@@ -1,15 +1,15 @@
 {
   "files": {
-    "main.css": "/eye-candy/static/css/main.f1b90d84.css",
-    "main.js": "/eye-candy/static/js/main.0b3a294e.js",
+    "main.css": "/eye-candy/static/css/main.59e7a329.css",
+    "main.js": "/eye-candy/static/js/main.d899400b.js",
     "static/js/787.0d7a769f.chunk.js": "/eye-candy/static/js/787.0d7a769f.chunk.js",
     "index.html": "/eye-candy/index.html",
-    "main.f1b90d84.css.map": "/eye-candy/static/css/main.f1b90d84.css.map",
-    "main.0b3a294e.js.map": "/eye-candy/static/js/main.0b3a294e.js.map",
+    "main.59e7a329.css.map": "/eye-candy/static/css/main.59e7a329.css.map",
+    "main.d899400b.js.map": "/eye-candy/static/js/main.d899400b.js.map",
     "787.0d7a769f.chunk.js.map": "/eye-candy/static/js/787.0d7a769f.chunk.js.map"
   },
   "entrypoints": [
-    "static/css/main.f1b90d84.css",
-    "static/js/main.0b3a294e.js"
+    "static/css/main.59e7a329.css",
+    "static/js/main.d899400b.js"
   ]
 }

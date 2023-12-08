@@ -1,15 +1,15 @@
 {
   "files": {
-    "main.css": "/eye-candy/static/css/main.59e7a329.css",
+    "main.css": "/eye-candy/static/css/main.32928c28.css",
     "main.js": "/eye-candy/static/js/main.d899400b.js",
     "static/js/787.0d7a769f.chunk.js": "/eye-candy/static/js/787.0d7a769f.chunk.js",
     "index.html": "/eye-candy/index.html",
-    "main.59e7a329.css.map": "/eye-candy/static/css/main.59e7a329.css.map",
+    "main.32928c28.css.map": "/eye-candy/static/css/main.32928c28.css.map",
     "main.d899400b.js.map": "/eye-candy/static/js/main.d899400b.js.map",
     "787.0d7a769f.chunk.js.map": "/eye-candy/static/js/787.0d7a769f.chunk.js.map"
   },
   "entrypoints": [
-    "static/css/main.59e7a329.css",
+    "static/css/main.32928c28.css",
     "static/js/main.d899400b.js"
   ]
 }

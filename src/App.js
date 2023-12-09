@@ -6,6 +6,7 @@ function App() {
   return (
     <div className="App">
       <Canvas shadows>
+        <gridHelper />
         <ambientLight intensity={0.1} />
         <directionalLight color="red" position={[0, 0, 5]} />
         <mesh castShadow receiveShadow>

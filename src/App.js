@@ -4,14 +4,16 @@ import { Canvas } from "@react-three/fiber";
 import { CameraControls } from "@react-three/drei";
 
 import "./App.css";
+
 import { _45_deg } from "./utils/constants";
 
+import Loader from "./components/Loader/Loader";
 import LightingRig from "./components/Rigging/LightingRig";
 import GridHelper from "./components/Rigging/GridHelper";
+
 import { HaloSet } from "./components/Elements/Halo";
 import { Skull } from "./components/Elements/Skull";
 import { Femur } from "./components/Elements/Femur";
-import Loader from "./components/Loader/Loader";
 
 function App() {
   const femur = useControls("Femur", {

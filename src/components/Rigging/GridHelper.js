@@ -1,4 +1,4 @@
-import { _90_deg } from "../utils/constants";
+import { _90_deg } from "../../utils/constants";
 
 export function GridHelper() {
   return (
@@ -9,3 +9,5 @@ export function GridHelper() {
     </group>
   );
 }
+
+export default GridHelper;

@@ -1,6 +1,6 @@
 import { _90_deg } from "../../utils/constants";
 
-export function GridHelper() {
+function GridHelper() {
   return (
     <group>
       <gridHelper rotation={[0, 0, 0]} />

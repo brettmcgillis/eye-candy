@@ -3,7 +3,7 @@ import * as THREE from "three";
 export function Halo({
   innerRadius = 1,
   outerRadius = 2,
-  color = "blue",
+  color = "black",
   ...props
 }) {
   return (

@@ -1,16 +1,17 @@
 import { Suspense } from "react";
 import { Canvas } from "@react-three/fiber";
 import { CameraControls } from "@react-three/drei";
+import { useControls } from "leva";
 
 import "./App.css";
 
 import Loader from "./components/Loader/Loader";
 import LightingRig from "./components/Rigging/LightingRig";
 import GridHelper from "./components/Rigging/GridHelper";
+import PolarGridHelper from "./components/Rigging/PolarGridHelper";
+import ScreenShotControsl from "./components/Rigging/ScreenShot";
 
 import NewScene from "./scenes/NewScene";
-import { useControls } from "leva";
-import PolarGridHelper from "./components/Rigging/PolarGridHelper";
 
 function App() {
   // COMPLEX CONTROLS~!
@@ -41,7 +42,7 @@ function App() {
 
   return (
     <div className="App">
-      <Canvas shadows>
+      <Canvas shadows gl={{ preserveDrawingBuffer: true }}>
         <Suspense fallback={<Loader />}>
           <GridHelper visible={controls.show_grid_helper} />
           <PolarGridHelper visible={controls.show_polar_grid_helper} />
@@ -50,6 +51,7 @@ function App() {
           <NewScene />
 
           <CameraControls makeDefault />
+          <ScreenShotControsl />
         </Suspense>
       </Canvas>
     </div>

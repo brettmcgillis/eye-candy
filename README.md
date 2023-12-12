@@ -1,4 +1,7 @@
-# Try it
-[Eye Candy](https://brettmcgillis.github.io/eye-candy/)
-![spooky!](https://brettmcgillis.github.io/eye-candy/screenshot.png)
+# Eye candy
 
+Experiments in 3D.
+
+[Try it](https://brettmcgillis.github.io/eye-candy/)
+
+![spooky!](https://brettmcgillis.github.io/eye-candy/screenshot.png)

@@ -1,4 +1,6 @@
-# Eye candy
+# Eye Candy 
+
+![yum](https://brettmcgillis.github.io/eye-candy/favicon.ico)
 
 Experiments in 3D.
 

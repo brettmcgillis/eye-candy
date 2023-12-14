@@ -19,10 +19,9 @@ function App() {
           <LightingRig />
           <Environment />
           <ScreenShotControls />
+          <CameraControls makeDefault />
 
           <NewScene />
-
-          <CameraControls makeDefault />
         </Suspense>
       </Canvas>
     </div>

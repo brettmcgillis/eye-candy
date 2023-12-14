@@ -1,8 +1,8 @@
 import { _45_deg } from "../../utils/constants";
 
-import { HaloSet } from "../Elements/Halo";
-import { Femur } from "../Elements/Femur";
-import { Skull } from "../Elements/Skull/Skull";
+import { HaloSet } from "../elements/Halo";
+import { Femur } from "../elements/Femur";
+import { Skull } from "../elements/skull/Skull";
 
 function NewScene() {
   return (

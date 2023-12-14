@@ -10,7 +10,7 @@
 - HALO
   -- halo props (# of rings)
   -- halo hover glow
-  -- generative halos
+  -- generative halos?
 
 - SKULL
   -- element position controls
@@ -23,11 +23,17 @@
   -- motion controls (ie drag drop elements?)
   -- physics
   -- post processing?
-  --- sparkles
+  -- Cloud
+  -- selectable background color
 
 - LIGHTINGRIG
   -- improve controls
   -- directional lighting
 
 - CONTROLS
-  -- control module
+  -- universal control module
+
+- add utils
+  -- color utilites (hook into THREE if possible)
+
+- Start new scene to recreated folded frame #?

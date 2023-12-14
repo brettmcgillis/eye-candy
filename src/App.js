@@ -9,7 +9,7 @@ import Loader from "./components/loader/Loader";
 import LightingRig from "./components/rigging/LightingRig";
 import GridHelper from "./components/rigging/GridHelper";
 import PolarGridHelper from "./components/rigging/PolarGridHelper";
-import ScreenShotControsl from "./components/rigging/ScreenShot";
+import ScreenShotControls from "./components/rigging/ScreenShot";
 
 import NewScene from "./components/scenes/NewScene";
 
@@ -51,7 +51,7 @@ function App() {
           <NewScene />
 
           <CameraControls makeDefault />
-          <ScreenShotControsl />
+          <ScreenShotControls />
         </Suspense>
       </Canvas>
     </div>

@@ -1,6 +1,6 @@
 import { button, useControls } from "leva";
 
-function ScreenShotControsl() {
+function ScreenShotControls() {
   useControls(
     "ScreenShot",
     {
@@ -27,4 +27,4 @@ function ScreenShotControsl() {
   return <></>;
 }
 
-export default ScreenShotControsl;
+export default ScreenShotControls;

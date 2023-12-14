@@ -18,11 +18,11 @@ function App() {
         <Suspense fallback={<Loader />}>
           <LightingRig />
           <Environment />
+          <ScreenShotControls />
 
           <NewScene />
 
           <CameraControls makeDefault />
-          <ScreenShotControls />
         </Suspense>
       </Canvas>
     </div>

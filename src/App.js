@@ -11,7 +11,7 @@ import GridHelper from "./components/Rigging/GridHelper";
 import PolarGridHelper from "./components/Rigging/PolarGridHelper";
 import ScreenShotControsl from "./components/Rigging/ScreenShot";
 
-import NewScene from "./scenes/NewScene";
+import NewScene from "./components/Scenes/NewScene";
 
 function App() {
   // COMPLEX CONTROLS~!

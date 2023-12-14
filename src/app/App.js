@@ -5,13 +5,13 @@ import { useControls } from "leva";
 
 import "./App.css";
 
-import Loader from "./components/loader/Loader";
-import LightingRig from "./components/rigging/LightingRig";
-import GridHelper from "./components/rigging/GridHelper";
-import PolarGridHelper from "./components/rigging/PolarGridHelper";
-import ScreenShotControls from "./components/rigging/ScreenShot";
+import Loader from "../components/loader/Loader";
+import LightingRig from "../components/rigging/LightingRig";
+import GridHelper from "../components/rigging/GridHelper";
+import PolarGridHelper from "../components/rigging/PolarGridHelper";
+import ScreenShotControls from "../components/rigging/ScreenShot";
 
-import NewScene from "./components/scenes/NewScene";
+import NewScene from "../components/scenes/NewScene";
 
 function App() {
   // COMPLEX CONTROLS~!

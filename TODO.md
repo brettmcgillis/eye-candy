@@ -2,6 +2,9 @@
 
 - update screenshot.png
 
+- OVERLAY
+  -- update defaults on leva for visiblity, collapsed
+
 - NEWSCENE
   -- name
   -- element position controls

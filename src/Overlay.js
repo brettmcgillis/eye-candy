@@ -13,10 +13,6 @@ function Overlay() {
 
   return (
     <>
-      {/* 
-        TODO: add collapsed attribute
-        set showLeva default false
-       */}
       <Leva hidden={!showLeva} />
       <div className="Overlay">
         <div className="Top-Left">

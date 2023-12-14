@@ -4,12 +4,12 @@ import { CameraControls } from "@react-three/drei";
 
 import "./App.css";
 
+import Environment from "../components/rigging/Environment";
 import Loader from "../components/loader/Loader";
 import LightingRig from "../components/rigging/LightingRig";
 import ScreenShotControls from "../components/rigging/ScreenShot";
 
 import NewScene from "../components/scenes/NewScene";
-import Environment from "../components/rigging/Environment";
 
 function App() {
   return (
@@ -19,7 +19,7 @@ function App() {
           <LightingRig />
           <Environment />
 
-          {/* <NewScene /> */}
+          <NewScene />
 
           <CameraControls makeDefault />
           <ScreenShotControls />

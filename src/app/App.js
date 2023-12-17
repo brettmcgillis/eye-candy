@@ -1,14 +1,11 @@
 import { Suspense } from "react";
 import { Canvas } from "@react-three/fiber";
-import { CameraControls } from "@react-three/drei";
 
 import "./App.css";
 
-import Environment from "../components/rigging/Environment";
 import Loader from "../components/loader/Loader";
-import LightingRig from "../components/rigging/LightingRig";
-import ScreenShotControls from "../components/rigging/ScreenShot";
 
+import FoldedFrame from "../components/scenes/FoldedFrame/FoldedFrame";
 import NewScene from "../components/scenes/NewScene";
 
 function App() {
@@ -16,11 +13,7 @@ function App() {
     <div className="App">
       <Canvas shadows gl={{ preserveDrawingBuffer: true }}>
         <Suspense fallback={<Loader />}>
-          <LightingRig />
-          <Environment />
-          <ScreenShotControls />
-          <CameraControls makeDefault />
-
+          {/* <FoldedFrame /> */}
           <NewScene />
         </Suspense>
       </Canvas>

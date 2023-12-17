@@ -1,21 +1,38 @@
-import { useControls } from "leva";
 import React from "react";
 import { useGLTF } from "@react-three/drei";
 
 import skull from "../../../models/Skull.gltf";
-import * as _ from "./Skull_Helper";
 
-export function Skull({ ...props }) {
+export function Skull({
+  showCranium,
+  showLeftZygomatic,
+  showOccipital,
+  showRightLacrimal,
+  showRightMaxilla,
+  showRightNasal,
+  showRightPalatine,
+  showRightParietal,
+  showRightTemporal,
+  showRightZygomatic,
+  showSphenoid,
+  showTeeth,
+  showVomer,
+  showEthmoid,
+  showFrontal,
+  showInferiorConchae,
+  showLeftLacrimal,
+  showLeftMaxilla,
+  showLeftNasal,
+  showLeftPalatine,
+  showLeftParietal,
+  showLeftTemporal,
+  showMandible,
+  showMandibleBone,
+  showMandibleTeeth,
+  ...props
+}) {
   const { nodes, materials } = useGLTF(skull);
 
-  const controls = useControls(
-    "Skull",
-    {
-      Cranium: _.folderFromObject(_.Cranium),
-      Mandible: _.folderFromObject(_.Mandible),
-    },
-    { collapsed: true }
-  );
   return (
     <group {...props} dispose={null}>
       <group
@@ -25,184 +42,184 @@ export function Skull({ ...props }) {
         <group
           position={[-0.418, -1.66, 0.931]}
           rotation={[-0.154, 0.022, 0.045]}
-          visible={controls[_.Mandible.show_full_mandible]}
+          visible={showMandible}
         >
           <mesh
             castShadow
             receiveShadow
             geometry={nodes.Lower_teeth_1.geometry}
             material={materials.phong3}
-            visible={controls[_.Mandible.show_mandible_teeth]}
+            visible={showMandibleTeeth}
           />
           <mesh
             castShadow
             receiveShadow
             geometry={nodes.Mandible_2.geometry}
             material={materials.lambert5}
-            visible={controls[_.Mandible.show_mandible_bone]}
+            visible={showMandibleBone}
           />
         </group>
-        <group visible={controls[_.Cranium.show_cranium]}>
+        <group visible={showCranium}>
           <mesh
             castShadow
             receiveShadow
             geometry={nodes.Left_zygomatic_1.geometry}
             material={materials.lambert5}
-            visible={controls[_.Cranium.show_Left_zygomatic]}
+            visible={showLeftZygomatic}
           />
           <mesh
             castShadow
             receiveShadow
             geometry={nodes.Occipital_1.geometry}
             material={materials.lambert5}
-            visible={controls[_.Cranium.show_Occipital]}
+            visible={showOccipital}
           />
           <mesh
             castShadow
             receiveShadow
             geometry={nodes.Right_lacrimal_1.geometry}
             material={materials.lambert5}
-            visible={controls[_.Cranium.show_Right_lacrimal]}
+            visible={showRightLacrimal}
           />
           <mesh
             castShadow
             receiveShadow
             geometry={nodes.Right_max_1.geometry}
             material={materials.lambert5}
-            visible={controls[_.Cranium.show_Right_max]}
+            visible={showRightMaxilla}
           />
           <mesh
             castShadow
             receiveShadow
             geometry={nodes.Right_nasal_1.geometry}
             material={materials.lambert5}
-            visible={controls[_.Cranium.show_Right_nasal]}
+            visible={showRightNasal}
           />
           <mesh
             castShadow
             receiveShadow
             geometry={nodes.Right_palatine_1.geometry}
             material={materials.lambert5}
-            visible={controls[_.Cranium.show_Right_palatine]}
+            visible={showRightPalatine}
           />
           <mesh
             castShadow
             receiveShadow
             geometry={nodes.Right_Parietal_1.geometry}
             material={materials.lambert5}
-            visible={controls[_.Cranium.show_Right_Parietal]}
+            visible={showRightParietal}
           />
           <mesh
             castShadow
             receiveShadow
             geometry={nodes.Right_temporal_1.geometry}
             material={materials.lambert5}
-            visible={controls[_.Cranium.show_Right_temporal]}
+            visible={showRightTemporal}
           />
           <mesh
             castShadow
             receiveShadow
             geometry={nodes.Right_zygomatic_1.geometry}
             material={materials.lambert5}
-            visible={controls[_.Cranium.show_Right_zygomatic]}
+            visible={showRightZygomatic}
           />
           <mesh
             castShadow
             receiveShadow
             geometry={nodes.Sphenoid_1.geometry}
             material={materials.lambert5}
-            visible={controls[_.Cranium.show_Sphenoid]}
+            visible={showSphenoid}
           />
           <mesh
             castShadow
             receiveShadow
             geometry={nodes.Teeth_1.geometry}
             material={materials.phong3}
-            visible={controls[_.Cranium.show_Teeth]}
+            visible={showTeeth}
           />
           <mesh
             castShadow
             receiveShadow
             geometry={nodes.Vomer_1.geometry}
             material={materials.lambert5}
-            visible={controls[_.Cranium.show_Vomer]}
+            visible={showVomer}
           />
           <mesh
             castShadow
             receiveShadow
             geometry={nodes.Ethmoid_1.geometry}
             material={materials.lambert5}
-            visible={controls[_.Cranium.show_Ethmoid]}
+            visible={showEthmoid}
           />
           <mesh
             castShadow
             receiveShadow
             geometry={nodes.Ethmoid_2.geometry}
             material={materials.lambert5}
-            visible={controls[_.Cranium.show_Ethmoid]}
+            visible={showEthmoid}
           />
           <mesh
             castShadow
             receiveShadow
             geometry={nodes.Frontal_1.geometry}
             material={materials.lambert5}
-            visible={controls[_.Cranium.show_Frontal]}
+            visible={showFrontal}
           />
           <mesh
             castShadow
             receiveShadow
             geometry={nodes.Inferior_conchae_1.geometry}
             material={materials.lambert5}
-            visible={controls[_.Cranium.show_Inferior_conchae]}
+            visible={showInferiorConchae}
           />
           <mesh
             castShadow
             receiveShadow
             geometry={nodes.Left_lacrimal_1.geometry}
             material={materials.lambert5}
-            visible={controls[_.Cranium.show_Left_lacrimal]}
+            visible={showLeftLacrimal}
           />
           <mesh
             castShadow
             receiveShadow
             geometry={nodes.Left_maxilla_1.geometry}
             material={materials.lambert5}
-            visible={controls[_.Cranium.show_Left_maxilla]}
+            visible={showLeftMaxilla}
           />
           <mesh
             castShadow
             receiveShadow
             geometry={nodes.Left_maxilla_2.geometry}
             material={materials.lambert5}
-            visible={controls[_.Cranium.show_Left_maxilla]}
+            visible={showLeftMaxilla}
           />
           <mesh
             castShadow
             receiveShadow
             geometry={nodes.Left_nasal_1.geometry}
             material={materials.lambert5}
-            visible={controls[_.Cranium.show_Left_nasal]}
+            visible={showLeftNasal}
           />
           <mesh
             castShadow
             receiveShadow
             geometry={nodes.Left_palatine_1.geometry}
             material={materials.lambert5}
-            visible={controls[_.Cranium.show_Left_palatine]}
+            visible={showLeftPalatine}
           />
           <mesh
             castShadow
             receiveShadow
             geometry={nodes.Left_parietal_1.geometry}
             material={materials.lambert5}
-            visible={controls[_.Cranium.show_Left_parietal]}
+            visible={showLeftParietal}
           />
           <mesh
             castShadow
             receiveShadow
             geometry={nodes.Left_temporal_1.geometry}
             material={materials.lambert5}
-            visible={controls[_.Cranium.show_Left_temporal]}
+            visible={showLeftTemporal}
           />
         </group>
       </group>

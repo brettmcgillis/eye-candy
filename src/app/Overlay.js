@@ -16,9 +16,8 @@ function Overlay() {
       <Leva hidden={!showLeva} />
       <div className="Overlay">
         <div className="Top-Left">
-          🤘 —
           <span className="Debug" onClick={handleDebug}>
-            &nbsp;🔥&nbsp;
+            🔥&nbsp;
           </span>
           — 💀
         </div>

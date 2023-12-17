@@ -25,8 +25,9 @@
   --- element position controls
   --- element rotation controls
   --- post processing (dots, godrays, +)
-  --- motion controls (drag drop)
-  --- physics
+  --- Fun stuff
+  ---- motion controls (drag drop)
+  ---- physics
 
   -- FOLDEDFRAME
   --- fix default lighting

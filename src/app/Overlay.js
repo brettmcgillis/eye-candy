@@ -6,14 +6,14 @@ import { useState } from "react";
 function Overlay() {
   const date = new Date();
 
-  const [showLeva, setShowLeva] = useState(true);
+  const [showLeva, setShowLeva] = useState(false);
   const handleDebug = () => {
     setShowLeva(!showLeva);
   };
 
   return (
     <>
-      <Leva hidden={!showLeva} />
+      <Leva collapsed hidden={!showLeva} />
       <div className="Overlay">
         <div className="Top-Left">
           <span className="Debug" onClick={handleDebug}>

@@ -1,19 +1,22 @@
+import { useState } from "react";
 import { Leva } from "leva";
 
 import "./Overlay.css";
-import { useState } from "react";
 
 function Overlay() {
   const date = new Date();
 
-  const [showLeva, setShowLeva] = useState(false);
+  const local = isLocalHost();
+
+  const [showLeva, setShowLeva] = useState(local ? true : false);
+
   const handleDebug = () => {
     setShowLeva(!showLeva);
   };
 
   return (
     <>
-      <Leva collapsed hidden={!showLeva} />
+      <Leva collapsed={local ? false : true} hidden={!showLeva} />
       <div className="Overlay">
         <div className="Top-Left">
           <span className="Debug" onClick={handleDebug}>
@@ -27,6 +30,14 @@ function Overlay() {
         </div>
       </div>
     </>
+  );
+}
+
+function isLocalHost() {
+  return (
+    window.location.hostname === "localhost" ||
+    window.location.hostname === "127.0.0.1" ||
+    window.location.hostname === "[::1]"
   );
 }
 

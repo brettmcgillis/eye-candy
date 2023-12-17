@@ -8,7 +8,6 @@
   -- pixelation component.
 
 - OVERLAY
-  -- update defaults on leva for visiblity, collapsed
   -- add personal links
   -- display back link contextually.
   -- show emojis contextually.

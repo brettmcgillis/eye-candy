@@ -19,8 +19,7 @@
 - SCENES
   -- NEWSCENE
   --- name it
-  --- Cloud size, position , bounds, color, castShadow, receiveShadow
-  --- Skull elements disabled by default
+  --- Cloud size, position, bounds, color, castShadow, receiveShadow
   --- default camera position
   --- element position controls
   --- element rotation controls
@@ -41,9 +40,8 @@
   --- halo hover glow
   --- generative halos?
   -- SKULL
-  -- props to controls
-  --- element position controls
-  --- material controls (? chrome skull)
+  -- element position controls
+  -- material controls (? chrome skull)
 
 - ENVIRONMENT (app)
   -- selectable background color

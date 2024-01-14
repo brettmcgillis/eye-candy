@@ -34,11 +34,7 @@ function Overlay() {
 }
 
 function isLocalHost() {
-  return (
-    window.location.hostname === "localhost" ||
-    window.location.hostname === "127.0.0.1" ||
-    window.location.hostname === "[::1]"
-  );
+  return ["localhost", "127.0.0.1", "[::1]"].includes(window.location.hostname);
 }
 
 export default Overlay;

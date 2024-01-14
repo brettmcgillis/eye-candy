@@ -11,7 +11,11 @@ import NewScene from "../components/scenes/NewScene";
 function App() {
   return (
     <div className="App">
-      <Canvas shadows gl={{ preserveDrawingBuffer: true }}>
+      <Canvas
+        shadows
+        gl={{ preserveDrawingBuffer: true }}
+        camera={{ position: [-1, -1, 3.5] }}
+      >
         <Suspense fallback={<Loader />}>
           {/* <FoldedFrame /> */}
           <NewScene />

@@ -1,40 +1,44 @@
 import * as THREE from "three";
 
-export function Halo({
+function Ring({
   innerRadius = 1,
   outerRadius = 2,
   color = "black",
+  metallic = false,
   ...props
 }) {
+  const metalness = metallic ? 1 : 0;
+  const roughness = metallic ? 0.3 : 1;
+
   return (
     <mesh {...props}>
-      <ringGeometry args={[innerRadius, outerRadius, 50]} />
-      <meshStandardMaterial color={color} side={THREE.DoubleSide} />
+      <ringGeometry args={[innerRadius, outerRadius, 150]} />
+      <meshStandardMaterial
+        color={color}
+        roughness={roughness}
+        metalness={metalness}
+        side={THREE.DoubleSide}
+      />
     </mesh>
   );
 }
 
-export function HaloSet({ ...props }) {
-  return (
-    <group {...props}>
-      <Halo
+export function Halo({ innerRadius, rings, ...props }) {
+  let ir = innerRadius;
+  const halos = rings.map((ring, _, __) => {
+    const inner = ir;
+    const outer = ir + ring.width;
+    ir = outer;
+    return (
+      <Ring
+        innerRadius={inner}
+        outerRadius={outer}
+        color={ring.color}
+        metallic={ring.metallic}
         position={[0, 0, 0]}
-        color="lightblue"
-        innerRadius={0.5}
-        outerRadius={1}
       />
-      <Halo
-        position={[0, 0, 0]}
-        color="blue"
-        innerRadius={1}
-        outerRadius={1.5}
-      />
-      <Halo
-        position={[0, 0, 0]}
-        color="darkblue"
-        innerRadius={1.5}
-        outerRadius={2}
-      />
-    </group>
-  );
+    );
+  });
+
+  return <group {...props}>{halos}</group>;
 }

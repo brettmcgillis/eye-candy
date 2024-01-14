@@ -19,7 +19,7 @@ function LightingRig() {
   const ambientLight = useControls(
     "Ambient Light",
     {
-      intensity: { value: 0.1, min: 0, max: 1, step: 0.1 },
+      intensity: { value: 0, min: 0, max: 1, step: 0.1 },
     },
     { collapsed: true }
   );

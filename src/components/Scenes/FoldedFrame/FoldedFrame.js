@@ -1,6 +1,6 @@
 import { useControls } from "leva";
 
-import { _45_deg } from "../../../utils/constants";
+import { _45_deg } from "../../../utils/math";
 import getColorsInRange from "../../../utils/colors";
 import LightingRig from "../../rigging/LightingRig";
 

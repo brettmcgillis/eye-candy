@@ -19,10 +19,9 @@
 - SCENES
   -- NEWSCENE
   --- name it
-  --- Cloud size, position, bounds, color, castShadow, receiveShadow
+  --- extract all settings to json
+  --- reset button (leverage set() + json settings)
   --- default camera position
-  --- element position controls
-  --- element rotation controls
   --- post processing (dots, godrays, +)
   --- Fun stuff
   ---- motion controls (drag drop)
@@ -84,5 +83,12 @@
   //     },
   //     { render: (get) => get("Controls.show2") }
   //   ),
+  //   options: {
+  //     value: 'helloWorld',
+  //     options: {
+  //       'Hello World': 'helloWorld',
+  //       'Leva is awesome!': 'leva',
+  //     },
+  //   }
   // });
   ```

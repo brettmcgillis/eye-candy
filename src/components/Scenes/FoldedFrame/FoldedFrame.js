@@ -2,10 +2,12 @@ import { useControls } from "leva";
 
 import { _45_deg } from "../../../utils/math";
 import getColorsInRange from "../../../utils/colors";
+
 import LightingRig from "../../rigging/LightingRig";
+import CameraRig from "../../rigging/CameraRig";
+import { PaperFrame } from "../../elements/PaperFrame";
 
 import { getFrames, getFrameData } from "./FrameData";
-import CameraRig from "../../rigging/CameraRig";
 
 function Square({ index, layer, size, position, color, settings }) {
   const [x, y] = position;
@@ -38,7 +40,16 @@ function Layer({ layer, squares, depth, settings }) {
 
 function FoldedFrame() {
   const frames = getFrames();
-  const { frame, rotate, colorRange_start, colorRange_end } = useControls(
+  const {
+    frame,
+    rotate,
+    colorRange_start,
+    colorRange_end,
+    dataScale,
+    frameScale,
+    dataPosition,
+    framePosition,
+  } = useControls(
     "Scene",
     {
       frame: {
@@ -47,8 +58,27 @@ function FoldedFrame() {
         options: frames.map((f) => f.name),
       },
       colorRange_start: { label: "Start", value: "#FFFFFF" },
-      colorRange_end: { label: "End", value: "#797979" },
+      colorRange_end: { label: "End", value: "#D8D8D8" },
       rotate: { value: true, label: "Rotate 45*" },
+      dataScale: {
+        label: "Square Scale",
+        value: 0.1,
+        min: 0.1,
+        max: 10,
+        step: 0.1,
+      },
+      dataPosition: {
+        label: "Square Position",
+        value: { x: 0, y: 0, z: 0.08 },
+      },
+      framePosition: { label: "Frame Position", value: { x: 0, y: 0, z: 0 } },
+      frameScale: {
+        label: "Frame Scale",
+        value: 1.1,
+        min: 0.1,
+        max: 10,
+        step: 0.1,
+      },
     },
     { collapsed: false }
   );
@@ -73,7 +103,16 @@ function FoldedFrame() {
     <>
       <LightingRig />
       <CameraRig />
-      <group rotation={[0, 0, rotate ? -_45_deg : 0]}>
+      <PaperFrame
+        position={[framePosition.x, framePosition.y, framePosition.z]}
+        scale={frameScale}
+        rotation={[0, 0, rotate ? 0 : -_45_deg]}
+      />
+      <group
+        position={[dataPosition.x, dataPosition.y, dataPosition.z]}
+        scale={dataScale}
+        rotation={[0, 0, rotate ? -_45_deg : 0]}
+      >
         {layers.map((layer, index) => {
           return Layer({
             layer: index,

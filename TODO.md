@@ -29,7 +29,6 @@
 
   -- FOLDEDFRAME
   --- fix default lighting
-  --- Blender up a model for the frolded frame :| ~!
   --- animate layer color
   --- break elements out into reusable components where possible
 

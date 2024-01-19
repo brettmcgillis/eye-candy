@@ -32,6 +32,10 @@
   --- animate layer color
   --- break elements out into reusable components where possible
 
+  -- LOGLOW
+  --- color controls (glow, rgb)
+  --- Camera
+
 - ELEMENTS
   -- HALO
   --- halo props to controls
@@ -40,6 +44,8 @@
   -- SKULL
   -- element position controls
   -- material controls (? chrome skull)
+  -- LOGO
+  --- colors to props
 
 - ENVIRONMENT (app)
   -- selectable background color

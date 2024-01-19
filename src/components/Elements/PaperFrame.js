@@ -18,4 +18,4 @@ export function PaperFrame(props) {
   );
 }
 
-useGLTF.preload("/foldedframe.glb");
+useGLTF.preload("/FoldedFrame.glb");

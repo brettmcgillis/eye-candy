@@ -24,6 +24,9 @@
   --- default camera position
   --- post processing (dots, godrays, +)
   --- Fun stuff
+  ---- Atomic Halo
+  ---- LP Halo
+  ---- 45lb Halo
   ---- motion controls (drag drop)
   ---- physics
 

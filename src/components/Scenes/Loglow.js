@@ -40,7 +40,7 @@ export default function LoGlow() {
       <color attach="background" args={[backgroundColor]} />
       <fog attach="fog" args={[fogColor, fogNear, fogFar]} />
 
-      <Logo rotation={[_90_deg, 0, 0]} />
+      <Logo scale={2} rotation={[_90_deg, 0, 0]} />
       <BakeShadows />
       <Effects disableGamma>
         <unrealBloomPass

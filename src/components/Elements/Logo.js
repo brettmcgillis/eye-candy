@@ -1,8 +1,9 @@
-import React from "react";
-import { useGLTF } from "@react-three/drei";
-import * as THREE from "three";
+import React from 'react';
+import * as THREE from 'three';
 
-import logo from "../../models/Logo.glb";
+import { useGLTF } from '@react-three/drei';
+
+import logo from '../../models/Logo.glb';
 
 export default function Logo({
   innerColorVal,
@@ -15,7 +16,7 @@ export default function Logo({
 }) {
   const { nodes, materials } = useGLTF(logo);
   const innerMaterial = !innerColorVal
-    ? materials["SVGMat.001"]
+    ? materials['SVGMat.001']
     : new THREE.MeshStandardMaterial({
         color: innerColorEmissive ? null : innerColorVal,
         emissive: innerColorEmissive ? innerColorVal : null,
@@ -23,7 +24,7 @@ export default function Logo({
         side: THREE.DoubleSide,
       });
   const outerMaterial = !outerColorVal
-    ? materials["SVGMat.004"]
+    ? materials['SVGMat.004']
     : new THREE.MeshStandardMaterial({
         color: outerColorEmissive ? null : outerColorVal,
         emissive: outerColorEmissive ? outerColorVal : null,
@@ -36,7 +37,7 @@ export default function Logo({
       <mesh
         castShadow
         receiveShadow
-        geometry={nodes["frog-in"].geometry}
+        geometry={nodes['frog-in'].geometry}
         material={innerMaterial}
         position={[0.835, 0.03, 0.46]}
         scale={[10, 1.018, 10]}
@@ -44,7 +45,7 @@ export default function Logo({
       <mesh
         castShadow
         receiveShadow
-        geometry={nodes["frog-out"].geometry}
+        geometry={nodes['frog-out'].geometry}
         material={outerMaterial}
         position={[0.835, 0, 0.46]}
         scale={[10, 1.018, 10]}
@@ -52,7 +53,7 @@ export default function Logo({
       <mesh
         castShadow
         receiveShadow
-        geometry={nodes["bret-in"].geometry}
+        geometry={nodes['bret-in'].geometry}
         material={innerMaterial}
         position={[0.038, 0.03, 0.028]}
         scale={[10, 0.524, 10]}
@@ -60,7 +61,7 @@ export default function Logo({
       <mesh
         castShadow
         receiveShadow
-        geometry={nodes["bret-out"].geometry}
+        geometry={nodes['bret-out'].geometry}
         material={outerMaterial}
         position={[0.045, 0, 0.099]}
         scale={[10, 0.524, 10]}
@@ -69,4 +70,4 @@ export default function Logo({
   );
 }
 
-useGLTF.preload("/Logo.glb");
+useGLTF.preload('/Logo.glb');

@@ -1,13 +1,13 @@
-import { extend } from "@react-three/fiber";
-import { BakeShadows, Effects } from "@react-three/drei";
-import { UnrealBloomPass } from "three-stdlib";
-import { useControls } from "leva";
+import { useControls } from 'leva';
+import { UnrealBloomPass } from 'three-stdlib';
 
-import { _90_deg } from "../../utils/math";
+import { BakeShadows, Effects } from '@react-three/drei';
+import { extend } from '@react-three/fiber';
 
-import Logo from "../elements/Logo";
-import CameraRig from "../rigging/CameraRig";
-import LightingRig from "../rigging/LightingRig";
+import { _90_deg } from '../../utils/math';
+import Logo from '../elements/Logo';
+import CameraRig from '../rigging/CameraRig';
+import LightingRig from '../rigging/LightingRig';
 
 extend({ UnrealBloomPass });
 
@@ -27,45 +27,45 @@ export default function LoGlow() {
     outerColorEmissive,
     outerColorEmissiveIntensity,
   } = useControls(
-    "LoGlow",
+    'LoGlow',
     {
-      backgroundColor: { label: "Background Color", value: "#202030" },
-      fogColor: { label: "Fog Color", value: "#202030" },
-      fogNear: { label: "Fog Near", value: 10 },
-      fogFar: { label: "Fog Far", value: 25 },
-      bloomThreshold: { label: "Bloom Threshold", value: 0.1, min: 0, max: 10 },
-      bloomStrength: { label: "Bloom Strength", value: 0.2, min: 0, max: 10 },
-      bloomRadius: { label: "Bloom Radius", value: 0.2, min: 0, max: 10 },
+      backgroundColor: { label: 'Background Color', value: '#202030' },
+      fogColor: { label: 'Fog Color', value: '#202030' },
+      fogNear: { label: 'Fog Near', value: 10 },
+      fogFar: { label: 'Fog Far', value: 25 },
+      bloomThreshold: { label: 'Bloom Threshold', value: 0.1, min: 0, max: 10 },
+      bloomStrength: { label: 'Bloom Strength', value: 0.2, min: 0, max: 10 },
+      bloomRadius: { label: 'Bloom Radius', value: 0.2, min: 0, max: 10 },
       innerColorVal: {
-        label: "Inner Color",
-        value: "#FF0000",
+        label: 'Inner Color',
+        value: '#FF0000',
       },
       innerColorEmissive: {
-        label: "Inner Color Emissive",
+        label: 'Inner Color Emissive',
         value: true,
       },
       innerColorEmissiveIntensity: {
-        label: "Inner Color Emissive Intensity",
+        label: 'Inner Color Emissive Intensity',
         value: 5,
         min: 0,
         max: 10,
       },
       outerColorVal: {
-        label: "Outer Color",
-        value: "#000000",
+        label: 'Outer Color',
+        value: '#000000',
       },
       outerColorEmissive: {
-        label: "Outer Color Emissive",
+        label: 'Outer Color Emissive',
         value: false,
       },
       outerColorEmissiveIntensity: {
-        label: "Outer Color Emissive Intensity",
+        label: 'Outer Color Emissive Intensity',
         value: 0,
         min: 0,
         max: 10,
       },
     },
-    { collapsed: true }
+    { collapsed: true },
   );
 
   return (

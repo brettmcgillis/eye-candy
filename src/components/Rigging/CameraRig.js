@@ -1,6 +1,6 @@
-import { CameraControls } from "@react-three/drei";
+import { CameraControls } from '@react-three/drei';
 
-import ScreenShotControls from "./ScreenShotControls";
+import ScreenShotControls from './ScreenShotControls';
 
 function CameraRig({ screenShot = false }) {
   return (

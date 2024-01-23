@@ -1,7 +1,8 @@
-import React from "react";
-import { useGLTF } from "@react-three/drei";
+import React from 'react';
 
-import skull from "../../../models/Skull.gltf";
+import { useGLTF } from '@react-three/drei';
+
+import skull from '../../../models/Skull.gltf';
 
 export function Skull({
   showCranium,
@@ -227,4 +228,4 @@ export function Skull({
   );
 }
 
-useGLTF.preload("/Skull.gltf");
+useGLTF.preload('/Skull.gltf');

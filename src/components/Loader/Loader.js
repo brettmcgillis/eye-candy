@@ -1,8 +1,9 @@
-import { Html, useProgress } from "@react-three/drei";
-import ProgressBar from "react-bootstrap/ProgressBar";
+import 'bootstrap/dist/css/bootstrap.min.css';
+import ProgressBar from 'react-bootstrap/ProgressBar';
 
-import "bootstrap/dist/css/bootstrap.min.css";
-import "./Loader.css";
+import { Html, useProgress } from '@react-three/drei';
+
+import './Loader.css';
 
 function Loader() {
   const { progress } = useProgress();

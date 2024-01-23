@@ -1,5 +1,5 @@
 function sq(size, position) {
-  return c_sq(size, position, "white");
+  return c_sq(size, position, 'white');
 }
 
 function c_sq(size, position, color) {
@@ -48,7 +48,7 @@ const FrameData1 = {
 };
 
 export function getFrames() {
-  return [{ name: "1", frame: FrameData1 }];
+  return [{ name: '1', frame: FrameData1 }];
 }
 
 export function getFrameData(name) {

@@ -1,13 +1,13 @@
-import { useControls } from "leva";
+import { useControls } from 'leva';
 
-import { _45_deg } from "../../../utils/math";
-import getColorsInRange from "../../../utils/colors";
+import getColorsInRange from '../../../utils/colors';
+import { _45_deg } from '../../../utils/math';
 
-import LightingRig from "../../rigging/LightingRig";
-import CameraRig from "../../rigging/CameraRig";
-import { PaperFrame } from "../../elements/PaperFrame";
+import { PaperFrame } from '../../elements/PaperFrame';
+import CameraRig from '../../rigging/CameraRig';
+import LightingRig from '../../rigging/LightingRig';
 
-import { getFrames, getFrameData } from "./FrameData";
+import { getFrameData, getFrames } from './FrameData';
 
 function Square({ index, layer, size, position, color, settings }) {
   const [x, y] = position;
@@ -50,37 +50,37 @@ function FoldedFrame() {
     dataPosition,
     framePosition,
   } = useControls(
-    "Scene",
+    'Scene',
     {
       frame: {
-        label: "Select Frame",
+        label: 'Select Frame',
         value: frames[0].name,
         options: frames.map((f) => f.name),
       },
-      colorRange_start: { label: "Start", value: "#FFFFFF" },
-      colorRange_end: { label: "End", value: "#D8D8D8" },
-      rotate: { value: true, label: "Rotate 45*" },
+      colorRange_start: { label: 'Start', value: '#FFFFFF' },
+      colorRange_end: { label: 'End', value: '#D8D8D8' },
+      rotate: { value: true, label: 'Rotate 45*' },
       dataScale: {
-        label: "Square Scale",
+        label: 'Square Scale',
         value: 0.1,
         min: 0.1,
         max: 10,
         step: 0.1,
       },
       dataPosition: {
-        label: "Square Position",
+        label: 'Square Position',
         value: { x: 0, y: 0, z: 0.08 },
       },
-      framePosition: { label: "Frame Position", value: { x: 0, y: 0, z: 0 } },
+      framePosition: { label: 'Frame Position', value: { x: 0, y: 0, z: 0 } },
       frameScale: {
-        label: "Frame Scale",
+        label: 'Frame Scale',
         value: 1.1,
         min: 0.1,
         max: 10,
         step: 0.1,
       },
     },
-    { collapsed: false }
+    { collapsed: false },
   );
 
   const frameData = getFrameData(!!frame ? frame : frames[0].name);
@@ -89,7 +89,7 @@ function FoldedFrame() {
   const colorGamut = getColorsInRange(
     colorRange_start,
     colorRange_end,
-    layers.length
+    layers.length,
   );
 
   layers = layers.map((layer, index) => {

@@ -1,7 +1,8 @@
-import React, { useRef } from "react";
-import { useGLTF } from "@react-three/drei";
+import React, { useRef } from 'react';
 
-import paperFrame from "../../models/FoldedFrame.glb";
+import { useGLTF } from '@react-three/drei';
+
+import paperFrame from '../../models/FoldedFrame.glb';
 
 export function PaperFrame(props) {
   const { nodes, materials } = useGLTF(paperFrame);
@@ -11,11 +12,11 @@ export function PaperFrame(props) {
         castShadow
         receiveShadow
         geometry={nodes.Frame.geometry}
-        material={materials["Material.002"]}
+        material={materials['Material.002']}
         rotation={[Math.PI / 2, 0, 0]}
       />
     </group>
   );
 }
 
-useGLTF.preload("/FoldedFrame.glb");
+useGLTF.preload('/FoldedFrame.glb');

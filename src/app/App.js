@@ -1,12 +1,13 @@
-import { Suspense } from "react";
-import { Canvas } from "@react-three/fiber";
+import { Suspense } from 'react';
 
-import "./App.css";
+import { Canvas } from '@react-three/fiber';
 
-import Loader from "../components/loader/Loader";
+import Loader from '../components/loader/Loader';
+import FoldedFrame from '../components/scenes/FoldedFrame/FoldedFrame';
+import LoGlow from '../components/scenes/Loglow';
+import NewScene from '../components/scenes/NewScene';
 
-import FoldedFrame from "../components/scenes/FoldedFrame/FoldedFrame";
-import NewScene from "../components/scenes/NewScene";
+import './App.css';
 
 function App() {
   return (
@@ -19,6 +20,7 @@ function App() {
         <Suspense fallback={<Loader />}>
           {/* <FoldedFrame /> */}
           <NewScene />
+          {/* <LoGlow /> */}
         </Suspense>
       </Canvas>
     </div>

@@ -1,7 +1,7 @@
-import { useState } from "react";
-import { Leva } from "leva";
+import { Leva } from 'leva';
+import { useState } from 'react';
 
-import "./Overlay.css";
+import './Overlay.css';
 
 function Overlay() {
   const date = new Date();
@@ -34,7 +34,7 @@ function Overlay() {
 }
 
 function isLocalHost() {
-  return ["localhost", "127.0.0.1", "[::1]"].includes(window.location.hostname);
+  return ['localhost', '127.0.0.1', '[::1]'].includes(window.location.hostname);
 }
 
 export default Overlay;

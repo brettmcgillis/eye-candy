@@ -1,9 +1,9 @@
-import * as THREE from "three";
+import * as THREE from 'three';
 
 function Ring({
   innerRadius = 1,
   outerRadius = 2,
-  color = "black",
+  color = 'black',
   metallic = false,
   ...props
 }) {

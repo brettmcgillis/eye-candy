@@ -1,28 +1,28 @@
-import { button, useControls } from "leva";
+import { button, useControls } from 'leva';
 
 function ScreenShotControls() {
   useControls(
-    "ScreenShot",
+    'ScreenShot',
     {
-      name: "canvas",
+      name: 'canvas',
       png: button((get) => {
-        let name = get("ScreenShot.name");
+        let name = get('ScreenShot.name');
         if (!name.length) {
-          name = "Canvas";
+          name = 'Canvas';
         }
-        const link = document.createElement("a");
-        link.setAttribute("download", `${name}.png`);
+        const link = document.createElement('a');
+        link.setAttribute('download', `${name}.png`);
         link.setAttribute(
-          "href",
+          'href',
           document
-            .querySelector("canvas")
-            .toDataURL("image/png")
-            .replace("image/png", "image/octet-stream")
+            .querySelector('canvas')
+            .toDataURL('image/png')
+            .replace('image/png', 'image/octet-stream'),
         );
         link.click();
       }),
     },
-    { collapsed: true }
+    { collapsed: true },
   );
   return <></>;
 }

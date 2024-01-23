@@ -1,8 +1,8 @@
-import { useControls } from "leva";
+import { useControls } from 'leva';
 
 function LightingRig() {
   const pointLight = useControls(
-    "Point Light",
+    'Point Light',
     {
       x: { value: 3, min: -10, max: 10, step: 1 },
       y: { value: 3, min: -10, max: 10, step: 1 },
@@ -13,15 +13,15 @@ function LightingRig() {
     },
     {
       collapsed: true,
-    }
+    },
   );
 
   const ambientLight = useControls(
-    "Ambient Light",
+    'Ambient Light',
     {
       intensity: { value: 0, min: 0, max: 1, step: 0.1 },
     },
-    { collapsed: true }
+    { collapsed: true },
   );
 
   return (

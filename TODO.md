@@ -36,7 +36,6 @@
   --- break elements out into reusable components where possible
 
   -- LOGLOW
-  --- color controls (glow, rgb)
   --- Camera
 
 - ELEMENTS
@@ -48,7 +47,7 @@
   -- element position controls
   -- material controls (? chrome skull)
   -- LOGO
-  --- colors to props
+  --- visiblity to props
 
 - ENVIRONMENT (app)
   -- selectable background color

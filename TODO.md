@@ -21,7 +21,6 @@
   --- name it
   --- extract all settings to json
   --- reset button (leverage set() + json settings)
-  --- default camera position
   --- post processing (dots, godrays, +)
   --- Fun stuff
   ---- Atomic Halo

@@ -1,10 +1,11 @@
 import { useControls } from 'leva';
 import { UnrealBloomPass } from 'three-stdlib';
 
-import { BakeShadows, Effects } from '@react-three/drei';
+import { BakeShadows, Effects, PerspectiveCamera } from '@react-three/drei';
 import { extend } from '@react-three/fiber';
 
 import { _90_deg } from '../../utils/math';
+
 import Logo from '../elements/Logo';
 import CameraRig from '../rigging/CameraRig';
 import LightingRig from '../rigging/LightingRig';
@@ -72,6 +73,8 @@ export default function LoGlow() {
     <>
       <LightingRig />
       <CameraRig screenShot />
+
+      <PerspectiveCamera makeDefault position={[0, 0, 5]} />
 
       <color attach="background" args={[backgroundColor]} />
       <fog attach="fog" args={[fogColor, fogNear, fogFar]} />

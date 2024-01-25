@@ -1,5 +1,7 @@
 import { useControls } from 'leva';
 
+import { PerspectiveCamera } from '@react-three/drei';
+
 import getColorsInRange from '../../../utils/colors';
 import { _45_deg } from '../../../utils/math';
 
@@ -103,6 +105,9 @@ function FoldedFrame() {
     <>
       <LightingRig />
       <CameraRig />
+
+      <PerspectiveCamera makeDefault position={[0, 0, 3]} />
+
       <PaperFrame
         position={[framePosition.x, framePosition.y, framePosition.z]}
         scale={frameScale}

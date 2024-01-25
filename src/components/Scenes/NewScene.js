@@ -1,6 +1,6 @@
 import { folder, useControls } from 'leva';
 
-import { Cloud } from '@react-three/drei';
+import { Cloud, PerspectiveCamera } from '@react-three/drei';
 
 import getColorsInRange from '../../utils/colors';
 import { _45_deg, getRandomNumber, radians } from '../../utils/math';
@@ -35,8 +35,11 @@ function NewScene() {
 
   return (
     <>
-      <LightingRig />
       <CameraRig screenShot />
+
+      <LightingRig />
+      <PerspectiveCamera makeDefault position={[-1, -1, 3.5]} />
+
       <GridHelper x y z visible={scene.showGridHelper} />
       <PolarGridHelper x y z visible={scene.showPolarGridHelper} />
 

@@ -12,11 +12,7 @@ import './App.css';
 function App() {
   return (
     <div className="App">
-      <Canvas
-        shadows
-        gl={{ preserveDrawingBuffer: true }}
-        camera={{ position: [-1, -1, 3.5] }}
-      >
+      <Canvas shadows gl={{ preserveDrawingBuffer: true }}>
         <Suspense fallback={<Loader />}>
           {/* <FoldedFrame /> */}
           <NewScene />

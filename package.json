@@ -1,8 +1,18 @@
 {
+  "private": true,
   "name": "eye-candy",
   "version": "0.1.0",
   "homepage": "https://brettmcgillis.github.io/eye-candy",
-  "private": true,
+  "scripts": {
+    "build": "react-scripts build",
+    "predeploy": "npm run build",
+    "deploy": "gh-pages -d build",
+    "eject": "react-scripts eject",
+    "format": "prettier --write .",
+    "format:package": "prettier-package-json --write",
+    "start": "react-scripts start",
+    "test": "react-scripts test"
+  },
   "dependencies": {
     "@react-three/drei": "^9.90.0",
     "@react-three/fiber": "^8.15.12",
@@ -21,19 +31,10 @@
     "three": "^0.159.0",
     "web-vitals": "^2.1.4"
   },
-  "scripts": {
-    "predeploy": "npm run build",
-    "deploy": "gh-pages -d build",
-    "start": "react-scripts start",
-    "build": "react-scripts build",
-    "test": "react-scripts test",
-    "eject": "react-scripts eject"
-  },
-  "eslintConfig": {
-    "extends": [
-      "react-app",
-      "react-app/jest"
-    ]
+  "devDependencies": {
+    "@trivago/prettier-plugin-sort-imports": "^4.3.0",
+    "prettier": "3.2.4",
+    "prettier-package-json": "^2.8.0"
   },
   "browserslist": {
     "production": [
@@ -47,28 +48,10 @@
       "last 1 safari version"
     ]
   },
-  "devDependencies": {
-    "@trivago/prettier-plugin-sort-imports": "^4.3.0",
-    "prettier": "3.2.4"
-  },
-  "prettier": {
-    "printWidth": 80,
-    "tabWidth": 2,
-    "trailingComma": "all",
-    "singleQuote": true,
-    "semi": true,
-    "importOrder": [
-      "^@(.*)/(.*)$",
-      "\\.\\./\\.\\./\\.\\./",
-      "\\.\\./\\.\\./",
-      "\\.\\./",
-      "\\./",
-      "^[./]"
-    ],
-    "importOrderSeparation": true,
-    "importOrderSortSpecifiers": true,
-    "plugins": [
-      "@trivago/prettier-plugin-sort-imports"
+  "eslintConfig": {
+    "extends": [
+      "react-app",
+      "react-app/jest"
     ]
   }
 }

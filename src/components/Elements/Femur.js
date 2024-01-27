@@ -2,9 +2,9 @@ import React from 'react';
 
 import { useGLTF } from '@react-three/drei';
 
-import femur from '../../models/Femur.gltf';
+import femur from 'models/Femur.gltf';
 
-export function Femur(props) {
+export default function Femur(props) {
   const { nodes, materials } = useGLTF(femur);
   return (
     <group {...props} dispose={null}>

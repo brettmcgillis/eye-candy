@@ -1,10 +1,10 @@
-import React, { useRef } from 'react';
+import React from 'react';
 
 import { useGLTF } from '@react-three/drei';
 
-import paperFrame from '../../models/FoldedFrame.glb';
+import paperFrame from 'models/FoldedFrame.glb';
 
-export function PaperFrame(props) {
+export default function PaperFrame(props) {
   const { nodes, materials } = useGLTF(paperFrame);
   return (
     <group {...props} dispose={null}>

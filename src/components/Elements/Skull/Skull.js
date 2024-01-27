@@ -2,9 +2,9 @@ import React from 'react';
 
 import { useGLTF } from '@react-three/drei';
 
-import skull from '../../../models/Skull.gltf';
+import skull from 'models/Skull.gltf';
 
-export function Skull({
+export default function Skull({
   showCranium,
   showLeftZygomatic,
   showOccipital,

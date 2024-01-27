@@ -3,7 +3,7 @@ import * as THREE from 'three';
 
 import { useGLTF } from '@react-three/drei';
 
-import logo from '../../models/Logo.glb';
+import logo from 'models/Logo.glb';
 
 export default function Logo({
   innerColorVal,

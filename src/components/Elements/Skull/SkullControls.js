@@ -31,26 +31,6 @@ export const MandibleControls = {
   showMandibleTeeth: { value: true, label: 'Show Bottom Teeth' },
 };
 
-export function useSkullControls(overrides = {}) {
-  const craiumControls = overrideDefaults(
-    CraniumControls,
-    overrides.cranium ? overrides.cranium : {},
-  );
-  const mandibleControls = overrideDefaults(
-    MandibleControls,
-    overrides.mandible ? overrides.mandible : {},
-  );
-
-  return useControls(
-    overrides.controlName ? overrides.controlName : 'Skull',
-    {
-      Cranium: folder(craiumControls, { collapsed: true }),
-      Mandible: folder(mandibleControls, { collapsed: true }),
-    },
-    { collapsed: overrides.collapsed ? overrides.collapsed : true },
-  );
-}
-
 export function overrideDefaults(defaults, overrides) {
   const updated = { ...defaults };
   for (const key in overrides) {
@@ -59,4 +39,24 @@ export function overrideDefaults(defaults, overrides) {
     }
   }
   return updated;
+}
+
+export function useSkullControls(overrides = {}) {
+  const craiumControls = overrideDefaults(
+    CraniumControls,
+    overrides.cranium ? overrides.cranium : {}
+  );
+  const mandibleControls = overrideDefaults(
+    MandibleControls,
+    overrides.mandible ? overrides.mandible : {}
+  );
+
+  return useControls(
+    overrides.controlName ? overrides.controlName : 'Skull',
+    {
+      Cranium: folder(craiumControls, { collapsed: true }),
+      Mandible: folder(mandibleControls, { collapsed: true }),
+    },
+    { collapsed: overrides.collapsed ? overrides.collapsed : true }
+  );
 }

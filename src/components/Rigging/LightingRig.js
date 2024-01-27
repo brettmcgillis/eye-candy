@@ -1,4 +1,5 @@
 import { useControls } from 'leva';
+import React from 'react';
 
 function LightingRig() {
   const pointLight = useControls(
@@ -11,9 +12,7 @@ function LightingRig() {
       distance: { value: -1, min: -10, max: 10, step: 1 },
       castShadow: true,
     },
-    {
-      collapsed: true,
-    },
+    { collapsed: true }
   );
 
   const ambientLight = useControls(
@@ -21,7 +20,7 @@ function LightingRig() {
     {
       intensity: { value: 0, min: 0, max: 1, step: 0.1 },
     },
-    { collapsed: true },
+    { collapsed: true }
   );
 
   return (

@@ -1,13 +1,14 @@
 import { useControls } from 'leva';
+import React from 'react';
 
 import { PerspectiveCamera } from '@react-three/drei';
 
-import getColorsInRange from '../../../utils/colors';
-import { _45_deg } from '../../../utils/math';
+import { PaperFrame } from 'components/elements/PaperFrame';
+import CameraRig from 'components/rigging/CameraRig';
+import LightingRig from 'components/rigging/LightingRig';
 
-import { PaperFrame } from '../../elements/PaperFrame';
-import CameraRig from '../../rigging/CameraRig';
-import LightingRig from '../../rigging/LightingRig';
+import getColorsInRange from 'utils/colors';
+import { _45_deg } from 'utils/math';
 
 import { getFrameData, getFrames } from './FrameData';
 
@@ -33,9 +34,9 @@ function Square({ index, layer, size, position, color, settings }) {
 function Layer({ layer, squares, depth, settings }) {
   return (
     <group position={[0, 0, depth]}>
-      {squares.map((square, index) => {
-        return Square({ index, layer, ...square, settings });
-      })}
+      {squares.map((square, index) =>
+        Square({ index, layer, ...square, settings })
+      )}
     </group>
   );
 }
@@ -45,8 +46,8 @@ function FoldedFrame() {
   const {
     frame,
     rotate,
-    colorRange_start,
-    colorRange_end,
+    colorRangeStart,
+    colorRangeEnd,
     dataScale,
     frameScale,
     dataPosition,
@@ -59,8 +60,8 @@ function FoldedFrame() {
         value: frames[0].name,
         options: frames.map((f) => f.name),
       },
-      colorRange_start: { label: 'Start', value: '#FFFFFF' },
-      colorRange_end: { label: 'End', value: '#D8D8D8' },
+      colorRangeStart: { label: 'Start', value: '#FFFFFF' },
+      colorRangeEnd: { label: 'End', value: '#D8D8D8' },
       rotate: { value: true, label: 'Rotate 45*' },
       dataScale: {
         label: 'Square Scale',
@@ -82,24 +83,24 @@ function FoldedFrame() {
         step: 0.1,
       },
     },
-    { collapsed: false },
+    { collapsed: false }
   );
 
-  const frameData = getFrameData(!!frame ? frame : frames[0].name);
+  const frameData = getFrameData(frame || frames[0].name);
   let { settings, layers } = frameData;
 
   const colorGamut = getColorsInRange(
-    colorRange_start,
-    colorRange_end,
-    layers.length,
+    colorRangeStart,
+    colorRangeEnd,
+    layers.length
   );
 
-  layers = layers.map((layer, index) => {
-    return layer.map((square) => {
+  layers = layers.map((layer, index) =>
+    layer.map((square) => {
       square.color = colorGamut[index];
       return square;
-    });
-  });
+    })
+  );
 
   return (
     <>
@@ -118,14 +119,14 @@ function FoldedFrame() {
         scale={dataScale}
         rotation={[0, 0, rotate ? -_45_deg : 0]}
       >
-        {layers.map((layer, index) => {
-          return Layer({
+        {layers.map((layer, index) =>
+          Layer({
             layer: index,
             squares: layer,
             depth: -(index * settings.paperDepth),
             settings,
-          });
-        })}
+          })
+        )}
       </group>
     </>
   );

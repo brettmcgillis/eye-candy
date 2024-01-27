@@ -1,17 +1,18 @@
 import { folder, useControls } from 'leva';
+import React from 'react';
 
 import { Cloud, PerspectiveCamera } from '@react-three/drei';
 
-import getColorsInRange from '../../utils/colors';
-import { _45_deg, getRandomNumber, radians } from '../../utils/math';
+import { Femur } from 'components/elements/Femur';
+import { Halo } from 'components/elements/Halo';
+import { Skull } from 'components/elements/skull/Skull';
+import { useSkullControls } from 'components/elements/skull/SkullControls';
+import CameraRig from 'components/rigging/CameraRig';
+import { GridHelper, PolarGridHelper } from 'components/rigging/GridHelper';
+import LightingRig from 'components/rigging/LightingRig';
 
-import { Femur } from '../elements/Femur';
-import { Halo } from '../elements/Halo';
-import { Skull } from '../elements/skull/Skull';
-import { useSkullControls } from '../elements/skull/SkullControls';
-import CameraRig from '../rigging/CameraRig';
-import { GridHelper, PolarGridHelper } from '../rigging/GridHelper';
-import LightingRig from '../rigging/LightingRig';
+import getColorsInRange from 'utils/colors';
+import { _45_deg, getRandomNumber, radians } from 'utils/math';
 
 function NewScene() {
   const scene = useSceneControls();
@@ -119,7 +120,7 @@ function useSceneControls() {
             value: { x: 45, y: 0, z: 0 },
           },
         },
-        { collapsed: true },
+        { collapsed: true }
       ),
       'Skull Position': folder(
         {
@@ -133,7 +134,7 @@ function useSceneControls() {
             step: 0.01,
           },
         },
-        { collapsed: true },
+        { collapsed: true }
       ),
       'Cloud Position': folder(
         {
@@ -147,7 +148,7 @@ function useSceneControls() {
             step: 0.01,
           },
         },
-        { collapsed: true },
+        { collapsed: true }
       ),
       'Femur Position': folder(
         {
@@ -164,10 +165,10 @@ function useSceneControls() {
             step: 0.01,
           },
         },
-        { collapsed: true },
+        { collapsed: true }
       ),
     },
-    { collapsed: true },
+    { collapsed: true }
   );
 }
 
@@ -187,7 +188,7 @@ function useCloudControls() {
       z: { value: 1, min: 0, max: 10, step: 1 },
       color: '#bababa',
     },
-    { collapsed: true },
+    { collapsed: true }
   );
 }
 
@@ -289,7 +290,7 @@ function useHaloControls() {
         render: (get) => get('Halo.style') === 'default',
       },
     },
-    { collapsed: true },
+    { collapsed: true }
   );
 }
 
@@ -313,9 +314,9 @@ function getHaloConfig(haloControls) {
   } = haloControls;
   const width = outerRadius - innerRadius;
 
-  const gradientColors = getColorsInRange(start, end, steps).map((v, _, __) => {
-    return { width: width / steps, color: v };
-  });
+  const gradientColors = getColorsInRange(start, end, steps).map(
+    (v, _, __) => ({ width: width / steps, color: v })
+  );
 
   const colors = [
     { width: lg, color: silver },

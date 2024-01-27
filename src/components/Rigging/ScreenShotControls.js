@@ -1,4 +1,5 @@
 import { button, useControls } from 'leva';
+import React from 'react';
 
 function ScreenShotControls() {
   useControls(
@@ -17,12 +18,12 @@ function ScreenShotControls() {
           document
             .querySelector('canvas')
             .toDataURL('image/png')
-            .replace('image/png', 'image/octet-stream'),
+            .replace('image/png', 'image/octet-stream')
         );
         link.click();
       }),
     },
-    { collapsed: true },
+    { collapsed: true }
   );
   return <></>;
 }

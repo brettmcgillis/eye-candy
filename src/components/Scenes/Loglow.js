@@ -1,14 +1,15 @@
 import { useControls } from 'leva';
+import React from 'react';
 import { UnrealBloomPass } from 'three-stdlib';
 
 import { BakeShadows, Effects, PerspectiveCamera } from '@react-three/drei';
 import { extend } from '@react-three/fiber';
 
-import { _90_deg } from '../../utils/math';
+import Logo from 'components/elements/Logo';
+import CameraRig from 'components/rigging/CameraRig';
+import LightingRig from 'components/rigging/LightingRig';
 
-import Logo from '../elements/Logo';
-import CameraRig from '../rigging/CameraRig';
-import LightingRig from '../rigging/LightingRig';
+import { _90_deg } from 'utils/math';
 
 extend({ UnrealBloomPass });
 
@@ -66,7 +67,7 @@ export default function LoGlow() {
         max: 10,
       },
     },
-    { collapsed: true },
+    { collapsed: true }
   );
 
   return (

@@ -1,11 +1,11 @@
-import { Suspense } from 'react';
+import React, { Suspense } from 'react';
 
 import { Canvas } from '@react-three/fiber';
 
-import Loader from '../components/loader/Loader';
-import FoldedFrame from '../components/scenes/FoldedFrame/FoldedFrame';
-import LoGlow from '../components/scenes/Loglow';
-import NewScene from '../components/scenes/NewScene';
+import Loader from 'components/loader/Loader';
+// import FoldedFrame from 'components/scenes/FoldedFrame/FoldedFrame';
+// import LoGlow from 'components/scenes/Loglow';
+import NewScene from 'components/scenes/NewScene';
 
 import './App.css';
 
@@ -15,8 +15,8 @@ function App() {
       <Canvas shadows gl={{ preserveDrawingBuffer: true }}>
         <Suspense fallback={<Loader />}>
           {/* <FoldedFrame /> */}
-          <NewScene />
           {/* <LoGlow /> */}
+          <NewScene />
         </Suspense>
       </Canvas>
     </div>

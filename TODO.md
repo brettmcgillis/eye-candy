@@ -1,6 +1,12 @@
 # #TODO:
 
-- update screenshot(s)
+- add/update screenshot(s)
+
+- REPO
+  -- re-enable react/no-unknown-property, react/jsx-props-no-spreading ?
+  -- state management
+  -- springs?
+  -- maath
 
 - EXPLORE/EXPLODE
   -- glass
@@ -26,6 +32,7 @@
   ---- Atomic Halo
   ---- LP Halo
   ---- 45lb Halo
+  ---- Animation (rotation + wobble)
   ---- motion controls (drag drop)
   ---- physics
 
@@ -35,7 +42,9 @@
   --- break elements out into reusable components where possible
 
   -- LOGLOW
+  --- Rename
   --- Camera
+  --- Animate (rotation)
 
 - ELEMENTS
   -- HALO
@@ -49,7 +58,9 @@
   --- visiblity to props
 
 - ENVIRONMENT (app)
-  -- selectable background color
+  -- background color
+  -- background environment
+  -- background fog
 
 - SCREENSHOT
   -- add watermark?
@@ -59,7 +70,6 @@
 - CAMERARIG
   -- add camera rig with props for default position, more
   -- add camera controls, control availablity with props?
-  -- add screenshot to camera rig, control availablity with props?
   -- orbit (on/off w/props)
 
 - LIGHTINGRIG

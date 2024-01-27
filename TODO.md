@@ -3,7 +3,7 @@
 - add/update screenshot(s)
 
 - REPO
-  -- re-enable react/no-unknown-property, react/jsx-props-no-spreading ?
+  -- re-enable react/no-unknown-property, react/prop-types ?
   -- state management
   -- springs?
   -- maath

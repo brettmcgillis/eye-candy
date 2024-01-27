@@ -1,8 +1,10 @@
+import React from 'react';
+
 import { CameraControls } from '@react-three/drei';
 
 import ScreenShotControls from './ScreenShotControls';
 
-function CameraRig({ screenShot = false }) {
+export default function CameraRig({ screenShot = false }) {
   return (
     <>
       <CameraControls
@@ -12,4 +14,3 @@ function CameraRig({ screenShot = false }) {
     </>
   );
 }
-export default CameraRig;

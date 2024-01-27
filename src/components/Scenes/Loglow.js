@@ -9,7 +9,7 @@ import Logo from 'components/elements/Logo';
 import CameraRig from 'components/rigging/CameraRig';
 import LightingRig from 'components/rigging/LightingRig';
 
-import { _90_deg } from 'utils/math';
+import { ninetyDegrees } from 'utils/math';
 
 extend({ UnrealBloomPass });
 
@@ -88,7 +88,7 @@ export default function LoGlow() {
         outerColorEmissive={outerColorEmissive}
         outerColorEmissiveIntensity={outerColorEmissiveIntensity}
         scale={2}
-        rotation={[_90_deg, 0, 0]}
+        rotation={[ninetyDegrees, 0, 0]}
       />
       <BakeShadows />
       <Effects disableGamma>

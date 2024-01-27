@@ -1,13 +1,13 @@
-function sq(size, position) {
-  return c_sq(size, position, 'white');
-}
-
-function c_sq(size, position, color) {
+function cSq(size, position, color) {
   return {
     size,
     position,
     color,
   };
+}
+
+function sq(size, position) {
+  return cSq(size, position, 'white');
 }
 
 const FrameData1 = {

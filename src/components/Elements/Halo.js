@@ -1,3 +1,4 @@
+import React from 'react';
 import * as THREE from 'three';
 
 function Ring({
@@ -23,9 +24,9 @@ function Ring({
   );
 }
 
-export function Halo({ innerRadius, rings, ...props }) {
+export default function Halo({ innerRadius, rings, ...props }) {
   let ir = innerRadius;
-  const halos = rings.map((ring, _, __) => {
+  const halos = rings.map((ring) => {
     const inner = ir;
     const outer = ir + ring.width;
     ir = outer;

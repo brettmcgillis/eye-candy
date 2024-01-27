@@ -33,11 +33,11 @@ export const MandibleControls = {
 
 export function overrideDefaults(defaults, overrides) {
   const updated = { ...defaults };
-  for (const key in overrides) {
-    if (overrides.hasOwnProperty(key) && updated.hasOwnProperty(key)) {
+  Object.keys(overrides).forEach((key) => {
+    if (Object.hasOwn(updated, key)) {
       updated[key].value = overrides[key];
     }
-  }
+  });
   return updated;
 }
 

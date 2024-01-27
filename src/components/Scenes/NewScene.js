@@ -4,7 +4,7 @@ import React from 'react';
 import { Cloud, PerspectiveCamera } from '@react-three/drei';
 
 import Femur from 'components/elements/Femur';
-import { Halo } from 'components/elements/Halo';
+import Halo from 'components/elements/Halo';
 import Skull from 'components/elements/skull/Skull';
 import { useSkullControls } from 'components/elements/skull/SkullControls';
 import CameraRig from 'components/rigging/CameraRig';
@@ -12,99 +12,7 @@ import { GridHelper, PolarGridHelper } from 'components/rigging/GridHelper';
 import LightingRig from 'components/rigging/LightingRig';
 
 import getColorsInRange from 'utils/colors';
-import { _45_deg, getRandomNumber, radians } from 'utils/math';
-
-function NewScene() {
-  const scene = useSceneControls();
-
-  const skullControls = useSkullControls({
-    cranium: {
-      showRightParietal: false,
-      showRightTemporal: false,
-      showTeeth: false,
-      showLeftParietal: false,
-      showLeftTemporal: false,
-    },
-    mandible: {
-      showMandible: false,
-    },
-  });
-
-  const cloudControls = useCloudControls();
-
-  const haloControls = useHaloControls();
-
-  return (
-    <>
-      <CameraRig screenShot />
-
-      <LightingRig />
-      <PerspectiveCamera makeDefault position={[-1, -1, 3.5]} />
-
-      <GridHelper x y z visible={scene.showGridHelper} />
-      <PolarGridHelper x y z visible={scene.showPolarGridHelper} />
-
-      <Halo
-        position={[
-          scene.haloPosition.x,
-          scene.haloPosition.y,
-          scene.haloPosition.z,
-        ]}
-        rotation={[
-          radians(scene.haloRotation.x),
-          radians(scene.haloRotation.y),
-          radians(scene.haloRotation.z),
-        ]}
-        {...getHaloConfig(haloControls)}
-      />
-
-      <Skull
-        {...skullControls}
-        position={[
-          scene.skullPosition.x,
-          scene.skullPosition.y,
-          scene.skullPosition.z,
-        ]}
-        rotation={[
-          radians(scene.skullRotation.x),
-          radians(scene.skullRotation.y),
-          radians(scene.skullRotation.z),
-        ]}
-        scale={scene.skullScale}
-      />
-      <Cloud
-        position={[
-          scene.cloudPosition.x,
-          scene.cloudPosition.y,
-          scene.cloudPosition.z,
-        ]}
-        rotation={[
-          radians(scene.cloudRotation.x),
-          radians(scene.cloudRotation.y),
-          radians(scene.cloudRotation.z),
-        ]}
-        bounds={[cloudControls.x, cloudControls.y, cloudControls.z]}
-        scale={scene.cloudScale}
-        {...cloudControls}
-        castShadow
-        receiveShadow
-      />
-      <Femur
-        position={[
-          scene.femurPosition.x,
-          scene.femurPosition.y,
-          scene.femurPosition.z,
-        ]}
-        rotation={[
-          radians(scene.femurRotation.x),
-          radians(scene.femurRotation.y),
-          radians(scene.femurRotation.z),
-        ]}
-        scale={scene.femurScale}
-      />
-    </>
-  );
-}
+import { getRandomNumber, radians } from 'utils/math';
 
 function useSceneControls() {
   return useControls(
@@ -314,9 +222,10 @@ function getHaloConfig(haloControls) {
   } = haloControls;
   const width = outerRadius - innerRadius;
 
-  const gradientColors = getColorsInRange(start, end, steps).map(
-    (v, _, __) => ({ width: width / steps, color: v })
-  );
+  const gradientColors = getColorsInRange(start, end, steps).map((v) => ({
+    width: width / steps,
+    color: v,
+  }));
 
   const colors = [
     { width: lg, color: silver },
@@ -329,14 +238,12 @@ function getHaloConfig(haloControls) {
     { width: lg, color: silver },
   ];
   const totalWidthRatio = colors.reduce((total, ring) => total + ring.width, 0);
-  let currentWidth = 0;
   const rings =
     style === 'gradient'
       ? gradientColors
-      : colors.map((color, index, array) => {
+      : colors.map((color) => {
           const normalizedWidth = (color.width / totalWidthRatio) * width;
           const roundedWidth = Math.round(normalizedWidth * 100) / 100;
-          currentWidth += roundedWidth;
           return { ...color, width: roundedWidth };
         });
   return {
@@ -345,4 +252,94 @@ function getHaloConfig(haloControls) {
   };
 }
 
-export default NewScene;
+export default function NewScene() {
+  const scene = useSceneControls();
+
+  const skullControls = useSkullControls({
+    cranium: {
+      showRightParietal: false,
+      showRightTemporal: false,
+      showTeeth: false,
+      showLeftParietal: false,
+      showLeftTemporal: false,
+    },
+    mandible: {
+      showMandible: false,
+    },
+  });
+
+  const cloudControls = useCloudControls();
+
+  const haloControls = useHaloControls();
+
+  return (
+    <>
+      <CameraRig screenShot />
+
+      <LightingRig />
+      <PerspectiveCamera makeDefault position={[-1, -1, 3.5]} />
+
+      <GridHelper x y z visible={scene.showGridHelper} />
+      <PolarGridHelper x y z visible={scene.showPolarGridHelper} />
+
+      <Halo
+        position={[
+          scene.haloPosition.x,
+          scene.haloPosition.y,
+          scene.haloPosition.z,
+        ]}
+        rotation={[
+          radians(scene.haloRotation.x),
+          radians(scene.haloRotation.y),
+          radians(scene.haloRotation.z),
+        ]}
+        {...getHaloConfig(haloControls)}
+      />
+
+      <Skull
+        {...skullControls}
+        position={[
+          scene.skullPosition.x,
+          scene.skullPosition.y,
+          scene.skullPosition.z,
+        ]}
+        rotation={[
+          radians(scene.skullRotation.x),
+          radians(scene.skullRotation.y),
+          radians(scene.skullRotation.z),
+        ]}
+        scale={scene.skullScale}
+      />
+      <Cloud
+        position={[
+          scene.cloudPosition.x,
+          scene.cloudPosition.y,
+          scene.cloudPosition.z,
+        ]}
+        rotation={[
+          radians(scene.cloudRotation.x),
+          radians(scene.cloudRotation.y),
+          radians(scene.cloudRotation.z),
+        ]}
+        bounds={[cloudControls.x, cloudControls.y, cloudControls.z]}
+        scale={scene.cloudScale}
+        {...cloudControls}
+        castShadow
+        receiveShadow
+      />
+      <Femur
+        position={[
+          scene.femurPosition.x,
+          scene.femurPosition.y,
+          scene.femurPosition.z,
+        ]}
+        rotation={[
+          radians(scene.femurRotation.x),
+          radians(scene.femurRotation.y),
+          radians(scene.femurRotation.z),
+        ]}
+        scale={scene.femurScale}
+      />
+    </>
+  );
+}

@@ -3,16 +3,16 @@ import React from 'react';
 
 import { PerspectiveCamera } from '@react-three/drei';
 
-import { PaperFrame } from 'components/elements/PaperFrame';
+import PaperFrame from 'components/elements/PaperFrame';
 import CameraRig from 'components/rigging/CameraRig';
 import LightingRig from 'components/rigging/LightingRig';
 
 import getColorsInRange from 'utils/colors';
-import { _45_deg } from 'utils/math';
+import { fourtyFiveDegrees } from 'utils/math';
 
 import { getFrameData, getFrames } from './FrameData';
 
-function Square({ index, layer, size, position, color, settings }) {
+function Square({ size, position, color, settings }) {
   const [x, y] = position;
   const mirror = settings.symmetric && (x !== 0 || y !== 0);
   return (
@@ -87,7 +87,7 @@ function FoldedFrame() {
   );
 
   const frameData = getFrameData(frame || frames[0].name);
-  let { settings, layers } = frameData;
+  const { settings, layers } = frameData;
 
   const colorGamut = getColorsInRange(
     colorRangeStart,
@@ -95,11 +95,11 @@ function FoldedFrame() {
     layers.length
   );
 
-  layers = layers.map((layer, index) =>
-    layer.map((square) => {
-      square.color = colorGamut[index];
-      return square;
-    })
+  const frameLayers = layers.map((layer, index) =>
+    layer.map((square) => ({
+      color: colorGamut[index],
+      ...square,
+    }))
   );
 
   return (
@@ -112,14 +112,14 @@ function FoldedFrame() {
       <PaperFrame
         position={[framePosition.x, framePosition.y, framePosition.z]}
         scale={frameScale}
-        rotation={[0, 0, rotate ? 0 : -_45_deg]}
+        rotation={[0, 0, rotate ? 0 : -fourtyFiveDegrees]}
       />
       <group
         position={[dataPosition.x, dataPosition.y, dataPosition.z]}
         scale={dataScale}
-        rotation={[0, 0, rotate ? -_45_deg : 0]}
+        rotation={[0, 0, rotate ? -fourtyFiveDegrees : 0]}
       >
-        {layers.map((layer, index) =>
+        {frameLayers.map((layer, index) =>
           Layer({
             layer: index,
             squares: layer,

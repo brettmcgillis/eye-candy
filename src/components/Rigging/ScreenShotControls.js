@@ -1,5 +1,4 @@
 import { button, useControls } from 'leva';
-import React from 'react';
 
 function ScreenShotControls() {
   useControls(
@@ -25,7 +24,7 @@ function ScreenShotControls() {
     },
     { collapsed: true }
   );
-  return <></>;
+  return null;
 }
 
 export default ScreenShotControls;

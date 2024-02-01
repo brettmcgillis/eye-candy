@@ -1,16 +1,16 @@
 {
   "files": {
     "main.css": "/eye-candy/static/css/main.ca13cfa3.css",
-    "main.js": "/eye-candy/static/js/main.688c2437.js",
+    "main.js": "/eye-candy/static/js/main.2e2753af.js",
     "static/js/787.0d7a769f.chunk.js": "/eye-candy/static/js/787.0d7a769f.chunk.js",
     "static/media/Logo.glb": "/eye-candy/static/media/Logo.12913acc2ffcb64a72d0.glb",
     "index.html": "/eye-candy/index.html",
     "main.ca13cfa3.css.map": "/eye-candy/static/css/main.ca13cfa3.css.map",
-    "main.688c2437.js.map": "/eye-candy/static/js/main.688c2437.js.map",
+    "main.2e2753af.js.map": "/eye-candy/static/js/main.2e2753af.js.map",
     "787.0d7a769f.chunk.js.map": "/eye-candy/static/js/787.0d7a769f.chunk.js.map"
   },
   "entrypoints": [
     "static/css/main.ca13cfa3.css",
-    "static/js/main.688c2437.js"
+    "static/js/main.2e2753af.js"
   ]
 }

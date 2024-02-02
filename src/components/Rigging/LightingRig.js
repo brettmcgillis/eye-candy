@@ -1,37 +1,73 @@
-import { useControls } from 'leva';
+import { folder, useControls } from 'leva';
 import React from 'react';
 
 function LightingRig() {
-  const pointLight = useControls(
-    'Point Light',
+  const {
+    plPosition,
+    plDecay,
+    plDistance,
+    plIntensity,
+    plCastShadow,
+    ambientLightIntensity,
+  } = useControls(
+    'Lighting Rig',
     {
-      x: { value: 3, min: -10, max: 10, step: 1 },
-      y: { value: 3, min: -10, max: 10, step: 1 },
-      z: { value: 5, min: -10, max: 10, step: 1 },
-      decay: { value: 0, min: -10, max: 10, step: 1 },
-      distance: { value: -1, min: -10, max: 10, step: 1 },
-      castShadow: true,
-    },
-    { collapsed: true }
-  );
-
-  const ambientLight = useControls(
-    'Ambient Light',
-    {
-      intensity: { value: 0, min: 0, max: 1, step: 0.1 },
+      'Point Light': folder(
+        {
+          plPosition: {
+            label: 'Position',
+            value: { x: 3, y: 3, z: 5 },
+          },
+          plDecay: {
+            label: 'Decay',
+            value: 0,
+            min: -10,
+            max: 10,
+            step: 0.1,
+          },
+          plDistance: {
+            label: 'Distance',
+            value: -1,
+            min: -10,
+            max: 10,
+            step: 0.1,
+          },
+          plIntensity: {
+            label: 'Intensity',
+            value: 0.8,
+            min: 0,
+            max: 10,
+            step: 0.1,
+          },
+          plCastShadow: { label: 'Cast Shadow', value: true },
+        },
+        { collapsed: true }
+      ),
+      'Ambient Light': folder(
+        {
+          ambientLightIntensity: {
+            label: 'Intensity',
+            value: 0,
+            min: 0,
+            max: 1,
+            step: 0.1,
+          },
+        },
+        { collapsed: true }
+      ),
     },
     { collapsed: true }
   );
 
   return (
     <group>
-      <ambientLight intensity={ambientLight.intensity} />
+      <ambientLight intensity={ambientLightIntensity} />
       <pointLight
-        position={[pointLight.x, pointLight.y, pointLight.z]}
-        decay={pointLight.decay}
-        distance={pointLight.distance}
-        intensity={pointLight.intensity}
-        castShadow={pointLight.castShadow}
+        position={[plPosition.x, plPosition.y, plPosition.z]}
+        decay={plDecay}
+        distance={plDistance}
+        intensity={plIntensity}
+        castShadow={plCastShadow}
       />
     </group>
   );

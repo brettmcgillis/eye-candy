@@ -1,10 +1,12 @@
+/* eslint-disable no-unused-vars */
 import { folder, useControls } from 'leva';
 import React from 'react';
 
-import { Cloud, PerspectiveCamera } from '@react-three/drei';
+import { Cloud, Clouds, PerspectiveCamera } from '@react-three/drei';
 
 import Femur from 'components/elements/Femur';
 import Halo from 'components/elements/Halo';
+import Record from 'components/elements/Record';
 import Skull from 'components/elements/skull/Skull';
 import { useSkullControls } from 'components/elements/skull/SkullControls';
 import CameraRig from 'components/rigging/CameraRig';
@@ -16,21 +18,29 @@ import { getRandomNumber, radians } from 'utils/math';
 
 function useSceneControls() {
   return useControls(
-    'Scene Controls',
+    'Scene',
     {
       showGridHelper: { label: 'Show Grid Helper', value: false },
       showPolarGridHelper: { label: 'Show Polar Grid Helper', value: false },
-      'Halo Position': folder(
+      Halo: folder(
         {
           haloPosition: { label: 'Position', value: { x: 0, y: 1.5, z: -1 } },
           haloRotation: {
             label: 'Rotation',
             value: { x: 45, y: 0, z: 0 },
           },
+          haloScale: {
+            label: 'Scale',
+            value: 12,
+            min: 0.1,
+            max: 12,
+            step: 0.1,
+          },
+          haloVisible: { label: 'Visible', value: true },
         },
         { collapsed: true }
       ),
-      'Skull Position': folder(
+      Skull: folder(
         {
           skullPosition: { label: 'Position', value: { x: 0, y: 0, z: 0 } },
           skullRotation: { label: 'Rotation', value: { x: 0, y: 0, z: 0 } },
@@ -41,10 +51,11 @@ function useSceneControls() {
             max: 1,
             step: 0.01,
           },
+          skullVisible: { label: 'Visible', value: true },
         },
         { collapsed: true }
       ),
-      'Cloud Position': folder(
+      Cloud: folder(
         {
           cloudPosition: { label: 'Position', value: { x: 0, y: 0.75, z: 0 } },
           cloudRotation: { label: 'Rotation', value: { x: 0, y: 0, z: 0 } },
@@ -55,10 +66,11 @@ function useSceneControls() {
             max: 1,
             step: 0.01,
           },
+          cloudVisible: { label: 'Visible', value: true },
         },
         { collapsed: true }
       ),
-      'Femur Position': folder(
+      Femur: folder(
         {
           femurPosition: {
             label: 'Position',
@@ -72,6 +84,7 @@ function useSceneControls() {
             max: 1,
             step: 0.01,
           },
+          femurVisible: { label: 'Visible', value: true },
         },
         { collapsed: true }
       ),
@@ -282,7 +295,8 @@ export default function NewScene() {
       <GridHelper x y z visible={scene.showGridHelper} />
       <PolarGridHelper x y z visible={scene.showPolarGridHelper} />
 
-      <Halo
+      {/* <Halo
+        visible={scene.Halo.haloVisible}
         position={[
           scene.haloPosition.x,
           scene.haloPosition.y,
@@ -294,6 +308,20 @@ export default function NewScene() {
           radians(scene.haloRotation.z),
         ]}
         {...getHaloConfig(haloControls)}
+      /> */}
+
+      <Record
+        scale={scene.haloScale}
+        position={[
+          scene.haloPosition.x,
+          scene.haloPosition.y,
+          scene.haloPosition.z,
+        ]}
+        rotation={[
+          radians(scene.haloRotation.x),
+          radians(scene.haloRotation.y),
+          radians(scene.haloRotation.z),
+        ]}
       />
 
       <Skull
@@ -309,24 +337,27 @@ export default function NewScene() {
           radians(scene.skullRotation.z),
         ]}
         scale={scene.skullScale}
+        visible={scene.skullVisible}
       />
-      <Cloud
-        position={[
-          scene.cloudPosition.x,
-          scene.cloudPosition.y,
-          scene.cloudPosition.z,
-        ]}
-        rotation={[
-          radians(scene.cloudRotation.x),
-          radians(scene.cloudRotation.y),
-          radians(scene.cloudRotation.z),
-        ]}
-        bounds={[cloudControls.x, cloudControls.y, cloudControls.z]}
-        scale={scene.cloudScale}
-        {...cloudControls}
-        castShadow
-        receiveShadow
-      />
+      <Clouds visible={scene.cloudVisible}>
+        <Cloud
+          position={[
+            scene.cloudPosition.x,
+            scene.cloudPosition.y,
+            scene.cloudPosition.z,
+          ]}
+          rotation={[
+            radians(scene.cloudRotation.x),
+            radians(scene.cloudRotation.y),
+            radians(scene.cloudRotation.z),
+          ]}
+          bounds={[cloudControls.x, cloudControls.y, cloudControls.z]}
+          scale={scene.cloudScale}
+          {...cloudControls}
+          castShadow
+          receiveShadow
+        />
+      </Clouds>
       <Femur
         position={[
           scene.femurPosition.x,
@@ -339,6 +370,7 @@ export default function NewScene() {
           radians(scene.femurRotation.z),
         ]}
         scale={scene.femurScale}
+        visible={scene.femurVisible}
       />
     </>
   );

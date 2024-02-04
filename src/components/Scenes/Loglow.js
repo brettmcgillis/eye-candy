@@ -48,7 +48,7 @@ export default function LoGlow() {
           fogNear: { label: 'Fog Near', value: 10 },
           fogFar: { label: 'Fog Far', value: 25 },
         },
-        { label: 'Background', collapsed: true }
+        { collapsed: true }
       ),
       Bloom: folder(
         {
@@ -66,7 +66,7 @@ export default function LoGlow() {
           },
           bloomRadius: { label: 'Bloom Radius', value: 0.2, min: 0, max: 10 },
         },
-        { label: 'Bloom', collapsed: true }
+        { collapsed: true }
       ),
       Colors: folder(
         {
@@ -156,10 +156,10 @@ export default function LoGlow() {
       <fog attach="fog" args={[fogColor, fogNear, fogFar]} />
 
       <Float
-        speed={floatSpeed} // Animation speed, defaults to 1
-        rotationIntensity={floatRotationIntensity} // XYZ rotation intensity, defaults to 1
-        floatIntensity={floatIntensity} // Up/down float intensity, works like a multiplier with floatingRange,defaults to 1
-        floatingRange={[floatingRangeMin, floatingRangeMax]} // Range of y-axis values the object will float within, defaults to [-0.1,0.1]
+        speed={floatSpeed}
+        rotationIntensity={floatRotationIntensity}
+        floatIntensity={floatIntensity}
+        floatingRange={[floatingRangeMin, floatingRangeMax]}
       >
         <Logo
           innerColorVal={innerColorVal}

@@ -16,6 +16,7 @@
   -- add personal links
   -- display back link contextually.
   -- show emojis contextually.
+  -- change positions when on mobile
 
 - APP
   -- serve up multiple scenes
@@ -41,8 +42,7 @@
 
   -- LOGLOW
   --- Rename
-  --- Camera
-  --- Animate (rotation)
+  --- Animate (flip, neon flicker)
 
 - ELEMENTS
   -- HALO
@@ -50,6 +50,7 @@
   --- halo hover glow
   --- generative halos?
   -- SKULL
+  -- default prop vals
   -- element position controls
   -- material controls (? chrome skull)
   -- LOGO

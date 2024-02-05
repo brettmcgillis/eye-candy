@@ -2,12 +2,7 @@ import { folder, useControls } from 'leva';
 import React from 'react';
 import { UnrealBloomPass } from 'three-stdlib';
 
-import {
-  BakeShadows,
-  Effects,
-  Float,
-  PerspectiveCamera,
-} from '@react-three/drei';
+import { BakeShadows, Effects, PerspectiveCamera } from '@react-three/drei';
 import { extend } from '@react-three/fiber';
 
 import Logo from 'components/elements/logo/Logo';
@@ -25,17 +20,22 @@ export default function LoGlow() {
     bloomThreshold,
     bloomStrength,
     bloomRadius,
-    innerColorVal,
-    innerColorEmissive,
-    innerColorEmissiveIntensity,
-    outerColorVal,
-    outerColorEmissive,
-    outerColorEmissiveIntensity,
-    floatSpeed,
-    floatRotationIntensity,
-    floatIntensity,
-    floatingRangeMin,
-    floatingRangeMax,
+    bretPosition,
+    bretRotation,
+    bretInnerColor,
+    bretInnerColorEmissive,
+    bretInnerColorEmissiveIntensity,
+    bretOuterColor,
+    bretOuterColorEmissive,
+    bretOuterColorEmissiveIntensity,
+    reversalPosition,
+    reversalRotation,
+    reversalInnerColor,
+    reversalInnerColorEmissive,
+    reversalInnerColorEmissiveIntensity,
+    reversalOuterColor,
+    reversalOuterColorEmissive,
+    reversalOuterColorEmissiveIntensity,
   } = useControls(
     'LoGlow',
     {
@@ -71,76 +71,90 @@ export default function LoGlow() {
         },
         { collapsed: true }
       ),
-      Colors: folder(
+      Logo: folder(
         {
-          innerColorVal: {
-            label: 'Inner Color',
-            value: '#FF0000',
-          },
-          innerColorEmissive: {
-            label: 'Inner Color Emissive',
-            value: true,
-          },
-          innerColorEmissiveIntensity: {
-            label: 'Inner Color Emissive Intensity',
-            value: 5,
-            min: 0,
-            max: 10,
-          },
-          outerColorVal: {
-            label: 'Outer Color',
-            value: '#000000',
-          },
-          outerColorEmissive: {
-            label: 'Outer Color Emissive',
-            value: false,
-          },
-          outerColorEmissiveIntensity: {
-            label: 'Outer Color Emissive Intensity',
-            value: 0,
-            min: 0,
-            max: 10,
-          },
-        },
-        { collapsed: true }
-      ),
-      Float: folder(
-        {
-          floatSpeed: {
-            label: 'Float Speed',
-            value: 5,
-            min: 0,
-            max: 10,
-            step: 1,
-          },
-          floatRotationIntensity: {
-            label: 'Float Rotation Intensity',
-            value: 0,
-            min: 0,
-            max: 10,
-            step: 1,
-          },
-          floatIntensity: {
-            label: 'Float Intensity',
-            value: 0.1,
-            min: 0,
-            max: 10,
-            step: 0.1,
-          },
-          floatingRangeMin: {
-            label: 'Floating Range (Min)',
-            value: -1,
-            min: -10,
-            max: 0,
-            step: 0.1,
-          },
-          floatingRangeMax: {
-            label: 'Floating Range (Max)',
-            value: 1,
-            min: 0,
-            max: 10,
-            step: 0.1,
-          },
+          Bret: folder(
+            {
+              bretPosition: { label: 'Position', value: { x: 0, y: 0, z: 0 } },
+              bretRotation: { label: 'Rotation', value: { x: 0, y: 0, z: 0 } },
+              'Inner Color': folder(
+                {
+                  bretInnerColor: { label: 'Color', value: '#FF0000' },
+                  bretInnerColorEmissive: { label: 'Emissive', value: true },
+                  bretInnerColorEmissiveIntensity: {
+                    label: 'Emissive Intensity',
+                    value: 5,
+                    min: 0,
+                    max: 10,
+                    step: 0.1,
+                  },
+                },
+                { collapsed: true }
+              ),
+              'Outer Color': folder(
+                {
+                  bretOuterColor: { label: 'Color', value: '#000000' },
+                  bretOuterColorEmissive: { label: 'Emissive', value: false },
+                  bretOuterColorEmissiveIntensity: {
+                    label: 'Emissive Intensity',
+                    value: 0,
+                    min: 0,
+                    max: 10,
+                    step: 0.1,
+                  },
+                },
+                { collapsed: true }
+              ),
+            },
+            { collapsed: true }
+          ),
+          Reversal: folder(
+            {
+              reversalPosition: {
+                label: 'Position',
+                value: { x: 0.9, y: -0.4, z: 0 },
+              },
+              reversalRotation: {
+                label: 'Rotation',
+                value: { x: 0, y: 0, z: 0 },
+              },
+              'Inner Color': folder(
+                {
+                  reversalInnerColor: { label: 'Color', value: '#FF0000' },
+                  reversalInnerColorEmissive: {
+                    label: 'Emissive',
+                    value: true,
+                  },
+                  reversalInnerColorEmissiveIntensity: {
+                    label: 'Emissive Intensity',
+                    value: 5,
+                    min: 0,
+                    max: 10,
+                    step: 0.1,
+                  },
+                },
+                { collapsed: true }
+              ),
+              'Outer Color': folder(
+                {
+                  reversalOuterColor: { label: 'Color', value: '#000000' },
+                  reversalOuterColorEmissive: {
+                    label: 'Emissive',
+                    value: false,
+                  },
+                  reversalOuterColorEmissiveIntensity: {
+                    label: 'Emissive Intensity',
+                    value: 0,
+                    min: 0,
+                    max: 10,
+                    step: 0.1,
+                  },
+                },
+                { collapsed: true }
+              ),
+            },
+            { collapsed: true }
+          ),
         },
         { collapsed: true }
       ),
@@ -152,29 +166,34 @@ export default function LoGlow() {
     <>
       <LightingRig />
       <CameraRig screenShot />
-
       <PerspectiveCamera makeDefault position={[0, 0, 5]} />
+      <BakeShadows />
 
       <color attach="background" args={[backgroundColor]} />
       <fog attach="fog" args={[fogColor, fogNear, fogFar]} />
 
-      <Float
-        speed={floatSpeed}
-        rotationIntensity={floatRotationIntensity}
-        floatIntensity={floatIntensity}
-        floatingRange={[floatingRangeMin, floatingRangeMax]}
-      >
-        <Logo
-          innerColorVal={innerColorVal}
-          innerColorEmissive={innerColorEmissive}
-          innerColorEmissiveIntensity={innerColorEmissiveIntensity}
-          outerColorVal={outerColorVal}
-          outerColorEmissive={outerColorEmissive}
-          outerColorEmissiveIntensity={outerColorEmissiveIntensity}
-          scale={2}
-        />
-      </Float>
-      <BakeShadows />
+      <Logo
+        scale={2}
+        {...{
+          bretPosition,
+          bretRotation,
+          bretInnerColor,
+          bretInnerColorEmissive,
+          bretInnerColorEmissiveIntensity,
+          bretOuterColor,
+          bretOuterColorEmissive,
+          bretOuterColorEmissiveIntensity,
+          reversalPosition,
+          reversalRotation,
+          reversalInnerColor,
+          reversalInnerColorEmissive,
+          reversalInnerColorEmissiveIntensity,
+          reversalOuterColor,
+          reversalOuterColorEmissive,
+          reversalOuterColorEmissiveIntensity,
+        }}
+      />
+
       <Effects disableGamma>
         <unrealBloomPass
           threshold={bloomThreshold}

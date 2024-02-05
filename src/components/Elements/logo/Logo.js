@@ -1,113 +1,31 @@
-import { folder, useControls } from 'leva';
 import React from 'react';
 
 import Bret from 'components/elements/bret/Bret';
 import Reversal from 'components/elements/reversal/Reversal';
-import { GridHelper } from 'components/rigging/GridHelper';
 
 import { radians } from 'utils/math';
 
-export default function Logo({ ...props }) {
-  const {
-    bretPosition,
-    bretRotation,
-    bretInnerColor,
-    bretInnerColorEmissive,
-    bretInnerColorEmissiveIntensity,
-    bretOuterColor,
-    bretOuterColorEmissive,
-    bretOuterColorEmissiveIntensity,
-    reversalPosition,
-    reversalRotation,
-    reversalInnerColor,
-    reversalInnerColorEmissive,
-    reversalInnerColorEmissiveIntensity,
-    reversalOuterColor,
-    reversalOuterColorEmissive,
-    reversalOuterColorEmissiveIntensity,
-  } = useControls(
-    'Logo',
-    {
-      Bret: folder(
-        {
-          bretPosition: { label: 'Position', value: { x: 0, y: 0, z: 0 } },
-          bretRotation: { label: 'Rotation', value: { x: 0, y: 0, z: 0 } },
-          'Inner Color': folder(
-            {
-              bretInnerColor: { label: 'Color', value: '#FF0000' },
-              bretInnerColorEmissive: { label: 'Emissive', value: true },
-              bretInnerColorEmissiveIntensity: {
-                label: 'Emissive Intensity',
-                value: 5,
-                min: 0,
-                max: 10,
-                step: 0.1,
-              },
-            },
-            { collapsed: true }
-          ),
-          'Outer Color': folder(
-            {
-              bretOuterColor: { label: 'Color', value: '#000000' },
-              bretOuterColorEmissive: { label: 'Emissive', value: false },
-              bretOuterColorEmissiveIntensity: {
-                label: 'Emissive Intensity',
-                value: 0,
-                min: 0,
-                max: 10,
-                step: 0.1,
-              },
-            },
-            { collapsed: true }
-          ),
-        },
-        { collapsed: true }
-      ),
-      Reversal: folder(
-        {
-          reversalPosition: {
-            label: 'Position',
-            value: { x: 0.9, y: -0.4, z: 0 },
-          },
-          reversalRotation: { label: 'Rotation', value: { x: 0, y: 0, z: 0 } },
-          'Inner Color': folder(
-            {
-              reversalInnerColor: { label: 'Color', value: '#FF0000' },
-              reversalInnerColorEmissive: { label: 'Emissive', value: true },
-              reversalInnerColorEmissiveIntensity: {
-                label: 'Emissive Intensity',
-                value: 5,
-                min: 0,
-                max: 10,
-                step: 0.1,
-              },
-            },
-            { collapsed: true }
-          ),
-          'Outer Color': folder(
-            {
-              reversalOuterColor: { label: 'Color', value: '#000000' },
-              reversalOuterColorEmissive: { label: 'Emissive', value: false },
-              reversalOuterColorEmissiveIntensity: {
-                label: 'Emissive Intensity',
-                value: 0,
-                min: 0,
-                max: 10,
-                step: 0.1,
-              },
-            },
-            { collapsed: true }
-          ),
-        },
-        { collapsed: true }
-      ),
-    },
-    { collapsed: true }
-  );
-
+export default function Logo({
+  bretPosition = { x: 0, y: 0, z: 0 },
+  bretRotation = { x: 0, y: 0, z: 0 },
+  bretInnerColor = '#FF0000',
+  bretInnerColorEmissive = false,
+  bretInnerColorEmissiveIntensity = 0,
+  bretOuterColor = '#000000',
+  bretOuterColorEmissive = false,
+  bretOuterColorEmissiveIntensity = 0,
+  reversalPosition = { x: 0.9, y: -0.4, z: 0 },
+  reversalRotation = { x: 0, y: 0, z: 0 },
+  reversalInnerColor = '#FF0000',
+  reversalInnerColorEmissive = false,
+  reversalInnerColorEmissiveIntensity = 0,
+  reversalOuterColor = '#000000',
+  reversalOuterColorEmissive = false,
+  reversalOuterColorEmissiveIntensity = 0,
+  ...props
+}) {
   return (
     <group {...props} dispose={null}>
-      <GridHelper x y z />
       <Bret
         position={[bretPosition.x, bretPosition.y, bretPosition.z]}
         rotation={[

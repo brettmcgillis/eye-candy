@@ -10,11 +10,9 @@ import {
 } from '@react-three/drei';
 import { extend } from '@react-three/fiber';
 
-import Logo from 'components/elements/Logo';
+import Logo from 'components/elements/logo/Logo';
 import CameraRig from 'components/rigging/CameraRig';
 import LightingRig from 'components/rigging/LightingRig';
-
-import { ninetyDegrees } from 'utils/math';
 
 extend({ UnrealBloomPass });
 
@@ -44,9 +42,14 @@ export default function LoGlow() {
       Background: folder(
         {
           backgroundColor: { label: 'Background Color', value: '#202030' },
-          fogColor: { label: 'Fog Color', value: '#202030' },
-          fogNear: { label: 'Fog Near', value: 10 },
-          fogFar: { label: 'Fog Far', value: 25 },
+          Fog: folder(
+            {
+              fogColor: { label: 'Fog Color', value: '#202030' },
+              fogNear: { label: 'Fog Near', value: 10 },
+              fogFar: { label: 'Fog Far', value: 25 },
+            },
+            { collapsed: true }
+          ),
         },
         { collapsed: true }
       ),
@@ -169,7 +172,6 @@ export default function LoGlow() {
           outerColorEmissive={outerColorEmissive}
           outerColorEmissiveIntensity={outerColorEmissiveIntensity}
           scale={2}
-          rotation={[ninetyDegrees, 0, 0]}
         />
       </Float>
       <BakeShadows />

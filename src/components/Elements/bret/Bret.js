@@ -6,12 +6,12 @@ import { useGLTF } from '@react-three/drei';
 import bret from 'models/Bret.glb';
 
 export default function Bret({
-  innerColor,
-  innerColorEmissive,
-  innerColorEmissiveIntensity,
-  outerColor,
-  outerColorEmissive,
-  outerColorEmissiveIntensity,
+  innerColor = '#FF0000',
+  innerColorEmissive = false,
+  innerColorEmissiveIntensity = 0,
+  outerColor = '#000000',
+  outerColorEmissive = false,
+  outerColorEmissiveIntensity = 0,
   ...props
 }) {
   const { nodes, materials } = useGLTF(bret);

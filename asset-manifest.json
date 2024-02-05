@@ -1,18 +1,17 @@
 {
   "files": {
     "main.css": "/eye-candy/static/css/main.ca13cfa3.css",
-    "main.js": "/eye-candy/static/js/main.b6822ed9.js",
+    "main.js": "/eye-candy/static/js/main.abd5e5b0.js",
     "static/js/787.0d7a769f.chunk.js": "/eye-candy/static/js/787.0d7a769f.chunk.js",
-    "static/media/Skull.gltf": "/eye-candy/static/media/Skull.e958afa89a482134f354.gltf",
-    "static/media/Femur.gltf": "/eye-candy/static/media/Femur.21d443163e4cbd9eb2e8.gltf",
-    "static/media/Record.glb": "/eye-candy/static/media/Record.39abe11da3262c173101.glb",
+    "static/media/Reversal.glb": "/eye-candy/static/media/Reversal.09a7f6bafea2b4d72d81.glb",
+    "static/media/Bret.glb": "/eye-candy/static/media/Bret.45ee6bcb17dbc631271e.glb",
     "index.html": "/eye-candy/index.html",
     "main.ca13cfa3.css.map": "/eye-candy/static/css/main.ca13cfa3.css.map",
-    "main.b6822ed9.js.map": "/eye-candy/static/js/main.b6822ed9.js.map",
+    "main.abd5e5b0.js.map": "/eye-candy/static/js/main.abd5e5b0.js.map",
     "787.0d7a769f.chunk.js.map": "/eye-candy/static/js/787.0d7a769f.chunk.js.map"
   },
   "entrypoints": [
     "static/css/main.ca13cfa3.css",
-    "static/js/main.b6822ed9.js"
+    "static/js/main.abd5e5b0.js"
   ]
 }

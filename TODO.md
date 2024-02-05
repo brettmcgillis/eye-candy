@@ -10,7 +10,6 @@
 
 - EXPLORE/EXPLODE
   -- glass
-  -- chrome/metalic
   -- pixelation component.
 
 - OVERLAY
@@ -30,7 +29,6 @@
   --- post processing (dots, godrays, +)
   --- Fun stuff
   ---- Atomic Halo
-  ---- LP Halo
   ---- 45lb Halo
   ---- Animation (rotation + wobble)
   ---- motion controls (drag drop)
@@ -74,7 +72,6 @@
 
 - LIGHTINGRIG
   -- props
-  -- improve controls
   -- directional lighting
 
 - UTILS

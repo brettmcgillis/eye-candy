@@ -25,6 +25,7 @@
   ],
   "importOrder": [
     "^@(.*)/(.*)$",
+    "^app/.+$",
     "^stores/.+$",
     "^components/.+$",
     "^models/.+$",

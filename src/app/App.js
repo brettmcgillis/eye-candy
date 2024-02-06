@@ -2,7 +2,8 @@ import React, { Suspense } from 'react';
 
 import { Canvas } from '@react-three/fiber';
 
-import Loader from 'components/loader/Loader';
+import Loader from 'app/scaffold/loader/Loader';
+
 // import FoldedFrame from 'components/scenes/FoldedFrame/FoldedFrame';
 import LoGlow from 'components/scenes/Loglow';
 

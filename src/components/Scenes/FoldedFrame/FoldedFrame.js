@@ -3,7 +3,7 @@ import React from 'react';
 
 import { PerspectiveCamera } from '@react-three/drei';
 
-import PaperFrame from 'components/elements/PaperFrame';
+import PaperFrame from 'components/elements/paperframe/PaperFrame';
 import CameraRig from 'components/rigging/CameraRig';
 import LightingRig from 'components/rigging/LightingRig';
 

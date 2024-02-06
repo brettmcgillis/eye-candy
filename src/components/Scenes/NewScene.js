@@ -4,9 +4,9 @@ import React from 'react';
 
 import { Cloud, Clouds, PerspectiveCamera } from '@react-three/drei';
 
-import Femur from 'components/elements/Femur';
-import Halo from 'components/elements/Halo';
-import Record from 'components/elements/Record';
+import Femur from 'components/elements/femur/Femur';
+import Halo from 'components/elements/halo/Halo';
+import Record from 'components/elements/record/Record';
 import Skull from 'components/elements/skull/Skull';
 import { useSkullControls } from 'components/elements/skull/SkullControls';
 import CameraRig from 'components/rigging/CameraRig';

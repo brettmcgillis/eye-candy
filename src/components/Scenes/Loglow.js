@@ -2,7 +2,12 @@ import { folder, useControls } from 'leva';
 import React from 'react';
 import { UnrealBloomPass } from 'three-stdlib';
 
-import { BakeShadows, Effects, PerspectiveCamera } from '@react-three/drei';
+import {
+  BakeShadows,
+  Effects,
+  PerspectiveCamera,
+  Sparkles,
+} from '@react-three/drei';
 import { extend } from '@react-three/fiber';
 
 import Logo from 'components/elements/logo/Logo';
@@ -36,6 +41,13 @@ export default function LoGlow() {
     reversalOuterColor,
     reversalOuterColorEmissive,
     reversalOuterColorEmissiveIntensity,
+    sparkleColor,
+    sparkleCount,
+    sparkleNoise,
+    sparkleOpactity,
+    sparkleScale,
+    sparkleSize,
+    sparkleSpeed,
   } = useControls(
     'LoGlow',
     {
@@ -158,6 +170,18 @@ export default function LoGlow() {
         },
         { collapsed: true }
       ),
+      Sparkles: folder(
+        {
+          sparkleCount: { label: 'Count', value: 100, min: 10, max: 500 },
+          sparkleSpeed: { label: 'Speed', value: 0.71, min: 0, max: 10 },
+          sparkleOpactity: { label: 'Opacity', value: 0.7, min: 0, max: 1 },
+          sparkleColor: { label: 'Color', value: '#FFFFFF' },
+          sparkleSize: { label: 'Size', value: 0.7, min: 0.1, max: 10 },
+          sparkleScale: { label: 'Scale', value: 3.6, min: 0, max: 10 },
+          sparkleNoise: { label: 'Noise', value: 1, min: 0, max: 10 },
+        },
+        { collapsed: true }
+      ),
     },
     { collapsed: true }
   );
@@ -194,6 +218,15 @@ export default function LoGlow() {
         }}
       />
 
+      <Sparkles
+        count={sparkleCount}
+        speed={sparkleSpeed}
+        opacity={sparkleOpactity}
+        color={sparkleColor}
+        size={sparkleSize}
+        scale={sparkleScale}
+        noise={sparkleNoise}
+      />
       <Effects disableGamma>
         <unrealBloomPass
           threshold={bloomThreshold}

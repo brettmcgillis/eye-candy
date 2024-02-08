@@ -8,8 +8,19 @@ import Reversal from 'components/elements/reversal/Reversal';
 
 import { radians } from 'utils/math';
 
-function getPosition(time, speed, intensity) {
+function sineWave(time, speed, intensity) {
   return Math.sin(time * speed) * intensity;
+}
+
+function waitAndFlip(time, waitPeriod, rotationPeriod) {
+  const cycleTime = time % (waitPeriod + rotationPeriod);
+  if (cycleTime < waitPeriod) {
+    return 0;
+  }
+  const rotationTime = cycleTime - waitPeriod;
+  const rotationProgress = rotationTime / rotationPeriod;
+  const rotationAngle = rotationProgress * 2 * Math.PI;
+  return rotationAngle;
 }
 
 export default function Logo({
@@ -35,10 +46,9 @@ export default function Logo({
     float,
     floatSpeed,
     floatIntensity,
-    // flip,
-    // flipDelay,
-    // flipSpeed,
-    // flipRotation,
+    flip,
+    flipDelay,
+    flipDuration,
     spin,
     spinRotation,
     spinSpeed,
@@ -79,21 +89,26 @@ export default function Logo({
         },
         { collapsed: true }
       ),
-      //   Flip: folder(
-      //     {
-      //       flip: { label: 'Flip', value: false },
-      //       flipRotation: {
-      //         label: 'Rotation',
-      //         value: 360,
-      //         min: 0,
-      //         max: 360,
-      //         step: 1,
-      //       },
-      //       flipSpeed: { label: 'Speed', value: 0.1, min: 0, max: 1, step: 0.01 },
-      //       flipDelay: { label: 'Delay', value: 0, min: 0, max: 10, step: 0.01 },
-      //     },
-      //     { collapsed: true }
-      //   ),
+      Flip: folder(
+        {
+          flip: { label: 'Flip', value: false },
+          flipDuration: {
+            label: 'Duration',
+            value: 1.5,
+            min: 1,
+            max: 2,
+            step: 0.01,
+          },
+          flipDelay: {
+            label: 'Delay',
+            value: 4,
+            min: 0,
+            max: 10,
+            step: 0.01,
+          },
+        },
+        { collapsed: true }
+      ),
     },
     { collapsed: true }
   );
@@ -105,66 +120,82 @@ export default function Logo({
   useFrame(({ clock }) => {
     const time = clock.getElapsedTime();
     if (float) {
-      logoRef.current.position.y = getPosition(
+      logoRef.current.position.y = sineWave(time, floatSpeed, floatIntensity);
+    } else if (logoRef.current.position.y !== 0) {
+      logoRef.current.position.y = sineWave(
         time,
-        floatSpeed,
+        floatSpeed * 2,
         floatIntensity
       );
-    } else {
-      logoRef.current.position.y = 0;
+      if (Math.abs(logoRef.current.position.y) < 0.01) {
+        logoRef.current.position.y = 0;
+      }
     }
     if (spin) {
       logoRef.current.rotation.y = radians(
-        getPosition(time, spinSpeed, spinRotation)
+        sineWave(time, spinSpeed, spinRotation)
       );
-    } else {
-      logoRef.current.rotation.y = 0;
+    } else if (logoRef.current.rotation.y !== 0) {
+      logoRef.current.rotation.y = radians(
+        sineWave(time, spinSpeed * 2, spinRotation)
+      );
+      if (Math.abs(logoRef.current.rotation.y) < 0.1) {
+        logoRef.current.rotation.y = 0;
+      }
     }
-    // if (flip) {
-    //   reversalRef.current.rotation.x = radians(
-    //     getPosition(time, flipSpeed, flipRotation)
-    //   );
-    // }
+    if (flip || reversalRef.current.rotation.x !== 0) {
+      reversalRef.current.rotation.x = waitAndFlip(
+        time,
+        flipDelay,
+        flipDuration
+      );
+    }
   });
 
   return (
     <group {...props} dispose={null}>
       <group ref={logoRef}>
-        <group ref={bretRef}>
-          <Bret
-            position={[bretPosition.x, bretPosition.y, bretPosition.z]}
-            rotation={[
-              radians(bretRotation.x),
-              radians(bretRotation.y),
-              radians(bretRotation.z),
-            ]}
-            innerColor={bretInnerColor}
-            innerColorEmissive={bretInnerColorEmissive}
-            innerColorEmissiveIntensity={bretInnerColorEmissiveIntensity}
-            outerColor={bretOuterColor}
-            outerColorEmissive={bretOuterColorEmissive}
-            outerColorEmissiveIntensity={bretOuterColorEmissiveIntensity}
-          />
+        <group
+          position={[bretPosition.x, bretPosition.y, bretPosition.z]}
+          rotation={[
+            radians(bretRotation.x),
+            radians(bretRotation.y),
+            radians(bretRotation.z),
+          ]}
+        >
+          <group ref={bretRef}>
+            <Bret
+              innerColor={bretInnerColor}
+              innerColorEmissive={bretInnerColorEmissive}
+              innerColorEmissiveIntensity={bretInnerColorEmissiveIntensity}
+              outerColor={bretOuterColor}
+              outerColorEmissive={bretOuterColorEmissive}
+              outerColorEmissiveIntensity={bretOuterColorEmissiveIntensity}
+            />
+          </group>
         </group>
-        <group ref={reversalRef}>
-          <Reversal
-            position={[
-              reversalPosition.x,
-              reversalPosition.y,
-              reversalPosition.z,
-            ]}
-            rotation={[
-              radians(reversalRotation.x),
-              radians(reversalRotation.y),
-              radians(reversalRotation.z),
-            ]}
-            innerColor={reversalInnerColor}
-            innerColorEmissive={reversalInnerColorEmissive}
-            innerColorEmissiveIntensity={reversalInnerColorEmissiveIntensity}
-            outerColor={reversalOuterColor}
-            outerColorEmissive={reversalOuterColorEmissive}
-            outerColorEmissiveIntensity={reversalOuterColorEmissiveIntensity}
-          />
+        <group
+          position={[
+            reversalPosition.x,
+            reversalPosition.y,
+            reversalPosition.z,
+          ]}
+          rotation={[
+            radians(reversalRotation.x),
+            radians(reversalRotation.y),
+            radians(reversalRotation.z),
+          ]}
+        >
+          <group ref={reversalRef}>
+            <Reversal
+              innerColor={reversalInnerColor}
+              innerColorEmissive={reversalInnerColorEmissive}
+              innerColorEmissiveIntensity={reversalInnerColorEmissiveIntensity}
+              outerColor={reversalOuterColor}
+              outerColorEmissive={reversalOuterColorEmissive}
+              outerColorEmissiveIntensity={reversalOuterColorEmissiveIntensity}
+            />
+          </group>
         </group>
       </group>
     </group>

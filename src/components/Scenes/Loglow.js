@@ -1,5 +1,5 @@
 import { folder, useControls } from 'leva';
-import React from 'react';
+import React, { useState } from 'react';
 import { UnrealBloomPass } from 'three-stdlib';
 
 import {
@@ -8,13 +8,27 @@ import {
   PerspectiveCamera,
   Sparkles,
 } from '@react-three/drei';
-import { extend } from '@react-three/fiber';
+import { extend, useFrame } from '@react-three/fiber';
 
 import Logo from 'components/elements/logo/Logo';
 import CameraRig from 'components/rigging/CameraRig';
 import LightingRig from 'components/rigging/LightingRig';
 
 extend({ UnrealBloomPass });
+
+function neonFlicker(
+  time,
+  baseIntensity = 8,
+  flickerIntensity = 2,
+  flickerFrequency = 10
+) {
+  const seconds = time / 1000;
+  const noise = Math.random() * flickerIntensity;
+  const flickerOscillation = Math.sin(seconds * 2 * Math.PI * flickerFrequency);
+  const emissiveIntensity =
+    baseIntensity + flickerIntensity * flickerOscillation + noise;
+  return Math.max(1, Math.min(10, emissiveIntensity));
+}
 
 export default function LoGlow() {
   const {
@@ -48,6 +62,9 @@ export default function LoGlow() {
     sparkleScale,
     sparkleSize,
     sparkleSpeed,
+    enableNeonFlicker,
+    neonFlickerIntensity,
+    neonFlickerFrequency,
   } = useControls(
     'LoGlow',
     {
@@ -167,6 +184,24 @@ export default function LoGlow() {
             },
             { collapsed: true }
           ),
+          Neon: folder(
+            {
+              enableNeonFlicker: { label: 'Flicker', value: true },
+              neonFlickerIntensity: {
+                label: 'Intensity',
+                value: 2,
+                min: 0.1,
+                max: 10,
+              },
+              neonFlickerFrequency: {
+                label: 'Frequency',
+                value: 10,
+                min: 0.1,
+                max: 10,
+              },
+            },
+            { collapsed: true }
+          ),
         },
         { collapsed: true }
       ),
@@ -186,6 +221,38 @@ export default function LoGlow() {
     { collapsed: true }
   );
 
+  const [
+    { reversalEmissiveIntensity, bretEmissiveIntensity },
+    setEmissiveIntensity,
+  ] = useState({ reversalEmissiveIntensity: 0, bretEmissiveIntensity: 0 });
+
+  useFrame(({ clock }) => {
+    if (enableNeonFlicker) {
+      setEmissiveIntensity({
+        reversalEmissiveIntensity: neonFlicker(
+          clock.getElapsedTime(),
+          reversalInnerColorEmissiveIntensity,
+          neonFlickerIntensity,
+          neonFlickerFrequency
+        ),
+        bretEmissiveIntensity: neonFlicker(
+          clock.getElapsedTime(),
+          bretInnerColorEmissiveIntensity,
+          neonFlickerIntensity,
+          neonFlickerFrequency
+        ),
+      });
+    } else if (
+      reversalEmissiveIntensity !== reversalInnerColorEmissiveIntensity ||
+      bretEmissiveIntensity !== bretInnerColorEmissiveIntensity
+    ) {
+      setEmissiveIntensity({
+        reversalEmissiveIntensity: reversalInnerColorEmissiveIntensity,
+        bretEmissiveIntensity: bretInnerColorEmissiveIntensity,
+      });
+    }
+  });
+
   return (
     <>
       <LightingRig />
@@ -203,7 +270,8 @@ export default function LoGlow() {
           bretRotation,
           bretInnerColor,
           bretInnerColorEmissive,
-          bretInnerColorEmissiveIntensity,
+          bretInnerColorEmissiveIntensity: bretEmissiveIntensity,
+          bretEmissiveIntensity,
           bretOuterColor,
           bretOuterColorEmissive,
           bretOuterColorEmissiveIntensity,
@@ -211,7 +279,7 @@ export default function LoGlow() {
           reversalRotation,
           reversalInnerColor,
           reversalInnerColorEmissive,
-          reversalInnerColorEmissiveIntensity,
+          reversalInnerColorEmissiveIntensity: reversalEmissiveIntensity,
           reversalOuterColor,
           reversalOuterColorEmissive,
           reversalOuterColorEmissiveIntensity,

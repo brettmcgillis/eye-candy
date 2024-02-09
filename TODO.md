@@ -31,9 +31,9 @@
   --- Fun stuff
   ---- Atomic Halo
   ---- 45lb Halo
-  ---- Animation (rotation + wobble)
+  ---- Animation (rotation + wobble, refactor out of record, into reusable code to be applied to any halo type)
   ---- motion controls (drag drop)
-  ---- physics
+  ---- physics (cannon looks good)
 
   -- FOLDEDFRAME
   --- fix default lighting
@@ -45,6 +45,7 @@
   --- Animate (flip, neon flicker)
 
 - ELEMENTS
+  -- make them all forwardRefs
   -- HALO
   --- halo props to controls
   --- halo hover glow

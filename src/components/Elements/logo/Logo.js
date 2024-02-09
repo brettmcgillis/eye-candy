@@ -57,7 +57,7 @@ export default function Logo({
     {
       Float: folder(
         {
-          float: { label: 'Float', value: false },
+          float: { label: 'Float', value: true },
           floatSpeed: {
             label: 'Speed',
             value: 1,
@@ -77,7 +77,7 @@ export default function Logo({
       ),
       Spin: folder(
         {
-          spin: { label: 'Spin', value: false },
+          spin: { label: 'Spin', value: true },
           spinRotation: {
             label: 'Rotation',
             value: 33,
@@ -91,7 +91,7 @@ export default function Logo({
       ),
       Flip: folder(
         {
-          flip: { label: 'Flip', value: false },
+          flip: { label: 'Flip', value: true },
           flipDuration: {
             label: 'Duration',
             value: 2,

@@ -94,7 +94,7 @@ export default function Logo({
           flip: { label: 'Flip', value: false },
           flipDuration: {
             label: 'Duration',
-            value: 1.5,
+            value: 2,
             min: 1,
             max: 2,
             step: 0.01,

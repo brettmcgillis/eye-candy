@@ -5,10 +5,10 @@ import { Canvas } from '@react-three/fiber';
 import Loader from 'app/scaffold/loader/Loader';
 
 // import FoldedFrame from 'components/scenes/FoldedFrame/FoldedFrame';
-// import LoGlow from 'components/scenes/Loglow';
-// import NewScene from 'components/scenes/NewScene';
-import PaperStack from 'components/scenes/paperstack/PaperStack';
+import LoGlow from 'components/scenes/Loglow';
 
+// import NewScene from 'components/scenes/NewScene';
+// import PaperStack from 'components/scenes/paperstack/PaperStack';
 import './App.css';
 
 function App() {
@@ -17,9 +17,9 @@ function App() {
       <Canvas shadows gl={{ preserveDrawingBuffer: true }}>
         <Suspense fallback={<Loader />}>
           {/* <FoldedFrame /> */}
-          {/* <LoGlow /> */}
+          <LoGlow />
           {/* <NewScene /> */}
-          <PaperStack />
+          {/* <PaperStack /> */}
         </Suspense>
       </Canvas>
     </div>

@@ -31,6 +31,7 @@
   --- Fun stuff
   ---- Atomic Halo
   ---- 45lb Halo
+  ---- neural network halo
   ---- Animation (rotation + wobble, refactor out of record, into reusable code to be applied to any halo type)
   ---- motion controls (drag drop)
   ---- physics (cannon looks good)

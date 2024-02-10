@@ -14,25 +14,43 @@
   }
 }
 
-.Top-Left {
+.Top-Left,
+.Bottom-Left,
+.Bottom-Right {
   position: absolute;
-  top: 40px;
-  left: 40px;
-  font-size: 13px;
+  font-size: 14px;
+}
+
+.Top-Left {
+  top: 5em;
+  left: 5em;
 }
 
 .Bottom-Left {
-  position: absolute;
-  bottom: 40px;
-  left: 40px;
-  font-size: 13px;
+  bottom: 5em;
+  left: 5em;
 }
 
 .Bottom-Right {
-  position: absolute;
-  bottom: 40px;
-  right: 40px;
-  font-size: 13px;
+  bottom: 5em;
+  right: 5em;
+}
+
+@media only screen and (max-width: 600px) {
+  .Top-Left {
+    top: 8em;
+    left: 2em;
+  }
+
+  .Bottom-Left {
+    bottom: 8em;
+    left: 2em;
+  }
+
+  .Bottom-Right {
+    bottom: 8em;
+    right: 2em;
+  }
 }
 
 .Debug {

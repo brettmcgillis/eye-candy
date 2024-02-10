@@ -18,6 +18,7 @@
     "test": "react-scripts test"
   },
   "dependencies": {
+    "@react-three/csg": "^3.2.0",
     "@react-three/drei": "^9.90.0",
     "@react-three/fiber": "^8.15.12",
     "@react-three/postprocessing": "^2.15.11",

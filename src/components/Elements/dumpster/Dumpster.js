@@ -4,7 +4,17 @@ import { useGLTF } from '@react-three/drei';
 
 import dumpster from 'models/Dumpster.glb';
 
-export default function Dumpster(props) {
+export default function Dumpster({
+  rightLidVisible = true,
+  rightLidRotation = Math.PI / 4,
+  leftLidVisible = true,
+  leftLidRotation = 1.833,
+  frontLeftWheelRotation = Math.PI,
+  frontRightWheelRotation = 0,
+  rearLeftWheelRotation = Math.PI,
+  rearRightWheelRotation = 0,
+  ...props
+}) {
   const { nodes, materials } = useGLTF(dumpster);
   return (
     <group {...props} dispose={null}>
@@ -31,7 +41,7 @@ export default function Dumpster(props) {
                 <group
                   name="FrontLeftWheel"
                   position={[-83.16, -30, 16.669]}
-                  rotation={[0, 0, -Math.PI]}
+                  rotation={[0, 0, frontLeftWheelRotation]}
                 >
                   <group
                     name="FLW1"
@@ -47,7 +57,11 @@ export default function Dumpster(props) {
                     />
                   </group>
                 </group>
-                <group name="FrontRightWheel" position={[83.16, -30, 16.669]}>
+                <group
+                  name="FrontRightWheel"
+                  position={[83.16, -30, 16.669]}
+                  rotation={[0, 0, frontRightWheelRotation]}
+                >
                   <group
                     name="FRW1"
                     position={[6.84, -17.523, 81.499]}
@@ -63,9 +77,10 @@ export default function Dumpster(props) {
                   </group>
                 </group>
                 <group
+                  visible={leftLidVisible}
                   name="LeftLid"
                   position={[-47.5, 51.999, 146.244]}
-                  rotation={[1.833, 0, 0]}
+                  rotation={[leftLidRotation, 0, 0]}
                 >
                   <group name="LL1" position={[0, 0.3, 51.276]}>
                     <mesh
@@ -80,7 +95,7 @@ export default function Dumpster(props) {
                 <group
                   name="RearLeftWheel"
                   position={[-83.16, 30, 16.669]}
-                  rotation={[0, 0, Math.PI]}
+                  rotation={[0, 0, rearLeftWheelRotation]}
                 >
                   <group
                     name="RLW1"
@@ -96,7 +111,11 @@ export default function Dumpster(props) {
                     />
                   </group>
                 </group>
-                <group name="RearRightWheel" position={[83.16, 33.131, 16.669]}>
+                <group
+                  name="RearRightWheel"
+                  position={[83.16, 33.131, 16.669]}
+                  rotation={[0, 0, rearRightWheelRotation]}
+                >
                   <group
                     name="RRW1"
                     position={[6.84, -17.523, 81.499]}
@@ -113,8 +132,9 @@ export default function Dumpster(props) {
                 </group>
                 <group
                   name="RightLid"
+                  visible={rightLidVisible}
                   position={[47.5, 51.999, 146.244]}
-                  rotation={[Math.PI / 4, 0, 0]}
+                  rotation={[rightLidRotation, 0, 0]}
                 >
                   <group name="RL1" position={[0, 0.3, 51.276]}>
                     <mesh

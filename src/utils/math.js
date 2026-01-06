@@ -12,5 +12,9 @@ export function getRandomNumber(min, max) {
   return randomNumber;
 }
 
+export function sineWave(time, speed, intensity) {
+  return Math.sin(time * speed) * intensity;
+}
+
 export const fourtyFiveDegrees = radians(45);
 export const ninetyDegrees = radians(90);

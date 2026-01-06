@@ -2,7 +2,15 @@
 import { folder, useControls } from 'leva';
 import React from 'react';
 
-import { Cloud, Clouds, PerspectiveCamera } from '@react-three/drei';
+import {
+  AsciiRenderer,
+  Cloud,
+  Clouds,
+  Float,
+  OrbitControls,
+  PerspectiveCamera,
+} from '@react-three/drei';
+import { EffectComposer, Pixelation } from '@react-three/postprocessing';
 
 import Femur from 'components/elements/femur/Femur';
 import Halo from 'components/elements/halo/Halo';
@@ -85,6 +93,49 @@ function useSceneControls() {
             step: 0.01,
           },
           femurVisible: { label: 'Visible', value: true },
+        },
+        { collapsed: true }
+      ),
+      Effects: folder(
+        {
+          autoRotateSpeed: {
+            label: 'Rotate Speed',
+            value: 0,
+            min: -50,
+            max: 50,
+          },
+          floatSpeed: {
+            label: 'Float Speed',
+            value: 0.5,
+            min: 0,
+            max: 1,
+            step: 0.01,
+          },
+          pixelationEnabled: { label: 'Pixelation Enabled', value: false },
+          pixelationGranularity: {
+            label: 'Pixelation Granularity',
+            value: 8,
+            min: 0,
+            max: 50,
+            step: 1,
+          },
+          asciiEnabled: { label: 'Ascii Enabled', value: false },
+          asciiBgColor: { label: 'Ascii BG Color', value: '#FFFFFF' },
+          asciiFgColor: { label: 'Ascii FG Color', value: '#000000' },
+          asciiCharSet: {
+            label: 'Ascii Char Set',
+            value:
+              " `.-':_,^=;><+!rc*/z?sLTv)J7(|Fi{C}fI31tlu[neoZ5Yxjya]2ESwqkP6h9d4VpOGbUAKXHm8RD#$Bg0MNWQ%&@",
+          },
+          asciiInvert: { label: 'Ascii Invert', value: false },
+          asciiColorize: { label: 'Ascii Colorize', value: true },
+          asciiResolution: {
+            label: 'Ascii Resolution',
+            value: 0.25,
+            min: 0.1,
+            max: 0.4,
+            step: 0.01,
+          },
         },
         { collapsed: true }
       ),
@@ -287,7 +338,7 @@ export default function NewScene() {
 
   return (
     <>
-      <CameraRig screenShot />
+      {/* <CameraRig screenShot /> */}
 
       <LightingRig />
       <PerspectiveCamera makeDefault position={[-1, -1, 3.5]} />
@@ -295,22 +346,31 @@ export default function NewScene() {
       <GridHelper x y z visible={scene.showGridHelper} />
       <PolarGridHelper x y z visible={scene.showPolarGridHelper} />
 
-      {/* <Halo
-        visible={scene.Halo.haloVisible}
-        position={[
-          scene.haloPosition.x,
-          scene.haloPosition.y,
-          scene.haloPosition.z,
-        ]}
-        rotation={[
-          radians(scene.haloRotation.x),
-          radians(scene.haloRotation.y),
-          radians(scene.haloRotation.z),
-        ]}
-        {...getHaloConfig(haloControls)}
-      /> */}
+      <OrbitControls
+        autoRotate
+        enableDamping
+        enablePan
+        enableRotate
+        enableZoom
+        autoRotateSpeed={scene.autoRotateSpeed}
+      />
+      <Float speed={scene.floatSpeed}>
+        <Halo
+          visible={scene.haloVisible}
+          position={[
+            scene.haloPosition.x,
+            scene.haloPosition.y,
+            scene.haloPosition.z,
+          ]}
+          rotation={[
+            radians(scene.haloRotation.x),
+            radians(scene.haloRotation.y),
+            radians(scene.haloRotation.z),
+          ]}
+          {...getHaloConfig(haloControls)}
+        />
 
-      <Record
+        {/* <Record
         scale={scene.haloScale}
         position={[
           scene.haloPosition.x,
@@ -322,56 +382,78 @@ export default function NewScene() {
           radians(scene.haloRotation.y),
           radians(scene.haloRotation.z),
         ]}
-      />
+      /> */}
 
-      <Skull
-        {...skullControls}
-        position={[
-          scene.skullPosition.x,
-          scene.skullPosition.y,
-          scene.skullPosition.z,
-        ]}
-        rotation={[
-          radians(scene.skullRotation.x),
-          radians(scene.skullRotation.y),
-          radians(scene.skullRotation.z),
-        ]}
-        scale={scene.skullScale}
-        visible={scene.skullVisible}
-      />
-      <Clouds visible={scene.cloudVisible}>
-        <Cloud
+        <Skull
+          {...skullControls}
           position={[
-            scene.cloudPosition.x,
-            scene.cloudPosition.y,
-            scene.cloudPosition.z,
+            scene.skullPosition.x,
+            scene.skullPosition.y,
+            scene.skullPosition.z,
           ]}
           rotation={[
-            radians(scene.cloudRotation.x),
-            radians(scene.cloudRotation.y),
-            radians(scene.cloudRotation.z),
+            radians(scene.skullRotation.x),
+            radians(scene.skullRotation.y),
+            radians(scene.skullRotation.z),
           ]}
-          bounds={[cloudControls.x, cloudControls.y, cloudControls.z]}
-          scale={scene.cloudScale}
-          {...cloudControls}
-          castShadow
-          receiveShadow
+          scale={scene.skullScale}
+          visible={scene.skullVisible}
         />
-      </Clouds>
-      <Femur
-        position={[
-          scene.femurPosition.x,
-          scene.femurPosition.y,
-          scene.femurPosition.z,
-        ]}
-        rotation={[
-          radians(scene.femurRotation.x),
-          radians(scene.femurRotation.y),
-          radians(scene.femurRotation.z),
-        ]}
-        scale={scene.femurScale}
-        visible={scene.femurVisible}
-      />
+        <Clouds visible={scene.cloudVisible}>
+          <Cloud
+            position={[
+              scene.cloudPosition.x,
+              scene.cloudPosition.y,
+              scene.cloudPosition.z,
+            ]}
+            rotation={[
+              radians(scene.cloudRotation.x),
+              radians(scene.cloudRotation.y),
+              radians(scene.cloudRotation.z),
+            ]}
+            bounds={[cloudControls.x, cloudControls.y, cloudControls.z]}
+            scale={scene.cloudScale}
+            {...cloudControls}
+            castShadow
+            receiveShadow
+          />
+        </Clouds>
+        <Femur
+          position={[
+            scene.femurPosition.x,
+            scene.femurPosition.y,
+            scene.femurPosition.z,
+          ]}
+          rotation={[
+            radians(scene.femurRotation.x),
+            radians(scene.femurRotation.y),
+            radians(scene.femurRotation.z),
+          ]}
+          scale={scene.femurScale}
+          visible={scene.femurVisible}
+        />
+      </Float>
+
+      {scene.asciiEnabled && (
+        <AsciiRenderer
+          bgColor={scene.asciiBgColor}
+          fgColor={scene.asciiFgColor}
+          characters={scene.asciiCharSet}
+          /** Invert character, default: true */
+          invert={scene.asciiInvert}
+          /** Colorize output (very expensive!), default: false */
+          color={scene.asciiColorize}
+          /** Level of detail, default: 0.15 */
+          resolution={scene.asciiResolution}
+        />
+      )}
+      <EffectComposer>
+        <Pixelation
+          granularity={
+            scene.pixelationEnabled ? scene.pixelationGranularity : 0
+          }
+        />
+      </EffectComposer>
     </>
   );
 }

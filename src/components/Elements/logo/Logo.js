@@ -6,11 +6,7 @@ import { useFrame } from '@react-three/fiber';
 import Bret from 'components/elements/bret/Bret';
 import Reversal from 'components/elements/reversal/Reversal';
 
-import { radians } from 'utils/math';
-
-function sineWave(time, speed, intensity) {
-  return Math.sin(time * speed) * intensity;
-}
+import { radians, sineWave } from 'utils/math';
 
 function waitAndFlip(time, waitPeriod, rotationPeriod) {
   const cycleTime = time % (waitPeriod + rotationPeriod);

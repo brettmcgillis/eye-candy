@@ -1,7 +1,13 @@
 import { useControls } from 'leva';
-import React from 'react';
+import { React, useRef, useState } from 'react';
 
-import { PerspectiveCamera } from '@react-three/drei';
+import {
+  AccumulativeShadows,
+  Environment,
+  PerspectiveCamera,
+  RandomizedLight,
+} from '@react-three/drei';
+import { useFrame } from '@react-three/fiber';
 
 import PaperFrame from 'components/elements/paperframe/PaperFrame';
 import CameraRig from 'components/rigging/CameraRig';
@@ -17,13 +23,21 @@ function Square({ size, position, color, settings }) {
   const mirror = settings.symmetric && (x !== 0 || y !== 0);
   return (
     <>
-      <mesh castShadow receiveShadow position={[x, y, 0]}>
-        <boxGeometry args={[size, size, settings.paperDepth]} />
+      <mesh position={[x, y, 0]}>
+        <boxGeometry
+          castShadow
+          receiveShadow
+          args={[size, size, settings.paperDepth]}
+        />
         <meshStandardMaterial color={color} />
       </mesh>
       {mirror && (
         <mesh castShadow receiveShadow position={[-x, -y, 0]}>
-          <boxGeometry args={[size, size, settings.paperDepth]} />
+          <boxGeometry
+            castShadow
+            receiveShadow
+            args={[size, size, settings.paperDepth]}
+          />
           <meshStandardMaterial color={color} />
         </mesh>
       )}
@@ -33,7 +47,7 @@ function Square({ size, position, color, settings }) {
 
 function Layer({ layer, squares, depth, settings }) {
   return (
-    <group position={[0, 0, depth]}>
+    <group castShadow receiveShadow position={[0, 0, depth]}>
       {squares.map((square, index) =>
         Square({ index, layer, ...square, settings })
       )}
@@ -43,18 +57,22 @@ function Layer({ layer, squares, depth, settings }) {
 
 function FoldedFrame() {
   const frames = getFrames();
-  const {
-    frame,
-    rotate,
-    colorRangeStart,
-    colorRangeEnd,
-    dataScale,
-    frameScale,
-    dataPosition,
-    framePosition,
-  } = useControls(
-    'Scene',
+  const [
     {
+      frame,
+      rotate,
+      colorRangeStart,
+      colorRangeEnd,
+      dataScale,
+      frameScale,
+      dataPosition,
+      frameVisible,
+      framePosition,
+    },
+    set,
+  ] = useControls(
+    'Scene',
+    () => ({
       frame: {
         label: 'Select Frame',
         value: frames[0].name,
@@ -72,9 +90,10 @@ function FoldedFrame() {
       },
       dataPosition: {
         label: 'Square Position',
-        value: { x: 0, y: 0, z: 0.08 },
+        value: { x: 0, y: 1.1, z: 0.08 },
       },
-      framePosition: { label: 'Frame Position', value: { x: 0, y: 0, z: 0 } },
+      frameVisible: { label: 'Show Frame', value: true },
+      framePosition: { label: 'Frame Position', value: { x: 0, y: 1.1, z: 0 } },
       frameScale: {
         label: 'Frame Scale',
         value: 1.1,
@@ -82,7 +101,7 @@ function FoldedFrame() {
         max: 10,
         step: 0.1,
       },
-    },
+    }),
     { collapsed: false }
   );
 
@@ -97,36 +116,93 @@ function FoldedFrame() {
 
   const frameLayers = layers.map((layer, index) =>
     layer.map((square) => ({
-      color: colorGamut[index],
       ...square,
+      color: colorGamut[index],
     }))
   );
+
+  const [depthBuffer, setDepthBuffer] = useState(1);
+
+  function getRandomHexColor(time) {
+    const hexColor = Math.floor(time).toString(16);
+    const paddedHexColor = hexColor.padStart(6, '0');
+    return `#${paddedHexColor}`;
+  }
+  function getInverseHexColorFromTimeElapsed(time) {
+    const hexColor = (16777215 - Math.floor(time)).toString(16);
+    const paddedHexColor = hexColor.padStart(6, '0');
+    return `#${paddedHexColor}`;
+  }
+  const groupRef = useRef();
+
+  useFrame(({ clock }) => {
+    if (!clock) {
+      setDepthBuffer(1 + Math.sin(clock.getElapsedTime()) / 2);
+      if (clock.getElapsedTime() % 2 < 0.5) {
+        set({
+          colorRangeStart: getRandomHexColor(
+            clock.elapsedTime * clock.elapsedTime * 23
+          ),
+          colorRangeEnd: getInverseHexColorFromTimeElapsed(
+            clock.elapsedTime * clock.elapsedTime * 23
+          ),
+        });
+      }
+    }
+  });
 
   return (
     <>
       <LightingRig />
       <CameraRig />
 
-      <PerspectiveCamera makeDefault position={[0, 0, 3]} />
-
-      <PaperFrame
-        position={[framePosition.x, framePosition.y, framePosition.z]}
-        scale={frameScale}
-        rotation={[0, 0, rotate ? 0 : -fourtyFiveDegrees]}
+      <PerspectiveCamera
+        makeDefault
+        position={[0, 0, 3]}
+        rotation={[0, 0, 0]}
       />
-      <group
-        position={[dataPosition.x, dataPosition.y, dataPosition.z]}
-        scale={dataScale}
-        rotation={[0, 0, rotate ? -fourtyFiveDegrees : 0]}
+      <AccumulativeShadows
+        temporal
+        frames={200}
+        color="purple"
+        colorBlend={0.5}
+        opacity={1}
+        scale={10}
+        alphaTest={0.85}
       >
-        {frameLayers.map((layer, index) =>
-          Layer({
-            layer: index,
-            squares: layer,
-            depth: -(index * settings.paperDepth),
-            settings,
-          })
-        )}
+        <RandomizedLight
+          amount={8}
+          radius={5}
+          ambient={0.5}
+          position={[5, 3, 2]}
+          bias={0.001}
+        />
+      </AccumulativeShadows>
+      <Environment preset="city" background blur={1} />
+
+      <group ref={groupRef}>
+        <PaperFrame
+          visible={frameVisible}
+          position={[framePosition.x, framePosition.y, framePosition.z]}
+          scale={frameScale}
+          rotation={[0, 0, rotate ? 0 : -fourtyFiveDegrees]}
+        />
+        <group
+          castShadow
+          receiveShadow
+          position={[dataPosition.x, dataPosition.y, dataPosition.z]}
+          scale={dataScale}
+          rotation={[0, 0, rotate ? -fourtyFiveDegrees : 0]}
+        >
+          {frameLayers.map((layer, index) =>
+            Layer({
+              layer: index,
+              squares: layer,
+              depth: -(index * settings.paperDepth * depthBuffer),
+              settings,
+            })
+          )}
+        </group>
       </group>
     </>
   );

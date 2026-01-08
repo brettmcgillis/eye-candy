@@ -6,32 +6,46 @@ class PixelMaskEffectImpl extends Effect {
     super(
       'PixelMaskEffect',
       `
-      uniform sampler2D maskTex;
-      uniform sampler2D maskDepthTex;
-      uniform float pixelSize;
-      uniform vec2 resolution;
+        uniform sampler2D maskTex;
+        uniform sampler2D maskDepthTex;
+        uniform float pixelSize;
+        uniform vec2 resolution;
+        uniform float depthBias;
 
-      void mainImage(const in vec4 inputColor, const in vec2 uv, out vec4 outputColor) {
+        void mainImage(const in vec4 inputColor, const in vec2 uv, out vec4 outputColor) {
 
-        float mask = texture(maskTex, uv).r;
         float sceneDepth = texture(depthBuffer, uv).r;
-        float maskDepth = texture(maskDepthTex, uv).r;
+        float maskDepth  = texture(maskDepthTex, uv).r;
+
+        float px = 1.0 / resolution.x;
+        float py = 1.0 / resolution.y;
+
+        float mask = 0.0;
+        mask += texture(maskTex, uv + vec2( px, 0)).r;
+        mask += texture(maskTex, uv + vec2(-px, 0)).r;
+        mask += texture(maskTex, uv + vec2(0,  py)).r;
+        mask += texture(maskTex, uv + vec2(0, -py)).r;
+        mask *= 0.25;
+
+        bool depthPass = sceneDepth > maskDepth + depthBias;
+        bool stable = abs(sceneDepth - maskDepth) > 0.0012;
 
         vec4 color = inputColor;
 
-        if (mask > 0.01 && sceneDepth > maskDepth + 0.0005) {
-          vec2 grid = pixelSize / resolution;
-          vec2 pUv = floor(uv / grid) * grid;
-          color = texture(inputBuffer, pUv);
+        if (mask > 0.02 && depthPass && stable) {
+            vec2 grid = pixelSize / resolution;
+            vec2 pUv = floor(uv / grid) * grid;
+            color = texture(inputBuffer, pUv);
         }
 
         outputColor = color;
-      }
+        }
       `,
       {
         uniforms: new Map([
           ['maskTex', new THREE.Uniform(null)],
           ['maskDepthTex', new THREE.Uniform(null)],
+          ['depthBias', new THREE.Uniform(0.005)],
           ['pixelSize', new THREE.Uniform(pixelSize)],
           ['resolution', new THREE.Uniform(new THREE.Vector2())],
         ]),
@@ -50,7 +64,7 @@ class PixelMaskEffectImpl extends Effect {
     });
 
     this.maskTarget.depthTexture = new THREE.DepthTexture();
-    this.maskTarget.depthTexture.type = THREE.UnsignedShortType;
+    this.maskTarget.depthTexture.type = THREE.UnsignedInt248Type;
   }
 
   update(renderer) {

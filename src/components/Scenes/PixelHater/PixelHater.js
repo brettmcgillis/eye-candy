@@ -15,29 +15,28 @@ import PixelMaskEffect from './composed/PixelMaskEffectComponent';
 export default function PixelHater() {
   const { pixelSize, planeHeight, planeWidth } = useControls('👾', {
     pixelSize: { value: 8, min: 1, max: 32, step: 1 },
-    planeHeight: { value: 10, min: 1, max: 50, step: 1 },
-    planeWidth: { value: 10, min: 1, max: 50, step: 1 },
+    planeHeight: { value: 1, min: 1, max: 50, step: 1 },
+    planeWidth: { value: 5, min: 1, max: 50, step: 1 },
   });
   return (
     <>
       <LightingRig />
       <OrbitControls enableDamping enablePan enableRotate enableZoom />
 
-      <Environment
-        preset="studio"
-        background
-        blur={0.25}
-        rotation={[0, 0, 0]}
-      />
+      <Environment preset="studio" background blur={0.25} />
 
       <Record scale={10} position={[0, 0, -1]} rotation={[0, 0, 0]} />
+
+      <mesh>
+        <sphereGeometry args={[0.25, 32, 32]} />
+        <meshBasicMaterial color="hotpink" />
+      </mesh>
 
       <EffectComposer multisampling={0}>
         <PixelMaskEffect pixelSize={pixelSize}>
           <PixelMask>
             <mesh position={[0, 0, 0]}>
               <planeGeometry args={[planeWidth, planeHeight]} />
-              {/* <torusKnotGeometry args={[0.7, 0.2, 128, 32]} /> */}
               <meshBasicMaterial />
             </mesh>
           </PixelMask>

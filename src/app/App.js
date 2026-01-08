@@ -7,7 +7,8 @@ import Loader from 'app/scaffold/loader/Loader';
 // import DumpsterFire from 'components/scenes/DumpsterFire/DumpsterFire';
 // import FoldedFrame from 'components/scenes/FoldedFrame/FoldedFrame';
 // import LoGlow from 'components/scenes/Loglow';
-import NewScene from 'components/scenes/NewScene';
+// import NewScene from 'components/scenes/NewScene';
+import PixelHater from 'components/scenes/PixelHater/PixelHater';
 
 // import PaperStack from 'components/scenes/paperstack/PaperStack';
 import './App.css';
@@ -15,13 +16,17 @@ import './App.css';
 function App() {
   return (
     <div className="App">
-      <Canvas shadows gl={{ preserveDrawingBuffer: true }}>
+      <Canvas
+        shadows
+        gl={{ preserveDrawingBuffer: true, depth: true, debug: true }}
+      >
         <Suspense fallback={<Loader />}>
           {/* <FoldedFrame /> */}
           {/* <LoGlow /> */}
-          <NewScene />
+          {/* <NewScene /> */}
           {/* <PaperStack /> */}
           {/* <DumpsterFire /> */}
+          <PixelHater />
         </Suspense>
       </Canvas>
     </div>

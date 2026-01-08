@@ -3,7 +3,14 @@
     "browser": true,
     "es2021": true
   },
-  "extends": ["eslint:recommended", "airbnb", "prettier"],
+  "extends": [
+    "eslint:recommended",
+    "airbnb",
+    "prettier",
+    "plugin:import/errors",
+    "plugin:import/warnings",
+    "plugin:import/recommended"
+  ],
   "parserOptions": {
     "ecmaFeatures": {
       "jsx": true
@@ -18,6 +25,7 @@
     "react/prop-types": "off",
     "react/no-unknown-property": "off",
     "react/jsx-props-no-spreading": "off",
+    "import/no-unresolved": "error",
     "react/jsx-filename-extension": [
       1,
       {
@@ -27,11 +35,16 @@
     "no-relative-import-paths/no-relative-import-paths": [
       "warn",
       { "allowSameFolder": true, "rootDir": "src" }
-    ]
+    ],
+    "import/named": "error",
+    "import/default": "error",
+    "import/no-named-as-default": "error",
+    "import/no-named-as-default-member": "error"
   },
   "settings": {
     "import/resolver": {
       "node": {
+        "extensions": [".js", ".jsx"],
         "moduleDirectory": ["node_modules", "src"]
       }
     }

@@ -27,7 +27,7 @@ export default function PixelHater() {
 
       <Record scale={10} position={[0, 0, -1]} rotation={[0, 0, 0]} />
 
-      <mesh>
+      <mesh position={[0, 0, 1]}>
         <sphereGeometry args={[0.25, 32, 32]} />
         <meshBasicMaterial color="hotpink" />
       </mesh>

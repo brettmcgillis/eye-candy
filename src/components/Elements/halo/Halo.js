@@ -1,3 +1,4 @@
+/* eslint-disable react/no-array-index-key */
 import React from 'react';
 import * as THREE from 'three';
 
@@ -26,12 +27,13 @@ function Ring({
 
 export default function Halo({ innerRadius, rings, ...props }) {
   let ir = innerRadius;
-  const halos = rings.map((ring) => {
+  const halos = rings.map((ring, index) => {
     const inner = ir;
     const outer = ir + ring.width;
     ir = outer;
     return (
       <Ring
+        key={`ring-${index}`}
         innerRadius={inner}
         outerRadius={outer}
         color={ring.color}

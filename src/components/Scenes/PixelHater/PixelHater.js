@@ -18,6 +18,7 @@ export default function PixelHater() {
     planeHeight: { value: 1, min: 1, max: 50, step: 1 },
     planeWidth: { value: 5, min: 1, max: 50, step: 1 },
   });
+
   return (
     <>
       <LightingRig />
@@ -32,7 +33,7 @@ export default function PixelHater() {
         <meshBasicMaterial color="hotpink" />
       </mesh>
 
-      <EffectComposer multisampling={0}>
+      <EffectComposer multisampling={0} enableNormalPass>
         <PixelMaskEffect pixelSize={pixelSize}>
           <PixelMask>
             <mesh position={[0, 0, 0]}>

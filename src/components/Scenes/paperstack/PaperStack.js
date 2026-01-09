@@ -1,3 +1,5 @@
+/* eslint-disable react/no-array-index-key */
+
 /* eslint-disable no-unused-vars */
 import { folder, useControls } from 'leva';
 import React, { useMemo, useRef } from 'react';
@@ -102,6 +104,7 @@ function Stack() {
     () => new THREE.BoxGeometry(layerWidth, layerHeight, layerDepth),
     [layerWidth, layerHeight, layerDepth]
   );
+
   const windowBox = useMemo(
     () =>
       new THREE.BoxGeometry(
@@ -111,6 +114,7 @@ function Stack() {
       ),
     [windowSize, windowDepth, layerDepth, layerDepthBuffer]
   );
+
   const windowSplit = useMemo(
     () =>
       new THREE.BoxGeometry(windowSize, windowSize * splitWidth, windowSize),
@@ -126,6 +130,7 @@ function Stack() {
 
         {layers.slice(1).map((color, index) => (
           <Addition
+            key={`layer-${index}`}
             position={[0, 0, -(index + 1) * (layerDepth + layerDepthBuffer)]}
             geometry={paper}
           >
@@ -148,6 +153,7 @@ function Stack() {
 
               return (
                 <Addition
+                  key={`sublayer-${index}`}
                   geometry={windowBox}
                   position={[0, 0, windowPosition.z - zDepth]}
                   scale={[xyScale, xyScale, 1]}

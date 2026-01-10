@@ -23,8 +23,10 @@ function Overlay() {
       <Leva
         collapsed={!local}
         hidden={!showLeva}
+        oneLineLabels
         titleBar={{
           title: '💣🔥💥',
+          filter: true,
         }}
       />
       <div className="Overlay">

@@ -1,6 +1,7 @@
 import { useControls } from 'leva';
 import React, { Suspense } from 'react';
 
+import { Html } from '@react-three/drei';
 import { Canvas } from '@react-three/fiber';
 
 import Loader from 'app/scaffold/loader/Loader';
@@ -37,6 +38,11 @@ function App() {
         gl={{ preserveDrawingBuffer: true, depth: true, debug: true }}
       >
         <Suspense fallback={<Loader />}>
+          {scene === 'None' && (
+            <Html>
+              <p>💀</p>
+            </Html>
+          )}
           {scene === 'PixelHater' && <PixelHater />}
           {scene === 'DumpsterFire' && <DumpsterFire />}
           {scene === 'FoldedFrame' && <FoldedFrame />}

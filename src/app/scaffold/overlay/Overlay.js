@@ -20,7 +20,13 @@ function Overlay() {
 
   return (
     <>
-      <Leva collapsed={!local} hidden={!showLeva} />
+      <Leva
+        collapsed={!local}
+        hidden={!showLeva}
+        titleBar={{
+          title: '💣🔥💥',
+        }}
+      />
       <div className="Overlay">
         <div className="Top-Left">
           <span className="Debug" onClick={handleDebug}>

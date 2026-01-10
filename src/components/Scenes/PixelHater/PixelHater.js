@@ -30,14 +30,19 @@ export default function PixelHater() {
 
       <mesh position={[0, 0, 1]}>
         <sphereGeometry args={[0.25, 32, 32]} />
-        <meshBasicMaterial color="hotpink" />
+        <meshPhysicalMaterial color="hotpink" />
       </mesh>
 
       <EffectComposer multisampling={0} enableNormalPass>
         <PixelMaskEffect pixelSize={pixelSize}>
           <PixelMask>
-            <mesh position={[0, 0, 0]}>
-              <planeGeometry args={[planeWidth, planeHeight]} />
+            <mesh position={[0.5, 0.5, 0]}>
+              <planeGeometry args={[1, 1]} />
+              <meshBasicMaterial />
+            </mesh>
+
+            <mesh position={[-0.5, -0.5, 0]}>
+              <planeGeometry args={[1, 1]} />
               <meshBasicMaterial />
             </mesh>
           </PixelMask>

@@ -18,6 +18,7 @@ function App() {
   const { scene } = useControls('Scene Selection', {
     scene: {
       options: {
+        None: 'None',
         PixelHater: 'PixelHater',
         DumpsterFire: 'DumpsterFire',
         FoldedFrame: 'FoldedFrame',
@@ -25,7 +26,7 @@ function App() {
         NewScene: 'NewScene',
         PaperStack: 'PaperStack',
       },
-      value: null,
+      value: 'None',
     },
   });
 

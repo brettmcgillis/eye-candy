@@ -1,5 +1,6 @@
+/* eslint-disable react/no-array-index-key */
 import { useControls } from 'leva';
-import { React, useRef, useState } from 'react';
+import React, { useRef, useState } from 'react';
 
 import {
   AccumulativeShadows,
@@ -48,9 +49,15 @@ function Square({ size, position, color, settings }) {
 function Layer({ layer, squares, depth, settings }) {
   return (
     <group castShadow receiveShadow position={[0, 0, depth]}>
-      {squares.map((square, index) =>
-        Square({ index, layer, ...square, settings })
-      )}
+      {squares.map((square, index) => (
+        <Square
+          key={`sq-${index}`}
+          index={index}
+          layer={layer}
+          {...square}
+          settings={settings}
+        />
+      ))}
     </group>
   );
 }
@@ -194,14 +201,15 @@ function FoldedFrame() {
           scale={dataScale}
           rotation={[0, 0, rotate ? -fourtyFiveDegrees : 0]}
         >
-          {frameLayers.map((layer, index) =>
-            Layer({
-              layer: index,
-              squares: layer,
-              depth: -(index * settings.paperDepth * depthBuffer),
-              settings,
-            })
-          )}
+          {frameLayers.map((layer, index) => (
+            <Layer
+              key={`layer-${index}`}
+              layer={index}
+              squares={layer}
+              depth={-(index * settings.paperDepth * depthBuffer)}
+              settings={settings}
+            />
+          ))}
         </group>
       </group>
     </>

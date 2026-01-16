@@ -57,7 +57,7 @@ function Overlay() {
           oneLineLabels
           theme={levaTheme}
           fill
-          titleBar={{ title: '💣🔥💥', filter: true }}
+          titleBar={{ title: '💣🔥💥', filter: true, drag: false }}
         />
       </div>
 

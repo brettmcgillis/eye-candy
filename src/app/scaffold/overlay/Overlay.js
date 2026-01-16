@@ -3,12 +3,42 @@ import React, { useState } from 'react';
 
 import './Overlay.css';
 
+const levaTheme = {
+  colors: {
+    elevation1: 'var(--overlay-bg)',
+    elevation2: 'var(--overlay-bg-2)',
+    elevation3: 'var(--overlay-bg)',
+    highlight1: '#000',
+    highlight2: '#000',
+    highlight3: '#ffffff',
+    accent1: '#000',
+    accent2: '#000',
+    accent3: '#000',
+    folderWidgetColor: '#000',
+  },
+  radii: {
+    xs: '6px',
+    sm: '10px',
+    lg: '2em',
+  },
+  shadows: {
+    level1: 'none',
+    // level1: 'var(--overlay-shadow)',
+    // level2: 'var(--overlay-shadow)',
+  },
+  fonts: {
+    mono: 'inherit',
+    sans: 'inherit',
+  },
+};
+
 function isLocalHost() {
   return ['localhost', '127.0.0.1', '[::1]'].includes(window.location.hostname);
 }
 
 function Overlay() {
   const date = new Date();
+  const dateString = `${date.getDate()} | ${date.getMonth() + 1} | ${date.getFullYear()}`;
 
   const local = isLocalHost();
 
@@ -19,29 +49,29 @@ function Overlay() {
   };
 
   return (
-    <>
-      <Leva
-        collapsed={!local}
-        hidden={!showLeva}
-        oneLineLabels
-        titleBar={{
-          title: '💣🔥💥',
-          filter: true,
-        }}
-      />
-      <div className="Overlay">
-        <div className="Top-Left">
-          <span className="Debug" onClick={handleDebug}>
-            🔥&nbsp;
-          </span>
-          — 💀
-        </div>
-        <div className="Bottom-Left">Brett McGillis</div>
-        <div className="Bottom-Right">
-          {`${date.getDate()} | ${date.getMonth() + 1} | ${date.getFullYear()}`}
-        </div>
+    <div className="Overlay">
+      <div className="Top-Right overlay-panel">
+        <Leva
+          collapsed={!local}
+          hidden={!showLeva}
+          oneLineLabels
+          theme={levaTheme}
+          fill
+          titleBar={{ title: '💣🔥💥', filter: true }}
+        />
       </div>
-    </>
+
+      <div className="Top-Left overlay-panel">
+        <span className="Debug" onClick={handleDebug}>
+          🔥{' '}
+        </span>
+        — 💀
+      </div>
+
+      <div className="Bottom-Left overlay-panel">Brett McGillis</div>
+
+      <div className="Bottom-Right overlay-panel">{dateString}</div>
+    </div>
   );
 }
 

@@ -1,0 +1,12 @@
+:root {
+  --overlay-inset: 5em;
+  --overlay-inset-mobile: 2em;
+
+  --overlay-bg: #ffffff;
+  --overlay-bg-2: #dedede;
+  --overlay-fg: #000000;
+  --overlay-radius: 2em;
+  --overlay-shadow: 0px 0px 20px 1px #888888;
+
+  --overlay-font-size: 14px;
+}

@@ -12,6 +12,7 @@ export default function useMediaPipeHands({
   width = 1280,
   height = 720,
   showVideo = false,
+  videoPosition = 'bottom-center',
   videoStyle = {},
 } = {}) {
   const videoRef = useRef(null);
@@ -28,19 +29,18 @@ export default function useMediaPipeHands({
     let active = true;
 
     const video = document.createElement('video');
+    video.className = videoPosition ?? 'bottom-center';
     video.playsInline = true;
     video.autoplay = true;
     video.muted = true;
 
     Object.assign(video.style, {
       position: 'fixed',
-      bottom: '12px',
-      right: '12px',
       width: '240px',
       transform: 'scaleX(-1)',
       zIndex: 9999,
-      borderRadius: '12px',
-      boxShadow: '0 10px 30px rgba(0,0,0,0.35)',
+      borderRadius: 'var(--overlay-radius)',
+      boxShadow: 'var(--overlay-shadow)',
       display: showVideo ? 'block' : 'none',
       ...videoStyle,
     });

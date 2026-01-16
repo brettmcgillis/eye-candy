@@ -1,0 +1,96 @@
+/* -------------------------------- */
+/* Overlay root                     */
+/* -------------------------------- */
+
+.overlay {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+}
+
+/* -------------------------------- */
+/* Overlay surface (panels)         */
+/* -------------------------------- */
+
+.overlay-panel {
+  background: var(--overlay-bg);
+  color: var(--overlay-fg);
+  padding: 1em;
+  border-radius: var(--overlay-radius);
+  box-shadow: var(--overlay-shadow);
+  font-size: var(--overlay-font-size);
+  pointer-events: auto;
+  user-select: none;
+}
+
+/* -------------------------------- */
+/* Overlay positions                */
+/* -------------------------------- */
+
+.top-left,
+.top-center,
+.top-right,
+.right-center,
+.bottom-right,
+.bottom-center,
+.bottom-left,
+.left-center {
+  position: absolute;
+}
+
+/* corners */
+
+.top-left {
+  top: var(--overlay-inset);
+  left: var(--overlay-inset);
+}
+
+.top-right {
+  top: var(--overlay-inset);
+  right: var(--overlay-inset);
+}
+
+.bottom-left {
+  bottom: var(--overlay-inset);
+  left: var(--overlay-inset);
+}
+
+.bottom-right {
+  bottom: var(--overlay-inset);
+  right: var(--overlay-inset);
+}
+
+/* edge centers */
+
+.top-center {
+  top: var(--overlay-inset);
+  left: 50%;
+  translate: -50% 0;
+}
+
+.bottom-center {
+  bottom: var(--overlay-inset);
+  left: 50%;
+  translate: -50% 0;
+}
+
+.left-center {
+  left: var(--overlay-inset);
+  top: 50%;
+  translate: 0 -50%;
+}
+
+.right-center {
+  right: var(--overlay-inset);
+  top: 50%;
+  translate: 0 -50%;
+}
+/* -------------------------------- */
+/* Responsive spacing               */
+/* -------------------------------- */
+
+@media (max-width: 600px) {
+  :root {
+    --overlay-inset: var(--overlay-inset-mobile);
+  }
+}

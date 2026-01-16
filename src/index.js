@@ -6,6 +6,7 @@ import Overlay from 'app/scaffold/overlay/Overlay';
 
 import './index.css';
 import reportWebVitals from './reportWebVitals';
+import './styles/global.css';
 import './styles/tokens.css';
 
 const root = ReactDOM.createRoot(document.getElementById('root'));

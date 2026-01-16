@@ -49,8 +49,8 @@ function Overlay() {
   };
 
   return (
-    <div className="Overlay">
-      <div className="Top-Right overlay-panel">
+    <div className="overlay">
+      <div className="top-right overlay-panel">
         <Leva
           collapsed={!local}
           hidden={!showLeva}
@@ -61,16 +61,16 @@ function Overlay() {
         />
       </div>
 
-      <div className="Top-Left overlay-panel">
-        <span className="Debug" onClick={handleDebug}>
+      <div className="top-left overlay-panel">
+        <span className="debug" onClick={handleDebug}>
           🔥{' '}
         </span>
         — 💀
       </div>
 
-      <div className="Bottom-Left overlay-panel">Brett McGillis</div>
+      <div className="bottom-left overlay-panel">Brett McGillis</div>
 
-      <div className="Bottom-Right overlay-panel">{dateString}</div>
+      <div className="bottom-right overlay-panel">{dateString}</div>
     </div>
   );
 }

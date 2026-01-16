@@ -8,6 +8,7 @@ import Loader from 'app/scaffold/loader/Loader';
 
 import DumpsterFire from 'components/scenes/DumpsterFire/DumpsterFire';
 import FoldedFrame from 'components/scenes/FoldedFrame/FoldedFrame';
+import HandStuff from 'components/scenes/HandStuff/HandStuff';
 import LoGlow from 'components/scenes/Loglow';
 import NewScene from 'components/scenes/NewScene';
 import PaperStack from 'components/scenes/PaperStack/PaperStack';
@@ -26,6 +27,7 @@ function App() {
         LoGlow: 'LoGlow',
         NewScene: 'NewScene',
         PaperStack: 'PaperStack',
+        HandStuff: 'HandStuff',
       },
       value: 'None',
     },
@@ -49,6 +51,7 @@ function App() {
           {scene === 'LoGlow' && <LoGlow />}
           {scene === 'NewScene' && <NewScene />}
           {scene === 'PaperStack' && <PaperStack />}
+          {scene === 'HandStuff' && <HandStuff />}
         </Suspense>
       </Canvas>
     </div>

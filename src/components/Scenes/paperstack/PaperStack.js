@@ -1,6 +1,7 @@
 /* eslint-disable react/no-array-index-key */
 
 /* eslint-disable no-unused-vars */
+// eslint-disable-next-line unused-imports/no-unused-imports
 import { folder, useControls } from 'leva';
 import React, { useMemo, useRef } from 'react';
 import * as THREE from 'three';
@@ -8,7 +9,6 @@ import { degToRad } from 'three/src/math/MathUtils';
 
 import { Addition, Base, Geometry, Subtraction } from '@react-three/csg';
 import { MeshTransmissionMaterial } from '@react-three/drei';
-import { useFrame } from '@react-three/fiber';
 
 import CameraRig from 'components/rigging/CameraRig';
 import LightingRig from 'components/rigging/LightingRig';

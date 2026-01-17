@@ -21,6 +21,8 @@
   font-size: var(--overlay-font-size);
   pointer-events: auto;
   user-select: none;
+  max-height: 50%;
+  overflow: auto;
 }
 
 /* -------------------------------- */

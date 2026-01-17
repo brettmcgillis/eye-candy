@@ -50,7 +50,13 @@ function Overlay() {
 
   return (
     <div className="overlay">
-      <div className="top-right overlay-panel">
+      <div
+        className={
+          showLeva
+            ? 'top-right overlay-panel'
+            : 'top-right overlay-panel hidden'
+        }
+      >
         <Leva
           collapsed={!local}
           hidden={!showLeva}

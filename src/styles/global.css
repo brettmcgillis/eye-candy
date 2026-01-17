@@ -94,3 +94,7 @@
     --overlay-inset: var(--overlay-inset-mobile);
   }
 }
+
+.hidden {
+  display: none;
+}

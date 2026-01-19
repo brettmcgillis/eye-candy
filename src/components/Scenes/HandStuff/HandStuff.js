@@ -1,12 +1,7 @@
 import { button, useControls } from 'leva';
 import React, { useRef } from 'react';
 
-import {
-  Environment,
-  Grid,
-  OrbitControls,
-  PerspectiveCamera,
-} from '@react-three/drei';
+import { Grid, OrbitControls, PerspectiveCamera } from '@react-three/drei';
 import { useFrame } from '@react-three/fiber';
 
 import Reversal from 'components/elements/reversal/Reversal';
@@ -158,34 +153,27 @@ export default function HandStuff() {
 
   return (
     <>
-      <Environment preset="sunset" />
       <PerspectiveCamera makeDefault position={[-5, 2, 4]} fov={50} />
-
-      <ambientLight intensity={0.5} />
+      <ambientLight intensity={1} />
       <color attach="background" args={['#5b5b5b']} />
-
       <OrbitControls />
       <Grid args={[10, 10]} />
       <Reversal />
-
       {/* primary hand */}
       <mesh ref={probe} position={[0, 0, 1]} visible={mp.maxHands === 1}>
         <sphereGeometry args={[0.15, 32, 32]} />
         <meshPhysicalMaterial color={poseColor(gestureState?.primaryPose)} />
       </mesh>
-
       {/* left hand */}
       <mesh ref={leftProbe} position={[-1, 0, 1]} visible={mp.maxHands === 2}>
         <sphereGeometry args={[0.15, 32, 32]} />
         <meshPhysicalMaterial color={poseColor(gestureState?.leftPose)} />
       </mesh>
-
       {/* right hand */}
       <mesh ref={rightProbe} position={[1, 0, 1]} visible={mp.maxHands === 2}>
         <sphereGeometry args={[0.15, 32, 32]} />
         <meshPhysicalMaterial color={poseColor(gestureState?.rightPose)} />
       </mesh>
-
       {/* landmark debug */}
       {debug.showLandmarks && hands && (
         <HandLandmarksDebug hands={hands.hands} scale={mapping} />

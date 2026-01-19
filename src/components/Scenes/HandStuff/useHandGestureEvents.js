@@ -8,37 +8,54 @@ function dist2D(a, b) {
   return Math.hypot(a.x - b.x, a.y - b.y);
 }
 
-function isExtended(lm, tipIndex, pipIndex) {
-  const tip = lm[tipIndex];
-  const pip = lm[pipIndex];
-  const wrist = lm[0];
-
-  return dist2D(tip, wrist) > dist2D(pip, wrist);
+function isExtended(lm, tip, pip) {
+  const t = lm[tip];
+  const p = lm[pip];
+  const w = lm[0];
+  return dist2D(t, w) > dist2D(p, w);
 }
 
 /* ---------------------------------------------
- Pose classification
+ Finger pinches (low-level)
 ----------------------------------------------*/
 
-function detectPose(landmarks, { pinchDist = 0.05 } = {}) {
-  if (!landmarks) return 'IDLE';
+function detectFingerPinches(lm, threshold = 0.045) {
+  if (!lm) return null;
 
-  const thumbTip = landmarks[4];
-  const indexTip = landmarks[8];
+  const thumb = lm[4];
 
-  const indexExt = isExtended(landmarks, 8, 6);
-  const middleExt = isExtended(landmarks, 12, 10);
-  const ringExt = isExtended(landmarks, 16, 14);
-  const pinkyExt = isExtended(landmarks, 20, 18);
+  return {
+    index: dist2D(thumb, lm[8]) < threshold,
+    middle: dist2D(thumb, lm[12]) < threshold,
+    ring: dist2D(thumb, lm[16]) < threshold,
+    pinky: dist2D(thumb, lm[20]) < threshold,
+  };
+}
 
-  const pinch = dist2D(thumbTip, indexTip) < pinchDist;
+/* ---------------------------------------------
+ Pose classification (high-level)
+----------------------------------------------*/
 
-  /* ---------- high confidence gestures first ---------- */
+function detectPose(lm, { pinchDist = 0.05 } = {}) {
+  if (!lm) return 'IDLE';
+
+  const thumb = lm[4];
+  const index = lm[8];
+
+  const indexExt = isExtended(lm, 8, 6);
+  const middleExt = isExtended(lm, 12, 10);
+  const ringExt = isExtended(lm, 16, 14);
+  const pinkyExt = isExtended(lm, 20, 18);
+
+  const pinch = dist2D(thumb, index) < pinchDist;
+
+  /* ---------- priority ordering ---------- */
 
   if (pinch) return 'PINCH';
 
-  // 🖕 THE BIRD
   if (!indexExt && middleExt && !ringExt && !pinkyExt) return 'THE_BIRD';
+
+  if (indexExt && !middleExt && !ringExt && pinkyExt) return 'THE_HORNS';
 
   if (indexExt && middleExt && ringExt && pinkyExt) return 'PALM_OPEN';
 
@@ -59,6 +76,8 @@ export default function useHandGestureEvents(
   handState,
   {
     pinchDist = 0.05,
+    fingerPinchDist = 0.045,
+
     swipeThreshold = 0.12,
     swipeCooldownMs = 900,
 
@@ -69,6 +88,11 @@ export default function useHandGestureEvents(
     onGestureStart,
     onGestureEnd,
 
+    onLeftFingerPinchStart,
+    onLeftFingerPinchEnd,
+    onRightFingerPinchStart,
+    onRightFingerPinchEnd,
+
     onSwipeLeft,
     onSwipeRight,
   } = {}
@@ -77,6 +101,8 @@ export default function useHandGestureEvents(
     leftGesture: 'IDLE',
     rightGesture: 'IDLE',
     primaryGesture: 'IDLE',
+    leftPinches: {},
+    rightPinches: {},
   });
 
   const prevHandPos = useRef(null);
@@ -89,27 +115,34 @@ export default function useHandGestureEvents(
   const gestureState = useMemo(() => {
     if (!handState?.hands?.length) return null;
 
-    const leftPose = handState.left
-      ? detectPose(handState.left.rawLandmarks, { pinchDist })
-      : 'IDLE';
+    const build = (hand) => {
+      if (!hand) return null;
 
-    const rightPose = handState.right
-      ? detectPose(handState.right.rawLandmarks, { pinchDist })
-      : 'IDLE';
+      const lm = hand.rawLandmarks;
 
-    const primaryPose = handState.primary
-      ? detectPose(handState.primary.rawLandmarks, { pinchDist })
-      : 'IDLE';
+      return {
+        pose: detectPose(lm, { pinchDist }),
+        pinches: detectFingerPinches(lm, fingerPinchDist),
+      };
+    };
+
+    const left = build(handState.left);
+    const right = build(handState.right);
+    const primary = build(handState.primary);
 
     return {
-      left: leftPose,
-      right: rightPose,
-      primary: primaryPose,
+      left,
+      right,
+      primary,
+
+      leftPose: left?.pose ?? 'IDLE',
+      rightPose: right?.pose ?? 'IDLE',
+      primaryPose: primary?.pose ?? 'IDLE',
     };
-  }, [handState, pinchDist]);
+  }, [handState, pinchDist, fingerPinchDist]);
 
   /* ---------------------------------------------
-   Edge events
+   Pose edge events
   ----------------------------------------------*/
 
   useEffect(() => {
@@ -127,19 +160,63 @@ export default function useHandGestureEvents(
 
     edge(
       'leftGesture',
-      gestureState.left,
+      gestureState.leftPose,
       onLeftGestureStart,
       onLeftGestureEnd
     );
 
     edge(
       'rightGesture',
-      gestureState.right,
+      gestureState.rightPose,
       onRightGestureStart,
       onRightGestureEnd
     );
 
-    edge('primaryGesture', gestureState.primary, onGestureStart, onGestureEnd);
+    edge(
+      'primaryGesture',
+      gestureState.primaryPose,
+      onGestureStart,
+      onGestureEnd
+    );
+  }, [gestureState, handState]);
+
+  /* ---------------------------------------------
+   Finger pinch edge events
+  ----------------------------------------------*/
+
+  useEffect(() => {
+    if (!gestureState) return;
+
+    function detectPinches(handKey, current, onStart, onEnd) {
+      const prevMap = prev.current[handKey] || {};
+      if (!current) return;
+
+      ['index', 'middle', 'ring', 'pinky'].forEach((finger) => {
+        const now = current[finger];
+        const was = prevMap[finger] ?? false;
+
+        if (!was && now && onStart) onStart(finger, handState);
+        if (was && !now && onEnd) onEnd(finger, handState);
+
+        prevMap[finger] = now;
+      });
+
+      prev.current[handKey] = prevMap;
+    }
+
+    detectPinches(
+      'leftPinches',
+      gestureState.left?.pinches,
+      onLeftFingerPinchStart,
+      onLeftFingerPinchEnd
+    );
+
+    detectPinches(
+      'rightPinches',
+      gestureState.right?.pinches,
+      onRightFingerPinchStart,
+      onRightFingerPinchEnd
+    );
   }, [gestureState, handState]);
 
   /* ---------------------------------------------
@@ -152,14 +229,15 @@ export default function useHandGestureEvents(
     const now = Date.now();
 
     const activeHand = handState.right || handState.left;
-    const activePose = handState.right ? gestureState.right : gestureState.left;
+    const activePose = handState.right
+      ? gestureState.rightPose
+      : gestureState.leftPose;
 
     if (!activeHand || activePose !== 'PALM_OPEN') {
       prevHandPos.current = null;
       return;
     }
 
-    // middle MCP
     const p = activeHand.rawLandmarks[9];
     const curr = { x: p.x, y: p.y };
 
@@ -187,14 +265,23 @@ export default function useHandGestureEvents(
   return {
     ...gestureState,
 
-    isLeftPinching: gestureState?.left === 'PINCH',
-    isRightPinching: gestureState?.right === 'PINCH',
-    isGrabbing: gestureState?.left === 'GRAB' || gestureState?.right === 'GRAB',
+    left: gestureState?.left,
+    right: gestureState?.right,
+    primary: gestureState?.primary,
 
     isPalmOpen:
-      gestureState?.left === 'PALM_OPEN' || gestureState?.right === 'PALM_OPEN',
+      gestureState?.leftPose === 'PALM_OPEN' ||
+      gestureState?.rightPose === 'PALM_OPEN',
+
+    isGrabbing:
+      gestureState?.leftPose === 'GRAB' || gestureState?.rightPose === 'GRAB',
 
     isBird:
-      gestureState?.left === 'THE_BIRD' || gestureState?.right === 'THE_BIRD',
+      gestureState?.leftPose === 'THE_BIRD' ||
+      gestureState?.rightPose === 'THE_BIRD',
+
+    isHorns:
+      gestureState?.leftPose === 'THE_HORNS' ||
+      gestureState?.rightPose === 'THE_HORNS',
   };
 }

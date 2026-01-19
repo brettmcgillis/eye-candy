@@ -74,6 +74,14 @@ export default function HandStuff() {
     onLeftGestureStart: (g) => console.log('✋ left start:', g),
     onRightGestureStart: (g) => console.log('🤚 right start:', g),
 
+    onLeftFingerPinchStart: (f) => {
+      console.log('LEFT PINCH:', f);
+    },
+
+    onRightFingerPinchStart: (f) => {
+      console.log('RIGHT PINCH:', f);
+    },
+
     onSwipeLeft: () => console.log('⬅️ swipe left'),
     onSwipeRight: () => console.log('➡️ swipe right'),
   });

@@ -10,6 +10,7 @@ import DumpsterFire from 'components/scenes/DumpsterFire/DumpsterFire';
 import FoldedFrame from 'components/scenes/FoldedFrame/FoldedFrame';
 import HandStuff from 'components/scenes/HandStuff/HandStuff';
 import LoGlow from 'components/scenes/Loglow';
+import NetworkTest from 'components/scenes/NetworkTest/NetworkTest';
 import NewScene from 'components/scenes/NewScene';
 import PaperStack from 'components/scenes/PaperStack/PaperStack';
 import PixelHater from 'components/scenes/PixelHater/PixelHater';
@@ -28,6 +29,7 @@ function App() {
         NewScene: 'NewScene',
         PaperStack: 'PaperStack',
         HandStuff: 'HandStuff',
+        NetworkTest: 'NetworkTest',
       },
       value: 'None',
     },
@@ -52,6 +54,7 @@ function App() {
           {scene === 'NewScene' && <NewScene />}
           {scene === 'PaperStack' && <PaperStack />}
           {scene === 'HandStuff' && <HandStuff />}
+          {scene === 'NetworkTest' && <NetworkTest />}
         </Suspense>
       </Canvas>
     </div>

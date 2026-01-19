@@ -1,192 +1,327 @@
 /* eslint-disable no-continue */
 
 /* eslint-disable no-plusplus */
-import React, { useEffect, useMemo, useRef } from 'react';
-import { AdditiveBlending, Vector3 } from 'three';
+import React, { useEffect, useRef } from 'react';
+import {
+  AdditiveBlending,
+  BufferAttribute,
+  Color,
+  MultiplyBlending,
+  NormalBlending,
+  SubtractiveBlending,
+} from 'three';
 
 import { useFrame } from '@react-three/fiber';
 
-import CameraRig from 'components/rigging/CameraRig';
+/* ---------------------------------------------
+   Blending resolver (safe for Leva)
+----------------------------------------------*/
 
-export default function NeuralNetwork() {
+const BLENDING = {
+  normal: NormalBlending,
+  additive: AdditiveBlending,
+  multiply: MultiplyBlending,
+  subtractive: SubtractiveBlending,
+};
+
+export default function NeuralNetwork({
+  innerDiameter = 6,
+  outerDiameter = 18,
+  height = 0,
+
+  maxParticleCount = 1000,
+  particleCount = 500,
+
+  minConnections = 1,
+  maxConnections = 8,
+
+  minDistance = 0.8,
+  maxDistance = 2.4,
+
+  pointColor = '#ffffff',
+  lineColor = '#88ccff',
+  pointSize = 2.5,
+  lineWidth = 1,
+
+  /* ---------- visual controls ---------- */
+
+  pointBlending = 'normal',
+  lineBlending = 'normal',
+
+  pointsToneMapped = false,
+  linesToneMapped = false,
+
+  pointsTransparent = true,
+  linesTransparent = true,
+
+  pointsOpacity = 1,
+  linesOpacity = 1,
+
+  /* ---------- simulation speed ---------- */
+
+  timeScale = 1,
+  angularSpeed = 1,
+  radialSpeed = 1,
+  verticalSpeed = 1,
+  systemRotation = 1,
+}) {
   const groupRef = useRef();
   const particlesRef = useRef();
   const linesGeometryRef = useRef();
 
-  const maxParticleCount = 1000;
-  const particleCount = 500;
-  const r = 10;
-  const rHalf = r / 2;
-  const maxConnections = 20;
-  const minDistance = 2.5;
+  const particlesData = useRef([]);
 
-  let vertexpos = 0;
-  let colorpos = 0;
-  let numConnected = 0;
+  const particlePositions = useRef();
+  const linePositions = useRef();
+  const lineColors = useRef();
 
-  const segments = maxParticleCount * maxParticleCount;
-  const positions = useMemo(() => new Float32Array(segments * 3), [segments]);
-  const colors = useMemo(() => new Float32Array(segments * 3), [segments]);
+  const innerR = innerDiameter * 0.5;
+  const outerR = outerDiameter * 0.5;
 
-  const particlePositions = useMemo(
-    () => new Float32Array(maxParticleCount * 3),
-    [maxParticleCount]
-  );
-
-  const particlesData = useMemo(() => [], []);
-
-  const v = useMemo(() => new Vector3(), []);
+  /* ---------------------------------------------
+     HARD RESET
+  ----------------------------------------------*/
 
   useEffect(() => {
+    const maxSegments = maxParticleCount * maxParticleCount;
+
+    particlePositions.current = new Float32Array(maxParticleCount * 3);
+    linePositions.current = new Float32Array(maxSegments * 3);
+    lineColors.current = new Float32Array(maxSegments * 3);
+
+    particlesData.current = [];
+
     for (let i = 0; i < maxParticleCount; i++) {
-      const x = Math.random() * r - r / 2;
-      const y = Math.random() * r - r / 2;
-      const z = Math.random() * r - r / 2;
+      const t = Math.random() * Math.PI * 2;
+      const r = innerR + Math.random() * (outerR - innerR);
+      const y = (Math.random() - 0.5) * height;
 
-      particlePositions[i * 3] = x;
-      particlePositions[i * 3 + 1] = y;
-      particlePositions[i * 3 + 2] = z;
+      const speed =
+        (0.15 + Math.random() * 0.25) * (innerR / Math.max(r, 0.0001));
 
-      const vec = new Vector3(
-        -1 + Math.random() * 2,
-        -1 + Math.random() * 2,
-        -1 + Math.random() * 2
+      particlePositions.current.set(
+        [Math.cos(t) * r, y, Math.sin(t) * r],
+        i * 3
       );
-      particlesData.push({
-        velocity: vec.normalize().divideScalar(50),
+
+      particlesData.current.push({
+        theta: t,
+        radius: r,
+        y,
+        angularVelocity: speed * (Math.random() < 0.5 ? -1 : 1),
+        radialVelocity: (Math.random() - 0.5) * 0.002,
+        verticalPhase: Math.random() * Math.PI * 2,
+        verticalSpeed: 0.3 + Math.random() * 0.4,
         numConnections: 0,
       });
     }
 
-    particlesRef.current.setDrawRange(0, particleCount);
-  });
+    const pGeo = particlesRef.current;
+    const lGeo = linesGeometryRef.current;
+
+    pGeo.setAttribute(
+      'position',
+      new BufferAttribute(particlePositions.current, 3)
+    );
+
+    lGeo.setAttribute(
+      'position',
+      new BufferAttribute(linePositions.current, 3)
+    );
+
+    lGeo.setAttribute('color', new BufferAttribute(lineColors.current, 3));
+
+    pGeo.setDrawRange(0, particleCount);
+    lGeo.setDrawRange(0, 0);
+
+    pGeo.attributes.position.needsUpdate = true;
+    lGeo.attributes.position.needsUpdate = true;
+    lGeo.attributes.color.needsUpdate = true;
+  }, [maxParticleCount, innerDiameter, outerDiameter, height]);
+
+  /* ---------------------------------------------
+     Cheap update
+  ----------------------------------------------*/
+
+  useEffect(() => {
+    if (particlesRef.current)
+      particlesRef.current.setDrawRange(0, particleCount);
+  }, [particleCount]);
+
+  /* ---------------------------------------------
+     FRAME LOOP
+  ----------------------------------------------*/
 
   useFrame((_, delta) => {
-    vertexpos = 0;
-    colorpos = 0;
-    numConnected = 0;
+    if (!particlePositions.current) return;
 
-    for (let i = 0; i < particleCount; i++) particlesData[i].numConnections = 0;
+    const dt = delta * timeScale;
+
+    let vertexpos = 0;
+    let colorpos = 0;
+
+    const pos = particlePositions.current;
+    const data = particlesData.current;
+
+    /* -------- reset counts -------- */
+
+    for (let i = 0; i < particleCount; i++) data[i].numConnections = 0;
+
+    /* -------- integrate motion -------- */
 
     for (let i = 0; i < particleCount; i++) {
-      const particleData = particlesData[i];
+      const p = data[i];
 
-      v.set(
-        particlePositions[i * 3],
-        particlePositions[i * 3 + 1],
-        particlePositions[i * 3 + 2]
-      )
-        .add(particleData.velocity)
-        .setLength(10);
-      particlePositions[i * 3] = v.x;
-      particlePositions[i * 3 + 1] = v.y;
-      particlePositions[i * 3 + 2] = v.z;
+      p.theta += p.angularVelocity * dt * 2 * angularSpeed;
+      p.radius += p.radialVelocity * dt * 60 * radialSpeed;
 
-      if (
-        particlePositions[i * 3 + 1] < -rHalf ||
-        particlePositions[i * 3 + 1] > rHalf
-      )
-        particleData.velocity.y = -particleData.velocity.y;
+      if (p.radius < innerR) {
+        p.radius = innerR;
+        p.radialVelocity *= -1;
+      }
+      if (p.radius > outerR) {
+        p.radius = outerR;
+        p.radialVelocity *= -1;
+      }
 
-      if (particlePositions[i * 3] < -rHalf || particlePositions[i * 3] > rHalf)
-        particleData.velocity.x = -particleData.velocity.x;
+      p.verticalPhase += dt * p.verticalSpeed * verticalSpeed;
+      const y = p.y + Math.sin(p.verticalPhase) * height * 0.15;
 
-      if (
-        particlePositions[i * 3 + 2] < -rHalf ||
-        particlePositions[i * 3 + 2] > rHalf
-      )
-        particleData.velocity.z = -particleData.velocity.z;
+      /* -------- apply virtual insanity -------- */
 
-      if (particleData.numConnections >= maxConnections) continue;
+      pos[i * 3] = Math.cos(p.theta) * p.radius;
+      pos[i * 3 + 1] = y;
+      pos[i * 3 + 2] = Math.sin(p.theta) * p.radius;
+    }
 
+    /* -------- build candidate edge list -------- */
+
+    const edges = [];
+
+    for (let i = 0; i < particleCount; i++) {
       for (let j = i + 1; j < particleCount; j++) {
-        const particleDataB = particlesData[j];
-        if (particleDataB.numConnections >= maxConnections) continue;
+        const dx = pos[i * 3] - pos[j * 3];
+        const dy = pos[i * 3 + 1] - pos[j * 3 + 1];
+        const dz = pos[i * 3 + 2] - pos[j * 3 + 2];
 
-        const dx = particlePositions[i * 3] - particlePositions[j * 3];
-        const dy = particlePositions[i * 3 + 1] - particlePositions[j * 3 + 1];
-        const dz = particlePositions[i * 3 + 2] - particlePositions[j * 3 + 2];
+        /* -------- get the dist of my squirt -------- */
+
         const dist = Math.sqrt(dx * dx + dy * dy + dz * dz);
 
-        if (dist < minDistance) {
-          particleData.numConnections++;
-          particleDataB.numConnections++;
-
-          const alpha = 1.0 - dist / minDistance;
-
-          positions[vertexpos++] = particlePositions[i * 3];
-          positions[vertexpos++] = particlePositions[i * 3 + 1];
-          positions[vertexpos++] = particlePositions[i * 3 + 2];
-
-          positions[vertexpos++] = particlePositions[j * 3];
-          positions[vertexpos++] = particlePositions[j * 3 + 1];
-          positions[vertexpos++] = particlePositions[j * 3 + 2];
-
-          colors[colorpos++] = alpha;
-          colors[colorpos++] = alpha;
-          colors[colorpos++] = alpha;
-
-          colors[colorpos++] = alpha;
-          colors[colorpos++] = alpha;
-          colors[colorpos++] = alpha;
-
-          numConnected++;
+        if (dist >= minDistance && dist <= maxDistance) {
+          edges.push({ i, j, dist });
         }
       }
     }
 
-    linesGeometryRef.current.setDrawRange(0, numConnected * 2);
-    linesGeometryRef.current.attributes.position.needsUpdate = true;
-    linesGeometryRef.current.attributes.color.needsUpdate = true;
+    edges.sort((a, b) => a.dist - b.dist);
+
+    const connect = (a, b, dist) => {
+      const alpha = 1 - (dist - minDistance) / (maxDistance - minDistance);
+
+      linePositions.current.set(
+        [
+          pos[a * 3],
+          pos[a * 3 + 1],
+          pos[a * 3 + 2],
+          pos[b * 3],
+          pos[b * 3 + 1],
+          pos[b * 3 + 2],
+        ],
+        vertexpos
+      );
+
+      lineColors.current.set(
+        [alpha, alpha, alpha, alpha, alpha, alpha],
+        colorpos
+      );
+
+      vertexpos += 6;
+      colorpos += 6;
+
+      data[a].numConnections++;
+      data[b].numConnections++;
+    };
+
+    /* -------- pass 1: satisfy minConnections -------- */
+
+    for (let e = 0; e < edges.length; e++) {
+      const { i, j, dist } = edges[e];
+
+      const a = data[i];
+      const b = data[j];
+
+      if (
+        (a.numConnections < minConnections ||
+          b.numConnections < minConnections) &&
+        a.numConnections < maxConnections &&
+        b.numConnections < maxConnections
+      ) {
+        connect(i, j, dist);
+      }
+    }
+
+    /* -------- pass 2: fill up to maxConnections -------- */
+
+    for (let e = 0; e < edges.length; e++) {
+      const { i, j, dist } = edges[e];
+
+      const a = data[i];
+      const b = data[j];
+
+      if (
+        a.numConnections < maxConnections &&
+        b.numConnections < maxConnections
+      ) {
+        connect(i, j, dist);
+      }
+    }
+
+    /* -------- upload -------- */
+
+    const lg = linesGeometryRef.current;
+    lg.setDrawRange(0, vertexpos / 3);
+    lg.attributes.position.needsUpdate = true;
+    lg.attributes.color.needsUpdate = true;
 
     particlesRef.current.attributes.position.needsUpdate = true;
 
-    groupRef.current.rotation.y += delta / 5;
+    groupRef.current.rotation.y += dt * 0.03 * systemRotation;
   });
 
+  /* ---------------------------------------------
+     RENDER
+  ----------------------------------------------*/
+
   return (
-    <>
-      <CameraRig />
-      <group ref={groupRef} dispose={null}>
-        <points>
-          <bufferGeometry ref={particlesRef}>
-            <bufferAttribute
-              attach="attributes-position"
-              count={particleCount}
-              array={particlePositions}
-              itemSize={3}
-            />
-          </bufferGeometry>
-          <pointsMaterial
-            color="black"
-            size={3}
-            blending={AdditiveBlending}
-            transparent
-            sizeAttenuation={false}
-          />
-        </points>
-        <lineSegments>
-          <bufferGeometry ref={linesGeometryRef}>
-            <bufferAttribute
-              attach="attributes-position"
-              count={positions.length / 3}
-              array={positions}
-              itemSize={3}
-            />
-            <bufferAttribute
-              attach="attributes-color"
-              count={colors.length / 3}
-              array={colors}
-              itemSize={3}
-            />
-          </bufferGeometry>
-          <lineBasicMaterial
-            vertexColors
-            blending={AdditiveBlending}
-            transparent
-          />
-        </lineSegments>
-      </group>
-    </>
+    <group ref={groupRef} dispose={null}>
+      <points>
+        <bufferGeometry ref={particlesRef} />
+        <pointsMaterial
+          color={new Color(pointColor)}
+          size={pointSize}
+          sizeAttenuation={false}
+          blending={BLENDING[pointBlending] ?? NormalBlending}
+          transparent={pointsTransparent}
+          opacity={pointsOpacity}
+          toneMapped={pointsToneMapped}
+          depthWrite={false}
+        />
+      </points>
+
+      <lineSegments>
+        <bufferGeometry ref={linesGeometryRef} />
+        <lineBasicMaterial
+          color={new Color(lineColor)}
+          linewidth={lineWidth}
+          vertexColors
+          blending={BLENDING[lineBlending] ?? NormalBlending}
+          transparent={linesTransparent}
+          opacity={linesOpacity}
+          toneMapped={linesToneMapped}
+          depthWrite={false}
+        />
+      </lineSegments>
+    </group>
   );
 }

@@ -32,34 +32,6 @@ export default function HandStuff() {
     { collapsed: true }
   );
 
-  const gestures = useControls(
-    'Gestures',
-    {
-      pinchThreshold: {
-        label: 'Pinch Threshold',
-        value: 0.17,
-        min: 0.1,
-        max: 1,
-        step: 0.01,
-      },
-      closeThreshold: {
-        label: 'Close Threshold',
-        value: 1.15,
-        min: 0.4,
-        max: 2,
-        step: 0.05,
-      },
-      expandThreshold: {
-        label: 'Expand Threshold',
-        value: 0.9,
-        min: 0.8,
-        max: 3,
-        step: 0.05,
-      },
-    },
-    { collapsed: true }
-  );
-
   const mapping = useControls(
     'Scale Mapping',
     {
@@ -92,22 +64,18 @@ export default function HandStuff() {
 
   const hands = useHandControls(results, {
     maxHands: mp.maxHands,
-    ...gestures,
     ...mapping,
   });
 
-  useHandGestureEvents(hands, {
-    onPinchStart: () => console.log('🤏 pinch 🤏'),
-    onCloseStart: () => console.log('✊ close ✊'),
-    onExpandStart: () => console.log('🖐 expand 🖐 '),
+  const gestureState = useHandGestureEvents(hands, {
+    onGestureStart: (g) => console.log('👉 gesture start:', g),
+    onGestureEnd: (g) => console.log('👋 gesture end:', g),
 
-    onLeftPinchStart: () => console.log('🤏 pinch left'),
-    onLeftCloseStart: () => console.log('✊ close left'),
-    onLeftExpandStart: () => console.log('🖐 expand left'),
+    onLeftGestureStart: (g) => console.log('✋ left start:', g),
+    onRightGestureStart: (g) => console.log('🤚 right start:', g),
 
-    onRightPinchStart: () => console.log('🤏 pinch right'),
-    onRightCloseStart: () => console.log('✊ close right'),
-    onRightExpandStart: () => console.log('🖐 expand right'),
+    onSwipeLeft: () => console.log('⬅️ swipe left'),
+    onSwipeRight: () => console.log('➡️ swipe right'),
   });
 
   /* ---------------- Example interaction ---------------- */
@@ -124,18 +92,30 @@ export default function HandStuff() {
     }
   });
 
-  /* ---------------- LFG MY DUDES  ---------------- */
-  const probeColor = (hand) => {
-    if (hand?.gestures?.pinch) return 'hotpink';
-    if (hand?.gestures?.closed) return 'red';
-    if (hand?.gestures?.expanded) return 'blue';
-    return 'white';
-  };
+  /* ---------------- Visual gesture feedback ---------------- */
+
+  function poseColor(pose) {
+    if (!pose) return 'white';
+
+    switch (pose) {
+      case 'PINCH':
+        return 'hotpink';
+      case 'GRAB':
+        return 'red';
+      case 'PALM_OPEN':
+        return 'blue';
+      case 'POINT':
+        return 'yellow';
+      case 'VICTORY':
+        return 'lime';
+      default:
+        return 'white';
+    }
+  }
 
   return (
     <>
       <Environment preset="sunset" />
-
       <PerspectiveCamera makeDefault position={[-5, 2, 4]} fov={50} />
 
       <ambientLight intensity={0.5} />
@@ -143,23 +123,24 @@ export default function HandStuff() {
 
       <OrbitControls />
       <Grid args={[10, 10]} />
-
       <Reversal />
 
-      {/* test objects driven by hand */}
+      {/* primary hand */}
       <mesh ref={probe} position={[0, 0, 1]} visible={mp.maxHands === 1}>
         <sphereGeometry args={[0.15, 32, 32]} />
-        <meshPhysicalMaterial color={probeColor(hands.primary)} />
+        <meshPhysicalMaterial color={poseColor(gestureState?.primary)} />
       </mesh>
 
+      {/* left hand */}
       <mesh ref={leftProbe} position={[-1, 0, 1]} visible={mp.maxHands === 2}>
         <sphereGeometry args={[0.15, 32, 32]} />
-        <meshPhysicalMaterial color={probeColor(hands.left)} />
+        <meshPhysicalMaterial color={poseColor(gestureState?.left)} />
       </mesh>
 
+      {/* right hand */}
       <mesh ref={rightProbe} position={[1, 0, 1]} visible={mp.maxHands === 2}>
         <sphereGeometry args={[0.15, 32, 32]} />
-        <meshPhysicalMaterial color={probeColor(hands.right)} />
+        <meshPhysicalMaterial color={poseColor(gestureState?.right)} />
       </mesh>
 
       {/* landmark debug */}

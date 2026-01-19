@@ -1,7 +1,8 @@
 import React, { useMemo } from 'react';
-import * as THREE from 'three';
 
 import { Sphere } from '@react-three/drei';
+
+import { mapToWorld } from './useHandcontrols';
 
 export default function HandLandmarksDebug({
   hands,
@@ -11,18 +12,12 @@ export default function HandLandmarksDebug({
     if (!hands?.length) return [];
 
     return hands.flatMap((hand, h) =>
-      Object.values(hand.landmarks).map((lm, i) => {
-        return {
-          key: `${h}-${i}`,
-          position: new THREE.Vector3(
-            (lm.x - 0.5) * xScale,
-            -(lm.y - 0.5) * yScale,
-            -lm.z * zScale
-          ),
-        };
-      })
+      Object.values(hand.landmarks).map((lm, i) => ({
+        key: `${h}-${i}`,
+        position: mapToWorld(lm, { xScale, yScale, zScale }),
+      }))
     );
-  }, [hands]);
+  }, [hands, xScale, yScale, zScale]);
 
   return points.map((p) => (
     <Sphere key={p.key} args={[0.025, 12, 12]} position={p.position}>

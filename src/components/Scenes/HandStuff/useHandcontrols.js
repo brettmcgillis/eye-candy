@@ -54,15 +54,37 @@ function dist(a, b) {
   return Math.hypot(a.x - b.x, a.y - b.y, a.z - b.z);
 }
 
-function palmSize(lm) {
-  return dist(lm.wrist, lm.middleMCP);
+/* -------- stable palm reference -------- */
+
+function palmCenter(lm) {
+  const pts = [lm.wrist, lm.indexMCP, lm.middleMCP, lm.ringMCP, lm.pinkyMCP];
+
+  const out = { x: 0, y: 0, z: 0 };
+
+  pts.forEach((p) => {
+    out.x += p.x;
+    out.y += p.y;
+    out.z += p.z;
+  });
+
+  out.x /= pts.length;
+  out.y /= pts.length;
+  out.z /= pts.length;
+
+  return out;
 }
 
-function toWorldPosition(wrist, { xScale = 4, yScale = 3, zScale = 5 } = {}) {
+function palmSize(lm) {
+  return dist(lm.indexMCP, lm.pinkyMCP);
+}
+
+/* -------- single world-space mapper (mirrored) -------- */
+
+export function mapToWorld(p, { xScale = 4, yScale = 3, zScale = 5 } = {}) {
   return new THREE.Vector3(
-    (wrist.x - 0.5) * xScale,
-    -(wrist.y - 0.5) * yScale,
-    -wrist.z * zScale
+    -(p.x - 0.5) * xScale, // mirror X
+    -(p.y - 0.5) * yScale,
+    -p.z * zScale
   );
 }
 
@@ -79,9 +101,7 @@ function computeGestures(
   const size = palmSize(lm);
 
   const pinch = dist(lm.thumbTip, lm.indexTip) / size < pinchThreshold;
-
   const closed = dist(lm.middleTip, lm.wrist) / size < closeThreshold;
-
   const expanded = dist(lm.indexTip, lm.pinkyTip) / size > expandThreshold;
 
   return { pinch, closed, expanded };
@@ -93,6 +113,10 @@ function computeGestures(
 
 const emptyState = {
   hands: [],
+
+  left: null,
+  right: null,
+  primary: null,
 
   leftHandPosition: null,
   rightHandPosition: null,
@@ -140,15 +164,20 @@ export default function useHandControls(
       return emptyState;
     }
 
+    /* -------- build hand objects -------- */
+
     const hands = results.multiHandLandmarks.map((lm, i) => {
       const named = nameLandmarks(lm);
-      const handedness = results.multiHandedness?.[i]?.label || 'Unknown';
+      const palm = palmCenter(named);
+
+      const position = mapToWorld(palm, { xScale, yScale, zScale });
 
       return {
-        handedness,
+        index: i,
         landmarks: named,
         rawLandmarks: lm,
-        position: toWorldPosition(named.wrist, { xScale, yScale, zScale }),
+        palm,
+        position,
         gestures: computeGestures(named, {
           pinchThreshold,
           closeThreshold,
@@ -157,15 +186,16 @@ export default function useHandControls(
       };
     });
 
-    let left = null;
-    let right = null;
+    /* -------- assign left/right by world X -------- */
 
-    hands.forEach((hand) => {
-      if (hand.handedness === 'Left') left = hand;
-      if (hand.handedness === 'Right') right = hand;
-    });
+    const sorted = [...hands].sort((a, b) => a.position.x - b.position.x);
+
+    const left = sorted[0] ?? null;
+    const right = sorted[1] ?? null;
 
     const primary = maxHands === 1 ? hands[0] ?? null : null;
+
+    /* -------- return unified state -------- */
 
     return {
       hands,

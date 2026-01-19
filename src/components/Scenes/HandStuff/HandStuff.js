@@ -26,8 +26,8 @@ export default function HandStuff() {
   const mp = useControls(
     'MediaPipe',
     {
-      maxHands: { label: 'Hands', value: 1, min: 1, max: 2, step: 1 },
-      showVideo: { label: 'Show Video', value: false },
+      maxHands: { label: 'Hands', value: 2, min: 1, max: 2, step: 1 },
+      showVideo: { label: 'Show Video', value: true },
     },
     { collapsed: true }
   );
@@ -73,7 +73,7 @@ export default function HandStuff() {
   const debug = useControls(
     'Debug',
     {
-      showLandmarks: { label: 'Show Landmarks', value: false },
+      showLandmarks: { label: 'Show Landmarks', value: true },
       reset: button(() => {
         probe.current.position.set(0, 0, 1);
         leftProbe.current.position.set(-1, 0, 1);

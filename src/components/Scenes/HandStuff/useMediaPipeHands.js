@@ -4,14 +4,20 @@ import { useEffect, useRef, useState } from 'react';
 import { Camera } from '@mediapipe/camera_utils';
 import { Hands } from '@mediapipe/hands';
 
+function isMobile() {
+  return window.innerWidth < window.innerHeight;
+}
+
 export default function useMediaPipeHands({
   maxHands = 1,
   modelComplexity = 1,
   minDetectionConfidence = 0.6,
   minTrackingConfidence = 0.6,
-  width = 1280,
-  height = 720,
+  cameraWidth = isMobile() ? 720 : 1280,
+  cameraHeight = isMobile() ? 1280 : 720,
   showVideo = false,
+  videoWidth = 240,
+  videoHeight = 135,
   videoPosition = 'bottom-center',
   videoStyle = {},
 } = {}) {
@@ -36,7 +42,8 @@ export default function useMediaPipeHands({
 
     Object.assign(video.style, {
       position: 'fixed',
-      width: '240px',
+      width: `${videoWidth}px`,
+      height: `${videoHeight}px`,
       transform: 'scaleX(-1)',
       zIndex: 9999,
       borderRadius: 'var(--overlay-radius)',
@@ -64,8 +71,8 @@ export default function useMediaPipeHands({
         if (!handsRef.current) return;
         await handsRef.current.send({ image: video });
       },
-      width,
-      height,
+      width: cameraWidth,
+      height: cameraHeight,
     });
 
     camera.start();

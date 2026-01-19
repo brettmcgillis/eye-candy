@@ -28,6 +28,23 @@ export default function HandStuff() {
     {
       maxHands: { label: 'Hands', value: 2, min: 1, max: 2, step: 1 },
       showVideo: { label: 'Show Video', value: true },
+      showDebugSkeleton: { label: 'Show Skeleton', value: true },
+      landmarkColor: { label: 'Landmark Color', value: '#FF3366' },
+      connectorColor: { label: 'Connector Color', value: '#00FFAA' },
+      landmarkRadius: { label: 'Landmark Radius', value: 4, min: 1, max: 10 },
+      connectorLineWidth: {
+        label: 'Connector Line Width',
+        value: 3,
+        min: 1,
+        max: 10,
+      },
+      videoSize: {
+        label: 'Video Size (x)',
+        value: 1,
+        min: 0.1,
+        max: 3,
+        step: 0.1,
+      },
     },
     { collapsed: true }
   );
@@ -60,6 +77,13 @@ export default function HandStuff() {
   const results = useMediaPipeHands({
     maxHands: mp.maxHands,
     showVideo: mp.showVideo,
+    showDebugSkeleton: mp.showDebugSkeleton,
+    landmarkStyle: { color: mp.landmarkColor, radius: mp.landmarkRadius },
+    connectorStyle: {
+      color: mp.connectorColor,
+      lineWidth: mp.connectorLineWidth,
+    },
+    videoSize: mp.videoSize,
   });
 
   const hands = useHandControls(results, {
@@ -74,13 +98,8 @@ export default function HandStuff() {
     onLeftGestureStart: (g) => console.log('✋ left start:', g),
     onRightGestureStart: (g) => console.log('🤚 right start:', g),
 
-    onLeftFingerPinchStart: (f) => {
-      console.log('LEFT PINCH:', f);
-    },
-
-    onRightFingerPinchStart: (f) => {
-      console.log('RIGHT PINCH:', f);
-    },
+    onLeftFingerPinchStart: (f) => console.log('🤏 LEFT PINCH:', f),
+    onRightFingerPinchStart: (f) => console.log('🤏 RIGHT PINCH:', f),
 
     onSwipeLeft: () => console.log('⬅️ swipe left'),
     onSwipeRight: () => console.log('➡️ swipe right'),
@@ -106,16 +125,32 @@ export default function HandStuff() {
     if (!pose) return 'white';
 
     switch (pose) {
-      case 'PINCH':
-        return 'hotpink';
+      /* base poses */
+      case 'PALM_OPEN':
+        return 'deepskyblue';
       case 'GRAB':
         return 'red';
-      case 'PALM_OPEN':
-        return 'blue';
       case 'POINT':
         return 'yellow';
       case 'VICTORY':
         return 'lime';
+      case 'THE_HORNS':
+        return 'orange';
+
+      /* generic pinch */
+      case 'PINCH':
+        return 'hotpink';
+
+      /* individual finger pinches */
+      case 'THUMB_INDEX':
+        return 'hotpink';
+      case 'THUMB_MIDDLE':
+        return 'violet';
+      case 'THUMB_RING':
+        return 'cyan';
+      case 'THUMB_PINKY':
+        return 'gold';
+
       default:
         return 'white';
     }
@@ -136,19 +171,19 @@ export default function HandStuff() {
       {/* primary hand */}
       <mesh ref={probe} position={[0, 0, 1]} visible={mp.maxHands === 1}>
         <sphereGeometry args={[0.15, 32, 32]} />
-        <meshPhysicalMaterial color={poseColor(gestureState?.primary)} />
+        <meshPhysicalMaterial color={poseColor(gestureState?.primaryPose)} />
       </mesh>
 
       {/* left hand */}
       <mesh ref={leftProbe} position={[-1, 0, 1]} visible={mp.maxHands === 2}>
         <sphereGeometry args={[0.15, 32, 32]} />
-        <meshPhysicalMaterial color={poseColor(gestureState?.left)} />
+        <meshPhysicalMaterial color={poseColor(gestureState?.leftPose)} />
       </mesh>
 
       {/* right hand */}
       <mesh ref={rightProbe} position={[1, 0, 1]} visible={mp.maxHands === 2}>
         <sphereGeometry args={[0.15, 32, 32]} />
-        <meshPhysicalMaterial color={poseColor(gestureState?.right)} />
+        <meshPhysicalMaterial color={poseColor(gestureState?.rightPose)} />
       </mesh>
 
       {/* landmark debug */}

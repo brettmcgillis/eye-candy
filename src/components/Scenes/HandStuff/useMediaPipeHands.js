@@ -9,6 +9,9 @@ function isMobile() {
   return window.innerWidth < window.innerHeight;
 }
 
+const videoWidth = 240;
+const videoHeight = 135;
+
 export default function useMediaPipeHands({
   maxHands = 1,
   modelComplexity = 1,
@@ -23,8 +26,7 @@ export default function useMediaPipeHands({
   landmarkStyle = { color: '#FF3366', radius: 4 },
   connectorStyle = { color: '#00FFAA', lineWidth: 3 },
 
-  videoWidth = 240,
-  videoHeight = 135,
+  videoSize = 1,
   videoPosition = 'bottom-center',
   videoStyle = {},
 } = {}) {
@@ -34,17 +36,40 @@ export default function useMediaPipeHands({
   const handsRef = useRef(null);
   const cameraRef = useRef(null);
 
+  const showVideoRef = useRef(showVideo);
+  const showSkeletonRef = useRef(showDebugSkeleton);
+  const landmarkStyleRef = useRef(landmarkStyle);
+  const connectorStyleRef = useRef(connectorStyle);
+
   const [results, setResults] = useState(null);
 
-  // -------------------------
-  // Create MediaPipe ONCE
-  // -------------------------
+  /* ---------------- reactive mirrors ---------------- */
+
+  useEffect(() => {
+    showVideoRef.current = showVideo;
+  }, [showVideo]);
+
+  useEffect(() => {
+    showSkeletonRef.current = showDebugSkeleton;
+  }, [showDebugSkeleton]);
+
+  useEffect(() => {
+    landmarkStyleRef.current = landmarkStyle;
+  }, [landmarkStyle]);
+
+  useEffect(() => {
+    connectorStyleRef.current = connectorStyle;
+  }, [connectorStyle]);
+
+  /* ---------------- create once ---------------- */
+
   useEffect(() => {
     if (handsRef.current) return;
 
     let active = true;
 
-    // ---------- video ----------
+    /* ---------- video ---------- */
+
     const video = document.createElement('video');
     video.className = videoPosition ?? 'bottom-center';
     video.playsInline = true;
@@ -53,28 +78,25 @@ export default function useMediaPipeHands({
 
     Object.assign(video.style, {
       position: 'fixed',
-      width: `${videoWidth}px`,
-      height: `${videoHeight}px`,
       transform: 'scaleX(-1)',
       zIndex: 9999,
       borderRadius: 'var(--overlay-radius)',
       boxShadow: 'var(--overlay-shadow)',
-      display: showVideo ? 'block' : 'none',
-      ...videoStyle,
+      display: 'none',
     });
 
-    // ---------- canvas ----------
+    /* ---------- canvas ---------- */
+
     const canvas = document.createElement('canvas');
     canvas.className = videoPosition ?? 'bottom-center';
 
     Object.assign(canvas.style, {
       position: 'fixed',
-      width: `${videoWidth}px`,
-      height: `${videoHeight}px`,
       transform: 'scaleX(-1)',
       zIndex: 10000,
       pointerEvents: 'none',
       borderRadius: 'var(--overlay-radius)',
+      display: 'none',
     });
 
     const ctx = canvas.getContext('2d');
@@ -86,13 +108,13 @@ export default function useMediaPipeHands({
     canvasRef.current = canvas;
     ctxRef.current = ctx;
 
-    // match real camera resolution
     video.addEventListener('loadedmetadata', () => {
       canvas.width = video.videoWidth;
       canvas.height = video.videoHeight;
     });
 
-    // ---------- hands ----------
+    /* ---------- hands ---------- */
+
     const hands = new Hands({
       locateFile: (file) =>
         `https://cdn.jsdelivr.net/npm/@mediapipe/hands/${file}`,
@@ -103,48 +125,58 @@ export default function useMediaPipeHands({
 
       setResults(res);
 
-      if (!showDebugSkeleton) return;
+      const videoVisible = showVideoRef.current;
+      const skeletonVisible = showSkeletonRef.current;
 
-      const ctxRefCurrent = ctxRef.current;
-      const canvasRefCurrent = canvasRef.current;
-      if (!ctxRefCurrent || !canvasRefCurrent) return;
+      if (!ctxRef.current || !canvasRef.current) return;
 
-      ctxRefCurrent.save();
-      ctxRefCurrent.clearRect(
+      if (!videoVisible) {
+        ctxRef.current.clearRect(
+          0,
+          0,
+          canvasRef.current.width,
+          canvasRef.current.height
+        );
+        return;
+      }
+
+      ctxRef.current.save();
+      ctxRef.current.clearRect(
         0,
         0,
-        canvasRefCurrent.width,
-        canvasRefCurrent.height
+        canvasRef.current.width,
+        canvasRef.current.height
       );
 
-      // draw camera frame (optional)
-      ctxRefCurrent.drawImage(
+      // always draw video frame if visible
+      ctxRef.current.drawImage(
         res.image,
         0,
         0,
-        canvasRefCurrent.width,
-        canvasRefCurrent.height
+        canvasRef.current.width,
+        canvasRef.current.height
       );
 
-      if (res.multiHandLandmarks) {
+      // only draw skeleton if video is visible AND skeleton enabled
+      if (skeletonVisible && res.multiHandLandmarks) {
         res.multiHandLandmarks.forEach((landmarks) => {
           drawConnectors(
-            ctxRefCurrent,
+            ctxRef.current,
             landmarks,
             HAND_CONNECTIONS,
-            connectorStyle
+            connectorStyleRef.current
           );
-
-          drawLandmarks(ctxRefCurrent, landmarks, landmarkStyle);
+          drawLandmarks(ctxRef.current, landmarks, landmarkStyleRef.current);
         });
       }
 
-      ctxRefCurrent.restore();
+      ctxRef.current.restore();
     });
 
     handsRef.current = hands;
 
-    // ---------- camera ----------
+    /* ---------- camera ---------- */
+
     const camera = new Camera(video, {
       onFrame: async () => {
         if (!handsRef.current) return;
@@ -163,13 +195,8 @@ export default function useMediaPipeHands({
       cameraRef.current?.stop();
       handsRef.current?.close();
 
-      if (video && document.body.contains(video)) {
-        document.body.removeChild(video);
-      }
-
-      if (canvas && document.body.contains(canvas)) {
-        document.body.removeChild(canvas);
-      }
+      video.remove();
+      canvas.remove();
 
       handsRef.current = null;
       cameraRef.current = null;
@@ -179,9 +206,8 @@ export default function useMediaPipeHands({
     };
   }, []);
 
-  // -------------------------
-  // Live option updates
-  // -------------------------
+  /* ---------------- live option updates ---------------- */
+
   useEffect(() => {
     if (!handsRef.current) return;
 
@@ -198,22 +224,48 @@ export default function useMediaPipeHands({
     minTrackingConfidence,
   ]);
 
-  // -------------------------
-  // Video + canvas visibility
-  // -------------------------
+  /* ---------------- visibility ---------------- */
+
   useEffect(() => {
     if (!videoRef.current || !canvasRef.current) return;
 
+    const display = showVideo ? 'block' : 'none';
+
     Object.assign(videoRef.current.style, {
-      display: showVideo ? 'block' : 'none',
+      display,
       ...videoStyle,
     });
 
     Object.assign(canvasRef.current.style, {
-      display: showVideo || showDebugSkeleton ? 'block' : 'none',
+      display,
       ...videoStyle,
     });
-  }, [showVideo, showDebugSkeleton, videoStyle]);
+
+    if (!showVideo && ctxRef.current && canvasRef.current) {
+      ctxRef.current.clearRect(
+        0,
+        0,
+        canvasRef.current.width,
+        canvasRef.current.height
+      );
+    }
+  }, [showVideo, videoStyle]);
+
+  /* ---------------- live resize ---------------- */
+
+  useEffect(() => {
+    if (!videoRef.current || !canvasRef.current) return;
+
+    Object.assign(videoRef.current.style, {
+      width: `${videoWidth * videoSize}px`,
+      height: `${videoHeight * videoSize}px`,
+    });
+
+    Object.assign(canvasRef.current.style, {
+      width: `${videoWidth * videoSize}px`,
+      height: `${videoHeight * videoSize}px`,
+    });
+  }, [videoSize]);
 
   return results;
 }

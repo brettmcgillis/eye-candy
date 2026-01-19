@@ -33,7 +33,12 @@ function detectPose(landmarks, { pinchDist = 0.05 } = {}) {
 
   const pinch = dist2D(thumbTip, indexTip) < pinchDist;
 
+  /* ---------- high confidence gestures first ---------- */
+
   if (pinch) return 'PINCH';
+
+  // 🖕 THE BIRD
+  if (!indexExt && middleExt && !ringExt && !pinkyExt) return 'THE_BIRD';
 
   if (indexExt && middleExt && ringExt && pinkyExt) return 'PALM_OPEN';
 
@@ -188,5 +193,8 @@ export default function useHandGestureEvents(
 
     isPalmOpen:
       gestureState?.left === 'PALM_OPEN' || gestureState?.right === 'PALM_OPEN',
+
+    isBird:
+      gestureState?.left === 'THE_BIRD' || gestureState?.right === 'THE_BIRD',
   };
 }

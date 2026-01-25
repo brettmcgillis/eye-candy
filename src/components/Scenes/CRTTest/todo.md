@@ -14,5 +14,8 @@
 - [ ] Fix vignette in CRTStaticMaterial, CRTSnowMat
 - [ ] Rename CRTStaticMaterial -> SmtpeStaticMaterial
 - [ ] Rename CRTSnowMaterial -> CRTStaticMaterial
+- [ ] Add channelSurf prop, auto rotate channels
 - [ ] Test Mobile
 - [ ] Wire up sounds
+- [ ] Fix camera bug - Scene material. Could the test scene take a ref that is used by the render tex?
+- [ ] Use dial instances to provide 4th dial, emissive white, channelSurf indicator.

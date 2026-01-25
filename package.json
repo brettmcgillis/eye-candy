@@ -15,6 +15,7 @@
     "lint:check": "eslint .",
     "lint:fix": "eslint . --fix",
     "start": "react-scripts start",
+    "start-https": "HTTPS=true npm run start",
     "test": "react-scripts test"
   },
   "dependencies": {

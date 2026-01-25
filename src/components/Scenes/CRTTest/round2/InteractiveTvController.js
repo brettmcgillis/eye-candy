@@ -24,7 +24,11 @@ import TestScene from 'components/scenes/CRTTest/TestScene';
 ---------------------------------------------- */
 import { TvContext, TvInstances } from './TvInstances';
 
-export function InteractiveTvController({ stepsPerRotation = 12, ...props }) {
+export function InteractiveTvController({
+  stepsPerRotation = 12,
+  isTurnedOn = false,
+  ...props
+}) {
   /* ---------- shared tv materials ---------- */
 
   const materials = useMemo(
@@ -61,7 +65,7 @@ export function InteractiveTvController({ stepsPerRotation = 12, ...props }) {
 
   /* ---------- tv state ---------- */
 
-  const [power, setPower] = useState(true);
+  const [power, setPower] = useState(isTurnedOn);
   const [channelIndex, setChannelIndex] = useState(0);
   const [knobStep, setKnobStep] = useState(0);
 

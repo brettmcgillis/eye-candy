@@ -1,9 +1,42 @@
-import React from 'react';
+/* eslint-disable no-unused-vars */
+
+/* eslint-disable react/no-array-index-key */
+import React, { useRef } from 'react';
 
 import { PerspectiveCamera } from '@react-three/drei';
+import { useFrame } from '@react-three/fiber';
 
 import Bret from 'components/elements/bret/Bret';
 import { InteractiveReversal } from 'components/elements/reversal/Reversal';
+
+function OrbitingReversals({ count = 4, radius = 2, speed = 0.25 }) {
+  const group = useRef();
+  const step = (Math.PI * 2) / count;
+
+  useFrame((_, delta) => {
+    group.current.rotation.y += delta * speed;
+  });
+
+  return (
+    <group ref={group}>
+      {Array.from({ length: count }).map((_, i) => {
+        const angle = i * step;
+
+        // note sin/cos order (0 starts on +Z, not +X)
+        const x = Math.sin(angle) * radius;
+        const z = Math.cos(angle) * radius;
+
+        return (
+          <InteractiveReversal
+            key={i}
+            position={[x, 0, z]}
+            rotation={[0, angle, 0]}
+          />
+        );
+      })}
+    </group>
+  );
+}
 
 export default function TestScene() {
   return (
@@ -15,17 +48,14 @@ export default function TestScene() {
       <ambientLight intensity={0.3} />
       <directionalLight position={[5, 6, 4]} intensity={1.2} />
 
-      <InteractiveReversal
-        position={[-1, 0, -1]}
-        rotation={[0, -Math.PI / 4, 0]}
-      />
-      <InteractiveReversal position={[0, 0, 0]} />
-      <InteractiveReversal
-        position={[1, 0, -1]}
-        rotation={[0, Math.PI / 4, 0]}
-      />
+      {/* Orbiting ring */}
 
-      <Bret scale={2.5} position={[0, 0, -2]} />
+      <OrbitingReversals count={6} radius={1.2} speed={0.6} />
+
+      <InteractiveReversal position={[0, 0, -2]} rotation={[0, Math.PI, 0]} />
+
+      {/* Center vertical element */}
+      <Bret scale={2.5} position={[0, 0, 0]} rotation={[0, 0, 0]} />
     </>
   );
 }

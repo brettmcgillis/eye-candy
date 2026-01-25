@@ -2,6 +2,8 @@
 
 - add/update screenshot(s) on readme for each scene
 
+- Fix dbg layout on mobile
+
 ### REPO
 
 - re-enable react/no-unknown-property, react/prop-types ?

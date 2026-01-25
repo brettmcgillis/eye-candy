@@ -4,18 +4,13 @@
 - [x] create a new shader material that combines the webcam output with some glitching and static effects
 - [x] create a new shader material that combines a gif with some glitching and static effects
 - [x] update my existing crt static material with defaults that resemble my existing scene.
-- [ ] Refactor my crt television to expose a variation prop. with the following options.
-      off -> default model material.
-      white glow -> a bright white emissive material.
-      smtpe static -> our existing crt static material.
-      vhs -> our new vhs shader material,
-      static -> our always on static shader.
-      video -> the glitchy webcam shader.
+- [x] Refactor my crt television to expose a variation prop. Uses channel key.
 - [ ] Fix vignette in CRTStaticMaterial, CRTSnowMat
-- [ ] Rename CRTStaticMaterial -> SmtpeStaticMaterial
+- [ ] Rename CRTStaticMaterial -> CRTSmtpeStaticMaterial
 - [ ] Rename CRTSnowMaterial -> CRTStaticMaterial
-- [ ] Add channelSurf prop, auto rotate channels
-- [ ] Test Mobile
+- [x] Add channelSurf prop, auto rotate channels
+- [ ] Test Mobile - Webcam Only works HTTPS.
+- [ ] Add default background to CRTShowMaterial when webcam disabled. R&S fallback sucsk
 - [ ] Wire up sounds
 - [ ] Fix camera bug - Scene material. Could the test scene take a ref that is used by the render tex?
-- [ ] Use dial instances to provide 4th dial, emissive white, channelSurf indicator.
+- [x] Use dial instances to provide 4th dial, emissive white, channelSurf indicator.

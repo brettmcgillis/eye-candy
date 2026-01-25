@@ -1,138 +1,199 @@
-/* eslint-disable react/no-array-index-key */
+/* eslint-disable react/jsx-no-constructed-context-values */
 
-/* eslint-disable no-plusplus */
-import React, { createContext, useContext, useMemo } from 'react';
+/* eslint-disable no-unused-vars */
+import React, { createContext, forwardRef, useContext, useMemo } from 'react';
+import * as THREE from 'three';
 
+import { animated } from '@react-spring/three';
 import { Merged, useGLTF } from '@react-three/drei';
 
-const context = createContext();
+const TvContext = createContext(null);
 
 /* ---------------------------------------------
-   MAIN TV
-----------------------------------------------*/
+   Public API (DUMB VIEW)
+---------------------------------------------- */
 
-export default function CRTTelevision({ ...props }) {
+const CRTTelevision = forwardRef(function CRTTelevision(
+  {
+    materials,
+    screenMaterial,
+
+    knob0Rotation = 0,
+    knob1Rotation = 0,
+
+    dials = {
+      dial0: { depth: 0, color: '#000000', intensity: 0 },
+      dial1: { depth: 0, color: '#000000', intensity: 0 },
+      dial2: { depth: 0, color: '#000000', intensity: 0 },
+    },
+
+    onKnobClick,
+    onDialClick,
+    ...props
+  },
+  ref
+) {
   return (
-    <Instances>
+    <TvInstances materials={materials}>
       <group {...props}>
-        <Model />
+        <TvModel
+          screenMaterial={screenMaterial}
+          knob0Rotation={knob0Rotation}
+          knob1Rotation={knob1Rotation}
+          dials={dials}
+          onKnobClick={onKnobClick}
+          onDialClick={onDialClick}
+        />
       </group>
-    </Instances>
+    </TvInstances>
   );
-}
+});
 
 /* ---------------------------------------------
-   INSTANCES
-----------------------------------------------*/
+   Instancing Layer
+---------------------------------------------- */
 
-export function Instances({ children, ...props }) {
-  const { nodes } = useGLTF(`${process.env.PUBLIC_URL}/models/crt_tv.glb`);
+function TvInstances({ children, materials }) {
+  const { nodes } = useGLTF(`${process.env.PUBLIC_URL}/models/retro_tv.glb`);
 
-  const instances = useMemo(
+  const baseMaterials = useMemo(
     () => ({
-      DefaultMaterial: nodes.defaultMaterial,
-      DefaultMaterial1: nodes.defaultMaterial_1,
-      DefaultMaterial2: nodes.defaultMaterial_2,
-      DefaultMaterial3: nodes.defaultMaterial_3,
-      DefaultMaterial4: nodes.defaultMaterial_4,
-      DefaultMaterial5: nodes.defaultMaterial_5,
-      DefaultMaterial6: nodes.defaultMaterial_6,
-      DefaultMaterial7: nodes.defaultMaterial_7,
-      DefaultMaterial8: nodes.defaultMaterial_8,
+      body:
+        materials?.body ??
+        new THREE.MeshStandardMaterial({ color: '#2b2b2b', roughness: 0.6 }),
+
+      knob:
+        materials?.knob ??
+        new THREE.MeshStandardMaterial({ color: '#888', roughness: 0.25 }),
+
+      screenOff:
+        materials?.screen ??
+        new THREE.MeshStandardMaterial({
+          color: '#616161',
+          roughness: 0,
+          metalness: 1,
+        }),
     }),
-    [nodes]
+    [materials]
   );
 
+  const instances = useMemo(() => {
+    const body = nodes.retro_tv.clone();
+    const knob = nodes.knob_01.clone();
+    const knob1 = nodes.knob_02.clone();
+
+    body.material = baseMaterials.body;
+    knob.material = baseMaterials.knob;
+    knob1.material = baseMaterials.knob;
+
+    return { Retrotv: body, Knob: knob, Knob1: knob1 };
+  }, [nodes, baseMaterials]);
+
   return (
-    <Merged meshes={instances} {...props}>
-      {(value) => <context.Provider value={value}>{children}</context.Provider>}
+    <Merged meshes={instances}>
+      {(value) => {
+        const ctx = { instances: value, baseMaterials, nodes };
+        return <TvContext.Provider value={ctx}>{children}</TvContext.Provider>;
+      }}
     </Merged>
   );
 }
 
 /* ---------------------------------------------
-   MODEL
-----------------------------------------------*/
+   Model (NO STATE, NO SPRINGS)
+---------------------------------------------- */
 
-export function Model({ ...props }) {
-  const instances = useContext(context);
-  const { nodes } = useGLTF(`${process.env.PUBLIC_URL}/models/crt_tv.glb`);
+function TvModel({
+  screenMaterial,
+  knob0Rotation,
+  knob1Rotation,
+  dials,
+  onKnobClick,
+  onDialClick,
+}) {
+  const { instances, baseMaterials, nodes } = useContext(TvContext);
+
+  /* ---------- Persistent dial materials ---------- */
 
   return (
-    <group {...props} dispose={null}>
-      <group name="Sketchfab_Scene">
-        <group rotation={[-Math.PI / 2, 0, -Math.PI]} scale={0.01}>
-          <group rotation={[Math.PI / 2, 0, 0]}>
-            <group name="tv" position={[0, 26.836, 0]}>
-              <group
-                name="rear_section"
-                position={[0, -0.042, 0]}
-                scale={[0.99, 0.99, 1]}
-              >
-                <instances.DefaultMaterial />
-              </group>
+    <group dispose={null}>
+      <instances.Retrotv rotation={[-Math.PI, -Math.PI, -Math.PI]}>
+        {/* -------- Dials -------- */}
 
-              <group name="Front_section">
-                <instances.DefaultMaterial1 />
-              </group>
+        {['dial0', 'dial1', 'dial2'].map((id, i) => {
+          const node = nodes[`dial_0${i + 1}`];
+          const dial = dials[id];
 
-              <group name="Front_buttons">
-                <instances.DefaultMaterial2 />
-              </group>
+          return (
+            <animated.mesh
+              key={id}
+              geometry={node.geometry}
+              position-x={[0.254, 0.291, 0.328][i]}
+              position-y={0.208}
+              position-z={dial.depth.to((z) => 0.092 + z)}
+              onPointerDown={(e) => {
+                e.stopPropagation();
+                onDialClick?.(id);
+              }}
+              castShadow
+              receiveShadow
+            >
+              {/* ✅ SINGLE OWNER MATERIAL (like Reversal) */}
+              <animated.meshStandardMaterial
+                attach="material"
+                color="#050505"
+                emissive={dial.color}
+                emissiveIntensity={dial.intensity}
+                toneMapped={false}
+                roughness={0.3}
+                metalness={0.0}
+              />
+            </animated.mesh>
+          );
+        })}
 
-              {/* ---------------- SCREEN ---------------- */}
+        {/* -------- Knobs -------- */}
 
-              <group name="Screen" position={[0, 0, -166.617]} scale={398.216}>
-                <mesh geometry={nodes.defaultMaterial_3.geometry}>
-                  <instances.DefaultMaterial3 />
-                </mesh>
-              </group>
+        <animated.group
+          position={[0.291, 0.406, 0.097]}
+          rotation-z={knob0Rotation.to((v) => -v)}
+          onClick={(e) => {
+            e.stopPropagation();
+            onKnobClick?.('knob0');
+          }}
+        >
+          <instances.Knob />
+        </animated.group>
 
-              {/* ---------------------------------------- */}
+        <animated.group
+          position={[0.291, 0.289, 0.097]}
+          rotation-z={knob1Rotation.to((v) => -v)}
+          onClick={(e) => {
+            e.stopPropagation();
+            onKnobClick?.('knob1');
+          }}
+        >
+          <instances.Knob1 />
+        </animated.group>
 
-              <group
-                name="Screw"
-                position={[3.169, -20.046, -18.301]}
-                rotation={[0, 0, -0.596]}
-                scale={[0.378, 0.378, 0.221]}
-              >
-                <instances.DefaultMaterial4 />
-              </group>
+        {/* -------- Screen -------- */}
 
-              <group name="AV_front" position={[0, -26.836, 0]}>
-                <instances.DefaultMaterial5 />
-              </group>
-
-              <group
-                name="AV_back"
-                position={[11.057, -26.295, -18.646]}
-                rotation={[-Math.PI, 0, -Math.PI]}
-              >
-                <instances.DefaultMaterial6 />
-              </group>
-
-              <group
-                name="Coax_connector"
-                position={[26.908, -17.616, -17.225]}
-                rotation={[-Math.PI / 2, Math.PI / 2, 0]}
-                scale={[0.173, 0.159, 0.173]}
-              >
-                <instances.DefaultMaterial7 />
-              </group>
-
-              <group
-                name="Logo"
-                position={[0.003, -19.835, 0.852]}
-                scale={0.11}
-              >
-                <instances.DefaultMaterial8 />
-              </group>
-            </group>
-          </group>
-        </group>
-      </group>
+        <mesh
+          geometry={nodes.screen.geometry}
+          position={[-0.077, 0.262, 0.07]}
+          rotation={[0, 0, -3.13]}
+        >
+          {screenMaterial ? (
+            React.cloneElement(screenMaterial, { attach: 'material' })
+          ) : (
+            <primitive attach="material" object={baseMaterials.screenOff} />
+          )}
+        </mesh>
+      </instances.Retrotv>
     </group>
   );
 }
 
-useGLTF.preload(`${process.env.PUBLIC_URL}/models/crt_tv.glb`);
+useGLTF.preload(`${process.env.PUBLIC_URL}/models/retro_tv.glb`);
+
+export default CRTTelevision;

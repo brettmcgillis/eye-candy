@@ -265,7 +265,7 @@ export const VHSSetting = {
 };
 
 export const TerminalSetting = {
-  screenText: 'USERNAME: ********\r\nPASSWORD: ',
+  screenText: 'USERNAME: @ruinedpaintings\nPASSWORD: ********',
   fontSize: 28,
   fontName: 'Press Start 2P',
   fontColor: '#48ff00',

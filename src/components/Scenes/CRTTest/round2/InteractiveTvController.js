@@ -30,6 +30,7 @@ import { TvContext, TvInstances } from './TvInstances';
 export function InteractiveTvController({
   stepsPerRotation = 12,
   isTurnedOn = true,
+  defaultChannel,
   ...props
 }) {
   /* ---------- shared tv materials ---------- */
@@ -65,12 +66,23 @@ export function InteractiveTvController({
     ],
     []
   );
-
+  const channelIndexMap = useMemo(() => {
+    const map = {};
+    channels.forEach((c, i) => {
+      if (c?.key != null) map[c.key] = i;
+    });
+    return map;
+  }, [channels]);
   /* ---------- tv state ---------- */
 
   const [power, setPower] = useState(isTurnedOn);
 
-  const [channelIndex, setChannelIndex] = useState(0);
+  const [channelIndex, setChannelIndex] = useState(() => {
+    if (defaultChannel && defaultChannel in channelIndexMap) {
+      return channelIndexMap[defaultChannel];
+    }
+    return 0;
+  });
   const [knobStep, setKnobStep] = useState(0);
 
   const activeChannel = power ? channels[channelIndex % channels.length] : null;

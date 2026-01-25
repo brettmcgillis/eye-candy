@@ -1,12 +1,12 @@
 import { useControls } from 'leva';
 import React, { Suspense } from 'react';
 
-import { Html, OrbitControls } from '@react-three/drei';
+import { Html } from '@react-three/drei';
 import { Canvas } from '@react-three/fiber';
 
 import Loader from 'app/scaffold/loader/Loader';
 
-import CrtTest from 'components/scenes/CRTTest/CrtTest';
+import CRTTest from 'components/scenes/CRTTest/CrtTest';
 import DumpsterFire from 'components/scenes/DumpsterFire/DumpsterFire';
 import FoldedFrame from 'components/scenes/FoldedFrame/FoldedFrame';
 import HandStuff from 'components/scenes/HandStuff/HandStuff';
@@ -31,7 +31,6 @@ function App() {
         PaperStack: 'PaperStack',
         HandStuff: 'HandStuff',
         NetworkTest: 'NetworkTest',
-        FaceTime: 'FaceTime',
         CrtTest: 'CrtTest',
       },
       value: 'None',
@@ -58,12 +57,7 @@ function App() {
           {scene === 'PaperStack' && <PaperStack />}
           {scene === 'HandStuff' && <HandStuff />}
           {scene === 'NetworkTest' && <NetworkTest />}
-          {scene === 'CrtTest' && (
-            <>
-              <OrbitControls />
-              <CrtTest />
-            </>
-          )}
+          {scene === 'CrtTest' && <CRTTest />}
         </Suspense>
       </Canvas>
     </div>

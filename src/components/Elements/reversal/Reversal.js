@@ -57,7 +57,7 @@ export default function Reversal({
 useGLTF.preload(`${process.env.PUBLIC_URL}/models/Reversal.glb`);
 
 export function InteractiveReversal({
-  pressDepth = 0.25,
+  pressDepth = 0.015,
   glowIntensity = 2.5,
   ...props
 }) {

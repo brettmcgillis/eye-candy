@@ -52,10 +52,8 @@ export default function TestScene() {
 
       <OrbitingReversals count={6} radius={1.2} speed={0.6} />
 
-      <InteractiveReversal position={[0, 0, -2]} rotation={[0, Math.PI, 0]} />
-
       {/* Center vertical element */}
-      <Bret scale={2.5} position={[0, 0, 0]} rotation={[0, 0, 0]} />
+      <Bret scale={1.5} position={[0, 0.05, 0]} rotation={[0, 0, 0]} />
     </>
   );
 }

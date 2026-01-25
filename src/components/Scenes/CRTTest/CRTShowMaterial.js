@@ -248,42 +248,102 @@ export default function CRTShowMaterial({
   useEffect(() => {
     if (!ref.current) return;
 
-    let cleanup = () => {};
+    let stream = null;
+    let disposed = false;
 
     const video = document.createElement('video');
     video.crossOrigin = 'anonymous';
     video.loop = true;
     video.muted = true;
-    video.playsInline = true;
+    video.playsInline = true; // critical for iOS
     video.autoplay = true;
 
-    if (useWebcam) {
-      navigator.mediaDevices.getUserMedia({ video: true }).then((stream) => {
-        video.srcObject = stream;
-        video.play();
-      });
-    } else {
-      video.src = src; // works for mp4, webm
-      video.play();
-    }
+    const startVideoTexture = () => {
+      if (disposed) return;
 
-    const tex = new THREE.VideoTexture(video);
-    tex.colorSpace = THREE.SRGBColorSpace;
-    tex.minFilter = THREE.LinearFilter;
-    tex.magFilter = THREE.LinearFilter;
-    tex.generateMipmaps = false;
+      const tex = new THREE.VideoTexture(video);
+      tex.colorSpace = THREE.SRGBColorSpace;
+      tex.minFilter = THREE.LinearFilter;
+      tex.magFilter = THREE.LinearFilter;
+      tex.generateMipmaps = false;
 
-    ref.current.uTexture = tex;
-
-    cleanup = () => {
-      if (video.srcObject) {
-        video.srcObject.getTracks().forEach((t) => t.stop());
-      }
-      tex.dispose();
-      video.remove();
+      ref.current.uTexture = tex;
     };
 
-    return cleanup;
+    const startFallbackVideo = async () => {
+      try {
+        video.src = src;
+        await video.play();
+        startVideoTexture();
+      } catch (e) {
+        console.error('[CRTShowMaterial] Video failed to play:', e);
+      }
+    };
+
+    const startWebcam = async () => {
+      try {
+        const nav = navigator;
+
+        const getUserMedia =
+          nav.mediaDevices?.getUserMedia ||
+          nav.getUserMedia ||
+          nav.webkitGetUserMedia ||
+          nav.mozGetUserMedia;
+
+        if (!getUserMedia) {
+          throw new Error('getUserMedia not supported on this device');
+        }
+
+        if (nav.mediaDevices?.getUserMedia) {
+          stream = await nav.mediaDevices.getUserMedia({
+            video: { facingMode: 'user' },
+            audio: false,
+          });
+        } else {
+          // Legacy mobile fallback
+          stream = await new Promise((resolve, reject) => {
+            getUserMedia.call(
+              nav,
+              { video: true, audio: false },
+              resolve,
+              reject
+            );
+          });
+        }
+
+        video.srcObject = stream;
+
+        await video.play();
+        startVideoTexture();
+      } catch (err) {
+        console.warn(
+          '[CRTShowMaterial] Webcam failed, falling back to video:',
+          err
+        );
+        startFallbackVideo();
+      }
+    };
+
+    if (useWebcam) {
+      startWebcam();
+    } else {
+      startFallbackVideo();
+    }
+
+    return () => {
+      disposed = true;
+
+      if (stream) {
+        stream.getTracks().forEach((t) => t.stop());
+      }
+
+      if (ref.current?.uTexture) {
+        ref.current.uTexture.dispose();
+      }
+
+      video.pause();
+      video.remove();
+    };
   }, [src, useWebcam]);
 
   useFrame((_, delta) => {

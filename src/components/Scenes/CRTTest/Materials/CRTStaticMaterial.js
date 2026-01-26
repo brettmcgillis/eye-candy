@@ -1,4 +1,4 @@
-// CrtSnowMaterial.js
+// CRTStaticMaterial.js
 import React, { useRef } from 'react';
 
 import { shaderMaterial } from '@react-three/drei';
@@ -146,7 +146,7 @@ void main() {
    Drei material class
 ----------------------------------------------*/
 
-const CrtSnowMaterial = shaderMaterial(
+const CrtStaticMaterial = shaderMaterial(
   {
     uTime: 0,
 
@@ -171,9 +171,9 @@ const CrtSnowMaterial = shaderMaterial(
   fragmentShader
 );
 
-extend({ CrtSnowMaterial });
+extend({ CrtStaticMaterial });
 
-export default function CRTSnowMaterial({
+export default function CRTStaticMaterial({
   snowAmount = 1,
   snowScale = 180,
   snowSpeed = 1,
@@ -195,9 +195,9 @@ export default function CRTSnowMaterial({
   });
 
   return (
-    <crtSnowMaterial
+    <crtStaticMaterial
       ref={ref}
-      key={CrtSnowMaterial.key}
+      key={CrtStaticMaterial.key}
       transparent={false}
       depthWrite
       toneMapped={false}

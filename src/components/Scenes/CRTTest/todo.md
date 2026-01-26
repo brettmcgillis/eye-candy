@@ -8,7 +8,7 @@
 - [x] Add channelSurf prop, auto rotate channels
 - [x] Use dial instances to provide 4th dial, emissive white, channelSurf indicator.
 - [x] Wire up dial, knob sounds
-- [ ] Add a Strudel thing
+- [x] Add a Strudel thing. added hook, and test panel to app.
 - [ ] Fix vignette in CRTStaticMaterial, CRTSnowMat
 - [ ] Rename CRTStaticMaterial -> CRTSmtpeStaticMaterial
 - [ ] Rename CRTSnowMaterial -> CRTStaticMaterial
@@ -22,6 +22,7 @@
 - [ ] Fix camera bug on Scene material. Could the test scene take a ref that is used by the render tex?
 - [ ] Making of Reel
 - [ ] Reel
+- [ ] Add helper modal. use HTML to get a billboard. Show on !localhost. useState for visibility. include dial & knob instructions. include audio instructions. include mobile details
 - [ ] Push to ghpages
 - [ ] Post Reeel w/ link
 - [ ] Update link in bio

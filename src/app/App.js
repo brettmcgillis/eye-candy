@@ -15,7 +15,7 @@ import NetworkTest from 'components/scenes/NetworkTest/NetworkTest';
 import NewScene from 'components/scenes/NewScene';
 import PaperStack from 'components/scenes/PaperStack/PaperStack';
 import PixelHater from 'components/scenes/PixelHater/PixelHater';
-import StrudelTester from 'components/scenes/StrudelTest/StrudelTester';
+import StrudelDoodle from 'components/scenes/StrudelDoodle/StrudelDoodle';
 
 import './App.css';
 
@@ -36,7 +36,7 @@ const SCENES = {
   HandStuff: { Component: HandStuff },
   NetworkTest: { Component: NetworkTest },
   CrtTest: { Component: CRTTest },
-  StrudelTester: { Component: StrudelTester },
+  StrudelDoodle: { Component: StrudelDoodle },
 };
 
 /* ---------------------------------------------

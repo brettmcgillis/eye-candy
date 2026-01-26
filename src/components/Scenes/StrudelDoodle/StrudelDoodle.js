@@ -1,4 +1,4 @@
-// StrudelTestRig.jsx
+// StrudelDoodle.jsx
 import useStrudelTrack from 'hooks/useStrudelTrack';
 import React, { useState } from 'react';
 
@@ -14,7 +14,7 @@ stack(
 )
 `;
 
-export default function StrudelTester() {
+export default function StrudelDoodle() {
   const { ready, play, stop, isPlaying } = useStrudelTrack({
     withSamples: true,
   });

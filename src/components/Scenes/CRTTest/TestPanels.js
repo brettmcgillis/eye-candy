@@ -4,12 +4,12 @@ import React, { useMemo } from 'react';
 import CRTBlueScreenMaterial, {
   TerminalSetting,
   VHSSetting,
-} from './CRTBlueScreenMaterial';
-import CRTSceneInSceneMaterial from './CRTSceneInSceneMaterial';
-import CRTSceneMaterial from './CRTSceneMaterial';
-import CRTShowMaterial from './CRTShowMaterial';
-import CRTSnowMaterial from './CRTSnowMaterial';
-import CRTStaticMaterial from './CRTStaticMaterial';
+} from './Materials/CRTBlueScreenMaterial';
+import CRTSceneInSceneMaterial from './Materials/CRTSceneInSceneMaterial';
+import CRTSceneMaterial from './Materials/CRTSceneMaterial';
+import CRTShowMaterial from './Materials/CRTShowMaterial';
+import CRTSnowMaterial from './Materials/CRTSnowMaterial';
+import CRTStaticMaterial from './Materials/CRTStaticMaterial';
 import TestScene from './TestScene';
 
 export default function TestPanels() {

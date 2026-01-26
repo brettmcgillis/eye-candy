@@ -4,12 +4,12 @@ import React, { useMemo } from 'react';
 import CRTBlueScreenMaterial, {
   TerminalSetting,
   VHSSetting,
-} from 'components/scenes/CRTTest/CRTBlueScreenMaterial';
-import CRTSceneInSceneMaterial from 'components/scenes/CRTTest/CRTSceneInSceneMaterial';
-import CRTSceneMaterial from 'components/scenes/CRTTest/CRTSceneMaterial';
-import CRTShowMaterial from 'components/scenes/CRTTest/CRTShowMaterial';
-import CRTSnowMaterial from 'components/scenes/CRTTest/CRTSnowMaterial';
-import CRTStaticMaterial from 'components/scenes/CRTTest/CRTStaticMaterial';
+} from 'components/scenes/CRTTest/Materials/CRTBlueScreenMaterial';
+import CRTSceneInSceneMaterial from 'components/scenes/CRTTest/Materials/CRTSceneInSceneMaterial';
+import CRTSceneMaterial from 'components/scenes/CRTTest/Materials/CRTSceneMaterial';
+import CRTShowMaterial from 'components/scenes/CRTTest/Materials/CRTShowMaterial';
+import CRTSnowMaterial from 'components/scenes/CRTTest/Materials/CRTSnowMaterial';
+import CRTStaticMaterial from 'components/scenes/CRTTest/Materials/CRTStaticMaterial';
 import TestScene from 'components/scenes/CRTTest/TestScene';
 
 import { STRUDEL_TRACKS } from 'utils/tracks';

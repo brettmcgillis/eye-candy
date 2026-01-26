@@ -5,7 +5,7 @@
 /* eslint-disable unused-imports/no-unused-vars */
 
 /* eslint-disable react/jsx-no-bind */
-import React, { useMemo, useState } from 'react';
+import React, { useEffect, useMemo, useState } from 'react';
 import * as THREE from 'three';
 
 import InstancedTvInteractive from './InstancedTvInteractive';
@@ -84,6 +84,13 @@ export default function InteractiveTvController({
   const [knobStep, setKnobStep] = useState(0);
 
   /* ---------- handlers ---------- */
+
+  useEffect(() => {
+    if (surfing) {
+      setKnobStep((s) => s + 1);
+    }
+  }, [channelKey, setKnobStep]);
+
   function handleKnob01Click() {
     knobClick();
     nextChannel();

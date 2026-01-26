@@ -72,7 +72,7 @@ function SeentIt() {
           position={[-5, 1, -3]}
           rotation={[0, Math.PI / 4, 0]}
           scale={10}
-          defaultChannel="threeD"
+          defaultChannel="tv"
         />
       </TvInstances>
 

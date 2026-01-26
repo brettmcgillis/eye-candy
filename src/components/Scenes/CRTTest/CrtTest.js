@@ -66,7 +66,7 @@ function SeentIt() {
           position={[5, 1, -3]}
           rotation={[0, -Math.PI / 4, 0]}
           scale={10}
-          defaultChannel="terminal"
+          defaultChannel="vhs"
           isTurnedOn={false}
         />
 
@@ -74,14 +74,14 @@ function SeentIt() {
           position={[0, 6.25, -5]}
           rotation={[0, 0, 0]}
           scale={10}
-          defaultChannel="terminal"
+          defaultChannel="threeD"
         />
 
         <InteractiveTvController
           position={[-5, 1, -3]}
           rotation={[0, Math.PI / 4, 0]}
           scale={10}
-          defaultChannel="tv"
+          defaultChannel="terminal"
           isTurnedOn={false}
         />
       </TvInstances>
@@ -96,7 +96,7 @@ function SeentIt() {
       {/* <TestPanels /> */}
 
       <mesh position={[0, 0, 2]} rotation={[-Math.PI / 2, 0, -Math.PI / 4]}>
-        <planeGeometry args={[15, 15]} />
+        <planeGeometry args={[20, 20]} />
         <MeshReflectorMaterial
           blur={[300, 100]}
           resolution={2048}

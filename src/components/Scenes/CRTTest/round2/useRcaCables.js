@@ -49,8 +49,16 @@ export default function useRcaCables({
 
   const channels = useMemo(
     () => [
-      { key: 'snow', video: <CRTSnowMaterial />, audio: null },
-      { key: 'static', video: <CRTStaticMaterial />, audio: null },
+      {
+        key: 'snow',
+        video: <CRTSnowMaterial />,
+        audio: null, // Static
+      },
+      {
+        key: 'static',
+        video: <CRTStaticMaterial />,
+        audio: null, // Different static
+      },
       {
         key: 'vhs',
         video: (
@@ -60,7 +68,7 @@ export default function useRcaCables({
             verticalPadding={95}
           />
         ),
-        audio: null,
+        audio: null, // Vhs Rewind
       },
       {
         key: 'terminal',
@@ -71,9 +79,13 @@ export default function useRcaCables({
             verticalPadding={95}
           />
         ),
-        audio: null,
+        audio: null, // Terminal boop?
       },
-      { key: 'homeVideo', video: <CRTShowMaterial useWebcam />, audio: null },
+      {
+        key: 'homeVideo',
+        video: <CRTShowMaterial useWebcam />,
+        audio: null, // Laugh track
+      },
       {
         key: 'tv',
         video: <CRTShowMaterial />,
@@ -86,7 +98,7 @@ export default function useRcaCables({
       {
         key: 'threeD',
         video: <CRTSceneMaterial scene={<TestScene />} />,
-        audio: null,
+        audio: null, // Strudel something?
       },
       { key: 'pip', video: <CRTSceneInSceneMaterial />, audio: null },
     ],

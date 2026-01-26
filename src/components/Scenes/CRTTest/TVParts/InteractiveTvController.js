@@ -8,9 +8,10 @@
 import React, { useEffect, useMemo, useState } from 'react';
 import * as THREE from 'three';
 
+import useRcaCables from 'components/scenes/CRTTest/round2/useRcaCables';
+
 import InstancedTvInteractive from './InstancedTvInteractive';
 import { TvInstances } from './TvInstances';
-import useRcaCables from './useRcaCables';
 
 export default function InteractiveTvController({
   stepsPerRotation = 12,

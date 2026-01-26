@@ -21,9 +21,9 @@ import Reversal, {
   InteractiveReversal,
 } from 'components/elements/reversal/Reversal';
 
+import InteractiveTvController from './TVParts/InteractiveTvController';
+import { TvInstances } from './TVParts/TvInstances';
 import TestPanels from './TestPanels';
-import InteractiveTvController from './round2/InteractiveTvController';
-import { TvInstances } from './round2/TvInstances';
 
 export default function CRTTest() {
   return (

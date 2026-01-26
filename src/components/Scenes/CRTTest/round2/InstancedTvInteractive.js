@@ -14,6 +14,7 @@ export default function InstancedTvInteractive({
   onDial2Click,
   onDial3Click,
   onDial4Click,
+  onDial5Click,
 
   onKnob01Click,
   onKnob02Click,
@@ -44,6 +45,7 @@ export default function InstancedTvInteractive({
       terminal: nodes.dial_02.material.clone(),
       vhs: nodes.dial_03.material.clone(),
       surf: nodes.dial_01.material.clone(),
+      mute: nodes.dial_01.material.clone(),
     }),
     [nodes]
   );
@@ -54,6 +56,7 @@ export default function InstancedTvInteractive({
     dialMats.terminal.emissive.set('#00ff55');
     dialMats.vhs.emissive.set('#1a4dff');
     dialMats.surf.emissive.set('#d0d0d0');
+    dialMats.mute.emissive.set('#fb00ff');
   }, [dialMats]);
 
   /* ---------- glow springs ---------- */
@@ -77,6 +80,11 @@ export default function InstancedTvInteractive({
     glow: power && channelSurfing ? 1 : 0,
     config: { tension: 120, friction: 20 },
   });
+
+  const muteGlow = useSpring({
+    glow: power && channelSurfing ? 1 : 0,
+    config: { tension: 120, friction: 20 },
+  });
   /* ---------- drive emissive every frame ---------- */
 
   useFrame(() => {
@@ -84,6 +92,7 @@ export default function InstancedTvInteractive({
     dialMats.terminal.emissiveIntensity = terminalGlow.glow.get() * 2;
     dialMats.vhs.emissiveIntensity = vhsGlow.glow.get() * 2;
     dialMats.surf.emissiveIntensity = surfGlow.glow.get() * 2;
+    dialMats.mute.emissiveIntensity = muteGlow.glow.get() * 2;
   });
 
   /* ---------- press animation ---------- */
@@ -172,6 +181,23 @@ export default function InstancedTvInteractive({
             pressDial('dial4');
             onDial4Click?.();
             setTimeout(() => releaseDial('dial4'), 120);
+          }}
+        />
+
+        <primitive
+          object={nodes.dial_01.clone()}
+          ref={(r) => {
+            if (!r) return;
+            r.material = dialMats.mute;
+            dialRefs.current.dial5 = r;
+          }}
+          scale={0.5}
+          position={[0.326, 0.208, 0.092]} // 👈 tweak this
+          onClick={(e) => {
+            e.stopPropagation();
+            pressDial('dial5');
+            onDial5Click?.();
+            setTimeout(() => releaseDial('dial5'), 120);
           }}
         />
         {/* -------- KNOBS -------- */}

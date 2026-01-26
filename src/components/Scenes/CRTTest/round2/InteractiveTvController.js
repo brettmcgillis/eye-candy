@@ -109,6 +109,10 @@ export default function InteractiveTvController({
     toggleSurfing();
   }
 
+  function handleDial5Click() {
+    dialClick();
+  }
+
   function handleKnob02Click() {
     console.log('knob 2 clicked (reserved)');
   }
@@ -133,6 +137,7 @@ export default function InteractiveTvController({
         onDial2Click={handleDial2Click}
         onDial3Click={handleDial3Click}
         onDial4Click={handleDial4Click}
+        onDial5Click={handleDial5Click}
         onKnob01Click={handleKnob01Click}
         onKnob02Click={handleKnob02Click}
       />

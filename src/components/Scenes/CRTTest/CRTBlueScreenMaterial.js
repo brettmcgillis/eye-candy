@@ -239,7 +239,7 @@ export const BsodFonts = [
 ];
 
 export const VHSSetting = {
-  screenText: '12:00 FEB. 28, 1986',
+  screenText: '12:00 FEB. 28, 1986\r\n<< REWIND',
   fontSize: 28,
   fontName: 'Press Start 2P',
   fontColor: '#FFFFFF',

@@ -17,22 +17,34 @@
 - [ ] Rename CRTStaticMaterial -> CRTSmtpeStaticMaterial
 - [ ] Rename CRTSnowMaterial -> CRTStaticMaterial
 - [ ] Add default background to CRTShowMaterial when webcam disabled. R&S fallback sucsk
+- [ ] Fix camera bug on Scene material. Could the test scene take a ref that is used by the render tex?
 - [ ] Combine materials to cohesive set of props
 
-**Other**
+**TV**
+
+- [ ] Fix dial z-depth issue on clicks. should be quick in out, probably not setTimeout based
+- [ ] Wire up settings scan on knob2
+
+**Audio**
 
 - [ ] Fix strudel/mp3 play on first render. Cant due to gesture requirement from chrome, so maybe info modal onclose can hit play? Or tv default off?
 - [ ] fix multple audio playing on 1 tv.
 - [ ] Nice to have: support multiple audio on 2 tvs
-- [ ] Wire up settings scan on knob2
+- [ ] Wire up sounds for all channels
+- [ ] Fix audio drop out when switching mp3s
+
+**Other**
+
 - [ ] Move Materials
 - [ ] Move TV components
 - [ ] Test Mobile - Webcam Only works HTTPS. Strudel only works w/ silent off?
-- [ ] Wire up sounds
-- [ ] Fix camera bug on Scene material. Could the test scene take a ref that is used by the render tex?
-- [ ] Making of Reel
-- [ ] Reel
 - [ ] Add helper modal. use HTML to get a billboard. Show on !localhost. useState for visibility. include dial & knob instructions. include audio instructions. include mobile details
+
+**Final Steps**
+
+- [ ] Making of Reel + side quest reels.
+- [ ] Reel
 - [ ] Push to ghpages
-- [ ] Post Reeel w/ link
+- [ ] Post Reel w/ link
+- [ ] Share Reel Post
 - [ ] Update link in bio

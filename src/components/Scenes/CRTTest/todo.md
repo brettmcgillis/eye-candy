@@ -1,3 +1,5 @@
+**Completed Tasks**
+
 - [x] remove telemetry
 - [x] create a new shader material for an always-on static, no smtpe bars, just black and white static. perhaps by layering noise.
 - [x] create a new shader material to resemble old vhs player static: All blue screen with rolling scanlines of static. Potentially include the date in a retro white font in the top corner.
@@ -10,11 +12,13 @@
 - [x] Wire up dial, knob sounds
 - [x] Add a Strudel thing. added hook, and test panel to app.
 - [x] Fix knob rotation during channel surf
+- [x] Rename CRTStaticMaterial -> CRTSmtpeStaticMaterial
+- [x] Rename CRTSnowMaterial -> CRTStaticMaterial
+- [x] Move Materials
+- [x] Move TV components
 
 **CRT Shaders**
 
-- [x] Rename CRTStaticMaterial -> CRTSmtpeStaticMaterial
-- [x] Rename CRTSnowMaterial -> CRTStaticMaterial
 - [ ] Test CRT Shader settings.
 - [ ] Fix vignette in CRTSmtpeStaticMaterial, CRTStaticMaterial
 - [ ] Add default background to CRTShowMaterial when webcam disabled. R&S fallback sucsk
@@ -37,8 +41,6 @@
 
 **Other**
 
-- [x] Move Materials
-- [x] Move TV components
 - [ ] Test Mobile - Webcam Only works HTTPS. Strudel only works w/ silent off?
 - [ ] Add helper modal. use HTML to get a billboard. Show on !localhost. useState for visibility. include dial & knob instructions. include audio instructions. include mobile details
 

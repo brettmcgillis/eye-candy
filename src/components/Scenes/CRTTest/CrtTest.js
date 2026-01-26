@@ -30,7 +30,6 @@ import CRTSceneMaterial from './CRTSceneMaterial';
 import CRTShowMaterial from './CRTShowMaterial';
 import CRTSnowMaterial from './CRTSnowMaterial';
 import CRTStaticMaterial from './CRTStaticMaterial';
-import InteractiveTv from './InteractiveTv';
 import TestScene from './TestScene';
 import InteractiveTvController from './round2/InteractiveTvController';
 import { TvInstances } from './round2/TvInstances';
@@ -64,12 +63,12 @@ export default function CRTTest() {
   );
 }
 
-function SeentIt() {
+function DemoPanels() {
   /* ---------------------------------------------
-     Config (matches your original layout)
+     Config 
   ---------------------------------------------- */
 
-  const radius = 7; // how wide
+  const radius = 7;
   const height = 1;
   const arc = Math.PI * 0.6; // shallow semi arc
   const zOffset = 0.2; // pushes arc forward
@@ -135,14 +134,29 @@ function SeentIt() {
     });
   }, [materials, radius, height, arc, zOffset]);
 
+  return (
+    <>
+      {panels.map((panel, i) => (
+        <mesh
+          key={`panel-${i}`}
+          position={panel.position}
+          rotation={panel.rotation}
+        >
+          <planeGeometry args={[2, 2]} />
+          {panel.material}
+        </mesh>
+      ))}
+    </>
+  );
+}
+
+function SeentIt() {
   /* ---------------------------------------------
      Render
   ---------------------------------------------- */
 
   return (
     <group>
-      {/* <InteractiveTv position={[0, 1, -3]} scale={10} /> */}
-
       <TvInstances>
         <InteractiveTvController
           position={[5, 1, -3]}
@@ -156,16 +170,6 @@ function SeentIt() {
           scale={10}
         />
       </TvInstances>
-      {/* {panels.map((panel, i) => (
-        <mesh
-          key={`panel-${i}`}
-          position={panel.position}
-          rotation={panel.rotation}
-        >
-          <planeGeometry args={[2, 2]} />
-          {panel.material}
-        </mesh>
-      ))} */}
 
       <InteractiveReversal
         position={[0, 0, 1]}
@@ -173,6 +177,8 @@ function SeentIt() {
       />
       <Reversal position={[-1, 0, 2]} rotation={[-Math.PI / 2, 0, 0]} />
       <Reversal position={[1, 0, 2]} rotation={[-Math.PI / 2, 0, 0]} />
+
+      {/* <DemoPanels /> */}
 
       <mesh position={[0, 0, 2]} rotation={[-Math.PI / 2, 0, -Math.PI / 4]}>
         <planeGeometry args={[15, 15]} />

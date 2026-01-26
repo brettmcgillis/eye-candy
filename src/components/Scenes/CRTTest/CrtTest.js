@@ -32,7 +32,7 @@ import CRTSnowMaterial from './CRTSnowMaterial';
 import CRTStaticMaterial from './CRTStaticMaterial';
 import InteractiveTv from './InteractiveTv';
 import TestScene from './TestScene';
-import { InteractiveTvController } from './round2/InteractiveTvController';
+import InteractiveTvController from './round2/InteractiveTvController';
 import { TvInstances } from './round2/TvInstances';
 
 export default function CRTTest() {

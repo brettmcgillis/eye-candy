@@ -21,6 +21,7 @@ export default function InstancedTvInteractive({
 
   screenMaterial,
   power,
+  muted,
   channelSurfing,
   channelIndex,
   ...props
@@ -82,7 +83,7 @@ export default function InstancedTvInteractive({
   });
 
   const muteGlow = useSpring({
-    glow: power && channelSurfing ? 1 : 0,
+    glow: power && muted ? 1 : 0,
     config: { tension: 120, friction: 20 },
   });
   /* ---------- drive emissive every frame ---------- */

@@ -144,6 +144,7 @@ export default function InteractiveTvController({
         stepsPerRotation={stepsPerRotation}
         knob01Step={knobStep}
         power={power}
+        muted={muted}
         channelSurfing={surfing}
         channelIndex={channelIndex}
         screenMaterial={activeChannel?.video ?? null}

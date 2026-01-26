@@ -67,12 +67,22 @@ function SeentIt() {
           rotation={[0, -Math.PI / 4, 0]}
           scale={10}
           defaultChannel="terminal"
+          isTurnedOn={false}
         />
+
+        <InteractiveTvController
+          position={[0, 6.25, -5]}
+          rotation={[0, 0, 0]}
+          scale={10}
+          defaultChannel="terminal"
+        />
+
         <InteractiveTvController
           position={[-5, 1, -3]}
           rotation={[0, Math.PI / 4, 0]}
           scale={10}
           defaultChannel="tv"
+          isTurnedOn={false}
         />
       </TvInstances>
 

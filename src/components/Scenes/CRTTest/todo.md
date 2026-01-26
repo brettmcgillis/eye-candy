@@ -9,13 +9,21 @@
 - [x] Use dial instances to provide 4th dial, emissive white, channelSurf indicator.
 - [x] Wire up dial, knob sounds
 - [x] Add a Strudel thing. added hook, and test panel to app.
+- [x] Fix knob rotation during channel surf
+
+**CRT Shaders**
+
 - [ ] Fix vignette in CRTStaticMaterial, CRTSnowMat
 - [ ] Rename CRTStaticMaterial -> CRTSmtpeStaticMaterial
 - [ ] Rename CRTSnowMaterial -> CRTStaticMaterial
 - [ ] Add default background to CRTShowMaterial when webcam disabled. R&S fallback sucsk
 - [ ] Combine materials to cohesive set of props
-- [ ] Fix knob rotation during channel surf
-- [ ] Fix strudel plan on first render. Cant due to gesture requirement, so maybe info modal onclose can hit play? Or tv default off?
+
+**Other**
+
+- [ ] Fix strudel/mp3 play on first render. Cant due to gesture requirement from chrome, so maybe info modal onclose can hit play? Or tv default off?
+- [ ] fix multple audio playing on 1 tv.
+- [ ] Nice to have: support multiple audio on 2 tvs
 - [ ] Wire up settings scan on knob2
 - [ ] Move Materials
 - [ ] Move TV components

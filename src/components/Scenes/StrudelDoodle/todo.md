@@ -1,0 +1,1 @@
+- [ ] Can I show the visualizations on the screen some how? pianoroll etc?

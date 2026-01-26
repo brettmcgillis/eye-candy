@@ -22,7 +22,7 @@ export default function useCableSubscription() {
   const channels = useMemo(
     () => [
       {
-        key: 'snow',
+        key: 'static',
         video: <CRTStaticMaterial />,
         audio: {
           type: 'file',
@@ -31,7 +31,7 @@ export default function useCableSubscription() {
         },
       },
       {
-        key: 'static',
+        key: 'smtpe',
         video: <CRTSmtpeStaticMaterial />,
         audio: {
           type: 'file',

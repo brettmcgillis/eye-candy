@@ -63,8 +63,8 @@ export default function useInteractiveTvControls() {
     { collapsed: true }
   );
 
-  const snow = useControls(
-    'CRT Snow',
+  const tvStatic = useControls(
+    'CRT Static',
     {
       snowAmount: { value: 1, min: 0, max: 1 },
       snowScale: { value: 180, min: 10, max: 800 },
@@ -453,5 +453,5 @@ export default function useInteractiveTvControls() {
     { collapsed: true }
   );
 
-  return { smtpe, snow, noSignal, terminal, homeVideo, tv, threeD, pip };
+  return { smtpe, tvStatic, noSignal, terminal, homeVideo, tv, threeD, pip };
 }

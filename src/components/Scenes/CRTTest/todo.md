@@ -13,12 +13,13 @@
 
 **CRT Shaders**
 
-- [ ] Fix vignette in CRTStaticMaterial, CRTSnowMat
 - [ ] Rename CRTStaticMaterial -> CRTSmtpeStaticMaterial
 - [ ] Rename CRTSnowMaterial -> CRTStaticMaterial
+- [ ] Fix vignette in CRTSmtpeStaticMaterial, CRTStaticMaterial
 - [ ] Add default background to CRTShowMaterial when webcam disabled. R&S fallback sucsk
 - [ ] Fix camera bug on Scene material. Could the test scene take a ref that is used by the render tex?
 - [ ] Combine materials to cohesive set of props
+- [ ] Update default input props based on final scene
 
 **TV**
 
@@ -35,16 +36,16 @@
 
 **Other**
 
-- [ ] Move Materials
-- [ ] Move TV components
+- [x] Move Materials
+- [x] Move TV components
 - [ ] Test Mobile - Webcam Only works HTTPS. Strudel only works w/ silent off?
 - [ ] Add helper modal. use HTML to get a billboard. Show on !localhost. useState for visibility. include dial & knob instructions. include audio instructions. include mobile details
 
 **Final Steps**
 
-- [ ] Making of Reel + side quest reels.
-- [ ] Reel
+- [ ] 'Making Of' reel + side quest reels.
+- [ ] Reel of page running channel surf.
 - [ ] Push to ghpages
 - [ ] Post Reel w/ link
-- [ ] Share Reel Post
+- [ ] Share Reel Post in stories
 - [ ] Update link in bio

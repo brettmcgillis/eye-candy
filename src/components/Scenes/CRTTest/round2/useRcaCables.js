@@ -2,6 +2,8 @@
 import React, { useEffect, useMemo, useRef, useState } from 'react';
 import * as THREE from 'three';
 
+import { useFrame } from '@react-three/fiber';
+
 import CRTBlueScreenMaterial, {
   TerminalSetting,
   VHSSetting,
@@ -265,16 +267,18 @@ export default function useRcaCables({
   const surfTimer = useRef(0);
   const nextInterval = useRef(1 + Math.random() * 0.5);
 
-  function updateSurf(delta) {
+  useFrame((_, delta) => {
     if (!power || !surfing) return;
 
     surfTimer.current += delta;
+
     if (surfTimer.current >= nextInterval.current) {
       surfTimer.current = 0;
-      nextInterval.current = 0.8 + Math.random() * 0.7;
-      nextChannel();
+      nextInterval.current = 0.6 + Math.random() * 0.9;
+
+      setChannelIndex((i) => (i + 1) % channels.length);
     }
-  }
+  });
 
   const toggleSurfing = () => setSurfing((s) => !s);
 
@@ -353,7 +357,6 @@ export default function useRcaCables({
     setChannelByKey,
 
     toggleSurfing,
-    updateSurf,
 
     /* audio */
     knobClick,

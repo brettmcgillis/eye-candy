@@ -58,7 +58,6 @@ export default function InteractiveTvController({
     setChannelByKey,
 
     toggleSurfing,
-    updateSurf,
 
     /* audio */
     knobClick,
@@ -84,20 +83,29 @@ export default function InteractiveTvController({
   }
 
   function handleDial2Click() {
+    dialClick();
     if (!power) {
       togglePower();
+    }
+    if (surfing) {
+      toggleSurfing();
     }
     setChannelByKey('terminal'); // terminal
   }
 
   function handleDial3Click() {
+    dialClick();
     if (!power) {
       togglePower();
+    }
+    if (surfing) {
+      toggleSurfing();
     }
     setChannelByKey('vhs'); // terminal
   }
 
   function handleDial4Click() {
+    dialClick();
     toggleSurfing();
   }
 

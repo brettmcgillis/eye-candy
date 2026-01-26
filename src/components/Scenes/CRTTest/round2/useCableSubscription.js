@@ -21,8 +21,24 @@ function audioFile(name) {
 export default function useCableSubscription() {
   const channels = useMemo(
     () => [
-      { key: 'snow', video: <CRTSnowMaterial />, audio: null },
-      { key: 'static', video: <CRTStaticMaterial />, audio: null },
+      {
+        key: 'snow',
+        video: <CRTSnowMaterial />,
+        audio: {
+          type: 'file',
+          url: audioFile('tv-static.mp3'),
+          loop: true,
+        },
+      },
+      {
+        key: 'static',
+        video: <CRTStaticMaterial />,
+        audio: {
+          type: 'file',
+          url: audioFile('tv-static.mp3'),
+          loop: true,
+        },
+      },
       {
         key: 'vhs',
         video: (

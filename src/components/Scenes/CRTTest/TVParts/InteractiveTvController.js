@@ -8,7 +8,7 @@
 import React, { useEffect, useMemo, useState } from 'react';
 import * as THREE from 'three';
 
-import useRcaCables from 'components/scenes/CRTTest/round2/useRcaCables';
+import useRcaCables from 'components/scenes/CRTTest/Hooks/useRcaCables';
 
 import InstancedTvInteractive from './InstancedTvInteractive';
 import { TvInstances } from './TvInstances';

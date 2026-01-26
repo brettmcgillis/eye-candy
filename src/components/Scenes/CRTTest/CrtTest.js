@@ -42,7 +42,9 @@ export default function CRTTest() {
         lookAt={[0, 0, 0]}
       />
       <Stats />
-      <SeentIt />
+      {/* <SeentIt /> */}
+      <TestPanels />
+
       <RingLight />
 
       <color attach="background" args={['#000000']} />
@@ -75,6 +77,7 @@ function SeentIt() {
           rotation={[0, 0, 0]}
           scale={10}
           defaultChannel="threeD"
+          isTurnedOn={false}
         />
 
         <InteractiveTvController
@@ -92,8 +95,6 @@ function SeentIt() {
       />
       <Reversal position={[-1, 0, 2]} rotation={[-Math.PI / 2, 0, 0]} />
       <Reversal position={[1, 0, 2]} rotation={[-Math.PI / 2, 0, 0]} />
-
-      {/* <TestPanels /> */}
 
       <mesh position={[0, 0, 2]} rotation={[-Math.PI / 2, 0, -Math.PI / 4]}>
         <planeGeometry args={[20, 20]} />

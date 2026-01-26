@@ -1,10 +1,12 @@
 /* eslint-disable no-unused-vars */
 
 /* eslint-disable react/no-array-index-key */
-import React, { useRef } from 'react';
+import React, { Suspense, useRef } from 'react';
 
 import { PerspectiveCamera } from '@react-three/drei';
 import { useFrame } from '@react-three/fiber';
+
+import Loader from 'app/scaffold/loader/Loader';
 
 import Bret from 'components/elements/bret/Bret';
 import { InteractiveReversal } from 'components/elements/reversal/Reversal';
@@ -40,7 +42,7 @@ function OrbitingReversals({ count = 4, radius = 2, speed = 0.25 }) {
 
 export default function TestScene() {
   return (
-    <>
+    <Suspense fallback={<Loader />}>
       <PerspectiveCamera makeDefault position={[0, 0, 3]} />
 
       <color attach="background" args={['#646464']} />
@@ -54,6 +56,6 @@ export default function TestScene() {
 
       {/* Center vertical element */}
       <Bret scale={1.5} position={[0, 0.05, 0]} rotation={[0, 0, 0]} />
-    </>
+    </Suspense>
   );
 }

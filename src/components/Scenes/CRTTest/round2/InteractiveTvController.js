@@ -11,26 +11,17 @@ import * as THREE from 'three';
 import { animated, useSpring } from '@react-spring/three';
 import { useFrame } from '@react-three/fiber';
 
-import CRTBlueScreenMaterial, {
-  TerminalSetting,
-  VHSSetting,
-} from 'components/scenes/CRTTest/CRTBlueScreenMaterial';
-import CRTSceneInSceneMaterial from 'components/scenes/CRTTest/CRTSceneInSceneMaterial';
-import CRTSceneMaterial from 'components/scenes/CRTTest/CRTSceneMaterial';
-import CRTShowMaterial from 'components/scenes/CRTTest/CRTShowMaterial';
-import CRTSnowMaterial from 'components/scenes/CRTTest/CRTSnowMaterial';
-import CRTStaticMaterial from 'components/scenes/CRTTest/CRTStaticMaterial';
-import TestScene from 'components/scenes/CRTTest/TestScene';
-
 /* ---------------------------------------------
    Parent / Orchestrator
 ---------------------------------------------- */
 import { TvContext, TvInstances } from './TvInstances';
+import useRcaCables from './useRcaCables';
 
 export function InteractiveTvController({
   stepsPerRotation = 12,
   isTurnedOn = true,
   defaultChannel,
+  surfChannels = false,
   ...props
 }) {
   /* ---------- shared tv materials ---------- */
@@ -53,19 +44,21 @@ export function InteractiveTvController({
 
   /* ---------- channels ---------- */
 
-  const channels = useMemo(
-    () => [
-      <CRTSnowMaterial key="snow" />,
-      <CRTStaticMaterial key="static" />,
-      <CRTBlueScreenMaterial key="vhs" {...VHSSetting} />, // index 2
-      <CRTBlueScreenMaterial key="terminal" {...TerminalSetting} />, // index 3
-      <CRTShowMaterial key="homeVideo" useWebcam />,
-      <CRTShowMaterial key="tv" />,
-      <CRTSceneMaterial key="threeD" scene={<TestScene />} />,
-      <CRTSceneInSceneMaterial key="pip" />,
-    ],
-    []
-  );
+  const {
+    channels,
+
+    tuneChannel,
+    powerOn,
+    powerOff,
+
+    knobClick,
+    dialClick,
+
+    attachToObject,
+    unlockAudio,
+    unlocked,
+  } = useRcaCables();
+
   const channelIndexMap = useMemo(() => {
     const map = {};
     channels.forEach((c, i) => {
@@ -76,6 +69,7 @@ export function InteractiveTvController({
   /* ---------- tv state ---------- */
 
   const [power, setPower] = useState(isTurnedOn);
+  const [channelSurfing, setChannelSurfing] = useState(surfChannels);
 
   const [channelIndex, setChannelIndex] = useState(() => {
     if (defaultChannel && defaultChannel in channelIndexMap) {
@@ -85,11 +79,24 @@ export function InteractiveTvController({
   });
   const [knobStep, setKnobStep] = useState(0);
 
-  const activeChannel = power ? channels[channelIndex % channels.length] : null;
+  useEffect(() => {
+    if (!power) powerOff();
+    else {
+      powerOn();
+      tuneChannel(channelIndex);
+    }
+  }, [power]);
+
+  useEffect(() => {
+    if (power) tuneChannel(channelIndex);
+  }, [channelIndex]);
+
+  const activeChannel = power ? channels[channelIndex]?.video : null;
 
   /* ---------- handlers ---------- */
-
   function handleKnob01Click() {
+    unlockAudio();
+    knobClick();
     setKnobStep((s) => s + 1);
     setChannelIndex((i) => (i + 1) % channels.length);
   }
@@ -108,9 +115,31 @@ export function InteractiveTvController({
     setChannelIndex(2); // vhs
   }
 
+  function handleDial4Click() {
+    setChannelSurfing((s) => !s);
+  }
+
   function handleKnob02Click() {
     console.log('knob 2 clicked (reserved)');
   }
+
+  const surfTimer = useRef(0);
+  const nextInterval = useRef(1 + Math.random() * 0.4);
+
+  useFrame((_, delta) => {
+    if (!power || !channelSurfing) {
+      surfTimer.current = 0; // reset when not active
+      return;
+    }
+
+    surfTimer.current += delta;
+
+    if (surfTimer.current >= nextInterval.current) {
+      surfTimer.current = 0;
+      nextInterval.current = 1 + Math.random() * 0.6;
+      handleKnob01Click();
+    }
+  });
 
   /* ---------- render ---------- */
 
@@ -125,11 +154,13 @@ export function InteractiveTvController({
         stepsPerRotation={stepsPerRotation}
         knob01Step={knobStep}
         power={power}
+        channelSurfing={channelSurfing}
         channelIndex={channelIndex}
         screenMaterial={activeChannel}
         onDial1Click={handleDial1Click}
         onDial2Click={handleDial2Click}
         onDial3Click={handleDial3Click}
+        onDial4Click={handleDial4Click}
         onKnob01Click={handleKnob01Click}
         onKnob02Click={handleKnob02Click}
       />
@@ -146,12 +177,14 @@ export function InstancedTvInteractive({
   onDial1Click,
   onDial2Click,
   onDial3Click,
+  onDial4Click,
 
   onKnob01Click,
   onKnob02Click,
 
   screenMaterial,
   power,
+  channelSurfing,
   channelIndex,
   ...props
 }) {
@@ -174,6 +207,7 @@ export function InstancedTvInteractive({
       power: nodes.dial_01.material.clone(),
       terminal: nodes.dial_02.material.clone(),
       vhs: nodes.dial_03.material.clone(),
+      surf: nodes.dial_01.material.clone(),
     }),
     [nodes]
   );
@@ -183,6 +217,7 @@ export function InstancedTvInteractive({
     dialMats.power.emissive.set('#ff1a1a');
     dialMats.terminal.emissive.set('#00ff55');
     dialMats.vhs.emissive.set('#1a4dff');
+    dialMats.surf.emissive.set('#d0d0d0');
   }, [dialMats]);
 
   /* ---------- glow springs ---------- */
@@ -202,12 +237,17 @@ export function InstancedTvInteractive({
     config: { tension: 120, friction: 20 },
   });
 
+  const surfGlow = useSpring({
+    glow: power && channelSurfing ? 1 : 0,
+    config: { tension: 120, friction: 20 },
+  });
   /* ---------- drive emissive every frame ---------- */
 
   useFrame(() => {
     dialMats.power.emissiveIntensity = powerGlow.glow.get() * 2;
     dialMats.terminal.emissiveIntensity = terminalGlow.glow.get() * 2;
     dialMats.vhs.emissiveIntensity = vhsGlow.glow.get() * 2;
+    dialMats.surf.emissiveIntensity = surfGlow.glow.get() * 2;
   });
 
   /* ---------- press animation ---------- */
@@ -238,6 +278,7 @@ export function InstancedTvInteractive({
             r.material = dialMats.power;
             dialRefs.current.dial1 = r;
           }}
+          scale={0.5}
           position={[0.254, 0.208, 0.092]}
           onClick={(e) => {
             e.stopPropagation();
@@ -254,7 +295,8 @@ export function InstancedTvInteractive({
             r.material = dialMats.terminal;
             dialRefs.current.dial2 = r;
           }}
-          position={[0.291, 0.208, 0.092]}
+          scale={0.5}
+          position={[0.272, 0.208, 0.092]}
           onClick={(e) => {
             e.stopPropagation();
             pressDial('dial2');
@@ -270,7 +312,8 @@ export function InstancedTvInteractive({
             r.material = dialMats.vhs;
             dialRefs.current.dial3 = r;
           }}
-          position={[0.328, 0.208, 0.092]}
+          scale={0.5}
+          position={[0.29, 0.208, 0.092]}
           onClick={(e) => {
             e.stopPropagation();
             pressDial('dial3');
@@ -279,6 +322,22 @@ export function InstancedTvInteractive({
           }}
         />
 
+        <primitive
+          object={nodes.dial_01.clone()}
+          ref={(r) => {
+            if (!r) return;
+            r.material = dialMats.surf;
+            dialRefs.current.dial4 = r;
+          }}
+          scale={0.5}
+          position={[0.308, 0.208, 0.092]} // 👈 tweak this
+          onClick={(e) => {
+            e.stopPropagation();
+            pressDial('dial4');
+            onDial4Click?.();
+            setTimeout(() => releaseDial('dial4'), 120);
+          }}
+        />
         {/* -------- KNOBS -------- */}
 
         <animated.group

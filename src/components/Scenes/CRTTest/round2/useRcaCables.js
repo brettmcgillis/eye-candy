@@ -1,4 +1,5 @@
 /* eslint-disable no-unused-vars */
+import useStrudelTrack from 'hooks/useStrudelTrack';
 import { useEffect, useMemo, useRef, useState } from 'react';
 import * as THREE from 'three';
 
@@ -7,7 +8,7 @@ import { useFrame } from '@react-three/fiber';
 import useCableSubscription from './useCableSubscription';
 
 /* -------------------------------------------------
-   useRcaCables — TV brain + A/V bus (with mute)
+   useRcaCables — TV brain + A/V bus (with Strudel)
 -------------------------------------------------- */
 
 function audioFile(name) {
@@ -28,6 +29,9 @@ export default function useRcaCables({
 
   const currentSource = useRef(null);
   const currentGain = useRef(null);
+
+  // 🔑 reactive AudioContext so Strudel waits for it
+  const [audioCtx, setAudioCtx] = useState(null);
 
   /* ---------- tv state ---------- */
 
@@ -60,6 +64,8 @@ export default function useRcaCables({
   /* ---------- audio graph ---------- */
 
   useEffect(() => {
+    console.log('[rca] creating AudioContext…');
+
     const ctx = new AudioContext();
 
     const input = ctx.createGain();
@@ -86,8 +92,46 @@ export default function useRcaCables({
     tvInput.current = input;
     tvOutput.current = output;
 
-    return () => ctx.close();
-  }, []);
+    setAudioCtx(ctx);
+
+    console.log('[rca] AudioContext ready', ctx);
+
+    return () => {
+      console.log('[rca] closing AudioContext');
+      ctx.close();
+    };
+  }, [initialMuted]);
+
+  /* ---------- Strudel engine (owned by RCA) ---------- */
+
+  // ⚠️ Only instantiate once audioCtx exists
+  const strudel = useStrudelTrack(audioCtx ? { audioContext: audioCtx } : null);
+
+  // Patch Strudel into the TV bus once ready
+  useEffect(() => {
+    if (!strudel?.ready || !strudel.output || !tvInput.current) return;
+
+    console.log('[rca] attempting to patch strudel…');
+    console.log('[rca] RCA ctx:', ctxRef.current);
+    console.log('[rca] Strudel ctx:', strudel.ctx || strudel.audioContext);
+
+    if (strudel.ctx && ctxRef.current && strudel.ctx !== ctxRef.current) {
+      console.error('[rca] ❌ AUDIO CONTEXT MISMATCH — aborting patch');
+      return;
+    }
+
+    try {
+      // Remove default speaker routing
+      strudel.output.disconnect();
+    } catch (e) {
+      console.warn('[rca] strudel output disconnect failed', e);
+    }
+
+    // Strudel now becomes a physical TV input
+    strudel.output.connect(tvInput.current);
+
+    console.log('[rca] ✅ strudel patched into tv bus');
+  }, [strudel?.ready]);
 
   /* ---------- mute bus ---------- */
 
@@ -109,8 +153,12 @@ export default function useRcaCables({
   const unlockAudio = async () => {
     const ctx = ctxRef.current;
     if (!ctx || ctx.state === 'running') return;
+
+    console.log('[rca] unlocking audio…');
     await ctx.resume();
+    await strudel?.unlock?.();
     setUnlocked(true);
+    console.log('[rca] audio unlocked');
   };
 
   /* ---------- fades ---------- */
@@ -125,19 +173,24 @@ export default function useRcaCables({
     );
 
     setTimeout(() => {
-      currentSource.current?.stop();
+      try {
+        currentSource.current?.stop?.();
+      } catch (e) {
+        console.error('[rca cables] current source stop failed', e);
+      }
       currentSource.current = null;
       currentGain.current = null;
     }, time * 1000);
   }
 
-  /* ---------- playback ---------- */
+  /* ---------- playback (files) ---------- */
 
   async function playFileChannel(url, loop = true, fade = 0.4) {
     const ctx = ctxRef.current;
     if (!ctx || !tvInput.current) return;
 
     fadeOutAndStop();
+    strudel?.stop?.();
 
     const res = await fetch(url);
     const buf = await ctx.decodeAudioData(await res.arrayBuffer());
@@ -163,6 +216,7 @@ export default function useRcaCables({
   useEffect(() => {
     if (!power || muted || !activeChannel?.audio) {
       fadeOutAndStop(0.35);
+      strudel?.stop?.();
       return;
     }
 
@@ -171,7 +225,12 @@ export default function useRcaCables({
     if (audio.type === 'file') {
       playFileChannel(audio.url, audio.loop);
     }
-  }, [power, channelIndex, muted]);
+
+    if (audio.type === 'strudel' && strudel?.ready) {
+      fadeOutAndStop(0.35);
+      strudel.play(audio.code);
+    }
+  }, [power, channelIndex, muted, strudel?.ready]);
 
   /* ---------- power ---------- */
 
@@ -182,13 +241,18 @@ export default function useRcaCables({
 
   const powerOff = () => {
     fadeOutAndStop(0.35);
+    strudel?.stop?.();
     setPower(false);
   };
 
   const togglePower = () => {
     setPower((p) => {
-      if (p) fadeOutAndStop(0.35);
-      else unlockAudio();
+      if (p) {
+        fadeOutAndStop(0.35);
+        strudel?.stop?.();
+      } else {
+        unlockAudio();
+      }
       return !p;
     });
   };
@@ -247,7 +311,7 @@ export default function useRcaCables({
     gain.gain.value = volume;
     src.buffer = buf;
 
-    // SFX bypass mute bus (feels physical)
+    // SFX bypass mute bus
     src.connect(gain).connect(ctx.destination);
     src.start();
 
@@ -312,5 +376,8 @@ export default function useRcaCables({
     dialClick,
     unlockAudio,
     attachToObject,
+
+    // optional: expose strudel for UI / debugging
+    strudel,
   };
 }

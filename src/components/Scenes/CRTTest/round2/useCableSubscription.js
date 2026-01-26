@@ -12,6 +12,8 @@ import CRTSnowMaterial from 'components/scenes/CRTTest/CRTSnowMaterial';
 import CRTStaticMaterial from 'components/scenes/CRTTest/CRTStaticMaterial';
 import TestScene from 'components/scenes/CRTTest/TestScene';
 
+import { STRUDEL_TRACKS } from 'utils/tracks';
+
 function audioFile(name) {
   return `${process.env.PUBLIC_URL}/audio/${name}`;
 }
@@ -66,18 +68,18 @@ export default function useCableSubscription() {
         video: <CRTSceneMaterial scene={<TestScene />} />,
         audio: {
           type: 'strudel',
-          code: `
-                setcps(0.7)
-                stack(
-                sound("bd ~ bd ~").gain(1.1),
-                sound("hh*8").gain(0.4),
-                sound("arpy:2").slow(2).gain(0.5)
-                )
-                `,
+          code: STRUDEL_TRACKS.threeD,
         },
       },
 
-      { key: 'pip', video: <CRTSceneInSceneMaterial />, audio: null },
+      {
+        key: 'pip',
+        video: <CRTSceneInSceneMaterial />,
+        audio: {
+          type: 'strudel',
+          code: STRUDEL_TRACKS.weirderStuff,
+        },
+      },
     ],
     []
   );

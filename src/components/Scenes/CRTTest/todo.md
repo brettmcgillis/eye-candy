@@ -14,6 +14,8 @@
 - [ ] Rename CRTSnowMaterial -> CRTStaticMaterial
 - [ ] Add default background to CRTShowMaterial when webcam disabled. R&S fallback sucsk
 - [ ] Combine materials to cohesive set of props
+- [ ] Fix knob rotation during channel surf
+- [ ] Fix strudel plan on first render. Cant due to gesture requirement, so maybe info modal onclose can hit play? Or tv default off?
 - [ ] Wire up settings scan on knob2
 - [ ] Move Materials
 - [ ] Move TV components

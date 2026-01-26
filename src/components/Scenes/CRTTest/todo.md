@@ -13,8 +13,9 @@
 
 **CRT Shaders**
 
-- [ ] Rename CRTStaticMaterial -> CRTSmtpeStaticMaterial
-- [ ] Rename CRTSnowMaterial -> CRTStaticMaterial
+- [x] Rename CRTStaticMaterial -> CRTSmtpeStaticMaterial
+- [x] Rename CRTSnowMaterial -> CRTStaticMaterial
+- [ ] Test CRT Shader settings.
 - [ ] Fix vignette in CRTSmtpeStaticMaterial, CRTStaticMaterial
 - [ ] Add default background to CRTShowMaterial when webcam disabled. R&S fallback sucsk
 - [ ] Fix camera bug on Scene material. Could the test scene take a ref that is used by the render tex?

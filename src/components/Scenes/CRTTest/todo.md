@@ -5,12 +5,23 @@
 - [x] create a new shader material that combines a gif with some glitching and static effects
 - [x] update my existing crt static material with defaults that resemble my existing scene.
 - [x] Refactor my crt television to expose a variation prop. Uses channel key.
+- [x] Add channelSurf prop, auto rotate channels
+- [x] Use dial instances to provide 4th dial, emissive white, channelSurf indicator.
+- [x] Wire up dial, knob sounds
+- [ ] Add a Strudel thing
 - [ ] Fix vignette in CRTStaticMaterial, CRTSnowMat
 - [ ] Rename CRTStaticMaterial -> CRTSmtpeStaticMaterial
 - [ ] Rename CRTSnowMaterial -> CRTStaticMaterial
-- [x] Add channelSurf prop, auto rotate channels
-- [ ] Test Mobile - Webcam Only works HTTPS.
 - [ ] Add default background to CRTShowMaterial when webcam disabled. R&S fallback sucsk
+- [ ] Combine materials to cohesive set of props
+- [ ] Wire up settings scan on knob2
+- [ ] Move Materials
+- [ ] Move TV components
+- [ ] Test Mobile - Webcam Only works HTTPS. Strudel only works w/ silent off?
 - [ ] Wire up sounds
-- [ ] Fix camera bug - Scene material. Could the test scene take a ref that is used by the render tex?
-- [x] Use dial instances to provide 4th dial, emissive white, channelSurf indicator.
+- [ ] Fix camera bug on Scene material. Could the test scene take a ref that is used by the render tex?
+- [ ] Making of Reel
+- [ ] Reel
+- [ ] Push to ghpages
+- [ ] Post Reeel w/ link
+- [ ] Update link in bio

@@ -1,5 +1,5 @@
 import { useControls } from 'leva';
-import React, { Suspense } from 'react';
+import React, { Suspense, useEffect, useMemo } from 'react';
 
 import { Html } from '@react-three/drei';
 import { Canvas } from '@react-three/fiber';
@@ -18,24 +18,57 @@ import PixelHater from 'components/scenes/PixelHater/PixelHater';
 
 import './App.css';
 
+const SCENES = {
+  None: {
+    Component: () => (
+      <Html>
+        <p>💀</p>
+      </Html>
+    ),
+  },
+  PixelHater: { Component: PixelHater },
+  DumpsterFire: { Component: DumpsterFire },
+  FoldedFrame: { Component: FoldedFrame },
+  LoGlow: { Component: LoGlow },
+  NewScene: { Component: NewScene },
+  PaperStack: { Component: PaperStack },
+  HandStuff: { Component: HandStuff },
+  NetworkTest: { Component: NetworkTest },
+  CrtTest: { Component: CRTTest },
+};
+
+/* ---------------------------------------------
+   Query param helpers
+---------------------------------------------- */
+
+function getInitialScene() {
+  const params = new URLSearchParams(window.location.search);
+  const scene = params.get('scene');
+  return scene && SCENES[scene] ? scene : 'None';
+}
+
+/* ---------------------------------------------
+   App
+---------------------------------------------- */
+
 function App() {
+  const initialScene = useMemo(getInitialScene, []);
+
   const { scene } = useControls('Scene Selection', {
     scene: {
-      options: {
-        None: 'None',
-        PixelHater: 'PixelHater',
-        DumpsterFire: 'DumpsterFire',
-        FoldedFrame: 'FoldedFrame',
-        LoGlow: 'LoGlow',
-        NewScene: 'NewScene',
-        PaperStack: 'PaperStack',
-        HandStuff: 'HandStuff',
-        NetworkTest: 'NetworkTest',
-        CrtTest: 'CrtTest',
-      },
-      value: 'None',
+      options: Object.keys(SCENES),
+      value: initialScene,
     },
   });
+
+  // write back to url when scene changes
+  useEffect(() => {
+    const params = new URLSearchParams(window.location.search);
+    params.set('scene', scene);
+    window.history.replaceState({}, '', `?${params.toString()}`);
+  }, [scene]);
+
+  const SceneComponent = SCENES[scene]?.Component;
 
   return (
     <div className="App">
@@ -44,20 +77,7 @@ function App() {
         gl={{ preserveDrawingBuffer: true, depth: true, debug: true }}
       >
         <Suspense fallback={<Loader />}>
-          {scene === 'None' && (
-            <Html>
-              <p>💀</p>
-            </Html>
-          )}
-          {scene === 'PixelHater' && <PixelHater />}
-          {scene === 'DumpsterFire' && <DumpsterFire />}
-          {scene === 'FoldedFrame' && <FoldedFrame />}
-          {scene === 'LoGlow' && <LoGlow />}
-          {scene === 'NewScene' && <NewScene />}
-          {scene === 'PaperStack' && <PaperStack />}
-          {scene === 'HandStuff' && <HandStuff />}
-          {scene === 'NetworkTest' && <NetworkTest />}
-          {scene === 'CrtTest' && <CRTTest />}
+          {SceneComponent && <SceneComponent />}
         </Suspense>
       </Canvas>
     </div>

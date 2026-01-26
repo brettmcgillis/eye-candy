@@ -19,7 +19,7 @@
     "ecmaVersion": 12,
     "sourceType": "module"
   },
-  "plugins": ["no-relative-import-paths", "prettier", "unused-imports"],
+  "plugins": ["prettier", "unused-imports"],
   "rules": {
     "jsx-a11y/click-events-have-key-events": "off",
     "jsx-a11y/no-static-element-interactions": "off",
@@ -30,12 +30,8 @@
     "react/jsx-filename-extension": [
       1,
       {
-        "extensions": [".js"]
+        "extensions": [".js", ".jsx"]
       }
-    ],
-    "no-relative-import-paths/no-relative-import-paths": [
-      "warn",
-      { "allowSameFolder": true, "rootDir": "src" }
     ],
     "import/named": "error",
     "import/default": "error",
@@ -48,11 +44,26 @@
       { "varsIgnorePattern": "^_", "argsIgnorePattern": "^_" }
     ]
   },
+  "overrides": [
+    {
+      "files": ["vite.config.*", "vitest.config.*"],
+      "env": {
+        "node": true
+      },
+      "rules": {
+        "import/no-extraneous-dependencies": [
+          "error",
+          { "devDependencies": true }
+        ],
+        "import/no-unresolved": "off"
+      }
+    }
+  ],
   "settings": {
     "import/resolver": {
       "node": {
         "extensions": [".js", ".jsx"],
-        "moduleDirectory": ["node_modules", "src"]
+        "moduleDirectory": ["node_modules"]
       }
     }
   }

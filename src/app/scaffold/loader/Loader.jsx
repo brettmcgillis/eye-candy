@@ -6,7 +6,7 @@ import { Html, useProgress } from '@react-three/drei';
 
 import './Loader.css';
 
-function Loader() {
+export default function Loader() {
   const { progress } = useProgress();
   const p = Math.floor(progress);
   return (
@@ -19,5 +19,3 @@ function Loader() {
     </Html>
   );
 }
-
-export default Loader;

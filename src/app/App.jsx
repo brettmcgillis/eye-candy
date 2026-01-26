@@ -1,23 +1,22 @@
 import { useControls } from 'leva';
+
 import React, { Suspense, useEffect, useMemo } from 'react';
 
 import { Html } from '@react-three/drei';
 import { Canvas } from '@react-three/fiber';
 
-import Loader from 'app/scaffold/loader/Loader';
-
-import CRTTest from 'components/scenes/CRTTest/CrtTest';
-import DumpsterFire from 'components/scenes/DumpsterFire/DumpsterFire';
-import FoldedFrame from 'components/scenes/FoldedFrame/FoldedFrame';
-import HandStuff from 'components/scenes/HandStuff/HandStuff';
-import LoGlow from 'components/scenes/Loglow';
-import NetworkTest from 'components/scenes/NetworkTest/NetworkTest';
-import NewScene from 'components/scenes/NewScene';
-import PaperStack from 'components/scenes/PaperStack/PaperStack';
-import PixelHater from 'components/scenes/PixelHater/PixelHater';
-import StrudelDoodle from 'components/scenes/StrudelDoodle/StrudelDoodle';
-
+import CRTTest from '../components/scenes/CRTTest/CrtTest';
+import DumpsterFire from '../components/scenes/DumpsterFire/DumpsterFire';
+import FoldedFrame from '../components/scenes/FoldedFrame/FoldedFrame';
+import HandStuff from '../components/scenes/HandStuff/HandStuff';
+import LoGlow from '../components/scenes/Loglow';
+import NetworkTest from '../components/scenes/NetworkTest/NetworkTest';
+import NewScene from '../components/scenes/NewScene';
+import PaperStack from '../components/scenes/PaperStack/PaperStack';
+import PixelHater from '../components/scenes/PixelHater/PixelHater';
+import StrudelDoodle from '../components/scenes/StrudelDoodle/StrudelDoodle';
 import './App.css';
+import Loader from './scaffold/loader/Loader';
 
 const SCENES = {
   None: {

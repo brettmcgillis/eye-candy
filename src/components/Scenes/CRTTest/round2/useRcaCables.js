@@ -1,19 +1,10 @@
 /* eslint-disable no-unused-vars */
-import React, { useEffect, useMemo, useRef, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import * as THREE from 'three';
 
 import { useFrame } from '@react-three/fiber';
 
-import CRTBlueScreenMaterial, {
-  TerminalSetting,
-  VHSSetting,
-} from 'components/scenes/CRTTest/CRTBlueScreenMaterial';
-import CRTSceneInSceneMaterial from 'components/scenes/CRTTest/CRTSceneInSceneMaterial';
-import CRTSceneMaterial from 'components/scenes/CRTTest/CRTSceneMaterial';
-import CRTShowMaterial from 'components/scenes/CRTTest/CRTShowMaterial';
-import CRTSnowMaterial from 'components/scenes/CRTTest/CRTSnowMaterial';
-import CRTStaticMaterial from 'components/scenes/CRTTest/CRTStaticMaterial';
-import TestScene from 'components/scenes/CRTTest/TestScene';
+import useCableSubscription from './useCableSubscription';
 
 /* -------------------------------------------------
    useRcaCables — TV brain + A/V bus (with mute)
@@ -47,63 +38,7 @@ export default function useRcaCables({
 
   /* ---------- channels ---------- */
 
-  const channels = useMemo(
-    () => [
-      {
-        key: 'snow',
-        video: <CRTSnowMaterial />,
-        audio: null, // Static
-      },
-      {
-        key: 'static',
-        video: <CRTStaticMaterial />,
-        audio: null, // Different static
-      },
-      {
-        key: 'vhs',
-        video: (
-          <CRTBlueScreenMaterial
-            {...VHSSetting}
-            horizontalPadding={100}
-            verticalPadding={95}
-          />
-        ),
-        audio: null, // Vhs Rewind
-      },
-      {
-        key: 'terminal',
-        video: (
-          <CRTBlueScreenMaterial
-            {...TerminalSetting}
-            horizontalPadding={100}
-            verticalPadding={95}
-          />
-        ),
-        audio: null, // Terminal boop?
-      },
-      {
-        key: 'homeVideo',
-        video: <CRTShowMaterial useWebcam />,
-        audio: null, // Laugh track
-      },
-      {
-        key: 'tv',
-        video: <CRTShowMaterial />,
-        audio: {
-          type: 'file',
-          url: audioFile('ren-and-stimpy.mp3'),
-          loop: true,
-        },
-      },
-      {
-        key: 'threeD',
-        video: <CRTSceneMaterial scene={<TestScene />} />,
-        audio: null, // Strudel something?
-      },
-      { key: 'pip', video: <CRTSceneInSceneMaterial />, audio: null },
-    ],
-    []
-  );
+  const { channels } = useCableSubscription();
 
   const channelIndexMap = useMemo(() => {
     const map = {};

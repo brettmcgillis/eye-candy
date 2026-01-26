@@ -5,10 +5,8 @@
 /* eslint-disable unused-imports/no-unused-vars */
 
 /* eslint-disable react/jsx-no-bind */
-import React, { useEffect, useMemo, useRef, useState } from 'react';
+import React, { useMemo, useState } from 'react';
 import * as THREE from 'three';
-
-import { useFrame } from '@react-three/fiber';
 
 import InstancedTvInteractive from './InstancedTvInteractive';
 import { TvInstances } from './TvInstances';
@@ -18,7 +16,7 @@ export default function InteractiveTvController({
   stepsPerRotation = 12,
   isTurnedOn = true,
   defaultChannel,
-  surfChannels = false,
+  isSurfingChannels = false,
   ...props
 }) {
   /* ---------- shared tv materials ---------- */
@@ -42,101 +40,70 @@ export default function InteractiveTvController({
   /* ---------- channels ---------- */
 
   const {
+    /* state */
     channels,
+    activeChannel,
+    channelIndex,
+    channelKey,
+    power,
+    surfing,
+    unlocked,
 
-    tuneChannel,
+    /* controls */
     powerOn,
     powerOff,
+    togglePower,
 
+    nextChannel,
+    setChannelByKey,
+
+    toggleSurfing,
+    updateSurf,
+
+    /* audio */
     knobClick,
     dialClick,
-
-    attachToObject,
     unlockAudio,
-    unlocked,
-  } = useRcaCables();
+    attachToObject,
+  } = useRcaCables({ defaultChannel, initialPower: isTurnedOn });
 
-  const channelIndexMap = useMemo(() => {
-    const map = {};
-    channels.forEach((c, i) => {
-      if (c?.key != null) map[c.key] = i;
-    });
-    return map;
-  }, [channels]);
   /* ---------- tv state ---------- */
 
-  const [power, setPower] = useState(isTurnedOn);
-  const [channelSurfing, setChannelSurfing] = useState(surfChannels);
-
-  const [channelIndex, setChannelIndex] = useState(() => {
-    if (defaultChannel && defaultChannel in channelIndexMap) {
-      return channelIndexMap[defaultChannel];
-    }
-    return 0;
-  });
   const [knobStep, setKnobStep] = useState(0);
-
-  useEffect(() => {
-    if (!power) powerOff();
-    else {
-      powerOn();
-      tuneChannel(channelIndex);
-    }
-  }, [power]);
-
-  useEffect(() => {
-    if (power) tuneChannel(channelIndex);
-  }, [channelIndex]);
-
-  const activeChannel = power ? channels[channelIndex]?.video : null;
 
   /* ---------- handlers ---------- */
   function handleKnob01Click() {
-    unlockAudio();
     knobClick();
+    nextChannel();
     setKnobStep((s) => s + 1);
-    setChannelIndex((i) => (i + 1) % channels.length);
   }
 
   function handleDial1Click() {
-    setPower((p) => !p);
+    dialClick();
+    togglePower();
   }
 
   function handleDial2Click() {
-    setPower(true);
-    setChannelIndex(3); // terminal
+    if (!power) {
+      togglePower();
+    }
+    setChannelByKey('terminal'); // terminal
   }
 
   function handleDial3Click() {
-    setPower(true);
-    setChannelIndex(2); // vhs
+    if (!power) {
+      togglePower();
+    }
+    setChannelByKey('vhs'); // terminal
   }
 
   function handleDial4Click() {
-    setChannelSurfing((s) => !s);
+    toggleSurfing();
   }
 
   function handleKnob02Click() {
     console.log('knob 2 clicked (reserved)');
   }
-
-  const surfTimer = useRef(0);
-  const nextInterval = useRef(1 + Math.random() * 0.4);
-
-  useFrame((_, delta) => {
-    if (!power || !channelSurfing) {
-      surfTimer.current = 0; // reset when not active
-      return;
-    }
-
-    surfTimer.current += delta;
-
-    if (surfTimer.current >= nextInterval.current) {
-      surfTimer.current = 0;
-      nextInterval.current = 1 + Math.random() * 0.6;
-      handleKnob01Click();
-    }
-  });
 
   /* ---------- render ---------- */
 
@@ -151,9 +118,9 @@ export default function InteractiveTvController({
         stepsPerRotation={stepsPerRotation}
         knob01Step={knobStep}
         power={power}
-        channelSurfing={channelSurfing}
+        channelSurfing={surfing}
         channelIndex={channelIndex}
-        screenMaterial={activeChannel}
+        screenMaterial={activeChannel?.video ?? null}
         onDial1Click={handleDial1Click}
         onDial2Click={handleDial2Click}
         onDial3Click={handleDial3Click}

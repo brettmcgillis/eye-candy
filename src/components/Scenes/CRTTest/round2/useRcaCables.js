@@ -14,26 +14,126 @@ import CRTStaticMaterial from 'components/scenes/CRTTest/CRTStaticMaterial';
 import TestScene from 'components/scenes/CRTTest/TestScene';
 
 /* -------------------------------------------------
-   useRcaCables — centralized TV A/V bus
+   useRcaCables — TV brain + A/V bus
 -------------------------------------------------- */
 
-export default function useRcaCables() {
-  const ctxRef = useRef(null);
-  const currentSource = useRef(null);
-  const currentGain = useRef(null);
+function audioFile(name) {
+  return `${process.env.PUBLIC_URL}/audio/${name}`;
+}
 
+export default function useRcaCables({
+  initialPower = true,
+  defaultChannelKey,
+  surfChannels = false,
+} = {}) {
+  /* ---------- audio core ---------- */
+
+  const ctxRef = useRef(null);
   const tvInput = useRef(null);
   const tvOutput = useRef(null);
 
-  const [unlocked, setUnlocked] = useState(false);
+  const currentSource = useRef(null);
+  const currentGain = useRef(null);
 
-  /* ---------- audio context + TV speaker chain ---------- */
+  /* ---------- tv state ---------- */
+
+  const [unlocked, setUnlocked] = useState(false);
+  const [power, setPower] = useState(initialPower);
+  const [surfing, setSurfing] = useState(surfChannels);
+
+  /* ---------- channels ---------- */
+
+  const channels = useMemo(
+    () => [
+      {
+        key: 'snow',
+        video: <CRTSnowMaterial />,
+        audio: null,
+        // audio: { type: 'file', url: '/audio/tv-static.mp3', loop: true },
+      },
+      {
+        key: 'static',
+        video: <CRTStaticMaterial />,
+        audio: null,
+        // audio: { type: 'file', url: '/audio/tv-noise-low.mp3', loop: true },
+      },
+      {
+        key: 'vhs',
+        video: (
+          <CRTBlueScreenMaterial
+            {...VHSSetting}
+            horizontalPadding={100}
+            verticalPadding={95}
+          />
+        ),
+        audio: null,
+        // audio: { type: 'file', url: '/audio/vhs-hum.mp3', loop: true },
+      },
+      {
+        key: 'terminal',
+        video: (
+          <CRTBlueScreenMaterial
+            {...TerminalSetting}
+            horizontalPadding={100}
+            verticalPadding={95}
+          />
+        ),
+        audio: null,
+        // audio: { type: 'file', url: '/audio/modem-drone.mp3', loop: true },
+      },
+      {
+        key: 'homeVideo',
+        video: <CRTShowMaterial useWebcam />,
+        audio: null,
+      },
+      {
+        key: 'tv',
+        video: <CRTShowMaterial />,
+        audio: {
+          type: 'file',
+          url: audioFile('ren-and-stimpy.mp3'),
+          loop: true,
+        },
+      },
+      {
+        key: 'threeD',
+        video: <CRTSceneMaterial scene={<TestScene />} />,
+        audio: null,
+        // audio: { type: 'file', url: '/audio/synth-bed.mp3', loop: true },
+      },
+      {
+        key: 'pip',
+        video: <CRTSceneInSceneMaterial />,
+        audio: null,
+      },
+    ],
+    []
+  );
+
+  const channelIndexMap = useMemo(() => {
+    const map = {};
+    channels.forEach((c, i) => {
+      map[c.key] = i;
+    });
+    return map;
+  }, [channels]);
+
+  const [channelIndex, setChannelIndex] = useState(() => {
+    if (defaultChannelKey && defaultChannelKey in channelIndexMap) {
+      return channelIndexMap[defaultChannelKey];
+    }
+    return 0;
+  });
+
+  const activeChannel = power ? channels[channelIndex] : null;
+
+  /* ---------- audio graph ---------- */
 
   useEffect(() => {
     const ctx = new AudioContext();
 
     const input = ctx.createGain();
-    const preGain = ctx.createGain();
+    const pre = ctx.createGain();
     const filter = ctx.createBiquadFilter();
     const comp = ctx.createDynamicsCompressor();
     const output = ctx.createGain();
@@ -42,11 +142,11 @@ export default function useRcaCables() {
     filter.frequency.value = 1800;
     filter.Q.value = 0.8;
 
-    preGain.gain.value = 0.9;
+    pre.gain.value = 0.9;
     output.gain.value = 0.8;
 
     input
-      .connect(preGain)
+      .connect(pre)
       .connect(filter)
       .connect(comp)
       .connect(output)
@@ -56,9 +156,7 @@ export default function useRcaCables() {
     tvInput.current = input;
     tvOutput.current = output;
 
-    return () => {
-      ctx.close();
-    };
+    return () => ctx.close();
   }, []);
 
   /* ---------- mobile unlock ---------- */
@@ -70,34 +168,9 @@ export default function useRcaCables() {
     setUnlocked(true);
   };
 
-  /* ---------- one-shot SFX ---------- */
-
-  async function playOneShot(url, volume = 0.6) {
-    const ctx = ctxRef.current;
-    if (!ctx) return;
-
-    const res = await fetch(url);
-    const buf = await ctx.decodeAudioData(await res.arrayBuffer());
-
-    const src = ctx.createBufferSource();
-    const gain = ctx.createGain();
-    gain.gain.value = volume;
-
-    src.buffer = buf;
-    src.connect(gain).connect(tvInput.current);
-    src.start();
-  }
-
-  const knobClick = () => {
-    // playOneShot('/audio/knob-click.wav', 0.35);
-  };
-  const dialClick = () => {
-    // playOneShot('/audio/dial-click.wav', 0.5);
-  };
-
   /* ---------- fades ---------- */
 
-  function fadeOutAndStop(time = 0.25) {
+  function fadeOutAndStop(time = 0.3) {
     if (!currentGain.current || !currentSource.current) return;
     const ctx = ctxRef.current;
 
@@ -113,11 +186,11 @@ export default function useRcaCables() {
     }, time * 1000);
   }
 
-  /* ---------- channel playback ---------- */
+  /* ---------- playback ---------- */
 
   async function playFileChannel(url, loop = true, fade = 0.4) {
     const ctx = ctxRef.current;
-    if (!ctx) return;
+    if (!ctx || !tvInput.current) return;
 
     fadeOutAndStop();
 
@@ -140,10 +213,106 @@ export default function useRcaCables() {
     currentGain.current = gain;
   }
 
+  /* ---------- channel audio router ---------- */
+
+  useEffect(() => {
+    if (!power || !activeChannel?.audio) {
+      fadeOutAndStop(0.35);
+      return;
+    }
+
+    const { audio } = activeChannel;
+
+    if (audio.type === 'file') {
+      playFileChannel(audio.url, audio.loop);
+    }
+
+    // if (audio.type === 'strudel') playStrudelChannel(audio)
+  }, [power, channelIndex]);
+
   /* ---------- power ---------- */
 
-  const powerOff = () => fadeOutAndStop(0.35);
-  const powerOn = () => unlockAudio();
+  const powerOn = () => {
+    unlockAudio();
+    setPower(true);
+  };
+
+  const powerOff = () => {
+    fadeOutAndStop(0.35);
+    setPower(false);
+  };
+
+  const togglePower = () => {
+    setPower((p) => {
+      if (p) fadeOutAndStop(0.35);
+      else unlockAudio();
+      return !p;
+    });
+  };
+
+  /* ---------- channels ---------- */
+
+  function nextChannel() {
+    setChannelIndex((i) => (i + 1) % channels.length);
+  }
+
+  function setChannelByKey(key) {
+    if (key in channelIndexMap) setChannelIndex(channelIndexMap[key]);
+  }
+
+  /* ---------- surfing ---------- */
+
+  const surfTimer = useRef(0);
+  const nextInterval = useRef(1 + Math.random() * 0.5);
+
+  function updateSurf(delta) {
+    if (!power || !surfing) return;
+
+    surfTimer.current += delta;
+    if (surfTimer.current >= nextInterval.current) {
+      surfTimer.current = 0;
+      nextInterval.current = 0.8 + Math.random() * 0.7;
+      nextChannel();
+    }
+  }
+
+  const toggleSurfing = () => setSurfing((s) => !s);
+
+  /* ---------- one-shot SFX ---------- */
+
+  async function playOneShot(url, volume = 0.5) {
+    const ctx = ctxRef.current;
+    if (!ctx || !tvInput.current) return;
+
+    // mobile safety
+    if (ctx.state !== 'running') await unlockAudio();
+
+    const res = await fetch(url);
+    const buf = await ctx.decodeAudioData(await res.arrayBuffer());
+
+    const src = ctx.createBufferSource();
+    const gain = ctx.createGain();
+
+    gain.gain.value = volume;
+
+    src.buffer = buf;
+    src.connect(gain).connect(tvInput.current);
+    src.start();
+
+    src.onended = () => {
+      src.disconnect();
+      gain.disconnect();
+    };
+  }
+  /* ---------- SFX ---------- */
+
+  const knobClick = () => {
+    playOneShot(audioFile('knob-click.mp3'), 0.35);
+  };
+
+  const dialClick = () => {
+    playOneShot(audioFile('switch-click.mp3'), 0.35);
+  };
 
   /* ---------- positional hookup ---------- */
 
@@ -154,7 +323,6 @@ export default function useRcaCables() {
     object3D.add(listener);
 
     const positional = new THREE.PositionalAudio(listener);
-
     tvOutput.current.disconnect();
     tvOutput.current.connect(positional.gain);
 
@@ -164,99 +332,33 @@ export default function useRcaCables() {
     object3D.add(positional);
   }
 
-  /* ---------- CHANNEL BUS (A/V together) ---------- */
-
-  const channels = useMemo(
-    () => [
-      {
-        key: 'snow',
-        video: <CRTSnowMaterial />,
-        // audio: { type: 'file', url: '/audio/tv-static.mp3', loop: true },
-      },
-
-      {
-        key: 'static',
-        video: <CRTStaticMaterial />,
-        // audio: { type: 'file', url: '/audio/tv-noise-low.mp3', loop: true },
-      },
-
-      {
-        key: 'vhs',
-        video: (
-          <CRTBlueScreenMaterial
-            {...VHSSetting}
-            horizontalPadding={100}
-            verticalPadding={95}
-          />
-        ),
-        // audio: { type: 'file', url: '/audio/vhs-hum.mp3', loop: true },
-      },
-
-      {
-        key: 'terminal',
-        video: (
-          <CRTBlueScreenMaterial
-            {...TerminalSetting}
-            horizontalPadding={100}
-            verticalPadding={95}
-          />
-        ),
-        // audio: { type: 'file', url: '/audio/modem-drone.mp3', loop: true },
-      },
-
-      {
-        key: 'homeVideo',
-        video: <CRTShowMaterial useWebcam />,
-        // audio: { type: 'file', url: '/audio/room-tone.mp3', loop: true },
-      },
-
-      {
-        key: 'tv',
-        video: <CRTShowMaterial />,
-        // audio: { type: 'file', url: '/audio/show.mp3', loop: true },
-      },
-
-      {
-        key: 'threeD',
-        video: <CRTSceneMaterial scene={<TestScene />} />,
-        // audio: { type: 'file', url: '/audio/synth-bed.mp3', loop: true },
-      },
-
-      {
-        key: 'pip',
-        video: <CRTSceneInSceneMaterial />,
-        // audio: { type: 'file', url: '/audio/camera-feed.mp3', loop: true },
-      },
-    ],
-    []
-  );
-
-  /* ---------- channel switching ---------- */
-
-  function tuneChannel(i) {
-    const ch = channels[i % channels.length];
-    if (!ch?.audio) return;
-
-    if (ch.audio.type === 'file') {
-      playFileChannel(ch.audio.url, ch.audio.loop);
-    }
-
-    // reserved:
-    // if (ch.audio.type === 'strudel') playStrudelChannel(ch.audio)
-  }
+  /* ---------- public API ---------- */
 
   return {
+    /* state */
     channels,
+    activeChannel,
+    channelIndex,
+    channelKey: activeChannel?.key ?? null,
+    power,
+    surfing,
+    unlocked,
 
-    tuneChannel,
+    /* controls */
     powerOn,
     powerOff,
+    togglePower,
 
+    nextChannel,
+    setChannelByKey,
+
+    toggleSurfing,
+    updateSurf,
+
+    /* audio */
     knobClick,
     dialClick,
-
-    attachToObject,
     unlockAudio,
-    unlocked,
+    attachToObject,
   };
 }

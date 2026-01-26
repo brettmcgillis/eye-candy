@@ -61,14 +61,19 @@ export default function useCableSubscription() {
           loop: true,
         },
       },
-
-      /* 🔥 external audio channel */
       {
         key: 'threeD',
         video: <CRTSceneMaterial scene={<TestScene />} />,
         audio: {
-          type: 'external',
-          input: 'strudel',
+          type: 'strudel',
+          code: `
+                setcps(0.7)
+                stack(
+                sound("bd ~ bd ~").gain(1.1),
+                sound("hh*8").gain(0.4),
+                sound("arpy:2").slow(2).gain(0.5)
+                )
+                `,
         },
       },
 

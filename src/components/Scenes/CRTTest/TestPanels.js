@@ -30,7 +30,7 @@ export default function TestPanels() {
     () => [
       <meshStandardMaterial
         key="std"
-        color="#616161"
+        color="#111"
         roughness={0}
         metalness={1}
       />,

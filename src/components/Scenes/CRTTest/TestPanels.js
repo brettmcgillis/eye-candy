@@ -1,25 +1,25 @@
 /* eslint-disable react/no-array-index-key */
 import React, { useMemo } from 'react';
 
-import CRTBlueScreenMaterial, {
-  TerminalSetting,
-  VHSSetting,
-} from './Materials/CRTBlueScreenMaterial';
+import CRTBlueScreenMaterial from './Materials/CRTBlueScreenMaterial';
 import CRTSceneInSceneMaterial from './Materials/CRTSceneInSceneMaterial';
 import CRTSceneMaterial from './Materials/CRTSceneMaterial';
 import CRTShowMaterial from './Materials/CRTShowMaterial';
 import CRTSmtpeStaticMaterial from './Materials/CRTSmtpeStaticMaterial';
 import CRTStaticMaterial from './Materials/CRTStaticMaterial';
 import TestScene from './TestScene';
+import useInteractiveTvControls from './useInteractiveTvControls';
 
 export default function TestPanels() {
+  const { smtpe, tvStatic, noSignal, terminal, homeVideo, tv, threeD, pip } =
+    useInteractiveTvControls();
   /* ---------------------------------------------
      Config 
   ---------------------------------------------- */
 
   const radius = 7;
   const height = 1;
-  const arc = Math.PI * 0.6; // shallow semi arc
+  const arc = Math.PI * 0.9; // shallow semi arc
   const zOffset = 0.2; // pushes arc forward
 
   /* ---------------------------------------------
@@ -34,14 +34,22 @@ export default function TestPanels() {
         roughness={0}
         metalness={1}
       />,
-      <CRTStaticMaterial key="snow" />,
-      <CRTSmtpeStaticMaterial key="static" />,
-      <CRTBlueScreenMaterial key="terminal" {...TerminalSetting} />,
-      <CRTBlueScreenMaterial key="vhs" {...VHSSetting} />,
-      <CRTShowMaterial key="homeVideo" useWebcam />,
-      <CRTShowMaterial key="tv" />,
-      <CRTSceneMaterial key="triple-d" scene={<TestScene />} />,
-      <CRTSceneInSceneMaterial key="pip" />,
+      <CRTStaticMaterial key="static" {...tvStatic} />,
+      <CRTSmtpeStaticMaterial key="smtpe" {...smtpe} />,
+      <CRTBlueScreenMaterial
+        key="terminal"
+        // {...TerminalSetting}
+        {...terminal}
+      />,
+      <CRTBlueScreenMaterial
+        key="vhs"
+        // {...VHSSetting}
+        {...noSignal}
+      />,
+      <CRTShowMaterial key="homeVideo" useWebcam {...homeVideo} />,
+      <CRTShowMaterial key="tv" {...tv} />,
+      <CRTSceneMaterial key="three-d" scene={<TestScene />} {...threeD} />,
+      <CRTSceneInSceneMaterial key="pip" {...pip} />,
     ],
     []
   );

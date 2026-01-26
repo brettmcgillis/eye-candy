@@ -8,8 +8,8 @@ import CRTBlueScreenMaterial, {
 import CRTSceneInSceneMaterial from './Materials/CRTSceneInSceneMaterial';
 import CRTSceneMaterial from './Materials/CRTSceneMaterial';
 import CRTShowMaterial from './Materials/CRTShowMaterial';
+import CRTSmtpeStaticMaterial from './Materials/CRTSmtpeStaticMaterial';
 import CRTSnowMaterial from './Materials/CRTSnowMaterial';
-import CRTStaticMaterial from './Materials/CRTStaticMaterial';
 import TestScene from './TestScene';
 
 export default function TestPanels() {
@@ -35,7 +35,7 @@ export default function TestPanels() {
         metalness={1}
       />,
       <CRTSnowMaterial key="snow" />,
-      <CRTStaticMaterial key="static" />,
+      <CRTSmtpeStaticMaterial key="static" />,
       <CRTBlueScreenMaterial key="terminal" {...TerminalSetting} />,
       <CRTBlueScreenMaterial key="vhs" {...VHSSetting} />,
       <CRTShowMaterial key="homeVideo" useWebcam />,

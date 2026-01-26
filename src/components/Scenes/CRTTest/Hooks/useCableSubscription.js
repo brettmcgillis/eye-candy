@@ -8,8 +8,8 @@ import CRTBlueScreenMaterial, {
 import CRTSceneInSceneMaterial from 'components/scenes/CRTTest/Materials/CRTSceneInSceneMaterial';
 import CRTSceneMaterial from 'components/scenes/CRTTest/Materials/CRTSceneMaterial';
 import CRTShowMaterial from 'components/scenes/CRTTest/Materials/CRTShowMaterial';
+import CRTSmtpeStaticMaterial from 'components/scenes/CRTTest/Materials/CRTSmtpeStaticMaterial';
 import CRTSnowMaterial from 'components/scenes/CRTTest/Materials/CRTSnowMaterial';
-import CRTStaticMaterial from 'components/scenes/CRTTest/Materials/CRTStaticMaterial';
 import TestScene from 'components/scenes/CRTTest/TestScene';
 
 import { STRUDEL_TRACKS } from 'utils/tracks';
@@ -32,7 +32,7 @@ export default function useCableSubscription() {
       },
       {
         key: 'static',
-        video: <CRTStaticMaterial />,
+        video: <CRTSmtpeStaticMaterial />,
         audio: {
           type: 'file',
           url: audioFile('tv-static.mp3'),

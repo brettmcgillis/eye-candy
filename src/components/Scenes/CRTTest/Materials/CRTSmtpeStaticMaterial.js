@@ -1,4 +1,4 @@
-// CrtStaticMaterial.js
+// CrtSmtpeStaticMaterial.js
 import React, { useRef } from 'react';
 
 import { shaderMaterial } from '@react-three/drei';
@@ -229,7 +229,7 @@ void main() {
    Drei material class
 ----------------------------------------------*/
 
-const CrtStaticMaterial = shaderMaterial(
+const CrtSmtpeStaticMaterial = shaderMaterial(
   {
     uTime: 0,
 
@@ -265,13 +265,13 @@ const CrtStaticMaterial = shaderMaterial(
   fragmentShader
 );
 
-extend({ CrtStaticMaterial });
+extend({ CrtSmtpeStaticMaterial });
 
 /* ---------------------------------------------
    React wrapper (drop-in)
 ----------------------------------------------*/
 
-export default function CRTStaticMaterial({
+export default function CRTSmtpeStaticMaterial({
   staticAmount = 0.35,
   staticScale = 700,
   staticSpeed = 9,
@@ -308,9 +308,9 @@ export default function CRTStaticMaterial({
   });
 
   return (
-    <crtStaticMaterial
+    <crtSmtpeStaticMaterial
       ref={ref}
-      key={CrtStaticMaterial.key}
+      key={CrtSmtpeStaticMaterial.key}
       transparent={false}
       depthWrite
       toneMapped={false}

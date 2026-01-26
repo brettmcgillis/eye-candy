@@ -15,8 +15,9 @@ import useRcaCables from './useRcaCables';
 export default function InteractiveTvController({
   stepsPerRotation = 12,
   isTurnedOn = true,
-  defaultChannel,
+  defaultChannel = 'snow',
   isSurfingChannels = false,
+  isOnMute = false,
   ...props
 }) {
   /* ---------- shared tv materials ---------- */
@@ -47,6 +48,7 @@ export default function InteractiveTvController({
     channelKey,
     power,
     surfing,
+    muted,
     unlocked,
 
     /* controls */
@@ -54,9 +56,15 @@ export default function InteractiveTvController({
     powerOff,
     togglePower,
 
+    muteOn,
+    muteOff,
+    toggleMute,
+
     nextChannel,
     setChannelByKey,
 
+    surfOn,
+    surfOff,
     toggleSurfing,
 
     /* audio */
@@ -64,7 +72,12 @@ export default function InteractiveTvController({
     dialClick,
     unlockAudio,
     attachToObject,
-  } = useRcaCables({ defaultChannel, initialPower: isTurnedOn });
+  } = useRcaCables({
+    initialPower: isTurnedOn,
+    defaultChannelKey: defaultChannel,
+    surfChannels: isSurfingChannels,
+    initialMuted: isOnMute,
+  });
 
   /* ---------- tv state ---------- */
 
@@ -111,6 +124,7 @@ export default function InteractiveTvController({
 
   function handleDial5Click() {
     dialClick();
+    toggleMute();
   }
 
   function handleKnob02Click() {

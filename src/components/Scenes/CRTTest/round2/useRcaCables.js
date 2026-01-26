@@ -16,7 +16,7 @@ import CRTStaticMaterial from 'components/scenes/CRTTest/CRTStaticMaterial';
 import TestScene from 'components/scenes/CRTTest/TestScene';
 
 /* -------------------------------------------------
-   useRcaCables — TV brain + A/V bus
+   useRcaCables — TV brain + A/V bus (with mute)
 -------------------------------------------------- */
 
 function audioFile(name) {
@@ -27,6 +27,7 @@ export default function useRcaCables({
   initialPower = true,
   defaultChannelKey,
   surfChannels = false,
+  initialMuted = false,
 } = {}) {
   /* ---------- audio core ---------- */
 
@@ -42,23 +43,14 @@ export default function useRcaCables({
   const [unlocked, setUnlocked] = useState(false);
   const [power, setPower] = useState(initialPower);
   const [surfing, setSurfing] = useState(surfChannels);
+  const [muted, setMuted] = useState(initialMuted);
 
   /* ---------- channels ---------- */
 
   const channels = useMemo(
     () => [
-      {
-        key: 'snow',
-        video: <CRTSnowMaterial />,
-        audio: null,
-        // audio: { type: 'file', url: '/audio/tv-static.mp3', loop: true },
-      },
-      {
-        key: 'static',
-        video: <CRTStaticMaterial />,
-        audio: null,
-        // audio: { type: 'file', url: '/audio/tv-noise-low.mp3', loop: true },
-      },
+      { key: 'snow', video: <CRTSnowMaterial />, audio: null },
+      { key: 'static', video: <CRTStaticMaterial />, audio: null },
       {
         key: 'vhs',
         video: (
@@ -69,7 +61,6 @@ export default function useRcaCables({
           />
         ),
         audio: null,
-        // audio: { type: 'file', url: '/audio/vhs-hum.mp3', loop: true },
       },
       {
         key: 'terminal',
@@ -81,13 +72,8 @@ export default function useRcaCables({
           />
         ),
         audio: null,
-        // audio: { type: 'file', url: '/audio/modem-drone.mp3', loop: true },
       },
-      {
-        key: 'homeVideo',
-        video: <CRTShowMaterial useWebcam />,
-        audio: null,
-      },
+      { key: 'homeVideo', video: <CRTShowMaterial useWebcam />, audio: null },
       {
         key: 'tv',
         video: <CRTShowMaterial />,
@@ -101,13 +87,8 @@ export default function useRcaCables({
         key: 'threeD',
         video: <CRTSceneMaterial scene={<TestScene />} />,
         audio: null,
-        // audio: { type: 'file', url: '/audio/synth-bed.mp3', loop: true },
       },
-      {
-        key: 'pip',
-        video: <CRTSceneInSceneMaterial />,
-        audio: null,
-      },
+      { key: 'pip', video: <CRTSceneInSceneMaterial />, audio: null },
     ],
     []
   );
@@ -145,7 +126,7 @@ export default function useRcaCables({
     filter.Q.value = 0.8;
 
     pre.gain.value = 0.9;
-    output.gain.value = 0.8;
+    output.gain.value = initialMuted ? 0.0001 : 0.8;
 
     input
       .connect(pre)
@@ -160,6 +141,21 @@ export default function useRcaCables({
 
     return () => ctx.close();
   }, []);
+
+  /* ---------- mute bus ---------- */
+
+  useEffect(() => {
+    if (!tvOutput.current || !ctxRef.current) return;
+
+    const ctx = ctxRef.current;
+    const target = muted ? 0.0001 : 0.8;
+
+    tvOutput.current.gain.cancelScheduledValues(ctx.currentTime);
+    tvOutput.current.gain.linearRampToValueAtTime(
+      target,
+      ctx.currentTime + 0.15
+    );
+  }, [muted]);
 
   /* ---------- mobile unlock ---------- */
 
@@ -218,7 +214,7 @@ export default function useRcaCables({
   /* ---------- channel audio router ---------- */
 
   useEffect(() => {
-    if (!power || !activeChannel?.audio) {
+    if (!power || muted || !activeChannel?.audio) {
       fadeOutAndStop(0.35);
       return;
     }
@@ -228,9 +224,7 @@ export default function useRcaCables({
     if (audio.type === 'file') {
       playFileChannel(audio.url, audio.loop);
     }
-
-    // if (audio.type === 'strudel') playStrudelChannel(audio)
-  }, [power, channelIndex]);
+  }, [power, channelIndex, muted]);
 
   /* ---------- power ---------- */
 
@@ -251,6 +245,12 @@ export default function useRcaCables({
       return !p;
     });
   };
+
+  /* ---------- mute controls ---------- */
+
+  const muteOn = () => setMuted(true);
+  const muteOff = () => setMuted(false);
+  const toggleMute = () => setMuted((m) => !m);
 
   /* ---------- channels ---------- */
 
@@ -275,20 +275,20 @@ export default function useRcaCables({
     if (surfTimer.current >= nextInterval.current) {
       surfTimer.current = 0;
       nextInterval.current = 0.6 + Math.random() * 0.9;
-
       setChannelIndex((i) => (i + 1) % channels.length);
     }
   });
 
+  const surfOn = () => setSurfing(true);
+  const surfOff = () => setSurfing(false);
   const toggleSurfing = () => setSurfing((s) => !s);
 
   /* ---------- one-shot SFX ---------- */
 
   async function playOneShot(url, volume = 0.5) {
     const ctx = ctxRef.current;
-    if (!ctx || !tvInput.current) return;
+    if (!ctx) return;
 
-    // mobile safety
     if (ctx.state !== 'running') await unlockAudio();
 
     const res = await fetch(url);
@@ -298,9 +298,10 @@ export default function useRcaCables({
     const gain = ctx.createGain();
 
     gain.gain.value = volume;
-
     src.buffer = buf;
-    src.connect(gain).connect(tvInput.current);
+
+    // SFX bypass mute bus (feels physical)
+    src.connect(gain).connect(ctx.destination);
     src.start();
 
     src.onended = () => {
@@ -308,15 +309,9 @@ export default function useRcaCables({
       gain.disconnect();
     };
   }
-  /* ---------- SFX ---------- */
 
-  const knobClick = () => {
-    playOneShot(audioFile('knob-click.mp3'), 0.35);
-  };
-
-  const dialClick = () => {
-    playOneShot(audioFile('switch-click.mp3'), 0.35);
-  };
+  const knobClick = () => playOneShot(audioFile('knob-click.mp3'), 0.35);
+  const dialClick = () => playOneShot(audioFile('switch-click.mp3'), 0.35);
 
   /* ---------- positional hookup ---------- */
 
@@ -346,6 +341,7 @@ export default function useRcaCables({
     channelKey: activeChannel?.key ?? null,
     power,
     surfing,
+    muted,
     unlocked,
 
     /* controls */
@@ -353,9 +349,15 @@ export default function useRcaCables({
     powerOff,
     togglePower,
 
+    muteOn,
+    muteOff,
+    toggleMute,
+
     nextChannel,
     setChannelByKey,
 
+    surfOn,
+    surfOff,
     toggleSurfing,
 
     /* audio */

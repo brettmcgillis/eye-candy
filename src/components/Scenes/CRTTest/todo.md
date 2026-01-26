@@ -33,7 +33,7 @@
 
 **Audio**
 
-- [ ] Fix strudel/mp3 play on first render. Cant due to gesture requirement from chrome, so maybe info modal onclose can hit play? Or tv default off?
+- [ ] Fix strudel/mp3 play on first render. Cant due to gesture requirement from chrome, so maybe info modal onclose can hit play? Or tv default off & press play button?
 - [ ] fix multple audio playing on 1 tv.
 - [ ] Nice to have: support multiple audio on 2 tvs
 - [ ] Wire up sounds for all channels

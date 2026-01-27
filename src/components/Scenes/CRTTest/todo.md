@@ -32,7 +32,7 @@
 **TV**
 
 - [ ] Need disabled prop to disallow knob/dial interactions.
-- [ ] Fix dial click handling
+- [x] Fix dial click handling
 - [ ] Fix dial z-depth issue on clicks. should be quick in out, probably not setTimeout based
 - [ ] Wire up settings scan on knob2
 

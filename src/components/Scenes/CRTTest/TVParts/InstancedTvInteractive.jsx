@@ -6,6 +6,16 @@ import { useFrame } from '@react-three/fiber';
 
 import { TvContext } from './TvInstances';
 
+/* ---------- helpers ---------- */
+
+function extractMesh(node) {
+  let found = null;
+  node.traverse((o) => {
+    if (o.isMesh && !found) found = o;
+  });
+  return found;
+}
+
 export default function InstancedTvInteractive({
   knob01Step = 0,
   stepsPerRotation = 12,
@@ -38,20 +48,31 @@ export default function InstancedTvInteractive({
     config: { tension: 180, friction: 20 },
   });
 
+  /* ---------- extract dial geometries once ---------- */
+
+  const dialGeos = useMemo(() => {
+    return {
+      d1: extractMesh(nodes.dial_01)?.geometry,
+      d2: extractMesh(nodes.dial_02)?.geometry,
+      d3: extractMesh(nodes.dial_03)?.geometry,
+    };
+  }, [nodes]);
+
   /* ---------- unique dial materials ---------- */
 
   const dialMats = useMemo(
     () => ({
-      power: nodes.dial_01.material.clone(),
-      terminal: nodes.dial_02.material.clone(),
-      vhs: nodes.dial_03.material.clone(),
-      surf: nodes.dial_01.material.clone(),
-      mute: nodes.dial_01.material.clone(),
+      power: extractMesh(nodes.dial_01).material.clone(),
+      terminal: extractMesh(nodes.dial_02).material.clone(),
+      vhs: extractMesh(nodes.dial_03).material.clone(),
+      surf: extractMesh(nodes.dial_01).material.clone(),
+      mute: extractMesh(nodes.dial_01).material.clone(),
     }),
     [nodes]
   );
 
-  // set base emissive colors once
+  /* ---------- emissive base colors ---------- */
+
   useEffect(() => {
     dialMats.power.emissive.set('#ff1a1a');
     dialMats.terminal.emissive.set('#00ff55');
@@ -62,31 +83,13 @@ export default function InstancedTvInteractive({
 
   /* ---------- glow springs ---------- */
 
-  const powerGlow = useSpring({
-    glow: power ? 1 : 0,
-    config: { tension: 120, friction: 20 },
-  });
+  const powerGlow = useSpring({ glow: power ? 1 : 0 });
+  const terminalGlow = useSpring({ glow: power && channelIndex === 3 ? 1 : 0 });
+  const vhsGlow = useSpring({ glow: power && channelIndex === 2 ? 1 : 0 });
+  const surfGlow = useSpring({ glow: power && channelSurfing ? 1 : 0 });
+  const muteGlow = useSpring({ glow: power && muted ? 1 : 0 });
 
-  const terminalGlow = useSpring({
-    glow: power && channelIndex === 3 ? 1 : 0,
-    config: { tension: 120, friction: 20 },
-  });
-
-  const vhsGlow = useSpring({
-    glow: power && channelIndex === 2 ? 1 : 0,
-    config: { tension: 120, friction: 20 },
-  });
-
-  const surfGlow = useSpring({
-    glow: power && channelSurfing ? 1 : 0,
-    config: { tension: 120, friction: 20 },
-  });
-
-  const muteGlow = useSpring({
-    glow: power && muted ? 1 : 0,
-    config: { tension: 120, friction: 20 },
-  });
-  /* ---------- drive emissive every frame ---------- */
+  /* ---------- drive emissive ---------- */
 
   useFrame(() => {
     dialMats.power.emissiveIntensity = powerGlow.glow.get() * 2;
@@ -108,6 +111,15 @@ export default function InstancedTvInteractive({
     if (d) d.position.z -= depth;
   }
 
+  function dialHandler(id, cb) {
+    return (e) => {
+      e.stopPropagation();
+      pressDial(id);
+      cb?.();
+      setTimeout(() => releaseDial(id), 120);
+    };
+  }
+
   /* ---------- render ---------- */
 
   return (
@@ -115,104 +127,75 @@ export default function InstancedTvInteractive({
       <group rotation={[-Math.PI, -Math.PI, -Math.PI]}>
         <merged.Body />
 
-        {/* -------- DIALS -------- */}
+        {/* -------- DIALS (real meshes, raycast-safe) -------- */}
 
-        <primitive
-          object={nodes.dial_01.clone()}
-          ref={(r) => {
-            if (!r) return;
-            r.material = dialMats.power;
-            dialRefs.current.dial1 = r;
-          }}
+        <mesh
+          geometry={dialGeos.d1}
+          material={dialMats.power}
           scale={0.5}
           position={[0.254, 0.208, 0.092]}
-          onClick={(e) => {
-            e.stopPropagation();
-            pressDial('dial1');
-            onDial1Click?.();
-            setTimeout(() => releaseDial('dial1'), 120);
+          ref={(r) => {
+            dialRefs.current.dial1 = r;
           }}
+          onPointerDown={dialHandler('dial1', onDial1Click)}
         />
 
-        <primitive
-          object={nodes.dial_02.clone()}
-          ref={(r) => {
-            if (!r) return;
-            r.material = dialMats.terminal;
-            dialRefs.current.dial2 = r;
-          }}
+        <mesh
+          geometry={dialGeos.d2}
+          material={dialMats.terminal}
           scale={0.5}
           position={[0.272, 0.208, 0.092]}
-          onClick={(e) => {
-            e.stopPropagation();
-            pressDial('dial2');
-            onDial2Click?.();
-            setTimeout(() => releaseDial('dial2'), 120);
+          ref={(r) => {
+            dialRefs.current.dial2 = r;
           }}
+          onPointerDown={dialHandler('dial2', onDial2Click)}
         />
 
-        <primitive
-          object={nodes.dial_03.clone()}
-          ref={(r) => {
-            if (!r) return;
-            r.material = dialMats.vhs;
-            dialRefs.current.dial3 = r;
-          }}
+        <mesh
+          geometry={dialGeos.d3}
+          material={dialMats.vhs}
           scale={0.5}
           position={[0.29, 0.208, 0.092]}
-          onClick={(e) => {
-            e.stopPropagation();
-            pressDial('dial3');
-            onDial3Click?.();
-            setTimeout(() => releaseDial('dial3'), 120);
+          ref={(r) => {
+            dialRefs.current.dial3 = r;
           }}
+          onPointerDown={dialHandler('dial3', onDial3Click)}
         />
 
-        <primitive
-          object={nodes.dial_01.clone()}
+        <mesh
+          geometry={dialGeos.d1}
+          material={dialMats.surf}
+          scale={0.5}
+          position={[0.308, 0.208, 0.092]}
           ref={(r) => {
-            if (!r) return;
-            r.material = dialMats.surf;
             dialRefs.current.dial4 = r;
           }}
-          scale={0.5}
-          position={[0.308, 0.208, 0.092]} // 👈 tweak this
-          onClick={(e) => {
-            e.stopPropagation();
-            pressDial('dial4');
-            onDial4Click?.();
-            setTimeout(() => releaseDial('dial4'), 120);
-          }}
+          onPointerDown={dialHandler('dial4', onDial4Click)}
         />
 
-        <primitive
-          object={nodes.dial_01.clone()}
+        <mesh
+          geometry={dialGeos.d1}
+          material={dialMats.mute}
+          scale={0.5}
+          position={[0.326, 0.208, 0.092]}
           ref={(r) => {
-            if (!r) return;
-            r.material = dialMats.mute;
             dialRefs.current.dial5 = r;
           }}
-          scale={0.5}
-          position={[0.326, 0.208, 0.092]} // 👈 tweak this
-          onClick={(e) => {
-            e.stopPropagation();
-            pressDial('dial5');
-            onDial5Click?.();
-            setTimeout(() => releaseDial('dial5'), 120);
-          }}
+          onPointerDown={dialHandler('dial5', onDial5Click)}
         />
+
         {/* -------- KNOBS -------- */}
 
         <animated.group
           position={[0.291, 0.406, 0.097]}
           rotation-z={knobRotation}
         >
-          <merged.Knob onClick={onKnob01Click} />
+          <merged.Knob onPointerDown={onKnob01Click} />
         </animated.group>
 
         <merged.Knob1
           position={[0.291, 0.289, 0.097]}
-          onClick={onKnob02Click}
+          onPointerDown={onKnob02Click}
         />
 
         {/* -------- SCREEN -------- */}

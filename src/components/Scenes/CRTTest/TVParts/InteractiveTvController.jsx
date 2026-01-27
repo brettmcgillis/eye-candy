@@ -27,13 +27,18 @@ export default function InteractiveTvController({
     () => ({
       body: new THREE.MeshStandardMaterial({
         color: '#050505',
-        roughness: 0.65,
-        metalness: 0.15,
+        roughness: 0.75,
+        metalness: 0.05,
       }),
       plastic: new THREE.MeshStandardMaterial({
         color: '#0b0b0b',
         roughness: 0.4,
         metalness: 0.1,
+      }),
+      metal: new THREE.MeshStandardMaterial({
+        color: '#7d7b7b',
+        roughness: 0.0,
+        metalness: 1,
       }),
     }),
     []
@@ -145,7 +150,7 @@ export default function InteractiveTvController({
     <TvInstances
       bodyMaterial={materials.body}
       dialMaterial={materials.plastic}
-      knobMaterial={materials.plastic}
+      knobMaterial={materials.metal}
     >
       <InstancedTvInteractive
         {...props}

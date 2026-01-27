@@ -256,10 +256,10 @@ export default function PaperStack() {
       <Stack />
 
       {/* sanity plane */}
-      <mesh position={[0, 0, -4]}>
+      {/* <mesh position={[0, 0, -4]}>
         <planeGeometry args={[5, 5]} />
         <meshStandardMaterial color="#893131" />
-      </mesh>
+      </mesh> */}
     </>
   );
 }

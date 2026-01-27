@@ -44,7 +44,7 @@ export default function CRTTest() {
       <Stats />
       <SeentIt />
       {/* <TestPanels /> */}
-
+      <Floor />
       <RingLight />
 
       <color attach="background" args={['#000000']} />
@@ -95,23 +95,27 @@ function SeentIt() {
       />
       <Reversal position={[-1, 0, 2]} rotation={[-Math.PI / 2, 0, 0]} />
       <Reversal position={[1, 0, 2]} rotation={[-Math.PI / 2, 0, 0]} />
-
-      <mesh position={[0, 0, 2]} rotation={[-Math.PI / 2, 0, -Math.PI / 4]}>
-        <planeGeometry args={[20, 20]} />
-        <MeshReflectorMaterial
-          blur={[300, 100]}
-          resolution={2048}
-          mixBlur={1}
-          mixStrength={80}
-          roughness={1}
-          depthScale={1.2}
-          minDepthThreshold={0.4}
-          maxDepthThreshold={1.4}
-          color="#131313"
-          metalness={1}
-        />
-      </mesh>
     </group>
+  );
+}
+
+function Floor() {
+  return (
+    <mesh position={[0, 0, 2]} rotation={[-Math.PI / 2, 0, -Math.PI / 4]}>
+      <planeGeometry args={[20, 20]} />
+      <MeshReflectorMaterial
+        blur={[300, 100]}
+        resolution={2048}
+        mixBlur={1}
+        mixStrength={80}
+        roughness={1}
+        depthScale={1.2}
+        minDepthThreshold={0.4}
+        maxDepthThreshold={1.4}
+        color="#131313"
+        metalness={1}
+      />
+    </mesh>
   );
 }
 

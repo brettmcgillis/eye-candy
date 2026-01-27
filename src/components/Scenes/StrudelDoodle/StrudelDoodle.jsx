@@ -23,7 +23,7 @@ export default function StrudelDoodle() {
   const [code, setCode] = useState(DEFAULT_PATTERN);
 
   return (
-    <Html fullscreen>
+    <Html>
       <div className="overlay">
         <div className="center-center">
           <div

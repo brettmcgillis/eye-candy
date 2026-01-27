@@ -69,6 +69,7 @@
 
 - [x] Totally broken, no color. upgrade csg? rebuild? Fixed!
 - [ ] Add compelling animations
+- [ ] create presets using settings, add preset option control
 
 ### HandStuff
 

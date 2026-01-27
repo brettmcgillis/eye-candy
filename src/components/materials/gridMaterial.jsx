@@ -11,6 +11,7 @@ import {
   select,
   step,
   vec2,
+  vec3,
 } from 'three/tsl';
 import * as THREE from 'three/webgpu';
 

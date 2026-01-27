@@ -118,9 +118,9 @@ export default function TestPanels() {
     }),
 
     leave: {
-      position: [0, height, 3],
-      rotation: [0, 0, 0],
-      scale: 0.1,
+      position: [0, height - 0.5, 2.5],
+      rotation: [0, Math.PI * 0.15, 0],
+      scale: 0.05,
     },
 
     config: {

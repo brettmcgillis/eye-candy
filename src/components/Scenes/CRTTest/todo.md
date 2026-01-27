@@ -31,7 +31,7 @@
 
 **TV**
 
-- [ ] Need disabled prop to disallow knob/dial interactions.
+- [ ] Need disabled prop(s) to disallow knob/dial interactions. powerDisabled, knobsDisabled, dialsDisabled
 - [x] Fix dial click handling
 - [ ] Fix dial z-depth issue on clicks. should be quick in out, probably not setTimeout based
 - [ ] Wire up settings scan on knob2

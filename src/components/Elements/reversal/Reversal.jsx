@@ -56,6 +56,7 @@ export default function Reversal({
 export function InteractiveReversal({
   pressDepth = 0.015,
   glowIntensity = 2.5,
+  onClick,
   ...props
 }) {
   const { nodes } = useGLTF(`/models/Reversal.glb`);
@@ -117,6 +118,7 @@ export function InteractiveReversal({
           position-y={pressY}
           onPointerDown={(e) => {
             e.stopPropagation();
+            onClick?.();
             setIsPressed(true);
           }}
           onPointerUp={(e) => {
@@ -143,6 +145,17 @@ export function InteractiveReversal({
           geometry={nodes['reversal-out'].geometry}
           material={outerMaterial}
           scale={[10, 1.018, 10]}
+          onPointerDown={(e) => {
+            e.stopPropagation();
+            onClick?.();
+            setIsPressed(true);
+          }}
+          onPointerUp={(e) => {
+            e.stopPropagation();
+            setIsPressed(false);
+            setIsOn((v) => !v);
+          }}
+          onPointerLeave={() => setIsPressed(false)}
         />
       </group>
     </group>

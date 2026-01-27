@@ -50,7 +50,7 @@
 **Other**
 
 - [ ] Click to add decals?
-- [ ] Update Test Panels to use InteractiveReversal to push materials into a collection, Pop when all are used, so we can demo each one & the collection w/ TV off.
+- [x] Update Test Panels to use InteractiveReversal to push materials into a collection, Pop when all are used, so we can demo each one & the collection w/ TV off.
 - [ ] Test Mobile - Webcam Only works HTTPS. Strudel only works w/ silent off?
 - [ ] Add helper modal. use HTML to get a billboard. useState for visibility. include dial & knob instructions. include audio instructions. include mobile details, include toggle for tv sound on. Power on tv on dismiss.
 

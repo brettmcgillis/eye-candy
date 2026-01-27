@@ -43,7 +43,7 @@ export default function CRTTest() {
       />
       <Stats />
       <SeentIt />
-      {/* <TestPanels /> */}
+      <TestPanels />
       <Floor />
       <RingLight />
 
@@ -88,13 +88,6 @@ function SeentIt() {
           isTurnedOn={false}
         />
       </TvInstances>
-
-      <InteractiveReversal
-        position={[0, 0, 1]}
-        rotation={[-Math.PI / 2, 0, 0]}
-      />
-      <Reversal position={[-1, 0, 2]} rotation={[-Math.PI / 2, 0, 0]} />
-      <Reversal position={[1, 0, 2]} rotation={[-Math.PI / 2, 0, 0]} />
     </group>
   );
 }

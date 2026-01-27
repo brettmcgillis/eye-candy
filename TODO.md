@@ -69,7 +69,8 @@
 
 - [x] Totally broken, no color. upgrade csg? rebuild? Fixed!
 - [ ] Add compelling animations
-- [ ] create presets using settings, add preset option control
+- [ ] create window orientation presets using settings, add preset option control
+- [ ] create some preset color arrangements, add controls.
 
 ### HandStuff
 

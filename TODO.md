@@ -25,8 +25,8 @@
 ### APP
 
 - [ ] fix icon used in manifest, logo192 is not the right size, causes console err
-- [ ] serve up multiple scenes
-  - [ ] portal(s)?, picture frames?, routing?
+- [ ] serve up multiple scenes. portal(s)?, picture frames?, routing?
+- [ ] if were doing screen cap then move it out of scenes and into something at app layer
 
 ### SCENES
 
@@ -81,12 +81,14 @@
 
 - [ ] Points are broken? Likely canvas gl related
 - [ ] When they are ready, promote hooks from handstuff, and bring them in to the scene to control network size, volume rotation etc
+- [ ] show instanced meshes at points?
 
 ### StrudelDoodle
 
 - [x] Prevent panel from stealing mouse, should still be able to click overlay items.
 - [ ] Could we replace the text area with the REPL still maintain control?
 - [ ] Could we show strudel visuals on the background of the scene?
+- [ ] do a background. keep it on theme
 
 ### ELEMENTS
 

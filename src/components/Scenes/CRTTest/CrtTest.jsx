@@ -42,8 +42,8 @@ export default function CRTTest() {
         lookAt={[0, 0, 0]}
       />
       <Stats />
-      {/* <SeentIt /> */}
-      <TestPanels />
+      <SeentIt />
+      {/* <TestPanels /> */}
 
       <RingLight />
 
@@ -69,7 +69,7 @@ function SeentIt() {
           rotation={[0, -Math.PI / 4, 0]}
           scale={10}
           defaultChannel="vhs"
-          isTurnedOn={false}
+          // isTurnedOn={false}
         />
 
         <InteractiveTvController

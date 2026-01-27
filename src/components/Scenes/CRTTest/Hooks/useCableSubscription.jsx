@@ -14,7 +14,7 @@ import CRTStaticMaterial from '../Materials/CRTStaticMaterial';
 import TestScene from '../TestScene';
 
 function audioFile(name) {
-  return `eye-candy/audio/${name}`;
+  return `/audio/${name}`;
 }
 
 export default function useCableSubscription() {

@@ -1,2 +1,3 @@
 - [ ] Can I show the visualizations on the screen some how? pianoroll etc?
+- [ ] Can I get syntax highlighting by leveraging the REPL?
 - [ ] Fix widget stealing mouse on play.

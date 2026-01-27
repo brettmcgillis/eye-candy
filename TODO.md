@@ -25,35 +25,65 @@
 
 ### APP
 
+- fix icon used in manifest, logo192 is not the right size, causes console err
 - serve up multiple scenes
   - portal(s)?, picture frames?, routing?
 
 ### SCENES
 
-#### NEWSCENE
+### PixelHater
+
+- See if we can improve shader to prevent pixel colors including unmasked object colors.
+
+### Dumpster Fire
+
+- Totally broken. see console for err. cant switch scenes
+
+#### FoldedFrame
+
+- fix default lighting
+- fix default camera positiopn
+- animate layer color
+- break elements out into reusable components where possible
+
+#### LoGlow
+
+- Rename
+- Animate (flip, neon flicker)
+
+#### NewScene
 
 - name it
 - extract all settings to json
 - reset button (leverage set() + json settings)
 - post processing (dots, godrays, +)
+- add environment for reflections, add children for their reflections.
 - Fun stuff
   - Atomic Halo
   - 45lb Halo
-  - neural network halo
+  - neural network halo (built, wire up)
   - Animation (rotation + wobble, refactor out of record, into reusable code to be applied to any halo type)
   - motion controls (drag drop)
   - physics (cannon looks good, rapier looks better, is installed)
 
-#### FOLDEDFRAME
+### PaperStack
 
-- fix default lighting
-- animate layer color
-- break elements out into reusable components where possible
+- Totally broken, no color. upgrade csg? rebuild?
 
-#### LOGLOW
+### HandStuff
 
-- Rename
-- Animate (flip, neon flicker)
+- Upgrade mediaPipe, handControls, and gestureControls hooks to handle n hands as array. Update scene to spawn probes based on number returned.
+- Refactor hook to break apart media pipe and webcam + camera for reusability. Scenes need to be able to determine their own draw functions. hook responsible for drawing should accept an array of functions and provide the existing default.
+
+### NetworkTest
+
+- When they are ready, promote hooks from handstuff, and bring them in to the scene to control network size, volume rotation etc
+
+### StrudelDoodle
+
+- Prevent panel from stealing mouse, should still be able to click overlay items.
+- Could we replace the text area with the REPL still maintain control?
+- Could we show strudel visuals on the background of the scene?
 
 ### ELEMENTS
 

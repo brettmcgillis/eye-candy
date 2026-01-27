@@ -1,4 +1,5 @@
 import { useControls } from 'leva';
+import * as THREE from 'three/webgpu';
 
 import React, { Suspense, useEffect, useMemo } from 'react';
 
@@ -16,26 +17,33 @@ import PaperStack from '../components/scenes/PaperStack/PaperStack';
 import PixelHater from '../components/scenes/PixelHater/PixelHater';
 import StrudelDoodle from '../components/scenes/StrudelDoodle/StrudelDoodle';
 import './App.css';
+import WebGLCanvas from './scaffold/canvas/WebGLCanvas';
+import WebGPUCanvas from './scaffold/canvas/WebGPUCanvas';
 import Loader from './scaffold/loader/Loader';
 
 const SCENES = {
   None: {
+    renderer: 'webgl',
     Component: () => (
       <Html>
         <p>💀</p>
       </Html>
     ),
   },
-  PixelHater: { Component: PixelHater },
-  DumpsterFire: { Component: DumpsterFire },
-  FoldedFrame: { Component: FoldedFrame },
-  LoGlow: { Component: LoGlow },
-  NewScene: { Component: NewScene },
-  PaperStack: { Component: PaperStack },
-  HandStuff: { Component: HandStuff },
-  NetworkTest: { Component: NetworkTest },
-  CrtTest: { Component: CRTTest },
-  StrudelDoodle: { Component: StrudelDoodle },
+
+  PixelHater: { renderer: 'webgl', Component: PixelHater },
+  DumpsterFire: { renderer: 'webgl', Component: DumpsterFire },
+  FoldedFrame: { renderer: 'webgl', Component: FoldedFrame },
+  LoGlow: { renderer: 'webgl', Component: LoGlow },
+  NewScene: { renderer: 'webgl', Component: NewScene },
+  PaperStack: { renderer: 'webgl', Component: PaperStack },
+  HandStuff: { renderer: 'webgl', Component: HandStuff },
+  NetworkTest: { renderer: 'webgpu', Component: NetworkTest },
+  CrtTest: { renderer: 'webgl', Component: CRTTest },
+  StrudelDoodle: { renderer: 'webgl', Component: StrudelDoodle },
+
+  // 👇 when you start porting
+  // CrtTest: { renderer: 'webgpu', Component: CRTTest },
 };
 
 /* ---------------------------------------------
@@ -62,25 +70,25 @@ function App() {
     },
   });
 
-  // write back to url when scene changes
   useEffect(() => {
     const params = new URLSearchParams(window.location.search);
     params.set('scene', scene);
     window.history.replaceState({}, '', `?${params.toString()}`);
   }, [scene]);
 
-  const SceneComponent = SCENES[scene]?.Component;
+  const sceneDef = SCENES[scene];
+  const SceneComponent = sceneDef?.Component;
+  const renderer = sceneDef?.renderer ?? 'webgl';
+
+  const CanvasWrapper = renderer === 'webgpu' ? WebGPUCanvas : WebGLCanvas;
 
   return (
     <div className="App">
-      <Canvas
-        shadows
-        gl={{ preserveDrawingBuffer: true, depth: true, debug: true }}
-      >
+      <CanvasWrapper key={renderer}>
         <Suspense fallback={<Loader />}>
           {SceneComponent && <SceneComponent />}
         </Suspense>
-      </Canvas>
+      </CanvasWrapper>
     </div>
   );
 }

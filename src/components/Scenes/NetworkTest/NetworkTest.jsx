@@ -6,6 +6,7 @@ import { OrbitControls, PerspectiveCamera } from '@react-three/drei';
 
 import Bret from '../../elements/bret/Bret';
 import NeuralNetwork from '../../elements/network/NeuralNetwork';
+import { GridMaterial } from '../../materials/gridMaterial';
 
 export default function NetworkTest() {
   const rings = useControls('Neural Rings', {
@@ -80,6 +81,10 @@ export default function NetworkTest() {
       <OrbitControls />
       <NeuralNetwork {...rings} />
       <Bret />
+      <mesh position={[0, -1, 0]} rotation={[-Math.PI / 2, 0, 0]}>
+        <planeGeometry args={[5, 5]} />
+        <GridMaterial />
+      </mesh>
     </>
   );
 }

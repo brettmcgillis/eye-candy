@@ -84,7 +84,7 @@
 
 ### StrudelDoodle
 
-- [ ] Prevent panel from stealing mouse, should still be able to click overlay items.
+- [x] Prevent panel from stealing mouse, should still be able to click overlay items.
 - [ ] Could we replace the text area with the REPL still maintain control?
 - [ ] Could we show strudel visuals on the background of the scene?
 

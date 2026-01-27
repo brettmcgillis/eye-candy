@@ -1,6 +1,8 @@
 /* eslint-disable react/no-array-index-key */
 import React, { useCallback, useMemo, useRef, useState } from 'react';
 
+import { a, useTransition } from '@react-spring/three';
+
 import Reversal, {
   InteractiveReversal,
 } from '../../elements/reversal/Reversal';
@@ -63,22 +65,17 @@ export default function TestPanels() {
   );
 
   /* ---------------------------------------------
-     Arc layout
+     Arc layout (CENTER-PACKED)
   ---------------------------------------------- */
+
   const panels = useMemo(() => {
     const count = activeMaterials.length;
     if (count === 0) return [];
 
-    const maxArc = arc; // total arc available
+    const maxArc = arc;
     const maxPanels = materialRegistry.length;
-
-    // angular spacing assuming full arc at max population
     const baseSpacing = maxArc / Math.max(maxPanels - 1, 1);
-
-    // shrink slightly so they don't feel edge-clamped
     const spacing = baseSpacing * 0.95;
-
-    // center indices around 0  → [-1.5, -0.5, 0.5, 1.5]
     const mid = (count - 1) / 2;
 
     return activeMaterials.map((mat, i) => {
@@ -86,15 +83,52 @@ export default function TestPanels() {
 
       const x = Math.sin(theta) * radius;
       const z = -(Math.cos(theta) * radius) + radius + zOffset;
-      const rotY = -theta;
 
       return {
         position: [x, height, z],
-        rotation: [0, rotY, 0],
+        rotation: [0, -theta, 0],
         material: mat,
       };
     });
   }, [activeMaterials, radius, height, arc, zOffset, materialRegistry.length]);
+
+  /* ---------------------------------------------
+     Transitions (ENTER + UPDATE + LEAVE)
+  ---------------------------------------------- */
+
+  const transitions = useTransition(panels, {
+    keys: (_, i) => i,
+
+    from: {
+      position: [0, height, 3],
+      rotation: [0, 0, 0],
+      scale: 0.25,
+    },
+
+    enter: (item) => ({
+      position: item.position,
+      rotation: item.rotation,
+      scale: 1,
+    }),
+
+    update: (item) => ({
+      position: item.position,
+      rotation: item.rotation,
+      scale: 1,
+    }),
+
+    leave: {
+      position: [0, height, 3],
+      rotation: [0, 0, 0],
+      scale: 0.1,
+    },
+
+    config: {
+      mass: 1,
+      tension: 220,
+      friction: 26,
+    },
+  });
 
   /* ---------------------------------------------
      Interaction
@@ -102,13 +136,11 @@ export default function TestPanels() {
 
   const handleReversalClick = useCallback(() => {
     setActiveCount((prev) => {
-      // reached the end → reverse
       if (prev >= materialRegistry.length) {
         directionRef.current = -1;
         return prev - 1;
       }
 
-      // reached zero → build again
       if (prev <= 0) {
         directionRef.current = 1;
         return 1;
@@ -124,17 +156,17 @@ export default function TestPanels() {
 
   return (
     <>
-      {panels.map((panel, i) => (
-        <mesh
+      {transitions((style, panel, _, i) => (
+        <a.mesh
           key={`panel-${i}`}
-          position={panel.position}
-          rotation={panel.rotation}
+          position={style.position}
+          rotation={style.rotation}
+          scale={style.scale}
         >
           <planeGeometry args={[2, 2]} />
           {panel.material}
-        </mesh>
+        </a.mesh>
       ))}
-
       <InteractiveReversal
         position={[0, 0, 1]}
         rotation={[-Math.PI / 2, 0, 0]}

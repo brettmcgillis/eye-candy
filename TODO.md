@@ -77,6 +77,7 @@
 
 ### NetworkTest
 
+- Points are broken? Likely canvas gl related
 - When they are ready, promote hooks from handstuff, and bring them in to the scene to control network size, volume rotation etc
 
 ### StrudelDoodle

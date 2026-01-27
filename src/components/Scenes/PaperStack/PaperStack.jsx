@@ -1,197 +1,247 @@
 /* eslint-disable react/no-array-index-key */
-
-/* eslint-disable no-unused-vars */
-// eslint-disable-next-line unused-imports/no-unused-imports
 import { folder, useControls } from 'leva';
 import * as THREE from 'three';
-import { degToRad } from 'three/src/math/MathUtils';
 
-import React, { useMemo, useRef } from 'react';
+import React, { useMemo } from 'react';
 
-import { Addition, Base, Geometry, Subtraction } from '@react-three/csg';
-import { MeshTransmissionMaterial } from '@react-three/drei';
+import { Base, Geometry, Subtraction } from '@react-three/csg';
 
 import CameraRig from '../../rigging/CameraRig';
 import LightingRig from '../../rigging/LightingRig';
 
+const COLORS = [
+  'black',
+  'violet',
+  'indigo',
+  'blue',
+  'green',
+  'yellow',
+  'orange',
+  'red',
+  'white',
+  'black',
+];
+
 function Stack() {
-  const geometryRef = useRef();
-  const subtractionRef = useRef();
-
-  const update = (_) => geometryRef?.current?.update();
-
   const {
     layerWidth,
     layerDepth,
     layerDepthBuffer,
     layerHeight,
-    windowPosition,
-    windowSize,
-    windowDepth,
-    splitWidth,
-  } = useControls(
-    'Paper Stack',
-    {
-      Stack: folder(
-        {
-          layerHeight: {
-            label: 'Height',
-            value: 4,
-            min: 1,
-            max: 10,
-          },
-          layerWidth: {
-            label: 'Width',
-            value: 10,
-            min: 1,
-            max: 20,
-          },
-          layerDepth: {
-            label: 'Layer Depth',
-            value: 0.01,
-            min: 0.005,
-            max: 0.1,
-          },
-          layerDepthBuffer: {
-            label: 'Buffer',
-            value: 0.01,
-            min: 0.01,
-            max: 0.1,
-          },
+
+    windowSize01,
+    minSizeRatio,
+    maxSizeRatio,
+
+    windowXY,
+    windowZ,
+
+    taperAmount,
+    taperCurve,
+
+    squareSpacing,
+
+    patternRotationDeg,
+    windowRotationDeg,
+
+    spiralTwistDeg,
+    spiralCurve,
+  } = useControls('Paper Stack', {
+    Stack: folder(
+      {
+        layerHeight: { value: 4, min: 1, max: 10 },
+        layerWidth: { value: 10, min: 1, max: 20 },
+        layerDepth: { value: 0.01, min: 0.005, max: 0.1 },
+        layerDepthBuffer: { value: 0.01, min: 0, max: 0.1 },
+      },
+      { collapsed: true }
+    ),
+
+    Window: folder(
+      {
+        windowSize01: { label: 'Size', value: 0.5, min: 0, max: 1 },
+
+        minSizeRatio: { label: 'Min Size %', value: 0.12, min: 0.02, max: 0.4 },
+        maxSizeRatio: { label: 'Max Size %', value: 0.38, min: 0.1, max: 0.48 },
+
+        windowXY: { value: { x: 0, y: 0 } },
+        windowZ: { value: 0.005, min: -0.1, max: 0.1 },
+
+        squareSpacing: { value: 0.9, min: 0.4, max: 1.4 },
+
+        patternRotationDeg: {
+          label: 'Pattern Rot (°)',
+          value: 0,
+          min: 0,
+          max: 180,
+          step: 1,
         },
-        { collapsed: true }
-      ),
-      Window: folder(
-        {
-          windowSize: { label: 'Size', value: 2, min: 1, max: 4 },
-          windowDepth: { label: 'Depth', value: 0.03, min: 0.01, max: 0.5 },
-          windowPosition: {
-            label: 'Position',
-            value: { x: 0, y: 0, z: 0.005 },
-          },
-          splitWidth: {
-            label: 'Split Width',
-            value: 0.05,
-            min: 0.01,
-            max: 0.5,
-          },
+
+        windowRotationDeg: {
+          label: 'Square Rot (°)',
+          value: 0,
+          min: 0,
+          max: 90,
+          step: 1,
         },
-        { collapsed: true }
+      },
+      { collapsed: false }
+    ),
+
+    Stepping: folder(
+      {
+        taperAmount: { value: 0.22, min: 0, max: 0.9 },
+        taperCurve: { value: 2.2, min: 0.4, max: 4, step: 0.1 },
+      },
+      { collapsed: false }
+    ),
+
+    Spiral: folder(
+      {
+        spiralTwistDeg: {
+          label: 'Total Spiral (°)',
+          value: 0,
+          min: -360,
+          max: 360,
+          step: 1,
+        },
+        spiralCurve: {
+          label: 'Spiral Curve',
+          value: 1.6,
+          min: 0.2,
+          max: 4,
+          step: 0.1,
+        },
+      },
+      { collapsed: false }
+    ),
+  });
+
+  /* ---------------- Angles ---------------- */
+
+  const patternRotation = THREE.MathUtils.degToRad(patternRotationDeg);
+  const windowRotation = THREE.MathUtils.degToRad(windowRotationDeg);
+  const spiralTotal = THREE.MathUtils.degToRad(spiralTwistDeg);
+
+  const layerStep = layerDepth + layerDepthBuffer;
+  const layerCount = COLORS.length;
+
+  /* ---------------- Materials ---------------- */
+
+  const materials = useMemo(
+    () =>
+      COLORS.map(
+        (c) =>
+          new THREE.MeshStandardMaterial({
+            color: c,
+            side: THREE.DoubleSide,
+          })
       ),
-    },
-    { collapsed: true }
+    []
   );
 
-  const layers = [
-    'black',
-    'violet',
-    'indigo',
-    'blue',
-    'green',
-    'yellow',
-    'orange',
-    'red',
-    'white',
-    'black',
-  ];
+  /* ---------------- Geometry ---------------- */
 
-  // useFrame(({ clock }) => {
-  //   const time = clock.getElapsedTime();
-  //   subtractionRef.current.position.z = Math.sin(time) / 4 + 0.25;
-  //   geometryRef.current.update();
-  // });
-
-  const paper = useMemo(
+  const paperGeo = useMemo(
     () => new THREE.BoxGeometry(layerWidth, layerHeight, layerDepth),
     [layerWidth, layerHeight, layerDepth]
   );
 
-  const windowBox = useMemo(
-    () =>
-      new THREE.BoxGeometry(
-        windowSize,
-        windowSize,
-        (layerDepth + layerDepthBuffer) * 2
-      ),
-    [windowSize, windowDepth, layerDepth, layerDepthBuffer]
+  const cutGeo = useMemo(
+    () => new THREE.BoxGeometry(1, 1, layerDepth * 6),
+    [layerDepth]
   );
 
-  const windowSplit = useMemo(
+  /* ---------------- Window size ---------------- */
+
+  const safeWindowSize = useMemo(() => {
+    const base = Math.min(layerWidth, layerHeight);
+    const min = base * minSizeRatio;
+    const max = base * maxSizeRatio;
+    return THREE.MathUtils.lerp(min, max, windowSize01);
+  }, [layerWidth, layerHeight, minSizeRatio, maxSizeRatio, windowSize01]);
+
+  /* ---------------- Layers ---------------- */
+
+  const layers = useMemo(
     () =>
-      new THREE.BoxGeometry(windowSize, windowSize * splitWidth, windowSize),
-    [windowSize, splitWidth, windowSize]
+      COLORS.map((_, i) => {
+        const t = i / (layerCount - 1);
+        const curved = t ** taperCurve;
+        const scale = THREE.MathUtils.lerp(1, 1 - taperAmount, curved);
+
+        const spiralT = t ** spiralCurve;
+        const spiral = spiralTotal * spiralT;
+
+        return {
+          i,
+          z: -i * layerStep,
+          scale,
+          spiral,
+        };
+      }),
+    [layerStep, layerCount, taperAmount, taperCurve, spiralTotal, spiralCurve]
   );
+
+  /* ---------------- Base square layout ---------------- */
+
+  const baseOffsets = useMemo(() => {
+    const d = safeWindowSize * squareSpacing;
+    return [
+      [d, d],
+      [-d, d],
+      [d, -d],
+      [-d, -d],
+    ];
+  }, [safeWindowSize, squareSpacing]);
+
+  /* ---------------- Render ---------------- */
 
   return (
-    <mesh receiveShadow castShadow>
-      <Geometry ref={geometryRef} useGroups>
-        <Base position={[0, 0, 0]} geometry={paper}>
-          <meshStandardMaterial color={layers[0]} side={THREE.DoubleSide} />
-        </Base>
-
-        {layers.slice(1).map((color, index) => (
-          <Addition
-            key={`layer-${index}`}
-            position={[0, 0, -(index + 1) * (layerDepth + layerDepthBuffer)]}
-            geometry={paper}
-          >
-            <meshStandardMaterial color={color} side={THREE.DoubleSide} />
-          </Addition>
-        ))}
-
-        <Subtraction
-          position={[windowPosition.x, windowPosition.y, windowPosition.z]}
-          ref={subtractionRef}
+    <group>
+      {layers.map((layer) => (
+        <mesh
+          key={layer.i}
+          castShadow
+          receiveShadow
+          material={materials[layer.i]}
+          position={[0, 0, layer.z]}
         >
-          <Geometry>
-            <Base geometry={windowBox}>
-              <MeshTransmissionMaterial side={THREE.DoubleSide} />
-            </Base>
-            {layers.slice(2).map((_, index, arr) => {
-              const layerIx = index + 2;
-              const zDepth = layerIx * (layerDepth + layerDepthBuffer);
-              const xyScale = 1 - (1 / arr.length) * layerIx;
+          <Geometry computeVertexNormals>
+            {/* Paper sheet */}
+            <Base geometry={paperGeo} />
+
+            {/* Windows (only affect this sheet) */}
+            {baseOffsets.map((o, j) => {
+              const angle = patternRotation + layer.spiral;
+              const cos = Math.cos(angle);
+              const sin = Math.sin(angle);
+
+              const x = o[0] * cos - o[1] * sin;
+              const y = o[0] * sin + o[1] * cos;
 
               return (
-                <Addition
-                  key={`sublayer-${index}`}
-                  geometry={windowBox}
-                  position={[0, 0, windowPosition.z - zDepth]}
-                  scale={[xyScale, xyScale, 1]}
-                >
-                  <MeshTransmissionMaterial side={THREE.DoubleSide} />
-                </Addition>
+                <Subtraction
+                  key={`cut-${layer.i}-${j}`}
+                  geometry={cutGeo}
+                  rotation={[0, 0, windowRotation + layer.spiral]}
+                  position={[
+                    windowXY.x + x * layer.scale,
+                    windowXY.y + y * layer.scale,
+                    windowZ,
+                  ]}
+                  scale={[
+                    safeWindowSize * layer.scale,
+                    safeWindowSize * layer.scale,
+                    1,
+                  ]}
+                />
               );
             })}
-
-            {/* {layers.slice(1).map((_, index) => {
-              const layer = index + 1;
-              const scale = -((1 - 0.1) / layers.length) * layer;
-              const winDepth = layerDepth + layerDepthBuffer + 0.1;
-              return (
-                <Addition
-                  position={[
-                    windowPosition.x,
-                    windowPosition.y,
-                    windowPosition.z - layer * winDepth,
-                  ]}
-                  scale={[scale, scale, 1]}
-                  geometry={windowBox}
-                >
-                  <MeshTransmissionMaterial side={THREE.DoubleSide} />
-                </Addition>
-              );
-            })} */}
-            <Subtraction geometry={windowSplit} />
-            <Subtraction
-              geometry={windowSplit}
-              rotation={[0, 0, degToRad(90)]}
-            />
           </Geometry>
-          <MeshTransmissionMaterial side={THREE.DoubleSide} />
-        </Subtraction>
-      </Geometry>
-    </mesh>
+        </mesh>
+      ))}
+    </group>
   );
 }
 
@@ -202,8 +252,14 @@ export default function PaperStack() {
       <ambientLight intensity={1} />
       <LightingRig />
       <CameraRig screenShot />
-      {/* <GridHelper x y z /> */}
+
       <Stack />
+
+      {/* sanity plane */}
+      <mesh position={[0, 0, -4]}>
+        <planeGeometry args={[5, 5]} />
+        <meshStandardMaterial color="#893131" />
+      </mesh>
     </>
   );
 }

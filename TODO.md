@@ -68,7 +68,8 @@
 
 ### PaperStack
 
-- Totally broken, no color. upgrade csg? rebuild?
+- Totally broken, no color. upgrade csg? rebuild? Fixed!
+- Add compelling animations
 
 ### HandStuff
 

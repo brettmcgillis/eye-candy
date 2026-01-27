@@ -26,7 +26,6 @@
     "react/prop-types": "off",
     "react/no-unknown-property": "off",
     "react/jsx-props-no-spreading": "off",
-    "import/no-unresolved": "error",
     "react/jsx-filename-extension": [
       1,
       {
@@ -61,6 +60,7 @@
   ],
   "settings": {
     "import/resolver": {
+      "exports": {},
       "node": {
         "extensions": [".js", ".jsx"],
         "moduleDirectory": ["node_modules"]

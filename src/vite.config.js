@@ -8,4 +8,5 @@ export default defineConfig({
   server: {
     https: true,
   },
+  assetsInclude: ['**/*.glb', '**/*.gltf', '**/*.mp3', '**/*.mp4'],
 });

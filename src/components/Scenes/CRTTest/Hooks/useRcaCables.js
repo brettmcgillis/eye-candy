@@ -1,10 +1,11 @@
 /* eslint-disable no-unused-vars */
-import useStrudelTrack from 'hooks/useStrudelTrack';
-import { useEffect, useMemo, useRef, useState } from 'react';
 import * as THREE from 'three';
+
+import { useEffect, useMemo, useRef, useState } from 'react';
 
 import { useFrame } from '@react-three/fiber';
 
+import useStrudelTrack from '../../../../hooks/useStrudelTrack';
 import useCableSubscription from './useCableSubscription';
 
 /* -------------------------------------------------
@@ -12,7 +13,7 @@ import useCableSubscription from './useCableSubscription';
 -------------------------------------------------- */
 
 function audioFile(name) {
-  return `${process.env.PUBLIC_URL}/audio/${name}`;
+  return `/audio/${name}`;
 }
 
 export default function useRcaCables({

@@ -4,7 +4,9 @@
   "version": "0.1.0",
   "homepage": "https://brettmcgillis.github.io/eye-candy",
   "scripts": {
-    "dev": "vite",
+    "start": "npm run dev",
+    "dev": "vite --host",
+    "dev:https": "vite --host --mode https",
     "build": "vite build",
     "preview": "vite preview",
     "predeploy": "npm run build",
@@ -14,9 +16,7 @@
     "format:package:check": "prettier-package-json",
     "format:package:fix": "prettier-package-json --write",
     "lint:check": "eslint .",
-    "lint:fix": "eslint . --fix",
-    "start": "npm run dev",
-    "start-https": "HTTPS=true npm run start"
+    "lint:fix": "eslint . --fix"
   },
   "dependencies": {
     "@mediapipe/camera_utils": "^0.3.1675466862",
@@ -52,6 +52,7 @@
   },
   "devDependencies": {
     "@trivago/prettier-plugin-sort-imports": "^4.3.0",
+    "@vitejs/plugin-basic-ssl": "^2.1.4",
     "@vitejs/plugin-react": "^5.1.2",
     "eslint": "^8.56.0",
     "eslint-config-airbnb": "^19.0.4",

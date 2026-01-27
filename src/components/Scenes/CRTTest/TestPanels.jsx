@@ -100,7 +100,7 @@ export default function TestPanels() {
     keys: (_, i) => i,
 
     from: {
-      position: [0, height, 3],
+      position: [0, -1, 3],
       rotation: [0, 0, 0],
       scale: 0.25,
     },

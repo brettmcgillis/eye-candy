@@ -30,6 +30,7 @@
 - [ ] Combine materials to cohesive set of props
 - [ ] Update default input props based on final scene
 - [ ] Can we preload (suspense) fonts? to prevent VHS looking shit on first render?
+- [ ] THREE.doubleside them all?
 - [ ] SideQuest - Could we put strudel visuals on a shader and pair that w/ strudel audio?
 
 **TV**

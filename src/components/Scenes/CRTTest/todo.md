@@ -16,6 +16,9 @@
 - [x] Rename CRTSnowMaterial -> CRTStaticMaterial
 - [x] Move Materials
 - [x] Move TV components
+- [x] MP3 & Strudel Audio not working? Strudel works if we click at the right time during very early during first render. Fixed, Make sure to use appropriate file paths to assets
+- [x] Update Test Panels to use InteractiveReversal to push materials into a collection, Pop when all are used, so we can demo each one & the collection w/ TV off.
+- [x] Fix dial click handling
 
 **CRT Shaders**
 
@@ -32,13 +35,11 @@
 **TV**
 
 - [ ] Need disabled prop(s) to disallow knob/dial interactions. powerDisabled, knobsDisabled, dialsDisabled
-- [x] Fix dial click handling
 - [ ] Fix dial z-depth issue on clicks. should be quick in out, probably not setTimeout based
 - [ ] Wire up settings scan on knob2
 
 **Audio**
 
-- [x] MP3 & Strudel Audio not working? Strudel works if we click at the right time during very early during first render. Fixed, Make sure to use appropriate file paths to assets
 - [ ] Fix strudel/mp3 play on first render. Cant due to gesture requirement from chrome, so maybe info modal onclose can hit play? Or tv default off & press play button?
 - [ ] fix multple audio playing on 1 tv.
 - [ ] Nice to have: support multiple audio on 2 tvs
@@ -50,7 +51,6 @@
 **Other**
 
 - [ ] Click to add decals?
-- [x] Update Test Panels to use InteractiveReversal to push materials into a collection, Pop when all are used, so we can demo each one & the collection w/ TV off.
 - [ ] Test Mobile - Webcam Only works HTTPS. Strudel only works w/ silent off?
 - [ ] Add helper modal. use HTML to get a billboard. useState for visibility. include dial & knob instructions. include audio instructions. include mobile details, include toggle for tv sound on. Power on tv on dismiss.
 

@@ -21,6 +21,7 @@ function getSceneFromQuery() {
 /* ---------------------------------------------
    App
 ---------------------------------------------- */
+const DEFAULT_SCENE_ID = 'loGlow';
 
 function App() {
   const local = isLocalHost();
@@ -46,17 +47,20 @@ function App() {
   const initialScene = useMemo(() => {
     const requested = getSceneFromQuery();
 
+    // 1. Explicit query string always wins (if allowed)
     if (requested && sceneMap[requested]) {
       const scene = sceneMap[requested];
 
-      // local: allow any existing scene
       if (local) return scene.id;
-
-      // public: only allow linkable scenes
       if (scene.linkable) return scene.id;
     }
 
-    // fallback: first public + linkable scene
+    // 2. No query string → explicit default
+    if (!requested && !local && sceneMap[DEFAULT_SCENE_ID]) {
+      return sceneMap[DEFAULT_SCENE_ID].id;
+    }
+
+    // 3. Final fallback: first public + linkable scene
     const fallback = scenes.find((s) => s.public && s.linkable);
 
     return fallback?.id ?? scenes[0].id;

@@ -7,7 +7,6 @@
 
 ### GENERAL
 
-- [x] Show version on overlay
 - [ ] Add scripts to update major, minor, hotfix versions
 - [ ] Add scripts to deploy next maj, min, hotfix
 - [ ] add/update screenshot(s) on readme for each scene
@@ -27,6 +26,8 @@
 
 ### OVERLAY
 
+- [x] Show version on overlay
+- [ ] Spring animate leva transition.
 - [ ] add personal links
 - [ ] display back link contextually.
 - [ ] show emojis contextually.

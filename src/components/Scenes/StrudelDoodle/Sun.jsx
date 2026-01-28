@@ -14,6 +14,7 @@ const SunMaterial = shaderMaterial(
   },
   /* glsl */ `
     varying vec2 vUv;
+
     void main() {
       vUv = uv;
       gl_Position = projectionMatrix * modelViewMatrix * vec4(position,1.0);
@@ -24,16 +25,37 @@ const SunMaterial = shaderMaterial(
     uniform vec3 uColorTop;
     uniform vec3 uColorBottom;
     uniform float uBands;
+
     varying vec2 vUv;
 
     void main() {
-      float bands = step(0.5, fract(vUv.y * uBands));
-      float glow = smoothstep(0.0, 0.3, 1.0 - distance(vUv, vec2(0.5)));
+
+      /* -----------------------
+         Band mask (on/off only)
+      ------------------------ */
+
+      float band = step(0.5, fract(vUv.y * uBands));
+
+      /* -----------------------
+         Radial glow (brightness only)
+      ------------------------ */
+
+      float dist = distance(vUv, vec2(0.5));
+      float glow = smoothstep(0.0, 0.35, 1.0 - dist);
+
+      /* -----------------------
+         Gradient color
+      ------------------------ */
 
       vec3 grad = mix(uColorBottom, uColorTop, vUv.y);
-      vec3 color = grad * bands;
 
-      gl_FragColor = vec4(color * glow * 2.2, 1.0);
+      vec3 color = grad * glow * 2.2;
+
+      /* -----------------------
+         Final: solid bands, clear gaps
+      ------------------------ */
+
+      gl_FragColor = vec4(color, band);
     }
   `
 );
@@ -49,7 +71,7 @@ export default function Sun({
   const mat = useRef();
 
   useFrame((_, delta) => {
-    mat.current.uTime += delta;
+    if (mat.current) mat.current.uTime += delta;
   });
 
   return (
@@ -58,9 +80,11 @@ export default function Sun({
       <sunMaterial
         ref={mat}
         transparent
+        depthWrite={false}
         uColorTop={colorTop}
         uColorBottom={colorBottom}
         uBands={bands}
+        side={THREE.DoubleSide}
       />
     </mesh>
   );

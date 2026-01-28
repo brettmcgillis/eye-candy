@@ -65,31 +65,63 @@ function VaporwaveScene({ theme }) {
         cellColor={theme.grid}
         sectionColor={theme.grid}
       />
-      <Sun
-        position={[5, 9, -12]}
-        colorTop="#ffffff"
-        bands={20}
-        colorBottom="#000000"
-      />
+
       <Floating>
-        <mesh scale={2.4} position={[0, 0, -6]}>
-          <torusKnotGeometry args={[1, 0.32, 160, 24]} />
-          <WireMaterial color={theme.wire} />
-        </mesh>
+        <Sun
+          position={[5, 9, -12]}
+          colorTop="#ffffff"
+          colorBottom="#000000"
+          bands={20}
+        />
       </Floating>
 
-      <Floating speed={0.18} amp={0.4}>
-        <mesh scale={1.6} position={[-4, 0.5, -10]}>
-          <icosahedronGeometry args={[1.3, 1]} />
-          <WireMaterial color={theme.accent} opacity={0.7} />
-        </mesh>
+      <Floating>
+        <Sun
+          position={[-1, -3, 2]}
+          colorTop="#38daf6"
+          colorBottom="#7e007e"
+          bands={7}
+        />
       </Floating>
 
-      <Floating speed={0.14} amp={0.5}>
-        <mesh scale={1.9} position={[4, -0.3, -12]}>
-          <octahedronGeometry args={[1.5, 0]} />
-          <WireMaterial color={theme.wire} opacity={0.6} />
-        </mesh>
+      <Floating>
+        <Sun
+          scale={2.2}
+          position={[-7, 0.5, -10]}
+          colorTop="#b500b5"
+          colorBottom="#00ff59"
+          bands={16}
+        />
+      </Floating>
+
+      <Floating>
+        <Sun
+          scale={1.3}
+          position={[4, -0.3, -7]}
+          colorTop="#e020e6"
+          colorBottom="#02c68e"
+          bands={12}
+        />
+      </Floating>
+
+      <Floating>
+        <Sun
+          scale={0.7}
+          position={[-7, 0.5, 4]}
+          colorTop="#0d00ff"
+          colorBottom="#ff00ff"
+          bands={16}
+        />
+      </Floating>
+
+      <Floating>
+        <Sun
+          scale={0.7}
+          position={[5.5, 3.5, 4]}
+          colorTop="#ff0084"
+          colorBottom="#0080ff"
+          bands={16}
+        />
       </Floating>
     </>
   );

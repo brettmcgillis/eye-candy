@@ -6,8 +6,8 @@ import * as THREE from 'three';
 
 import React, { useEffect, useMemo, useRef, useState } from 'react';
 
-import { Grid, Html, OrbitControls } from '@react-three/drei';
-import { useFrame } from '@react-three/fiber';
+import { Grid, Html, OrbitControls, shaderMaterial } from '@react-three/drei';
+import { extend, useFrame } from '@react-three/fiber';
 
 import useStrudelTrack from '../../../hooks/useStrudelTrack';
 import { STRUDEL_TRACKS } from '../../../utils/tracks';
@@ -21,6 +21,7 @@ function Floating({ children, speed = 0.25, amp = 0.6 }) {
 
   useFrame((state) => {
     const t = state.clock.elapsedTime * speed;
+    if (!ref.current) return;
     ref.current.position.y = Math.sin(t) * amp;
     ref.current.rotation.y += 0.002;
     ref.current.rotation.x = Math.sin(t * 0.6) * 0.04;
@@ -29,15 +30,118 @@ function Floating({ children, speed = 0.25, amp = 0.6 }) {
   return <group ref={ref}>{children}</group>;
 }
 
-function WireMaterial({ color, opacity = 0.85 }) {
+/* ----------------------------- SKYDOME ----------------------------- */
+
+const SkyMaterial = shaderMaterial(
+  {
+    uTop: new THREE.Color('#2b0f3f'),
+    uBottom: new THREE.Color('#060010'),
+  },
+  /* glsl */ `
+    varying vec3 vPos;
+    void main() {
+      vPos = position;
+      gl_Position = projectionMatrix * modelViewMatrix * vec4(position,1.0);
+    }
+  `,
+  /* glsl */ `
+    uniform vec3 uTop;
+    uniform vec3 uBottom;
+    varying vec3 vPos;
+
+    void main() {
+      float h = normalize(vPos).y * 0.5 + 0.5;
+      vec3 col = mix(uBottom, uTop, smoothstep(0.0, 1.0, h));
+      gl_FragColor = vec4(col, 1.0);
+    }
+  `
+);
+
+extend({ SkyMaterial });
+
+function SkyDome({ top, bottom }) {
   return (
-    <meshBasicMaterial
-      wireframe
-      transparent
-      toneMapped={false}
-      color={color}
-      opacity={opacity}
-    />
+    <mesh scale={200}>
+      <sphereGeometry args={[1, 64, 64]} />
+      <skyMaterial side={THREE.BackSide} uTop={top} uBottom={bottom} />
+    </mesh>
+  );
+}
+
+/* ----------------------------- GROUND OCCLUDER ----------------------------- */
+/* Invisible depth-writing plane so you can’t see sky through the grid */
+
+function GroundOccluder({ y = -2.401 }) {
+  return (
+    <mesh rotation={[-Math.PI / 2, 0, 0]} position={[0, y, 0]}>
+      <planeGeometry args={[500, 500]} />
+      <meshStandardMaterial color="#000" transparent opacity={1} depthWrite />
+    </mesh>
+  );
+}
+
+/* ----------------------------- HORIZON SUN ----------------------------- */
+
+const HorizonSunMaterial = shaderMaterial(
+  {
+    uColorTop: new THREE.Color('#ff9bf5'),
+    uColorBottom: new THREE.Color('#ff2fa4'),
+    uBands: 14,
+    uHorizon: 0.35,
+  },
+  /* glsl */ `
+    varying vec2 vUv;
+    void main() {
+      vUv = uv;
+      gl_Position = projectionMatrix * modelViewMatrix * vec4(position,1.0);
+    }
+  `,
+  /* glsl */ `
+    uniform vec3 uColorTop;
+    uniform vec3 uColorBottom;
+    uniform float uBands;
+    uniform float uHorizon;
+    varying vec2 vUv;
+
+    void main() {
+
+      if (vUv.y < uHorizon) discard;
+
+      float band = step(0.5, fract(vUv.y * uBands));
+
+      float dist = distance(vUv, vec2(0.5));
+      float glow = smoothstep(0.0, 0.35, 1.0 - dist);
+
+      vec3 grad = mix(uColorBottom, uColorTop, vUv.y);
+      vec3 color = grad * glow * 2.2;
+
+      gl_FragColor = vec4(color, band);
+    }
+  `
+);
+
+extend({ HorizonSunMaterial });
+
+function HorizonSun({
+  colorTop,
+  colorBottom,
+  bands = 14,
+  horizon = 0.35,
+  ...props
+}) {
+  return (
+    <mesh {...props}>
+      <sphereGeometry args={[2.4, 64, 64]} />
+      <horizonSunMaterial
+        transparent
+        depthWrite={false}
+        side={THREE.DoubleSide}
+        uColorTop={colorTop}
+        uColorBottom={colorBottom}
+        uBands={bands}
+        uHorizon={horizon}
+      />
+    </mesh>
   );
 }
 
@@ -48,11 +152,24 @@ function VaporwaveScene({ theme }) {
 
   return (
     <>
-      <color attach="background" args={[theme.bg]} />
       <primitive attach="fog" object={fog} />
+
+      <SkyDome top={theme.skyTop} bottom={theme.skyBottom} />
 
       <ambientLight intensity={0.6} />
       <pointLight position={[0, 6, -10]} intensity={3} color={theme.accent} />
+
+      <HorizonSun
+        position={[0, 2.4, -155]}
+        scale={17}
+        colorTop={theme.accent}
+        colorBottom={theme.grid}
+        bands={18}
+        horizon={0.38}
+      />
+
+      {/* Invisible depth blocker */}
+      <GroundOccluder y={-2.42} />
 
       <Grid
         position={[0, -2.4, 0]}
@@ -100,12 +217,11 @@ function VaporwaveScene({ theme }) {
           position={[7, -0.5, 10]}
           colorTop="#b500b5"
           colorBottom="#00ff59"
-          innterColorTop="#00ff59"
+          innerColorTop="#00ff59"
           innerColorBottom="#b500b5"
           bands={16}
         />
       </Floating>
-
       <Floating>
         <Sun
           scale={1.3}
@@ -156,29 +272,19 @@ export default function StrudelDoodle() {
   });
 
   const PRESETS = useMemo(
-    () => ({
-      ...Object.fromEntries(
-        Object.entries(STRUDEL_TRACKS).map(([key, value]) => [
-          key,
-          value.toString(),
-        ])
+    () =>
+      Object.fromEntries(
+        Object.entries(STRUDEL_TRACKS).map(([k, v]) => [k, v.toString()])
       ),
-    }),
     []
   );
 
   const { themeName, presetName, autoPlay } = useControls('Strudelizer', {
     Theme: folder({
-      themeName: {
-        value: 'Miami',
-        options: Object.keys(THEMES),
-      },
+      themeName: { value: 'Miami', options: Object.keys(THEMES) },
     }),
     Track: folder({
-      presetName: {
-        value: PRESETS[0] ?? 'defaultPattern',
-        options: Object.keys(PRESETS),
-      },
+      presetName: { value: 'defaultPattern', options: Object.keys(PRESETS) },
       autoPlay: false,
     }),
   });
@@ -192,9 +298,7 @@ export default function StrudelDoodle() {
       setCode(next);
       if (autoPlay && ready) play(next);
     }
-  }, [presetName]);
-
-  /* ----------------------------- UI ----------------------------- */
+  }, [presetName, ready, autoPlay, play]);
 
   return (
     <>
@@ -202,8 +306,9 @@ export default function StrudelDoodle() {
         enablePan={false}
         minDistance={6}
         maxDistance={16}
-        maxPolarAngle={Math.PI * 0.55}
+        target={[0, 1.5, 0]}
         minPolarAngle={Math.PI * 0.35}
+        maxPolarAngle={Math.PI * 0.495}
       />
 
       <VaporwaveScene theme={theme} />

@@ -2,13 +2,13 @@
 
 #### FUCKING BIG ONE
 
-- [ ] Test deploy to gh pages with a default scene set, sanity check scene select availablity.
+- [ ] Test deploy to gh pages, sanity check scene select availablity, query stringing.
 - [ ] Merge this megafuck branch.
 
 ### GENERAL
 
-- [ ] Add scripts to update major, minor, hotfix versions
-- [ ] Add scripts to deploy next maj, min, hotfix
+- [x] Add scripts to update major, minor, hotfix versions
+- [x] Add scripts to deploy next maj, min, hotfix
 - [ ] add/update screenshot(s) on readme for each scene
 - [ ] Fix dbg layout on mobile
 
@@ -116,6 +116,7 @@
 - [ ] default prop vals
 - [ ] element position controls
 - [ ] material controls (? chrome skull)
+- [ ] CSG Skull?
 
 #### LOGO
 
@@ -136,12 +137,14 @@
 
 ### CAMERARIG
 
+- [ ] Probably just delete it
 - [ ] add camera rig with props for default position, more
 - [ ] add camera controls, control availablity with props?
 - [ ] orbit (on/off w/props)
 
 ### LIGHTINGRIG
 
+- [ ] Probably just delete it
 - [ ] props
 - [ ] directional lighting
 

@@ -4,7 +4,7 @@ import React from 'react';
 
 import { OrbitControls, PerspectiveCamera } from '@react-three/drei';
 
-import Bret from '../../elements/bret/Bret';
+import { InteractiveBret } from '../../elements/bret/Bret';
 import NeuralNetwork from '../../elements/network/NeuralNetwork';
 import { GridMaterial } from '../../materials/gridMaterial';
 
@@ -80,7 +80,8 @@ export default function NetworkTest() {
       <color attach="background" args={['#5b5b5b']} />
       <OrbitControls />
       <NeuralNetwork {...rings} />
-      <Bret />
+      {/* <Bret /> */}
+      <InteractiveBret />
       <mesh position={[0, -1, 0]} rotation={[-Math.PI / 2, 0, 0]}>
         <planeGeometry args={[5, 5]} />
         <GridMaterial />

@@ -11,6 +11,7 @@ import { useFrame } from '@react-three/fiber';
 
 import useStrudelTrack from '../../../hooks/useStrudelTrack';
 import { STRUDEL_TRACKS } from '../../../utils/tracks';
+import Sun from './Sun';
 import THEMES from './themes';
 
 /* ----------------------------- helpers ----------------------------- */
@@ -64,7 +65,12 @@ function VaporwaveScene({ theme }) {
         cellColor={theme.grid}
         sectionColor={theme.grid}
       />
-
+      <Sun
+        position={[5, 9, -12]}
+        colorTop="#ffffff"
+        bands={20}
+        colorBottom="#000000"
+      />
       <Floating>
         <mesh scale={2.4} position={[0, 0, -6]}>
           <torusKnotGeometry args={[1, 0.32, 160, 24]} />

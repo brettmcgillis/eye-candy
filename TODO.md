@@ -27,8 +27,8 @@
 ### OVERLAY
 
 - [x] Show version on overlay
-- [ ] Spring animate leva transition.
-- [ ] add personal links
+- [x] Spring animate leva transition.
+- [x] add personal links
 - [ ] display back link contextually.
 - [ ] show emojis contextually.
 - [ ] change positions when on mobile

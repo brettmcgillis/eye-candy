@@ -2,6 +2,7 @@ import { Leva } from 'leva';
 
 import React, { useState } from 'react';
 
+import isLocalHost from '../../../utils/appUtils';
 import './Overlay.css';
 
 const levaTheme = {
@@ -32,10 +33,6 @@ const levaTheme = {
     sans: 'inherit',
   },
 };
-
-function isLocalHost() {
-  return ['localhost', '127.0.0.1', '[::1]'].includes(window.location.hostname);
-}
 
 function Overlay() {
   const date = new Date();

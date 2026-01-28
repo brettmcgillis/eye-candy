@@ -1,10 +1,8 @@
 import { useControls } from 'leva';
-import * as THREE from 'three/webgpu';
 
 import React, { Suspense, useEffect, useMemo } from 'react';
 
 import { Html } from '@react-three/drei';
-import { Canvas } from '@react-three/fiber';
 
 import CRTTest from '../components/scenes/CRTTest/CrtTest';
 import DumpsterFire from '../components/scenes/DumpsterFire/DumpsterFire';
@@ -16,6 +14,7 @@ import NewScene from '../components/scenes/NewScene';
 import PaperStack from '../components/scenes/PaperStack/PaperStack';
 import PixelHater from '../components/scenes/PixelHater/PixelHater';
 import StrudelDoodle from '../components/scenes/StrudelDoodle/StrudelDoodle';
+import isLocalHost from '../utils/appUtils';
 import './App.css';
 import WebGLCanvas from './scaffold/canvas/WebGLCanvas';
 import WebGPUCanvas from './scaffold/canvas/WebGPUCanvas';
@@ -63,12 +62,16 @@ function getInitialScene() {
 function App() {
   const initialScene = useMemo(getInitialScene, []);
 
-  const { scene } = useControls('Scene Selection', {
-    scene: {
-      options: Object.keys(SCENES),
-      value: initialScene,
+  const { scene } = useControls(
+    'Scene Selection',
+    {
+      scene: {
+        options: Object.keys(SCENES),
+        value: initialScene,
+      },
     },
-  });
+    { render: () => isLocalHost() }
+  );
 
   useEffect(() => {
     const params = new URLSearchParams(window.location.search);

@@ -47,10 +47,20 @@ p1: n("0 2 4 6 7 6 4 2")
 p2: "<a1 e2>/8".clip(0.8).struct("x*8").s("supersaw").note();
 `;
 
+export const defaultPattern = `
+setcps(0.7)
+
+stack(
+  sound("bd ~ bd ~").gain(1.1),
+  sound("hh*8").gain(0.4),
+  sound("arpy:2").slow(2).gain(0.5)
+)
+`;
 /* Optional: registry object if you prefer */
 export const STRUDEL_TRACKS = {
   threeD,
   glitch,
   ambient,
   weirderStuff,
+  defaultPattern,
 };

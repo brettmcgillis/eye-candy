@@ -5,6 +5,64 @@ import React, { useMemo, useState } from 'react';
 import { animated, useSpring } from '@react-spring/three';
 import { useGLTF } from '@react-three/drei';
 
+/* ========================================================================
+   Generic base (new third variation)
+======================================================================== */
+
+export function ReversalBase({
+  innerMaterial = null,
+  outerMaterial = null,
+  innerProps = {},
+  outerProps = {},
+  ...props
+}) {
+  const { nodes } = useGLTF('/models/Reversal.glb');
+
+  const isJSX = (m) => React.isValidElement(m);
+
+  return (
+    <group {...props} dispose={null}>
+      <group rotation={[Math.PI / 2, 0, 0]}>
+        {innerMaterial && (
+          <mesh
+            castShadow
+            receiveShadow
+            geometry={nodes['reversal-in'].geometry}
+            scale={[10, 1.018, 10]}
+            {...innerProps}
+          >
+            {isJSX(innerMaterial) ? (
+              innerMaterial
+            ) : (
+              <primitive attach="material" object={innerMaterial} />
+            )}
+          </mesh>
+        )}
+
+        {outerMaterial && (
+          <mesh
+            castShadow
+            receiveShadow
+            geometry={nodes['reversal-out'].geometry}
+            scale={[10, 1.018, 10]}
+            {...outerProps}
+          >
+            {isJSX(outerMaterial) ? (
+              outerMaterial
+            ) : (
+              <primitive attach="material" object={outerMaterial} />
+            )}
+          </mesh>
+        )}
+      </group>
+    </group>
+  );
+}
+
+/* ========================================================================
+   Static colored version (existing default export)
+======================================================================== */
+
 export default function Reversal({
   innerColor = '#FF0000',
   innerColorEmissive = false,
@@ -14,44 +72,40 @@ export default function Reversal({
   outerColorEmissiveIntensity = 0,
   ...props
 }) {
-  const { nodes, materials } = useGLTF(`/models/Reversal.glb`);
-  const innerMaterial = !innerColor
-    ? materials['SVGMat.001']
-    : new THREE.MeshStandardMaterial({
-        color: innerColorEmissive ? null : innerColor,
-        emissive: innerColorEmissive ? innerColor : null,
-        emissiveIntensity: innerColorEmissiveIntensity,
-        side: THREE.DoubleSide,
-      });
-  const outerMaterial = !outerColor
-    ? materials['SVGMat.004']
-    : new THREE.MeshStandardMaterial({
-        color: outerColorEmissive ? null : outerColor,
-        emissive: outerColorEmissive ? outerColor : null,
-        emissiveIntensity: outerColorEmissiveIntensity,
-        side: THREE.DoubleSide,
-      });
+  const innerMaterial = useMemo(() => {
+    if (!innerColor) return null;
+
+    return new THREE.MeshStandardMaterial({
+      color: innerColorEmissive ? null : innerColor,
+      emissive: innerColorEmissive ? innerColor : null,
+      emissiveIntensity: innerColorEmissiveIntensity,
+      side: THREE.DoubleSide,
+    });
+  }, [innerColor, innerColorEmissive, innerColorEmissiveIntensity]);
+
+  const outerMaterial = useMemo(() => {
+    if (!outerColor) return null;
+
+    return new THREE.MeshStandardMaterial({
+      color: outerColorEmissive ? null : outerColor,
+      emissive: outerColorEmissive ? outerColor : null,
+      emissiveIntensity: outerColorEmissiveIntensity,
+      side: THREE.DoubleSide,
+    });
+  }, [outerColor, outerColorEmissive, outerColorEmissiveIntensity]);
+
   return (
-    <group {...props} dispose={null}>
-      <group rotation={[Math.PI / 2, 0, 0]}>
-        <mesh
-          castShadow
-          receiveShadow
-          geometry={nodes['reversal-in'].geometry}
-          material={innerMaterial}
-          scale={[10, 1.018, 10]}
-        />
-        <mesh
-          castShadow
-          receiveShadow
-          geometry={nodes['reversal-out'].geometry}
-          material={outerMaterial}
-          scale={[10, 1.018, 10]}
-        />
-      </group>
-    </group>
+    <ReversalBase
+      {...props}
+      innerMaterial={innerMaterial}
+      outerMaterial={outerMaterial}
+    />
   );
 }
+
+/* ========================================================================
+   Interactive animated version
+======================================================================== */
 
 export function InteractiveReversal({
   pressDepth = 0.015,
@@ -59,25 +113,8 @@ export function InteractiveReversal({
   onClick,
   ...props
 }) {
-  const { nodes } = useGLTF(`/models/Reversal.glb`);
-
   const [isOn, setIsOn] = useState(false);
   const [isPressed, setIsPressed] = useState(false);
-
-  /* -----------------------------
-     Materials
-  ------------------------------ */
-
-  const innerMaterial = useMemo(
-    () =>
-      new THREE.MeshStandardMaterial({
-        color: '#ff0000',
-        emissive: '#ff0000',
-        emissiveIntensity: 0,
-        side: THREE.DoubleSide,
-      }),
-    []
-  );
 
   const outerMaterial = useMemo(
     () =>
@@ -88,10 +125,6 @@ export function InteractiveReversal({
     []
   );
 
-  /* -----------------------------
-     Springs
-  ------------------------------ */
-
   const { pressY, emissive } = useSpring({
     pressY: isPressed ? -pressDepth : 0,
     emissive: isOn ? glowIntensity : 0,
@@ -101,65 +134,44 @@ export function InteractiveReversal({
         : { mass: 1, tension: 120, friction: 20 },
   });
 
-  /* -----------------------------
-     Render
-  ------------------------------ */
+  const pointerHandlers = {
+    onPointerDown: (e) => {
+      e.stopPropagation();
+      onClick?.();
+      setIsPressed(true);
+    },
+    onPointerUp: (e) => {
+      e.stopPropagation();
+      setIsPressed(false);
+      setIsOn((v) => !v);
+    },
+    onPointerLeave: () => setIsPressed(false),
+  };
 
   return (
-    <group {...props} dispose={null}>
-      <group rotation={[Math.PI / 2, 0, 0]}>
-        {/* INNER (animated) */}
-        <animated.mesh
-          castShadow
-          receiveShadow
-          geometry={nodes['reversal-in'].geometry}
-          material={innerMaterial}
-          scale={[10, 1.018, 10]}
-          position-y={pressY}
-          onPointerDown={(e) => {
-            e.stopPropagation();
-            onClick?.();
-            setIsPressed(true);
-          }}
-          onPointerUp={(e) => {
-            e.stopPropagation();
-            setIsPressed(false);
-            setIsOn((v) => !v);
-          }}
-          onPointerLeave={() => setIsPressed(false)}
-        >
-          {/* spring drives emissive intensity */}
-          <animated.meshStandardMaterial
-            attach="material"
-            color="#ff0000"
-            emissive="#ff0000"
-            emissiveIntensity={emissive}
-            side={THREE.DoubleSide}
-          />
-        </animated.mesh>
-
-        {/* OUTER */}
-        <mesh
-          castShadow
-          receiveShadow
-          geometry={nodes['reversal-out'].geometry}
-          material={outerMaterial}
-          scale={[10, 1.018, 10]}
-          onPointerDown={(e) => {
-            e.stopPropagation();
-            onClick?.();
-            setIsPressed(true);
-          }}
-          onPointerUp={(e) => {
-            e.stopPropagation();
-            setIsPressed(false);
-            setIsOn((v) => !v);
-          }}
-          onPointerLeave={() => setIsPressed(false)}
+    <ReversalBase
+      {...props}
+      outerMaterial={outerMaterial}
+      outerProps={pointerHandlers}
+      innerMaterial={
+        <animated.meshStandardMaterial
+          attach="material"
+          color="#ff0000"
+          emissive="#ff0000"
+          emissiveIntensity={emissive}
+          side={THREE.DoubleSide}
         />
-      </group>
-    </group>
+      }
+      innerProps={{
+        positionY: pressY,
+        ...pointerHandlers,
+      }}
+    />
   );
 }
 
-useGLTF.preload(`/models/Reversal.glb`);
+/* ========================================================================
+   Preload
+======================================================================== */
+
+useGLTF.preload('/models/Reversal.glb');

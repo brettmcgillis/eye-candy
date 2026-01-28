@@ -1,5 +1,12 @@
 # #TODO:
 
+#### FUCKING BIG ONE
+
+- [ ] Test deploy to gh pages with a default scene set, sanity check scene select availablity.
+- [ ] Merge this megafuck branch.
+
+### GENERAL
+
 - [ ] add/update screenshot(s) on readme for each scene
 - [ ] Fix dbg layout on mobile
 

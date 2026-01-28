@@ -11,7 +11,7 @@ import { useFrame } from '@react-three/fiber';
 
 import useStrudelTrack from '../../../hooks/useStrudelTrack';
 import { STRUDEL_TRACKS } from '../../../utils/tracks';
-import Sun from './Sun';
+import Sun, { DoubleLayerSun } from './Sun';
 import THEMES from './themes';
 
 /* ----------------------------- helpers ----------------------------- */
@@ -69,8 +69,8 @@ function VaporwaveScene({ theme }) {
       <Floating>
         <Sun
           position={[5, 9, -12]}
-          colorTop="#ffffff"
-          colorBottom="#000000"
+          colorTop="#ededed"
+          colorBottom="#343434"
           bands={20}
         />
       </Floating>
@@ -90,6 +90,18 @@ function VaporwaveScene({ theme }) {
           position={[-7, 0.5, -10]}
           colorTop="#b500b5"
           colorBottom="#00ff59"
+          bands={16}
+        />
+      </Floating>
+
+      <Floating>
+        <DoubleLayerSun
+          scale={2.2}
+          position={[7, -0.5, 10]}
+          colorTop="#b500b5"
+          colorBottom="#00ff59"
+          innterColorTop="#00ff59"
+          innerColorBottom="#b500b5"
           bands={16}
         />
       </Floating>
@@ -117,10 +129,19 @@ function VaporwaveScene({ theme }) {
       <Floating>
         <Sun
           scale={0.7}
-          position={[5.5, 3.5, 4]}
+          position={[5.5, 6, 4]}
           colorTop="#ff0084"
           colorBottom="#0080ff"
           bands={16}
+        />
+        <DoubleLayerSun
+          scale={0.2}
+          position={[6.5, 7, 4.5]}
+          colorTop="#ff0084"
+          colorBottom="#0080ff"
+          innerColorTop="#ffffff"
+          innerColorBottom="#000000"
+          bands={8}
         />
       </Floating>
     </>
@@ -137,7 +158,10 @@ export default function StrudelDoodle() {
   const PRESETS = useMemo(
     () => ({
       ...Object.fromEntries(
-        Object.entries(STRUDEL_TRACKS).map(([key, value]) => [key, value])
+        Object.entries(STRUDEL_TRACKS).map(([key, value]) => [
+          key,
+          value.toString(),
+        ])
       ),
     }),
     []
@@ -152,10 +176,10 @@ export default function StrudelDoodle() {
     }),
     Track: folder({
       presetName: {
-        value: PRESETS[0],
+        value: PRESETS[0] ?? 'defaultPattern',
         options: Object.keys(PRESETS),
       },
-      autoPlay: true,
+      autoPlay: false,
     }),
   });
 

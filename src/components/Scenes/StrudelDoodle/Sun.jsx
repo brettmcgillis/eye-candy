@@ -11,6 +11,7 @@ const SunMaterial = shaderMaterial(
     uColorTop: new THREE.Color('#ff9bf5'),
     uColorBottom: new THREE.Color('#ff2fa4'),
     uBands: 12,
+    uIntensity: 2.2,
   },
   /* glsl */ `
     varying vec2 vUv;
@@ -25,35 +26,23 @@ const SunMaterial = shaderMaterial(
     uniform vec3 uColorTop;
     uniform vec3 uColorBottom;
     uniform float uBands;
+    uniform float uIntensity;
 
     varying vec2 vUv;
 
     void main() {
 
-      /* -----------------------
-         Band mask (on/off only)
-      ------------------------ */
-
+      // band mask (solid or hole)
       float band = step(0.5, fract(vUv.y * uBands));
 
-      /* -----------------------
-         Radial glow (brightness only)
-      ------------------------ */
-
+      // radial glow (brightness only)
       float dist = distance(vUv, vec2(0.5));
       float glow = smoothstep(0.0, 0.35, 1.0 - dist);
 
-      /* -----------------------
-         Gradient color
-      ------------------------ */
-
+      // vertical gradient
       vec3 grad = mix(uColorBottom, uColorTop, vUv.y);
 
-      vec3 color = grad * glow * 2.2;
-
-      /* -----------------------
-         Final: solid bands, clear gaps
-      ------------------------ */
+      vec3 color = grad * glow * uIntensity;
 
       gl_FragColor = vec4(color, band);
     }
@@ -87,5 +76,58 @@ export default function Sun({
         side={THREE.DoubleSide}
       />
     </mesh>
+  );
+}
+
+export function DoubleLayerSun({
+  colorTop = '#ff9bf5',
+  colorBottom = '#ff2fa4',
+  innerColorTop = '#6b2cff',
+  innerColorBottom = '#14002b',
+  bands = 12,
+  intensity = 2.2,
+  radius = 1.5,
+  ...props
+}) {
+  const outer = useRef();
+  const inner = useRef();
+
+  useFrame((_, delta) => {
+    if (outer.current) outer.current.uTime += delta;
+    if (inner.current) inner.current.uTime += delta * 0.6;
+  });
+
+  return (
+    <group {...props}>
+      {/* OUTER SHELL */}
+      <mesh>
+        <sphereGeometry args={[radius, 64, 64]} />
+        <sunMaterial
+          ref={outer}
+          transparent
+          depthWrite={false}
+          side={THREE.FrontSide}
+          uColorTop={colorTop}
+          uColorBottom={colorBottom}
+          uBands={bands}
+          uIntensity={intensity}
+        />
+      </mesh>
+
+      {/* INNER SHELL */}
+      <mesh scale={0.995}>
+        <sphereGeometry args={[radius, 64, 64]} />
+        <sunMaterial
+          ref={inner}
+          transparent
+          depthWrite={false}
+          side={THREE.BackSide}
+          uColorTop={innerColorTop}
+          uColorBottom={innerColorBottom}
+          uBands={bands}
+          uIntensity={intensity * 0.8}
+        />
+      </mesh>
+    </group>
   );
 }

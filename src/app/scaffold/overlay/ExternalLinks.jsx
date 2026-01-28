@@ -11,7 +11,7 @@ export default function ExternalLinks() {
         rel="noreferrer"
         aria-label="Instagram"
       >
-        <FaInstagram color="#000000" />
+        <FaInstagram size={16} color="#000000" />
       </a>
 
       <a
@@ -20,7 +20,7 @@ export default function ExternalLinks() {
         rel="noreferrer"
         aria-label="LinkedIn"
       >
-        <FaLinkedin color="#000000" />
+        <FaLinkedin size={16} color="#000000" />
       </a>
     </div>
   );

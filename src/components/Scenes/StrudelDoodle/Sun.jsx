@@ -22,7 +22,6 @@ const SunMaterial = shaderMaterial(
     }
   `,
   /* glsl */ `
-    uniform float uTime;
     uniform vec3 uColorTop;
     uniform vec3 uColorBottom;
     uniform float uBands;
@@ -32,29 +31,32 @@ const SunMaterial = shaderMaterial(
 
     void main() {
 
-      // band mask (solid or hole)
+      // solid band or hole
       float band = step(0.5, fract(vUv.y * uBands));
+      if (band > 0.5) discard;
 
-      // radial glow (brightness only)
+      // radial glow
       float dist = distance(vUv, vec2(0.5));
       float glow = smoothstep(0.0, 0.35, 1.0 - dist);
 
       // vertical gradient
       vec3 grad = mix(uColorBottom, uColorTop, vUv.y);
-
       vec3 color = grad * glow * uIntensity;
 
-      gl_FragColor = vec4(color, band);
+      gl_FragColor = vec4(color, 1.0);
     }
   `
 );
 
 extend({ SunMaterial });
 
+/* ----------------------------- SINGLE SUN ----------------------------- */
+
 export default function Sun({
   colorTop = '#ff9bf5',
   colorBottom = '#ff2fa4',
   bands = 12,
+  intensity = 2.2,
   ...props
 }) {
   const mat = useRef();
@@ -68,16 +70,19 @@ export default function Sun({
       <sphereGeometry args={[1.5, 64, 64]} />
       <sunMaterial
         ref={mat}
-        transparent
-        depthWrite={false}
+        side={THREE.FrontSide}
+        depthWrite
+        depthTest
         uColorTop={colorTop}
         uColorBottom={colorBottom}
         uBands={bands}
-        side={THREE.DoubleSide}
+        uIntensity={intensity}
       />
     </mesh>
   );
 }
+
+/* ----------------------------- DOUBLE SUN ----------------------------- */
 
 export function DoubleLayerSun({
   colorTop = '#ff9bf5',
@@ -99,14 +104,14 @@ export function DoubleLayerSun({
 
   return (
     <group {...props}>
-      {/* OUTER SHELL */}
+      {/* OUTER */}
       <mesh>
         <sphereGeometry args={[radius, 64, 64]} />
         <sunMaterial
           ref={outer}
-          transparent
-          depthWrite={false}
           side={THREE.FrontSide}
+          depthWrite
+          depthTest
           uColorTop={colorTop}
           uColorBottom={colorBottom}
           uBands={bands}
@@ -114,18 +119,18 @@ export function DoubleLayerSun({
         />
       </mesh>
 
-      {/* INNER SHELL */}
-      <mesh scale={0.995}>
+      {/* INNER */}
+      <mesh scale={0.992}>
         <sphereGeometry args={[radius, 64, 64]} />
         <sunMaterial
           ref={inner}
-          transparent
-          depthWrite={false}
           side={THREE.BackSide}
+          depthWrite
+          depthTest
           uColorTop={innerColorTop}
           uColorBottom={innerColorBottom}
           uBands={bands}
-          uIntensity={intensity * 0.8}
+          uIntensity={intensity * 0.75}
         />
       </mesh>
     </group>

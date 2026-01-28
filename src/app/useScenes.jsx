@@ -1,7 +1,3 @@
-import React from 'react';
-
-import { Html } from '@react-three/drei';
-
 import CRTTest from '../components/scenes/CRTTest/CrtTest';
 import DumpsterFire from '../components/scenes/DumpsterFire/DumpsterFire';
 import FoldedFrame from '../components/scenes/FoldedFrame/FoldedFrame';
@@ -12,15 +8,12 @@ import NewScene from '../components/scenes/NewScene';
 import PaperStack from '../components/scenes/PaperStack/PaperStack';
 import PixelHater from '../components/scenes/PixelHater/PixelHater';
 import StrudelDoodle from '../components/scenes/StrudelDoodle/StrudelDoodle';
+import NoScene from './scaffold/NoScene';
 
 const noScene = {
   id: 'noScene',
   renderer: 'webgl',
-  Component: () => (
-    <Html>
-      <p>💀</p>
-    </Html>
-  ),
+  Component: NoScene,
   icon: '💀',
   public: true,
   linkable: true,
@@ -90,7 +83,7 @@ const handStuff = {
   id: 'handStuff',
   renderer: 'webgl',
   Component: HandStuff,
-  label: 'HandS tuff',
+  label: 'Hand Stuff',
   icon: '👾',
   public: true,
   linkable: true,

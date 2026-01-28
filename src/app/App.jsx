@@ -2,57 +2,20 @@ import { useControls } from 'leva';
 
 import React, { Suspense, useEffect, useMemo } from 'react';
 
-import { Html } from '@react-three/drei';
-
-import CRTTest from '../components/scenes/CRTTest/CrtTest';
-import DumpsterFire from '../components/scenes/DumpsterFire/DumpsterFire';
-import FoldedFrame from '../components/scenes/FoldedFrame/FoldedFrame';
-import HandStuff from '../components/scenes/HandStuff/HandStuff';
-import LoGlow from '../components/scenes/Loglow';
-import NetworkTest from '../components/scenes/NetworkTest/NetworkTest';
-import NewScene from '../components/scenes/NewScene';
-import PaperStack from '../components/scenes/PaperStack/PaperStack';
-import PixelHater from '../components/scenes/PixelHater/PixelHater';
-import StrudelDoodle from '../components/scenes/StrudelDoodle/StrudelDoodle';
 import isLocalHost from '../utils/appUtils';
 import './App.css';
 import WebGLCanvas from './scaffold/canvas/WebGLCanvas';
 import WebGPUCanvas from './scaffold/canvas/WebGPUCanvas';
 import Loader from './scaffold/loader/Loader';
-
-const SCENES = {
-  None: {
-    renderer: 'webgl',
-    Component: () => (
-      <Html>
-        <p>💀</p>
-      </Html>
-    ),
-  },
-
-  PixelHater: { renderer: 'webgl', Component: PixelHater },
-  DumpsterFire: { renderer: 'webgl', Component: DumpsterFire },
-  FoldedFrame: { renderer: 'webgl', Component: FoldedFrame },
-  LoGlow: { renderer: 'webgl', Component: LoGlow },
-  NewScene: { renderer: 'webgl', Component: NewScene },
-  PaperStack: { renderer: 'webgl', Component: PaperStack },
-  HandStuff: { renderer: 'webgl', Component: HandStuff },
-  NetworkTest: { renderer: 'webgpu', Component: NetworkTest },
-  CrtTest: { renderer: 'webgl', Component: CRTTest },
-  StrudelDoodle: { renderer: 'webgl', Component: StrudelDoodle },
-
-  // 👇 when you start porting
-  // CrtTest: { renderer: 'webgpu', Component: CRTTest },
-};
+import useScenes from './useScenes';
 
 /* ---------------------------------------------
-   Query param helpers
+   Query helpers
 ---------------------------------------------- */
 
-function getInitialScene() {
+function getSceneFromQuery() {
   const params = new URLSearchParams(window.location.search);
-  const scene = params.get('scene');
-  return scene && SCENES[scene] ? scene : 'None';
+  return params.get('scene');
 }
 
 /* ---------------------------------------------
@@ -60,28 +23,67 @@ function getInitialScene() {
 ---------------------------------------------- */
 
 function App() {
-  const initialScene = useMemo(getInitialScene, []);
+  const local = isLocalHost();
+  const { scenes } = useScenes();
+
+  // index scenes by id for fast lookup
+  const sceneMap = useMemo(() => {
+    return Object.fromEntries(scenes.map((s) => [s.id, s]));
+  }, [scenes]);
+
+  // scenes allowed in dropdown
+  const dropdownScenes = useMemo(() => {
+    return local ? scenes : scenes.filter((s) => s.public);
+  }, [local, scenes]);
+
+  const dropdownOptions = useMemo(() => {
+    return Object.fromEntries(
+      dropdownScenes.map((s) => [`${s.label ?? s.id}`, s.id])
+    );
+  }, [dropdownScenes]);
+
+  // determine initial scene
+  const initialScene = useMemo(() => {
+    const requested = getSceneFromQuery();
+
+    if (requested && sceneMap[requested]) {
+      const scene = sceneMap[requested];
+
+      // local: allow any existing scene
+      if (local) return scene.id;
+
+      // public: only allow linkable scenes
+      if (scene.linkable) return scene.id;
+    }
+
+    // fallback: first public + linkable scene
+    const fallback = scenes.find((s) => s.public && s.linkable);
+
+    return fallback?.id ?? scenes[0].id;
+  }, [local, sceneMap, scenes]);
 
   const { scene } = useControls(
     'Scene Selection',
     {
       scene: {
-        options: Object.keys(SCENES),
+        options: dropdownOptions,
         value: initialScene,
       },
     },
-    { render: () => isLocalHost() }
+    // Consider removing this to allow people to check other scenes
+    { render: () => local }
   );
 
+  // keep query string in sync
   useEffect(() => {
     const params = new URLSearchParams(window.location.search);
     params.set('scene', scene);
     window.history.replaceState({}, '', `?${params.toString()}`);
   }, [scene]);
 
-  const sceneDef = SCENES[scene];
-  const SceneComponent = sceneDef?.Component;
+  const sceneDef = sceneMap[scene];
   const renderer = sceneDef?.renderer ?? 'webgl';
+  const SceneComponent = sceneDef?.Component;
 
   const CanvasWrapper = renderer === 'webgpu' ? WebGPUCanvas : WebGLCanvas;
 

@@ -1,3 +1,6 @@
+- [ ] Fix Text area. unable to type in the middle. unable to select text without hitting orbit controls.
+- [ ] Skydome, on theme.
+- [ ] Audio reactive elements
 - [ ] Can I show the visualizations on the screen some how? pianoroll etc?
 - [ ] Can I get syntax highlighting by leveraging the REPL?
 - [x] Fix widget stealing mouse on play.

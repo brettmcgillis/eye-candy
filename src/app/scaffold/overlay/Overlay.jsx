@@ -89,7 +89,7 @@ function Overlay() {
       </div>
 
       <div className="bottom-left overlay-panel">
-        Brett McGillis <ExternalLinks />
+        <ExternalLinks />
       </div>
 
       <div className="bottom-right overlay-panel">{dateString}</div>

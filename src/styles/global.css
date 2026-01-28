@@ -107,6 +107,12 @@
   justify-content: center;
 }
 
+.external-links {
+  display: flex;
+  justify-content: space-between;
+  gap: 0.5rem; /* even spacing between all items */
+  white-space: nowrap; /* prevent name from wrapping */
+}
 /* -------------------------------- */
 /* Responsive spacing               */
 /* -------------------------------- */

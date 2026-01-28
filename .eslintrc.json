@@ -66,5 +66,8 @@
         "moduleDirectory": ["node_modules"]
       }
     }
+  },
+  "globals": {
+    "__APP_VERSION__": "readonly"
   }
 }

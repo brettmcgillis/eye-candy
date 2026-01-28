@@ -7,6 +7,9 @@
 
 ### GENERAL
 
+- [x] Show version on overlay
+- [ ] Add scripts to update major, minor, hotfix versions
+- [ ] Add scripts to deploy next maj, min, hotfix
 - [ ] add/update screenshot(s) on readme for each scene
 - [ ] Fix dbg layout on mobile
 

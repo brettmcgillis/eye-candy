@@ -45,16 +45,12 @@ function Overlay() {
   const handleDebug = () => {
     setShowLeva(!showLeva);
   };
+  const version = __APP_VERSION__;
 
   return (
     <div className="overlay">
-      <div
-        className={
-          showLeva
-            ? 'top-right overlay-panel'
-            : 'top-right overlay-panel hidden'
-        }
-      >
+      <div className="top-right overlay-panel">
+        <div className="version-tag">v. {version}</div>
         <Leva
           collapsed={!local}
           hidden={!showLeva}

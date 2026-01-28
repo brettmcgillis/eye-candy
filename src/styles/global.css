@@ -97,6 +97,16 @@
   translate: -50% -50%;
 }
 
+.hidden {
+  display: none;
+}
+
+.version-tag {
+  display: flex;
+  align-content: center;
+  justify-content: center;
+}
+
 /* -------------------------------- */
 /* Responsive spacing               */
 /* -------------------------------- */
@@ -105,8 +115,4 @@
   :root {
     --overlay-inset: var(--overlay-inset-mobile);
   }
-}
-
-.hidden {
-  display: none;
 }

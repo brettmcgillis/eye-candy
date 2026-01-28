@@ -4,35 +4,7 @@ import React, { useState } from 'react';
 
 import isLocalHost from '../../../utils/appUtils';
 import './Overlay.css';
-
-const levaTheme = {
-  colors: {
-    elevation1: 'var(--overlay-bg)',
-    elevation2: 'var(--overlay-bg-2)',
-    elevation3: 'var(--overlay-bg)',
-    highlight1: '#000',
-    highlight2: '#000',
-    highlight3: '#ffffff',
-    accent1: '#000',
-    accent2: '#000',
-    accent3: '#000',
-    folderWidgetColor: '#000',
-  },
-  radii: {
-    xs: '6px',
-    sm: '10px',
-    lg: '2em',
-  },
-  shadows: {
-    level1: 'none',
-    // level1: 'var(--overlay-shadow)',
-    // level2: 'var(--overlay-shadow)',
-  },
-  fonts: {
-    mono: 'inherit',
-    sans: 'inherit',
-  },
-};
+import LevaTheme from './levaTheme';
 
 function Overlay() {
   const date = new Date();
@@ -55,7 +27,7 @@ function Overlay() {
           collapsed={!local}
           hidden={!showLeva}
           oneLineLabels
-          theme={levaTheme}
+          theme={LevaTheme}
           fill
           titleBar={{ title: '💣🔥💥', filter: true, drag: false }}
         />

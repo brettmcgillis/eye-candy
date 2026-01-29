@@ -34,9 +34,9 @@ const dumpsterFire = {
   renderer: 'webgl',
   Component: DumpsterFire,
   label: 'Dumpster Fire',
-  icon: '👾',
-  public: true,
-  linkable: true,
+  icon: '🗑️🔥',
+  public: false,
+  linkable: false,
 };
 
 const foldedFrame = {
@@ -44,7 +44,7 @@ const foldedFrame = {
   renderer: 'webgl',
   Component: FoldedFrame,
   label: 'Folded Frame',
-  icon: '👾',
+  icon: '⬜️ ◻️ ▫️',
   public: true,
   linkable: true,
 };
@@ -54,7 +54,7 @@ const loGlow = {
   renderer: 'webgl',
   Component: LoGlow,
   label: 'LoGlow',
-  icon: '👾',
+  icon: '',
   public: true,
   linkable: true,
 };
@@ -64,7 +64,7 @@ const newScene = {
   renderer: 'webgl',
   Component: NewScene,
   label: 'New Scene',
-  icon: '👾',
+  icon: '☠️',
   public: true,
   linkable: true,
 };
@@ -74,7 +74,7 @@ const paperStack = {
   renderer: 'webgl',
   Component: PaperStack,
   label: 'Paper Stack',
-  icon: '👾',
+  icon: '📚',
   public: true,
   linkable: true,
 };
@@ -84,8 +84,8 @@ const handStuff = {
   renderer: 'webgl',
   Component: HandStuff,
   label: 'Hand Stuff',
-  icon: '👾',
-  public: true,
+  icon: '👌',
+  public: false,
   linkable: true,
 };
 
@@ -94,8 +94,8 @@ const networkTest = {
   renderer: 'webgpu',
   Component: NetworkTest,
   label: 'Network Test',
-  icon: '👾',
-  public: true,
+  icon: '🕸️',
+  public: false,
   linkable: true,
 };
 
@@ -104,9 +104,9 @@ const crtTest = {
   renderer: 'webgl',
   Component: CRTTest,
   label: 'CRT Test',
-  icon: '👾',
-  public: true,
-  linkable: true,
+  icon: '📺',
+  public: false,
+  linkable: false,
 };
 
 const strudelDoodle = {
@@ -114,8 +114,8 @@ const strudelDoodle = {
   renderer: 'webgl',
   Component: StrudelDoodle,
   label: 'StrudelDoodle',
-  icon: '👾',
-  public: true,
+  icon: '🎵',
+  public: false,
   linkable: true,
 };
 

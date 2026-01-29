@@ -16,6 +16,9 @@
 - [x] Rename CRTSnowMaterial -> CRTStaticMaterial
 - [x] Move Materials
 - [x] Move TV components
+- [x] MP3 & Strudel Audio not working? Strudel works if we click at the right time during very early during first render. Fixed, Make sure to use appropriate file paths to assets
+- [x] Update Test Panels to use InteractiveReversal to push materials into a collection, Pop when all are used, so we can demo each one & the collection w/ TV off.
+- [x] Fix dial click handling
 
 **CRT Shaders**
 
@@ -23,11 +26,16 @@
 - [ ] Fix vignette in CRTSmtpeStaticMaterial, CRTStaticMaterial
 - [ ] Add default background to CRTShowMaterial when webcam disabled. R&S fallback sucsk
 - [ ] Fix camera bug on Scene material. Could the test scene take a ref that is used by the render tex?
+- [ ] Fix invalid op on CRTSceneInSceneMaterial. see console. Could we possible just paint the previous webcam frame?
 - [ ] Combine materials to cohesive set of props
 - [ ] Update default input props based on final scene
+- [ ] Can we preload (suspense) fonts? to prevent VHS looking shit on first render?
+- [ ] THREE.doubleside them all?
+- [ ] SideQuest - Could we put strudel visuals on a shader and pair that w/ strudel audio?
 
 **TV**
 
+- [ ] Need disabled prop(s) to disallow knob/dial interactions. powerDisabled, knobsDisabled, dialsDisabled
 - [ ] Fix dial z-depth issue on clicks. should be quick in out, probably not setTimeout based
 - [ ] Wire up settings scan on knob2
 
@@ -38,11 +46,14 @@
 - [ ] Nice to have: support multiple audio on 2 tvs
 - [ ] Wire up sounds for all channels
 - [ ] Fix audio drop out when switching mp3s
+- [ ] Can we preload (suspense) all the required audio assets?
+- [ ] Wire up positional audio?
 
 **Other**
 
+- [ ] Click to add decals?
 - [ ] Test Mobile - Webcam Only works HTTPS. Strudel only works w/ silent off?
-- [ ] Add helper modal. use HTML to get a billboard. Show on !localhost. useState for visibility. include dial & knob instructions. include audio instructions. include mobile details
+- [ ] Add helper modal. use HTML to get a billboard. useState for visibility. include dial & knob instructions. include audio instructions. include mobile details, include toggle for tv sound on. Power on tv on dismiss.
 
 **Final Steps**
 

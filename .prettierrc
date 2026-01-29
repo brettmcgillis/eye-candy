@@ -23,17 +23,7 @@
       }
     }
   ],
-  "importOrder": [
-    "^@(.*)/(.*)$",
-    "^app/.+$",
-    "^stores/.+$",
-    "^components/.+$",
-    "^models/.+$",
-    "^utils/.+$",
-    "^styles/.+$",
-    "^\\.?\\./.+$",
-    "^[./]"
-  ],
+  "importOrder": ["^react", "^@", "^\\.?\\./.+$", "^[./]"],
   "importOrderSortSpecifiers": true,
   "importOrderSeparation": true,
   "importOrderCaseInsensitive": false,

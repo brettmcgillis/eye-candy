@@ -3,8 +3,10 @@ import React from 'react';
 
 import { useGLTF } from '@react-three/drei';
 
+import { modelFile } from '../../../../utils/appUtils';
+
 export default function TvModel(props) {
-  const { nodes, _materials } = useGLTF(`/models/retro_tv.glb`);
+  const { nodes, _materials } = useGLTF(modelFile(`retro_tv.glb`));
   return (
     <group {...props} dispose={null}>
       <mesh
@@ -61,4 +63,4 @@ export default function TvModel(props) {
     </group>
   );
 }
-useGLTF.preload(`/models/retro_tv.glb`);
+useGLTF.preload(modelFile(`retro_tv.glb`));

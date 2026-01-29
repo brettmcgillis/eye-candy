@@ -2,8 +2,10 @@ import React from 'react';
 
 import { useGLTF } from '@react-three/drei';
 
+import { modelFile } from '../../../utils/appUtils';
+
 export default function PaperFrame(props) {
-  const { nodes, materials } = useGLTF(`/models/FoldedFrame.glb`);
+  const { nodes, materials } = useGLTF(modelFile(`FoldedFrame.glb`));
   return (
     <group {...props} dispose={null}>
       <mesh
@@ -17,4 +19,4 @@ export default function PaperFrame(props) {
   );
 }
 
-useGLTF.preload(`/models/FoldedFrame.glb`);
+useGLTF.preload(modelFile(`FoldedFrame.glb`));

@@ -1,6 +1,7 @@
 /* --- Materials --- */
 import React, { useMemo } from 'react';
 
+import { audioFile } from '../../../../utils/appUtils';
 import { STRUDEL_TRACKS } from '../../../../utils/tracks';
 import CRTBlueScreenMaterial, {
   TerminalSetting,
@@ -12,10 +13,6 @@ import CRTShowMaterial from '../Materials/CRTShowMaterial';
 import CRTSmtpeStaticMaterial from '../Materials/CRTSmtpeStaticMaterial';
 import CRTStaticMaterial from '../Materials/CRTStaticMaterial';
 import TestScene from '../TestScene';
-
-function audioFile(name) {
-  return `/audio/${name}`;
-}
 
 export default function useCableSubscription() {
   const channels = useMemo(

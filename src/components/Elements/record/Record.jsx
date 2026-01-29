@@ -5,6 +5,7 @@ import React, { useRef } from 'react';
 import { useGLTF } from '@react-three/drei';
 import { useFrame } from '@react-three/fiber';
 
+import { modelFile } from '../../../utils/appUtils';
 import { radians } from '../../../utils/math';
 
 export default function Record({ ...props }) {
@@ -51,7 +52,7 @@ export default function Record({ ...props }) {
       ref.current.rotation.x = radians(degrees);
     }
   });
-  const { nodes, materials } = useGLTF(`/models/Record.glb`);
+  const { nodes, materials } = useGLTF(modelFile(`Record.glb`));
   return (
     <group {...props} dispose={null}>
       <group ref={ref}>
@@ -67,4 +68,4 @@ export default function Record({ ...props }) {
   );
 }
 
-useGLTF.preload(`/models/Record.glb`);
+useGLTF.preload(modelFile(`Record.glb`));

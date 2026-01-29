@@ -5,6 +5,8 @@ import React, { useMemo, useState } from 'react';
 import { animated, useSpring } from '@react-spring/three';
 import { useGLTF } from '@react-three/drei';
 
+import { modelFile } from '../../../utils/appUtils';
+
 /* ========================================================================
    Generic base (new third variation)
 ======================================================================== */
@@ -16,7 +18,7 @@ export function ReversalBase({
   outerProps = {},
   ...props
 }) {
-  const { nodes } = useGLTF('/models/Reversal.glb');
+  const { nodes } = useGLTF(modelFile('Reversal.glb'));
 
   const isJSX = (m) => React.isValidElement(m);
 
@@ -174,4 +176,4 @@ export function InteractiveReversal({
    Preload
 ======================================================================== */
 
-useGLTF.preload('/models/Reversal.glb');
+useGLTF.preload(modelFile('Reversal.glb'));

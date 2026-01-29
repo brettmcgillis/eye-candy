@@ -2,7 +2,7 @@ import { useControls } from 'leva';
 
 import React, { Suspense, useEffect, useMemo } from 'react';
 
-import isLocalHost from '../utils/appUtils';
+import { isLocalHost } from '../utils/appUtils';
 import './App.css';
 import WebGLCanvas from './scaffold/canvas/WebGLCanvas';
 import WebGPUCanvas from './scaffold/canvas/WebGPUCanvas';

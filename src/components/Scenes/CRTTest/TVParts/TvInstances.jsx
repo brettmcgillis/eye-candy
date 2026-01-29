@@ -6,6 +6,8 @@ import React, { createContext, useMemo } from 'react';
 
 import { Merged, useGLTF } from '@react-three/drei';
 
+import { modelFile } from '../../../../utils/appUtils';
+
 export const TvContext = createContext(null);
 
 export function TvInstances({
@@ -14,7 +16,7 @@ export function TvInstances({
   dialMaterial,
   knobMaterial,
 }) {
-  const { nodes } = useGLTF(`/models/retro_tv.glb`);
+  const { nodes } = useGLTF(modelFile(`retro_tv.glb`));
 
   const baseMaterials = useMemo(
     () => ({
@@ -70,4 +72,4 @@ export function TvInstances({
   );
 }
 
-useGLTF.preload(`/models/retro_tv.glb`);
+useGLTF.preload(modelFile(`retro_tv.glb`));

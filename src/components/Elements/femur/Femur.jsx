@@ -2,8 +2,10 @@ import React from 'react';
 
 import { useGLTF } from '@react-three/drei';
 
+import { modelFile } from '../../../utils/appUtils';
+
 export default function Femur(props) {
-  const { nodes, materials } = useGLTF(`/models/Femur.gltf`);
+  const { nodes, materials } = useGLTF(modelFile(`Femur.gltf`));
   return (
     <group {...props} dispose={null}>
       <group position={[-4.28, 3.792, 4.512]} rotation={[-3.127, 0.467, 1.865]}>
@@ -54,4 +56,4 @@ export default function Femur(props) {
   );
 }
 
-useGLTF.preload(`/models/Femur.gltf`);
+useGLTF.preload(modelFile(`Femur.gltf`));

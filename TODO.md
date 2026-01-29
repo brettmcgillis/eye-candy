@@ -2,7 +2,7 @@
 
 #### FUCKING BIG ONE
 
-- [ ] Test deploy to gh pages, sanity check scene select availablity, query stringing.
+- [ ] Test deploy to gh pages, sanity check scene select availablity, query strin.
 - [ ] Merge this megafuck branch.
 
 ### GENERAL
@@ -32,6 +32,7 @@
 - [ ] display back link contextually.
 - [ ] show emojis contextually.
 - [ ] change positions when on mobile
+- [ ] update leva theme
 
 ### APP
 

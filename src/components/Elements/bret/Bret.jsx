@@ -5,6 +5,8 @@ import React, { useMemo, useState } from 'react';
 import { animated, useSpring } from '@react-spring/three';
 import { useGLTF } from '@react-three/drei';
 
+import { modelFile } from '../../../utils/appUtils';
+
 /* -------------------------------------------------------
    Base (geometry only)
 ------------------------------------------------------- */
@@ -16,7 +18,7 @@ export function BretBase({
   outerProps,
   ...props
 }) {
-  const { nodes } = useGLTF('/models/Bret.glb');
+  const { nodes } = useGLTF(modelFile('Bret.glb'));
 
   return (
     <group {...props} dispose={null}>
@@ -55,7 +57,7 @@ export default function Bret({
   outerColorEmissiveIntensity = 0,
   ...props
 }) {
-  const { materials } = useGLTF('/models/Bret.glb');
+  const { materials } = useGLTF(modelFile('Bret.glb'));
 
   const innerMaterial = useMemo(
     () =>
@@ -181,4 +183,4 @@ export function InteractiveBret({
 
 /* ------------------------------------------------------- */
 
-useGLTF.preload('/models/Bret.glb');
+useGLTF.preload(modelFile('Bret.glb'));

@@ -2,6 +2,8 @@ import React from 'react';
 
 import { useGLTF } from '@react-three/drei';
 
+import { modelFile } from '../../../utils/appUtils';
+
 export default function Skull({
   showCranium,
   showLeftZygomatic,
@@ -30,7 +32,7 @@ export default function Skull({
   showMandibleTeeth,
   ...props
 }) {
-  const { nodes, materials } = useGLTF(`/models/Skull.gltf`);
+  const { nodes, materials } = useGLTF(modelFile(`Skull.gltf`));
 
   return (
     <group {...props} dispose={null}>
@@ -226,4 +228,4 @@ export default function Skull({
   );
 }
 
-useGLTF.preload(`/models/Skull.gltf`);
+useGLTF.preload(modelFile(`Skull.gltf`));

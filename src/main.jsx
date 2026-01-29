@@ -9,7 +9,7 @@ import './styles/tokens.css';
 
 createRoot(document.getElementById('root')).render(
   <>
-    <App />
     <Overlay />
+    <App />
   </>
 );

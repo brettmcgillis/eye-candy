@@ -6,6 +6,8 @@ import React, { useEffect, useRef } from 'react';
 import { shaderMaterial } from '@react-three/drei';
 import { extend, useFrame } from '@react-three/fiber';
 
+import { videoFile } from '../../../../utils/appUtils';
+
 /* ---------------------------------------------
    Shaders
 ----------------------------------------------*/
@@ -215,7 +217,7 @@ extend({ CrtShowMaterial });
 ----------------------------------------------*/
 
 export default function CRTShowMaterial({
-  src = `/videos/ren_and_stimpy.mp4`,
+  src = videoFile(`ren_and_stimpy.mp4`),
   useWebcam = false,
 
   padX = 0.06,

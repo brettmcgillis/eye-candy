@@ -6,10 +6,12 @@
   position: absolute;
   inset: 0;
   pointer-events: none;
+  z-index: 99999;
 }
 
 /* -------------------------------- */
 /* Overlay surface (panels)         */
+
 /* -------------------------------- */
 
 .overlay-panel {
@@ -19,6 +21,7 @@
   border-radius: var(--overlay-radius);
   box-shadow: var(--overlay-shadow);
   font-size: var(--overlay-font-size);
+  font-weight: 600;
   pointer-events: auto;
   user-select: none;
   max-height: 50%;

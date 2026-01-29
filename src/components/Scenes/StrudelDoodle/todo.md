@@ -3,5 +3,6 @@
 - [ ] Audio reactive elements
 - [ ] Can I show the visualizations on the screen some how? pianoroll etc?
 - [ ] Can I get syntax highlighting by leveraging the REPL?
+- [ ] Fix HTML section, should not eclipse Leva
 - [x] Fix widget stealing mouse on play.
 - [x] do a background. keep it on theme

@@ -2,6 +2,8 @@ import React from 'react';
 
 import { useGLTF } from '@react-three/drei';
 
+import { modelFile } from '../../../utils/appUtils';
+
 export default function Dumpster({
   rightLidVisible = true,
   rightLidRotation = Math.PI / 4,
@@ -13,7 +15,7 @@ export default function Dumpster({
   rearRightWheelRotation = 0,
   ...props
 }) {
-  const { nodes, materials } = useGLTF(`/models/Dumpster.glb`);
+  const { nodes, materials } = useGLTF(modelFile(`Dumpster.glb`));
   return (
     <group {...props} dispose={null}>
       <group name="Scene">
@@ -153,4 +155,4 @@ export default function Dumpster({
   );
 }
 
-useGLTF.preload(`/models/Dumpster.glb`);
+useGLTF.preload(modelFile(`Dumpster.glb`));

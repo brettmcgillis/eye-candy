@@ -1,20 +1,17 @@
 /* eslint-disable no-unused-vars */
-import useStrudelTrack from 'hooks/useStrudelTrack';
-import { useEffect, useMemo, useRef, useState } from 'react';
 import * as THREE from 'three';
+
+import { useEffect, useMemo, useRef, useState } from 'react';
 
 import { useFrame } from '@react-three/fiber';
 
+import useStrudelTrack from '../../../../hooks/useStrudelTrack';
+import { audioFile } from '../../../../utils/appUtils';
 import useCableSubscription from './useCableSubscription';
 
 /* -------------------------------------------------
    useRcaCables — TV brain + A/V bus (with Strudel)
 -------------------------------------------------- */
-
-function audioFile(name) {
-  return `${process.env.PUBLIC_URL}/audio/${name}`;
-}
-
 export default function useRcaCables({
   initialPower = true,
   defaultChannelKey,

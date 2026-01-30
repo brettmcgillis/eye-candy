@@ -786,7 +786,7 @@ React wrapper (drop-in)
 ----------------------------------------------_/
 
 export default function CRTShowMaterial({
-src = `${process.env.PUBLIC_URL}/videos/ren_and_stimpy.mp4`,
+src = videoFile(`ren_and_stimpy.mp4`),
 useWebcam = false,
 
 padX = 0.06,

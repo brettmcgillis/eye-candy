@@ -1,6 +1,7 @@
 // useHandControls.js
-import { useMemo } from 'react';
 import * as THREE from 'three';
+
+import { useMemo } from 'react';
 
 /* ---------------------------------------------
  Landmark naming map (MediaPipe index → label)
@@ -131,7 +132,7 @@ export default function useHandControls(
 
     const left = sorted[0] ?? null;
     const right = sorted[1] ?? null;
-    const primary = maxHands === 1 ? (hands[0] ?? null) : null;
+    const primary = maxHands === 1 ? hands[0] ?? null : null;
 
     return {
       hands,

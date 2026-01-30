@@ -1,111 +1,162 @@
 # #TODO:
 
-- add/update screenshot(s) on readme for each scene
+#### FUCKING BIG ONE
 
-- Fix dbg layout on mobile
+- [ ] Test deploy to gh pages, sanity check scene select availablity, query strin.
+- [ ] Merge this megafuck branch.
+
+### GENERAL
+
+- [x] Add scripts to update major, minor, hotfix versions
+- [x] Add scripts to deploy next maj, min, hotfix
+- [ ] add/update screenshot(s) on readme for each scene
+- [ ] Fix dbg layout on mobile
 
 ### REPO
 
-- re-enable react/no-unknown-property, react/prop-types ?
-- state management
-- springs?
-- maath
+- [ ] re-enable react/no-unknown-property, react/prop-types ?
+- [ ] state management
+- [x] springs? got it
+- [ ] maath
 
 ### EXPLORE/EXPLODE
 
-- glass
-- pixelation component.
+- [ ] glass
+- [x] pixelation component. did a pixelhater
 
 ### OVERLAY
 
-- add personal links
-- display back link contextually.
-- show emojis contextually.
-- change positions when on mobile
+- [x] Show version on overlay
+- [x] Spring animate leva transition.
+- [x] add personal links
+- [ ] display back link contextually.
+- [ ] show emojis contextually.
+- [ ] change positions when on mobile
+- [ ] update leva theme
 
 ### APP
 
-- serve up multiple scenes
-  - portal(s)?, picture frames?, routing?
+- [ ] fix icon used in manifest, logo192 is not the right size, causes console err
+- [ ] serve up multiple scenes. portal(s)?, picture frames?, routing?
+- [ ] if were doing screen cap then move it out of scenes and into something at app layer
 
 ### SCENES
 
-#### NEWSCENE
+### PixelHater
 
-- name it
-- extract all settings to json
-- reset button (leverage set() + json settings)
-- post processing (dots, godrays, +)
-- Fun stuff
-  - Atomic Halo
-  - 45lb Halo
-  - neural network halo
-  - Animation (rotation + wobble, refactor out of record, into reusable code to be applied to any halo type)
-  - motion controls (drag drop)
-  - physics (cannon looks good, rapier looks better, is installed)
+- [ ] See if we can improve shader to prevent pixel colors including unmasked object colors.
 
-#### FOLDEDFRAME
+### Dumpster Fire
 
-- fix default lighting
-- animate layer color
-- break elements out into reusable components where possible
+- [ ] Totally broken. see console for err. cant switch scenes
 
-#### LOGLOW
+#### FoldedFrame
 
-- Rename
-- Animate (flip, neon flicker)
+- [ ] fix default lighting
+- [ ] fix default camera positiopn
+- [ ] animate layer color
+- [ ] break elements out into reusable components where possible
+
+#### LoGlow
+
+- [ ] Rename
+- [x] Animate (flip, neon flicker)
+
+#### NewScene
+
+- [ ] name it
+- [ ] extract all settings to json
+- [ ] reset button (leverage set() + json settings)
+- [ ] post processing (dots, godrays, +)
+- [ ] add environment for reflections, add children for their reflections.
+- [ ] Fun stuff
+  - [ ] Atomic Halo
+  - [ ] 45lb Halo
+  - [ ] neural network halo (built, now wire up)
+  - [ ] Animation (rotation + wobble, refactor out of record, into reusable code to be applied to any halo type)
+  - [ ] motion controls (drag drop)
+  - [ ] physics (cannon looks good, rapier looks better, is installed)
+
+### PaperStack
+
+- [x] Totally broken, no color. upgrade csg? rebuild? Fixed!
+- [ ] Add compelling animations
+- [ ] create window orientation presets using settings, add preset option control
+- [ ] create some preset color arrangements, add controls.
+
+### HandStuff
+
+- [ ] Upgrade mediaPipe, handControls, and gestureControls hooks to handle n hands as array. Update scene to spawn probes based on number returned.
+- [ ] Refactor hook to break apart media pipe and webcam + camera for reusability. Scenes need to be able to determine their own draw functions. hook responsible for drawing should accept an array of functions and provide the existing default.
+
+### NetworkTest
+
+- [ ] Points are broken? Likely canvas gl related
+- [ ] When they are ready, promote hooks from handstuff, and bring them in to the scene to control network size, volume rotation etc
+- [ ] show instanced meshes at points?
+
+### StrudelDoodle
+
+- [x] Prevent panel from stealing mouse, should still be able to click overlay items.
+- [ ] Could we replace the text area with the REPL still maintain control?
+- [ ] Could we show strudel visuals on the background of the scene?
+- [ ] do a background. keep it on theme
 
 ### ELEMENTS
 
-- make them all forwardRefs
+- [ ] make them all forwardRefs
 
 #### HALO
 
-- halo props to controls
-- halo hover glow
-- generative halos?
+- [ ] halo props to controls
+- [ ] halo hover glow
+- [ ] generative halos?
 
 #### SKULL
 
-- default prop vals
-- element position controls
-- material controls (? chrome skull)
+- [ ] default prop vals
+- [ ] element position controls
+- [ ] material controls (? chrome skull)
+- [ ] CSG Skull?
 
 #### LOGO
 
-- visiblity to props
+- [ ] visiblity to props
 
 ### ENVIRONMENT (app)
 
-- background color
-- background environment
-- background fog
+- [ ] probably just delete it
+- [ ] background color
+- [ ] background environment
+- [ ] background fog
 
 ### SCREENSHOT
 
-- add watermark?
-- add Screen Rec
-  - add screen rec controls.
+- [ ] add watermark?
+- [ ] make it work on mobile
+- [ ] add Screen Recording
 
 ### CAMERARIG
 
-- add camera rig with props for default position, more
-- add camera controls, control availablity with props?
-- orbit (on/off w/props)
+- [ ] Probably just delete it
+- [ ] add camera rig with props for default position, more
+- [ ] add camera controls, control availablity with props?
+- [ ] orbit (on/off w/props)
 
 ### LIGHTINGRIG
 
-- props
-- directional lighting
+- [ ] Probably just delete it
+- [ ] props
+- [ ] directional lighting
 
 ### UTILS
 
-- color utilites
-  - (hook into THREE for glow etc)
+- [ ] color utilites
+  - [ ] (hook into THREE for glow etc)
 
 ### CONTROLS
 
-- universal control module
+- [ ] universal control module
 
 ```javascript
 // COMPLEX CONTROLS~!

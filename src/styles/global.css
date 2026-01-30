@@ -6,10 +6,12 @@
   position: absolute;
   inset: 0;
   pointer-events: none;
+  z-index: 99999;
 }
 
 /* -------------------------------- */
 /* Overlay surface (panels)         */
+
 /* -------------------------------- */
 
 .overlay-panel {
@@ -19,6 +21,7 @@
   border-radius: var(--overlay-radius);
   box-shadow: var(--overlay-shadow);
   font-size: var(--overlay-font-size);
+  font-weight: 600;
   pointer-events: auto;
   user-select: none;
   max-height: 50%;
@@ -97,6 +100,22 @@
   translate: -50% -50%;
 }
 
+.hidden {
+  display: none;
+}
+
+.version-tag {
+  display: flex;
+  align-content: center;
+  justify-content: center;
+}
+
+.external-links {
+  display: flex;
+  justify-content: space-between;
+  gap: 0.5rem; /* even spacing between all items */
+  white-space: nowrap; /* prevent name from wrapping */
+}
 /* -------------------------------- */
 /* Responsive spacing               */
 /* -------------------------------- */
@@ -105,8 +124,4 @@
   :root {
     --overlay-inset: var(--overlay-inset-mobile);
   }
-}
-
-.hidden {
-  display: none;
 }

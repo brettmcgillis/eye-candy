@@ -13,11 +13,10 @@ export default function ExternalLinks() {
   const localHost = isLocalHost();
 
   const localTest = getLocalTestFlag();
-
   return (
     <div className="external-links">
       <span>Brett McGillis</span>
-      {!localHost && !localTest && (
+      {(!localHost || localTest) && (
         <>
           <a
             href="https://www.instagram.com/ruinedpaintings/"

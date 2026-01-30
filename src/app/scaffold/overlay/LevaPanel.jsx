@@ -2,7 +2,7 @@ import { Leva } from 'leva';
 
 import React from 'react';
 
-import { a, useSpring, useTransition } from '@react-spring/web';
+import { a, to, useSpring } from '@react-spring/web';
 
 import { isLocalHost } from '../../../utils/appUtils';
 import LevaTheme from './levaTheme';
@@ -20,10 +20,12 @@ export default function LevaPanel({ visible }) {
 
   /* ---------------- leva enter/exit ---------------- */
 
-  const levaTransition = useTransition(visible, {
-    from: { opacity: 0, y: -12, scale: 0.97 },
-    enter: { opacity: 1, y: 0, scale: 1 },
-    leave: { opacity: 0, y: -12, scale: 0.97 },
+  // Keep `<Leva />` mounted even when hidden so Leva does not auto-inject
+  // its own default panel/store (which shows up un-themed in production).
+  const panelSpring = useSpring({
+    opacity: visible ? 1 : 0,
+    y: visible ? 0 : -12,
+    scale: visible ? 1 : 0.97,
     config: { tension: 170, friction: 26 }, // match parent
   });
 
@@ -33,30 +35,29 @@ export default function LevaPanel({ visible }) {
         overflow: 'hidden',
         opacity: containerSpring.opacity,
         maxHeight: containerSpring.maxHeight,
+        pointerEvents: visible ? 'auto' : 'none',
       }}
     >
-      {levaTransition((style, item) =>
-        item ? (
-          <a.div
-            style={{
-              opacity: style.opacity,
-              transform: style.y.to(
-                (y) => `translate3d(0, ${y}px, 0) scale(${style.scale.get()})`
-              ),
-              transformOrigin: 'top right',
-            }}
-          >
-            <Leva
-              collapsed={!local}
-              hidden={false}
-              oneLineLabels
-              theme={LevaTheme}
-              fill
-              titleBar={{ title: '💣🔥💥', filter: true, drag: false }}
-            />
-          </a.div>
-        ) : null
-      )}
+      <a.div
+        style={{
+          opacity: panelSpring.opacity,
+          transform: to(
+            [panelSpring.y, panelSpring.scale],
+            (y, scale) => `translate3d(0, ${y}px, 0) scale(${scale})`
+          ),
+          transformOrigin: 'top right',
+        }}
+      >
+        <Leva
+          collapsed={!local}
+          hidden={!visible}
+          oneLineLabels
+          persist={false}
+          theme={LevaTheme}
+          fill
+          titleBar={{ title: '💣🔥💥', filter: true, drag: false }}
+        />
+      </a.div>
     </a.div>
   );
 }

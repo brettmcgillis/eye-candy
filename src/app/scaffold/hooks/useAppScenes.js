@@ -2,7 +2,7 @@ import { useControls } from 'leva';
 
 import { useEffect, useMemo } from 'react';
 
-import { isLocalHost } from '../../../utils/appUtils';
+import { localEnv } from '../../../utils/appUtils';
 import useScenes from '../../useScenes';
 import WebGLCanvas from '../canvas/WebGLCanvas';
 import WebGPUCanvas from '../canvas/WebGPUCanvas';
@@ -16,7 +16,7 @@ function getSceneFromQuery() {
 }
 
 export default function useAppScenes() {
-  const local = isLocalHost();
+  const local = localEnv();
   const { scenes } = useScenes();
 
   // index scenes by id for fast lookup
@@ -58,12 +58,16 @@ export default function useAppScenes() {
     return fallback?.id ?? scenes[0]?.id;
   }, [local, sceneMap, scenes]);
 
-  const { scene: sceneId = initialScene } = useControls('Scene Selection', {
-    scene: {
-      options: dropdownOptions,
-      value: initialScene,
+  const { scene: sceneId = initialScene } = useControls(
+    'Scene Selection',
+    {
+      scene: {
+        options: dropdownOptions,
+        value: initialScene,
+      },
     },
-  });
+    { collapsed: true, render: () => local }
+  );
 
   // keep query string in sync
   useEffect(() => {

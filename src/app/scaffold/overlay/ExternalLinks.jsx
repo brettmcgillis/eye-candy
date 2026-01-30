@@ -1,22 +1,15 @@
 import React from 'react';
 import { FaInstagram, FaLinkedin } from 'react-icons/fa';
 
-import { isLocalHost } from '../../../utils/appUtils';
-
-function getLocalTestFlag() {
-  if (typeof window === 'undefined') return false;
-  const params = new URLSearchParams(window.location.search);
-  return params.get('localTest') === 'true';
-}
+import { localEnv } from '../../../utils/appUtils';
 
 export default function ExternalLinks() {
-  const localHost = isLocalHost();
+  const local = localEnv();
 
-  const localTest = getLocalTestFlag();
   return (
     <div className="external-links">
       <span>Brett McGillis</span>
-      {(!localHost || localTest) && (
+      {!local && (
         <>
           <a
             href="https://www.instagram.com/ruinedpaintings/"

@@ -4,11 +4,11 @@ import React from 'react';
 
 import { a, to, useSpring } from '@react-spring/web';
 
-import { isLocalHost } from '../../../utils/appUtils';
+import { localEnv } from '../../../utils/appUtils';
 import LevaTheme from './levaTheme';
 
 export default function LevaPanel({ visible }) {
-  const local = isLocalHost();
+  const local = localEnv();
 
   /* ---------------- parent resize spring ---------------- */
 

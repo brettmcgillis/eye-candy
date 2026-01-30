@@ -1,9 +1,19 @@
-export function isLocalHost() {
+function isLocalHost() {
   const host = window.location.hostname;
   const isGhPages = host.endsWith('github.io');
   const onLocalHost = ['localhost', '127.0.0.1', '[::1]'].includes(host);
   const onLocalNetwork = ['192.168'].includes(host);
   return (onLocalHost || onLocalNetwork) && !isGhPages;
+}
+
+function testMode() {
+  if (typeof window === 'undefined') return false;
+  const params = new URLSearchParams(window.location.search);
+  return params.get('testMode') === 'true';
+}
+
+export function localEnv() {
+  return isLocalHost() && !testMode();
 }
 
 function assetPath(pathToAsset) {

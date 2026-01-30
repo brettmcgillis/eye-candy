@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 
-import { isLocalHost } from '../../../utils/appUtils';
+import { localEnv } from '../../../utils/appUtils';
 import Date from './DateDisplay';
 import ExternalLinks from './ExternalLinks';
 import LevaPanel from './LevaPanel';
@@ -8,7 +8,7 @@ import './Overlay.css';
 import VersionTag from './VersionTag';
 
 function Overlay() {
-  const local = isLocalHost();
+  const local = localEnv();
   const [showLeva, setShowLeva] = useState(!!local);
 
   const handleDebug = () => {

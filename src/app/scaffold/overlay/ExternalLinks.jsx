@@ -1,27 +1,33 @@
 import React from 'react';
 import { FaInstagram, FaLinkedin } from 'react-icons/fa';
 
+import { isLocalHost } from '../../../utils/appUtils';
+
 export default function ExternalLinks() {
+  const localHost = isLocalHost();
   return (
     <div className="external-links">
       <span>Brett McGillis</span>
-      <a
-        href="https://www.instagram.com/ruinedpaintings/"
-        target="_blank"
-        rel="noreferrer"
-        aria-label="Instagram"
-      >
-        <FaInstagram size={16} color="#000000" />
-      </a>
-
-      <a
-        href="https://www.linkedin.com/in/brett-mcgillis-61b93a125/"
-        target="_blank"
-        rel="noreferrer"
-        aria-label="LinkedIn"
-      >
-        <FaLinkedin size={16} color="#000000" />
-      </a>
+      {!localHost && (
+        <>
+          <a
+            href="https://www.instagram.com/ruinedpaintings/"
+            target="_blank"
+            rel="noreferrer"
+            aria-label="Instagram"
+          >
+            <FaInstagram size={16} color="#000000" />
+          </a>
+          <a
+            href="https://www.linkedin.com/in/brett-mcgillis-61b93a125/"
+            target="_blank"
+            rel="noreferrer"
+            aria-label="LinkedIn"
+          >
+            <FaLinkedin size={16} color="#000000" />
+          </a>
+        </>
+      )}
     </div>
   );
 }

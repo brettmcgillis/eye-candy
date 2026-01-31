@@ -11,9 +11,9 @@ import {
 } from '@react-three/drei';
 import { extend, useFrame } from '@react-three/fiber';
 
-import Logo from '../elements/logo/Logo';
-import CameraRig from '../rigging/CameraRig';
-import LightingRig from '../rigging/LightingRig';
+import Logo from '../../elements/logo/Logo';
+import CameraRig from '../../rigging/CameraRig';
+import LightingRig from '../../rigging/LightingRig';
 
 extend({ UnrealBloomPass });
 

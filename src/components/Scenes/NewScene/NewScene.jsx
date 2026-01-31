@@ -15,16 +15,16 @@ import {
 } from '@react-three/drei';
 import { EffectComposer, Pixelation } from '@react-three/postprocessing';
 
-import getColorsInRange from '../../utils/colors';
-import { getRandomNumber, radians } from '../../utils/math';
-import Femur from '../elements/femur/Femur';
-import Halo from '../elements/halo/Halo';
-import Record from '../elements/record/Record';
-import Skull from '../elements/skull/Skull';
-import { useSkullControls } from '../elements/skull/SkullControls';
-import CameraRig from '../rigging/CameraRig';
-import { GridHelper, PolarGridHelper } from '../rigging/GridHelper';
-import LightingRig from '../rigging/LightingRig';
+import getColorsInRange from '../../../utils/colors';
+import { getRandomNumber, radians } from '../../../utils/math';
+import Femur from '../../elements/femur/Femur';
+import Halo from '../../elements/halo/Halo';
+import Record from '../../elements/record/Record';
+import Skull from '../../elements/skull/Skull';
+import { useSkullControls } from '../../elements/skull/SkullControls';
+import CameraRig from '../../rigging/CameraRig';
+import { GridHelper, PolarGridHelper } from '../../rigging/GridHelper';
+import LightingRig from '../../rigging/LightingRig';
 
 function useSceneControls() {
   return useControls(

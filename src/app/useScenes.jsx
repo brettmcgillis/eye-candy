@@ -3,6 +3,7 @@ import DumpsterFire from '../components/scenes/DumpsterFire/DumpsterFire';
 import FoldedFrame from '../components/scenes/FoldedFrame/FoldedFrame';
 import HandStuff from '../components/scenes/HandStuff/HandStuff';
 import LoGlow from '../components/scenes/LoGlow/LoGlow';
+import MobilePhysicsTest from '../components/scenes/MobilePhysicsTest/MobilePhysicsTest';
 import NetworkTest from '../components/scenes/NetworkTest/NetworkTest';
 import NewScene from '../components/scenes/NewScene/NewScene';
 import PaperStack from '../components/scenes/PaperStack/PaperStack';
@@ -119,6 +120,16 @@ const strudelDoodle = {
   linkable: true,
 };
 
+const mobilePhysicsTest = {
+  id: 'mobilePhysicsTest',
+  renderer: 'webgpu',
+  Component: MobilePhysicsTest,
+  label: 'Mobile Physics Test',
+  icon: '📱',
+  public: false,
+  linkable: true,
+};
+
 const scenes = [
   noScene,
   pixelHater,
@@ -131,6 +142,7 @@ const scenes = [
   networkTest,
   crtTest,
   strudelDoodle,
+  mobilePhysicsTest,
 ];
 
 export default function useScenes() {

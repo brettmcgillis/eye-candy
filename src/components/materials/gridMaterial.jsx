@@ -87,6 +87,7 @@ export function GridMaterial({
   lineColor,
   roughness = 1,
   metalness = 0,
+  side = THREE.DoubleSide,
 }) {
   const { gridColorNode } = useGridMaterial({
     gridSize,
@@ -100,7 +101,7 @@ export function GridMaterial({
       colorNode={gridColorNode}
       roughness={roughness}
       metalness={metalness}
-      side={THREE.DoubleSide}
+      side={side}
     />
   );
 }

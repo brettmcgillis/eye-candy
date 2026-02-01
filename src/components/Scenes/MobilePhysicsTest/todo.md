@@ -1,0 +1,2 @@
+- [ ] Fix physics crashing. stops working quickly.
+- [ ] Fix depth cube size. Aim for device aspect ratio.

@@ -142,6 +142,7 @@ function PhysicalReversal({ position }) {
       friction={0.9}
       linearDamping={0.25}
       angularDamping={0.25}
+      canSleep={false}
       ccd
     >
       <Reversal />
@@ -163,6 +164,7 @@ function PhysicalBret({ position }) {
       linearDamping={0.25}
       angularDamping={0.25}
       scale={[0.5, 0.5, 0.5]}
+      canSleep={false}
       ccd
     >
       <Bret />
@@ -180,6 +182,7 @@ function Ball({ position, color = '#FFFFFF' }) {
       friction={0.9}
       linearDamping={0.25}
       angularDamping={0.25}
+      canSleep={false}
       ccd
     >
       <mesh castShadow receiveShadow>

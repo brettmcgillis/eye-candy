@@ -1,10 +1,5 @@
 # #TODO:
 
-#### FUCKING BIG ONE
-
-- [ ] Test deploy to gh pages, sanity check scene select availablity, query strin.
-- [ ] Merge this megafuck branch.
-
 ### GENERAL
 
 - [x] Add scripts to update major, minor, hotfix versions

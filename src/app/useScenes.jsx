@@ -1,5 +1,6 @@
 import CRTTest from '../components/scenes/CRTTest/CrtTest';
 import DumpsterFire from '../components/scenes/DumpsterFire/DumpsterFire';
+import FluidTest from '../components/scenes/FluidTest/FluidTest';
 import FoldedFrame from '../components/scenes/FoldedFrame/FoldedFrame';
 import HandStuff from '../components/scenes/HandStuff/HandStuff';
 import LoGlow from '../components/scenes/LoGlow/LoGlow';
@@ -130,6 +131,16 @@ const mobilePhysicsTest = {
   linkable: true,
 };
 
+const fluidTest = {
+  id: 'fluidTest',
+  renderer: 'webgl',
+  Component: FluidTest,
+  label: 'Fluid Test',
+  icon: '💧',
+  public: false,
+  linkable: true,
+};
+
 const scenes = [
   noScene,
   pixelHater,
@@ -143,6 +154,7 @@ const scenes = [
   crtTest,
   strudelDoodle,
   mobilePhysicsTest,
+  fluidTest,
 ];
 
 export default function useScenes() {

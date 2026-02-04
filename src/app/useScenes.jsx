@@ -9,12 +9,14 @@ import NetworkTest from '../components/scenes/NetworkTest/NetworkTest';
 import NewScene from '../components/scenes/NewScene/NewScene';
 import PaperStack from '../components/scenes/PaperStack/PaperStack';
 import PixelHater from '../components/scenes/PixelHater/PixelHater';
+import Rosie from '../components/scenes/Rosie/Rosie';
 import StrudelDoodle from '../components/scenes/StrudelDoodle/StrudelDoodle';
 import NoScene from './scaffold/NoScene';
 
 const noScene = {
   id: 'noScene',
   renderer: 'webgl',
+  label: 'None',
   Component: NoScene,
   icon: '💀',
   public: true,
@@ -141,6 +143,16 @@ const fluidTest = {
   linkable: true,
 };
 
+const rosie = {
+  id: 'rosie',
+  renderer: 'webgl',
+  Component: Rosie,
+  label: 'Rosie',
+  icon: '🌹❤️',
+  public: false,
+  linkable: true,
+};
+
 const scenes = [
   noScene,
   pixelHater,
@@ -155,6 +167,7 @@ const scenes = [
   strudelDoodle,
   mobilePhysicsTest,
   fluidTest,
+  rosie,
 ];
 
 export default function useScenes() {

@@ -1,0 +1,2 @@
+- [ ] check out Spark for splat rendering, effects.
+- [ ] fix click handling on splats.

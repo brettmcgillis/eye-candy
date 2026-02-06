@@ -1,2 +1,3 @@
 - [ ] check out Spark for splat rendering, effects.
+- [x] splat texture
 - [ ] fix click handling on splats.

@@ -6,6 +6,8 @@ import React, { useEffect, useMemo, useRef } from 'react';
 import { shaderMaterial } from '@react-three/drei';
 import { extend, useFrame } from '@react-three/fiber';
 
+import { asciiBret } from './ascii';
+
 /* ---------------------------------------------
    Shaders
 ---------------------------------------------- */
@@ -270,6 +272,31 @@ export const TerminalSetting = {
   fontSize: 28,
   fontName: 'Press Start 2P',
   fontColor: '#48ff00',
+  showCaret: true,
+  caretMode: 'block',
+  caretBlinkRate: 2,
+  horizontalPadding: 48,
+  verticalPadding: 40,
+  screenColor: '#000000',
+  glowStrength: 0.35,
+  curvature: 0.06,
+  vignette: 1.15,
+
+  noiseStrength: 0.08,
+  scanlineStrength: 0.08,
+  scanlineDensity: 900,
+
+  rollSpeed: 0.4,
+  rollStrength: 0,
+
+  chromaOffset: 0.0025,
+};
+
+export const AsciiSetting = {
+  screenText: asciiBret,
+  fontSize: 12,
+  fontName: 'Press Start 2P',
+  fontColor: '#00ff00',
   showCaret: true,
   caretMode: 'block',
   caretBlinkRate: 2,

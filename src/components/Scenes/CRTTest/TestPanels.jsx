@@ -16,9 +16,18 @@ import TestScene from './TestScene';
 import useInteractiveTvControls from './useInteractiveTvControls';
 
 export default function TestPanels() {
-  const { smtpe, tvStatic, noSignal, terminal, homeVideo, tv, threeD, pip } =
-    useInteractiveTvControls();
-
+  const controls = useInteractiveTvControls();
+  const {
+    smtpe,
+    tvStatic,
+    noSignal,
+    terminal,
+    ascii,
+    homeVideo,
+    tv,
+    threeD,
+    pip,
+  } = controls;
   /* ---------------------------------------------
      Config 
   ---------------------------------------------- */
@@ -44,12 +53,13 @@ export default function TestPanels() {
       <CRTSmtpeStaticMaterial key="smtpe" {...smtpe} />,
       <CRTBlueScreenMaterial key="terminal" {...terminal} />,
       <CRTBlueScreenMaterial key="vhs" {...noSignal} />,
+      <CRTBlueScreenMaterial key="ascii" {...ascii} />,
       <CRTShowMaterial key="homeVideo" useWebcam {...homeVideo} />,
       <CRTShowMaterial key="tv" {...tv} />,
       <CRTSceneMaterial key="three-d" scene={<TestScene />} {...threeD} />,
       <CRTSceneInSceneMaterial key="pip" {...pip} />,
     ],
-    []
+    [controls]
   );
 
   /* ---------------------------------------------

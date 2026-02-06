@@ -1,5 +1,7 @@
 import { folder, useControls } from 'leva';
 
+import { asciiSkull } from './Materials/ascii';
+
 const fonts = [
   /* ----------------- CRT / UI ----------------- */ 'Arial Black',
   'Arial',
@@ -153,7 +155,7 @@ export default function useInteractiveTvControls() {
         {
           screenText: {
             value:
-              'a:\\> ||TERMINAL ERROR||\r\n    - 0X666420 -\r\n    DATA CORRUPTED\r\na:\\> FULL SYSTEM FAILURE\na:\\> INSERT BOOT DISK',
+              'a:\\> ||TERMINAL ERROR||\r\n      - 0X666420 -\r\n      DATA CORRUPTED\r\na:\\> FULL SYSTEM FAILURE\na:\\> INSERT BOOT DISK',
             rows: true,
           },
           fontSize: { value: 26, min: 0, max: 48, step: 1 },
@@ -168,6 +170,68 @@ export default function useInteractiveTvControls() {
 
           horizontalPadding: { value: 100, min: 0, max: 1000, step: 1 },
           verticalPadding: { value: 95, min: 0, max: 1000, step: 1 },
+        },
+        { collapsed: true }
+      ),
+
+      Look: folder(
+        {
+          screenColor: { value: '#000000' },
+          glowStrength: { value: 0.35, min: 0, max: 1, step: 0.01 },
+          curvature: { value: 0.06, min: 0, max: 0.2, step: 0.001 },
+          vignette: { value: 1.15, min: 0.5, max: 2, step: 0.01 },
+        },
+        { collapsed: true }
+      ),
+
+      Noise: folder(
+        {
+          noiseStrength: { value: 0.08, min: 0, max: 0.4, step: 0.001 },
+          scanlineStrength: { value: 0.08, min: 0, max: 0.3, step: 0.001 },
+          scanlineDensity: { value: 900, min: 200, max: 2000, step: 10 },
+        },
+        { collapsed: true }
+      ),
+
+      Roll: folder(
+        {
+          rollSpeed: { value: 0.4, min: 0, max: 2, step: 0.01 },
+          rollStrength: { value: 0, min: 0, max: 2, step: 0.01 },
+        },
+        { collapsed: true }
+      ),
+
+      Chroma: folder(
+        {
+          chromaOffset: { value: 0.0025, min: 0, max: 0.01, step: 0.0001 },
+        },
+        { collapsed: true }
+      ),
+    },
+    { collapsed: true }
+  );
+
+  const ascii = useControls(
+    'Ascii',
+    {
+      Text: folder(
+        {
+          screenText: {
+            value: asciiSkull,
+            rows: true,
+          },
+          fontSize: { value: 6, min: 0, max: 48, step: 1 },
+          fontName: { value: 'Press Start 2P', options: fonts },
+          fontColor: { value: '#ff0000' },
+          showCaret: { value: false },
+          caretMode: {
+            value: 'block',
+            options: ['block', 'underscore', 'line'],
+          },
+          caretBlinkRate: { value: 2, min: 0.2, max: 5, step: 0.1 },
+
+          horizontalPadding: { value: 208, min: 0, max: 1000, step: 1 },
+          verticalPadding: { value: 0, min: 0, max: 1000, step: 1 },
         },
         { collapsed: true }
       ),
@@ -453,5 +517,15 @@ export default function useInteractiveTvControls() {
     { collapsed: true }
   );
 
-  return { smtpe, tvStatic, noSignal, terminal, homeVideo, tv, threeD, pip };
+  return {
+    smtpe,
+    tvStatic,
+    noSignal,
+    terminal,
+    ascii,
+    homeVideo,
+    tv,
+    threeD,
+    pip,
+  };
 }

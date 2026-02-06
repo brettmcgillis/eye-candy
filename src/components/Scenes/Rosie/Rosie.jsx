@@ -1,13 +1,40 @@
+/* eslint-disable no-plusplus */
+import { useControls } from 'leva';
 import * as THREE from 'three';
 
 import React, { useEffect, useMemo, useRef, useState } from 'react';
 
-import { OrbitControls, PerspectiveCamera, Splat } from '@react-three/drei';
+import {
+  OrbitControls,
+  PerspectiveCamera,
+  Splat,
+  Stats,
+} from '@react-three/drei';
 import { useFrame, useThree } from '@react-three/fiber';
 
-import { modelFile } from '../../../utils/appUtils';
+import { imageFile, modelFile } from '../../../utils/appUtils';
+import SparkSplatRenderer from './SparkRenderer';
+import SparkSplat from './SparkSplat';
+import useSplatDataTexture from './useSplatDataTexture';
 
 export default function Rosie() {
+  const render = useControls(
+    'Render',
+    { useSpark: { value: true } },
+    { collapsed: true }
+  );
+  const controls = useControls(
+    'Splat',
+    {
+      maxStdDev: { value: 1.5, min: 0, max: 2 },
+      focalDistance: { value: 4.0, min: 0, max: 10 },
+      near: { value: 1, min: 0, max: 5 },
+      far: { value: 15, min: 10, max: 20 },
+      mid: { value: 5, min: 5, max: 10 },
+    },
+    { collapsed: true }
+  );
+
   const cameraRef = useRef();
   const controlsRef = useRef();
   const { camera } = useThree();
@@ -17,19 +44,19 @@ export default function Rosie() {
     () => [
       {
         id: 0,
-        src: modelFile('rosie_1.splat'),
+        src: 'rosie_1.splat',
         position: new THREE.Vector3(-0.5, 0, 0),
         rotation: [0, Math.PI / 4, 0],
       },
       {
         id: 1,
-        src: modelFile('rosie_2.splat'),
+        src: 'rosie_2.splat',
         position: new THREE.Vector3(0, 0, -1),
         rotation: [0, 0, 0],
       },
       {
         id: 2,
-        src: modelFile('rosie_3.splat'),
+        src: 'rosie_3.splat',
         position: new THREE.Vector3(0.5, 0, 0),
         rotation: [0, -Math.PI / 4, 0],
       },
@@ -114,6 +141,8 @@ export default function Rosie() {
     return () => window.removeEventListener('keydown', onKeyDown);
   }, [splats]);
 
+  const splatDataTexture = useSplatDataTexture(imageFile('heart.png'));
+
   // --- RENDER -----------------------------------------------
   return (
     <>
@@ -136,15 +165,32 @@ export default function Rosie() {
 
       <color attach="background" args={['#ffffff']} />
 
-      {splats.map((splat, i) => (
-        <Splat
-          key={splat.id}
-          src={splat.src}
-          position={splat.position.toArray()}
-          rotation={splat.rotation}
-          onClick={() => focusSplat(i)}
-        />
-      ))}
+      {render.useSpark && (
+        <SparkSplatRenderer {...controls} splatDataTexture={splatDataTexture}>
+          {splats.map((splat, i) => (
+            <SparkSplat
+              key={splat.id}
+              splat={splat.src}
+              position={splat.position.toArray()}
+              rotation={splat.rotation}
+              onClick={() => focusSplat(i)}
+            />
+          ))}
+        </SparkSplatRenderer>
+      )}
+
+      {!render.useSpark &&
+        splats.map((splat, i) => (
+          <Splat
+            key={splat.id}
+            src={modelFile(splat.src)}
+            position={splat.position.toArray()}
+            rotation={splat.rotation}
+            onClick={() => focusSplat(i)}
+          />
+        ))}
+
+      <Stats />
     </>
   );
 }

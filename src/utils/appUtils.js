@@ -34,3 +34,7 @@ export function modelFile(fileName) {
 export function videoFile(fileName) {
   return assetPath(`/videos/${fileName}`);
 }
+
+export function imageFile(fileName) {
+  return assetPath(`/images/${fileName}`);
+}

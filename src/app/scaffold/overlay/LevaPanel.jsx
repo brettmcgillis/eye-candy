@@ -14,7 +14,6 @@ export default function LevaPanel({ visible }) {
 
   const containerSpring = useSpring({
     opacity: visible ? 1 : 0,
-    maxHeight: visible ? 600 : 0, // large enough to fit Leva
     config: { tension: 170, friction: 26 }, // slower + softer
   });
 
@@ -32,9 +31,8 @@ export default function LevaPanel({ visible }) {
   return (
     <a.div
       style={{
-        overflow: 'hidden',
+        overflow: 'visible',
         opacity: containerSpring.opacity,
-        maxHeight: containerSpring.maxHeight,
         pointerEvents: visible ? 'auto' : 'none',
       }}
     >

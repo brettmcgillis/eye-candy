@@ -2,3 +2,30 @@
   cursor: crosshair;
   pointer-events: auto;
 }
+
+.top-right.overlay-panel {
+  padding: 0;
+}
+
+.top-right.overlay-panel .version-tag {
+  position: sticky;
+  top: 0;
+  z-index: 2;
+  align-self: stretch;
+  width: 100%;
+  background: var(--overlay-bg);
+  padding: 1em;
+  box-sizing: border-box;
+}
+
+.top-right.overlay-panel.leva-visible .version-tag {
+  padding: 1em 1em 0.5em;
+}
+
+.top-right.overlay-panel .leva-panel-wrap {
+  padding: 0;
+}
+
+.top-right.overlay-panel .leva-panel-wrap.is-visible {
+  padding: 0 1em 1em;
+}

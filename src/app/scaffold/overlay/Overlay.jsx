@@ -19,9 +19,11 @@ function Overlay() {
 
   return (
     <div className="overlay">
-      <div className="top-right overlay-panel">
+      <div className={`top-right overlay-panel${showLeva ? ' leva-visible' : ''}`}>
         <VersionTag />
-        <LevaPanel visible={showLeva} />
+        <div className={`leva-panel-wrap${showLeva ? ' is-visible' : ''}`}>
+          <LevaPanel visible={showLeva} />
+        </div>
       </div>
 
       <div className="top-left overlay-panel">

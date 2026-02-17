@@ -119,7 +119,7 @@ function usePaperStackConfig() {
 
     Window: folder(
       {
-        windowSize01: { label: 'Size', value: 0.5, min: 0, max: 1 },
+        windowSize01: { label: 'Size', value: 0.75, min: 0, max: 1 },
 
         minSizeRatio: { label: 'Min Size %', value: 0.12, min: 0.02, max: 0.4 },
         maxSizeRatio: { label: 'Max Size %', value: 0.38, min: 0.1, max: 0.48 },
@@ -127,7 +127,7 @@ function usePaperStackConfig() {
         windowXY: { value: { x: 0, y: 0 } },
         windowZ: { value: 0.005, min: -0.1, max: 0.1 },
 
-        squareSpacing: { value: 0.9, min: 0.4, max: 1.4 },
+        squareSpacing: { value: 0.69, min: 0.4, max: 1.4 },
 
         patternRotationDeg: {
           label: 'Pattern Rot (°)',
@@ -145,7 +145,7 @@ function usePaperStackConfig() {
           step: 1,
         },
       },
-      { collapsed: false }
+      { collapsed: true }
     ),
 
     Stepping: folder(
@@ -153,7 +153,7 @@ function usePaperStackConfig() {
         taperAmount: { value: 0.22, min: 0, max: 0.9 },
         taperCurve: { value: 2.2, min: 0.4, max: 4, step: 0.1 },
       },
-      { collapsed: false }
+      { collapsed: true }
     ),
 
     Spiral: folder(
@@ -173,7 +173,7 @@ function usePaperStackConfig() {
           step: 0.1,
         },
       },
-      { collapsed: false }
+      { collapsed: true }
     ),
 
     Chips: folder(
@@ -210,13 +210,13 @@ function usePaperStackConfig() {
           step: 1,
         },
       },
-      { collapsed: false }
+      { collapsed: true }
     ),
 
     Shadows: folder(
       {
         accumFrames: { label: 'Frames', value: 200, min: 1, max: 400, step: 1 },
-        accumColor: { label: 'Color', value: '#7a7a7a' },
+        accumColor: { label: 'Color', value: '#000000' },
         accumColorBlend: {
           label: 'Color Blend',
           value: 0.5,
@@ -231,10 +231,10 @@ function usePaperStackConfig() {
           max: 1,
           step: 0.01,
         },
-        accumScale: { label: 'Scale', value: 10, min: 1, max: 40, step: 0.1 },
+        accumScale: { label: 'Scale', value: 40, min: 1, max: 40, step: 0.1 },
         accumAlphaTest: {
           label: 'Alpha Test',
-          value: 0.85,
+          value: 0.55,
           min: 0,
           max: 1,
           step: 0.01,
@@ -274,7 +274,7 @@ function usePaperStackConfig() {
         lightY: { label: 'Light Y', value: 3, min: -20, max: 20, step: 0.1 },
         lightZ: { label: 'Light Z', value: 2, min: -20, max: 20, step: 0.1 },
       },
-      { collapsed: false }
+      { collapsed: true }
     ),
   });
 
@@ -503,6 +503,9 @@ export default function PaperStack() {
           new THREE.MeshStandardMaterial({
             color: c,
             side: THREE.DoubleSide,
+            roughness: 0.92,
+            metalness: 0,
+            envMapIntensity: 0.2,
           })
       ),
     []
@@ -514,7 +517,7 @@ export default function PaperStack() {
       <ambientLight intensity={1} />
       <PerspectiveCamera
         makeDefault
-        position={[0, 3.5, 12]}
+        position={[-5, 3.5, 12]}
         fov={45}
         onUpdate={(self) => self.lookAt(0, 2, 0)}
       />

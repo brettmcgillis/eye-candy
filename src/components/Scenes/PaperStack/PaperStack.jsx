@@ -1,8 +1,8 @@
 /* eslint-disable react/no-array-index-key */
-import { folder, useControls } from 'leva';
+import { button, folder, useControls } from 'leva';
 import * as THREE from 'three';
 
-import React, { useMemo } from 'react';
+import React, { useEffect, useMemo, useRef } from 'react';
 
 import { Base, Geometry, Subtraction } from '@react-three/csg';
 import {
@@ -12,77 +12,223 @@ import {
   RandomizedLight,
 } from '@react-three/drei';
 
-const COLORS = [
-  'black',
-  'violet',
-  'indigo',
-  'blue',
-  'green',
-  'yellow',
-  'orange',
-  'red',
-  'white',
-  'black',
-];
+import { localEnv } from '../../../utils/appUtils';
 
+const COLOR_PRESETS = {
+  Default: [
+    'black',
+    'violet',
+    'indigo',
+    'blue',
+    'green',
+    'yellow',
+    'orange',
+    'red',
+    'white',
+    'black',
+  ],
+};
+
+const WINDOW_PRESETS = {
+  Default: {
+    stackX: 0,
+    stackY: 0,
+    stackZ: 0,
+    stackRotXDeg: 0,
+    stackRotYDeg: 0,
+    stackRotZDeg: 0,
+    layerHeight: 4,
+    layerWidth: 10,
+    layerDepth: 0.01,
+    layerDepthBuffer: 0.01,
+    windowSize01: 0.75,
+    minSizeRatio: 0.12,
+    maxSizeRatio: 0.38,
+    windowXY: { x: 0, y: 0 },
+    windowZ: 0.005,
+    squareSpacing: 0.69,
+    patternRotationDeg: 0,
+    windowRotationDeg: 0,
+    taperAmount: 0.22,
+    taperCurve: 2.2,
+    spiralTwistDeg: 0,
+    spiralCurve: 1.6,
+    chipsX: 0,
+    chipsY: 0,
+    chipsZ: 2.8,
+    chipsPitchDeg: -90,
+    chipsRotXDeg: 0,
+    chipsRotYDeg: 45,
+    chipsRotZDeg: 0,
+    accumFrames: 200,
+    accumColor: '#000000',
+    accumColorBlend: 0.5,
+    accumOpacity: 1,
+    accumScale: 40,
+    accumAlphaTest: 0.55,
+    accumX: 0,
+    accumY: 0,
+    accumZ: 0,
+    lightAmount: 8,
+    lightRadius: 5,
+    lightAmbient: 0.5,
+    lightBias: 0.001,
+    lightX: 5,
+    lightY: 3,
+    lightZ: 2,
+  },
+  FourtyFive: {
+    stackX: 0,
+    stackY: 0,
+    stackZ: 0,
+    stackRotXDeg: 0,
+    stackRotYDeg: 0,
+    stackRotZDeg: 0,
+    layerHeight: 4,
+    layerWidth: 10,
+    layerDepth: 0.01,
+    layerDepthBuffer: 0.01,
+    windowSize01: 0.6,
+    minSizeRatio: 0.12,
+    maxSizeRatio: 0.38,
+    windowXY: {
+      x: 0,
+      y: 0,
+    },
+    windowZ: 0.005,
+    squareSpacing: 0.6,
+    patternRotationDeg: 45,
+    windowRotationDeg: 45,
+    taperAmount: 0.364,
+    taperCurve: 1.9000000000000001,
+    spiralTwistDeg: 45,
+    spiralCurve: 1.2000000000000002,
+    chipsX: 0,
+    chipsY: 0,
+    chipsZ: 2.8,
+    chipsPitchDeg: -90,
+    chipsRotXDeg: 0,
+    chipsRotYDeg: 0,
+    chipsRotZDeg: 0,
+    accumFrames: 200,
+    accumColor: '#000000',
+    accumColorBlend: 0.5,
+    accumOpacity: 1,
+    accumScale: 40,
+    accumAlphaTest: 0.55,
+    accumX: 0,
+    accumY: 0,
+    accumZ: 0,
+    lightAmount: 8,
+    lightRadius: 5,
+    lightAmbient: 0.5,
+    lightBias: 0.001,
+    lightX: 5,
+    lightY: 3,
+    lightZ: 2,
+  },
+};
 function usePaperStackConfig() {
-  const {
-    layerWidth,
-    layerDepth,
-    layerDepthBuffer,
-    layerHeight,
+  const controlsSnapshotRef = useRef(WINDOW_PRESETS.Default);
+  const selectedPresetRef = useRef('Default');
 
-    windowSize01,
-    minSizeRatio,
-    maxSizeRatio,
+  const [
+    {
+      windowPreset,
+      colorPreset,
+      layerWidth,
+      layerDepth,
+      layerDepthBuffer,
+      layerHeight,
 
-    windowXY,
-    windowZ,
+      windowSize01,
+      minSizeRatio,
+      maxSizeRatio,
 
-    taperAmount,
-    taperCurve,
+      windowXY,
+      windowZ,
 
-    squareSpacing,
+      taperAmount,
+      taperCurve,
 
-    patternRotationDeg,
-    windowRotationDeg,
+      squareSpacing,
 
-    spiralTwistDeg,
-    spiralCurve,
+      patternRotationDeg,
+      windowRotationDeg,
 
-    stackX,
-    stackY,
-    stackZ,
-    stackRotXDeg,
-    stackRotYDeg,
-    stackRotZDeg,
+      spiralTwistDeg,
+      spiralCurve,
 
-    chipsX,
-    chipsY,
-    chipsZ,
-    chipsPitchDeg,
-    chipsRotXDeg,
-    chipsRotYDeg,
-    chipsRotZDeg,
+      stackX,
+      stackY,
+      stackZ,
+      stackRotXDeg,
+      stackRotYDeg,
+      stackRotZDeg,
 
-    accumFrames,
-    accumColor,
-    accumColorBlend,
-    accumOpacity,
-    accumScale,
-    accumAlphaTest,
-    accumX,
-    accumY,
-    accumZ,
+      chipsX,
+      chipsY,
+      chipsZ,
+      chipsPitchDeg,
+      chipsRotXDeg,
+      chipsRotYDeg,
+      chipsRotZDeg,
 
-    lightAmount,
-    lightRadius,
-    lightAmbient,
-    lightBias,
-    lightX,
-    lightY,
-    lightZ,
-  } = useControls('Paper Stack', {
+      accumFrames,
+      accumColor,
+      accumColorBlend,
+      accumOpacity,
+      accumScale,
+      accumAlphaTest,
+      accumX,
+      accumY,
+      accumZ,
+
+      lightAmount,
+      lightRadius,
+      lightAmbient,
+      lightBias,
+      lightX,
+      lightY,
+      lightZ,
+    },
+    setControls,
+  ] = useControls('Paper Stack', () => ({
+    Presets: folder(
+      {
+        windowPreset: {
+          label: 'Window Preset',
+          value: 'Default',
+          options: Object.keys(WINDOW_PRESETS),
+        },
+        colorPreset: {
+          label: 'Color Preset',
+          value: 'Default',
+          options: Object.keys(COLOR_PRESETS),
+        },
+        reset: button(() => {
+          const preset = WINDOW_PRESETS[selectedPresetRef.current];
+          if (preset) {
+            setControls(preset);
+          }
+        }),
+        ...(localEnv()
+          ? {
+              copy: button(() => {
+                const asObjectLiteral = JSON.stringify(
+                  controlsSnapshotRef.current,
+                  null,
+                  2
+                ).replace(/"([A-Za-z_$][A-Za-z0-9_$]*)":/g, '$1:');
+
+                navigator.clipboard.writeText(asObjectLiteral);
+              }),
+            }
+          : {}),
+      },
+      { collapsed: true }
+    ),
+
     Stack: folder(
       {
         stackX: { label: 'X', value: 0, min: -20, max: 20, step: 0.1 },
@@ -276,7 +422,111 @@ function usePaperStackConfig() {
       },
       { collapsed: true }
     ),
-  });
+  }));
+
+  useEffect(() => {
+    selectedPresetRef.current = windowPreset;
+    const presetValues = WINDOW_PRESETS[windowPreset];
+    if (presetValues) {
+      setControls(presetValues);
+    }
+  }, [windowPreset, setControls]);
+
+  useEffect(() => {
+    controlsSnapshotRef.current = {
+      stackX,
+      stackY,
+      stackZ,
+      stackRotXDeg,
+      stackRotYDeg,
+      stackRotZDeg,
+      layerHeight,
+      layerWidth,
+      layerDepth,
+      layerDepthBuffer,
+      windowSize01,
+      minSizeRatio,
+      maxSizeRatio,
+      windowXY,
+      windowZ,
+      squareSpacing,
+      patternRotationDeg,
+      windowRotationDeg,
+      taperAmount,
+      taperCurve,
+      spiralTwistDeg,
+      spiralCurve,
+      chipsX,
+      chipsY,
+      chipsZ,
+      chipsPitchDeg,
+      chipsRotXDeg,
+      chipsRotYDeg,
+      chipsRotZDeg,
+      accumFrames,
+      accumColor,
+      accumColorBlend,
+      accumOpacity,
+      accumScale,
+      accumAlphaTest,
+      accumX,
+      accumY,
+      accumZ,
+      lightAmount,
+      lightRadius,
+      lightAmbient,
+      lightBias,
+      lightX,
+      lightY,
+      lightZ,
+    };
+  }, [
+    stackX,
+    stackY,
+    stackZ,
+    stackRotXDeg,
+    stackRotYDeg,
+    stackRotZDeg,
+    layerHeight,
+    layerWidth,
+    layerDepth,
+    layerDepthBuffer,
+    windowSize01,
+    minSizeRatio,
+    maxSizeRatio,
+    windowXY,
+    windowZ,
+    squareSpacing,
+    patternRotationDeg,
+    windowRotationDeg,
+    taperAmount,
+    taperCurve,
+    spiralTwistDeg,
+    spiralCurve,
+    chipsX,
+    chipsY,
+    chipsZ,
+    chipsPitchDeg,
+    chipsRotXDeg,
+    chipsRotYDeg,
+    chipsRotZDeg,
+    accumFrames,
+    accumColor,
+    accumColorBlend,
+    accumOpacity,
+    accumScale,
+    accumAlphaTest,
+    accumX,
+    accumY,
+    accumZ,
+    lightAmount,
+    lightRadius,
+    lightAmbient,
+    lightBias,
+    lightX,
+    lightY,
+    lightZ,
+  ]);
 
   /* ---------------- Angles ---------------- */
 
@@ -284,8 +534,9 @@ function usePaperStackConfig() {
   const windowRotation = THREE.MathUtils.degToRad(windowRotationDeg);
   const spiralTotal = THREE.MathUtils.degToRad(spiralTwistDeg);
 
+  const colors = COLOR_PRESETS[colorPreset] || COLOR_PRESETS.Default;
   const layerStep = layerDepth + layerDepthBuffer;
-  const layerCount = COLORS.length;
+  const layerCount = colors.length;
 
   /* ---------------- Window size ---------------- */
 
@@ -300,7 +551,7 @@ function usePaperStackConfig() {
 
   const layers = useMemo(
     () =>
-      COLORS.map((_, i) => {
+      colors.map((_, i) => {
         const t = i / (layerCount - 1);
         const curved = t ** taperCurve;
         const scale = THREE.MathUtils.lerp(1, 1 - taperAmount, curved);
@@ -315,7 +566,15 @@ function usePaperStackConfig() {
           spiral,
         };
       }),
-    [layerStep, layerCount, taperAmount, taperCurve, spiralTotal, spiralCurve]
+    [
+      colors,
+      layerStep,
+      layerCount,
+      taperAmount,
+      taperCurve,
+      spiralTotal,
+      spiralCurve,
+    ]
   );
 
   /* ---------------- Base square layout ---------------- */
@@ -348,6 +607,7 @@ function usePaperStackConfig() {
     windowRotation,
     safeWindowSize,
     layers,
+    colors,
     baseOffsets,
     chipsX,
     chipsY,
@@ -498,7 +758,7 @@ export default function PaperStack() {
 
   const materials = useMemo(
     () =>
-      COLORS.map(
+      config.colors.map(
         (c) =>
           new THREE.MeshStandardMaterial({
             color: c,
@@ -508,7 +768,7 @@ export default function PaperStack() {
             envMapIntensity: 0.2,
           })
       ),
-    []
+    [config.colors]
   );
 
   return (

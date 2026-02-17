@@ -37,6 +37,14 @@
 
 ### SCENES
 
+### Scene TODO Files
+
+- [CRTTest](src/components/scenes/CRTTest/todo.md)
+- [MobilePhysicsTest](src/components/scenes/MobilePhysicsTest/todo.md)
+- [PaperStack](src/components/scenes/PaperStack/todo.md)
+- [Rosie](src/components/scenes/Rosie/todo.md)
+- [StrudelDoodle](src/components/scenes/StrudelDoodle/todo.md)
+
 ### PixelHater
 
 - [ ] See if we can improve shader to prevent pixel colors including unmasked object colors.
@@ -76,8 +84,8 @@
 
 - [x] Totally broken, no color. upgrade csg? rebuild? Fixed!
 - [ ] Add compelling animations
-- [ ] create window orientation presets using settings, add preset option control
-- [ ] create some preset color arrangements, add controls.
+- [x] create window orientation presets using settings, add preset option control
+- [x] create some preset color arrangements, add controls.
 
 ### HandStuff
 

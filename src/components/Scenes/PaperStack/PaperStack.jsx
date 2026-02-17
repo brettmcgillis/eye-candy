@@ -2,7 +2,7 @@
 import { button, folder, useControls } from 'leva';
 import * as THREE from 'three';
 
-import React, { useEffect, useMemo, useRef } from 'react';
+import React, { useEffect, useMemo, useRef, useState } from 'react';
 
 import { Base, Geometry, Subtraction } from '@react-three/csg';
 import {
@@ -16,16 +16,28 @@ import { localEnv } from '../../../utils/appUtils';
 
 const COLOR_PRESETS = {
   Default: [
-    'black',
-    'violet',
-    'indigo',
-    'blue',
-    'green',
-    'yellow',
-    'orange',
-    'red',
-    'white',
-    'black',
+    '#000000',
+    '#ee82ee',
+    '#4b0082',
+    '#0000ff',
+    '#008000',
+    '#ffff00',
+    '#ffa500',
+    '#ff0000',
+    '#ffffff',
+    '#000000',
+  ],
+  RedAndBlack: [
+    '#000000',
+    '#ff0000',
+    '#ffffff',
+    '#000000',
+    '#ff0000',
+    '#ffffff',
+    '#000000',
+    '#ff0000',
+    '#ffffff',
+    '#000000',
   ],
 };
 
@@ -131,6 +143,9 @@ const WINDOW_PRESETS = {
 function usePaperStackConfig() {
   const controlsSnapshotRef = useRef(WINDOW_PRESETS.Default);
   const selectedPresetRef = useRef('Default');
+  const selectedColorPresetRef = useRef('Default');
+  const customColorsRef = useRef(COLOR_PRESETS.Default);
+  const [customColors, setCustomColors] = useState(COLOR_PRESETS.Default);
 
   const [
     {
@@ -211,6 +226,10 @@ function usePaperStackConfig() {
           if (preset) {
             setControls(preset);
           }
+          const presetColors =
+            COLOR_PRESETS[selectedColorPresetRef.current] ||
+            COLOR_PRESETS.Default;
+          setCustomColors(presetColors);
         }),
         ...(localEnv()
           ? {
@@ -424,6 +443,46 @@ function usePaperStackConfig() {
     ),
   }));
 
+  const [colorSettings, setColorSettings] = useControls(
+    'Paper Stack',
+    () => {
+      const customColorControls = customColors.reduce((acc, color, index) => {
+        acc[`customColor${index}`] = {
+          label: `Layer ${index + 1}`,
+          value: color,
+        };
+        return acc;
+      }, {});
+
+      return {
+        'Color Settings': folder(
+          {
+            add: button(() => {
+              setCustomColors((prev) => [
+                ...prev,
+                prev[prev.length - 1] || '#ffffff',
+              ]);
+            }),
+            remove: button(() => {
+              setCustomColors((prev) =>
+                prev.length > 1 ? prev.slice(0, -1) : prev
+              );
+            }),
+            copyColors: button(() => {
+              const asArrayLiteral = `[\n${customColorsRef.current
+                .map((color) => `  '${color}'`)
+                .join(',\n')}\n]`;
+              navigator.clipboard.writeText(asArrayLiteral);
+            }),
+            ...customColorControls,
+          },
+          { collapsed: false }
+        ),
+      };
+    },
+    [customColors.length]
+  );
+
   useEffect(() => {
     selectedPresetRef.current = windowPreset;
     const presetValues = WINDOW_PRESETS[windowPreset];
@@ -528,13 +587,44 @@ function usePaperStackConfig() {
     lightZ,
   ]);
 
+  useEffect(() => {
+    if (!colorSettings) {
+      return;
+    }
+    setCustomColors((prev) => {
+      const next = prev.map(
+        (existing, index) => colorSettings[`customColor${index}`] || existing
+      );
+      const didChange = next.some((color, index) => color !== prev[index]);
+      return didChange ? next : prev;
+    });
+  }, [colorSettings]);
+
+  useEffect(() => {
+    const presetColors = COLOR_PRESETS[colorPreset] || COLOR_PRESETS.Default;
+    selectedColorPresetRef.current = colorPreset;
+    setCustomColors([...presetColors]);
+  }, [colorPreset]);
+
+  useEffect(() => {
+    const nextColorControlValues = customColors.reduce((acc, color, index) => {
+      acc[`customColor${index}`] = color;
+      return acc;
+    }, {});
+    setColorSettings(nextColorControlValues);
+  }, [customColors, setColorSettings]);
+
   /* ---------------- Angles ---------------- */
 
   const patternRotation = THREE.MathUtils.degToRad(patternRotationDeg);
   const windowRotation = THREE.MathUtils.degToRad(windowRotationDeg);
   const spiralTotal = THREE.MathUtils.degToRad(spiralTwistDeg);
 
-  const colors = COLOR_PRESETS[colorPreset] || COLOR_PRESETS.Default;
+  const colors = customColors;
+
+  useEffect(() => {
+    customColorsRef.current = colors;
+  }, [colors]);
   const layerStep = layerDepth + layerDepthBuffer;
   const layerCount = colors.length;
 

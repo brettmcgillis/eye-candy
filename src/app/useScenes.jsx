@@ -1,5 +1,6 @@
 import CRTTest from '../components/scenes/CRTTest/CrtTest';
 import DumpsterFire from '../components/scenes/DumpsterFire/DumpsterFire';
+import ExplosionTest from '../components/scenes/ExplosionTest/ExplosionTest';
 import FluidTest from '../components/scenes/FluidTest/FluidTest';
 import FoldedFrame from '../components/scenes/FoldedFrame/FoldedFrame';
 import HandStuff from '../components/scenes/HandStuff/HandStuff';
@@ -153,6 +154,16 @@ const rosie = {
   linkable: true,
 };
 
+const explosionTest = {
+  id: 'explosionTest',
+  renderer: 'webgl',
+  Component: ExplosionTest,
+  label: 'Explosion Test',
+  icon: '💥',
+  public: false,
+  linkable: true,
+};
+
 const scenes = [
   noScene,
   pixelHater,
@@ -168,6 +179,7 @@ const scenes = [
   mobilePhysicsTest,
   fluidTest,
   rosie,
+  explosionTest,
 ];
 
 export default function useScenes() {

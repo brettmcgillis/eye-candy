@@ -23,11 +23,14 @@ function ExplodingSphere({
   returnSpeed,
   motionBoost,
   damping,
+  showPointerRadiusDebug,
   color,
   roughness,
   metalness,
 }) {
   const meshRef = useRef(null);
+  const interactionShellRef = useRef(null);
+  const debugSphereRef = useRef(null);
   const materialRef = useRef(null);
   const shaderRef = useRef(null);
   const hoverRef = useRef(false);
@@ -36,6 +39,13 @@ function ExplodingSphere({
   const pointerTargetRef = useRef(new THREE.Vector3(9999, 9999, 9999));
   const pointerSmoothedRef = useRef(new THREE.Vector3(9999, 9999, 9999));
   const lastPointerRef = useRef(null);
+  const shellPointRef = useRef(new THREE.Vector3());
+  const inverseMatrixRef = useRef(new THREE.Matrix4());
+  const localRayRef = useRef(new THREE.Ray());
+  const localRayOriginRef = useRef(new THREE.Vector3());
+  const localRayDirectionRef = useRef(new THREE.Vector3());
+  const outerSphereRef = useRef(new THREE.Sphere(new THREE.Vector3(), radius));
+  const outerHitRef = useRef(new THREE.Vector3());
 
   const { geometry, positionTexture, normalTexture } = useMemo(() => {
     const geometryData = new THREE.SphereGeometry(
@@ -158,6 +168,42 @@ function ExplodingSphere({
     [geometry, normalTexture, positionTexture]
   );
 
+  useEffect(() => {
+    outerSphereRef.current.radius = radius;
+  }, [radius]);
+
+  const resolveLocalInteractionPoint = (event) => {
+    if (!meshRef.current) return null;
+
+    const inverseMatrix = inverseMatrixRef.current
+      .copy(meshRef.current.matrixWorld)
+      .invert();
+    localRayOriginRef.current
+      .copy(event.ray.origin)
+      .applyMatrix4(inverseMatrix);
+    localRayDirectionRef.current
+      .copy(event.ray.direction)
+      .transformDirection(inverseMatrix);
+    localRayRef.current.set(
+      localRayOriginRef.current,
+      localRayDirectionRef.current
+    );
+
+    const hit = localRayRef.current.intersectSphere(
+      outerSphereRef.current,
+      outerHitRef.current
+    );
+    if (hit) return outerHitRef.current;
+
+    shellPointRef.current.copy(event.point);
+    const fallback = meshRef.current.worldToLocal(shellPointRef.current);
+    const length = fallback.length();
+    if (length > 0.0001) {
+      fallback.multiplyScalar(radius / length);
+    }
+    return fallback;
+  };
+
   useFrame((state, delta) => {
     const hoverTarget = hoverRef.current ? 1 : 0;
     hoverAmountRef.current = THREE.MathUtils.damp(
@@ -176,6 +222,17 @@ function ExplodingSphere({
       pointerTargetRef.current,
       1 - Math.exp(-20 * delta)
     );
+    if (debugSphereRef.current) {
+      const isVisible =
+        showPointerRadiusDebug &&
+        hoverRef.current &&
+        pointerSmoothedRef.current.lengthSq() < 10000;
+      debugSphereRef.current.visible = isVisible;
+      if (isVisible) {
+        debugSphereRef.current.position.copy(pointerSmoothedRef.current);
+        debugSphereRef.current.scale.setScalar(pointerRadius);
+      }
+    }
 
     const shader = shaderRef.current;
     if (!shader) return;
@@ -192,37 +249,58 @@ function ExplodingSphere({
   });
 
   return (
-    <mesh
-      ref={meshRef}
-      position={meshPosition}
-      geometry={geometry}
-      onPointerOver={() => {
-        hoverRef.current = true;
-      }}
-      onPointerOut={() => {
-        hoverRef.current = false;
-        pointerTargetRef.current.set(9999, 9999, 9999);
-        lastPointerRef.current = null;
-      }}
-      onPointerMove={(event) => {
-        event.stopPropagation();
-        if (!meshRef.current) return;
+    <mesh ref={meshRef} position={meshPosition} geometry={geometry}>
+      <mesh
+        ref={interactionShellRef}
+        onPointerOver={(event) => {
+          event.stopPropagation();
+          if (!meshRef.current) return;
+          hoverRef.current = true;
+          const localPoint = resolveLocalInteractionPoint(event);
+          if (!localPoint) return;
+          pointerTargetRef.current.copy(localPoint);
+          pointerSmoothedRef.current.copy(localPoint);
+          lastPointerRef.current = localPoint.clone();
+        }}
+        onPointerOut={(event) => {
+          event.stopPropagation();
+          hoverRef.current = false;
+          pointerTargetRef.current.set(9999, 9999, 9999);
+          lastPointerRef.current = null;
+        }}
+        onPointerMove={(event) => {
+          event.stopPropagation();
+          if (!meshRef.current) return;
+          hoverRef.current = true;
+          const localPoint = resolveLocalInteractionPoint(event);
+          if (!localPoint) return;
+          pointerTargetRef.current.copy(localPoint);
 
-        const localPoint = meshRef.current.worldToLocal(event.point.clone());
-        pointerTargetRef.current.copy(localPoint);
-
-        if (lastPointerRef.current) {
-          const movement = localPoint.distanceTo(lastPointerRef.current);
-          moveEnergyRef.current = Math.min(
-            2.5,
-            moveEnergyRef.current + movement * motionBoost
-          );
-        } else {
-          moveEnergyRef.current = 0.4;
-        }
-        lastPointerRef.current = localPoint;
-      }}
-    >
+          if (lastPointerRef.current) {
+            const movement = localPoint.distanceTo(lastPointerRef.current);
+            moveEnergyRef.current = Math.min(
+              2.5,
+              moveEnergyRef.current + movement * motionBoost
+            );
+            lastPointerRef.current.copy(localPoint);
+          } else {
+            moveEnergyRef.current = 0.4;
+            lastPointerRef.current = localPoint.clone();
+          }
+        }}
+      >
+        <sphereGeometry args={[radius + pointerRadius, 24, 24]} />
+        <meshBasicMaterial transparent opacity={0} depthWrite={false} />
+      </mesh>
+      <mesh ref={debugSphereRef} visible={false}>
+        <sphereGeometry args={[1, 16, 16]} />
+        <meshBasicMaterial
+          color="#ff2d2d"
+          wireframe
+          toneMapped={false}
+          depthTest={false}
+        />
+      </mesh>
       <meshStandardMaterial
         ref={materialRef}
         color={color}
@@ -368,6 +446,7 @@ export default function ExplosionTest() {
         returnSpeed: { value: 10, min: 1, max: 30, step: 0.1 },
         motionBoost: { value: 14, min: 1, max: 40, step: 0.1 },
         damping: { value: 6, min: 0.5, max: 20, step: 0.1 },
+        showPointerRadiusDebug: false,
       },
       { collapsed: false }
     ),
@@ -456,6 +535,7 @@ export default function ExplosionTest() {
         returnSpeed={resolvedSettings.returnSpeed}
         motionBoost={resolvedSettings.motionBoost}
         damping={resolvedSettings.damping}
+        showPointerRadiusDebug={resolvedSettings.showPointerRadiusDebug}
         color={resolvedSettings.secondColor}
         roughness={resolvedSettings.secondRoughness}
         metalness={resolvedSettings.secondMetalness}

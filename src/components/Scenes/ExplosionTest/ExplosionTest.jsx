@@ -1,4 +1,3 @@
-import { button, folder, useControls } from 'leva';
 import * as THREE from 'three';
 
 import React, { useEffect, useMemo, useRef } from 'react';
@@ -6,15 +5,170 @@ import React, { useEffect, useMemo, useRef } from 'react';
 import { CameraControls, MeshTransmissionMaterial } from '@react-three/drei';
 import { useFrame } from '@react-three/fiber';
 
-import EXPLOSION_PRESETS from './ExplosionTest.presets';
+import useExplosionTestControls from './useExplosionTestControls';
 
-const PRESET_OPTIONS = [...Object.keys(EXPLOSION_PRESETS), 'Custom'];
+const GEOMETRY_SUFFIX = 'Geometry';
+const MATERIAL_SUFFIX = 'Material';
 
-function ExplodingSphere({
-  meshPosition,
-  radius,
-  widthSegments,
-  heightSegments,
+function sanitizeMaterialProps(props) {
+  if (!props) return {};
+  const next = { ...props };
+  delete next.children;
+  delete next.attach;
+  delete next.args;
+  delete next.ref;
+  delete next.onBeforeCompile;
+  return next;
+}
+
+function getGeometryFromMeshElement(meshElement) {
+  if (!React.isValidElement(meshElement)) return null;
+  const { geometry: directGeometry, children } = meshElement.props || {};
+
+  if (directGeometry?.isBufferGeometry) {
+    return directGeometry.clone();
+  }
+
+  const childElements = React.Children.toArray(children);
+  const geometryElement = childElements.find(
+    (child) =>
+      React.isValidElement(child) &&
+      typeof child.type === 'string' &&
+      child.type.endsWith(GEOMETRY_SUFFIX)
+  );
+
+  if (!geometryElement || typeof geometryElement.type !== 'string') {
+    return null;
+  }
+
+  const constructorName = `${geometryElement.type
+    .charAt(0)
+    .toUpperCase()}${geometryElement.type.slice(1)}`;
+  const GeometryConstructor = THREE[constructorName];
+  if (typeof GeometryConstructor !== 'function') {
+    return null;
+  }
+
+  const args = geometryElement.props?.args || [];
+  return new GeometryConstructor(...args);
+}
+
+function getMaterialPropsFromMeshElement(meshElement) {
+  if (!React.isValidElement(meshElement)) return null;
+  const childElements = React.Children.toArray(meshElement.props?.children);
+  const materialElement = childElements.find(
+    (child) =>
+      React.isValidElement(child) &&
+      typeof child.type === 'string' &&
+      child.type.endsWith(MATERIAL_SUFFIX)
+  );
+  if (!materialElement) return null;
+  return sanitizeMaterialProps(materialElement.props);
+}
+
+function materialInstanceToProps(material) {
+  if (!material || !material.isMaterial) return null;
+  return sanitizeMaterialProps({
+    color: material.color?.getHexString
+      ? `#${material.color.getHexString()}`
+      : undefined,
+    roughness: material.roughness,
+    metalness: material.metalness,
+    emissive: material.emissive?.getHexString
+      ? `#${material.emissive.getHexString()}`
+      : undefined,
+    emissiveIntensity: material.emissiveIntensity,
+    wireframe: material.wireframe,
+    transparent: material.transparent,
+    opacity: material.opacity,
+    side: material.side,
+    flatShading: material.flatShading,
+  });
+}
+
+function toArray3(value, fallback = [0, 0, 0]) {
+  if (!value) return fallback;
+  if (Array.isArray(value)) return value;
+  if (typeof value.x === 'number') return [value.x, value.y, value.z];
+  return fallback;
+}
+
+function toArray4(value, fallback = [0, 0, 0, 1]) {
+  if (!value) return fallback;
+  if (Array.isArray(value)) return value;
+  if (typeof value.x === 'number') return [value.x, value.y, value.z, value.w];
+  return fallback;
+}
+
+function extractExplodingSources(child) {
+  if (!React.isValidElement(child)) return [];
+
+  if (child.type === 'mesh') {
+    const geometry = getGeometryFromMeshElement(child);
+    if (!geometry) return [];
+
+    const materialFromChild = getMaterialPropsFromMeshElement(child);
+    const materialFromProp = materialInstanceToProps(child.props?.material);
+    return [
+      {
+        geometry,
+        transform: {
+          position: toArray3(child.props?.position),
+          rotation: toArray3(child.props?.rotation),
+          quaternion: child.props?.quaternion
+            ? toArray4(child.props.quaternion)
+            : undefined,
+          scale: child.props?.scale,
+        },
+        materialProps: materialFromChild || materialFromProp,
+      },
+    ];
+  }
+
+  if (child.type === 'primitive' && child.props?.object?.isObject3D) {
+    const root = child.props.object.clone(true);
+    if (child.props.position) {
+      root.position.set(...toArray3(child.props.position));
+    }
+    if (child.props.rotation) {
+      root.rotation.set(...toArray3(child.props.rotation));
+    }
+    if (child.props.quaternion) {
+      root.quaternion.set(...toArray4(child.props.quaternion));
+    }
+    if (child.props.scale) {
+      const { scale } = child.props;
+      if (Array.isArray(scale)) root.scale.set(scale[0], scale[1], scale[2]);
+      else if (typeof scale === 'number') root.scale.setScalar(scale);
+      else if (typeof scale.x === 'number') root.scale.copy(scale);
+    }
+    root.updateMatrixWorld(true);
+
+    const position = new THREE.Vector3();
+    const quaternion = new THREE.Quaternion();
+    const scale = new THREE.Vector3();
+    const sources = [];
+    root.traverse((node) => {
+      if (!node.isMesh || !node.geometry) return;
+      node.matrixWorld.decompose(position, quaternion, scale);
+      sources.push({
+        geometry: node.geometry.clone(),
+        transform: {
+          position: [position.x, position.y, position.z],
+          quaternion: [quaternion.x, quaternion.y, quaternion.z, quaternion.w],
+          scale: [scale.x, scale.y, scale.z],
+        },
+        materialProps: materialInstanceToProps(node.material),
+      });
+    });
+    return sources;
+  }
+
+  return [];
+}
+
+function ExplodingThing({
+  source,
   explodeStrength,
   pointerRadius,
   falloff,
@@ -44,15 +198,27 @@ function ExplodingSphere({
   const localRayRef = useRef(new THREE.Ray());
   const localRayOriginRef = useRef(new THREE.Vector3());
   const localRayDirectionRef = useRef(new THREE.Vector3());
-  const outerSphereRef = useRef(new THREE.Sphere(new THREE.Vector3(), radius));
+  const outerSphereRef = useRef(new THREE.Sphere(new THREE.Vector3(), 1));
   const outerHitRef = useRef(new THREE.Vector3());
+  const sourceGeometryRef = useRef(null);
+  const sourceMaterialProps = source.materialProps;
 
-  const { geometry, positionTexture, normalTexture } = useMemo(() => {
-    const geometryData = new THREE.SphereGeometry(
-      radius,
-      widthSegments,
-      heightSegments
-    ).toNonIndexed();
+  const {
+    geometry,
+    positionTexture,
+    normalTexture,
+    shapeRadius,
+    meshTransform,
+  } = useMemo(() => {
+    const sourceGeometry = source?.geometry?.clone?.();
+    if (!sourceGeometry) {
+      return null;
+    }
+    sourceGeometryRef.current = sourceGeometry;
+
+    const geometryData = sourceGeometry.toNonIndexed();
+    geometryData.computeBoundingSphere();
+    const computedRadius = geometryData.boundingSphere?.radius || 1;
     const base = Float32Array.from(geometryData.attributes.position.array);
     const vertexCount = base.length / 3;
     const triCount = vertexCount / 3;
@@ -156,11 +322,26 @@ function ExplodingSphere({
       geometry: geometryData,
       positionTexture: posTexture,
       normalTexture: nrmTexture,
+      shapeRadius: computedRadius,
+      meshTransform: {
+        position: source.transform?.position || [0, 0, 0],
+        rotation: source.transform?.rotation,
+        quaternion: source.transform?.quaternion,
+        scale: source.transform?.scale,
+      },
     };
-  }, [heightSegments, radius, widthSegments]);
+  }, [source]);
 
   useEffect(
     () => () => {
+      sourceGeometryRef.current?.dispose();
+    },
+    []
+  );
+
+  useEffect(
+    () => () => {
+      if (!geometry) return;
       geometry.dispose();
       positionTexture.dispose();
       normalTexture.dispose();
@@ -169,8 +350,10 @@ function ExplodingSphere({
   );
 
   useEffect(() => {
-    outerSphereRef.current.radius = radius;
-  }, [radius]);
+    outerSphereRef.current.radius = shapeRadius || 1;
+  }, [shapeRadius]);
+
+  if (!geometry) return null;
 
   const resolveLocalInteractionPoint = (event) => {
     if (!meshRef.current) return null;
@@ -199,7 +382,7 @@ function ExplodingSphere({
     const fallback = meshRef.current.worldToLocal(shellPointRef.current);
     const length = fallback.length();
     if (length > 0.0001) {
-      fallback.multiplyScalar(radius / length);
+      fallback.multiplyScalar((shapeRadius || 1) / length);
     }
     return fallback;
   };
@@ -249,7 +432,14 @@ function ExplodingSphere({
   });
 
   return (
-    <mesh ref={meshRef} position={meshPosition} geometry={geometry}>
+    <mesh
+      ref={meshRef}
+      position={meshTransform.position}
+      rotation={meshTransform.rotation}
+      quaternion={meshTransform.quaternion}
+      scale={meshTransform.scale}
+      geometry={geometry}
+    >
       <mesh
         ref={interactionShellRef}
         onPointerOver={(event) => {
@@ -289,7 +479,7 @@ function ExplodingSphere({
           }
         }}
       >
-        <sphereGeometry args={[radius + pointerRadius, 24, 24]} />
+        <sphereGeometry args={[(shapeRadius || 1) + pointerRadius, 24, 24]} />
         <meshBasicMaterial transparent opacity={0} depthWrite={false} />
       </mesh>
       <mesh ref={debugSphereRef} visible={false}>
@@ -302,11 +492,12 @@ function ExplodingSphere({
         />
       </mesh>
       <meshStandardMaterial
+        {...sourceMaterialProps}
         ref={materialRef}
-        color={color}
-        roughness={roughness}
-        metalness={metalness}
-        side={THREE.DoubleSide}
+        color={sourceMaterialProps?.color || color}
+        roughness={sourceMaterialProps?.roughness ?? roughness}
+        metalness={sourceMaterialProps?.metalness ?? metalness}
+        side={sourceMaterialProps?.side ?? THREE.DoubleSide}
         onBeforeCompile={(incomingShader) => {
           const shader = incomingShader;
           shaderRef.current = shader;
@@ -362,122 +553,55 @@ function ExplodingSphere({
   );
 }
 
-export default function ExplosionTest() {
-  const isLocalDev = import.meta.env.DEV;
-  const latestResolvedSettingsRef = useRef(EXPLOSION_PRESETS.Default);
+function ExplodingThings({
+  children,
+  explodeStrength,
+  pointerRadius,
+  falloff,
+  shakeAmount,
+  shakeSpeed,
+  returnSpeed,
+  motionBoost,
+  damping,
+  showPointerRadiusDebug,
+  color,
+  roughness,
+  metalness,
+}) {
+  const items = useMemo(() => {
+    const childItems = React.Children.toArray(children).filter(
+      React.isValidElement
+    );
+    return childItems.flatMap((child) => extractExplodingSources(child));
+  }, [children]);
 
-  const [controls, setControls] = useControls('Explosion Test', () => ({
-    Presets: folder(
-      {
-        preset: {
-          value: 'Default',
-          options: PRESET_OPTIONS,
-          onChange: (value) => {
-            if (value === 'Custom') return;
-            const presetValues = EXPLOSION_PRESETS[value];
-            if (!presetValues) return;
-            setControls(presetValues);
-          },
-        },
-        ...(isLocalDev
-          ? {
-              copySettings: button(() => {
-                const settings = latestResolvedSettingsRef.current;
-                if (!settings || !navigator?.clipboard?.writeText) return;
-                navigator.clipboard.writeText(
-                  JSON.stringify(settings, null, 2)
-                );
-              }),
-            }
-          : {}),
-      },
-      { collapsed: false }
-    ),
-    'Inner Sphere': folder(
-      {
-        innerRadius: {
-          value: EXPLOSION_PRESETS.Default.innerRadius,
-          min: 0.8,
-          max: 1.49,
-          step: 0.01,
-        },
-        innerX: {
-          value: EXPLOSION_PRESETS.Default.innerX,
-          min: -2,
-          max: 2,
-          step: 0.01,
-        },
-        innerY: {
-          value: EXPLOSION_PRESETS.Default.innerY,
-          min: -2,
-          max: 2,
-          step: 0.01,
-        },
-        innerZ: {
-          value: EXPLOSION_PRESETS.Default.innerZ,
-          min: -2,
-          max: 2,
-          step: 0.01,
-        },
-        glassColor: EXPLOSION_PRESETS.Default.glassColor,
-        transmission: { value: 1, min: 0, max: 1, step: 0.01 },
-        thickness: { value: 0.45, min: 0, max: 3, step: 0.01 },
-        chromaticAberration: { value: 0.045, min: 0, max: 0.3, step: 0.001 },
-        anisotropy: { value: 0.2, min: 0, max: 1, step: 0.01 },
-        distortion: { value: 0.12, min: 0, max: 1, step: 0.01 },
-        distortionScale: { value: 0.25, min: 0, max: 1, step: 0.01 },
-        temporalDistortion: { value: 0.1, min: 0, max: 1, step: 0.01 },
-      },
-      { collapsed: false }
-    ),
-    Background: folder(
-      {
-        backgroundColor: EXPLOSION_PRESETS.Default.backgroundColor,
-      },
-      { collapsed: false }
-    ),
-    Shader: folder(
-      {
-        explodeStrength: { value: 0.3, min: 0, max: 1.5, step: 0.01 },
-        pointerRadius: { value: 0.45, min: 0.1, max: 1.5, step: 0.01 },
-        falloff: { value: 0.65, min: 0.1, max: 1.5, step: 0.01 },
-        shakeAmount: { value: 0.025, min: 0, max: 0.25, step: 0.001 },
-        shakeSpeed: { value: 18, min: 1, max: 50, step: 0.1 },
-        returnSpeed: { value: 10, min: 1, max: 30, step: 0.1 },
-        motionBoost: { value: 14, min: 1, max: 40, step: 0.1 },
-        damping: { value: 6, min: 0.5, max: 20, step: 0.1 },
-        showPointerRadiusDebug: false,
-      },
-      { collapsed: false }
-    ),
-    'Outer Sphere': folder(
-      {
-        outerRadius: { value: 1, min: 0.3, max: 1.5, step: 0.01 },
-        outerX: {
-          value: EXPLOSION_PRESETS.Default.outerX,
-          min: -2,
-          max: 2,
-          step: 0.01,
-        },
-        outerY: {
-          value: EXPLOSION_PRESETS.Default.outerY,
-          min: -2,
-          max: 2,
-          step: 0.01,
-        },
-        outerZ: {
-          value: EXPLOSION_PRESETS.Default.outerZ,
-          min: -2,
-          max: 2,
-          step: 0.01,
-        },
-        secondColor: '#ffffff',
-        secondRoughness: { value: 0.35, min: 0, max: 1, step: 0.01 },
-        secondMetalness: { value: 0.15, min: 0, max: 1, step: 0.01 },
-      },
-      { collapsed: false }
-    ),
-  }));
+  return (
+    <>
+      {items.map((item, index) => (
+        <ExplodingThing
+          key={item.key || `exploding-thing-${index}`}
+          source={item}
+          explodeStrength={explodeStrength}
+          pointerRadius={pointerRadius}
+          falloff={falloff}
+          shakeAmount={shakeAmount}
+          shakeSpeed={shakeSpeed}
+          returnSpeed={returnSpeed}
+          motionBoost={motionBoost}
+          damping={damping}
+          showPointerRadiusDebug={showPointerRadiusDebug}
+          color={color}
+          roughness={roughness}
+          metalness={metalness}
+        />
+      ))}
+    </>
+  );
+}
+
+export default function ExplosionTest() {
+  const latestResolvedSettingsRef = useRef({});
+  const controls = useExplosionTestControls(latestResolvedSettingsRef);
 
   const resolvedSettings = controls;
   latestResolvedSettingsRef.current = resolvedSettings;
@@ -518,15 +642,7 @@ export default function ExplosionTest() {
           backside
         />
       </mesh>
-      <ExplodingSphere
-        meshPosition={[
-          resolvedSettings.outerX,
-          resolvedSettings.outerY,
-          resolvedSettings.outerZ,
-        ]}
-        radius={resolvedSettings.outerRadius}
-        widthSegments={64}
-        heightSegments={64}
+      <ExplodingThings
         explodeStrength={resolvedSettings.explodeStrength}
         pointerRadius={resolvedSettings.pointerRadius}
         falloff={resolvedSettings.falloff}
@@ -539,7 +655,37 @@ export default function ExplosionTest() {
         color={resolvedSettings.secondColor}
         roughness={resolvedSettings.secondRoughness}
         metalness={resolvedSettings.secondMetalness}
-      />
+      >
+        <mesh
+          position={[
+            resolvedSettings.outerX,
+            resolvedSettings.outerY,
+            resolvedSettings.outerZ,
+          ]}
+        >
+          <sphereGeometry args={[resolvedSettings.outerRadius, 64, 64]} />
+          <meshStandardMaterial
+            color={resolvedSettings.secondColor}
+            roughness={resolvedSettings.secondRoughness}
+            metalness={resolvedSettings.secondMetalness}
+          />
+        </mesh>
+        <mesh
+          position={[
+            resolvedSettings.outerX + 2.35,
+            resolvedSettings.outerY + 0.2,
+            resolvedSettings.outerZ - 0.45,
+          ]}
+          scale={[0.82, 0.82, 0.82]}
+        >
+          <sphereGeometry args={[resolvedSettings.outerRadius, 64, 64]} />
+          <meshStandardMaterial
+            color="#8ad7ff"
+            roughness={0.08}
+            metalness={0.92}
+          />
+        </mesh>
+      </ExplodingThings>
     </>
   );
 }

@@ -151,7 +151,7 @@ export default function PaperStack() {
 
   return (
     <>
-      <color attach="background" args={['#f0f0f0']} />
+      <color attach="background" args={[config.shadows.backgroundColor]} />
       <ambientLight intensity={1} />
       <PerspectiveCamera
         makeDefault
@@ -187,6 +187,12 @@ export default function PaperStack() {
             bias={config.shadows.lightBias}
           />
         </AccumulativeShadows>
+        {config.shadows.lightDebug && (
+          <mesh position={config.shadows.lightPosition}>
+            <boxGeometry args={[1, 1, 1]} />
+            <meshBasicMaterial color="#ff0000" wireframe />
+          </mesh>
+        )}
 
         <Stack config={config} materials={materials} />
         <Chips config={config} materials={materials} />

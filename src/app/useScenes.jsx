@@ -10,6 +10,7 @@ import NetworkTest from '../components/scenes/NetworkTest/NetworkTest';
 import NewScene from '../components/scenes/NewScene/NewScene';
 import PaperStack from '../components/scenes/PaperStack/PaperStack';
 import PixelHater from '../components/scenes/PixelHater/PixelHater';
+import QuinnsDice from '../components/scenes/QuinnsDice/QuinnsDice';
 import Rosie from '../components/scenes/Rosie/Rosie';
 import StrudelDoodle from '../components/scenes/StrudelDoodle/StrudelDoodle';
 import NoScene from './scaffold/NoScene';
@@ -164,6 +165,16 @@ const explosionTest = {
   linkable: true,
 };
 
+const dice = {
+  id: 'dice',
+  renderer: 'webgl',
+  Component: QuinnsDice,
+  label: "Quinn's Dice",
+  icon: '🎲',
+  public: false,
+  linkable: true,
+};
+
 const scenes = [
   noScene,
   pixelHater,
@@ -180,6 +191,7 @@ const scenes = [
   fluidTest,
   rosie,
   explosionTest,
+  dice,
 ];
 
 export default function useScenes() {

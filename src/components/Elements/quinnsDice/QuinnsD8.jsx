@@ -11,8 +11,14 @@ export default function QuinnsD8(props) {
       <mesh
         castShadow
         receiveShadow
-        geometry={nodes.d8_geo.geometry}
+        geometry={nodes.Solid001.geometry}
         material={materials.d8_mat}
+      />
+      <mesh
+        castShadow
+        receiveShadow
+        geometry={nodes.Solid001_1.geometry}
+        material={materials.Material}
       />
     </group>
   );

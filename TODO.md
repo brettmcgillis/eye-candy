@@ -43,6 +43,7 @@
 - [ExplosionTest](src/components/scenes/ExplosionTest/todo.md)
 - [MobilePhysicsTest](src/components/scenes/MobilePhysicsTest/todo.md)
 - [PaperStack](src/components/scenes/PaperStack/todo.md)
+- [QuinnsDice](src/components/scenes/QuinnsDice/todo.md)
 - [Rosie](src/components/scenes/Rosie/todo.md)
 - [StrudelDoodle](src/components/scenes/StrudelDoodle/todo.md)
 

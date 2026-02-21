@@ -175,6 +175,31 @@ export default function useQuinnsDiceControls() {
     ),
     Dice: folder(
       {
+        Roll: folder(
+          {
+            rollTarget: {
+              label: 'Die',
+              value: QUINNS_DICE_PRESETS.Default.rollTarget,
+              options: ROLL_TARGET_OPTIONS,
+            },
+            rollPower: {
+              label: 'Roll Power',
+              value: QUINNS_DICE_PRESETS.Default.rollPower,
+              min: 0.1,
+              max: 5,
+              step: 0.01,
+            },
+            rollRejoinDelaySeconds: {
+              label: 'Rejoin Delay (s)',
+              value: QUINNS_DICE_PRESETS.Default.rollRejoinDelaySeconds,
+              min: 0,
+              max: 10,
+              step: 0.1,
+            },
+            roll: button(emitRoll),
+          },
+          { collapsed: true, order: 0 }
+        ),
         D4: folder(
           {
             d4Scale: {
@@ -190,7 +215,7 @@ export default function useQuinnsDiceControls() {
               options: COLLIDER_MODE_OPTIONS,
             },
           },
-          { collapsed: true }
+          { collapsed: true, order: 1 }
         ),
         D6: folder(
           {
@@ -207,7 +232,7 @@ export default function useQuinnsDiceControls() {
               options: COLLIDER_MODE_OPTIONS,
             },
           },
-          { collapsed: true }
+          { collapsed: true, order: 2 }
         ),
         D8: folder(
           {
@@ -224,7 +249,7 @@ export default function useQuinnsDiceControls() {
               options: COLLIDER_MODE_OPTIONS,
             },
           },
-          { collapsed: true }
+          { collapsed: true, order: 3 }
         ),
         D10: folder(
           {
@@ -241,7 +266,7 @@ export default function useQuinnsDiceControls() {
               options: COLLIDER_MODE_OPTIONS,
             },
           },
-          { collapsed: true }
+          { collapsed: true, order: 4 }
         ),
         D12: folder(
           {
@@ -258,7 +283,7 @@ export default function useQuinnsDiceControls() {
               options: COLLIDER_MODE_OPTIONS,
             },
           },
-          { collapsed: true }
+          { collapsed: true, order: 5 }
         ),
         D20: folder(
           {
@@ -286,7 +311,7 @@ export default function useQuinnsDiceControls() {
               options: COLLIDER_MODE_OPTIONS,
             },
           },
-          { collapsed: true }
+          { collapsed: true, order: 6 }
         ),
       },
       { collapsed: true }
@@ -310,31 +335,6 @@ export default function useQuinnsDiceControls() {
           value: QUINNS_DICE_PRESETS.Default.orbitControlsEnabled,
         },
         resetGridPositions: button(emitResetGrid),
-      },
-      { collapsed: true }
-    ),
-    Roll: folder(
-      {
-        rollTarget: {
-          label: 'Die',
-          value: QUINNS_DICE_PRESETS.Default.rollTarget,
-          options: ROLL_TARGET_OPTIONS,
-        },
-        rollPower: {
-          label: 'Roll Power',
-          value: QUINNS_DICE_PRESETS.Default.rollPower,
-          min: 0.1,
-          max: 5,
-          step: 0.01,
-        },
-        rollRejoinDelaySeconds: {
-          label: 'Rejoin Delay (s)',
-          value: QUINNS_DICE_PRESETS.Default.rollRejoinDelaySeconds,
-          min: 0,
-          max: 10,
-          step: 0.1,
-        },
-        roll: button(emitRoll),
       },
       { collapsed: true }
     ),

@@ -697,7 +697,7 @@ function DieBody({
   );
 }
 
-function D4Die({ scale = 1, bodyRef, colliderMode = 'ball', ...props }) {
+function D4Die({ scale = 1, bodyRef, colliderMode = 'hull', ...props }) {
   const { position } = dice[0];
   const colliders =
     colliderMode === 'trimesh'
@@ -727,7 +727,7 @@ function D4Die({ scale = 1, bodyRef, colliderMode = 'ball', ...props }) {
   );
 }
 
-function D6Die({ scale = 1, bodyRef, colliderMode = 'roundCuboid', ...props }) {
+function D6Die({ scale = 1, bodyRef, colliderMode = 'hull', ...props }) {
   const { position } = dice[1];
   const colliders =
     colliderMode === 'trimesh'
@@ -757,7 +757,7 @@ function D6Die({ scale = 1, bodyRef, colliderMode = 'roundCuboid', ...props }) {
   );
 }
 
-function D8Die({ scale = 1, bodyRef, colliderMode = 'ball', ...props }) {
+function D8Die({ scale = 1, bodyRef, colliderMode = 'hull', ...props }) {
   const { position } = dice[2];
   const colliders =
     colliderMode === 'trimesh'
@@ -789,7 +789,7 @@ function D8Die({ scale = 1, bodyRef, colliderMode = 'ball', ...props }) {
   );
 }
 
-function D10Die({ scale = 1, bodyRef, colliderMode = 'ball', ...props }) {
+function D10Die({ scale = 1, bodyRef, colliderMode = 'hull', ...props }) {
   const { position } = dice[3];
   const colliders =
     colliderMode === 'trimesh'
@@ -821,7 +821,7 @@ function D10Die({ scale = 1, bodyRef, colliderMode = 'ball', ...props }) {
   );
 }
 
-function D12Die({ scale = 1, bodyRef, colliderMode = 'ball', ...props }) {
+function D12Die({ scale = 1, bodyRef, colliderMode = 'hull', ...props }) {
   const { position } = dice[4];
   const colliders =
     colliderMode === 'trimesh'
@@ -856,7 +856,7 @@ function D12Die({ scale = 1, bodyRef, colliderMode = 'ball', ...props }) {
 function D20Die({
   bodyRef,
   scale = 1,
-  colliderMode = 'ball',
+  colliderMode = 'hull',
   emissiveColor = '#ffffff',
   emissiveIntensity = 1,
   ...props

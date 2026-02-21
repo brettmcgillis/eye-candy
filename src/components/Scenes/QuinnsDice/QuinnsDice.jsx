@@ -341,6 +341,7 @@ export default function QuinnsDice() {
       rejoinTimerRef.current = Math.max(0, rejoinTimerRef.current - delta);
       if (rejoinTimerRef.current === 0) {
         setDetachedDieId(null);
+        setFocusedDieId(null);
       }
     }
 

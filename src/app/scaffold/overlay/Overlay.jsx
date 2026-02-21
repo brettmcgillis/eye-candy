@@ -5,6 +5,7 @@ import Date from './DateDisplay';
 import ExternalLinks from './ExternalLinks';
 import LevaPanel from './LevaPanel';
 import './Overlay.css';
+import Scenemoji from './Scenemoji';
 import VersionTag from './VersionTag';
 
 function Overlay() {
@@ -29,10 +30,7 @@ function Overlay() {
       </div>
 
       <div className="top-left overlay-panel">
-        <span className="debug" onClick={handleDebug}>
-          🔥{' '}
-        </span>
-        — 💀
+        <Scenemoji onDebugToggle={handleDebug} />
       </div>
 
       <div className="bottom-left overlay-panel">

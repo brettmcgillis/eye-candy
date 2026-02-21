@@ -165,12 +165,17 @@ export default function QuinnsDice() {
   }, []);
 
   const findDieIdForBody = useCallback(
-    (body) => {
+    (body, rigidBodyObject) => {
+      if (rigidBodyObject?.name && dieRefMap[rigidBodyObject.name]) {
+        return rigidBodyObject.name;
+      }
       if (!body) return null;
+      const { handle } = body;
+      if (handle === undefined || handle === null) return null;
       const entries = Object.entries(dieRefMap);
       for (let i = 0; i < entries.length; i += 1) {
         const [id, ref] = entries[i];
-        if (ref.current === body) return id;
+        if (ref.current?.handle === handle) return id;
       }
       return null;
     },
@@ -179,7 +184,10 @@ export default function QuinnsDice() {
 
   const handleBottomPlaneCollision = useCallback(
     (payload) => {
-      const hitId = findDieIdForBody(payload?.other?.rigidBody);
+      const hitId = findDieIdForBody(
+        payload?.other?.rigidBody,
+        payload?.other?.rigidBodyObject
+      );
       const activeId = rollingDieIdRef.current;
       if (!hitId || !activeId || hitId !== activeId) return;
       setRollingDieId(null);
@@ -638,6 +646,7 @@ function SceneBounds({
 }
 
 function DieBody({
+  name,
   position,
   children,
   bodyRef,
@@ -670,6 +679,7 @@ function DieBody({
   });
   return (
     <RigidBody
+      name={name}
       linearDamping={linearDamping}
       angularDamping={angularDamping}
       friction={friction}
@@ -695,6 +705,7 @@ function D4Die({ scale = 1, bodyRef, colliderMode = 'ball', ...props }) {
         : false;
   return (
     <DieBody
+      name="d4"
       position={position}
       bodyRef={bodyRef}
       colliders={colliders}
@@ -724,6 +735,7 @@ function D6Die({ scale = 1, bodyRef, colliderMode = 'roundCuboid', ...props }) {
         : false;
   return (
     <DieBody
+      name="d6"
       position={position}
       bodyRef={bodyRef}
       colliders={colliders}
@@ -753,6 +765,7 @@ function D8Die({ scale = 1, bodyRef, colliderMode = 'ball', ...props }) {
         : false;
   return (
     <DieBody
+      name="d8"
       position={position}
       bodyRef={bodyRef}
       colliders={colliders}
@@ -784,6 +797,7 @@ function D10Die({ scale = 1, bodyRef, colliderMode = 'ball', ...props }) {
         : false;
   return (
     <DieBody
+      name="d10"
       position={position}
       bodyRef={bodyRef}
       colliders={colliders}
@@ -815,6 +829,7 @@ function D12Die({ scale = 1, bodyRef, colliderMode = 'ball', ...props }) {
         : false;
   return (
     <DieBody
+      name="d12"
       position={position}
       bodyRef={bodyRef}
       colliders={colliders}
@@ -853,6 +868,7 @@ function D20Die({
         : false;
   return (
     <DieBody
+      name="d20"
       position={position}
       bodyRef={bodyRef}
       colliders={colliders}

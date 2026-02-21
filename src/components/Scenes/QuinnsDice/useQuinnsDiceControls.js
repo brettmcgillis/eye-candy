@@ -123,48 +123,53 @@ export default function useQuinnsDiceControls() {
       },
       { collapsed: true }
     ),
-    Background: folder(
+    Setting: folder(
       {
-        backgroundTopColor: QUINNS_DICE_PRESETS.Default.backgroundTopColor,
-        backgroundBottomColor:
-          QUINNS_DICE_PRESETS.Default.backgroundBottomColor,
-      },
-      { collapsed: true }
-    ),
-    Bloom: folder(
-      {
-        bloomEnabled: {
-          label: 'Enabled',
-          value: QUINNS_DICE_PRESETS.Default.bloomEnabled,
-        },
-        bloomIntensity: {
-          label: 'Intensity',
-          value: QUINNS_DICE_PRESETS.Default.bloomIntensity,
-          min: 0,
-          max: 10,
-          step: 0.01,
-        },
-        bloomLuminanceThreshold: {
-          label: 'Threshold',
-          value: QUINNS_DICE_PRESETS.Default.bloomLuminanceThreshold,
-          min: 0,
-          max: 1,
-          step: 0.01,
-        },
-        bloomLuminanceSmoothing: {
-          label: 'Smoothing',
-          value: QUINNS_DICE_PRESETS.Default.bloomLuminanceSmoothing,
-          min: 0,
-          max: 1,
-          step: 0.01,
-        },
-        bloomRadius: {
-          label: 'Radius',
-          value: QUINNS_DICE_PRESETS.Default.bloomRadius,
-          min: 0,
-          max: 1,
-          step: 0.01,
-        },
+        Background: folder(
+          {
+            backgroundTopColor: QUINNS_DICE_PRESETS.Default.backgroundTopColor,
+            backgroundBottomColor:
+              QUINNS_DICE_PRESETS.Default.backgroundBottomColor,
+          },
+          { collapsed: true }
+        ),
+        Bloom: folder(
+          {
+            bloomEnabled: {
+              label: 'Enabled',
+              value: QUINNS_DICE_PRESETS.Default.bloomEnabled,
+            },
+            bloomIntensity: {
+              label: 'Intensity',
+              value: QUINNS_DICE_PRESETS.Default.bloomIntensity,
+              min: 0,
+              max: 10,
+              step: 0.01,
+            },
+            bloomLuminanceThreshold: {
+              label: 'Threshold',
+              value: QUINNS_DICE_PRESETS.Default.bloomLuminanceThreshold,
+              min: 0,
+              max: 1,
+              step: 0.01,
+            },
+            bloomLuminanceSmoothing: {
+              label: 'Smoothing',
+              value: QUINNS_DICE_PRESETS.Default.bloomLuminanceSmoothing,
+              min: 0,
+              max: 1,
+              step: 0.01,
+            },
+            bloomRadius: {
+              label: 'Radius',
+              value: QUINNS_DICE_PRESETS.Default.bloomRadius,
+              min: 0,
+              max: 1,
+              step: 0.01,
+            },
+          },
+          { collapsed: true }
+        ),
       },
       { collapsed: true }
     ),
@@ -370,65 +375,65 @@ export default function useQuinnsDiceControls() {
           max: 2,
           step: 0.01,
         },
-      },
-      { collapsed: true }
-    ),
-    Bounds: folder(
-      {
-        boxWidth: {
-          label: 'Box Width',
-          value: QUINNS_DICE_PRESETS.Default.boxWidth,
-          min: 2,
-          max: 200,
-          step: 0.1,
-        },
-        boxHeight: {
-          label: 'Box Height',
-          value: QUINNS_DICE_PRESETS.Default.boxHeight,
-          min: 2,
-          max: 200,
-          step: 0.1,
-        },
-        boxDepth: {
-          label: 'Box Depth',
-          value: QUINNS_DICE_PRESETS.Default.boxDepth,
-          min: 2,
-          max: 200,
-          step: 0.1,
-        },
-      },
-      { collapsed: true }
-    ),
-    'Gravity Target': folder(
-      {
-        targetX: {
-          label: 'Target X',
-          value: QUINNS_DICE_PRESETS.Default.targetX,
-          min: -10,
-          max: 10,
-          step: 0.1,
-        },
-        targetY: {
-          label: 'Target Y',
-          value: QUINNS_DICE_PRESETS.Default.targetY,
-          min: -10,
-          max: 10,
-          step: 0.1,
-        },
-        targetZ: {
-          label: 'Target Z',
-          value: QUINNS_DICE_PRESETS.Default.targetZ,
-          min: -10,
-          max: 10,
-          step: 0.1,
-        },
-        pointerRadius: {
-          label: 'Pointer Radius',
-          value: QUINNS_DICE_PRESETS.Default.pointerRadius,
-          min: 0.1,
-          max: 5,
-          step: 0.1,
-        },
+        Bounds: folder(
+          {
+            boxWidth: {
+              label: 'Box Width',
+              value: QUINNS_DICE_PRESETS.Default.boxWidth,
+              min: 2,
+              max: 200,
+              step: 0.1,
+            },
+            boxHeight: {
+              label: 'Box Height',
+              value: QUINNS_DICE_PRESETS.Default.boxHeight,
+              min: 2,
+              max: 200,
+              step: 0.1,
+            },
+            boxDepth: {
+              label: 'Box Depth',
+              value: QUINNS_DICE_PRESETS.Default.boxDepth,
+              min: 2,
+              max: 200,
+              step: 0.1,
+            },
+          },
+          { collapsed: true }
+        ),
+        'Gravity Target': folder(
+          {
+            targetX: {
+              label: 'Target X',
+              value: QUINNS_DICE_PRESETS.Default.targetX,
+              min: -10,
+              max: 10,
+              step: 0.1,
+            },
+            targetY: {
+              label: 'Target Y',
+              value: QUINNS_DICE_PRESETS.Default.targetY,
+              min: -10,
+              max: 10,
+              step: 0.1,
+            },
+            targetZ: {
+              label: 'Target Z',
+              value: QUINNS_DICE_PRESETS.Default.targetZ,
+              min: -10,
+              max: 10,
+              step: 0.1,
+            },
+            pointerRadius: {
+              label: 'Pointer Radius',
+              value: QUINNS_DICE_PRESETS.Default.pointerRadius,
+              min: 0.1,
+              max: 5,
+              step: 0.1,
+            },
+          },
+          { collapsed: true }
+        ),
       },
       { collapsed: true }
     ),

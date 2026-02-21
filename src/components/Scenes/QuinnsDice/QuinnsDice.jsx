@@ -11,7 +11,13 @@
 /* eslint-disable react/no-array-index-key */
 import * as THREE from 'three';
 
-import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import React, {
+  useCallback,
+  useEffect,
+  useMemo,
+  useRef,
+  useState,
+} from 'react';
 
 import {
   Center,
@@ -118,10 +124,13 @@ export default function QuinnsDice() {
   const d12Ref = useRef();
   const d20Ref = useRef();
   const cameraRef = useRef();
+  const cameraLookAtRef = useRef(new THREE.Vector3(0, 0, 0));
   const [rollingDieId, setRollingDieId] = useState(null);
   const [detachedDieId, setDetachedDieId] = useState(null);
   const [focusedDieId, setFocusedDieId] = useState(null);
   const rollingDieIdRef = useRef(null);
+  const focusedDieIdRef = useRef(null);
+  const pendingRollDieIdRef = useRef(null);
   const rejoinTimerRef = useRef(0);
   const rollPowerRef = useRef(1);
   const rollDelayRef = useRef(1.5);
@@ -180,14 +189,8 @@ export default function QuinnsDice() {
     [findDieIdForBody]
   );
 
-  const handleRoll = useCallback(
-    (event) => {
-      const requested = event?.detail?.target || 'random';
-      const ids = Object.keys(dieRefMap);
-      const dieId =
-        requested === 'random'
-          ? ids[Math.floor(Math.random() * ids.length)]
-          : requested;
+  const executeRoll = useCallback(
+    (dieId) => {
       const body = dieRefMap[dieId]?.current;
       if (!body) return;
 
@@ -226,6 +229,31 @@ export default function QuinnsDice() {
       rollingDieIdRef.current = dieId;
     },
     [dieRefMap]
+  );
+
+  const handleRoll = useCallback(
+    (event) => {
+      const requested = event?.detail?.target || 'random';
+      const ids = Object.keys(dieRefMap);
+      const dieId =
+        requested === 'random'
+          ? ids[Math.floor(Math.random() * ids.length)]
+          : requested;
+
+      // When switching focused dice, ease camera back to neutral before new toss.
+      if (
+        focusedDieIdRef.current &&
+        focusedDieIdRef.current !== dieId &&
+        !rollingDieIdRef.current
+      ) {
+        pendingRollDieIdRef.current = dieId;
+        setFocusedDieId(null);
+        return;
+      }
+
+      executeRoll(dieId);
+    },
+    [dieRefMap, executeRoll]
   );
 
   useEffect(() => {
@@ -281,9 +309,19 @@ export default function QuinnsDice() {
   rollPowerRef.current = rollPower;
   rollDelayRef.current = rollRejoinDelaySeconds;
   rollingDieIdRef.current = rollingDieId;
+  focusedDieIdRef.current = focusedDieId;
   rollLaneZRef.current = boxDepth * 0.35;
 
   useFrame((_, delta) => {
+    if (pendingRollDieIdRef.current && !rollingDieIdRef.current) {
+      const cam = cameraRef.current;
+      if (cam && cam.position.distanceTo(DEFAULT_CAMERA_POSITION) < 0.35) {
+        const nextDieId = pendingRollDieIdRef.current;
+        pendingRollDieIdRef.current = null;
+        executeRoll(nextDieId);
+      }
+    }
+
     if (rollingDieId) {
       const body = dieRefMap[rollingDieId]?.current;
       if (body) {
@@ -316,8 +354,11 @@ export default function QuinnsDice() {
     }
 
     const lerpAlpha = 1 - 0.001 ** delta;
-    cam.position.lerp(positionTarget, lerpAlpha * 0.55);
-    cam.lookAt(lookAtTarget);
+    const positionLerpStrength = pendingRollDieIdRef.current ? 0.35 : 0.55;
+    const lookAtLerpStrength = pendingRollDieIdRef.current ? 0.28 : 0.45;
+    cam.position.lerp(positionTarget, lerpAlpha * positionLerpStrength);
+    cameraLookAtRef.current.lerp(lookAtTarget, lerpAlpha * lookAtLerpStrength);
+    cam.lookAt(cameraLookAtRef.current);
   });
 
   return (

@@ -29,3 +29,17 @@
 .top-right.overlay-panel .leva-panel-wrap.is-visible {
   padding: 0 1em 1em;
 }
+
+@media (max-width: 900px) {
+  .top-right.overlay-panel .version-tag {
+    padding: 0.65em 0.85em;
+  }
+
+  .top-right.overlay-panel.leva-visible .version-tag {
+    padding: 0.65em 0.85em 0.35em;
+  }
+
+  .top-right.overlay-panel .leva-panel-wrap.is-visible {
+    padding: 0 0.85em 0.65em;
+  }
+}

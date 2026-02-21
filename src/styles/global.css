@@ -120,8 +120,46 @@
 /* Responsive spacing               */
 /* -------------------------------- */
 
-@media (max-width: 600px) {
-  :root {
-    --overlay-inset: var(--overlay-inset-mobile);
+@media (max-width: 900px) {
+  .overlay-panel {
+    padding: 0.65em 0.85em;
+    border-radius: 1.6em;
+    font-size: 13px;
+  }
+
+  .top-left {
+    top: var(--overlay-inset-mobile);
+    left: var(--overlay-inset-mobile);
+  }
+
+  .top-right {
+    top: var(--overlay-inset-mobile);
+    right: var(--overlay-inset-mobile);
+  }
+
+  .bottom-left {
+    bottom: var(--overlay-inset-mobile);
+    left: var(--overlay-inset-mobile);
+  }
+
+  .bottom-right {
+    bottom: var(--overlay-inset-mobile);
+    right: var(--overlay-inset-mobile);
+  }
+
+  .top-left.overlay-panel,
+  .top-right.overlay-panel {
+    max-width: calc(50vw - (var(--overlay-inset-mobile) + 0.35rem));
+  }
+
+  .bottom-left.overlay-panel,
+  .bottom-right.overlay-panel {
+    max-width: none;
+    overflow: visible;
+  }
+
+  .external-links {
+    justify-content: flex-start;
+    gap: 0.35rem;
   }
 }

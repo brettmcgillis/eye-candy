@@ -1,6 +1,6 @@
 :root {
   --overlay-inset: 5em;
-  --overlay-inset-mobile: 2em;
+  --overlay-inset-mobile: 1rem;
 
   --overlay-bg: #ffffff;
   --overlay-bg-2: #dedede;

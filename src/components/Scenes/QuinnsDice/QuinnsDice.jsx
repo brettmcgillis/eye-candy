@@ -613,6 +613,7 @@ function SceneBounds({
         position={[0, -halfH, 0]}
         friction={1}
         restitution={0}
+        onContactForce={onBottomCollisionEnter}
         onCollisionEnter={onBottomCollisionEnter}
       />
       <CuboidCollider
@@ -675,7 +676,7 @@ function DieBody({
       .sub(translation)
       .multiplyScalar(returnStrength * delta * 60)
       .clampLength(0, maxImpulse);
-    body.applyImpulse(vec);
+    body.applyImpulse(vec, true);
   });
   return (
     <RigidBody

@@ -98,6 +98,7 @@ const lightformerConfigs = [
 
 export default function QuinnsDice() {
   const {
+    physicsEnabled,
     debug,
     debugLights,
     orbitControlsEnabled,
@@ -148,7 +149,7 @@ export default function QuinnsDice() {
           target={mainLightTarget}
         />
       )}
-      <Physics gravity={[0, 0, 0]} debug={debug}>
+      <Physics gravity={[0, 0, 0]} debug={debug} paused={!physicsEnabled}>
         <SceneBounds width={boxWidth} height={boxHeight} depth={boxDepth} />
         <Pointer radius={pointerRadius} />
         <D4Die
@@ -217,6 +218,7 @@ export default function QuinnsDice() {
           ))}
         </group>
       </Environment>
+      <Environment preset="city" />
       {debugLights && (
         <group rotation={[-Math.PI / 3, 0, 1]}>
           {lightformerConfigs.map((config, index) => (

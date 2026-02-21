@@ -6,6 +6,7 @@ import QUINNS_DICE_PRESETS from './QuinnsDice.presets';
 
 const PRESET_OPTIONS = [...Object.keys(QUINNS_DICE_PRESETS), 'Custom'];
 const PRESET_CONTROL_KEYS = [
+  'physicsEnabled',
   'debug',
   'debugLights',
   'orbitControlsEnabled',
@@ -82,6 +83,10 @@ export default function useQuinnsDiceControls() {
     ),
     Debug: folder(
       {
+        physicsEnabled: {
+          label: 'Physics Enabled',
+          value: QUINNS_DICE_PRESETS.Default.physicsEnabled,
+        },
         debug: {
           label: 'Debug Physics',
           value: QUINNS_DICE_PRESETS.Default.debug,

@@ -1,5 +1,6 @@
 const QUINNS_DICE_PRESETS = {
   Default: {
+    physicsEnabled: true,
     debug: false,
     debugLights: false,
     orbitControlsEnabled: false,

@@ -15,7 +15,27 @@ const ROLL_TARGET_OPTIONS = {
   D20: 'd20',
 };
 const ROLL_DIE_EVENT = 'quinns-dice-roll';
+const CONTROL_MODE_OPTIONS = {
+  'Touch/Pointer': 'touch/pointer',
+  Hands: 'hands',
+};
 const PRESET_CONTROL_KEYS = [
+  'mode',
+  'handsShowVideo',
+  'handsShowDebugSkeleton',
+  'handsVideoSize',
+  'handsCameraWidth',
+  'handsCameraHeight',
+  'handsXScale',
+  'handsYScale',
+  'handsZScale',
+  'handsLandmarkColor',
+  'handsConnectorColor',
+  'handsLandmarkRadius',
+  'handsConnectorLineWidth',
+  'handsEnableGestures',
+  'handsPointRollEnabled',
+  'handsPointRollCooldownMs',
   'physicsEnabled',
   'debug',
   'debugLights',
@@ -91,6 +111,110 @@ export default function useQuinnsDiceControls() {
   };
 
   const [controls, setControls] = useControls('Quinns Dice', () => ({
+    Mode: folder(
+      {
+        mode: {
+          value: QUINNS_DICE_PRESETS.Default.mode || 'touch/pointer',
+          options: CONTROL_MODE_OPTIONS,
+        },
+      },
+      { collapsed: true }
+    ),
+    Hands: folder(
+      {
+        handsShowVideo: {
+          label: 'Show Cam',
+          value: QUINNS_DICE_PRESETS.Default.handsShowVideo,
+        },
+        handsShowDebugSkeleton: {
+          label: 'Show Skeleton',
+          value: QUINNS_DICE_PRESETS.Default.handsShowDebugSkeleton,
+        },
+        handsVideoSize: {
+          label: 'Video Size',
+          value: QUINNS_DICE_PRESETS.Default.handsVideoSize,
+          min: 0.5,
+          max: 3,
+          step: 0.1,
+        },
+        handsCameraWidth: {
+          label: 'Camera Width',
+          value: QUINNS_DICE_PRESETS.Default.handsCameraWidth,
+          min: 320,
+          max: 1920,
+          step: 10,
+        },
+        handsCameraHeight: {
+          label: 'Camera Height',
+          value: QUINNS_DICE_PRESETS.Default.handsCameraHeight,
+          min: 240,
+          max: 1920,
+          step: 10,
+        },
+        handsXScale: {
+          label: 'Scale X',
+          value: QUINNS_DICE_PRESETS.Default.handsXScale,
+          min: 1,
+          max: 12,
+          step: 0.1,
+        },
+        handsYScale: {
+          label: 'Scale Y',
+          value: QUINNS_DICE_PRESETS.Default.handsYScale,
+          min: 1,
+          max: 12,
+          step: 0.1,
+        },
+        handsZScale: {
+          label: 'Scale Z',
+          value: QUINNS_DICE_PRESETS.Default.handsZScale,
+          min: 1,
+          max: 20,
+          step: 0.1,
+        },
+        handsLandmarkColor: {
+          label: 'Landmark Color',
+          value: QUINNS_DICE_PRESETS.Default.handsLandmarkColor,
+        },
+        handsConnectorColor: {
+          label: 'Connector Color',
+          value: QUINNS_DICE_PRESETS.Default.handsConnectorColor,
+        },
+        handsLandmarkRadius: {
+          label: 'Landmark Radius',
+          value: QUINNS_DICE_PRESETS.Default.handsLandmarkRadius,
+          min: 1,
+          max: 12,
+          step: 1,
+        },
+        handsConnectorLineWidth: {
+          label: 'Connector Width',
+          value: QUINNS_DICE_PRESETS.Default.handsConnectorLineWidth,
+          min: 1,
+          max: 12,
+          step: 1,
+        },
+        handsEnableGestures: {
+          label: 'Enable Gestures',
+          value: QUINNS_DICE_PRESETS.Default.handsEnableGestures,
+        },
+        handsPointRollEnabled: {
+          label: 'Point Rolls Die',
+          value: QUINNS_DICE_PRESETS.Default.handsPointRollEnabled,
+        },
+        handsPointRollCooldownMs: {
+          label: 'Point Roll Cooldown',
+          value: QUINNS_DICE_PRESETS.Default.handsPointRollCooldownMs,
+          min: 0,
+          max: 3000,
+          step: 50,
+        },
+      },
+      {
+        collapsed: true,
+        // render: (get) => get('Mode.mode') === 'hands'
+      }
+    ),
     Presets: folder(
       {
         preset: {

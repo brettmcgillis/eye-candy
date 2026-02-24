@@ -36,6 +36,9 @@ import {
   RigidBody,
 } from '@react-three/rapier';
 
+import useHandGestureEvents from '../../../hooks/hands/useHandGestureEvents';
+import useHandControls from '../../../hooks/hands/useHandcontrols';
+import useMediaPipeHands from '../../../hooks/hands/useMediaPipeHands';
 import QuinnsD4 from '../../elements/quinnsDice/QuinnsD4';
 import QuinnsD6 from '../../elements/quinnsDice/QuinnsD6';
 import QuinnsD8 from '../../elements/quinnsDice/QuinnsD8';
@@ -218,6 +221,22 @@ export default function QuinnsDice() {
   }, [resetToGrid, handleRoll]);
 
   const {
+    mode,
+    handsShowVideo,
+    handsShowDebugSkeleton,
+    handsVideoSize,
+    handsCameraWidth,
+    handsCameraHeight,
+    handsXScale,
+    handsYScale,
+    handsZScale,
+    handsLandmarkColor,
+    handsConnectorColor,
+    handsLandmarkRadius,
+    handsConnectorLineWidth,
+    handsEnableGestures,
+    handsPointRollEnabled,
+    handsPointRollCooldownMs,
     physicsEnabled,
     debug,
     debugLights,
@@ -357,7 +376,27 @@ export default function QuinnsDice() {
           depth={boxDepth}
           onBottomCollisionEnter={handleBottomPlaneCollision}
         />
-        <Pointer radius={pointerRadius} />
+        {mode === 'touch/pointer' && <Pointer radius={pointerRadius} />}
+        {mode === 'hands' && (
+          <HandsPointer
+            radius={pointerRadius}
+            showVideo={handsShowVideo}
+            showDebugSkeleton={handsShowDebugSkeleton}
+            videoSize={handsVideoSize}
+            cameraWidth={handsCameraWidth}
+            cameraHeight={handsCameraHeight}
+            xScale={handsXScale}
+            yScale={handsYScale}
+            zScale={handsZScale}
+            landmarkColor={handsLandmarkColor}
+            connectorColor={handsConnectorColor}
+            landmarkRadius={handsLandmarkRadius}
+            connectorLineWidth={handsConnectorLineWidth}
+            enableGestures={handsEnableGestures}
+            pointRollEnabled={handsPointRollEnabled}
+            pointRollCooldownMs={handsPointRollCooldownMs}
+          />
+        )}
         <D4Die
           bodyRef={d4Ref}
           scale={d4Scale}
@@ -817,6 +856,89 @@ function Pointer({ radius = 1, vec = new THREE.Vector3() }) {
       )
     );
   });
+  return (
+    <RigidBody
+      position={[999, 999, 999]}
+      type="kinematicPosition"
+      colliders={false}
+      ref={ref}
+      ccd
+    >
+      <BallCollider args={[radius]} />
+    </RigidBody>
+  );
+}
+
+function HandsPointer({
+  radius = 1,
+  xScale = 4,
+  yScale = 3,
+  zScale = 5,
+  cameraWidth = 1280,
+  cameraHeight = 720,
+  showVideo = false,
+  showDebugSkeleton = true,
+  videoSize = 1,
+  landmarkColor = '#FF3366',
+  connectorColor = '#00FFAA',
+  landmarkRadius = 4,
+  connectorLineWidth = 3,
+  enableGestures = true,
+  pointRollEnabled = true,
+  pointRollCooldownMs = 900,
+  vec = new THREE.Vector3(),
+}) {
+  const ref = useRef();
+  const smoothedHandPosRef = useRef(new THREE.Vector3(999, 999, 999));
+  const lastPointRollAtRef = useRef(0);
+
+  const results = useMediaPipeHands({
+    maxHands: 1,
+    cameraWidth,
+    cameraHeight,
+    showVideo,
+    showDebugSkeleton,
+    landmarkStyle: { color: landmarkColor, radius: landmarkRadius },
+    connectorStyle: { color: connectorColor, lineWidth: connectorLineWidth },
+    videoSize,
+  });
+
+  const hands = useHandControls(results, {
+    maxHands: 1,
+    xScale,
+    yScale,
+    zScale,
+  });
+
+  useHandGestureEvents(hands, {
+    onGestureStart: (gesture) => {
+      if (!enableGestures || !pointRollEnabled) return;
+      if (gesture !== 'POINT') return;
+
+      const now = Date.now();
+      if (now - lastPointRollAtRef.current < pointRollCooldownMs) return;
+      lastPointRollAtRef.current = now;
+
+      if (typeof window === 'undefined') return;
+      window.dispatchEvent(
+        new CustomEvent(ROLL_DIE_EVENT, { detail: { target: 'random' } })
+      );
+    },
+  });
+
+  useFrame(() => {
+    const body = ref.current;
+    if (!body) return;
+
+    if (!hands?.handPosition) {
+      body.setNextKinematicTranslation(vec.set(999, 999, 999));
+      return;
+    }
+
+    smoothedHandPosRef.current.lerp(hands.handPosition, 0.3);
+    body.setNextKinematicTranslation(smoothedHandPosRef.current);
+  });
+
   return (
     <RigidBody
       position={[999, 999, 999]}

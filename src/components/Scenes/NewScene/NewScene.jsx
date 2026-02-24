@@ -28,7 +28,7 @@ import LightingRig from '../../rigging/LightingRig';
 
 function useSceneControls() {
   return useControls(
-    'Scene',
+    'NewScene',
     {
       showGridHelper: { label: 'Show Grid Helper', value: false },
       showPolarGridHelper: { label: 'Show Polar Grid Helper', value: false },

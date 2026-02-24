@@ -294,12 +294,16 @@ function DeviceGravity({ enabled, gravityOutRef, cameraRef }) {
 }
 
 export default function MobilePhysicsTest() {
-  const { debug } = useControls({
-    debug: {
-      label: 'Debug',
-      value: true,
+  const { debug } = useControls(
+    'Mobile Physics Test',
+    {
+      debug: {
+        label: 'Debug',
+        value: true,
+      },
     },
-  });
+    { collapsed: true }
+  );
   const cameraRef = useRef();
   const gravityRef = useRef(new THREE.Vector3(0, -G, 0));
 

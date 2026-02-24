@@ -14,6 +14,7 @@ import * as THREE from 'three';
 import React, {
   useCallback,
   useEffect,
+  useLayoutEffect,
   useMemo,
   useRef,
   useState,
@@ -496,12 +497,15 @@ function SceneBackground({ topColor, bottomColor }) {
     if (prevTexture) prevTexture.dispose();
   }, [topColor, bottomColor, gl, scene]);
 
-  useEffect(
+  useLayoutEffect(
     () => () => {
       if (textureRef.current) textureRef.current.dispose();
+      textureRef.current = null;
       scene.background = null;
+      gl.setClearColor(0x000000, 0);
+      gl.clear(true, true, true);
     },
-    [scene]
+    [gl, scene]
   );
 
   return null;

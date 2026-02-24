@@ -1,11 +1,29 @@
 import ExplosionTest from '../ExplosionTest/ExplosionTest';
 import FluidTest from '../FluidTest/FluidTest';
+import HandStuff from '../HandStuff/HandStuff';
+import PixelHater from '../PixelHater/PixelHater';
+import StrudelDoodle from '../StrudelDoodle/StrudelDoodle';
 
 const scenes = [
   {
     id: 'fluidTest',
     label: 'Fluid Test',
     Component: FluidTest,
+  },
+  {
+    id: 'handStuff',
+    label: 'Hand Stuff',
+    Component: HandStuff,
+  },
+  {
+    id: 'pixelHater',
+    label: 'PixelHater',
+    Component: PixelHater,
+  },
+  {
+    id: 'strudelDoodle',
+    label: 'StrudelDoodle',
+    Component: StrudelDoodle,
   },
   {
     id: 'explosionTest',

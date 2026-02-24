@@ -33,7 +33,6 @@ import {
   CuboidCollider,
   Physics,
   RigidBody,
-  RoundCuboidCollider,
 } from '@react-three/rapier';
 
 import QuinnsD4 from '../../elements/quinnsDice/QuinnsD4';
@@ -131,6 +130,7 @@ export default function QuinnsDice() {
   const rollingDieIdRef = useRef(null);
   const focusedDieIdRef = useRef(null);
   const pendingRollDieIdRef = useRef(null);
+  const orbitControlsEnabledRef = useRef(false);
   const rejoinTimerRef = useRef(0);
   const rollPowerRef = useRef(1);
   const rollDelayRef = useRef(1.5);
@@ -250,6 +250,7 @@ export default function QuinnsDice() {
 
       // When switching focused dice, ease camera back to neutral before new toss.
       if (
+        !orbitControlsEnabledRef.current &&
         focusedDieIdRef.current &&
         focusedDieIdRef.current !== dieId &&
         !rollingDieIdRef.current
@@ -286,17 +287,11 @@ export default function QuinnsDice() {
     bloomLuminanceSmoothing,
     bloomRadius,
     d4Scale,
-    d4ColliderMode,
     d6Scale,
-    d6ColliderMode,
     d8Scale,
-    d8ColliderMode,
     d10Scale,
-    d10ColliderMode,
     d12Scale,
-    d12ColliderMode,
     d20Scale,
-    d20ColliderMode,
     d20EmissiveColor,
     d20EmissiveIntensity,
     rollPower,
@@ -318,7 +313,16 @@ export default function QuinnsDice() {
   rollDelayRef.current = rollRejoinDelaySeconds;
   rollingDieIdRef.current = rollingDieId;
   focusedDieIdRef.current = focusedDieId;
+  orbitControlsEnabledRef.current = orbitControlsEnabled;
   rollLaneZRef.current = boxDepth * 0.35;
+
+  useEffect(() => {
+    if (!orbitControlsEnabled || rollingDieIdRef.current) return;
+    if (!pendingRollDieIdRef.current) return;
+    const nextDieId = pendingRollDieIdRef.current;
+    pendingRollDieIdRef.current = null;
+    executeRoll(nextDieId);
+  }, [executeRoll, orbitControlsEnabled]);
 
   useFrame((_, delta) => {
     if (pendingRollDieIdRef.current && !rollingDieIdRef.current) {
@@ -347,6 +351,7 @@ export default function QuinnsDice() {
 
     const cam = cameraRef.current;
     if (!cam) return;
+    if (orbitControlsEnabled) return;
 
     const focusBody = focusedDieId ? dieRefMap[focusedDieId]?.current : null;
     const positionTarget = new THREE.Vector3().copy(DEFAULT_CAMERA_POSITION);
@@ -413,7 +418,6 @@ export default function QuinnsDice() {
         <D4Die
           bodyRef={d4Ref}
           scale={d4Scale}
-          colliderMode={d4ColliderMode}
           attractorEnabled={detachedDieId !== 'd4'}
           returnStrength={returnStrength}
           maxImpulse={maxImpulse}
@@ -425,7 +429,6 @@ export default function QuinnsDice() {
         <D6Die
           bodyRef={d6Ref}
           scale={d6Scale}
-          colliderMode={d6ColliderMode}
           attractorEnabled={detachedDieId !== 'd6'}
           returnStrength={returnStrength}
           maxImpulse={maxImpulse}
@@ -437,7 +440,6 @@ export default function QuinnsDice() {
         <D8Die
           bodyRef={d8Ref}
           scale={d8Scale}
-          colliderMode={d8ColliderMode}
           attractorEnabled={detachedDieId !== 'd8'}
           returnStrength={returnStrength}
           maxImpulse={maxImpulse}
@@ -449,7 +451,6 @@ export default function QuinnsDice() {
         <D10Die
           bodyRef={d10Ref}
           scale={d10Scale}
-          colliderMode={d10ColliderMode}
           attractorEnabled={detachedDieId !== 'd10'}
           returnStrength={returnStrength}
           maxImpulse={maxImpulse}
@@ -461,7 +462,6 @@ export default function QuinnsDice() {
         <D12Die
           bodyRef={d12Ref}
           scale={d12Scale}
-          colliderMode={d12ColliderMode}
           attractorEnabled={detachedDieId !== 'd12'}
           returnStrength={returnStrength}
           maxImpulse={maxImpulse}
@@ -473,7 +473,6 @@ export default function QuinnsDice() {
         <D20Die
           bodyRef={d20Ref}
           scale={d20Scale}
-          colliderMode={d20ColliderMode}
           attractorEnabled={detachedDieId !== 'd20'}
           emissiveColor={d20EmissiveColor}
           emissiveIntensity={d20EmissiveIntensity}
@@ -640,7 +639,7 @@ function SceneBounds({
         rotation={[-Math.PI / 2, 0, 0]}
         position={[0, -halfH + wallThickness + 0.001, 0]}
       >
-        <planeGeometry args={[width, depth]} />
+        <planeGeometry args={[100, 100]} />
         <shadowMaterial transparent opacity={0.3} />
       </mesh>
     </RigidBody>
@@ -651,6 +650,7 @@ function DieBody({
   name,
   position,
   children,
+  rigidScale = 1,
   bodyRef,
   vec = new THREE.Vector3(),
   r = THREE.MathUtils.randFloatSpread,
@@ -681,12 +681,14 @@ function DieBody({
   });
   return (
     <RigidBody
+      key={`${name}-${rigidScale}`}
       name={name}
       linearDamping={linearDamping}
       angularDamping={angularDamping}
       friction={friction}
       restitution={restitution}
       position={pos}
+      scale={rigidScale}
       ref={api}
       colliders={colliders}
       canSleep
@@ -697,157 +699,91 @@ function DieBody({
   );
 }
 
-function D4Die({ scale = 1, bodyRef, colliderMode = 'hull', ...props }) {
+function D4Die({ scale = 1, bodyRef, ...props }) {
   const { position } = dice[0];
-  const colliders =
-    colliderMode === 'trimesh'
-      ? 'trimesh'
-      : colliderMode === 'hull'
-        ? 'hull'
-        : false;
   return (
     <DieBody
       name="d4"
       position={position}
+      rigidScale={scale}
       bodyRef={bodyRef}
-      colliders={colliders}
+      colliders="hull"
       {...props}
     >
-      {colliderMode === 'ball' && <BallCollider args={[0.9]} />}
-      {colliderMode === 'cuboid' && <CuboidCollider args={[0.8, 0.8, 0.8]} />}
-      {colliderMode === 'roundCuboid' && (
-        <RoundCuboidCollider args={[0.8, 0.8, 0.8, 0.12]} />
-      )}
       <Center>
-        <group scale={scale}>
-          <QuinnsD4 />
-        </group>
+        <QuinnsD4 />
       </Center>
     </DieBody>
   );
 }
 
-function D6Die({ scale = 1, bodyRef, colliderMode = 'hull', ...props }) {
+function D6Die({ scale = 1, bodyRef, ...props }) {
   const { position } = dice[1];
-  const colliders =
-    colliderMode === 'trimesh'
-      ? 'trimesh'
-      : colliderMode === 'hull'
-        ? 'hull'
-        : false;
   return (
     <DieBody
       name="d6"
       position={position}
+      rigidScale={scale}
       bodyRef={bodyRef}
-      colliders={colliders}
+      colliders="hull"
       {...props}
     >
-      {colliderMode === 'ball' && <BallCollider args={[0.9]} />}
-      {colliderMode === 'cuboid' && <CuboidCollider args={[0.9, 0.9, 0.9]} />}
-      {colliderMode === 'roundCuboid' && (
-        <RoundCuboidCollider args={[0.9, 0.9, 0.9, 0.14]} />
-      )}
       <Center>
-        <group scale={scale}>
-          <QuinnsD6 />
-        </group>
+        <QuinnsD6 />
       </Center>
     </DieBody>
   );
 }
 
-function D8Die({ scale = 1, bodyRef, colliderMode = 'hull', ...props }) {
+function D8Die({ scale = 1, bodyRef, ...props }) {
   const { position } = dice[2];
-  const colliders =
-    colliderMode === 'trimesh'
-      ? 'trimesh'
-      : colliderMode === 'hull'
-        ? 'hull'
-        : false;
   return (
     <DieBody
       name="d8"
       position={position}
+      rigidScale={scale}
       bodyRef={bodyRef}
-      colliders={colliders}
+      colliders="hull"
       {...props}
     >
-      {colliderMode === 'ball' && <BallCollider args={[0.9]} />}
-      {colliderMode === 'cuboid' && (
-        <CuboidCollider args={[0.85, 0.85, 0.85]} />
-      )}
-      {colliderMode === 'roundCuboid' && (
-        <RoundCuboidCollider args={[0.85, 0.85, 0.85, 0.1]} />
-      )}
       <Center>
-        <group scale={scale}>
-          <QuinnsD8 />
-        </group>
+        <QuinnsD8 />
       </Center>
     </DieBody>
   );
 }
 
-function D10Die({ scale = 1, bodyRef, colliderMode = 'hull', ...props }) {
+function D10Die({ scale = 1, bodyRef, ...props }) {
   const { position } = dice[3];
-  const colliders =
-    colliderMode === 'trimesh'
-      ? 'trimesh'
-      : colliderMode === 'hull'
-        ? 'hull'
-        : false;
   return (
     <DieBody
       name="d10"
       position={position}
+      rigidScale={scale}
       bodyRef={bodyRef}
-      colliders={colliders}
+      colliders="hull"
       {...props}
     >
-      {colliderMode === 'ball' && <BallCollider args={[1]} />}
-      {colliderMode === 'cuboid' && (
-        <CuboidCollider args={[0.95, 0.95, 0.95]} />
-      )}
-      {colliderMode === 'roundCuboid' && (
-        <RoundCuboidCollider args={[0.95, 0.95, 0.95, 0.1]} />
-      )}
       <Center>
-        <group scale={scale}>
-          <QuinnsD10 />
-        </group>
+        <QuinnsD10 />
       </Center>
     </DieBody>
   );
 }
 
-function D12Die({ scale = 1, bodyRef, colliderMode = 'hull', ...props }) {
+function D12Die({ scale = 1, bodyRef, ...props }) {
   const { position } = dice[4];
-  const colliders =
-    colliderMode === 'trimesh'
-      ? 'trimesh'
-      : colliderMode === 'hull'
-        ? 'hull'
-        : false;
   return (
     <DieBody
       name="d12"
       position={position}
+      rigidScale={scale}
       bodyRef={bodyRef}
-      colliders={colliders}
+      colliders="hull"
       {...props}
     >
-      {colliderMode === 'ball' && <BallCollider args={[1]} />}
-      {colliderMode === 'cuboid' && (
-        <CuboidCollider args={[0.95, 0.95, 0.95]} />
-      )}
-      {colliderMode === 'roundCuboid' && (
-        <RoundCuboidCollider args={[0.95, 0.95, 0.95, 0.1]} />
-      )}
       <Center>
-        <group scale={scale}>
-          <QuinnsD12 />
-        </group>
+        <QuinnsD12 />
       </Center>
     </DieBody>
   );
@@ -856,36 +792,22 @@ function D12Die({ scale = 1, bodyRef, colliderMode = 'hull', ...props }) {
 function D20Die({
   bodyRef,
   scale = 1,
-  colliderMode = 'hull',
   emissiveColor = '#ffffff',
   emissiveIntensity = 1,
   ...props
 }) {
   const { position } = dice[5];
-  const colliders =
-    colliderMode === 'trimesh'
-      ? 'trimesh'
-      : colliderMode === 'hull'
-        ? 'hull'
-        : false;
   return (
     <DieBody
       name="d20"
       position={position}
+      rigidScale={scale}
       bodyRef={bodyRef}
-      colliders={colliders}
+      colliders="hull"
       {...props}
     >
-      {colliderMode === 'ball' && <BallCollider args={[1]} />}
-      {colliderMode === 'cuboid' && (
-        <CuboidCollider args={[0.95, 0.95, 0.95]} />
-      )}
-      {colliderMode === 'roundCuboid' && (
-        <RoundCuboidCollider args={[0.95, 0.95, 0.95, 0.1]} />
-      )}
       <Center>
         <D20Visual
-          scale={scale}
           emissiveColor={emissiveColor}
           emissiveIntensity={emissiveIntensity}
         />
@@ -894,11 +816,7 @@ function D20Die({
   );
 }
 
-function D20Visual({
-  scale = 1,
-  emissiveColor = '#ffffff',
-  emissiveIntensity = 1,
-}) {
+function D20Visual({ emissiveColor = '#ffffff', emissiveIntensity = 1 }) {
   const groupRef = useRef();
 
   useEffect(() => {
@@ -916,7 +834,7 @@ function D20Visual({
   }, [emissiveColor, emissiveIntensity]);
 
   return (
-    <group ref={groupRef} scale={scale}>
+    <group ref={groupRef}>
       <QuinnsD20 />
     </group>
   );

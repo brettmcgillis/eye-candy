@@ -4,14 +4,7 @@ import { useEffect, useRef } from 'react';
 
 import QUINNS_DICE_PRESETS from './QuinnsDice.presets';
 
-const PRESET_OPTIONS = [...Object.keys(QUINNS_DICE_PRESETS), 'Custom'];
-const COLLIDER_MODE_OPTIONS = {
-  Ball: 'ball',
-  Cuboid: 'cuboid',
-  'Round Cuboid': 'roundCuboid',
-  Hull: 'hull',
-  Trimesh: 'trimesh',
-};
+const PRESET_OPTIONS = Object.keys(QUINNS_DICE_PRESETS);
 const ROLL_TARGET_OPTIONS = {
   Random: 'random',
   D4: 'd4',
@@ -35,17 +28,11 @@ const PRESET_CONTROL_KEYS = [
   'bloomLuminanceSmoothing',
   'bloomRadius',
   'd4Scale',
-  'd4ColliderMode',
   'd6Scale',
-  'd6ColliderMode',
   'd8Scale',
-  'd8ColliderMode',
   'd10Scale',
-  'd10ColliderMode',
   'd12Scale',
-  'd12ColliderMode',
   'd20Scale',
-  'd20ColliderMode',
   'd20EmissiveColor',
   'd20EmissiveIntensity',
   'rollTarget',
@@ -84,6 +71,8 @@ function toUnquotedKeyObjectString(obj) {
 export default function useQuinnsDiceControls() {
   const isLocalDev = import.meta.env.DEV;
   const latestResolvedSettingsRef = useRef(null);
+  const selectedPresetRef = useRef('Default');
+  const setControlsRef = useRef(null);
   const emitResetGrid = () => {
     if (typeof window === 'undefined') return;
     window.dispatchEvent(new Event('quinns-dice-reset-grid'));
@@ -95,6 +84,11 @@ export default function useQuinnsDiceControls() {
       new CustomEvent(ROLL_DIE_EVENT, { detail: { target } })
     );
   };
+  const resetToSelectedPreset = () => {
+    const presetValues = QUINNS_DICE_PRESETS[selectedPresetRef.current];
+    if (!presetValues) return;
+    setControlsRef.current?.(pickSupportedPresetValues(presetValues));
+  };
 
   const [controls, setControls] = useControls('Quinns Dice', () => ({
     Presets: folder(
@@ -103,12 +97,13 @@ export default function useQuinnsDiceControls() {
           value: 'Default',
           options: PRESET_OPTIONS,
           onChange: (value) => {
-            if (value === 'Custom') return;
+            selectedPresetRef.current = value;
             const presetValues = QUINNS_DICE_PRESETS[value];
             if (!presetValues) return;
             setControls(pickSupportedPresetValues(presetValues));
           },
         },
+        resetPreset: button(resetToSelectedPreset),
         ...(isLocalDev
           ? {
               copySettings: button(() => {
@@ -209,11 +204,6 @@ export default function useQuinnsDiceControls() {
               max: 5,
               step: 0.01,
             },
-            d4ColliderMode: {
-              label: 'Collider',
-              value: QUINNS_DICE_PRESETS.Default.d4ColliderMode,
-              options: COLLIDER_MODE_OPTIONS,
-            },
           },
           { collapsed: true, order: 1 }
         ),
@@ -225,11 +215,6 @@ export default function useQuinnsDiceControls() {
               min: 0.1,
               max: 5,
               step: 0.01,
-            },
-            d6ColliderMode: {
-              label: 'Collider',
-              value: QUINNS_DICE_PRESETS.Default.d6ColliderMode,
-              options: COLLIDER_MODE_OPTIONS,
             },
           },
           { collapsed: true, order: 2 }
@@ -243,11 +228,6 @@ export default function useQuinnsDiceControls() {
               max: 5,
               step: 0.01,
             },
-            d8ColliderMode: {
-              label: 'Collider',
-              value: QUINNS_DICE_PRESETS.Default.d8ColliderMode,
-              options: COLLIDER_MODE_OPTIONS,
-            },
           },
           { collapsed: true, order: 3 }
         ),
@@ -260,11 +240,6 @@ export default function useQuinnsDiceControls() {
               max: 5,
               step: 0.01,
             },
-            d10ColliderMode: {
-              label: 'Collider',
-              value: QUINNS_DICE_PRESETS.Default.d10ColliderMode,
-              options: COLLIDER_MODE_OPTIONS,
-            },
           },
           { collapsed: true, order: 4 }
         ),
@@ -276,11 +251,6 @@ export default function useQuinnsDiceControls() {
               min: 0.1,
               max: 5,
               step: 0.01,
-            },
-            d12ColliderMode: {
-              label: 'Collider',
-              value: QUINNS_DICE_PRESETS.Default.d12ColliderMode,
-              options: COLLIDER_MODE_OPTIONS,
             },
           },
           { collapsed: true, order: 5 }
@@ -304,11 +274,6 @@ export default function useQuinnsDiceControls() {
               min: 0,
               max: 20,
               step: 0.01,
-            },
-            d20ColliderMode: {
-              label: 'Collider',
-              value: QUINNS_DICE_PRESETS.Default.d20ColliderMode,
-              options: COLLIDER_MODE_OPTIONS,
             },
           },
           { collapsed: true, order: 6 }
@@ -438,6 +403,7 @@ export default function useQuinnsDiceControls() {
       { collapsed: true }
     ),
   }));
+  setControlsRef.current = setControls;
 
   useEffect(() => {
     latestResolvedSettingsRef.current = pickSupportedPresetValues(controls);

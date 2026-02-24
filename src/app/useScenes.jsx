@@ -1,18 +1,16 @@
 import CRTTest from '../components/scenes/CRTTest/CrtTest';
 import DumpsterFire from '../components/scenes/DumpsterFire/DumpsterFire';
-import ExplosionTest from '../components/scenes/ExplosionTest/ExplosionTest';
-import FluidTest from '../components/scenes/FluidTest/FluidTest';
 import FoldedFrame from '../components/scenes/FoldedFrame/FoldedFrame';
 import HandStuff from '../components/scenes/HandStuff/HandStuff';
 import LoGlow from '../components/scenes/LoGlow/LoGlow';
-import MobilePhysicsTest from '../components/scenes/MobilePhysicsTest/MobilePhysicsTest';
-import NetworkTest from '../components/scenes/NetworkTest/NetworkTest';
 import NewScene from '../components/scenes/NewScene/NewScene';
 import PaperStack from '../components/scenes/PaperStack/PaperStack';
 import PixelHater from '../components/scenes/PixelHater/PixelHater';
 import QuinnsDice from '../components/scenes/QuinnsDice/QuinnsDice';
 import Rosie from '../components/scenes/Rosie/Rosie';
 import StrudelDoodle from '../components/scenes/StrudelDoodle/StrudelDoodle';
+import WebGLTestLab from '../components/scenes/TestLab/WebGLTestLab';
+import WebGPUTestLab from '../components/scenes/TestLab/WebGPUTestLab';
 import NoScene from './scaffold/NoScene';
 
 const noScene = {
@@ -95,12 +93,12 @@ const handStuff = {
   linkable: true,
 };
 
-const networkTest = {
-  id: 'networkTest',
-  renderer: 'webgpu',
-  Component: NetworkTest,
-  label: 'Network Test',
-  icon: '🕸️',
+const webglTestLab = {
+  id: 'webglTestLab',
+  renderer: 'webgl',
+  Component: WebGLTestLab,
+  label: 'WebGL Test Lab',
+  icon: '🧪',
   public: false,
   linkable: true,
 };
@@ -125,22 +123,12 @@ const strudelDoodle = {
   linkable: true,
 };
 
-const mobilePhysicsTest = {
-  id: 'mobilePhysicsTest',
+const webgpuTestLab = {
+  id: 'webgpuTestLab',
   renderer: 'webgpu',
-  Component: MobilePhysicsTest,
-  label: 'Mobile Physics Test',
-  icon: '📱',
-  public: false,
-  linkable: true,
-};
-
-const fluidTest = {
-  id: 'fluidTest',
-  renderer: 'webgl',
-  Component: FluidTest,
-  label: 'Fluid Test',
-  icon: '💧',
+  Component: WebGPUTestLab,
+  label: 'WebGPU Test Lab',
+  icon: '🧪',
   public: false,
   linkable: true,
 };
@@ -151,16 +139,6 @@ const rosie = {
   Component: Rosie,
   label: 'Rosie',
   icon: '🌹❤️',
-  public: false,
-  linkable: true,
-};
-
-const explosionTest = {
-  id: 'explosionTest',
-  renderer: 'webgl',
-  Component: ExplosionTest,
-  label: 'Explosion Test',
-  icon: '💥',
   public: false,
   linkable: true,
 };
@@ -184,16 +162,22 @@ const scenes = [
   newScene,
   paperStack,
   handStuff,
-  networkTest,
+  webglTestLab,
   crtTest,
   strudelDoodle,
-  mobilePhysicsTest,
-  fluidTest,
+  webgpuTestLab,
   rosie,
-  explosionTest,
   dice,
 ];
 
+function compareScenes(a, b) {
+  if (a.id === 'noScene') return -1;
+  if (b.id === 'noScene') return 1;
+  const aKey = a.label ?? a.id;
+  const bKey = b.label ?? b.id;
+  return aKey.localeCompare(bKey, undefined, { sensitivity: 'base' });
+}
+
 export default function useScenes() {
-  return { scenes };
+  return { scenes: [...scenes].sort(compareScenes) };
 }

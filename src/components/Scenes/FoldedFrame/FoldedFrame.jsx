@@ -108,7 +108,7 @@ function FoldedFrame() {
         step: 0.1,
       },
     }),
-    { collapsed: false }
+    { collapsed: true }
   );
 
   const frameData = getFrameData(frame || frames[0].name);

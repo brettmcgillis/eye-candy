@@ -279,15 +279,28 @@ export default function StrudelDoodle() {
     []
   );
 
-  const { themeName, presetName, autoPlay } = useControls('Strudelizer', {
-    Theme: folder({
-      themeName: { value: 'Miami', options: Object.keys(THEMES) },
-    }),
-    Track: folder({
-      presetName: { value: 'defaultPattern', options: Object.keys(PRESETS) },
-      autoPlay: false,
-    }),
-  });
+  const { themeName, presetName, autoPlay } = useControls(
+    'Strudelizer',
+    {
+      Theme: folder(
+        {
+          themeName: { value: 'Miami', options: Object.keys(THEMES) },
+        },
+        { collapsed: true }
+      ),
+      Track: folder(
+        {
+          presetName: {
+            value: 'defaultPattern',
+            options: Object.keys(PRESETS),
+          },
+          autoPlay: false,
+        },
+        { collapsed: true }
+      ),
+    },
+    { collapsed: true }
+  );
 
   const theme = THEMES[themeName];
   const [code, setCode] = useState(STRUDEL_TRACKS.defaultPattern);

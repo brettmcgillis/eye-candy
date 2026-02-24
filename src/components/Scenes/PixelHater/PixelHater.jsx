@@ -62,7 +62,7 @@ export default function PixelHater() {
           // },
         },
       },
-      {}
+      { collapsed: true }
     );
 
   return (

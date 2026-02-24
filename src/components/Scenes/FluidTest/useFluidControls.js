@@ -1,9 +1,10 @@
-import { useRef } from 'react';
 import { button, folder, useControls } from 'leva';
+
+import { useRef } from 'react';
+
 import { FLUID_PRESETS, RANDOM_BURST_COUNT } from './fluidPresets';
 
 function copySettingsToClipboard(get) {
-
   const settings = {
     paused: get('Fluid.Solver.paused'),
     simResolution: get('Fluid.Solver.simResolution'),
@@ -78,7 +79,8 @@ export default function useFluidControls({ presetRef, randomSplatQueueRef }) {
         resetToPreset: button((get) => {
           const currentPresetKey =
             get('Fluid.Presets.preset') || presetRef.current || 'default';
-          const nextPreset = FLUID_PRESETS[currentPresetKey] || FLUID_PRESETS.default;
+          const nextPreset =
+            FLUID_PRESETS[currentPresetKey] || FLUID_PRESETS.default;
           if (nextPreset && setRef.current) {
             presetRef.current = currentPresetKey;
             setRef.current(nextPreset);
@@ -160,7 +162,7 @@ export default function useFluidControls({ presetRef, randomSplatQueueRef }) {
           autoSplatRate: {
             value: FLUID_PRESETS.default.autoSplatRate,
             min: 0.5,
-            max: 24,
+            max: 96,
             step: 0.5,
           },
           autoSplatBurst: {
@@ -296,4 +298,3 @@ export default function useFluidControls({ presetRef, randomSplatQueueRef }) {
 
   return controls;
 }
-

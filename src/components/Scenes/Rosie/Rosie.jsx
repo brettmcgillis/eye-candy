@@ -4,12 +4,7 @@ import * as THREE from 'three';
 
 import React, { useEffect, useMemo, useRef, useState } from 'react';
 
-import {
-  OrbitControls,
-  PerspectiveCamera,
-  Splat,
-  Stats,
-} from '@react-three/drei';
+import { OrbitControls, PerspectiveCamera, Splat } from '@react-three/drei';
 import { useFrame, useThree } from '@react-three/fiber';
 
 import { imageFile, modelFile } from '../../../utils/appUtils';
@@ -189,8 +184,6 @@ export default function Rosie() {
             onClick={() => focusSplat(i)}
           />
         ))}
-
-      <Stats />
     </>
   );
 }

@@ -575,9 +575,9 @@ const FLUID_PRESETS = {
     splatForce: 6000,
     dyeStrength: 1,
     autoSplat: true,
-    autoSplatStrength: 0.35,
-    autoSplatRate: 12,
-    autoSplatBurst: 3,
+    autoSplatStrength: 0.06,
+    autoSplatRate: 22,
+    autoSplatBurst: 2,
     shading: true,
     bloom: true,
     bloomResolution: 0.25,
@@ -698,7 +698,7 @@ const FluidMaterial = forwardRef((_, ref) => {
   const colorBRef = useRef(new THREE.Color());
   const colorCRef = useRef(new THREE.Color());
   const forceRef = useRef(new THREE.Vector3());
-  const autoSplatColorRef = useRef(new THREE.Vector3());
+  const autoSplatColorRef = useRef(new THREE.Color());
   const autoSplatSeedRef = useRef(Math.random() * Math.PI * 2);
   const autoPointerRef = useRef({
     initialized: false,
@@ -1460,7 +1460,9 @@ const FluidMaterial = forwardRef((_, ref) => {
     displayMat.uniforms.uSunraysEnabled.value = sunrays;
 
     const pointer = pointerRef.current;
-    const debugContactFadeDurationSafe = Number.isFinite(debugContactFadeDuration)
+    const debugContactFadeDurationSafe = Number.isFinite(
+      debugContactFadeDuration
+    )
       ? Math.max(0.05, debugContactFadeDuration)
       : FLUID_PRESETS.default.debugContactFadeDuration;
 
@@ -1575,7 +1577,7 @@ const FluidMaterial = forwardRef((_, ref) => {
         const burstCount = Math.max(1, Math.floor(autoSplatBurstSafe));
         const rate = Math.max(0.5, autoSplatRateSafe);
         const pathSpeed =
-          (0.4 + rate * 0.11) * (0.55 + Math.max(0, colorCycleSpeed) * 0.45);
+          (0.9 + rate * 0.15) * (0.7 + Math.max(0, colorCycleSpeed) * 0.5);
 
         const sampleAutoCursor = (phase) => {
           const x =
@@ -1607,7 +1609,11 @@ const FluidMaterial = forwardRef((_, ref) => {
 
         const prevX = autoPointerRef.current.x;
         const prevY = autoPointerRef.current.y;
-        const follow = THREE.MathUtils.clamp(0.1 + dt * (rate * 2.1), 0.1, 0.6);
+        const follow = THREE.MathUtils.clamp(
+          0.22 + dt * (rate * 3.0),
+          0.22,
+          0.9
+        );
         const nextX = THREE.MathUtils.lerp(prevX, target.x, follow);
         const nextY = THREE.MathUtils.lerp(prevY, target.y, follow);
 
@@ -1620,54 +1626,83 @@ const FluidMaterial = forwardRef((_, ref) => {
           dvy *= size.height / Math.max(1, size.width);
         }
 
-        let baseForceX = dvx * splatForce * autoSplatStrengthSafe * 64;
-        let baseForceY = dvy * splatForce * autoSplatStrengthSafe * 64;
-        const minForce = splatForce * autoSplatStrengthSafe * 0.16;
-        if (Math.hypot(baseForceX, baseForceY) < minForce) {
-          baseForceX += Math.cos(phase * 1.9) * minForce;
-          baseForceY += Math.sin(phase * 1.9) * minForce;
+        const autoSpeed = Math.min(1, Math.hypot(dvx, dvy) * 140);
+        const mobileForceFactor =
+          FLUID_PRESETS.mobile.splatForce / Math.max(1, splatForce);
+        const mobileDyeFactor =
+          FLUID_PRESETS.mobile.dyeStrength / Math.max(0.001, dyeStrength);
+        let autoForceX =
+          dvx * splatForce * autoSplatStrengthSafe * mobileForceFactor * 1.4;
+        let autoForceY =
+          dvy * splatForce * autoSplatStrengthSafe * mobileForceFactor * 1.4;
+        const minForce =
+          splatForce * autoSplatStrengthSafe * mobileForceFactor * 0.0018;
+        if (Math.hypot(autoForceX, autoForceY) < minForce) {
+          autoForceX += Math.cos(phase * 1.9) * minForce;
+          autoForceY += Math.sin(phase * 1.9) * minForce;
         }
 
         autoPointerRef.current.x = nextX;
         autoPointerRef.current.y = nextY;
 
-        for (let i = 0; i < burstCount; i++) {
-          const jitterPhase = phase + i * 2.17;
-          const trailT = (i + 1) / (burstCount + 1);
-          const trailX = THREE.MathUtils.lerp(prevX, nextX, trailT);
-          const trailY = THREE.MathUtils.lerp(prevY, nextY, trailT);
-          const jitter = 0.012 * (i / Math.max(1, burstCount - 1));
-          const jx = Math.sin(jitterPhase * 1.37) * jitter;
-          const jy = Math.cos(jitterPhase * 1.71) * jitter;
-          const pulse =
-            0.75 + 0.25 * (0.5 + 0.5 * Math.sin(jitterPhase * 0.83));
-          const decay = 1 - i * 0.07;
-
-          autoSplatColorRef.current.set(
+        autoSplatColorRef.current.set(
+          Math.min(
+            1,
             THREE.MathUtils.lerp(
               colorARef.current.r,
               colorBRef.current.r,
-              0.5 + 0.5 * Math.sin(jitterPhase * 0.61)
-            ),
+              0.5 + 0.5 * Math.sin(phase * 0.61)
+            ) + 0.01
+          ),
+          Math.min(
+            1,
             THREE.MathUtils.lerp(
               colorBRef.current.g,
               colorCRef.current.g,
-              0.5 + 0.5 * Math.sin(jitterPhase * 0.73 + 0.7)
-            ),
+              0.5 + 0.5 * Math.sin(phase * 0.73 + 0.7)
+            ) + 0.01
+          ),
+          Math.min(
+            1,
             THREE.MathUtils.lerp(
               colorCRef.current.b,
               colorARef.current.b,
-              0.5 + 0.5 * Math.sin(jitterPhase * 0.67 + 1.4)
-            )
-          );
+              0.5 + 0.5 * Math.sin(phase * 0.67 + 1.4)
+            ) + 0.01
+          )
+        ).multiplyScalar(0.75);
+
+        const autoStrength =
+          (0.12 + autoSpeed * 0.2) *
+          mobileDyeFactor *
+          autoSplatStrengthSafe *
+          0.75;
+        splatAt(
+          nextX,
+          nextY,
+          autoForceX,
+          autoForceY,
+          autoSplatColorRef.current,
+          autoStrength
+        );
+
+        for (let i = 1; i < burstCount; i++) {
+          const jitterPhase = phase + i * 1.73;
+          const trailT = i / burstCount;
+          const trailX = THREE.MathUtils.lerp(prevX, nextX, trailT);
+          const trailY = THREE.MathUtils.lerp(prevY, nextY, trailT);
+          const jitter = 0.006 * (i / Math.max(1, burstCount - 1));
+          const jx = Math.sin(jitterPhase * 1.19) * jitter;
+          const jy = Math.cos(jitterPhase * 1.47) * jitter;
+          const decay = Math.max(0.12, 1 - i * 0.28);
 
           splatAt(
             trailX + jx,
             trailY + jy,
-            baseForceX * decay,
-            baseForceY * decay,
+            autoForceX * decay,
+            autoForceY * decay,
             autoSplatColorRef.current,
-            pulse * 1.35
+            autoStrength * decay * 0.55
           );
         }
       } else {

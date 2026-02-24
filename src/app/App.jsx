@@ -2,6 +2,7 @@ import React, { Suspense } from 'react';
 
 import './App.css';
 import useAppScenes from './scaffold/hooks/useAppScenes';
+import AppStats from './scaffold/leva/AppStats';
 import Loader from './scaffold/loader/Loader';
 import Overlay from './scaffold/overlay/Overlay';
 
@@ -14,6 +15,7 @@ function App() {
   return (
     <div className="App">
       <CanvasWrapper key={renderer}>
+        <AppStats />
         <Suspense fallback={<Loader />}>
           {SceneComponent && <SceneComponent />}
         </Suspense>

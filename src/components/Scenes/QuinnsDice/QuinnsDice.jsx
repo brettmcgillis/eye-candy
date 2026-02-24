@@ -41,79 +41,21 @@ import QuinnsD8 from '../../elements/quinnsDice/QuinnsD8';
 import QuinnsD10 from '../../elements/quinnsDice/QuinnsD10';
 import QuinnsD12 from '../../elements/quinnsDice/QuinnsD12';
 import QuinnsD20 from '../../elements/quinnsDice/QuinnsD20';
+import {
+  DEFAULT_CAMERA_POSITION_VALUES,
+  DICE_CONFIGS,
+  LIGHTFORMER_CONFIGS,
+  MAIN_LIGHT_POSITION,
+  MAIN_LIGHT_TARGET,
+  RESET_GRID_EVENT,
+  RESET_GRID_POSITIONS,
+  ROLL_DIE_EVENT,
+} from './QuinnsDice.sceneSettings';
 import useQuinnsDiceControls from './useQuinnsDiceControls';
 
-const dice = [
-  {
-    id: 'd4',
-    Component: QuinnsD4,
-    position: [-1.6, 1.1, 0],
-  },
-  {
-    id: 'd6',
-    Component: QuinnsD6,
-    position: [-0.3, 1.25, 0],
-  },
-  {
-    id: 'd8',
-    Component: QuinnsD8,
-    position: [1.1, 1.05, 0],
-  },
-  {
-    id: 'd10',
-    Component: QuinnsD10,
-    position: [2, -0.05, 0],
-  },
-  {
-    id: 'd12',
-    Component: QuinnsD12,
-    position: [-0.9, -1.1, 0],
-  },
-  {
-    id: 'd20',
-    Component: QuinnsD20,
-    position: [0.7, -1.25, 0],
-  },
-];
-const mainLightPosition = [10, 10, 10];
-const mainLightTarget = [0, 0, 0];
-const lightformerConfigs = [
-  {
-    position: [0, 5, -9],
-    rotation: [Math.PI / 2, 0, 0],
-    intensity: 4,
-    scale: 2,
-  },
-  {
-    position: [-5, 1, -1],
-    rotation: [0, Math.PI / 2, 0],
-    intensity: 2,
-    scale: 2,
-  },
-  {
-    position: [-5, -1, -1],
-    rotation: [0, Math.PI / 2, 0],
-    intensity: 2,
-    scale: 2,
-  },
-  {
-    position: [10, 1, 0],
-    rotation: [0, -Math.PI / 2, 0],
-    intensity: 2,
-    scale: 8,
-  },
-];
-const RESET_GRID_POSITIONS = [
-  [-2, 1.8, 0],
-  [0, 1.8, 0],
-  [2, 1.8, 0],
-  [-2, -1.8, 0],
-  [0, -1.8, 0],
-  [2, -1.8, 0],
-];
-const RESET_GRID_EVENT = 'quinns-dice-reset-grid';
-const ROLL_DIE_EVENT = 'quinns-dice-roll';
-const DEFAULT_CAMERA_POSITION = new THREE.Vector3(0, 0, 22);
+const DEFAULT_CAMERA_POSITION = new THREE.Vector3(
+  ...DEFAULT_CAMERA_POSITION_VALUES
+);
 
 export default function QuinnsDice() {
   const d4Ref = useRef();
@@ -394,8 +336,8 @@ export default function QuinnsDice() {
       )}
       <ambientLight intensity={0.4} />
       <spotLight
-        position={mainLightPosition}
-        target-position={mainLightTarget}
+        position={MAIN_LIGHT_POSITION}
+        target-position={MAIN_LIGHT_TARGET}
         angle={0.15}
         penumbra={1}
         intensity={1}
@@ -403,8 +345,8 @@ export default function QuinnsDice() {
       />
       {debugLights && (
         <LightDebugPyramid
-          position={mainLightPosition}
-          target={mainLightTarget}
+          position={MAIN_LIGHT_POSITION}
+          target={MAIN_LIGHT_TARGET}
         />
       )}
       <Physics gravity={[0, 0, 0]} debug={debug} paused={!physicsEnabled}>
@@ -496,7 +438,7 @@ export default function QuinnsDice() {
       </EffectComposer>
       <Environment resolution={256}>
         <group rotation={[-Math.PI / 3, 0, 1]}>
-          {lightformerConfigs.map((config, index) => (
+          {LIGHTFORMER_CONFIGS.map((config, index) => (
             <Lightformer
               key={`lf-${index}`}
               form="circle"
@@ -511,7 +453,7 @@ export default function QuinnsDice() {
       <Environment preset="city" />
       {debugLights && (
         <group rotation={[-Math.PI / 3, 0, 1]}>
-          {lightformerConfigs.map((config, index) => (
+          {LIGHTFORMER_CONFIGS.map((config, index) => (
             <LightformerDebugPyramid
               key={`lf-debug-${index}`}
               position={config.position}
@@ -700,7 +642,7 @@ function DieBody({
 }
 
 function D4Die({ scale = 1, bodyRef, ...props }) {
-  const { position } = dice[0];
+  const { position } = DICE_CONFIGS[0];
   return (
     <DieBody
       name="d4"
@@ -718,7 +660,7 @@ function D4Die({ scale = 1, bodyRef, ...props }) {
 }
 
 function D6Die({ scale = 1, bodyRef, ...props }) {
-  const { position } = dice[1];
+  const { position } = DICE_CONFIGS[1];
   return (
     <DieBody
       name="d6"
@@ -736,7 +678,7 @@ function D6Die({ scale = 1, bodyRef, ...props }) {
 }
 
 function D8Die({ scale = 1, bodyRef, ...props }) {
-  const { position } = dice[2];
+  const { position } = DICE_CONFIGS[2];
   return (
     <DieBody
       name="d8"
@@ -754,7 +696,7 @@ function D8Die({ scale = 1, bodyRef, ...props }) {
 }
 
 function D10Die({ scale = 1, bodyRef, ...props }) {
-  const { position } = dice[3];
+  const { position } = DICE_CONFIGS[3];
   return (
     <DieBody
       name="d10"
@@ -772,7 +714,7 @@ function D10Die({ scale = 1, bodyRef, ...props }) {
 }
 
 function D12Die({ scale = 1, bodyRef, ...props }) {
-  const { position } = dice[4];
+  const { position } = DICE_CONFIGS[4];
   return (
     <DieBody
       name="d12"
@@ -796,7 +738,7 @@ function D20Die({
   emissiveIntensity = 1,
   ...props
 }) {
-  const { position } = dice[5];
+  const { position } = DICE_CONFIGS[5];
   return (
     <DieBody
       name="d20"

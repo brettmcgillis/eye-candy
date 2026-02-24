@@ -1,5 +1,4 @@
 /* eslint-disable no-plusplus */
-import { button, folder, useControls } from 'leva';
 import * as THREE from 'three';
 
 import React, {
@@ -11,6 +10,13 @@ import React, {
 } from 'react';
 
 import { useFrame, useThree } from '@react-three/fiber';
+
+import {
+  DEBUG_CONTACT_CAP,
+  FLUID_PRESETS,
+  RANDOM_BURST_COUNT,
+} from './fluidPresets';
+import useFluidControls from './useFluidControls';
 
 const simVertexShader = `
 varying vec2 vUv;
@@ -558,135 +564,6 @@ function createDitheringTexture() {
 const PAVEL_DYE_COLOR_SCALE = 0.15;
 const MAX_BLOOM_CHAIN = 16;
 const MAX_SPLAT_VELOCITY = 900;
-const DEBUG_CONTACT_CAP = 12;
-const DEBUG_CONTACT_TTL_DEFAULT = 0.28;
-const RANDOM_BURST_COUNT = DEBUG_CONTACT_CAP;
-
-const FLUID_PRESETS = {
-  default: {
-    paused: false,
-    simResolution: 0.65,
-    pressureRelax: 0.8,
-    pressureIterations: 20,
-    vorticity: 30,
-    velocityDissipation: 0.2,
-    densityDissipation: 1,
-    splatRadius: 0.003,
-    splatForce: 6000,
-    dyeStrength: 1,
-    autoSplat: true,
-    autoSplatStrength: 0.06,
-    autoSplatRate: 22,
-    autoSplatBurst: 2,
-    shading: true,
-    bloom: true,
-    bloomResolution: 0.25,
-    bloomIterations: 8,
-    bloomIntensity: 0.65,
-    bloomThreshold: 0.6,
-    bloomSoftKnee: 0.7,
-    sunrays: true,
-    sunraysResolution: 0.18,
-    sunraysWeight: 0.85,
-    colorA: '#ff6d6d',
-    colorB: '#ff0000',
-    colorC: '#7b0000',
-    colorful: true,
-    colorUpdateSpeed: 10,
-    colorCycleSpeed: 0.8,
-    bgA: '#999797',
-    bgB: '#090012',
-    brightness: 1.08,
-    contrast: 1.2,
-    saturation: 1.25,
-    debugCursor: true,
-    debugPointerColor: '#9a9a9a',
-    debugAutoColor: '#3e003a',
-    debugContactFadeDuration: DEBUG_CONTACT_TTL_DEFAULT,
-  },
-  pavelLike: {
-    paused: false,
-    simResolution: 0.75,
-    pressureRelax: 0.8,
-    pressureIterations: 28,
-    vorticity: 42,
-    velocityDissipation: 0.18,
-    densityDissipation: 1,
-    splatRadius: 0.0028,
-    splatForce: 7000,
-    dyeStrength: 1,
-    autoSplat: false,
-    autoSplatStrength: 0.25,
-    autoSplatRate: 10,
-    autoSplatBurst: 2,
-    shading: true,
-    bloom: true,
-    bloomResolution: 0.25,
-    bloomIterations: 10,
-    bloomIntensity: 0.72,
-    bloomThreshold: 0.58,
-    bloomSoftKnee: 0.7,
-    sunrays: true,
-    sunraysResolution: 0.2,
-    sunraysWeight: 0.85,
-    colorA: '#1de9ff',
-    colorB: '#ff4ccf',
-    colorC: '#ffd35e',
-    colorful: true,
-    colorUpdateSpeed: 12,
-    colorCycleSpeed: 1.2,
-    bgA: '#000000',
-    bgB: '#0a0017',
-    brightness: 1.12,
-    contrast: 1.3,
-    saturation: 1.4,
-    debugCursor: false,
-    debugPointerColor: '#8df4ff',
-    debugAutoColor: '#ffd35e',
-    debugContactFadeDuration: DEBUG_CONTACT_TTL_DEFAULT,
-  },
-  mobile: {
-    paused: false,
-    simResolution: 0.42,
-    pressureRelax: 0.84,
-    pressureIterations: 14,
-    vorticity: 24,
-    velocityDissipation: 0.24,
-    densityDissipation: 1,
-    splatRadius: 0.0022,
-    splatForce: 4200,
-    dyeStrength: 0.9,
-    autoSplat: false,
-    autoSplatStrength: 0.1,
-    autoSplatRate: 6,
-    autoSplatBurst: 1,
-    shading: false,
-    bloom: false,
-    bloomResolution: 0.2,
-    bloomIterations: 4,
-    bloomIntensity: 0.5,
-    bloomThreshold: 0.62,
-    bloomSoftKnee: 0.7,
-    sunrays: false,
-    sunraysResolution: 0.16,
-    sunraysWeight: 0.9,
-    colorA: '#4bd5ff',
-    colorB: '#ff7cd8',
-    colorC: '#7cf08b',
-    colorful: true,
-    colorUpdateSpeed: 8,
-    colorCycleSpeed: 0.7,
-    bgA: '#030611',
-    bgB: '#0b0414',
-    brightness: 1.05,
-    contrast: 1.16,
-    saturation: 1.2,
-    debugCursor: false,
-    debugPointerColor: '#7fdfff',
-    debugAutoColor: '#8ff0b0',
-    debugContactFadeDuration: DEBUG_CONTACT_TTL_DEFAULT,
-  },
-};
 
 const FluidMaterial = forwardRef((_, ref) => {
   const { gl, size } = useThree();
@@ -716,268 +593,58 @@ const FluidMaterial = forwardRef((_, ref) => {
   );
   const debugContactWriteRef = useRef(0);
 
-  const [
-    {
-      preset,
-      paused,
-      simResolution,
-      pressureRelax,
-      pressureIterations,
-      vorticity,
-      velocityDissipation,
-      densityDissipation,
-      splatRadius,
-      splatForce,
-      dyeStrength,
-      autoSplat,
-      autoSplatStrength,
-      autoSplatRate,
-      autoSplatBurst,
-      shading,
-      bloom,
-      bloomResolution,
-      bloomIterations,
-      bloomIntensity,
-      bloomThreshold,
-      bloomSoftKnee,
-      sunrays,
-      sunraysResolution,
-      sunraysWeight,
-      colorA,
-      colorB,
-      colorC,
-      colorful,
-      colorUpdateSpeed,
-      colorCycleSpeed,
-      bgA,
-      bgB,
-      brightness,
-      contrast,
-      saturation,
-      debugCursor,
-      debugPointerColor,
-      debugAutoColor,
-      debugContactFadeDuration,
-    },
-    setControls,
-  ] = useControls(
-    'Fluid',
-    () => ({
-      preset: {
-        value: 'default',
-        options: {
-          Default: 'default',
-          'Pavel-Like': 'pavelLike',
-          Mobile: 'mobile',
-        },
-      },
-      Solver: folder(
-        {
-          paused: FLUID_PRESETS.default.paused,
-          simResolution: {
-            value: FLUID_PRESETS.default.simResolution,
-            min: 0.2,
-            max: 1,
-            step: 0.05,
-          },
-          pressureRelax: {
-            value: FLUID_PRESETS.default.pressureRelax,
-            min: 0.2,
-            max: 1,
-            step: 0.01,
-          },
-          pressureIterations: {
-            value: FLUID_PRESETS.default.pressureIterations,
-            min: 8,
-            max: 40,
-            step: 1,
-          },
-          vorticity: {
-            value: FLUID_PRESETS.default.vorticity,
-            min: 0,
-            max: 90,
-            step: 1,
-          },
-          velocityDissipation: {
-            value: FLUID_PRESETS.default.velocityDissipation,
-            min: 0,
-            max: 2,
-            step: 0.01,
-          },
-          densityDissipation: {
-            value: FLUID_PRESETS.default.densityDissipation,
-            min: 0,
-            max: 2,
-            step: 0.01,
-          },
-        },
-        { collapsed: true }
-      ),
-      Interaction: folder(
-        {
-          splatRadius: {
-            value: FLUID_PRESETS.default.splatRadius,
-            min: 0.0005,
-            max: 0.02,
-            step: 0.0001,
-          },
-          splatForce: {
-            value: FLUID_PRESETS.default.splatForce,
-            min: 100,
-            max: 12000,
-            step: 50,
-          },
-          dyeStrength: {
-            value: FLUID_PRESETS.default.dyeStrength,
-            min: 0.05,
-            max: 2.5,
-            step: 0.01,
-          },
-          autoSplat: FLUID_PRESETS.default.autoSplat,
-          autoSplatStrength: {
-            value: FLUID_PRESETS.default.autoSplatStrength,
-            min: 0,
-            max: 0.6,
-            step: 0.01,
-          },
-          autoSplatRate: {
-            value: FLUID_PRESETS.default.autoSplatRate,
-            min: 0.5,
-            max: 24,
-            step: 0.5,
-          },
-          autoSplatBurst: {
-            value: FLUID_PRESETS.default.autoSplatBurst,
-            min: 1,
-            max: 8,
-            step: 1,
-          },
-          randomBurst: button(() => {
-            randomSplatQueueRef.current += RANDOM_BURST_COUNT;
-          }),
-        },
-        { collapsed: true }
-      ),
-      Effects: folder(
-        {
-          shading: FLUID_PRESETS.default.shading,
-          bloom: FLUID_PRESETS.default.bloom,
-          bloomResolution: {
-            value: FLUID_PRESETS.default.bloomResolution,
-            min: 0.1,
-            max: 0.5,
-            step: 0.01,
-          },
-          bloomIterations: {
-            value: FLUID_PRESETS.default.bloomIterations,
-            min: 1,
-            max: 16,
-            step: 1,
-          },
-          bloomIntensity: {
-            value: FLUID_PRESETS.default.bloomIntensity,
-            min: 0,
-            max: 2,
-            step: 0.01,
-          },
-          bloomThreshold: {
-            value: FLUID_PRESETS.default.bloomThreshold,
-            min: 0,
-            max: 1,
-            step: 0.01,
-          },
-          bloomSoftKnee: {
-            value: FLUID_PRESETS.default.bloomSoftKnee,
-            min: 0,
-            max: 1,
-            step: 0.01,
-          },
-          sunrays: FLUID_PRESETS.default.sunrays,
-          sunraysResolution: {
-            value: FLUID_PRESETS.default.sunraysResolution,
-            min: 0.08,
-            max: 0.4,
-            step: 0.01,
-          },
-          sunraysWeight: {
-            value: FLUID_PRESETS.default.sunraysWeight,
-            min: 0.3,
-            max: 1.5,
-            step: 0.01,
-          },
-        },
-        { collapsed: true }
-      ),
-      Color: folder(
-        {
-          colorA: FLUID_PRESETS.default.colorA,
-          colorB: FLUID_PRESETS.default.colorB,
-          colorC: FLUID_PRESETS.default.colorC,
-          colorful: FLUID_PRESETS.default.colorful,
-          colorUpdateSpeed: {
-            value: FLUID_PRESETS.default.colorUpdateSpeed,
-            min: 0,
-            max: 20,
-            step: 0.1,
-          },
-          colorCycleSpeed: {
-            value: FLUID_PRESETS.default.colorCycleSpeed,
-            min: 0,
-            max: 3,
-            step: 0.05,
-          },
-        },
-        { collapsed: true }
-      ),
-      Display: folder(
-        {
-          bgA: FLUID_PRESETS.default.bgA,
-          bgB: FLUID_PRESETS.default.bgB,
-          brightness: {
-            value: FLUID_PRESETS.default.brightness,
-            min: 0.5,
-            max: 2,
-            step: 0.01,
-          },
-          contrast: {
-            value: FLUID_PRESETS.default.contrast,
-            min: 0.6,
-            max: 2,
-            step: 0.01,
-          },
-          saturation: {
-            value: FLUID_PRESETS.default.saturation,
-            min: 0.2,
-            max: 2.2,
-            step: 0.01,
-          },
-        },
-        { collapsed: true }
-      ),
-      Debug: folder(
-        {
-          debugCursor: FLUID_PRESETS.default.debugCursor,
-          debugPointerColor: FLUID_PRESETS.default.debugPointerColor,
-          debugAutoColor: FLUID_PRESETS.default.debugAutoColor,
-          debugContactFadeDuration: {
-            value: FLUID_PRESETS.default.debugContactFadeDuration,
-            min: 0.05,
-            max: 2,
-            step: 0.01,
-          },
-        },
-        { collapsed: true }
-      ),
-    }),
-    { collapsed: true }
-  );
+  const [fluidValues, setControls] = useFluidControls({
+    presetRef,
+    randomSplatQueueRef,
+  });
+
+  const {
+    paused,
+    simResolution,
+    pressureRelax,
+    pressureIterations,
+    vorticity,
+    velocityDissipation,
+    densityDissipation,
+    splatRadius,
+    splatForce,
+    dyeStrength,
+    autoSplat,
+    autoSplatStrength,
+    autoSplatRate,
+    autoSplatBurst,
+    shading,
+    bloom,
+    bloomResolution,
+    bloomIterations,
+    bloomIntensity,
+    bloomThreshold,
+    bloomSoftKnee,
+    sunrays,
+    sunraysResolution,
+    sunraysWeight,
+    colorA,
+    colorB,
+    colorC,
+    colorful,
+    colorUpdateSpeed,
+    colorCycleSpeed,
+    bgA,
+    bgB,
+    brightness,
+    contrast,
+    saturation,
+    debugCursor,
+    debugPointerColor,
+    debugAutoColor,
+    debugContactFadeDuration,
+  } = fluidValues;
 
   useEffect(() => {
-    if (presetRef.current === preset) return;
-    const nextPreset = FLUID_PRESETS[preset];
+    const currentPresetKey = presetRef.current || 'default';
+    const nextPreset = FLUID_PRESETS[currentPresetKey];
     if (nextPreset) setControls(nextPreset);
-    presetRef.current = preset;
-  }, [preset, setControls]);
+  }, [setControls]);
 
   const simWidth = Math.max(64, Math.floor(size.width * simResolution));
   const simHeight = Math.max(64, Math.floor(size.height * simResolution));
@@ -1645,32 +1312,34 @@ const FluidMaterial = forwardRef((_, ref) => {
         autoPointerRef.current.x = nextX;
         autoPointerRef.current.y = nextY;
 
-        autoSplatColorRef.current.set(
-          Math.min(
-            1,
-            THREE.MathUtils.lerp(
-              colorARef.current.r,
-              colorBRef.current.r,
-              0.5 + 0.5 * Math.sin(phase * 0.61)
-            ) + 0.01
-          ),
-          Math.min(
-            1,
-            THREE.MathUtils.lerp(
-              colorBRef.current.g,
-              colorCRef.current.g,
-              0.5 + 0.5 * Math.sin(phase * 0.73 + 0.7)
-            ) + 0.01
-          ),
-          Math.min(
-            1,
-            THREE.MathUtils.lerp(
-              colorCRef.current.b,
-              colorARef.current.b,
-              0.5 + 0.5 * Math.sin(phase * 0.67 + 1.4)
-            ) + 0.01
+        autoSplatColorRef.current
+          .set(
+            Math.min(
+              1,
+              THREE.MathUtils.lerp(
+                colorARef.current.r,
+                colorBRef.current.r,
+                0.5 + 0.5 * Math.sin(phase * 0.61)
+              ) + 0.01
+            ),
+            Math.min(
+              1,
+              THREE.MathUtils.lerp(
+                colorBRef.current.g,
+                colorCRef.current.g,
+                0.5 + 0.5 * Math.sin(phase * 0.73 + 0.7)
+              ) + 0.01
+            ),
+            Math.min(
+              1,
+              THREE.MathUtils.lerp(
+                colorCRef.current.b,
+                colorARef.current.b,
+                0.5 + 0.5 * Math.sin(phase * 0.67 + 1.4)
+              ) + 0.01
+            )
           )
-        ).multiplyScalar(0.75);
+          .multiplyScalar(0.75);
 
         const autoStrength =
           (0.12 + autoSpeed * 0.2) *

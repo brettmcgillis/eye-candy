@@ -4,6 +4,7 @@
 
 [Back to main TODO](../../../../TODO.md)
 
-- [ ] Prevent control changes from resetting the fluid simulation state.
-- [ ] Fix auto-splat behavior so it does not interfere with pointer interaction.
+- [ ] Fix control changes from resetting the fluid simulation state.
+- [ ] Fix auto-splat behavior so it works and also does not prevent or interfere with pointer interaction.
+- [ ] Fix window resize issue that stops the sim. Its a material, it shouldnt matter? We need to be able to slap this material on a model in a scene and have it become interactive.
 - [ ] Add input `mode` control: `Pointer/Touch` or `Hands` (wire with existing hand control hooks).

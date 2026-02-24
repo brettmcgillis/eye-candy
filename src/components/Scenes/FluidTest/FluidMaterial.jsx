@@ -282,6 +282,19 @@ void main() {
 }
 `;
 
+const bloomComposeFragmentShader = `
+varying vec2 vUv;
+uniform sampler2D uBase;
+uniform sampler2D uAdd;
+uniform float uAddFactor;
+
+void main() {
+  vec3 base = texture2D(uBase, vUv).rgb;
+  vec3 add = texture2D(uAdd, vUv).rgb;
+  gl_FragColor = vec4(base + add * uAddFactor, 1.0);
+}
+`;
+
 const sunraysMaskFragmentShader = `
 varying vec2 vUv;
 uniform sampler2D uTexture;
@@ -342,7 +355,9 @@ varying vec2 vUv;
 uniform sampler2D uDye;
 uniform sampler2D uBloom;
 uniform sampler2D uSunrays;
+uniform sampler2D uDithering;
 uniform vec2 uDyeTexel;
+uniform vec2 uDitherScale;
 uniform vec3 uBgA;
 uniform vec3 uBgB;
 uniform float uBrightness;
@@ -351,6 +366,20 @@ uniform float uSaturation;
 uniform bool uShading;
 uniform bool uBloomEnabled;
 uniform bool uSunraysEnabled;
+uniform bool uDebugCursor;
+uniform vec2 uDebugPointer;
+uniform vec2 uDebugAuto;
+uniform float uDebugPointerSize;
+uniform float uDebugAutoSize;
+uniform float uDebugPointerActive;
+uniform float uDebugAutoActive;
+uniform vec3 uDebugPointerColor;
+uniform vec3 uDebugAutoColor;
+#define DEBUG_CONTACT_CAP 12
+uniform vec2 uDebugContacts[DEBUG_CONTACT_CAP];
+uniform float uDebugContactLife[DEBUG_CONTACT_CAP];
+uniform float uDebugContactKind[DEBUG_CONTACT_CAP];
+uniform float uDebugContactFadeDuration;
 
 vec3 linearToGamma(vec3 color) {
   color = max(color, vec3(0.0));
@@ -362,10 +391,12 @@ vec3 saturateColor(vec3 col, float amount) {
   return mix(vec3(l), col, amount);
 }
 
-float hash12(vec2 p) {
-  vec3 p3 = fract(vec3(p.xyx) * 0.1031);
-  p3 += dot(p3, p3.yzx + 33.33);
-  return fract((p3.x + p3.y) * p3.z);
+float squareOutline(vec2 uv, vec2 center, float halfSize, float thickness) {
+  vec2 p = abs(uv - center);
+  float outer = step(p.x, halfSize) * step(p.y, halfSize);
+  float innerSize = max(halfSize - thickness, 0.0);
+  float inner = step(p.x, innerSize) * step(p.y, innerSize);
+  return clamp(outer - inner, 0.0, 1.0);
 }
 
 void main() {
@@ -393,7 +424,7 @@ void main() {
 
   if (uBloomEnabled) {
     vec3 bloom = texture2D(uBloom, vUv).rgb;
-    float noise = hash12(vUv * vec2(1024.0, 1024.0)) * 2.0 - 1.0;
+    float noise = texture2D(uDithering, vUv * uDitherScale).r * 2.0 - 1.0;
     bloom += noise / 255.0;
     bloom = linearToGamma(bloom);
 
@@ -410,6 +441,41 @@ void main() {
   color = saturateColor(color, uSaturation);
   color = (color - 0.5) * uContrast + 0.5;
   color *= uBrightness;
+
+  if (uDebugCursor) {
+    float pointerThickness = max(0.00035, uDebugPointerSize * 0.04);
+    float autoThickness = max(0.00035, uDebugAutoSize * 0.04);
+    float pointerSquare = squareOutline(
+      vUv,
+      uDebugPointer,
+      uDebugPointerSize,
+      pointerThickness
+    ) * uDebugPointerActive;
+    float autoSquare = squareOutline(
+      vUv,
+      uDebugAuto,
+      uDebugAutoSize,
+      autoThickness
+    ) * uDebugAutoActive;
+
+    color = mix(color, uDebugPointerColor, pointerSquare);
+    color = mix(color, uDebugAutoColor, autoSquare);
+
+    for (int i = 0; i < DEBUG_CONTACT_CAP; i++) {
+      float contactActive = clamp(
+        uDebugContactLife[i] / max(uDebugContactFadeDuration, 0.0001),
+        0.0,
+        1.0
+      );
+      float kind = clamp(uDebugContactKind[i], 0.0, 1.0);
+      float size = mix(uDebugAutoSize, uDebugPointerSize, kind);
+      float thickness = mix(autoThickness, pointerThickness, kind);
+      vec3 markColor = mix(uDebugAutoColor, uDebugPointerColor, kind);
+      float mark =
+        squareOutline(vUv, uDebugContacts[i], size, thickness) * contactActive;
+      color = mix(color, markColor, mark);
+    }
+  }
 
   gl_FragColor = vec4(color, 1.0);
 }
@@ -450,6 +516,52 @@ function createPair(width, height, options) {
   };
 }
 
+function createBloomChain(width, height, iterations, options) {
+  const chain = [];
+  const count = Math.max(1, Math.floor(iterations));
+  let w = width;
+  let h = height;
+
+  for (let i = 0; i < count; i++) {
+    w = Math.max(2, Math.floor(w / 2));
+    h = Math.max(2, Math.floor(h / 2));
+    chain.push(new THREE.WebGLRenderTarget(w, h, options));
+  }
+
+  return chain;
+}
+
+function createDitheringTexture() {
+  // Ordered 4x4 Bayer matrix, encoded to repeat as subtle bloom dither.
+  const bayer = [0, 8, 2, 10, 12, 4, 14, 6, 3, 11, 1, 9, 15, 7, 13, 5];
+  const size = 4;
+  const data = new Uint8Array(size * size * 4);
+
+  for (let i = 0; i < bayer.length; i++) {
+    const v = Math.floor((bayer[i] / 15) * 255);
+    const idx = i * 4;
+    data[idx] = v;
+    data[idx + 1] = v;
+    data[idx + 2] = v;
+    data[idx + 3] = 255;
+  }
+
+  const texture = new THREE.DataTexture(data, size, size, THREE.RGBAFormat);
+  texture.minFilter = THREE.LinearFilter;
+  texture.magFilter = THREE.LinearFilter;
+  texture.wrapS = THREE.RepeatWrapping;
+  texture.wrapT = THREE.RepeatWrapping;
+  texture.needsUpdate = true;
+  return texture;
+}
+
+const PAVEL_DYE_COLOR_SCALE = 0.15;
+const MAX_BLOOM_CHAIN = 16;
+const MAX_SPLAT_VELOCITY = 900;
+const DEBUG_CONTACT_CAP = 12;
+const DEBUG_CONTACT_TTL_DEFAULT = 0.28;
+const RANDOM_BURST_COUNT = DEBUG_CONTACT_CAP;
+
 const FLUID_PRESETS = {
   default: {
     paused: false,
@@ -461,30 +573,36 @@ const FLUID_PRESETS = {
     densityDissipation: 1,
     splatRadius: 0.003,
     splatForce: 6000,
-    dyeStrength: 0.55,
-    autoSplat: false,
-    autoSplatStrength: 0.2,
+    dyeStrength: 1,
+    autoSplat: true,
+    autoSplatStrength: 0.35,
+    autoSplatRate: 12,
+    autoSplatBurst: 3,
     shading: true,
     bloom: true,
     bloomResolution: 0.25,
     bloomIterations: 8,
-    bloomIntensity: 0.8,
+    bloomIntensity: 0.65,
     bloomThreshold: 0.6,
     bloomSoftKnee: 0.7,
     sunrays: true,
     sunraysResolution: 0.18,
-    sunraysWeight: 1,
-    colorA: '#1ed8ff',
-    colorB: '#ff6bd6',
-    colorC: '#8eff70',
+    sunraysWeight: 0.85,
+    colorA: '#ff6d6d',
+    colorB: '#ff0000',
+    colorC: '#7b0000',
     colorful: true,
     colorUpdateSpeed: 10,
     colorCycleSpeed: 0.8,
-    bgA: '#000000',
+    bgA: '#999797',
     bgB: '#090012',
     brightness: 1.08,
     contrast: 1.2,
     saturation: 1.25,
+    debugCursor: true,
+    debugPointerColor: '#9a9a9a',
+    debugAutoColor: '#3e003a',
+    debugContactFadeDuration: DEBUG_CONTACT_TTL_DEFAULT,
   },
   pavelLike: {
     paused: false,
@@ -496,19 +614,21 @@ const FLUID_PRESETS = {
     densityDissipation: 1,
     splatRadius: 0.0028,
     splatForce: 7000,
-    dyeStrength: 0.85,
+    dyeStrength: 1,
     autoSplat: false,
     autoSplatStrength: 0.25,
+    autoSplatRate: 10,
+    autoSplatBurst: 2,
     shading: true,
     bloom: true,
     bloomResolution: 0.25,
     bloomIterations: 10,
-    bloomIntensity: 0.95,
+    bloomIntensity: 0.72,
     bloomThreshold: 0.58,
     bloomSoftKnee: 0.7,
     sunrays: true,
     sunraysResolution: 0.2,
-    sunraysWeight: 1,
+    sunraysWeight: 0.85,
     colorA: '#1de9ff',
     colorB: '#ff4ccf',
     colorC: '#ffd35e',
@@ -520,6 +640,10 @@ const FLUID_PRESETS = {
     brightness: 1.12,
     contrast: 1.3,
     saturation: 1.4,
+    debugCursor: false,
+    debugPointerColor: '#8df4ff',
+    debugAutoColor: '#ffd35e',
+    debugContactFadeDuration: DEBUG_CONTACT_TTL_DEFAULT,
   },
   mobile: {
     paused: false,
@@ -531,14 +655,16 @@ const FLUID_PRESETS = {
     densityDissipation: 1,
     splatRadius: 0.0022,
     splatForce: 4200,
-    dyeStrength: 0.5,
+    dyeStrength: 0.9,
     autoSplat: false,
     autoSplatStrength: 0.1,
+    autoSplatRate: 6,
+    autoSplatBurst: 1,
     shading: false,
     bloom: false,
     bloomResolution: 0.2,
     bloomIterations: 4,
-    bloomIntensity: 0.65,
+    bloomIntensity: 0.5,
     bloomThreshold: 0.62,
     bloomSoftKnee: 0.7,
     sunrays: false,
@@ -555,6 +681,10 @@ const FLUID_PRESETS = {
     brightness: 1.05,
     contrast: 1.16,
     saturation: 1.2,
+    debugCursor: false,
+    debugPointerColor: '#7fdfff',
+    debugAutoColor: '#8ff0b0',
+    debugContactFadeDuration: DEBUG_CONTACT_TTL_DEFAULT,
   },
 };
 
@@ -568,6 +698,23 @@ const FluidMaterial = forwardRef((_, ref) => {
   const colorBRef = useRef(new THREE.Color());
   const colorCRef = useRef(new THREE.Color());
   const forceRef = useRef(new THREE.Vector3());
+  const autoSplatColorRef = useRef(new THREE.Vector3());
+  const autoSplatSeedRef = useRef(Math.random() * Math.PI * 2);
+  const autoPointerRef = useRef({
+    initialized: false,
+    x: 0.5,
+    y: 0.5,
+    phase: Math.random() * Math.PI * 4,
+  });
+  const debugContactsRef = useRef(
+    Array.from({ length: DEBUG_CONTACT_CAP }, () => ({
+      x: 0.5,
+      y: 0.5,
+      ttl: 0,
+      kind: 0,
+    }))
+  );
+  const debugContactWriteRef = useRef(0);
 
   const [
     {
@@ -584,6 +731,8 @@ const FluidMaterial = forwardRef((_, ref) => {
       dyeStrength,
       autoSplat,
       autoSplatStrength,
+      autoSplatRate,
+      autoSplatBurst,
       shading,
       bloom,
       bloomResolution,
@@ -605,6 +754,10 @@ const FluidMaterial = forwardRef((_, ref) => {
       brightness,
       contrast,
       saturation,
+      debugCursor,
+      debugPointerColor,
+      debugAutoColor,
+      debugContactFadeDuration,
     },
     setControls,
   ] = useControls(
@@ -687,8 +840,20 @@ const FluidMaterial = forwardRef((_, ref) => {
             max: 0.6,
             step: 0.01,
           },
+          autoSplatRate: {
+            value: FLUID_PRESETS.default.autoSplatRate,
+            min: 0.5,
+            max: 24,
+            step: 0.5,
+          },
+          autoSplatBurst: {
+            value: FLUID_PRESETS.default.autoSplatBurst,
+            min: 1,
+            max: 8,
+            step: 1,
+          },
           randomBurst: button(() => {
-            randomSplatQueueRef.current += 12;
+            randomSplatQueueRef.current += RANDOM_BURST_COUNT;
           }),
         },
         { collapsed: true }
@@ -789,6 +954,20 @@ const FluidMaterial = forwardRef((_, ref) => {
         },
         { collapsed: true }
       ),
+      Debug: folder(
+        {
+          debugCursor: FLUID_PRESETS.default.debugCursor,
+          debugPointerColor: FLUID_PRESETS.default.debugPointerColor,
+          debugAutoColor: FLUID_PRESETS.default.debugAutoColor,
+          debugContactFadeDuration: {
+            value: FLUID_PRESETS.default.debugContactFadeDuration,
+            min: 0.05,
+            max: 2,
+            step: 0.01,
+          },
+        },
+        { collapsed: true }
+      ),
     }),
     { collapsed: true }
   );
@@ -848,11 +1027,6 @@ const FluidMaterial = forwardRef((_, ref) => {
     [sunraysWidth, sunraysHeight]
   );
 
-  const screenTexel = useMemo(
-    () => new THREE.Vector2(1 / size.width, 1 / size.height),
-    [size.height, size.width]
-  );
-
   const simScene = useMemo(() => new THREE.Scene(), []);
   const simCamera = useMemo(
     () => new THREE.OrthographicCamera(-1, 1, 1, -1, 0, 1),
@@ -888,12 +1062,12 @@ const FluidMaterial = forwardRef((_, ref) => {
     [simHeight, simWidth, rtOptions]
   );
 
-  const bloomA = useMemo(
-    () => new THREE.WebGLRenderTarget(bloomWidth, bloomHeight, rtOptions),
+  const bloomComposite = useMemo(
+    () => createPair(bloomWidth, bloomHeight, rtOptions),
     [bloomHeight, bloomWidth, rtOptions]
   );
-  const bloomB = useMemo(
-    () => new THREE.WebGLRenderTarget(bloomWidth, bloomHeight, rtOptions),
+  const bloomChain = useMemo(
+    () => createBloomChain(bloomWidth, bloomHeight, MAX_BLOOM_CHAIN, rtOptions),
     [bloomHeight, bloomWidth, rtOptions]
   );
 
@@ -991,7 +1165,7 @@ const FluidMaterial = forwardRef((_, ref) => {
         uRadius: { value: splatRadius },
         uAspect: { value: simWidth / simHeight },
       }),
-    [simHeight, simWidth, splatRadius]
+    [simHeight, simWidth]
   );
 
   const bloomPrefilterMat = useMemo(
@@ -1019,6 +1193,16 @@ const FluidMaterial = forwardRef((_, ref) => {
         uTexture: { value: null },
         uTexel: { value: bloomTexel.clone() },
         uIntensity: { value: bloomIntensity },
+      }),
+    [bloomTexel]
+  );
+
+  const bloomComposeMat = useMemo(
+    () =>
+      createFullscreenMaterial(bloomComposeFragmentShader, {
+        uBase: { value: null },
+        uAdd: { value: null },
+        uAddFactor: { value: 1 },
       }),
     [bloomTexel]
   );
@@ -1058,7 +1242,9 @@ const FluidMaterial = forwardRef((_, ref) => {
           uDye: { value: null },
           uBloom: { value: null },
           uSunrays: { value: null },
+          uDithering: { value: null },
           uDyeTexel: { value: simTexel.clone() },
+          uDitherScale: { value: new THREE.Vector2(1, 1) },
           uBgA: { value: new THREE.Color(bgA) },
           uBgB: { value: new THREE.Color(bgB) },
           uBrightness: { value: brightness },
@@ -1067,12 +1253,41 @@ const FluidMaterial = forwardRef((_, ref) => {
           uShading: { value: shading },
           uBloomEnabled: { value: bloom },
           uSunraysEnabled: { value: sunrays },
+          uDebugCursor: { value: false },
+          uDebugPointer: { value: new THREE.Vector2(0.5, 0.5) },
+          uDebugAuto: { value: new THREE.Vector2(0.5, 0.5) },
+          uDebugPointerSize: { value: 0.03 },
+          uDebugAutoSize: { value: 0.03 },
+          uDebugPointerActive: { value: 0 },
+          uDebugAutoActive: { value: 0 },
+          uDebugPointerColor: {
+            value: new THREE.Color(FLUID_PRESETS.default.debugPointerColor),
+          },
+          uDebugAutoColor: {
+            value: new THREE.Color(FLUID_PRESETS.default.debugAutoColor),
+          },
+          uDebugContacts: {
+            value: Array.from(
+              { length: DEBUG_CONTACT_CAP },
+              () => new THREE.Vector2(0.5, 0.5)
+            ),
+          },
+          uDebugContactLife: {
+            value: Array.from({ length: DEBUG_CONTACT_CAP }, () => 0),
+          },
+          uDebugContactKind: {
+            value: Array.from({ length: DEBUG_CONTACT_CAP }, () => 0),
+          },
+          uDebugContactFadeDuration: {
+            value: FLUID_PRESETS.default.debugContactFadeDuration,
+          },
         },
         depthTest: false,
         depthWrite: false,
       }),
     [simTexel]
   );
+  const ditheringTexture = useMemo(() => createDitheringTexture(), []);
 
   useEffect(() => {
     simScene.add(simMesh);
@@ -1096,17 +1311,10 @@ const FluidMaterial = forwardRef((_, ref) => {
     clearTarget(pressureTex.write);
     clearTarget(curl);
     clearTarget(divergence);
-    clearTarget(bloomA);
-    clearTarget(bloomB);
-    clearTarget(sunraysMask);
-    clearTarget(sunraysTex);
-    clearTarget(sunraysTemp);
 
     gl.setRenderTarget(null);
 
     return () => {
-      simMesh.geometry.dispose();
-
       velocity.read.dispose();
       velocity.write.dispose();
       dye.read.dispose();
@@ -1115,12 +1323,39 @@ const FluidMaterial = forwardRef((_, ref) => {
       pressureTex.write.dispose();
       curl.dispose();
       divergence.dispose();
-      bloomA.dispose();
-      bloomB.dispose();
+    };
+  }, [curl, divergence, dye, gl, pressureTex, velocity]);
+
+  useEffect(() => {
+    const clearTarget = (target) => {
+      gl.setRenderTarget(target);
+      gl.clearColor(0, 0, 0, 1);
+      gl.clear(gl.COLOR_BUFFER_BIT);
+    };
+
+    clearTarget(bloomComposite.read);
+    clearTarget(bloomComposite.write);
+    bloomChain.forEach(clearTarget);
+    clearTarget(sunraysMask);
+    clearTarget(sunraysTex);
+    clearTarget(sunraysTemp);
+
+    gl.setRenderTarget(null);
+
+    return () => {
+      bloomComposite.read.dispose();
+      bloomComposite.write.dispose();
+      bloomChain.forEach((target) => target.dispose());
       sunraysMask.dispose();
       sunraysTex.dispose();
       sunraysTemp.dispose();
+    };
+  }, [bloomComposite, gl, sunraysMask, sunraysTemp, sunraysTex, bloomChain]);
 
+  useEffect(
+    () => () => {
+      simMesh.geometry.dispose();
+      ditheringTexture.dispose();
       advectionMat.dispose();
       clearMat.dispose();
       curlMat.dispose();
@@ -1132,43 +1367,33 @@ const FluidMaterial = forwardRef((_, ref) => {
       bloomPrefilterMat.dispose();
       bloomBlurMat.dispose();
       bloomFinalMat.dispose();
+      bloomComposeMat.dispose();
       sunraysMaskMat.dispose();
       sunraysMat.dispose();
       blurMat.dispose();
       displayMat.dispose();
-    };
-  }, [
-    advectionMat,
-    bloomA,
-    bloomB,
-    bloomBlurMat,
-    bloomFinalMat,
-    bloomPrefilterMat,
-    blurMat,
-    clearMat,
-    curl,
-    curlMat,
-    divergence,
-    divergenceMat,
-    dye.read,
-    dye.write,
-    displayMat,
-    gl,
-    gradientMat,
-    pressureMat,
-    pressureTex.read,
-    pressureTex.write,
-    simMesh.geometry,
-    splatMat,
-    sunraysMask,
-    sunraysMaskMat,
-    sunraysMat,
-    sunraysTemp,
-    sunraysTex,
-    velocity.read,
-    velocity.write,
-    vorticityMat,
-  ]);
+    },
+    [
+      advectionMat,
+      bloomBlurMat,
+      bloomComposeMat,
+      bloomFinalMat,
+      bloomPrefilterMat,
+      blurMat,
+      clearMat,
+      curlMat,
+      divergenceMat,
+      displayMat,
+      ditheringTexture,
+      gradientMat,
+      pressureMat,
+      simMesh.geometry,
+      splatMat,
+      sunraysMaskMat,
+      sunraysMat,
+      vorticityMat,
+    ]
+  );
 
   useImperativeHandle(ref, () => ({
     setPointer(next) {
@@ -1179,6 +1404,10 @@ const FluidMaterial = forwardRef((_, ref) => {
   useFrame((state) => {
     const dt = Math.min(0.033, state.clock.getDelta());
     const t = state.clock.elapsedTime;
+    for (let i = 0; i < DEBUG_CONTACT_CAP; i++) {
+      const contact = debugContactsRef.current[i];
+      contact.ttl = Math.max(0, contact.ttl - dt);
+    }
 
     const renderPass = (material, target) => {
       simMesh.material = material;
@@ -1215,7 +1444,12 @@ const FluidMaterial = forwardRef((_, ref) => {
 
     sunraysMat.uniforms.uWeight.value = sunraysWeight;
 
-    displayMat.uniforms.uDyeTexel.value.copy(screenTexel);
+    displayMat.uniforms.uDyeTexel.value.copy(simTexel);
+    displayMat.uniforms.uDithering.value = ditheringTexture;
+    displayMat.uniforms.uDitherScale.value.set(
+      size.width / ditheringTexture.image.width,
+      size.height / ditheringTexture.image.height
+    );
     displayMat.uniforms.uBgA.value.set(bgA);
     displayMat.uniforms.uBgB.value.set(bgB);
     displayMat.uniforms.uBrightness.value = brightness;
@@ -1225,7 +1459,22 @@ const FluidMaterial = forwardRef((_, ref) => {
     displayMat.uniforms.uBloomEnabled.value = bloom;
     displayMat.uniforms.uSunraysEnabled.value = sunrays;
 
+    const pointer = pointerRef.current;
+    const debugContactFadeDurationSafe = Number.isFinite(debugContactFadeDuration)
+      ? Math.max(0.05, debugContactFadeDuration)
+      : FLUID_PRESETS.default.debugContactFadeDuration;
+
     if (!paused) {
+      const autoSplatRateSafe = Number.isFinite(autoSplatRate)
+        ? autoSplatRate
+        : FLUID_PRESETS.default.autoSplatRate;
+      const autoSplatBurstSafe = Number.isFinite(autoSplatBurst)
+        ? autoSplatBurst
+        : FLUID_PRESETS.default.autoSplatBurst;
+      const autoSplatStrengthSafe = Number.isFinite(autoSplatStrength)
+        ? autoSplatStrength
+        : FLUID_PRESETS.default.autoSplatStrength;
+
       advectionMat.uniforms.uVelocity.value = velocity.read.texture;
       advectionMat.uniforms.uSource.value = velocity.read.texture;
       advectionMat.uniforms.uDissipation.value = velocityDissipation;
@@ -1240,25 +1489,57 @@ const FluidMaterial = forwardRef((_, ref) => {
       renderPass(vorticityMat, velocity.write);
       velocity.swap();
 
-      const splatAt = (px, py, vx, vy, rgb, strength = 1) => {
-        splatMat.uniforms.uPoint.value.set(px, py);
+      const splatAt = (px, py, vx, vy, rgb, strength = 1, debugKind = -1) => {
+        if (
+          !Number.isFinite(px) ||
+          !Number.isFinite(py) ||
+          !Number.isFinite(vx) ||
+          !Number.isFinite(vy) ||
+          !Number.isFinite(strength) ||
+          !rgb ||
+          !Number.isFinite(rgb.r) ||
+          !Number.isFinite(rgb.g) ||
+          !Number.isFinite(rgb.b)
+        ) {
+          return;
+        }
+
+        const safePx = THREE.MathUtils.clamp(px, 0, 1);
+        const safePy = THREE.MathUtils.clamp(py, 0, 1);
+        const safeStrength = THREE.MathUtils.clamp(strength, 0, 3);
+        if (debugKind >= 0) {
+          const idx = debugContactWriteRef.current;
+          debugContactsRef.current[idx].x = safePx;
+          debugContactsRef.current[idx].y = safePy;
+          debugContactsRef.current[idx].ttl = debugContactFadeDurationSafe;
+          debugContactsRef.current[idx].kind = debugKind > 0 ? 1 : 0;
+          debugContactWriteRef.current = (idx + 1) % DEBUG_CONTACT_CAP;
+        }
+
+        splatMat.uniforms.uPoint.value.set(safePx, safePy);
 
         splatMat.uniforms.uTarget.value = velocity.read.texture;
-        forceRef.current.set(vx, vy, 0);
+        forceRef.current.set(
+          THREE.MathUtils.clamp(vx, -MAX_SPLAT_VELOCITY, MAX_SPLAT_VELOCITY),
+          THREE.MathUtils.clamp(vy, -MAX_SPLAT_VELOCITY, MAX_SPLAT_VELOCITY),
+          0
+        );
         splatMat.uniforms.uColor.value.copy(forceRef.current);
         renderPass(splatMat, velocity.write);
         velocity.swap();
 
         splatMat.uniforms.uTarget.value = dye.read.texture;
         forceRef.current
-          .set(rgb.r, rgb.g, rgb.b)
-          .multiplyScalar(dyeStrength * strength);
+          .set(
+            THREE.MathUtils.clamp(rgb.r, 0, 1),
+            THREE.MathUtils.clamp(rgb.g, 0, 1),
+            THREE.MathUtils.clamp(rgb.b, 0, 1)
+          )
+          .multiplyScalar(dyeStrength * safeStrength * PAVEL_DYE_COLOR_SCALE);
         splatMat.uniforms.uColor.value.copy(forceRef.current);
         renderPass(splatMat, dye.write);
         dye.swap();
       };
-
-      const pointer = pointerRef.current;
 
       if (pointer?.down) {
         const cycleSpeed = colorCycleSpeed * Math.max(0.001, colorUpdateSpeed);
@@ -1291,35 +1572,122 @@ const FluidMaterial = forwardRef((_, ref) => {
       }
 
       if (autoSplat) {
-        const px = 0.5 + Math.sin(t * 0.43) * 0.22;
-        const py = 0.5 + Math.cos(t * 0.57) * 0.18;
-        const pvx = Math.cos(t * 1.6) * autoSplatStrength * 3.5;
-        const pvy = Math.sin(t * 1.4) * autoSplatStrength * 3.5;
+        const burstCount = Math.max(1, Math.floor(autoSplatBurstSafe));
+        const rate = Math.max(0.5, autoSplatRateSafe);
+        const pathSpeed =
+          (0.4 + rate * 0.11) * (0.55 + Math.max(0, colorCycleSpeed) * 0.45);
 
-        const pulse =
-          0.35 + 0.65 * (0.5 + 0.5 * Math.sin(t * colorCycleSpeed * 0.8));
-        forceRef.current.set(
-          colorBRef.current.r,
-          colorCRef.current.g,
-          colorARef.current.b
-        );
-        splatAt(px, py, pvx, pvy, forceRef.current, autoSplatStrength * pulse);
+        const sampleAutoCursor = (phase) => {
+          const x =
+            0.5 +
+            Math.sin(phase * 0.97) * 0.26 +
+            Math.sin(phase * 0.41 + 1.4) * 0.13 +
+            Math.sin(phase * 1.81 + 0.3) * 0.05;
+          const y =
+            0.5 +
+            Math.cos(phase * 1.13) * 0.24 +
+            Math.cos(phase * 0.53 + 2.0) * 0.12 +
+            Math.cos(phase * 1.47 + 0.9) * 0.05;
+
+          return {
+            x: THREE.MathUtils.clamp(x, 0.05, 0.95),
+            y: THREE.MathUtils.clamp(y, 0.05, 0.95),
+          };
+        };
+
+        autoPointerRef.current.phase += dt * pathSpeed;
+        const phase = autoPointerRef.current.phase + autoSplatSeedRef.current;
+        const target = sampleAutoCursor(phase);
+
+        if (!autoPointerRef.current.initialized) {
+          autoPointerRef.current.initialized = true;
+          autoPointerRef.current.x = target.x;
+          autoPointerRef.current.y = target.y;
+        }
+
+        const prevX = autoPointerRef.current.x;
+        const prevY = autoPointerRef.current.y;
+        const follow = THREE.MathUtils.clamp(0.1 + dt * (rate * 2.1), 0.1, 0.6);
+        const nextX = THREE.MathUtils.lerp(prevX, target.x, follow);
+        const nextY = THREE.MathUtils.lerp(prevY, target.y, follow);
+
+        let dvx = nextX - prevX;
+        let dvy = nextY - prevY;
+
+        if (size.width > size.height) {
+          dvx *= size.width / Math.max(1, size.height);
+        } else {
+          dvy *= size.height / Math.max(1, size.width);
+        }
+
+        let baseForceX = dvx * splatForce * autoSplatStrengthSafe * 64;
+        let baseForceY = dvy * splatForce * autoSplatStrengthSafe * 64;
+        const minForce = splatForce * autoSplatStrengthSafe * 0.16;
+        if (Math.hypot(baseForceX, baseForceY) < minForce) {
+          baseForceX += Math.cos(phase * 1.9) * minForce;
+          baseForceY += Math.sin(phase * 1.9) * minForce;
+        }
+
+        autoPointerRef.current.x = nextX;
+        autoPointerRef.current.y = nextY;
+
+        for (let i = 0; i < burstCount; i++) {
+          const jitterPhase = phase + i * 2.17;
+          const trailT = (i + 1) / (burstCount + 1);
+          const trailX = THREE.MathUtils.lerp(prevX, nextX, trailT);
+          const trailY = THREE.MathUtils.lerp(prevY, nextY, trailT);
+          const jitter = 0.012 * (i / Math.max(1, burstCount - 1));
+          const jx = Math.sin(jitterPhase * 1.37) * jitter;
+          const jy = Math.cos(jitterPhase * 1.71) * jitter;
+          const pulse =
+            0.75 + 0.25 * (0.5 + 0.5 * Math.sin(jitterPhase * 0.83));
+          const decay = 1 - i * 0.07;
+
+          autoSplatColorRef.current.set(
+            THREE.MathUtils.lerp(
+              colorARef.current.r,
+              colorBRef.current.r,
+              0.5 + 0.5 * Math.sin(jitterPhase * 0.61)
+            ),
+            THREE.MathUtils.lerp(
+              colorBRef.current.g,
+              colorCRef.current.g,
+              0.5 + 0.5 * Math.sin(jitterPhase * 0.73 + 0.7)
+            ),
+            THREE.MathUtils.lerp(
+              colorCRef.current.b,
+              colorARef.current.b,
+              0.5 + 0.5 * Math.sin(jitterPhase * 0.67 + 1.4)
+            )
+          );
+
+          splatAt(
+            trailX + jx,
+            trailY + jy,
+            baseForceX * decay,
+            baseForceY * decay,
+            autoSplatColorRef.current,
+            pulse * 1.35
+          );
+        }
+      } else {
+        autoPointerRef.current.initialized = false;
       }
 
       if (randomSplatQueueRef.current > 0) {
-        const batch = Math.min(randomSplatQueueRef.current, 6);
+        const batch = Math.min(randomSplatQueueRef.current, RANDOM_BURST_COUNT);
         randomSplatQueueRef.current -= batch;
         for (let i = 0; i < batch; i++) {
           const px = Math.random();
           const py = Math.random();
-          const vx = (Math.random() * 2 - 1) * splatForce * 0.35;
-          const vy = (Math.random() * 2 - 1) * splatForce * 0.35;
+          const vx = (Math.random() * 2 - 1) * splatForce * 0.08;
+          const vy = (Math.random() * 2 - 1) * splatForce * 0.08;
           const hueMix = Math.random();
           const tint = colorARef.current
             .clone()
             .lerp(colorBRef.current, hueMix)
             .lerp(colorCRef.current, Math.random() * 0.5);
-          splatAt(px, py, vx, vy, tint, 0.5 + Math.random() * 0.8);
+          splatAt(px, py, vx, vy, tint, 0.5 + Math.random() * 0.8, 0);
         }
       }
 
@@ -1349,7 +1717,42 @@ const FluidMaterial = forwardRef((_, ref) => {
       dye.swap();
     }
 
-    if (bloom) {
+    const debugCursorSize = THREE.MathUtils.clamp(
+      Math.sqrt(Math.max(splatRadius, 0.000001)) * 1.35,
+      0.008,
+      0.18
+    );
+    displayMat.uniforms.uDebugCursor.value = debugCursor;
+    displayMat.uniforms.uDebugPointer.value.set(
+      pointer?.x ?? 0.5,
+      pointer?.y ?? 0.5
+    );
+    displayMat.uniforms.uDebugAuto.value.set(
+      autoPointerRef.current.x,
+      autoPointerRef.current.y
+    );
+    displayMat.uniforms.uDebugPointerSize.value = debugCursorSize;
+    displayMat.uniforms.uDebugAutoSize.value = debugCursorSize;
+    displayMat.uniforms.uDebugPointerActive.value = pointer?.down ? 1 : 0;
+    displayMat.uniforms.uDebugAutoActive.value =
+      autoSplat && autoPointerRef.current.initialized ? 1 : 0;
+    displayMat.uniforms.uDebugPointerColor.value.set(debugPointerColor);
+    displayMat.uniforms.uDebugAutoColor.value.set(debugAutoColor);
+    displayMat.uniforms.uDebugContactFadeDuration.value =
+      debugContactFadeDurationSafe;
+    for (let i = 0; i < DEBUG_CONTACT_CAP; i++) {
+      const contact = debugContactsRef.current[i];
+      displayMat.uniforms.uDebugContacts.value[i].set(contact.x, contact.y);
+      displayMat.uniforms.uDebugContactLife.value[i] = contact.ttl;
+      displayMat.uniforms.uDebugContactKind.value[i] = contact.kind;
+    }
+
+    const bloomLevelCount = Math.min(
+      bloomChain.length,
+      Math.max(1, Math.floor(bloomIterations))
+    );
+
+    if (bloom && bloomLevelCount > 0) {
       const knee = bloomThreshold * bloomSoftKnee + 0.0001;
       bloomPrefilterMat.uniforms.uCurve.value.set(
         bloomThreshold - knee,
@@ -1357,24 +1760,35 @@ const FluidMaterial = forwardRef((_, ref) => {
         0.25 / knee
       );
       bloomPrefilterMat.uniforms.uTexture.value = dye.read.texture;
-      renderPass(bloomPrefilterMat, bloomA);
+      renderPass(bloomPrefilterMat, bloomChain[0]);
 
-      let sourceTarget = bloomA;
-      let destTarget = bloomB;
-      const iterations = Math.max(1, Math.floor(bloomIterations));
-
-      for (let i = 0; i < iterations; i++) {
-        bloomBlurMat.uniforms.uTexture.value = sourceTarget.texture;
-        renderPass(bloomBlurMat, destTarget);
-
-        const temp = sourceTarget;
-        sourceTarget = destTarget;
-        destTarget = temp;
+      for (let i = 1; i < bloomLevelCount; i++) {
+        const src = bloomChain[i - 1];
+        const dst = bloomChain[i];
+        bloomBlurMat.uniforms.uTexel.value.set(1 / src.width, 1 / src.height);
+        bloomBlurMat.uniforms.uTexture.value = src.texture;
+        renderPass(bloomBlurMat, dst);
       }
 
-      bloomFinalMat.uniforms.uTexture.value = sourceTarget.texture;
-      renderPass(bloomFinalMat, bloomB);
-      displayMat.uniforms.uBloom.value = bloomB.texture;
+      gl.setRenderTarget(bloomComposite.read);
+      gl.clearColor(0, 0, 0, 1);
+      gl.clear(gl.COLOR_BUFFER_BIT);
+
+      for (let i = bloomLevelCount - 1; i >= 0; i--) {
+        bloomComposeMat.uniforms.uBase.value = bloomComposite.read.texture;
+        bloomComposeMat.uniforms.uAdd.value = bloomChain[i].texture;
+        bloomComposeMat.uniforms.uAddFactor.value =
+          0.82 ** (bloomLevelCount - 1 - i);
+        renderPass(bloomComposeMat, bloomComposite.write);
+        bloomComposite.swap();
+      }
+
+      bloomFinalMat.uniforms.uTexel.value.copy(bloomTexel);
+      bloomFinalMat.uniforms.uTexture.value = bloomComposite.read.texture;
+      renderPass(bloomFinalMat, bloomComposite.write);
+      bloomComposite.swap();
+
+      displayMat.uniforms.uBloom.value = bloomComposite.read.texture;
     } else {
       displayMat.uniforms.uBloom.value = dye.read.texture;
     }

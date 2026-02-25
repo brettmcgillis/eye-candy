@@ -5,7 +5,12 @@ import { button, folder, useControls } from 'leva';
 
 import { useRef } from 'react';
 
-import { FLUID_PRESETS, RANDOM_BURST_COUNT } from './fluidPresets';
+import {
+  BLEND_MODE_ADDITIVE,
+  BLEND_MODE_MULTIPLY,
+  FLUID_PRESETS,
+  RANDOM_BURST_COUNT,
+} from './fluidPresets';
 
 function copySettingsToClipboard(get) {
   const settings = {
@@ -44,6 +49,7 @@ function copySettingsToClipboard(get) {
     brightness: get('Fluid.Display.brightness'),
     contrast: get('Fluid.Display.contrast'),
     saturation: get('Fluid.Display.saturation'),
+    blendMode: get('Fluid.Display.blendMode'),
     debugCursor: get('Fluid.Debug.debugCursor'),
     debugPointerColor: get('Fluid.Debug.debugPointerColor'),
     debugAutoColor: get('Fluid.Debug.debugAutoColor'),
@@ -287,6 +293,13 @@ export default function useFluidControls({ presetRef, randomSplatQueueRef }) {
             min: 0.2,
             max: 2.2,
             step: 0.01,
+          },
+          blendMode: {
+            value: FLUID_PRESETS.default.blendMode,
+            options: {
+              Additive: BLEND_MODE_ADDITIVE,
+              Multiply: BLEND_MODE_MULTIPLY,
+            },
           },
         },
         { collapsed: true }

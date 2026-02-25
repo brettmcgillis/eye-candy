@@ -373,6 +373,7 @@ uniform bool uShading;
 uniform bool uBloomEnabled;
 uniform bool uSunraysEnabled;
 uniform bool uDebugCursor;
+uniform float uBlendMode;
 uniform vec2 uDebugPointer;
 uniform vec2 uDebugAuto;
 uniform float uDebugPointerSize;
@@ -442,7 +443,17 @@ void main() {
   }
 
   vec3 bg = mix(uBgA, uBgB, smoothstep(0.0, 1.0, vUv.y));
-  vec3 color = bg + c;
+  vec3 color;
+  
+  if (uBlendMode > 0.5) {
+    // For ink-on-paper effect, use multiplicative blending (darken based on dye)
+    // Invert dye to get ink concentration
+    vec3 ink = vec3(1.0) - c;
+    color = bg * ink;
+  } else {
+    // Standard additive blending for luminous effects
+    color = bg + c;
+  }
 
   color = saturateColor(color, uSaturation);
   color = (color - 0.5) * uContrast + 0.5;
@@ -634,6 +645,7 @@ const FluidMaterial = forwardRef((_, ref) => {
     brightness,
     contrast,
     saturation,
+    blendMode,
     debugCursor,
     debugPointerColor,
     debugAutoColor,
@@ -920,6 +932,7 @@ const FluidMaterial = forwardRef((_, ref) => {
           uShading: { value: shading },
           uBloomEnabled: { value: bloom },
           uSunraysEnabled: { value: sunrays },
+          uBlendMode: { value: 0 },
           uDebugCursor: { value: false },
           uDebugPointer: { value: new THREE.Vector2(0.5, 0.5) },
           uDebugAuto: { value: new THREE.Vector2(0.5, 0.5) },
@@ -1122,6 +1135,7 @@ const FluidMaterial = forwardRef((_, ref) => {
     displayMat.uniforms.uBrightness.value = brightness;
     displayMat.uniforms.uContrast.value = contrast;
     displayMat.uniforms.uSaturation.value = saturation;
+    displayMat.uniforms.uBlendMode.value = blendMode;
     displayMat.uniforms.uShading.value = shading;
     displayMat.uniforms.uBloomEnabled.value = bloom;
     displayMat.uniforms.uSunraysEnabled.value = sunrays;
@@ -1220,6 +1234,20 @@ const FluidMaterial = forwardRef((_, ref) => {
           colorARef.current.lerp(colorCRef.current, mixBC * 0.45);
         }
 
+        // For multiply blend mode (ink on paper), invert colors so black becomes visible
+        let paintColor = colorARef.current;
+        if (blendMode > 0.5) {
+          paintColor = colorARef.current
+            .clone()
+            .multiplyScalar(-1)
+            .addScalar(1);
+        }
+        if (!colorful && blendMode > 0.5) {
+          // When not colorful in multiply mode, need to invert the base colorA
+          const baseColor = new THREE.Color(colorA);
+          paintColor = baseColor.multiplyScalar(-1).addScalar(1);
+        }
+
         const speed = Math.min(
           1,
           Math.hypot(pointer.vx || 0, pointer.vy || 0) * 80
@@ -1232,7 +1260,7 @@ const FluidMaterial = forwardRef((_, ref) => {
           pointer.y,
           forceX,
           forceY,
-          colorful ? colorARef.current : colorARef.current.set(colorA),
+          paintColor,
           0.65 + speed * 0.75
         );
       } else if (!startedRef.current) {
@@ -1341,6 +1369,11 @@ const FluidMaterial = forwardRef((_, ref) => {
           )
           .multiplyScalar(0.75);
 
+        // For multiply blend mode (ink on paper), invert colors so black becomes visible
+        if (blendMode > 0.5) {
+          autoSplatColorRef.current.multiplyScalar(-1).addScalar(1);
+        }
+
         const autoStrength =
           (0.12 + autoSpeed * 0.2) *
           mobileDyeFactor *
@@ -1391,6 +1424,10 @@ const FluidMaterial = forwardRef((_, ref) => {
             .clone()
             .lerp(colorBRef.current, hueMix)
             .lerp(colorCRef.current, Math.random() * 0.5);
+          // For multiply blend mode (ink on paper), invert colors
+          if (blendMode > 0.5) {
+            tint.multiplyScalar(-1).addScalar(1);
+          }
           splatAt(px, py, vx, vy, tint, 0.5 + Math.random() * 0.8, 0);
         }
       }

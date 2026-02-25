@@ -561,7 +561,7 @@ function createDitheringTexture() {
   return texture;
 }
 
-const PAVEL_DYE_COLOR_SCALE = 0.15;
+const DYE_COLOR_SCALE = 0.15;
 const MAX_BLOOM_CHAIN = 16;
 const MAX_SPLAT_VELOCITY = 900;
 
@@ -1204,7 +1204,7 @@ const FluidMaterial = forwardRef((_, ref) => {
             THREE.MathUtils.clamp(rgb.g, 0, 1),
             THREE.MathUtils.clamp(rgb.b, 0, 1)
           )
-          .multiplyScalar(dyeStrength * safeStrength * PAVEL_DYE_COLOR_SCALE);
+          .multiplyScalar(dyeStrength * safeStrength * DYE_COLOR_SCALE);
         splatMat.uniforms.uColor.value.copy(forceRef.current);
         renderPass(splatMat, dye.write);
         dye.swap();

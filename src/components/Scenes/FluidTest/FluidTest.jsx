@@ -24,7 +24,6 @@ function FullscreenPlane() {
       let vx = prev ? x - prev.x : 0;
       let vy = prev ? y - prev.y : 0;
 
-      // Match Pavel's delta correction so force is balanced across aspect ratios.
       if (size.width > size.height) {
         vx *= size.width / Math.max(1, size.height);
       } else {

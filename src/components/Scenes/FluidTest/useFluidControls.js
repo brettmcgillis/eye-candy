@@ -1,3 +1,6 @@
+/* eslint-disable prefer-destructuring */
+
+/* eslint-disable no-param-reassign */
 import { button, folder, useControls } from 'leva';
 
 import { useRef } from 'react';
@@ -72,8 +75,20 @@ export default function useFluidControls({ presetRef, randomSplatQueueRef }) {
           value: 'default',
           options: {
             Default: 'default',
-            'Pavel-Like': 'pavelLike',
+            Pastel: 'pastel',
             Mobile: 'mobile',
+            'Fast Flow': 'fastFlow',
+            'Viscous Flow': 'viscousFlow',
+            'Debug View': 'debugView',
+            'Ink on Paper': 'inkOnPaper',
+          },
+          onChange: (value) => {
+            const presetValues = FLUID_PRESETS[value];
+            if (!presetValues) return;
+            if (setRef.current) {
+              presetRef.current = value;
+              setRef.current(presetValues);
+            }
           },
         },
         resetToPreset: button((get) => {

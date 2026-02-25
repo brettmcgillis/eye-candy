@@ -383,6 +383,11 @@ uniform float uDebugAutoActive;
 uniform vec3 uDebugPointerColor;
 uniform vec3 uDebugAutoColor;
 #define DEBUG_CONTACT_CAP 12
+#if DEBUG_CONTACT_CAP > 0
+uniform float uDebugAutoCount;
+uniform vec2 uDebugAutos[DEBUG_CONTACT_CAP];
+uniform float uDebugAutoLife[DEBUG_CONTACT_CAP];
+#endif
 uniform vec2 uDebugContacts[DEBUG_CONTACT_CAP];
 uniform float uDebugContactLife[DEBUG_CONTACT_CAP];
 uniform float uDebugContactKind[DEBUG_CONTACT_CAP];
@@ -492,6 +497,16 @@ void main() {
         squareOutline(vUv, uDebugContacts[i], size, thickness) * contactActive;
       color = mix(color, markColor, mark);
     }
+    // draw additional auto debug squares (beyond the primary auto)
+    #if DEBUG_CONTACT_CAP > 0
+    for (int i = 0; i < DEBUG_CONTACT_CAP; i++) {
+      if (float(i) >= uDebugAutoCount) continue;
+      if (i == 0) continue;
+      float aActive = clamp(uDebugAutoLife[i] / max(uDebugContactFadeDuration, 0.0001), 0.0, 1.0);
+      float aMark = squareOutline(vUv, uDebugAutos[i], uDebugAutoSize, autoThickness) * aActive;
+      color = mix(color, uDebugAutoColor, aMark);
+    }
+    #endif
   }
 
   gl_FragColor = vec4(color, 1.0);
@@ -588,12 +603,16 @@ const FluidMaterial = forwardRef((_, ref) => {
   const forceRef = useRef(new THREE.Vector3());
   const autoSplatColorRef = useRef(new THREE.Color());
   const autoSplatSeedRef = useRef(Math.random() * Math.PI * 2);
-  const autoPointerRef = useRef({
-    initialized: false,
-    x: 0.5,
-    y: 0.5,
-    phase: Math.random() * Math.PI * 4,
-  });
+  const autoPointersRef = useRef([
+    {
+      initialized: false,
+      x: 0.5,
+      y: 0.5,
+      phase: Math.random() * Math.PI * 4,
+      seed: Math.random() * Math.PI * 2,
+      ttl: 0,
+    },
+  ]);
   const debugContactsRef = useRef(
     Array.from({ length: DEBUG_CONTACT_CAP }, () => ({
       x: 0.5,
@@ -624,6 +643,7 @@ const FluidMaterial = forwardRef((_, ref) => {
     autoSplatStrength,
     autoSplatRate,
     autoSplatBurst,
+    autoSplatCount,
     shading,
     bloom,
     bloomResolution,
@@ -946,6 +966,16 @@ const FluidMaterial = forwardRef((_, ref) => {
           uDebugAutoColor: {
             value: new THREE.Color(FLUID_PRESETS.default.debugAutoColor),
           },
+          uDebugAutoCount: { value: 0 },
+          uDebugAutos: {
+            value: Array.from(
+              { length: DEBUG_CONTACT_CAP },
+              () => new THREE.Vector2(0.5, 0.5)
+            ),
+          },
+          uDebugAutoLife: {
+            value: Array.from({ length: DEBUG_CONTACT_CAP }, () => 0),
+          },
           uDebugContacts: {
             value: Array.from(
               { length: DEBUG_CONTACT_CAP },
@@ -1088,6 +1118,11 @@ const FluidMaterial = forwardRef((_, ref) => {
       const contact = debugContactsRef.current[i];
       contact.ttl = Math.max(0, contact.ttl - dt);
     }
+    // decay auto pointer TTLs so they can fade out when deactivated
+    autoPointersRef.current.forEach((ap) => {
+      if (!ap) return;
+      ap.ttl = Math.max(0, (ap.ttl || 0) - dt);
+    });
 
     const renderPass = (material, target) => {
       simMesh.material = material;
@@ -1292,123 +1327,148 @@ const FluidMaterial = forwardRef((_, ref) => {
           };
         };
 
-        autoPointerRef.current.phase += dt * pathSpeed;
-        const phase = autoPointerRef.current.phase + autoSplatSeedRef.current;
-        const target = sampleAutoCursor(phase);
-
-        if (!autoPointerRef.current.initialized) {
-          autoPointerRef.current.initialized = true;
-          autoPointerRef.current.x = target.x;
-          autoPointerRef.current.y = target.y;
+        // Support multiple autonomous splat cursors
+        const count = Math.max(1, Math.floor(autoSplatCount || 1));
+        // ensure pointers array length
+        while (autoPointersRef.current.length < count) {
+          autoPointersRef.current.push({
+            initialized: false,
+            x: 0.5,
+            y: 0.5,
+            phase: Math.random() * Math.PI * 4,
+            seed: Math.random() * Math.PI * 2,
+            ttl: 0,
+          });
         }
 
-        const prevX = autoPointerRef.current.x;
-        const prevY = autoPointerRef.current.y;
-        const follow = THREE.MathUtils.clamp(
-          0.22 + dt * (rate * 3.0),
-          0.22,
-          0.9
-        );
-        const nextX = THREE.MathUtils.lerp(prevX, target.x, follow);
-        const nextY = THREE.MathUtils.lerp(prevY, target.y, follow);
+        for (let p = 0; p < count; p++) {
+          const ap = autoPointersRef.current[p] || {};
+          if (!ap.seed) ap.seed = Math.random() * Math.PI * 2;
+          if (!ap.phase && ap.phase !== 0)
+            ap.phase = Math.random() * Math.PI * 4;
 
-        let dvx = nextX - prevX;
-        let dvy = nextY - prevY;
+          ap.phase += dt * pathSpeed;
+          const phase = ap.phase + (ap.seed || 0);
+          const target = sampleAutoCursor(phase);
 
-        if (size.width > size.height) {
-          dvx *= size.width / Math.max(1, size.height);
-        } else {
-          dvy *= size.height / Math.max(1, size.width);
-        }
+          if (!ap.initialized) {
+            ap.initialized = true;
+            ap.x = target.x;
+            ap.y = target.y;
+          }
+          // refresh TTL so the debug marker remains visible while active
+          ap.ttl = debugContactFadeDurationSafe;
 
-        const autoSpeed = Math.min(1, Math.hypot(dvx, dvy) * 140);
-        const mobileForceFactor =
-          FLUID_PRESETS.mobile.splatForce / Math.max(1, splatForce);
-        const mobileDyeFactor =
-          FLUID_PRESETS.mobile.dyeStrength / Math.max(0.001, dyeStrength);
-        let autoForceX =
-          dvx * splatForce * autoSplatStrengthSafe * mobileForceFactor * 1.4;
-        let autoForceY =
-          dvy * splatForce * autoSplatStrengthSafe * mobileForceFactor * 1.4;
-        const minForce =
-          splatForce * autoSplatStrengthSafe * mobileForceFactor * 0.0018;
-        if (Math.hypot(autoForceX, autoForceY) < minForce) {
-          autoForceX += Math.cos(phase * 1.9) * minForce;
-          autoForceY += Math.sin(phase * 1.9) * minForce;
-        }
-
-        autoPointerRef.current.x = nextX;
-        autoPointerRef.current.y = nextY;
-
-        autoSplatColorRef.current
-          .set(
-            Math.min(
-              1,
-              THREE.MathUtils.lerp(
-                colorARef.current.r,
-                colorBRef.current.r,
-                0.5 + 0.5 * Math.sin(phase * 0.61)
-              ) + 0.01
-            ),
-            Math.min(
-              1,
-              THREE.MathUtils.lerp(
-                colorBRef.current.g,
-                colorCRef.current.g,
-                0.5 + 0.5 * Math.sin(phase * 0.73 + 0.7)
-              ) + 0.01
-            ),
-            Math.min(
-              1,
-              THREE.MathUtils.lerp(
-                colorCRef.current.b,
-                colorARef.current.b,
-                0.5 + 0.5 * Math.sin(phase * 0.67 + 1.4)
-              ) + 0.01
-            )
-          )
-          .multiplyScalar(0.75);
-
-        // For multiply blend mode (ink on paper), invert colors so black becomes visible
-        if (blendMode > 0.5) {
-          autoSplatColorRef.current.multiplyScalar(-1).addScalar(1);
-        }
-
-        const autoStrength =
-          (0.12 + autoSpeed * 0.2) *
-          mobileDyeFactor *
-          autoSplatStrengthSafe *
-          0.75;
-        splatAt(
-          nextX,
-          nextY,
-          autoForceX,
-          autoForceY,
-          autoSplatColorRef.current,
-          autoStrength
-        );
-
-        for (let i = 1; i < burstCount; i++) {
-          const jitterPhase = phase + i * 1.73;
-          const trailT = i / burstCount;
-          const trailX = THREE.MathUtils.lerp(prevX, nextX, trailT);
-          const trailY = THREE.MathUtils.lerp(prevY, nextY, trailT);
-          const jitter = 0.006 * (i / Math.max(1, burstCount - 1));
-          const jx = Math.sin(jitterPhase * 1.19) * jitter;
-          const jy = Math.cos(jitterPhase * 1.47) * jitter;
-          const decay = Math.max(0.12, 1 - i * 0.28);
-
-          splatAt(
-            trailX + jx,
-            trailY + jy,
-            autoForceX * decay,
-            autoForceY * decay,
-            autoSplatColorRef.current,
-            autoStrength * decay * 0.55
+          const prevX = ap.x;
+          const prevY = ap.y;
+          const follow = THREE.MathUtils.clamp(
+            0.22 + dt * (rate * 3.0),
+            0.22,
+            0.9
           );
+          const nextX = THREE.MathUtils.lerp(prevX, target.x, follow);
+          const nextY = THREE.MathUtils.lerp(prevY, target.y, follow);
+
+          let dvx = nextX - prevX;
+          let dvy = nextY - prevY;
+
+          if (size.width > size.height) {
+            dvx *= size.width / Math.max(1, size.height);
+          } else {
+            dvy *= size.height / Math.max(1, size.width);
+          }
+
+          const autoSpeed = Math.min(1, Math.hypot(dvx, dvy) * 140);
+          const mobileForceFactor =
+            FLUID_PRESETS.mobile.splatForce / Math.max(1, splatForce);
+          const mobileDyeFactor =
+            FLUID_PRESETS.mobile.dyeStrength / Math.max(0.001, dyeStrength);
+          let autoForceX =
+            dvx * splatForce * autoSplatStrengthSafe * mobileForceFactor * 1.4;
+          let autoForceY =
+            dvy * splatForce * autoSplatStrengthSafe * mobileForceFactor * 1.4;
+          const minForce =
+            splatForce * autoSplatStrengthSafe * mobileForceFactor * 0.0018;
+          if (Math.hypot(autoForceX, autoForceY) < minForce) {
+            autoForceX += Math.cos(phase * 1.9) * minForce;
+            autoForceY += Math.sin(phase * 1.9) * minForce;
+          }
+
+          ap.x = nextX;
+          ap.y = nextY;
+
+          autoSplatColorRef.current
+            .set(
+              Math.min(
+                1,
+                THREE.MathUtils.lerp(
+                  colorARef.current.r,
+                  colorBRef.current.r,
+                  0.5 + 0.5 * Math.sin(phase * 0.61 + p * 0.13)
+                ) + 0.01
+              ),
+              Math.min(
+                1,
+                THREE.MathUtils.lerp(
+                  colorBRef.current.g,
+                  colorCRef.current.g,
+                  0.5 + 0.5 * Math.sin(phase * 0.73 + 0.7 + p * 0.11)
+                ) + 0.01
+              ),
+              Math.min(
+                1,
+                THREE.MathUtils.lerp(
+                  colorCRef.current.b,
+                  colorARef.current.b,
+                  0.5 + 0.5 * Math.sin(phase * 0.67 + 1.4 + p * 0.09)
+                ) + 0.01
+              )
+            )
+            .multiplyScalar(0.75);
+
+          if (blendMode > 0.5) {
+            autoSplatColorRef.current.multiplyScalar(-1).addScalar(1);
+          }
+
+          const autoStrength =
+            (0.12 + autoSpeed * 0.2) *
+            mobileDyeFactor *
+            autoSplatStrengthSafe *
+            0.75;
+          splatAt(
+            nextX,
+            nextY,
+            autoForceX,
+            autoForceY,
+            autoSplatColorRef.current,
+            autoStrength
+          );
+
+          for (let i = 1; i < burstCount; i++) {
+            const jitterPhase = phase + i * 1.73;
+            const trailT = i / burstCount;
+            const trailX = THREE.MathUtils.lerp(prevX, nextX, trailT);
+            const trailY = THREE.MathUtils.lerp(prevY, nextY, trailT);
+            const jitter = 0.006 * (i / Math.max(1, burstCount - 1));
+            const jx = Math.sin(jitterPhase * 1.19) * jitter;
+            const jy = Math.cos(jitterPhase * 1.47) * jitter;
+            const decay = Math.max(0.12, 1 - i * 0.28);
+
+            splatAt(
+              trailX + jx,
+              trailY + jy,
+              autoForceX * decay,
+              autoForceY * decay,
+              autoSplatColorRef.current,
+              autoStrength * decay * 0.55
+            );
+          }
         }
       } else {
-        autoPointerRef.current.initialized = false;
+        // mark all auto pointers as uninitialized when autoSplat disabled
+        autoPointersRef.current.forEach((p) => {
+          if (p) p.initialized = false;
+        });
       }
 
       if (randomSplatQueueRef.current > 0) {
@@ -1468,15 +1528,39 @@ const FluidMaterial = forwardRef((_, ref) => {
       pointer?.x ?? 0.5,
       pointer?.y ?? 0.5
     );
-    displayMat.uniforms.uDebugAuto.value.set(
-      autoPointerRef.current.x,
-      autoPointerRef.current.y
+    const firstAuto = autoPointersRef.current[0] || {
+      x: 0.5,
+      y: 0.5,
+      initialized: false,
+      ttl: 0,
+    };
+    displayMat.uniforms.uDebugAuto.value.set(firstAuto.x, firstAuto.y);
+    // populate autos array for shader (one per autonomous splat)
+    const desiredCount = Math.max(0, Math.floor(autoSplatCount || 0));
+    let highestActiveIndex = -1;
+    for (let i = 0; i < autoPointersRef.current.length; i++) {
+      const ap = autoPointersRef.current[i];
+      if (ap && (ap.ttl || 0) > 0) highestActiveIndex = i;
+    }
+    const autoCount = Math.min(
+      DEBUG_CONTACT_CAP,
+      Math.max(desiredCount, highestActiveIndex + 1)
     );
+    displayMat.uniforms.uDebugAutoCount.value = autoCount;
+    for (let i = 0; i < DEBUG_CONTACT_CAP; i++) {
+      const ap = autoPointersRef.current[i];
+      if (i < autoCount && ap) {
+        displayMat.uniforms.uDebugAutos.value[i].set(ap.x, ap.y);
+        displayMat.uniforms.uDebugAutoLife.value[i] = ap.ttl || 0;
+      } else {
+        displayMat.uniforms.uDebugAutos.value[i].set(0.5, 0.5);
+        displayMat.uniforms.uDebugAutoLife.value[i] = 0;
+      }
+    }
     displayMat.uniforms.uDebugPointerSize.value = debugCursorSize;
     displayMat.uniforms.uDebugAutoSize.value = debugCursorSize;
     displayMat.uniforms.uDebugPointerActive.value = pointer?.down ? 1 : 0;
-    displayMat.uniforms.uDebugAutoActive.value =
-      autoSplat && autoPointerRef.current.initialized ? 1 : 0;
+    displayMat.uniforms.uDebugAutoActive.value = firstAuto.ttl > 0 ? 1 : 0;
     displayMat.uniforms.uDebugPointerColor.value.set(debugPointerColor);
     displayMat.uniforms.uDebugAutoColor.value.set(debugAutoColor);
     displayMat.uniforms.uDebugContactFadeDuration.value =

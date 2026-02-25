@@ -28,6 +28,7 @@ function copySettingsToClipboard(get) {
     autoSplatStrength: get('Fluid.Interaction.autoSplatStrength'),
     autoSplatRate: get('Fluid.Interaction.autoSplatRate'),
     autoSplatBurst: get('Fluid.Interaction.autoSplatBurst'),
+    autoSplatCount: get('Fluid.Interaction.autoSplatCount'),
     shading: get('Fluid.Effects.shading'),
     bloom: get('Fluid.Effects.bloom'),
     bloomResolution: get('Fluid.Effects.bloomResolution'),
@@ -188,6 +189,12 @@ export default function useFluidControls({ presetRef, randomSplatQueueRef }) {
           },
           autoSplatBurst: {
             value: FLUID_PRESETS.default.autoSplatBurst,
+            min: 1,
+            max: 8,
+            step: 1,
+          },
+          autoSplatCount: {
+            value: FLUID_PRESETS.default.autoSplatCount,
             min: 1,
             max: 8,
             step: 1,

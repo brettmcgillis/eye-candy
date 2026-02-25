@@ -611,6 +611,17 @@ const FluidMaterial = forwardRef((_, ref) => {
       phase: Math.random() * Math.PI * 4,
       seed: Math.random() * Math.PI * 2,
       ttl: 0,
+      jitterOffset: {
+        x: (Math.random() - 0.5) * 0.08,
+        y: (Math.random() - 0.5) * 0.08,
+      },
+      freqMul: {
+        a: 0.9 + Math.random() * 0.4,
+        b: 0.8 + Math.random() * 0.5,
+        c: 0.8 + Math.random() * 0.5,
+      },
+      ampMul: 1 + (Math.random() - 0.5) * 0.5,
+      pathSpeedMul: 0.7 + Math.random() * 1.2,
     },
   ]);
   const debugContactsRef = useRef(
@@ -1309,27 +1320,36 @@ const FluidMaterial = forwardRef((_, ref) => {
         const pathSpeed =
           (0.9 + rate * 0.15) * (0.7 + Math.max(0, colorCycleSpeed) * 0.5);
 
-        const sampleAutoCursor = (phase) => {
+        const sampleAutoCursor = (phase, ap = {}) => {
+          // per-pointer multipliers to diversify paths
+          const aMul = (ap.freqMul && ap.freqMul.a) || 0.97;
+          const bMul = (ap.freqMul && ap.freqMul.b) || 0.41;
+          const cMul = (ap.freqMul && ap.freqMul.c) || 1.81;
+          const amp = (ap.ampMul || 1) * 1.0;
+
           const x =
             0.5 +
-            Math.sin(phase * 0.97) * 0.26 +
-            Math.sin(phase * 0.41 + 1.4) * 0.13 +
-            Math.sin(phase * 1.81 + 0.3) * 0.05;
+            Math.sin(phase * aMul) * 0.26 * amp +
+            Math.sin(phase * bMul + 1.4) * 0.13 * amp +
+            Math.sin(phase * cMul + 0.3) * 0.05 * amp;
           const y =
             0.5 +
-            Math.cos(phase * 1.13) * 0.24 +
-            Math.cos(phase * 0.53 + 2.0) * 0.12 +
-            Math.cos(phase * 1.47 + 0.9) * 0.05;
+            Math.cos(phase * (1.13 * aMul)) * 0.24 * amp +
+            Math.cos(phase * (0.53 * bMul) + 2.0) * 0.12 * amp +
+            Math.cos(phase * (1.47 * cMul) + 0.9) * 0.05 * amp;
+
+          const jitterX = (ap.jitterOffset && ap.jitterOffset.x) || 0;
+          const jitterY = (ap.jitterOffset && ap.jitterOffset.y) || 0;
 
           return {
-            x: THREE.MathUtils.clamp(x, 0.05, 0.95),
-            y: THREE.MathUtils.clamp(y, 0.05, 0.95),
+            x: THREE.MathUtils.clamp(x + jitterX, 0.05, 0.95),
+            y: THREE.MathUtils.clamp(y + jitterY, 0.05, 0.95),
           };
         };
 
         // Support multiple autonomous splat cursors
         const count = Math.max(1, Math.floor(autoSplatCount || 1));
-        // ensure pointers array length
+        // ensure pointers array length, initialize with per-pointer randomization
         while (autoPointersRef.current.length < count) {
           autoPointersRef.current.push({
             initialized: false,
@@ -1338,6 +1358,17 @@ const FluidMaterial = forwardRef((_, ref) => {
             phase: Math.random() * Math.PI * 4,
             seed: Math.random() * Math.PI * 2,
             ttl: 0,
+            jitterOffset: {
+              x: (Math.random() - 0.5) * 0.12,
+              y: (Math.random() - 0.5) * 0.12,
+            },
+            freqMul: {
+              a: 0.85 + Math.random() * 0.5,
+              b: 0.7 + Math.random() * 0.6,
+              c: 0.8 + Math.random() * 0.6,
+            },
+            ampMul: 1 + (Math.random() - 0.5) * 0.6,
+            pathSpeedMul: 0.6 + Math.random() * 1.4,
           });
         }
 
@@ -1347,14 +1378,15 @@ const FluidMaterial = forwardRef((_, ref) => {
           if (!ap.phase && ap.phase !== 0)
             ap.phase = Math.random() * Math.PI * 4;
 
-          ap.phase += dt * pathSpeed;
+          ap.phase += dt * pathSpeed * (ap.pathSpeedMul || 1);
           const phase = ap.phase + (ap.seed || 0);
-          const target = sampleAutoCursor(phase);
+          const target = sampleAutoCursor(phase, ap);
 
           if (!ap.initialized) {
             ap.initialized = true;
-            ap.x = target.x;
-            ap.y = target.y;
+            // spread initial positions using jitter so multiple pointers don't cluster
+            ap.x = target.x + ((ap.jitterOffset && ap.jitterOffset.x) || 0);
+            ap.y = target.y + ((ap.jitterOffset && ap.jitterOffset.y) || 0);
           }
           // refresh TTL so the debug marker remains visible while active
           ap.ttl = debugContactFadeDurationSafe;

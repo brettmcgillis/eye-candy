@@ -364,6 +364,8 @@ uniform sampler2D uSunrays;
 uniform sampler2D uDithering;
 uniform vec2 uDyeTexel;
 uniform vec2 uDitherScale;
+uniform bool uDitheringEnabled;
+uniform float uDitherStrength;
 uniform vec3 uBgA;
 uniform vec3 uBgB;
 uniform float uBrightness;
@@ -437,7 +439,7 @@ void main() {
   if (uBloomEnabled) {
     vec3 bloom = texture2D(uBloom, vUv).rgb;
     float noise = texture2D(uDithering, vUv * uDitherScale).r * 2.0 - 1.0;
-    bloom += noise / 255.0;
+    bloom += noise * uDitherStrength / 255.0 * (uDitheringEnabled ? 1.0 : 0.0);
     bloom = linearToGamma(bloom);
 
     if (uSunraysEnabled) {
@@ -671,6 +673,9 @@ const FluidMaterial = forwardRef((_, ref) => {
     colorful,
     colorUpdateSpeed,
     colorCycleSpeed,
+    dithering,
+    ditherStrength,
+    ditherScale,
     bgA,
     bgB,
     brightness,
@@ -955,6 +960,8 @@ const FluidMaterial = forwardRef((_, ref) => {
           uDithering: { value: null },
           uDyeTexel: { value: simTexel.clone() },
           uDitherScale: { value: new THREE.Vector2(1, 1) },
+          uDitheringEnabled: { value: FLUID_PRESETS.default.dithering },
+          uDitherStrength: { value: FLUID_PRESETS.default.ditherStrength },
           uBgA: { value: new THREE.Color(bgA) },
           uBgB: { value: new THREE.Color(bgB) },
           uBrightness: { value: brightness },
@@ -1172,10 +1179,13 @@ const FluidMaterial = forwardRef((_, ref) => {
 
     displayMat.uniforms.uDyeTexel.value.copy(simTexel);
     displayMat.uniforms.uDithering.value = ditheringTexture;
+    displayMat.uniforms.uDithering.value = ditheringTexture;
     displayMat.uniforms.uDitherScale.value.set(
-      size.width / ditheringTexture.image.width,
-      size.height / ditheringTexture.image.height
+      (size.width / ditheringTexture.image.width) * (ditherScale || 1),
+      (size.height / ditheringTexture.image.height) * (ditherScale || 1)
     );
+    displayMat.uniforms.uDitherStrength.value = ditherStrength || 0;
+    displayMat.uniforms.uDitheringEnabled.value = !!dithering;
     displayMat.uniforms.uBgA.value.set(bgA);
     displayMat.uniforms.uBgB.value.set(bgB);
     displayMat.uniforms.uBrightness.value = brightness;

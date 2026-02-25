@@ -47,6 +47,9 @@ function copySettingsToClipboard(get) {
     colorCycleSpeed: get('Fluid.Color.colorCycleSpeed'),
     bgA: get('Fluid.Display.bgA'),
     bgB: get('Fluid.Display.bgB'),
+    dithering: get('Fluid.Display.dithering'),
+    ditherStrength: get('Fluid.Display.ditherStrength'),
+    ditherScale: get('Fluid.Display.ditherScale'),
     brightness: get('Fluid.Display.brightness'),
     contrast: get('Fluid.Display.contrast'),
     saturation: get('Fluid.Display.saturation'),
@@ -88,6 +91,7 @@ export default function useFluidControls({ presetRef, randomSplatQueueRef }) {
             'Viscous Flow': 'viscousFlow',
             'Debug View': 'debugView',
             'Ink on Paper': 'inkOnPaper',
+            Freon: 'freon',
           },
           onChange: (value) => {
             const presetValues = FLUID_PRESETS[value];
@@ -283,6 +287,19 @@ export default function useFluidControls({ presetRef, randomSplatQueueRef }) {
         {
           bgA: FLUID_PRESETS.default.bgA,
           bgB: FLUID_PRESETS.default.bgB,
+          dithering: FLUID_PRESETS.default.dithering,
+          ditherStrength: {
+            value: FLUID_PRESETS.default.ditherStrength,
+            min: 0,
+            max: 4,
+            step: 0.01,
+          },
+          ditherScale: {
+            value: FLUID_PRESETS.default.ditherScale,
+            min: 0.25,
+            max: 4,
+            step: 0.01,
+          },
           brightness: {
             value: FLUID_PRESETS.default.brightness,
             min: 0.5,

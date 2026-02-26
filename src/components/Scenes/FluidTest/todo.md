@@ -38,15 +38,13 @@ Long term vision / use cases:
 - [ ] Move shader code out of the material file.
 - [ ] Consider what else should live in separate modules. Any reusable hooks?
 - [x] Add a clear/reset control for the simulation (both in the public API and Leva).
-- [ ] Create a pointer‑mapping utility to normalize mouse/hand coords for the material.
-- [ ] Document the effect each control has on the sim (add comments or a reference sheet).
 
 ## Features
 
 - [ ] Add input `mode` control: `Pointer/Touch` or `Hands` (wire with existing hand‑control hooks).
 - [x] Support for n auto‑splats (and presets that exercise multiple splats).
 - [ ] Try the material on an existing model / arbitrary mesh.
-- [ ] Add controls for debug square sizing.
+- [ ] Add controls for cursor debug square sizing.
 - [ ] Experiment with other dither effects.
 - [ ] Try a subtractive blend mode.
 - [ ] Add frequency control to induce stutter in mouse input (dotted vs solid line).

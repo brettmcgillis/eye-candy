@@ -57,6 +57,8 @@ function copySettingsToClipboard(get) {
     debugCursor: get('Fluid.Debug.debugCursor'),
     debugPointerColor: get('Fluid.Debug.debugPointerColor'),
     debugAutoColor: get('Fluid.Debug.debugAutoColor'),
+    debugAutoSize: get('Fluid.Debug.debugAutoSize'),
+    debugPointerSize: get('Fluid.Debug.debugPointerSize'),
     debugContactFadeDuration: get('Fluid.Debug.debugContactFadeDuration'),
   };
 
@@ -88,14 +90,13 @@ export default function useFluidControls({
         preset: {
           value: 'default',
           options: {
-            Default: 'default',
+            Cardinals: 'default',
+            'Ink on Paper': 'inkOnPaper',
+            Freon: 'freon',
             Pastel: 'pastel',
             Mobile: 'mobile',
             'Fast Flow': 'fastFlow',
             'Viscous Flow': 'viscousFlow',
-            'Debug View': 'debugView',
-            'Ink on Paper': 'inkOnPaper',
-            Freon: 'freon',
           },
           onChange: (value) => {
             const presetValues = FLUID_PRESETS[value];

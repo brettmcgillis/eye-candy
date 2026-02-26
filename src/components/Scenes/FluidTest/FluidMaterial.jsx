@@ -13,6 +13,7 @@ import { useFrame, useThree } from '@react-three/fiber';
 
 import {
   DEBUG_CONTACT_CAP,
+  DEBUG_CONTACT_TTL_DEFAULT,
   FLUID_PRESETS,
   RANDOM_BURST_COUNT,
 } from './fluidPresets';
@@ -605,7 +606,6 @@ const FluidMaterial = forwardRef((_, ref) => {
   const colorCRef = useRef(new THREE.Color());
   const forceRef = useRef(new THREE.Vector3());
   const autoSplatColorRef = useRef(new THREE.Color());
-  const autoSplatSeedRef = useRef(Math.random() * Math.PI * 2);
   const autoPointersRef = useRef([
     {
       initialized: false,
@@ -964,8 +964,8 @@ const FluidMaterial = forwardRef((_, ref) => {
           uDithering: { value: null },
           uDyeTexel: { value: simTexel.clone() },
           uDitherScale: { value: new THREE.Vector2(1, 1) },
-          uDitheringEnabled: { value: FLUID_PRESETS.default.dithering },
-          uDitherStrength: { value: FLUID_PRESETS.default.ditherStrength },
+          uDitheringEnabled: { value: true },
+          uDitherStrength: { value: 1 },
           uBgA: { value: new THREE.Color(bgA) },
           uBgB: { value: new THREE.Color(bgB) },
           uBrightness: { value: brightness },
@@ -983,10 +983,10 @@ const FluidMaterial = forwardRef((_, ref) => {
           uDebugPointerActive: { value: 0 },
           uDebugAutoActive: { value: 0 },
           uDebugPointerColor: {
-            value: new THREE.Color(FLUID_PRESETS.default.debugPointerColor),
+            value: new THREE.Color('#ffffff'),
           },
           uDebugAutoColor: {
-            value: new THREE.Color(FLUID_PRESETS.default.debugAutoColor),
+            value: new THREE.Color('#000000'),
           },
           uDebugAutoCount: { value: 0 },
           uDebugAutos: {
@@ -1011,7 +1011,7 @@ const FluidMaterial = forwardRef((_, ref) => {
             value: Array.from({ length: DEBUG_CONTACT_CAP }, () => 0),
           },
           uDebugContactFadeDuration: {
-            value: FLUID_PRESETS.default.debugContactFadeDuration,
+            value: DEBUG_CONTACT_TTL_DEFAULT,
           },
         },
         depthTest: false,
@@ -1139,29 +1139,31 @@ const FluidMaterial = forwardRef((_, ref) => {
   useFrame((state, delta) => {
     const dt = Math.min(0.033, delta);
     const t = state.clock.elapsedTime;
-    // pull latest control values directly from leva store when available
-    const latest =
-      typeof getControls === 'function' ? getControls() : fluidValues;
-    const pausedNow =
-      typeof latest.paused !== 'undefined' ? latest.paused : paused;
-    const autoSplatNow =
-      typeof latest.autoSplat !== 'undefined' ? latest.autoSplat : autoSplat;
-    const autoSplatRateNow =
-      typeof latest.autoSplatRate !== 'undefined'
-        ? latest.autoSplatRate
-        : autoSplatRate;
-    const autoSplatBurstNow =
-      typeof latest.autoSplatBurst !== 'undefined'
-        ? latest.autoSplatBurst
-        : autoSplatBurst;
-    const autoSplatStrengthNow =
-      typeof latest.autoSplatStrength !== 'undefined'
-        ? latest.autoSplatStrength
-        : autoSplatStrength;
-    const autoSplatCountNow =
-      typeof latest.autoSplatCount !== 'undefined'
-        ? latest.autoSplatCount
-        : autoSplatCount;
+
+    // helper for pointer movement: constant velocity derived from rate
+    // MIN_MOVE ensures some motion even at low rates (prevents center clustering)
+    const SPEED_SCALE = 0.025;
+    const MIN_MOVE = 0.01;
+    const computeNextPos = (prevX, prevY, tgtX, tgtY, rateVal) => {
+      if (rateVal <= 0 || (prevX === tgtX && prevY === tgtY))
+        return { x: prevX, y: prevY };
+      const speed = rateVal * SPEED_SCALE;
+      const dx = tgtX - prevX;
+      const dy = tgtY - prevY;
+      const dist = Math.hypot(dx, dy);
+      if (dist < 1e-6) return { x: prevX, y: prevY };
+      let maxMove = speed * dt;
+      if (maxMove < MIN_MOVE) maxMove = MIN_MOVE;
+      if (dist <= maxMove) {
+        return { x: tgtX, y: tgtY };
+      }
+      const inv = 1.0 / dist;
+      return {
+        x: prevX + dx * inv * maxMove,
+        y: prevY + dy * inv * maxMove,
+      };
+    };
+
     for (let i = 0; i < DEBUG_CONTACT_CAP; i++) {
       const contact = debugContactsRef.current[i];
       contact.ttl = Math.max(0, contact.ttl - dt);
@@ -1175,12 +1177,9 @@ const FluidMaterial = forwardRef((_, ref) => {
     // advance auto pointer phases every frame so their paths keep evolving
     // even when Leva UI is hidden (prevents clustering when controls are not available)
     try {
-      const baseRateForPhase = Number.isFinite(autoSplatRate)
-        ? autoSplatRate
-        : FLUID_PRESETS.default.autoSplatRate;
-      const basePathSpeed =
-        (0.9 + Math.max(0.5, baseRateForPhase) * 0.05) *
-        (0.7 + Math.max(0, colorCycleSpeed) * 0.5);
+      // Phase should advance at constant speed independent of movement rate
+      // This ensures splats roam across full XY range regardless of rate setting
+      const basePathSpeed = 0.95 * (0.7 + Math.max(0, colorCycleSpeed) * 0.5);
       autoPointersRef.current.forEach((ap) => {
         if (!ap) return;
         if (typeof ap.phase !== 'number')
@@ -1273,23 +1272,8 @@ const FluidMaterial = forwardRef((_, ref) => {
     displayMat.uniforms.uSunraysEnabled.value = sunrays;
 
     const pointer = pointerRef.current;
-    const debugContactFadeDurationSafe = Number.isFinite(
-      debugContactFadeDuration
-    )
-      ? Math.max(0.05, debugContactFadeDuration)
-      : FLUID_PRESETS.default.debugContactFadeDuration;
 
-    if (!pausedNow) {
-      const autoSplatRateSafe = Number.isFinite(autoSplatRateNow)
-        ? autoSplatRateNow
-        : FLUID_PRESETS.default.autoSplatRate;
-      const autoSplatBurstSafe = Number.isFinite(autoSplatBurstNow)
-        ? autoSplatBurstNow
-        : FLUID_PRESETS.default.autoSplatBurst;
-      const autoSplatStrengthSafe = Number.isFinite(autoSplatStrengthNow)
-        ? autoSplatStrengthNow
-        : FLUID_PRESETS.default.autoSplatStrength;
-
+    if (!paused) {
       advectionMat.uniforms.uVelocity.value = velocity.read.texture;
       advectionMat.uniforms.uSource.value = velocity.read.texture;
       advectionMat.uniforms.uDissipation.value = velocityDissipation;
@@ -1306,12 +1290,10 @@ const FluidMaterial = forwardRef((_, ref) => {
 
       const splatAt = (px, py, vx, vy, rgb, strength = 1, debugKind = -1) => {
         try {
-          const baseRateForPhase = Number.isFinite(autoSplatRateNow)
-            ? autoSplatRateNow
-            : FLUID_PRESETS.default.autoSplatRate;
+          // Phase should advance at constant speed independent of movement rate
+          // This ensures splats roam across full XY range regardless of rate setting
           const basePathSpeed =
-            (0.9 + Math.max(0.5, baseRateForPhase) * 0.05) *
-            (0.7 + Math.max(0, colorCycleSpeed) * 0.5);
+            0.95 * (0.7 + Math.max(0, colorCycleSpeed) * 0.5);
           autoPointersRef.current.forEach((ap) => {
             if (!ap) return;
             if (typeof ap.phase !== 'number')
@@ -1329,7 +1311,10 @@ const FluidMaterial = forwardRef((_, ref) => {
           const idx = debugContactWriteRef.current;
           debugContactsRef.current[idx].x = safePx;
           debugContactsRef.current[idx].y = safePy;
-          debugContactsRef.current[idx].ttl = debugContactFadeDurationSafe;
+          debugContactsRef.current[idx].ttl = Math.max(
+            0.05,
+            debugContactFadeDuration
+          );
           debugContactsRef.current[idx].kind = debugKind > 0 ? 1 : 0;
           debugContactWriteRef.current = (idx + 1) % DEBUG_CONTACT_CAP;
         }
@@ -1403,11 +1388,11 @@ const FluidMaterial = forwardRef((_, ref) => {
         splatAt(0.5, 0.5, 0, 0, colorARef.current.set(0.2, 0.4, 0.7), 0.35);
       }
 
-      if (autoSplatNow) {
-        const burstCount = Math.max(1, Math.floor(autoSplatBurstSafe));
-        const rate = Math.max(0.5, autoSplatRateSafe);
-        const pathSpeed =
-          (0.9 + rate * 0.05) * (0.7 + Math.max(0, colorCycleSpeed) * 0.5);
+      if (autoSplat) {
+        const burstCount = Math.max(1, Math.floor(autoSplatBurst));
+        const rate = autoSplatRate; // raw rate; speed handled by computeNextPos
+        // Phase should advance at constant speed independent of movement rate
+        // This ensures splats roam across full XY range regardless of rate setting
 
         const sampleAutoCursor = (phase, ap = {}) => {
           // per-pointer multipliers to diversify paths
@@ -1477,17 +1462,18 @@ const FluidMaterial = forwardRef((_, ref) => {
             ap.y = target.y + ((ap.jitterOffset && ap.jitterOffset.y) || 0);
           }
           // refresh TTL so the debug marker remains visible while active
-          ap.ttl = debugContactFadeDurationSafe;
+          ap.ttl = Math.max(0.05, debugContactFadeDuration);
 
           const prevX = ap.x;
           const prevY = ap.y;
-          const follow = THREE.MathUtils.clamp(
-            0.22 + dt * (rate * 1.0),
-            0.1,
-            0.9
+          // compute new pointer position based on constant speed derived from rate
+          const { x: nextX, y: nextY } = computeNextPos(
+            prevX,
+            prevY,
+            target.x,
+            target.y,
+            rate
           );
-          const nextX = THREE.MathUtils.lerp(prevX, target.x, follow);
-          const nextY = THREE.MathUtils.lerp(prevY, target.y, follow);
 
           let dvx = nextX - prevX;
           let dvy = nextY - prevY;
@@ -1499,24 +1485,22 @@ const FluidMaterial = forwardRef((_, ref) => {
           }
 
           const autoSpeed = Math.min(1, Math.hypot(dvx, dvy) * 140);
-          const mobileForceFactor =
-            FLUID_PRESETS.mobile.splatForce / Math.max(1, splatForce);
-          const mobileDyeFactor =
-            FLUID_PRESETS.mobile.dyeStrength / Math.max(0.001, dyeStrength);
-          let autoForceX =
-            dvx * splatForce * autoSplatStrengthSafe * mobileForceFactor * 1.4;
-          let autoForceY =
-            dvy * splatForce * autoSplatStrengthSafe * mobileForceFactor * 1.4;
-          const minForce =
-            splatForce * autoSplatStrengthSafe * mobileForceFactor * 0.0018;
-          if (Math.hypot(autoForceX, autoForceY) < minForce) {
-            autoForceX += Math.cos(phase * 1.9) * minForce;
-            autoForceY += Math.sin(phase * 1.9) * minForce;
+          let autoForceX = dvx * splatForce * autoSplatStrength * 1.4;
+          let autoForceY = dvy * splatForce * autoSplatStrength * 1.4;
+          // Only apply minForce when movement is active (rate > 0)
+          // This prevents jittery movement when rate is set to 0
+          if (rate > 0) {
+            const minForce = splatForce * autoSplatStrength * 0.0018;
+            if (Math.hypot(autoForceX, autoForceY) < minForce) {
+              autoForceX += Math.cos(phase * 1.9) * minForce;
+              autoForceY += Math.sin(phase * 1.9) * minForce;
+            }
           }
 
           ap.x = nextX;
           ap.y = nextY;
 
+          // Check if enough time has elapsed since last splat
           autoSplatColorRef.current
             .set(
               Math.min(
@@ -1551,10 +1535,8 @@ const FluidMaterial = forwardRef((_, ref) => {
           }
 
           const autoStrength =
-            (0.12 + autoSpeed * 0.2) *
-            mobileDyeFactor *
-            autoSplatStrengthSafe *
-            0.75;
+            (0.12 + autoSpeed * 0.2) * autoSplatStrength * 0.75;
+
           splatAt(
             nextX,
             nextY,
@@ -1587,7 +1569,7 @@ const FluidMaterial = forwardRef((_, ref) => {
       } else {
         // when autoSplat is disabled, still advance pointer positions so
         // their paths continue to evolve (prevents frozen debug markers)
-        const count = Math.max(1, Math.floor(autoSplatCountNow || 1));
+        const count = Math.max(1, Math.floor(autoSplatCount || 1));
         // ensure pointers array length
         while (autoPointersRef.current.length < count) {
           autoPointersRef.current.push({
@@ -1611,9 +1593,9 @@ const FluidMaterial = forwardRef((_, ref) => {
           });
         }
 
-        const rate = Math.max(0.5, autoSplatRateNow);
-        const pathSpeed =
-          (0.9 + rate * 0.05) * (0.7 + Math.max(0, colorCycleSpeed) * 0.5);
+        const rate = autoSplatRate; // raw rate used by computeNextPos
+        // Phase should advance at constant speed independent of movement rate
+        // This ensures splats roam across full XY range regardless of rate setting
 
         const sampleAutoCursorSimple = (phase, ap = {}) => {
           const aMul = (ap.freqMul && ap.freqMul.a) || 0.97;
@@ -1659,13 +1641,13 @@ const FluidMaterial = forwardRef((_, ref) => {
 
           const prevX = ap.x;
           const prevY = ap.y;
-          const follow = THREE.MathUtils.clamp(
-            0.22 + dt * (rate * 1.0),
-            0.1,
-            0.9
+          const { x: nextX, y: nextY } = computeNextPos(
+            prevX,
+            prevY,
+            target.x,
+            target.y,
+            rate
           );
-          const nextX = THREE.MathUtils.lerp(prevX, target.x, follow);
-          const nextY = THREE.MathUtils.lerp(prevY, target.y, follow);
 
           ap.x = nextX;
           ap.y = nextY;
@@ -1760,8 +1742,10 @@ const FluidMaterial = forwardRef((_, ref) => {
     displayMat.uniforms.uDebugAutoActive.value = firstAuto.ttl > 0 ? 1 : 0;
     displayMat.uniforms.uDebugPointerColor.value.set(debugPointerColor);
     displayMat.uniforms.uDebugAutoColor.value.set(debugAutoColor);
-    displayMat.uniforms.uDebugContactFadeDuration.value =
-      debugContactFadeDurationSafe;
+    displayMat.uniforms.uDebugContactFadeDuration.value = Math.max(
+      0.05,
+      debugContactFadeDuration
+    );
     for (let i = 0; i < DEBUG_CONTACT_CAP; i++) {
       const contact = debugContactsRef.current[i];
       displayMat.uniforms.uDebugContacts.value[i].set(contact.x, contact.y);

@@ -342,6 +342,18 @@ export default function useFluidControls({
           debugCursor: FLUID_PRESETS.default.debugCursor,
           debugPointerColor: FLUID_PRESETS.default.debugPointerColor,
           debugAutoColor: FLUID_PRESETS.default.debugAutoColor,
+          debugPointerSize: {
+            value: FLUID_PRESETS.default.debugPointerSize,
+            min: 0.005,
+            max: 0.15,
+            step: 0.002,
+          },
+          debugAutoSize: {
+            value: FLUID_PRESETS.default.debugAutoSize,
+            min: 0.005,
+            max: 0.15,
+            step: 0.002,
+          },
           debugContactFadeDuration: {
             value: FLUID_PRESETS.default.debugContactFadeDuration,
             min: 0.05,

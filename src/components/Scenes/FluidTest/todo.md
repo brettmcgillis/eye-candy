@@ -32,7 +32,7 @@ Long term vision / use cases:
 
 ## Refactor / Architecture
 
-- [ ] Hoist Leva controls hook out of the material file and into the test/scene file.
+- [ ] Hoist Leva controls hook out of the material file and into the test/scene file. The material should be a dumb componet that takes props and acts on them.
 - [ ] Tidy up control ranges/min‑maxes and adjust presets accordingly.
 - [ ] auto‑splat logic belongs in the scene; material should just accept contact points for user & auto.
 - [ ] Move shader code out of the material file.
@@ -44,7 +44,7 @@ Long term vision / use cases:
 - [ ] Add input `mode` control: `Pointer/Touch` or `Hands` (wire with existing hand‑control hooks).
 - [x] Support for n auto‑splats (and presets that exercise multiple splats).
 - [ ] Try the material on an existing model / arbitrary mesh.
-- [ ] Add controls for cursor debug square sizing.
+- [x] Add controls for cursor debug square sizing.
 - [ ] Experiment with other dither effects.
 - [ ] Try a subtractive blend mode.
 - [ ] Add frequency control to induce stutter in mouse input (dotted vs solid line).

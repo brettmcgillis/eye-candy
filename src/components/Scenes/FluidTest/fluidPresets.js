@@ -51,6 +51,8 @@ const FLUID_PRESETS = {
     debugCursor: true,
     debugPointerColor: '#9a9a9a',
     debugAutoColor: '#3e003a',
+    debugPointerSize: 0.03,
+    debugAutoSize: 0.03,
     debugContactFadeDuration: DEBUG_CONTACT_TTL_DEFAULT,
   },
   fastFlow: {
@@ -97,6 +99,8 @@ const FLUID_PRESETS = {
     debugCursor: false,
     debugPointerColor: '#ffffff',
     debugAutoColor: '#22c55e',
+    debugPointerSize: 0.03,
+    debugAutoSize: 0.03,
     debugContactFadeDuration: DEBUG_CONTACT_TTL_DEFAULT,
   },
   viscousFlow: {
@@ -143,6 +147,8 @@ const FLUID_PRESETS = {
     debugCursor: false,
     debugPointerColor: '#7dd3fc',
     debugAutoColor: '#22c55e',
+    debugPointerSize: 0.03,
+    debugAutoSize: 0.03,
     debugContactFadeDuration: DEBUG_CONTACT_TTL_DEFAULT,
   },
   pastel: {
@@ -189,6 +195,8 @@ const FLUID_PRESETS = {
     debugCursor: false,
     debugPointerColor: '#8df4ff',
     debugAutoColor: '#ffd35e',
+    debugPointerSize: 0.03,
+    debugAutoSize: 0.03,
     debugContactFadeDuration: DEBUG_CONTACT_TTL_DEFAULT,
   },
   mobile: {
@@ -235,6 +243,8 @@ const FLUID_PRESETS = {
     debugCursor: false,
     debugPointerColor: '#7fdfff',
     debugAutoColor: '#8ff0b0',
+    debugPointerSize: 0.03,
+    debugAutoSize: 0.03,
     debugContactFadeDuration: DEBUG_CONTACT_TTL_DEFAULT,
   },
   debugView: {
@@ -281,6 +291,8 @@ const FLUID_PRESETS = {
     debugCursor: true,
     debugPointerColor: '#f97316',
     debugAutoColor: '#22c55e',
+    debugPointerSize: 0.04,
+    debugAutoSize: 0.04,
     debugContactFadeDuration: DEBUG_CONTACT_TTL_DEFAULT * 1.6,
   },
   inkOnPaper: {
@@ -327,6 +339,8 @@ const FLUID_PRESETS = {
     debugCursor: true,
     debugPointerColor: '#111827',
     debugAutoColor: '#4b5563',
+    debugPointerSize: 0.025,
+    debugAutoSize: 0.025,
     debugContactFadeDuration: DEBUG_CONTACT_TTL_DEFAULT,
   },
   freon: {
@@ -373,6 +387,8 @@ const FLUID_PRESETS = {
     debugCursor: true,
     debugPointerColor: '#111827',
     debugAutoColor: '#4b5563',
+    debugPointerSize: 0.025,
+    debugAutoSize: 0.025,
     debugContactFadeDuration: 0.28,
   },
 };

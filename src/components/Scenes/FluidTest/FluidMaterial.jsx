@@ -687,6 +687,8 @@ const FluidMaterial = forwardRef((_, ref) => {
     debugCursor,
     debugPointerColor,
     debugAutoColor,
+    debugPointerSize,
+    debugAutoSize,
     debugContactFadeDuration,
   } = fluidValues;
 
@@ -1718,11 +1720,6 @@ const FluidMaterial = forwardRef((_, ref) => {
       dye.swap();
     }
 
-    const debugCursorSize = THREE.MathUtils.clamp(
-      Math.sqrt(Math.max(splatRadius, 0.000001)) * 1.35,
-      0.008,
-      0.18
-    );
     displayMat.uniforms.uDebugCursor.value = debugCursor;
     displayMat.uniforms.uDebugPointer.value.set(
       pointer?.x ?? 0.5,
@@ -1757,8 +1754,8 @@ const FluidMaterial = forwardRef((_, ref) => {
         displayMat.uniforms.uDebugAutoLife.value[i] = 0;
       }
     }
-    displayMat.uniforms.uDebugPointerSize.value = debugCursorSize;
-    displayMat.uniforms.uDebugAutoSize.value = debugCursorSize;
+    displayMat.uniforms.uDebugPointerSize.value = debugPointerSize;
+    displayMat.uniforms.uDebugAutoSize.value = debugAutoSize;
     displayMat.uniforms.uDebugPointerActive.value = pointer?.down ? 1 : 0;
     displayMat.uniforms.uDebugAutoActive.value = firstAuto.ttl > 0 ? 1 : 0;
     displayMat.uniforms.uDebugPointerColor.value.set(debugPointerColor);

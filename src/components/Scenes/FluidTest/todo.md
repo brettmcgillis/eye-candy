@@ -8,7 +8,9 @@ Long term vision / use cases:
 - Material can be added to a 3d model
 - Material can be added to a plane, which can then be scaled to view port size for full screen ux.
 - Material allows for dynamic adjustment of shader props
+- Material can be used in other compositions for interactivity
 
+- Scene serves as a test bed for the development of the material
 - Scene manages material settings via leva controls.
 - Scene manages user input from mouse or media pipe hook, and passes the point data to the material.
 - Scene manages auto splat logic and behaviour, and passess the point data to the material.

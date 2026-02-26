@@ -599,6 +599,7 @@ const FluidMaterial = forwardRef((_, ref) => {
   const startedRef = useRef(false);
   const presetRef = useRef('default');
   const randomSplatQueueRef = useRef(0);
+  const resetRequestedRef = useRef(false);
   const colorARef = useRef(new THREE.Color());
   const colorBRef = useRef(new THREE.Color());
   const colorCRef = useRef(new THREE.Color());
@@ -639,6 +640,7 @@ const FluidMaterial = forwardRef((_, ref) => {
   const [fluidValues, setControls] = useFluidControls({
     presetRef,
     randomSplatQueueRef,
+    resetSimRef: ref,
   });
 
   const {
@@ -1127,6 +1129,9 @@ const FluidMaterial = forwardRef((_, ref) => {
     setPointer(next) {
       pointerRef.current = next;
     },
+    reset() {
+      resetRequestedRef.current = true;
+    },
   }));
 
   useFrame((state, delta) => {
@@ -1182,6 +1187,33 @@ const FluidMaterial = forwardRef((_, ref) => {
       });
     } catch (e) {
       // ignore - defensive in case controls are temporarily unavailable
+    }
+
+    // Handle reset request
+    if (resetRequestedRef.current) {
+      const clearTarget = (target) => {
+        gl.setRenderTarget(target);
+        gl.clearColor(0, 0, 0, 1);
+        gl.clear(gl.COLOR_BUFFER_BIT);
+      };
+
+      clearTarget(velocity.read);
+      clearTarget(velocity.write);
+      clearTarget(dye.read);
+      clearTarget(dye.write);
+      clearTarget(pressureTex.read);
+      clearTarget(pressureTex.write);
+      clearTarget(curl);
+      clearTarget(divergence);
+      clearTarget(bloomComposite.read);
+      clearTarget(bloomComposite.write);
+      bloomChain.forEach(clearTarget);
+      clearTarget(sunraysMask);
+      clearTarget(sunraysTex);
+      clearTarget(sunraysTemp);
+
+      gl.setRenderTarget(null);
+      resetRequestedRef.current = false;
     }
 
     const renderPass = (material, target) => {

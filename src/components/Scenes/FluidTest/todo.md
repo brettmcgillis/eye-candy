@@ -37,7 +37,7 @@ Long term vision / use cases:
 - [ ] auto‑splat logic belongs in the scene; material should just accept contact points for user & auto.
 - [ ] Move shader code out of the material file.
 - [ ] Consider what else should live in separate modules. Any reusable hooks?
-- [ ] Add a clear/reset control for the simulation (both in the public API and Leva).
+- [x] Add a clear/reset control for the simulation (both in the public API and Leva).
 - [ ] Create a pointer‑mapping utility to normalize mouse/hand coords for the material.
 - [ ] Document the effect each control has on the sim (add comments or a reference sheet).
 

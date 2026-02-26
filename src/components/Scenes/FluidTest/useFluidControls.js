@@ -74,7 +74,11 @@ function copySettingsToClipboard(get) {
   }
 }
 
-export default function useFluidControls({ presetRef, randomSplatQueueRef }) {
+export default function useFluidControls({
+  presetRef,
+  randomSplatQueueRef,
+  resetSimRef,
+}) {
   const setRef = useRef(null);
 
   const controls = useControls(
@@ -155,6 +159,11 @@ export default function useFluidControls({ presetRef, randomSplatQueueRef }) {
             max: 2,
             step: 0.01,
           },
+          resetSimulation: button(() => {
+            if (resetSimRef && resetSimRef.current) {
+              resetSimRef.current.reset();
+            }
+          }),
         },
         { collapsed: true }
       ),

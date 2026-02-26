@@ -1129,9 +1129,32 @@ const FluidMaterial = forwardRef((_, ref) => {
     },
   }));
 
-  useFrame((state) => {
-    const dt = Math.min(0.033, state.clock.getDelta());
+  useFrame((state, delta) => {
+    const dt = Math.min(0.033, delta);
     const t = state.clock.elapsedTime;
+    // pull latest control values directly from leva store when available
+    const latest =
+      typeof getControls === 'function' ? getControls() : fluidValues;
+    const pausedNow =
+      typeof latest.paused !== 'undefined' ? latest.paused : paused;
+    const autoSplatNow =
+      typeof latest.autoSplat !== 'undefined' ? latest.autoSplat : autoSplat;
+    const autoSplatRateNow =
+      typeof latest.autoSplatRate !== 'undefined'
+        ? latest.autoSplatRate
+        : autoSplatRate;
+    const autoSplatBurstNow =
+      typeof latest.autoSplatBurst !== 'undefined'
+        ? latest.autoSplatBurst
+        : autoSplatBurst;
+    const autoSplatStrengthNow =
+      typeof latest.autoSplatStrength !== 'undefined'
+        ? latest.autoSplatStrength
+        : autoSplatStrength;
+    const autoSplatCountNow =
+      typeof latest.autoSplatCount !== 'undefined'
+        ? latest.autoSplatCount
+        : autoSplatCount;
     for (let i = 0; i < DEBUG_CONTACT_CAP; i++) {
       const contact = debugContactsRef.current[i];
       contact.ttl = Math.max(0, contact.ttl - dt);
@@ -1141,6 +1164,25 @@ const FluidMaterial = forwardRef((_, ref) => {
       if (!ap) return;
       ap.ttl = Math.max(0, (ap.ttl || 0) - dt);
     });
+
+    // advance auto pointer phases every frame so their paths keep evolving
+    // even when Leva UI is hidden (prevents clustering when controls are not available)
+    try {
+      const baseRateForPhase = Number.isFinite(autoSplatRate)
+        ? autoSplatRate
+        : FLUID_PRESETS.default.autoSplatRate;
+      const basePathSpeed =
+        (0.9 + Math.max(0.5, baseRateForPhase) * 0.05) *
+        (0.7 + Math.max(0, colorCycleSpeed) * 0.5);
+      autoPointersRef.current.forEach((ap) => {
+        if (!ap) return;
+        if (typeof ap.phase !== 'number')
+          ap.phase = Math.random() * Math.PI * 4;
+        ap.phase += dt * basePathSpeed * (ap.pathSpeedMul || 1);
+      });
+    } catch (e) {
+      // ignore - defensive in case controls are temporarily unavailable
+    }
 
     const renderPass = (material, target) => {
       simMesh.material = material;
@@ -1203,15 +1245,15 @@ const FluidMaterial = forwardRef((_, ref) => {
       ? Math.max(0.05, debugContactFadeDuration)
       : FLUID_PRESETS.default.debugContactFadeDuration;
 
-    if (!paused) {
-      const autoSplatRateSafe = Number.isFinite(autoSplatRate)
-        ? autoSplatRate
+    if (!pausedNow) {
+      const autoSplatRateSafe = Number.isFinite(autoSplatRateNow)
+        ? autoSplatRateNow
         : FLUID_PRESETS.default.autoSplatRate;
-      const autoSplatBurstSafe = Number.isFinite(autoSplatBurst)
-        ? autoSplatBurst
+      const autoSplatBurstSafe = Number.isFinite(autoSplatBurstNow)
+        ? autoSplatBurstNow
         : FLUID_PRESETS.default.autoSplatBurst;
-      const autoSplatStrengthSafe = Number.isFinite(autoSplatStrength)
-        ? autoSplatStrength
+      const autoSplatStrengthSafe = Number.isFinite(autoSplatStrengthNow)
+        ? autoSplatStrengthNow
         : FLUID_PRESETS.default.autoSplatStrength;
 
       advectionMat.uniforms.uVelocity.value = velocity.read.texture;
@@ -1229,18 +1271,21 @@ const FluidMaterial = forwardRef((_, ref) => {
       velocity.swap();
 
       const splatAt = (px, py, vx, vy, rgb, strength = 1, debugKind = -1) => {
-        if (
-          !Number.isFinite(px) ||
-          !Number.isFinite(py) ||
-          !Number.isFinite(vx) ||
-          !Number.isFinite(vy) ||
-          !Number.isFinite(strength) ||
-          !rgb ||
-          !Number.isFinite(rgb.r) ||
-          !Number.isFinite(rgb.g) ||
-          !Number.isFinite(rgb.b)
-        ) {
-          return;
+        try {
+          const baseRateForPhase = Number.isFinite(autoSplatRateNow)
+            ? autoSplatRateNow
+            : FLUID_PRESETS.default.autoSplatRate;
+          const basePathSpeed =
+            (0.9 + Math.max(0.5, baseRateForPhase) * 0.05) *
+            (0.7 + Math.max(0, colorCycleSpeed) * 0.5);
+          autoPointersRef.current.forEach((ap) => {
+            if (!ap) return;
+            if (typeof ap.phase !== 'number')
+              ap.phase = Math.random() * Math.PI * 4;
+            ap.phase += dt * basePathSpeed * (ap.pathSpeedMul || 1);
+          });
+        } catch (e) {
+          // ignore - defensive in case controls are temporarily unavailable
         }
 
         const safePx = THREE.MathUtils.clamp(px, 0, 1);
@@ -1324,11 +1369,11 @@ const FluidMaterial = forwardRef((_, ref) => {
         splatAt(0.5, 0.5, 0, 0, colorARef.current.set(0.2, 0.4, 0.7), 0.35);
       }
 
-      if (autoSplat) {
+      if (autoSplatNow) {
         const burstCount = Math.max(1, Math.floor(autoSplatBurstSafe));
         const rate = Math.max(0.5, autoSplatRateSafe);
         const pathSpeed =
-          (0.9 + rate * 0.15) * (0.7 + Math.max(0, colorCycleSpeed) * 0.5);
+          (0.9 + rate * 0.05) * (0.7 + Math.max(0, colorCycleSpeed) * 0.5);
 
         const sampleAutoCursor = (phase, ap = {}) => {
           // per-pointer multipliers to diversify paths
@@ -1388,7 +1433,6 @@ const FluidMaterial = forwardRef((_, ref) => {
           if (!ap.phase && ap.phase !== 0)
             ap.phase = Math.random() * Math.PI * 4;
 
-          ap.phase += dt * pathSpeed * (ap.pathSpeedMul || 1);
           const phase = ap.phase + (ap.seed || 0);
           const target = sampleAutoCursor(phase, ap);
 
@@ -1404,8 +1448,8 @@ const FluidMaterial = forwardRef((_, ref) => {
           const prevX = ap.x;
           const prevY = ap.y;
           const follow = THREE.MathUtils.clamp(
-            0.22 + dt * (rate * 3.0),
-            0.22,
+            0.22 + dt * (rate * 1.0),
+            0.1,
             0.9
           );
           const nextX = THREE.MathUtils.lerp(prevX, target.x, follow);
@@ -1507,10 +1551,92 @@ const FluidMaterial = forwardRef((_, ref) => {
           }
         }
       } else {
-        // mark all auto pointers as uninitialized when autoSplat disabled
-        autoPointersRef.current.forEach((p) => {
-          if (p) p.initialized = false;
-        });
+        // when autoSplat is disabled, still advance pointer positions so
+        // their paths continue to evolve (prevents frozen debug markers)
+        const count = Math.max(1, Math.floor(autoSplatCountNow || 1));
+        // ensure pointers array length
+        while (autoPointersRef.current.length < count) {
+          autoPointersRef.current.push({
+            initialized: false,
+            x: 0.5,
+            y: 0.5,
+            phase: Math.random() * Math.PI * 4,
+            seed: Math.random() * Math.PI * 2,
+            ttl: 0,
+            jitterOffset: {
+              x: (Math.random() - 0.5) * 0.12,
+              y: (Math.random() - 0.5) * 0.12,
+            },
+            freqMul: {
+              a: 0.85 + Math.random() * 0.5,
+              b: 0.7 + Math.random() * 0.6,
+              c: 0.8 + Math.random() * 0.6,
+            },
+            ampMul: 1 + (Math.random() - 0.5) * 0.6,
+            pathSpeedMul: 0.6 + Math.random() * 1.4,
+          });
+        }
+
+        const rate = Math.max(0.5, autoSplatRateNow);
+        const pathSpeed =
+          (0.9 + rate * 0.05) * (0.7 + Math.max(0, colorCycleSpeed) * 0.5);
+
+        const sampleAutoCursorSimple = (phase, ap = {}) => {
+          const aMul = (ap.freqMul && ap.freqMul.a) || 0.97;
+          const bMul = (ap.freqMul && ap.freqMul.b) || 0.41;
+          const cMul = (ap.freqMul && ap.freqMul.c) || 1.81;
+          const amp = (ap.ampMul || 1) * 1.0;
+
+          const x =
+            0.5 +
+            Math.sin(phase * aMul) * 0.26 * amp +
+            Math.sin(phase * bMul + 1.4) * 0.13 * amp +
+            Math.sin(phase * cMul + 0.3) * 0.05 * amp;
+          const y =
+            0.5 +
+            Math.cos(phase * (1.13 * aMul)) * 0.24 * amp +
+            Math.cos(phase * (0.53 * bMul) + 2.0) * 0.12 * amp +
+            Math.cos(phase * (1.47 * cMul) + 0.9) * 0.05 * amp;
+
+          const jitterX = (ap.jitterOffset && ap.jitterOffset.x) || 0;
+          const jitterY = (ap.jitterOffset && ap.jitterOffset.y) || 0;
+
+          return {
+            x: THREE.MathUtils.clamp(x + jitterX, 0.05, 0.95),
+            y: THREE.MathUtils.clamp(y + jitterY, 0.05, 0.95),
+          };
+        };
+
+        for (let p = 0; p < count; p++) {
+          const ap = autoPointersRef.current[p] || {};
+          if (!ap.seed) ap.seed = Math.random() * Math.PI * 2;
+          if (!ap.phase && ap.phase !== 0)
+            ap.phase = Math.random() * Math.PI * 4;
+
+          // phase is advanced globally above; compute sampling target
+          const phase = ap.phase + (ap.seed || 0);
+          const target = sampleAutoCursorSimple(phase, ap);
+
+          if (!ap.initialized) {
+            ap.initialized = true;
+            ap.x = target.x + ((ap.jitterOffset && ap.jitterOffset.x) || 0);
+            ap.y = target.y + ((ap.jitterOffset && ap.jitterOffset.y) || 0);
+          }
+
+          const prevX = ap.x;
+          const prevY = ap.y;
+          const follow = THREE.MathUtils.clamp(
+            0.22 + dt * (rate * 1.0),
+            0.1,
+            0.9
+          );
+          const nextX = THREE.MathUtils.lerp(prevX, target.x, follow);
+          const nextY = THREE.MathUtils.lerp(prevY, target.y, follow);
+
+          ap.x = nextX;
+          ap.y = nextY;
+          // do not refresh TTL or emit splats when autoSplat is disabled
+        }
       }
 
       if (randomSplatQueueRef.current > 0) {

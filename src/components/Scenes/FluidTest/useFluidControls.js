@@ -187,9 +187,9 @@ export default function useFluidControls({ presetRef, randomSplatQueueRef }) {
           },
           autoSplatRate: {
             value: FLUID_PRESETS.default.autoSplatRate,
-            min: 0.5,
-            max: 96,
-            step: 0.5,
+            min: 0,
+            max: 100,
+            step: 1,
           },
           autoSplatBurst: {
             value: FLUID_PRESETS.default.autoSplatBurst,

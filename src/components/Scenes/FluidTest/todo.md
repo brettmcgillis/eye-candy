@@ -22,26 +22,40 @@ Long term vision / use cases:
 
 [Back to main TODO](../../../../TODO.md)
 
-- [ ] Fix sim resolution control changes from resetting the fluid simulation state if possible. very low priorty.
-- [x] Fix auto-splat behavior so it works and also does not prevent or interfere with pointer interaction.
-- [ ] Fix window resize issue that stops the sim. Its a material, it shouldnt matter? We need to be able to slap this material on a model in a scene and have it become interactive.
-- [ ] Add input `mode` control: `Pointer/Touch` or `Hands` (wire with existing hand control hooks).
-- [x] Add some sensible presets. Need a fast moving fluid, need a flow viscous fluid, need a preset with debug always on, need to set up some preset with different color pallettes
-- [x] Add support and preset for black ink on white background.
-- [x] Add support for n autoSplats
-- [ ] Slow down auto splats. autosplat rate 0 should be stopped. 100 is way too fast.
-- [ ] Hoist leva controls out of material file and into test file.
-- [ ] Should auto splat logic get hoisted too? Perhaps the material should just accept the points of contact, like the mouse?
-- [ ] Try the material on an existing model
+## Bugs
+
+- [ ] Fix window resize issue that stops the sim. It's a material – it shouldn't matter. We need to slap this on a model and have it remain interactive.
+- [ ] Fix sim resolution control changes from resetting the fluid simulation state if possible (very low priority).
+- [x] Fix auto‑splat behavior so it works and also does not prevent or interfere with pointer interaction.
+- [ ] Slow down auto‑splats. rate 0 should be stopped; 100 is way too fast.
+- [ ] Add support for interaction while sim is paused. Should still be able to drop ink.
+
+## Refactor / Architecture
+
+- [ ] Hoist Leva controls hook out of the material file and into the test/scene file.
+- [ ] Tidy up control ranges/min‑maxes and adjust presets accordingly.
+- [ ] auto‑splat logic belongs in the scene; material should just accept contact points for user & auto.
+- [ ] Move shader code out of the material file.
+- [ ] Consider what else should live in separate modules. Any reusable hooks?
+- [ ] Add a clear/reset control for the simulation (both in the public API and Leva).
+- [ ] Create a pointer‑mapping utility to normalize mouse/hand coords for the material.
+- [ ] Document the effect each control has on the sim (add comments or a reference sheet).
+
+## Features
+
+- [ ] Add input `mode` control: `Pointer/Touch` or `Hands` (wire with existing hand‑control hooks).
+- [ ] Support for n auto‑splats (and presets that exercise multiple splats).
+- [ ] Try the material on an existing model / arbitrary mesh.
 - [ ] Add controls for debug square sizing.
-- [ ] Try other dither effects.
-- [ ] Move shader code out of material file.
-- [ ] Consider what else should go in separate files. Are there any hooks to be created to help separate concerns?
-- [ ] Try subtractive blendmode
-- [ ] Add frequency control to induce stutter in mouse control; think dotted vs solid line
-- [ ] Tidy up controls, lots of weird min/maxes there. Adjust presets accordingly.
-- [ ] Can we do a preset that looks like an inverted photgraph?
-- [ ] Add support for interaction while sim is paused. Should be able to still drop ink.
-- [ ] Update leva controls to include labels so we can shorten displayed text.
-- [ ] Document the effect each control has on the sim.
-- [ ] After separating concerns between test file and material, try to add support for stationary auto splats. Use a leva control to add/remove stationary splats. allow drag and drop with mouse.
+- [ ] Experiment with other dither effects.
+- [ ] Try a subtractive blend mode.
+- [ ] Add frequency control to induce stutter in mouse input (dotted vs solid line).
+- [ ] Create a preset that looks like an inverted photograph.
+- [ ] After splitting responsibilities, add stationary auto‑splats with a Leva toggle and drag‑and‑drop placement.
+
+## Polish / Presets / UX
+
+- [x] Add some sensible presets: fast fluid, viscous flow, debug‑always‑on, varied palettes.
+- [x] Add support and preset for black‑ink‑on‑white.
+- [ ] Update Leva controls to include labels so displayed text can be shorter.
+- [ ] Prepare a README (props).

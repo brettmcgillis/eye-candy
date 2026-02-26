@@ -46,6 +46,7 @@ Long term vision / use cases:
 - [x] Support for n auto‑splats (and presets that exercise multiple splats).
 - [ ] Try the material on an existing model / arbitrary mesh.
 - [x] Add controls for cursor debug square sizing.
+- [ ] Add controls for cursor debug square line weight.
 - [ ] Experiment with other dither effects.
 - [ ] Try a subtractive blend mode.
 - [ ] Add frequency control to induce stutter in mouse input (dotted vs solid line).

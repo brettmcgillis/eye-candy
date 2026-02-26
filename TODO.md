@@ -5,14 +5,14 @@
 - [x] Add scripts to update major, minor, hotfix versions
 - [x] Add scripts to deploy next maj, min, hotfix
 - [ ] add/update screenshot(s) on readme for each scene
-- [ ] Fix dbg layout on mobile
+- [x] Fix dbg layout on mobile
 
 ### REPO
 
 - [ ] re-enable react/no-unknown-property, react/prop-types ?
 - [ ] state management
 - [x] springs? got it
-- [ ] maath
+- [x] maath
 
 ### EXPLORE/EXPLODE
 
@@ -25,15 +25,17 @@
 - [x] Spring animate leva transition.
 - [x] add personal links
 - [ ] display back link contextually.
-- [ ] show emojis contextually.
-- [ ] change positions when on mobile
-- [ ] update leva theme
+- [x] show emojis contextually.
+- [x] change positions when on mobile
+- [x] update leva theme
 
 ### APP
 
 - [ ] fix icon used in manifest, logo192 is not the right size, causes console err
-- [ ] serve up multiple scenes. portal(s)?, picture frames?, routing?
+- [x] serve up multiple scenes. portal(s)?, picture frames?, routing?
 - [ ] if were doing screen cap then move it out of scenes and into something at app layer
+
+- [Scaffold](src/app/scaffold/todo.md)
 
 ### SCENES
 
@@ -54,7 +56,7 @@
 
 ### Dumpster Fire
 
-- [ ] Totally broken. see console for err. cant switch scenes
+- [x] Totally broken. see console for err. cant switch scenes
 
 #### FoldedFrame
 

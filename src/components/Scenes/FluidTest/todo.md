@@ -34,6 +34,7 @@ Long term vision / use cases:
 
 - [ ] Hoist Leva controls hook out of the material file and into the test/scene file. The material should be a dumb componet that takes props and acts on them.
 - [ ] Tidy up control ranges/min‑maxes and adjust presets accordingly.
+- [ ] Any auto splat controls that govern force, strength, etc, should parrallel the controls applied to the cursor
 - [ ] auto‑splat logic belongs in the scene; material should just accept contact points for user & auto.
 - [ ] Move shader code out of the material file.
 - [ ] Consider what else should live in separate modules. Any reusable hooks?

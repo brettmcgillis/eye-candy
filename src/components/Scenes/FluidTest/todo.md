@@ -44,7 +44,7 @@ Long term vision / use cases:
 ## Features
 
 - [ ] Add input `mode` control: `Pointer/Touch` or `Hands` (wire with existing hand‑control hooks).
-- [ ] Support for n auto‑splats (and presets that exercise multiple splats).
+- [x] Support for n auto‑splats (and presets that exercise multiple splats).
 - [ ] Try the material on an existing model / arbitrary mesh.
 - [ ] Add controls for debug square sizing.
 - [ ] Experiment with other dither effects.

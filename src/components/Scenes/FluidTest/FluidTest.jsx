@@ -5,6 +5,7 @@ import { useThree } from '@react-three/fiber';
 
 import FluidMaterial from './FluidMaterial';
 import { FLUID_PRESETS } from './fluidPresets';
+import useFluidAutoPointers from './useFluidAutoPointers';
 import useFluidControls from './useFluidControls';
 
 function FullscreenPlane() {
@@ -26,6 +27,11 @@ function FullscreenPlane() {
     const nextPreset = FLUID_PRESETS[currentPresetKey];
     if (nextPreset) setControls(nextPreset);
   }, [setControls]);
+
+  const autoPointersRef = useFluidAutoPointers({
+    config: fluidValues,
+    size,
+  });
 
   const setPointer = useCallback((next) => {
     matRef.current?.setPointer(next);
@@ -99,6 +105,7 @@ function FullscreenPlane() {
       <FluidMaterial
         ref={matRef}
         config={fluidValues}
+        autoPointersRef={autoPointersRef}
         randomSplatQueueRef={randomSplatQueueRef}
       />
     </mesh>

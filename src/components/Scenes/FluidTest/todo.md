@@ -34,8 +34,7 @@ Long term vision / use cases:
 ## Refactor / Architecture
 
 - [x] Hoist Leva controls hook out of the material file and into the test/scene file. The material should be a dumb componet that takes props and acts on them.
-- [ ] Tidy up control ranges/min‑maxes and adjust presets accordingly.
-- [ ] Any auto splat controls that govern force, strength, etc, should parrallel the controls applied to the cursor
+- [ ] Tidy up control ranges/min‑maxes and adjust presets accordingly. Any auto splat controls that govern force, strength, etc, should parrallel the controls applied to the cursor
 - [x] auto‑splat logic belongs in the scene; material should just accept contact points for user & auto.
 - [x] Move shader code out of the material file.
 - [x] Consider what else should live in separate modules. Any reusable hooks?
@@ -43,7 +42,7 @@ Long term vision / use cases:
 
 ## Features
 
-- [ ] Add `input mode` control: `Pointer/Touch` or `Hands` (wire with existing hand‑control hooks).
+- [ ] Add `input mode` control: Option `Pointer/Touch` uses current mouse/touch pinter config. Option `Hands` uses existing media pipe hand‑control hooks to get points from webcam and translates these to pointer position.
 - [x] Support for n auto‑splats (and presets that exercise multiple splats).
 - [ ] Add `test mode` control: Option `Plane` shows current config with plane and orthographic cam. Option `3d` shows material on a sphere with orbit cam controls.
 - [x] Add controls for cursor debug square sizing.
@@ -59,4 +58,4 @@ Long term vision / use cases:
 - [x] Add some sensible presets: fast fluid, viscous flow, debug‑always‑on, varied palettes.
 - [x] Add support and preset for black‑ink‑on‑white.
 - [ ] Update Leva controls to include labels so displayed text can be shorter.
-- [ ] Prepare a README (props).
+- [ ] Prepare a README so i dont forget how to use the various props for controlling the material behaviours.

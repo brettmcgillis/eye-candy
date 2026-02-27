@@ -27,6 +27,7 @@ function copySettingsToClipboard(get) {
     autoSplat: get('Fluid.Interaction.autoSplat'),
     autoSplatStrength: get('Fluid.Interaction.autoSplatStrength'),
     autoSplatRate: get('Fluid.Interaction.autoSplatRate'),
+    autoSplatRange: get('Fluid.Interaction.autoSplatRange'),
     autoSplatBurst: get('Fluid.Interaction.autoSplatBurst'),
     autoSplatCount: get('Fluid.Interaction.autoSplatCount'),
     shading: get('Fluid.Effects.shading'),
@@ -204,6 +205,12 @@ export default function useFluidControls({
             min: 0,
             max: 100,
             step: 1,
+          },
+          autoSplatRange: {
+            value: FLUID_PRESETS.default.autoSplatRange,
+            min: 0,
+            max: 1,
+            step: 0.01,
           },
           autoSplatBurst: {
             value: FLUID_PRESETS.default.autoSplatBurst,

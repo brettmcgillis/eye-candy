@@ -668,6 +668,7 @@ const FluidMaterial = forwardRef((_, ref) => {
     autoSplat,
     autoSplatStrength,
     autoSplatRate,
+    autoSplatRange,
     autoSplatBurst,
     autoSplatCount,
     shading,
@@ -1199,14 +1200,15 @@ const FluidMaterial = forwardRef((_, ref) => {
     // advance auto pointer phases every frame so their paths keep evolving
     // even when Leva UI is hidden (prevents clustering when controls are not available)
     try {
-      // Phase should advance at constant speed independent of movement rate
-      // This ensures splats roam across full XY range regardless of rate setting
+      // Phase advancement scales with rate so slow markers can catch up to targets
+      // This allows full XY range coverage at any speed when autoSplatRange=1.0
       const basePathSpeed = 0.95 * (0.7 + Math.max(0, colorCycleSpeed) * 0.5);
+      const rateScale = Math.max(0, autoSplatRate) / 100; // normalize 0-100 to 0-1
       autoPointersRef.current.forEach((ap) => {
         if (!ap) return;
         if (typeof ap.phase !== 'number')
           ap.phase = Math.random() * Math.PI * 4;
-        ap.phase += dt * basePathSpeed * (ap.pathSpeedMul || 1);
+        ap.phase += dt * basePathSpeed * (ap.pathSpeedMul || 1) * rateScale;
       });
     } catch (e) {
       // ignore - defensive in case controls are temporarily unavailable
@@ -1312,15 +1314,16 @@ const FluidMaterial = forwardRef((_, ref) => {
 
       const splatAt = (px, py, vx, vy, rgb, strength = 1, debugKind = -1) => {
         try {
-          // Phase should advance at constant speed independent of movement rate
-          // This ensures splats roam across full XY range regardless of rate setting
+          // Phase advancement scales with rate so slow markers can catch up to targets
+          // This allows full XY range coverage at any speed when autoSplatRange=1.0
           const basePathSpeed =
             0.95 * (0.7 + Math.max(0, colorCycleSpeed) * 0.5);
+          const rateScale = Math.max(0, autoSplatRate) / 100; // normalize 0-100 to 0-1
           autoPointersRef.current.forEach((ap) => {
             if (!ap) return;
             if (typeof ap.phase !== 'number')
               ap.phase = Math.random() * Math.PI * 4;
-            ap.phase += dt * basePathSpeed * (ap.pathSpeedMul || 1);
+            ap.phase += dt * basePathSpeed * (ap.pathSpeedMul || 1) * rateScale;
           });
         } catch (e) {
           // ignore - defensive in case controls are temporarily unavailable
@@ -1421,7 +1424,7 @@ const FluidMaterial = forwardRef((_, ref) => {
           const aMul = (ap.freqMul && ap.freqMul.a) || 0.97;
           const bMul = (ap.freqMul && ap.freqMul.b) || 0.41;
           const cMul = (ap.freqMul && ap.freqMul.c) || 1.81;
-          const amp = (ap.ampMul || 1) * 1.0;
+          const amp = (ap.ampMul || 1) * Math.max(0, autoSplatRange || 1.0);
 
           const x =
             0.5 +
@@ -1623,7 +1626,7 @@ const FluidMaterial = forwardRef((_, ref) => {
           const aMul = (ap.freqMul && ap.freqMul.a) || 0.97;
           const bMul = (ap.freqMul && ap.freqMul.b) || 0.41;
           const cMul = (ap.freqMul && ap.freqMul.c) || 1.81;
-          const amp = (ap.ampMul || 1) * 1.0;
+          const amp = (ap.ampMul || 1) * Math.max(0, autoSplatRange || 1.0);
 
           const x =
             0.5 +

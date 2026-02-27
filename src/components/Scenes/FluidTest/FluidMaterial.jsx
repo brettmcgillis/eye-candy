@@ -11,6 +11,7 @@ import React, {
 
 import { useFrame, useThree } from '@react-three/fiber';
 
+import renderPass from './fluidPassUtils';
 import {
   DEBUG_CONTACT_CAP,
   DEBUG_CONTACT_TTL_DEFAULT,
@@ -40,61 +41,9 @@ import {
   sunraysMaskFragmentShader,
   vorticityFragmentShader,
 } from './fluidShaders';
+import { createDitheringTexture } from './fluidSimUtils';
 import useFluidControls from './useFluidControls';
-
-function createPair(width, height, options) {
-  const read = new THREE.WebGLRenderTarget(width, height, options);
-  const write = new THREE.WebGLRenderTarget(width, height, options);
-
-  return {
-    read,
-    write,
-    swap() {
-      const tmp = this.read;
-      this.read = this.write;
-      this.write = tmp;
-    },
-  };
-}
-
-function createBloomChain(width, height, iterations, options) {
-  const chain = [];
-  const count = Math.max(1, Math.floor(iterations));
-  let w = width;
-  let h = height;
-
-  for (let i = 0; i < count; i++) {
-    w = Math.max(2, Math.floor(w / 2));
-    h = Math.max(2, Math.floor(h / 2));
-    chain.push(new THREE.WebGLRenderTarget(w, h, options));
-  }
-
-  return chain;
-}
-
-function createDitheringTexture() {
-  // Ordered 4x4 Bayer matrix, encoded to repeat as subtle bloom dither.
-  const bayer = [0, 8, 2, 10, 12, 4, 14, 6, 3, 11, 1, 9, 15, 7, 13, 5];
-  const size = 4;
-  const data = new Uint8Array(size * size * 4);
-
-  for (let i = 0; i < bayer.length; i++) {
-    const v = Math.floor((bayer[i] / 15) * 255);
-    const idx = i * 4;
-    data[idx] = v;
-    data[idx + 1] = v;
-    data[idx + 2] = v;
-    data[idx + 3] = 255;
-  }
-
-  const texture = new THREE.DataTexture(data, size, size, THREE.RGBAFormat);
-  texture.minFilter = THREE.LinearFilter;
-  texture.magFilter = THREE.LinearFilter;
-  texture.wrapS = THREE.RepeatWrapping;
-  texture.wrapT = THREE.RepeatWrapping;
-  texture.needsUpdate = true;
-  return texture;
-}
+import useFluidRenderTargets from './useFluidRenderTargets';
 
 const DYE_COLOR_SCALE = 0.15;
 const MAX_BLOOM_CHAIN = 16;
@@ -267,48 +216,29 @@ const FluidMaterial = forwardRef((_, ref) => {
     []
   );
 
-  const velocity = useMemo(
-    () => createPair(simWidth, simHeight, rtOptions),
-    [simHeight, simWidth, rtOptions]
-  );
-  const dye = useMemo(
-    () => createPair(simWidth, simHeight, rtOptions),
-    [simHeight, simWidth, rtOptions]
-  );
-  const pressureTex = useMemo(
-    () => createPair(simWidth, simHeight, rtOptions),
-    [simHeight, simWidth, rtOptions]
-  );
-  const curl = useMemo(
-    () => new THREE.WebGLRenderTarget(simWidth, simHeight, rtOptions),
-    [simHeight, simWidth, rtOptions]
-  );
-  const divergence = useMemo(
-    () => new THREE.WebGLRenderTarget(simWidth, simHeight, rtOptions),
-    [simHeight, simWidth, rtOptions]
-  );
-
-  const bloomComposite = useMemo(
-    () => createPair(bloomWidth, bloomHeight, rtOptions),
-    [bloomHeight, bloomWidth, rtOptions]
-  );
-  const bloomChain = useMemo(
-    () => createBloomChain(bloomWidth, bloomHeight, MAX_BLOOM_CHAIN, rtOptions),
-    [bloomHeight, bloomWidth, rtOptions]
-  );
-
-  const sunraysMask = useMemo(
-    () => new THREE.WebGLRenderTarget(sunraysWidth, sunraysHeight, rtOptions),
-    [rtOptions, sunraysHeight, sunraysWidth]
-  );
-  const sunraysTex = useMemo(
-    () => new THREE.WebGLRenderTarget(sunraysWidth, sunraysHeight, rtOptions),
-    [rtOptions, sunraysHeight, sunraysWidth]
-  );
-  const sunraysTemp = useMemo(
-    () => new THREE.WebGLRenderTarget(sunraysWidth, sunraysHeight, rtOptions),
-    [rtOptions, sunraysHeight, sunraysWidth]
-  );
+  const {
+    velocity,
+    dye,
+    pressureTex,
+    curl,
+    divergence,
+    bloomComposite,
+    bloomChain,
+    sunraysMask,
+    sunraysTex,
+    sunraysTemp,
+    clearAllTargets,
+  } = useFluidRenderTargets({
+    gl,
+    simWidth,
+    simHeight,
+    bloomWidth,
+    bloomHeight,
+    sunraysWidth,
+    sunraysHeight,
+    rtOptions,
+    maxBloomChain: MAX_BLOOM_CHAIN,
+  });
 
   const advectionMat = useMemo(
     () =>
@@ -548,62 +478,6 @@ const FluidMaterial = forwardRef((_, ref) => {
     };
   }, [simMesh, simScene]);
 
-  useEffect(() => {
-    const clearTarget = (target) => {
-      gl.setRenderTarget(target);
-      gl.clearColor(0, 0, 0, 1);
-      gl.clear(gl.COLOR_BUFFER_BIT);
-    };
-
-    clearTarget(velocity.read);
-    clearTarget(velocity.write);
-    clearTarget(dye.read);
-    clearTarget(dye.write);
-    clearTarget(pressureTex.read);
-    clearTarget(pressureTex.write);
-    clearTarget(curl);
-    clearTarget(divergence);
-
-    gl.setRenderTarget(null);
-
-    return () => {
-      velocity.read.dispose();
-      velocity.write.dispose();
-      dye.read.dispose();
-      dye.write.dispose();
-      pressureTex.read.dispose();
-      pressureTex.write.dispose();
-      curl.dispose();
-      divergence.dispose();
-    };
-  }, [curl, divergence, dye, gl, pressureTex, velocity]);
-
-  useEffect(() => {
-    const clearTarget = (target) => {
-      gl.setRenderTarget(target);
-      gl.clearColor(0, 0, 0, 1);
-      gl.clear(gl.COLOR_BUFFER_BIT);
-    };
-
-    clearTarget(bloomComposite.read);
-    clearTarget(bloomComposite.write);
-    bloomChain.forEach(clearTarget);
-    clearTarget(sunraysMask);
-    clearTarget(sunraysTex);
-    clearTarget(sunraysTemp);
-
-    gl.setRenderTarget(null);
-
-    return () => {
-      bloomComposite.read.dispose();
-      bloomComposite.write.dispose();
-      bloomChain.forEach((target) => target.dispose());
-      sunraysMask.dispose();
-      sunraysTex.dispose();
-      sunraysTemp.dispose();
-    };
-  }, [bloomComposite, gl, sunraysMask, sunraysTemp, sunraysTex, bloomChain]);
-
   useEffect(
     () => () => {
       simMesh.geometry.dispose();
@@ -717,35 +591,12 @@ const FluidMaterial = forwardRef((_, ref) => {
 
     // Handle reset request
     if (resetRequestedRef.current) {
-      const clearTarget = (target) => {
-        gl.setRenderTarget(target);
-        gl.clearColor(0, 0, 0, 1);
-        gl.clear(gl.COLOR_BUFFER_BIT);
-      };
-
-      clearTarget(velocity.read);
-      clearTarget(velocity.write);
-      clearTarget(dye.read);
-      clearTarget(dye.write);
-      clearTarget(pressureTex.read);
-      clearTarget(pressureTex.write);
-      clearTarget(curl);
-      clearTarget(divergence);
-      clearTarget(bloomComposite.read);
-      clearTarget(bloomComposite.write);
-      bloomChain.forEach(clearTarget);
-      clearTarget(sunraysMask);
-      clearTarget(sunraysTex);
-      clearTarget(sunraysTemp);
-
-      gl.setRenderTarget(null);
+      clearAllTargets();
       resetRequestedRef.current = false;
     }
 
-    const renderPass = (material, target) => {
-      simMesh.material = material;
-      gl.setRenderTarget(target);
-      gl.render(simScene, simCamera);
+    const renderSimPass = (material, target) => {
+      renderPass(gl, simScene, simCamera, simMesh, material, target);
     };
 
     colorARef.current.set(colorA);
@@ -801,15 +652,15 @@ const FluidMaterial = forwardRef((_, ref) => {
       advectionMat.uniforms.uVelocity.value = velocity.read.texture;
       advectionMat.uniforms.uSource.value = velocity.read.texture;
       advectionMat.uniforms.uDissipation.value = velocityDissipation;
-      renderPass(advectionMat, velocity.write);
+      renderSimPass(advectionMat, velocity.write);
       velocity.swap();
 
       curlMat.uniforms.uVelocity.value = velocity.read.texture;
-      renderPass(curlMat, curl);
+      renderSimPass(curlMat, curl);
 
       vorticityMat.uniforms.uVelocity.value = velocity.read.texture;
       vorticityMat.uniforms.uCurlTex.value = curl.texture;
-      renderPass(vorticityMat, velocity.write);
+      renderSimPass(vorticityMat, velocity.write);
       velocity.swap();
 
       const splatAt = (px, py, vx, vy, rgb, strength = 1, debugKind = -1) => {
@@ -837,7 +688,7 @@ const FluidMaterial = forwardRef((_, ref) => {
           0
         );
         splatMat.uniforms.uColor.value.copy(forceRef.current);
-        renderPass(splatMat, velocity.write);
+        renderSimPass(splatMat, velocity.write);
         velocity.swap();
 
         splatMat.uniforms.uTarget.value = dye.read.texture;
@@ -849,7 +700,7 @@ const FluidMaterial = forwardRef((_, ref) => {
           )
           .multiplyScalar(dyeStrength * safeStrength * DYE_COLOR_SCALE);
         splatMat.uniforms.uColor.value.copy(forceRef.current);
-        renderPass(splatMat, dye.write);
+        renderSimPass(splatMat, dye.write);
         dye.swap();
       };
 
@@ -1186,28 +1037,28 @@ const FluidMaterial = forwardRef((_, ref) => {
       }
 
       divergenceMat.uniforms.uVelocity.value = velocity.read.texture;
-      renderPass(divergenceMat, divergence);
+      renderSimPass(divergenceMat, divergence);
 
       clearMat.uniforms.uTexture.value = pressureTex.read.texture;
-      renderPass(clearMat, pressureTex.write);
+      renderSimPass(clearMat, pressureTex.write);
       pressureTex.swap();
 
       pressureMat.uniforms.uDivergence.value = divergence.texture;
       for (let i = 0; i < pressureIterations; i++) {
         pressureMat.uniforms.uPressure.value = pressureTex.read.texture;
-        renderPass(pressureMat, pressureTex.write);
+        renderSimPass(pressureMat, pressureTex.write);
         pressureTex.swap();
       }
 
       gradientMat.uniforms.uPressure.value = pressureTex.read.texture;
       gradientMat.uniforms.uVelocity.value = velocity.read.texture;
-      renderPass(gradientMat, velocity.write);
+      renderSimPass(gradientMat, velocity.write);
       velocity.swap();
 
       advectionMat.uniforms.uVelocity.value = velocity.read.texture;
       advectionMat.uniforms.uSource.value = dye.read.texture;
       advectionMat.uniforms.uDissipation.value = densityDissipation;
-      renderPass(advectionMat, dye.write);
+      renderSimPass(advectionMat, dye.write);
       dye.swap();
     }
 
@@ -1281,14 +1132,14 @@ const FluidMaterial = forwardRef((_, ref) => {
         0.25 / knee
       );
       bloomPrefilterMat.uniforms.uTexture.value = dye.read.texture;
-      renderPass(bloomPrefilterMat, bloomChain[0]);
+      renderSimPass(bloomPrefilterMat, bloomChain[0]);
 
       for (let i = 1; i < bloomLevelCount; i++) {
         const src = bloomChain[i - 1];
         const dst = bloomChain[i];
         bloomBlurMat.uniforms.uTexel.value.set(1 / src.width, 1 / src.height);
         bloomBlurMat.uniforms.uTexture.value = src.texture;
-        renderPass(bloomBlurMat, dst);
+        renderSimPass(bloomBlurMat, dst);
       }
 
       gl.setRenderTarget(bloomComposite.read);
@@ -1300,13 +1151,13 @@ const FluidMaterial = forwardRef((_, ref) => {
         bloomComposeMat.uniforms.uAdd.value = bloomChain[i].texture;
         bloomComposeMat.uniforms.uAddFactor.value =
           0.82 ** (bloomLevelCount - 1 - i);
-        renderPass(bloomComposeMat, bloomComposite.write);
+        renderSimPass(bloomComposeMat, bloomComposite.write);
         bloomComposite.swap();
       }
 
       bloomFinalMat.uniforms.uTexel.value.copy(bloomTexel);
       bloomFinalMat.uniforms.uTexture.value = bloomComposite.read.texture;
-      renderPass(bloomFinalMat, bloomComposite.write);
+      renderSimPass(bloomFinalMat, bloomComposite.write);
       bloomComposite.swap();
 
       displayMat.uniforms.uBloom.value = bloomComposite.read.texture;
@@ -1316,18 +1167,18 @@ const FluidMaterial = forwardRef((_, ref) => {
 
     if (sunrays) {
       sunraysMaskMat.uniforms.uTexture.value = dye.read.texture;
-      renderPass(sunraysMaskMat, sunraysMask);
+      renderSimPass(sunraysMaskMat, sunraysMask);
 
       sunraysMat.uniforms.uTexture.value = sunraysMask.texture;
-      renderPass(sunraysMat, sunraysTex);
+      renderSimPass(sunraysMat, sunraysTex);
 
       blurMat.uniforms.uTexture.value = sunraysTex.texture;
       blurMat.uniforms.uTexel.value.set(sunraysTexel.x, 0);
-      renderPass(blurMat, sunraysTemp);
+      renderSimPass(blurMat, sunraysTemp);
 
       blurMat.uniforms.uTexture.value = sunraysTemp.texture;
       blurMat.uniforms.uTexel.value.set(0, sunraysTexel.y);
-      renderPass(blurMat, sunraysTex);
+      renderSimPass(blurMat, sunraysTex);
 
       displayMat.uniforms.uSunrays.value = sunraysTex.texture;
     } else {

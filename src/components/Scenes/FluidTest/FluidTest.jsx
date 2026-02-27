@@ -33,7 +33,7 @@ function FluidHandsPointerBridge({
   invertY,
   gesturesEnabled,
 }) {
-  const previousRef = useRef(null);
+  const previousByHandRef = useRef(new Map());
   const lastGestureBurstRef = useRef(0);
 
   const handResults = useMediaPipeHands(mediaPipeConfig);
@@ -54,39 +54,53 @@ function FluidHandsPointerBridge({
   });
 
   useEffect(() => {
-    const primaryPos = hands?.primary?.position || hands?.hands?.[0]?.position;
+    const handList = hands?.hands || [];
 
-    if (!primaryPos) {
-      previousRef.current = null;
+    if (handList.length === 0) {
+      previousByHandRef.current.clear();
       onPointerChange(null);
       return;
     }
 
-    const mapped = mapWorldToScreenUv(primaryPos, {
-      xScale: handControlConfig.xScale || 4,
-      yScale: handControlConfig.yScale || 3,
-      mirrorX: false,
-      mirrorY: true,
-    });
-    const targetX = invertX ? 1 - mapped.x : mapped.x;
-    const targetY = invertY ? 1 - mapped.y : mapped.y;
-    const prev = previousRef.current;
+    const maxHands = Math.max(1, Math.floor(handControlConfig.maxHands || 1));
+    const activeHands = handList.slice(0, maxHands);
+    const nextPrevByHand = new Map();
+    const nextPointers = [];
 
-    const x = prev ? THREE.MathUtils.lerp(prev.x, targetX, 0.35) : targetX;
-    const y = prev ? THREE.MathUtils.lerp(prev.y, targetY, 0.35) : targetY;
+    for (let i = 0; i < activeHands.length; i += 1) {
+      const hand = activeHands[i];
+      if (hand?.position) {
+        const mapped = mapWorldToScreenUv(hand.position, {
+          xScale: handControlConfig.xScale || 4,
+          yScale: handControlConfig.yScale || 3,
+          mirrorX: false,
+          mirrorY: true,
+        });
+        const targetX = invertX ? 1 - mapped.x : mapped.x;
+        const targetY = invertY ? 1 - mapped.y : mapped.y;
+        const prev = previousByHandRef.current.get(hand.index);
 
-    let vx = prev ? x - prev.x : 0;
-    let vy = prev ? y - prev.y : 0;
+        const x = prev ? THREE.MathUtils.lerp(prev.x, targetX, 0.35) : targetX;
+        const y = prev ? THREE.MathUtils.lerp(prev.y, targetY, 0.35) : targetY;
 
-    if (size.width > size.height) {
-      vx *= size.width / Math.max(1, size.height);
-    } else {
-      vy *= size.height / Math.max(1, size.width);
+        let vx = prev ? x - prev.x : 0;
+        let vy = prev ? y - prev.y : 0;
+
+        if (size.width > size.height) {
+          vx *= size.width / Math.max(1, size.height);
+        } else {
+          vy *= size.height / Math.max(1, size.width);
+        }
+
+        nextPointers.push({ x, y, vx, vy, down: true });
+        nextPrevByHand.set(hand.index, { x, y });
+      }
     }
 
-    onPointerChange({ x, y, vx, vy, down: true });
-    previousRef.current = { x, y };
+    previousByHandRef.current = nextPrevByHand;
+    onPointerChange(nextPointers.length > 0 ? nextPointers : null);
   }, [
+    handControlConfig.maxHands,
     handControlConfig.xScale,
     handControlConfig.yScale,
     hands,
@@ -99,7 +113,7 @@ function FluidHandsPointerBridge({
 
   useEffect(
     () => () => {
-      previousRef.current = null;
+      previousByHandRef.current.clear();
       onPointerChange(null);
     },
     [onPointerChange]

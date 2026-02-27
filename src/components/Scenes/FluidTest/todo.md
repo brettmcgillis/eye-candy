@@ -54,7 +54,7 @@ Long term vision / use cases:
 - [ ] Create a preset that looks like an inverted photograph.
 - [ ] After splitting responsibilities, add stationary auto‑splats with a Leva toggle and drag‑and‑drop placement.
 - [ ] Figure out what to do with gesture control. Consider gestures for add/remove auto splats, gesture for generate random bursts, gesture for "pointer down".
-- [ ] Support for multiple hands coming back from media pipe -> map to multiple pointers.
+- [x] Support for multiple hands coming back from media pipe -> map to multiple pointers.
 
 ## Polish / Presets / UX
 

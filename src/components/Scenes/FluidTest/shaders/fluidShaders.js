@@ -356,17 +356,19 @@ uniform bool uBloomEnabled;
 uniform bool uSunraysEnabled;
 uniform bool uDebugCursor;
 uniform float uBlendMode;
-uniform vec2 uDebugPointer;
 uniform vec2 uDebugAuto;
 uniform float uDebugPointerSize;
 uniform float uDebugAutoSize;
 uniform float uDebugPointerAspect;
 uniform float uDebugAutoAspect;
 uniform float uDebugLineWeightScale;
-uniform float uDebugPointerActive;
 uniform float uDebugAutoActive;
 uniform vec3 uDebugPointerColor;
 uniform vec3 uDebugAutoColor;
+#define DEBUG_POINTER_CAP 8
+uniform float uDebugPointerCount;
+uniform vec2 uDebugPointers[DEBUG_POINTER_CAP];
+uniform float uDebugPointerLife[DEBUG_POINTER_CAP];
 #define DEBUG_CONTACT_CAP 12
 #if DEBUG_CONTACT_CAP > 0
 uniform float uDebugAutoCount;
@@ -450,7 +452,6 @@ void main() {
   if (uDebugCursor) {
     float pointerHalf = uDebugPointerSize * 0.5;
     float autoHalf = uDebugAutoSize * 0.5;
-    vec2 ptrCenter = uDebugPointer;
     vec2 autoCenter = uDebugAuto;
     float pointerThickness = max(
       0.00035,
@@ -462,11 +463,20 @@ void main() {
     );
     vec2 ptrHalf = vec2(pointerHalf * uDebugPointerAspect, pointerHalf / max(uDebugPointerAspect, 0.0001));
     vec2 autoHalfVec = vec2(autoHalf * uDebugAutoAspect, autoHalf / max(uDebugAutoAspect, 0.0001));
-    float pointerSquare = squareOutline(vUv, ptrCenter, ptrHalf, pointerThickness) * uDebugPointerActive;
     float autoSquare = squareOutline(vUv, autoCenter, autoHalfVec, autoThickness) * uDebugAutoActive;
-
-    color = mix(color, uDebugPointerColor, pointerSquare);
     color = mix(color, uDebugAutoColor, autoSquare);
+
+    for (int i = 0; i < DEBUG_POINTER_CAP; i++) {
+      if (float(i) >= uDebugPointerCount) continue;
+      float pActive = clamp(
+        uDebugPointerLife[i] / max(uDebugContactFadeDuration, 0.0001),
+        0.0,
+        1.0
+      );
+      float pointerSquare =
+        squareOutline(vUv, uDebugPointers[i], ptrHalf, pointerThickness) * pActive;
+      color = mix(color, uDebugPointerColor, pointerSquare);
+    }
 
     for (int i = 0; i < DEBUG_CONTACT_CAP; i++) {
       float contactActive = clamp(

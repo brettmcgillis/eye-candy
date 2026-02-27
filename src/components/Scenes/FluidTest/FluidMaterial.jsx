@@ -47,6 +47,7 @@ const DYE_COLOR_SCALE = 0.15;
 const MAX_BLOOM_CHAIN = 16;
 const MAX_SPLAT_VELOCITY = 900;
 const SIM_DIMENSION_QUANTIZATION = 32;
+const DEBUG_POINTER_CAP = 8;
 
 const FluidMaterial = forwardRef(
   (
@@ -433,7 +434,6 @@ const FluidMaterial = forwardRef(
             uSunraysEnabled: { value: sunrays },
             uBlendMode: { value: 0 },
             uDebugCursor: { value: false },
-            uDebugPointer: { value: new THREE.Vector2(0.5, 0.5) },
             uDebugAuto: { value: new THREE.Vector2(0.5, 0.5) },
             uDebugPointerSize: {
               value: FLUID_PRESETS.default.debugPointerSize,
@@ -450,13 +450,22 @@ const FluidMaterial = forwardRef(
             uDebugLineWeightScale: {
               value: FLUID_PRESETS.default.debugLineWeightScale,
             },
-            uDebugPointerActive: { value: 0 },
             uDebugAutoActive: { value: 0 },
             uDebugPointerColor: {
               value: new THREE.Color('#ffffff'),
             },
             uDebugAutoColor: {
               value: new THREE.Color('#000000'),
+            },
+            uDebugPointerCount: { value: 0 },
+            uDebugPointers: {
+              value: Array.from(
+                { length: DEBUG_POINTER_CAP },
+                () => new THREE.Vector2(0.5, 0.5)
+              ),
+            },
+            uDebugPointerLife: {
+              value: Array.from({ length: DEBUG_POINTER_CAP }, () => 0),
             },
             uDebugAutoCount: { value: 0 },
             uDebugAutos: {
@@ -612,8 +621,13 @@ const FluidMaterial = forwardRef(
       displayMat.uniforms.uBloomEnabled.value = bloom;
       displayMat.uniforms.uSunraysEnabled.value = sunrays;
 
-      const pointer = pointerRef.current;
-
+      const pointerState = pointerRef.current;
+      let activePointers = [];
+      if (Array.isArray(pointerState)) {
+        activePointers = pointerState.filter((p) => p?.down);
+      } else if (pointerState?.down) {
+        activePointers = [pointerState];
+      }
       const splatAt = (
         px,
         py,
@@ -669,7 +683,7 @@ const FluidMaterial = forwardRef(
         }
       };
 
-      if (pointer?.down) {
+      if (activePointers.length > 0) {
         const cycleSpeed = colorCycleSpeed * Math.max(0.001, colorUpdateSpeed);
         const mixAB = 0.5 + 0.5 * Math.sin(t * cycleSpeed);
         const mixBC = 0.5 + 0.5 * Math.sin(t * cycleSpeed * 1.37 + 1.7);
@@ -693,26 +707,29 @@ const FluidMaterial = forwardRef(
           paintColor = baseColor.multiplyScalar(-1).addScalar(1);
         }
 
-        const speed = Math.min(
-          1,
-          Math.hypot(pointer.vx || 0, pointer.vy || 0) * 80
-        );
-        const forceX = (pointer.vx || 0) * splatForce;
-        const forceY = (pointer.vy || 0) * splatForce;
+        for (let i = 0; i < activePointers.length; i += 1) {
+          const pointer = activePointers[i];
+          const speed = Math.min(
+            1,
+            Math.hypot(pointer.vx || 0, pointer.vy || 0) * 80
+          );
+          const forceX = (pointer.vx || 0) * splatForce;
+          const forceY = (pointer.vy || 0) * splatForce;
 
-        splatAt(
-          pointer.x,
-          pointer.y,
-          forceX,
-          forceY,
-          paintColor,
-          0.65 + speed * 0.75,
-          -1,
-          {
-            applyVelocity: !paused,
-            applyDye: true,
-          }
-        );
+          splatAt(
+            pointer.x,
+            pointer.y,
+            forceX,
+            forceY,
+            paintColor,
+            0.65 + speed * 0.75,
+            -1,
+            {
+              applyVelocity: !paused,
+              applyDye: true,
+            }
+          );
+        }
       }
 
       if (!paused) {
@@ -730,7 +747,7 @@ const FluidMaterial = forwardRef(
         renderSimPass(vorticityMat, velocity.write);
         velocity.swap();
 
-        if (!pointer?.down && !startedRef.current) {
+        if (activePointers.length === 0 && !startedRef.current) {
           startedRef.current = true;
           splatAt(0.5, 0.5, 0, 0, colorARef.current.set(0.2, 0.4, 0.7), 0.35);
         }
@@ -880,10 +897,24 @@ const FluidMaterial = forwardRef(
       }
 
       displayMat.uniforms.uDebugCursor.value = debugCursor;
-      displayMat.uniforms.uDebugPointer.value.set(
-        pointer?.x ?? 0.5,
-        pointer?.y ?? 0.5
-      );
+      const pointerCount = Math.min(DEBUG_POINTER_CAP, activePointers.length);
+      displayMat.uniforms.uDebugPointerCount.value = pointerCount;
+      for (let i = 0; i < DEBUG_POINTER_CAP; i += 1) {
+        const pointer = activePointers[i];
+        if (i < pointerCount && pointer) {
+          displayMat.uniforms.uDebugPointers.value[i].set(
+            pointer.x ?? 0.5,
+            pointer.y ?? 0.5
+          );
+          displayMat.uniforms.uDebugPointerLife.value[i] = Math.max(
+            0.05,
+            debugContactFadeDuration
+          );
+        } else {
+          displayMat.uniforms.uDebugPointers.value[i].set(0.5, 0.5);
+          displayMat.uniforms.uDebugPointerLife.value[i] = 0;
+        }
+      }
       const firstAuto = autoPointersRef.current[0] || {
         x: 0.5,
         y: 0.5,
@@ -921,7 +952,6 @@ const FluidMaterial = forwardRef(
         fluidValues.debugAutoAspect || 1.0;
       displayMat.uniforms.uDebugLineWeightScale.value =
         fluidValues.debugLineWeightScale || 1.0;
-      displayMat.uniforms.uDebugPointerActive.value = pointer?.down ? 1 : 0;
       displayMat.uniforms.uDebugAutoActive.value = firstAuto.ttl > 0 ? 1 : 0;
       displayMat.uniforms.uDebugPointerColor.value.set(debugPointerColor);
       displayMat.uniforms.uDebugAutoColor.value.set(debugAutoColor);

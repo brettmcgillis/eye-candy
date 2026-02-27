@@ -381,6 +381,9 @@ uniform vec2 uDebugPointer;
 uniform vec2 uDebugAuto;
 uniform float uDebugPointerSize;
 uniform float uDebugAutoSize;
+uniform float uDebugPointerAspect;
+uniform float uDebugAutoAspect;
+uniform float uDebugLineWeightScale;
 uniform float uDebugPointerActive;
 uniform float uDebugAutoActive;
 uniform vec3 uDebugPointerColor;
@@ -406,11 +409,12 @@ vec3 saturateColor(vec3 col, float amount) {
   return mix(vec3(l), col, amount);
 }
 
-float squareOutline(vec2 uv, vec2 center, float halfSize, float thickness) {
+float squareOutline(vec2 uv, vec2 center, vec2 halfSize, float thickness) {
   vec2 p = abs(uv - center);
-  float outer = step(p.x, halfSize) * step(p.y, halfSize);
-  float innerSize = max(halfSize - thickness, 0.0);
-  float inner = step(p.x, innerSize) * step(p.y, innerSize);
+  float outer = step(p.x, halfSize.x) * step(p.y, halfSize.y);
+  float innerSizeX = max(halfSize.x - thickness, 0.0);
+  float innerSizeY = max(halfSize.y - thickness, 0.0);
+  float inner = step(p.x, innerSizeX) * step(p.y, innerSizeY);
   return clamp(outer - inner, 0.0, 1.0);
 }
 
@@ -468,20 +472,24 @@ void main() {
   color *= uBrightness;
 
   if (uDebugCursor) {
-    float pointerThickness = max(0.00035, uDebugPointerSize * 0.04);
-    float autoThickness = max(0.00035, uDebugAutoSize * 0.04);
-    float pointerSquare = squareOutline(
-      vUv,
-      uDebugPointer,
-      uDebugPointerSize,
-      pointerThickness
-    ) * uDebugPointerActive;
-    float autoSquare = squareOutline(
-      vUv,
-      uDebugAuto,
-      uDebugAutoSize,
-      autoThickness
-    ) * uDebugAutoActive;
+    // apply aspect ratio corrections and line weight scaling
+    float pointerHalf = uDebugPointerSize * 0.5;
+    float autoHalf = uDebugAutoSize * 0.5;
+    vec2 ptrCenter = uDebugPointer;
+    vec2 autoCenter = uDebugAuto;
+    float pointerThickness = max(
+      0.00035,
+      uDebugPointerSize * 0.04 * uDebugLineWeightScale
+    );
+    float autoThickness = max(
+      0.00035,
+      uDebugAutoSize * 0.04 * uDebugLineWeightScale
+    );
+    // compute axis-aware half-sizes so aspect deforms shape (default square)
+    vec2 ptrHalf = vec2(pointerHalf * uDebugPointerAspect, pointerHalf / max(uDebugPointerAspect, 0.0001));
+    vec2 autoHalfVec = vec2(autoHalf * uDebugAutoAspect, autoHalf / max(uDebugAutoAspect, 0.0001));
+    float pointerSquare = squareOutline(vUv, ptrCenter, ptrHalf, pointerThickness) * uDebugPointerActive;
+    float autoSquare = squareOutline(vUv, autoCenter, autoHalfVec, autoThickness) * uDebugAutoActive;
 
     color = mix(color, uDebugPointerColor, pointerSquare);
     color = mix(color, uDebugAutoColor, autoSquare);
@@ -493,11 +501,13 @@ void main() {
         1.0
       );
       float kind = clamp(uDebugContactKind[i], 0.0, 1.0);
-      float size = mix(uDebugAutoSize, uDebugPointerSize, kind);
+      // mix sizes and thickness with aspect correction
+      vec2 autoHalfMix = vec2((uDebugAutoSize * 0.5) * uDebugAutoAspect, (uDebugAutoSize * 0.5) / max(uDebugAutoAspect, 0.0001));
+      vec2 pointerHalfMix = vec2((uDebugPointerSize * 0.5) * uDebugPointerAspect, (uDebugPointerSize * 0.5) / max(uDebugPointerAspect, 0.0001));
+      vec2 sizeVec = mix(autoHalfMix, pointerHalfMix, kind);
       float thickness = mix(autoThickness, pointerThickness, kind);
       vec3 markColor = mix(uDebugAutoColor, uDebugPointerColor, kind);
-      float mark =
-        squareOutline(vUv, uDebugContacts[i], size, thickness) * contactActive;
+      float mark = squareOutline(vUv, uDebugContacts[i], sizeVec, thickness) * contactActive;
       color = mix(color, markColor, mark);
     }
     // draw additional auto debug squares (beyond the primary auto)
@@ -506,7 +516,8 @@ void main() {
       if (float(i) >= uDebugAutoCount) continue;
       if (i == 0) continue;
       float aActive = clamp(uDebugAutoLife[i] / max(uDebugContactFadeDuration, 0.0001), 0.0, 1.0);
-      float aMark = squareOutline(vUv, uDebugAutos[i], uDebugAutoSize, autoThickness) * aActive;
+      vec2 aHalf = vec2((uDebugAutoSize * 0.5) * uDebugAutoAspect, (uDebugAutoSize * 0.5) / max(uDebugAutoAspect, 0.0001));
+      float aMark = squareOutline(vUv, uDebugAutos[i], aHalf, autoThickness) * aActive;
       color = mix(color, uDebugAutoColor, aMark);
     }
     #endif
@@ -978,8 +989,21 @@ const FluidMaterial = forwardRef((_, ref) => {
           uDebugCursor: { value: false },
           uDebugPointer: { value: new THREE.Vector2(0.5, 0.5) },
           uDebugAuto: { value: new THREE.Vector2(0.5, 0.5) },
-          uDebugPointerSize: { value: 0.03 },
-          uDebugAutoSize: { value: 0.03 },
+          uDebugPointerSize: {
+            value: FLUID_PRESETS.default.debugPointerSize,
+          },
+          uDebugAutoSize: {
+            value: FLUID_PRESETS.default.debugAutoSize,
+          },
+          uDebugPointerAspect: {
+            value: FLUID_PRESETS.default.debugPointerAspect,
+          },
+          uDebugAutoAspect: {
+            value: FLUID_PRESETS.default.debugAutoAspect,
+          },
+          uDebugLineWeightScale: {
+            value: FLUID_PRESETS.default.debugLineWeightScale,
+          },
           uDebugPointerActive: { value: 0 },
           uDebugAutoActive: { value: 0 },
           uDebugPointerColor: {
@@ -1142,7 +1166,7 @@ const FluidMaterial = forwardRef((_, ref) => {
 
     // helper for pointer movement: constant velocity derived from rate
     // MIN_MOVE ensures some motion even at low rates (prevents center clustering)
-    const SPEED_SCALE = 0.025;
+    const SPEED_SCALE = 0.01;
     const MIN_MOVE = 0.01;
     const computeNextPos = (prevX, prevY, tgtX, tgtY, rateVal) => {
       if (rateVal <= 0 || (prevX === tgtX && prevY === tgtY))
@@ -1738,6 +1762,12 @@ const FluidMaterial = forwardRef((_, ref) => {
     }
     displayMat.uniforms.uDebugPointerSize.value = debugPointerSize;
     displayMat.uniforms.uDebugAutoSize.value = debugAutoSize;
+    displayMat.uniforms.uDebugPointerAspect.value =
+      fluidValues.debugPointerAspect || 1.0;
+    displayMat.uniforms.uDebugAutoAspect.value =
+      fluidValues.debugAutoAspect || 1.0;
+    displayMat.uniforms.uDebugLineWeightScale.value =
+      fluidValues.debugLineWeightScale || 1.0;
     displayMat.uniforms.uDebugPointerActive.value = pointer?.down ? 1 : 0;
     displayMat.uniforms.uDebugAutoActive.value = firstAuto.ttl > 0 ? 1 : 0;
     displayMat.uniforms.uDebugPointerColor.value.set(debugPointerColor);

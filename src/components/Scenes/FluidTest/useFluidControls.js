@@ -59,6 +59,9 @@ function copySettingsToClipboard(get) {
     debugAutoColor: get('Fluid.Debug.debugAutoColor'),
     debugAutoSize: get('Fluid.Debug.debugAutoSize'),
     debugPointerSize: get('Fluid.Debug.debugPointerSize'),
+    debugPointerAspect: get('Fluid.Debug.debugPointerAspect'),
+    debugAutoAspect: get('Fluid.Debug.debugAutoAspect'),
+    debugLineWeightScale: get('Fluid.Debug.debugLineWeightScale'),
     debugContactFadeDuration: get('Fluid.Debug.debugContactFadeDuration'),
   };
 
@@ -91,6 +94,7 @@ export default function useFluidControls({
           value: 'default',
           options: {
             Cardinals: 'default',
+            'Cardinals (Mobile)': 'cardinalsMobile',
             'Ink on Paper': 'inkOnPaper',
             Freon: 'freon',
             Pastel: 'pastel',
@@ -354,6 +358,24 @@ export default function useFluidControls({
             min: 0.005,
             max: 0.15,
             step: 0.002,
+          },
+          debugPointerAspect: {
+            value: FLUID_PRESETS.default.debugPointerAspect,
+            min: 0.1,
+            max: 5,
+            step: 0.05,
+          },
+          debugAutoAspect: {
+            value: FLUID_PRESETS.default.debugAutoAspect,
+            min: 0.1,
+            max: 5,
+            step: 0.05,
+          },
+          debugLineWeightScale: {
+            value: FLUID_PRESETS.default.debugLineWeightScale,
+            min: 0.25,
+            max: 4,
+            step: 0.05,
           },
           debugContactFadeDuration: {
             value: FLUID_PRESETS.default.debugContactFadeDuration,

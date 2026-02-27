@@ -91,7 +91,7 @@ export default function useFluidControls({
     () => ({
       Presets: folder({
         preset: {
-          value: 'default',
+          value: 'cardinalsMobile',
           options: {
             Cardinals: 'default',
             'Cardinals (Mobile)': 'cardinalsMobile',

@@ -43,9 +43,9 @@ Long term vision / use cases:
 
 ## Features
 
-- [ ] Add input `mode` control: `Pointer/Touch` or `Hands` (wire with existing hand‑control hooks).
+- [ ] Add `input mode` control: `Pointer/Touch` or `Hands` (wire with existing hand‑control hooks).
 - [x] Support for n auto‑splats (and presets that exercise multiple splats).
-- [ ] Try the material on an existing model / arbitrary mesh.
+- [ ] Add `test mode` control: Option `Plane` shows current config with plane and orthographic cam. Option `3d` shows material on a sphere with orbit cam controls.
 - [x] Add controls for cursor debug square sizing.
 - [x] Add controls for cursor debug square line weight.
 - [ ] Experiment with other dither effects.

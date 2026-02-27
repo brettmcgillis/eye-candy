@@ -49,11 +49,17 @@ const MAX_SPLAT_VELOCITY = 900;
 
 const FluidMaterial = forwardRef(
   (
-    { autoPointersRef: externalAutoPointersRef, config, randomSplatsRef },
+    {
+      autoPointersRef: externalAutoPointersRef,
+      config,
+      pointerRef: externalPointerRef,
+      randomSplatsRef,
+    },
     ref
   ) => {
     const { gl, size } = useThree();
-    const pointerRef = useRef(null);
+    const internalPointerRef = useRef(null);
+    const pointerRef = externalPointerRef || internalPointerRef;
     const startedRef = useRef(false);
     const internalRandomSplatsRef = useRef([]);
     const internalAutoPointersRef = useRef([
@@ -499,9 +505,6 @@ const FluidMaterial = forwardRef(
     );
 
     useImperativeHandle(ref, () => ({
-      setPointer(next) {
-        pointerRef.current = next;
-      },
       reset() {
         resetRequestedRef.current = true;
       },

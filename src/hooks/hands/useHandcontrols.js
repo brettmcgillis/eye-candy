@@ -82,6 +82,22 @@ export function mapToWorld(p, { xScale = 4, yScale = 3, zScale = 5 } = {}) {
   );
 }
 
+export function mapWorldToScreenUv(
+  p,
+  { xScale = 4, yScale = 3, mirrorX = true, mirrorY = false } = {}
+) {
+  const safeXScale = Math.max(0.001, xScale);
+  const safeYScale = Math.max(0.001, yScale);
+
+  const baseX = 0.5 + p.x / safeXScale;
+  const baseY = 0.5 - p.y / safeYScale;
+
+  return {
+    x: THREE.MathUtils.clamp(mirrorX ? 1 - baseX : baseX, 0, 1),
+    y: THREE.MathUtils.clamp(mirrorY ? 1 - baseY : baseY, 0, 1),
+  };
+}
+
 /* ---------------------------------------------
  Empty fallback
 ----------------------------------------------*/
@@ -132,7 +148,7 @@ export default function useHandControls(
 
     const left = sorted[0] ?? null;
     const right = sorted[1] ?? null;
-    const primary = maxHands === 1 ? hands[0] ?? null : null;
+    const primary = maxHands === 1 ? (hands[0] ?? null) : null;
 
     return {
       hands,

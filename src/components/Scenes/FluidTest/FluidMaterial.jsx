@@ -42,19 +42,18 @@ import {
   vorticityFragmentShader,
 } from './fluidShaders';
 import { createDitheringTexture } from './fluidSimUtils';
-import useFluidControls from './useFluidControls';
 import useFluidRenderTargets from './useFluidRenderTargets';
 
 const DYE_COLOR_SCALE = 0.15;
 const MAX_BLOOM_CHAIN = 16;
 const MAX_SPLAT_VELOCITY = 900;
 
-const FluidMaterial = forwardRef((_, ref) => {
+const FluidMaterial = forwardRef(({ config, randomSplatQueueRef }, ref) => {
   const { gl, size } = useThree();
   const pointerRef = useRef(null);
   const startedRef = useRef(false);
-  const presetRef = useRef('default');
-  const randomSplatQueueRef = useRef(0);
+  const internalRandomSplatQueueRef = useRef(0);
+  const randomQueueRef = randomSplatQueueRef || internalRandomSplatQueueRef;
   const resetRequestedRef = useRef(false);
   const colorARef = useRef(new THREE.Color());
   const colorBRef = useRef(new THREE.Color());
@@ -92,11 +91,7 @@ const FluidMaterial = forwardRef((_, ref) => {
   );
   const debugContactWriteRef = useRef(0);
 
-  const [fluidValues, setControls] = useFluidControls({
-    presetRef,
-    randomSplatQueueRef,
-    resetSimRef: ref,
-  });
+  const fluidValues = config || FLUID_PRESETS.default;
 
   const {
     paused,
@@ -147,12 +142,6 @@ const FluidMaterial = forwardRef((_, ref) => {
     debugAutoSize,
     debugContactFadeDuration,
   } = fluidValues;
-
-  useEffect(() => {
-    const currentPresetKey = presetRef.current || 'default';
-    const nextPreset = FLUID_PRESETS[currentPresetKey];
-    if (nextPreset) setControls(nextPreset);
-  }, [setControls]);
 
   const simWidth = Math.max(64, Math.floor(size.width * simResolution));
   const simHeight = Math.max(64, Math.floor(size.height * simResolution));
@@ -1015,9 +1004,9 @@ const FluidMaterial = forwardRef((_, ref) => {
         }
       }
 
-      if (randomSplatQueueRef.current > 0) {
-        const batch = Math.min(randomSplatQueueRef.current, RANDOM_BURST_COUNT);
-        randomSplatQueueRef.current -= batch;
+      if (randomQueueRef.current > 0) {
+        const batch = Math.min(randomQueueRef.current, RANDOM_BURST_COUNT);
+        randomQueueRef.current -= batch;
         for (let i = 0; i < batch; i++) {
           const px = Math.random();
           const py = Math.random();

@@ -1164,10 +1164,9 @@ const FluidMaterial = forwardRef((_, ref) => {
     const dt = Math.min(0.033, delta);
     const t = state.clock.elapsedTime;
 
-    // helper for pointer movement: constant velocity derived from rate
-    // MIN_MOVE ensures some motion even at low rates (prevents center clustering)
+    // helper for pointer movement: rate directly controls speed (linear 0-100)
+    // Phase advancement is decoupled, so paths still cover full XY range
     const SPEED_SCALE = 0.01;
-    const MIN_MOVE = 0.01;
     const computeNextPos = (prevX, prevY, tgtX, tgtY, rateVal) => {
       if (rateVal <= 0 || (prevX === tgtX && prevY === tgtY))
         return { x: prevX, y: prevY };
@@ -1176,11 +1175,10 @@ const FluidMaterial = forwardRef((_, ref) => {
       const dy = tgtY - prevY;
       const dist = Math.hypot(dx, dy);
       if (dist < 1e-6) return { x: prevX, y: prevY };
-      let maxMove = speed * dt;
-      if (maxMove < MIN_MOVE) maxMove = MIN_MOVE;
-      if (dist <= maxMove) {
-        return { x: tgtX, y: tgtY };
-      }
+      const maxMove = speed * dt;
+      // if (dist <= maxMove) {
+      //   return { x: tgtX, y: tgtY };
+      // }
       const inv = 1.0 / dist;
       return {
         x: prevX + dx * inv * maxMove,

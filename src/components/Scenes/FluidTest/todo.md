@@ -27,7 +27,7 @@ Long term vision / use cases:
 - [ ] Fix window resize issue that stops the sim. It's a material – it shouldn't matter. We need to slap this on a model and have it remain interactive.
 - [ ] Fix sim resolution control changes from resetting the fluid simulation state if possible (very low priority).
 - [x] Fix auto‑splat behavior so it works and also does not prevent or interfere with pointer interaction.
-- [ ] Slow down auto‑splats. rate 0 should be stopped; 100 is way too fast.
+- [ ] Slow down auto‑splats. rate 0 should be stopped; 100 is way too fast.
 - [ ] Add support for interaction while sim is paused. Should still be able to drop ink.
 
 ## Refactor / Architecture
@@ -46,7 +46,7 @@ Long term vision / use cases:
 - [x] Support for n auto‑splats (and presets that exercise multiple splats).
 - [ ] Try the material on an existing model / arbitrary mesh.
 - [x] Add controls for cursor debug square sizing.
-- [ ] Add controls for cursor debug square line weight.
+- [x] Add controls for cursor debug square line weight.
 - [ ] Experiment with other dither effects.
 - [ ] Try a subtractive blend mode.
 - [ ] Add frequency control to induce stutter in mouse input (dotted vs solid line).

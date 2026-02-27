@@ -25,6 +25,7 @@ function copySettingsToClipboard(get) {
     splatForce: get('Fluid.Interaction.splatForce'),
     dyeStrength: get('Fluid.Interaction.dyeStrength'),
     inputMode: get('Fluid.Interaction.inputMode'),
+    testMode: get('Fluid.Debug.testMode'),
     autoSplat: get('Fluid.Interaction.autoSplat'),
     autoSplatStrength: get('Fluid.Interaction.autoSplatStrength'),
     autoSplatRate: get('Fluid.Interaction.autoSplatRate'),
@@ -441,6 +442,13 @@ export default function useFluidControls({
       ),
       Debug: folder(
         {
+          testMode: {
+            value: 'plane',
+            options: {
+              Plane: 'plane',
+              '3D (Sphere)': '3d',
+            },
+          },
           debugCursor: FLUID_PRESETS.default.debugCursor,
           debugPointerColor: FLUID_PRESETS.default.debugPointerColor,
           debugAutoColor: FLUID_PRESETS.default.debugAutoColor,

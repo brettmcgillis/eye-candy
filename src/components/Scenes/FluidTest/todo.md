@@ -44,7 +44,7 @@ Long term vision / use cases:
 
 - [x] Add `input mode` control: Option `Pointer/Touch` uses current mouse/touch pinter config. Option `Hands` uses existing media pipe hand‑control hooks to get points from webcam and translates these to pointer position.
 - [x] Support for n auto‑splats (and presets that exercise multiple splats).
-- [ ] Add `test mode` control: Option `Plane` shows current config with plane and orthographic cam. Option `3d` shows material on a sphere with orbit cam controls.
+- [x] Add `test mode` control: Option `Plane` shows current config with plane and orthographic cam. Option `3d` shows material on a sphere with orbit cam controls.
 - [x] Add controls for cursor debug square sizing.
 - [x] Add controls for cursor debug square line weight.
 - [ ] Experiment with other dither effects, provide option control
@@ -52,7 +52,7 @@ Long term vision / use cases:
 - [ ] Add frequency control to induce stutter in mouse input (dotted vs solid line).
 - [ ] Create a preset that looks like an inverted photograph.
 - [ ] After splitting responsibilities, add stationary auto‑splats with a Leva toggle and drag‑and‑drop placement.
-- [ ] Figure out what to do with gesture control. Consider gestures for add/remove auto splats, generate random bursts.
+- [ ] Figure out what to do with gesture control. Consider gestures for add/remove auto splats, gesture for generate random bursts, gesture for "pointer down".
 - [ ] Support for multiple hands coming back from media pipe -> map to multiple pointers.
 
 ## Polish / Presets / UX

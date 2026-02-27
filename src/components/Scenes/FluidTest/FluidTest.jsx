@@ -2,7 +2,11 @@ import * as THREE from 'three';
 
 import React, { useCallback, useEffect, useMemo, useRef } from 'react';
 
-import { OrthographicCamera } from '@react-three/drei';
+import {
+  OrbitControls,
+  OrthographicCamera,
+  PerspectiveCamera,
+} from '@react-three/drei';
 import { useThree } from '@react-three/fiber';
 
 import useHandGestureEvents from '../../../hooks/hands/useHandGestureEvents';
@@ -104,7 +108,7 @@ function FluidHandsPointerBridge({
   return null;
 }
 
-function FullscreenPlane() {
+function FluidTestbed() {
   const { viewport, size } = useThree();
   const matRef = useRef();
   const presetRef = useRef('default');
@@ -189,11 +193,21 @@ function FullscreenPlane() {
 
   const inputMode = fluidValues.inputMode || 'pointer';
   const usingHands = inputMode === 'hands';
+  const testMode = fluidValues.testMode || 'plane';
+  const using3D = testMode === '3d';
   const activePointerRef = usingHands ? handsPointerRef : pointerInputRef;
   const meshPointerEvents = usingHands ? {} : pointerEvents;
 
   return (
     <>
+      {using3D ? (
+        <>
+          <PerspectiveCamera makeDefault position={[0, 0, 3.3]} fov={45} />
+          <OrbitControls enablePan={false} minDistance={2} maxDistance={8} />
+        </>
+      ) : (
+        <OrthographicCamera makeDefault position={[0, 0, 10]} />
+      )}
       {usingHands && (
         <FluidHandsPointerBridge
           gesturesEnabled={!!fluidValues.gesturesEnabled}
@@ -206,25 +220,36 @@ function FullscreenPlane() {
           size={size}
         />
       )}
-      <mesh scale={[viewport.width, viewport.height, 1]} {...meshPointerEvents}>
-        <planeGeometry args={[1, 1]} />
-        <FluidMaterial
-          ref={matRef}
-          pointerRef={activePointerRef}
-          config={fluidValues}
-          autoPointersRef={autoPointersRef}
-          randomSplatsRef={randomSplatsRef}
-        />
-      </mesh>
+      {using3D ? (
+        <mesh {...meshPointerEvents}>
+          <sphereGeometry args={[1.1, 128, 128]} />
+          <FluidMaterial
+            ref={matRef}
+            pointerRef={activePointerRef}
+            config={fluidValues}
+            autoPointersRef={autoPointersRef}
+            randomSplatsRef={randomSplatsRef}
+          />
+        </mesh>
+      ) : (
+        <mesh
+          scale={[viewport.width, viewport.height, 1]}
+          {...meshPointerEvents}
+        >
+          <planeGeometry args={[1, 1]} />
+          <FluidMaterial
+            ref={matRef}
+            pointerRef={activePointerRef}
+            config={fluidValues}
+            autoPointersRef={autoPointersRef}
+            randomSplatsRef={randomSplatsRef}
+          />
+        </mesh>
+      )}
     </>
   );
 }
 
 export default function FluidTest() {
-  return (
-    <>
-      <OrthographicCamera makeDefault position={[0, 0, 10]} />
-      <FullscreenPlane />
-    </>
-  );
+  return <FluidTestbed />;
 }

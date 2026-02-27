@@ -5,10 +5,10 @@ import { useThree } from '@react-three/fiber';
 
 import FluidMaterial from './FluidMaterial';
 import { FLUID_PRESETS } from './fluidPresets';
-import useFluidAutoPointers from './useFluidAutoPointers';
-import useFluidControls from './useFluidControls';
-import useFluidPointerInput from './useFluidPointerInput';
-import useFluidRandomSplats from './useFluidRandomSplats';
+import useFluidAutoPointers from './hooks/useFluidAutoPointers';
+import useFluidControls from './hooks/useFluidControls';
+import useFluidPointerInput from './hooks/useFluidPointerInput';
+import useFluidRandomSplats from './hooks/useFluidRandomSplats';
 
 function FullscreenPlane() {
   const { viewport, size } = useThree();

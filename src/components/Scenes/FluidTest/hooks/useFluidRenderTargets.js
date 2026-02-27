@@ -6,7 +6,7 @@ import {
   clearRenderTargets,
   createBloomChain,
   createPair,
-} from './fluidSimUtils';
+} from '../utils/fluidSimUtils';
 
 export default function useFluidRenderTargets({
   gl,

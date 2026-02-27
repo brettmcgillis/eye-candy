@@ -27,17 +27,17 @@ Long term vision / use cases:
 - [ ] Fix window resize issue that stops the sim. It's a material – it shouldn't matter. We need to slap this on a model and have it remain interactive.
 - [ ] Fix sim resolution control changes from resetting the fluid simulation state if possible (very low priority).
 - [x] Fix auto‑splat behavior so it works and also does not prevent or interfere with pointer interaction.
-- [ ] Slow down auto‑splats. rate 0 should be stopped; 100 is way too fast.
+- [x] Slow down auto‑splats. rate 0 should be stopped; 100 is way too fast.
 - [ ] Add support for interaction while sim is paused. Should still be able to drop ink.
 
 ## Refactor / Architecture
 
-- [ ] Hoist Leva controls hook out of the material file and into the test/scene file. The material should be a dumb componet that takes props and acts on them.
+- [x] Hoist Leva controls hook out of the material file and into the test/scene file. The material should be a dumb componet that takes props and acts on them.
 - [ ] Tidy up control ranges/min‑maxes and adjust presets accordingly.
 - [ ] Any auto splat controls that govern force, strength, etc, should parrallel the controls applied to the cursor
 - [ ] auto‑splat logic belongs in the scene; material should just accept contact points for user & auto.
-- [ ] Move shader code out of the material file.
-- [ ] Consider what else should live in separate modules. Any reusable hooks?
+- [x] Move shader code out of the material file.
+- [x] Consider what else should live in separate modules. Any reusable hooks?
 - [x] Add a clear/reset control for the simulation (both in the public API and Leva).
 
 ## Features

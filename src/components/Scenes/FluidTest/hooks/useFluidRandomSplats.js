@@ -2,7 +2,7 @@ import { useRef } from 'react';
 
 import { useFrame } from '@react-three/fiber';
 
-import { RANDOM_BURST_COUNT } from './fluidPresets';
+import { RANDOM_BURST_COUNT } from '../fluidPresets';
 
 export default function useFluidRandomSplats({ config, randomSplatQueueRef }) {
   const randomSplatsRef = useRef([]);

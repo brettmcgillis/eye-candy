@@ -10,7 +10,7 @@ import {
   BLEND_MODE_MULTIPLY,
   FLUID_PRESETS,
   RANDOM_BURST_COUNT,
-} from './fluidPresets';
+} from '../fluidPresets';
 
 function copySettingsToClipboard(get) {
   const settings = {

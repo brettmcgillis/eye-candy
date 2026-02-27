@@ -11,16 +11,16 @@ import React, {
 
 import { useFrame, useThree } from '@react-three/fiber';
 
-import renderPass from './fluidPassUtils';
 import {
   DEBUG_CONTACT_CAP,
   DEBUG_CONTACT_TTL_DEFAULT,
   FLUID_PRESETS,
 } from './fluidPresets';
+import useFluidRenderTargets from './hooks/useFluidRenderTargets';
 import {
   createFullscreenMaterial,
   createSimMaterial,
-} from './fluidShaderMaterials';
+} from './shaders/fluidShaderMaterials';
 import {
   advectionFragmentShader,
   bloomBlurFragmentShader,
@@ -39,9 +39,9 @@ import {
   sunraysFragmentShader,
   sunraysMaskFragmentShader,
   vorticityFragmentShader,
-} from './fluidShaders';
-import { createDitheringTexture } from './fluidSimUtils';
-import useFluidRenderTargets from './useFluidRenderTargets';
+} from './shaders/fluidShaders';
+import renderPass from './utils/fluidPassUtils';
+import { createDitheringTexture } from './utils/fluidSimUtils';
 
 const DYE_COLOR_SCALE = 0.15;
 const MAX_BLOOM_CHAIN = 16;

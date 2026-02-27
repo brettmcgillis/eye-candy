@@ -131,16 +131,7 @@ export default function useFluidRenderTargets({
       curl.dispose();
       divergence.dispose();
     };
-  }, [
-    curl,
-    divergence,
-    dye,
-    gl,
-    pressureTex,
-    simHeight,
-    simWidth,
-    velocity,
-  ]);
+  }, [curl, divergence, dye, gl, pressureTex, simHeight, simWidth, velocity]);
 
   useEffect(() => {
     clearRenderTargets(gl, [

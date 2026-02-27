@@ -29,7 +29,7 @@ Long term vision / use cases:
 - [x] Fix auto‑splat behavior so it works and also does not prevent or interfere with pointer interaction.
 - [x] Slow down auto‑splats. rate 0 should be stopped; 100 is way too fast.
 - [x] Add support for interaction while sim is paused. Should still be able to drop ink.
-- [ ] Fix auto-splat debug markers disappearing on pause.
+- [x] Fix auto-splat debug markers disappearing on pause.
 - [ ] Fix orbit on pointer down on sphere. Cant drag cursor to drop ink without orbiting as well (very low priority).
 
 ## Refactor / Architecture

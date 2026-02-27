@@ -7,6 +7,7 @@ import FluidMaterial from './FluidMaterial';
 import { FLUID_PRESETS } from './fluidPresets';
 import useFluidAutoPointers from './useFluidAutoPointers';
 import useFluidControls from './useFluidControls';
+import useFluidRandomSplats from './useFluidRandomSplats';
 
 function FullscreenPlane() {
   const { viewport, size } = useThree();
@@ -31,6 +32,10 @@ function FullscreenPlane() {
   const autoPointersRef = useFluidAutoPointers({
     config: fluidValues,
     size,
+  });
+  const randomSplatsRef = useFluidRandomSplats({
+    config: fluidValues,
+    randomSplatQueueRef,
   });
 
   const setPointer = useCallback((next) => {
@@ -106,7 +111,7 @@ function FullscreenPlane() {
         ref={matRef}
         config={fluidValues}
         autoPointersRef={autoPointersRef}
-        randomSplatQueueRef={randomSplatQueueRef}
+        randomSplatsRef={randomSplatsRef}
       />
     </mesh>
   );

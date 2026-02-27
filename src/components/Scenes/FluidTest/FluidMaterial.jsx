@@ -16,7 +16,6 @@ import {
   DEBUG_CONTACT_CAP,
   DEBUG_CONTACT_TTL_DEFAULT,
   FLUID_PRESETS,
-  RANDOM_BURST_COUNT,
 } from './fluidPresets';
 import {
   createFullscreenMaterial,
@@ -50,18 +49,18 @@ const MAX_SPLAT_VELOCITY = 900;
 
 const FluidMaterial = forwardRef(
   (
-    { autoPointersRef: externalAutoPointersRef, config, randomSplatQueueRef },
+    { autoPointersRef: externalAutoPointersRef, config, randomSplatsRef },
     ref
   ) => {
     const { gl, size } = useThree();
     const pointerRef = useRef(null);
     const startedRef = useRef(false);
-    const internalRandomSplatQueueRef = useRef(0);
+    const internalRandomSplatsRef = useRef([]);
     const internalAutoPointersRef = useRef([
       { x: 0.5, y: 0.5, ttl: 0, phase: 0 },
     ]);
     const autoPointersRef = externalAutoPointersRef || internalAutoPointersRef;
-    const randomQueueRef = randomSplatQueueRef || internalRandomSplatQueueRef;
+    const sceneRandomSplatsRef = randomSplatsRef || internalRandomSplatsRef;
     const resetRequestedRef = useRef(false);
     const colorARef = useRef(new THREE.Color());
     const colorBRef = useRef(new THREE.Color());
@@ -769,25 +768,29 @@ const FluidMaterial = forwardRef(
           }
         }
 
-        if (randomQueueRef.current > 0) {
-          const batch = Math.min(randomQueueRef.current, RANDOM_BURST_COUNT);
-          randomQueueRef.current -= batch;
-          for (let i = 0; i < batch; i++) {
-            const px = Math.random();
-            const py = Math.random();
-            const vx = (Math.random() * 2 - 1) * splatForce * 0.08;
-            const vy = (Math.random() * 2 - 1) * splatForce * 0.08;
-            const hueMix = Math.random();
+        if (sceneRandomSplatsRef.current.length > 0) {
+          for (let i = 0; i < sceneRandomSplatsRef.current.length; i += 1) {
+            const randomSplat = sceneRandomSplatsRef.current[i];
             const tint = colorARef.current
               .clone()
-              .lerp(colorBRef.current, hueMix)
-              .lerp(colorCRef.current, Math.random() * 0.5);
-            // For multiply blend mode (ink on paper), invert colors
+              .lerp(colorBRef.current, randomSplat.hueMix)
+              .lerp(colorCRef.current, randomSplat.colorMix);
             if (blendMode > 0.5) {
               tint.multiplyScalar(-1).addScalar(1);
             }
-            splatAt(px, py, vx, vy, tint, 0.5 + Math.random() * 0.8, 0);
+
+            splatAt(
+              randomSplat.x,
+              randomSplat.y,
+              randomSplat.vx,
+              randomSplat.vy,
+              tint,
+              randomSplat.strength,
+              0
+            );
           }
+
+          sceneRandomSplatsRef.current = [];
         }
 
         divergenceMat.uniforms.uVelocity.value = velocity.read.texture;

@@ -46,6 +46,7 @@ import { createDitheringTexture } from './utils/fluidSimUtils';
 const DYE_COLOR_SCALE = 0.15;
 const MAX_BLOOM_CHAIN = 16;
 const MAX_SPLAT_VELOCITY = 900;
+const SIM_DIMENSION_QUANTIZATION = 32;
 
 const FluidMaterial = forwardRef(
   (
@@ -68,6 +69,11 @@ const FluidMaterial = forwardRef(
     const autoPointersRef = externalAutoPointersRef || internalAutoPointersRef;
     const sceneRandomSplatsRef = randomSplatsRef || internalRandomSplatsRef;
     const resetRequestedRef = useRef(false);
+    const initialSizeRef = useRef(null);
+
+    if (!initialSizeRef.current && size.width > 1 && size.height > 1) {
+      initialSizeRef.current = { width: size.width, height: size.height };
+    }
     const colorARef = useRef(new THREE.Color());
     const colorBRef = useRef(new THREE.Color());
     const colorCRef = useRef(new THREE.Color());
@@ -83,7 +89,10 @@ const FluidMaterial = forwardRef(
     );
     const debugContactWriteRef = useRef(0);
 
-    const fluidValues = config || FLUID_PRESETS.default;
+    const fluidValues = useMemo(
+      () => ({ ...FLUID_PRESETS.default, ...(config || {}) }),
+      [config]
+    );
 
     const {
       paused,
@@ -134,19 +143,47 @@ const FluidMaterial = forwardRef(
       debugContactFadeDuration,
     } = fluidValues;
 
-    const simWidth = Math.max(64, Math.floor(size.width * simResolution));
-    const simHeight = Math.max(64, Math.floor(size.height * simResolution));
+    const baseSimWidth = Math.max(
+      1,
+      initialSizeRef.current?.width || size.width
+    );
+    const baseSimHeight = Math.max(
+      1,
+      initialSizeRef.current?.height || size.height
+    );
 
-    const bloomWidth = Math.max(32, Math.floor(size.width * bloomResolution));
-    const bloomHeight = Math.max(32, Math.floor(size.height * bloomResolution));
+    const simWidth = Math.max(
+      64,
+      Math.max(
+        SIM_DIMENSION_QUANTIZATION,
+        Math.floor(
+          (baseSimWidth * simResolution) / SIM_DIMENSION_QUANTIZATION
+        ) * SIM_DIMENSION_QUANTIZATION
+      )
+    );
+    const simHeight = Math.max(
+      64,
+      Math.max(
+        SIM_DIMENSION_QUANTIZATION,
+        Math.floor(
+          (baseSimHeight * simResolution) / SIM_DIMENSION_QUANTIZATION
+        ) * SIM_DIMENSION_QUANTIZATION
+      )
+    );
+
+    const bloomWidth = Math.max(32, Math.floor(baseSimWidth * bloomResolution));
+    const bloomHeight = Math.max(
+      32,
+      Math.floor(baseSimHeight * bloomResolution)
+    );
 
     const sunraysWidth = Math.max(
       32,
-      Math.floor(size.width * sunraysResolution)
+      Math.floor(baseSimWidth * sunraysResolution)
     );
     const sunraysHeight = Math.max(
       32,
-      Math.floor(size.height * sunraysResolution)
+      Math.floor(baseSimHeight * sunraysResolution)
     );
 
     const type = gl.capabilities.isWebGL2
@@ -577,6 +614,107 @@ const FluidMaterial = forwardRef(
 
       const pointer = pointerRef.current;
 
+      const splatAt = (
+        px,
+        py,
+        vx,
+        vy,
+        rgb,
+        strength = 1,
+        debugKind = -1,
+        options = {}
+      ) => {
+        const { applyVelocity = true, applyDye = true } = options;
+        const safePx = THREE.MathUtils.clamp(px, 0, 1);
+        const safePy = THREE.MathUtils.clamp(py, 0, 1);
+        const safeStrength = THREE.MathUtils.clamp(strength, 0, 3);
+        if (debugKind >= 0) {
+          const idx = debugContactWriteRef.current;
+          debugContactsRef.current[idx].x = safePx;
+          debugContactsRef.current[idx].y = safePy;
+          debugContactsRef.current[idx].ttl = Math.max(
+            0.05,
+            debugContactFadeDuration
+          );
+          debugContactsRef.current[idx].kind = debugKind > 0 ? 1 : 0;
+          debugContactWriteRef.current = (idx + 1) % DEBUG_CONTACT_CAP;
+        }
+
+        splatMat.uniforms.uPoint.value.set(safePx, safePy);
+
+        if (applyVelocity) {
+          splatMat.uniforms.uTarget.value = velocity.read.texture;
+          forceRef.current.set(
+            THREE.MathUtils.clamp(vx, -MAX_SPLAT_VELOCITY, MAX_SPLAT_VELOCITY),
+            THREE.MathUtils.clamp(vy, -MAX_SPLAT_VELOCITY, MAX_SPLAT_VELOCITY),
+            0
+          );
+          splatMat.uniforms.uColor.value.copy(forceRef.current);
+          renderSimPass(splatMat, velocity.write);
+          velocity.swap();
+        }
+
+        if (applyDye) {
+          splatMat.uniforms.uTarget.value = dye.read.texture;
+          forceRef.current
+            .set(
+              THREE.MathUtils.clamp(rgb.r, 0, 1),
+              THREE.MathUtils.clamp(rgb.g, 0, 1),
+              THREE.MathUtils.clamp(rgb.b, 0, 1)
+            )
+            .multiplyScalar(dyeStrength * safeStrength * DYE_COLOR_SCALE);
+          splatMat.uniforms.uColor.value.copy(forceRef.current);
+          renderSimPass(splatMat, dye.write);
+          dye.swap();
+        }
+      };
+
+      if (pointer?.down) {
+        const cycleSpeed = colorCycleSpeed * Math.max(0.001, colorUpdateSpeed);
+        const mixAB = 0.5 + 0.5 * Math.sin(t * cycleSpeed);
+        const mixBC = 0.5 + 0.5 * Math.sin(t * cycleSpeed * 1.37 + 1.7);
+
+        if (colorful) {
+          colorARef.current.lerp(colorBRef.current, mixAB);
+          colorARef.current.lerp(colorCRef.current, mixBC * 0.45);
+        }
+
+        // For multiply blend mode (ink on paper), invert colors so black becomes visible
+        let paintColor = colorARef.current;
+        if (blendMode > 0.5) {
+          paintColor = colorARef.current
+            .clone()
+            .multiplyScalar(-1)
+            .addScalar(1);
+        }
+        if (!colorful && blendMode > 0.5) {
+          // When not colorful in multiply mode, need to invert the base colorA
+          const baseColor = new THREE.Color(colorA);
+          paintColor = baseColor.multiplyScalar(-1).addScalar(1);
+        }
+
+        const speed = Math.min(
+          1,
+          Math.hypot(pointer.vx || 0, pointer.vy || 0) * 80
+        );
+        const forceX = (pointer.vx || 0) * splatForce;
+        const forceY = (pointer.vy || 0) * splatForce;
+
+        splatAt(
+          pointer.x,
+          pointer.y,
+          forceX,
+          forceY,
+          paintColor,
+          0.65 + speed * 0.75,
+          -1,
+          {
+            applyVelocity: !paused,
+            applyDye: true,
+          }
+        );
+      }
+
       if (!paused) {
         advectionMat.uniforms.uVelocity.value = velocity.read.texture;
         advectionMat.uniforms.uSource.value = velocity.read.texture;
@@ -592,88 +730,7 @@ const FluidMaterial = forwardRef(
         renderSimPass(vorticityMat, velocity.write);
         velocity.swap();
 
-        const splatAt = (px, py, vx, vy, rgb, strength = 1, debugKind = -1) => {
-          const safePx = THREE.MathUtils.clamp(px, 0, 1);
-          const safePy = THREE.MathUtils.clamp(py, 0, 1);
-          const safeStrength = THREE.MathUtils.clamp(strength, 0, 3);
-          if (debugKind >= 0) {
-            const idx = debugContactWriteRef.current;
-            debugContactsRef.current[idx].x = safePx;
-            debugContactsRef.current[idx].y = safePy;
-            debugContactsRef.current[idx].ttl = Math.max(
-              0.05,
-              debugContactFadeDuration
-            );
-            debugContactsRef.current[idx].kind = debugKind > 0 ? 1 : 0;
-            debugContactWriteRef.current = (idx + 1) % DEBUG_CONTACT_CAP;
-          }
-
-          splatMat.uniforms.uPoint.value.set(safePx, safePy);
-
-          splatMat.uniforms.uTarget.value = velocity.read.texture;
-          forceRef.current.set(
-            THREE.MathUtils.clamp(vx, -MAX_SPLAT_VELOCITY, MAX_SPLAT_VELOCITY),
-            THREE.MathUtils.clamp(vy, -MAX_SPLAT_VELOCITY, MAX_SPLAT_VELOCITY),
-            0
-          );
-          splatMat.uniforms.uColor.value.copy(forceRef.current);
-          renderSimPass(splatMat, velocity.write);
-          velocity.swap();
-
-          splatMat.uniforms.uTarget.value = dye.read.texture;
-          forceRef.current
-            .set(
-              THREE.MathUtils.clamp(rgb.r, 0, 1),
-              THREE.MathUtils.clamp(rgb.g, 0, 1),
-              THREE.MathUtils.clamp(rgb.b, 0, 1)
-            )
-            .multiplyScalar(dyeStrength * safeStrength * DYE_COLOR_SCALE);
-          splatMat.uniforms.uColor.value.copy(forceRef.current);
-          renderSimPass(splatMat, dye.write);
-          dye.swap();
-        };
-
-        if (pointer?.down) {
-          const cycleSpeed =
-            colorCycleSpeed * Math.max(0.001, colorUpdateSpeed);
-          const mixAB = 0.5 + 0.5 * Math.sin(t * cycleSpeed);
-          const mixBC = 0.5 + 0.5 * Math.sin(t * cycleSpeed * 1.37 + 1.7);
-
-          if (colorful) {
-            colorARef.current.lerp(colorBRef.current, mixAB);
-            colorARef.current.lerp(colorCRef.current, mixBC * 0.45);
-          }
-
-          // For multiply blend mode (ink on paper), invert colors so black becomes visible
-          let paintColor = colorARef.current;
-          if (blendMode > 0.5) {
-            paintColor = colorARef.current
-              .clone()
-              .multiplyScalar(-1)
-              .addScalar(1);
-          }
-          if (!colorful && blendMode > 0.5) {
-            // When not colorful in multiply mode, need to invert the base colorA
-            const baseColor = new THREE.Color(colorA);
-            paintColor = baseColor.multiplyScalar(-1).addScalar(1);
-          }
-
-          const speed = Math.min(
-            1,
-            Math.hypot(pointer.vx || 0, pointer.vy || 0) * 80
-          );
-          const forceX = (pointer.vx || 0) * splatForce;
-          const forceY = (pointer.vy || 0) * splatForce;
-
-          splatAt(
-            pointer.x,
-            pointer.y,
-            forceX,
-            forceY,
-            paintColor,
-            0.65 + speed * 0.75
-          );
-        } else if (!startedRef.current) {
+        if (!pointer?.down && !startedRef.current) {
           startedRef.current = true;
           splatAt(0.5, 0.5, 0, 0, colorARef.current.set(0.2, 0.4, 0.7), 0.35);
         }

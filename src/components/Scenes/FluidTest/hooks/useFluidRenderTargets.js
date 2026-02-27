@@ -110,7 +110,16 @@ export default function useFluidRenderTargets({
   }, [clearPostTargets, clearSimTargets]);
 
   useEffect(() => {
-    clearSimTargets();
+    clearRenderTargets(gl, [
+      velocity.read,
+      velocity.write,
+      dye.read,
+      dye.write,
+      pressureTex.read,
+      pressureTex.write,
+      curl,
+      divergence,
+    ]);
 
     return () => {
       velocity.read.dispose();
@@ -122,10 +131,26 @@ export default function useFluidRenderTargets({
       curl.dispose();
       divergence.dispose();
     };
-  }, [clearSimTargets, curl, divergence, dye, pressureTex, velocity]);
+  }, [
+    curl,
+    divergence,
+    dye,
+    gl,
+    pressureTex,
+    simHeight,
+    simWidth,
+    velocity,
+  ]);
 
   useEffect(() => {
-    clearPostTargets();
+    clearRenderTargets(gl, [
+      bloomComposite.read,
+      bloomComposite.write,
+      ...bloomChain,
+      sunraysMask,
+      sunraysTex,
+      sunraysTemp,
+    ]);
 
     return () => {
       bloomComposite.read.dispose();
@@ -138,9 +163,13 @@ export default function useFluidRenderTargets({
   }, [
     bloomChain,
     bloomComposite,
-    clearPostTargets,
+    bloomHeight,
+    bloomWidth,
+    gl,
+    sunraysHeight,
     sunraysMask,
     sunraysTemp,
+    sunraysWidth,
     sunraysTex,
   ]);
 

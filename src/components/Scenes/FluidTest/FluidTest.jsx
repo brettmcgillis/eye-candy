@@ -112,6 +112,7 @@ function FluidTestbed() {
   const { viewport, size } = useThree();
   const matRef = useRef();
   const presetRef = useRef('default');
+  const initializedPresetRef = useRef(false);
   const randomSplatQueueRef = useRef(0);
 
   const [fluidValues, setControls] = useFluidControls({
@@ -121,9 +122,14 @@ function FluidTestbed() {
   });
 
   useEffect(() => {
+    if (initializedPresetRef.current) return;
+
     const currentPresetKey = presetRef.current || 'default';
     const nextPreset = FLUID_PRESETS[currentPresetKey];
-    if (nextPreset) setControls(nextPreset);
+    if (nextPreset) {
+      setControls(nextPreset);
+      initializedPresetRef.current = true;
+    }
   }, [setControls]);
 
   const autoPointersRef = useFluidAutoPointers({

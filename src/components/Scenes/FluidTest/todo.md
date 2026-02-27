@@ -24,11 +24,11 @@ Long term vision / use cases:
 
 ## Bugs
 
-- [ ] Fix window resize issue that stops the sim. It's a material – it shouldn't matter. We need to slap this on a model and have it remain interactive.
+- [ ] Fix window resize issue that stops the sim. It's a material – it shouldn't matter. We need to slap this on a model and have it remain interactive (very low priority).
 - [ ] Fix sim resolution control changes from resetting the fluid simulation state if possible (very low priority).
 - [x] Fix auto‑splat behavior so it works and also does not prevent or interfere with pointer interaction.
 - [x] Slow down auto‑splats. rate 0 should be stopped; 100 is way too fast.
-- [ ] Add support for interaction while sim is paused. Should still be able to drop ink.
+- [x] Add support for interaction while sim is paused. Should still be able to drop ink.
 - [ ] Fix auto-splat debug markers disappearing on pause.
 - [ ] Fix orbit on pointer down on sphere. Cant drag cursor to drop ink without orbiting as well (very low priority).
 

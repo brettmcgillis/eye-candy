@@ -62,6 +62,7 @@ export default function useFluidAutoPointers({ config, size }) {
   useFrame((_, delta) => {
     const dt = Math.min(0.033, delta);
     const {
+      paused,
       autoSplat,
       autoSplatRate,
       autoSplatRange,
@@ -84,6 +85,15 @@ export default function useFluidAutoPointers({ config, size }) {
       if (!ap) {
         // no-op
       } else {
+        if (paused) {
+          ap.vx = 0;
+          ap.vy = 0;
+          if (autoSplat && i < count) {
+            ap.ttl = Math.max(0.05, debugContactFadeDuration);
+          }
+          continue;
+        }
+
         ap.ttl = Math.max(0, (ap.ttl || 0) - dt);
 
         if (typeof ap.phase !== 'number') {

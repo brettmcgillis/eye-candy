@@ -1177,9 +1177,9 @@ const FluidMaterial = forwardRef((_, ref) => {
       const dist = Math.hypot(dx, dy);
       if (dist < 1e-6) return { x: prevX, y: prevY };
       const maxMove = speed * dt;
-      // if (dist <= maxMove) {
-      //   return { x: tgtX, y: tgtY };
-      // }
+      if (dist <= maxMove) {
+        return { x: tgtX, y: tgtY };
+      }
       const inv = 1.0 / dist;
       return {
         x: prevX + dx * inv * maxMove,
@@ -1192,10 +1192,12 @@ const FluidMaterial = forwardRef((_, ref) => {
       contact.ttl = Math.max(0, contact.ttl - dt);
     }
     // decay auto pointer TTLs so they can fade out when deactivated
-    autoPointersRef.current.forEach((ap) => {
-      if (!ap) return;
-      ap.ttl = Math.max(0, (ap.ttl || 0) - dt);
-    });
+    for (let i = 0; i < autoPointersRef.current.length; i++) {
+      const pointerState = autoPointersRef.current[i];
+      if (pointerState) {
+        pointerState.ttl = Math.max(0, (pointerState.ttl || 0) - dt);
+      }
+    }
 
     // advance auto pointer phases every frame so their paths keep evolving
     // even when Leva UI is hidden (prevents clustering when controls are not available)
@@ -1204,12 +1206,16 @@ const FluidMaterial = forwardRef((_, ref) => {
       // This allows full XY range coverage at any speed when autoSplatRange=1.0
       const basePathSpeed = 0.95 * (0.7 + Math.max(0, colorCycleSpeed) * 0.5);
       const rateScale = Math.max(0, autoSplatRate) / 100; // normalize 0-100 to 0-1
-      autoPointersRef.current.forEach((ap) => {
-        if (!ap) return;
-        if (typeof ap.phase !== 'number')
-          ap.phase = Math.random() * Math.PI * 4;
-        ap.phase += dt * basePathSpeed * (ap.pathSpeedMul || 1) * rateScale;
-      });
+      for (let i = 0; i < autoPointersRef.current.length; i++) {
+        const pointerState = autoPointersRef.current[i];
+        if (pointerState) {
+          if (typeof pointerState.phase !== 'number') {
+            pointerState.phase = Math.random() * Math.PI * 4;
+          }
+          pointerState.phase +=
+            dt * basePathSpeed * (pointerState.pathSpeedMul || 1) * rateScale;
+        }
+      }
     } catch (e) {
       // ignore - defensive in case controls are temporarily unavailable
     }
@@ -1278,7 +1284,6 @@ const FluidMaterial = forwardRef((_, ref) => {
 
     displayMat.uniforms.uDyeTexel.value.copy(simTexel);
     displayMat.uniforms.uDithering.value = ditheringTexture;
-    displayMat.uniforms.uDithering.value = ditheringTexture;
     displayMat.uniforms.uDitherScale.value.set(
       (size.width / ditheringTexture.image.width) * (ditherScale || 1),
       (size.height / ditheringTexture.image.height) * (ditherScale || 1)
@@ -1313,22 +1318,6 @@ const FluidMaterial = forwardRef((_, ref) => {
       velocity.swap();
 
       const splatAt = (px, py, vx, vy, rgb, strength = 1, debugKind = -1) => {
-        try {
-          // Phase advancement scales with rate so slow markers can catch up to targets
-          // This allows full XY range coverage at any speed when autoSplatRange=1.0
-          const basePathSpeed =
-            0.95 * (0.7 + Math.max(0, colorCycleSpeed) * 0.5);
-          const rateScale = Math.max(0, autoSplatRate) / 100; // normalize 0-100 to 0-1
-          autoPointersRef.current.forEach((ap) => {
-            if (!ap) return;
-            if (typeof ap.phase !== 'number')
-              ap.phase = Math.random() * Math.PI * 4;
-            ap.phase += dt * basePathSpeed * (ap.pathSpeedMul || 1) * rateScale;
-          });
-        } catch (e) {
-          // ignore - defensive in case controls are temporarily unavailable
-        }
-
         const safePx = THREE.MathUtils.clamp(px, 0, 1);
         const safePy = THREE.MathUtils.clamp(py, 0, 1);
         const safeStrength = THREE.MathUtils.clamp(strength, 0, 3);

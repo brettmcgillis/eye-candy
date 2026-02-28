@@ -82,78 +82,75 @@ export default function useFluidAutoPointers({ config, size }) {
 
     for (let i = 0; i < autoPointersRef.current.length; i += 1) {
       const ap = autoPointersRef.current[i];
-      if (!ap) {
-        // no-op
-      } else {
+      if (ap) {
         if (paused) {
           ap.vx = 0;
           ap.vy = 0;
           if (autoSplat && i < count) {
-            ap.ttl = Math.max(0.05, debugContactFadeDuration);
+            ap.ttl = Math.max(0, debugContactFadeDuration);
           }
-          continue;
-        }
-
-        ap.ttl = Math.max(0, (ap.ttl || 0) - dt);
-
-        if (typeof ap.phase !== 'number') {
-          ap.phase = Math.random() * Math.PI * 4;
-        }
-        ap.phase += dt * basePathSpeed * (ap.pathSpeedMul || 1) * rateScale;
-
-        const phase = ap.phase + (ap.seed || 0);
-        const target = sampleAutoCursor(phase, autoSplatRange, ap);
-
-        if (!ap.initialized) {
-          ap.initialized = true;
-          ap.x = target.x + ((ap.jitterOffset && ap.jitterOffset.x) || 0);
-          ap.y = target.y + ((ap.jitterOffset && ap.jitterOffset.y) || 0);
-        }
-
-        const rate = autoSplatRate;
-        const prevX = ap.x;
-        const prevY = ap.y;
-
-        if (rate <= 0 || (prevX === target.x && prevY === target.y)) {
-          ap.vx = 0;
-          ap.vy = 0;
         } else {
-          const speed = rate * speedScale;
-          const dx = target.x - prevX;
-          const dy = target.y - prevY;
-          const dist = Math.hypot(dx, dy);
+          ap.ttl = Math.max(0, (ap.ttl || 0) - dt);
 
-          if (dist < 1e-6) {
+          if (typeof ap.phase !== 'number') {
+            ap.phase = Math.random() * Math.PI * 4;
+          }
+          ap.phase += dt * basePathSpeed * (ap.pathSpeedMul || 1) * rateScale;
+
+          const phase = ap.phase + (ap.seed || 0);
+          const target = sampleAutoCursor(phase, autoSplatRange, ap);
+
+          if (!ap.initialized) {
+            ap.initialized = true;
+            ap.x = target.x + ((ap.jitterOffset && ap.jitterOffset.x) || 0);
+            ap.y = target.y + ((ap.jitterOffset && ap.jitterOffset.y) || 0);
+          }
+
+          const rate = autoSplatRate;
+          const prevX = ap.x;
+          const prevY = ap.y;
+
+          if (rate <= 0 || (prevX === target.x && prevY === target.y)) {
             ap.vx = 0;
             ap.vy = 0;
           } else {
-            const maxMove = speed * dt;
-            let nextX = target.x;
-            let nextY = target.y;
+            const speed = rate * speedScale;
+            const dx = target.x - prevX;
+            const dy = target.y - prevY;
+            const dist = Math.hypot(dx, dy);
 
-            if (dist > maxMove) {
-              const inv = 1 / dist;
-              nextX = prevX + dx * inv * maxMove;
-              nextY = prevY + dy * inv * maxMove;
-            }
-
-            let dvx = nextX - prevX;
-            let dvy = nextY - prevY;
-            if (size.width > size.height) {
-              dvx *= size.width / Math.max(1, size.height);
+            if (dist < 1e-6) {
+              ap.vx = 0;
+              ap.vy = 0;
             } else {
-              dvy *= size.height / Math.max(1, size.width);
+              const maxMove = speed * dt;
+              let nextX = target.x;
+              let nextY = target.y;
+
+              if (dist > maxMove) {
+                const inv = 1 / dist;
+                nextX = prevX + dx * inv * maxMove;
+                nextY = prevY + dy * inv * maxMove;
+              }
+
+              let dvx = nextX - prevX;
+              let dvy = nextY - prevY;
+              if (size.width > size.height) {
+                dvx *= size.width / Math.max(1, size.height);
+              } else {
+                dvy *= size.height / Math.max(1, size.width);
+              }
+
+              ap.x = nextX;
+              ap.y = nextY;
+              ap.vx = dvx;
+              ap.vy = dvy;
             }
-
-            ap.x = nextX;
-            ap.y = nextY;
-            ap.vx = dvx;
-            ap.vy = dvy;
           }
-        }
 
-        if (autoSplat && i < count) {
-          ap.ttl = Math.max(0.05, debugContactFadeDuration);
+          if (autoSplat && i < count) {
+            ap.ttl = Math.max(0, debugContactFadeDuration);
+          }
         }
       }
     }

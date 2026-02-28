@@ -31,7 +31,7 @@ Long term vision / use cases:
 - [x] Add support for interaction while sim is paused. Should still be able to drop ink.
 - [x] Fix auto-splat debug markers disappearing on pause.
 - [ ] Fix orbit on pointer down on sphere. Cant drag cursor to drop ink without orbiting as well (very low priority).
-- [ ] Fix debugcontactfadeduration. control should represent time in seconds it takes for squares to fade. min 0 should be near instant, set a max of 5 for 5 seconds.
+- [x] Fix debugcontactfadeduration. control should represent time in seconds it takes for squares to fade. min 0 should be near instant, set a max of 5 for 5 seconds.
 
 ## Refactor / Architecture
 
@@ -60,6 +60,7 @@ Long term vision / use cases:
 - [ ] Figure out what to do with gesture control. Consider gestures for add/remove auto splats, gesture for generate random bursts, gesture for "pointer down".
 - [x] Support for multiple hands coming back from media pipe -> map to multiple pointers.
 - [x] Add controls for the appearance of the debug markers shown around the random splats. Add controls for random splat strength,
+- [ ] Add toggle, fill debug marker, to all the contact point folders, to allow for filling debug markers discretely per contact type
 
 ## Polish / Presets / UX
 

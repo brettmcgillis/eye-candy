@@ -720,7 +720,7 @@ const FluidMaterial = forwardRef(
         debugContactsRef.current[idx].x = safePx;
         debugContactsRef.current[idx].y = safePy;
         debugContactsRef.current[idx].ttl = Math.max(
-          0.05,
+          0,
           debugContactFadeDuration
         );
         debugContactsRef.current[idx].kind = THREE.MathUtils.clamp(
@@ -1064,7 +1064,7 @@ const FluidMaterial = forwardRef(
             pointer.y ?? 0.5
           );
           displayMat.uniforms.uDebugPointerLife.value[i] = Math.max(
-            0.05,
+            0,
             debugContactFadeDuration
           );
         } else {
@@ -1137,7 +1137,7 @@ const FluidMaterial = forwardRef(
       displayMat.uniforms.uDebugStationaryColor.value.set(debugStationaryColor);
       displayMat.uniforms.uDebugRandomColor.value.set(debugRandomColor);
       displayMat.uniforms.uDebugContactFadeDuration.value = Math.max(
-        0.05,
+        0.0001,
         debugContactFadeDuration
       );
       for (let i = 0; i < DEBUG_CONTACT_CAP; i++) {

@@ -42,6 +42,7 @@ const FLUID_PRESETS = {
     autoSplatRange: 1.0,
     autoSplatBurst: 2,
     autoSplatCount: 2,
+    randomSplatStrength: 1,
     stationarySplatsEnabled: false,
     stationarySplatStrength: 0.35,
     stationarySplatCount: 0,
@@ -72,19 +73,29 @@ const FLUID_PRESETS = {
     saturation: 1.33,
     blendMode: 0,
     debugCursor: true,
+    debugAutoSplat: true,
+    debugStationarySplat: true,
+    debugRandomBurst: true,
     debugPointerColor: '#ffffff',
     debugAutoColor: '#000000',
     debugAutoSize: 0.03,
     debugPointerSize: 0.03,
     debugPointerAspect: 1,
     debugPointerRotation: 0,
+    debugPointerLineWeight: 2,
     debugAutoAspect: 1,
     debugAutoRotation: 0,
+    debugAutoLineWeight: 2,
     debugStationaryColor: '#ffd166',
     debugStationarySize: 0.03,
     debugStationaryAspect: 1,
     debugStationaryRotation: 0,
+    debugStationaryLineWeight: 2,
+    debugRandomColor: '#7c3aed',
+    debugRandomSize: 0.03,
+    debugRandomAspect: 1,
     debugRandomRotation: 0,
+    debugRandomLineWeight: 2,
     debugLineWeightScale: 2,
     debugContactFadeDuration: 0.28,
   },
@@ -603,6 +614,46 @@ const FLUID_PRESETS = {
     debugContactFadeDuration: 0.28,
   },
 };
+
+Object.keys(FLUID_PRESETS).forEach((presetKey) => {
+  const preset = FLUID_PRESETS[presetKey];
+  if (preset.debugAutoSplat === undefined) {
+    FLUID_PRESETS[presetKey].debugAutoSplat = !!preset.debugCursor;
+  }
+  if (preset.debugStationarySplat === undefined) {
+    FLUID_PRESETS[presetKey].debugStationarySplat = !!preset.debugCursor;
+  }
+  if (preset.debugRandomBurst === undefined) {
+    FLUID_PRESETS[presetKey].debugRandomBurst = !!preset.debugCursor;
+  }
+  const fallbackLineWeight = preset.debugLineWeightScale ?? 1;
+  if (preset.debugPointerLineWeight === undefined) {
+    FLUID_PRESETS[presetKey].debugPointerLineWeight = fallbackLineWeight;
+  }
+  if (preset.debugAutoLineWeight === undefined) {
+    FLUID_PRESETS[presetKey].debugAutoLineWeight = fallbackLineWeight;
+  }
+  if (preset.debugStationaryLineWeight === undefined) {
+    FLUID_PRESETS[presetKey].debugStationaryLineWeight = fallbackLineWeight;
+  }
+  if (preset.debugRandomLineWeight === undefined) {
+    FLUID_PRESETS[presetKey].debugRandomLineWeight = fallbackLineWeight;
+  }
+});
+
+const PRESET_DEFAULTS = { ...FLUID_PRESETS.default };
+delete PRESET_DEFAULTS.stationarySplats;
+delete PRESET_DEFAULTS.debugLineWeightScale;
+
+Object.keys(FLUID_PRESETS).forEach((presetKey) => {
+  const normalized = {
+    ...PRESET_DEFAULTS,
+    ...FLUID_PRESETS[presetKey],
+  };
+  delete normalized.stationarySplats;
+  delete normalized.debugLineWeightScale;
+  FLUID_PRESETS[presetKey] = normalized;
+});
 
 export {
   DEBUG_CONTACT_CAP,

@@ -15,16 +15,17 @@ export default function useFluidRandomSplats({ config, randomSplatQueueRef }) {
 
     const batch = Math.min(queueRef.current, RANDOM_BURST_COUNT);
     queueRef.current -= batch;
+    const randomStrength = Math.max(0, config?.randomSplatStrength ?? 1);
 
     for (let i = 0; i < batch; i += 1) {
       randomSplatsRef.current.push({
         x: Math.random(),
         y: Math.random(),
-        vx: (Math.random() * 2 - 1) * config.splatForce * 0.08,
-        vy: (Math.random() * 2 - 1) * config.splatForce * 0.08,
+        vx: (Math.random() * 2 - 1) * config.splatForce * 0.08 * randomStrength,
+        vy: (Math.random() * 2 - 1) * config.splatForce * 0.08 * randomStrength,
         hueMix: Math.random(),
         colorMix: Math.random() * 0.5,
-        strength: 0.5 + Math.random() * 0.8,
+        strength: (0.5 + Math.random() * 0.8) * randomStrength,
       });
     }
   });

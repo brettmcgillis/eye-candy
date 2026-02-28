@@ -144,15 +144,25 @@ const FluidMaterial = forwardRef(
       saturation,
       blendMode,
       debugCursor,
+      debugAutoSplat,
+      debugStationarySplat,
+      debugRandomBurst,
       debugPointerColor,
       debugAutoColor,
       debugPointerSize,
       debugAutoSize,
       debugStationaryColor,
       debugStationarySize,
+      debugPointerLineWeight,
+      debugAutoLineWeight,
+      debugStationaryLineWeight,
+      debugRandomLineWeight,
       debugPointerRotation,
       debugAutoRotation,
       debugStationaryRotation,
+      debugRandomColor,
+      debugRandomSize,
+      debugRandomAspect,
       debugRandomRotation,
       debugContactFadeDuration,
     } = fluidValues;
@@ -447,6 +457,9 @@ const FluidMaterial = forwardRef(
             uSunraysEnabled: { value: sunrays },
             uBlendMode: { value: 0 },
             uDebugCursor: { value: false },
+            uDebugAutoSplat: { value: false },
+            uDebugStationarySplat: { value: false },
+            uDebugRandomBurst: { value: false },
             uDebugAuto: { value: new THREE.Vector2(0.5, 0.5) },
             uDebugPointerSize: {
               value: FLUID_PRESETS.default.debugPointerSize,
@@ -470,8 +483,17 @@ const FluidMaterial = forwardRef(
                 FLUID_PRESETS.default.debugAutoRotation
               ),
             },
-            uDebugLineWeightScale: {
-              value: FLUID_PRESETS.default.debugLineWeightScale,
+            uDebugPointerLineWeight: {
+              value: FLUID_PRESETS.default.debugPointerLineWeight,
+            },
+            uDebugAutoLineWeight: {
+              value: FLUID_PRESETS.default.debugAutoLineWeight,
+            },
+            uDebugStationaryLineWeight: {
+              value: FLUID_PRESETS.default.debugStationaryLineWeight,
+            },
+            uDebugRandomLineWeight: {
+              value: FLUID_PRESETS.default.debugRandomLineWeight,
             },
             uDebugAutoActive: { value: 0 },
             uDebugPointerColor: {
@@ -495,6 +517,15 @@ const FluidMaterial = forwardRef(
               value: THREE.MathUtils.degToRad(
                 FLUID_PRESETS.default.debugStationaryRotation
               ),
+            },
+            uDebugRandomColor: {
+              value: new THREE.Color(FLUID_PRESETS.default.debugRandomColor),
+            },
+            uDebugRandomSize: {
+              value: FLUID_PRESETS.default.debugRandomSize,
+            },
+            uDebugRandomAspect: {
+              value: FLUID_PRESETS.default.debugRandomAspect,
             },
             uDebugRandomRotation: {
               value: THREE.MathUtils.degToRad(
@@ -797,7 +828,7 @@ const FluidMaterial = forwardRef(
       }
 
       if (
-        debugCursor &&
+        debugStationarySplat &&
         stationarySplatsEnabled &&
         stationaryPointers.length > 0
       ) {
@@ -1020,6 +1051,9 @@ const FluidMaterial = forwardRef(
       }
 
       displayMat.uniforms.uDebugCursor.value = debugCursor;
+      displayMat.uniforms.uDebugAutoSplat.value = !!debugAutoSplat;
+      displayMat.uniforms.uDebugStationarySplat.value = !!debugStationarySplat;
+      displayMat.uniforms.uDebugRandomBurst.value = !!debugRandomBurst;
       const pointerCount = Math.min(DEBUG_POINTER_CAP, activePointers.length);
       displayMat.uniforms.uDebugPointerCount.value = pointerCount;
       for (let i = 0; i < DEBUG_POINTER_CAP; i += 1) {
@@ -1070,6 +1104,7 @@ const FluidMaterial = forwardRef(
       displayMat.uniforms.uDebugPointerSize.value = debugPointerSize;
       displayMat.uniforms.uDebugAutoSize.value = debugAutoSize;
       displayMat.uniforms.uDebugStationarySize.value = debugStationarySize;
+      displayMat.uniforms.uDebugRandomSize.value = debugRandomSize ?? 0.03;
       displayMat.uniforms.uDebugPointerAspect.value =
         fluidValues.debugPointerAspect || 1.0;
       displayMat.uniforms.uDebugAutoAspect.value =
@@ -1081,17 +1116,26 @@ const FluidMaterial = forwardRef(
       );
       displayMat.uniforms.uDebugStationaryAspect.value =
         fluidValues.debugStationaryAspect || 1.0;
+      displayMat.uniforms.uDebugRandomAspect.value = debugRandomAspect ?? 1.0;
       displayMat.uniforms.uDebugStationaryRotation.value =
         THREE.MathUtils.degToRad(debugStationaryRotation || 0);
       displayMat.uniforms.uDebugRandomRotation.value = THREE.MathUtils.degToRad(
         debugRandomRotation || 0
       );
-      displayMat.uniforms.uDebugLineWeightScale.value =
-        fluidValues.debugLineWeightScale || 1.0;
+      const legacyLineWeight = fluidValues.debugLineWeightScale ?? 1.0;
+      displayMat.uniforms.uDebugPointerLineWeight.value =
+        debugPointerLineWeight ?? legacyLineWeight;
+      displayMat.uniforms.uDebugAutoLineWeight.value =
+        debugAutoLineWeight ?? legacyLineWeight;
+      displayMat.uniforms.uDebugStationaryLineWeight.value =
+        debugStationaryLineWeight ?? legacyLineWeight;
+      displayMat.uniforms.uDebugRandomLineWeight.value =
+        debugRandomLineWeight ?? legacyLineWeight;
       displayMat.uniforms.uDebugAutoActive.value = firstAuto.ttl > 0 ? 1 : 0;
       displayMat.uniforms.uDebugPointerColor.value.set(debugPointerColor);
       displayMat.uniforms.uDebugAutoColor.value.set(debugAutoColor);
       displayMat.uniforms.uDebugStationaryColor.value.set(debugStationaryColor);
+      displayMat.uniforms.uDebugRandomColor.value.set(debugRandomColor);
       displayMat.uniforms.uDebugContactFadeDuration.value = Math.max(
         0.05,
         debugContactFadeDuration

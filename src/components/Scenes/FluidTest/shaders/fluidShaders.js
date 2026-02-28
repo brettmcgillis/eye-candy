@@ -355,6 +355,9 @@ uniform bool uShading;
 uniform bool uBloomEnabled;
 uniform bool uSunraysEnabled;
 uniform bool uDebugCursor;
+uniform bool uDebugAutoSplat;
+uniform bool uDebugStationarySplat;
+uniform bool uDebugRandomBurst;
 uniform float uBlendMode;
 uniform vec2 uDebugAuto;
 uniform float uDebugPointerSize;
@@ -366,12 +369,18 @@ uniform float uDebugAutoRotation;
 uniform float uDebugStationarySize;
 uniform float uDebugStationaryAspect;
 uniform float uDebugStationaryRotation;
+uniform float uDebugRandomSize;
+uniform float uDebugRandomAspect;
 uniform float uDebugRandomRotation;
-uniform float uDebugLineWeightScale;
+uniform float uDebugPointerLineWeight;
+uniform float uDebugAutoLineWeight;
+uniform float uDebugStationaryLineWeight;
+uniform float uDebugRandomLineWeight;
 uniform float uDebugAutoActive;
 uniform vec3 uDebugPointerColor;
 uniform vec3 uDebugAutoColor;
 uniform vec3 uDebugStationaryColor;
+uniform vec3 uDebugRandomColor;
 #define DEBUG_POINTER_CAP 8
 uniform float uDebugPointerCount;
 uniform vec2 uDebugPointers[DEBUG_POINTER_CAP];
@@ -468,24 +477,29 @@ void main() {
   color = (color - 0.5) * uContrast + 0.5;
   color *= uBrightness;
 
-  if (uDebugCursor) {
-    float pointerHalf = uDebugPointerSize * 0.5;
-    float autoHalf = uDebugAutoSize * 0.5;
-    vec2 autoCenter = uDebugAuto;
-    float pointerThickness = max(
-      0.00035,
-      uDebugPointerSize * 0.04 * uDebugLineWeightScale
-    );
-    float autoThickness = max(
-      0.00035,
-      uDebugAutoSize * 0.04 * uDebugLineWeightScale
-    );
-    float stationaryThickness = max(
-      0.00035,
-      uDebugStationarySize * 0.04 * uDebugLineWeightScale
-    );
-    vec2 ptrHalf = vec2(pointerHalf * uDebugPointerAspect, pointerHalf / max(uDebugPointerAspect, 0.0001));
-    vec2 autoHalfVec = vec2(autoHalf * uDebugAutoAspect, autoHalf / max(uDebugAutoAspect, 0.0001));
+  float pointerHalf = uDebugPointerSize * 0.5;
+  float autoHalf = uDebugAutoSize * 0.5;
+  vec2 autoCenter = uDebugAuto;
+  float pointerThickness = max(
+    0.00035,
+    uDebugPointerSize * 0.04 * uDebugPointerLineWeight
+  );
+  float autoThickness = max(
+    0.00035,
+    uDebugAutoSize * 0.04 * uDebugAutoLineWeight
+  );
+  float stationaryThickness = max(
+    0.00035,
+    uDebugStationarySize * 0.04 * uDebugStationaryLineWeight
+  );
+  float randomThickness = max(
+    0.00035,
+    uDebugRandomSize * 0.04 * uDebugRandomLineWeight
+  );
+  vec2 ptrHalf = vec2(pointerHalf * uDebugPointerAspect, pointerHalf / max(uDebugPointerAspect, 0.0001));
+  vec2 autoHalfVec = vec2(autoHalf * uDebugAutoAspect, autoHalf / max(uDebugAutoAspect, 0.0001));
+
+  if (uDebugAutoSplat) {
     float autoSquare = squareOutline(
       vUv,
       autoCenter,
@@ -494,7 +508,9 @@ void main() {
       uDebugAutoRotation
     ) * uDebugAutoActive;
     color = mix(color, uDebugAutoColor, autoSquare);
+  }
 
+  if (uDebugCursor) {
     for (int i = 0; i < DEBUG_POINTER_CAP; i++) {
       if (float(i) >= uDebugPointerCount) continue;
       float pActive = clamp(
@@ -512,38 +528,47 @@ void main() {
         ) * pActive;
       color = mix(color, uDebugPointerColor, pointerSquare);
     }
+  }
 
-    for (int i = 0; i < DEBUG_CONTACT_CAP; i++) {
-      float contactActive = clamp(
-        uDebugContactLife[i] / max(uDebugContactFadeDuration, 0.0001),
-        0.0,
-        1.0
-      );
-      float kind = clamp(uDebugContactKind[i], 0.0, 2.0);
-      vec2 autoHalfMix = vec2((uDebugAutoSize * 0.5) * uDebugAutoAspect, (uDebugAutoSize * 0.5) / max(uDebugAutoAspect, 0.0001));
-      vec2 pointerHalfMix = vec2((uDebugPointerSize * 0.5) * uDebugPointerAspect, (uDebugPointerSize * 0.5) / max(uDebugPointerAspect, 0.0001));
-      vec2 stationaryHalfMix = vec2((uDebugStationarySize * 0.5) * uDebugStationaryAspect, (uDebugStationarySize * 0.5) / max(uDebugStationaryAspect, 0.0001));
-      vec2 sizeVec = autoHalfMix;
-      float thickness = autoThickness;
-      float rotation = uDebugRandomRotation;
-      vec3 markColor = uDebugAutoColor;
-      if (kind > 1.5) {
-        sizeVec = stationaryHalfMix;
-        thickness = stationaryThickness;
-        rotation = uDebugStationaryRotation;
-        markColor = uDebugStationaryColor;
-      } else if (kind > 0.5) {
-        sizeVec = pointerHalfMix;
-        thickness = pointerThickness;
-        rotation = uDebugPointerRotation;
-        markColor = uDebugPointerColor;
-      }
-      float mark =
-        squareOutline(vUv, uDebugContacts[i], sizeVec, thickness, rotation) *
-        contactActive;
-      color = mix(color, markColor, mark);
+  for (int i = 0; i < DEBUG_CONTACT_CAP; i++) {
+    float contactActive = clamp(
+      uDebugContactLife[i] / max(uDebugContactFadeDuration, 0.0001),
+      0.0,
+      1.0
+    );
+    float kind = clamp(uDebugContactKind[i], 0.0, 2.0);
+    vec2 stationaryHalfMix = vec2((uDebugStationarySize * 0.5) * uDebugStationaryAspect, (uDebugStationarySize * 0.5) / max(uDebugStationaryAspect, 0.0001));
+    vec2 randomHalfMix = vec2((uDebugRandomSize * 0.5) * uDebugRandomAspect, (uDebugRandomSize * 0.5) / max(uDebugRandomAspect, 0.0001));
+
+    vec2 sizeVec = vec2(0.0);
+    float thickness = 0.0;
+    float rotation = 0.0;
+    vec3 markColor = vec3(0.0);
+    bool enabled = false;
+
+    if (kind > 1.5) {
+      enabled = uDebugStationarySplat;
+      sizeVec = stationaryHalfMix;
+      thickness = stationaryThickness;
+      rotation = uDebugStationaryRotation;
+      markColor = uDebugStationaryColor;
+    } else {
+      enabled = uDebugRandomBurst;
+      sizeVec = randomHalfMix;
+      thickness = randomThickness;
+      rotation = uDebugRandomRotation;
+      markColor = uDebugRandomColor;
     }
-    #if DEBUG_CONTACT_CAP > 0
+
+    if (!enabled) continue;
+
+    float mark =
+      squareOutline(vUv, uDebugContacts[i], sizeVec, thickness, rotation) *
+      contactActive;
+    color = mix(color, markColor, mark);
+  }
+  #if DEBUG_CONTACT_CAP > 0
+  if (uDebugAutoSplat) {
     for (int i = 0; i < DEBUG_CONTACT_CAP; i++) {
       if (float(i) >= uDebugAutoCount) continue;
       if (i == 0) continue;
@@ -554,8 +579,8 @@ void main() {
         aActive;
       color = mix(color, uDebugAutoColor, aMark);
     }
-    #endif
   }
+  #endif
 
   gl_FragColor = vec4(color, 1.0);
 }

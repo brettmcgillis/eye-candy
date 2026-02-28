@@ -45,7 +45,7 @@ Long term vision / use cases:
 ## Features
 
 - [x] Add rotation controls for debug cursor, debug auto, and debug stationary markers. min max at 0 - 90 degrees.
-- [ ] Add discrete control folders for pointer/hand controls, auto splat controls, stationary splat controls, and random burst controls. Try to keep control order in folders uniform.
+- [x] Add discrete control folders for pointer/hand controls, auto splat controls, stationary splat controls, and random burst controls. Try to keep control order in folders uniform.
 - [x] Add `input mode` control: Option `Pointer/Touch` uses current mouse/touch pinter config. Option `Hands` uses existing media pipe hand‑control hooks to get points from webcam and translates these to pointer position.
 - [x] Support for n auto‑splats (and presets that exercise multiple splats).
 - [x] Add `test mode` control: Option `Plane` shows current config with plane and orthographic cam. Option `3d` shows material on a sphere with orbit cam controls.
@@ -59,7 +59,7 @@ Long term vision / use cases:
 - [ ] Can we add/remove x/y controls to/from leva as we add/remove stationary splats, and control the splat position using leva? Can we wire these dynamically added controls into our presets, so I can copy stationary splat settings and paste back to ide, along with the rest of the control values?
 - [ ] Figure out what to do with gesture control. Consider gestures for add/remove auto splats, gesture for generate random bursts, gesture for "pointer down".
 - [x] Support for multiple hands coming back from media pipe -> map to multiple pointers.
-- [ ] Add controls for the appearance of the debug markers shown around the random splats. Add controls for random splat strength,
+- [x] Add controls for the appearance of the debug markers shown around the random splats. Add controls for random splat strength,
 
 ## Polish / Presets / UX
 

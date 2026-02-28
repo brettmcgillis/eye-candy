@@ -21,36 +21,59 @@ function copySettingsToClipboard(get) {
     vorticity: get('Fluid.Solver.vorticity'),
     velocityDissipation: get('Fluid.Solver.velocityDissipation'),
     densityDissipation: get('Fluid.Solver.densityDissipation'),
-    splatRadius: get('Fluid.Interaction.splatRadius'),
-    splatForce: get('Fluid.Interaction.splatForce'),
-    dyeStrength: get('Fluid.Interaction.dyeStrength'),
-    inputMode: get('Fluid.Interaction.inputMode'),
-    testMode: get('Fluid.Debug.testMode'),
-    autoSplat: get('Fluid.Interaction.autoSplat'),
-    autoSplatStrength: get('Fluid.Interaction.autoSplatStrength'),
-    autoSplatRate: get('Fluid.Interaction.autoSplatRate'),
-    autoSplatRange: get('Fluid.Interaction.autoSplatRange'),
-    autoSplatBurst: get('Fluid.Interaction.autoSplatBurst'),
-    autoSplatCount: get('Fluid.Interaction.autoSplatCount'),
-    stationarySplatsEnabled: get('Fluid.Interaction.stationarySplatsEnabled'),
-    stationarySplatStrength: get('Fluid.Interaction.stationarySplatStrength'),
-    stationarySplatCount: get('Fluid.Interaction.stationarySplatCount'),
-    handsMaxHands: get('Fluid.Hands.handsMaxHands'),
-    handsShowVideo: get('Fluid.Hands.handsShowVideo'),
-    handsShowDebugSkeleton: get('Fluid.Hands.handsShowDebugSkeleton'),
-    handsLandmarkColor: get('Fluid.Hands.handsLandmarkColor'),
-    handsConnectorColor: get('Fluid.Hands.handsConnectorColor'),
-    handsLandmarkRadius: get('Fluid.Hands.handsLandmarkRadius'),
-    handsConnectorLineWidth: get('Fluid.Hands.handsConnectorLineWidth'),
-    handsModelComplexity: get('Fluid.Hands.handsModelComplexity'),
-    handsMinDetectionConfidence: get('Fluid.Hands.handsMinDetectionConfidence'),
-    handsMinTrackingConfidence: get('Fluid.Hands.handsMinTrackingConfidence'),
-    handsXScale: get('Fluid.Hands.handsXScale'),
-    handsYScale: get('Fluid.Hands.handsYScale'),
-    handsZScale: get('Fluid.Hands.handsZScale'),
-    handsInvertX: get('Fluid.Hands.handsInvertX'),
-    handsInvertY: get('Fluid.Hands.handsInvertY'),
-    gesturesEnabled: get('Fluid.Hands.gesturesEnabled'),
+    splatRadius: get('Fluid.Interaction.PointerTouch.splatRadius'),
+    splatForce: get('Fluid.Interaction.PointerTouch.splatForce'),
+    dyeStrength: get('Fluid.Interaction.PointerTouch.dyeStrength'),
+    inputMode: get('Fluid.Interaction.PointerTouch.inputMode'),
+    testMode: get('Fluid.Presets.testMode'),
+    autoSplat: get('Fluid.Interaction.AutoSplats.autoSplat'),
+    autoSplatStrength: get('Fluid.Interaction.AutoSplats.autoSplatStrength'),
+    autoSplatRate: get('Fluid.Interaction.AutoSplats.autoSplatRate'),
+    autoSplatRange: get('Fluid.Interaction.AutoSplats.autoSplatRange'),
+    autoSplatBurst: get('Fluid.Interaction.AutoSplats.autoSplatBurst'),
+    autoSplatCount: get('Fluid.Interaction.AutoSplats.autoSplatCount'),
+    randomSplatStrength: get(
+      'Fluid.Interaction.RandomBurst.randomSplatStrength'
+    ),
+    stationarySplatsEnabled: get(
+      'Fluid.Interaction.StationarySplats.stationarySplatsEnabled'
+    ),
+    stationarySplatStrength: get(
+      'Fluid.Interaction.StationarySplats.stationarySplatStrength'
+    ),
+    stationarySplatCount: get(
+      'Fluid.Interaction.StationarySplats.stationarySplatCount'
+    ),
+    handsMaxHands: get('Fluid.Interaction.HandsInput.handsMaxHands'),
+    handsShowVideo: get('Fluid.Interaction.HandsInput.handsShowVideo'),
+    handsShowDebugSkeleton: get(
+      'Fluid.Interaction.HandsInput.handsShowDebugSkeleton'
+    ),
+    handsLandmarkColor: get('Fluid.Interaction.HandsInput.handsLandmarkColor'),
+    handsConnectorColor: get(
+      'Fluid.Interaction.HandsInput.handsConnectorColor'
+    ),
+    handsLandmarkRadius: get(
+      'Fluid.Interaction.HandsInput.handsLandmarkRadius'
+    ),
+    handsConnectorLineWidth: get(
+      'Fluid.Interaction.HandsInput.handsConnectorLineWidth'
+    ),
+    handsModelComplexity: get(
+      'Fluid.Interaction.HandsInput.handsModelComplexity'
+    ),
+    handsMinDetectionConfidence: get(
+      'Fluid.Interaction.HandsInput.handsMinDetectionConfidence'
+    ),
+    handsMinTrackingConfidence: get(
+      'Fluid.Interaction.HandsInput.handsMinTrackingConfidence'
+    ),
+    handsXScale: get('Fluid.Interaction.HandsInput.handsXScale'),
+    handsYScale: get('Fluid.Interaction.HandsInput.handsYScale'),
+    handsZScale: get('Fluid.Interaction.HandsInput.handsZScale'),
+    handsInvertX: get('Fluid.Interaction.HandsInput.handsInvertX'),
+    handsInvertY: get('Fluid.Interaction.HandsInput.handsInvertY'),
+    gesturesEnabled: get('Fluid.Interaction.HandsInput.gesturesEnabled'),
     shading: get('Fluid.Effects.shading'),
     bloom: get('Fluid.Effects.bloom'),
     bloomResolution: get('Fluid.Effects.bloomResolution'),
@@ -76,22 +99,55 @@ function copySettingsToClipboard(get) {
     contrast: get('Fluid.Display.contrast'),
     saturation: get('Fluid.Display.saturation'),
     blendMode: get('Fluid.Display.blendMode'),
-    debugCursor: get('Fluid.Debug.debugCursor'),
-    debugPointerColor: get('Fluid.Debug.debugPointerColor'),
-    debugAutoColor: get('Fluid.Debug.debugAutoColor'),
-    debugAutoSize: get('Fluid.Debug.debugAutoSize'),
-    debugPointerSize: get('Fluid.Debug.debugPointerSize'),
-    debugPointerAspect: get('Fluid.Debug.debugPointerAspect'),
-    debugPointerRotation: get('Fluid.Debug.debugPointerRotation'),
-    debugAutoAspect: get('Fluid.Debug.debugAutoAspect'),
-    debugAutoRotation: get('Fluid.Debug.debugAutoRotation'),
-    debugStationaryColor: get('Fluid.Debug.debugStationaryColor'),
-    debugStationarySize: get('Fluid.Debug.debugStationarySize'),
-    debugStationaryAspect: get('Fluid.Debug.debugStationaryAspect'),
-    debugStationaryRotation: get('Fluid.Debug.debugStationaryRotation'),
-    debugRandomRotation: get('Fluid.Debug.debugRandomRotation'),
-    debugLineWeightScale: get('Fluid.Debug.debugLineWeightScale'),
-    debugContactFadeDuration: get('Fluid.Debug.debugContactFadeDuration'),
+    debugCursor: get('Fluid.Interaction.PointerTouch.debugCursor'),
+    debugAutoSplat: get('Fluid.Interaction.AutoSplats.debugAutoSplat'),
+    debugStationarySplat: get(
+      'Fluid.Interaction.StationarySplats.debugStationarySplat'
+    ),
+    debugRandomBurst: get('Fluid.Interaction.RandomBurst.debugRandomBurst'),
+    debugPointerColor: get('Fluid.Interaction.PointerTouch.debugPointerColor'),
+    debugAutoColor: get('Fluid.Interaction.AutoSplats.debugAutoColor'),
+    debugAutoSize: get('Fluid.Interaction.AutoSplats.debugAutoSize'),
+    debugPointerSize: get('Fluid.Interaction.PointerTouch.debugPointerSize'),
+    debugPointerAspect: get(
+      'Fluid.Interaction.PointerTouch.debugPointerAspect'
+    ),
+    debugPointerLineWeight: get(
+      'Fluid.Interaction.PointerTouch.debugPointerLineWeight'
+    ),
+    debugPointerRotation: get(
+      'Fluid.Interaction.PointerTouch.debugPointerRotation'
+    ),
+    debugAutoAspect: get('Fluid.Interaction.AutoSplats.debugAutoAspect'),
+    debugAutoLineWeight: get(
+      'Fluid.Interaction.AutoSplats.debugAutoLineWeight'
+    ),
+    debugAutoRotation: get('Fluid.Interaction.AutoSplats.debugAutoRotation'),
+    debugStationaryColor: get(
+      'Fluid.Interaction.StationarySplats.debugStationaryColor'
+    ),
+    debugStationarySize: get(
+      'Fluid.Interaction.StationarySplats.debugStationarySize'
+    ),
+    debugStationaryAspect: get(
+      'Fluid.Interaction.StationarySplats.debugStationaryAspect'
+    ),
+    debugStationaryLineWeight: get(
+      'Fluid.Interaction.StationarySplats.debugStationaryLineWeight'
+    ),
+    debugStationaryRotation: get(
+      'Fluid.Interaction.StationarySplats.debugStationaryRotation'
+    ),
+    debugRandomColor: get('Fluid.Interaction.RandomBurst.debugRandomColor'),
+    debugRandomSize: get('Fluid.Interaction.RandomBurst.debugRandomSize'),
+    debugRandomAspect: get('Fluid.Interaction.RandomBurst.debugRandomAspect'),
+    debugRandomLineWeight: get(
+      'Fluid.Interaction.RandomBurst.debugRandomLineWeight'
+    ),
+    debugRandomRotation: get(
+      'Fluid.Interaction.RandomBurst.debugRandomRotation'
+    ),
+    debugContactFadeDuration: get('Fluid.Interaction.debugContactFadeDuration'),
   };
 
   let text = JSON.stringify(settings, null, 2);
@@ -138,6 +194,13 @@ export default function useFluidControls({
               presetRef.current = value;
               setRef.current(presetValues);
             }
+          },
+        },
+        testMode: {
+          value: 'plane',
+          options: {
+            Plane: 'plane',
+            '3D (Sphere)': '3d',
           },
         },
         resetToPreset: button((get) => {
@@ -203,82 +266,284 @@ export default function useFluidControls({
       ),
       Interaction: folder(
         {
-          splatRadius: {
-            value: FLUID_PRESETS.default.splatRadius,
-            min: 0.0005,
-            max: 0.02,
-            step: 0.0001,
-          },
-          splatForce: {
-            value: FLUID_PRESETS.default.splatForce,
-            min: 100,
-            max: 12000,
-            step: 50,
-          },
-          dyeStrength: {
-            value: FLUID_PRESETS.default.dyeStrength,
-            min: 0.05,
-            max: 2.5,
+          debugContactFadeDuration: {
+            value: FLUID_PRESETS.default.debugContactFadeDuration,
+            min: 0,
+            max: 5,
             step: 0.01,
           },
-          inputMode: {
-            value: 'pointer',
-            options: {
-              'Pointer/Touch': 'pointer',
-              Hands: 'hands',
+          PointerTouch: folder(
+            {
+              inputMode: {
+                value: 'pointer',
+                options: {
+                  'Pointer/Touch': 'pointer',
+                  Hands: 'hands',
+                },
+              },
+              splatRadius: {
+                value: FLUID_PRESETS.default.splatRadius,
+                min: 0.0005,
+                max: 0.02,
+                step: 0.0001,
+              },
+              splatForce: {
+                value: FLUID_PRESETS.default.splatForce,
+                min: 100,
+                max: 12000,
+                step: 50,
+              },
+              dyeStrength: {
+                value: FLUID_PRESETS.default.dyeStrength,
+                min: 0.05,
+                max: 2.5,
+                step: 0.01,
+              },
+              debugCursor: FLUID_PRESETS.default.debugCursor,
+              debugPointerColor: FLUID_PRESETS.default.debugPointerColor,
+              debugPointerSize: {
+                value: FLUID_PRESETS.default.debugPointerSize,
+                min: 0.005,
+                max: 0.15,
+                step: 0.002,
+              },
+              debugPointerAspect: {
+                value: FLUID_PRESETS.default.debugPointerAspect,
+                min: 0.1,
+                max: 5,
+                step: 0.05,
+              },
+              debugPointerLineWeight: {
+                value: FLUID_PRESETS.default.debugPointerLineWeight,
+                min: 0.25,
+                max: 4,
+                step: 0.05,
+              },
+              debugPointerRotation: {
+                value: FLUID_PRESETS.default.debugPointerRotation,
+                min: 0,
+                max: 90,
+                step: 1,
+              },
             },
-          },
-          autoSplat: FLUID_PRESETS.default.autoSplat,
-          autoSplatStrength: {
-            value: FLUID_PRESETS.default.autoSplatStrength,
-            min: 0,
-            max: 0.6,
-            step: 0.01,
-          },
-          autoSplatRate: {
-            value: FLUID_PRESETS.default.autoSplatRate,
-            min: 0,
-            max: 100,
-            step: 1,
-          },
-          autoSplatRange: {
-            value: FLUID_PRESETS.default.autoSplatRange,
-            min: 0,
-            max: 1,
-            step: 0.01,
-          },
-          autoSplatBurst: {
-            value: FLUID_PRESETS.default.autoSplatBurst,
-            min: 1,
-            max: 8,
-            step: 1,
-          },
-          autoSplatCount: {
-            value: FLUID_PRESETS.default.autoSplatCount,
-            min: 1,
-            max: 8,
-            step: 1,
-          },
-          stationarySplatsEnabled:
-            FLUID_PRESETS.default.stationarySplatsEnabled,
-          stationarySplatStrength: {
-            value: FLUID_PRESETS.default.stationarySplatStrength,
-            min: 0,
-            max: 1,
-            step: 0.01,
-          },
-          stationarySplatCount: {
-            value: FLUID_PRESETS.default.stationarySplatCount,
-            min: 0,
-            max: 8,
-            step: 1,
-          },
-          randomBurst: button(() => {
-            if (randomSplatQueueRef) {
-              // eslint-disable-next-line no-param-reassign
-              randomSplatQueueRef.current += RANDOM_BURST_COUNT;
-            }
-          }),
+            { collapsed: true }
+          ),
+          HandsInput: folder(
+            {
+              handsMaxHands: {
+                value: 1,
+                min: 1,
+                max: 2,
+                step: 1,
+              },
+              handsShowVideo: false,
+              handsShowDebugSkeleton: false,
+              handsLandmarkColor: '#FF3366',
+              handsConnectorColor: '#00FFAA',
+              handsLandmarkRadius: {
+                value: 4,
+                min: 1,
+                max: 12,
+                step: 1,
+              },
+              handsConnectorLineWidth: {
+                value: 3,
+                min: 1,
+                max: 12,
+                step: 1,
+              },
+              handsModelComplexity: {
+                value: 1,
+                min: 0,
+                max: 1,
+                step: 1,
+              },
+              handsMinDetectionConfidence: {
+                value: 0.6,
+                min: 0.1,
+                max: 1,
+                step: 0.01,
+              },
+              handsMinTrackingConfidence: {
+                value: 0.6,
+                min: 0.1,
+                max: 1,
+                step: 0.01,
+              },
+              handsXScale: {
+                value: 4,
+                min: 1,
+                max: 10,
+                step: 0.1,
+              },
+              handsYScale: {
+                value: 3,
+                min: 1,
+                max: 10,
+                step: 0.1,
+              },
+              handsZScale: {
+                value: 5,
+                min: 1,
+                max: 15,
+                step: 0.1,
+              },
+              handsInvertX: false,
+              handsInvertY: false,
+              gesturesEnabled: true,
+            },
+            { collapsed: true }
+          ),
+          AutoSplats: folder(
+            {
+              autoSplat: FLUID_PRESETS.default.autoSplat,
+              autoSplatStrength: {
+                value: FLUID_PRESETS.default.autoSplatStrength,
+                min: 0,
+                max: 1,
+                step: 0.01,
+              },
+              autoSplatRate: {
+                value: FLUID_PRESETS.default.autoSplatRate,
+                min: 0,
+                max: 100,
+                step: 1,
+              },
+              autoSplatRange: {
+                value: FLUID_PRESETS.default.autoSplatRange,
+                min: 0,
+                max: 1,
+                step: 0.01,
+              },
+              autoSplatBurst: {
+                value: FLUID_PRESETS.default.autoSplatBurst,
+                min: 1,
+                max: 8,
+                step: 1,
+              },
+              autoSplatCount: {
+                value: FLUID_PRESETS.default.autoSplatCount,
+                min: 1,
+                max: 8,
+                step: 1,
+              },
+              debugAutoSplat: FLUID_PRESETS.default.debugAutoSplat,
+              debugAutoColor: FLUID_PRESETS.default.debugAutoColor,
+              debugAutoSize: {
+                value: FLUID_PRESETS.default.debugAutoSize,
+                min: 0.005,
+                max: 0.15,
+                step: 0.002,
+              },
+              debugAutoAspect: {
+                value: FLUID_PRESETS.default.debugAutoAspect,
+                min: 0.1,
+                max: 5,
+                step: 0.05,
+              },
+              debugAutoLineWeight: {
+                value: FLUID_PRESETS.default.debugAutoLineWeight,
+                min: 0.25,
+                max: 4,
+                step: 0.05,
+              },
+              debugAutoRotation: {
+                value: FLUID_PRESETS.default.debugAutoRotation,
+                min: 0,
+                max: 90,
+                step: 1,
+              },
+            },
+            { collapsed: true }
+          ),
+          StationarySplats: folder(
+            {
+              stationarySplatsEnabled:
+                FLUID_PRESETS.default.stationarySplatsEnabled,
+              stationarySplatStrength: {
+                value: FLUID_PRESETS.default.stationarySplatStrength,
+                min: 0,
+                max: 1,
+                step: 0.01,
+              },
+              stationarySplatCount: {
+                value: FLUID_PRESETS.default.stationarySplatCount,
+                min: 0,
+                max: 8,
+                step: 1,
+              },
+              debugStationarySplat: FLUID_PRESETS.default.debugStationarySplat,
+              debugStationaryColor: FLUID_PRESETS.default.debugStationaryColor,
+              debugStationarySize: {
+                value: FLUID_PRESETS.default.debugStationarySize,
+                min: 0.005,
+                max: 0.15,
+                step: 0.002,
+              },
+              debugStationaryAspect: {
+                value: FLUID_PRESETS.default.debugStationaryAspect,
+                min: 0.1,
+                max: 5,
+                step: 0.05,
+              },
+              debugStationaryLineWeight: {
+                value: FLUID_PRESETS.default.debugStationaryLineWeight,
+                min: 0.25,
+                max: 4,
+                step: 0.05,
+              },
+              debugStationaryRotation: {
+                value: FLUID_PRESETS.default.debugStationaryRotation,
+                min: 0,
+                max: 90,
+                step: 1,
+              },
+            },
+            { collapsed: true }
+          ),
+          RandomBurst: folder(
+            {
+              randomSplatStrength: {
+                value: FLUID_PRESETS.default.randomSplatStrength,
+                min: 0,
+                max: 2,
+                step: 0.01,
+              },
+              debugRandomBurst: FLUID_PRESETS.default.debugRandomBurst,
+              debugRandomColor: FLUID_PRESETS.default.debugRandomColor,
+              debugRandomSize: {
+                value: FLUID_PRESETS.default.debugRandomSize,
+                min: 0.005,
+                max: 0.15,
+                step: 0.002,
+              },
+              debugRandomAspect: {
+                value: FLUID_PRESETS.default.debugRandomAspect,
+                min: 0.1,
+                max: 5,
+                step: 0.05,
+              },
+              debugRandomLineWeight: {
+                value: FLUID_PRESETS.default.debugRandomLineWeight,
+                min: 0.25,
+                max: 4,
+                step: 0.05,
+              },
+              debugRandomRotation: {
+                value: FLUID_PRESETS.default.debugRandomRotation,
+                min: 0,
+                max: 90,
+                step: 1,
+              },
+              randomBurst: button(() => {
+                if (randomSplatQueueRef) {
+                  // eslint-disable-next-line no-param-reassign
+                  randomSplatQueueRef.current += RANDOM_BURST_COUNT;
+                }
+              }),
+            },
+            { collapsed: true }
+          ),
         },
         { collapsed: true }
       ),
@@ -329,72 +594,6 @@ export default function useFluidControls({
             max: 1.5,
             step: 0.01,
           },
-        },
-        { collapsed: true }
-      ),
-      Hands: folder(
-        {
-          handsMaxHands: {
-            value: 1,
-            min: 1,
-            max: 2,
-            step: 1,
-          },
-          handsShowVideo: false,
-          handsShowDebugSkeleton: false,
-          handsLandmarkColor: '#FF3366',
-          handsConnectorColor: '#00FFAA',
-          handsLandmarkRadius: {
-            value: 4,
-            min: 1,
-            max: 12,
-            step: 1,
-          },
-          handsConnectorLineWidth: {
-            value: 3,
-            min: 1,
-            max: 12,
-            step: 1,
-          },
-          handsModelComplexity: {
-            value: 1,
-            min: 0,
-            max: 1,
-            step: 1,
-          },
-          handsMinDetectionConfidence: {
-            value: 0.6,
-            min: 0.1,
-            max: 1,
-            step: 0.01,
-          },
-          handsMinTrackingConfidence: {
-            value: 0.6,
-            min: 0.1,
-            max: 1,
-            step: 0.01,
-          },
-          handsXScale: {
-            value: 4,
-            min: 1,
-            max: 10,
-            step: 0.1,
-          },
-          handsYScale: {
-            value: 3,
-            min: 1,
-            max: 10,
-            step: 0.1,
-          },
-          handsZScale: {
-            value: 5,
-            min: 1,
-            max: 15,
-            step: 0.1,
-          },
-          handsInvertX: false,
-          handsInvertY: false,
-          gesturesEnabled: true,
         },
         { collapsed: true }
       ),
@@ -460,94 +659,6 @@ export default function useFluidControls({
               Additive: BLEND_MODE_ADDITIVE,
               Multiply: BLEND_MODE_MULTIPLY,
             },
-          },
-        },
-        { collapsed: true }
-      ),
-      Debug: folder(
-        {
-          testMode: {
-            value: 'plane',
-            options: {
-              Plane: 'plane',
-              '3D (Sphere)': '3d',
-            },
-          },
-          debugCursor: FLUID_PRESETS.default.debugCursor,
-          debugPointerColor: FLUID_PRESETS.default.debugPointerColor,
-          debugAutoColor: FLUID_PRESETS.default.debugAutoColor,
-          debugPointerSize: {
-            value: FLUID_PRESETS.default.debugPointerSize,
-            min: 0.005,
-            max: 0.15,
-            step: 0.002,
-          },
-          debugAutoSize: {
-            value: FLUID_PRESETS.default.debugAutoSize,
-            min: 0.005,
-            max: 0.15,
-            step: 0.002,
-          },
-          debugPointerAspect: {
-            value: FLUID_PRESETS.default.debugPointerAspect,
-            min: 0.1,
-            max: 5,
-            step: 0.05,
-          },
-          debugPointerRotation: {
-            value: FLUID_PRESETS.default.debugPointerRotation,
-            min: 0,
-            max: 45,
-            step: 1,
-          },
-          debugAutoAspect: {
-            value: FLUID_PRESETS.default.debugAutoAspect,
-            min: 0.1,
-            max: 5,
-            step: 0.05,
-          },
-          debugAutoRotation: {
-            value: FLUID_PRESETS.default.debugAutoRotation,
-            min: 0,
-            max: 45,
-            step: 1,
-          },
-          debugStationaryColor: FLUID_PRESETS.default.debugStationaryColor,
-          debugStationarySize: {
-            value: FLUID_PRESETS.default.debugStationarySize,
-            min: 0.005,
-            max: 0.15,
-            step: 0.002,
-          },
-          debugStationaryAspect: {
-            value: FLUID_PRESETS.default.debugStationaryAspect,
-            min: 0.1,
-            max: 5,
-            step: 0.05,
-          },
-          debugStationaryRotation: {
-            value: FLUID_PRESETS.default.debugStationaryRotation,
-            min: 0,
-            max: 45,
-            step: 1,
-          },
-          debugRandomRotation: {
-            value: FLUID_PRESETS.default.debugRandomRotation,
-            min: 0,
-            max: 45,
-            step: 1,
-          },
-          debugLineWeightScale: {
-            value: FLUID_PRESETS.default.debugLineWeightScale,
-            min: 0.25,
-            max: 4,
-            step: 0.05,
-          },
-          debugContactFadeDuration: {
-            value: FLUID_PRESETS.default.debugContactFadeDuration,
-            min: 0.05,
-            max: 2,
-            step: 0.01,
           },
         },
         { collapsed: true }

@@ -376,6 +376,10 @@ uniform float uDebugPointerLineWeight;
 uniform float uDebugAutoLineWeight;
 uniform float uDebugStationaryLineWeight;
 uniform float uDebugRandomLineWeight;
+uniform bool uDebugPointerFill;
+uniform bool uDebugAutoFill;
+uniform bool uDebugStationaryFill;
+uniform bool uDebugRandomFill;
 uniform float uDebugAutoActive;
 uniform vec3 uDebugPointerColor;
 uniform vec3 uDebugAutoColor;
@@ -425,6 +429,25 @@ float squareOutline(
   float innerSizeY = max(halfSize.y - thickness, 0.0);
   float inner = step(p.x, innerSizeX) * step(p.y, innerSizeY);
   return clamp(outer - inner, 0.0, 1.0);
+}
+
+float squareFill(vec2 uv, vec2 center, vec2 halfSize, float rotation) {
+  vec2 p = abs(rotate2D(uv - center, -rotation));
+  return step(p.x, halfSize.x) * step(p.y, halfSize.y);
+}
+
+float squareMarker(
+  vec2 uv,
+  vec2 center,
+  vec2 halfSize,
+  float thickness,
+  float rotation,
+  bool fill
+) {
+  if (fill) {
+    return squareFill(uv, center, halfSize, rotation);
+  }
+  return squareOutline(uv, center, halfSize, thickness, rotation);
 }
 
 void main() {
@@ -500,12 +523,13 @@ void main() {
   vec2 autoHalfVec = vec2(autoHalf * uDebugAutoAspect, autoHalf / max(uDebugAutoAspect, 0.0001));
 
   if (uDebugAutoSplat) {
-    float autoSquare = squareOutline(
+    float autoSquare = squareMarker(
       vUv,
       autoCenter,
       autoHalfVec,
       autoThickness,
-      uDebugAutoRotation
+      uDebugAutoRotation,
+      uDebugAutoFill
     ) * uDebugAutoActive;
     color = mix(color, uDebugAutoColor, autoSquare);
   }
@@ -519,12 +543,13 @@ void main() {
         1.0
       );
       float pointerSquare =
-        squareOutline(
+        squareMarker(
           vUv,
           uDebugPointers[i],
           ptrHalf,
           pointerThickness,
-          uDebugPointerRotation
+          uDebugPointerRotation,
+          uDebugPointerFill
         ) * pActive;
       color = mix(color, uDebugPointerColor, pointerSquare);
     }
@@ -563,7 +588,14 @@ void main() {
     if (!enabled) continue;
 
     float mark =
-      squareOutline(vUv, uDebugContacts[i], sizeVec, thickness, rotation) *
+      squareMarker(
+        vUv,
+        uDebugContacts[i],
+        sizeVec,
+        thickness,
+        rotation,
+        kind > 1.5 ? uDebugStationaryFill : uDebugRandomFill
+      ) *
       contactActive;
     color = mix(color, markColor, mark);
   }
@@ -575,7 +607,14 @@ void main() {
       float aActive = clamp(uDebugAutoLife[i] / max(uDebugContactFadeDuration, 0.0001), 0.0, 1.0);
       vec2 aHalf = vec2((uDebugAutoSize * 0.5) * uDebugAutoAspect, (uDebugAutoSize * 0.5) / max(uDebugAutoAspect, 0.0001));
       float aMark =
-        squareOutline(vUv, uDebugAutos[i], aHalf, autoThickness, uDebugAutoRotation) *
+        squareMarker(
+          vUv,
+          uDebugAutos[i],
+          aHalf,
+          autoThickness,
+          uDebugAutoRotation,
+          uDebugAutoFill
+        ) *
         aActive;
       color = mix(color, uDebugAutoColor, aMark);
     }

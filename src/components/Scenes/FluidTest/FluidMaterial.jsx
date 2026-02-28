@@ -157,6 +157,10 @@ const FluidMaterial = forwardRef(
       debugAutoLineWeight,
       debugStationaryLineWeight,
       debugRandomLineWeight,
+      debugPointerFill,
+      debugAutoFill,
+      debugStationaryFill,
+      debugRandomFill,
       debugPointerRotation,
       debugAutoRotation,
       debugStationaryRotation,
@@ -494,6 +498,18 @@ const FluidMaterial = forwardRef(
             },
             uDebugRandomLineWeight: {
               value: FLUID_PRESETS.default.debugRandomLineWeight,
+            },
+            uDebugPointerFill: {
+              value: FLUID_PRESETS.default.debugPointerFill,
+            },
+            uDebugAutoFill: {
+              value: FLUID_PRESETS.default.debugAutoFill,
+            },
+            uDebugStationaryFill: {
+              value: FLUID_PRESETS.default.debugStationaryFill,
+            },
+            uDebugRandomFill: {
+              value: FLUID_PRESETS.default.debugRandomFill,
             },
             uDebugAutoActive: { value: 0 },
             uDebugPointerColor: {
@@ -1131,6 +1147,10 @@ const FluidMaterial = forwardRef(
         debugStationaryLineWeight ?? legacyLineWeight;
       displayMat.uniforms.uDebugRandomLineWeight.value =
         debugRandomLineWeight ?? legacyLineWeight;
+      displayMat.uniforms.uDebugPointerFill.value = !!debugPointerFill;
+      displayMat.uniforms.uDebugAutoFill.value = !!debugAutoFill;
+      displayMat.uniforms.uDebugStationaryFill.value = !!debugStationaryFill;
+      displayMat.uniforms.uDebugRandomFill.value = !!debugRandomFill;
       displayMat.uniforms.uDebugAutoActive.value = firstAuto.ttl > 0 ? 1 : 0;
       displayMat.uniforms.uDebugPointerColor.value.set(debugPointerColor);
       displayMat.uniforms.uDebugAutoColor.value.set(debugAutoColor);

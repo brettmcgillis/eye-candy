@@ -115,6 +115,7 @@ function copySettingsToClipboard(get) {
     debugPointerLineWeight: get(
       'Fluid.Interaction.PointerTouch.debugPointerLineWeight'
     ),
+    debugPointerFill: get('Fluid.Interaction.PointerTouch.debugPointerFill'),
     debugPointerRotation: get(
       'Fluid.Interaction.PointerTouch.debugPointerRotation'
     ),
@@ -122,6 +123,7 @@ function copySettingsToClipboard(get) {
     debugAutoLineWeight: get(
       'Fluid.Interaction.AutoSplats.debugAutoLineWeight'
     ),
+    debugAutoFill: get('Fluid.Interaction.AutoSplats.debugAutoFill'),
     debugAutoRotation: get('Fluid.Interaction.AutoSplats.debugAutoRotation'),
     debugStationaryColor: get(
       'Fluid.Interaction.StationarySplats.debugStationaryColor'
@@ -135,6 +137,9 @@ function copySettingsToClipboard(get) {
     debugStationaryLineWeight: get(
       'Fluid.Interaction.StationarySplats.debugStationaryLineWeight'
     ),
+    debugStationaryFill: get(
+      'Fluid.Interaction.StationarySplats.debugStationaryFill'
+    ),
     debugStationaryRotation: get(
       'Fluid.Interaction.StationarySplats.debugStationaryRotation'
     ),
@@ -144,6 +149,7 @@ function copySettingsToClipboard(get) {
     debugRandomLineWeight: get(
       'Fluid.Interaction.RandomBurst.debugRandomLineWeight'
     ),
+    debugRandomFill: get('Fluid.Interaction.RandomBurst.debugRandomFill'),
     debugRandomRotation: get(
       'Fluid.Interaction.RandomBurst.debugRandomRotation'
     ),
@@ -319,6 +325,7 @@ export default function useFluidControls({
                 max: 4,
                 step: 0.05,
               },
+              debugPointerFill: FLUID_PRESETS.default.debugPointerFill,
               debugPointerRotation: {
                 value: FLUID_PRESETS.default.debugPointerRotation,
                 min: 0,
@@ -447,6 +454,7 @@ export default function useFluidControls({
                 max: 4,
                 step: 0.05,
               },
+              debugAutoFill: FLUID_PRESETS.default.debugAutoFill,
               debugAutoRotation: {
                 value: FLUID_PRESETS.default.debugAutoRotation,
                 min: 0,
@@ -492,6 +500,7 @@ export default function useFluidControls({
                 max: 4,
                 step: 0.05,
               },
+              debugStationaryFill: FLUID_PRESETS.default.debugStationaryFill,
               debugStationaryRotation: {
                 value: FLUID_PRESETS.default.debugStationaryRotation,
                 min: 0,
@@ -529,6 +538,7 @@ export default function useFluidControls({
                 max: 4,
                 step: 0.05,
               },
+              debugRandomFill: FLUID_PRESETS.default.debugRandomFill,
               debugRandomRotation: {
                 value: FLUID_PRESETS.default.debugRandomRotation,
                 min: 0,

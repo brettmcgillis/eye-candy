@@ -60,7 +60,7 @@ Long term vision / use cases:
 - [ ] Figure out what to do with gesture control. Consider gestures for add/remove auto splats, gesture for generate random bursts, gesture for "pointer down".
 - [x] Support for multiple hands coming back from media pipe -> map to multiple pointers.
 - [x] Add controls for the appearance of the debug markers shown around the random splats. Add controls for random splat strength,
-- [ ] Add toggle, fill debug marker, to all the contact point folders, to allow for filling debug markers discretely per contact type
+- [x] Add toggle, fill debug marker, to all the contact point folders, to allow for filling debug markers discretely per contact type
 
 ## Polish / Presets / UX
 

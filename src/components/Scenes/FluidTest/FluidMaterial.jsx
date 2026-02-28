@@ -56,6 +56,7 @@ const FluidMaterial = forwardRef(
       config,
       pointerRef: externalPointerRef,
       randomSplatsRef,
+      stationaryPointersRef: externalStationaryPointersRef,
     },
     ref
   ) => {
@@ -67,9 +68,13 @@ const FluidMaterial = forwardRef(
     const internalAutoPointersRef = useRef([
       { x: 0.5, y: 0.5, ttl: 0, phase: 0 },
     ]);
+    const internalStationaryPointersRef = useRef([]);
     const autoPointersRef = externalAutoPointersRef || internalAutoPointersRef;
+    const stationaryPointersRef =
+      externalStationaryPointersRef || internalStationaryPointersRef;
     const sceneRandomSplatsRef = randomSplatsRef || internalRandomSplatsRef;
     const resetRequestedRef = useRef(false);
+    const stationaryEmitStateRef = useRef(new Map());
     const initialSizeRef = useRef(null);
 
     if (!initialSizeRef.current && size.width > 1 && size.height > 1) {
@@ -111,6 +116,11 @@ const FluidMaterial = forwardRef(
       autoSplatRate,
       autoSplatBurst,
       autoSplatCount,
+      stationarySplatsEnabled,
+      stationarySplatStrength,
+      stationarySplatRate,
+      stationarySplatBurst,
+      stationarySplatCount,
       shading,
       bloom,
       bloomResolution,
@@ -141,6 +151,8 @@ const FluidMaterial = forwardRef(
       debugAutoColor,
       debugPointerSize,
       debugAutoSize,
+      debugStationaryColor,
+      debugStationarySize,
       debugContactFadeDuration,
     } = fluidValues;
 
@@ -457,6 +469,17 @@ const FluidMaterial = forwardRef(
             uDebugAutoColor: {
               value: new THREE.Color('#000000'),
             },
+            uDebugStationaryColor: {
+              value: new THREE.Color(
+                FLUID_PRESETS.default.debugStationaryColor
+              ),
+            },
+            uDebugStationarySize: {
+              value: FLUID_PRESETS.default.debugStationarySize,
+            },
+            uDebugStationaryAspect: {
+              value: FLUID_PRESETS.default.debugStationaryAspect,
+            },
             uDebugPointerCount: { value: 0 },
             uDebugPointers: {
               value: Array.from(
@@ -628,6 +651,34 @@ const FluidMaterial = forwardRef(
       } else if (pointerState?.down) {
         activePointers = [pointerState];
       }
+
+      const desiredStationaryCount = Math.max(
+        0,
+        Math.floor(stationarySplatCount || 0)
+      );
+      const stationaryPointers = (stationaryPointersRef.current || []).slice(
+        0,
+        desiredStationaryCount
+      );
+
+      const writeDebugContact = (px, py, debugKind = 0) => {
+        const safePx = THREE.MathUtils.clamp(px, 0, 1);
+        const safePy = THREE.MathUtils.clamp(py, 0, 1);
+        const idx = debugContactWriteRef.current;
+        debugContactsRef.current[idx].x = safePx;
+        debugContactsRef.current[idx].y = safePy;
+        debugContactsRef.current[idx].ttl = Math.max(
+          0.05,
+          debugContactFadeDuration
+        );
+        debugContactsRef.current[idx].kind = THREE.MathUtils.clamp(
+          debugKind,
+          0,
+          2
+        );
+        debugContactWriteRef.current = (idx + 1) % DEBUG_CONTACT_CAP;
+      };
+
       const splatAt = (
         px,
         py,
@@ -643,15 +694,7 @@ const FluidMaterial = forwardRef(
         const safePy = THREE.MathUtils.clamp(py, 0, 1);
         const safeStrength = THREE.MathUtils.clamp(strength, 0, 3);
         if (debugKind >= 0) {
-          const idx = debugContactWriteRef.current;
-          debugContactsRef.current[idx].x = safePx;
-          debugContactsRef.current[idx].y = safePy;
-          debugContactsRef.current[idx].ttl = Math.max(
-            0.05,
-            debugContactFadeDuration
-          );
-          debugContactsRef.current[idx].kind = debugKind > 0 ? 1 : 0;
-          debugContactWriteRef.current = (idx + 1) % DEBUG_CONTACT_CAP;
+          writeDebugContact(safePx, safePy, debugKind);
         }
 
         splatMat.uniforms.uPoint.value.set(safePx, safePy);
@@ -729,6 +772,19 @@ const FluidMaterial = forwardRef(
               applyDye: true,
             }
           );
+        }
+      }
+
+      if (
+        debugCursor &&
+        stationarySplatsEnabled &&
+        stationaryPointers.length > 0
+      ) {
+        for (let i = 0; i < stationaryPointers.length; i += 1) {
+          const sp = stationaryPointers[i];
+          if (sp) {
+            writeDebugContact(sp.x ?? 0.5, sp.y ?? 0.5, 2);
+          }
         }
       }
 
@@ -845,6 +901,112 @@ const FluidMaterial = forwardRef(
           }
         }
 
+        if (stationarySplatsEnabled && stationaryPointers.length > 0) {
+          const emitMap = stationaryEmitStateRef.current;
+          const activeIds = new Set();
+          const burstCount = Math.max(1, Math.floor(stationarySplatBurst || 1));
+          const rateScale = Math.max(0, stationarySplatRate || 0) / 100;
+          const basePathSpeed =
+            0.95 * (0.7 + Math.max(0, colorCycleSpeed || 0) * 0.5);
+
+          for (let i = 0; i < stationaryPointers.length; i += 1) {
+            const sp = stationaryPointers[i] || {};
+            const pointId = sp.id || i;
+            activeIds.add(pointId);
+
+            let emitState = emitMap.get(pointId);
+            if (!emitState) {
+              emitState = {
+                phase: Math.random() * Math.PI * 4,
+              };
+              emitMap.set(pointId, emitState);
+            }
+
+            emitState.phase += dt * basePathSpeed * Math.max(rateScale, 0.001);
+            const phase = emitState.phase + i * 1.31;
+            let forceX = 0;
+            let forceY = 0;
+            if (stationarySplatRate > 0) {
+              const minForce = splatForce * stationarySplatStrength * 0.0018;
+              forceX += Math.cos(phase * 1.9) * minForce;
+              forceY += Math.sin(phase * 1.9) * minForce;
+            }
+
+            autoSplatColorRef.current
+              .set(
+                Math.min(
+                  1,
+                  THREE.MathUtils.lerp(
+                    colorARef.current.r,
+                    colorBRef.current.r,
+                    0.5 + 0.5 * Math.sin(phase * 0.61 + i * 0.13)
+                  ) + 0.01
+                ),
+                Math.min(
+                  1,
+                  THREE.MathUtils.lerp(
+                    colorBRef.current.g,
+                    colorCRef.current.g,
+                    0.5 + 0.5 * Math.sin(phase * 0.73 + 0.7 + i * 0.11)
+                  ) + 0.01
+                ),
+                Math.min(
+                  1,
+                  THREE.MathUtils.lerp(
+                    colorCRef.current.b,
+                    colorARef.current.b,
+                    0.5 + 0.5 * Math.sin(phase * 0.67 + 1.4 + i * 0.09)
+                  ) + 0.01
+                )
+              )
+              .multiplyScalar(0.75);
+
+            if (blendMode > 0.5) {
+              autoSplatColorRef.current.multiplyScalar(-1).addScalar(1);
+            }
+
+            const px = sp.x ?? 0.5;
+            const py = sp.y ?? 0.5;
+            const strength = 0.12 * stationarySplatStrength * 0.75;
+
+            splatAt(
+              px,
+              py,
+              forceX,
+              forceY,
+              autoSplatColorRef.current,
+              strength,
+              2
+            );
+
+            for (let b = 1; b < burstCount; b += 1) {
+              const jitterPhase = phase + b * 1.73;
+              const jitter = 0.006 * (b / Math.max(1, burstCount - 1));
+              const jx = Math.sin(jitterPhase * 1.19) * jitter;
+              const jy = Math.cos(jitterPhase * 1.47) * jitter;
+              const decay = Math.max(0.12, 1 - b * 0.28);
+
+              splatAt(
+                px + jx,
+                py + jy,
+                forceX * decay,
+                forceY * decay,
+                autoSplatColorRef.current,
+                strength * decay * 0.55,
+                2
+              );
+            }
+          }
+
+          emitMap.forEach((_, key) => {
+            if (!activeIds.has(key)) {
+              emitMap.delete(key);
+            }
+          });
+        } else {
+          stationaryEmitStateRef.current.clear();
+        }
+
         if (sceneRandomSplatsRef.current.length > 0) {
           for (let i = 0; i < sceneRandomSplatsRef.current.length; i += 1) {
             const randomSplat = sceneRandomSplatsRef.current[i];
@@ -946,15 +1108,19 @@ const FluidMaterial = forwardRef(
       }
       displayMat.uniforms.uDebugPointerSize.value = debugPointerSize;
       displayMat.uniforms.uDebugAutoSize.value = debugAutoSize;
+      displayMat.uniforms.uDebugStationarySize.value = debugStationarySize;
       displayMat.uniforms.uDebugPointerAspect.value =
         fluidValues.debugPointerAspect || 1.0;
       displayMat.uniforms.uDebugAutoAspect.value =
         fluidValues.debugAutoAspect || 1.0;
+      displayMat.uniforms.uDebugStationaryAspect.value =
+        fluidValues.debugStationaryAspect || 1.0;
       displayMat.uniforms.uDebugLineWeightScale.value =
         fluidValues.debugLineWeightScale || 1.0;
       displayMat.uniforms.uDebugAutoActive.value = firstAuto.ttl > 0 ? 1 : 0;
       displayMat.uniforms.uDebugPointerColor.value.set(debugPointerColor);
       displayMat.uniforms.uDebugAutoColor.value.set(debugAutoColor);
+      displayMat.uniforms.uDebugStationaryColor.value.set(debugStationaryColor);
       displayMat.uniforms.uDebugContactFadeDuration.value = Math.max(
         0.05,
         debugContactFadeDuration

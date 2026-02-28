@@ -361,10 +361,13 @@ uniform float uDebugPointerSize;
 uniform float uDebugAutoSize;
 uniform float uDebugPointerAspect;
 uniform float uDebugAutoAspect;
+uniform float uDebugStationarySize;
+uniform float uDebugStationaryAspect;
 uniform float uDebugLineWeightScale;
 uniform float uDebugAutoActive;
 uniform vec3 uDebugPointerColor;
 uniform vec3 uDebugAutoColor;
+uniform vec3 uDebugStationaryColor;
 #define DEBUG_POINTER_CAP 8
 uniform float uDebugPointerCount;
 uniform vec2 uDebugPointers[DEBUG_POINTER_CAP];
@@ -461,6 +464,10 @@ void main() {
       0.00035,
       uDebugAutoSize * 0.04 * uDebugLineWeightScale
     );
+    float stationaryThickness = max(
+      0.00035,
+      uDebugStationarySize * 0.04 * uDebugLineWeightScale
+    );
     vec2 ptrHalf = vec2(pointerHalf * uDebugPointerAspect, pointerHalf / max(uDebugPointerAspect, 0.0001));
     vec2 autoHalfVec = vec2(autoHalf * uDebugAutoAspect, autoHalf / max(uDebugAutoAspect, 0.0001));
     float autoSquare = squareOutline(vUv, autoCenter, autoHalfVec, autoThickness) * uDebugAutoActive;
@@ -484,12 +491,22 @@ void main() {
         0.0,
         1.0
       );
-      float kind = clamp(uDebugContactKind[i], 0.0, 1.0);
+      float kind = clamp(uDebugContactKind[i], 0.0, 2.0);
       vec2 autoHalfMix = vec2((uDebugAutoSize * 0.5) * uDebugAutoAspect, (uDebugAutoSize * 0.5) / max(uDebugAutoAspect, 0.0001));
       vec2 pointerHalfMix = vec2((uDebugPointerSize * 0.5) * uDebugPointerAspect, (uDebugPointerSize * 0.5) / max(uDebugPointerAspect, 0.0001));
-      vec2 sizeVec = mix(autoHalfMix, pointerHalfMix, kind);
-      float thickness = mix(autoThickness, pointerThickness, kind);
-      vec3 markColor = mix(uDebugAutoColor, uDebugPointerColor, kind);
+      vec2 stationaryHalfMix = vec2((uDebugStationarySize * 0.5) * uDebugStationaryAspect, (uDebugStationarySize * 0.5) / max(uDebugStationaryAspect, 0.0001));
+      vec2 sizeVec = autoHalfMix;
+      float thickness = autoThickness;
+      vec3 markColor = uDebugAutoColor;
+      if (kind > 1.5) {
+        sizeVec = stationaryHalfMix;
+        thickness = stationaryThickness;
+        markColor = uDebugStationaryColor;
+      } else if (kind > 0.5) {
+        sizeVec = pointerHalfMix;
+        thickness = pointerThickness;
+        markColor = uDebugPointerColor;
+      }
       float mark = squareOutline(vUv, uDebugContacts[i], sizeVec, thickness) * contactActive;
       color = mix(color, markColor, mark);
     }

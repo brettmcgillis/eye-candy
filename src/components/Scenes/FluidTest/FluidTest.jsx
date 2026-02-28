@@ -20,6 +20,7 @@ import useFluidAutoPointers from './hooks/useFluidAutoPointers';
 import useFluidControls from './hooks/useFluidControls';
 import useFluidPointerInput from './hooks/useFluidPointerInput';
 import useFluidRandomSplats from './hooks/useFluidRandomSplats';
+import useFluidStationarySplats from './hooks/useFluidStationarySplats';
 
 const GESTURE_BURST_COOLDOWN_MS = 350;
 
@@ -165,6 +166,12 @@ function FluidTestbed() {
     randomSplatQueueRef.current += RANDOM_BURST_COUNT;
   }, []);
 
+  const { stationaryPointersRef, pointerEvents: stationaryPointerEvents } =
+    useFluidStationarySplats({
+      config: fluidValues,
+      pointerEvents,
+    });
+
   const mediaPipeConfig = useMemo(
     () => ({
       maxHands: fluidValues.handsMaxHands || 1,
@@ -216,7 +223,7 @@ function FluidTestbed() {
   const testMode = fluidValues.testMode || 'plane';
   const using3D = testMode === '3d';
   const activePointerRef = usingHands ? handsPointerRef : pointerInputRef;
-  const meshPointerEvents = usingHands ? {} : pointerEvents;
+  const meshPointerEvents = usingHands ? {} : stationaryPointerEvents;
 
   return (
     <>
@@ -248,6 +255,7 @@ function FluidTestbed() {
             pointerRef={activePointerRef}
             config={fluidValues}
             autoPointersRef={autoPointersRef}
+            stationaryPointersRef={stationaryPointersRef}
             randomSplatsRef={randomSplatsRef}
           />
         </mesh>
@@ -262,6 +270,7 @@ function FluidTestbed() {
             pointerRef={activePointerRef}
             config={fluidValues}
             autoPointersRef={autoPointersRef}
+            stationaryPointersRef={stationaryPointersRef}
             randomSplatsRef={randomSplatsRef}
           />
         </mesh>

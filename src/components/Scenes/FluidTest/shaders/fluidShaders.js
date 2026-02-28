@@ -489,7 +489,9 @@ void main() {
   vec3 bg = mix(uBgA, uBgB, smoothstep(0.0, 1.0, vUv.y));
   vec3 color;
   
-  if (uBlendMode > 0.5) {
+  if (uBlendMode > 1.5) {
+    color = max(bg - c, vec3(0.0));
+  } else if (uBlendMode > 0.5) {
     vec3 ink = vec3(1.0) - c;
     color = bg * ink;
   } else {

@@ -12,6 +12,7 @@ import React, {
 import { useFrame, useThree } from '@react-three/fiber';
 
 import {
+  BLEND_MODE_MULTIPLY,
   DEBUG_CONTACT_CAP,
   DEBUG_CONTACT_TTL_DEFAULT,
   FLUID_PRESETS,
@@ -712,6 +713,8 @@ const FluidMaterial = forwardRef(
       displayMat.uniforms.uBloomEnabled.value = bloom;
       displayMat.uniforms.uSunraysEnabled.value = sunrays;
 
+      const isMultiplyBlend = blendMode === BLEND_MODE_MULTIPLY;
+
       const pointerState = pointerRef.current;
       let activePointers = [];
       if (Array.isArray(pointerState)) {
@@ -806,13 +809,13 @@ const FluidMaterial = forwardRef(
 
         // For multiply blend mode (ink on paper), invert colors so black becomes visible
         let paintColor = colorARef.current;
-        if (blendMode > 0.5) {
+        if (isMultiplyBlend) {
           paintColor = colorARef.current
             .clone()
             .multiplyScalar(-1)
             .addScalar(1);
         }
-        if (!colorful && blendMode > 0.5) {
+        if (!colorful && isMultiplyBlend) {
           // When not colorful in multiply mode, need to invert the base colorA
           const baseColor = new THREE.Color(colorA);
           paintColor = baseColor.multiplyScalar(-1).addScalar(1);
@@ -929,7 +932,7 @@ const FluidMaterial = forwardRef(
               )
               .multiplyScalar(0.75);
 
-            if (blendMode > 0.5) {
+            if (isMultiplyBlend) {
               autoSplatColorRef.current.multiplyScalar(-1).addScalar(1);
             }
 
@@ -1003,7 +1006,7 @@ const FluidMaterial = forwardRef(
               )
               .multiplyScalar(0.75);
 
-            if (blendMode > 0.5) {
+            if (isMultiplyBlend) {
               autoSplatColorRef.current.multiplyScalar(-1).addScalar(1);
             }
 
@@ -1022,7 +1025,7 @@ const FluidMaterial = forwardRef(
               .clone()
               .lerp(colorBRef.current, randomSplat.hueMix)
               .lerp(colorCRef.current, randomSplat.colorMix);
-            if (blendMode > 0.5) {
+            if (isMultiplyBlend) {
               tint.multiplyScalar(-1).addScalar(1);
             }
 

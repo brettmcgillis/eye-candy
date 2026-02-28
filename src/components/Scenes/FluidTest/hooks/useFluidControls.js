@@ -8,6 +8,7 @@ import { useEffect, useMemo, useRef, useState } from 'react';
 import {
   BLEND_MODE_ADDITIVE,
   BLEND_MODE_MULTIPLY,
+  BLEND_MODE_SUBTRACTIVE,
   FLUID_PRESETS,
   RANDOM_BURST_COUNT,
 } from '../fluidPresets';
@@ -226,7 +227,7 @@ function copySettingsToClipboard(get) {
     brightness: get('Fluid.Display.brightness'),
     contrast: get('Fluid.Display.contrast'),
     saturation: get('Fluid.Display.saturation'),
-    blendMode: get('Fluid.Display.blendMode'),
+    blendMode: get('Fluid.Color.blendMode'),
     debugCursor: get('Fluid.Interaction.PointerTouch.debugCursor'),
     debugAutoSplat: get('Fluid.Interaction.AutoSplats.debugAutoSplat'),
     debugStationarySplat: get(
@@ -775,6 +776,14 @@ export default function useFluidControls({
             max: 3,
             step: 0.05,
           },
+          blendMode: {
+            value: FLUID_PRESETS.default.blendMode,
+            options: {
+              Additive: BLEND_MODE_ADDITIVE,
+              Multiply: BLEND_MODE_MULTIPLY,
+              Subtractive: BLEND_MODE_SUBTRACTIVE,
+            },
+          },
         },
         { collapsed: true }
       ),
@@ -812,13 +821,6 @@ export default function useFluidControls({
             min: 0.2,
             max: 2.2,
             step: 0.01,
-          },
-          blendMode: {
-            value: FLUID_PRESETS.default.blendMode,
-            options: {
-              Additive: BLEND_MODE_ADDITIVE,
-              Multiply: BLEND_MODE_MULTIPLY,
-            },
           },
         },
         { collapsed: true }

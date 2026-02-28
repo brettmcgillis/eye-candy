@@ -31,6 +31,7 @@ Long term vision / use cases:
 - [x] Add support for interaction while sim is paused. Should still be able to drop ink.
 - [x] Fix auto-splat debug markers disappearing on pause.
 - [ ] Fix orbit on pointer down on sphere. Cant drag cursor to drop ink without orbiting as well (very low priority).
+- [ ] Fix debugcontactfadeduration. control should represent time in seconds it takes for squares to fade. min 0 should be near instant, set a max of 5 for 5 seconds.
 
 ## Refactor / Architecture
 
@@ -43,6 +44,8 @@ Long term vision / use cases:
 
 ## Features
 
+- [x] Add rotation controls for debug cursor, debug auto, and debug stationary markers. min max at 0 - 90 degrees.
+- [ ] Add discrete control folders for pointer/hand controls, auto splat controls, stationary splat controls, and random burst controls. Try to keep control order in folders uniform.
 - [x] Add `input mode` control: Option `Pointer/Touch` uses current mouse/touch pinter config. Option `Hands` uses existing media pipe hand‑control hooks to get points from webcam and translates these to pointer position.
 - [x] Support for n auto‑splats (and presets that exercise multiple splats).
 - [x] Add `test mode` control: Option `Plane` shows current config with plane and orthographic cam. Option `3d` shows material on a sphere with orbit cam controls.
@@ -52,9 +55,11 @@ Long term vision / use cases:
 - [ ] Try a subtractive blend mode.
 - [ ] Add frequency control to induce stutter in mouse input (dotted vs solid line).
 - [ ] Create a preset that looks like an inverted photograph.
-- [ ] After splitting responsibilities, add stationary auto‑splats with a Leva toggle and drag‑and‑drop placement.
+- [x] Add stationary auto‑splats.
+- [ ] Can we add/remove x/y controls to/from leva as we add/remove stationary splats, and control the splat position using leva? Can we wire these dynamically added controls into our presets, so I can copy stationary splat settings and paste back to ide, along with the rest of the control values?
 - [ ] Figure out what to do with gesture control. Consider gestures for add/remove auto splats, gesture for generate random bursts, gesture for "pointer down".
 - [x] Support for multiple hands coming back from media pipe -> map to multiple pointers.
+- [ ] Add controls for the appearance of the debug markers shown around the random splats. Add controls for random splat strength,
 
 ## Polish / Presets / UX
 

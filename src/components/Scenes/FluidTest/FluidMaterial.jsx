@@ -74,7 +74,6 @@ const FluidMaterial = forwardRef(
       externalStationaryPointersRef || internalStationaryPointersRef;
     const sceneRandomSplatsRef = randomSplatsRef || internalRandomSplatsRef;
     const resetRequestedRef = useRef(false);
-    const stationaryEmitStateRef = useRef(new Map());
     const initialSizeRef = useRef(null);
 
     if (!initialSizeRef.current && size.width > 1 && size.height > 1) {
@@ -118,8 +117,6 @@ const FluidMaterial = forwardRef(
       autoSplatCount,
       stationarySplatsEnabled,
       stationarySplatStrength,
-      stationarySplatRate,
-      stationarySplatBurst,
       stationarySplatCount,
       shading,
       bloom,
@@ -153,6 +150,10 @@ const FluidMaterial = forwardRef(
       debugAutoSize,
       debugStationaryColor,
       debugStationarySize,
+      debugPointerRotation,
+      debugAutoRotation,
+      debugStationaryRotation,
+      debugRandomRotation,
       debugContactFadeDuration,
     } = fluidValues;
 
@@ -459,6 +460,16 @@ const FluidMaterial = forwardRef(
             uDebugAutoAspect: {
               value: FLUID_PRESETS.default.debugAutoAspect,
             },
+            uDebugPointerRotation: {
+              value: THREE.MathUtils.degToRad(
+                FLUID_PRESETS.default.debugPointerRotation
+              ),
+            },
+            uDebugAutoRotation: {
+              value: THREE.MathUtils.degToRad(
+                FLUID_PRESETS.default.debugAutoRotation
+              ),
+            },
             uDebugLineWeightScale: {
               value: FLUID_PRESETS.default.debugLineWeightScale,
             },
@@ -479,6 +490,16 @@ const FluidMaterial = forwardRef(
             },
             uDebugStationaryAspect: {
               value: FLUID_PRESETS.default.debugStationaryAspect,
+            },
+            uDebugStationaryRotation: {
+              value: THREE.MathUtils.degToRad(
+                FLUID_PRESETS.default.debugStationaryRotation
+              ),
+            },
+            uDebugRandomRotation: {
+              value: THREE.MathUtils.degToRad(
+                FLUID_PRESETS.default.debugRandomRotation
+              ),
             },
             uDebugPointerCount: { value: 0 },
             uDebugPointers: {
@@ -902,35 +923,9 @@ const FluidMaterial = forwardRef(
         }
 
         if (stationarySplatsEnabled && stationaryPointers.length > 0) {
-          const emitMap = stationaryEmitStateRef.current;
-          const activeIds = new Set();
-          const burstCount = Math.max(1, Math.floor(stationarySplatBurst || 1));
-          const rateScale = Math.max(0, stationarySplatRate || 0) / 100;
-          const basePathSpeed =
-            0.95 * (0.7 + Math.max(0, colorCycleSpeed || 0) * 0.5);
-
           for (let i = 0; i < stationaryPointers.length; i += 1) {
             const sp = stationaryPointers[i] || {};
-            const pointId = sp.id || i;
-            activeIds.add(pointId);
-
-            let emitState = emitMap.get(pointId);
-            if (!emitState) {
-              emitState = {
-                phase: Math.random() * Math.PI * 4,
-              };
-              emitMap.set(pointId, emitState);
-            }
-
-            emitState.phase += dt * basePathSpeed * Math.max(rateScale, 0.001);
-            const phase = emitState.phase + i * 1.31;
-            let forceX = 0;
-            let forceY = 0;
-            if (stationarySplatRate > 0) {
-              const minForce = splatForce * stationarySplatStrength * 0.0018;
-              forceX += Math.cos(phase * 1.9) * minForce;
-              forceY += Math.sin(phase * 1.9) * minForce;
-            }
+            const phase = t * (0.7 + Math.max(0, colorCycleSpeed || 0) * 0.5);
 
             autoSplatColorRef.current
               .set(
@@ -969,42 +964,8 @@ const FluidMaterial = forwardRef(
             const py = sp.y ?? 0.5;
             const strength = 0.12 * stationarySplatStrength * 0.75;
 
-            splatAt(
-              px,
-              py,
-              forceX,
-              forceY,
-              autoSplatColorRef.current,
-              strength,
-              2
-            );
-
-            for (let b = 1; b < burstCount; b += 1) {
-              const jitterPhase = phase + b * 1.73;
-              const jitter = 0.006 * (b / Math.max(1, burstCount - 1));
-              const jx = Math.sin(jitterPhase * 1.19) * jitter;
-              const jy = Math.cos(jitterPhase * 1.47) * jitter;
-              const decay = Math.max(0.12, 1 - b * 0.28);
-
-              splatAt(
-                px + jx,
-                py + jy,
-                forceX * decay,
-                forceY * decay,
-                autoSplatColorRef.current,
-                strength * decay * 0.55,
-                2
-              );
-            }
+            splatAt(px, py, 0, 0, autoSplatColorRef.current, strength, 2);
           }
-
-          emitMap.forEach((_, key) => {
-            if (!activeIds.has(key)) {
-              emitMap.delete(key);
-            }
-          });
-        } else {
-          stationaryEmitStateRef.current.clear();
         }
 
         if (sceneRandomSplatsRef.current.length > 0) {
@@ -1113,8 +1074,18 @@ const FluidMaterial = forwardRef(
         fluidValues.debugPointerAspect || 1.0;
       displayMat.uniforms.uDebugAutoAspect.value =
         fluidValues.debugAutoAspect || 1.0;
+      displayMat.uniforms.uDebugPointerRotation.value =
+        THREE.MathUtils.degToRad(debugPointerRotation || 0);
+      displayMat.uniforms.uDebugAutoRotation.value = THREE.MathUtils.degToRad(
+        debugAutoRotation || 0
+      );
       displayMat.uniforms.uDebugStationaryAspect.value =
         fluidValues.debugStationaryAspect || 1.0;
+      displayMat.uniforms.uDebugStationaryRotation.value =
+        THREE.MathUtils.degToRad(debugStationaryRotation || 0);
+      displayMat.uniforms.uDebugRandomRotation.value = THREE.MathUtils.degToRad(
+        debugRandomRotation || 0
+      );
       displayMat.uniforms.uDebugLineWeightScale.value =
         fluidValues.debugLineWeightScale || 1.0;
       displayMat.uniforms.uDebugAutoActive.value = firstAuto.ttl > 0 ? 1 : 0;

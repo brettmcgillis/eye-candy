@@ -56,7 +56,7 @@ Long term vision / use cases:
 - [ ] Add frequency control to induce stutter in mouse input (dotted vs solid line).
 - [ ] Create a preset that looks like an inverted photograph.
 - [x] Add stationary auto‑splats.
-- [ ] Can we add/remove x/y controls to/from leva as we add/remove stationary splats, and control the splat position using leva? Can we wire these dynamically added controls into our presets, so I can copy stationary splat settings and paste back to ide, along with the rest of the control values?
+- [x] Can we add/remove x/y controls to/from leva as we add/remove stationary splats, and control the splat position using leva? Can we wire these dynamically added controls into our presets, so I can copy stationary splat settings and paste back to ide, along with the rest of the control values?
 - [ ] Figure out what to do with gesture control. Consider gestures for add/remove auto splats, gesture for generate random bursts, gesture for "pointer down".
 - [x] Support for multiple hands coming back from media pipe -> map to multiple pointers.
 - [x] Add controls for the appearance of the debug markers shown around the random splats. Add controls for random splat strength,
@@ -68,3 +68,23 @@ Long term vision / use cases:
 - [x] Add support and preset for black‑ink‑on‑white.
 - [ ] Update Leva controls to include labels so displayed text can be shorter.
 - [ ] Prepare a README so i dont forget how to use the various props for controlling the material behaviours.
+
+// Leva example:
+
+```
+export const AddingInputs = () => {
+  const [n, setN] = React.useState(1)
+  const inputs = Array(n)
+    .fill(0)
+    .reduce((acc, _, i) => Object.assign(acc, { [`input${i}`]: i }), {})
+
+  const values = useControls(inputs, [n])
+
+  return (
+    <div>
+      <button onClick={() => setN((n) => n + 1)}>Add input</button>
+      <pre>{JSON.stringify(values, null, '  ')}</pre>
+    </div>
+  )
+}
+```

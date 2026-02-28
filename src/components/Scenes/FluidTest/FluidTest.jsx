@@ -142,7 +142,9 @@ function FluidTestbed() {
     const currentPresetKey = presetRef.current || 'default';
     const nextPreset = FLUID_PRESETS[currentPresetKey];
     if (nextPreset) {
-      setControls(nextPreset);
+      const { stationarySplats: _stationarySplats, ...levaPresetValues } =
+        nextPreset;
+      setControls(levaPresetValues);
       initializedPresetRef.current = true;
     }
   }, [setControls]);

@@ -26,6 +26,13 @@ function createRandomPoint() {
   };
 }
 
+function getConfiguredPoints(config) {
+  if (Array.isArray(config?.stationarySplats)) {
+    return config.stationarySplats;
+  }
+  return [];
+}
+
 export default function useFluidStationarySplats({ config, pointerEvents }) {
   const stationaryPointersRef = useRef([]);
   const idRef = useRef(0);
@@ -37,14 +44,25 @@ export default function useFluidStationarySplats({ config, pointerEvents }) {
       MAX_STATIONARY_SPLATS
     );
 
+    const configuredPoints = getConfiguredPoints(config);
+
     const next = stationaryPointersRef.current.slice(0, desiredCount);
     while (next.length < desiredCount) {
       const nextId = `stationary-${idRef.current}`;
       idRef.current += 1;
-      next.push(normalizePoint(createRandomPoint(), nextId));
+      const configuredPoint = configuredPoints[next.length];
+      const point = configuredPoint || createRandomPoint();
+      next.push(normalizePoint(point, nextId));
     }
+
+    for (let i = 0; i < next.length; i += 1) {
+      if (configuredPoints[i]) {
+        next[i] = normalizePoint(configuredPoints[i], next[i].id);
+      }
+    }
+
     stationaryPointersRef.current = next;
-  }, [config?.stationarySplatCount]);
+  }, [config?.stationarySplatCount, config?.stationarySplats]);
 
   return {
     stationaryPointersRef,

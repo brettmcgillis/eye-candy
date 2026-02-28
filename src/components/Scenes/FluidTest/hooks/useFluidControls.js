@@ -3,7 +3,7 @@
 /* eslint-disable no-param-reassign */
 import { button, folder, useControls } from 'leva';
 
-import { useRef } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 
 import {
   BLEND_MODE_ADDITIVE,
@@ -12,7 +12,134 @@ import {
   RANDOM_BURST_COUNT,
 } from '../fluidPresets';
 
+const MAX_STATIONARY_SPLATS = 8;
+
+function clampStationarySplatCount(value) {
+  if (!Number.isFinite(value)) return 0;
+  return Math.max(0, Math.min(MAX_STATIONARY_SPLATS, Math.floor(value)));
+}
+
+function clamp01(value, fallback = 0.5) {
+  if (Number.isFinite(value)) {
+    return Math.max(0, Math.min(1, value));
+  }
+  return fallback;
+}
+
+function createRandomStationarySplat() {
+  return {
+    x: 0.1 + Math.random() * 0.8,
+    y: 0.1 + Math.random() * 0.8,
+  };
+}
+
+function getStationarySplatKey(index) {
+  return `stationarySplat${index + 1}Pos`;
+}
+
+function normalizeStationarySplat(point) {
+  return {
+    x: clamp01(point?.x),
+    y: clamp01(point?.y),
+  };
+}
+
+function getNormalizedStationarySplatsFromPreset(presetValues) {
+  const presetCount = clampStationarySplatCount(
+    presetValues?.stationarySplatCount ?? presetValues?.stationarySplats?.length
+  );
+  const presetSplats = Array.isArray(presetValues?.stationarySplats)
+    ? presetValues.stationarySplats
+    : [];
+
+  const next = [];
+  for (let i = 0; i < presetCount; i += 1) {
+    const presetPoint = presetSplats[i];
+    const point = presetPoint
+      ? normalizeStationarySplat(presetPoint)
+      : createRandomStationarySplat();
+    next.push(point);
+  }
+
+  return next;
+}
+
+function buildStationarySplatControlPatch(stationarySplats) {
+  return stationarySplats.reduce((acc, splat, index) => {
+    acc[getStationarySplatKey(index)] = {
+      x: clamp01(splat?.x),
+      y: clamp01(splat?.y),
+    };
+    return acc;
+  }, {});
+}
+
+function buildStationarySplatControls(stationarySplats, setStationarySplats) {
+  const controls = {};
+
+  for (let index = 0; index < MAX_STATIONARY_SPLATS; index += 1) {
+    const splat = stationarySplats[index] || { x: 0.5, y: 0.5 };
+    const key = getStationarySplatKey(index);
+    const labelIndex = index + 1;
+
+    controls[key] = {
+      label: `S${labelIndex} Pos`,
+      value: {
+        x: clamp01(splat?.x),
+        y: clamp01(splat?.y),
+      },
+      min: 0,
+      max: 1,
+      step: 0.001,
+      render: (get) => {
+        const count = clampStationarySplatCount(
+          get('Fluid.Interaction.StationarySplats.stationarySplatCount')
+        );
+        return index < count;
+      },
+      onChange: (nextPos) => {
+        setStationarySplats((prev) => {
+          if (!prev[index]) return prev;
+
+          const nextX = clamp01(nextPos?.x);
+          const nextY = clamp01(nextPos?.y);
+
+          if (prev[index].x === nextX && prev[index].y === nextY) return prev;
+
+          const next = [...prev];
+          next[index] = {
+            x: nextX,
+            y: nextY,
+          };
+          return next;
+        });
+      },
+    };
+  }
+
+  return controls;
+}
+
+function getStationarySplatsFromLeva(get, stationarySplatCount) {
+  const count = clampStationarySplatCount(stationarySplatCount);
+  const splats = [];
+
+  for (let i = 0; i < count; i += 1) {
+    const path = `Fluid.Interaction.StationarySplats.${getStationarySplatKey(i)}`;
+    const value = get(path);
+    splats.push({
+      x: clamp01(value?.x),
+      y: clamp01(value?.y),
+    });
+  }
+
+  return splats;
+}
+
 function copySettingsToClipboard(get) {
+  const stationarySplatCount = clampStationarySplatCount(
+    get('Fluid.Interaction.StationarySplats.stationarySplatCount')
+  );
   const settings = {
     paused: get('Fluid.Solver.paused'),
     simResolution: get('Fluid.Solver.simResolution'),
@@ -44,6 +171,7 @@ function copySettingsToClipboard(get) {
     stationarySplatCount: get(
       'Fluid.Interaction.StationarySplats.stationarySplatCount'
     ),
+    stationarySplats: getStationarySplatsFromLeva(get, stationarySplatCount),
     handsMaxHands: get('Fluid.Interaction.HandsInput.handsMaxHands'),
     handsShowVideo: get('Fluid.Interaction.HandsInput.handsShowVideo'),
     handsShowDebugSkeleton: get(
@@ -176,6 +304,30 @@ export default function useFluidControls({
   resetSimRef,
 }) {
   const setRef = useRef(null);
+  const [stationarySplats, setStationarySplats] = useState(() =>
+    getNormalizedStationarySplatsFromPreset(FLUID_PRESETS.default)
+  );
+
+  const applyPresetValues = (presetValues, presetKey) => {
+    if (!presetValues || !setRef.current) return;
+
+    const { stationarySplats: _stationarySplats, ...levaPresetValues } =
+      presetValues;
+
+    const normalizedStationarySplats =
+      getNormalizedStationarySplatsFromPreset(presetValues);
+    const stationarySplatCount = normalizedStationarySplats.length;
+
+    setStationarySplats(normalizedStationarySplats);
+    if (presetKey) {
+      presetRef.current = presetKey;
+    }
+
+    setRef.current({
+      ...levaPresetValues,
+      stationarySplatCount,
+    });
+  };
 
   const controls = useControls(
     'Fluid',
@@ -196,10 +348,7 @@ export default function useFluidControls({
           onChange: (value) => {
             const presetValues = FLUID_PRESETS[value];
             if (!presetValues) return;
-            if (setRef.current) {
-              presetRef.current = value;
-              setRef.current(presetValues);
-            }
+            applyPresetValues(presetValues, value);
           },
         },
         testMode: {
@@ -214,10 +363,7 @@ export default function useFluidControls({
             get('Fluid.Presets.preset') || presetRef.current || 'default';
           const nextPreset =
             FLUID_PRESETS[currentPresetKey] || FLUID_PRESETS.default;
-          if (nextPreset && setRef.current) {
-            presetRef.current = currentPresetKey;
-            setRef.current(nextPreset);
-          }
+          applyPresetValues(nextPreset, currentPresetKey);
         }),
         copySettings: button((get) => {
           copySettingsToClipboard(get);
@@ -480,6 +626,10 @@ export default function useFluidControls({
                 max: 8,
                 step: 1,
               },
+              ...buildStationarySplatControls(
+                stationarySplats,
+                setStationarySplats
+              ),
               debugStationarySplat: FLUID_PRESETS.default.debugStationarySplat,
               debugStationaryColor: FLUID_PRESETS.default.debugStationaryColor,
               debugStationarySize: {
@@ -677,7 +827,65 @@ export default function useFluidControls({
     { collapsed: true }
   );
 
-  setRef.current = controls[1];
+  const [controlValues, setControls] = controls;
 
-  return controls;
+  setRef.current = setControls;
+
+  useEffect(() => {
+    const desiredCount = clampStationarySplatCount(
+      controlValues.stationarySplatCount
+    );
+
+    setStationarySplats((prev) => {
+      if (prev.length === desiredCount) return prev;
+      const next = prev.slice(0, desiredCount);
+      while (next.length < desiredCount) {
+        next.push(createRandomStationarySplat());
+      }
+      return next;
+    });
+  }, [controlValues.stationarySplatCount]);
+
+  useEffect(() => {
+    if (!setRef.current) return;
+
+    const controlPatch = buildStationarySplatControlPatch(stationarySplats);
+    const registeredPatch = Object.entries(controlPatch).reduce(
+      (acc, [key, nextValue]) => {
+        if (!Object.prototype.hasOwnProperty.call(controlValues, key)) {
+          return acc;
+        }
+
+        const currentValue = controlValues[key];
+        const hasChanged =
+          !currentValue ||
+          currentValue.x !== nextValue.x ||
+          currentValue.y !== nextValue.y;
+
+        if (hasChanged) {
+          acc[key] = nextValue;
+        }
+
+        return acc;
+      },
+      {}
+    );
+
+    if (Object.keys(registeredPatch).length > 0) {
+      setRef.current(registeredPatch);
+    }
+  }, [controlValues, stationarySplats]);
+
+  const mergedControlValues = useMemo(() => {
+    const desiredCount = clampStationarySplatCount(
+      controlValues.stationarySplatCount
+    );
+
+    return {
+      ...controlValues,
+      stationarySplats: stationarySplats.slice(0, desiredCount),
+    };
+  }, [controlValues, stationarySplats]);
+
+  return [mergedControlValues, setControls];
 }

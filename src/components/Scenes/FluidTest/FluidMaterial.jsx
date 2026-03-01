@@ -66,13 +66,16 @@ const MATERIAL_DEFAULTS = {
   dyeStrength: 0.92,
   autoSplat: true,
   autoSplatStrength: 0.6,
+  autoSplatDyeStrength: 0.92,
   autoSplatForce: 2200,
   autoSplatRate: 100,
   autoSplatBurst: 2,
   autoSplatCount: 2,
   stationarySplatsEnabled: true,
   stationarySplatStrength: 0.35,
+  stationarySplatDyeStrength: 0.92,
   stationarySplatForce: 2200,
+  randomSplatDyeStrength: 0.92,
   stationarySplatDirectionStrength: 0,
   stationarySplatDirectionAngle: 180,
   stationarySplatCount: 8,
@@ -210,13 +213,16 @@ const FluidMaterial = forwardRef(
       dyeStrength,
       autoSplat,
       autoSplatStrength,
+      autoSplatDyeStrength,
       autoSplatForce,
       autoSplatRate,
       autoSplatBurst,
       autoSplatCount,
       stationarySplatsEnabled,
       stationarySplatStrength,
+      stationarySplatDyeStrength,
       stationarySplatForce,
+      randomSplatDyeStrength,
       stationarySplatDirectionStrength,
       stationarySplatDirectionAngle,
       stationarySplatCount,
@@ -885,11 +891,20 @@ const FluidMaterial = forwardRef(
         debugTarget = null,
         options = {}
       ) => {
-        const { applyVelocity = true, applyDye = true } = options;
+        const {
+          applyVelocity = true,
+          applyDye = true,
+          dyeStrengthOverride = dyeStrength,
+        } = options;
         const safePx = THREE.MathUtils.clamp(px, 0, 1);
         const safePy = THREE.MathUtils.clamp(py, 0, 1);
         const safeStrength = THREE.MathUtils.clamp(strength, 0, 3);
         const safeRadius = THREE.MathUtils.clamp(radius, 0.00001, 0.1);
+        const safeDyeStrength = THREE.MathUtils.clamp(
+          dyeStrengthOverride,
+          0,
+          3
+        );
         if (debugTarget === 'random') {
           writeDebugRandomContact(safePx, safePy);
         }
@@ -917,7 +932,7 @@ const FluidMaterial = forwardRef(
               THREE.MathUtils.clamp(rgb.g, 0, 1),
               THREE.MathUtils.clamp(rgb.b, 0, 1)
             )
-            .multiplyScalar(dyeStrength * safeStrength * DYE_COLOR_SCALE);
+            .multiplyScalar(safeDyeStrength * safeStrength * DYE_COLOR_SCALE);
           splatMat.uniforms.uColor.value.copy(forceRef.current);
           renderSimPass(splatMat, dye.write);
           dye.swap();
@@ -1073,7 +1088,11 @@ const FluidMaterial = forwardRef(
               autoForceY,
               autoSplatColorRef.current,
               autoStrength,
-              autoSplatRadius
+              autoSplatRadius,
+              null,
+              {
+                dyeStrengthOverride: autoSplatDyeStrength,
+              }
             );
 
             for (let i = 1; i < burstCount; i++) {
@@ -1095,7 +1114,11 @@ const FluidMaterial = forwardRef(
                 autoForceY * decay,
                 autoSplatColorRef.current,
                 autoStrength * decay * 0.55,
-                autoSplatRadius
+                autoSplatRadius,
+                null,
+                {
+                  dyeStrengthOverride: autoSplatDyeStrength,
+                }
               );
             }
           }
@@ -1166,7 +1189,11 @@ const FluidMaterial = forwardRef(
               stationaryForceY,
               autoSplatColorRef.current,
               strength,
-              stationarySplatRadius
+              stationarySplatRadius,
+              null,
+              {
+                dyeStrengthOverride: stationarySplatDyeStrength,
+              }
             );
           }
         }
@@ -1190,7 +1217,10 @@ const FluidMaterial = forwardRef(
               tint,
               randomSplat.strength,
               randomSplatRadius,
-              'random'
+              'random',
+              {
+                dyeStrengthOverride: randomSplatDyeStrength,
+              }
             );
           }
 

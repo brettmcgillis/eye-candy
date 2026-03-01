@@ -67,6 +67,8 @@ Long term vision / use cases:
 - [x] Bump auto/stationary splat max from 8 to 10.
 - [x] Move autosplat to start position when it changes.
 - [x] Can we implement direction on stationary splats?
+- [ ] Implement stationary debug markers
+- [x] Align Random burst controls with auto, stationary, pointer. Are we missing force, dye? What else?
 
 ## Polish / Presets / UX
 
@@ -74,4 +76,4 @@ Long term vision / use cases:
 - [x] Add support and preset for black‑ink‑on‑white.
 - [x] Update Leva controls to include labels so displayed text can be shorter.
 - [ ] Prepare a README so i dont forget how to use the various props for controlling the material behaviours.
-- [ ] Do a preset for black and red squares.
+- [ ] Update preset for black and red squares. Move config upto 1/3 mark

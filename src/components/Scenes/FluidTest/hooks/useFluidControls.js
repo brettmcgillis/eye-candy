@@ -33,6 +33,7 @@ const CONTROL_DEFAULTS = {
   dyeStrength: 0.92,
   autoSplat: true,
   autoSplatStrength: 0.6,
+  autoSplatDyeStrength: 0.92,
   autoSplatForce: 2200,
   autoSplatRate: 0,
   autoSplatRange: 1,
@@ -49,8 +50,11 @@ const CONTROL_DEFAULTS = {
     },
   ],
   randomSplatStrength: 1,
+  randomSplatDyeStrength: 0.92,
+  randomSplatForce: 2200,
   stationarySplatsEnabled: true,
   stationarySplatStrength: 0.35,
+  stationarySplatDyeStrength: 0.92,
   stationarySplatForce: 2200,
   stationarySplatDirectionStrength: 0,
   stationarySplatDirectionAngle: 180,
@@ -412,6 +416,9 @@ function copySettingsToClipboard(get) {
     testMode: get('Fluid.Presets.testMode'),
     autoSplat: get('Fluid.Interaction.AutoSplats.autoSplat'),
     autoSplatStrength: get('Fluid.Interaction.AutoSplats.autoSplatStrength'),
+    autoSplatDyeStrength: get(
+      'Fluid.Interaction.AutoSplats.autoSplatDyeStrength'
+    ),
     autoSplatForce: get('Fluid.Interaction.AutoSplats.autoSplatForce'),
     autoSplatRate: get('Fluid.Interaction.AutoSplats.autoSplatRate'),
     autoSplatRange: get('Fluid.Interaction.AutoSplats.autoSplatRange'),
@@ -421,11 +428,18 @@ function copySettingsToClipboard(get) {
     randomSplatStrength: get(
       'Fluid.Interaction.RandomBurst.randomSplatStrength'
     ),
+    randomSplatDyeStrength: get(
+      'Fluid.Interaction.RandomBurst.randomSplatDyeStrength'
+    ),
+    randomSplatForce: get('Fluid.Interaction.RandomBurst.randomSplatForce'),
     stationarySplatsEnabled: get(
       'Fluid.Interaction.StationarySplats.stationarySplatsEnabled'
     ),
     stationarySplatStrength: get(
       'Fluid.Interaction.StationarySplats.stationarySplatStrength'
+    ),
+    stationarySplatDyeStrength: get(
+      'Fluid.Interaction.StationarySplats.stationarySplatDyeStrength'
     ),
     stationarySplatForce: get(
       'Fluid.Interaction.StationarySplats.stationarySplatForce'
@@ -614,10 +628,26 @@ export default function useFluidControls({ randomSplatQueueRef, resetSimRef }) {
         presetValues.randomSplatRadius ??
         presetValues.splatRadius ??
         CONTROL_DEFAULTS.randomSplatRadius,
+      randomSplatDyeStrength:
+        presetValues.randomSplatDyeStrength ??
+        presetValues.dyeStrength ??
+        CONTROL_DEFAULTS.randomSplatDyeStrength,
+      randomSplatForce:
+        presetValues.randomSplatForce ??
+        presetValues.splatForce ??
+        CONTROL_DEFAULTS.randomSplatForce,
       autoSplatForce:
         presetValues.autoSplatForce ??
         presetValues.splatForce ??
         CONTROL_DEFAULTS.autoSplatForce,
+      autoSplatDyeStrength:
+        presetValues.autoSplatDyeStrength ??
+        presetValues.dyeStrength ??
+        CONTROL_DEFAULTS.autoSplatDyeStrength,
+      stationarySplatDyeStrength:
+        presetValues.stationarySplatDyeStrength ??
+        presetValues.dyeStrength ??
+        CONTROL_DEFAULTS.stationarySplatDyeStrength,
       stationarySplatDirectionStrength:
         presetValues.stationarySplatDirectionStrength ??
         CONTROL_DEFAULTS.stationarySplatDirectionStrength,
@@ -733,13 +763,6 @@ export default function useFluidControls({ randomSplatQueueRef, resetSimRef }) {
       ),
       Interaction: folder(
         {
-          debugContactFadeDuration: {
-            label: 'Debug Fade (s)',
-            value: CONTROL_DEFAULTS.debugContactFadeDuration,
-            min: 0,
-            max: 5,
-            step: 0.01,
-          },
           PointerTouch: folder(
             {
               inputMode: {
@@ -750,12 +773,12 @@ export default function useFluidControls({ randomSplatQueueRef, resetSimRef }) {
                   Hands: 'hands',
                 },
               },
-              splatRadius: {
-                label: 'Radius',
-                value: CONTROL_DEFAULTS.splatRadius,
-                min: 0.0005,
-                max: 0.02,
-                step: 0.0001,
+              dyeStrength: {
+                label: 'Dye',
+                value: CONTROL_DEFAULTS.dyeStrength,
+                min: 0.05,
+                max: 2.5,
+                step: 0.01,
               },
               splatForce: {
                 label: 'Force',
@@ -764,12 +787,12 @@ export default function useFluidControls({ randomSplatQueueRef, resetSimRef }) {
                 max: 12000,
                 step: 50,
               },
-              dyeStrength: {
-                label: 'Dye',
-                value: CONTROL_DEFAULTS.dyeStrength,
-                min: 0.05,
-                max: 2.5,
-                step: 0.01,
+              splatRadius: {
+                label: 'Radius',
+                value: CONTROL_DEFAULTS.splatRadius,
+                min: 0.0005,
+                max: 0.02,
+                step: 0.0001,
               },
               debugCursor: {
                 value: CONTROL_DEFAULTS.debugCursor,
@@ -824,10 +847,6 @@ export default function useFluidControls({ randomSplatQueueRef, resetSimRef }) {
                 step: 1,
               },
               handsShowVideo: { value: false, label: 'Show Video' },
-              handsShowDebugSkeleton: {
-                value: false,
-                label: 'Show Skeleton',
-              },
               handsLandmarkColor: { value: '#FF3366', label: 'Point Color' },
               handsConnectorColor: {
                 value: '#00FFAA',
@@ -892,6 +911,10 @@ export default function useFluidControls({ randomSplatQueueRef, resetSimRef }) {
               handsInvertX: { value: false, label: 'Invert X' },
               handsInvertY: { value: false, label: 'Invert Y' },
               gesturesEnabled: { value: true, label: 'Gestures' },
+              handsShowDebugSkeleton: {
+                value: false,
+                label: 'Show Skeleton',
+              },
             },
             { collapsed: true }
           ),
@@ -903,6 +926,13 @@ export default function useFluidControls({ randomSplatQueueRef, resetSimRef }) {
                 value: CONTROL_DEFAULTS.autoSplatStrength,
                 min: 0,
                 max: 1,
+                step: 0.01,
+              },
+              autoSplatDyeStrength: {
+                label: 'Dye',
+                value: CONTROL_DEFAULTS.autoSplatDyeStrength,
+                min: 0,
+                max: 2.5,
                 step: 0.01,
               },
               autoSplatForce: {
@@ -1007,6 +1037,13 @@ export default function useFluidControls({ randomSplatQueueRef, resetSimRef }) {
                 max: 1,
                 step: 0.01,
               },
+              stationarySplatDyeStrength: {
+                label: 'Dye',
+                value: CONTROL_DEFAULTS.stationarySplatDyeStrength,
+                min: 0,
+                max: 2.5,
+                step: 0.01,
+              },
               stationarySplatForce: {
                 label: 'Force',
                 value: CONTROL_DEFAULTS.stationarySplatForce,
@@ -1098,6 +1135,20 @@ export default function useFluidControls({ randomSplatQueueRef, resetSimRef }) {
                 max: 2,
                 step: 0.01,
               },
+              randomSplatDyeStrength: {
+                label: 'Dye',
+                value: CONTROL_DEFAULTS.randomSplatDyeStrength,
+                min: 0,
+                max: 2.5,
+                step: 0.01,
+              },
+              randomSplatForce: {
+                label: 'Force',
+                value: CONTROL_DEFAULTS.randomSplatForce,
+                min: 100,
+                max: 12000,
+                step: 50,
+              },
               randomSplatRadius: {
                 label: 'Radius',
                 value: CONTROL_DEFAULTS.randomSplatRadius,
@@ -1105,6 +1156,12 @@ export default function useFluidControls({ randomSplatQueueRef, resetSimRef }) {
                 max: 0.02,
                 step: 0.0001,
               },
+              randomBurst: button(() => {
+                if (randomSplatQueueRef) {
+                  // eslint-disable-next-line no-param-reassign
+                  randomSplatQueueRef.current += RANDOM_BURST_COUNT;
+                }
+              }),
               debugRandomBurst: {
                 value: CONTROL_DEFAULTS.debugRandomBurst,
                 label: 'Debug',
@@ -1145,15 +1202,16 @@ export default function useFluidControls({ randomSplatQueueRef, resetSimRef }) {
                 max: 45,
                 step: 1,
               },
-              randomBurst: button(() => {
-                if (randomSplatQueueRef) {
-                  // eslint-disable-next-line no-param-reassign
-                  randomSplatQueueRef.current += RANDOM_BURST_COUNT;
-                }
-              }),
             },
             { collapsed: true }
           ),
+          debugContactFadeDuration: {
+            label: 'Debug Fade (s)',
+            value: CONTROL_DEFAULTS.debugContactFadeDuration,
+            min: 0,
+            max: 5,
+            step: 0.01,
+          },
         },
         { collapsed: true }
       ),

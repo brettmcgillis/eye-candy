@@ -47,6 +47,8 @@ const CONTROL_DEFAULTS = {
   randomSplatStrength: 1,
   stationarySplatsEnabled: true,
   stationarySplatStrength: 0.35,
+  stationarySplatDirectionStrength: 0,
+  stationarySplatDirectionAngle: 180,
   stationarySplatCount: 8,
   shading: true,
   bloom: true,
@@ -414,6 +416,12 @@ function copySettingsToClipboard(get) {
     stationarySplatStrength: get(
       'Fluid.Interaction.StationarySplats.stationarySplatStrength'
     ),
+    stationarySplatDirectionStrength: get(
+      'Fluid.Interaction.StationarySplats.stationarySplatDirectionStrength'
+    ),
+    stationarySplatDirectionAngle: get(
+      'Fluid.Interaction.StationarySplats.stationarySplatDirectionAngle'
+    ),
     stationarySplatCount: get(
       'Fluid.Interaction.StationarySplats.stationarySplatCount'
     ),
@@ -580,6 +588,12 @@ export default function useFluidControls({ randomSplatQueueRef, resetSimRef }) {
 
     setRef.current({
       ...levaPresetValues,
+      stationarySplatDirectionStrength:
+        presetValues.stationarySplatDirectionStrength ??
+        CONTROL_DEFAULTS.stationarySplatDirectionStrength,
+      stationarySplatDirectionAngle:
+        presetValues.stationarySplatDirectionAngle ??
+        CONTROL_DEFAULTS.stationarySplatDirectionAngle,
       autoSplatCount,
       stationarySplatCount,
     });
@@ -881,6 +895,18 @@ export default function useFluidControls({ randomSplatQueueRef, resetSimRef }) {
                 min: 0,
                 max: 1,
                 step: 0.01,
+              },
+              stationarySplatDirectionStrength: {
+                value: CONTROL_DEFAULTS.stationarySplatDirectionStrength,
+                min: 0,
+                max: 1,
+                step: 0.01,
+              },
+              stationarySplatDirectionAngle: {
+                value: CONTROL_DEFAULTS.stationarySplatDirectionAngle,
+                min: 0,
+                max: 360,
+                step: 1,
               },
               stationarySplatCount: {
                 value: CONTROL_DEFAULTS.stationarySplatCount,

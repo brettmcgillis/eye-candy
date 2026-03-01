@@ -68,6 +68,8 @@ const MATERIAL_DEFAULTS = {
   autoSplatCount: 2,
   stationarySplatsEnabled: true,
   stationarySplatStrength: 0.35,
+  stationarySplatDirectionStrength: 0,
+  stationarySplatDirectionAngle: 180,
   stationarySplatCount: 8,
   shading: true,
   bloom: true,
@@ -205,6 +207,8 @@ const FluidMaterial = forwardRef(
       autoSplatCount,
       stationarySplatsEnabled,
       stationarySplatStrength,
+      stationarySplatDirectionStrength,
+      stationarySplatDirectionAngle,
       stationarySplatCount,
       shading,
       bloom,
@@ -1083,6 +1087,18 @@ const FluidMaterial = forwardRef(
         }
 
         if (stationarySplatsEnabled && stationaryPointers.length > 0) {
+          const directionForceScale = THREE.MathUtils.clamp(
+            stationarySplatDirectionStrength,
+            0,
+            1
+          );
+          const directionAngleRadians =
+            (stationarySplatDirectionAngle * Math.PI) / 180;
+          const stationaryForceX =
+            Math.cos(directionAngleRadians) * splatForce * directionForceScale;
+          const stationaryForceY =
+            Math.sin(directionAngleRadians) * splatForce * directionForceScale;
+
           for (let i = 0; i < stationaryPointers.length; i += 1) {
             const sp = stationaryPointers[i] || {};
             const phase = t * (0.7 + Math.max(0, colorCycleSpeed || 0) * 0.5);
@@ -1124,7 +1140,14 @@ const FluidMaterial = forwardRef(
             const py = sp.y ?? 0.5;
             const strength = 0.12 * stationarySplatStrength * 0.75;
 
-            splatAt(px, py, 0, 0, autoSplatColorRef.current, strength);
+            splatAt(
+              px,
+              py,
+              stationaryForceX,
+              stationaryForceY,
+              autoSplatColorRef.current,
+              strength
+            );
           }
         }
 

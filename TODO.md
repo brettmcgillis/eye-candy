@@ -39,7 +39,8 @@
 
 ### SCENES
 
-- [ ] Hoist Cardinals (mobile) and Watercolor Squares (mobile) out of Fluid Test and into dedicated scenes at the App level. Consider: Does watercolor squares override controls to provide consistent appearance across viewport sizes?
+- [ ] Hoist Cardinals (mobile) out of Fluid Test and into dedicated scene at the App level.
+- [ ] Hoist Watercolor Squares (mobile) out of Fluid Test and into dedicated scene at the App level. Include Blue variant as preset. Consider: Does watercolor squares override controls to provide consistent appearance across viewport sizes?
 
 ### Scene TODO Files
 

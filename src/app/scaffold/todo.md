@@ -12,7 +12,8 @@
 - [x] show emojis contextually.
 - [x] change positions when on mobile
 - [x] update leva theme
-- [ ] Add query param to increase top bottom padding on overlay containers for ig posts.
+- [x] Add query param to increase top bottom padding on overlay containers for ig posts.
+- [ ] Add query param for hide overlay, with hotkey combo to reveal.
 
 ## // NoScene
 

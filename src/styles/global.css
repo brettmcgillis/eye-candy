@@ -7,6 +7,24 @@
   inset: 0;
   pointer-events: none;
   z-index: 9999;
+
+  --overlay-ig-top-offset: 0px;
+  --overlay-ig-bottom-offset: 0px;
+}
+
+.overlay:where(.overlay-ig-story) {
+  --overlay-ig-top-offset: var(--overlay-ig-story-top-offset);
+  --overlay-ig-bottom-offset: var(--overlay-ig-story-bottom-offset);
+}
+
+.overlay:where(.overlay-ig-reel) {
+  --overlay-ig-top-offset: var(--overlay-ig-reel-top-offset);
+  --overlay-ig-bottom-offset: var(--overlay-ig-reel-bottom-offset);
+}
+
+.overlay:where(.overlay-ig-post) {
+  --overlay-ig-top-offset: var(--overlay-ig-post-top-offset);
+  --overlay-ig-bottom-offset: var(--overlay-ig-post-bottom-offset);
 }
 
 /* -------------------------------- */
@@ -45,23 +63,29 @@
 
 /* corners */
 
-.top-left {
+.top-left,
+.top-right {
   top: var(--overlay-inset);
+}
+
+.bottom-left,
+.bottom-right {
+  bottom: var(--overlay-inset);
+}
+
+.top-left {
   left: var(--overlay-inset);
 }
 
 .top-right {
-  top: var(--overlay-inset);
   right: var(--overlay-inset);
 }
 
 .bottom-left {
-  bottom: var(--overlay-inset);
   left: var(--overlay-inset);
 }
 
 .bottom-right {
-  bottom: var(--overlay-inset);
   right: var(--overlay-inset);
 }
 
@@ -127,23 +151,29 @@
     font-size: 13px;
   }
 
+  .top-left,
+  .top-right {
+    top: calc(var(--overlay-inset-mobile) + var(--overlay-ig-top-offset));
+  }
+
+  .bottom-left,
+  .bottom-right {
+    bottom: calc(var(--overlay-inset-mobile) + var(--overlay-ig-bottom-offset));
+  }
+
   .top-left {
-    top: var(--overlay-inset-mobile);
     left: var(--overlay-inset-mobile);
   }
 
   .top-right {
-    top: var(--overlay-inset-mobile);
     right: var(--overlay-inset-mobile);
   }
 
   .bottom-left {
-    bottom: var(--overlay-inset-mobile);
     left: var(--overlay-inset-mobile);
   }
 
   .bottom-right {
-    bottom: var(--overlay-inset-mobile);
     right: var(--overlay-inset-mobile);
   }
 

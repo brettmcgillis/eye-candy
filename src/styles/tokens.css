@@ -2,6 +2,15 @@
   --overlay-inset: 5em;
   --overlay-inset-mobile: 1rem;
 
+  --overlay-ig-story-top-offset: 3.25rem;
+  --overlay-ig-story-bottom-offset: 4rem;
+
+  --overlay-ig-reel-top-offset: 3.25rem;
+  --overlay-ig-reel-bottom-offset: 4rem;
+
+  --overlay-ig-post-top-offset: 5rem;
+  --overlay-ig-post-bottom-offset: 5rem;
+
   --overlay-bg: #ffffff;
   --overlay-bg-2: #dedede;
   --overlay-fg: #000000;

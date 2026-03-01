@@ -941,7 +941,8 @@ export default function useFluidControls({ randomSplatQueueRef, resetSimRef }) {
           label: 'Preset',
           value: INITIAL_PRESET_KEY,
           options: {
-            'Watercolor Squares (Mobile)': 'watercolorSquares',
+            'Watercolor (Mobile)': 'watercolorSquares',
+            'Watercolor Blue  (Mobile)': 'watercolorSquares_blue',
             'Cardinals (Mobile)': 'cardinalsMobile',
             'Ink on Paper': 'inkOnPaper',
             Freon: 'freon',

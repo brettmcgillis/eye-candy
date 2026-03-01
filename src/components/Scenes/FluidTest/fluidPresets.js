@@ -8,7 +8,7 @@ const BLEND_MODE_MULTIPLY = 1;
 const BLEND_MODE_SUBTRACTIVE = 2;
 
 const FLUID_PRESETS = {
-  cardinals: {
+  test: {
     paused: false,
     simResolution: 1,
     pressureRelax: 1,
@@ -986,13 +986,13 @@ const FLUID_PRESETS = {
     simResolution: 0.98,
     pressureRelax: 0.84,
     pressureIterations: 14,
-    vorticity: 2,
+    vorticity: 54,
     velocityDissipation: 0.4,
     densityDissipation: 1.6,
     splatRadius: 0.0005,
     autoSplatRadius: 0.0005,
     stationarySplatRadius: 0.0005,
-    randomSplatRadius: 0.0022,
+    randomSplatRadius: 0.002\2,
     splatForce: 4200,
     dyeStrength: 0.25,
     inputMode: 'pointer',
@@ -1028,10 +1028,6 @@ const FLUID_PRESETS = {
     stationarySplats: [
       {
         x: 0.5,
-        y: 0.35,
-      },
-      {
-        x: 0.5,
         y: 0.45,
       },
       {
@@ -1043,8 +1039,8 @@ const FLUID_PRESETS = {
         y: 0.65,
       },
       {
-        x: 0.4,
-        y: 0.4,
+        x: 0.5,
+        y: 0.75,
       },
       {
         x: 0.4,
@@ -1055,8 +1051,8 @@ const FLUID_PRESETS = {
         y: 0.6,
       },
       {
-        x: 0.6,
-        y: 0.4,
+        x: 0.4,
+        y: 0.7,
       },
       {
         x: 0.6,
@@ -1065,6 +1061,10 @@ const FLUID_PRESETS = {
       {
         x: 0.6,
         y: 0.6,
+      },
+      {
+        x: 0.6,
+        y: 0.7,
       },
     ],
     stationaryDebugMarkersEnabled: true,
@@ -1072,10 +1072,6 @@ const FLUID_PRESETS = {
     stationaryDebugMarkers: [
       {
         x: 0.5,
-        y: 0.4,
-      },
-      {
-        x: 0.5,
         y: 0.5,
       },
       {
@@ -1083,20 +1079,24 @@ const FLUID_PRESETS = {
         y: 0.6,
       },
       {
-        x: 0.4,
-        y: 0.45,
+        x: 0.5,
+        y: 0.7,
       },
       {
         x: 0.4,
         y: 0.55,
       },
       {
-        x: 0.6,
-        y: 0.45,
+        x: 0.4,
+        y: 0.65,
       },
       {
         x: 0.6,
         y: 0.55,
+      },
+      {
+        x: 0.6,
+        y: 0.65,
       },
     ],
     handsMaxHands: 1,

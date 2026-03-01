@@ -17,8 +17,8 @@
 
 ## // NoScene
 
-- [ ] Remove skull emoji
-- [ ] Fix faded png
-- [ ] Add bret.png, turboflex.png
-- [ ] Cycle pngs randomly
-- [ ] Can we hide behind Suspense & Loader until png is ready?
+- [x] Remove skull emoji
+- [x] Fix opaque png
+- [x] Add bret.png, turboflex.png
+- [x] Cycle pngs randomly
+- [x] Can we hide behind Suspense & Loader until png is ready?

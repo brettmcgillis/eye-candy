@@ -992,7 +992,7 @@ const FLUID_PRESETS = {
     splatRadius: 0.0005,
     autoSplatRadius: 0.0005,
     stationarySplatRadius: 0.0005,
-    randomSplatRadius: 0.002\2,
+    randomSplatRadius: 0.0022,
     splatForce: 4200,
     dyeStrength: 0.25,
     inputMode: 'pointer',

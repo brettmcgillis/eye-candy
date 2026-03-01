@@ -17,6 +17,7 @@ const MAX_STATIONARY_SPLATS = 10;
 const MAX_STATIONARY_DEBUG_MARKERS = 10;
 const MAX_AUTO_SPLATS = 10;
 const INITIAL_PRESET_KEY = 'watercolorSquares';
+const PRESET_QUERY_PARAM = 'preset';
 
 const CONTROL_DEFAULTS = {
   paused: false,
@@ -198,8 +199,19 @@ const CONTROL_DEFAULTS = {
   ],
 };
 
-const INITIAL_PRESET_VALUES =
-  FLUID_PRESETS[INITIAL_PRESET_KEY] || CONTROL_DEFAULTS;
+function getPresetFromQuery() {
+  if (typeof window === 'undefined') return null;
+  const params = new URLSearchParams(window.location.search);
+  return params.get(PRESET_QUERY_PARAM);
+}
+
+function getInitialPresetKey() {
+  const requestedPreset = getPresetFromQuery();
+  if (requestedPreset && FLUID_PRESETS[requestedPreset]) {
+    return requestedPreset;
+  }
+  return INITIAL_PRESET_KEY;
+}
 
 function clampStationarySplatCount(value) {
   if (!Number.isFinite(value)) return 0;
@@ -785,18 +797,25 @@ function copySettingsToClipboard(get) {
 }
 
 export default function useFluidControls({ randomSplatQueueRef, resetSimRef }) {
+  const initialPresetKey = useMemo(() => getInitialPresetKey(), []);
+  const initialPresetValues = useMemo(
+    () => FLUID_PRESETS[initialPresetKey] || CONTROL_DEFAULTS,
+    [initialPresetKey]
+  );
+
   const setRef = useRef(null);
-  const currentPresetRef = useRef(INITIAL_PRESET_KEY);
+  const currentPresetRef = useRef(initialPresetKey);
   const initializedPresetRef = useRef(false);
+  const [activePresetKey, setActivePresetKey] = useState(initialPresetKey);
   const [presetInitialized, setPresetInitialized] = useState(false);
   const [autoSplatStarts, setAutoSplatStarts] = useState(() =>
-    getNormalizedAutoSplatStartsFromPreset(INITIAL_PRESET_VALUES)
+    getNormalizedAutoSplatStartsFromPreset(initialPresetValues)
   );
   const [stationarySplats, setStationarySplats] = useState(() =>
-    getNormalizedStationarySplatsFromPreset(INITIAL_PRESET_VALUES)
+    getNormalizedStationarySplatsFromPreset(initialPresetValues)
   );
   const [stationaryDebugMarkers, setStationaryDebugMarkers] = useState(() =>
-    getNormalizedStationaryDebugMarkersFromPreset(INITIAL_PRESET_VALUES)
+    getNormalizedStationaryDebugMarkersFromPreset(initialPresetValues)
   );
 
   const applyPresetValues = (presetValues, presetKey) => {
@@ -830,6 +849,7 @@ export default function useFluidControls({ randomSplatQueueRef, resetSimRef }) {
     setStationaryDebugMarkers(normalizedStationaryDebugMarkers);
     if (presetKey) {
       currentPresetRef.current = presetKey;
+      setActivePresetKey(presetKey);
     }
 
     setRef.current({
@@ -939,7 +959,7 @@ export default function useFluidControls({ randomSplatQueueRef, resetSimRef }) {
       Presets: folder({
         preset: {
           label: 'Preset',
-          value: INITIAL_PRESET_KEY,
+          value: initialPresetKey,
           options: {
             'Watercolor (Mobile)': 'watercolorSquares',
             'Watercolor Blue  (Mobile)': 'watercolorSquares_blue',
@@ -1685,10 +1705,22 @@ export default function useFluidControls({ randomSplatQueueRef, resetSimRef }) {
   useEffect(() => {
     if (initializedPresetRef.current || !setRef.current) return;
 
-    applyPresetValues(INITIAL_PRESET_VALUES, INITIAL_PRESET_KEY);
+    applyPresetValues(initialPresetValues, initialPresetKey);
     initializedPresetRef.current = true;
     setPresetInitialized(true);
-  }, []);
+  }, [initialPresetKey, initialPresetValues]);
+
+  useEffect(() => {
+    if (typeof window === 'undefined') return;
+
+    const presetKey =
+      activePresetKey || currentPresetRef.current || initialPresetKey;
+    if (!presetKey || !FLUID_PRESETS[presetKey]) return;
+
+    const params = new URLSearchParams(window.location.search);
+    params.set(PRESET_QUERY_PARAM, presetKey);
+    window.history.replaceState({}, '', `?${params.toString()}`);
+  }, [activePresetKey, initialPresetKey]);
 
   useEffect(() => {
     if (!presetInitialized) return;

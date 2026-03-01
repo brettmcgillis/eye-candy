@@ -66,11 +66,13 @@ const MATERIAL_DEFAULTS = {
   dyeStrength: 0.92,
   autoSplat: true,
   autoSplatStrength: 0.6,
+  autoSplatForce: 2200,
   autoSplatRate: 100,
   autoSplatBurst: 2,
   autoSplatCount: 2,
   stationarySplatsEnabled: true,
   stationarySplatStrength: 0.35,
+  stationarySplatForce: 2200,
   stationarySplatDirectionStrength: 0,
   stationarySplatDirectionAngle: 180,
   stationarySplatCount: 8,
@@ -208,11 +210,13 @@ const FluidMaterial = forwardRef(
       dyeStrength,
       autoSplat,
       autoSplatStrength,
+      autoSplatForce,
       autoSplatRate,
       autoSplatBurst,
       autoSplatCount,
       stationarySplatsEnabled,
       stationarySplatStrength,
+      stationarySplatForce,
       stationarySplatDirectionStrength,
       stationarySplatDirectionAngle,
       stationarySplatCount,
@@ -1015,11 +1019,11 @@ const FluidMaterial = forwardRef(
               Math.hypot(ap.vx || 0, ap.vy || 0) * 140
             );
             let autoForceX =
-              (ap.vx || 0) * splatForce * autoSplatStrength * 1.4;
+              (ap.vx || 0) * autoSplatForce * autoSplatStrength * 1.4;
             let autoForceY =
-              (ap.vy || 0) * splatForce * autoSplatStrength * 1.4;
+              (ap.vy || 0) * autoSplatForce * autoSplatStrength * 1.4;
             if (autoSplatRate > 0) {
-              const minForce = splatForce * autoSplatStrength * 0.0018;
+              const minForce = autoSplatForce * autoSplatStrength * 0.0018;
               if (Math.hypot(autoForceX, autoForceY) < minForce) {
                 autoForceX += Math.cos(phase * 1.9) * minForce;
                 autoForceY += Math.sin(phase * 1.9) * minForce;
@@ -1106,9 +1110,13 @@ const FluidMaterial = forwardRef(
           const directionAngleRadians =
             (stationarySplatDirectionAngle * Math.PI) / 180;
           const stationaryForceX =
-            Math.cos(directionAngleRadians) * splatForce * directionForceScale;
+            Math.cos(directionAngleRadians) *
+            stationarySplatForce *
+            directionForceScale;
           const stationaryForceY =
-            Math.sin(directionAngleRadians) * splatForce * directionForceScale;
+            Math.sin(directionAngleRadians) *
+            stationarySplatForce *
+            directionForceScale;
 
           for (let i = 0; i < stationaryPointers.length; i += 1) {
             const sp = stationaryPointers[i] || {};

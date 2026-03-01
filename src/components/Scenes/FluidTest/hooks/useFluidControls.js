@@ -33,6 +33,7 @@ const CONTROL_DEFAULTS = {
   dyeStrength: 0.92,
   autoSplat: true,
   autoSplatStrength: 0.6,
+  autoSplatForce: 2200,
   autoSplatRate: 0,
   autoSplatRange: 1,
   autoSplatBurst: 2,
@@ -50,6 +51,7 @@ const CONTROL_DEFAULTS = {
   randomSplatStrength: 1,
   stationarySplatsEnabled: true,
   stationarySplatStrength: 0.35,
+  stationarySplatForce: 2200,
   stationarySplatDirectionStrength: 0,
   stationarySplatDirectionAngle: 180,
   stationarySplatCount: 8,
@@ -410,6 +412,7 @@ function copySettingsToClipboard(get) {
     testMode: get('Fluid.Presets.testMode'),
     autoSplat: get('Fluid.Interaction.AutoSplats.autoSplat'),
     autoSplatStrength: get('Fluid.Interaction.AutoSplats.autoSplatStrength'),
+    autoSplatForce: get('Fluid.Interaction.AutoSplats.autoSplatForce'),
     autoSplatRate: get('Fluid.Interaction.AutoSplats.autoSplatRate'),
     autoSplatRange: get('Fluid.Interaction.AutoSplats.autoSplatRange'),
     autoSplatBurst: get('Fluid.Interaction.AutoSplats.autoSplatBurst'),
@@ -423,6 +426,9 @@ function copySettingsToClipboard(get) {
     ),
     stationarySplatStrength: get(
       'Fluid.Interaction.StationarySplats.stationarySplatStrength'
+    ),
+    stationarySplatForce: get(
+      'Fluid.Interaction.StationarySplats.stationarySplatForce'
     ),
     stationarySplatDirectionStrength: get(
       'Fluid.Interaction.StationarySplats.stationarySplatDirectionStrength'
@@ -608,12 +614,20 @@ export default function useFluidControls({ randomSplatQueueRef, resetSimRef }) {
         presetValues.randomSplatRadius ??
         presetValues.splatRadius ??
         CONTROL_DEFAULTS.randomSplatRadius,
+      autoSplatForce:
+        presetValues.autoSplatForce ??
+        presetValues.splatForce ??
+        CONTROL_DEFAULTS.autoSplatForce,
       stationarySplatDirectionStrength:
         presetValues.stationarySplatDirectionStrength ??
         CONTROL_DEFAULTS.stationarySplatDirectionStrength,
       stationarySplatDirectionAngle:
         presetValues.stationarySplatDirectionAngle ??
         CONTROL_DEFAULTS.stationarySplatDirectionAngle,
+      stationarySplatForce:
+        presetValues.stationarySplatForce ??
+        presetValues.splatForce ??
+        CONTROL_DEFAULTS.stationarySplatForce,
       autoSplatCount,
       stationarySplatCount,
     });
@@ -891,6 +905,13 @@ export default function useFluidControls({ randomSplatQueueRef, resetSimRef }) {
                 max: 1,
                 step: 0.01,
               },
+              autoSplatForce: {
+                label: 'Force',
+                value: CONTROL_DEFAULTS.autoSplatForce,
+                min: 100,
+                max: 12000,
+                step: 50,
+              },
               autoSplatRadius: {
                 label: 'Radius',
                 value: CONTROL_DEFAULTS.autoSplatRadius,
@@ -985,6 +1006,13 @@ export default function useFluidControls({ randomSplatQueueRef, resetSimRef }) {
                 min: 0,
                 max: 1,
                 step: 0.01,
+              },
+              stationarySplatForce: {
+                label: 'Force',
+                value: CONTROL_DEFAULTS.stationarySplatForce,
+                min: 100,
+                max: 12000,
+                step: 50,
               },
               stationarySplatRadius: {
                 label: 'Radius',

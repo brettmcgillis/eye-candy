@@ -28,19 +28,29 @@ function createPointerState() {
   };
 }
 
-function sampleAutoCursor(phase, range, ap = {}) {
+function clamp01(value, fallback = 0.5) {
+  if (Number.isFinite(value)) {
+    return Math.max(0, Math.min(1, value));
+  }
+  return fallback;
+}
+
+function sampleAutoCursor(phase, range, ap = {}, center = { x: 0.5, y: 0.5 }) {
   const aMul = (ap.freqMul && ap.freqMul.a) || 0.97;
   const bMul = (ap.freqMul && ap.freqMul.b) || 0.41;
   const cMul = (ap.freqMul && ap.freqMul.c) || 1.81;
   const amp = (ap.ampMul || 1) * Math.max(0, range || 1.0);
 
+  const centerX = clamp01(center?.x);
+  const centerY = clamp01(center?.y);
+
   const x =
-    0.5 +
+    centerX +
     Math.sin(phase * aMul) * 0.26 * amp +
     Math.sin(phase * bMul + 1.4) * 0.13 * amp +
     Math.sin(phase * cMul + 0.3) * 0.05 * amp;
   const y =
-    0.5 +
+    centerY +
     Math.cos(phase * (1.13 * aMul)) * 0.24 * amp +
     Math.cos(phase * (0.53 * bMul) + 2.0) * 0.12 * amp +
     Math.cos(phase * (1.47 * cMul) + 0.9) * 0.05 * amp;
@@ -67,6 +77,7 @@ export default function useFluidAutoPointers({ config, size }) {
       autoSplatRate,
       autoSplatRange,
       autoSplatCount,
+      autoSplatStarts,
       colorCycleSpeed,
       debugContactFadeDuration,
     } = config;
@@ -92,18 +103,25 @@ export default function useFluidAutoPointers({ config, size }) {
         } else {
           ap.ttl = Math.max(0, (ap.ttl || 0) - dt);
 
+          const configuredStart = autoSplatStarts?.[i] || { x: 0.5, y: 0.5 };
+          const startX = clamp01(configuredStart?.x);
+          const startY = clamp01(configuredStart?.y);
+
           if (typeof ap.phase !== 'number') {
             ap.phase = Math.random() * Math.PI * 4;
           }
           ap.phase += dt * basePathSpeed * (ap.pathSpeedMul || 1) * rateScale;
 
           const phase = ap.phase + (ap.seed || 0);
-          const target = sampleAutoCursor(phase, autoSplatRange, ap);
+          const target = sampleAutoCursor(phase, autoSplatRange, ap, {
+            x: startX,
+            y: startY,
+          });
 
           if (!ap.initialized) {
             ap.initialized = true;
-            ap.x = target.x + ((ap.jitterOffset && ap.jitterOffset.x) || 0);
-            ap.y = target.y + ((ap.jitterOffset && ap.jitterOffset.y) || 0);
+            ap.x = startX;
+            ap.y = startY;
           }
 
           const rate = autoSplatRate;

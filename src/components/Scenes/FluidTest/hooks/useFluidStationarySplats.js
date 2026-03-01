@@ -2,7 +2,7 @@ import * as THREE from 'three';
 
 import { useEffect, useRef } from 'react';
 
-const MAX_STATIONARY_SPLATS = 8;
+const MAX_STATIONARY_SPLATS = 10;
 
 function clamp01(value, fallback = 0.5) {
   if (Number.isFinite(value)) {

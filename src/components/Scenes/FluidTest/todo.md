@@ -63,6 +63,9 @@ Long term vision / use cases:
 - [x] Add controls for the appearance of the debug markers shown around the random splats. Add controls for random splat strength,
 - [x] Add toggle, fill debug marker, to all the contact point folders, to allow for filling debug markers discretely per contact type
 - [ ] Add a background color or gradient to show behind the sphere in 3d mode. Add controls for color(s). Update presets to include props with matching colors.
+- [x] Add controls for auto splat start position, following the pattern established for stationary splats. Update presets.
+- [x] Bump auto/stationary splat max from 8 to 10.
+- [ ] Can we implement direction on stationary splats?
 
 ## Polish / Presets / UX
 
@@ -70,3 +73,4 @@ Long term vision / use cases:
 - [x] Add support and preset for black‑ink‑on‑white.
 - [ ] Update Leva controls to include labels so displayed text can be shorter.
 - [ ] Prepare a README so i dont forget how to use the various props for controlling the material behaviours.
+- [ ] Do a preset for black and red squares.

@@ -15,7 +15,6 @@ import {
   BLEND_MODE_MULTIPLY,
   DEBUG_CONTACT_CAP,
   DEBUG_CONTACT_TTL_DEFAULT,
-  FLUID_PRESETS,
 } from './fluidPresets';
 import useFluidRenderTargets from './hooks/useFluidRenderTargets';
 import {
@@ -49,6 +48,81 @@ const MAX_BLOOM_CHAIN = 16;
 const MAX_SPLAT_VELOCITY = 900;
 const SIM_DIMENSION_QUANTIZATION = 32;
 const DEBUG_POINTER_CAP = 8;
+
+const MATERIAL_DEFAULTS = {
+  paused: false,
+  simResolution: 1,
+  pressureRelax: 1,
+  pressureIterations: 40,
+  vorticity: 90,
+  velocityDissipation: 2,
+  densityDissipation: 2,
+  splatRadius: 0.003,
+  splatForce: 2200,
+  dyeStrength: 0.92,
+  autoSplat: true,
+  autoSplatStrength: 0.6,
+  autoSplatRate: 100,
+  autoSplatBurst: 2,
+  autoSplatCount: 2,
+  stationarySplatsEnabled: true,
+  stationarySplatStrength: 0.35,
+  stationarySplatCount: 8,
+  shading: true,
+  bloom: true,
+  bloomResolution: 0.25,
+  bloomIterations: 8,
+  bloomIntensity: 0.65,
+  bloomThreshold: 0.6,
+  bloomSoftKnee: 0.7,
+  sunrays: true,
+  sunraysResolution: 0.18,
+  sunraysWeight: 0.85,
+  colorA: '#ff6d6d',
+  colorB: '#ff0000',
+  colorC: '#7b0000',
+  colorful: true,
+  colorUpdateSpeed: 20,
+  colorCycleSpeed: 0.55,
+  dithering: true,
+  ditherStrength: 1,
+  ditherScale: 1,
+  bgA: '#4b4b4b',
+  bgB: '#797979',
+  brightness: 1.37,
+  contrast: 1.2,
+  saturation: 1.33,
+  blendMode: 0,
+  debugCursor: true,
+  debugAutoSplat: true,
+  debugStationarySplat: true,
+  debugRandomBurst: true,
+  debugPointerColor: '#ffffff',
+  debugAutoColor: '#000000',
+  debugStationaryColor: '#ffd166',
+  debugRandomColor: '#7c3aed',
+  debugPointerWidth: 0.03,
+  debugPointerHeight: 0.03,
+  debugAutoWidth: 0.03,
+  debugAutoHeight: 0.03,
+  debugStationaryWidth: 0.03,
+  debugStationaryHeight: 0.03,
+  debugRandomWidth: 0.03,
+  debugRandomHeight: 0.03,
+  debugPointerLineWeight: 2,
+  debugAutoLineWeight: 2,
+  debugStationaryLineWeight: 2,
+  debugRandomLineWeight: 2,
+  debugPointerFill: false,
+  debugAutoFill: false,
+  debugStationaryFill: false,
+  debugRandomFill: false,
+  debugPointerRotation: 0,
+  debugAutoRotation: 0,
+  debugStationaryRotation: 0,
+  debugRandomRotation: 0,
+  debugContactFadeDuration: 0.28,
+};
 
 const FluidMaterial = forwardRef(
   (
@@ -96,7 +170,7 @@ const FluidMaterial = forwardRef(
     const debugContactWriteRef = useRef(0);
 
     const fluidValues = useMemo(
-      () => ({ ...FLUID_PRESETS.default, ...(config || {}) }),
+      () => ({ ...MATERIAL_DEFAULTS, ...(config || {}) }),
       [config]
     );
 
@@ -473,50 +547,50 @@ const FluidMaterial = forwardRef(
               value: Math.max(size.width / Math.max(size.height, 1), 0.0001),
             },
             uDebugPointerWidth: {
-              value: FLUID_PRESETS.default.debugPointerWidth,
+              value: MATERIAL_DEFAULTS.debugPointerWidth,
             },
             uDebugPointerHeight: {
-              value: FLUID_PRESETS.default.debugPointerHeight,
+              value: MATERIAL_DEFAULTS.debugPointerHeight,
             },
             uDebugAutoWidth: {
-              value: FLUID_PRESETS.default.debugAutoWidth,
+              value: MATERIAL_DEFAULTS.debugAutoWidth,
             },
             uDebugAutoHeight: {
-              value: FLUID_PRESETS.default.debugAutoHeight,
+              value: MATERIAL_DEFAULTS.debugAutoHeight,
             },
             uDebugPointerRotation: {
               value: THREE.MathUtils.degToRad(
-                FLUID_PRESETS.default.debugPointerRotation
+                MATERIAL_DEFAULTS.debugPointerRotation
               ),
             },
             uDebugAutoRotation: {
               value: THREE.MathUtils.degToRad(
-                FLUID_PRESETS.default.debugAutoRotation
+                MATERIAL_DEFAULTS.debugAutoRotation
               ),
             },
             uDebugPointerLineWeight: {
-              value: FLUID_PRESETS.default.debugPointerLineWeight,
+              value: MATERIAL_DEFAULTS.debugPointerLineWeight,
             },
             uDebugAutoLineWeight: {
-              value: FLUID_PRESETS.default.debugAutoLineWeight,
+              value: MATERIAL_DEFAULTS.debugAutoLineWeight,
             },
             uDebugStationaryLineWeight: {
-              value: FLUID_PRESETS.default.debugStationaryLineWeight,
+              value: MATERIAL_DEFAULTS.debugStationaryLineWeight,
             },
             uDebugRandomLineWeight: {
-              value: FLUID_PRESETS.default.debugRandomLineWeight,
+              value: MATERIAL_DEFAULTS.debugRandomLineWeight,
             },
             uDebugPointerFill: {
-              value: FLUID_PRESETS.default.debugPointerFill,
+              value: MATERIAL_DEFAULTS.debugPointerFill,
             },
             uDebugAutoFill: {
-              value: FLUID_PRESETS.default.debugAutoFill,
+              value: MATERIAL_DEFAULTS.debugAutoFill,
             },
             uDebugStationaryFill: {
-              value: FLUID_PRESETS.default.debugStationaryFill,
+              value: MATERIAL_DEFAULTS.debugStationaryFill,
             },
             uDebugRandomFill: {
-              value: FLUID_PRESETS.default.debugRandomFill,
+              value: MATERIAL_DEFAULTS.debugRandomFill,
             },
             uDebugAutoActive: { value: 0 },
             uDebugPointerColor: {
@@ -526,33 +600,31 @@ const FluidMaterial = forwardRef(
               value: new THREE.Color('#000000'),
             },
             uDebugStationaryColor: {
-              value: new THREE.Color(
-                FLUID_PRESETS.default.debugStationaryColor
-              ),
+              value: new THREE.Color(MATERIAL_DEFAULTS.debugStationaryColor),
             },
             uDebugStationaryWidth: {
-              value: FLUID_PRESETS.default.debugStationaryWidth,
+              value: MATERIAL_DEFAULTS.debugStationaryWidth,
             },
             uDebugStationaryHeight: {
-              value: FLUID_PRESETS.default.debugStationaryHeight,
+              value: MATERIAL_DEFAULTS.debugStationaryHeight,
             },
             uDebugStationaryRotation: {
               value: THREE.MathUtils.degToRad(
-                FLUID_PRESETS.default.debugStationaryRotation
+                MATERIAL_DEFAULTS.debugStationaryRotation
               ),
             },
             uDebugRandomColor: {
-              value: new THREE.Color(FLUID_PRESETS.default.debugRandomColor),
+              value: new THREE.Color(MATERIAL_DEFAULTS.debugRandomColor),
             },
             uDebugRandomWidth: {
-              value: FLUID_PRESETS.default.debugRandomWidth,
+              value: MATERIAL_DEFAULTS.debugRandomWidth,
             },
             uDebugRandomHeight: {
-              value: FLUID_PRESETS.default.debugRandomHeight,
+              value: MATERIAL_DEFAULTS.debugRandomHeight,
             },
             uDebugRandomRotation: {
               value: THREE.MathUtils.degToRad(
-                FLUID_PRESETS.default.debugRandomRotation
+                MATERIAL_DEFAULTS.debugRandomRotation
               ),
             },
             uDebugPointerCount: { value: 0 },
@@ -662,7 +734,6 @@ const FluidMaterial = forwardRef(
         const contact = debugContactsRef.current[i];
         contact.ttl = Math.max(0, contact.ttl - dt);
       }
-      // Handle reset request
       if (resetRequestedRef.current) {
         clearAllTargets();
         resetRequestedRef.current = false;
@@ -813,7 +884,7 @@ const FluidMaterial = forwardRef(
           colorARef.current.lerp(colorCRef.current, mixBC * 0.45);
         }
 
-        // For multiply blend mode (ink on paper), invert colors so black becomes visible
+        // In multiply mode, invert paint to keep dark ink visible.
         let paintColor = colorARef.current;
         if (isMultiplyBlend) {
           paintColor = colorARef.current
@@ -822,7 +893,7 @@ const FluidMaterial = forwardRef(
             .addScalar(1);
         }
         if (!colorful && isMultiplyBlend) {
-          // When not colorful in multiply mode, need to invert the base colorA
+          // In non-colorful multiply mode, invert the base color.
           const baseColor = new THREE.Color(colorA);
           paintColor = baseColor.multiplyScalar(-1).addScalar(1);
         }
@@ -908,7 +979,6 @@ const FluidMaterial = forwardRef(
               }
             }
 
-            // Check if enough time has elapsed since last splat
             autoSplatColorRef.current
               .set(
                 Math.min(
@@ -1108,7 +1178,6 @@ const FluidMaterial = forwardRef(
         ttl: 0,
       };
       displayMat.uniforms.uDebugAuto.value.set(firstAuto.x, firstAuto.y);
-      // populate autos array for shader (one per autonomous splat)
       const desiredCount = Math.max(0, Math.floor(autoSplatCount || 0));
       let highestActiveIndex = -1;
       for (let i = 0; i < autoPointersRef.current.length; i++) {
@@ -1149,14 +1218,14 @@ const FluidMaterial = forwardRef(
         debugRandomRotation || 0
       );
       displayMat.uniforms.uDebugPointerLineWeight.value =
-        debugPointerLineWeight ?? FLUID_PRESETS.default.debugPointerLineWeight;
+        debugPointerLineWeight ?? MATERIAL_DEFAULTS.debugPointerLineWeight;
       displayMat.uniforms.uDebugAutoLineWeight.value =
-        debugAutoLineWeight ?? FLUID_PRESETS.default.debugAutoLineWeight;
+        debugAutoLineWeight ?? MATERIAL_DEFAULTS.debugAutoLineWeight;
       displayMat.uniforms.uDebugStationaryLineWeight.value =
         debugStationaryLineWeight ??
-        FLUID_PRESETS.default.debugStationaryLineWeight;
+        MATERIAL_DEFAULTS.debugStationaryLineWeight;
       displayMat.uniforms.uDebugRandomLineWeight.value =
-        debugRandomLineWeight ?? FLUID_PRESETS.default.debugRandomLineWeight;
+        debugRandomLineWeight ?? MATERIAL_DEFAULTS.debugRandomLineWeight;
       displayMat.uniforms.uDebugPointerFill.value = !!debugPointerFill;
       displayMat.uniforms.uDebugAutoFill.value = !!debugAutoFill;
       displayMat.uniforms.uDebugStationaryFill.value = !!debugStationaryFill;

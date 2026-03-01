@@ -15,7 +15,7 @@ import useHandControls, {
 } from '../../../hooks/hands/useHandcontrols';
 import useMediaPipeHands from '../../../hooks/hands/useMediaPipeHands';
 import FluidMaterial from './FluidMaterial';
-import { FLUID_PRESETS, RANDOM_BURST_COUNT } from './fluidPresets';
+import { RANDOM_BURST_COUNT } from './fluidPresets';
 import useFluidAutoPointers from './hooks/useFluidAutoPointers';
 import useFluidControls from './hooks/useFluidControls';
 import useFluidPointerInput from './hooks/useFluidPointerInput';
@@ -126,28 +126,12 @@ function FluidHandsPointerBridge({
 function FluidTestbed() {
   const { viewport, size } = useThree();
   const matRef = useRef();
-  const presetRef = useRef('default');
-  const initializedPresetRef = useRef(false);
   const randomSplatQueueRef = useRef(0);
 
-  const [fluidValues, setControls] = useFluidControls({
-    presetRef,
+  const [fluidValues] = useFluidControls({
     randomSplatQueueRef,
     resetSimRef: matRef,
   });
-
-  useEffect(() => {
-    if (initializedPresetRef.current) return;
-
-    const currentPresetKey = presetRef.current || 'default';
-    const nextPreset = FLUID_PRESETS[currentPresetKey];
-    if (nextPreset) {
-      const { stationarySplats: _stationarySplats, ...levaPresetValues } =
-        nextPreset;
-      setControls(levaPresetValues);
-      initializedPresetRef.current = true;
-    }
-  }, [setControls]);
 
   const autoPointersRef = useFluidAutoPointers({
     config: fluidValues,

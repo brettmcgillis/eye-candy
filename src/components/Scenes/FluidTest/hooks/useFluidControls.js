@@ -26,6 +26,9 @@ const CONTROL_DEFAULTS = {
   velocityDissipation: 2,
   densityDissipation: 2,
   splatRadius: 0.003,
+  autoSplatRadius: 0.003,
+  stationarySplatRadius: 0.003,
+  randomSplatRadius: 0.003,
   splatForce: 2200,
   dyeStrength: 0.92,
   autoSplat: true,
@@ -396,6 +399,11 @@ function copySettingsToClipboard(get) {
     velocityDissipation: get('Fluid.Solver.velocityDissipation'),
     densityDissipation: get('Fluid.Solver.densityDissipation'),
     splatRadius: get('Fluid.Interaction.PointerTouch.splatRadius'),
+    autoSplatRadius: get('Fluid.Interaction.AutoSplats.autoSplatRadius'),
+    stationarySplatRadius: get(
+      'Fluid.Interaction.StationarySplats.stationarySplatRadius'
+    ),
+    randomSplatRadius: get('Fluid.Interaction.RandomBurst.randomSplatRadius'),
     splatForce: get('Fluid.Interaction.PointerTouch.splatForce'),
     dyeStrength: get('Fluid.Interaction.PointerTouch.dyeStrength'),
     inputMode: get('Fluid.Interaction.PointerTouch.inputMode'),
@@ -588,6 +596,18 @@ export default function useFluidControls({ randomSplatQueueRef, resetSimRef }) {
 
     setRef.current({
       ...levaPresetValues,
+      autoSplatRadius:
+        presetValues.autoSplatRadius ??
+        presetValues.splatRadius ??
+        CONTROL_DEFAULTS.autoSplatRadius,
+      stationarySplatRadius:
+        presetValues.stationarySplatRadius ??
+        presetValues.splatRadius ??
+        CONTROL_DEFAULTS.stationarySplatRadius,
+      randomSplatRadius:
+        presetValues.randomSplatRadius ??
+        presetValues.splatRadius ??
+        CONTROL_DEFAULTS.randomSplatRadius,
       stationarySplatDirectionStrength:
         presetValues.stationarySplatDirectionStrength ??
         CONTROL_DEFAULTS.stationarySplatDirectionStrength,
@@ -829,6 +849,12 @@ export default function useFluidControls({ randomSplatQueueRef, resetSimRef }) {
                 max: 1,
                 step: 0.01,
               },
+              autoSplatRadius: {
+                value: CONTROL_DEFAULTS.autoSplatRadius,
+                min: 0.0005,
+                max: 0.02,
+                step: 0.0001,
+              },
               autoSplatRate: {
                 value: CONTROL_DEFAULTS.autoSplatRate,
                 min: 0,
@@ -896,6 +922,12 @@ export default function useFluidControls({ randomSplatQueueRef, resetSimRef }) {
                 max: 1,
                 step: 0.01,
               },
+              stationarySplatRadius: {
+                value: CONTROL_DEFAULTS.stationarySplatRadius,
+                min: 0.0005,
+                max: 0.02,
+                step: 0.0001,
+              },
               stationarySplatDirectionStrength: {
                 value: CONTROL_DEFAULTS.stationarySplatDirectionStrength,
                 min: 0,
@@ -955,6 +987,12 @@ export default function useFluidControls({ randomSplatQueueRef, resetSimRef }) {
                 min: 0,
                 max: 2,
                 step: 0.01,
+              },
+              randomSplatRadius: {
+                value: CONTROL_DEFAULTS.randomSplatRadius,
+                min: 0.0005,
+                max: 0.02,
+                step: 0.0001,
               },
               debugRandomBurst: CONTROL_DEFAULTS.debugRandomBurst,
               debugRandomColor: CONTROL_DEFAULTS.debugRandomColor,

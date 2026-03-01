@@ -59,6 +59,9 @@ const MATERIAL_DEFAULTS = {
   velocityDissipation: 2,
   densityDissipation: 2,
   splatRadius: 0.003,
+  autoSplatRadius: 0.003,
+  stationarySplatRadius: 0.003,
+  randomSplatRadius: 0.003,
   splatForce: 2200,
   dyeStrength: 0.92,
   autoSplat: true,
@@ -198,6 +201,9 @@ const FluidMaterial = forwardRef(
       velocityDissipation,
       densityDissipation,
       splatRadius,
+      autoSplatRadius,
+      stationarySplatRadius,
+      randomSplatRadius,
       splatForce,
       dyeStrength,
       autoSplat,
@@ -787,7 +793,6 @@ const FluidMaterial = forwardRef(
       pressureMat.uniforms.uTexel.value.copy(simTexel);
       clearMat.uniforms.uValue.value = pressureRelax;
 
-      splatMat.uniforms.uRadius.value = splatRadius;
       splatMat.uniforms.uAspect.value = simWidth / simHeight;
 
       bloomPrefilterMat.uniforms.uThreshold.value = bloomThreshold;
@@ -872,6 +877,7 @@ const FluidMaterial = forwardRef(
         vy,
         rgb,
         strength = 1,
+        radius = splatRadius,
         debugTarget = null,
         options = {}
       ) => {
@@ -879,11 +885,13 @@ const FluidMaterial = forwardRef(
         const safePx = THREE.MathUtils.clamp(px, 0, 1);
         const safePy = THREE.MathUtils.clamp(py, 0, 1);
         const safeStrength = THREE.MathUtils.clamp(strength, 0, 3);
+        const safeRadius = THREE.MathUtils.clamp(radius, 0.00001, 0.1);
         if (debugTarget === 'random') {
           writeDebugRandomContact(safePx, safePy);
         }
 
         splatMat.uniforms.uPoint.value.set(safePx, safePy);
+        splatMat.uniforms.uRadius.value = safeRadius;
 
         if (applyVelocity) {
           splatMat.uniforms.uTarget.value = velocity.read.texture;
@@ -952,6 +960,7 @@ const FluidMaterial = forwardRef(
             forceY,
             paintColor,
             0.65 + speed * 0.75,
+            splatRadius,
             null,
             {
               applyVelocity: !paused,
@@ -1059,7 +1068,8 @@ const FluidMaterial = forwardRef(
               autoForceX,
               autoForceY,
               autoSplatColorRef.current,
-              autoStrength
+              autoStrength,
+              autoSplatRadius
             );
 
             for (let i = 1; i < burstCount; i++) {
@@ -1080,7 +1090,8 @@ const FluidMaterial = forwardRef(
                 autoForceX * decay,
                 autoForceY * decay,
                 autoSplatColorRef.current,
-                autoStrength * decay * 0.55
+                autoStrength * decay * 0.55,
+                autoSplatRadius
               );
             }
           }
@@ -1146,7 +1157,8 @@ const FluidMaterial = forwardRef(
               stationaryForceX,
               stationaryForceY,
               autoSplatColorRef.current,
-              strength
+              strength,
+              stationarySplatRadius
             );
           }
         }
@@ -1169,6 +1181,7 @@ const FluidMaterial = forwardRef(
               randomSplat.vy,
               tint,
               randomSplat.strength,
+              randomSplatRadius,
               'random'
             );
           }

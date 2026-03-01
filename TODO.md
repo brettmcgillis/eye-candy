@@ -19,16 +19,6 @@
 - [ ] glass
 - [x] pixelation component. did a pixelhater
 
-### OVERLAY
-
-- [x] Show version on overlay
-- [x] Spring animate leva transition.
-- [x] add personal links
-- [ ] display back link contextually.
-- [x] show emojis contextually.
-- [x] change positions when on mobile
-- [x] update leva theme
-
 ### APP
 
 - [ ] fix icon used in manifest, logo192 is not the right size, causes console err

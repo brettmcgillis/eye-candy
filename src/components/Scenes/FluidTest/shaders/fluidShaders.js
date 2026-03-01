@@ -360,17 +360,18 @@ uniform bool uDebugStationarySplat;
 uniform bool uDebugRandomBurst;
 uniform float uBlendMode;
 uniform vec2 uDebugAuto;
-uniform float uDebugPointerSize;
-uniform float uDebugAutoSize;
-uniform float uDebugPointerAspect;
-uniform float uDebugAutoAspect;
+uniform float uViewportAspect;
+uniform float uDebugPointerWidth;
+uniform float uDebugPointerHeight;
+uniform float uDebugAutoWidth;
+uniform float uDebugAutoHeight;
 uniform float uDebugPointerRotation;
 uniform float uDebugAutoRotation;
-uniform float uDebugStationarySize;
-uniform float uDebugStationaryAspect;
+uniform float uDebugStationaryWidth;
+uniform float uDebugStationaryHeight;
 uniform float uDebugStationaryRotation;
-uniform float uDebugRandomSize;
-uniform float uDebugRandomAspect;
+uniform float uDebugRandomWidth;
+uniform float uDebugRandomHeight;
 uniform float uDebugRandomRotation;
 uniform float uDebugPointerLineWeight;
 uniform float uDebugAutoLineWeight;
@@ -416,6 +417,10 @@ vec2 rotate2D(vec2 point, float angle) {
   return vec2(c * point.x - s * point.y, s * point.x + c * point.y);
 }
 
+vec2 toMarkerSpace(vec2 point) {
+  return vec2(point.x * uViewportAspect, point.y);
+}
+
 float squareOutline(
   vec2 uv,
   vec2 center,
@@ -423,7 +428,7 @@ float squareOutline(
   float thickness,
   float rotation
 ) {
-  vec2 p = abs(rotate2D(uv - center, -rotation));
+  vec2 p = abs(rotate2D(toMarkerSpace(uv - center), -rotation));
   float outer = step(p.x, halfSize.x) * step(p.y, halfSize.y);
   float innerSizeX = max(halfSize.x - thickness, 0.0);
   float innerSizeY = max(halfSize.y - thickness, 0.0);
@@ -432,7 +437,7 @@ float squareOutline(
 }
 
 float squareFill(vec2 uv, vec2 center, vec2 halfSize, float rotation) {
-  vec2 p = abs(rotate2D(uv - center, -rotation));
+  vec2 p = abs(rotate2D(toMarkerSpace(uv - center), -rotation));
   return step(p.x, halfSize.x) * step(p.y, halfSize.y);
 }
 
@@ -502,27 +507,44 @@ void main() {
   color = (color - 0.5) * uContrast + 0.5;
   color *= uBrightness;
 
-  float pointerHalf = uDebugPointerSize * 0.5;
-  float autoHalf = uDebugAutoSize * 0.5;
+  vec2 pointerSize = vec2(
+    max(uDebugPointerWidth, 0.0),
+    max(uDebugPointerHeight, 0.0)
+  );
+  vec2 autoSize = vec2(max(uDebugAutoWidth, 0.0), max(uDebugAutoHeight, 0.0));
+  vec2 stationarySize = vec2(
+    max(uDebugStationaryWidth, 0.0),
+    max(uDebugStationaryHeight, 0.0)
+  );
+  vec2 randomSize = vec2(
+    max(uDebugRandomWidth, 0.0),
+    max(uDebugRandomHeight, 0.0)
+  );
+  vec2 ptrHalf = pointerSize * 0.5;
+  vec2 autoHalfVec = autoSize * 0.5;
+  vec2 stationaryHalfMix = stationarySize * 0.5;
+  vec2 randomHalfMix = randomSize * 0.5;
   vec2 autoCenter = uDebugAuto;
+  float pointerMinSize = max(min(pointerSize.x, pointerSize.y), 0.0001);
+  float autoMinSize = max(min(autoSize.x, autoSize.y), 0.0001);
+  float stationaryMinSize = max(min(stationarySize.x, stationarySize.y), 0.0001);
+  float randomMinSize = max(min(randomSize.x, randomSize.y), 0.0001);
   float pointerThickness = max(
     0.00035,
-    uDebugPointerSize * 0.04 * uDebugPointerLineWeight
+    pointerMinSize * 0.04 * uDebugPointerLineWeight
   );
   float autoThickness = max(
     0.00035,
-    uDebugAutoSize * 0.04 * uDebugAutoLineWeight
+    autoMinSize * 0.04 * uDebugAutoLineWeight
   );
   float stationaryThickness = max(
     0.00035,
-    uDebugStationarySize * 0.04 * uDebugStationaryLineWeight
+    stationaryMinSize * 0.04 * uDebugStationaryLineWeight
   );
   float randomThickness = max(
     0.00035,
-    uDebugRandomSize * 0.04 * uDebugRandomLineWeight
+    randomMinSize * 0.04 * uDebugRandomLineWeight
   );
-  vec2 ptrHalf = vec2(pointerHalf * uDebugPointerAspect, pointerHalf / max(uDebugPointerAspect, 0.0001));
-  vec2 autoHalfVec = vec2(autoHalf * uDebugAutoAspect, autoHalf / max(uDebugAutoAspect, 0.0001));
 
   if (uDebugAutoSplat) {
     float autoSquare = squareMarker(
@@ -564,9 +586,6 @@ void main() {
       1.0
     );
     float kind = clamp(uDebugContactKind[i], 0.0, 2.0);
-    vec2 stationaryHalfMix = vec2((uDebugStationarySize * 0.5) * uDebugStationaryAspect, (uDebugStationarySize * 0.5) / max(uDebugStationaryAspect, 0.0001));
-    vec2 randomHalfMix = vec2((uDebugRandomSize * 0.5) * uDebugRandomAspect, (uDebugRandomSize * 0.5) / max(uDebugRandomAspect, 0.0001));
-
     vec2 sizeVec = vec2(0.0);
     float thickness = 0.0;
     float rotation = 0.0;
@@ -607,12 +626,11 @@ void main() {
       if (float(i) >= uDebugAutoCount) continue;
       if (i == 0) continue;
       float aActive = clamp(uDebugAutoLife[i] / max(uDebugContactFadeDuration, 0.0001), 0.0, 1.0);
-      vec2 aHalf = vec2((uDebugAutoSize * 0.5) * uDebugAutoAspect, (uDebugAutoSize * 0.5) / max(uDebugAutoAspect, 0.0001));
       float aMark =
         squareMarker(
           vUv,
           uDebugAutos[i],
-          aHalf,
+          autoHalfVec,
           autoThickness,
           uDebugAutoRotation,
           uDebugAutoFill

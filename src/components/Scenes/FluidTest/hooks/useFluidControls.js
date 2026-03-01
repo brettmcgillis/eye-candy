@@ -236,10 +236,11 @@ function copySettingsToClipboard(get) {
     debugRandomBurst: get('Fluid.Interaction.RandomBurst.debugRandomBurst'),
     debugPointerColor: get('Fluid.Interaction.PointerTouch.debugPointerColor'),
     debugAutoColor: get('Fluid.Interaction.AutoSplats.debugAutoColor'),
-    debugAutoSize: get('Fluid.Interaction.AutoSplats.debugAutoSize'),
-    debugPointerSize: get('Fluid.Interaction.PointerTouch.debugPointerSize'),
-    debugPointerAspect: get(
-      'Fluid.Interaction.PointerTouch.debugPointerAspect'
+    debugAutoWidth: get('Fluid.Interaction.AutoSplats.debugAutoWidth'),
+    debugAutoHeight: get('Fluid.Interaction.AutoSplats.debugAutoHeight'),
+    debugPointerWidth: get('Fluid.Interaction.PointerTouch.debugPointerWidth'),
+    debugPointerHeight: get(
+      'Fluid.Interaction.PointerTouch.debugPointerHeight'
     ),
     debugPointerLineWeight: get(
       'Fluid.Interaction.PointerTouch.debugPointerLineWeight'
@@ -248,7 +249,6 @@ function copySettingsToClipboard(get) {
     debugPointerRotation: get(
       'Fluid.Interaction.PointerTouch.debugPointerRotation'
     ),
-    debugAutoAspect: get('Fluid.Interaction.AutoSplats.debugAutoAspect'),
     debugAutoLineWeight: get(
       'Fluid.Interaction.AutoSplats.debugAutoLineWeight'
     ),
@@ -257,11 +257,11 @@ function copySettingsToClipboard(get) {
     debugStationaryColor: get(
       'Fluid.Interaction.StationarySplats.debugStationaryColor'
     ),
-    debugStationarySize: get(
-      'Fluid.Interaction.StationarySplats.debugStationarySize'
+    debugStationaryWidth: get(
+      'Fluid.Interaction.StationarySplats.debugStationaryWidth'
     ),
-    debugStationaryAspect: get(
-      'Fluid.Interaction.StationarySplats.debugStationaryAspect'
+    debugStationaryHeight: get(
+      'Fluid.Interaction.StationarySplats.debugStationaryHeight'
     ),
     debugStationaryLineWeight: get(
       'Fluid.Interaction.StationarySplats.debugStationaryLineWeight'
@@ -273,8 +273,8 @@ function copySettingsToClipboard(get) {
       'Fluid.Interaction.StationarySplats.debugStationaryRotation'
     ),
     debugRandomColor: get('Fluid.Interaction.RandomBurst.debugRandomColor'),
-    debugRandomSize: get('Fluid.Interaction.RandomBurst.debugRandomSize'),
-    debugRandomAspect: get('Fluid.Interaction.RandomBurst.debugRandomAspect'),
+    debugRandomWidth: get('Fluid.Interaction.RandomBurst.debugRandomWidth'),
+    debugRandomHeight: get('Fluid.Interaction.RandomBurst.debugRandomHeight'),
     debugRandomLineWeight: get(
       'Fluid.Interaction.RandomBurst.debugRandomLineWeight'
     ),
@@ -311,7 +311,6 @@ export default function useFluidControls({
 
   const applyPresetValues = (presetValues, presetKey) => {
     if (!presetValues || !setRef.current) return;
-
     const { stationarySplats: _stationarySplats, ...levaPresetValues } =
       presetValues;
 
@@ -454,17 +453,17 @@ export default function useFluidControls({
               },
               debugCursor: FLUID_PRESETS.default.debugCursor,
               debugPointerColor: FLUID_PRESETS.default.debugPointerColor,
-              debugPointerSize: {
-                value: FLUID_PRESETS.default.debugPointerSize,
+              debugPointerWidth: {
+                value: FLUID_PRESETS.default.debugPointerWidth,
                 min: 0.005,
                 max: 0.15,
                 step: 0.002,
               },
-              debugPointerAspect: {
-                value: FLUID_PRESETS.default.debugPointerAspect,
-                min: 0.1,
-                max: 5,
-                step: 0.05,
+              debugPointerHeight: {
+                value: FLUID_PRESETS.default.debugPointerHeight,
+                min: 0.005,
+                max: 0.15,
+                step: 0.002,
               },
               debugPointerLineWeight: {
                 value: FLUID_PRESETS.default.debugPointerLineWeight,
@@ -476,7 +475,7 @@ export default function useFluidControls({
               debugPointerRotation: {
                 value: FLUID_PRESETS.default.debugPointerRotation,
                 min: 0,
-                max: 90,
+                max: 45,
                 step: 1,
               },
             },
@@ -583,17 +582,17 @@ export default function useFluidControls({
               },
               debugAutoSplat: FLUID_PRESETS.default.debugAutoSplat,
               debugAutoColor: FLUID_PRESETS.default.debugAutoColor,
-              debugAutoSize: {
-                value: FLUID_PRESETS.default.debugAutoSize,
+              debugAutoWidth: {
+                value: FLUID_PRESETS.default.debugAutoWidth,
                 min: 0.005,
                 max: 0.15,
                 step: 0.002,
               },
-              debugAutoAspect: {
-                value: FLUID_PRESETS.default.debugAutoAspect,
-                min: 0.1,
-                max: 5,
-                step: 0.05,
+              debugAutoHeight: {
+                value: FLUID_PRESETS.default.debugAutoHeight,
+                min: 0.005,
+                max: 0.15,
+                step: 0.002,
               },
               debugAutoLineWeight: {
                 value: FLUID_PRESETS.default.debugAutoLineWeight,
@@ -605,7 +604,7 @@ export default function useFluidControls({
               debugAutoRotation: {
                 value: FLUID_PRESETS.default.debugAutoRotation,
                 min: 0,
-                max: 90,
+                max: 45,
                 step: 1,
               },
             },
@@ -633,17 +632,17 @@ export default function useFluidControls({
               ),
               debugStationarySplat: FLUID_PRESETS.default.debugStationarySplat,
               debugStationaryColor: FLUID_PRESETS.default.debugStationaryColor,
-              debugStationarySize: {
-                value: FLUID_PRESETS.default.debugStationarySize,
+              debugStationaryWidth: {
+                value: FLUID_PRESETS.default.debugStationaryWidth,
                 min: 0.005,
                 max: 0.15,
                 step: 0.002,
               },
-              debugStationaryAspect: {
-                value: FLUID_PRESETS.default.debugStationaryAspect,
-                min: 0.1,
-                max: 5,
-                step: 0.05,
+              debugStationaryHeight: {
+                value: FLUID_PRESETS.default.debugStationaryHeight,
+                min: 0.005,
+                max: 0.15,
+                step: 0.002,
               },
               debugStationaryLineWeight: {
                 value: FLUID_PRESETS.default.debugStationaryLineWeight,
@@ -655,7 +654,7 @@ export default function useFluidControls({
               debugStationaryRotation: {
                 value: FLUID_PRESETS.default.debugStationaryRotation,
                 min: 0,
-                max: 90,
+                max: 45,
                 step: 1,
               },
             },
@@ -671,17 +670,17 @@ export default function useFluidControls({
               },
               debugRandomBurst: FLUID_PRESETS.default.debugRandomBurst,
               debugRandomColor: FLUID_PRESETS.default.debugRandomColor,
-              debugRandomSize: {
-                value: FLUID_PRESETS.default.debugRandomSize,
+              debugRandomWidth: {
+                value: FLUID_PRESETS.default.debugRandomWidth,
                 min: 0.005,
                 max: 0.15,
                 step: 0.002,
               },
-              debugRandomAspect: {
-                value: FLUID_PRESETS.default.debugRandomAspect,
-                min: 0.1,
-                max: 5,
-                step: 0.05,
+              debugRandomHeight: {
+                value: FLUID_PRESETS.default.debugRandomHeight,
+                min: 0.005,
+                max: 0.15,
+                step: 0.002,
               },
               debugRandomLineWeight: {
                 value: FLUID_PRESETS.default.debugRandomLineWeight,
@@ -693,7 +692,7 @@ export default function useFluidControls({
               debugRandomRotation: {
                 value: FLUID_PRESETS.default.debugRandomRotation,
                 min: 0,
-                max: 90,
+                max: 45,
                 step: 1,
               },
               randomBurst: button(() => {

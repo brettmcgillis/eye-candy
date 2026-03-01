@@ -41,6 +41,7 @@ Long term vision / use cases:
 - [x] Move shader code out of the material file.
 - [x] Consider what else should live in separate modules. Any reusable hooks?
 - [x] Add a clear/reset control for the simulation (both in the public API and Leva).
+- [x] Fix debug markers, shape and size can be unpredicable across screen sizes. add height/width controls, remove aspect controls. default to square dimensions
 
 ## Features
 

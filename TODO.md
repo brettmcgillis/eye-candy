@@ -39,6 +39,8 @@
 
 ### SCENES
 
+- [ ] Hoist Cardinals (mobile) and Watercolor Squares (mobile) out of Fluid Test and into dedicated scenes at the App level. Consider: Does watercolor squares override controls to provide consistent appearance across viewport sizes?
+
 ### Scene TODO Files
 
 - [CRTTest](src/components/scenes/CRTTest/todo.md)

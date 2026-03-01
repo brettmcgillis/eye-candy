@@ -152,11 +152,14 @@ function FluidTestbed() {
     randomSplatQueueRef.current += RANDOM_BURST_COUNT;
   }, []);
 
-  const { stationaryPointersRef, pointerEvents: stationaryPointerEvents } =
-    useFluidStationarySplats({
-      config: fluidValues,
-      pointerEvents,
-    });
+  const {
+    stationaryPointersRef,
+    stationaryDebugMarkersRef,
+    pointerEvents: stationaryPointerEvents,
+  } = useFluidStationarySplats({
+    config: fluidValues,
+    pointerEvents,
+  });
 
   const mediaPipeConfig = useMemo(
     () => ({
@@ -242,6 +245,7 @@ function FluidTestbed() {
             config={fluidValues}
             autoPointersRef={autoPointersRef}
             stationaryPointersRef={stationaryPointersRef}
+            stationaryDebugMarkersRef={stationaryDebugMarkersRef}
             randomSplatsRef={randomSplatsRef}
           />
         </mesh>
@@ -257,6 +261,7 @@ function FluidTestbed() {
             config={fluidValues}
             autoPointersRef={autoPointersRef}
             stationaryPointersRef={stationaryPointersRef}
+            stationaryDebugMarkersRef={stationaryDebugMarkersRef}
             randomSplatsRef={randomSplatsRef}
           />
         </mesh>

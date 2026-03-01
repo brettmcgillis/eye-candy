@@ -48,7 +48,7 @@ const MAX_BLOOM_CHAIN = 16;
 const MAX_SPLAT_VELOCITY = 900;
 const SIM_DIMENSION_QUANTIZATION = 32;
 const DEBUG_POINTER_CAP = 8;
-const MAX_STATIONARY_DEBUG_SLOTS = 10;
+const MAX_STATIONARY_DEBUG_SLOTS = DEBUG_CONTACT_CAP;
 
 const MATERIAL_DEFAULTS = {
   paused: false,
@@ -79,6 +79,8 @@ const MATERIAL_DEFAULTS = {
   stationarySplatDirectionStrength: 0,
   stationarySplatDirectionAngle: 180,
   stationarySplatCount: 8,
+  stationaryDebugMarkersEnabled: true,
+  stationaryDebugMarkerCount: 8,
   shading: true,
   bloom: true,
   bloomResolution: 0.25,
@@ -131,6 +133,18 @@ const MATERIAL_DEFAULTS = {
   debugPointerRotation: 0,
   debugAutoRotation: 0,
   debugStationaryRotation: 0,
+  debugStationarySplatColor: '#ffd166',
+  debugStationarySplatWidth: 0.03,
+  debugStationarySplatHeight: 0.03,
+  debugStationarySplatLineWeight: 2,
+  debugStationarySplatFill: false,
+  debugStationarySplatRotation: 0,
+  debugStationaryMarkerColor: '#ffd166',
+  debugStationaryMarkerWidth: 0.03,
+  debugStationaryMarkerHeight: 0.03,
+  debugStationaryMarkerLineWeight: 2,
+  debugStationaryMarkerFill: false,
+  debugStationaryMarkerRotation: 0,
   debugRandomRotation: 0,
   debugContactFadeDuration: 0.28,
 };
@@ -142,6 +156,7 @@ const FluidMaterial = forwardRef(
       config,
       pointerRef: externalPointerRef,
       randomSplatsRef,
+      stationaryDebugMarkersRef: externalStationaryDebugMarkersRef,
       stationaryPointersRef: externalStationaryPointersRef,
     },
     ref
@@ -155,9 +170,12 @@ const FluidMaterial = forwardRef(
       { x: 0.5, y: 0.5, ttl: 0, phase: 0 },
     ]);
     const internalStationaryPointersRef = useRef([]);
+    const internalStationaryDebugMarkersRef = useRef([]);
     const autoPointersRef = externalAutoPointersRef || internalAutoPointersRef;
     const stationaryPointersRef =
       externalStationaryPointersRef || internalStationaryPointersRef;
+    const stationaryDebugMarkersRef =
+      externalStationaryDebugMarkersRef || internalStationaryDebugMarkersRef;
     const sceneRandomSplatsRef = randomSplatsRef || internalRandomSplatsRef;
     const resetRequestedRef = useRef(false);
     const initialSizeRef = useRef(null);
@@ -171,6 +189,13 @@ const FluidMaterial = forwardRef(
     const forceRef = useRef(new THREE.Vector3());
     const autoSplatColorRef = useRef(new THREE.Color());
     const debugStationaryContactsRef = useRef(
+      Array.from({ length: DEBUG_CONTACT_CAP }, () => ({
+        x: 0.5,
+        y: 0.5,
+        ttl: 0,
+      }))
+    );
+    const debugStationaryMarkerContactsRef = useRef(
       Array.from({ length: DEBUG_CONTACT_CAP }, () => ({
         x: 0.5,
         y: 0.5,
@@ -226,6 +251,8 @@ const FluidMaterial = forwardRef(
       stationarySplatDirectionStrength,
       stationarySplatDirectionAngle,
       stationarySplatCount,
+      stationaryDebugMarkersEnabled,
+      stationaryDebugMarkerCount,
       shading,
       bloom,
       bloomResolution,
@@ -275,12 +302,49 @@ const FluidMaterial = forwardRef(
       debugPointerRotation,
       debugAutoRotation,
       debugStationaryRotation,
+      debugStationarySplatColor,
+      debugStationarySplatWidth,
+      debugStationarySplatHeight,
+      debugStationarySplatLineWeight,
+      debugStationarySplatFill,
+      debugStationarySplatRotation,
+      debugStationaryMarkerColor,
+      debugStationaryMarkerWidth,
+      debugStationaryMarkerHeight,
+      debugStationaryMarkerLineWeight,
+      debugStationaryMarkerFill,
+      debugStationaryMarkerRotation,
       debugRandomColor,
       debugRandomWidth,
       debugRandomHeight,
       debugRandomRotation,
       debugContactFadeDuration,
     } = fluidValues;
+
+    const resolvedDebugStationarySplatColor =
+      debugStationarySplatColor ?? debugStationaryColor;
+    const resolvedDebugStationarySplatWidth =
+      debugStationarySplatWidth ?? debugStationaryWidth;
+    const resolvedDebugStationarySplatHeight =
+      debugStationarySplatHeight ?? debugStationaryHeight;
+    const resolvedDebugStationarySplatLineWeight =
+      debugStationarySplatLineWeight ?? debugStationaryLineWeight;
+    const resolvedDebugStationarySplatFill =
+      debugStationarySplatFill ?? debugStationaryFill;
+    const resolvedDebugStationarySplatRotation =
+      debugStationarySplatRotation ?? debugStationaryRotation;
+    const resolvedDebugStationaryMarkerColor =
+      debugStationaryMarkerColor ?? debugStationaryColor;
+    const resolvedDebugStationaryMarkerWidth =
+      debugStationaryMarkerWidth ?? debugStationaryWidth;
+    const resolvedDebugStationaryMarkerHeight =
+      debugStationaryMarkerHeight ?? debugStationaryHeight;
+    const resolvedDebugStationaryMarkerLineWeight =
+      debugStationaryMarkerLineWeight ?? debugStationaryLineWeight;
+    const resolvedDebugStationaryMarkerFill =
+      debugStationaryMarkerFill ?? debugStationaryFill;
+    const resolvedDebugStationaryMarkerRotation =
+      debugStationaryMarkerRotation ?? debugStationaryRotation;
 
     const baseSimWidth = Math.max(
       1,
@@ -610,6 +674,9 @@ const FluidMaterial = forwardRef(
             uDebugStationaryLineWeight: {
               value: MATERIAL_DEFAULTS.debugStationaryLineWeight,
             },
+            uDebugStationaryMarkerLineWeight: {
+              value: MATERIAL_DEFAULTS.debugStationaryMarkerLineWeight,
+            },
             uDebugRandomLineWeight: {
               value: MATERIAL_DEFAULTS.debugRandomLineWeight,
             },
@@ -621,6 +688,9 @@ const FluidMaterial = forwardRef(
             },
             uDebugStationaryFill: {
               value: MATERIAL_DEFAULTS.debugStationaryFill,
+            },
+            uDebugStationaryMarkerFill: {
+              value: MATERIAL_DEFAULTS.debugStationaryMarkerFill,
             },
             uDebugRandomFill: {
               value: MATERIAL_DEFAULTS.debugRandomFill,
@@ -635,6 +705,11 @@ const FluidMaterial = forwardRef(
             uDebugStationaryColor: {
               value: new THREE.Color(MATERIAL_DEFAULTS.debugStationaryColor),
             },
+            uDebugStationaryMarkerColor: {
+              value: new THREE.Color(
+                MATERIAL_DEFAULTS.debugStationaryMarkerColor
+              ),
+            },
             uDebugStationaryWidth: {
               value: MATERIAL_DEFAULTS.debugStationaryWidth,
             },
@@ -644,6 +719,17 @@ const FluidMaterial = forwardRef(
             uDebugStationaryRotation: {
               value: THREE.MathUtils.degToRad(
                 MATERIAL_DEFAULTS.debugStationaryRotation
+              ),
+            },
+            uDebugStationaryMarkerWidth: {
+              value: MATERIAL_DEFAULTS.debugStationaryMarkerWidth,
+            },
+            uDebugStationaryMarkerHeight: {
+              value: MATERIAL_DEFAULTS.debugStationaryMarkerHeight,
+            },
+            uDebugStationaryMarkerRotation: {
+              value: THREE.MathUtils.degToRad(
+                MATERIAL_DEFAULTS.debugStationaryMarkerRotation
               ),
             },
             uDebugRandomColor: {
@@ -687,6 +773,15 @@ const FluidMaterial = forwardRef(
               ),
             },
             uDebugStationaryLife: {
+              value: Array.from({ length: DEBUG_CONTACT_CAP }, () => 0),
+            },
+            uDebugStationaryMarkerContacts: {
+              value: Array.from(
+                { length: DEBUG_CONTACT_CAP },
+                () => new THREE.Vector2(0.5, 0.5)
+              ),
+            },
+            uDebugStationaryMarkerLife: {
               value: Array.from({ length: DEBUG_CONTACT_CAP }, () => 0),
             },
             uDebugRandomContacts: {
@@ -771,8 +866,14 @@ const FluidMaterial = forwardRef(
 
       for (let i = 0; i < DEBUG_CONTACT_CAP; i++) {
         const stationaryContact = debugStationaryContactsRef.current[i];
+        const stationaryMarkerContact =
+          debugStationaryMarkerContactsRef.current[i];
         const randomContact = debugRandomContactsRef.current[i];
         stationaryContact.ttl = Math.max(0, stationaryContact.ttl - dt);
+        stationaryMarkerContact.ttl = Math.max(
+          0,
+          stationaryMarkerContact.ttl - dt
+        );
         randomContact.ttl = Math.max(0, randomContact.ttl - dt);
       }
       if (resetRequestedRef.current) {
@@ -848,6 +949,17 @@ const FluidMaterial = forwardRef(
         0,
         desiredStationaryCount
       );
+      const desiredStationaryDebugMarkerCount = Math.max(
+        0,
+        Math.floor(
+          stationaryDebugMarkerCount ??
+            stationarySplatCount ??
+            desiredStationaryCount
+        )
+      );
+      const stationaryDebugMarkers = (
+        stationaryDebugMarkersRef.current || []
+      ).slice(0, desiredStationaryDebugMarkerCount);
       const writeDebugStationaryContact = (px, py, slot) => {
         const safePx = THREE.MathUtils.clamp(px, 0, 1);
         const safePy = THREE.MathUtils.clamp(py, 0, 1);
@@ -860,6 +972,23 @@ const FluidMaterial = forwardRef(
         debugStationaryContactsRef.current[idx].x = safePx;
         debugStationaryContactsRef.current[idx].y = safePy;
         debugStationaryContactsRef.current[idx].ttl = Math.max(
+          0,
+          debugContactFadeDuration
+        );
+      };
+
+      const writeDebugStationaryMarkerContact = (px, py, slot) => {
+        const safePx = THREE.MathUtils.clamp(px, 0, 1);
+        const safePy = THREE.MathUtils.clamp(py, 0, 1);
+        const idx = THREE.MathUtils.clamp(
+          Math.floor(slot),
+          0,
+          Math.min(MAX_STATIONARY_DEBUG_SLOTS, DEBUG_CONTACT_CAP) - 1
+        );
+
+        debugStationaryMarkerContactsRef.current[idx].x = safePx;
+        debugStationaryMarkerContactsRef.current[idx].y = safePy;
+        debugStationaryMarkerContactsRef.current[idx].ttl = Math.max(
           0,
           debugContactFadeDuration
         );
@@ -989,15 +1118,28 @@ const FluidMaterial = forwardRef(
         }
       }
 
-      if (
-        debugStationarySplat &&
-        stationarySplatsEnabled &&
-        stationaryPointers.length > 0
-      ) {
-        for (let i = 0; i < stationaryPointers.length; i += 1) {
-          const sp = stationaryPointers[i];
-          if (sp) {
-            writeDebugStationaryContact(sp.x ?? 0.5, sp.y ?? 0.5, i);
+      if (debugStationarySplat) {
+        if (stationarySplatsEnabled) {
+          for (let i = 0; i < stationaryPointers.length; i += 1) {
+            if (i >= MAX_STATIONARY_DEBUG_SLOTS) break;
+            const sp = stationaryPointers[i];
+            if (sp) {
+              writeDebugStationaryContact(sp.x ?? 0.5, sp.y ?? 0.5, i);
+            }
+          }
+        }
+
+        if (stationaryDebugMarkersEnabled) {
+          for (let i = 0; i < stationaryDebugMarkers.length; i += 1) {
+            if (i >= MAX_STATIONARY_DEBUG_SLOTS) break;
+            const marker = stationaryDebugMarkers[i];
+            if (marker) {
+              writeDebugStationaryMarkerContact(
+                marker.x ?? 0.5,
+                marker.y ?? 0.5,
+                i
+              );
+            }
           }
         }
       }
@@ -1323,8 +1465,14 @@ const FluidMaterial = forwardRef(
       displayMat.uniforms.uDebugPointerHeight.value = debugPointerHeight;
       displayMat.uniforms.uDebugAutoWidth.value = debugAutoWidth;
       displayMat.uniforms.uDebugAutoHeight.value = debugAutoHeight;
-      displayMat.uniforms.uDebugStationaryWidth.value = debugStationaryWidth;
-      displayMat.uniforms.uDebugStationaryHeight.value = debugStationaryHeight;
+      displayMat.uniforms.uDebugStationaryWidth.value =
+        resolvedDebugStationarySplatWidth;
+      displayMat.uniforms.uDebugStationaryHeight.value =
+        resolvedDebugStationarySplatHeight;
+      displayMat.uniforms.uDebugStationaryMarkerWidth.value =
+        resolvedDebugStationaryMarkerWidth;
+      displayMat.uniforms.uDebugStationaryMarkerHeight.value =
+        resolvedDebugStationaryMarkerHeight;
       displayMat.uniforms.uDebugRandomWidth.value = debugRandomWidth;
       displayMat.uniforms.uDebugRandomHeight.value = debugRandomHeight;
       displayMat.uniforms.uDebugPointerRotation.value =
@@ -1333,7 +1481,9 @@ const FluidMaterial = forwardRef(
         debugAutoRotation || 0
       );
       displayMat.uniforms.uDebugStationaryRotation.value =
-        THREE.MathUtils.degToRad(debugStationaryRotation || 0);
+        THREE.MathUtils.degToRad(resolvedDebugStationarySplatRotation || 0);
+      displayMat.uniforms.uDebugStationaryMarkerRotation.value =
+        THREE.MathUtils.degToRad(resolvedDebugStationaryMarkerRotation || 0);
       displayMat.uniforms.uDebugRandomRotation.value = THREE.MathUtils.degToRad(
         debugRandomRotation || 0
       );
@@ -1342,18 +1492,29 @@ const FluidMaterial = forwardRef(
       displayMat.uniforms.uDebugAutoLineWeight.value =
         debugAutoLineWeight ?? MATERIAL_DEFAULTS.debugAutoLineWeight;
       displayMat.uniforms.uDebugStationaryLineWeight.value =
-        debugStationaryLineWeight ??
+        resolvedDebugStationarySplatLineWeight ??
         MATERIAL_DEFAULTS.debugStationaryLineWeight;
+      displayMat.uniforms.uDebugStationaryMarkerLineWeight.value =
+        resolvedDebugStationaryMarkerLineWeight ??
+        MATERIAL_DEFAULTS.debugStationaryMarkerLineWeight;
       displayMat.uniforms.uDebugRandomLineWeight.value =
         debugRandomLineWeight ?? MATERIAL_DEFAULTS.debugRandomLineWeight;
       displayMat.uniforms.uDebugPointerFill.value = !!debugPointerFill;
       displayMat.uniforms.uDebugAutoFill.value = !!debugAutoFill;
-      displayMat.uniforms.uDebugStationaryFill.value = !!debugStationaryFill;
+      displayMat.uniforms.uDebugStationaryFill.value =
+        !!resolvedDebugStationarySplatFill;
+      displayMat.uniforms.uDebugStationaryMarkerFill.value =
+        !!resolvedDebugStationaryMarkerFill;
       displayMat.uniforms.uDebugRandomFill.value = !!debugRandomFill;
       displayMat.uniforms.uDebugAutoActive.value = firstAuto.ttl > 0 ? 1 : 0;
       displayMat.uniforms.uDebugPointerColor.value.set(debugPointerColor);
       displayMat.uniforms.uDebugAutoColor.value.set(debugAutoColor);
-      displayMat.uniforms.uDebugStationaryColor.value.set(debugStationaryColor);
+      displayMat.uniforms.uDebugStationaryColor.value.set(
+        resolvedDebugStationarySplatColor
+      );
+      displayMat.uniforms.uDebugStationaryMarkerColor.value.set(
+        resolvedDebugStationaryMarkerColor
+      );
       displayMat.uniforms.uDebugRandomColor.value.set(debugRandomColor);
       displayMat.uniforms.uDebugContactFadeDuration.value = Math.max(
         0.0001,
@@ -1361,6 +1522,8 @@ const FluidMaterial = forwardRef(
       );
       for (let i = 0; i < DEBUG_CONTACT_CAP; i++) {
         const stationaryContact = debugStationaryContactsRef.current[i];
+        const stationaryMarkerContact =
+          debugStationaryMarkerContactsRef.current[i];
         const randomContact = debugRandomContactsRef.current[i];
         displayMat.uniforms.uDebugStationaryContacts.value[i].set(
           stationaryContact.x,
@@ -1368,6 +1531,12 @@ const FluidMaterial = forwardRef(
         );
         displayMat.uniforms.uDebugStationaryLife.value[i] =
           stationaryContact.ttl;
+        displayMat.uniforms.uDebugStationaryMarkerContacts.value[i].set(
+          stationaryMarkerContact.x,
+          stationaryMarkerContact.y
+        );
+        displayMat.uniforms.uDebugStationaryMarkerLife.value[i] =
+          stationaryMarkerContact.ttl;
         displayMat.uniforms.uDebugRandomContacts.value[i].set(
           randomContact.x,
           randomContact.y

@@ -14,6 +14,7 @@ import {
 } from '../fluidPresets';
 
 const MAX_STATIONARY_SPLATS = 10;
+const MAX_STATIONARY_DEBUG_MARKERS = 10;
 const MAX_AUTO_SPLATS = 10;
 const INITIAL_PRESET_KEY = 'watercolorSquares';
 
@@ -59,6 +60,8 @@ const CONTROL_DEFAULTS = {
   stationarySplatDirectionStrength: 0,
   stationarySplatDirectionAngle: 180,
   stationarySplatCount: 8,
+  stationaryDebugMarkersEnabled: true,
+  stationaryDebugMarkerCount: 8,
   shading: true,
   bloom: true,
   bloomResolution: 0.25,
@@ -100,6 +103,18 @@ const CONTROL_DEFAULTS = {
   debugAutoFill: false,
   debugAutoRotation: 0,
   debugStationarySplat: true,
+  debugStationarySplatColor: '#ffd166',
+  debugStationarySplatWidth: 0.03,
+  debugStationarySplatHeight: 0.03,
+  debugStationarySplatLineWeight: 2,
+  debugStationarySplatFill: false,
+  debugStationarySplatRotation: 0,
+  debugStationaryMarkerColor: '#ffd166',
+  debugStationaryMarkerWidth: 0.03,
+  debugStationaryMarkerHeight: 0.03,
+  debugStationaryMarkerLineWeight: 2,
+  debugStationaryMarkerFill: false,
+  debugStationaryMarkerRotation: 0,
   debugStationaryColor: '#ffd166',
   debugStationaryWidth: 0.03,
   debugStationaryHeight: 0.03,
@@ -147,6 +162,40 @@ const CONTROL_DEFAULTS = {
       y: 0.8,
     },
   ],
+  stationaryDebugMarkers: [
+    {
+      x: 0.1,
+      y: 0.1,
+    },
+    {
+      x: 0.2,
+      y: 0.2,
+    },
+    {
+      x: 0.3,
+      y: 0.3,
+    },
+    {
+      x: 0.4,
+      y: 0.4,
+    },
+    {
+      x: 0.5,
+      y: 0.5,
+    },
+    {
+      x: 0.6,
+      y: 0.6,
+    },
+    {
+      x: 0.7,
+      y: 0.7,
+    },
+    {
+      x: 0.8,
+      y: 0.8,
+    },
+  ],
 };
 
 const INITIAL_PRESET_VALUES =
@@ -155,6 +204,11 @@ const INITIAL_PRESET_VALUES =
 function clampStationarySplatCount(value) {
   if (!Number.isFinite(value)) return 0;
   return Math.max(0, Math.min(MAX_STATIONARY_SPLATS, Math.floor(value)));
+}
+
+function clampStationaryDebugMarkerCount(value) {
+  if (!Number.isFinite(value)) return 0;
+  return Math.max(0, Math.min(MAX_STATIONARY_DEBUG_MARKERS, Math.floor(value)));
 }
 
 function clampAutoSplatCount(value) {
@@ -176,6 +230,13 @@ function createRandomStationarySplat() {
   };
 }
 
+function createRandomStationaryDebugMarker() {
+  return {
+    x: 0.1 + Math.random() * 0.8,
+    y: 0.1 + Math.random() * 0.8,
+  };
+}
+
 function createRandomAutoSplatStart() {
   return {
     x: 0.1 + Math.random() * 0.8,
@@ -187,11 +248,22 @@ function getStationarySplatKey(index) {
   return `stationarySplat${index + 1}Pos`;
 }
 
+function getStationaryDebugMarkerKey(index) {
+  return `stationaryDebugMarker${index + 1}Pos`;
+}
+
 function getAutoSplatStartKey(index) {
   return `autoSplat${index + 1}StartPos`;
 }
 
 function normalizeStationarySplat(point) {
+  return {
+    x: clamp01(point?.x),
+    y: clamp01(point?.y),
+  };
+}
+
+function normalizeStationaryDebugMarker(point) {
   return {
     x: clamp01(point?.x),
     y: clamp01(point?.y),
@@ -225,6 +297,32 @@ function getNormalizedStationarySplatsFromPreset(presetValues) {
   return next;
 }
 
+function getNormalizedStationaryDebugMarkersFromPreset(presetValues) {
+  const presetCount = clampStationaryDebugMarkerCount(
+    presetValues?.stationaryDebugMarkerCount ??
+      presetValues?.stationaryDebugMarkers?.length ??
+      presetValues?.stationarySplatCount ??
+      presetValues?.stationarySplats?.length
+  );
+  let presetMarkers = [];
+  if (Array.isArray(presetValues?.stationaryDebugMarkers)) {
+    presetMarkers = presetValues.stationaryDebugMarkers;
+  } else if (Array.isArray(presetValues?.stationarySplats)) {
+    presetMarkers = presetValues.stationarySplats;
+  }
+
+  const next = [];
+  for (let i = 0; i < presetCount; i += 1) {
+    const presetPoint = presetMarkers[i];
+    const point = presetPoint
+      ? normalizeStationaryDebugMarker(presetPoint)
+      : createRandomStationaryDebugMarker();
+    next.push(point);
+  }
+
+  return next;
+}
+
 function getNormalizedAutoSplatStartsFromPreset(presetValues) {
   const presetCount = clampAutoSplatCount(
     presetValues?.autoSplatCount ?? presetValues?.autoSplatStarts?.length
@@ -250,6 +348,16 @@ function buildStationarySplatControlPatch(stationarySplats) {
     acc[getStationarySplatKey(index)] = {
       x: clamp01(splat?.x),
       y: clamp01(splat?.y),
+    };
+    return acc;
+  }, {});
+}
+
+function buildStationaryDebugMarkerControlPatch(stationaryDebugMarkers) {
+  return stationaryDebugMarkers.reduce((acc, marker, index) => {
+    acc[getStationaryDebugMarkerKey(index)] = {
+      x: clamp01(marker?.x),
+      y: clamp01(marker?.y),
     };
     return acc;
   }, {});
@@ -290,6 +398,55 @@ function buildStationarySplatControls(stationarySplats, setStationarySplats) {
       },
       onChange: (nextPos) => {
         setStationarySplats((prev) => {
+          if (!prev[index]) return prev;
+
+          const nextX = clamp01(nextPos?.x);
+          const nextY = clamp01(nextPos?.y);
+
+          if (prev[index].x === nextX && prev[index].y === nextY) return prev;
+
+          const next = [...prev];
+          next[index] = {
+            x: nextX,
+            y: nextY,
+          };
+          return next;
+        });
+      },
+    };
+  }
+
+  return controls;
+}
+
+function buildStationaryDebugMarkerControls(
+  stationaryDebugMarkers,
+  setStationaryDebugMarkers
+) {
+  const controls = {};
+
+  for (let index = 0; index < MAX_STATIONARY_DEBUG_MARKERS; index += 1) {
+    const marker = stationaryDebugMarkers[index] || { x: 0.5, y: 0.5 };
+    const key = getStationaryDebugMarkerKey(index);
+    const labelIndex = index + 1;
+
+    controls[key] = {
+      label: `M${labelIndex} Pos`,
+      value: {
+        x: clamp01(marker?.x),
+        y: clamp01(marker?.y),
+      },
+      min: 0,
+      max: 1,
+      step: 0.001,
+      render: (get) => {
+        const count = clampStationaryDebugMarkerCount(
+          get('Fluid.Interaction.StationaryMarkers.stationaryDebugMarkerCount')
+        );
+        return index < count;
+      },
+      onChange: (nextPos) => {
+        setStationaryDebugMarkers((prev) => {
           if (!prev[index]) return prev;
 
           const nextX = clamp01(nextPos?.x);
@@ -373,6 +530,22 @@ function getStationarySplatsFromLeva(get, stationarySplatCount) {
   return splats;
 }
 
+function getStationaryDebugMarkersFromLeva(get, stationaryDebugMarkerCount) {
+  const count = clampStationaryDebugMarkerCount(stationaryDebugMarkerCount);
+  const markers = [];
+
+  for (let i = 0; i < count; i += 1) {
+    const path = `Fluid.Interaction.StationaryMarkers.${getStationaryDebugMarkerKey(i)}`;
+    const value = get(path);
+    markers.push({
+      x: clamp01(value?.x),
+      y: clamp01(value?.y),
+    });
+  }
+
+  return markers;
+}
+
 function getAutoSplatStartsFromLeva(get, autoSplatCount) {
   const count = clampAutoSplatCount(autoSplatCount);
   const starts = [];
@@ -395,6 +568,9 @@ function copySettingsToClipboard(get) {
   );
   const stationarySplatCount = clampStationarySplatCount(
     get('Fluid.Interaction.StationarySplats.stationarySplatCount')
+  );
+  const stationaryDebugMarkerCount = clampStationaryDebugMarkerCount(
+    get('Fluid.Interaction.StationaryMarkers.stationaryDebugMarkerCount')
   );
   const settings = {
     paused: get('Fluid.Solver.paused'),
@@ -454,6 +630,16 @@ function copySettingsToClipboard(get) {
       'Fluid.Interaction.StationarySplats.stationarySplatCount'
     ),
     stationarySplats: getStationarySplatsFromLeva(get, stationarySplatCount),
+    stationaryDebugMarkersEnabled: get(
+      'Fluid.Interaction.StationaryMarkers.stationaryDebugMarkersEnabled'
+    ),
+    stationaryDebugMarkerCount: get(
+      'Fluid.Interaction.StationaryMarkers.stationaryDebugMarkerCount'
+    ),
+    stationaryDebugMarkers: getStationaryDebugMarkersFromLeva(
+      get,
+      stationaryDebugMarkerCount
+    ),
     handsMaxHands: get('Fluid.Interaction.HandsInput.handsMaxHands'),
     handsShowVideo: get('Fluid.Interaction.HandsInput.handsShowVideo'),
     handsShowDebugSkeleton: get(
@@ -535,23 +721,41 @@ function copySettingsToClipboard(get) {
     ),
     debugAutoFill: get('Fluid.Interaction.AutoSplats.debugAutoFill'),
     debugAutoRotation: get('Fluid.Interaction.AutoSplats.debugAutoRotation'),
-    debugStationaryColor: get(
-      'Fluid.Interaction.StationarySplats.debugStationaryColor'
+    debugStationarySplatColor: get(
+      'Fluid.Interaction.StationarySplats.debugStationarySplatColor'
     ),
-    debugStationaryWidth: get(
-      'Fluid.Interaction.StationarySplats.debugStationaryWidth'
+    debugStationarySplatWidth: get(
+      'Fluid.Interaction.StationarySplats.debugStationarySplatWidth'
     ),
-    debugStationaryHeight: get(
-      'Fluid.Interaction.StationarySplats.debugStationaryHeight'
+    debugStationarySplatHeight: get(
+      'Fluid.Interaction.StationarySplats.debugStationarySplatHeight'
     ),
-    debugStationaryLineWeight: get(
-      'Fluid.Interaction.StationarySplats.debugStationaryLineWeight'
+    debugStationarySplatLineWeight: get(
+      'Fluid.Interaction.StationarySplats.debugStationarySplatLineWeight'
     ),
-    debugStationaryFill: get(
-      'Fluid.Interaction.StationarySplats.debugStationaryFill'
+    debugStationarySplatFill: get(
+      'Fluid.Interaction.StationarySplats.debugStationarySplatFill'
     ),
-    debugStationaryRotation: get(
-      'Fluid.Interaction.StationarySplats.debugStationaryRotation'
+    debugStationarySplatRotation: get(
+      'Fluid.Interaction.StationarySplats.debugStationarySplatRotation'
+    ),
+    debugStationaryMarkerColor: get(
+      'Fluid.Interaction.StationaryMarkers.debugStationaryMarkerColor'
+    ),
+    debugStationaryMarkerWidth: get(
+      'Fluid.Interaction.StationaryMarkers.debugStationaryMarkerWidth'
+    ),
+    debugStationaryMarkerHeight: get(
+      'Fluid.Interaction.StationaryMarkers.debugStationaryMarkerHeight'
+    ),
+    debugStationaryMarkerLineWeight: get(
+      'Fluid.Interaction.StationaryMarkers.debugStationaryMarkerLineWeight'
+    ),
+    debugStationaryMarkerFill: get(
+      'Fluid.Interaction.StationaryMarkers.debugStationaryMarkerFill'
+    ),
+    debugStationaryMarkerRotation: get(
+      'Fluid.Interaction.StationaryMarkers.debugStationaryMarkerRotation'
     ),
     debugRandomColor: get('Fluid.Interaction.RandomBurst.debugRandomColor'),
     debugRandomWidth: get('Fluid.Interaction.RandomBurst.debugRandomWidth'),
@@ -591,12 +795,22 @@ export default function useFluidControls({ randomSplatQueueRef, resetSimRef }) {
   const [stationarySplats, setStationarySplats] = useState(() =>
     getNormalizedStationarySplatsFromPreset(INITIAL_PRESET_VALUES)
   );
+  const [stationaryDebugMarkers, setStationaryDebugMarkers] = useState(() =>
+    getNormalizedStationaryDebugMarkersFromPreset(INITIAL_PRESET_VALUES)
+  );
 
   const applyPresetValues = (presetValues, presetKey) => {
     if (!presetValues || !setRef.current) return;
     const {
       stationarySplats: _stationarySplats,
+      stationaryDebugMarkers: _stationaryDebugMarkers,
       autoSplatStarts: _autoSplatStarts,
+      debugStationaryColor: _legacyDebugStationaryColor,
+      debugStationaryWidth: _legacyDebugStationaryWidth,
+      debugStationaryHeight: _legacyDebugStationaryHeight,
+      debugStationaryLineWeight: _legacyDebugStationaryLineWeight,
+      debugStationaryFill: _legacyDebugStationaryFill,
+      debugStationaryRotation: _legacyDebugStationaryRotation,
       ...levaPresetValues
     } = presetValues;
 
@@ -607,9 +821,13 @@ export default function useFluidControls({ randomSplatQueueRef, resetSimRef }) {
     const normalizedStationarySplats =
       getNormalizedStationarySplatsFromPreset(presetValues);
     const stationarySplatCount = normalizedStationarySplats.length;
+    const normalizedStationaryDebugMarkers =
+      getNormalizedStationaryDebugMarkersFromPreset(presetValues);
+    const stationaryDebugMarkerCount = normalizedStationaryDebugMarkers.length;
 
     setAutoSplatStarts(normalizedAutoSplatStarts);
     setStationarySplats(normalizedStationarySplats);
+    setStationaryDebugMarkers(normalizedStationaryDebugMarkers);
     if (presetKey) {
       currentPresetRef.current = presetKey;
     }
@@ -658,8 +876,60 @@ export default function useFluidControls({ randomSplatQueueRef, resetSimRef }) {
         presetValues.stationarySplatForce ??
         presetValues.splatForce ??
         CONTROL_DEFAULTS.stationarySplatForce,
+      stationaryDebugMarkersEnabled:
+        presetValues.stationaryDebugMarkersEnabled ??
+        CONTROL_DEFAULTS.stationaryDebugMarkersEnabled,
+      debugStationarySplatColor:
+        presetValues.debugStationarySplatColor ??
+        presetValues.debugStationaryColor ??
+        CONTROL_DEFAULTS.debugStationarySplatColor,
+      debugStationarySplatWidth:
+        presetValues.debugStationarySplatWidth ??
+        presetValues.debugStationaryWidth ??
+        CONTROL_DEFAULTS.debugStationarySplatWidth,
+      debugStationarySplatHeight:
+        presetValues.debugStationarySplatHeight ??
+        presetValues.debugStationaryHeight ??
+        CONTROL_DEFAULTS.debugStationarySplatHeight,
+      debugStationarySplatLineWeight:
+        presetValues.debugStationarySplatLineWeight ??
+        presetValues.debugStationaryLineWeight ??
+        CONTROL_DEFAULTS.debugStationarySplatLineWeight,
+      debugStationarySplatFill:
+        presetValues.debugStationarySplatFill ??
+        presetValues.debugStationaryFill ??
+        CONTROL_DEFAULTS.debugStationarySplatFill,
+      debugStationarySplatRotation:
+        presetValues.debugStationarySplatRotation ??
+        presetValues.debugStationaryRotation ??
+        CONTROL_DEFAULTS.debugStationarySplatRotation,
+      debugStationaryMarkerColor:
+        presetValues.debugStationaryMarkerColor ??
+        presetValues.debugStationaryColor ??
+        CONTROL_DEFAULTS.debugStationaryMarkerColor,
+      debugStationaryMarkerWidth:
+        presetValues.debugStationaryMarkerWidth ??
+        presetValues.debugStationaryWidth ??
+        CONTROL_DEFAULTS.debugStationaryMarkerWidth,
+      debugStationaryMarkerHeight:
+        presetValues.debugStationaryMarkerHeight ??
+        presetValues.debugStationaryHeight ??
+        CONTROL_DEFAULTS.debugStationaryMarkerHeight,
+      debugStationaryMarkerLineWeight:
+        presetValues.debugStationaryMarkerLineWeight ??
+        presetValues.debugStationaryLineWeight ??
+        CONTROL_DEFAULTS.debugStationaryMarkerLineWeight,
+      debugStationaryMarkerFill:
+        presetValues.debugStationaryMarkerFill ??
+        presetValues.debugStationaryFill ??
+        CONTROL_DEFAULTS.debugStationaryMarkerFill,
+      debugStationaryMarkerRotation:
+        presetValues.debugStationaryMarkerRotation ??
+        presetValues.debugStationaryRotation ??
+        CONTROL_DEFAULTS.debugStationaryMarkerRotation,
       autoSplatCount,
       stationarySplatCount,
+      stationaryDebugMarkerCount,
     });
   };
 
@@ -1087,38 +1357,94 @@ export default function useFluidControls({ randomSplatQueueRef, resetSimRef }) {
                 value: CONTROL_DEFAULTS.debugStationarySplat,
                 label: 'Debug',
               },
-              debugStationaryColor: {
-                value: CONTROL_DEFAULTS.debugStationaryColor,
+              debugStationarySplatColor: {
+                value: CONTROL_DEFAULTS.debugStationarySplatColor,
                 label: 'Debug Color',
               },
-              debugStationaryWidth: {
+              debugStationarySplatWidth: {
                 label: 'Debug W',
-                value: CONTROL_DEFAULTS.debugStationaryWidth,
+                value: CONTROL_DEFAULTS.debugStationarySplatWidth,
                 min: 0.005,
                 max: 0.15,
                 step: 0.002,
               },
-              debugStationaryHeight: {
+              debugStationarySplatHeight: {
                 label: 'Debug H',
-                value: CONTROL_DEFAULTS.debugStationaryHeight,
+                value: CONTROL_DEFAULTS.debugStationarySplatHeight,
                 min: 0.005,
                 max: 0.15,
                 step: 0.002,
               },
-              debugStationaryLineWeight: {
+              debugStationarySplatLineWeight: {
                 label: 'Debug Line',
-                value: CONTROL_DEFAULTS.debugStationaryLineWeight,
+                value: CONTROL_DEFAULTS.debugStationarySplatLineWeight,
                 min: 0.25,
                 max: 4,
                 step: 0.05,
               },
-              debugStationaryFill: {
-                value: CONTROL_DEFAULTS.debugStationaryFill,
+              debugStationarySplatFill: {
+                value: CONTROL_DEFAULTS.debugStationarySplatFill,
                 label: 'Debug Fill',
               },
-              debugStationaryRotation: {
+              debugStationarySplatRotation: {
                 label: 'Debug Rot°',
-                value: CONTROL_DEFAULTS.debugStationaryRotation,
+                value: CONTROL_DEFAULTS.debugStationarySplatRotation,
+                min: 0,
+                max: 45,
+                step: 1,
+              },
+            },
+            { collapsed: true }
+          ),
+          StationaryMarkers: folder(
+            {
+              stationaryDebugMarkersEnabled: {
+                value: CONTROL_DEFAULTS.stationaryDebugMarkersEnabled,
+                label: 'Markers',
+              },
+              stationaryDebugMarkerCount: {
+                label: 'Marker Count',
+                value: CONTROL_DEFAULTS.stationaryDebugMarkerCount,
+                min: 0,
+                max: 10,
+                step: 1,
+              },
+              ...buildStationaryDebugMarkerControls(
+                stationaryDebugMarkers,
+                setStationaryDebugMarkers
+              ),
+              debugStationaryMarkerColor: {
+                value: CONTROL_DEFAULTS.debugStationaryMarkerColor,
+                label: 'Debug Color',
+              },
+              debugStationaryMarkerWidth: {
+                label: 'Debug W',
+                value: CONTROL_DEFAULTS.debugStationaryMarkerWidth,
+                min: 0.005,
+                max: 0.15,
+                step: 0.002,
+              },
+              debugStationaryMarkerHeight: {
+                label: 'Debug H',
+                value: CONTROL_DEFAULTS.debugStationaryMarkerHeight,
+                min: 0.005,
+                max: 0.15,
+                step: 0.002,
+              },
+              debugStationaryMarkerLineWeight: {
+                label: 'Debug Line',
+                value: CONTROL_DEFAULTS.debugStationaryMarkerLineWeight,
+                min: 0.25,
+                max: 4,
+                step: 0.05,
+              },
+              debugStationaryMarkerFill: {
+                value: CONTROL_DEFAULTS.debugStationaryMarkerFill,
+                label: 'Debug Fill',
+              },
+              debugStationaryMarkerRotation: {
+                label: 'Debug Rot°',
+                value: CONTROL_DEFAULTS.debugStationaryMarkerRotation,
                 min: 0,
                 max: 45,
                 step: 1,
@@ -1396,6 +1722,23 @@ export default function useFluidControls({ randomSplatQueueRef, resetSimRef }) {
   }, [controlValues.stationarySplatCount, presetInitialized]);
 
   useEffect(() => {
+    if (!presetInitialized) return;
+
+    const desiredCount = clampStationaryDebugMarkerCount(
+      controlValues.stationaryDebugMarkerCount
+    );
+
+    setStationaryDebugMarkers((prev) => {
+      if (prev.length === desiredCount) return prev;
+      const next = prev.slice(0, desiredCount);
+      while (next.length < desiredCount) {
+        next.push(createRandomStationaryDebugMarker());
+      }
+      return next;
+    });
+  }, [controlValues.stationaryDebugMarkerCount, presetInitialized]);
+
+  useEffect(() => {
     if (!setRef.current) return;
 
     const controlPatch = buildAutoSplatStartControlPatch(autoSplatStarts);
@@ -1455,18 +1798,62 @@ export default function useFluidControls({ randomSplatQueueRef, resetSimRef }) {
     }
   }, [controlValues, stationarySplats]);
 
+  useEffect(() => {
+    if (!setRef.current) return;
+
+    const controlPatch = buildStationaryDebugMarkerControlPatch(
+      stationaryDebugMarkers
+    );
+    const registeredPatch = Object.entries(controlPatch).reduce(
+      (acc, [key, nextValue]) => {
+        if (!Object.prototype.hasOwnProperty.call(controlValues, key)) {
+          return acc;
+        }
+
+        const currentValue = controlValues[key];
+        const hasChanged =
+          !currentValue ||
+          currentValue.x !== nextValue.x ||
+          currentValue.y !== nextValue.y;
+
+        if (hasChanged) {
+          acc[key] = nextValue;
+        }
+
+        return acc;
+      },
+      {}
+    );
+
+    if (Object.keys(registeredPatch).length > 0) {
+      setRef.current(registeredPatch);
+    }
+  }, [controlValues, stationaryDebugMarkers]);
+
   const mergedControlValues = useMemo(() => {
     const autoCount = clampAutoSplatCount(controlValues.autoSplatCount);
-    const desiredCount = clampStationarySplatCount(
+    const stationarySplatDesiredCount = clampStationarySplatCount(
       controlValues.stationarySplatCount
+    );
+    const stationaryDebugMarkerDesiredCount = clampStationaryDebugMarkerCount(
+      controlValues.stationaryDebugMarkerCount
     );
 
     return {
       ...controlValues,
       autoSplatStarts: autoSplatStarts.slice(0, autoCount),
-      stationarySplats: stationarySplats.slice(0, desiredCount),
+      stationarySplats: stationarySplats.slice(0, stationarySplatDesiredCount),
+      stationaryDebugMarkers: stationaryDebugMarkers.slice(
+        0,
+        stationaryDebugMarkerDesiredCount
+      ),
     };
-  }, [autoSplatStarts, controlValues, stationarySplats]);
+  }, [
+    autoSplatStarts,
+    controlValues,
+    stationaryDebugMarkers,
+    stationarySplats,
+  ]);
 
   return [mergedControlValues, setControls];
 }

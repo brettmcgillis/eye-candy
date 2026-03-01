@@ -370,21 +370,27 @@ uniform float uDebugAutoRotation;
 uniform float uDebugStationaryWidth;
 uniform float uDebugStationaryHeight;
 uniform float uDebugStationaryRotation;
+uniform float uDebugStationaryMarkerWidth;
+uniform float uDebugStationaryMarkerHeight;
+uniform float uDebugStationaryMarkerRotation;
 uniform float uDebugRandomWidth;
 uniform float uDebugRandomHeight;
 uniform float uDebugRandomRotation;
 uniform float uDebugPointerLineWeight;
 uniform float uDebugAutoLineWeight;
 uniform float uDebugStationaryLineWeight;
+uniform float uDebugStationaryMarkerLineWeight;
 uniform float uDebugRandomLineWeight;
 uniform bool uDebugPointerFill;
 uniform bool uDebugAutoFill;
 uniform bool uDebugStationaryFill;
+uniform bool uDebugStationaryMarkerFill;
 uniform bool uDebugRandomFill;
 uniform float uDebugAutoActive;
 uniform vec3 uDebugPointerColor;
 uniform vec3 uDebugAutoColor;
 uniform vec3 uDebugStationaryColor;
+uniform vec3 uDebugStationaryMarkerColor;
 uniform vec3 uDebugRandomColor;
 #define DEBUG_POINTER_CAP 8
 uniform float uDebugPointerCount;
@@ -398,6 +404,8 @@ uniform float uDebugAutoLife[DEBUG_CONTACT_CAP];
 #endif
 uniform vec2 uDebugStationaryContacts[DEBUG_CONTACT_CAP];
 uniform float uDebugStationaryLife[DEBUG_CONTACT_CAP];
+uniform vec2 uDebugStationaryMarkerContacts[DEBUG_CONTACT_CAP];
+uniform float uDebugStationaryMarkerLife[DEBUG_CONTACT_CAP];
 uniform vec2 uDebugRandomContacts[DEBUG_CONTACT_CAP];
 uniform float uDebugRandomLife[DEBUG_CONTACT_CAP];
 uniform float uDebugContactFadeDuration;
@@ -517,6 +525,10 @@ void main() {
     max(uDebugStationaryWidth, 0.0),
     max(uDebugStationaryHeight, 0.0)
   );
+  vec2 stationaryMarkerSize = vec2(
+    max(uDebugStationaryMarkerWidth, 0.0),
+    max(uDebugStationaryMarkerHeight, 0.0)
+  );
   vec2 randomSize = vec2(
     max(uDebugRandomWidth, 0.0),
     max(uDebugRandomHeight, 0.0)
@@ -524,11 +536,16 @@ void main() {
   vec2 ptrHalf = pointerSize * 0.5;
   vec2 autoHalfVec = autoSize * 0.5;
   vec2 stationaryHalfMix = stationarySize * 0.5;
+  vec2 stationaryMarkerHalfMix = stationaryMarkerSize * 0.5;
   vec2 randomHalfMix = randomSize * 0.5;
   vec2 autoCenter = uDebugAuto;
   float pointerMinSize = max(min(pointerSize.x, pointerSize.y), 0.0001);
   float autoMinSize = max(min(autoSize.x, autoSize.y), 0.0001);
   float stationaryMinSize = max(min(stationarySize.x, stationarySize.y), 0.0001);
+  float stationaryMarkerMinSize = max(
+    min(stationaryMarkerSize.x, stationaryMarkerSize.y),
+    0.0001
+  );
   float randomMinSize = max(min(randomSize.x, randomSize.y), 0.0001);
   float pointerThickness = max(
     0.00035,
@@ -541,6 +558,10 @@ void main() {
   float stationaryThickness = max(
     0.00035,
     stationaryMinSize * 0.04 * uDebugStationaryLineWeight
+  );
+  float stationaryMarkerThickness = max(
+    0.00035,
+    stationaryMarkerMinSize * 0.04 * uDebugStationaryMarkerLineWeight
   );
   float randomThickness = max(
     0.00035,
@@ -598,6 +619,25 @@ void main() {
         ) *
         stationaryActive;
       color = mix(color, uDebugStationaryColor, stationaryMark);
+    }
+
+    for (int i = 0; i < DEBUG_CONTACT_CAP; i++) {
+      float stationaryMarkerActive = clamp(
+        uDebugStationaryMarkerLife[i] / max(uDebugContactFadeDuration, 0.0001),
+        0.0,
+        1.0
+      );
+      float stationaryMarkerMark =
+        squareMarker(
+          vUv,
+          uDebugStationaryMarkerContacts[i],
+          stationaryMarkerHalfMix,
+          stationaryMarkerThickness,
+          uDebugStationaryMarkerRotation,
+          uDebugStationaryMarkerFill
+        ) *
+        stationaryMarkerActive;
+      color = mix(color, uDebugStationaryMarkerColor, stationaryMarkerMark);
     }
   }
 

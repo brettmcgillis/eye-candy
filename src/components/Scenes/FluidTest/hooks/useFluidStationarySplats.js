@@ -3,6 +3,7 @@ import * as THREE from 'three';
 import { useEffect, useRef } from 'react';
 
 const MAX_STATIONARY_SPLATS = 10;
+const MAX_STATIONARY_DEBUG_MARKERS = 10;
 
 function clamp01(value, fallback = 0.5) {
   if (Number.isFinite(value)) {
@@ -33,9 +34,18 @@ function getConfiguredPoints(config) {
   return [];
 }
 
+function getConfiguredDebugMarkerPoints(config) {
+  if (Array.isArray(config?.stationaryDebugMarkers)) {
+    return config.stationaryDebugMarkers;
+  }
+  return getConfiguredPoints(config);
+}
+
 export default function useFluidStationarySplats({ config, pointerEvents }) {
   const stationaryPointersRef = useRef([]);
+  const stationaryDebugMarkersRef = useRef([]);
   const idRef = useRef(0);
+  const debugIdRef = useRef(0);
 
   useEffect(() => {
     const desiredCount = THREE.MathUtils.clamp(
@@ -45,8 +55,8 @@ export default function useFluidStationarySplats({ config, pointerEvents }) {
     );
 
     const configuredPoints = getConfiguredPoints(config);
-
     const next = stationaryPointersRef.current.slice(0, desiredCount);
+
     while (next.length < desiredCount) {
       const nextId = `stationary-${idRef.current}`;
       idRef.current += 1;
@@ -64,8 +74,47 @@ export default function useFluidStationarySplats({ config, pointerEvents }) {
     stationaryPointersRef.current = next;
   }, [config?.stationarySplatCount, config?.stationarySplats]);
 
+  useEffect(() => {
+    const configuredDebugPoints = getConfiguredDebugMarkerPoints(config);
+    const fallbackCount = Math.max(
+      0,
+      Math.floor(config?.stationarySplatCount || 0)
+    );
+    const desiredCount = THREE.MathUtils.clamp(
+      Math.max(
+        0,
+        Math.floor(config?.stationaryDebugMarkerCount ?? fallbackCount)
+      ),
+      0,
+      MAX_STATIONARY_DEBUG_MARKERS
+    );
+    const next = stationaryDebugMarkersRef.current.slice(0, desiredCount);
+
+    while (next.length < desiredCount) {
+      const nextId = `stationary-debug-${debugIdRef.current}`;
+      debugIdRef.current += 1;
+      const configuredPoint = configuredDebugPoints[next.length];
+      const point = configuredPoint || createRandomPoint();
+      next.push(normalizePoint(point, nextId));
+    }
+
+    for (let i = 0; i < next.length; i += 1) {
+      if (configuredDebugPoints[i]) {
+        next[i] = normalizePoint(configuredDebugPoints[i], next[i].id);
+      }
+    }
+
+    stationaryDebugMarkersRef.current = next;
+  }, [
+    config?.stationaryDebugMarkerCount,
+    config?.stationaryDebugMarkers,
+    config?.stationarySplatCount,
+    config?.stationarySplats,
+  ]);
+
   return {
     stationaryPointersRef,
+    stationaryDebugMarkersRef,
     pointerEvents: pointerEvents || {},
   };
 }

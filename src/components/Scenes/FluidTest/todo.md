@@ -72,6 +72,6 @@ Long term vision / use cases:
 
 - [x] Add some sensible presets: fast fluid, viscous flow, debug‑always‑on, varied palettes.
 - [x] Add support and preset for black‑ink‑on‑white.
-- [ ] Update Leva controls to include labels so displayed text can be shorter.
+- [x] Update Leva controls to include labels so displayed text can be shorter.
 - [ ] Prepare a README so i dont forget how to use the various props for controlling the material behaviours.
 - [ ] Do a preset for black and red squares.

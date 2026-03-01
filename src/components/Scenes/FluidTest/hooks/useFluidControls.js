@@ -624,6 +624,7 @@ export default function useFluidControls({ randomSplatQueueRef, resetSimRef }) {
     () => ({
       Presets: folder({
         preset: {
+          label: 'Preset',
           value: INITIAL_PRESET_KEY,
           options: {
             'Watercolor Squares': 'watercolorSquares',
@@ -643,6 +644,7 @@ export default function useFluidControls({ randomSplatQueueRef, resetSimRef }) {
           },
         },
         testMode: {
+          label: 'Mode',
           value: 'plane',
           options: {
             Plane: 'plane',
@@ -664,38 +666,44 @@ export default function useFluidControls({ randomSplatQueueRef, resetSimRef }) {
       }),
       Solver: folder(
         {
-          paused: false,
+          paused: { value: false, label: 'Pause' },
           simResolution: {
+            label: 'Sim Res',
             value: 1,
             min: 0.2,
             max: 1,
             step: 0.05,
           },
           pressureRelax: {
+            label: 'Pressure Relax',
             value: 1,
             min: 0.2,
             max: 1,
             step: 0.01,
           },
           pressureIterations: {
+            label: 'Pressure Iters',
             value: CONTROL_DEFAULTS.pressureIterations,
             min: 8,
             max: 40,
             step: 1,
           },
           vorticity: {
+            label: 'Vorticity',
             value: CONTROL_DEFAULTS.vorticity,
             min: 0,
             max: 90,
             step: 1,
           },
           velocityDissipation: {
+            label: 'Vel Dissip.',
             value: CONTROL_DEFAULTS.velocityDissipation,
             min: 0,
             max: 2,
             step: 0.01,
           },
           densityDissipation: {
+            label: 'Dye Dissip.',
             value: CONTROL_DEFAULTS.densityDissipation,
             min: 0,
             max: 2,
@@ -712,6 +720,7 @@ export default function useFluidControls({ randomSplatQueueRef, resetSimRef }) {
       Interaction: folder(
         {
           debugContactFadeDuration: {
+            label: 'Debug Fade (s)',
             value: CONTROL_DEFAULTS.debugContactFadeDuration,
             min: 0,
             max: 5,
@@ -720,6 +729,7 @@ export default function useFluidControls({ randomSplatQueueRef, resetSimRef }) {
           PointerTouch: folder(
             {
               inputMode: {
+                label: 'Input',
                 value: 'pointer',
                 options: {
                   'Pointer/Touch': 'pointer',
@@ -727,45 +737,61 @@ export default function useFluidControls({ randomSplatQueueRef, resetSimRef }) {
                 },
               },
               splatRadius: {
+                label: 'Radius',
                 value: CONTROL_DEFAULTS.splatRadius,
                 min: 0.0005,
                 max: 0.02,
                 step: 0.0001,
               },
               splatForce: {
+                label: 'Force',
                 value: CONTROL_DEFAULTS.splatForce,
                 min: 100,
                 max: 12000,
                 step: 50,
               },
               dyeStrength: {
+                label: 'Dye',
                 value: CONTROL_DEFAULTS.dyeStrength,
                 min: 0.05,
                 max: 2.5,
                 step: 0.01,
               },
-              debugCursor: CONTROL_DEFAULTS.debugCursor,
-              debugPointerColor: CONTROL_DEFAULTS.debugPointerColor,
+              debugCursor: {
+                value: CONTROL_DEFAULTS.debugCursor,
+                label: 'Debug',
+              },
+              debugPointerColor: {
+                value: CONTROL_DEFAULTS.debugPointerColor,
+                label: 'Debug Color',
+              },
               debugPointerWidth: {
+                label: 'Debug W',
                 value: CONTROL_DEFAULTS.debugPointerWidth,
                 min: 0.005,
                 max: 0.15,
                 step: 0.002,
               },
               debugPointerHeight: {
+                label: 'Debug H',
                 value: CONTROL_DEFAULTS.debugPointerHeight,
                 min: 0.005,
                 max: 0.15,
                 step: 0.002,
               },
               debugPointerLineWeight: {
+                label: 'Debug Line',
                 value: CONTROL_DEFAULTS.debugPointerLineWeight,
                 min: 0.25,
                 max: 4,
                 step: 0.05,
               },
-              debugPointerFill: CONTROL_DEFAULTS.debugPointerFill,
+              debugPointerFill: {
+                value: CONTROL_DEFAULTS.debugPointerFill,
+                label: 'Debug Fill',
+              },
               debugPointerRotation: {
+                label: 'Debug Rot°',
                 value: CONTROL_DEFAULTS.debugPointerRotation,
                 min: 0,
                 max: 45,
@@ -777,103 +803,124 @@ export default function useFluidControls({ randomSplatQueueRef, resetSimRef }) {
           HandsInput: folder(
             {
               handsMaxHands: {
+                label: 'Max Hands',
                 value: 1,
                 min: 1,
                 max: 2,
                 step: 1,
               },
-              handsShowVideo: false,
-              handsShowDebugSkeleton: false,
-              handsLandmarkColor: '#FF3366',
-              handsConnectorColor: '#00FFAA',
+              handsShowVideo: { value: false, label: 'Show Video' },
+              handsShowDebugSkeleton: {
+                value: false,
+                label: 'Show Skeleton',
+              },
+              handsLandmarkColor: { value: '#FF3366', label: 'Point Color' },
+              handsConnectorColor: {
+                value: '#00FFAA',
+                label: 'Line Color',
+              },
               handsLandmarkRadius: {
+                label: 'Point Radius',
                 value: 4,
                 min: 1,
                 max: 12,
                 step: 1,
               },
               handsConnectorLineWidth: {
+                label: 'Line Width',
                 value: 3,
                 min: 1,
                 max: 12,
                 step: 1,
               },
               handsModelComplexity: {
+                label: 'Model',
                 value: 1,
                 min: 0,
                 max: 1,
                 step: 1,
               },
               handsMinDetectionConfidence: {
+                label: 'Detect Min',
                 value: 0.6,
                 min: 0.1,
                 max: 1,
                 step: 0.01,
               },
               handsMinTrackingConfidence: {
+                label: 'Track Min',
                 value: 0.6,
                 min: 0.1,
                 max: 1,
                 step: 0.01,
               },
               handsXScale: {
+                label: 'Scale X',
                 value: 4,
                 min: 1,
                 max: 10,
                 step: 0.1,
               },
               handsYScale: {
+                label: 'Scale Y',
                 value: 3,
                 min: 1,
                 max: 10,
                 step: 0.1,
               },
               handsZScale: {
+                label: 'Scale Z',
                 value: 5,
                 min: 1,
                 max: 15,
                 step: 0.1,
               },
-              handsInvertX: false,
-              handsInvertY: false,
-              gesturesEnabled: true,
+              handsInvertX: { value: false, label: 'Invert X' },
+              handsInvertY: { value: false, label: 'Invert Y' },
+              gesturesEnabled: { value: true, label: 'Gestures' },
             },
             { collapsed: true }
           ),
           AutoSplats: folder(
             {
-              autoSplat: CONTROL_DEFAULTS.autoSplat,
+              autoSplat: { value: CONTROL_DEFAULTS.autoSplat, label: 'Enable' },
               autoSplatStrength: {
+                label: 'Strength',
                 value: CONTROL_DEFAULTS.autoSplatStrength,
                 min: 0,
                 max: 1,
                 step: 0.01,
               },
               autoSplatRadius: {
+                label: 'Radius',
                 value: CONTROL_DEFAULTS.autoSplatRadius,
                 min: 0.0005,
                 max: 0.02,
                 step: 0.0001,
               },
               autoSplatRate: {
+                label: 'Rate',
                 value: CONTROL_DEFAULTS.autoSplatRate,
                 min: 0,
                 max: 100,
                 step: 1,
               },
               autoSplatRange: {
+                label: 'Range',
                 value: CONTROL_DEFAULTS.autoSplatRange,
                 min: 0,
                 max: 1,
                 step: 0.01,
               },
               autoSplatBurst: {
+                label: 'Burst',
                 value: CONTROL_DEFAULTS.autoSplatBurst,
                 min: 1,
                 max: 10,
                 step: 1,
               },
               autoSplatCount: {
+                label: 'Count',
                 value: CONTROL_DEFAULTS.autoSplatCount,
                 min: 1,
                 max: 10,
@@ -883,28 +930,41 @@ export default function useFluidControls({ randomSplatQueueRef, resetSimRef }) {
                 autoSplatStarts,
                 setAutoSplatStarts
               ),
-              debugAutoSplat: CONTROL_DEFAULTS.debugAutoSplat,
-              debugAutoColor: CONTROL_DEFAULTS.debugAutoColor,
+              debugAutoSplat: {
+                value: CONTROL_DEFAULTS.debugAutoSplat,
+                label: 'Debug',
+              },
+              debugAutoColor: {
+                value: CONTROL_DEFAULTS.debugAutoColor,
+                label: 'Debug Color',
+              },
               debugAutoWidth: {
+                label: 'Debug W',
                 value: CONTROL_DEFAULTS.debugAutoWidth,
                 min: 0.005,
                 max: 0.15,
                 step: 0.002,
               },
               debugAutoHeight: {
+                label: 'Debug H',
                 value: CONTROL_DEFAULTS.debugAutoHeight,
                 min: 0.005,
                 max: 0.15,
                 step: 0.002,
               },
               debugAutoLineWeight: {
+                label: 'Debug Line',
                 value: CONTROL_DEFAULTS.debugAutoLineWeight,
                 min: 0.25,
                 max: 4,
                 step: 0.05,
               },
-              debugAutoFill: CONTROL_DEFAULTS.debugAutoFill,
+              debugAutoFill: {
+                value: CONTROL_DEFAULTS.debugAutoFill,
+                label: 'Debug Fill',
+              },
               debugAutoRotation: {
+                label: 'Debug Rot°',
                 value: CONTROL_DEFAULTS.debugAutoRotation,
                 min: 0,
                 max: 45,
@@ -915,32 +975,40 @@ export default function useFluidControls({ randomSplatQueueRef, resetSimRef }) {
           ),
           StationarySplats: folder(
             {
-              stationarySplatsEnabled: CONTROL_DEFAULTS.stationarySplatsEnabled,
+              stationarySplatsEnabled: {
+                value: CONTROL_DEFAULTS.stationarySplatsEnabled,
+                label: 'Enable',
+              },
               stationarySplatStrength: {
+                label: 'Strength',
                 value: CONTROL_DEFAULTS.stationarySplatStrength,
                 min: 0,
                 max: 1,
                 step: 0.01,
               },
               stationarySplatRadius: {
+                label: 'Radius',
                 value: CONTROL_DEFAULTS.stationarySplatRadius,
                 min: 0.0005,
                 max: 0.02,
                 step: 0.0001,
               },
               stationarySplatDirectionStrength: {
+                label: 'Dir Strength',
                 value: CONTROL_DEFAULTS.stationarySplatDirectionStrength,
                 min: 0,
                 max: 1,
                 step: 0.01,
               },
               stationarySplatDirectionAngle: {
+                label: 'Dir Angle°',
                 value: CONTROL_DEFAULTS.stationarySplatDirectionAngle,
                 min: 0,
                 max: 360,
                 step: 1,
               },
               stationarySplatCount: {
+                label: 'Count',
                 value: CONTROL_DEFAULTS.stationarySplatCount,
                 min: 0,
                 max: 10,
@@ -950,28 +1018,41 @@ export default function useFluidControls({ randomSplatQueueRef, resetSimRef }) {
                 stationarySplats,
                 setStationarySplats
               ),
-              debugStationarySplat: CONTROL_DEFAULTS.debugStationarySplat,
-              debugStationaryColor: CONTROL_DEFAULTS.debugStationaryColor,
+              debugStationarySplat: {
+                value: CONTROL_DEFAULTS.debugStationarySplat,
+                label: 'Debug',
+              },
+              debugStationaryColor: {
+                value: CONTROL_DEFAULTS.debugStationaryColor,
+                label: 'Debug Color',
+              },
               debugStationaryWidth: {
+                label: 'Debug W',
                 value: CONTROL_DEFAULTS.debugStationaryWidth,
                 min: 0.005,
                 max: 0.15,
                 step: 0.002,
               },
               debugStationaryHeight: {
+                label: 'Debug H',
                 value: CONTROL_DEFAULTS.debugStationaryHeight,
                 min: 0.005,
                 max: 0.15,
                 step: 0.002,
               },
               debugStationaryLineWeight: {
+                label: 'Debug Line',
                 value: CONTROL_DEFAULTS.debugStationaryLineWeight,
                 min: 0.25,
                 max: 4,
                 step: 0.05,
               },
-              debugStationaryFill: CONTROL_DEFAULTS.debugStationaryFill,
+              debugStationaryFill: {
+                value: CONTROL_DEFAULTS.debugStationaryFill,
+                label: 'Debug Fill',
+              },
               debugStationaryRotation: {
+                label: 'Debug Rot°',
                 value: CONTROL_DEFAULTS.debugStationaryRotation,
                 min: 0,
                 max: 45,
@@ -983,39 +1064,54 @@ export default function useFluidControls({ randomSplatQueueRef, resetSimRef }) {
           RandomBurst: folder(
             {
               randomSplatStrength: {
+                label: 'Strength',
                 value: CONTROL_DEFAULTS.randomSplatStrength,
                 min: 0,
                 max: 2,
                 step: 0.01,
               },
               randomSplatRadius: {
+                label: 'Radius',
                 value: CONTROL_DEFAULTS.randomSplatRadius,
                 min: 0.0005,
                 max: 0.02,
                 step: 0.0001,
               },
-              debugRandomBurst: CONTROL_DEFAULTS.debugRandomBurst,
-              debugRandomColor: CONTROL_DEFAULTS.debugRandomColor,
+              debugRandomBurst: {
+                value: CONTROL_DEFAULTS.debugRandomBurst,
+                label: 'Debug',
+              },
+              debugRandomColor: {
+                value: CONTROL_DEFAULTS.debugRandomColor,
+                label: 'Debug Color',
+              },
               debugRandomWidth: {
+                label: 'Debug W',
                 value: CONTROL_DEFAULTS.debugRandomWidth,
                 min: 0.005,
                 max: 0.15,
                 step: 0.002,
               },
               debugRandomHeight: {
+                label: 'Debug H',
                 value: CONTROL_DEFAULTS.debugRandomHeight,
                 min: 0.005,
                 max: 0.15,
                 step: 0.002,
               },
               debugRandomLineWeight: {
+                label: 'Debug Line',
                 value: CONTROL_DEFAULTS.debugRandomLineWeight,
                 min: 0.25,
                 max: 4,
                 step: 0.05,
               },
-              debugRandomFill: CONTROL_DEFAULTS.debugRandomFill,
+              debugRandomFill: {
+                value: CONTROL_DEFAULTS.debugRandomFill,
+                label: 'Debug Fill',
+              },
               debugRandomRotation: {
+                label: 'Debug Rot°',
                 value: CONTROL_DEFAULTS.debugRandomRotation,
                 min: 0,
                 max: 45,
@@ -1035,46 +1131,53 @@ export default function useFluidControls({ randomSplatQueueRef, resetSimRef }) {
       ),
       Effects: folder(
         {
-          shading: CONTROL_DEFAULTS.shading,
-          bloom: CONTROL_DEFAULTS.bloom,
+          shading: { value: CONTROL_DEFAULTS.shading, label: 'Shading' },
+          bloom: { value: CONTROL_DEFAULTS.bloom, label: 'Bloom' },
           bloomResolution: {
+            label: 'Bloom Res',
             value: CONTROL_DEFAULTS.bloomResolution,
             min: 0.1,
             max: 0.5,
             step: 0.01,
           },
           bloomIterations: {
+            label: 'Bloom Iters',
             value: CONTROL_DEFAULTS.bloomIterations,
             min: 1,
             max: 16,
             step: 1,
           },
           bloomIntensity: {
+            label: 'Bloom Intensity',
             value: CONTROL_DEFAULTS.bloomIntensity,
             min: 0,
             max: 2,
             step: 0.01,
           },
           bloomThreshold: {
+            label: 'Bloom Threshold',
             value: CONTROL_DEFAULTS.bloomThreshold,
             min: 0,
             max: 1,
             step: 0.01,
           },
           bloomSoftKnee: {
+            label: 'Bloom Soft Knee',
             value: CONTROL_DEFAULTS.bloomSoftKnee,
             min: 0,
             max: 1,
             step: 0.01,
           },
-          sunrays: CONTROL_DEFAULTS.sunrays,
+          sunrays: { value: CONTROL_DEFAULTS.sunrays, label: 'Sunrays' },
           sunraysResolution: {
+            label: 'Sunrays Res',
             value: CONTROL_DEFAULTS.sunraysResolution,
             min: 0.08,
             max: 0.4,
             step: 0.01,
           },
           sunraysWeight: {
+            label: 'Sunrays Weight',
             value: CONTROL_DEFAULTS.sunraysWeight,
             min: 0.3,
             max: 1.5,
@@ -1085,23 +1188,26 @@ export default function useFluidControls({ randomSplatQueueRef, resetSimRef }) {
       ),
       Color: folder(
         {
-          colorA: CONTROL_DEFAULTS.colorA,
-          colorB: CONTROL_DEFAULTS.colorB,
-          colorC: CONTROL_DEFAULTS.colorC,
-          colorful: CONTROL_DEFAULTS.colorful,
+          colorA: { value: CONTROL_DEFAULTS.colorA, label: 'Color A' },
+          colorB: { value: CONTROL_DEFAULTS.colorB, label: 'Color B' },
+          colorC: { value: CONTROL_DEFAULTS.colorC, label: 'Color C' },
+          colorful: { value: CONTROL_DEFAULTS.colorful, label: 'Colorful' },
           colorUpdateSpeed: {
+            label: 'Update Speed',
             value: CONTROL_DEFAULTS.colorUpdateSpeed,
             min: 0,
             max: 20,
             step: 0.1,
           },
           colorCycleSpeed: {
+            label: 'Cycle Speed',
             value: CONTROL_DEFAULTS.colorCycleSpeed,
             min: 0,
             max: 3,
             step: 0.05,
           },
           blendMode: {
+            label: 'Blend',
             value: CONTROL_DEFAULTS.blendMode,
             options: {
               Additive: BLEND_MODE_ADDITIVE,
@@ -1114,34 +1220,39 @@ export default function useFluidControls({ randomSplatQueueRef, resetSimRef }) {
       ),
       Display: folder(
         {
-          bgA: CONTROL_DEFAULTS.bgA,
-          bgB: CONTROL_DEFAULTS.bgB,
-          dithering: CONTROL_DEFAULTS.dithering,
+          bgA: { value: CONTROL_DEFAULTS.bgA, label: 'BG A' },
+          bgB: { value: CONTROL_DEFAULTS.bgB, label: 'BG B' },
+          dithering: { value: CONTROL_DEFAULTS.dithering, label: 'Dithering' },
           ditherStrength: {
+            label: 'Dither Strength',
             value: CONTROL_DEFAULTS.ditherStrength,
             min: 0,
             max: 4,
             step: 0.01,
           },
           ditherScale: {
+            label: 'Dither Scale',
             value: CONTROL_DEFAULTS.ditherScale,
             min: 0.25,
             max: 4,
             step: 0.01,
           },
           brightness: {
+            label: 'Brightness',
             value: CONTROL_DEFAULTS.brightness,
             min: 0.5,
             max: 2,
             step: 0.01,
           },
           contrast: {
+            label: 'Contrast',
             value: CONTROL_DEFAULTS.contrast,
             min: 0.6,
             max: 2,
             step: 0.01,
           },
           saturation: {
+            label: 'Saturation',
             value: CONTROL_DEFAULTS.saturation,
             min: 0.2,
             max: 2.2,

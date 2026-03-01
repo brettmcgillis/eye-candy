@@ -94,7 +94,30 @@ export default function useFluidAutoPointers({ config, size }) {
     for (let i = 0; i < autoPointersRef.current.length; i += 1) {
       const ap = autoPointersRef.current[i];
       if (ap) {
-        if (paused) {
+        const configuredStart = autoSplatStarts?.[i] || { x: 0.5, y: 0.5 };
+        const startX = clamp01(configuredStart?.x);
+        const startY = clamp01(configuredStart?.y);
+        const startChanged = ap.startX !== startX || ap.startY !== startY;
+        let didSnapToStart = false;
+
+        if (startChanged) {
+          ap.startX = startX;
+          ap.startY = startY;
+          ap.initialized = true;
+          ap.x = startX;
+          ap.y = startY;
+          ap.vx = 0;
+          ap.vy = 0;
+
+          if (autoSplat && i < count) {
+            ap.ttl = Math.max(0, debugContactFadeDuration);
+          }
+          didSnapToStart = true;
+        }
+
+        if (didSnapToStart) {
+          // Skip motion integration on the same frame as a start-position snap.
+        } else if (paused) {
           ap.vx = 0;
           ap.vy = 0;
           if (autoSplat && i < count) {
@@ -102,10 +125,6 @@ export default function useFluidAutoPointers({ config, size }) {
           }
         } else {
           ap.ttl = Math.max(0, (ap.ttl || 0) - dt);
-
-          const configuredStart = autoSplatStarts?.[i] || { x: 0.5, y: 0.5 };
-          const startX = clamp01(configuredStart?.x);
-          const startY = clamp01(configuredStart?.y);
 
           if (typeof ap.phase !== 'number') {
             ap.phase = Math.random() * Math.PI * 4;

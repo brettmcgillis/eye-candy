@@ -48,6 +48,7 @@ const MAX_BLOOM_CHAIN = 16;
 const MAX_SPLAT_VELOCITY = 900;
 const SIM_DIMENSION_QUANTIZATION = 32;
 const DEBUG_POINTER_CAP = 8;
+const MAX_STATIONARY_DEBUG_SLOTS = 10;
 
 const MATERIAL_DEFAULTS = {
   paused: false,
@@ -159,15 +160,27 @@ const FluidMaterial = forwardRef(
     const colorCRef = useRef(new THREE.Color());
     const forceRef = useRef(new THREE.Vector3());
     const autoSplatColorRef = useRef(new THREE.Color());
-    const debugContactsRef = useRef(
+    const debugStationaryContactsRef = useRef(
       Array.from({ length: DEBUG_CONTACT_CAP }, () => ({
         x: 0.5,
         y: 0.5,
         ttl: 0,
-        kind: 0,
       }))
     );
-    const debugContactWriteRef = useRef(0);
+    const debugRandomContactsRef = useRef(
+      Array.from({ length: DEBUG_CONTACT_CAP }, () => ({
+        x: 0.5,
+        y: 0.5,
+        ttl: 0,
+      }))
+    );
+    const debugRandomWriteRef = useRef(0);
+    const debugPointerLifeRef = useRef(
+      Array.from({ length: DEBUG_POINTER_CAP }, () => 0)
+    );
+    const debugPointerPosRef = useRef(
+      Array.from({ length: DEBUG_POINTER_CAP }, () => ({ x: 0.5, y: 0.5 }))
+    );
 
     const fluidValues = useMemo(
       () => ({ ...MATERIAL_DEFAULTS, ...(config || {}) }),
@@ -647,16 +660,22 @@ const FluidMaterial = forwardRef(
             uDebugAutoLife: {
               value: Array.from({ length: DEBUG_CONTACT_CAP }, () => 0),
             },
-            uDebugContacts: {
+            uDebugStationaryContacts: {
               value: Array.from(
                 { length: DEBUG_CONTACT_CAP },
                 () => new THREE.Vector2(0.5, 0.5)
               ),
             },
-            uDebugContactLife: {
+            uDebugStationaryLife: {
               value: Array.from({ length: DEBUG_CONTACT_CAP }, () => 0),
             },
-            uDebugContactKind: {
+            uDebugRandomContacts: {
+              value: Array.from(
+                { length: DEBUG_CONTACT_CAP },
+                () => new THREE.Vector2(0.5, 0.5)
+              ),
+            },
+            uDebugRandomLife: {
               value: Array.from({ length: DEBUG_CONTACT_CAP }, () => 0),
             },
             uDebugContactFadeDuration: {
@@ -731,8 +750,10 @@ const FluidMaterial = forwardRef(
       const t = state.clock.elapsedTime;
 
       for (let i = 0; i < DEBUG_CONTACT_CAP; i++) {
-        const contact = debugContactsRef.current[i];
-        contact.ttl = Math.max(0, contact.ttl - dt);
+        const stationaryContact = debugStationaryContactsRef.current[i];
+        const randomContact = debugRandomContactsRef.current[i];
+        stationaryContact.ttl = Math.max(0, stationaryContact.ttl - dt);
+        randomContact.ttl = Math.max(0, randomContact.ttl - dt);
       }
       if (resetRequestedRef.current) {
         clearAllTargets();
@@ -808,23 +829,36 @@ const FluidMaterial = forwardRef(
         0,
         desiredStationaryCount
       );
-
-      const writeDebugContact = (px, py, debugKind = 0) => {
+      const writeDebugStationaryContact = (px, py, slot) => {
         const safePx = THREE.MathUtils.clamp(px, 0, 1);
         const safePy = THREE.MathUtils.clamp(py, 0, 1);
-        const idx = debugContactWriteRef.current;
-        debugContactsRef.current[idx].x = safePx;
-        debugContactsRef.current[idx].y = safePy;
-        debugContactsRef.current[idx].ttl = Math.max(
+        const idx = THREE.MathUtils.clamp(
+          Math.floor(slot),
+          0,
+          Math.min(MAX_STATIONARY_DEBUG_SLOTS, DEBUG_CONTACT_CAP) - 1
+        );
+
+        debugStationaryContactsRef.current[idx].x = safePx;
+        debugStationaryContactsRef.current[idx].y = safePy;
+        debugStationaryContactsRef.current[idx].ttl = Math.max(
           0,
           debugContactFadeDuration
         );
-        debugContactsRef.current[idx].kind = THREE.MathUtils.clamp(
-          debugKind,
+      };
+
+      const writeDebugRandomContact = (px, py) => {
+        const safePx = THREE.MathUtils.clamp(px, 0, 1);
+        const safePy = THREE.MathUtils.clamp(py, 0, 1);
+        const idx = debugRandomWriteRef.current;
+
+        debugRandomContactsRef.current[idx].x = safePx;
+        debugRandomContactsRef.current[idx].y = safePy;
+        debugRandomContactsRef.current[idx].ttl = Math.max(
           0,
-          2
+          debugContactFadeDuration
         );
-        debugContactWriteRef.current = (idx + 1) % DEBUG_CONTACT_CAP;
+
+        debugRandomWriteRef.current = (idx + 1) % DEBUG_CONTACT_CAP;
       };
 
       const splatAt = (
@@ -834,15 +868,15 @@ const FluidMaterial = forwardRef(
         vy,
         rgb,
         strength = 1,
-        debugKind = -1,
+        debugTarget = null,
         options = {}
       ) => {
         const { applyVelocity = true, applyDye = true } = options;
         const safePx = THREE.MathUtils.clamp(px, 0, 1);
         const safePy = THREE.MathUtils.clamp(py, 0, 1);
         const safeStrength = THREE.MathUtils.clamp(strength, 0, 3);
-        if (debugKind >= 0) {
-          writeDebugContact(safePx, safePy, debugKind);
+        if (debugTarget === 'random') {
+          writeDebugRandomContact(safePx, safePy);
         }
 
         splatMat.uniforms.uPoint.value.set(safePx, safePy);
@@ -914,7 +948,7 @@ const FluidMaterial = forwardRef(
             forceY,
             paintColor,
             0.65 + speed * 0.75,
-            -1,
+            null,
             {
               applyVelocity: !paused,
               applyDye: true,
@@ -931,7 +965,7 @@ const FluidMaterial = forwardRef(
         for (let i = 0; i < stationaryPointers.length; i += 1) {
           const sp = stationaryPointers[i];
           if (sp) {
-            writeDebugContact(sp.x ?? 0.5, sp.y ?? 0.5, 2);
+            writeDebugStationaryContact(sp.x ?? 0.5, sp.y ?? 0.5, i);
           }
         }
       }
@@ -1090,7 +1124,7 @@ const FluidMaterial = forwardRef(
             const py = sp.y ?? 0.5;
             const strength = 0.12 * stationarySplatStrength * 0.75;
 
-            splatAt(px, py, 0, 0, autoSplatColorRef.current, strength, 2);
+            splatAt(px, py, 0, 0, autoSplatColorRef.current, strength);
           }
         }
 
@@ -1112,7 +1146,7 @@ const FluidMaterial = forwardRef(
               randomSplat.vy,
               tint,
               randomSplat.strength,
-              0
+              'random'
             );
           }
 
@@ -1155,21 +1189,33 @@ const FluidMaterial = forwardRef(
       );
       const pointerCount = Math.min(DEBUG_POINTER_CAP, activePointers.length);
       displayMat.uniforms.uDebugPointerCount.value = pointerCount;
+
+      for (let i = 0; i < DEBUG_POINTER_CAP; i += 1) {
+        debugPointerLifeRef.current[i] = Math.max(
+          0,
+          debugPointerLifeRef.current[i] - dt
+        );
+      }
+
       for (let i = 0; i < DEBUG_POINTER_CAP; i += 1) {
         const pointer = activePointers[i];
         if (i < pointerCount && pointer) {
-          displayMat.uniforms.uDebugPointers.value[i].set(
-            pointer.x ?? 0.5,
-            pointer.y ?? 0.5
-          );
-          displayMat.uniforms.uDebugPointerLife.value[i] = Math.max(
+          const px = pointer.x ?? 0.5;
+          const py = pointer.y ?? 0.5;
+          debugPointerPosRef.current[i].x = px;
+          debugPointerPosRef.current[i].y = py;
+          debugPointerLifeRef.current[i] = Math.max(
             0,
             debugContactFadeDuration
           );
-        } else {
-          displayMat.uniforms.uDebugPointers.value[i].set(0.5, 0.5);
-          displayMat.uniforms.uDebugPointerLife.value[i] = 0;
         }
+
+        displayMat.uniforms.uDebugPointers.value[i].set(
+          debugPointerPosRef.current[i].x,
+          debugPointerPosRef.current[i].y
+        );
+        displayMat.uniforms.uDebugPointerLife.value[i] =
+          debugPointerLifeRef.current[i];
       }
       const firstAuto = autoPointersRef.current[0] || {
         x: 0.5,
@@ -1240,10 +1286,19 @@ const FluidMaterial = forwardRef(
         debugContactFadeDuration
       );
       for (let i = 0; i < DEBUG_CONTACT_CAP; i++) {
-        const contact = debugContactsRef.current[i];
-        displayMat.uniforms.uDebugContacts.value[i].set(contact.x, contact.y);
-        displayMat.uniforms.uDebugContactLife.value[i] = contact.ttl;
-        displayMat.uniforms.uDebugContactKind.value[i] = contact.kind;
+        const stationaryContact = debugStationaryContactsRef.current[i];
+        const randomContact = debugRandomContactsRef.current[i];
+        displayMat.uniforms.uDebugStationaryContacts.value[i].set(
+          stationaryContact.x,
+          stationaryContact.y
+        );
+        displayMat.uniforms.uDebugStationaryLife.value[i] =
+          stationaryContact.ttl;
+        displayMat.uniforms.uDebugRandomContacts.value[i].set(
+          randomContact.x,
+          randomContact.y
+        );
+        displayMat.uniforms.uDebugRandomLife.value[i] = randomContact.ttl;
       }
 
       const bloomLevelCount = Math.min(

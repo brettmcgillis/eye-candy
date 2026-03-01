@@ -65,6 +65,7 @@ Long term vision / use cases:
 - [ ] Add a background color or gradient to show behind the sphere in 3d mode. Add controls for color(s). Update presets to include props with matching colors.
 - [x] Add controls for auto splat start position, following the pattern established for stationary splats. Update presets.
 - [x] Bump auto/stationary splat max from 8 to 10.
+- [x] Move autosplat to start position when it changes.
 - [ ] Can we implement direction on stationary splats?
 
 ## Polish / Presets / UX

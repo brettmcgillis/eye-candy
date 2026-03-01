@@ -30,7 +30,7 @@ const CONTROL_DEFAULTS = {
   dyeStrength: 0.92,
   autoSplat: true,
   autoSplatStrength: 0.6,
-  autoSplatRate: 100,
+  autoSplatRate: 0,
   autoSplatRange: 1,
   autoSplatBurst: 2,
   autoSplatCount: 2,
@@ -548,6 +548,7 @@ export default function useFluidControls({ randomSplatQueueRef, resetSimRef }) {
   const setRef = useRef(null);
   const currentPresetRef = useRef(INITIAL_PRESET_KEY);
   const initializedPresetRef = useRef(false);
+  const [presetInitialized, setPresetInitialized] = useState(false);
   const [autoSplatStarts, setAutoSplatStarts] = useState(() =>
     getNormalizedAutoSplatStartsFromPreset(INITIAL_PRESET_VALUES)
   );
@@ -1098,9 +1099,12 @@ export default function useFluidControls({ randomSplatQueueRef, resetSimRef }) {
 
     applyPresetValues(INITIAL_PRESET_VALUES, INITIAL_PRESET_KEY);
     initializedPresetRef.current = true;
+    setPresetInitialized(true);
   }, []);
 
   useEffect(() => {
+    if (!presetInitialized) return;
+
     const desiredCount = clampAutoSplatCount(controlValues.autoSplatCount);
 
     setAutoSplatStarts((prev) => {
@@ -1111,9 +1115,11 @@ export default function useFluidControls({ randomSplatQueueRef, resetSimRef }) {
       }
       return next;
     });
-  }, [controlValues.autoSplatCount]);
+  }, [controlValues.autoSplatCount, presetInitialized]);
 
   useEffect(() => {
+    if (!presetInitialized) return;
+
     const desiredCount = clampStationarySplatCount(
       controlValues.stationarySplatCount
     );
@@ -1126,7 +1132,7 @@ export default function useFluidControls({ randomSplatQueueRef, resetSimRef }) {
       }
       return next;
     });
-  }, [controlValues.stationarySplatCount]);
+  }, [controlValues.stationarySplatCount, presetInitialized]);
 
   useEffect(() => {
     if (!setRef.current) return;

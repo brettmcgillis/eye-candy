@@ -927,15 +927,11 @@ const FLUID_PRESETS = {
     autoSplatRate: 0,
     autoSplatRange: 1,
     autoSplatBurst: 1,
-    autoSplatCount: 8,
+    autoSplatCount: 7,
     autoSplatStarts: [
       {
-        x: 0.35,
-        y: 0.35,
-      },
-      {
-        x: 0.65,
-        y: 0.65,
+        x: 0.5,
+        y: 0.4,
       },
       {
         x: 0.5,
@@ -943,61 +939,69 @@ const FLUID_PRESETS = {
       },
       {
         x: 0.5,
-        y: 0.5,
+        y: 0.6,
       },
       {
-        x: 0.5,
-        y: 0.5,
+        x: 0.4,
+        y: 0.45,
       },
       {
-        x: 0.5,
-        y: 0.5,
+        x: 0.4,
+        y: 0.55,
       },
       {
-        x: 0.5,
-        y: 0.5,
+        x: 0.6,
+        y: 0.45,
       },
       {
-        x: 0.5,
-        y: 0.5,
+        x: 0.6,
+        y: 0.55,
       },
     ],
     randomSplatStrength: 1,
     stationarySplatsEnabled: true,
     stationarySplatStrength: 0.35,
-    stationarySplatCount: 8,
+    stationarySplatCount: 10,
     stationarySplats: [
       {
-        x: 0.15,
-        y: 0.15,
-      },
-      {
-        x: 0.25,
-        y: 0.25,
-      },
-      {
-        x: 0.35,
+        x: 0.5,
         y: 0.35,
       },
       {
-        x: 0.45,
+        x: 0.5,
         y: 0.45,
       },
       {
-        x: 0.55,
+        x: 0.5,
         y: 0.55,
       },
       {
-        x: 0.65,
+        x: 0.5,
         y: 0.65,
       },
       {
-        x: 0.75,
-        y: 0.75,
+        x: 0.4,
+        y: 0.4,
       },
       {
-        x: 0.85,
-        y: 0.85,
+        x: 0.4,
+        y: 0.5,
+      },
+      {
+        x: 0.4,
+        y: 0.6,
+      },
+      {
+        x: 0.6,
+        y: 0.4,
+      },
+      {
+        x: 0.6,
+        y: 0.5,
+      },
+      {
+        x: 0.6,
+        y: 0.6,
       },
     ],
     handsMaxHands: 1,
@@ -1053,7 +1057,7 @@ const FLUID_PRESETS = {
     debugPointerHeight: 0.024,
     debugPointerLineWeight: 1,
     debugPointerFill: false,
-    debugPointerRotation: 0,
+    debugPointerRotation: 45,
     debugAutoLineWeight: 1,
     debugAutoFill: true,
     debugAutoRotation: 45,
@@ -1067,8 +1071,8 @@ const FLUID_PRESETS = {
     debugRandomWidth: 0.03,
     debugRandomHeight: 0.03,
     debugRandomLineWeight: 1,
-    debugRandomFill: false,
-    debugRandomRotation: 0,
+    debugRandomFill: true,
+    debugRandomRotation: 45,
     debugContactFadeDuration: 0.28,
   },
 };

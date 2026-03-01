@@ -396,9 +396,10 @@ uniform float uDebugAutoCount;
 uniform vec2 uDebugAutos[DEBUG_CONTACT_CAP];
 uniform float uDebugAutoLife[DEBUG_CONTACT_CAP];
 #endif
-uniform vec2 uDebugContacts[DEBUG_CONTACT_CAP];
-uniform float uDebugContactLife[DEBUG_CONTACT_CAP];
-uniform float uDebugContactKind[DEBUG_CONTACT_CAP];
+uniform vec2 uDebugStationaryContacts[DEBUG_CONTACT_CAP];
+uniform float uDebugStationaryLife[DEBUG_CONTACT_CAP];
+uniform vec2 uDebugRandomContacts[DEBUG_CONTACT_CAP];
+uniform float uDebugRandomLife[DEBUG_CONTACT_CAP];
 uniform float uDebugContactFadeDuration;
 
 vec3 linearToGamma(vec3 color) {
@@ -579,46 +580,46 @@ void main() {
     }
   }
 
-  for (int i = 0; i < DEBUG_CONTACT_CAP; i++) {
-    float contactActive = clamp(
-      uDebugContactLife[i] / max(uDebugContactFadeDuration, 0.0001),
-      0.0,
-      1.0
-    );
-    float kind = clamp(uDebugContactKind[i], 0.0, 2.0);
-    vec2 sizeVec = vec2(0.0);
-    float thickness = 0.0;
-    float rotation = 0.0;
-    vec3 markColor = vec3(0.0);
-    bool enabled = false;
-
-    if (kind > 1.5) {
-      enabled = uDebugStationarySplat;
-      sizeVec = stationaryHalfMix;
-      thickness = stationaryThickness;
-      rotation = uDebugStationaryRotation;
-      markColor = uDebugStationaryColor;
-    } else {
-      enabled = uDebugRandomBurst;
-      sizeVec = randomHalfMix;
-      thickness = randomThickness;
-      rotation = uDebugRandomRotation;
-      markColor = uDebugRandomColor;
+  if (uDebugStationarySplat) {
+    for (int i = 0; i < DEBUG_CONTACT_CAP; i++) {
+      float stationaryActive = clamp(
+        uDebugStationaryLife[i] / max(uDebugContactFadeDuration, 0.0001),
+        0.0,
+        1.0
+      );
+      float stationaryMark =
+        squareMarker(
+          vUv,
+          uDebugStationaryContacts[i],
+          stationaryHalfMix,
+          stationaryThickness,
+          uDebugStationaryRotation,
+          uDebugStationaryFill
+        ) *
+        stationaryActive;
+      color = mix(color, uDebugStationaryColor, stationaryMark);
     }
+  }
 
-    if (!enabled) continue;
-
-    float mark =
-      squareMarker(
-        vUv,
-        uDebugContacts[i],
-        sizeVec,
-        thickness,
-        rotation,
-        kind > 1.5 ? uDebugStationaryFill : uDebugRandomFill
-      ) *
-      contactActive;
-    color = mix(color, markColor, mark);
+  if (uDebugRandomBurst) {
+    for (int i = 0; i < DEBUG_CONTACT_CAP; i++) {
+      float randomActive = clamp(
+        uDebugRandomLife[i] / max(uDebugContactFadeDuration, 0.0001),
+        0.0,
+        1.0
+      );
+      float randomMark =
+        squareMarker(
+          vUv,
+          uDebugRandomContacts[i],
+          randomHalfMix,
+          randomThickness,
+          uDebugRandomRotation,
+          uDebugRandomFill
+        ) *
+        randomActive;
+      color = mix(color, uDebugRandomColor, randomMark);
+    }
   }
   #if DEBUG_CONTACT_CAP > 0
   if (uDebugAutoSplat) {

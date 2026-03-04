@@ -1,8 +1,12 @@
 # // Rosie
-# // TODO: 
+
+# // TODO:
 
 [Back to main TODO](../../../../TODO.md)
 
-- [ ] check out Spark for splat rendering, effects.
+- [s] check out Spark for splat rendering, effects.
 - [x] splat texture
-- [ ] fix click handling on splats.
+- [x] Optimize texture, make smaller. (Compressed 4k->700b)
+- [ ] Hide spark splats behind App/Loader by using useLoader?
+- [ ] Can we load the heart png to a texture in a more performant way?
+- [ ] Try to optimize perf.

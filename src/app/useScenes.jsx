@@ -142,6 +142,8 @@ function compareScenes(a, b) {
   return aKey.localeCompare(bKey, undefined, { sensitivity: 'base' });
 }
 
+const sortedScenes = [...scenes].sort(compareScenes);
+
 export default function useScenes() {
-  return { scenes: [...scenes].sort(compareScenes) };
+  return { scenes: sortedScenes };
 }

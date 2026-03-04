@@ -1,0 +1,22 @@
+---
+description: R3F/Three.js performance and pitfalls guardrails for scene-related edits
+globs:
+  - src/components/scenes/**/*.{js,jsx,ts,tsx}
+  - src/components/materials/**/*.{js,jsx,ts,tsx}
+  - src/components/rigging/**/*.{js,jsx,ts,tsx}
+alwaysApply: false
+---
+
+# R3F Performance Rule Wrapper
+
+Use these as canonical references:
+
+- `docs/r3f-performance-playbook.md`
+- `docs/scene-performance-checklist.md`
+
+When editing matching files:
+
+1. Follow the playbook rules, especially frame-loop and React pitfalls.
+2. Treat the checklist as required and explicitly verify impacted items.
+3. Keep changes minimal, reuse resources, and reduce draw calls where practical.
+4. Preserve visual intent while applying balanced adaptive quality for mobile-first targets.

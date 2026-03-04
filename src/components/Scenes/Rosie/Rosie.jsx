@@ -2,37 +2,35 @@
 import { useControls } from 'leva';
 import * as THREE from 'three';
 
-import React, { useEffect, useMemo, useRef, useState } from 'react';
+import React, { useCallback, useEffect, useMemo, useRef } from 'react';
 
 import { OrbitControls, PerspectiveCamera, Splat } from '@react-three/drei';
-import { useFrame, useThree } from '@react-three/fiber';
+import { useFrame, useLoader, useThree } from '@react-three/fiber';
 
 import { imageFile, modelFile } from '../../../utils/appUtils';
-import SparkSplatRenderer from './SparkRenderer';
-import SparkSplat from './SparkSplat';
+import CustomMultiSplat from './CustomMultiSplat';
+import SparkMultiSplat from './SparkMultiSplat';
 import useSplatDataTexture from './useSplatDataTexture';
 
 export default function Rosie() {
   const render = useControls(
     'Render',
-    { useSpark: { value: true } },
-    { collapsed: true }
-  );
-  const controls = useControls(
-    'Splat',
     {
-      maxStdDev: { value: 1.5, min: 0, max: 2 },
-      focalDistance: { value: 4.0, min: 0, max: 10 },
-      near: { value: 1, min: 0, max: 5 },
-      far: { value: 15, min: 10, max: 20 },
-      mid: { value: 5, min: 5, max: 10 },
+      mode: {
+        options: {
+          Spark: 'spark',
+          Drei: 'drei',
+          'Custom Splat': 'customSplat',
+        },
+        value: 'drei',
+      },
     },
     { collapsed: true }
   );
-
-  const cameraRef = useRef();
   const controlsRef = useRef();
-  const { camera } = useThree();
+  const camera = useThree((state) => state.camera);
+  const invalidate = useThree((state) => state.invalidate);
+  const setFrameloop = useThree((state) => state.setFrameloop);
 
   // --- SPLATS ------------------------------------------------
   const splats = useMemo(
@@ -41,18 +39,21 @@ export default function Rosie() {
         id: 0,
         src: 'rosie_1.splat',
         position: new THREE.Vector3(-0.5, 0, 0),
+        positionArray: [-0.5, 0, 0],
         rotation: [0, Math.PI / 4, 0],
       },
       {
         id: 1,
         src: 'rosie_2.splat',
         position: new THREE.Vector3(0, 0, -1),
+        positionArray: [0, 0, -1],
         rotation: [0, 0, 0],
       },
       {
         id: 2,
         src: 'rosie_3.splat',
         position: new THREE.Vector3(0.5, 0, 0),
+        positionArray: [0.5, 0, 0],
         rotation: [0, -Math.PI / 4, 0],
       },
     ],
@@ -63,6 +64,7 @@ export default function Rosie() {
   const defaultTarget = useMemo(
     () => ({
       position: new THREE.Vector3(0, 0, 1),
+      positionArray: [0, 0, 1],
       lookAt: splats[1].position.clone(),
     }),
     [splats]
@@ -73,50 +75,105 @@ export default function Rosie() {
   const targetLookAt = useRef(defaultTarget.lookAt.clone());
 
   const activeIndexRef = useRef(-1); // authoritative index
-  const [, forceRender] = useState(0); // optional: debugging / future UI
 
   const isAuto = useRef(true);
+  const isFreeRoam = useRef(false);
+  const isDemandFrameloop = useRef(false);
+  const modeWarmupFrames = useRef(0);
+  const focusOffset = useRef(new THREE.Vector3(0, 0, 0.6));
+  const rotationAxisY = useRef(new THREE.Vector3(0, 1, 0));
+  const tmpOffset = useRef(new THREE.Vector3());
+  const controlsLerp = 6;
+  const maxLerpDelta = 1 / 30;
+  const arriveThresholdSq = 0.0001;
+
+  const invalidateIfDemand = useCallback(() => {
+    if (!isDemandFrameloop.current) return;
+    invalidate();
+  }, [invalidate]);
+
+  const splatUrls = useMemo(
+    () => splats.map((splat) => modelFile(splat.src)),
+    [splats]
+  );
+  const splatDataTexture = useSplatDataTexture(imageFile('heart-bw.png'));
+
+  useLoader(THREE.FileLoader, splatUrls);
+
+  useEffect(() => {
+    isDemandFrameloop.current = render.mode !== 'spark';
+    modeWarmupFrames.current = isDemandFrameloop.current ? 90 : 0;
+    setFrameloop(isDemandFrameloop.current ? 'demand' : 'always');
+    invalidate();
+
+    return () => {
+      setFrameloop('always');
+    };
+  }, [invalidate, render.mode, setFrameloop]);
 
   // --- CAMERA ANIMATION -------------------------------------
   useFrame((_, delta) => {
+    if (modeWarmupFrames.current > 0) {
+      modeWarmupFrames.current -= 1;
+      invalidateIfDemand();
+    }
+
     if (!isAuto.current) return;
 
-    camera.position.lerp(targetPosition.current, 1 - Math.exp(-delta * 6));
+    const clampedDelta = Math.min(delta, maxLerpDelta);
+    const lerpAlpha = 1 - Math.exp(-clampedDelta * controlsLerp);
+    camera.position.lerp(targetPosition.current, lerpAlpha);
 
-    if (controlsRef.current) {
-      controlsRef.current.target.lerp(
-        targetLookAt.current,
-        1 - Math.exp(-delta * 6)
-      );
-      controlsRef.current.update();
+    const orbitControls = controlsRef.current;
+    if (orbitControls) {
+      orbitControls.target.lerp(targetLookAt.current, lerpAlpha);
+      orbitControls.update();
     } else {
       camera.lookAt(targetLookAt.current);
     }
-  });
 
-  // --- FOCUS LOGIC ------------------------------------------
-  const focusSplat = (index) => {
-    isAuto.current = true;
-
-    if (index < 0) {
-      targetPosition.current.copy(defaultTarget.position);
-      targetLookAt.current.copy(defaultTarget.lookAt);
-      activeIndexRef.current = -1;
-      forceRender((v) => v + 1);
+    if (
+      camera.position.distanceToSquared(targetPosition.current) <=
+        arriveThresholdSq &&
+      (!orbitControls ||
+        orbitControls.target.distanceToSquared(targetLookAt.current) <=
+          arriveThresholdSq)
+    ) {
+      isAuto.current = false;
       return;
     }
 
-    const splat = splats[index];
+    invalidateIfDemand();
+  });
 
-    const offset = new THREE.Vector3(0, 0, 0.6);
-    offset.applyAxisAngle(new THREE.Vector3(0, 1, 0), splat.rotation[1]);
+  // --- FOCUS LOGIC ------------------------------------------
+  const focusSplat = useCallback(
+    (index) => {
+      isFreeRoam.current = false;
+      isAuto.current = true;
 
-    targetPosition.current.copy(splat.position).add(offset);
-    targetLookAt.current.copy(splat.position);
+      if (index < 0) {
+        targetPosition.current.copy(defaultTarget.position);
+        targetLookAt.current.copy(defaultTarget.lookAt);
+        activeIndexRef.current = -1;
+        invalidateIfDemand();
+        return;
+      }
 
-    activeIndexRef.current = index;
-    forceRender((v) => v + 1);
-  };
+      const splat = splats[index];
+
+      tmpOffset.current
+        .copy(focusOffset.current)
+        .applyAxisAngle(rotationAxisY.current, splat.rotation[1]);
+
+      targetPosition.current.copy(splat.position).add(tmpOffset.current);
+      targetLookAt.current.copy(splat.position);
+
+      activeIndexRef.current = index;
+      invalidateIfDemand();
+    },
+    [defaultTarget, invalidateIfDemand, splats]
+  );
 
   // --- SPACE BAR CYCLING ------------------------------------
   useEffect(() => {
@@ -134,56 +191,63 @@ export default function Rosie() {
 
     window.addEventListener('keydown', onKeyDown);
     return () => window.removeEventListener('keydown', onKeyDown);
-  }, [splats]);
+  }, [focusSplat, splats.length]);
 
-  const splatDataTexture = useSplatDataTexture(imageFile('heart.png'));
+  const splatClickHandlers = useMemo(
+    () => splats.map((_, i) => () => focusSplat(i)),
+    [focusSplat, splats]
+  );
 
   // --- RENDER -----------------------------------------------
   return (
     <>
       <PerspectiveCamera
-        ref={cameraRef}
         makeDefault
-        position={defaultTarget.position.toArray()}
+        position={defaultTarget.positionArray}
         near={0.1}
         far={20}
       />
 
       <OrbitControls
         ref={controlsRef}
-        enableDamping
-        dampingFactor={0.1}
+        enableDamping={false}
         onStart={() => {
+          isFreeRoam.current = true;
           isAuto.current = false; // user takes control
+          invalidateIfDemand();
+        }}
+        onChange={() => {
+          if (isFreeRoam.current) invalidateIfDemand();
         }}
       />
 
       <color attach="background" args={['#ffffff']} />
 
-      {render.useSpark && (
-        <SparkSplatRenderer {...controls} splatDataTexture={splatDataTexture}>
-          {splats.map((splat, i) => (
-            <SparkSplat
-              key={splat.id}
-              splat={splat.src}
-              position={splat.position.toArray()}
-              rotation={splat.rotation}
-              onClick={() => focusSplat(i)}
-            />
-          ))}
-        </SparkSplatRenderer>
+      {render.mode === 'spark' && (
+        <SparkMultiSplat
+          splats={splats}
+          splatClickHandlers={splatClickHandlers}
+          splatDataTexture={splatDataTexture}
+        />
       )}
 
-      {!render.useSpark &&
+      {render.mode === 'drei' &&
         splats.map((splat, i) => (
           <Splat
             key={splat.id}
             src={modelFile(splat.src)}
-            position={splat.position.toArray()}
+            position={splat.positionArray}
             rotation={splat.rotation}
-            onClick={() => focusSplat(i)}
+            onClick={splatClickHandlers[i]}
           />
         ))}
+
+      {render.mode === 'customSplat' && (
+        <CustomMultiSplat
+          splats={splats}
+          splatClickHandlers={splatClickHandlers}
+        />
+      )}
     </>
   );
 }

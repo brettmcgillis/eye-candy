@@ -40,6 +40,7 @@ These instructions give an AI coding agent the immediately useful knowledge to w
 **Leva controls, presets and local-dev helpers**
 
 - Prefer encapsulating scene controls in a `useXControls` hook that uses `useControls` + `folder` from `leva` (see `src/components/scenes/PaperStack/usePaperStackControls.js`).
+- Prefer human-friendly labels for Leva controls so UI labels stay readable while code keeps stable internal values.
 - Provide a `Presets` folder with an options control (string `options: Object.keys(MY_PRESETS)`) plus a `reset` `button()` to reapply the currently-selected preset via `setControls(preset)`.
 - Keep a small snapshot/ref of the current control values (e.g., `controlsSnapshotRef`) so the `copy` button can serialize them.
 - Expose a `copy` button only in local dev (guarded by a helper like `localEnv()` in `utils/appUtils`) that writes a neat object-literal to the clipboard. PaperStack shows an example:

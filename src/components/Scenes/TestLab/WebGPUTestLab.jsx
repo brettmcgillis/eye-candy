@@ -8,7 +8,7 @@ export default function WebGPUTestLab() {
   const { SceneComponent } = useTestLabSceneSelector({
     scenes,
     defaultSceneId: 'networkTest',
-    groupLabel: 'Test Selection',
+    groupLabel: 'WebGPU Test Selection',
     queryParam: 'webgpuTestScene',
   });
 

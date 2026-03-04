@@ -42,16 +42,24 @@ export default function useTestLabSceneSelector({
     return scenes[0]?.id;
   }, [defaultSceneId, queryParam, sceneMap, scenes]);
 
-  const { scene: sceneId = initialScene } = useControls(
+  const [{ scene: selectedSceneId = initialScene }, setControls] = useControls(
     groupLabel,
-    {
+    () => ({
       scene: {
         options: dropdownOptions,
         value: initialScene,
       },
-    },
+    }),
     { collapsed: true, render: () => local }
   );
+
+  const sceneId = sceneMap[selectedSceneId] ? selectedSceneId : initialScene;
+
+  useEffect(() => {
+    if (!initialScene) return;
+    if (sceneMap[selectedSceneId]) return;
+    setControls({ scene: initialScene });
+  }, [initialScene, sceneMap, selectedSceneId, setControls]);
 
   useEffect(() => {
     if (typeof window === 'undefined') return;

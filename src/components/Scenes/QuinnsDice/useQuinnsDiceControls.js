@@ -19,6 +19,12 @@ const CONTROL_MODE_OPTIONS = {
   'Touch/Pointer': 'touch/pointer',
   Hands: 'hands',
 };
+const POINTER_LOOK_OPTIONS = {
+  Light: 'light',
+  Sphere: 'sphere',
+  'Magic Glass': 'magicGlass',
+  None: 'none',
+};
 const PRESET_CONTROL_KEYS = [
   'mode',
   'handsShowVideo',
@@ -69,7 +75,33 @@ const PRESET_CONTROL_KEYS = [
   'targetX',
   'targetY',
   'targetZ',
+  'pointerLook',
+  'pointerLightColor',
+  'pointerLightIntensity',
+  'pointerLightDistance',
+  'pointerLightDecay',
+  'pointerLightBallScale',
   'pointerRadius',
+  'pointerSphereColor',
+  'pointerSphereOpacity',
+  'pointerSphereRoughness',
+  'pointerSphereMetalness',
+  'pointerSphereEmissiveColor',
+  'pointerSphereEmissiveIntensity',
+  'pointerSphereWireframe',
+  'pointerMagicGlassColor',
+  'pointerMagicGlassOpacity',
+  'pointerMagicGlassTransmission',
+  'pointerMagicGlassThickness',
+  'pointerMagicGlassRoughness',
+  'pointerMagicGlassIor',
+  'pointerMagicGlassChromaticAberration',
+  'pointerMagicGlassAnisotropy',
+  'pointerMagicGlassDistortion',
+  'pointerMagicGlassDistortionScale',
+  'pointerMagicGlassTemporalDistortion',
+  'pointerMagicGlassAttenuationColor',
+  'pointerMagicGlassAttenuationDistance',
 ];
 
 function pickSupportedPresetValues(presetValues) {
@@ -513,12 +545,201 @@ export default function useQuinnsDiceControls() {
               max: 10,
               step: 0.1,
             },
-            pointerRadius: {
-              label: 'Pointer Radius',
-              value: QUINNS_DICE_PRESETS.Default.pointerRadius,
-              min: 0.1,
-              max: 5,
+          },
+          { collapsed: true }
+        ),
+      },
+      { collapsed: true }
+    ),
+    Pointer: folder(
+      {
+        pointerLook: {
+          label: 'Look',
+          value: QUINNS_DICE_PRESETS.Default.pointerLook,
+          options: POINTER_LOOK_OPTIONS,
+        },
+        pointerRadius: {
+          label: 'Radius',
+          value: QUINNS_DICE_PRESETS.Default.pointerRadius,
+          min: 0.1,
+          max: 5,
+          step: 0.1,
+        },
+        'Light Ball': folder(
+          {
+            pointerLightColor: {
+              label: 'Color',
+              value: QUINNS_DICE_PRESETS.Default.pointerLightColor,
+            },
+            pointerLightIntensity: {
+              label: 'Intensity',
+              value: QUINNS_DICE_PRESETS.Default.pointerLightIntensity,
+              min: 0,
+              max: 30,
               step: 0.1,
+            },
+            pointerLightDistance: {
+              label: 'Distance',
+              value: QUINNS_DICE_PRESETS.Default.pointerLightDistance,
+              min: 0,
+              max: 40,
+              step: 0.1,
+            },
+            pointerLightDecay: {
+              label: 'Decay',
+              value: QUINNS_DICE_PRESETS.Default.pointerLightDecay,
+              min: 0,
+              max: 4,
+              step: 0.01,
+            },
+            pointerLightBallScale: {
+              label: 'Scale',
+              value: QUINNS_DICE_PRESETS.Default.pointerLightBallScale,
+              min: 0.05,
+              max: 2,
+              step: 0.01,
+            },
+          },
+          { collapsed: true }
+        ),
+        Sphere: folder(
+          {
+            pointerSphereColor: {
+              label: 'Color',
+              value: QUINNS_DICE_PRESETS.Default.pointerSphereColor,
+            },
+            pointerSphereOpacity: {
+              label: 'Opacity',
+              value: QUINNS_DICE_PRESETS.Default.pointerSphereOpacity,
+              min: 0,
+              max: 1,
+              step: 0.01,
+            },
+            pointerSphereRoughness: {
+              label: 'Roughness',
+              value: QUINNS_DICE_PRESETS.Default.pointerSphereRoughness,
+              min: 0,
+              max: 1,
+              step: 0.01,
+            },
+            pointerSphereMetalness: {
+              label: 'Metalness',
+              value: QUINNS_DICE_PRESETS.Default.pointerSphereMetalness,
+              min: 0,
+              max: 1,
+              step: 0.01,
+            },
+            pointerSphereEmissiveColor: {
+              label: 'Emissive Color',
+              value: QUINNS_DICE_PRESETS.Default.pointerSphereEmissiveColor,
+            },
+            pointerSphereEmissiveIntensity: {
+              label: 'Emissive Intensity',
+              value: QUINNS_DICE_PRESETS.Default.pointerSphereEmissiveIntensity,
+              min: 0,
+              max: 20,
+              step: 0.01,
+            },
+            pointerSphereWireframe: {
+              label: 'Wireframe',
+              value: QUINNS_DICE_PRESETS.Default.pointerSphereWireframe,
+            },
+          },
+          { collapsed: true }
+        ),
+        'Magic Glass': folder(
+          {
+            pointerMagicGlassColor: {
+              label: 'Color',
+              value: QUINNS_DICE_PRESETS.Default.pointerMagicGlassColor,
+            },
+            pointerMagicGlassOpacity: {
+              label: 'Opacity',
+              value: QUINNS_DICE_PRESETS.Default.pointerMagicGlassOpacity,
+              min: 0,
+              max: 1,
+              step: 0.01,
+            },
+            pointerMagicGlassTransmission: {
+              label: 'Transmission',
+              value: QUINNS_DICE_PRESETS.Default.pointerMagicGlassTransmission,
+              min: 0,
+              max: 1,
+              step: 0.01,
+            },
+            pointerMagicGlassThickness: {
+              label: 'Thickness',
+              value: QUINNS_DICE_PRESETS.Default.pointerMagicGlassThickness,
+              min: 0,
+              max: 10,
+              step: 0.01,
+            },
+            pointerMagicGlassRoughness: {
+              label: 'Roughness',
+              value: QUINNS_DICE_PRESETS.Default.pointerMagicGlassRoughness,
+              min: 0,
+              max: 1,
+              step: 0.01,
+            },
+            pointerMagicGlassIor: {
+              label: 'IOR',
+              value: QUINNS_DICE_PRESETS.Default.pointerMagicGlassIor,
+              min: 1,
+              max: 2.5,
+              step: 0.01,
+            },
+            pointerMagicGlassChromaticAberration: {
+              label: 'Chromatic Aberration',
+              value:
+                QUINNS_DICE_PRESETS.Default
+                  .pointerMagicGlassChromaticAberration,
+              min: 0,
+              max: 2,
+              step: 0.001,
+            },
+            pointerMagicGlassAnisotropy: {
+              label: 'Anisotropy',
+              value: QUINNS_DICE_PRESETS.Default.pointerMagicGlassAnisotropy,
+              min: 0,
+              max: 1,
+              step: 0.01,
+            },
+            pointerMagicGlassDistortion: {
+              label: 'Distortion',
+              value: QUINNS_DICE_PRESETS.Default.pointerMagicGlassDistortion,
+              min: 0,
+              max: 1,
+              step: 0.01,
+            },
+            pointerMagicGlassDistortionScale: {
+              label: 'Distortion Scale',
+              value:
+                QUINNS_DICE_PRESETS.Default.pointerMagicGlassDistortionScale,
+              min: 0,
+              max: 1,
+              step: 0.01,
+            },
+            pointerMagicGlassTemporalDistortion: {
+              label: 'Temporal Distortion',
+              value:
+                QUINNS_DICE_PRESETS.Default.pointerMagicGlassTemporalDistortion,
+              min: 0,
+              max: 2,
+              step: 0.01,
+            },
+            pointerMagicGlassAttenuationColor: {
+              label: 'Attenuation Color',
+              value:
+                QUINNS_DICE_PRESETS.Default.pointerMagicGlassAttenuationColor,
+            },
+            pointerMagicGlassAttenuationDistance: {
+              label: 'Attenuation Distance',
+              value:
+                QUINNS_DICE_PRESETS.Default
+                  .pointerMagicGlassAttenuationDistance,
+              min: 0,
+              max: 20,
+              step: 0.01,
             },
           },
           { collapsed: true }

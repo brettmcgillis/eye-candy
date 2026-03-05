@@ -24,6 +24,7 @@ import {
   Center,
   Environment,
   Lightformer,
+  MeshTransmissionMaterial,
   OrbitControls,
   PerspectiveCamera,
 } from '@react-three/drei';
@@ -34,6 +35,7 @@ import {
   CuboidCollider,
   Physics,
   RigidBody,
+  useBeforePhysicsStep,
 } from '@react-three/rapier';
 
 import useHandGestureEvents from '../../../hooks/hands/useHandGestureEvents';
@@ -60,8 +62,11 @@ import useQuinnsDiceControls from './useQuinnsDiceControls';
 const DEFAULT_CAMERA_POSITION = new THREE.Vector3(
   ...DEFAULT_CAMERA_POSITION_VALUES
 );
+const CAMERA_DEFAULT_LOOK_AT = new THREE.Vector3(0, 0, 0);
+const DIE_IDS = DICE_CONFIGS.map((config) => config.id);
 
 export default function QuinnsDice() {
+  const viewport = useThree((state) => state.viewport);
   const d4Ref = useRef();
   const d6Ref = useRef();
   const d8Ref = useRef();
@@ -81,6 +86,8 @@ export default function QuinnsDice() {
   const rollPowerRef = useRef(1);
   const rollDelayRef = useRef(1.5);
   const rollLaneZRef = useRef(3);
+  const cameraPositionTargetRef = useRef(new THREE.Vector3());
+  const cameraLookAtTargetRef = useRef(new THREE.Vector3());
   const dieRefMap = useMemo(
     () => ({
       d4: d4Ref,
@@ -270,6 +277,32 @@ export default function QuinnsDice() {
     targetY,
     targetZ,
     pointerRadius,
+    pointerLook,
+    pointerLightColor,
+    pointerLightIntensity,
+    pointerLightDistance,
+    pointerLightDecay,
+    pointerLightBallScale,
+    pointerSphereColor,
+    pointerSphereOpacity,
+    pointerSphereRoughness,
+    pointerSphereMetalness,
+    pointerSphereEmissiveColor,
+    pointerSphereEmissiveIntensity,
+    pointerSphereWireframe,
+    pointerMagicGlassColor,
+    pointerMagicGlassOpacity,
+    pointerMagicGlassTransmission,
+    pointerMagicGlassThickness,
+    pointerMagicGlassRoughness,
+    pointerMagicGlassIor,
+    pointerMagicGlassChromaticAberration,
+    pointerMagicGlassAnisotropy,
+    pointerMagicGlassDistortion,
+    pointerMagicGlassDistortionScale,
+    pointerMagicGlassTemporalDistortion,
+    pointerMagicGlassAttenuationColor,
+    pointerMagicGlassAttenuationDistance,
   } = useQuinnsDiceControls();
   rollPowerRef.current = rollPower;
   rollDelayRef.current = rollRejoinDelaySeconds;
@@ -277,6 +310,15 @@ export default function QuinnsDice() {
   focusedDieIdRef.current = focusedDieId;
   orbitControlsEnabledRef.current = orbitControlsEnabled;
   rollLaneZRef.current = boxDepth * 0.35;
+
+  const boundsWidth =
+    Number.isFinite(viewport?.width) && viewport.width > 0
+      ? viewport.width
+      : boxWidth;
+  const boundsHeight =
+    Number.isFinite(viewport?.height) && viewport.height > 0
+      ? viewport.height
+      : boxHeight;
 
   useEffect(() => {
     if (!orbitControlsEnabled || rollingDieIdRef.current) return;
@@ -296,13 +338,6 @@ export default function QuinnsDice() {
       }
     }
 
-    if (rollingDieId) {
-      const body = dieRefMap[rollingDieId]?.current;
-      if (body) {
-        body.applyImpulse({ x: 0, y: -9.81 * delta * 2.2, z: 0 }, true);
-      }
-    }
-
     if (!rollingDieId && detachedDieId) {
       rejoinTimerRef.current = Math.max(0, rejoinTimerRef.current - delta);
       if (rejoinTimerRef.current === 0) {
@@ -316,8 +351,12 @@ export default function QuinnsDice() {
     if (orbitControlsEnabled) return;
 
     const focusBody = focusedDieId ? dieRefMap[focusedDieId]?.current : null;
-    const positionTarget = new THREE.Vector3().copy(DEFAULT_CAMERA_POSITION);
-    const lookAtTarget = new THREE.Vector3(0, 0, 0);
+    const positionTarget = cameraPositionTargetRef.current.copy(
+      DEFAULT_CAMERA_POSITION
+    );
+    const lookAtTarget = cameraLookAtTargetRef.current.copy(
+      CAMERA_DEFAULT_LOOK_AT
+    );
 
     if (focusBody) {
       const t = focusBody.translation();
@@ -355,12 +394,11 @@ export default function QuinnsDice() {
         <OrbitControls enableDamping dampingFactor={0.08} />
       )}
       <ambientLight intensity={0.4} />
-      <spotLight
+      <pointLight
         position={MAIN_LIGHT_POSITION}
-        target-position={MAIN_LIGHT_TARGET}
-        angle={0.15}
-        penumbra={1}
-        intensity={1}
+        intensity={1.25}
+        distance={70}
+        decay={2}
         castShadow
       />
       {debugLights && (
@@ -369,17 +407,100 @@ export default function QuinnsDice() {
           target={MAIN_LIGHT_TARGET}
         />
       )}
-      <Physics gravity={[0, 0, 0]} debug={debug} paused={!physicsEnabled}>
+      <Physics
+        gravity={[0, 0, 0]}
+        debug={debug}
+        paused={!physicsEnabled}
+        timeStep={1 / 60}
+        interpolate
+      >
+        <DicePhysicsDriver
+          dieRefMap={dieRefMap}
+          detachedDieId={detachedDieId}
+          rollingDieId={rollingDieId}
+          physicsEnabled={physicsEnabled}
+          returnStrength={returnStrength}
+          linearDamping={linearDamping}
+          maxImpulse={maxImpulse}
+          targetX={targetX}
+          targetY={targetY}
+          targetZ={targetZ}
+          boundsWidth={boundsWidth}
+          boundsHeight={boundsHeight}
+          boxDepth={boxDepth}
+        />
         <SceneBounds
-          width={boxWidth}
-          height={boxHeight}
+          width={boundsWidth}
+          height={boundsHeight}
           depth={boxDepth}
           onBottomCollisionEnter={handleBottomPlaneCollision}
         />
-        {mode === 'touch/pointer' && <Pointer radius={pointerRadius} />}
+        {mode === 'touch/pointer' && (
+          <Pointer
+            radius={pointerRadius}
+            boxWidth={boundsWidth}
+            boxHeight={boundsHeight}
+            boxDepth={boxDepth}
+            look={pointerLook}
+            lightColor={pointerLightColor}
+            lightIntensity={pointerLightIntensity}
+            lightDistance={pointerLightDistance}
+            lightDecay={pointerLightDecay}
+            lightBallScale={pointerLightBallScale}
+            sphereColor={pointerSphereColor}
+            sphereOpacity={pointerSphereOpacity}
+            sphereRoughness={pointerSphereRoughness}
+            sphereMetalness={pointerSphereMetalness}
+            sphereEmissiveColor={pointerSphereEmissiveColor}
+            sphereEmissiveIntensity={pointerSphereEmissiveIntensity}
+            sphereWireframe={pointerSphereWireframe}
+            magicGlassColor={pointerMagicGlassColor}
+            magicGlassOpacity={pointerMagicGlassOpacity}
+            magicGlassTransmission={pointerMagicGlassTransmission}
+            magicGlassThickness={pointerMagicGlassThickness}
+            magicGlassRoughness={pointerMagicGlassRoughness}
+            magicGlassIor={pointerMagicGlassIor}
+            magicGlassChromaticAberration={pointerMagicGlassChromaticAberration}
+            magicGlassAnisotropy={pointerMagicGlassAnisotropy}
+            magicGlassDistortion={pointerMagicGlassDistortion}
+            magicGlassDistortionScale={pointerMagicGlassDistortionScale}
+            magicGlassTemporalDistortion={pointerMagicGlassTemporalDistortion}
+            magicGlassAttenuationColor={pointerMagicGlassAttenuationColor}
+            magicGlassAttenuationDistance={pointerMagicGlassAttenuationDistance}
+          />
+        )}
         {mode === 'hands' && (
           <HandsPointer
             radius={pointerRadius}
+            boxWidth={boundsWidth}
+            boxHeight={boundsHeight}
+            boxDepth={boxDepth}
+            look={pointerLook}
+            lightColor={pointerLightColor}
+            lightIntensity={pointerLightIntensity}
+            lightDistance={pointerLightDistance}
+            lightDecay={pointerLightDecay}
+            lightBallScale={pointerLightBallScale}
+            sphereColor={pointerSphereColor}
+            sphereOpacity={pointerSphereOpacity}
+            sphereRoughness={pointerSphereRoughness}
+            sphereMetalness={pointerSphereMetalness}
+            sphereEmissiveColor={pointerSphereEmissiveColor}
+            sphereEmissiveIntensity={pointerSphereEmissiveIntensity}
+            sphereWireframe={pointerSphereWireframe}
+            magicGlassColor={pointerMagicGlassColor}
+            magicGlassOpacity={pointerMagicGlassOpacity}
+            magicGlassTransmission={pointerMagicGlassTransmission}
+            magicGlassThickness={pointerMagicGlassThickness}
+            magicGlassRoughness={pointerMagicGlassRoughness}
+            magicGlassIor={pointerMagicGlassIor}
+            magicGlassChromaticAberration={pointerMagicGlassChromaticAberration}
+            magicGlassAnisotropy={pointerMagicGlassAnisotropy}
+            magicGlassDistortion={pointerMagicGlassDistortion}
+            magicGlassDistortionScale={pointerMagicGlassDistortionScale}
+            magicGlassTemporalDistortion={pointerMagicGlassTemporalDistortion}
+            magicGlassAttenuationColor={pointerMagicGlassAttenuationColor}
+            magicGlassAttenuationDistance={pointerMagicGlassAttenuationDistance}
             showVideo={handsShowVideo}
             showDebugSkeleton={handsShowDebugSkeleton}
             videoSize={handsVideoSize}
@@ -400,70 +521,46 @@ export default function QuinnsDice() {
         <D4Die
           bodyRef={d4Ref}
           scale={d4Scale}
-          attractorEnabled={detachedDieId !== 'd4'}
-          returnStrength={returnStrength}
-          maxImpulse={maxImpulse}
           linearDamping={linearDamping}
           angularDamping={angularDamping}
           friction={friction}
-          target={[targetX, targetY, targetZ]}
         />
         <D6Die
           bodyRef={d6Ref}
           scale={d6Scale}
-          attractorEnabled={detachedDieId !== 'd6'}
-          returnStrength={returnStrength}
-          maxImpulse={maxImpulse}
           linearDamping={linearDamping}
           angularDamping={angularDamping}
           friction={friction}
-          target={[targetX, targetY, targetZ]}
         />
         <D8Die
           bodyRef={d8Ref}
           scale={d8Scale}
-          attractorEnabled={detachedDieId !== 'd8'}
-          returnStrength={returnStrength}
-          maxImpulse={maxImpulse}
           linearDamping={linearDamping}
           angularDamping={angularDamping}
           friction={friction}
-          target={[targetX, targetY, targetZ]}
         />
         <D10Die
           bodyRef={d10Ref}
           scale={d10Scale}
-          attractorEnabled={detachedDieId !== 'd10'}
-          returnStrength={returnStrength}
-          maxImpulse={maxImpulse}
           linearDamping={linearDamping}
           angularDamping={angularDamping}
           friction={friction}
-          target={[targetX, targetY, targetZ]}
         />
         <D12Die
           bodyRef={d12Ref}
           scale={d12Scale}
-          attractorEnabled={detachedDieId !== 'd12'}
-          returnStrength={returnStrength}
-          maxImpulse={maxImpulse}
           linearDamping={linearDamping}
           angularDamping={angularDamping}
           friction={friction}
-          target={[targetX, targetY, targetZ]}
         />
         <D20Die
           bodyRef={d20Ref}
           scale={d20Scale}
-          attractorEnabled={detachedDieId !== 'd20'}
           emissiveColor={d20EmissiveColor}
           emissiveIntensity={d20EmissiveIntensity}
-          returnStrength={returnStrength}
-          maxImpulse={maxImpulse}
           linearDamping={linearDamping}
           angularDamping={angularDamping}
           friction={friction}
-          target={[targetX, targetY, targetZ]}
         />
       </Physics>
       <EffectComposer disableNormalPass multisampling={8}>
@@ -504,6 +601,125 @@ export default function QuinnsDice() {
       )}
     </group>
   );
+}
+
+function DicePhysicsDriver({
+  dieRefMap,
+  detachedDieId,
+  rollingDieId,
+  physicsEnabled,
+  returnStrength,
+  linearDamping,
+  maxImpulse,
+  targetX,
+  targetY,
+  targetZ,
+  boundsWidth,
+  boundsHeight,
+  boxDepth,
+}) {
+  const impulseRef = useRef(new THREE.Vector3());
+
+  useBeforePhysicsStep(() => {
+    if (!physicsEnabled) return;
+
+    const impulse = impulseRef.current;
+    const fixedDt = 1 / 60;
+    const springStrength = Math.max(0, returnStrength) * 22;
+    const dampingStrength = Math.max(0.5, linearDamping * 0.45 + 2.2);
+
+    for (let i = 0; i < DIE_IDS.length; i += 1) {
+      const id = DIE_IDS[i];
+      if (detachedDieId !== id) {
+        const body = dieRefMap[id]?.current;
+        if (body) {
+          const translation = body.translation();
+          const linearVelocity = body.linvel();
+          impulse
+            .set(targetX, targetY, targetZ)
+            .sub(translation)
+            .multiplyScalar(springStrength * fixedDt);
+
+          impulse.x -= linearVelocity.x * dampingStrength * fixedDt;
+          impulse.y -= linearVelocity.y * dampingStrength * fixedDt;
+          impulse.z -= linearVelocity.z * dampingStrength * fixedDt;
+
+          const displacementSq =
+            (targetX - translation.x) ** 2 +
+            (targetY - translation.y) ** 2 +
+            (targetZ - translation.z) ** 2;
+          const velocitySq =
+            linearVelocity.x ** 2 +
+            linearVelocity.y ** 2 +
+            linearVelocity.z ** 2;
+
+          if (displacementSq < 0.0004 && velocitySq < 0.0004) {
+            impulse.set(0, 0, 0);
+          }
+
+          impulse.clampLength(0, maxImpulse);
+
+          if (impulse.lengthSq() > 0.000001) {
+            body.applyImpulse(impulse, false);
+          }
+        }
+      }
+    }
+
+    if (rollingDieId) {
+      const rollingBody = dieRefMap[rollingDieId]?.current;
+      if (rollingBody) {
+        rollingBody.applyImpulse({ x: 0, y: -0.36, z: 0 }, false);
+      }
+    }
+
+    const halfW = boundsWidth / 2;
+    const halfH = boundsHeight / 2;
+    const halfD = boxDepth / 2;
+    const boundaryMargin = 0.55;
+    const minX = -halfW + boundaryMargin;
+    const maxX = halfW - boundaryMargin;
+    const minY = -halfH + boundaryMargin;
+    const maxY = halfH - boundaryMargin;
+    const minZ = -halfD + boundaryMargin;
+    const maxZ = halfD - boundaryMargin;
+    const boundaryBounceDamping = 0.25;
+
+    for (let i = 0; i < DIE_IDS.length; i += 1) {
+      const id = DIE_IDS[i];
+      const body = dieRefMap[id]?.current;
+      if (body) {
+        const translation = body.translation();
+        const nextX = THREE.MathUtils.clamp(translation.x, minX, maxX);
+        const nextY = THREE.MathUtils.clamp(translation.y, minY, maxY);
+        const nextZ = THREE.MathUtils.clamp(translation.z, minZ, maxZ);
+        const xExceeded = nextX !== translation.x;
+        const yExceeded = nextY !== translation.y;
+        const zExceeded = nextZ !== translation.z;
+
+        if (xExceeded || yExceeded || zExceeded) {
+          const linearVelocity = body.linvel();
+          body.setTranslation({ x: nextX, y: nextY, z: nextZ }, true);
+          body.setLinvel(
+            {
+              x: xExceeded
+                ? -linearVelocity.x * boundaryBounceDamping
+                : linearVelocity.x,
+              y: yExceeded
+                ? -linearVelocity.y * boundaryBounceDamping
+                : linearVelocity.y,
+              z: zExceeded
+                ? -linearVelocity.z * boundaryBounceDamping
+                : linearVelocity.z,
+            },
+            true
+          );
+        }
+      }
+    }
+  });
+
+  return null;
 }
 
 function SceneBackground({ topColor, bottomColor }) {
@@ -598,7 +814,6 @@ function SceneBounds({
         position={[0, -halfH, 0]}
         friction={1}
         restitution={0}
-        onContactForce={onBottomCollisionEnter}
         onCollisionEnter={onBottomCollisionEnter}
       />
       <CuboidCollider
@@ -637,33 +852,16 @@ function DieBody({
   children,
   rigidScale = 1,
   bodyRef,
-  vec = new THREE.Vector3(),
-  r = THREE.MathUtils.randFloatSpread,
-  returnStrength = 0.2,
-  maxImpulse = 0.5,
   linearDamping = 4,
   angularDamping = 1,
   friction = 0.1,
-  attractorEnabled = true,
-  target = [0, 0, 0],
   colliders = false,
   restitution = 0.05,
+  softCcdPrediction = 0.35,
 }) {
   const internalRef = useRef();
   const api = bodyRef || internalRef;
-  const pos = useMemo(() => position || [r(10), r(10), r(10)], []);
-  useFrame((_, delta) => {
-    const body = api.current;
-    if (!body || !attractorEnabled) return;
-    delta = Math.min(0.1, delta);
-    const translation = body.translation();
-    vec
-      .set(target[0], target[1], target[2])
-      .sub(translation)
-      .multiplyScalar(returnStrength * delta * 60)
-      .clampLength(0, maxImpulse);
-    body.applyImpulse(vec, true);
-  });
+  const pos = useMemo(() => position || [0, 0, 0], [position]);
   return (
     <RigidBody
       key={`${name}-${rigidScale}`}
@@ -678,6 +876,7 @@ function DieBody({
       colliders={colliders}
       canSleep
       ccd
+      softCcdPrediction={softCcdPrediction}
     >
       {children}
     </RigidBody>
@@ -825,52 +1024,236 @@ function D20Visual({ emissiveColor = '#ffffff', emissiveIntensity = 1 }) {
   );
 }
 
-function Pointer({ radius = 1, vec = new THREE.Vector3() }) {
-  const { gl } = useThree();
-  const ref = useRef();
-  const hasMovedRef = useRef(false);
+function PointerAppearance({
+  radius,
+  look,
+  lightColor,
+  lightIntensity,
+  lightDistance,
+  lightDecay,
+  lightBallScale,
+  sphereColor,
+  sphereOpacity,
+  sphereRoughness,
+  sphereMetalness,
+  sphereEmissiveColor,
+  sphereEmissiveIntensity,
+  sphereWireframe,
+  magicGlassColor,
+  magicGlassOpacity,
+  magicGlassTransmission,
+  magicGlassThickness,
+  magicGlassRoughness,
+  magicGlassIor,
+  magicGlassChromaticAberration,
+  magicGlassAnisotropy,
+  magicGlassDistortion,
+  magicGlassDistortionScale,
+  magicGlassTemporalDistortion,
+  magicGlassAttenuationColor,
+  magicGlassAttenuationDistance,
+}) {
+  const safeAttenuationDistance =
+    magicGlassAttenuationDistance <= 0 ? 1000 : magicGlassAttenuationDistance;
 
-  useEffect(() => {
-    const onPointerMove = () => {
-      hasMovedRef.current = true;
-    };
-    gl.domElement.addEventListener('pointermove', onPointerMove);
-    return () =>
-      gl.domElement.removeEventListener('pointermove', onPointerMove);
-  }, [gl]);
+  return (
+    <>
+      {look === 'sphere' && (
+        <mesh scale={radius}>
+          <sphereGeometry args={[1, 12, 12]} />
+          <meshStandardMaterial
+            color={sphereColor}
+            transparent={sphereOpacity < 1}
+            opacity={sphereOpacity}
+            roughness={sphereRoughness}
+            metalness={sphereMetalness}
+            emissive={sphereEmissiveColor}
+            emissiveIntensity={sphereEmissiveIntensity}
+            wireframe={sphereWireframe}
+          />
+        </mesh>
+      )}
+      {look === 'light' && (
+        <mesh scale={radius * lightBallScale}>
+          <sphereGeometry args={[1, 12, 12]} />
+          <meshBasicMaterial color={lightColor} toneMapped={false} />
+          <pointLight
+            color={lightColor}
+            intensity={lightIntensity}
+            distance={lightDistance}
+            decay={lightDecay}
+          />
+        </mesh>
+      )}
+      {look === 'magicGlass' && (
+        <group>
+          <mesh scale={radius}>
+            <sphereGeometry args={[1, 32, 32]} />
+            <MeshTransmissionMaterial
+              color={magicGlassColor}
+              transmissionSampler
+              samples={2}
+              resolution={128}
+              transmission={magicGlassTransmission}
+              thickness={magicGlassThickness}
+              roughness={magicGlassRoughness}
+              ior={magicGlassIor}
+              chromaticAberration={magicGlassChromaticAberration}
+              anisotropy={magicGlassAnisotropy}
+              distortion={magicGlassDistortion}
+              distortionScale={magicGlassDistortionScale}
+              temporalDistortion={magicGlassTemporalDistortion}
+              attenuationColor={magicGlassAttenuationColor}
+              attenuationDistance={safeAttenuationDistance}
+              transparent={magicGlassOpacity < 1}
+              opacity={magicGlassOpacity}
+            />
+          </mesh>
+          <mesh scale={radius * lightBallScale}>
+            <sphereGeometry args={[1, 12, 12]} />
+            <meshBasicMaterial color={lightColor} toneMapped={false} />
+            <pointLight
+              color={lightColor}
+              intensity={lightIntensity}
+              distance={lightDistance}
+              decay={lightDecay}
+            />
+          </mesh>
+        </group>
+      )}
+    </>
+  );
+}
+
+function Pointer({
+  radius = 1,
+  boxWidth = 10,
+  boxHeight = 10,
+  boxDepth = 10,
+  look = 'light',
+  lightColor = '#ffffff',
+  lightIntensity = 8,
+  lightDistance = 10,
+  lightDecay = 2,
+  lightBallScale = 0.35,
+  sphereColor = '#ffffff',
+  sphereOpacity = 1,
+  sphereRoughness = 0.35,
+  sphereMetalness = 0,
+  sphereEmissiveColor = '#000000',
+  sphereEmissiveIntensity = 0,
+  sphereWireframe = false,
+  magicGlassColor = '#ffffff',
+  magicGlassOpacity = 1,
+  magicGlassTransmission = 1,
+  magicGlassThickness = 0.9,
+  magicGlassRoughness = 0.03,
+  magicGlassIor = 1.25,
+  magicGlassChromaticAberration = 0.08,
+  magicGlassAnisotropy = 0.05,
+  magicGlassDistortion = 0,
+  magicGlassDistortionScale = 0.3,
+  magicGlassTemporalDistortion = 0,
+  magicGlassAttenuationColor = '#ffffff',
+  magicGlassAttenuationDistance = 0,
+  vec = new THREE.Vector3(),
+}) {
+  const ref = useRef();
 
   useFrame(({ mouse, viewport }) => {
     const body = ref.current;
     if (!body) return;
 
-    // Keep pointer away from dice until we get real mouse movement.
-    if (!hasMovedRef.current) {
-      body.setNextKinematicTranslation(vec.set(999, 999, 999));
-      return;
-    }
-    body.setNextKinematicTranslation(
-      vec.set(
-        (mouse.x * viewport.width) / 2,
-        (mouse.y * viewport.height) / 2,
-        0
-      )
+    const halfW = boxWidth / 2;
+    const halfH = boxHeight / 2;
+    const halfD = boxDepth / 2;
+    const margin = radius + 0.35;
+    const targetX = THREE.MathUtils.clamp(
+      (mouse.x * viewport.width) / 2,
+      -halfW + margin,
+      halfW - margin
     );
+    const targetY = THREE.MathUtils.clamp(
+      (mouse.y * viewport.height) / 2,
+      -halfH + margin,
+      halfH - margin
+    );
+    const targetZ = THREE.MathUtils.clamp(0, -halfD + margin, halfD - margin);
+
+    body.setNextKinematicTranslation(vec.set(targetX, targetY, targetZ));
   });
   return (
     <RigidBody
-      position={[999, 999, 999]}
+      position={[0, 0, 0]}
       type="kinematicPosition"
       colliders={false}
       ref={ref}
-      ccd
     >
       <BallCollider args={[radius]} />
+      <PointerAppearance
+        radius={radius}
+        look={look}
+        lightColor={lightColor}
+        lightIntensity={lightIntensity}
+        lightDistance={lightDistance}
+        lightDecay={lightDecay}
+        lightBallScale={lightBallScale}
+        sphereColor={sphereColor}
+        sphereOpacity={sphereOpacity}
+        sphereRoughness={sphereRoughness}
+        sphereMetalness={sphereMetalness}
+        sphereEmissiveColor={sphereEmissiveColor}
+        sphereEmissiveIntensity={sphereEmissiveIntensity}
+        sphereWireframe={sphereWireframe}
+        magicGlassColor={magicGlassColor}
+        magicGlassOpacity={magicGlassOpacity}
+        magicGlassTransmission={magicGlassTransmission}
+        magicGlassThickness={magicGlassThickness}
+        magicGlassRoughness={magicGlassRoughness}
+        magicGlassIor={magicGlassIor}
+        magicGlassChromaticAberration={magicGlassChromaticAberration}
+        magicGlassAnisotropy={magicGlassAnisotropy}
+        magicGlassDistortion={magicGlassDistortion}
+        magicGlassDistortionScale={magicGlassDistortionScale}
+        magicGlassTemporalDistortion={magicGlassTemporalDistortion}
+        magicGlassAttenuationColor={magicGlassAttenuationColor}
+        magicGlassAttenuationDistance={magicGlassAttenuationDistance}
+      />
     </RigidBody>
   );
 }
 
 function HandsPointer({
   radius = 1,
+  boxWidth = 10,
+  boxHeight = 10,
+  boxDepth = 10,
+  look = 'light',
+  lightColor = '#ffffff',
+  lightIntensity = 8,
+  lightDistance = 10,
+  lightDecay = 2,
+  lightBallScale = 0.35,
+  sphereColor = '#ffffff',
+  sphereOpacity = 1,
+  sphereRoughness = 0.35,
+  sphereMetalness = 0,
+  sphereEmissiveColor = '#000000',
+  sphereEmissiveIntensity = 0,
+  sphereWireframe = false,
+  magicGlassColor = '#ffffff',
+  magicGlassOpacity = 1,
+  magicGlassTransmission = 1,
+  magicGlassThickness = 0.9,
+  magicGlassRoughness = 0.03,
+  magicGlassIor = 1.25,
+  magicGlassChromaticAberration = 0.08,
+  magicGlassAnisotropy = 0.05,
+  magicGlassDistortion = 0,
+  magicGlassDistortionScale = 0.3,
+  magicGlassTemporalDistortion = 0,
+  magicGlassAttenuationColor = '#ffffff',
+  magicGlassAttenuationDistance = 0,
   xScale = 4,
   yScale = 3,
   zScale = 5,
@@ -935,7 +1318,19 @@ function HandsPointer({
       return;
     }
 
-    smoothedHandPosRef.current.lerp(hands.handPosition, 0.3);
+    const halfW = boxWidth / 2;
+    const halfH = boxHeight / 2;
+    const halfD = boxDepth / 2;
+    const margin = radius + 0.35;
+    vec
+      .copy(hands.handPosition)
+      .set(
+        THREE.MathUtils.clamp(vec.x, -halfW + margin, halfW - margin),
+        THREE.MathUtils.clamp(vec.y, -halfH + margin, halfH - margin),
+        THREE.MathUtils.clamp(vec.z, -halfD + margin, halfD - margin)
+      );
+
+    smoothedHandPosRef.current.lerp(vec, 0.3);
     body.setNextKinematicTranslation(smoothedHandPosRef.current);
   });
 
@@ -945,9 +1340,37 @@ function HandsPointer({
       type="kinematicPosition"
       colliders={false}
       ref={ref}
-      ccd
     >
       <BallCollider args={[radius]} />
+      <PointerAppearance
+        radius={radius}
+        look={look}
+        lightColor={lightColor}
+        lightIntensity={lightIntensity}
+        lightDistance={lightDistance}
+        lightDecay={lightDecay}
+        lightBallScale={lightBallScale}
+        sphereColor={sphereColor}
+        sphereOpacity={sphereOpacity}
+        sphereRoughness={sphereRoughness}
+        sphereMetalness={sphereMetalness}
+        sphereEmissiveColor={sphereEmissiveColor}
+        sphereEmissiveIntensity={sphereEmissiveIntensity}
+        sphereWireframe={sphereWireframe}
+        magicGlassColor={magicGlassColor}
+        magicGlassOpacity={magicGlassOpacity}
+        magicGlassTransmission={magicGlassTransmission}
+        magicGlassThickness={magicGlassThickness}
+        magicGlassRoughness={magicGlassRoughness}
+        magicGlassIor={magicGlassIor}
+        magicGlassChromaticAberration={magicGlassChromaticAberration}
+        magicGlassAnisotropy={magicGlassAnisotropy}
+        magicGlassDistortion={magicGlassDistortion}
+        magicGlassDistortionScale={magicGlassDistortionScale}
+        magicGlassTemporalDistortion={magicGlassTemporalDistortion}
+        magicGlassAttenuationColor={magicGlassAttenuationColor}
+        magicGlassAttenuationDistance={magicGlassAttenuationDistance}
+      />
     </RigidBody>
   );
 }

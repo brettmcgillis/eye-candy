@@ -8,4 +8,4 @@
 - [x] Fix depth cube size. Aim for device aspect ratio.
 - [ ] Use Hull colliders for models
 - [ ] Setup mode for desktop or motion controls disabled. Click to set gravity OR gravity follows cursor
-- [ ] Fix device orientation on iPad.
+- [x] Fix device orientation on iPad.

@@ -21,7 +21,7 @@
 - [x] hand controls and mode control.
 - [x] Consider adding a mesh where the pointer is for more obvious interaction on startup.
 - [x] Try to default the bounds of the room to the device viewport size/dimesions
-- [ ] Add presets for use on high/low perf machines.
+- [ ] Add presets for use on high/low perf machines. Use simplified colliders for low perf machines
 
 # // Bugs
 

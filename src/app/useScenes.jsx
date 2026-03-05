@@ -1,14 +1,29 @@
-import CRTTest from '../components/scenes/CRTTest/CrtTest';
-import DumpsterFire from '../components/scenes/DumpsterFire/DumpsterFire';
-import FoldedFrame from '../components/scenes/FoldedFrame/FoldedFrame';
-import LoGlow from '../components/scenes/LoGlow/LoGlow';
-import NewScene from '../components/scenes/NewScene/NewScene';
-import PaperStack from '../components/scenes/PaperStack/PaperStack';
-import QuinnsDice from '../components/scenes/QuinnsDice/QuinnsDice';
-import Rosie from '../components/scenes/Rosie/Rosie';
-import WebGLTestLab from '../components/scenes/TestLab/WebGLTestLab';
-import WebGPUTestLab from '../components/scenes/TestLab/WebGPUTestLab';
+import { lazy } from 'react';
+
 import NoScene from './scaffold/NoScene';
+
+const CRTTest = lazy(() => import('../components/scenes/CRTTest/CrtTest'));
+const DumpsterFire = lazy(
+  () => import('../components/scenes/DumpsterFire/DumpsterFire')
+);
+const FoldedFrame = lazy(
+  () => import('../components/scenes/FoldedFrame/FoldedFrame')
+);
+const LoGlow = lazy(() => import('../components/scenes/LoGlow/LoGlow'));
+const NewScene = lazy(() => import('../components/scenes/NewScene/NewScene'));
+const PaperStack = lazy(
+  () => import('../components/scenes/PaperStack/PaperStack')
+);
+const QuinnsDice = lazy(
+  () => import('../components/scenes/QuinnsDice/QuinnsDice')
+);
+const Rosie = lazy(() => import('../components/scenes/Rosie/Rosie'));
+const WebGLTestLab = lazy(
+  () => import('../components/scenes/TestLab/WebGLTestLab')
+);
+const WebGPUTestLab = lazy(
+  () => import('../components/scenes/TestLab/WebGPUTestLab')
+);
 
 const noScene = {
   id: 'noScene',

@@ -1,4 +1,4 @@
-import { useControls } from 'leva';
+import { button, useControls } from 'leva';
 import * as THREE from 'three';
 
 import React, {
@@ -10,7 +10,7 @@ import React, {
 } from 'react';
 
 import { Html, PerspectiveCamera } from '@react-three/drei';
-import { useFrame } from '@react-three/fiber';
+import { useFrame, useThree } from '@react-three/fiber';
 import {
   CuboidCollider,
   Physics,
@@ -44,6 +44,16 @@ function needsIOSMotionPermission() {
 
 function getScreenAngleRad() {
   if (typeof window === 'undefined') return 0;
+
+  const orientationType = window.screen?.orientation?.type;
+  if (typeof orientationType === 'string') {
+    // Normalize to a portrait-based basis so iPad + iPhone map consistently.
+    if (orientationType === 'portrait-primary') return 0;
+    if (orientationType === 'portrait-secondary') return Math.PI;
+    if (orientationType === 'landscape-primary') return -Math.PI / 2;
+    if (orientationType === 'landscape-secondary') return Math.PI / 2;
+  }
+
   let angle = 0;
   if (
     window.screen?.orientation &&
@@ -100,11 +110,14 @@ function MotionPermissionOverlay({ onEnable }) {
   );
 }
 
-function RoomVisual({ size = ROOM_SIZE, position = ROOM_POSITION }) {
+function RoomVisual({
+  dimensions = [ROOM_SIZE, ROOM_SIZE, ROOM_SIZE],
+  position = ROOM_POSITION,
+}) {
   return (
     <group position={position}>
       <mesh>
-        <boxGeometry args={[size, size, size]} />
+        <boxGeometry args={dimensions} />
         <GridMaterial side={THREE.BackSide} />
       </mesh>
     </group>
@@ -112,22 +125,25 @@ function RoomVisual({ size = ROOM_SIZE, position = ROOM_POSITION }) {
 }
 
 function RoomBounds({
-  size = ROOM_SIZE,
+  dimensions = [ROOM_SIZE, ROOM_SIZE, ROOM_SIZE],
   thickness = WALL_THICKNESS,
   position = ROOM_POSITION,
 }) {
-  const h = size / 2;
+  const [width, height, depth] = dimensions;
+  const hx = width / 2;
+  const hy = height / 2;
+  const hz = depth / 2;
   const t = thickness;
 
   return (
     <RigidBody type="fixed" colliders={false} position={position}>
       {/* Push collider centers outward so their *inner* faces align with the visual cube. */}
-      <CuboidCollider args={[h, t, h]} position={[0, -(h + t), 0]} />
-      <CuboidCollider args={[h, t, h]} position={[0, h + t, 0]} />
-      <CuboidCollider args={[t, h, h]} position={[-(h + t), 0, 0]} />
-      <CuboidCollider args={[t, h, h]} position={[h + t, 0, 0]} />
-      <CuboidCollider args={[h, h, t]} position={[0, 0, -(h + t)]} />
-      <CuboidCollider args={[h, h, t]} position={[0, 0, h + t]} />
+      <CuboidCollider args={[hx, t, hz]} position={[0, -(hy + t), 0]} />
+      <CuboidCollider args={[hx, t, hz]} position={[0, hy + t, 0]} />
+      <CuboidCollider args={[t, hy, hz]} position={[-(hx + t), 0, 0]} />
+      <CuboidCollider args={[t, hy, hz]} position={[hx + t, 0, 0]} />
+      <CuboidCollider args={[hx, hy, t]} position={[0, 0, -(hz + t)]} />
+      <CuboidCollider args={[hx, hy, t]} position={[0, 0, hz + t]} />
     </RigidBody>
   );
 }
@@ -193,8 +209,16 @@ function Ball({ position, color = '#FFFFFF' }) {
   );
 }
 
-function DeviceGravity({ enabled, gravityOutRef, cameraRef }) {
+function DeviceGravity({
+  enabled,
+  gravityOutRef,
+  cameraRef,
+  calibrateRequestRef,
+  calibrationResetRequestRef,
+}) {
   const { world } = useRapier();
+  const calibrateRequest = calibrateRequestRef;
+  const calibrationResetRequest = calibrationResetRequestRef;
 
   const rawDeviceAccelG = useRef(new THREE.Vector3(0, -G, 0));
   const lastMotionAtMs = useRef(0);
@@ -202,9 +226,12 @@ function DeviceGravity({ enabled, gravityOutRef, cameraRef }) {
   const orientationRef = useRef({ beta: 0, gamma: 0 });
   const smoothedWorldG = useRef(new THREE.Vector3(0, -G, 0));
   const appliedWorldG = useRef(new THREE.Vector3(0, -G, 0));
+  const calibrationQuatRef = useRef(new THREE.Quaternion());
 
   const tmp = useMemo(() => new THREE.Vector3(), []);
   const zAxis = useMemo(() => new THREE.Vector3(0, 0, 1), []);
+  const calibFrom = useMemo(() => new THREE.Vector3(), []);
+  const down = useMemo(() => new THREE.Vector3(0, -1, 0), []);
 
   useEffect(() => {
     if (!enabled) return undefined;
@@ -274,6 +301,11 @@ function DeviceGravity({ enabled, gravityOutRef, cameraRef }) {
     if (!Number.isFinite(targetWorldG.x)) return;
     targetWorldG.clampLength(0, 3 * G);
 
+    if (calibrationResetRequest?.current) {
+      calibrationQuatRef.current.identity();
+      calibrationResetRequest.current = false;
+    }
+
     // Smooth a bit to reduce jitter.
     const lerpT = 1 - 0.001 ** dt; // ~consistent across fps
     smoothedWorldG.current.lerp(targetWorldG, lerpT * 0.22);
@@ -281,6 +313,17 @@ function DeviceGravity({ enabled, gravityOutRef, cameraRef }) {
     // Write to rapier world.
     // Invert: current sensor basis feels flipped for this scene.
     appliedWorldG.current.copy(smoothedWorldG.current).multiplyScalar(-1);
+
+    if (
+      calibrateRequest?.current &&
+      appliedWorldG.current.lengthSq() > 0.0001
+    ) {
+      calibFrom.copy(appliedWorldG.current).normalize();
+      calibrationQuatRef.current.setFromUnitVectors(calibFrom, down);
+      calibrateRequest.current = false;
+    }
+
+    appliedWorldG.current.applyQuaternion(calibrationQuatRef.current);
     const g = appliedWorldG.current;
     world.gravity = { x: g.x, y: g.y, z: g.z };
 
@@ -294,6 +337,9 @@ function DeviceGravity({ enabled, gravityOutRef, cameraRef }) {
 }
 
 export default function MobilePhysicsTest() {
+  const size = useThree((state) => state.size);
+  const calibrateRequestRef = useRef(false);
+  const calibrationResetRequestRef = useRef(false);
   const { debug } = useControls(
     'Mobile Physics Test',
     {
@@ -301,11 +347,38 @@ export default function MobilePhysicsTest() {
         label: 'Debug',
         value: true,
       },
+      calibrate: button(() => {
+        calibrateRequestRef.current = true;
+      }),
+      resetCalibration: button(() => {
+        calibrationResetRequestRef.current = true;
+      }),
     },
     { collapsed: true }
   );
   const cameraRef = useRef();
   const gravityRef = useRef(new THREE.Vector3(0, -G, 0));
+  const roomDimensions = useMemo(() => {
+    const aspect = size.height > 0 ? size.width / size.height : 1;
+    const cameraZ = cameraRef.current?.position?.z ?? 3.25;
+    const cameraFov = cameraRef.current?.fov ?? 55;
+    const distanceToRoom = Math.max(
+      0.001,
+      Math.abs(cameraZ - ROOM_POSITION[2])
+    );
+    const frustumHeight =
+      2 * Math.tan(THREE.MathUtils.degToRad(cameraFov) * 0.5) * distanceToRoom;
+    const frustumWidth = frustumHeight * aspect;
+
+    return [frustumWidth, frustumHeight, ROOM_SIZE];
+  }, [size.height, size.width]);
+  const [roomWidth, roomHeight] = roomDimensions;
+  const xScale = roomWidth / ROOM_SIZE;
+  const yScale = roomHeight / ROOM_SIZE;
+  const scaleToRoom = useCallback(
+    ([x, y, z]) => [x * xScale, y * yScale, z],
+    [xScale, yScale]
+  );
 
   const [motionEnabled, setMotionEnabled] = useState(() => {
     // If iOS permission is required, start disabled until user taps.
@@ -359,14 +432,25 @@ export default function MobilePhysicsTest() {
           enabled={motionEnabled}
           gravityOutRef={gravityRef}
           cameraRef={cameraRef}
+          calibrateRequestRef={calibrateRequestRef}
+          calibrationResetRequestRef={calibrationResetRequestRef}
         />
-        <RoomVisual />
-        <RoomBounds />
-        <Ball color="#000000" position={[0.1, -0.3, ROOM_POSITION[2]]} />
-        <Ball color="#FFFFFF" position={[0, 0.3, ROOM_POSITION[2]]} />
-        <Ball color="#FF0000" position={[-0.1, 0.2, ROOM_POSITION[2]]} />
-        <PhysicalReversal position={[-0.7, 0.9, -1]} />
-        <PhysicalReversal position={[0.5, -0.7, -1]} />
+        <RoomVisual dimensions={roomDimensions} />
+        <RoomBounds dimensions={roomDimensions} />
+        <Ball
+          color="#000000"
+          position={scaleToRoom([0.1, -0.3, ROOM_POSITION[2]])}
+        />
+        <Ball
+          color="#FFFFFF"
+          position={scaleToRoom([0, 0.3, ROOM_POSITION[2]])}
+        />
+        <Ball
+          color="#FF0000"
+          position={scaleToRoom([-0.1, 0.2, ROOM_POSITION[2]])}
+        />
+        <PhysicalReversal position={scaleToRoom([-0.7, 0.9, -1])} />
+        <PhysicalReversal position={scaleToRoom([0.5, -0.7, -1])} />
         <PhysicalBret />
       </Physics>
 

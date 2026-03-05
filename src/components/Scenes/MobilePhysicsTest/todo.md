@@ -1,7 +1,11 @@
 # // MobilePhysicsTest
-# // TODO: 
+
+# // TODO:
 
 [Back to main TODO](../../../../TODO.md)
 
-- [ ] Fix physics crashing. stops working quickly.
-- [ ] Fix depth cube size. Aim for device aspect ratio.
+- [x] Fix physics crashing. stops working quickly.
+- [x] Fix depth cube size. Aim for device aspect ratio.
+- [ ] Use Hull colliders for models
+- [ ] Setup mode for desktop or motion controls disabled. Click to set gravity OR gravity follows cursor
+- [ ] Fix device orientation on iPad.

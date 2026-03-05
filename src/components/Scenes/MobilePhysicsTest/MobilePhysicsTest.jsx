@@ -12,6 +12,7 @@ import React, {
 import { Html, PerspectiveCamera } from '@react-three/drei';
 import { useFrame, useThree } from '@react-three/fiber';
 import {
+  BallCollider,
   CuboidCollider,
   Physics,
   RigidBody,
@@ -42,6 +43,23 @@ function needsIOSMotionPermission() {
   );
 }
 
+function supportsMotionSensors() {
+  if (typeof window === 'undefined') return false;
+  return (
+    typeof window.DeviceMotionEvent !== 'undefined' ||
+    typeof window.DeviceOrientationEvent !== 'undefined'
+  );
+}
+
+function prefersPointerControls() {
+  if (typeof window === 'undefined') return false;
+  const hasFinePointer =
+    typeof window.matchMedia === 'function' &&
+    window.matchMedia('(any-pointer: fine)').matches;
+  const hasTouch = (navigator?.maxTouchPoints ?? 0) > 0;
+  return hasFinePointer && !hasTouch;
+}
+
 function getScreenAngleRad() {
   if (typeof window === 'undefined') return 0;
 
@@ -66,7 +84,7 @@ function getScreenAngleRad() {
   return THREE.MathUtils.degToRad(angle);
 }
 
-function MotionPermissionOverlay({ onEnable }) {
+function MotionPermissionOverlay({ onEnable, onDecline, showDecline = false }) {
   return (
     <Html center style={{ pointerEvents: 'auto' }}>
       <div
@@ -82,12 +100,11 @@ function MotionPermissionOverlay({ onEnable }) {
         }}
       >
         <div style={{ fontWeight: 700, marginBottom: 8 }}>
-          Enable motion controls
+          Motion controls available
         </div>
         <div style={{ fontSize: 12, opacity: 0.9, marginBottom: 12 }}>
-          This scene uses your device tilt for gravity + off-axis projection.
-          Motion sensors only work on HTTPS (or localhost), and iOS requires a
-          tap to grant permission.
+          Enable tilt controls, or continue with click-to-set gravity. You can
+          always use click controls if you prefer.
         </div>
         <button
           type="button"
@@ -103,7 +120,67 @@ function MotionPermissionOverlay({ onEnable }) {
             fontWeight: 600,
           }}
         >
-          Enable motion
+          Enable tilt controls
+        </button>
+        {showDecline && (
+          <button
+            type="button"
+            onClick={onDecline}
+            style={{
+              width: '100%',
+              marginTop: 8,
+              padding: '10px 12px',
+              borderRadius: 8,
+              border: '1px solid rgba(255,255,255,0.16)',
+              background: 'rgba(255,255,255,0.04)',
+              color: 'white',
+              cursor: 'pointer',
+              fontWeight: 500,
+            }}
+          >
+            Use click controls
+          </button>
+        )}
+      </div>
+    </Html>
+  );
+}
+
+function PointerHelpOverlay({ onDismiss }) {
+  return (
+    <Html center style={{ pointerEvents: 'auto' }}>
+      <div
+        style={{
+          width: 280,
+          padding: 14,
+          borderRadius: 10,
+          background: 'rgba(0,0,0,0.72)',
+          color: 'white',
+          fontFamily:
+            'ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, sans-serif',
+          lineHeight: 1.2,
+        }}
+      >
+        <div style={{ fontWeight: 700, marginBottom: 8 }}>Desktop controls</div>
+        <div style={{ fontSize: 12, opacity: 0.9 }}>
+          Click anywhere to set gravity direction.
+        </div>
+        <button
+          type="button"
+          onClick={onDismiss}
+          style={{
+            width: '100%',
+            marginTop: 10,
+            padding: '10px 12px',
+            borderRadius: 8,
+            border: '1px solid rgba(255,255,255,0.2)',
+            background: 'rgba(255,255,255,0.08)',
+            color: 'white',
+            cursor: 'pointer',
+            fontWeight: 600,
+          }}
+        >
+          OK
         </button>
       </div>
     </Html>
@@ -151,7 +228,7 @@ function RoomBounds({
 function PhysicalReversal({ position }) {
   return (
     <RigidBody
-      colliders={false}
+      colliders="hull"
       scale={[0.8, 0.8, 0.8]}
       position={position}
       restitution={0.25}
@@ -162,10 +239,6 @@ function PhysicalReversal({ position }) {
       ccd
     >
       <Reversal />
-      {/* Height */}
-      <CuboidCollider args={[0.07, 0.35, 0.07]} />
-      {/* Length */}
-      <CuboidCollider args={[0.47, 0.07, 0.07]} />
     </RigidBody>
   );
 }
@@ -173,7 +246,7 @@ function PhysicalReversal({ position }) {
 function PhysicalBret({ position }) {
   return (
     <RigidBody
-      colliders={false}
+      colliders="hull"
       position={position}
       restitution={0.25}
       friction={0.9}
@@ -184,7 +257,6 @@ function PhysicalBret({ position }) {
       ccd
     >
       <Bret />
-      <CuboidCollider args={[0.45, 0.75, 0.07]} position={[0.1, -0.05, 0]} />
     </RigidBody>
   );
 }
@@ -205,6 +277,113 @@ function Ball({ position, color = '#FFFFFF' }) {
         <sphereGeometry args={[BALL_RADIUS, 32, 32]} />
         <meshStandardMaterial color={color} roughness={1} metalness={0.9} />
       </mesh>
+    </RigidBody>
+  );
+}
+
+function GlassBallPair({ position, radius = 0.45 }) {
+  return (
+    <RigidBody
+      colliders={false}
+      position={position}
+      restitution={0.25}
+      friction={0.9}
+      linearDamping={0.25}
+      angularDamping={0.25}
+      canSleep={false}
+      ccd
+    >
+      <BallCollider args={[radius]} />
+      <mesh castShadow receiveShadow>
+        <sphereGeometry args={[radius, 48, 48]} />
+        <meshPhysicalMaterial
+          color="#ffffff"
+          transparent
+          opacity={0.2}
+          transmission={0.95}
+          roughness={0.05}
+          metalness={0}
+          thickness={0.3}
+          ior={1.3}
+        />
+      </mesh>
+
+      <group>
+        <group scale={[0.2, 0.2, 0.2]} position={[-0.14, 0.06, 0]}>
+          <Bret />
+        </group>
+        <group scale={[0.3, 0.3, 0.3]} position={[0.14, -0.04, 0]}>
+          <Reversal />
+        </group>
+      </group>
+    </RigidBody>
+  );
+}
+
+function GlassBallBret({ position, radius = 0.4 }) {
+  return (
+    <RigidBody
+      colliders={false}
+      position={position}
+      restitution={0.25}
+      friction={0.9}
+      linearDamping={0.25}
+      angularDamping={0.25}
+      canSleep={false}
+      ccd
+    >
+      <BallCollider args={[radius]} />
+      <mesh castShadow receiveShadow>
+        <sphereGeometry args={[radius, 48, 48]} />
+        <meshPhysicalMaterial
+          color="#ffffff"
+          transparent
+          opacity={0.2}
+          transmission={0.95}
+          roughness={0.05}
+          metalness={0}
+          thickness={0.3}
+          ior={1.3}
+        />
+      </mesh>
+
+      <group scale={[0.22, 0.22, 0.22]} position={[0, 0, 0]}>
+        <Bret />
+      </group>
+    </RigidBody>
+  );
+}
+
+function GlassBallReversal({ position, radius = 0.4 }) {
+  return (
+    <RigidBody
+      colliders={false}
+      position={position}
+      restitution={0.25}
+      friction={0.9}
+      linearDamping={0.25}
+      angularDamping={0.25}
+      canSleep={false}
+      ccd
+    >
+      <BallCollider args={[radius]} />
+      <mesh castShadow receiveShadow>
+        <sphereGeometry args={[radius, 48, 48]} />
+        <meshPhysicalMaterial
+          color="#ffffff"
+          transparent
+          opacity={0.2}
+          transmission={0.95}
+          roughness={0.05}
+          metalness={0}
+          thickness={0.3}
+          ior={1.3}
+        />
+      </mesh>
+
+      <group scale={[0.3, 0.3, 0.3]} position={[0, 0, 0]}>
+        <Reversal />
+      </group>
     </RigidBody>
   );
 }
@@ -336,16 +515,77 @@ function DeviceGravity({
   return null;
 }
 
+function PointerGravity({ enabled, gravityOutRef }) {
+  const { world } = useRapier();
+  const targetGravity = useRef(new THREE.Vector3(0, -G, 0));
+  const appliedGravity = useRef(new THREE.Vector3(0, -G, 0));
+  const centerDeadzone = 0.03;
+  const centerResponseGamma = 0.65;
+
+  const setFromPointer = useCallback(
+    (ndcX, ndcY) => {
+      const shapeAxis = (rawValue) => {
+        const clamped = THREE.MathUtils.clamp(rawValue, -1, 1);
+        const sign = Math.sign(clamped);
+        const magnitude = Math.abs(clamped);
+        if (magnitude <= centerDeadzone) return 0;
+
+        const normalized = (magnitude - centerDeadzone) / (1 - centerDeadzone);
+        return sign * normalized ** centerResponseGamma;
+      };
+
+      const gx = shapeAxis(ndcX) * G * 1.6;
+      const gy = shapeAxis(ndcY) * G * 1.6;
+      targetGravity.current.set(gx, gy, 0).clampLength(0, 3 * G);
+    },
+    [centerDeadzone, centerResponseGamma]
+  );
+
+  useEffect(() => {
+    if (!enabled) return undefined;
+
+    const onPointerDown = (event) => {
+      if (typeof window === 'undefined') return;
+      const { innerWidth, innerHeight } = window;
+      if (!innerWidth || !innerHeight) return;
+
+      const ndcX = (event.clientX / innerWidth) * 2 - 1;
+      const ndcY = -((event.clientY / innerHeight) * 2 - 1);
+      setFromPointer(ndcX, ndcY);
+    };
+
+    window.addEventListener('pointerdown', onPointerDown, { passive: true });
+    return () => {
+      window.removeEventListener('pointerdown', onPointerDown);
+    };
+  }, [enabled, setFromPointer]);
+
+  useFrame((_, dt) => {
+    if (!enabled) return;
+
+    const lerpT = 1 - 0.001 ** dt;
+    appliedGravity.current.lerp(targetGravity.current, lerpT * 0.28);
+    const g = appliedGravity.current;
+    world.gravity = { x: g.x, y: g.y, z: g.z };
+    if (gravityOutRef) gravityOutRef.current.copy(g);
+  });
+
+  return null;
+}
+
 export default function MobilePhysicsTest() {
   const size = useThree((state) => state.size);
   const calibrateRequestRef = useRef(false);
   const calibrationResetRequestRef = useRef(false);
+  const motionSupported = useMemo(() => supportsMotionSensors(), []);
+  const pointerPreferred = useMemo(() => prefersPointerControls(), []);
+  const [pointerHelpDismissed, setPointerHelpDismissed] = useState(false);
   const { debug } = useControls(
     'Mobile Physics Test',
     {
       debug: {
         label: 'Debug',
-        value: true,
+        value: false,
       },
       calibrate: button(() => {
         calibrateRequestRef.current = true;
@@ -381,11 +621,14 @@ export default function MobilePhysicsTest() {
   );
 
   const [motionEnabled, setMotionEnabled] = useState(() => {
+    if (prefersPointerControls()) return false;
+    if (!supportsMotionSensors()) return false;
     // If iOS permission is required, start disabled until user taps.
     if (needsIOSMotionPermission()) return false;
     // Otherwise try immediately (will still require HTTPS).
     return true;
   });
+  const [motionDeclined, setMotionDeclined] = useState(false);
 
   const enableMotion = useCallback(async () => {
     if (!isSecureContextAvailable()) {
@@ -404,7 +647,17 @@ export default function MobilePhysicsTest() {
     }
 
     setMotionEnabled(true);
+    setMotionDeclined(false);
   }, []);
+
+  const declineMotion = useCallback(() => {
+    setMotionEnabled(false);
+    setMotionDeclined(true);
+  }, []);
+
+  const usePointerGravity = !motionSupported || !motionEnabled;
+  const showPointerHelp =
+    usePointerGravity && pointerPreferred && !pointerHelpDismissed;
 
   return (
     <>
@@ -435,6 +688,10 @@ export default function MobilePhysicsTest() {
           calibrateRequestRef={calibrateRequestRef}
           calibrationResetRequestRef={calibrationResetRequestRef}
         />
+        <PointerGravity
+          enabled={usePointerGravity}
+          gravityOutRef={gravityRef}
+        />
         <RoomVisual dimensions={roomDimensions} />
         <RoomBounds dimensions={roomDimensions} />
         <Ball
@@ -451,10 +708,26 @@ export default function MobilePhysicsTest() {
         />
         <PhysicalReversal position={scaleToRoom([-0.7, 0.9, -1])} />
         <PhysicalReversal position={scaleToRoom([0.5, -0.7, -1])} />
-        <PhysicalBret />
+        <PhysicalBret position={scaleToRoom([0, 0, ROOM_POSITION[2]])} />
+        <GlassBallBret
+          position={scaleToRoom([-0.85, 0.45, ROOM_POSITION[2]])}
+        />
+        <GlassBallReversal
+          position={scaleToRoom([-0.85, -0.45, ROOM_POSITION[2]])}
+        />
+        <GlassBallPair position={scaleToRoom([0.7, 0.05, ROOM_POSITION[2]])} />
       </Physics>
 
-      {!motionEnabled && <MotionPermissionOverlay onEnable={enableMotion} />}
+      {!pointerPreferred && !motionEnabled && !motionDeclined && (
+        <MotionPermissionOverlay
+          onEnable={enableMotion}
+          onDecline={declineMotion}
+          showDecline={needsIOSMotionPermission()}
+        />
+      )}
+      {showPointerHelp && (
+        <PointerHelpOverlay onDismiss={() => setPointerHelpDismissed(true)} />
+      )}
     </>
   );
 }

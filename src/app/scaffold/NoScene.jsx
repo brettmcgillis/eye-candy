@@ -7,7 +7,7 @@ import { useLoader } from '@react-three/fiber';
 
 import { imageFile } from '../../utils/appUtils';
 
-const NO_SCENE_IMAGE_FILES = ['reversal.PNG', 'bret.PNG', 'turbo_flex.PNG'];
+const NO_SCENE_IMAGE_FILES = ['reversal.png', 'bret.png', 'turbo_flex.png'];
 const NO_SCENE_IMAGE_FRAME_SIZE = 520;
 const NO_SCENE_MAX_DIMENSION = 360;
 const NO_SCENE_MIN_FRAME_SIZE = 180;

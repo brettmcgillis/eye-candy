@@ -58,6 +58,7 @@
     "react-dom": "^19.0.0",
     "react-icons": "^5.5.0",
     "three": "^0.182.0",
+    "three-plotter-renderer": "^1.1.1",
     "three-stdlib": "^2.36.1"
   },
   "devDependencies": {

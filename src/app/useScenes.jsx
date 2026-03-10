@@ -14,6 +14,9 @@ const NewScene = lazy(() => import('../components/scenes/NewScene/NewScene'));
 const PaperStack = lazy(
   () => import('../components/scenes/PaperStack/PaperStack')
 );
+const PlotterTest = lazy(
+  () => import('../components/scenes/PlotterTest/PlotterTest')
+);
 const QuinnsDice = lazy(
   () => import('../components/scenes/QuinnsDice/QuinnsDice')
 );
@@ -85,6 +88,16 @@ const paperStack = {
   linkable: true,
 };
 
+const plotterTest = {
+  id: 'plotterTest',
+  renderer: 'webgl',
+  Component: PlotterTest,
+  label: 'Plotter Test',
+  icon: '🖊️',
+  public: false,
+  linkable: false,
+};
+
 const webglTestLab = {
   id: 'webglTestLab',
   renderer: 'webgl',
@@ -142,6 +155,7 @@ const scenes = [
   loGlow,
   newScene,
   paperStack,
+  plotterTest,
   webglTestLab,
   crtTest,
   webgpuTestLab,

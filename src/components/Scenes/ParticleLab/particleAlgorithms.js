@@ -1,5 +1,204 @@
 // Particle cloud algorithms used by ParticleLab.
 
+const normalizeVec3 = (v) => {
+  const len = Math.hypot(v[0], v[1], v[2]) || 1;
+  return [v[0] / len, v[1] / len, v[2] / len];
+};
+
+const crossVec3 = (a, b) => [
+  a[1] * b[2] - a[2] * b[1],
+  a[2] * b[0] - a[0] * b[2],
+  a[0] * b[1] - a[1] * b[0],
+];
+
+const rotateYawPitch = (dir, yaw, pitch) => {
+  const cosY = Math.cos(yaw);
+  const sinY = Math.sin(yaw);
+  const x1 = dir[0] * cosY - dir[2] * sinY;
+  const z1 = dir[0] * sinY + dir[2] * cosY;
+
+  const cosP = Math.cos(pitch);
+  const sinP = Math.sin(pitch);
+  const y2 = dir[1] * cosP - z1 * sinP;
+  const z2 = dir[1] * sinP + z1 * cosP;
+
+  return normalizeVec3([x1, y2, z2]);
+};
+
+const makeSeededRandom = (seedValue) => {
+  let seed = Math.floor(seedValue);
+  if (!Number.isFinite(seed) || seed <= 0) seed = 1;
+  seed %= 4294967296;
+
+  return () => {
+    seed = (seed * 1664525 + 1013904223) % 4294967296;
+    return seed / 4294967296;
+  };
+};
+
+const shuffledBranchTokens = (rand) => {
+  const tokens = ['+', '-', '&', '^'];
+  for (let i = tokens.length - 1; i > 0; i -= 1) {
+    const j = Math.floor(rand() * (i + 1));
+    const tmp = tokens[i];
+    tokens[i] = tokens[j];
+    tokens[j] = tmp;
+  }
+  return tokens;
+};
+
+const generateVascularTree = (p, positions, pointsCount) => {
+  const rand = makeSeededRandom(p.seed);
+  const iterations = Math.max(1, Math.floor(p.iterations));
+  const angle = (p.angleDeg * Math.PI) / 180;
+  const maxSymbols = Math.max(pointsCount * 2, 60000);
+  const { step: initialStep } = p;
+
+  let sentence = 'X';
+  for (let i = 0; i < iterations; i += 1) {
+    let next = '';
+    for (let j = 0; j < sentence.length; j += 1) {
+      const ch = sentence.charAt(j);
+      if (ch === 'X') {
+        const tokens = shuffledBranchTokens(rand);
+        if (rand() < p.forkChance) {
+          next += `F[${tokens[0]}X][${tokens[1]}X][${tokens[2]}X][${tokens[3]}X]X`;
+        } else {
+          next += `F[${tokens[0]}X][${tokens[1]}X]X`;
+        }
+      } else if (ch === 'F') {
+        next += rand() < p.stretch ? 'FF' : 'F';
+      } else {
+        next += ch;
+      }
+
+      if (next.length >= maxSymbols) break;
+    }
+
+    sentence = next;
+    if (sentence.length >= maxSymbols) break;
+  }
+
+  let segmentIndex = 0;
+
+  const pushSegmentPoints = (from, to, currentStep) => {
+    const segmentDir = normalizeVec3([
+      to[0] - from[0],
+      to[1] - from[1],
+      to[2] - from[2],
+    ]);
+    const up = Math.abs(segmentDir[1]) < 0.92 ? [0, 1, 0] : [1, 0, 0];
+    const side = normalizeVec3(crossVec3(segmentDir, up));
+    const binormal = normalizeVec3(crossVec3(segmentDir, side));
+    const samples = Math.max(2, Math.floor(6 + currentStep * 12));
+
+    for (let i = 0; i < samples; i += 1) {
+      if (positions.length >= pointsCount * 3) return;
+      const t = i / (samples - 1);
+      const lx = from[0] + (to[0] - from[0]) * t;
+      const ly = from[1] + (to[1] - from[1]) * t;
+      const lz = from[2] + (to[2] - from[2]) * t;
+      const wobble =
+        Math.sin(segmentIndex * 0.37 + t * 7.2) * p.jitter * currentStep;
+      const ripple =
+        Math.cos(segmentIndex * 0.21 + t * 5.4) * p.jitter * currentStep * 0.7;
+
+      positions.push(
+        lx + side[0] * wobble + binormal[0] * ripple,
+        ly + side[1] * wobble + binormal[1] * ripple,
+        lz + side[2] * wobble + binormal[2] * ripple
+      );
+    }
+    segmentIndex += 1;
+  };
+
+  const growFromTrunk = (startDir, targetPoints, trunkSeed) => {
+    const trunkRand = makeSeededRandom(trunkSeed);
+    const stack = [];
+    const startLen = positions.length;
+    const maxLen = targetPoints * 3;
+
+    let pos = [0, 0, 0];
+    let dir = normalizeVec3(startDir);
+    let step = initialStep;
+
+    for (let i = 0; i < sentence.length; i += 1) {
+      const ch = sentence.charAt(i);
+      if (positions.length - startLen >= maxLen) break;
+      if (positions.length >= pointsCount * 3) break;
+
+      if (ch === 'F' || ch === 'X') {
+        const veinPulse = 1 + Math.sin(segmentIndex * 0.33) * 0.18;
+        const currentStep = step * veinPulse;
+        const nextPos = [
+          pos[0] + dir[0] * currentStep,
+          pos[1] + dir[1] * currentStep,
+          pos[2] + dir[2] * currentStep,
+        ];
+        pushSegmentPoints(pos, nextPos, currentStep);
+        pos = nextPos;
+        step = Math.max(0.02, step * p.taper);
+      } else if (ch === '+') {
+        dir = rotateYawPitch(
+          dir,
+          angle * (0.7 + trunkRand() * 0.8),
+          p.curl * 0.25
+        );
+      } else if (ch === '-') {
+        dir = rotateYawPitch(
+          dir,
+          -angle * (0.7 + trunkRand() * 0.8),
+          -p.curl * 0.25
+        );
+      } else if (ch === '&') {
+        dir = rotateYawPitch(
+          dir,
+          p.curl * 0.3,
+          angle * (0.65 + trunkRand() * 0.7)
+        );
+      } else if (ch === '^') {
+        dir = rotateYawPitch(
+          dir,
+          -p.curl * 0.3,
+          -angle * (0.65 + trunkRand() * 0.7)
+        );
+      } else if (ch === '[') {
+        stack.push({ pos: [...pos], dir: [...dir], step });
+        step = Math.max(0.02, step * p.branchShrink);
+      } else if (ch === ']') {
+        const state = stack.pop();
+        if (state) {
+          pos = state.pos;
+          dir = state.dir;
+          step = state.step;
+        }
+      }
+    }
+  };
+
+  const upCount = Math.floor(pointsCount * 0.5);
+  const downCount = pointsCount - upCount;
+  const startYaw = (rand() - 0.5) * Math.PI * 2;
+  const startPitch = (rand() - 0.5) * angle * 0.45;
+  const upDir = rotateYawPitch([0, 1, 0], startYaw, startPitch);
+  const downDir = rotateYawPitch(
+    [0, -1, 0],
+    startYaw + Math.PI * 0.33,
+    -startPitch
+  );
+
+  growFromTrunk(upDir, upCount, p.seed + 101);
+  growFromTrunk(downDir, downCount, p.seed + 2027);
+
+  if (positions.length >= 3 && positions.length < pointsCount * 3) {
+    const existing = positions.length;
+    for (let i = existing; i < pointsCount * 3; i += 3) {
+      const idx = i % existing;
+      positions.push(positions[idx], positions[idx + 1], positions[idx + 2]);
+    }
+  }
+};
+
 const algorithms = {
   'Aizawa Sphere': {
     type: 'ode',
@@ -800,6 +999,217 @@ const algorithms = {
             Math.sin(p.k * x) * Math.cos(p.k * y) * 0.4 +
             Math.cos(x * y * 0.3) * 0.2;
           positions.push(x, y, z);
+        }
+      }
+    },
+  },
+  'L-Systems Vascular Tree': {
+    type: 'map',
+    defaults: {
+      iterations: 5,
+      angleDeg: 24,
+      step: 0.32,
+      taper: 0.992,
+      branchShrink: 0.8,
+      jitter: 0.23,
+      forkChance: 0.62,
+      stretch: 0.38,
+      curl: 0.33,
+      seed: 11,
+    },
+    ranges: {
+      iterations: [2, 7, 1],
+      angleDeg: [8, 48, 1],
+      step: [0.08, 0.75, 0.01],
+      taper: [0.96, 0.999, 0.001],
+      branchShrink: [0.55, 0.95, 0.01],
+      jitter: [0.0, 0.45, 0.005],
+      forkChance: [0.2, 0.95, 0.01],
+      stretch: [0.05, 0.8, 0.01],
+      curl: [0.0, 0.8, 0.01],
+      seed: [1, 999, 1],
+    },
+    generate: (p, positions, pointsCount) => {
+      generateVascularTree(p, positions, pointsCount);
+    },
+  },
+  'Mandelbulb Point Sampler': {
+    type: 'map',
+    defaults: {
+      power: 8.0,
+      bailout: 4.0,
+      iterations: 12,
+      radius: 1.4,
+      jitter: 0.02,
+    },
+    ranges: {
+      power: [2.0, 12.0, 0.1],
+      bailout: [2.0, 8.0, 0.1],
+      iterations: [5, 20, 1],
+      radius: [0.8, 2.2, 0.01],
+      jitter: [0.0, 0.1, 0.001],
+    },
+    generate: (p, positions, pointsCount) => {
+      let seed = 1337;
+      const accepted = [];
+      const maxAttempts = Math.max(pointsCount * 12, 200000);
+
+      const rand = () => {
+        seed = (seed * 1664525 + 1013904223) % 4294967296;
+        return seed / 4294967296;
+      };
+
+      const iterateMandelbulb = (cx, cy, cz) => {
+        let x = 0.0;
+        let y = 0.0;
+        let z = 0.0;
+        let escaped = false;
+        let orbitTrap = 9999;
+
+        for (let i = 0; i < p.iterations; i += 1) {
+          const r = Math.sqrt(x * x + y * y + z * z);
+          orbitTrap = Math.min(orbitTrap, r);
+
+          if (r > p.bailout) {
+            escaped = true;
+            break;
+          }
+
+          const theta = r > 0.000001 ? Math.acos(z / r) : 0.0;
+          const phi = Math.atan2(y, x);
+          const rn = r ** p.power;
+          const thetan = theta * p.power;
+          const phin = phi * p.power;
+          const sinTheta = Math.sin(thetan);
+
+          x = rn * sinTheta * Math.cos(phin) + cx;
+          y = rn * sinTheta * Math.sin(phin) + cy;
+          z = rn * Math.cos(thetan) + cz;
+        }
+
+        return { escaped, orbitTrap };
+      };
+
+      for (let attempts = 0; attempts < maxAttempts; attempts += 1) {
+        if (accepted.length >= pointsCount * 3) break;
+
+        const cx = (rand() * 2 - 1) * p.radius;
+        const cy = (rand() * 2 - 1) * p.radius;
+        const cz = (rand() * 2 - 1) * p.radius;
+
+        const { escaped, orbitTrap } = iterateMandelbulb(cx, cy, cz);
+
+        if (!escaped) {
+          const jx = (rand() * 2 - 1) * p.jitter;
+          const jy = (rand() * 2 - 1) * p.jitter;
+          const jz = (rand() * 2 - 1) * p.jitter;
+          const trapBias = Math.min(1, orbitTrap * 0.5);
+
+          accepted.push(cx + jx, cy + jy, cz + jz + (0.5 - trapBias) * 0.08);
+        }
+      }
+
+      if (accepted.length >= 3) {
+        for (let i = 0; i < pointsCount; i += 1) {
+          const idx = (i * 3) % accepted.length;
+          positions.push(accepted[idx], accepted[idx + 1], accepted[idx + 2]);
+        }
+      }
+    },
+  },
+  'Quaternion Julia Sampler': {
+    type: 'map',
+    defaults: {
+      cx: -0.2,
+      cy: 0.72,
+      cz: 0.0,
+      cw: 0.12,
+      bailout: 4.0,
+      iterations: 14,
+      radius: 1.3,
+      jitter: 0.015,
+    },
+    ranges: {
+      cx: [-1.2, 1.2, 0.01],
+      cy: [-1.2, 1.2, 0.01],
+      cz: [-1.2, 1.2, 0.01],
+      cw: [-1.2, 1.2, 0.01],
+      bailout: [2.0, 8.0, 0.1],
+      iterations: [5, 24, 1],
+      radius: [0.7, 2.0, 0.01],
+      jitter: [0.0, 0.08, 0.001],
+    },
+    generate: (p, positions, pointsCount) => {
+      let seed = 4242;
+      const accepted = [];
+      const maxAttempts = Math.max(pointsCount * 20, 250000);
+
+      const rand = () => {
+        seed = (seed * 1664525 + 1013904223) % 4294967296;
+        return seed / 4294967296;
+      };
+
+      const iterateQuaternionJulia = (qx, qy, qz, qw) => {
+        let x = qx;
+        let y = qy;
+        let z = qz;
+        let w = qw;
+        let escaped = false;
+
+        for (let i = 0; i < p.iterations; i += 1) {
+          const xx = x * x;
+          const yy = y * y;
+          const zz = z * z;
+          const ww = w * w;
+
+          const nx = xx - yy - zz - ww + p.cx;
+          const ny = 2 * x * y + p.cy;
+          const nz = 2 * x * z + p.cz;
+          const nw = 2 * x * w + p.cw;
+
+          x = nx;
+          y = ny;
+          z = nz;
+          w = nw;
+
+          const magSq = x * x + y * y + z * z + w * w;
+          if (magSq > p.bailout * p.bailout) {
+            escaped = true;
+            break;
+          }
+        }
+
+        return { escaped, x, y, z, w };
+      };
+
+      for (let attempts = 0; attempts < maxAttempts; attempts += 1) {
+        if (accepted.length >= pointsCount * 3) break;
+
+        const qx = (rand() * 2 - 1) * p.radius;
+        const qy = (rand() * 2 - 1) * p.radius;
+        const qz = (rand() * 2 - 1) * p.radius;
+        const qw = (rand() * 2 - 1) * p.radius;
+
+        const result = iterateQuaternionJulia(qx, qy, qz, qw);
+
+        if (!result.escaped) {
+          const jx = (rand() * 2 - 1) * p.jitter;
+          const jy = (rand() * 2 - 1) * p.jitter;
+          const jz = (rand() * 2 - 1) * p.jitter;
+          // Project the original bounded 4D sample into 3D to preserve shell thickness.
+          const px = qx * 0.86 + qz * 0.34;
+          const py = qy * 0.9 + qw * 0.22;
+          const pz = qz * 0.72 - qx * 0.24 + qw * 0.46;
+          const proj = 1 / (1 + Math.abs(qw) * 0.6);
+
+          accepted.push((px + jx) * proj, (py + jy) * proj, (pz + jz) * proj);
+        }
+      }
+
+      if (accepted.length >= 3) {
+        for (let i = 0; i < pointsCount; i += 1) {
+          const idx = (i * 3) % accepted.length;
+          positions.push(accepted[idx], accepted[idx + 1], accepted[idx + 2]);
         }
       }
     },

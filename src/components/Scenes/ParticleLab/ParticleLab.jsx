@@ -92,7 +92,7 @@ function useParticleLabControls() {
           depthTest: { value: true },
           premultipliedAlpha: { value: false },
         },
-        { collapsed: false }
+        { collapsed: true }
       ),
       Transform: folder(
         {

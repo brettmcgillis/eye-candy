@@ -51,9 +51,9 @@
 
 - [ ] IFS Fractals in 3D
   - Weighted affine transforms for fern/coral/crystal growth clouds.
-- [ ] L-Systems + noisy turtle in 3D
+- [x] L-Systems + noisy turtle in 3D
   - Branching vascular and tree-like particle structures.
-- [ ] Quaternion Julia / Mandelbulb point sampling
+- [x] Quaternion Julia / Mandelbulb point sampling
   - Very high detail dense static clouds with depth coloring.
 - [ ] Strange attractor + curl-noise advection hybrid
   - Seed points on an attractor, then advect through divergence-free fields.

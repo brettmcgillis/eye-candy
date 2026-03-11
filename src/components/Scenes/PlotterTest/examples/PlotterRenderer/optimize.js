@@ -1,5 +1,5 @@
 /* eslint-disable */
-import { Analyzer } from './analyzer.js';
+import Analyzer from './analyzer.js';
 import {
   GeomUtil,
   Point,

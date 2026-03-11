@@ -1,5 +1,4 @@
 import * as THREE from 'three';
-import { PlotterRenderer } from 'three-plotter-renderer';
 
 import React, {
   useCallback,
@@ -13,6 +12,7 @@ import { PerspectiveCamera, Text } from '@react-three/drei';
 import { useFrame, useThree } from '@react-three/fiber';
 
 import CameraRig from '../../rigging/CameraRig';
+import { PlotterRenderer } from './examples/PlotterRenderer/plotter-renderer';
 import downloadSvg from './export/downloadSvg';
 import usePlotterTestControls from './usePlotterTestControls';
 
@@ -26,11 +26,17 @@ function getThemeColors(theme) {
         background: '#ffffff',
         canvasText: '#2f2f2f',
         sourceAmbient: 2.0,
+        gridCenter: 0xcccccc,
+        gridLines: 0xdddddd,
+        paperBackground: '#f4f1e8',
       }
     : {
         background: '#222222',
         canvasText: '#e0e0e0',
         sourceAmbient: 0.25,
+        gridCenter: 0x444444,
+        gridLines: 0x333333,
+        paperBackground: '#2a2a2a',
       };
 }
 
@@ -121,39 +127,8 @@ export default function PlotterTest() {
   const previewTextureRef = useRef(null);
   const configRef = useRef(null);
   const isMountedRef = useRef(true);
-  const computeRunningRef = useRef(false);
-  const computeStateRef = useRef('idle');
-  const queuedComputeRef = useRef(null);
-  const computeStatsRef = useRef({
-    requests: 0,
-    superseded: 0,
-    errors: 0,
-  });
-  const cameraSettledTimerRef = useRef(null);
-  const controlsSettledTimerRef = useRef(null);
-  const initialRenderDoneRef = useRef(false);
-  const refreshTickRef = useRef(0);
   const layerSyncTickRef = useRef(0);
-  const cameraSignatureRef = useRef('');
-  const controlsSignatureRef = useRef('');
-  const [isPreviewComputing, setIsPreviewComputing] = useState(true);
   const [hasPreview, setHasPreview] = useState(false);
-  const [renderProgress, setRenderProgress] = useState(null);
-  const [, setDiagnostics] = useState({
-    computeState: 'idle',
-    queueDepth: 0,
-    requests: 0,
-    superseded: 0,
-    errors: 0,
-    lastComputeMs: 0,
-    lastRenderer: 'none',
-    lastPreviewMode: 'none',
-    lastSvgNodes: 0,
-  });
-
-  const updateDiagnostics = useCallback((partial) => {
-    setDiagnostics((prev) => ({ ...prev, ...partial }));
-  }, []);
 
   const previewTexture = useMemo(() => {
     if (typeof document === 'undefined') return null;
@@ -188,63 +163,8 @@ export default function PlotterTest() {
     return Math.max(256, cfg.previewResolution || 1024);
   }, []);
 
-  const getInteractiveConfig = useCallback(
-    (cfg) => {
-      const interactiveResolution = Math.max(
-        256,
-        Math.floor(getPreviewResolution(cfg) * 0.5)
-      );
-
-      return {
-        ...cfg,
-        previewResolution: interactiveResolution,
-        // Keep interactive updates responsive while orbiting.
-        showSilhouettes: false,
-        showHatches: false,
-        hatchMaxSegments: Math.min(cfg.hatchMaxSegments || 2200, 900),
-        thirdPartyFullFrameBudgetMs: Math.min(
-          cfg.thirdPartyFullFrameBudgetMs || 10,
-          6
-        ),
-      };
-    },
-    [getPreviewResolution]
-  );
-
-  const getPlotterControlsSignature = useCallback((cfg) => {
-    return [
-      cfg.theme,
-      cfg.previewResolution,
-      cfg.strokeWidth,
-      cfg.showSilhouettes,
-      cfg.showEdges,
-      cfg.showHatches,
-      cfg.rotX,
-      cfg.rotY,
-      cfg.rotZ,
-      cfg.spaceX,
-      cfg.spaceY,
-      cfg.spaceZ,
-      cfg.insetPixels,
-      cfg.connectHatches,
-      cfg.brightnessShading,
-      cfg.minSpacing,
-      cfg.maxSpacing,
-      cfg.lightX,
-      cfg.lightY,
-      cfg.lightZ,
-      cfg.lightIntensity,
-      cfg.hatchMaxSegments,
-      cfg.thirdPartyFullFrameBudgetMs,
-      cfg.thirdPartySilhouetteMinArea,
-      cfg.thirdPartySilhouetteNormalBuckets,
-      cfg.thirdPartySilhouetteSimplifyTolerance,
-      cfg.thirdPartySmoothThreshold,
-    ].join('|');
-  }, []);
-
   const computeThirdPartySvg = useCallback(
-    async (cfg, cameraForProjection, onProgress = null) => {
+    async (cfg, cameraForProjection) => {
       const glRenderer = getThree().gl;
       if (!sourceRef.current || !cameraForProjection || !glRenderer) {
         return null;
@@ -296,7 +216,6 @@ export default function PlotterTest() {
         minSpacing: cfg.minSpacing,
         maxSpacing: cfg.maxSpacing,
         connectHatches: Boolean(cfg.connectHatches),
-        progressCallback: onProgress || undefined,
         axisSettings: {
           x: { rotation: cfg.rotX, spacing: cfg.spaceX },
           y: { rotation: cfg.rotY, spacing: cfg.spaceY },
@@ -326,7 +245,7 @@ export default function PlotterTest() {
       ) {
         return {
           svgString: plotterRenderer.domElement.outerHTML,
-          fileName: `${cfg.exportName || 'plotter-test'}-third-party`,
+          fileName: `${cfg.exportName || 'plotter-test'}-output`,
           renderer: 'thirdParty',
           svgNodeCount: 1,
           backgroundColor: colors.background,
@@ -336,7 +255,7 @@ export default function PlotterTest() {
 
       return {
         svgString,
-        fileName: `${cfg.exportName || 'plotter-test'}-third-party`,
+        fileName: `${cfg.exportName || 'plotter-test'}-output`,
         renderer: 'thirdParty',
         svgNodeCount,
         backgroundColor: colors.background,
@@ -346,25 +265,18 @@ export default function PlotterTest() {
   );
 
   const computePlotterOutput = useCallback(
-    async (cfg, activeCamera, onProgress = null, mode = 'full') => {
+    async (cfg, activeCamera) => {
       const cameraForProjection = activeCamera || getThree().camera;
       if (!cameraForProjection || !previewCanvasRef.current) return null;
 
-      const effectiveCfg =
-        mode === 'interactive' ? getInteractiveConfig(cfg) : cfg;
-
-      const resolution = getPreviewResolution(effectiveCfg);
+      const resolution = getPreviewResolution(cfg);
       const canvas = previewCanvasRef.current;
       if (canvas.width !== resolution || canvas.height !== resolution) {
         canvas.width = resolution;
         canvas.height = resolution;
       }
 
-      const output = await computeThirdPartySvg(
-        effectiveCfg,
-        cameraForProjection,
-        onProgress
-      );
+      const output = await computeThirdPartySvg(cfg, cameraForProjection);
       if (!output?.svgString) return null;
 
       await drawSvgToCanvas(canvas, output.svgString, {
@@ -376,100 +288,19 @@ export default function PlotterTest() {
 
       return output;
     },
-    [computeThirdPartySvg, getInteractiveConfig, getPreviewResolution, getThree]
-  );
-
-  const runQueuedPreviewCompute = useCallback(() => {
-    const next = queuedComputeRef.current;
-    if (!next) {
-      computeRunningRef.current = false;
-      computeStateRef.current = 'idle';
-      updateDiagnostics({ computeState: 'idle', queueDepth: 0 });
-      if (isMountedRef.current) setIsPreviewComputing(false);
-      return;
-    }
-
-    queuedComputeRef.current = null;
-    computeRunningRef.current = true;
-    computeStateRef.current = 'running';
-    updateDiagnostics({ computeState: 'running', queueDepth: 0 });
-
-    if (isMountedRef.current) setIsPreviewComputing(true);
-
-    window.setTimeout(async () => {
-      const startTime = performance.now();
-      const onProgress = (p) => {
-        if (next.mode === 'interactive') return;
-        if (isMountedRef.current) setRenderProgress(Math.round(p * 100));
-      };
-      try {
-        const output = await computePlotterOutput(
-          next.cfg,
-          next.camera,
-          onProgress,
-          next.mode
-        );
-        const computeMs = Math.round((performance.now() - startTime) * 10) / 10;
-        if (isMountedRef.current) {
-          setRenderProgress(null);
-          if (output) {
-            setHasPreview(true);
-            updateDiagnostics({
-              lastComputeMs: computeMs,
-              lastRenderer: output.renderer || 'unknown',
-              lastPreviewMode: next.mode,
-              lastSvgNodes: output.svgNodeCount || 0,
-            });
-          }
-        }
-      } catch {
-        computeStatsRef.current.errors += 1;
-        if (isMountedRef.current) {
-          setRenderProgress(null);
-          setHasPreview(false);
-        }
-        updateDiagnostics({ errors: computeStatsRef.current.errors });
-      }
-
-      runQueuedPreviewCompute();
-    }, 0);
-  }, [computePlotterOutput, setRenderProgress, updateDiagnostics]);
-
-  const requestPreviewCompute = useCallback(
-    (cfg, activeCamera, mode = 'full') => {
-      if (!cfg) return;
-
-      computeStatsRef.current.requests += 1;
-      if (queuedComputeRef.current) {
-        computeStatsRef.current.superseded += 1;
-      }
-
-      queuedComputeRef.current = {
-        cfg,
-        camera: activeCamera || getThree().camera,
-        mode,
-      };
-
-      const queueDepth = computeRunningRef.current ? 1 : 0;
-      updateDiagnostics({
-        queueDepth,
-        requests: computeStatsRef.current.requests,
-        superseded: computeStatsRef.current.superseded,
-      });
-
-      if (!computeRunningRef.current) {
-        computeStateRef.current = 'queued';
-        updateDiagnostics({ computeState: 'queued' });
-        runQueuedPreviewCompute();
-      }
-    },
-    [getThree, runQueuedPreviewCompute, updateDiagnostics]
+    [computeThirdPartySvg, getPreviewResolution, getThree]
   );
 
   const handleRefresh = useCallback(() => {
     if (!configRef.current) return;
-    requestPreviewCompute(configRef.current, getThree().camera, 'full');
-  }, [getThree, requestPreviewCompute]);
+    computePlotterOutput(configRef.current, getThree().camera).then(
+      (output) => {
+        if (output) {
+          setHasPreview(true);
+        }
+      }
+    );
+  }, [computePlotterOutput, getThree]);
 
   const handleExport = useCallback(
     async (snapshot) => {
@@ -520,7 +351,6 @@ export default function PlotterTest() {
       lightZ: config.lightZ,
       lightIntensity: config.lightIntensity,
       hatchMaxSegments: config.hatchMaxSegments,
-      thirdPartyInteractiveDebounceMs: config.thirdPartyInteractiveDebounceMs,
       thirdPartyFullFrameBudgetMs: config.thirdPartyFullFrameBudgetMs,
       thirdPartySmoothThreshold: config.thirdPartySmoothThreshold,
       thirdPartySilhouetteSimplifyTolerance:
@@ -566,7 +396,6 @@ export default function PlotterTest() {
       config.strokeWidth,
       config.thirdPartyFullFrameBudgetMs,
       config.theme,
-      config.thirdPartyInteractiveDebounceMs,
       config.thirdPartySilhouetteMinArea,
       config.thirdPartySilhouetteNormalBuckets,
       config.thirdPartySilhouetteSimplifyTolerance,
@@ -581,22 +410,15 @@ export default function PlotterTest() {
 
     return () => {
       isMountedRef.current = false;
-      if (cameraSettledTimerRef.current) {
-        window.clearTimeout(cameraSettledTimerRef.current);
-        cameraSettledTimerRef.current = null;
-      }
-      if (controlsSettledTimerRef.current) {
-        window.clearTimeout(controlsSettledTimerRef.current);
-        controlsSettledTimerRef.current = null;
-      }
     };
   }, [sceneConfig]);
 
   useEffect(() => {
-    if (!configRef.current || initialRenderDoneRef.current) return;
-    initialRenderDoneRef.current = true;
-    requestPreviewCompute(configRef.current, getThree().camera, 'full');
-  }, [sceneConfig, getThree, requestPreviewCompute]);
+    applyLayerRecursive(sourceViewRef.current, SOURCE_LAYER);
+    applyLayerRecursive(outputViewRef.current, OUTPUT_LAYER);
+    applyLayerRecursive(sourceLightRef.current, SOURCE_LAYER);
+    applyLayerRecursive(outputLightRef.current, OUTPUT_LAYER);
+  }, []);
 
   useEffect(() => {
     if (!configRef.current) return;
@@ -606,7 +428,7 @@ export default function PlotterTest() {
     const previewCtx = previewCanvas?.getContext('2d');
     if (previewCtx && previewCanvas && !hasPreview) {
       // Keep a visible paper placeholder before first plot render.
-      previewCtx.fillStyle = '#f4f1e8';
+      previewCtx.fillStyle = colors.paperBackground;
       previewCtx.fillRect(0, 0, previewCanvas.width, previewCanvas.height);
       if (previewTextureRef.current) {
         previewTextureRef.current.needsUpdate = true;
@@ -626,76 +448,6 @@ export default function PlotterTest() {
       sourcePointLightRef.current.intensity = configRef.current.lightIntensity;
     }
   }, [hasPreview, sceneConfig]);
-
-  useEffect(() => {
-    applyLayerRecursive(sourceViewRef.current, SOURCE_LAYER);
-    applyLayerRecursive(outputViewRef.current, OUTPUT_LAYER);
-    applyLayerRecursive(sourceLightRef.current, SOURCE_LAYER);
-    applyLayerRecursive(outputLightRef.current, OUTPUT_LAYER);
-  }, []);
-
-  useFrame((state) => {
-    if (!configRef.current) return;
-
-    refreshTickRef.current += 1;
-    if (refreshTickRef.current % 8 !== 0) return;
-
-    const cfg = configRef.current;
-
-    const activeCamera = state.camera;
-    const cameraSig = `${activeCamera.position.x.toFixed(3)}:${activeCamera.position.y.toFixed(
-      3
-    )}:${activeCamera.position.z.toFixed(3)}:${activeCamera.quaternion.x.toFixed(
-      3
-    )}:${activeCamera.quaternion.y.toFixed(3)}:${activeCamera.quaternion.z.toFixed(
-      3
-    )}:${activeCamera.quaternion.w.toFixed(3)}`;
-
-    const controlsSig = getPlotterControlsSignature(cfg);
-
-    const cameraChanged = cameraSig !== cameraSignatureRef.current;
-    const controlsChanged = controlsSig !== controlsSignatureRef.current;
-
-    if (!cameraChanged && !controlsChanged) return;
-
-    if (controlsChanged) {
-      controlsSignatureRef.current = controlsSig;
-      requestPreviewCompute(cfg, activeCamera, 'interactive');
-
-      if (controlsSettledTimerRef.current) {
-        window.clearTimeout(controlsSettledTimerRef.current);
-      }
-
-      controlsSettledTimerRef.current = window.setTimeout(
-        () => {
-          requestPreviewCompute(cfg, activeCamera, 'full');
-        },
-        Math.max(120, cfg.thirdPartyInteractiveDebounceMs || 360)
-      );
-    }
-
-    if (!cfg.autoRefresh) return;
-
-    if (cameraChanged) {
-      cameraSignatureRef.current = cameraSig;
-
-      requestPreviewCompute(cfg, activeCamera, 'interactive');
-
-      // Third-party GPU layer extraction is debounced; with frameBudgetMs
-      // yielding to the browser, camera-settle recomputes stay non-blocking.
-      if (cameraSettledTimerRef.current) {
-        window.clearTimeout(cameraSettledTimerRef.current);
-      }
-
-      cameraSettledTimerRef.current = window.setTimeout(
-        () => {
-          if (!configRef.current?.autoRefresh) return;
-          requestPreviewCompute(configRef.current, activeCamera, 'full');
-        },
-        Math.max(120, cfg.thirdPartyInteractiveDebounceMs || 360)
-      );
-    }
-  }, 0);
 
   useFrame((state) => {
     if (!configRef.current) return;
@@ -769,7 +521,7 @@ export default function PlotterTest() {
     <>
       <color attach="background" args={[themeColors.background]} />
 
-      <PerspectiveCamera makeDefault fov={34} position={[0, 0, 13]} />
+      <PerspectiveCamera makeDefault fov={45} position={[8, 6, 10]} />
       <CameraRig />
 
       <group ref={sourceLightRef}>
@@ -777,11 +529,9 @@ export default function PlotterTest() {
           ref={sourceAmbientLightRef}
           intensity={themeColors.sourceAmbient}
         />
-        <directionalLight intensity={1.6} position={[5.5, 7, 4]} castShadow />
-        <directionalLight intensity={0.8} position={[-3.5, 2.5, -4.5]} />
         <pointLight
           ref={sourcePointLightRef}
-          intensity={config.lightIntensity}
+          intensity={50}
           position={[config.lightX, config.lightY, config.lightZ]}
         />
       </group>
@@ -792,38 +542,24 @@ export default function PlotterTest() {
 
       <group ref={sourceViewRef}>
         <group ref={sourceRef}>
-          <mesh
-            position={[-0.8, 0.15, 0.1]}
-            rotation={[0.22, -0.5, 0.08]}
-            castShadow
-          >
-            <boxGeometry args={[1.15, 1.15, 1.15]} />
-            <meshStandardMaterial
-              color="#d64a38"
-              roughness={0.35}
-              metalness={0.08}
-            />
+          <mesh position={[-4, 1.25, 0]}>
+            <coneGeometry args={[1.5, 2.5, 4]} />
+            <meshPhongMaterial color={0xff6644} flatShading shininess={0} />
           </mesh>
-          <mesh position={[0.95, -0.25, -0.2]} castShadow>
-            <sphereGeometry args={[0.75, 48, 48]} />
-            <meshStandardMaterial
-              color="#f1f0ea"
-              roughness={0.18}
-              metalness={0.12}
-            />
+
+          <mesh position={[0, 1.25, 0]}>
+            <cylinderGeometry args={[1, 1, 2.5, 12]} />
+            <meshPhongMaterial color={0x44ff66} flatShading shininess={0} />
           </mesh>
-          <mesh
-            position={[0, -1.18, -0.55]}
-            rotation={[-Math.PI / 2, 0, 0]}
-            receiveShadow
-          >
-            <planeGeometry args={[5.5, 3.8, 40, 28]} />
-            <meshStandardMaterial
-              color="#121212"
-              roughness={0.92}
-              metalness={0.02}
-            />
+
+          <mesh position={[4, 1.5, 0]}>
+            <icosahedronGeometry args={[1.5, 0]} />
+            <meshPhongMaterial color={0x4466ff} flatShading shininess={0} />
           </mesh>
+
+          <gridHelper
+            args={[20, 20, themeColors.gridCenter, themeColors.gridLines]}
+          />
         </group>
       </group>
 
@@ -836,7 +572,7 @@ export default function PlotterTest() {
           <meshBasicMaterial map={previewTexture} toneMapped={false} />
         </mesh>
 
-        {(isPreviewComputing || !hasPreview) && (
+        {!hasPreview && (
           <Text
             position={[0, -config.panelScale * 0.56, 0.08]}
             fontSize={0.08}
@@ -844,9 +580,7 @@ export default function PlotterTest() {
             anchorX="center"
             anchorY="middle"
           >
-            {renderProgress !== null
-              ? `Rendering... ${renderProgress}%`
-              : 'Generating preview...'}
+            Click &quot;Render&quot; to generate
           </Text>
         )}
       </group>

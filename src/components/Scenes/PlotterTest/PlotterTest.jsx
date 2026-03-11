@@ -82,6 +82,10 @@ export default function PlotterTest() {
     outerHTML: '',
     viewBox: null,
   });
+  const getFixedOverlayPosition = useCallback((_, __, size) => {
+    if (!size) return [0, 0];
+    return [size.width / 2, size.height / 2];
+  }, []);
 
   const getCaptureAspect = useCallback(
     (cameraForProjection) => {
@@ -544,7 +548,12 @@ export default function PlotterTest() {
         />
       </group>
 
-      <Html fullscreen zIndexRange={[10, 0]}>
+      <Html
+        fullscreen
+        zIndexRange={[10, 0]}
+        transform={false}
+        calculatePosition={getFixedOverlayPosition}
+      >
         <div
           style={{
             position: 'absolute',

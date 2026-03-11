@@ -8,6 +8,15 @@ import { useFrame } from '@react-three/fiber';
 
 import algorithms from './particleAlgorithms';
 
+const BLENDING_MODES = {
+  Additive: THREE.AdditiveBlending,
+  Normal: THREE.NormalBlending,
+  Subtractive: THREE.SubtractiveBlending,
+  Multiply: THREE.MultiplyBlending,
+};
+
+const PREMULTIPLIED_ALPHA_REQUIRED_MODES = new Set(['Subtractive', 'Multiply']);
+
 function createCircleTexture() {
   const canvas = document.createElement('canvas');
   canvas.width = 64;
@@ -57,6 +66,7 @@ function useParticleLabControls() {
           color1: { label: 'Core Color', value: '#ff0055' },
           color2: { label: 'Mid Color', value: '#4422ff' },
           color3: { label: 'Edge Color', value: '#00ffff' },
+          backgroundColor: { label: 'Background', value: '#020205' },
           pointSize: {
             label: 'Point Size',
             value: 0.046,
@@ -65,6 +75,22 @@ function useParticleLabControls() {
             step: 0.001,
           },
           opacity: { value: 1.0, min: 0.05, max: 1.0, step: 0.01 },
+          transparent: { value: true },
+          blendingMode: {
+            label: 'Blending',
+            value: 'Additive',
+            options: Object.keys(BLENDING_MODES),
+          },
+          alphaTest: {
+            label: 'Alpha Test',
+            value: 0.01,
+            min: 0,
+            max: 1,
+            step: 0.001,
+          },
+          depthWrite: { value: false },
+          depthTest: { value: true },
+          premultipliedAlpha: { value: false },
         },
         { collapsed: false }
       ),
@@ -98,14 +124,14 @@ function useParticleLabControls() {
     ...selectedAlgorithm.defaults,
   }));
 
-  useControls(
+  const [, setAlgorithmControls] = useControls(
     'Particle Lab Parameters',
     () => {
       const schema = {};
       Object.keys(selectedAlgorithm.ranges).forEach((key) => {
         const [min, max, step = 0.01] = selectedAlgorithm.ranges[key];
         schema[key] = {
-          value: paramState[key] ?? selectedAlgorithm.defaults[key],
+          value: selectedAlgorithm.defaults[key],
           min,
           max,
           step,
@@ -121,25 +147,18 @@ function useParticleLabControls() {
       });
       return schema;
     },
-    [baseControls.algorithm, paramState]
+    [baseControls.algorithm]
   );
 
   useEffect(() => {
-    setParamState((prev) => {
-      const next = { ...selectedAlgorithm.defaults };
-      const prevKeys = Object.keys(prev);
-      const nextKeys = Object.keys(next);
-
-      if (
-        prevKeys.length === nextKeys.length &&
-        nextKeys.every((key) => prev[key] === next[key])
-      ) {
-        return prev;
-      }
-
-      return next;
-    });
-  }, [baseControls.algorithm, selectedAlgorithm.defaults]);
+    const nextDefaults = { ...selectedAlgorithm.defaults };
+    setParamState(nextDefaults);
+    setAlgorithmControls(nextDefaults);
+  }, [
+    baseControls.algorithm,
+    selectedAlgorithm.defaults,
+    setAlgorithmControls,
+  ]);
 
   const resolvedParams = { ...selectedAlgorithm.defaults };
   Object.keys(selectedAlgorithm.defaults).forEach((key) => {
@@ -340,12 +359,17 @@ function ParticleCloud({ config }) {
       <pointsMaterial
         size={config.pointSize}
         vertexColors
-        transparent
+        transparent={config.transparent}
         opacity={config.opacity}
         map={texture || undefined}
-        alphaTest={0.01}
-        blending={THREE.AdditiveBlending}
-        depthWrite={false}
+        alphaTest={config.alphaTest}
+        blending={BLENDING_MODES[config.blendingMode] ?? THREE.AdditiveBlending}
+        depthWrite={config.depthWrite}
+        depthTest={config.depthTest}
+        premultipliedAlpha={
+          config.premultipliedAlpha ||
+          PREMULTIPLIED_ALPHA_REQUIRED_MODES.has(config.blendingMode)
+        }
       />
     </points>
   );
@@ -356,8 +380,8 @@ export default function ParticleLab() {
 
   return (
     <>
-      <color attach="background" args={['#020205']} />
-      <fog attach="fog" args={['#020205', 0.015]} />
+      <color attach="background" args={[config.backgroundColor]} />
+      <fog attach="fog" args={[config.backgroundColor, 0.015]} />
       <ambientLight intensity={0.4} />
       <PerspectiveCamera makeDefault position={[0, 10, 30]} fov={45} />
       <OrbitControls enableDamping dampingFactor={0.05} autoRotate={false} />

@@ -14,6 +14,7 @@
 import {
   MeshDepthMaterial,
   MeshNormalMaterial,
+  NearestFilter,
   RGBADepthPacking,
   Vector2,
   Vector3,

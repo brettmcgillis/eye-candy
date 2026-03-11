@@ -7,7 +7,7 @@ export default function WebGLTestLab() {
   const { scenes } = useWebGLTestScenes();
   const { SceneComponent } = useTestLabSceneSelector({
     scenes,
-    defaultSceneId: 'fluidTest',
+    defaultSceneId: 'noScene',
     groupLabel: 'WebGL Test Selection',
     queryParam: 'webglTestScene',
   });

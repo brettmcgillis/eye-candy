@@ -1,5 +1,61 @@
-- [x] Format this todo
-- [x] Reactify the ParticleLab.jsx
-- [x] Move to Leva controls
-- [x] Add to the appropriate test lab
-- [ ] Format this todo following repo convention. add to main todo.
+# // ParticleLab
+
+# // TODO:
+
+[Back to main TODO](../../../../TODO.md)
+
+## Completed
+
+- [x] Add to the test lab
+
+## Particle Systems To Explore
+
+### High-Value Adds
+
+- [ ] Lorenz Attractor
+  - Classic, instantly recognizable butterfly lobes.
+  - `dx = sigma*(y-x), dy = x*(rho-z)-y, dz = x*y-beta*z`
+- [ ] Rossler Attractor
+  - Clean spiraling ribbons, great for motion trails.
+  - `dx = -y-z, dy = x+a*y, dz = b+z*(x-c)`
+- [ ] Dadras Attractor
+  - Dense folded sheets, very nebula-like.
+  - `dx = y-a*x+b*y*z, dy = c*y-x*z+z, dz = d*x*y-e*z`
+- [ ] Halvorsen Attractor
+  - Threefold symmetry, braided cloud feel.
+  - `dx = -a*x-4*y-4*z-y*y (+ cyclic perms)`
+- [ ] Chen Attractor
+  - Lorenz-like but sharper and more explosive.
+  - `dx = a*(y-x), dy = (c-a)*x - x*z + c*y, dz = x*y - b*z`
+
+### Obscure / Weird Ones
+
+- [ ] Rabinovich-Fabrikant
+  - Wild toroidal tearing and knotty bursts; dramatic with slight parameter drift.
+- [ ] Arneodo
+  - Thin filament sculpture look, almost calligraphic in 3D.
+- [ ] Burke-Shaw
+  - Compact chaotic clover-like structures that rotate well.
+- [ ] Sprott Systems (A/B/C/... families)
+  - Many compact equations; strong morphology variety for algorithm roulette.
+- [ ] Ikeda Map (2D map, embed as z modulation)
+  - Photon-orbit feel with rich output and low math cost.
+- [ ] Gumowski-Mira Map (2D, lift to 3D)
+  - Organic flower/frond structures; responds well to parameter sweeps.
+- [ ] Svensson Map (2D, lift to 3D)
+  - Fast to compute with wide visual diversity, often woven-smoke-like.
+- [ ] Popcorn / Pickover map variants
+  - Speckled cosmic dust and curved fold structures.
+
+### Non-Attractor Families
+
+- [ ] IFS Fractals in 3D
+  - Weighted affine transforms for fern/coral/crystal growth clouds.
+- [ ] L-Systems + noisy turtle in 3D
+  - Branching vascular and tree-like particle structures.
+- [ ] Quaternion Julia / Mandelbulb point sampling
+  - Very high detail dense static clouds with depth coloring.
+- [ ] Strange attractor + curl-noise advection hybrid
+  - Seed points on an attractor, then advect through divergence-free fields.
+- [ ] Hopf fibration sampling
+  - Elegant linked-circle structures with distinct geometry.

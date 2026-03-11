@@ -1,4 +1,4 @@
-// 8 retained favorites, 4 fixed, 5 custom algorithms.
+// Particle cloud algorithms used by ParticleLab.
 
 const algorithms = {
   'Aizawa Sphere': {
@@ -446,6 +446,156 @@ const algorithms = {
         z += dz;
         if (Number.isNaN(x) || Math.abs(x) > 1000) {
           x = 1.0;
+          y = 0.0;
+          z = 0.0;
+        }
+        positions.push(x, y, z);
+      }
+    },
+  },
+  'Lorenz Attractor': {
+    type: 'ode',
+    defaults: { sigma: 10.0, rho: 28.0, beta: 2.67, dt: 0.005 },
+    ranges: {
+      sigma: [1.0, 30.0, 0.1],
+      rho: [5.0, 60.0, 0.1],
+      beta: [1.0, 4.0, 0.01],
+      dt: [0.001, 0.02, 0.001],
+    },
+    generate: (p, positions, pointsCount) => {
+      let x = 0.1;
+      let y = 0.0;
+      let z = 0.0;
+      for (let i = 0; i < pointsCount; i += 1) {
+        const dx = p.sigma * (y - x);
+        const dy = x * (p.rho - z) - y;
+        const dz = x * y - p.beta * z;
+        x += dx * p.dt;
+        y += dy * p.dt;
+        z += dz * p.dt;
+        if (Number.isNaN(x) || Math.abs(x) > 1000) {
+          x = 0.1;
+          y = 0.0;
+          z = 0.0;
+        }
+        positions.push(x, y, z);
+      }
+    },
+  },
+  'Rossler Attractor': {
+    type: 'ode',
+    defaults: { a: 0.2, b: 0.2, c: 5.7, dt: 0.01 },
+    ranges: {
+      a: [0.05, 0.6, 0.01],
+      b: [0.05, 0.6, 0.01],
+      c: [2.0, 12.0, 0.1],
+      dt: [0.001, 0.03, 0.001],
+    },
+    generate: (p, positions, pointsCount) => {
+      let x = 0.1;
+      let y = 0.0;
+      let z = 0.0;
+      for (let i = 0; i < pointsCount; i += 1) {
+        const dx = -y - z;
+        const dy = x + p.a * y;
+        const dz = p.b + z * (x - p.c);
+        x += dx * p.dt;
+        y += dy * p.dt;
+        z += dz * p.dt;
+        if (Number.isNaN(x) || Math.abs(x) > 1000) {
+          x = 0.1;
+          y = 0.0;
+          z = 0.0;
+        }
+        positions.push(x, y, z);
+      }
+    },
+  },
+  'Dadras Attractor': {
+    type: 'ode',
+    defaults: { a: 3.0, b: 2.7, c: 1.7, d: 2.0, e: 9.0, dt: 0.002 },
+    ranges: {
+      a: [0.5, 6.0, 0.1],
+      b: [0.5, 6.0, 0.1],
+      c: [0.1, 4.0, 0.1],
+      d: [0.5, 4.0, 0.1],
+      e: [1.0, 15.0, 0.1],
+      dt: [0.001, 0.02, 0.001],
+    },
+    generate: (p, positions, pointsCount) => {
+      let x = 0.1;
+      let y = 0.1;
+      let z = 0.1;
+      const burnIn = 1200;
+
+      for (let i = 0; i < pointsCount + burnIn; i += 1) {
+        const dx = y - p.a * x + p.b * y * z;
+        const dy = p.c * y - x * z + z;
+        const dz = p.d * x * y - p.e * z;
+        x += dx * p.dt;
+        y += dy * p.dt;
+        z += dz * p.dt;
+        if (Number.isNaN(x) || Math.abs(x) > 1000) {
+          x = 0.1;
+          y = 0.1;
+          z = 0.1;
+        }
+
+        if (i >= burnIn) {
+          positions.push(x, y, z);
+        }
+      }
+    },
+  },
+  'Halvorsen Attractor': {
+    type: 'ode',
+    defaults: { a: 1.4, dt: 0.005 },
+    ranges: {
+      a: [0.5, 3.0, 0.01],
+      dt: [0.001, 0.02, 0.001],
+    },
+    generate: (p, positions, pointsCount) => {
+      let x = 1.0;
+      let y = 0.0;
+      let z = 0.0;
+      for (let i = 0; i < pointsCount; i += 1) {
+        const dx = -p.a * x - 4 * y - 4 * z - y * y;
+        const dy = -p.a * y - 4 * z - 4 * x - z * z;
+        const dz = -p.a * z - 4 * x - 4 * y - x * x;
+        x += dx * p.dt;
+        y += dy * p.dt;
+        z += dz * p.dt;
+        if (Number.isNaN(x) || Math.abs(x) > 1000) {
+          x = 1.0;
+          y = 0.0;
+          z = 0.0;
+        }
+        positions.push(x, y, z);
+      }
+    },
+  },
+  'Chen Attractor': {
+    type: 'ode',
+    defaults: { a: 35.0, b: 3.0, c: 28.0, dt: 0.002 },
+    ranges: {
+      a: [10.0, 60.0, 0.1],
+      b: [1.0, 10.0, 0.1],
+      c: [10.0, 50.0, 0.1],
+      dt: [0.001, 0.01, 0.001],
+    },
+    generate: (p, positions, pointsCount) => {
+      let x = 0.1;
+      let y = 0.0;
+      let z = 0.0;
+      for (let i = 0; i < pointsCount; i += 1) {
+        const dx = p.a * (y - x);
+        const dy = (p.c - p.a) * x - x * z + p.c * y;
+        const dz = x * y - p.b * z;
+        x += dx * p.dt;
+        y += dy * p.dt;
+        z += dz * p.dt;
+        if (Number.isNaN(x) || Math.abs(x) > 1000) {
+          x = 0.1;
           y = 0.0;
           z = 0.0;
         }

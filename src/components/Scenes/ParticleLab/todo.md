@@ -10,21 +10,21 @@
 
 ## Particle Systems To Explore
 
-### High-Value Adds
+### Well known systems
 
-- [ ] Lorenz Attractor
+- [x] Lorenz Attractor
   - Classic, instantly recognizable butterfly lobes.
   - `dx = sigma*(y-x), dy = x*(rho-z)-y, dz = x*y-beta*z`
-- [ ] Rossler Attractor
+- [x] Rossler Attractor
   - Clean spiraling ribbons, great for motion trails.
   - `dx = -y-z, dy = x+a*y, dz = b+z*(x-c)`
-- [ ] Dadras Attractor
+- [x] Dadras Attractor
   - Dense folded sheets, very nebula-like.
   - `dx = y-a*x+b*y*z, dy = c*y-x*z+z, dz = d*x*y-e*z`
-- [ ] Halvorsen Attractor
+- [x] Halvorsen Attractor
   - Threefold symmetry, braided cloud feel.
   - `dx = -a*x-4*y-4*z-y*y (+ cyclic perms)`
-- [ ] Chen Attractor
+- [x] Chen Attractor
   - Lorenz-like but sharper and more explosive.
   - `dx = a*(y-x), dy = (c-a)*x - x*z + c*y, dz = x*y - b*z`
 

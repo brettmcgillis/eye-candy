@@ -5,11 +5,11 @@ import React, { useRef } from 'react';
 import { Grid, OrbitControls, PerspectiveCamera } from '@react-three/drei';
 import { useFrame } from '@react-three/fiber';
 
-import Reversal from '../../elements/reversal/Reversal';
-import HandLandmarksDebug from './HandLandmarksDebug';
 import useHandGestureEvents from '../../../hooks/hands/useHandGestureEvents';
 import useHandControls from '../../../hooks/hands/useHandcontrols';
 import useMediaPipeHands from '../../../hooks/hands/useMediaPipeHands';
+import Reversal from '../../elements/reversal/Reversal';
+import HandLandmarksDebug from './HandLandmarksDebug';
 
 export default function HandStuff() {
   const probe = useRef();

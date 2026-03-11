@@ -1,6 +1,13 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
 
-import { initStrudel, samples } from '@strudel/web';
+let strudelWebModulePromise = null;
+
+function loadStrudelWebModule() {
+  if (!strudelWebModulePromise) {
+    strudelWebModulePromise = import('@strudel/web');
+  }
+  return strudelWebModulePromise;
+}
 
 export default function useStrudelTrack(options = {}) {
   const { audioContext = undefined, withSamples = true } = options || {};
@@ -26,6 +33,8 @@ export default function useStrudelTrack(options = {}) {
 
     async function init() {
       console.log('[strudel] init start');
+
+      const { initStrudel, samples } = await loadStrudelWebModule();
 
       // Decide context source
       let ctx;

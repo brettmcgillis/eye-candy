@@ -2,6 +2,7 @@ import ExplosionTest from '../ExplosionTest/ExplosionTest';
 import FluidTest from '../FluidTest/FluidTest';
 import HandStuff from '../HandStuff/HandStuff';
 import PixelHater from '../PixelHater/PixelHater';
+import PlotterTest from '../PlotterTest/PlotterTest';
 import StrudelDoodle from '../StrudelDoodle/StrudelDoodle';
 
 const scenes = [
@@ -29,6 +30,11 @@ const scenes = [
     id: 'explosionTest',
     label: 'Explosion Test',
     Component: ExplosionTest,
+  },
+  {
+    id: 'plotterTest',
+    label: 'Plotter Test',
+    Component: PlotterTest,
   },
 ];
 

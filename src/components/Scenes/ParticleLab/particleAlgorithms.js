@@ -547,6 +547,141 @@ const algorithms = {
       }
     },
   },
+  'Rabinovich-Fabrikant': {
+    type: 'ode',
+    defaults: { alpha: 0.14, gamma: 0.1, dt: 0.002 },
+    ranges: {
+      alpha: [0.02, 0.4, 0.001],
+      gamma: [0.02, 0.3, 0.001],
+      dt: [0.0005, 0.01, 0.0005],
+    },
+    generate: (p, positions, pointsCount) => {
+      let x = -1.0;
+      let y = 0.0;
+      let z = 0.5;
+      const burnIn = 1500;
+
+      for (let i = 0; i < pointsCount + burnIn; i += 1) {
+        const xx = x * x;
+        const dx = y * (z - 1 + xx) + p.gamma * x;
+        const dy = x * (3 * z + 1 - xx) + p.gamma * y;
+        const dz = -2 * z * (p.alpha + x * y);
+        x += dx * p.dt;
+        y += dy * p.dt;
+        z += dz * p.dt;
+        if (Number.isNaN(x) || Math.abs(x) > 1000) {
+          x = -1.0;
+          y = 0.0;
+          z = 0.5;
+        }
+
+        if (i >= burnIn) {
+          positions.push(x, y, z);
+        }
+      }
+    },
+  },
+  'Arneodo Attractor': {
+    type: 'ode',
+    defaults: { a: -5.5, b: 3.5, c: -1.0, dt: 0.005 },
+    ranges: {
+      a: [-8.0, -1.0, 0.1],
+      b: [0.5, 6.0, 0.1],
+      c: [-2.5, -0.1, 0.01],
+      dt: [0.001, 0.02, 0.001],
+    },
+    generate: (p, positions, pointsCount) => {
+      let x = 0.1;
+      let y = 0.0;
+      let z = 0.0;
+      const burnIn = 1200;
+
+      for (let i = 0; i < pointsCount + burnIn; i += 1) {
+        const dx = y;
+        const dy = z;
+        const dz = -p.a * x - p.b * y - z + p.c * x ** 3;
+        x += dx * p.dt;
+        y += dy * p.dt;
+        z += dz * p.dt;
+        if (Number.isNaN(x) || Math.abs(x) > 1000) {
+          x = 0.1;
+          y = 0.0;
+          z = 0.0;
+        }
+
+        if (i >= burnIn) {
+          positions.push(x, y, z);
+        }
+      }
+    },
+  },
+  'Burke-Shaw Clover': {
+    type: 'ode',
+    defaults: { s: 10.0, v: 4.272, dt: 0.005 },
+    ranges: {
+      s: [1.0, 25.0, 0.1],
+      v: [0.5, 8.0, 0.001],
+      dt: [0.001, 0.02, 0.001],
+    },
+    generate: (p, positions, pointsCount) => {
+      let x = 0.1;
+      let y = 0.0;
+      let z = 0.0;
+      const burnIn = 1000;
+
+      for (let i = 0; i < pointsCount + burnIn; i += 1) {
+        const dx = -p.s * (x + y);
+        const dy = -y - p.s * x * z;
+        const dz = p.s * x * y + p.v;
+        x += dx * p.dt;
+        y += dy * p.dt;
+        z += dz * p.dt;
+        if (Number.isNaN(x) || Math.abs(x) > 1000) {
+          x = 0.1;
+          y = 0.0;
+          z = 0.0;
+        }
+
+        if (i >= burnIn) {
+          positions.push(x, y, z);
+        }
+      }
+    },
+  },
+  'Sprott Orbit': {
+    type: 'ode',
+    defaults: { a: 2.07, b: 1.79, dt: 0.004 },
+    ranges: {
+      a: [0.5, 4.0, 0.01],
+      b: [0.5, 3.0, 0.01],
+      dt: [0.001, 0.02, 0.001],
+    },
+    generate: (p, positions, pointsCount) => {
+      let x = 0.1;
+      let y = 0.0;
+      let z = 0.0;
+      const burnIn = 1500;
+
+      for (let i = 0; i < pointsCount + burnIn; i += 1) {
+        const xx = x * x;
+        const dx = y + p.a * x * y + x * z;
+        const dy = 1 - p.b * xx + y * z;
+        const dz = x - xx - y * y;
+        x += dx * p.dt;
+        y += dy * p.dt;
+        z += dz * p.dt;
+        if (Number.isNaN(x) || Math.abs(x) > 1000) {
+          x = 0.1;
+          y = 0.0;
+          z = 0.0;
+        }
+
+        if (i >= burnIn) {
+          positions.push(x, y, z);
+        }
+      }
+    },
+  },
   'Halvorsen Attractor': {
     type: 'ode',
     defaults: { a: 1.4, dt: 0.005 },
@@ -600,6 +735,72 @@ const algorithms = {
           z = 0.0;
         }
         positions.push(x, y, z);
+      }
+    },
+  },
+  'Pickover Attractor': {
+    type: 'map',
+    defaults: { a: 2.24, b: 0.43, c: -0.65, d: -2.43 },
+    ranges: {
+      a: [-3.0, 3.0, 0.01],
+      b: [-3.0, 3.0, 0.01],
+      c: [-3.0, 3.0, 0.01],
+      d: [-3.0, 3.0, 0.01],
+    },
+    generate: (p, positions, pointsCount) => {
+      let x = 0.1;
+      let y = 0.1;
+      let z = 0.1;
+      for (let i = 0; i < pointsCount; i += 1) {
+        const nx = Math.sin(p.a * y) - z * Math.cos(p.b * x);
+        const ny = z * Math.sin(p.c * x) - Math.cos(p.d * y);
+        const nz = Math.sin(x);
+        x = nx;
+        y = ny;
+        z = nz;
+        if (Number.isNaN(x) || Math.abs(x) > 1000) {
+          x = 0.1;
+          y = 0.1;
+          z = 0.1;
+        }
+        positions.push(x, y, z);
+      }
+    },
+  },
+  'Popcorn Cloud': {
+    type: 'map',
+    defaults: { h: 0.05, k: 3.0 },
+    ranges: {
+      h: [0.005, 0.2, 0.001],
+      k: [0.5, 8.0, 0.01],
+    },
+    generate: (p, positions, pointsCount) => {
+      // Single-seed trajectories collapse — use many seeds spread deterministically
+      // across [-π, π]² via the golden ratio so we fill the full chaotic domain.
+      const PHI = 1.6180339887;
+      const { PI } = Math;
+      const seeds = 300;
+      const stepsPerSeed = Math.ceil(pointsCount / seeds);
+
+      for (let s = 0; s < seeds; s += 1) {
+        let x = ((s * PHI) % 1) * 2 * PI - PI;
+        let y = ((s * PHI * PHI) % 1) * 2 * PI - PI;
+
+        for (let i = 0; i < stepsPerSeed; i += 1) {
+          const ty = Math.tan(p.k * y);
+          const tx = Math.tan(p.k * x);
+          // tan blows up at π/2 + nπ — bail on this seed rather than resetting
+          if (!Number.isFinite(ty) || !Number.isFinite(tx)) break;
+          const nx = x - p.h * Math.sin(y + ty);
+          const ny = y - p.h * Math.sin(x + tx);
+          if (Number.isNaN(nx) || Math.abs(nx) > 50) break;
+          x = nx;
+          y = ny;
+          const z =
+            Math.sin(p.k * x) * Math.cos(p.k * y) * 0.4 +
+            Math.cos(x * y * 0.3) * 0.2;
+          positions.push(x, y, z);
+        }
       }
     },
   },

@@ -30,13 +30,13 @@
 
 ### Obscure / Weird Ones
 
-- [ ] Rabinovich-Fabrikant
+- [x] Rabinovich-Fabrikant
   - Wild toroidal tearing and knotty bursts; dramatic with slight parameter drift.
-- [ ] Arneodo
+- [x] Arneodo
   - Thin filament sculpture look, almost calligraphic in 3D.
-- [ ] Burke-Shaw
+- [x] Burke-Shaw
   - Compact chaotic clover-like structures that rotate well.
-- [ ] Sprott Systems (A/B/C/... families)
+- [x] Sprott Systems (A/B/C/... families)
   - Many compact equations; strong morphology variety for algorithm roulette.
 - [ ] Ikeda Map (2D map, embed as z modulation)
   - Photon-orbit feel with rich output and low math cost.
@@ -44,7 +44,7 @@
   - Organic flower/frond structures; responds well to parameter sweeps.
 - [ ] Svensson Map (2D, lift to 3D)
   - Fast to compute with wide visual diversity, often woven-smoke-like.
-- [ ] Popcorn / Pickover map variants
+- [x] Popcorn / Pickover map variants
   - Speckled cosmic dust and curved fold structures.
 
 ### Non-Attractor Families

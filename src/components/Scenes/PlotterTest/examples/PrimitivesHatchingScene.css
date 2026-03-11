@@ -1,0 +1,16 @@
+.plotter-example-overlay {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+}
+
+.plotter-example-overlay * {
+  box-sizing: border-box;
+}
+
+.plotter-example-svgOverlay {
+  position: absolute;
+  inset: 0;
+  overflow: visible;
+  pointer-events: none;
+}

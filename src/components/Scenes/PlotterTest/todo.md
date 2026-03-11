@@ -54,3 +54,13 @@
 # // General bugs
 
 - [ ] Update the plotter output preview to always stay facing the camera. The preview should be like a billboard that reflects the camera position of the test scene.
+
+# // Progress Notes
+
+- [x] Scene moved out of main scenes and into WebGL Test Lab scene selection.
+- [x] Added renderer mode toggle for A/B testing: `thirdParty`, `homebrew`, `split-ab`.
+- [x] Added expanded three-plotter-renderer controls (interactive resolution, debounce, frame budgets, segment caps, spacing floor, edge toggle).
+- [x] Added dev diagnostics controls (compute state, queue depth, request/superseded/error counters, last compute time, last renderer/mode, detected SVG node count).
+- [x] Updated output preview panel to billboard toward the active scene camera.
+- [ ] Visual-verify duplicate preview issue is fully resolved after latest SVG extraction and draw-pipeline hardening.
+- [ ] Visual-verify smooth left-camera interaction in browser under continuous orbit movement; tune new controls as needed.

@@ -12,19 +12,38 @@ const PAPER_PRESETS = {
 };
 
 const DEFAULTS = {
-  autoRefresh: true,
-  showHatching: true,
-  hatchSpacing: 8,
-  hatchAngleDeg: 38,
-  hatchThreshold: 0.35,
+  theme: 'dark',
+  autoRefresh: false,
+  showSilhouettes: true,
+  showEdges: true,
+  showHatches: true,
+  rotX: 0,
+  rotY: 0,
+  rotZ: 0,
+  spaceX: 8,
+  spaceY: 8,
+  spaceZ: 8,
+  insetPixels: 2,
+  connectHatches: false,
+  brightnessShading: true,
+  minSpacing: 3,
+  maxSpacing: 40,
+  lightX: 5,
+  lightY: 5,
+  lightZ: 5,
+  lightIntensity: 1,
   hatchMaxSegments: 2200,
+  thirdPartyInteractiveDebounceMs: 360,
+  thirdPartyFullFrameBudgetMs: 10,
+  thirdPartySmoothThreshold: 0.99,
+  thirdPartySilhouetteSimplifyTolerance: 2,
+  thirdPartySilhouetteMinArea: 100,
+  thirdPartySilhouetteNormalBuckets: 12,
   strokeWidth: 0.8,
-  simplifyTolerance: 0.5,
   precision: 2,
   previewResolution: 1024,
   panelScale: 2.35,
   splitRatio: 0.5,
-  viewportGapRatio: 0.02,
   paperPreset: 'A4',
   paperWidthMm: PAPER_PRESETS.A4.widthMm,
   paperHeightMm: PAPER_PRESETS.A4.heightMm,
@@ -39,31 +58,101 @@ export default function usePlotterTestControls({ onExport, onRefresh }) {
   const [config, setControls] = useControls(
     'Plotter Test',
     () => ({
+      Theme: folder(
+        {
+          theme: {
+            label: 'Paper / Ink Theme',
+            value: DEFAULTS.theme,
+            options: {
+              'Dark (white on black)': 'dark',
+              'Light (black on white)': 'light',
+            },
+          },
+        },
+        { collapsed: true }
+      ),
+      Layers: folder(
+        {
+          showSilhouettes: {
+            label: 'Show Silhouettes',
+            value: DEFAULTS.showSilhouettes,
+          },
+          showEdges: {
+            label: 'Show Edges',
+            value: DEFAULTS.showEdges,
+          },
+          showHatches: {
+            label: 'Show Hatches',
+            value: DEFAULTS.showHatches,
+          },
+        },
+        { collapsed: true }
+      ),
+      'Renderer Performance': folder(
+        {
+          thirdPartyInteractiveDebounceMs: {
+            label: 'Auto Refresh Debounce (ms)',
+            value: DEFAULTS.thirdPartyInteractiveDebounceMs,
+            min: 120,
+            max: 1200,
+            step: 20,
+          },
+          thirdPartyFullFrameBudgetMs: {
+            label: 'Full Render Frame Budget (ms)',
+            value: DEFAULTS.thirdPartyFullFrameBudgetMs,
+            min: 2,
+            max: 24,
+            step: 1,
+          },
+          thirdPartySmoothThreshold: {
+            label: 'Edge Smoothness Filter',
+            value: DEFAULTS.thirdPartySmoothThreshold,
+            min: 0.9,
+            max: 0.999,
+            step: 0.001,
+          },
+          thirdPartySilhouetteSimplifyTolerance: {
+            label: 'Silhouette Simplify Tolerance',
+            value: DEFAULTS.thirdPartySilhouetteSimplifyTolerance,
+            min: 0,
+            max: 6,
+            step: 0.1,
+          },
+          thirdPartySilhouetteMinArea: {
+            label: 'Silhouette Minimum Area',
+            value: DEFAULTS.thirdPartySilhouetteMinArea,
+            min: 0,
+            max: 400,
+            step: 5,
+          },
+          thirdPartySilhouetteNormalBuckets: {
+            label: 'Silhouette Normal Buckets',
+            value: DEFAULTS.thirdPartySilhouetteNormalBuckets,
+            min: 4,
+            max: 32,
+            step: 1,
+          },
+        },
+        { collapsed: true }
+      ),
       Output: folder(
         {
           strokeWidth: {
-            label: 'Stroke Width',
+            label: 'Line Width',
             value: DEFAULTS.strokeWidth,
             min: 0.1,
             max: 2.5,
             step: 0.05,
           },
-          simplifyTolerance: {
-            label: 'Simplify',
-            value: DEFAULTS.simplifyTolerance,
-            min: 0,
-            max: 2,
-            step: 0.05,
-          },
           precision: {
-            label: 'Precision',
+            label: 'SVG Decimal Precision',
             value: DEFAULTS.precision,
             min: 0,
             max: 4,
             step: 1,
           },
           previewResolution: {
-            label: 'Preview Px',
+            label: 'Final Preview Resolution (px)',
             value: DEFAULTS.previewResolution,
             min: 256,
             max: 2048,
@@ -72,73 +161,156 @@ export default function usePlotterTestControls({ onExport, onRefresh }) {
         },
         { collapsed: true }
       ),
-      Shadows: folder(
+      Hatching: folder(
         {
-          showHatching: {
-            label: 'Hatching',
-            value: DEFAULTS.showHatching,
-          },
-          hatchSpacing: {
-            label: 'Hatch Spacing',
-            value: DEFAULTS.hatchSpacing,
-            min: 2,
-            max: 24,
-            step: 1,
-            render: (get) => get('Plotter Test.Shadows.showHatching'),
-          },
-          hatchAngleDeg: {
-            label: 'Hatch Angle',
-            value: DEFAULTS.hatchAngleDeg,
-            min: 0,
+          rotX: {
+            label: 'Rotation X (deg)',
+            value: DEFAULTS.rotX,
+            min: -180,
             max: 180,
             step: 1,
-            render: (get) => get('Plotter Test.Shadows.showHatching'),
+            render: (get) => get('Plotter Test.Layers.showHatches'),
           },
-          hatchThreshold: {
-            label: 'Hatch Threshold',
-            value: DEFAULTS.hatchThreshold,
-            min: 0,
-            max: 1,
-            step: 0.01,
-            render: (get) => get('Plotter Test.Shadows.showHatching'),
+          rotY: {
+            label: 'Rotation Y (deg)',
+            value: DEFAULTS.rotY,
+            min: -180,
+            max: 180,
+            step: 1,
+            render: (get) => get('Plotter Test.Layers.showHatches'),
+          },
+          rotZ: {
+            label: 'Rotation Z (deg)',
+            value: DEFAULTS.rotZ,
+            min: -180,
+            max: 180,
+            step: 1,
+            render: (get) => get('Plotter Test.Layers.showHatches'),
+          },
+          spaceX: {
+            label: 'Spacing X',
+            value: DEFAULTS.spaceX,
+            min: 1,
+            max: 80,
+            step: 1,
+            render: (get) => get('Plotter Test.Layers.showHatches'),
+          },
+          spaceY: {
+            label: 'Spacing Y',
+            value: DEFAULTS.spaceY,
+            min: 1,
+            max: 80,
+            step: 1,
+            render: (get) => get('Plotter Test.Layers.showHatches'),
+          },
+          spaceZ: {
+            label: 'Spacing Z',
+            value: DEFAULTS.spaceZ,
+            min: 1,
+            max: 80,
+            step: 1,
+            render: (get) => get('Plotter Test.Layers.showHatches'),
           },
           hatchMaxSegments: {
-            label: 'Hatch Max Segments',
+            label: 'Hatch Segment Limit',
             value: DEFAULTS.hatchMaxSegments,
             min: 200,
             max: 6000,
             step: 100,
-            render: (get) => get('Plotter Test.Shadows.showHatching'),
+            render: (get) => get('Plotter Test.Layers.showHatches'),
+          },
+          insetPixels: {
+            label: 'Hatch Boundary Inset (px)',
+            value: DEFAULTS.insetPixels,
+            min: 0,
+            max: 10,
+            step: 0.5,
+            render: (get) => get('Plotter Test.Layers.showHatches'),
+          },
+          connectHatches: {
+            label: 'Connect Hatch Lines',
+            value: DEFAULTS.connectHatches,
+            render: (get) => get('Plotter Test.Layers.showHatches'),
           },
         },
         { collapsed: true }
       ),
-      Comparison: folder(
+      Lighting: folder(
+        {
+          brightnessShading: {
+            label: 'Brightness Shading',
+            value: DEFAULTS.brightnessShading,
+          },
+          minSpacing: {
+            label: 'Min Hatch Spacing',
+            value: DEFAULTS.minSpacing,
+            min: 1,
+            max: 80,
+            step: 1,
+            render: (get) =>
+              get('Plotter Test.Lighting.brightnessShading') &&
+              get('Plotter Test.Layers.showHatches'),
+          },
+          maxSpacing: {
+            label: 'Max Hatch Spacing',
+            value: DEFAULTS.maxSpacing,
+            min: 1,
+            max: 120,
+            step: 1,
+            render: (get) =>
+              get('Plotter Test.Lighting.brightnessShading') &&
+              get('Plotter Test.Layers.showHatches'),
+          },
+          lightX: {
+            label: 'Light X',
+            value: DEFAULTS.lightX,
+            min: -20,
+            max: 20,
+            step: 0.25,
+          },
+          lightY: {
+            label: 'Light Y',
+            value: DEFAULTS.lightY,
+            min: -20,
+            max: 20,
+            step: 0.25,
+          },
+          lightZ: {
+            label: 'Light Z',
+            value: DEFAULTS.lightZ,
+            min: -20,
+            max: 20,
+            step: 0.25,
+          },
+          lightIntensity: {
+            label: 'Light Intensity',
+            value: DEFAULTS.lightIntensity,
+            min: 0.1,
+            max: 8,
+            step: 0.1,
+          },
+        },
+        { collapsed: true }
+      ),
+      'Preview Panel': folder(
         {
           autoRefresh: {
-            label: 'Auto Refresh',
+            label: 'Auto Refresh While Orbiting',
             value: DEFAULTS.autoRefresh,
           },
           panelScale: {
-            label: 'Panel Scale',
+            label: 'Right Panel Scale',
             value: DEFAULTS.panelScale,
             min: 1,
             max: 5,
             step: 0.05,
           },
           splitRatio: {
-            label: 'Split Ratio',
+            label: 'Left/Right Width Split',
             value: DEFAULTS.splitRatio,
             min: 0.25,
             max: 0.75,
             step: 0.01,
-          },
-          viewportGapRatio: {
-            label: 'Viewport Gap',
-            value: DEFAULTS.viewportGapRatio,
-            min: 0,
-            max: 0.08,
-            step: 0.005,
           },
           refreshPreview: button(() => {
             onRefresh?.();
@@ -146,10 +318,10 @@ export default function usePlotterTestControls({ onExport, onRefresh }) {
         },
         { collapsed: true }
       ),
-      'Plotter Constraints': folder(
+      'Paper + Plotter Limits': folder(
         {
           paperPreset: {
-            label: 'Paper Preset',
+            label: 'Paper Size Preset',
             value: DEFAULTS.paperPreset,
             options: Object.keys(PAPER_PRESETS),
             onChange: (next) => {
@@ -188,7 +360,7 @@ export default function usePlotterTestControls({ onExport, onRefresh }) {
       Export: folder(
         {
           exportName: {
-            label: 'Filename',
+            label: 'Export Filename',
             value: DEFAULTS.exportName,
           },
           exportSvg: button(() => {

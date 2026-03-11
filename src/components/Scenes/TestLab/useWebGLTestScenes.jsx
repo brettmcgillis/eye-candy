@@ -3,6 +3,7 @@ import FluidTest from '../FluidTest/FluidTest';
 import HandStuff from '../HandStuff/HandStuff';
 import PixelHater from '../PixelHater/PixelHater';
 import PlotterTest from '../PlotterTest/PlotterTest';
+import PrimitivesHatchingScene from '../PlotterTest/examples/PrimitivesHatchingScene';
 import StrudelDoodle from '../StrudelDoodle/StrudelDoodle';
 
 const scenes = [
@@ -35,6 +36,11 @@ const scenes = [
     id: 'plotterTest',
     label: 'Plotter Test',
     Component: PlotterTest,
+  },
+  {
+    id: 'primitivesHatchingScene',
+    label: 'Primitives Hatching Scene',
+    Component: PrimitivesHatchingScene,
   },
 ];
 

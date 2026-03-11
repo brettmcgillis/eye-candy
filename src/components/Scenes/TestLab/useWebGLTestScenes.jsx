@@ -2,6 +2,7 @@ import ExplosionTest from '../ExplosionTest/ExplosionTest';
 import FluidTest from '../FluidTest/FluidTest';
 import HandStuff from '../HandStuff/HandStuff';
 import PixelHater from '../PixelHater/PixelHater';
+import ParticleLab from '../ParticleLab/ParticleLab';
 import PlotterTest from '../PlotterTest/PlotterTest';
 import PrimitivesHatchingScene from '../PlotterTest/examples/PrimitivesHatchingScene';
 import StrudelDoodle from '../StrudelDoodle/StrudelDoodle';
@@ -21,6 +22,11 @@ const scenes = [
     id: 'pixelHater',
     label: 'PixelHater',
     Component: PixelHater,
+  },
+  {
+    id: 'particleLab',
+    label: 'Particle Lab',
+    Component: ParticleLab,
   },
   {
     id: 'strudelDoodle',

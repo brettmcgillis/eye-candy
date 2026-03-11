@@ -8,7 +8,7 @@ import React, {
   useState,
 } from 'react';
 
-import { PerspectiveCamera, Text } from '@react-three/drei';
+import { Html, PerspectiveCamera } from '@react-three/drei';
 import { useFrame, useThree } from '@react-three/fiber';
 
 import CameraRig from '../../rigging/CameraRig';
@@ -16,9 +16,8 @@ import { PlotterRenderer } from './examples/PlotterRenderer/plotter-renderer';
 import downloadSvg from './export/downloadSvg';
 import usePlotterTestControls from './usePlotterTestControls';
 
-const SOURCE_LAYER = 1;
-const OUTPUT_LAYER = 2;
 const VIEWPORT_DIVIDER_PX = 2;
+const FIXED_SPLIT_RATIO = 0.5;
 
 function getThemeColors(theme) {
   return theme === 'light'
@@ -40,145 +39,125 @@ function getThemeColors(theme) {
       };
 }
 
-function applyLayerRecursive(root, layer) {
-  if (!root) return;
-  root.traverse((obj) => {
-    obj.layers.set(layer);
-  });
+function getViewportLayout(size) {
+  const viewportWidth = Math.max(1, Number(size?.width) || 1);
+  const viewportHeight = Math.max(1, Number(size?.height) || 1);
+  const leftWidth = Math.max(1, Math.floor(viewportWidth * FIXED_SPLIT_RATIO));
+  const rightWidth = Math.max(1, viewportWidth - leftWidth);
+
+  return {
+    leftWidth,
+    rightWidth,
+    rightX: leftWidth,
+    viewportHeight,
+    captureAspect: leftWidth / viewportHeight,
+  };
 }
 
-function drawSvgToCanvas(canvas, svgString, options = {}) {
-  return new Promise((resolve) => {
-    const {
-      clear = true,
-      background = '#fcfcfa',
-      x = 0,
-      y = 0,
-      width = canvas.width,
-      height = canvas.height,
-    } = options;
-    const ctx = canvas.getContext('2d');
-    if (!ctx) {
-      resolve(false);
-      return;
-    }
-
-    const img = new Image();
-    img.onload = () => {
-      if (clear) {
-        ctx.fillStyle = background;
-        ctx.fillRect(0, 0, canvas.width, canvas.height);
-      }
-      ctx.drawImage(img, x, y, width, height);
-      resolve(true);
-    };
-    img.onerror = () => {
-      resolve(false);
-    };
-
-    const encoded = encodeURIComponent(svgString)
-      .replace(/'/g, '%27')
-      .replace(/"/g, '%22');
-    img.src = `data:image/svg+xml;charset=utf-8,${encoded}`;
-  });
-}
-
-function extractLatestSvgString(domElement, size) {
+function extractSvgMarkup(domElement) {
   if (!domElement) {
-    return { svgString: null, svgNodeCount: 0 };
+    return { innerHTML: '', outerHTML: '', viewBox: null };
   }
 
-  const isRootSvg = domElement.tagName?.toLowerCase() === 'svg';
-  const svgNodes = isRootSvg
-    ? [domElement]
-    : Array.from(domElement.querySelectorAll?.('svg') || []);
-  const svgNodeCount = svgNodes.length;
-  const latestSvg = svgNodes[svgNodeCount - 1];
-  if (!latestSvg) {
-    return { svgString: null, svgNodeCount };
-  }
-
-  const svgClone = latestSvg.cloneNode(true);
-  if (!svgClone.getAttribute('xmlns')) {
-    svgClone.setAttribute('xmlns', 'http://www.w3.org/2000/svg');
-  }
-  if (!svgClone.getAttribute('viewBox')) {
-    svgClone.setAttribute('viewBox', `0 0 ${size} ${size}`);
-  }
-  svgClone.setAttribute('width', String(size));
-  svgClone.setAttribute('height', String(size));
-
-  const svgString = new XMLSerializer().serializeToString(svgClone);
-  return { svgString, svgNodeCount };
+  return {
+    innerHTML: domElement.innerHTML,
+    outerHTML: domElement.outerHTML,
+    viewBox: domElement.getAttribute('viewBox'),
+  };
 }
 
 export default function PlotterTest() {
   const sourceRef = useRef();
-  const sourceViewRef = useRef();
-  const outputViewRef = useRef();
-  const sourceLightRef = useRef();
-  const outputLightRef = useRef();
   const sourceAmbientLightRef = useRef();
   const sourcePointLightRef = useRef();
-  const getThree = useThree((state) => state.get);
-  const outputRenderCameraRef = useRef(null);
+  const svgOverlayRef = useRef(null);
   const plotterRendererRef = useRef(null);
-  const previewCanvasRef = useRef(null);
-  const previewTextureRef = useRef(null);
   const configRef = useRef(null);
   const isMountedRef = useRef(true);
-  const layerSyncTickRef = useRef(0);
+  const getThree = useThree((state) => state.get);
+  const viewportSize = useThree((state) => state.size);
   const [hasPreview, setHasPreview] = useState(false);
+  const [svgState, setSvgState] = useState({
+    innerHTML: '',
+    outerHTML: '',
+    viewBox: null,
+  });
 
-  const previewTexture = useMemo(() => {
-    if (typeof document === 'undefined') return null;
+  const getCaptureAspect = useCallback(
+    (cameraForProjection) => {
+      const { size } = getThree();
+      const layout = getViewportLayout(size);
 
-    const canvas = document.createElement('canvas');
-    canvas.width = 1024;
-    canvas.height = 1024;
-    const ctx = canvas.getContext('2d');
-    if (ctx) {
-      ctx.fillStyle = '#fcfcfa';
-      ctx.fillRect(0, 0, canvas.width, canvas.height);
-    }
-    previewCanvasRef.current = canvas;
+      if (layout.rightWidth > 0 && layout.viewportHeight > 0) {
+        return layout.rightWidth / layout.viewportHeight;
+      }
 
-    const texture = new THREE.CanvasTexture(canvas);
-    texture.colorSpace = THREE.SRGBColorSpace;
-    texture.needsUpdate = true;
-    previewTextureRef.current = texture;
-    return texture;
-  }, []);
+      return Math.max(0.01, cameraForProjection?.aspect || 1);
+    },
+    [getThree]
+  );
 
-  useMemo(() => {
-    const outputCamera = new THREE.PerspectiveCamera(28, 1, 0.1, 100);
-    outputCamera.position.set(0, 0, 13);
-    outputCamera.lookAt(0, 0, 0);
-    outputCamera.updateProjectionMatrix();
-    outputRenderCameraRef.current = outputCamera;
-    return outputCamera;
-  }, []);
+  const getCaptureSize = useCallback(() => {
+    const { size } = getThree();
+    const layout = getViewportLayout(size);
 
-  const getPreviewResolution = useCallback((cfg) => {
-    return Math.max(256, cfg.previewResolution || 1024);
-  }, []);
+    return {
+      width: Math.max(1, Math.round(layout.rightWidth)),
+      height: Math.max(1, Math.round(layout.viewportHeight)),
+    };
+  }, [getThree]);
+
+  const createProjectionCamera = useCallback(
+    (cameraForProjection, captureAspect) => {
+      if (!cameraForProjection) return null;
+
+      cameraForProjection.updateMatrixWorld(true);
+      if (cameraForProjection.updateProjectionMatrix) {
+        cameraForProjection.updateProjectionMatrix();
+      }
+
+      const projectionCamera = cameraForProjection.clone();
+
+      if (projectionCamera.isPerspectiveCamera) {
+        projectionCamera.aspect = Math.max(
+          0.01,
+          captureAspect || cameraForProjection.aspect || 1
+        );
+      }
+
+      projectionCamera.position.copy(cameraForProjection.position);
+      projectionCamera.quaternion.copy(cameraForProjection.quaternion);
+      projectionCamera.scale.copy(cameraForProjection.scale);
+      projectionCamera.updateProjectionMatrix();
+      projectionCamera.updateMatrixWorld(true);
+
+      return projectionCamera;
+    },
+    []
+  );
 
   const computeThirdPartySvg = useCallback(
-    async (cfg, cameraForProjection) => {
-      const glRenderer = getThree().gl;
-      if (!sourceRef.current || !cameraForProjection || !glRenderer) {
+    async (cfg, cameraForProjection, captureAspect) => {
+      const { gl: glRenderer, scene: rootScene } = getThree();
+      if (!rootScene || !cameraForProjection || !glRenderer) {
         return null;
       }
 
-      const resolution = getPreviewResolution(cfg);
+      const projectionCamera = createProjectionCamera(
+        cameraForProjection,
+        captureAspect
+      );
+      if (!projectionCamera) return null;
+
+      const plotSize = getCaptureSize();
 
       if (!plotterRendererRef.current) {
         plotterRendererRef.current = new PlotterRenderer();
       }
 
       const plotterRenderer = plotterRendererRef.current;
-      const colors = getThemeColors(cfg.theme);
-      plotterRenderer.setSize(resolution, resolution);
+      plotterRenderer.setClearColor('#ffffff');
+      plotterRenderer.setSize(plotSize.width, plotSize.height);
       plotterRenderer.setGLRenderer(glRenderer);
       plotterRenderer.theme = cfg.theme;
       plotterRenderer.showSilhouettes = Boolean(cfg.showSilhouettes);
@@ -230,65 +209,81 @@ export default function PlotterTest() {
         maxSegments: cfg.hatchMaxSegments,
       };
 
-      plotterRenderer.clear();
-      await plotterRenderer.renderGPULayers(
-        sourceRef.current,
-        cameraForProjection
-      );
-      const { svgString, svgNodeCount } = extractLatestSvgString(
-        plotterRenderer.domElement,
-        resolution
-      );
+      rootScene.updateMatrixWorld(true);
+      projectionCamera.updateMatrixWorld(true);
+      projectionCamera.updateProjectionMatrix();
+      const previousRendererSize = glRenderer.getSize(new THREE.Vector2());
+
+      try {
+        // Keep PlotterRenderer passes in the same coordinate space as the
+        // capture target to avoid stretched silhouettes/hatching.
+        glRenderer.setSize(plotSize.width, plotSize.height, false);
+        plotterRenderer.clear();
+        await plotterRenderer.renderGPULayers(rootScene, projectionCamera);
+      } finally {
+        glRenderer.setSize(
+          previousRendererSize.x,
+          previousRendererSize.y,
+          false
+        );
+      }
+
+      const nextSvg = extractSvgMarkup(plotterRenderer.domElement);
       if (
-        !svgString &&
+        !nextSvg.outerHTML &&
         plotterRenderer.domElement?.outerHTML?.includes('<svg')
       ) {
         return {
-          svgString: plotterRenderer.domElement.outerHTML,
+          svg: plotterRenderer.domElement.outerHTML,
           fileName: `${cfg.exportName || 'plotter-test'}-output`,
-          renderer: 'thirdParty',
-          svgNodeCount: 1,
-          backgroundColor: colors.background,
+          svgState: {
+            innerHTML: plotterRenderer.domElement.innerHTML,
+            outerHTML: plotterRenderer.domElement.outerHTML,
+            viewBox: plotterRenderer.domElement.getAttribute('viewBox'),
+          },
         };
       }
-      if (!svgString) return null;
+      if (!nextSvg.outerHTML) return null;
 
       return {
-        svgString,
+        svg: nextSvg.outerHTML,
+        svgState: nextSvg,
         fileName: `${cfg.exportName || 'plotter-test'}-output`,
-        renderer: 'thirdParty',
-        svgNodeCount,
-        backgroundColor: colors.background,
       };
     },
-    [getPreviewResolution, getThree]
+    [createProjectionCamera, getCaptureSize, getThree]
   );
 
   const computePlotterOutput = useCallback(
     async (cfg, activeCamera) => {
       const cameraForProjection = activeCamera || getThree().camera;
-      if (!cameraForProjection || !previewCanvasRef.current) return null;
+      if (!cameraForProjection) return null;
 
-      const resolution = getPreviewResolution(cfg);
-      const canvas = previewCanvasRef.current;
-      if (canvas.width !== resolution || canvas.height !== resolution) {
-        canvas.width = resolution;
-        canvas.height = resolution;
+      const captureAspect = getCaptureAspect(cameraForProjection);
+      const output = await computeThirdPartySvg(
+        cfg,
+        cameraForProjection,
+        captureAspect
+      );
+      if (!output?.svgState?.outerHTML) return null;
+
+      if (svgOverlayRef.current) {
+        svgOverlayRef.current.innerHTML = output.svgState.innerHTML || '';
+        if (output.svgState.viewBox) {
+          svgOverlayRef.current.setAttribute(
+            'viewBox',
+            output.svgState.viewBox
+          );
+        } else {
+          svgOverlayRef.current.removeAttribute('viewBox');
+        }
       }
 
-      const output = await computeThirdPartySvg(cfg, cameraForProjection);
-      if (!output?.svgString) return null;
-
-      await drawSvgToCanvas(canvas, output.svgString, {
-        background: output.backgroundColor || '#fcfcfa',
-      });
-      if (previewTextureRef.current) {
-        previewTextureRef.current.needsUpdate = true;
-      }
+      setSvgState(output.svgState);
 
       return output;
     },
-    [computeThirdPartySvg, getPreviewResolution, getThree]
+    [computeThirdPartySvg, getCaptureAspect, getThree]
   );
 
   const handleRefresh = useCallback(() => {
@@ -302,18 +297,47 @@ export default function PlotterTest() {
     );
   }, [computePlotterOutput, getThree]);
 
+  useEffect(() => {
+    const isTypingTarget = (target) => {
+      const element = target;
+      if (!element) return false;
+
+      const tagName = element.tagName?.toLowerCase();
+      return (
+        element.isContentEditable ||
+        tagName === 'input' ||
+        tagName === 'textarea' ||
+        tagName === 'select'
+      );
+    };
+
+    const onKeyDown = (event) => {
+      if (event.code !== 'Space' || event.repeat) return;
+      if (isTypingTarget(event.target)) return;
+
+      event.preventDefault();
+      handleRefresh();
+    };
+
+    window.addEventListener('keydown', onKeyDown);
+    return () => {
+      window.removeEventListener('keydown', onKeyDown);
+    };
+  }, [handleRefresh]);
+
   const handleExport = useCallback(
     async (snapshot) => {
       const cfg = snapshot || configRef.current;
       if (!cfg) return;
 
       const { camera } = getThree();
-      const output = await computeThirdPartySvg(cfg, camera);
-      if (!output?.svgString) return;
+      const captureAspect = getCaptureAspect(camera);
+      const output = await computeThirdPartySvg(cfg, camera, captureAspect);
+      if (!output?.svg) return;
 
-      downloadSvg(output.svgString, output.fileName);
+      downloadSvg(output.svg, output.fileName);
     },
-    [computeThirdPartySvg, getThree]
+    [computeThirdPartySvg, getCaptureAspect, getThree]
   );
 
   const config = usePlotterTestControls({
@@ -326,11 +350,12 @@ export default function PlotterTest() {
     [config.theme]
   );
 
+  const layout = useMemo(() => getViewportLayout(viewportSize), [viewportSize]);
+
   const sceneConfig = useMemo(
     () => ({
       autoRefresh: config.autoRefresh,
       theme: config.theme,
-      previewResolution: config.previewResolution,
       strokeWidth: config.strokeWidth,
       showSilhouettes: config.showSilhouettes,
       showEdges: config.showEdges,
@@ -358,11 +383,6 @@ export default function PlotterTest() {
       thirdPartySilhouetteMinArea: config.thirdPartySilhouetteMinArea,
       thirdPartySilhouetteNormalBuckets:
         config.thirdPartySilhouetteNormalBuckets,
-      panelScale: config.panelScale,
-      splitRatio: config.splitRatio,
-      paperWidthMm: config.paperWidthMm,
-      paperHeightMm: config.paperHeightMm,
-      marginMm: config.marginMm,
       precision: config.precision,
       exportName: config.exportName,
     }),
@@ -375,14 +395,9 @@ export default function PlotterTest() {
       config.lightX,
       config.lightY,
       config.lightZ,
-      config.marginMm,
       config.maxSpacing,
       config.minSpacing,
-      config.panelScale,
-      config.paperHeightMm,
-      config.paperWidthMm,
       config.precision,
-      config.previewResolution,
       config.rotX,
       config.rotY,
       config.rotZ,
@@ -392,7 +407,6 @@ export default function PlotterTest() {
       config.spaceX,
       config.spaceY,
       config.spaceZ,
-      config.splitRatio,
       config.strokeWidth,
       config.thirdPartyFullFrameBudgetMs,
       config.theme,
@@ -414,26 +428,20 @@ export default function PlotterTest() {
   }, [sceneConfig]);
 
   useEffect(() => {
-    applyLayerRecursive(sourceViewRef.current, SOURCE_LAYER);
-    applyLayerRecursive(outputViewRef.current, OUTPUT_LAYER);
-    applyLayerRecursive(sourceLightRef.current, SOURCE_LAYER);
-    applyLayerRecursive(outputLightRef.current, OUTPUT_LAYER);
-  }, []);
+    if (svgOverlayRef.current) {
+      svgOverlayRef.current.innerHTML = svgState.innerHTML || '';
+      if (svgState.viewBox) {
+        svgOverlayRef.current.setAttribute('viewBox', svgState.viewBox);
+      } else {
+        svgOverlayRef.current.removeAttribute('viewBox');
+      }
+    }
+  }, [svgState.innerHTML, svgState.viewBox]);
 
   useEffect(() => {
     if (!configRef.current) return;
 
     const colors = getThemeColors(configRef.current.theme);
-    const previewCanvas = previewCanvasRef.current;
-    const previewCtx = previewCanvas?.getContext('2d');
-    if (previewCtx && previewCanvas && !hasPreview) {
-      // Keep a visible paper placeholder before first plot render.
-      previewCtx.fillStyle = colors.paperBackground;
-      previewCtx.fillRect(0, 0, previewCanvas.width, previewCanvas.height);
-      if (previewTextureRef.current) {
-        previewTextureRef.current.needsUpdate = true;
-      }
-    }
 
     if (sourceAmbientLightRef.current) {
       sourceAmbientLightRef.current.intensity = colors.sourceAmbient;
@@ -453,17 +461,9 @@ export default function PlotterTest() {
     if (!configRef.current) return;
 
     const { gl, size, camera: activeCamera, scene } = state;
-    const outputCamera = outputRenderCameraRef.current;
-    if (!outputCamera) return;
 
-    const splitRatio = THREE.MathUtils.clamp(
-      configRef.current.splitRatio,
-      0.2,
-      0.8
-    );
-    const leftWidth = Math.max(1, Math.floor(size.width * splitRatio));
-    const rightWidth = Math.max(1, size.width - leftWidth);
-    const rightX = leftWidth;
+    const { leftWidth, rightWidth, rightX, viewportHeight } =
+      getViewportLayout(size);
 
     const originalAspect = activeCamera.aspect;
 
@@ -471,20 +471,19 @@ export default function PlotterTest() {
     gl.setScissorTest(true);
     gl.clear(true, true, true);
 
-    activeCamera.layers.set(SOURCE_LAYER);
-    activeCamera.aspect = leftWidth / size.height;
+    activeCamera.aspect = leftWidth / viewportHeight;
     activeCamera.updateProjectionMatrix();
-    gl.setViewport(0, 0, leftWidth, size.height);
-    gl.setScissor(0, 0, leftWidth, size.height);
+    gl.setViewport(0, 0, leftWidth, viewportHeight);
+    gl.setScissor(0, 0, leftWidth, viewportHeight);
     gl.render(scene, activeCamera);
 
-    gl.clearDepth();
-    outputCamera.layers.set(OUTPUT_LAYER);
-    outputCamera.aspect = rightWidth / size.height;
-    outputCamera.updateProjectionMatrix();
-    gl.setViewport(rightX, 0, rightWidth, size.height);
-    gl.setScissor(rightX, 0, rightWidth, size.height);
-    gl.render(scene, outputCamera);
+    const previousClearColor = gl.getClearColor(new THREE.Color());
+    const previousClearAlpha = gl.getClearAlpha();
+    gl.setViewport(rightX, 0, rightWidth, viewportHeight);
+    gl.setScissor(rightX, 0, rightWidth, viewportHeight);
+    gl.setClearColor(themeColors.background, 1);
+    gl.clear(true, true, true);
+    gl.setClearColor(previousClearColor, previousClearAlpha);
 
     // Draw a fixed black separator directly on top of both viewports.
     const dividerX = Math.max(
@@ -493,28 +492,18 @@ export default function PlotterTest() {
     );
     const dividerWidth = Math.min(VIEWPORT_DIVIDER_PX, size.width - dividerX);
     if (dividerWidth > 0) {
-      const previousClearColor = gl.getClearColor(new THREE.Color());
-      const previousClearAlpha = gl.getClearAlpha();
-      gl.setViewport(dividerX, 0, dividerWidth, size.height);
-      gl.setScissor(dividerX, 0, dividerWidth, size.height);
+      const dividerClearColor = gl.getClearColor(new THREE.Color());
+      const dividerClearAlpha = gl.getClearAlpha();
+      gl.setViewport(dividerX, 0, dividerWidth, viewportHeight);
+      gl.setScissor(dividerX, 0, dividerWidth, viewportHeight);
       gl.setClearColor('#000000', 1);
       gl.clear(true, false, false);
-      gl.setClearColor(previousClearColor, previousClearAlpha);
+      gl.setClearColor(dividerClearColor, dividerClearAlpha);
     }
 
-    activeCamera.layers.set(SOURCE_LAYER);
-    activeCamera.layers.enable(OUTPUT_LAYER);
     activeCamera.aspect = originalAspect;
     activeCamera.updateProjectionMatrix();
     gl.setScissorTest(false);
-
-    layerSyncTickRef.current += 1;
-    if (layerSyncTickRef.current % 90 === 0) {
-      applyLayerRecursive(sourceViewRef.current, SOURCE_LAYER);
-      applyLayerRecursive(outputViewRef.current, OUTPUT_LAYER);
-      applyLayerRecursive(sourceLightRef.current, SOURCE_LAYER);
-      applyLayerRecursive(outputLightRef.current, OUTPUT_LAYER);
-    }
   }, 1);
 
   return (
@@ -524,66 +513,87 @@ export default function PlotterTest() {
       <PerspectiveCamera makeDefault fov={45} position={[8, 6, 10]} />
       <CameraRig />
 
-      <group ref={sourceLightRef}>
-        <ambientLight
-          ref={sourceAmbientLightRef}
-          intensity={themeColors.sourceAmbient}
-        />
-        <pointLight
-          ref={sourcePointLightRef}
-          intensity={50}
-          position={[config.lightX, config.lightY, config.lightZ]}
-        />
-      </group>
+      <ambientLight
+        ref={sourceAmbientLightRef}
+        intensity={themeColors.sourceAmbient}
+      />
+      <pointLight
+        ref={sourcePointLightRef}
+        intensity={50}
+        position={[config.lightX, config.lightY, config.lightZ]}
+      />
 
-      <group ref={outputLightRef}>
-        <ambientLight intensity={0.95} />
-      </group>
-
-      <group ref={sourceViewRef}>
-        <group ref={sourceRef}>
-          <mesh position={[-4, 1.25, 0]}>
-            <coneGeometry args={[1.5, 2.5, 4]} />
-            <meshPhongMaterial color={0xff6644} flatShading shininess={0} />
-          </mesh>
-
-          <mesh position={[0, 1.25, 0]}>
-            <cylinderGeometry args={[1, 1, 2.5, 12]} />
-            <meshPhongMaterial color={0x44ff66} flatShading shininess={0} />
-          </mesh>
-
-          <mesh position={[4, 1.5, 0]}>
-            <icosahedronGeometry args={[1.5, 0]} />
-            <meshPhongMaterial color={0x4466ff} flatShading shininess={0} />
-          </mesh>
-
-          <gridHelper
-            args={[20, 20, themeColors.gridCenter, themeColors.gridLines]}
-          />
-        </group>
-      </group>
-
-      <group ref={outputViewRef}>
-        <mesh
-          scale={[config.panelScale, config.panelScale, 1]}
-          position={[0, 0, 0]}
-        >
-          <planeGeometry args={[1.2, 1.2]} />
-          <meshBasicMaterial map={previewTexture} toneMapped={false} />
+      <group ref={sourceRef}>
+        <mesh position={[-4, 1.25, 0]}>
+          <coneGeometry args={[1.5, 2.5, 4]} />
+          <meshPhongMaterial color={0xff6644} flatShading shininess={0} />
         </mesh>
 
-        {!hasPreview && (
-          <Text
-            position={[0, -config.panelScale * 0.56, 0.08]}
-            fontSize={0.08}
-            color={themeColors.canvasText}
-            anchorX="center"
-            anchorY="middle"
-          >
-            Click &quot;Render&quot; to generate
-          </Text>
-        )}
+        <mesh position={[0, 1.25, 0]}>
+          <cylinderGeometry args={[1, 1, 2.5, 12]} />
+          <meshPhongMaterial color={0x44ff66} flatShading shininess={0} />
+        </mesh>
+
+        <mesh position={[4, 1.5, 0]}>
+          <icosahedronGeometry args={[1.5, 0]} />
+          <meshPhongMaterial color={0x4466ff} flatShading shininess={0} />
+        </mesh>
+
+        <gridHelper
+          args={[20, 20, themeColors.gridCenter, themeColors.gridLines]}
+        />
       </group>
+
+      <Html fullscreen zIndexRange={[10, 0]}>
+        <div
+          style={{
+            position: 'absolute',
+            inset: 0,
+            pointerEvents: 'none',
+          }}
+        >
+          <div
+            style={{
+              position: 'absolute',
+              left: `${layout.rightX}px`,
+              top: 0,
+              width: `${layout.rightWidth}px`,
+              height: `${layout.viewportHeight}px`,
+              overflow: 'hidden',
+            }}
+          >
+            <svg
+              ref={svgOverlayRef}
+              xmlns="http://www.w3.org/2000/svg"
+              width={layout.rightWidth}
+              height={layout.viewportHeight}
+              viewBox={svgState.viewBox || undefined}
+              style={{
+                display: 'block',
+                width: '100%',
+                height: '100%',
+              }}
+            />
+
+            {!hasPreview ? (
+              <div
+                style={{
+                  position: 'absolute',
+                  left: '50%',
+                  top: '50%',
+                  transform: 'translate(-50%, -50%)',
+                  color: themeColors.canvasText,
+                  fontSize: '14px',
+                  letterSpacing: '0.02em',
+                  textAlign: 'center',
+                }}
+              >
+                Click &quot;Render&quot; to generate
+              </div>
+            ) : null}
+          </div>
+        </div>
+      </Html>
     </>
   );
 }

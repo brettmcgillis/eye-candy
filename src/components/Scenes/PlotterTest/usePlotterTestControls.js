@@ -4,13 +4,6 @@ import { useEffect, useRef } from 'react';
 
 import { localEnv } from '../../../utils/appUtils';
 
-const PAPER_PRESETS = {
-  A5: { widthMm: 148, heightMm: 210 },
-  A4: { widthMm: 210, heightMm: 297 },
-  Letter: { widthMm: 216, heightMm: 279 },
-  Tabloid: { widthMm: 279, heightMm: 432 },
-};
-
 const DEFAULTS = {
   theme: 'dark',
   autoRefresh: false,
@@ -41,13 +34,6 @@ const DEFAULTS = {
   thirdPartySilhouetteNormalBuckets: 12,
   strokeWidth: 0.8,
   precision: 2,
-  previewResolution: 1024,
-  panelScale: 2.35,
-  splitRatio: 0.5,
-  paperPreset: 'A4',
-  paperWidthMm: PAPER_PRESETS.A4.widthMm,
-  paperHeightMm: PAPER_PRESETS.A4.heightMm,
-  marginMm: 12,
   exportName: 'plotter-test',
 };
 
@@ -55,7 +41,7 @@ export default function usePlotterTestControls({ onExport, onRefresh }) {
   const isLocal = localEnv() || import.meta.env.DEV;
   const controlsSnapshotRef = useRef(DEFAULTS);
 
-  const [config, setControls] = useControls(
+  const [config] = useControls(
     'Plotter Test',
     () => ({
       Theme: folder(
@@ -150,13 +136,6 @@ export default function usePlotterTestControls({ onExport, onRefresh }) {
             min: 0,
             max: 4,
             step: 1,
-          },
-          previewResolution: {
-            label: 'Final Preview Resolution (px)',
-            value: DEFAULTS.previewResolution,
-            min: 256,
-            max: 2048,
-            step: 128,
           },
         },
         { collapsed: true }
@@ -298,62 +277,9 @@ export default function usePlotterTestControls({ onExport, onRefresh }) {
             label: 'Auto Refresh While Orbiting',
             value: DEFAULTS.autoRefresh,
           },
-          panelScale: {
-            label: 'Right Panel Scale',
-            value: DEFAULTS.panelScale,
-            min: 1,
-            max: 5,
-            step: 0.05,
-          },
-          splitRatio: {
-            label: 'Left/Right Width Split',
-            value: DEFAULTS.splitRatio,
-            min: 0.25,
-            max: 0.75,
-            step: 0.01,
-          },
           refreshPreview: button(() => {
             onRefresh?.();
           }),
-        },
-        { collapsed: true }
-      ),
-      'Paper + Plotter Limits': folder(
-        {
-          paperPreset: {
-            label: 'Paper Size Preset',
-            value: DEFAULTS.paperPreset,
-            options: Object.keys(PAPER_PRESETS),
-            onChange: (next) => {
-              const preset = PAPER_PRESETS[next];
-              if (!preset) return;
-              setControls({
-                paperWidthMm: preset.widthMm,
-                paperHeightMm: preset.heightMm,
-              });
-            },
-          },
-          paperWidthMm: {
-            label: 'Paper Width (mm)',
-            value: DEFAULTS.paperWidthMm,
-            min: 50,
-            max: 1200,
-            step: 1,
-          },
-          paperHeightMm: {
-            label: 'Paper Height (mm)',
-            value: DEFAULTS.paperHeightMm,
-            min: 50,
-            max: 1200,
-            step: 1,
-          },
-          marginMm: {
-            label: 'Margin (mm)',
-            value: DEFAULTS.marginMm,
-            min: 0,
-            max: 80,
-            step: 1,
-          },
         },
         { collapsed: true }
       ),

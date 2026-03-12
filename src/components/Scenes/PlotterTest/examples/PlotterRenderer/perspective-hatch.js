@@ -134,13 +134,6 @@ export function generatePerspectiveHatches(region, camera, options = {}) {
   const wy = ay / total;
   const wz = az / total;
 
-  // Debug: Log first 5 regions
-  if (region.regionId <= 5) {
-    console.log(
-      `[Hatch] Region ${region.regionId}: viewNormal=(${normal.x.toFixed(2)}, ${normal.y.toFixed(2)}, ${normal.z.toFixed(2)}) -> worldNormal=(${qx}, ${qy}, ${qz}) -> weights=(wx:${wx.toFixed(2)}, wy:${wy.toFixed(2)}, wz:${wz.toFixed(2)})`
-    );
-  }
-
   // Get settings for each axis (defaults)
   const xSettings = axisSettings.x || { rotation: 0, spacing: baseSpacing };
   const ySettings = axisSettings.y || { rotation: 0, spacing: baseSpacing };

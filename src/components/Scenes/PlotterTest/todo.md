@@ -27,11 +27,17 @@
 - [x] Toggle to represent scene shadows using hatching
 - [ ] Upgrade comparison to true dual synchronized viewports/canvases, currently need to press a button or space to re-render. would be nice to do it every few frames automatically, so i can reorient the scene or toggle plotter renderer controls and see live updates. three-plotter-renderer supports this type of async rendering.
 - [x] Can we update the plotter renderer to do a second opposing hatching pass, to get crosshatching? If so, add a control to enable, disable second pass
+- [ ] Test with more complex geometries. ex loglow, newScene
+- [ ] Test with particle cloud.
+- [ ] Test with neural network.
+- [ ] Refactor out test scene as POC that we can use any scene on the left side.
+- [ ] Once we know we can render any scene left, lets add a scene select for other webgl scenes and test those.
+- [ ] Pretty sure we can simplify the component internals once we get the live refresh up and running too. Refresh on resize and refresh on mount will be unecessary.
 
 # // Bugs
 
-- [ ] Update scene to call refresh render on mount so we dont have to manually do it
+- [x] Update scene to call refresh render on mount so we dont have to manually do it
 - [ ] Refreshing the render seems to be locking the browser. example, click to drag using orbit controls, press space bar to refresh AND keep dragging mouse. Result: test scene seems to stutter a bit as we orbit. Suspicion: refresh render is not truely async and is blocking
-- [ ] Remove all the debug console logging around plot rendering
-- [ ] Plot render looks weird on window resize, might need to refresh render on resize.
-- [ ] On export I am seeing paths that extend way beyond the bounds of the scene. Example: the edges of the plane are larger than the silhouette of the plane.
+- [x] Remove all the debug console logging around plot rendering
+- [x] Plot render looks weird on window resize, might need to refresh render on resize.
+- [ ] On export I am seeing paths that extend way beyond the bounds of the scene. Example: the edges of the plane are larger than the silhouette of the plane. The silhouette seems to be obeying what i see in the plot render, but the edges extend beyond.

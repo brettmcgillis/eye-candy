@@ -74,6 +74,8 @@ export default function PlotterTest() {
   const plotterRendererRef = useRef(null);
   const configRef = useRef(null);
   const isMountedRef = useRef(true);
+  const initialRefreshRequestedRef = useRef(false);
+  const lastViewportSizeRef = useRef({ width: null, height: null });
   const getThree = useThree((state) => state.get);
   const viewportSize = useThree((state) => state.size);
   const [hasPreview, setHasPreview] = useState(false);
@@ -287,6 +289,10 @@ export default function PlotterTest() {
         }
       }
 
+      if (!isMountedRef.current) {
+        return output;
+      }
+
       setSvgState(output.svgState);
 
       return output;
@@ -298,7 +304,7 @@ export default function PlotterTest() {
     if (!configRef.current) return;
     computePlotterOutput(configRef.current, getThree().camera).then(
       (output) => {
-        if (output) {
+        if (output && isMountedRef.current) {
           setHasPreview(true);
         }
       }
@@ -386,6 +392,7 @@ export default function PlotterTest() {
       lightZ: config.lightZ,
       lightIntensity: config.lightIntensity,
       hatchMaxSegments: config.hatchMaxSegments,
+      thirdPartyInteractiveDebounceMs: config.thirdPartyInteractiveDebounceMs,
       thirdPartyFullFrameBudgetMs: config.thirdPartyFullFrameBudgetMs,
       thirdPartySmoothThreshold: config.thirdPartySmoothThreshold,
       thirdPartySilhouetteSimplifyTolerance:
@@ -420,6 +427,7 @@ export default function PlotterTest() {
       config.spaceY,
       config.spaceZ,
       config.strokeWidth,
+      config.thirdPartyInteractiveDebounceMs,
       config.thirdPartyFullFrameBudgetMs,
       config.theme,
       config.thirdPartySilhouetteMinArea,
@@ -438,6 +446,54 @@ export default function PlotterTest() {
       isMountedRef.current = false;
     };
   }, [sceneConfig]);
+
+  useEffect(() => {
+    if (initialRefreshRequestedRef.current || !configRef.current) {
+      return undefined;
+    }
+
+    initialRefreshRequestedRef.current = true;
+    const frameId = window.requestAnimationFrame(() => {
+      handleRefresh();
+    });
+
+    return () => {
+      window.cancelAnimationFrame(frameId);
+    };
+  }, [handleRefresh, sceneConfig]);
+
+  useEffect(() => {
+    const width = Math.round(Number(viewportSize?.width) || 0);
+    const height = Math.round(Number(viewportSize?.height) || 0);
+
+    if (!width || !height) {
+      return undefined;
+    }
+
+    const previousSize = lastViewportSizeRef.current;
+    if (previousSize.width === null || previousSize.height === null) {
+      lastViewportSizeRef.current = { width, height };
+      return undefined;
+    }
+
+    if (previousSize.width === width && previousSize.height === height) {
+      return undefined;
+    }
+
+    lastViewportSizeRef.current = { width, height };
+
+    const debounceMs = Math.max(
+      0,
+      Number(configRef.current?.thirdPartyInteractiveDebounceMs) || 0
+    );
+    const timeoutId = window.setTimeout(() => {
+      handleRefresh();
+    }, debounceMs);
+
+    return () => {
+      window.clearTimeout(timeoutId);
+    };
+  }, [handleRefresh, viewportSize?.height, viewportSize?.width]);
 
   useEffect(() => {
     if (svgOverlayRef.current) {

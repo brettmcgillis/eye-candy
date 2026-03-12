@@ -200,9 +200,6 @@ export class Optimize {
       }
     }
 
-    console.log(
-      `[JS] Optimize: ${sb.length + segs.length} -> ${segs.length} segments`
-    );
     return segs;
   }
 }

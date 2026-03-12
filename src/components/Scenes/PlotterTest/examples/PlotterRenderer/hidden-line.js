@@ -286,10 +286,6 @@ export function classifyEdges(edges, cameraPosition, smoothThreshold = 0.99) {
     }
   }
 
-  console.log(
-    `classifyEdges: ${profiles.length} profiles, ${smoothFiltered.length} smooth/crease edges`
-  );
-
   return { profiles, smoothFiltered };
 }
 
@@ -560,10 +556,6 @@ export function splitAtIntersections(edges) {
     }
   }
 
-  console.log(
-    `T-junction detection: ${potentialStragglers.size} potential straggler edges`
-  );
-
   // Split edges at recorded points
   const result = [];
 
@@ -703,13 +695,6 @@ export function testOcclusionDepthBuffer(
     }
   }
 
-  // Debug: sample center of depth buffer
-  const centerIdx =
-    Math.floor(height / 2) * width * 4 + Math.floor(width / 2) * 4;
-  console.log(
-    `Depth buffer center pixel (RGBA): ${depthData[centerIdx]}, ${depthData[centerIdx + 1]}, ${depthData[centerIdx + 2]}, ${depthData[centerIdx + 3]}`
-  );
-
   if (!hasData) {
     console.warn('Could not read depth buffer, falling back to all-visible');
     renderTarget.dispose();
@@ -758,9 +743,6 @@ export function testOcclusionDepthBuffer(
   // @ts-ignore
   const { far } = camera;
 
-  // Debug: log first few depth comparisons
-  let debugCount = 0;
-
   for (const edge of edges) {
     // Get screen-space coordinates of edge midpoint
     const midX = (edge.a.x + edge.b.x) / 2;
@@ -799,14 +781,6 @@ export function testOcclusionDepthBuffer(
 
     // Convert to 0-1 range matching MeshDepthMaterial
     const expectedDepth = (viewZ - near) / (far - near);
-
-    // Debug logging
-    if (debugCount < 10) {
-      console.log(
-        `Edge ${debugCount}: sample=${sampledDepth.toFixed(4)}, expected=${expectedDepth.toFixed(4)}, diff=${(sampledDepth - expectedDepth).toFixed(6)}`
-      );
-      debugCount++;
-    }
 
     // Compare: edge is visible if sampled depth >= expected depth (within tolerance)
     // sampledDepth is depth of closest surface at this pixel
@@ -1294,9 +1268,6 @@ export function filterSmoothSplitEdges(
     }
   }
 
-  console.log(
-    `Geometric straggler filter: removed ${removedCount} coplanar edges`
-  );
   return filteredEdges;
 }
 /**
@@ -1325,8 +1296,6 @@ export function testOcclusionMath(edges, projectedFaces, camera) {
  */
 function testOcclusionMathJS(edges, projectedFaces, cameraPos, viewMatrix) {
   const visibleEdges = [];
-  let debugHitCount = 0;
-  let debugOccludedCount = 0;
 
   for (const edge of edges) {
     // Get midpoint in 2D and 3D
@@ -1378,10 +1347,8 @@ function testOcclusionMathJS(edges, projectedFaces, cameraPos, viewMatrix) {
       // If face is closer → edge is occluded
       if (faceDepthAtPoint < edgeDepth - 0.001) {
         occluded = true;
-        debugOccludedCount++;
         break;
       }
-      debugHitCount++;
     }
 
     if (!occluded) {
@@ -1392,9 +1359,6 @@ function testOcclusionMathJS(edges, projectedFaces, cameraPos, viewMatrix) {
     }
   }
 
-  console.log(
-    `[JS] Occlusion debug: ${debugHitCount} point-in-triangle hits, ${debugOccludedCount} occluded`
-  );
   return visibleEdges;
 }
 
@@ -1570,7 +1534,6 @@ export function cleanupOrphanedEdges(
     }
   }
 
-  console.log(`Edge cleanup: found ${orphans.length} orphaned endpoints`);
   if (orphans.length === 0) return edges;
 
   // Line-line intersection helper
@@ -1698,10 +1661,6 @@ export function cleanupOrphanedEdges(
     }
   }
 
-  console.log(
-    `Edge cleanup: extended ${extensionsCount} pairs of edges to intersections`
-  );
-
   // Calculate average edge length for threshold
   let totalLength = 0;
   for (const edge of edges) {
@@ -1711,10 +1670,6 @@ export function cleanupOrphanedEdges(
   }
   const avgEdgeLength = totalLength / edges.length;
   const snapThreshold = avgEdgeLength / 8;
-
-  console.log(
-    `Edge cleanup: average edge length = ${avgEdgeLength.toFixed(2)}, snap threshold = ${snapThreshold.toFixed(2)}`
-  );
 
   // Rebuild orphan list after extensions
   const finalVertices = new Map();
@@ -1737,10 +1692,6 @@ export function cleanupOrphanedEdges(
       finalOrphans.push({ key, ...vertex.edges[0], point: vertex.point });
     }
   }
-
-  console.log(
-    `Edge cleanup: ${finalOrphans.length} orphaned endpoints before snap pass`
-  );
 
   // Snap nearby orphans together
   let snapCount = 0;
@@ -1796,12 +1747,7 @@ export function cleanupOrphanedEdges(
     }
   }
 
-  console.log(`Edge cleanup: snapped ${snapCount} pairs of nearby orphans`);
-
   // Final count
-  const remainingOrphans = finalOrphans.length - snapCount * 2;
-  console.log(`Edge cleanup: ${remainingOrphans} orphaned endpoints remaining`);
-
   return edges;
 }
 
@@ -1837,13 +1783,6 @@ export function removeIsolatedEdges(edges, tolerance = 1.0) {
     // Keep edge if at least one endpoint has 2+ connections
     return connectionsA >= 2 || connectionsB >= 2;
   });
-
-  const removed = edges.length - filtered.length;
-  if (removed > 0) {
-    console.log(
-      `Edge cleanup: removed ${removed} isolated edges (orphaned at both ends)`
-    );
-  }
 
   return filtered;
 }
@@ -1913,48 +1852,32 @@ export function computeHiddenLines(mesh, camera, scene, options = {}) {
     renderer = null,
   } = options;
 
-  console.time('extractEdges');
   const edges3d = extractEdges(mesh, camera.position);
-  console.timeEnd('extractEdges');
-  console.log(`Extracted ${edges3d.length} edges`);
 
-  console.time('filterBackfacing');
   const frontEdges = filterBackfacing(edges3d, camera.position);
-  console.timeEnd('filterBackfacing');
-  console.log(`After backface filter: ${frontEdges.length} edges`);
 
-  console.time('classifyEdges');
   const { profiles, smoothFiltered } = classifyEdges(
     frontEdges,
     camera.position,
     smoothThreshold
   );
-  console.timeEnd('classifyEdges');
-  console.log(
-    `Profiles: ${profiles.length}, Smooth edges: ${smoothFiltered.length}`
-  );
 
   // Combine profile and smooth edges for processing
   const allEdges = [...profiles, ...smoothFiltered];
 
-  console.time('projectEdges');
   const edges2d = projectEdges(allEdges, camera, width, height);
-  console.timeEnd('projectEdges');
 
   // Mark profile edges
   for (let i = 0; i < profiles.length; i++) {
     edges2d[i].isProfile = true;
   }
 
-  console.time('spatialHash');
   const cellSize = Math.max(width, height) / gridSize;
   const hash = new SpatialHash(cellSize);
   for (const edge of edges2d) {
     hash.insert(edge);
   }
-  console.timeEnd('spatialHash');
 
-  console.time('splitIntersections');
   // Process each cell
   const processedEdges = new Set();
   const splitEdges = [];
@@ -1965,15 +1888,11 @@ export function computeHiddenLines(mesh, camera, scene, options = {}) {
     splitEdges.push(...split);
     for (const e of cellEdges) processedEdges.add(e);
   }
-  console.timeEnd('splitIntersections');
-  console.log(`After splitting: ${splitEdges.length} edges`);
 
   let visibleEdges;
   if (skipOcclusion) {
-    console.log('Skipping occlusion test (debug mode)');
     visibleEdges = splitEdges;
   } else if (renderer) {
-    console.time('testOcclusion (face ID buffer)');
     // Separate profile and non-profile edges
     const profileEdges = splitEdges.filter((e) => e.isProfile);
     const otherEdges = splitEdges.filter((e) => !e.isProfile);
@@ -1993,22 +1912,13 @@ export function computeHiddenLines(mesh, camera, scene, options = {}) {
     );
 
     visibleEdges = [...profileEdges, ...visibleOtherEdges];
-    console.timeEnd('testOcclusion (face ID buffer)');
   } else {
-    console.time('testOcclusion (raycaster - slow)');
     visibleEdges = testOcclusion(splitEdges, scene, camera, occlusionEpsilon);
-    console.timeEnd('testOcclusion (raycaster - slow)');
   }
-  console.log(`Visible edges: ${visibleEdges.length}`);
 
-  console.time('optimize');
   const optimizedEdges = optimizeEdges(visibleEdges);
-  console.timeEnd('optimize');
 
-  console.time('cleanup orphans');
   const finalEdges = cleanupOrphanedEdges(optimizedEdges);
-  console.timeEnd('cleanup orphans');
-  console.log(`Final edges: ${finalEdges.length}`);
 
   return {
     edges: finalEdges,
@@ -2062,29 +1972,20 @@ export function computeHiddenLinesMultiple(
     allEdges3d.push(...edges3d);
   }
 
-  console.log(
-    `Extracted ${allEdges3d.length} edges from ${meshes.length} meshes`
-  );
-
   // Classify edges: identify profiles and filter smooth edges
   const { profiles, smoothFiltered } = classifyEdges(
     allEdges3d,
     camera.position,
     smoothThreshold
   );
-  console.log(
-    `Profiles: ${profiles.length}, Crease edges: ${smoothFiltered.length}`
-  );
 
   const allEdges = [...profiles, ...smoothFiltered];
-  console.log(`After smooth filter: ${allEdges.length} edges`);
 
   // Project to 2D (with internal scale for precision)
   const edges2d = projectEdges(allEdges, camera, width, height, internalScale);
 
   // Process additional hatch edges if provided
   if (options.hatchEdges && options.hatchEdges.length > 0) {
-    console.log(`Processing ${options.hatchEdges.length} hatch edges...`);
     // Filter backfacing hatch edges
     let visibleHatch = filterBackfacing(options.hatchEdges, camera.position);
 
@@ -2101,9 +2002,6 @@ export function computeHiddenLinesMultiple(
         const dot = edge.normal1.dot(viewDir);
         return Math.abs(dot) >= threshold;
       });
-      console.log(
-        `Density filter: kept ${visibleHatch.length} hatch edges (threshold ${threshold})`
-      );
     }
 
     // Project
@@ -2120,18 +2018,13 @@ export function computeHiddenLinesMultiple(
 
     // Add to main list
     edges2d.push(...hatch2d);
-    console.log(`Added ${hatch2d.length} visible hatch edges`);
   }
 
   // Mark profile edges
   // Split all edges at intersections (direct O(n²) comparison - no spatial hash)
-  console.time('splitIntersections');
   const splitEdges = splitAtIntersections(edges2d);
-  console.timeEnd('splitIntersections');
-  console.log(`After splitting: ${splitEdges.length} edges`);
 
   // Build projected faces array for math occlusion
-  console.time('buildProjectedFaces');
   /** @type {ProjectedFace[]} */
   const projectedFaces = [];
   const cameraPos = camera.position;
@@ -2229,51 +2122,37 @@ export function computeHiddenLinesMultiple(
       });
     }
   }
-  console.timeEnd('buildProjectedFaces');
-  console.log(`Built ${projectedFaces.length} projected faces for occlusion`);
 
   // Classify silhouette edges (edges that border the void) - BEFORE cleanup/optimization
-  console.time('classifySilhouettes');
   classifySilhouettes(splitEdges, projectedFaces);
-  console.timeEnd('classifySilhouettes');
 
   // Geometric straggler filter: remove edges lying between coplanar faces
-  console.time('filterSmoothSplitEdges');
   const smoothFilteredEdges = filterSmoothSplitEdges(
     splitEdges,
     projectedFaces,
     smoothThreshold,
     distanceThreshold
   );
-  console.timeEnd('filterSmoothSplitEdges');
 
   // Occlusion using pure math
   let visibleEdges;
   if (skipOcclusion) {
     visibleEdges = smoothFilteredEdges;
   } else {
-    console.time('testOcclusion (math)');
     // Test ALL edges through occlusion (no special treatment for profiles)
     visibleEdges = testOcclusionMath(
       smoothFilteredEdges,
       projectedFaces,
       camera
     );
-    console.timeEnd('testOcclusion (math)');
   }
-  console.log(`Visible edges: ${visibleEdges.length}`);
 
-  console.time('optimize');
   const optimizedEdges = optimizeEdges(visibleEdges);
-  console.timeEnd('optimize');
 
-  console.time('cleanup orphans');
   const cleanedEdges = cleanupOrphanedEdges(optimizedEdges);
-  console.timeEnd('cleanup orphans');
 
   // Remove completely isolated edges (orphaned at both ends)
   const filteredEdges = removeIsolatedEdges(cleanedEdges);
-  console.log(`Final edges before optimization: ${filteredEdges.length}`);
 
   // Run through Optimize.js
   let optimizedFinal = filteredEdges;
@@ -2286,11 +2165,6 @@ export function computeHiddenLinesMultiple(
     }
     const avgLen = totalLen / filteredEdges.length;
     const smallDist = avgLen / 10;
-    console.log(
-      `Optimization: avgLen=${avgLen.toFixed(2)}, trim limit=${smallDist.toFixed(2)}`
-    );
-
-    console.time('Optimize.segments');
     // @ts-ignore - _segments is private but we need the raw objects to preserve metadata
     optimizedFinal = Optimize.segments(
       filteredEdges,
@@ -2301,8 +2175,6 @@ export function computeHiddenLinesMultiple(
       false,
       false
     )._segments;
-    console.timeEnd('Optimize.segments');
-    console.log(`After optimization: ${optimizedFinal.length} edges`);
   }
 
   // Scale edges back down to original coordinate space
@@ -2378,8 +2250,6 @@ function classifySilhouettes(edges, projectedFaces) {
     edge.isSilhouette = !leftHit || !rightHit;
   }
 
-  const silCount = edges.filter((e) => e.isSilhouette).length;
-  console.log(`Classified ${silCount} silhouette edges out of ${edges.length}`);
 }
 
 /**

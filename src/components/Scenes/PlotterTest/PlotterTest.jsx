@@ -8,10 +8,10 @@ import React, {
   useState,
 } from 'react';
 
-import { Html, PerspectiveCamera } from '@react-three/drei';
+import { Html } from '@react-three/drei';
 import { useFrame, useThree } from '@react-three/fiber';
 
-import CameraRig from '../../rigging/CameraRig';
+import TestScene from './TestScene';
 import { PlotterRenderer } from './examples/PlotterRenderer/plotter-renderer';
 import downloadSvg from './export/downloadSvg';
 import usePlotterTestControls from './usePlotterTestControls';
@@ -67,9 +67,6 @@ function extractSvgMarkup(domElement) {
 }
 
 export default function PlotterTest() {
-  const sourceRef = useRef();
-  const sourceAmbientLightRef = useRef();
-  const sourcePointLightRef = useRef();
   const svgOverlayRef = useRef(null);
   const plotterRendererRef = useRef(null);
   const configRef = useRef(null);
@@ -506,25 +503,6 @@ export default function PlotterTest() {
     }
   }, [svgState.innerHTML, svgState.viewBox]);
 
-  useEffect(() => {
-    if (!configRef.current) return;
-
-    const colors = getThemeColors(configRef.current.theme);
-
-    if (sourceAmbientLightRef.current) {
-      sourceAmbientLightRef.current.intensity = colors.sourceAmbient;
-    }
-
-    if (sourcePointLightRef.current) {
-      sourcePointLightRef.current.position.set(
-        configRef.current.lightX,
-        configRef.current.lightY,
-        configRef.current.lightZ
-      );
-      sourcePointLightRef.current.intensity = configRef.current.lightIntensity;
-    }
-  }, [hasPreview, sceneConfig]);
-
   useFrame((state) => {
     if (!configRef.current) return;
 
@@ -577,58 +555,7 @@ export default function PlotterTest() {
   return (
     <>
       <color attach="background" args={[themeColors.background]} />
-
-      <PerspectiveCamera makeDefault fov={45} position={[8, 6, 10]} />
-      <CameraRig />
-
-      <ambientLight
-        ref={sourceAmbientLightRef}
-        intensity={themeColors.sourceAmbient}
-      />
-      <pointLight
-        ref={sourcePointLightRef}
-        castShadow
-        intensity={50}
-        position={[config.lightX, config.lightY, config.lightZ]}
-        shadow-mapSize-width={2048}
-        shadow-mapSize-height={2048}
-        shadow-bias={-0.0001}
-      />
-
-      <group ref={sourceRef}>
-        <mesh castShadow position={[-3, 1.25, -3]}>
-          <coneGeometry args={[1.5, 2.5, 4]} />
-          <meshPhongMaterial color={0xff6644} flatShading shininess={0} />
-        </mesh>
-
-        <mesh castShadow position={[3, 1.25, -3]}>
-          <cylinderGeometry args={[1, 1, 2.5, 12]} />
-          <meshPhongMaterial color={0x44ff66} flatShading shininess={0} />
-        </mesh>
-
-        <mesh castShadow position={[-3, 1.25, 3]}>
-          <sphereGeometry args={[1.25, 18, 12]} />
-          <meshPhongMaterial color={0xffcc44} flatShading shininess={0} />
-        </mesh>
-
-        <mesh castShadow position={[3, 1.5, 3]}>
-          <icosahedronGeometry args={[1.5, 0]} />
-          <meshPhongMaterial color={0x4466ff} flatShading shininess={0} />
-        </mesh>
-
-        <mesh
-          receiveShadow
-          rotation={[-Math.PI / 2, 0, 0]}
-          position={[0, -0.02, 0]}
-        >
-          <planeGeometry args={[20, 20, 1, 1]} />
-          <meshPhongMaterial color={0xb7b7b7} shininess={0} />
-        </mesh>
-
-        <gridHelper
-          args={[20, 20, themeColors.gridCenter, themeColors.gridLines]}
-        />
-      </group>
+      <TestScene />
 
       <Html
         fullscreen
@@ -679,7 +606,7 @@ export default function PlotterTest() {
                   textAlign: 'center',
                 }}
               >
-                Click &quot;Render&quot; to generate
+                Click &quot;refreshRender&quot; to generate
               </div>
             ) : null}
           </div>

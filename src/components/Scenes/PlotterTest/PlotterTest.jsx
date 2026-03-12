@@ -523,24 +523,42 @@ export default function PlotterTest() {
       />
       <pointLight
         ref={sourcePointLightRef}
+        castShadow
         intensity={50}
         position={[config.lightX, config.lightY, config.lightZ]}
+        shadow-mapSize-width={2048}
+        shadow-mapSize-height={2048}
+        shadow-bias={-0.0001}
       />
 
       <group ref={sourceRef}>
-        <mesh position={[-4, 1.25, 0]}>
+        <mesh castShadow position={[-3, 1.25, -3]}>
           <coneGeometry args={[1.5, 2.5, 4]} />
           <meshPhongMaterial color={0xff6644} flatShading shininess={0} />
         </mesh>
 
-        <mesh position={[0, 1.25, 0]}>
+        <mesh castShadow position={[3, 1.25, -3]}>
           <cylinderGeometry args={[1, 1, 2.5, 12]} />
           <meshPhongMaterial color={0x44ff66} flatShading shininess={0} />
         </mesh>
 
-        <mesh position={[4, 1.5, 0]}>
+        <mesh castShadow position={[-3, 1.25, 3]}>
+          <sphereGeometry args={[1.25, 18, 12]} />
+          <meshPhongMaterial color={0xffcc44} flatShading shininess={0} />
+        </mesh>
+
+        <mesh castShadow position={[3, 1.5, 3]}>
           <icosahedronGeometry args={[1.5, 0]} />
           <meshPhongMaterial color={0x4466ff} flatShading shininess={0} />
+        </mesh>
+
+        <mesh
+          receiveShadow
+          rotation={[-Math.PI / 2, 0, 0]}
+          position={[0, -0.02, 0]}
+        >
+          <planeGeometry args={[20, 20, 1, 1]} />
+          <meshPhongMaterial color={0xb7b7b7} shininess={0} />
         </mesh>
 
         <gridHelper

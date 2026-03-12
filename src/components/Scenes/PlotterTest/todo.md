@@ -33,6 +33,7 @@
 - [ ] Refactor out test scene as POC that we can use any scene on the left side.
 - [ ] Once we know we can render any scene left, lets add a scene select for other webgl scenes and test those.
 - [ ] Pretty sure we can simplify the component internals once we get the live refresh up and running too. Refresh on resize and refresh on mount will be unecessary.
+- [ ] Consider adding a control for "guidelines". When enabled show lines at the 1/3 points of the left panel to aid in aligning the scene for rendering on the right panel, similar to the line we display down the center of the screen.
 
 # // Bugs
 

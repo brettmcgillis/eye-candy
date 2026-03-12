@@ -96,21 +96,26 @@ function useParticleLabControls() {
       ),
       Transform: folder(
         {
-          alignX: { value: 0, min: -Math.PI, max: Math.PI, step: 0.01 },
-          alignY: { value: 0, min: -Math.PI, max: Math.PI, step: 0.01 },
-          rotationSpeedX: {
+          rotationX: {
             label: 'Rotation X',
-            value: 0.0033,
-            min: -0.05,
-            max: 0.05,
-            step: 0.0001,
+            value: 0,
+            min: 0,
+            max: 360,
+            step: 1,
           },
-          rotationSpeedY: {
+          rotationY: {
             label: 'Rotation Y',
             value: 0,
-            min: -0.05,
-            max: 0.05,
-            step: 0.0001,
+            min: 0,
+            max: 360,
+            step: 1,
+          },
+          rotationZ: {
+            label: 'Rotation Z',
+            value: 0,
+            min: 0,
+            max: 360,
+            step: 1,
           },
         },
         { collapsed: true }
@@ -174,6 +179,11 @@ function useParticleLabControls() {
     ...baseControls,
     params: resolvedParams,
     paramsKey,
+    rotationRadians: {
+      x: THREE.MathUtils.degToRad(baseControls.rotationX),
+      y: THREE.MathUtils.degToRad(baseControls.rotationY),
+      z: THREE.MathUtils.degToRad(baseControls.rotationZ),
+    },
   };
 }
 
@@ -219,11 +229,6 @@ function ParticleCloud({ config }) {
     const alignedPositions = new Float32Array(rawPositions.length);
     alignedPositionsRef.current = alignedPositions;
 
-    const matrix = new THREE.Matrix4().makeRotationFromEuler(
-      new THREE.Euler(config.alignX, config.alignY, 0, 'XYZ')
-    );
-    const m = matrix.elements;
-
     const c1 = new THREE.Color(config.color1);
     const c2 = new THREE.Color(config.color2);
     const c3 = new THREE.Color(config.color3);
@@ -233,9 +238,9 @@ function ParticleCloud({ config }) {
       const by = (rawPositions[i + 1] - centroid.y) * currentScaleFactor;
       const bz = (rawPositions[i + 2] - centroid.z) * currentScaleFactor;
 
-      alignedPositions[i] = m[0] * bx + m[4] * by + m[8] * bz;
-      alignedPositions[i + 1] = m[1] * bx + m[5] * by + m[9] * bz;
-      alignedPositions[i + 2] = m[2] * bx + m[6] * by + m[10] * bz;
+      alignedPositions[i] = bx;
+      alignedPositions[i + 1] = by;
+      alignedPositions[i + 2] = bz;
 
       const distNorm = Math.sqrt(bx * bx + by * by + bz * bz) / 15.0;
       const timeNorm = i / 3 / actualCount;
@@ -269,14 +274,12 @@ function ParticleCloud({ config }) {
     config.algorithm,
     config.paramsKey,
     config.pointsCount,
-    config.alignX,
-    config.alignY,
     config.color1,
     config.color2,
     config.color3,
   ]);
 
-  useFrame((_, delta) => {
+  useFrame(() => {
     const points = pointsRef.current;
     const geometry = geometryRef.current;
     const alignedPositions = alignedPositionsRef.current;
@@ -341,9 +344,6 @@ function ParticleCloud({ config }) {
       positionAttr.needsUpdate = true;
       wasAnimatingRef.current = false;
     }
-
-    points.rotation.y += config.rotationSpeedX * (delta * 60);
-    points.rotation.x += config.rotationSpeedY * (delta * 60);
   });
 
   useEffect(() => {
@@ -354,7 +354,14 @@ function ParticleCloud({ config }) {
   }, [texture]);
 
   return (
-    <points ref={pointsRef}>
+    <points
+      ref={pointsRef}
+      rotation={[
+        config.rotationRadians.x,
+        config.rotationRadians.y,
+        config.rotationRadians.z,
+      ]}
+    >
       <bufferGeometry ref={geometryRef} />
       <pointsMaterial
         size={config.pointSize}

@@ -38,6 +38,12 @@
   - Compact chaotic clover-like structures that rotate well.
 - [x] Sprott Systems (A/B/C/... families)
   - Many compact equations; strong morphology variety for algorithm roulette.
+- [x] Lorenz 83
+  - Seasonal-chaos style Lorenz variant with broad folded sheets.
+- [x] Three-Scroll Unified Chaotic System
+  - Multi-scroll chaotic structure with dramatic lobe transitions.
+- [x] Chen-Lee
+  - Alternative Chen-family formulation matching the DynamicMath equation set.
 - [ ] Ikeda Map (2D map, embed as z modulation)
   - Photon-orbit feel with rich output and low math cost.
 - [ ] Gumowski-Mira Map (2D, lift to 3D)
@@ -57,5 +63,5 @@
   - Very high detail dense static clouds with depth coloring.
 - [ ] Strange attractor + curl-noise advection hybrid
   - Seed points on an attractor, then advect through divergence-free fields.
-- [ ] Hopf fibration sampling
+- [x] Hopf fibration sampling
   - Elegant linked-circle structures with distinct geometry.

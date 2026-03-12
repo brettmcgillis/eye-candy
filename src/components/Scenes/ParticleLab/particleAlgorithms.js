@@ -937,6 +937,120 @@ const algorithms = {
       }
     },
   },
+  'Chen-Lee': {
+    type: 'ode',
+    defaults: { alpha: 5.0, beta: -10.0, delta: -0.38, dt: 0.003 },
+    ranges: {
+      alpha: [0.5, 20.0, 0.1],
+      beta: [-30.0, 5.0, 0.1],
+      delta: [-3.0, 1.0, 0.01],
+      dt: [0.0005, 0.02, 0.0005],
+    },
+    generate: (p, positions, pointsCount) => {
+      let x = 0.1;
+      let y = 0.1;
+      let z = 0.1;
+      const burnIn = 1000;
+
+      for (let i = 0; i < pointsCount + burnIn; i += 1) {
+        const dx = p.alpha * x - y * z;
+        const dy = p.beta * y + x * z;
+        const dz = p.delta * z + (x * y) / 3;
+        x += dx * p.dt;
+        y += dy * p.dt;
+        z += dz * p.dt;
+        if (Number.isNaN(x) || Math.abs(x) > 1000) {
+          x = 0.1;
+          y = 0.1;
+          z = 0.1;
+        }
+
+        if (i >= burnIn) {
+          positions.push(x, y, z);
+        }
+      }
+    },
+  },
+  'Lorenz 83': {
+    type: 'ode',
+    defaults: { a: 0.95, b: 7.91, f: 4.83, g: 4.66, dt: 0.004 },
+    ranges: {
+      a: [0.1, 3.0, 0.01],
+      b: [0.1, 20.0, 0.01],
+      f: [0.1, 10.0, 0.01],
+      g: [0.1, 10.0, 0.01],
+      dt: [0.0005, 0.02, 0.0005],
+    },
+    generate: (p, positions, pointsCount) => {
+      let x = 0.1;
+      let y = 0.0;
+      let z = 0.0;
+      const burnIn = 1200;
+
+      for (let i = 0; i < pointsCount + burnIn; i += 1) {
+        const dx = -p.a * x - y * y - z * z + p.a * p.f;
+        const dy = -y + x * y - p.b * x * z + p.g;
+        const dz = -z + p.b * x * y + x * z;
+        x += dx * p.dt;
+        y += dy * p.dt;
+        z += dz * p.dt;
+        if (Number.isNaN(x) || Math.abs(x) > 1000) {
+          x = 0.1;
+          y = 0.0;
+          z = 0.0;
+        }
+
+        if (i >= burnIn) {
+          positions.push(x, y, z);
+        }
+      }
+    },
+  },
+  'Three-Scroll Unified Chaotic System': {
+    type: 'ode',
+    defaults: {
+      a: 32.48,
+      b: 45.84,
+      c: 1.18,
+      d: 0.13,
+      e: 0.57,
+      f: 14.7,
+      dt: 0.0008,
+    },
+    ranges: {
+      a: [5.0, 60.0, 0.01],
+      b: [5.0, 70.0, 0.01],
+      c: [0.2, 5.0, 0.01],
+      d: [0.0, 1.0, 0.001],
+      e: [0.0, 2.0, 0.001],
+      f: [1.0, 25.0, 0.01],
+      dt: [0.0001, 0.01, 0.0001],
+    },
+    generate: (p, positions, pointsCount) => {
+      let x = 0.1;
+      let y = 0.0;
+      let z = 0.0;
+      const burnIn = 1500;
+
+      for (let i = 0; i < pointsCount + burnIn; i += 1) {
+        const dx = p.a * (y - x) + p.d * x * z;
+        const dy = p.b * x - x * z + p.f * y;
+        const dz = p.c * z + x * y - p.e * x * x;
+        x += dx * p.dt;
+        y += dy * p.dt;
+        z += dz * p.dt;
+        if (Number.isNaN(x) || Math.abs(x) > 1000) {
+          x = 0.1;
+          y = 0.0;
+          z = 0.0;
+        }
+
+        if (i >= burnIn) {
+          positions.push(x, y, z);
+        }
+      }
+    },
+  },
   'Pickover Attractor': {
     type: 'map',
     defaults: { a: 2.24, b: 0.43, c: -0.65, d: -2.43 },
@@ -999,6 +1113,104 @@ const algorithms = {
             Math.sin(p.k * x) * Math.cos(p.k * y) * 0.4 +
             Math.cos(x * y * 0.3) * 0.2;
           positions.push(x, y, z);
+        }
+      }
+    },
+  },
+  'Hopf Fibration Sampler': {
+    type: 'map',
+    defaults: {
+      fibers: 220,
+      twist: 1.0,
+      projection: 0.92,
+      phase: 0.0,
+      jitter: 0.01,
+      baseRotation: 0.0,
+    },
+    ranges: {
+      fibers: [24, 900, 1],
+      twist: [0.3, 4.0, 0.01],
+      projection: [0.5, 0.98, 0.001],
+      phase: [0.0, Math.PI * 2, 0.01],
+      jitter: [0.0, 0.08, 0.001],
+      baseRotation: [0.0, Math.PI * 2, 0.01],
+    },
+    generate: (p, positions, pointsCount) => {
+      const PHI = (1 + Math.sqrt(5)) / 2;
+      const GOLDEN_ANGLE = Math.PI * (3 - Math.sqrt(5));
+      const totalFibers = Math.max(
+        1,
+        Math.min(pointsCount, Math.floor(p.fibers))
+      );
+      const samplesPerFiber = Math.max(6, Math.ceil(pointsCount / totalFibers));
+      const maxProjection = Math.max(0.001, Number(p.projection) || 0.92);
+      let seed = 2463534242;
+
+      const rand = () => {
+        seed = (seed * 1664525 + 1013904223) % 4294967296;
+        return seed / 4294967296;
+      };
+
+      for (let i = 0; i < totalFibers; i += 1) {
+        if (positions.length >= pointsCount * 3) break;
+
+        const u = (i + 0.5) / totalFibers;
+        const yBase = 1 - 2 * u;
+        const radial = Math.sqrt(Math.max(0, 1 - yBase * yBase));
+        const azimuth = GOLDEN_ANGLE * i + p.baseRotation * PHI;
+        const xBase = radial * Math.cos(azimuth);
+        const zBase = radial * Math.sin(azimuth);
+
+        const eta = Math.acos(Math.max(-1, Math.min(1, yBase)));
+        const phi = Math.atan2(zBase, xBase);
+        const halfEtaCos = Math.cos(eta * 0.5);
+        const halfEtaSin = Math.sin(eta * 0.5);
+
+        for (let j = 0; j < samplesPerFiber; j += 1) {
+          if (positions.length >= pointsCount * 3) break;
+
+          const t = (j / samplesPerFiber) * Math.PI * 2;
+          const psi = t * p.twist + p.phase + i * 0.013;
+          const a1 = (psi + phi) * 0.5;
+          const a2 = (psi - phi) * 0.5;
+
+          const x = halfEtaCos * Math.cos(a1);
+          const y = halfEtaCos * Math.sin(a1);
+          const z = halfEtaSin * Math.cos(a2);
+          const w = halfEtaSin * Math.sin(a2);
+
+          const denom = Math.max(0.03, 1 - w * maxProjection);
+          const { jitter } = p;
+          const jx = (rand() * 2 - 1) * jitter;
+          const jy = (rand() * 2 - 1) * jitter;
+          const jz = (rand() * 2 - 1) * jitter;
+
+          const px = x / denom + jx;
+          const py = y / denom + jy;
+          const pz = z / denom + jz;
+
+          if (
+            Number.isFinite(px) &&
+            Number.isFinite(py) &&
+            Number.isFinite(pz) &&
+            Math.abs(px) < 100 &&
+            Math.abs(py) < 100 &&
+            Math.abs(pz) < 100
+          ) {
+            positions.push(px, py, pz);
+          }
+        }
+      }
+
+      if (positions.length >= 3 && positions.length < pointsCount * 3) {
+        const existing = positions.length;
+        for (let i = existing; i < pointsCount * 3; i += 3) {
+          const idx = i % existing;
+          positions.push(
+            positions[idx],
+            positions[idx + 1],
+            positions[idx + 2]
+          );
         }
       }
     },

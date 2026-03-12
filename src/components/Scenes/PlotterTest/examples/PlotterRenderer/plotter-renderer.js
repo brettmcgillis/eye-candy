@@ -119,6 +119,10 @@ const PlotterRenderer = function () {
       y: { rotation: 0, spacing: 8 },
       z: { rotation: 0, spacing: 8 },
     },
+    secondaryPass: {
+      enabled: false,
+      angleOffset: 90,
+    },
     // Brightness-based shading
     brightnessShading: {
       enabled: false, // Enable lighting-based density
@@ -410,17 +414,36 @@ const PlotterRenderer = function () {
             };
           }
 
-          let hatches = generatePerspectiveHatches(region, camera, {
-            baseSpacing: _this.hatchOptions.baseSpacing * spacingScale,
-            minSpacing: _this.hatchOptions.minSpacing * spacingScale,
-            maxSpacing: _this.hatchOptions.maxSpacing * spacingScale,
-            depthFactor: _this.hatchOptions.depthFactor,
-            insetPixels: _this.hatchOptions.insetPixels,
-            screenWidth: _svgWidth,
-            screenHeight: _svgHeight,
-            axisSettings: scaledAxisSettings,
-            brightness,
-            invertBrightness: shadingOpts.invert || false,
+          const hatchPasses = [scaledAxisSettings];
+          const secondaryPass = _this.hatchOptions.secondaryPass || {};
+          if (secondaryPass.enabled) {
+            const angleOffset = Number(secondaryPass.angleOffset) || 90;
+            const crossAxisSettings = {};
+            for (const axis of ['x', 'y', 'z']) {
+              const settings = scaledAxisSettings[axis] || {};
+              crossAxisSettings[axis] = {
+                ...settings,
+                rotation: (settings.rotation || 0) + angleOffset,
+              };
+            }
+            hatchPasses.push(crossAxisSettings);
+          }
+
+          let hatches = [];
+          hatchPasses.forEach((axisSettingsForPass) => {
+            const passHatches = generatePerspectiveHatches(region, camera, {
+              baseSpacing: _this.hatchOptions.baseSpacing * spacingScale,
+              minSpacing: _this.hatchOptions.minSpacing * spacingScale,
+              maxSpacing: _this.hatchOptions.maxSpacing * spacingScale,
+              depthFactor: _this.hatchOptions.depthFactor,
+              insetPixels: _this.hatchOptions.insetPixels,
+              screenWidth: _svgWidth,
+              screenHeight: _svgHeight,
+              axisSettings: axisSettingsForPass,
+              brightness,
+              invertBrightness: shadingOpts.invert || false,
+            });
+            hatches.push(...passHatches);
           });
 
           // Check time budget after hatch generation

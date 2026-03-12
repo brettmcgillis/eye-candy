@@ -18,6 +18,8 @@ const DEFAULTS = {
   spaceZ: 8,
   insetPixels: 2,
   connectHatches: false,
+  secondHatchPass: false,
+  secondHatchPassAngle: 90,
   brightnessShading: true,
   minSpacing: 3,
   maxSpacing: 40,
@@ -210,6 +212,21 @@ export default function usePlotterTestControls({ onExport, onRefresh }) {
             label: 'Connect Hatch Lines',
             value: DEFAULTS.connectHatches,
             render: (get) => get('Plotter Test.Layers.showHatches'),
+          },
+          secondHatchPass: {
+            label: 'Second Hatch Pass (Crosshatch)',
+            value: DEFAULTS.secondHatchPass,
+            render: (get) => get('Plotter Test.Layers.showHatches'),
+          },
+          secondHatchPassAngle: {
+            label: 'Second Pass Angle Offset (deg)',
+            value: DEFAULTS.secondHatchPassAngle,
+            min: -180,
+            max: 180,
+            step: 1,
+            render: (get) =>
+              get('Plotter Test.Hatching.secondHatchPass') &&
+              get('Plotter Test.Layers.showHatches'),
           },
         },
         { collapsed: true }

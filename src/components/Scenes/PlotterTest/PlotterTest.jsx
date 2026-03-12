@@ -204,6 +204,10 @@ export default function PlotterTest() {
           y: { rotation: cfg.rotY, spacing: cfg.spaceY },
           z: { rotation: cfg.rotZ, spacing: cfg.spaceZ },
         },
+        secondaryPass: {
+          enabled: Boolean(cfg.secondHatchPass),
+          angleOffset: cfg.secondHatchPassAngle,
+        },
         brightnessShading: {
           enabled: Boolean(cfg.brightnessShading),
           invert: cfg.theme === 'dark',
@@ -372,6 +376,8 @@ export default function PlotterTest() {
       spaceZ: config.spaceZ,
       insetPixels: config.insetPixels,
       connectHatches: config.connectHatches,
+      secondHatchPass: config.secondHatchPass,
+      secondHatchPassAngle: config.secondHatchPassAngle,
       brightnessShading: config.brightnessShading,
       minSpacing: config.minSpacing,
       maxSpacing: config.maxSpacing,
@@ -405,6 +411,8 @@ export default function PlotterTest() {
       config.rotX,
       config.rotY,
       config.rotZ,
+      config.secondHatchPass,
+      config.secondHatchPassAngle,
       config.showEdges,
       config.showHatches,
       config.showSilhouettes,

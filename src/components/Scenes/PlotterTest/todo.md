@@ -26,7 +26,7 @@
 - [x] Support exporting a scene as an SVG, to be printed using an xy pen plotter.
 - [x] Toggle to represent scene shadows using hatching
 - [ ] Upgrade comparison to true dual synchronized viewports/canvases, currently need to press a button or space to re-render. would be nice to do it every few frames automatically, so i can reorient the scene or toggle plotter renderer controls and see live updates. three-plotter-renderer supports this type of async rendering.
-- [ ] Can we update the plotter renderer to do a second opposing hatching pass, to get crosshatching? If so, add a control to enable, disable second pass
+- [x] Can we update the plotter renderer to do a second opposing hatching pass, to get crosshatching? If so, add a control to enable, disable second pass
 
 # // Bugs
 

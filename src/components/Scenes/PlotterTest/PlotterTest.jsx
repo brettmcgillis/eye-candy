@@ -146,6 +146,8 @@ export default function PlotterTest() {
       plotterRenderer.showEdges = Boolean(cfg.showEdges);
       plotterRenderer.showHatches = Boolean(cfg.showHatches);
       plotterRenderer.showCrossHatches = Boolean(cfg.showCrossHatches);
+      plotterRenderer.showPrimitivePoints = Boolean(cfg.showPrimitivePoints);
+      plotterRenderer.showPrimitiveLines = Boolean(cfg.showPrimitiveLines);
       plotterRenderer.hiddenLineOptions = {
         smoothThreshold: cfg.smoothThreshold,
       };
@@ -157,6 +159,21 @@ export default function PlotterTest() {
       plotterRenderer.edgeOptions = {
         stroke: null,
         strokeWidth: `${Math.max(0.7, cfg.strokeWidth * 1.1)}px`,
+      };
+      plotterRenderer.primitivePointOptions = {
+        fill: null,
+        radius: cfg.primitivePointRadius,
+        opacity: cfg.primitivePointOpacity,
+        densityQuantization: cfg.primitivePointDensityQuantization,
+        maxCount: cfg.primitivePointDensityMaxCount,
+      };
+      plotterRenderer.primitiveLineOptions = {
+        stroke: null,
+        strokeWidth: `${Math.max(0.45, cfg.strokeWidth * cfg.primitiveLineStrokeWidthScale)}px`,
+        opacity: cfg.primitiveLineOpacity,
+        densityQuantization: cfg.primitiveLineDensityQuantization,
+        maxSegments: cfg.primitiveLineDensityMaxSegments,
+        minLength: cfg.primitiveLineDensityMinLength,
       };
 
       const lightDirection = new THREE.Vector3(
@@ -433,6 +450,8 @@ export default function PlotterTest() {
       showEdges: config.showEdges,
       showHatches: config.showHatches,
       showCrossHatches: config.showCrossHatches,
+      showPrimitivePoints: config.showPrimitivePoints,
+      showPrimitiveLines: config.showPrimitiveLines,
       rotX: config.rotX,
       rotY: config.rotY,
       rotZ: config.rotZ,
@@ -452,6 +471,16 @@ export default function PlotterTest() {
       crossHatchConnectHatches: config.crossHatchConnectHatches,
       crossHatchMaxSegments: config.crossHatchMaxSegments,
       crossHatchStrokeWidthScale: config.crossHatchStrokeWidthScale,
+      primitivePointRadius: config.primitivePointRadius,
+      primitivePointOpacity: config.primitivePointOpacity,
+      primitivePointDensityQuantization:
+        config.primitivePointDensityQuantization,
+      primitivePointDensityMaxCount: config.primitivePointDensityMaxCount,
+      primitiveLineStrokeWidthScale: config.primitiveLineStrokeWidthScale,
+      primitiveLineOpacity: config.primitiveLineOpacity,
+      primitiveLineDensityQuantization: config.primitiveLineDensityQuantization,
+      primitiveLineDensityMaxSegments: config.primitiveLineDensityMaxSegments,
+      primitiveLineDensityMinLength: config.primitiveLineDensityMinLength,
       brightnessShading: config.brightnessShading,
       minSpacing: config.minSpacing,
       maxSpacing: config.maxSpacing,
@@ -489,6 +518,8 @@ export default function PlotterTest() {
       config.showEdges,
       config.showHatches,
       config.showCrossHatches,
+      config.showPrimitivePoints,
+      config.showPrimitiveLines,
       config.showSilhouettes,
       config.spaceX,
       config.spaceY,
@@ -504,6 +535,15 @@ export default function PlotterTest() {
       config.crossHatchSpaceY,
       config.crossHatchSpaceZ,
       config.crossHatchStrokeWidthScale,
+      config.primitivePointRadius,
+      config.primitivePointOpacity,
+      config.primitivePointDensityQuantization,
+      config.primitivePointDensityMaxCount,
+      config.primitiveLineStrokeWidthScale,
+      config.primitiveLineOpacity,
+      config.primitiveLineDensityQuantization,
+      config.primitiveLineDensityMaxSegments,
+      config.primitiveLineDensityMinLength,
       config.strokeWidth,
       config.interactiveDebounceMs,
       config.fullFrameBudgetMs,

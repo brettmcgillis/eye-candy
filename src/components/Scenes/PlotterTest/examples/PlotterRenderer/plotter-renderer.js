@@ -43,6 +43,14 @@ const PlotterRenderer = function () {
     'http://www.w3.org/2000/svg',
     'g'
   );
+  const _primitiveLines = document.createElementNS(
+    'http://www.w3.org/2000/svg',
+    'g'
+  );
+  const _primitivePoints = document.createElementNS(
+    'http://www.w3.org/2000/svg',
+    'g'
+  );
   let _svgWidth;
   let _svgHeight;
   let _svgWidthHalf;
@@ -79,6 +87,16 @@ const PlotterRenderer = function () {
   _edges.id = 'edges_layer';
   _svg.appendChild(_edges);
 
+  _primitiveLines.setAttribute('inkscape:label', 'Primitive Lines');
+  _primitiveLines.setAttribute('inkscape:groupmode', 'layer');
+  _primitiveLines.id = 'primitive_lines_layer';
+  _svg.appendChild(_primitiveLines);
+
+  _primitivePoints.setAttribute('inkscape:label', 'Primitive Points');
+  _primitivePoints.setAttribute('inkscape:groupmode', 'layer');
+  _primitivePoints.id = 'primitive_points_layer';
+  _svg.appendChild(_primitivePoints);
+
   this.domElement = _svg;
 
   // Layer toggles
@@ -86,6 +104,8 @@ const PlotterRenderer = function () {
   this.showEdges = true;
   this.showHatches = true;
   this.showCrossHatches = false;
+  this.showPrimitiveLines = true;
+  this.showPrimitivePoints = true;
 
   // Theme definitions
   this.themes = {
@@ -93,6 +113,7 @@ const PlotterRenderer = function () {
       background: '#ffffff',
       edgeStroke: '#000000',
       hatchStroke: '#444444',
+      primitiveStroke: '#111111',
       silhouetteFill: (n) =>
         `rgba(${Math.floor((n.x * 0.5 + 0.5) * 40 + 200)},${Math.floor((n.y * 0.5 + 0.5) * 40 + 200)},${Math.floor((n.z * 0.5 + 0.5) * 40 + 200)},0.3)`,
     },
@@ -100,6 +121,7 @@ const PlotterRenderer = function () {
       background: '#222222',
       edgeStroke: '#ffffff',
       hatchStroke: '#aaaaaa',
+      primitiveStroke: '#ffffff',
       silhouetteFill: (n) =>
         `rgba(${Math.floor((n.x * 0.5 + 0.5) * 255)},${Math.floor((n.y * 0.5 + 0.5) * 255)},${Math.floor((n.z * 0.5 + 0.5) * 255)},0.3)`,
     },
@@ -147,6 +169,23 @@ const PlotterRenderer = function () {
   this.edgeOptions = {
     stroke: null, // null = use theme
     strokeWidth: '1px',
+  };
+
+  this.primitiveLineOptions = {
+    stroke: null,
+    strokeWidth: '1px',
+    opacity: 1,
+    densityQuantization: 0.5,
+    maxSegments: 3000,
+    minLength: 0.75,
+  };
+
+  this.primitivePointOptions = {
+    fill: null,
+    radius: 1.2,
+    opacity: 1,
+    densityQuantization: 1,
+    maxCount: 2000,
   };
 
   // Hidden-line options
@@ -203,6 +242,346 @@ const PlotterRenderer = function () {
     while (_secondaryShading.childNodes.length > 0) {
       _secondaryShading.removeChild(_secondaryShading.childNodes[0]);
     }
+    while (_primitiveLines.childNodes.length > 0) {
+      _primitiveLines.removeChild(_primitiveLines.childNodes[0]);
+    }
+    while (_primitivePoints.childNodes.length > 0) {
+      _primitivePoints.removeChild(_primitivePoints.childNodes[0]);
+    }
+  }
+
+  function resolveHierarchySvgExclusion(obj) {
+    let parent = obj;
+    while (parent) {
+      if (parent.userData && parent.userData.excludeFromSVG) {
+        return true;
+      }
+      parent = parent.parent;
+    }
+    return false;
+  }
+
+  function resolveCssPxNumber(value, fallback) {
+    if (typeof value === 'number' && Number.isFinite(value)) {
+      return value;
+    }
+    if (typeof value === 'string') {
+      const parsed = Number.parseFloat(value.replace('px', ''));
+      if (Number.isFinite(parsed)) {
+        return parsed;
+      }
+    }
+    return fallback;
+  }
+
+  function clipSegmentNdc(aNdc, bNdc) {
+    const a = aNdc.clone();
+    const b = bNdc.clone();
+    const d = b.clone().sub(a);
+    let t0 = 0;
+    let t1 = 1;
+
+    const clipTest = (p, q) => {
+      if (Math.abs(p) < 1e-10) {
+        return q >= 0;
+      }
+      const r = q / p;
+      if (p < 0) {
+        if (r > t1) return false;
+        if (r > t0) t0 = r;
+      } else {
+        if (r < t0) return false;
+        if (r < t1) t1 = r;
+      }
+      return true;
+    };
+
+    if (!clipTest(-d.x, a.x + 1)) return null;
+    if (!clipTest(d.x, 1 - a.x)) return null;
+    if (!clipTest(-d.y, a.y + 1)) return null;
+    if (!clipTest(d.y, 1 - a.y)) return null;
+    if (!clipTest(-d.z, a.z + 1)) return null;
+    if (!clipTest(d.z, 1 - a.z)) return null;
+
+    return {
+      a: a.clone().addScaledVector(d, t0),
+      b: a.clone().addScaledVector(d, t1),
+    };
+  }
+
+  function projectWorldToSvgPoint(worldPoint, camera) {
+    const projected = worldPoint.clone().project(camera);
+    if (!Number.isFinite(projected.x) || !Number.isFinite(projected.y)) {
+      return null;
+    }
+    if (projected.z < -1 || projected.z > 1) {
+      return null;
+    }
+    return {
+      x: projected.x * _svgWidthHalf,
+      y: -projected.y * _svgHeightHalf,
+      z: projected.z,
+    };
+  }
+
+  function projectAndClipWorldSegment(aWorld, bWorld, camera) {
+    const aNdc = aWorld.clone().project(camera);
+    const bNdc = bWorld.clone().project(camera);
+
+    if (
+      !Number.isFinite(aNdc.x) ||
+      !Number.isFinite(aNdc.y) ||
+      !Number.isFinite(bNdc.x) ||
+      !Number.isFinite(bNdc.y)
+    ) {
+      return null;
+    }
+
+    const clipped = clipSegmentNdc(aNdc, bNdc);
+    if (!clipped) return null;
+
+    return {
+      a: {
+        x: clipped.a.x * _svgWidthHalf,
+        y: -clipped.a.y * _svgHeightHalf,
+        z: clipped.a.z,
+      },
+      b: {
+        x: clipped.b.x * _svgWidthHalf,
+        y: -clipped.b.y * _svgHeightHalf,
+        z: clipped.b.z,
+      },
+    };
+  }
+
+  function dedupeAndLimitPoints(points, options) {
+    const quant = Math.max(0, Number(options.densityQuantization) || 0);
+    const maxCount = Math.max(0, Number(options.maxCount) || 0);
+    const seen = new Set();
+    let reduced = points;
+
+    if (quant > 0) {
+      reduced = [];
+      points.forEach((pt) => {
+        const qx = Math.round(pt.x / quant);
+        const qy = Math.round(pt.y / quant);
+        const key = `${qx},${qy}`;
+        if (seen.has(key)) return;
+        seen.add(key);
+        reduced.push(pt);
+      });
+    }
+
+    if (maxCount > 0 && reduced.length > maxCount) {
+      const step = reduced.length / maxCount;
+      const sampled = [];
+      for (let i = 0; i < maxCount; i += 1) {
+        sampled.push(reduced[Math.floor(i * step)]);
+      }
+      return sampled;
+    }
+
+    return reduced;
+  }
+
+  function dedupeAndLimitSegments(segments, options) {
+    const quant = Math.max(0, Number(options.densityQuantization) || 0);
+    const maxSegments = Math.max(0, Number(options.maxSegments) || 0);
+    const minLength = Math.max(0, Number(options.minLength) || 0);
+    const seen = new Set();
+    let reduced = segments;
+
+    if (minLength > 0) {
+      reduced = reduced.filter((segment) => {
+        const dx = segment.b.x - segment.a.x;
+        const dy = segment.b.y - segment.a.y;
+        return Math.sqrt(dx * dx + dy * dy) >= minLength;
+      });
+    }
+
+    if (quant > 0) {
+      const deduped = [];
+      reduced.forEach((segment) => {
+        const ax = Math.round(segment.a.x / quant);
+        const ay = Math.round(segment.a.y / quant);
+        const bx = Math.round(segment.b.x / quant);
+        const by = Math.round(segment.b.y / quant);
+        const forward = `${ax},${ay}|${bx},${by}`;
+        const reverse = `${bx},${by}|${ax},${ay}`;
+        const key = forward < reverse ? forward : reverse;
+        if (seen.has(key)) return;
+        seen.add(key);
+        deduped.push(segment);
+      });
+      reduced = deduped;
+    }
+
+    if (maxSegments > 0 && reduced.length > maxSegments) {
+      const step = reduced.length / maxSegments;
+      const sampled = [];
+      for (let i = 0; i < maxSegments; i += 1) {
+        sampled.push(reduced[Math.floor(i * step)]);
+      }
+      return sampled;
+    }
+
+    return reduced;
+  }
+
+  function extractPrimitivePoints(scene, camera) {
+    const points = [];
+    const worldPoint = new Vector3();
+    const sourceColor = new Color();
+
+    scene.traverse((obj) => {
+      if (!obj.isPoints || !obj.geometry) return;
+      if (resolveHierarchySvgExclusion(obj)) return;
+      const positionAttr = obj.geometry.getAttribute('position');
+      if (!positionAttr) return;
+
+      const materialColor = obj.material?.color
+        ? `#${sourceColor.copy(obj.material.color).getHexString()}`
+        : null;
+
+      for (let i = 0; i < positionAttr.count; i += 1) {
+        worldPoint.set(
+          positionAttr.getX(i),
+          positionAttr.getY(i),
+          positionAttr.getZ(i)
+        );
+        worldPoint.applyMatrix4(obj.matrixWorld);
+        const projected = projectWorldToSvgPoint(worldPoint, camera);
+        if (!projected) continue;
+        points.push({ ...projected, color: materialColor });
+      }
+    });
+
+    return points;
+  }
+
+  function extractPrimitiveLineSegments(scene, camera) {
+    const segments = [];
+    const aWorld = new Vector3();
+    const bWorld = new Vector3();
+    const sourceColor = new Color();
+
+    scene.traverse((obj) => {
+      if (!(obj.isLine || obj.isLineSegments || obj.isLineLoop) || !obj.geometry)
+        return;
+      if (resolveHierarchySvgExclusion(obj)) return;
+
+      const positionAttr = obj.geometry.getAttribute('position');
+      if (!positionAttr || positionAttr.count < 2) return;
+      const indexAttr = obj.geometry.getIndex();
+      const materialColor = obj.material?.color
+        ? `#${sourceColor.copy(obj.material.color).getHexString()}`
+        : null;
+
+      const appendSegment = (aIdx, bIdx) => {
+        aWorld.set(
+          positionAttr.getX(aIdx),
+          positionAttr.getY(aIdx),
+          positionAttr.getZ(aIdx)
+        );
+        bWorld.set(
+          positionAttr.getX(bIdx),
+          positionAttr.getY(bIdx),
+          positionAttr.getZ(bIdx)
+        );
+        aWorld.applyMatrix4(obj.matrixWorld);
+        bWorld.applyMatrix4(obj.matrixWorld);
+
+        const projected = projectAndClipWorldSegment(aWorld, bWorld, camera);
+        if (!projected) return;
+        segments.push({ ...projected, color: materialColor });
+      };
+
+      if (obj.isLineSegments) {
+        if (indexAttr) {
+          for (let i = 0; i + 1 < indexAttr.count; i += 2) {
+            appendSegment(indexAttr.getX(i), indexAttr.getX(i + 1));
+          }
+        } else {
+          for (let i = 0; i + 1 < positionAttr.count; i += 2) {
+            appendSegment(i, i + 1);
+          }
+        }
+        return;
+      }
+
+      if (indexAttr) {
+        for (let i = 0; i + 1 < indexAttr.count; i += 1) {
+          appendSegment(indexAttr.getX(i), indexAttr.getX(i + 1));
+        }
+        if (obj.isLineLoop && indexAttr.count > 2) {
+          appendSegment(indexAttr.getX(indexAttr.count - 1), indexAttr.getX(0));
+        }
+      } else {
+        for (let i = 0; i + 1 < positionAttr.count; i += 1) {
+          appendSegment(i, i + 1);
+        }
+        if (obj.isLineLoop && positionAttr.count > 2) {
+          appendSegment(positionAttr.count - 1, 0);
+        }
+      }
+    });
+
+    return segments;
+  }
+
+  function renderPrimitivePoints(scene, camera) {
+    const primitiveTheme = _this.themes[_this.theme] || _this.themes.dark;
+    const baseFill =
+      _this.primitivePointOptions.fill ||
+      _this.primitiveLineOptions.stroke ||
+      primitiveTheme.primitiveStroke ||
+      primitiveTheme.edgeStroke;
+    const radius = Math.max(0.2, Number(_this.primitivePointOptions.radius) || 1);
+    const opacity = Math.min(
+      1,
+      Math.max(0.05, Number(_this.primitivePointOptions.opacity) || 1)
+    );
+
+    const rawPoints = extractPrimitivePoints(scene, camera);
+    const points = dedupeAndLimitPoints(rawPoints, _this.primitivePointOptions);
+
+    points.forEach((pt) => {
+      const circle = document.createElementNS('http://www.w3.org/2000/svg', 'circle');
+      circle.setAttribute('cx', lop(pt.x));
+      circle.setAttribute('cy', lop(pt.y));
+      circle.setAttribute('r', lop(radius));
+      circle.setAttribute('fill', pt.color || baseFill);
+      circle.setAttribute('fill-opacity', opacity);
+      _primitivePoints.appendChild(circle);
+    });
+  }
+
+  function renderPrimitiveLines(scene, camera) {
+    const primitiveTheme = _this.themes[_this.theme] || _this.themes.dark;
+    const stroke =
+      _this.primitiveLineOptions.stroke ||
+      primitiveTheme.primitiveStroke ||
+      primitiveTheme.edgeStroke;
+    const strokeWidth = resolveCssPxNumber(_this.primitiveLineOptions.strokeWidth, 1);
+    const opacity = Math.min(
+      1,
+      Math.max(0.05, Number(_this.primitiveLineOptions.opacity) || 1)
+    );
+
+    const rawSegments = extractPrimitiveLineSegments(scene, camera);
+    const segments = dedupeAndLimitSegments(rawSegments, _this.primitiveLineOptions);
+
+    segments.forEach((segment) => {
+      const line = document.createElementNS('http://www.w3.org/2000/svg', 'line');
+      line.setAttribute('x1', lop(segment.a.x));
+      line.setAttribute('y1', lop(segment.a.y));
+      line.setAttribute('x2', lop(segment.b.x));
+      line.setAttribute('y2', lop(segment.b.y));
+      line.setAttribute('stroke', segment.color || stroke);
+      line.setAttribute('stroke-width', lop(strokeWidth));
+      line.setAttribute('stroke-opacity', opacity);
+      _primitiveLines.appendChild(line);
+    });
   }
 
   function computeSpacingScale(scene, camera) {
@@ -313,13 +692,17 @@ const PlotterRenderer = function () {
     return lightDir.clone().transformDirection(camera.matrixWorldInverse);
   }
 
-  function appendHatchesToLayer(layerNode, hatches, layerOptions, spacingScale) {
+  function appendHatchesToLayer(
+    layerNode,
+    hatches,
+    layerOptions,
+    spacingScale
+  ) {
     const hatchTheme = _this.themes[_this.theme] || _this.themes.dark;
     const hatchStroke = layerOptions.stroke || hatchTheme.hatchStroke;
 
     if (layerOptions.connectHatches && hatches.length > 0) {
-      const maxConnectDist =
-        (layerOptions.baseSpacing || 8) * spacingScale * 2;
+      const maxConnectDist = (layerOptions.baseSpacing || 8) * spacingScale * 2;
 
       const paths = [];
       let currentPath = '';
@@ -385,7 +768,13 @@ const PlotterRenderer = function () {
     });
   }
 
-  async function renderHatchLayer({ scene, camera, regions, layerNode, layerOptions }) {
+  async function renderHatchLayer({
+    scene,
+    camera,
+    regions,
+    layerNode,
+    layerOptions,
+  }) {
     const orderedRegions = [...regions].sort((a, b) => a.depth - b.depth);
     const allRegionBounds = orderedRegions.map(
       (region) => region.hatchBoundary || region.boundary
@@ -414,7 +803,8 @@ const PlotterRenderer = function () {
         const settings = rawAxisSettings[axis] || {};
         scaledAxisSettings[axis] = {
           rotation: settings.rotation || 0,
-          spacing: (settings.spacing || layerOptions.baseSpacing) * spacingScale,
+          spacing:
+            (settings.spacing || layerOptions.baseSpacing) * spacingScale,
         };
       }
 
@@ -634,6 +1024,14 @@ const PlotterRenderer = function () {
           _edges.appendChild(line);
         });
       }
+    }
+
+    if (_this.showPrimitiveLines) {
+      renderPrimitiveLines(scene, camera);
+    }
+
+    if (_this.showPrimitivePoints) {
+      renderPrimitivePoints(scene, camera);
     }
   };
 

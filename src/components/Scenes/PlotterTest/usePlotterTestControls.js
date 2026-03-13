@@ -87,6 +87,96 @@ export default function usePlotterTestControls({ onExport, onRefresh }) {
             label: 'Show Crosshatching',
             value: DEFAULTS.showCrossHatches,
           },
+          showPrimitivePoints: {
+            label: 'Show Primitive Points',
+            value: DEFAULTS.showPrimitivePoints,
+          },
+          showPrimitiveLines: {
+            label: 'Show Primitive Lines',
+            value: DEFAULTS.showPrimitiveLines,
+          },
+        },
+        { collapsed: true }
+      ),
+      'Primitive Points': folder(
+        {
+          primitivePointRadius: {
+            label: 'Point Radius (px)',
+            value: DEFAULTS.primitivePointRadius,
+            min: 0.4,
+            max: 4,
+            step: 0.05,
+            render: (get) => get('Plotter Test.Layers.showPrimitivePoints'),
+          },
+          primitivePointOpacity: {
+            label: 'Point Opacity',
+            value: DEFAULTS.primitivePointOpacity,
+            min: 0.1,
+            max: 1,
+            step: 0.05,
+            render: (get) => get('Plotter Test.Layers.showPrimitivePoints'),
+          },
+          primitivePointDensityQuantization: {
+            label: 'Density Quantization (px)',
+            value: DEFAULTS.primitivePointDensityQuantization,
+            min: 0,
+            max: 4,
+            step: 0.1,
+            render: (get) => get('Plotter Test.Layers.showPrimitivePoints'),
+          },
+          primitivePointDensityMaxCount: {
+            label: 'Max Points',
+            value: DEFAULTS.primitivePointDensityMaxCount,
+            min: 100,
+            max: 20000,
+            step: 100,
+            render: (get) => get('Plotter Test.Layers.showPrimitivePoints'),
+          },
+        },
+        { collapsed: true }
+      ),
+      'Primitive Lines': folder(
+        {
+          primitiveLineStrokeWidthScale: {
+            label: 'Stroke Width Scale',
+            value: DEFAULTS.primitiveLineStrokeWidthScale,
+            min: 0.25,
+            max: 3,
+            step: 0.05,
+            render: (get) => get('Plotter Test.Layers.showPrimitiveLines'),
+          },
+          primitiveLineOpacity: {
+            label: 'Line Opacity',
+            value: DEFAULTS.primitiveLineOpacity,
+            min: 0.1,
+            max: 1,
+            step: 0.05,
+            render: (get) => get('Plotter Test.Layers.showPrimitiveLines'),
+          },
+          primitiveLineDensityQuantization: {
+            label: 'Density Quantization (px)',
+            value: DEFAULTS.primitiveLineDensityQuantization,
+            min: 0,
+            max: 4,
+            step: 0.1,
+            render: (get) => get('Plotter Test.Layers.showPrimitiveLines'),
+          },
+          primitiveLineDensityMaxSegments: {
+            label: 'Max Segments',
+            value: DEFAULTS.primitiveLineDensityMaxSegments,
+            min: 100,
+            max: 20000,
+            step: 100,
+            render: (get) => get('Plotter Test.Layers.showPrimitiveLines'),
+          },
+          primitiveLineDensityMinLength: {
+            label: 'Min Segment Length (px)',
+            value: DEFAULTS.primitiveLineDensityMinLength,
+            min: 0,
+            max: 6,
+            step: 0.1,
+            render: (get) => get('Plotter Test.Layers.showPrimitiveLines'),
+          },
         },
         { collapsed: true }
       ),

@@ -3,49 +3,59 @@ import { button, folder, useControls } from 'leva';
 import { useEffect, useRef } from 'react';
 
 import { localEnv } from '../../../utils/appUtils';
+import {
+  DEFAULT_PLOTTER_TEST_PRESET,
+  PLOTTER_TEST_PRESETS,
+  normalizePlotterTestConfig,
+} from './plotterTestPresets';
 
-const DEFAULTS = {
-  theme: 'dark',
-  autoRefresh: false,
-  showSilhouettes: true,
-  showEdges: true,
-  showHatches: true,
-  rotX: 0,
-  rotY: 0,
-  rotZ: 0,
-  spaceX: 8,
-  spaceY: 8,
-  spaceZ: 8,
-  insetPixels: 2,
-  connectHatches: false,
-  secondHatchPass: false,
-  secondHatchPassAngle: 90,
-  brightnessShading: true,
-  minSpacing: 3,
-  maxSpacing: 40,
-  lightX: 5,
-  lightY: 5,
-  lightZ: 5,
-  lightIntensity: 1,
-  hatchMaxSegments: 2200,
-  thirdPartyInteractiveDebounceMs: 360,
-  thirdPartyFullFrameBudgetMs: 10,
-  thirdPartySmoothThreshold: 0.99,
-  thirdPartySilhouetteSimplifyTolerance: 2,
-  thirdPartySilhouetteMinArea: 100,
-  thirdPartySilhouetteNormalBuckets: 12,
-  strokeWidth: 0.8,
-  precision: 2,
-  exportName: 'plotter-test',
-};
+const DEFAULTS = normalizePlotterTestConfig(
+  PLOTTER_TEST_PRESETS[DEFAULT_PLOTTER_TEST_PRESET]
+);
 
 export default function usePlotterTestControls({ onExport, onRefresh }) {
   const isLocal = localEnv() || import.meta.env.DEV;
   const controlsSnapshotRef = useRef(DEFAULTS);
+  const selectedPresetRef = useRef(DEFAULT_PLOTTER_TEST_PRESET);
 
-  const [config] = useControls(
+  const [config, setControls] = useControls(
     'Plotter Test',
     () => ({
+      Presets: folder(
+        {
+          preset: {
+            label: 'Quality Preset',
+            value: DEFAULT_PLOTTER_TEST_PRESET,
+            options: {
+              'Low (fast)': 'low',
+              'Medium (balanced)': 'medium',
+              'High (detailed)': 'high',
+            },
+            onChange: (nextPreset) => {
+              selectedPresetRef.current = nextPreset;
+              const preset = PLOTTER_TEST_PRESETS[nextPreset];
+              if (!preset) return;
+              setControls(preset);
+            },
+          },
+          resetPreset: button(() => {
+            const preset = PLOTTER_TEST_PRESETS[selectedPresetRef.current];
+            if (!preset) return;
+            setControls(preset);
+          }),
+          copyPreset: button(() => {
+            const presetName = selectedPresetRef.current;
+            const preset = PLOTTER_TEST_PRESETS[presetName];
+            if (!preset) return;
+
+            const payload = JSON.stringify({ [presetName]: preset }, null, 2)
+              .replace(/"([A-Za-z_$][A-Za-z0-9_$]*)":/g, '$1:')
+              .replace(/"(low|medium|high)":/g, '$1:');
+            navigator.clipboard.writeText(payload);
+          }),
+        },
+        { collapsed: true }
+      ),
       Theme: folder(
         {
           theme: {
@@ -70,52 +80,56 @@ export default function usePlotterTestControls({ onExport, onRefresh }) {
             value: DEFAULTS.showEdges,
           },
           showHatches: {
-            label: 'Show Hatches',
+            label: 'Show Hatching',
             value: DEFAULTS.showHatches,
+          },
+          showCrossHatches: {
+            label: 'Show Crosshatching',
+            value: DEFAULTS.showCrossHatches,
           },
         },
         { collapsed: true }
       ),
       'Renderer Performance': folder(
         {
-          thirdPartyInteractiveDebounceMs: {
+          interactiveDebounceMs: {
             label: 'Auto Refresh Debounce (ms)',
-            value: DEFAULTS.thirdPartyInteractiveDebounceMs,
+            value: DEFAULTS.interactiveDebounceMs,
             min: 120,
             max: 1200,
             step: 20,
           },
-          thirdPartyFullFrameBudgetMs: {
+          fullFrameBudgetMs: {
             label: 'Full Render Frame Budget (ms)',
-            value: DEFAULTS.thirdPartyFullFrameBudgetMs,
+            value: DEFAULTS.fullFrameBudgetMs,
             min: 2,
             max: 24,
             step: 1,
           },
-          thirdPartySmoothThreshold: {
+          smoothThreshold: {
             label: 'Edge Smoothness Filter',
-            value: DEFAULTS.thirdPartySmoothThreshold,
+            value: DEFAULTS.smoothThreshold,
             min: 0.9,
             max: 0.999,
             step: 0.001,
           },
-          thirdPartySilhouetteSimplifyTolerance: {
+          silhouetteSimplifyTolerance: {
             label: 'Silhouette Simplify Tolerance',
-            value: DEFAULTS.thirdPartySilhouetteSimplifyTolerance,
+            value: DEFAULTS.silhouetteSimplifyTolerance,
             min: 0,
             max: 6,
             step: 0.1,
           },
-          thirdPartySilhouetteMinArea: {
+          silhouetteMinArea: {
             label: 'Silhouette Minimum Area',
-            value: DEFAULTS.thirdPartySilhouetteMinArea,
+            value: DEFAULTS.silhouetteMinArea,
             min: 0,
             max: 400,
             step: 5,
           },
-          thirdPartySilhouetteNormalBuckets: {
+          silhouetteNormalBuckets: {
             label: 'Silhouette Normal Buckets',
-            value: DEFAULTS.thirdPartySilhouetteNormalBuckets,
+            value: DEFAULTS.silhouetteNormalBuckets,
             min: 4,
             max: 32,
             step: 1,
@@ -213,20 +227,95 @@ export default function usePlotterTestControls({ onExport, onRefresh }) {
             value: DEFAULTS.connectHatches,
             render: (get) => get('Plotter Test.Layers.showHatches'),
           },
-          secondHatchPass: {
-            label: 'Second Hatch Pass (Crosshatch)',
-            value: DEFAULTS.secondHatchPass,
+          hatchStrokeWidthScale: {
+            label: 'Stroke Width Scale',
+            value: DEFAULTS.hatchStrokeWidthScale,
+            min: 0.25,
+            max: 3,
+            step: 0.05,
             render: (get) => get('Plotter Test.Layers.showHatches'),
           },
-          secondHatchPassAngle: {
-            label: 'Second Pass Angle Offset (deg)',
-            value: DEFAULTS.secondHatchPassAngle,
+        },
+        { collapsed: true }
+      ),
+      Crosshatching: folder(
+        {
+          crossHatchRotX: {
+            label: 'Rotation X (deg)',
+            value: DEFAULTS.crossHatchRotX,
             min: -180,
             max: 180,
             step: 1,
-            render: (get) =>
-              get('Plotter Test.Hatching.secondHatchPass') &&
-              get('Plotter Test.Layers.showHatches'),
+            render: (get) => get('Plotter Test.Layers.showCrossHatches'),
+          },
+          crossHatchRotY: {
+            label: 'Rotation Y (deg)',
+            value: DEFAULTS.crossHatchRotY,
+            min: -180,
+            max: 180,
+            step: 1,
+            render: (get) => get('Plotter Test.Layers.showCrossHatches'),
+          },
+          crossHatchRotZ: {
+            label: 'Rotation Z (deg)',
+            value: DEFAULTS.crossHatchRotZ,
+            min: -180,
+            max: 180,
+            step: 1,
+            render: (get) => get('Plotter Test.Layers.showCrossHatches'),
+          },
+          crossHatchSpaceX: {
+            label: 'Spacing X',
+            value: DEFAULTS.crossHatchSpaceX,
+            min: 1,
+            max: 80,
+            step: 1,
+            render: (get) => get('Plotter Test.Layers.showCrossHatches'),
+          },
+          crossHatchSpaceY: {
+            label: 'Spacing Y',
+            value: DEFAULTS.crossHatchSpaceY,
+            min: 1,
+            max: 80,
+            step: 1,
+            render: (get) => get('Plotter Test.Layers.showCrossHatches'),
+          },
+          crossHatchSpaceZ: {
+            label: 'Spacing Z',
+            value: DEFAULTS.crossHatchSpaceZ,
+            min: 1,
+            max: 80,
+            step: 1,
+            render: (get) => get('Plotter Test.Layers.showCrossHatches'),
+          },
+          crossHatchMaxSegments: {
+            label: 'Hatch Segment Limit',
+            value: DEFAULTS.crossHatchMaxSegments,
+            min: 200,
+            max: 6000,
+            step: 100,
+            render: (get) => get('Plotter Test.Layers.showCrossHatches'),
+          },
+          crossHatchInsetPixels: {
+            label: 'Hatch Boundary Inset (px)',
+            value: DEFAULTS.crossHatchInsetPixels,
+            min: 0,
+            max: 10,
+            step: 0.5,
+            render: (get) => get('Plotter Test.Layers.showCrossHatches'),
+          },
+          crossHatchConnectHatches: {
+            label: 'Connect Hatch Lines',
+            value: DEFAULTS.crossHatchConnectHatches,
+            render: (get) => get('Plotter Test.Layers.showCrossHatches'),
+          },
+          crossHatchStrokeWidthScale: {
+            label: 'Stroke Width Scale',
+            value: DEFAULTS.crossHatchStrokeWidthScale,
+            min: 0.25,
+            max: 3,
+            step: 0.05,
+            render: (get) => get('Plotter Test.Layers.showCrossHatches'),
           },
         },
         { collapsed: true }
@@ -245,7 +334,8 @@ export default function usePlotterTestControls({ onExport, onRefresh }) {
             step: 1,
             render: (get) =>
               get('Plotter Test.Lighting.brightnessShading') &&
-              get('Plotter Test.Layers.showHatches'),
+              (get('Plotter Test.Layers.showHatches') ||
+                get('Plotter Test.Layers.showCrossHatches')),
           },
           maxSpacing: {
             label: 'Max Hatch Spacing',
@@ -255,7 +345,8 @@ export default function usePlotterTestControls({ onExport, onRefresh }) {
             step: 1,
             render: (get) =>
               get('Plotter Test.Lighting.brightnessShading') &&
-              get('Plotter Test.Layers.showHatches'),
+              (get('Plotter Test.Layers.showHatches') ||
+                get('Plotter Test.Layers.showCrossHatches')),
           },
           lightX: {
             label: 'Light X',
@@ -329,8 +420,11 @@ export default function usePlotterTestControls({ onExport, onRefresh }) {
   );
 
   useEffect(() => {
-    controlsSnapshotRef.current = config;
+    if (config?.preset) {
+      selectedPresetRef.current = config.preset;
+    }
+    controlsSnapshotRef.current = normalizePlotterTestConfig(config);
   }, [config]);
 
-  return config;
+  return normalizePlotterTestConfig(config);
 }

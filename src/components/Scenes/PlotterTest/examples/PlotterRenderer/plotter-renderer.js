@@ -39,6 +39,10 @@ const PlotterRenderer = function () {
   );
   const _edges = document.createElementNS('http://www.w3.org/2000/svg', 'g');
   const _shading = document.createElementNS('http://www.w3.org/2000/svg', 'g');
+  const _secondaryShading = document.createElementNS(
+    'http://www.w3.org/2000/svg',
+    'g'
+  );
   let _svgWidth;
   let _svgHeight;
   let _svgWidthHalf;
@@ -65,6 +69,11 @@ const PlotterRenderer = function () {
   _shading.id = 'shading_layer';
   _svg.appendChild(_shading);
 
+  _secondaryShading.setAttribute('inkscape:label', 'Secondary Shading');
+  _secondaryShading.setAttribute('inkscape:groupmode', 'layer');
+  _secondaryShading.id = 'secondary_shading_layer';
+  _svg.appendChild(_secondaryShading);
+
   _edges.setAttribute('inkscape:label', 'Edges');
   _edges.setAttribute('inkscape:groupmode', 'layer');
   _edges.id = 'edges_layer';
@@ -76,6 +85,7 @@ const PlotterRenderer = function () {
   this.showSilhouettes = true;
   this.showEdges = true;
   this.showHatches = true;
+  this.showCrossHatches = false;
 
   // Theme definitions
   this.themes = {
@@ -105,34 +115,33 @@ const PlotterRenderer = function () {
     minArea: 100,
   };
 
-  // Hatch options (perspective hatching)
-  this.hatchOptions = {
+  const createHatchLayerOptions = () => ({
     baseSpacing: 8,
     minSpacing: 3,
     maxSpacing: 40,
     depthFactor: 0.5,
     insetPixels: 2,
-    stroke: null, // null = use theme
+    stroke: null,
     strokeWidth: '1px',
+    maxSegments: 0,
+    connectHatches: false,
     axisSettings: {
       x: { rotation: 0, spacing: 8 },
       y: { rotation: 0, spacing: 8 },
       z: { rotation: 0, spacing: 8 },
     },
-    secondaryPass: {
-      enabled: false,
-      angleOffset: 90,
-    },
-    // Brightness-based shading
     brightnessShading: {
-      enabled: false, // Enable lighting-based density
-      invert: false, // True for white pen on black paper
-      lightDirection: null, // Override: Vector3 or null (auto from scene)
+      enabled: false,
+      invert: false,
+      lightDirection: null,
     },
-    // Async rendering options
-    frameBudgetMs: 16, // Max ms per frame (16ms = ~60fps)
-    progressCallback: null, // Optional: (progress: 0-1) => void
-  };
+    frameBudgetMs: 16,
+    progressCallback: null,
+  });
+
+  // Hatch options (perspective hatching)
+  this.hatchOptions = createHatchLayerOptions();
+  this.crossHatchOptions = createHatchLayerOptions();
 
   // Edge options (hidden line edges)
   this.edgeOptions = {
@@ -191,6 +200,289 @@ const PlotterRenderer = function () {
     while (_shading.childNodes.length > 0) {
       _shading.removeChild(_shading.childNodes[0]);
     }
+    while (_secondaryShading.childNodes.length > 0) {
+      _secondaryShading.removeChild(_secondaryShading.childNodes[0]);
+    }
+  }
+
+  function computeSpacingScale(scene, camera) {
+    let spacingScale = 1.0;
+    let minX = Infinity;
+    let maxX = -Infinity;
+    let minY = Infinity;
+    let maxY = -Infinity;
+    let minZ = Infinity;
+    let maxZ = -Infinity;
+
+    scene.traverse((obj) => {
+      if (!obj.isMesh || !obj.geometry) return;
+      obj.geometry.computeBoundingBox();
+      const bbox = obj.geometry.boundingBox;
+      if (!bbox) return;
+
+      const corners = [
+        new Vector3(bbox.min.x, bbox.min.y, bbox.min.z),
+        new Vector3(bbox.max.x, bbox.max.y, bbox.max.z),
+        new Vector3(bbox.min.x, bbox.min.y, bbox.max.z),
+        new Vector3(bbox.min.x, bbox.max.y, bbox.min.z),
+        new Vector3(bbox.max.x, bbox.min.y, bbox.min.z),
+        new Vector3(bbox.min.x, bbox.max.y, bbox.max.z),
+        new Vector3(bbox.max.x, bbox.min.y, bbox.max.z),
+        new Vector3(bbox.max.x, bbox.max.y, bbox.min.z),
+      ];
+
+      for (const corner of corners) {
+        corner.applyMatrix4(obj.matrixWorld);
+        minX = Math.min(minX, corner.x);
+        maxX = Math.max(maxX, corner.x);
+        minY = Math.min(minY, corner.y);
+        maxY = Math.max(maxY, corner.y);
+        minZ = Math.min(minZ, corner.z);
+        maxZ = Math.max(maxZ, corner.z);
+      }
+    });
+
+    if (!isFinite(minX)) {
+      return spacingScale;
+    }
+
+    const worldCorners = [
+      new Vector3(minX, minY, minZ),
+      new Vector3(maxX, maxY, maxZ),
+      new Vector3(minX, minY, maxZ),
+      new Vector3(minX, maxY, minZ),
+      new Vector3(maxX, minY, minZ),
+      new Vector3(minX, maxY, maxZ),
+      new Vector3(maxX, minY, maxZ),
+      new Vector3(maxX, maxY, minZ),
+    ];
+
+    let screenMinX = Infinity;
+    let screenMaxX = -Infinity;
+    let screenMinY = Infinity;
+    let screenMaxY = -Infinity;
+
+    for (const corner of worldCorners) {
+      const projected = corner.clone().project(camera);
+      const screenX = ((projected.x + 1) * _svgWidth) / 2;
+      const screenY = ((1 - projected.y) * _svgHeight) / 2;
+      screenMinX = Math.min(screenMinX, screenX);
+      screenMaxX = Math.max(screenMaxX, screenX);
+      screenMinY = Math.min(screenMinY, screenY);
+      screenMaxY = Math.max(screenMaxY, screenY);
+    }
+
+    const screenWidth = screenMaxX - screenMinX;
+    const screenHeight = screenMaxY - screenMinY;
+    const screenSize = Math.max(screenWidth, screenHeight);
+    const canvasSize = Math.max(_svgWidth, _svgHeight);
+
+    if (screenSize > 0 && canvasSize > 0) {
+      spacingScale = screenSize / canvasSize;
+    }
+
+    return spacingScale;
+  }
+
+  function resolveLightDirection(scene, camera, layerOptions) {
+    const shadingOpts = layerOptions.brightnessShading || {};
+    if (!shadingOpts.enabled) {
+      return null;
+    }
+
+    let lightDir = null;
+    if (shadingOpts.lightDirection) {
+      lightDir = shadingOpts.lightDirection.clone().normalize();
+    } else {
+      scene.traverse((obj) => {
+        if (lightDir) return;
+        if (obj.isDirectionalLight) {
+          lightDir = new Vector3()
+            .subVectors(obj.position, obj.target.position)
+            .normalize();
+        } else if (obj.isPointLight || obj.isSpotLight) {
+          lightDir = obj.position.clone().normalize();
+        }
+      });
+    }
+
+    if (!lightDir) {
+      lightDir = new Vector3(1, 1, 1).normalize();
+    }
+
+    return lightDir.clone().transformDirection(camera.matrixWorldInverse);
+  }
+
+  function appendHatchesToLayer(layerNode, hatches, layerOptions, spacingScale) {
+    const hatchTheme = _this.themes[_this.theme] || _this.themes.dark;
+    const hatchStroke = layerOptions.stroke || hatchTheme.hatchStroke;
+
+    if (layerOptions.connectHatches && hatches.length > 0) {
+      const maxConnectDist =
+        (layerOptions.baseSpacing || 8) * spacingScale * 2;
+
+      const paths = [];
+      let currentPath = '';
+      let prevEnd = null;
+
+      hatches.forEach((hatch, hatchIdx) => {
+        const start = hatchIdx % 2 === 0 ? hatch.start : hatch.end;
+        const end = hatchIdx % 2 === 0 ? hatch.end : hatch.start;
+
+        let shouldBreak = false;
+        if (prevEnd) {
+          const dist = Math.sqrt(
+            (start.x - prevEnd.x) ** 2 + (start.y - prevEnd.y) ** 2
+          );
+          shouldBreak = dist > maxConnectDist;
+        }
+
+        if (hatchIdx === 0 || shouldBreak) {
+          if (currentPath) {
+            paths.push(currentPath);
+          }
+          currentPath = `M${lop(start.x)},${lop(-start.y)}`;
+        } else {
+          currentPath += `L${lop(start.x)},${lop(-start.y)}`;
+        }
+
+        currentPath += `L${lop(end.x)},${lop(-end.y)}`;
+        prevEnd = end;
+      });
+
+      if (currentPath) {
+        paths.push(currentPath);
+      }
+
+      paths.forEach((d) => {
+        const path = document.createElementNS(
+          'http://www.w3.org/2000/svg',
+          'path'
+        );
+        path.setAttribute('d', d);
+        path.setAttribute('fill', 'none');
+        path.setAttribute('stroke', hatchStroke);
+        path.setAttribute('stroke-width', layerOptions.strokeWidth);
+        layerNode.appendChild(path);
+      });
+
+      return;
+    }
+
+    hatches.forEach((hatch, hatchIdx) => {
+      const path = document.createElementNS(
+        'http://www.w3.org/2000/svg',
+        'path'
+      );
+      const start = hatchIdx % 2 === 0 ? hatch.start : hatch.end;
+      const end = hatchIdx % 2 === 0 ? hatch.end : hatch.start;
+      const d = `M${lop(start.x)},${lop(-start.y)}L${lop(end.x)},${lop(-end.y)}`;
+      path.setAttribute('d', d);
+      path.setAttribute('fill', 'none');
+      path.setAttribute('stroke', hatchStroke);
+      path.setAttribute('stroke-width', layerOptions.strokeWidth);
+      layerNode.appendChild(path);
+    });
+  }
+
+  async function renderHatchLayer({ scene, camera, regions, layerNode, layerOptions }) {
+    const orderedRegions = [...regions].sort((a, b) => a.depth - b.depth);
+    const allRegionBounds = orderedRegions.map(
+      (region) => region.hatchBoundary || region.boundary
+    );
+    const holeRegions = orderedRegions.filter((region) => region.isHole);
+    const spacingScale = computeSpacingScale(scene, camera);
+    const lightDir = resolveLightDirection(scene, camera, layerOptions);
+    const shadingOpts = layerOptions.brightnessShading || {};
+    const frameBudgetMs = layerOptions.frameBudgetMs || 16;
+    const { progressCallback } = layerOptions;
+    let frameStartTime = performance.now();
+
+    for (let idx = 0; idx < orderedRegions.length; idx++) {
+      const region = orderedRegions[idx];
+      let brightness = null;
+      if (lightDir && shadingOpts.enabled) {
+        brightness = Math.max(0, region.normal.dot(lightDir));
+      }
+
+      const regionStartTime = performance.now();
+      const regionTimeBudget = layerOptions.regionTimeBudget || 100;
+      const scaledAxisSettings = {};
+      const rawAxisSettings = layerOptions.axisSettings || {};
+
+      for (const axis of ['x', 'y', 'z']) {
+        const settings = rawAxisSettings[axis] || {};
+        scaledAxisSettings[axis] = {
+          rotation: settings.rotation || 0,
+          spacing: (settings.spacing || layerOptions.baseSpacing) * spacingScale,
+        };
+      }
+
+      let hatches = generatePerspectiveHatches(region, camera, {
+        baseSpacing: layerOptions.baseSpacing * spacingScale,
+        minSpacing: layerOptions.minSpacing * spacingScale,
+        maxSpacing: layerOptions.maxSpacing * spacingScale,
+        depthFactor: layerOptions.depthFactor,
+        insetPixels: layerOptions.insetPixels,
+        screenWidth: _svgWidth,
+        screenHeight: _svgHeight,
+        axisSettings: scaledAxisSettings,
+        brightness,
+        invertBrightness: shadingOpts.invert || false,
+      });
+
+      if (performance.now() - regionStartTime > regionTimeBudget) {
+        console.warn(
+          `Region ${idx} hatch generation exceeded time budget, skipping`
+        );
+        continue;
+      }
+
+      for (let frontIdx = 0; frontIdx < idx; frontIdx++) {
+        const frontRegion = orderedRegions[frontIdx];
+        if (region.isHole && region.parentRegionId === frontRegion.regionId) {
+          continue;
+        }
+
+        hatches = hatches.flatMap((hatch) =>
+          clipLineOutsidePolygon(hatch, allRegionBounds[frontIdx])
+        );
+
+        if (performance.now() - regionStartTime > regionTimeBudget) {
+          console.warn(`Region ${idx} clipping exceeded time budget, aborting`);
+          hatches = [];
+          break;
+        }
+      }
+
+      for (const holeRegion of holeRegions) {
+        if (holeRegion.parentRegionId !== region.regionId) continue;
+        if (hatches.length === 0) break;
+        hatches = hatches.flatMap((hatch) =>
+          clipLineOutsidePolygon(hatch, holeRegion.boundary)
+        );
+      }
+
+      const maxSegments = Number(layerOptions.maxSegments) || 0;
+      if (maxSegments > 0 && hatches.length > maxSegments) {
+        hatches = hatches.slice(0, maxSegments);
+      }
+
+      appendHatchesToLayer(layerNode, hatches, layerOptions, spacingScale);
+
+      const elapsed = performance.now() - frameStartTime;
+      if (elapsed > frameBudgetMs && idx < orderedRegions.length - 1) {
+        if (progressCallback) {
+          progressCallback((idx + 1) / orderedRegions.length);
+        }
+        await new Promise((resolve) => requestAnimationFrame(resolve));
+        frameStartTime = performance.now();
+      }
+    }
+
+    if (progressCallback) {
+      progressCallback(1);
+    }
   }
 
   this.clear = function () {
@@ -216,18 +508,29 @@ const PlotterRenderer = function () {
 
     const glRenderer = _this._glRenderer;
 
-    // GPU Silhouettes (region fills based on normal direction)
-    if (_this.showSilhouettes || _this.showHatches) {
-      const regions = extractNormalRegions(glRenderer, scene, camera, {
-        normalBuckets: _this.silhouetteOptions.normalBuckets,
-        simplifyTolerance: _this.silhouetteOptions.simplifyTolerance,
-        minArea: _this.silhouetteOptions.minArea,
-        insetPixels: _this.showHatches ? _this.hatchOptions.insetPixels : 0,
-      });
+    // GPU Silhouettes and hatch layers share the same region extraction pipeline.
+    if (_this.showSilhouettes || _this.showHatches || _this.showCrossHatches) {
+      const regionCache = new Map();
+      const getRegionsForInset = (insetPixels) => {
+        const cacheKey = `${Math.round((Number(insetPixels) || 0) * 1000)}`;
+        if (!regionCache.has(cacheKey)) {
+          regionCache.set(
+            cacheKey,
+            extractNormalRegions(glRenderer, scene, camera, {
+              normalBuckets: _this.silhouetteOptions.normalBuckets,
+              simplifyTolerance: _this.silhouetteOptions.simplifyTolerance,
+              minArea: _this.silhouetteOptions.minArea,
+              insetPixels,
+            })
+          );
+        }
+        return regionCache.get(cacheKey) || [];
+      };
 
       // Draw silhouette fills
       if (_this.showSilhouettes) {
-        regions.forEach((region) => {
+        const silhouetteRegions = getRegionsForInset(0);
+        silhouetteRegions.forEach((region) => {
           if (region.boundary.length < 3) return;
 
           const path = document.createElementNS(
@@ -256,335 +559,29 @@ const PlotterRenderer = function () {
         });
       }
 
-      // GPU Perspective Hatches (render before edges so edges appear on top)
+      // GPU Perspective Hatching (render before edges so edges appear on top)
       if (_this.showHatches) {
-        // Sort by depth (front first) for occlusion
-        regions.sort((a, b) => a.depth - b.depth);
-        // Use hatchBoundary for clipping (inset boundary, falls back to regular boundary)
-        const allRegionBounds = regions.map(
-          (r) => r.hatchBoundary || r.boundary
+        const hatchRegions = getRegionsForInset(_this.hatchOptions.insetPixels);
+        await renderHatchLayer({
+          scene,
+          camera,
+          regions: hatchRegions,
+          layerNode: _shading,
+          layerOptions: _this.hatchOptions,
+        });
+      }
+
+      if (_this.showCrossHatches) {
+        const crossHatchRegions = getRegionsForInset(
+          _this.crossHatchOptions.insetPixels
         );
-
-        // Compute zoom-invariant spacing scale factor
-        // Project scene bounding box to screen space, use that size relative to canvas
-        let spacingScale = 1.0;
-        {
-          // Compute world-space bounding box of all meshes in scene
-          let minX = Infinity;
-          let maxX = -Infinity;
-          let minY = Infinity;
-          let maxY = -Infinity;
-          let minZ = Infinity;
-          let maxZ = -Infinity;
-
-          scene.traverse((obj) => {
-            if (!obj.isMesh || !obj.geometry) return;
-            obj.geometry.computeBoundingBox();
-            const bbox = obj.geometry.boundingBox;
-            if (!bbox) return;
-
-            // Transform bbox corners to world space
-            const corners = [
-              new Vector3(bbox.min.x, bbox.min.y, bbox.min.z),
-              new Vector3(bbox.max.x, bbox.max.y, bbox.max.z),
-              new Vector3(bbox.min.x, bbox.min.y, bbox.max.z),
-              new Vector3(bbox.min.x, bbox.max.y, bbox.min.z),
-              new Vector3(bbox.max.x, bbox.min.y, bbox.min.z),
-              new Vector3(bbox.min.x, bbox.max.y, bbox.max.z),
-              new Vector3(bbox.max.x, bbox.min.y, bbox.max.z),
-              new Vector3(bbox.max.x, bbox.max.y, bbox.min.z),
-            ];
-            for (const corner of corners) {
-              corner.applyMatrix4(obj.matrixWorld);
-              minX = Math.min(minX, corner.x);
-              maxX = Math.max(maxX, corner.x);
-              minY = Math.min(minY, corner.y);
-              maxY = Math.max(maxY, corner.y);
-              minZ = Math.min(minZ, corner.z);
-              maxZ = Math.max(maxZ, corner.z);
-            }
-          });
-
-          // Project bbox corners to screen space and compute screen-space bbox
-          if (isFinite(minX)) {
-            const worldCorners = [
-              new Vector3(minX, minY, minZ),
-              new Vector3(maxX, maxY, maxZ),
-              new Vector3(minX, minY, maxZ),
-              new Vector3(minX, maxY, minZ),
-              new Vector3(maxX, minY, minZ),
-              new Vector3(minX, maxY, maxZ),
-              new Vector3(maxX, minY, maxZ),
-              new Vector3(maxX, maxY, minZ),
-            ];
-
-            let screenMinX = Infinity;
-            let screenMaxX = -Infinity;
-            let screenMinY = Infinity;
-            let screenMaxY = -Infinity;
-
-            for (const corner of worldCorners) {
-              const projected = corner.clone().project(camera);
-              const screenX = ((projected.x + 1) * _svgWidth) / 2;
-              const screenY = ((1 - projected.y) * _svgHeight) / 2;
-              screenMinX = Math.min(screenMinX, screenX);
-              screenMaxX = Math.max(screenMaxX, screenX);
-              screenMinY = Math.min(screenMinY, screenY);
-              screenMaxY = Math.max(screenMaxY, screenY);
-            }
-
-            const screenWidth = screenMaxX - screenMinX;
-            const screenHeight = screenMaxY - screenMinY;
-            const screenSize = Math.max(screenWidth, screenHeight);
-            const canvasSize = Math.max(_svgWidth, _svgHeight);
-
-            // Scale factor: model screen size / canvas size
-            // When model fills canvas, spacingScale = 1
-            // When model is smaller, spacingScale < 1 (denser relative spacing)
-            if (screenSize > 0 && canvasSize > 0) {
-              spacingScale = screenSize / canvasSize;
-            }
-          }
-        }
-
-        // Collect hole regions for clipping (regardless of depth order)
-        const holeRegions = regions.filter((r) => r.isHole);
-
-        // Compute light direction for brightness shading
-        let lightDir = null;
-        const shadingOpts = _this.hatchOptions.brightnessShading || {};
-        if (shadingOpts.enabled) {
-          if (shadingOpts.lightDirection) {
-            lightDir = shadingOpts.lightDirection.clone().normalize();
-          } else {
-            // Auto-detect from scene: find first directional/point/spot light
-            scene.traverse((obj) => {
-              if (lightDir) return;
-              if (obj.isDirectionalLight) {
-                // Direction = from target toward light position
-                lightDir = new Vector3()
-                  .subVectors(obj.position, obj.target.position)
-                  .normalize();
-              } else if (obj.isPointLight) {
-                lightDir = obj.position.clone().normalize();
-              } else if (obj.isSpotLight) {
-                lightDir = obj.position.clone().normalize();
-              }
-            });
-            if (!lightDir) {
-              lightDir = new Vector3(1, 1, 1).normalize();
-            }
-          }
-
-          // Transform to view space (MeshNormalMaterial gives view-space normals)
-          lightDir = lightDir
-            .clone()
-            .transformDirection(camera.matrixWorldInverse);
-        }
-
-        // Frame budget settings
-        const frameBudgetMs = _this.hatchOptions.frameBudgetMs || 16;
-        const { progressCallback } = _this.hatchOptions;
-        let frameStartTime = performance.now();
-
-        // Process regions with frame budgeting (yields control to browser)
-        for (let idx = 0; idx < regions.length; idx++) {
-          const region = regions[idx];
-
-          // Compute brightness: N·L (Lambertian)
-          let brightness = null;
-          if (lightDir && shadingOpts.enabled) {
-            brightness = Math.max(0, region.normal.dot(lightDir));
-          }
-
-          // Time budget for this region (abort if taking too long)
-          const regionStartTime = performance.now();
-          const regionTimeBudget = _this.hatchOptions.regionTimeBudget || 100; // ms per region
-
-          // Scale axisSettings spacing values too
-          const scaledAxisSettings = {};
-          const rawAxisSettings = _this.hatchOptions.axisSettings || {};
-          for (const axis of ['x', 'y', 'z']) {
-            const settings = rawAxisSettings[axis] || {};
-            scaledAxisSettings[axis] = {
-              rotation: settings.rotation || 0,
-              spacing:
-                (settings.spacing || _this.hatchOptions.baseSpacing) *
-                spacingScale,
-            };
-          }
-
-          const hatchPasses = [scaledAxisSettings];
-          const secondaryPass = _this.hatchOptions.secondaryPass || {};
-          if (secondaryPass.enabled) {
-            const angleOffset = Number(secondaryPass.angleOffset) || 90;
-            const crossAxisSettings = {};
-            for (const axis of ['x', 'y', 'z']) {
-              const settings = scaledAxisSettings[axis] || {};
-              crossAxisSettings[axis] = {
-                ...settings,
-                rotation: (settings.rotation || 0) + angleOffset,
-              };
-            }
-            hatchPasses.push(crossAxisSettings);
-          }
-
-          let hatches = [];
-          hatchPasses.forEach((axisSettingsForPass) => {
-            const passHatches = generatePerspectiveHatches(region, camera, {
-              baseSpacing: _this.hatchOptions.baseSpacing * spacingScale,
-              minSpacing: _this.hatchOptions.minSpacing * spacingScale,
-              maxSpacing: _this.hatchOptions.maxSpacing * spacingScale,
-              depthFactor: _this.hatchOptions.depthFactor,
-              insetPixels: _this.hatchOptions.insetPixels,
-              screenWidth: _svgWidth,
-              screenHeight: _svgHeight,
-              axisSettings: axisSettingsForPass,
-              brightness,
-              invertBrightness: shadingOpts.invert || false,
-            });
-            hatches.push(...passHatches);
-          });
-
-          // Check time budget after hatch generation
-          if (performance.now() - regionStartTime > regionTimeBudget) {
-            console.warn(
-              `Region ${idx} hatch generation exceeded time budget, skipping`
-            );
-            continue; // Skip this region entirely
-          }
-
-          // Clip against front regions (with time budget check)
-          // Skip clipping holes against their parent region (otherwise hole hatches get removed)
-          for (let frontIdx = 0; frontIdx < idx; frontIdx++) {
-            const frontRegion = regions[frontIdx];
-
-            // Don't clip a hole against its parent - the hole IS inside the parent
-            if (
-              region.isHole &&
-              region.parentRegionId === frontRegion.regionId
-            ) {
-              continue;
-            }
-
-            hatches = hatches.flatMap((hatch) =>
-              clipLineOutsidePolygon(hatch, allRegionBounds[frontIdx])
-            );
-
-            // Check time budget during clipping
-            if (performance.now() - regionStartTime > regionTimeBudget) {
-              console.warn(
-                `Region ${idx} clipping exceeded time budget, aborting`
-              );
-              hatches = []; // Clear hatches and bail
-              break;
-            }
-          }
-
-          // Clip against holes that are children of this region
-          // (holes whose parentRegionId matches this region's regionId)
-          for (const holeRegion of holeRegions) {
-            if (holeRegion.parentRegionId !== region.regionId) continue;
-            if (hatches.length === 0) break;
-            hatches = hatches.flatMap((hatch) =>
-              clipLineOutsidePolygon(hatch, holeRegion.boundary)
-            );
-          }
-
-          // Draw hatches (boustrophedon: flip alternating lines to minimize pen travel)
-          const hatchTheme = _this.themes[_this.theme] || _this.themes.dark;
-          const hatchStroke =
-            _this.hatchOptions.stroke || hatchTheme.hatchStroke;
-
-          if (_this.hatchOptions.connectHatches && hatches.length > 0) {
-            // Connect hatches into continuous polylines, but break at large gaps
-            // Max connection distance: use spacing as threshold (gaps larger than this start new path)
-            const maxConnectDist =
-              (_this.hatchOptions.baseSpacing || 8) * spacingScale * 2;
-
-            const paths = [];
-            let currentPath = '';
-            let prevEnd = null;
-
-            hatches.forEach((hatch, hatchIdx) => {
-              const start = hatchIdx % 2 === 0 ? hatch.start : hatch.end;
-              const end = hatchIdx % 2 === 0 ? hatch.end : hatch.start;
-
-              // Check distance from previous end to current start
-              let shouldBreak = false;
-              if (prevEnd) {
-                const dist = Math.sqrt(
-                  (start.x - prevEnd.x) ** 2 + (start.y - prevEnd.y) ** 2
-                );
-                shouldBreak = dist > maxConnectDist;
-              }
-
-              if (hatchIdx === 0 || shouldBreak) {
-                // Start new path
-                if (currentPath) {
-                  paths.push(currentPath);
-                }
-                currentPath = `M${lop(start.x)},${lop(-start.y)}`;
-              } else {
-                // Connect to previous
-                currentPath += `L${lop(start.x)},${lop(-start.y)}`;
-              }
-              currentPath += `L${lop(end.x)},${lop(-end.y)}`;
-              prevEnd = end;
-            });
-
-            if (currentPath) {
-              paths.push(currentPath);
-            }
-
-            // Create path elements
-            paths.forEach((d) => {
-              const path = document.createElementNS(
-                'http://www.w3.org/2000/svg',
-                'path'
-              );
-              path.setAttribute('d', d);
-              path.setAttribute('fill', 'none');
-              path.setAttribute('stroke', hatchStroke);
-              path.setAttribute('stroke-width', _this.hatchOptions.strokeWidth);
-              _shading.appendChild(path);
-            });
-          } else {
-            // Individual hatch lines
-            hatches.forEach((hatch, hatchIdx) => {
-              const path = document.createElementNS(
-                'http://www.w3.org/2000/svg',
-                'path'
-              );
-              // Flip start/end on odd indices for zigzag pen path
-              const start = hatchIdx % 2 === 0 ? hatch.start : hatch.end;
-              const end = hatchIdx % 2 === 0 ? hatch.end : hatch.start;
-              const d = `M${lop(start.x)},${lop(-start.y)}L${lop(end.x)},${lop(-end.y)}`;
-              path.setAttribute('d', d);
-              path.setAttribute('fill', 'none');
-              path.setAttribute('stroke', hatchStroke);
-              path.setAttribute('stroke-width', _this.hatchOptions.strokeWidth);
-              _shading.appendChild(path);
-            });
-          }
-
-          // Check if we should yield to the browser
-          const elapsed = performance.now() - frameStartTime;
-          if (elapsed > frameBudgetMs && idx < regions.length - 1) {
-            // Report progress
-            if (progressCallback) {
-              progressCallback((idx + 1) / regions.length);
-            }
-            // Yield to browser via requestAnimationFrame
-            await new Promise((resolve) => requestAnimationFrame(resolve));
-            frameStartTime = performance.now();
-          }
-        }
-
-        // Final progress callback
-        if (progressCallback) {
-          progressCallback(1);
-        }
+        await renderHatchLayer({
+          scene,
+          camera,
+          regions: crossHatchRegions,
+          layerNode: _secondaryShading,
+          layerOptions: _this.crossHatchOptions,
+        });
       }
     }
 

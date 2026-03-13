@@ -13,74 +13,33 @@ import { useFrame, useThree } from '@react-three/fiber';
 
 import TestScene from './TestScene';
 import { PlotterRenderer } from './examples/PlotterRenderer/plotter-renderer';
-import downloadSvg from './export/downloadSvg';
+import { normalizePlotterTestConfig } from './plotterTestPresets';
+import {
+  downloadSvg,
+  extractSvgMarkup,
+  getThemeColors,
+  getViewportLayout,
+} from './plotterTestUtils';
 import usePlotterTestControls from './usePlotterTestControls';
 
 const VIEWPORT_DIVIDER_PX = 2;
-const FIXED_SPLIT_RATIO = 0.5;
-
-function getThemeColors(theme) {
-  return theme === 'light'
-    ? {
-        background: '#ffffff',
-        canvasText: '#2f2f2f',
-        sourceAmbient: 2.0,
-        gridCenter: 0xcccccc,
-        gridLines: 0xdddddd,
-        paperBackground: '#f4f1e8',
-      }
-    : {
-        background: '#222222',
-        canvasText: '#e0e0e0',
-        sourceAmbient: 0.25,
-        gridCenter: 0x444444,
-        gridLines: 0x333333,
-        paperBackground: '#2a2a2a',
-      };
-}
-
-function getViewportLayout(size) {
-  const viewportWidth = Math.max(1, Number(size?.width) || 1);
-  const viewportHeight = Math.max(1, Number(size?.height) || 1);
-  const leftWidth = Math.max(1, Math.floor(viewportWidth * FIXED_SPLIT_RATIO));
-  const rightWidth = Math.max(1, viewportWidth - leftWidth);
-
-  return {
-    leftWidth,
-    rightWidth,
-    rightX: leftWidth,
-    viewportHeight,
-    captureAspect: leftWidth / viewportHeight,
-  };
-}
-
-function extractSvgMarkup(domElement) {
-  if (!domElement) {
-    return { innerHTML: '', outerHTML: '', viewBox: null };
-  }
-
-  return {
-    innerHTML: domElement.innerHTML,
-    outerHTML: domElement.outerHTML,
-    viewBox: domElement.getAttribute('viewBox'),
-  };
-}
 
 export default function PlotterTest() {
   const svgOverlayRef = useRef(null);
   const plotterRendererRef = useRef(null);
+  const offscreenGlRendererRef = useRef(null);
+  const offscreenSizeRef = useRef({ width: 0, height: 0 });
   const configRef = useRef(null);
+  const refreshStateRef = useRef({
+    inFlight: false,
+    pendingSnapshot: null,
+  });
   const isMountedRef = useRef(true);
   const initialRefreshRequestedRef = useRef(false);
   const lastViewportSizeRef = useRef({ width: null, height: null });
   const getThree = useThree((state) => state.get);
   const viewportSize = useThree((state) => state.size);
   const [hasPreview, setHasPreview] = useState(false);
-  const [svgState, setSvgState] = useState({
-    innerHTML: '',
-    outerHTML: '',
-    viewBox: null,
-  });
   const getFixedOverlayPosition = useCallback((_, __, size) => {
     if (!size) return [0, 0];
     return [size.width / 2, size.height / 2];
@@ -91,8 +50,8 @@ export default function PlotterTest() {
       const { size } = getThree();
       const layout = getViewportLayout(size);
 
-      if (layout.rightWidth > 0 && layout.viewportHeight > 0) {
-        return layout.rightWidth / layout.viewportHeight;
+      if (layout.leftWidth > 0 && layout.viewportHeight > 0) {
+        return layout.captureAspect;
       }
 
       return Math.max(0.01, cameraForProjection?.aspect || 1);
@@ -139,40 +98,61 @@ export default function PlotterTest() {
     []
   );
 
-  const computeThirdPartySvg = useCallback(
-    async (cfg, cameraForProjection, captureAspect) => {
-      const { gl: glRenderer, scene: rootScene } = getThree();
-      if (!rootScene || !cameraForProjection || !glRenderer) {
+  const getOffscreenGlRenderer = useCallback((plotSize) => {
+    if (!offscreenGlRendererRef.current) {
+      offscreenGlRendererRef.current = new THREE.WebGLRenderer({
+        antialias: false,
+        alpha: false,
+        powerPreference: 'low-power',
+      });
+      offscreenGlRendererRef.current.setPixelRatio(1);
+      offscreenGlRendererRef.current.autoClear = true;
+    }
+
+    const targetWidth = Math.max(1, Math.round(plotSize.width));
+    const targetHeight = Math.max(1, Math.round(plotSize.height));
+    const previousSize = offscreenSizeRef.current;
+    if (
+      previousSize.width !== targetWidth ||
+      previousSize.height !== targetHeight
+    ) {
+      offscreenGlRendererRef.current.setSize(targetWidth, targetHeight, false);
+      offscreenSizeRef.current = {
+        width: targetWidth,
+        height: targetHeight,
+      };
+    }
+
+    return offscreenGlRendererRef.current;
+  }, []);
+
+  const computePlotterSvg = useCallback(
+    async (cfg, projectionCamera, plotSize, sourceScene) => {
+      if (!sourceScene || !projectionCamera) {
         return null;
       }
-
-      const projectionCamera = createProjectionCamera(
-        cameraForProjection,
-        captureAspect
-      );
-      if (!projectionCamera) return null;
-
-      const plotSize = getCaptureSize();
 
       if (!plotterRendererRef.current) {
         plotterRendererRef.current = new PlotterRenderer();
       }
 
       const plotterRenderer = plotterRendererRef.current;
+      const offscreenRenderer = getOffscreenGlRenderer(plotSize);
       plotterRenderer.setClearColor('#ffffff');
       plotterRenderer.setSize(plotSize.width, plotSize.height);
-      plotterRenderer.setGLRenderer(glRenderer);
+      plotterRenderer.setGLRenderer(offscreenRenderer);
       plotterRenderer.theme = cfg.theme;
       plotterRenderer.showSilhouettes = Boolean(cfg.showSilhouettes);
       plotterRenderer.showEdges = Boolean(cfg.showEdges);
       plotterRenderer.showHatches = Boolean(cfg.showHatches);
+      plotterRenderer.showCrossHatches = Boolean(cfg.showCrossHatches);
       plotterRenderer.hiddenLineOptions = {
-        smoothThreshold: cfg.thirdPartySmoothThreshold,
+        smoothThreshold: cfg.smoothThreshold,
       };
       plotterRenderer.silhouetteOptions = {
-        simplifyTolerance: cfg.thirdPartySilhouetteSimplifyTolerance,
-        minArea: cfg.thirdPartySilhouetteMinArea,
-        normalBuckets: cfg.thirdPartySilhouetteNormalBuckets,
+        simplifyTolerance: cfg.silhouetteSimplifyTolerance,
+        minArea: cfg.silhouetteMinArea,
+        normalBuckets: cfg.silhouetteNormalBuckets,
       };
       plotterRenderer.edgeOptions = {
         stroke: null,
@@ -191,21 +171,18 @@ export default function PlotterTest() {
 
       plotterRenderer.hatchOptions = {
         stroke: null,
-        strokeWidth: `${Math.max(0.6, cfg.strokeWidth * 0.85)}px`,
+        strokeWidth: `${Math.max(0.6, cfg.strokeWidth * 0.85 * cfg.hatchStrokeWidthScale)}px`,
         baseSpacing: cfg.spaceX,
-        frameBudgetMs: cfg.thirdPartyFullFrameBudgetMs || 10,
+        frameBudgetMs: cfg.fullFrameBudgetMs || 10,
         insetPixels: cfg.insetPixels,
         minSpacing: cfg.minSpacing,
         maxSpacing: cfg.maxSpacing,
+        maxSegments: cfg.hatchMaxSegments,
         connectHatches: Boolean(cfg.connectHatches),
         axisSettings: {
           x: { rotation: cfg.rotX, spacing: cfg.spaceX },
           y: { rotation: cfg.rotY, spacing: cfg.spaceY },
           z: { rotation: cfg.rotZ, spacing: cfg.spaceZ },
-        },
-        secondaryPass: {
-          enabled: Boolean(cfg.secondHatchPass),
-          angleOffset: cfg.secondHatchPassAngle,
         },
         brightnessShading: {
           enabled: Boolean(cfg.brightnessShading),
@@ -213,27 +190,35 @@ export default function PlotterTest() {
           intensity: cfg.lightIntensity,
           lightDirection,
         },
-        maxSegments: cfg.hatchMaxSegments,
+      };
+      plotterRenderer.crossHatchOptions = {
+        stroke: null,
+        strokeWidth: `${Math.max(0.6, cfg.strokeWidth * 0.85 * cfg.crossHatchStrokeWidthScale)}px`,
+        baseSpacing: cfg.crossHatchSpaceX,
+        frameBudgetMs: cfg.fullFrameBudgetMs || 10,
+        insetPixels: cfg.crossHatchInsetPixels,
+        minSpacing: cfg.minSpacing,
+        maxSpacing: cfg.maxSpacing,
+        maxSegments: cfg.crossHatchMaxSegments,
+        connectHatches: Boolean(cfg.crossHatchConnectHatches),
+        axisSettings: {
+          x: { rotation: cfg.crossHatchRotX, spacing: cfg.crossHatchSpaceX },
+          y: { rotation: cfg.crossHatchRotY, spacing: cfg.crossHatchSpaceY },
+          z: { rotation: cfg.crossHatchRotZ, spacing: cfg.crossHatchSpaceZ },
+        },
+        brightnessShading: {
+          enabled: Boolean(cfg.brightnessShading),
+          invert: cfg.theme === 'dark',
+          intensity: cfg.lightIntensity,
+          lightDirection,
+        },
       };
 
-      rootScene.updateMatrixWorld(true);
+      sourceScene.updateMatrixWorld(true);
       projectionCamera.updateMatrixWorld(true);
       projectionCamera.updateProjectionMatrix();
-      const previousRendererSize = glRenderer.getSize(new THREE.Vector2());
-
-      try {
-        // Keep PlotterRenderer passes in the same coordinate space as the
-        // capture target to avoid stretched silhouettes/hatching.
-        glRenderer.setSize(plotSize.width, plotSize.height, false);
-        plotterRenderer.clear();
-        await plotterRenderer.renderGPULayers(rootScene, projectionCamera);
-      } finally {
-        glRenderer.setSize(
-          previousRendererSize.x,
-          previousRendererSize.y,
-          false
-        );
-      }
+      plotterRenderer.clear();
+      await plotterRenderer.renderGPULayers(sourceScene, projectionCamera);
 
       const nextSvg = extractSvgMarkup(plotterRenderer.domElement);
       if (
@@ -258,19 +243,41 @@ export default function PlotterTest() {
         fileName: `${cfg.exportName || 'plotter-test'}-output`,
       };
     },
-    [createProjectionCamera, getCaptureSize, getThree]
+    [getOffscreenGlRenderer]
+  );
+
+  const createRefreshSnapshot = useCallback(
+    (cfg, cameraForProjection) => {
+      if (!cfg || !cameraForProjection) return null;
+
+      const { scene } = getThree();
+      if (!scene) return null;
+
+      const captureAspect = getCaptureAspect(cameraForProjection);
+      const projectionCamera = createProjectionCamera(
+        cameraForProjection,
+        captureAspect
+      );
+      if (!projectionCamera) return null;
+
+      return {
+        cfg: { ...cfg },
+        sourceScene: scene,
+        projectionCamera,
+        plotSize: getCaptureSize(),
+      };
+    },
+    [createProjectionCamera, getCaptureAspect, getCaptureSize, getThree]
   );
 
   const computePlotterOutput = useCallback(
-    async (cfg, activeCamera) => {
-      const cameraForProjection = activeCamera || getThree().camera;
-      if (!cameraForProjection) return null;
-
-      const captureAspect = getCaptureAspect(cameraForProjection);
-      const output = await computeThirdPartySvg(
-        cfg,
-        cameraForProjection,
-        captureAspect
+    async (snapshot) => {
+      if (!snapshot) return null;
+      const output = await computePlotterSvg(
+        snapshot.cfg,
+        snapshot.projectionCamera,
+        snapshot.plotSize,
+        snapshot.sourceScene
       );
       if (!output?.svgState?.outerHTML) return null;
 
@@ -290,23 +297,60 @@ export default function PlotterTest() {
         return output;
       }
 
-      setSvgState(output.svgState);
-
       return output;
     },
-    [computeThirdPartySvg, getCaptureAspect, getThree]
+    [computePlotterSvg]
+  );
+
+  const scheduleRefresh = useCallback(
+    (snapshot) => {
+      if (!snapshot) return;
+
+      const refreshState = refreshStateRef.current;
+      refreshState.pendingSnapshot = snapshot;
+
+      if (refreshState.inFlight) {
+        return;
+      }
+
+      const processNext = async () => {
+        const nextSnapshot = refreshState.pendingSnapshot;
+        if (!nextSnapshot) {
+          refreshState.inFlight = false;
+          return;
+        }
+
+        refreshState.pendingSnapshot = null;
+
+        // Yield once so camera interaction can present a fresh frame first.
+        await new Promise((resolve) => {
+          window.requestAnimationFrame(resolve);
+        });
+
+        const output = await computePlotterOutput(nextSnapshot);
+        if (output && isMountedRef.current) {
+          setHasPreview(true);
+        }
+
+        await processNext();
+      };
+
+      refreshState.inFlight = true;
+      processNext().catch(() => {
+        refreshState.inFlight = false;
+      });
+    },
+    [computePlotterOutput]
   );
 
   const handleRefresh = useCallback(() => {
     if (!configRef.current) return;
-    computePlotterOutput(configRef.current, getThree().camera).then(
-      (output) => {
-        if (output && isMountedRef.current) {
-          setHasPreview(true);
-        }
-      }
+    const snapshot = createRefreshSnapshot(
+      configRef.current,
+      getThree().camera
     );
-  }, [computePlotterOutput, getThree]);
+    scheduleRefresh(snapshot);
+  }, [createRefreshSnapshot, getThree, scheduleRefresh]);
 
   useEffect(() => {
     const isTypingTarget = (target) => {
@@ -342,13 +386,30 @@ export default function PlotterTest() {
       if (!cfg) return;
 
       const { camera } = getThree();
-      const captureAspect = getCaptureAspect(camera);
-      const output = await computeThirdPartySvg(cfg, camera, captureAspect);
+      const refreshSnapshot = createRefreshSnapshot(cfg, camera);
+      if (!refreshSnapshot) return;
+
+      const output = await computePlotterSvg(
+        refreshSnapshot.cfg,
+        refreshSnapshot.projectionCamera,
+        refreshSnapshot.plotSize,
+        refreshSnapshot.sourceScene
+      );
       if (!output?.svg) return;
 
       downloadSvg(output.svg, output.fileName);
     },
-    [computeThirdPartySvg, getCaptureAspect, getThree]
+    [computePlotterSvg, createRefreshSnapshot, getThree]
+  );
+
+  useEffect(
+    () => () => {
+      if (offscreenGlRendererRef.current) {
+        offscreenGlRendererRef.current.dispose();
+        offscreenGlRendererRef.current = null;
+      }
+    },
+    []
   );
 
   const config = usePlotterTestControls({
@@ -371,6 +432,7 @@ export default function PlotterTest() {
       showSilhouettes: config.showSilhouettes,
       showEdges: config.showEdges,
       showHatches: config.showHatches,
+      showCrossHatches: config.showCrossHatches,
       rotX: config.rotX,
       rotY: config.rotY,
       rotZ: config.rotZ,
@@ -379,8 +441,17 @@ export default function PlotterTest() {
       spaceZ: config.spaceZ,
       insetPixels: config.insetPixels,
       connectHatches: config.connectHatches,
-      secondHatchPass: config.secondHatchPass,
-      secondHatchPassAngle: config.secondHatchPassAngle,
+      hatchStrokeWidthScale: config.hatchStrokeWidthScale,
+      crossHatchRotX: config.crossHatchRotX,
+      crossHatchRotY: config.crossHatchRotY,
+      crossHatchRotZ: config.crossHatchRotZ,
+      crossHatchSpaceX: config.crossHatchSpaceX,
+      crossHatchSpaceY: config.crossHatchSpaceY,
+      crossHatchSpaceZ: config.crossHatchSpaceZ,
+      crossHatchInsetPixels: config.crossHatchInsetPixels,
+      crossHatchConnectHatches: config.crossHatchConnectHatches,
+      crossHatchMaxSegments: config.crossHatchMaxSegments,
+      crossHatchStrokeWidthScale: config.crossHatchStrokeWidthScale,
       brightnessShading: config.brightnessShading,
       minSpacing: config.minSpacing,
       maxSpacing: config.maxSpacing,
@@ -389,19 +460,19 @@ export default function PlotterTest() {
       lightZ: config.lightZ,
       lightIntensity: config.lightIntensity,
       hatchMaxSegments: config.hatchMaxSegments,
-      thirdPartyInteractiveDebounceMs: config.thirdPartyInteractiveDebounceMs,
-      thirdPartyFullFrameBudgetMs: config.thirdPartyFullFrameBudgetMs,
-      thirdPartySmoothThreshold: config.thirdPartySmoothThreshold,
-      thirdPartySilhouetteSimplifyTolerance:
-        config.thirdPartySilhouetteSimplifyTolerance,
-      thirdPartySilhouetteMinArea: config.thirdPartySilhouetteMinArea,
-      thirdPartySilhouetteNormalBuckets:
-        config.thirdPartySilhouetteNormalBuckets,
+      interactiveDebounceMs: config.interactiveDebounceMs,
+      fullFrameBudgetMs: config.fullFrameBudgetMs,
+      smoothThreshold: config.smoothThreshold,
+      silhouetteSimplifyTolerance: config.silhouetteSimplifyTolerance,
+      silhouetteMinArea: config.silhouetteMinArea,
+      silhouetteNormalBuckets: config.silhouetteNormalBuckets,
       precision: config.precision,
       exportName: config.exportName,
     }),
     [
       config.autoRefresh,
+      config.brightnessShading,
+      config.connectHatches,
       config.exportName,
       config.hatchMaxSegments,
       config.insetPixels,
@@ -415,29 +486,39 @@ export default function PlotterTest() {
       config.rotX,
       config.rotY,
       config.rotZ,
-      config.secondHatchPass,
-      config.secondHatchPassAngle,
       config.showEdges,
       config.showHatches,
+      config.showCrossHatches,
       config.showSilhouettes,
       config.spaceX,
       config.spaceY,
       config.spaceZ,
+      config.hatchStrokeWidthScale,
+      config.crossHatchConnectHatches,
+      config.crossHatchInsetPixels,
+      config.crossHatchMaxSegments,
+      config.crossHatchRotX,
+      config.crossHatchRotY,
+      config.crossHatchRotZ,
+      config.crossHatchSpaceX,
+      config.crossHatchSpaceY,
+      config.crossHatchSpaceZ,
+      config.crossHatchStrokeWidthScale,
       config.strokeWidth,
-      config.thirdPartyInteractiveDebounceMs,
-      config.thirdPartyFullFrameBudgetMs,
+      config.interactiveDebounceMs,
+      config.fullFrameBudgetMs,
       config.theme,
-      config.thirdPartySilhouetteMinArea,
-      config.thirdPartySilhouetteNormalBuckets,
-      config.thirdPartySilhouetteSimplifyTolerance,
-      config.thirdPartySmoothThreshold,
+      config.silhouetteMinArea,
+      config.silhouetteNormalBuckets,
+      config.silhouetteSimplifyTolerance,
+      config.smoothThreshold,
     ]
   );
 
   useEffect(() => {
     isMountedRef.current = true;
 
-    configRef.current = sceneConfig;
+    configRef.current = normalizePlotterTestConfig(sceneConfig);
 
     return () => {
       isMountedRef.current = false;
@@ -481,7 +562,7 @@ export default function PlotterTest() {
 
     const debounceMs = Math.max(
       0,
-      Number(configRef.current?.thirdPartyInteractiveDebounceMs) || 0
+      Number(configRef.current?.interactiveDebounceMs) || 0
     );
     const timeoutId = window.setTimeout(() => {
       handleRefresh();
@@ -491,17 +572,6 @@ export default function PlotterTest() {
       window.clearTimeout(timeoutId);
     };
   }, [handleRefresh, viewportSize?.height, viewportSize?.width]);
-
-  useEffect(() => {
-    if (svgOverlayRef.current) {
-      svgOverlayRef.current.innerHTML = svgState.innerHTML || '';
-      if (svgState.viewBox) {
-        svgOverlayRef.current.setAttribute('viewBox', svgState.viewBox);
-      } else {
-        svgOverlayRef.current.removeAttribute('viewBox');
-      }
-    }
-  }, [svgState.innerHTML, svgState.viewBox]);
 
   useFrame((state) => {
     if (!configRef.current) return;
@@ -585,7 +655,6 @@ export default function PlotterTest() {
               xmlns="http://www.w3.org/2000/svg"
               width={layout.rightWidth}
               height={layout.viewportHeight}
-              viewBox={svgState.viewBox || undefined}
               style={{
                 display: 'block',
                 width: '100%',

@@ -233,6 +233,7 @@ export default function TestScene() {
       ),
       Visibility: folder(
         {
+          showCube: { label: 'Cube', value: true },
           showCone: { label: 'Cone', value: true },
           showCylinder: { label: 'Cylinder', value: true },
           showSphere: { label: 'Sphere', value: true },
@@ -257,6 +258,16 @@ export default function TestScene() {
   const gridSpacing = 12;
   const baseY = 1.5;
   const objects = [
+    {
+      key: 'cube',
+      visible: config.showCube,
+      element: (
+        <mesh castShadow>
+          <boxGeometry args={[2.4, 2.4, 2.4]} />
+          <meshPhongMaterial color="#44ccff" flatShading shininess={0} />
+        </mesh>
+      ),
+    },
     {
       key: 'cone',
       visible: config.showCone,

@@ -1,76 +1,37 @@
 import { button, folder, useControls } from 'leva';
 
-import { useEffect, useRef } from 'react';
-
-import { localEnv } from '../../../../utils/appUtils';
+import { useEffect, useMemo, useRef } from 'react';
 
 const PANEL_TITLE = 'Primitives Hatching Scene';
-const CONTROL_KEYS = [
-  'theme',
-  'showSilhouettes',
-  'showEdges',
-  'showHatches',
-  'rotX',
-  'rotY',
-  'rotZ',
-  'spaceX',
-  'spaceY',
-  'spaceZ',
-  'insetPixels',
-  'connectHatches',
-  'brightnessShading',
-  'minSpacing',
-  'maxSpacing',
-  'lightX',
-  'lightY',
-  'lightZ',
-  'lightIntensity',
-];
-
-function pickConfigValues(source = {}) {
-  return CONTROL_KEYS.reduce((acc, key) => {
-    acc[key] = source[key];
-    return acc;
-  }, {});
-}
-
-function serializeConfig(config) {
-  return JSON.stringify(config, null, 2).replace(
-    /"([A-Za-z_$][A-Za-z0-9_$]*)":/g,
-    '$1:'
-  );
-}
-
-function areConfigsEqual(a, b) {
-  if (a === b) return true;
-  if (!a || !b) return false;
-
-  const aKeys = Object.keys(a);
-  const bKeys = Object.keys(b);
-
-  if (aKeys.length !== bKeys.length) {
-    return false;
-  }
-
-  return aKeys.every((key) => a[key] === b[key]);
-}
+const DEFAULT_CONFIG = {
+  theme: 'dark',
+  showSilhouettes: true,
+  showEdges: true,
+  showHatches: true,
+  rotX: 0,
+  rotY: 0,
+  rotZ: 0,
+  spaceX: 8,
+  spaceY: 8,
+  spaceZ: 8,
+  insetPixels: 2,
+  connectHatches: false,
+  brightnessShading: true,
+  minSpacing: 3,
+  maxSpacing: 40,
+  lightX: 5,
+  lightY: 5,
+  lightZ: 5,
+  lightIntensity: 1,
+};
 
 export default function usePrimitivesHatchingSceneControls({
-  config,
-  defaultConfig,
-  onChange,
   onExport,
   onRender,
 }) {
-  const defaultConfigRef = useRef(defaultConfig);
-  const syncedConfigRef = useRef(pickConfigValues(config));
+  const defaults = DEFAULT_CONFIG;
   const renderRef = useRef(onRender);
   const exportRef = useRef(onExport);
-  const changeRef = useRef(onChange);
-
-  useEffect(() => {
-    defaultConfigRef.current = defaultConfig;
-  }, [defaultConfig]);
 
   useEffect(() => {
     renderRef.current = onRender;
@@ -80,11 +41,7 @@ export default function usePrimitivesHatchingSceneControls({
     exportRef.current = onExport;
   }, [onExport]);
 
-  useEffect(() => {
-    changeRef.current = onChange;
-  }, [onChange]);
-
-  const [controls, setControls] = useControls(
+  const [controls] = useControls(
     PANEL_TITLE,
     () => ({
       Actions: folder(
@@ -95,18 +52,6 @@ export default function usePrimitivesHatchingSceneControls({
           exportSvg: button(() => {
             exportRef.current?.();
           }),
-          reset: button(() => {
-            setControls(defaultConfigRef.current);
-          }),
-          ...(localEnv() || import.meta.env.DEV
-            ? {
-                copy: button(() => {
-                  navigator.clipboard.writeText(
-                    serializeConfig(syncedConfigRef.current)
-                  );
-                }),
-              }
-            : {}),
         },
         { collapsed: false }
       ),
@@ -114,7 +59,7 @@ export default function usePrimitivesHatchingSceneControls({
         {
           theme: {
             label: 'Paper / Ink Theme',
-            value: config.theme,
+            value: defaults.theme,
             options: {
               'Dark (white on black)': 'dark',
               'Light (black on white)': 'light',
@@ -127,15 +72,15 @@ export default function usePrimitivesHatchingSceneControls({
         {
           showSilhouettes: {
             label: 'Show Silhouettes',
-            value: config.showSilhouettes,
+            value: defaults.showSilhouettes,
           },
           showEdges: {
             label: 'Show Edges',
-            value: config.showEdges,
+            value: defaults.showEdges,
           },
           showHatches: {
             label: 'Show Hatches',
-            value: config.showHatches,
+            value: defaults.showHatches,
           },
         },
         { collapsed: true }
@@ -144,7 +89,7 @@ export default function usePrimitivesHatchingSceneControls({
         {
           rotX: {
             label: 'Rotation X (deg)',
-            value: config.rotX,
+            value: defaults.rotX,
             min: -180,
             max: 180,
             step: 1,
@@ -152,7 +97,7 @@ export default function usePrimitivesHatchingSceneControls({
           },
           rotY: {
             label: 'Rotation Y (deg)',
-            value: config.rotY,
+            value: defaults.rotY,
             min: -180,
             max: 180,
             step: 1,
@@ -160,7 +105,7 @@ export default function usePrimitivesHatchingSceneControls({
           },
           rotZ: {
             label: 'Rotation Z (deg)',
-            value: config.rotZ,
+            value: defaults.rotZ,
             min: -180,
             max: 180,
             step: 1,
@@ -168,7 +113,7 @@ export default function usePrimitivesHatchingSceneControls({
           },
           spaceX: {
             label: 'Spacing X',
-            value: config.spaceX,
+            value: defaults.spaceX,
             min: 1,
             max: 80,
             step: 1,
@@ -176,7 +121,7 @@ export default function usePrimitivesHatchingSceneControls({
           },
           spaceY: {
             label: 'Spacing Y',
-            value: config.spaceY,
+            value: defaults.spaceY,
             min: 1,
             max: 80,
             step: 1,
@@ -184,7 +129,7 @@ export default function usePrimitivesHatchingSceneControls({
           },
           spaceZ: {
             label: 'Spacing Z',
-            value: config.spaceZ,
+            value: defaults.spaceZ,
             min: 1,
             max: 80,
             step: 1,
@@ -192,7 +137,7 @@ export default function usePrimitivesHatchingSceneControls({
           },
           insetPixels: {
             label: 'Hatch Boundary Inset (px)',
-            value: config.insetPixels,
+            value: defaults.insetPixels,
             min: 0,
             max: 10,
             step: 0.5,
@@ -200,7 +145,7 @@ export default function usePrimitivesHatchingSceneControls({
           },
           connectHatches: {
             label: 'Connect Hatch Lines',
-            value: config.connectHatches,
+            value: defaults.connectHatches,
             render: (get) => get(`${PANEL_TITLE}.Layers.showHatches`),
           },
         },
@@ -210,11 +155,11 @@ export default function usePrimitivesHatchingSceneControls({
         {
           brightnessShading: {
             label: 'Brightness Shading',
-            value: config.brightnessShading,
+            value: defaults.brightnessShading,
           },
           minSpacing: {
             label: 'Min Hatch Spacing',
-            value: config.minSpacing,
+            value: defaults.minSpacing,
             min: 1,
             max: 80,
             step: 1,
@@ -224,7 +169,7 @@ export default function usePrimitivesHatchingSceneControls({
           },
           maxSpacing: {
             label: 'Max Hatch Spacing',
-            value: config.maxSpacing,
+            value: defaults.maxSpacing,
             min: 1,
             max: 120,
             step: 1,
@@ -234,28 +179,28 @@ export default function usePrimitivesHatchingSceneControls({
           },
           lightX: {
             label: 'Light X',
-            value: config.lightX,
+            value: defaults.lightX,
             min: -20,
             max: 20,
             step: 0.25,
           },
           lightY: {
             label: 'Light Y',
-            value: config.lightY,
+            value: defaults.lightY,
             min: -20,
             max: 20,
             step: 0.25,
           },
           lightZ: {
             label: 'Light Z',
-            value: config.lightZ,
+            value: defaults.lightZ,
             min: -20,
             max: 20,
             step: 0.25,
           },
           lightIntensity: {
             label: 'Light Intensity',
-            value: config.lightIntensity,
+            value: defaults.lightIntensity,
             min: 0.1,
             max: 8,
             step: 0.1,
@@ -267,14 +212,28 @@ export default function usePrimitivesHatchingSceneControls({
     { collapsed: false }
   );
 
-  useEffect(() => {
-    const nextConfig = pickConfigValues(controls);
-
-    if (areConfigsEqual(nextConfig, syncedConfigRef.current)) {
-      return;
-    }
-
-    syncedConfigRef.current = nextConfig;
-    changeRef.current?.(nextConfig);
-  }, [controls]);
+  return useMemo(
+    () => ({
+      theme: controls.theme,
+      showSilhouettes: controls.showSilhouettes,
+      showEdges: controls.showEdges,
+      showHatches: controls.showHatches,
+      rotX: controls.rotX,
+      rotY: controls.rotY,
+      rotZ: controls.rotZ,
+      spaceX: controls.spaceX,
+      spaceY: controls.spaceY,
+      spaceZ: controls.spaceZ,
+      insetPixels: controls.insetPixels,
+      connectHatches: controls.connectHatches,
+      brightnessShading: controls.brightnessShading,
+      minSpacing: controls.minSpacing,
+      maxSpacing: controls.maxSpacing,
+      lightX: controls.lightX,
+      lightY: controls.lightY,
+      lightZ: controls.lightZ,
+      lightIntensity: controls.lightIntensity,
+    }),
+    [controls]
+  );
 }

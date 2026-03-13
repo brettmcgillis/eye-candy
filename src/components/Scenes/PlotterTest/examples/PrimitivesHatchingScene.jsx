@@ -1,8 +1,6 @@
 import React, {
-  forwardRef,
   useCallback,
   useEffect,
-  useImperativeHandle,
   useMemo,
   useRef,
   useState,
@@ -14,28 +12,6 @@ import { useThree } from '@react-three/fiber';
 import { PlotterRenderer } from './PlotterRenderer/plotter-renderer';
 import './PrimitivesHatchingScene.css';
 import usePrimitivesHatchingSceneControls from './usePrimitivesHatchingSceneControls';
-
-const DEFAULT_CONFIG = {
-  theme: 'dark',
-  showSilhouettes: true,
-  showEdges: true,
-  showHatches: true,
-  rotX: 0,
-  rotY: 0,
-  rotZ: 0,
-  spaceX: 8,
-  spaceY: 8,
-  spaceZ: 8,
-  insetPixels: 2,
-  connectHatches: false,
-  brightnessShading: true,
-  minSpacing: 3,
-  maxSpacing: 40,
-  lightX: 5,
-  lightY: 5,
-  lightZ: 5,
-  lightIntensity: 1,
-};
 
 function getThemeColors(theme) {
   if (theme === 'light') {
@@ -67,98 +43,71 @@ function extractSvgMarkup(domElement) {
   };
 }
 
-function PrimitivesHatchingSceneControls({
-  config,
-  defaultConfig,
-  onChange,
-  onExport,
-  onRender,
-}) {
-  usePrimitivesHatchingSceneControls({
-    config,
-    defaultConfig,
-    onChange,
-    onExport,
-    onRender,
-  });
+const EXPORT_FILE_NAME = 'primitives-hidden-lines';
 
-  return null;
-}
-
-const PrimitivesHatchingScene = forwardRef(function PrimitivesHatchingScene(
-  {
-    initialConfig,
-    autoRender = false,
-    exportFileName = 'primitives-hidden-lines',
-    showPanel = true,
-    showLightHelper = true,
-    onRenderComplete,
-  },
-  ref
-) {
-  const mergedInitialConfig = useMemo(
-    () => ({ ...DEFAULT_CONFIG, ...initialConfig }),
-    [initialConfig]
-  );
+function PrimitivesHatchingScene() {
   const { gl, scene, size, camera } = useThree();
-  const pointLightRef = useRef(null);
   const plotterRendererRef = useRef(null);
   const svgOverlayRef = useRef(null);
-  const initializedRef = useRef(false);
-  const [config, setConfig] = useState(mergedInitialConfig);
+  const renderPlotRef = useRef(null);
+  const autoRenderRef = useRef(false);
+  const svgOuterHtmlRef = useRef('');
   const [svgState, setSvgState] = useState({
     innerHTML: '',
     outerHTML: '',
     viewBox: null,
   });
-  const [, setStats] = useState(
-    'Use mouse to orbit. Click Render to generate.'
-  );
 
-  useEffect(() => {
-    setConfig(mergedInitialConfig);
-  }, [mergedInitialConfig]);
+  const handleRenderAction = useCallback(() => renderPlotRef.current?.(), []);
+  const handleExportAction = useCallback(async () => {
+    const svgContent =
+      svgOuterHtmlRef.current || (await renderPlotRef.current?.());
+    if (!svgContent) return;
+
+    const blob = new Blob([svgContent], { type: 'image/svg+xml' });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement('a');
+    link.href = url;
+    link.download = `${EXPORT_FILE_NAME}.svg`;
+    link.click();
+    URL.revokeObjectURL(url);
+  }, []);
+
+  const config = usePrimitivesHatchingSceneControls({
+    onExport: handleExportAction,
+    onRender: handleRenderAction,
+  });
 
   const themeColors = useMemo(
     () => getThemeColors(config.theme),
     [config.theme]
   );
 
-  useEffect(() => {
-    if (!plotterRendererRef.current) {
-      plotterRendererRef.current = new PlotterRenderer();
-    }
-
-    plotterRendererRef.current.setGLRenderer(gl);
-  }, [gl]);
-
-  useEffect(() => {
-    if (!plotterRendererRef.current) return;
-
-    plotterRendererRef.current.setSize(size.width, size.height);
-  }, [size.height, size.width]);
-
-  useEffect(() => {
-    if (!pointLightRef.current) return;
-
-    pointLightRef.current.position.set(
+  const lightPosition = useMemo(
+    () => [
       Number(config.lightX) || 5,
       Number(config.lightY) || 5,
-      Number(config.lightZ) || 5
-    );
-    pointLightRef.current.intensity = Number(config.lightIntensity) || 1;
-  }, [config.lightIntensity, config.lightX, config.lightY, config.lightZ]);
+      Number(config.lightZ) || 5,
+    ],
+    [config.lightX, config.lightY, config.lightZ]
+  );
+  const lightIntensity = Number(config.lightIntensity) || 1;
 
   useEffect(() => {
     if (!svgOverlayRef.current) return;
 
     svgOverlayRef.current.innerHTML = svgState.innerHTML || '';
-  }, [svgState.innerHTML]);
+    if (svgState.viewBox) {
+      svgOverlayRef.current.setAttribute('viewBox', svgState.viewBox);
+    } else {
+      svgOverlayRef.current.removeAttribute('viewBox');
+    }
+  }, [svgState.innerHTML, svgState.viewBox]);
 
   const renderPlot = useCallback(async () => {
-    if (!plotterRendererRef.current) return null;
-
-    setStats('Rendering...');
+    if (!plotterRendererRef.current) {
+      plotterRendererRef.current = new PlotterRenderer();
+    }
 
     const plotterRenderer = plotterRendererRef.current;
 
@@ -202,67 +151,28 @@ const PrimitivesHatchingScene = forwardRef(function PrimitivesHatchingScene(
     camera.updateMatrixWorld(true);
     camera.updateProjectionMatrix();
 
-    const startTime = performance.now();
     plotterRenderer.clear();
     await plotterRenderer.renderGPULayers(scene, camera);
 
     const nextSvg = extractSvgMarkup(plotterRenderer.domElement);
-    const elapsed = performance.now() - startTime;
 
-    if (svgOverlayRef.current) {
-      svgOverlayRef.current.innerHTML = nextSvg.innerHTML || '';
-      if (nextSvg.viewBox) {
-        svgOverlayRef.current.setAttribute('viewBox', nextSvg.viewBox);
-      } else {
-        svgOverlayRef.current.removeAttribute('viewBox');
-      }
-    }
-
+    svgOuterHtmlRef.current = nextSvg.outerHTML || '';
     setSvgState(nextSvg);
-    setStats(`Render completed in ${elapsed.toFixed(0)}ms`);
-    onRenderComplete?.({
-      elapsed,
-      svg: nextSvg.outerHTML,
-      config,
-    });
 
     return nextSvg.outerHTML;
-  }, [camera, config, gl, onRenderComplete, scene, size.height, size.width]);
+  }, [camera, config, gl, scene, size.height, size.width]);
 
-  const exportSvg = useCallback(async () => {
-    const svgContent = svgState.outerHTML || (await renderPlot());
-    if (!svgContent) return;
-
-    const blob = new Blob([svgContent], { type: 'image/svg+xml' });
-    const url = URL.createObjectURL(blob);
-    const link = document.createElement('a');
-    link.href = url;
-    link.download = `${exportFileName}.svg`;
-    link.click();
-    URL.revokeObjectURL(url);
-  }, [exportFileName, renderPlot, svgState.outerHTML]);
-
-  useImperativeHandle(
-    ref,
-    () => ({
-      exportSvg,
-      getConfig: () => config,
-      getSvgString: () => svgState.outerHTML,
-      render: renderPlot,
-      setConfig: (nextConfig) => {
-        setConfig((prev) => ({ ...prev, ...nextConfig }));
-      },
-    }),
-    [config, exportSvg, renderPlot, svgState.outerHTML]
-  );
+  useEffect(() => {
+    renderPlotRef.current = renderPlot;
+  }, [renderPlot]);
 
   useEffect(() => {
     let handle = null;
 
-    if (autoRender && !initializedRef.current) {
-      initializedRef.current = true;
+    if (!autoRenderRef.current) {
+      autoRenderRef.current = true;
       handle = window.setTimeout(() => {
-        renderPlot();
+        renderPlotRef.current?.();
       }, 120);
     }
 
@@ -271,41 +181,45 @@ const PrimitivesHatchingScene = forwardRef(function PrimitivesHatchingScene(
         window.clearTimeout(handle);
       }
     };
-  }, [autoRender, renderPlot]);
+  }, []);
+
+  useEffect(() => {
+    const handleKeyDown = (event) => {
+      const { target } = event;
+      const isTypingTarget =
+        target instanceof HTMLElement &&
+        (target.isContentEditable ||
+          ['INPUT', 'TEXTAREA', 'SELECT'].includes(target.tagName));
+
+      if (isTypingTarget || event.repeat) return;
+
+      if (event.code === 'Space' || event.key === ' ') {
+        event.preventDefault();
+        renderPlotRef.current?.();
+      }
+    };
+
+    window.addEventListener('keydown', handleKeyDown);
+
+    return () => {
+      window.removeEventListener('keydown', handleKeyDown);
+    };
+  }, []);
 
   return (
     <>
-      {showPanel ? (
-        <PrimitivesHatchingSceneControls
-          config={config}
-          defaultConfig={mergedInitialConfig}
-          onChange={setConfig}
-          onExport={exportSvg}
-          onRender={renderPlot}
-        />
-      ) : null}
-
       <color attach="background" args={[themeColors.background]} />
 
       <PerspectiveCamera makeDefault fov={45} position={[8, 6, 10]} />
       <CameraControls />
 
       <ambientLight intensity={themeColors.ambient} />
-      <pointLight ref={pointLightRef} intensity={50} position={[5, 5, 5]} />
+      <pointLight intensity={lightIntensity} position={lightPosition} />
 
-      {showLightHelper ? (
-        <mesh
-          position={[
-            Number(config.lightX) || 5,
-            Number(config.lightY) || 5,
-            Number(config.lightZ) || 5,
-          ]}
-          userData={{ excludeFromSVG: true }}
-        >
-          <sphereGeometry args={[0.12, 12, 12]} />
-          <meshBasicMaterial color={0xff8800} toneMapped={false} />
-        </mesh>
-      ) : null}
+      <mesh position={lightPosition} userData={{ excludeFromSVG: true }}>
+        <sphereGeometry args={[0.12, 12, 12]} />
+        <meshBasicMaterial color={0xff8800} toneMapped={false} />
+      </mesh>
 
       <mesh position={[-4, 1.25, 0]}>
         <coneGeometry args={[1.5, 2.5, 4]} />
@@ -340,7 +254,6 @@ const PrimitivesHatchingScene = forwardRef(function PrimitivesHatchingScene(
       </Html>
     </>
   );
-});
+}
 
 export default PrimitivesHatchingScene;
-export { DEFAULT_CONFIG };

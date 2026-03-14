@@ -1,7 +1,13 @@
 import { folder, useControls } from 'leva';
 import * as THREE from 'three';
+import {
+  klein,
+  mobius,
+  plane,
+} from 'three/addons/geometries/ParametricFunctions.js';
+import { ParametricGeometry } from 'three/addons/geometries/ParametricGeometry.js';
 
-import React, { useMemo } from 'react';
+import React, { useEffect, useMemo } from 'react';
 
 import { CameraControls, PerspectiveCamera } from '@react-three/drei';
 
@@ -10,7 +16,7 @@ import { CameraControls, PerspectiveCamera } from '@react-three/drei';
    25 deterministic particles on a ring, connected by short edges.
    No animation; renders points + lineSegments for the plotter.
 ------------------------------------------------------- */
-function MiniNeuralNet({ position }) {
+function MiniNeuralNet() {
   const { ptPositions, ptCount, linePositions, lineColors, lineCount } =
     useMemo(() => {
       const N = 25;
@@ -59,7 +65,7 @@ function MiniNeuralNet({ position }) {
     }, []);
 
   return (
-    <group position={position}>
+    <group>
       <points>
         <bufferGeometry>
           <bufferAttribute
@@ -68,7 +74,12 @@ function MiniNeuralNet({ position }) {
             count={ptCount}
           />
         </bufferGeometry>
-        <pointsMaterial color="#88ccff" size={3} sizeAttenuation={false} />
+        <pointsMaterial
+          color="#88ccff"
+          size={3}
+          sizeAttenuation={false}
+          side={THREE.DoubleSide}
+        />
       </points>
 
       <lineSegments>
@@ -84,7 +95,7 @@ function MiniNeuralNet({ position }) {
             count={lineCount}
           />
         </bufferGeometry>
-        <lineBasicMaterial vertexColors />
+        <lineBasicMaterial vertexColors side={THREE.DoubleSide} />
       </lineSegments>
     </group>
   );
@@ -96,7 +107,7 @@ function MiniNeuralNet({ position }) {
    algorithms in particleAlgorithms), colored core→edge.
    No animation; renders points only.
 ------------------------------------------------------- */
-function MiniParticleCloud({ position }) {
+function MiniParticleCloud() {
   const { posArray, colorArray, count } = useMemo(() => {
     const N = 400;
     // Lorenz attractor parameters
@@ -166,7 +177,7 @@ function MiniParticleCloud({ position }) {
   }, []);
 
   return (
-    <group position={position}>
+    <group>
       <points>
         <bufferGeometry>
           <bufferAttribute
@@ -180,7 +191,12 @@ function MiniParticleCloud({ position }) {
             count={count}
           />
         </bufferGeometry>
-        <pointsMaterial size={2.5} sizeAttenuation={false} vertexColors />
+        <pointsMaterial
+          size={2.5}
+          sizeAttenuation={false}
+          vertexColors
+          side={THREE.DoubleSide}
+        />
       </points>
     </group>
   );
@@ -225,7 +241,18 @@ export default function PrimitivesTest() {
           showCylinder: { label: 'Cylinder', value: true },
           showSphere: { label: 'Sphere', value: true },
           showIcosahedron: { label: 'Icosahedron', value: true },
+          showOctahedron: { label: 'Octahedron', value: true },
+          showTetrahedron: { label: 'Tetrahedron', value: true },
           showTorusKnot: { label: 'Torus Knot', value: true },
+          showPlanePrimitive: { label: 'Plane Primitive', value: true },
+          showCircle: { label: 'Circle', value: true },
+          showRing: { label: 'Ring', value: true },
+          showLathe: { label: 'Lathe', value: true },
+          showTorus: { label: 'Torus', value: true },
+          showCapsule: { label: 'Capsule', value: true },
+          showParametricPlane: { label: 'Parametric Plane', value: true },
+          showKlein: { label: 'Klein', value: true },
+          showMobius: { label: 'Mobius', value: true },
           showMiniNeuralNet: { label: 'Mini Neural Net', value: true },
           showMiniParticleCloud: { label: 'Mini Particle Cloud', value: true },
           showGroundPlane: { label: 'Ground Plane', value: true },
@@ -241,8 +268,49 @@ export default function PrimitivesTest() {
     SOURCE_THEME_COLORS[config.sourceTheme] || SOURCE_THEME_COLORS.dark;
   const lightPosition = [config.lightX, config.lightY, config.lightZ];
 
-  // Evenly space 6 objects in a 2x3 grid
-  const gridSpacing = 12;
+  const lathePoints = useMemo(() => {
+    const points = [];
+    for (let i = 0; i < 50; i += 1) {
+      points.push(
+        new THREE.Vector2(
+          Math.sin(i * 0.2) * Math.sin(i * 0.1) * 0.45 + 1.1,
+          (i - 25) * 0.05
+        )
+      );
+    }
+    return points;
+  }, []);
+
+  const parametricGeometries = useMemo(() => {
+    const parametricPlane = new ParametricGeometry(plane, 10, 10);
+    parametricPlane.scale(1.8, 1.8, 1.8);
+    parametricPlane.center();
+
+    const kleinGeometry = new ParametricGeometry(klein, 20, 20);
+    kleinGeometry.scale(0.18, 0.18, 0.18);
+    kleinGeometry.center();
+
+    const mobiusGeometry = new ParametricGeometry(mobius, 20, 20);
+    mobiusGeometry.scale(1.2, 1.2, 1.2);
+    mobiusGeometry.center();
+
+    return {
+      parametricPlane,
+      kleinGeometry,
+      mobiusGeometry,
+    };
+  }, []);
+
+  useEffect(() => {
+    return () => {
+      parametricGeometries.parametricPlane.dispose();
+      parametricGeometries.kleinGeometry.dispose();
+      parametricGeometries.mobiusGeometry.dispose();
+    };
+  }, [parametricGeometries]);
+
+  const layoutPlaneSize = 40;
+  const layoutPadding = 4;
   const baseY = 1.5;
   const objects = [
     {
@@ -251,7 +319,12 @@ export default function PrimitivesTest() {
       element: (
         <mesh castShadow>
           <boxGeometry args={[2.4, 2.4, 2.4]} />
-          <meshPhongMaterial color="#44ccff" flatShading shininess={0} />
+          <meshPhongMaterial
+            color="#44ccff"
+            flatShading
+            shininess={0}
+            side={THREE.DoubleSide}
+          />
         </mesh>
       ),
     },
@@ -261,7 +334,12 @@ export default function PrimitivesTest() {
       element: (
         <mesh castShadow>
           <coneGeometry args={[1.5, 2.5, 4]} />
-          <meshPhongMaterial color="#ff6644" flatShading shininess={0} />
+          <meshPhongMaterial
+            color="#ff6644"
+            flatShading
+            shininess={0}
+            side={THREE.DoubleSide}
+          />
         </mesh>
       ),
     },
@@ -271,7 +349,12 @@ export default function PrimitivesTest() {
       element: (
         <mesh castShadow>
           <cylinderGeometry args={[1, 1, 2.5, 12]} />
-          <meshPhongMaterial color="#44ff66" flatShading shininess={0} />
+          <meshPhongMaterial
+            color="#44ff66"
+            flatShading
+            shininess={0}
+            side={THREE.DoubleSide}
+          />
         </mesh>
       ),
     },
@@ -281,7 +364,12 @@ export default function PrimitivesTest() {
       element: (
         <mesh castShadow>
           <sphereGeometry args={[1.25, 18, 12]} />
-          <meshPhongMaterial color="#ffcc44" flatShading shininess={0} />
+          <meshPhongMaterial
+            color="#ffcc44"
+            flatShading
+            shininess={0}
+            side={THREE.DoubleSide}
+          />
         </mesh>
       ),
     },
@@ -291,7 +379,42 @@ export default function PrimitivesTest() {
       element: (
         <mesh castShadow>
           <icosahedronGeometry args={[1.5, 0]} />
-          <meshPhongMaterial color="#4466ff" flatShading shininess={0} />
+          <meshPhongMaterial
+            color="#4466ff"
+            flatShading
+            shininess={0}
+            side={THREE.DoubleSide}
+          />
+        </mesh>
+      ),
+    },
+    {
+      key: 'octahedron',
+      visible: config.showOctahedron,
+      element: (
+        <mesh castShadow>
+          <octahedronGeometry args={[1.5, 0]} />
+          <meshPhongMaterial
+            color="#2f88ff"
+            flatShading
+            shininess={0}
+            side={THREE.DoubleSide}
+          />
+        </mesh>
+      ),
+    },
+    {
+      key: 'tetrahedron',
+      visible: config.showTetrahedron,
+      element: (
+        <mesh castShadow>
+          <tetrahedronGeometry args={[1.7, 0]} />
+          <meshPhongMaterial
+            color="#7c5cff"
+            flatShading
+            shininess={0}
+            side={THREE.DoubleSide}
+          />
         </mesh>
       ),
     },
@@ -301,21 +424,180 @@ export default function PrimitivesTest() {
       element: (
         <mesh castShadow>
           <torusKnotGeometry args={[2, 0.4, 128, 16, 5, 6]} />
-          <meshPhongMaterial color="#ff44cc" flatShading shininess={0} />
+          <meshPhongMaterial
+            color="#ff44cc"
+            flatShading
+            shininess={0}
+            side={THREE.DoubleSide}
+          />
         </mesh>
       ),
     },
+    {
+      key: 'planePrimitive',
+      visible: config.showPlanePrimitive,
+      element: (
+        <mesh castShadow>
+          <planeGeometry args={[2.6, 2.6, 4, 4]} />
+          <meshPhongMaterial
+            color="#7acba8"
+            flatShading
+            shininess={0}
+            side={THREE.DoubleSide}
+          />
+        </mesh>
+      ),
+    },
+    {
+      key: 'circle',
+      visible: config.showCircle,
+      element: (
+        <mesh castShadow>
+          <circleGeometry args={[1.35, 24, 0, Math.PI * 2]} />
+          <meshPhongMaterial
+            color="#f57a52"
+            flatShading
+            shininess={0}
+            side={THREE.DoubleSide}
+          />
+        </mesh>
+      ),
+    },
+    {
+      key: 'ring',
+      visible: config.showRing,
+      element: (
+        <mesh castShadow>
+          <ringGeometry args={[0.45, 1.35, 24, 6, 0, Math.PI * 2]} />
+          <meshPhongMaterial
+            color="#ffd166"
+            flatShading
+            shininess={0}
+            side={THREE.DoubleSide}
+          />
+        </mesh>
+      ),
+    },
+    {
+      key: 'lathe',
+      visible: config.showLathe,
+      element: (
+        <mesh castShadow>
+          <latheGeometry args={[lathePoints, 24]} />
+          <meshPhongMaterial
+            color="#5dd39e"
+            flatShading
+            shininess={0}
+            side={THREE.DoubleSide}
+          />
+        </mesh>
+      ),
+    },
+    {
+      key: 'torus',
+      visible: config.showTorus,
+      element: (
+        <mesh castShadow>
+          <torusGeometry args={[1.4, 0.45, 20, 28]} />
+          <meshPhongMaterial
+            color="#ff77aa"
+            flatShading
+            shininess={0}
+            side={THREE.DoubleSide}
+          />
+        </mesh>
+      ),
+    },
+    {
+      key: 'capsule',
+      visible: config.showCapsule,
+      element: (
+        <mesh castShadow>
+          <capsuleGeometry args={[0.75, 1.45, 8, 16]} />
+          <meshPhongMaterial
+            color="#76c0ff"
+            flatShading
+            shininess={0}
+            side={THREE.DoubleSide}
+          />
+        </mesh>
+      ),
+    },
+    {
+      key: 'parametricPlane',
+      visible: config.showParametricPlane,
+      element: (
+        <mesh castShadow>
+          <primitive
+            object={parametricGeometries.parametricPlane}
+            attach="geometry"
+          />
+          <meshPhongMaterial
+            color="#9fe870"
+            flatShading
+            shininess={0}
+            side={THREE.DoubleSide}
+          />
+        </mesh>
+      ),
+    },
+    {
+      key: 'klein',
+      visible: config.showKlein,
+      element: (
+        <mesh castShadow>
+          <primitive
+            object={parametricGeometries.kleinGeometry}
+            attach="geometry"
+          />
+          <meshPhongMaterial
+            color="#93a8ff"
+            flatShading
+            shininess={0}
+            side={THREE.DoubleSide}
+          />
+        </mesh>
+      ),
+    },
+    {
+      key: 'mobius',
+      visible: config.showMobius,
+      element: (
+        <mesh castShadow>
+          <primitive
+            object={parametricGeometries.mobiusGeometry}
+            attach="geometry"
+          />
+          <meshPhongMaterial
+            color="#ffab91"
+            flatShading
+            shininess={0}
+            side={THREE.DoubleSide}
+          />
+        </mesh>
+      ),
+    },
+    {
+      key: 'miniNeuralNet',
+      visible: config.showMiniNeuralNet,
+      element: <MiniNeuralNet />,
+    },
+    {
+      key: 'miniParticleCloud',
+      visible: config.showMiniParticleCloud,
+      element: <MiniParticleCloud />,
+    },
   ];
 
-  // 2 rows, 3 columns (use first 6 objects)
-  const positions = [
-    [-gridSpacing, baseY, -gridSpacing],
-    [0, baseY, -gridSpacing],
-    [gridSpacing, baseY, -gridSpacing],
-    [-gridSpacing, baseY, gridSpacing],
-    [0, baseY, gridSpacing],
-    [gridSpacing, baseY, gridSpacing],
-  ];
+  const visibleObjects = objects.filter((obj) => obj.visible);
+  const itemCount = visibleObjects.length;
+  const columns = Math.max(1, Math.ceil(Math.sqrt(itemCount)));
+  const rows = Math.max(1, Math.ceil(itemCount / columns));
+  const usableSpan = Math.max(0, layoutPlaneSize - layoutPadding * 2);
+  const stepX = columns > 1 ? usableSpan / (columns - 1) : 0;
+  const stepZ = rows > 1 ? usableSpan / (rows - 1) : 0;
+  const xStart = -usableSpan / 2;
+  const zStart = -usableSpan / 2;
 
   return (
     <>
@@ -334,25 +616,25 @@ export default function PrimitivesTest() {
 
       <mesh position={lightPosition} userData={{ excludeFromSVG: true }}>
         <sphereGeometry args={[0.12, 12, 12]} />
-        <meshBasicMaterial color={0xff8800} toneMapped={false} />
+        <meshBasicMaterial
+          color={0xff8800}
+          toneMapped={false}
+          side={THREE.DoubleSide}
+        />
       </mesh>
 
       {/* Evenly spaced objects for plot rendering test */}
-      {objects.slice(0, 6).map((obj, i) => (
-        <group key={obj.key} position={positions[i]}>
-          {obj.visible ? obj.element : null}
-        </group>
-      ))}
+      {visibleObjects.map((obj, i) => {
+        const col = i % columns;
+        const row = Math.floor(i / columns);
+        const position = [xStart + col * stepX, baseY, zStart + row * stepZ];
 
-      {/* Mini neural network — points + line segments, no animation */}
-      {config.showMiniNeuralNet ? (
-        <MiniNeuralNet position={[-6, 1.5, 0]} />
-      ) : null}
-
-      {/* Mini particle cloud — Lorenz attractor, no animation */}
-      {config.showMiniParticleCloud ? (
-        <MiniParticleCloud position={[6, 1.5, 0]} />
-      ) : null}
+        return (
+          <group key={obj.key} position={position}>
+            {obj.element}
+          </group>
+        );
+      })}
 
       {/* Plane and grid */}
       {config.showGroundPlane ? (
@@ -361,13 +643,22 @@ export default function PrimitivesTest() {
           rotation={[-Math.PI / 2, 0, 0]}
           position={[0, -0.02, 0]}
         >
-          <planeGeometry args={[40, 40, 1, 1]} />
-          <meshPhongMaterial color="#b7b7b7" shininess={0} />
+          <planeGeometry args={[layoutPlaneSize, layoutPlaneSize, 1, 1]} />
+          <meshPhongMaterial
+            color="#b7b7b7"
+            shininess={0}
+            side={THREE.DoubleSide}
+          />
         </mesh>
       ) : null}
       {config.showGrid ? (
         <gridHelper
-          args={[40, 40, themeColors.gridCenter, themeColors.gridLines]}
+          args={[
+            layoutPlaneSize,
+            layoutPlaneSize,
+            themeColors.gridCenter,
+            themeColors.gridLines,
+          ]}
         />
       ) : null}
     </>

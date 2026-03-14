@@ -2,21 +2,21 @@ import { button, folder, useControls } from 'leva';
 
 import { useEffect, useRef } from 'react';
 
-import { localEnv } from '../../../utils/appUtils';
+import { localEnv } from '../../../../utils/appUtils';
 import {
-  DEFAULT_PLOTTER_TEST_PRESET,
-  PLOTTER_TEST_PRESETS,
-  normalizePlotterTestConfig,
-} from './plotterTestPresets';
+  DEFAULT_PLOTTER_PRESET,
+  PLOTTER_PRESETS,
+  normalizePlotterConfig,
+} from '../utils/plotterPresets';
 
-const DEFAULTS = normalizePlotterTestConfig(
-  PLOTTER_TEST_PRESETS[DEFAULT_PLOTTER_TEST_PRESET]
+const DEFAULTS = normalizePlotterConfig(
+  PLOTTER_PRESETS[DEFAULT_PLOTTER_PRESET]
 );
 
-export default function usePlotterTestControls({ onExport, onRefresh }) {
+export default function usePlotterControls({ onExport, onRefresh }) {
   const isLocal = localEnv() || import.meta.env.DEV;
   const controlsSnapshotRef = useRef(DEFAULTS);
-  const selectedPresetRef = useRef(DEFAULT_PLOTTER_TEST_PRESET);
+  const selectedPresetRef = useRef(DEFAULT_PLOTTER_PRESET);
 
   const [config, setControls] = useControls(
     'Plotter Test',
@@ -25,7 +25,7 @@ export default function usePlotterTestControls({ onExport, onRefresh }) {
         {
           preset: {
             label: 'Quality Preset',
-            value: DEFAULT_PLOTTER_TEST_PRESET,
+            value: DEFAULT_PLOTTER_PRESET,
             options: {
               'Low (fast)': 'low',
               'Medium (balanced)': 'medium',
@@ -33,19 +33,19 @@ export default function usePlotterTestControls({ onExport, onRefresh }) {
             },
             onChange: (nextPreset) => {
               selectedPresetRef.current = nextPreset;
-              const preset = PLOTTER_TEST_PRESETS[nextPreset];
+              const preset = PLOTTER_PRESETS[nextPreset];
               if (!preset) return;
               setControls(preset);
             },
           },
           resetPreset: button(() => {
-            const preset = PLOTTER_TEST_PRESETS[selectedPresetRef.current];
+            const preset = PLOTTER_PRESETS[selectedPresetRef.current];
             if (!preset) return;
             setControls(preset);
           }),
           copyPreset: button(() => {
             const presetName = selectedPresetRef.current;
-            const preset = PLOTTER_TEST_PRESETS[presetName];
+            const preset = PLOTTER_PRESETS[presetName];
             if (!preset) return;
 
             const payload = JSON.stringify({ [presetName]: preset }, null, 2)
@@ -513,8 +513,8 @@ export default function usePlotterTestControls({ onExport, onRefresh }) {
     if (config?.preset) {
       selectedPresetRef.current = config.preset;
     }
-    controlsSnapshotRef.current = normalizePlotterTestConfig(config);
+    controlsSnapshotRef.current = config;
   }, [config]);
 
-  return normalizePlotterTestConfig(config);
+  return config;
 }

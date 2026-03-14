@@ -3,9 +3,8 @@ import ExplosionTest from '../ExplosionTest/ExplosionTest';
 import FluidTest from '../FluidTest/FluidTest';
 import HandStuff from '../HandStuff/HandStuff';
 import ParticleLab from '../ParticleLab/ParticleLab';
+import PenPlotter from '../PenPlotter/PenPlotter';
 import PixelHater from '../PixelHater/PixelHater';
-import PlotterTest from '../PlotterTest/PlotterTest';
-import PrimitivesHatchingScene from '../PlotterTest/examples/PrimitivesHatchingScene';
 import StrudelDoodle from '../StrudelDoodle/StrudelDoodle';
 
 const scenes = [
@@ -45,14 +44,9 @@ const scenes = [
     Component: ExplosionTest,
   },
   {
-    id: 'plotterTest',
-    label: 'Plotter Test',
-    Component: PlotterTest,
-  },
-  {
-    id: 'primitivesHatchingScene',
-    label: 'Primitives Hatching Scene',
-    Component: PrimitivesHatchingScene,
+    id: 'penPlotter',
+    label: 'PenPlotter',
+    Component: PenPlotter,
   },
 ];
 

@@ -2,7 +2,7 @@ import { useControls } from 'leva';
 
 import { useEffect, useMemo } from 'react';
 
-import { localEnv } from '../../../utils/appUtils';
+import { localEnv } from '../utils/appUtils';
 
 function getSceneFromQuery(queryParam) {
   if (typeof window === 'undefined') return null;
@@ -10,7 +10,7 @@ function getSceneFromQuery(queryParam) {
   return params.get(queryParam);
 }
 
-export default function useTestLabSceneSelector({
+export default function useSubSceneSelector({
   scenes,
   defaultSceneId,
   groupLabel,

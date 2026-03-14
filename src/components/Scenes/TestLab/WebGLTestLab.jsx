@@ -1,11 +1,11 @@
 import React from 'react';
 
-import useTestLabSceneSelector from './TestLab';
+import useSubSceneSelector from '../../../hooks/useSubSceneSelector';
 import useWebGLTestScenes from './useWebGLTestScenes';
 
 export default function WebGLTestLab() {
   const { scenes } = useWebGLTestScenes();
-  const { SceneComponent } = useTestLabSceneSelector({
+  const { SceneComponent } = useSubSceneSelector({
     scenes,
     defaultSceneId: 'noScene',
     groupLabel: 'WebGL Test Selection',

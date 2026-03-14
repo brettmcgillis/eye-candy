@@ -1,6 +1,6 @@
-export const DEFAULT_PLOTTER_TEST_PRESET = 'low';
+export const DEFAULT_PLOTTER_PRESET = 'low';
 
-export function normalizePlotterTestConfig(config = {}) {
+export function normalizePlotterConfig(config = {}) {
   const hatchRotX = Number(config.rotX) || 0;
   const hatchRotY = Number(config.rotY) || 0;
   const hatchRotZ = Number(config.rotZ) || 0;
@@ -48,7 +48,7 @@ export function normalizePlotterTestConfig(config = {}) {
   };
 }
 
-const RAW_PLOTTER_TEST_PRESETS = {
+const RAW_PLOTTER_PRESETS = {
   low: {
     theme: 'dark',
     autoRefresh: false,
@@ -216,9 +216,9 @@ const RAW_PLOTTER_TEST_PRESETS = {
   },
 };
 
-export const PLOTTER_TEST_PRESETS = Object.fromEntries(
-  Object.entries(RAW_PLOTTER_TEST_PRESETS).map(([name, preset]) => [
+export const PLOTTER_PRESETS = Object.fromEntries(
+  Object.entries(RAW_PLOTTER_PRESETS).map(([name, preset]) => [
     name,
-    normalizePlotterTestConfig(preset),
+    normalizePlotterConfig(preset),
   ])
 );

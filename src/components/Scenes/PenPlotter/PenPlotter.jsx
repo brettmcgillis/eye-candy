@@ -11,20 +11,19 @@ import React, {
 import { Html } from '@react-three/drei';
 import { useFrame, useThree } from '@react-three/fiber';
 
-import TestScene from './TestScene';
-import { PlotterRenderer } from './examples/PlotterRenderer/plotter-renderer';
-import { normalizePlotterTestConfig } from './plotterTestPresets';
+import usePlotterControls from './Hooks/usePlotterControls';
+import PlotView from './PlotView';
+import { PlotterRenderer } from './PlotterRenderer/plotter-renderer';
 import {
   downloadSvg,
   extractSvgMarkup,
   getThemeColors,
   getViewportLayout,
-} from './plotterTestUtils';
-import usePlotterTestControls from './usePlotterTestControls';
+} from './utils/plotterUtils';
 
 const VIEWPORT_DIVIDER_PX = 2;
 
-export default function PlotterTest() {
+export default function PenPlotter() {
   const svgOverlayRef = useRef(null);
   const plotterRendererRef = useRef(null);
   const offscreenGlRendererRef = useRef(null);
@@ -429,7 +428,7 @@ export default function PlotterTest() {
     []
   );
 
-  const config = usePlotterTestControls({
+  const config = usePlotterControls({
     onExport: handleExport,
     onRefresh: handleRefresh,
   });
@@ -441,129 +440,15 @@ export default function PlotterTest() {
 
   const layout = useMemo(() => getViewportLayout(viewportSize), [viewportSize]);
 
-  const sceneConfig = useMemo(
-    () => ({
-      autoRefresh: config.autoRefresh,
-      theme: config.theme,
-      strokeWidth: config.strokeWidth,
-      showSilhouettes: config.showSilhouettes,
-      showEdges: config.showEdges,
-      showHatches: config.showHatches,
-      showCrossHatches: config.showCrossHatches,
-      showPrimitivePoints: config.showPrimitivePoints,
-      showPrimitiveLines: config.showPrimitiveLines,
-      rotX: config.rotX,
-      rotY: config.rotY,
-      rotZ: config.rotZ,
-      spaceX: config.spaceX,
-      spaceY: config.spaceY,
-      spaceZ: config.spaceZ,
-      insetPixels: config.insetPixels,
-      connectHatches: config.connectHatches,
-      hatchStrokeWidthScale: config.hatchStrokeWidthScale,
-      crossHatchRotX: config.crossHatchRotX,
-      crossHatchRotY: config.crossHatchRotY,
-      crossHatchRotZ: config.crossHatchRotZ,
-      crossHatchSpaceX: config.crossHatchSpaceX,
-      crossHatchSpaceY: config.crossHatchSpaceY,
-      crossHatchSpaceZ: config.crossHatchSpaceZ,
-      crossHatchInsetPixels: config.crossHatchInsetPixels,
-      crossHatchConnectHatches: config.crossHatchConnectHatches,
-      crossHatchMaxSegments: config.crossHatchMaxSegments,
-      crossHatchStrokeWidthScale: config.crossHatchStrokeWidthScale,
-      primitivePointRadius: config.primitivePointRadius,
-      primitivePointOpacity: config.primitivePointOpacity,
-      primitivePointDensityQuantization:
-        config.primitivePointDensityQuantization,
-      primitivePointDensityMaxCount: config.primitivePointDensityMaxCount,
-      primitiveLineStrokeWidthScale: config.primitiveLineStrokeWidthScale,
-      primitiveLineOpacity: config.primitiveLineOpacity,
-      primitiveLineDensityQuantization: config.primitiveLineDensityQuantization,
-      primitiveLineDensityMaxSegments: config.primitiveLineDensityMaxSegments,
-      primitiveLineDensityMinLength: config.primitiveLineDensityMinLength,
-      brightnessShading: config.brightnessShading,
-      minSpacing: config.minSpacing,
-      maxSpacing: config.maxSpacing,
-      lightX: config.lightX,
-      lightY: config.lightY,
-      lightZ: config.lightZ,
-      lightIntensity: config.lightIntensity,
-      hatchMaxSegments: config.hatchMaxSegments,
-      interactiveDebounceMs: config.interactiveDebounceMs,
-      fullFrameBudgetMs: config.fullFrameBudgetMs,
-      smoothThreshold: config.smoothThreshold,
-      silhouetteSimplifyTolerance: config.silhouetteSimplifyTolerance,
-      silhouetteMinArea: config.silhouetteMinArea,
-      silhouetteNormalBuckets: config.silhouetteNormalBuckets,
-      precision: config.precision,
-      exportName: config.exportName,
-    }),
-    [
-      config.autoRefresh,
-      config.brightnessShading,
-      config.connectHatches,
-      config.exportName,
-      config.hatchMaxSegments,
-      config.insetPixels,
-      config.lightIntensity,
-      config.lightX,
-      config.lightY,
-      config.lightZ,
-      config.maxSpacing,
-      config.minSpacing,
-      config.precision,
-      config.rotX,
-      config.rotY,
-      config.rotZ,
-      config.showEdges,
-      config.showHatches,
-      config.showCrossHatches,
-      config.showPrimitivePoints,
-      config.showPrimitiveLines,
-      config.showSilhouettes,
-      config.spaceX,
-      config.spaceY,
-      config.spaceZ,
-      config.hatchStrokeWidthScale,
-      config.crossHatchConnectHatches,
-      config.crossHatchInsetPixels,
-      config.crossHatchMaxSegments,
-      config.crossHatchRotX,
-      config.crossHatchRotY,
-      config.crossHatchRotZ,
-      config.crossHatchSpaceX,
-      config.crossHatchSpaceY,
-      config.crossHatchSpaceZ,
-      config.crossHatchStrokeWidthScale,
-      config.primitivePointRadius,
-      config.primitivePointOpacity,
-      config.primitivePointDensityQuantization,
-      config.primitivePointDensityMaxCount,
-      config.primitiveLineStrokeWidthScale,
-      config.primitiveLineOpacity,
-      config.primitiveLineDensityQuantization,
-      config.primitiveLineDensityMaxSegments,
-      config.primitiveLineDensityMinLength,
-      config.strokeWidth,
-      config.interactiveDebounceMs,
-      config.fullFrameBudgetMs,
-      config.theme,
-      config.silhouetteMinArea,
-      config.silhouetteNormalBuckets,
-      config.silhouetteSimplifyTolerance,
-      config.smoothThreshold,
-    ]
-  );
-
   useEffect(() => {
     isMountedRef.current = true;
 
-    configRef.current = normalizePlotterTestConfig(sceneConfig);
+    configRef.current = config;
 
     return () => {
       isMountedRef.current = false;
     };
-  }, [sceneConfig]);
+  }, [config]);
 
   useEffect(() => {
     if (initialRefreshRequestedRef.current || !configRef.current) {
@@ -578,7 +463,7 @@ export default function PlotterTest() {
     return () => {
       window.cancelAnimationFrame(frameId);
     };
-  }, [handleRefresh, sceneConfig]);
+  }, [handleRefresh, config]);
 
   useEffect(() => {
     const width = Math.round(Number(viewportSize?.width) || 0);
@@ -665,7 +550,7 @@ export default function PlotterTest() {
   return (
     <>
       <color attach="background" args={[themeColors.background]} />
-      <TestScene />
+      <PlotView />
 
       <Html
         fullscreen

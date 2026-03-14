@@ -1,11 +1,11 @@
 import React from 'react';
 
-import useTestLabSceneSelector from './TestLab';
+import useSubSceneSelector from '../../../hooks/useSubSceneSelector';
 import useWebGPUTestScenes from './useWebGPUTestScenes';
 
 export default function WebGPUTestLab() {
   const { scenes } = useWebGPUTestScenes();
-  const { SceneComponent } = useTestLabSceneSelector({
+  const { SceneComponent } = useSubSceneSelector({
     scenes,
     defaultSceneId: 'noScene',
     groupLabel: 'WebGPU Test Selection',

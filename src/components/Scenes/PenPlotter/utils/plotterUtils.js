@@ -8,8 +8,8 @@ export function downloadSvg(svgString, fileName = 'export') {
   link.click();
   URL.revokeObjectURL(url);
 }
-// Utility functions for PlotterTest
 
+// Utility functions for PenPlotter
 export function getThemeColors(theme) {
   return theme === 'light'
     ? {

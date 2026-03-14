@@ -199,23 +199,10 @@ const SOURCE_THEME_COLORS = {
   },
 };
 
-export default function TestScene() {
+export default function PrimitivesTest() {
   const config = useControls(
-    'Plotter Source Scene',
+    'Primitives Test Scene',
     {
-      Theme: folder(
-        {
-          sourceTheme: {
-            label: 'Theme',
-            value: 'dark',
-            options: {
-              Dark: 'dark',
-              Light: 'light',
-            },
-          },
-        },
-        { collapsed: true }
-      ),
       Lighting: folder(
         {
           lightIntensity: {

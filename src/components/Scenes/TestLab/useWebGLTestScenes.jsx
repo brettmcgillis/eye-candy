@@ -3,7 +3,6 @@ import ExplosionTest from '../ExplosionTest/ExplosionTest';
 import FluidTest from '../FluidTest/FluidTest';
 import HandStuff from '../HandStuff/HandStuff';
 import ParticleLab from '../ParticleLab/ParticleLab';
-import PenPlotter from '../PenPlotter/PenPlotter';
 import PixelHater from '../PixelHater/PixelHater';
 import StrudelDoodle from '../StrudelDoodle/StrudelDoodle';
 
@@ -42,11 +41,6 @@ const scenes = [
     id: 'explosionTest',
     label: 'Explosion Test',
     Component: ExplosionTest,
-  },
-  {
-    id: 'penPlotter',
-    label: 'PenPlotter',
-    Component: PenPlotter,
   },
 ];
 

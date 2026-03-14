@@ -14,6 +14,9 @@ const NewScene = lazy(() => import('../components/scenes/NewScene/NewScene'));
 const PaperStack = lazy(
   () => import('../components/scenes/PaperStack/PaperStack')
 );
+const PenPlotter = lazy(
+  () => import('../components/scenes/PenPlotter/PenPlotter')
+);
 const QuinnsDice = lazy(
   () => import('../components/scenes/QuinnsDice/QuinnsDice')
 );
@@ -85,6 +88,16 @@ const paperStack = {
   linkable: true,
 };
 
+const penPlotter = {
+  id: 'penPlotter',
+  renderer: 'webgl',
+  Component: PenPlotter,
+  label: 'Pen Plotter',
+  icon: '📐🖊️',
+  public: true,
+  linkable: true,
+};
+
 const webglTestLab = {
   id: 'webglTestLab',
   renderer: 'webgl',
@@ -142,6 +155,7 @@ const scenes = [
   loGlow,
   newScene,
   paperStack,
+  penPlotter,
   webglTestLab,
   crtTest,
   webgpuTestLab,

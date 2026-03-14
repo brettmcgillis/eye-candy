@@ -431,17 +431,12 @@ const PlotterRenderer = function () {
   function extractPrimitivePoints(scene, camera) {
     const points = [];
     const worldPoint = new Vector3();
-    const sourceColor = new Color();
 
     scene.traverse((obj) => {
       if (!obj.isPoints || !obj.geometry) return;
       if (resolveHierarchySvgExclusion(obj)) return;
       const positionAttr = obj.geometry.getAttribute('position');
       if (!positionAttr) return;
-
-      const materialColor = obj.material?.color
-        ? `#${sourceColor.copy(obj.material.color).getHexString()}`
-        : null;
 
       for (let i = 0; i < positionAttr.count; i += 1) {
         worldPoint.set(
@@ -452,7 +447,7 @@ const PlotterRenderer = function () {
         worldPoint.applyMatrix4(obj.matrixWorld);
         const projected = projectWorldToSvgPoint(worldPoint, camera);
         if (!projected) continue;
-        points.push({ ...projected, color: materialColor });
+        points.push(projected);
       }
     });
 
@@ -463,19 +458,18 @@ const PlotterRenderer = function () {
     const segments = [];
     const aWorld = new Vector3();
     const bWorld = new Vector3();
-    const sourceColor = new Color();
 
     scene.traverse((obj) => {
-      if (!(obj.isLine || obj.isLineSegments || obj.isLineLoop) || !obj.geometry)
+      if (
+        !(obj.isLine || obj.isLineSegments || obj.isLineLoop) ||
+        !obj.geometry
+      )
         return;
       if (resolveHierarchySvgExclusion(obj)) return;
 
       const positionAttr = obj.geometry.getAttribute('position');
       if (!positionAttr || positionAttr.count < 2) return;
       const indexAttr = obj.geometry.getIndex();
-      const materialColor = obj.material?.color
-        ? `#${sourceColor.copy(obj.material.color).getHexString()}`
-        : null;
 
       const appendSegment = (aIdx, bIdx) => {
         aWorld.set(
@@ -493,7 +487,7 @@ const PlotterRenderer = function () {
 
         const projected = projectAndClipWorldSegment(aWorld, bWorld, camera);
         if (!projected) return;
-        segments.push({ ...projected, color: materialColor });
+        segments.push(projected);
       };
 
       if (obj.isLineSegments) {
@@ -536,7 +530,10 @@ const PlotterRenderer = function () {
       _this.primitiveLineOptions.stroke ||
       primitiveTheme.primitiveStroke ||
       primitiveTheme.edgeStroke;
-    const radius = Math.max(0.2, Number(_this.primitivePointOptions.radius) || 1);
+    const radius = Math.max(
+      0.2,
+      Number(_this.primitivePointOptions.radius) || 1
+    );
     const opacity = Math.min(
       1,
       Math.max(0.05, Number(_this.primitivePointOptions.opacity) || 1)
@@ -546,11 +543,14 @@ const PlotterRenderer = function () {
     const points = dedupeAndLimitPoints(rawPoints, _this.primitivePointOptions);
 
     points.forEach((pt) => {
-      const circle = document.createElementNS('http://www.w3.org/2000/svg', 'circle');
+      const circle = document.createElementNS(
+        'http://www.w3.org/2000/svg',
+        'circle'
+      );
       circle.setAttribute('cx', lop(pt.x));
       circle.setAttribute('cy', lop(pt.y));
       circle.setAttribute('r', lop(radius));
-      circle.setAttribute('fill', pt.color || baseFill);
+      circle.setAttribute('fill', baseFill);
       circle.setAttribute('fill-opacity', opacity);
       _primitivePoints.appendChild(circle);
     });
@@ -562,22 +562,31 @@ const PlotterRenderer = function () {
       _this.primitiveLineOptions.stroke ||
       primitiveTheme.primitiveStroke ||
       primitiveTheme.edgeStroke;
-    const strokeWidth = resolveCssPxNumber(_this.primitiveLineOptions.strokeWidth, 1);
+    const strokeWidth = resolveCssPxNumber(
+      _this.primitiveLineOptions.strokeWidth,
+      1
+    );
     const opacity = Math.min(
       1,
       Math.max(0.05, Number(_this.primitiveLineOptions.opacity) || 1)
     );
 
     const rawSegments = extractPrimitiveLineSegments(scene, camera);
-    const segments = dedupeAndLimitSegments(rawSegments, _this.primitiveLineOptions);
+    const segments = dedupeAndLimitSegments(
+      rawSegments,
+      _this.primitiveLineOptions
+    );
 
     segments.forEach((segment) => {
-      const line = document.createElementNS('http://www.w3.org/2000/svg', 'line');
+      const line = document.createElementNS(
+        'http://www.w3.org/2000/svg',
+        'line'
+      );
       line.setAttribute('x1', lop(segment.a.x));
       line.setAttribute('y1', lop(segment.a.y));
       line.setAttribute('x2', lop(segment.b.x));
       line.setAttribute('y2', lop(segment.b.y));
-      line.setAttribute('stroke', segment.color || stroke);
+      line.setAttribute('stroke', stroke);
       line.setAttribute('stroke-width', lop(strokeWidth));
       line.setAttribute('stroke-opacity', opacity);
       _primitiveLines.appendChild(line);

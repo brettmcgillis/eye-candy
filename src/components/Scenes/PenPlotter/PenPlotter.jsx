@@ -507,6 +507,7 @@ export default function PenPlotter() {
       getViewportLayout(size);
 
     const originalAspect = activeCamera.aspect;
+    const previousAutoClear = gl.autoClear;
 
     gl.autoClear = false;
     gl.setScissorTest(true);
@@ -544,8 +545,21 @@ export default function PenPlotter() {
 
     activeCamera.aspect = originalAspect;
     activeCamera.updateProjectionMatrix();
+    gl.setViewport(0, 0, size.width, size.height);
+    gl.setScissor(0, 0, size.width, size.height);
     gl.setScissorTest(false);
+    gl.autoClear = previousAutoClear;
   }, 1);
+
+  useEffect(() => {
+    return () => {
+      const { gl, size } = getThree();
+      gl.autoClear = true;
+      gl.setScissorTest(false);
+      gl.setViewport(0, 0, size.width, size.height);
+      gl.setScissor(0, 0, size.width, size.height);
+    };
+  }, [getThree]);
 
   return (
     <>

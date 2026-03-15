@@ -419,15 +419,22 @@ export default function PrimitivesTest() {
     },
   ];
 
-  const visibleObjects = objects.filter((obj) => obj.visible);
-  const itemCount = visibleObjects.length;
-  const columns = Math.max(1, Math.ceil(Math.sqrt(itemCount)));
-  const rows = Math.max(1, Math.ceil(itemCount / columns));
-  const usableSpan = Math.max(0, layoutPlaneSize - layoutPadding * 2);
-  const stepX = columns > 1 ? usableSpan / (columns - 1) : 0;
-  const stepZ = rows > 1 ? usableSpan / (rows - 1) : 0;
-  const xStart = -usableSpan / 2;
-  const zStart = -usableSpan / 2;
+  const totalObjects = objects.length;
+  const objectPositions = useMemo(() => {
+    const columns = Math.max(1, Math.ceil(Math.sqrt(totalObjects)));
+    const rows = Math.max(1, Math.ceil(totalObjects / columns));
+    const usableSpan = Math.max(0, layoutPlaneSize - layoutPadding * 2);
+    const stepX = columns > 1 ? usableSpan / (columns - 1) : 0;
+    const stepZ = rows > 1 ? usableSpan / (rows - 1) : 0;
+    const xStart = -usableSpan / 2;
+    const zStart = -usableSpan / 2;
+
+    return Array.from({ length: totalObjects }, (_, i) => {
+      const col = i % columns;
+      const row = Math.floor(i / columns);
+      return [xStart + col * stepX, baseY, zStart + row * stepZ];
+    });
+  }, [baseY, layoutPadding, layoutPlaneSize, totalObjects]);
 
   return (
     <>
@@ -454,14 +461,14 @@ export default function PrimitivesTest() {
         />
       </mesh>
 
-      {/* Evenly spaced objects for plot rendering test */}
-      {visibleObjects.map((obj, i) => {
-        const col = i % columns;
-        const row = Math.floor(i / columns);
-        const position = [xStart + col * stepX, baseY, zStart + row * stepZ];
+      {/* Stable slots prevent remaining objects from shifting when toggled */}
+      {objects.map((obj, i) => {
+        if (!obj.visible) {
+          return null;
+        }
 
         return (
-          <group key={obj.key} position={position}>
+          <group key={obj.key} position={objectPositions[i]}>
             {obj.element}
           </group>
         );

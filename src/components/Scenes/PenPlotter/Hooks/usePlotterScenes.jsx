@@ -1,4 +1,4 @@
-import PrimitivesTest from '../PlotScenes/PrimitivesTest';
+import PrimitivesTest from '../PlotScenes/PrimitivesTest/PrimitivesTest';
 
 const scenes = [
   {

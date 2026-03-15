@@ -12,208 +12,14 @@ import React, { useEffect, useMemo } from 'react';
 
 import { CameraControls, PerspectiveCamera } from '@react-three/drei';
 
-/* -------------------------------------------------------
-   MiniNeuralNet — tiny static approximation of NeuralNetwork.
-   25 deterministic particles on a ring, connected by short edges.
-   No animation; renders points + lineSegments for the plotter.
-------------------------------------------------------- */
-function MiniNeuralNet() {
-  const { ptPositions, ptCount, linePositions, lineColors, lineCount } =
-    useMemo(() => {
-      const N = 25;
-      const pts = [];
+import MiniNeuralNet from './MiniNetwork';
+import MiniParticleCloud from './MiniParticleCloud';
 
-      // Deterministic ring with vertical wobble — no Math.random()
-      for (let i = 0; i < N; i += 1) {
-        const theta = (i / N) * Math.PI * 2;
-        const r = 1.2 + 0.4 * Math.abs(Math.sin(i * 1.3));
-        const y = 0.6 * Math.sin(i * 0.8 + 1.0);
-        pts.push([Math.cos(theta) * r, y, Math.sin(theta) * r]);
-      }
-
-      const ptPos = new Float32Array(N * 3);
-      pts.forEach(([x, y, z], i) => {
-        ptPos[i * 3] = x;
-        ptPos[i * 3 + 1] = y;
-        ptPos[i * 3 + 2] = z;
-      });
-
-      const maxDist = 1.8;
-      const linePosArr = [];
-      const lineColArr = [];
-
-      for (let i = 0; i < N; i += 1) {
-        for (let j = i + 1; j < N; j += 1) {
-          const dx = pts[i][0] - pts[j][0];
-          const dy = pts[i][1] - pts[j][1];
-          const dz = pts[i][2] - pts[j][2];
-          const dist = Math.sqrt(dx * dx + dy * dy + dz * dz);
-          if (dist < maxDist) {
-            const alpha = 1 - dist / maxDist;
-            linePosArr.push(...pts[i], ...pts[j]);
-            lineColArr.push(alpha, alpha, alpha, alpha, alpha, alpha);
-          }
-        }
-      }
-
-      return {
-        ptPositions: ptPos,
-        ptCount: N,
-        linePositions: new Float32Array(linePosArr),
-        lineColors: new Float32Array(lineColArr),
-        lineCount: linePosArr.length / 3,
-      };
-    }, []);
-
-  return (
-    <group>
-      <points>
-        <bufferGeometry>
-          <bufferAttribute
-            attach="attributes-position"
-            args={[ptPositions, 3]}
-            count={ptCount}
-          />
-        </bufferGeometry>
-        <pointsMaterial
-          color="#88ccff"
-          size={3}
-          sizeAttenuation={false}
-          side={THREE.DoubleSide}
-        />
-      </points>
-
-      <lineSegments>
-        <bufferGeometry>
-          <bufferAttribute
-            attach="attributes-position"
-            args={[linePositions, 3]}
-            count={lineCount}
-          />
-          <bufferAttribute
-            attach="attributes-color"
-            args={[lineColors, 3]}
-            count={lineCount}
-          />
-        </bufferGeometry>
-        <lineBasicMaterial vertexColors side={THREE.DoubleSide} />
-      </lineSegments>
-    </group>
-  );
-}
-
-/* -------------------------------------------------------
-   MiniParticleCloud — tiny static approximation of ParticleCloud.
-   400 points sampled from a Lorenz attractor (like the ODE fractal
-   algorithms in particleAlgorithms), colored core→edge.
-   No animation; renders points only.
-------------------------------------------------------- */
-function MiniParticleCloud() {
-  const { posArray, colorArray, count } = useMemo(() => {
-    const N = 400;
-    // Lorenz attractor parameters
-    let x = 0.1;
-    let y = 0.0;
-    let z = 0.0;
-    const dt = 0.005;
-    const sigma = 10;
-    const rho = 28;
-    const beta = 8 / 3;
-
-    // Skip transient
-    for (let i = 0; i < 1000; i += 1) {
-      const dx = sigma * (y - x) * dt;
-      const dy = (x * (rho - z) - y) * dt;
-      const dz = (x * y - beta * z) * dt;
-      x += dx;
-      y += dy;
-      z += dz;
-    }
-
-    // Collect N samples (subsample every 3 steps for variety)
-    const raw = [];
-    for (let i = 0; i < N; i += 1) {
-      for (let s = 0; s < 3; s += 1) {
-        const dx = sigma * (y - x) * dt;
-        const dy = (x * (rho - z) - y) * dt;
-        const dz = (x * y - beta * z) * dt;
-        x += dx;
-        y += dy;
-        z += dz;
-      }
-      // Map (x, y, z_attractor) → Three.js (x, height, depth)
-      raw.push(x, z - 25, y);
-    }
-
-    // Normalize to fit within ~2 world-units radius
-    let maxR = 0;
-    for (let i = 0; i < raw.length; i += 3) {
-      const r = Math.sqrt(raw[i] ** 2 + raw[i + 1] ** 2 + raw[i + 2] ** 2);
-      if (r > maxR) maxR = r;
-    }
-    const scale = 2.0 / (maxR || 1);
-
-    const pos = new Float32Array(N * 3);
-    const col = new Float32Array(N * 3);
-    const c1 = new THREE.Color('#ff0055');
-    const c2 = new THREE.Color('#4422ff');
-    const c3 = new THREE.Color('#00ffff');
-
-    for (let i = 0; i < N; i += 1) {
-      pos[i * 3] = raw[i * 3] * scale;
-      pos[i * 3 + 1] = raw[i * 3 + 1] * scale;
-      pos[i * 3 + 2] = raw[i * 3 + 2] * scale;
-
-      const t = i / N;
-      const c =
-        t < 0.5
-          ? c1.clone().lerp(c2, t * 2)
-          : c2.clone().lerp(c3, (t - 0.5) * 2);
-      col[i * 3] = c.r;
-      col[i * 3 + 1] = c.g;
-      col[i * 3 + 2] = c.b;
-    }
-
-    return { posArray: pos, colorArray: col, count: N };
-  }, []);
-
-  return (
-    <group>
-      <points>
-        <bufferGeometry>
-          <bufferAttribute
-            attach="attributes-position"
-            args={[posArray, 3]}
-            count={count}
-          />
-          <bufferAttribute
-            attach="attributes-color"
-            args={[colorArray, 3]}
-            count={count}
-          />
-        </bufferGeometry>
-        <pointsMaterial
-          size={2.5}
-          sizeAttenuation={false}
-          vertexColors
-          side={THREE.DoubleSide}
-        />
-      </points>
-    </group>
-  );
-}
-
-const SOURCE_THEME_COLORS = {
-  light: {
-    ambient: 2.0,
-    gridCenter: '#cccccc',
-    gridLines: '#dddddd',
-  },
-  dark: {
-    ambient: 0.25,
-    gridCenter: '#444444',
-    gridLines: '#333333',
-  },
+const FIXED_SCENE_COLORS = {
+  background: '#1c1c1c',
+  ambient: 0.25,
+  gridCenter: '#444444',
+  gridLines: '#333333',
 };
 
 export default function PrimitivesTest() {
@@ -266,8 +72,6 @@ export default function PrimitivesTest() {
     { collapsed: true }
   );
 
-  const themeColors =
-    SOURCE_THEME_COLORS[config.sourceTheme] || SOURCE_THEME_COLORS.dark;
   const lightPosition = [config.lightX, config.lightY, config.lightZ];
 
   const lathePoints = useMemo(() => {
@@ -627,10 +431,11 @@ export default function PrimitivesTest() {
 
   return (
     <>
+      <color attach="background" args={[FIXED_SCENE_COLORS.background]} />
       <PerspectiveCamera makeDefault fov={45} position={[8, 6, 10]} />
       <CameraControls />
 
-      <ambientLight intensity={themeColors.ambient} />
+      <ambientLight intensity={FIXED_SCENE_COLORS.ambient} />
       <pointLight
         castShadow
         intensity={config.lightIntensity}
@@ -682,8 +487,8 @@ export default function PrimitivesTest() {
           args={[
             layoutPlaneSize,
             layoutPlaneSize,
-            themeColors.gridCenter,
-            themeColors.gridLines,
+            FIXED_SCENE_COLORS.gridCenter,
+            FIXED_SCENE_COLORS.gridLines,
           ]}
         />
       ) : null}

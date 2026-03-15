@@ -563,7 +563,6 @@ export default function PenPlotter() {
 
   return (
     <>
-      <color attach="background" args={[themeColors.background]} />
       <PlotView />
 
       <Html

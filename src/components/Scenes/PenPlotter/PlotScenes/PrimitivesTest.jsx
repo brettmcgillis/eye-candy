@@ -3,6 +3,7 @@ import * as THREE from 'three';
 import {
   klein,
   mobius,
+  mobius3d,
   plane,
 } from 'three/addons/geometries/ParametricFunctions.js';
 import { ParametricGeometry } from 'three/addons/geometries/ParametricGeometry.js';
@@ -253,6 +254,7 @@ export default function PrimitivesTest() {
           showParametricPlane: { label: 'Parametric Plane', value: true },
           showKlein: { label: 'Klein', value: true },
           showMobius: { label: 'Mobius', value: true },
+          showMobius3d: { label: 'Mobius 3D', value: true },
           showMiniNeuralNet: { label: 'Mini Neural Net', value: true },
           showMiniParticleCloud: { label: 'Mini Particle Cloud', value: true },
           showGroundPlane: { label: 'Ground Plane', value: true },
@@ -294,10 +296,15 @@ export default function PrimitivesTest() {
     mobiusGeometry.scale(1.2, 1.2, 1.2);
     mobiusGeometry.center();
 
+    const mobius3dGeometry = new ParametricGeometry(mobius3d, 30, 16);
+    mobius3dGeometry.scale(0.7, 0.7, 0.7);
+    mobius3dGeometry.center();
+
     return {
       parametricPlane,
       kleinGeometry,
       mobiusGeometry,
+      mobius3dGeometry,
     };
   }, []);
 
@@ -306,6 +313,7 @@ export default function PrimitivesTest() {
       parametricGeometries.parametricPlane.dispose();
       parametricGeometries.kleinGeometry.dispose();
       parametricGeometries.mobiusGeometry.dispose();
+      parametricGeometries.mobius3dGeometry.dispose();
     };
   }, [parametricGeometries]);
 
@@ -570,6 +578,24 @@ export default function PrimitivesTest() {
           />
           <meshPhongMaterial
             color="#ffab91"
+            flatShading
+            shininess={0}
+            side={THREE.DoubleSide}
+          />
+        </mesh>
+      ),
+    },
+    {
+      key: 'mobius3d',
+      visible: config.showMobius3d,
+      element: (
+        <mesh castShadow>
+          <primitive
+            object={parametricGeometries.mobius3dGeometry}
+            attach="geometry"
+          />
+          <meshPhongMaterial
+            color="#ff8dc7"
             flatShading
             shininess={0}
             side={THREE.DoubleSide}

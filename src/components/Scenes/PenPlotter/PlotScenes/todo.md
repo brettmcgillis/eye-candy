@@ -1,5 +1,13 @@
 # // Plot Scenes
 
+Best setup will likely be:
+
+- orthographic camera
+- a primitive at the back of the scene to provide framing. exampls, a large square, circle, or rectangle, a triptych of rectangles.
+- geometry arranged in front of the framing
+
+# // Plot Ideas
+
 - [ ] point cloud
 - [ ] point cloud inside cube
 - [ ] point cloud inside icosahedron

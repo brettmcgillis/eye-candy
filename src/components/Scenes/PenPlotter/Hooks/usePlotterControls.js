@@ -19,7 +19,7 @@ export default function usePlotterControls({ onExport, onRefresh }) {
   const selectedPresetRef = useRef(DEFAULT_PLOTTER_PRESET);
 
   const [config, setControls] = useControls(
-    'Plotter Test',
+    'Pen Plotter',
     () => ({
       Presets: folder(
         {
@@ -106,7 +106,7 @@ export default function usePlotterControls({ onExport, onRefresh }) {
             min: 0.4,
             max: 4,
             step: 0.05,
-            render: (get) => get('Plotter Test.Layers.showPrimitivePoints'),
+            render: (get) => get('Pen Plotter.Layers.showPrimitivePoints'),
           },
           primitivePointOpacity: {
             label: 'Point Opacity',
@@ -114,7 +114,7 @@ export default function usePlotterControls({ onExport, onRefresh }) {
             min: 0.1,
             max: 1,
             step: 0.05,
-            render: (get) => get('Plotter Test.Layers.showPrimitivePoints'),
+            render: (get) => get('Pen Plotter.Layers.showPrimitivePoints'),
           },
           primitivePointDensityQuantization: {
             label: 'Density Quantization (px)',
@@ -122,7 +122,7 @@ export default function usePlotterControls({ onExport, onRefresh }) {
             min: 0,
             max: 4,
             step: 0.1,
-            render: (get) => get('Plotter Test.Layers.showPrimitivePoints'),
+            render: (get) => get('Pen Plotter.Layers.showPrimitivePoints'),
           },
           primitivePointDensityMaxCount: {
             label: 'Max Points',
@@ -130,7 +130,7 @@ export default function usePlotterControls({ onExport, onRefresh }) {
             min: 100,
             max: 20000,
             step: 100,
-            render: (get) => get('Plotter Test.Layers.showPrimitivePoints'),
+            render: (get) => get('Pen Plotter.Layers.showPrimitivePoints'),
           },
         },
         { collapsed: true }
@@ -143,7 +143,7 @@ export default function usePlotterControls({ onExport, onRefresh }) {
             min: 0.25,
             max: 3,
             step: 0.05,
-            render: (get) => get('Plotter Test.Layers.showPrimitiveLines'),
+            render: (get) => get('Pen Plotter.Layers.showPrimitiveLines'),
           },
           primitiveLineOpacity: {
             label: 'Line Opacity',
@@ -151,7 +151,7 @@ export default function usePlotterControls({ onExport, onRefresh }) {
             min: 0.1,
             max: 1,
             step: 0.05,
-            render: (get) => get('Plotter Test.Layers.showPrimitiveLines'),
+            render: (get) => get('Pen Plotter.Layers.showPrimitiveLines'),
           },
           primitiveLineDensityQuantization: {
             label: 'Density Quantization (px)',
@@ -159,7 +159,7 @@ export default function usePlotterControls({ onExport, onRefresh }) {
             min: 0,
             max: 4,
             step: 0.1,
-            render: (get) => get('Plotter Test.Layers.showPrimitiveLines'),
+            render: (get) => get('Pen Plotter.Layers.showPrimitiveLines'),
           },
           primitiveLineDensityMaxSegments: {
             label: 'Max Segments',
@@ -167,7 +167,7 @@ export default function usePlotterControls({ onExport, onRefresh }) {
             min: 100,
             max: 20000,
             step: 100,
-            render: (get) => get('Plotter Test.Layers.showPrimitiveLines'),
+            render: (get) => get('Pen Plotter.Layers.showPrimitiveLines'),
           },
           primitiveLineDensityMinLength: {
             label: 'Min Segment Length (px)',
@@ -175,7 +175,7 @@ export default function usePlotterControls({ onExport, onRefresh }) {
             min: 0,
             max: 6,
             step: 0.1,
-            render: (get) => get('Plotter Test.Layers.showPrimitiveLines'),
+            render: (get) => get('Pen Plotter.Layers.showPrimitiveLines'),
           },
         },
         { collapsed: true }
@@ -254,7 +254,7 @@ export default function usePlotterControls({ onExport, onRefresh }) {
             min: -180,
             max: 180,
             step: 1,
-            render: (get) => get('Plotter Test.Layers.showHatches'),
+            render: (get) => get('Pen Plotter.Layers.showHatches'),
           },
           rotY: {
             label: 'Rotation Y (deg)',
@@ -262,7 +262,7 @@ export default function usePlotterControls({ onExport, onRefresh }) {
             min: -180,
             max: 180,
             step: 1,
-            render: (get) => get('Plotter Test.Layers.showHatches'),
+            render: (get) => get('Pen Plotter.Layers.showHatches'),
           },
           rotZ: {
             label: 'Rotation Z (deg)',
@@ -270,7 +270,7 @@ export default function usePlotterControls({ onExport, onRefresh }) {
             min: -180,
             max: 180,
             step: 1,
-            render: (get) => get('Plotter Test.Layers.showHatches'),
+            render: (get) => get('Pen Plotter.Layers.showHatches'),
           },
           spaceX: {
             label: 'Spacing X',
@@ -278,7 +278,7 @@ export default function usePlotterControls({ onExport, onRefresh }) {
             min: 1,
             max: 80,
             step: 1,
-            render: (get) => get('Plotter Test.Layers.showHatches'),
+            render: (get) => get('Pen Plotter.Layers.showHatches'),
           },
           spaceY: {
             label: 'Spacing Y',
@@ -286,7 +286,7 @@ export default function usePlotterControls({ onExport, onRefresh }) {
             min: 1,
             max: 80,
             step: 1,
-            render: (get) => get('Plotter Test.Layers.showHatches'),
+            render: (get) => get('Pen Plotter.Layers.showHatches'),
           },
           spaceZ: {
             label: 'Spacing Z',
@@ -294,7 +294,7 @@ export default function usePlotterControls({ onExport, onRefresh }) {
             min: 1,
             max: 80,
             step: 1,
-            render: (get) => get('Plotter Test.Layers.showHatches'),
+            render: (get) => get('Pen Plotter.Layers.showHatches'),
           },
           hatchMaxSegments: {
             label: 'Hatch Segment Limit',
@@ -302,7 +302,7 @@ export default function usePlotterControls({ onExport, onRefresh }) {
             min: 200,
             max: 6000,
             step: 100,
-            render: (get) => get('Plotter Test.Layers.showHatches'),
+            render: (get) => get('Pen Plotter.Layers.showHatches'),
           },
           insetPixels: {
             label: 'Hatch Boundary Inset (px)',
@@ -310,12 +310,12 @@ export default function usePlotterControls({ onExport, onRefresh }) {
             min: 0,
             max: 10,
             step: 0.5,
-            render: (get) => get('Plotter Test.Layers.showHatches'),
+            render: (get) => get('Pen Plotter.Layers.showHatches'),
           },
           connectHatches: {
             label: 'Connect Hatch Lines',
             value: DEFAULTS.connectHatches,
-            render: (get) => get('Plotter Test.Layers.showHatches'),
+            render: (get) => get('Pen Plotter.Layers.showHatches'),
           },
           hatchStrokeWidthScale: {
             label: 'Stroke Width Scale',
@@ -323,7 +323,7 @@ export default function usePlotterControls({ onExport, onRefresh }) {
             min: 0.25,
             max: 3,
             step: 0.05,
-            render: (get) => get('Plotter Test.Layers.showHatches'),
+            render: (get) => get('Pen Plotter.Layers.showHatches'),
           },
         },
         { collapsed: true }
@@ -336,7 +336,7 @@ export default function usePlotterControls({ onExport, onRefresh }) {
             min: -180,
             max: 180,
             step: 1,
-            render: (get) => get('Plotter Test.Layers.showCrossHatches'),
+            render: (get) => get('Pen Plotter.Layers.showCrossHatches'),
           },
           crossHatchRotY: {
             label: 'Rotation Y (deg)',
@@ -344,7 +344,7 @@ export default function usePlotterControls({ onExport, onRefresh }) {
             min: -180,
             max: 180,
             step: 1,
-            render: (get) => get('Plotter Test.Layers.showCrossHatches'),
+            render: (get) => get('Pen Plotter.Layers.showCrossHatches'),
           },
           crossHatchRotZ: {
             label: 'Rotation Z (deg)',
@@ -352,7 +352,7 @@ export default function usePlotterControls({ onExport, onRefresh }) {
             min: -180,
             max: 180,
             step: 1,
-            render: (get) => get('Plotter Test.Layers.showCrossHatches'),
+            render: (get) => get('Pen Plotter.Layers.showCrossHatches'),
           },
           crossHatchSpaceX: {
             label: 'Spacing X',
@@ -360,7 +360,7 @@ export default function usePlotterControls({ onExport, onRefresh }) {
             min: 1,
             max: 80,
             step: 1,
-            render: (get) => get('Plotter Test.Layers.showCrossHatches'),
+            render: (get) => get('Pen Plotter.Layers.showCrossHatches'),
           },
           crossHatchSpaceY: {
             label: 'Spacing Y',
@@ -368,7 +368,7 @@ export default function usePlotterControls({ onExport, onRefresh }) {
             min: 1,
             max: 80,
             step: 1,
-            render: (get) => get('Plotter Test.Layers.showCrossHatches'),
+            render: (get) => get('Pen Plotter.Layers.showCrossHatches'),
           },
           crossHatchSpaceZ: {
             label: 'Spacing Z',
@@ -376,7 +376,7 @@ export default function usePlotterControls({ onExport, onRefresh }) {
             min: 1,
             max: 80,
             step: 1,
-            render: (get) => get('Plotter Test.Layers.showCrossHatches'),
+            render: (get) => get('Pen Plotter.Layers.showCrossHatches'),
           },
           crossHatchMaxSegments: {
             label: 'Hatch Segment Limit',
@@ -384,7 +384,7 @@ export default function usePlotterControls({ onExport, onRefresh }) {
             min: 200,
             max: 6000,
             step: 100,
-            render: (get) => get('Plotter Test.Layers.showCrossHatches'),
+            render: (get) => get('Pen Plotter.Layers.showCrossHatches'),
           },
           crossHatchInsetPixels: {
             label: 'Hatch Boundary Inset (px)',
@@ -392,12 +392,12 @@ export default function usePlotterControls({ onExport, onRefresh }) {
             min: 0,
             max: 10,
             step: 0.5,
-            render: (get) => get('Plotter Test.Layers.showCrossHatches'),
+            render: (get) => get('Pen Plotter.Layers.showCrossHatches'),
           },
           crossHatchConnectHatches: {
             label: 'Connect Hatch Lines',
             value: DEFAULTS.crossHatchConnectHatches,
-            render: (get) => get('Plotter Test.Layers.showCrossHatches'),
+            render: (get) => get('Pen Plotter.Layers.showCrossHatches'),
           },
           crossHatchStrokeWidthScale: {
             label: 'Stroke Width Scale',
@@ -405,7 +405,7 @@ export default function usePlotterControls({ onExport, onRefresh }) {
             min: 0.25,
             max: 3,
             step: 0.05,
-            render: (get) => get('Plotter Test.Layers.showCrossHatches'),
+            render: (get) => get('Pen Plotter.Layers.showCrossHatches'),
           },
         },
         { collapsed: true }
@@ -423,9 +423,9 @@ export default function usePlotterControls({ onExport, onRefresh }) {
             max: 80,
             step: 1,
             render: (get) =>
-              get('Plotter Test.Lighting.brightnessShading') &&
-              (get('Plotter Test.Layers.showHatches') ||
-                get('Plotter Test.Layers.showCrossHatches')),
+              get('Pen Plotter.Lighting.brightnessShading') &&
+              (get('Pen Plotter.Layers.showHatches') ||
+                get('Pen Plotter.Layers.showCrossHatches')),
           },
           maxSpacing: {
             label: 'Max Hatch Spacing',
@@ -434,9 +434,9 @@ export default function usePlotterControls({ onExport, onRefresh }) {
             max: 120,
             step: 1,
             render: (get) =>
-              get('Plotter Test.Lighting.brightnessShading') &&
-              (get('Plotter Test.Layers.showHatches') ||
-                get('Plotter Test.Layers.showCrossHatches')),
+              get('Pen Plotter.Lighting.brightnessShading') &&
+              (get('Pen Plotter.Layers.showHatches') ||
+                get('Pen Plotter.Layers.showCrossHatches')),
           },
           lightX: {
             label: 'Light X',

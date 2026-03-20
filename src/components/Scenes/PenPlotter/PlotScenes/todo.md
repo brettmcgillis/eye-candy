@@ -8,10 +8,14 @@ Best setup will likely be:
 
 # // Plot Ideas
 
+# // Particle Plot
+
 - [ ] point cloud
 - [ ] point cloud inside cube
 - [ ] point cloud inside icosahedron
 - [ ] point cloud and halo
+
+# // Network Plot
 
 - [ ] neural halo
 - [ ] genrative halo with neural ring(s)
@@ -21,6 +25,11 @@ Best setup will likely be:
 - [ ] neural network inside cube
 - [ ] neural network inside icosahedron
 
-- [ ] torus knot
+# // Generative Geometry
 
 - [ ] generative rings of primitive geometries.
+
+# // Other
+
+- [ ] torus knot
+- [ ] Intersecting cube wireframes

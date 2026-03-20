@@ -21,7 +21,7 @@
 
 ### APP
 
-- [ ] fix icon used in manifest, logo192 is not the right size, causes console err
+- [x] fix icon used in manifest, logo192 is not the right size, causes console err
 - [x] serve up multiple scenes. portal(s)?, picture frames?, routing?
 - [ ] if were doing screen cap then move it out of scenes and into something at app layer
 
@@ -208,3 +208,11 @@ File: ~/SceneName/scenePresets.js
 File: ~/SceneName/TestScene.jsx
 
 - Some scenes are designed to build and exercise tooling. These scenes require a sub-scene to test against. Subscenes go into a dedicated TestScene file to keep the main component clean and ensure tooling is generic enough to be used against any other sub-scene.
+
+- [ ] Check out Tone.js for audio. Could be a good solution to bridging Strudel, Mp3, etc.
+
+- [ ] We should do a scene with Quinns seal, 3rd person camera, player controls w/keyboard and controller.
+      Scene should include quinns dice in the environment.
+      Scene should include various art images on planes in the environment.
+      Scene should allow user to walk around and look at Quinns Portfolio.
+      see example @ https://henryegloff.com/

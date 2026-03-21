@@ -229,3 +229,12 @@ File: ~/SceneName/TestScene.jsx
   Option - Toolbox - Sets us on WebGL/WebGPU Toolbox
 - Scene
   Options - Provided by the Showcase/WIP/TestLab/Toolbox
+
+- SceneMoji
+  Format: 🔥 - {Area} - {Scene}
+- Area:
+  - ShowCase: no emoji, no second hyphen.
+  - Wip: 🏗️
+  - TestLab: 🧪
+  - Toolbox: 🧰
+- Scene: Should be defined in our scene registry hooks

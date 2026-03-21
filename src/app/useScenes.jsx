@@ -2,27 +2,6 @@ import { lazy } from 'react';
 
 import NoScene from './scaffold/NoScene';
 
-const FoldedFrame = lazy(
-  () => import('../components/scenes/Showcase/WebGL/FoldedFrame/FoldedFrame')
-);
-const LoGlow = lazy(
-  () => import('../components/scenes/Showcase/WebGL/LoGlow/LoGlow')
-);
-const NewScene = lazy(
-  () => import('../components/scenes/Showcase/WebGL/NewScene/NewScene')
-);
-const PaperStack = lazy(
-  () => import('../components/scenes/Showcase/WebGL/PaperStack/PaperStack')
-);
-const PenPlotter = lazy(
-  () => import('../components/scenes/Showcase/WebGL/PenPlotter/PenPlotter')
-);
-const QuinnsDice = lazy(
-  () => import('../components/scenes/Showcase/WebGL/QuinnsDice/QuinnsDice')
-);
-const Rosie = lazy(
-  () => import('../components/scenes/Showcase/WebGL/Rosie/Rosie')
-);
 const WebGLTestLab = lazy(
   () => import('../components/scenes/TestLab/WebGLTestLab')
 );
@@ -54,56 +33,6 @@ const noScene = {
   label: 'None',
   Component: NoScene,
   icon: '💀',
-  public: true,
-  linkable: true,
-};
-
-const foldedFrame = {
-  id: 'foldedFrame',
-  renderer: 'webgl',
-  Component: FoldedFrame,
-  label: 'Folded Frame',
-  icon: '⬜️ ◻️ ▫️',
-  public: true,
-  linkable: true,
-};
-
-const loGlow = {
-  id: 'loGlow',
-  renderer: 'webgl',
-  Component: LoGlow,
-  label: 'LoGlow',
-  icon: '',
-  public: true,
-  linkable: true,
-};
-
-const newScene = {
-  id: 'newScene',
-  renderer: 'webgl',
-  Component: NewScene,
-  label: 'New Scene',
-  icon: '☠️',
-  public: true,
-  linkable: true,
-};
-
-const paperStack = {
-  id: 'paperStack',
-  renderer: 'webgl',
-  Component: PaperStack,
-  label: 'Paper Stack',
-  icon: '📚',
-  public: true,
-  linkable: true,
-};
-
-const penPlotter = {
-  id: 'penPlotter',
-  renderer: 'webgl',
-  Component: PenPlotter,
-  label: 'Pen Plotter',
-  icon: '📐🖊️',
   public: true,
   linkable: true,
 };
@@ -188,33 +117,8 @@ const webgpuShowcase = {
   linkable: true,
 };
 
-const rosie = {
-  id: 'rosie',
-  renderer: 'webgl',
-  Component: Rosie,
-  label: 'Rosie',
-  icon: '🌹❤️',
-  public: false,
-  linkable: true,
-};
-
-const dice = {
-  id: 'dice',
-  renderer: 'webgl',
-  Component: QuinnsDice,
-  label: "Quinn's Dice",
-  icon: '🎲',
-  public: false,
-  linkable: true,
-};
-
 const scenes = [
   noScene,
-  foldedFrame,
-  loGlow,
-  newScene,
-  paperStack,
-  penPlotter,
   webglTestLab,
   webgpuTestLab,
   webglToolBox,
@@ -223,8 +127,6 @@ const scenes = [
   webgpuWorkInProgress,
   webglShowcase,
   webgpuShowcase,
-  rosie,
-  dice,
 ];
 
 function compareScenes(a, b) {

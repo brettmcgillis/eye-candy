@@ -19,9 +19,9 @@ import {
   useRapier,
 } from '@react-three/rapier';
 
-import Bret from '../../elements/bret/Bret';
-import Reversal from '../../elements/reversal/Reversal';
-import { GridMaterial } from '../../materials/gridMaterial';
+import Bret from '../../../../elements/bret/Bret';
+import Reversal from '../../../../elements/reversal/Reversal';
+import { GridMaterial } from '../../../../materials/gridMaterial';
 
 const ROOM_SIZE = 2.2;
 const WALL_THICKNESS = 0.08;

@@ -9,11 +9,11 @@ import {
 } from '@react-three/drei';
 import { useThree } from '@react-three/fiber';
 
-import useHandGestureEvents from '../../../hooks/hands/useHandGestureEvents';
+import useHandGestureEvents from '../../../../../hooks/hands/useHandGestureEvents';
 import useHandControls, {
   mapWorldToScreenUv,
-} from '../../../hooks/hands/useHandcontrols';
-import useMediaPipeHands from '../../../hooks/hands/useMediaPipeHands';
+} from '../../../../../hooks/hands/useHandcontrols';
+import useMediaPipeHands from '../../../../../hooks/hands/useMediaPipeHands';
 import FluidMaterial from './FluidMaterial';
 import { RANDOM_BURST_COUNT } from './fluidPresets';
 import useFluidAutoPointers from './hooks/useFluidAutoPointers';

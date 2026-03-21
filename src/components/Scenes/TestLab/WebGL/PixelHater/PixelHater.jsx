@@ -6,8 +6,8 @@ import React from 'react';
 import { Environment, OrbitControls, Plane } from '@react-three/drei';
 import { EffectComposer, Pixelation } from '@react-three/postprocessing';
 
-import Record from '../../elements/record/Record';
-import LightingRig from '../../rigging/LightingRig';
+import Record from '../../../../elements/record/Record';
+import LightingRig from '../../../../rigging/LightingRig';
 import PixelMask from './composed/PixelMask';
 import PixelMaskEffect from './composed/PixelMaskEffectComponent';
 

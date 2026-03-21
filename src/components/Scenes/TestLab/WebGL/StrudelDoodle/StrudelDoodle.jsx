@@ -9,8 +9,8 @@ import React, { useEffect, useMemo, useRef, useState } from 'react';
 import { Grid, Html, OrbitControls, shaderMaterial } from '@react-three/drei';
 import { extend, useFrame } from '@react-three/fiber';
 
-import useStrudelTrack from '../../../hooks/useStrudelTrack';
-import { STRUDEL_TRACKS } from '../../../utils/tracks';
+import useStrudelTrack from '../../../../../hooks/useStrudelTrack';
+import { STRUDEL_TRACKS } from '../../../../../utils/tracks';
 import Sun, { DoubleLayerSun } from './Sun';
 import THEMES from './themes';
 

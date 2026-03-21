@@ -1,10 +1,10 @@
 import NoScene from '../../../app/scaffold/NoScene';
-import ExplosionTest from '../ExplosionTest/ExplosionTest';
-import FluidTest from '../FluidTest/FluidTest';
-import HandStuff from '../HandStuff/HandStuff';
-import ParticleLab from '../ParticleLab/ParticleLab';
-import PixelHater from '../PixelHater/PixelHater';
-import StrudelDoodle from '../StrudelDoodle/StrudelDoodle';
+import ExplosionTest from './WebGL/ExplosionTest/ExplosionTest';
+import FluidTest from './WebGL/FluidTest/FluidTest';
+import HandStuff from './WebGL/HandStuff/HandStuff';
+import ParticleLab from './WebGL/ParticleLab/ParticleLab';
+import PixelHater from './WebGL/PixelHater/PixelHater';
+import StrudelDoodle from './WebGL/StrudelDoodle/StrudelDoodle';
 
 const scenes = [
   {

@@ -1,6 +1,6 @@
 import NoScene from '../../../app/scaffold/NoScene';
-import MobilePhysicsTest from '../MobilePhysicsTest/MobilePhysicsTest';
-import NetworkTest from '../NetworkTest/NetworkTest';
+import MobilePhysicsTest from './WebGPU/MobilePhysicsTest/MobilePhysicsTest';
+import NetworkTest from './WebGPU/NetworkTest/NetworkTest';
 
 const scenes = [
   {

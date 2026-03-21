@@ -2,7 +2,7 @@ import React, { useMemo } from 'react';
 
 import { Sphere } from '@react-three/drei';
 
-import { mapToWorld } from '../../../hooks/hands/useHandcontrols';
+import { mapToWorld } from '../../../../../hooks/hands/useHandcontrols';
 
 export default function HandLandmarksDebug({
   hands,

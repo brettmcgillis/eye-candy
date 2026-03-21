@@ -23,6 +23,8 @@
 - [x] Try to default the bounds of the room to the device viewport size/dimesions
 - [ ] Add presets for use on high/low perf machines. Use simplified colliders for low perf machines
 
+- Add an Auto mode, where the glass ball continuously moves in a figure 8 crossing the center point
+
 # // Bugs
 
 - [ ] Fix performance, too few fps right now, very slow.

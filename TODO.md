@@ -43,6 +43,7 @@
 - [QuinnsDice](src/components/scenes/QuinnsDice/todo.md)
 - [Rosie](src/components/scenes/Rosie/todo.md)
 - [StrudelDoodle](src/components/scenes/StrudelDoodle/todo.md)
+- [FoldedFrame](src/components/scenes/Showcase/WebGL/FoldedFrame/todo.md)
 
 ### PixelHater
 
@@ -51,13 +52,6 @@
 ### Dumpster Fire
 
 - [x] Totally broken. see console for err. cant switch scenes
-
-#### FoldedFrame
-
-- [ ] fix default lighting
-- [ ] fix default camera positiopn
-- [ ] animate layer color
-- [ ] break elements out into reusable components where possible
 
 #### LoGlow
 
@@ -217,24 +211,27 @@ File: ~/SceneName/TestScene.jsx
       Scene should allow user to walk around and look at Quinns Portfolio.
       see example @ https://henryegloff.com/
 
-- v 0.1.0
-- Stats
-- Channel
-  Option - WebGPU - Sets the WebGPU Canvas wrapper
-  Option - WebGL - Sets the WebGL Canvas wrapper
-- Area
-  Option - Showcase - Sets us on WebGL/WebGPU ShowCase
-  Option - Work in progress - Sets us on WebGL/WebGPU WIP
-  Option - TestLab - Sets us on WebGL/WebGPU TestLab
-  Option - Toolbox - Sets us on WebGL/WebGPU Toolbox
-- Scene
-  Options - Provided by the Showcase/WIP/TestLab/Toolbox
+- [x] Update the way we set up the Leva controls/menu and scaffold the app. It should end up looking like the pseudo code below. we also want to make sure we can still link directly to a scene (ie eye-candy/?mode=gpu&area=showcase&scene=myCoolScene)
 
-- SceneMoji
-  Format: 🔥 - {Area} - {Scene}
-- Area:
-  - ShowCase: no emoji, no second hyphen.
-  - Wip: 🏗️
-  - TestLab: 🧪
-  - Toolbox: 🧰
-- Scene: Should be defined in our scene registry hooks
+  ```
+  - v 0.1.0
+  - Stats
+  - Channel (mode? not sure whats best here)
+    Option - WebGPU - Sets the WebGPU Canvas wrapper
+    Option - WebGL - Sets the WebGL Canvas wrapper
+  - Area (? what makes sense here too ?)
+    Option - Showcase - Sets us on WebGL/WebGPU ShowCase
+    Option - Work in progress - Sets us on WebGL/WebGPU WIP
+    Option - TestLab - Sets us on WebGL/WebGPU TestLab
+    Option - Toolbox - Sets us on WebGL/WebGPU Toolbox
+  - Scene
+    Options - Provided by the Showcase/WIP/TestLab/Toolbox
+  ```
+
+- [ ] Update how SceneMoji sets up and displays. New Format: 🔥 - {Area} - {Scene}
+  - Area:
+    - ShowCase: no emoji, no second hyphen.
+    - Wip: 🏗️
+    - TestLab: 🧪
+    - Toolbox: 🧰
+  - Scene: Should be the icondefined in our scene registry hooks

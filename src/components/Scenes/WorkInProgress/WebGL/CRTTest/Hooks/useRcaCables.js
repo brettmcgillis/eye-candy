@@ -5,8 +5,8 @@ import { useEffect, useMemo, useRef, useState } from 'react';
 
 import { useFrame } from '@react-three/fiber';
 
-import useStrudelTrack from '../../../../hooks/useStrudelTrack';
-import { audioFile } from '../../../../utils/appUtils';
+import useStrudelTrack from '../../../../../../hooks/useStrudelTrack';
+import { audioFile } from '../../../../../../utils/appUtils';
 import useCableSubscription from './useCableSubscription';
 
 /* -------------------------------------------------

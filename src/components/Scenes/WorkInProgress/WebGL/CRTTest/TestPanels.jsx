@@ -5,7 +5,7 @@ import { a, useTransition } from '@react-spring/three';
 
 import Reversal, {
   InteractiveReversal,
-} from '../../elements/reversal/Reversal';
+} from '../../../../elements/reversal/Reversal';
 import CRTBlueScreenMaterial from './Materials/CRTBlueScreenMaterial';
 import CRTSceneInSceneMaterial from './Materials/CRTSceneInSceneMaterial';
 import CRTSceneMaterial from './Materials/CRTSceneMaterial';

@@ -1,4 +1,8 @@
-import PrimitivesTest from '../PlotScenes/PrimitivesTest/PrimitivesTest';
+import { lazy } from 'react';
+
+const PrimitivesTest = lazy(
+  () => import('../PlotScenes/PrimitivesTest/PrimitivesTest')
+);
 
 const scenes = [
   {

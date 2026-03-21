@@ -1,26 +1,12 @@
 import { lazy } from 'react';
 
 const NoScene = lazy(() => import('../../../app/scaffold/NoScene'));
-const MobilePhysicsTest = lazy(
-  () => import('./WebGPU/MobilePhysicsTest/MobilePhysicsTest')
-);
-const NetworkTest = lazy(() => import('./WebGPU/NetworkTest/NetworkTest'));
 
 const scenes = [
   {
     id: 'noScene',
     label: 'None',
     Component: NoScene,
-  },
-  {
-    id: 'networkTest',
-    label: 'Network Test',
-    Component: NetworkTest,
-  },
-  {
-    id: 'mobilePhysicsTest',
-    label: 'Mobile Physics Test',
-    Component: MobilePhysicsTest,
   },
 ];
 
@@ -33,6 +19,6 @@ function compareScenes(a, b) {
   return aKey.localeCompare(bKey, undefined, { sensitivity: 'base' });
 }
 
-export default function useWebGPUTestScenes() {
+export default function useWebGLToolScenes() {
   return { scenes: [...scenes].sort(compareScenes) };
 }

@@ -1,10 +1,8 @@
 import { lazy } from 'react';
 
 const NoScene = lazy(() => import('../../../app/scaffold/NoScene'));
-const MobilePhysicsTest = lazy(
-  () => import('./WebGPU/MobilePhysicsTest/MobilePhysicsTest')
-);
-const NetworkTest = lazy(() => import('./WebGPU/NetworkTest/NetworkTest'));
+const CrtTest = lazy(() => import('./WebGL/CRTTest/CrtTest'));
+const DumpsterFire = lazy(() => import('./WebGL/DumpsterFire/DumpsterFire'));
 
 const scenes = [
   {
@@ -13,14 +11,14 @@ const scenes = [
     Component: NoScene,
   },
   {
-    id: 'networkTest',
-    label: 'Network Test',
-    Component: NetworkTest,
+    id: 'crtTest',
+    label: 'CRT Test',
+    Component: CrtTest,
   },
   {
-    id: 'mobilePhysicsTest',
-    label: 'Mobile Physics Test',
-    Component: MobilePhysicsTest,
+    id: 'dumpsterFire',
+    label: 'Dumpster Fire',
+    Component: DumpsterFire,
   },
 ];
 
@@ -33,6 +31,6 @@ function compareScenes(a, b) {
   return aKey.localeCompare(bKey, undefined, { sensitivity: 'base' });
 }
 
-export default function useWebGPUTestScenes() {
+export default function useWebGLWorkInProgressScenes() {
   return { scenes: [...scenes].sort(compareScenes) };
 }

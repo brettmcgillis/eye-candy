@@ -10,11 +10,11 @@ import {
   RandomizedLight,
 } from '@react-three/drei';
 
-import { radians } from '../../../utils/math';
-import Dumpster from '../../elements/dumpster/Dumpster';
-import CameraRig from '../../rigging/CameraRig';
-import { GridHelper } from '../../rigging/GridHelper';
-import LightingRig from '../../rigging/LightingRig';
+import { radians } from '../../../../../utils/math';
+import Dumpster from '../../../../elements/dumpster/Dumpster';
+import CameraRig from '../../../../rigging/CameraRig';
+import { GridHelper } from '../../../../rigging/GridHelper';
+import LightingRig from '../../../../rigging/LightingRig';
 
 export default function DumpsterFire() {
   const { rightLidRotation, leftLidRotation } = useControls(

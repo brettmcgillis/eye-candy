@@ -20,7 +20,7 @@ import { Bloom, EffectComposer } from '@react-three/postprocessing';
 
 import Reversal, {
   InteractiveReversal,
-} from '../../elements/reversal/Reversal';
+} from '../../../../elements/reversal/Reversal';
 import InteractiveTvController from './TVParts/InteractiveTvController';
 import { TvInstances } from './TVParts/TvInstances';
 import TestPanels from './TestPanels';

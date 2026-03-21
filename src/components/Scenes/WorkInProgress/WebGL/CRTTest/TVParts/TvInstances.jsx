@@ -6,7 +6,7 @@ import React, { createContext, useMemo } from 'react';
 
 import { Merged, useGLTF } from '@react-three/drei';
 
-import { modelFile } from '../../../../utils/appUtils';
+import { modelFile } from '../../../../../../utils/appUtils';
 
 export const TvContext = createContext(null);
 

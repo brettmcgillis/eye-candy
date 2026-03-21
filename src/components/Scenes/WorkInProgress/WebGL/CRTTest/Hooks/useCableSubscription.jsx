@@ -1,8 +1,8 @@
 /* --- Materials --- */
 import React, { useMemo } from 'react';
 
-import { audioFile } from '../../../../utils/appUtils';
-import { STRUDEL_TRACKS } from '../../../../utils/tracks';
+import { audioFile } from '../../../../../../utils/appUtils';
+import { STRUDEL_TRACKS } from '../../../../../../utils/tracks';
 import CRTBlueScreenMaterial, {
   TerminalSetting,
   VHSSetting,

@@ -6,9 +6,9 @@ import React, { Suspense, useRef } from 'react';
 import { PerspectiveCamera } from '@react-three/drei';
 import { useFrame } from '@react-three/fiber';
 
-import Loader from '../../../app/scaffold/loader/Loader';
-import Bret from '../../elements/bret/Bret';
-import { InteractiveReversal } from '../../elements/reversal/Reversal';
+import Loader from '../../../../../app/scaffold/loader/Loader';
+import Bret from '../../../../elements/bret/Bret';
+import { InteractiveReversal } from '../../../../elements/reversal/Reversal';
 
 function OrbitingReversals({ count = 4, radius = 2, speed = 0.25 }) {
   const group = useRef();

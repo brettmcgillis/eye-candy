@@ -1,10 +1,12 @@
-import NoScene from '../../../app/scaffold/NoScene';
-import ExplosionTest from './WebGL/ExplosionTest/ExplosionTest';
-import FluidTest from './WebGL/FluidTest/FluidTest';
-import HandStuff from './WebGL/HandStuff/HandStuff';
-import ParticleLab from './WebGL/ParticleLab/ParticleLab';
-import PixelHater from './WebGL/PixelHater/PixelHater';
-import StrudelDoodle from './WebGL/StrudelDoodle/StrudelDoodle';
+import { lazy } from 'react';
+
+const NoScene = lazy(() => import('../../../app/scaffold/NoScene'));
+const ExplosionTest = lazy(() => import('./WebGL/ExplosionTest/ExplosionTest'));
+const FluidTest = lazy(() => import('./WebGL/FluidTest/FluidTest'));
+const HandStuff = lazy(() => import('./WebGL/HandStuff/HandStuff'));
+const ParticleLab = lazy(() => import('./WebGL/ParticleLab/ParticleLab'));
+const PixelHater = lazy(() => import('./WebGL/PixelHater/PixelHater'));
+const StrudelDoodle = lazy(() => import('./WebGL/StrudelDoodle/StrudelDoodle'));
 
 const scenes = [
   {

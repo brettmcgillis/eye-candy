@@ -6,7 +6,7 @@ import React, { useEffect, useRef } from 'react';
 import { shaderMaterial } from '@react-three/drei';
 import { extend, useFrame } from '@react-three/fiber';
 
-import { videoFile } from '../../../../utils/appUtils';
+import { videoFile } from '../../../../../../utils/appUtils';
 
 /* ---------------------------------------------
    Shaders

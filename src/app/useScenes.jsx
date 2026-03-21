@@ -2,10 +2,6 @@ import { lazy } from 'react';
 
 import NoScene from './scaffold/NoScene';
 
-const CRTTest = lazy(() => import('../components/scenes/CRTTest/CrtTest'));
-const DumpsterFire = lazy(
-  () => import('../components/scenes/DumpsterFire/DumpsterFire')
-);
 const FoldedFrame = lazy(
   () => import('../components/scenes/FoldedFrame/FoldedFrame')
 );
@@ -27,6 +23,18 @@ const WebGLTestLab = lazy(
 const WebGPUTestLab = lazy(
   () => import('../components/scenes/TestLab/WebGPUTestLab')
 );
+const WebGLToolBox = lazy(
+  () => import('../components/scenes/ToolBox/WebGLToolBox')
+);
+const WebGPUToolBox = lazy(
+  () => import('../components/scenes/ToolBox/WebGPUToolBox')
+);
+const WebGLWorkInProgress = lazy(
+  () => import('../components/scenes/WorkInProgress/WebGLWorkInProgress')
+);
+const WebGPUWorkInProgress = lazy(
+  () => import('../components/scenes/WorkInProgress/WebGPUWorkInProgress')
+);
 
 const noScene = {
   id: 'noScene',
@@ -36,16 +44,6 @@ const noScene = {
   icon: '💀',
   public: true,
   linkable: true,
-};
-
-const dumpsterFire = {
-  id: 'dumpsterFire',
-  renderer: 'webgl',
-  Component: DumpsterFire,
-  label: 'Dumpster Fire',
-  icon: '🗑️🔥',
-  public: false,
-  linkable: false,
 };
 
 const foldedFrame = {
@@ -108,22 +106,52 @@ const webglTestLab = {
   linkable: true,
 };
 
-const crtTest = {
-  id: 'crtTest',
-  renderer: 'webgl',
-  Component: CRTTest,
-  label: 'CRT Test',
-  icon: '📺',
-  public: false,
-  linkable: false,
-};
-
 const webgpuTestLab = {
   id: 'webgpuTestLab',
   renderer: 'webgpu',
   Component: WebGPUTestLab,
   label: 'WebGPU Test Lab',
   icon: '🧪',
+  public: false,
+  linkable: true,
+};
+
+const webglToolBox = {
+  id: 'webglToolBox',
+  renderer: 'webgl',
+  Component: WebGLToolBox,
+  label: 'WebGL Tool Box',
+  icon: '🧰',
+  public: false,
+  linkable: true,
+};
+
+const webgpuToolBox = {
+  id: 'webgpuToolBox',
+  renderer: 'webgpu',
+  Component: WebGPUToolBox,
+  label: 'WebGPU Tool Box',
+  icon: '🧰',
+  public: false,
+  linkable: true,
+};
+
+const webglWorkInProgress = {
+  id: 'webglWorkInProgress',
+  renderer: 'webgl',
+  Component: WebGLWorkInProgress,
+  label: 'WebGL Work In Progress',
+  icon: '🚧',
+  public: false,
+  linkable: true,
+};
+
+const webgpuWorkInProgress = {
+  id: 'webgpuWorkInProgress',
+  renderer: 'webgpu',
+  Component: WebGPUWorkInProgress,
+  label: 'WebGPU Work In Progress',
+  icon: '🚧',
   public: false,
   linkable: true,
 };
@@ -150,15 +178,17 @@ const dice = {
 
 const scenes = [
   noScene,
-  dumpsterFire,
   foldedFrame,
   loGlow,
   newScene,
   paperStack,
   penPlotter,
   webglTestLab,
-  crtTest,
   webgpuTestLab,
+  webglToolBox,
+  webgpuToolBox,
+  webglWorkInProgress,
+  webgpuWorkInProgress,
   rosie,
   dice,
 ];

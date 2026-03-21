@@ -11,8 +11,10 @@
 # // Features
 
 - Lets start with the example from Three and work from there.
+- scene currently includes grid floor. lets make sure to add grid walls and ceiling too. make material only on the inside, so as not to obstruct camera view, but provide spatial reference.
 - I may want leva controls for the xyz position of each point for fine tuning.
 - I may want a way to select a point and use keyboard arrows to move, factoring in the camera's view position.
 - I will want our typical presets/reset preset/copy preset controls so I can "save" difficult splines and work on them over time.
+- I will want a way to pin the camera position to a given axis, such that I can create 2d splines.
 
 # // Bugs

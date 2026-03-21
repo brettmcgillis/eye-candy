@@ -389,8 +389,10 @@ export default function QuinnsDice() {
         <OrbitControls enableDamping dampingFactor={0.08} />
       )}
       <ambientLight intensity={0.4} />
-      <pointLight
+      <spotLight
         position={MAIN_LIGHT_POSITION}
+        angle={Math.PI / 3}
+        penumbra={1}
         intensity={1.25}
         distance={70}
         decay={2}
@@ -559,15 +561,17 @@ export default function QuinnsDice() {
           friction={friction}
         />
       </Physics>
-      <EffectComposer disableNormalPass multisampling={8}>
+      <EffectComposer disableNormalPass multisampling={4}>
         <N8AO distanceFalloff={1} aoRadius={1} intensity={4} />
-        <Bloom
-          intensity={bloomEnabled ? bloomIntensity : 0}
-          luminanceThreshold={bloomLuminanceThreshold}
-          luminanceSmoothing={bloomLuminanceSmoothing}
-          mipmapBlur
-          radius={bloomRadius}
-        />
+        {bloomEnabled && (
+          <Bloom
+            intensity={bloomIntensity}
+            luminanceThreshold={bloomLuminanceThreshold}
+            luminanceSmoothing={bloomLuminanceSmoothing}
+            mipmapBlur
+            radius={bloomRadius}
+          />
+        )}
       </EffectComposer>
       <SceneLighting />
       {debugLights && (
@@ -700,23 +704,20 @@ const DicePhysicsDriver = React.memo(function DicePhysicsDriver({
 
 const SceneLighting = React.memo(function SceneLighting() {
   return (
-    <>
-      <Environment resolution={256}>
-        <group rotation={[-Math.PI / 3, 0, 1]}>
-          {LIGHTFORMER_CONFIGS.map((config, index) => (
-            <Lightformer
-              key={`lf-${index}`}
-              form="circle"
-              intensity={config.intensity}
-              position={config.position}
-              rotation={config.rotation}
-              scale={config.scale}
-            />
-          ))}
-        </group>
-      </Environment>
-      <Environment preset="city" />
-    </>
+    <Environment preset="city" resolution={256}>
+      <group rotation={[-Math.PI / 3, 0, 1]}>
+        {LIGHTFORMER_CONFIGS.map((config, index) => (
+          <Lightformer
+            key={`lf-${index}`}
+            form="circle"
+            intensity={config.intensity}
+            position={config.position}
+            rotation={config.rotation}
+            scale={config.scale}
+          />
+        ))}
+      </group>
+    </Environment>
   );
 });
 

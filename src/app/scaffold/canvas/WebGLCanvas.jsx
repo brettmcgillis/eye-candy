@@ -7,7 +7,12 @@ export default function WebGLCanvas({ children }) {
     <Canvas
       dpr={[1, 1.5]}
       shadows
-      gl={{ preserveDrawingBuffer: true, depth: true, alpha: true }}
+      gl={{
+        antialias: false,
+        preserveDrawingBuffer: true,
+        depth: true,
+        alpha: true,
+      }}
     >
       {children}
     </Canvas>

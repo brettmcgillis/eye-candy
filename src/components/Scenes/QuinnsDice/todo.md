@@ -27,3 +27,4 @@
 
 - [ ] Fix performance, too few fps right now, very slow.
 - [ ] Can we set defualt x/y scale based on viewport and scene bounds
+- [ ] Can we improve perf by removing the hull colliders and adding the appropriate colliders for the given die geometry?

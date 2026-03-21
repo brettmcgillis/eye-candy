@@ -13,5 +13,6 @@
 - Lets start with the example from Three and work from there.
 - I may want leva controls for the xyz position of each point for fine tuning.
 - I may want a way to select a point and use keyboard arrows to move, factoring in the camera's view position.
+- I will want our typical presets/reset preset/copy preset controls so I can "save" difficult splines and work on them over time.
 
 # // Bugs

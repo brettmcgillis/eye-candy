@@ -17,7 +17,6 @@ import React, {
   useLayoutEffect,
   useMemo,
   useRef,
-  useState,
 } from 'react';
 
 import {
@@ -66,7 +65,6 @@ const CAMERA_DEFAULT_LOOK_AT = new THREE.Vector3(0, 0, 0);
 const DIE_IDS = DICE_CONFIGS.map((config) => config.id);
 
 export default function QuinnsDice() {
-  const viewport = useThree((state) => state.viewport);
   const d4Ref = useRef();
   const d6Ref = useRef();
   const d8Ref = useRef();
@@ -75,11 +73,9 @@ export default function QuinnsDice() {
   const d20Ref = useRef();
   const cameraRef = useRef();
   const cameraLookAtRef = useRef(new THREE.Vector3(0, 0, 0));
-  const [rollingDieId, setRollingDieId] = useState(null);
-  const [detachedDieId, setDetachedDieId] = useState(null);
-  const [focusedDieId, setFocusedDieId] = useState(null);
   const rollingDieIdRef = useRef(null);
   const focusedDieIdRef = useRef(null);
+  const detachedDieIdRef = useRef(null);
   const pendingRollDieIdRef = useRef(null);
   const orbitControlsEnabledRef = useRef(false);
   const rejoinTimerRef = useRef(0);
@@ -111,9 +107,9 @@ export default function QuinnsDice() {
       body.setLinvel({ x: 0, y: 0, z: 0 }, true);
       body.setAngvel({ x: 0, y: 0, z: 0 }, true);
     });
-    setRollingDieId(null);
-    setDetachedDieId(null);
     rollingDieIdRef.current = null;
+    focusedDieIdRef.current = null;
+    detachedDieIdRef.current = null;
     rejoinTimerRef.current = 0;
   }, []);
 
@@ -143,7 +139,6 @@ export default function QuinnsDice() {
       );
       const activeId = rollingDieIdRef.current;
       if (!hitId || !activeId || hitId !== activeId) return;
-      setRollingDieId(null);
       rollingDieIdRef.current = null;
       rejoinTimerRef.current = rollDelayRef.current;
     },
@@ -184,9 +179,8 @@ export default function QuinnsDice() {
       );
 
       rejoinTimerRef.current = 0;
-      setFocusedDieId(dieId);
-      setDetachedDieId(dieId);
-      setRollingDieId(dieId);
+      focusedDieIdRef.current = dieId;
+      detachedDieIdRef.current = dieId;
       rollingDieIdRef.current = dieId;
     },
     [dieRefMap]
@@ -209,7 +203,7 @@ export default function QuinnsDice() {
         !rollingDieIdRef.current
       ) {
         pendingRollDieIdRef.current = dieId;
-        setFocusedDieId(null);
+        focusedDieIdRef.current = null;
         return;
       }
 
@@ -307,19 +301,11 @@ export default function QuinnsDice() {
   } = useQuinnsDiceControls();
   rollPowerRef.current = rollPower;
   rollDelayRef.current = rollRejoinDelaySeconds;
-  rollingDieIdRef.current = rollingDieId;
-  focusedDieIdRef.current = focusedDieId;
   orbitControlsEnabledRef.current = orbitControlsEnabled;
   rollLaneZRef.current = boxDepth * 0.35;
 
-  const boundsWidth =
-    Number.isFinite(viewport?.width) && viewport.width > 0
-      ? viewport.width
-      : boxWidth;
-  const boundsHeight =
-    Number.isFinite(viewport?.height) && viewport.height > 0
-      ? viewport.height
-      : boxHeight;
+  const boundsWidth = boxWidth;
+  const boundsHeight = boxHeight;
 
   useEffect(() => {
     if (!orbitControlsEnabled || rollingDieIdRef.current) return;
@@ -339,19 +325,21 @@ export default function QuinnsDice() {
       }
     }
 
-    if (!rollingDieId && detachedDieId) {
+    if (!rollingDieIdRef.current && detachedDieIdRef.current) {
       rejoinTimerRef.current = Math.max(0, rejoinTimerRef.current - delta);
       if (rejoinTimerRef.current === 0) {
-        setDetachedDieId(null);
-        setFocusedDieId(null);
+        detachedDieIdRef.current = null;
+        focusedDieIdRef.current = null;
       }
     }
 
     const cam = cameraRef.current;
     if (!cam) return;
-    if (orbitControlsEnabled) return;
+    if (orbitControlsEnabledRef.current) return;
 
-    const focusBody = focusedDieId ? dieRefMap[focusedDieId]?.current : null;
+    const focusBody = focusedDieIdRef.current
+      ? dieRefMap[focusedDieIdRef.current]?.current
+      : null;
     const positionTarget = cameraPositionTargetRef.current.copy(
       DEFAULT_CAMERA_POSITION
     );
@@ -362,7 +350,7 @@ export default function QuinnsDice() {
     if (focusBody) {
       const t = focusBody.translation();
       lookAtTarget.set(t.x, t.y, t.z);
-      if (rollingDieId) {
+      if (rollingDieIdRef.current) {
         positionTarget.set(t.x, t.y + 3.6, t.z + 13);
       } else {
         positionTarget.set(t.x, t.y + 1.9, t.z + 8.2);
@@ -417,8 +405,8 @@ export default function QuinnsDice() {
       >
         <DicePhysicsDriver
           dieRefMap={dieRefMap}
-          detachedDieId={detachedDieId}
-          rollingDieId={rollingDieId}
+          detachedDieIdRef={detachedDieIdRef}
+          rollingDieIdRef={rollingDieIdRef}
           physicsEnabled={physicsEnabled}
           returnStrength={returnStrength}
           linearDamping={linearDamping}
@@ -607,8 +595,8 @@ export default function QuinnsDice() {
 
 function DicePhysicsDriver({
   dieRefMap,
-  detachedDieId,
-  rollingDieId,
+  detachedDieIdRef,
+  rollingDieIdRef,
   physicsEnabled,
   returnStrength,
   linearDamping,
@@ -681,7 +669,7 @@ function DicePhysicsDriver({
           body.setLinvel(correctedVelocity, false);
         }
 
-        if (detachedDieId !== id) {
+        if (detachedDieIdRef.current !== id) {
           const dx = targetX - clampedX;
           const dy = targetY - clampedY;
           const dz = targetZ - clampedZ;
@@ -707,8 +695,8 @@ function DicePhysicsDriver({
       }
     }
 
-    if (rollingDieId) {
-      const rollingBody = dieRefMap[rollingDieId]?.current;
+    if (rollingDieIdRef.current) {
+      const rollingBody = dieRefMap[rollingDieIdRef.current]?.current;
       if (rollingBody) {
         rollingBody.applyImpulse({ x: 0, y: -0.1, z: 0 }, false);
       }

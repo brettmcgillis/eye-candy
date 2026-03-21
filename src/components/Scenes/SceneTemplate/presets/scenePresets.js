@@ -1,0 +1,1 @@
+// This file should contain presets for the scene that can be used in the useSceneControls hook. This is where we will define different configurations for the scene that users can easily switch between. We should also provide an example of how to reset controls to a preset and how to copy a preset for use in the IDE.

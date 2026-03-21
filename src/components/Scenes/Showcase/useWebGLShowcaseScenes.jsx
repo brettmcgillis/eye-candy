@@ -13,41 +13,49 @@ const scenes = [
   {
     id: 'noScene',
     label: 'None',
+    icon: '💀',
     Component: NoScene,
   },
   {
     id: 'foldedFrame',
     label: 'Folded Frame',
+    icon: '⬜️◻️▫️',
     Component: FoldedFrame,
   },
   {
     id: 'loGlow',
     label: 'LoGlow',
+    icon: '🌑',
     Component: LoGlow,
   },
   {
     id: 'newScene',
     label: 'New Scene',
+    icon: '💀',
     Component: NewScene,
   },
   {
     id: 'paperStack',
     label: 'Paper Stack',
+    icon: '📄',
     Component: PaperStack,
   },
   {
     id: 'penPlotter',
     label: 'Pen Plotter',
+    icon: '🖊️',
     Component: PenPlotter,
   },
   {
     id: 'dice',
     label: "Quinn's Dice",
+    icon: '🎲',
     Component: QuinnsDice,
   },
   {
     id: 'rosie',
     label: 'Rosie',
+    icon: '❤️🌹',
     Component: Rosie,
   },
 ];

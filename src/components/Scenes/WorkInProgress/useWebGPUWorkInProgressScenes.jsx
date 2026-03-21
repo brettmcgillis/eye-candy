@@ -6,6 +6,7 @@ const scenes = [
   {
     id: 'noScene',
     label: 'None',
+    icon: '💀',
     Component: NoScene,
   },
 ];

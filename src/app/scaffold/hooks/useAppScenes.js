@@ -3,95 +3,144 @@ import { useControls } from 'leva';
 import { useEffect, useMemo } from 'react';
 
 import { localEnv } from '../../../utils/appUtils';
-import useScenes from '../../useScenes';
+import useScenes, { AREAS, CHANNELS } from '../../useScenes';
 import WebGLCanvas from '../canvas/WebGLCanvas';
 import WebGPUCanvas from '../canvas/WebGPUCanvas';
 
-const DEFAULT_SCENE_ID = 'loGlow';
+const DEFAULT_CHANNEL = 'webgl';
+const DEFAULT_AREA = 'showcase';
+const DEFAULT_SCENE = 'loGlow';
 
-function getSceneFromQuery() {
+function getQueryParam(key) {
   if (typeof window === 'undefined') return null;
   const params = new URLSearchParams(window.location.search);
-  return params.get('scene');
+  return params.get(key);
 }
 
 export default function useAppScenes() {
   const local = localEnv();
-  const { scenes } = useScenes();
+  const registry = useScenes();
 
-  // index scenes by id for fast lookup
-  const sceneMap = useMemo(() => {
-    return Object.fromEntries(scenes.map((s) => [s.id, s]));
-  }, [scenes]);
+  // --- initial values from URL (captured once) ---
 
-  // scenes allowed in dropdown
-  const dropdownScenes = useMemo(() => {
-    return local ? scenes : scenes.filter((s) => s.public);
-  }, [local, scenes]);
+  const initialChannel = useMemo(() => {
+    const mode = getQueryParam('mode');
+    return mode && mode in registry ? mode : DEFAULT_CHANNEL;
+  }, []);
 
-  const dropdownOptions = useMemo(() => {
-    return Object.fromEntries(
-      dropdownScenes.map((s) => [`${s.label ?? s.id}`, s.id])
-    );
-  }, [dropdownScenes]);
+  const initialArea = useMemo(() => {
+    const raw = getQueryParam('area');
+    return raw && raw in AREAS ? raw : DEFAULT_AREA;
+  }, []);
 
-  // determine initial scene
   const initialScene = useMemo(() => {
-    const requested = getSceneFromQuery();
+    const raw = getQueryParam('scene');
+    const scenes = registry[initialChannel]?.[initialArea] ?? [];
+    if (raw && scenes.some((s) => s.id === raw)) return raw;
+    if (scenes.some((s) => s.id === DEFAULT_SCENE)) return DEFAULT_SCENE;
+    return scenes[0]?.id ?? 'noScene';
+  }, []);
 
-    // 1. Explicit query string always wins (if allowed)
-    if (requested && sceneMap[requested]) {
-      const scene = sceneMap[requested];
+  // --- Leva controls ---
 
-      if (local) return scene.id;
-      if (scene.linkable) return scene.id;
-    }
+  const channelOptions = useMemo(
+    () => Object.fromEntries(Object.entries(CHANNELS).map(([k, v]) => [v, k])),
+    []
+  );
 
-    // 2. No query string → explicit default
-    if (!requested && !local && sceneMap[DEFAULT_SCENE_ID]) {
-      return sceneMap[DEFAULT_SCENE_ID].id;
-    }
+  const areaOptions = useMemo(
+    () => Object.fromEntries(Object.entries(AREAS).map(([k, v]) => [v, k])),
+    []
+  );
 
-    // 3. Final fallback: first public + linkable scene
-    const fallback = scenes.find((s) => s.public && s.linkable);
-
-    return fallback?.id ?? scenes[0]?.id;
-  }, [local, sceneMap, scenes]);
-
-  const { scene: sceneId = initialScene } = useControls(
-    'Scene Selection',
+  const { mode, area } = useControls(
+    'Scene Select',
     {
-      scene: {
-        options: dropdownOptions,
-        value: initialScene,
-      },
+      mode: { options: channelOptions, value: initialChannel },
+      area: { options: areaOptions, value: initialArea },
     },
     { collapsed: true, render: () => local }
   );
 
-  // keep query string in sync
+  // --- scenes for current channel + area ---
+
+  const scenes = useMemo(
+    () => registry[mode]?.[area] ?? [],
+    [registry, mode, area]
+  );
+
+  const sceneOptions = useMemo(
+    () => Object.fromEntries(scenes.map((s) => [s.label ?? s.id, s.id])),
+    [scenes]
+  );
+
+  const sceneDefault = useMemo(() => {
+    if (scenes.some((s) => s.id === initialScene)) return initialScene;
+    if (scenes.some((s) => s.id === DEFAULT_SCENE)) return DEFAULT_SCENE;
+    return scenes[0]?.id ?? 'noScene';
+  }, [scenes, initialScene]);
+
+  // Re-evaluates when channel / area change (leva deps array)
+  const [{ scene: rawSceneId }, setSceneControl] = useControls(
+    'Scene Select',
+    () => ({
+      scene: { options: sceneOptions, value: sceneDefault },
+    }),
+    { collapsed: true, render: () => local },
+    [mode, area]
+  );
+
+  // --- guard against stale value after area/channel switch ---
+
+  const sceneMap = useMemo(
+    () => Object.fromEntries(scenes.map((s) => [s.id, s])),
+    [scenes]
+  );
+
+  const sceneId = sceneMap[rawSceneId] ? rawSceneId : sceneDefault;
+
+  useEffect(() => {
+    if (!sceneMap[rawSceneId]) {
+      setSceneControl({ scene: sceneDefault });
+    }
+  }, [rawSceneId, sceneMap, sceneDefault, setSceneControl]);
+
+  // --- URL sync ---
+
   useEffect(() => {
     if (typeof window === 'undefined') return;
     const params = new URLSearchParams(window.location.search);
+    params.set('mode', mode);
+    params.set('area', area);
     params.set('scene', sceneId);
+
+    // remove legacy params
+    params.delete('webglShowcaseScene');
+    params.delete('webgpuShowcaseScene');
+    params.delete('webglTestScene');
+    params.delete('webgpuTestScene');
+    params.delete('webglWipScene');
+    params.delete('webgpuWipScene');
+    params.delete('webglToolScene');
+    params.delete('webgpuToolScene');
+
     window.history.replaceState({}, '', `?${params.toString()}`);
-  }, [sceneId]);
+  }, [mode, area, sceneId]);
+
+  // --- resolve ---
 
   const sceneDef = sceneMap[sceneId];
-  const renderer = sceneDef?.renderer ?? 'webgl';
   const SceneComponent = sceneDef?.Component;
-  const CanvasWrapper = renderer === 'webgpu' ? WebGPUCanvas : WebGLCanvas;
+  const CanvasWrapper = mode === 'webgpu' ? WebGPUCanvas : WebGLCanvas;
 
   return {
     local,
-    scenes,
-    sceneMap,
-    dropdownScenes,
-    dropdownOptions,
+    channel: mode,
+    area,
     sceneId,
     sceneDef,
-    renderer,
     SceneComponent,
     CanvasWrapper,
+    renderer: mode,
   };
 }

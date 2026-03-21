@@ -12,36 +12,43 @@ const scenes = [
   {
     id: 'noScene',
     label: 'None',
+    icon: '💀',
     Component: NoScene,
   },
   {
     id: 'fluidTest',
     label: 'Fluid Test',
+    icon: '🌊',
     Component: FluidTest,
   },
   {
     id: 'handStuff',
     label: 'Hand Stuff',
+    icon: '🤚',
     Component: HandStuff,
   },
   {
     id: 'pixelHater',
     label: 'PixelHater',
+    icon: '👾',
     Component: PixelHater,
   },
   {
     id: 'particleLab',
     label: 'Particle Lab',
+    icon: '🔬',
     Component: ParticleLab,
   },
   {
     id: 'strudelDoodle',
     label: 'StrudelDoodle',
+    icon: '🎵',
     Component: StrudelDoodle,
   },
   {
     id: 'explosionTest',
     label: 'Explosion Test',
+    icon: '💥',
     Component: ExplosionTest,
   },
 ];

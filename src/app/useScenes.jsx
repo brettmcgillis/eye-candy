@@ -1,144 +1,53 @@
-import { lazy } from 'react';
+import useWebGLShowcaseScenes from '../components/scenes/Showcase/useWebGLShowcaseScenes';
+import useWebGPUShowcaseScenes from '../components/scenes/Showcase/useWebGPUShowcaseScenes';
+import useWebGLTestScenes from '../components/scenes/TestLab/useWebGLTestScenes';
+import useWebGPUTestScenes from '../components/scenes/TestLab/useWebGPUTestScenes';
+import useWebGLToolScenes from '../components/scenes/ToolBox/useWebGLToolScenes';
+import useWebGPUToolScenes from '../components/scenes/ToolBox/useWebGPUToolScenes';
+import useWebGLWorkInProgressScenes from '../components/scenes/WorkInProgress/useWebGLWorkInProgressScenes';
+import useWebGPUWorkInProgressScenes from '../components/scenes/WorkInProgress/useWebGPUWorkInProgressScenes';
 
-import NoScene from './scaffold/NoScene';
-
-const WebGLTestLab = lazy(
-  () => import('../components/scenes/TestLab/WebGLTestLab')
-);
-const WebGPUTestLab = lazy(
-  () => import('../components/scenes/TestLab/WebGPUTestLab')
-);
-const WebGLToolBox = lazy(
-  () => import('../components/scenes/ToolBox/WebGLToolBox')
-);
-const WebGPUToolBox = lazy(
-  () => import('../components/scenes/ToolBox/WebGPUToolBox')
-);
-const WebGLWorkInProgress = lazy(
-  () => import('../components/scenes/WorkInProgress/WebGLWorkInProgress')
-);
-const WebGPUWorkInProgress = lazy(
-  () => import('../components/scenes/WorkInProgress/WebGPUWorkInProgress')
-);
-const WebGLShowcase = lazy(
-  () => import('../components/scenes/Showcase/WebGLShowcase')
-);
-const WebGPUShowcase = lazy(
-  () => import('../components/scenes/Showcase/WebGPUShowcase')
-);
-
-const noScene = {
-  id: 'noScene',
-  renderer: 'webgl',
-  label: 'None',
-  Component: NoScene,
-  icon: '💀',
-  public: true,
-  linkable: true,
+export const CHANNELS = {
+  webgl: 'WebGL',
+  webgpu: 'WebGPU',
 };
 
-const webglTestLab = {
-  id: 'webglTestLab',
-  renderer: 'webgl',
-  Component: WebGLTestLab,
-  label: 'WebGL Test Lab',
-  icon: '🧪',
-  public: false,
-  linkable: true,
+export const AREAS = {
+  showcase: 'Showcase',
+  wip: 'Work in Progress',
+  testlab: 'TestLab',
+  toolbox: 'Toolbox',
 };
 
-const webgpuTestLab = {
-  id: 'webgpuTestLab',
-  renderer: 'webgpu',
-  Component: WebGPUTestLab,
-  label: 'WebGPU Test Lab',
-  icon: '🧪',
-  public: false,
-  linkable: true,
+export const AREA_ICONS = {
+  showcase: '',
+  wip: '🏗️',
+  testlab: '🧪',
+  toolbox: '🧰',
 };
-
-const webglToolBox = {
-  id: 'webglToolBox',
-  renderer: 'webgl',
-  Component: WebGLToolBox,
-  label: 'WebGL Tool Box',
-  icon: '🧰',
-  public: false,
-  linkable: true,
-};
-
-const webgpuToolBox = {
-  id: 'webgpuToolBox',
-  renderer: 'webgpu',
-  Component: WebGPUToolBox,
-  label: 'WebGPU Tool Box',
-  icon: '🧰',
-  public: false,
-  linkable: true,
-};
-
-const webglWorkInProgress = {
-  id: 'webglWorkInProgress',
-  renderer: 'webgl',
-  Component: WebGLWorkInProgress,
-  label: 'WebGL Work In Progress',
-  icon: '🚧',
-  public: false,
-  linkable: true,
-};
-
-const webgpuWorkInProgress = {
-  id: 'webgpuWorkInProgress',
-  renderer: 'webgpu',
-  Component: WebGPUWorkInProgress,
-  label: 'WebGPU Work In Progress',
-  icon: '🚧',
-  public: false,
-  linkable: true,
-};
-
-const webglShowcase = {
-  id: 'webglShowcase',
-  renderer: 'webgl',
-  Component: WebGLShowcase,
-  label: 'WebGL Showcase',
-  icon: '🎬',
-  public: false,
-  linkable: true,
-};
-
-const webgpuShowcase = {
-  id: 'webgpuShowcase',
-  renderer: 'webgpu',
-  Component: WebGPUShowcase,
-  label: 'WebGPU Showcase',
-  icon: '🎬',
-  public: false,
-  linkable: true,
-};
-
-const scenes = [
-  noScene,
-  webglTestLab,
-  webgpuTestLab,
-  webglToolBox,
-  webgpuToolBox,
-  webglWorkInProgress,
-  webgpuWorkInProgress,
-  webglShowcase,
-  webgpuShowcase,
-];
-
-function compareScenes(a, b) {
-  if (a.id === 'noScene') return -1;
-  if (b.id === 'noScene') return 1;
-  const aKey = a.label ?? a.id;
-  const bKey = b.label ?? b.id;
-  return aKey.localeCompare(bKey, undefined, { sensitivity: 'base' });
-}
-
-const sortedScenes = [...scenes].sort(compareScenes);
 
 export default function useScenes() {
-  return { scenes: sortedScenes };
+  const webglShowcase = useWebGLShowcaseScenes();
+  const webgpuShowcase = useWebGPUShowcaseScenes();
+  const webglTestlab = useWebGLTestScenes();
+  const webgpuTestlab = useWebGPUTestScenes();
+  const webglWip = useWebGLWorkInProgressScenes();
+  const webgpuWip = useWebGPUWorkInProgressScenes();
+  const webglToolbox = useWebGLToolScenes();
+  const webgpuToolbox = useWebGPUToolScenes();
+
+  return {
+    webgl: {
+      showcase: webglShowcase.scenes,
+      wip: webglWip.scenes,
+      testlab: webglTestlab.scenes,
+      toolbox: webglToolbox.scenes,
+    },
+    webgpu: {
+      showcase: webgpuShowcase.scenes,
+      wip: webgpuWip.scenes,
+      testlab: webgpuTestlab.scenes,
+      toolbox: webgpuToolbox.scenes,
+    },
+  };
 }

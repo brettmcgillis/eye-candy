@@ -40,7 +40,7 @@ export default function AppStats() {
         { collapsed: true }
       ),
     },
-    { collapsed: true, render: () => showStats }
+    { collapsed: true, order: -1, render: () => showStats }
   );
 
   return (

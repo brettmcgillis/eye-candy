@@ -10,16 +10,19 @@ const scenes = [
   {
     id: 'noScene',
     label: 'None',
+    icon: '💀',
     Component: NoScene,
   },
   {
     id: 'networkTest',
     label: 'Network Test',
+    icon: '🕸️',
     Component: NetworkTest,
   },
   {
     id: 'mobilePhysicsTest',
     label: 'Mobile Physics Test',
+    icon: '📱',
     Component: MobilePhysicsTest,
   },
 ];

@@ -8,16 +8,19 @@ const scenes = [
   {
     id: 'noScene',
     label: 'None',
+    icon: '💀',
     Component: NoScene,
   },
   {
     id: 'crtTest',
     label: 'CRT Test',
+    icon: '📺',
     Component: CrtTest,
   },
   {
     id: 'dumpsterFire',
     label: 'Dumpster Fire',
+    icon: '🔥🗑️',
     Component: DumpsterFire,
   },
 ];

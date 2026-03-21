@@ -2,27 +2,37 @@ import { levaStore } from 'leva';
 
 import React from 'react';
 
-import useScenes from '../../useScenes';
+import useScenes, { AREA_ICONS } from '../../useScenes';
 
-const SCENE_CONTROL_PATH = 'Scene Selection.scene';
-const FALLBACK_EMOJI = '💀';
+const FALLBACK_ICON = '💀';
 
 export default function Scenemoji({ onDebugToggle }) {
-  const { scenes } = useScenes();
+  const registry = useScenes();
+
+  const channel =
+    levaStore.useStore((state) => state.data?.['Scene Select.mode']?.value) ??
+    'webgl';
+
+  const area =
+    levaStore.useStore((state) => state.data?.['Scene Select.area']?.value) ??
+    'showcase';
 
   const sceneId = levaStore.useStore(
-    (state) => state.data?.[SCENE_CONTROL_PATH]?.value
+    (state) => state.data?.['Scene Select.scene']?.value
   );
 
+  const scenes = registry[channel]?.[area] ?? [];
   const scene = scenes.find((s) => s.id === sceneId);
-  const emoji = scene?.icon || FALLBACK_EMOJI;
+  const sceneIcon = scene?.icon ?? FALLBACK_ICON;
+  const areaIcon = AREA_ICONS[area];
 
   return (
     <>
       <span className="debug" onClick={onDebugToggle}>
-        🔥{' '}
+        🔥
       </span>
-      — {emoji}
+      {areaIcon ? ` — ${areaIcon} — ` : ' — '}
+      {sceneIcon}
     </>
   );
 }

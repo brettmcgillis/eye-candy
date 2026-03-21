@@ -17,6 +17,7 @@ const ROLL_TARGET_OPTIONS = {
 const ROLL_DIE_EVENT = 'quinns-dice-roll';
 const CONTROL_MODE_OPTIONS = {
   'Touch/Pointer': 'touch/pointer',
+  Auto: 'auto',
   Hands: 'hands',
 };
 const POINTER_LOOK_OPTIONS = {
@@ -27,6 +28,7 @@ const POINTER_LOOK_OPTIONS = {
 };
 const PRESET_CONTROL_KEYS = [
   'mode',
+  'autoSpeed',
   'handsShowVideo',
   'handsShowDebugSkeleton',
   'handsVideoSize',
@@ -142,24 +144,65 @@ export default function useQuinnsDiceControls() {
   };
 
   const [controls, setControls] = useControls('Quinns Dice', () => ({
+    ...(PRESET_OPTIONS.length > 1
+      ? {
+          Presets: folder(
+            {
+              preset: {
+                value: 'Default',
+                options: PRESET_OPTIONS,
+                onChange: (value) => {
+                  selectedPresetRef.current = value;
+                  const presetValues = QUINNS_DICE_PRESETS[value];
+                  if (!presetValues) return;
+                  setControls(pickSupportedPresetValues(presetValues));
+                },
+              },
+              resetPreset: button(resetToSelectedPreset),
+              ...(isLocalDev
+                ? {
+                    copySettings: button(() => {
+                      const settings = latestResolvedSettingsRef.current;
+                      if (!settings || !navigator?.clipboard?.writeText) return;
+                      navigator.clipboard.writeText(
+                        toUnquotedKeyObjectString(settings)
+                      );
+                    }),
+                  }
+                : {}),
+            },
+            { collapsed: true, order: 0 }
+          ),
+        }
+      : {}),
     Mode: folder(
       {
         mode: {
           value: QUINNS_DICE_PRESETS.Default.mode || 'touch/pointer',
           options: CONTROL_MODE_OPTIONS,
         },
+        autoSpeed: {
+          label: 'Auto Speed',
+          value: QUINNS_DICE_PRESETS.Default.autoSpeed ?? 0.6,
+          min: 0.1,
+          max: 3,
+          step: 0.1,
+          render: (get) => get('Quinns Dice.Mode.mode') === 'auto',
+        },
       },
-      { collapsed: true }
+      { collapsed: true, order: 1 }
     ),
     Hands: folder(
       {
         handsShowVideo: {
           label: 'Show Cam',
           value: QUINNS_DICE_PRESETS.Default.handsShowVideo,
+          render: (get) => get('Quinns Dice.Mode.mode') === 'hands',
         },
         handsShowDebugSkeleton: {
           label: 'Show Skeleton',
           value: QUINNS_DICE_PRESETS.Default.handsShowDebugSkeleton,
+          render: (get) => get('Quinns Dice.Mode.mode') === 'hands',
         },
         handsVideoSize: {
           label: 'Video Size',
@@ -167,6 +210,7 @@ export default function useQuinnsDiceControls() {
           min: 0.5,
           max: 3,
           step: 0.1,
+          render: (get) => get('Quinns Dice.Mode.mode') === 'hands',
         },
         handsCameraWidth: {
           label: 'Camera Width',
@@ -174,6 +218,7 @@ export default function useQuinnsDiceControls() {
           min: 320,
           max: 1920,
           step: 10,
+          render: (get) => get('Quinns Dice.Mode.mode') === 'hands',
         },
         handsCameraHeight: {
           label: 'Camera Height',
@@ -181,6 +226,7 @@ export default function useQuinnsDiceControls() {
           min: 240,
           max: 1920,
           step: 10,
+          render: (get) => get('Quinns Dice.Mode.mode') === 'hands',
         },
         handsXScale: {
           label: 'Scale X',
@@ -188,6 +234,7 @@ export default function useQuinnsDiceControls() {
           min: 1,
           max: 12,
           step: 0.1,
+          render: (get) => get('Quinns Dice.Mode.mode') === 'hands',
         },
         handsYScale: {
           label: 'Scale Y',
@@ -195,6 +242,7 @@ export default function useQuinnsDiceControls() {
           min: 1,
           max: 12,
           step: 0.1,
+          render: (get) => get('Quinns Dice.Mode.mode') === 'hands',
         },
         handsZScale: {
           label: 'Scale Z',
@@ -202,14 +250,17 @@ export default function useQuinnsDiceControls() {
           min: 1,
           max: 20,
           step: 0.1,
+          render: (get) => get('Quinns Dice.Mode.mode') === 'hands',
         },
         handsLandmarkColor: {
           label: 'Landmark Color',
           value: QUINNS_DICE_PRESETS.Default.handsLandmarkColor,
+          render: (get) => get('Quinns Dice.Mode.mode') === 'hands',
         },
         handsConnectorColor: {
           label: 'Connector Color',
           value: QUINNS_DICE_PRESETS.Default.handsConnectorColor,
+          render: (get) => get('Quinns Dice.Mode.mode') === 'hands',
         },
         handsLandmarkRadius: {
           label: 'Landmark Radius',
@@ -217,6 +268,7 @@ export default function useQuinnsDiceControls() {
           min: 1,
           max: 12,
           step: 1,
+          render: (get) => get('Quinns Dice.Mode.mode') === 'hands',
         },
         handsConnectorLineWidth: {
           label: 'Connector Width',
@@ -224,14 +276,17 @@ export default function useQuinnsDiceControls() {
           min: 1,
           max: 12,
           step: 1,
+          render: (get) => get('Quinns Dice.Mode.mode') === 'hands',
         },
         handsEnableGestures: {
           label: 'Enable Gestures',
           value: QUINNS_DICE_PRESETS.Default.handsEnableGestures,
+          render: (get) => get('Quinns Dice.Mode.mode') === 'hands',
         },
         handsPointRollEnabled: {
           label: 'Point Rolls Die',
           value: QUINNS_DICE_PRESETS.Default.handsPointRollEnabled,
+          render: (get) => get('Quinns Dice.Mode.mode') === 'hands',
         },
         handsPointRollCooldownMs: {
           label: 'Point Roll Cooldown',
@@ -239,39 +294,14 @@ export default function useQuinnsDiceControls() {
           min: 0,
           max: 3000,
           step: 50,
+          render: (get) => get('Quinns Dice.Mode.mode') === 'hands',
         },
       },
       {
         collapsed: true,
-        // render: (get) => get('Mode.mode') === 'hands'
+        order: 2,
+        render: (get) => get('Quinns Dice.Mode.mode') === 'hands',
       }
-    ),
-    Presets: folder(
-      {
-        preset: {
-          value: 'Default',
-          options: PRESET_OPTIONS,
-          onChange: (value) => {
-            selectedPresetRef.current = value;
-            const presetValues = QUINNS_DICE_PRESETS[value];
-            if (!presetValues) return;
-            setControls(pickSupportedPresetValues(presetValues));
-          },
-        },
-        resetPreset: button(resetToSelectedPreset),
-        ...(isLocalDev
-          ? {
-              copySettings: button(() => {
-                const settings = latestResolvedSettingsRef.current;
-                if (!settings || !navigator?.clipboard?.writeText) return;
-                navigator.clipboard.writeText(
-                  toUnquotedKeyObjectString(settings)
-                );
-              }),
-            }
-          : {}),
-      },
-      { collapsed: true }
     ),
     Setting: folder(
       {
@@ -321,7 +351,224 @@ export default function useQuinnsDiceControls() {
           { collapsed: true }
         ),
       },
-      { collapsed: true }
+      { collapsed: true, order: 3 }
+    ),
+    Pointer: folder(
+      {
+        pointerLook: {
+          label: 'Look',
+          value: QUINNS_DICE_PRESETS.Default.pointerLook,
+          options: POINTER_LOOK_OPTIONS,
+        },
+        pointerRadius: {
+          label: 'Radius',
+          value: QUINNS_DICE_PRESETS.Default.pointerRadius,
+          min: 0.1,
+          max: 5,
+          step: 0.1,
+        },
+        pointerFollowSpeed: {
+          label: 'Follow Speed',
+          value: QUINNS_DICE_PRESETS.Default.pointerFollowSpeed,
+          min: 1,
+          max: 80,
+          step: 1,
+        },
+        'Light Ball': folder(
+          {
+            pointerLightColor: {
+              label: 'Color',
+              value: QUINNS_DICE_PRESETS.Default.pointerLightColor,
+            },
+            pointerLightIntensity: {
+              label: 'Intensity',
+              value: QUINNS_DICE_PRESETS.Default.pointerLightIntensity,
+              min: 0,
+              max: 30,
+              step: 0.1,
+            },
+            pointerLightDistance: {
+              label: 'Distance',
+              value: QUINNS_DICE_PRESETS.Default.pointerLightDistance,
+              min: 0,
+              max: 40,
+              step: 0.1,
+            },
+            pointerLightDecay: {
+              label: 'Decay',
+              value: QUINNS_DICE_PRESETS.Default.pointerLightDecay,
+              min: 0,
+              max: 4,
+              step: 0.01,
+            },
+            pointerLightBallScale: {
+              label: 'Scale',
+              value: QUINNS_DICE_PRESETS.Default.pointerLightBallScale,
+              min: 0.05,
+              max: 2,
+              step: 0.01,
+            },
+          },
+          {
+            collapsed: true,
+            render: (get) => {
+              const look = get('Quinns Dice.Pointer.pointerLook');
+              return look === 'light' || look === 'magicGlass';
+            },
+          }
+        ),
+        Sphere: folder(
+          {
+            pointerSphereColor: {
+              label: 'Color',
+              value: QUINNS_DICE_PRESETS.Default.pointerSphereColor,
+            },
+            pointerSphereOpacity: {
+              label: 'Opacity',
+              value: QUINNS_DICE_PRESETS.Default.pointerSphereOpacity,
+              min: 0,
+              max: 1,
+              step: 0.01,
+            },
+            pointerSphereRoughness: {
+              label: 'Roughness',
+              value: QUINNS_DICE_PRESETS.Default.pointerSphereRoughness,
+              min: 0,
+              max: 1,
+              step: 0.01,
+            },
+            pointerSphereMetalness: {
+              label: 'Metalness',
+              value: QUINNS_DICE_PRESETS.Default.pointerSphereMetalness,
+              min: 0,
+              max: 1,
+              step: 0.01,
+            },
+            pointerSphereEmissiveColor: {
+              label: 'Emissive Color',
+              value: QUINNS_DICE_PRESETS.Default.pointerSphereEmissiveColor,
+            },
+            pointerSphereEmissiveIntensity: {
+              label: 'Emissive Intensity',
+              value: QUINNS_DICE_PRESETS.Default.pointerSphereEmissiveIntensity,
+              min: 0,
+              max: 20,
+              step: 0.01,
+            },
+            pointerSphereWireframe: {
+              label: 'Wireframe',
+              value: QUINNS_DICE_PRESETS.Default.pointerSphereWireframe,
+            },
+          },
+          {
+            collapsed: true,
+            render: (get) =>
+              get('Quinns Dice.Pointer.pointerLook') === 'sphere',
+          }
+        ),
+        'Magic Glass': folder(
+          {
+            pointerMagicGlassColor: {
+              label: 'Color',
+              value: QUINNS_DICE_PRESETS.Default.pointerMagicGlassColor,
+            },
+            pointerMagicGlassOpacity: {
+              label: 'Opacity',
+              value: QUINNS_DICE_PRESETS.Default.pointerMagicGlassOpacity,
+              min: 0,
+              max: 1,
+              step: 0.01,
+            },
+            pointerMagicGlassTransmission: {
+              label: 'Transmission',
+              value: QUINNS_DICE_PRESETS.Default.pointerMagicGlassTransmission,
+              min: 0,
+              max: 1,
+              step: 0.01,
+            },
+            pointerMagicGlassThickness: {
+              label: 'Thickness',
+              value: QUINNS_DICE_PRESETS.Default.pointerMagicGlassThickness,
+              min: 0,
+              max: 10,
+              step: 0.01,
+            },
+            pointerMagicGlassRoughness: {
+              label: 'Roughness',
+              value: QUINNS_DICE_PRESETS.Default.pointerMagicGlassRoughness,
+              min: 0,
+              max: 1,
+              step: 0.01,
+            },
+            pointerMagicGlassIor: {
+              label: 'IOR',
+              value: QUINNS_DICE_PRESETS.Default.pointerMagicGlassIor,
+              min: 1,
+              max: 2.5,
+              step: 0.01,
+            },
+            pointerMagicGlassChromaticAberration: {
+              label: 'Chromatic Aberration',
+              value:
+                QUINNS_DICE_PRESETS.Default
+                  .pointerMagicGlassChromaticAberration,
+              min: 0,
+              max: 2,
+              step: 0.001,
+            },
+            pointerMagicGlassAnisotropy: {
+              label: 'Anisotropy',
+              value: QUINNS_DICE_PRESETS.Default.pointerMagicGlassAnisotropy,
+              min: 0,
+              max: 1,
+              step: 0.01,
+            },
+            pointerMagicGlassDistortion: {
+              label: 'Distortion',
+              value: QUINNS_DICE_PRESETS.Default.pointerMagicGlassDistortion,
+              min: 0,
+              max: 1,
+              step: 0.01,
+            },
+            pointerMagicGlassDistortionScale: {
+              label: 'Distortion Scale',
+              value:
+                QUINNS_DICE_PRESETS.Default.pointerMagicGlassDistortionScale,
+              min: 0,
+              max: 1,
+              step: 0.01,
+            },
+            pointerMagicGlassTemporalDistortion: {
+              label: 'Temporal Distortion',
+              value:
+                QUINNS_DICE_PRESETS.Default.pointerMagicGlassTemporalDistortion,
+              min: 0,
+              max: 2,
+              step: 0.01,
+            },
+            pointerMagicGlassAttenuationColor: {
+              label: 'Attenuation Color',
+              value:
+                QUINNS_DICE_PRESETS.Default.pointerMagicGlassAttenuationColor,
+            },
+            pointerMagicGlassAttenuationDistance: {
+              label: 'Attenuation Distance',
+              value:
+                QUINNS_DICE_PRESETS.Default
+                  .pointerMagicGlassAttenuationDistance,
+              min: 0,
+              max: 20,
+              step: 0.01,
+            },
+          },
+          {
+            collapsed: true,
+            render: (get) =>
+              get('Quinns Dice.Pointer.pointerLook') === 'magicGlass',
+          }
+        ),
+      },
+      { collapsed: true, order: 4 }
     ),
     Dice: folder(
       {
@@ -434,29 +681,7 @@ export default function useQuinnsDiceControls() {
           { collapsed: true, order: 6 }
         ),
       },
-      { collapsed: true }
-    ),
-    Debug: folder(
-      {
-        physicsEnabled: {
-          label: 'Physics Enabled',
-          value: QUINNS_DICE_PRESETS.Default.physicsEnabled,
-        },
-        debug: {
-          label: 'Debug Physics',
-          value: QUINNS_DICE_PRESETS.Default.debug,
-        },
-        debugLights: {
-          label: 'Debug Lights',
-          value: QUINNS_DICE_PRESETS.Default.debugLights,
-        },
-        orbitControlsEnabled: {
-          label: 'Orbit Controls',
-          value: QUINNS_DICE_PRESETS.Default.orbitControlsEnabled,
-        },
-        resetGridPositions: button(emitResetGrid),
-      },
-      { collapsed: true }
+      { collapsed: true, order: 5 }
     ),
     Physics: folder(
       {
@@ -534,210 +759,29 @@ export default function useQuinnsDiceControls() {
           { collapsed: true }
         ),
       },
-      { collapsed: true }
+      { collapsed: true, order: 6 }
     ),
-    Pointer: folder(
+    Debug: folder(
       {
-        pointerLook: {
-          label: 'Look',
-          value: QUINNS_DICE_PRESETS.Default.pointerLook,
-          options: POINTER_LOOK_OPTIONS,
+        physicsEnabled: {
+          label: 'Physics Enabled',
+          value: QUINNS_DICE_PRESETS.Default.physicsEnabled,
         },
-        pointerRadius: {
-          label: 'Radius',
-          value: QUINNS_DICE_PRESETS.Default.pointerRadius,
-          min: 0.1,
-          max: 5,
-          step: 0.1,
+        debug: {
+          label: 'Debug Physics',
+          value: QUINNS_DICE_PRESETS.Default.debug,
         },
-        pointerFollowSpeed: {
-          label: 'Follow Speed',
-          value: QUINNS_DICE_PRESETS.Default.pointerFollowSpeed,
-          min: 1,
-          max: 80,
-          step: 1,
+        debugLights: {
+          label: 'Debug Lights',
+          value: QUINNS_DICE_PRESETS.Default.debugLights,
         },
-        'Light Ball': folder(
-          {
-            pointerLightColor: {
-              label: 'Color',
-              value: QUINNS_DICE_PRESETS.Default.pointerLightColor,
-            },
-            pointerLightIntensity: {
-              label: 'Intensity',
-              value: QUINNS_DICE_PRESETS.Default.pointerLightIntensity,
-              min: 0,
-              max: 30,
-              step: 0.1,
-            },
-            pointerLightDistance: {
-              label: 'Distance',
-              value: QUINNS_DICE_PRESETS.Default.pointerLightDistance,
-              min: 0,
-              max: 40,
-              step: 0.1,
-            },
-            pointerLightDecay: {
-              label: 'Decay',
-              value: QUINNS_DICE_PRESETS.Default.pointerLightDecay,
-              min: 0,
-              max: 4,
-              step: 0.01,
-            },
-            pointerLightBallScale: {
-              label: 'Scale',
-              value: QUINNS_DICE_PRESETS.Default.pointerLightBallScale,
-              min: 0.05,
-              max: 2,
-              step: 0.01,
-            },
-          },
-          { collapsed: true }
-        ),
-        Sphere: folder(
-          {
-            pointerSphereColor: {
-              label: 'Color',
-              value: QUINNS_DICE_PRESETS.Default.pointerSphereColor,
-            },
-            pointerSphereOpacity: {
-              label: 'Opacity',
-              value: QUINNS_DICE_PRESETS.Default.pointerSphereOpacity,
-              min: 0,
-              max: 1,
-              step: 0.01,
-            },
-            pointerSphereRoughness: {
-              label: 'Roughness',
-              value: QUINNS_DICE_PRESETS.Default.pointerSphereRoughness,
-              min: 0,
-              max: 1,
-              step: 0.01,
-            },
-            pointerSphereMetalness: {
-              label: 'Metalness',
-              value: QUINNS_DICE_PRESETS.Default.pointerSphereMetalness,
-              min: 0,
-              max: 1,
-              step: 0.01,
-            },
-            pointerSphereEmissiveColor: {
-              label: 'Emissive Color',
-              value: QUINNS_DICE_PRESETS.Default.pointerSphereEmissiveColor,
-            },
-            pointerSphereEmissiveIntensity: {
-              label: 'Emissive Intensity',
-              value: QUINNS_DICE_PRESETS.Default.pointerSphereEmissiveIntensity,
-              min: 0,
-              max: 20,
-              step: 0.01,
-            },
-            pointerSphereWireframe: {
-              label: 'Wireframe',
-              value: QUINNS_DICE_PRESETS.Default.pointerSphereWireframe,
-            },
-          },
-          { collapsed: true }
-        ),
-        'Magic Glass': folder(
-          {
-            pointerMagicGlassColor: {
-              label: 'Color',
-              value: QUINNS_DICE_PRESETS.Default.pointerMagicGlassColor,
-            },
-            pointerMagicGlassOpacity: {
-              label: 'Opacity',
-              value: QUINNS_DICE_PRESETS.Default.pointerMagicGlassOpacity,
-              min: 0,
-              max: 1,
-              step: 0.01,
-            },
-            pointerMagicGlassTransmission: {
-              label: 'Transmission',
-              value: QUINNS_DICE_PRESETS.Default.pointerMagicGlassTransmission,
-              min: 0,
-              max: 1,
-              step: 0.01,
-            },
-            pointerMagicGlassThickness: {
-              label: 'Thickness',
-              value: QUINNS_DICE_PRESETS.Default.pointerMagicGlassThickness,
-              min: 0,
-              max: 10,
-              step: 0.01,
-            },
-            pointerMagicGlassRoughness: {
-              label: 'Roughness',
-              value: QUINNS_DICE_PRESETS.Default.pointerMagicGlassRoughness,
-              min: 0,
-              max: 1,
-              step: 0.01,
-            },
-            pointerMagicGlassIor: {
-              label: 'IOR',
-              value: QUINNS_DICE_PRESETS.Default.pointerMagicGlassIor,
-              min: 1,
-              max: 2.5,
-              step: 0.01,
-            },
-            pointerMagicGlassChromaticAberration: {
-              label: 'Chromatic Aberration',
-              value:
-                QUINNS_DICE_PRESETS.Default
-                  .pointerMagicGlassChromaticAberration,
-              min: 0,
-              max: 2,
-              step: 0.001,
-            },
-            pointerMagicGlassAnisotropy: {
-              label: 'Anisotropy',
-              value: QUINNS_DICE_PRESETS.Default.pointerMagicGlassAnisotropy,
-              min: 0,
-              max: 1,
-              step: 0.01,
-            },
-            pointerMagicGlassDistortion: {
-              label: 'Distortion',
-              value: QUINNS_DICE_PRESETS.Default.pointerMagicGlassDistortion,
-              min: 0,
-              max: 1,
-              step: 0.01,
-            },
-            pointerMagicGlassDistortionScale: {
-              label: 'Distortion Scale',
-              value:
-                QUINNS_DICE_PRESETS.Default.pointerMagicGlassDistortionScale,
-              min: 0,
-              max: 1,
-              step: 0.01,
-            },
-            pointerMagicGlassTemporalDistortion: {
-              label: 'Temporal Distortion',
-              value:
-                QUINNS_DICE_PRESETS.Default.pointerMagicGlassTemporalDistortion,
-              min: 0,
-              max: 2,
-              step: 0.01,
-            },
-            pointerMagicGlassAttenuationColor: {
-              label: 'Attenuation Color',
-              value:
-                QUINNS_DICE_PRESETS.Default.pointerMagicGlassAttenuationColor,
-            },
-            pointerMagicGlassAttenuationDistance: {
-              label: 'Attenuation Distance',
-              value:
-                QUINNS_DICE_PRESETS.Default
-                  .pointerMagicGlassAttenuationDistance,
-              min: 0,
-              max: 20,
-              step: 0.01,
-            },
-          },
-          { collapsed: true }
-        ),
+        orbitControlsEnabled: {
+          label: 'Orbit Controls',
+          value: QUINNS_DICE_PRESETS.Default.orbitControlsEnabled,
+        },
+        resetGridPositions: button(emitResetGrid),
       },
-      { collapsed: true }
+      { collapsed: true, order: 7 }
     ),
   }));
   setControlsRef.current = setControls;

@@ -226,6 +226,7 @@ export default function QuinnsDice() {
 
   const {
     mode,
+    autoSpeed,
     handsShowVideo,
     handsShowDebugSkeleton,
     handsVideoSize,
@@ -432,6 +433,42 @@ export default function QuinnsDice() {
           depth={boxDepth}
           onBottomCollisionEnter={handleBottomPlaneCollision}
         />
+        {mode === 'auto' && (
+          <AutoPointer
+            radius={pointerRadius}
+            autoSpeed={autoSpeed}
+            followSpeed={pointerFollowSpeed}
+            boxWidth={boundsWidth}
+            boxHeight={boundsHeight}
+            boxDepth={boxDepth}
+            look={pointerLook}
+            lightColor={pointerLightColor}
+            lightIntensity={pointerLightIntensity}
+            lightDistance={pointerLightDistance}
+            lightDecay={pointerLightDecay}
+            lightBallScale={pointerLightBallScale}
+            sphereColor={pointerSphereColor}
+            sphereOpacity={pointerSphereOpacity}
+            sphereRoughness={pointerSphereRoughness}
+            sphereMetalness={pointerSphereMetalness}
+            sphereEmissiveColor={pointerSphereEmissiveColor}
+            sphereEmissiveIntensity={pointerSphereEmissiveIntensity}
+            sphereWireframe={pointerSphereWireframe}
+            magicGlassColor={pointerMagicGlassColor}
+            magicGlassOpacity={pointerMagicGlassOpacity}
+            magicGlassTransmission={pointerMagicGlassTransmission}
+            magicGlassThickness={pointerMagicGlassThickness}
+            magicGlassRoughness={pointerMagicGlassRoughness}
+            magicGlassIor={pointerMagicGlassIor}
+            magicGlassChromaticAberration={pointerMagicGlassChromaticAberration}
+            magicGlassAnisotropy={pointerMagicGlassAnisotropy}
+            magicGlassDistortion={pointerMagicGlassDistortion}
+            magicGlassDistortionScale={pointerMagicGlassDistortionScale}
+            magicGlassTemporalDistortion={pointerMagicGlassTemporalDistortion}
+            magicGlassAttenuationColor={pointerMagicGlassAttenuationColor}
+            magicGlassAttenuationDistance={pointerMagicGlassAttenuationDistance}
+          />
+        )}
         {mode === 'touch/pointer' && (
           <Pointer
             radius={pointerRadius}
@@ -1191,6 +1228,115 @@ const Pointer = React.memo(function Pointer({
 
     smoothedPosRef.current.lerp(target, smoothingAlpha);
 
+    body.setNextKinematicTranslation(smoothedPosRef.current);
+  });
+
+  useEffect(() => {
+    smoothedPosRef.current.set(0, 0, 0);
+  }, []);
+
+  return (
+    <RigidBody
+      position={[0, 0, 0]}
+      type="kinematicPosition"
+      colliders={false}
+      ref={ref}
+    >
+      <BallCollider args={[radius]} />
+      <PointerAppearance
+        radius={radius}
+        look={look}
+        lightColor={lightColor}
+        lightIntensity={lightIntensity}
+        lightDistance={lightDistance}
+        lightDecay={lightDecay}
+        lightBallScale={lightBallScale}
+        sphereColor={sphereColor}
+        sphereOpacity={sphereOpacity}
+        sphereRoughness={sphereRoughness}
+        sphereMetalness={sphereMetalness}
+        sphereEmissiveColor={sphereEmissiveColor}
+        sphereEmissiveIntensity={sphereEmissiveIntensity}
+        sphereWireframe={sphereWireframe}
+        magicGlassColor={magicGlassColor}
+        magicGlassOpacity={magicGlassOpacity}
+        magicGlassTransmission={magicGlassTransmission}
+        magicGlassThickness={magicGlassThickness}
+        magicGlassRoughness={magicGlassRoughness}
+        magicGlassIor={magicGlassIor}
+        magicGlassChromaticAberration={magicGlassChromaticAberration}
+        magicGlassAnisotropy={magicGlassAnisotropy}
+        magicGlassDistortion={magicGlassDistortion}
+        magicGlassDistortionScale={magicGlassDistortionScale}
+        magicGlassTemporalDistortion={magicGlassTemporalDistortion}
+        magicGlassAttenuationColor={magicGlassAttenuationColor}
+        magicGlassAttenuationDistance={magicGlassAttenuationDistance}
+      />
+    </RigidBody>
+  );
+});
+
+const AutoPointer = React.memo(function AutoPointer({
+  radius = 1,
+  autoSpeed = 0.6,
+  followSpeed = 30,
+  boxWidth = 10,
+  boxHeight = 10,
+  boxDepth = 10,
+  look = 'light',
+  lightColor = '#ffffff',
+  lightIntensity = 8,
+  lightDistance = 10,
+  lightDecay = 2,
+  lightBallScale = 0.35,
+  sphereColor = '#ffffff',
+  sphereOpacity = 1,
+  sphereRoughness = 0.35,
+  sphereMetalness = 0,
+  sphereEmissiveColor = '#000000',
+  sphereEmissiveIntensity = 0,
+  sphereWireframe = false,
+  magicGlassColor = '#ffffff',
+  magicGlassOpacity = 1,
+  magicGlassTransmission = 1,
+  magicGlassThickness = 0.9,
+  magicGlassRoughness = 0.03,
+  magicGlassIor = 1.25,
+  magicGlassChromaticAberration = 0.08,
+  magicGlassAnisotropy = 0.05,
+  magicGlassDistortion = 0,
+  magicGlassDistortionScale = 0.3,
+  magicGlassTemporalDistortion = 0,
+  magicGlassAttenuationColor = '#ffffff',
+  magicGlassAttenuationDistance = 0,
+}) {
+  const ref = useRef();
+  const smoothedPosRef = useRef(new THREE.Vector3());
+  const targetPosRef = useRef(new THREE.Vector3());
+  const tRef = useRef(0);
+
+  useFrame((_, delta) => {
+    const body = ref.current;
+    if (!body) return;
+
+    tRef.current += delta * autoSpeed;
+    const t = tRef.current;
+    const sinT = Math.sin(t);
+    const cosT = Math.cos(t);
+    const denom = 1 + sinT * sinT;
+
+    const halfW = boxWidth / 2;
+    const halfH = boxHeight / 2;
+    const margin = radius + 0.35;
+    const rangeX = halfW - margin;
+    const rangeY = halfH - margin;
+
+    const targetX = (cosT / denom) * rangeX;
+    const targetY = ((sinT * cosT) / denom) * rangeY;
+    const target = targetPosRef.current.set(targetX, targetY, 0);
+
+    const smoothingAlpha = 1 - Math.exp(-Math.max(0, followSpeed) * delta);
+    smoothedPosRef.current.lerp(target, smoothingAlpha);
     body.setNextKinematicTranslation(smoothedPosRef.current);
   });
 

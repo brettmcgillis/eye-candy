@@ -23,10 +23,9 @@
 - [x] Try to default the bounds of the room to the device viewport size/dimesions
 - [ ] Add presets for use on high/low perf machines. Use simplified colliders for low perf machines
 
-- Add an Auto mode, where the glass ball continuously moves in a figure 8 crossing the center point
+- [x] Add an 'Auto' pointer mode, where the glass ball continuously moves in a figure 8 crossing the center point
 
 # // Bugs
 
-- [ ] Fix performance, too few fps right now, very slow.
-- [ ] Can we set defualt x/y scale based on viewport and scene bounds
+- [x] Improve performance, too few fps right now, very slow.
 - [ ] Can we improve perf by removing the hull colliders and adding the appropriate colliders for the given die geometry?

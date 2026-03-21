@@ -20,7 +20,7 @@ Long term vision / use cases:
 
 # // TODO:
 
-[Back to main TODO](../../../../TODO.md)
+[Back to main TODO](../../../../../../TODO.md)
 
 ## Bugs
 
@@ -77,3 +77,5 @@ Long term vision / use cases:
 - [x] Update Leva controls to include labels so displayed text can be shorter.
 - [ ] Prepare a README so i dont forget how to use the various props for controlling the material behaviours.
 - [ ] Update preset for black and red squares. Move config upto 1/3 mark, apply more downward force.
+
+- [ ] Improve perf. really slow on low end devices. Can we get an improvement if we pull the marker squares out of the shader and handle them in the scene?

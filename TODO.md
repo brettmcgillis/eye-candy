@@ -34,70 +34,38 @@
 
 ### Scene TODO Files
 
-- [CRTTest](src/components/scenes/CRTTest/todo.md)
-- [ExplosionTest](src/components/scenes/ExplosionTest/todo.md)
-- [FluidTest](src/components/scenes/FluidTest/todo.md)
-- [MobilePhysicsTest](src/components/scenes/MobilePhysicsTest/todo.md)
-- [ParticleLab](src/components/scenes/ParticleLab/todo.md)
-- [PaperStack](src/components/scenes/PaperStack/todo.md)
-- [QuinnsDice](src/components/scenes/QuinnsDice/todo.md)
-- [Rosie](src/components/scenes/Rosie/todo.md)
-- [StrudelDoodle](src/components/scenes/StrudelDoodle/todo.md)
+**Showcase**
 - [FoldedFrame](src/components/scenes/Showcase/WebGL/FoldedFrame/todo.md)
+- [LoGlow](src/components/scenes/Showcase/WebGL/LoGlow/todo.md)
+- [NewScene](src/components/scenes/Showcase/WebGL/NewScene/todo.md)
+- [PaperStack](src/components/scenes/Showcase/WebGL/PaperStack/todo.md)
+- [PenPlotter](src/components/scenes/Showcase/WebGL/PenPlotter/todo.md)
+  - [PlotScenes](src/components/scenes/Showcase/WebGL/PenPlotter/PlotScenes/todo.md)
+  - [GenerativeGeometry](src/components/scenes/Showcase/WebGL/PenPlotter/PlotScenes/GenerativeGeometry/todo.md)
+  - [NetworkPlot](src/components/scenes/Showcase/WebGL/PenPlotter/PlotScenes/NetworkPlot/todo.md)
+  - [ParticlePlot](src/components/scenes/Showcase/WebGL/PenPlotter/PlotScenes/ParticlePlot/todo.md)
+- [QuinnsDice](src/components/scenes/Showcase/WebGL/QuinnsDice/todo.md)
+- [Rosie](src/components/scenes/Showcase/WebGL/Rosie/todo.md)
 
-### PixelHater
+**TestLab**
+- [ExplosionTest](src/components/scenes/TestLab/WebGL/ExplosionTest/todo.md)
+- [FluidTest](src/components/scenes/TestLab/WebGL/FluidTest/todo.md)
+- [HandStuff](src/components/scenes/TestLab/WebGL/HandStuff/todo.md)
+- [ParticleLab](src/components/scenes/TestLab/WebGL/ParticleLab/todo.md)
+- [PixelHater](src/components/scenes/TestLab/WebGL/PixelHater/todo.md)
+- [StrudelDoodle](src/components/scenes/TestLab/WebGL/StrudelDoodle/todo.md)
+- [MobilePhysicsTest](src/components/scenes/TestLab/WebGPU/MobilePhysicsTest/todo.md)
+- [NetworkTest](src/components/scenes/TestLab/WebGPU/NetworkTest/todo.md)
 
-- [ ] See if we can improve shader to prevent pixel colors including unmasked object colors.
+**WorkInProgress**
+- [CRTTest](src/components/scenes/WorkInProgress/WebGL/CRTTest/todo.md)
+- [DumpsterFire](src/components/scenes/WorkInProgress/WebGL/DumpsterFire/todo.md)
 
-### Dumpster Fire
+**Template**
+- [SceneTemplate](src/components/scenes/Template/SceneTemplate/todo.md)
 
-- [x] Totally broken. see console for err. cant switch scenes
-
-#### LoGlow
-
-- [ ] Rename
-- [x] Animate (flip, neon flicker)
-
-#### NewScene
-
-- [ ] name it
-- [ ] extract all settings to json
-- [ ] reset button (leverage set() + json settings)
-- [ ] post processing (dots, godrays, +)
-- [ ] add environment for reflections, add children for their reflections.
-- [ ] Fun stuff
-  - [ ] Atomic Halo
-  - [ ] 45lb Halo
-  - [ ] neural network halo (built, now wire up)
-  - [ ] Animation (rotation + wobble, refactor out of record, into reusable code to be applied to any halo type)
-  - [ ] motion controls (drag drop)
-  - [ ] physics (cannon looks good, rapier looks better, is installed)
-
-### PaperStack
-
-- [x] Totally broken, no color. upgrade csg? rebuild? Fixed!
-- [ ] Add compelling animations
-- [x] create window orientation presets using settings, add preset option control
-- [x] create some preset color arrangements, add controls.
-
-### HandStuff
-
-- [ ] Upgrade mediaPipe, handControls, and gestureControls hooks to handle n hands as array. Update scene to spawn probes based on number returned.
-- [ ] Refactor hook to break apart media pipe and webcam + camera for reusability. Scenes need to be able to determine their own draw functions. hook responsible for drawing should accept an array of functions and provide the existing default.
-- [ ] Allow for unmounting webcam from scene (ie, if i enable it then disable it, we shouldnt still have a handle on the cam)
-
-### NetworkTest
-
-- [ ] Points are broken? Likely canvas gl related
-- [ ] Bring hand control hooks in to the scene to control network size, volume rotation etc
-- [ ] show instanced meshes at points?
-
-### StrudelDoodle
-
-- [x] Prevent panel from stealing mouse, should still be able to click overlay items.
-- [ ] Could we replace the text area with the REPL still maintain control?
-- [ ] Could we show strudel visuals on the background of the scene?
-- [ ] do a background. keep it on theme
+**ToolBox**
+- [SplineEditor](src/components/scenes/ToolBox/WebGL/SplineEditor/todo.md)
 
 ### ELEMENTS
 

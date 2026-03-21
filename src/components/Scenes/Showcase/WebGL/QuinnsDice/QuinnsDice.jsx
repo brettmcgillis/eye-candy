@@ -37,15 +37,15 @@ import {
   useBeforePhysicsStep,
 } from '@react-three/rapier';
 
-import useHandGestureEvents from '../../../hooks/hands/useHandGestureEvents';
-import useHandControls from '../../../hooks/hands/useHandcontrols';
-import useMediaPipeHands from '../../../hooks/hands/useMediaPipeHands';
-import QuinnsD4 from '../../elements/quinnsDice/QuinnsD4';
-import QuinnsD6 from '../../elements/quinnsDice/QuinnsD6';
-import QuinnsD8 from '../../elements/quinnsDice/QuinnsD8';
-import QuinnsD10 from '../../elements/quinnsDice/QuinnsD10';
-import QuinnsD12 from '../../elements/quinnsDice/QuinnsD12';
-import QuinnsD20 from '../../elements/quinnsDice/QuinnsD20';
+import useHandGestureEvents from '../../../../../hooks/hands/useHandGestureEvents';
+import useHandControls from '../../../../../hooks/hands/useHandcontrols';
+import useMediaPipeHands from '../../../../../hooks/hands/useMediaPipeHands';
+import QuinnsD4 from '../../../../elements/quinnsDice/QuinnsD4';
+import QuinnsD6 from '../../../../elements/quinnsDice/QuinnsD6';
+import QuinnsD8 from '../../../../elements/quinnsDice/QuinnsD8';
+import QuinnsD10 from '../../../../elements/quinnsDice/QuinnsD10';
+import QuinnsD12 from '../../../../elements/quinnsDice/QuinnsD12';
+import QuinnsD20 from '../../../../elements/quinnsDice/QuinnsD20';
 import {
   DEFAULT_CAMERA_POSITION_VALUES,
   DICE_CONFIGS,

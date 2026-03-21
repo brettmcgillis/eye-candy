@@ -1,7 +1,7 @@
 import React, { useMemo } from 'react';
 
-import { modelFile } from '../../../utils/appUtils';
-import { SparkSplatMesh } from '../../../utils/spark-extend';
+import { modelFile } from '../../../../../utils/appUtils';
+import { SparkSplatMesh } from '../../../../../utils/spark-extend';
 
 export default function SparkSplat({ splat, ...props }) {
   const splatMeshArgs = useMemo(() => ({ url: modelFile(splat) }), [splat]);

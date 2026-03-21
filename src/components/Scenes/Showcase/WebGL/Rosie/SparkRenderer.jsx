@@ -2,7 +2,7 @@ import React, { useEffect, useMemo, useRef } from 'react';
 
 import { useThree } from '@react-three/fiber';
 
-import { SparkRenderer } from '../../../utils/spark-extend';
+import { SparkRenderer } from '../../../../../utils/spark-extend';
 
 export default function SparkSplatRenderer({
   splatDataTexture,

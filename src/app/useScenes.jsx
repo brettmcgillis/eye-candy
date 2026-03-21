@@ -3,20 +3,26 @@ import { lazy } from 'react';
 import NoScene from './scaffold/NoScene';
 
 const FoldedFrame = lazy(
-  () => import('../components/scenes/FoldedFrame/FoldedFrame')
+  () => import('../components/scenes/Showcase/WebGL/FoldedFrame/FoldedFrame')
 );
-const LoGlow = lazy(() => import('../components/scenes/LoGlow/LoGlow'));
-const NewScene = lazy(() => import('../components/scenes/NewScene/NewScene'));
+const LoGlow = lazy(
+  () => import('../components/scenes/Showcase/WebGL/LoGlow/LoGlow')
+);
+const NewScene = lazy(
+  () => import('../components/scenes/Showcase/WebGL/NewScene/NewScene')
+);
 const PaperStack = lazy(
-  () => import('../components/scenes/PaperStack/PaperStack')
+  () => import('../components/scenes/Showcase/WebGL/PaperStack/PaperStack')
 );
 const PenPlotter = lazy(
-  () => import('../components/scenes/PenPlotter/PenPlotter')
+  () => import('../components/scenes/Showcase/WebGL/PenPlotter/PenPlotter')
 );
 const QuinnsDice = lazy(
-  () => import('../components/scenes/QuinnsDice/QuinnsDice')
+  () => import('../components/scenes/Showcase/WebGL/QuinnsDice/QuinnsDice')
 );
-const Rosie = lazy(() => import('../components/scenes/Rosie/Rosie'));
+const Rosie = lazy(
+  () => import('../components/scenes/Showcase/WebGL/Rosie/Rosie')
+);
 const WebGLTestLab = lazy(
   () => import('../components/scenes/TestLab/WebGLTestLab')
 );
@@ -34,6 +40,12 @@ const WebGLWorkInProgress = lazy(
 );
 const WebGPUWorkInProgress = lazy(
   () => import('../components/scenes/WorkInProgress/WebGPUWorkInProgress')
+);
+const WebGLShowcase = lazy(
+  () => import('../components/scenes/Showcase/WebGLShowcase')
+);
+const WebGPUShowcase = lazy(
+  () => import('../components/scenes/Showcase/WebGPUShowcase')
 );
 
 const noScene = {
@@ -156,6 +168,26 @@ const webgpuWorkInProgress = {
   linkable: true,
 };
 
+const webglShowcase = {
+  id: 'webglShowcase',
+  renderer: 'webgl',
+  Component: WebGLShowcase,
+  label: 'WebGL Showcase',
+  icon: '🎬',
+  public: false,
+  linkable: true,
+};
+
+const webgpuShowcase = {
+  id: 'webgpuShowcase',
+  renderer: 'webgpu',
+  Component: WebGPUShowcase,
+  label: 'WebGPU Showcase',
+  icon: '🎬',
+  public: false,
+  linkable: true,
+};
+
 const rosie = {
   id: 'rosie',
   renderer: 'webgl',
@@ -189,6 +221,8 @@ const scenes = [
   webgpuToolBox,
   webglWorkInProgress,
   webgpuWorkInProgress,
+  webglShowcase,
+  webgpuShowcase,
   rosie,
   dice,
 ];

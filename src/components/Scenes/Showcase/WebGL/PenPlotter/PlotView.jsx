@@ -1,6 +1,6 @@
 import React from 'react';
 
-import useTestLabSceneSelector from '../../../hooks/useSubSceneSelector';
+import useTestLabSceneSelector from '../../../../../hooks/useSubSceneSelector';
 import usePlotterScenes from './Hooks/usePlotterScenes';
 
 export default function PlotView() {

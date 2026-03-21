@@ -7,7 +7,7 @@ import React, { useCallback, useEffect, useMemo, useRef } from 'react';
 import { OrbitControls, PerspectiveCamera, Splat } from '@react-three/drei';
 import { useFrame, useLoader, useThree } from '@react-three/fiber';
 
-import { imageFile, modelFile } from '../../../utils/appUtils';
+import { imageFile, modelFile } from '../../../../../utils/appUtils';
 import CustomMultiSplat from './CustomMultiSplat';
 import SparkMultiSplat from './SparkMultiSplat';
 import useSplatDataTexture from './useSplatDataTexture';

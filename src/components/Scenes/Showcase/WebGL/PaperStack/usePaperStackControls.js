@@ -3,7 +3,7 @@ import * as THREE from 'three';
 
 import { useEffect, useMemo, useRef, useState } from 'react';
 
-import { localEnv } from '../../../utils/appUtils';
+import { localEnv } from '../../../../../utils/appUtils';
 import { COLOR_PRESETS, WINDOW_PRESETS } from './presets';
 
 function areColorsEqual(a, b) {

@@ -216,3 +216,16 @@ File: ~/SceneName/TestScene.jsx
       Scene should include various art images on planes in the environment.
       Scene should allow user to walk around and look at Quinns Portfolio.
       see example @ https://henryegloff.com/
+
+- v 0.1.0
+- Stats
+- Channel
+  Option - WebGPU - Sets the WebGPU Canvas wrapper
+  Option - WebGL - Sets the WebGL Canvas wrapper
+- Area
+  Option - Showcase - Sets us on WebGL/WebGPU ShowCase
+  Option - Work in progress - Sets us on WebGL/WebGPU WIP
+  Option - TestLab - Sets us on WebGL/WebGPU TestLab
+  Option - Toolbox - Sets us on WebGL/WebGPU Toolbox
+- Scene
+  Options - Provided by the Showcase/WIP/TestLab/Toolbox

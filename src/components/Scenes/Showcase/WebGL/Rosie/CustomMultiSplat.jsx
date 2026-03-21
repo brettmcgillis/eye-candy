@@ -5,7 +5,7 @@ import React from 'react';
 
 import { useLoader } from '@react-three/fiber';
 
-import { imageFile, modelFile } from '../../../utils/appUtils';
+import { imageFile, modelFile } from '../../../../../utils/appUtils';
 import TexturedSplat from './TexturedSplat';
 
 const CUSTOM_SPLAT_TEXTURE_OPTIONS = {

@@ -2,7 +2,7 @@ import { button, folder, useControls } from 'leva';
 
 import { useEffect, useRef } from 'react';
 
-import { localEnv } from '../../../../utils/appUtils';
+import { localEnv } from '../../../../../../utils/appUtils';
 import {
   DEFAULT_PLOTTER_PRESET,
   PLOTTER_PRESETS,

@@ -69,8 +69,6 @@ const PRESET_CONTROL_KEYS = [
   'linearDamping',
   'angularDamping',
   'friction',
-  'boxWidth',
-  'boxHeight',
   'boxDepth',
   'targetX',
   'targetY',
@@ -499,20 +497,6 @@ export default function useQuinnsDiceControls() {
         },
         Bounds: folder(
           {
-            boxWidth: {
-              label: 'Box Width',
-              value: QUINNS_DICE_PRESETS.Default.boxWidth,
-              min: 2,
-              max: 200,
-              step: 0.1,
-            },
-            boxHeight: {
-              label: 'Box Height',
-              value: QUINNS_DICE_PRESETS.Default.boxHeight,
-              min: 2,
-              max: 200,
-              step: 0.1,
-            },
             boxDepth: {
               label: 'Box Depth',
               value: QUINNS_DICE_PRESETS.Default.boxDepth,

@@ -43,8 +43,6 @@ const QUINNS_DICE_PRESETS = {
     linearDamping: 2,
     angularDamping: 1,
     friction: 0.1,
-    boxWidth: 10,
-    boxHeight: 10,
     boxDepth: 10,
     targetX: 0,
     targetY: 0,

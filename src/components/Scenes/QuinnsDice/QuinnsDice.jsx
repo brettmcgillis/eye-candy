@@ -63,6 +63,8 @@ const DEFAULT_CAMERA_POSITION = new THREE.Vector3(
 );
 const CAMERA_DEFAULT_LOOK_AT = new THREE.Vector3(0, 0, 0);
 const DIE_IDS = DICE_CONFIGS.map((config) => config.id);
+const ZERO_VEL = { x: 0, y: 0, z: 0 };
+const GRAVITY_IMPULSE = { x: 0, y: -0.1, z: 0 };
 
 export default function QuinnsDice() {
   const d4Ref = useRef();
@@ -82,6 +84,7 @@ export default function QuinnsDice() {
   const rollPowerRef = useRef(1);
   const rollDelayRef = useRef(1.5);
   const rollLaneZRef = useRef(3);
+  const size = useThree((state) => state.size);
   const cameraPositionTargetRef = useRef(new THREE.Vector3());
   const cameraLookAtTargetRef = useRef(new THREE.Vector3());
   const dieRefMap = useMemo(
@@ -264,8 +267,6 @@ export default function QuinnsDice() {
     linearDamping,
     angularDamping,
     friction,
-    boxWidth,
-    boxHeight,
     boxDepth,
     targetX,
     targetY,
@@ -304,8 +305,13 @@ export default function QuinnsDice() {
   orbitControlsEnabledRef.current = orbitControlsEnabled;
   rollLaneZRef.current = boxDepth * 0.35;
 
-  const boundsWidth = boxWidth;
-  const boundsHeight = boxHeight;
+  const { boundsWidth, boundsHeight } = useMemo(() => {
+    const fovRad = 24 * (Math.PI / 180);
+    const cameraZ = DEFAULT_CAMERA_POSITION_VALUES[2];
+    const aspect = size.width / size.height;
+    const visibleHeight = 2 * Math.tan(fovRad / 2) * cameraZ;
+    return { boundsWidth: visibleHeight * aspect, boundsHeight: visibleHeight };
+  }, [size.width, size.height]);
 
   useEffect(() => {
     if (!orbitControlsEnabled || rollingDieIdRef.current) return;
@@ -563,21 +569,7 @@ export default function QuinnsDice() {
           radius={bloomRadius}
         />
       </EffectComposer>
-      <Environment resolution={256}>
-        <group rotation={[-Math.PI / 3, 0, 1]}>
-          {LIGHTFORMER_CONFIGS.map((config, index) => (
-            <Lightformer
-              key={`lf-${index}`}
-              form="circle"
-              intensity={config.intensity}
-              position={config.position}
-              rotation={config.rotation}
-              scale={config.scale}
-            />
-          ))}
-        </group>
-      </Environment>
-      <Environment preset="city" />
+      <SceneLighting />
       {debugLights && (
         <group rotation={[-Math.PI / 3, 0, 1]}>
           {LIGHTFORMER_CONFIGS.map((config, index) => (
@@ -593,7 +585,7 @@ export default function QuinnsDice() {
   );
 }
 
-function DicePhysicsDriver({
+const DicePhysicsDriver = React.memo(function DicePhysicsDriver({
   dieRefMap,
   detachedDieIdRef,
   rollingDieIdRef,
@@ -680,7 +672,7 @@ function DicePhysicsDriver({
             linearVelocity.z ** 2;
 
           if (displacementSq < settleDistanceSq && velocitySq < settleSpeedSq) {
-            body.setLinvel({ x: 0, y: 0, z: 0 }, false);
+            body.setLinvel(ZERO_VEL, false);
           } else {
             targetVelocity.set(dx, dy, dz).multiplyScalar(followRate);
             if (targetVelocity.lengthSq() > maxReturnSpeed * maxReturnSpeed) {
@@ -698,15 +690,40 @@ function DicePhysicsDriver({
     if (rollingDieIdRef.current) {
       const rollingBody = dieRefMap[rollingDieIdRef.current]?.current;
       if (rollingBody) {
-        rollingBody.applyImpulse({ x: 0, y: -0.1, z: 0 }, false);
+        rollingBody.applyImpulse(GRAVITY_IMPULSE, false);
       }
     }
   });
 
   return null;
-}
+});
 
-function SceneBackground({ topColor, bottomColor }) {
+const SceneLighting = React.memo(function SceneLighting() {
+  return (
+    <>
+      <Environment resolution={256}>
+        <group rotation={[-Math.PI / 3, 0, 1]}>
+          {LIGHTFORMER_CONFIGS.map((config, index) => (
+            <Lightformer
+              key={`lf-${index}`}
+              form="circle"
+              intensity={config.intensity}
+              position={config.position}
+              rotation={config.rotation}
+              scale={config.scale}
+            />
+          ))}
+        </group>
+      </Environment>
+      <Environment preset="city" />
+    </>
+  );
+});
+
+const SceneBackground = React.memo(function SceneBackground({
+  topColor,
+  bottomColor,
+}) {
   const { gl, scene } = useThree();
   const textureRef = useRef();
 
@@ -748,7 +765,7 @@ function SceneBackground({ topColor, bottomColor }) {
   );
 
   return null;
-}
+});
 
 function LightDebugPyramid({ position, target }) {
   const quaternion = useMemo(() => {
@@ -776,7 +793,7 @@ function LightformerDebugPyramid({ position, rotation }) {
   );
 }
 
-function SceneBounds({
+const SceneBounds = React.memo(function SceneBounds({
   width = 30,
   height = 30,
   depth = 30,
@@ -828,7 +845,7 @@ function SceneBounds({
       </mesh>
     </RigidBody>
   );
-}
+});
 
 function DieBody({
   name,
@@ -867,7 +884,7 @@ function DieBody({
   );
 }
 
-function D4Die({ scale = 1, bodyRef, ...props }) {
+const D4Die = React.memo(function D4Die({ scale = 1, bodyRef, ...props }) {
   const { position } = DICE_CONFIGS[0];
   return (
     <DieBody
@@ -883,9 +900,9 @@ function D4Die({ scale = 1, bodyRef, ...props }) {
       </Center>
     </DieBody>
   );
-}
+});
 
-function D6Die({ scale = 1, bodyRef, ...props }) {
+const D6Die = React.memo(function D6Die({ scale = 1, bodyRef, ...props }) {
   const { position } = DICE_CONFIGS[1];
   return (
     <DieBody
@@ -901,9 +918,9 @@ function D6Die({ scale = 1, bodyRef, ...props }) {
       </Center>
     </DieBody>
   );
-}
+});
 
-function D8Die({ scale = 1, bodyRef, ...props }) {
+const D8Die = React.memo(function D8Die({ scale = 1, bodyRef, ...props }) {
   const { position } = DICE_CONFIGS[2];
   return (
     <DieBody
@@ -919,9 +936,9 @@ function D8Die({ scale = 1, bodyRef, ...props }) {
       </Center>
     </DieBody>
   );
-}
+});
 
-function D10Die({ scale = 1, bodyRef, ...props }) {
+const D10Die = React.memo(function D10Die({ scale = 1, bodyRef, ...props }) {
   const { position } = DICE_CONFIGS[3];
   return (
     <DieBody
@@ -937,9 +954,9 @@ function D10Die({ scale = 1, bodyRef, ...props }) {
       </Center>
     </DieBody>
   );
-}
+});
 
-function D12Die({ scale = 1, bodyRef, ...props }) {
+const D12Die = React.memo(function D12Die({ scale = 1, bodyRef, ...props }) {
   const { position } = DICE_CONFIGS[4];
   return (
     <DieBody
@@ -955,9 +972,9 @@ function D12Die({ scale = 1, bodyRef, ...props }) {
       </Center>
     </DieBody>
   );
-}
+});
 
-function D20Die({
+const D20Die = React.memo(function D20Die({
   bodyRef,
   scale = 1,
   emissiveColor = '#ffffff',
@@ -982,9 +999,12 @@ function D20Die({
       </Center>
     </DieBody>
   );
-}
+});
 
-function D20Visual({ emissiveColor = '#ffffff', emissiveIntensity = 1 }) {
+const D20Visual = React.memo(function D20Visual({
+  emissiveColor = '#ffffff',
+  emissiveIntensity = 1,
+}) {
   const groupRef = useRef();
 
   useEffect(() => {
@@ -1006,9 +1026,9 @@ function D20Visual({ emissiveColor = '#ffffff', emissiveIntensity = 1 }) {
       <QuinnsD20 />
     </group>
   );
-}
+});
 
-function PointerAppearance({
+const PointerAppearance = React.memo(function PointerAppearance({
   radius,
   look,
   lightColor,
@@ -1107,9 +1127,9 @@ function PointerAppearance({
       )}
     </>
   );
-}
+});
 
-function Pointer({
+const Pointer = React.memo(function Pointer({
   radius = 1,
   followSpeed = 30,
   boxWidth = 10,
@@ -1216,9 +1236,9 @@ function Pointer({
       />
     </RigidBody>
   );
-}
+});
 
-function HandsPointer({
+const HandsPointer = React.memo(function HandsPointer({
   radius = 1,
   boxWidth = 10,
   boxHeight = 10,
@@ -1264,9 +1284,9 @@ function HandsPointer({
   enableGestures = true,
   pointRollEnabled = true,
   pointRollCooldownMs = 900,
-  vec = new THREE.Vector3(),
 }) {
   const ref = useRef();
+  const vecRef = useRef(new THREE.Vector3());
   const smoothedHandPosRef = useRef(new THREE.Vector3(999, 999, 999));
   const lastPointRollAtRef = useRef(0);
 
@@ -1307,6 +1327,7 @@ function HandsPointer({
   useFrame(() => {
     const body = ref.current;
     if (!body) return;
+    const vec = vecRef.current;
 
     if (!hands?.handPosition) {
       body.setNextKinematicTranslation(vec.set(999, 999, 999));
@@ -1368,4 +1389,4 @@ function HandsPointer({
       />
     </RigidBody>
   );
-}
+});

@@ -9,12 +9,31 @@ import NeuralNetwork from '../../elements/network/NeuralNetwork';
 import { GridMaterial } from '../../materials/gridMaterial';
 
 export default function NetworkTest() {
-  const rings = useControls('Neural Rings', {
+  const network = useControls('Neural Network', {
+    Shape: folder(
+      {
+        shape: {
+          value: 'ring',
+          options: ['ring', 'sphere', 'network'],
+        },
+      },
+      { collapsed: true }
+    ),
+
     Ring: folder(
       {
         innerDiameter: { value: 3, min: 0, max: 30, step: 0.1 },
         outerDiameter: { value: 7, min: 1, max: 60, step: 0.1 },
         height: { value: 0.2, min: 0, max: 10, step: 0.05 },
+      },
+      { collapsed: true }
+    ),
+
+    Bounds: folder(
+      {
+        networkWidth: { value: 7, min: 0.1, max: 60, step: 0.1 },
+        networkHeight: { value: 3, min: 0.1, max: 60, step: 0.1 },
+        networkDepth: { value: 7, min: 0.1, max: 60, step: 0.1 },
       },
       { collapsed: true }
     ),
@@ -79,7 +98,7 @@ export default function NetworkTest() {
       <ambientLight intensity={0.9} />
       <color attach="background" args={['#5b5b5b']} />
       <OrbitControls />
-      <NeuralNetwork {...rings} />
+      <NeuralNetwork {...network} />
       {/* <Bret /> */}
       <InteractiveBret />
       <mesh position={[0, -1, 0]} rotation={[-Math.PI / 2, 0, 0]}>

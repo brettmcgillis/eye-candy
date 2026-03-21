@@ -9,6 +9,7 @@ import useComponentControls from '../components/useComponentControls';
 // should also provide an example of how we reset controls from the current
 // preset.This hook should also provide an example of how we offer a
 // copy preset button in dev for bringing presets back to the IDE.
+// The hook should only render the presets folder if the presets include more than the Default
 export default function useSceneControls() {
   const [sceneControls, setSceneControls] = useControls(
     'Scene Template',

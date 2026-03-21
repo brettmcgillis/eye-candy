@@ -277,6 +277,7 @@ export default function QuinnsDice() {
     targetY,
     targetZ,
     pointerRadius,
+    pointerFollowSpeed,
     pointerLook,
     pointerLightColor,
     pointerLightIntensity,
@@ -422,12 +423,12 @@ export default function QuinnsDice() {
           returnStrength={returnStrength}
           linearDamping={linearDamping}
           maxImpulse={maxImpulse}
+          boundsWidth={boundsWidth}
+          boundsHeight={boundsHeight}
+          boundsDepth={boxDepth}
           targetX={targetX}
           targetY={targetY}
           targetZ={targetZ}
-          boundsWidth={boundsWidth}
-          boundsHeight={boundsHeight}
-          boxDepth={boxDepth}
         />
         <SceneBounds
           width={boundsWidth}
@@ -438,6 +439,7 @@ export default function QuinnsDice() {
         {mode === 'touch/pointer' && (
           <Pointer
             radius={pointerRadius}
+            followSpeed={pointerFollowSpeed}
             boxWidth={boundsWidth}
             boxHeight={boundsHeight}
             boxDepth={boxDepth}
@@ -611,56 +613,95 @@ function DicePhysicsDriver({
   returnStrength,
   linearDamping,
   maxImpulse,
+  boundsWidth,
+  boundsHeight,
+  boundsDepth,
   targetX,
   targetY,
   targetZ,
-  boundsWidth,
-  boundsHeight,
-  boxDepth,
 }) {
-  const impulseRef = useRef(new THREE.Vector3());
+  const velocityRef = useRef(new THREE.Vector3());
+  const targetVelocityRef = useRef(new THREE.Vector3());
+  const correctedTranslationRef = useRef(new THREE.Vector3());
+  const correctedVelocityRef = useRef(new THREE.Vector3());
 
   useBeforePhysicsStep(() => {
     if (!physicsEnabled) return;
 
-    const impulse = impulseRef.current;
-    const fixedDt = 1 / 60;
-    const springStrength = Math.max(0, returnStrength) * 22;
-    const dampingStrength = Math.max(0.5, linearDamping * 0.45 + 2.2);
+    const velocity = velocityRef.current;
+    const targetVelocity = targetVelocityRef.current;
+    const dt = 1 / 60;
+    const settleDistanceSq = 0.0009;
+    const settleSpeedSq = 0.0009;
+    const baseFollow = Math.max(0, returnStrength) * 2.2;
+    const followRate = Math.max(0.4, baseFollow);
+    const dampingRate = Math.max(0.2, linearDamping * 0.55);
+    const blend = 1 - Math.exp(-followRate * dt);
+    const dampingFactor = Math.exp(-dampingRate * dt);
+    const maxReturnSpeed = Math.max(0.2, maxImpulse * 10);
+    const boundaryPadding = 0.65;
+    const xLimit = Math.max(0.2, boundsWidth / 2 - boundaryPadding);
+    const yLimit = Math.max(0.2, boundsHeight / 2 - boundaryPadding);
+    const zLimit = Math.max(0.2, boundsDepth / 2 - boundaryPadding);
+    const correctionSpeed = Math.max(1.8, maxReturnSpeed * 0.7);
+    const correctedTranslation = correctedTranslationRef.current;
+    const correctedVelocity = correctedVelocityRef.current;
 
     for (let i = 0; i < DIE_IDS.length; i += 1) {
       const id = DIE_IDS[i];
-      if (detachedDieId !== id) {
-        const body = dieRefMap[id]?.current;
-        if (body) {
-          const translation = body.translation();
-          const linearVelocity = body.linvel();
-          impulse
-            .set(targetX, targetY, targetZ)
-            .sub(translation)
-            .multiplyScalar(springStrength * fixedDt);
+      const body = dieRefMap[id]?.current;
+      if (body) {
+        const translation = body.translation();
+        const linearVelocity = body.linvel();
+        const clampedX = THREE.MathUtils.clamp(translation.x, -xLimit, xLimit);
+        const clampedY = THREE.MathUtils.clamp(translation.y, -yLimit, yLimit);
+        const clampedZ = THREE.MathUtils.clamp(translation.z, -zLimit, zLimit);
+        const correctedX = clampedX !== translation.x;
+        const correctedY = clampedY !== translation.y;
+        const correctedZ = clampedZ !== translation.z;
 
-          impulse.x -= linearVelocity.x * dampingStrength * fixedDt;
-          impulse.y -= linearVelocity.y * dampingStrength * fixedDt;
-          impulse.z -= linearVelocity.z * dampingStrength * fixedDt;
+        if (correctedX || correctedY || correctedZ) {
+          correctedTranslation.set(clampedX, clampedY, clampedZ);
+          body.setTranslation(correctedTranslation, false);
 
-          const displacementSq =
-            (targetX - translation.x) ** 2 +
-            (targetY - translation.y) ** 2 +
-            (targetZ - translation.z) ** 2;
+          correctedVelocity.set(
+            correctedX
+              ? -Math.sign(translation.x) *
+                  Math.max(correctionSpeed, Math.abs(linearVelocity.x) * 0.35)
+              : linearVelocity.x,
+            correctedY
+              ? -Math.sign(translation.y) *
+                  Math.max(correctionSpeed, Math.abs(linearVelocity.y) * 0.35)
+              : linearVelocity.y,
+            correctedZ
+              ? -Math.sign(translation.z) *
+                  Math.max(correctionSpeed, Math.abs(linearVelocity.z) * 0.35)
+              : linearVelocity.z
+          );
+          body.setLinvel(correctedVelocity, false);
+        }
+
+        if (detachedDieId !== id) {
+          const dx = targetX - clampedX;
+          const dy = targetY - clampedY;
+          const dz = targetZ - clampedZ;
+          const displacementSq = dx * dx + dy * dy + dz * dz;
           const velocitySq =
             linearVelocity.x ** 2 +
             linearVelocity.y ** 2 +
             linearVelocity.z ** 2;
 
-          if (displacementSq < 0.0004 && velocitySq < 0.0004) {
-            impulse.set(0, 0, 0);
-          }
+          if (displacementSq < settleDistanceSq && velocitySq < settleSpeedSq) {
+            body.setLinvel({ x: 0, y: 0, z: 0 }, false);
+          } else {
+            targetVelocity.set(dx, dy, dz).multiplyScalar(followRate);
+            if (targetVelocity.lengthSq() > maxReturnSpeed * maxReturnSpeed) {
+              targetVelocity.setLength(maxReturnSpeed);
+            }
 
-          impulse.clampLength(0, maxImpulse);
-
-          if (impulse.lengthSq() > 0.000001) {
-            body.applyImpulse(impulse, false);
+            velocity.set(linearVelocity.x, linearVelocity.y, linearVelocity.z);
+            velocity.lerp(targetVelocity, blend).multiplyScalar(dampingFactor);
+            body.setLinvel(velocity, false);
           }
         }
       }
@@ -669,52 +710,7 @@ function DicePhysicsDriver({
     if (rollingDieId) {
       const rollingBody = dieRefMap[rollingDieId]?.current;
       if (rollingBody) {
-        rollingBody.applyImpulse({ x: 0, y: -0.36, z: 0 }, false);
-      }
-    }
-
-    const halfW = boundsWidth / 2;
-    const halfH = boundsHeight / 2;
-    const halfD = boxDepth / 2;
-    const boundaryMargin = 0.55;
-    const minX = -halfW + boundaryMargin;
-    const maxX = halfW - boundaryMargin;
-    const minY = -halfH + boundaryMargin;
-    const maxY = halfH - boundaryMargin;
-    const minZ = -halfD + boundaryMargin;
-    const maxZ = halfD - boundaryMargin;
-    const boundaryBounceDamping = 0.25;
-
-    for (let i = 0; i < DIE_IDS.length; i += 1) {
-      const id = DIE_IDS[i];
-      const body = dieRefMap[id]?.current;
-      if (body) {
-        const translation = body.translation();
-        const nextX = THREE.MathUtils.clamp(translation.x, minX, maxX);
-        const nextY = THREE.MathUtils.clamp(translation.y, minY, maxY);
-        const nextZ = THREE.MathUtils.clamp(translation.z, minZ, maxZ);
-        const xExceeded = nextX !== translation.x;
-        const yExceeded = nextY !== translation.y;
-        const zExceeded = nextZ !== translation.z;
-
-        if (xExceeded || yExceeded || zExceeded) {
-          const linearVelocity = body.linvel();
-          body.setTranslation({ x: nextX, y: nextY, z: nextZ }, true);
-          body.setLinvel(
-            {
-              x: xExceeded
-                ? -linearVelocity.x * boundaryBounceDamping
-                : linearVelocity.x,
-              y: yExceeded
-                ? -linearVelocity.y * boundaryBounceDamping
-                : linearVelocity.y,
-              z: zExceeded
-                ? -linearVelocity.z * boundaryBounceDamping
-                : linearVelocity.z,
-            },
-            true
-          );
-        }
+        rollingBody.applyImpulse({ x: 0, y: -0.1, z: 0 }, false);
       }
     }
   });
@@ -801,7 +797,7 @@ function SceneBounds({
   const halfW = width / 2;
   const halfH = height / 2;
   const halfD = depth / 2;
-  const wallThickness = 0.25;
+  const wallThickness = 0.5;
 
   return (
     <RigidBody type="fixed" colliders={false}>
@@ -1127,6 +1123,7 @@ function PointerAppearance({
 
 function Pointer({
   radius = 1,
+  followSpeed = 30,
   boxWidth = 10,
   boxHeight = 10,
   boxDepth = 10,
@@ -1156,11 +1153,12 @@ function Pointer({
   magicGlassTemporalDistortion = 0,
   magicGlassAttenuationColor = '#ffffff',
   magicGlassAttenuationDistance = 0,
-  vec = new THREE.Vector3(),
 }) {
   const ref = useRef();
+  const smoothedPosRef = useRef(new THREE.Vector3());
+  const targetPosRef = useRef(new THREE.Vector3());
 
-  useFrame(({ mouse, viewport }) => {
+  useFrame(({ mouse, viewport }, delta) => {
     const body = ref.current;
     if (!body) return;
 
@@ -1179,9 +1177,18 @@ function Pointer({
       halfH - margin
     );
     const targetZ = THREE.MathUtils.clamp(0, -halfD + margin, halfD - margin);
+    const target = targetPosRef.current.set(targetX, targetY, targetZ);
+    const smoothingAlpha = 1 - Math.exp(-Math.max(0, followSpeed) * delta);
 
-    body.setNextKinematicTranslation(vec.set(targetX, targetY, targetZ));
+    smoothedPosRef.current.lerp(target, smoothingAlpha);
+
+    body.setNextKinematicTranslation(smoothedPosRef.current);
   });
+
+  useEffect(() => {
+    smoothedPosRef.current.set(0, 0, 0);
+  }, []);
+
   return (
     <RigidBody
       position={[0, 0, 0]}

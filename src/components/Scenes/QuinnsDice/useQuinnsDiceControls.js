@@ -75,6 +75,7 @@ const PRESET_CONTROL_KEYS = [
   'targetX',
   'targetY',
   'targetZ',
+  'pointerFollowSpeed',
   'pointerLook',
   'pointerLightColor',
   'pointerLightIntensity',
@@ -564,6 +565,13 @@ export default function useQuinnsDiceControls() {
           min: 0.1,
           max: 5,
           step: 0.1,
+        },
+        pointerFollowSpeed: {
+          label: 'Follow Speed',
+          value: QUINNS_DICE_PRESETS.Default.pointerFollowSpeed,
+          min: 1,
+          max: 80,
+          step: 1,
         },
         'Light Ball': folder(
           {

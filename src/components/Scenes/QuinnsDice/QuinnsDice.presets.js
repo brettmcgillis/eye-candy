@@ -56,6 +56,7 @@ const QUINNS_DICE_PRESETS = {
     pointerLightDecay: 2,
     pointerLightBallScale: 0.35,
     pointerRadius: 0.6,
+    pointerFollowSpeed: 34,
     pointerSphereColor: '#ffffff',
     pointerSphereOpacity: 1,
     pointerSphereRoughness: 0.35,

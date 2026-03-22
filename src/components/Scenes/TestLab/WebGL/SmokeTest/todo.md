@@ -22,3 +22,5 @@
 # // Features
 
 # // Bugs
+
+- the scene is reusing too much of SplineEditor which tells me its time to make some of the base components more generic and more easily shared. They should get moved into components/elements

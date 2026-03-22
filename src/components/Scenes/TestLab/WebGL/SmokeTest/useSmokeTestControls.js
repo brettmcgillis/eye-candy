@@ -1,13 +1,17 @@
 import { button, folder, useControls } from 'leva';
 import * as THREE from 'three';
 
-import { useMemo } from 'react';
+import { useEffect, useMemo, useRef } from 'react';
 
 import { localEnv } from '../../../../../utils/appUtils';
+import SPLINE_PRESETS from '../../../ToolBox/WebGL/SplineEditor/presets/presets';
 
 export default function useSmokeTestControls(points, setPoints) {
+  const selectedPresetRef = useRef('Default');
+
   const [
     {
+      preset,
       tension,
       closed,
       showSpline,
@@ -29,6 +33,21 @@ export default function useSmokeTestControls(points, setPoints) {
       fadeRate,
     },
   ] = useControls('Smoke Test', () => ({
+    Presets: folder(
+      {
+        preset: {
+          label: 'Preset',
+          value: 'Default',
+          options: Object.keys(SPLINE_PRESETS),
+        },
+        reset: button(() => {
+          const p = SPLINE_PRESETS[selectedPresetRef.current];
+          if (p) setPoints(p.points.map((v) => v.clone()));
+        }),
+      },
+      { collapsed: false }
+    ),
+
     Spline: folder(
       {
         tension: {
@@ -235,6 +254,17 @@ export default function useSmokeTestControls(points, setPoints) {
         }
       : {}),
   }));
+
+  // Track selected preset name
+  useEffect(() => {
+    selectedPresetRef.current = preset;
+  }, [preset]);
+
+  // Apply preset points when selection changes
+  useEffect(() => {
+    const p = SPLINE_PRESETS[preset];
+    if (p) setPoints(p.points.map((v) => v.clone()));
+  }, [preset]);
 
   return useMemo(
     () => ({

@@ -79,3 +79,6 @@ Long term vision / use cases:
 - [ ] Update preset for black and red squares. Move config upto 1/3 mark, apply more downward force.
 
 - [ ] Improve perf. really slow on low end devices. Can we get an improvement if we pull the marker squares out of the shader and handle them in the scene?
+
+- [ ] Hoist Cardinals (mobile) out of Fluid Test and into dedicated scene at the App level. Do not bring test mode, scene is always plane + orthographic cam
+- [ ] Hoist Watercolor Squares (mobile) out of Fluid Test and into dedicated scene at the App level. Include Blue variant as preset. Do not bring test mode, scene is always plane + orthographic cam. Consider: Does watercolor squares override controls to provide consistent appearance across viewport sizes?

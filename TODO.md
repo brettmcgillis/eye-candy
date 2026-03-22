@@ -18,6 +18,7 @@
 
 - [ ] glass
 - [x] pixelation component. did a pixelhater
+- [ ] Check out Tone.js for audio. Could be a good solution to bridging Strudel, Mp3, etc.
 
 ### APP
 
@@ -29,8 +30,16 @@
 
 ### SCENES
 
-- [ ] Hoist Cardinals (mobile) out of Fluid Test and into dedicated scene at the App level. Do not bring test mode, scene is always plane + orthographic cam
-- [ ] Hoist Watercolor Squares (mobile) out of Fluid Test and into dedicated scene at the App level. Include Blue variant as preset. Do not bring test mode, scene is always plane + orthographic cam. Consider: Does watercolor squares override controls to provide consistent appearance across viewport sizes?
+To Build:
+
+- [ ] CSG Skull. Knock a reversal out of its forehead.
+- [ ] Relax and take notes while the gun smoke spells out "That's all, folks!"
+- [ ] Burning the candle at both ends
+- [ ] We should do a scene with Quinns seal, 3rd person camera, player controls w/keyboard and controller.
+      Scene should include quinns dice in the environment.
+      Scene should include various art images on planes in the environment.
+      Scene should allow user to walk around and look at Quinns Portfolio.
+      see example @ https://henryegloff.com/
 
 ### Scene TODO Files
 
@@ -74,8 +83,6 @@
 
 ### ELEMENTS
 
-- [ ] make them all forwardRefs
-
 #### HALO
 
 - [ ] halo props to controls
@@ -84,127 +91,23 @@
 
 #### SKULL
 
-- [ ] default prop vals
-- [ ] element position controls
+- [ ] Refactor like we did with bret/reversal to offer a generic that takes props, and specialized versions
 - [ ] material controls (? chrome skull)
-- [ ] CSG Skull?
-
-#### LOGO
-
-- [ ] visiblity to props
 
 ### ENVIRONMENT (app)
 
-- [ ] probably just delete it
-- [ ] background color
-- [ ] background environment
-- [ ] background fog
+- [ ] delete it
 
 ### SCREENSHOT
 
-- [ ] add watermark?
-- [ ] make it work on mobile
-- [ ] add Screen Recording
+- Overhaul. Should support screenshot and screenred
+- Make sure output includes a watermark & some cool hiddnen fileinfo
+- Make sure it works on mobile
 
 ### CAMERARIG
 
-- [ ] Probably just delete it
-- [ ] add camera rig with props for default position, more
-- [ ] add camera controls, control availablity with props?
-- [ ] orbit (on/off w/props)
+- [ ] delete it
 
 ### LIGHTINGRIG
 
-- [ ] Probably just delete it
-- [ ] props
-- [ ] directional lighting
-
-### UTILS
-
-- [ ] color utilites
-  - [ ] (hook into THREE for glow etc)
-
-### CONTROLS
-
-- [ ] universal control module
-
-```javascript
-// COMPLEX CONTROLS~!
-// const controls = useControls("Controls", {
-//   show: { value: true, label: "Show color" },
-//   color: { value: "#fff", render: (get) => get("Controls.show") },
-//   show2: { value: false, label: "Show folder" },
-//   folder: folder(
-//     {
-//       number: 1,
-//       string: {
-//         value: "shown if `number >= 1`",
-//         render: (get) => get("Controls.folder.number") >= 1,
-//       },
-//     },
-//     { render: (get) => get("Controls.show2") }
-//   ),
-//   options: {
-//     value: 'helloWorld',
-//     options: {
-//       'Hello World': 'helloWorld',
-//       'Leva is awesome!': 'leva',
-//     },
-//   }
-// });
-```
-
-### Scene setup and conventions
-
-File: ~/SceneName/SceneName.jsx
-
-- A fully encapsulated scene component that accepts no props and is designed to be dropped in a <Canvas />
-
-File: ~/SceneName/useSceneControls.js
-
-- Leverages leva use controls to provide control values to the scene and mange scene state.
-- Some scenes will provide a preset dropdown allowing users to set control values to predetermined settings.
-- Scenes with a preset dropdown also get a reset button to restore control values to the currently selected preset.
-- Scenes with a preset dropdown also get a copy settings button, to allow me to copy the control settings as json, and bring them back to the IDE as new or updated presets.
-
-File: ~/SceneName/scenePresets.js
-
-- Contains control presets, in json format.
-- More mature scenes with multiple configs will get a presets file, to be leveraged in the controls hook to provide an options dropdown
-
-File: ~/SceneName/TestScene.jsx
-
-- Some scenes are designed to build and exercise tooling. These scenes require a sub-scene to test against. Subscenes go into a dedicated TestScene file to keep the main component clean and ensure tooling is generic enough to be used against any other sub-scene.
-
-- [ ] Check out Tone.js for audio. Could be a good solution to bridging Strudel, Mp3, etc.
-
-- [ ] We should do a scene with Quinns seal, 3rd person camera, player controls w/keyboard and controller.
-      Scene should include quinns dice in the environment.
-      Scene should include various art images on planes in the environment.
-      Scene should allow user to walk around and look at Quinns Portfolio.
-      see example @ https://henryegloff.com/
-
-- [x] Update the way we set up the Leva controls/menu and scaffold the app. It should end up looking like the pseudo code below. we also want to make sure we can still link directly to a scene (ie eye-candy/?mode=gpu&area=showcase&scene=myCoolScene)
-
-  ```
-  - v 0.1.0
-  - Stats
-  - Channel (mode? not sure whats best here)
-    Option - WebGPU - Sets the WebGPU Canvas wrapper
-    Option - WebGL - Sets the WebGL Canvas wrapper
-  - Area (? what makes sense here too ?)
-    Option - Showcase - Sets us on WebGL/WebGPU ShowCase
-    Option - Work in progress - Sets us on WebGL/WebGPU WIP
-    Option - TestLab - Sets us on WebGL/WebGPU TestLab
-    Option - Toolbox - Sets us on WebGL/WebGPU Toolbox
-  - Scene
-    Options - Provided by the Showcase/WIP/TestLab/Toolbox
-  ```
-
-- [ ] Update how SceneMoji sets up and displays. New Format: 🔥 - {Area} - {Scene}
-  - Area:
-    - ShowCase: no emoji, no second hyphen.
-    - Wip: 🏗️
-    - TestLab: 🧪
-    - Toolbox: 🧰
-  - Scene: Should be the icondefined in our scene registry hooks
+- [ ] delete it

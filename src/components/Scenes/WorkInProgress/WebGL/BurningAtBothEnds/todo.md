@@ -29,6 +29,7 @@
 - [ ] Animate candle shrinking over time. flame shrinking once candle is at min.
 - [x] Add a mode for candle off. show candle smoke instead of flame.
 - [x] Wick should support hot (current ember) and cold mode (all black, with some grey char) to better suport candle off mode.
+- [ ] When lit mode changes we should lerp the flame down to nothing then lerp the smoke up to it's size.
 
 # // Bugs
 

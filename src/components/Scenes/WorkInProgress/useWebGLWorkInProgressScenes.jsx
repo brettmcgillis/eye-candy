@@ -1,6 +1,9 @@
 import { lazy } from 'react';
 
 const NoScene = lazy(() => import('../../../app/scaffold/NoScene'));
+const BurningAtBothEnds = lazy(
+  () => import('./WebGL/BurningAtBothEnds/BurningAtBothEnds')
+);
 const CrtTest = lazy(() => import('./WebGL/CRTTest/CrtTest'));
 const DumpsterFire = lazy(() => import('./WebGL/DumpsterFire/DumpsterFire'));
 
@@ -10,6 +13,12 @@ const scenes = [
     label: 'None',
     icon: '💀',
     Component: NoScene,
+  },
+  {
+    id: 'burningAtBothEnds',
+    label: 'Burning At Both Ends',
+    icon: '🕯️',
+    Component: BurningAtBothEnds,
   },
   {
     id: 'crtTest',

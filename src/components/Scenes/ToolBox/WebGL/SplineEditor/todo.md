@@ -12,13 +12,22 @@
 - I want to be able to create splines that start/end at the same point creating a loop.
 - I have multiple scenes I would like to build that involve smoke(particles) flowing along a curve and want to be able to build those curves easily
 
-# // Features
-
 - Lets start with the example from Three and work from there.
 - scene currently includes grid floor. lets make sure to add grid walls and ceiling too. make material only on the inside, so as not to obstruct camera view, but provide spatial reference.
 - I may want leva controls for the xyz position of each point for fine tuning.
 - I may want a way to select a point and use keyboard arrows to move, factoring in the camera's view position.
 - I will want our typical presets/reset preset/copy preset controls so I can "save" difficult splines and work on them over time.
 - I will want a way to pin the camera position to a given axis, such that I can create 2d splines.
+
+# // Features
+
+- [ ] Grid snapping control.
+- [ ] Add a mode for testing spline with a camera. Not sure how to handle this.
+  - have control to loop camera motion. on closed loop just keep going. on unclosed spline i want option to go start-finish-back to start OR start-finish-camera snaps back to start.
+  - when camera motion is not looped mode just go start-finish.
+  - might want to enable a camera mode where it traverses the spline and 'look at' 0,0,0.
+  - might want a first person mode where i can look around but cam follows path.
+  - might want a controlled mode. ie on scroll or move traverse the spline fforwardwd/backwarsd
+  - In 'camera' mode include a geometry w/ transform control to set the location to look at.
 
 # // Bugs

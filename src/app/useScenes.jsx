@@ -15,7 +15,7 @@ export const CHANNELS = {
 export const AREAS = {
   showcase: 'Showcase',
   wip: 'Work in Progress',
-  testlab: 'TestLab',
+  testlab: 'Test Lab',
   toolbox: 'Toolbox',
 };
 

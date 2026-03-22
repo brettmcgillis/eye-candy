@@ -42,7 +42,18 @@ export default function Candle({ config, position = [0, 0, 0] }) {
     >
       {/* Candle body */}
       <mesh geometry={candleGeo}>
-        <meshStandardMaterial color="#ffffff" roughness={0.75} metalness={0} />
+        <meshPhysicalMaterial
+          color="#f8f6f1"
+          roughness={0.46}
+          metalness={0}
+          transmission={0.08}
+          thickness={0.7}
+          ior={1.45}
+          attenuationDistance={0.8}
+          attenuationColor="#fff1d8"
+          clearcoat={0.08}
+          clearcoatRoughness={0.55}
+        />
       </mesh>
 
       {/* Top flame assembly */}

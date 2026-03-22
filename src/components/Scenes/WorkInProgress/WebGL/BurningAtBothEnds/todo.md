@@ -10,6 +10,7 @@
 - Slight tilt (~15°) for visual interest.
 - Flame shader adapted from example.js — duplicated at top and bottom of candle.
 - Flickering point lights at each flame for dynamic illumination.
+- Intent is to strike a balance between realism and surrealism. The candle, wick and flame should try to get to as real as we can. the inverted candle should be surrel, in that it is like a mirror image of the top candle; there is still a crater at the wick and excess wax flows up the candle stick in symmetry to the wax flowing down.
 
 # // Features
 

@@ -20,7 +20,7 @@ export default function useSceneControls() {
         {
           ambientLightIntensity: {
             label: 'Ambient Intensity',
-            value: 0.5,
+            value: 2,
             min: 0,
             max: 2,
             step: 0.01,

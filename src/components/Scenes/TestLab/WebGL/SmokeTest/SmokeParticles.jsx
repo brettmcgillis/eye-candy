@@ -84,11 +84,23 @@ const curveLookupCache = new Float32Array(CURVE_SAMPLES * 3);
 export default function SmokeParticles({ points, config, attractorsRef }) {
   const pointsRef = useRef();
   const geometryRef = useRef();
-  const materialRef = useRef();
   const texture = useMemo(createSoftCircleTexture, []);
   const timeRef = useRef(0);
 
   const stateRef = useRef(null);
+
+  // Stable uniform object — mutated directly in useFrame every frame.
+  // Defined here (before useFrame) so the frame callback can reference it.
+  const uniforms = useMemo(
+    () => ({
+      uSize: { value: 40 },
+      uScale: { value: 400 },
+      uColor: { value: new THREE.Color('#7c7989') },
+      uOpacity: { value: 0.045 },
+      uMap: { value: texture },
+    }),
+    [texture]
+  );
 
   // Initialize or resize the simulation when particleCount changes.
   // Existing particles are never touched — only new slots are filled (grow)
@@ -226,18 +238,24 @@ export default function SmokeParticles({ points, config, attractorsRef }) {
   useFrame(({ size }, delta) => {
     const state = stateRef.current;
     const geometry = geometryRef.current;
-    const material = materialRef.current;
     if (!state || !geometry || points.length < 2) return;
 
     // Cap delta so a tab switch doesn't explode velocities.
     const dt = Math.min(delta, 0.05);
 
-    // Sync shader uniforms from Leva config each frame.
-    if (material) {
-      material.uniforms.uSize.value = config.particleSize;
-      material.uniforms.uColor.value.set(config.particleColor);
-      material.uniforms.uOpacity.value = config.opacity;
-      material.uniforms.uScale.value = size.height / 2;
+    // Sync uniforms every frame by writing directly to the useMemo object
+    // (material.uniforms IS this same object) and also via pointsRef so the
+    // correct value is always used regardless of how R3F v9 sets up the ref.
+    uniforms.uSize.value = config.particleSize;
+    uniforms.uColor.value.set(config.particleColor);
+    uniforms.uOpacity.value = config.opacity;
+    uniforms.uScale.value = size.height / 2;
+    const mat = pointsRef.current?.material;
+    if (mat?.uniforms) {
+      mat.uniforms.uSize.value = config.particleSize;
+      mat.uniforms.uColor.value.set(config.particleColor);
+      mat.uniforms.uOpacity.value = config.opacity;
+      mat.uniforms.uScale.value = size.height / 2;
     }
 
     // Rebuild the per-frame lookup table (512 sample arc).
@@ -381,7 +399,7 @@ export default function SmokeParticles({ points, config, attractorsRef }) {
         vy += (sy - py) * springK * dt;
         vz += (sz - pz) * springK * dt;
 
-        // Radial attractor forces.
+        // Radial attractor forces + directional component from attractor rotation.
         for (let a = 0; a < attractors.length; a += 1) {
           const ap = attractors[a].position;
           const dx = ap[0] - px;
@@ -390,10 +408,24 @@ export default function SmokeParticles({ points, config, attractorsRef }) {
           const dist2 = dx * dx + dy * dy + dz * dz;
           const dist = Math.sqrt(dist2) + 0.1;
           const falloff = attractorRadius * attractorRadius;
-          const strength = (attractorStrength * falloff) / (dist2 + falloff);
-          vx += (dx / dist) * strength * dt;
-          vy += (dy / dist) * strength * dt;
-          vz += (dz / dist) * strength * dt;
+          const radialStrength =
+            (attractorStrength * falloff) / (dist2 + falloff);
+          vx += (dx / dist) * radialStrength * dt;
+          vy += (dy / dist) * radialStrength * dt;
+          vz += (dz / dist) * radialStrength * dt;
+
+          // Directional force: pushes particles along the attractor's pointing
+          // axis (local +Y after rotation). Uses the same falloff so it only
+          // affects particles within attractorRadius. Scaled to 40% of radial
+          // strength so it adds a noticeable deflection without dominating.
+          const dir = attractors[a].direction;
+          if (dir) {
+            const dirStrength =
+              (attractorStrength * 0.4 * falloff) / (dist2 + falloff);
+            vx += dir[0] * dirStrength * dt;
+            vy += dir[1] * dirStrength * dt;
+            vz += dir[2] * dirStrength * dt;
+          }
         }
 
         // Per-particle turbulence — staggered sinusoids give organic wispy motion.
@@ -456,23 +488,10 @@ export default function SmokeParticles({ points, config, attractorsRef }) {
     };
   }, [texture]);
 
-  // Stable uniform object — values are mutated directly in useFrame.
-  const uniforms = useMemo(
-    () => ({
-      uSize: { value: 40 },
-      uScale: { value: 400 },
-      uColor: { value: new THREE.Color('#7c7989') },
-      uOpacity: { value: 0.045 },
-      uMap: { value: texture },
-    }),
-    [texture]
-  );
-
   return (
     <points ref={pointsRef}>
       <bufferGeometry ref={geometryRef} />
       <shaderMaterial
-        ref={materialRef}
         vertexShader={vertexShader}
         fragmentShader={fragmentShader}
         uniforms={uniforms}

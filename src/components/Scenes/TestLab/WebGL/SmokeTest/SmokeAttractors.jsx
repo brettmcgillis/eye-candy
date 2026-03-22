@@ -1,4 +1,5 @@
 import { button, useControls } from 'leva';
+import * as THREE from 'three';
 
 import React, { useCallback, useEffect, useRef, useState } from 'react';
 
@@ -28,16 +29,19 @@ const CONE_OFFSET = 26;
 // Single draggable attractor marker
 // ---------------------------------------------------------------------------
 
-function AttractorHandle({ index, initialPosition, mode, onUpdate }) {
+function AttractorHandle({ index, attractor, mode, onUpdate }) {
   const groupRef = useRef();
   const tcRef = useRef();
   const [ready, setReady] = useState(false);
   const { get } = useThree();
 
-  // Place the group at the world-space initial position (mount-only).
+  // Place the group at the world-space position and apply stored rotation (mount-only).
   useEffect(() => {
     if (!groupRef.current) return;
-    groupRef.current.position.set(...initialPosition);
+    groupRef.current.position.set(...attractor.position);
+    if (attractor.rotation) {
+      groupRef.current.rotation.set(...attractor.rotation);
+    }
     setReady(true);
   }, []); // intentionally mount-only
 
@@ -54,7 +58,17 @@ function AttractorHandle({ index, initialPosition, mode, onUpdate }) {
     const onChange = () => {
       if (!groupRef.current) return;
       const p = groupRef.current.position;
-      onUpdate(index, [p.x, p.y, p.z]);
+      // Compute the world-space direction of the attractor (local +Y after rotation).
+      // Used by the particle sim for the directional force component.
+      const dir = new THREE.Vector3(0, 1, 0)
+        .applyEuler(groupRef.current.rotation)
+        .toArray();
+      const rot = groupRef.current.rotation.toArray().slice(0, 3);
+      onUpdate(index, {
+        position: [p.x, p.y, p.z],
+        direction: dir,
+        rotation: rot,
+      });
     };
 
     tc.addEventListener('dragging-changed', onDrag);
@@ -90,7 +104,7 @@ function AttractorHandle({ index, initialPosition, mode, onUpdate }) {
         <TransformControls
           ref={tcRef}
           object={groupRef.current}
-          mode="translate"
+          mode={mode}
           size={0.55}
         />
       )}
@@ -110,7 +124,7 @@ export default function SmokeAttractors({ attractorsRef }) {
     controlsMode: {
       label: 'Mode',
       value: 'translate',
-      options: ['translate', 'none'],
+      options: ['translate', 'rotate', 'none'],
     },
     addAttractor: button(() => {
       if (attractorsRef.current.length >= MAX_ATTRACTORS) return;
@@ -120,6 +134,8 @@ export default function SmokeAttractors({ attractorsRef }) {
           100 + Math.random() * 500,
           (Math.random() - 0.5) * 400,
         ],
+        direction: [0, 1, 0],
+        rotation: [0, 0, 0],
       });
       forceUpdate((c) => c + 1);
     }),
@@ -131,9 +147,9 @@ export default function SmokeAttractors({ attractorsRef }) {
   });
 
   const handleUpdate = useCallback(
-    (idx, position) => {
+    (idx, { position, direction, rotation }) => {
       // eslint-disable-next-line no-param-reassign
-      attractorsRef.current[idx] = { position };
+      attractorsRef.current[idx] = { position, direction, rotation };
     },
     [attractorsRef]
   );
@@ -147,7 +163,7 @@ export default function SmokeAttractors({ attractorsRef }) {
           // eslint-disable-next-line react/no-array-index-key
           key={i}
           index={i}
-          initialPosition={attr.position}
+          attractor={attr}
           mode={controlsMode}
           onUpdate={handleUpdate}
         />

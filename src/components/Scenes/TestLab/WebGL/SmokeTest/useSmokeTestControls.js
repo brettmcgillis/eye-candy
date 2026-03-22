@@ -4,7 +4,6 @@ import * as THREE from 'three';
 import { useMemo } from 'react';
 
 import { localEnv } from '../../../../../utils/appUtils';
-import SPLINE_PRESETS from '../../../ToolBox/WebGL/SplineEditor/presets/presets';
 
 export default function useSmokeTestControls(points, setPoints) {
   const [
@@ -26,13 +25,14 @@ export default function useSmokeTestControls(points, setPoints) {
       maxDrift,
       attractorStrength,
       attractorRadius,
+      fadeRate,
     },
   ] = useControls('Smoke Test', () => ({
     Spline: folder(
       {
         tension: {
           label: 'Tension',
-          value: SPLINE_PRESETS.Default.tension,
+          value: 1,
           min: 0,
           max: 1,
           step: 0.01,
@@ -100,12 +100,12 @@ export default function useSmokeTestControls(points, setPoints) {
         },
         particleColor: {
           label: 'Color',
-          value: '#3a3a3a',
+          value: '#7c7989',
         },
         opacity: {
           label: 'Opacity',
-          value: 0.07,
-          min: 0.01,
+          value: 0.045,
+          min: 0.005,
           max: 1,
           step: 0.005,
         },
@@ -164,6 +164,14 @@ export default function useSmokeTestControls(points, setPoints) {
           max: 2000,
           step: 50,
         },
+        fadeRate: {
+          label: 'Fade Rate',
+          value: 8,
+          min: 1,
+          max: 50,
+          step: 1,
+          hint: 'Open loop only — how fast particles fade after the spline end',
+        },
       },
       { collapsed: true }
     ),
@@ -206,6 +214,7 @@ export default function useSmokeTestControls(points, setPoints) {
                 turbulenceSpeed,
                 spawnSpread,
                 maxDrift,
+                fadeRate,
                 attractorStrength,
                 attractorRadius,
                 points: points.map((p) => ({ x: p.x, y: p.y, z: p.z })),
@@ -239,6 +248,7 @@ export default function useSmokeTestControls(points, setPoints) {
       turbulenceSpeed,
       spawnSpread,
       maxDrift,
+      fadeRate,
       attractorStrength,
       attractorRadius,
     }),
@@ -258,6 +268,7 @@ export default function useSmokeTestControls(points, setPoints) {
       turbulenceSpeed,
       spawnSpread,
       maxDrift,
+      fadeRate,
       attractorStrength,
       attractorRadius,
     ]

@@ -11,11 +11,20 @@ const pointGeometry = new THREE.BoxGeometry(
   POINT_BOX_SIZE
 );
 
-export default function SplinePoints({ points, setPoints }) {
+export default function SplinePoints({ points, setPoints, visible = true }) {
   const orbitRef = useRef();
   const transformRef = useRef();
   const pointMeshRefs = useRef([]);
   const [selectedIndex, setSelectedIndex] = useState(null);
+
+  // Deselect and detach transform controls whenever helpers are hidden.
+  useEffect(() => {
+    if (!visible) {
+      setSelectedIndex(null);
+      if (transformRef.current) transformRef.current.detach();
+      if (orbitRef.current) orbitRef.current.enabled = true;
+    }
+  }, [visible]);
 
   // Keep refs array length in sync
   useEffect(() => {
@@ -127,34 +136,35 @@ export default function SplinePoints({ points, setPoints }) {
   return (
     <>
       {/* eslint-disable react/no-array-index-key */}
-      {points.map((pos, i) => (
-        <mesh
-          // eslint-disable-next-line react/no-array-index-key
-          key={i}
-          ref={(el) => {
-            pointMeshRefs.current[i] = el;
-          }}
-          geometry={pointGeometry}
-          castShadow
-          position={pos}
-          onPointerDown={handlePointPointerDown}
-          onPointerUp={handlePointPointerUp}
-          onClick={(e) => {
-            e.stopPropagation();
-            handleSelect(i);
-          }}
-          onPointerMissed={handlePointerMissed}
-        >
-          <meshLambertMaterial
-            color={new THREE.Color().setHSL((i * 0.13) % 1, 0.75, 0.55)}
-            emissive={new THREE.Color().setHSL((i * 0.13) % 1, 0.75, 0.55)}
-            emissiveIntensity={selectedIndex === i ? 0.6 : 0.0}
-          />
-        </mesh>
-      ))}
+      {visible &&
+        points.map((pos, i) => (
+          <mesh
+            // eslint-disable-next-line react/no-array-index-key
+            key={i}
+            ref={(el) => {
+              pointMeshRefs.current[i] = el;
+            }}
+            geometry={pointGeometry}
+            castShadow
+            position={pos}
+            onPointerDown={handlePointPointerDown}
+            onPointerUp={handlePointPointerUp}
+            onClick={(e) => {
+              e.stopPropagation();
+              handleSelect(i);
+            }}
+            onPointerMissed={handlePointerMissed}
+          >
+            <meshLambertMaterial
+              color={new THREE.Color().setHSL((i * 0.13) % 1, 0.75, 0.55)}
+              emissive={new THREE.Color().setHSL((i * 0.13) % 1, 0.75, 0.55)}
+              emissiveIntensity={selectedIndex === i ? 0.6 : 0.0}
+            />
+          </mesh>
+        ))}
       {/* eslint-enable react/no-array-index-key */}
 
-      {selectedIndex !== null && (
+      {visible && selectedIndex !== null && (
         <TransformControls
           ref={transformRef}
           onObjectChange={handleObjectChange}

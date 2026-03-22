@@ -15,6 +15,7 @@ export default function useSplineEditorControls(pointPositions, setPoints) {
       preset,
       tension,
       closed,
+      showPoints,
       showUniform,
       showCentripetal,
       showChordal,
@@ -37,6 +38,7 @@ export default function useSplineEditorControls(pointPositions, setPoints) {
               setControls({
                 tension: p.tension,
                 closed: p.closed,
+                showPoints: p.showPoints ?? true,
                 showUniform: p.showUniform,
                 showCentripetal: p.showCentripetal,
                 showChordal: p.showChordal,
@@ -84,6 +86,10 @@ export default function useSplineEditorControls(pointPositions, setPoints) {
       ),
       Visibility: folder(
         {
+          showPoints: {
+            label: 'Show Points',
+            value: SPLINE_PRESETS.Default.showPoints,
+          },
           showUniform: {
             label: 'Uniform (red)',
             value: SPLINE_PRESETS.Default.showUniform,
@@ -157,6 +163,7 @@ export default function useSplineEditorControls(pointPositions, setPoints) {
     controlsSnapshotRef.current = {
       tension,
       closed,
+      showPoints,
       showUniform,
       showCentripetal,
       showChordal,
@@ -165,6 +172,7 @@ export default function useSplineEditorControls(pointPositions, setPoints) {
   }, [
     tension,
     closed,
+    showPoints,
     showUniform,
     showCentripetal,
     showChordal,
@@ -178,6 +186,7 @@ export default function useSplineEditorControls(pointPositions, setPoints) {
     setControls({
       tension: p.tension,
       closed: p.closed,
+      showPoints: p.showPoints ?? true,
       showUniform: p.showUniform,
       showCentripetal: p.showCentripetal,
       showChordal: p.showChordal,
@@ -190,10 +199,19 @@ export default function useSplineEditorControls(pointPositions, setPoints) {
       tension,
       closed,
       arcSegments,
+      showPoints,
       showUniform,
       showCentripetal,
       showChordal,
     }),
-    [tension, closed, arcSegments, showUniform, showCentripetal, showChordal]
+    [
+      tension,
+      closed,
+      arcSegments,
+      showPoints,
+      showUniform,
+      showCentripetal,
+      showChordal,
+    ]
   );
 }

@@ -34,7 +34,11 @@ export default function SplineEditorScene({ points, setPoints, config }) {
 
       <SplineGridBox />
 
-      <SplinePoints points={points} setPoints={setPoints} />
+      <SplinePoints
+        points={points}
+        setPoints={setPoints}
+        visible={config.showPoints}
+      />
 
       <SplineLine
         points={points}

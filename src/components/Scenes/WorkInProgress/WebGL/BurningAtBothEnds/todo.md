@@ -25,3 +25,5 @@
 - [ ] Post-processing bloom pass for flame glow
 
 # // Bugs
+
+- [ ] default camera position is too close to candle, should be farther back and higher up and looking downwards towards the center of the candle

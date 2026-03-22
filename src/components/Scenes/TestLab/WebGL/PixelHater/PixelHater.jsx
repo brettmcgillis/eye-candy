@@ -14,6 +14,10 @@ import PixelMaskEffect from './composed/PixelMaskEffectComponent';
 
 export default function PixelHater() {
   const {
+    bgType,
+    bgPreset,
+    bgBlur,
+    bgColor,
     pixelEffect,
     effectShape,
     pixelSize,
@@ -23,6 +27,41 @@ export default function PixelHater() {
   } = useControls(
     '👾',
     {
+      bgType: {
+        label: 'Background',
+        options: { Environment: 'environment', Color: 'color' },
+        value: 'environment',
+      },
+      bgPreset: {
+        label: 'Preset',
+        options: [
+          'apartment',
+          'city',
+          'dawn',
+          'forest',
+          'lobby',
+          'night',
+          'park',
+          'studio',
+          'sunset',
+          'warehouse',
+        ],
+        value: 'studio',
+        render: (get) => get('👾.bgType') === 'environment',
+      },
+      bgBlur: {
+        label: 'Blur',
+        value: 0.25,
+        min: 0,
+        max: 1,
+        step: 0.05,
+        render: (get) => get('👾.bgType') === 'environment',
+      },
+      bgColor: {
+        label: 'Color',
+        value: '#111111',
+        render: (get) => get('👾.bgType') === 'color',
+      },
       pixelEffect: {
         label: 'Effect',
         options: {
@@ -85,7 +124,12 @@ export default function PixelHater() {
       <LightingRig />
       <OrbitControls enableDamping enablePan enableRotate enableZoom />
 
-      <Environment preset="studio" background blur={0.25} />
+      <Environment
+        preset={bgPreset}
+        background={bgType === 'environment'}
+        blur={bgBlur}
+      />
+      {bgType === 'color' && <color attach="background" args={[bgColor]} />}
 
       <Record scale={10} position={[0, 0, -1]} rotation={[0, 0, 0]} />
 
@@ -129,6 +173,7 @@ export default function PixelHater() {
             <Censor
               pixelSize={pixelSize}
               refraction={refraction}
+              clipOffset={0.5}
               position={[0, 0, 1]}
             >
               <boxGeometry args={[1, 1, 1]} />

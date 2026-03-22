@@ -50,6 +50,7 @@ const fragmentShader = /* glsl */ `
 export default function Censor({
   pixelSize = 8,
   refraction = 0,
+  clipOffset = 0,
   children,
   ...props
 }) {
@@ -100,13 +101,22 @@ export default function Censor({
 
     // Clip plane at the censor mesh's position, facing the camera.
     // This ensures the FBO only captures objects behind the censor surface.
+    // clipOffset shifts the boundary toward the camera (positive = closer to camera),
+    // useful for volumetric shapes where you want to include geometry inside the mesh.
     mesh.getWorldPosition(worldPos);
     camera.getWorldDirection(camDir);
     clipPlane.setFromNormalAndCoplanarPoint(camDir, worldPos);
+    clipPlane.constant += clipOffset;
 
     mesh.visible = false;
     const savedClip = gl.clippingPlanes;
     gl.clippingPlanes = [clipPlane];
+
+    // Disable tone mapping during FBO render so we capture raw linear values.
+    // The ShaderMaterial applies tonemapping + colorspace in its fragment shader
+    // to avoid double-tonemapping (which causes darkening).
+    const savedToneMapping = gl.toneMapping;
+    gl.toneMapping = THREE.NoToneMapping;
 
     const previousRT = gl.getRenderTarget();
     gl.setRenderTarget(renderTarget);
@@ -114,6 +124,7 @@ export default function Censor({
     gl.render(scene, camera);
     gl.setRenderTarget(previousRT);
 
+    gl.toneMapping = savedToneMapping;
     gl.clippingPlanes = savedClip;
     mesh.visible = true;
 

@@ -15,6 +15,7 @@ import {
   clipLineOutsidePolygon,
   generatePerspectiveHatches,
 } from './perspective-hatch.js';
+import { yieldToMain } from './yield-utils.js';
 
 export { debugRenderNormals };
 
@@ -923,12 +924,12 @@ const PlotterRenderer = function () {
             })
           );
         }
-        return regionCache.get(cacheKey) || [];
+        return regionCache.get(cacheKey);
       };
 
       // Draw silhouette fills
       if (_this.showSilhouettes) {
-        const silhouetteRegions = getRegionsForInset(0);
+        const silhouetteRegions = await getRegionsForInset(0);
         silhouetteRegions.forEach((region) => {
           if (region.boundary.length < 3) return;
 
@@ -960,7 +961,7 @@ const PlotterRenderer = function () {
 
       // GPU Perspective Hatching (render before edges so edges appear on top)
       if (_this.showHatches) {
-        const hatchRegions = getRegionsForInset(_this.hatchOptions.insetPixels);
+        const hatchRegions = await getRegionsForInset(_this.hatchOptions.insetPixels);
         await renderHatchLayer({
           scene,
           camera,
@@ -971,7 +972,7 @@ const PlotterRenderer = function () {
       }
 
       if (_this.showCrossHatches) {
-        const crossHatchRegions = getRegionsForInset(
+        const crossHatchRegions = await getRegionsForInset(
           _this.crossHatchOptions.insetPixels
         );
         await renderHatchLayer({
@@ -983,6 +984,9 @@ const PlotterRenderer = function () {
         });
       }
     }
+
+    // Yield before hidden-line edge computation
+    await yieldToMain();
 
     // Hidden Line Edges (render last so they appear on top)
     // This is OUTSIDE the silhouettes/hatches block so edges can render independently
@@ -1009,7 +1013,7 @@ const PlotterRenderer = function () {
       });
 
       if (meshes.length > 0) {
-        const result = computeHiddenLinesMultiple(meshes, camera, scene, {
+        const result = await computeHiddenLinesMultiple(meshes, camera, scene, {
           smoothThreshold: _this.hiddenLineOptions.smoothThreshold,
           width: _svgWidth,
           height: _svgHeight,

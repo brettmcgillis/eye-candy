@@ -50,3 +50,4 @@
 - [x] Remove all the debug console logging around plot rendering
 - [x] Plot render looks weird on window resize, might need to refresh render on resize.
 - [ ] On export I am seeing paths that extend way beyond the bounds of the scene. Example: the edges of the plane are larger than the silhouette of the plane. The silhouette seems to be obeying what i see in the plot render, but the edges extend beyond.
+- [ ] Disable render on mount until we can render async

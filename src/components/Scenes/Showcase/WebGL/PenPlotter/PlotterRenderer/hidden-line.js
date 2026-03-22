@@ -27,6 +27,7 @@ import {
 } from 'three';
 
 import { Optimize } from './optimize.js';
+import { yieldToMain } from './yield-utils.js';
 
 /**
  * @typedef {Object} Edge3D
@@ -1945,7 +1946,7 @@ export function computeHiddenLines(mesh, camera, scene, options = {}) {
  * @param {number} [options.distanceThreshold] - Distance threshold for coplanar detection (default: 0.5)
  * @returns {{edges: Edge2D[], profiles: Edge2D[], allEdges: Edge2D[], projectedFaces: ProjectedFace[]}}
  */
-export function computeHiddenLinesMultiple(
+export async function computeHiddenLinesMultiple(
   meshes,
   camera,
   scene,
@@ -1980,6 +1981,9 @@ export function computeHiddenLinesMultiple(
   );
 
   const allEdges = [...profiles, ...smoothFiltered];
+
+  // Yield before heavy 2D projection + intersection splitting
+  await yieldToMain();
 
   // Project to 2D (with internal scale for precision)
   const edges2d = projectEdges(allEdges, camera, width, height, internalScale);
@@ -2023,6 +2027,9 @@ export function computeHiddenLinesMultiple(
   // Mark profile edges
   // Split all edges at intersections (direct O(n²) comparison - no spatial hash)
   const splitEdges = splitAtIntersections(edges2d);
+
+  // Yield before building projected faces (per-face matrix transforms)
+  await yieldToMain();
 
   // Build projected faces array for math occlusion
   /** @type {ProjectedFace[]} */
@@ -2126,6 +2133,9 @@ export function computeHiddenLinesMultiple(
   // Classify silhouette edges (edges that border the void) - BEFORE cleanup/optimization
   classifySilhouettes(splitEdges, projectedFaces);
 
+  // Yield before smooth filtering + occlusion (the two heaviest CPU stages)
+  await yieldToMain();
+
   // Geometric straggler filter: remove edges lying between coplanar faces
   const smoothFilteredEdges = filterSmoothSplitEdges(
     splitEdges,
@@ -2139,6 +2149,9 @@ export function computeHiddenLinesMultiple(
   if (skipOcclusion) {
     visibleEdges = smoothFilteredEdges;
   } else {
+    // Yield before the most expensive stage: per-edge × per-face occlusion
+    await yieldToMain();
+
     // Test ALL edges through occlusion (no special treatment for profiles)
     visibleEdges = testOcclusionMath(
       smoothFilteredEdges,

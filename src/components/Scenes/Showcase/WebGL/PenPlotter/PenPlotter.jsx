@@ -450,20 +450,21 @@ export default function PenPlotter() {
     };
   }, [config]);
 
-  useEffect(() => {
-    if (initialRefreshRequestedRef.current || !configRef.current) {
-      return undefined;
-    }
-
-    initialRefreshRequestedRef.current = true;
-    const frameId = window.requestAnimationFrame(() => {
-      handleRefresh();
-    });
-
-    return () => {
-      window.cancelAnimationFrame(frameId);
-    };
-  }, [handleRefresh, config]);
+  // Render-on-mount disabled until async rendering is fully non-blocking.
+  // useEffect(() => {
+  //   if (initialRefreshRequestedRef.current || !configRef.current) {
+  //     return undefined;
+  //   }
+  //
+  //   initialRefreshRequestedRef.current = true;
+  //   const frameId = window.requestAnimationFrame(() => {
+  //     handleRefresh();
+  //   });
+  //
+  //   return () => {
+  //     window.cancelAnimationFrame(frameId);
+  //   };
+  // }, [handleRefresh, config]);
 
   useEffect(() => {
     const width = Math.round(Number(viewportSize?.width) || 0);
@@ -613,7 +614,7 @@ export default function PenPlotter() {
                   textAlign: 'center',
                 }}
               >
-                Click &quot;refreshRender&quot; to generate
+                Press spacebar to render
               </div>
             ) : null}
           </div>

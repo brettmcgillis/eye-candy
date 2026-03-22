@@ -21,6 +21,8 @@ import {
   WebGLRenderTarget,
 } from 'three';
 
+import { yieldToMain } from './yield-utils.js';
+
 /**
  * @typedef {Object} NormalRegion
  * @property {Vector2[]} boundary - Closed boundary polygon points
@@ -37,7 +39,7 @@ import {
  * @param {Object} options
  * @returns {NormalRegion[]}
  */
-export function extractNormalRegions(renderer, scene, camera, options = {}) {
+export async function extractNormalRegions(renderer, scene, camera, options = {}) {
   const {
     resolution = 2.0, // Render at 2x for smooth boundaries
     normalBuckets = 12, // Quantize normals into N directions
@@ -57,6 +59,9 @@ export function extractNormalRegions(renderer, scene, camera, options = {}) {
   const normalPixels = renderNormals(renderer, scene, camera, width, height);
   const depthPixels = renderDepth(renderer, scene, camera, width, height);
 
+  // Yield after GPU reads so the browser can present a frame.
+  await yieldToMain();
+
   // Step 2: Quantize normals to region IDs
   const { regionMap, normalLookup } = quantizeNormals(
     normalPixels,
@@ -65,12 +70,18 @@ export function extractNormalRegions(renderer, scene, camera, options = {}) {
     normalBuckets
   );
 
+  // Yield before connected-component labeling (CPU-heavy pixel scan)
+  await yieldToMain();
+
   // Step 3: Connected component labeling
   const { labels, regionCount, labelToNormalId } = connectedComponents(
     regionMap,
     width,
     height
   );
+
+  // Yield before boundary tracing
+  await yieldToMain();
 
   // Step 4: Trace boundaries for each region
   const regions = [];

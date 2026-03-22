@@ -21,7 +21,7 @@ export const AREAS = {
 
 export const AREA_ICONS = {
   showcase: '',
-  wip: '🏗️',
+  wip: '🛠️',
   testlab: '🧪',
   toolbox: '🧰',
 };

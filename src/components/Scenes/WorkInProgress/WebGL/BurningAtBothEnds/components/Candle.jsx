@@ -9,6 +9,30 @@ import { useFrame } from '@react-three/fiber';
 import Candlewick from './Candlewick';
 import Flame from './Flame';
 
+function createSeededRandom(startSeed) {
+  let seed = startSeed;
+
+  return () => {
+    seed = (seed * 9301 + 49297) % 233280;
+    return seed / 233280;
+  };
+}
+
+function createWaxMaterial() {
+  return new THREE.MeshPhysicalMaterial({
+    color: '#fff6e8',
+    roughness: 0.34,
+    metalness: 0,
+    transmission: 0.05,
+    thickness: 0.45,
+    ior: 1.45,
+    attenuationDistance: 0.65,
+    attenuationColor: new THREE.Color('#fff0d6'),
+  });
+}
+
+const DRIP_ROOT_Y = 0.92;
+
 function WaxMetaballCap({ radius, y, inverted = false, config }) {
   const waxSizing = useMemo(() => {
     const spreadBase = Math.max(0.7, config.waxMetaSpread);
@@ -63,27 +87,56 @@ function WaxMetaballCap({ radius, y, inverted = false, config }) {
   // world-position mapping (0.5 + worldY * 0.5) which breaks for candle ends
   // at world Y > 1.
   const blobs = useMemo(() => {
-    let seed = 1337;
-    const rand = () => {
-      seed = (seed * 9301 + 49297) % 233280;
-      return seed / 233280;
-    };
+    const rand = createSeededRandom(inverted ? 9001 : 1337);
 
     const nodes = [];
     const ringCount = Math.max(12, Math.floor(config.waxMetaBlobCount));
     const { minRingRadius, maxRingRadius } = waxSizing;
+    const sizeVariation = config.waxMetaSizeVariation ?? 0.55;
 
     // Dense guard ring guarantees a minimum silhouette around the full circumference.
     const guardCount = Math.max(32, Math.floor(ringCount * 1.75));
     for (let i = 0; i < guardCount; i += 1) {
       const t = i / guardCount;
-      const angle = t * Math.PI * 2;
+      const angle = t * Math.PI * 2 + (rand() - 0.5) * 0.08;
+      const radial = minRingRadius + rand() * 0.035;
       nodes.push({
         id: `g-${i}`,
-        x: 0.5 + Math.cos(angle) * minRingRadius * 0.5,
-        z: 0.5 + Math.sin(angle) * minRingRadius * 0.5,
-        y: 0.5 + (rand() - 0.5) * 0.04,
-        strength: 0.18 + rand() * 0.12,
+        x: 0.5 + Math.cos(angle) * radial * 0.5,
+        z: 0.5 + Math.sin(angle) * radial * 0.5,
+        y: 0.5 + (rand() - 0.5) * 0.07,
+        strength: (0.12 + rand() * 0.08) * (1 + (rand() - 0.5) * sizeVariation),
+      });
+    }
+
+    const clusterCount = Math.max(3, Math.floor(ringCount * 0.3));
+    for (let i = 0; i < clusterCount; i += 1) {
+      const angle = rand() * Math.PI * 2;
+      const radial = minRingRadius + rand() * (maxRingRadius - minRingRadius);
+      const heroScale = 1 + rand() * (0.8 + sizeVariation * 0.9);
+
+      nodes.push({
+        id: `hero-${i}`,
+        x: 0.5 + Math.cos(angle) * radial * 0.5,
+        z: 0.5 + Math.sin(angle) * radial * 0.5,
+        y: 0.53 + (rand() - 0.5) * 0.16,
+        strength: (0.34 + rand() * 0.2) * heroScale,
+      });
+
+      nodes.push({
+        id: `hero-support-a-${i}`,
+        x: 0.5 + Math.cos(angle + 0.18) * (radial - 0.03) * 0.5,
+        z: 0.5 + Math.sin(angle + 0.18) * (radial - 0.03) * 0.5,
+        y: 0.5 + (rand() - 0.5) * 0.14,
+        strength: (0.18 + rand() * 0.16) * (0.9 + sizeVariation * 0.35),
+      });
+
+      nodes.push({
+        id: `hero-support-b-${i}`,
+        x: 0.5 + Math.cos(angle - 0.16) * (radial + 0.025) * 0.5,
+        z: 0.5 + Math.sin(angle - 0.16) * (radial + 0.025) * 0.5,
+        y: 0.5 + (rand() - 0.5) * 0.18,
+        strength: (0.16 + rand() * 0.14) * (0.85 + sizeVariation * 0.3),
       });
     }
 
@@ -92,12 +145,16 @@ function WaxMetaballCap({ radius, y, inverted = false, config }) {
       const angle = t * Math.PI * 2 + (rand() - 0.5) * 0.22;
       // Primary ring runs between min/max outer targets, with slight jitter.
       const radial = minRingRadius + rand() * (maxRingRadius - minRingRadius);
+      const scaleBias = Math.max(
+        0.45,
+        1 + (rand() - 0.5) * (0.8 + sizeVariation * 1.1)
+      );
       nodes.push({
         id: `r-${i}`,
         x: 0.5 + Math.cos(angle) * radial * 0.5,
         z: 0.5 + Math.sin(angle) * radial * 0.5,
-        y: 0.5 + (rand() - 0.5) * 0.12,
-        strength: 0.3 + rand() * 0.3,
+        y: 0.5 + (rand() - 0.5) * 0.2,
+        strength: (0.22 + rand() * 0.34) * scaleBias,
       });
     }
 
@@ -105,12 +162,16 @@ function WaxMetaballCap({ radius, y, inverted = false, config }) {
     for (let i = 0; i < Math.floor(ringCount * 0.5); i += 1) {
       const angle = rand() * Math.PI * 2;
       const radial = 0.25 + rand() * 0.3;
+      const scaleBias = Math.max(
+        0.5,
+        1 + (rand() - 0.5) * (0.65 + sizeVariation * 0.8)
+      );
       nodes.push({
         id: `f-${i}`,
         x: 0.5 + Math.cos(angle) * radial * 0.5,
         z: 0.5 + Math.sin(angle) * radial * 0.5,
-        y: 0.5 + (rand() - 0.5) * 0.08,
-        strength: 0.18 + rand() * 0.2,
+        y: 0.5 + (rand() - 0.5) * 0.14,
+        strength: (0.14 + rand() * 0.22) * scaleBias,
       });
     }
 
@@ -118,32 +179,28 @@ function WaxMetaballCap({ radius, y, inverted = false, config }) {
     for (let i = 0; i < Math.floor(ringCount * 0.7); i += 1) {
       const angle = rand() * Math.PI * 2;
       const radial = 0.4 + rand() * 0.28;
+      const scaleBias = Math.max(
+        0.45,
+        1 + (rand() - 0.5) * (0.9 + sizeVariation)
+      );
       nodes.push({
         id: `s-${i}`,
         x: 0.5 + Math.cos(angle) * radial * 0.5,
         z: 0.5 + Math.sin(angle) * radial * 0.5,
-        y: 0.5 + (rand() - 0.5) * 0.14,
-        strength: 0.14 + rand() * 0.22,
+        y: 0.5 + (rand() - 0.5) * 0.2,
+        strength: (0.1 + rand() * 0.26) * scaleBias,
       });
     }
 
     return nodes;
-  }, [config.waxMetaBlobCount, waxSizing]);
+  }, [
+    config.waxMetaBlobCount,
+    config.waxMetaSizeVariation,
+    inverted,
+    waxSizing,
+  ]);
 
-  const waxMaterial = useMemo(
-    () =>
-      new THREE.MeshPhysicalMaterial({
-        color: '#fff6e8',
-        roughness: 0.34,
-        metalness: 0,
-        transmission: 0.05,
-        thickness: 0.45,
-        ior: 1.45,
-        attenuationDistance: 0.65,
-        attenuationColor: new THREE.Color('#fff0d6'),
-      }),
-    []
-  );
+  const waxMaterial = useMemo(() => createWaxMaterial(), []);
 
   const mc = useMemo(
     () =>
@@ -185,6 +242,107 @@ function WaxMetaballCap({ radius, y, inverted = false, config }) {
   );
 }
 
+function WaxSideDrips({ radius, y, inverted = false, config }) {
+  const drips = useMemo(() => {
+    const rand = createSeededRandom(inverted ? 7331 : 4242);
+    const nodes = [];
+    const dripCount = Math.max(0, Math.floor(config.waxDripCount ?? 3));
+    const sizeVariation = config.waxMetaSizeVariation ?? 0.55;
+
+    for (let i = 0; i < dripCount; i += 1) {
+      const angle = rand() * Math.PI * 2;
+      const radial = 0.68 + rand() * 0.16;
+      const rootX = 0.5 + Math.cos(angle) * radial * 0.5;
+      const rootZ = 0.5 + Math.sin(angle) * radial * 0.5;
+      const segmentCount = 3 + Math.floor(rand() * 4);
+      const chainDepth = 0.45 + rand() * 0.3;
+      const rootStrength = 0.22 + rand() * 0.12;
+
+      nodes.push({
+        id: `drip-root-${i}`,
+        x: rootX,
+        y: DRIP_ROOT_Y + (rand() - 0.5) * 0.015,
+        z: rootZ,
+        strength: rootStrength * (1.05 + rand() * 0.45),
+      });
+
+      nodes.push({
+        id: `drip-shoulder-${i}`,
+        x: 0.5 + Math.cos(angle + 0.12) * (radial + 0.02) * 0.5,
+        y: 0.84 + (rand() - 0.5) * 0.03,
+        z: 0.5 + Math.sin(angle + 0.12) * (radial + 0.02) * 0.5,
+        strength: rootStrength * (0.8 + rand() * 0.25),
+      });
+
+      for (let segment = 0; segment < segmentCount; segment += 1) {
+        const t = (segment + 1) / segmentCount;
+        const wobble = (rand() - 0.5) * 0.05;
+        const lateral = 1 + (rand() - 0.5) * 0.12;
+        const neckStrength =
+          rootStrength *
+          Math.max(0.45, 0.95 - t * (0.42 + sizeVariation * 0.22));
+
+        nodes.push({
+          id: `drip-chain-${i}-${segment}`,
+          x: 0.5 + Math.cos(angle + wobble) * radial * lateral * 0.5,
+          y: 0.84 - t * chainDepth,
+          z: 0.5 + Math.sin(angle + wobble) * radial * lateral * 0.5,
+          strength: neckStrength,
+        });
+      }
+
+      nodes.push({
+        id: `drip-bulb-${i}`,
+        x: 0.5 + Math.cos(angle) * (radial - 0.015) * 0.5,
+        y: 0.14 + rand() * 0.14,
+        z: 0.5 + Math.sin(angle) * (radial - 0.015) * 0.5,
+        strength:
+          rootStrength *
+          (0.95 + rand() * 0.6 + sizeVariation * (0.35 + rand() * 0.25)),
+      });
+    }
+
+    return nodes;
+  }, [config.waxDripCount, config.waxMetaSizeVariation, inverted]);
+
+  const waxMaterial = useMemo(() => createWaxMaterial(), []);
+
+  const mc = useMemo(
+    () =>
+      new ThreeMarchingCubes(
+        Math.floor(config.waxMetaResolution),
+        waxMaterial,
+        false,
+        false,
+        Math.floor(config.waxMetaMaxPolyCount)
+      ),
+    [config.waxMetaResolution, config.waxMetaMaxPolyCount, waxMaterial]
+  );
+
+  useFrame(() => {
+    mc.reset();
+    drips.forEach((blob) => {
+      mc.addBall(
+        blob.x,
+        blob.y,
+        blob.z,
+        blob.strength * config.waxMetaStrength,
+        config.waxMetaSubtract
+      );
+    });
+    mc.update();
+  });
+
+  return (
+    <primitive
+      object={mc}
+      position={[0, y, 0]}
+      rotation={inverted ? [Math.PI, 0, 0] : [0, 0, 0]}
+      scale={[radius * 1.2, config.waxDripLength, radius * 1.2]}
+    />
+  );
+}
+
 export default function Candle({ config, position = [0, 0, 0] }) {
   const { height, radius, tilt } = config;
   const flameMotion = {
@@ -212,6 +370,9 @@ export default function Candle({ config, position = [0, 0, 0] }) {
     waxMetaHeight: config.waxMetaHeight ?? 0.72,
     waxMetaMinOuter: config.waxMetaMinOuter ?? 1,
     waxMetaMaxOuter: config.waxMetaMaxOuter ?? 1.28,
+    waxMetaSizeVariation: config.waxMetaSizeVariation ?? 0.55,
+    waxDripCount: config.waxDripCount ?? 3,
+    waxDripLength: config.waxDripLength ?? 1.2,
   };
   const topLightRef = useRef();
   const bottomLightRef = useRef();
@@ -342,6 +503,21 @@ export default function Candle({ config, position = [0, 0, 0] }) {
             config={waxMeta}
             inverted
           />
+          {waxMeta.waxDripCount > 0 && (
+            <>
+              <WaxSideDrips
+                radius={radius}
+                y={halfH - waxMeta.waxDripLength * DRIP_ROOT_Y}
+                config={waxMeta}
+              />
+              <WaxSideDrips
+                radius={radius}
+                y={-halfH + waxMeta.waxDripLength * DRIP_ROOT_Y}
+                config={waxMeta}
+                inverted
+              />
+            </>
+          )}
         </>
       )}
 

@@ -124,17 +124,18 @@ export default function SmokeParticles({ points, config, attractorsRef }) {
       curveLookupCache[s * 3 + 2] = curveTmp.z;
     }
 
-    // Spread particles over the virtual cycle [-1, 1) so half start in the
-    // invisible queue (t < 0, held at spline start) and half are already
-    // flowing. This ensures continuous, gap-free emission from steady state
-    // without all particles cycling in lockstep.
+    // For open splines, spread over [-1, 1) so half the particles start in the
+    // invisible queue before t=0, ensuring gap-free steady-state emission.
+    // For closed loops, spread over [0, 1) — no queue needed, just fill the
+    // whole loop uniformly to avoid a startup clump at the origin.
     const [initSX, initSY, initSZ] = curveLookupCache;
+    const tOffset = config.closed ? 0 : -1.0;
+    const tRange = config.closed ? 1.0 : 2.0;
     for (let i = 0; i < N; i += 1) {
-      // t in [-1, 1): negative = queued (invisible at start), positive = flowing.
-      const t = (i / N) * 2.0 - 1.0;
+      const t = tOffset + (i / N) * tRange;
       splineT[i] = t;
       if (t < 0) {
-        // Queued particles start at the spline origin.
+        // Queued particles (open spline only) start at the spline origin.
         alphas[i] = 0;
         const qi = i * 3;
         positions[qi] = initSX;
@@ -238,10 +239,36 @@ export default function SmokeParticles({ points, config, attractorsRef }) {
       let justRespawned = false;
       if (closed) {
         // Closed loop: wrap back to start seamlessly.
+        // Use sign-safe modulo — JS % preserves sign, so -0.3 % 1.0 = -0.3,
+        // not 0.7. Without this fix any particle arriving from open mode with
+        // t < 0 stays negative, gets clamped to tIdx=0, and piles up at the
+        // spline start.
+        const tPrev = splineT[i];
         // eslint-disable-next-line no-param-reassign
-        splineT[i] %= 1.0;
+        splineT[i] = ((tPrev % 1.0) + 1.0) % 1.0;
         // eslint-disable-next-line no-param-reassign
         alphas[i] = 1.0;
+        // If this particle was parked in the open-mode queue (t was negative,
+        // position sitting at the spline origin), teleport it to the remapped
+        // spline position so it doesn't spring in from the origin.
+        if (tPrev < 0) {
+          const ti = Math.max(
+            0,
+            Math.min(
+              CURVE_SAMPLES - 1,
+              Math.floor(splineT[i] * (CURVE_SAMPLES - 1))
+            )
+          );
+          const spread = config.spawnSpread;
+          positions[pi] = lookup[ti * 3] + (Math.random() - 0.5) * spread;
+          positions[pi + 1] =
+            lookup[ti * 3 + 1] + (Math.random() - 0.5) * spread;
+          positions[pi + 2] =
+            lookup[ti * 3 + 2] + (Math.random() - 0.5) * spread;
+          velocities[pi] = 0;
+          velocities[pi + 1] = 0;
+          velocities[pi + 2] = 0;
+        }
       } else if (splineT[i] > 1.0) {
         // Open spline: fade out after the last control point.
         // eslint-disable-next-line no-param-reassign
@@ -326,19 +353,19 @@ export default function SmokeParticles({ points, config, attractorsRef }) {
         const ny = py + vy * dt;
         const nz = pz + vz * dt;
 
-        // Drift-respawn: also queue the particle rather than snapping to t=0,
-        // so it blends back into the stream without creating a visible pop.
+        // Drift-respawn: snap to the tracked spline position rather than
+        // queuing at the origin. This keeps flow intact when the spline shape
+        // changes dramatically (e.g. adding/moving a control point) — particles
+        // teleport to their new tracked position and continue flowing, instead
+        // of all disappearing and re-entering staggered from the queue.
         const ex = nx - sx;
         const ey = ny - sy;
         const ez = nz - sz;
         if (ex * ex + ey * ey + ez * ez > maxDrift2) {
-          // eslint-disable-next-line no-param-reassign
-          splineT[i] = -(Math.random() * 0.5);
-          // eslint-disable-next-line no-param-reassign
-          alphas[i] = 0;
-          positions[pi] = splineStartX;
-          positions[pi + 1] = splineStartY;
-          positions[pi + 2] = splineStartZ;
+          const spread = config.spawnSpread;
+          positions[pi] = sx + (Math.random() - 0.5) * spread;
+          positions[pi + 1] = sy + (Math.random() - 0.5) * spread;
+          positions[pi + 2] = sz + (Math.random() - 0.5) * spread;
           velocities[pi] = 0;
           velocities[pi + 1] = 0;
           velocities[pi + 2] = 0;

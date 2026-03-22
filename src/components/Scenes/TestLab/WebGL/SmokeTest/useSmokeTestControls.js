@@ -11,6 +11,7 @@ export default function useSmokeTestControls(points, setPoints) {
       tension,
       closed,
       showSpline,
+      showHelpers,
       arcSegments,
       particleCount,
       particleSize,
@@ -43,6 +44,10 @@ export default function useSmokeTestControls(points, setPoints) {
         },
         showSpline: {
           label: 'Show Spline',
+          value: true,
+        },
+        showHelpers: {
+          label: 'Show Helpers',
           value: true,
         },
         arcSegments: {
@@ -236,6 +241,7 @@ export default function useSmokeTestControls(points, setPoints) {
       tension,
       closed,
       showSpline,
+      showHelpers,
       arcSegments,
       particleCount,
       particleSize,
@@ -256,6 +262,7 @@ export default function useSmokeTestControls(points, setPoints) {
       tension,
       closed,
       showSpline,
+      showHelpers,
       arcSegments,
       particleCount,
       particleSize,

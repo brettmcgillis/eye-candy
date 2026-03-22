@@ -55,7 +55,11 @@ export default function SmokeTest() {
       <SmokeGridBox />
 
       {/* SplinePoints renders its own OrbitControls with makeDefault */}
-      <SplinePoints points={points} setPoints={setPoints} />
+      <SplinePoints
+        points={points}
+        setPoints={setPoints}
+        visible={config.showHelpers}
+      />
 
       <SplineLine
         points={points}

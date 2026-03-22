@@ -4,6 +4,7 @@ const SPLINE_PRESETS = {
   Default: {
     tension: 0.5,
     closed: true,
+    showPoints: true,
     showUniform: true,
     showCentripetal: false,
     showChordal: false,
@@ -18,6 +19,7 @@ const SPLINE_PRESETS = {
   Loop: {
     tension: 0.5,
     closed: true,
+    showPoints: true,
     showUniform: true,
     showCentripetal: false,
     showChordal: false,
@@ -31,6 +33,7 @@ const SPLINE_PRESETS = {
   FlatXZ: {
     tension: 0.5,
     closed: false,
+    showPoints: true,
     showUniform: true,
     showCentripetal: false,
     showChordal: false,

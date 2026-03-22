@@ -90,79 +90,138 @@ export default function SmokeParticles({ points, config, attractorsRef }) {
 
   const stateRef = useRef(null);
 
-  // Reinitialize the simulation state whenever particle count changes.
+  // Initialize or resize the simulation when particleCount changes.
+  // Existing particles are never touched — only new slots are filled (grow)
+  // or the live count is simply reduced (shrink), so changing the ceiling
+  // does not disturb the particles already flowing on the spline.
   const { particleCount } = config;
   useEffect(() => {
     const geo = geometryRef.current;
     if (!geo || points.length < 2) return;
 
     const N = particleCount;
+    const prev = stateRef.current;
+
+    // ── FIRST INIT ──────────────────────────────────────────────────────────
+    if (!prev) {
+      const positions = new Float32Array(N * 3);
+      const velocities = new Float32Array(N * 3);
+      const splineT = new Float32Array(N);
+      const alphas = new Float32Array(N).fill(1);
+      const phases = new Float32Array(N);
+      for (let i = 0; i < N; i += 1) {
+        phases[i] = Math.random() * Math.PI * 2;
+      }
+
+      const curve = new THREE.CatmullRomCurve3(
+        [...points],
+        config.closed,
+        'catmullrom',
+        config.tension
+      );
+
+      for (let s = 0; s < CURVE_SAMPLES; s += 1) {
+        curve.getPoint(s / (CURVE_SAMPLES - 1), curveTmp);
+        curveLookupCache[s * 3] = curveTmp.x;
+        curveLookupCache[s * 3 + 1] = curveTmp.y;
+        curveLookupCache[s * 3 + 2] = curveTmp.z;
+      }
+
+      const [initSX, initSY, initSZ] = curveLookupCache;
+      const tOffset = config.closed ? 0 : -1.0;
+      const tRange = config.closed ? 1.0 : 2.0;
+      for (let i = 0; i < N; i += 1) {
+        const t = tOffset + (i / N) * tRange;
+        splineT[i] = t;
+        if (t < 0) {
+          alphas[i] = 0;
+          const qi = i * 3;
+          positions[qi] = initSX;
+          positions[qi + 1] = initSY;
+          positions[qi + 2] = initSZ;
+        } else {
+          curve.getPoint(t, curveTmp);
+          const spread = config.spawnSpread;
+          const fi = i * 3;
+          positions[fi] = curveTmp.x + (Math.random() - 0.5) * spread;
+          positions[fi + 1] = curveTmp.y + (Math.random() - 0.5) * spread;
+          positions[fi + 2] = curveTmp.z + (Math.random() - 0.5) * spread;
+        }
+      }
+
+      const initPosAttr = new THREE.BufferAttribute(positions, 3);
+      initPosAttr.usage = THREE.DynamicDrawUsage;
+      geo.setAttribute('position', initPosAttr);
+      const alphaAttr = new THREE.BufferAttribute(new Float32Array(alphas), 1);
+      alphaAttr.usage = THREE.DynamicDrawUsage;
+      geo.setAttribute('aAlpha', alphaAttr);
+
+      stateRef.current = { positions, velocities, splineT, alphas, phases, N };
+      return;
+    }
+
+    // ── RESIZE (grow or shrink) ──────────────────────────────────────────────
+    // Copy existing live particles verbatim into new, larger/smaller buffers.
+    // New slots (grow) are queued invisibly at t = -rand so they enter the
+    // flow staggered without disturbing the existing stream.
+    const oldN = prev.N;
     const positions = new Float32Array(N * 3);
     const velocities = new Float32Array(N * 3);
     const splineT = new Float32Array(N);
-    // Per-particle alpha: 1 = fully visible, 0 = invisible (used for open-loop fade).
     const alphas = new Float32Array(N).fill(1);
-    // Fixed per-particle turbulence phase — random once, used every frame.
     const phases = new Float32Array(N);
-    for (let i = 0; i < N; i += 1) {
+
+    const copyN = Math.min(oldN, N);
+    positions.set(prev.positions.subarray(0, copyN * 3));
+    velocities.set(prev.velocities.subarray(0, copyN * 3));
+    splineT.set(prev.splineT.subarray(0, copyN));
+    alphas.set(prev.alphas.subarray(0, copyN));
+    phases.set(prev.phases.subarray(0, copyN));
+
+    // Seed new slots — queue them in open mode, scatter on spline in closed mode.
+    const [startX, startY, startZ] = curveLookupCache;
+    for (let i = oldN; i < N; i += 1) {
       phases[i] = Math.random() * Math.PI * 2;
-    }
-
-    const curve = new THREE.CatmullRomCurve3(
-      [...points],
-      config.closed,
-      'catmullrom',
-      config.tension
-    );
-
-    // Build the lookup table first so the queued-particle init below can
-    // read curveLookupCache[0..2] for the spline start position.
-    for (let s = 0; s < CURVE_SAMPLES; s += 1) {
-      curve.getPoint(s / (CURVE_SAMPLES - 1), curveTmp);
-      curveLookupCache[s * 3] = curveTmp.x;
-      curveLookupCache[s * 3 + 1] = curveTmp.y;
-      curveLookupCache[s * 3 + 2] = curveTmp.z;
-    }
-
-    // For open splines, spread over [-1, 1) so half the particles start in the
-    // invisible queue before t=0, ensuring gap-free steady-state emission.
-    // For closed loops, spread over [0, 1) — no queue needed, just fill the
-    // whole loop uniformly to avoid a startup clump at the origin.
-    const [initSX, initSY, initSZ] = curveLookupCache;
-    const tOffset = config.closed ? 0 : -1.0;
-    const tRange = config.closed ? 1.0 : 2.0;
-    for (let i = 0; i < N; i += 1) {
-      const t = tOffset + (i / N) * tRange;
-      splineT[i] = t;
-      if (t < 0) {
-        // Queued particles (open spline only) start at the spline origin.
-        alphas[i] = 0;
-        const qi = i * 3;
-        positions[qi] = initSX;
-        positions[qi + 1] = initSY;
-        positions[qi + 2] = initSZ;
-      } else {
-        curve.getPoint(t, curveTmp);
+      const ni = i * 3;
+      if (config.closed) {
+        // In closed loop, seed directly at a random point on the spline.
+        const seedT = Math.random();
+        const si = Math.floor(seedT * (CURVE_SAMPLES - 1));
         const spread = config.spawnSpread;
-        const fi = i * 3;
-        positions[fi] = curveTmp.x + (Math.random() - 0.5) * spread;
-        positions[fi + 1] = curveTmp.y + (Math.random() - 0.5) * spread;
-        positions[fi + 2] = curveTmp.z + (Math.random() - 0.5) * spread;
+        splineT[i] = seedT;
+        alphas[i] = 1;
+        positions[ni] =
+          curveLookupCache[si * 3] + (Math.random() - 0.5) * spread;
+        positions[ni + 1] =
+          curveLookupCache[si * 3 + 1] + (Math.random() - 0.5) * spread;
+        positions[ni + 2] =
+          curveLookupCache[si * 3 + 2] + (Math.random() - 0.5) * spread;
+      } else {
+        // In open mode, queue invisibly — trickle in staggered.
+        splineT[i] = -Math.random();
+        alphas[i] = 0;
+        positions[ni] = startX;
+        positions[ni + 1] = startY;
+        positions[ni + 2] = startZ;
       }
     }
 
-    geo.setAttribute(
-      'position',
-      new THREE.BufferAttribute(new Float32Array(positions), 3)
-    );
-    const alphaAttr = new THREE.BufferAttribute(new Float32Array(alphas), 1);
-    alphaAttr.usage = THREE.DynamicDrawUsage;
-    geo.setAttribute('aAlpha', alphaAttr);
+    // Always use setAttribute with a fresh BufferAttribute so Three.js calls
+    // gl.bufferData (full GPU realloc) rather than gl.bufferSubData. Mutating
+    // an existing attribute's .array on a grown buffer triggers bufferSubData
+    // which writes beyond the allocated GL buffer and can lock the tab.
+    const newPosAttr = new THREE.BufferAttribute(positions, 3);
+    newPosAttr.usage = THREE.DynamicDrawUsage;
+    geo.setAttribute('position', newPosAttr);
+
+    const newAlphaAttr = new THREE.BufferAttribute(alphas, 1);
+    newAlphaAttr.usage = THREE.DynamicDrawUsage;
+    geo.setAttribute('aAlpha', newAlphaAttr);
 
     stateRef.current = { positions, velocities, splineT, alphas, phases, N };
   }, [particleCount]); // intentionally only on particleCount
-  // Intentionally only on particleCount — changing tension/closed/points
-  // moves particles via the spring force without resetting the whole sim.
+  // Intentionally only on particleCount — all other config changes (tension,
+  // closed, points) are handled live inside useFrame.
 
   useFrame(({ size }, delta) => {
     const state = stateRef.current;
@@ -382,13 +441,11 @@ export default function SmokeParticles({ points, config, attractorsRef }) {
 
     const posAttr = geometry.attributes.position;
     if (posAttr) {
-      posAttr.array.set(positions);
       posAttr.needsUpdate = true;
     }
 
     const alphaAttr = geometry.attributes.aAlpha;
     if (alphaAttr) {
-      alphaAttr.array.set(alphas);
       alphaAttr.needsUpdate = true;
     }
   });

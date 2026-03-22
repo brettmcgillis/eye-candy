@@ -13,6 +13,7 @@
 - scene should allow for adding/removing points to simplify.complexify spline
 - scene should include a few attractors to pull particles off the spline
 - scene should allow for moving attractors.
+- scene should allow for rotating attractors.
 - scene should allow for adding/removing attractors to simplify/complexify system
 - scene should contain a white background with grey/black particles
 - scene should be inside of a cube with a grid material applied to the inside of the mesh so we can use the grid for spatial orientation.

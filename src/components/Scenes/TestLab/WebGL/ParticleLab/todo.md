@@ -10,7 +10,7 @@
 
 # // Features
 
-- [ ] checkout example.html. Build this into the lab as an option or mode or something!
+- [x] Build the attractors system into the lab as an option
 
 ## Particle Systems To Explore
 

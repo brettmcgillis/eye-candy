@@ -36,6 +36,14 @@ const makeSeededRandom = (seedValue) => {
   };
 };
 
+// Attractor definitions for Gravity Attractors sim
+// Exported so the scene can clone these as the initial mutable state.
+export const INITIAL_ATTRACTORS = [
+  { position: [-1, 0, 0], axis: [0, 1, 0] },
+  { position: [1, 0, -0.5], axis: [0, 1, 0] },
+  { position: [0, 0.5, 1], axis: normalizeVec3([1, 0, -0.5]) },
+];
+
 const shuffledBranchTokens = (rand) => {
   const tokens = ['+', '-', '&', '^'];
   for (let i = tokens.length - 1; i > 0; i -= 1) {
@@ -1423,6 +1431,179 @@ const algorithms = {
           const idx = (i * 3) % accepted.length;
           positions.push(accepted[idx], accepted[idx + 1], accepted[idx + 2]);
         }
+      }
+    },
+  },
+
+  // ---------------------------------------------------------------------------
+  // Gravity Attractors — real-time N-body attractor simulation (type: 'sim')
+  // Ported from the Three.js WebGPU compute-shader example.
+  // ---------------------------------------------------------------------------
+  'Gravity Attractors': {
+    type: 'sim',
+    defaults: {
+      attractorMassExp: 7,
+      particleMassExp: 4,
+      maxSpeed: 8,
+      velocityDamping: 0.1,
+      spinningStrength: 2.75,
+      boundHalfExtent: 8,
+      timeScale: 1,
+    },
+    ranges: {
+      attractorMassExp: [1, 10, 1],
+      particleMassExp: [1, 10, 1],
+      maxSpeed: [0.5, 20, 0.1],
+      velocityDamping: [0, 0.2, 0.001],
+      spinningStrength: [0, 10, 0.01],
+      boundHalfExtent: [2, 20, 0.5],
+      timeScale: [0.1, 3, 0.1],
+    },
+    generate: (_p, positions, pointsCount) => {
+      // Deterministic initial positions so geometry doesn't re-randomise on
+      // param slider changes (useEffect re-fires on paramsKey).
+      const rand = makeSeededRandom(42);
+      for (let i = 0; i < pointsCount; i += 1) {
+        positions.push(
+          (rand() - 0.5) * 5,
+          (rand() - 0.5) * 0.2,
+          (rand() - 0.5) * 5
+        );
+      }
+    },
+
+    /** Create mutable simulation buffers (called once per algo/count change). */
+    createSimState: (pointsCount) => {
+      const positions = new Float32Array(pointsCount * 3);
+      const velocities = new Float32Array(pointsCount * 3);
+      const masses = new Float32Array(pointsCount);
+
+      // Initial positions — must match generate() above (same seed).
+      const randPos = makeSeededRandom(42);
+      for (let i = 0; i < pointsCount; i += 1) {
+        positions[i * 3] = (randPos() - 0.5) * 5;
+        positions[i * 3 + 1] = (randPos() - 0.5) * 0.2;
+        positions[i * 3 + 2] = (randPos() - 0.5) * 5;
+      }
+
+      // Random velocities + per-particle mass multiplier.
+      const randVel = makeSeededRandom(1337);
+      for (let i = 0; i < pointsCount; i += 1) {
+        const phi = randVel() * Math.PI * 2;
+        const theta = randVel() * Math.PI;
+        const sinPhi = Math.sin(phi);
+        velocities[i * 3] = sinPhi * Math.sin(theta) * 0.05;
+        velocities[i * 3 + 1] = Math.cos(phi) * 0.05;
+        velocities[i * 3 + 2] = sinPhi * Math.cos(theta) * 0.05;
+        masses[i] = 0.25 + randVel() * 0.75;
+      }
+
+      return { positions, velocities, masses };
+    },
+
+    /** Advance the simulation one fixed-dt step (called every frame).
+     *  @param {object}  state      – mutable sim buffers
+     *  @param {object}  params     – Leva parameter values
+     *  @param {Array}   [liveAttractors] – optional live attractor array from
+     *                   the scene (position/axis per entry). Falls back to
+     *                   INITIAL_ATTRACTORS when omitted.
+     */
+    update: (state, params, liveAttractors) => {
+      const { positions, velocities, masses } = state;
+      const pointsCount = masses.length;
+      const attractorMass = 10 ** params.attractorMassExp;
+      const particleGlobalMass = 10 ** params.particleMassExp;
+      const G = 6.67e-11;
+      const dt = (1 / 60) * params.timeScale;
+      const { maxSpeed, spinningStrength, boundHalfExtent } = params;
+      const dampFactor = 1 - params.velocityDamping;
+      const halfHalf = boundHalfExtent / 2;
+      const attractors = liveAttractors || INITIAL_ATTRACTORS;
+      const numAttractors = attractors.length;
+
+      for (let i = 0; i < pointsCount; i += 1) {
+        const idx = i * 3;
+        let px = positions[idx];
+        let py = positions[idx + 1];
+        let pz = positions[idx + 2];
+        const pMass = masses[i] * particleGlobalMass;
+
+        let fx = 0;
+        let fy = 0;
+        let fz = 0;
+
+        for (let a = 0; a < numAttractors; a += 1) {
+          const attr = attractors[a];
+          const dx = attr.position[0] - px;
+          const dy = attr.position[1] - py;
+          const dz = attr.position[2] - pz;
+          const distSq = dx * dx + dy * dy + dz * dz;
+          const dist = Math.sqrt(distSq);
+          if (dist < 0.001) continue; // eslint-disable-line no-continue
+
+          const invDist = 1 / dist;
+          const gStr = (attractorMass * pMass * G) / distSq;
+
+          // Gravity
+          fx += dx * invDist * gStr;
+          fy += dy * invDist * gStr;
+          fz += dz * invDist * gStr;
+
+          // Spinning: cross(rotAxis * gStr * spin, toAttractor)
+          const s = gStr * spinningStrength;
+          const sx = attr.axis[0] * s;
+          const sy = attr.axis[1] * s;
+          const sz = attr.axis[2] * s;
+          fx += sy * dz - sz * dy;
+          fy += sz * dx - sx * dz;
+          fz += sx * dy - sy * dx;
+        }
+
+        // Velocity update
+        let vx = velocities[idx] + fx * dt;
+        let vy = velocities[idx + 1] + fy * dt;
+        let vz = velocities[idx + 2] + fz * dt;
+
+        // Clamp speed
+        const spd = Math.sqrt(vx * vx + vy * vy + vz * vz);
+        if (spd > maxSpeed) {
+          const sc = maxSpeed / spd;
+          vx *= sc;
+          vy *= sc;
+          vz *= sc;
+        }
+
+        // Damping
+        vx *= dampFactor;
+        vy *= dampFactor;
+        vz *= dampFactor;
+
+        velocities[idx] = vx;
+        velocities[idx + 1] = vy;
+        velocities[idx + 2] = vz;
+
+        // Position update
+        px += vx * dt;
+        py += vy * dt;
+        pz += vz * dt;
+
+        // Box wrap (JS-safe modulo for negatives)
+        px =
+          ((((px + halfHalf) % boundHalfExtent) + boundHalfExtent) %
+            boundHalfExtent) -
+          halfHalf;
+        py =
+          ((((py + halfHalf) % boundHalfExtent) + boundHalfExtent) %
+            boundHalfExtent) -
+          halfHalf;
+        pz =
+          ((((pz + halfHalf) % boundHalfExtent) + boundHalfExtent) %
+            boundHalfExtent) -
+          halfHalf;
+
+        positions[idx] = px;
+        positions[idx + 1] = py;
+        positions[idx + 2] = pz;
       }
     },
   },

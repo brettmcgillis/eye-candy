@@ -57,7 +57,7 @@ export default function useSplineEditorControls(pointPositions, setPoints) {
               }
             : {}),
         },
-        { collapsed: false }
+        { collapsed: true }
       ),
       Spline: folder(
         {
@@ -80,7 +80,7 @@ export default function useSplineEditorControls(pointPositions, setPoints) {
             step: 10,
           },
         },
-        { collapsed: false }
+        { collapsed: true }
       ),
       Visibility: folder(
         {
@@ -97,7 +97,7 @@ export default function useSplineEditorControls(pointPositions, setPoints) {
             value: SPLINE_PRESETS.Default.showChordal,
           },
         },
-        { collapsed: false }
+        { collapsed: true }
       ),
       Actions: folder(
         {
@@ -141,7 +141,7 @@ export default function useSplineEditorControls(pointPositions, setPoints) {
             { label: 'Export (copy)' }
           ),
         },
-        { collapsed: false }
+        { collapsed: true }
       ),
     }),
     { store: undefined }

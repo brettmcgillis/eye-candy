@@ -6,6 +6,7 @@ const FluidTest = lazy(() => import('./WebGL/FluidTest/FluidTest'));
 const HandStuff = lazy(() => import('./WebGL/HandStuff/HandStuff'));
 const ParticleLab = lazy(() => import('./WebGL/ParticleLab/ParticleLab'));
 const PixelHater = lazy(() => import('./WebGL/PixelHater/PixelHater'));
+const SmokeTest = lazy(() => import('./WebGL/SmokeTest/SmokeTest'));
 const StrudelDoodle = lazy(() => import('./WebGL/StrudelDoodle/StrudelDoodle'));
 
 const scenes = [
@@ -50,6 +51,12 @@ const scenes = [
     label: 'Explosion Test',
     icon: '💥',
     Component: ExplosionTest,
+  },
+  {
+    id: 'smokeTest',
+    label: 'Smoke Test',
+    icon: '🌫️',
+    Component: SmokeTest,
   },
 ];
 

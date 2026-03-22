@@ -11,6 +11,7 @@
 - Flame shader adapted from example.js — duplicated at top and bottom of candle.
 - Flickering point lights at each flame for dynamic illumination.
 - Intent is to strike a balance between realism and surrealism. The candle, wick and flame should try to get to as real as we can. the inverted candle should be surrel, in that it is like a mirror image of the top candle; there is still a crater at the wick and excess wax flows up the candle stick in symmetry to the wax flowing down.
+- Candle is symmetrical in the same manner as the suicide king in a deck of cards
 
 # // Features
 
@@ -20,10 +21,15 @@
 - [x] Dual flames: top and bottom (bottom flame inverted)
 - [x] Candlewick at each end
 - [x] Flickering point lights at each flame
-- [ ] Should we use CSG to give the ends of the candle a melted look?
+- [x] Use CSG to give the ends of the candle a melted look (mirrored top and bottom craters)
+- [x] Add extra wax buildup rims near each crater, preserving top/bottom surreal symmetry
 - [ ] Should we use a metaballs shader to make dripping wax?
 - [ ] Post-processing bloom pass for flame glow
 
 # // Bugs
 
-- [ ] default camera position is too close to candle, should be farther back and higher up and looking downwards towards the center of the candle
+- [x] default camera position is farther back and higher up, looking toward candle center
+- [x] shorten wicks and relax curve; add subtle frayed fibers near the tip
+- [x] move flame further down toward the wick
+- [x] soften sharp points on melt crater and wax buildup
+- [x] blinking point light moved inside flame volume near wick (no visible hovering source)

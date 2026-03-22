@@ -2,7 +2,11 @@ import * as THREE from 'three';
 
 import React, { useMemo } from 'react';
 
-import { MeshReflectorMaterial, OrbitControls } from '@react-three/drei';
+import {
+  MeshReflectorMaterial,
+  OrbitControls,
+  PerspectiveCamera,
+} from '@react-three/drei';
 
 import Candle from './components/Candle';
 import useSceneControls from './hooks/useSceneControls';
@@ -39,7 +43,18 @@ export default function BurningAtBothEnds() {
   return (
     <>
       <color attach="background" args={[backgroundColor]} />
-      <OrbitControls makeDefault />
+      <PerspectiveCamera
+        makeDefault
+        position={[0, 7, 14]}
+        fov={42}
+        onUpdate={(self) => self.lookAt(0, 1.5, 0)}
+      />
+      <OrbitControls
+        makeDefault
+        target={[0, 1.5, 0]}
+        minDistance={6}
+        maxDistance={28}
+      />
       <ambientLight intensity={ambientLightIntensity} />
 
       <mesh renderOrder={-10} rotation-x={-Math.PI / 2} position={[0, -5, 0]}>

@@ -24,7 +24,9 @@
 - [x] Use CSG to give the ends of the candle a melted look (mirrored top and bottom craters)
 - [x] Add extra wax buildup rims near each crater, preserving top/bottom surreal symmetry
 - [ ] Should we use a metaballs shader to make dripping wax?
-- [ ] Post-processing bloom pass for flame glow
+- [x] Post-processing bloom pass for flame glow
+- [ ] Should be able to scale the flame like we do with candle.
+- [ ] Animate candle shrinking over time. flame shrinking once candle is at min.
 
 # // Bugs
 

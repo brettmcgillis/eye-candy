@@ -64,7 +64,9 @@ const FLAME_FRAG = /* glsl */ `
       alpha
     );
     gl_FragColor.rgb = mix(vec3(0.0, 0.0, 1.0), gl_FragColor.rgb, smoothstep(0.0, 0.3, hValue));
-    gl_FragColor.rgb += vec3(1.0, 0.9, 0.5) * (1.25 - vUv.y);
+    // Inner-core glow: concentrated in the lower flame body, fades toward tip and base
+    float coreGlow = smoothstep(0.0, 0.3, hValue) * (1.0 - smoothstep(0.3, 0.88, hValue));
+    gl_FragColor.rgb += vec3(1.0, 0.88, 0.5) * coreGlow * 0.65;
     gl_FragColor.rgb = mix(gl_FragColor.rgb, vec3(0.66, 0.32, 0.03), smoothstep(0.95, 1.0, hValue));
   }
 `;

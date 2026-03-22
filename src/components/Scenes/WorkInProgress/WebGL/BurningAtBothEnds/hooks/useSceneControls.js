@@ -20,7 +20,7 @@ export default function useSceneControls() {
         {
           ambientLightIntensity: {
             label: 'Ambient Intensity',
-            value: 0.28,
+            value: 0.08,
             min: 0,
             max: 2,
             step: 0.01,
@@ -188,6 +188,43 @@ export default function useSceneControls() {
             value: 0.72,
             min: 0.15,
             max: 1.2,
+            step: 0.01,
+          },
+        },
+        { collapsed: true }
+      ),
+      postFx: folder(
+        {
+          bloomEnabled: {
+            label: 'Bloom',
+            value: true,
+          },
+          bloomIntensity: {
+            label: 'Intensity',
+            value: 1.6,
+            min: 0,
+            max: 6,
+            step: 0.01,
+          },
+          bloomLuminanceThreshold: {
+            label: 'Lum Threshold',
+            value: 0.5,
+            min: 0,
+            max: 1,
+            step: 0.01,
+          },
+          bloomLuminanceSmoothing: {
+            label: 'Lum Smoothing',
+            value: 0.35,
+            min: 0,
+            max: 1,
+            step: 0.01,
+          },
+          bloomRadius: {
+            label: 'Radius',
+            value: 0.6,
+            min: 0,
+            max: 1,
             step: 0.01,
           },
         },

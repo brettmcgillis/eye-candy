@@ -7,13 +7,42 @@ import {
   OrbitControls,
   PerspectiveCamera,
 } from '@react-three/drei';
+import { Bloom, EffectComposer } from '@react-three/postprocessing';
 
 import Candle from './components/Candle';
 import useSceneControls from './hooks/useSceneControls';
 
 export default function BurningAtBothEnds() {
   const config = useSceneControls();
-  const { backgroundColor, ambientLightIntensity } = config;
+  const {
+    backgroundColor,
+    ambientLightIntensity,
+    bloomEnabled,
+    bloomIntensity,
+    bloomLuminanceThreshold,
+    bloomLuminanceSmoothing,
+    bloomRadius,
+  } = config;
+  const candleY = 1.5;
+  const candlePosition = [0, candleY, 0];
+  const cameraFrame = useMemo(() => {
+    const flameTipOffset = 2.35;
+    const halfSceneHeight = config.height / 2 + flameTipOffset;
+    const framedHeight = halfSceneHeight * 2 * 1.08;
+    const fov = 42;
+    const fovRadians = THREE.MathUtils.degToRad(fov);
+    const distance = framedHeight / (2 * Math.tan(fovRadians / 2));
+    const targetY = candleY;
+    const cameraYOffset = Math.max(0.75, config.height * 0.12);
+
+    return {
+      fov,
+      position: [0, targetY + cameraYOffset, distance + 3],
+      target: [0, targetY, 0],
+      minDistance: Math.max(8, distance * 0.72),
+      maxDistance: Math.max(28, distance * 1.8),
+    };
+  }, [candleY, config.height]);
   const floorAlphaMap = useMemo(() => {
     const size = 512;
     const canvas = document.createElement('canvas');
@@ -45,16 +74,16 @@ export default function BurningAtBothEnds() {
       <color attach="background" args={[backgroundColor]} />
       <PerspectiveCamera
         makeDefault
-        position={[0, 7, 14]}
-        fov={42}
-        onUpdate={(self) => self.lookAt(0, 1.5, 0)}
+        position={cameraFrame.position}
+        fov={cameraFrame.fov}
+        onUpdate={(self) => self.lookAt(...cameraFrame.target)}
       />
       <OrbitControls
         makeDefault
         autoRotate
-        target={[0, 1.5, 0]}
-        minDistance={6}
-        maxDistance={28}
+        target={cameraFrame.target}
+        minDistance={cameraFrame.minDistance}
+        maxDistance={cameraFrame.maxDistance}
       />
       <ambientLight intensity={ambientLightIntensity} />
       <hemisphereLight
@@ -66,11 +95,6 @@ export default function BurningAtBothEnds() {
         position={[3.5, 7, 5.5]}
         intensity={0.5}
         color="#fff2de"
-      />
-      <directionalLight
-        position={[-4.5, 4.2, -3.8]}
-        intensity={0.22}
-        color="#8fb7ff"
       />
 
       <mesh renderOrder={-10} rotation-x={-Math.PI / 2} position={[0, -5, 0]}>
@@ -94,7 +118,19 @@ export default function BurningAtBothEnds() {
         />
       </mesh>
 
-      <Candle config={config} position={[0, 1.5, 0]} />
+      <Candle config={config} position={candlePosition} />
+
+      {bloomEnabled && (
+        <EffectComposer disableNormalPass>
+          <Bloom
+            intensity={bloomIntensity}
+            luminanceThreshold={bloomLuminanceThreshold}
+            luminanceSmoothing={bloomLuminanceSmoothing}
+            mipmapBlur
+            radius={bloomRadius}
+          />
+        </EffectComposer>
+      )}
     </>
   );
 }

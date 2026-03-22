@@ -35,6 +35,7 @@ To Build:
 - [ ] CSG Skull. Knock a reversal out of its forehead.
 - [ ] Relax and take notes while the gun smoke spells out "That's all, folks!"
 - [ ] Burning the candle at both ends
+- [ ] Metaball (marching cubes) lava lamp
 - [ ] We should do a scene with Quinns seal, 3rd person camera, player controls w/keyboard and controller.
       Scene should include quinns dice in the environment.
       Scene should include various art images on planes in the environment.

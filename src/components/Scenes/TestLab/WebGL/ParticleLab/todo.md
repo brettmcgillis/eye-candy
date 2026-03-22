@@ -8,6 +8,10 @@
 
 - [x] Add to the test lab
 
+# // Features
+
+- [ ] checkout example.html. Build this into the lab as an option or mode or something!
+
 ## Particle Systems To Explore
 
 ### Well known systems

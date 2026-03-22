@@ -51,20 +51,37 @@ export default function BurningAtBothEnds() {
       />
       <OrbitControls
         makeDefault
+        autoRotate
         target={[0, 1.5, 0]}
         minDistance={6}
         maxDistance={28}
       />
       <ambientLight intensity={ambientLightIntensity} />
+      <hemisphereLight
+        skyColor="#8ea0b5"
+        groundColor="#1a1410"
+        intensity={0.15}
+      />
+      <directionalLight
+        position={[3.5, 7, 5.5]}
+        intensity={0.5}
+        color="#fff2de"
+      />
+      <directionalLight
+        position={[-4.5, 4.2, -3.8]}
+        intensity={0.22}
+        color="#8fb7ff"
+      />
 
       <mesh renderOrder={-10} rotation-x={-Math.PI / 2} position={[0, -5, 0]}>
         <circleGeometry args={[25, 128]} />
         <MeshReflectorMaterial
-          blur={[200, 80]}
+          blur={[64, 24]}
           resolution={1024}
-          mixBlur={0.8}
-          mixStrength={45}
-          roughness={0.2}
+          mirror={0.52}
+          mixBlur={0.35}
+          mixStrength={72}
+          roughness={0.08}
           depthScale={1}
           minDepthThreshold={0.5}
           maxDepthThreshold={1.6}

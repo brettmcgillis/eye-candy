@@ -76,7 +76,7 @@ export default function Candlewick({ position = [0, 0, 0], inverted = false }) {
         />
       </mesh>
       <mesh ref={emberRef} position={[0.183, 0.34, 0.088]}>
-        <sphereGeometry args={[0.03, 12, 12]} />
+        <sphereGeometry args={[0.0625, 12, 12]} />
         <meshStandardMaterial
           color="#2a1a10"
           emissive="#ff7a22"

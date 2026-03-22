@@ -40,13 +40,13 @@ export default function Magnum(props) {
             geometry={nodes.defaultMaterial_4.geometry}
             material={materials['44_Magnum_MTL']}
           />
-          <mesh
+          {/* bullet? dont need */}
+          {/* <mesh
             castShadow
             receiveShadow
             geometry={nodes.defaultMaterial_5.geometry}
             material={materials['44_Magnum_MTL']}
-          />
-          {/* bullet? dont need */}
+          /> */}
           {/* <mesh
             castShadow
             receiveShadow

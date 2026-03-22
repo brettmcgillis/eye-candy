@@ -19,6 +19,8 @@ const DEFAULT_MOTION = {
   swayZ: 0.014,
   pulseFreq: 3.4,
   pulseAmp: 0.04,
+  scaleX: 1,
+  scaleY: 1,
 };
 
 export default function Flame({
@@ -61,7 +63,11 @@ export default function Flame({
         1 +
         Math.sin(phaseRef.current * flameMotion.pulseFreq) *
           flameMotion.pulseAmp;
-      groupRef.current.scale.set(1, pulse, 1);
+      groupRef.current.scale.set(
+        flameMotion.scaleX,
+        pulse * flameMotion.scaleY,
+        flameMotion.scaleX
+      );
     }
   });
 

@@ -7,7 +7,11 @@ import { useFrame } from '@react-three/fiber';
 const wickProfile = new THREE.Shape();
 wickProfile.absarc(0, 0, 0.0625, 0, Math.PI * 2);
 
-export default function Candlewick({ position = [0, 0, 0], inverted = false }) {
+export default function Candlewick({
+  position = [0, 0, 0],
+  inverted = false,
+  hot = true,
+}) {
   const emberRef = useRef();
   const frayFiberGeo = useMemo(
     () => new THREE.CylinderGeometry(0.004, 0.0018, 0.09, 6),
@@ -55,7 +59,7 @@ export default function Candlewick({ position = [0, 0, 0], inverted = false }) {
   }, []);
 
   useFrame(({ clock }) => {
-    if (!emberRef.current) return;
+    if (!hot || !emberRef.current) return;
     const t = clock.getElapsedTime();
     emberRef.current.material.emissiveIntensity =
       0.25 + (Math.sin(t * 8) * 0.5 + 0.5) * 0.2;
@@ -67,24 +71,36 @@ export default function Candlewick({ position = [0, 0, 0], inverted = false }) {
       rotation={inverted ? [Math.PI, 0, 0] : [0, 0, 0]}
     >
       <mesh geometry={geometry}>
-        <meshStandardMaterial
-          vertexColors
-          roughness={0.85}
-          metalness={0}
-          emissive="#120b06"
-          emissiveIntensity={0.08}
-        />
+        {hot ? (
+          <meshStandardMaterial
+            vertexColors
+            roughness={0.85}
+            metalness={0}
+            emissive="#120b06"
+            emissiveIntensity={0.08}
+          />
+        ) : (
+          <meshStandardMaterial
+            color="#1c1c1c"
+            roughness={0.92}
+            metalness={0}
+            emissive="#000000"
+            emissiveIntensity={0}
+          />
+        )}
       </mesh>
-      <mesh ref={emberRef} position={[0.183, 0.34, 0.088]}>
-        <sphereGeometry args={[0.0625, 12, 12]} />
-        <meshStandardMaterial
-          color="#2a1a10"
-          emissive="#ff7a22"
-          emissiveIntensity={0.3}
-          roughness={0.6}
-          metalness={0}
-        />
-      </mesh>
+      {hot && (
+        <mesh ref={emberRef} position={[0.183, 0.34, 0.088]}>
+          <sphereGeometry args={[0.0625, 12, 12]} />
+          <meshStandardMaterial
+            color="#2a1a10"
+            emissive="#ff7a22"
+            emissiveIntensity={0.3}
+            roughness={0.6}
+            metalness={0}
+          />
+        </mesh>
+      )}
       {frayFibers.map((fiber) => (
         <mesh
           key={fiber.p.join('-')}

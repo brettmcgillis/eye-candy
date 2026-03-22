@@ -6,8 +6,11 @@ import React, { useMemo, useRef } from 'react';
 import { Base, Geometry, Subtraction } from '@react-three/csg';
 import { useFrame } from '@react-three/fiber';
 
+import CandleSmoke from './CandleSmoke';
 import Candlewick from './Candlewick';
 import Flame from './Flame';
+import VolumetricFlame from './VolumetricFlame';
+import VolumetricSmoke from './VolumetricSmoke';
 
 function createSeededRandom(startSeed) {
   let seed = startSeed;
@@ -252,8 +255,11 @@ function WaxSideDrips({ radius, y, inverted = false, config }) {
     for (let i = 0; i < dripCount; i += 1) {
       const angle = rand() * Math.PI * 2;
       const radial = 0.68 + rand() * 0.16;
-      const rootX = 0.5 + Math.cos(angle) * radial * 0.5;
-      const rootZ = 0.5 + Math.sin(angle) * radial * 0.5;
+      // Factor 0.375 (vs original 0.5) keeps blob centres ≤0.83 in [0,1]
+      // space so typical-strength blobs don't clip the field boundary. The XZ
+      // scale compensates (radius*1.6 vs 1.2) to preserve world positions.
+      const rootX = 0.5 + Math.cos(angle) * radial * 0.375;
+      const rootZ = 0.5 + Math.sin(angle) * radial * 0.375;
       const segmentCount = 3 + Math.floor(rand() * 4);
       const chainDepth = 0.45 + rand() * 0.3;
       const rootStrength = 0.22 + rand() * 0.12;
@@ -268,9 +274,9 @@ function WaxSideDrips({ radius, y, inverted = false, config }) {
 
       nodes.push({
         id: `drip-shoulder-${i}`,
-        x: 0.5 + Math.cos(angle + 0.12) * (radial + 0.02) * 0.5,
+        x: 0.5 + Math.cos(angle + 0.12) * (radial + 0.02) * 0.375,
         y: 0.84 + (rand() - 0.5) * 0.03,
-        z: 0.5 + Math.sin(angle + 0.12) * (radial + 0.02) * 0.5,
+        z: 0.5 + Math.sin(angle + 0.12) * (radial + 0.02) * 0.375,
         strength: rootStrength * (0.8 + rand() * 0.25),
       });
 
@@ -284,18 +290,18 @@ function WaxSideDrips({ radius, y, inverted = false, config }) {
 
         nodes.push({
           id: `drip-chain-${i}-${segment}`,
-          x: 0.5 + Math.cos(angle + wobble) * radial * lateral * 0.5,
+          x: 0.5 + Math.cos(angle + wobble) * radial * lateral * 0.375,
           y: 0.84 - t * chainDepth,
-          z: 0.5 + Math.sin(angle + wobble) * radial * lateral * 0.5,
+          z: 0.5 + Math.sin(angle + wobble) * radial * lateral * 0.375,
           strength: neckStrength,
         });
       }
 
       nodes.push({
         id: `drip-bulb-${i}`,
-        x: 0.5 + Math.cos(angle) * (radial - 0.015) * 0.5,
+        x: 0.5 + Math.cos(angle) * (radial - 0.015) * 0.375,
         y: 0.14 + rand() * 0.14,
-        z: 0.5 + Math.sin(angle) * (radial - 0.015) * 0.5,
+        z: 0.5 + Math.sin(angle) * (radial - 0.015) * 0.375,
         strength:
           rootStrength *
           (0.95 + rand() * 0.6 + sizeVariation * (0.35 + rand() * 0.25)),
@@ -338,13 +344,34 @@ function WaxSideDrips({ radius, y, inverted = false, config }) {
       object={mc}
       position={[0, y, 0]}
       rotation={inverted ? [Math.PI, 0, 0] : [0, 0, 0]}
-      scale={[radius * 1.2, config.waxDripLength, radius * 1.2]}
+      scale={[radius * 1.6, config.waxDripLength, radius * 1.6]}
     />
   );
 }
 
 export default function Candle({ config, position = [0, 0, 0] }) {
   const { height, radius, tilt } = config;
+  const lit = config.candleLit !== false;
+  const wickHot = config.wickHot !== false;
+  const useVolumetric = config.flameType === 'Volumetric';
+  const useVolumetricSmoke = config.smokeType === 'Volumetric';
+  const vfProps = {
+    width: config.vfWidth ?? 0.8,
+    height: config.vfHeight ?? 2.0,
+    depth: config.vfDepth ?? 0.725,
+    sliceSpacing: config.vfSliceSpacing ?? 0.05,
+    bendX: config.vfBendX ?? 0,
+    bendZ: config.vfBendZ ?? 0,
+    animated: config.vfAnimated ?? true,
+    animSpeed: config.vfAnimSpeed ?? 0.5,
+    showSpline: config.vfShowSpline ?? false,
+    magnitude: config.vfMagnitude ?? 0.5,
+    lacunarity: config.vfLacunarity ?? 4.0,
+    gain: config.vfGain ?? 0,
+    tintColor: config.vfTintColor ?? '#ffffff',
+    saturation: config.vfSaturation ?? 1.0,
+    brightness: config.vfBrightness ?? 1.5,
+  };
   const flameMotion = {
     baseSpeed: config.flameBaseSpeed,
     minSpeed: config.flameMinSpeed,
@@ -358,6 +385,8 @@ export default function Candle({ config, position = [0, 0, 0] }) {
     swayZ: config.flameSwayZ,
     pulseFreq: config.flamePulseFreq,
     pulseAmp: config.flamePulseAmp,
+    scaleX: config.flameScaleX ?? 1,
+    scaleY: config.flameScaleY ?? 1,
   };
   const waxMeta = {
     enabled: config.waxUseMetaballs ?? true,
@@ -373,6 +402,17 @@ export default function Candle({ config, position = [0, 0, 0] }) {
     waxMetaSizeVariation: config.waxMetaSizeVariation ?? 0.55,
     waxDripCount: config.waxDripCount ?? 3,
     waxDripLength: config.waxDripLength ?? 1.2,
+  };
+  const smokeConfig = {
+    timeFrequency: config.smokeTimeFrequency ?? 0.45,
+    uvFrequencyX: config.smokeUvFrequencyX ?? 4,
+    uvFrequencyY: config.smokeUvFrequencyY ?? 5,
+    riseSpeed: config.smokeRiseSpeed ?? 0.35,
+    spreadStrength: config.smokeSpreadStrength ?? 0.15,
+    opacity: config.smokeOpacity ?? 0.6,
+    color: config.smokeColor ?? '#b8b8b8',
+    width: config.smokeWidth ?? 0.5,
+    height: config.smokeHeight ?? 3.0,
   };
   const topLightRef = useRef();
   const bottomLightRef = useRef();
@@ -522,8 +562,25 @@ export default function Candle({ config, position = [0, 0, 0] }) {
       )}
 
       {/* Top flame assembly */}
-      <Candlewick position={[0, halfH, 0]} />
-      <Flame position={[0.06, halfH + 0.21, 0.06]} motion={flameMotion} />
+      <Candlewick position={[0, halfH, 0]} hot={wickHot} />
+      {lit &&
+        (useVolumetric ? (
+          <VolumetricFlame position={[0.06, halfH + 0.21, 0.06]} {...vfProps} />
+        ) : (
+          <Flame position={[0.06, halfH + 0.21, 0.06]} motion={flameMotion} />
+        ))}
+      <CandleSmoke
+        position={[0.18, halfH + 0.34, 0.088]}
+        smoke={smokeConfig}
+        visible={!lit && !useVolumetricSmoke}
+      />
+      {useVolumetricSmoke && (
+        <VolumetricSmoke
+          position={[0.18, halfH + 0.34, 0.088]}
+          smoke={smokeConfig}
+          visible={!lit}
+        />
+      )}
       <pointLight
         ref={topLightRef}
         color={0xffaa33}
@@ -531,15 +588,39 @@ export default function Candle({ config, position = [0, 0, 0] }) {
         distance={8}
         decay={2}
         position={[0.06, halfH + 0.23, 0.06]}
+        visible={lit}
       />
 
       {/* Bottom flame assembly (inverted) */}
-      <Candlewick position={[0, -halfH, 0]} inverted />
-      <Flame
-        position={[0.06, -halfH - 0.21, 0.06]}
+      <Candlewick position={[0, -halfH, 0]} inverted hot={wickHot} />
+      {lit &&
+        (useVolumetric ? (
+          <VolumetricFlame
+            position={[0.06, -halfH - 0.21, 0.06]}
+            inverted
+            {...vfProps}
+          />
+        ) : (
+          <Flame
+            position={[0.06, -halfH - 0.21, 0.06]}
+            inverted
+            motion={flameMotion}
+          />
+        ))}
+      <CandleSmoke
+        position={[0.18, -(halfH + 0.34), 0.088]}
         inverted
-        motion={flameMotion}
+        smoke={smokeConfig}
+        visible={!lit && !useVolumetricSmoke}
       />
+      {useVolumetricSmoke && (
+        <VolumetricSmoke
+          position={[0.18, -(halfH + 0.34), 0.088]}
+          inverted
+          smoke={smokeConfig}
+          visible={!lit}
+        />
+      )}
       <pointLight
         ref={bottomLightRef}
         color={0xffaa33}
@@ -547,6 +628,7 @@ export default function Candle({ config, position = [0, 0, 0] }) {
         distance={8}
         decay={2}
         position={[0.06, -halfH - 0.23, 0.06]}
+        visible={lit}
       />
     </group>
   );

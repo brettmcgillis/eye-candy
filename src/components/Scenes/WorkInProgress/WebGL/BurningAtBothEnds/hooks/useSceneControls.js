@@ -10,14 +10,27 @@ const presetNames = Object.keys(SCENE_PRESETS);
 const hasPresets = presetNames.length > 1;
 
 export default function useSceneControls() {
-  const controlsSnapshotRef = useRef(SCENE_PRESETS.Default);
-  const selectedPresetRef = useRef('Default');
+  const controlsSnapshotRef = useRef(SCENE_PRESETS.Enlightened);
+  const selectedPresetRef = useRef('Enlightened');
 
-  const [sceneControls] = useControls(
+  const [sceneControls, setSceneControls] = useControls(
     'Burning At Both Ends',
     () => ({
       Scene: folder(
         {
+          candleLit: {
+            label: 'Lit',
+            value: true,
+          },
+          wickHot: {
+            label: 'Wick Hot',
+            value: true,
+          },
+          flameType: {
+            label: 'Flame Type',
+            value: 'Shader',
+            options: ['Shader', 'Volumetric'],
+          },
           ambientLightIntensity: {
             label: 'Ambient Intensity',
             value: 0.08,
@@ -117,6 +130,20 @@ export default function useSceneControls() {
             min: 0,
             max: 0.25,
             step: 0.001,
+          },
+          flameScaleX: {
+            label: 'Scale X',
+            value: 1,
+            min: 0.1,
+            max: 4,
+            step: 0.01,
+          },
+          flameScaleY: {
+            label: 'Scale Y',
+            value: 1,
+            min: 0.1,
+            max: 4,
+            step: 0.01,
           },
         },
         { collapsed: true }
@@ -251,6 +278,177 @@ export default function useSceneControls() {
         },
         { collapsed: true }
       ),
+      candleSmoke: folder(
+        {
+          smokeType: {
+            label: 'Type',
+            value: 'Billboard',
+            options: ['Billboard', 'Volumetric'],
+          },
+          smokeOpacity: {
+            label: 'Opacity',
+            value: 0.6,
+            min: 0,
+            max: 1,
+            step: 0.01,
+          },
+          smokeColor: {
+            label: 'Color',
+            value: '#b8b8b8',
+          },
+          smokeRiseSpeed: {
+            label: 'Rise Speed',
+            value: 0.35,
+            min: 0,
+            max: 2,
+            step: 0.01,
+          },
+          smokeSpreadStrength: {
+            label: 'Spread',
+            value: 0.18,
+            min: 0,
+            max: 0.5,
+            step: 0.01,
+          },
+          smokeTimeFrequency: {
+            label: 'Time Freq',
+            value: 0.45,
+            min: 0,
+            max: 2,
+            step: 0.01,
+          },
+          smokeUvFrequencyX: {
+            label: 'UV Freq X',
+            value: 1.0,
+            min: 1,
+            max: 12,
+            step: 0.1,
+          },
+          smokeUvFrequencyY: {
+            label: 'UV Freq Y',
+            value: 1.5,
+            min: 1,
+            max: 20,
+            step: 0.1,
+          },
+          smokeWidth: {
+            label: 'Width',
+            value: 0.25,
+            min: 0.05,
+            max: 1,
+            step: 0.01,
+          },
+          smokeHeight: {
+            label: 'Height',
+            value: 3.0,
+            min: 0.1,
+            max: 6,
+            step: 0.01,
+          },
+        },
+        { collapsed: true }
+      ),
+      volumetricFlame: folder(
+        {
+          vfWidth: {
+            label: 'VF Width',
+            value: 0.8,
+            min: 0.05,
+            max: 1.5,
+            step: 0.01,
+          },
+          vfHeight: {
+            label: 'VF Height',
+            value: 2.0,
+            min: 0.2,
+            max: 3.0,
+            step: 0.05,
+          },
+          vfDepth: {
+            label: 'VF Depth',
+            value: 0.725,
+            min: 0.05,
+            max: 1.5,
+            step: 0.01,
+          },
+          vfSliceSpacing: {
+            label: 'VF Slice Spacing',
+            value: 0.05,
+            min: 0.01,
+            max: 0.2,
+            step: 0.005,
+          },
+          vfBendX: {
+            label: 'VF Bend X',
+            value: 0.0,
+            min: -1.0,
+            max: 1.0,
+            step: 0.01,
+          },
+          vfBendZ: {
+            label: 'VF Bend Z',
+            value: 0.0,
+            min: -1.0,
+            max: 1.0,
+            step: 0.01,
+          },
+          vfAnimated: {
+            label: 'VF Animated',
+            value: true,
+          },
+          vfAnimSpeed: {
+            label: 'VF Anim Speed',
+            value: 0.5,
+            min: 0,
+            max: 3,
+            step: 0.01,
+          },
+          vfShowSpline: {
+            label: 'VF Show Spline',
+            value: false,
+          },
+          vfMagnitude: {
+            label: 'VF Magnitude',
+            value: 0.5,
+            min: 0.1,
+            max: 3.0,
+            step: 0.05,
+          },
+          vfLacunarity: {
+            label: 'VF Lacunarity',
+            value: 4.0,
+            min: 1.0,
+            max: 4.0,
+            step: 0.1,
+          },
+          vfGain: {
+            label: 'VF Gain',
+            value: 0,
+            min: 0.0,
+            max: 1.0,
+            step: 0.01,
+          },
+          vfTintColor: {
+            label: 'VF Tint',
+            value: '#ffffff',
+          },
+          vfSaturation: {
+            label: 'VF Saturation',
+            value: 1.0,
+            min: 0.0,
+            max: 2.0,
+            step: 0.01,
+          },
+          vfBrightness: {
+            label: 'VF Brightness',
+            value: 1.5,
+            min: 0.0,
+            max: 4.0,
+            step: 0.05,
+          },
+        },
+        { collapsed: true }
+      ),
     }),
     { collapsed: true }
   );
@@ -261,7 +459,18 @@ export default function useSceneControls() {
     const preset = SCENE_PRESETS[name];
     if (!preset) return;
     selectedPresetRef.current = name;
-    setCandleControls(preset);
+
+    // Each Leva store only accepts keys it owns — split preset accordingly.
+    const candleKeys = new Set(['height', 'radius', 'tilt']);
+    const candleSlice = {};
+    const sceneSlice = {};
+    Object.entries(preset).forEach(([k, v]) => {
+      if (candleKeys.has(k)) candleSlice[k] = v;
+      else sceneSlice[k] = v;
+    });
+
+    setSceneControls(sceneSlice);
+    setCandleControls(candleSlice);
     controlsSnapshotRef.current = { ...preset };
   };
 
@@ -275,7 +484,7 @@ export default function useSceneControls() {
           {
             preset: {
               label: 'Preset',
-              value: 'Default',
+              value: 'Enlightened',
               options: presetNames,
               onChange: (v) => applyPreset(v),
             },
@@ -294,7 +503,7 @@ export default function useSceneControls() {
                 }
               : {}),
           },
-          { collapsed: false }
+          { collapsed: true }
         );
       }
 
@@ -304,7 +513,7 @@ export default function useSceneControls() {
   );
 
   // keep snapshot in sync
-  controlsSnapshotRef.current = { ...candleControls };
+  controlsSnapshotRef.current = { ...sceneControls, ...candleControls };
 
   return { ...sceneControls, ...candleControls };
 }

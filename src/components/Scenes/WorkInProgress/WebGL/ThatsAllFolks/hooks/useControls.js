@@ -47,13 +47,18 @@ function curveDef(defaults = {}) {
 export default function useSceneControls() {
   const [
     {
-      showHelpers,
       // gun
       gunScale,
+      gunX,
       gunY,
-      barrelTipY,
-      // smoke global
+      gunZ,
+      // smoke group
       particleColor,
+      smokeScale,
+      smokeX,
+      smokeY,
+      smokeZ,
+      showHelpers,
       // physics global
       springK,
       damping,
@@ -118,168 +123,177 @@ export default function useSceneControls() {
       olksTailFlowSpeed,
     },
   ] = useControls('Thats All Folks', () => ({
-    Scene: folder(
-      { showHelpers: { label: 'Show Helpers', value: false } },
-      { collapsed: false }
-    ),
-
     Gun: folder(
       {
         gunScale: { label: 'Scale', value: 1500, min: 50, max: 2000, step: 10 },
-        gunY: { label: 'Position Y', value: 50, min: -400, max: 600, step: 5 },
-        barrelTipY: {
-          label: 'Barrel Tip Y',
-          value: 285,
-          min: 50,
-          max: 700,
-          step: 5,
-        },
+        gunX: { label: 'X', value: -400, min: -800, max: 800, step: 5 },
+        gunY: { label: 'Y', value: 50, min: -400, max: 600, step: 5 },
+        gunZ: { label: 'Z', value: 0, min: -800, max: 800, step: 5 },
       },
       { collapsed: true }
     ),
 
     Smoke: folder(
-      { particleColor: { label: 'Color', value: '#d0cdc9' } },
-      { collapsed: false }
-    ),
-
-    Physics: folder(
       {
-        springK: { label: 'Spring', value: 5.0, min: 0, max: 40, step: 0.5 },
-        damping: {
-          label: 'Damping',
-          value: 0.1,
-          min: 0.001,
-          max: 1,
-          step: 0.005,
-        },
-        turbulence: {
-          label: 'Turbulence',
-          value: 95,
-          min: 0,
-          max: 600,
-          step: 5,
-        },
-        turbulenceSpeed: {
-          label: 'Turb Speed',
-          value: 0.28,
-          min: 0,
-          max: 3,
-          step: 0.05,
-        },
-        spawnSpread: {
-          label: 'Spawn Spread',
-          value: 90,
-          min: 0,
-          max: 400,
-          step: 5,
-        },
-        maxDrift: {
-          label: 'Max Drift',
-          value: 480,
-          min: 50,
-          max: 2000,
-          step: 50,
-        },
-        fadeRate: { label: 'Fade Rate', value: 6, min: 1, max: 30, step: 1 },
-      },
-      { collapsed: true }
-    ),
+        particleColor: { label: 'Color', value: '#d0cdc9' },
+        smokeScale: { label: 'Scale', value: 1, min: 0.1, max: 4, step: 0.05 },
+        smokeX: { label: 'X', value: 44, min: -800, max: 800, step: 5 },
+        smokeY: { label: 'Y', value: 194, min: -400, max: 800, step: 5 },
+        smokeZ: { label: 'Z', value: 34, min: -800, max: 800, step: 5 },
+        showHelpers: { label: 'Show Helpers', value: false },
 
-    Splines: folder(
-      {
-        'Capital T': folder(
+        Physics: folder(
           {
-            capitalTVisible: curveDef().visible,
-            capitalTParticleCount: curveDef().particleCount,
-            capitalTParticleSize: curveDef().particleSize,
-            capitalTOpacity: curveDef().opacity,
-            capitalTFlowSpeed: curveDef().flowSpeed,
+            springK: {
+              label: 'Spring',
+              value: 5.0,
+              min: 0,
+              max: 40,
+              step: 0.5,
+            },
+            damping: {
+              label: 'Damping',
+              value: 0.1,
+              min: 0.001,
+              max: 1,
+              step: 0.005,
+            },
+            turbulence: {
+              label: 'Turbulence',
+              value: 95,
+              min: 0,
+              max: 600,
+              step: 5,
+            },
+            turbulenceSpeed: {
+              label: 'Turb Speed',
+              value: 0.28,
+              min: 0,
+              max: 3,
+              step: 0.05,
+            },
+            spawnSpread: {
+              label: 'Spawn Spread',
+              value: 90,
+              min: 0,
+              max: 400,
+              step: 5,
+            },
+            maxDrift: {
+              label: 'Max Drift',
+              value: 480,
+              min: 50,
+              max: 2000,
+              step: 50,
+            },
+            fadeRate: {
+              label: 'Fade Rate',
+              value: 6,
+              min: 1,
+              max: 30,
+              step: 1,
+            },
           },
           { collapsed: true }
         ),
-        'hats (h,a,t,s)': folder(
+
+        Splines: folder(
           {
-            hatsVisible: curveDef().visible,
-            hatsParticleCount: curveDef().particleCount,
-            hatsParticleSize: curveDef().particleSize,
-            hatsOpacity: curveDef().opacity,
-            hatsFlowSpeed: curveDef().flowSpeed,
-          },
-          { collapsed: true }
-        ),
-        'T Crossbar': folder(
-          {
-            crossbarVisible: curveDef().visible,
-            crossbarParticleCount: curveDef({ particleCount: 1000 })
-              .particleCount,
-            crossbarParticleSize: curveDef().particleSize,
-            crossbarOpacity: curveDef().opacity,
-            crossbarFlowSpeed: curveDef().flowSpeed,
-          },
-          { collapsed: true }
-        ),
-        Apostrophe: folder(
-          {
-            apostropheVisible: curveDef().visible,
-            apostropheParticleCount: curveDef({ particleCount: 500 })
-              .particleCount,
-            apostropheParticleSize: curveDef().particleSize,
-            apostropheOpacity: curveDef().opacity,
-            apostropheFlowSpeed: curveDef().flowSpeed,
-          },
-          { collapsed: true }
-        ),
-        All: folder(
-          {
-            allLettersVisible: curveDef().visible,
-            allLettersParticleCount: curveDef().particleCount,
-            allLettersParticleSize: curveDef().particleSize,
-            allLettersOpacity: curveDef().opacity,
-            allLettersFlowSpeed: curveDef().flowSpeed,
-          },
-          { collapsed: true }
-        ),
-        'Capital F': folder(
-          {
-            capitalFVisible: curveDef().visible,
-            capitalFParticleCount: curveDef().particleCount,
-            capitalFParticleSize: curveDef().particleSize,
-            capitalFOpacity: curveDef().opacity,
-            capitalFFlowSpeed: curveDef().flowSpeed,
-          },
-          { collapsed: true }
-        ),
-        'Exclamation !': folder(
-          {
-            exclamLineVisible: curveDef().visible,
-            exclamLineParticleCount: curveDef({ particleCount: 1000 })
-              .particleCount,
-            exclamLineParticleSize: curveDef().particleSize,
-            exclamLineOpacity: curveDef().opacity,
-            exclamLineFlowSpeed: curveDef().flowSpeed,
-          },
-          { collapsed: true }
-        ),
-        'Exclamation Dot': folder(
-          {
-            exclamDotVisible: curveDef().visible,
-            exclamDotParticleCount: curveDef({ particleCount: 300 })
-              .particleCount,
-            exclamDotParticleSize: curveDef().particleSize,
-            exclamDotOpacity: curveDef().opacity,
-            exclamDotFlowSpeed: curveDef().flowSpeed,
-          },
-          { collapsed: true }
-        ),
-        'olks + tail': folder(
-          {
-            olksTailVisible: curveDef().visible,
-            olksTailParticleCount: curveDef({ particleCount: 8000 })
-              .particleCount,
-            olksTailParticleSize: curveDef().particleSize,
-            olksTailOpacity: curveDef().opacity,
-            olksTailFlowSpeed: curveDef({ flowSpeed: 0.018 }).flowSpeed,
+            'Capital T': folder(
+              {
+                capitalTVisible: curveDef().visible,
+                capitalTParticleCount: curveDef().particleCount,
+                capitalTParticleSize: curveDef().particleSize,
+                capitalTOpacity: curveDef().opacity,
+                capitalTFlowSpeed: curveDef().flowSpeed,
+              },
+              { collapsed: true }
+            ),
+            'hats (h,a,t,s)': folder(
+              {
+                hatsVisible: curveDef().visible,
+                hatsParticleCount: curveDef().particleCount,
+                hatsParticleSize: curveDef().particleSize,
+                hatsOpacity: curveDef().opacity,
+                hatsFlowSpeed: curveDef().flowSpeed,
+              },
+              { collapsed: true }
+            ),
+            'T Crossbar': folder(
+              {
+                crossbarVisible: curveDef().visible,
+                crossbarParticleCount: curveDef({ particleCount: 1000 })
+                  .particleCount,
+                crossbarParticleSize: curveDef().particleSize,
+                crossbarOpacity: curveDef().opacity,
+                crossbarFlowSpeed: curveDef().flowSpeed,
+              },
+              { collapsed: true }
+            ),
+            Apostrophe: folder(
+              {
+                apostropheVisible: curveDef().visible,
+                apostropheParticleCount: curveDef({ particleCount: 500 })
+                  .particleCount,
+                apostropheParticleSize: curveDef().particleSize,
+                apostropheOpacity: curveDef().opacity,
+                apostropheFlowSpeed: curveDef().flowSpeed,
+              },
+              { collapsed: true }
+            ),
+            All: folder(
+              {
+                allLettersVisible: curveDef().visible,
+                allLettersParticleCount: curveDef().particleCount,
+                allLettersParticleSize: curveDef().particleSize,
+                allLettersOpacity: curveDef().opacity,
+                allLettersFlowSpeed: curveDef().flowSpeed,
+              },
+              { collapsed: true }
+            ),
+            'Capital F': folder(
+              {
+                capitalFVisible: curveDef().visible,
+                capitalFParticleCount: curveDef().particleCount,
+                capitalFParticleSize: curveDef().particleSize,
+                capitalFOpacity: curveDef().opacity,
+                capitalFFlowSpeed: curveDef().flowSpeed,
+              },
+              { collapsed: true }
+            ),
+            'Exclamation !': folder(
+              {
+                exclamLineVisible: curveDef().visible,
+                exclamLineParticleCount: curveDef({ particleCount: 1000 })
+                  .particleCount,
+                exclamLineParticleSize: curveDef().particleSize,
+                exclamLineOpacity: curveDef().opacity,
+                exclamLineFlowSpeed: curveDef().flowSpeed,
+              },
+              { collapsed: true }
+            ),
+            'Exclamation Dot': folder(
+              {
+                exclamDotVisible: curveDef().visible,
+                exclamDotParticleCount: curveDef({ particleCount: 300 })
+                  .particleCount,
+                exclamDotParticleSize: curveDef().particleSize,
+                exclamDotOpacity: curveDef().opacity,
+                exclamDotFlowSpeed: curveDef().flowSpeed,
+              },
+              { collapsed: true }
+            ),
+            'olks + tail': folder(
+              {
+                olksTailVisible: curveDef().visible,
+                olksTailParticleCount: curveDef({ particleCount: 8000 })
+                  .particleCount,
+                olksTailParticleSize: curveDef().particleSize,
+                olksTailOpacity: curveDef().opacity,
+                olksTailFlowSpeed: curveDef({ flowSpeed: 0.018 }).flowSpeed,
+              },
+              { collapsed: true }
+            ),
           },
           { collapsed: true }
         ),
@@ -292,8 +306,13 @@ export default function useSceneControls() {
     () => ({
       showHelpers,
       gunScale,
+      gunX,
       gunY,
-      barrelTipY,
+      gunZ,
+      smokeScale,
+      smokeX,
+      smokeY,
+      smokeZ,
       // shared smoke + physics (spread into per-curve configs as base)
       particleColor,
       springK,
@@ -375,8 +394,13 @@ export default function useSceneControls() {
     [
       showHelpers,
       gunScale,
+      gunX,
       gunY,
-      barrelTipY,
+      gunZ,
+      smokeScale,
+      smokeX,
+      smokeY,
+      smokeZ,
       particleColor,
       springK,
       damping,

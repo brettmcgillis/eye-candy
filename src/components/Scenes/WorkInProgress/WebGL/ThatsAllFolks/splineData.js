@@ -6,20 +6,19 @@ import * as THREE from 'three';
 //   x → right, y → down, origin top-left.
 //   CANVAS_H = 445 is the barrel-tip's canvas y-coordinate.
 //
-// toScene() flips y and offsets all positions by barrelTipY so that
-// the barrel tip stays anchored as barrelTipY changes via Leva.
-//   canvas y=CANVAS_H → scene y=barrelTipY
-//   canvas y=0        → scene y=barrelTipY + CANVAS_H*SCALE ≈ barrelTipY+365
+// toScene() flips y so that the barrel tip (canvas y=CANVAS_H) maps to
+// local origin (0, 0). The smoke <group> in ThatsAllFolks.jsx handles
+// world positioning via Leva X / Y / Z controls.
+//   canvas y=CANVAS_H → local y=0
+//   canvas y=0        → local y=CANVAS_H*SCALE ≈ 365
 //
 // Scene units: 1 unit ≈ 1 cm.
 
 const CANVAS_H = 445;
 const SCALE = 0.82;
 
-export function toScene(pts, barrelTipY = 285) {
-  return pts.map(
-    ({ x, y }) => new THREE.Vector3(x, (CANVAS_H - y) * SCALE + barrelTipY, 0)
-  );
+export function toScene(pts) {
+  return pts.map(({ x, y }) => new THREE.Vector3(x, (CANVAS_H - y) * SCALE, 0));
 }
 
 // ─── Per-letterform canvas control-points (x→right, y→down) ─────────────────
@@ -207,8 +206,14 @@ export const EXCLAMATION_DOT = [
   { x: 418, y: 327 },
 ];
 
-// "olks" + connecting tail — reversed so first point is the barrel tip [0, 445].
+// "olks" + connecting tail — reversed so first point is the barrel tip.
+// x=-200 gives ~163 scene-units of clear runway before the "olks" letters
+// so the gun can be positioned well to the left without the tail going
+// under the text.
 export const OLKS_TAIL = [
+  { x: -200, y: 445 },
+  { x: -140, y: 445 },
+  { x: -70, y: 445 },
   { x: 0, y: 445 },
   { x: 34, y: 446 },
   { x: 105, y: 445 },

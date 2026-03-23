@@ -142,11 +142,10 @@ export default function TafSmoke({ points, config }) {
         }
       }
 
-      geo.setAttribute(
-        'position',
-        new THREE.BufferAttribute(new Float32Array(positions), 3)
-      );
-      const alphaAttr = new THREE.BufferAttribute(new Float32Array(alphas), 1);
+      const initPosAttr = new THREE.BufferAttribute(positions, 3);
+      initPosAttr.usage = THREE.DynamicDrawUsage;
+      geo.setAttribute('position', initPosAttr);
+      const alphaAttr = new THREE.BufferAttribute(alphas, 1);
       alphaAttr.usage = THREE.DynamicDrawUsage;
       geo.setAttribute('aAlpha', alphaAttr);
       stateRef.current = { positions, velocities, splineT, alphas, phases, N };
@@ -177,28 +176,17 @@ export default function TafSmoke({ points, config }) {
       positions[i * 3 + 2] = startZ;
     }
 
-    const posAttr = geo.attributes.position;
-    if (posAttr) {
-      posAttr.array = positions;
-      posAttr.count = N;
-      posAttr.needsUpdate = true;
-    } else {
-      geo.setAttribute(
-        'position',
-        new THREE.BufferAttribute(new Float32Array(positions), 3)
-      );
-    }
+    // Always use setAttribute with a fresh BufferAttribute so Three.js calls
+    // gl.bufferData (full GPU realloc) rather than gl.bufferSubData. Mutating
+    // an existing attribute's .array on a grown buffer triggers bufferSubData
+    // which writes beyond the allocated GL buffer and can lock the tab.
+    const newPosAttr = new THREE.BufferAttribute(positions, 3);
+    newPosAttr.usage = THREE.DynamicDrawUsage;
+    geo.setAttribute('position', newPosAttr);
 
-    const alphaAttr = geo.attributes.aAlpha;
-    if (alphaAttr) {
-      alphaAttr.array = alphas;
-      alphaAttr.count = N;
-      alphaAttr.needsUpdate = true;
-    } else {
-      const newA = new THREE.BufferAttribute(new Float32Array(alphas), 1);
-      newA.usage = THREE.DynamicDrawUsage;
-      geo.setAttribute('aAlpha', newA);
-    }
+    const newAlphaAttr = new THREE.BufferAttribute(alphas, 1);
+    newAlphaAttr.usage = THREE.DynamicDrawUsage;
+    geo.setAttribute('aAlpha', newAlphaAttr);
 
     stateRef.current = { positions, velocities, splineT, alphas, phases, N };
     // particleCount is the only dep that requires geometry reallocation;

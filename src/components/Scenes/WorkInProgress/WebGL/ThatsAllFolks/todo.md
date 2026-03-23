@@ -12,7 +12,7 @@
 
 # // TODO:
 
-- [ ] Build 'Thats all folks cursive' writing spline(s) based on the text in the jpg.
+- [x] Build 'Thats all folks cursive' writing spline(s) based on the text in the jpg.
 - [ ] Build the spline/attractor/particle system(s) to flow the smoke. Smoke test is not fully complete yet though.
 
 # // Features
@@ -20,3 +20,5 @@
 # // Bugs
 
 - Scene is creating its own spline line and smoke. We should reuse the results of the smoketest lab, by breaking it down into reusable components in components/elements
+
+- [x] Scene locks when adjusting particle counts

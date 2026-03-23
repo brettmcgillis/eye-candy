@@ -2,11 +2,11 @@ import React, { useRef, useState } from 'react';
 
 import { PerspectiveCamera } from '@react-three/drei';
 
-import SplineLine from '../../../ToolBox/WebGL/SplineEditor/components/SplineLine';
-import SplinePoints from '../../../ToolBox/WebGL/SplineEditor/components/SplinePoints';
-import SPLINE_PRESETS from '../../../ToolBox/WebGL/SplineEditor/presets/presets';
+import GridBox from '../../../../elements/gridbox/GridBox';
+import SplineLine from '../../../../elements/spline/SplineLine';
+import SplinePoints from '../../../../elements/spline/SplinePoints';
+import SPLINE_PRESETS from '../../../../elements/spline/splinePresets';
 import SmokeAttractors from './SmokeAttractors';
-import SmokeGridBox from './SmokeGridBox';
 import SmokeParticles from './SmokeParticles';
 import useSmokeTestControls from './useSmokeTestControls';
 
@@ -52,7 +52,7 @@ export default function SmokeTest() {
         shadow-mapSize={[1024, 1024]}
       />
 
-      <SmokeGridBox />
+      <GridBox bgColor="#ffffff" lineColor="#d1d1d1" lineWidth={0.02} />
 
       {/* SplinePoints renders its own OrbitControls with makeDefault */}
       <SplinePoints

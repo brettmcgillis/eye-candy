@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 
 import SplineEditorScene from '../SplineEditorScene';
 import useSplineEditorControls from '../hooks/useSplineEditorControls';
-import SPLINE_PRESETS from '../presets/presets';
+import SPLINE_PRESETS from '../../../../../elements/spline/splinePresets';
 
 export default function SplineEditor() {
   const [points, setPoints] = useState(() =>

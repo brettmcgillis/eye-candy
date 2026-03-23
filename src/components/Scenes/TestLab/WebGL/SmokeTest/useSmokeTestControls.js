@@ -4,7 +4,7 @@ import * as THREE from 'three';
 import { useEffect, useMemo, useRef } from 'react';
 
 import { localEnv } from '../../../../../utils/appUtils';
-import SPLINE_PRESETS from '../../../ToolBox/WebGL/SplineEditor/presets/presets';
+import SPLINE_PRESETS from '../../../../elements/spline/splinePresets';
 
 export default function useSmokeTestControls(points, setPoints) {
   const selectedPresetRef = useRef('Default');

@@ -2,7 +2,8 @@ import * as THREE from 'three';
 
 import React, { useMemo } from 'react';
 
-// Same dimensions as SplineEditor's grid box, white/grey colour scheme.
+// The box is 2000 units on each side, centered at Y=800 so the floor sits at Y=-200
+// matching the spline editor workspace layout.
 const BOX_SIZE = 2000;
 const BOX_CENTER_Y = BOX_SIZE / 2 - 200; // 800
 
@@ -22,6 +23,7 @@ const fragmentShader = /* glsl */ `
   varying vec3 vLocalPos;
 
   void main() {
+    // Determine dominant face axis so each face gets its own 2D grid UV.
     vec3 absP = abs(vLocalPos);
     vec2 gridUV;
     if (absP.x >= absP.y && absP.x >= absP.z) {
@@ -31,27 +33,43 @@ const fragmentShader = /* glsl */ `
     } else {
       gridUV = vLocalPos.xy;
     }
+
+    // Draw grid lines at every gridSize world units.
     vec2 f = fract(gridUV / gridSize);
     float line = max(step(f.x, lineWidth), step(f.y, lineWidth));
+
     gl_FragColor = vec4(mix(bgColor, lineColor, line), 1.0);
   }
 `;
 
-export default function SmokeGridBox() {
+// Parse '#rrggbb' to raw sRGB [0..1] Vector3, bypassing THREE.Color linearization
+// so uniform values match the scene background <color> display path.
+function hexToRawVec3(hex) {
+  const r = parseInt(hex.slice(1, 3), 16) / 255;
+  const g = parseInt(hex.slice(3, 5), 16) / 255;
+  const b = parseInt(hex.slice(5, 7), 16) / 255;
+  return new THREE.Vector3(r, g, b);
+}
+
+export default function GridBox({
+  bgColor = '#3a4a5c',
+  lineColor = '#1a2330',
+  lineWidth = 0.025,
+}) {
   const material = useMemo(
     () =>
       new THREE.ShaderMaterial({
         vertexShader,
         fragmentShader,
         uniforms: {
-          bgColor: { value: new THREE.Vector3(1.0, 1.0, 1.0) },
-          lineColor: { value: new THREE.Vector3(0.82, 0.82, 0.82) },
+          bgColor: { value: hexToRawVec3(bgColor) },
+          lineColor: { value: hexToRawVec3(lineColor) },
           gridSize: { value: 100.0 },
-          lineWidth: { value: 0.02 },
+          lineWidth: { value: lineWidth },
         },
         side: THREE.BackSide,
       }),
-    []
+    [bgColor, lineColor, lineWidth]
   );
 
   return (

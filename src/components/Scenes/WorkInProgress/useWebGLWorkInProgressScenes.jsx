@@ -6,6 +6,7 @@ const BurningAtBothEnds = lazy(
 );
 const CrtTest = lazy(() => import('./WebGL/CRTTest/CrtTest'));
 const DumpsterFire = lazy(() => import('./WebGL/DumpsterFire/DumpsterFire'));
+const ThatsAllFolks = lazy(() => import('./WebGL/ThatsAllFolks/ThatsAllFolks'));
 
 const scenes = [
   {
@@ -31,6 +32,12 @@ const scenes = [
     label: 'Dumpster Fire',
     icon: '🔥🗑️',
     Component: DumpsterFire,
+  },
+  {
+    id: 'thatsAllFolks',
+    label: "That's All Folks",
+    icon: '🔫💨',
+    Component: ThatsAllFolks,
   },
 ];
 

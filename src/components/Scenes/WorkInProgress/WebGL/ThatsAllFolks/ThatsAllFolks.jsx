@@ -1,0 +1,255 @@
+// ThatsAllFolks — 44 Magnum standing barrel-up, smoke flowing from the
+// barrel tip tracing cursive letterforms for "That's All Folks!".
+// Each named curve is an independent smoke system with its own Leva controls.
+import React, { useMemo } from 'react';
+
+import {
+  Environment,
+  OrbitControls,
+  PerspectiveCamera,
+} from '@react-three/drei';
+import { Bloom, EffectComposer } from '@react-three/postprocessing';
+
+import Magnum from '../../../../elements/magnum/Magnum';
+import Smoke from './components/Smoke';
+import SplineLine from './components/SplineLine';
+import useSceneControls from './hooks/useControls';
+import {
+  ALL_LETTERS,
+  APOSTROPHE,
+  CAPITAL_F,
+  CAPITAL_T,
+  EXCLAMATION_DOT,
+  EXCLAMATION_LINE,
+  HATS,
+  OLKS_TAIL,
+  T_CROSSBAR,
+  toScene,
+} from './splineData';
+
+// ─── Helpers ─────────────────────────────────────────────────────────────────
+
+// Merge global config with a curve's per-curve overrides.
+// particleColor and all physics params come from the global config;
+// particleCount / particleSize / opacity / flowSpeed come from the curve.
+function mergeCurveConfig(globalConfig, curveConfig) {
+  return {
+    ...globalConfig,
+    particleCount: curveConfig.particleCount,
+    particleSize: curveConfig.particleSize,
+    opacity: curveConfig.opacity,
+    flowSpeed: curveConfig.flowSpeed,
+  };
+}
+
+// ─── Scene ───────────────────────────────────────────────────────────────────
+
+export default function ThatsAllFolks() {
+  const config = useSceneControls();
+
+  // Build all 9 curve point arrays. Re-runs only when barrelTipY changes so
+  // that the whole text block moves with the gun barrel.
+  const pts = useMemo(
+    () => ({
+      capitalT: toScene(CAPITAL_T, config.barrelTipY),
+      hats: toScene(HATS, config.barrelTipY),
+      crossbar: toScene(T_CROSSBAR, config.barrelTipY),
+      apostrophe: toScene(APOSTROPHE, config.barrelTipY),
+      allLetters: toScene(ALL_LETTERS, config.barrelTipY),
+      capitalF: toScene(CAPITAL_F, config.barrelTipY),
+      exclamLine: toScene(EXCLAMATION_LINE, config.barrelTipY),
+      exclamDot: toScene(EXCLAMATION_DOT, config.barrelTipY),
+      olksTail: toScene(OLKS_TAIL, config.barrelTipY),
+    }),
+    [config.barrelTipY]
+  );
+
+  const { curves } = config;
+
+  return (
+    <>
+      <color attach="background" args={['#18100a']} />
+
+      {/* Environment map — essential for PBR metallic surfaces */}
+      <Environment preset="studio" />
+
+      {/* Camera — framed to show the gun lower-centre, smoke/text filling upper 2/3 */}
+      <PerspectiveCamera
+        makeDefault
+        position={[50, 380, 1050]}
+        fov={55}
+        near={1}
+        far={8000}
+        onUpdate={(self) => self.lookAt(0, 200, 0)}
+      />
+      <OrbitControls target={[0, 200, 0]} />
+
+      {/* Lighting */}
+      <ambientLight intensity={1.5} color="#ffe8c0" />
+      <spotLight
+        position={[500, 1400, 700]}
+        angle={Math.PI * 0.16}
+        intensity={25}
+        decay={0}
+        color="#fff5e0"
+        castShadow
+        shadow-camera-near={100}
+        shadow-camera-far={3000}
+        shadow-bias={-0.0002}
+        shadow-mapSize={[1024, 1024]}
+      />
+      {/* Cool blue rim from back-left */}
+      <pointLight
+        position={[-700, 900, -300]}
+        intensity={6}
+        decay={0}
+        color="#5080b0"
+      />
+
+      {/* Shadow-receiving floor */}
+      <mesh rotation={[-Math.PI / 2, 0, 0]} position={[0, -2, 0]} receiveShadow>
+        <planeGeometry args={[4000, 4000]} />
+        <shadowMaterial opacity={0.4} />
+      </mesh>
+
+      {/* 44 Magnum — standing barrel-up */}
+      <group position={[0, config.gunY, 0]} scale={config.gunScale}>
+        <Magnum rotation={[0, Math.PI / 2, 0]} />
+      </group>
+
+      {/* ── Smoke systems — one per letterform curve ──────────────────────── */}
+      {curves.capitalT.visible && (
+        <Smoke
+          points={pts.capitalT}
+          config={mergeCurveConfig(config, curves.capitalT)}
+        />
+      )}
+      {curves.hats.visible && (
+        <Smoke
+          points={pts.hats}
+          config={mergeCurveConfig(config, curves.hats)}
+        />
+      )}
+      {curves.crossbar.visible && (
+        <Smoke
+          points={pts.crossbar}
+          config={mergeCurveConfig(config, curves.crossbar)}
+        />
+      )}
+      {curves.apostrophe.visible && (
+        <Smoke
+          points={pts.apostrophe}
+          config={mergeCurveConfig(config, curves.apostrophe)}
+        />
+      )}
+      {curves.allLetters.visible && (
+        <Smoke
+          points={pts.allLetters}
+          config={mergeCurveConfig(config, curves.allLetters)}
+        />
+      )}
+      {curves.capitalF.visible && (
+        <Smoke
+          points={pts.capitalF}
+          config={mergeCurveConfig(config, curves.capitalF)}
+        />
+      )}
+      {curves.exclamLine.visible && (
+        <Smoke
+          points={pts.exclamLine}
+          config={mergeCurveConfig(config, curves.exclamLine)}
+        />
+      )}
+      {curves.exclamDot.visible && (
+        <Smoke
+          points={pts.exclamDot}
+          config={mergeCurveConfig(config, curves.exclamDot)}
+        />
+      )}
+      {curves.olksTail.visible && (
+        <Smoke
+          points={pts.olksTail}
+          config={mergeCurveConfig(config, curves.olksTail)}
+        />
+      )}
+
+      {/* ── Spline helpers — per-curve colour-coded debug lines ───────────── */}
+      {config.showHelpers && (
+        <>
+          <SplineLine
+            points={pts.capitalT}
+            visible={curves.capitalT.visible}
+            color="#ff6644"
+            tension={0.8}
+            arcSegments={200}
+          />
+          <SplineLine
+            points={pts.hats}
+            visible={curves.hats.visible}
+            color="#ff44aa"
+            tension={0.8}
+            arcSegments={300}
+          />
+          <SplineLine
+            points={pts.crossbar}
+            visible={curves.crossbar.visible}
+            color="#ffcc44"
+            tension={0.8}
+            arcSegments={60}
+          />
+          <SplineLine
+            points={pts.apostrophe}
+            visible={curves.apostrophe.visible}
+            color="#44ffcc"
+            tension={0.8}
+            arcSegments={60}
+          />
+          <SplineLine
+            points={pts.allLetters}
+            visible={curves.allLetters.visible}
+            color="#44ff88"
+            tension={0.8}
+            arcSegments={300}
+          />
+          <SplineLine
+            points={pts.capitalF}
+            visible={curves.capitalF.visible}
+            color="#4488ff"
+            tension={0.8}
+            arcSegments={200}
+          />
+          <SplineLine
+            points={pts.exclamLine}
+            visible={curves.exclamLine.visible}
+            color="#cc44ff"
+            tension={0.8}
+            arcSegments={60}
+          />
+          <SplineLine
+            points={pts.exclamDot}
+            visible={curves.exclamDot.visible}
+            color="#ff44cc"
+            tension={0.8}
+            arcSegments={60}
+          />
+          <SplineLine
+            points={pts.olksTail}
+            visible={curves.olksTail.visible}
+            color="#44ccff"
+            tension={0.8}
+            arcSegments={400}
+          />
+        </>
+      )}
+
+      {/* Post-processing */}
+      <EffectComposer>
+        <Bloom
+          intensity={0.55}
+          luminanceThreshold={0.1}
+          luminanceSmoothing={0.88}
+        />
+      </EffectComposer>
+    </>
+  );
+}

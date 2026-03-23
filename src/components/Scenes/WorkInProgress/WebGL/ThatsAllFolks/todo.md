@@ -19,4 +19,4 @@
 
 # // Bugs
 
-- None, make sure you dont create any.
+- Scene is creating its own spline line and smoke. We should reuse the results of the smoketest lab, by breaking it down into reusable components in components/elements

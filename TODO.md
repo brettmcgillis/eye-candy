@@ -63,14 +63,17 @@ To Build:
 - [HandStuff](src/components/scenes/TestLab/WebGL/HandStuff/todo.md)
 - [ParticleLab](src/components/scenes/TestLab/WebGL/ParticleLab/todo.md)
 - [PixelHater](src/components/scenes/TestLab/WebGL/PixelHater/todo.md)
+- [SmokeTest](src/components/scenes/TestLab/WebGL/SmokeTest/todo.md)
 - [StrudelDoodle](src/components/scenes/TestLab/WebGL/StrudelDoodle/todo.md)
 - [MobilePhysicsTest](src/components/scenes/TestLab/WebGPU/MobilePhysicsTest/todo.md)
 - [NetworkTest](src/components/scenes/TestLab/WebGPU/NetworkTest/todo.md)
 
 **WorkInProgress**
 
+- [BurningAtBothEnds](src/components/scenes/WorkInProgress/WebGL/BurningAtBothEnds/todo.md)
 - [CRTTest](src/components/scenes/WorkInProgress/WebGL/CRTTest/todo.md)
 - [DumpsterFire](src/components/scenes/WorkInProgress/WebGL/DumpsterFire/todo.md)
+- [ThatsAllFolks](src/components/scenes/WorkInProgress/WebGL/ThatsAllFolks/todo.md)
 
 **Template**
 

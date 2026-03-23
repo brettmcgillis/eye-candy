@@ -206,9 +206,20 @@ export const EXCLAMATION_DOT = [
   { x: 418, y: 327 },
 ];
 
-// "olks" + connecting tail (redesigned) — reversed so smoke flows from the tail end.
+// "olks" + connecting tail (redesigned).
+// Curve-11 barrel approach is prepended: translated so its highest point
+// (354,348 in curve-11 space) lands exactly on the original first point
+// (285,468), delta (-69, +120). Smoke emits from near the gun barrel
+// (~y=578 canvas) and curves horizontally before rising into the letterforms.
 export const OLKS_TAIL = [
-  { x: 285, y: 518 },
+  // ── curve 11 barrel approach — pick one option, comment out the others ──
+  { x: 216, y: 578 },
+  { x: 270, y: 577 },
+  { x: 315, y: 562 },
+  { x: 310, y: 530 },
+  { x: 280, y: 500 },
+
+  // ── original olks+tail ──────────────────────────────────────────────────
   { x: 285, y: 468 },
   { x: 262, y: 442 },
   { x: 229, y: 426 },

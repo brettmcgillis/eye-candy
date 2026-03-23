@@ -38,7 +38,7 @@ To Build:
 - [ ] Police Presence
 - [ ] Flying High (with both engines on fire)
 - [ ] We should do a scene with Quinns seal, 3rd person camera, player controls w/keyboard and controller.
-      Scene should include quinns dice in the environment.
+      Scene should include quinns dice in the environment. Get low-LOD versions.
       Scene should include various art images on planes in the environment.
       Scene should allow user to walk around and look at Quinns Portfolio.
       see example @ https://henryegloff.com/

@@ -102,7 +102,7 @@ To Build:
 
 ### SCREENSHOT
 
-- Overhaul. Should support screenshot and screenred
+- Overhaul. Should support screenshot and screenrec.
 - Make sure output includes a watermark & some cool hiddnen fileinfo
 - Make sure it works on mobile
 
@@ -117,10 +117,12 @@ To Build:
 ## Show
 
 - SVG Renderer
+- Explosion Test
 - Particle Lab
 - Spline Editor
 - SmokeTest
-- ThatsAllFolks
 - PixelHater updates
-- Trophy Husband
+- TrophyHusband
 - Yggdraskill
+- Thats All Folks
+- Crt Test

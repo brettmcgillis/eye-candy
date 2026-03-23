@@ -12,12 +12,19 @@ const CURVE_SAMPLES = 512;
 const vertexShader = /* glsl */ `
 uniform float uSize;
 uniform float uScale;
+uniform float uGrowth;
 attribute float aAlpha;
+attribute float aAge;
+attribute float aRotation;
 varying float vAlpha;
+varying float vAge;
+varying float vRotation;
 void main() {
   vAlpha = aAlpha;
+  vAge = aAge;
+  vRotation = aRotation;
   vec4 mvPosition = modelViewMatrix * vec4(position, 1.0);
-  gl_PointSize = uSize * uScale / (-mvPosition.z);
+  gl_PointSize = uSize * (1.0 + aAge * uGrowth) * uScale / (-mvPosition.z);
   gl_Position = projectionMatrix * mvPosition;
 }
 `;
@@ -26,16 +33,28 @@ const fragmentShader = /* glsl */ `
 uniform sampler2D uMap;
 uniform vec3 uColor;
 uniform float uOpacity;
+uniform float uFadeExp;
 varying float vAlpha;
+varying float vAge;
+varying float vRotation;
 void main() {
-  vec4 tex = texture2D(uMap, gl_PointCoord);
-  float a = tex.a * uOpacity * vAlpha;
+  // Rotate texture coords around particle centre — each particle gets unique orientation
+  vec2 uv = gl_PointCoord - 0.5;
+  float c = cos(vRotation);
+  float s = sin(vRotation);
+  uv = vec2(c * uv.x - s * uv.y, s * uv.x + c * uv.y) + 0.5;
+  vec4 tex = texture2D(uMap, uv);
+  float ageFade = 1.0 - pow(vAge, uFadeExp);
+  float a = tex.a * uOpacity * vAlpha * ageFade;
   if (a < 0.001) discard;
   gl_FragColor = vec4(uColor, a);
 }
 `;
 
-function createSoftCircleTexture() {
+// Asymmetric wispy smoke puff texture. The off-centre lobes only reveal
+// their asymmetry when rotated per-particle, giving each particle a unique
+// shape and making the overall field look organic rather than circular.
+function createSmokeTexture() {
   const S = 128;
   const canvas = document.createElement('canvas');
   canvas.width = S;
@@ -43,31 +62,40 @@ function createSoftCircleTexture() {
   const ctx = canvas.getContext('2d');
   if (!ctx) return null;
 
-  const blobs = [
-    { x: 0.5, y: 0.5, rx: 0.4, ry: 0.4, a: 0.55 },
-    { x: 0.38, y: 0.42, rx: 0.26, ry: 0.22, a: 0.3 },
-    { x: 0.62, y: 0.58, rx: 0.22, ry: 0.28, a: 0.25 },
-    { x: 0.55, y: 0.36, rx: 0.18, ry: 0.15, a: 0.2 },
-    { x: 0.44, y: 0.62, rx: 0.15, ry: 0.18, a: 0.18 },
-    { x: 0.3, y: 0.56, rx: 0.14, ry: 0.12, a: 0.15 },
-  ];
+  // Soft central core
+  const core = ctx.createRadialGradient(
+    S * 0.5,
+    S * 0.5,
+    0,
+    S * 0.5,
+    S * 0.5,
+    S * 0.46
+  );
+  core.addColorStop(0, 'rgba(255,255,255,0.72)');
+  core.addColorStop(0.3, 'rgba(255,255,255,0.48)');
+  core.addColorStop(0.65, 'rgba(255,255,255,0.14)');
+  core.addColorStop(1, 'rgba(255,255,255,0)');
+  ctx.fillStyle = core;
+  ctx.fillRect(0, 0, S, S);
 
+  // Irregular wispy lobes — asymmetric offsets so rotation reveals different shapes
   ctx.globalCompositeOperation = 'lighter';
-  blobs.forEach(({ x, y, rx, ry, a }) => {
-    const cx = x * S;
-    const cy = y * S;
-    const rMax = Math.max(rx, ry) * S;
-    const g = ctx.createRadialGradient(cx, cy, 0, cx, cy, rMax);
+  const lobes = [
+    { ox: 0.2, oy: -0.12, r: 0.24, a: 0.2 },
+    { ox: -0.16, oy: 0.14, r: 0.21, a: 0.17 },
+    { ox: 0.02, oy: 0.22, r: 0.19, a: 0.14 },
+    { ox: -0.19, oy: -0.08, r: 0.18, a: 0.11 },
+    { ox: 0.1, oy: 0.18, r: 0.15, a: 0.09 },
+    { ox: 0.14, oy: -0.2, r: 0.13, a: 0.08 },
+  ];
+  lobes.forEach(({ ox, oy, r, a }) => {
+    const cx = S * (0.5 + ox);
+    const cy = S * (0.5 + oy);
+    const g = ctx.createRadialGradient(cx, cy, 0, cx, cy, S * r);
     g.addColorStop(0, `rgba(255,255,255,${a})`);
-    g.addColorStop(0.5, `rgba(255,255,255,${a * 0.4})`);
     g.addColorStop(1, 'rgba(255,255,255,0)');
-    ctx.save();
-    ctx.translate(cx, cy);
-    ctx.scale(rx / Math.max(rx, ry), ry / Math.max(rx, ry));
-    ctx.translate(-cx, -cy);
     ctx.fillStyle = g;
     ctx.fillRect(0, 0, S, S);
-    ctx.restore();
   });
 
   const tex = new THREE.CanvasTexture(canvas);
@@ -83,7 +111,7 @@ export default function TafSmoke({ points, config }) {
   const pointsRef = useRef();
   const geometryRef = useRef();
   const materialRef = useRef();
-  const texture = useMemo(createSoftCircleTexture, []);
+  const texture = useMemo(createSmokeTexture, []);
   const timeRef = useRef(0);
   const stateRef = useRef(null);
   // Per-instance lookup cache — prevents data races between multiple TafSmoke instances.
@@ -105,8 +133,13 @@ export default function TafSmoke({ points, config }) {
       const velocities = new Float32Array(N * 3);
       const splineT = new Float32Array(N);
       const alphas = new Float32Array(N).fill(1);
+      const ages = new Float32Array(N);
+      const rotations = new Float32Array(N);
       const phases = new Float32Array(N);
-      for (let i = 0; i < N; i += 1) phases[i] = Math.random() * Math.PI * 2;
+      for (let i = 0; i < N; i += 1) {
+        phases[i] = Math.random() * Math.PI * 2;
+        rotations[i] = Math.random() * Math.PI * 2;
+      }
 
       const curve = new THREE.CatmullRomCurve3(
         [...points],
@@ -148,7 +181,22 @@ export default function TafSmoke({ points, config }) {
       const alphaAttr = new THREE.BufferAttribute(alphas, 1);
       alphaAttr.usage = THREE.DynamicDrawUsage;
       geo.setAttribute('aAlpha', alphaAttr);
-      stateRef.current = { positions, velocities, splineT, alphas, phases, N };
+      const ageAttr = new THREE.BufferAttribute(ages, 1);
+      ageAttr.usage = THREE.DynamicDrawUsage;
+      geo.setAttribute('aAge', ageAttr);
+      const rotAttr = new THREE.BufferAttribute(rotations, 1);
+      rotAttr.usage = THREE.DynamicDrawUsage;
+      geo.setAttribute('aRotation', rotAttr);
+      stateRef.current = {
+        positions,
+        velocities,
+        splineT,
+        alphas,
+        phases,
+        ages,
+        rotations,
+        N,
+      };
       return;
     }
 
@@ -159,18 +207,23 @@ export default function TafSmoke({ points, config }) {
     const splineT = new Float32Array(N);
     const alphas = new Float32Array(N).fill(1);
     const phases = new Float32Array(N);
+    const ages = new Float32Array(N);
+    const rotations = new Float32Array(N);
     const copyN = Math.min(oldN, N);
     positions.set(prev.positions.subarray(0, copyN * 3));
     velocities.set(prev.velocities.subarray(0, copyN * 3));
     splineT.set(prev.splineT.subarray(0, copyN));
     alphas.set(prev.alphas.subarray(0, copyN));
     phases.set(prev.phases.subarray(0, copyN));
+    if (prev.ages) ages.set(prev.ages.subarray(0, copyN));
+    if (prev.rotations) rotations.set(prev.rotations.subarray(0, copyN));
 
     const [startX, startY, startZ] = lookup;
     for (let i = oldN; i < N; i += 1) {
       splineT[i] = -Math.random();
       alphas[i] = 0;
       phases[i] = Math.random() * Math.PI * 2;
+      rotations[i] = Math.random() * Math.PI * 2;
       positions[i * 3] = startX;
       positions[i * 3 + 1] = startY;
       positions[i * 3 + 2] = startZ;
@@ -187,8 +240,23 @@ export default function TafSmoke({ points, config }) {
     const newAlphaAttr = new THREE.BufferAttribute(alphas, 1);
     newAlphaAttr.usage = THREE.DynamicDrawUsage;
     geo.setAttribute('aAlpha', newAlphaAttr);
+    const newAgeAttr = new THREE.BufferAttribute(ages, 1);
+    newAgeAttr.usage = THREE.DynamicDrawUsage;
+    geo.setAttribute('aAge', newAgeAttr);
+    const newRotAttr = new THREE.BufferAttribute(rotations, 1);
+    newRotAttr.usage = THREE.DynamicDrawUsage;
+    geo.setAttribute('aRotation', newRotAttr);
 
-    stateRef.current = { positions, velocities, splineT, alphas, phases, N };
+    stateRef.current = {
+      positions,
+      velocities,
+      splineT,
+      alphas,
+      phases,
+      ages,
+      rotations,
+      N,
+    };
     // particleCount is the only dep that requires geometry reallocation;
     // points/config update propagate live through the useFrame loop.
   }, [particleCount]);
@@ -206,6 +274,8 @@ export default function TafSmoke({ points, config }) {
       material.uniforms.uColor.value.set(config.particleColor);
       material.uniforms.uOpacity.value = config.opacity;
       material.uniforms.uScale.value = size.height / 2;
+      material.uniforms.uGrowth.value = config.growth;
+      material.uniforms.uFadeExp.value = config.fadeExponent;
     }
 
     // Rebuild lookup cache each frame to track any live point changes.
@@ -233,18 +303,33 @@ export default function TafSmoke({ points, config }) {
       closed,
       fadeRate,
       spawnSpread,
+      buoyancy,
+      rotSpeed,
     } = config;
 
     timeRef.current += dt;
     const time = timeRef.current;
     const dampPerFrame = damping ** dt;
     const maxDrift2 = maxDrift * maxDrift;
-    const { positions, velocities, splineT, alphas, phases, N } = state;
+    const {
+      positions,
+      velocities,
+      splineT,
+      alphas,
+      phases,
+      ages,
+      rotations,
+      N,
+    } = state;
     const [splineStartX, splineStartY, splineStartZ] = lookup;
 
     for (let i = 0; i < N; i += 1) {
       const pi = i * 3;
       splineT[i] += flowSpeed * dt;
+      // Age: 0 at barrel/start, 1 at spline end — drives size growth and alpha fade
+      ages[i] = Math.max(0, Math.min(1, splineT[i]));
+      // Per-particle slow rotation — variation from phases avoids lock-step spinning
+      rotations[i] += rotSpeed * (0.7 + Math.sin(phases[i]) * 0.3) * dt;
 
       if (!closed && splineT[i] < 0) {
         alphas[i] = 0;
@@ -321,6 +406,8 @@ export default function TafSmoke({ points, config }) {
         vx += Math.sin(ts + ph) * turbulence * dt;
         vy += Math.cos(ts * 0.73 + ph * 1.4) * turbulence * dt;
         vz += Math.sin(ts * 1.27 + ph * 2.3) * turbulence * dt;
+        // Buoyancy — smoke always rises
+        vy += buoyancy * dt;
 
         vx *= dampPerFrame;
         vy *= dampPerFrame;
@@ -359,6 +446,14 @@ export default function TafSmoke({ points, config }) {
       geometry.attributes.aAlpha.array.set(alphas);
       geometry.attributes.aAlpha.needsUpdate = true;
     }
+    if (geometry.attributes.aAge) {
+      geometry.attributes.aAge.array.set(ages);
+      geometry.attributes.aAge.needsUpdate = true;
+    }
+    if (geometry.attributes.aRotation) {
+      geometry.attributes.aRotation.array.set(rotations);
+      geometry.attributes.aRotation.needsUpdate = true;
+    }
   });
 
   useEffect(() => {
@@ -374,6 +469,8 @@ export default function TafSmoke({ points, config }) {
       uColor: { value: new THREE.Color('#cac8c5') },
       uOpacity: { value: 0.042 },
       uMap: { value: texture },
+      uGrowth: { value: 2.0 },
+      uFadeExp: { value: 1.2 },
     }),
     [texture]
   );

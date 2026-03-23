@@ -7,8 +7,8 @@ function curveDef(defaults = {}) {
   const {
     visible = true,
     particleCount = 3000,
-    particleSize = 35,
-    opacity = 0.044,
+    particleSize = 22,
+    opacity = 0.036,
     flowSpeed = 0.022,
   } = defaults;
   return {
@@ -17,7 +17,7 @@ function curveDef(defaults = {}) {
       label: 'Particles',
       value: particleCount,
       min: 100,
-      max: 15000,
+      max: 150000,
       step: 100,
     },
     particleSize: {
@@ -67,6 +67,10 @@ export default function useSceneControls() {
       spawnSpread,
       maxDrift,
       fadeRate,
+      growth,
+      fadeExponent,
+      buoyancy,
+      rotSpeed,
       // Capital T
       capitalTVisible,
       capitalTParticleCount,
@@ -126,8 +130,8 @@ export default function useSceneControls() {
     Gun: folder(
       {
         gunScale: { label: 'Scale', value: 1500, min: 50, max: 2000, step: 10 },
-        gunX: { label: 'X', value: -400, min: -800, max: 800, step: 5 },
-        gunY: { label: 'Y', value: 50, min: -400, max: 600, step: 5 },
+        gunX: { label: 'X', value: -200, min: -800, max: 800, step: 5 },
+        gunY: { label: 'Y', value: 0, min: -400, max: 600, step: 5 },
         gunZ: { label: 'Z', value: 0, min: -800, max: 800, step: 5 },
       },
       { collapsed: true }
@@ -136,9 +140,15 @@ export default function useSceneControls() {
     Smoke: folder(
       {
         particleColor: { label: 'Color', value: '#d0cdc9' },
-        smokeScale: { label: 'Scale', value: 1, min: 0.1, max: 4, step: 0.05 },
-        smokeX: { label: 'X', value: 44, min: -800, max: 800, step: 5 },
-        smokeY: { label: 'Y', value: 194, min: -400, max: 800, step: 5 },
+        smokeScale: {
+          label: 'Scale',
+          value: 1.5,
+          min: 0.1,
+          max: 4,
+          step: 0.05,
+        },
+        smokeX: { label: 'X', value: -250, min: -800, max: 800, step: 5 },
+        smokeY: { label: 'Y', value: 300, min: -400, max: 800, step: 5 },
         smokeZ: { label: 'Z', value: 34, min: -800, max: 800, step: 5 },
         showHelpers: { label: 'Show Helpers', value: false },
 
@@ -146,21 +156,21 @@ export default function useSceneControls() {
           {
             springK: {
               label: 'Spring',
-              value: 5.0,
+              value: 14.0,
               min: 0,
               max: 40,
               step: 0.5,
             },
             damping: {
               label: 'Damping',
-              value: 0.1,
+              value: 0.12,
               min: 0.001,
               max: 1,
               step: 0.005,
             },
             turbulence: {
               label: 'Turbulence',
-              value: 95,
+              value: 45,
               min: 0,
               max: 600,
               step: 5,
@@ -174,24 +184,52 @@ export default function useSceneControls() {
             },
             spawnSpread: {
               label: 'Spawn Spread',
-              value: 90,
+              value: 35,
               min: 0,
               max: 400,
               step: 5,
             },
             maxDrift: {
               label: 'Max Drift',
-              value: 480,
+              value: 160,
               min: 50,
               max: 2000,
               step: 50,
             },
             fadeRate: {
               label: 'Fade Rate',
-              value: 6,
+              value: 30,
               min: 1,
               max: 30,
               step: 1,
+            },
+            growth: {
+              label: 'Size Growth',
+              value: 0.7,
+              min: 0,
+              max: 8,
+              step: 0.1,
+            },
+            fadeExponent: {
+              label: 'Age Fade',
+              value: 4.65,
+              min: 0.3,
+              max: 5,
+              step: 0.1,
+            },
+            buoyancy: {
+              label: 'Buoyancy',
+              value: 5,
+              min: 0,
+              max: 200,
+              step: 5,
+            },
+            rotSpeed: {
+              label: 'Rot Speed',
+              value: 0.25,
+              min: 0,
+              max: 2,
+              step: 0.05,
             },
           },
           { collapsed: true }
@@ -322,6 +360,10 @@ export default function useSceneControls() {
       spawnSpread,
       maxDrift,
       fadeRate,
+      growth,
+      fadeExponent,
+      buoyancy,
+      rotSpeed,
       tension: 0.8,
       closed: false,
       // per-curve settings — consumed in ThatsAllFolks.jsx
@@ -409,6 +451,10 @@ export default function useSceneControls() {
       spawnSpread,
       maxDrift,
       fadeRate,
+      growth,
+      fadeExponent,
+      buoyancy,
+      rotSpeed,
       capitalTVisible,
       capitalTParticleCount,
       capitalTParticleSize,

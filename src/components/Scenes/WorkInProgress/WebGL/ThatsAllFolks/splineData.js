@@ -191,11 +191,11 @@ export const CAPITAL_F = [
   { x: 149, y: 356 },
 ];
 
-// Exclamation mark shaft
+// Exclamation mark shaft — reversed so smoke flows up (dot → top)
 export const EXCLAMATION_LINE = [
-  { x: 422, y: 206 },
-  { x: 418, y: 248 },
   { x: 414, y: 300 },
+  { x: 418, y: 248 },
+  { x: 422, y: 206 },
 ];
 
 // Exclamation mark dot
@@ -206,19 +206,18 @@ export const EXCLAMATION_DOT = [
   { x: 418, y: 327 },
 ];
 
-// "olks" + connecting tail — reversed so first point is the barrel tip.
-// x=-200 gives ~163 scene-units of clear runway before the "olks" letters
-// so the gun can be positioned well to the left without the tail going
-// under the text.
+// "olks" + connecting tail (redesigned) — reversed so smoke flows from the tail end.
 export const OLKS_TAIL = [
-  { x: -200, y: 445 },
-  { x: -140, y: 445 },
-  { x: -70, y: 445 },
-  { x: 0, y: 445 },
-  { x: 34, y: 446 },
-  { x: 105, y: 445 },
-  { x: 166, y: 439 },
-  { x: 216, y: 431 },
+  { x: 285, y: 518 },
+  { x: 285, y: 468 },
+  { x: 262, y: 442 },
+  { x: 229, y: 426 },
+  { x: 182, y: 415 },
+  { x: 149, y: 410 },
+  { x: 114, y: 412 },
+  { x: 102, y: 434 },
+  { x: 130, y: 452 },
+  { x: 178, y: 445 },
   { x: 258, y: 420 },
   { x: 304, y: 405 },
   { x: 354, y: 385 },
@@ -280,5 +279,4 @@ export const OLKS_TAIL = [
   { x: 205, y: 308 },
   { x: 176, y: 314 },
   { x: 156, y: 321 },
-  { x: 138, y: 316 },
 ];

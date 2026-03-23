@@ -26,6 +26,26 @@ File: ~/SceneName/TestScene.jsx
 
 - Some scenes are designed to build and exercise tooling. These scenes require a sub-scene to test against. Subscenes go into a dedicated TestScene file to keep the main component clean and ensure tooling is generic enough to be used against any other sub-scene.
 
+# // Scene Types
+
+## // Showcase scenes
+
+These should be fully formed and as close to complete as possible. Work you would share and link out.
+
+## // Work In Progress Scenes
+
+These are incomplete showcase scenes.
+
+## // Toolbox Scenes
+
+These are scenes built from repo assets to provide usefull tools for building other scenes.
+Example: SplineEditor, a tool for creating and editing splines to be used as camera paths in showcase scenes
+
+## // TestLab Scenes
+
+These scenes are built from repo assets and tools and are used to explore new concepts. If successful a testlab should produce a useable tool for the repo.
+Example: HandStuff was built to understand hand tracking using mediaPipe and produced a hook that is used in showcase scenes to inject webcam handtracking as a substitute for mouse/pointer interaction.
+
 # // Features
 
 # // Bugs

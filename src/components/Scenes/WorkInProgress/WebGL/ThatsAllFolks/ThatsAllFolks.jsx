@@ -126,127 +126,158 @@ export default function ThatsAllFolks() {
         scale={config.smokeScale}
       >
         {/* ── Smoke systems — one per letterform curve ──────────────────────── */}
-        {curves.capitalT.visible && (
-          <Smoke
-            points={pts.capitalT}
-            config={mergeCurveConfig(config, curves.capitalT)}
-          />
-        )}
-        {curves.hats.visible && (
-          <Smoke
-            points={pts.hats}
-            config={mergeCurveConfig(config, curves.hats)}
-          />
-        )}
-        {curves.crossbar.visible && (
-          <Smoke
-            points={pts.crossbar}
-            config={mergeCurveConfig(config, curves.crossbar)}
-          />
-        )}
-        {curves.apostrophe.visible && (
-          <Smoke
-            points={pts.apostrophe}
-            config={mergeCurveConfig(config, curves.apostrophe)}
-          />
-        )}
-        {curves.allLetters.visible && (
-          <Smoke
-            points={pts.allLetters}
-            config={mergeCurveConfig(config, curves.allLetters)}
-          />
-        )}
-        {curves.capitalF.visible && (
-          <Smoke
-            points={pts.capitalF}
-            config={mergeCurveConfig(config, curves.capitalF)}
-          />
-        )}
-        {curves.exclamLine.visible && (
-          <Smoke
-            points={pts.exclamLine}
-            config={mergeCurveConfig(config, curves.exclamLine)}
-          />
-        )}
-        {curves.exclamDot.visible && (
-          <Smoke
-            points={pts.exclamDot}
-            config={mergeCurveConfig(config, curves.exclamDot)}
-          />
-        )}
-        {curves.olksTail.visible && (
-          <Smoke
-            points={pts.olksTail}
-            config={mergeCurveConfig(config, curves.olksTail)}
-          />
-        )}
+
+        {/* That's — Capital T + hats + crossbar + apostrophe */}
+        <group position={[config.thatsX, config.thatsY, config.thatsZ]}>
+          {curves.capitalT.visible && (
+            <Smoke
+              points={pts.capitalT}
+              config={mergeCurveConfig(config, curves.capitalT)}
+            />
+          )}
+          {curves.hats.visible && (
+            <Smoke
+              points={pts.hats}
+              config={mergeCurveConfig(config, curves.hats)}
+            />
+          )}
+          {curves.crossbar.visible && (
+            <Smoke
+              points={pts.crossbar}
+              config={mergeCurveConfig(config, curves.crossbar)}
+            />
+          )}
+          {curves.apostrophe.visible && (
+            <Smoke
+              points={pts.apostrophe}
+              config={mergeCurveConfig(config, curves.apostrophe)}
+            />
+          )}
+        </group>
+
+        {/* All */}
+        <group position={[config.allX, config.allY, config.allZ]}>
+          {curves.allLetters.visible && (
+            <Smoke
+              points={pts.allLetters}
+              config={mergeCurveConfig(config, curves.allLetters)}
+            />
+          )}
+        </group>
+
+        {/* Folks — Capital F + olks tail */}
+        <group position={[config.folksX, config.folksY, config.folksZ]}>
+          {curves.capitalF.visible && (
+            <Smoke
+              points={pts.capitalF}
+              config={mergeCurveConfig(config, curves.capitalF)}
+            />
+          )}
+          {curves.olksTail.visible && (
+            <Smoke
+              points={pts.olksTail}
+              config={mergeCurveConfig(config, curves.olksTail)}
+            />
+          )}
+        </group>
+
+        {/* Exclamation — line + dot */}
+        <group position={[config.exclamX, config.exclamY, config.exclamZ]}>
+          {curves.exclamLine.visible && (
+            <Smoke
+              points={pts.exclamLine}
+              config={mergeCurveConfig(config, curves.exclamLine)}
+            />
+          )}
+          {curves.exclamDot.visible && (
+            <Smoke
+              points={pts.exclamDot}
+              config={mergeCurveConfig(config, curves.exclamDot)}
+            />
+          )}
+        </group>
 
         {/* ── Spline helpers — per-curve colour-coded debug lines ───────────── */}
         {config.showHelpers && (
           <>
-            <SplineLine
-              points={pts.capitalT}
-              visible={curves.capitalT.visible}
-              color="#ff6644"
-              tension={0.8}
-              arcSegments={200}
-            />
-            <SplineLine
-              points={pts.hats}
-              visible={curves.hats.visible}
-              color="#ff44aa"
-              tension={0.8}
-              arcSegments={300}
-            />
-            <SplineLine
-              points={pts.crossbar}
-              visible={curves.crossbar.visible}
-              color="#ffcc44"
-              tension={0.8}
-              arcSegments={60}
-            />
-            <SplineLine
-              points={pts.apostrophe}
-              visible={curves.apostrophe.visible}
-              color="#44ffcc"
-              tension={0.8}
-              arcSegments={60}
-            />
-            <SplineLine
-              points={pts.allLetters}
-              visible={curves.allLetters.visible}
-              color="#44ff88"
-              tension={0.8}
-              arcSegments={300}
-            />
-            <SplineLine
-              points={pts.capitalF}
-              visible={curves.capitalF.visible}
-              color="#4488ff"
-              tension={0.8}
-              arcSegments={200}
-            />
-            <SplineLine
-              points={pts.exclamLine}
-              visible={curves.exclamLine.visible}
-              color="#cc44ff"
-              tension={0.8}
-              arcSegments={60}
-            />
-            <SplineLine
-              points={pts.exclamDot}
-              visible={curves.exclamDot.visible}
-              color="#ff44cc"
-              tension={0.8}
-              arcSegments={60}
-            />
-            <SplineLine
-              points={pts.olksTail}
-              visible={curves.olksTail.visible}
-              color="#44ccff"
-              tension={0.8}
-              arcSegments={400}
-            />
+            {/* That's helpers */}
+            <group position={[config.thatsX, config.thatsY, config.thatsZ]}>
+              <SplineLine
+                points={pts.capitalT}
+                visible={curves.capitalT.visible}
+                color="#ff6644"
+                tension={0.8}
+                arcSegments={200}
+              />
+              <SplineLine
+                points={pts.hats}
+                visible={curves.hats.visible}
+                color="#ff44aa"
+                tension={0.8}
+                arcSegments={300}
+              />
+              <SplineLine
+                points={pts.crossbar}
+                visible={curves.crossbar.visible}
+                color="#ffcc44"
+                tension={0.8}
+                arcSegments={60}
+              />
+              <SplineLine
+                points={pts.apostrophe}
+                visible={curves.apostrophe.visible}
+                color="#44ffcc"
+                tension={0.8}
+                arcSegments={60}
+              />
+            </group>
+
+            {/* All helper */}
+            <group position={[config.allX, config.allY, config.allZ]}>
+              <SplineLine
+                points={pts.allLetters}
+                visible={curves.allLetters.visible}
+                color="#44ff88"
+                tension={0.8}
+                arcSegments={300}
+              />
+            </group>
+
+            {/* Folks helpers */}
+            <group position={[config.folksX, config.folksY, config.folksZ]}>
+              <SplineLine
+                points={pts.capitalF}
+                visible={curves.capitalF.visible}
+                color="#4488ff"
+                tension={0.8}
+                arcSegments={200}
+              />
+              <SplineLine
+                points={pts.olksTail}
+                visible={curves.olksTail.visible}
+                color="#44ccff"
+                tension={0.8}
+                arcSegments={400}
+              />
+            </group>
+
+            {/* Exclamation helpers */}
+            <group position={[config.exclamX, config.exclamY, config.exclamZ]}>
+              <SplineLine
+                points={pts.exclamLine}
+                visible={curves.exclamLine.visible}
+                color="#cc44ff"
+                tension={0.8}
+                arcSegments={60}
+              />
+              <SplineLine
+                points={pts.exclamDot}
+                visible={curves.exclamDot.visible}
+                color="#ff44cc"
+                tension={0.8}
+                arcSegments={60}
+              />
+            </group>
           </>
         )}
       </group>

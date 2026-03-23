@@ -125,6 +125,19 @@ export default function useSceneControls() {
       olksTailParticleSize,
       olksTailOpacity,
       olksTailFlowSpeed,
+      // sub-group positions (relative to smoke group)
+      thatsX,
+      thatsY,
+      thatsZ,
+      allX,
+      allY,
+      allZ,
+      folksX,
+      folksY,
+      folksZ,
+      exclamX,
+      exclamY,
+      exclamZ,
     },
   ] = useControls('Thats All Folks', () => ({
     Gun: folder(
@@ -147,7 +160,7 @@ export default function useSceneControls() {
           max: 4,
           step: 0.05,
         },
-        smokeX: { label: 'X', value: -250, min: -800, max: 800, step: 5 },
+        smokeX: { label: 'X', value: -350, min: -800, max: 800, step: 5 },
         smokeY: { label: 'Y', value: 300, min: -400, max: 800, step: 5 },
         smokeZ: { label: 'Z', value: 34, min: -800, max: 800, step: 5 },
         showHelpers: { label: 'Show Helpers', value: false },
@@ -235,12 +248,57 @@ export default function useSceneControls() {
           { collapsed: true }
         ),
 
+        Groups: folder(
+          {
+            "That's": folder(
+              {
+                thatsX: { label: 'X', value: -4, min: -500, max: 500, step: 1 },
+                thatsY: { label: 'Y', value: 2, min: -500, max: 500, step: 1 },
+                thatsZ: { label: 'Z', value: 0, min: -500, max: 500, step: 1 },
+              },
+              { collapsed: true }
+            ),
+            All: folder(
+              {
+                allX: { label: 'X', value: 5, min: -500, max: 500, step: 1 },
+                allY: { label: 'Y', value: 2, min: -500, max: 500, step: 1 },
+                allZ: { label: 'Z', value: 0, min: -500, max: 500, step: 1 },
+              },
+              { collapsed: true }
+            ),
+            Folks: folder(
+              {
+                folksX: { label: 'X', value: 0, min: -500, max: 500, step: 1 },
+                folksY: { label: 'Y', value: 0, min: -500, max: 500, step: 1 },
+                folksZ: { label: 'Z', value: 0, min: -500, max: 500, step: 1 },
+              },
+              { collapsed: true }
+            ),
+            Exclamation: folder(
+              {
+                exclamX: { label: 'X', value: 7, min: -500, max: 500, step: 1 },
+                exclamY: {
+                  label: 'Y',
+                  value: 12,
+                  min: -500,
+                  max: 500,
+                  step: 1,
+                },
+                exclamZ: { label: 'Z', value: 0, min: -500, max: 500, step: 1 },
+              },
+              { collapsed: true }
+            ),
+          },
+          { collapsed: true }
+        ),
+
         Splines: folder(
           {
             'Capital T': folder(
               {
                 capitalTVisible: curveDef().visible,
-                capitalTParticleCount: curveDef().particleCount,
+                capitalTParticleCount: curveDef({ particleCount: 34000 })
+                  .particleCount,
                 capitalTParticleSize: curveDef().particleSize,
                 capitalTOpacity: curveDef().opacity,
                 capitalTFlowSpeed: curveDef().flowSpeed,
@@ -250,7 +308,8 @@ export default function useSceneControls() {
             'hats (h,a,t,s)': folder(
               {
                 hatsVisible: curveDef().visible,
-                hatsParticleCount: curveDef().particleCount,
+                hatsParticleCount: curveDef({ particleCount: 54000 })
+                  .particleCount,
                 hatsParticleSize: curveDef().particleSize,
                 hatsOpacity: curveDef().opacity,
                 hatsFlowSpeed: curveDef().flowSpeed,
@@ -260,7 +319,7 @@ export default function useSceneControls() {
             'T Crossbar': folder(
               {
                 crossbarVisible: curveDef().visible,
-                crossbarParticleCount: curveDef({ particleCount: 1000 })
+                crossbarParticleCount: curveDef({ particleCount: 5000 })
                   .particleCount,
                 crossbarParticleSize: curveDef().particleSize,
                 crossbarOpacity: curveDef().opacity,
@@ -271,7 +330,7 @@ export default function useSceneControls() {
             Apostrophe: folder(
               {
                 apostropheVisible: curveDef().visible,
-                apostropheParticleCount: curveDef({ particleCount: 500 })
+                apostropheParticleCount: curveDef({ particleCount: 2000 })
                   .particleCount,
                 apostropheParticleSize: curveDef().particleSize,
                 apostropheOpacity: curveDef().opacity,
@@ -282,7 +341,8 @@ export default function useSceneControls() {
             All: folder(
               {
                 allLettersVisible: curveDef().visible,
-                allLettersParticleCount: curveDef().particleCount,
+                allLettersParticleCount: curveDef({ particleCount: 40000 })
+                  .particleCount,
                 allLettersParticleSize: curveDef().particleSize,
                 allLettersOpacity: curveDef().opacity,
                 allLettersFlowSpeed: curveDef().flowSpeed,
@@ -292,7 +352,8 @@ export default function useSceneControls() {
             'Capital F': folder(
               {
                 capitalFVisible: curveDef().visible,
-                capitalFParticleCount: curveDef().particleCount,
+                capitalFParticleCount: curveDef({ particleCount: 34000 })
+                  .particleCount,
                 capitalFParticleSize: curveDef().particleSize,
                 capitalFOpacity: curveDef().opacity,
                 capitalFFlowSpeed: curveDef().flowSpeed,
@@ -302,7 +363,7 @@ export default function useSceneControls() {
             'Exclamation !': folder(
               {
                 exclamLineVisible: curveDef().visible,
-                exclamLineParticleCount: curveDef({ particleCount: 1000 })
+                exclamLineParticleCount: curveDef({ particleCount: 5000 })
                   .particleCount,
                 exclamLineParticleSize: curveDef().particleSize,
                 exclamLineOpacity: curveDef().opacity,
@@ -313,7 +374,7 @@ export default function useSceneControls() {
             'Exclamation Dot': folder(
               {
                 exclamDotVisible: curveDef().visible,
-                exclamDotParticleCount: curveDef({ particleCount: 300 })
+                exclamDotParticleCount: curveDef({ particleCount: 2000 })
                   .particleCount,
                 exclamDotParticleSize: curveDef().particleSize,
                 exclamDotOpacity: curveDef().opacity,
@@ -324,7 +385,7 @@ export default function useSceneControls() {
             'olks + tail': folder(
               {
                 olksTailVisible: curveDef().visible,
-                olksTailParticleCount: curveDef({ particleCount: 8000 })
+                olksTailParticleCount: curveDef({ particleCount: 80000 })
                   .particleCount,
                 olksTailParticleSize: curveDef().particleSize,
                 olksTailOpacity: curveDef().opacity,
@@ -366,6 +427,19 @@ export default function useSceneControls() {
       rotSpeed,
       tension: 0.8,
       closed: false,
+      // sub-group positions
+      thatsX,
+      thatsY,
+      thatsZ,
+      allX,
+      allY,
+      allZ,
+      folksX,
+      folksY,
+      folksZ,
+      exclamX,
+      exclamY,
+      exclamZ,
       // per-curve settings — consumed in ThatsAllFolks.jsx
       curves: {
         capitalT: {
@@ -500,6 +574,18 @@ export default function useSceneControls() {
       olksTailParticleSize,
       olksTailOpacity,
       olksTailFlowSpeed,
+      thatsX,
+      thatsY,
+      thatsZ,
+      allX,
+      allY,
+      allZ,
+      folksX,
+      folksY,
+      folksZ,
+      exclamX,
+      exclamY,
+      exclamZ,
     ]
   );
 }

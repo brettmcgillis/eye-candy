@@ -2,7 +2,7 @@ import React from 'react';
 
 import { PerspectiveCamera } from '@react-three/drei';
 
-import SplineGridBox from './components/SplineGridBox';
+import GridBox from './components/GridBox';
 import SplineLine from './components/SplineLine';
 import SplinePoints from './components/SplinePoints';
 
@@ -32,7 +32,7 @@ export default function SplineEditorScene({ points, setPoints, config }) {
         shadow-mapSize={[1024, 1024]}
       />
 
-      <SplineGridBox />
+      <GridBox />
 
       <SplinePoints
         points={points}

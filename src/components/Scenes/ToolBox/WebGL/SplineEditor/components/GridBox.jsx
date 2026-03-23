@@ -42,7 +42,7 @@ const fragmentShader = /* glsl */ `
   }
 `;
 
-export default function SplineGridBox() {
+export default function GridBox() {
   const material = useMemo(
     () =>
       new THREE.ShaderMaterial({

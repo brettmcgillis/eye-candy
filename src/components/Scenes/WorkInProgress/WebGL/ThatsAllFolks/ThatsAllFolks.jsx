@@ -68,7 +68,7 @@ export default function ThatsAllFolks() {
 
   return (
     <>
-      <color attach="background" args={['#18100a']} />
+      <color attach="background" args={[config.bgColor]} />
 
       {/* Environment map — essential for PBR metallic surfaces */}
       <Environment preset="studio" />
@@ -85,13 +85,16 @@ export default function ThatsAllFolks() {
       <OrbitControls target={[0, 200, 0]} />
 
       {/* Lighting */}
-      <ambientLight intensity={1.5} color="#ffe8c0" />
+      <ambientLight
+        intensity={config.ambientIntensity}
+        color={config.ambientColor}
+      />
       <spotLight
-        position={[500, 1400, 700]}
+        position={[config.spotX, config.spotY, config.spotZ]}
         angle={Math.PI * 0.16}
-        intensity={25}
-        decay={0}
-        color="#fff5e0"
+        intensity={config.spotIntensity}
+        decay={config.spotDecay}
+        color={config.spotColor}
         castShadow
         shadow-camera-near={100}
         shadow-camera-far={3000}
@@ -285,9 +288,9 @@ export default function ThatsAllFolks() {
       {/* Post-processing */}
       <EffectComposer>
         <Bloom
-          intensity={0.55}
-          luminanceThreshold={0.1}
-          luminanceSmoothing={0.88}
+          intensity={config.bloomIntensity}
+          luminanceThreshold={config.bloomThreshold}
+          luminanceSmoothing={config.bloomSmoothing}
         />
       </EffectComposer>
     </>

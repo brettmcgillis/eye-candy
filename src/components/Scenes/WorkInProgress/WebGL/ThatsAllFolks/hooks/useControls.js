@@ -138,13 +138,120 @@ export default function useSceneControls() {
       exclamX,
       exclamY,
       exclamZ,
+      // scene
+      bgColor,
+      bloomIntensity,
+      bloomThreshold,
+      bloomSmoothing,
+      // lighting
+      ambientIntensity,
+      ambientColor,
+      spotIntensity,
+      spotColor,
+      spotDecay,
+      spotX,
+      spotY,
+      spotZ,
     },
   ] = useControls('Thats All Folks', () => ({
+    Scene: folder(
+      {
+        bgColor: { label: 'Background', value: '#18100a' },
+        Bloom: folder(
+          {
+            bloomIntensity: {
+              label: 'Intensity',
+              value: 0.55,
+              min: 0,
+              max: 5,
+              step: 0.05,
+            },
+            bloomThreshold: {
+              label: 'Threshold',
+              value: 0.1,
+              min: 0,
+              max: 1,
+              step: 0.01,
+            },
+            bloomSmoothing: {
+              label: 'Smoothing',
+              value: 0.88,
+              min: 0,
+              max: 1,
+              step: 0.01,
+            },
+          },
+          { collapsed: true }
+        ),
+
+        Lighting: folder(
+          {
+            Ambient: folder(
+              {
+                ambientIntensity: {
+                  label: 'Intensity',
+                  value: 1.5,
+                  min: 0,
+                  max: 10,
+                  step: 0.1,
+                },
+                ambientColor: { label: 'Color', value: '#ffe8c0' },
+              },
+              { collapsed: true }
+            ),
+            Spot: folder(
+              {
+                spotIntensity: {
+                  label: 'Intensity',
+                  value: 25,
+                  min: 0,
+                  max: 200,
+                  step: 1,
+                },
+                spotColor: { label: 'Color', value: '#fff5e0' },
+                spotDecay: {
+                  label: 'Decay',
+                  value: 0,
+                  min: 0,
+                  max: 4,
+                  step: 0.1,
+                },
+                spotX: {
+                  label: 'X',
+                  value: 500,
+                  min: -2000,
+                  max: 2000,
+                  step: 10,
+                },
+                spotY: {
+                  label: 'Y',
+                  value: 1400,
+                  min: -2000,
+                  max: 3000,
+                  step: 10,
+                },
+                spotZ: {
+                  label: 'Z',
+                  value: 700,
+                  min: -2000,
+                  max: 2000,
+                  step: 10,
+                },
+              },
+              { collapsed: true }
+            ),
+          },
+          { collapsed: true }
+        ),
+      },
+      { collapsed: true }
+    ),
+
     Gun: folder(
       {
         gunScale: { label: 'Scale', value: 1500, min: 50, max: 2000, step: 10 },
         gunX: { label: 'X', value: -200, min: -800, max: 800, step: 5 },
-        gunY: { label: 'Y', value: 0, min: -400, max: 600, step: 5 },
+        gunY: { label: 'Y', value: 250, min: -400, max: 600, step: 5 },
         gunZ: { label: 'Z', value: 0, min: -800, max: 800, step: 5 },
       },
       { collapsed: true }
@@ -161,7 +268,7 @@ export default function useSceneControls() {
           step: 0.05,
         },
         smokeX: { label: 'X', value: -350, min: -800, max: 800, step: 5 },
-        smokeY: { label: 'Y', value: 300, min: -400, max: 800, step: 5 },
+        smokeY: { label: 'Y', value: 550, min: -400, max: 800, step: 5 },
         smokeZ: { label: 'Z', value: 34, min: -800, max: 800, step: 5 },
         showHelpers: { label: 'Show Helpers', value: false },
 
@@ -427,6 +534,20 @@ export default function useSceneControls() {
       rotSpeed,
       tension: 0.8,
       closed: false,
+      // scene
+      bgColor,
+      bloomIntensity,
+      bloomThreshold,
+      bloomSmoothing,
+      // lighting
+      ambientIntensity,
+      ambientColor,
+      spotIntensity,
+      spotColor,
+      spotDecay,
+      spotX,
+      spotY,
+      spotZ,
       // sub-group positions
       thatsX,
       thatsY,
@@ -586,6 +707,18 @@ export default function useSceneControls() {
       exclamX,
       exclamY,
       exclamZ,
+      bgColor,
+      bloomIntensity,
+      bloomThreshold,
+      bloomSmoothing,
+      ambientIntensity,
+      ambientColor,
+      spotIntensity,
+      spotColor,
+      spotDecay,
+      spotX,
+      spotY,
+      spotZ,
     ]
   );
 }

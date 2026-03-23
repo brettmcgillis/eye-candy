@@ -34,6 +34,9 @@ To Build:
 
 - [ ] CSG Skull. Knock a reversal out of its forehead.
 - [ ] Metaball (marching cubes) lava lamp
+- [ ] Still Pulling For You
+- [ ] Police Presence
+- [ ] Flying High (with both engines on fire)
 - [ ] We should do a scene with Quinns seal, 3rd person camera, player controls w/keyboard and controller.
       Scene should include quinns dice in the environment.
       Scene should include various art images on planes in the environment.

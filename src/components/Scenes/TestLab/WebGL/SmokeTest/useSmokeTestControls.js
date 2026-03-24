@@ -31,6 +31,20 @@ export default function useSmokeTestControls(points, setPoints) {
       attractorStrength,
       attractorRadius,
       fadeRate,
+      showClassicSmoke,
+      showVolSmoke,
+      bgColor,
+      volParticleCount,
+      volSize,
+      volColor,
+      volOpacity,
+      volBlendMode,
+      volSpread,
+      volSpringK,
+      volDamping,
+      volTurbulence,
+      volTurbulenceSpeed,
+      volMaxDrift,
     },
   ] = useControls('Smoke Test', () => ({
     Presets: folder(
@@ -220,6 +234,102 @@ export default function useSmokeTestControls(points, setPoints) {
       { collapsed: true }
     ),
 
+    'A/B Test': folder(
+      {
+        showClassicSmoke: {
+          label: 'Classic Smoke',
+          value: true,
+        },
+        showVolSmoke: {
+          label: 'Volumetric Smoke',
+          value: true,
+        },
+        bgColor: {
+          label: 'Background',
+          value: '#ffffff',
+        },
+      },
+      { collapsed: false }
+    ),
+
+    'Volumetric Smoke': folder(
+      {
+        volParticleCount: {
+          label: 'Particle Count',
+          value: 12000,
+          min: 500,
+          max: 40000,
+          step: 500,
+        },
+        volSize: {
+          label: 'Particle Size',
+          value: 60,
+          min: 5,
+          max: 200,
+          step: 1,
+        },
+        volColor: {
+          label: 'Color',
+          value: '#9090a0',
+        },
+        volOpacity: {
+          label: 'Opacity',
+          value: 0.06,
+          min: 0.005,
+          max: 1,
+          step: 0.005,
+        },
+        volBlendMode: {
+          label: 'Blend Mode',
+          value: 'Normal',
+          options: ['Normal', 'Additive', 'Subtractive', 'Multiply'],
+        },
+        volSpread: {
+          label: 'Spawn Spread',
+          value: 120,
+          min: 0,
+          max: 600,
+          step: 5,
+        },
+        volSpringK: {
+          label: 'Spring Strength',
+          value: 2.5,
+          min: 0,
+          max: 40,
+          step: 0.5,
+        },
+        volDamping: {
+          label: 'Damping /sec',
+          value: 0.1,
+          min: 0.001,
+          max: 1,
+          step: 0.005,
+        },
+        volTurbulence: {
+          label: 'Turbulence',
+          value: 180,
+          min: 0,
+          max: 800,
+          step: 10,
+        },
+        volTurbulenceSpeed: {
+          label: 'Turbulence Speed',
+          value: 0.25,
+          min: 0,
+          max: 3,
+          step: 0.05,
+        },
+        volMaxDrift: {
+          label: 'Max Drift',
+          value: 900,
+          min: 50,
+          max: 2000,
+          step: 50,
+        },
+      },
+      { collapsed: true }
+    ),
+
     ...(localEnv()
       ? {
           copyPreset: button(
@@ -287,6 +397,20 @@ export default function useSmokeTestControls(points, setPoints) {
       fadeRate,
       attractorStrength,
       attractorRadius,
+      showClassicSmoke,
+      showVolSmoke,
+      bgColor,
+      volParticleCount,
+      volSize,
+      volColor,
+      volOpacity,
+      volBlendMode,
+      volSpread,
+      volSpringK,
+      volDamping,
+      volTurbulence,
+      volTurbulenceSpeed,
+      volMaxDrift,
     }),
     [
       tension,
@@ -308,6 +432,20 @@ export default function useSmokeTestControls(points, setPoints) {
       fadeRate,
       attractorStrength,
       attractorRadius,
+      showClassicSmoke,
+      showVolSmoke,
+      bgColor,
+      volParticleCount,
+      volSize,
+      volColor,
+      volOpacity,
+      volBlendMode,
+      volSpread,
+      volSpringK,
+      volDamping,
+      volTurbulence,
+      volTurbulenceSpeed,
+      volMaxDrift,
     ]
   );
 }

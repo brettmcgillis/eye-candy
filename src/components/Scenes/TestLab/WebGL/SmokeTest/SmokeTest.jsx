@@ -8,6 +8,7 @@ import SplinePoints from '../../../../elements/spline/SplinePoints';
 import SPLINE_PRESETS from '../../../../elements/spline/splinePresets';
 import SmokeAttractors from './SmokeAttractors';
 import SmokeParticles from './SmokeParticles';
+import VolumetricSmokeParticles from './VolumetricSmokeParticles';
 import useSmokeTestControls from './useSmokeTestControls';
 
 // 2 attractors sit ON the spline arc at arc midpoints (not at control points).
@@ -29,7 +30,7 @@ export default function SmokeTest() {
 
   return (
     <>
-      <color attach="background" args={['#ffffff']} />
+      <color attach="background" args={[config.bgColor ?? '#ffffff']} />
 
       <PerspectiveCamera
         makeDefault
@@ -52,7 +53,11 @@ export default function SmokeTest() {
         shadow-mapSize={[1024, 1024]}
       />
 
-      <GridBox bgColor="#ffffff" lineColor="#d1d1d1" lineWidth={0.02} />
+      <GridBox
+        bgColor={config.bgColor ?? '#ffffff'}
+        lineColor="#d1d1d1"
+        lineWidth={0.02}
+      />
 
       {/* SplinePoints renders its own OrbitControls with makeDefault */}
       <SplinePoints
@@ -75,7 +80,12 @@ export default function SmokeTest() {
         points={points}
         config={config}
         attractorsRef={attractorsRef}
+        visible={config.showClassicSmoke}
       />
+
+      {config.showVolSmoke && (
+        <VolumetricSmokeParticles points={points} config={config} />
+      )}
 
       {/* SmokeAttractors reads orbit controls from the R3F store (makeDefault) */}
       <SmokeAttractors attractorsRef={attractorsRef} />

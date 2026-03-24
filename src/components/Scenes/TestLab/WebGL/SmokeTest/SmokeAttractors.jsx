@@ -140,8 +140,12 @@ export default function SmokeAttractors({ attractorsRef }) {
       forceUpdate((c) => c + 1);
     }),
     removeAttractor: button(() => {
-      if (attractorsRef.current.length <= 1) return;
+      if (attractorsRef.current.length <= 0) return;
       attractorsRef.current.pop();
+      forceUpdate((c) => c + 1);
+    }),
+    removeAll: button(() => {
+      attractorsRef.current.length = 0;
       forceUpdate((c) => c + 1);
     }),
   });

@@ -6,11 +6,11 @@ import React, { useMemo, useRef } from 'react';
 import { Base, Geometry, Subtraction } from '@react-three/csg';
 import { useFrame } from '@react-three/fiber';
 
-import CandleSmoke from './CandleSmoke';
+import Flame from '../../../../../elements/flame/Flame';
+import Smoke2D from '../../../../../elements/smoke/Smoke2D';
+import VolumetricSmokeParticles from '../../../../TestLab/WebGL/SmokeTest/VolumetricSmokeParticles';
 import Candlewick from './Candlewick';
-import Flame from './Flame';
 import VolumetricFlame from './VolumetricFlame';
-import VolumetricSmoke from './VolumetricSmoke';
 
 function createSeededRandom(startSeed) {
   let seed = startSeed;
@@ -414,6 +414,47 @@ export default function Candle({ config, position = [0, 0, 0] }) {
     width: config.smokeWidth ?? 0.5,
     height: config.smokeHeight ?? 3.0,
   };
+  const volSmokeConfig = useMemo(
+    () => ({
+      volParticleCount: 3000,
+      volColor: config.smokeColor ?? '#b8b8b8',
+      volOpacity: 0.08,
+      volSize: 8,
+      volBlendMode: 'Normal',
+      volSpread: 0.15,
+      volSpringK: 3.0,
+      volDamping: 0.12,
+      volTurbulence: 1.5,
+      volTurbulenceSpeed: 0.2,
+      volMaxDrift: 3,
+      flowSpeed: 0.06,
+      fadeRate: 6,
+      closed: false,
+      tension: 0.5,
+    }),
+    [config.smokeColor]
+  );
+  const smokeHeight = config.smokeHeight ?? 3.0;
+  const topSmokePoints = useMemo(
+    () => [
+      new THREE.Vector3(0, 0, 0),
+      new THREE.Vector3(0, smokeHeight * 0.25, 0),
+      new THREE.Vector3(0, smokeHeight * 0.5, 0),
+      new THREE.Vector3(0, smokeHeight * 0.75, 0),
+      new THREE.Vector3(0, smokeHeight, 0),
+    ],
+    [smokeHeight]
+  );
+  const bottomSmokePoints = useMemo(
+    () => [
+      new THREE.Vector3(0, 0, 0),
+      new THREE.Vector3(0, -smokeHeight * 0.25, 0),
+      new THREE.Vector3(0, -smokeHeight * 0.5, 0),
+      new THREE.Vector3(0, -smokeHeight * 0.75, 0),
+      new THREE.Vector3(0, -smokeHeight, 0),
+    ],
+    [smokeHeight]
+  );
   const topLightRef = useRef();
   const bottomLightRef = useRef();
 
@@ -569,17 +610,18 @@ export default function Candle({ config, position = [0, 0, 0] }) {
         ) : (
           <Flame position={[0.06, halfH + 0.21, 0.06]} motion={flameMotion} />
         ))}
-      <CandleSmoke
+      <Smoke2D
         position={[0.18, halfH + 0.34, 0.088]}
         smoke={smokeConfig}
         visible={!lit && !useVolumetricSmoke}
       />
-      {useVolumetricSmoke && (
-        <VolumetricSmoke
-          position={[0.18, halfH + 0.34, 0.088]}
-          smoke={smokeConfig}
-          visible={!lit}
-        />
+      {useVolumetricSmoke && !lit && (
+        <group position={[0.18, halfH + 0.34, 0.088]}>
+          <VolumetricSmokeParticles
+            points={topSmokePoints}
+            config={volSmokeConfig}
+          />
+        </group>
       )}
       <pointLight
         ref={topLightRef}
@@ -607,19 +649,19 @@ export default function Candle({ config, position = [0, 0, 0] }) {
             motion={flameMotion}
           />
         ))}
-      <CandleSmoke
+      <Smoke2D
         position={[0.18, -(halfH + 0.34), 0.088]}
         inverted
         smoke={smokeConfig}
         visible={!lit && !useVolumetricSmoke}
       />
-      {useVolumetricSmoke && (
-        <VolumetricSmoke
-          position={[0.18, -(halfH + 0.34), 0.088]}
-          inverted
-          smoke={smokeConfig}
-          visible={!lit}
-        />
+      {useVolumetricSmoke && !lit && (
+        <group position={[0.18, -(halfH + 0.34), 0.088]}>
+          <VolumetricSmokeParticles
+            points={bottomSmokePoints}
+            config={volSmokeConfig}
+          />
+        </group>
       )}
       <pointLight
         ref={bottomLightRef}

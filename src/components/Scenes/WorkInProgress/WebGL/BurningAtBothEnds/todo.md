@@ -30,11 +30,11 @@
 - [x] Add a mode for candle off. show candle smoke instead of flame.
 - [x] Wick should support hot (current ember) and cold mode (all black, with some grey char) to better suport candle off mode.
 - [ ] When lit mode changes we should lerp the flame down to nothing then lerp the smoke up to it's size.
-- [ ] Move flame and smoke materials to materials folder
-- [ ] Rename CandleSmoke to 2dSmoke
-- [ ] Move 2dSmoke, flame to compeonets/elements as generic reusable compoents.
-- [ ] Replace VolumetricSmoke with VolumetricSmokeParticles
-- [ ] Create some nice lil splines for VolumetricSmokeParticles to follow.
+- [x] Move flame and smoke materials to components/materials folder as reusable materials.
+- [x] Rename CandleSmoke to 2DSmoke
+- [x] Move 2DSmoke, flame to components/elements as generic reusable compoents.
+- [x] Replace the scenes current VolumetricSmoke with our reusable VolumetricSmokeParticles
+- [ ] Create some nice lil splines for VolumetricSmokeParticles to follow and place them coming off the wick.
 
 # // Bugs
 
@@ -44,6 +44,29 @@
 - [x] soften sharp points on melt crater and wax buildup
 - [x] blinking point light moved inside flame volume near wick (no visible hovering source)
 - [ ] Cleanup controls, all the candle,wax,drip,flame, smoke, related controls should be in the candle folder. update folder names with proper labels, update control names with concise labels. Make sure controls are nested properly
+  - Burning at both ends
+    - Scene
+      - BG
+      - Amblient light intensity
+      - post processing
+    - Candle
+      - Lit
+      - Height
+      - Radius
+      - Tilt
+      - Flame
+        - Type
+        - shader flame controls
+        - volume flame controls
+      - Smoke
+        - Type
+        - color
+        - 2d smoke controls
+        - volume smoke controls
+      - Wick
+        - Hot
+      - Wax
+        - current wax controls
 - [ ] Update the hook for useCandleControls. Should it just return a leva folder, so it can be composed within the scene folder?
 - [x] The drip metaballs are getting clipped if they go too far off the face of the cylinder.
 - [ ] Default camera position needs to be back far enough, and up high enough to see the reflection on the floor plane

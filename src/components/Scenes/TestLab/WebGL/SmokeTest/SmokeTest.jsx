@@ -3,22 +3,13 @@ import React, { useRef, useState } from 'react';
 import { PerspectiveCamera } from '@react-three/drei';
 
 import GridBox from '../../../../elements/gridbox/GridBox';
+import SmokeParticles from '../../../../elements/smoke/SmokeParticles';
 import SplineLine from '../../../../elements/spline/SplineLine';
 import SplinePoints from '../../../../elements/spline/SplinePoints';
 import SPLINE_PRESETS from '../../../../elements/spline/splinePresets';
 import SmokeAttractors from './SmokeAttractors';
-import SmokeParticles from './SmokeParticles';
 import VolumetricSmokeParticles from './VolumetricSmokeParticles';
 import useSmokeTestControls from './useSmokeTestControls';
-
-// 2 attractors sit ON the spline arc at arc midpoints (not at control points).
-// 2 attractors are NEAR the arc, offset ~100u so they pull without pinning.
-const INITIAL_ATTRACTORS = [
-  { position: [313, 313, 205], direction: [0, 1, 0], rotation: [0, 0, 0] },
-  { position: [-270, 338, 205], direction: [0, 1, 0], rotation: [0, 0, 0] },
-  { position: [-184, 357, -58], direction: [0, 1, 0], rotation: [0, 0, 0] },
-  { position: [72, 273, 331], direction: [0, 1, 0], rotation: [0, 0, 0] },
-];
 
 export default function SmokeTest() {
   const [points, setPoints] = useState(() =>
@@ -26,7 +17,12 @@ export default function SmokeTest() {
   );
 
   const config = useSmokeTestControls(points, setPoints);
-  const attractorsRef = useRef(INITIAL_ATTRACTORS.map((a) => ({ ...a })));
+  const attractorsRef = useRef([
+    { position: [313, 313, 205], direction: [0, 1, 0], rotation: [0, 0, 0] },
+    { position: [-270, 338, 205], direction: [0, 1, 0], rotation: [0, 0, 0] },
+    { position: [-184, 357, -58], direction: [0, 1, 0], rotation: [0, 0, 0] },
+    { position: [72, 273, 331], direction: [0, 1, 0], rotation: [0, 0, 0] },
+  ]);
 
   return (
     <>
@@ -76,12 +72,13 @@ export default function SmokeTest() {
         arcSegments={config.arcSegments}
       />
 
-      <SmokeParticles
-        points={points}
-        config={config}
-        attractorsRef={attractorsRef}
-        visible={config.showClassicSmoke}
-      />
+      {config.showClassicSmoke && (
+        <SmokeParticles
+          points={points}
+          config={config}
+          attractorsRef={attractorsRef}
+        />
+      )}
 
       {config.showVolSmoke && (
         <VolumetricSmokeParticles points={points} config={config} />

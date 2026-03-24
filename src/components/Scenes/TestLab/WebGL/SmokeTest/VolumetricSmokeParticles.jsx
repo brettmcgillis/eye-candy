@@ -94,7 +94,11 @@ const BLEND_MODES = {
   Multiply: THREE.MultiplyBlending,
 };
 
-export default function VolumetricSmokeParticles({ points, config }) {
+export default function VolumetricSmokeParticles({
+  points,
+  config,
+  attractorsRef,
+}) {
   const pointsRef = useRef();
   const geometryRef = useRef();
   const timeRef = useRef(0);
@@ -285,6 +289,8 @@ export default function VolumetricSmokeParticles({ points, config }) {
     const damping = config.volDamping ?? 0.1;
     const dampPerFrame = damping ** dt;
     const maxDrift2 = (config.volMaxDrift ?? 900) ** 2;
+    const attractorStrength = config.attractorStrength ?? 300;
+    const attractorRadius = config.attractorRadius ?? 300;
 
     const [splineStartX, splineStartY, splineStartZ] = lookup;
     const { positions, velocities, splineT, alphas, phases, N } = state;
@@ -372,6 +378,31 @@ export default function VolumetricSmokeParticles({ points, config }) {
         vx += (sx - px) * springK * dt;
         vy += (sy - py) * springK * dt;
         vz += (sz - pz) * springK * dt;
+
+        // Radial attractor forces + directional component from attractor rotation.
+        const attractors = attractorsRef?.current ?? [];
+        for (let a = 0; a < attractors.length; a += 1) {
+          const ap = attractors[a].position;
+          const dx = ap[0] - px;
+          const dy = ap[1] - py;
+          const dz = ap[2] - pz;
+          const dist2 = dx * dx + dy * dy + dz * dz;
+          const dist = Math.sqrt(dist2) + 0.1;
+          const falloff = attractorRadius * attractorRadius;
+          const radialStrength =
+            (attractorStrength * falloff) / (dist2 + falloff);
+          vx += (dx / dist) * radialStrength * dt;
+          vy += (dy / dist) * radialStrength * dt;
+          vz += (dz / dist) * radialStrength * dt;
+          const dir = attractors[a].direction;
+          if (dir) {
+            const dirStrength =
+              (attractorStrength * 0.4 * falloff) / (dist2 + falloff);
+            vx += dir[0] * dirStrength * dt;
+            vy += dir[1] * dirStrength * dt;
+            vz += dir[2] * dirStrength * dt;
+          }
+        }
 
         // Volumetric advection via a layered sinusoidal velocity field.
         // Mirrors the divergence-free character of the Shadertoy Buffer A/C

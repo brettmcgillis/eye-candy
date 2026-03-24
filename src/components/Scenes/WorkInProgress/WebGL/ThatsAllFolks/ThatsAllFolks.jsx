@@ -11,8 +11,8 @@ import {
 import { Bloom, EffectComposer } from '@react-three/postprocessing';
 
 import Magnum from '../../../../elements/magnum/Magnum';
-import Smoke from './components/Smoke';
-import SplineLine from './components/SplineLine';
+import SmokeParticles from '../../../../elements/smoke/SmokeParticles';
+import SplineLine from '../../../../elements/spline/SplineLine';
 import useSceneControls from './hooks/useControls';
 import {
   ALL_LETTERS,
@@ -133,25 +133,25 @@ export default function ThatsAllFolks() {
         {/* That's — Capital T + hats + crossbar + apostrophe */}
         <group position={[config.thatsX, config.thatsY, config.thatsZ]}>
           {curves.capitalT.visible && (
-            <Smoke
+            <SmokeParticles
               points={pts.capitalT}
               config={mergeCurveConfig(config, curves.capitalT)}
             />
           )}
           {curves.hats.visible && (
-            <Smoke
+            <SmokeParticles
               points={pts.hats}
               config={mergeCurveConfig(config, curves.hats)}
             />
           )}
           {curves.crossbar.visible && (
-            <Smoke
+            <SmokeParticles
               points={pts.crossbar}
               config={mergeCurveConfig(config, curves.crossbar)}
             />
           )}
           {curves.apostrophe.visible && (
-            <Smoke
+            <SmokeParticles
               points={pts.apostrophe}
               config={mergeCurveConfig(config, curves.apostrophe)}
             />
@@ -161,7 +161,7 @@ export default function ThatsAllFolks() {
         {/* All */}
         <group position={[config.allX, config.allY, config.allZ]}>
           {curves.allLetters.visible && (
-            <Smoke
+            <SmokeParticles
               points={pts.allLetters}
               config={mergeCurveConfig(config, curves.allLetters)}
             />
@@ -171,13 +171,13 @@ export default function ThatsAllFolks() {
         {/* Folks — Capital F + olks tail */}
         <group position={[config.folksX, config.folksY, config.folksZ]}>
           {curves.capitalF.visible && (
-            <Smoke
+            <SmokeParticles
               points={pts.capitalF}
               config={mergeCurveConfig(config, curves.capitalF)}
             />
           )}
           {curves.olksTail.visible && (
-            <Smoke
+            <SmokeParticles
               points={pts.olksTail}
               config={mergeCurveConfig(config, curves.olksTail)}
             />
@@ -187,13 +187,13 @@ export default function ThatsAllFolks() {
         {/* Exclamation — line + dot */}
         <group position={[config.exclamX, config.exclamY, config.exclamZ]}>
           {curves.exclamLine.visible && (
-            <Smoke
+            <SmokeParticles
               points={pts.exclamLine}
               config={mergeCurveConfig(config, curves.exclamLine)}
             />
           )}
           {curves.exclamDot.visible && (
-            <Smoke
+            <SmokeParticles
               points={pts.exclamDot}
               config={mergeCurveConfig(config, curves.exclamDot)}
             />

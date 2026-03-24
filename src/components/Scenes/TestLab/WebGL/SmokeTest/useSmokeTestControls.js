@@ -31,6 +31,10 @@ export default function useSmokeTestControls(points, setPoints) {
       attractorStrength,
       attractorRadius,
       fadeRate,
+      growth,
+      fadeExponent,
+      buoyancy,
+      rotSpeed,
       showClassicSmoke,
       showVolSmoke,
       bgColor,
@@ -94,17 +98,19 @@ export default function useSmokeTestControls(points, setPoints) {
           () => {
             setPoints((prev) => {
               const last = prev[prev.length - 1] ?? new THREE.Vector3(0, 0, 0);
+              // GridBox spans Y: -200 to 1800 — use inner bounds with margin
+              const Y_MIN = -150;
+              const Y_MAX = 1750;
+              let newY = last.y + (Math.random() - 0.5) * 200;
+              if (newY > Y_MAX) newY = 2 * Y_MAX - newY;
+              if (newY < Y_MIN) newY = 2 * Y_MIN - newY;
               return [
                 ...prev,
-                last
-                  .clone()
-                  .add(
-                    new THREE.Vector3(
-                      (Math.random() - 0.5) * 200,
-                      Math.random() * 100,
-                      (Math.random() - 0.5) * 200
-                    )
-                  ),
+                new THREE.Vector3(
+                  last.x + (Math.random() - 0.5) * 200,
+                  newY,
+                  last.z + (Math.random() - 0.5) * 200
+                ),
               ];
             });
           },
@@ -146,6 +152,34 @@ export default function useSmokeTestControls(points, setPoints) {
           min: 0.005,
           max: 1,
           step: 0.005,
+        },
+        growth: {
+          label: 'Growth',
+          value: 2.0,
+          min: 0,
+          max: 10,
+          step: 0.1,
+        },
+        fadeExponent: {
+          label: 'Fade Exponent',
+          value: 1.2,
+          min: 0.1,
+          max: 5,
+          step: 0.1,
+        },
+        buoyancy: {
+          label: 'Buoyancy',
+          value: 20,
+          min: -200,
+          max: 200,
+          step: 5,
+        },
+        rotSpeed: {
+          label: 'Rotation Speed',
+          value: 0.3,
+          min: 0,
+          max: 5,
+          step: 0.05,
         },
       },
       { collapsed: false }
@@ -351,6 +385,10 @@ export default function useSmokeTestControls(points, setPoints) {
                 fadeRate,
                 attractorStrength,
                 attractorRadius,
+                growth,
+                fadeExponent,
+                buoyancy,
+                rotSpeed,
                 points: points.map((p) => ({ x: p.x, y: p.y, z: p.z })),
               };
               const str = JSON.stringify(snap, null, 2).replace(
@@ -394,9 +432,13 @@ export default function useSmokeTestControls(points, setPoints) {
       turbulenceSpeed,
       spawnSpread,
       maxDrift,
-      fadeRate,
       attractorStrength,
       attractorRadius,
+      fadeRate,
+      growth,
+      fadeExponent,
+      buoyancy,
+      rotSpeed,
       showClassicSmoke,
       showVolSmoke,
       bgColor,
@@ -429,9 +471,13 @@ export default function useSmokeTestControls(points, setPoints) {
       turbulenceSpeed,
       spawnSpread,
       maxDrift,
-      fadeRate,
       attractorStrength,
       attractorRadius,
+      fadeRate,
+      growth,
+      fadeExponent,
+      buoyancy,
+      rotSpeed,
       showClassicSmoke,
       showVolSmoke,
       bgColor,

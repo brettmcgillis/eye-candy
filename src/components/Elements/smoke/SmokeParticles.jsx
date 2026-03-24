@@ -1,6 +1,9 @@
-// TafSmoke — spline-driven smoke particle system.
-// Adapted from SmokeParticles (SmokeTest) with per-instance lookup caches
-// so multiple TafSmoke components can safely share a frame.  No attractors.
+// SmokeParticles — spline-driven smoke particle system.
+// Shared between SmokeTest (design) and ThatsAllFolks (production).
+// Per-instance lookup caches allow multiple SmokeParticles to safely
+// coexist in the same frame.
+// Optional attractorsRef: pass a ref of attractor objects (SmokeTest) or omit
+// (ThatsAllFolks) — physics is skipped when no attractors are present.
 import * as THREE from 'three';
 
 import React, { useEffect, useMemo, useRef } from 'react';
@@ -107,14 +110,18 @@ function createSmokeTexture() {
 // and we read immediately (synchronous, no yielding between calls).
 const curveTmp = new THREE.Vector3();
 
-export default function TafSmoke({ points, config }) {
+export default function SmokeParticles({
+  points,
+  config,
+  attractorsRef = null,
+}) {
   const pointsRef = useRef();
   const geometryRef = useRef();
   const materialRef = useRef();
   const texture = useMemo(createSmokeTexture, []);
   const timeRef = useRef(0);
   const stateRef = useRef(null);
-  // Per-instance lookup cache — prevents data races between multiple TafSmoke instances.
+  // Per-instance lookup cache — prevents data races between multiple SmokeParticles instances.
   const lookupRef = useRef(new Float32Array(CURVE_SAMPLES * 3));
 
   const { particleCount } = config;
@@ -297,6 +304,8 @@ export default function TafSmoke({ points, config }) {
       springK,
       flowSpeed,
       damping,
+      attractorStrength,
+      attractorRadius,
       maxDrift,
       turbulence,
       turbulenceSpeed,
@@ -306,6 +315,8 @@ export default function TafSmoke({ points, config }) {
       buoyancy,
       rotSpeed,
     } = config;
+
+    const attractors = attractorsRef ? attractorsRef.current : null;
 
     timeRef.current += dt;
     const time = timeRef.current;
@@ -326,7 +337,7 @@ export default function TafSmoke({ points, config }) {
     for (let i = 0; i < N; i += 1) {
       const pi = i * 3;
       splineT[i] += flowSpeed * dt;
-      // Age: 0 at barrel/start, 1 at spline end — drives size growth and alpha fade
+      // Age: 0 at start, 1 at spline end — drives size growth and alpha fade
       ages[i] = Math.max(0, Math.min(1, splineT[i]));
       // Per-particle slow rotation — variation from phases avoids lock-step spinning
       rotations[i] += rotSpeed * (0.7 + Math.sin(phases[i]) * 0.3) * dt;
@@ -400,6 +411,32 @@ export default function TafSmoke({ points, config }) {
         vx += (sx - px) * springK * dt;
         vy += (sy - py) * springK * dt;
         vz += (sz - pz) * springK * dt;
+
+        // Radial attractor forces + directional component from attractor rotation.
+        if (attractors) {
+          for (let a = 0; a < attractors.length; a += 1) {
+            const ap = attractors[a].position;
+            const adx = ap[0] - px;
+            const ady = ap[1] - py;
+            const adz = ap[2] - pz;
+            const dist2 = adx * adx + ady * ady + adz * adz;
+            const dist = Math.sqrt(dist2) + 0.1;
+            const falloff = attractorRadius * attractorRadius;
+            const radialStrength =
+              (attractorStrength * falloff) / (dist2 + falloff);
+            vx += (adx / dist) * radialStrength * dt;
+            vy += (ady / dist) * radialStrength * dt;
+            vz += (adz / dist) * radialStrength * dt;
+            const dir = attractors[a].direction;
+            if (dir) {
+              const dirStrength =
+                (attractorStrength * 0.4 * falloff) / (dist2 + falloff);
+              vx += dir[0] * dirStrength * dt;
+              vy += dir[1] * dirStrength * dt;
+              vz += dir[2] * dirStrength * dt;
+            }
+          }
+        }
 
         const ph = phases[i];
         const ts = time * turbulenceSpeed;

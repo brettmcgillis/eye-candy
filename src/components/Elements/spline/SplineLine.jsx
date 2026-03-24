@@ -8,7 +8,7 @@ export default function SplineLine({
   points,
   tension,
   closed,
-  curveType,
+  curveType = 'catmullrom',
   color,
   visible,
   arcSegments,

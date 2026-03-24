@@ -14,6 +14,7 @@ const PolicePresence = lazy(
 const StillPullingForYou = lazy(
   () => import('./WebGL/StillPullingForYou/StillPullingForYou')
 );
+const RowItAlone = lazy(() => import('./WebGL/RowItAlone/RowItAlone'));
 
 const scenes = [
   {
@@ -63,6 +64,12 @@ const scenes = [
     label: 'Still Pulling For You',
     icon: '🚢',
     Component: StillPullingForYou,
+  },
+  {
+    id: 'rowItAlone',
+    label: 'Row It Alone',
+    icon: '🚣',
+    Component: RowItAlone,
   },
 ];
 

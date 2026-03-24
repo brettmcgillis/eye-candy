@@ -7,6 +7,13 @@ const BurningAtBothEnds = lazy(
 const CrtTest = lazy(() => import('./WebGL/CRTTest/CrtTest'));
 const DumpsterFire = lazy(() => import('./WebGL/DumpsterFire/DumpsterFire'));
 const ThatsAllFolks = lazy(() => import('./WebGL/ThatsAllFolks/ThatsAllFolks'));
+const FlyingHigh = lazy(() => import('./WebGL/FlyingHigh/FlyingHigh'));
+const PolicePresence = lazy(
+  () => import('./WebGL/PolicePresence/PolicePresence')
+);
+const StillPullingForYou = lazy(
+  () => import('./WebGL/StillPullingForYou/StillPullingForYou')
+);
 
 const scenes = [
   {
@@ -14,12 +21,6 @@ const scenes = [
     label: 'None',
     icon: '💀',
     Component: NoScene,
-  },
-  {
-    id: 'burningAtBothEnds',
-    label: 'Burning At Both Ends',
-    icon: '🕯️',
-    Component: BurningAtBothEnds,
   },
   {
     id: 'crtTest',
@@ -34,10 +35,34 @@ const scenes = [
     Component: DumpsterFire,
   },
   {
+    id: 'burningAtBothEnds',
+    label: 'Burning At Both Ends',
+    icon: '🕯️',
+    Component: BurningAtBothEnds,
+  },
+  {
     id: 'thatsAllFolks',
     label: "That's All Folks",
     icon: '🔫💨',
     Component: ThatsAllFolks,
+  },
+  {
+    id: 'flyingHigh',
+    label: 'Flying High',
+    icon: '✈️',
+    Component: FlyingHigh,
+  },
+  {
+    id: 'policePresence',
+    label: 'Police Presence',
+    icon: '🚓',
+    Component: PolicePresence,
+  },
+  {
+    id: 'stillPullingForYou',
+    label: 'Still Pulling For You',
+    icon: '🚢',
+    Component: StillPullingForYou,
   },
 ];
 

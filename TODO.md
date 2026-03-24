@@ -34,9 +34,6 @@ To Build:
 
 - [ ] CSG Skull. Knock a reversal out of its forehead.
 - [ ] Metaball (marching cubes) lava lamp
-- [ ] Still Pulling For You
-- [ ] Police Presence
-- [ ] Flying High (with both engines on fire)
 - [ ] We should do a scene with Quinns seal, 3rd person camera, player controls w/keyboard and controller.
       Scene should include quinns dice in the environment. Get low-LOD versions.
       Scene should include various art images on planes in the environment.
@@ -77,6 +74,9 @@ To Build:
 - [CRTTest](src/components/scenes/WorkInProgress/WebGL/CRTTest/todo.md)
 - [DumpsterFire](src/components/scenes/WorkInProgress/WebGL/DumpsterFire/todo.md)
 - [ThatsAllFolks](src/components/scenes/WorkInProgress/WebGL/ThatsAllFolks/todo.md)
+- [StillPullingForYou](src/components/scenes/WorkInProgress/WebGL/StillPullingForYou/todo.md)
+- [PolicePresence](src/components/scenes/WorkInProgress/WebGL/PolicePresence/todo.md)
+- [FlyingHigh](src/components/scenes/WorkInProgress/WebGL/FlyingHigh/todo.md)
 
 **Template**
 

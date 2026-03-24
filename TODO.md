@@ -77,6 +77,7 @@ To Build:
 - [StillPullingForYou](src/components/scenes/WorkInProgress/WebGL/StillPullingForYou/todo.md)
 - [PolicePresence](src/components/scenes/WorkInProgress/WebGL/PolicePresence/todo.md)
 - [FlyingHigh](src/components/scenes/WorkInProgress/WebGL/FlyingHigh/todo.md)
+- [RowItAlone](src/components/scenes/WorkInProgress/WebGL/RowItAlone/todo.md)
 
 **Template**
 

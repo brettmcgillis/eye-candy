@@ -475,7 +475,7 @@ export default function VolumetricSmokeParticles({
         transparent
         blending={THREE.NormalBlending}
         depthWrite={false}
-        depthTest={false}
+        depthTest
       />
     </points>
   );

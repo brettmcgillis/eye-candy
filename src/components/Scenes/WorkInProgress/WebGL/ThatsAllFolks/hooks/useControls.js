@@ -54,12 +54,14 @@ export default function useSceneControls() {
       gunZ,
       // smoke group
       particleColor,
+      smokeType,
+      blendMode,
       smokeScale,
       smokeX,
       smokeY,
       smokeZ,
       showHelpers,
-      // physics global
+      // particle physics
       springK,
       damping,
       turbulence,
@@ -71,6 +73,14 @@ export default function useSceneControls() {
       fadeExponent,
       buoyancy,
       rotSpeed,
+      // volumetric physics
+      volSpringK,
+      volDamping,
+      volTurbulence,
+      volTurbulenceSpeed,
+      volSpread,
+      volMaxDrift,
+      volFadeRate,
       // Capital T
       capitalTVisible,
       capitalTParticleCount,
@@ -259,6 +269,16 @@ export default function useSceneControls() {
 
     Smoke: folder(
       {
+        smokeType: {
+          label: 'Smoke Type',
+          value: 'particle',
+          options: ['particle', 'volumetric', 'both'],
+        },
+        blendMode: {
+          label: 'Blend Mode',
+          value: 'Normal',
+          options: ['Normal', 'Additive', 'Subtractive', 'Multiply'],
+        },
         particleColor: { label: 'Color', value: '#d0cdc9' },
         smokeScale: {
           label: 'Scale',
@@ -272,7 +292,7 @@ export default function useSceneControls() {
         smokeZ: { label: 'Z', value: 34, min: -800, max: 800, step: 5 },
         showHelpers: { label: 'Show Helpers', value: false },
 
-        Physics: folder(
+        'Particle Physics': folder(
           {
             springK: {
               label: 'Spring',
@@ -350,6 +370,61 @@ export default function useSceneControls() {
               min: 0,
               max: 2,
               step: 0.05,
+            },
+          },
+          { collapsed: true }
+        ),
+
+        'Volumetric Physics': folder(
+          {
+            volSpringK: {
+              label: 'Spring',
+              value: 2.5,
+              min: 0,
+              max: 40,
+              step: 0.5,
+            },
+            volDamping: {
+              label: 'Damping',
+              value: 0.1,
+              min: 0.001,
+              max: 1,
+              step: 0.005,
+            },
+            volTurbulence: {
+              label: 'Turbulence',
+              value: 180,
+              min: 0,
+              max: 800,
+              step: 10,
+            },
+            volTurbulenceSpeed: {
+              label: 'Turb Speed',
+              value: 0.25,
+              min: 0,
+              max: 3,
+              step: 0.05,
+            },
+            volSpread: {
+              label: 'Spawn Spread',
+              value: 120,
+              min: 0,
+              max: 600,
+              step: 5,
+            },
+            volMaxDrift: {
+              label: 'Max Drift',
+              value: 900,
+              min: 50,
+              max: 2000,
+              step: 50,
+            },
+            volFadeRate: {
+              label: 'Fade Rate',
+              value: 8,
+              min: 1,
+              max: 30,
+              step: 1,
             },
           },
           { collapsed: true }
@@ -511,6 +586,8 @@ export default function useSceneControls() {
   return useMemo(
     () => ({
       showHelpers,
+      smokeType,
+      blendMode,
       gunScale,
       gunX,
       gunY,
@@ -532,6 +609,14 @@ export default function useSceneControls() {
       fadeExponent,
       buoyancy,
       rotSpeed,
+      // volumetric physics
+      volSpringK,
+      volDamping,
+      volTurbulence,
+      volTurbulenceSpeed,
+      volSpread,
+      volMaxDrift,
+      volFadeRate,
       tension: 0.8,
       closed: false,
       // scene
@@ -630,6 +715,7 @@ export default function useSceneControls() {
     }),
     [
       showHelpers,
+      smokeType,
       gunScale,
       gunX,
       gunY,
@@ -650,6 +736,13 @@ export default function useSceneControls() {
       fadeExponent,
       buoyancy,
       rotSpeed,
+      volSpringK,
+      volDamping,
+      volTurbulence,
+      volTurbulenceSpeed,
+      volSpread,
+      volMaxDrift,
+      volFadeRate,
       capitalTVisible,
       capitalTParticleCount,
       capitalTParticleSize,

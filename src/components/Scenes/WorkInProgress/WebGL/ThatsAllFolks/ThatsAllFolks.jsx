@@ -13,6 +13,7 @@ import { Bloom, EffectComposer } from '@react-three/postprocessing';
 import Magnum from '../../../../elements/magnum/Magnum';
 import SmokeParticles from '../../../../elements/smoke/SmokeParticles';
 import SplineLine from '../../../../elements/spline/SplineLine';
+import VolumetricSmokeParticles from '../../../TestLab/WebGL/SmokeTest/VolumetricSmokeParticles';
 import useSceneControls from './hooks/useControls';
 import {
   ALL_LETTERS,
@@ -39,13 +40,58 @@ function mergeCurveConfig(globalConfig, curveConfig) {
     particleSize: curveConfig.particleSize,
     opacity: curveConfig.opacity,
     flowSpeed: curveConfig.flowSpeed,
+    blendMode: globalConfig.blendMode,
   };
+}
+
+// Volumetric variant — maps per-curve overrides and bridges the shared physics
+// param names (springK, turbulence, …) to the vol* names that
+// VolumetricSmokeParticles reads, so the Leva panel controls both modes.
+function mergeVolCurveConfig(globalConfig, curveConfig) {
+  return {
+    ...globalConfig,
+    volParticleCount: curveConfig.particleCount,
+    flowSpeed: curveConfig.flowSpeed,
+    // curve-level appearance overrides
+    volColor: globalConfig.particleColor,
+    volOpacity: curveConfig.opacity,
+    volSize: curveConfig.particleSize,
+    // bridge blendMode → volBlendMode; vol physics spread in via ...globalConfig
+    volBlendMode: globalConfig.blendMode,
+    fadeRate: globalConfig.volFadeRate,
+  };
+}
+
+// ─── Per-curve smoke renderer ────────────────────────────────────────────────
+// Renders particle, volumetric, or both layers for a single curve.
+// Using a named component (not inline) keeps Three.js from unmounting/remounting
+// the geometry on every parent re-render.
+function SmokeCurve({ smokeType, points, globalConfig, curveConfig }) {
+  const showParticle = smokeType === 'particle' || smokeType === 'both';
+  const showVolumetric = smokeType === 'volumetric' || smokeType === 'both';
+  return (
+    <>
+      {showParticle && (
+        <SmokeParticles
+          points={points}
+          config={mergeCurveConfig(globalConfig, curveConfig)}
+        />
+      )}
+      {showVolumetric && (
+        <VolumetricSmokeParticles
+          points={points}
+          config={mergeVolCurveConfig(globalConfig, curveConfig)}
+        />
+      )}
+    </>
+  );
 }
 
 // ─── Scene ───────────────────────────────────────────────────────────────────
 
 export default function ThatsAllFolks() {
   const config = useSceneControls();
+  const { smokeType } = config;
 
   // Build all 9 curve point arrays once — world positioning is handled by
   // the smoke <group> transform controlled via Leva.
@@ -133,27 +179,35 @@ export default function ThatsAllFolks() {
         {/* That's — Capital T + hats + crossbar + apostrophe */}
         <group position={[config.thatsX, config.thatsY, config.thatsZ]}>
           {curves.capitalT.visible && (
-            <SmokeParticles
+            <SmokeCurve
+              smokeType={smokeType}
               points={pts.capitalT}
-              config={mergeCurveConfig(config, curves.capitalT)}
+              globalConfig={config}
+              curveConfig={curves.capitalT}
             />
           )}
           {curves.hats.visible && (
-            <SmokeParticles
+            <SmokeCurve
+              smokeType={smokeType}
               points={pts.hats}
-              config={mergeCurveConfig(config, curves.hats)}
+              globalConfig={config}
+              curveConfig={curves.hats}
             />
           )}
           {curves.crossbar.visible && (
-            <SmokeParticles
+            <SmokeCurve
+              smokeType={smokeType}
               points={pts.crossbar}
-              config={mergeCurveConfig(config, curves.crossbar)}
+              globalConfig={config}
+              curveConfig={curves.crossbar}
             />
           )}
           {curves.apostrophe.visible && (
-            <SmokeParticles
+            <SmokeCurve
+              smokeType={smokeType}
               points={pts.apostrophe}
-              config={mergeCurveConfig(config, curves.apostrophe)}
+              globalConfig={config}
+              curveConfig={curves.apostrophe}
             />
           )}
         </group>
@@ -161,9 +215,11 @@ export default function ThatsAllFolks() {
         {/* All */}
         <group position={[config.allX, config.allY, config.allZ]}>
           {curves.allLetters.visible && (
-            <SmokeParticles
+            <SmokeCurve
+              smokeType={smokeType}
               points={pts.allLetters}
-              config={mergeCurveConfig(config, curves.allLetters)}
+              globalConfig={config}
+              curveConfig={curves.allLetters}
             />
           )}
         </group>
@@ -171,15 +227,19 @@ export default function ThatsAllFolks() {
         {/* Folks — Capital F + olks tail */}
         <group position={[config.folksX, config.folksY, config.folksZ]}>
           {curves.capitalF.visible && (
-            <SmokeParticles
+            <SmokeCurve
+              smokeType={smokeType}
               points={pts.capitalF}
-              config={mergeCurveConfig(config, curves.capitalF)}
+              globalConfig={config}
+              curveConfig={curves.capitalF}
             />
           )}
           {curves.olksTail.visible && (
-            <SmokeParticles
+            <SmokeCurve
+              smokeType={smokeType}
               points={pts.olksTail}
-              config={mergeCurveConfig(config, curves.olksTail)}
+              globalConfig={config}
+              curveConfig={curves.olksTail}
             />
           )}
         </group>
@@ -187,15 +247,19 @@ export default function ThatsAllFolks() {
         {/* Exclamation — line + dot */}
         <group position={[config.exclamX, config.exclamY, config.exclamZ]}>
           {curves.exclamLine.visible && (
-            <SmokeParticles
+            <SmokeCurve
+              smokeType={smokeType}
               points={pts.exclamLine}
-              config={mergeCurveConfig(config, curves.exclamLine)}
+              globalConfig={config}
+              curveConfig={curves.exclamLine}
             />
           )}
           {curves.exclamDot.visible && (
-            <SmokeParticles
+            <SmokeCurve
+              smokeType={smokeType}
               points={pts.exclamDot}
-              config={mergeCurveConfig(config, curves.exclamDot)}
+              globalConfig={config}
+              curveConfig={curves.exclamDot}
             />
           )}
         </group>

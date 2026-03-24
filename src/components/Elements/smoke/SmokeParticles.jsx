@@ -110,6 +110,13 @@ function createSmokeTexture() {
 // and we read immediately (synchronous, no yielding between calls).
 const curveTmp = new THREE.Vector3();
 
+const BLEND_MODES = {
+  Normal: THREE.NormalBlending,
+  Additive: THREE.AdditiveBlending,
+  Subtractive: THREE.SubtractiveBlending,
+  Multiply: THREE.MultiplyBlending,
+};
+
 export default function SmokeParticles({
   points,
   config,
@@ -283,6 +290,18 @@ export default function SmokeParticles({
       material.uniforms.uScale.value = size.height / 2;
       material.uniforms.uGrowth.value = config.growth;
       material.uniforms.uFadeExp.value = config.fadeExponent;
+      const nextBlend = BLEND_MODES[config.blendMode] ?? THREE.NormalBlending;
+      const needsPremultiplied =
+        nextBlend === THREE.SubtractiveBlending ||
+        nextBlend === THREE.MultiplyBlending;
+      if (
+        material.blending !== nextBlend ||
+        material.premultipliedAlpha !== needsPremultiplied
+      ) {
+        material.blending = nextBlend;
+        material.premultipliedAlpha = needsPremultiplied;
+        material.needsUpdate = true;
+      }
     }
 
     // Rebuild lookup cache each frame to track any live point changes.
@@ -523,7 +542,7 @@ export default function SmokeParticles({
         transparent
         blending={THREE.NormalBlending}
         depthWrite={false}
-        depthTest={false}
+        depthTest
       />
     </points>
   );

@@ -30,6 +30,11 @@
 - [x] Add a mode for candle off. show candle smoke instead of flame.
 - [x] Wick should support hot (current ember) and cold mode (all black, with some grey char) to better suport candle off mode.
 - [ ] When lit mode changes we should lerp the flame down to nothing then lerp the smoke up to it's size.
+- [ ] Move flame and smoke materials to materials folder
+- [ ] Rename CandleSmoke to 2dSmoke
+- [ ] Move 2dSmoke, flame to compeonets/elements as generic reusable compoents.
+- [ ] Replace VolumetricSmoke with VolumetricSmokeParticles
+- [ ] Create some nice lil splines for VolumetricSmokeParticles to follow.
 
 # // Bugs
 

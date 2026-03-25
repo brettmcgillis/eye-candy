@@ -4,6 +4,7 @@ import { MarchingCubes as ThreeMarchingCubes } from 'three-stdlib';
 import React, { useMemo, useRef } from 'react';
 
 import { Base, Geometry, Subtraction } from '@react-three/csg';
+import { Line } from '@react-three/drei';
 import { useFrame } from '@react-three/fiber';
 
 import Flame from '../../../../../elements/flame/Flame';
@@ -355,6 +356,7 @@ export default function Candle({ config, position = [0, 0, 0] }) {
   const wickHot = config.wickHot !== false;
   const useVolumetric = config.flameType === 'Volumetric';
   const useVolumetricSmoke = config.smokeType === 'Volumetric';
+  const volShowSpline = config.volShowSpline ?? false;
   const vfProps = {
     width: config.vfWidth ?? 0.8,
     height: config.vfHeight ?? 2.0,
@@ -416,23 +418,40 @@ export default function Candle({ config, position = [0, 0, 0] }) {
   };
   const volSmokeConfig = useMemo(
     () => ({
-      volParticleCount: 3000,
+      volParticleCount: config.volParticleCount ?? 4000,
       volColor: config.smokeColor ?? '#b8b8b8',
-      volOpacity: 0.08,
-      volSize: 8,
-      volBlendMode: 'Normal',
-      volSpread: 0.15,
-      volSpringK: 3.0,
-      volDamping: 0.12,
-      volTurbulence: 1.5,
-      volTurbulenceSpeed: 0.2,
-      volMaxDrift: 3,
-      flowSpeed: 0.06,
-      fadeRate: 6,
+      volOpacity: config.volOpacity ?? 0.01,
+      volSize: config.volSize ?? 1,
+      volBlendMode: config.volBlendMode ?? 'Normal',
+      volSpread: config.volSpread ?? 0.35,
+      volSpringK: config.volSpringK ?? 1.2,
+      volDamping: config.volDamping ?? 0.06,
+      volTurbulence: config.volTurbulence ?? 2,
+      volTurbulenceSpeed: config.volTurbulenceSpeed ?? 0.25,
+      volMaxDrift: config.volMaxDrift ?? 2.4,
+      flowSpeed: config.volFlowSpeed ?? 0.04,
+      fadeRate: config.volFadeRate ?? 4,
       closed: false,
-      tension: 0.5,
+      tension: config.volTension ?? 0.3,
+      volNoiseScale: config.volNoiseScale ?? 80,
     }),
-    [config.smokeColor]
+    [
+      config.smokeColor,
+      config.volParticleCount,
+      config.volOpacity,
+      config.volSize,
+      config.volBlendMode,
+      config.volSpread,
+      config.volSpringK,
+      config.volDamping,
+      config.volTurbulence,
+      config.volTurbulenceSpeed,
+      config.volMaxDrift,
+      config.volFlowSpeed,
+      config.volFadeRate,
+      config.volTension,
+      config.volNoiseScale,
+    ]
   );
   const smokeHeight = config.smokeHeight ?? 3.0;
   const topSmokePoints = useMemo(
@@ -457,6 +476,14 @@ export default function Candle({ config, position = [0, 0, 0] }) {
   );
   const topLightRef = useRef();
   const bottomLightRef = useRef();
+
+  // Transition refs: 0 = fully hidden, 1 = fully visible
+  const flameTRef = useRef(lit ? 1 : 0);
+  const smokeTRef = useRef(lit ? 0 : 1);
+  const topFlameGroupRef = useRef();
+  const bottomFlameGroupRef = useRef();
+  const topSmokeGroupRef = useRef();
+  const bottomSmokeGroupRef = useRef();
 
   const candleGeo = useMemo(
     () => new THREE.CylinderGeometry(radius, radius, height, 64),
@@ -493,14 +520,64 @@ export default function Candle({ config, position = [0, 0, 0] }) {
     ],
     []
   );
-  useFrame(({ clock }) => {
+  useFrame(({ clock }, delta) => {
     const t = clock.getElapsedTime();
+
+    // --- Lit/unlit transition (sequential: one fades out, then the other fades in) ---
+    const DAMP_RATE = 6;
+    const ft = flameTRef.current;
+    const st = smokeTRef.current;
+
+    if (lit) {
+      // Lighting: smoke shrinks first, then flame grows
+      if (st > 0.001) {
+        smokeTRef.current = THREE.MathUtils.damp(st, 0, DAMP_RATE, delta);
+        if (smokeTRef.current < 0.001) smokeTRef.current = 0;
+      } else {
+        smokeTRef.current = 0;
+        flameTRef.current = THREE.MathUtils.damp(ft, 1, DAMP_RATE, delta);
+        if (flameTRef.current > 0.999) flameTRef.current = 1;
+      }
+    } else if (ft > 0.001) {
+      // Extinguishing: flame shrinks first, then smoke grows
+      flameTRef.current = THREE.MathUtils.damp(ft, 0, DAMP_RATE, delta);
+      if (flameTRef.current < 0.001) flameTRef.current = 0;
+    } else {
+      flameTRef.current = 0;
+      smokeTRef.current = THREE.MathUtils.damp(st, 1, DAMP_RATE, delta);
+      if (smokeTRef.current > 0.999) smokeTRef.current = 1;
+    }
+
+    const flameT = flameTRef.current;
+    const smokeT = smokeTRef.current;
+
+    // Apply transition scale to flame groups
+    [topFlameGroupRef, bottomFlameGroupRef].forEach((r) => {
+      const g = r.current;
+      if (g) {
+        g.visible = flameT > 0.001;
+        g.scale.setScalar(flameT);
+      }
+    });
+
+    // Apply transition scale to smoke groups
+    [topSmokeGroupRef, bottomSmokeGroupRef].forEach((r) => {
+      const g = r.current;
+      if (g) {
+        g.visible = smokeT > 0.001;
+        g.scale.setScalar(smokeT);
+      }
+    });
+
+    // Flickering point lights (modulated by flame transition)
     if (topLightRef.current) {
       topLightRef.current.position.x = 0.06 + Math.sin(t * Math.PI) * 0.05;
       topLightRef.current.position.z =
         0.06 + Math.cos(t * Math.PI * 0.75) * 0.05;
       topLightRef.current.intensity =
-        2 + Math.sin(t * Math.PI * 2) * Math.cos(t * Math.PI * 1.5) * 0.25;
+        (2 + Math.sin(t * Math.PI * 2) * Math.cos(t * Math.PI * 1.5) * 0.25) *
+        flameT;
+      topLightRef.current.visible = flameT > 0.001;
     }
     if (bottomLightRef.current) {
       bottomLightRef.current.position.x =
@@ -508,7 +585,9 @@ export default function Candle({ config, position = [0, 0, 0] }) {
       bottomLightRef.current.position.z =
         0.06 + Math.cos(t * Math.PI * 0.85) * 0.05;
       bottomLightRef.current.intensity =
-        2 + Math.cos(t * Math.PI * 2.2) * Math.sin(t * Math.PI * 1.3) * 0.25;
+        (2 + Math.cos(t * Math.PI * 2.2) * Math.sin(t * Math.PI * 1.3) * 0.25) *
+        flameT;
+      bottomLightRef.current.visible = flameT > 0.001;
     }
   });
 
@@ -604,25 +683,28 @@ export default function Candle({ config, position = [0, 0, 0] }) {
 
       {/* Top flame assembly */}
       <Candlewick position={[0, halfH, 0]} hot={wickHot} />
-      {lit &&
-        (useVolumetric ? (
-          <VolumetricFlame position={[0.06, halfH + 0.21, 0.06]} {...vfProps} />
+      <group ref={topFlameGroupRef} position={[0.06, halfH + 0.21, 0.06]}>
+        {useVolumetric ? (
+          <VolumetricFlame {...vfProps} />
         ) : (
-          <Flame position={[0.06, halfH + 0.21, 0.06]} motion={flameMotion} />
-        ))}
-      <Smoke2D
-        position={[0.18, halfH + 0.34, 0.088]}
-        smoke={smokeConfig}
-        visible={!lit && !useVolumetricSmoke}
-      />
-      {useVolumetricSmoke && !lit && (
-        <group position={[0.18, halfH + 0.34, 0.088]}>
-          <VolumetricSmokeParticles
-            points={topSmokePoints}
-            config={volSmokeConfig}
-          />
-        </group>
-      )}
+          <Flame motion={flameMotion} />
+        )}
+      </group>
+      <group ref={topSmokeGroupRef} position={[0.18, halfH + 0.34, 0.088]}>
+        {useVolumetricSmoke ? (
+          <>
+            <VolumetricSmokeParticles
+              points={topSmokePoints}
+              config={volSmokeConfig}
+            />
+            {volShowSpline && (
+              <Line points={topSmokePoints} color="cyan" lineWidth={2} />
+            )}
+          </>
+        ) : (
+          <Smoke2D smoke={smokeConfig} />
+        )}
+      </group>
       <pointLight
         ref={topLightRef}
         color={0xffaa33}
@@ -630,39 +712,35 @@ export default function Candle({ config, position = [0, 0, 0] }) {
         distance={8}
         decay={2}
         position={[0.06, halfH + 0.23, 0.06]}
-        visible={lit}
       />
 
       {/* Bottom flame assembly (inverted) */}
       <Candlewick position={[0, -halfH, 0]} inverted hot={wickHot} />
-      {lit &&
-        (useVolumetric ? (
-          <VolumetricFlame
-            position={[0.06, -halfH - 0.21, 0.06]}
-            inverted
-            {...vfProps}
-          />
+      <group ref={bottomFlameGroupRef} position={[0.06, -halfH - 0.21, 0.06]}>
+        {useVolumetric ? (
+          <VolumetricFlame inverted {...vfProps} />
         ) : (
-          <Flame
-            position={[0.06, -halfH - 0.21, 0.06]}
-            inverted
-            motion={flameMotion}
-          />
-        ))}
-      <Smoke2D
+          <Flame inverted motion={flameMotion} />
+        )}
+      </group>
+      <group
+        ref={bottomSmokeGroupRef}
         position={[0.18, -(halfH + 0.34), 0.088]}
-        inverted
-        smoke={smokeConfig}
-        visible={!lit && !useVolumetricSmoke}
-      />
-      {useVolumetricSmoke && !lit && (
-        <group position={[0.18, -(halfH + 0.34), 0.088]}>
-          <VolumetricSmokeParticles
-            points={bottomSmokePoints}
-            config={volSmokeConfig}
-          />
-        </group>
-      )}
+      >
+        {useVolumetricSmoke ? (
+          <>
+            <VolumetricSmokeParticles
+              points={bottomSmokePoints}
+              config={volSmokeConfig}
+            />
+            {volShowSpline && (
+              <Line points={bottomSmokePoints} color="cyan" lineWidth={2} />
+            )}
+          </>
+        ) : (
+          <Smoke2D inverted smoke={smokeConfig} />
+        )}
+      </group>
       <pointLight
         ref={bottomLightRef}
         color={0xffaa33}
@@ -670,7 +748,6 @@ export default function Candle({ config, position = [0, 0, 0] }) {
         distance={8}
         decay={2}
         position={[0.06, -halfH - 0.23, 0.06]}
-        visible={lit}
       />
     </group>
   );

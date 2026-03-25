@@ -80,7 +80,7 @@ export default function BurningAtBothEnds() {
       />
       <OrbitControls
         makeDefault
-        autoRotate
+        autoRotate={config.autoRotate}
         target={cameraFrame.target}
         minDistance={cameraFrame.minDistance}
         maxDistance={cameraFrame.maxDistance}

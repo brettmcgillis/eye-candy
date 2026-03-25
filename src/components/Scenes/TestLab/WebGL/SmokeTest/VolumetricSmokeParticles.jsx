@@ -145,23 +145,32 @@ export default function VolumetricSmokeParticles({
       }
 
       const [initX, initY, initZ] = curveLookupCache;
-      const tOffset = config.closed ? 0 : -1.0;
-      const tRange = config.closed ? 1.0 : 2.0;
       for (let i = 0; i < N; i += 1) {
-        const t = tOffset + (i / N) * tRange;
-        splineT[i] = t;
         const fi = i * 3;
-        if (t < 0) {
-          alphas[i] = 0;
-          positions[fi] = initX;
-          positions[fi + 1] = initY;
-          positions[fi + 2] = initZ;
-        } else {
-          curve.getPoint(t, curveTmp);
+        if (config.closed) {
+          // Closed loops: distribute evenly so the ring is pre-filled.
+          const t = i / N;
+          splineT[i] = t;
+          const curve2 = new THREE.CatmullRomCurve3(
+            [...points],
+            true,
+            'catmullrom',
+            config.tension
+          );
+          curve2.getPoint(t, curveTmp);
           const spread = config.volSpread ?? config.spawnSpread ?? 80;
           positions[fi] = curveTmp.x + (Math.random() - 0.5) * spread;
           positions[fi + 1] = curveTmp.y + (Math.random() - 0.5) * spread;
           positions[fi + 2] = curveTmp.z + (Math.random() - 0.5) * spread;
+        } else {
+          // Open splines: all particles start queued before the spline origin
+          // so they flow in naturally from the wick instead of appearing as a
+          // vertical line.
+          splineT[i] = -(i / N) * 2.0;
+          alphas[i] = 0;
+          positions[fi] = initX;
+          positions[fi + 1] = initY;
+          positions[fi + 2] = initZ;
         }
       }
 
@@ -283,6 +292,7 @@ export default function VolumetricSmokeParticles({
     // Volumetric noise parameters — heavier turbulence, layered advection.
     const turbStrength = config.volTurbulence ?? 180;
     const turbSpeed = config.volTurbulenceSpeed ?? 0.25;
+    const noiseScale = config.volNoiseScale ?? 1;
     // Spring to spline is softer than SmokeParticles — lets the flow field
     // pull particles away from the spline centre, creating visible volume.
     const springK = config.volSpringK ?? 2.5;
@@ -407,9 +417,27 @@ export default function VolumetricSmokeParticles({
         // Volumetric advection via a layered sinusoidal velocity field.
         // Mirrors the divergence-free character of the Shadertoy Buffer A/C
         // pressure-velocity update without needing a GPU texture.
-        const nx3d = noiseX(px, py, pz, time, turbSpeed);
-        const ny3d = noiseY(px, py, pz, time, turbSpeed);
-        const nz3d = noiseZ(px, py, pz, time, turbSpeed);
+        const nx3d = noiseX(
+          px * noiseScale,
+          py * noiseScale,
+          pz * noiseScale,
+          time,
+          turbSpeed
+        );
+        const ny3d = noiseY(
+          px * noiseScale,
+          py * noiseScale,
+          pz * noiseScale,
+          time,
+          turbSpeed
+        );
+        const nz3d = noiseZ(
+          px * noiseScale,
+          py * noiseScale,
+          pz * noiseScale,
+          time,
+          turbSpeed
+        );
         vx += nx3d * turbStrength * dt;
         vy += ny3d * turbStrength * dt;
         vz += nz3d * turbStrength * dt;

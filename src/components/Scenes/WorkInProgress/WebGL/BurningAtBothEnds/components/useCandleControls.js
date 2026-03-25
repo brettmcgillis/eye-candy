@@ -1,41 +1,488 @@
-import { useControls } from 'leva';
+import { folder } from 'leva';
 
-const DEFAULTS = {
-  height: 6,
-  radius: 0.4,
-  tilt: 15,
-};
-
-export default function useCandleControls(controlName, defaultValues = {}) {
-  const defaults = { ...DEFAULTS, ...defaultValues };
-
-  const [controls, setControls] = useControls(
-    controlName ?? 'Candle',
-    () => ({
-      height: {
-        label: 'Height',
-        value: defaults.height,
-        min: 2,
-        max: 12,
-        step: 0.1,
-      },
-      radius: {
-        label: 'Radius',
-        value: defaults.radius,
-        min: 0.1,
-        max: 1.5,
-        step: 0.05,
-      },
-      tilt: {
-        label: 'Tilt (°)',
-        value: defaults.tilt,
-        min: -45,
-        max: 45,
-        step: 1,
-      },
-    }),
+export default function getCandleFolder() {
+  return folder(
+    {
+      candleLit: { label: 'Lit', value: true },
+      height: { label: 'Height', value: 6, min: 2, max: 12, step: 0.1 },
+      radius: { label: 'Radius', value: 0.4, min: 0.1, max: 1.5, step: 0.05 },
+      tilt: { label: 'Tilt (°)', value: 15, min: -45, max: 45, step: 1 },
+      Flame: folder(
+        {
+          flameType: {
+            label: 'Type',
+            value: 'Shader',
+            options: ['Shader', 'Volumetric'],
+          },
+          'Shader Flame': folder(
+            {
+              flameBaseSpeed: {
+                label: 'Base Speed',
+                value: 1.15,
+                min: 0,
+                max: 3,
+                step: 0.01,
+              },
+              flameMinSpeed: {
+                label: 'Min Speed',
+                value: 0.28,
+                min: 0,
+                max: 2,
+                step: 0.01,
+              },
+              flameSlowFreq: {
+                label: 'Slow Freq',
+                value: 0.7,
+                min: 0,
+                max: 4,
+                step: 0.01,
+              },
+              flameSlowAmp: {
+                label: 'Slow Amp',
+                value: 0.55,
+                min: 0,
+                max: 2,
+                step: 0.01,
+              },
+              flameFastFreq: {
+                label: 'Fast Freq',
+                value: 2.6,
+                min: 0,
+                max: 10,
+                step: 0.01,
+              },
+              flameFastAmp: {
+                label: 'Fast Amp',
+                value: 0.25,
+                min: 0,
+                max: 2,
+                step: 0.01,
+              },
+              flameMicroFreq: {
+                label: 'Micro Freq',
+                value: 5.7,
+                min: 0,
+                max: 16,
+                step: 0.01,
+              },
+              flameMicroAmp: {
+                label: 'Micro Amp',
+                value: 0.08,
+                min: 0,
+                max: 1,
+                step: 0.01,
+              },
+              flameSwayX: {
+                label: 'Sway X',
+                value: 0.015,
+                min: 0,
+                max: 0.08,
+                step: 0.001,
+              },
+              flameSwayZ: {
+                label: 'Sway Z',
+                value: 0.014,
+                min: 0,
+                max: 0.08,
+                step: 0.001,
+              },
+              flamePulseFreq: {
+                label: 'Pulse Freq',
+                value: 3.4,
+                min: 0,
+                max: 12,
+                step: 0.01,
+              },
+              flamePulseAmp: {
+                label: 'Pulse Amp',
+                value: 0.04,
+                min: 0,
+                max: 0.25,
+                step: 0.001,
+              },
+              flameScaleX: {
+                label: 'Scale X',
+                value: 1,
+                min: 0.1,
+                max: 4,
+                step: 0.01,
+              },
+              flameScaleY: {
+                label: 'Scale Y',
+                value: 1,
+                min: 0.1,
+                max: 4,
+                step: 0.01,
+              },
+            },
+            { collapsed: true }
+          ),
+          'Volume Flame': folder(
+            {
+              vfWidth: {
+                label: 'Width',
+                value: 0.8,
+                min: 0.05,
+                max: 1.5,
+                step: 0.01,
+              },
+              vfHeight: {
+                label: 'Height',
+                value: 2.0,
+                min: 0.2,
+                max: 3.0,
+                step: 0.05,
+              },
+              vfDepth: {
+                label: 'Depth',
+                value: 0.725,
+                min: 0.05,
+                max: 1.5,
+                step: 0.01,
+              },
+              vfSliceSpacing: {
+                label: 'Slice Spacing',
+                value: 0.05,
+                min: 0.01,
+                max: 0.2,
+                step: 0.005,
+              },
+              vfBendX: {
+                label: 'Bend X',
+                value: 0.0,
+                min: -1.0,
+                max: 1.0,
+                step: 0.01,
+              },
+              vfBendZ: {
+                label: 'Bend Z',
+                value: 0.0,
+                min: -1.0,
+                max: 1.0,
+                step: 0.01,
+              },
+              vfAnimated: { label: 'Animated', value: true },
+              vfAnimSpeed: {
+                label: 'Speed',
+                value: 0.5,
+                min: 0,
+                max: 3,
+                step: 0.01,
+              },
+              vfShowSpline: { label: 'Show Spline', value: false },
+              vfMagnitude: {
+                label: 'Magnitude',
+                value: 0.5,
+                min: 0.1,
+                max: 3.0,
+                step: 0.05,
+              },
+              vfLacunarity: {
+                label: 'Lacunarity',
+                value: 4.0,
+                min: 1.0,
+                max: 4.0,
+                step: 0.1,
+              },
+              vfGain: {
+                label: 'Gain',
+                value: 0,
+                min: 0.0,
+                max: 1.0,
+                step: 0.01,
+              },
+              vfTintColor: { label: 'Tint', value: '#ffffff' },
+              vfSaturation: {
+                label: 'Saturation',
+                value: 1.0,
+                min: 0.0,
+                max: 2.0,
+                step: 0.01,
+              },
+              vfBrightness: {
+                label: 'Brightness',
+                value: 1.5,
+                min: 0.0,
+                max: 4.0,
+                step: 0.05,
+              },
+            },
+            { collapsed: true }
+          ),
+        },
+        { collapsed: true }
+      ),
+      Smoke: folder(
+        {
+          smokeType: {
+            label: 'Type',
+            value: 'Billboard',
+            options: ['Billboard', 'Volumetric'],
+          },
+          smokeColor: { label: 'Color', value: '#b8b8b8' },
+          Billboard: folder(
+            {
+              smokeOpacity: {
+                label: 'Opacity',
+                value: 0.6,
+                min: 0,
+                max: 1,
+                step: 0.01,
+              },
+              smokeRiseSpeed: {
+                label: 'Rise Speed',
+                value: 0.35,
+                min: 0,
+                max: 2,
+                step: 0.01,
+              },
+              smokeSpreadStrength: {
+                label: 'Spread',
+                value: 0.18,
+                min: 0,
+                max: 0.5,
+                step: 0.01,
+              },
+              smokeTimeFrequency: {
+                label: 'Time Freq',
+                value: 0.45,
+                min: 0,
+                max: 2,
+                step: 0.01,
+              },
+              smokeUvFrequencyX: {
+                label: 'UV Freq X',
+                value: 1.0,
+                min: 1,
+                max: 12,
+                step: 0.1,
+              },
+              smokeUvFrequencyY: {
+                label: 'UV Freq Y',
+                value: 1.5,
+                min: 1,
+                max: 20,
+                step: 0.1,
+              },
+              smokeWidth: {
+                label: 'Width',
+                value: 0.25,
+                min: 0.05,
+                max: 1,
+                step: 0.01,
+              },
+              smokeHeight: {
+                label: 'Height',
+                value: 3.0,
+                min: 0.1,
+                max: 6,
+                step: 0.01,
+              },
+            },
+            { collapsed: true }
+          ),
+          Volumetric: folder(
+            {
+              volShowSpline: { label: 'Show Spline', value: false },
+              volParticleCount: {
+                label: 'Particles',
+                value: 4000,
+                min: 500,
+                max: 8000,
+                step: 100,
+              },
+              volOpacity: {
+                label: 'Opacity',
+                value: 0.01,
+                min: 0,
+                max: 0.5,
+                step: 0.005,
+              },
+              volSize: {
+                label: 'Size',
+                value: 1,
+                min: 1,
+                max: 60,
+                step: 1,
+              },
+              volBlendMode: {
+                label: 'Blend',
+                value: 'Normal',
+                options: ['Normal', 'Additive', 'Screen'],
+              },
+              volSpread: {
+                label: 'Spread',
+                value: 0.35,
+                min: 0.01,
+                max: 2,
+                step: 0.01,
+              },
+              volSpringK: {
+                label: 'Spring K',
+                value: 1.2,
+                min: 0.1,
+                max: 10,
+                step: 0.1,
+              },
+              volDamping: {
+                label: 'Damping',
+                value: 0.06,
+                min: 0,
+                max: 1,
+                step: 0.01,
+              },
+              volTurbulence: {
+                label: 'Turbulence',
+                value: 2,
+                min: 0,
+                max: 10,
+                step: 0.1,
+              },
+              volTurbulenceSpeed: {
+                label: 'Turb Speed',
+                value: 0.25,
+                min: 0,
+                max: 2,
+                step: 0.01,
+              },
+              volMaxDrift: {
+                label: 'Max Drift',
+                value: 2.4,
+                min: 0,
+                max: 10,
+                step: 0.1,
+              },
+              volFlowSpeed: {
+                label: 'Flow Speed',
+                value: 0.04,
+                min: 0,
+                max: 0.5,
+                step: 0.01,
+              },
+              volFadeRate: {
+                label: 'Fade Rate',
+                value: 4,
+                min: 0.5,
+                max: 20,
+                step: 0.5,
+              },
+              volTension: {
+                label: 'Tension',
+                value: 0.3,
+                min: 0,
+                max: 1,
+                step: 0.01,
+              },
+              volNoiseScale: {
+                label: 'Noise Scale',
+                value: 80,
+                min: 1,
+                max: 200,
+                step: 1,
+              },
+            },
+            { collapsed: true }
+          ),
+        },
+        { collapsed: true }
+      ),
+      Wick: folder(
+        {
+          wickHot: { label: 'Hot', value: true },
+        },
+        { collapsed: true }
+      ),
+      Wax: folder(
+        {
+          waxUseMetaballs: { label: 'Metaballs', value: true },
+          waxMetaResolution: {
+            label: 'Resolution',
+            value: 30,
+            min: 16,
+            max: 60,
+            step: 1,
+          },
+          waxMetaMaxPolyCount: {
+            label: 'Max Poly',
+            value: 24000,
+            min: 8000,
+            max: 80000,
+            step: 1000,
+          },
+          waxMetaBlobCount: {
+            label: 'Blob Count',
+            value: 22,
+            min: 10,
+            max: 48,
+            step: 1,
+          },
+          waxMetaStrength: {
+            label: 'Strength',
+            value: 1,
+            min: 0.3,
+            max: 2,
+            step: 0.01,
+          },
+          waxMetaSizeVariation: {
+            label: 'Size Variation',
+            value: 0.55,
+            min: 0,
+            max: 1.5,
+            step: 0.01,
+          },
+          waxMetaSubtract: {
+            label: 'Subtract',
+            value: 10,
+            min: 4,
+            max: 18,
+            step: 0.1,
+          },
+          waxMetaSpread: {
+            label: 'Spread',
+            value: 1.3,
+            min: 0.7,
+            max: 2,
+            step: 0.01,
+          },
+          waxMetaMinOuter: {
+            label: 'Min Outer',
+            value: 1,
+            min: 0.9,
+            max: 1.2,
+            step: 0.01,
+          },
+          waxMetaMaxOuter: {
+            label: 'Max Outer',
+            value: 1.28,
+            min: 1,
+            max: 1.7,
+            step: 0.01,
+          },
+          waxMetaHeight: {
+            label: 'Height',
+            value: 0.72,
+            min: 0.15,
+            max: 1.2,
+            step: 0.01,
+          },
+          waxDripCount: {
+            label: 'Drip Count',
+            value: 3,
+            min: 0,
+            max: 8,
+            step: 1,
+          },
+          waxDripLength: {
+            label: 'Drip Length',
+            value: 1.2,
+            min: 0.2,
+            max: 2.8,
+            step: 0.01,
+          },
+        },
+        { collapsed: true }
+      ),
+    },
     { collapsed: true }
   );
-
-  return [controls, setControls];
 }

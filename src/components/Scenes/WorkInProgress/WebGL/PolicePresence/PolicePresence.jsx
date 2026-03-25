@@ -7,21 +7,7 @@ import { useFrame } from '@react-three/fiber';
 
 import PoliceCruiser from '../../../../elements/policeCruiser/PoliceCruiser';
 import SmokeParticles from '../../../../elements/smoke/SmokeParticles';
-import FireBillboard from './FireBillboard';
-
-// ─── Fire source positions (PoliceCruiser local coords, z ≈ -4) ──────────
-const FIRES = [
-  // Windshield — main blaze
-  { pos: [0.6, 1.1, -4.0], scale: [1.6, 3.0, 1], intensity: 1.6, seed: 0 },
-  // Driver window
-  { pos: [0.0, 1.0, -4.72], scale: [0.9, 2.0, 1], intensity: 1.3, seed: 1.7 },
-  // Passenger window
-  { pos: [0.0, 1.0, -3.28], scale: [0.9, 2.0, 1], intensity: 1.3, seed: 3.1 },
-  // Hood / engine area
-  { pos: [1.3, 0.9, -4.0], scale: [1.1, 1.8, 1], intensity: 1.1, seed: 5.2 },
-  // Roof wrap-back
-  { pos: [-0.4, 1.25, -4.0], scale: [1.4, 2.4, 1], intensity: 1.2, seed: 7.9 },
-];
+import VolumetricFire from '../../../../elements/volumetricFire/VolumetricFire';
 
 // ─── Smoke configuration ──────────────────────────────────────────────────
 const SMOKE_CONFIG = {
@@ -181,16 +167,72 @@ export default function PolicePresence() {
       {/* ── Police cruiser model ─────────────────────────────────────── */}
       <PoliceCruiser />
 
-      {/* ── Fire billboards ──────────────────────────────────────────── */}
-      {FIRES.map((f) => (
-        <FireBillboard
-          key={f.seed}
-          position={f.pos}
-          scale={f.scale}
-          intensity={f.intensity}
-          seed={f.seed}
-        />
-      ))}
+      {/* ── Volumetric fire ──────────────────────────────────────────── */}
+      {/* Windshield — main blaze, tall and wide */}
+      <VolumetricFire
+        position={[0.6, 1.1, -4.0]}
+        width={1.2}
+        depth={0.8}
+        height={2.8}
+        bendX={-0.3}
+        bendZ={0.15}
+        animated
+        animSpeed={0.6}
+        magnitude={1.5}
+        brightness={1.6}
+      />
+      {/* Driver window — flames licking out sideways */}
+      <VolumetricFire
+        position={[0.0, 1.0, -4.72]}
+        width={0.6}
+        depth={0.5}
+        height={1.8}
+        bendX={-0.1}
+        bendZ={-0.4}
+        animated
+        animSpeed={0.5}
+        magnitude={1.3}
+        brightness={1.4}
+      />
+      {/* Passenger window — mirrored */}
+      <VolumetricFire
+        position={[0.0, 1.0, -3.28]}
+        width={0.6}
+        depth={0.5}
+        height={1.8}
+        bendX={-0.1}
+        bendZ={0.4}
+        animated
+        animSpeed={0.55}
+        magnitude={1.3}
+        brightness={1.4}
+      />
+      {/* Hood / engine area — lower, wider */}
+      <VolumetricFire
+        position={[1.4, 0.85, -4.0]}
+        width={0.9}
+        depth={0.7}
+        height={1.5}
+        bendX={0.2}
+        bendZ={0.1}
+        animated
+        animSpeed={0.45}
+        magnitude={1.1}
+        brightness={1.3}
+      />
+      {/* Roof wrap-back — broad draping fire */}
+      <VolumetricFire
+        position={[-0.4, 1.25, -4.0]}
+        width={1.0}
+        depth={0.9}
+        height={2.2}
+        bendX={-0.5}
+        bendZ={-0.1}
+        animated
+        animSpeed={0.55}
+        magnitude={1.4}
+        brightness={1.5}
+      />
 
       {/* ── Smoke column ─────────────────────────────────────────────── */}
       <SmokeParticles points={smokePoints} config={SMOKE_CONFIG} />

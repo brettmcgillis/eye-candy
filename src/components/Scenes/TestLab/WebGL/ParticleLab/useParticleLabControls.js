@@ -26,7 +26,7 @@ export default function useParticleLabControls() {
           },
           animatePoints: { value: false },
         },
-        { collapsed: false }
+        { collapsed: true }
       ),
       Styling: folder(
         {
@@ -88,7 +88,7 @@ export default function useParticleLabControls() {
         { collapsed: true }
       ),
     },
-    { collapsed: false }
+    { collapsed: true }
   );
 
   const selectedAlgorithm = algorithms[baseControls.algorithm];

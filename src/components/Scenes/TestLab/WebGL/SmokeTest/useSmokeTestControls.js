@@ -63,7 +63,7 @@ export default function useSmokeTestControls(points, setPoints) {
           if (p) setPoints(p.points.map((v) => v.clone()));
         }),
       },
-      { collapsed: false }
+      { collapsed: true }
     ),
 
     Spline: folder(
@@ -123,7 +123,7 @@ export default function useSmokeTestControls(points, setPoints) {
           { label: 'Remove Last' }
         ),
       },
-      { collapsed: false }
+      { collapsed: true }
     ),
 
     Smoke: folder(
@@ -182,7 +182,7 @@ export default function useSmokeTestControls(points, setPoints) {
           step: 0.05,
         },
       },
-      { collapsed: false }
+      { collapsed: true }
     ),
 
     Physics: folder(
@@ -283,7 +283,7 @@ export default function useSmokeTestControls(points, setPoints) {
           value: '#ffffff',
         },
       },
-      { collapsed: false }
+      { collapsed: true }
     ),
 
     'Volumetric Smoke': folder(

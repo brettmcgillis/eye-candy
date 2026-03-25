@@ -579,7 +579,7 @@ export default function useSceneControls() {
           { collapsed: true }
         ),
       },
-      { collapsed: false }
+      { collapsed: true }
     ),
   }));
 

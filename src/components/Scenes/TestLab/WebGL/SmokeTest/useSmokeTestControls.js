@@ -1,13 +1,21 @@
 import { button, folder, useControls } from 'leva';
 import * as THREE from 'three';
 
-import { useEffect, useMemo, useRef } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 
 import { localEnv } from '../../../../../utils/appUtils';
 import SPLINE_PRESETS from '../../../../elements/spline/splinePresets';
 
-export default function useSmokeTestControls(points, setPoints) {
+const MAX_ATTRACTORS = 8;
+
+export default function useSmokeTestControls(points, setPoints, attractorsRef) {
   const selectedPresetRef = useRef('Default');
+  const controlsSnapshotRef = useRef({});
+  const [attractorVersion, setAttractorVersion] = useState(0);
+  const forceAttractorUpdate = useCallback(
+    () => setAttractorVersion((c) => c + 1),
+    []
+  );
 
   const [
     {
@@ -17,10 +25,18 @@ export default function useSmokeTestControls(points, setPoints) {
       showSpline,
       showHelpers,
       arcSegments,
+      showClassicSmoke,
+      showVolSmoke,
+      bgColor,
       particleCount,
       particleSize,
       particleColor,
       opacity,
+      growth,
+      fadeExponent,
+      buoyancy,
+      rotSpeed,
+      blendMode,
       springK,
       flowSpeed,
       damping,
@@ -28,17 +44,7 @@ export default function useSmokeTestControls(points, setPoints) {
       turbulenceSpeed,
       spawnSpread,
       maxDrift,
-      attractorStrength,
-      attractorRadius,
       fadeRate,
-      growth,
-      fadeExponent,
-      buoyancy,
-      rotSpeed,
-      blendMode,
-      showClassicSmoke,
-      showVolSmoke,
-      bgColor,
       volParticleCount,
       volSize,
       volColor,
@@ -50,6 +56,10 @@ export default function useSmokeTestControls(points, setPoints) {
       volTurbulence,
       volTurbulenceSpeed,
       volMaxDrift,
+      attractorStrength,
+      attractorRadius,
+      showAttractors,
+      attractorMode,
     },
   ] = useControls('Smoke Test', () => ({
     Presets: folder(
@@ -63,6 +73,39 @@ export default function useSmokeTestControls(points, setPoints) {
           const p = SPLINE_PRESETS[selectedPresetRef.current];
           if (p) setPoints(p.points.map((v) => v.clone()));
         }),
+        ...(localEnv()
+          ? {
+              copy: button(
+                () => {
+                  const str = JSON.stringify(
+                    controlsSnapshotRef.current,
+                    null,
+                    2
+                  ).replace(/"([A-Za-z_$][A-Za-z0-9_$]*)"\s*:/g, '$1:');
+                  navigator.clipboard.writeText(str);
+                },
+                { label: 'Copy Preset' }
+              ),
+            }
+          : {}),
+      },
+      { collapsed: true }
+    ),
+
+    Scene: folder(
+      {
+        showClassicSmoke: {
+          label: 'Particle Smoke',
+          value: true,
+        },
+        showVolSmoke: {
+          label: 'Volumetric Smoke',
+          value: true,
+        },
+        bgColor: {
+          label: 'Background',
+          value: '#ffffff',
+        },
       },
       { collapsed: true }
     ),
@@ -127,7 +170,7 @@ export default function useSmokeTestControls(points, setPoints) {
       { collapsed: true }
     ),
 
-    Smoke: folder(
+    'Particle Smoke': folder(
       {
         particleCount: {
           label: 'Particle Count',
@@ -187,12 +230,6 @@ export default function useSmokeTestControls(points, setPoints) {
           value: 'Normal',
           options: ['Normal', 'Additive', 'Subtractive', 'Multiply'],
         },
-      },
-      { collapsed: true }
-    ),
-
-    Physics: folder(
-      {
         springK: {
           label: 'Spring Strength',
           value: 5,
@@ -249,44 +286,6 @@ export default function useSmokeTestControls(points, setPoints) {
           max: 50,
           step: 1,
           hint: 'Open loop only — how fast particles fade after the spline end',
-        },
-      },
-      { collapsed: true }
-    ),
-
-    'Attractor Physics': folder(
-      {
-        attractorStrength: {
-          label: 'Strength',
-          value: 300,
-          min: 0,
-          max: 5000,
-          step: 50,
-        },
-        attractorRadius: {
-          label: 'Radius',
-          value: 300,
-          min: 10,
-          max: 1000,
-          step: 10,
-        },
-      },
-      { collapsed: true }
-    ),
-
-    'A/B Test': folder(
-      {
-        showClassicSmoke: {
-          label: 'Classic Smoke',
-          value: true,
-        },
-        showVolSmoke: {
-          label: 'Volumetric Smoke',
-          value: true,
-        },
-        bgColor: {
-          label: 'Background',
-          value: '#ffffff',
         },
       },
       { collapsed: true }
@@ -370,43 +369,57 @@ export default function useSmokeTestControls(points, setPoints) {
       { collapsed: true }
     ),
 
-    ...(localEnv()
-      ? {
-          copyPreset: button(
-            () => {
-              const snap = {
-                tension,
-                closed,
-                particleCount,
-                particleSize,
-                particleColor,
-                opacity,
-                springK,
-                flowSpeed,
-                damping,
-                turbulence,
-                turbulenceSpeed,
-                spawnSpread,
-                maxDrift,
-                fadeRate,
-                attractorStrength,
-                attractorRadius,
-                growth,
-                fadeExponent,
-                buoyancy,
-                rotSpeed,
-                points: points.map((p) => ({ x: p.x, y: p.y, z: p.z })),
-              };
-              const str = JSON.stringify(snap, null, 2).replace(
-                /"([A-Za-z_$][A-Za-z0-9_$]*)"\s*:/g,
-                '$1:'
-              );
-              navigator.clipboard.writeText(str);
-            },
-            { label: 'Copy Preset' }
-          ),
-        }
-      : {}),
+    Attractors: folder(
+      {
+        showAttractors: {
+          label: 'Show Helpers',
+          value: true,
+        },
+        attractorMode: {
+          label: 'Mode',
+          value: 'translate',
+          options: ['translate', 'rotate', 'none'],
+        },
+        attractorStrength: {
+          label: 'Strength',
+          value: 300,
+          min: 0,
+          max: 5000,
+          step: 50,
+        },
+        attractorRadius: {
+          label: 'Radius',
+          value: 300,
+          min: 10,
+          max: 1000,
+          step: 10,
+        },
+        addAttractor: button(() => {
+          if (attractorsRef.current.length >= MAX_ATTRACTORS) return;
+          attractorsRef.current.push({
+            position: [
+              (Math.random() - 0.5) * 600,
+              100 + Math.random() * 500,
+              (Math.random() - 0.5) * 400,
+            ],
+            direction: [0, 1, 0],
+            rotation: [0, 0, 0],
+          });
+          setAttractorVersion((c) => c + 1);
+        }),
+        removeAttractor: button(() => {
+          if (attractorsRef.current.length <= 0) return;
+          attractorsRef.current.pop();
+          setAttractorVersion((c) => c + 1);
+        }),
+        removeAll: button(() => {
+          // eslint-disable-next-line no-param-reassign
+          attractorsRef.current.length = 0;
+          setAttractorVersion((c) => c + 1);
+        }),
+      },
+      { collapsed: true }
+    ),
   }));
 
   // Track selected preset name
@@ -420,6 +433,48 @@ export default function useSmokeTestControls(points, setPoints) {
     if (p) setPoints(p.points.map((v) => v.clone()));
   }, [preset]);
 
+  // Keep snapshot ref current for the copy button
+  useEffect(() => {
+    controlsSnapshotRef.current = {
+      tension,
+      closed,
+      particleCount,
+      particleSize,
+      particleColor,
+      opacity,
+      growth,
+      fadeExponent,
+      buoyancy,
+      rotSpeed,
+      blendMode,
+      springK,
+      flowSpeed,
+      damping,
+      turbulence,
+      turbulenceSpeed,
+      spawnSpread,
+      maxDrift,
+      fadeRate,
+      attractorStrength,
+      attractorRadius,
+      volParticleCount,
+      volSize,
+      volColor,
+      volOpacity,
+      volBlendMode,
+      volSpread,
+      volSpringK,
+      volDamping,
+      volTurbulence,
+      volTurbulenceSpeed,
+      volMaxDrift,
+      showClassicSmoke,
+      showVolSmoke,
+      bgColor,
+      points: points.map((p) => ({ x: p.x, y: p.y, z: p.z })),
+    };
+  });
+
   return useMemo(
     () => ({
       tension,
@@ -427,10 +482,18 @@ export default function useSmokeTestControls(points, setPoints) {
       showSpline,
       showHelpers,
       arcSegments,
+      showClassicSmoke,
+      showVolSmoke,
+      bgColor,
       particleCount,
       particleSize,
       particleColor,
       opacity,
+      growth,
+      fadeExponent,
+      buoyancy,
+      rotSpeed,
+      blendMode,
       springK,
       flowSpeed,
       damping,
@@ -438,17 +501,7 @@ export default function useSmokeTestControls(points, setPoints) {
       turbulenceSpeed,
       spawnSpread,
       maxDrift,
-      attractorStrength,
-      attractorRadius,
       fadeRate,
-      growth,
-      fadeExponent,
-      buoyancy,
-      rotSpeed,
-      blendMode,
-      showClassicSmoke,
-      showVolSmoke,
-      bgColor,
       volParticleCount,
       volSize,
       volColor,
@@ -460,6 +513,12 @@ export default function useSmokeTestControls(points, setPoints) {
       volTurbulence,
       volTurbulenceSpeed,
       volMaxDrift,
+      attractorStrength,
+      attractorRadius,
+      showAttractors,
+      attractorMode,
+      attractorVersion,
+      forceAttractorUpdate,
     }),
     [
       tension,
@@ -467,10 +526,18 @@ export default function useSmokeTestControls(points, setPoints) {
       showSpline,
       showHelpers,
       arcSegments,
+      showClassicSmoke,
+      showVolSmoke,
+      bgColor,
       particleCount,
       particleSize,
       particleColor,
       opacity,
+      growth,
+      fadeExponent,
+      buoyancy,
+      rotSpeed,
+      blendMode,
       springK,
       flowSpeed,
       damping,
@@ -478,17 +545,7 @@ export default function useSmokeTestControls(points, setPoints) {
       turbulenceSpeed,
       spawnSpread,
       maxDrift,
-      attractorStrength,
-      attractorRadius,
       fadeRate,
-      growth,
-      fadeExponent,
-      buoyancy,
-      rotSpeed,
-      blendMode,
-      showClassicSmoke,
-      showVolSmoke,
-      bgColor,
       volParticleCount,
       volSize,
       volColor,
@@ -500,6 +557,12 @@ export default function useSmokeTestControls(points, setPoints) {
       volTurbulence,
       volTurbulenceSpeed,
       volMaxDrift,
+      attractorStrength,
+      attractorRadius,
+      showAttractors,
+      attractorMode,
+      attractorVersion,
+      forceAttractorUpdate,
     ]
   );
 }

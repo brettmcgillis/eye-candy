@@ -16,13 +16,14 @@ export default function SmokeTest() {
     SPLINE_PRESETS.Default.points.map((v) => v.clone())
   );
 
-  const config = useSmokeTestControls(points, setPoints);
   const attractorsRef = useRef([
     { position: [313, 313, 205], direction: [0, 1, 0], rotation: [0, 0, 0] },
     { position: [-270, 338, 205], direction: [0, 1, 0], rotation: [0, 0, 0] },
     { position: [-184, 357, -58], direction: [0, 1, 0], rotation: [0, 0, 0] },
     { position: [72, 273, 331], direction: [0, 1, 0], rotation: [0, 0, 0] },
   ]);
+
+  const config = useSmokeTestControls(points, setPoints, attractorsRef);
 
   return (
     <>
@@ -81,11 +82,14 @@ export default function SmokeTest() {
       )}
 
       {config.showVolSmoke && (
-        <VolumetricSmokeParticles points={points} config={config} />
+        <VolumetricSmokeParticles
+          points={points}
+          config={config}
+          attractorsRef={attractorsRef}
+        />
       )}
 
-      {/* SmokeAttractors reads orbit controls from the R3F store (makeDefault) */}
-      <SmokeAttractors attractorsRef={attractorsRef} />
+      <SmokeAttractors attractorsRef={attractorsRef} config={config} />
     </>
   );
 }

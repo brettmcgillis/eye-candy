@@ -1,12 +1,9 @@
-import { button, useControls } from 'leva';
 import * as THREE from 'three';
 
 import React, { useCallback, useEffect, useRef, useState } from 'react';
 
 import { TransformControls } from '@react-three/drei';
 import { useThree } from '@react-three/fiber';
-
-const MAX_ATTRACTORS = 8;
 
 const ATTRACTOR_COLORS = [
   '#ff4466',
@@ -116,39 +113,8 @@ function AttractorHandle({ index, attractor, mode, onUpdate }) {
 // Manager — Leva panel + attractor list
 // ---------------------------------------------------------------------------
 
-export default function SmokeAttractors({ attractorsRef }) {
-  const [, forceUpdate] = useState(0);
-
-  const { showHelpers, controlsMode } = useControls('Attractors', {
-    showHelpers: { label: 'Show Helpers', value: true },
-    controlsMode: {
-      label: 'Mode',
-      value: 'translate',
-      options: ['translate', 'rotate', 'none'],
-    },
-    addAttractor: button(() => {
-      if (attractorsRef.current.length >= MAX_ATTRACTORS) return;
-      attractorsRef.current.push({
-        position: [
-          (Math.random() - 0.5) * 600,
-          100 + Math.random() * 500,
-          (Math.random() - 0.5) * 400,
-        ],
-        direction: [0, 1, 0],
-        rotation: [0, 0, 0],
-      });
-      forceUpdate((c) => c + 1);
-    }),
-    removeAttractor: button(() => {
-      if (attractorsRef.current.length <= 0) return;
-      attractorsRef.current.pop();
-      forceUpdate((c) => c + 1);
-    }),
-    removeAll: button(() => {
-      attractorsRef.current.length = 0;
-      forceUpdate((c) => c + 1);
-    }),
-  });
+export default function SmokeAttractors({ attractorsRef, config }) {
+  const { showAttractors, attractorMode, attractorVersion } = config;
 
   const handleUpdate = useCallback(
     (idx, { position, direction, rotation }) => {
@@ -158,17 +124,17 @@ export default function SmokeAttractors({ attractorsRef }) {
     [attractorsRef]
   );
 
-  if (!showHelpers) return null;
+  if (!showAttractors) return null;
 
   return (
     <>
       {attractorsRef.current.map((attr, i) => (
         <AttractorHandle
           // eslint-disable-next-line react/no-array-index-key
-          key={i}
+          key={`${i}-${attractorVersion}`}
           index={i}
           attractor={attr}
-          mode={controlsMode}
+          mode={attractorMode}
           onUpdate={handleUpdate}
         />
       ))}

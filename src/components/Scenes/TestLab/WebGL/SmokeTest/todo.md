@@ -23,4 +23,21 @@
 
 # // Bugs
 
-- the scene is reusing too much of SplineEditor which tells me its time to make some of the base components more generic and more easily shared. They should get moved into components/elements
+- [x] the scene is reusing too much of SplineEditor which tells me its time to make some of the base components more generic and more easily shared. They should get moved into components/elements
+- [ ] Controls are a mixed bag. Tidy up.
+  - SmokeTest
+    - Presets
+      - dropdown
+      - reset
+      - copy
+    - Scene
+      - Smoke visibiilty controls
+      - BG color
+    - Spline
+    - Particle Smoke
+      - All particle smoke controls & particle smoke physics
+    - Volumetric Smoke
+      - All volumetric smoke controls & volumetric smoke physics
+    - Attractors
+      - visiblity
+      - physics

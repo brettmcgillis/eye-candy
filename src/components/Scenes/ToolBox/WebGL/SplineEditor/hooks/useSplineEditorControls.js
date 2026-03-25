@@ -6,9 +6,11 @@ import { useEffect, useMemo, useRef } from 'react';
 import { localEnv } from '../../../../../../utils/appUtils';
 import SPLINE_PRESETS from '../../../../../elements/spline/splinePresets';
 
-export default function useSplineEditorControls(pointPositions, setPoints) {
+export default function useSplineEditorControls(splines, setSplines) {
   const controlsSnapshotRef = useRef({});
   const selectedPresetRef = useRef('Default');
+  const splinesRef = useRef(splines);
+  splinesRef.current = splines;
 
   const [
     {
@@ -43,7 +45,7 @@ export default function useSplineEditorControls(pointPositions, setPoints) {
                 showCentripetal: p.showCentripetal,
                 showChordal: p.showChordal,
               });
-              setPoints(p.points.map((v) => v.clone()));
+              setSplines([p.points.map((v) => v.clone())]);
             }
           }),
           ...(localEnv()
@@ -91,15 +93,15 @@ export default function useSplineEditorControls(pointPositions, setPoints) {
             value: SPLINE_PRESETS.Default.showPoints,
           },
           showUniform: {
-            label: 'Uniform (red)',
+            label: 'Uniform',
             value: SPLINE_PRESETS.Default.showUniform,
           },
           showCentripetal: {
-            label: 'Centripetal (green)',
+            label: 'Centripetal',
             value: SPLINE_PRESETS.Default.showCentripetal,
           },
           showChordal: {
-            label: 'Chordal (blue)',
+            label: 'Chordal',
             value: SPLINE_PRESETS.Default.showChordal,
           },
         },
@@ -107,41 +109,52 @@ export default function useSplineEditorControls(pointPositions, setPoints) {
       ),
       Actions: folder(
         {
-          addPoint: button(
+          addSpline: button(
             () => {
-              setPoints((prev) => {
-                const last =
-                  prev[prev.length - 1] ?? new THREE.Vector3(0, 0, 0);
-                return [
-                  ...prev,
-                  last
-                    .clone()
-                    .add(
-                      new THREE.Vector3(
-                        (Math.random() - 0.5) * 200,
-                        Math.random() * 100,
-                        (Math.random() - 0.5) * 200
-                      )
-                    ),
-                ];
-              });
+              setSplines((prev) => [
+                ...prev,
+                [
+                  new THREE.Vector3(
+                    (Math.random() - 0.5) * 400,
+                    Math.random() * 200,
+                    (Math.random() - 0.5) * 400
+                  ),
+                  new THREE.Vector3(
+                    (Math.random() - 0.5) * 400,
+                    Math.random() * 200,
+                    (Math.random() - 0.5) * 400
+                  ),
+                  new THREE.Vector3(
+                    (Math.random() - 0.5) * 400,
+                    Math.random() * 200,
+                    (Math.random() - 0.5) * 400
+                  ),
+                ],
+              ]);
             },
-            { label: 'Add Point' }
+            { label: 'Add Spline' }
           ),
-          removeLast: button(
+          removeSpline: button(
             () => {
-              setPoints((prev) => (prev.length > 2 ? prev.slice(0, -1) : prev));
-            },
-            { label: 'Remove Last' }
-          ),
-          exportSpline: button(
-            () => {
-              const pts = controlsSnapshotRef.current.points ?? [];
-              const strs = pts.map(
-                (p) =>
-                  `new THREE.Vector3(${p.x.toFixed(3)}, ${p.y.toFixed(3)}, ${p.z.toFixed(3)})`
+              setSplines((prev) =>
+                prev.length > 1 ? prev.slice(0, -1) : prev
               );
-              const code = `[\n  ${strs.join(',\n  ')}\n]`;
+            },
+            { label: 'Remove Spline' }
+          ),
+          exportSplines: button(
+            () => {
+              const all = splinesRef.current;
+              const splinesCode = all
+                .map((pts) => {
+                  const strs = pts.map(
+                    (p) =>
+                      `    new THREE.Vector3(${p.x.toFixed(3)}, ${p.y.toFixed(3)}, ${p.z.toFixed(3)})`
+                  );
+                  return `  [\n${strs.join(',\n')}\n  ]`;
+                })
+                .join(',\n');
+              const code = `[\n${splinesCode}\n]`;
               navigator.clipboard.writeText(code);
             },
             { label: 'Export (copy)' }
@@ -149,8 +162,52 @@ export default function useSplineEditorControls(pointPositions, setPoints) {
         },
         { collapsed: true }
       ),
+      // Per-spline folders — rebuilt when spline count changes
+      ...splines.reduce((acc, _, index) => {
+        acc[`Spline ${index + 1}`] = folder(
+          {
+            [`addPoint_${index}`]: button(
+              () => {
+                setSplines((prev) =>
+                  prev.map((pts, i) => {
+                    if (i !== index) return pts;
+                    const last =
+                      pts[pts.length - 1] ?? new THREE.Vector3(0, 0, 0);
+                    return [
+                      ...pts,
+                      last
+                        .clone()
+                        .add(
+                          new THREE.Vector3(
+                            (Math.random() - 0.5) * 200,
+                            Math.random() * 100,
+                            (Math.random() - 0.5) * 200
+                          )
+                        ),
+                    ];
+                  })
+                );
+              },
+              { label: 'Add Point' }
+            ),
+            [`removePoint_${index}`]: button(
+              () => {
+                setSplines((prev) =>
+                  prev.map((pts, i) => {
+                    if (i !== index) return pts;
+                    return pts.length > 2 ? pts.slice(0, -1) : pts;
+                  })
+                );
+              },
+              { label: 'Remove Last Point' }
+            ),
+          },
+          { collapsed: false }
+        );
+        return acc;
+      }, {}),
     }),
-    { store: undefined }
+    [splines.length]
   );
 
   // Track selected preset name
@@ -158,7 +215,7 @@ export default function useSplineEditorControls(pointPositions, setPoints) {
     selectedPresetRef.current = preset;
   }, [preset]);
 
-  // Update snapshot ref when controls or points change
+  // Update snapshot ref when controls or splines change
   useEffect(() => {
     controlsSnapshotRef.current = {
       tension,
@@ -167,7 +224,9 @@ export default function useSplineEditorControls(pointPositions, setPoints) {
       showUniform,
       showCentripetal,
       showChordal,
-      points: pointPositions.map((p) => ({ x: p.x, y: p.y, z: p.z })),
+      splines: splines.map((pts) =>
+        pts.map((p) => ({ x: p.x, y: p.y, z: p.z }))
+      ),
     };
   }, [
     tension,
@@ -176,7 +235,7 @@ export default function useSplineEditorControls(pointPositions, setPoints) {
     showUniform,
     showCentripetal,
     showChordal,
-    pointPositions,
+    splines,
   ]);
 
   // Apply preset when selection changes
@@ -191,8 +250,8 @@ export default function useSplineEditorControls(pointPositions, setPoints) {
       showCentripetal: p.showCentripetal,
       showChordal: p.showChordal,
     });
-    setPoints(p.points.map((v) => v.clone()));
-  }, [preset]); // intentionally omit setControls/setPoints — only re-run on preset change
+    setSplines([p.points.map((v) => v.clone())]);
+  }, [preset]); // intentionally omit setControls/setSplines — only re-run on preset change
 
   return useMemo(
     () => ({

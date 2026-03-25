@@ -1,4 +1,4 @@
-import React, { useRef, useState } from 'react';
+import React, { useCallback, useRef, useState } from 'react';
 
 import { OrbitControls, PerspectiveCamera } from '@react-three/drei';
 
@@ -11,10 +11,68 @@ import SplinePoints from '../../../../elements/spline/SplinePoints';
 import SPLINE_PRESETS from '../../../../elements/spline/splinePresets';
 import useSmokeTestControls from './useSmokeTestControls';
 
-export default function SmokeTest() {
-  const [points, setPoints] = useState(() =>
-    SPLINE_PRESETS.Default.points.map((v) => v.clone())
+function SmokeSplineGroup({
+  index,
+  points,
+  config,
+  attractorsRef,
+  setSplinePoints,
+}) {
+  const setPoints = useCallback(
+    (updater) => setSplinePoints(index, updater),
+    [index, setSplinePoints]
   );
+
+  return (
+    <>
+      <SplinePoints
+        points={points}
+        setPoints={setPoints}
+        visible={config.showHelpers}
+      />
+
+      <SplineLine
+        points={points}
+        tension={config.tension}
+        closed={config.closed}
+        curveType="catmullrom"
+        color="#aaaaaa"
+        visible={config.showSpline}
+        arcSegments={config.arcSegments}
+      />
+
+      {config.showClassicSmoke && (
+        <SmokeParticles
+          points={points}
+          config={config}
+          attractorsRef={attractorsRef}
+        />
+      )}
+
+      {config.showVolSmoke && (
+        <VolumetricSmokeParticles
+          points={points}
+          config={config}
+          attractorsRef={attractorsRef}
+        />
+      )}
+    </>
+  );
+}
+
+export default function SmokeTest() {
+  const [splines, setSplines] = useState(() => [
+    SPLINE_PRESETS.Default.points.map((v) => v.clone()),
+  ]);
+
+  const setSplinePoints = useCallback((splineIndex, updater) => {
+    setSplines((prev) =>
+      prev.map((pts, i) => {
+        if (i !== splineIndex) return pts;
+        return typeof updater === 'function' ? updater(pts) : updater;
+      })
+    );
+  }, []);
 
   const attractorsRef = useRef([
     { position: [313, 313, 205], direction: [0, 1, 0], rotation: [0, 0, 0] },
@@ -23,7 +81,7 @@ export default function SmokeTest() {
     { position: [72, 273, 331], direction: [0, 1, 0], rotation: [0, 0, 0] },
   ]);
 
-  const config = useSmokeTestControls(points, setPoints, attractorsRef);
+  const config = useSmokeTestControls(splines, setSplines, attractorsRef);
 
   return (
     <>
@@ -58,38 +116,18 @@ export default function SmokeTest() {
 
       <OrbitControls makeDefault dampingFactor={0.2} />
 
-      {/* SplinePoints coordinates with scene OrbitControls via useThree */}
-      <SplinePoints
-        points={points}
-        setPoints={setPoints}
-        visible={config.showHelpers}
-      />
-
-      <SplineLine
-        points={points}
-        tension={config.tension}
-        closed={config.closed}
-        curveType="catmullrom"
-        color="#aaaaaa"
-        visible={config.showSpline}
-        arcSegments={config.arcSegments}
-      />
-
-      {config.showClassicSmoke && (
-        <SmokeParticles
+      {/* eslint-disable react/no-array-index-key */}
+      {splines.map((points, index) => (
+        <SmokeSplineGroup
+          key={index}
+          index={index}
           points={points}
           config={config}
           attractorsRef={attractorsRef}
+          setSplinePoints={setSplinePoints}
         />
-      )}
-
-      {config.showVolSmoke && (
-        <VolumetricSmokeParticles
-          points={points}
-          config={config}
-          attractorsRef={attractorsRef}
-        />
-      )}
+      ))}
+      {/* eslint-enable react/no-array-index-key */}
 
       <Attractors
         attractorsRef={attractorsRef}

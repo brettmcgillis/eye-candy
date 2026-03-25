@@ -29,5 +29,12 @@
   - might want a first person mode where i can look around but cam follows path.
   - might want a controlled mode. ie on scroll or move traverse the spline fforwardwd/backwarsd
   - In 'camera' mode include a geometry w/ transform control to set the location to look at.
+- [x] Refactor to allow editing multiple splines. They can use the same Spline settings, but i want to be able to add remove points from each spline so i can edit multiple in parrallel. When I export i want to get all splines in an array.
+- Actions Folder
+  - Add Spline button
+  - Remove Spline button
+  - Export spline(s) button
+
+When a spline is added, create a new leva folder "Spline x". Inside spline X folder, add point, remove point.
 
 # // Bugs

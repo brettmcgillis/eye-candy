@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useCallback, useState } from 'react';
 
 import { OrbitControls, PerspectiveCamera } from '@react-three/drei';
 
@@ -8,12 +8,75 @@ import SplinePoints from '../../../../elements/spline/SplinePoints';
 import SPLINE_PRESETS from '../../../../elements/spline/splinePresets';
 import useSplineEditorControls from './hooks/useSplineEditorControls';
 
-export default function SplineEditor() {
-  const [points, setPoints] = useState(() =>
-    SPLINE_PRESETS.Default.points.map((v) => v.clone())
-  );
+function getSplineColors(splineIndex) {
+  const hue = (splineIndex * 72) % 360;
+  return {
+    uniform: `hsl(${hue}, 75%, 55%)`,
+    centripetal: `hsl(${(hue + 120) % 360}, 75%, 55%)`,
+    chordal: `hsl(${(hue + 240) % 360}, 75%, 55%)`,
+  };
+}
 
-  const config = useSplineEditorControls(points, setPoints);
+function SplineGroup({ index, points, config, setSplinePoints }) {
+  const setPoints = useCallback(
+    (updater) => setSplinePoints(index, updater),
+    [index, setSplinePoints]
+  );
+  const colors = getSplineColors(index);
+
+  return (
+    <>
+      <SplinePoints
+        points={points}
+        setPoints={setPoints}
+        visible={config.showPoints}
+      />
+      <SplineLine
+        points={points}
+        tension={config.tension}
+        closed={config.closed}
+        curveType="catmullrom"
+        color={colors.uniform}
+        visible={config.showUniform}
+        arcSegments={config.arcSegments}
+      />
+      <SplineLine
+        points={points}
+        tension={config.tension}
+        closed={config.closed}
+        curveType="centripetal"
+        color={colors.centripetal}
+        visible={config.showCentripetal}
+        arcSegments={config.arcSegments}
+      />
+      <SplineLine
+        points={points}
+        tension={config.tension}
+        closed={config.closed}
+        curveType="chordal"
+        color={colors.chordal}
+        visible={config.showChordal}
+        arcSegments={config.arcSegments}
+      />
+    </>
+  );
+}
+
+export default function SplineEditor() {
+  const [splines, setSplines] = useState(() => [
+    SPLINE_PRESETS.Default.points.map((v) => v.clone()),
+  ]);
+
+  const setSplinePoints = useCallback((splineIndex, updater) => {
+    setSplines((prev) =>
+      prev.map((pts, i) => {
+        if (i !== splineIndex) return pts;
+        return typeof updater === 'function' ? updater(pts) : updater;
+      })
+    );
+  }, []);
+
+  const config = useSplineEditorControls(splines, setSplines);
 
   return (
     <>
@@ -44,39 +107,17 @@ export default function SplineEditor() {
 
       <OrbitControls makeDefault dampingFactor={0.2} />
 
-      <SplinePoints
-        points={points}
-        setPoints={setPoints}
-        visible={config.showPoints}
-      />
-
-      <SplineLine
-        points={points}
-        tension={config.tension}
-        closed={config.closed}
-        curveType="catmullrom"
-        color="#ff4444"
-        visible={config.showUniform}
-        arcSegments={config.arcSegments}
-      />
-      <SplineLine
-        points={points}
-        tension={config.tension}
-        closed={config.closed}
-        curveType="centripetal"
-        color="#44ff88"
-        visible={config.showCentripetal}
-        arcSegments={config.arcSegments}
-      />
-      <SplineLine
-        points={points}
-        tension={config.tension}
-        closed={config.closed}
-        curveType="chordal"
-        color="#4488ff"
-        visible={config.showChordal}
-        arcSegments={config.arcSegments}
-      />
+      {/* eslint-disable react/no-array-index-key */}
+      {splines.map((points, index) => (
+        <SplineGroup
+          key={index}
+          index={index}
+          points={points}
+          config={config}
+          setSplinePoints={setSplinePoints}
+        />
+      ))}
+      {/* eslint-enable react/no-array-index-key */}
     </>
   );
 }

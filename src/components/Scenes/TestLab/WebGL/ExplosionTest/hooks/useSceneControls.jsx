@@ -72,7 +72,7 @@ export default function useSceneControls(latestResolvedSettingsRef) {
       Presets: folder(
         {
           preset: {
-            value: 'Default',
+            value: 'Standard',
             options: PRESET_OPTIONS,
             onChange: (value) => {
               const presetValues = EXPLOSION_PRESETS[value];
@@ -104,7 +104,7 @@ export default function useSceneControls(latestResolvedSettingsRef) {
       ),
       Scene: folder(
         {
-          backgroundColor: EXPLOSION_PRESETS.Default.backgroundColor,
+          backgroundColor: EXPLOSION_PRESETS.Standard.backgroundColor,
           ambientIntensity: { value: 0.55, min: 0, max: 2, step: 0.01 },
           directionalIntensity: {
             value: 1.35,
@@ -138,7 +138,7 @@ export default function useSceneControls(latestResolvedSettingsRef) {
             options: MATERIAL_TYPES,
           },
           color: {
-            value: EXPLOSION_PRESETS.Default.color,
+            value: EXPLOSION_PRESETS.Standard.color,
             render: (get) => get(MAT_PATH) !== 'Normal',
           },
           roughness: {
@@ -247,7 +247,7 @@ export default function useSceneControls(latestResolvedSettingsRef) {
       ),
       'Glass Settings': folder(
         {
-          glassColor: EXPLOSION_PRESETS.Default.glassColor,
+          glassColor: EXPLOSION_PRESETS.Standard.glassColor,
           transmission: { value: 0.98, min: 0, max: 1, step: 0.01 },
           thickness: { value: 0.42, min: 0, max: 2, step: 0.01 },
           ior: { value: 1.25, min: 1, max: 3, step: 0.01 },

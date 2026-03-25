@@ -37,7 +37,7 @@ const BASE_PRESET = {
 };
 
 const EXPLOSION_PRESETS = {
-  Default: {
+  Standard: {
     ...BASE_PRESET,
   },
   StandardWire: {

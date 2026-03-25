@@ -12,8 +12,8 @@ import { Bloom, EffectComposer } from '@react-three/postprocessing';
 
 import Magnum from '../../../../elements/magnum/Magnum';
 import SmokeParticles from '../../../../elements/smoke/SmokeParticles';
+import VolumetricSmokeParticles from '../../../../elements/smoke/VolumetricSmokeParticles';
 import SplineLine from '../../../../elements/spline/SplineLine';
-import VolumetricSmokeParticles from '../../../TestLab/WebGL/SmokeTest/VolumetricSmokeParticles';
 import useSceneControls from './hooks/useControls';
 import {
   ALL_LETTERS,

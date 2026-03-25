@@ -4,11 +4,11 @@ import { PerspectiveCamera } from '@react-three/drei';
 
 import GridBox from '../../../../elements/gridbox/GridBox';
 import SmokeParticles from '../../../../elements/smoke/SmokeParticles';
+import VolumetricSmokeParticles from '../../../../elements/smoke/VolumetricSmokeParticles';
 import SplineLine from '../../../../elements/spline/SplineLine';
 import SplinePoints from '../../../../elements/spline/SplinePoints';
 import SPLINE_PRESETS from '../../../../elements/spline/splinePresets';
 import SmokeAttractors from './SmokeAttractors';
-import VolumetricSmokeParticles from './VolumetricSmokeParticles';
 import useSmokeTestControls from './useSmokeTestControls';
 
 export default function SmokeTest() {

@@ -9,8 +9,8 @@ import { useFrame } from '@react-three/fiber';
 
 import Flame from '../../../../../elements/flame/Flame';
 import Smoke2D from '../../../../../elements/smoke/Smoke2D';
+import VolumetricSmokeParticles from '../../../../../elements/smoke/VolumetricSmokeParticles';
 import VolumetricFire from '../../../../../elements/volumetricFire/VolumetricFire';
-import VolumetricSmokeParticles from '../../../../TestLab/WebGL/SmokeTest/VolumetricSmokeParticles';
 import Candlewick from './Candlewick';
 
 function createSeededRandom(startSeed) {

@@ -97,8 +97,8 @@ const SMOKE_CONFIG = {
   fadeExponent: 1.4,
   closed: false,
   tension: 0.25,
-  attractorRadius: 0,
   attractorStrength: 0,
+  attractorRadius: 0,
   maxDrift: 10,
 };
 

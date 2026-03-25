@@ -323,16 +323,16 @@ export default function SmokeParticles({
       springK,
       flowSpeed,
       damping,
-      attractorStrength,
-      attractorRadius,
-      maxDrift,
+      attractorStrength = 0,
+      attractorRadius = 300,
+      maxDrift = 600,
       turbulence,
       turbulenceSpeed,
       closed,
       fadeRate,
       spawnSpread,
-      buoyancy,
-      rotSpeed,
+      buoyancy = 0,
+      rotSpeed = 0,
     } = config;
 
     const attractors = attractorsRef ? attractorsRef.current : null;

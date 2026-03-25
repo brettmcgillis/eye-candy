@@ -39,7 +39,12 @@ import { yieldToMain } from './yield-utils.js';
  * @param {Object} options
  * @returns {NormalRegion[]}
  */
-export async function extractNormalRegions(renderer, scene, camera, options = {}) {
+export async function extractNormalRegions(
+  renderer,
+  scene,
+  camera,
+  options = {}
+) {
   const {
     resolution = 2.0, // Render at 2x for smooth boundaries
     normalBuckets = 12, // Quantize normals into N directions

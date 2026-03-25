@@ -1,10 +1,14 @@
 import { button, folder, useControls } from 'leva';
 
-import EXPLOSION_PRESETS from './ExplosionTest.presets';
+import EXPLOSION_PRESETS from '../presets/ExplosionTest.presets';
 
 const PRESET_OPTIONS = [...Object.keys(EXPLOSION_PRESETS), 'Custom'];
 const PRESET_CONTROL_KEYS = [
   'backgroundColor',
+  'ambientIntensity',
+  'directionalIntensity',
+  'rowSpacing',
+  'columnSpacing',
   'explodeStrength',
   'pointerRadius',
   'falloff',
@@ -13,9 +17,14 @@ const PRESET_CONTROL_KEYS = [
   'returnSpeed',
   'motionBoost',
   'damping',
-  'secondColor',
-  'secondRoughness',
-  'secondMetalness',
+  'color',
+  'roughness',
+  'metalness',
+  'glassColor',
+  'transmission',
+  'thickness',
+  'ior',
+  'chromaticAberration',
 ];
 
 function pickSupportedPresetValues(presetValues) {
@@ -45,9 +54,17 @@ export default function useExplosionTestControls(latestResolvedSettingsRef) {
               setControls(pickSupportedPresetValues(presetValues));
             },
           },
+          reset: button(() => {
+            const { preset: presetName } =
+              latestResolvedSettingsRef.current || {};
+            if (!presetName || presetName === 'Custom') return;
+            const presetValues = EXPLOSION_PRESETS[presetName];
+            if (!presetValues) return;
+            setControls(pickSupportedPresetValues(presetValues));
+          }),
           ...(isLocalDev
             ? {
-                copySettings: button(() => {
+                copy: button(() => {
                   const settings = latestResolvedSettingsRef.current;
                   if (!settings || !navigator?.clipboard?.writeText) return;
                   navigator.clipboard.writeText(
@@ -59,27 +76,22 @@ export default function useExplosionTestControls(latestResolvedSettingsRef) {
         },
         { collapsed: true }
       ),
-      Background: folder(
+      Scene: folder(
         {
           backgroundColor: EXPLOSION_PRESETS.Default.backgroundColor,
+          ambientIntensity: { value: 0.55, min: 0, max: 2, step: 0.01 },
+          directionalIntensity: {
+            value: 1.35,
+            min: 0,
+            max: 3,
+            step: 0.01,
+          },
+          rowSpacing: { value: 2.8, min: 0, max: 8, step: 0.01 },
+          columnSpacing: { value: 2.4, min: 0, max: 8, step: 0.01 },
         },
         { collapsed: true }
       ),
-      Layout: folder(
-        {
-          topExplodeX: { value: 0, min: -8, max: 8, step: 0.01 },
-          topExplodeY: { value: 1.35, min: -8, max: 8, step: 0.01 },
-          topExplodeZ: { value: 0, min: -8, max: 8, step: 0.01 },
-          glassX: { value: 0, min: -8, max: 8, step: 0.01 },
-          glassY: { value: -1.45, min: -8, max: 8, step: 0.01 },
-          glassZ: { value: 0, min: -8, max: 8, step: 0.01 },
-          lowerExplodeX: { value: 0, min: -8, max: 8, step: 0.01 },
-          lowerExplodeY: { value: -1.45, min: -8, max: 8, step: 0.01 },
-          lowerExplodeZ: { value: 0, min: -8, max: 8, step: 0.01 },
-        },
-        { collapsed: true }
-      ),
-      Shader: folder(
+      'Shader Settings': folder(
         {
           explodeStrength: { value: 0.3, min: 0, max: 1.5, step: 0.01 },
           pointerRadius: { value: 0.45, min: 0.1, max: 1.5, step: 0.01 },
@@ -93,11 +105,26 @@ export default function useExplosionTestControls(latestResolvedSettingsRef) {
         },
         { collapsed: true }
       ),
-      Materials: folder(
+      'Material Settings': folder(
         {
-          secondColor: '#ffffff',
-          secondRoughness: { value: 0.35, min: 0, max: 1, step: 0.01 },
-          secondMetalness: { value: 0.15, min: 0, max: 1, step: 0.01 },
+          color: EXPLOSION_PRESETS.Default.color,
+          roughness: { value: 0.35, min: 0, max: 1, step: 0.01 },
+          metalness: { value: 0.15, min: 0, max: 1, step: 0.01 },
+        },
+        { collapsed: true }
+      ),
+      'Glass Settings': folder(
+        {
+          glassColor: EXPLOSION_PRESETS.Default.glassColor,
+          transmission: { value: 0.98, min: 0, max: 1, step: 0.01 },
+          thickness: { value: 0.42, min: 0, max: 2, step: 0.01 },
+          ior: { value: 1.25, min: 1, max: 3, step: 0.01 },
+          chromaticAberration: {
+            value: 0.025,
+            min: 0,
+            max: 0.2,
+            step: 0.001,
+          },
         },
         { collapsed: true }
       ),

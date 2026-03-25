@@ -961,7 +961,9 @@ const PlotterRenderer = function () {
 
       // GPU Perspective Hatching (render before edges so edges appear on top)
       if (_this.showHatches) {
-        const hatchRegions = await getRegionsForInset(_this.hatchOptions.insetPixels);
+        const hatchRegions = await getRegionsForInset(
+          _this.hatchOptions.insetPixels
+        );
         await renderHatchLayer({
           scene,
           camera,

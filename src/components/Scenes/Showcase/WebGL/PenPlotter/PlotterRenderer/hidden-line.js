@@ -2262,7 +2262,6 @@ function classifySilhouettes(edges, projectedFaces) {
     // Silhouette if one side has no intersection
     edge.isSilhouette = !leftHit || !rightHit;
   }
-
 }
 
 /**

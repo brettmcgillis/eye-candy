@@ -2,7 +2,7 @@ import { button, folder, useControls } from 'leva';
 
 import EXPLOSION_PRESETS from '../presets/presets';
 
-const PRESET_OPTIONS = [...Object.keys(EXPLOSION_PRESETS), 'Custom'];
+const PRESET_OPTIONS = Object.keys(EXPLOSION_PRESETS);
 const PRESET_CONTROL_KEYS = [
   'backgroundColor',
   'ambientIntensity',
@@ -75,7 +75,6 @@ export default function useSceneControls(latestResolvedSettingsRef) {
             value: 'Default',
             options: PRESET_OPTIONS,
             onChange: (value) => {
-              if (value === 'Custom') return;
               const presetValues = EXPLOSION_PRESETS[value];
               if (!presetValues) return;
               setControls(pickSupportedPresetValues(presetValues));
@@ -84,7 +83,7 @@ export default function useSceneControls(latestResolvedSettingsRef) {
           reset: button(() => {
             const { preset: presetName } =
               latestResolvedSettingsRef.current || {};
-            if (!presetName || presetName === 'Custom') return;
+            if (!presetName) return;
             const presetValues = EXPLOSION_PRESETS[presetName];
             if (!presetValues) return;
             setControls(pickSupportedPresetValues(presetValues));

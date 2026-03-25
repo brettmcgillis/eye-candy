@@ -1,4 +1,4 @@
-import React, { useRef } from 'react';
+import React, { useMemo, useRef } from 'react';
 
 import { CameraControls } from '@react-three/drei';
 
@@ -15,45 +15,88 @@ export default function ExplosionTest() {
   const controls = useSceneControls(latestResolvedSettingsRef);
   latestResolvedSettingsRef.current = controls;
 
-  const shaderProps = {
-    explodeStrength: controls.explodeStrength,
-    pointerRadius: controls.pointerRadius,
-    falloff: controls.falloff,
-    shakeAmount: controls.shakeAmount,
-    shakeSpeed: controls.shakeSpeed,
-    returnSpeed: controls.returnSpeed,
-    motionBoost: controls.motionBoost,
-    damping: controls.damping,
-    showPointerRadiusDebug: controls.showPointerRadiusDebug,
-  };
+  const shaderProps = useMemo(
+    () => ({
+      explodeStrength: controls.explodeStrength,
+      pointerRadius: controls.pointerRadius,
+      falloff: controls.falloff,
+      shakeAmount: controls.shakeAmount,
+      shakeSpeed: controls.shakeSpeed,
+      returnSpeed: controls.returnSpeed,
+      motionBoost: controls.motionBoost,
+      damping: controls.damping,
+      showPointerRadiusDebug: controls.showPointerRadiusDebug,
+    }),
+    [
+      controls.explodeStrength,
+      controls.pointerRadius,
+      controls.falloff,
+      controls.shakeAmount,
+      controls.shakeSpeed,
+      controls.returnSpeed,
+      controls.motionBoost,
+      controls.damping,
+      controls.showPointerRadiusDebug,
+    ]
+  );
 
-  const materialProps = {
-    materialType: controls.materialType,
-    color: controls.color,
-    roughness: controls.roughness,
-    metalness: controls.metalness,
-    shininess: controls.shininess,
-    specular: controls.specular,
-    clearcoat: controls.clearcoat,
-    clearcoatRoughness: controls.clearcoatRoughness,
-    emissive: controls.emissive,
-    emissiveIntensity: controls.emissiveIntensity,
-    sheen: controls.sheen,
-    sheenRoughness: controls.sheenRoughness,
-    sheenColor: controls.sheenColor,
-    iridescence: controls.iridescence,
-    iridescenceIOR: controls.iridescenceIOR,
-    flatShading: controls.flatShading,
-    wireframe: controls.wireframe,
-  };
+  const materialProps = useMemo(
+    () => ({
+      materialType: controls.materialType,
+      color: controls.color,
+      roughness: controls.roughness,
+      metalness: controls.metalness,
+      shininess: controls.shininess,
+      specular: controls.specular,
+      clearcoat: controls.clearcoat,
+      clearcoatRoughness: controls.clearcoatRoughness,
+      emissive: controls.emissive,
+      emissiveIntensity: controls.emissiveIntensity,
+      sheen: controls.sheen,
+      sheenRoughness: controls.sheenRoughness,
+      sheenColor: controls.sheenColor,
+      iridescence: controls.iridescence,
+      iridescenceIOR: controls.iridescenceIOR,
+      flatShading: controls.flatShading,
+      wireframe: controls.wireframe,
+    }),
+    [
+      controls.materialType,
+      controls.color,
+      controls.roughness,
+      controls.metalness,
+      controls.shininess,
+      controls.specular,
+      controls.clearcoat,
+      controls.clearcoatRoughness,
+      controls.emissive,
+      controls.emissiveIntensity,
+      controls.sheen,
+      controls.sheenRoughness,
+      controls.sheenColor,
+      controls.iridescence,
+      controls.iridescenceIOR,
+      controls.flatShading,
+      controls.wireframe,
+    ]
+  );
 
-  const glassProps = {
-    glassColor: controls.glassColor,
-    transmission: controls.transmission,
-    thickness: controls.thickness,
-    ior: controls.ior,
-    chromaticAberration: controls.chromaticAberration,
-  };
+  const glassProps = useMemo(
+    () => ({
+      glassColor: controls.glassColor,
+      transmission: controls.transmission,
+      thickness: controls.thickness,
+      ior: controls.ior,
+      chromaticAberration: controls.chromaticAberration,
+    }),
+    [
+      controls.glassColor,
+      controls.transmission,
+      controls.thickness,
+      controls.ior,
+      controls.chromaticAberration,
+    ]
+  );
 
   const { columnSpacing, rowSpacing } = controls;
 

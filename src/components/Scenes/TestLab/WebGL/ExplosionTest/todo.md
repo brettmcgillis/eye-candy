@@ -17,6 +17,7 @@
 - [x] Support as many material types as possible so that we can explode any material we can use in Thre. Right now we pass in a meshStandardMaterial. What else could we support?
 - [x] Move components, hooks, and presets into sub folders.
 - [x] create a new material that uses the shader from explodable group.
+- [x] Update presets so we have an example of each material type. Include one meshStandard in wireframe mode
 
 # // Bugs
 

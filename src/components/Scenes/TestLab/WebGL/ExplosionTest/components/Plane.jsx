@@ -1,10 +1,10 @@
 import * as THREE from 'three';
 
-import React, { useMemo, useRef } from 'react';
+import React, { useCallback, useMemo, useRef } from 'react';
 
 import ExplodingMaterial from './explodingMaterial';
 
-export default function Plane({
+const Plane = React.memo(function Plane({
   position,
   rotation = [-0.5, 0.4, 0],
   showPointerRadiusDebug,
@@ -15,6 +15,21 @@ export default function Plane({
   const materialRef = useRef();
   const debugRef = useRef();
   const geometry = useMemo(() => new THREE.PlaneGeometry(2.2, 1.6, 24, 18), []);
+  const showDebugRef = useRef(showPointerRadiusDebug);
+  showDebugRef.current = showPointerRadiusDebug;
+
+  const onPointerMove = useCallback((e) => {
+    e.stopPropagation();
+    materialRef.current?.handlePointerMove(e);
+    if (debugRef.current) {
+      debugRef.current.visible = !!showDebugRef.current;
+    }
+  }, []);
+
+  const onPointerLeave = useCallback(() => {
+    materialRef.current?.handlePointerLeave();
+    if (debugRef.current) debugRef.current.visible = false;
+  }, []);
 
   return (
     <group position={position}>
@@ -22,17 +37,8 @@ export default function Plane({
         ref={meshRef}
         rotation={rotation}
         geometry={geometry}
-        onPointerMove={(e) => {
-          e.stopPropagation();
-          materialRef.current?.handlePointerMove(e);
-          if (debugRef.current) {
-            debugRef.current.visible = !!showPointerRadiusDebug;
-          }
-        }}
-        onPointerLeave={() => {
-          materialRef.current?.handlePointerLeave();
-          if (debugRef.current) debugRef.current.visible = false;
-        }}
+        onPointerMove={onPointerMove}
+        onPointerLeave={onPointerLeave}
       >
         <ExplodingMaterial
           ref={materialRef}
@@ -53,4 +59,6 @@ export default function Plane({
       </mesh>
     </group>
   );
-}
+});
+
+export default Plane;

@@ -270,6 +270,8 @@ const ExplodingMaterial = forwardRef(function ExplodingMaterial(
 ) {
   const shaderStateRef = useRef(null);
   const materialInstanceRef = useRef(null);
+  const motionBoostRef = useRef(motionBoost);
+  motionBoostRef.current = motionBoost;
   const stateRef = useRef({
     hoverAmount: 0,
     moveEnergy: 0,
@@ -296,7 +298,10 @@ const ExplodingMaterial = forwardRef(function ExplodingMaterial(
           return;
         }
         const movement = localPoint.distanceTo(st.lastPointer);
-        st.moveEnergy = Math.min(2.5, st.moveEnergy + movement * motionBoost);
+        st.moveEnergy = Math.min(
+          2.5,
+          st.moveEnergy + movement * motionBoostRef.current
+        );
         st.lastPointer.copy(localPoint);
       },
       handlePointerLeave() {
@@ -312,7 +317,7 @@ const ExplodingMaterial = forwardRef(function ExplodingMaterial(
         return stateRef.current.pointerSmooth;
       },
     }),
-    [motionBoost]
+    []
   );
 
   useEffect(() => {

@@ -1,10 +1,10 @@
 import * as THREE from 'three';
 
-import React, { useMemo, useRef } from 'react';
+import React, { useCallback, useMemo, useRef } from 'react';
 
 import ExplodingMaterial from './explodingMaterial';
 
-export default function Cube({
+const Cube = React.memo(function Cube({
   position,
   rotation = [0.2, 0.35, 0.1],
   showPointerRadiusDebug,
@@ -18,6 +18,21 @@ export default function Cube({
     () => new THREE.BoxGeometry(1.25, 1.25, 1.25, 12, 12, 12),
     []
   );
+  const showDebugRef = useRef(showPointerRadiusDebug);
+  showDebugRef.current = showPointerRadiusDebug;
+
+  const onPointerMove = useCallback((e) => {
+    e.stopPropagation();
+    materialRef.current?.handlePointerMove(e);
+    if (debugRef.current) {
+      debugRef.current.visible = !!showDebugRef.current;
+    }
+  }, []);
+
+  const onPointerLeave = useCallback(() => {
+    materialRef.current?.handlePointerLeave();
+    if (debugRef.current) debugRef.current.visible = false;
+  }, []);
 
   return (
     <group position={position}>
@@ -25,17 +40,8 @@ export default function Cube({
         ref={meshRef}
         rotation={rotation}
         geometry={geometry}
-        onPointerMove={(e) => {
-          e.stopPropagation();
-          materialRef.current?.handlePointerMove(e);
-          if (debugRef.current) {
-            debugRef.current.visible = !!showPointerRadiusDebug;
-          }
-        }}
-        onPointerLeave={() => {
-          materialRef.current?.handlePointerLeave();
-          if (debugRef.current) debugRef.current.visible = false;
-        }}
+        onPointerMove={onPointerMove}
+        onPointerLeave={onPointerLeave}
       >
         <ExplodingMaterial
           ref={materialRef}
@@ -56,4 +62,6 @@ export default function Cube({
       </mesh>
     </group>
   );
-}
+});
+
+export default Cube;

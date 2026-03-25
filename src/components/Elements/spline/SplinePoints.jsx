@@ -2,7 +2,8 @@ import * as THREE from 'three';
 
 import React, { useCallback, useEffect, useRef, useState } from 'react';
 
-import { OrbitControls, TransformControls } from '@react-three/drei';
+import { TransformControls } from '@react-three/drei';
+import { useThree } from '@react-three/fiber';
 
 const POINT_BOX_SIZE = 20;
 const pointGeometry = new THREE.BoxGeometry(
@@ -12,7 +13,7 @@ const pointGeometry = new THREE.BoxGeometry(
 );
 
 export default function SplinePoints({ points, setPoints, visible = true }) {
-  const orbitRef = useRef();
+  const controls = useThree((state) => state.controls);
   const transformRef = useRef();
   const pointMeshRefs = useRef([]);
   const [selectedIndex, setSelectedIndex] = useState(null);
@@ -22,7 +23,7 @@ export default function SplinePoints({ points, setPoints, visible = true }) {
     if (!visible) {
       setSelectedIndex(null);
       if (transformRef.current) transformRef.current.detach();
-      if (orbitRef.current) orbitRef.current.enabled = true;
+      if (controls) controls.enabled = true;
     }
   }, [visible]);
 
@@ -48,11 +49,10 @@ export default function SplinePoints({ points, setPoints, visible = true }) {
   // disabled the instant a TC handle drag begins — more reliable than the prop.
   useEffect(() => {
     const tc = transformRef.current;
-    const orbit = orbitRef.current;
-    if (!tc || !orbit) return;
+    if (!tc || !controls) return;
 
     const onDrag = ({ value }) => {
-      orbit.enabled = !value;
+      controls.enabled = !value;
     };
     tc.addEventListener('dragging-changed', onDrag);
     // eslint-disable-next-line consistent-return
@@ -74,13 +74,13 @@ export default function SplinePoints({ points, setPoints, visible = true }) {
   // Immediately disable orbit on pointerdown on a point mesh so that orbit
   // never starts on the same event that selects / starts a drag.
   const handlePointPointerDown = useCallback(() => {
-    if (orbitRef.current) orbitRef.current.enabled = false;
-  }, []);
+    if (controls) controls.enabled = false;
+  }, [controls]);
 
   // Re-enable orbit on pointerup anywhere on the canvas
   const handlePointPointerUp = useCallback(() => {
-    if (orbitRef.current) orbitRef.current.enabled = true;
-  }, []);
+    if (controls) controls.enabled = true;
+  }, [controls]);
 
   const handleSelect = useCallback((index) => {
     setSelectedIndex((prev) => (prev === index ? null : index));
@@ -88,9 +88,9 @@ export default function SplinePoints({ points, setPoints, visible = true }) {
 
   const handlePointerMissed = useCallback(() => {
     setSelectedIndex(null);
-    if (orbitRef.current) orbitRef.current.enabled = true;
+    if (controls) controls.enabled = true;
     if (transformRef.current) transformRef.current.detach();
-  }, []);
+  }, [controls]);
 
   const addPoint = useCallback(() => {
     setPoints((prev) => {
@@ -170,10 +170,6 @@ export default function SplinePoints({ points, setPoints, visible = true }) {
           onObjectChange={handleObjectChange}
         />
       )}
-
-      {/* makeDefault registers OrbitControls with R3F so TransformControls
-          can coordinate event priority with it automatically */}
-      <OrbitControls ref={orbitRef} makeDefault dampingFactor={0.2} />
     </>
   );
 }

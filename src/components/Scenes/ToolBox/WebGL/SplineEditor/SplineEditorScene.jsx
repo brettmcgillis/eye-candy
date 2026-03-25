@@ -1,6 +1,6 @@
 import React from 'react';
 
-import { PerspectiveCamera } from '@react-three/drei';
+import { OrbitControls, PerspectiveCamera } from '@react-three/drei';
 
 import GridBox from '../../../../elements/gridbox/GridBox';
 import SplineLine from '../../../../elements/spline/SplineLine';
@@ -33,6 +33,8 @@ export default function SplineEditorScene({ points, setPoints, config }) {
       />
 
       <GridBox bgColor="#3a4a5c" lineColor="#1a2330" lineWidth={0.025} />
+
+      <OrbitControls makeDefault dampingFactor={0.2} />
 
       <SplinePoints
         points={points}

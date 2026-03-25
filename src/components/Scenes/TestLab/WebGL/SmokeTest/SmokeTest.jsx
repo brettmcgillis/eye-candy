@@ -1,6 +1,6 @@
 import React, { useRef, useState } from 'react';
 
-import { PerspectiveCamera } from '@react-three/drei';
+import { OrbitControls, PerspectiveCamera } from '@react-three/drei';
 
 import Attractors from '../../../../elements/attractors/Attractors';
 import GridBox from '../../../../elements/gridbox/GridBox';
@@ -56,7 +56,9 @@ export default function SmokeTest() {
         lineWidth={0.02}
       />
 
-      {/* SplinePoints renders its own OrbitControls with makeDefault */}
+      <OrbitControls makeDefault dampingFactor={0.2} />
+
+      {/* SplinePoints coordinates with scene OrbitControls via useThree */}
       <SplinePoints
         points={points}
         setPoints={setPoints}

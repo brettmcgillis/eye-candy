@@ -286,7 +286,7 @@ export default function getCandleFolder() {
               volShowSpline: { label: 'Show Spline', value: false },
               volParticleCount: {
                 label: 'Particles',
-                value: 4000,
+                value: 8000,
                 min: 500,
                 max: 8000,
                 step: 100,

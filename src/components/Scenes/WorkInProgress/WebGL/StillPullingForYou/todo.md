@@ -12,6 +12,9 @@
 - The scene uses some shader to modify the height of the water over time to illustrate waves moving around the boat.
 - The scene uses some geometry witha a transparent material to represent a volume of water
 
+- Ocean Scene Example - Great example of a skybox w/controls for sky appearance. Realistic water appearance with no mouse or surrounding mesh interactivty.
+- Interactive Water Plane Example - Great example of a water-like plane. Unrealistic water appearance. Cartoonish water waves with mouse interaction (and potentially programmatic interacion). Good interaction with surrounding meshes (ducks)
+
 # // TODO:
 
 [Back to main TODO](../../../../../../TODO.md)

@@ -7,6 +7,10 @@
 - The scene contains a plane with shader effects applied to resemble water as well as modulate the height of the plane to simulate choppy waters
 - The scene uses rapier physics on the water, boat and oars to allow the boat to float on the water and move up and down with the waves
 
+- Ocean Scene Example - Great example of a skybox w/controls for sky appearance. Realistic water appearance with no mouse or surrounding mesh interactivty.
+- Interactive Water Plane Example - Great example of a water-like plane. Unrealistic water appearance. Cartoonish water waves with mouse interaction (and potentially programmatic interacion). Good interaction with surrounding meshes (ducks)
+- Rapier Locked Transforms Example - An example of how we might use locked transforms in the scene to ensure the oars & oarlocks of the boat can move around while still staying locked in place. The boat and oars should ride up and down on the waves and the oars should always stay with the boat.
+
 # // TODO:
 
 [Back to main TODO](../../../../../../TODO.md)

@@ -58,6 +58,7 @@ export default function useSceneControls() {
         {
           autoRotate: { label: 'Auto Rotate', value: true },
           backgroundColor: { label: 'BG', value: '#050507' },
+          groundPlaneColor: { label: 'Ground Color', value: '#111111' },
           ambientLightIntensity: {
             label: 'Ambient Intensity',
             value: 0.08,

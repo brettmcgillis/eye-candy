@@ -9,9 +9,9 @@ import { useFrame } from '@react-three/fiber';
 
 import Flame from '../../../../../elements/flame/Flame';
 import Smoke2D from '../../../../../elements/smoke/Smoke2D';
+import VolumetricFire from '../../../../../elements/volumetricFire/VolumetricFire';
 import VolumetricSmokeParticles from '../../../../TestLab/WebGL/SmokeTest/VolumetricSmokeParticles';
 import Candlewick from './Candlewick';
-import VolumetricFlame from './VolumetricFlame';
 
 function createSeededRandom(startSeed) {
   let seed = startSeed;
@@ -418,7 +418,7 @@ export default function Candle({ config, position = [0, 0, 0] }) {
   };
   const volSmokeConfig = useMemo(
     () => ({
-      volParticleCount: config.volParticleCount ?? 4000,
+      volParticleCount: config.volParticleCount ?? 8000,
       volColor: config.smokeColor ?? '#b8b8b8',
       volOpacity: config.volOpacity ?? 0.01,
       volSize: config.volSize ?? 1,
@@ -679,7 +679,7 @@ export default function Candle({ config, position = [0, 0, 0] }) {
       <Candlewick position={[0, halfH, 0]} hot={wickHot} />
       <group ref={topFlameGroupRef} position={[0.06, halfH + 0.21, 0.06]}>
         {useVolumetric ? (
-          <VolumetricFlame {...vfProps} />
+          <VolumetricFire {...vfProps} />
         ) : (
           <Flame motion={flameMotion} />
         )}
@@ -714,7 +714,7 @@ export default function Candle({ config, position = [0, 0, 0] }) {
       <Candlewick position={[0, -halfH, 0]} inverted hot={wickHot} />
       <group ref={bottomFlameGroupRef} position={[0.06, -halfH - 0.21, 0.06]}>
         {useVolumetric ? (
-          <VolumetricFlame inverted {...vfProps} />
+          <VolumetricFire inverted {...vfProps} />
         ) : (
           <Flame inverted motion={flameMotion} />
         )}

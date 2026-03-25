@@ -109,7 +109,7 @@ export default function BurningAtBothEnds() {
           depthScale={1}
           minDepthThreshold={0.5}
           maxDepthThreshold={1.6}
-          color="#111111"
+          color={config.groundPlaneColor ?? '#111111'}
           metalness={0.8}
           transparent
           alphaTest={0.02}

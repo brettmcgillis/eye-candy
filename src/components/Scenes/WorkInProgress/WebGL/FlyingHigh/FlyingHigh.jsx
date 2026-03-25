@@ -12,7 +12,7 @@ import { Bloom, EffectComposer } from '@react-three/postprocessing';
 
 import Boeing737 from '../../../../elements/boeing737/Boeing737';
 import SmokeParticles from '../../../../elements/smoke/SmokeParticles';
-import VolumetricFlame from '../BurningAtBothEnds/components/VolumetricFlame';
+import VolumetricFire from '../../../../elements/volumetricFire/VolumetricFire';
 
 // ─── Sky Panel ───────────────────────────────────────────────────────────────
 // Large oval backdrop coloured sky-blue with a painterly feathered edge
@@ -215,7 +215,7 @@ export default function FlyingHigh() {
       />
 
       {/* Volumetric fire at left engine — flame bends backward in airstream */}
-      <VolumetricFlame
+      <VolumetricFire
         position={[-1.8, 0.0, 0.3]}
         {...FLAME_PROPS}
         bendX={0.4}
@@ -225,7 +225,7 @@ export default function FlyingHigh() {
       />
 
       {/* Volumetric fire at right engine */}
-      <VolumetricFlame
+      <VolumetricFire
         position={[1.8, 0.0, 0.3]}
         {...FLAME_PROPS}
         bendX={-0.4}
@@ -235,7 +235,7 @@ export default function FlyingHigh() {
       />
 
       {/* Secondary smaller flames — wing wrapping effect */}
-      <VolumetricFlame
+      <VolumetricFire
         position={[-1.4, 0.3, -0.2]}
         width={0.35}
         height={1.2}
@@ -250,7 +250,7 @@ export default function FlyingHigh() {
         bendZ={-0.9}
         tintColor="#ff8833"
       />
-      <VolumetricFlame
+      <VolumetricFire
         position={[1.4, 0.3, -0.2]}
         width={0.35}
         height={1.2}

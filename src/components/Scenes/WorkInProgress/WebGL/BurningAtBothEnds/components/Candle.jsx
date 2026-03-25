@@ -1,7 +1,7 @@
 import * as THREE from 'three';
 import { MarchingCubes as ThreeMarchingCubes } from 'three-stdlib';
 
-import React, { useMemo, useRef } from 'react';
+import React, { useMemo, useRef, useState } from 'react';
 
 import { Base, Geometry, Subtraction } from '@react-three/csg';
 import { Line } from '@react-three/drei';
@@ -482,8 +482,9 @@ export default function Candle({ config, position = [0, 0, 0] }) {
   const smokeTRef = useRef(lit ? 0 : 1);
   const topFlameGroupRef = useRef();
   const bottomFlameGroupRef = useRef();
-  const topSmokeGroupRef = useRef();
-  const bottomSmokeGroupRef = useRef();
+  // Smoke is conditionally mounted (not just hidden) so the particle system
+  // resets fresh and particles flow naturally from the spline origin.
+  const [smokeActive, setSmokeActive] = useState(!lit);
 
   const candleGeo = useMemo(
     () => new THREE.CylinderGeometry(radius, radius, height, 64),
@@ -524,32 +525,34 @@ export default function Candle({ config, position = [0, 0, 0] }) {
     const t = clock.getElapsedTime();
 
     // --- Lit/unlit transition (sequential: one fades out, then the other fades in) ---
-    const DAMP_RATE = 6;
-    const ft = flameTRef.current;
-    const st = smokeTRef.current;
+    // Linear speed (units/sec) with smoothstep easing for a steady, natural feel.
+    const SPEED = 1.8;
+    const step = SPEED * delta;
+    let ft = flameTRef.current;
+    let st = smokeTRef.current;
 
     if (lit) {
-      // Lighting: smoke shrinks first, then flame grows
-      if (st > 0.001) {
-        smokeTRef.current = THREE.MathUtils.damp(st, 0, DAMP_RATE, delta);
-        if (smokeTRef.current < 0.001) smokeTRef.current = 0;
-      } else {
-        smokeTRef.current = 0;
-        flameTRef.current = THREE.MathUtils.damp(ft, 1, DAMP_RATE, delta);
-        if (flameTRef.current > 0.999) flameTRef.current = 1;
+      // Lighting: smoke unmounts instantly, flame grows up from ember
+      if (st > 0) {
+        st = 0;
+        setSmokeActive(false);
       }
-    } else if (ft > 0.001) {
-      // Extinguishing: flame shrinks first, then smoke grows
-      flameTRef.current = THREE.MathUtils.damp(ft, 0, DAMP_RATE, delta);
-      if (flameTRef.current < 0.001) flameTRef.current = 0;
+      ft = Math.min(1, ft + step);
+    } else if (ft > 0) {
+      // Extinguishing: flame shrinks to nothing first
+      ft = Math.max(0, ft - step);
     } else {
-      flameTRef.current = 0;
-      smokeTRef.current = THREE.MathUtils.damp(st, 1, DAMP_RATE, delta);
-      if (smokeTRef.current > 0.999) smokeTRef.current = 1;
+      // Once flame is gone, mount smoke system (particles flow from origin)
+      ft = 0;
+      if (st === 0 && !smokeActive) setSmokeActive(true);
+      st = 1;
     }
 
-    const flameT = flameTRef.current;
-    const smokeT = smokeTRef.current;
+    flameTRef.current = ft;
+    smokeTRef.current = st;
+
+    // Smoothstep easing: 3t² - 2t³ (accelerate then decelerate)
+    const flameT = ft * ft * (3 - 2 * ft);
 
     // Apply transition scale to flame groups
     [topFlameGroupRef, bottomFlameGroupRef].forEach((r) => {
@@ -557,15 +560,6 @@ export default function Candle({ config, position = [0, 0, 0] }) {
       if (g) {
         g.visible = flameT > 0.001;
         g.scale.setScalar(flameT);
-      }
-    });
-
-    // Apply transition scale to smoke groups
-    [topSmokeGroupRef, bottomSmokeGroupRef].forEach((r) => {
-      const g = r.current;
-      if (g) {
-        g.visible = smokeT > 0.001;
-        g.scale.setScalar(smokeT);
       }
     });
 
@@ -690,21 +684,23 @@ export default function Candle({ config, position = [0, 0, 0] }) {
           <Flame motion={flameMotion} />
         )}
       </group>
-      <group ref={topSmokeGroupRef} position={[0.18, halfH + 0.34, 0.088]}>
-        {useVolumetricSmoke ? (
-          <>
-            <VolumetricSmokeParticles
-              points={topSmokePoints}
-              config={volSmokeConfig}
-            />
-            {volShowSpline && (
-              <Line points={topSmokePoints} color="cyan" lineWidth={2} />
-            )}
-          </>
-        ) : (
-          <Smoke2D smoke={smokeConfig} />
-        )}
-      </group>
+      {smokeActive && (
+        <group position={[0.18, halfH + 0.34, 0.088]}>
+          {useVolumetricSmoke ? (
+            <>
+              <VolumetricSmokeParticles
+                points={topSmokePoints}
+                config={volSmokeConfig}
+              />
+              {volShowSpline && (
+                <Line points={topSmokePoints} color="cyan" lineWidth={2} />
+              )}
+            </>
+          ) : (
+            <Smoke2D smoke={smokeConfig} />
+          )}
+        </group>
+      )}
       <pointLight
         ref={topLightRef}
         color={0xffaa33}
@@ -723,24 +719,23 @@ export default function Candle({ config, position = [0, 0, 0] }) {
           <Flame inverted motion={flameMotion} />
         )}
       </group>
-      <group
-        ref={bottomSmokeGroupRef}
-        position={[0.18, -(halfH + 0.34), 0.088]}
-      >
-        {useVolumetricSmoke ? (
-          <>
-            <VolumetricSmokeParticles
-              points={bottomSmokePoints}
-              config={volSmokeConfig}
-            />
-            {volShowSpline && (
-              <Line points={bottomSmokePoints} color="cyan" lineWidth={2} />
-            )}
-          </>
-        ) : (
-          <Smoke2D inverted smoke={smokeConfig} />
-        )}
-      </group>
+      {smokeActive && (
+        <group position={[0.18, -(halfH + 0.34), 0.088]}>
+          {useVolumetricSmoke ? (
+            <>
+              <VolumetricSmokeParticles
+                points={bottomSmokePoints}
+                config={volSmokeConfig}
+              />
+              {volShowSpline && (
+                <Line points={bottomSmokePoints} color="cyan" lineWidth={2} />
+              )}
+            </>
+          ) : (
+            <Smoke2D inverted smoke={smokeConfig} />
+          )}
+        </group>
+      )}
       <pointLight
         ref={bottomLightRef}
         color={0xffaa33}

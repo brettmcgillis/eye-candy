@@ -11,7 +11,7 @@ export default function getCandleFolder() {
         {
           flameType: {
             label: 'Type',
-            value: 'Shader',
+            value: 'Volumetric',
             options: ['Shader', 'Volumetric'],
           },
           'Shader Flame': folder(
@@ -216,7 +216,7 @@ export default function getCandleFolder() {
         {
           smokeType: {
             label: 'Type',
-            value: 'Billboard',
+            value: 'Volumetric',
             options: ['Billboard', 'Volumetric'],
           },
           smokeColor: { label: 'Color', value: '#b8b8b8' },

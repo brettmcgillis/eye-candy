@@ -39,9 +39,9 @@ const makeSeededRandom = (seedValue) => {
 // Attractor definitions for Gravity Attractors sim
 // Exported so the scene can clone these as the initial mutable state.
 export const INITIAL_ATTRACTORS = [
-  { position: [-1, 0, 0], axis: [0, 1, 0] },
-  { position: [1, 0, -0.5], axis: [0, 1, 0] },
-  { position: [0, 0.5, 1], axis: normalizeVec3([1, 0, -0.5]) },
+  { position: [-1, 0, 0], direction: [0, 1, 0] },
+  { position: [1, 0, -0.5], direction: [0, 1, 0] },
+  { position: [0, 0.5, 1], direction: normalizeVec3([1, 0, -0.5]) },
 ];
 
 const shuffledBranchTokens = (rand) => {
@@ -1505,7 +1505,7 @@ const algorithms = {
      *  @param {object}  state      – mutable sim buffers
      *  @param {object}  params     – Leva parameter values
      *  @param {Array}   [liveAttractors] – optional live attractor array from
-     *                   the scene (position/axis per entry). Falls back to
+     *                   the scene (position/direction per entry). Falls back to
      *                   INITIAL_ATTRACTORS when omitted.
      */
     update: (state, params, liveAttractors) => {
@@ -1551,9 +1551,9 @@ const algorithms = {
 
           // Spinning: cross(rotAxis * gStr * spin, toAttractor)
           const s = gStr * spinningStrength;
-          const sx = attr.axis[0] * s;
-          const sy = attr.axis[1] * s;
-          const sz = attr.axis[2] * s;
+          const sx = attr.direction[0] * s;
+          const sy = attr.direction[1] * s;
+          const sz = attr.direction[2] * s;
           fx += sy * dz - sz * dy;
           fy += sz * dx - sx * dz;
           fz += sx * dy - sy * dx;

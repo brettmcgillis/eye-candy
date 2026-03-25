@@ -9,13 +9,10 @@ import React, {
   useState,
 } from 'react';
 
-import {
-  OrbitControls,
-  PerspectiveCamera,
-  TransformControls,
-} from '@react-three/drei';
+import { OrbitControls, PerspectiveCamera } from '@react-three/drei';
 import { useFrame } from '@react-three/fiber';
 
+import Attractors from '../../../../elements/attractors/Attractors';
 import algorithms, { INITIAL_ATTRACTORS } from './particleAlgorithms';
 import useParticleLabControls from './useParticleLabControls';
 
@@ -49,190 +46,7 @@ function createCircleTexture() {
   return texture;
 }
 
-// ---------------------------------------------------------------------------
-// Attractor helpers — draggable 3D markers for the Gravity Attractors sim
-// ---------------------------------------------------------------------------
-
 const MAX_ATTRACTORS = 8;
-const ATTRACTOR_COLORS = [
-  '#ff4466',
-  '#44ff66',
-  '#4488ff',
-  '#ffdd44',
-  '#ff44ff',
-  '#44ffff',
-  '#ff8844',
-  '#88ff44',
-];
-
-/** Single draggable attractor marker with spin-axis indicator. */
-function AttractorHandle({
-  index,
-  initialPosition,
-  initialAxis,
-  mode,
-  onUpdate,
-  orbitRef,
-  scaleRef,
-}) {
-  const groupRef = useRef();
-  const translateControlsRef = useRef();
-  const rotateControlsRef = useRef();
-  const [ready, setReady] = useState(false);
-
-  // Set position / quaternion imperatively so React re-renders never
-  // overwrite values that TransformControls has changed via dragging.
-  useEffect(() => {
-    if (!groupRef.current) return;
-    const s = scaleRef.current;
-    groupRef.current.position.set(
-      initialPosition[0] * s,
-      initialPosition[1] * s,
-      initialPosition[2] * s
-    );
-    const axis = new THREE.Vector3(...initialAxis).normalize();
-    const up = new THREE.Vector3(0, 1, 0);
-    if (
-      axis.distanceTo(up) > 0.001 &&
-      axis.distanceTo(up.clone().negate()) > 0.001
-    ) {
-      groupRef.current.quaternion.setFromUnitVectors(up, axis);
-    }
-    setReady(true);
-    // eslint-disable-next-line no-empty-pattern
-  }, []); // intentionally mount-only
-
-  // Wire TransformControls events → orbit toggle + attractor data update.
-  useEffect(() => {
-    const tcTranslate = translateControlsRef.current;
-    const tcRotate = rotateControlsRef.current;
-    const refs = [tcTranslate, tcRotate].filter(Boolean);
-    if (refs.length === 0) return undefined;
-
-    const onDrag = (event) => {
-      const orbit = orbitRef.current;
-      if (orbit) {
-        // eslint-disable-next-line no-param-reassign
-        orbit.enabled = !event.value;
-      }
-    };
-    const onChange = () => {
-      if (!groupRef.current) return;
-      const p = groupRef.current.position;
-      const invS = 1 / (scaleRef.current || 1);
-      const a = new THREE.Vector3(0, 1, 0)
-        .applyQuaternion(groupRef.current.quaternion)
-        .normalize();
-      onUpdate(index, [p.x * invS, p.y * invS, p.z * invS], [a.x, a.y, a.z]);
-    };
-
-    refs.forEach((tc) => {
-      tc.addEventListener('dragging-changed', onDrag);
-      tc.addEventListener('objectChange', onChange);
-    });
-    return () => {
-      refs.forEach((tc) => {
-        tc.removeEventListener('dragging-changed', onDrag);
-        tc.removeEventListener('objectChange', onChange);
-      });
-    };
-  }, [ready, mode, index, onUpdate, orbitRef, scaleRef]);
-
-  const clr = ATTRACTOR_COLORS[index % ATTRACTOR_COLORS.length];
-
-  return (
-    <>
-      <group ref={groupRef}>
-        {/* marker sphere */}
-        <mesh>
-          <icosahedronGeometry args={[0.12, 2]} />
-          <meshBasicMaterial
-            color={clr}
-            transparent
-            opacity={0.7}
-            depthTest={false}
-          />
-        </mesh>
-        {/* spin-axis cone */}
-        <mesh position={[0, 0.3, 0]}>
-          <coneGeometry args={[0.04, 0.15, 8]} />
-          <meshBasicMaterial color={clr} depthTest={false} />
-        </mesh>
-      </group>
-      {ready && (mode === 'translate' || mode === 'both') && (
-        <TransformControls
-          ref={translateControlsRef}
-          object={groupRef.current}
-          mode="translate"
-          size={0.5}
-        />
-      )}
-      {ready && (mode === 'rotate' || mode === 'both') && (
-        <TransformControls
-          ref={rotateControlsRef}
-          object={groupRef.current}
-          mode="rotate"
-          size={0.5}
-        />
-      )}
-    </>
-  );
-}
-
-/** Leva panel + visual helpers for managing attractors in the viewport. */
-function AttractorManager({ attractorsRef, orbitRef, scaleRef }) {
-  const [, forceUpdate] = useState(0);
-
-  const { controlsMode, showHelpers } = useControls('Attractors', {
-    controlsMode: {
-      label: 'Mode',
-      value: 'translate',
-      options: ['both', 'translate', 'rotate', 'none'],
-    },
-    showHelpers: { label: 'Show Helpers', value: true },
-    addAttractor: button(() => {
-      if (attractorsRef.current.length >= MAX_ATTRACTORS) return;
-      attractorsRef.current.push({
-        position: [Math.random() * 2 - 1, 0, Math.random() * 2 - 1],
-        axis: [0, 1, 0],
-      });
-      forceUpdate((c) => c + 1);
-    }),
-    removeAttractor: button(() => {
-      if (attractorsRef.current.length <= 1) return;
-      attractorsRef.current.pop();
-      forceUpdate((c) => c + 1);
-    }),
-  });
-
-  const handleUpdate = useCallback(
-    (idx, position, axis) => {
-      // eslint-disable-next-line no-param-reassign
-      attractorsRef.current[idx] = { position, axis };
-    },
-    [attractorsRef]
-  );
-
-  if (!showHelpers) return null;
-
-  return (
-    <>
-      {attractorsRef.current.map((attr, i) => (
-        <AttractorHandle
-          // eslint-disable-next-line react/no-array-index-key
-          key={i}
-          index={i}
-          initialPosition={attr.position}
-          initialAxis={attr.axis}
-          mode={controlsMode}
-          onUpdate={handleUpdate}
-          orbitRef={orbitRef}
-          scaleRef={scaleRef}
-        />
-      ))}
-    </>
-  );
-}
 
 // ---------------------------------------------------------------------------
 // Particle cloud renderer
@@ -513,14 +327,57 @@ function ParticleCloud({ config, attractorsRef, scaleRef }) {
 
 export default function ParticleLab() {
   const config = useParticleLabControls();
-  const orbitRef = useRef();
   const scaleRef = useRef(1);
   const attractorsRef = useRef(
     INITIAL_ATTRACTORS.map((a) => ({
       position: [...a.position],
-      axis: [...a.axis],
+      direction: [...a.direction],
     }))
   );
+  const [attractorVersion, setAttractorVersion] = useState(0);
+
+  // World-space attractor copies for the visual markers (scaled up).
+  const worldAttractorsRef = useRef([]);
+  useEffect(() => {
+    const s = scaleRef.current;
+    worldAttractorsRef.current = attractorsRef.current.map((a) => ({
+      position: [a.position[0] * s, a.position[1] * s, a.position[2] * s],
+      direction: [...a.direction],
+      rotation: [0, 0, 0],
+    }));
+  }, [attractorVersion]);
+
+  // Convert world-space marker drag back to normalised attractor data.
+  const handleAttractorUpdate = useCallback((idx, { position, direction }) => {
+    const invS = 1 / (scaleRef.current || 1);
+    // eslint-disable-next-line no-param-reassign
+    attractorsRef.current[idx] = {
+      position: [position[0] * invS, position[1] * invS, position[2] * invS],
+      direction,
+    };
+  }, []);
+
+  const { controlsMode, showHelpers } = useControls('Attractors', {
+    controlsMode: {
+      label: 'Mode',
+      value: 'translate',
+      options: ['both', 'translate', 'rotate', 'none'],
+    },
+    showHelpers: { label: 'Show Helpers', value: true },
+    addAttractor: button(() => {
+      if (attractorsRef.current.length >= MAX_ATTRACTORS) return;
+      attractorsRef.current.push({
+        position: [Math.random() * 2 - 1, 0, Math.random() * 2 - 1],
+        direction: [0, 1, 0],
+      });
+      setAttractorVersion((c) => c + 1);
+    }),
+    removeAttractor: button(() => {
+      if (attractorsRef.current.length <= 1) return;
+      attractorsRef.current.pop();
+      setAttractorVersion((c) => c + 1);
+    }),
+  });
 
   return (
     <>
@@ -529,7 +386,7 @@ export default function ParticleLab() {
       <ambientLight intensity={0.4} />
       <PerspectiveCamera makeDefault position={[0, 10, 30]} fov={45} />
       <OrbitControls
-        ref={orbitRef}
+        makeDefault
         enableDamping
         dampingFactor={0.05}
         autoRotate={false}
@@ -540,10 +397,14 @@ export default function ParticleLab() {
         scaleRef={scaleRef}
       />
       {config.algorithm === 'Gravity Attractors' && (
-        <AttractorManager
-          attractorsRef={attractorsRef}
-          orbitRef={orbitRef}
-          scaleRef={scaleRef}
+        <Attractors
+          attractorsRef={worldAttractorsRef}
+          mode={controlsMode}
+          visible={showHelpers}
+          markerSize={0.12}
+          controlsSize={0.5}
+          version={attractorVersion}
+          onUpdate={handleAttractorUpdate}
         />
       )}
     </>

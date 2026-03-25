@@ -1,9 +1,7 @@
 import { lazy } from 'react';
 
 const NoScene = lazy(() => import('../../../app/scaffold/NoScene'));
-const SplineEditor = lazy(
-  () => import('./WebGL/SplineEditor/components/SplineEditor')
-);
+const SplineEditor = lazy(() => import('./WebGL/SplineEditor/SplineEditor'));
 
 const scenes = [
   {

@@ -1,12 +1,20 @@
-import React from 'react';
+import React, { useState } from 'react';
 
 import { OrbitControls, PerspectiveCamera } from '@react-three/drei';
 
 import GridBox from '../../../../elements/gridbox/GridBox';
 import SplineLine from '../../../../elements/spline/SplineLine';
 import SplinePoints from '../../../../elements/spline/SplinePoints';
+import SPLINE_PRESETS from '../../../../elements/spline/splinePresets';
+import useSplineEditorControls from './hooks/useSplineEditorControls';
 
-export default function SplineEditorScene({ points, setPoints, config }) {
+export default function SplineEditor() {
+  const [points, setPoints] = useState(() =>
+    SPLINE_PRESETS.Default.points.map((v) => v.clone())
+  );
+
+  const config = useSplineEditorControls(points, setPoints);
+
   return (
     <>
       <color attach="background" args={['#3a4a5c']} />

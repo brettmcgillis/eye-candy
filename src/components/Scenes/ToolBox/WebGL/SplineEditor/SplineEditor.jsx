@@ -17,12 +17,14 @@ function getSplineColors(splineIndex) {
   };
 }
 
-function SplineGroup({ index, points, config, setSplinePoints }) {
+function SplineGroup({ index, points, config, setSplinePoints, visible }) {
   const setPoints = useCallback(
     (updater) => setSplinePoints(index, updater),
     [index, setSplinePoints]
   );
   const colors = getSplineColors(index);
+
+  if (!visible) return null;
 
   return (
     <>
@@ -115,6 +117,7 @@ export default function SplineEditor() {
           points={points}
           config={config}
           setSplinePoints={setSplinePoints}
+          visible={config.splineVisibility[index] !== false}
         />
       ))}
       {/* eslint-enable react/no-array-index-key */}

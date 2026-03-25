@@ -1,7 +1,7 @@
 import { button, folder, useControls } from 'leva';
 import * as THREE from 'three';
 
-import { useEffect, useMemo, useRef } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 
 import { localEnv } from '../../../../../../utils/appUtils';
 import SPLINE_PRESETS from '../../../../../elements/spline/splinePresets';
@@ -11,6 +11,9 @@ export default function useSplineEditorControls(splines, setSplines) {
   const selectedPresetRef = useRef('Default');
   const splinesRef = useRef(splines);
   splinesRef.current = splines;
+  const [splineVisibility, setSplineVisibility] = useState(() =>
+    splines.map(() => true)
+  );
 
   const [
     {
@@ -166,6 +169,16 @@ export default function useSplineEditorControls(splines, setSplines) {
       ...splines.reduce((acc, _, index) => {
         acc[`Spline ${index + 1}`] = folder(
           {
+            [`visible_${index}`]: {
+              label: 'Visible',
+              value: true,
+              onChange: (v) =>
+                setSplineVisibility((prev) => {
+                  const next = [...prev];
+                  next[index] = v;
+                  return next;
+                }),
+            },
             [`addPoint_${index}`]: button(
               () => {
                 setSplines((prev) =>
@@ -251,7 +264,17 @@ export default function useSplineEditorControls(splines, setSplines) {
       showChordal: p.showChordal,
     });
     setSplines([p.points.map((v) => v.clone())]);
+    setSplineVisibility([true]);
   }, [preset]); // intentionally omit setControls/setSplines — only re-run on preset change
+
+  // Keep visibility array in sync with spline count
+  useEffect(() => {
+    setSplineVisibility((prev) => {
+      if (prev.length === splines.length) return prev;
+      const next = splines.map((_, i) => prev[i] ?? true);
+      return next;
+    });
+  }, [splines.length]);
 
   return useMemo(
     () => ({
@@ -262,6 +285,7 @@ export default function useSplineEditorControls(splines, setSplines) {
       showUniform,
       showCentripetal,
       showChordal,
+      splineVisibility,
     }),
     [
       tension,
@@ -271,6 +295,7 @@ export default function useSplineEditorControls(splines, setSplines) {
       showUniform,
       showCentripetal,
       showChordal,
+      splineVisibility,
     ]
   );
 }

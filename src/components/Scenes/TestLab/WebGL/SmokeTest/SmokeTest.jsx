@@ -17,11 +17,14 @@ function SmokeSplineGroup({
   config,
   attractorsRef,
   setSplinePoints,
+  visible,
 }) {
   const setPoints = useCallback(
     (updater) => setSplinePoints(index, updater),
     [index, setSplinePoints]
   );
+
+  if (!visible) return null;
 
   return (
     <>
@@ -125,6 +128,7 @@ export default function SmokeTest() {
           config={config}
           attractorsRef={attractorsRef}
           setSplinePoints={setSplinePoints}
+          visible={config.splineVisibility[index] !== false}
         />
       ))}
       {/* eslint-enable react/no-array-index-key */}

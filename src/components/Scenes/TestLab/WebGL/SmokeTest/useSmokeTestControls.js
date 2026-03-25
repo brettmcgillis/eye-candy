@@ -17,6 +17,9 @@ export default function useSmokeTestControls(
   const controlsSnapshotRef = useRef({});
   const splinesRef = useRef(splines);
   splinesRef.current = splines;
+  const [splineVisibility, setSplineVisibility] = useState(() =>
+    splines.map(() => true)
+  );
   const [attractorVersion, setAttractorVersion] = useState(0);
   const forceAttractorUpdate = useCallback(
     () => setAttractorVersion((c) => c + 1),
@@ -461,6 +464,16 @@ export default function useSmokeTestControls(
       ...splines.reduce((acc, _, index) => {
         acc[`Spline ${index + 1}`] = folder(
           {
+            [`visible_${index}`]: {
+              label: 'Visible',
+              value: true,
+              onChange: (v) =>
+                setSplineVisibility((prev) => {
+                  const next = [...prev];
+                  next[index] = v;
+                  return next;
+                }),
+            },
             [`addPoint_${index}`]: button(
               () => {
                 setSplines((prev) =>
@@ -515,7 +528,16 @@ export default function useSmokeTestControls(
   useEffect(() => {
     const p = SPLINE_PRESETS[preset];
     if (p) setSplines([p.points.map((v) => v.clone())]);
+    setSplineVisibility([true]);
   }, [preset]);
+
+  // Keep visibility array in sync with spline count
+  useEffect(() => {
+    setSplineVisibility((prev) => {
+      if (prev.length === splines.length) return prev;
+      return splines.map((_, i) => prev[i] ?? true);
+    });
+  }, [splines.length]);
 
   // Keep snapshot ref current for the copy button
   useEffect(() => {
@@ -605,6 +627,7 @@ export default function useSmokeTestControls(
       attractorMode,
       attractorVersion,
       forceAttractorUpdate,
+      splineVisibility,
     }),
     [
       tension,
@@ -649,6 +672,7 @@ export default function useSmokeTestControls(
       attractorMode,
       attractorVersion,
       forceAttractorUpdate,
+      splineVisibility,
     ]
   );
 }

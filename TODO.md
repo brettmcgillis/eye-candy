@@ -134,3 +134,15 @@ To Build:
 - Row It Alone
 - Police Presence
 - Flying High
+- Dumpster Fire
+
+## Firescale
+
+Ive accumulated a bunch of scenes that involve things on fire or smoking. Cataloging here so I can make sure they all work nicely as I continue to upgrade my smoke and fire systems
+
+- Candle
+- Gun
+- Dumpster
+- Police Car
+- Tug Boat
+- Airplane

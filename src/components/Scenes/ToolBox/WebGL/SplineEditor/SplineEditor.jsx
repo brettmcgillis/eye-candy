@@ -17,14 +17,14 @@ function getSplineColors(splineIndex) {
   };
 }
 
-function SplineGroup({ index, points, config, setSplinePoints, visible }) {
+function SplineGroup({ index, points, config, splineConfig, setSplinePoints }) {
   const setPoints = useCallback(
     (updater) => setSplinePoints(index, updater),
     [index, setSplinePoints]
   );
   const colors = getSplineColors(index);
 
-  if (!visible) return null;
+  if (!splineConfig.visible) return null;
 
   return (
     <>
@@ -35,30 +35,30 @@ function SplineGroup({ index, points, config, setSplinePoints, visible }) {
       />
       <SplineLine
         points={points}
-        tension={config.tension}
-        closed={config.closed}
+        tension={splineConfig.tension}
+        closed={splineConfig.closed}
         curveType="catmullrom"
         color={colors.uniform}
         visible={config.showUniform}
-        arcSegments={config.arcSegments}
+        arcSegments={splineConfig.arcSegments}
       />
       <SplineLine
         points={points}
-        tension={config.tension}
-        closed={config.closed}
+        tension={splineConfig.tension}
+        closed={splineConfig.closed}
         curveType="centripetal"
         color={colors.centripetal}
         visible={config.showCentripetal}
-        arcSegments={config.arcSegments}
+        arcSegments={splineConfig.arcSegments}
       />
       <SplineLine
         points={points}
-        tension={config.tension}
-        closed={config.closed}
+        tension={splineConfig.tension}
+        closed={splineConfig.closed}
         curveType="chordal"
         color={colors.chordal}
         visible={config.showChordal}
-        arcSegments={config.arcSegments}
+        arcSegments={splineConfig.arcSegments}
       />
     </>
   );
@@ -116,8 +116,8 @@ export default function SplineEditor() {
           index={index}
           points={points}
           config={config}
+          splineConfig={config.splineConfigs[index] ?? {}}
           setSplinePoints={setSplinePoints}
-          visible={config.splineVisibility[index] !== false}
         />
       ))}
       {/* eslint-enable react/no-array-index-key */}

@@ -6,26 +6,32 @@ import { useEffect, useMemo, useRef, useState } from 'react';
 import { localEnv } from '../../../../../../utils/appUtils';
 import SPLINE_PRESETS from '../../../../../elements/spline/splinePresets';
 
+const DEFAULT_SPLINE_CONFIG = {
+  visible: true,
+  tension: SPLINE_PRESETS.Default.tension,
+  closed: SPLINE_PRESETS.Default.closed,
+  arcSegments: 200,
+};
+
+function updateSplineConfig(setter, index, key, value) {
+  setter((prev) => {
+    const next = [...prev];
+    next[index] = { ...next[index], [key]: value };
+    return next;
+  });
+}
+
 export default function useSplineEditorControls(splines, setSplines) {
   const controlsSnapshotRef = useRef({});
   const selectedPresetRef = useRef('Default');
   const splinesRef = useRef(splines);
   splinesRef.current = splines;
-  const [splineVisibility, setSplineVisibility] = useState(() =>
-    splines.map(() => true)
+  const [splineConfigs, setSplineConfigs] = useState(() =>
+    splines.map(() => ({ ...DEFAULT_SPLINE_CONFIG }))
   );
 
   const [
-    {
-      preset,
-      tension,
-      closed,
-      showPoints,
-      showUniform,
-      showCentripetal,
-      showChordal,
-      arcSegments,
-    },
+    { preset, showPoints, showUniform, showCentripetal, showChordal },
     setControls,
   ] = useControls(
     'Spline Editor',
@@ -41,14 +47,19 @@ export default function useSplineEditorControls(splines, setSplines) {
             const p = SPLINE_PRESETS[selectedPresetRef.current];
             if (p) {
               setControls({
-                tension: p.tension,
-                closed: p.closed,
                 showPoints: p.showPoints ?? true,
                 showUniform: p.showUniform,
                 showCentripetal: p.showCentripetal,
                 showChordal: p.showChordal,
               });
               setSplines([p.points.map((v) => v.clone())]);
+              setSplineConfigs([
+                {
+                  ...DEFAULT_SPLINE_CONFIG,
+                  tension: p.tension,
+                  closed: p.closed,
+                },
+              ]);
             }
           }),
           ...(localEnv()
@@ -63,29 +74,6 @@ export default function useSplineEditorControls(splines, setSplines) {
                 }),
               }
             : {}),
-        },
-        { collapsed: true }
-      ),
-      Spline: folder(
-        {
-          tension: {
-            label: 'Tension',
-            value: SPLINE_PRESETS.Default.tension,
-            min: 0,
-            max: 1,
-            step: 0.01,
-          },
-          closed: {
-            label: 'Closed Loop',
-            value: SPLINE_PRESETS.Default.closed,
-          },
-          arcSegments: {
-            label: 'Arc Segments',
-            value: 200,
-            min: 10,
-            max: 500,
-            step: 10,
-          },
         },
         { collapsed: true }
       ),
@@ -167,17 +155,38 @@ export default function useSplineEditorControls(splines, setSplines) {
       ),
       // Per-spline folders — rebuilt when spline count changes
       ...splines.reduce((acc, _, index) => {
+        const cfg = splineConfigs[index] ?? DEFAULT_SPLINE_CONFIG;
         acc[`Spline ${index + 1}`] = folder(
           {
             [`visible_${index}`]: {
               label: 'Visible',
-              value: true,
+              value: cfg.visible,
               onChange: (v) =>
-                setSplineVisibility((prev) => {
-                  const next = [...prev];
-                  next[index] = v;
-                  return next;
-                }),
+                updateSplineConfig(setSplineConfigs, index, 'visible', v),
+            },
+            [`tension_${index}`]: {
+              label: 'Tension',
+              value: cfg.tension,
+              min: 0,
+              max: 1,
+              step: 0.01,
+              onChange: (v) =>
+                updateSplineConfig(setSplineConfigs, index, 'tension', v),
+            },
+            [`closed_${index}`]: {
+              label: 'Closed Loop',
+              value: cfg.closed,
+              onChange: (v) =>
+                updateSplineConfig(setSplineConfigs, index, 'closed', v),
+            },
+            [`arcSegments_${index}`]: {
+              label: 'Arc Segments',
+              value: cfg.arcSegments,
+              min: 10,
+              max: 500,
+              step: 10,
+              onChange: (v) =>
+                updateSplineConfig(setSplineConfigs, index, 'arcSegments', v),
             },
             [`addPoint_${index}`]: button(
               () => {
@@ -231,24 +240,22 @@ export default function useSplineEditorControls(splines, setSplines) {
   // Update snapshot ref when controls or splines change
   useEffect(() => {
     controlsSnapshotRef.current = {
-      tension,
-      closed,
       showPoints,
       showUniform,
       showCentripetal,
       showChordal,
-      splines: splines.map((pts) =>
-        pts.map((p) => ({ x: p.x, y: p.y, z: p.z }))
-      ),
+      splines: splines.map((pts, i) => ({
+        ...(splineConfigs[i] ?? DEFAULT_SPLINE_CONFIG),
+        points: pts.map((p) => ({ x: p.x, y: p.y, z: p.z })),
+      })),
     };
   }, [
-    tension,
-    closed,
     showPoints,
     showUniform,
     showCentripetal,
     showChordal,
     splines,
+    splineConfigs,
   ]);
 
   // Apply preset when selection changes
@@ -256,46 +263,33 @@ export default function useSplineEditorControls(splines, setSplines) {
     const p = SPLINE_PRESETS[preset];
     if (!p) return;
     setControls({
-      tension: p.tension,
-      closed: p.closed,
       showPoints: p.showPoints ?? true,
       showUniform: p.showUniform,
       showCentripetal: p.showCentripetal,
       showChordal: p.showChordal,
     });
     setSplines([p.points.map((v) => v.clone())]);
-    setSplineVisibility([true]);
+    setSplineConfigs([
+      { ...DEFAULT_SPLINE_CONFIG, tension: p.tension, closed: p.closed },
+    ]);
   }, [preset]); // intentionally omit setControls/setSplines — only re-run on preset change
 
-  // Keep visibility array in sync with spline count
+  // Keep configs array in sync with spline count
   useEffect(() => {
-    setSplineVisibility((prev) => {
+    setSplineConfigs((prev) => {
       if (prev.length === splines.length) return prev;
-      const next = splines.map((_, i) => prev[i] ?? true);
-      return next;
+      return splines.map((_, i) => prev[i] ?? { ...DEFAULT_SPLINE_CONFIG });
     });
   }, [splines.length]);
 
   return useMemo(
     () => ({
-      tension,
-      closed,
-      arcSegments,
       showPoints,
       showUniform,
       showCentripetal,
       showChordal,
-      splineVisibility,
+      splineConfigs,
     }),
-    [
-      tension,
-      closed,
-      arcSegments,
-      showPoints,
-      showUniform,
-      showCentripetal,
-      showChordal,
-      splineVisibility,
-    ]
+    [showPoints, showUniform, showCentripetal, showChordal, splineConfigs]
   );
 }

@@ -8,6 +8,23 @@ import SPLINE_PRESETS from '../../../../elements/spline/splinePresets';
 
 const MAX_ATTRACTORS = 8;
 
+const DEFAULT_SPLINE_CONFIG = {
+  visible: true,
+  tension: 1,
+  closed: true,
+  showSpline: true,
+  showHelpers: true,
+  arcSegments: 200,
+};
+
+function updateSplineConfig(setter, index, key, value) {
+  setter((prev) => {
+    const next = [...prev];
+    next[index] = { ...next[index], [key]: value };
+    return next;
+  });
+}
+
 export default function useSmokeTestControls(
   splines,
   setSplines,
@@ -17,8 +34,8 @@ export default function useSmokeTestControls(
   const controlsSnapshotRef = useRef({});
   const splinesRef = useRef(splines);
   splinesRef.current = splines;
-  const [splineVisibility, setSplineVisibility] = useState(() =>
-    splines.map(() => true)
+  const [splineConfigs, setSplineConfigs] = useState(() =>
+    splines.map(() => ({ ...DEFAULT_SPLINE_CONFIG }))
   );
   const [attractorVersion, setAttractorVersion] = useState(0);
   const forceAttractorUpdate = useCallback(
@@ -29,11 +46,6 @@ export default function useSmokeTestControls(
   const [
     {
       preset,
-      tension,
-      closed,
-      showSpline,
-      showHelpers,
-      arcSegments,
       showClassicSmoke,
       showVolSmoke,
       bgColor,
@@ -82,7 +94,16 @@ export default function useSmokeTestControls(
           },
           reset: button(() => {
             const p = SPLINE_PRESETS[selectedPresetRef.current];
-            if (p) setSplines([p.points.map((v) => v.clone())]);
+            if (p) {
+              setSplines([p.points.map((v) => v.clone())]);
+              setSplineConfigs([
+                {
+                  ...DEFAULT_SPLINE_CONFIG,
+                  tension: p.tension ?? DEFAULT_SPLINE_CONFIG.tension,
+                  closed: p.closed ?? DEFAULT_SPLINE_CONFIG.closed,
+                },
+              ]);
+            }
           }),
           ...(localEnv()
             ? {
@@ -116,38 +137,6 @@ export default function useSmokeTestControls(
           bgColor: {
             label: 'Background',
             value: '#ffffff',
-          },
-        },
-        { collapsed: true }
-      ),
-
-      Spline: folder(
-        {
-          tension: {
-            label: 'Tension',
-            value: 1,
-            min: 0,
-            max: 1,
-            step: 0.01,
-          },
-          closed: {
-            label: 'Closed Loop',
-            value: true,
-          },
-          showSpline: {
-            label: 'Show Spline',
-            value: true,
-          },
-          showHelpers: {
-            label: 'Show Helpers',
-            value: true,
-          },
-          arcSegments: {
-            label: 'Arc Segments',
-            value: 200,
-            min: 10,
-            max: 500,
-            step: 10,
           },
         },
         { collapsed: true }
@@ -462,17 +451,50 @@ export default function useSmokeTestControls(
 
       // Per-spline folders — rebuilt when spline count changes
       ...splines.reduce((acc, _, index) => {
+        const cfg = splineConfigs[index] ?? DEFAULT_SPLINE_CONFIG;
         acc[`Spline ${index + 1}`] = folder(
           {
             [`visible_${index}`]: {
               label: 'Visible',
-              value: true,
+              value: cfg.visible,
               onChange: (v) =>
-                setSplineVisibility((prev) => {
-                  const next = [...prev];
-                  next[index] = v;
-                  return next;
-                }),
+                updateSplineConfig(setSplineConfigs, index, 'visible', v),
+            },
+            [`tension_${index}`]: {
+              label: 'Tension',
+              value: cfg.tension,
+              min: 0,
+              max: 1,
+              step: 0.01,
+              onChange: (v) =>
+                updateSplineConfig(setSplineConfigs, index, 'tension', v),
+            },
+            [`closed_${index}`]: {
+              label: 'Closed Loop',
+              value: cfg.closed,
+              onChange: (v) =>
+                updateSplineConfig(setSplineConfigs, index, 'closed', v),
+            },
+            [`showSpline_${index}`]: {
+              label: 'Show Spline',
+              value: cfg.showSpline,
+              onChange: (v) =>
+                updateSplineConfig(setSplineConfigs, index, 'showSpline', v),
+            },
+            [`showHelpers_${index}`]: {
+              label: 'Show Helpers',
+              value: cfg.showHelpers,
+              onChange: (v) =>
+                updateSplineConfig(setSplineConfigs, index, 'showHelpers', v),
+            },
+            [`arcSegments_${index}`]: {
+              label: 'Arc Segments',
+              value: cfg.arcSegments,
+              min: 10,
+              max: 500,
+              step: 10,
+              onChange: (v) =>
+                updateSplineConfig(setSplineConfigs, index, 'arcSegments', v),
             },
             [`addPoint_${index}`]: button(
               () => {
@@ -527,23 +549,29 @@ export default function useSmokeTestControls(
   // Apply preset points when selection changes
   useEffect(() => {
     const p = SPLINE_PRESETS[preset];
-    if (p) setSplines([p.points.map((v) => v.clone())]);
-    setSplineVisibility([true]);
+    if (p) {
+      setSplines([p.points.map((v) => v.clone())]);
+      setSplineConfigs([
+        {
+          ...DEFAULT_SPLINE_CONFIG,
+          tension: p.tension ?? DEFAULT_SPLINE_CONFIG.tension,
+          closed: p.closed ?? DEFAULT_SPLINE_CONFIG.closed,
+        },
+      ]);
+    }
   }, [preset]);
 
-  // Keep visibility array in sync with spline count
+  // Keep configs array in sync with spline count
   useEffect(() => {
-    setSplineVisibility((prev) => {
+    setSplineConfigs((prev) => {
       if (prev.length === splines.length) return prev;
-      return splines.map((_, i) => prev[i] ?? true);
+      return splines.map((_, i) => prev[i] ?? { ...DEFAULT_SPLINE_CONFIG });
     });
   }, [splines.length]);
 
   // Keep snapshot ref current for the copy button
   useEffect(() => {
     controlsSnapshotRef.current = {
-      tension,
-      closed,
       particleCount,
       particleSize,
       particleColor,
@@ -577,19 +605,15 @@ export default function useSmokeTestControls(
       showClassicSmoke,
       showVolSmoke,
       bgColor,
-      splines: splines.map((pts) =>
-        pts.map((p) => ({ x: p.x, y: p.y, z: p.z }))
-      ),
+      splines: splines.map((pts, i) => ({
+        ...(splineConfigs[i] ?? DEFAULT_SPLINE_CONFIG),
+        points: pts.map((p) => ({ x: p.x, y: p.y, z: p.z })),
+      })),
     };
   });
 
   return useMemo(
     () => ({
-      tension,
-      closed,
-      showSpline,
-      showHelpers,
-      arcSegments,
       showClassicSmoke,
       showVolSmoke,
       bgColor,
@@ -627,14 +651,9 @@ export default function useSmokeTestControls(
       attractorMode,
       attractorVersion,
       forceAttractorUpdate,
-      splineVisibility,
+      splineConfigs,
     }),
     [
-      tension,
-      closed,
-      showSpline,
-      showHelpers,
-      arcSegments,
       showClassicSmoke,
       showVolSmoke,
       bgColor,
@@ -672,7 +691,7 @@ export default function useSmokeTestControls(
       attractorMode,
       attractorVersion,
       forceAttractorUpdate,
-      splineVisibility,
+      splineConfigs,
     ]
   );
 }

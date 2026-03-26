@@ -1,4 +1,4 @@
-import React, { useCallback, useRef, useState } from 'react';
+import React, { useCallback, useMemo, useRef, useState } from 'react';
 
 import { OrbitControls, PerspectiveCamera } from '@react-three/drei';
 
@@ -15,39 +15,55 @@ function SmokeSplineGroup({
   index,
   points,
   config,
+  splineConfig,
   attractorsRef,
   setSplinePoints,
-  visible,
 }) {
   const setPoints = useCallback(
     (updater) => setSplinePoints(index, updater),
     [index, setSplinePoints]
   );
 
-  if (!visible) return null;
+  // Merge per-spline settings into config for smoke components
+  const mergedConfig = useMemo(
+    () => ({
+      ...config,
+      tension: splineConfig.tension,
+      closed: splineConfig.closed,
+      arcSegments: splineConfig.arcSegments,
+    }),
+    [
+      config,
+      splineConfig.tension,
+      splineConfig.closed,
+      splineConfig.arcSegments,
+    ]
+  );
+
+  if (!splineConfig.visible) return null;
 
   return (
     <>
       <SplinePoints
         points={points}
         setPoints={setPoints}
-        visible={config.showHelpers}
+        visible={splineConfig.showHelpers}
       />
 
       <SplineLine
         points={points}
-        tension={config.tension}
-        closed={config.closed}
+        tension={splineConfig.tension}
+        closed={splineConfig.closed}
         curveType="catmullrom"
         color="#aaaaaa"
-        visible={config.showSpline}
-        arcSegments={config.arcSegments}
+        visible={splineConfig.showSpline}
+        arcSegments={splineConfig.arcSegments}
       />
 
       {config.showClassicSmoke && (
         <SmokeParticles
           points={points}
-          config={config}
+          config={mergedConfig}
           attractorsRef={attractorsRef}
         />
       )}
@@ -55,7 +71,7 @@ function SmokeSplineGroup({
       {config.showVolSmoke && (
         <VolumetricSmokeParticles
           points={points}
-          config={config}
+          config={mergedConfig}
           attractorsRef={attractorsRef}
         />
       )}
@@ -126,9 +142,9 @@ export default function SmokeTest() {
           index={index}
           points={points}
           config={config}
+          splineConfig={config.splineConfigs[index] ?? {}}
           attractorsRef={attractorsRef}
           setSplinePoints={setSplinePoints}
-          visible={config.splineVisibility[index] !== false}
         />
       ))}
       {/* eslint-enable react/no-array-index-key */}

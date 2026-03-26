@@ -377,6 +377,27 @@ export default function useHotBoxControls(splines, setSplines, attractorsRef) {
             max: 2000,
             step: 50,
           },
+          volGrowth: {
+            label: 'Growth',
+            value: 1.5,
+            min: 0,
+            max: 10,
+            step: 0.1,
+          },
+          volFadeExp: {
+            label: 'Fade Exponent',
+            value: 1.2,
+            min: 0.1,
+            max: 5,
+            step: 0.1,
+          },
+          volBuoyancy: {
+            label: 'Buoyancy',
+            value: 0,
+            min: -200,
+            max: 200,
+            step: 5,
+          },
         },
         { collapsed: true }
       ),

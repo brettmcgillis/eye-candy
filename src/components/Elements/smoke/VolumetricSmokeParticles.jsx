@@ -25,12 +25,16 @@ const CURVE_SAMPLES = 512;
 const vertexShader = /* glsl */ `
 uniform float uSize;
 uniform float uScale;
+uniform float uGrowth;
 attribute float aAlpha;
+attribute float aAge;
 varying float vAlpha;
+varying float vAge;
 void main() {
   vAlpha = aAlpha;
+  vAge = aAge;
   vec4 mvPosition = modelViewMatrix * vec4(position, 1.0);
-  gl_PointSize = uSize * uScale / (-mvPosition.z);
+  gl_PointSize = uSize * (1.0 + aAge * uGrowth) * uScale / (-mvPosition.z);
   gl_Position = projectionMatrix * mvPosition;
 }
 `;
@@ -39,14 +43,17 @@ const fragmentShader = /* glsl */ `
 uniform sampler2D uMap;
 uniform vec3 uColor;
 uniform float uOpacity;
+uniform float uFadeExp;
 varying float vAlpha;
+varying float vAge;
 void main() {
   vec2 uv = gl_PointCoord;
   float r = length(uv - 0.5) * 2.0;
   // Smooth radial density — integrates like a volumetric density field.
   float density = exp(-r * r * 2.8) - exp(-2.8);
   density = clamp(density / (1.0 - exp(-2.8)), 0.0, 1.0);
-  float a = density * uOpacity * vAlpha;
+  float ageFade = 1.0 - pow(vAge, uFadeExp);
+  float a = density * uOpacity * vAlpha * ageFade;
   if (a < 0.001) discard;
   gl_FragColor = vec4(uColor * density, a);
 }
@@ -160,6 +167,8 @@ export default function VolumetricSmokeParticles({
       uScale: { value: 400 },
       uColor: { value: new THREE.Color(config.volColor ?? '#9090a0') },
       uOpacity: { value: config.volOpacity ?? 0.06 },
+      uGrowth: { value: config.volGrowth ?? 1.5 },
+      uFadeExp: { value: config.volFadeExp ?? 1.2 },
     }),
     [] // intentionally stable — seeded from config defaults only
   );
@@ -178,6 +187,7 @@ export default function VolumetricSmokeParticles({
       const velocities = new Float32Array(N * 3);
       const splineT = new Float32Array(N);
       const alphas = new Float32Array(N).fill(1);
+      const ages = new Float32Array(N);
       const phases = new Float32Array(N);
       for (let i = 0; i < N; i += 1) phases[i] = Math.random() * Math.PI * 2;
 
@@ -252,8 +262,19 @@ export default function VolumetricSmokeParticles({
       const alphaAttr = new THREE.BufferAttribute(new Float32Array(alphas), 1);
       alphaAttr.usage = THREE.DynamicDrawUsage;
       geo.setAttribute('aAlpha', alphaAttr);
+      const ageAttr = new THREE.BufferAttribute(ages, 1);
+      ageAttr.usage = THREE.DynamicDrawUsage;
+      geo.setAttribute('aAge', ageAttr);
 
-      stateRef.current = { positions, velocities, splineT, alphas, phases, N };
+      stateRef.current = {
+        positions,
+        velocities,
+        splineT,
+        alphas,
+        ages,
+        phases,
+        N,
+      };
       return;
     }
 
@@ -263,6 +284,7 @@ export default function VolumetricSmokeParticles({
     const velocities = new Float32Array(N * 3);
     const splineT = new Float32Array(N);
     const alphas = new Float32Array(N).fill(1);
+    const ages = new Float32Array(N);
     const phases = new Float32Array(N);
 
     const copyN = Math.min(oldN, N);
@@ -270,6 +292,7 @@ export default function VolumetricSmokeParticles({
     velocities.set(prev.velocities.subarray(0, copyN * 3));
     splineT.set(prev.splineT.subarray(0, copyN));
     alphas.set(prev.alphas.subarray(0, copyN));
+    if (prev.ages) ages.set(prev.ages.subarray(0, copyN));
     phases.set(prev.phases.subarray(0, copyN));
 
     const lookup = lookupRef.current;
@@ -308,8 +331,19 @@ export default function VolumetricSmokeParticles({
     const newAlphaAttr = new THREE.BufferAttribute(alphas, 1);
     newAlphaAttr.usage = THREE.DynamicDrawUsage;
     geo.setAttribute('aAlpha', newAlphaAttr);
+    const newAgeAttr = new THREE.BufferAttribute(ages, 1);
+    newAgeAttr.usage = THREE.DynamicDrawUsage;
+    geo.setAttribute('aAge', newAgeAttr);
 
-    stateRef.current = { positions, velocities, splineT, alphas, phases, N };
+    stateRef.current = {
+      positions,
+      velocities,
+      splineT,
+      alphas,
+      ages,
+      phases,
+      N,
+    };
   }, [volParticleCount]); // intentionally only on volParticleCount
 
   useFrame(({ size }, delta) => {
@@ -331,6 +365,8 @@ export default function VolumetricSmokeParticles({
       mat.uniforms.uColor.value.set(volColor);
       mat.uniforms.uOpacity.value = volOpacity;
       mat.uniforms.uScale.value = size.height / 2;
+      mat.uniforms.uGrowth.value = config.volGrowth ?? 1.5;
+      mat.uniforms.uFadeExp.value = config.volFadeExp ?? 1.2;
       const nextBlend =
         BLEND_MODES[config.volBlendMode] ?? THREE.NormalBlending;
       const needsPremultiplied =
@@ -394,13 +430,18 @@ export default function VolumetricSmokeParticles({
     const attractorStrength = config.attractorStrength ?? 300;
     const attractorRadius = config.attractorRadius ?? 300;
 
+    const volBuoyancy = config.volBuoyancy ?? 0;
+
     const [splineStartX, splineStartY, splineStartZ] = lookup;
-    const { positions, velocities, splineT, alphas, phases, N } = state;
+    const { positions, velocities, splineT, alphas, ages, phases, N } = state;
 
     for (let i = 0; i < N; i += 1) {
       const pi = i * 3;
       // eslint-disable-next-line no-param-reassign
       splineT[i] += flowSpeed * dt;
+      // Age: 0 at start, 1 at spline end — drives size growth and alpha fade
+      // eslint-disable-next-line no-param-reassign
+      ages[i] = Math.max(0, Math.min(1, splineT[i]));
 
       if (!closed && splineT[i] < 0) {
         // eslint-disable-next-line no-param-reassign
@@ -545,6 +586,8 @@ export default function VolumetricSmokeParticles({
         vx += Math.sin(ts + ph) * turbStrength * 0.15 * dt;
         vy += Math.cos(ts * 0.73 + ph * 1.4) * turbStrength * 0.15 * dt;
         vz += Math.sin(ts * 1.27 + ph * 2.3) * turbStrength * 0.15 * dt;
+        // Buoyancy — smoke always rises
+        vy += volBuoyancy * dt;
 
         vx *= dampPerFrame;
         vy *= dampPerFrame;
@@ -587,6 +630,11 @@ export default function VolumetricSmokeParticles({
     if (alphaAttr) {
       alphaAttr.array.set(alphas);
       alphaAttr.needsUpdate = true;
+    }
+    const ageAttr = geometry.getAttribute('aAge');
+    if (ageAttr) {
+      ageAttr.array.set(ages);
+      ageAttr.needsUpdate = true;
     }
   });
 

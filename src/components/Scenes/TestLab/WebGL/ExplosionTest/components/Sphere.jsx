@@ -2,7 +2,7 @@ import * as THREE from 'three';
 
 import React, { useCallback, useMemo, useRef } from 'react';
 
-import ExplodingMaterial from './explodingMaterial';
+import ExplodingMaterial from '../../../../../materials/explodingMaterial';
 
 const Sphere = React.memo(function Sphere({
   position,

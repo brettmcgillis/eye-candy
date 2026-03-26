@@ -3,8 +3,8 @@ import * as THREE from 'three';
 
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 
-import { localEnv } from '../../../../../utils/appUtils';
-import SPLINE_PRESETS from '../../../../elements/spline/splinePresets';
+import { localEnv } from '../../../../../../utils/appUtils';
+import SPLINE_PRESETS from '../../../../../elements/spline/splinePresets';
 
 const MAX_ATTRACTORS = 8;
 

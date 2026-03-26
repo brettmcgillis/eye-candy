@@ -9,7 +9,7 @@ import VolumetricSmokeParticles from '../../../../elements/smoke/VolumetricSmoke
 import SplineLine from '../../../../elements/spline/SplineLine';
 import SplinePoints from '../../../../elements/spline/SplinePoints';
 import SPLINE_PRESETS from '../../../../elements/spline/splinePresets';
-import useSmokeTestControls from './useSmokeTestControls';
+import useSmokeTestControls from './hooks/useSmokeTestControls';
 
 function SmokeSplineGroup({
   index,

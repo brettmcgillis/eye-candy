@@ -120,8 +120,6 @@ To Build:
 - SmokeTest
 - HotBox
 - PixelHater updates
-- TrophyHusband
-- Yggdraskill
 - Thats All Folks
 - Crt Test
 - Still Pulling For You
@@ -129,6 +127,9 @@ To Build:
 - Police Presence
 - Flying High
 - Dumpster Fire
+
+- TrophyHusband
+- Yggdraskill
 
 ## Firescale
 

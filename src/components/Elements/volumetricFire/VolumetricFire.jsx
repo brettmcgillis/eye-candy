@@ -754,6 +754,7 @@ export default function VolumetricFire({
   tintColor = '#ffffff',
   saturation = 1.0,
   brightness = 1.5,
+  controlPoints = null,
 }) {
   const { camera } = useThree();
 
@@ -833,19 +834,23 @@ export default function VolumetricFire({
 
   // ── Per-frame update ──────────────────────────────────────────────────────
   useFrame(({ clock }, delta) => {
-    let bx = baseBendRef.current.x;
-    let bz = baseBendRef.current.z;
+    if (controlPoints) {
+      fire.setControlPoints(controlPoints);
+    } else {
+      let bx = baseBendRef.current.x;
+      let bz = baseBendRef.current.z;
 
-    if (animated) {
-      animTimeRef.current += delta * animSpeed;
-      const t = animTimeRef.current;
-      // Layered sinusoids give asymmetric, organic sway.
-      bx += Math.sin(t * 0.8) * 0.14 + Math.sin(t * 2.1 + 0.5) * 0.04;
-      bz += Math.cos(t * 0.65 + 1.2) * 0.07 + Math.cos(t * 1.7) * 0.03;
+      if (animated) {
+        animTimeRef.current += delta * animSpeed;
+        const t = animTimeRef.current;
+        // Layered sinusoids give asymmetric, organic sway.
+        bx += Math.sin(t * 0.8) * 0.14 + Math.sin(t * 2.1 + 0.5) * 0.04;
+        bz += Math.cos(t * 0.65 + 1.2) * 0.07 + Math.cos(t * 1.7) * 0.03;
+      }
+
+      fillControlPoints(cpPoolRef.current, height, width, depth, bx, bz);
+      fire.setControlPoints(cpPoolRef.current);
     }
-
-    fillControlPoints(cpPoolRef.current, height, width, depth, bx, bz);
-    fire.setControlPoints(cpPoolRef.current);
     fire.update(clock.getElapsedTime());
 
     if (showSpline) {
@@ -869,7 +874,7 @@ export default function VolumetricFire({
   // of the existing shader Flame component.
   // For inverted flames the outer group's π-rotation flips Y, turning the
   // upward offset into a downward offset automatically.
-  const halfH = height / 2;
+  const halfH = controlPoints ? 0 : height / 2;
 
   return (
     <group

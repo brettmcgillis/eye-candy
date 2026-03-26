@@ -1,0 +1,3 @@
+const POLICE_PRESENCE_FIRE = {};
+
+export default POLICE_PRESENCE_FIRE;

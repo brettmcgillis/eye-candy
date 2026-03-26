@@ -1,0 +1,3 @@
+const DEFAULT_CAMERA_SPLINE = {};
+
+export default DEFAULT_CAMERA_SPLINE;

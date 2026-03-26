@@ -1,0 +1,3 @@
+const BURNING_AT_BOTH_ENDS_FIRE = {};
+
+export default BURNING_AT_BOTH_ENDS_FIRE;

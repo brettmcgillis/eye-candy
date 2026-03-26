@@ -63,7 +63,6 @@ To Build:
 - [HandStuff](src/components/scenes/TestLab/WebGL/HandStuff/todo.md)
 - [ParticleLab](src/components/scenes/TestLab/WebGL/ParticleLab/todo.md)
 - [PixelHater](src/components/scenes/TestLab/WebGL/PixelHater/todo.md)
-- [SmokeTest](src/components/scenes/TestLab/WebGL/SmokeTest/todo.md)
 - [StrudelDoodle](src/components/scenes/TestLab/WebGL/StrudelDoodle/todo.md)
 - [MobilePhysicsTest](src/components/scenes/TestLab/WebGPU/MobilePhysicsTest/todo.md)
 - [NetworkTest](src/components/scenes/TestLab/WebGPU/NetworkTest/todo.md)
@@ -85,6 +84,8 @@ To Build:
 
 **ToolBox**
 
+- [HotBox](src/components/scenes/ToolBox/WebGL/HotBox/todo.md)
+- [SmokeTest](src/components/scenes/ToolBox/WebGL/SmokeTest/todo.md)
 - [SplineEditor](src/components/scenes/ToolBox/WebGL/SplineEditor/todo.md)
 
 ### ELEMENTS
@@ -100,19 +101,11 @@ To Build:
 - [ ] Refactor like we did with bret/reversal to offer a generic that takes props, and specialized versions
 - [ ] material controls (? chrome skull)
 
-### ENVIRONMENT (app)
-
-- [ ] delete it
-
 ### SCREENSHOT
 
 - Overhaul. Should support screenshot and screenrec.
 - Make sure output includes a watermark & some cool hiddnen fileinfo
 - Make sure it works on mobile
-
-### CAMERARIG
-
-- [ ] delete it
 
 ### LIGHTINGRIG
 
@@ -125,6 +118,7 @@ To Build:
 - Particle Lab
 - Spline Editor
 - SmokeTest
+- HotBox
 - PixelHater updates
 - TrophyHusband
 - Yggdraskill

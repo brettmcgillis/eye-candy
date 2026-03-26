@@ -1,6 +1,7 @@
 import { lazy } from 'react';
 
 const NoScene = lazy(() => import('../../../app/scaffold/NoScene'));
+const HotBox = lazy(() => import('./WebGL/HotBox/HotBox'));
 const SplineEditor = lazy(() => import('./WebGL/SplineEditor/SplineEditor'));
 const SmokeTest = lazy(() => import('./WebGL/SmokeTest/SmokeTest'));
 
@@ -10,6 +11,12 @@ const scenes = [
     label: 'None',
     icon: '💀',
     Component: NoScene,
+  },
+  {
+    id: 'hotBox',
+    label: 'Hot Box',
+    icon: '🔥💨',
+    Component: HotBox,
   },
   {
     id: 'splineEditor',

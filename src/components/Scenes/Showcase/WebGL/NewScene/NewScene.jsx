@@ -22,7 +22,6 @@ import Halo from '../../../../elements/halo/Halo';
 import Record from '../../../../elements/record/Record';
 import Skull from '../../../../elements/skull/Skull';
 import { useSkullControls } from '../../../../elements/skull/SkullControls';
-import CameraRig from '../../../../rigging/CameraRig';
 import { GridHelper, PolarGridHelper } from '../../../../rigging/GridHelper';
 import LightingRig from '../../../../rigging/LightingRig';
 
@@ -343,8 +342,6 @@ export default function NewScene() {
 
   return (
     <>
-      {/* <CameraRig screenShot /> */}
-
       <LightingRig />
       <PerspectiveCamera makeDefault position={[-1, -1, 3.5]} />
 

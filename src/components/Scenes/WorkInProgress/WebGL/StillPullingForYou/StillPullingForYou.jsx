@@ -7,7 +7,6 @@ import { useFrame } from '@react-three/fiber';
 
 import Smoke2D from '../../../../elements/smoke/Smoke2D';
 import TugBoat from '../../../../elements/tugboat/TugBoat';
-import CameraRig from '../../../../rigging/CameraRig';
 import OceanMaterial, { sampleWaveHeight } from './OceanMaterial';
 
 // ── Water config (shared between surface + boat sampling) ───────────────────
@@ -94,7 +93,6 @@ export default function StillPullingForYou() {
 
       {/* Camera — isometric-ish 3/4 view */}
       <PerspectiveCamera makeDefault position={[6, 5, 6]} fov={45} />
-      <CameraRig />
 
       {/* Lighting */}
       <ambientLight intensity={0.8} />

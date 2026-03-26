@@ -14,7 +14,6 @@ import { useFrame } from '@react-three/fiber';
 import getColorsInRange from '../../../../../utils/colors';
 import { fourtyFiveDegrees } from '../../../../../utils/math';
 import PaperFrame from '../../../../elements/paperframe/PaperFrame';
-import CameraRig from '../../../../rigging/CameraRig';
 import LightingRig from '../../../../rigging/LightingRig';
 import { getFrameData, getFrames } from './FrameData';
 
@@ -160,7 +159,6 @@ function FoldedFrame() {
   return (
     <>
       <LightingRig />
-      <CameraRig />
 
       <PerspectiveCamera
         makeDefault

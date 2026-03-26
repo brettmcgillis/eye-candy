@@ -12,7 +12,6 @@ import SmokeParticles from '../../../../elements/smoke/SmokeParticles';
 import VolumetricSmokeParticles from '../../../../elements/smoke/VolumetricSmokeParticles';
 import SplineLine from '../../../../elements/spline/SplineLine';
 import VolumetricFire from '../../../../elements/volumetricFire/VolumetricFire';
-import CameraRig from '../../../../rigging/CameraRig';
 
 // ---------------------------------------------------------------------------
 // Smoke spline — open curve from dumpster top flowing up and to the right,
@@ -89,7 +88,6 @@ export default function DumpsterFire() {
   return (
     <>
       <PerspectiveCamera makeDefault position={[1, 3, 14]} fov={50} />
-      <CameraRig />
 
       {/* White background */}
       <color attach="background" args={['#e8e8e8']} />

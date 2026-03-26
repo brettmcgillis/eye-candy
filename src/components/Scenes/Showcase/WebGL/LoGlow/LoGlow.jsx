@@ -12,7 +12,6 @@ import {
 import { extend, useFrame } from '@react-three/fiber';
 
 import Logo from '../../../../elements/logo/Logo';
-import CameraRig from '../../../../rigging/CameraRig';
 import LightingRig from '../../../../rigging/LightingRig';
 
 extend({ UnrealBloomPass });
@@ -257,7 +256,6 @@ export default function LoGlow() {
   return (
     <>
       <LightingRig />
-      <CameraRig screenShot />
       <PerspectiveCamera makeDefault position={[0, 0, 5]} />
       <BakeShadows />
 

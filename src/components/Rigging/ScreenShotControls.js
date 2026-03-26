@@ -1,7 +1,7 @@
-import { button, useControls } from 'leva';
+import { button, folder } from 'leva';
 
 export default function ScreenShotControls() {
-  useControls(
+  return folder(
     'ScreenShot',
     {
       name: 'canvas',
@@ -24,5 +24,4 @@ export default function ScreenShotControls() {
     },
     { collapsed: true }
   );
-  return null;
 }

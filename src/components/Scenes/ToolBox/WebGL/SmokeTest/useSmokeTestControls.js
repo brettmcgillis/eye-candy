@@ -533,7 +533,7 @@ export default function useSmokeTestControls(
               { label: 'Remove Last Point' }
             ),
           },
-          { collapsed: false }
+          { collapsed: true }
         );
         return acc;
       }, {}),

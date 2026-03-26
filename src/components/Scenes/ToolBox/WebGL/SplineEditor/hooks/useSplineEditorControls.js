@@ -1,5 +1,6 @@
 import { button, folder, useControls } from 'leva';
 import * as THREE from 'three';
+import { TorusGeometry } from 'three';
 
 import { useEffect, useMemo, useRef, useState } from 'react';
 
@@ -224,7 +225,7 @@ export default function useSplineEditorControls(splines, setSplines) {
               { label: 'Remove Last Point' }
             ),
           },
-          { collapsed: false }
+          { collapsed: TorusGeometry }
         );
         return acc;
       }, {}),

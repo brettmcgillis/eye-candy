@@ -85,7 +85,6 @@ function noiseZ(x, y, z, t, speed) {
 
 // Pre-allocate to avoid per-frame heap pressure.
 const curveTmp = new THREE.Vector3();
-const curveLookupCache = new Float32Array(CURVE_SAMPLES * 3);
 
 // ── Rotation interpolation for directional spawn spread ─────────────────────
 const rotQuatTmp = new THREE.Quaternion();
@@ -148,6 +147,8 @@ export default function VolumetricSmokeParticles({
   const geometryRef = useRef();
   const timeRef = useRef(0);
   const stateRef = useRef(null);
+  // Per-instance lookup cache — prevents data races between multiple instances.
+  const lookupRef = useRef(new Float32Array(CURVE_SAMPLES * 3));
   const rotLookupRef = useRef(new Float32Array(CURVE_SAMPLES * 4));
   const ctrlQuatsRef = useRef(
     Array.from({ length: 32 }, () => new THREE.Quaternion())
@@ -186,14 +187,15 @@ export default function VolumetricSmokeParticles({
         'catmullrom',
         config.tension
       );
+      const lookup = lookupRef.current;
       for (let s = 0; s < CURVE_SAMPLES; s += 1) {
         curve.getPoint(s / (CURVE_SAMPLES - 1), curveTmp);
-        curveLookupCache[s * 3] = curveTmp.x;
-        curveLookupCache[s * 3 + 1] = curveTmp.y;
-        curveLookupCache[s * 3 + 2] = curveTmp.z;
+        lookup[s * 3] = curveTmp.x;
+        lookup[s * 3 + 1] = curveTmp.y;
+        lookup[s * 3 + 2] = curveTmp.z;
       }
 
-      const [initX, initY, initZ] = curveLookupCache;
+      const [initX, initY, initZ] = lookup;
 
       // Build rotation lookup for initial spawn spread.
       const initRotLookup =
@@ -270,7 +272,8 @@ export default function VolumetricSmokeParticles({
     alphas.set(prev.alphas.subarray(0, copyN));
     phases.set(prev.phases.subarray(0, copyN));
 
-    const [startX, startY, startZ] = curveLookupCache;
+    const lookup = lookupRef.current;
+    const [startX, startY, startZ] = lookup;
     for (let i = oldN; i < N; i += 1) {
       phases[i] = Math.random() * Math.PI * 2;
       const ni = i * 3;
@@ -287,9 +290,9 @@ export default function VolumetricSmokeParticles({
             : null,
           si
         );
-        positions[ni] = curveLookupCache[si * 3] + rOff.x;
-        positions[ni + 1] = curveLookupCache[si * 3 + 1] + rOff.y;
-        positions[ni + 2] = curveLookupCache[si * 3 + 2] + rOff.z;
+        positions[ni] = lookup[si * 3] + rOff.x;
+        positions[ni + 1] = lookup[si * 3 + 1] + rOff.y;
+        positions[ni + 2] = lookup[si * 3 + 2] + rOff.z;
       } else {
         splineT[i] = -Math.random();
         alphas[i] = 0;
@@ -350,7 +353,7 @@ export default function VolumetricSmokeParticles({
       'catmullrom',
       config.tension
     );
-    const lookup = curveLookupCache;
+    const lookup = lookupRef.current;
     for (let s = 0; s < CURVE_SAMPLES; s += 1) {
       curve.getPoint(s / (CURVE_SAMPLES - 1), curveTmp);
       lookup[s * 3] = curveTmp.x;
@@ -395,17 +398,22 @@ export default function VolumetricSmokeParticles({
     const { positions, velocities, splineT, alphas, phases, N } = state;
 
     for (let i = 0; i < N; i += 1) {
+      const pi = i * 3;
       // eslint-disable-next-line no-param-reassign
       splineT[i] += flowSpeed * dt;
 
       if (!closed && splineT[i] < 0) {
         // eslint-disable-next-line no-param-reassign
         alphas[i] = 0;
+        // Keep queued particles at the current spline start so they
+        // don't appear at a stale position when they become visible.
+        positions[pi] = splineStartX;
+        positions[pi + 1] = splineStartY;
+        positions[pi + 2] = splineStartZ;
         // eslint-disable-next-line no-continue
         continue;
       }
 
-      const pi = i * 3;
       let justRespawned = false;
 
       if (closed) {

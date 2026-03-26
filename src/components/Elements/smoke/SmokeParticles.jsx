@@ -452,6 +452,11 @@ export default function SmokeParticles({
 
       if (!closed && splineT[i] < 0) {
         alphas[i] = 0;
+        // Keep queued particles at the current spline start so they
+        // don't appear at a stale position when they become visible.
+        positions[pi] = splineStartX;
+        positions[pi + 1] = splineStartY;
+        positions[pi + 2] = splineStartZ;
         // eslint-disable-next-line no-continue
         continue;
       }

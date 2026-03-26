@@ -137,13 +137,15 @@ export default function useSplineEditorControls(splines, setSplines) {
           exportSplines: button(
             () => {
               const all = splinesRef.current;
+              const configs = splineConfigs;
               const splinesCode = all
-                .map((pts) => {
-                  const strs = pts.map(
+                .map((pts, idx) => {
+                  const cfg = configs[idx] ?? DEFAULT_SPLINE_CONFIG;
+                  const pointStrs = pts.map(
                     (p) =>
                       `    new THREE.Vector3(${p.x.toFixed(3)}, ${p.y.toFixed(3)}, ${p.z.toFixed(3)})`
                   );
-                  return `  [\n${strs.join(',\n')}\n  ]`;
+                  return `  {\n    tension: ${cfg.tension},\n    closed: ${cfg.closed},\n    points: [\n${pointStrs.join(',\n')}\n    ]\n  }`;
                 })
                 .join(',\n');
               const code = `[\n${splinesCode}\n]`;

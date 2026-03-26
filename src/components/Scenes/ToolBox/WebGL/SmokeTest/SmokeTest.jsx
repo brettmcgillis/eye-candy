@@ -10,7 +10,10 @@ import useSmokeTestControls from './hooks/useSmokeTestControls';
 
 export default function SmokeTest() {
   const [splines, setSplines] = useState(() => [
-    SPLINE_PRESETS.Default.points.map((v) => v.clone()),
+    SPLINE_PRESETS.Default.points.map((pt) => ({
+      position: pt.position.clone(),
+      rotation: pt.rotation.clone(),
+    })),
   ]);
 
   const setSplinePoints = useCallback((splineIndex, updater) => {

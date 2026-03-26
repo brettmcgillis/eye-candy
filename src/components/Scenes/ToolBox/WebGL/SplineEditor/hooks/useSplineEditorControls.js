@@ -32,7 +32,14 @@ export default function useSplineEditorControls(splines, setSplines) {
   );
 
   const [
-    { preset, showPoints, showUniform, showCentripetal, showChordal },
+    {
+      preset,
+      pointMode,
+      showPoints,
+      showUniform,
+      showCentripetal,
+      showChordal,
+    },
     setControls,
   ] = useControls(
     'Spline Editor',
@@ -53,7 +60,12 @@ export default function useSplineEditorControls(splines, setSplines) {
                 showCentripetal: p.showCentripetal,
                 showChordal: p.showChordal,
               });
-              setSplines([p.points.map((v) => v.clone())]);
+              setSplines([
+                p.points.map((pt) => ({
+                  position: pt.position.clone(),
+                  rotation: pt.rotation.clone(),
+                })),
+              ]);
               setSplineConfigs([
                 {
                   ...DEFAULT_SPLINE_CONFIG,
@@ -80,6 +92,11 @@ export default function useSplineEditorControls(splines, setSplines) {
       ),
       Visibility: folder(
         {
+          pointMode: {
+            label: 'Point Mode',
+            value: 'translate',
+            options: ['translate', 'rotate'],
+          },
           showPoints: {
             label: 'Show Points',
             value: SPLINE_PRESETS.Default.showPoints,
@@ -103,26 +120,15 @@ export default function useSplineEditorControls(splines, setSplines) {
         {
           addSpline: button(
             () => {
-              setSplines((prev) => [
-                ...prev,
-                [
-                  new THREE.Vector3(
-                    (Math.random() - 0.5) * 400,
-                    Math.random() * 200,
-                    (Math.random() - 0.5) * 400
-                  ),
-                  new THREE.Vector3(
-                    (Math.random() - 0.5) * 400,
-                    Math.random() * 200,
-                    (Math.random() - 0.5) * 400
-                  ),
-                  new THREE.Vector3(
-                    (Math.random() - 0.5) * 400,
-                    Math.random() * 200,
-                    (Math.random() - 0.5) * 400
-                  ),
-                ],
-              ]);
+              const randPt = () => ({
+                position: new THREE.Vector3(
+                  (Math.random() - 0.5) * 400,
+                  Math.random() * 200,
+                  (Math.random() - 0.5) * 400
+                ),
+                rotation: new THREE.Euler(),
+              });
+              setSplines((prev) => [...prev, [randPt(), randPt(), randPt()]]);
             },
             { label: 'Add Spline' }
           ),
@@ -141,10 +147,11 @@ export default function useSplineEditorControls(splines, setSplines) {
               const splinesCode = all
                 .map((pts, idx) => {
                   const cfg = configs[idx] ?? DEFAULT_SPLINE_CONFIG;
-                  const pointStrs = pts.map(
-                    (p) =>
-                      `    new THREE.Vector3(${p.x.toFixed(3)}, ${p.y.toFixed(3)}, ${p.z.toFixed(3)})`
-                  );
+                  const pointStrs = pts.map((pt) => {
+                    const p = pt.position;
+                    const r = pt.rotation ?? new THREE.Euler();
+                    return `    { position: new THREE.Vector3(${p.x.toFixed(3)}, ${p.y.toFixed(3)}, ${p.z.toFixed(3)}), rotation: new THREE.Euler(${r.x.toFixed(3)}, ${r.y.toFixed(3)}, ${r.z.toFixed(3)}) }`;
+                  });
                   return `  {\n    tension: ${cfg.tension},\n    closed: ${cfg.closed},\n    points: [\n${pointStrs.join(',\n')}\n    ]\n  }`;
                 })
                 .join(',\n');
@@ -196,19 +203,23 @@ export default function useSplineEditorControls(splines, setSplines) {
                 setSplines((prev) =>
                   prev.map((pts, i) => {
                     if (i !== index) return pts;
-                    const last =
-                      pts[pts.length - 1] ?? new THREE.Vector3(0, 0, 0);
+                    const lastPos =
+                      pts[pts.length - 1]?.position ??
+                      new THREE.Vector3(0, 0, 0);
                     return [
                       ...pts,
-                      last
-                        .clone()
-                        .add(
-                          new THREE.Vector3(
-                            (Math.random() - 0.5) * 200,
-                            Math.random() * 100,
-                            (Math.random() - 0.5) * 200
-                          )
-                        ),
+                      {
+                        position: lastPos
+                          .clone()
+                          .add(
+                            new THREE.Vector3(
+                              (Math.random() - 0.5) * 200,
+                              Math.random() * 100,
+                              (Math.random() - 0.5) * 200
+                            )
+                          ),
+                        rotation: new THREE.Euler(),
+                      },
                     ];
                   })
                 );
@@ -249,7 +260,12 @@ export default function useSplineEditorControls(splines, setSplines) {
       showChordal,
       splines: splines.map((pts, i) => ({
         ...(splineConfigs[i] ?? DEFAULT_SPLINE_CONFIG),
-        points: pts.map((p) => ({ x: p.x, y: p.y, z: p.z })),
+        points: pts.map((pt) => ({
+          x: pt.position.x,
+          y: pt.position.y,
+          z: pt.position.z,
+          rotation: (pt.rotation ?? new THREE.Euler()).toArray().slice(0, 3),
+        })),
       })),
     };
   }, [
@@ -271,7 +287,12 @@ export default function useSplineEditorControls(splines, setSplines) {
       showCentripetal: p.showCentripetal,
       showChordal: p.showChordal,
     });
-    setSplines([p.points.map((v) => v.clone())]);
+    setSplines([
+      p.points.map((pt) => ({
+        position: pt.position.clone(),
+        rotation: pt.rotation.clone(),
+      })),
+    ]);
     setSplineConfigs([
       { ...DEFAULT_SPLINE_CONFIG, tension: p.tension, closed: p.closed },
     ]);
@@ -287,12 +308,20 @@ export default function useSplineEditorControls(splines, setSplines) {
 
   return useMemo(
     () => ({
+      pointMode,
       showPoints,
       showUniform,
       showCentripetal,
       showChordal,
       splineConfigs,
     }),
-    [showPoints, showUniform, showCentripetal, showChordal, splineConfigs]
+    [
+      pointMode,
+      showPoints,
+      showUniform,
+      showCentripetal,
+      showChordal,
+      splineConfigs,
+    ]
   );
 }

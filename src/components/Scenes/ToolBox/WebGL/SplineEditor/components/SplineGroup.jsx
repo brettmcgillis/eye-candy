@@ -1,4 +1,4 @@
-import React, { useCallback } from 'react';
+import React, { useCallback, useMemo } from 'react';
 
 import SplineLine from '../../../../../elements/spline/SplineLine';
 import SplinePoints from '../../../../../elements/spline/SplinePoints';
@@ -24,6 +24,7 @@ export default function SplineGroup({
     [index, setSplinePoints]
   );
   const colors = getSplineColors(index);
+  const positions = useMemo(() => points.map((pt) => pt.position), [points]);
 
   if (!splineConfig.visible) return null;
 
@@ -33,9 +34,10 @@ export default function SplineGroup({
         points={points}
         setPoints={setPoints}
         visible={config.showPoints}
+        mode={config.pointMode}
       />
       <SplineLine
-        points={points}
+        points={positions}
         tension={splineConfig.tension}
         closed={splineConfig.closed}
         curveType="catmullrom"
@@ -44,7 +46,7 @@ export default function SplineGroup({
         arcSegments={splineConfig.arcSegments}
       />
       <SplineLine
-        points={points}
+        points={positions}
         tension={splineConfig.tension}
         closed={splineConfig.closed}
         curveType="centripetal"
@@ -53,7 +55,7 @@ export default function SplineGroup({
         arcSegments={splineConfig.arcSegments}
       />
       <SplineLine
-        points={points}
+        points={positions}
         tension={splineConfig.tension}
         closed={splineConfig.closed}
         curveType="chordal"

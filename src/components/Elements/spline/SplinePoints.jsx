@@ -12,7 +12,12 @@ const pointGeometry = new THREE.BoxGeometry(
   POINT_BOX_SIZE
 );
 
-export default function SplinePoints({ points, setPoints, visible = true }) {
+export default function SplinePoints({
+  points,
+  setPoints,
+  visible = true,
+  mode = 'translate',
+}) {
   const controls = useThree((state) => state.controls);
   const transformRef = useRef();
   const pointMeshRefs = useRef([]);
@@ -59,17 +64,26 @@ export default function SplinePoints({ points, setPoints, visible = true }) {
     return () => tc.removeEventListener('dragging-changed', onDrag);
   }); // no dep array — always re-binds with fresh refs after each render
 
-  // Propagate TC drag position back into points state
+  // Propagate TC drag back into point data
   const handleObjectChange = useCallback(() => {
     const tc = transformRef.current;
     if (!tc || !tc.object || selectedIndex === null) return;
-    const newPos = tc.object.position.clone();
-    setPoints((prev) => {
-      const next = [...prev];
-      next[selectedIndex] = newPos;
-      return next;
-    });
-  }, [selectedIndex, setPoints]);
+    if (mode === 'rotate') {
+      const rot = tc.object.rotation.clone();
+      setPoints((prev) => {
+        const next = [...prev];
+        next[selectedIndex] = { ...next[selectedIndex], rotation: rot };
+        return next;
+      });
+    } else {
+      const newPos = tc.object.position.clone();
+      setPoints((prev) => {
+        const next = [...prev];
+        next[selectedIndex] = { ...next[selectedIndex], position: newPos };
+        return next;
+      });
+    }
+  }, [selectedIndex, setPoints, mode]);
 
   // Immediately disable orbit on pointerdown on a point mesh so that orbit
   // never starts on the same event that selects / starts a drag.
@@ -94,18 +108,22 @@ export default function SplinePoints({ points, setPoints, visible = true }) {
 
   const addPoint = useCallback(() => {
     setPoints((prev) => {
-      const last = prev[prev.length - 1] ?? new THREE.Vector3(0, 0, 0);
+      const last = prev[prev.length - 1];
+      const lastPos = last?.position ?? new THREE.Vector3(0, 0, 0);
       return [
         ...prev,
-        last
-          .clone()
-          .add(
-            new THREE.Vector3(
-              (Math.random() - 0.5) * 200,
-              Math.random() * 100,
-              (Math.random() - 0.5) * 200
-            )
-          ),
+        {
+          position: lastPos
+            .clone()
+            .add(
+              new THREE.Vector3(
+                (Math.random() - 0.5) * 200,
+                Math.random() * 100,
+                (Math.random() - 0.5) * 200
+              )
+            ),
+          rotation: new THREE.Euler(),
+        },
       ];
     });
   }, [setPoints]);
@@ -137,7 +155,7 @@ export default function SplinePoints({ points, setPoints, visible = true }) {
     <>
       {/* eslint-disable react/no-array-index-key */}
       {visible &&
-        points.map((pos, i) => (
+        points.map((pt, i) => (
           <mesh
             // eslint-disable-next-line react/no-array-index-key
             key={i}
@@ -146,7 +164,8 @@ export default function SplinePoints({ points, setPoints, visible = true }) {
             }}
             geometry={pointGeometry}
             castShadow
-            position={pos}
+            position={pt.position}
+            rotation={pt.rotation ?? new THREE.Euler()}
             onPointerDown={handlePointPointerDown}
             onPointerUp={handlePointPointerUp}
             onClick={(e) => {
@@ -167,6 +186,7 @@ export default function SplinePoints({ points, setPoints, visible = true }) {
       {visible && selectedIndex !== null && (
         <TransformControls
           ref={transformRef}
+          mode={mode}
           onObjectChange={handleObjectChange}
         />
       )}

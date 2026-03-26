@@ -110,6 +110,55 @@ function createSmokeTexture() {
 // and we read immediately (synchronous, no yielding between calls).
 const curveTmp = new THREE.Vector3();
 
+// ── Rotation interpolation for directional spawn spread ─────────────────────
+const rotQuatTmp = new THREE.Quaternion();
+const spreadOffTmp = new THREE.Vector3();
+
+/**
+ * Build a per-sample quaternion lookup from control-point Euler rotations.
+ * SLERP between neighbours mirrors the position interpolation by the curve.
+ */
+function buildRotationLookup(eulers, nSamples, closed, out, scratchQuats) {
+  const nPts = eulers.length;
+  for (let i = 0; i < nPts; i += 1) scratchQuats[i].setFromEuler(eulers[i]);
+  for (let s = 0; s < nSamples; s += 1) {
+    const t = s / (nSamples - 1);
+    const span = closed ? nPts : Math.max(1, nPts - 1);
+    const seg = Math.min(t * span, span - 1e-6);
+    const idx = Math.floor(seg);
+    rotQuatTmp
+      .copy(scratchQuats[idx % nPts])
+      .slerp(scratchQuats[(idx + 1) % nPts], seg - idx);
+    const o = s * 4;
+    // eslint-disable-next-line no-param-reassign
+    out[o] = rotQuatTmp.x;
+    // eslint-disable-next-line no-param-reassign
+    out[o + 1] = rotQuatTmp.y;
+    // eslint-disable-next-line no-param-reassign
+    out[o + 2] = rotQuatTmp.z;
+    // eslint-disable-next-line no-param-reassign
+    out[o + 3] = rotQuatTmp.w;
+  }
+}
+
+/** Return a spread offset rotated by the interpolated quaternion at tIdx. */
+function spawnWithRotation(spread, rotLookup, tIdx) {
+  const ox = (Math.random() - 0.5) * spread;
+  const oy = (Math.random() - 0.5) * spread;
+  const oz = (Math.random() - 0.5) * spread;
+  if (rotLookup) {
+    const qi = tIdx * 4;
+    rotQuatTmp.set(
+      rotLookup[qi],
+      rotLookup[qi + 1],
+      rotLookup[qi + 2],
+      rotLookup[qi + 3]
+    );
+    return spreadOffTmp.set(ox, oy, oz).applyQuaternion(rotQuatTmp);
+  }
+  return spreadOffTmp.set(ox, oy, oz);
+}
+
 const BLEND_MODES = {
   Normal: THREE.NormalBlending,
   Additive: THREE.AdditiveBlending,
@@ -119,6 +168,7 @@ const BLEND_MODES = {
 
 export default function SmokeParticles({
   points,
+  pointRotations,
   config,
   attractorsRef = null,
 }) {
@@ -128,6 +178,10 @@ export default function SmokeParticles({
   const texture = useMemo(createSmokeTexture, []);
   const timeRef = useRef(0);
   const stateRef = useRef(null);
+  const rotLookupRef = useRef(new Float32Array(CURVE_SAMPLES * 4));
+  const ctrlQuatsRef = useRef(
+    Array.from({ length: 32 }, () => new THREE.Quaternion())
+  );
   // Per-instance lookup cache — prevents data races between multiple SmokeParticles instances.
   const lookupRef = useRef(new Float32Array(CURVE_SAMPLES * 3));
 
@@ -168,6 +222,21 @@ export default function SmokeParticles({
         lookup[s * 3 + 2] = curveTmp.z;
       }
 
+      // Build rotation lookup for initial spawn spread.
+      const initRotLookup =
+        pointRotations && pointRotations.length >= 2
+          ? rotLookupRef.current
+          : null;
+      if (initRotLookup) {
+        buildRotationLookup(
+          pointRotations,
+          CURVE_SAMPLES,
+          config.closed,
+          initRotLookup,
+          ctrlQuatsRef.current
+        );
+      }
+
       const [initSX, initSY, initSZ] = lookup;
       const tOffset = config.closed ? 0 : -1.0;
       const tRange = config.closed ? 1.0 : 2.0;
@@ -183,9 +252,14 @@ export default function SmokeParticles({
         } else {
           curve.getPoint(t, curveTmp);
           const spread = config.spawnSpread;
-          positions[i * 3] = curveTmp.x + (Math.random() - 0.5) * spread;
-          positions[i * 3 + 1] = curveTmp.y + (Math.random() - 0.5) * spread;
-          positions[i * 3 + 2] = curveTmp.z + (Math.random() - 0.5) * spread;
+          const tIdx = Math.max(
+            0,
+            Math.min(CURVE_SAMPLES - 1, Math.floor(t * (CURVE_SAMPLES - 1)))
+          );
+          const off = spawnWithRotation(spread, initRotLookup, tIdx);
+          positions[i * 3] = curveTmp.x + off.x;
+          positions[i * 3 + 1] = curveTmp.y + off.y;
+          positions[i * 3 + 2] = curveTmp.z + off.z;
         }
       }
 
@@ -319,6 +393,21 @@ export default function SmokeParticles({
       lookup[s * 3 + 2] = curveTmp.z;
     }
 
+    // Rebuild rotation lookup alongside position lookup.
+    const rotLookup =
+      pointRotations && pointRotations.length >= 2
+        ? rotLookupRef.current
+        : null;
+    if (rotLookup) {
+      buildRotationLookup(
+        pointRotations,
+        CURVE_SAMPLES,
+        config.closed,
+        rotLookup,
+        ctrlQuatsRef.current
+      );
+    }
+
     const {
       springK,
       flowSpeed,
@@ -381,11 +470,10 @@ export default function SmokeParticles({
               Math.floor(splineT[i] * (CURVE_SAMPLES - 1))
             )
           );
-          positions[pi] = lookup[ti * 3] + (Math.random() - 0.5) * spawnSpread;
-          positions[pi + 1] =
-            lookup[ti * 3 + 1] + (Math.random() - 0.5) * spawnSpread;
-          positions[pi + 2] =
-            lookup[ti * 3 + 2] + (Math.random() - 0.5) * spawnSpread;
+          const cOff = spawnWithRotation(spawnSpread, rotLookup, ti);
+          positions[pi] = lookup[ti * 3] + cOff.x;
+          positions[pi + 1] = lookup[ti * 3 + 1] + cOff.y;
+          positions[pi + 2] = lookup[ti * 3 + 2] + cOff.z;
           velocities[pi] = 0;
           velocities[pi + 1] = 0;
           velocities[pi + 2] = 0;
@@ -477,9 +565,10 @@ export default function SmokeParticles({
         const ez = nz - sz;
 
         if (ex * ex + ey * ey + ez * ez > maxDrift2) {
-          positions[pi] = sx + (Math.random() - 0.5) * spawnSpread;
-          positions[pi + 1] = sy + (Math.random() - 0.5) * spawnSpread;
-          positions[pi + 2] = sz + (Math.random() - 0.5) * spawnSpread;
+          const dOff = spawnWithRotation(spawnSpread, rotLookup, tIdx);
+          positions[pi] = sx + dOff.x;
+          positions[pi + 1] = sy + dOff.y;
+          positions[pi + 2] = sz + dOff.z;
           velocities[pi] = 0;
           velocities[pi + 1] = 0;
           velocities[pi + 2] = 0;

@@ -12,7 +12,12 @@ const DEFAULT_PRESET = HOTBOX_PRESETS.Default;
 
 export default function HotBox() {
   const [splines, setSplines] = useState(() =>
-    DEFAULT_PRESET.splines.map((s) => s.points.map((v) => v.clone()))
+    DEFAULT_PRESET.splines.map((s) =>
+      s.points.map((pt) => ({
+        position: pt.position.clone(),
+        rotation: pt.rotation.clone(),
+      }))
+    )
   );
 
   const setSplinePoints = useCallback((splineIndex, updater) => {

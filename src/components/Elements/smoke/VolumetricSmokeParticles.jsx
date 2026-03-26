@@ -87,6 +87,50 @@ function noiseZ(x, y, z, t, speed) {
 const curveTmp = new THREE.Vector3();
 const curveLookupCache = new Float32Array(CURVE_SAMPLES * 3);
 
+// ── Rotation interpolation for directional spawn spread ─────────────────────
+const rotQuatTmp = new THREE.Quaternion();
+const spreadOffTmp = new THREE.Vector3();
+
+function buildRotationLookup(eulers, nSamples, closed, out, scratchQuats) {
+  const nPts = eulers.length;
+  for (let i = 0; i < nPts; i += 1) scratchQuats[i].setFromEuler(eulers[i]);
+  for (let s = 0; s < nSamples; s += 1) {
+    const t = s / (nSamples - 1);
+    const span = closed ? nPts : Math.max(1, nPts - 1);
+    const seg = Math.min(t * span, span - 1e-6);
+    const idx = Math.floor(seg);
+    rotQuatTmp
+      .copy(scratchQuats[idx % nPts])
+      .slerp(scratchQuats[(idx + 1) % nPts], seg - idx);
+    const o = s * 4;
+    // eslint-disable-next-line no-param-reassign
+    out[o] = rotQuatTmp.x;
+    // eslint-disable-next-line no-param-reassign
+    out[o + 1] = rotQuatTmp.y;
+    // eslint-disable-next-line no-param-reassign
+    out[o + 2] = rotQuatTmp.z;
+    // eslint-disable-next-line no-param-reassign
+    out[o + 3] = rotQuatTmp.w;
+  }
+}
+
+function spawnWithRotation(spread, rotLookup, tIdx) {
+  const ox = (Math.random() - 0.5) * spread;
+  const oy = (Math.random() - 0.5) * spread;
+  const oz = (Math.random() - 0.5) * spread;
+  if (rotLookup) {
+    const qi = tIdx * 4;
+    rotQuatTmp.set(
+      rotLookup[qi],
+      rotLookup[qi + 1],
+      rotLookup[qi + 2],
+      rotLookup[qi + 3]
+    );
+    return spreadOffTmp.set(ox, oy, oz).applyQuaternion(rotQuatTmp);
+  }
+  return spreadOffTmp.set(ox, oy, oz);
+}
+
 const BLEND_MODES = {
   Normal: THREE.NormalBlending,
   Additive: THREE.AdditiveBlending,
@@ -96,6 +140,7 @@ const BLEND_MODES = {
 
 export default function VolumetricSmokeParticles({
   points,
+  pointRotations,
   config,
   attractorsRef,
 }) {
@@ -103,6 +148,10 @@ export default function VolumetricSmokeParticles({
   const geometryRef = useRef();
   const timeRef = useRef(0);
   const stateRef = useRef(null);
+  const rotLookupRef = useRef(new Float32Array(CURVE_SAMPLES * 4));
+  const ctrlQuatsRef = useRef(
+    Array.from({ length: 32 }, () => new THREE.Quaternion())
+  );
 
   const uniforms = useMemo(
     () => ({
@@ -145,6 +194,22 @@ export default function VolumetricSmokeParticles({
       }
 
       const [initX, initY, initZ] = curveLookupCache;
+
+      // Build rotation lookup for initial spawn spread.
+      const initRotLookup =
+        pointRotations && pointRotations.length >= 2
+          ? rotLookupRef.current
+          : null;
+      if (initRotLookup) {
+        buildRotationLookup(
+          pointRotations,
+          CURVE_SAMPLES,
+          config.closed,
+          initRotLookup,
+          ctrlQuatsRef.current
+        );
+      }
+
       for (let i = 0; i < N; i += 1) {
         const fi = i * 3;
         if (config.closed) {
@@ -159,9 +224,14 @@ export default function VolumetricSmokeParticles({
           );
           curve2.getPoint(t, curveTmp);
           const spread = config.volSpread ?? config.spawnSpread ?? 80;
-          positions[fi] = curveTmp.x + (Math.random() - 0.5) * spread;
-          positions[fi + 1] = curveTmp.y + (Math.random() - 0.5) * spread;
-          positions[fi + 2] = curveTmp.z + (Math.random() - 0.5) * spread;
+          const tIdx = Math.max(
+            0,
+            Math.min(CURVE_SAMPLES - 1, Math.floor(t * (CURVE_SAMPLES - 1)))
+          );
+          const off = spawnWithRotation(spread, initRotLookup, tIdx);
+          positions[fi] = curveTmp.x + off.x;
+          positions[fi + 1] = curveTmp.y + off.y;
+          positions[fi + 2] = curveTmp.z + off.z;
         } else {
           // Open splines: all particles start queued before the spline origin
           // so they flow in naturally from the wick instead of appearing as a
@@ -210,12 +280,16 @@ export default function VolumetricSmokeParticles({
         const spread = config.volSpread ?? config.spawnSpread ?? 80;
         splineT[i] = seedT;
         alphas[i] = 1;
-        positions[ni] =
-          curveLookupCache[si * 3] + (Math.random() - 0.5) * spread;
-        positions[ni + 1] =
-          curveLookupCache[si * 3 + 1] + (Math.random() - 0.5) * spread;
-        positions[ni + 2] =
-          curveLookupCache[si * 3 + 2] + (Math.random() - 0.5) * spread;
+        const rOff = spawnWithRotation(
+          spread,
+          pointRotations && pointRotations.length >= 2
+            ? rotLookupRef.current
+            : null,
+          si
+        );
+        positions[ni] = curveLookupCache[si * 3] + rOff.x;
+        positions[ni + 1] = curveLookupCache[si * 3 + 1] + rOff.y;
+        positions[ni + 2] = curveLookupCache[si * 3 + 2] + rOff.z;
       } else {
         splineT[i] = -Math.random();
         alphas[i] = 0;
@@ -284,6 +358,21 @@ export default function VolumetricSmokeParticles({
       lookup[s * 3 + 2] = curveTmp.z;
     }
 
+    // Rebuild rotation lookup alongside position lookup.
+    const rotLookup =
+      pointRotations && pointRotations.length >= 2
+        ? rotLookupRef.current
+        : null;
+    if (rotLookup) {
+      buildRotationLookup(
+        pointRotations,
+        CURVE_SAMPLES,
+        config.closed,
+        rotLookup,
+        ctrlQuatsRef.current
+      );
+    }
+
     const flowSpeed = config.flowSpeed ?? 0.04;
     const { closed } = config;
     const fadeRate = config.fadeRate ?? 8;
@@ -333,11 +422,10 @@ export default function VolumetricSmokeParticles({
               Math.floor(splineT[i] * (CURVE_SAMPLES - 1))
             )
           );
-          positions[pi] = lookup[ti * 3] + (Math.random() - 0.5) * volSpread;
-          positions[pi + 1] =
-            lookup[ti * 3 + 1] + (Math.random() - 0.5) * volSpread;
-          positions[pi + 2] =
-            lookup[ti * 3 + 2] + (Math.random() - 0.5) * volSpread;
+          const cOff = spawnWithRotation(volSpread, rotLookup, ti);
+          positions[pi] = lookup[ti * 3] + cOff.x;
+          positions[pi + 1] = lookup[ti * 3 + 1] + cOff.y;
+          positions[pi + 2] = lookup[ti * 3 + 2] + cOff.z;
           velocities[pi] = 0;
           velocities[pi + 1] = 0;
           velocities[pi + 2] = 0;
@@ -464,9 +552,10 @@ export default function VolumetricSmokeParticles({
         const ddz = nnz - sz;
         const drift2 = ddx * ddx + ddy * ddy + ddz * ddz;
         if (drift2 > maxDrift2) {
-          positions[pi] = sx + (Math.random() - 0.5) * volSpread;
-          positions[pi + 1] = sy + (Math.random() - 0.5) * volSpread;
-          positions[pi + 2] = sz + (Math.random() - 0.5) * volSpread;
+          const dOff = spawnWithRotation(volSpread, rotLookup, tIdx);
+          positions[pi] = sx + dOff.x;
+          positions[pi + 1] = sy + dOff.y;
+          positions[pi + 2] = sz + dOff.z;
           velocities[pi] = 0;
           velocities[pi + 1] = 0;
           velocities[pi + 2] = 0;

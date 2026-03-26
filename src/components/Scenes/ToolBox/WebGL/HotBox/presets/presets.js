@@ -1,9 +1,15 @@
 import * as THREE from 'three';
 
 const V = (x, y, z) => new THREE.Vector3(x, y, z);
+const E = (x, y, z) => new THREE.Euler(x, y, z);
+
+const P = (x, y, z) => ({
+  position: V(x, y, z),
+  rotation: E(0, 0, 0),
+});
 
 // Floor sits at Y = -200 in the GridBox workspace.
-const FLOOR_Y = -200;
+const FLOOR_Y = -100;
 
 const HOTBOX_PRESETS = {
   Default: {
@@ -14,11 +20,11 @@ const HOTBOX_PRESETS = {
         closed: false,
         tension: 0.7,
         points: [
-          V(0, FLOOR_Y, 0),
-          V(110, 100, 70),
-          V(-40, 400, 140),
-          V(-130, 720, -30),
-          V(60, 1000, -110),
+          P(0, FLOOR_Y, 0),
+          P(110, 100, 70),
+          P(-40, 400, 140),
+          P(-130, 720, -30),
+          P(60, 1000, -110),
         ],
       },
       {
@@ -26,11 +32,11 @@ const HOTBOX_PRESETS = {
         closed: false,
         tension: 0.7,
         points: [
-          V(20, FLOOR_Y, -15),
-          V(80, 120, 120),
-          V(-80, 430, 100),
-          V(-90, 690, -70),
-          V(100, 970, -70),
+          P(20, FLOOR_Y, -15),
+          P(80, 120, 120),
+          P(-80, 430, 100),
+          P(-90, 690, -70),
+          P(100, 970, -70),
         ],
       },
     ],

@@ -11,10 +11,10 @@ import VolumetricFire from '../../../../../elements/volumetricFire/VolumetricFir
 function FireFromSpline({ points, config }) {
   const fireControlPoints = useMemo(
     () =>
-      points.map((p) => ({
-        pos: p.clone(),
+      points.map((pt) => ({
+        pos: pt.position.clone(),
         scale: new THREE.Vector3(config.fireWidth, 1, config.fireDepth),
-        rot: new THREE.Quaternion(),
+        rot: new THREE.Quaternion().setFromEuler(pt.rotation),
       })),
     [points, config.fireWidth, config.fireDepth]
   );
@@ -48,6 +48,9 @@ export default function HotBoxSplineGroup({
     [index, setSplinePoints]
   );
 
+  const positions = useMemo(() => points.map((pt) => pt.position), [points]);
+  const rotations = useMemo(() => points.map((pt) => pt.rotation), [points]);
+
   // Merge per-spline settings into config for smoke components
   const mergedConfig = useMemo(
     () => ({
@@ -76,10 +79,11 @@ export default function HotBoxSplineGroup({
         points={points}
         setPoints={setPoints}
         visible={splineConfig.showHelpers}
+        mode={config.pointMode}
       />
 
       <SplineLine
-        points={points}
+        points={positions}
         tension={splineConfig.tension}
         closed={splineConfig.closed}
         curveType="catmullrom"
@@ -93,7 +97,8 @@ export default function HotBoxSplineGroup({
         config.showSmoke &&
         (smokeType === 'Particle' || smokeType === 'Both') && (
           <SmokeParticles
-            points={points}
+            points={positions}
+            pointRotations={rotations}
             config={mergedConfig}
             attractorsRef={attractorsRef}
           />
@@ -103,7 +108,8 @@ export default function HotBoxSplineGroup({
         config.showSmoke &&
         (smokeType === 'Volumetric' || smokeType === 'Both') && (
           <VolumetricSmokeParticles
-            points={points}
+            points={positions}
+            pointRotations={rotations}
             config={mergedConfig}
             attractorsRef={attractorsRef}
           />

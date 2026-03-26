@@ -18,6 +18,9 @@ export default function SmokeSplineGroup({
     [index, setSplinePoints]
   );
 
+  const positions = useMemo(() => points.map((pt) => pt.position), [points]);
+  const rotations = useMemo(() => points.map((pt) => pt.rotation), [points]);
+
   // Merge per-spline settings into config for smoke components
   const mergedConfig = useMemo(
     () => ({
@@ -42,10 +45,11 @@ export default function SmokeSplineGroup({
         points={points}
         setPoints={setPoints}
         visible={splineConfig.showHelpers}
+        mode={config.pointMode}
       />
 
       <SplineLine
-        points={points}
+        points={positions}
         tension={splineConfig.tension}
         closed={splineConfig.closed}
         curveType="catmullrom"
@@ -56,7 +60,8 @@ export default function SmokeSplineGroup({
 
       {config.showClassicSmoke && (
         <SmokeParticles
-          points={points}
+          points={positions}
+          pointRotations={rotations}
           config={mergedConfig}
           attractorsRef={attractorsRef}
         />
@@ -64,7 +69,8 @@ export default function SmokeSplineGroup({
 
       {config.showVolSmoke && (
         <VolumetricSmokeParticles
-          points={points}
+          points={positions}
+          pointRotations={rotations}
           config={mergedConfig}
           attractorsRef={attractorsRef}
         />

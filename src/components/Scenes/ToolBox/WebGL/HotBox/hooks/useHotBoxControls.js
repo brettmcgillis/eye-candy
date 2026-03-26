@@ -30,7 +30,14 @@ function updateSplineConfig(setter, index, key, value) {
 function applyPreset(presetName, setSplines, setSplineConfigs) {
   const p = HOTBOX_PRESETS[presetName];
   if (!p) return;
-  setSplines(p.splines.map((s) => s.points.map((v) => v.clone())));
+  setSplines(
+    p.splines.map((s) =>
+      s.points.map((pt) => ({
+        position: pt.position.clone(),
+        rotation: pt.rotation.clone(),
+      }))
+    )
+  );
   setSplineConfigs(
     p.splines.map((s) => ({
       ...DEFAULT_SPLINE_CONFIG,
@@ -67,6 +74,7 @@ export default function useHotBoxControls(splines, setSplines, attractorsRef) {
   const [
     {
       preset,
+      pointMode,
       showSmoke,
       showFire,
       bgColor,
@@ -153,6 +161,11 @@ export default function useHotBoxControls(splines, setSplines, attractorsRef) {
 
       Scene: folder(
         {
+          pointMode: {
+            label: 'Point Mode',
+            value: 'translate',
+            options: ['translate', 'rotate'],
+          },
           showFire: {
             label: 'Fire',
             value: true,
@@ -508,26 +521,15 @@ export default function useHotBoxControls(splines, setSplines, attractorsRef) {
         {
           addSpline: button(
             () => {
-              setSplines((prev) => [
-                ...prev,
-                [
-                  new THREE.Vector3(
-                    (Math.random() - 0.5) * 400,
-                    100 + Math.random() * 400,
-                    (Math.random() - 0.5) * 400
-                  ),
-                  new THREE.Vector3(
-                    (Math.random() - 0.5) * 400,
-                    100 + Math.random() * 400,
-                    (Math.random() - 0.5) * 400
-                  ),
-                  new THREE.Vector3(
-                    (Math.random() - 0.5) * 400,
-                    100 + Math.random() * 400,
-                    (Math.random() - 0.5) * 400
-                  ),
-                ],
-              ]);
+              const randPt = () => ({
+                position: new THREE.Vector3(
+                  (Math.random() - 0.5) * 400,
+                  100 + Math.random() * 400,
+                  (Math.random() - 0.5) * 400
+                ),
+                rotation: new THREE.Euler(),
+              });
+              setSplines((prev) => [...prev, [randPt(), randPt(), randPt()]]);
             },
             { label: 'Add Spline' }
           ),
@@ -546,10 +548,11 @@ export default function useHotBoxControls(splines, setSplines, attractorsRef) {
               const splinesCode = all
                 .map((pts, idx) => {
                   const cfg = configs[idx] ?? DEFAULT_SPLINE_CONFIG;
-                  const pointStrs = pts.map(
-                    (p) =>
-                      `    new THREE.Vector3(${p.x.toFixed(3)}, ${p.y.toFixed(3)}, ${p.z.toFixed(3)})`
-                  );
+                  const pointStrs = pts.map((pt) => {
+                    const p = pt.position;
+                    const r = pt.rotation ?? new THREE.Euler();
+                    return `    { position: new THREE.Vector3(${p.x.toFixed(3)}, ${p.y.toFixed(3)}, ${p.z.toFixed(3)}), rotation: new THREE.Euler(${r.x.toFixed(3)}, ${r.y.toFixed(3)}, ${r.z.toFixed(3)}) }`;
+                  });
                   return `  {\n    type: '${cfg.type}',\n    smokeType: '${cfg.smokeType}',\n    tension: ${cfg.tension},\n    closed: ${cfg.closed},\n    points: [\n${pointStrs.join(',\n')}\n    ]\n  }`;
                 })
                 .join(',\n');
@@ -630,20 +633,24 @@ export default function useHotBoxControls(splines, setSplines, attractorsRef) {
                 setSplines((prev) =>
                   prev.map((pts, i) => {
                     if (i !== index) return pts;
-                    const last =
-                      pts[pts.length - 1] ?? new THREE.Vector3(0, 0, 0);
+                    const lastPos =
+                      pts[pts.length - 1]?.position ??
+                      new THREE.Vector3(0, 0, 0);
                     const Y_MIN = -150;
                     const Y_MAX = 1750;
-                    let newY = last.y + (Math.random() - 0.5) * 200;
+                    let newY = lastPos.y + (Math.random() - 0.5) * 200;
                     if (newY > Y_MAX) newY = 2 * Y_MAX - newY;
                     if (newY < Y_MIN) newY = 2 * Y_MIN - newY;
                     return [
                       ...pts,
-                      new THREE.Vector3(
-                        last.x + (Math.random() - 0.5) * 200,
-                        newY,
-                        last.z + (Math.random() - 0.5) * 200
-                      ),
+                      {
+                        position: new THREE.Vector3(
+                          lastPos.x + (Math.random() - 0.5) * 200,
+                          newY,
+                          lastPos.z + (Math.random() - 0.5) * 200
+                        ),
+                        rotation: new THREE.Euler(),
+                      },
                     ];
                   })
                 );
@@ -743,13 +750,19 @@ export default function useHotBoxControls(splines, setSplines, attractorsRef) {
       bgColor,
       splines: splines.map((pts, i) => ({
         ...(splineConfigs[i] ?? DEFAULT_SPLINE_CONFIG),
-        points: pts.map((p) => ({ x: p.x, y: p.y, z: p.z })),
+        points: pts.map((pt) => ({
+          x: pt.position.x,
+          y: pt.position.y,
+          z: pt.position.z,
+          rotation: (pt.rotation ?? new THREE.Euler()).toArray().slice(0, 3),
+        })),
       })),
     };
   });
 
   return useMemo(
     () => ({
+      pointMode,
       showSmoke,
       showFire,
       bgColor,
@@ -802,6 +815,7 @@ export default function useHotBoxControls(splines, setSplines, attractorsRef) {
       splineConfigs,
     }),
     [
+      pointMode,
       showSmoke,
       showFire,
       bgColor,

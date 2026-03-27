@@ -89,7 +89,7 @@ const DEFAULT_SPLINE_CONFIG = {
   cs184Animated: true,
   cs184AnimSpeed: 0.5,
   // Fireball Fire (Duke's Volumetric Explosion — https://shadertoy.com/view/lsySzd)
-  fireballRadius: 1.5,
+  fireballRadius: 80,
   fireballRotSpeed: 0.1,
   fireballNoiseScale: 0.5,
   fireballCoreColor: '#ccffff',
@@ -210,7 +210,7 @@ export default function useHotBoxControls(splines, setSplines, attractorsRef) {
           },
           bgColor: {
             label: 'Background',
-            value: '#1a1a2e',
+            value: '#9b9b9b',
           },
         },
         { collapsed: true }

@@ -10,13 +10,26 @@ import useSplineEditorControls from './hooks/useSplineEditorControls';
 const DEFAULT_PRESET_KEY = Object.keys(SPLINE_PRESETS)[0];
 const DEFAULT_PRESET = SPLINE_PRESETS[DEFAULT_PRESET_KEY];
 
-export default function SplineEditor() {
-  const [splines, setSplines] = useState(() => [
-    DEFAULT_PRESET.points.map((pt) => ({
+function toRuntimeSplinePoints(preset) {
+  let sourceSplines = [];
+  if (Array.isArray(preset?.splines)) {
+    sourceSplines = preset.splines;
+  } else if (preset?.points) {
+    sourceSplines = [preset];
+  }
+
+  return sourceSplines.map((spline) =>
+    spline.points.map((pt) => ({
       position: pt.position.clone(),
       rotation: pt.rotation.clone(),
-    })),
-  ]);
+    }))
+  );
+}
+
+export default function SplineEditor() {
+  const [splines, setSplines] = useState(() =>
+    toRuntimeSplinePoints(DEFAULT_PRESET)
+  );
 
   const setSplinePoints = useCallback((splineIndex, updater) => {
     setSplines((prev) =>

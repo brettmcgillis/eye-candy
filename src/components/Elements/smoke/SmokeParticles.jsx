@@ -120,7 +120,13 @@ const spreadOffTmp = new THREE.Vector3();
  */
 function buildRotationLookup(eulers, nSamples, closed, out, scratchQuats) {
   const nPts = eulers.length;
-  for (let i = 0; i < nPts; i += 1) scratchQuats[i].setFromEuler(eulers[i]);
+  while (scratchQuats.length < nPts) {
+    scratchQuats.push(new THREE.Quaternion());
+  }
+  for (let i = 0; i < nPts; i += 1) {
+    // Some imported presets may omit per-point rotation; treat as identity.
+    scratchQuats[i].setFromEuler(eulers[i] ?? new THREE.Euler(0, 0, 0));
+  }
   for (let s = 0; s < nSamples; s += 1) {
     const t = s / (nSamples - 1);
     const span = closed ? nPts : Math.max(1, nPts - 1);

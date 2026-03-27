@@ -10,13 +10,50 @@ import { localEnv } from '../../../../../../utils/appUtils';
 const DEFAULT_PRESET_KEY = Object.keys(SPLINE_PRESETS)[0];
 const DEFAULT_PRESET = SPLINE_PRESETS[DEFAULT_PRESET_KEY];
 
+function getPresetSourceSplines(preset) {
+  if (Array.isArray(preset?.splines)) return preset.splines;
+  if (preset?.points) return [preset];
+  return [];
+}
+
+function getPresetVisibility(preset) {
+  return {
+    showPoints: preset?.showPoints ?? true,
+    showUniform: preset?.showUniform ?? true,
+    showCentripetal: preset?.showCentripetal ?? false,
+    showChordal: preset?.showChordal ?? false,
+  };
+}
+
+const DEFAULT_SOURCE_SPLINE = getPresetSourceSplines(DEFAULT_PRESET)[0] ?? {};
+
 const DEFAULT_SPLINE_CONFIG = {
   name: '',
   visible: true,
-  tension: DEFAULT_PRESET.tension,
-  closed: DEFAULT_PRESET.closed,
+  tension: DEFAULT_SOURCE_SPLINE.tension ?? 0.5,
+  closed: DEFAULT_SOURCE_SPLINE.closed ?? false,
   arcSegments: 200,
 };
+
+function parsePreset(preset) {
+  const sourceSplines = getPresetSourceSplines(preset);
+
+  const splines = sourceSplines.map((spline) =>
+    spline.points.map((pt) => ({
+      position: pt.position.clone(),
+      rotation: pt.rotation.clone(),
+    }))
+  );
+
+  const splineConfigs = sourceSplines.map((spline) => ({
+    ...DEFAULT_SPLINE_CONFIG,
+    name: spline.name ?? '',
+    tension: spline.tension ?? DEFAULT_SPLINE_CONFIG.tension,
+    closed: spline.closed ?? DEFAULT_SPLINE_CONFIG.closed,
+  }));
+
+  return { splines, splineConfigs };
+}
 
 function updateSplineConfig(setter, index, key, value) {
   setter((prev) => {
@@ -58,25 +95,11 @@ export default function useSplineEditorControls(splines, setSplines) {
           reset: button(() => {
             const p = SPLINE_PRESETS[selectedPresetRef.current];
             if (p) {
-              setControls({
-                showPoints: p.showPoints ?? true,
-                showUniform: p.showUniform,
-                showCentripetal: p.showCentripetal,
-                showChordal: p.showChordal,
-              });
-              setSplines([
-                p.points.map((pt) => ({
-                  position: pt.position.clone(),
-                  rotation: pt.rotation.clone(),
-                })),
-              ]);
-              setSplineConfigs([
-                {
-                  ...DEFAULT_SPLINE_CONFIG,
-                  tension: p.tension,
-                  closed: p.closed,
-                },
-              ]);
+              const { splines: nextSplines, splineConfigs: nextConfigs } =
+                parsePreset(p);
+              setControls(getPresetVisibility(p));
+              setSplines(nextSplines);
+              setSplineConfigs(nextConfigs);
             }
           }),
           ...(localEnv()
@@ -103,19 +126,19 @@ export default function useSplineEditorControls(splines, setSplines) {
           },
           showPoints: {
             label: 'Show Points',
-            value: DEFAULT_PRESET.showPoints,
+            value: DEFAULT_PRESET.showPoints ?? true,
           },
           showUniform: {
             label: 'Uniform',
-            value: DEFAULT_PRESET.showUniform,
+            value: DEFAULT_PRESET.showUniform ?? true,
           },
           showCentripetal: {
             label: 'Centripetal',
-            value: DEFAULT_PRESET.showCentripetal,
+            value: DEFAULT_PRESET.showCentripetal ?? false,
           },
           showChordal: {
             label: 'Chordal',
-            value: DEFAULT_PRESET.showChordal,
+            value: DEFAULT_PRESET.showChordal ?? false,
           },
         },
         { collapsed: true }
@@ -342,21 +365,10 @@ export default function useSplineEditorControls(splines, setSplines) {
   useEffect(() => {
     const p = SPLINE_PRESETS[preset];
     if (!p) return;
-    setControls({
-      showPoints: p.showPoints ?? true,
-      showUniform: p.showUniform,
-      showCentripetal: p.showCentripetal,
-      showChordal: p.showChordal,
-    });
-    setSplines([
-      p.points.map((pt) => ({
-        position: pt.position.clone(),
-        rotation: pt.rotation.clone(),
-      })),
-    ]);
-    setSplineConfigs([
-      { ...DEFAULT_SPLINE_CONFIG, tension: p.tension, closed: p.closed },
-    ]);
+    const { splines: nextSplines, splineConfigs: nextConfigs } = parsePreset(p);
+    setControls(getPresetVisibility(p));
+    setSplines(nextSplines);
+    setSplineConfigs(nextConfigs);
   }, [preset]); // intentionally omit setControls/setSplines — only re-run on preset change
 
   // Keep configs array in sync with spline count

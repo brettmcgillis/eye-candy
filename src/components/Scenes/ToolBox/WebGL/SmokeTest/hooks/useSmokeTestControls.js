@@ -63,6 +63,33 @@ function updateSplineConfig(setter, index, key, value) {
   });
 }
 
+function parsePreset(preset) {
+  let sourceSplines = [];
+  if (Array.isArray(preset?.splines)) {
+    sourceSplines = preset.splines;
+  } else if (preset?.points) {
+    sourceSplines = [preset];
+  }
+
+  const splines = sourceSplines.map((spline) =>
+    spline.points.map((pt) => ({
+      position: pt.position.clone(),
+      rotation: pt.rotation ? pt.rotation.clone() : new THREE.Euler(0, 0, 0),
+      scale: pt.scale ? pt.scale.clone() : new THREE.Vector3(1, 1, 1),
+    }))
+  );
+
+  const splineConfigs = sourceSplines.map((spline) => ({
+    ...DEFAULT_SPLINE_CONFIG,
+    name: spline.name ?? '',
+    type: spline.type ?? DEFAULT_SPLINE_CONFIG.type,
+    tension: spline.tension ?? DEFAULT_SPLINE_CONFIG.tension,
+    closed: spline.closed ?? DEFAULT_SPLINE_CONFIG.closed,
+  }));
+
+  return { splines, splineConfigs };
+}
+
 export default function useSmokeTestControls(
   splines,
   setSplines,
@@ -104,22 +131,10 @@ export default function useSmokeTestControls(
           reset: button(() => {
             const p = SMOKE_PRESETS[selectedPresetRef.current];
             if (p) {
-              setSplines([
-                p.points.map((pt) => ({
-                  position: pt.position.clone(),
-                  rotation: pt.rotation.clone(),
-                  scale: pt.scale
-                    ? pt.scale.clone()
-                    : new THREE.Vector3(1, 1, 1),
-                })),
-              ]);
-              setSplineConfigs([
-                {
-                  ...DEFAULT_SPLINE_CONFIG,
-                  tension: p.tension ?? DEFAULT_SPLINE_CONFIG.tension,
-                  closed: p.closed ?? DEFAULT_SPLINE_CONFIG.closed,
-                },
-              ]);
+              const { splines: nextSplines, splineConfigs: nextConfigs } =
+                parsePreset(p);
+              setSplines(nextSplines);
+              setSplineConfigs(nextConfigs);
             }
           }),
           ...(localEnv()
@@ -814,20 +829,10 @@ export default function useSmokeTestControls(
   useEffect(() => {
     const p = SMOKE_PRESETS[preset];
     if (p) {
-      setSplines([
-        p.points.map((pt) => ({
-          position: pt.position.clone(),
-          rotation: pt.rotation.clone(),
-          scale: pt.scale ? pt.scale.clone() : new THREE.Vector3(1, 1, 1),
-        })),
-      ]);
-      setSplineConfigs([
-        {
-          ...DEFAULT_SPLINE_CONFIG,
-          tension: p.tension ?? DEFAULT_SPLINE_CONFIG.tension,
-          closed: p.closed ?? DEFAULT_SPLINE_CONFIG.closed,
-        },
-      ]);
+      const { splines: nextSplines, splineConfigs: nextConfigs } =
+        parsePreset(p);
+      setSplines(nextSplines);
+      setSplineConfigs(nextConfigs);
     }
   }, [preset]);
 

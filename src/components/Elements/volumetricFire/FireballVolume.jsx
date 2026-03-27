@@ -186,6 +186,7 @@ const fragmentShader = /* glsl */ `
 
     float t   = max(minT, 0.0);
     float td  = 0.0;
+    float d   = 1.0; // initialised to 1 so the first iteration's break check passes
     vec4  sum = vec4(0.0);
 
     const float h = 0.1; // density scale factor (matches original)
@@ -193,10 +194,14 @@ const fragmentShader = /* glsl */ `
     for (int i = 0; i < 128; i++) {
       if (i >= uSteps) break;
       if (td > 0.9)    break;
+      // Check previous iteration's d — exits near-zero / negative field regions
+      // immediately, preventing negative-weight accumulation after the fireball
+      // interior that would drag sum back to black. Matches original shader logic.
+      if (d  < 0.001)  break;
       if (t  > maxT)   break;
 
-      vec3  pos = oRo + t * oRd;
-      float d   = mapDensity(pos) * h;
+      vec3 pos = oRo + t * oRd;
+      d = mapDensity(pos) * h;
 
       if (d < 0.08) {
         float w  = (1.0 - td) * d * uDensity;

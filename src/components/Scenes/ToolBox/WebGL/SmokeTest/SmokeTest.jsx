@@ -13,14 +13,27 @@ import useSmokeTestControls from './hooks/useSmokeTestControls';
 const DEFAULT_PRESET_KEY = Object.keys(SMOKE_PRESETS)[0];
 const DEFAULT_PRESET = SMOKE_PRESETS[DEFAULT_PRESET_KEY];
 
-export default function SmokeTest() {
-  const [splines, setSplines] = useState(() => [
-    DEFAULT_PRESET.points.map((pt) => ({
+function toRuntimeSplinePoints(preset) {
+  let sourceSplines = [];
+  if (Array.isArray(preset?.splines)) {
+    sourceSplines = preset.splines;
+  } else if (preset?.points) {
+    sourceSplines = [preset];
+  }
+
+  return sourceSplines.map((spline) =>
+    spline.points.map((pt) => ({
       position: pt.position.clone(),
       rotation: pt.rotation.clone(),
       scale: pt.scale ? pt.scale.clone() : new THREE.Vector3(1, 1, 1),
-    })),
-  ]);
+    }))
+  );
+}
+
+export default function SmokeTest() {
+  const [splines, setSplines] = useState(() =>
+    toRuntimeSplinePoints(DEFAULT_PRESET)
+  );
 
   const setSplinePoints = useCallback((splineIndex, updater) => {
     setSplines((prev) =>

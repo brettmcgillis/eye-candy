@@ -7,26 +7,34 @@ const P = (x, y, z) => ({
 });
 
 const STILL_PULLING_FOR_YOU_SMOKE = {
-  'Still Pulling For You - Main': {
-    tension: 0.6,
-    closed: false,
-    points: [
-      P(-260, 220, 20),
-      P(-120, 300, 80),
-      P(40, 390, 120),
-      P(210, 500, 60),
-      P(330, 650, -20),
-    ],
-  },
-  'Still Pulling For You - Stub 2': {
-    tension: 0.6,
-    closed: false,
-    points: [
-      P(-300, 200, -40),
-      P(-170, 290, 40),
-      P(-10, 380, 120),
-      P(160, 480, 90),
-      P(320, 620, 10),
+  'Still Pulling For You': {
+    splines: [
+      {
+        name: 'Main',
+        type: 'Particle',
+        tension: 0.6,
+        closed: false,
+        points: [
+          P(-260, 220, 20),
+          P(-120, 300, 80),
+          P(40, 390, 120),
+          P(210, 500, 60),
+          P(330, 650, -20),
+        ],
+      },
+      {
+        name: 'Stub 2',
+        type: 'Particle',
+        tension: 0.6,
+        closed: false,
+        points: [
+          P(-300, 200, -40),
+          P(-170, 290, 40),
+          P(-10, 380, 120),
+          P(160, 480, 90),
+          P(320, 620, 10),
+        ],
+      },
     ],
   },
 };

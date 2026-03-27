@@ -27,16 +27,9 @@ export default function SmokeSplineGroup({
   const mergedConfig = useMemo(
     () => ({
       ...config,
-      tension: splineConfig.tension,
-      closed: splineConfig.closed,
-      arcSegments: splineConfig.arcSegments,
+      ...splineConfig,
     }),
-    [
-      config,
-      splineConfig.tension,
-      splineConfig.closed,
-      splineConfig.arcSegments,
-    ]
+    [config, splineConfig]
   );
 
   if (!splineConfig.visible) return null;
@@ -90,7 +83,10 @@ export default function SmokeSplineGroup({
           tension={splineConfig.tension}
           closed={splineConfig.closed}
           spread={
-            Math.max(config.spawnSpread ?? 0, config.volSpread ?? 0) || 120
+            Math.max(
+              mergedConfig.spawnSpread ?? 0,
+              mergedConfig.volSpread ?? 0
+            ) || 120
           }
         />
       )}

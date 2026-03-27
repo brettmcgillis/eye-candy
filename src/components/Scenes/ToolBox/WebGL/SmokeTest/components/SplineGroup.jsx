@@ -27,12 +27,21 @@ export default function SmokeSplineGroup({
   const mergedConfig = useMemo(
     () => ({
       ...config,
-      ...splineConfig,
+      tension: splineConfig.tension,
+      closed: splineConfig.closed,
+      arcSegments: splineConfig.arcSegments,
     }),
-    [config, splineConfig]
+    [
+      config,
+      splineConfig.tension,
+      splineConfig.closed,
+      splineConfig.arcSegments,
+    ]
   );
 
   if (!splineConfig.visible) return null;
+
+  const smokeType = splineConfig.type ?? 'Particle';
 
   return (
     <>
@@ -53,7 +62,7 @@ export default function SmokeSplineGroup({
         arcSegments={splineConfig.arcSegments}
       />
 
-      {splineConfig.type === 'Particle' && (
+      {smokeType === 'Particle' && (
         <SmokeParticles
           points={positions}
           pointRotations={rotations}
@@ -63,7 +72,7 @@ export default function SmokeSplineGroup({
         />
       )}
 
-      {splineConfig.type === 'Volumetric' && (
+      {smokeType === 'Volumetric' && (
         <VolumetricSmokeParticles
           points={positions}
           pointRotations={rotations}
@@ -73,7 +82,7 @@ export default function SmokeSplineGroup({
         />
       )}
 
-      {config.showSmokeVolume && (
+      {splineConfig.showSmokeVolume && (
         <SmokeVolumeMesh
           points={positions}
           pointRotations={rotations}
@@ -81,10 +90,7 @@ export default function SmokeSplineGroup({
           tension={splineConfig.tension}
           closed={splineConfig.closed}
           spread={
-            Math.max(
-              mergedConfig.spawnSpread ?? 0,
-              mergedConfig.volSpread ?? 0
-            ) || 120
+            Math.max(config.spawnSpread ?? 0, config.volSpread ?? 0) || 120
           }
         />
       )}

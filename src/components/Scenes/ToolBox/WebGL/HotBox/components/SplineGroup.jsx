@@ -95,13 +95,20 @@ export default function HotBoxSplineGroup({
   const rotations = useMemo(() => points.map((pt) => pt.rotation), [points]);
   const scales = useMemo(() => points.map((pt) => pt.scale), [points]);
 
-  // Merge per-spline settings into config for smoke/fire components
+  // Merge per-spline settings into config for smoke components
   const mergedConfig = useMemo(
     () => ({
       ...config,
-      ...splineConfig,
+      tension: splineConfig.tension,
+      closed: splineConfig.closed,
+      arcSegments: splineConfig.arcSegments,
     }),
-    [config, splineConfig]
+    [
+      config,
+      splineConfig.tension,
+      splineConfig.closed,
+      splineConfig.arcSegments,
+    ]
   );
 
   if (!splineConfig.visible) return null;
@@ -150,7 +157,7 @@ export default function HotBoxSplineGroup({
         />
       )}
 
-      {isSmoke && config.showSmokeVolume && (
+      {isSmoke && splineConfig.showSmokeVolume && (
         <SmokeVolumeMesh
           points={positions}
           pointRotations={rotations}
@@ -158,27 +165,25 @@ export default function HotBoxSplineGroup({
           tension={splineConfig.tension}
           closed={splineConfig.closed}
           spread={
-            Math.max(
-              mergedConfig.spawnSpread ?? 0,
-              mergedConfig.volSpread ?? 0
-            ) || 120
+            Math.max(config.spawnSpread ?? 0, config.volSpread ?? 0) || 120
           }
         />
       )}
 
+      {/* Fire rendering — gated by per-spline type */}
       {isFire && (fireType === 'Classic' || fireType === 'Both') && (
         <FireFromSpline
           points={points}
-          config={mergedConfig}
-          showVolume={config.showFireVolume}
+          config={config}
+          showVolume={splineConfig.showFireVolume}
         />
       )}
 
       {isFire && (fireType === 'Curve' || fireType === 'Both') && (
         <Fire2FromSpline
           points={points}
-          config={mergedConfig}
-          showVolume={config.showFireVolume}
+          config={config}
+          showVolume={splineConfig.showFireVolume}
         />
       )}
     </>

@@ -34,7 +34,9 @@
 - [x] Rename CandleSmoke to 2DSmoke
 - [x] Move 2DSmoke, flame to components/elements as generic reusable compoents.
 - [x] Replace the scenes current VolumetricSmoke with our reusable VolumetricSmokeParticles
-- [ ] Create some nice lil splines for VolumetricSmokeParticles to follow and place them coming off the wick.
+
+- [ ] Tune Smoke + fire
+- [ ] Design and add scene controls
 
 # // Bugs
 

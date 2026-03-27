@@ -25,12 +25,15 @@
 - [ ] Starts to look pretty good with a shitload of particles. Might need to scale up the smoke and space the words out a bit more.
 - [ ] Fix particle system init. they seem to start distributed around the spline, need to get spawned in from start pos. Might be fixed if we reuse SmokeTest components
 
+- [ ] Tune up the smoke
+
 # // Features
 
 - [ ] Cursor/smoke interaction.
 
 # // Bugs
 
-- Scene is creating its own spline line and smoke. We should reuse the results of the smoketest lab, by breaking it down into reusable components in components/elements
+- [ ] Scene is creating its own spline line and smoke. We should reuse the results of the smoketest lab, by breaking it down into reusable components in components/elements
 
 - [x] Scene locks when adjusting particle counts
+- [ ] Smoke is currently broken/not visible.

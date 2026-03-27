@@ -18,6 +18,8 @@
 
 [Back to main TODO](../../../../../../TODO.md)
 
+- [ ] Design and add scene controls
+
 # // Features
 
 # // Bugs
@@ -27,6 +29,8 @@
 - [ ] Fix shark orientations while following curve. they seem to be rotating in the opposite direction they are travelling.
 - [ ] Slow down how fast sharks follow the curve
 - [ ] Try to stagger movement so they are circling, opposing eachother.
+- [ ] Seeing this error in console:
+      [.WebGL-0x1140543a600] GL_INVALID_OPERATION: glDrawElements: Feedback loop formed between Framebuffer and active Texture.
 
 // Same as StillPullingForYou
 

@@ -14,11 +14,14 @@
 
 - [x] Totally broken. see console for err. cant switch scenes
 - [x] Remove Drei Clouds, GridHelper, AccumulativeShadows
-- [x] Add VolumetricFire emerging from dumpster opening
-- [x] Add Smoke2D wisps at fire source
-- [x] Add VolumetricSmokeParticles on spline flowing up-right
-- [x] White background, open lids, match painting composition
+- [ ] Add VolumetricFire emerging from dumpster opening
+- [ ] Add VolumetricSmokeParticles on spline flowing up-right
+
+- [ ] Tune Smoke + fire
+- [ ] Design and add scene controls
 
 # // Features
 
 # // Bugs
+
+- [ ] Fix dumpster lids, one should be closed

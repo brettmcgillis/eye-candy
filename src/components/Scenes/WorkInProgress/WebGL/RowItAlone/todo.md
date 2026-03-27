@@ -15,10 +15,17 @@
 
 [Back to main TODO](../../../../../../TODO.md)
 
+- [ ] Design and add scene controls
+
 # // Features
 
 # // Bugs
 
 - [ ] Fix water, it only appears to wave in 1 direction (ex north-south) should probably be all 4 (ex, north-south + east-west)
 - [ ] Fix sky, doenst really match ocean shader example
+- [ ] fix water appearance, use waterShaderExample
+- [ ] Fix fog, use heightFog reference
 - [ ] Fix boat, oars seem fixed in place, should use locked transforms at the oarlocks to allow them to move up and down like on a real boat.
+
+- [ ] Fix console error:
+      Cannot update a component (`Loader`) while rendering a different component (`FloatingBoat`). To locate the bad setState() call inside `FloatingBoat`, follow the stack trace as described in

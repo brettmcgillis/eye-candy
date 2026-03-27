@@ -15,6 +15,13 @@
 
 [Back to main TODO](../../../../../../TODO.md)
 
+- [ ] Tune up the smoke + fire.
+- [ ] Design and add scene controls
+
 # // Features
 
 # // Bugs
+
+- [ ] Fix top bar lights. Currently it looks like 2 lights, red + blue, traversing the length of the light bar. Should instead be 2 x 2 lights, red+blue, back to back, and rotating.
+- [ ] Fix brake lights, look like they might be inside trunk
+- [ ] Fix headlights. Model has two headlights per side, looks like were only using 1 point light per side. Point light looks like its at top right corner of inner light. lets try to center two points within the lights

@@ -8,7 +8,7 @@ import { useFrame } from '@react-three/fiber';
 import STILL_PULLING_FOR_YOU_SMOKE from '../../../../../presets/smoke/stillPullingForYouSmoke';
 import SmokeParticles from '../../../../elements/smoke/SmokeParticles';
 import TugBoat from '../../../../elements/tugboat/TugBoat';
-import OceanMaterial, { sampleWaveHeight } from './OceanMaterial';
+import OceanMaterial, { sampleWaveHeight } from './components/OceanMaterial';
 
 // ── Water config (shared between surface + boat sampling) ───────────────────
 const WATER_CONFIG = {

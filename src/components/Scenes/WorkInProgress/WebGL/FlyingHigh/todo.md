@@ -13,6 +13,13 @@
 
 [Back to main TODO](../../../../../../TODO.md)
 
+- [ ] Tune Smoke + fire
+- [ ] Update cloud appearance so they stick out more as objects in the scene
+- [ ] Design and add scene controls
+
 # // Features
 
 # // Bugs
+
+- [ ] Fix Sky panel. Make plane an oval that fades at the edges
+- [ ] Fix shader on blue sky plane. Make it look better, more painterly

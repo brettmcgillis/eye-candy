@@ -19,7 +19,8 @@
 
 [Back to main TODO](../../../../../../TODO.md)
 
-- [ ] Should we use a NURBS volume for the water? Looks like it suports building a rectangular prism with irregular face geometry on the top face, as well as irregular side face configuration.
+- [ ] Add smoke from smokestack
+- [ ] Design and add scene controls
 
 # // Features
 

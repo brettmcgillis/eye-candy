@@ -21,3 +21,4 @@
 
 - [ ] Fix water, it only appears to wave in 1 direction (ex north-south) should probably be all 4 (ex, north-south + east-west)
 - [ ] Fix sky, doenst really match ocean shader example
+- [ ] Fix boat, oars seem fixed in place, should use locked transforms at the oarlocks to allow them to move up and down like on a real boat.

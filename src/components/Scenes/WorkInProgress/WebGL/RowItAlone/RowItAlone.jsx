@@ -10,8 +10,8 @@ import { modelFile } from '../../../../../utils/appUtils';
 import OceanMaterial, {
   sampleWaveHeight,
   sampleWaveNormal,
-} from './OceanMaterial';
-import useRowItAloneControls from './useRowItAloneControls';
+} from './components/OceanMaterial';
+import useRowItAloneControls from './hooks/useRowItAloneControls';
 
 // ---------- reusable quaternion / euler scratch ----------
 const scratchEuler = new THREE.Euler();

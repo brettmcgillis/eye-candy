@@ -19,17 +19,68 @@
 
 [Back to main TODO](../../../../../../TODO.md)
 
-- [ ] Add smoke from smokestack
-- [ ] Design and add scene controls
+- [x] Add smoke from smokestack
+- [x] Add pointlight at "headlight" and in cabin.
+- [x] Add a bumpy seafloor plane.
+- [x] Add a mode for the boat to float with the water. Boat should be reacting to water, and not just bobbing freely.
+- [x] Add orbit controls for debug
+- [x] Move controls out of scene into controls hook in /hooks
+- [x] Break the scene down in to memoized child components where it makes sense and store in /components
+- [x] Add default settings and presets to presets.jsx
+- [x] Add scene controls
+  - Still Pulling For You
+    - Presets
+      - Dropdown
+        - Options:
+          - Rough Waters:
+            - Water is very wavy
+            - boat is properly oriented
+            - boat is floating on the water.
+            - smoke visible
+            - seafloor hidden
+            - cabin, headlights on
+          - Still Pulling
+            - Water is very wavy
+            - boat is fixed position, nose up, half sunk
+            - smoke visible
+            - cabin, headlights flickering on/off
+            - seafloor hidden
+          - Sunk
+            - water is calm
+            - boat is fixed position at the bottom of the column
+            - smoke hidden
+            - cabin, headlights flickering on/off
+            - seafloor visible
+      - Copy
+      - Reset
+    - Scene
+      - Background color
+      - Lighting
+      - Camera dropdown
+        - Options: Fixed, Orbit
+    - Tugboat
+      - Mode Dropdown
+        - Options: Fixed, Floating
+      - Position (for fixed mode)
+      - Scale
+      - Rotation
+    - Smoke
+      - visibility
+      - Position
+      - Scale
+      - Rotation
+      - Smoke controls
+    - Water
+      - Controls for water props
+    - Seafloor
+      - visibility
+      - color
+      - appearance
 
 # // Features
 
 # // Bugs
 
 - [x] Fix camera angle, cant see boat or most of water volume
-- [ ] Fix boat angle. Dont bob up & down, stay fixed position
-
-// Same as StayingAfloat
-
-- [x] Fix triangle shadow artifacts
-- [x] Fix water. The wavy top and the solid volume should be one contiguous unit of geometry. Should we use a NURBS volume for the water? Looks like it suports building a rectangular prism with irregular face geometry on the top face, as well as irregular side face configuration.
+- [x] Fix boat. Dont bob up & down, stay fixed position
+- [x] Fix ocean floor. Currently its a bumpy plane, but this doesnt look right as it doesnt align with the bttom of the water column. I think I need another NURBS component like the water column, dirt column.

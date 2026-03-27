@@ -69,10 +69,12 @@ const WAVE_PREAMBLE = /* glsl */ `
 
   varying float vNormHeight;
 
+  // Y-only wave displacement — walls stay vertical, only top undulates
   vec3 nurbsWaveDisplace(vec3 pos) {
     float normY = clamp(
       (pos.y - uColumnBottom) / (uColumnTop - uColumnBottom), 0.0, 1.0
     );
+    // Only vertices near the top move (sides lerp from 0 at bottom to full at top)
     float blend = smoothstep(0.5, 1.0, normY);
 
     vec2 dirs[4];
@@ -87,20 +89,16 @@ const WAVE_PREAMBLE = /* glsl */ `
     float baseAmps[4];
     baseAmps[0] = 1.0; baseAmps[1] = 0.4; baseAmps[2] = 0.2; baseAmps[3] = 0.1;
 
-    vec3 disp = vec3(0.0);
+    float heightDisp = 0.0;
     for (int i = 0; i < 4; i++) {
       float amp = baseAmps[i] * uWaveHeight;
-      float Q = uWaveChoppiness / (freqs[i] * amp * 4.0);
       float phase = uWaveSpeed * freqs[i];
       float theta = dot(dirs[i], pos.xz) * freqs[i] + uTime * phase;
-      float s = sin(theta);
-      float c = cos(theta);
-      disp.x -= Q * amp * dirs[i].x * s;
-      disp.z -= Q * amp * dirs[i].y * s;
-      disp.y += amp * c;
+      heightDisp += amp * cos(theta);
     }
 
-    return disp * blend;
+    // Only displace in Y — no horizontal shift keeps walls flush
+    return vec3(0.0, heightDisp * blend, 0.0);
   }
 
   vec3 nurbsWaveNormal(vec3 pos) {
@@ -196,8 +194,9 @@ function buildBottomSurface(hw, hd, botY) {
   return new NURBSSurface(3, 3, knots, knots, cp);
 }
 
-function buildSideSurface(uVals, getPos, bulgeDir, bulgeFactor, botY, topY) {
+function buildSideSurface(uVals, getPos, botY, topY) {
   // degree 3 (width, 4 CPs) × degree 2 (height, 3 CPs)
+  // Flat vertical plane — mid CP sits exactly between top/bottom (no bulge)
   const knotsU = [0, 0, 0, 0, 1, 1, 1, 1];
   const knotsV = [0, 0, 0, 1, 1, 1];
   const midY = (botY + topY) / 2;
@@ -207,12 +206,7 @@ function buildSideSurface(uVals, getPos, bulgeDir, bulgeFactor, botY, topY) {
     const t = getPos(uVal, topY);
     return [
       new THREE.Vector4(b.x, b.y, b.z, 1),
-      new THREE.Vector4(
-        (b.x + t.x) / 2 + bulgeDir.x * bulgeFactor,
-        midY,
-        (b.z + t.z) / 2 + bulgeDir.z * bulgeFactor,
-        1
-      ),
+      new THREE.Vector4((b.x + t.x) / 2, midY, (b.z + t.z) / 2, 1),
       new THREE.Vector4(t.x, t.y, t.z, 1),
     ];
   });
@@ -220,7 +214,7 @@ function buildSideSurface(uVals, getPos, bulgeDir, bulgeFactor, botY, topY) {
   return new NURBSSurface(3, 2, knotsU, knotsV, cp);
 }
 
-function buildAllSurfaces({ width, depth, height, bulgeFactor }) {
+function buildAllSurfaces({ width, depth, height }) {
   const hw = width / 2;
   const hd = depth / 2;
   const topY = height / 2;
@@ -229,39 +223,27 @@ function buildAllSurfaces({ width, depth, height, bulgeFactor }) {
   return {
     top: buildTopSurface(hw, hd, topY),
     bottom: buildBottomSurface(hw, hd, botY),
-    // Front (z=+hd) normal +z: u along X left→right
     front: buildSideSurface(
       [-hw, -hw / 3, hw / 3, hw],
       (x, y) => ({ x, y, z: hd }),
-      { x: 0, z: 1 },
-      bulgeFactor,
       botY,
       topY
     ),
-    // Back (z=−hd) normal −z: u reversed
     back: buildSideSurface(
       [hw, hw / 3, -hw / 3, -hw],
       (x, y) => ({ x, y, z: -hd }),
-      { x: 0, z: -1 },
-      bulgeFactor,
       botY,
       topY
     ),
-    // Right (x=+hw) normal +x: u along Z reversed
     right: buildSideSurface(
       [hd, hd / 3, -hd / 3, -hd],
       (z, y) => ({ x: hw, y, z }),
-      { x: 1, z: 0 },
-      bulgeFactor,
       botY,
       topY
     ),
-    // Left (x=−hw) normal −x: u along Z normal
     left: buildSideSurface(
       [-hd, -hd / 3, hd / 3, hd],
       (z, y) => ({ x: -hw, y, z }),
-      { x: -1, z: 0 },
-      bulgeFactor,
       botY,
       topY
     ),
@@ -283,6 +265,62 @@ function buildGeometries(surfaces, segments, height, maxDim) {
   ];
 }
 
+// ── Edge line helpers ────────────────────────────────────────────────
+
+const EDGE_SEGS = 32; // subdivisions per top edge for smooth wave following
+
+function buildEdgeGeometries(hw, hd, topY, botY) {
+  // Bottom rectangle (static, closed loop)
+  const bottomPts = [
+    new THREE.Vector3(-hw, botY, -hd),
+    new THREE.Vector3(hw, botY, -hd),
+    new THREE.Vector3(hw, botY, hd),
+    new THREE.Vector3(-hw, botY, hd),
+    new THREE.Vector3(-hw, botY, -hd),
+  ];
+  const bottomGeo = new THREE.BufferGeometry().setFromPoints(bottomPts);
+
+  // 4 vertical corner lines (bottom → top, updated each frame at top end)
+  const corners = [
+    [-hw, -hd],
+    [hw, -hd],
+    [hw, hd],
+    [-hw, hd],
+  ];
+  const vertGeos = corners.map(([cx, cz]) => {
+    const geo = new THREE.BufferGeometry().setFromPoints([
+      new THREE.Vector3(cx, botY, cz),
+      new THREE.Vector3(cx, topY, cz),
+    ]);
+    return { geo, cx, cz };
+  });
+
+  // 4 top edges, each subdivided so they can follow the wave contour
+  const topEdges = [
+    { x0: -hw, z0: -hd, x1: hw, z1: -hd }, // back
+    { x0: hw, z0: -hd, x1: hw, z1: hd }, // right
+    { x0: hw, z0: hd, x1: -hw, z1: hd }, // front
+    { x0: -hw, z0: hd, x1: -hw, z1: -hd }, // left
+  ];
+  const topGeos = topEdges.map((edge) => {
+    const pts = [];
+    for (let i = 0; i <= EDGE_SEGS; i += 1) {
+      const t = i / EDGE_SEGS;
+      pts.push(
+        new THREE.Vector3(
+          edge.x0 + (edge.x1 - edge.x0) * t,
+          topY,
+          edge.z0 + (edge.z1 - edge.z0) * t
+        )
+      );
+    }
+    const geo = new THREE.BufferGeometry().setFromPoints(pts);
+    return { geo, edge };
+  });
+
+  return { bottomGeo, vertGeos, topGeos };
+}
+
 // ── Component ───────────────────────────────────────────────────────
 
 export default function NurbsWaterColumn({
@@ -290,7 +328,6 @@ export default function NurbsWaterColumn({
   depth = 3.6,
   height = 6.0,
   segments = 24,
-  bulgeFactor = 0.08,
   topColor = '#9edff0',
   bottomColor = '#246f98',
   opacity = 0.34,
@@ -322,9 +359,9 @@ export default function NurbsWaterColumn({
   );
 
   const geometries = useMemo(() => {
-    const surfaces = buildAllSurfaces({ width, depth, height, bulgeFactor });
+    const surfaces = buildAllSurfaces({ width, depth, height });
     return buildGeometries(surfaces, segments, height, Math.max(width, depth));
-  }, [width, depth, height, segments, bulgeFactor]);
+  }, [width, depth, height, segments]);
 
   const material = useMemo(() => {
     const mat = new THREE.MeshPhysicalMaterial({
@@ -371,12 +408,11 @@ export default function NurbsWaterColumn({
     return mat;
   }, [uniforms, opacity, transmission, roughness, ior, thickness]);
 
-  const edgesGeo = useMemo(() => {
+  const edgeData = useMemo(() => {
     if (!showEdges) return null;
-    const box = new THREE.BoxGeometry(width, height, depth);
-    const edges = new THREE.EdgesGeometry(box);
-    box.dispose();
-    return edges;
+    const hw = width / 2;
+    const hd = depth / 2;
+    return buildEdgeGeometries(hw, hd, height / 2, -height / 2);
   }, [showEdges, width, height, depth]);
 
   useFrame((_, delta) => {
@@ -386,6 +422,42 @@ export default function NurbsWaterColumn({
     uniforms.uWaveChoppiness.value = waveChoppiness;
     uniforms.uWaveSpeed.value = waveSpeed;
     waveTime = timeRef.current;
+
+    // Animate top edges + vertical corner tops to follow waves
+    if (edgeData) {
+      const topY = height / 2;
+      // Update top edge subdivisions
+      edgeData.topGeos.forEach(({ geo, edge }) => {
+        const pos = geo.attributes.position;
+        for (let i = 0; i <= EDGE_SEGS; i += 1) {
+          const t = i / EDGE_SEGS;
+          const px = edge.x0 + (edge.x1 - edge.x0) * t;
+          const pz = edge.z0 + (edge.z1 - edge.z0) * t;
+          const wY = sampleWaveHeight(
+            px,
+            pz,
+            waveHeight,
+            waveChoppiness,
+            waveSpeed
+          );
+          pos.setY(i, topY + wY);
+        }
+        pos.needsUpdate = true;
+      });
+      // Update vertical corner top-end vertex (index 1)
+      edgeData.vertGeos.forEach(({ geo, cx, cz }) => {
+        const pos = geo.attributes.position;
+        const wY = sampleWaveHeight(
+          cx,
+          cz,
+          waveHeight,
+          waveChoppiness,
+          waveSpeed
+        );
+        pos.setY(1, topY + wY);
+        pos.needsUpdate = true;
+      });
+    }
   });
 
   return (
@@ -395,15 +467,41 @@ export default function NurbsWaterColumn({
         <mesh key={idx} geometry={geo} material={material} />
       ))}
 
-      {showEdges && edgesGeo && (
-        <lineSegments geometry={edgesGeo}>
-          <lineBasicMaterial
-            color={edgeColor}
-            transparent
-            opacity={edgeOpacity}
-            toneMapped={false}
-          />
-        </lineSegments>
+      {showEdges && edgeData && (
+        <>
+          {/* eslint-disable react/no-unknown-property */}
+          <line geometry={edgeData.bottomGeo}>
+            <lineBasicMaterial
+              color={edgeColor}
+              transparent
+              opacity={edgeOpacity}
+              toneMapped={false}
+            />
+          </line>
+          {edgeData.vertGeos.map(({ geo }, i) => (
+            // eslint-disable-next-line react/no-array-index-key
+            <line key={`v${i}`} geometry={geo}>
+              <lineBasicMaterial
+                color={edgeColor}
+                transparent
+                opacity={edgeOpacity}
+                toneMapped={false}
+              />
+            </line>
+          ))}
+          {edgeData.topGeos.map(({ geo }, i) => (
+            // eslint-disable-next-line react/no-array-index-key
+            <line key={`t${i}`} geometry={geo}>
+              <lineBasicMaterial
+                color={edgeColor}
+                transparent
+                opacity={edgeOpacity}
+                toneMapped={false}
+              />
+            </line>
+          ))}
+          {/* eslint-enable react/no-unknown-property */}
+        </>
       )}
     </group>
   );

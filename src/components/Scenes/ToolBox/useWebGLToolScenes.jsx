@@ -21,13 +21,13 @@ const scenes = [
   {
     id: 'splineEditor',
     label: 'Spline Editor',
-    icon: '〰️',
+    icon: '➰',
     Component: SplineEditor,
   },
   {
     id: 'smokeTest',
     label: 'Smoke Test',
-    icon: '🌫️',
+    icon: '💨',
     Component: SmokeTest,
   },
 ];

@@ -11,13 +11,13 @@ const STILL_PULLING = {
 
   // Tugboat — fixed, nose-up, half sunk
   boatMode: 'Fixed',
-  boatX: 0,
-  boatY: -0.35,
-  boatZ: 0,
+  boatX: 0.6,
+  boatY: 0.65,
+  boatZ: -0.2,
   boatScale: 0.12,
-  boatRotX: 1.1,
-  boatRotY: 0.4,
-  boatRotZ: 0,
+  boatRotX: 0,
+  boatRotY: 0.8,
+  boatRotZ: 0.6,
   floatDraft: -0.05,
 
   // Smoke — visible
@@ -123,13 +123,13 @@ const SUNK = {
 
   // Tugboat — at the bottom
   boatMode: 'Fixed',
-  boatX: 0,
+  boatX: 0.45,
   boatY: -0.9,
-  boatZ: 0,
+  boatZ: -0.3,
   boatScale: 0.12,
-  boatRotX: 0.3,
+  boatRotX: 1.3,
   boatRotY: 0.2,
-  boatRotZ: 0.15,
+  boatRotZ: 0.6,
   floatDraft: -0.05,
 
   // Smoke — hidden

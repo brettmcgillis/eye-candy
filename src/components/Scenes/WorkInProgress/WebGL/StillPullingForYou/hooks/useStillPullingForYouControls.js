@@ -15,13 +15,13 @@ const DEFAULTS = {
 
   // Tugboat
   boatMode: 'Fixed',
-  boatX: 0,
-  boatY: -0.35,
-  boatZ: 0,
+  boatX: 0.6,
+  boatY: 0.65,
+  boatZ: -0.2,
   boatScale: 0.12,
-  boatRotX: 1.1,
-  boatRotY: 0.4,
-  boatRotZ: 0,
+  boatRotX: 0,
+  boatRotY: 0.8,
+  boatRotZ: 0.6,
   floatDraft: -0.05,
 
   // Smoke
@@ -54,7 +54,7 @@ const DEFAULTS = {
   waveSpeed: 0.6,
 
   // Seafloor
-  seafloorVisible: true,
+  seafloorVisible: false,
   seafloorColor: '#8a7e6b',
   bumpHeight: 0.08,
   bumpFrequency: 1.0,

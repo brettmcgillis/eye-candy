@@ -1,4 +1,5 @@
-import React, { useRef } from 'react';
+/* eslint-disable no-underscore-dangle */
+import React, { useEffect, useRef } from 'react';
 
 import { useAnimations, useGLTF } from '@react-three/drei';
 
@@ -10,6 +11,21 @@ export default function HammerHead(props) {
     modelFile('/hammerHead.glb')
   );
   const { actions } = useAnimations(animations, group);
+
+  useEffect(() => {
+    Object.values(actions ?? {}).forEach((action) => {
+      action.reset();
+      action.fadeIn(0.35);
+      action.play();
+    });
+
+    return () => {
+      Object.values(actions ?? {}).forEach((action) => {
+        action.fadeOut(0.2);
+        action.stop();
+      });
+    };
+  }, [actions]);
 
   return (
     <group ref={group} {...props} dispose={null}>

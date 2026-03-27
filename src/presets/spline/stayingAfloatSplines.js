@@ -1,0 +1,3 @@
+const STAYING_AFLOAT_SPLINES = {};
+
+export default STAYING_AFLOAT_SPLINES;

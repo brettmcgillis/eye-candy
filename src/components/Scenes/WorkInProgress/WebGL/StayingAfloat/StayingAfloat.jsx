@@ -9,71 +9,10 @@ import STAYING_AFLOAT_SPLINES from '../../../../../presets/spline/stayingAfloatS
 import HammerHead from '../../../../elements/hammerHead/HammerHead';
 import LifePreserver from '../../../../elements/lifePreserver/LifePreserver';
 import TigerShark from '../../../../elements/tigerShark/TigerShark';
+import NurbsWaterColumn from '../../../../elements/water/NurbsWaterColumn';
 
 const COLUMN_SIZE = 3.6;
 const COLUMN_HEIGHT = 6.0;
-
-function WaterColumn() {
-  const segments = useMemo(
-    () => [
-      { y: 1.8, height: 1.8, color: '#9edff0', opacity: 0.34 },
-      { y: 0.0, height: 1.8, color: '#63bcd7', opacity: 0.3 },
-      { y: -1.8, height: 2.4, color: '#246f98', opacity: 0.34 },
-    ],
-    []
-  );
-
-  const columnGeometry = useMemo(
-    () => new THREE.BoxGeometry(COLUMN_SIZE, COLUMN_HEIGHT, COLUMN_SIZE),
-    []
-  );
-  const edgesGeometry = useMemo(
-    () => new THREE.EdgesGeometry(columnGeometry),
-    [columnGeometry]
-  );
-
-  return (
-    <group>
-      {segments.map((segment) => (
-        <mesh key={segment.y} position={[0, segment.y, 0]}>
-          <boxGeometry args={[COLUMN_SIZE, segment.height, COLUMN_SIZE]} />
-          <meshPhysicalMaterial
-            color={segment.color}
-            transparent
-            opacity={segment.opacity}
-            roughness={0.3}
-            metalness={0.0}
-            transmission={0.5}
-            ior={1.12}
-            thickness={0.35}
-            side={THREE.DoubleSide}
-            depthWrite={false}
-          />
-        </mesh>
-      ))}
-
-      <mesh position={[0, COLUMN_HEIGHT * 0.5, 0]}>
-        <boxGeometry args={[COLUMN_SIZE * 0.98, 0.02, COLUMN_SIZE * 0.98]} />
-        <meshStandardMaterial
-          color="#c8f0ff"
-          transparent
-          opacity={0.65}
-          roughness={0.1}
-          metalness={0.0}
-        />
-      </mesh>
-
-      <lineSegments geometry={edgesGeometry}>
-        <lineBasicMaterial
-          color="#1f4455"
-          transparent
-          opacity={0.65}
-          toneMapped={false}
-        />
-      </lineSegments>
-    </group>
-  );
-}
 
 function FloatingPreserver() {
   const ref = useRef();
@@ -178,7 +117,21 @@ export default function StayingAfloat() {
         color="#d9f2ff"
       />
 
-      <WaterColumn />
+      <NurbsWaterColumn
+        width={COLUMN_SIZE}
+        depth={COLUMN_SIZE}
+        height={COLUMN_HEIGHT}
+        topColor="#9edff0"
+        bottomColor="#246f98"
+        opacity={0.34}
+        transmission={0.5}
+        roughness={0.3}
+        ior={1.12}
+        thickness={0.35}
+        waveHeight={0.15}
+        waveChoppiness={0.5}
+        waveSpeed={0.6}
+      />
       <FloatingPreserver />
 
       <SplineShark

@@ -1,5 +1,3 @@
-import * as THREE from 'three';
-
 import React, { useMemo, useRef } from 'react';
 
 import { PerspectiveCamera } from '@react-three/drei';
@@ -8,7 +6,9 @@ import { useFrame } from '@react-three/fiber';
 import STILL_PULLING_FOR_YOU_SMOKE from '../../../../../presets/smoke/stillPullingForYouSmoke';
 import SmokeParticles from '../../../../elements/smoke/SmokeParticles';
 import TugBoat from '../../../../elements/tugboat/TugBoat';
-import OceanMaterial, { sampleWaveHeight } from './components/OceanMaterial';
+import NurbsWaterColumn, {
+  sampleWaveHeight,
+} from '../../../../elements/water/NurbsWaterColumn';
 
 // ── Water config (shared between surface + boat sampling) ───────────────────
 const WATER_CONFIG = {
@@ -25,37 +25,6 @@ const WATER_CONFIG = {
 const BOAT_SCALE = 0.15;
 const BOAT_POS = [0, -0.12, 0]; // centre, partially submerged
 const BOAT_ROT = [0.35, 0.4, 0]; // tilted nose-up
-
-// ── Water Surface (Gerstner waves via OceanMaterial) ────────────────────────
-function WaterSurface() {
-  const geometry = useMemo(() => new THREE.PlaneGeometry(20, 20, 128, 128), []);
-
-  return (
-    <mesh
-      geometry={geometry}
-      rotation={[-Math.PI / 2, 0, 0]}
-      position={[0, 0, 0]}
-    >
-      <OceanMaterial config={WATER_CONFIG} />
-    </mesh>
-  );
-}
-
-// ── Water Volume (transparent block beneath surface) ────────────────────────
-function WaterVolume() {
-  return (
-    <mesh position={[0, -0.75, 0]}>
-      <boxGeometry args={[20, 1.5, 20]} />
-      <meshStandardMaterial
-        color="#2a7f8f"
-        transparent
-        opacity={0.25}
-        side={THREE.DoubleSide}
-        depthWrite={false}
-      />
-    </mesh>
-  );
-}
 
 // ── Sinking Tugboat (bobs with waves) ───────────────────────────────────────
 function SinkingTugboat() {
@@ -116,7 +85,12 @@ export default function StillPullingForYou() {
       <color attach="background" args={['#f5f5f0']} />
 
       {/* Camera — isometric-ish 3/4 view */}
-      <PerspectiveCamera makeDefault position={[6, 5, 6]} fov={45} />
+      <PerspectiveCamera
+        makeDefault
+        position={[3, 2.5, 4]}
+        fov={50}
+        onUpdate={(c) => c.lookAt(0, 0, 0)}
+      />
 
       {/* Lighting */}
       <ambientLight intensity={0.8} />
@@ -140,11 +114,23 @@ export default function StillPullingForYou() {
         </group>
       ))}
 
-      {/* Water surface with Gerstner wave shader */}
-      <WaterSurface />
-
-      {/* Transparent water volume beneath */}
-      <WaterVolume />
+      {/* NURBS water column */}
+      <NurbsWaterColumn
+        width={4.0}
+        depth={4.0}
+        height={2.0}
+        topColor="#2a7f8f"
+        bottomColor="#1a5060"
+        opacity={WATER_CONFIG.waterOpacity}
+        transmission={0.4}
+        roughness={WATER_CONFIG.waterRoughness}
+        ior={1.12}
+        thickness={0.35}
+        waveHeight={WATER_CONFIG.waveHeight}
+        waveChoppiness={WATER_CONFIG.waveChoppiness}
+        waveSpeed={WATER_CONFIG.waveSpeed}
+        showEdges={false}
+      />
     </>
   );
 }

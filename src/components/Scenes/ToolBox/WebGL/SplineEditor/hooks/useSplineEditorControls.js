@@ -4,14 +4,17 @@ import { TorusGeometry } from 'three';
 
 import { useEffect, useMemo, useRef, useState } from 'react';
 
+import SPLINE_PRESETS from '../../../../../../presets/spline/splinePresets';
 import { localEnv } from '../../../../../../utils/appUtils';
-import SPLINE_PRESETS from '../../../../../elements/spline/splinePresets';
+
+const DEFAULT_PRESET_KEY = Object.keys(SPLINE_PRESETS)[0];
+const DEFAULT_PRESET = SPLINE_PRESETS[DEFAULT_PRESET_KEY];
 
 const DEFAULT_SPLINE_CONFIG = {
   name: '',
   visible: true,
-  tension: SPLINE_PRESETS.Default.tension,
-  closed: SPLINE_PRESETS.Default.closed,
+  tension: DEFAULT_PRESET.tension,
+  closed: DEFAULT_PRESET.closed,
   arcSegments: 200,
 };
 
@@ -25,7 +28,7 @@ function updateSplineConfig(setter, index, key, value) {
 
 export default function useSplineEditorControls(splines, setSplines) {
   const controlsSnapshotRef = useRef({});
-  const selectedPresetRef = useRef('Default');
+  const selectedPresetRef = useRef(DEFAULT_PRESET_KEY);
   const splinesRef = useRef(splines);
   splinesRef.current = splines;
   const [splineConfigs, setSplineConfigs] = useState(() =>
@@ -49,7 +52,7 @@ export default function useSplineEditorControls(splines, setSplines) {
         {
           preset: {
             label: 'Preset',
-            value: 'Default',
+            value: DEFAULT_PRESET_KEY,
             options: Object.keys(SPLINE_PRESETS),
           },
           reset: button(() => {
@@ -100,19 +103,19 @@ export default function useSplineEditorControls(splines, setSplines) {
           },
           showPoints: {
             label: 'Show Points',
-            value: SPLINE_PRESETS.Default.showPoints,
+            value: DEFAULT_PRESET.showPoints,
           },
           showUniform: {
             label: 'Uniform',
-            value: SPLINE_PRESETS.Default.showUniform,
+            value: DEFAULT_PRESET.showUniform,
           },
           showCentripetal: {
             label: 'Centripetal',
-            value: SPLINE_PRESETS.Default.showCentripetal,
+            value: DEFAULT_PRESET.showCentripetal,
           },
           showChordal: {
             label: 'Chordal',
-            value: SPLINE_PRESETS.Default.showChordal,
+            value: DEFAULT_PRESET.showChordal,
           },
         },
         { collapsed: true }

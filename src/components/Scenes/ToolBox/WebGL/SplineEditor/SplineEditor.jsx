@@ -2,14 +2,17 @@ import React, { useCallback, useState } from 'react';
 
 import { OrbitControls, PerspectiveCamera } from '@react-three/drei';
 
+import SPLINE_PRESETS from '../../../../../presets/spline/splinePresets';
 import GridBox from '../../../../elements/gridbox/GridBox';
-import SPLINE_PRESETS from '../../../../elements/spline/splinePresets';
 import SplineGroup from './components/SplineGroup';
 import useSplineEditorControls from './hooks/useSplineEditorControls';
 
+const DEFAULT_PRESET_KEY = Object.keys(SPLINE_PRESETS)[0];
+const DEFAULT_PRESET = SPLINE_PRESETS[DEFAULT_PRESET_KEY];
+
 export default function SplineEditor() {
   const [splines, setSplines] = useState(() => [
-    SPLINE_PRESETS.Default.points.map((pt) => ({
+    DEFAULT_PRESET.points.map((pt) => ({
       position: pt.position.clone(),
       rotation: pt.rotation.clone(),
     })),

@@ -3,8 +3,10 @@ import * as THREE from 'three';
 
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 
+import SMOKE_PRESETS from '../../../../../../presets/smoke/smokePresets';
 import { localEnv } from '../../../../../../utils/appUtils';
-import SPLINE_PRESETS from '../../../../../elements/spline/splinePresets';
+
+const DEFAULT_PRESET_KEY = Object.keys(SMOKE_PRESETS)[0];
 
 const MAX_ATTRACTORS = 8;
 
@@ -66,7 +68,7 @@ export default function useSmokeTestControls(
   setSplines,
   attractorsRef
 ) {
-  const selectedPresetRef = useRef('Default');
+  const selectedPresetRef = useRef(DEFAULT_PRESET_KEY);
   const controlsSnapshotRef = useRef({});
   const splinesRef = useRef(splines);
   splinesRef.current = splines;
@@ -96,11 +98,11 @@ export default function useSmokeTestControls(
         {
           preset: {
             label: 'Preset',
-            value: 'Default',
-            options: Object.keys(SPLINE_PRESETS),
+            value: DEFAULT_PRESET_KEY,
+            options: Object.keys(SMOKE_PRESETS),
           },
           reset: button(() => {
-            const p = SPLINE_PRESETS[selectedPresetRef.current];
+            const p = SMOKE_PRESETS[selectedPresetRef.current];
             if (p) {
               setSplines([
                 p.points.map((pt) => ({
@@ -810,7 +812,7 @@ export default function useSmokeTestControls(
 
   // Apply preset points when selection changes
   useEffect(() => {
-    const p = SPLINE_PRESETS[preset];
+    const p = SMOKE_PRESETS[preset];
     if (p) {
       setSplines([
         p.points.map((pt) => ({

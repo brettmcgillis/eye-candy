@@ -4,15 +4,18 @@ import React, { useCallback, useRef, useState } from 'react';
 
 import { OrbitControls, PerspectiveCamera } from '@react-three/drei';
 
+import SMOKE_PRESETS from '../../../../../presets/smoke/smokePresets';
 import Attractors from '../../../../elements/attractors/Attractors';
 import GridBox from '../../../../elements/gridbox/GridBox';
-import SPLINE_PRESETS from '../../../../elements/spline/splinePresets';
 import SmokeSplineGroup from './components/SplineGroup';
 import useSmokeTestControls from './hooks/useSmokeTestControls';
 
+const DEFAULT_PRESET_KEY = Object.keys(SMOKE_PRESETS)[0];
+const DEFAULT_PRESET = SMOKE_PRESETS[DEFAULT_PRESET_KEY];
+
 export default function SmokeTest() {
   const [splines, setSplines] = useState(() => [
-    SPLINE_PRESETS.Default.points.map((pt) => ({
+    DEFAULT_PRESET.points.map((pt) => ({
       position: pt.position.clone(),
       rotation: pt.rotation.clone(),
       scale: pt.scale ? pt.scale.clone() : new THREE.Vector3(1, 1, 1),

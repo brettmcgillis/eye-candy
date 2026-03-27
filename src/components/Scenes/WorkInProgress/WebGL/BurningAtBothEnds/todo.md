@@ -23,10 +23,8 @@
 - [x] Flickering point lights at each flame
 - [x] Use CSG to give the ends of the candle a melted look (mirrored top and bottom craters)
 - [x] Add extra wax buildup rims near each crater, preserving top/bottom surreal symmetry
-- [ ] Should we use a metaballs shader to make dripping wax droplets?
 - [x] Post-processing bloom pass for flame glow
 - [x] Should be able to scale the flame like we do with candle.
-- [ ] Animate candle shrinking over time. flame shrinking once candle is at min.
 - [x] Add a mode for candle off. show candle smoke instead of flame.
 - [x] Wick should support hot (current ember) and cold mode (all black, with some grey char) to better suport candle off mode.
 - [x] When lit mode changes we should lerp the flame down to nothing then lerp the smoke up to it's size.
@@ -37,6 +35,7 @@
 
 - [ ] Tune Smoke + fire
 - [ ] Design and add scene controls
+- [ ] Should we use a metaballs shader to make dripping wax droplets?
 
 # // Bugs
 
@@ -71,10 +70,11 @@
         - current wax controls
 - [x] Update the hook for useCandleControls. Should it just return a leva folder, so it can be composed within the scene folder?
 - [x] The drip metaballs are getting clipped if they go too far off the face of the cylinder.
-- [ ] Default camera position needs to be back far enough, and up high enough to see the reflection on the floor plane
-- [ ] Update extinguished preset. Wick is hard to see, so we may need some additional lighting or less preferably a diff background + floor color.
+
 - [x] improve default smoke appearance, 3.0 height. its also 2d so can we make it always face camera?
 - [x] can we use a volumetric flame and animated spline(s) to make a second smoke type?
+- [x] fix bottom wick smoke, going in wrong dir
+
+- [ ] Default camera position needs to be back far enough, and up high enough to see the reflection on the floor plane
 - [ ] Fix metaballs. wax buildup and drips have hard edges where they meet due to being discrete collections.
 - [ ] Fix wax melt to candle connection and see if we can fix hard edges.
-- [x] fix bottom wick smoke, going in wrong dir

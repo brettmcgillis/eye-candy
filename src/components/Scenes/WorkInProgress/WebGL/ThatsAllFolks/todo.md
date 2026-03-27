@@ -19,7 +19,6 @@
 - [ ] Make the splines 3d
 - [ ] Finalize particle settings for each spline.
 - [ ] Finalize physics setting for composition
-- [ ] fix gun/smoke positioning. currently clipping floor plane cuasing shadow to intersect model
 - [ ] fix smoke shadows?
 - [ ] fix background/background color
 - [ ] Starts to look pretty good with a shitload of particles. Might need to scale up the smoke and space the words out a bit more.
@@ -32,8 +31,6 @@
 - [ ] Cursor/smoke interaction.
 
 # // Bugs
-
-- [ ] Scene is creating its own spline line and smoke. We should reuse the results of the smoketest lab, by breaking it down into reusable components in components/elements
 
 - [x] Scene locks when adjusting particle counts
 - [ ] Smoke is currently broken/not visible.

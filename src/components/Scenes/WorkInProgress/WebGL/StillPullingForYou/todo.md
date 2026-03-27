@@ -26,7 +26,7 @@
 
 # // Bugs
 
-- [ ] Fix camera angle
+- [ ] Fix camera angle, cant see boat or most of water volume
 
 // Same as StayingAfloat
 

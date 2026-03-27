@@ -3,8 +3,10 @@ import * as THREE from 'three';
 
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 
+import FIRE_PRESETS from '../../../../../../presets/fire/firePresets';
 import { localEnv } from '../../../../../../utils/appUtils';
-import HOTBOX_PRESETS from '../presets/presets';
+
+const DEFAULT_PRESET_KEY = Object.keys(FIRE_PRESETS)[0];
 
 const MAX_ATTRACTORS = 8;
 
@@ -86,6 +88,16 @@ const DEFAULT_SPLINE_CONFIG = {
   cs184StepSize: 1.0,
   cs184Animated: true,
   cs184AnimSpeed: 0.5,
+  // Fireball Fire (Duke's Volumetric Explosion — https://shadertoy.com/view/lsySzd)
+  fireballRadius: 1.5,
+  fireballRotSpeed: 0.1,
+  fireballNoiseScale: 0.5,
+  fireballCoreColor: '#ccffff',
+  fireballCoreIntensity: 7.0,
+  fireballEdgeColor: '#7a877f',
+  fireballEdgeIntensity: 1.5,
+  fireballDensity: 1.0,
+  fireballSteps: 64,
 };
 
 function updateSplineConfig(setter, index, key, value) {
@@ -97,7 +109,7 @@ function updateSplineConfig(setter, index, key, value) {
 }
 
 function applyPreset(presetName, setSplines, setSplineConfigs) {
-  const p = HOTBOX_PRESETS[presetName];
+  const p = FIRE_PRESETS[presetName];
   if (!p) return;
   setSplines(
     p.splines.map((s) =>
@@ -122,12 +134,12 @@ function applyPreset(presetName, setSplines, setSplineConfigs) {
 }
 
 export default function useHotBoxControls(splines, setSplines, attractorsRef) {
-  const selectedPresetRef = useRef('Default');
+  const selectedPresetRef = useRef(DEFAULT_PRESET_KEY);
   const controlsSnapshotRef = useRef({});
   const splinesRef = useRef(splines);
   splinesRef.current = splines;
   const [splineConfigs, setSplineConfigs] = useState(() => {
-    const p = HOTBOX_PRESETS.Default;
+    const p = FIRE_PRESETS[DEFAULT_PRESET_KEY];
     return p.splines.map((s) => ({
       ...DEFAULT_SPLINE_CONFIG,
       type: s.type ?? 'Smoke',
@@ -160,8 +172,8 @@ export default function useHotBoxControls(splines, setSplines, attractorsRef) {
         {
           preset: {
             label: 'Preset',
-            value: 'Default',
-            options: Object.keys(HOTBOX_PRESETS),
+            value: DEFAULT_PRESET_KEY,
+            options: Object.keys(FIRE_PRESETS),
           },
           reset: button(() => {
             applyPreset(
@@ -348,7 +360,7 @@ export default function useHotBoxControls(splines, setSplines, attractorsRef) {
             [`fireType_${index}`]: {
               label: 'Fire Rendering',
               value: cfg.fireType ?? 'Classic',
-              options: ['Classic', 'RayMarch'],
+              options: ['Classic', 'RayMarch', 'Fireball'],
               render: (get) =>
                 get(`Hot Box.Spline ${index + 1}.type_${index}`) === 'Fire',
               onChange: (v) =>
@@ -1112,6 +1124,134 @@ export default function useHotBoxControls(splines, setSplines, attractorsRef) {
                       setSplineConfigs,
                       index,
                       'cs184AnimSpeed',
+                      v
+                    ),
+                },
+              },
+              { collapsed: true }
+            ),
+            [`Fireball Fire ${index}`]: folder(
+              {
+                [`fireballRadius_${index}`]: {
+                  label: 'Radius',
+                  value: cfg.fireballRadius,
+                  min: 0.1,
+                  max: 20,
+                  step: 0.1,
+                  hint: 'World-space sphere radius per control point',
+                  onChange: (v) =>
+                    updateSplineConfig(
+                      setSplineConfigs,
+                      index,
+                      'fireballRadius',
+                      v
+                    ),
+                },
+                [`fireballRotSpeed_${index}`]: {
+                  label: 'Rotation Speed',
+                  value: cfg.fireballRotSpeed,
+                  min: 0,
+                  max: 2,
+                  step: 0.01,
+                  onChange: (v) =>
+                    updateSplineConfig(
+                      setSplineConfigs,
+                      index,
+                      'fireballRotSpeed',
+                      v
+                    ),
+                },
+                [`fireballNoiseScale_${index}`]: {
+                  label: 'Noise Scale',
+                  value: cfg.fireballNoiseScale,
+                  min: 0.1,
+                  max: 2,
+                  step: 0.05,
+                  hint: '0.5 = 2× zoom into noise field (original default)',
+                  onChange: (v) =>
+                    updateSplineConfig(
+                      setSplineConfigs,
+                      index,
+                      'fireballNoiseScale',
+                      v
+                    ),
+                },
+                [`fireballCoreColor_${index}`]: {
+                  label: 'Core Color',
+                  value: cfg.fireballCoreColor,
+                  onChange: (v) =>
+                    updateSplineConfig(
+                      setSplineConfigs,
+                      index,
+                      'fireballCoreColor',
+                      v
+                    ),
+                },
+                [`fireballCoreIntensity_${index}`]: {
+                  label: 'Core Intensity',
+                  value: cfg.fireballCoreIntensity,
+                  min: 0,
+                  max: 20,
+                  step: 0.5,
+                  hint: 'HDR brightness multiplier — values > 1 produce glow bloom',
+                  onChange: (v) =>
+                    updateSplineConfig(
+                      setSplineConfigs,
+                      index,
+                      'fireballCoreIntensity',
+                      v
+                    ),
+                },
+                [`fireballEdgeColor_${index}`]: {
+                  label: 'Edge Color',
+                  value: cfg.fireballEdgeColor,
+                  onChange: (v) =>
+                    updateSplineConfig(
+                      setSplineConfigs,
+                      index,
+                      'fireballEdgeColor',
+                      v
+                    ),
+                },
+                [`fireballEdgeIntensity_${index}`]: {
+                  label: 'Edge Intensity',
+                  value: cfg.fireballEdgeIntensity,
+                  min: 0,
+                  max: 10,
+                  step: 0.1,
+                  onChange: (v) =>
+                    updateSplineConfig(
+                      setSplineConfigs,
+                      index,
+                      'fireballEdgeIntensity',
+                      v
+                    ),
+                },
+                [`fireballDensity_${index}`]: {
+                  label: 'Density',
+                  value: cfg.fireballDensity,
+                  min: 0,
+                  max: 5,
+                  step: 0.1,
+                  onChange: (v) =>
+                    updateSplineConfig(
+                      setSplineConfigs,
+                      index,
+                      'fireballDensity',
+                      v
+                    ),
+                },
+                [`fireballSteps_${index}`]: {
+                  label: 'Steps',
+                  value: cfg.fireballSteps,
+                  min: 8,
+                  max: 128,
+                  step: 8,
+                  onChange: (v) =>
+                    updateSplineConfig(
+                      setSplineConfigs,
+                      index,
+                      'fireballSteps',
                       v
                     ),
                 },

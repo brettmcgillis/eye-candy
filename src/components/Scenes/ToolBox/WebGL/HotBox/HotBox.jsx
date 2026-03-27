@@ -4,13 +4,14 @@ import React, { useCallback, useRef, useState } from 'react';
 
 import { OrbitControls, PerspectiveCamera } from '@react-three/drei';
 
+import FIRE_PRESETS from '../../../../../presets/fire/firePresets';
 import Attractors from '../../../../elements/attractors/Attractors';
 import GridBox from '../../../../elements/gridbox/GridBox';
 import HotBoxSplineGroup from './components/SplineGroup';
 import useHotBoxControls from './hooks/useHotBoxControls';
-import HOTBOX_PRESETS from './presets/presets';
 
-const DEFAULT_PRESET = HOTBOX_PRESETS.Default;
+const DEFAULT_PRESET_KEY = Object.keys(FIRE_PRESETS)[0];
+const DEFAULT_PRESET = FIRE_PRESETS[DEFAULT_PRESET_KEY];
 
 export default function HotBox() {
   const [splines, setSplines] = useState(() =>

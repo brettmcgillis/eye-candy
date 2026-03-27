@@ -8,6 +8,7 @@ import VolumetricSmokeParticles from '../../../../../elements/smoke/VolumetricSm
 import SplineLine from '../../../../../elements/spline/SplineLine';
 import SplinePoints from '../../../../../elements/spline/SplinePoints';
 import CS184VolumetricFire from '../../../../../elements/volumetricFire/CS184VolumetricFire';
+import FireballVolume from '../../../../../elements/volumetricFire/FireballVolume';
 import VolumetricFire from '../../../../../elements/volumetricFire/VolumetricFire';
 
 function FireFromSpline({ points, config, showVolume }) {
@@ -79,6 +80,32 @@ function CS184FireFromSpline({ points, config }) {
       animated={config.cs184Animated}
       animSpeed={config.cs184AnimSpeed}
     />
+  );
+}
+
+// Renders one FireballVolume per control point, sized by point scale.x.
+// Position control points to define hotspot locations (base contact, tip
+// transition, internal pockets) independently of any flame spline.
+function FireballFromSpline({ points, config }) {
+  return (
+    <>
+      {points.map((pt, i) => (
+        <FireballVolume
+          // eslint-disable-next-line react/no-array-index-key
+          key={i}
+          position={pt.position}
+          radius={config.fireballRadius * (pt.scale?.x ?? 1)}
+          rotSpeed={config.fireballRotSpeed}
+          noiseScale={config.fireballNoiseScale}
+          coreColor={config.fireballCoreColor}
+          coreIntensity={config.fireballCoreIntensity}
+          edgeColor={config.fireballEdgeColor}
+          edgeIntensity={config.fireballEdgeIntensity}
+          density={config.fireballDensity}
+          steps={config.fireballSteps}
+        />
+      ))}
+    </>
   );
 }
 
@@ -181,6 +208,10 @@ export default function HotBoxSplineGroup({
 
       {isFire && fireType === 'RayMarch' && (
         <CS184FireFromSpline points={points} config={mergedConfig} />
+      )}
+
+      {isFire && fireType === 'Fireball' && (
+        <FireballFromSpline points={points} config={mergedConfig} />
       )}
     </>
   );

@@ -10,7 +10,6 @@
 ### REPO
 
 - [ ] re-enable react/no-unknown-property, react/prop-types ?
-- [ ] state management
 - [x] springs? got it
 - [x] maath
 
@@ -77,6 +76,7 @@ To Build:
 - [PolicePresence](src/components/scenes/WorkInProgress/WebGL/PolicePresence/todo.md)
 - [FlyingHigh](src/components/scenes/WorkInProgress/WebGL/FlyingHigh/todo.md)
 - [RowItAlone](src/components/scenes/WorkInProgress/WebGL/RowItAlone/todo.md)
+- [StayingAfloat](src/components/scenes/WorkInProgress/WebGL/StayingAfloat/todo.md)
 
 **Template**
 
@@ -94,22 +94,15 @@ To Build:
 
 - [ ] halo props to controls
 - [ ] halo hover glow
-- [ ] generative halos?
 
 #### SKULL
 
 - [ ] Refactor like we did with bret/reversal to offer a generic that takes props, and specialized versions
-- [ ] material controls (? chrome skull)
-
-### SCREENSHOT
 
 - Overhaul. Should support screenshot and screenrec.
 - Make sure output includes a watermark & some cool hiddnen fileinfo
-- Make sure it works on mobile
 
 ### LIGHTINGRIG
-
-- [ ] delete it
 
 ## Show
 
@@ -135,9 +128,20 @@ To Build:
 
 Ive accumulated a bunch of scenes that involve things on fire or smoking. Cataloging here so I can make sure they all work nicely as I continue to upgrade my smoke and fire systems
 
-- Candle
-- Gun
-- Dumpster
-- Police Car
-- Tug Boat
-- Airplane
+- Candle - Burning At Both Ends
+- Gun - Thats All Folks
+- Dumpster - Dumpster Fire
+- Police Car - Police Presence
+- Tug Boat - Still Pulling For You
+- Airplane - Flying High (with both engines on fire)
+
+# // ASCII Settings
+
+Plopping this here since Im about to rip it out elsewhere.
+
+- This is supposed to be every char in ascending density
+  // " `.-':\_,^=;><+!rc\*/z?sLTv)J7(|Fi{C}fI31tlu[neoZ5Yxjya]2ESwqkP6h9d4VpOGbUAKXHm8RD#$Bg0MNWQ%&@",
+- These look cool
+  // " ░▒▓█"
+  // " ▁▂▃▄▅▆▇█"
+  // " ░▒▓█▁▂▃▄▅▆▇█"

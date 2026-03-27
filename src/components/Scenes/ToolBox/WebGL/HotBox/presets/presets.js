@@ -17,7 +17,7 @@ const HOTBOX_PRESETS = {
     splines: [
       {
         type: 'Smoke',
-        smokeType: 'Both',
+        smokeType: 'Particle',
         closed: false,
         tension: 0.7,
         points: [

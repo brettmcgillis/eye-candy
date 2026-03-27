@@ -95,20 +95,13 @@ export default function HotBoxSplineGroup({
   const rotations = useMemo(() => points.map((pt) => pt.rotation), [points]);
   const scales = useMemo(() => points.map((pt) => pt.scale), [points]);
 
-  // Merge per-spline settings into config for smoke components
+  // Merge per-spline settings into config for smoke/fire components
   const mergedConfig = useMemo(
     () => ({
       ...config,
-      tension: splineConfig.tension,
-      closed: splineConfig.closed,
-      arcSegments: splineConfig.arcSegments,
+      ...splineConfig,
     }),
-    [
-      config,
-      splineConfig.tension,
-      splineConfig.closed,
-      splineConfig.arcSegments,
-    ]
+    [config, splineConfig]
   );
 
   if (!splineConfig.visible) return null;
@@ -165,24 +158,27 @@ export default function HotBoxSplineGroup({
           tension={splineConfig.tension}
           closed={splineConfig.closed}
           spread={
-            Math.max(config.spawnSpread ?? 0, config.volSpread ?? 0) || 120
+            Math.max(
+              mergedConfig.spawnSpread ?? 0,
+              mergedConfig.volSpread ?? 0
+            ) || 120
           }
         />
       )}
 
       {/* Fire rendering — gated by per-spline type */}
-      {isFire && (fireType === 'Classic' || fireType === 'Both') && (
+      {isFire && fireType === 'Classic' && (
         <FireFromSpline
           points={points}
-          config={config}
+          config={mergedConfig}
           showVolume={splineConfig.showFireVolume}
         />
       )}
 
-      {isFire && (fireType === 'Curve' || fireType === 'Both') && (
+      {isFire && fireType === 'Curve' && (
         <Fire2FromSpline
           points={points}
-          config={config}
+          config={mergedConfig}
           showVolume={splineConfig.showFireVolume}
         />
       )}

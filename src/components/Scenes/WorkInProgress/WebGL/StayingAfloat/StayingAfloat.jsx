@@ -1,84 +1,21 @@
-import * as THREE from 'three';
+import React, { useMemo } from 'react';
 
-import React, { useMemo, useRef } from 'react';
-
-import { PerspectiveCamera } from '@react-three/drei';
-import { useFrame } from '@react-three/fiber';
+import { OrbitControls, PerspectiveCamera } from '@react-three/drei';
 
 import STAYING_AFLOAT_SPLINES from '../../../../../presets/spline/stayingAfloatSplines';
 import HammerHead from '../../../../elements/hammerHead/HammerHead';
-import LifePreserver from '../../../../elements/lifePreserver/LifePreserver';
 import TigerShark from '../../../../elements/tigerShark/TigerShark';
 import NurbsWaterColumn from '../../../../elements/water/NurbsWaterColumn';
+import FloatingPreserver from './components/FloatingPreserver';
+import SplineShark from './components/SplineShark';
+import useStayingAfloatControls from './hooks/useStayingAfloatControls';
 
 const COLUMN_SIZE = 3.6;
 const COLUMN_HEIGHT = 6.0;
 
-function FloatingPreserver() {
-  const ref = useRef();
-
-  useFrame((state) => {
-    if (!ref.current) return;
-    const t = state.clock.elapsedTime;
-    ref.current.position.y = 3.03 + Math.sin(t * 1.4) * 0.04;
-    ref.current.rotation.x = Math.sin(t * 0.9) * 0.08;
-    ref.current.rotation.z = Math.cos(t * 1.1) * 0.08;
-    ref.current.rotation.y = t * 0.2;
-  });
-
-  return (
-    <group ref={ref} position={[0.1, 3.03, 0.15]} scale={0.22}>
-      <LifePreserver />
-    </group>
-  );
-}
-
-function SplineShark({
-  Shark,
-  points,
-  speed,
-  scale,
-  headingOffset = 0,
-  clockwise = true,
-  sharkProps = {},
-}) {
-  const ref = useRef();
-  const curve = useMemo(() => {
-    if (!points?.length) return null;
-    const scenePoints = points.map((point) =>
-      point.clone().multiplyScalar(0.01)
-    );
-    return new THREE.CatmullRomCurve3(scenePoints, true, 'centripetal', 0.5);
-  }, [points]);
-
-  useFrame((state) => {
-    if (!ref.current || !curve) return;
-    const t = (state.clock.elapsedTime * speed) % 1;
-    const u = clockwise ? (1 - t + 1) % 1 : t;
-    const aheadU = (u + 0.01) % 1;
-    const p = curve.getPointAt(u);
-    const pAhead = curve.getPointAt(aheadU);
-    const dx = pAhead.x - p.x;
-    const dz = pAhead.z - p.z;
-    const heading = Math.atan2(dx, dz);
-
-    ref.current.position.set(
-      p.x,
-      p.y + Math.sin(state.clock.elapsedTime * 1.7) * 0.05,
-      p.z
-    );
-    ref.current.rotation.y = heading + headingOffset;
-    ref.current.rotation.z = Math.sin(state.clock.elapsedTime * 2.0) * 0.08;
-  });
-
-  return (
-    <group ref={ref} scale={scale}>
-      <Shark {...sharkProps} />
-    </group>
-  );
-}
-
 export default function StayingAfloat() {
+  const controls = useStayingAfloatControls();
+
   const { hammerheadPath, tigerSharkPath, tigerSharkPath2 } = useMemo(() => {
     const preset = STAYING_AFLOAT_SPLINES['Staying Afloat'];
     const splines = preset?.splines ?? [];
@@ -97,7 +34,7 @@ export default function StayingAfloat() {
 
   return (
     <>
-      <color attach="background" args={['#ffffff']} />
+      <color attach="background" args={[controls.backgroundColor]} />
 
       <PerspectiveCamera
         makeDefault
@@ -107,63 +44,79 @@ export default function StayingAfloat() {
         far={100}
         onUpdate={(self) => self.lookAt(0, 0.4, 0)}
       />
+      {controls.cameraMode === 'Orbit' && (
+        <OrbitControls target={[0, 0.4, 0]} />
+      )}
 
-      <ambientLight intensity={0.85} color="#f7fbff" />
+      <ambientLight
+        intensity={controls.ambientIntensity}
+        color={controls.ambientColor}
+      />
       <directionalLight
         position={[4, 10, 5]}
-        intensity={1.15}
-        color="#fff8ea"
+        intensity={controls.mainLightIntensity}
+        color={controls.mainLightColor}
         castShadow
         shadow-bias={-0.0005}
         shadow-normalBias={0.04}
       />
       <directionalLight
         position={[-5, 2, -6]}
-        intensity={0.35}
-        color="#d9f2ff"
+        intensity={controls.fillLightIntensity}
+        color={controls.fillLightColor}
       />
 
       <NurbsWaterColumn
         width={COLUMN_SIZE}
         depth={COLUMN_SIZE}
         height={COLUMN_HEIGHT}
-        topColor="#9edff0"
-        bottomColor="#246f98"
-        opacity={0.34}
-        transmission={0.5}
-        roughness={0.3}
-        ior={1.12}
-        thickness={0.35}
-        waveHeight={0.15}
-        waveChoppiness={0.5}
-        waveSpeed={0.6}
+        topColor={controls.topColor}
+        bottomColor={controls.bottomColor}
+        opacity={controls.opacity}
+        transmission={controls.transmission}
+        roughness={controls.roughness}
+        ior={controls.ior}
+        thickness={controls.thickness}
+        waveHeight={controls.waveHeight}
+        waveChoppiness={controls.waveChoppiness}
+        waveSpeed={controls.waveSpeed}
       />
-      <FloatingPreserver />
+      <FloatingPreserver
+        waveHeight={controls.waveHeight}
+        waveChoppiness={controls.waveChoppiness}
+        waveSpeed={controls.waveSpeed}
+      />
 
       <SplineShark
         Shark={HammerHead}
         points={hammerheadPath?.points?.map((p) => p.position) ?? []}
-        speed={0.1}
-        scale={0.38}
+        speed={controls.hammerheadSpeed}
+        scale={controls.hammerheadScale}
         headingOffset={Math.PI}
+        visible={controls.hammerheadVisible}
+        showSpline={controls.hammerheadSplineVisible}
       />
 
       <SplineShark
         Shark={TigerShark}
         points={tigerSharkPath?.points?.map((p) => p.position) ?? []}
-        speed={0.075}
-        scale={0.003}
+        speed={controls.tiger1Speed}
+        scale={controls.tiger1Scale}
         headingOffset={Math.PI}
+        visible={controls.tiger1Visible}
+        showSpline={controls.tiger1SplineVisible}
         sharkProps={{ excludeAnimations: ['attack'] }}
       />
 
       <SplineShark
         Shark={TigerShark}
         points={tigerSharkPath2?.points?.map((p) => p.position) ?? []}
-        speed={0.06}
-        scale={0.003}
+        speed={controls.tiger2Speed}
+        scale={controls.tiger2Scale}
         headingOffset={0}
         clockwise={false}
+        visible={controls.tiger2Visible}
+        showSpline={controls.tiger2SplineVisible}
         sharkProps={{ excludeAnimations: ['attack'] }}
       />
     </>

@@ -18,7 +18,37 @@
 
 [Back to main TODO](../../../../../../TODO.md)
 
-- [ ] Design and add scene controls
+- [x] Add scene controls
+  - Staying Afloat
+    - Scene
+      - Background
+      - Lighting
+      - Camera dropdown
+        - Options: Fixed, Orbit
+    - Water
+      - Water Props Controls
+    - Sharks
+      - HammerHead
+        - Visiblity
+        - Scale
+        - Speed
+        - Path
+          - Spline visibility
+      - TigerShark 1
+        - Visiblity
+        - Scale
+        - Speed
+        - Path
+          - Spline visibility
+      - TigerShark 3
+        - Visiblity
+        - Scale
+        - Speed
+        - Path
+          - Spline visibility
+
+- [x] Move controls out of scene into controls hook in /hooks
+- [x] Break the scene down in to memoized child components where it makes sense and store in /components
 
 # // Features
 
@@ -29,12 +59,7 @@
 - [x] Remove tiger shark attack animation
 - [x] Fix shark orientations while following curve. they seem to be rotating in the opposite direction they are travelling.
 - [x] Slow down how fast sharks follow the curve
-- [ ] Try to stagger movement so they are circling, opposing eachother.
-- [x] Seeing this error in console:
-      [.WebGL-0x1140543a600] GL_INVALID_OPERATION: glDrawElements: Feedback loop formed between Framebuffer and active Texture.
-
-// Same as StillPullingForYou
-
-- [x] Fix triangle shadow artifacts
-- [x] Fix water. The wavy top and the solid volume should be one contiguous unit of geometry. Should we use a NURBS volume for the water? Looks like it suports building a rectangular prism with irregular face geometry on the top face, as well as irregular side face configuration.
-- [ ] Fix water. should have 3 layers, currently only 2
+- [x] Try to stagger movement so they are circling, opposing eachother.
+- [x] Fix life preserver flotation. It should be riding the water, reacting to the shape of it. Right now it appears to be just bobbing up and down independent of the water.
+- [ ] Can we improve the swim animation by bending the model along the curve the shark follows? This would help with the weird rounding-the-corner look they get now sometimes.
+- [ ] Fix water. should have 3 layers, currently only has 2. Might need to add meshes inside the column, since we only want 1 outline, but 3 column sections

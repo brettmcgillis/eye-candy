@@ -15,11 +15,31 @@
 
 - [ ] Tune Smoke + fire
 - [ ] Update cloud appearance so they stick out more as objects in the scene
-- [ ] Design and add scene controls
+- [ ] Add scene controls
+  - Flying High
+    - Scene
+      - Background
+      - lighting
+    - Sky
+      - controls for sky plane appearance
+      - controls for sky plane shader
+    - Plane
+      - Scale
+      - Position
+      - Rotation
+    - Clouds
+      - Cloud N
+        - Scale
+        - Position
+        - Rotation
+        - Cloud Props
+
+- [ ] Move controls out of scene into controls hook in /hooks
+- [ ] Break the scene down in to memoized child components where it makes sense and store in /components
 
 # // Features
 
 # // Bugs
 
-- [ ] Fix Sky panel. Make plane an oval that fades at the edges
-- [ ] Fix shader on blue sky plane. Make it look better, more painterly
+- [x] Fix Sky panel. Make plane an oval that fades at the edges
+- [x] Fix shader on blue sky plane. Make it look better, more painterly, use watercolor shader example

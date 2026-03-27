@@ -52,18 +52,62 @@ const skyMaterial = new THREE.ShaderMaterial({
       return mix(mix(a, b, f.x), mix(c, d, f.x), f.y);
     }
 
+    // Fractal Brownian Motion — layered noise with inter-octave rotation
+    // to break axis-alignment and create organic, flowing shapes.
+    float fbm(vec2 p) {
+      float v = 0.0;
+      float a = 0.5;
+      vec2 shift = vec2(100.0);
+      mat2 rot = mat2(cos(0.5), sin(0.5), -sin(0.5), cos(0.5));
+      for (int i = 0; i < 5; i++) {
+        v += a * noise(p);
+        p = rot * p * 2.0 + shift;
+        a *= 0.5;
+      }
+      return v;
+    }
+
     void main() {
       vec2 centered = vUv - 0.5;
       // Elliptical shape — wider than tall
       float dist = length(centered * vec2(1.0, 1.5));
 
-      // Multi-octave brush-stroke noise at the edge
-      float n = noise(vUv * 8.0) * 0.14
-              + noise(vUv * 18.0) * 0.08
-              + noise(vUv * 36.0) * 0.04;
+      // Domain-warped FBM: organic watercolor-paint boundaries
+      vec2 q = vec2(
+        fbm(vUv * 5.0),
+        fbm(vUv * 5.0 + vec2(5.2, 1.3))
+      );
+      float warp = fbm(vUv * 5.0 + 3.0 * q);
 
-      float edge = smoothstep(0.5, 0.34 + n, dist);
-      gl_FragColor = vec4(uColor, edge);
+      // Brush-stroke noise: directional horizontal streaks
+      float brush = noise(vec2(vUv.x * 3.0 + warp, vUv.y * 18.0)) * 0.07
+                  + noise(vec2(vUv.x * 6.0, vUv.y * 30.0)) * 0.03;
+
+      // Edge perturbation from domain warp + brush strokes
+      float edgeNoise = warp * 0.10 + brush;
+
+      // Main oval with ragged, painterly edge
+      float edge = smoothstep(0.50, 0.28 + edgeNoise, dist);
+
+      // Watercolor bleed: faint pigment wicking past main edge
+      float bleed = smoothstep(0.56, 0.36 + edgeNoise * 0.6, dist) * 0.12;
+
+      float alpha = max(edge, bleed);
+
+      // Pigment pooling: watercolor darkens near edges as paint gathers
+      float pooling = smoothstep(0.15, 0.42, dist);
+      vec3 lightWash = uColor * 1.05;
+      vec3 pooledEdge = uColor * 0.78;
+      vec3 col = mix(lightWash, pooledEdge, pooling * pooling);
+
+      // Subtle warm-cool hue shift (watercolor pigment isn't uniform)
+      col += vec3(0.02, -0.01, -0.02) * warp;
+
+      // Paper grain: fine noise simulates paper tooth/texture
+      float grain = noise(vUv * 180.0) * 0.035 - 0.0175;
+      col += grain;
+
+      gl_FragColor = vec4(col, alpha);
     }
   `,
 });

@@ -8,6 +8,7 @@ import { localEnv } from '../../../../../../utils/appUtils';
 import SPLINE_PRESETS from '../../../../../elements/spline/splinePresets';
 
 const DEFAULT_SPLINE_CONFIG = {
+  name: '',
   visible: true,
   tension: SPLINE_PRESETS.Default.tension,
   closed: SPLINE_PRESETS.Default.closed,
@@ -129,16 +130,15 @@ export default function useSplineEditorControls(splines, setSplines) {
                 rotation: new THREE.Euler(),
               });
               setSplines((prev) => [...prev, [randPt(), randPt(), randPt()]]);
+              setSplineConfigs((prev) => [
+                ...prev,
+                {
+                  ...DEFAULT_SPLINE_CONFIG,
+                  name: `Spline ${prev.length + 1}`,
+                },
+              ]);
             },
             { label: 'Add Spline' }
-          ),
-          removeSpline: button(
-            () => {
-              setSplines((prev) =>
-                prev.length > 1 ? prev.slice(0, -1) : prev
-              );
-            },
-            { label: 'Remove Spline' }
           ),
           exportSplines: button(
             () => {
@@ -152,7 +152,8 @@ export default function useSplineEditorControls(splines, setSplines) {
                     const r = pt.rotation ?? new THREE.Euler();
                     return `    { position: new THREE.Vector3(${p.x.toFixed(3)}, ${p.y.toFixed(3)}, ${p.z.toFixed(3)}), rotation: new THREE.Euler(${r.x.toFixed(3)}, ${r.y.toFixed(3)}, ${r.z.toFixed(3)}) }`;
                   });
-                  return `  {\n    tension: ${cfg.tension},\n    closed: ${cfg.closed},\n    points: [\n${pointStrs.join(',\n')}\n    ]\n  }`;
+                  const nameStr = cfg.name ? `\n    name: '${cfg.name}',` : '';
+                  return `  {${nameStr}\n    tension: ${cfg.tension},\n    closed: ${cfg.closed},\n    points: [\n${pointStrs.join(',\n')}\n    ]\n  }`;
                 })
                 .join(',\n');
               const code = `[\n${splinesCode}\n]`;
@@ -168,74 +169,131 @@ export default function useSplineEditorControls(splines, setSplines) {
         const cfg = splineConfigs[index] ?? DEFAULT_SPLINE_CONFIG;
         acc[`Spline ${index + 1}`] = folder(
           {
-            [`visible_${index}`]: {
-              label: 'Visible',
-              value: cfg.visible,
+            [`name_${index}`]: {
+              label: 'Name',
+              value: cfg.name ?? '',
               onChange: (v) =>
-                updateSplineConfig(setSplineConfigs, index, 'visible', v),
+                updateSplineConfig(setSplineConfigs, index, 'name', v),
             },
-            [`tension_${index}`]: {
-              label: 'Tension',
-              value: cfg.tension,
-              min: 0,
-              max: 1,
-              step: 0.01,
-              onChange: (v) =>
-                updateSplineConfig(setSplineConfigs, index, 'tension', v),
-            },
-            [`closed_${index}`]: {
-              label: 'Closed Loop',
-              value: cfg.closed,
-              onChange: (v) =>
-                updateSplineConfig(setSplineConfigs, index, 'closed', v),
-            },
-            [`arcSegments_${index}`]: {
-              label: 'Arc Segments',
-              value: cfg.arcSegments,
-              min: 10,
-              max: 500,
-              step: 10,
-              onChange: (v) =>
-                updateSplineConfig(setSplineConfigs, index, 'arcSegments', v),
-            },
-            [`addPoint_${index}`]: button(
-              () => {
-                setSplines((prev) =>
-                  prev.map((pts, i) => {
-                    if (i !== index) return pts;
-                    const lastPos =
-                      pts[pts.length - 1]?.position ??
-                      new THREE.Vector3(0, 0, 0);
-                    return [
-                      ...pts,
-                      {
-                        position: lastPos
-                          .clone()
-                          .add(
-                            new THREE.Vector3(
-                              (Math.random() - 0.5) * 200,
-                              Math.random() * 100,
-                              (Math.random() - 0.5) * 200
-                            )
-                          ),
-                        rotation: new THREE.Euler(),
-                      },
-                    ];
-                  })
-                );
+            [`Config ${index}`]: folder(
+              {
+                [`visible_${index}`]: {
+                  label: 'Visible',
+                  value: cfg.visible,
+                  onChange: (v) =>
+                    updateSplineConfig(setSplineConfigs, index, 'visible', v),
+                },
+                [`tension_${index}`]: {
+                  label: 'Tension',
+                  value: cfg.tension,
+                  min: 0,
+                  max: 1,
+                  step: 0.01,
+                  onChange: (v) =>
+                    updateSplineConfig(setSplineConfigs, index, 'tension', v),
+                },
+                [`closed_${index}`]: {
+                  label: 'Closed Loop',
+                  value: cfg.closed,
+                  onChange: (v) =>
+                    updateSplineConfig(setSplineConfigs, index, 'closed', v),
+                },
+                [`arcSegments_${index}`]: {
+                  label: 'Arc Segments',
+                  value: cfg.arcSegments,
+                  min: 10,
+                  max: 500,
+                  step: 10,
+                  onChange: (v) =>
+                    updateSplineConfig(
+                      setSplineConfigs,
+                      index,
+                      'arcSegments',
+                      v
+                    ),
+                },
               },
-              { label: 'Add Point' }
+              { collapsed: true }
             ),
-            [`removePoint_${index}`]: button(
-              () => {
-                setSplines((prev) =>
-                  prev.map((pts, i) => {
-                    if (i !== index) return pts;
-                    return pts.length > 2 ? pts.slice(0, -1) : pts;
-                  })
-                );
+            [`Actions ${index}`]: folder(
+              {
+                [`cloneSpline_${index}`]: button(
+                  () => {
+                    setSplines((prev) => {
+                      const cloned = prev[index].map((pt) => ({
+                        position: pt.position.clone(),
+                        rotation: pt.rotation
+                          ? pt.rotation.clone()
+                          : new THREE.Euler(),
+                      }));
+                      return [...prev, cloned];
+                    });
+                    setSplineConfigs((prev) => [
+                      ...prev,
+                      {
+                        ...(prev[index] ?? DEFAULT_SPLINE_CONFIG),
+                        name: `${(prev[index] ?? DEFAULT_SPLINE_CONFIG).name || `Spline ${index + 1}`} Copy`,
+                      },
+                    ]);
+                  },
+                  { label: 'Clone Spline' }
+                ),
+                [`removeSpline_${index}`]: button(
+                  () => {
+                    setSplines((prev) =>
+                      prev.length > 1
+                        ? prev.filter((_el, i) => i !== index)
+                        : prev
+                    );
+                    setSplineConfigs((prev) =>
+                      prev.length > 1
+                        ? prev.filter((_el, i) => i !== index)
+                        : prev
+                    );
+                  },
+                  { label: 'Remove Spline' }
+                ),
+                [`addPoint_${index}`]: button(
+                  () => {
+                    setSplines((prev) =>
+                      prev.map((pts, i) => {
+                        if (i !== index) return pts;
+                        const lastPos =
+                          pts[pts.length - 1]?.position ??
+                          new THREE.Vector3(0, 0, 0);
+                        return [
+                          ...pts,
+                          {
+                            position: lastPos
+                              .clone()
+                              .add(
+                                new THREE.Vector3(
+                                  (Math.random() - 0.5) * 200,
+                                  Math.random() * 100,
+                                  (Math.random() - 0.5) * 200
+                                )
+                              ),
+                            rotation: new THREE.Euler(),
+                          },
+                        ];
+                      })
+                    );
+                  },
+                  { label: 'Add Point' }
+                ),
+                [`removePoint_${index}`]: button(
+                  () => {
+                    setSplines((prev) =>
+                      prev.map((pts, i) => {
+                        if (i !== index) return pts;
+                        return pts.length > 2 ? pts.slice(0, -1) : pts;
+                      })
+                    );
+                  },
+                  { label: 'Remove Last Point' }
+                ),
               },
-              { label: 'Remove Last Point' }
+              { collapsed: true }
             ),
           },
           { collapsed: TorusGeometry }

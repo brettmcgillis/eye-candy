@@ -49,6 +49,7 @@ export default function useSmokeTestControls(
       pointMode,
       showClassicSmoke,
       showVolSmoke,
+      showSmokeVolume,
       bgColor,
       particleCount,
       particleSize,
@@ -100,6 +101,9 @@ export default function useSmokeTestControls(
                 p.points.map((pt) => ({
                   position: pt.position.clone(),
                   rotation: pt.rotation.clone(),
+                  scale: pt.scale
+                    ? pt.scale.clone()
+                    : new THREE.Vector3(1, 1, 1),
                 })),
               ]);
               setSplineConfigs([
@@ -135,7 +139,7 @@ export default function useSmokeTestControls(
           pointMode: {
             label: 'Point Mode',
             value: 'translate',
-            options: ['translate', 'rotate'],
+            options: ['translate', 'rotate', 'scale'],
           },
           showClassicSmoke: {
             label: 'Particle Smoke',
@@ -148,6 +152,10 @@ export default function useSmokeTestControls(
           bgColor: {
             label: 'Background',
             value: '#ffffff',
+          },
+          showSmokeVolume: {
+            label: 'Volume Mesh',
+            value: false,
           },
         },
         { collapsed: true }
@@ -436,6 +444,7 @@ export default function useSmokeTestControls(
                   (Math.random() - 0.5) * 400
                 ),
                 rotation: new THREE.Euler(),
+                scale: new THREE.Vector3(1, 1, 1),
               });
               setSplines((prev) => [...prev, [randPt(), randPt(), randPt()]]);
             },
@@ -459,7 +468,8 @@ export default function useSmokeTestControls(
                   const pointStrs = pts.map((pt) => {
                     const p = pt.position;
                     const r = pt.rotation ?? new THREE.Euler();
-                    return `    { position: new THREE.Vector3(${p.x.toFixed(3)}, ${p.y.toFixed(3)}, ${p.z.toFixed(3)}), rotation: new THREE.Euler(${r.x.toFixed(3)}, ${r.y.toFixed(3)}, ${r.z.toFixed(3)}) }`;
+                    const s = pt.scale ?? new THREE.Vector3(1, 1, 1);
+                    return `    { position: new THREE.Vector3(${p.x.toFixed(3)}, ${p.y.toFixed(3)}, ${p.z.toFixed(3)}), rotation: new THREE.Euler(${r.x.toFixed(3)}, ${r.y.toFixed(3)}, ${r.z.toFixed(3)}), scale: new THREE.Vector3(${s.x.toFixed(3)}, ${s.y.toFixed(3)}, ${s.z.toFixed(3)}) }`;
                   });
                   return `  {\n    tension: ${cfg.tension},\n    closed: ${cfg.closed},\n    points: [\n${pointStrs.join(',\n')}\n    ]\n  }`;
                 })
@@ -542,6 +552,7 @@ export default function useSmokeTestControls(
                           lastPos.z + (Math.random() - 0.5) * 200
                         ),
                         rotation: new THREE.Euler(),
+                        scale: new THREE.Vector3(1, 1, 1),
                       },
                     ];
                   })
@@ -582,6 +593,7 @@ export default function useSmokeTestControls(
         p.points.map((pt) => ({
           position: pt.position.clone(),
           rotation: pt.rotation.clone(),
+          scale: pt.scale ? pt.scale.clone() : new THREE.Vector3(1, 1, 1),
         })),
       ]);
       setSplineConfigs([
@@ -637,6 +649,7 @@ export default function useSmokeTestControls(
       volMaxDrift,
       showClassicSmoke,
       showVolSmoke,
+      showSmokeVolume,
       bgColor,
       splines: splines.map((pts, i) => ({
         ...(splineConfigs[i] ?? DEFAULT_SPLINE_CONFIG),
@@ -645,6 +658,7 @@ export default function useSmokeTestControls(
           y: pt.position.y,
           z: pt.position.z,
           rotation: (pt.rotation ?? new THREE.Euler()).toArray().slice(0, 3),
+          scale: [pt.scale?.x ?? 1, pt.scale?.y ?? 1, pt.scale?.z ?? 1],
         })),
       })),
     };
@@ -655,6 +669,7 @@ export default function useSmokeTestControls(
       pointMode,
       showClassicSmoke,
       showVolSmoke,
+      showSmokeVolume,
       bgColor,
       particleCount,
       particleSize,
@@ -696,6 +711,7 @@ export default function useSmokeTestControls(
       pointMode,
       showClassicSmoke,
       showVolSmoke,
+      showSmokeVolume,
       bgColor,
       particleCount,
       particleSize,

@@ -6,6 +6,7 @@ const E = (x, y, z) => new THREE.Euler(x, y, z);
 const P = (x, y, z) => ({
   position: V(x, y, z),
   rotation: E(0, 0, 0),
+  scale: V(1, 1, 1),
 });
 
 const SPLINE_PRESETS = {

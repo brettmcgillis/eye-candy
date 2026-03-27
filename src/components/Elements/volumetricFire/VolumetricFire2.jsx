@@ -1,3 +1,5 @@
+/* eslint-disable no-unused-vars */
+
 /* eslint-disable max-classes-per-file, no-underscore-dangle, no-plusplus, no-continue, no-loop-func, no-console */
 import * as THREE from 'three';
 
@@ -683,6 +685,158 @@ function getFireProfileTexture() {
 
 const CP_COUNT = 5;
 
+// ─── Curve Control-Point Helpers ─────────────────────────────────────────────
+
+/**
+ * Normalise one element of a curvePoints array into a full control-point
+ * object `{ pos, scale, rot }` compatible with VolumetricFireMesh.setControlPoints.
+ *
+ * Accepted input shapes per element:
+ *   • [x, y, z]                          — position only
+ *   • { pos: [x,y,z] | Vector3 }         — position only
+ *   • { pos, rot: Euler | Quaternion }   — position + explicit rotation
+ *   • { pos, scale: [x,y,z] | Vector3 } — position + explicit scale
+ *   • { pos, rot, scale }                — all three
+ */
+function normaliseCurvePoint(raw) {
+  if (Array.isArray(raw)) {
+    return {
+      pos: new THREE.Vector3(raw[0], raw[1], raw[2]),
+      scale: new THREE.Vector3(1, 1, 1),
+      rot: new THREE.Quaternion(),
+    };
+  }
+  const pos =
+    raw.pos instanceof THREE.Vector3
+      ? raw.pos.clone()
+      : new THREE.Vector3(...(raw.pos ?? [0, 0, 0]));
+
+  let rot = new THREE.Quaternion();
+  if (raw.rot) {
+    if (raw.rot instanceof THREE.Quaternion) {
+      rot = raw.rot.clone();
+    } else if (raw.rot instanceof THREE.Euler) {
+      rot.setFromEuler(raw.rot);
+    } else if (Array.isArray(raw.rot)) {
+      // Accept [x,y,z] Euler radians or [x,y,z,w] quaternion
+      if (raw.rot.length === 4) {
+        rot.set(raw.rot[0], raw.rot[1], raw.rot[2], raw.rot[3]);
+      } else {
+        rot.setFromEuler(new THREE.Euler(raw.rot[0], raw.rot[1], raw.rot[2]));
+      }
+    }
+  }
+
+  let scale = new THREE.Vector3(1, 1, 1);
+  if (raw.scale) {
+    if (raw.scale instanceof THREE.Vector3) {
+      scale = raw.scale.clone();
+    } else if (Array.isArray(raw.scale)) {
+      scale.set(raw.scale[0], raw.scale[1], raw.scale[2]);
+    }
+  }
+
+  return { pos, scale, rot };
+}
+
+// Reusable scratch objects – avoids per-frame allocation in buildCurveControlPoints.
+const _tangent = new THREE.Vector3();
+const _up = new THREE.Vector3(0, 1, 0);
+const _right = new THREE.Vector3();
+const _quat = new THREE.Quaternion();
+const _mat = new THREE.Matrix4();
+
+/**
+ * Convert a user-supplied curvePoints array into the VolumetricFireMesh
+ * control-point format.
+ *
+ * @param {Array}  rawPoints  – array of user curve point descriptors (see normaliseCurvePoint)
+ * @param {number} width      – default cross-section width (used when scale is not supplied)
+ * @param {number} depth      – default cross-section depth
+ * @param {boolean} autoRotate – align each ring to the curve tangent when rot is not supplied
+ * @param {boolean} autoTaper – linearly shrink scale from base to tip by taperAmount when scale is not supplied
+ * @param {number} taperAmount – fraction to shrink width/depth by at the tip (0 = none, 0.25 = 25% smaller)
+ * @param {Array}  out        – optional pre-allocated array to write into (avoids GC)
+ */
+function buildCurveControlPoints(
+  rawPoints,
+  {
+    width = 1,
+    depth = 1,
+    autoRotate = true,
+    autoTaper = true,
+    taperAmount = 0.25,
+  } = {},
+  out = null
+) {
+  const n = rawPoints.length;
+  const result =
+    out ??
+    Array.from({ length: n }, () => ({
+      pos: new THREE.Vector3(),
+      scale: new THREE.Vector3(1, 1, 1),
+      rot: new THREE.Quaternion(),
+    }));
+
+  // Build a temporary CatmullRom curve just for tangent queries.
+  const posList = rawPoints.map((r) => normaliseCurvePoint(r).pos);
+  const tmpCurve = new THREE.CatmullRomCurve3(posList, false, 'centripetal');
+
+  for (let i = 0; i < n; i++) {
+    const t = n > 1 ? i / (n - 1) : 0;
+    const norm = normaliseCurvePoint(rawPoints[i]);
+
+    // ── Position: always from the curve for smooth interpolation ──
+    result[i].pos.copy(tmpCurve.getPoint(t));
+
+    // ── Scale: use supplied value or derive from width/depth + taper ──
+    if (
+      rawPoints[i] != null &&
+      !Array.isArray(rawPoints[i]) &&
+      rawPoints[i].scale
+    ) {
+      result[i].scale.copy(norm.scale);
+    } else {
+      const taper = autoTaper ? 1.0 - t * taperAmount : 1.0;
+      result[i].scale.set(width * taper, 1, depth * taper);
+    }
+
+    // ── Rotation: use supplied value or align to tangent ──────────
+    if (
+      rawPoints[i] != null &&
+      !Array.isArray(rawPoints[i]) &&
+      rawPoints[i].rot
+    ) {
+      result[i].rot.copy(norm.rot);
+    } else if (autoRotate && posList.length > 1) {
+      // Get the curve tangent at this t, build a rotation matrix from it.
+      tmpCurve.getTangent(t, _tangent).normalize();
+      _right.crossVectors(_up, _tangent).normalize();
+      // If tangent is nearly parallel to up (vertical curve), fall back to Z-right.
+      if (_right.lengthSq() < 0.01) _right.set(0, 0, 1);
+      const up2 = new THREE.Vector3()
+        .crossVectors(_tangent, _right)
+        .normalize();
+      _mat.makeBasis(_right, up2, _tangent.clone().negate());
+      result[i].rot.setFromRotationMatrix(_mat);
+    } else {
+      result[i].rot.copy(norm.rot);
+    }
+  }
+
+  return result;
+}
+
+// Per-component pre-allocated pool for buildCurveControlPoints output.
+// Keyed by point count so it grows on demand but never shrinks unnecessarily.
+function makeCurvePool(count) {
+  return Array.from({ length: count }, () => ({
+    pos: new THREE.Vector3(),
+    scale: new THREE.Vector3(1, 1, 1),
+    rot: new THREE.Quaternion(),
+  }));
+}
+
 // Pre-allocate the control-point objects to avoid per-frame GC pressure.
 function makeControlPointPool(count) {
   return Array.from({ length: count }, () => ({
@@ -765,6 +919,42 @@ export default function VolumetricFire({
   saturation = 1.0,
   brightness = 1.5,
   controlPoints = null,
+  // ── Curve path props ──────────────────────────────────────────────────────
+  /**
+   * curvePoints – drive the flame along an arbitrary 3-D path.
+   *
+   * Each element may be one of:
+   *   • [x, y, z]                           – position only
+   *   • { pos: [x,y,z] | Vector3 }          – position only
+   *   • { pos, rot: Euler|Quaternion|[...] } – position + rotation
+   *   • { pos, scale: [x,y,z] | Vector3 }   – position + scale
+   *   • { pos, rot, scale }                  – all three
+   *
+   * When supplied, `controlPoints`, `bendX/Z`, `animated` and the
+   * height-based halfH offset are all bypassed.
+   *
+   * Example – a simple arc:
+   *   curvePoints={[
+   *     [0, 0, 0],
+   *     [1, 1, 0],
+   *     [2, 0.5, -1],
+   *   ]}
+   *
+   * Example – with explicit rotation and scale per point:
+   *   curvePoints={[
+   *     { pos: [0,0,0], rot: new THREE.Euler(0, 0, Math.PI/4), scale: [0.4, 1, 0.4] },
+   *     { pos: [0,1,0], rot: new THREE.Quaternion(), scale: [0.3, 1, 0.3] },
+   *   ]}
+   */
+  curvePoints = null,
+  /** Auto-align each ring to the curve tangent (only used when curvePoints is set and a point has no explicit rot). */
+  curveAutoRotate = true,
+  /** Taper the flame cross-section from base to tip along the curve. */
+  curveAutoTaper = true,
+  /** Fraction to shrink width/depth at the tip (0 = no taper, 0.25 = 25% narrower at tip). */
+  curveTaperAmount = 0.25,
+  /** Draw the curve path as a visible line (like showSpline, but for curvePoints). */
+  showCurve = false,
 }) {
   const { camera } = useThree();
 
@@ -775,6 +965,10 @@ export default function VolumetricFire({
   // Pre-allocated control-point pool (recreated only when CP_COUNT changes).
   const cpPoolRef = useRef(null);
   if (!cpPoolRef.current) cpPoolRef.current = makeControlPointPool(CP_COUNT);
+
+  // Pre-allocated pool for curvePoints output – grown on demand, never triggers
+  // a re-render, avoids per-frame GC pressure.
+  const curvePoolRef = useRef(null);
 
   // ── Create VolumetricFireMesh ──────────────────────────────────────────────
   // Only `camera` and `segments` require a new instance; shape / spacing are
@@ -847,9 +1041,53 @@ export default function VolumetricFire({
 
   useEffect(() => () => guideGeo.dispose(), [guideGeo]);
 
+  // ── Curve guide geometry (for showCurve) ─────────────────────────────────
+  const curveGuideGeo = useMemo(() => {
+    const geo = new THREE.BufferGeometry();
+    geo.setAttribute(
+      'position',
+      new THREE.BufferAttribute(new Float32Array(GUIDE_POINTS * 3), 3)
+    );
+    return geo;
+  }, []);
+
+  useEffect(() => () => curveGuideGeo.dispose(), [curveGuideGeo]);
+
   // ── Per-frame update ──────────────────────────────────────────────────────
   useFrame(({ clock }, delta) => {
-    if (controlPoints) {
+    if (curvePoints && curvePoints.length >= 2) {
+      // Grow the pool if the point count has changed.
+      if (
+        !curvePoolRef.current ||
+        curvePoolRef.current.length !== curvePoints.length
+      ) {
+        curvePoolRef.current = makeCurvePool(curvePoints.length);
+      }
+      buildCurveControlPoints(
+        curvePoints,
+        {
+          width,
+          depth,
+          autoRotate: curveAutoRotate,
+          autoTaper: curveAutoTaper,
+          taperAmount: curveTaperAmount,
+        },
+        curvePoolRef.current
+      );
+      fire.setControlPoints(curvePoolRef.current);
+
+      if (showCurve) {
+        const curve = fire._posCurve; // eslint-disable-line no-underscore-dangle
+        if (curve?.points?.length > 1) {
+          const pts = curve.getPoints(GUIDE_POINTS - 1);
+          const attr = curveGuideGeo.attributes.position;
+          for (let i = 0; i < pts.length; i += 1) {
+            attr.setXYZ(i, pts[i].x, pts[i].y, pts[i].z);
+          }
+          attr.needsUpdate = true;
+        }
+      }
+    } else if (controlPoints) {
       fire.setControlPoints(controlPoints);
     } else {
       let bx = baseBendRef.current.x;
@@ -889,7 +1127,9 @@ export default function VolumetricFire({
   // of the existing shader Flame component.
   // For inverted flames the outer group's π-rotation flips Y, turning the
   // upward offset into a downward offset automatically.
-  const halfH = controlPoints ? 0 : height / 2;
+  // When curvePoints drives the shape the geometry already spans the full
+  // curve, so no offset is needed.
+  const halfH = controlPoints || curvePoints ? 0 : height / 2;
 
   return (
     <group
@@ -899,6 +1139,12 @@ export default function VolumetricFire({
       <group position={[0, halfH, 0]}>
         <primitive object={fire} />
         {showSpline && <SplineGuide guideGeo={guideGeo} />}
+        {showCurve && (
+          <line geometry={curveGuideGeo}>
+            {/* eslint-disable-next-line react/no-unknown-property */}
+            <lineBasicMaterial color={0xff6600} transparent opacity={0.8} />
+          </line>
+        )}
       </group>
     </group>
   );

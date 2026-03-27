@@ -1,6 +1,7 @@
 import React, { useCallback, useMemo } from 'react';
 
 import SmokeParticles from '../../../../../elements/smoke/SmokeParticles';
+import SmokeVolumeMesh from '../../../../../elements/smoke/SmokeVolumeMesh';
 import VolumetricSmokeParticles from '../../../../../elements/smoke/VolumetricSmokeParticles';
 import SplineLine from '../../../../../elements/spline/SplineLine';
 import SplinePoints from '../../../../../elements/spline/SplinePoints';
@@ -20,6 +21,7 @@ export default function SmokeSplineGroup({
 
   const positions = useMemo(() => points.map((pt) => pt.position), [points]);
   const rotations = useMemo(() => points.map((pt) => pt.rotation), [points]);
+  const scales = useMemo(() => points.map((pt) => pt.scale), [points]);
 
   // Merge per-spline settings into config for smoke components
   const mergedConfig = useMemo(
@@ -62,6 +64,7 @@ export default function SmokeSplineGroup({
         <SmokeParticles
           points={positions}
           pointRotations={rotations}
+          pointScales={scales}
           config={mergedConfig}
           attractorsRef={attractorsRef}
         />
@@ -71,8 +74,22 @@ export default function SmokeSplineGroup({
         <VolumetricSmokeParticles
           points={positions}
           pointRotations={rotations}
+          pointScales={scales}
           config={mergedConfig}
           attractorsRef={attractorsRef}
+        />
+      )}
+
+      {config.showSmokeVolume && (
+        <SmokeVolumeMesh
+          points={positions}
+          pointRotations={rotations}
+          pointScales={scales}
+          tension={splineConfig.tension}
+          closed={splineConfig.closed}
+          spread={
+            Math.max(config.spawnSpread ?? 0, config.volSpread ?? 0) || 120
+          }
         />
       )}
     </>

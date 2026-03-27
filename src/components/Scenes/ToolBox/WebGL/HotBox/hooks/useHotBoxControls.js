@@ -12,6 +12,7 @@ const DEFAULT_SPLINE_CONFIG = {
   visible: true,
   type: 'Smoke',
   smokeType: 'Both',
+  fireType: 'Classic',
   tension: 1,
   closed: true,
   showSpline: true,
@@ -35,6 +36,7 @@ function applyPreset(presetName, setSplines, setSplineConfigs) {
       s.points.map((pt) => ({
         position: pt.position.clone(),
         rotation: pt.rotation.clone(),
+        scale: pt.scale ? pt.scale.clone() : new THREE.Vector3(1, 1, 1),
       }))
     )
   );
@@ -43,6 +45,7 @@ function applyPreset(presetName, setSplines, setSplineConfigs) {
       ...DEFAULT_SPLINE_CONFIG,
       type: s.type ?? 'Smoke',
       smokeType: s.smokeType ?? 'Both',
+      fireType: s.fireType ?? 'Classic',
       tension: s.tension ?? DEFAULT_SPLINE_CONFIG.tension,
       closed: s.closed ?? DEFAULT_SPLINE_CONFIG.closed,
       ...(s.type === 'Fire' ? { closed: s.closed ?? false } : {}),
@@ -61,6 +64,7 @@ export default function useHotBoxControls(splines, setSplines, attractorsRef) {
       ...DEFAULT_SPLINE_CONFIG,
       type: s.type ?? 'Smoke',
       smokeType: s.smokeType ?? 'Both',
+      fireType: s.fireType ?? 'Classic',
       tension: s.tension ?? DEFAULT_SPLINE_CONFIG.tension,
       closed: s.closed ?? DEFAULT_SPLINE_CONFIG.closed,
     }));
@@ -78,6 +82,8 @@ export default function useHotBoxControls(splines, setSplines, attractorsRef) {
       showSmoke,
       showFire,
       bgColor,
+      showSmokeVolume,
+      showFireVolume,
       particleCount,
       particleSize,
       particleColor,
@@ -118,6 +124,10 @@ export default function useHotBoxControls(splines, setSplines, attractorsRef) {
       fireBrightness,
       fireAnimated,
       fireAnimSpeed,
+      fire2AutoRotate,
+      fire2AutoTaper,
+      fire2TaperAmount,
+      fire2ShowCurve,
       attractorStrength,
       attractorRadius,
       showAttractors,
@@ -164,7 +174,7 @@ export default function useHotBoxControls(splines, setSplines, attractorsRef) {
           pointMode: {
             label: 'Point Mode',
             value: 'translate',
-            options: ['translate', 'rotate'],
+            options: ['translate', 'rotate', 'scale'],
           },
           showFire: {
             label: 'Fire',
@@ -177,6 +187,14 @@ export default function useHotBoxControls(splines, setSplines, attractorsRef) {
           bgColor: {
             label: 'Background',
             value: '#1a1a2e',
+          },
+          showSmokeVolume: {
+            label: 'Smoke Volume',
+            value: false,
+          },
+          showFireVolume: {
+            label: 'Fire Volume',
+            value: false,
           },
         },
         { collapsed: true }
@@ -486,6 +504,31 @@ export default function useHotBoxControls(splines, setSplines, attractorsRef) {
         { collapsed: true }
       ),
 
+      'Curve Fire': folder(
+        {
+          fire2AutoRotate: {
+            label: 'Auto Rotate',
+            value: true,
+          },
+          fire2AutoTaper: {
+            label: 'Auto Taper',
+            value: true,
+          },
+          fire2TaperAmount: {
+            label: 'Taper Amount',
+            value: 0.25,
+            min: 0,
+            max: 1,
+            step: 0.01,
+          },
+          fire2ShowCurve: {
+            label: 'Show Curve',
+            value: false,
+          },
+        },
+        { collapsed: true }
+      ),
+
       Attractors: folder(
         {
           showAttractors: {
@@ -549,6 +592,7 @@ export default function useHotBoxControls(splines, setSplines, attractorsRef) {
                   (Math.random() - 0.5) * 400
                 ),
                 rotation: new THREE.Euler(),
+                scale: new THREE.Vector3(1, 1, 1),
               });
               setSplines((prev) => [...prev, [randPt(), randPt(), randPt()]]);
             },
@@ -572,9 +616,10 @@ export default function useHotBoxControls(splines, setSplines, attractorsRef) {
                   const pointStrs = pts.map((pt) => {
                     const p = pt.position;
                     const r = pt.rotation ?? new THREE.Euler();
-                    return `    { position: new THREE.Vector3(${p.x.toFixed(3)}, ${p.y.toFixed(3)}, ${p.z.toFixed(3)}), rotation: new THREE.Euler(${r.x.toFixed(3)}, ${r.y.toFixed(3)}, ${r.z.toFixed(3)}) }`;
+                    const s = pt.scale ?? new THREE.Vector3(1, 1, 1);
+                    return `    { position: new THREE.Vector3(${p.x.toFixed(3)}, ${p.y.toFixed(3)}, ${p.z.toFixed(3)}), rotation: new THREE.Euler(${r.x.toFixed(3)}, ${r.y.toFixed(3)}, ${r.z.toFixed(3)}), scale: new THREE.Vector3(${s.x.toFixed(3)}, ${s.y.toFixed(3)}, ${s.z.toFixed(3)}) }`;
                   });
-                  return `  {\n    type: '${cfg.type}',\n    smokeType: '${cfg.smokeType}',\n    tension: ${cfg.tension},\n    closed: ${cfg.closed},\n    points: [\n${pointStrs.join(',\n')}\n    ]\n  }`;
+                  return `  {\n    type: '${cfg.type}',\n    smokeType: '${cfg.smokeType}',\n    fireType: '${cfg.fireType}',\n    tension: ${cfg.tension},\n    closed: ${cfg.closed},\n    points: [\n${pointStrs.join(',\n')}\n    ]\n  }`;
                 })
                 .join(',\n');
               const code = `[\n${splinesCode}\n]`;
@@ -612,6 +657,15 @@ export default function useHotBoxControls(splines, setSplines, attractorsRef) {
                 get(`Hot Box.Spline ${index + 1}.type_${index}`) === 'Smoke',
               onChange: (v) =>
                 updateSplineConfig(setSplineConfigs, index, 'smokeType', v),
+            },
+            [`fireType_${index}`]: {
+              label: 'Fire Rendering',
+              value: cfg.fireType ?? 'Classic',
+              options: ['Classic', 'Curve', 'Both'],
+              render: (get) =>
+                get(`Hot Box.Spline ${index + 1}.type_${index}`) === 'Fire',
+              onChange: (v) =>
+                updateSplineConfig(setSplineConfigs, index, 'fireType', v),
             },
             [`tension_${index}`]: {
               label: 'Tension',
@@ -671,6 +725,7 @@ export default function useHotBoxControls(splines, setSplines, attractorsRef) {
                           lastPos.z + (Math.random() - 0.5) * 200
                         ),
                         rotation: new THREE.Euler(),
+                        scale: new THREE.Vector3(1, 1, 1),
                       },
                     ];
                   })
@@ -766,6 +821,10 @@ export default function useHotBoxControls(splines, setSplines, attractorsRef) {
       fireBrightness,
       fireAnimated,
       fireAnimSpeed,
+      fire2AutoRotate,
+      fire2AutoTaper,
+      fire2TaperAmount,
+      fire2ShowCurve,
       showSmoke,
       showFire,
       bgColor,
@@ -776,6 +835,7 @@ export default function useHotBoxControls(splines, setSplines, attractorsRef) {
           y: pt.position.y,
           z: pt.position.z,
           rotation: (pt.rotation ?? new THREE.Euler()).toArray().slice(0, 3),
+          scale: [pt.scale?.x ?? 1, pt.scale?.y ?? 1, pt.scale?.z ?? 1],
         })),
       })),
     };
@@ -786,6 +846,8 @@ export default function useHotBoxControls(splines, setSplines, attractorsRef) {
       pointMode,
       showSmoke,
       showFire,
+      showSmokeVolume,
+      showFireVolume,
       bgColor,
       particleCount,
       particleSize,
@@ -827,6 +889,10 @@ export default function useHotBoxControls(splines, setSplines, attractorsRef) {
       fireBrightness,
       fireAnimated,
       fireAnimSpeed,
+      fire2AutoRotate,
+      fire2AutoTaper,
+      fire2TaperAmount,
+      fire2ShowCurve,
       attractorStrength,
       attractorRadius,
       showAttractors,
@@ -839,6 +905,8 @@ export default function useHotBoxControls(splines, setSplines, attractorsRef) {
       pointMode,
       showSmoke,
       showFire,
+      showSmokeVolume,
+      showFireVolume,
       bgColor,
       particleCount,
       particleSize,
@@ -880,6 +948,10 @@ export default function useHotBoxControls(splines, setSplines, attractorsRef) {
       fireBrightness,
       fireAnimated,
       fireAnimSpeed,
+      fire2AutoRotate,
+      fire2AutoTaper,
+      fire2TaperAmount,
+      fire2ShowCurve,
       attractorStrength,
       attractorRadius,
       showAttractors,

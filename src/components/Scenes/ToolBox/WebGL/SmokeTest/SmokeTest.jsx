@@ -1,3 +1,5 @@
+import * as THREE from 'three';
+
 import React, { useCallback, useRef, useState } from 'react';
 
 import { OrbitControls, PerspectiveCamera } from '@react-three/drei';
@@ -13,6 +15,7 @@ export default function SmokeTest() {
     SPLINE_PRESETS.Default.points.map((pt) => ({
       position: pt.position.clone(),
       rotation: pt.rotation.clone(),
+      scale: pt.scale ? pt.scale.clone() : new THREE.Vector3(1, 1, 1),
     })),
   ]);
 

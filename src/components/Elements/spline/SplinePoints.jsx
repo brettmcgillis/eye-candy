@@ -75,6 +75,13 @@ export default function SplinePoints({
         next[selectedIndex] = { ...next[selectedIndex], rotation: rot };
         return next;
       });
+    } else if (mode === 'scale') {
+      const newScale = tc.object.scale.clone();
+      setPoints((prev) => {
+        const next = [...prev];
+        next[selectedIndex] = { ...next[selectedIndex], scale: newScale };
+        return next;
+      });
     } else {
       const newPos = tc.object.position.clone();
       setPoints((prev) => {
@@ -123,6 +130,7 @@ export default function SplinePoints({
               )
             ),
           rotation: new THREE.Euler(),
+          scale: new THREE.Vector3(1, 1, 1),
         },
       ];
     });
@@ -166,6 +174,7 @@ export default function SplinePoints({
             castShadow
             position={pt.position}
             rotation={pt.rotation ?? new THREE.Euler()}
+            scale={pt.scale ?? [1, 1, 1]}
             onPointerDown={handlePointPointerDown}
             onPointerUp={handlePointPointerUp}
             onClick={(e) => {

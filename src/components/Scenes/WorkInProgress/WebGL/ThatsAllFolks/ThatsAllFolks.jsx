@@ -10,23 +10,12 @@ import {
 } from '@react-three/drei';
 import { Bloom, EffectComposer } from '@react-three/postprocessing';
 
+import THATS_ALL_FOLKS_SMOKE from '../../../../../presets/smoke/thatsAllFolksSmoke';
 import Magnum from '../../../../elements/magnum/Magnum';
 import SmokeParticles from '../../../../elements/smoke/SmokeParticles';
 import VolumetricSmokeParticles from '../../../../elements/smoke/VolumetricSmokeParticles';
 import SplineLine from '../../../../elements/spline/SplineLine';
 import useSceneControls from './hooks/useControls';
-import {
-  ALL_LETTERS,
-  APOSTROPHE,
-  CAPITAL_F,
-  CAPITAL_T,
-  EXCLAMATION_DOT,
-  EXCLAMATION_LINE,
-  HATS,
-  OLKS_TAIL,
-  T_CROSSBAR,
-  toScene,
-} from './splineData';
 
 // ─── Helpers ─────────────────────────────────────────────────────────────────
 
@@ -93,22 +82,29 @@ export default function ThatsAllFolks() {
   const config = useSceneControls();
   const { smokeType } = config;
 
-  // Build all 9 curve point arrays once — world positioning is handled by
-  // the smoke <group> transform controlled via Leva.
-  const pts = useMemo(
-    () => ({
-      capitalT: toScene(CAPITAL_T),
-      hats: toScene(HATS),
-      crossbar: toScene(T_CROSSBAR),
-      apostrophe: toScene(APOSTROPHE),
-      allLetters: toScene(ALL_LETTERS),
-      capitalF: toScene(CAPITAL_F),
-      exclamLine: toScene(EXCLAMATION_LINE),
-      exclamDot: toScene(EXCLAMATION_DOT),
-      olksTail: toScene(OLKS_TAIL),
-    }),
-    []
-  );
+  // Build all 9 curve point arrays from the preset — world positioning is
+  // handled by the smoke <group> transform controlled via Leva.
+  const pts = useMemo(() => {
+    const preset = THATS_ALL_FOLKS_SMOKE["That's All Folks"];
+    if (!preset || !preset.splines) return {};
+    const curveNameToKey = {
+      'Capital T': 'capitalT',
+      Hats: 'hats',
+      'T Crossbar': 'crossbar',
+      Apostrophe: 'apostrophe',
+      'All Letters': 'allLetters',
+      'Capital F': 'capitalF',
+      'Exclamation Line': 'exclamLine',
+      'Exclamation Dot': 'exclamDot',
+      'Olks Tail': 'olksTail',
+    };
+    return Object.fromEntries(
+      preset.splines.map((spline) => {
+        const key = curveNameToKey[spline.name];
+        return [key, spline.points];
+      })
+    );
+  }, []);
 
   const { curves } = config;
 

@@ -10,6 +10,7 @@ import {
 } from '@react-three/drei';
 import { Bloom, EffectComposer } from '@react-three/postprocessing';
 
+import FLYING_HIGH_FIRE from '../../../../../presets/fire/flyingHighFire';
 import Boeing737 from '../../../../elements/boeing737/Boeing737';
 import SmokeParticles from '../../../../elements/smoke/SmokeParticles';
 import VolumetricFire from '../../../../elements/volumetricFire/VolumetricFire';
@@ -75,72 +76,46 @@ function SkyPanel() {
   );
 }
 
-// ─── Smoke configs ───────────────────────────────────────────────────────────
-// Dark billowing smoke trailing upward and backward from the engines.
-
-const SMOKE_CONFIG = {
-  particleCount: 500,
-  particleSize: 90,
-  particleColor: [0.12, 0.11, 0.1],
-  opacity: 0.35,
-  flowSpeed: 0.25,
-  springK: 0.008,
-  damping: 0.965,
-  turbulence: 0.35,
-  turbulenceSpeed: 0.6,
-  buoyancy: 0.12,
-  rotSpeed: 0.15,
-  fadeRate: 0.4,
-  spawnSpread: 0.6,
-  blendMode: 'Normal',
-  growth: 2.5,
-  fadeExponent: 1.4,
-  closed: false,
-  tension: 0.25,
-  attractorStrength: 0,
-  attractorRadius: 0,
-  maxDrift: 10,
-};
-
-// ─── Flame defaults ──────────────────────────────────────────────────────────
-
-const FLAME_PROPS = {
-  width: 0.5,
-  height: 1.8,
-  depth: 0.5,
-  sliceSpacing: 0.08,
-  segments: 20,
-  magnitude: 1.6,
-  brightness: 2.2,
-  saturation: 0.9,
-  animated: true,
-  animSpeed: 0.9,
-};
-
 // ─── Scene ───────────────────────────────────────────────────────────────────
 
 export default function FlyingHigh() {
-  // Smoke spline paths — start at each engine, arc upward and backward
+  const {
+    leftEngineMainFire,
+    rightEngineMainFire,
+    leftWingSecondaryFire,
+    rightWingSecondaryFire,
+    leftEngineSmokeTrail,
+    rightEngineSmokeTrail,
+  } = useMemo(() => {
+    const splines = FLYING_HIGH_FIRE.splines ?? [];
+    return {
+      leftEngineMainFire: splines.find(
+        (s) => s.name === 'Left Engine Main Fire'
+      ),
+      rightEngineMainFire: splines.find(
+        (s) => s.name === 'Right Engine Main Fire'
+      ),
+      leftWingSecondaryFire: splines.find(
+        (s) => s.name === 'Left Wing Secondary Fire'
+      ),
+      rightWingSecondaryFire: splines.find(
+        (s) => s.name === 'Right Wing Secondary Fire'
+      ),
+      leftEngineSmokeTrail: splines.find(
+        (s) => s.name === 'Left Engine Smoke Trail'
+      ),
+      rightEngineSmokeTrail: splines.find(
+        (s) => s.name === 'Right Engine Smoke Trail'
+      ),
+    };
+  }, []);
   const leftSmokePoints = useMemo(
-    () => [
-      new THREE.Vector3(-1.8, -0.1, 0.3),
-      new THREE.Vector3(-2.0, 0.6, -1.5),
-      new THREE.Vector3(-2.2, 1.6, -3.5),
-      new THREE.Vector3(-2.0, 3.0, -5.5),
-      new THREE.Vector3(-1.6, 5.0, -7.5),
-    ],
-    []
+    () => leftEngineSmokeTrail?.points?.map((pt) => pt.position.clone()) ?? [],
+    [leftEngineSmokeTrail]
   );
-
   const rightSmokePoints = useMemo(
-    () => [
-      new THREE.Vector3(1.8, -0.1, 0.3),
-      new THREE.Vector3(2.0, 0.6, -1.5),
-      new THREE.Vector3(2.2, 1.6, -3.5),
-      new THREE.Vector3(2.0, 3.0, -5.5),
-      new THREE.Vector3(1.6, 5.0, -7.5),
-    ],
-    []
+    () => rightEngineSmokeTrail?.points?.map((pt) => pt.position.clone()) ?? [],
+    [rightEngineSmokeTrail]
   );
 
   return (
@@ -162,14 +137,22 @@ export default function FlyingHigh() {
 
       {/* Warm point lights at engines — give fire a glow spread */}
       <pointLight
-        position={[-1.8, -0.1, 0.4]}
+        position={
+          leftEngineMainFire?.points?.[0]?.position?.toArray() ?? [
+            -1.8, -0.1, 0.4,
+          ]
+        }
         color="#ff6600"
         intensity={4}
         distance={8}
         decay={2}
       />
       <pointLight
-        position={[1.8, -0.1, 0.4]}
+        position={
+          rightEngineMainFire?.points?.[0]?.position?.toArray() ?? [
+            1.8, -0.1, 0.4,
+          ]
+        }
         color="#ff6600"
         intensity={4}
         distance={8}
@@ -216,59 +199,92 @@ export default function FlyingHigh() {
 
       {/* Volumetric fire at left engine — flame bends backward in airstream */}
       <VolumetricFire
-        position={[-1.8, 0.0, 0.3]}
-        {...FLAME_PROPS}
+        position={
+          leftEngineMainFire?.points?.[0]?.position?.toArray() ?? [
+            -1.8, 0.0, 0.3,
+          ]
+        }
+        width={leftEngineMainFire?.fireWidth ?? 0.5}
+        height={leftEngineMainFire?.fireHeight ?? 1.8}
+        depth={leftEngineMainFire?.fireDepth ?? 0.5}
+        sliceSpacing={leftEngineMainFire?.fireSliceSpacing ?? 0.08}
+        magnitude={leftEngineMainFire?.fireMagnitude ?? 1.6}
+        brightness={leftEngineMainFire?.fireBrightness ?? 2.2}
+        saturation={leftEngineMainFire?.fireSaturation ?? 0.9}
+        animated={leftEngineMainFire?.fireAnimated ?? true}
         bendX={0.4}
         bendZ={-1.2}
-        animSpeed={0.85}
-        tintColor="#ffcc44"
+        animSpeed={leftEngineMainFire?.fireAnimSpeed ?? 0.85}
+        tintColor={leftEngineMainFire?.fireTintColor ?? '#ffcc44'}
       />
 
       {/* Volumetric fire at right engine */}
       <VolumetricFire
-        position={[1.8, 0.0, 0.3]}
-        {...FLAME_PROPS}
+        position={
+          rightEngineMainFire?.points?.[0]?.position?.toArray() ?? [
+            1.8, 0.0, 0.3,
+          ]
+        }
+        width={rightEngineMainFire?.fireWidth ?? 0.5}
+        height={rightEngineMainFire?.fireHeight ?? 1.8}
+        depth={rightEngineMainFire?.fireDepth ?? 0.5}
+        sliceSpacing={rightEngineMainFire?.fireSliceSpacing ?? 0.08}
+        magnitude={rightEngineMainFire?.fireMagnitude ?? 1.6}
+        brightness={rightEngineMainFire?.fireBrightness ?? 2.2}
+        saturation={rightEngineMainFire?.fireSaturation ?? 0.9}
+        animated={rightEngineMainFire?.fireAnimated ?? true}
         bendX={-0.4}
         bendZ={-1.2}
-        animSpeed={0.75}
-        tintColor="#ffcc44"
+        animSpeed={rightEngineMainFire?.fireAnimSpeed ?? 0.75}
+        tintColor={rightEngineMainFire?.fireTintColor ?? '#ffcc44'}
       />
 
       {/* Secondary smaller flames — wing wrapping effect */}
       <VolumetricFire
-        position={[-1.4, 0.3, -0.2]}
-        width={0.35}
-        height={1.2}
-        depth={0.35}
-        sliceSpacing={0.1}
+        position={
+          leftWingSecondaryFire?.points?.[0]?.position?.toArray() ?? [
+            -1.4, 0.3, -0.2,
+          ]
+        }
+        width={leftWingSecondaryFire?.fireWidth ?? 0.35}
+        height={leftWingSecondaryFire?.fireHeight ?? 1.2}
+        depth={leftWingSecondaryFire?.fireDepth ?? 0.35}
+        sliceSpacing={leftWingSecondaryFire?.fireSliceSpacing ?? 0.1}
         segments={16}
-        magnitude={1.4}
-        brightness={1.8}
-        animated
-        animSpeed={1.1}
+        magnitude={leftWingSecondaryFire?.fireMagnitude ?? 1.4}
+        brightness={leftWingSecondaryFire?.fireBrightness ?? 1.8}
+        animated={leftWingSecondaryFire?.fireAnimated ?? true}
+        animSpeed={leftWingSecondaryFire?.fireAnimSpeed ?? 1.1}
         bendX={0.2}
         bendZ={-0.9}
-        tintColor="#ff8833"
+        tintColor={leftWingSecondaryFire?.fireTintColor ?? '#ff8833'}
       />
       <VolumetricFire
-        position={[1.4, 0.3, -0.2]}
-        width={0.35}
-        height={1.2}
-        depth={0.35}
-        sliceSpacing={0.1}
+        position={
+          rightWingSecondaryFire?.points?.[0]?.position?.toArray() ?? [
+            1.4, 0.3, -0.2,
+          ]
+        }
+        width={rightWingSecondaryFire?.fireWidth ?? 0.35}
+        height={rightWingSecondaryFire?.fireHeight ?? 1.2}
+        depth={rightWingSecondaryFire?.fireDepth ?? 0.35}
+        sliceSpacing={rightWingSecondaryFire?.fireSliceSpacing ?? 0.1}
         segments={16}
-        magnitude={1.4}
-        brightness={1.8}
-        animated
-        animSpeed={1.0}
+        magnitude={rightWingSecondaryFire?.fireMagnitude ?? 1.4}
+        brightness={rightWingSecondaryFire?.fireBrightness ?? 1.8}
+        animated={rightWingSecondaryFire?.fireAnimated ?? true}
+        animSpeed={rightWingSecondaryFire?.fireAnimSpeed ?? 1.0}
         bendX={-0.2}
         bendZ={-0.9}
-        tintColor="#ff8833"
+        tintColor={rightWingSecondaryFire?.fireTintColor ?? '#ff8833'}
       />
 
       {/* Smoke trailing from engines */}
-      <SmokeParticles points={leftSmokePoints} config={SMOKE_CONFIG} />
-      <SmokeParticles points={rightSmokePoints} config={SMOKE_CONFIG} />
+      <SmokeParticles points={leftSmokePoints} config={leftEngineSmokeTrail} />
+      <SmokeParticles
+        points={rightSmokePoints}
+        config={rightEngineSmokeTrail}
+      />
 
       {/* Bloom for fire glow */}
       <EffectComposer disableNormalPass>

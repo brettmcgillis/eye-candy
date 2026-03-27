@@ -18,3 +18,6 @@
 # // Features
 
 # // Bugs
+
+- [ ] Fix water, it only appears to wave in 1 direction (ex north-south) should probably be all 4 (ex, north-south + east-west)
+- [ ] Fix sky, doenst really match ocean shader example

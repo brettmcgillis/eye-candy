@@ -19,6 +19,15 @@
 
 [Back to main TODO](../../../../../../TODO.md)
 
+- [ ] Should we use a NURBS volume for the water? Looks like it suports building a rectangular prism with irregular face geometry on the top face, as well as irregular side face configuration.
+
 # // Features
 
 # // Bugs
+
+- [ ] Fix camera angle
+
+// Same as StayingAfloat
+
+- [ ] Fix triangle shadow artifacts
+- [ ] Fix water. The wavy top and the solid volume should be one contiguous unit of geometry. Should we use a NURBS volume for the water? Looks like it suports building a rectangular prism with irregular face geometry on the top face, as well as irregular side face configuration.

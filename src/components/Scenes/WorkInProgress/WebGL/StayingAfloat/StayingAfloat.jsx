@@ -5,6 +5,7 @@ import React, { useMemo, useRef } from 'react';
 import { PerspectiveCamera } from '@react-three/drei';
 import { useFrame } from '@react-three/fiber';
 
+import STAYING_AFLOAT_SPLINES from '../../../../../presets/spline/stayingAfloatSplines';
 import HammerHead from '../../../../elements/hammerHead/HammerHead';
 import LifePreserver from '../../../../elements/lifePreserver/LifePreserver';
 import TigerShark from '../../../../elements/tigerShark/TigerShark';
@@ -93,34 +94,41 @@ function FloatingPreserver() {
   );
 }
 
-function CirclingShark({
+function SplineShark({
   Shark,
-  radius,
-  depth,
+  points,
   speed,
   scale,
-  phase = 0,
   headingOffset = 0,
   clockwise = true,
 }) {
   const ref = useRef();
+  const curve = useMemo(() => {
+    if (!points?.length) return null;
+    const scenePoints = points.map((point) =>
+      point.clone().multiplyScalar(0.01)
+    );
+    return new THREE.CatmullRomCurve3(scenePoints, true, 'centripetal', 0.5);
+  }, [points]);
 
   useFrame((state) => {
-    if (!ref.current) return;
-    const t = state.clock.elapsedTime * speed + phase;
-    const orbit = clockwise ? -t : t;
-    const rx = radius;
-    const rz = radius * 0.72;
-
-    const x = Math.cos(orbit) * rx;
-    const z = Math.sin(orbit) * rz;
-    const dx = -Math.sin(orbit) * rx;
-    const dz = Math.cos(orbit) * rz;
+    if (!ref.current || !curve) return;
+    const t = (state.clock.elapsedTime * speed) % 1;
+    const u = clockwise ? (1 - t + 1) % 1 : t;
+    const aheadU = (u + 0.01) % 1;
+    const p = curve.getPointAt(u);
+    const pAhead = curve.getPointAt(aheadU);
+    const dx = pAhead.x - p.x;
+    const dz = pAhead.z - p.z;
     const heading = Math.atan2(dz, dx);
 
-    ref.current.position.set(x, depth + Math.sin(t * 1.7) * 0.05, z);
+    ref.current.position.set(
+      p.x,
+      p.y + Math.sin(state.clock.elapsedTime * 1.7) * 0.05,
+      p.z
+    );
     ref.current.rotation.y = heading + headingOffset;
-    ref.current.rotation.z = Math.sin(t * 2.0) * 0.08;
+    ref.current.rotation.z = Math.sin(state.clock.elapsedTime * 2.0) * 0.08;
   });
 
   return (
@@ -131,6 +139,19 @@ function CirclingShark({
 }
 
 export default function StayingAfloat() {
+  const { hammerheadPath, tigerSharkPath } = useMemo(() => {
+    const preset = STAYING_AFLOAT_SPLINES['Staying Afloat'];
+    const splines = preset?.splines ?? [];
+    return {
+      hammerheadPath: splines.find(
+        (spline) => spline.name === 'Hammerhead Path'
+      ),
+      tigerSharkPath: splines.find(
+        (spline) => spline.name === 'Tiger Shark Path'
+      ),
+    };
+  }, []);
+
   return (
     <>
       <color attach="background" args={['#ffffff']} />
@@ -160,23 +181,19 @@ export default function StayingAfloat() {
       <WaterColumn />
       <FloatingPreserver />
 
-      <CirclingShark
+      <SplineShark
         Shark={HammerHead}
-        radius={1.05}
-        depth={0.35}
+        points={hammerheadPath?.points?.map((p) => p.position) ?? []}
         speed={0.42}
         scale={0.28}
-        phase={Math.PI * 0.15}
         headingOffset={Math.PI}
       />
 
-      <CirclingShark
+      <SplineShark
         Shark={TigerShark}
-        radius={1.42}
-        depth={-1.05}
+        points={tigerSharkPath?.points?.map((p) => p.position) ?? []}
         speed={0.32}
         scale={0.018}
-        phase={Math.PI * 1.1}
         headingOffset={Math.PI * 0.9}
       />
     </>

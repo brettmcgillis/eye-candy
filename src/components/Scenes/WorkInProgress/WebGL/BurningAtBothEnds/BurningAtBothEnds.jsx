@@ -9,6 +9,7 @@ import {
 } from '@react-three/drei';
 import { Bloom, EffectComposer } from '@react-three/postprocessing';
 
+import BURNING_AT_BOTH_ENDS_FIRE from '../../../../../presets/fire/burningAtBothEndsFire';
 import Candle from './components/Candle';
 import useSceneControls from './hooks/useSceneControls';
 
@@ -118,7 +119,11 @@ export default function BurningAtBothEnds() {
         />
       </mesh>
 
-      <Candle config={config} position={candlePosition} />
+      <Candle
+        config={config}
+        position={candlePosition}
+        firePreset={BURNING_AT_BOTH_ENDS_FIRE}
+      />
 
       {bloomEnabled && (
         <EffectComposer disableNormalPass>

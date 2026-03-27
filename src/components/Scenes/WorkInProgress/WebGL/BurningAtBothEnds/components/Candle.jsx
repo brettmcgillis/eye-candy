@@ -350,29 +350,69 @@ function WaxSideDrips({ radius, y, inverted = false, config }) {
   );
 }
 
-export default function Candle({ config, position = [0, 0, 0] }) {
+export default function Candle({ config, position = [0, 0, 0], firePreset }) {
   const { height, radius, tilt } = config;
+  const presetSplines = firePreset?.splines ?? [];
+  const topFireSpline = useMemo(
+    () => presetSplines.find((spline) => spline.name === 'Top Wick Fire'),
+    [presetSplines]
+  );
+  const bottomFireSpline = useMemo(
+    () => presetSplines.find((spline) => spline.name === 'Bottom Wick Fire'),
+    [presetSplines]
+  );
+  const topSmokeSpline = useMemo(
+    () => presetSplines.find((spline) => spline.name === 'Top Wick Smoke'),
+    [presetSplines]
+  );
+  const bottomSmokeSpline = useMemo(
+    () => presetSplines.find((spline) => spline.name === 'Bottom Wick Smoke'),
+    [presetSplines]
+  );
   const lit = config.candleLit !== false;
   const wickHot = config.wickHot !== false;
   const useVolumetric = config.flameType === 'Volumetric';
   const useVolumetricSmoke = config.smokeType === 'Volumetric';
   const volShowSpline = config.volShowSpline ?? false;
+  const topFireOrigin = topFireSpline?.points?.[0]?.position?.toArray() ?? [
+    0.06,
+    height / 2 + 0.21,
+    0.06,
+  ];
+  const bottomFireOrigin =
+    bottomFireSpline?.points?.[0]?.position?.toArray() ?? [
+      0.06,
+      -(height / 2 + 0.21),
+      0.06,
+    ];
+  const topSmokeOrigin = topSmokeSpline?.points?.[0]?.position?.toArray() ?? [
+    0.18,
+    height / 2 + 0.34,
+    0.088,
+  ];
+  const bottomSmokeOrigin =
+    bottomSmokeSpline?.points?.[0]?.position?.toArray() ?? [
+      0.18,
+      -(height / 2 + 0.34),
+      0.088,
+    ];
   const vfProps = {
-    width: config.vfWidth ?? 0.8,
-    height: config.vfHeight ?? 2.0,
-    depth: config.vfDepth ?? 0.725,
-    sliceSpacing: config.vfSliceSpacing ?? 0.05,
+    width: config.vfWidth ?? topFireSpline?.fireWidth ?? 0.8,
+    height: config.vfHeight ?? topFireSpline?.fireHeight ?? 2.0,
+    depth: config.vfDepth ?? topFireSpline?.fireDepth ?? 0.725,
+    sliceSpacing:
+      config.vfSliceSpacing ?? topFireSpline?.fireSliceSpacing ?? 0.05,
     bendX: config.vfBendX ?? 0,
     bendZ: config.vfBendZ ?? 0,
-    animated: config.vfAnimated ?? true,
-    animSpeed: config.vfAnimSpeed ?? 0.5,
+    animated: config.vfAnimated ?? topFireSpline?.fireAnimated ?? true,
+    animSpeed: config.vfAnimSpeed ?? topFireSpline?.fireAnimSpeed ?? 0.5,
     showSpline: config.vfShowSpline ?? false,
-    magnitude: config.vfMagnitude ?? 0.5,
-    lacunarity: config.vfLacunarity ?? 4.0,
-    gain: config.vfGain ?? 0,
-    tintColor: config.vfTintColor ?? '#ffffff',
-    saturation: config.vfSaturation ?? 1.0,
-    brightness: config.vfBrightness ?? 1.5,
+    magnitude: config.vfMagnitude ?? topFireSpline?.fireMagnitude ?? 0.5,
+    lacunarity: config.vfLacunarity ?? topFireSpline?.fireLacunarity ?? 4.0,
+    gain: config.vfGain ?? topFireSpline?.fireGain ?? 0,
+    tintColor: config.vfTintColor ?? topFireSpline?.fireTintColor ?? '#ffffff',
+    saturation: config.vfSaturation ?? topFireSpline?.fireSaturation ?? 1.0,
+    brightness: config.vfBrightness ?? topFireSpline?.fireBrightness ?? 1.5,
   };
   const flameMotion = {
     baseSpeed: config.flameBaseSpeed,
@@ -418,24 +458,28 @@ export default function Candle({ config, position = [0, 0, 0] }) {
   };
   const volSmokeConfig = useMemo(
     () => ({
-      volParticleCount: config.volParticleCount ?? 8000,
-      volColor: config.smokeColor ?? '#b8b8b8',
-      volOpacity: config.volOpacity ?? 0.01,
-      volSize: config.volSize ?? 1,
-      volBlendMode: config.volBlendMode ?? 'Normal',
-      volSpread: config.volSpread ?? 0.35,
-      volSpringK: config.volSpringK ?? 1.2,
-      volDamping: config.volDamping ?? 0.06,
-      volTurbulence: config.volTurbulence ?? 2,
-      volTurbulenceSpeed: config.volTurbulenceSpeed ?? 0.25,
-      volMaxDrift: config.volMaxDrift ?? 2.4,
-      flowSpeed: config.volFlowSpeed ?? 0.04,
-      fadeRate: config.volFadeRate ?? 4,
+      volParticleCount:
+        config.volParticleCount ?? topSmokeSpline?.volParticleCount ?? 8000,
+      volColor: config.smokeColor ?? topSmokeSpline?.volColor ?? '#b8b8b8',
+      volOpacity: config.volOpacity ?? topSmokeSpline?.volOpacity ?? 0.01,
+      volSize: config.volSize ?? topSmokeSpline?.volSize ?? 1,
+      volBlendMode:
+        config.volBlendMode ?? topSmokeSpline?.volBlendMode ?? 'Normal',
+      volSpread: config.volSpread ?? topSmokeSpline?.volSpread ?? 0.35,
+      volSpringK: config.volSpringK ?? topSmokeSpline?.volSpringK ?? 1.2,
+      volDamping: config.volDamping ?? topSmokeSpline?.volDamping ?? 0.06,
+      volTurbulence: config.volTurbulence ?? topSmokeSpline?.volTurbulence ?? 2,
+      volTurbulenceSpeed:
+        config.volTurbulenceSpeed ?? topSmokeSpline?.volTurbulenceSpeed ?? 0.25,
+      volMaxDrift: config.volMaxDrift ?? topSmokeSpline?.volMaxDrift ?? 2.4,
+      flowSpeed: config.volFlowSpeed ?? topSmokeSpline?.flowSpeed ?? 0.04,
+      fadeRate: config.volFadeRate ?? topSmokeSpline?.fadeRate ?? 4,
       closed: false,
-      tension: config.volTension ?? 0.3,
+      tension: config.volTension ?? topSmokeSpline?.tension ?? 0.3,
       volNoiseScale: config.volNoiseScale ?? 80,
     }),
     [
+      topSmokeSpline,
       config.smokeColor,
       config.volParticleCount,
       config.volOpacity,
@@ -455,24 +499,26 @@ export default function Candle({ config, position = [0, 0, 0] }) {
   );
   const smokeHeight = config.smokeHeight ?? 3.0;
   const topSmokePoints = useMemo(
-    () => [
-      new THREE.Vector3(0, 0, 0),
-      new THREE.Vector3(0, smokeHeight * 0.25, 0),
-      new THREE.Vector3(0, smokeHeight * 0.5, 0),
-      new THREE.Vector3(0, smokeHeight * 0.75, 0),
-      new THREE.Vector3(0, smokeHeight, 0),
-    ],
-    [smokeHeight]
+    () =>
+      topSmokeSpline?.points?.map((point) => point.position.clone()) ?? [
+        new THREE.Vector3(0, 0, 0),
+        new THREE.Vector3(0, smokeHeight * 0.25, 0),
+        new THREE.Vector3(0, smokeHeight * 0.5, 0),
+        new THREE.Vector3(0, smokeHeight * 0.75, 0),
+        new THREE.Vector3(0, smokeHeight, 0),
+      ],
+    [smokeHeight, topSmokeSpline]
   );
   const bottomSmokePoints = useMemo(
-    () => [
-      new THREE.Vector3(0, 0, 0),
-      new THREE.Vector3(0, -smokeHeight * 0.25, 0),
-      new THREE.Vector3(0, -smokeHeight * 0.5, 0),
-      new THREE.Vector3(0, -smokeHeight * 0.75, 0),
-      new THREE.Vector3(0, -smokeHeight, 0),
-    ],
-    [smokeHeight]
+    () =>
+      bottomSmokeSpline?.points?.map((point) => point.position.clone()) ?? [
+        new THREE.Vector3(0, 0, 0),
+        new THREE.Vector3(0, -smokeHeight * 0.25, 0),
+        new THREE.Vector3(0, -smokeHeight * 0.5, 0),
+        new THREE.Vector3(0, -smokeHeight * 0.75, 0),
+        new THREE.Vector3(0, -smokeHeight, 0),
+      ],
+    [bottomSmokeSpline, smokeHeight]
   );
   const topLightRef = useRef();
   const bottomLightRef = useRef();
@@ -677,7 +723,7 @@ export default function Candle({ config, position = [0, 0, 0] }) {
 
       {/* Top flame assembly */}
       <Candlewick position={[0, halfH, 0]} hot={wickHot} />
-      <group ref={topFlameGroupRef} position={[0.06, halfH + 0.21, 0.06]}>
+      <group ref={topFlameGroupRef} position={topFireOrigin}>
         {useVolumetric ? (
           <VolumetricFire {...vfProps} />
         ) : (
@@ -685,7 +731,7 @@ export default function Candle({ config, position = [0, 0, 0] }) {
         )}
       </group>
       {smokeActive && (
-        <group position={[0.18, halfH + 0.34, 0.088]}>
+        <group position={topSmokeOrigin}>
           {useVolumetricSmoke ? (
             <>
               <VolumetricSmokeParticles
@@ -712,7 +758,7 @@ export default function Candle({ config, position = [0, 0, 0] }) {
 
       {/* Bottom flame assembly (inverted) */}
       <Candlewick position={[0, -halfH, 0]} inverted hot={wickHot} />
-      <group ref={bottomFlameGroupRef} position={[0.06, -halfH - 0.21, 0.06]}>
+      <group ref={bottomFlameGroupRef} position={bottomFireOrigin}>
         {useVolumetric ? (
           <VolumetricFire inverted {...vfProps} />
         ) : (
@@ -720,7 +766,7 @@ export default function Candle({ config, position = [0, 0, 0] }) {
         )}
       </group>
       {smokeActive && (
-        <group position={[0.18, -(halfH + 0.34), 0.088]}>
+        <group position={bottomSmokeOrigin}>
           {useVolumetricSmoke ? (
             <>
               <VolumetricSmokeParticles

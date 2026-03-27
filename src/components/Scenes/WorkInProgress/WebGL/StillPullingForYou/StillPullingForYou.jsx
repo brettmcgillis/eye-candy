@@ -5,7 +5,8 @@ import React, { useMemo, useRef } from 'react';
 import { PerspectiveCamera } from '@react-three/drei';
 import { useFrame } from '@react-three/fiber';
 
-import Smoke2D from '../../../../elements/smoke/Smoke2D';
+import STILL_PULLING_FOR_YOU_SMOKE from '../../../../../presets/smoke/stillPullingForYouSmoke';
+import SmokeParticles from '../../../../elements/smoke/SmokeParticles';
 import TugBoat from '../../../../elements/tugboat/TugBoat';
 import OceanMaterial, { sampleWaveHeight } from './OceanMaterial';
 
@@ -86,6 +87,29 @@ function SinkingTugboat() {
 
 // ── Main Scene ──────────────────────────────────────────────────────────────
 export default function StillPullingForYou() {
+  const preset = useMemo(
+    () => STILL_PULLING_FOR_YOU_SMOKE['Still Pulling For You'],
+    []
+  );
+
+  const smokeSplines = useMemo(() => preset?.splines ?? [], [preset]);
+
+  const globalSmokeConfig = useMemo(
+    () => ({
+      particleColor: '#a8a8a0',
+      opacity: 0.35,
+      particleSize: 25,
+      particleCount: 3000,
+      flowSpeed: 0.15,
+      springK: 1.0,
+      damping: 0.93,
+      turbulence: 0.5,
+      fadeRate: 1.5,
+      growth: 2.0,
+      fadeExponent: 1.0,
+    }),
+    []
+  );
   return (
     <>
       {/* White / warm-paper background */}
@@ -108,37 +132,13 @@ export default function StillPullingForYou() {
       {/* Tugboat — tilted nose-up, half submerged, bobbing with waves */}
       <SinkingTugboat />
 
-      {/* Smoke rising from the stack */}
-      <Smoke2D
-        position={[0.02, 0.35, -0.04]}
-        smoke={{
-          timeFrequency: 0.3,
-          uvFrequencyX: 0.8,
-          uvFrequencyY: 1.2,
-          riseSpeed: 0.15,
-          spreadStrength: 0.1,
-          opacity: 0.35,
-          color: '#a8a8a0',
-          width: 0.25,
-          height: 2.5,
-        }}
-      />
-
-      {/* Second wisp for volume */}
-      <Smoke2D
-        position={[0.0, 0.32, -0.02]}
-        smoke={{
-          timeFrequency: 0.25,
-          uvFrequencyX: 1.2,
-          uvFrequencyY: 1.0,
-          riseSpeed: 0.12,
-          spreadStrength: 0.12,
-          opacity: 0.25,
-          color: '#b5b5aa',
-          width: 0.2,
-          height: 2.0,
-        }}
-      />
+      {/* Smoke splines from preset */}
+      {/* eslint-disable react/no-array-index-key */}
+      {smokeSplines.map((spline) => (
+        <group key={spline.name} position={[0.02, 0.35, -0.04]}>
+          <SmokeParticles points={spline.points} config={globalSmokeConfig} />
+        </group>
+      ))}
 
       {/* Water surface with Gerstner wave shader */}
       <WaterSurface />

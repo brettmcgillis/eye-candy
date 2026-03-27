@@ -1,38 +1,12 @@
-import * as THREE from 'three';
-
 import React, { useMemo, useRef } from 'react';
 
 import { OrbitControls, PerspectiveCamera } from '@react-three/drei';
 import { useFrame } from '@react-three/fiber';
 
+import POLICE_PRESENCE_FIRE from '../../../../../presets/fire/policePresenceFire';
 import PoliceCruiser from '../../../../elements/policeCruiser/PoliceCruiser';
 import SmokeParticles from '../../../../elements/smoke/SmokeParticles';
 import VolumetricFire from '../../../../elements/volumetricFire/VolumetricFire';
-
-// ─── Smoke configuration ──────────────────────────────────────────────────
-const SMOKE_CONFIG = {
-  particleCount: 400,
-  particleSize: 70,
-  particleColor: '#161616',
-  opacity: 0.09,
-  growth: 3.5,
-  fadeExponent: 1.3,
-  springK: 1.0,
-  flowSpeed: 0.12,
-  damping: 0.93,
-  attractorStrength: 0,
-  attractorRadius: 0,
-  maxDrift: 4.0,
-  turbulence: 0.6,
-  turbulenceSpeed: 0.35,
-  buoyancy: 0.8,
-  rotSpeed: 0.2,
-  fadeRate: 1.5,
-  spawnSpread: 0.9,
-  closed: false,
-  tension: 0.5,
-  blendMode: 'Normal',
-};
 
 // ─── Animated siren lights on the light bar ───────────────────────────────
 function SirenLights() {
@@ -140,15 +114,29 @@ function FireGlow() {
 // Main scene
 // ═══════════════════════════════════════════════════════════════════════════
 export default function PolicePresence() {
+  const {
+    windshieldFire,
+    driverWindowFire,
+    passengerWindowFire,
+    hoodFire,
+    roofFire,
+    smokeColumn,
+  } = useMemo(() => {
+    const splines = POLICE_PRESENCE_FIRE.splines ?? [];
+    return {
+      windshieldFire: splines.find((s) => s.name === 'Windshield Fire'),
+      driverWindowFire: splines.find((s) => s.name === 'Driver Window Fire'),
+      passengerWindowFire: splines.find(
+        (s) => s.name === 'Passenger Window Fire'
+      ),
+      hoodFire: splines.find((s) => s.name === 'Hood Fire'),
+      roofFire: splines.find((s) => s.name === 'Roof Fire'),
+      smokeColumn: splines.find((s) => s.name === 'Smoke Column'),
+    };
+  }, []);
   const smokePoints = useMemo(
-    () => [
-      new THREE.Vector3(0.3, 1.8, -4.0),
-      new THREE.Vector3(0.1, 3.2, -4.1),
-      new THREE.Vector3(-0.2, 5.0, -4.3),
-      new THREE.Vector3(-0.6, 7.5, -4.5),
-      new THREE.Vector3(-1.0, 10.0, -4.8),
-    ],
-    []
+    () => smokeColumn?.points?.map((pt) => pt.position.clone()) ?? [],
+    [smokeColumn]
   );
 
   return (
@@ -170,72 +158,86 @@ export default function PolicePresence() {
       {/* ── Volumetric fire ──────────────────────────────────────────── */}
       {/* Windshield — main blaze, tall and wide */}
       <VolumetricFire
-        position={[0.6, 1.1, -4.0]}
-        width={1.2}
-        depth={0.8}
-        height={2.8}
+        position={
+          windshieldFire?.points?.[0]?.position?.toArray() ?? [0.6, 1.1, -4.0]
+        }
+        width={windshieldFire?.fireWidth ?? 1.2}
+        depth={windshieldFire?.fireDepth ?? 0.8}
+        height={windshieldFire?.fireHeight ?? 2.8}
         bendX={-0.3}
         bendZ={0.15}
-        animated
-        animSpeed={0.6}
-        magnitude={1.5}
-        brightness={1.6}
+        animated={windshieldFire?.fireAnimated ?? true}
+        animSpeed={windshieldFire?.fireAnimSpeed ?? 0.6}
+        magnitude={windshieldFire?.fireMagnitude ?? 1.5}
+        brightness={windshieldFire?.fireBrightness ?? 1.6}
       />
       {/* Driver window — flames licking out sideways */}
       <VolumetricFire
-        position={[0.0, 1.0, -4.72]}
-        width={0.6}
-        depth={0.5}
-        height={1.8}
+        position={
+          driverWindowFire?.points?.[0]?.position?.toArray() ?? [
+            0.0, 1.0, -4.72,
+          ]
+        }
+        width={driverWindowFire?.fireWidth ?? 0.6}
+        depth={driverWindowFire?.fireDepth ?? 0.5}
+        height={driverWindowFire?.fireHeight ?? 1.8}
         bendX={-0.1}
         bendZ={-0.4}
-        animated
-        animSpeed={0.5}
-        magnitude={1.3}
-        brightness={1.4}
+        animated={driverWindowFire?.fireAnimated ?? true}
+        animSpeed={driverWindowFire?.fireAnimSpeed ?? 0.5}
+        magnitude={driverWindowFire?.fireMagnitude ?? 1.3}
+        brightness={driverWindowFire?.fireBrightness ?? 1.4}
       />
       {/* Passenger window — mirrored */}
       <VolumetricFire
-        position={[0.0, 1.0, -3.28]}
-        width={0.6}
-        depth={0.5}
-        height={1.8}
+        position={
+          passengerWindowFire?.points?.[0]?.position?.toArray() ?? [
+            0.0, 1.0, -3.28,
+          ]
+        }
+        width={passengerWindowFire?.fireWidth ?? 0.6}
+        depth={passengerWindowFire?.fireDepth ?? 0.5}
+        height={passengerWindowFire?.fireHeight ?? 1.8}
         bendX={-0.1}
         bendZ={0.4}
-        animated
-        animSpeed={0.55}
-        magnitude={1.3}
-        brightness={1.4}
+        animated={passengerWindowFire?.fireAnimated ?? true}
+        animSpeed={passengerWindowFire?.fireAnimSpeed ?? 0.55}
+        magnitude={passengerWindowFire?.fireMagnitude ?? 1.3}
+        brightness={passengerWindowFire?.fireBrightness ?? 1.4}
       />
       {/* Hood / engine area — lower, wider */}
       <VolumetricFire
-        position={[1.4, 0.85, -4.0]}
-        width={0.9}
-        depth={0.7}
-        height={1.5}
+        position={
+          hoodFire?.points?.[0]?.position?.toArray() ?? [1.4, 0.85, -4.0]
+        }
+        width={hoodFire?.fireWidth ?? 0.9}
+        depth={hoodFire?.fireDepth ?? 0.7}
+        height={hoodFire?.fireHeight ?? 1.5}
         bendX={0.2}
         bendZ={0.1}
-        animated
-        animSpeed={0.45}
-        magnitude={1.1}
-        brightness={1.3}
+        animated={hoodFire?.fireAnimated ?? true}
+        animSpeed={hoodFire?.fireAnimSpeed ?? 0.45}
+        magnitude={hoodFire?.fireMagnitude ?? 1.1}
+        brightness={hoodFire?.fireBrightness ?? 1.3}
       />
       {/* Roof wrap-back — broad draping fire */}
       <VolumetricFire
-        position={[-0.4, 1.25, -4.0]}
-        width={1.0}
-        depth={0.9}
-        height={2.2}
+        position={
+          roofFire?.points?.[0]?.position?.toArray() ?? [-0.4, 1.25, -4.0]
+        }
+        width={roofFire?.fireWidth ?? 1.0}
+        depth={roofFire?.fireDepth ?? 0.9}
+        height={roofFire?.fireHeight ?? 2.2}
         bendX={-0.5}
         bendZ={-0.1}
-        animated
-        animSpeed={0.55}
-        magnitude={1.4}
-        brightness={1.5}
+        animated={roofFire?.fireAnimated ?? true}
+        animSpeed={roofFire?.fireAnimSpeed ?? 0.55}
+        magnitude={roofFire?.fireMagnitude ?? 1.4}
+        brightness={roofFire?.fireBrightness ?? 1.5}
       />
 
       {/* ── Smoke column ─────────────────────────────────────────────── */}
-      <SmokeParticles points={smokePoints} config={SMOKE_CONFIG} />
+      <SmokeParticles points={smokePoints} config={smokeColumn} />
 
       {/* ── Fire glow (casts orange light on car) ────────────────────── */}
       <FireGlow />

@@ -1,10 +1,10 @@
 import { useControls } from 'leva';
-import * as THREE from 'three';
 
 import React, { useMemo } from 'react';
 
 import { Environment, PerspectiveCamera } from '@react-three/drei';
 
+import DUMPSTER_FIRE from '../../../../../presets/fire/dumpsterFire';
 import { radians } from '../../../../../utils/math';
 import Dumpster from '../../../../elements/dumpster/Dumpster';
 import Smoke2D from '../../../../elements/smoke/Smoke2D';
@@ -12,67 +12,6 @@ import SmokeParticles from '../../../../elements/smoke/SmokeParticles';
 import VolumetricSmokeParticles from '../../../../elements/smoke/VolumetricSmokeParticles';
 import SplineLine from '../../../../elements/spline/SplineLine';
 import VolumetricFire from '../../../../elements/volumetricFire/VolumetricFire';
-
-// ---------------------------------------------------------------------------
-// Smoke spline — open curve from dumpster top flowing up and to the right,
-// matching the composition of the reference painting. More control points
-// keep particles hugging the intended plume shape.
-// ---------------------------------------------------------------------------
-const SMOKE_SPLINE = [
-  new THREE.Vector3(-1.0, 1.4, 0),
-  new THREE.Vector3(-0.6, 1.9, 0.05),
-  new THREE.Vector3(-0.1, 2.4, 0.1),
-  new THREE.Vector3(0.5, 2.9, 0.0),
-  new THREE.Vector3(1.2, 3.3, -0.08),
-  new THREE.Vector3(2.0, 3.8, 0.1),
-  new THREE.Vector3(3.0, 4.3, -0.05),
-  new THREE.Vector3(4.2, 4.8, 0.15),
-  new THREE.Vector3(5.5, 5.3, -0.1),
-  new THREE.Vector3(7.0, 5.8, 0.0),
-];
-
-// Volumetric layer — soft, wide density that fills the plume body.
-const VOL_SMOKE_CONFIG = {
-  volParticleCount: 20000,
-  volSize: 45,
-  volColor: '#6a6a6a',
-  volOpacity: 0.032,
-  volBlendMode: 'Normal',
-  volSpringK: 5.0,
-  volDamping: 0.14,
-  volTurbulence: 90,
-  volTurbulenceSpeed: 0.18,
-  volSpread: 40,
-  volMaxDrift: 350,
-  fadeRate: 4,
-  closed: false,
-  tension: 0.5,
-  flowSpeed: 0.03,
-};
-
-// Textured particle layer — puff-billowed shapes that give visible cloud
-// structure within the plume (matches the painting's internal detail).
-const PARTICLE_SMOKE_CONFIG = {
-  particleCount: 8000,
-  particleSize: 55,
-  particleColor: '#555555',
-  opacity: 0.04,
-  growth: 2.5,
-  fadeExponent: 1.0,
-  blendMode: 'Normal',
-  closed: false,
-  tension: 0.5,
-  springK: 6.0,
-  flowSpeed: 0.03,
-  damping: 0.15,
-  turbulence: 70,
-  turbulenceSpeed: 0.22,
-  spawnSpread: 30,
-  maxDrift: 300,
-  buoyancy: 8,
-  rotSpeed: 0.15,
-  fadeRate: 4,
-};
 
 export default function DumpsterFire() {
   const { showSplines } = useControls(
@@ -83,7 +22,22 @@ export default function DumpsterFire() {
     { collapsed: true }
   );
 
-  const smokePoints = useMemo(() => SMOKE_SPLINE.map((v) => v.clone()), []);
+  const { fireSpline, volSmokeSpline, particleSmokeSpline } = useMemo(() => {
+    const splines = DUMPSTER_FIRE.splines ?? [];
+    return {
+      fireSpline: splines.find((s) => s.name === 'Dumpster Core Fire'),
+      volSmokeSpline: splines.find(
+        (s) => s.name === 'Dumpster Plume Volumetric'
+      ),
+      particleSmokeSpline: splines.find(
+        (s) => s.name === 'Dumpster Plume Particle'
+      ),
+    };
+  }, []);
+  const smokePoints = useMemo(
+    () => volSmokeSpline?.points?.map((pt) => pt.position.clone()) ?? [],
+    [volSmokeSpline]
+  );
 
   return (
     <>
@@ -106,14 +60,14 @@ export default function DumpsterFire() {
 
       {/* Volumetric fire emerging from the dumpster opening */}
       <VolumetricFire
-        position={[-2, 0.5, 0]}
-        width={0.9}
-        height={1.2}
-        depth={0.5}
-        animated
-        animSpeed={0.5}
-        brightness={1.6}
-        magnitude={1.4}
+        position={fireSpline?.points?.[0]?.position?.toArray() ?? [-2, 0.5, 0]}
+        width={fireSpline?.fireWidth ?? 0.9}
+        height={fireSpline?.fireHeight ?? 1.2}
+        depth={fireSpline?.fireDepth ?? 0.5}
+        animated={fireSpline?.fireAnimated ?? true}
+        animSpeed={fireSpline?.fireAnimSpeed ?? 0.5}
+        brightness={fireSpline?.fireBrightness ?? 1.6}
+        magnitude={fireSpline?.fireMagnitude ?? 1.4}
       />
 
       {/* Wispy 2D smoke at the fire source */}
@@ -127,17 +81,14 @@ export default function DumpsterFire() {
       />
 
       {/* Main smoke plume — two layers for depth and structure */}
-      <VolumetricSmokeParticles
-        points={smokePoints}
-        config={VOL_SMOKE_CONFIG}
-      />
-      <SmokeParticles points={smokePoints} config={PARTICLE_SMOKE_CONFIG} />
+      <VolumetricSmokeParticles points={smokePoints} config={volSmokeSpline} />
+      <SmokeParticles points={smokePoints} config={particleSmokeSpline} />
 
       {/* Debug spline visualization */}
       <SplineLine
         points={smokePoints}
-        tension={0.5}
-        closed={false}
+        tension={volSmokeSpline?.tension ?? 0.5}
+        closed={volSmokeSpline?.closed ?? false}
         color="#ff4444"
         visible={showSplines}
         arcSegments={200}

@@ -9,7 +9,7 @@
 - The scene contains a hammerhead shark in the water
 - The scene contains a tiger shark in the water
 - The sharks are animated to swim using the animations in the model
-- The sharks should be further animated such that they are circling.
+- The sharks should be fur\ther animated such that they are circling.
 
 - Ocean Scene Example - Great example of a skybox w/controls for sky appearance. Realistic water appearance with no mouse or surrounding mesh interactivty.
 - Interactive Water Plane Example - Great example of a water-like plane. Unrealistic water appearance. Cartoonish water waves with mouse interaction (and potentially programmatic interacion). Good interaction with surrounding meshes (ducks)
@@ -21,3 +21,14 @@
 # // Features
 
 # // Bugs
+
+- [ ] Scale tiger shark
+- [ ] Remove tiger shark attack animation
+- [ ] Fix shark orientations while following curve. they seem to be rotating in the opposite direction they are travelling.
+- [ ] Slow down how fast sharks follow the curve
+- [ ] Try to stagger movement so they are circling, opposing eachother.
+
+// Same as StillPullingForYou
+
+- [ ] Fix triangle shadow artifacts
+- [ ] Fix water. The wavy top and the solid volume should be one contiguous unit of geometry. Should we use a NURBS volume for the water? Looks like it suports building a rectangular prism with irregular face geometry on the top face, as well as irregular side face configuration.

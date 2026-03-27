@@ -1,6 +1,7 @@
 /* eslint-disable no-underscore-dangle */
 
 /* eslint-disable import/no-unresolved */
+import * as THREE from 'three';
 import { clone as cloneSkeleton } from 'three/examples/jsm/utils/SkeletonUtils.js';
 
 import React, { useEffect, useMemo, useRef } from 'react';
@@ -28,6 +29,8 @@ export default function TigerShark({ excludeAnimations = [], ...props }) {
     Object.entries(actions ?? {}).forEach(([name, action]) => {
       if (excluded.some((ex) => name.toLowerCase().includes(ex))) return;
       action.reset();
+      action.setLoop(THREE.LoopRepeat, Infinity);
+      Object.assign(action, { clampWhenFinished: false });
       action.fadeIn(0.35);
       action.play();
     });

@@ -33,7 +33,7 @@ const fragmentShader = /* glsl */ `
   precision highp float;
 
   // ── Camera & time ──────────────────────────────────────────────────────────
-  uniform vec3  cameraPosition;
+  // cameraPosition is injected automatically by Three.js
   uniform float uTime;
 
   // ── Flame-space → world transform ──────────────────────────────────────────

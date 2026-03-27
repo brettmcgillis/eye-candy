@@ -7,8 +7,8 @@ import SmokeVolumeMesh from '../../../../../elements/smoke/SmokeVolumeMesh';
 import VolumetricSmokeParticles from '../../../../../elements/smoke/VolumetricSmokeParticles';
 import SplineLine from '../../../../../elements/spline/SplineLine';
 import SplinePoints from '../../../../../elements/spline/SplinePoints';
+import CS184VolumetricFire from '../../../../../elements/volumetricFire/CS184VolumetricFire';
 import VolumetricFire from '../../../../../elements/volumetricFire/VolumetricFire';
-import VolumetricFire2 from '../../../../../elements/volumetricFire/VolumetricFire2';
 
 function FireFromSpline({ points, config, showVolume }) {
   const fireControlPoints = useMemo(
@@ -42,8 +42,8 @@ function FireFromSpline({ points, config, showVolume }) {
   );
 }
 
-function Fire2FromSpline({ points, config, showVolume }) {
-  const curvePoints = useMemo(
+function CS184FireFromSpline({ points, config }) {
+  const fireControlPoints = useMemo(
     () =>
       points.map((pt) => ({
         pos: pt.position.clone(),
@@ -52,28 +52,32 @@ function Fire2FromSpline({ points, config, showVolume }) {
           pt.scale?.y ?? 1,
           config.fireDepth * (pt.scale?.z ?? 1)
         ),
-        rot: pt.rotation.clone(),
+        rot: new THREE.Quaternion().setFromEuler(pt.rotation),
       })),
     [points, config.fireWidth, config.fireDepth]
   );
 
   return (
-    <VolumetricFire2
-      curvePoints={curvePoints}
-      width={config.fireWidth}
-      depth={config.fireDepth}
-      sliceSpacing={config.fireSliceSpacing}
-      magnitude={config.fireMagnitude}
-      lacunarity={config.fireLacunarity}
-      gain={config.fireGain}
-      tintColor={config.fireTintColor}
-      saturation={config.fireSaturation}
-      brightness={config.fireBrightness}
-      curveAutoRotate={config.fire2AutoRotate}
-      curveAutoTaper={config.fire2AutoTaper}
-      curveTaperAmount={config.fire2TaperAmount}
-      showCurve={config.fire2ShowCurve}
-      showVolume={showVolume}
+    <CS184VolumetricFire
+      controlPoints={fireControlPoints}
+      magnitude={config.cs184Magnitude}
+      lacunarity={config.cs184Lacunarity}
+      gain={config.cs184Gain}
+      speed={config.cs184Speed}
+      density={config.cs184Density}
+      brightness={config.cs184Brightness}
+      saturation={config.cs184Saturation}
+      tintColor={config.cs184TintColor}
+      coreColor={config.cs184CoreColor}
+      borderColor={config.cs184BorderColor}
+      smokeColor={config.cs184SmokeColor}
+      emberDensity={config.cs184EmberDensity}
+      emberSize={config.cs184EmberSize}
+      emberColor={config.cs184EmberColor}
+      steps={config.cs184Steps}
+      stepSize={config.cs184StepSize}
+      animated={config.cs184Animated}
+      animSpeed={config.cs184AnimSpeed}
     />
   );
 }
@@ -175,12 +179,8 @@ export default function HotBoxSplineGroup({
         />
       )}
 
-      {isFire && fireType === 'Curve' && (
-        <Fire2FromSpline
-          points={points}
-          config={mergedConfig}
-          showVolume={splineConfig.showFireVolume}
-        />
+      {isFire && fireType === 'RayMarch' && (
+        <CS184FireFromSpline points={points} config={mergedConfig} />
       )}
     </>
   );

@@ -67,11 +67,25 @@ const DEFAULT_SPLINE_CONFIG = {
   fireBrightness: 1.5,
   fireAnimated: true,
   fireAnimSpeed: 0.5,
-  // Curve Fire
-  fire2AutoRotate: true,
-  fire2AutoTaper: true,
-  fire2TaperAmount: 0.25,
-  fire2ShowCurve: false,
+  // RayMarch Fire (CS184)
+  cs184Magnitude: 1.3,
+  cs184Lacunarity: 2.0,
+  cs184Gain: 0.5,
+  cs184Speed: 0.8,
+  cs184Density: 1.2,
+  cs184Brightness: 1.8,
+  cs184Saturation: 1.0,
+  cs184TintColor: '#ffffff',
+  cs184CoreColor: '#ffffcc',
+  cs184BorderColor: '#ff6600',
+  cs184SmokeColor: '#330000',
+  cs184EmberDensity: 0.15,
+  cs184EmberSize: 0.25,
+  cs184EmberColor: '#ff4400',
+  cs184Steps: 64,
+  cs184StepSize: 1.0,
+  cs184Animated: true,
+  cs184AnimSpeed: 0.5,
 };
 
 function updateSplineConfig(setter, index, key, value) {
@@ -334,7 +348,7 @@ export default function useHotBoxControls(splines, setSplines, attractorsRef) {
             [`fireType_${index}`]: {
               label: 'Fire Rendering',
               value: cfg.fireType ?? 'Classic',
-              options: ['Classic', 'Curve'],
+              options: ['Classic', 'RayMarch'],
               render: (get) =>
                 get(`Hot Box.Spline ${index + 1}.type_${index}`) === 'Fire',
               onChange: (v) =>
@@ -870,52 +884,234 @@ export default function useHotBoxControls(splines, setSplines, attractorsRef) {
               },
               { collapsed: true }
             ),
-            [`Curve Fire ${index}`]: folder(
+            [`RayMarch Fire ${index}`]: folder(
               {
-                [`fire2AutoRotate_${index}`]: {
-                  label: 'Auto Rotate',
-                  value: cfg.fire2AutoRotate,
+                [`cs184Magnitude_${index}`]: {
+                  label: 'Magnitude',
+                  value: cfg.cs184Magnitude,
+                  min: 0.1,
+                  max: 5,
+                  step: 0.1,
                   onChange: (v) =>
                     updateSplineConfig(
                       setSplineConfigs,
                       index,
-                      'fire2AutoRotate',
+                      'cs184Magnitude',
                       v
                     ),
                 },
-                [`fire2AutoTaper_${index}`]: {
-                  label: 'Auto Taper',
-                  value: cfg.fire2AutoTaper,
+                [`cs184Lacunarity_${index}`]: {
+                  label: 'Lacunarity',
+                  value: cfg.cs184Lacunarity,
+                  min: 1,
+                  max: 5,
+                  step: 0.1,
                   onChange: (v) =>
                     updateSplineConfig(
                       setSplineConfigs,
                       index,
-                      'fire2AutoTaper',
+                      'cs184Lacunarity',
                       v
                     ),
                 },
-                [`fire2TaperAmount_${index}`]: {
-                  label: 'Taper Amount',
-                  value: cfg.fire2TaperAmount,
-                  min: 0,
+                [`cs184Gain_${index}`]: {
+                  label: 'Gain',
+                  value: cfg.cs184Gain,
+                  min: 0.01,
                   max: 1,
                   step: 0.01,
                   onChange: (v) =>
-                    updateSplineConfig(
-                      setSplineConfigs,
-                      index,
-                      'fire2TaperAmount',
-                      v
-                    ),
+                    updateSplineConfig(setSplineConfigs, index, 'cs184Gain', v),
                 },
-                [`fire2ShowCurve_${index}`]: {
-                  label: 'Show Curve',
-                  value: cfg.fire2ShowCurve,
+                [`cs184Speed_${index}`]: {
+                  label: 'Speed',
+                  value: cfg.cs184Speed,
+                  min: 0,
+                  max: 5,
+                  step: 0.1,
                   onChange: (v) =>
                     updateSplineConfig(
                       setSplineConfigs,
                       index,
-                      'fire2ShowCurve',
+                      'cs184Speed',
+                      v
+                    ),
+                },
+                [`cs184Density_${index}`]: {
+                  label: 'Density',
+                  value: cfg.cs184Density,
+                  min: 0,
+                  max: 5,
+                  step: 0.1,
+                  onChange: (v) =>
+                    updateSplineConfig(
+                      setSplineConfigs,
+                      index,
+                      'cs184Density',
+                      v
+                    ),
+                },
+                [`cs184Brightness_${index}`]: {
+                  label: 'Brightness',
+                  value: cfg.cs184Brightness,
+                  min: 0,
+                  max: 5,
+                  step: 0.1,
+                  onChange: (v) =>
+                    updateSplineConfig(
+                      setSplineConfigs,
+                      index,
+                      'cs184Brightness',
+                      v
+                    ),
+                },
+                [`cs184Saturation_${index}`]: {
+                  label: 'Saturation',
+                  value: cfg.cs184Saturation,
+                  min: 0,
+                  max: 3,
+                  step: 0.1,
+                  onChange: (v) =>
+                    updateSplineConfig(
+                      setSplineConfigs,
+                      index,
+                      'cs184Saturation',
+                      v
+                    ),
+                },
+                [`cs184TintColor_${index}`]: {
+                  label: 'Tint',
+                  value: cfg.cs184TintColor,
+                  onChange: (v) =>
+                    updateSplineConfig(
+                      setSplineConfigs,
+                      index,
+                      'cs184TintColor',
+                      v
+                    ),
+                },
+                [`cs184CoreColor_${index}`]: {
+                  label: 'Core Color',
+                  value: cfg.cs184CoreColor,
+                  onChange: (v) =>
+                    updateSplineConfig(
+                      setSplineConfigs,
+                      index,
+                      'cs184CoreColor',
+                      v
+                    ),
+                },
+                [`cs184BorderColor_${index}`]: {
+                  label: 'Border Color',
+                  value: cfg.cs184BorderColor,
+                  onChange: (v) =>
+                    updateSplineConfig(
+                      setSplineConfigs,
+                      index,
+                      'cs184BorderColor',
+                      v
+                    ),
+                },
+                [`cs184SmokeColor_${index}`]: {
+                  label: 'Smoke Color',
+                  value: cfg.cs184SmokeColor,
+                  onChange: (v) =>
+                    updateSplineConfig(
+                      setSplineConfigs,
+                      index,
+                      'cs184SmokeColor',
+                      v
+                    ),
+                },
+                [`cs184EmberDensity_${index}`]: {
+                  label: 'Ember Density',
+                  value: cfg.cs184EmberDensity,
+                  min: 0,
+                  max: 2,
+                  step: 0.05,
+                  onChange: (v) =>
+                    updateSplineConfig(
+                      setSplineConfigs,
+                      index,
+                      'cs184EmberDensity',
+                      v
+                    ),
+                },
+                [`cs184EmberSize_${index}`]: {
+                  label: 'Ember Size',
+                  value: cfg.cs184EmberSize,
+                  min: 0,
+                  max: 2,
+                  step: 0.05,
+                  onChange: (v) =>
+                    updateSplineConfig(
+                      setSplineConfigs,
+                      index,
+                      'cs184EmberSize',
+                      v
+                    ),
+                },
+                [`cs184EmberColor_${index}`]: {
+                  label: 'Ember Color',
+                  value: cfg.cs184EmberColor,
+                  onChange: (v) =>
+                    updateSplineConfig(
+                      setSplineConfigs,
+                      index,
+                      'cs184EmberColor',
+                      v
+                    ),
+                },
+                [`cs184Steps_${index}`]: {
+                  label: 'Steps',
+                  value: cfg.cs184Steps,
+                  min: 8,
+                  max: 128,
+                  step: 4,
+                  onChange: (v) =>
+                    updateSplineConfig(
+                      setSplineConfigs,
+                      index,
+                      'cs184Steps',
+                      v
+                    ),
+                },
+                [`cs184StepSize_${index}`]: {
+                  label: 'Step Size',
+                  value: cfg.cs184StepSize,
+                  min: 0.1,
+                  max: 3,
+                  step: 0.1,
+                  onChange: (v) =>
+                    updateSplineConfig(
+                      setSplineConfigs,
+                      index,
+                      'cs184StepSize',
+                      v
+                    ),
+                },
+                [`cs184Animated_${index}`]: {
+                  label: 'Animated',
+                  value: cfg.cs184Animated,
+                  onChange: (v) =>
+                    updateSplineConfig(
+                      setSplineConfigs,
+                      index,
+                      'cs184Animated',
+                      v
+                    ),
+                },
+                [`cs184AnimSpeed_${index}`]: {
+                  label: 'Anim Speed',
+                  value: cfg.cs184AnimSpeed,
+                  min: 0,
+                  max: 3,
+                  step: 0.05,
+                  onChange: (v) =>
+                    updateSplineConfig(
+                      setSplineConfigs,
+                      index,
+                      'cs184AnimSpeed',
                       v
                     ),
                 },

@@ -27,7 +27,7 @@ function FloatingPreserver() {
   });
 
   return (
-    <group ref={ref} position={[0.1, 3.03, 0.15]} scale={0.52}>
+    <group ref={ref} position={[0.1, 3.03, 0.15]} scale={0.22}>
       <LifePreserver />
     </group>
   );
@@ -40,6 +40,7 @@ function SplineShark({
   scale,
   headingOffset = 0,
   clockwise = true,
+  sharkProps = {},
 }) {
   const ref = useRef();
   const curve = useMemo(() => {
@@ -59,7 +60,7 @@ function SplineShark({
     const pAhead = curve.getPointAt(aheadU);
     const dx = pAhead.x - p.x;
     const dz = pAhead.z - p.z;
-    const heading = Math.atan2(dz, dx);
+    const heading = Math.atan2(dx, dz);
 
     ref.current.position.set(
       p.x,
@@ -72,13 +73,13 @@ function SplineShark({
 
   return (
     <group ref={ref} scale={scale}>
-      <Shark />
+      <Shark {...sharkProps} />
     </group>
   );
 }
 
 export default function StayingAfloat() {
-  const { hammerheadPath, tigerSharkPath } = useMemo(() => {
+  const { hammerheadPath, tigerSharkPath, tigerSharkPath2 } = useMemo(() => {
     const preset = STAYING_AFLOAT_SPLINES['Staying Afloat'];
     const splines = preset?.splines ?? [];
     return {
@@ -87,6 +88,9 @@ export default function StayingAfloat() {
       ),
       tigerSharkPath: splines.find(
         (spline) => spline.name === 'Tiger Shark Path'
+      ),
+      tigerSharkPath2: splines.find(
+        (spline) => spline.name === 'Tiger Shark Path 2'
       ),
     };
   }, []);
@@ -110,6 +114,8 @@ export default function StayingAfloat() {
         intensity={1.15}
         color="#fff8ea"
         castShadow
+        shadow-bias={-0.0005}
+        shadow-normalBias={0.04}
       />
       <directionalLight
         position={[-5, 2, -6]}
@@ -137,17 +143,28 @@ export default function StayingAfloat() {
       <SplineShark
         Shark={HammerHead}
         points={hammerheadPath?.points?.map((p) => p.position) ?? []}
-        speed={0.42}
-        scale={0.28}
+        speed={0.1}
+        scale={0.38}
         headingOffset={Math.PI}
       />
 
       <SplineShark
         Shark={TigerShark}
         points={tigerSharkPath?.points?.map((p) => p.position) ?? []}
-        speed={0.32}
-        scale={0.018}
-        headingOffset={Math.PI * 0.9}
+        speed={0.075}
+        scale={0.003}
+        headingOffset={Math.PI}
+        sharkProps={{ excludeAnimations: ['attack'] }}
+      />
+
+      <SplineShark
+        Shark={TigerShark}
+        points={tigerSharkPath2?.points?.map((p) => p.position) ?? []}
+        speed={0.06}
+        scale={0.003}
+        headingOffset={0}
+        clockwise={false}
+        sharkProps={{ excludeAnimations: ['attack'] }}
       />
     </>
   );

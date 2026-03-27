@@ -24,16 +24,17 @@
 
 # // Bugs
 
-- [ ] Scale tiger shark
-- [ ] Remove tiger shark attack animation
-- [ ] Fix shark orientations while following curve. they seem to be rotating in the opposite direction they are travelling.
-- [ ] Slow down how fast sharks follow the curve
+- [x] Scale tiger shark down to size of hammerhead
+- [x] Scale life preserver down
+- [x] Remove tiger shark attack animation
+- [x] Fix shark orientations while following curve. they seem to be rotating in the opposite direction they are travelling.
+- [x] Slow down how fast sharks follow the curve
 - [ ] Try to stagger movement so they are circling, opposing eachother.
-- [ ] Seeing this error in console:
+- [x] Seeing this error in console:
       [.WebGL-0x1140543a600] GL_INVALID_OPERATION: glDrawElements: Feedback loop formed between Framebuffer and active Texture.
 
 // Same as StillPullingForYou
 
-- [ ] Fix triangle shadow artifacts
+- [x] Fix triangle shadow artifacts
+- [x] Fix water. The wavy top and the solid volume should be one contiguous unit of geometry. Should we use a NURBS volume for the water? Looks like it suports building a rectangular prism with irregular face geometry on the top face, as well as irregular side face configuration.
 - [ ] Fix water. should have 3 layers, currently only 2
-- [ ] Fix water. The wavy top and the solid volume should be one contiguous unit of geometry. Should we use a NURBS volume for the water? Looks like it suports building a rectangular prism with irregular face geometry on the top face, as well as irregular side face configuration.

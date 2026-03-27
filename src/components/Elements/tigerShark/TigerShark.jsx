@@ -1,19 +1,32 @@
 /* eslint-disable no-underscore-dangle */
-import React, { useEffect, useRef } from 'react';
+
+/* eslint-disable import/no-unresolved */
+import { clone as cloneSkeleton } from 'three/examples/jsm/utils/SkeletonUtils.js';
+
+import React, { useEffect, useMemo, useRef } from 'react';
 
 import { useAnimations, useGLTF } from '@react-three/drei';
+import { useGraph } from '@react-three/fiber';
 
 import { modelFile } from '../../../utils/appUtils';
 
-export default function TigerShark(props) {
+export default function TigerShark({ excludeAnimations = [], ...props }) {
   const group = useRef();
-  const { nodes, materials, animations } = useGLTF(
+  const { scene, materials, animations } = useGLTF(
     modelFile('/tigerShark.glb')
   );
-  const { actions } = useAnimations(animations, group);
+  const clonedScene = useMemo(() => cloneSkeleton(scene), [scene]);
+  const { nodes } = useGraph(clonedScene);
+  const clonedAnimations = useMemo(
+    () => animations.map((clip) => clip.clone()),
+    [animations]
+  );
+  const { actions } = useAnimations(clonedAnimations, group);
 
   useEffect(() => {
-    Object.values(actions ?? {}).forEach((action) => {
+    const excluded = excludeAnimations.map((s) => s.toLowerCase());
+    Object.entries(actions ?? {}).forEach(([name, action]) => {
+      if (excluded.some((ex) => name.toLowerCase().includes(ex))) return;
       action.reset();
       action.fadeIn(0.35);
       action.play();
@@ -25,7 +38,7 @@ export default function TigerShark(props) {
         action.stop();
       });
     };
-  }, [actions]);
+  }, [actions, excludeAnimations]);
 
   return (
     <group ref={group} {...props} dispose={null}>

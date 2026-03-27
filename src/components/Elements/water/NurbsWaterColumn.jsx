@@ -372,7 +372,7 @@ export default function NurbsWaterColumn({
       metalness: 0.0,
       ior,
       thickness,
-      side: THREE.DoubleSide,
+      side: THREE.FrontSide,
       depthWrite: false,
     });
 

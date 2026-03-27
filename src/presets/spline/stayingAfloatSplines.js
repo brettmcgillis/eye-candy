@@ -35,7 +35,7 @@ const STAYING_AFLOAT_SPLINES = {
         closed: true,
         points: createOrbitPoints({
           radius: 1.05,
-          depth: 0.35,
+          depth: -0.4,
           phase: Math.PI * 0.15,
           rotationY: Math.PI,
         }),
@@ -45,10 +45,21 @@ const STAYING_AFLOAT_SPLINES = {
         tension: 0.5,
         closed: true,
         points: createOrbitPoints({
-          radius: 1.42,
-          depth: -1.05,
+          radius: 1.25,
+          depth: 1.4,
           phase: Math.PI * 1.1,
           rotationY: Math.PI * 0.9,
+        }),
+      },
+      {
+        name: 'Tiger Shark Path 2',
+        tension: 0.5,
+        closed: true,
+        points: createOrbitPoints({
+          radius: 1.42,
+          depth: -2.1,
+          phase: Math.PI * 0.55,
+          rotationY: Math.PI,
         }),
       },
     ],

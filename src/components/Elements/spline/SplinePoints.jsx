@@ -1,23 +1,29 @@
 import * as THREE from 'three';
 
-import React, { useCallback, useEffect, useRef, useState } from 'react';
+import React, {
+  useCallback,
+  useEffect,
+  useMemo,
+  useRef,
+  useState,
+} from 'react';
 
 import { TransformControls } from '@react-three/drei';
 import { useThree } from '@react-three/fiber';
 
-const POINT_BOX_SIZE = 20;
-const pointGeometry = new THREE.BoxGeometry(
-  POINT_BOX_SIZE,
-  POINT_BOX_SIZE,
-  POINT_BOX_SIZE
-);
+const DEFAULT_POINT_SIZE = 20;
 
 export default function SplinePoints({
   points,
   setPoints,
   visible = true,
   mode = 'translate',
+  pointSize = DEFAULT_POINT_SIZE,
 }) {
+  const pointGeometry = useMemo(
+    () => new THREE.BoxGeometry(pointSize, pointSize, pointSize),
+    [pointSize]
+  );
   const controls = useThree((state) => state.controls);
   const transformRef = useRef();
   const pointMeshRefs = useRef([]);
@@ -124,9 +130,9 @@ export default function SplinePoints({
             .clone()
             .add(
               new THREE.Vector3(
-                (Math.random() - 0.5) * 200,
-                Math.random() * 100,
-                (Math.random() - 0.5) * 200
+                (Math.random() - 0.5) * 0.5,
+                (Math.random() - 0.5) * 0.5,
+                (Math.random() - 0.5) * 0.5
               )
             ),
           rotation: new THREE.Euler(),

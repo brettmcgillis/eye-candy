@@ -27,60 +27,32 @@
 - [x] Move controls out of scene into controls hook in /hooks
 - [x] Break the scene down in to memoized child components where it makes sense and store in /components
 - [x] Add default settings and presets to presets.jsx
-- [x] Add scene controls
-  - Still Pulling For You
-    - Presets
-      - Dropdown
-        - Options:
-          - Rough Waters:
-            - Water is very wavy
-            - boat is properly oriented
-            - boat is floating on the water.
-            - smoke visible
-            - seafloor hidden
-            - cabin, headlights on
-          - Still Pulling
-            - Water is very wavy
-            - boat is fixed position, nose up, half sunk
-            - smoke visible
-            - cabin, headlights flickering on/off
-            - seafloor hidden
-          - Sunk
-            - water is calm
-            - boat is fixed position at the bottom of the column
-            - smoke hidden
-            - cabin, headlights flickering on/off
-            - seafloor visible
-      - Copy
-      - Reset
-    - Scene
-      - Background color
-      - Lighting
-      - Camera dropdown
-        - Options: Fixed, Orbit
-    - Tugboat
-      - Mode Dropdown
-        - Options: Fixed, Floating
-      - Position (for fixed mode)
-      - Scale
-      - Rotation
-      - Lights
-        - Position
-        - Scale
-        - Rotation
-        - Light prop controls
-    - Smoke
-      - visibility
-      - Position
-      - Scale
-      - Rotation
-      - Smoke controls
-    - Water
-      - Controls for water props
-    - Seafloor
-      - visibility
-      - color
-      - appearance
+- [ ] Update scene controls
+  - Smoke
+    - visiblity
+    - Remove group pos, rot, scale
+    - Spline actions
+      - edit toggle, when enabled show spline & spline points for editing.
+      - add spline
+      - export splines
+    - Spline N
+      - name
+      - type dropdown
+      - volume mesh
+      - particle settings folder
+      - volumetric settings folder
+      - Config folder - leave as is
+      - actions folder - leave as is
+
+- [ ] Add some post processing bloom. Maybe selective bloom on the cabin and headlights?
+- [ ] Add some animation to the light states.
+  - Rough Waters - no animation
+  - Still Pulling - Quick flickering, mostly on, but shorting due to taking on water
+  - Sunk - Slow flickering, mostly off/very low due to being sunk
+- [ ] Add a few attractors to the scene and animate their position
+  - Rough waters - Quick movement, like stormy winds.
+  - Still Pulling - slower, reduced movement
+  - Sunk - Off. no smoke at this setting
 
 # // Features
 

@@ -1,7 +1,7 @@
 /* eslint-disable no-underscore-dangle */
 import * as THREE from 'three';
 
-import React, { useRef } from 'react';
+import React, { useLayoutEffect, useRef } from 'react';
 
 import { useFrame } from '@react-three/fiber';
 
@@ -32,6 +32,26 @@ function FloatingTugboat({
   lightConfig,
 }) {
   const waveRef = useRef();
+
+  // Set initial position/orientation so there's no visible snap on mount
+  useLayoutEffect(() => {
+    const g = waveRef.current;
+    if (!g) return;
+
+    const x = position[0];
+    const z = position[2];
+    const waveY = sampleWaveHeight(x, z, waveHeight, waveChoppiness, waveSpeed);
+    g.position.y = waveY + floatDraft;
+
+    const n = sampleWaveNormal(x, z, waveHeight, waveChoppiness, waveSpeed);
+    _normalVec.set(n.x, n.y, n.z).normalize();
+    _waveQuat.setFromUnitVectors(_up, _normalVec);
+    _baseQuat.setFromEuler(
+      new THREE.Euler(rotation[0], rotation[1], rotation[2])
+    );
+    _qTarget.copy(_waveQuat).multiply(_baseQuat);
+    g.quaternion.copy(_qTarget);
+  }, []);
 
   useFrame(() => {
     const g = waveRef.current;

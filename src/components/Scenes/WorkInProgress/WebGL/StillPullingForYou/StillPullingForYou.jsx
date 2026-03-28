@@ -1,68 +1,104 @@
-import React, { useMemo } from 'react';
+import * as THREE from 'three';
+
+import React, { useCallback, useState } from 'react';
 
 import { OrbitControls, PerspectiveCamera } from '@react-three/drei';
 
 import STILL_PULLING_FOR_YOU_SMOKE from '../../../../../presets/smoke/stillPullingForYouSmoke';
-import SmokeParticles from '../../../../elements/smoke/SmokeParticles';
 import NurbsWaterColumn from '../../../../elements/water/NurbsWaterColumn';
 import FloatingTugboat from './components/FloatingTugboat';
 import Seafloor from './components/Seafloor';
 import SinkingTugboat from './components/SinkingTugboat';
-import useStillPullingForYouControls from './hooks/useStillPullingForYouControls';
+import SmokeSplineGroup from './components/SmokeSplineGroup';
+import useStillPullingForYouControls, {
+  DEFAULT_SPLINE_CONFIG,
+} from './hooks/useStillPullingForYouControls';
+
+const DEFAULT_PRESET = STILL_PULLING_FOR_YOU_SMOKE['Still Pulling For You'];
+
+function toRuntimeSplinePoints(preset) {
+  let sourceSplines = [];
+  if (Array.isArray(preset?.splines)) {
+    sourceSplines = preset.splines;
+  } else if (preset?.points) {
+    sourceSplines = [preset];
+  }
+
+  return sourceSplines.map((spline) =>
+    spline.points.map((pt) => ({
+      position: pt.position.clone(),
+      rotation: pt.rotation ? pt.rotation.clone() : new THREE.Euler(0, 0, 0),
+      scale: pt.scale ? pt.scale.clone() : new THREE.Vector3(1, 1, 1),
+    }))
+  );
+}
+
+function toRuntimeSplineConfigs(preset) {
+  let sourceSplines = [];
+  if (Array.isArray(preset?.splines)) {
+    sourceSplines = preset.splines;
+  } else if (preset?.points) {
+    sourceSplines = [preset];
+  }
+
+  const configKeys = Object.keys(DEFAULT_SPLINE_CONFIG);
+  return sourceSplines.map((spline) => {
+    const cfg = { ...DEFAULT_SPLINE_CONFIG };
+    configKeys.forEach((key) => {
+      if (key in spline) cfg[key] = spline[key];
+    });
+    return cfg;
+  });
+}
 
 // ── Main Scene ──────────────────────────────────────────────────────────────
 export default function StillPullingForYou() {
-  const config = useStillPullingForYouControls();
-
-  const preset = useMemo(
-    () => STILL_PULLING_FOR_YOU_SMOKE['Still Pulling For You'],
-    []
+  const [splines, setSplines] = useState(() =>
+    toRuntimeSplinePoints(DEFAULT_PRESET)
   );
 
-  const smokeSplines = useMemo(() => preset?.splines ?? [], [preset]);
-
-  const globalSmokeConfig = useMemo(
-    () => ({
-      particleColor: config.particleColor,
-      opacity: config.smokeOpacity,
-      particleSize: config.particleSize,
-      particleCount: config.particleCount,
-      flowSpeed: config.flowSpeed,
-      springK: config.springK,
-      damping: config.damping,
-      turbulence: config.turbulence,
-      fadeRate: config.fadeRate,
-      growth: config.growth,
-      fadeExponent: config.fadeExponent,
-    }),
-    [
-      config.particleColor,
-      config.smokeOpacity,
-      config.particleSize,
-      config.particleCount,
-      config.flowSpeed,
-      config.springK,
-      config.damping,
-      config.turbulence,
-      config.fadeRate,
-      config.growth,
-      config.fadeExponent,
-    ]
+  const [initialSplineConfigs] = useState(() =>
+    toRuntimeSplineConfigs(DEFAULT_PRESET)
   );
 
-  const boatPosition = [config.boatX, config.boatY, config.boatZ];
-  const boatRotation = [config.boatRotX, config.boatRotY, config.boatRotZ];
+  const setSplinePoints = useCallback((splineIndex, updater) => {
+    setSplines((prev) =>
+      prev.map((pts, i) => {
+        if (i !== splineIndex) return pts;
+        return typeof updater === 'function' ? updater(pts) : updater;
+      })
+    );
+  }, []);
+
+  const config = useStillPullingForYouControls(
+    splines,
+    setSplines,
+    initialSplineConfigs
+  );
+
+  const boatPosition = [
+    config.boatPosition.x,
+    config.boatPosition.y,
+    config.boatPosition.z,
+  ];
+  const boatRotation = [
+    config.boatRotation.x,
+    config.boatRotation.y,
+    config.boatRotation.z,
+  ];
   const isOrbit = config.cameraMode === 'Orbit';
   const isFloating = config.boatMode === 'Floating';
 
   const lightConfig = {
     lightDebug: config.lightDebug,
+    headlightVisible: config.headlightVisible,
     headlightX: config.headlightX,
     headlightY: config.headlightY,
     headlightZ: config.headlightZ,
     headlightIntensity: config.headlightIntensity,
     headlightDistance: config.headlightDistance,
     headlightColor: config.headlightColor,
+    cabinVisible: config.cabinVisible,
     cabinX: config.cabinX,
     cabinY: config.cabinY,
     cabinZ: config.cabinZ,
@@ -84,7 +120,12 @@ export default function StillPullingForYou() {
         onUpdate={(c) => c.lookAt(0, 0, 0)}
       />
       {isOrbit && (
-        <OrbitControls target={[0, 0, 0]} enableDamping dampingFactor={0.1} />
+        <OrbitControls
+          makeDefault
+          target={[0, 0, 0]}
+          enableDamping
+          dampingFactor={0.1}
+        />
       )}
 
       {/* Lighting */}
@@ -104,7 +145,7 @@ export default function StillPullingForYou() {
       />
 
       {/* Tugboat */}
-      {isFloating ? (
+      {config.boatVisible && isFloating && (
         <FloatingTugboat
           position={boatPosition}
           rotation={boatRotation}
@@ -115,7 +156,8 @@ export default function StillPullingForYou() {
           waveSpeed={config.waveSpeed}
           lightConfig={lightConfig}
         />
-      ) : (
+      )}
+      {config.boatVisible && !isFloating && (
         <SinkingTugboat
           position={boatPosition}
           rotation={boatRotation}
@@ -124,20 +166,23 @@ export default function StillPullingForYou() {
         />
       )}
 
-      {/* Smoke splines from preset */}
-      {config.smokeVisible &&
-        smokeSplines.map((spline) => (
-          <group
-            key={spline.name}
-            position={[
-              config.smokeOffsetX,
-              config.smokeOffsetY,
-              config.smokeOffsetZ,
-            ]}
-          >
-            <SmokeParticles points={spline.points} config={globalSmokeConfig} />
-          </group>
-        ))}
+      {/* Smoke splines — editable */}
+      {config.smokeVisible && (
+        <>
+          {/* eslint-disable react/no-array-index-key */}
+          {splines.map((points, index) => (
+            <SmokeSplineGroup
+              key={index}
+              index={index}
+              points={points}
+              splineConfig={config.splineConfigs[index] ?? {}}
+              editSplines={config.editSplines}
+              setSplinePoints={setSplinePoints}
+            />
+          ))}
+          {/* eslint-enable react/no-array-index-key */}
+        </>
+      )}
 
       {/* Bumpy seafloor beneath the water */}
       <Seafloor
@@ -149,22 +194,24 @@ export default function StillPullingForYou() {
       />
 
       {/* NURBS water column */}
-      <NurbsWaterColumn
-        width={4.0}
-        depth={4.0}
-        height={2.0}
-        topColor={config.waterTopColor}
-        bottomColor={config.waterBottomColor}
-        opacity={config.waterOpacity}
-        transmission={config.waterTransmission}
-        roughness={config.waterRoughness}
-        ior={config.waterIor}
-        thickness={config.waterThickness}
-        waveHeight={config.waveHeight}
-        waveChoppiness={config.waveChoppiness}
-        waveSpeed={config.waveSpeed}
-        showEdges={false}
-      />
+      {config.waterVisible && (
+        <NurbsWaterColumn
+          width={4.0}
+          depth={4.0}
+          height={2.0}
+          topColor={config.waterTopColor}
+          bottomColor={config.waterBottomColor}
+          opacity={config.waterOpacity}
+          transmission={config.waterTransmission}
+          roughness={config.waterRoughness}
+          ior={config.waterIor}
+          thickness={config.waterThickness}
+          waveHeight={config.waveHeight}
+          waveChoppiness={config.waveChoppiness}
+          waveSpeed={config.waveSpeed}
+          showEdges={false}
+        />
+      )}
     </>
   );
 }

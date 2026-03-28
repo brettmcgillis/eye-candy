@@ -471,9 +471,9 @@ export default function VolumetricSmokeParticles({
       buildScaleLookup(pointScales, CURVE_SAMPLES, config.closed, scaleLookup);
     }
 
-    const flowSpeed = config.flowSpeed ?? 0.04;
+    const flowSpeed = config.volFlowSpeed ?? config.flowSpeed ?? 0.04;
     const { closed } = config;
-    const fadeRate = config.fadeRate ?? 8;
+    const fadeRate = config.volFadeRate ?? config.fadeRate ?? 8;
     const volSpread = config.volSpread ?? config.spawnSpread ?? 80;
 
     // Volumetric noise parameters — heavier turbulence, layered advection.

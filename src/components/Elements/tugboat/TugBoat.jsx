@@ -37,13 +37,19 @@ export default function TugBoat(props) {
       />
       <mesh
         name="UpperDeck_Glass"
-        castShadow
-        receiveShadow
         geometry={nodes.UpperDeck_Glass.geometry}
-        material={materials.Deck_Mat}
         rotation={[Math.PI / 2, 0, 0]}
         scale={0.01}
-      />
+      >
+        <meshPhysicalMaterial
+          transmission={0.95}
+          roughness={0.05}
+          ior={1.5}
+          thickness={0.5}
+          color="#aaccdd"
+          transparent
+        />
+      </mesh>
     </group>
   );
 }

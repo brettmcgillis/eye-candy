@@ -1,24 +1,50 @@
 import React from 'react';
 
-function BoatLights() {
+function BoatLights({
+  lightDebug = false,
+  headlightX = 0,
+  headlightY = 0.6,
+  headlightZ = -5,
+  headlightIntensity = 2,
+  headlightDistance = 8,
+  headlightColor = '#ffe8b0',
+  cabinX = 0,
+  cabinY = 1.2,
+  cabinZ = 1,
+  cabinIntensity = 1.5,
+  cabinDistance = 5,
+  cabinColor = '#ffd080',
+}) {
   return (
     <>
-      {/* Headlight — front of the boat */}
+      {/* Headlight */}
       <pointLight
-        position={[0, 0.6, -5]}
-        intensity={2}
-        distance={8}
+        position={[headlightX, headlightY, headlightZ]}
+        intensity={headlightIntensity}
+        distance={headlightDistance}
         decay={2}
-        color="#ffe8b0"
+        color={headlightColor}
       />
+      {lightDebug && (
+        <mesh position={[headlightX, headlightY, headlightZ]}>
+          <sphereGeometry args={[0.3, 8, 6]} />
+          <meshBasicMaterial color={headlightColor} wireframe />
+        </mesh>
+      )}
       {/* Cabin interior light */}
       <pointLight
-        position={[0, 1.2, 1]}
-        intensity={1.5}
-        distance={5}
+        position={[cabinX, cabinY, cabinZ]}
+        intensity={cabinIntensity}
+        distance={cabinDistance}
         decay={2}
-        color="#ffd080"
+        color={cabinColor}
       />
+      {lightDebug && (
+        <mesh position={[cabinX, cabinY, cabinZ]}>
+          <sphereGeometry args={[0.3, 8, 6]} />
+          <meshBasicMaterial color={cabinColor} wireframe />
+        </mesh>
+      )}
     </>
   );
 }

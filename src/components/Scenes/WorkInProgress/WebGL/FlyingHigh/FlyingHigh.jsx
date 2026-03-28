@@ -1,128 +1,20 @@
-import * as THREE from 'three';
-
 import React, { useMemo } from 'react';
 
-import {
-  Cloud,
-  Clouds,
-  OrbitControls,
-  PerspectiveCamera,
-} from '@react-three/drei';
+import { OrbitControls, PerspectiveCamera } from '@react-three/drei';
 import { Bloom, EffectComposer } from '@react-three/postprocessing';
 
 import FLYING_HIGH_FIRE from '../../../../../presets/fire/flyingHighFire';
 import Boeing737 from '../../../../elements/boeing737/Boeing737';
-import SmokeParticles from '../../../../elements/smoke/SmokeParticles';
-import VolumetricFire from '../../../../elements/volumetricFire/VolumetricFire';
-
-// ─── Sky Panel ───────────────────────────────────────────────────────────────
-// Large oval backdrop coloured sky-blue with a painterly feathered edge
-// that makes it look like the boundary was applied with a brush.
-
-const skyMaterial = new THREE.ShaderMaterial({
-  transparent: true,
-  side: THREE.DoubleSide,
-  depthWrite: false,
-  uniforms: {
-    uColor: { value: new THREE.Color('#87CEEB') },
-  },
-  vertexShader: /* glsl */ `
-    varying vec2 vUv;
-    void main() {
-      vUv = uv;
-      gl_Position = projectionMatrix * modelViewMatrix * vec4(position, 1.0);
-    }
-  `,
-  fragmentShader: /* glsl */ `
-    uniform vec3 uColor;
-    varying vec2 vUv;
-
-    float hash(vec2 p) {
-      return fract(sin(dot(p, vec2(127.1, 311.7))) * 43758.5453);
-    }
-
-    float noise(vec2 p) {
-      vec2 i = floor(p);
-      vec2 f = fract(p);
-      f = f * f * (3.0 - 2.0 * f);
-      float a = hash(i);
-      float b = hash(i + vec2(1.0, 0.0));
-      float c = hash(i + vec2(0.0, 1.0));
-      float d = hash(i + vec2(1.0, 1.0));
-      return mix(mix(a, b, f.x), mix(c, d, f.x), f.y);
-    }
-
-    // Fractal Brownian Motion — layered noise with inter-octave rotation
-    // to break axis-alignment and create organic, flowing shapes.
-    float fbm(vec2 p) {
-      float v = 0.0;
-      float a = 0.5;
-      vec2 shift = vec2(100.0);
-      mat2 rot = mat2(cos(0.5), sin(0.5), -sin(0.5), cos(0.5));
-      for (int i = 0; i < 5; i++) {
-        v += a * noise(p);
-        p = rot * p * 2.0 + shift;
-        a *= 0.5;
-      }
-      return v;
-    }
-
-    void main() {
-      vec2 centered = vUv - 0.5;
-      // Elliptical shape — wider than tall
-      float dist = length(centered * vec2(1.0, 1.5));
-
-      // Domain-warped FBM: organic watercolor-paint boundaries
-      vec2 q = vec2(
-        fbm(vUv * 5.0),
-        fbm(vUv * 5.0 + vec2(5.2, 1.3))
-      );
-      float warp = fbm(vUv * 5.0 + 3.0 * q);
-
-      // Brush-stroke noise: directional horizontal streaks
-      float brush = noise(vec2(vUv.x * 3.0 + warp, vUv.y * 18.0)) * 0.07
-                  + noise(vec2(vUv.x * 6.0, vUv.y * 30.0)) * 0.03;
-
-      // Edge perturbation from domain warp + brush strokes
-      float edgeNoise = warp * 0.10 + brush;
-
-      // Main oval with ragged, painterly edge
-      float edge = smoothstep(0.50, 0.28 + edgeNoise, dist);
-
-      // Watercolor bleed: faint pigment wicking past main edge
-      float bleed = smoothstep(0.56, 0.36 + edgeNoise * 0.6, dist) * 0.12;
-
-      float alpha = max(edge, bleed);
-
-      // Pigment pooling: watercolor darkens near edges as paint gathers
-      float pooling = smoothstep(0.15, 0.42, dist);
-      vec3 lightWash = uColor * 1.05;
-      vec3 pooledEdge = uColor * 0.78;
-      vec3 col = mix(lightWash, pooledEdge, pooling * pooling);
-
-      // Subtle warm-cool hue shift (watercolor pigment isn't uniform)
-      col += vec3(0.02, -0.01, -0.02) * warp;
-
-      // Paper grain: fine noise simulates paper tooth/texture
-      float grain = noise(vUv * 180.0) * 0.035 - 0.0175;
-      col += grain;
-
-      gl_FragColor = vec4(col, alpha);
-    }
-  `,
-});
-
-function SkyPanel() {
-  return (
-    <mesh position={[0, 1, -12]} material={skyMaterial} renderOrder={-10}>
-      <planeGeometry args={[40, 24]} />
-    </mesh>
-  );
-}
+import EngineFire from './components/EngineFire';
+import SceneClouds from './components/SceneClouds';
+import SkyPanel from './components/SkyPanel';
+import useFlyingHighControls from './hooks/useFlyingHighControls';
 
 // ─── Scene ───────────────────────────────────────────────────────────────────
 
 export default function FlyingHigh() {
+  const { scene, sky, plane, clouds } = useFlyingHighControls();
+
   const {
     leftEngineMainFire,
     rightEngineMainFire,
@@ -164,170 +56,48 @@ export default function FlyingHigh() {
 
   return (
     <>
-      <color attach="background" args={['#ffffff']} />
+      <color attach="background" args={[scene.background]} />
 
       {/* Camera — three-quarter front view of the plane */}
       <PerspectiveCamera makeDefault position={[10, 3, 14]} fov={42} />
       <OrbitControls target={[0, 0.5, -1]} />
 
       {/* Lighting */}
-      <ambientLight intensity={0.5} />
-      <directionalLight position={[5, 8, 10]} intensity={1.0} color="#fff5e0" />
+      <ambientLight intensity={scene.ambientIntensity} />
+      <directionalLight
+        position={[5, 8, 10]}
+        intensity={scene.directionalIntensity}
+        color="#fff5e0"
+      />
       <hemisphereLight
         skyColor="#87CEEB"
         groundColor="#443322"
-        intensity={0.25}
-      />
-
-      {/* Warm point lights at engines — give fire a glow spread */}
-      <pointLight
-        position={
-          leftEngineMainFire?.points?.[0]?.position?.toArray() ?? [
-            -1.8, -0.1, 0.4,
-          ]
-        }
-        color="#ff6600"
-        intensity={4}
-        distance={8}
-        decay={2}
-      />
-      <pointLight
-        position={
-          rightEngineMainFire?.points?.[0]?.position?.toArray() ?? [
-            1.8, -0.1, 0.4,
-          ]
-        }
-        color="#ff6600"
-        intensity={4}
-        distance={8}
-        decay={2}
+        intensity={scene.hemisphereIntensity}
       />
 
       {/* Painted sky oval backdrop */}
-      <SkyPanel />
+      <SkyPanel sky={sky} />
 
       {/* Drei clouds for depth */}
-      <Clouds material={THREE.MeshBasicMaterial}>
-        <Cloud
-          position={[-10, 5, -8]}
-          speed={0.2}
-          opacity={0.35}
-          width={8}
-          depth={2}
-          segments={20}
-        />
-        <Cloud
-          position={[8, 7, -9]}
-          speed={0.15}
-          opacity={0.3}
-          width={10}
-          depth={3}
-          segments={20}
-        />
-        <Cloud
-          position={[-4, -2, -6]}
-          speed={0.1}
-          opacity={0.2}
-          width={6}
-          depth={2}
-          segments={15}
-        />
-      </Clouds>
+      <SceneClouds clouds={clouds} />
 
       {/* Boeing 737 — angled slightly toward camera */}
       <Boeing737
-        scale={0.6}
-        rotation={[0.05, -Math.PI / 5, -0.03]}
-        position={[0, 0, 0]}
+        scale={plane.scale}
+        rotation={plane.rotation}
+        position={plane.position}
       />
 
-      {/* Volumetric fire at left engine — flame bends backward in airstream */}
-      <VolumetricFire
-        position={
-          leftEngineMainFire?.points?.[0]?.position?.toArray() ?? [
-            -1.8, 0.0, 0.3,
-          ]
-        }
-        width={leftEngineMainFire?.fireWidth ?? 0.5}
-        height={leftEngineMainFire?.fireHeight ?? 1.8}
-        depth={leftEngineMainFire?.fireDepth ?? 0.5}
-        sliceSpacing={leftEngineMainFire?.fireSliceSpacing ?? 0.08}
-        magnitude={leftEngineMainFire?.fireMagnitude ?? 1.6}
-        brightness={leftEngineMainFire?.fireBrightness ?? 2.2}
-        saturation={leftEngineMainFire?.fireSaturation ?? 0.9}
-        animated={leftEngineMainFire?.fireAnimated ?? true}
-        bendX={0.4}
-        bendZ={-1.2}
-        animSpeed={leftEngineMainFire?.fireAnimSpeed ?? 0.85}
-        tintColor={leftEngineMainFire?.fireTintColor ?? '#ffcc44'}
-      />
-
-      {/* Volumetric fire at right engine */}
-      <VolumetricFire
-        position={
-          rightEngineMainFire?.points?.[0]?.position?.toArray() ?? [
-            1.8, 0.0, 0.3,
-          ]
-        }
-        width={rightEngineMainFire?.fireWidth ?? 0.5}
-        height={rightEngineMainFire?.fireHeight ?? 1.8}
-        depth={rightEngineMainFire?.fireDepth ?? 0.5}
-        sliceSpacing={rightEngineMainFire?.fireSliceSpacing ?? 0.08}
-        magnitude={rightEngineMainFire?.fireMagnitude ?? 1.6}
-        brightness={rightEngineMainFire?.fireBrightness ?? 2.2}
-        saturation={rightEngineMainFire?.fireSaturation ?? 0.9}
-        animated={rightEngineMainFire?.fireAnimated ?? true}
-        bendX={-0.4}
-        bendZ={-1.2}
-        animSpeed={rightEngineMainFire?.fireAnimSpeed ?? 0.75}
-        tintColor={rightEngineMainFire?.fireTintColor ?? '#ffcc44'}
-      />
-
-      {/* Secondary smaller flames — wing wrapping effect */}
-      <VolumetricFire
-        position={
-          leftWingSecondaryFire?.points?.[0]?.position?.toArray() ?? [
-            -1.4, 0.3, -0.2,
-          ]
-        }
-        width={leftWingSecondaryFire?.fireWidth ?? 0.35}
-        height={leftWingSecondaryFire?.fireHeight ?? 1.2}
-        depth={leftWingSecondaryFire?.fireDepth ?? 0.35}
-        sliceSpacing={leftWingSecondaryFire?.fireSliceSpacing ?? 0.1}
-        segments={16}
-        magnitude={leftWingSecondaryFire?.fireMagnitude ?? 1.4}
-        brightness={leftWingSecondaryFire?.fireBrightness ?? 1.8}
-        animated={leftWingSecondaryFire?.fireAnimated ?? true}
-        animSpeed={leftWingSecondaryFire?.fireAnimSpeed ?? 1.1}
-        bendX={0.2}
-        bendZ={-0.9}
-        tintColor={leftWingSecondaryFire?.fireTintColor ?? '#ff8833'}
-      />
-      <VolumetricFire
-        position={
-          rightWingSecondaryFire?.points?.[0]?.position?.toArray() ?? [
-            1.4, 0.3, -0.2,
-          ]
-        }
-        width={rightWingSecondaryFire?.fireWidth ?? 0.35}
-        height={rightWingSecondaryFire?.fireHeight ?? 1.2}
-        depth={rightWingSecondaryFire?.fireDepth ?? 0.35}
-        sliceSpacing={rightWingSecondaryFire?.fireSliceSpacing ?? 0.1}
-        segments={16}
-        magnitude={rightWingSecondaryFire?.fireMagnitude ?? 1.4}
-        brightness={rightWingSecondaryFire?.fireBrightness ?? 1.8}
-        animated={rightWingSecondaryFire?.fireAnimated ?? true}
-        animSpeed={rightWingSecondaryFire?.fireAnimSpeed ?? 1.0}
-        bendX={-0.2}
-        bendZ={-0.9}
-        tintColor={rightWingSecondaryFire?.fireTintColor ?? '#ff8833'}
-      />
-
-      {/* Smoke trailing from engines */}
-      <SmokeParticles points={leftSmokePoints} config={leftEngineSmokeTrail} />
-      <SmokeParticles
-        points={rightSmokePoints}
-        config={rightEngineSmokeTrail}
+      {/* Engine fire, smoke & glow lights */}
+      <EngineFire
+        leftEngineMainFire={leftEngineMainFire}
+        rightEngineMainFire={rightEngineMainFire}
+        leftWingSecondaryFire={leftWingSecondaryFire}
+        rightWingSecondaryFire={rightWingSecondaryFire}
+        leftEngineSmokeTrail={leftEngineSmokeTrail}
+        rightEngineSmokeTrail={rightEngineSmokeTrail}
+        leftSmokePoints={leftSmokePoints}
+        rightSmokePoints={rightSmokePoints}
       />
 
       {/* Bloom for fire glow */}

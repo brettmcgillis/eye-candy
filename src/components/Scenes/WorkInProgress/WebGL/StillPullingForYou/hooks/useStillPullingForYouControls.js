@@ -22,7 +22,22 @@ const DEFAULTS = {
   boatRotX: 0,
   boatRotY: 0.8,
   boatRotZ: 0.6,
-  floatDraft: -0.05,
+  floatDraft: 0.66,
+
+  // Boat Lights
+  lightDebug: false,
+  headlightX: 6,
+  headlightY: 13.5,
+  headlightZ: -1.6,
+  headlightIntensity: 2,
+  headlightDistance: 8,
+  headlightColor: '#ffe8b0',
+  cabinX: 0,
+  cabinY: 1.2,
+  cabinZ: 1,
+  cabinIntensity: 1.5,
+  cabinDistance: 5,
+  cabinColor: '#ffd080',
 
   // Smoke
   smokeVisible: true,
@@ -207,10 +222,97 @@ export default function useStillPullingForYouControls() {
           floatDraft: {
             label: 'Float Draft',
             value: DEFAULTS.floatDraft,
-            min: -0.5,
-            max: 0.5,
+            min: 0,
+            max: 1,
             step: 0.01,
           },
+          Lights: folder(
+            {
+              lightDebug: {
+                label: 'Show Debug',
+                value: DEFAULTS.lightDebug,
+              },
+              headlightX: {
+                label: 'Head X',
+                value: DEFAULTS.headlightX,
+                min: -15,
+                max: 15,
+                step: 0.5,
+              },
+              headlightY: {
+                label: 'Head Y',
+                value: DEFAULTS.headlightY,
+                min: -15,
+                max: 15,
+                step: 0.5,
+              },
+              headlightZ: {
+                label: 'Head Z',
+                value: DEFAULTS.headlightZ,
+                min: -15,
+                max: 15,
+                step: 0.5,
+              },
+              headlightIntensity: {
+                label: 'Head Intensity',
+                value: DEFAULTS.headlightIntensity,
+                min: 0,
+                max: 10,
+                step: 0.1,
+              },
+              headlightDistance: {
+                label: 'Head Distance',
+                value: DEFAULTS.headlightDistance,
+                min: 0,
+                max: 30,
+                step: 0.5,
+              },
+              headlightColor: {
+                label: 'Head Color',
+                value: DEFAULTS.headlightColor,
+              },
+              cabinX: {
+                label: 'Cabin X',
+                value: DEFAULTS.cabinX,
+                min: -15,
+                max: 15,
+                step: 0.05,
+              },
+              cabinY: {
+                label: 'Cabin Y',
+                value: DEFAULTS.cabinY,
+                min: -15,
+                max: 15,
+                step: 0.05,
+              },
+              cabinZ: {
+                label: 'Cabin Z',
+                value: DEFAULTS.cabinZ,
+                min: -15,
+                max: 15,
+                step: 0.05,
+              },
+              cabinIntensity: {
+                label: 'Cabin Intensity',
+                value: DEFAULTS.cabinIntensity,
+                min: 0,
+                max: 10,
+                step: 0.1,
+              },
+              cabinDistance: {
+                label: 'Cabin Distance',
+                value: DEFAULTS.cabinDistance,
+                min: 0,
+                max: 30,
+                step: 0.5,
+              },
+              cabinColor: {
+                label: 'Cabin Color',
+                value: DEFAULTS.cabinColor,
+              },
+            },
+            { collapsed: true }
+          ),
         },
         { collapsed: true }
       ),

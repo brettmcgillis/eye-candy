@@ -55,6 +55,22 @@ export default function StillPullingForYou() {
   const isOrbit = config.cameraMode === 'Orbit';
   const isFloating = config.boatMode === 'Floating';
 
+  const lightConfig = {
+    lightDebug: config.lightDebug,
+    headlightX: config.headlightX,
+    headlightY: config.headlightY,
+    headlightZ: config.headlightZ,
+    headlightIntensity: config.headlightIntensity,
+    headlightDistance: config.headlightDistance,
+    headlightColor: config.headlightColor,
+    cabinX: config.cabinX,
+    cabinY: config.cabinY,
+    cabinZ: config.cabinZ,
+    cabinIntensity: config.cabinIntensity,
+    cabinDistance: config.cabinDistance,
+    cabinColor: config.cabinColor,
+  };
+
   return (
     <>
       {/* Background */}
@@ -90,17 +106,21 @@ export default function StillPullingForYou() {
       {/* Tugboat */}
       {isFloating ? (
         <FloatingTugboat
+          position={boatPosition}
+          rotation={boatRotation}
           scale={config.boatScale}
           floatDraft={config.floatDraft}
           waveHeight={config.waveHeight}
           waveChoppiness={config.waveChoppiness}
           waveSpeed={config.waveSpeed}
+          lightConfig={lightConfig}
         />
       ) : (
         <SinkingTugboat
           position={boatPosition}
           rotation={boatRotation}
           scale={config.boatScale}
+          lightConfig={lightConfig}
         />
       )}
 

@@ -14,8 +14,8 @@
 [Back to main TODO](../../../../../../TODO.md)
 
 - [ ] Tune Smoke + fire
-- [ ] Update cloud appearance so they stick out more as objects in the scene
-- [ ] Add scene controls
+- [x] Update cloud appearance so they stick out more as objects in the scene
+- [x] Add scene controls
   - Flying High
     - Scene
       - Background
@@ -34,8 +34,8 @@
         - Rotation
         - Cloud Props
 
-- [ ] Move controls out of scene into controls hook in /hooks
-- [ ] Break the scene down in to memoized child components where it makes sense and store in /components
+- [x] Move controls out of scene into controls hook in /hooks
+- [x] Break the scene down in to memoized child components where it makes sense and store in /components
 
 # // Features
 

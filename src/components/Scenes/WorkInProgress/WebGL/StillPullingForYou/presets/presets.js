@@ -11,14 +11,28 @@ const STILL_PULLING = {
 
   // Tugboat — fixed, nose-up, half sunk
   boatMode: 'Fixed',
-  boatX: 0.6,
+  boatX: 0,
   boatY: 0.65,
-  boatZ: -0.2,
+  boatZ: 0.4,
   boatScale: 0.12,
   boatRotX: 0,
-  boatRotY: 0.8,
+  boatRotY: -0.7,
   boatRotZ: 0.6,
   floatDraft: -0.05,
+
+  // Boat Lights
+  headlightX: 6,
+  headlightY: 13.5,
+  headlightZ: -1.6,
+  headlightIntensity: 2,
+  headlightDistance: 8,
+  headlightColor: '#ffe8b0',
+  cabinX: 0,
+  cabinY: 1.2,
+  cabinZ: 1,
+  cabinIntensity: 1.5,
+  cabinDistance: 5,
+  cabinColor: '#ffd080',
 
   // Smoke — visible
   smokeVisible: true,
@@ -67,14 +81,28 @@ const ROUGH_WATERS = {
 
   // Tugboat — floating on waves
   boatMode: 'Floating',
-  boatX: 0,
+  boatX: -0.1,
   boatY: 0,
-  boatZ: 0,
+  boatZ: 0.4,
   boatScale: 0.12,
   boatRotX: 0,
-  boatRotY: 0,
-  boatRotZ: 0,
-  floatDraft: -0.02,
+  boatRotY: -0.9,
+  boatRotZ: 0.1,
+  floatDraft: 0.66,
+
+  // Boat Lights
+  headlightX: 6,
+  headlightY: 13.5,
+  headlightZ: -1.6,
+  headlightIntensity: 3,
+  headlightDistance: 10,
+  headlightColor: '#ffe8b0',
+  cabinX: 0,
+  cabinY: 1.2,
+  cabinZ: 1,
+  cabinIntensity: 2,
+  cabinDistance: 6,
+  cabinColor: '#ffd080',
 
   // Smoke — visible, more turbulent
   smokeVisible: true,
@@ -131,6 +159,20 @@ const SUNK = {
   boatRotY: 0.2,
   boatRotZ: 0.6,
   floatDraft: -0.05,
+
+  // Boat Lights
+  headlightX: 6,
+  headlightY: 13.5,
+  headlightZ: -1.6,
+  headlightIntensity: 1,
+  headlightDistance: 6,
+  headlightColor: '#ffe8b0',
+  cabinX: 0,
+  cabinY: 1.2,
+  cabinZ: 1,
+  cabinIntensity: 0.8,
+  cabinDistance: 4,
+  cabinColor: '#ffd080',
 
   // Smoke — hidden
   smokeVisible: false,

@@ -64,6 +64,11 @@
       - Position (for fixed mode)
       - Scale
       - Rotation
+      - Lights
+        - Position
+        - Scale
+        - Rotation
+        - Light prop controls
     - Smoke
       - visibility
       - Position

@@ -29,6 +29,7 @@ function FloatingTugboat({
   waveHeight,
   waveChoppiness,
   waveSpeed,
+  tiltDamping = 0.3,
   lightConfig,
 }) {
   const waveRef = useRef();
@@ -45,6 +46,7 @@ function FloatingTugboat({
 
     const n = sampleWaveNormal(x, z, waveHeight, waveChoppiness, waveSpeed);
     _normalVec.set(n.x, n.y, n.z).normalize();
+    _normalVec.lerp(_up, 1 - tiltDamping).normalize();
     _waveQuat.setFromUnitVectors(_up, _normalVec);
     _baseQuat.setFromEuler(
       new THREE.Euler(rotation[0], rotation[1], rotation[2])
@@ -67,6 +69,7 @@ function FloatingTugboat({
     // Combine base orientation with wave tilt
     const n = sampleWaveNormal(x, z, waveHeight, waveChoppiness, waveSpeed);
     _normalVec.set(n.x, n.y, n.z).normalize();
+    _normalVec.lerp(_up, 1 - tiltDamping).normalize();
     _waveQuat.setFromUnitVectors(_up, _normalVec);
 
     _baseQuat.setFromEuler(

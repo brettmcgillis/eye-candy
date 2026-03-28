@@ -156,6 +156,7 @@ export default function StillPullingForYou() {
           waveHeight={config.waveHeight}
           waveChoppiness={config.waveChoppiness}
           waveSpeed={config.waveSpeed}
+          tiltDamping={config.tiltDamping}
           lightConfig={lightConfig}
         />
       )}

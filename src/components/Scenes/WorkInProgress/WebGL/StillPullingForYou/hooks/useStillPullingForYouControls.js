@@ -198,6 +198,13 @@ export default function useStillPullingForYouControls(
                 max: 1,
                 step: 0.01,
               },
+              tiltDamping: {
+                label: 'Tilt Damping',
+                value: D.tiltDamping,
+                min: 0,
+                max: 1,
+                step: 0.05,
+              },
             },
             { collapsed: true }
           ),

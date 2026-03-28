@@ -16,6 +16,7 @@ const STILL_PULLING = {
   boatRotation: { x: 0, y: -0.7, z: 0.6 },
   boatScale: 0.12,
   floatDraft: -0.05,
+  tiltDamping: 0.3,
 
   // Boat Lights
   lightDebug: false,
@@ -76,6 +77,7 @@ const ROUGH_WATERS = {
   boatRotation: { x: 0, y: -0.9, z: 0.1 },
   boatScale: 0.12,
   floatDraft: 0.66,
+  tiltDamping: 0.3,
 
   // Boat Lights
   lightDebug: false,
@@ -136,6 +138,7 @@ const SUNK = {
   boatRotation: { x: 1.3, y: 0.2, z: 0.6 },
   boatScale: 0.12,
   floatDraft: -0.05,
+  tiltDamping: 0.3,
 
   // Boat Lights
   lightDebug: false,

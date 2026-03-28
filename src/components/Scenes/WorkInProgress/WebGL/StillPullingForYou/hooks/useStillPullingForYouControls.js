@@ -252,6 +252,11 @@ export default function useStillPullingForYouControls(
                     label: 'Color',
                     value: D.headlightColor,
                   },
+                  headlightMode: {
+                    label: 'Mode',
+                    value: D.headlightMode,
+                    options: ['static', 'shorting', 'dying'],
+                  },
                 },
                 { collapsed: true }
               ),
@@ -299,6 +304,11 @@ export default function useStillPullingForYouControls(
                   cabinColor: {
                     label: 'Color',
                     value: D.cabinColor,
+                  },
+                  cabinMode: {
+                    label: 'Mode',
+                    value: D.cabinMode,
+                    options: ['static', 'shorting', 'dying'],
                   },
                 },
                 { collapsed: true }

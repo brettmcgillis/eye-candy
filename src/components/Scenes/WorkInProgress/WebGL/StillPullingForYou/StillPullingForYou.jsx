@@ -105,6 +105,8 @@ export default function StillPullingForYou() {
     cabinIntensity: config.cabinIntensity,
     cabinDistance: config.cabinDistance,
     cabinColor: config.cabinColor,
+    headlightMode: config.headlightMode,
+    cabinMode: config.cabinMode,
   };
 
   return (

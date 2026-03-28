@@ -26,6 +26,7 @@ const STILL_PULLING = {
   headlightIntensity: 2,
   headlightDistance: 8,
   headlightColor: '#ffe8b0',
+  headlightMode: 'shorting',
   cabinVisible: true,
   cabinX: 1.8,
   cabinY: 10.4,
@@ -33,6 +34,7 @@ const STILL_PULLING = {
   cabinIntensity: 5,
   cabinDistance: 0.5,
   cabinColor: '#ffd080',
+  cabinMode: 'shorting',
 
   // Smoke — visible
   smokeVisible: true,
@@ -84,6 +86,7 @@ const ROUGH_WATERS = {
   headlightIntensity: 3,
   headlightDistance: 10,
   headlightColor: '#ffe8b0',
+  headlightMode: 'static',
   cabinVisible: true,
   cabinX: 1.8,
   cabinY: 10.4,
@@ -91,9 +94,10 @@ const ROUGH_WATERS = {
   cabinIntensity: 5,
   cabinDistance: 0.5,
   cabinColor: '#ffd080',
+  cabinMode: 'static',
 
-  // Smoke — visible, more turbulent
-  smokeVisible: true,
+  // Smoke — hidden (no splines for this preset)
+  smokeVisible: false,
   editSplines: false,
 
   // Water — very wavy
@@ -142,6 +146,7 @@ const SUNK = {
   headlightIntensity: 1,
   headlightDistance: 6,
   headlightColor: '#ffe8b0',
+  headlightMode: 'dying',
   cabinVisible: true,
   cabinX: 1.8,
   cabinY: 10.4,
@@ -149,6 +154,7 @@ const SUNK = {
   cabinIntensity: 5,
   cabinDistance: 0.5,
   cabinColor: '#ffd080',
+  cabinMode: 'dying',
 
   // Smoke — hidden
   smokeVisible: false,

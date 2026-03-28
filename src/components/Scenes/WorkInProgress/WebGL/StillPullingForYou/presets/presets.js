@@ -3,7 +3,7 @@
 
 const STILL_PULLING = {
   // Scene
-  backgroundColor: '#d9d9d9',
+  backgroundColor: '#00101f',
   cameraMode: 'Fixed',
   ambientIntensity: 0.8,
   mainLightIntensity: 1.2,
@@ -139,7 +139,7 @@ const ROUGH_WATERS = {
 
 const SUNK = {
   // Scene
-  backgroundColor: '#13071f',
+  backgroundColor: '#d9d9d9',
   cameraMode: 'Fixed',
   ambientIntensity: 0.5,
   mainLightIntensity: 0.8,

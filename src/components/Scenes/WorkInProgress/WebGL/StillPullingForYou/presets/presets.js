@@ -3,7 +3,7 @@
 
 const STILL_PULLING = {
   // Scene
-  backgroundColor: '#13071f',
+  backgroundColor: '#d9d9d9',
   cameraMode: 'Orbit',
   ambientIntensity: 0.8,
   mainLightIntensity: 1.2,
@@ -71,7 +71,7 @@ const STILL_PULLING = {
 
 const ROUGH_WATERS = {
   // Scene
-  backgroundColor: '#13071f',
+  backgroundColor: '#000000',
   cameraMode: 'Orbit',
   ambientIntensity: 0.7,
   mainLightIntensity: 1.4,
@@ -118,8 +118,8 @@ const ROUGH_WATERS = {
   waterRoughness: 0.7,
   waterIor: 1.12,
   waterThickness: 0.35,
-  waveHeight: 0.18,
-  waveChoppiness: 0.8,
+  waveHeight: 0.19,
+  waveChoppiness: 1.13,
   waveSpeed: 0.9,
 
   // Seafloor — hidden

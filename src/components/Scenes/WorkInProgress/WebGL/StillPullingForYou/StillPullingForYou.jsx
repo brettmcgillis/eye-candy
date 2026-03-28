@@ -3,6 +3,7 @@ import * as THREE from 'three';
 import React, { useCallback, useState } from 'react';
 
 import { OrbitControls, PerspectiveCamera } from '@react-three/drei';
+import { Bloom, EffectComposer } from '@react-three/postprocessing';
 
 import STILL_PULLING_FOR_YOU_SMOKE from '../../../../../presets/smoke/stillPullingForYouSmoke';
 import NurbsWaterColumn from '../../../../elements/water/NurbsWaterColumn';
@@ -214,6 +215,18 @@ export default function StillPullingForYou() {
           waveSpeed={config.waveSpeed}
           showEdges={false}
         />
+      )}
+      {/* Bloom */}
+      {config.bloomEnabled && (
+        <EffectComposer disableNormalPass>
+          <Bloom
+            intensity={config.bloomIntensity}
+            luminanceThreshold={config.bloomLuminanceThreshold}
+            luminanceSmoothing={config.bloomLuminanceSmoothing}
+            mipmapBlur
+            radius={config.bloomRadius}
+          />
+        </EffectComposer>
       )}
     </>
   );

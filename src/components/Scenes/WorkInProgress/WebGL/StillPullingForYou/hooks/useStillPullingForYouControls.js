@@ -1115,6 +1115,44 @@ export default function useStillPullingForYouControls(
         },
         { collapsed: true }
       ),
+
+      'Post Processing': folder(
+        {
+          bloomEnabled: {
+            label: 'Bloom',
+            value: D.bloomEnabled,
+          },
+          bloomIntensity: {
+            label: 'Intensity',
+            value: D.bloomIntensity,
+            min: 0,
+            max: 6,
+            step: 0.01,
+          },
+          bloomLuminanceThreshold: {
+            label: 'Lum Threshold',
+            value: D.bloomLuminanceThreshold,
+            min: 0,
+            max: 1,
+            step: 0.01,
+          },
+          bloomLuminanceSmoothing: {
+            label: 'Lum Smoothing',
+            value: D.bloomLuminanceSmoothing,
+            min: 0,
+            max: 1,
+            step: 0.01,
+          },
+          bloomRadius: {
+            label: 'Radius',
+            value: D.bloomRadius,
+            min: 0,
+            max: 1,
+            step: 0.01,
+          },
+        },
+        { collapsed: true }
+      ),
     }),
     // Rebuild per-spline folders when count changes
     [splines.length, splineConfigs]

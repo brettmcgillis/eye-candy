@@ -60,6 +60,13 @@ const STILL_PULLING = {
   bumpHeight: 0.08,
   bumpFrequency: 1.0,
   bumpDetail: 1.0,
+
+  // Post Processing
+  bloomEnabled: true,
+  bloomIntensity: 1.2,
+  bloomLuminanceThreshold: 0.6,
+  bloomLuminanceSmoothing: 0.3,
+  bloomRadius: 0.4,
 };
 
 const ROUGH_WATERS = {
@@ -121,6 +128,13 @@ const ROUGH_WATERS = {
   bumpHeight: 0.12,
   bumpFrequency: 1.5,
   bumpDetail: 0.8,
+
+  // Post Processing
+  bloomEnabled: true,
+  bloomIntensity: 1.0,
+  bloomLuminanceThreshold: 0.65,
+  bloomLuminanceSmoothing: 0.35,
+  bloomRadius: 0.35,
 };
 
 const SUNK = {
@@ -172,8 +186,8 @@ const SUNK = {
   waterRoughness: 0.5,
   waterIor: 1.12,
   waterThickness: 0.35,
-  waveHeight: 0.02,
-  waveChoppiness: 0.15,
+  waveHeight: 0.13,
+  waveChoppiness: 0.4,
   waveSpeed: 0.25,
 
   // Seafloor — visible
@@ -182,6 +196,13 @@ const SUNK = {
   bumpHeight: 0.06,
   bumpFrequency: 0.8,
   bumpDetail: 0.6,
+
+  // Post Processing
+  bloomEnabled: true,
+  bloomIntensity: 0.6,
+  bloomLuminanceThreshold: 0.7,
+  bloomLuminanceSmoothing: 0.4,
+  bloomRadius: 0.3,
 };
 
 export const SCENE_PRESETS = {

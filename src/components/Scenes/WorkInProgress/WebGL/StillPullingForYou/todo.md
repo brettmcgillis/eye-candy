@@ -28,7 +28,7 @@
 - [x] Break the scene down in to memoized child components where it makes sense and store in /components
 - [x] Add default settings and presets to presets.jsx
 - [x] Update scene controls
-- [ ] Add some post processing bloom. Maybe selective bloom on the cabin and headlights?
+- [x] Add some post processing bloom. Maybe selective bloom on the cabin and headlights?
 - [x] Add some animation to the light states.
 - [ ] Add a few attractors to the scene and animate their position
   - Rough waters - Quick movement, like stormy winds.

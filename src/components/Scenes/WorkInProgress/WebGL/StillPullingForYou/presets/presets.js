@@ -4,7 +4,7 @@
 const STILL_PULLING = {
   // Scene
   backgroundColor: '#d9d9d9',
-  cameraMode: 'Orbit',
+  cameraMode: 'Fixed',
   ambientIntensity: 0.8,
   mainLightIntensity: 1.2,
   fillLightIntensity: 0.4,
@@ -72,7 +72,7 @@ const STILL_PULLING = {
 const ROUGH_WATERS = {
   // Scene
   backgroundColor: '#000000',
-  cameraMode: 'Orbit',
+  cameraMode: 'Fixed',
   ambientIntensity: 0.7,
   mainLightIntensity: 1.4,
   fillLightIntensity: 0.5,
@@ -140,7 +140,7 @@ const ROUGH_WATERS = {
 const SUNK = {
   // Scene
   backgroundColor: '#13071f',
-  cameraMode: 'Orbit',
+  cameraMode: 'Fixed',
   ambientIntensity: 0.5,
   mainLightIntensity: 0.8,
   fillLightIntensity: 0.3,

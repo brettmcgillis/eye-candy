@@ -1,8 +1,9 @@
 import * as THREE from 'three';
 
-import React, { useCallback, useState } from 'react';
+import React, { useCallback, useMemo, useState } from 'react';
 
 import { OrbitControls, PerspectiveCamera } from '@react-three/drei';
+import { useThree } from '@react-three/fiber';
 import { Bloom, EffectComposer } from '@react-three/postprocessing';
 
 import STILL_PULLING_FOR_YOU_SMOKE from '../../../../../presets/smoke/stillPullingForYouSmoke';
@@ -90,6 +91,14 @@ export default function StillPullingForYou() {
   const isOrbit = config.cameraMode === 'Orbit';
   const isFloating = config.boatMode === 'Floating';
 
+  // Responsive camera: pull back on narrow (mobile) viewports
+  const size = useThree((state) => state.size);
+  const cameraPosition = useMemo(() => {
+    const aspect = size.width / size.height;
+    const scale = Math.max(1, 1 / aspect);
+    return [4.5 * scale, 3.5 * scale, 6 * scale];
+  }, [size.width, size.height]);
+
   const lightConfig = {
     lightDebug: config.lightDebug,
     headlightVisible: config.headlightVisible,
@@ -118,7 +127,7 @@ export default function StillPullingForYou() {
       {/* Camera */}
       <PerspectiveCamera
         makeDefault
-        position={[3, 2.5, 4]}
+        position={cameraPosition}
         fov={50}
         onUpdate={(c) => c.lookAt(0, 0, 0)}
       />

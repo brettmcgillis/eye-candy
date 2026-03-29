@@ -228,7 +228,13 @@ export default function StillPullingForYou() {
       )}
       {/* Post Processing */}
       {config.painterlyEnabled && (
-        <PainterlyPostProcessing radius={config.painterlyRadius} />
+        <PainterlyPostProcessing
+          radius={config.painterlyRadius}
+          alpha={config.painterlyAlpha}
+          quantizeLevels={config.painterlyQuantize}
+          saturation={config.painterlySaturation}
+          paperStrength={config.painterlyPaper}
+        />
       )}
       {!config.painterlyEnabled && config.bloomEnabled && (
         <EffectComposer disableNormalPass>

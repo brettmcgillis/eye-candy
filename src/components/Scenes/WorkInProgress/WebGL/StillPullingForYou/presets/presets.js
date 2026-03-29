@@ -69,6 +69,10 @@ const STILL_PULLING = {
   bloomRadius: 0.4,
   painterlyEnabled: false,
   painterlyRadius: 6,
+  painterlyAlpha: 25,
+  painterlyQuantize: 16,
+  painterlySaturation: 1.5,
+  painterlyPaper: 1.0,
 };
 
 const ROUGH_WATERS = {
@@ -139,6 +143,10 @@ const ROUGH_WATERS = {
   bloomRadius: 0.35,
   painterlyEnabled: false,
   painterlyRadius: 6,
+  painterlyAlpha: 25,
+  painterlyQuantize: 16,
+  painterlySaturation: 1.5,
+  painterlyPaper: 1.0,
 };
 
 const SUNK = {
@@ -209,6 +217,10 @@ const SUNK = {
   bloomRadius: 0.3,
   painterlyEnabled: false,
   painterlyRadius: 6,
+  painterlyAlpha: 25,
+  painterlyQuantize: 16,
+  painterlySaturation: 1.5,
+  painterlyPaper: 1.0,
 };
 
 export const SCENE_PRESETS = {

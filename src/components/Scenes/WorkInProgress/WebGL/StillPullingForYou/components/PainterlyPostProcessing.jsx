@@ -55,6 +55,7 @@ const KUWAHARA_FRAGMENT = /* glsl */ `
 #define SECTOR_COUNT 8
 
 uniform int radius;
+uniform float alpha;
 uniform sampler2D inputBuffer;
 uniform vec4 resolution;
 uniform sampler2D originalTexture;
@@ -142,7 +143,6 @@ void main() {
 
   float anisotropy = (oaResult.z - oaResult.w) / (oaResult.z + oaResult.w + 1e-6);
 
-  float alpha = 25.0;
   float scaleX = alpha / (anisotropy + alpha);
   float scaleY = (anisotropy + alpha) / alpha;
 
@@ -177,6 +177,9 @@ void main() {
 const FINAL_FRAGMENT = /* glsl */ `
 uniform sampler2D inputBuffer;
 uniform sampler2D watercolorTexture;
+uniform int quantizeLevels;
+uniform float saturation;
+uniform float paperStrength;
 varying vec2 vUv;
 
 vec3 ACESFilm(vec3 x) {
@@ -200,7 +203,7 @@ void main() {
   vec3 grayscale = vec3(dot(color, vec3(0.299, 0.587, 0.114)));
 
   // Color quantization
-  int n = 16;
+  int n = quantizeLevels;
   float x = grayscale.r;
   float qn = floor(x * float(n - 1) + 0.5) / float(n - 1);
   qn = clamp(qn, 0.2, 0.7);
@@ -212,11 +215,11 @@ void main() {
     color = mix(color.rgb, vec3(1.0), (qn - 0.5) * 2.0);
   }
 
-  color = sat(color, 1.5);
+  color = sat(color, saturation);
   color = ACESFilm(color);
 
   vec4 outputColor = vec4(color, 1.0);
-  outputColor *= watercolorColor;
+  outputColor = mix(outputColor, outputColor * watercolorColor, paperStrength);
 
   gl_FragColor = outputColor;
 }
@@ -239,7 +242,13 @@ function makePassScene(geometry, fragmentShader, uniforms) {
 }
 
 // ── Component ───────────────────────────────────────────────────────────────
-export default function PainterlyPostProcessing({ radius = 6 }) {
+export default function PainterlyPostProcessing({
+  radius = 6,
+  alpha = 25,
+  quantizeLevels = 16,
+  saturation = 1.5,
+  paperStrength = 1.0,
+}) {
   const { size } = useThree();
   const resolutionRef = useRef(new THREE.Vector4());
 
@@ -280,6 +289,7 @@ export default function PainterlyPostProcessing({ radius = 6 }) {
         originalTexture: { value: null },
         resolution: { value: new THREE.Vector4() },
         radius: { value: radius },
+        alpha: { value: alpha },
       }),
     [fsGeometry]
   );
@@ -289,6 +299,9 @@ export default function PainterlyPostProcessing({ radius = 6 }) {
       makePassScene(fsGeometry, FINAL_FRAGMENT, {
         inputBuffer: { value: null },
         watercolorTexture: { value: null },
+        quantizeLevels: { value: quantizeLevels },
+        saturation: { value: saturation },
+        paperStrength: { value: paperStrength },
       }),
     [fsGeometry]
   );
@@ -322,6 +335,7 @@ export default function PainterlyPostProcessing({ radius = 6 }) {
       originalTarget.texture;
     kuwaharaPass.material.uniforms.resolution.value = resolutionRef.current;
     kuwaharaPass.material.uniforms.radius.value = radius;
+    kuwaharaPass.material.uniforms.alpha.value = alpha;
     gl.setRenderTarget(kuwaharaTarget);
     gl.clear();
     gl.render(kuwaharaPass.scene, fsCamera);
@@ -329,6 +343,9 @@ export default function PainterlyPostProcessing({ radius = 6 }) {
     // 4 — Final pass: color correction + paper texture → screen
     finalPass.material.uniforms.inputBuffer.value = kuwaharaTarget.texture;
     finalPass.material.uniforms.watercolorTexture.value = paperTexture;
+    finalPass.material.uniforms.quantizeLevels.value = quantizeLevels;
+    finalPass.material.uniforms.saturation.value = saturation;
+    finalPass.material.uniforms.paperStrength.value = paperStrength;
     gl.setRenderTarget(null);
     gl.clear();
     gl.render(finalPass.scene, fsCamera);

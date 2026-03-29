@@ -1208,20 +1208,6 @@ export default function useStillPullingForYouControls(
             max: 6,
             step: 0.01,
           },
-          bloomLuminanceThreshold: {
-            label: 'Lum Threshold',
-            value: D.bloomLuminanceThreshold,
-            min: 0,
-            max: 1,
-            step: 0.01,
-          },
-          bloomLuminanceSmoothing: {
-            label: 'Lum Smoothing',
-            value: D.bloomLuminanceSmoothing,
-            min: 0,
-            max: 1,
-            step: 0.01,
-          },
           bloomRadius: {
             label: 'Radius',
             value: D.bloomRadius,

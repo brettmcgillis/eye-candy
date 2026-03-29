@@ -1,6 +1,9 @@
-import React, { useRef } from 'react';
+import React, { useCallback, useRef } from 'react';
 
 import { useFrame } from '@react-three/fiber';
+
+// Bloom layer — meshes on this layer are rendered only in the bloom pass
+const BLOOM_LAYER = 1;
 
 // headlightMode / cabinMode:
 //   'static'   – no animation, use intensity props as-is
@@ -28,8 +31,16 @@ function BoatLights({
 }) {
   const headlightRef = useRef();
   const cabinRef = useRef();
+  const headGlowRef = useRef();
+  const cabinGlowRef = useRef();
   const headState = useRef({ nextChange: 0, on: true });
   const cabinState = useRef({ nextChange: 0, on: true });
+
+  // Assign bloom sprite to the bloom-only layer (invisible to main camera)
+  const setBloomLayer = useCallback((mesh) => {
+    if (!mesh) return;
+    mesh.layers.set(BLOOM_LAYER);
+  }, []);
 
   useFrame(({ clock }) => {
     const t = clock.getElapsedTime();
@@ -57,6 +68,9 @@ function BoatLights({
         }
       }
       headlightRef.current.intensity = s.on ? headlightIntensity : 0;
+      if (headGlowRef.current) {
+        headGlowRef.current.material.opacity = s.on ? 1 : 0;
+      }
     }
 
     // Cabin flicker (offset timings so the two lights don't sync)
@@ -82,6 +96,9 @@ function BoatLights({
         }
       }
       cabinRef.current.intensity = s.on ? cabinIntensity : 0;
+      if (cabinGlowRef.current) {
+        cabinGlowRef.current.material.opacity = s.on ? 1 : 0;
+      }
     }
   });
 
@@ -96,6 +113,23 @@ function BoatLights({
           decay={2}
           color={headlightColor}
         />
+      )}
+      {/* Bloom-only emissive sprite for headlight */}
+      {headlightVisible && (
+        <mesh
+          ref={(m) => {
+            headGlowRef.current = m;
+            setBloomLayer(m);
+          }}
+          position={[headlightX, headlightY, headlightZ]}
+        >
+          <sphereGeometry args={[0.5, 8, 6]} />
+          <meshBasicMaterial
+            color={headlightColor}
+            transparent
+            depthWrite={false}
+          />
+        </mesh>
       )}
       {lightDebug && (
         <mesh position={[headlightX, headlightY, headlightZ]}>
@@ -112,6 +146,23 @@ function BoatLights({
           decay={2}
           color={cabinColor}
         />
+      )}
+      {/* Bloom-only emissive sprite for cabin light */}
+      {cabinVisible && (
+        <mesh
+          ref={(m) => {
+            cabinGlowRef.current = m;
+            setBloomLayer(m);
+          }}
+          position={[cabinX, cabinY, cabinZ]}
+        >
+          <sphereGeometry args={[0.35, 8, 6]} />
+          <meshBasicMaterial
+            color={cabinColor}
+            transparent
+            depthWrite={false}
+          />
+        </mesh>
       )}
       {lightDebug && (
         <mesh position={[cabinX, cabinY, cabinZ]}>

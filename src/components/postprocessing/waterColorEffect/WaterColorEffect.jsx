@@ -7,11 +7,13 @@ import { useFrame, useThree } from '@react-three/fiber';
 
 import BLOOM_BLUR_FRAGMENT from './shaders/bloomBlurFragment';
 import BLOOM_COMPOSITE_FRAGMENT from './shaders/bloomCompositeFragment';
-import BLOOM_EXTRACT_FRAGMENT from './shaders/bloomExtractFragment';
 import FINAL_FRAGMENT from './shaders/finalFragment';
 import KUWAHARA_FRAGMENT from './shaders/kuwaharaFragment';
 import TENSOR_FRAGMENT from './shaders/tensorFragment';
 import makePassScene from './utils/makePassScene';
+
+// Must match the layer used in BoatLights bloom sprites
+const BLOOM_LAYER = 1;
 
 // ── Component ───────────────────────────────────────────────────────────────
 export default function WaterColorEffect({
@@ -22,8 +24,6 @@ export default function WaterColorEffect({
   paperStrength = 1.0,
   bloomEnabled = true,
   bloomIntensity = 1.2,
-  bloomThreshold = 0.6,
-  bloomSmoothing = 0.3,
 }) {
   const { size } = useThree();
   const resolutionRef = useRef(new THREE.Vector4());
@@ -41,8 +41,8 @@ export default function WaterColorEffect({
   });
   const kuwaharaTarget = useFBO({ depthBuffer: false });
 
-  // Bloom render targets
-  const bloomExtractTarget = useFBO({ depthBuffer: false });
+  // Bloom render targets (no extract — layer render replaces it)
+  const bloomLayerTarget = useFBO({ depthBuffer: true });
   const bloomBlurHTarget = useFBO({ depthBuffer: false });
   const bloomBlurVTarget = useFBO({ depthBuffer: false });
   const bloomedSceneTarget = useFBO({ depthBuffer: false });
@@ -88,17 +88,7 @@ export default function WaterColorEffect({
     [fsGeometry]
   );
 
-  // Bloom pass scenes
-  const bloomExtractPass = useMemo(
-    () =>
-      makePassScene(fsGeometry, BLOOM_EXTRACT_FRAGMENT, {
-        inputBuffer: { value: null },
-        luminanceThreshold: { value: bloomThreshold },
-        luminanceSmoothing: { value: bloomSmoothing },
-      }),
-    [fsGeometry]
-  );
-
+  // Bloom pass scenes (no extract pass — layer isolation replaces it)
   const bloomBlurHPass = useMemo(
     () =>
       makePassScene(fsGeometry, BLOOM_BLUR_FRAGMENT, {
@@ -145,24 +135,25 @@ export default function WaterColorEffect({
     gl.clear();
     gl.render(scene, camera);
 
-    // 1b — Optional bloom: extract → blur → composite back onto scene
+    // 1b — Optional selective bloom: render bloom layer → blur → composite
     const sceneTexture = bloomEnabled
       ? (() => {
           const res = resolutionRef.current;
-          // Extract bright pixels
-          bloomExtractPass.material.uniforms.inputBuffer.value =
-            originalTarget.texture;
-          bloomExtractPass.material.uniforms.luminanceThreshold.value =
-            bloomThreshold;
-          bloomExtractPass.material.uniforms.luminanceSmoothing.value =
-            bloomSmoothing;
-          gl.setRenderTarget(bloomExtractTarget);
+
+          // Render only bloom-layer objects onto a black background
+          const prevBg = scene.background;
+          scene.background = null;
+          camera.layers.set(BLOOM_LAYER);
+          gl.setRenderTarget(bloomLayerTarget);
+          gl.setClearColor(0x000000, 1);
           gl.clear();
-          gl.render(bloomExtractPass.scene, fsCamera);
+          gl.render(scene, camera);
+          camera.layers.set(0);
+          scene.background = prevBg;
 
           // Horizontal blur
           bloomBlurHPass.material.uniforms.inputBuffer.value =
-            bloomExtractTarget.texture;
+            bloomLayerTarget.texture;
           bloomBlurHPass.material.uniforms.resolution.value.set(res.x, res.y);
           gl.setRenderTarget(bloomBlurHTarget);
           gl.clear();

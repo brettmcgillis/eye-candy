@@ -6,6 +6,7 @@ import STAYING_AFLOAT_SPLINES from '../../../../../presets/spline/stayingAfloatS
 import HammerHead from '../../../../elements/hammerHead/HammerHead';
 import TigerShark from '../../../../elements/tigerShark/TigerShark';
 import NurbsWaterColumn from '../../../../elements/water/NurbsWaterColumn';
+import WaterColorEffect from '../../../../postprocessing/waterColorEffect/WaterColorEffect';
 import FloatingPreserver from './components/FloatingPreserver';
 import SplineShark from './components/SplineShark';
 import useStayingAfloatControls from './hooks/useStayingAfloatControls';
@@ -119,6 +120,18 @@ export default function StayingAfloat() {
         showSpline={controls.tiger2SplineVisible}
         sharkProps={{ excludeAnimations: ['attack'] }}
       />
+
+      {controls.painterlyEnabled && (
+        <WaterColorEffect
+          radius={controls.painterlyRadius}
+          alpha={controls.painterlyAlpha}
+          quantizeLevels={controls.painterlyQuantize}
+          saturation={controls.painterlySaturation}
+          paperStrength={controls.painterlyPaper}
+          bloomEnabled={controls.bloomEnabled}
+          bloomIntensity={controls.bloomIntensity}
+        />
+      )}
     </>
   );
 }

@@ -44,6 +44,16 @@ const DEFAULTS = {
   tiger2Scale: 0.003,
   tiger2Speed: 0.06,
   tiger2SplineVisible: false,
+
+  // Post Processing
+  painterlyEnabled: true,
+  painterlyRadius: 6,
+  painterlyAlpha: 25,
+  painterlyQuantize: 16,
+  painterlySaturation: 1.5,
+  painterlyPaper: 1.0,
+  bloomEnabled: true,
+  bloomIntensity: 1.2,
 };
 
 export default function useStayingAfloatControls() {
@@ -273,6 +283,62 @@ export default function useStayingAfloatControls() {
             },
             { collapsed: true }
           ),
+        },
+        { collapsed: true }
+      ),
+
+      'Post Processing': folder(
+        {
+          painterlyEnabled: {
+            label: 'Painterly',
+            value: DEFAULTS.painterlyEnabled,
+          },
+          painterlyRadius: {
+            label: 'Painterly Radius',
+            value: DEFAULTS.painterlyRadius,
+            min: 1,
+            max: 10,
+            step: 1,
+          },
+          painterlyAlpha: {
+            label: 'Stroke Direction',
+            value: DEFAULTS.painterlyAlpha,
+            min: 1,
+            max: 100,
+            step: 1,
+          },
+          painterlyQuantize: {
+            label: 'Quantize Levels',
+            value: DEFAULTS.painterlyQuantize,
+            min: 2,
+            max: 32,
+            step: 1,
+          },
+          painterlySaturation: {
+            label: 'Saturation',
+            value: DEFAULTS.painterlySaturation,
+            min: 0,
+            max: 3,
+            step: 0.05,
+          },
+          painterlyPaper: {
+            label: 'Paper Strength',
+            value: DEFAULTS.painterlyPaper,
+            min: 0,
+            max: 1,
+            step: 0.05,
+          },
+          bloomEnabled: {
+            label: 'Bloom',
+            value: DEFAULTS.bloomEnabled,
+          },
+          bloomIntensity: {
+            label: 'Bloom Intensity',
+            value: DEFAULTS.bloomIntensity,
+            min: 0,
+            max: 6,
+            step: 0.01,
+          },
         },
         { collapsed: true }
       ),

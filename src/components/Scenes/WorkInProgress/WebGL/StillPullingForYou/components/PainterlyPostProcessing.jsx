@@ -258,7 +258,7 @@ export default function PainterlyPostProcessing({
   paperTexture.generateMipmaps = true;
 
   // Render targets
-  const originalTarget = useFBO({ depthBuffer: false });
+  const originalTarget = useFBO({ depthBuffer: true });
   const tensorTarget = useFBO({
     depthBuffer: false,
     type: THREE.HalfFloatType,

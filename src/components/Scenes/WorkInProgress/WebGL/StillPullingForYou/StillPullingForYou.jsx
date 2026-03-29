@@ -234,6 +234,10 @@ export default function StillPullingForYou() {
           quantizeLevels={config.painterlyQuantize}
           saturation={config.painterlySaturation}
           paperStrength={config.painterlyPaper}
+          bloomEnabled={config.bloomEnabled}
+          bloomIntensity={config.bloomIntensity}
+          bloomThreshold={config.bloomLuminanceThreshold}
+          bloomSmoothing={config.bloomLuminanceSmoothing}
         />
       )}
       {!config.painterlyEnabled && config.bloomEnabled && (

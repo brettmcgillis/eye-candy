@@ -11,9 +11,6 @@ import FloatingPreserver from './components/FloatingPreserver';
 import SplineShark from './components/SplineShark';
 import useStayingAfloatControls from './hooks/useStayingAfloatControls';
 
-const COLUMN_SIZE = 3.6;
-const COLUMN_HEIGHT = 6.0;
-
 export default function StayingAfloat() {
   const controls = useStayingAfloatControls();
 
@@ -68,9 +65,10 @@ export default function StayingAfloat() {
       />
 
       <NurbsWaterColumn
-        width={COLUMN_SIZE}
-        depth={COLUMN_SIZE}
-        height={COLUMN_HEIGHT}
+        width={controls.columnWidth}
+        depth={controls.columnDepth}
+        height={controls.columnHeight}
+        segments={controls.segments}
         topColor={controls.topColor}
         bottomColor={controls.bottomColor}
         opacity={controls.opacity}
@@ -81,6 +79,10 @@ export default function StayingAfloat() {
         waveHeight={controls.waveHeight}
         waveChoppiness={controls.waveChoppiness}
         waveSpeed={controls.waveSpeed}
+        edgeColor={controls.edgeColor}
+        edgeOpacity={controls.edgeOpacity}
+        edgeLineWidth={controls.edgeLineWidth}
+        showEdges={controls.showEdges}
       />
       <FloatingPreserver
         waveHeight={controls.waveHeight}

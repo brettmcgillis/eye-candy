@@ -16,16 +16,24 @@ const DEFAULTS = {
   fillLightColor: '#d9f2ff',
 
   // Water
+  columnWidth: 3.6,
+  columnDepth: 3.6,
+  columnHeight: 6.0,
+  segments: 24,
   topColor: '#9edff0',
   bottomColor: '#246f98',
-  opacity: 0.34,
-  transmission: 0.5,
-  roughness: 0.3,
-  ior: 1.12,
-  thickness: 0.35,
+  opacity: 1,
+  transmission: 0.31,
+  roughness: 0,
+  ior: 2,
+  thickness: 0.24,
   waveHeight: 0.15,
   waveChoppiness: 0.5,
   waveSpeed: 0.6,
+  edgeColor: '#333333',
+  edgeOpacity: 1,
+  edgeLineWidth: 3.5,
+  showEdges: true,
 
   // HammerHead
   hammerheadVisible: true,
@@ -47,7 +55,7 @@ const DEFAULTS = {
 
   // Post Processing
   painterlyEnabled: true,
-  painterlyRadius: 6,
+  painterlyRadius: 2,
   painterlyAlpha: 25,
   painterlyQuantize: 16,
   painterlySaturation: 1.5,
@@ -140,6 +148,33 @@ export default function useStayingAfloatControls() {
 
       Water: folder(
         {
+          columnWidth: {
+            label: 'Width',
+            value: DEFAULTS.columnWidth,
+            min: 0.5,
+            max: 10,
+            step: 0.1,
+          },
+          columnDepth: {
+            label: 'Depth',
+            value: DEFAULTS.columnDepth,
+            min: 0.5,
+            max: 10,
+            step: 0.1,
+          },
+          columnHeight: {
+            label: 'Height',
+            value: DEFAULTS.columnHeight,
+            min: 0.5,
+            max: 12,
+            step: 0.1,
+          },
+          segments: {
+            value: DEFAULTS.segments,
+            min: 4,
+            max: 64,
+            step: 1,
+          },
           topColor: { label: 'Top Color', value: DEFAULTS.topColor },
           bottomColor: { label: 'Bottom Color', value: DEFAULTS.bottomColor },
           opacity: { value: DEFAULTS.opacity, min: 0, max: 1, step: 0.01 },
@@ -179,6 +214,33 @@ export default function useStayingAfloatControls() {
             max: 2,
             step: 0.01,
           },
+          Edges: folder(
+            {
+              showEdges: {
+                label: 'Show Edges',
+                value: DEFAULTS.showEdges,
+              },
+              edgeColor: {
+                label: 'Edge Color',
+                value: DEFAULTS.edgeColor,
+              },
+              edgeOpacity: {
+                label: 'Edge Opacity',
+                value: DEFAULTS.edgeOpacity,
+                min: 0,
+                max: 1,
+                step: 0.01,
+              },
+              edgeLineWidth: {
+                label: 'Line Width',
+                value: DEFAULTS.edgeLineWidth,
+                min: 0.1,
+                max: 5,
+                step: 0.1,
+              },
+            },
+            { collapsed: true }
+          ),
         },
         { collapsed: true }
       ),

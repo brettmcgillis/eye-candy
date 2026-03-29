@@ -1,9 +1,17 @@
 import * as THREE from 'three';
-import { NURBSSurface, ParametricGeometry } from 'three-stdlib';
+import {
+  Line2,
+  LineGeometry,
+  LineMaterial,
+  NURBSSurface,
+  ParametricGeometry,
+} from 'three-stdlib';
 
 import React, { useMemo, useRef } from 'react';
 
-import { useFrame } from '@react-three/fiber';
+import { extend, useFrame } from '@react-three/fiber';
+
+extend({ Line2 });
 
 // ── Gerstner wave constants (shared between GPU + CPU) ──────────────
 
@@ -271,14 +279,24 @@ const EDGE_SEGS = 32; // subdivisions per top edge for smooth wave following
 
 function buildEdgeGeometries(hw, hd, topY, botY) {
   // Bottom rectangle (static, closed loop)
-  const bottomPts = [
-    new THREE.Vector3(-hw, botY, -hd),
-    new THREE.Vector3(hw, botY, -hd),
-    new THREE.Vector3(hw, botY, hd),
-    new THREE.Vector3(-hw, botY, hd),
-    new THREE.Vector3(-hw, botY, -hd),
-  ];
-  const bottomGeo = new THREE.BufferGeometry().setFromPoints(bottomPts);
+  const bottomGeo = new LineGeometry();
+  bottomGeo.setPositions([
+    -hw,
+    botY,
+    -hd,
+    hw,
+    botY,
+    -hd,
+    hw,
+    botY,
+    hd,
+    -hw,
+    botY,
+    hd,
+    -hw,
+    botY,
+    -hd,
+  ]);
 
   // 4 vertical corner lines (bottom → top, updated each frame at top end)
   const corners = [
@@ -288,10 +306,8 @@ function buildEdgeGeometries(hw, hd, topY, botY) {
     [-hw, hd],
   ];
   const vertGeos = corners.map(([cx, cz]) => {
-    const geo = new THREE.BufferGeometry().setFromPoints([
-      new THREE.Vector3(cx, botY, cz),
-      new THREE.Vector3(cx, topY, cz),
-    ]);
+    const geo = new LineGeometry();
+    geo.setPositions([cx, botY, cz, cx, topY, cz]);
     return { geo, cx, cz };
   });
 
@@ -303,18 +319,17 @@ function buildEdgeGeometries(hw, hd, topY, botY) {
     { x0: -hw, z0: hd, x1: -hw, z1: -hd }, // left
   ];
   const topGeos = topEdges.map((edge) => {
-    const pts = [];
+    const positions = [];
     for (let i = 0; i <= EDGE_SEGS; i += 1) {
       const t = i / EDGE_SEGS;
-      pts.push(
-        new THREE.Vector3(
-          edge.x0 + (edge.x1 - edge.x0) * t,
-          topY,
-          edge.z0 + (edge.z1 - edge.z0) * t
-        )
+      positions.push(
+        edge.x0 + (edge.x1 - edge.x0) * t,
+        topY,
+        edge.z0 + (edge.z1 - edge.z0) * t
       );
     }
-    const geo = new THREE.BufferGeometry().setFromPoints(pts);
+    const geo = new LineGeometry();
+    geo.setPositions(positions);
     return { geo, edge };
   });
 
@@ -340,6 +355,7 @@ export default function NurbsWaterColumn({
   waveSpeed = 0.6,
   edgeColor = '#1f4455',
   edgeOpacity = 0.65,
+  edgeLineWidth = 1,
   showEdges = true,
 }) {
   const timeRef = useRef(0);
@@ -373,7 +389,7 @@ export default function NurbsWaterColumn({
       ior,
       thickness,
       side: THREE.FrontSide,
-      depthWrite: false,
+      depthWrite: true,
     });
 
     // eslint-disable-next-line no-param-reassign
@@ -415,7 +431,18 @@ export default function NurbsWaterColumn({
     return buildEdgeGeometries(hw, hd, height / 2, -height / 2);
   }, [showEdges, width, height, depth]);
 
-  useFrame((_, delta) => {
+  const edgeMat = useMemo(
+    () =>
+      new LineMaterial({
+        transparent: true,
+        depthTest: true,
+        depthWrite: false,
+        toneMapped: false,
+      }),
+    []
+  );
+
+  useFrame((state, delta) => {
     timeRef.current += delta;
     uniforms.uTime.value = timeRef.current;
     uniforms.uWaveHeight.value = waveHeight;
@@ -423,12 +450,21 @@ export default function NurbsWaterColumn({
     uniforms.uWaveSpeed.value = waveSpeed;
     waveTime = timeRef.current;
 
+    // Update edge material properties imperatively to avoid re-creating it
+    if (showEdges && edgeMat) {
+      edgeMat.color.set(edgeColor);
+      edgeMat.opacity = edgeOpacity;
+      edgeMat.linewidth = edgeLineWidth;
+      edgeMat.resolution.set(state.size.width, state.size.height);
+    }
+
     // Animate top edges + vertical corner tops to follow waves
     if (edgeData) {
       const topY = height / 2;
+      const botY = -height / 2;
       // Update top edge subdivisions
       edgeData.topGeos.forEach(({ geo, edge }) => {
-        const pos = geo.attributes.position;
+        const positions = [];
         for (let i = 0; i <= EDGE_SEGS; i += 1) {
           const t = i / EDGE_SEGS;
           const px = edge.x0 + (edge.x1 - edge.x0) * t;
@@ -440,13 +476,12 @@ export default function NurbsWaterColumn({
             waveChoppiness,
             waveSpeed
           );
-          pos.setY(i, topY + wY);
+          positions.push(px, topY + wY, pz);
         }
-        pos.needsUpdate = true;
+        geo.setPositions(positions);
       });
-      // Update vertical corner top-end vertex (index 1)
+      // Update vertical corner top-end vertex
       edgeData.vertGeos.forEach(({ geo, cx, cz }) => {
-        const pos = geo.attributes.position;
         const wY = sampleWaveHeight(
           cx,
           cz,
@@ -454,8 +489,7 @@ export default function NurbsWaterColumn({
           waveChoppiness,
           waveSpeed
         );
-        pos.setY(1, topY + wY);
-        pos.needsUpdate = true;
+        geo.setPositions([cx, botY, cz, cx, topY + wY, cz]);
       });
     }
   });
@@ -470,35 +504,14 @@ export default function NurbsWaterColumn({
       {showEdges && edgeData && (
         <>
           {/* eslint-disable react/no-unknown-property */}
-          <line geometry={edgeData.bottomGeo}>
-            <lineBasicMaterial
-              color={edgeColor}
-              transparent
-              opacity={edgeOpacity}
-              toneMapped={false}
-            />
-          </line>
+          <line2 geometry={edgeData.bottomGeo} material={edgeMat} />
           {edgeData.vertGeos.map(({ geo }, i) => (
             // eslint-disable-next-line react/no-array-index-key
-            <line key={`v${i}`} geometry={geo}>
-              <lineBasicMaterial
-                color={edgeColor}
-                transparent
-                opacity={edgeOpacity}
-                toneMapped={false}
-              />
-            </line>
+            <line2 key={`v${i}`} geometry={geo} material={edgeMat} />
           ))}
           {edgeData.topGeos.map(({ geo }, i) => (
             // eslint-disable-next-line react/no-array-index-key
-            <line key={`t${i}`} geometry={geo}>
-              <lineBasicMaterial
-                color={edgeColor}
-                transparent
-                opacity={edgeOpacity}
-                toneMapped={false}
-              />
-            </line>
+            <line2 key={`t${i}`} geometry={geo} material={edgeMat} />
           ))}
           {/* eslint-enable react/no-unknown-property */}
         </>

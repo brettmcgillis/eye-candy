@@ -67,6 +67,8 @@ const STILL_PULLING = {
   bloomLuminanceThreshold: 0.6,
   bloomLuminanceSmoothing: 0.3,
   bloomRadius: 0.4,
+  painterlyEnabled: false,
+  painterlyRadius: 6,
 };
 
 const ROUGH_WATERS = {
@@ -135,6 +137,8 @@ const ROUGH_WATERS = {
   bloomLuminanceThreshold: 0.65,
   bloomLuminanceSmoothing: 0.35,
   bloomRadius: 0.35,
+  painterlyEnabled: false,
+  painterlyRadius: 6,
 };
 
 const SUNK = {
@@ -203,6 +207,8 @@ const SUNK = {
   bloomLuminanceThreshold: 0.7,
   bloomLuminanceSmoothing: 0.4,
   bloomRadius: 0.3,
+  painterlyEnabled: false,
+  painterlyRadius: 6,
 };
 
 export const SCENE_PRESETS = {

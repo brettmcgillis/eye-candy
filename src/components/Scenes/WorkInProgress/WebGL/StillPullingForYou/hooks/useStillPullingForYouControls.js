@@ -1150,6 +1150,17 @@ export default function useStillPullingForYouControls(
             max: 1,
             step: 0.01,
           },
+          painterlyEnabled: {
+            label: 'Painterly',
+            value: D.painterlyEnabled,
+          },
+          painterlyRadius: {
+            label: 'Painterly Radius',
+            value: D.painterlyRadius,
+            min: 1,
+            max: 10,
+            step: 1,
+          },
         },
         { collapsed: true }
       ),

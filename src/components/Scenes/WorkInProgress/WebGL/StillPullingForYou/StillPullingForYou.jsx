@@ -9,6 +9,7 @@ import { Bloom, EffectComposer } from '@react-three/postprocessing';
 import STILL_PULLING_FOR_YOU_SMOKE from '../../../../../presets/smoke/stillPullingForYouSmoke';
 import NurbsWaterColumn from '../../../../elements/water/NurbsWaterColumn';
 import FloatingTugboat from './components/FloatingTugboat';
+import PainterlyPostProcessing from './components/PainterlyPostProcessing';
 import Seafloor from './components/Seafloor';
 import SinkingTugboat from './components/SinkingTugboat';
 import SmokeSplineGroup from './components/SmokeSplineGroup';
@@ -225,8 +226,11 @@ export default function StillPullingForYou() {
           showEdges={false}
         />
       )}
-      {/* Bloom */}
-      {config.bloomEnabled && (
+      {/* Post Processing */}
+      {config.painterlyEnabled && (
+        <PainterlyPostProcessing radius={config.painterlyRadius} />
+      )}
+      {!config.painterlyEnabled && config.bloomEnabled && (
         <EffectComposer disableNormalPass>
           <Bloom
             intensity={config.bloomIntensity}

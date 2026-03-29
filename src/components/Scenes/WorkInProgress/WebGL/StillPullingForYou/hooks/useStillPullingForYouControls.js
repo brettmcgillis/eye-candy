@@ -1037,6 +1037,39 @@ export default function useStillPullingForYouControls(
             label: 'Visible',
             value: D.waterVisible,
           },
+          Dimensions: folder(
+            {
+              waterWidth: {
+                label: 'Width',
+                value: D.waterWidth,
+                min: 0.5,
+                max: 20,
+                step: 0.1,
+              },
+              waterDepth: {
+                label: 'Depth',
+                value: D.waterDepth,
+                min: 0.5,
+                max: 20,
+                step: 0.1,
+              },
+              waterHeight: {
+                label: 'Height',
+                value: D.waterHeight,
+                min: 0.5,
+                max: 20,
+                step: 0.1,
+              },
+              waterSegments: {
+                label: 'Segments',
+                value: D.waterSegments,
+                min: 4,
+                max: 64,
+                step: 1,
+              },
+            },
+            { collapsed: true }
+          ),
           waterTopColor: { label: 'Top Color', value: D.waterTopColor },
           waterBottomColor: {
             label: 'Bottom Color',
@@ -1049,6 +1082,13 @@ export default function useStillPullingForYouControls(
             max: 1,
             step: 0.01,
           },
+          waterTransmission: {
+            label: 'Transmission',
+            value: D.waterTransmission,
+            min: 0,
+            max: 1,
+            step: 0.01,
+          },
           waterRoughness: {
             label: 'Roughness',
             value: D.waterRoughness,
@@ -1056,27 +1096,66 @@ export default function useStillPullingForYouControls(
             max: 1,
             step: 0.01,
           },
-          waveHeight: {
-            label: 'Wave Height',
-            value: D.waveHeight,
-            min: 0,
-            max: 0.5,
-            step: 0.005,
-          },
-          waveChoppiness: {
-            label: 'Choppiness',
-            value: D.waveChoppiness,
-            min: 0,
-            max: 2,
+          waterIor: {
+            label: 'IOR',
+            value: D.waterIor,
+            min: 1,
+            max: 2.5,
             step: 0.01,
           },
-          waveSpeed: {
-            label: 'Wave Speed',
-            value: D.waveSpeed,
+          waterThickness: {
+            label: 'Thickness',
+            value: D.waterThickness,
             min: 0,
-            max: 2,
-            step: 0.01,
+            max: 5,
+            step: 0.05,
           },
+          Waves: folder(
+            {
+              waveHeight: {
+                label: 'Height',
+                value: D.waveHeight,
+                min: 0,
+                max: 0.5,
+                step: 0.005,
+              },
+              waveChoppiness: {
+                label: 'Choppiness',
+                value: D.waveChoppiness,
+                min: 0,
+                max: 2,
+                step: 0.01,
+              },
+              waveSpeed: {
+                label: 'Speed',
+                value: D.waveSpeed,
+                min: 0,
+                max: 2,
+                step: 0.01,
+              },
+            },
+            { collapsed: true }
+          ),
+          Edges: folder(
+            {
+              waterShowEdges: {
+                label: 'Show Edges',
+                value: D.waterShowEdges,
+              },
+              waterEdgeColor: {
+                label: 'Edge Color',
+                value: D.waterEdgeColor,
+              },
+              waterEdgeOpacity: {
+                label: 'Edge Opacity',
+                value: D.waterEdgeOpacity,
+                min: 0,
+                max: 1,
+                step: 0.01,
+              },
+            },
+            { collapsed: true }
+          ),
         },
         { collapsed: true }
       ),

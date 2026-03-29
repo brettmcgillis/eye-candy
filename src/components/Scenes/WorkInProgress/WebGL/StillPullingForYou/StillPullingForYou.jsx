@@ -210,9 +210,10 @@ export default function StillPullingForYou() {
       {/* NURBS water column */}
       {config.waterVisible && (
         <NurbsWaterColumn
-          width={4.0}
-          depth={4.0}
-          height={2.0}
+          width={config.waterWidth}
+          depth={config.waterDepth}
+          height={config.waterHeight}
+          segments={config.waterSegments}
           topColor={config.waterTopColor}
           bottomColor={config.waterBottomColor}
           opacity={config.waterOpacity}
@@ -223,7 +224,9 @@ export default function StillPullingForYou() {
           waveHeight={config.waveHeight}
           waveChoppiness={config.waveChoppiness}
           waveSpeed={config.waveSpeed}
-          showEdges={false}
+          showEdges={config.waterShowEdges}
+          edgeColor={config.waterEdgeColor}
+          edgeOpacity={config.waterEdgeOpacity}
         />
       )}
       {/* Post Processing */}

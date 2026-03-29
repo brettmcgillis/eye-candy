@@ -43,6 +43,10 @@ const STILL_PULLING = {
 
   // Water — wavy
   waterVisible: true,
+  waterWidth: 4.0,
+  waterDepth: 4.0,
+  waterHeight: 2.0,
+  waterSegments: 24,
   waterTopColor: '#2a7f8f',
   waterBottomColor: '#1a5060',
   waterOpacity: 0.85,
@@ -53,6 +57,9 @@ const STILL_PULLING = {
   waveHeight: 0.08,
   waveChoppiness: 0.5,
   waveSpeed: 0.6,
+  waterShowEdges: false,
+  waterEdgeColor: '#1f4455',
+  waterEdgeOpacity: 0.65,
 
   // Seafloor — hidden
   seafloorVisible: false,
@@ -117,6 +124,10 @@ const ROUGH_WATERS = {
 
   // Water — very wavy
   waterVisible: true,
+  waterWidth: 4.0,
+  waterDepth: 4.0,
+  waterHeight: 2.0,
+  waterSegments: 24,
   waterTopColor: '#2a7f8f',
   waterBottomColor: '#1a5060',
   waterOpacity: 0.8,
@@ -127,6 +138,9 @@ const ROUGH_WATERS = {
   waveHeight: 0.19,
   waveChoppiness: 1.13,
   waveSpeed: 0.9,
+  waterShowEdges: false,
+  waterEdgeColor: '#1f4455',
+  waterEdgeOpacity: 0.65,
 
   // Seafloor — hidden
   seafloorVisible: false,
@@ -191,6 +205,10 @@ const SUNK = {
 
   // Water — calm
   waterVisible: true,
+  waterWidth: 4.0,
+  waterDepth: 4.0,
+  waterHeight: 2.0,
+  waterSegments: 24,
   waterTopColor: '#3a8a96',
   waterBottomColor: '#1a4a58',
   waterOpacity: 0.9,
@@ -201,6 +219,9 @@ const SUNK = {
   waveHeight: 0.13,
   waveChoppiness: 0.4,
   waveSpeed: 0.25,
+  waterShowEdges: false,
+  waterEdgeColor: '#1f4455',
+  waterEdgeOpacity: 0.65,
 
   // Seafloor — visible
   seafloorVisible: true,

@@ -265,7 +265,7 @@ void main() {
 
 export default function Fireball({
   position = [0, 0, 0],
-  radius = 1.0,
+  radius = 20,
   detail = 5,
   speed = 1.0,
   weight = 10.0,

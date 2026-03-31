@@ -117,7 +117,7 @@ export default function useFireTestControls() {
           },
           { collapsed: true }
         ),
-        fbRadius: { label: 'Radius', value: 80, min: 5, max: 400, step: 1 },
+        fbRadius: { label: 'Radius', value: 20, min: 5, max: 400, step: 1 },
         fbDetail: { label: 'Detail', value: 5, min: 1, max: 7, step: 1 },
         fbSpeed: { label: 'Speed', value: 1.0, min: 0, max: 5, step: 0.05 },
         fbWeight: {

@@ -73,16 +73,14 @@ const vertexShader = /* glsl */ `
 const fragmentShader = /* glsl */ `
   precision highp float;
 
-  // cameraPosition injected automatically by Three.js
   uniform float     uTime;
-  uniform float     uRotSpeed;   // noise-field rotation rate
-  uniform float     uNoiseScale; // noise zoom — smaller = finer detail
-  uniform mat4      uInvWorld;   // world → object-space transform
-  uniform sampler2D uNoiseTex;   // 256×256 RGBA hash-noise (replaces iChannel0)
-  uniform int       uSteps;      // raymarch step budget
-  uniform float     uDensity;    // overall density multiplier
+  uniform float     uRotSpeed;
+  uniform float     uNoiseScale;
+  uniform mat4      uInvWorld;
+  uniform sampler2D uNoiseTex;
+  uniform int       uSteps;
+  uniform float     uDensity;
 
-  // HDR colour params: final colour = base * mix(core * coreI, edge * edgeI, t)
   uniform vec3  uCoreColor;
   uniform float uCoreIntensity;
   uniform vec3  uEdgeColor;
@@ -91,8 +89,6 @@ const fragmentShader = /* glsl */ `
   varying vec3 vWorldPos;
 
   // ── iq's hash noise via texture lookup ──────────────────────────────────
-  // Maps a 3-D point to a 2-D tile coordinate; R+G channels provide the
-  // two independent gradient seeds needed for Z interpolation.
   float noise(vec3 x) {
     vec3 p = floor(x);
     vec3 f = fract(x);
@@ -102,7 +98,7 @@ const fragmentShader = /* glsl */ `
     return 1.0 - 0.82 * mix(rg.x, rg.y, f.z);
   }
 
-  // 4-octave fBm — adds fine turbulent wisps on top of the spiral shape
+  // 4-octave fBm
   float fbm(vec3 p) {
     return noise(p * 0.06125) * 0.5
          + noise(p * 0.125)   * 0.25
@@ -110,48 +106,46 @@ const fragmentShader = /* glsl */ `
          + noise(p * 0.4)     * 0.2;
   }
 
-  // ── otaviogood's SpiralNoiseC ────────────────────────────────────────────
-  // Builds noise from successively rotated sin/cos waves.  Cheaper than
-  // Perlin and avoids axis-aligned artefacts.
+  // Sphere SDF (matches original)
+  float Sphere(vec3 p, float r) {
+    return length(p) - r;
+  }
+
+  // ── otaviogood's SpiralNoiseC (matches original) ────────────────────────
+  const float nudge = 4.0;
+  const float normalizer = 1.0 / sqrt(1.0 + nudge * nudge);
+
   float SpiralNoiseC(vec3 p) {
-    float n    = 0.0;
-    float iter = 1.0;
+    float n    = mod(-uTime * 0.2, 2.0);
+    float iter = 2.0;
     for (int i = 0; i < 8; i++) {
       n    += -abs(sin(p.y * iter) + cos(p.x * iter)) / iter;
-      // Add perpendicular component then normalise (Pythagorean: 1/sqrt(1+4²))
-      p.xy += vec2(p.y, -p.x) * 4.0 / iter;
-      p.xy *= 0.24254 / iter;
-      p.xz += vec2(p.z, -p.x) * 4.0 / iter;
-      p.xz *= 0.24254 / iter;
+      p.xy += vec2(p.y, -p.x) * nudge;
+      p.xy *= normalizer;
+      p.xz += vec2(p.z, -p.x) * nudge;
+      p.xz *= normalizer;
       iter *= 1.733733;
     }
     return n;
   }
 
-  // ── Duke's volumetric explosion density field ────────────────────────────
-  // Different axis swizzles produce different SpiralNoiseC outputs; their
-  // pairwise differences carve out the asymmetric turbulent fireball shape.
+  // ── Duke's volumetric explosion density field (matches original) ────────
   float VolumetricExplosion(vec3 p) {
-    float f  = SpiralNoiseC(p.zxy * 0.5132 + 333.0) * 3.0;
-    f -= SpiralNoiseC(p.zxy * 0.5132 + 333.0) * 3.0; // cancel — baseline offset
-    f += SpiralNoiseC(p.yxy * 0.13212 + 1111.0);
-    f -= SpiralNoiseC(p.xyz * 0.13212 + 1111.0);      // yxy vs xyz → asymmetry
-    f += SpiralNoiseC(p.zxy * 0.5) * 3.0;
-    f -= SpiralNoiseC(p.yxz * 0.5) * 3.0;             // zxy vs yxz → main shape
-    f += fbm(p * 50.0);                                // fine turbulent detail
-    f += SpiralNoiseC(p.zxy * 0.4132 + 333.0) * 3.0;  // low-freq bulk mass
+    float f = Sphere(p, 1.4);
+    f += fbm(p * 50.0);
+    f += SpiralNoiseC(p.zxy * 0.4132 + 333.0) * 3.0;
     return f;
   }
 
-  // Slow rotation of the noise field over time, matching original iTime*0.1
-  float mapDensity(vec3 p) {
+  // Rotation of the noise field over time
+  float map(vec3 p) {
     float c = cos(uTime * uRotSpeed);
     float s = sin(uTime * uRotSpeed);
     p.xz = vec2(c * p.x + s * p.z, -s * p.x + c * p.z);
-    return VolumetricExplosion(p / uNoiseScale);
+    return VolumetricExplosion(p / uNoiseScale) * uNoiseScale;
   }
 
-  // ── Ray-sphere intersection (sphere at origin, radius r) ─────────────────
+  // ── Ray-sphere intersection ──────────────────────────────────────────────
   bool raySphere(vec3 ro, vec3 rd, float r, out float near, out float far) {
     float b   = dot(-ro, rd);
     float det = b * b - dot(ro, ro) + r * r;
@@ -162,64 +156,92 @@ const fragmentShader = /* glsl */ `
     return far > 0.0;
   }
 
-  // ── Colour from accumulated density + normalised radius ───────────────────
-  // Matches original computeColor: warm/white inner → dark outer density
-  // gradient multiplied by a radial HDR core-to-edge colour gradient.
+  // ── Colour from accumulated density + distance (matches original) ───────
   vec3 computeColor(float td, float radius) {
     vec3 base = mix(vec3(1.0, 0.9, 0.8), vec3(0.4, 0.15, 0.1), td);
     vec3 core = uCoreColor * uCoreIntensity;
     vec3 edge = uEdgeColor * uEdgeIntensity;
-    return base * mix(core, edge, min(1.0, 2.4 * radius));
+    return base * mix(core, edge, min((radius + 0.05) / 0.9, 1.15));
   }
 
-  // ── Main ─────────────────────────────────────────────────────────────────
+  // ── Main (front-to-back compositing, matches original) ──────────────────
   void main() {
-    // Build ray in world space then transform to object space (unit sphere)
     vec3 wRo = cameraPosition;
     vec3 wRd = normalize(vWorldPos - cameraPosition);
     vec3 oRo = (uInvWorld * vec4(wRo, 1.0)).xyz;
     vec3 oRd = normalize((uInvWorld * vec4(wRd, 0.0)).xyz);
 
-    // Intersect the unit sphere in object space
     float minT, maxT;
     if (!raySphere(oRo, oRd, 1.0, minT, maxT)) discard;
 
     float t   = max(minT, 0.0);
     float td  = 0.0;
-    float d   = 1.0; // initialised to 1 so the first iteration's break check passes
+    float ld  = 0.0;
+    float w   = 0.0;
+    float d   = 1.0;
     vec4  sum = vec4(0.0);
 
-    const float h = 0.1; // density scale factor (matches original)
+    const float h = 0.1;
 
     for (int i = 0; i < 128; i++) {
       if (i >= uSteps) break;
-      if (td > 0.9)    break;
-      // Check previous iteration's d — exits near-zero / negative field regions
-      // immediately, preventing negative-weight accumulation after the fireball
-      // interior that would drag sum back to black. Matches original shader logic.
-      if (d  < 0.001)  break;
-      if (t  > maxT)   break;
 
       vec3 pos = oRo + t * oRd;
-      d = mapDensity(pos) * h;
 
-      if (d < 0.08) {
-        float w  = (1.0 - td) * d * uDensity;
-        td      += w + 0.005;
-        // radius is normalised to [0,1] since this is a unit sphere
-        float r  = length(pos);
-        vec4  col = vec4(computeColor(td, r), td);
-        // Sub-pixel dithering — breaks up colour banding
-        col.rgb  += (1.0 / 255.0) * fract(0.75487766 * vWorldPos.x
-                                         + 0.56984029 * vWorldPos.y);
-        sum += col * w;
+      if (td > 0.9 || sum.a > 0.99 || t > maxT) break;
+
+      d = map(pos);
+
+      // clamp density — prevents negative weight
+      d = max(d, 0.03);
+
+      // point light at origin — bloom contribution
+      vec3  ldst = -pos;
+      float lDist = max(length(ldst), 0.001);
+      vec3  lightColor = vec3(1.0, 0.5, 0.25);
+      sum.rgb += lightColor / exp(lDist * lDist * lDist * 0.08) / 30.0;
+
+      if (d < h) {
+        // local density (inverted: thinner shell = higher density)
+        ld = h - d;
+
+        // weighting factor
+        w = (1.0 - td) * ld;
+
+        // accumulate total density
+        td += w + 1.0 / 200.0;
+
+        vec4 col = vec4(computeColor(td, lDist), td);
+
+        // emission
+        sum += sum.a * vec4(sum.rgb, 0.0) * 0.2 / lDist;
+
+        // uniform scale density & premultiply
+        col.a *= 0.2 * uDensity;
+        col.rgb *= col.a;
+
+        // front-to-back alpha blend
+        sum = sum + col * (1.0 - sum.a);
       }
 
-      // SDF-guided step: move faster through sparse regions
-      t += max(d, 0.02);
+      td += 1.0 / 70.0;
+
+      // dithering — breaks up colour banding
+      d = abs(d) * (0.8 + 0.08 * fract(0.75487766 * vWorldPos.x
+                                      + 0.56984029 * vWorldPos.y));
+
+      // adaptive step size (matches original)
+      t += max(d * 0.08 * max(min(lDist, d), 2.0), 0.01);
     }
 
+    // simple scattering
+    sum *= 1.0 / exp(ld * 0.2) * 0.8;
+
     sum = clamp(sum, 0.0, 1.0);
+
+    // S-curve contrast boost (matches original)
+    sum.xyz = sum.xyz * sum.xyz * (3.0 - 2.0 * sum.xyz);
+
     if (sum.a < 0.001) discard;
     gl_FragColor = sum;
   }

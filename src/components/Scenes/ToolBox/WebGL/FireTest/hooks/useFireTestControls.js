@@ -441,21 +441,21 @@ export default function useFireTestControls() {
           {
             fvPosX: {
               label: 'X',
-              value: -500,
+              value: 700,
               min: -1500,
               max: 1500,
               step: 1,
             },
             fvPosY: {
               label: 'Y',
-              value: 100,
+              value: 0,
               min: -500,
               max: 1000,
               step: 1,
             },
             fvPosZ: {
               label: 'Z',
-              value: 350,
+              value: 0,
               min: -500,
               max: 500,
               step: 1,

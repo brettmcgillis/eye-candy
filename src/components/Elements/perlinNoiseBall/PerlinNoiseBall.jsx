@@ -16,6 +16,10 @@ import { useFrame, useLoader } from '@react-three/fiber';
 
 import noiseGlsl from './noiseGlsl';
 
+// Pre-cache the default texture so useLoader won't trigger a loading-manager
+// state update (which causes "Cannot update Loader while rendering PerlinNoiseBall").
+useLoader.preload(THREE.TextureLoader, '/images/explosion.png');
+
 // ─── Vertex shader ───────────────────────────────────────────────────────────
 
 const vertexShader = /* glsl */ `

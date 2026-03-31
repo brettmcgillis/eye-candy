@@ -274,8 +274,11 @@ export default function Fireball({
 }) {
   const startTime = useMemo(() => Date.now(), []);
 
-  const tExplosion = useLoader(THREE.TextureLoader, texturePath);
-  tExplosion.colorSpace = THREE.NoColorSpace;
+  const tExplosionRaw = useLoader(THREE.TextureLoader, texturePath);
+  const tExplosion = useMemo(() => {
+    tExplosionRaw.colorSpace = THREE.NoColorSpace;
+    return tExplosionRaw;
+  }, [tExplosionRaw]);
 
   const uniforms = useMemo(
     () => ({

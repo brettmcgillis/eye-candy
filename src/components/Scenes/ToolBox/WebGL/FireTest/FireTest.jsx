@@ -115,15 +115,12 @@ export default function FireTest() {
       {/* ── Fire → Smoke spline ───────────────────────────────────────────── */}
       <FireballSpline
         controlPoints={fireballControlPoints}
-        sampleCount={config.fireSpline.sampleCount}
-        detail={config.fireSpline.detail}
+        tubularSegments={config.fireSpline.tubularSegments}
+        radialSegments={config.fireSpline.radialSegments}
+        capSegments={config.fireSpline.capSegments}
         speed={config.fireSpline.speed}
-        displacementScale={config.fireSpline.displacementScale}
+        weight={config.fireSpline.weight}
         animated={config.fireSpline.animated}
-        opacity={config.fireSpline.opacity}
-        fireCoreColor={config.fireSpline.fireCoreColor}
-        fireMidColor={config.fireSpline.fireMidColor}
-        fireOuterColor={config.fireSpline.fireOuterColor}
         smokeLightColor={config.fireSpline.smokeLightColor}
         smokeDarkColor={config.fireSpline.smokeDarkColor}
       />

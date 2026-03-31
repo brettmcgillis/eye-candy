@@ -225,7 +225,7 @@ export default function useHotBoxControls(splines, setSplines, attractorsRef) {
           attractorMode: {
             label: 'Mode',
             value: 'translate',
-            options: ['translate', 'rotate', 'none'],
+            options: ['translate', 'rotate', 'scale', 'none'],
           },
           attractorStrength: {
             label: 'Strength',

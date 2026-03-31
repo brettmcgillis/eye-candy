@@ -12,17 +12,27 @@ const DEFAULT_SMOKE_PRESET = {
   Default: {
     splines: [
       {
+        name: 'Particle Smoke',
+        type: 'Particle',
         tension: 0.5,
         closed: true,
-        showPoints: true,
-        showUniform: true,
-        showCentripetal: false,
-        showChordal: false,
         points: [
-          P(300, 200, 0),
-          P(0, 400, 200),
-          P(-300, 200, 0),
-          P(0, 0, -200),
+          P(700, 150, 0),
+          P(500, 350, 200),
+          P(300, 150, 0),
+          P(500, -50, -200),
+        ],
+      },
+      {
+        name: 'Volumetric Smoke',
+        type: 'Volumetric',
+        tension: 0.5,
+        closed: true,
+        points: [
+          P(500, 150, -200),
+          P(500, 350, 0),
+          P(500, 150, 200),
+          P(500, -50, 0),
         ],
       },
     ],

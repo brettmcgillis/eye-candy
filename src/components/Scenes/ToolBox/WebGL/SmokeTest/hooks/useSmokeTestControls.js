@@ -117,6 +117,30 @@ export default function useSmokeTestControls(
       attractorRadius,
       showAttractors,
       attractorMode,
+      // SmokeBall
+      sbPosX,
+      sbPosY,
+      sbPosZ,
+      sbRadius,
+      sbDetail,
+      sbSpeed,
+      sbWeight,
+      sbAnimated,
+      sbSmokeLight,
+      sbSmokeDark,
+      // SmokeBallSpline
+      ssBaseRadius,
+      ssTubular,
+      ssRadial,
+      ssCap,
+      ssSpeed,
+      ssWeight,
+      ssAnimated,
+      ssSmokeLight,
+      ssSmokeDark,
+      showSmokeBallPoints,
+      showSmokeBallLine,
+      smokeBallPointMode,
     },
   ] = useControls(
     'Smoke Test',
@@ -170,6 +194,139 @@ export default function useSmokeTestControls(
         },
         { collapsed: true }
       ),
+
+      // ── SmokeBall (Perlin noise vertex-displacement sphere, greyscale) ──
+      SmokeBall: folder(
+        {
+          'SB Position': folder(
+            {
+              sbPosX: {
+                label: 'X',
+                value: -500,
+                min: -1500,
+                max: 1500,
+                step: 1,
+              },
+              sbPosY: {
+                label: 'Y',
+                value: 100,
+                min: -500,
+                max: 1000,
+                step: 1,
+              },
+              sbPosZ: {
+                label: 'Z',
+                value: 0,
+                min: -500,
+                max: 500,
+                step: 1,
+              },
+            },
+            { collapsed: true }
+          ),
+          sbRadius: {
+            label: 'Radius',
+            value: 60,
+            min: 5,
+            max: 400,
+            step: 1,
+          },
+          sbDetail: { label: 'Detail', value: 5, min: 1, max: 7, step: 1 },
+          sbSpeed: {
+            label: 'Speed',
+            value: 1.0,
+            min: 0,
+            max: 5,
+            step: 0.05,
+          },
+          sbWeight: {
+            label: 'Weight',
+            value: 10.0,
+            min: 0,
+            max: 30,
+            step: 0.5,
+          },
+          sbAnimated: { label: 'Animated', value: true },
+          'SB Colors': folder(
+            {
+              sbSmokeLight: { label: 'Light', value: '#bcbcbc' },
+              sbSmokeDark: { label: 'Dark', value: '#262626' },
+            },
+            { collapsed: true }
+          ),
+        },
+        { collapsed: true }
+      ),
+
+      // ── SmokeBallSpline (variable-radius tube along spline, greyscale) ─
+      'Smoke Ball Spline': folder(
+        {
+          ssBaseRadius: {
+            label: 'Base Radius',
+            value: 60,
+            min: 5,
+            max: 400,
+            step: 1,
+          },
+          ssTubular: {
+            label: 'Tubular Segments',
+            value: 64,
+            min: 8,
+            max: 128,
+            step: 1,
+          },
+          ssRadial: {
+            label: 'Radial Segments',
+            value: 32,
+            min: 8,
+            max: 64,
+            step: 1,
+          },
+          ssCap: {
+            label: 'Cap Segments',
+            value: 8,
+            min: 2,
+            max: 16,
+            step: 1,
+          },
+          ssSpeed: {
+            label: 'Speed',
+            value: 1.0,
+            min: 0,
+            max: 5,
+            step: 0.05,
+          },
+          ssWeight: {
+            label: 'Weight',
+            value: 10.0,
+            min: 0,
+            max: 30,
+            step: 0.5,
+          },
+          'SS Colors': folder(
+            {
+              ssSmokeLight: { label: 'Light', value: '#bcbcbc' },
+              ssSmokeDark: { label: 'Dark', value: '#262626' },
+            },
+            { collapsed: true }
+          ),
+          ssAnimated: { label: 'Animated', value: true },
+          'Spline Editor': folder(
+            {
+              showSmokeBallPoints: { label: 'Show Points', value: true },
+              showSmokeBallLine: { label: 'Show Curve', value: true },
+              smokeBallPointMode: {
+                label: 'Transform',
+                value: 'translate',
+                options: ['translate', 'scale'],
+              },
+            },
+            { collapsed: true }
+          ),
+        },
+        { collapsed: true }
+      ),
+
       Attractors: folder(
         {
           showAttractors: {
@@ -179,7 +336,7 @@ export default function useSmokeTestControls(
           attractorMode: {
             label: 'Mode',
             value: 'translate',
-            options: ['translate', 'rotate', 'none'],
+            options: ['translate', 'rotate', 'scale', 'none'],
           },
           attractorStrength: {
             label: 'Strength',
@@ -874,6 +1031,30 @@ export default function useSmokeTestControls(
       attractorVersion,
       forceAttractorUpdate,
       splineConfigs,
+      smokeBall: {
+        position: [sbPosX, sbPosY, sbPosZ],
+        radius: sbRadius,
+        detail: sbDetail,
+        speed: sbSpeed,
+        weight: sbWeight,
+        animated: sbAnimated,
+        smokeLightColor: sbSmokeLight,
+        smokeDarkColor: sbSmokeDark,
+      },
+      smokeBallSpline: {
+        baseRadius: ssBaseRadius,
+        tubularSegments: ssTubular,
+        radialSegments: ssRadial,
+        capSegments: ssCap,
+        speed: ssSpeed,
+        weight: ssWeight,
+        smokeLightColor: ssSmokeLight,
+        smokeDarkColor: ssSmokeDark,
+        animated: ssAnimated,
+      },
+      showSmokeBallPoints,
+      showSmokeBallLine,
+      smokeBallPointMode,
     }),
     [
       pointMode,
@@ -885,6 +1066,28 @@ export default function useSmokeTestControls(
       attractorVersion,
       forceAttractorUpdate,
       splineConfigs,
+      sbPosX,
+      sbPosY,
+      sbPosZ,
+      sbRadius,
+      sbDetail,
+      sbSpeed,
+      sbWeight,
+      sbAnimated,
+      sbSmokeLight,
+      sbSmokeDark,
+      ssBaseRadius,
+      ssTubular,
+      ssRadial,
+      ssCap,
+      ssSpeed,
+      ssWeight,
+      ssSmokeLight,
+      ssSmokeDark,
+      ssAnimated,
+      showSmokeBallPoints,
+      showSmokeBallLine,
+      smokeBallPointMode,
     ]
   );
 }

@@ -600,16 +600,16 @@ export default function SmokeParticles({
             const adz = ap[2] - pz;
             const dist2 = adx * adx + ady * ady + adz * adz;
             const dist = Math.sqrt(dist2) + 0.1;
-            const falloff = attractorRadius * attractorRadius;
-            const radialStrength =
-              (attractorStrength * falloff) / (dist2 + falloff);
+            const aR = attractors[a].radius ?? attractorRadius;
+            const falloff = aR * aR;
+            const aStr = attractors[a].strength ?? attractorStrength;
+            const radialStrength = (aStr * falloff) / (dist2 + falloff);
             vx += (adx / dist) * radialStrength * dt;
             vy += (ady / dist) * radialStrength * dt;
             vz += (adz / dist) * radialStrength * dt;
             const dir = attractors[a].direction;
             if (dir) {
-              const dirStrength =
-                (attractorStrength * 0.4 * falloff) / (dist2 + falloff);
+              const dirStrength = (aStr * 0.4 * falloff) / (dist2 + falloff);
               vx += dir[0] * dirStrength * dt;
               vy += dir[1] * dirStrength * dt;
               vz += dir[2] * dirStrength * dt;

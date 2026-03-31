@@ -88,6 +88,7 @@ export default function HotBox() {
         attractorsRef={attractorsRef}
         mode={config.attractorMode}
         visible={config.showAttractors}
+        radius={config.attractorRadius}
         version={config.attractorVersion}
       />
     </>

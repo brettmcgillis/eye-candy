@@ -207,6 +207,18 @@ const generateVascularTree = (p, positions, pointsCount) => {
   }
 };
 
+// ---------------------------------------------------------------------------
+// Mycelium — spatial hash helpers for neighbor lookup
+// ---------------------------------------------------------------------------
+const HASH_SIZE = 65536; // power-of-2 hash table — sized for up to ~150k particles
+const HASH_MASK = HASH_SIZE - 1;
+
+// FNV-1a–style spatial hash for integer grid coordinates
+/* eslint-disable no-bitwise */
+const spatialHash = (ix, iy, iz) =>
+  ((ix * 73856093) ^ (iy * 19349663) ^ (iz * 83492791)) & HASH_MASK;
+/* eslint-enable no-bitwise */
+
 const algorithms = {
   'Aizawa Sphere': {
     type: 'ode',
@@ -1430,6 +1442,313 @@ const algorithms = {
         for (let i = 0; i < pointsCount; i += 1) {
           const idx = (i * 3) % accepted.length;
           positions.push(accepted[idx], accepted[idx + 1], accepted[idx + 2]);
+        }
+      }
+    },
+  },
+
+  // ---------------------------------------------------------------------------
+  // Mycelium — emergent structure via curl noise + neighbor interaction
+  //
+  // Three forces only:
+  //   1. Curl noise field — divergence-free turbulence (temperature/equilibrium)
+  //   2. Distance-only neighbor interaction — attract far / repel close
+  //      (Lennard-Jones–style, controlled by coherence + scaleDepth)
+  //   3. Spherical containment — gentle push back at boundary
+  //
+  // No agents, no trail, no communication beyond "how far away are you."
+  // Emergence comes from parameter-space frustration.
+  // ---------------------------------------------------------------------------
+  Mycelium: {
+    type: 'sim',
+    defaults: {
+      temperature: 0.6,
+      equilibrium: 1.5,
+      coherence: 1.2,
+      scaleDepth: 0.3,
+      inversion: 5,
+      viscosity: 0.02,
+      mass: 1,
+      freeEnergy: 0.8,
+      maxSpeed: 2,
+      halfLife: 0.98,
+    },
+    ranges: {
+      temperature: [0, 3, 0.01],
+      equilibrium: [0.3, 5, 0.05],
+      coherence: [0.3, 4, 0.05],
+      scaleDepth: [0.01, 2, 0.01],
+      inversion: [2, 10, 0.5],
+      viscosity: [0, 0.15, 0.001],
+      mass: [0.1, 5, 0.1],
+      freeEnergy: [0, 3, 0.01],
+      maxSpeed: [0.5, 10, 0.1],
+      halfLife: [0.9, 1, 0.001],
+    },
+    generate: (_p, positions, pointsCount) => {
+      const rand = makeSeededRandom(42);
+      for (let i = 0; i < pointsCount; i += 1) {
+        const theta = rand() * Math.PI * 2;
+        const cosPhi = rand() * 2 - 1;
+        const sinPhi = Math.sqrt(1 - cosPhi * cosPhi);
+        const r = Math.cbrt(rand()) * 5;
+        positions.push(
+          r * sinPhi * Math.cos(theta),
+          r * sinPhi * Math.sin(theta),
+          r * cosPhi
+        );
+      }
+    },
+
+    createSimState: (pointsCount) => {
+      const positions = new Float32Array(pointsCount * 3);
+      const velocities = new Float32Array(pointsCount * 3);
+      const masses = new Float32Array(pointsCount);
+
+      const randPos = makeSeededRandom(42);
+      for (let i = 0; i < pointsCount; i += 1) {
+        const theta = randPos() * Math.PI * 2;
+        const cosPhi = randPos() * 2 - 1;
+        const sinPhi = Math.sqrt(1 - cosPhi * cosPhi);
+        const r = Math.cbrt(randPos()) * 5;
+        positions[i * 3] = r * sinPhi * Math.cos(theta);
+        positions[i * 3 + 1] = r * sinPhi * Math.sin(theta);
+        positions[i * 3 + 2] = r * cosPhi;
+      }
+
+      // Small random initial velocities
+      const randVel = makeSeededRandom(1337);
+      for (let i = 0; i < pointsCount; i += 1) {
+        velocities[i * 3] = (randVel() - 0.5) * 0.1;
+        velocities[i * 3 + 1] = (randVel() - 0.5) * 0.1;
+        velocities[i * 3 + 2] = (randVel() - 0.5) * 0.1;
+        masses[i] = 1;
+      }
+
+      // Spatial hash chain arrays (re-built each frame)
+      const hashHead = new Int32Array(HASH_SIZE);
+      const hashNext = new Int32Array(pointsCount);
+
+      return {
+        positions,
+        velocities,
+        masses,
+        hashHead,
+        hashNext,
+        frameCounter: 0,
+      };
+    },
+
+    update: (state, params) => {
+      const { positions, velocities, masses, hashHead, hashNext } = state;
+      const count = masses.length;
+      const {
+        temperature,
+        equilibrium,
+        coherence,
+        scaleDepth,
+        inversion,
+        viscosity,
+        mass: particleMass,
+        freeEnergy,
+        maxSpeed,
+        halfLife,
+      } = params;
+
+      // Time-slice: split particles into SLICES batches, update one per frame.
+      // At 150k particles / 4 slices = 37.5k particles per frame — keeps the
+      // main-thread budget under ~8ms.
+      const SLICES = 4;
+      const slice = state.frameCounter % SLICES;
+      state.frameCounter += 1; // eslint-disable-line no-param-reassign
+
+      const sliceStart = Math.floor((count * slice) / SLICES);
+      const sliceEnd = Math.floor((count * (slice + 1)) / SLICES);
+
+      const dt = 1 / 60;
+      const invCoherence = 1 / coherence;
+      const radiusSq = inversion * inversion;
+      const boundaryStart = inversion * 0.9;
+      const dampFactor = 1 - viscosity;
+
+      // ---- Build spatial hash grid (full rebuild — all particles needed
+      //      for neighbor lookup even if only a slice is being updated) -------
+      const cellSize = coherence;
+      const invCellSize = 1 / cellSize;
+      hashHead.fill(-1);
+
+      for (let i = 0; i < count; i += 1) {
+        const pi = i * 3;
+        const cx = Math.floor(positions[pi] * invCellSize);
+        const cy = Math.floor(positions[pi + 1] * invCellSize);
+        const cz = Math.floor(positions[pi + 2] * invCellSize);
+        const h = spatialHash(cx, cy, cz);
+        hashNext[i] = hashHead[h];
+        hashHead[h] = i;
+      }
+
+      // ---- Curl noise constants -------------------------------------------
+      const freq = equilibrium;
+      const noiseScale = temperature * freeEnergy;
+
+      const fA = freq;
+      const fB = freq * 0.8;
+      const fC = freq * 1.1;
+      const fD = freq * 1.3;
+      const fE = freq * 0.7;
+      const fF = freq * 0.9;
+      const fG = freq * 0.9;
+      const fH = freq * 1.2;
+      const fJ = freq * 1.4;
+
+      const coherenceSq = coherence * coherence;
+      const invMass = 1 / particleMass;
+
+      // ---- Per-particle force accumulation (only this frame's slice) -------
+      for (let i = sliceStart; i < sliceEnd; i += 1) {
+        const pi = i * 3;
+        const px = positions[pi];
+        const py = positions[pi + 1];
+        const pz = positions[pi + 2];
+
+        let fx = 0;
+        let fy = 0;
+        let fz = 0;
+
+        // 1. Analytical curl of the potential field
+        const sA = Math.sin(fA * px + 1.7);
+        const cA = Math.cos(fA * px + 1.7);
+        const sB = Math.sin(fB * py + 2.3);
+        const cB = Math.cos(fB * py + 2.3);
+        const sC = Math.sin(fC * pz + 0.9);
+        const cC = Math.cos(fC * pz + 0.9);
+        const sD = Math.sin(fD * px - 0.5);
+        const cD = Math.cos(fD * px - 0.5);
+        const sE = Math.sin(fE * py + 1.1);
+        const cE = Math.cos(fE * py + 1.1);
+        const sF = Math.sin(fF * pz - 1.4);
+        const cF = Math.cos(fF * pz - 1.4);
+        const sG = Math.sin(fG * px + 3.1);
+        const cG = Math.cos(fG * px + 3.1);
+        const sH = Math.sin(fH * py - 0.8);
+        const cH = Math.cos(fH * py - 0.8);
+        const sJ = Math.sin(fJ * pz + 0.3);
+        const cJ = Math.cos(fJ * pz + 0.3);
+
+        const dPdx = fA * cA * cB * sC + fD * cD * sE * cF - fG * sG * sH * sJ;
+        const dPdy = -fB * sA * sB * sC + fE * sD * cE * cF + fH * cG * cH * sJ;
+        const dPdz = fC * sA * cB * cC - fF * sD * sE * sF + fJ * cG * sH * cJ;
+
+        fx += (dPdy - dPdz) * noiseScale;
+        fy += (dPdz - dPdx) * noiseScale;
+        fz += (dPdx - dPdy) * noiseScale;
+
+        // 2. Distance-dependent neighbor interaction (spatial hash lookup)
+        //    Two caps: qualifying neighbors (force contributors) AND total
+        //    chain entries traversed (prevents runaway iteration in dense buckets).
+        const MAX_NEIGHBORS = 12;
+        const MAX_CHECKED = 48;
+        let neighborCount = 0;
+        let totalChecked = 0;
+        const cix = Math.floor(px * invCellSize);
+        const ciy = Math.floor(py * invCellSize);
+        const ciz = Math.floor(pz * invCellSize);
+
+        for (let dz = -1; dz <= 1; dz += 1) {
+          for (let dy = -1; dy <= 1; dy += 1) {
+            for (let dx = -1; dx <= 1; dx += 1) {
+              const h = spatialHash(cix + dx, ciy + dy, ciz + dz);
+              let j = hashHead[h];
+              while (j !== -1 && totalChecked < MAX_CHECKED) {
+                totalChecked += 1;
+                if (j !== i) {
+                  const pj = j * 3;
+                  const ex = positions[pj] - px;
+                  const ey = positions[pj + 1] - py;
+                  const ez = positions[pj + 2] - pz;
+                  const distSq = ex * ex + ey * ey + ez * ez;
+
+                  if (distSq < coherenceSq && distSq > 0.0001) {
+                    const dist = Math.sqrt(distSq);
+                    const ratio = dist * invCoherence;
+                    const invDist = 1 / dist;
+
+                    let strength;
+                    if (ratio > 0.15) {
+                      strength = scaleDepth * (1 - ratio);
+                    } else {
+                      const overlap = 0.15 - ratio;
+                      strength = -scaleDepth * overlap * 20;
+                    }
+
+                    fx += ex * invDist * strength;
+                    fy += ey * invDist * strength;
+                    fz += ez * invDist * strength;
+
+                    neighborCount += 1;
+                    if (neighborCount >= MAX_NEIGHBORS) break;
+                  }
+                }
+                j = hashNext[j];
+              }
+              if (neighborCount >= MAX_NEIGHBORS || totalChecked >= MAX_CHECKED)
+                break;
+            }
+            if (neighborCount >= MAX_NEIGHBORS || totalChecked >= MAX_CHECKED)
+              break;
+          }
+          if (neighborCount >= MAX_NEIGHBORS || totalChecked >= MAX_CHECKED)
+            break;
+        }
+
+        // 3. Spherical containment
+        const distFromCenter = Math.sqrt(px * px + py * py + pz * pz);
+        if (distFromCenter > boundaryStart) {
+          const overflow =
+            (distFromCenter - boundaryStart) /
+            (inversion - boundaryStart + 0.001);
+          const pushStrength = overflow * overflow * 2;
+          const invDC = 1 / (distFromCenter || 1);
+          fx -= px * invDC * pushStrength;
+          fy -= py * invDC * pushStrength;
+          fz -= pz * invDC * pushStrength;
+        }
+
+        // Velocity update
+        let vx = (velocities[pi] + fx * dt * invMass) * dampFactor * halfLife;
+        let vy =
+          (velocities[pi + 1] + fy * dt * invMass) * dampFactor * halfLife;
+        let vz =
+          (velocities[pi + 2] + fz * dt * invMass) * dampFactor * halfLife;
+
+        const spd = Math.sqrt(vx * vx + vy * vy + vz * vz);
+        if (spd > maxSpeed) {
+          const sc = maxSpeed / spd;
+          vx *= sc;
+          vy *= sc;
+          vz *= sc;
+        }
+
+        velocities[pi] = vx;
+        velocities[pi + 1] = vy;
+        velocities[pi + 2] = vz;
+
+        // Position update
+        positions[pi] = px + vx * dt;
+        positions[pi + 1] = py + vy * dt;
+        positions[pi + 2] = pz + vz * dt;
+
+        // Hard clamp
+        const newDistSq =
+          positions[pi] * positions[pi] +
+          positions[pi + 1] * positions[pi + 1] +
+          positions[pi + 2] * positions[pi + 2];
+        if (newDistSq > radiusSq) {
+          const newDist = Math.sqrt(newDistSq);
+          const scale = (inversion * 0.999) / newDist;
+          positions[pi] *= scale;
+          positions[pi + 1] *= scale;
+          positions[pi + 2] *= scale;
         }
       }
     },

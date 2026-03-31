@@ -193,24 +193,38 @@ function ParticleCloud({ config, attractorsRef, scaleRef }) {
         positionAttr.needsUpdate = true;
 
         // Velocity-based coloring: slow → color1, mid → color2, fast → color3
+        // Time-slice coloring to match sim slicing — only recolor updated
+        // particles each frame, avoiding 65k sqrt + lerp ops per frame.
         const colorAttr = geometry.attributes.color;
-        if (colorAttr) {
+        if (colorAttr && sim.frameCounter != null) {
           const colors = colorAttr.array;
           const vel = sim.velocities;
           const maxSpd = config.params.maxSpeed || 8;
-          const c1 = new THREE.Color(config.color1);
-          const c2 = new THREE.Color(config.color2);
-          const c3 = new THREE.Color(config.color3);
           const count = sim.masses.length;
 
-          for (let j = 0; j < count; j += 1) {
+          // Match the sim's slice boundaries
+          const SLICES = 4;
+          const slice = (sim.frameCounter - 1 + SLICES) % SLICES;
+          const colorStart = Math.floor((count * slice) / SLICES);
+          const colorEnd = Math.floor((count * (slice + 1)) / SLICES);
+
+          const c1r = (parseInt(config.color1.slice(1, 3), 16) || 0) / 255;
+          const c1g = (parseInt(config.color1.slice(3, 5), 16) || 0) / 255;
+          const c1b = (parseInt(config.color1.slice(5, 7), 16) || 0) / 255;
+          const c2r = (parseInt(config.color2.slice(1, 3), 16) || 0) / 255;
+          const c2g = (parseInt(config.color2.slice(3, 5), 16) || 0) / 255;
+          const c2b = (parseInt(config.color2.slice(5, 7), 16) || 0) / 255;
+          const c3r = (parseInt(config.color3.slice(1, 3), 16) || 0) / 255;
+          const c3g = (parseInt(config.color3.slice(3, 5), 16) || 0) / 255;
+          const c3b = (parseInt(config.color3.slice(5, 7), 16) || 0) / 255;
+
+          for (let j = colorStart; j < colorEnd; j += 1) {
             const vi = j * 3;
             const spd = Math.sqrt(
               vel[vi] * vel[vi] +
                 vel[vi + 1] * vel[vi + 1] +
                 vel[vi + 2] * vel[vi + 2]
             );
-            // smoothstep-style mapping: speed/maxSpeed remapped through [0,0.5]→[0,1]
             let t = Math.min(1, Math.max(0, (spd / maxSpd) * 2));
             t = t * t * (3 - 2 * t);
 
@@ -219,14 +233,14 @@ function ParticleCloud({ config, attractorsRef, scaleRef }) {
             let b;
             if (t < 0.5) {
               const u = t * 2;
-              r = c1.r + (c2.r - c1.r) * u;
-              g = c1.g + (c2.g - c1.g) * u;
-              b = c1.b + (c2.b - c1.b) * u;
+              r = c1r + (c2r - c1r) * u;
+              g = c1g + (c2g - c1g) * u;
+              b = c1b + (c2b - c1b) * u;
             } else {
               const u = (t - 0.5) * 2;
-              r = c2.r + (c3.r - c2.r) * u;
-              g = c2.g + (c3.g - c2.g) * u;
-              b = c2.b + (c3.b - c2.b) * u;
+              r = c2r + (c3r - c2r) * u;
+              g = c2g + (c3g - c2g) * u;
+              b = c2b + (c3b - c2b) * u;
             }
 
             colors[vi] = r;
@@ -280,11 +294,17 @@ function ParticleCloud({ config, attractorsRef, scaleRef }) {
 
       positionAttr.needsUpdate = true;
     } else if (wasAnimatingRef.current) {
-      const positions = positionAttr.array;
-      for (let i = 0; i < positions.length; i += 1) {
-        positions[i] = alignedPositions[i];
+      // For sim-type algorithms (e.g. Gravity Attractors) leave the current
+      // display positions untouched so the simulation visually pauses in place
+      // instead of snapping back to the initial particle field.
+      const alg = algorithms[config.algorithm];
+      if (alg.type !== 'sim') {
+        const positions = positionAttr.array;
+        for (let i = 0; i < positions.length; i += 1) {
+          positions[i] = alignedPositions[i];
+        }
+        positionAttr.needsUpdate = true;
       }
-      positionAttr.needsUpdate = true;
       wasAnimatingRef.current = false;
     }
   });

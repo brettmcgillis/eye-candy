@@ -8,19 +8,15 @@ export default function useFireTestControls() {
       // Scene
       bgColor,
       lineColor,
-      // Spline editor
-      showSplinePoints,
-      showSplineLine,
-      pointMode,
       // Fireball
+      fbPosX,
+      fbPosY,
+      fbPosZ,
       fbRadius,
       fbDetail,
       fbSpeed,
       fbWeight,
       fbAnimated,
-      fbPosX,
-      fbPosY,
-      fbPosZ,
       // FireballSpline
       fsBaseRadius,
       fsTubular,
@@ -31,6 +27,63 @@ export default function useFireTestControls() {
       fsAnimated,
       fsSmokeLight,
       fsSmokeDark,
+      // Spline Editor
+      showSplinePoints,
+      showSplineLine,
+      pointMode,
+      // Flame
+      flPosX,
+      flPosY,
+      flPosZ,
+      flGroupScale,
+      flInverted,
+      flBaseSpeed,
+      flMinSpeed,
+      flSlowFreq,
+      flSlowAmp,
+      flFastFreq,
+      flFastAmp,
+      flMicroFreq,
+      flMicroAmp,
+      flSwayX,
+      flSwayZ,
+      flPulseFreq,
+      flPulseAmp,
+      flScaleX,
+      flScaleY,
+      // VolumetricFire
+      vfPosX,
+      vfPosY,
+      vfPosZ,
+      vfWidth,
+      vfHeight,
+      vfDepth,
+      vfSliceSpacing,
+      vfBendX,
+      vfBendZ,
+      vfAnimated,
+      vfAnimSpeed,
+      vfShowSpline,
+      vfShowVolume,
+      vfMagnitude,
+      vfLacunarity,
+      vfGain,
+      vfTintColor,
+      vfSaturation,
+      vfBrightness,
+      // FireballVolume
+      fvPosX,
+      fvPosY,
+      fvPosZ,
+      fvRadius,
+      fvRotSpeed,
+      fvNoiseScale,
+      fvCoreColor,
+      fvCoreIntensity,
+      fvEdgeColor,
+      fvEdgeIntensity,
+      fvDensity,
+      fvSteps,
     },
   ] = useControls('Fire Test', () => ({
     Scene: folder(
@@ -41,25 +94,45 @@ export default function useFireTestControls() {
       { collapsed: false }
     ),
 
+    // ── Fireball (Perlin noise vertex-displacement sphere) ───────────────
     Fireball: folder(
       {
-        Position: folder(
+        'FB Position': folder(
           {
-            fbPosX: { label: 'X', value: 0, min: -1000, max: 1000, step: 1 },
-            fbPosY: { label: 'Y', value: 0, min: -500, max: 1000, step: 1 },
+            fbPosX: {
+              label: 'X',
+              value: -500,
+              min: -1500,
+              max: 1500,
+              step: 1,
+            },
+            fbPosY: {
+              label: 'Y',
+              value: 100,
+              min: -500,
+              max: 1000,
+              step: 1,
+            },
             fbPosZ: { label: 'Z', value: 0, min: -500, max: 500, step: 1 },
           },
           { collapsed: true }
         ),
-        fbRadius: { label: 'Radius', value: 20, min: 5, max: 400, step: 1 },
+        fbRadius: { label: 'Radius', value: 80, min: 5, max: 400, step: 1 },
         fbDetail: { label: 'Detail', value: 5, min: 1, max: 7, step: 1 },
         fbSpeed: { label: 'Speed', value: 1.0, min: 0, max: 5, step: 0.05 },
-        fbWeight: { label: 'Weight', value: 10.0, min: 0, max: 30, step: 0.5 },
+        fbWeight: {
+          label: 'Weight',
+          value: 10.0,
+          min: 0,
+          max: 30,
+          step: 0.5,
+        },
         fbAnimated: { label: 'Animated', value: true },
       },
-      { collapsed: false }
+      { collapsed: true }
     ),
 
+    // ── FireballSpline (variable-radius tube along CatmullRom spline) ────
     'Fire Spline': folder(
       {
         fsBaseRadius: {
@@ -106,21 +179,347 @@ export default function useFireTestControls() {
           { collapsed: false }
         ),
         fsAnimated: { label: 'Animated', value: true },
+        'Spline Editor': folder(
+          {
+            showSplinePoints: { label: 'Show Points', value: true },
+            showSplineLine: { label: 'Show Curve', value: true },
+            pointMode: {
+              label: 'Transform',
+              value: 'translate',
+              options: ['translate', 'scale'],
+            },
+          },
+          { collapsed: true }
+        ),
       },
-      { collapsed: false }
+      { collapsed: true }
     ),
 
-    'Spline Editor': folder(
+    // ── Flame (wispy billboard shader flame) ─────────────────────────────
+    Flame: folder(
       {
-        showSplinePoints: { label: 'Show Points', value: true },
-        showSplineLine: { label: 'Show Curve', value: true },
-        pointMode: {
-          label: 'Transform',
-          value: 'translate',
-          options: ['translate', 'scale'],
+        'FL Position': folder(
+          {
+            flPosX: {
+              label: 'X',
+              value: 0,
+              min: -1500,
+              max: 1500,
+              step: 1,
+            },
+            flPosY: { label: 'Y', value: 0, min: -500, max: 1000, step: 1 },
+            flPosZ: { label: 'Z', value: 0, min: -500, max: 500, step: 1 },
+          },
+          { collapsed: true }
+        ),
+        flGroupScale: {
+          label: 'Scale',
+          value: 120,
+          min: 1,
+          max: 500,
+          step: 1,
+        },
+        flInverted: { label: 'Inverted', value: false },
+        Motion: folder(
+          {
+            flBaseSpeed: {
+              label: 'Base Speed',
+              value: 1.15,
+              min: 0,
+              max: 5,
+              step: 0.05,
+            },
+            flMinSpeed: {
+              label: 'Min Speed',
+              value: 0.28,
+              min: 0,
+              max: 2,
+              step: 0.01,
+            },
+            flSlowFreq: {
+              label: 'Slow Freq',
+              value: 0.7,
+              min: 0,
+              max: 5,
+              step: 0.1,
+            },
+            flSlowAmp: {
+              label: 'Slow Amp',
+              value: 0.55,
+              min: 0,
+              max: 2,
+              step: 0.05,
+            },
+            flFastFreq: {
+              label: 'Fast Freq',
+              value: 2.6,
+              min: 0,
+              max: 10,
+              step: 0.1,
+            },
+            flFastAmp: {
+              label: 'Fast Amp',
+              value: 0.25,
+              min: 0,
+              max: 2,
+              step: 0.05,
+            },
+            flMicroFreq: {
+              label: 'Micro Freq',
+              value: 5.7,
+              min: 0,
+              max: 20,
+              step: 0.1,
+            },
+            flMicroAmp: {
+              label: 'Micro Amp',
+              value: 0.08,
+              min: 0,
+              max: 1,
+              step: 0.01,
+            },
+            flSwayX: {
+              label: 'Sway X',
+              value: 0.015,
+              min: 0,
+              max: 0.2,
+              step: 0.001,
+            },
+            flSwayZ: {
+              label: 'Sway Z',
+              value: 0.014,
+              min: 0,
+              max: 0.2,
+              step: 0.001,
+            },
+            flPulseFreq: {
+              label: 'Pulse Freq',
+              value: 3.4,
+              min: 0,
+              max: 10,
+              step: 0.1,
+            },
+            flPulseAmp: {
+              label: 'Pulse Amp',
+              value: 0.04,
+              min: 0,
+              max: 0.5,
+              step: 0.01,
+            },
+            flScaleX: {
+              label: 'Scale X',
+              value: 1,
+              min: 0.1,
+              max: 5,
+              step: 0.1,
+            },
+            flScaleY: {
+              label: 'Scale Y',
+              value: 1,
+              min: 0.1,
+              max: 5,
+              step: 0.1,
+            },
+          },
+          { collapsed: true }
+        ),
+      },
+      { collapsed: true }
+    ),
+
+    // ── VolumetricFire (slice-rendered hexahedron) ───────────────────────
+    'Volumetric Fire': folder(
+      {
+        'VF Position': folder(
+          {
+            vfPosX: {
+              label: 'X',
+              value: 500,
+              min: -1500,
+              max: 1500,
+              step: 1,
+            },
+            vfPosY: { label: 'Y', value: 0, min: -500, max: 1000, step: 1 },
+            vfPosZ: { label: 'Z', value: 0, min: -500, max: 500, step: 1 },
+          },
+          { collapsed: true }
+        ),
+        vfWidth: { label: 'Width', value: 80, min: 10, max: 400, step: 5 },
+        vfHeight: {
+          label: 'Height',
+          value: 200,
+          min: 20,
+          max: 800,
+          step: 10,
+        },
+        vfDepth: { label: 'Depth', value: 80, min: 10, max: 400, step: 5 },
+        vfSliceSpacing: {
+          label: 'Slice Spacing',
+          value: 4,
+          min: 1,
+          max: 20,
+          step: 0.5,
+        },
+        vfBendX: {
+          label: 'Bend X',
+          value: 0,
+          min: -200,
+          max: 200,
+          step: 1,
+        },
+        vfBendZ: {
+          label: 'Bend Z',
+          value: 0,
+          min: -200,
+          max: 200,
+          step: 1,
+        },
+        vfAnimated: { label: 'Animated', value: true },
+        vfAnimSpeed: {
+          label: 'Anim Speed',
+          value: 0.5,
+          min: 0,
+          max: 3,
+          step: 0.05,
+        },
+        vfShowSpline: { label: 'Show Spline', value: false },
+        vfShowVolume: { label: 'Show Volume', value: false },
+        'VF Turbulence': folder(
+          {
+            vfMagnitude: {
+              label: 'Magnitude',
+              value: 1.3,
+              min: 0.1,
+              max: 5,
+              step: 0.1,
+            },
+            vfLacunarity: {
+              label: 'Lacunarity',
+              value: 2.0,
+              min: 1,
+              max: 5,
+              step: 0.1,
+            },
+            vfGain: {
+              label: 'Gain',
+              value: 0.5,
+              min: 0.01,
+              max: 1,
+              step: 0.01,
+            },
+          },
+          { collapsed: true }
+        ),
+        'VF Colors': folder(
+          {
+            vfTintColor: { label: 'Tint', value: '#ffffff' },
+            vfSaturation: {
+              label: 'Saturation',
+              value: 1.0,
+              min: 0,
+              max: 3,
+              step: 0.1,
+            },
+            vfBrightness: {
+              label: 'Brightness',
+              value: 1.5,
+              min: 0,
+              max: 5,
+              step: 0.1,
+            },
+          },
+          { collapsed: true }
+        ),
+      },
+      { collapsed: true }
+    ),
+
+    // ── FireballVolume (ray-marched spherical explosion) ─────────────────
+    'Fireball Volume': folder(
+      {
+        'FV Position': folder(
+          {
+            fvPosX: {
+              label: 'X',
+              value: -500,
+              min: -1500,
+              max: 1500,
+              step: 1,
+            },
+            fvPosY: {
+              label: 'Y',
+              value: 100,
+              min: -500,
+              max: 1000,
+              step: 1,
+            },
+            fvPosZ: {
+              label: 'Z',
+              value: 350,
+              min: -500,
+              max: 500,
+              step: 1,
+            },
+          },
+          { collapsed: true }
+        ),
+        fvRadius: { label: 'Radius', value: 80, min: 1, max: 400, step: 1 },
+        fvRotSpeed: {
+          label: 'Rotation Speed',
+          value: 0.1,
+          min: 0,
+          max: 2,
+          step: 0.01,
+        },
+        fvNoiseScale: {
+          label: 'Noise Scale',
+          value: 0.5,
+          min: 0.1,
+          max: 2,
+          step: 0.05,
+        },
+        'FV Core': folder(
+          {
+            fvCoreColor: { label: 'Color', value: '#ccffff' },
+            fvCoreIntensity: {
+              label: 'Intensity',
+              value: 7.0,
+              min: 0,
+              max: 20,
+              step: 0.5,
+            },
+          },
+          { collapsed: true }
+        ),
+        'FV Edge': folder(
+          {
+            fvEdgeColor: { label: 'Color', value: '#7a877f' },
+            fvEdgeIntensity: {
+              label: 'Intensity',
+              value: 1.5,
+              min: 0,
+              max: 10,
+              step: 0.1,
+            },
+          },
+          { collapsed: true }
+        ),
+        fvDensity: {
+          label: 'Density',
+          value: 1.0,
+          min: 0,
+          max: 5,
+          step: 0.1,
+        },
+        fvSteps: {
+          label: 'Steps',
+          value: 64,
+          min: 8,
+          max: 128,
+          step: 8,
         },
       },
-      { collapsed: false }
+      { collapsed: true }
     ),
   }));
 
@@ -150,6 +549,58 @@ export default function useFireTestControls() {
         smokeDarkColor: fsSmokeDark,
         animated: fsAnimated,
       },
+      flame: {
+        position: [flPosX, flPosY, flPosZ],
+        groupScale: flGroupScale,
+        inverted: flInverted,
+        motion: {
+          baseSpeed: flBaseSpeed,
+          minSpeed: flMinSpeed,
+          slowFreq: flSlowFreq,
+          slowAmp: flSlowAmp,
+          fastFreq: flFastFreq,
+          fastAmp: flFastAmp,
+          microFreq: flMicroFreq,
+          microAmp: flMicroAmp,
+          swayX: flSwayX,
+          swayZ: flSwayZ,
+          pulseFreq: flPulseFreq,
+          pulseAmp: flPulseAmp,
+          scaleX: flScaleX,
+          scaleY: flScaleY,
+        },
+      },
+      volumetricFire: {
+        position: [vfPosX, vfPosY, vfPosZ],
+        width: vfWidth,
+        height: vfHeight,
+        depth: vfDepth,
+        sliceSpacing: vfSliceSpacing,
+        bendX: vfBendX,
+        bendZ: vfBendZ,
+        animated: vfAnimated,
+        animSpeed: vfAnimSpeed,
+        showSpline: vfShowSpline,
+        showVolume: vfShowVolume,
+        magnitude: vfMagnitude,
+        lacunarity: vfLacunarity,
+        gain: vfGain,
+        tintColor: vfTintColor,
+        saturation: vfSaturation,
+        brightness: vfBrightness,
+      },
+      fireballVolume: {
+        position: [fvPosX, fvPosY, fvPosZ],
+        radius: fvRadius,
+        rotSpeed: fvRotSpeed,
+        noiseScale: fvNoiseScale,
+        coreColor: fvCoreColor,
+        coreIntensity: fvCoreIntensity,
+        edgeColor: fvEdgeColor,
+        edgeIntensity: fvEdgeIntensity,
+        density: fvDensity,
+        steps: fvSteps,
+      },
     }),
     [
       bgColor,
@@ -174,6 +625,56 @@ export default function useFireTestControls() {
       fsSmokeLight,
       fsSmokeDark,
       fsAnimated,
+      flPosX,
+      flPosY,
+      flPosZ,
+      flGroupScale,
+      flInverted,
+      flBaseSpeed,
+      flMinSpeed,
+      flSlowFreq,
+      flSlowAmp,
+      flFastFreq,
+      flFastAmp,
+      flMicroFreq,
+      flMicroAmp,
+      flSwayX,
+      flSwayZ,
+      flPulseFreq,
+      flPulseAmp,
+      flScaleX,
+      flScaleY,
+      vfPosX,
+      vfPosY,
+      vfPosZ,
+      vfWidth,
+      vfHeight,
+      vfDepth,
+      vfSliceSpacing,
+      vfBendX,
+      vfBendZ,
+      vfAnimated,
+      vfAnimSpeed,
+      vfShowSpline,
+      vfShowVolume,
+      vfMagnitude,
+      vfLacunarity,
+      vfGain,
+      vfTintColor,
+      vfSaturation,
+      vfBrightness,
+      fvPosX,
+      fvPosY,
+      fvPosZ,
+      fvRadius,
+      fvRotSpeed,
+      fvNoiseScale,
+      fvCoreColor,
+      fvCoreIntensity,
+      fvEdgeColor,
+      fvEdgeIntensity,
+      fvDensity,
+      fvSteps,
     ]
   );
 }

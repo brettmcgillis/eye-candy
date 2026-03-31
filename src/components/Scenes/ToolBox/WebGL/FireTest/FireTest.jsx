@@ -6,48 +6,51 @@ import { OrbitControls, PerspectiveCamera } from '@react-three/drei';
 
 import Fireball from '../../../../elements/fireball/Fireball';
 import FireballSpline from '../../../../elements/fireball/FireballSpline';
+import Flame from '../../../../elements/flame/Flame';
 import GridBox from '../../../../elements/gridbox/GridBox';
 import SplineLine from '../../../../elements/spline/SplineLine';
 import SplinePoints from '../../../../elements/spline/SplinePoints';
+import FireballVolume from '../../../../elements/volumetricFire/FireballVolume';
+import VolumetricFire from '../../../../elements/volumetricFire/VolumetricFire';
 import useFireTestControls from './hooks/useFireTestControls';
 
 // ─── Default spline control points ───────────────────────────────────────────
 //
-// Positioned to the right of the standalone Fireball (which sits at x ≈ -400).
+// Positioned to the right of the standalone Fireball (which sits at x ≈ -500).
 // Scale is used as a per-point radius multiplier — scale(1) = baseRadius,
 // scale(2) = 2× baseRadius.  Switch the Leva transform to "scale" to resize
 // individual spheres, or "translate" to reshape the curve.
 
 const DEFAULT_SPLINE_POINTS = [
   {
-    position: new THREE.Vector3(300, 0, 0),
-    rotation: new THREE.Euler(),
-    scale: new THREE.Vector3(1.0, 1.0, 1.0), // fire source — default radius
-  },
-  {
-    position: new THREE.Vector3(300, 90, 0),
-    rotation: new THREE.Euler(),
-    scale: new THREE.Vector3(0.9, 0.9, 0.9),
-  },
-  {
-    position: new THREE.Vector3(315, 180, 0),
+    position: new THREE.Vector3(-200, 0, 0),
     rotation: new THREE.Euler(),
     scale: new THREE.Vector3(1.0, 1.0, 1.0),
   },
   {
-    position: new THREE.Vector3(325, 270, 10),
+    position: new THREE.Vector3(-200, 90, 0),
+    rotation: new THREE.Euler(),
+    scale: new THREE.Vector3(0.9, 0.9, 0.9),
+  },
+  {
+    position: new THREE.Vector3(-185, 180, 0),
+    rotation: new THREE.Euler(),
+    scale: new THREE.Vector3(1.0, 1.0, 1.0),
+  },
+  {
+    position: new THREE.Vector3(-175, 270, 10),
     rotation: new THREE.Euler(),
     scale: new THREE.Vector3(1.3, 1.3, 1.3),
   },
   {
-    position: new THREE.Vector3(335, 360, 15),
+    position: new THREE.Vector3(-165, 360, 15),
     rotation: new THREE.Euler(),
     scale: new THREE.Vector3(1.6, 1.6, 1.6),
   },
   {
-    position: new THREE.Vector3(345, 450, 20),
+    position: new THREE.Vector3(-155, 450, 20),
     rotation: new THREE.Euler(),
-    scale: new THREE.Vector3(2.0, 2.0, 2.0), // smoke tip — 2× radius
+    scale: new THREE.Vector3(2.0, 2.0, 2.0),
   },
 ];
 
@@ -87,7 +90,7 @@ export default function FireTest() {
 
       <PerspectiveCamera
         makeDefault
-        position={[0, 0, 300]}
+        position={[0, 200, 800]}
         fov={70}
         near={1}
         far={10000}
@@ -109,10 +112,10 @@ export default function FireTest() {
 
       <OrbitControls makeDefault dampingFactor={0.2} />
 
-      {/* ── Standalone Fireball ────────────────────────────────────────────── */}
+      {/* ── Fireball (Perlin vertex-displacement sphere) ──────────────────── */}
       <Fireball {...config.fireball} />
 
-      {/* ── Fire → Smoke spline ───────────────────────────────────────────── */}
+      {/* ── FireballSpline (variable-radius tube along spline) ────────────── */}
       <FireballSpline
         controlPoints={fireballControlPoints}
         tubularSegments={config.fireSpline.tubularSegments}
@@ -135,9 +138,6 @@ export default function FireTest() {
       />
 
       {/* ── Interactive control-point handles ─────────────────────────────── */}
-      {/* Click a handle to select it, then drag the gizmo to reposition.     */}
-      {/* Keyboard: A = add point, Delete/Backspace = remove selected.         */}
-      {/* Switch Leva "Transform" to "scale" to resize per-point sphere radii. */}
       <SplinePoints
         points={splinePoints}
         setPoints={handleSetSplinePoints}
@@ -145,6 +145,17 @@ export default function FireTest() {
         mode={config.pointMode}
         pointSize={30}
       />
+
+      {/* ── Flame (wispy billboard shader flame) ──────────────────────────── */}
+      <group position={config.flame.position} scale={config.flame.groupScale}>
+        <Flame inverted={config.flame.inverted} motion={config.flame.motion} />
+      </group>
+
+      {/* ── VolumetricFire (slice-rendered hexahedron) ────────────────────── */}
+      <VolumetricFire {...config.volumetricFire} />
+
+      {/* ── FireballVolume (ray-marched spherical explosion) ──────────────── */}
+      <FireballVolume {...config.fireballVolume} />
     </>
   );
 }

@@ -100,6 +100,7 @@ export default function useParticleLabControls() {
     'Particle Lab Parameters',
     () => {
       const schema = {};
+      const labels = selectedAlgorithm.labels || {};
       Object.keys(selectedAlgorithm.ranges).forEach((key) => {
         const [min, max, step = 0.01] = selectedAlgorithm.ranges[key];
         schema[key] = {
@@ -107,6 +108,7 @@ export default function useParticleLabControls() {
           min,
           max,
           step,
+          ...(labels[key] ? { label: labels[key] } : {}),
           onChange: (nextValue) => {
             const value = Number(nextValue);
             if (!Number.isFinite(value)) return;

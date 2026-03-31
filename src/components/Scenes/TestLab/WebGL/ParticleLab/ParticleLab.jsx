@@ -199,7 +199,6 @@ function ParticleCloud({ config, attractorsRef, scaleRef }) {
         if (colorAttr && sim.frameCounter != null) {
           const colors = colorAttr.array;
           const vel = sim.velocities;
-          const maxSpd = config.params.maxSpeed || 8;
           const count = sim.masses.length;
 
           // Match the sim's slice boundaries
@@ -207,6 +206,20 @@ function ParticleCloud({ config, attractorsRef, scaleRef }) {
           const slice = (sim.frameCounter - 1 + SLICES) % SLICES;
           const colorStart = Math.floor((count * slice) / SLICES);
           const colorEnd = Math.floor((count * (slice + 1)) / SLICES);
+
+          // Find peak speed in this slice so the colour ramp adapts to the
+          // actual velocity distribution instead of the theoretical maxSpeed
+          // (which particles rarely approach in low-energy sims like Mycelium).
+          let peakSpdSq = 0;
+          for (let j = colorStart; j < colorEnd; j += 1) {
+            const vi = j * 3;
+            const sSq =
+              vel[vi] * vel[vi] +
+              vel[vi + 1] * vel[vi + 1] +
+              vel[vi + 2] * vel[vi + 2];
+            if (sSq > peakSpdSq) peakSpdSq = sSq;
+          }
+          const peakSpd = Math.sqrt(peakSpdSq) || 1;
 
           const c1r = (parseInt(config.color1.slice(1, 3), 16) || 0) / 255;
           const c1g = (parseInt(config.color1.slice(3, 5), 16) || 0) / 255;
@@ -225,7 +238,7 @@ function ParticleCloud({ config, attractorsRef, scaleRef }) {
                 vel[vi + 1] * vel[vi + 1] +
                 vel[vi + 2] * vel[vi + 2]
             );
-            let t = Math.min(1, Math.max(0, (spd / maxSpd) * 2));
+            let t = Math.min(1, spd / peakSpd);
             t = t * t * (3 - 2 * t);
 
             let r;

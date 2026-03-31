@@ -1466,7 +1466,7 @@ const algorithms = {
       equilibrium: 1.5,
       coherence: 1.2,
       scaleDepth: 0.3,
-      inversion: 5,
+      boundRadius: 5,
       viscosity: 0.02,
       mass: 1,
       freeEnergy: 0.8,
@@ -1478,12 +1478,19 @@ const algorithms = {
       equilibrium: [0.3, 5, 0.05],
       coherence: [0.3, 4, 0.05],
       scaleDepth: [0.01, 2, 0.01],
-      inversion: [2, 10, 0.5],
+      boundRadius: [2, 10, 0.5],
       viscosity: [0, 0.15, 0.001],
       mass: [0.1, 5, 0.1],
       freeEnergy: [0, 3, 0.01],
       maxSpeed: [0.5, 10, 0.1],
       halfLife: [0.9, 1, 0.001],
+    },
+    labels: {
+      boundRadius: 'Bound Radius',
+      scaleDepth: 'Scale Depth',
+      freeEnergy: 'Free Energy',
+      maxSpeed: 'Max Speed',
+      halfLife: 'Half Life',
     },
     generate: (_p, positions, pointsCount) => {
       const rand = makeSeededRandom(42);
@@ -1547,7 +1554,7 @@ const algorithms = {
         equilibrium,
         coherence,
         scaleDepth,
-        inversion,
+        boundRadius,
         viscosity,
         mass: particleMass,
         freeEnergy,
@@ -1567,8 +1574,8 @@ const algorithms = {
 
       const dt = 1 / 60;
       const invCoherence = 1 / coherence;
-      const radiusSq = inversion * inversion;
-      const boundaryStart = inversion * 0.9;
+      const radiusSq = boundRadius * boundRadius;
+      const boundaryStart = boundRadius * 0.9;
       const dampFactor = 1 - viscosity;
 
       // ---- Build spatial hash grid (full rebuild — all particles needed
@@ -1706,7 +1713,7 @@ const algorithms = {
         if (distFromCenter > boundaryStart) {
           const overflow =
             (distFromCenter - boundaryStart) /
-            (inversion - boundaryStart + 0.001);
+            (boundRadius - boundaryStart + 0.001);
           const pushStrength = overflow * overflow * 2;
           const invDC = 1 / (distFromCenter || 1);
           fx -= px * invDC * pushStrength;
@@ -1745,7 +1752,7 @@ const algorithms = {
           positions[pi + 2] * positions[pi + 2];
         if (newDistSq > radiusSq) {
           const newDist = Math.sqrt(newDistSq);
-          const scale = (inversion * 0.999) / newDist;
+          const scale = (boundRadius * 0.999) / newDist;
           positions[pi] *= scale;
           positions[pi + 1] *= scale;
           positions[pi + 2] *= scale;

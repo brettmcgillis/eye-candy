@@ -1,4 +1,4 @@
-import { memo } from 'react';
+import React, { memo, useMemo } from 'react';
 
 import { Cloud, Clouds } from '@react-three/drei';
 
@@ -16,16 +16,33 @@ const SceneCloud = memo(function SceneCloud({
   fade,
   growth,
   speed,
-  bounds,
+  boundsX,
+  boundsY,
+  boundsZ,
   color,
 }) {
+  const cloudPosition = useMemo(
+    () => [position.x, position.y, position.z],
+    [position.x, position.y, position.z]
+  );
+
+  const cloudRotation = useMemo(
+    () => [radians(rotation.x), radians(rotation.y), radians(rotation.z)],
+    [rotation.x, rotation.y, rotation.z]
+  );
+
+  const cloudBounds = useMemo(
+    () => [boundsX, boundsY, boundsZ],
+    [boundsX, boundsY, boundsZ]
+  );
+
   return (
     <Clouds visible={visible}>
       <Cloud
-        position={position}
-        rotation={rotation}
+        position={cloudPosition}
+        rotation={cloudRotation}
         scale={scale}
-        bounds={bounds}
+        bounds={cloudBounds}
         seed={seed}
         segments={segments}
         volume={volume}

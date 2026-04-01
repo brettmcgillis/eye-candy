@@ -73,6 +73,8 @@ export const PRESETS = {
     recordVisible: true,
     recordScale: 12,
     recordSideA: true,
+    animate: true,
+    speed: 33,
   },
   Plate: {
     haloType: 'plate',
@@ -80,5 +82,6 @@ export const PRESETS = {
     plateRotation: { x: 45, y: 0, z: 0 },
     plateVisible: true,
     plateScale: 0.18,
+    animate: false,
   },
 };

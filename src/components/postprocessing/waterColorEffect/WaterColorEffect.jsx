@@ -1,6 +1,6 @@
 import * as THREE from 'three';
 
-import { useMemo, useRef } from 'react';
+import { useEffect, useMemo, useRef } from 'react';
 
 import { useFBO, useTexture } from '@react-three/drei';
 import { useFrame, useThree } from '@react-three/fiber';
@@ -19,14 +19,26 @@ const BLOOM_LAYER = 1;
 export default function WaterColorEffect({
   radius = 6,
   alpha = 25,
+  qualityScale = 0.5,
   quantizeLevels = 16,
   saturation = 1.5,
   paperStrength = 1.0,
   bloomEnabled = true,
   bloomIntensity = 1.2,
+  outlineEnabled = true,
+  outlineStrength = 0.75,
+  outlineThreshold = 0.22,
+  outlineSoftness = 0.14,
+  hatchingEnabled = true,
+  hatchScale = 6.0,
+  hatchIntensity = 0.25,
+  hatchThickness = 0.9,
+  hatchRotation = 0.35,
 }) {
   const { size } = useThree();
   const resolutionRef = useRef(new THREE.Vector4());
+  // Separate ref for the half-resolution used by the tensor and kuwahara passes.
+  const halfResRef = useRef(new THREE.Vector4());
 
   const paperTexture = useTexture('/images/watercolor.png');
   paperTexture.minFilter = THREE.LinearMipmapLinearFilter;
@@ -35,11 +47,29 @@ export default function WaterColorEffect({
 
   // Render targets
   const originalTarget = useFBO({ depthBuffer: true });
-  const tensorTarget = useFBO({
-    depthBuffer: false,
-    type: THREE.HalfFloatType,
-  });
-  const kuwaharaTarget = useFBO({ depthBuffer: false });
+  // Tensor and Kuwahara targets are created at 1×1 and resized each frame to
+  // qualityScale of the viewport — typically half-res.  Painting/smoothing passes
+  // are low-frequency so the downscale is visually imperceptible.
+  const tensorTarget = useMemo(
+    () =>
+      new THREE.WebGLRenderTarget(1, 1, {
+        depthBuffer: false,
+        type: THREE.HalfFloatType,
+      }),
+    []
+  );
+  const kuwaharaTarget = useMemo(
+    () => new THREE.WebGLRenderTarget(1, 1, { depthBuffer: false }),
+    []
+  );
+
+  useEffect(
+    () => () => {
+      tensorTarget.dispose();
+      kuwaharaTarget.dispose();
+    },
+    [tensorTarget, kuwaharaTarget]
+  );
 
   // Bloom render targets (no extract — layer render replaces it)
   const bloomLayerTarget = useFBO({ depthBuffer: true });
@@ -69,7 +99,7 @@ export default function WaterColorEffect({
       makePassScene(fsGeometry, KUWAHARA_FRAGMENT, {
         inputBuffer: { value: null },
         originalTexture: { value: null },
-        resolution: { value: new THREE.Vector4() },
+        sourceSize: { value: new THREE.Vector2() },
         radius: { value: radius },
         alpha: { value: alpha },
       }),
@@ -81,9 +111,19 @@ export default function WaterColorEffect({
       makePassScene(fsGeometry, FINAL_FRAGMENT, {
         inputBuffer: { value: null },
         watercolorTexture: { value: null },
+        tensorTexture: { value: null },
         quantizeLevels: { value: quantizeLevels },
         saturation: { value: saturation },
         paperStrength: { value: paperStrength },
+        outlineEnabled: { value: outlineEnabled },
+        outlineStrength: { value: outlineStrength },
+        outlineThreshold: { value: outlineThreshold },
+        outlineSoftness: { value: outlineSoftness },
+        hatchingEnabled: { value: hatchingEnabled },
+        hatchScale: { value: hatchScale },
+        hatchIntensity: { value: hatchIntensity },
+        hatchThickness: { value: hatchThickness },
+        hatchRotation: { value: hatchRotation },
       }),
     [fsGeometry]
   );
@@ -126,6 +166,16 @@ export default function WaterColorEffect({
     const w = size.width * dpr;
     const h = size.height * dpr;
     resolutionRef.current.set(w, h, 1 / w, 1 / h);
+
+    // Resize the tensor + kuwahara targets to qualityScale of the viewport.
+    // setSize is a no-op when dimensions haven't changed.
+    const qw = Math.max(1, Math.round(w * qualityScale));
+    const qh = Math.max(1, Math.round(h * qualityScale));
+    if (tensorTarget.width !== qw || tensorTarget.height !== qh) {
+      tensorTarget.setSize(qw, qh);
+      kuwaharaTarget.setSize(qw, qh);
+    }
+    halfResRef.current.set(qw, qh, 1 / qw, 1 / qh);
 
     const prevAutoClear = gl.autoClear;
     gl.autoClear = false;
@@ -184,7 +234,7 @@ export default function WaterColorEffect({
 
     // 2 — Tensor pass: (bloomed) scene → structure tensor
     tensorPass.material.uniforms.inputBuffer.value = sceneTexture;
-    tensorPass.material.uniforms.resolution.value = resolutionRef.current;
+    tensorPass.material.uniforms.resolution.value = halfResRef.current;
     gl.setRenderTarget(tensorTarget);
     gl.clear();
     gl.render(tensorPass.scene, fsCamera);
@@ -192,7 +242,7 @@ export default function WaterColorEffect({
     // 3 — Anisotropic Kuwahara pass: tensor + (bloomed) scene → filtered output
     kuwaharaPass.material.uniforms.inputBuffer.value = tensorTarget.texture;
     kuwaharaPass.material.uniforms.originalTexture.value = sceneTexture;
-    kuwaharaPass.material.uniforms.resolution.value = resolutionRef.current;
+    kuwaharaPass.material.uniforms.sourceSize.value.set(w, h);
     kuwaharaPass.material.uniforms.radius.value = radius;
     kuwaharaPass.material.uniforms.alpha.value = alpha;
     gl.setRenderTarget(kuwaharaTarget);
@@ -202,9 +252,19 @@ export default function WaterColorEffect({
     // 4 — Final pass: color correction + paper texture → screen
     finalPass.material.uniforms.inputBuffer.value = kuwaharaTarget.texture;
     finalPass.material.uniforms.watercolorTexture.value = paperTexture;
+    finalPass.material.uniforms.tensorTexture.value = tensorTarget.texture;
     finalPass.material.uniforms.quantizeLevels.value = quantizeLevels;
     finalPass.material.uniforms.saturation.value = saturation;
     finalPass.material.uniforms.paperStrength.value = paperStrength;
+    finalPass.material.uniforms.outlineEnabled.value = outlineEnabled;
+    finalPass.material.uniforms.outlineStrength.value = outlineStrength;
+    finalPass.material.uniforms.outlineThreshold.value = outlineThreshold;
+    finalPass.material.uniforms.outlineSoftness.value = outlineSoftness;
+    finalPass.material.uniforms.hatchingEnabled.value = hatchingEnabled;
+    finalPass.material.uniforms.hatchScale.value = hatchScale;
+    finalPass.material.uniforms.hatchIntensity.value = hatchIntensity;
+    finalPass.material.uniforms.hatchThickness.value = hatchThickness;
+    finalPass.material.uniforms.hatchRotation.value = hatchRotation;
     gl.setRenderTarget(null);
     gl.clear();
     gl.render(finalPass.scene, fsCamera);

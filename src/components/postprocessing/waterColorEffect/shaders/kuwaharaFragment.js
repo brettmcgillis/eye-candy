@@ -4,7 +4,9 @@ const KUWAHARA_FRAGMENT = /* glsl */ `
 uniform int radius;
 uniform float alpha;
 uniform sampler2D inputBuffer;
-uniform vec4 resolution;
+// sourceSize = full-resolution (w, h) of the original scene texture.
+// Used to convert pixel-space offsets to UVs regardless of render-target resolution.
+uniform vec2 sourceSize;
 uniform sampler2D originalTexture;
 
 varying vec2 vUv;
@@ -16,9 +18,9 @@ vec4 fromLinear(vec4 linearRGB) {
   return vec4(mix(higher, lower, cutoff), linearRGB.a);
 }
 
-vec3 sampleColor(vec2 offset) {
-  vec2 coord = (gl_FragCoord.xy + offset) / resolution.xy;
-  return texture2D(originalTexture, coord).rgb;
+// Offset is in source-pixel units; dividing by sourceSize converts to UV delta.
+vec3 sampleColor(vec2 baseUv, vec2 offset) {
+  return texture2D(originalTexture, baseUv + offset / sourceSize).rgb;
 }
 
 vec4 getDominantOrientation(vec4 tensor) {
@@ -50,7 +52,7 @@ float polynomialWeight(float x, float y, float eta, float lambda) {
 }
 
 void getSectorVarianceAndAverageColor(
-  mat2 anisotropyMat, float angle, float rad,
+  mat2 anisotropyMat, float angle, float rad, vec2 baseUv,
   out vec3 avgColor, out float variance
 ) {
   vec3 weightedColorSum = vec3(0.0);
@@ -60,12 +62,15 @@ void getSectorVarianceAndAverageColor(
   float eta = 0.1;
   float lambda = 0.5;
 
-  for (float r = 1.0; r <= rad; r += 1.0) {
-    for (float a = -0.392699; a <= 0.392699; a += 0.196349) {
-      vec2 sampleOffset = r * vec2(cos(angle + a), sin(angle + a));
-      sampleOffset *= anisotropyMat;
+  // Hoist cos/sin and the anisotropy matrix multiply outside the radius loop.
+  // Each angular offset has a fixed direction regardless of r, so computing it
+  // once per angle reduces trig from (radius × angles) to just angles per sector.
+  for (float a = -0.392699; a <= 0.392699; a += 0.196349) {
+    vec2 baseDir = anisotropyMat * vec2(cos(angle + a), sin(angle + a));
+    for (float r = 1.0; r <= rad; r += 1.0) {
+      vec2 sampleOffset = r * baseDir;
 
-      vec3 color = sampleColor(sampleOffset);
+      vec3 color = sampleColor(baseUv, sampleOffset);
       float weight = polynomialWeight(sampleOffset.x, sampleOffset.y, eta, lambda);
 
       weightedColorSum += color * weight;
@@ -101,7 +106,7 @@ void main() {
   for (int i = 0; i < SECTOR_COUNT; i++) {
     float angle = float(i) * 6.28318 / float(SECTOR_COUNT);
     getSectorVarianceAndAverageColor(
-      anisotropyMat, angle, float(radius),
+      anisotropyMat, angle, float(radius), vUv,
       sectorAvgColors[i], sectorVariances[i]
     );
   }

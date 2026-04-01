@@ -1254,6 +1254,68 @@ export default function useStillPullingForYouControls(
             max: 1,
             step: 0.05,
           },
+          'Ink + Hatch': folder(
+            {
+              outlineEnabled: {
+                label: 'Outline',
+                value: D.outlineEnabled,
+              },
+              outlineStrength: {
+                label: 'Outline Strength',
+                value: D.outlineStrength,
+                min: 0,
+                max: 2,
+                step: 0.01,
+              },
+              outlineThreshold: {
+                label: 'Outline Threshold',
+                value: D.outlineThreshold,
+                min: 0,
+                max: 1,
+                step: 0.01,
+              },
+              outlineSoftness: {
+                label: 'Outline Softness',
+                value: D.outlineSoftness,
+                min: 0.001,
+                max: 1,
+                step: 0.005,
+              },
+              hatchingEnabled: {
+                label: 'Hatching',
+                value: D.hatchingEnabled,
+              },
+              hatchScale: {
+                label: 'Hatch Scale',
+                value: D.hatchScale,
+                min: 1,
+                max: 24,
+                step: 0.1,
+              },
+              hatchIntensity: {
+                label: 'Hatch Intensity',
+                value: D.hatchIntensity,
+                min: 0,
+                max: 1,
+                step: 0.01,
+              },
+              hatchThickness: {
+                label: 'Hatch Thickness',
+                value: D.hatchThickness,
+                min: 0.1,
+                max: 2,
+                step: 0.01,
+              },
+              hatchRotation: {
+                label: 'Hatch Rotation',
+                value: D.hatchRotation,
+                min: -Math.PI,
+                max: Math.PI,
+                step: 0.01,
+              },
+            },
+            { collapsed: true }
+          ),
         },
         { collapsed: true }
       ),

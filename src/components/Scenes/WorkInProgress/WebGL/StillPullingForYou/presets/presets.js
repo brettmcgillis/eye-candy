@@ -80,6 +80,15 @@ const STILL_PULLING = {
   painterlyQuantize: 16,
   painterlySaturation: 1.5,
   painterlyPaper: 1.0,
+  outlineEnabled: true,
+  outlineStrength: 0.75,
+  outlineThreshold: 0.22,
+  outlineSoftness: 0.14,
+  hatchingEnabled: true,
+  hatchScale: 6.0,
+  hatchIntensity: 0.25,
+  hatchThickness: 0.9,
+  hatchRotation: 0.35,
 };
 
 const ROUGH_WATERS = {
@@ -161,6 +170,15 @@ const ROUGH_WATERS = {
   painterlyQuantize: 16,
   painterlySaturation: 1.5,
   painterlyPaper: 1.0,
+  outlineEnabled: true,
+  outlineStrength: 0.75,
+  outlineThreshold: 0.22,
+  outlineSoftness: 0.14,
+  hatchingEnabled: true,
+  hatchScale: 6.0,
+  hatchIntensity: 0.25,
+  hatchThickness: 0.9,
+  hatchRotation: 0.35,
 };
 
 const SUNK = {
@@ -242,6 +260,15 @@ const SUNK = {
   painterlyQuantize: 16,
   painterlySaturation: 1.5,
   painterlyPaper: 1.0,
+  outlineEnabled: true,
+  outlineStrength: 0.75,
+  outlineThreshold: 0.22,
+  outlineSoftness: 0.14,
+  hatchingEnabled: true,
+  hatchScale: 6.0,
+  hatchIntensity: 0.25,
+  hatchThickness: 0.9,
+  hatchRotation: 0.35,
 };
 
 export const SCENE_PRESETS = {

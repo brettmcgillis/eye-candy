@@ -130,6 +130,15 @@ export default function StayingAfloat() {
           quantizeLevels={controls.painterlyQuantize}
           saturation={controls.painterlySaturation}
           paperStrength={controls.painterlyPaper}
+          outlineEnabled={controls.outlineEnabled}
+          outlineStrength={controls.outlineStrength}
+          outlineThreshold={controls.outlineThreshold}
+          outlineSoftness={controls.outlineSoftness}
+          hatchingEnabled={controls.hatchingEnabled}
+          hatchScale={controls.hatchScale}
+          hatchIntensity={controls.hatchIntensity}
+          hatchThickness={controls.hatchThickness}
+          hatchRotation={controls.hatchRotation}
           bloomEnabled={controls.bloomEnabled}
           bloomIntensity={controls.bloomIntensity}
         />

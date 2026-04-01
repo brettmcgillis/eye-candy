@@ -237,6 +237,15 @@ export default function StillPullingForYou() {
           quantizeLevels={config.painterlyQuantize}
           saturation={config.painterlySaturation}
           paperStrength={config.painterlyPaper}
+          outlineEnabled={config.outlineEnabled}
+          outlineStrength={config.outlineStrength}
+          outlineThreshold={config.outlineThreshold}
+          outlineSoftness={config.outlineSoftness}
+          hatchingEnabled={config.hatchingEnabled}
+          hatchScale={config.hatchScale}
+          hatchIntensity={config.hatchIntensity}
+          hatchThickness={config.hatchThickness}
+          hatchRotation={config.hatchRotation}
           bloomEnabled={config.bloomEnabled}
           bloomIntensity={config.bloomIntensity}
         />

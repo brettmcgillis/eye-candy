@@ -3,7 +3,9 @@ import { lazy } from 'react';
 const NoScene = lazy(() => import('../../../app/scaffold/NoScene'));
 const FoldedFrame = lazy(() => import('./WebGL/FoldedFrame/FoldedFrame'));
 const LoGlow = lazy(() => import('./WebGL/LoGlow/LoGlow'));
-const NewScene = lazy(() => import('./WebGL/NewScene/NewScene'));
+const AllMyThoughtsAreSoCumulus = lazy(
+  () => import('./WebGL/AllMyThoughtsAreSoCumulus/AllMyThoughtsAreSoCumulus')
+);
 const PaperStack = lazy(() => import('./WebGL/PaperStack/PaperStack'));
 const PenPlotter = lazy(() => import('./WebGL/PenPlotter/PenPlotter'));
 const QuinnsDice = lazy(() => import('./WebGL/QuinnsDice/QuinnsDice'));
@@ -29,10 +31,10 @@ const scenes = [
     Component: LoGlow,
   },
   {
-    id: 'newScene',
-    label: 'New Scene',
-    icon: '💀',
-    Component: NewScene,
+    id: 'allMyThoughtsAreSoCumulus',
+    label: 'All My Thoughts Are So Cumulus',
+    icon: '💀☁️',
+    Component: AllMyThoughtsAreSoCumulus,
   },
   {
     id: 'paperStack',

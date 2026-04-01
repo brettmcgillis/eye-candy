@@ -2,7 +2,7 @@ import { useRef } from 'react';
 
 import { useFrame } from '@react-three/fiber';
 
-import { radians } from '../../../../../utils/math';
+import { radians } from '../../../../../../utils/math';
 
 /**
  * useHaloAnimation

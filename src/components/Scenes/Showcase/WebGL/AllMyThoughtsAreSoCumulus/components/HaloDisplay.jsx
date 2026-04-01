@@ -8,8 +8,8 @@ import Atom from '../../../../../elements/Atom/Atom';
 import Halo from '../../../../../elements/halo/Halo';
 import NeuralNetwork from '../../../../../elements/network/NeuralNetwork';
 import Record from '../../../../../elements/record/Record';
+import useHaloAnimation from '../hooks/useHaloAnimation';
 import { HALO_PRESET_ORDER } from '../presets';
-import useHaloAnimation from '../useHaloAnimation';
 import {
   buildNetworkConfig,
   buildRingsConfig,

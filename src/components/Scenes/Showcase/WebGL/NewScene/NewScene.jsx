@@ -1,400 +1,107 @@
-/* eslint-disable unused-imports/no-unused-imports */
-
-/* eslint-disable no-unused-vars */
-import { folder, useControls } from 'leva';
-
-import React from 'react';
+import React, { useEffect, useMemo, useRef } from 'react';
 
 import {
-  AsciiRenderer,
-  Cloud,
-  Clouds,
   Environment,
   Float,
   OrbitControls,
   PerspectiveCamera,
 } from '@react-three/drei';
-import { useThree } from '@react-three/fiber';
-import { EffectComposer, Pixelation } from '@react-three/postprocessing';
 
 import getColorsInRange from '../../../../../utils/colors';
-import { getRandomNumber, radians } from '../../../../../utils/math';
-import Lb45Plate from '../../../../elements/45lbPlate/45lbPlate';
-import Atom from '../../../../elements/Atom/Atom';
-import Femur from '../../../../elements/femur/Femur';
-import Halo from '../../../../elements/halo/Halo';
-import NeuralNetwork from '../../../../elements/network/NeuralNetwork';
-import Record from '../../../../elements/record/Record';
-import Skull from '../../../../elements/skull/Skull';
+import { radians } from '../../../../../utils/math';
 import { useSkullControls } from '../../../../elements/skull/SkullControls';
 import { GridHelper, PolarGridHelper } from '../../../../rigging/GridHelper';
+import HaloDisplay from './components/HaloDisplay';
+import SceneCloud from './components/SceneCloud';
+import SceneFemur from './components/SceneFemur';
+import SceneSkull from './components/SceneSkull';
 import useHaloAnimation from './useHaloAnimation';
+import useSceneControls from './hooks/useSceneControls';
+import { HALO_PRESET_ORDER, PRESETS } from './presets';
 
-function useHaloAnimationControls() {
-  return useControls(
-    'Halo Animation',
-    {
-      animate: { label: 'Rotate', value: true },
-      speed: { label: 'RPM', value: 33, min: 0, max: 78, step: 1 },
-      wobble: { label: 'Wobble', value: false },
-      wobbleSpeed: {
-        label: 'Wobble Speed',
-        value: 1,
-        min: 0,
-        max: 10,
-        step: 0.1,
-      },
-      wobbleAngle: {
-        label: 'Wobble Angle',
-        value: 5,
-        min: 0,
-        max: 15,
-        step: 1,
-      },
-    },
-    { collapsed: true }
-  );
-}
+// ---------------------------------------------------------------------------
+// Helpers
+// ---------------------------------------------------------------------------
 
-function useSceneControls() {
-  return useControls(
-    'NewScene',
-    {
-      showGridHelper: { label: 'Show Grid Helper', value: false },
-      showPolarGridHelper: { label: 'Show Polar Grid Helper', value: false },
-      'Point Light': folder(
-        {
-          plPosition: {
-            label: 'Position',
-            value: { x: 3, y: 3, z: 5 },
-          },
-          plDecay: {
-            label: 'Decay',
-            value: 0,
-            min: -10,
-            max: 10,
-            step: 0.1,
-          },
-          plDistance: {
-            label: 'Distance',
-            value: -1,
-            min: -10,
-            max: 10,
-            step: 0.1,
-          },
-          plIntensity: {
-            label: 'Intensity',
-            value: 0.8,
-            min: 0,
-            max: 10,
-            step: 0.1,
-          },
-          plCastShadow: { label: 'Cast Shadow', value: true },
-        },
-        { collapsed: true }
-      ),
-      Halo: folder(
-        {
-          haloPosition: { label: 'Position', value: { x: 0, y: 1.5, z: -1 } },
-          haloRotation: {
-            label: 'Rotation',
-            value: { x: 45, y: 0, z: 0 },
-          },
-          haloScale: {
-            label: 'Scale',
-            value: 12,
-            min: 0.1,
-            max: 12,
-            step: 0.1,
-          },
-          haloVisible: { label: 'Visible', value: true },
-          recordSideA: {
-            label: 'Record Side',
-            value: true,
-            options: { 'Side A': true, 'Side B': false },
-          },
-        },
-        { collapsed: true }
-      ),
-      Skull: folder(
-        {
-          skullPosition: { label: 'Position', value: { x: 0, y: 0, z: 0 } },
-          skullRotation: { label: 'Rotation', value: { x: 0, y: 0, z: 0 } },
-          skullScale: {
-            label: 'Scale',
-            value: 0.1,
-            min: 0.01,
-            max: 1,
-            step: 0.01,
-          },
-          skullVisible: { label: 'Visible', value: true },
-        },
-        { collapsed: true }
-      ),
-      Cloud: folder(
-        {
-          cloudPosition: { label: 'Position', value: { x: 0, y: 0.75, z: 0 } },
-          cloudRotation: { label: 'Rotation', value: { x: 0, y: 0, z: 0 } },
-          cloudScale: {
-            label: 'Scale',
-            value: 0.15,
-            min: 0.01,
-            max: 1,
-            step: 0.01,
-          },
-          cloudVisible: { label: 'Visible', value: true },
-        },
-        { collapsed: true }
-      ),
-      Femur: folder(
-        {
-          femurPosition: {
-            label: 'Position',
-            value: { x: -3, y: -3, z: -0.05 },
-          },
-          femurRotation: { label: 'Rotation', value: { x: 0, y: 0, z: -66 } },
-          femurScale: {
-            label: 'Scale',
-            value: 0.75,
-            min: 0.1,
-            max: 1,
-            step: 0.01,
-          },
-          femurVisible: { label: 'Visible', value: true },
-        },
-        { collapsed: true }
-      ),
-      Effects: folder(
-        {
-          autoRotateSpeed: {
-            label: 'Rotate Speed',
-            value: 0,
-            min: -50,
-            max: 50,
-          },
-          floatSpeed: {
-            label: 'Float Speed',
-            value: 0.5,
-            min: 0,
-            max: 1,
-            step: 0.01,
-          },
-          environmentIntensity: {
-            label: 'Environment Intensity',
-            value: 0,
-            min: 0,
-            max: 2,
-            step: 0.01,
-          },
-          pixelationEnabled: { label: 'Pixelation Enabled', value: false },
-          pixelationGranularity: {
-            label: 'Pixelation Granularity',
-            value: 8,
-            min: 0,
-            max: 50,
-            step: 1,
-          },
-          asciiEnabled: { label: 'Ascii Enabled', value: false },
-          asciiBgColor: { label: 'Ascii BG Color', value: '#FFFFFF' },
-          asciiFgColor: { label: 'Ascii FG Color', value: '#000000' },
-          asciiCharSet: {
-            label: 'Ascii Char Set',
-            value:
-              " `.-':_,^=;><+!rc*/z?sLTv)J7(|Fi{C}fI31tlu[neoZ5Yxjya]2ESwqkP6h9d4VpOGbUAKXHm8RD#$Bg0MNWQ%&@",
-          },
-          asciiInvert: { label: 'Ascii Invert', value: false },
-          asciiColorize: { label: 'Ascii Colorize', value: true },
-          asciiResolution: {
-            label: 'Ascii Resolution',
-            value: 0.25,
-            min: 0.1,
-            max: 0.4,
-            step: 0.01,
-          },
-        },
-        { collapsed: true }
-      ),
-    },
-    { collapsed: true }
-  );
-}
+function buildRingsConfig(c) {
+  const width = c.ringsOuterRadius - c.ringsInnerRadius;
 
-function useCloudControls() {
-  return useControls(
-    'Cloud',
-    {
-      seed: { value: getRandomNumber(1, 100), min: 1, max: 100, step: 1 },
-      segments: { value: 50, min: 1, max: 80, step: 1 },
-      volume: { value: 6, min: 0, max: 100, step: 0.1 },
-      opacity: { value: 0.8, min: 0, max: 1, step: 0.01 },
-      fade: { value: 0, min: 0, max: 400, step: 1 },
-      growth: { value: 4, min: 0, max: 20, step: 1 },
-      speed: { value: 0.5, min: 0, max: 1, step: 0.01 },
-      x: { value: 6, min: 0, max: 10, step: 1 },
-      y: { value: 1, min: 0, max: 10, step: 1 },
-      z: { value: 1, min: 0, max: 10, step: 1 },
-      color: '#bababa',
-    },
-    { collapsed: true }
-  );
-}
-
-function useHaloControls() {
-  return useControls(
-    'Halo',
-    {
-      innerRadius: {
-        label: 'Inner Radius',
-        value: 0.5,
-        min: 0.1,
-        max: 2,
-        step: 0.1,
-      },
-      outerRadius: {
-        label: 'Outer Radius',
-        value: 2,
-        min: 2,
-        max: 20,
-        step: 0.1,
-      },
-      style: {
-        label: 'Style',
-        value: 'default',
-        options: {
-          Default: 'default',
-          Gradient: 'gradient',
-        },
-      },
-      start: {
-        label: 'Start',
-        value: '#FFFFFF',
-        render: (get) => get('Halo.style') === 'gradient',
-      },
-      end: {
-        label: 'End',
-        value: '#000000',
-        render: (get) => get('Halo.style') === 'gradient',
-      },
-      steps: {
-        label: 'Steps',
-        value: 8,
-        min: 2,
-        max: 20,
-        step: 1,
-        render: (get) => get('Halo.style') === 'gradient',
-      },
-      sm: {
-        value: 0.1,
-        min: 0.1,
-        max: 3,
-        step: 0.1,
-        render: (get) => get('Halo.style') === 'default',
-      },
-      med: {
-        value: 1,
-        min: 0.1,
-        max: 3,
-        step: 0.1,
-        render: (get) => get('Halo.style') === 'default',
-      },
-      lg: {
-        value: 2,
-        min: 0.1,
-        max: 3,
-        step: 0.1,
-        render: (get) => get('Halo.style') === 'default',
-      },
-      xl: {
-        value: 3,
-        min: 0.1,
-        max: 3,
-        step: 0.1,
-        render: (get) => get('Halo.style') === 'default',
-      },
-      silver: {
-        label: 'Silver',
-        value: '#c1c1c1',
-        render: (get) => get('Halo.style') === 'default',
-      },
-      white: {
-        label: 'White',
-        value: '#ffffff',
-        render: (get) => get('Halo.style') === 'default',
-      },
-      black: {
-        label: 'Black',
-        value: '#000000',
-        render: (get) => get('Halo.style') === 'default',
-      },
-      blue: {
-        label: 'Blue',
-        value: '#0023ff',
-        render: (get) => get('Halo.style') === 'default',
-      },
-      lightblue: {
-        label: 'Light Blue',
-        value: '#69d8ff',
-        render: (get) => get('Halo.style') === 'default',
-      },
-    },
-    { collapsed: true }
-  );
-}
-
-function getHaloConfig(haloControls) {
-  const {
-    innerRadius,
-    outerRadius,
-    style,
-    start,
-    end,
-    steps,
-    sm,
-    med,
-    lg,
-    xl,
-    silver,
-    white,
-    black,
-    blue,
-    lightblue,
-  } = haloControls;
-  const width = outerRadius - innerRadius;
-
-  const gradientColors = getColorsInRange(start, end, steps).map((v) => ({
-    width: width / steps,
-    color: v,
-  }));
+  if (c.ringsStyle === 'gradient') {
+    const gradientColors = getColorsInRange(
+      c.ringsStart,
+      c.ringsEnd,
+      c.ringsSteps
+    ).map((v) => ({ width: width / c.ringsSteps, color: v }));
+    return { innerRadius: c.ringsInnerRadius, rings: gradientColors };
+  }
 
   const colors = [
-    { width: lg, color: silver },
-    { width: sm, color: black },
-    { width: med, color: white },
-    { width: xl, color: black },
-    { width: xl, color: blue },
-    { width: xl, color: lightblue },
-    { width: sm, color: black },
-    { width: lg, color: silver },
+    { width: c.ringsLg, color: c.ringsSilver },
+    { width: c.ringsSm, color: c.ringsBlack },
+    { width: c.ringsMed, color: c.ringsWhite },
+    { width: c.ringsXl, color: c.ringsBlack },
+    { width: c.ringsXl, color: c.ringsBlue },
+    { width: c.ringsXl, color: c.ringsLightblue },
+    { width: c.ringsSm, color: c.ringsBlack },
+    { width: c.ringsLg, color: c.ringsSilver },
   ];
-  const totalWidthRatio = colors.reduce((total, ring) => total + ring.width, 0);
-  const rings =
-    style === 'gradient'
-      ? gradientColors
-      : colors.map((color) => {
-          const normalizedWidth = (color.width / totalWidthRatio) * width;
-          const roundedWidth = Math.round(normalizedWidth * 100) / 100;
-          return { ...color, width: roundedWidth };
-        });
+  const totalWidthRatio = colors.reduce((t, r) => t + r.width, 0);
+  const rings = colors.map((r) => ({
+    ...r,
+    width: Math.round(((r.width / totalWidthRatio) * width) * 100) / 100,
+  }));
+  return { innerRadius: c.ringsInnerRadius, rings };
+}
+
+function buildNetworkConfig(c) {
   return {
-    innerRadius,
-    rings,
+    shape: 'ring',
+    innerDiameter: 3,
+    outerDiameter: 7,
+    height: 0.2,
+    networkWidth: 7,
+    networkHeight: 3,
+    networkDepth: 7,
+    particleCount: c.networkParticleCount,
+    maxParticleCount: 1000,
+    minConnections: 1,
+    maxConnections: 8,
+    minDistance: 0.2,
+    maxDistance: c.networkMaxDistance,
+    pointColor: c.networkPointColor,
+    lineColor: c.networkLineColor,
+    pointSize: c.networkPointSize,
+    pointBlending: 'normal',
+    pointsToneMapped: false,
+    pointsTransparent: true,
+    pointsOpacity: 1,
+    lineWidth: 1,
+    linesToneMapped: false,
+    linesTransparent: true,
+    linesOpacity: 1,
+    lineBlending: 'normal',
+    timeScale: c.networkTimeScale,
+    angularSpeed: c.networkAngularSpeed,
+    radialSpeed: 1,
+    verticalSpeed: 1,
+    systemRotation: 1,
   };
 }
 
-export default function NewScene() {
-  const scene = useSceneControls();
+// ---------------------------------------------------------------------------
+// Scene
+// ---------------------------------------------------------------------------
 
+export default function AllMyThoughtsAreSoCumulus() {
+  const { controls: c, setControls, controlsSnapshotRef } = useSceneControls();
+
+  // Keep snapshot current for the Leva copy button
+  controlsSnapshotRef.current = c;
+
+  // Skull bone-visibility controls (own Leva panel)
   const skullControls = useSkullControls({
+    controlName: 'Skull Settings',
+    collapsed: true,
     cranium: {
       showRightParietal: false,
       showRightTemporal: false,
@@ -402,30 +109,149 @@ export default function NewScene() {
       showLeftParietal: false,
       showLeftTemporal: false,
     },
-    mandible: {
-      showMandible: false,
-    },
+    mandible: { showMandible: false },
   });
 
-  const cloudControls = useCloudControls();
+  // Halo animation ref — attached to the outer group in HaloDisplay
+  const haloAnimRef = useHaloAnimation({
+    animate: c.animate,
+    speed: c.speed,
+    wobble: c.wobble,
+    wobbleSpeed: c.wobbleSpeed,
+    wobbleAngle: c.wobbleAngle,
+  });
 
-  const haloControls = useHaloControls();
+  // ---------------------------------------------------------------------------
+  // Halo scroll mode — wheel cycles through presets
+  // ---------------------------------------------------------------------------
+  const presetIndexRef = useRef(HALO_PRESET_ORDER.indexOf(c.preset));
 
-  const haloAnim = useHaloAnimationControls();
-  const haloAnimRef = useHaloAnimation(haloAnim);
+  useEffect(() => {
+    presetIndexRef.current = HALO_PRESET_ORDER.indexOf(c.preset);
+  }, [c.preset]);
+
+  useEffect(() => {
+    if (!c.haloScrollEnabled) return undefined;
+
+    function handleWheel(e) {
+      const dir = e.deltaY > 0 ? 1 : -1;
+      presetIndexRef.current =
+        (presetIndexRef.current + dir + HALO_PRESET_ORDER.length) %
+        HALO_PRESET_ORDER.length;
+      const nextPreset = HALO_PRESET_ORDER[presetIndexRef.current];
+      setControls({ preset: nextPreset, ...PRESETS[nextPreset] });
+    }
+
+    window.addEventListener('wheel', handleWheel, { passive: true });
+    return () => window.removeEventListener('wheel', handleWheel);
+  }, [c.haloScrollEnabled, setControls]);
+
+  // ---------------------------------------------------------------------------
+  // Stable memoized props for memoized child components
+  // ---------------------------------------------------------------------------
+
+  const haloPos = useMemo(
+    () => [c.haloPosition.x, c.haloPosition.y, c.haloPosition.z],
+    [c.haloPosition.x, c.haloPosition.y, c.haloPosition.z]
+  );
+  const haloRot = useMemo(
+    () => [
+      radians(c.haloRotation.x),
+      radians(c.haloRotation.y),
+      radians(c.haloRotation.z),
+    ],
+    [c.haloRotation.x, c.haloRotation.y, c.haloRotation.z]
+  );
+
+  const ringsConfig = useMemo(() => buildRingsConfig(c), [
+    c.ringsStyle,
+    c.ringsInnerRadius,
+    c.ringsOuterRadius,
+    c.ringsStart,
+    c.ringsEnd,
+    c.ringsSteps,
+    c.ringsSm,
+    c.ringsMed,
+    c.ringsLg,
+    c.ringsXl,
+    c.ringsSilver,
+    c.ringsWhite,
+    c.ringsBlack,
+    c.ringsBlue,
+    c.ringsLightblue,
+  ]);
+
+  const networkConfig = useMemo(() => buildNetworkConfig(c), [
+    c.networkPointColor,
+    c.networkLineColor,
+    c.networkPointSize,
+    c.networkParticleCount,
+    c.networkMaxDistance,
+    c.networkAngularSpeed,
+    c.networkTimeScale,
+  ]);
+
+  const cloudPos = useMemo(
+    () => [c.cloudPosition.x, c.cloudPosition.y, c.cloudPosition.z],
+    [c.cloudPosition.x, c.cloudPosition.y, c.cloudPosition.z]
+  );
+  const cloudRot = useMemo(
+    () => [
+      radians(c.cloudRotation.x),
+      radians(c.cloudRotation.y),
+      radians(c.cloudRotation.z),
+    ],
+    [c.cloudRotation.x, c.cloudRotation.y, c.cloudRotation.z]
+  );
+  const cloudBounds = useMemo(
+    () => [c.cloudBoundsX, c.cloudBoundsY, c.cloudBoundsZ],
+    [c.cloudBoundsX, c.cloudBoundsY, c.cloudBoundsZ]
+  );
+
+  const skullPos = useMemo(
+    () => [c.skullPosition.x, c.skullPosition.y, c.skullPosition.z],
+    [c.skullPosition.x, c.skullPosition.y, c.skullPosition.z]
+  );
+  const skullRot = useMemo(
+    () => [
+      radians(c.skullRotation.x),
+      radians(c.skullRotation.y),
+      radians(c.skullRotation.z),
+    ],
+    [c.skullRotation.x, c.skullRotation.y, c.skullRotation.z]
+  );
+
+  const femurPos = useMemo(
+    () => [c.femurPosition.x, c.femurPosition.y, c.femurPosition.z],
+    [c.femurPosition.x, c.femurPosition.y, c.femurPosition.z]
+  );
+  const femurRot = useMemo(
+    () => [
+      radians(c.femurRotation.x),
+      radians(c.femurRotation.y),
+      radians(c.femurRotation.z),
+    ],
+    [c.femurRotation.x, c.femurRotation.y, c.femurRotation.z]
+  );
+
+  // ---------------------------------------------------------------------------
+  // Render
+  // ---------------------------------------------------------------------------
+
   return (
     <>
       <PerspectiveCamera makeDefault position={[-1, -1, 3.5]} />
+
       <pointLight
-        position={[scene.plPosition.x, scene.plPosition.y, scene.plPosition.z]}
-        decay={scene.plDecay}
-        distance={scene.plDistance}
-        intensity={scene.plIntensity}
-        castShadow={scene.plCastShadow}
+        position={[c.plPosition.x, c.plPosition.y, c.plPosition.z]}
+        decay={c.plDecay}
+        distance={c.plDistance}
+        intensity={c.plIntensity}
+        castShadow={c.plCastShadow}
       />
 
-      <GridHelper x y z visible={scene.showGridHelper} />
-      <PolarGridHelper x y z visible={scene.showPolarGridHelper} />
+      <GridHelper x y z visible={c.showGridHelper} />
+      <PolarGridHelper x y z visible={c.showPolarGridHelper} />
 
       <OrbitControls
         autoRotate
@@ -433,164 +259,61 @@ export default function NewScene() {
         enablePan
         enableRotate
         enableZoom
-        autoRotateSpeed={scene.autoRotateSpeed}
+        autoRotateSpeed={c.autoRotateSpeed}
       />
-      <Float speed={scene.floatSpeed}>
-        {/* Spread all halos along x axis, same orientation, all visible */}
-        <Halo
-          ref={haloAnimRef}
-          visible
-          position={[-6, 1.5, -1]}
-          rotation={[Math.PI / 4, 0, 0]}
-          scale={0.9}
-          {...getHaloConfig(haloControls)}
+
+      <Float speed={c.floatSpeed}>
+        <HaloDisplay
+          haloRef={haloAnimRef}
+          haloType={c.haloType}
+          position={haloPos}
+          rotation={haloRot}
+          scale={c.haloScale}
+          visible={c.haloVisible}
+          ringsConfig={ringsConfig}
+          recordSideA={c.recordSideA}
+          networkConfig={networkConfig}
+          atomicNumber={c.atomicNumber}
+          atomAnimateElectrons={c.atomAnimateElectrons}
+          atomShellSpacing={c.atomShellSpacing}
         />
 
-        {/* Atomic Halo Demo */}
-
-        {/* Extra group to guarantee orientation matches others */}
-        <group
-          position={[-3, 1.5, -1]}
-          rotation={[-Math.PI / 4, 0, 0]}
-          scale={1.05}
-        >
-          <Atom atomicNumber={8} animateElectrons shellSpacing={0.65} />
-        </group>
-
-        {/* 45lb Plate Halo Demo */}
-
-        <Lb45Plate
-          position={[0, 1.5, -1]}
-          rotation={[Math.PI / 4, 0, 0]}
-          scale={0.18}
-        />
-
-        {/* Neural Network Ring Halo Demo */}
-
-        <group
-          position={[3, 1.5, -1]}
-          rotation={[-Math.PI / 4, 0, 0]}
-          scale={0.53}
-        >
-          <NeuralNetwork
-            shape="ring"
-            innerDiameter={3}
-            outerDiameter={7}
-            height={0.2}
-            networkWidth={7}
-            networkHeight={3}
-            networkDepth={7}
-            particleCount={500}
-            maxParticleCount={1000}
-            minConnections={1}
-            maxConnections={8}
-            minDistance={0.2}
-            maxDistance={0.8}
-            pointColor="#ff0000"
-            lineColor="#000000"
-            pointSize={2.5}
-            pointBlending="normal"
-            pointsToneMapped={false}
-            pointsTransparent
-            pointsOpacity={1}
-            lineWidth={1}
-            linesToneMapped={false}
-            linesTransparent
-            linesOpacity={1}
-            lineBlending="normal"
-            timeScale={0.4}
-            angularSpeed={0.53}
-            radialSpeed={1}
-            verticalSpeed={1}
-            systemRotation={1}
-          />
-        </group>
-
-        {/* Record Halo Demo (visually aligned) */}
-
-        <Record
-          sideA={scene.recordSideA}
-          scale={12}
-          position={[6, 1.5, -1]}
-          rotation={[Math.PI / 4, 0, 0]}
-        />
-
-        <Skull
+        <SceneSkull
+          position={skullPos}
+          rotation={skullRot}
+          scale={c.skullScale}
+          visible={c.skullVisible}
           {...skullControls}
-          position={[
-            scene.skullPosition.x,
-            scene.skullPosition.y,
-            scene.skullPosition.z,
-          ]}
-          rotation={[
-            radians(scene.skullRotation.x),
-            radians(scene.skullRotation.y),
-            radians(scene.skullRotation.z),
-          ]}
-          scale={scene.skullScale}
-          visible={scene.skullVisible}
         />
-        <Clouds visible={scene.cloudVisible}>
-          <Cloud
-            position={[
-              scene.cloudPosition.x,
-              scene.cloudPosition.y,
-              scene.cloudPosition.z,
-            ]}
-            rotation={[
-              radians(scene.cloudRotation.x),
-              radians(scene.cloudRotation.y),
-              radians(scene.cloudRotation.z),
-            ]}
-            bounds={[cloudControls.x, cloudControls.y, cloudControls.z]}
-            scale={scene.cloudScale}
-            {...cloudControls}
-            castShadow
-            receiveShadow
-          />
-        </Clouds>
-        <Femur
-          position={[
-            scene.femurPosition.x,
-            scene.femurPosition.y,
-            scene.femurPosition.z,
-          ]}
-          rotation={[
-            radians(scene.femurRotation.x),
-            radians(scene.femurRotation.y),
-            radians(scene.femurRotation.z),
-          ]}
-          scale={scene.femurScale}
-          visible={scene.femurVisible}
+
+        <SceneCloud
+          position={cloudPos}
+          rotation={cloudRot}
+          scale={c.cloudScale}
+          visible={c.cloudVisible}
+          seed={c.cloudSeed}
+          segments={c.cloudSegments}
+          volume={c.cloudVolume}
+          opacity={c.cloudOpacity}
+          fade={c.cloudFade}
+          growth={c.cloudGrowth}
+          speed={c.cloudSpeed}
+          bounds={cloudBounds}
+          color={c.cloudColor}
+        />
+
+        <SceneFemur
+          position={femurPos}
+          rotation={femurRot}
+          scale={c.femurScale}
+          visible={c.femurVisible}
         />
       </Float>
 
-      {scene.asciiEnabled && (
-        <AsciiRenderer
-          bgColor={scene.asciiBgColor}
-          fgColor={scene.asciiFgColor}
-          characters={scene.asciiCharSet}
-          /** Invert character, default: true */
-          invert={scene.asciiInvert}
-          /** Colorize output (very expensive!), default: false */
-          color={scene.asciiColorize}
-          /** Level of detail, default: 0.15 */
-          resolution={scene.asciiResolution}
-        />
-      )}
-
       <Environment
         preset="studio"
-        environmentIntensity={scene.environmentIntensity}
+        environmentIntensity={c.environmentIntensity}
       />
-
-      <EffectComposer>
-        <Pixelation
-          granularity={
-            scene.pixelationEnabled ? scene.pixelationGranularity : 0
-          }
-        />
-      </EffectComposer>
     </>
   );
 }

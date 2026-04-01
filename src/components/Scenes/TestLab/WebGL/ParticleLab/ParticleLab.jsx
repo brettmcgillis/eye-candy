@@ -422,7 +422,8 @@ export default function ParticleLab() {
         makeDefault
         enableDamping
         dampingFactor={0.05}
-        autoRotate={false}
+        autoRotate={config.autoRotate}
+        autoRotateSpeed={config.autoRotateSpeed}
       />
       <ParticleCloud
         config={config}

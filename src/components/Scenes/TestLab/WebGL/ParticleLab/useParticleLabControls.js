@@ -84,6 +84,14 @@ export default function useParticleLabControls() {
             max: 360,
             step: 1,
           },
+          autoRotate: { label: 'Auto Rotate', value: false },
+          autoRotateSpeed: {
+            label: 'Rotate Speed',
+            value: 1.0,
+            min: -10,
+            max: 10,
+            step: 0.1,
+          },
         },
         { collapsed: true }
       ),

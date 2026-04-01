@@ -18,13 +18,13 @@
 
 - [x] Set the default scale of the Record, Rings, Plate, Atomic, and Netowrk to be visually aligned
 
-- [ ] Collapse all halos into a single position (matching the current Plate position: [0, 1.5, -1]) and render only one at a time based on the active halo type selection (Rings / Record / Network / Plate / Atomic)
-- [ ] rename it - All My Thoughts Are So Cumulus
-- [ ] Move controls out of scene into useSceneControls hook in /hooks folder
-- [ ] Break scene down into small memoized componets in the /components folder to prevent rerenders and make componet files small.
-- [ ] Add a preset for each halo type Default Rings, Gradient Rings, Atomic, Network, Record, Plate, in /presets
-- [ ] Add Halo Scroll mode to switch between the 6 halo presets we currently have.
-- [ ] Fix control layout
+- [x] Collapse all halos into a single position (matching the current Plate position: [0, 1.5, -1]) and render only one at a time based on the active halo type selection (Rings / Record / Network / Plate / Atomic)
+- [x] rename it - All My Thoughts Are So Cumulus
+- [x] Move controls out of scene into useSceneControls hook in /hooks folder
+- [x] Break scene down into small memoized componets in the /components folder to prevent rerenders and make componet files small.
+- [x] Add a preset for each halo type Default Rings, Gradient Rings, Atomic, Network, Record, Plate, in /presets
+- [x] Add Halo Scroll mode to switch between the 6 halo presets we currently have.
+- [x] Fix control layout
   - All My Thoughts Are So Cumulus
     - Presets
       - Dropdown

@@ -6,6 +6,8 @@ import { useFrame } from '@react-three/fiber';
 // Electron shell configuration: max electrons per shell
 
 const SHELLS = [2, 8, 8, 18, 18, 32, 32];
+const FIRST_SHELL_RADIUS = 1;
+
 function getShellConfig(electronCount) {
   let remaining = electronCount;
   const config = [];
@@ -15,6 +17,54 @@ function getShellConfig(electronCount) {
     remaining -= count;
   }
   return config;
+}
+
+function getNucleusRadius(totalNucleons, nucleonRadius) {
+  const estimatedClusterRadius =
+    nucleonRadius * Math.cbrt(totalNucleons) * 0.95;
+  return Math.min(estimatedClusterRadius, FIRST_SHELL_RADIUS * 0.5);
+}
+
+function getNucleusPositions(totalNucleons, nucleusRadius) {
+  const cellsPerAxis = Math.max(3, Math.ceil(Math.cbrt(totalNucleons)) + 2);
+  const step = (nucleusRadius * 2) / (cellsPerAxis - 1);
+  const offset = nucleusRadius;
+  const points = [];
+
+  for (let xi = 0; xi < cellsPerAxis; xi += 1) {
+    for (let yi = 0; yi < cellsPerAxis; yi += 1) {
+      for (let zi = 0; zi < cellsPerAxis; zi += 1) {
+        const x = xi * step - offset;
+        const y = yi * step - offset;
+        const z = zi * step - offset;
+        const distSq = x * x + y * y + z * z;
+        if (distSq <= nucleusRadius * nucleusRadius) {
+          points.push({ x, y, z, distSq });
+        }
+      }
+    }
+  }
+
+  points.sort((a, b) => a.distSq - b.distSq);
+
+  // Keep deterministic grid packing first, then fill any shortfall.
+  if (points.length < totalNucleons) {
+    const shortfall = totalNucleons - points.length;
+    for (let i = 0; i < shortfall; i += 1) {
+      let x;
+      let y;
+      let z;
+      do {
+        x = (Math.random() * 2 - 1) * nucleusRadius;
+        y = (Math.random() * 2 - 1) * nucleusRadius;
+        z = (Math.random() * 2 - 1) * nucleusRadius;
+      } while (x * x + y * y + z * z > nucleusRadius * nucleusRadius);
+      points.push({ x, y, z, distSq: x * x + y * y + z * z });
+    }
+    points.sort((a, b) => a.distSq - b.distSq);
+  }
+
+  return points.slice(0, totalNucleons);
 }
 
 export default function Atom({
@@ -43,20 +93,12 @@ export default function Atom({
   const nucleus = useMemo(() => {
     const spheres = [];
     const total = protonsFinal + neutronsFinal;
-    const nucleusRadius = shellSpacing * 0.5;
+    const nucleonRadius = Math.max(protonRadius, neutronRadius);
+    const nucleusRadius = getNucleusRadius(total, nucleonRadius);
+    const positions = getNucleusPositions(total, nucleusRadius);
+
     for (let i = 0; i < total; i += 1) {
-      // Random point inside a sphere (Marsaglia method)
-      let x;
-      let y;
-      let z;
-      do {
-        x = Math.random() * 2 - 1;
-        y = Math.random() * 2 - 1;
-        z = Math.random() * 2 - 1;
-      } while (x * x + y * y + z * z > 1);
-      x *= nucleusRadius;
-      y *= nucleusRadius;
-      z *= nucleusRadius;
+      const { x, y, z } = positions[i];
       const isProton = i < protonsFinal;
       spheres.push(
         <mesh key={`nucleus-${isProton ? 'p' : 'n'}-${i}`} position={[x, y, z]}>
@@ -68,7 +110,7 @@ export default function Atom({
       );
     }
     return spheres;
-  }, [protonsFinal, neutronsFinal, protonRadius, neutronRadius, shellSpacing]);
+  }, [protonsFinal, neutronsFinal, protonRadius, neutronRadius]);
 
   // Shells and electrons
   const shellConfig = useMemo(
@@ -77,7 +119,7 @@ export default function Atom({
   );
   const shells = useMemo(() => {
     return shellConfig.map((count, shellIdx) => {
-      const radius = 1 + shellIdx * shellSpacing;
+      const radius = FIRST_SHELL_RADIUS + shellIdx * shellSpacing;
       // Ring (shell)
       const ring = (
         <mesh key={`ring-shell-${shellIdx}`} rotation={[-Math.PI / 2, 0, 0]}>

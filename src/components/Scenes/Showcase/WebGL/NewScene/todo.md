@@ -1,4 +1,4 @@
-# // NewScene
+# // All My Thoughts Are So Cumulus
 
 # // TODO:
 
@@ -38,16 +38,21 @@
         - Halo scroll enabled
     - Halo
       - Type: Dropdown. Options: Rings, Record, Network, Plate, Atomic
-      - Appearance
-        - Position
-        - Rotation
-        - Scale
-        - Visiblity
-      - Rings controls folder
-      - Record controls folder
-      - Network controls folder
-      - Plate controls folder
-      - Atom controls folder
+      - Rings folder
+        - Appearance
+        - ring controls
+      - Record folder
+        - Appearance
+        - Record controls
+      - Network folder
+        - Appearance
+        - Network controls
+      - Plate folder
+        - Appearance
+        - Plate controls
+      - Atom folder
+        - Appearance
+        - Atom controls
     - Cloud
       - Appearance
         - Position

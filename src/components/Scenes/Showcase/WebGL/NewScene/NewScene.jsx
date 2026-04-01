@@ -6,6 +6,7 @@ import {
   OrbitControls,
   PerspectiveCamera,
 } from '@react-three/drei';
+import { useFrame } from '@react-three/fiber';
 
 import getColorsInRange from '../../../../../utils/colors';
 import { radians } from '../../../../../utils/math';
@@ -15,9 +16,9 @@ import HaloDisplay from './components/HaloDisplay';
 import SceneCloud from './components/SceneCloud';
 import SceneFemur from './components/SceneFemur';
 import SceneSkull from './components/SceneSkull';
-import useHaloAnimation from './useHaloAnimation';
 import useSceneControls from './hooks/useSceneControls';
-import { HALO_PRESET_ORDER, PRESETS } from './presets';
+import { HALO_PRESET_ORDER } from './presets';
+import useHaloAnimation from './useHaloAnimation';
 
 // ---------------------------------------------------------------------------
 // Helpers
@@ -48,7 +49,7 @@ function buildRingsConfig(c) {
   const totalWidthRatio = colors.reduce((t, r) => t + r.width, 0);
   const rings = colors.map((r) => ({
     ...r,
-    width: Math.round(((r.width / totalWidthRatio) * width) * 100) / 100,
+    width: Math.round((r.width / totalWidthRatio) * width * 100) / 100,
   }));
   return { innerRadius: c.ringsInnerRadius, rings };
 }
@@ -122,74 +123,151 @@ export default function AllMyThoughtsAreSoCumulus() {
   });
 
   // ---------------------------------------------------------------------------
-  // Halo scroll mode — wheel cycles through presets
+  // Halo scroll mode — time-based preset cycling
   // ---------------------------------------------------------------------------
   const presetIndexRef = useRef(HALO_PRESET_ORDER.indexOf(c.preset));
+  const lastScrollTimeRef = useRef(0);
 
   useEffect(() => {
     presetIndexRef.current = HALO_PRESET_ORDER.indexOf(c.preset);
   }, [c.preset]);
 
-  useEffect(() => {
-    if (!c.haloScrollEnabled) return undefined;
+  useFrame(({ clock }) => {
+    if (!c.haloScrollEnabled) return;
 
-    function handleWheel(e) {
-      const dir = e.deltaY > 0 ? 1 : -1;
+    const now = clock.elapsedTime;
+    if (now - lastScrollTimeRef.current >= c.haloScrollInterval) {
+      lastScrollTimeRef.current = now;
       presetIndexRef.current =
-        (presetIndexRef.current + dir + HALO_PRESET_ORDER.length) %
-        HALO_PRESET_ORDER.length;
+        (presetIndexRef.current + 1) % HALO_PRESET_ORDER.length;
       const nextPreset = HALO_PRESET_ORDER[presetIndexRef.current];
-      setControls({ preset: nextPreset, ...PRESETS[nextPreset] });
+      setControls({ preset: nextPreset });
     }
-
-    window.addEventListener('wheel', handleWheel, { passive: true });
-    return () => window.removeEventListener('wheel', handleWheel);
-  }, [c.haloScrollEnabled, setControls]);
+  });
 
   // ---------------------------------------------------------------------------
   // Stable memoized props for memoized child components
   // ---------------------------------------------------------------------------
 
+  // Get type-specific position, rotation, and visibility
+  const getHaloPosition = (haloType) => {
+    switch (haloType) {
+      case 'rings':
+        return c.ringsPosition;
+      case 'record':
+        return c.recordPosition;
+      case 'network':
+        return c.networkPosition;
+      case 'atomic':
+        return c.atomPosition;
+      case 'plate':
+        return c.platePosition;
+      default:
+        return { x: 0, y: 1.5, z: -1 };
+    }
+  };
+
+  const getHaloRotation = (haloType) => {
+    switch (haloType) {
+      case 'rings':
+        return c.ringsRotation;
+      case 'record':
+        return c.recordRotation;
+      case 'network':
+        return c.networkRotation;
+      case 'atomic':
+        return c.atomRotation;
+      case 'plate':
+        return c.plateRotation;
+      default:
+        return { x: 45, y: 0, z: 0 };
+    }
+  };
+
+  const getHaloVisible = (haloType) => {
+    switch (haloType) {
+      case 'rings':
+        return c.ringsVisible;
+      case 'record':
+        return c.recordVisible;
+      case 'network':
+        return c.networkVisible;
+      case 'atomic':
+        return c.atomVisible;
+      case 'plate':
+        return c.plateVisible;
+      default:
+        return true;
+    }
+  };
+
+  const currentHaloPosition = getHaloPosition(c.haloType);
+  const currentHaloRotation = getHaloRotation(c.haloType);
+  const currentHaloVisible = getHaloVisible(c.haloType);
+
   const haloPos = useMemo(
-    () => [c.haloPosition.x, c.haloPosition.y, c.haloPosition.z],
-    [c.haloPosition.x, c.haloPosition.y, c.haloPosition.z]
+    () => [currentHaloPosition.x, currentHaloPosition.y, currentHaloPosition.z],
+    [currentHaloPosition.x, currentHaloPosition.y, currentHaloPosition.z]
   );
   const haloRot = useMemo(
     () => [
-      radians(c.haloRotation.x),
-      radians(c.haloRotation.y),
-      radians(c.haloRotation.z),
+      radians(currentHaloRotation.x),
+      radians(currentHaloRotation.y),
+      radians(currentHaloRotation.z),
     ],
-    [c.haloRotation.x, c.haloRotation.y, c.haloRotation.z]
+    [currentHaloRotation.x, currentHaloRotation.y, currentHaloRotation.z]
   );
 
-  const ringsConfig = useMemo(() => buildRingsConfig(c), [
-    c.ringsStyle,
-    c.ringsInnerRadius,
-    c.ringsOuterRadius,
-    c.ringsStart,
-    c.ringsEnd,
-    c.ringsSteps,
-    c.ringsSm,
-    c.ringsMed,
-    c.ringsLg,
-    c.ringsXl,
-    c.ringsSilver,
-    c.ringsWhite,
-    c.ringsBlack,
-    c.ringsBlue,
-    c.ringsLightblue,
+  const haloScale = useMemo(() => {
+    if (c.haloType === 'rings') return c.ringsScale ?? c.haloScale ?? 0.9;
+    if (c.haloType === 'record') return c.recordScale ?? c.haloScale ?? 12;
+    if (c.haloType === 'network') return c.networkScale ?? c.haloScale ?? 0.53;
+    if (c.haloType === 'plate') return c.plateScale ?? c.haloScale ?? 0.18;
+    if (c.haloType === 'atomic') return c.atomScale ?? c.haloScale ?? 1.05;
+    return c.haloScale ?? 1;
+  }, [
+    c.haloType,
+    c.ringsScale,
+    c.recordScale,
+    c.networkScale,
+    c.plateScale,
+    c.atomScale,
+    c.haloScale,
   ]);
 
-  const networkConfig = useMemo(() => buildNetworkConfig(c), [
-    c.networkPointColor,
-    c.networkLineColor,
-    c.networkPointSize,
-    c.networkParticleCount,
-    c.networkMaxDistance,
-    c.networkAngularSpeed,
-    c.networkTimeScale,
-  ]);
+  const ringsConfig = useMemo(
+    () => buildRingsConfig(c),
+    [
+      c.ringsStyle,
+      c.ringsInnerRadius,
+      c.ringsOuterRadius,
+      c.ringsStart,
+      c.ringsEnd,
+      c.ringsSteps,
+      c.ringsSm,
+      c.ringsMed,
+      c.ringsLg,
+      c.ringsXl,
+      c.ringsSilver,
+      c.ringsWhite,
+      c.ringsBlack,
+      c.ringsBlue,
+      c.ringsLightblue,
+    ]
+  );
+
+  const networkConfig = useMemo(
+    () => buildNetworkConfig(c),
+    [
+      c.networkPointColor,
+      c.networkLineColor,
+      c.networkPointSize,
+      c.networkParticleCount,
+      c.networkMaxDistance,
+      c.networkAngularSpeed,
+      c.networkTimeScale,
+    ]
+  );
 
   const cloudPos = useMemo(
     () => [c.cloudPosition.x, c.cloudPosition.y, c.cloudPosition.z],
@@ -268,8 +346,8 @@ export default function AllMyThoughtsAreSoCumulus() {
           haloType={c.haloType}
           position={haloPos}
           rotation={haloRot}
-          scale={c.haloScale}
-          visible={c.haloVisible}
+          scale={haloScale}
+          visible={currentHaloVisible}
           ringsConfig={ringsConfig}
           recordSideA={c.recordSideA}
           networkConfig={networkConfig}

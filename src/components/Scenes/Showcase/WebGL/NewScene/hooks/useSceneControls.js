@@ -144,6 +144,13 @@ export default function useSceneControls() {
                 { collapsed: true }
               ),
               haloScrollEnabled: { label: 'Halo Scroll', value: false },
+              haloScrollInterval: {
+                label: 'Scroll Interval (s)',
+                value: 2,
+                min: 0.5,
+                max: 10,
+                step: 0.1,
+              },
             },
             { collapsed: true }
           ),
@@ -165,30 +172,29 @@ export default function useSceneControls() {
             },
           },
 
-          Appearance: folder(
+          Rings: folder(
             {
-              haloPosition: {
-                label: 'Position',
-                value: { x: 0, y: 1.5, z: -1 },
-              },
-              haloRotation: {
-                label: 'Rotation',
-                value: { x: 45, y: 0, z: 0 },
-              },
-              haloScale: {
+              Appearance: folder(
+                {
+                  ringsPosition: {
+                    label: 'Position',
+                    value: { x: 0, y: 1.5, z: -1 },
+                  },
+                  ringsRotation: {
+                    label: 'Rotation',
+                    value: { x: 45, y: 0, z: 0 },
+                  },
+                  ringsVisible: { label: 'Visible', value: true },
+                },
+                { collapsed: true }
+              ),
+              ringsScale: {
                 label: 'Scale',
                 value: 0.9,
                 min: 0.01,
                 max: 20,
                 step: 0.01,
               },
-              haloVisible: { label: 'Visible', value: true },
-            },
-            { collapsed: true }
-          ),
-
-          Rings: folder(
-            {
               ringsStyle: {
                 label: 'Style',
                 value: 'default',
@@ -292,6 +298,27 @@ export default function useSceneControls() {
 
           Record: folder(
             {
+              Appearance: folder(
+                {
+                  recordPosition: {
+                    label: 'Position',
+                    value: { x: 0, y: 1.5, z: -1 },
+                  },
+                  recordRotation: {
+                    label: 'Rotation',
+                    value: { x: 45, y: 0, z: 0 },
+                  },
+                  recordVisible: { label: 'Visible', value: true },
+                },
+                { collapsed: true }
+              ),
+              recordScale: {
+                label: 'Scale',
+                value: 12,
+                min: 0.01,
+                max: 20,
+                step: 0.01,
+              },
               recordSideA: {
                 label: 'Side',
                 value: true,
@@ -306,6 +333,27 @@ export default function useSceneControls() {
 
           Network: folder(
             {
+              Appearance: folder(
+                {
+                  networkPosition: {
+                    label: 'Position',
+                    value: { x: 0, y: 1.5, z: -1 },
+                  },
+                  networkRotation: {
+                    label: 'Rotation',
+                    value: { x: 45, y: 0, z: 0 },
+                  },
+                  networkVisible: { label: 'Visible', value: true },
+                },
+                { collapsed: true }
+              ),
+              networkScale: {
+                label: 'Scale',
+                value: 0.53,
+                min: 0.01,
+                max: 20,
+                step: 0.01,
+              },
               networkPointColor: {
                 label: 'Point Color',
                 value: '#ff0000',
@@ -358,6 +406,27 @@ export default function useSceneControls() {
 
           Atom: folder(
             {
+              Appearance: folder(
+                {
+                  atomPosition: {
+                    label: 'Position',
+                    value: { x: 0, y: 1.5, z: -1 },
+                  },
+                  atomRotation: {
+                    label: 'Rotation',
+                    value: { x: 45, y: 0, z: 0 },
+                  },
+                  atomVisible: { label: 'Visible', value: true },
+                },
+                { collapsed: true }
+              ),
+              atomScale: {
+                label: 'Scale',
+                value: 1.05,
+                min: 0.01,
+                max: 20,
+                step: 0.01,
+              },
               atomicNumber: {
                 label: 'Atomic Number',
                 value: 8,
@@ -380,6 +449,36 @@ export default function useSceneControls() {
             {
               collapsed: true,
               render: (get) => get(HALO_TYPE_PATH) === 'atomic',
+            }
+          ),
+
+          Plate: folder(
+            {
+              Appearance: folder(
+                {
+                  platePosition: {
+                    label: 'Position',
+                    value: { x: 0, y: 1.5, z: -1 },
+                  },
+                  plateRotation: {
+                    label: 'Rotation',
+                    value: { x: 45, y: 0, z: 0 },
+                  },
+                  plateVisible: { label: 'Visible', value: true },
+                },
+                { collapsed: true }
+              ),
+              plateScale: {
+                label: 'Scale',
+                value: 0.18,
+                min: 0.01,
+                max: 20,
+                step: 0.01,
+              },
+            },
+            {
+              collapsed: true,
+              render: (get) => get(HALO_TYPE_PATH) === 'plate',
             }
           ),
         },

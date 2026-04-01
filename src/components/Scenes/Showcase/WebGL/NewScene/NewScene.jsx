@@ -9,21 +9,52 @@ import {
   AsciiRenderer,
   Cloud,
   Clouds,
+  Environment,
   Float,
   OrbitControls,
   PerspectiveCamera,
 } from '@react-three/drei';
+import { useThree } from '@react-three/fiber';
 import { EffectComposer, Pixelation } from '@react-three/postprocessing';
 
 import getColorsInRange from '../../../../../utils/colors';
 import { getRandomNumber, radians } from '../../../../../utils/math';
+import Lb45Plate from '../../../../elements/45lbPlate/45lbPlate';
+import Atom from '../../../../elements/Atom/Atom';
 import Femur from '../../../../elements/femur/Femur';
 import Halo from '../../../../elements/halo/Halo';
+import NeuralNetwork from '../../../../elements/network/NeuralNetwork';
 import Record from '../../../../elements/record/Record';
 import Skull from '../../../../elements/skull/Skull';
 import { useSkullControls } from '../../../../elements/skull/SkullControls';
 import { GridHelper, PolarGridHelper } from '../../../../rigging/GridHelper';
-import LightingRig from '../../../../rigging/LightingRig';
+import useHaloAnimation from './useHaloAnimation';
+
+function useHaloAnimationControls() {
+  return useControls(
+    'Halo Animation',
+    {
+      animate: { label: 'Rotate', value: true },
+      speed: { label: 'RPM', value: 33, min: 0, max: 78, step: 1 },
+      wobble: { label: 'Wobble', value: false },
+      wobbleSpeed: {
+        label: 'Wobble Speed',
+        value: 1,
+        min: 0,
+        max: 10,
+        step: 0.1,
+      },
+      wobbleAngle: {
+        label: 'Wobble Angle',
+        value: 5,
+        min: 0,
+        max: 15,
+        step: 1,
+      },
+    },
+    { collapsed: true }
+  );
+}
 
 function useSceneControls() {
   return useControls(
@@ -31,6 +62,37 @@ function useSceneControls() {
     {
       showGridHelper: { label: 'Show Grid Helper', value: false },
       showPolarGridHelper: { label: 'Show Polar Grid Helper', value: false },
+      'Point Light': folder(
+        {
+          plPosition: {
+            label: 'Position',
+            value: { x: 3, y: 3, z: 5 },
+          },
+          plDecay: {
+            label: 'Decay',
+            value: 0,
+            min: -10,
+            max: 10,
+            step: 0.1,
+          },
+          plDistance: {
+            label: 'Distance',
+            value: -1,
+            min: -10,
+            max: 10,
+            step: 0.1,
+          },
+          plIntensity: {
+            label: 'Intensity',
+            value: 0.8,
+            min: 0,
+            max: 10,
+            step: 0.1,
+          },
+          plCastShadow: { label: 'Cast Shadow', value: true },
+        },
+        { collapsed: true }
+      ),
       Halo: folder(
         {
           haloPosition: { label: 'Position', value: { x: 0, y: 1.5, z: -1 } },
@@ -46,6 +108,11 @@ function useSceneControls() {
             step: 0.1,
           },
           haloVisible: { label: 'Visible', value: true },
+          recordSideA: {
+            label: 'Record Side',
+            value: true,
+            options: { 'Side A': true, 'Side B': false },
+          },
         },
         { collapsed: true }
       ),
@@ -110,6 +177,13 @@ function useSceneControls() {
             value: 0.5,
             min: 0,
             max: 1,
+            step: 0.01,
+          },
+          environmentIntensity: {
+            label: 'Environment Intensity',
+            value: 0,
+            min: 0,
+            max: 2,
             step: 0.01,
           },
           pixelationEnabled: { label: 'Pixelation Enabled', value: false },
@@ -337,10 +411,18 @@ export default function NewScene() {
 
   const haloControls = useHaloControls();
 
+  const haloAnim = useHaloAnimationControls();
+  const haloAnimRef = useHaloAnimation(haloAnim);
   return (
     <>
-      <LightingRig />
       <PerspectiveCamera makeDefault position={[-1, -1, 3.5]} />
+      <pointLight
+        position={[scene.plPosition.x, scene.plPosition.y, scene.plPosition.z]}
+        decay={scene.plDecay}
+        distance={scene.plDistance}
+        intensity={scene.plIntensity}
+        castShadow={scene.plCastShadow}
+      />
 
       <GridHelper x y z visible={scene.showGridHelper} />
       <PolarGridHelper x y z visible={scene.showPolarGridHelper} />
@@ -354,34 +436,84 @@ export default function NewScene() {
         autoRotateSpeed={scene.autoRotateSpeed}
       />
       <Float speed={scene.floatSpeed}>
+        {/* Spread all halos along x axis, same orientation, all visible */}
         <Halo
-          visible={scene.haloVisible}
-          position={[
-            scene.haloPosition.x,
-            scene.haloPosition.y,
-            scene.haloPosition.z,
-          ]}
-          rotation={[
-            radians(scene.haloRotation.x),
-            radians(scene.haloRotation.y),
-            radians(scene.haloRotation.z),
-          ]}
+          ref={haloAnimRef}
+          visible
+          position={[-6, 1.5, -1]}
+          rotation={[Math.PI / 4, 0, 0]}
+          scale={0.9}
           {...getHaloConfig(haloControls)}
         />
 
-        {/* <Record
-        scale={scene.haloScale}
-        position={[
-          scene.haloPosition.x,
-          scene.haloPosition.y,
-          scene.haloPosition.z,
-        ]}
-        rotation={[
-          radians(scene.haloRotation.x),
-          radians(scene.haloRotation.y),
-          radians(scene.haloRotation.z),
-        ]}
-      /> */}
+        {/* Atomic Halo Demo */}
+
+        {/* Extra group to guarantee orientation matches others */}
+        <group
+          position={[-3, 1.5, -1]}
+          rotation={[-Math.PI / 4, 0, 0]}
+          scale={1.05}
+        >
+          <Atom atomicNumber={8} animateElectrons shellSpacing={0.65} />
+        </group>
+
+        {/* 45lb Plate Halo Demo */}
+
+        <Lb45Plate
+          position={[0, 1.5, -1]}
+          rotation={[Math.PI / 4, 0, 0]}
+          scale={0.18}
+        />
+
+        {/* Neural Network Ring Halo Demo */}
+
+        <group
+          position={[3, 1.5, -1]}
+          rotation={[-Math.PI / 4, 0, 0]}
+          scale={0.53}
+        >
+          <NeuralNetwork
+            shape="ring"
+            innerDiameter={3}
+            outerDiameter={7}
+            height={0.2}
+            networkWidth={7}
+            networkHeight={3}
+            networkDepth={7}
+            particleCount={500}
+            maxParticleCount={1000}
+            minConnections={1}
+            maxConnections={8}
+            minDistance={0.2}
+            maxDistance={0.8}
+            pointColor="#ff0000"
+            lineColor="#000000"
+            pointSize={2.5}
+            pointBlending="normal"
+            pointsToneMapped={false}
+            pointsTransparent
+            pointsOpacity={1}
+            lineWidth={1}
+            linesToneMapped={false}
+            linesTransparent
+            linesOpacity={1}
+            lineBlending="normal"
+            timeScale={0.4}
+            angularSpeed={0.53}
+            radialSpeed={1}
+            verticalSpeed={1}
+            systemRotation={1}
+          />
+        </group>
+
+        {/* Record Halo Demo (visually aligned) */}
+
+        <Record
+          sideA={scene.recordSideA}
+          scale={12}
+          position={[6, 1.5, -1]}
+          rotation={[Math.PI / 4, 0, 0]}
+        />
 
         <Skull
           {...skullControls}
@@ -446,6 +578,12 @@ export default function NewScene() {
           resolution={scene.asciiResolution}
         />
       )}
+
+      <Environment
+        preset="studio"
+        environmentIntensity={scene.environmentIntensity}
+      />
+
       <EffectComposer>
         <Pixelation
           granularity={

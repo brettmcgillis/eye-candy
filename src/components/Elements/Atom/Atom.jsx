@@ -17,7 +17,7 @@ function getShellConfig(electronCount) {
   return config;
 }
 
-export default function AtomicHalo({
+export default function Atom({
   atomicNumber = 8,
   protons,
   neutrons,
@@ -82,7 +82,7 @@ export default function AtomicHalo({
       const ring = (
         <mesh key={`ring-shell-${shellIdx}`} rotation={[-Math.PI / 2, 0, 0]}>
           <torusGeometry args={[radius, shellRingWidth, 16, 64]} />
-          <meshStandardMaterial color="white" metalness={0.2} roughness={0.7} />
+          <meshStandardMaterial color="black" metalness={0.2} roughness={0.7} />
         </mesh>
       );
       // Electrons

@@ -10,6 +10,7 @@ export const HALO_PRESET_ORDER = [
 export const PRESETS = {
   'Default Rings': {
     haloType: 'rings',
+    wobble: false,
     ringsPosition: { x: 0, y: 1.5, z: -1 },
     ringsRotation: { x: 45, y: 0, z: 0 },
     ringsVisible: true,
@@ -29,6 +30,7 @@ export const PRESETS = {
   },
   'Gradient Rings': {
     haloType: 'rings',
+    wobble: false,
     ringsPosition: { x: 0, y: 1.5, z: -1 },
     ringsRotation: { x: 45, y: 0, z: 0 },
     ringsVisible: true,
@@ -42,6 +44,8 @@ export const PRESETS = {
   },
   Atomic: {
     haloType: 'atomic',
+    censorPanelVisible: false,
+    wobble: false,
     atomPosition: { x: 0, y: 1.5, z: -1 },
     atomRotation: { x: -45, y: 0, z: 0 },
     atomVisible: true,
@@ -53,6 +57,8 @@ export const PRESETS = {
   },
   Network: {
     haloType: 'network',
+    censorPanelVisible: false,
+    wobble: false,
     networkPosition: { x: 0, y: 1.5, z: -1 },
     networkRotation: { x: -45, y: 0, z: 0 },
     networkVisible: true,
@@ -68,20 +74,24 @@ export const PRESETS = {
   },
   Record: {
     haloType: 'record',
+    censorPanelVisible: false,
     recordPosition: { x: 0, y: 1.5, z: -1 },
     recordRotation: { x: 45, y: 0, z: 0 },
     recordVisible: true,
     recordScale: 12,
     recordSideA: true,
     animate: true,
+    wobble: true,
     speed: 33,
   },
   Plate: {
     haloType: 'plate',
+    censorPanelVisible: false,
     platePosition: { x: 0, y: 1.5, z: -1 },
     plateRotation: { x: 45, y: 0, z: 0 },
     plateVisible: true,
     plateScale: 0.18,
     animate: false,
+    wobble: false,
   },
 };

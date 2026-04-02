@@ -111,6 +111,7 @@ To Build:
 - Particle Lab
 - Spline Editor
 - SmokeTest
+- FireTest
 - HotBox
 - PixelHater updates
 - Thats All Folks
@@ -121,7 +122,11 @@ To Build:
 - Flying High
 - Dumpster Fire
 - Mycelium - ✔
-- All my thoughts are so cumulus
+- All my thoughts are so cumulus - Atomic
+- All my thoughts are so cumulus - Record
+- All my thoughts are so cumulus - Network
+- All my thoughts are so cumulus - Plate
+- All my thoughts are so cumulus - Censored Rings
 
 - TrophyHusband
 - Yggdraskill

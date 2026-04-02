@@ -12,8 +12,13 @@ import { PRESETS } from '../presets';
 const HALO_TYPE_PATH = 'All My Thoughts Are So Cumulus.Halo.haloType';
 const RINGS_STYLE_PATH = 'All My Thoughts Are So Cumulus.Halo.Rings.ringsStyle';
 
+function cloneSnapshot(snapshot) {
+  return JSON.parse(JSON.stringify(snapshot));
+}
+
 export default function useSceneControls() {
   const controlsSnapshotRef = useRef(PRESETS['Default Rings']);
+  const defaultControlsRef = useRef(null);
   const selectedPresetRef = useRef('Default Rings');
   const previousHaloTypeRef = useRef('rings');
 
@@ -28,8 +33,12 @@ export default function useSceneControls() {
             options: Object.keys(PRESETS),
           },
           reset: button(() => {
-            const snap = PRESETS[selectedPresetRef.current];
-            if (snap) setControls(snap);
+            const presetName = selectedPresetRef.current;
+            const snap = PRESETS[presetName];
+            if (!snap) return;
+
+            const base = defaultControlsRef.current || {};
+            setControls({ ...base, ...snap, preset: presetName });
           }),
           ...(localEnv()
             ? {
@@ -717,12 +726,19 @@ export default function useSceneControls() {
   );
 
   useEffect(() => {
+    if (!defaultControlsRef.current) {
+      defaultControlsRef.current = cloneSnapshot(controls);
+    }
+  }, [controls]);
+
+  useEffect(() => {
     selectedPresetRef.current = controls.preset;
     // Auto-apply preset when dropdown selection changes
     const snap = PRESETS[controls.preset];
-    if (snap) {
-      setControls(snap);
-    }
+    if (!snap) return;
+
+    const base = defaultControlsRef.current || {};
+    setControls({ ...base, ...snap, preset: controls.preset });
   }, [controls.preset, setControls]);
 
   useEffect(() => {

@@ -22,13 +22,6 @@ import {
  */
 const HaloDisplay = memo(function HaloDisplay({ controls, setControls }) {
   const { haloType } = controls;
-  const haloRef = useHaloAnimation({
-    animate: controls.animate,
-    speed: controls.speed,
-    wobble: controls.wobble,
-    wobbleSpeed: controls.wobbleSpeed,
-    wobbleAngle: controls.wobbleAngle,
-  });
   const presetIndexRef = useRef(HALO_PRESET_ORDER.indexOf(controls.preset));
   const lastScrollTimeRef = useRef(0);
 
@@ -88,6 +81,15 @@ const HaloDisplay = memo(function HaloDisplay({ controls, setControls }) {
     visible: true,
     scale: controls.haloScale ?? 1,
   };
+
+  const haloRef = useHaloAnimation({
+    animate: controls.animate,
+    speed: controls.speed,
+    wobble: controls.wobble,
+    wobbleSpeed: controls.wobbleSpeed,
+    wobbleAngle: controls.wobbleAngle,
+    baseRotationX: radians(activeAppearance.rotation.x),
+  });
 
   const position = useMemo(
     () => [

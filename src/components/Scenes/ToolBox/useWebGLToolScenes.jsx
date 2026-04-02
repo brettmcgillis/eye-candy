@@ -3,6 +3,7 @@ import { lazy } from 'react';
 const NoScene = lazy(() => import('../../../app/scaffold/NoScene'));
 const FireTest = lazy(() => import('./WebGL/FireTest/FireTest'));
 const HotBox = lazy(() => import('./WebGL/HotBox/HotBox'));
+const PenPlotter = lazy(() => import('./WebGL/PenPlotter/PenPlotter'));
 const SplineEditor = lazy(() => import('./WebGL/SplineEditor/SplineEditor'));
 const SmokeTest = lazy(() => import('./WebGL/SmokeTest/SmokeTest'));
 
@@ -24,6 +25,12 @@ const scenes = [
     label: 'Hot Box',
     icon: '🔥💨',
     Component: HotBox,
+  },
+  {
+    id: 'penPlotter',
+    label: 'Pen Plotter',
+    icon: '🖊️',
+    Component: PenPlotter,
   },
   {
     id: 'splineEditor',

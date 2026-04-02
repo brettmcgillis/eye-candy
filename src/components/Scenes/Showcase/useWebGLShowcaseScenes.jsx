@@ -7,7 +7,6 @@ const AllMyThoughtsAreSoCumulus = lazy(
   () => import('./WebGL/AllMyThoughtsAreSoCumulus/AllMyThoughtsAreSoCumulus')
 );
 const PaperStack = lazy(() => import('./WebGL/PaperStack/PaperStack'));
-const PenPlotter = lazy(() => import('./WebGL/PenPlotter/PenPlotter'));
 const QuinnsDice = lazy(() => import('./WebGL/QuinnsDice/QuinnsDice'));
 const Rosie = lazy(() => import('./WebGL/Rosie/Rosie'));
 
@@ -41,12 +40,6 @@ const scenes = [
     label: 'Paper Stack',
     icon: '📄',
     Component: PaperStack,
-  },
-  {
-    id: 'penPlotter',
-    label: 'Pen Plotter',
-    icon: '🖊️',
-    Component: PenPlotter,
   },
   {
     id: 'dice',

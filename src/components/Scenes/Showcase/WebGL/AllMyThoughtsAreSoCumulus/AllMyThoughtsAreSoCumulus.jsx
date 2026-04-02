@@ -9,6 +9,7 @@ import {
 
 import { useSkullControls } from '../../../../elements/skull/SkullControls';
 import { GridHelper, PolarGridHelper } from '../../../../rigging/GridHelper';
+import CensorPanel from './components/CensorPanel';
 import HaloDisplay from './components/HaloDisplay';
 import SceneCloud from './components/SceneCloud';
 import SceneFemur from './components/SceneFemur';
@@ -21,6 +22,8 @@ import useSceneControls from './hooks/useSceneControls';
 
 export default function AllMyThoughtsAreSoCumulus() {
   const { controls: c, setControls, controlsSnapshotRef } = useSceneControls();
+  const censorPanelVisible =
+    c.censorPanelVisible && !c.postPixelationEnabled && !c.postAsciiEnabled;
 
   // Keep snapshot current for the Leva copy button
   controlsSnapshotRef.current = c;
@@ -101,6 +104,19 @@ export default function AllMyThoughtsAreSoCumulus() {
           rotation={c.femurRotation}
           scale={c.femurScale}
           visible={c.femurVisible}
+        />
+
+        <CensorPanel
+          visible={censorPanelVisible}
+          position={c.censorPanelPosition}
+          rotation={c.censorPanelRotation}
+          scale={c.censorPanelScale}
+          pixelSize={c.censorPixelSize}
+          refraction={c.censorRefraction}
+          clipOffset={c.censorClipOffset}
+          tintVisible={c.censorPanelTintVisible}
+          tintColor={c.censorPanelTintColor}
+          tintOpacity={c.censorPanelTintOpacity}
         />
       </Float>
 

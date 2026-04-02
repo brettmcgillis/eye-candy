@@ -14,6 +14,7 @@ const RINGS_STYLE_PATH = 'All My Thoughts Are So Cumulus.Halo.Rings.ringsStyle';
 export default function useSceneControls() {
   const controlsSnapshotRef = useRef(PRESETS['Default Rings']);
   const selectedPresetRef = useRef('Default Rings');
+  const previousHaloTypeRef = useRef('rings');
 
   const [controls, setControls] = useControls(
     'All My Thoughts Are So Cumulus',
@@ -414,7 +415,7 @@ export default function useSceneControls() {
                   },
                   atomRotation: {
                     label: 'Rotation',
-                    value: { x: 45, y: 0, z: 0 },
+                    value: { x: -45, y: 0, z: 0 },
                   },
                   atomVisible: { label: 'Visible', value: true },
                 },
@@ -618,6 +619,87 @@ export default function useSceneControls() {
         },
         { collapsed: true }
       ),
+
+      'Censor Panel': folder(
+        {
+          Appearance: folder(
+            {
+              censorPanelVisible: { label: 'Visible', value: true },
+              censorPanelPosition: {
+                label: 'Position',
+                value: { x: 1, y: 2, z: 0 },
+              },
+              censorPanelRotation: {
+                label: 'Rotation',
+                value: { x: 45, y: 0, z: 0 },
+              },
+              censorPanelScale: {
+                label: 'Scale',
+                value: 1.65,
+                min: 0.1,
+                max: 5,
+                step: 0.05,
+              },
+              censorPanelTintVisible: {
+                label: 'Show Tint',
+                value: false,
+              },
+              censorPanelTintColor: {
+                label: 'Tint Color',
+                value: '#9fb4ff',
+              },
+              censorPanelTintOpacity: {
+                label: 'Tint Opacity',
+                value: 0.15,
+                min: 0,
+                max: 1,
+                step: 0.01,
+              },
+            },
+            { collapsed: true }
+          ),
+          Censor: folder(
+            {
+              censorPixelSize: {
+                label: 'Pixel Size',
+                value: 20,
+                min: 1,
+                max: 64,
+                step: 1,
+              },
+              censorRefraction: {
+                label: 'Refraction',
+                value: 0.02,
+                min: 0,
+                max: 0.15,
+                step: 0.005,
+              },
+              censorClipOffset: {
+                label: 'Clip Offset',
+                value: 2,
+                min: -2,
+                max: 2,
+                step: 0.01,
+              },
+            },
+            { collapsed: true }
+          ),
+          Post: folder(
+            {
+              postPixelationEnabled: {
+                label: 'Pixelation Enabled',
+                value: false,
+              },
+              postAsciiEnabled: {
+                label: 'ASCII Enabled',
+                value: false,
+              },
+            },
+            { collapsed: true }
+          ),
+        },
+        { collapsed: true }
+      ),
     }),
     { collapsed: true }
   );
@@ -630,6 +712,25 @@ export default function useSceneControls() {
       setControls(snap);
     }
   }, [controls.preset, setControls]);
+
+  useEffect(() => {
+    const hasHaloTypeChanged =
+      previousHaloTypeRef.current !== controls.haloType;
+    previousHaloTypeRef.current = controls.haloType;
+
+    if (!hasHaloTypeChanged || controls.haloType !== 'atomic') {
+      return;
+    }
+
+    const isLegacyAtomicRotation =
+      controls.atomRotation?.x === 45 &&
+      controls.atomRotation?.y === 0 &&
+      controls.atomRotation?.z === 0;
+
+    if (isLegacyAtomicRotation) {
+      setControls({ atomRotation: { x: -45, y: 0, z: 0 } });
+    }
+  }, [controls.haloType, controls.atomRotation, setControls]);
 
   return { controls, setControls, controlsSnapshotRef };
 }

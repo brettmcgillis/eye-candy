@@ -15,6 +15,9 @@ const vertexShader = /* glsl */ `
 
 const fragmentShader = /* glsl */ `
   uniform sampler2D sceneTexture;
+  uniform sampler2D sceneDepthTexture;
+  uniform sampler2D fullSceneTexture;
+  uniform vec3 fallbackColor;
   uniform vec2 resolution;
   uniform float pixelSize;
   uniform float refractionStrength;
@@ -31,9 +34,40 @@ const fragmentShader = /* glsl */ `
     // naturally preserving aspect ratio (isotropic cells).
     vec2 blockCount = resolution / vec2(pixelSize);
     vec2 uvQuantized = round(uv * blockCount) / blockCount;
+    vec2 texel = 1.0 / resolution;
+    uvQuantized = clamp(uvQuantized, texel * 0.5, vec2(1.0) - texel * 0.5);
 
-    vec3 color = texture2D(sceneTexture, uvQuantized).rgb;
-    gl_FragColor = vec4(color, 1.0);
+    vec2 uvBaseQuantized = round((gl_FragCoord.xy / resolution) * blockCount) / blockCount;
+    uvBaseQuantized = clamp(uvBaseQuantized, texel * 0.5, vec2(1.0) - texel * 0.5);
+
+    vec4 sampleColor = texture2D(sceneTexture, uvQuantized);
+    float clippedDepth = texture2D(sceneDepthTexture, uvQuantized).x;
+
+    // Clear depth is 1.0; if depth is at far plane, clipped pass had no geometry.
+    if (clippedDepth >= 0.999999) {
+      sampleColor = texture2D(fullSceneTexture, uvBaseQuantized);
+    }
+
+    // If refracted lookup lands in an empty/transparent texel, fall back to
+    // the non-refracted quantized sample to avoid see-through gaps.
+    if (sampleColor.a < 0.001) {
+      sampleColor = texture2D(sceneTexture, uvBaseQuantized);
+    }
+
+    // If clipped captures are empty, fall back to full-scene sample.
+    if (sampleColor.a < 0.001) {
+      sampleColor = texture2D(fullSceneTexture, uvBaseQuantized);
+    }
+
+    // Final guard: if no valid texel exists in either capture, use scene clear color.
+    if (sampleColor.a < 0.001) {
+      sampleColor = vec4(fallbackColor, 1.0);
+    }
+
+    gl_FragColor = vec4(sampleColor.rgb, 1.0);
+
+    #include <tonemapping_fragment>
+    #include <colorspace_fragment>
   }
 `;
 
@@ -58,7 +92,12 @@ export default function Censor({
   const { gl, scene, camera } = useThree();
 
   const renderTarget = useMemo(() => new THREE.WebGLRenderTarget(1, 1), []);
+  const fullSceneRenderTarget = useMemo(
+    () => new THREE.WebGLRenderTarget(1, 1),
+    []
+  );
   const sizeVec = useMemo(() => new THREE.Vector2(), []);
+  const clearColor = useMemo(() => new THREE.Color(), []);
   const worldPos = useMemo(() => new THREE.Vector3(), []);
   const camDir = useMemo(() => new THREE.Vector3(), []);
   const clipPlane = useMemo(() => new THREE.Plane(), []);
@@ -70,21 +109,31 @@ export default function Censor({
         fragmentShader,
         uniforms: {
           sceneTexture: { value: null },
+          sceneDepthTexture: { value: null },
+          fullSceneTexture: { value: null },
+          fallbackColor: { value: new THREE.Color(1, 1, 1) },
           resolution: { value: new THREE.Vector2() },
           pixelSize: { value: pixelSize },
           refractionStrength: { value: refraction },
         },
+        transparent: false,
         depthWrite: true,
       }),
     [] // eslint-disable-line
   );
 
   useEffect(() => {
+    renderTarget.depthTexture = new THREE.DepthTexture(1, 1);
+    renderTarget.depthTexture.type = THREE.UnsignedShortType;
+  }, [renderTarget]);
+
+  useEffect(() => {
     return () => {
       renderTarget.dispose();
+      fullSceneRenderTarget.dispose();
       material.dispose();
     };
-  }, [renderTarget, material]);
+  }, [renderTarget, fullSceneRenderTarget, material]);
 
   useFrame(() => {
     const mesh = meshRef.current;
@@ -93,6 +142,7 @@ export default function Censor({
     gl.getDrawingBufferSize(sizeVec);
     if (renderTarget.width !== sizeVec.x || renderTarget.height !== sizeVec.y) {
       renderTarget.setSize(sizeVec.x, sizeVec.y);
+      fullSceneRenderTarget.setSize(sizeVec.x, sizeVec.y);
     }
 
     material.uniforms.pixelSize.value = pixelSize;
@@ -110,25 +160,46 @@ export default function Censor({
 
     mesh.visible = false;
     const savedClip = gl.clippingPlanes;
-    gl.clippingPlanes = [clipPlane];
 
     // Disable tone mapping during FBO render so we capture raw linear values.
     // The ShaderMaterial applies tonemapping + colorspace in its fragment shader
     // to avoid double-tonemapping (which causes darkening).
     const savedToneMapping = gl.toneMapping;
     gl.toneMapping = THREE.NoToneMapping;
+    const savedClearAlpha = gl.getClearAlpha();
+    gl.getClearColor(clearColor);
+    if (scene.background && scene.background.isColor) {
+      material.uniforms.fallbackColor.value.copy(scene.background);
+    } else {
+      material.uniforms.fallbackColor.value.setRGB(1, 1, 1);
+    }
 
     const previousRT = gl.getRenderTarget();
+
+    // Full scene capture should match normal scene rendering.
+    gl.setClearColor(clearColor, savedClearAlpha);
+    gl.clippingPlanes = [];
+    gl.setRenderTarget(fullSceneRenderTarget);
+    gl.clear();
+    gl.render(scene, camera);
+
+    // Clipped capture for "behind censor" content uses transparent clear so
+    // empty texels are detectable in shader fallback logic.
+    gl.setClearColor(0x000000, 0);
+    gl.clippingPlanes = [clipPlane];
     gl.setRenderTarget(renderTarget);
     gl.clear();
     gl.render(scene, camera);
     gl.setRenderTarget(previousRT);
 
     gl.toneMapping = savedToneMapping;
+    gl.setClearColor(clearColor, savedClearAlpha);
     gl.clippingPlanes = savedClip;
     mesh.visible = true;
 
     material.uniforms.sceneTexture.value = renderTarget.texture;
+    material.uniforms.sceneDepthTexture.value = renderTarget.depthTexture;
+    material.uniforms.fullSceneTexture.value = fullSceneRenderTarget.texture;
   });
 
   return (

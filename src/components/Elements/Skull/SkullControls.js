@@ -1,4 +1,4 @@
-import { folder, useControls } from 'leva';
+import { folder } from 'leva';
 
 export const CraniumControls = {
   showCranium: { value: true, label: 'Show Cranium' },
@@ -32,7 +32,9 @@ export const MandibleControls = {
 };
 
 export function overrideDefaults(defaults, overrides) {
-  const updated = { ...defaults };
+  const updated = Object.fromEntries(
+    Object.entries(defaults).map(([key, config]) => [key, { ...config }])
+  );
   Object.keys(overrides).forEach((key) => {
     if (Object.hasOwn(updated, key)) {
       updated[key].value = overrides[key];
@@ -42,7 +44,7 @@ export function overrideDefaults(defaults, overrides) {
 }
 
 export function useSkullControls(overrides = {}) {
-  const craiumControls = overrideDefaults(
+  const craniumControls = overrideDefaults(
     CraniumControls,
     overrides.cranium ? overrides.cranium : {}
   );
@@ -51,10 +53,9 @@ export function useSkullControls(overrides = {}) {
     overrides.mandible ? overrides.mandible : {}
   );
 
-  return useControls(
-    overrides.controlName ? overrides.controlName : 'Skull',
+  return folder(
     {
-      Cranium: folder(craiumControls, { collapsed: true }),
+      Cranium: folder(craniumControls, { collapsed: true }),
       Mandible: folder(mandibleControls, { collapsed: true }),
     },
     { collapsed: overrides.collapsed ? overrides.collapsed : true }

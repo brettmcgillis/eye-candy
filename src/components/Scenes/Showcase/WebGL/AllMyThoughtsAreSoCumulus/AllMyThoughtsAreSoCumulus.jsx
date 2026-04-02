@@ -7,7 +7,6 @@ import {
   PerspectiveCamera,
 } from '@react-three/drei';
 
-import { useSkullControls } from '../../../../elements/skull/SkullControls';
 import { GridHelper, PolarGridHelper } from '../../../../rigging/GridHelper';
 import CensorPanel from './components/CensorPanel';
 import HaloDisplay from './components/HaloDisplay';
@@ -27,20 +26,6 @@ export default function AllMyThoughtsAreSoCumulus() {
 
   // Keep snapshot current for the Leva copy button
   controlsSnapshotRef.current = c;
-
-  // Skull bone-visibility controls (own Leva panel)
-  const skullControls = useSkullControls({
-    controlName: 'Skull Settings',
-    collapsed: true,
-    cranium: {
-      showRightParietal: false,
-      showRightTemporal: false,
-      showTeeth: false,
-      showLeftParietal: false,
-      showLeftTemporal: false,
-    },
-    mandible: { showMandible: false },
-  });
 
   // ---------------------------------------------------------------------------
   // Render
@@ -78,7 +63,31 @@ export default function AllMyThoughtsAreSoCumulus() {
           rotation={c.skullRotation}
           scale={c.skullScale}
           visible={c.skullVisible}
-          {...skullControls}
+          showCranium={c.showCranium}
+          showLeftZygomatic={c.showLeftZygomatic}
+          showOccipital={c.showOccipital}
+          showRightLacrimal={c.showRightLacrimal}
+          showRightMaxilla={c.showRightMaxilla}
+          showRightNasal={c.showRightNasal}
+          showRightPalatine={c.showRightPalatine}
+          showRightParietal={c.showRightParietal}
+          showRightTemporal={c.showRightTemporal}
+          showRightZygomatic={c.showRightZygomatic}
+          showSphenoid={c.showSphenoid}
+          showTeeth={c.showTeeth}
+          showVomer={c.showVomer}
+          showEthmoid={c.showEthmoid}
+          showFrontal={c.showFrontal}
+          showInferiorConchae={c.showInferiorConchae}
+          showLeftLacrimal={c.showLeftLacrimal}
+          showLeftMaxilla={c.showLeftMaxilla}
+          showLeftNasal={c.showLeftNasal}
+          showLeftPalatine={c.showLeftPalatine}
+          showLeftParietal={c.showLeftParietal}
+          showLeftTemporal={c.showLeftTemporal}
+          showMandible={c.showMandible}
+          showMandibleBone={c.showMandibleBone}
+          showMandibleTeeth={c.showMandibleTeeth}
         />
 
         <SceneCloud

@@ -4,6 +4,7 @@ import { useEffect, useRef } from 'react';
 
 import { localEnv } from '../../../../../../utils/appUtils';
 import { getRandomNumber } from '../../../../../../utils/math';
+import { useSkullControls } from '../../../../../elements/skull/SkullControls';
 import { PRESETS } from '../presets';
 
 // Key paths used in leva render() functions for conditional visibility.
@@ -589,6 +590,17 @@ export default function useSceneControls() {
             },
             { collapsed: true }
           ),
+          Bones: useSkullControls({
+            collapsed: true,
+            cranium: {
+              showRightParietal: false,
+              showRightTemporal: false,
+              showTeeth: false,
+              showLeftParietal: false,
+              showLeftTemporal: false,
+            },
+            mandible: { showMandible: false },
+          }),
         },
         { collapsed: true }
       ),

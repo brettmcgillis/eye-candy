@@ -1,3 +1,5 @@
+import { levaStore } from 'leva';
+
 import React, { useState } from 'react';
 
 import { localEnv } from '../../../utils/appUtils';
@@ -28,9 +30,19 @@ function getOverlayIgPreset() {
   return OVERLAY_IG_PRESETS[normalized] || null;
 }
 
+function normalizeOverlayIgPreset(value) {
+  if (!value) return null;
+  const normalized = String(value).trim().toLowerCase();
+  return OVERLAY_IG_PRESETS[normalized] || null;
+}
+
 function Overlay() {
   const local = localEnv();
-  const overlayIgPreset = getOverlayIgPreset();
+  const levaIgPreset = levaStore.useStore(
+    (state) => state.data?.['Scene Select.ig']?.value
+  );
+  const overlayIgPreset =
+    normalizeOverlayIgPreset(levaIgPreset) ?? getOverlayIgPreset();
   const [showLeva, setShowLeva] = useState(!!local);
   const overlayClasses = [
     'overlay',

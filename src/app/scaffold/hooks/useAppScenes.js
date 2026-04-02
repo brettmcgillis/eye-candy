@@ -10,6 +10,14 @@ import WebGPUCanvas from '../canvas/WebGPUCanvas';
 const DEFAULT_CHANNEL = 'webgl';
 const DEFAULT_AREA = 'showcase';
 const DEFAULT_SCENE = 'loGlow';
+const IG_QUERY_PARAM = 'ig';
+
+const IG_OPTIONS = {
+  Off: '',
+  Story: 'story',
+  Reel: 'reel',
+  Post: 'post',
+};
 
 function getQueryParam(key) {
   if (typeof window === 'undefined') return null;
@@ -41,6 +49,14 @@ export default function useAppScenes() {
     return scenes[0]?.id ?? 'noScene';
   }, []);
 
+  const initialIgPreset = useMemo(() => {
+    const raw = getQueryParam(IG_QUERY_PARAM);
+    if (!raw) return '';
+
+    const normalized = raw.trim().toLowerCase();
+    return Object.values(IG_OPTIONS).includes(normalized) ? normalized : '';
+  }, []);
+
   // --- Leva controls ---
 
   const channelOptions = useMemo(
@@ -53,11 +69,16 @@ export default function useAppScenes() {
     []
   );
 
-  const { mode, area } = useControls(
+  const { mode, area, ig } = useControls(
     'Scene Select',
     {
       mode: { options: channelOptions, value: initialChannel },
       area: { options: areaOptions, value: initialArea },
+      ig: {
+        label: 'IG Preset',
+        options: IG_OPTIONS,
+        value: initialIgPreset,
+      },
     },
     { collapsed: true, render: () => local }
   );
@@ -114,6 +135,12 @@ export default function useAppScenes() {
     params.set('area', area);
     params.set('scene', sceneId);
 
+    if (ig) {
+      params.set(IG_QUERY_PARAM, ig);
+    } else {
+      params.delete(IG_QUERY_PARAM);
+    }
+
     // remove legacy params
     params.delete('webglShowcaseScene');
     params.delete('webgpuShowcaseScene');
@@ -125,7 +152,7 @@ export default function useAppScenes() {
     params.delete('webgpuToolScene');
 
     window.history.replaceState({}, '', `?${params.toString()}`);
-  }, [mode, area, sceneId]);
+  }, [mode, area, sceneId, ig]);
 
   // --- resolve ---
 

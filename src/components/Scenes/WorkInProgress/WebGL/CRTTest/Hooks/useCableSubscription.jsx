@@ -3,6 +3,8 @@ import React, { useMemo } from 'react';
 
 import { audioFile } from '../../../../../../utils/appUtils';
 import { STRUDEL_TRACKS } from '../../../../../../utils/tracks';
+// eslint-disable-next-line import/no-unresolved, import/extensions
+import CRTStaticMaterial from '../../../../../materials/crtStaticMaterial';
 import CRTBlueScreenMaterial, {
   TerminalSetting,
   VHSSetting,
@@ -11,7 +13,6 @@ import CRTSceneInSceneMaterial from '../Materials/CRTSceneInSceneMaterial';
 import CRTSceneMaterial from '../Materials/CRTSceneMaterial';
 import CRTShowMaterial from '../Materials/CRTShowMaterial';
 import CRTSmtpeStaticMaterial from '../Materials/CRTSmtpeStaticMaterial';
-import CRTStaticMaterial from '../Materials/CRTStaticMaterial';
 import TestScene from '../TestScene';
 
 export default function useCableSubscription() {

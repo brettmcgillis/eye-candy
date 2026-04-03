@@ -1,11 +1,11 @@
-// CRTStaticMaterial.js
+// CRT Static Material - Shared across scenes
 import React, { useRef } from 'react';
 
 import { shaderMaterial } from '@react-three/drei';
 import { extend, useFrame } from '@react-three/fiber';
 
 /* ---------------------------------------------
-   Shaders 
+   Shaders
 ----------------------------------------------*/
 
 const vertexShader = `
@@ -173,7 +173,7 @@ const CrtStaticMaterial = shaderMaterial(
 
 extend({ CrtStaticMaterial });
 
-export default function CRTStaticMaterial({
+export default function CRTStaticMaterialComponent({
   snowAmount = 1,
   snowScale = 180,
   snowSpeed = 1,

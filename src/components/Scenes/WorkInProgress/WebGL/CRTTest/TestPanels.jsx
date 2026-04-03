@@ -6,12 +6,12 @@ import { a, useTransition } from '@react-spring/three';
 import Reversal, {
   InteractiveReversal,
 } from '../../../../elements/reversal/Reversal';
+import CRTStaticMaterial from '../../../../materials/crtStaticMaterial';
 import CRTBlueScreenMaterial from './Materials/CRTBlueScreenMaterial';
 import CRTSceneInSceneMaterial from './Materials/CRTSceneInSceneMaterial';
 import CRTSceneMaterial from './Materials/CRTSceneMaterial';
 import CRTShowMaterial from './Materials/CRTShowMaterial';
 import CRTSmtpeStaticMaterial from './Materials/CRTSmtpeStaticMaterial';
-import CRTStaticMaterial from './Materials/CRTStaticMaterial';
 import TestScene from './TestScene';
 import useInteractiveTvControls from './useInteractiveTvControls';
 

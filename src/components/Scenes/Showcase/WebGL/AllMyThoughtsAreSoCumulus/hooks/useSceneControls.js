@@ -60,6 +60,10 @@ export default function useSceneControls() {
 
       Scene: folder(
         {
+          backgroundColor: {
+            label: 'Background Color',
+            value: '#ffffff',
+          },
           Lighting: folder(
             {
               plPosition: {

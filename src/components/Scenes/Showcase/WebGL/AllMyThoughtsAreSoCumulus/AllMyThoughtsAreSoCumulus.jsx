@@ -44,6 +44,8 @@ export default function AllMyThoughtsAreSoCumulus() {
 
   return (
     <>
+      <color attach="background" args={[c.backgroundColor]} />
+
       <PerspectiveCamera makeDefault position={BASE_CAMERA_POSITION} fov={20} />
 
       <pointLight

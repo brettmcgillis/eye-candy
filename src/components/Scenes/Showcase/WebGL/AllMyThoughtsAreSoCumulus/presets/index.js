@@ -10,6 +10,7 @@ export const HALO_PRESET_ORDER = [
 
 export const PRESETS = {
   'Default Rings': {
+    backgroundColor: '#ffffff',
     haloType: 'rings',
     wobble: false,
     floatSpeed: 0,
@@ -31,6 +32,7 @@ export const PRESETS = {
     ringsLightblue: '#69d8ff',
   },
   'Gradient Rings': {
+    backgroundColor: '#ffffff',
     haloType: 'rings',
     wobble: false,
     floatSpeed: 0,
@@ -46,6 +48,7 @@ export const PRESETS = {
     ringsSteps: 8,
   },
   Atomic: {
+    backgroundColor: '#ffffff',
     haloType: 'atomic',
     censorPanelVisible: false,
     wobble: false,
@@ -60,6 +63,7 @@ export const PRESETS = {
     atomShellSpacing: 0.65,
   },
   Network: {
+    backgroundColor: '#ffffff',
     haloType: 'network',
     censorPanelVisible: false,
     wobble: false,
@@ -78,6 +82,7 @@ export const PRESETS = {
     networkTimeScale: 0.4,
   },
   Record: {
+    backgroundColor: '#ffffff',
     haloType: 'record',
     censorPanelVisible: false,
     floatSpeed: 0,
@@ -91,6 +96,7 @@ export const PRESETS = {
     speed: 33,
   },
   Plate: {
+    backgroundColor: '#ffffff',
     haloType: 'plate',
     censorPanelVisible: false,
     floatSpeed: 0,
@@ -102,6 +108,7 @@ export const PRESETS = {
     wobble: false,
   },
   Static: {
+    backgroundColor: '#ffffff',
     haloType: 'crtStaticRing',
     censorPanelVisible: false,
     floatSpeed: 0,

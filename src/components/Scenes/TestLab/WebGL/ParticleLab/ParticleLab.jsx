@@ -365,30 +365,72 @@ export default function ParticleLab() {
     INITIAL_ATTRACTORS.map((a) => ({
       position: [...a.position],
       direction: [...a.direction],
+      type: a.type || 'attractor',
     }))
   );
   const [attractorVersion, setAttractorVersion] = useState(0);
+  const isValidVec3 = useCallback(
+    (v) =>
+      Array.isArray(v) && v.length === 3 && v.every((n) => Number.isFinite(n)),
+    []
+  );
 
   // World-space attractor copies for the visual markers (scaled up).
   const worldAttractorsRef = useRef([]);
   useEffect(() => {
     const s = scaleRef.current;
-    worldAttractorsRef.current = attractorsRef.current.map((a) => ({
-      position: [a.position[0] * s, a.position[1] * s, a.position[2] * s],
-      direction: [...a.direction],
-      rotation: [0, 0, 0],
-    }));
-  }, [attractorVersion]);
+    worldAttractorsRef.current = attractorsRef.current.map((a) => {
+      let pos = a.position;
+      if (!isValidVec3(pos)) {
+        pos = [0, 0, 0];
+      }
+      return {
+        position: [pos[0] * s, pos[1] * s, pos[2] * s],
+        direction: isValidVec3(a.direction) ? [...a.direction] : [0, 1, 0],
+        rotation: [0, 0, 0],
+      };
+    });
+  }, [attractorVersion, isValidVec3]);
 
   // Convert world-space marker drag back to normalised attractor data.
-  const handleAttractorUpdate = useCallback((idx, { position, direction }) => {
-    const invS = 1 / (scaleRef.current || 1);
-    // eslint-disable-next-line no-param-reassign
-    attractorsRef.current[idx] = {
-      position: [position[0] * invS, position[1] * invS, position[2] * invS],
-      direction,
-    };
-  }, []);
+  const handleAttractorUpdate = useCallback(
+    (idx, { position, direction, ...rest }) => {
+      const invS = 1 / (scaleRef.current || 1);
+      const current = attractorsRef.current[idx] || {};
+
+      let nextPosWorld = null;
+      if (isValidVec3(position)) {
+        nextPosWorld = position;
+      } else if (isValidVec3(current.position)) {
+        nextPosWorld = [
+          current.position[0] * scaleRef.current,
+          current.position[1] * scaleRef.current,
+          current.position[2] * scaleRef.current,
+        ];
+      } else {
+        nextPosWorld = [0, 0, 0];
+      }
+
+      let nextDir = [0, 1, 0];
+      if (isValidVec3(direction)) {
+        nextDir = direction;
+      } else if (isValidVec3(current.direction)) {
+        nextDir = current.direction;
+      }
+
+      attractorsRef.current[idx] = {
+        ...current,
+        ...rest,
+        position: [
+          nextPosWorld[0] * invS,
+          nextPosWorld[1] * invS,
+          nextPosWorld[2] * invS,
+        ],
+        direction: nextDir,
+      };
+    },
+    [isValidVec3]
+  );
 
   const { controlsMode, showHelpers } = useControls(
     'Attractors',
@@ -404,6 +446,7 @@ export default function ParticleLab() {
         attractorsRef.current.push({
           position: [Math.random() * 2 - 1, 0, Math.random() * 2 - 1],
           direction: [0, 1, 0],
+          type: 'attractor',
         });
         setAttractorVersion((c) => c + 1);
       }),

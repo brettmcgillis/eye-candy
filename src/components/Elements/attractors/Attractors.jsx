@@ -58,6 +58,15 @@ function AttractorHandle({
   const [levaValues, setLeva] = useControls(
     folderName,
     () => ({
+      type: {
+        label: 'Type',
+        value: attractor.type || 'attractor',
+        options: ['attractor', 'repeller'],
+        render: () => true,
+        onChange: (nextType) => {
+          onUpdate(index, { type: nextType });
+        },
+      },
       strength: {
         label: 'Strength',
         value: attractor.strength ?? defaultStrength,

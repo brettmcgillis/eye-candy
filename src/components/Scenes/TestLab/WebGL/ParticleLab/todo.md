@@ -13,7 +13,7 @@
 # // Features
 
 - [x] Build the attractors system into the lab as an option
-- [ ] Explore Repellers in addition to attractors
+- [x] Build Repellers in addition to attractors
 
 ## Particle Systems To Explore
 

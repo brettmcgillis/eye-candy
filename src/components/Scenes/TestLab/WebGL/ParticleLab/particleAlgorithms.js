@@ -39,9 +39,13 @@ const makeSeededRandom = (seedValue) => {
 // Attractor definitions for Gravity Attractors sim
 // Exported so the scene can clone these as the initial mutable state.
 export const INITIAL_ATTRACTORS = [
-  { position: [-1, 0, 0], direction: [0, 1, 0] },
-  { position: [1, 0, -0.5], direction: [0, 1, 0] },
-  { position: [0, 0.5, 1], direction: normalizeVec3([1, 0, -0.5]) },
+  { position: [-1, 0, 0], direction: [0, 1, 0], type: 'attractor' },
+  { position: [1, 0, -0.5], direction: [0, 1, 0], type: 'attractor' },
+  {
+    position: [0, 0.5, 1],
+    direction: normalizeVec3([1, 0, -0.5]),
+    type: 'attractor',
+  },
 ];
 
 const shuffledBranchTokens = (rand) => {
@@ -1989,14 +1993,16 @@ const algorithms = {
 
           const invDist = 1 / dist;
           const gStr = (attractorMass * pMass * G) / distSq;
+          const type = attr.type || 'attractor';
+          const sign = type === 'repeller' ? -1 : 1;
 
-          // Gravity
-          fx += dx * invDist * gStr;
-          fy += dy * invDist * gStr;
-          fz += dz * invDist * gStr;
+          // Gravity or repeller
+          fx += sign * dx * invDist * gStr;
+          fy += sign * dy * invDist * gStr;
+          fz += sign * dz * invDist * gStr;
 
           // Spinning: cross(rotAxis * gStr * spin, toAttractor)
-          const s = gStr * spinningStrength;
+          const s = gStr * spinningStrength * sign;
           const sx = attr.direction[0] * s;
           const sy = attr.direction[1] * s;
           const sz = attr.direction[2] * s;

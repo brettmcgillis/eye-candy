@@ -1,3 +1,5 @@
+import { DoubleSide } from 'three';
+
 import React, { useMemo } from 'react';
 
 import CRTStaticMaterialComponent from '../../../../../materials/webGL/crt/crtStaticMaterial';
@@ -44,6 +46,7 @@ export default function CRTStaticRing({
         rfStrength={rfStrength}
         rfScale={rfScale}
         rfSpeed={rfSpeed}
+        side={DoubleSide}
       />
     </mesh>
   );

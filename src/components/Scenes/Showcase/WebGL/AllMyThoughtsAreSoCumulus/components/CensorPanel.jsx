@@ -11,9 +11,6 @@ const CensorPanel = memo(function CensorPanel({
   pixelSize,
   refraction,
   clipOffset,
-  tintVisible,
-  tintColor,
-  tintOpacity,
 }) {
   const panelPosition = useMemo(
     () => [position.x, position.y, position.z],
@@ -37,20 +34,8 @@ const CensorPanel = memo(function CensorPanel({
         refraction={refraction}
         clipOffset={clipOffset}
       >
-        <planeGeometry args={[1, 1]} />
+        <boxGeometry args={[1, 1, 0.1]} />
       </Censor>
-
-      {tintVisible && (
-        <mesh position={[0, 0, 0.001]}>
-          <planeGeometry args={[1, 1]} />
-          <meshBasicMaterial
-            color={tintColor}
-            transparent
-            opacity={tintOpacity}
-            depthWrite={false}
-          />
-        </mesh>
-      )}
     </group>
   );
 });

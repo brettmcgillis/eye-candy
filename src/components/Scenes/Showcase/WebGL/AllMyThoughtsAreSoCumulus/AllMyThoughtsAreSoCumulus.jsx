@@ -22,7 +22,7 @@ import useSceneControls from './hooks/useSceneControls';
 // Scene
 // ---------------------------------------------------------------------------
 
-const BASE_CAMERA_POSITION = [-4.9, 2.7, 5.8];
+const BASE_CAMERA_POSITION = [-4.7, 2.6, 5.9];
 const LANDSCAPE_BOUNDS_MARGIN = 1.04;
 const PORTRAIT_BOUNDS_MARGIN = 0.9;
 
@@ -158,9 +158,6 @@ export default function AllMyThoughtsAreSoCumulus() {
           pixelSize={c.censorPixelSize}
           refraction={c.censorRefraction}
           clipOffset={c.censorClipOffset}
-          tintVisible={c.censorPanelTintVisible}
-          tintColor={c.censorPanelTintColor}
-          tintOpacity={c.censorPanelTintOpacity}
         />
       </Float>
 

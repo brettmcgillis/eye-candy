@@ -1100,6 +1100,126 @@ const algorithms = {
       }
     },
   },
+  'Ikeda Map': {
+    type: 'map',
+    defaults: {
+      u: 0.9,
+      tBias: 0.4,
+      tScale: 6.0,
+      xBias: 1.0,
+      zScale: 0.55,
+      zFreq: 1.4,
+    },
+    ranges: {
+      u: [0.6, 1.0, 0.001],
+      tBias: [-2.0, 2.0, 0.01],
+      tScale: [0.5, 10.0, 0.01],
+      xBias: [-2.0, 2.0, 0.01],
+      zScale: [0.0, 2.0, 0.01],
+      zFreq: [0.1, 5.0, 0.01],
+    },
+    generate: (p, positions, pointsCount) => {
+      let x = 0.1;
+      let y = 0.0;
+      let z = 0.0;
+      for (let i = 0; i < pointsCount; i += 1) {
+        const denom = 1 + x * x + y * y;
+        const t = p.tBias - p.tScale / denom;
+        const ct = Math.cos(t);
+        const st = Math.sin(t);
+        const nx = p.xBias + p.u * (x * ct - y * st);
+        const ny = p.u * (x * st + y * ct);
+        const nz = Math.sin((nx * nx + ny * ny) * p.zFreq + z) * p.zScale;
+
+        x = nx;
+        y = ny;
+        z = nz;
+        if (Number.isNaN(x) || Math.abs(x) > 1000) {
+          x = 0.1;
+          y = 0.0;
+          z = 0.0;
+        }
+        positions.push(x, y, z);
+      }
+    },
+  },
+  'Gumowski-Mira Map': {
+    type: 'map',
+    defaults: {
+      mu: -0.31,
+      a: 0.008,
+      b: 0.05,
+      zLift: 0.75,
+      zMix: 0.65,
+    },
+    ranges: {
+      mu: [-1.0, 1.0, 0.001],
+      a: [0.001, 0.05, 0.0001],
+      b: [-0.3, 0.3, 0.001],
+      zLift: [0.0, 2.0, 0.01],
+      zMix: [0.0, 2.0, 0.01],
+    },
+    generate: (p, positions, pointsCount) => {
+      const f = (v) => {
+        const vv = v * v;
+        return p.mu * v + (2 * (1 - p.mu) * vv) / (1 + vv);
+      };
+
+      let x = 0.1;
+      let y = 0.0;
+      for (let i = 0; i < pointsCount; i += 1) {
+        const fx = f(x);
+        const nx = y + p.a * (1 - p.b * y * y) * y + fx;
+        const ny = -x + f(nx);
+        const nz =
+          (Math.sin(nx * p.zMix) + Math.cos(ny * (2 - p.zMix))) * 0.5 * p.zLift;
+
+        x = nx;
+        y = ny;
+        if (Number.isNaN(x) || Math.abs(x) > 1000) {
+          x = 0.1;
+          y = 0.0;
+        }
+        positions.push(x, y, nz);
+      }
+    },
+  },
+  'Svensson Map': {
+    type: 'map',
+    defaults: {
+      a: 1.4,
+      b: -1.56,
+      c: 1.4,
+      d: -6.56,
+      zLift: 0.5,
+      zFreq: 1.0,
+    },
+    ranges: {
+      a: [-8.0, 8.0, 0.01],
+      b: [-8.0, 8.0, 0.01],
+      c: [-8.0, 8.0, 0.01],
+      d: [-8.0, 8.0, 0.01],
+      zLift: [0.0, 2.0, 0.01],
+      zFreq: [0.1, 4.0, 0.01],
+    },
+    generate: (p, positions, pointsCount) => {
+      let x = 0.1;
+      let y = 0.0;
+      for (let i = 0; i < pointsCount; i += 1) {
+        const nx = p.d * Math.sin(p.a * x) - Math.sin(p.b * y);
+        const ny = p.c * Math.cos(p.a * x) + Math.cos(p.b * y);
+        const nz = Math.sin((nx + ny) * p.zFreq) * p.zLift;
+
+        x = nx;
+        y = ny;
+        if (Number.isNaN(x) || Math.abs(x) > 1000) {
+          x = 0.1;
+          y = 0.0;
+        }
+        positions.push(x, y, nz);
+      }
+    },
+  },
   'Popcorn Cloud': {
     type: 'map',
     defaults: { h: 0.05, k: 3.0 },

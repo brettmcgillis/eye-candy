@@ -390,27 +390,33 @@ export default function ParticleLab() {
     };
   }, []);
 
-  const { controlsMode, showHelpers } = useControls('Attractors', {
-    controlsMode: {
-      label: 'Mode',
-      value: 'translate',
-      options: ['both', 'translate', 'rotate', 'none'],
+  const { controlsMode, showHelpers } = useControls(
+    'Attractors',
+    {
+      controlsMode: {
+        label: 'Mode',
+        value: 'translate',
+        options: ['both', 'translate', 'rotate', 'none'],
+      },
+      showHelpers: { label: 'Show Helpers', value: true },
+      addAttractor: button(() => {
+        if (attractorsRef.current.length >= MAX_ATTRACTORS) return;
+        attractorsRef.current.push({
+          position: [Math.random() * 2 - 1, 0, Math.random() * 2 - 1],
+          direction: [0, 1, 0],
+        });
+        setAttractorVersion((c) => c + 1);
+      }),
+      removeAttractor: button(() => {
+        if (attractorsRef.current.length <= 1) return;
+        attractorsRef.current.pop();
+        setAttractorVersion((c) => c + 1);
+      }),
     },
-    showHelpers: { label: 'Show Helpers', value: true },
-    addAttractor: button(() => {
-      if (attractorsRef.current.length >= MAX_ATTRACTORS) return;
-      attractorsRef.current.push({
-        position: [Math.random() * 2 - 1, 0, Math.random() * 2 - 1],
-        direction: [0, 1, 0],
-      });
-      setAttractorVersion((c) => c + 1);
-    }),
-    removeAttractor: button(() => {
-      if (attractorsRef.current.length <= 1) return;
-      attractorsRef.current.pop();
-      setAttractorVersion((c) => c + 1);
-    }),
-  });
+    {
+      render: () => config.algorithm === 'Gravity Attractors',
+    }
+  );
 
   return (
     <>

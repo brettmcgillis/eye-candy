@@ -21,7 +21,7 @@ import {
 
 import Bret from '../../../../elements/bret/Bret';
 import Reversal from '../../../../elements/reversal/Reversal';
-import { GridMaterial } from '../../../../materials/gridMaterial';
+import { GridMaterial } from '../../../../materials/webGPU/gridMaterial';
 
 const ROOM_SIZE = 2.2;
 const WALL_THICKNESS = 0.08;

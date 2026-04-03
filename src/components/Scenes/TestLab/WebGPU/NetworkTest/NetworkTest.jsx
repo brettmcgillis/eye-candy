@@ -6,7 +6,7 @@ import { OrbitControls, PerspectiveCamera } from '@react-three/drei';
 
 import { InteractiveBret } from '../../../../elements/bret/Bret';
 import NeuralNetwork from '../../../../elements/network/NeuralNetwork';
-import { GridMaterial } from '../../../../materials/gridMaterial';
+import { GridMaterial } from '../../../../materials/webGPU/gridMaterial';
 
 export default function NetworkTest() {
   const network = useControls('Neural Network', {

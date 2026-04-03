@@ -3,16 +3,16 @@ import React, { useMemo } from 'react';
 
 import { audioFile } from '../../../../../../utils/appUtils';
 import { STRUDEL_TRACKS } from '../../../../../../utils/tracks';
-// eslint-disable-next-line import/no-unresolved, import/extensions
-import CRTStaticMaterial from '../../../../../materials/webGL/crt/crtStaticMaterial';
 import CRTBlueScreenMaterial, {
   TerminalSetting,
   VHSSetting,
-} from '../Materials/CRTBlueScreenMaterial';
-import CRTSceneInSceneMaterial from '../Materials/CRTSceneInSceneMaterial';
-import CRTSceneMaterial from '../Materials/CRTSceneMaterial';
-import CRTShowMaterial from '../Materials/CRTShowMaterial';
-import CRTSmtpeStaticMaterial from '../Materials/CRTSmtpeStaticMaterial';
+} from '../../../../../materials/webGL/crt/crtBlueScreenMaterial';
+import CRTSceneInSceneMaterial from '../../../../../materials/webGL/crt/crtSceneInSceneMaterial';
+import CRTSceneMaterial from '../../../../../materials/webGL/crt/crtSceneMaterial';
+import CRTShowMaterial from '../../../../../materials/webGL/crt/crtShowMaterial';
+import CRTSmtpeStaticMaterial from '../../../../../materials/webGL/crt/crtSmtpeStaticMaterial';
+// eslint-disable-next-line import/no-unresolved, import/extensions
+import CRTStaticMaterial from '../../../../../materials/webGL/crt/crtStaticMaterial';
 import TestScene from '../TestScene';
 
 export default function useCableSubscription() {

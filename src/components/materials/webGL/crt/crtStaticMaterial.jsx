@@ -1,4 +1,6 @@
 // CRT Static Material - Shared across scenes
+import { FrontSide } from 'three';
+
 import React, { useRef } from 'react';
 
 import { shaderMaterial } from '@react-three/drei';
@@ -187,6 +189,7 @@ export default function CRTStaticMaterialComponent({
   rfStrength = 0.25,
   rfScale = 22,
   rfSpeed = 0.4,
+  side = FrontSide,
 }) {
   const ref = useRef();
 
@@ -198,6 +201,7 @@ export default function CRTStaticMaterialComponent({
     <crtStaticMaterial
       ref={ref}
       key={CrtStaticMaterial.key}
+      side={side}
       transparent={false}
       depthWrite
       toneMapped={false}

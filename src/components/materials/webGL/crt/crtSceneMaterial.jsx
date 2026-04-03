@@ -1,3 +1,5 @@
+import { FrontSide } from 'three';
+
 import React, { useRef } from 'react';
 
 import { RenderTexture, shaderMaterial } from '@react-three/drei';
@@ -114,6 +116,7 @@ export default function CRTSceneMaterial({
   vignette = 0.85,
   chromaDrift = 0.25,
   bloom = 0.25,
+  side = FrontSide,
 }) {
   const mat = useRef();
 
@@ -124,6 +127,7 @@ export default function CRTSceneMaterial({
   return (
     <crtSceneShaderMaterial
       ref={mat}
+      side={side}
       uStaticAmount={staticAmount}
       uStaticScale={staticScale}
       uStaticSpeed={staticSpeed}

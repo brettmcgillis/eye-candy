@@ -343,6 +343,7 @@ export default function CRTBlueScreenMaterial({
   rollStrength = 0,
 
   chromaOffset = 0.0025,
+  side = THREE.FrontSide,
 }) {
   const ref = useRef();
   const caretClock = useRef(0);
@@ -397,6 +398,7 @@ export default function CRTBlueScreenMaterial({
     <crtBlueScreenMaterial
       ref={ref}
       key={CrtBlueScreenMaterial.key}
+      side={side}
       toneMapped={false}
       uTextTexture={texture}
       uScreenColor={screenColor}

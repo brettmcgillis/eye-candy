@@ -1,4 +1,6 @@
 // CrtSmtpeStaticMaterial.js
+import { FrontSide } from 'three';
+
 import React, { useRef } from 'react';
 
 import { shaderMaterial } from '@react-three/drei';
@@ -300,6 +302,7 @@ export default function CRTSmtpeStaticMaterial({
   spotNoise = 0.35,
   thermalDrift = 0.15,
   maskMode = 0,
+  side = FrontSide,
 }) {
   const ref = useRef();
 
@@ -311,6 +314,7 @@ export default function CRTSmtpeStaticMaterial({
     <crtSmtpeStaticMaterial
       ref={ref}
       key={CrtSmtpeStaticMaterial.key}
+      side={side}
       transparent={false}
       depthWrite
       toneMapped={false}

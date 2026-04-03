@@ -245,6 +245,7 @@ export default function CRTShowMaterial({
   spotNoise = 0.35,
   thermalDrift = 0.15,
   maskMode = 0,
+  side = THREE.FrontSide,
 }) {
   const ref = useRef();
 
@@ -358,6 +359,7 @@ export default function CRTShowMaterial({
     <crtShowMaterial
       ref={ref}
       key={CrtShowMaterial.key}
+      side={side}
       toneMapped={false}
       uPadX={padX}
       uPadY={padY}

@@ -97,6 +97,7 @@ export default function CRTSceneInSceneMaterial({
   scanlineStrength = 0.4,
   curvature = 0.12,
   vignette = 0.85,
+  side = THREE.FrontSide,
 }) {
   const mat = useRef();
   const { gl, scene, camera } = useThree();
@@ -148,6 +149,7 @@ export default function CRTSceneInSceneMaterial({
   return (
     <crtAccumMaterial
       ref={mat}
+      side={side}
       uDecay={decay}
       uZoom={zoom}
       uWarp={warp}

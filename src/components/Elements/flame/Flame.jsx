@@ -4,7 +4,7 @@ import React, { useMemo, useRef } from 'react';
 
 import { useFrame } from '@react-three/fiber';
 
-import FlameMaterial from '../../materials/flameMaterial';
+import FlameMaterial from '../../materials/webGL/flameMaterial';
 
 const DEFAULT_MOTION = {
   baseSpeed: 1.15,

@@ -2,7 +2,7 @@ import * as THREE from 'three';
 
 import React, { useCallback, useMemo, useRef } from 'react';
 
-import ExplodingMaterial from '../../../../../materials/explodingMaterial';
+import ExplodingMaterial from '../../../../../materials/webGL/explodingMaterial';
 
 const Plane = React.memo(function Plane({
   position,

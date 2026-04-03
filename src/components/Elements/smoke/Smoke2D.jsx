@@ -5,7 +5,7 @@ import React, { useMemo, useRef } from 'react';
 import { Billboard } from '@react-three/drei';
 import { useFrame } from '@react-three/fiber';
 
-import SmokeMaterial from '../../materials/smokeMaterial';
+import SmokeMaterial from '../../materials/webGL/smokeMaterial';
 
 const DEFAULT_SMOKE = {
   /** Scroll speed of the noise in the fragment shader */

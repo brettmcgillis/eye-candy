@@ -1,6 +1,6 @@
 import React, { useMemo } from 'react';
 
-import CRTStaticMaterialComponent from '../../../../../materials/crtStaticMaterial';
+import CRTStaticMaterialComponent from '../../../../../materials/webGL/crtStaticMaterial';
 
 export default function CRTStaticRing({
   position = [0, 1.5, -1],

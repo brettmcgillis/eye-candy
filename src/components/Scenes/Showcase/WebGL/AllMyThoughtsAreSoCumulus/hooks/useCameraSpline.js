@@ -54,7 +54,9 @@ export default function useCameraSpline({
     const hasPerPointLookAt = points[0]?.lookAt instanceof THREE.Vector3;
     if (hasPerPointLookAt) {
       const targets = points.map((p) =>
-        p.lookAt instanceof THREE.Vector3 ? p.lookAt.clone() : new THREE.Vector3()
+        p.lookAt instanceof THREE.Vector3
+          ? p.lookAt.clone()
+          : new THREE.Vector3()
       );
       lookAtCurveRef.current = new THREE.CatmullRomCurve3(
         targets,

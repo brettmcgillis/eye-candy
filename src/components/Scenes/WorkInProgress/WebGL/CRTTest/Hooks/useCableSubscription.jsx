@@ -4,7 +4,7 @@ import React, { useMemo } from 'react';
 import { audioFile } from '../../../../../../utils/appUtils';
 import { STRUDEL_TRACKS } from '../../../../../../utils/tracks';
 // eslint-disable-next-line import/no-unresolved, import/extensions
-import CRTStaticMaterial from '../../../../../materials/webGL/crtStaticMaterial';
+import CRTStaticMaterial from '../../../../../materials/webGL/crt/crtStaticMaterial';
 import CRTBlueScreenMaterial, {
   TerminalSetting,
   VHSSetting,

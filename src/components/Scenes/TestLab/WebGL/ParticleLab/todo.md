@@ -4,13 +4,16 @@
 
 [Back to main TODO](../../../../../../TODO.md)
 
-## Completed
-
-- [x] Add to the test lab
+- [ ] Hoist Mycellium out into a Showcase level scene.
+  - Scene should "evlolve" controls over time for more generative experience.
+  - Use datetime as a seed so each instance is unique
+  - Scene should contain a glitch mode that does dramatic jumps in control settings to cause extreme sudden shifts.
+  - Scene should be audio reactive as a final touch
 
 # // Features
 
 - [x] Build the attractors system into the lab as an option
+- [ ] Explore Repellers in addition to attractors
 
 ## Particle Systems To Explore
 
@@ -48,11 +51,11 @@
   - Multi-scroll chaotic structure with dramatic lobe transitions.
 - [x] Chen-Lee
   - Alternative Chen-family formulation matching the DynamicMath equation set.
-- [ ] Ikeda Map (2D map, embed as z modulation)
+- [x] Ikeda Map (2D map, embed as z modulation)
   - Photon-orbit feel with rich output and low math cost.
-- [ ] Gumowski-Mira Map (2D, lift to 3D)
+- [x] Gumowski-Mira Map (2D, lift to 3D)
   - Organic flower/frond structures; responds well to parameter sweeps.
-- [ ] Svensson Map (2D, lift to 3D)
+- [x] Svensson Map (2D, lift to 3D)
   - Fast to compute with wide visual diversity, often woven-smoke-like.
 - [x] Popcorn / Pickover map variants
   - Speckled cosmic dust and curved fold structures.

@@ -9,13 +9,11 @@
 
 ### REPO
 
-- [ ] re-enable react/no-unknown-property, react/prop-types ?
 - [x] springs? got it
 - [x] maath
 
 ### EXPLORE/EXPLODE
 
-- [ ] glass
 - [x] pixelation component. did a pixelhater
 - [ ] Check out Tone.js for audio. Could be a good solution to bridging Strudel, Mp3, etc.
 
@@ -24,6 +22,8 @@
 - [x] fix icon used in manifest, logo192 is not the right size, causes console err
 - [x] serve up multiple scenes. portal(s)?, picture frames?, routing?
 - [ ] if were doing screen cap then move it out of scenes and into something at app layer
+  - Overhaul. Should support screenshot and screenrec.
+  - Make sure output includes a watermark & some cool hiddnen fileinfo
 
 - [Scaffold](src/app/scaffold/todo.md)
 
@@ -31,6 +31,8 @@
 
 To Build:
 
+- [ ] Cardinals - Hoist it out of FluidTest into dedicated scene
+- [ ] Mycellium - Hoist it out of ParticleLab into dedicated scene
 - [ ] CSG Skull. Knock a reversal out of its forehead.
 - [ ] Metaball (marching cubes) lava lamp
 - [ ] We should do a scene with Quinns seal, 3rd person camera, player controls w/keyboard and controller.
@@ -90,43 +92,38 @@ To Build:
 
 ### ELEMENTS
 
-#### HALO
-
-- [ ] halo props to controls
-- [ ] halo hover glow
-
 #### SKULL
 
 - [ ] Refactor like we did with bret/reversal to offer a generic that takes props, and specialized versions
 
-- Overhaul. Should support screenshot and screenrec.
-- Make sure output includes a watermark & some cool hiddnen fileinfo
-
 ### LIGHTINGRIG
+
+- [ ] Get rid of it.
 
 ## Show
 
-- SVG Renderer
-- Explosion Test
-- Particle Lab
-- Spline Editor
-- SmokeTest
-- FireTest
-- HotBox
-- PixelHater updates
-- Thats All Folks
-- Crt Test
-- Still Pulling For You
-- Row It Alone
-- Police Presence
-- Flying High
-- Dumpster Fire
-- Mycelium - ✔
-- All my thoughts are so cumulus - Atomic
-- All my thoughts are so cumulus - Record
-- All my thoughts are so cumulus - Network
-- All my thoughts are so cumulus - Plate
-- All my thoughts are so cumulus - Censored Rings
+- [ ] SVG Renderer
+- [ ] Explosion Test
+- [ ] Particle Lab
+- [ ] Spline Editor
+- [ ] SmokeTest
+- [ ] FireTest
+- [ ] HotBox
+- [ ] PixelHater updates
+- [ ] Thats All Folks
+- [ ] Crt Test
+- [ ] Still Pulling For You
+- [ ] Row It Alone
+- [ ] Police Presence
+- [ ] Flying High
+- [ ] Dumpster Fire
+- [✔] Mycelium
+- [ ] All my thoughts are so cumulus - Atomic
+- [ ] All my thoughts are so cumulus - Censored Rings
+- [ ] All my thoughts are so cumulus - Network
+- [ ] All my thoughts are so cumulus - Plate
+- [ ] All my thoughts are so cumulus - Record
+- [✔] All my thoughts are so cumulus - Static
 
 - TrophyHusband
 - Yggdraskill

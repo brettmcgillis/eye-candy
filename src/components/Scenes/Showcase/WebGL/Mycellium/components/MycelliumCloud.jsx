@@ -285,7 +285,7 @@ export default function MycelliumCloud({ config, setConfig }) {
           map={texture || undefined}
           alphaTest={0.01}
           blending={THREE.NormalBlending}
-          depthWrite={false}
+          depthWrite
           depthTest
         />
       </points>

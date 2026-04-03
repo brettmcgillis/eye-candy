@@ -4,4 +4,5 @@
 
 [Back to main TODO](../../../../../../TODO.md)
 
-- Default colors are red and grey, black background
+- [ ] Rename cloud folders and move under scene.
+- [ ] Audio reactivity!

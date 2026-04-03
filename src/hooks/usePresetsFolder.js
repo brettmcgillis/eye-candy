@@ -2,6 +2,7 @@ import { button, folder } from 'leva';
 
 import { useCallback, useMemo, useRef, useState } from 'react';
 
+import { localEnv } from '../utils/appUtils';
 import {
   getInitialPresetFromQuery,
   useSyncPresetQueryParam,
@@ -15,23 +16,21 @@ function toObjectLiteral(snapshot) {
 }
 
 export default function usePresetsFolder({
-  collapsed = true,
   copyTransform,
   defaultPreset,
   getPresetControls,
-  local,
   presets,
-  queryParam = 'preset',
 }) {
+  const local = localEnv();
   const presetOptions = useMemo(() => Object.keys(presets), [presets]);
 
   const initialPreset = useMemo(() => {
     return getInitialPresetFromQuery({
       defaultPreset,
-      paramKey: queryParam,
+      paramKey: 'preset',
       presetValues: presetOptions,
     });
-  }, [defaultPreset, presetOptions, queryParam]);
+  }, [defaultPreset, presetOptions]);
 
   const controlsSnapshotRef = useRef(
     presets[initialPreset] || presets[defaultPreset] || {}
@@ -85,16 +84,9 @@ export default function usePresetsFolder({
             }
           : {}),
       },
-      { collapsed }
+      { collapsed: true }
     );
-  }, [
-    applyPresetByName,
-    collapsed,
-    copyTransform,
-    initialPreset,
-    local,
-    presetOptions,
-  ]);
+  }, [applyPresetByName, copyTransform, initialPreset, local, presetOptions]);
 
   const attachSetControls = useCallback((setControls) => {
     setControlsRef.current = setControls;
@@ -102,7 +94,7 @@ export default function usePresetsFolder({
 
   useSyncPresetQueryParam({
     defaultPreset,
-    paramKey: queryParam,
+    paramKey: 'preset',
     presetValues: presetOptions,
     selectedPreset,
   });

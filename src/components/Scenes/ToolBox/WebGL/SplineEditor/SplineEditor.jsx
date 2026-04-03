@@ -1,3 +1,5 @@
+import * as THREE from 'three';
+
 import React, { useCallback, useState } from 'react';
 
 import { OrbitControls, PerspectiveCamera } from '@react-three/drei';
@@ -21,7 +23,7 @@ function toRuntimeSplinePoints(preset) {
   return sourceSplines.map((spline) =>
     spline.points.map((pt) => ({
       position: pt.position.clone(),
-      rotation: pt.rotation.clone(),
+      rotation: pt.rotation?.clone() ?? new THREE.Euler(),
     }))
   );
 }

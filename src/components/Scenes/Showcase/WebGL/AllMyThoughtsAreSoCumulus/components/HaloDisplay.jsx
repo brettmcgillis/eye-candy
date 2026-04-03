@@ -16,6 +16,11 @@ import {
 } from '../utils/buildHaloConfigs';
 import CRTStaticRing from './CRTStaticRing';
 
+const HALO_MODEL_ROTATION_BY_TYPE = {
+  atomic: [Math.PI / 2, 0, 0],
+  network: [Math.PI / 2, 0, 0],
+};
+
 /**
  * Renders the active halo type at a shared position/rotation/scale.
  * All halo components are wrapped in an outer group so the animation ref
@@ -158,6 +163,8 @@ const HaloDisplay = memo(function HaloDisplay({ controls, setControls }) {
     ]
   );
 
+  const modelRotation = HALO_MODEL_ROTATION_BY_TYPE[haloType] || [0, 0, 0];
+
   return (
     <group
       ref={haloRef}
@@ -166,39 +173,41 @@ const HaloDisplay = memo(function HaloDisplay({ controls, setControls }) {
       scale={activeAppearance.scale}
       visible={activeAppearance.visible}
     >
-      {haloType === 'rings' && <Halo {...ringsConfig} />}
-      {haloType === 'record' && <Record sideA={controls.recordSideA} />}
-      {haloType === 'network' && <NeuralNetwork {...networkConfig} />}
-      {haloType === 'plate' && <Lb45Plate />}
-      {haloType === 'atomic' && (
-        <Atom
-          atomicNumber={controls.atomicNumber}
-          animateElectrons={controls.atomAnimateElectrons}
-          shellSpacing={controls.atomShellSpacing}
-        />
-      )}
-      {haloType === 'crtStaticRing' && (
-        <CRTStaticRing
-          position={[0, 0, 0]}
-          rotation={[0, 0, 0]}
-          scale={1}
-          innerRadius={controls.crtStaticRingInnerRadius}
-          outerRadius={controls.crtStaticRingOuterRadius}
-          snowAmount={controls.crtStaticRingSnowAmount}
-          snowScale={controls.crtStaticRingSnowScale}
-          snowSpeed={controls.crtStaticRingSnowSpeed}
-          snowSize={controls.crtStaticRingSnowSize}
-          snap={controls.crtStaticRingSnap}
-          bandStrength={controls.crtStaticRingBandStrength}
-          bandSpeed={controls.crtStaticRingBandSpeed}
-          bandScale={controls.crtStaticRingBandScale}
-          rfStrength={controls.crtStaticRingRFStrength}
-          rfScale={controls.crtStaticRingRFScale}
-          rfSpeed={controls.crtStaticRingRFSpeed}
-          curvature={controls.crtStaticRingCurvature}
-          vignette={controls.crtStaticRingVignette}
-        />
-      )}
+      <group rotation={modelRotation}>
+        {haloType === 'rings' && <Halo {...ringsConfig} />}
+        {haloType === 'record' && <Record sideA={controls.recordSideA} />}
+        {haloType === 'network' && <NeuralNetwork {...networkConfig} />}
+        {haloType === 'plate' && <Lb45Plate />}
+        {haloType === 'atomic' && (
+          <Atom
+            atomicNumber={controls.atomicNumber}
+            animateElectrons={controls.atomAnimateElectrons}
+            shellSpacing={controls.atomShellSpacing}
+          />
+        )}
+        {haloType === 'crtStaticRing' && (
+          <CRTStaticRing
+            position={[0, 0, 0]}
+            rotation={[0, 0, 0]}
+            scale={1}
+            innerRadius={controls.crtStaticRingInnerRadius}
+            outerRadius={controls.crtStaticRingOuterRadius}
+            snowAmount={controls.crtStaticRingSnowAmount}
+            snowScale={controls.crtStaticRingSnowScale}
+            snowSpeed={controls.crtStaticRingSnowSpeed}
+            snowSize={controls.crtStaticRingSnowSize}
+            snap={controls.crtStaticRingSnap}
+            bandStrength={controls.crtStaticRingBandStrength}
+            bandSpeed={controls.crtStaticRingBandSpeed}
+            bandScale={controls.crtStaticRingBandScale}
+            rfStrength={controls.crtStaticRingRFStrength}
+            rfScale={controls.crtStaticRingRFScale}
+            rfSpeed={controls.crtStaticRingRFSpeed}
+            curvature={controls.crtStaticRingCurvature}
+            vignette={controls.crtStaticRingVignette}
+          />
+        )}
+      </group>
     </group>
   );
 });

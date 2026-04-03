@@ -1,21 +1,26 @@
-import React from 'react';
+import * as THREE from 'three';
+
+import React, { useMemo, useRef } from 'react';
 
 import {
   Bounds,
   Environment,
   Float,
+  Line,
   OrbitControls,
   PerspectiveCamera,
 } from '@react-three/drei';
 import { useThree } from '@react-three/fiber';
 import { Bloom, EffectComposer } from '@react-three/postprocessing';
 
+import CAMERA_SPLINE_PRESETS from '../../../../../presets/spline/cameraSplinePresets';
 import { GridHelper, PolarGridHelper } from '../../../../rigging/GridHelper';
 import CensorPanel from './components/CensorPanel';
 import HaloDisplay from './components/HaloDisplay';
 import SceneCloud from './components/SceneCloud';
 import SceneFemur from './components/SceneFemur';
 import SceneSkull from './components/SceneSkull';
+import useCameraSpline from './hooks/useCameraSpline';
 import useSceneControls from './hooks/useSceneControls';
 
 // ---------------------------------------------------------------------------
@@ -28,6 +33,7 @@ const PORTRAIT_BOUNDS_MARGIN = 0.9;
 
 export default function AllMyThoughtsAreSoCumulus() {
   const { controls: c, setControls, controlsSnapshotRef } = useSceneControls();
+  const cameraRef = useRef(null);
   const size = useThree((state) => state.size);
   const boundsMargin =
     size.width >= size.height
@@ -37,6 +43,65 @@ export default function AllMyThoughtsAreSoCumulus() {
   // Keep snapshot current for the Leva copy button
   controlsSnapshotRef.current = c;
 
+  // Get camera spline points from preset
+  const cameraSplinePreset = CAMERA_SPLINE_PRESETS[c.cameraSplinePreset];
+  const isSplineMode = c.cameraMode === 'spline';
+  const cameraSplineClosed = cameraSplinePreset?.closed ?? true;
+  const cameraSplinePoints = useMemo(() => {
+    const sourcePoints = cameraSplinePreset?.points || [];
+    const positionOffset = new THREE.Vector3(
+      c.cameraSplinePosition.x,
+      c.cameraSplinePosition.y,
+      c.cameraSplinePosition.z
+    );
+    const scale = new THREE.Vector3(
+      c.cameraSplineScale.x,
+      c.cameraSplineScale.y,
+      c.cameraSplineScale.z
+    );
+
+    return sourcePoints.map((point) => ({
+      // Keep path transform, but force camera target to come from global Look At
+      position: point.position.clone().multiply(scale).add(positionOffset),
+    }));
+  }, [
+    cameraSplinePreset,
+    c.cameraSplinePosition.x,
+    c.cameraSplinePosition.y,
+    c.cameraSplinePosition.z,
+    c.cameraSplineScale.x,
+    c.cameraSplineScale.y,
+    c.cameraSplineScale.z,
+  ]);
+
+  const cameraSplinePathPoints = useMemo(() => {
+    if (cameraSplinePoints.length < 2) return [];
+
+    const splineCurve = new THREE.CatmullRomCurve3(
+      cameraSplinePoints.map((point) => point.position.clone()),
+      cameraSplineClosed,
+      'centripetal',
+      c.cameraSplineTension
+    );
+
+    return splineCurve.getPoints(200);
+  }, [cameraSplinePoints, cameraSplineClosed, c.cameraSplineTension]);
+
+  // Use camera spline for dynamic motion
+  useCameraSpline({
+    enabled: isSplineMode,
+    cameraRef,
+    points: cameraSplinePoints,
+    duration: c.cameraSplineDuration,
+    tension: c.cameraSplineTension,
+    closed: cameraSplineClosed,
+    lookAt: [
+      c.cameraSplineLookAt.x,
+      c.cameraSplineLookAt.y,
+      c.cameraSplineLookAt.z,
+    ],
+  });
+
   // ---------------------------------------------------------------------------
   // Render
   // ---------------------------------------------------------------------------
@@ -45,7 +110,12 @@ export default function AllMyThoughtsAreSoCumulus() {
     <>
       <color attach="background" args={[c.backgroundColor]} />
 
-      <PerspectiveCamera makeDefault position={BASE_CAMERA_POSITION} fov={20} />
+      <PerspectiveCamera
+        ref={cameraRef}
+        makeDefault
+        position={BASE_CAMERA_POSITION}
+        fov={20}
+      />
 
       <ambientLight intensity={c.ambientIntensity} />
 
@@ -78,18 +148,33 @@ export default function AllMyThoughtsAreSoCumulus() {
       <GridHelper x y z visible={c.showGridHelper} />
       <PolarGridHelper x y z visible={c.showPolarGridHelper} />
 
-      <OrbitControls
-        makeDefault
-        autoRotate
-        enableDamping
-        enablePan
-        enableRotate
-        enableZoom
-        autoRotateSpeed={c.autoRotateSpeed}
-      />
+      {c.cameraSplineShowPath && cameraSplinePathPoints.length > 1 ? (
+        <Line
+          points={cameraSplinePathPoints}
+          color={c.cameraSplinePathColor}
+          lineWidth={c.cameraSplinePathWidth}
+        />
+      ) : null}
+
+      {!isSplineMode ? (
+        <OrbitControls
+          makeDefault
+          autoRotate={c.autoRotateSpeed !== 0}
+          enableDamping
+          enablePan
+          enableRotate
+          enableZoom
+          autoRotateSpeed={c.autoRotateSpeed}
+        />
+      ) : null}
 
       <Float speed={c.floatSpeed}>
-        <Bounds fit clip observe margin={boundsMargin}>
+        <Bounds
+          fit={!isSplineMode}
+          clip
+          observe={!isSplineMode}
+          margin={boundsMargin}
+        >
           <HaloDisplay controls={c} setControls={setControls} />
 
           <SceneSkull

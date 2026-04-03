@@ -1,9 +1,9 @@
 import { folder, useControls } from 'leva';
 
-import { useEffect, useRef } from 'react';
+import { useCallback, useEffect, useRef } from 'react';
 
 import usePresetsFolder from '../../../../../../hooks/usePresetsFolder';
-import { localEnv } from '../../../../../../utils/appUtils';
+import CAMERA_SPLINE_PRESETS from '../../../../../../presets/spline/cameraSplinePresets';
 import { getRandomNumber } from '../../../../../../utils/math';
 import { useSkullControls } from '../../../../../elements/skull/SkullControls';
 import { PRESETS } from '../presets';
@@ -12,10 +12,11 @@ import { PRESETS } from '../presets';
 // Format: '<panelName>.<folderPath>.<controlKey>'
 const HALO_TYPE_PATH = 'All My Thoughts Are So Cumulus.Halo.haloType';
 const RINGS_STYLE_PATH = 'All My Thoughts Are So Cumulus.Halo.Rings.ringsStyle';
+const CAMERA_MODE_PATH =
+  'All My Thoughts Are So Cumulus.Scene.Camera.cameraMode';
 const DEFAULT_RINGS_INNER_RADIUS = 0.5;
 const DEFAULT_RINGS_OUTER_RADIUS = 2;
 const DEFAULT_PRESET = 'Default Rings';
-const PRESET_QUERY_PARAM = 'preset';
 
 function cloneSnapshot(snapshot) {
   return JSON.parse(JSON.stringify(snapshot));
@@ -25,6 +26,21 @@ export default function useSceneControls() {
   const defaultControlsRef = useRef(null);
   const previousHaloTypeRef = useRef('rings');
 
+  const getPresetControls = useCallback(
+    ({ currentControls, presetName, presetSnapshot }) => {
+      const base = defaultControlsRef.current || {};
+      return {
+        ...base,
+        ...presetSnapshot,
+        preset: presetName,
+        cameraMode: currentControls.cameraMode,
+        haloScrollEnabled: currentControls.haloScrollEnabled,
+        haloScrollInterval: currentControls.haloScrollInterval,
+      };
+    },
+    []
+  );
+
   const {
     applyPresetByName,
     attachSetControls,
@@ -33,19 +49,8 @@ export default function useSceneControls() {
     selectedPreset,
   } = usePresetsFolder({
     defaultPreset: DEFAULT_PRESET,
-    getPresetControls: ({ currentControls, presetName, presetSnapshot }) => {
-      const base = defaultControlsRef.current || {};
-      return {
-        ...base,
-        ...presetSnapshot,
-        preset: presetName,
-        haloScrollEnabled: currentControls.haloScrollEnabled,
-        haloScrollInterval: currentControls.haloScrollInterval,
-      };
-    },
-    local: localEnv(),
+    getPresetControls,
     presets: PRESETS,
-    queryParam: PRESET_QUERY_PARAM,
   });
 
   const [controls, setControls] = useControls(
@@ -55,10 +60,22 @@ export default function useSceneControls() {
 
       Scene: folder(
         {
-          backgroundColor: {
-            label: 'Background Color',
-            value: '#ffffff',
-          },
+          Environment: folder(
+            {
+              backgroundColor: {
+                label: 'Background Color',
+                value: '#ffffff',
+              },
+              environmentIntensity: {
+                label: 'Env Intensity',
+                value: 0,
+                min: 0,
+                max: 2,
+                step: 0.01,
+              },
+            },
+            { collapsed: true }
+          ),
           Lighting: folder(
             {
               Ambient: folder(
@@ -160,26 +177,78 @@ export default function useSceneControls() {
 
           Camera: folder(
             {
+              cameraMode: {
+                label: 'Mode',
+                value: 'orbit',
+                options: {
+                  Orbit: 'orbit',
+                  'Spline Motion': 'spline',
+                },
+              },
               autoRotateSpeed: {
                 label: 'Auto Rotate',
                 value: 0,
                 min: -50,
                 max: 50,
+                render: (get) => get(CAMERA_MODE_PATH) === 'orbit',
               },
-              floatSpeed: {
-                label: 'Float Speed',
-                value: 0.5,
-                min: 0,
-                max: 1,
-                step: 0.01,
-              },
-              environmentIntensity: {
-                label: 'Env Intensity',
-                value: 0,
-                min: 0,
-                max: 2,
-                step: 0.01,
-              },
+              'Spline Motion': folder(
+                {
+                  cameraSplinePreset: {
+                    label: 'Path',
+                    value: 'Loop de Loop',
+                    options: Object.keys(CAMERA_SPLINE_PRESETS),
+                  },
+                  cameraSplineShowPath: {
+                    label: 'Show Path',
+                    value: false,
+                  },
+                  cameraSplinePathColor: {
+                    label: 'Path Color',
+                    value: '#00ffff',
+                  },
+                  cameraSplinePathWidth: {
+                    label: 'Path Width',
+                    value: 2,
+                    min: 1,
+                    max: 8,
+                    step: 1,
+                  },
+                  cameraSplinePosition: {
+                    label: 'Position',
+                    value: { x: 0, y: 1, z: 0 },
+                  },
+                  cameraSplineScale: {
+                    label: 'Scale',
+                    value: { x: 2, y: 1, z: 3 },
+                    min: 0.1,
+                    max: 10,
+                    step: 0.1,
+                  },
+                  cameraSplineDuration: {
+                    label: 'Loop Duration (s)',
+                    value: 30,
+                    min: 5,
+                    max: 120,
+                    step: 1,
+                  },
+                  cameraSplineTension: {
+                    label: 'Curve Tension',
+                    value: 0.5,
+                    min: 0,
+                    max: 1,
+                    step: 0.1,
+                  },
+                  cameraSplineLookAt: {
+                    label: 'Look At',
+                    value: { x: 0, y: 1, z: 0 },
+                  },
+                },
+                {
+                  collapsed: true,
+                  // render: (get) => get(CAMERA_MODE_PATH) === 'spline',
+                }
+              ),
             },
             { collapsed: true }
           ),
@@ -214,6 +283,13 @@ export default function useSceneControls() {
                 },
                 { collapsed: true }
               ),
+              floatSpeed: {
+                label: 'Float Speed',
+                value: 0.5,
+                min: 0,
+                max: 1,
+                step: 0.01,
+              },
               haloScrollEnabled: { label: 'Halo Scroll', value: false },
               haloScrollInterval: {
                 label: 'Scroll Interval (s)',
@@ -222,6 +298,52 @@ export default function useSceneControls() {
                 max: 10,
                 step: 0.1,
               },
+            },
+            { collapsed: true }
+          ),
+
+          Post: folder(
+            {
+              Bloom: folder(
+                {
+                  bloomEnabled: {
+                    label: 'Enabled',
+                    value: true,
+                  },
+                  bloomIntensity: {
+                    label: 'Intensity',
+                    value: 1.1,
+                    min: 0,
+                    max: 4,
+                    step: 0.01,
+                  },
+                  bloomLuminanceThreshold: {
+                    label: 'Threshold',
+                    value: 0.3,
+                    min: 0,
+                    max: 1,
+                    step: 0.01,
+                  },
+                  bloomLuminanceSmoothing: {
+                    label: 'Smoothing',
+                    value: 0.28,
+                    min: 0,
+                    max: 1,
+                    step: 0.01,
+                  },
+                  bloomRadius: {
+                    label: 'Radius',
+                    value: 0.68,
+                    min: 0,
+                    max: 1,
+                    step: 0.01,
+                  },
+                },
+                {
+                  collapsed: true,
+                  render: (get) => get(HALO_TYPE_PATH) === 'crtStaticRing',
+                }
+              ),
             },
             { collapsed: true }
           ),
@@ -486,7 +608,7 @@ export default function useSceneControls() {
                   },
                   atomRotation: {
                     label: 'Rotation',
-                    value: { x: -45, y: 0, z: 0 },
+                    value: { x: 45, y: 0, z: 0 },
                   },
                   atomVisible: { label: 'Visible', value: true },
                 },
@@ -534,7 +656,7 @@ export default function useSceneControls() {
                   },
                   plateRotation: {
                     label: 'Rotation',
-                    value: { x: 45, y: 0, z: 0 },
+                    value: { x: 45, y: 0, z: 1 },
                   },
                   plateVisible: { label: 'Visible', value: true },
                 },
@@ -680,52 +802,6 @@ export default function useSceneControls() {
                 value: 0.92,
                 min: 0.6,
                 max: 0.98,
-                step: 0.01,
-              },
-            },
-            {
-              collapsed: true,
-              render: (get) => get(HALO_TYPE_PATH) === 'crtStaticRing',
-            }
-          ),
-        },
-        { collapsed: true }
-      ),
-
-      Post: folder(
-        {
-          Bloom: folder(
-            {
-              bloomEnabled: {
-                label: 'Enabled',
-                value: true,
-              },
-              bloomIntensity: {
-                label: 'Intensity',
-                value: 1.1,
-                min: 0,
-                max: 4,
-                step: 0.01,
-              },
-              bloomLuminanceThreshold: {
-                label: 'Threshold',
-                value: 0.3,
-                min: 0,
-                max: 1,
-                step: 0.01,
-              },
-              bloomLuminanceSmoothing: {
-                label: 'Smoothing',
-                value: 0.28,
-                min: 0,
-                max: 1,
-                step: 0.01,
-              },
-              bloomRadius: {
-                label: 'Radius',
-                value: 0.68,
-                min: 0,
-                max: 1,
                 step: 0.01,
               },
             },
@@ -958,19 +1034,37 @@ export default function useSceneControls() {
       previousHaloTypeRef.current !== controls.haloType;
     previousHaloTypeRef.current = controls.haloType;
 
-    if (!hasHaloTypeChanged || controls.haloType !== 'atomic') {
+    if (!hasHaloTypeChanged) {
       return;
     }
 
-    const isLegacyAtomicRotation =
-      controls.atomRotation?.x === 45 &&
-      controls.atomRotation?.y === 0 &&
-      controls.atomRotation?.z === 0;
+    if (controls.haloType === 'atomic') {
+      const isLegacyAtomicRotation =
+        controls.atomRotation?.x === -45 &&
+        controls.atomRotation?.y === 0 &&
+        controls.atomRotation?.z === 0;
 
-    if (isLegacyAtomicRotation) {
-      setControls({ atomRotation: { x: -45, y: 0, z: 0 } });
+      if (isLegacyAtomicRotation) {
+        setControls({ atomRotation: { x: 45, y: 0, z: 0 } });
+      }
     }
-  }, [controls.haloType, controls.atomRotation, setControls]);
+
+    if (controls.haloType === 'network') {
+      const isLegacyNetworkRotation =
+        controls.networkRotation?.x === -45 &&
+        controls.networkRotation?.y === 0 &&
+        controls.networkRotation?.z === 0;
+
+      if (isLegacyNetworkRotation) {
+        setControls({ networkRotation: { x: 45, y: 0, z: 0 } });
+      }
+    }
+  }, [
+    controls.haloType,
+    controls.atomRotation,
+    controls.networkRotation,
+    setControls,
+  ]);
 
   return { controls, setControls, controlsSnapshotRef };
 }

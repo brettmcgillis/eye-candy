@@ -66,32 +66,91 @@ export default function useSceneControls() {
           },
           Lighting: folder(
             {
-              plPosition: {
-                label: 'Position',
-                value: { x: 3, y: 3, z: 5 },
-              },
-              plDecay: {
-                label: 'Decay',
-                value: 0,
-                min: -10,
-                max: 10,
-                step: 0.1,
-              },
-              plDistance: {
-                label: 'Distance',
-                value: -1,
-                min: -10,
-                max: 10,
-                step: 0.1,
-              },
-              plIntensity: {
-                label: 'Intensity',
-                value: 0.8,
-                min: 0,
-                max: 10,
-                step: 0.1,
-              },
-              plCastShadow: { label: 'Cast Shadow', value: true },
+              Ambient: folder(
+                {
+                  ambientIntensity: {
+                    label: 'Intensity',
+                    value: 0.12,
+                    min: 0,
+                    max: 2,
+                    step: 0.01,
+                  },
+                },
+                { collapsed: true }
+              ),
+              'Point Light': folder(
+                {
+                  plPosition: {
+                    label: 'Position',
+                    value: { x: 3, y: 3, z: 5 },
+                  },
+                  plDecay: {
+                    label: 'Decay',
+                    value: 0,
+                    min: -10,
+                    max: 10,
+                    step: 0.1,
+                  },
+                  plDistance: {
+                    label: 'Distance',
+                    value: -1,
+                    min: -10,
+                    max: 10,
+                    step: 0.1,
+                  },
+                  plIntensity: {
+                    label: 'Intensity',
+                    value: 0.8,
+                    min: 0,
+                    max: 10,
+                    step: 0.1,
+                  },
+                  plCastShadow: { label: 'Cast Shadow', value: true },
+                },
+                { collapsed: true }
+              ),
+              Spotlight: folder(
+                {
+                  spotlightEnabled: {
+                    label: 'Enabled',
+                    value: false,
+                  },
+                  spotlightPosition: {
+                    label: 'Position',
+                    value: { x: -4.5, y: 2.4, z: -5 },
+                  },
+                  spotlightAngle: {
+                    label: 'Angle',
+                    value: 0.4,
+                    min: 0.05,
+                    max: 1.5,
+                    step: 0.01,
+                  },
+                  spotlightPenumbra: {
+                    label: 'Penumbra',
+                    value: 1,
+                    min: 0,
+                    max: 1,
+                    step: 0.01,
+                  },
+                  spotlightIntensity: {
+                    label: 'Intensity',
+                    value: 1.35,
+                    min: 0,
+                    max: 10,
+                    step: 0.01,
+                  },
+                  spotlightColor: {
+                    label: 'Color',
+                    value: '#d6e5ff',
+                  },
+                  spotlightCastShadow: {
+                    label: 'Cast Shadow',
+                    value: false,
+                  },
+                },
+                { collapsed: true }
+              ),
             },
             { collapsed: true }
           ),
@@ -623,9 +682,55 @@ export default function useSceneControls() {
               },
               crtStaticRingVignette: {
                 label: 'Vignette',
-                value: 0,
+                value: 0.92,
                 min: 0.6,
                 max: 0.98,
+                step: 0.01,
+              },
+            },
+            {
+              collapsed: true,
+              render: (get) => get(HALO_TYPE_PATH) === 'crtStaticRing',
+            }
+          ),
+        },
+        { collapsed: true }
+      ),
+
+      Post: folder(
+        {
+          Bloom: folder(
+            {
+              bloomEnabled: {
+                label: 'Enabled',
+                value: true,
+              },
+              bloomIntensity: {
+                label: 'Intensity',
+                value: 1.1,
+                min: 0,
+                max: 4,
+                step: 0.01,
+              },
+              bloomLuminanceThreshold: {
+                label: 'Threshold',
+                value: 0.3,
+                min: 0,
+                max: 1,
+                step: 0.01,
+              },
+              bloomLuminanceSmoothing: {
+                label: 'Smoothing',
+                value: 0.28,
+                min: 0,
+                max: 1,
+                step: 0.01,
+              },
+              bloomRadius: {
+                label: 'Radius',
+                value: 0.68,
+                min: 0,
+                max: 1,
                 step: 0.01,
               },
             },
@@ -790,7 +895,7 @@ export default function useSceneControls() {
               censorPanelVisible: { label: 'Visible', value: true },
               censorPanelPosition: {
                 label: 'Position',
-                value: { x: 1, y: 2, z: 0 },
+                value: { x: -0.8, y: 2.1, z: -0.25 },
               },
               censorPanelRotation: {
                 label: 'Rotation',
@@ -798,7 +903,7 @@ export default function useSceneControls() {
               },
               censorPanelScale: {
                 label: 'Scale',
-                value: 1.65,
+                value: 2,
                 min: 0.1,
                 max: 5,
                 step: 0.05,
@@ -843,19 +948,6 @@ export default function useSceneControls() {
                 min: -2,
                 max: 2,
                 step: 0.01,
-              },
-            },
-            { collapsed: true }
-          ),
-          Post: folder(
-            {
-              postPixelationEnabled: {
-                label: 'Pixelation Enabled',
-                value: false,
-              },
-              postAsciiEnabled: {
-                label: 'ASCII Enabled',
-                value: false,
               },
             },
             { collapsed: true }

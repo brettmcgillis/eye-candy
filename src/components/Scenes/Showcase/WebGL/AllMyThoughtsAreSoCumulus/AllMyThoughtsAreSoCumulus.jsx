@@ -8,6 +8,7 @@ import {
   PerspectiveCamera,
 } from '@react-three/drei';
 import { useThree } from '@react-three/fiber';
+import { Bloom, EffectComposer } from '@react-three/postprocessing';
 
 import { GridHelper, PolarGridHelper } from '../../../../rigging/GridHelper';
 import CensorPanel from './components/CensorPanel';
@@ -28,8 +29,6 @@ const PORTRAIT_BOUNDS_MARGIN = 0.9;
 export default function AllMyThoughtsAreSoCumulus() {
   const { controls: c, setControls, controlsSnapshotRef } = useSceneControls();
   const size = useThree((state) => state.size);
-  const censorPanelVisible =
-    c.censorPanelVisible && !c.postPixelationEnabled && !c.postAsciiEnabled;
   const boundsMargin =
     size.width >= size.height
       ? LANDSCAPE_BOUNDS_MARGIN
@@ -48,13 +47,33 @@ export default function AllMyThoughtsAreSoCumulus() {
 
       <PerspectiveCamera makeDefault position={BASE_CAMERA_POSITION} fov={20} />
 
+      <ambientLight intensity={c.ambientIntensity} />
+
       <pointLight
         position={[c.plPosition.x, c.plPosition.y, c.plPosition.z]}
         decay={c.plDecay}
         distance={c.plDistance}
         intensity={c.plIntensity}
         castShadow={c.plCastShadow}
+        shadow-mapSize-width={1024}
+        shadow-mapSize-height={1024}
+        shadow-bias={-0.0002}
       />
+
+      {c.spotlightEnabled ? (
+        <spotLight
+          position={[
+            c.spotlightPosition.x,
+            c.spotlightPosition.y,
+            c.spotlightPosition.z,
+          ]}
+          angle={c.spotlightAngle}
+          penumbra={c.spotlightPenumbra}
+          intensity={c.spotlightIntensity}
+          color={c.spotlightColor}
+          castShadow={c.spotlightCastShadow}
+        />
+      ) : null}
 
       <GridHelper x y z visible={c.showGridHelper} />
       <PolarGridHelper x y z visible={c.showPolarGridHelper} />
@@ -132,7 +151,7 @@ export default function AllMyThoughtsAreSoCumulus() {
         </Bounds>
 
         <CensorPanel
-          visible={censorPanelVisible}
+          visible={c.censorPanelVisible}
           position={c.censorPanelPosition}
           rotation={c.censorPanelRotation}
           scale={c.censorPanelScale}
@@ -149,6 +168,18 @@ export default function AllMyThoughtsAreSoCumulus() {
         preset="studio"
         environmentIntensity={c.environmentIntensity}
       />
+
+      {c.bloomEnabled ? (
+        <EffectComposer disableNormalPass multisampling={4}>
+          <Bloom
+            intensity={c.bloomIntensity}
+            luminanceThreshold={c.bloomLuminanceThreshold}
+            luminanceSmoothing={c.bloomLuminanceSmoothing}
+            mipmapBlur
+            radius={c.bloomRadius}
+          />
+        </EffectComposer>
+      ) : null}
     </>
   );
 }

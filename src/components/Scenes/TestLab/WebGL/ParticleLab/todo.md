@@ -4,7 +4,7 @@
 
 [Back to main TODO](../../../../../../TODO.md)
 
-- [ ] Hoist Mycellium out into a Showcase level scene.
+- [x] Hoist Mycellium out into a Showcase level scene.
   - Scene should "evlolve" controls over time for more generative experience.
   - Use datetime as a seed so each instance is unique
   - Scene should contain a glitch mode that does dramatic jumps in control settings to cause extreme sudden shifts.

@@ -29,6 +29,15 @@ These instructions give an AI coding agent the immediately useful knowledge to w
 - Format (check/fix): `npm run format:check` / `npm run format:fix`.
 - Publish to GitHub Pages: `npm run publish` (runs build then `gh-pages`).
 
+**Dev server process ownership (critical)**
+
+- Assume the human developer owns the active dev server process.
+- Do **not** run `npm run dev`, `npm start`, `npm run start-https`, or any long-lived serve/watch command unless the user explicitly asks you to do so in this chat.
+- Do **not** kill, restart, or replace existing dev servers (including port-kill commands like `lsof`/`kill`, `pkill`, `killall`, or equivalents).
+- If verification is needed, prefer non-server commands first (`npm run build`, targeted lint/format, static checks, and code inspection).
+- If a running server seems required, ask for confirmation and expected port/process ownership before starting anything.
+- If you accidentally started a background server, report it immediately and provide the exact process/terminal details so the user can decide what to do.
+
 **Project-specific conventions & patterns**
 
 - Scenes are React components that usually default-export a component (see `src/components/scenes/FluidTest/FluidTest.jsx`). Expect cameras (drei), mesh + custom materials, and hooks for interaction.

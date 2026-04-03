@@ -14,6 +14,7 @@ import {
   buildNetworkConfig,
   buildRingsConfig,
 } from '../utils/buildHaloConfigs';
+import CRTStaticRing from './CRTStaticRing';
 
 /**
  * Renders the active halo type at a shared position/rotation/scale.
@@ -72,6 +73,12 @@ const HaloDisplay = memo(function HaloDisplay({ controls, setControls }) {
       rotation: controls.atomRotation,
       visible: controls.atomVisible,
       scale: controls.atomScale ?? controls.haloScale ?? 1.05,
+    },
+    crtStaticRing: {
+      position: controls.crtStaticRingPosition,
+      rotation: controls.crtStaticRingRotation,
+      visible: controls.crtStaticRingVisible,
+      scale: controls.crtStaticRingScale ?? controls.haloScale ?? 0.9,
     },
   };
 
@@ -168,6 +175,28 @@ const HaloDisplay = memo(function HaloDisplay({ controls, setControls }) {
           atomicNumber={controls.atomicNumber}
           animateElectrons={controls.atomAnimateElectrons}
           shellSpacing={controls.atomShellSpacing}
+        />
+      )}
+      {haloType === 'crtStaticRing' && (
+        <CRTStaticRing
+          position={[0, 0, 0]}
+          rotation={[0, 0, 0]}
+          scale={1}
+          innerRadius={controls.crtStaticRingInnerRadius}
+          outerRadius={controls.crtStaticRingOuterRadius}
+          snowAmount={controls.crtStaticRingSnowAmount}
+          snowScale={controls.crtStaticRingSnowScale}
+          snowSpeed={controls.crtStaticRingSnowSpeed}
+          snowSize={controls.crtStaticRingSnowSize}
+          snap={controls.crtStaticRingSnap}
+          bandStrength={controls.crtStaticRingBandStrength}
+          bandSpeed={controls.crtStaticRingBandSpeed}
+          bandScale={controls.crtStaticRingBandScale}
+          rfStrength={controls.crtStaticRingRFStrength}
+          rfScale={controls.crtStaticRingRFScale}
+          rfSpeed={controls.crtStaticRingRFSpeed}
+          curvature={controls.crtStaticRingCurvature}
+          vignette={controls.crtStaticRingVignette}
         />
       )}
     </group>

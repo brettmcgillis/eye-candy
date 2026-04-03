@@ -11,6 +11,8 @@ import { PRESETS } from '../presets';
 // Format: '<panelName>.<folderPath>.<controlKey>'
 const HALO_TYPE_PATH = 'All My Thoughts Are So Cumulus.Halo.haloType';
 const RINGS_STYLE_PATH = 'All My Thoughts Are So Cumulus.Halo.Rings.ringsStyle';
+const DEFAULT_RINGS_INNER_RADIUS = 0.5;
+const DEFAULT_RINGS_OUTER_RADIUS = 2;
 
 function cloneSnapshot(snapshot) {
   return JSON.parse(JSON.stringify(snapshot));
@@ -180,6 +182,7 @@ export default function useSceneControls() {
               Network: 'network',
               Plate: 'plate',
               Atomic: 'atomic',
+              Static: 'crtStaticRing',
             },
           },
 
@@ -492,6 +495,141 @@ export default function useSceneControls() {
               render: (get) => get(HALO_TYPE_PATH) === 'plate',
             }
           ),
+
+          Static: folder(
+            {
+              Appearance: folder(
+                {
+                  crtStaticRingPosition: {
+                    label: 'Position',
+                    value: { x: 0, y: 1.5, z: -1 },
+                  },
+                  crtStaticRingRotation: {
+                    label: 'Rotation',
+                    value: { x: 45, y: 0, z: 0 },
+                  },
+                  crtStaticRingVisible: { label: 'Visible', value: true },
+                },
+                { collapsed: true }
+              ),
+              crtStaticRingScale: {
+                label: 'Scale',
+                value: 0.9,
+                min: 0.01,
+                max: 20,
+                step: 0.01,
+              },
+              crtStaticRingInnerRadius: {
+                label: 'Inner Radius',
+                value: DEFAULT_RINGS_INNER_RADIUS,
+                min: 0.1,
+                max: 15,
+                step: 0.01,
+              },
+              crtStaticRingOuterRadius: {
+                label: 'Outer Radius',
+                value: DEFAULT_RINGS_OUTER_RADIUS,
+                min: 0.1,
+                max: 15,
+                step: 0.01,
+              },
+              crtStaticRingSnowAmount: {
+                label: 'Snow Amount',
+                value: 1,
+                min: 0,
+                max: 1,
+                step: 0.01,
+              },
+              crtStaticRingSnowScale: {
+                label: 'Snow Scale',
+                value: 180,
+                min: 10,
+                max: 800,
+                step: 10,
+              },
+              crtStaticRingSnowSpeed: {
+                label: 'Snow Speed',
+                value: 1,
+                min: 0,
+                max: 5,
+                step: 0.1,
+              },
+              crtStaticRingSnowSize: {
+                label: 'Snow Size',
+                value: 240,
+                min: 40,
+                max: 1000,
+                step: 20,
+              },
+              crtStaticRingSnap: {
+                label: 'Snap',
+                value: 24,
+                min: 1,
+                max: 60,
+                step: 1,
+              },
+              crtStaticRingBandStrength: {
+                label: 'Band Strength',
+                value: 1,
+                min: 0,
+                max: 1,
+                step: 0.01,
+              },
+              crtStaticRingBandSpeed: {
+                label: 'Band Speed',
+                value: 0.6,
+                min: 0,
+                max: 3,
+                step: 0.1,
+              },
+              crtStaticRingBandScale: {
+                label: 'Band Scale',
+                value: 8,
+                min: 1,
+                max: 40,
+                step: 1,
+              },
+              crtStaticRingRFStrength: {
+                label: 'RF Strength',
+                value: 1,
+                min: 0,
+                max: 1,
+                step: 0.01,
+              },
+              crtStaticRingRFScale: {
+                label: 'RF Scale',
+                value: 22,
+                min: 2,
+                max: 80,
+                step: 1,
+              },
+              crtStaticRingRFSpeed: {
+                label: 'RF Speed',
+                value: 0.4,
+                min: 0,
+                max: 3,
+                step: 0.1,
+              },
+              crtStaticRingCurvature: {
+                label: 'Curvature',
+                value: 0,
+                min: 0,
+                max: 0.4,
+                step: 0.01,
+              },
+              crtStaticRingVignette: {
+                label: 'Vignette',
+                value: 0,
+                min: 0.6,
+                max: 0.98,
+                step: 0.01,
+              },
+            },
+            {
+              collapsed: true,
+              render: (get) => get(HALO_TYPE_PATH) === 'crtStaticRing',
+            }
+          ),
         },
         { collapsed: true }
       ),
@@ -690,7 +828,7 @@ export default function useSceneControls() {
               },
               censorRefraction: {
                 label: 'Refraction',
-                value: 0.02,
+                value: 0,
                 min: 0,
                 max: 0.15,
                 step: 0.005,

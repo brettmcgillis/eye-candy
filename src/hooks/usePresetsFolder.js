@@ -1,0 +1,119 @@
+import { button, folder } from 'leva';
+
+import { useCallback, useMemo, useRef, useState } from 'react';
+
+import {
+  getInitialPresetFromQuery,
+  useSyncPresetQueryParam,
+} from './usePresetQueryParam';
+
+function toObjectLiteral(snapshot) {
+  return JSON.stringify(snapshot, null, 2).replace(
+    /"([A-Za-z_$][A-Za-z0-9_$]*)":/g,
+    '$1:'
+  );
+}
+
+export default function usePresetsFolder({
+  collapsed = true,
+  copyTransform,
+  defaultPreset,
+  getPresetControls,
+  local,
+  presets,
+  queryParam = 'preset',
+}) {
+  const presetOptions = useMemo(() => Object.keys(presets), [presets]);
+
+  const initialPreset = useMemo(() => {
+    return getInitialPresetFromQuery({
+      defaultPreset,
+      paramKey: queryParam,
+      presetValues: presetOptions,
+    });
+  }, [defaultPreset, presetOptions, queryParam]);
+
+  const controlsSnapshotRef = useRef(
+    presets[initialPreset] || presets[defaultPreset] || {}
+  );
+  const selectedPresetRef = useRef(initialPreset);
+  const [selectedPreset, setSelectedPreset] = useState(initialPreset);
+  const setControlsRef = useRef(null);
+
+  const applyPresetByName = useCallback(
+    (presetName, context = {}) => {
+      const setControls = setControlsRef.current;
+      const presetSnapshot = presets[presetName];
+
+      if (!setControls || !presetSnapshot) return;
+
+      const nextControls = getPresetControls({
+        currentControls: context.currentControls || controlsSnapshotRef.current,
+        presetName,
+        presetSnapshot,
+      });
+
+      if (!nextControls) return;
+      setControls(nextControls);
+    },
+    [getPresetControls, presets]
+  );
+
+  const presetsFolder = useMemo(() => {
+    return folder(
+      {
+        preset: {
+          label: 'Preset',
+          value: initialPreset,
+          options: presetOptions,
+          onChange: (nextPreset) => {
+            selectedPresetRef.current = nextPreset;
+            setSelectedPreset(nextPreset);
+          },
+        },
+        reset: button(() => {
+          applyPresetByName(selectedPresetRef.current);
+        }),
+        ...(local
+          ? {
+              copy: button(() => {
+                const transform = copyTransform || toObjectLiteral;
+                navigator.clipboard.writeText(
+                  transform(controlsSnapshotRef.current)
+                );
+              }),
+            }
+          : {}),
+      },
+      { collapsed }
+    );
+  }, [
+    applyPresetByName,
+    collapsed,
+    copyTransform,
+    initialPreset,
+    local,
+    presetOptions,
+  ]);
+
+  const attachSetControls = useCallback((setControls) => {
+    setControlsRef.current = setControls;
+  }, []);
+
+  useSyncPresetQueryParam({
+    defaultPreset,
+    paramKey: queryParam,
+    presetValues: presetOptions,
+    selectedPreset,
+  });
+
+  return {
+    applyPresetByName,
+    attachSetControls,
+    controlsSnapshotRef,
+    initialPreset,
+    presetOptions,
+    presetsFolder,
+    selectedPreset,
+  };
+}

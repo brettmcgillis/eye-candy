@@ -1,7 +1,8 @@
-import { button, folder, useControls } from 'leva';
+import { folder, useControls } from 'leva';
 
 import { useEffect, useRef } from 'react';
 
+import usePresetsFolder from '../../../../../../hooks/usePresetsFolder';
 import { localEnv } from '../../../../../../utils/appUtils';
 import { getRandomNumber } from '../../../../../../utils/math';
 import { useSkullControls } from '../../../../../elements/skull/SkullControls';
@@ -13,57 +14,44 @@ const HALO_TYPE_PATH = 'All My Thoughts Are So Cumulus.Halo.haloType';
 const RINGS_STYLE_PATH = 'All My Thoughts Are So Cumulus.Halo.Rings.ringsStyle';
 const DEFAULT_RINGS_INNER_RADIUS = 0.5;
 const DEFAULT_RINGS_OUTER_RADIUS = 2;
+const DEFAULT_PRESET = 'Default Rings';
+const PRESET_QUERY_PARAM = 'preset';
 
 function cloneSnapshot(snapshot) {
   return JSON.parse(JSON.stringify(snapshot));
 }
 
 export default function useSceneControls() {
-  const controlsSnapshotRef = useRef(PRESETS['Default Rings']);
   const defaultControlsRef = useRef(null);
-  const selectedPresetRef = useRef('Default Rings');
   const previousHaloTypeRef = useRef('rings');
+
+  const {
+    applyPresetByName,
+    attachSetControls,
+    controlsSnapshotRef,
+    presetsFolder,
+    selectedPreset,
+  } = usePresetsFolder({
+    defaultPreset: DEFAULT_PRESET,
+    getPresetControls: ({ currentControls, presetName, presetSnapshot }) => {
+      const base = defaultControlsRef.current || {};
+      return {
+        ...base,
+        ...presetSnapshot,
+        preset: presetName,
+        haloScrollEnabled: currentControls.haloScrollEnabled,
+        haloScrollInterval: currentControls.haloScrollInterval,
+      };
+    },
+    local: localEnv(),
+    presets: PRESETS,
+    queryParam: PRESET_QUERY_PARAM,
+  });
 
   const [controls, setControls] = useControls(
     'All My Thoughts Are So Cumulus',
     () => ({
-      Presets: folder(
-        {
-          preset: {
-            label: 'Preset',
-            value: 'Default Rings',
-            options: Object.keys(PRESETS),
-          },
-          reset: button(() => {
-            const presetName = selectedPresetRef.current;
-            const snap = PRESETS[presetName];
-            if (!snap) return;
-
-            const base = defaultControlsRef.current || {};
-            setControls({
-              ...base,
-              ...snap,
-              preset: presetName,
-              haloScrollEnabled: controlsSnapshotRef.current.haloScrollEnabled,
-              haloScrollInterval:
-                controlsSnapshotRef.current.haloScrollInterval,
-            });
-          }),
-          ...(localEnv()
-            ? {
-                copy: button(() => {
-                  const asObjectLiteral = JSON.stringify(
-                    controlsSnapshotRef.current,
-                    null,
-                    2
-                  ).replace(/"([A-Za-z_$][A-Za-z0-9_$]*)":/g, '$1:');
-                  navigator.clipboard.writeText(asObjectLiteral);
-                }),
-              }
-            : {}),
-        },
-        { collapsed: true }
-      ),
+      Presets: presetsFolder,
 
       Scene: folder(
         {
@@ -902,7 +890,7 @@ export default function useSceneControls() {
               censorPanelVisible: { label: 'Visible', value: true },
               censorPanelPosition: {
                 label: 'Position',
-                value: { x: -1, y: 2.2, z: -0.15 },
+                value: { x: -1, y: 2.2, z: -0.25 },
               },
               censorPanelRotation: {
                 label: 'Rotation',
@@ -914,21 +902,6 @@ export default function useSceneControls() {
                 min: 0.1,
                 max: 5,
                 step: 0.05,
-              },
-              censorPanelTintVisible: {
-                label: 'Show Tint',
-                value: false,
-              },
-              censorPanelTintColor: {
-                label: 'Tint Color',
-                value: '#9fb4ff',
-              },
-              censorPanelTintOpacity: {
-                label: 'Tint Opacity',
-                value: 0.15,
-                min: 0,
-                max: 1,
-                step: 0.01,
               },
             },
             { collapsed: true }
@@ -967,26 +940,18 @@ export default function useSceneControls() {
   );
 
   useEffect(() => {
+    attachSetControls(setControls);
+  }, [attachSetControls, setControls]);
+
+  useEffect(() => {
     if (!defaultControlsRef.current) {
       defaultControlsRef.current = cloneSnapshot(controls);
     }
   }, [controls]);
 
   useEffect(() => {
-    selectedPresetRef.current = controls.preset;
-    // Auto-apply preset when dropdown selection changes
-    const snap = PRESETS[controls.preset];
-    if (!snap) return;
-
-    const base = defaultControlsRef.current || {};
-    setControls({
-      ...base,
-      ...snap,
-      preset: controls.preset,
-      haloScrollEnabled: controls.haloScrollEnabled,
-      haloScrollInterval: controls.haloScrollInterval,
-    });
-  }, [controls.preset, setControls]);
+    applyPresetByName(selectedPreset, { currentControls: controls });
+  }, [applyPresetByName, selectedPreset]);
 
   useEffect(() => {
     const hasHaloTypeChanged =

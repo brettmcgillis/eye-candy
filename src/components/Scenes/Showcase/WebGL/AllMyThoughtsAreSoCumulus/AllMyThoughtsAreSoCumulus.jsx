@@ -22,7 +22,7 @@ import useSceneControls from './hooks/useSceneControls';
 // Scene
 // ---------------------------------------------------------------------------
 
-const BASE_CAMERA_POSITION = [4.4, 1.9, 4.9];
+const BASE_CAMERA_POSITION = [-4.9, 2.7, 5.8];
 const LANDSCAPE_BOUNDS_MARGIN = 1.04;
 const PORTRAIT_BOUNDS_MARGIN = 0.9;
 

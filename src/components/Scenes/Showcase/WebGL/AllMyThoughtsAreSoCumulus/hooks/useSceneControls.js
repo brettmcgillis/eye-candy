@@ -40,7 +40,14 @@ export default function useSceneControls() {
             if (!snap) return;
 
             const base = defaultControlsRef.current || {};
-            setControls({ ...base, ...snap, preset: presetName });
+            setControls({
+              ...base,
+              ...snap,
+              preset: presetName,
+              haloScrollEnabled: controlsSnapshotRef.current.haloScrollEnabled,
+              haloScrollInterval:
+                controlsSnapshotRef.current.haloScrollInterval,
+            });
           }),
           ...(localEnv()
             ? {
@@ -895,7 +902,7 @@ export default function useSceneControls() {
               censorPanelVisible: { label: 'Visible', value: true },
               censorPanelPosition: {
                 label: 'Position',
-                value: { x: -0.8, y: 2.1, z: -0.25 },
+                value: { x: -1, y: 2.2, z: -0.15 },
               },
               censorPanelRotation: {
                 label: 'Rotation',
@@ -903,7 +910,7 @@ export default function useSceneControls() {
               },
               censorPanelScale: {
                 label: 'Scale',
-                value: 2,
+                value: 2.2,
                 min: 0.1,
                 max: 5,
                 step: 0.05,
@@ -972,7 +979,13 @@ export default function useSceneControls() {
     if (!snap) return;
 
     const base = defaultControlsRef.current || {};
-    setControls({ ...base, ...snap, preset: controls.preset });
+    setControls({
+      ...base,
+      ...snap,
+      preset: controls.preset,
+      haloScrollEnabled: controls.haloScrollEnabled,
+      haloScrollInterval: controls.haloScrollInterval,
+    });
   }, [controls.preset, setControls]);
 
   useEffect(() => {

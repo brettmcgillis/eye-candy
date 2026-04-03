@@ -29,8 +29,6 @@ export default function useHaloAnimation({
   const wasWobblingRef = useRef(false);
 
   useEffect(() => {
-    baseRotationXRef.current = baseRotationX;
-
     // Keep orientation aligned immediately when wobble is off.
     if (ref.current && !wobble) {
       ref.current.rotation.x = baseRotationX;
@@ -40,18 +38,22 @@ export default function useHaloAnimation({
   useFrame(({ clock }) => {
     if (!ref.current) return;
 
+    const hasBaseRotationChanged = baseRotationXRef.current !== baseRotationX;
+
     if (animate) {
       ref.current.rotation.z += (speed / 60) * 0.1;
     }
 
     if (!wobble) {
-      // Keep baseline in sync while wobble is disabled and restore it after toggling off.
-      if (wasWobblingRef.current) {
-        ref.current.rotation.x = baseRotationXRef.current;
-      }
-      baseRotationXRef.current = ref.current.rotation.x;
+      // Use the incoming preset/control rotation as canonical baseline.
+      baseRotationXRef.current = baseRotationX;
+      ref.current.rotation.x = baseRotationX;
       wasWobblingRef.current = false;
       return;
+    }
+
+    if (!wasWobblingRef.current || hasBaseRotationChanged) {
+      baseRotationXRef.current = baseRotationX;
     }
 
     const degrees = Math.sin(clock.elapsedTime * wobbleSpeed) * wobbleAngle;

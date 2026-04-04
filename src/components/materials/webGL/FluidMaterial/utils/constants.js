@@ -1,0 +1,13 @@
+export const BLEND_MODE_ADDITIVE = 0;
+export const BLEND_MODE_MULTIPLY = 1;
+export const BLEND_MODE_SUBTRACTIVE = 2;
+
+export const DEBUG_CONTACT_TTL_DEFAULT = 0.28;
+
+export const DEBUG_POINTER_CAP = 8;
+export const DEBUG_CONTACT_CAP = 12;
+
+export const MAX_POINTER_SPLATS = DEBUG_POINTER_CAP;
+export const MAX_AUTO_SPLATS = 10;
+export const MAX_STATIONARY_SPLATS = 10;
+export const MAX_RANDOM_SPLATS = DEBUG_CONTACT_CAP;

@@ -31,8 +31,9 @@
 
 To Build:
 
-- [ ] Cardinals - Hoist it out of FluidTest into dedicated scene
-- [x] Mycellium - Hoist it out of ParticleLab into dedicated scene
+- [ ] Skeleton with bird in ribcage
+- [ ] Skull & crossbones w/ stained glass spotlight.
+- [ ] Video casette tape with video playing on tape ribbon
 - [ ] CSG Skull. Knock a reversal out of its forehead.
 - [ ] Metaball (marching cubes) lava lamp
 - [ ] We should do a scene with Quinns seal, 3rd person camera, player controls w/keyboard and controller.

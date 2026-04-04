@@ -2,8 +2,7 @@ import * as THREE from 'three';
 
 import { useEffect, useRef } from 'react';
 
-const MAX_STATIONARY_SPLATS = 10;
-const MAX_STATIONARY_DEBUG_MARKERS = 10;
+import { MAX_STATIONARY_SPLATS } from '../../../../../materials/webGL/FluidMaterial/utils/constants';
 
 function clamp01(value, fallback = 0.5) {
   if (Number.isFinite(value)) {
@@ -86,7 +85,7 @@ export default function useFluidStationarySplats({ config, pointerEvents }) {
         Math.floor(config?.stationaryDebugMarkerCount ?? fallbackCount)
       ),
       0,
-      MAX_STATIONARY_DEBUG_MARKERS
+      MAX_STATIONARY_SPLATS
     );
     const next = stationaryDebugMarkersRef.current.slice(0, desiredCount);
 

@@ -9,13 +9,12 @@ import {
   BLEND_MODE_ADDITIVE,
   BLEND_MODE_MULTIPLY,
   BLEND_MODE_SUBTRACTIVE,
-  FLUID_PRESETS,
-  RANDOM_BURST_COUNT,
-} from '../fluidPresets';
+  MAX_AUTO_SPLATS,
+  MAX_RANDOM_SPLATS,
+  MAX_STATIONARY_SPLATS,
+} from '../../../../../materials/webGL/FluidMaterial/utils/constants';
+import FLUID_PRESETS from '../fluidPresets';
 
-const MAX_STATIONARY_SPLATS = 10;
-const MAX_STATIONARY_DEBUG_MARKERS = 10;
-const MAX_AUTO_SPLATS = 10;
 const INITIAL_PRESET_KEY = 'watercolorSquares';
 const PRESET_QUERY_PARAM = 'preset';
 
@@ -220,7 +219,7 @@ function clampStationarySplatCount(value) {
 
 function clampStationaryDebugMarkerCount(value) {
   if (!Number.isFinite(value)) return 0;
-  return Math.max(0, Math.min(MAX_STATIONARY_DEBUG_MARKERS, Math.floor(value)));
+  return Math.max(0, Math.min(MAX_STATIONARY_SPLATS, Math.floor(value)));
 }
 
 function clampAutoSplatCount(value) {
@@ -437,7 +436,7 @@ function buildStationaryDebugMarkerControls(
 ) {
   const controls = {};
 
-  for (let index = 0; index < MAX_STATIONARY_DEBUG_MARKERS; index += 1) {
+  for (let index = 0; index < MAX_STATIONARY_SPLATS; index += 1) {
     const marker = stationaryDebugMarkers[index] || { x: 0.5, y: 0.5 };
     const key = getStationaryDebugMarkerKey(index);
     const labelIndex = index + 1;
@@ -796,8 +795,15 @@ function copySettingsToClipboard(get) {
   }
 }
 
-export default function useFluidControls({ randomSplatQueueRef, resetSimRef }) {
-  const initialPresetKey = useMemo(() => getInitialPresetKey(), []);
+export default function useFluidControls({
+  randomSplatQueueRef,
+  resetSimRef,
+  initialPreset,
+}) {
+  const initialPresetKey = useMemo(
+    () => getInitialPresetKey(initialPreset),
+    [initialPreset]
+  );
   const initialPresetValues = useMemo(
     () => FLUID_PRESETS[initialPresetKey] || CONTROL_DEFAULTS,
     [initialPresetKey]
@@ -1506,7 +1512,7 @@ export default function useFluidControls({ randomSplatQueueRef, resetSimRef }) {
               randomBurst: button(() => {
                 if (randomSplatQueueRef) {
                   // eslint-disable-next-line no-param-reassign
-                  randomSplatQueueRef.current += RANDOM_BURST_COUNT;
+                  randomSplatQueueRef.current += MAX_RANDOM_SPLATS;
                 }
               }),
               debugRandomBurst: {

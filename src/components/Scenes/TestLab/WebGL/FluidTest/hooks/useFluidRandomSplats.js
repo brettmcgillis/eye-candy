@@ -2,7 +2,7 @@ import { useRef } from 'react';
 
 import { useFrame } from '@react-three/fiber';
 
-import { RANDOM_BURST_COUNT } from '../fluidPresets';
+import { MAX_RANDOM_SPLATS } from '../../../../../materials/webGL/FluidMaterial/utils/constants';
 
 export default function useFluidRandomSplats({ config, randomSplatQueueRef }) {
   const randomSplatsRef = useRef([]);
@@ -13,7 +13,7 @@ export default function useFluidRandomSplats({ config, randomSplatQueueRef }) {
 
     if (!queueRef || queueRef.current <= 0) return;
 
-    const batch = Math.min(queueRef.current, RANDOM_BURST_COUNT);
+    const batch = Math.min(queueRef.current, MAX_RANDOM_SPLATS);
     queueRef.current -= batch;
     const randomStrength = Math.max(0, config?.randomSplatStrength ?? 1);
     const randomForce = Math.max(

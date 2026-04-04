@@ -14,8 +14,8 @@ import useHandControls, {
   mapWorldToScreenUv,
 } from '../../../../../hooks/hands/useHandcontrols';
 import useMediaPipeHands from '../../../../../hooks/hands/useMediaPipeHands';
-import FluidMaterial from './FluidMaterial';
-import { RANDOM_BURST_COUNT } from './fluidPresets';
+import FluidMaterial from '../../../../materials/webGL/FluidMaterial/FluidMaterial';
+import { MAX_RANDOM_SPLATS } from '../../../../materials/webGL/FluidMaterial/utils/constants';
 import useFluidAutoPointers from './hooks/useFluidAutoPointers';
 import useFluidControls from './hooks/useFluidControls';
 import useFluidPointerInput from './hooks/useFluidPointerInput';
@@ -149,7 +149,7 @@ function FluidTestbed() {
     handsPointerRef.current = pointer;
   }, []);
   const enqueueGestureBurst = useCallback(() => {
-    randomSplatQueueRef.current += RANDOM_BURST_COUNT;
+    randomSplatQueueRef.current += MAX_RANDOM_SPLATS;
   }, []);
 
   const {

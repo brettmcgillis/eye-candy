@@ -1,6 +1,7 @@
 import { lazy } from 'react';
 
 const NoScene = lazy(() => import('../../../app/scaffold/NoScene'));
+const Cardinals = lazy(() => import('./WebGL/Cardinals/Cardinals'));
 const FoldedFrame = lazy(() => import('./WebGL/FoldedFrame/FoldedFrame'));
 const LoGlow = lazy(() => import('./WebGL/LoGlow/LoGlow'));
 const AllMyThoughtsAreSoCumulus = lazy(
@@ -10,6 +11,9 @@ const Mycellium = lazy(() => import('./WebGL/Mycellium/Mycellium'));
 const PaperStack = lazy(() => import('./WebGL/PaperStack/PaperStack'));
 const QuinnsDice = lazy(() => import('./WebGL/QuinnsDice/QuinnsDice'));
 const Rosie = lazy(() => import('./WebGL/Rosie/Rosie'));
+const WatercolorSquares = lazy(
+  () => import('./WebGL/WatercolorSquares/WatercolorSquares')
+);
 
 const scenes = [
   {
@@ -59,6 +63,18 @@ const scenes = [
     label: 'Rosie',
     icon: '❤️🌹',
     Component: Rosie,
+  },
+  {
+    id: 'cardinals',
+    label: 'Cardinals',
+    icon: '🔴',
+    Component: Cardinals,
+  },
+  {
+    id: 'watercolorSquares',
+    label: 'Watercolor Squares',
+    icon: '◆',
+    Component: WatercolorSquares,
   },
 ];
 

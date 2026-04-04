@@ -1,3 +1,5 @@
+/* eslint-disable no-param-reassign */
+
 /* eslint-disable no-plusplus */
 import * as THREE from 'three';
 
@@ -11,11 +13,6 @@ import React, {
 
 import { useFrame, useThree } from '@react-three/fiber';
 
-import {
-  BLEND_MODE_MULTIPLY,
-  DEBUG_CONTACT_CAP,
-  DEBUG_CONTACT_TTL_DEFAULT,
-} from './fluidPresets';
 import useFluidRenderTargets from './hooks/useFluidRenderTargets';
 import {
   createFullscreenMaterial,
@@ -40,6 +37,16 @@ import {
   sunraysMaskFragmentShader,
   vorticityFragmentShader,
 } from './shaders/fluidShaders';
+import {
+  BLEND_MODE_MULTIPLY,
+  DEBUG_CONTACT_CAP,
+  DEBUG_CONTACT_TTL_DEFAULT,
+  DEBUG_POINTER_CAP,
+  MAX_AUTO_SPLATS,
+  MAX_POINTER_SPLATS,
+  MAX_RANDOM_SPLATS,
+  MAX_STATIONARY_SPLATS,
+} from './utils/constants';
 import renderPass from './utils/fluidPassUtils';
 import { createDitheringTexture } from './utils/fluidSimUtils';
 
@@ -47,8 +54,6 @@ const DYE_COLOR_SCALE = 0.15;
 const MAX_BLOOM_CHAIN = 16;
 const MAX_SPLAT_VELOCITY = 900;
 const SIM_DIMENSION_QUANTIZATION = 32;
-const DEBUG_POINTER_CAP = 8;
-const MAX_STATIONARY_DEBUG_SLOTS = DEBUG_CONTACT_CAP;
 
 const MATERIAL_DEFAULTS = {
   paused: false,
@@ -864,18 +869,16 @@ const FluidMaterial = forwardRef(
       const dt = Math.min(0.033, delta);
       const t = state.clock.elapsedTime;
 
-      for (let i = 0; i < DEBUG_CONTACT_CAP; i++) {
-        const stationaryContact = debugStationaryContactsRef.current[i];
-        const stationaryMarkerContact =
-          debugStationaryMarkerContactsRef.current[i];
-        const randomContact = debugRandomContactsRef.current[i];
-        stationaryContact.ttl = Math.max(0, stationaryContact.ttl - dt);
-        stationaryMarkerContact.ttl = Math.max(
-          0,
-          stationaryMarkerContact.ttl - dt
-        );
-        randomContact.ttl = Math.max(0, randomContact.ttl - dt);
-      }
+      debugStationaryContactsRef.current.forEach((contact) => {
+        contact.ttl = Math.max(0, contact.ttl - dt);
+      });
+      debugStationaryMarkerContactsRef.current.forEach((contact) => {
+        contact.ttl = Math.max(0, contact.ttl - dt);
+      });
+      debugRandomContactsRef.current.forEach((contact) => {
+        contact.ttl = Math.max(0, contact.ttl - dt);
+      });
+
       if (resetRequestedRef.current) {
         clearAllTargets();
         resetRequestedRef.current = false;
@@ -966,7 +969,7 @@ const FluidMaterial = forwardRef(
         const idx = THREE.MathUtils.clamp(
           Math.floor(slot),
           0,
-          Math.min(MAX_STATIONARY_DEBUG_SLOTS, DEBUG_CONTACT_CAP) - 1
+          DEBUG_CONTACT_CAP - 1
         );
 
         debugStationaryContactsRef.current[idx].x = safePx;
@@ -983,7 +986,7 @@ const FluidMaterial = forwardRef(
         const idx = THREE.MathUtils.clamp(
           Math.floor(slot),
           0,
-          Math.min(MAX_STATIONARY_DEBUG_SLOTS, DEBUG_CONTACT_CAP) - 1
+          DEBUG_CONTACT_CAP - 1
         );
 
         debugStationaryMarkerContactsRef.current[idx].x = safePx;
@@ -1006,7 +1009,7 @@ const FluidMaterial = forwardRef(
           debugContactFadeDuration
         );
 
-        debugRandomWriteRef.current = (idx + 1) % DEBUG_CONTACT_CAP;
+        debugRandomWriteRef.current = (idx + 1) % MAX_RANDOM_SPLATS;
       };
 
       const splatAt = (
@@ -1121,7 +1124,7 @@ const FluidMaterial = forwardRef(
       if (debugStationarySplat) {
         if (stationarySplatsEnabled) {
           for (let i = 0; i < stationaryPointers.length; i += 1) {
-            if (i >= MAX_STATIONARY_DEBUG_SLOTS) break;
+            if (i >= MAX_STATIONARY_SPLATS) break;
             const sp = stationaryPointers[i];
             if (sp) {
               writeDebugStationaryContact(sp.x ?? 0.5, sp.y ?? 0.5, i);
@@ -1131,7 +1134,7 @@ const FluidMaterial = forwardRef(
 
         if (stationaryDebugMarkersEnabled) {
           for (let i = 0; i < stationaryDebugMarkers.length; i += 1) {
-            if (i >= MAX_STATIONARY_DEBUG_SLOTS) break;
+            if (i >= MAX_STATIONARY_SPLATS) break;
             const marker = stationaryDebugMarkers[i];
             if (marker) {
               writeDebugStationaryMarkerContact(
@@ -1403,7 +1406,7 @@ const FluidMaterial = forwardRef(
         size.width / Math.max(size.height, 1),
         0.0001
       );
-      const pointerCount = Math.min(DEBUG_POINTER_CAP, activePointers.length);
+      const pointerCount = Math.min(MAX_POINTER_SPLATS, activePointers.length);
       displayMat.uniforms.uDebugPointerCount.value = pointerCount;
 
       for (let i = 0; i < DEBUG_POINTER_CAP; i += 1) {
@@ -1447,7 +1450,7 @@ const FluidMaterial = forwardRef(
         if (ap && (ap.ttl || 0) > 0) highestActiveIndex = i;
       }
       const autoCount = Math.min(
-        DEBUG_CONTACT_CAP,
+        MAX_AUTO_SPLATS,
         Math.max(desiredCount, highestActiveIndex + 1)
       );
       displayMat.uniforms.uDebugAutoCount.value = autoCount;

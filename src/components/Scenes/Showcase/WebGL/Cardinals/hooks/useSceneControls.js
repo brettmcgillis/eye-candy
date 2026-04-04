@@ -277,6 +277,7 @@ export default function useSceneControls({ matRef, randomSplatQueueRef }) {
     attachSetControls,
     controlsSnapshotRef,
     initialPreset,
+    presetOptions,
     presetsFolder,
     selectedPreset,
   } = usePresetsFolder({
@@ -985,6 +986,20 @@ export default function useSceneControls({ matRef, randomSplatQueueRef }) {
         },
         { collapsed: true }
       ),
+
+      Animations: folder(
+        {
+          presetScrollEnabled: { label: 'Preset Scroll', value: false },
+          presetScrollInterval: {
+            label: 'Scroll Interval (s)',
+            value: 5,
+            min: 0.5,
+            max: 30,
+            step: 0.5,
+          },
+        },
+        { collapsed: true }
+      ),
     }),
     { collapsed: true }
   );
@@ -995,7 +1010,9 @@ export default function useSceneControls({ matRef, randomSplatQueueRef }) {
   }, [attachSetControls, setControls]);
 
   useEffect(() => {
-    controlsSnapshotRef.current = { ...controlValues };
+    // JSON-clone strips undefined/function values (button controls) so they
+    // don't propagate into getPresetControls via ...currentControls.
+    controlsSnapshotRef.current = JSON.parse(JSON.stringify(controlValues));
   }, [controlValues, controlsSnapshotRef]);
 
   // Apply/re-apply preset values and arrays when the selected preset changes.
@@ -1067,5 +1084,10 @@ export default function useSceneControls({ matRef, randomSplatQueueRef }) {
     autoSplatStarts,
   ]);
 
-  return { fluidConfig };
+  return {
+    applyPresetByName,
+    fluidConfig,
+    presetOptions,
+    selectedPreset,
+  };
 }

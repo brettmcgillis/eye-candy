@@ -22,6 +22,7 @@ const QUINNS_DICE_PRESETS = {
     orbitControlsEnabled: false,
     backgroundTopColor: '#f5b7f8',
     backgroundBottomColor: '#220031',
+    aoEnabled: true,
     bloomEnabled: true,
     bloomIntensity: 4.0,
     bloomLuminanceThreshold: 0.9,

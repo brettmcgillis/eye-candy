@@ -2,7 +2,7 @@ import { button, folder, useControls } from 'leva';
 
 import { useEffect, useRef } from 'react';
 
-import QUINNS_DICE_PRESETS from './QuinnsDice.presets';
+import QUINNS_DICE_PRESETS from '../presets/QuinnsDice.presets';
 
 const PRESET_OPTIONS = Object.keys(QUINNS_DICE_PRESETS);
 const ROLL_TARGET_OPTIONS = {
@@ -50,6 +50,7 @@ const PRESET_CONTROL_KEYS = [
   'orbitControlsEnabled',
   'backgroundTopColor',
   'backgroundBottomColor',
+  'aoEnabled',
   'bloomEnabled',
   'bloomIntensity',
   'bloomLuminanceThreshold',
@@ -315,6 +316,10 @@ export default function useQuinnsDiceControls() {
         ),
         Bloom: folder(
           {
+            aoEnabled: {
+              label: 'AO Enabled',
+              value: QUINNS_DICE_PRESETS.Default.aoEnabled,
+            },
             bloomEnabled: {
               label: 'Enabled',
               value: QUINNS_DICE_PRESETS.Default.bloomEnabled,

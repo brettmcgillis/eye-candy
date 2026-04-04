@@ -35,29 +35,47 @@ const SHARED_FLUID = {
   stationarySplatForce: 4200,
   stationarySplatDirectionStrength: 0.0005,
   stationarySplatDirectionAngle: 270,
+  // Positions are in height-normalised design UV space:
+  //   x=0.5, y=0.5 → screen center; ±0.07 in x ≈ ±7% of viewport height.
+  // WatercolorSquares.jsx converts these to fluid UV via designToFluidUV
+  // (aspect-corrected) before passing to the fluid simulation, while
+  // WatercolorMarkerLayer uses them directly with uvToConstrainedWorld
+  // (height-scaled on both axes).
+  // Positions use height-normalised design UV:
+  //   x=0.5 / y=0.5 → screen centre; ±0.13 in x ≈ ±13 % of viewport height.
+  // Classic argyle geometry: column separation = 0.13, row half-step = 0.075.
+  // Outlined splats (s=0.12) → tip-to-tip = 0.17 h > 0.15 separation → slight
+  // overlap creates the argyle crossing lines.
+  // Filled markers (s=0.09) → tip-to-tip = 0.127 h < 0.15 → sit inside cells.
   stationarySplatCount: 10,
   stationarySplats: [
-    { x: 0.5, y: 0.45 },
-    { x: 0.5, y: 0.55 },
-    { x: 0.5, y: 0.65 },
-    { x: 0.5, y: 0.75 },
-    { x: 0.4, y: 0.5 },
-    { x: 0.4, y: 0.6 },
-    { x: 0.4, y: 0.7 },
-    { x: 0.6, y: 0.5 },
-    { x: 0.6, y: 0.6 },
-    { x: 0.6, y: 0.7 },
+    // Centre column – 4 fluid emitters
+    { x: 0.5, y: 0.275 },
+    { x: 0.5, y: 0.425 },
+    { x: 0.5, y: 0.575 },
+    { x: 0.5, y: 0.725 },
+    // Left column – 3 fluid emitters (argyle half-step offset)
+    { x: 0.37, y: 0.35 },
+    { x: 0.37, y: 0.5 },
+    { x: 0.37, y: 0.65 },
+    // Right column – 3 fluid emitters (argyle half-step offset)
+    { x: 0.63, y: 0.35 },
+    { x: 0.63, y: 0.5 },
+    { x: 0.63, y: 0.65 },
   ],
   stationaryDebugMarkersEnabled: true,
   stationaryDebugMarkerCount: 7,
   stationaryDebugMarkers: [
-    { x: 0.5, y: 0.5 },
-    { x: 0.5, y: 0.6 },
-    { x: 0.5, y: 0.7 },
-    { x: 0.4, y: 0.55 },
-    { x: 0.4, y: 0.65 },
-    { x: 0.6, y: 0.55 },
-    { x: 0.6, y: 0.65 },
+    // Filled diamonds sit at midpoints between the outlined splats.
+    // Centre col splats are at y=0.275/0.425/0.575/0.725 → midpoints 0.350/0.500/0.650
+    // Side col splats are at y=0.350/0.500/0.650 → midpoints 0.425/0.575
+    { x: 0.5, y: 0.35 }, // centre upper-mid
+    { x: 0.5, y: 0.5 }, // centre middle
+    { x: 0.5, y: 0.65 }, // centre lower-mid
+    { x: 0.37, y: 0.425 }, // left upper-mid
+    { x: 0.37, y: 0.575 }, // left lower-mid
+    { x: 0.63, y: 0.425 }, // right upper-mid
+    { x: 0.63, y: 0.575 }, // right lower-mid
   ],
   shading: true,
   bgA: '#4b4b4b',
@@ -85,15 +103,17 @@ const SHARED_FLUID = {
   // The shader debug flags stay false so the display shader does not render
   // its own marker pass.
   debugStationarySplatColor: '#000000',
-  debugStationarySplatWidth: 0.05,
-  debugStationarySplatHeight: 0.05,
+  debugStationarySplatWidth: 0.12,
+  debugStationarySplatHeight: 0.12,
+  debugStationarySplatLineWeight: 2,
+  debugStationarySplatFill: false,
+  debugStationarySplatRotation: 0,
   debugStationaryMarkerColor: '#000000',
-  debugStationaryMarkerWidth: 0.05,
-  debugStationaryMarkerHeight: 0.05,
-  markerSplatColor: '#000000',
-  markerFillColor: '#000000',
-  markerSplatSize: 0.05,
-  markerFillSize: 0.05,
+  debugStationaryMarkerWidth: 0.09,
+  debugStationaryMarkerHeight: 0.09,
+  debugStationaryMarkerLineWeight: 2,
+  debugStationaryMarkerFill: true,
+  debugStationaryMarkerRotation: 0,
 };
 
 export const WATERCOLOR_SQUARES_PRESETS = {

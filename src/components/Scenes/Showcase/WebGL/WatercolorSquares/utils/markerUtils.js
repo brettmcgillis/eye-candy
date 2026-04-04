@@ -1,17 +1,28 @@
 /**
- * Convert a UV position (0–1) to world space using the shorter viewport
- * dimension as the span. This keeps the marker grid proportional regardless
- * of aspect ratio — on a wide desktop the grid doesn't blow out horizontally.
+ * Convert a design-space position (0–1, height-normalised) to world space.
+ * Both axes scale with viewport.height so the layout is proportional on any
+ * screen width. x=0.5, y=0.5 maps to world origin (0,0).
+ *
+ * To align with the fluid simulation (which operates in full-viewport UV
+ * space), use designToFluidUV before passing positions to the fluid sim.
  */
 export function uvToConstrainedWorld(u, v, viewport) {
-  const span = Math.min(viewport.width, viewport.height);
-  return [(u - 0.5) * span, (v - 0.5) * span, 0.1];
+  return [(u - 0.5) * viewport.height, (v - 0.5) * viewport.height, 0.1];
 }
 
 /**
- * Convert a marker size value (in shader marker-space units, e.g. 0.05) to
- * world units. The shader always renders markers at viewport.height scale
- * after the aspect correction, so we use height here.
+ * Convert a design-space position (height-normalised UV) to fluid simulation
+ * UV space (0–1 mapped across the full screen width). Applies aspect-ratio
+ * correction so fluid splats land at the same screen location as the geometry.
+ */
+export function designToFluidUV(u, v, viewport) {
+  const aspectCorrection = viewport.height / viewport.width;
+  return { x: (u - 0.5) * aspectCorrection + 0.5, y: v };
+}
+
+/**
+ * Convert a marker size value (in design-space units, e.g. 0.09) to world
+ * units. Uses viewport.height so size is consistent across aspect ratios.
  */
 export function markerWorldSize(uvSize, viewport) {
   return uvSize * viewport.height;

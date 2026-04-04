@@ -73,7 +73,7 @@ const scenes = [
   {
     id: 'watercolorSquares',
     label: 'Watercolor Squares',
-    icon: '◆',
+    icon: '◇◆◇',
     Component: WatercolorSquares,
   },
 ];

@@ -4,45 +4,42 @@ import React, { forwardRef, useEffect, useMemo } from 'react';
 
 const ROTATION_45 = Math.PI / 4;
 
-function makeOutlineGeometry(size) {
-  const h = size / 2;
-  const verts = new Float32Array([
-    -h,
-    -h,
-    0,
-    h,
-    -h,
-    0,
-    h,
-    -h,
-    0,
-    h,
-    h,
-    0,
-    h,
-    h,
-    0,
-    -h,
-    h,
-    0,
-    -h,
-    h,
-    0,
-    -h,
-    -h,
-    0,
-  ]);
-  const geo = new THREE.BufferGeometry();
-  geo.setAttribute('position', new THREE.BufferAttribute(verts, 3));
-  return geo;
+/**
+ * Builds a diamond ring ShapeGeometry (outer diamond minus inner diamond hole).
+ * `size` is the PlaneGeometry-equivalent side length — tip-to-tip = size * √2.
+ * `lineThickness` is the border width in the same world units.
+ */
+function makeDiamondRingGeometry(size, lineThickness) {
+  const outerR = (size * Math.SQRT2) / 2;
+  const innerR = Math.max(0, outerR - lineThickness);
+
+  const shape = new THREE.Shape();
+  shape.moveTo(outerR, 0);
+  shape.lineTo(0, outerR);
+  shape.lineTo(-outerR, 0);
+  shape.lineTo(0, -outerR);
+  shape.closePath();
+
+  if (innerR > 0) {
+    const hole = new THREE.Path();
+    hole.moveTo(innerR, 0);
+    hole.lineTo(0, innerR);
+    hole.lineTo(-innerR, 0);
+    hole.lineTo(0, -innerR);
+    hole.closePath();
+    shape.holes.push(hole);
+  }
+
+  return new THREE.ShapeGeometry(shape);
 }
 
 /**
  * A single filled square (PlaneGeometry) rendered as a diamond (rotated 45°).
+ * extraRotation is an optional additional z-rotation in radians.
  */
-export function FilledSquare({ position, size, color }) {
+export function FilledSquare({ position, size, color, extraRotation = 0 }) {
   return (
-    <mesh position={position} rotation-z={ROTATION_45}>
+    <mesh position={position} rotation-z={ROTATION_45 + extraRotation}>
       <planeGeometry args={[size, size]} />
       <meshBasicMaterial color={color} />
     </mesh>
@@ -50,33 +47,28 @@ export function FilledSquare({ position, size, color }) {
 }
 
 /**
- * A single outlined square (LineSegments) rendered as a diamond (rotated 45°).
- * Accepts a ref that resolves to the underlying THREE.LineSegments object,
- * allowing imperative position updates in useFrame.
+ * A single outlined diamond rendered as a mesh ring (outer minus inner diamond).
+ * Uses ShapeGeometry so lineThickness is a real world-unit value, not a WebGL
+ * linewidth (which is capped at 1px on most GPUs).
  */
 export const OutlinedSquare = forwardRef(function OutlinedSquare(
-  { position, size, color },
+  { position, size, color, lineThickness, extraRotation = 0 },
   ref
 ) {
-  const obj = useMemo(() => {
-    const geo = makeOutlineGeometry(size);
-    const mat = new THREE.LineBasicMaterial({ color });
-    return new THREE.LineSegments(geo, mat);
-  }, [size, color]);
+  const thickness = lineThickness ?? size * 0.15;
+
+  const geo = useMemo(
+    () => makeDiamondRingGeometry(size, thickness),
+    [size, thickness]
+  );
 
   useEffect(() => {
-    return () => {
-      obj.geometry.dispose();
-      obj.material.dispose();
-    };
-  }, [obj]);
+    return () => geo.dispose();
+  }, [geo]);
 
   return (
-    <primitive
-      ref={ref}
-      object={obj}
-      position={position}
-      rotation-z={ROTATION_45}
-    />
+    <mesh ref={ref} position={position} rotation-z={extraRotation} geometry={geo}>
+      <meshBasicMaterial color={color} />
+    </mesh>
   );
 });

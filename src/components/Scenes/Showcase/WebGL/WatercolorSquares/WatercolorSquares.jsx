@@ -9,6 +9,7 @@ import useHandGestureEvents from '../../../../../hooks/hands/useHandGestureEvent
 import useHandControls, {
   mapWorldToScreenUv,
 } from '../../../../../hooks/hands/useHandcontrols';
+import { designToFluidUV } from './utils/markerUtils';
 import useMediaPipeHands from '../../../../../hooks/hands/useMediaPipeHands';
 import FluidMaterial from '../../../../materials/webGL/FluidMaterial/FluidMaterial';
 import { MAX_RANDOM_SPLATS } from '../../../../materials/webGL/FluidMaterial/utils/constants';
@@ -124,6 +125,20 @@ export default function WatercolorSquares() {
 
   const { fluidConfig } = useSceneControls({ matRef, randomSplatQueueRef });
 
+  // Positions in the preset use height-normalised design UV (x scales with
+  // viewport.height). The fluid simulation operates in full-viewport UV space,
+  // so x must be aspect-corrected before passing to the fluid sim.
+  const effectiveFluidConfig = useMemo(() => {
+    const adj = (pts) =>
+      pts?.map((p) => ({ ...p, ...designToFluidUV(p.x, p.y, viewport) }));
+    return {
+      ...fluidConfig,
+      stationarySplats: adj(fluidConfig.stationarySplats),
+      stationaryDebugMarkers: adj(fluidConfig.stationaryDebugMarkers),
+      autoSplatStarts: adj(fluidConfig.autoSplatStarts),
+    };
+  }, [fluidConfig, viewport]);
+
   const { pointerRef, pointerEvents } = useFluidPointerInput({ size });
 
   const handsPointerRef = useRef(null);
@@ -134,16 +149,16 @@ export default function WatercolorSquares() {
     randomSplatQueueRef.current += MAX_RANDOM_SPLATS;
   }, []);
 
-  const autoPointersRef = useFluidAutoPointers({ config: fluidConfig, size });
+  const autoPointersRef = useFluidAutoPointers({ config: effectiveFluidConfig, size });
 
   const randomSplatsRef = useFluidRandomSplats({
-    config: fluidConfig,
+    config: effectiveFluidConfig,
     randomSplatQueueRef,
   });
 
   // Pass no pointerEvents — positions come from the preset, no drag-to-place.
   const { stationaryPointersRef, stationaryDebugMarkersRef } =
-    useFluidStationarySplats({ config: fluidConfig, pointerEvents: {} });
+    useFluidStationarySplats({ config: effectiveFluidConfig, pointerEvents: {} });
 
   const mediaPipeConfig = useMemo(
     () => ({
@@ -216,7 +231,7 @@ export default function WatercolorSquares() {
         <planeGeometry args={[1, 1]} />
         <FluidMaterial
           ref={matRef}
-          config={fluidConfig}
+          config={effectiveFluidConfig}
           pointerRef={activePointerRef}
           autoPointersRef={autoPointersRef}
           stationaryPointersRef={stationaryPointersRef}

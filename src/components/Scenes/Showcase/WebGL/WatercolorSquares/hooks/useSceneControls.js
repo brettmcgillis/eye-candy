@@ -255,10 +255,6 @@ function getPresetControls({ presetSnapshot, currentControls }) {
     debugStationaryMarkerColor: p.debugStationaryMarkerColor ?? '#000000',
     debugStationaryMarkerWidth: p.debugStationaryMarkerWidth ?? 0.05,
     debugStationaryMarkerHeight: p.debugStationaryMarkerHeight ?? 0.05,
-    markerSplatColor: p.markerSplatColor ?? '#000000',
-    markerFillColor: p.markerFillColor ?? '#000000',
-    markerSplatSize: p.markerSplatSize ?? 0.05,
-    markerFillSize: p.markerFillSize ?? 0.05,
   };
 }
 
@@ -695,18 +691,18 @@ export default function useSceneControls({ matRef, randomSplatQueueRef }) {
               },
               debugStationarySplatLineWeight: {
                 label: 'Debug Line',
-                value: 2,
+                value: 0.8,
                 min: 0.25,
                 max: 4,
                 step: 0.05,
               },
               debugStationarySplatFill: {
                 label: 'Debug Fill',
-                value: false,
+                value: p.debugStationarySplatFill ?? false,
               },
               debugStationarySplatRotation: {
                 label: 'Debug Rot°',
-                value: 0,
+                value: p.debugStationarySplatRotation ?? 0,
                 min: 0,
                 max: 45,
                 step: 1,
@@ -752,18 +748,18 @@ export default function useSceneControls({ matRef, randomSplatQueueRef }) {
               },
               debugStationaryMarkerLineWeight: {
                 label: 'Debug Line',
-                value: 2,
+                value: p.debugStationaryMarkerLineWeight ?? 2,
                 min: 0.25,
                 max: 4,
                 step: 0.05,
               },
               debugStationaryMarkerFill: {
                 label: 'Debug Fill',
-                value: false,
+                value: p.debugStationaryMarkerFill ?? true,
               },
               debugStationaryMarkerRotation: {
                 label: 'Debug Rot°',
-                value: 0,
+                value: p.debugStationaryMarkerRotation ?? 0,
                 min: 0,
                 max: 45,
                 step: 1,
@@ -982,31 +978,6 @@ export default function useSceneControls({ matRef, randomSplatQueueRef }) {
             min: 0.2,
             max: 2.2,
             step: 0.01,
-          },
-        },
-        { collapsed: true }
-      ),
-
-      Markers: folder(
-        {
-          markerSplatColor: {
-            label: 'Outline Color',
-            value: p.markerSplatColor,
-          },
-          markerFillColor: { label: 'Fill Color', value: p.markerFillColor },
-          markerSplatSize: {
-            label: 'Outline Size',
-            value: p.markerSplatSize,
-            min: 0.01,
-            max: 0.2,
-            step: 0.005,
-          },
-          markerFillSize: {
-            label: 'Fill Size',
-            value: p.markerFillSize,
-            min: 0.01,
-            max: 0.2,
-            step: 0.005,
           },
         },
         { collapsed: true }

@@ -4,44 +4,72 @@ import React from 'react';
 import { markerWorldSize, uvToConstrainedWorld } from '../utils/markerUtils';
 import { FilledSquare, OutlinedSquare } from './SquareMarker';
 
-/**
- * Renders the watercolor square markers as Three.js geometry.
- *
- * stationarySplats  → outlined diamonds (mark fluid emitter positions)
- * stationaryDebugMarkers → filled diamonds (the visual "squares" of the composition)
- *
- * Both use uvToConstrainedWorld so the grid layout is bounded by the shorter
- * viewport dimension and stays proportional on wide desktop screens.
- */
+const DEG_TO_RAD = Math.PI / 180;
+
 export default function WatercolorMarkerLayer({ fluidConfig, viewport }) {
-  const splatSize = markerWorldSize(
-    fluidConfig.debugStationarySplatWidth,
+  // — Splat (outlined) controls —
+  const splatSize = markerWorldSize(fluidConfig.debugStationarySplatWidth, viewport);
+  const splatThickness = markerWorldSize(
+    (fluidConfig.debugStationarySplatLineWeight ?? 2) / 100,
     viewport
   );
-  const fillSize = markerWorldSize(
-    fluidConfig.debugStationaryMarkerWidth,
+  const splatFill = !!fluidConfig.debugStationarySplatFill;
+  const splatRotation = (fluidConfig.debugStationarySplatRotation ?? 0) * DEG_TO_RAD;
+
+  // — Marker (filled) controls —
+  const markerSize = markerWorldSize(fluidConfig.debugStationaryMarkerWidth, viewport);
+  const markerThickness = markerWorldSize(
+    (fluidConfig.debugStationaryMarkerLineWeight ?? 2) / 100,
     viewport
   );
+  const markerFill = fluidConfig.debugStationaryMarkerFill !== false;
+  const markerRotation = (fluidConfig.debugStationaryMarkerRotation ?? 0) * DEG_TO_RAD;
+  const markersVisible = fluidConfig.stationaryDebugMarkersEnabled !== false;
 
   return (
     <>
-      {fluidConfig.stationarySplats?.map((pt, i) => (
-        <OutlinedSquare
-          key={`splat-${i}`}
-          position={uvToConstrainedWorld(pt.x, pt.y, viewport)}
-          size={splatSize}
-          color={fluidConfig.debugStationarySplatColor}
-        />
-      ))}
+      {fluidConfig.stationarySplats?.map((pt, i) =>
+        splatFill ? (
+          <FilledSquare
+            key={`splat-${i}`}
+            position={uvToConstrainedWorld(pt.x, pt.y, viewport)}
+            size={splatSize}
+            color={fluidConfig.debugStationarySplatColor}
+            extraRotation={splatRotation}
+          />
+        ) : (
+          <OutlinedSquare
+            key={`splat-${i}`}
+            position={uvToConstrainedWorld(pt.x, pt.y, viewport)}
+            size={splatSize}
+            lineThickness={splatThickness}
+            color={fluidConfig.debugStationarySplatColor}
+            extraRotation={splatRotation}
+          />
+        )
+      )}
 
-      {fluidConfig.stationaryDebugMarkers?.map((pt, i) => (
-        <FilledSquare
-          key={`fill-${i}`}
-          position={uvToConstrainedWorld(pt.x, pt.y, viewport)}
-          size={fillSize}
-          color={fluidConfig.debugStationaryMarkerColor}
-        />
-      ))}
+      {markersVisible &&
+        fluidConfig.stationaryDebugMarkers?.map((pt, i) =>
+          markerFill ? (
+            <FilledSquare
+              key={`fill-${i}`}
+              position={uvToConstrainedWorld(pt.x, pt.y, viewport)}
+              size={markerSize}
+              color={fluidConfig.debugStationaryMarkerColor}
+              extraRotation={markerRotation}
+            />
+          ) : (
+            <OutlinedSquare
+              key={`fill-${i}`}
+              position={uvToConstrainedWorld(pt.x, pt.y, viewport)}
+              size={markerSize}
+              lineThickness={markerThickness}
+              color={fluidConfig.debugStationaryMarkerColor}
+              extraRotation={markerRotation}
+            />
+          )
+        )}
     </>
   );
 }

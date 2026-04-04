@@ -255,6 +255,10 @@ function getPresetControls({ presetSnapshot, currentControls }) {
     debugStationaryMarkerColor: p.debugStationaryMarkerColor ?? '#000000',
     debugStationaryMarkerWidth: p.debugStationaryMarkerWidth ?? 0.05,
     debugStationaryMarkerHeight: p.debugStationaryMarkerHeight ?? 0.05,
+    markerSplatColor: p.markerSplatColor ?? '#000000',
+    markerFillColor: p.markerFillColor ?? '#000000',
+    markerSplatSize: p.markerSplatSize ?? 0.05,
+    markerFillSize: p.markerFillSize ?? 0.05,
   };
 }
 
@@ -1017,7 +1021,9 @@ export default function useSceneControls({ matRef, randomSplatQueueRef }) {
   }, [attachSetControls, setControls]);
 
   useEffect(() => {
-    controlsSnapshotRef.current = { ...controlValues };
+    // JSON-clone strips undefined/function values (button controls) so they
+    // don't propagate into getPresetControls via ...currentControls.
+    controlsSnapshotRef.current = JSON.parse(JSON.stringify(controlValues));
   }, [controlValues, controlsSnapshotRef]);
 
   // Apply/re-apply preset values and arrays when the selected preset changes.

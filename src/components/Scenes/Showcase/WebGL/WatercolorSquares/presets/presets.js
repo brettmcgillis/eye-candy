@@ -90,6 +90,10 @@ const SHARED_FLUID = {
   debugStationaryMarkerColor: '#000000',
   debugStationaryMarkerWidth: 0.05,
   debugStationaryMarkerHeight: 0.05,
+  markerSplatColor: '#000000',
+  markerFillColor: '#000000',
+  markerSplatSize: 0.05,
+  markerFillSize: 0.05,
 };
 
 export const WATERCOLOR_SQUARES_PRESETS = {

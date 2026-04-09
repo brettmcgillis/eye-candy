@@ -2,7 +2,7 @@ import { levaStore } from 'leva';
 
 import React from 'react';
 
-import useScenes, { AREA_ICONS } from '../../useScenes';
+import useScenes, { AREA_ICONS } from '../../../useScenes';
 
 const FALLBACK_ICON = '💀';
 

@@ -1,7 +1,6 @@
 import React, { Suspense } from 'react';
 
 import './App.css';
-// import StatsPanel from './scaffold/StatsPanel';
 import useAppScenes from './scaffold/hooks/useAppScenes';
 import AppStats from './scaffold/leva/AppStats';
 import Loader from './scaffold/loader/Loader';
@@ -18,7 +17,6 @@ function App() {
       <CanvasWrapper key={renderer}>
         <AppStats />
         <Suspense fallback={<Loader />}>
-          {/* <StatsPanel /> */}
           {SceneComponent && <SceneComponent />}
         </Suspense>
       </CanvasWrapper>

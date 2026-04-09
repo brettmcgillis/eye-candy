@@ -3,12 +3,12 @@ import { levaStore } from 'leva';
 import React, { useState } from 'react';
 
 import { localEnv } from '../../../utils/appUtils';
-import Date from './DateDisplay';
-import ExternalLinks from './ExternalLinks';
-import LevaPanel from './LevaPanel';
 import './Overlay.css';
-import Scenemoji from './Scenemoji';
-import VersionTag from './VersionTag';
+import Date from './components/DateDisplay';
+import ExternalLinks from './components/ExternalLinks';
+import LevaPanel from './components/LevaPanel';
+import Scenemoji from './components/Scenemoji';
+import VersionTag from './components/VersionTag';
 
 const OVERLAY_IG_QUERY_PARAM = 'ig';
 

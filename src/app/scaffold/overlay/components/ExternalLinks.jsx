@@ -1,7 +1,7 @@
 import React from 'react';
 import { FaInstagram, FaLinkedin } from 'react-icons/fa';
 
-import { localEnv } from '../../../utils/appUtils';
+import { localEnv } from '../../../../utils/appUtils';
 
 export default function ExternalLinks() {
   const local = localEnv();

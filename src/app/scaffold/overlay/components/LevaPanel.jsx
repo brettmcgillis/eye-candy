@@ -4,8 +4,8 @@ import React from 'react';
 
 import { a, to, useSpring } from '@react-spring/web';
 
-import { localEnv } from '../../../utils/appUtils';
-import LevaTheme from './levaTheme';
+import { localEnv } from '../../../../utils/appUtils';
+import LevaTheme from '../levaTheme';
 
 export default function LevaPanel({ visible }) {
   const local = localEnv();

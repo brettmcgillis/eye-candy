@@ -89,16 +89,14 @@ function Overlay() {
 
   return (
     <div className={overlayClasses}>
-      {!hideUI && (
-        <div
-          className={`top-right overlay-panel${showLeva ? ' leva-visible' : ''}`}
-        >
-          <VersionTag />
-          <div className={`leva-panel-wrap${showLeva ? ' is-visible' : ''}`}>
-            <LevaPanel visible={showLeva} />
-          </div>
+      <div
+        className={`top-right overlay-panel${showLeva ? ' leva-visible' : ''}`}
+      >
+        {!hideUI && <VersionTag />}
+        <div className={`leva-panel-wrap${showLeva ? ' is-visible' : ''}`}>
+          <LevaPanel visible={!hideUI && showLeva} />
         </div>
-      )}
+      </div>
 
       {!hideUI && (
         <div className="top-left overlay-panel">

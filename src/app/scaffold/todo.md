@@ -13,7 +13,7 @@
 - [x] change positions when on mobile
 - [x] update leva theme
 - [x] Add query param to increase top bottom padding on overlay containers for ig posts.
-- [ ] Add query param for hide overlay, with hotkey combo to reveal.
+- [x] Add query param for hide overlay, with hotkey combo to reveal.
 - [x] Update the way we set up the Leva controls/menu and scaffold the app. It should end up looking like the pseudo code below. we also want to make sure we can still link directly to a scene (ie eye-candy/?mode=gpu&area=showcase&scene=myCoolScene)
 
   ```

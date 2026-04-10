@@ -1,6 +1,6 @@
 import { levaStore } from 'leva';
 
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 
 import { localEnv } from '../../../utils/appUtils';
 import './Overlay.css';
@@ -11,6 +11,7 @@ import Scenemoji from './components/Scenemoji';
 import VersionTag from './components/VersionTag';
 
 const OVERLAY_IG_QUERY_PARAM = 'ig';
+const OVERLAY_HIDE_UI_QUERY_PARAM = 'hideUI';
 
 const OVERLAY_IG_PRESETS = {
   story: 'story',
@@ -36,6 +37,13 @@ function normalizeOverlayIgPreset(value) {
   return OVERLAY_IG_PRESETS[normalized] || null;
 }
 
+function getHideUIFromQueryParam() {
+  if (typeof window === 'undefined') return false;
+
+  const params = new URLSearchParams(window.location.search);
+  return params.has(OVERLAY_HIDE_UI_QUERY_PARAM);
+}
+
 function Overlay() {
   const local = localEnv();
   const levaIgPreset = levaStore.useStore(
@@ -44,6 +52,8 @@ function Overlay() {
   const overlayIgPreset =
     normalizeOverlayIgPreset(levaIgPreset) ?? getOverlayIgPreset();
   const [showLeva, setShowLeva] = useState(!!local);
+  const [hideUI, setHideUI] = useState(() => getHideUIFromQueryParam());
+
   const overlayClasses = [
     'overlay',
     overlayIgPreset ? `overlay-ig-${overlayIgPreset}` : '',
@@ -55,30 +65,56 @@ function Overlay() {
     setShowLeva((s) => !s);
   };
 
+  // Auto-hide Leva when UI is hidden
+  useEffect(() => {
+    if (hideUI && showLeva) {
+      setShowLeva(false);
+    }
+  }, [hideUI, showLeva]);
+
+  // Hotkey to toggle UI visibility (Shift+H)
+  useEffect(() => {
+    const handleKeyDown = (e) => {
+      if (e.shiftKey && e.key === 'H') {
+        e.preventDefault();
+        setHideUI((prev) => !prev);
+      }
+    };
+
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, []);
+
   /* ---------------- render ---------------- */
 
   return (
     <div className={overlayClasses}>
-      <div
-        className={`top-right overlay-panel${showLeva ? ' leva-visible' : ''}`}
-      >
-        <VersionTag />
-        <div className={`leva-panel-wrap${showLeva ? ' is-visible' : ''}`}>
-          <LevaPanel visible={showLeva} />
+      {!hideUI && (
+        <div
+          className={`top-right overlay-panel${showLeva ? ' leva-visible' : ''}`}
+        >
+          <VersionTag />
+          <div className={`leva-panel-wrap${showLeva ? ' is-visible' : ''}`}>
+            <LevaPanel visible={showLeva} />
+          </div>
         </div>
-      </div>
+      )}
 
-      <div className="top-left overlay-panel">
-        <Scenemoji onDebugToggle={handleDebug} />
-      </div>
+      {!hideUI && (
+        <div className="top-left overlay-panel">
+          <Scenemoji onDebugToggle={handleDebug} />
+        </div>
+      )}
 
       <div className="bottom-left overlay-panel">
         <ExternalLinks />
       </div>
 
-      <div className="bottom-right overlay-panel">
-        <Date />
-      </div>
+      {!hideUI && (
+        <div className="bottom-right overlay-panel">
+          <Date />
+        </div>
+      )}
     </div>
   );
 }

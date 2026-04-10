@@ -498,28 +498,36 @@ export default function Candle({ config, position = [0, 0, 0], firePreset }) {
     ]
   );
   const smokeHeight = config.smokeHeight ?? 3.0;
-  const topSmokePoints = useMemo(
-    () =>
-      topSmokeSpline?.points?.map((point) => point.position.clone()) ?? [
-        new THREE.Vector3(0, 0, 0),
-        new THREE.Vector3(0, smokeHeight * 0.25, 0),
-        new THREE.Vector3(0, smokeHeight * 0.5, 0),
-        new THREE.Vector3(0, smokeHeight * 0.75, 0),
-        new THREE.Vector3(0, smokeHeight, 0),
-      ],
-    [smokeHeight, topSmokeSpline]
-  );
-  const bottomSmokePoints = useMemo(
-    () =>
-      bottomSmokeSpline?.points?.map((point) => point.position.clone()) ?? [
-        new THREE.Vector3(0, 0, 0),
-        new THREE.Vector3(0, -smokeHeight * 0.25, 0),
-        new THREE.Vector3(0, -smokeHeight * 0.5, 0),
-        new THREE.Vector3(0, -smokeHeight * 0.75, 0),
-        new THREE.Vector3(0, -smokeHeight, 0),
-      ],
-    [bottomSmokeSpline, smokeHeight]
-  );
+  const topSmokePoints = useMemo(() => {
+    if (topSmokeSpline?.points) {
+      const origin = topSmokeSpline.points[0].position;
+      return topSmokeSpline.points.map((point) =>
+        point.position.clone().sub(origin)
+      );
+    }
+    return [
+      new THREE.Vector3(0, 0, 0),
+      new THREE.Vector3(0, smokeHeight * 0.25, 0),
+      new THREE.Vector3(0, smokeHeight * 0.5, 0),
+      new THREE.Vector3(0, smokeHeight * 0.75, 0),
+      new THREE.Vector3(0, smokeHeight, 0),
+    ];
+  }, [smokeHeight, topSmokeSpline]);
+  const bottomSmokePoints = useMemo(() => {
+    if (bottomSmokeSpline?.points) {
+      const origin = bottomSmokeSpline.points[0].position;
+      return bottomSmokeSpline.points.map((point) =>
+        point.position.clone().sub(origin)
+      );
+    }
+    return [
+      new THREE.Vector3(0, 0, 0),
+      new THREE.Vector3(0, -smokeHeight * 0.25, 0),
+      new THREE.Vector3(0, -smokeHeight * 0.5, 0),
+      new THREE.Vector3(0, -smokeHeight * 0.75, 0),
+      new THREE.Vector3(0, -smokeHeight, 0),
+    ];
+  }, [bottomSmokeSpline, smokeHeight]);
   const topLightRef = useRef();
   const bottomLightRef = useRef();
 

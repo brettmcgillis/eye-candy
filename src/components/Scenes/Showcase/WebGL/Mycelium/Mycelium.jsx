@@ -2,15 +2,11 @@ import React from 'react';
 
 import { OrbitControls, PerspectiveCamera } from '@react-three/drei';
 
-import MycelliumCloud from './components/MycelliumCloud';
-import useMycelliumControls from './hooks/useMycelliumControls';
+import MyceliumCloud from './components/MyceliumCloud';
 import useSceneControls from './hooks/useSceneControls';
-import { CLOUD_A_DEFAULTS, CLOUD_B_DEFAULTS } from './utils/defaults';
 
-export default function Mycellium() {
-  const scene = useSceneControls();
-  const [cloudA, setCloudA] = useMycelliumControls('Cloud A', CLOUD_A_DEFAULTS);
-  const [cloudB, setCloudB] = useMycelliumControls('Cloud B', CLOUD_B_DEFAULTS);
+export default function Mycelium() {
+  const { scene, cloudA, setCloudA, cloudB, setCloudB } = useSceneControls();
 
   return (
     <>
@@ -25,8 +21,8 @@ export default function Mycellium() {
         autoRotate={scene.autoRotate}
         autoRotateSpeed={scene.autoRotateSpeed}
       />
-      <MycelliumCloud config={cloudA} setConfig={setCloudA} />
-      <MycelliumCloud config={cloudB} setConfig={setCloudB} />
+      <MyceliumCloud config={cloudA} setConfig={setCloudA} />
+      <MyceliumCloud config={cloudB} setConfig={setCloudB} />
     </>
   );
 }

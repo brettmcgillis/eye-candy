@@ -7,7 +7,7 @@ const LoGlow = lazy(() => import('./WebGL/LoGlow/LoGlow'));
 const AllMyThoughtsAreSoCumulus = lazy(
   () => import('./WebGL/AllMyThoughtsAreSoCumulus/AllMyThoughtsAreSoCumulus')
 );
-const Mycellium = lazy(() => import('./WebGL/Mycellium/Mycellium'));
+const Mycelium = lazy(() => import('./WebGL/Mycelium/Mycelium'));
 const PaperStack = lazy(() => import('./WebGL/PaperStack/PaperStack'));
 const QuinnsDice = lazy(() => import('./WebGL/QuinnsDice/QuinnsDice'));
 const Rosie = lazy(() => import('./WebGL/Rosie/Rosie'));
@@ -53,10 +53,10 @@ const scenes = [
     Component: QuinnsDice,
   },
   {
-    id: 'mycellium',
-    label: 'Mycellium',
+    id: 'mycelium',
+    label: 'Mycelium',
     icon: '🔬',
-    Component: Mycellium,
+    Component: Mycelium,
   },
   {
     id: 'rosie',

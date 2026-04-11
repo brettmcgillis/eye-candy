@@ -40,10 +40,10 @@ function buildSimState(pointCount) {
 }
 
 // ---------------------------------------------------------------------------
-// MycelliumCloud
+// MyceliumCloud
 // ---------------------------------------------------------------------------
 
-export default function MycelliumCloud({ config, setConfig }) {
+export default function MyceliumCloud({ config, setConfig }) {
   const groupRef = useRef();
   const pointsRef = useRef();
   const geometryRef = useRef();

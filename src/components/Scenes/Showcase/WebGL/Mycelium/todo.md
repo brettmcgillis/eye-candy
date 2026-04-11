@@ -1,4 +1,4 @@
-# // Mycellium
+# // Mycelium
 
 # // TODO:
 

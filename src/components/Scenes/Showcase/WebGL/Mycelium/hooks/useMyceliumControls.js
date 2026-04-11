@@ -1,4 +1,4 @@
-import { folder, useControls } from 'leva';
+import { folder } from 'leva';
 
 const SIM_SCHEMA = {
   temperature: { min: 0, max: 3, step: 0.01 },
@@ -13,10 +13,9 @@ const SIM_SCHEMA = {
   halfLife: { label: 'Half Life', min: 0.9, max: 1, step: 0.001 },
 };
 
-export default function useMycelliumControls(label, defaults) {
-  return useControls(
-    label,
-    () => ({
+export default function getMyceliumFolder(defaults) {
+  return folder(
+    {
       Simulation: folder(
         Object.fromEntries(
           Object.entries(SIM_SCHEMA).map(([key, schema]) => [
@@ -97,7 +96,7 @@ export default function useMycelliumControls(label, defaults) {
         },
         { collapsed: true }
       ),
-    }),
+    },
     { collapsed: true }
   );
 }

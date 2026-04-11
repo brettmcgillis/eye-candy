@@ -50,7 +50,7 @@ To Build:
 - [Cardinals](src/components/scenes/Showcase/WebGL/Cardinals/todo.md)
 - [FoldedFrame](src/components/scenes/Showcase/WebGL/FoldedFrame/todo.md)
 - [LoGlow](src/components/scenes/Showcase/WebGL/LoGlow/todo.md)
-- [Mycellium](src/components/scenes/Showcase/WebGL/Mycellium/todo.md)
+- [Mycelium](src/components/scenes/Showcase/WebGL/Mycelum/todo.md)
 - [PaperStack](src/components/scenes/Showcase/WebGL/PaperStack/todo.md)
 - [QuinnsDice](src/components/scenes/Showcase/WebGL/QuinnsDice/todo.md)
 - [Rosie](src/components/scenes/Showcase/WebGL/Rosie/todo.md)

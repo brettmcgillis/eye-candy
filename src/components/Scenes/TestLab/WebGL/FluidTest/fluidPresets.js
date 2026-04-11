@@ -1,5 +1,5 @@
 const FLUID_PRESETS = {
-  test: {
+  Test: {
     paused: false,
     simResolution: 1,
     pressureRelax: 1,
@@ -146,7 +146,7 @@ const FLUID_PRESETS = {
       },
     ],
   },
-  cardinalsMobile: {
+  'Cardinals (Mobile)': {
     paused: false,
     simResolution: 0.98,
     pressureRelax: 0.84,
@@ -268,7 +268,7 @@ const FLUID_PRESETS = {
     debugContactFadeDuration: 0.28,
     stationarySplats: [],
   },
-  fastFlow: {
+  'Fast Flow': {
     paused: false,
     simResolution: 0.7,
     pressureRelax: 0.78,
@@ -386,7 +386,7 @@ const FLUID_PRESETS = {
     debugContactFadeDuration: 0.28,
     stationarySplats: [],
   },
-  viscousFlow: {
+  'Viscous Flow': {
     paused: false,
     simResolution: 0.7,
     pressureRelax: 0.86,
@@ -496,7 +496,7 @@ const FLUID_PRESETS = {
     debugContactFadeDuration: 0.28,
     stationarySplats: [],
   },
-  pastel: {
+  Pastel: {
     paused: false,
     simResolution: 0.75,
     pressureRelax: 0.8,
@@ -610,7 +610,7 @@ const FLUID_PRESETS = {
     debugContactFadeDuration: 0.28,
     stationarySplats: [],
   },
-  mobile: {
+  Mobile: {
     paused: false,
     simResolution: 0.42,
     pressureRelax: 0.84,
@@ -720,7 +720,7 @@ const FLUID_PRESETS = {
     debugContactFadeDuration: 0.28,
     stationarySplats: [],
   },
-  inkOnPaper: {
+  'Ink on Paper': {
     paused: false,
     simResolution: 0.75,
     pressureRelax: 0.88,
@@ -834,7 +834,7 @@ const FLUID_PRESETS = {
     debugContactFadeDuration: 0.28,
     stationarySplats: [],
   },
-  freon: {
+  Freon: {
     paused: false,
     simResolution: 0.75,
     pressureRelax: 0.88,
@@ -972,7 +972,7 @@ const FLUID_PRESETS = {
     debugContactFadeDuration: 0.28,
     stationarySplats: [],
   },
-  watercolorSquares: {
+  'Watercolor (Mobile)': {
     paused: false,
     simResolution: 0.98,
     pressureRelax: 0.84,
@@ -1167,7 +1167,7 @@ const FLUID_PRESETS = {
     debugRandomRotation: 45,
     debugContactFadeDuration: 0.28,
   },
-  watercolorSquares_blue: {
+  'Watercolor Blue (Mobile)': {
     paused: false,
     simResolution: 0.98,
     pressureRelax: 0.84,

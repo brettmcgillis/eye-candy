@@ -5,6 +5,7 @@ import { button, folder, useControls } from 'leva';
 
 import { useEffect, useMemo, useRef, useState } from 'react';
 
+import usePresetsFolder from '../../../../../../hooks/usePresetsFolder';
 import {
   BLEND_MODE_ADDITIVE,
   BLEND_MODE_MULTIPLY,
@@ -15,8 +16,7 @@ import {
 } from '../../../../../materials/webGL/FluidMaterial/utils/constants';
 import FLUID_PRESETS from '../fluidPresets';
 
-const INITIAL_PRESET_KEY = 'watercolorSquares';
-const PRESET_QUERY_PARAM = 'preset';
+const DEFAULT_PRESET = 'Watercolor (Mobile)';
 
 const CONTROL_DEFAULTS = {
   paused: false,
@@ -197,20 +197,6 @@ const CONTROL_DEFAULTS = {
     },
   ],
 };
-
-function getPresetFromQuery() {
-  if (typeof window === 'undefined') return null;
-  const params = new URLSearchParams(window.location.search);
-  return params.get(PRESET_QUERY_PARAM);
-}
-
-function getInitialPresetKey() {
-  const requestedPreset = getPresetFromQuery();
-  if (requestedPreset && FLUID_PRESETS[requestedPreset]) {
-    return requestedPreset;
-  }
-  return INITIAL_PRESET_KEY;
-}
 
 function clampStationarySplatCount(value) {
   if (!Number.isFinite(value)) return 0;
@@ -525,486 +511,215 @@ function buildAutoSplatStartControls(autoSplatStarts, setAutoSplatStarts) {
   return controls;
 }
 
-function getStationarySplatsFromLeva(get, stationarySplatCount) {
-  const count = clampStationarySplatCount(stationarySplatCount);
-  const splats = [];
+function getPresetControls({ presetSnapshot: p, currentControls }) {
+  const nextAutoStarts = getNormalizedAutoSplatStartsFromPreset(p);
+  const nextSplats = getNormalizedStationarySplatsFromPreset(p);
+  const nextMarkers = getNormalizedStationaryDebugMarkersFromPreset(p);
 
-  for (let i = 0; i < count; i += 1) {
-    const path = `Fluid.Interaction.StationarySplats.${getStationarySplatKey(i)}`;
-    const value = get(path);
-    splats.push({
-      x: clamp01(value?.x),
-      y: clamp01(value?.y),
-    });
-  }
-
-  return splats;
-}
-
-function getStationaryDebugMarkersFromLeva(get, stationaryDebugMarkerCount) {
-  const count = clampStationaryDebugMarkerCount(stationaryDebugMarkerCount);
-  const markers = [];
-
-  for (let i = 0; i < count; i += 1) {
-    const path = `Fluid.Interaction.StationaryMarkers.${getStationaryDebugMarkerKey(i)}`;
-    const value = get(path);
-    markers.push({
-      x: clamp01(value?.x),
-      y: clamp01(value?.y),
-    });
-  }
-
-  return markers;
-}
-
-function getAutoSplatStartsFromLeva(get, autoSplatCount) {
-  const count = clampAutoSplatCount(autoSplatCount);
-  const starts = [];
-
-  for (let i = 0; i < count; i += 1) {
-    const path = `Fluid.Interaction.AutoSplats.${getAutoSplatStartKey(i)}`;
-    const value = get(path);
-    starts.push({
-      x: clamp01(value?.x),
-      y: clamp01(value?.y),
-    });
-  }
-
-  return starts;
-}
-
-function copySettingsToClipboard(get) {
-  const autoSplatCount = clampAutoSplatCount(
-    get('Fluid.Interaction.AutoSplats.autoSplatCount')
-  );
-  const stationarySplatCount = clampStationarySplatCount(
-    get('Fluid.Interaction.StationarySplats.stationarySplatCount')
-  );
-  const stationaryDebugMarkerCount = clampStationaryDebugMarkerCount(
-    get('Fluid.Interaction.StationaryMarkers.stationaryDebugMarkerCount')
-  );
-  const settings = {
-    paused: get('Fluid.Solver.paused'),
-    simResolution: get('Fluid.Solver.simResolution'),
-    pressureRelax: get('Fluid.Solver.pressureRelax'),
-    pressureIterations: get('Fluid.Solver.pressureIterations'),
-    vorticity: get('Fluid.Solver.vorticity'),
-    velocityDissipation: get('Fluid.Solver.velocityDissipation'),
-    densityDissipation: get('Fluid.Solver.densityDissipation'),
-    splatRadius: get('Fluid.Interaction.PointerTouch.splatRadius'),
-    autoSplatRadius: get('Fluid.Interaction.AutoSplats.autoSplatRadius'),
-    stationarySplatRadius: get(
-      'Fluid.Interaction.StationarySplats.stationarySplatRadius'
-    ),
-    randomSplatRadius: get('Fluid.Interaction.RandomBurst.randomSplatRadius'),
-    splatForce: get('Fluid.Interaction.PointerTouch.splatForce'),
-    dyeStrength: get('Fluid.Interaction.PointerTouch.dyeStrength'),
-    inputMode: get('Fluid.Interaction.PointerTouch.inputMode'),
-    testMode: get('Fluid.Presets.testMode'),
-    autoSplat: get('Fluid.Interaction.AutoSplats.autoSplat'),
-    autoSplatStrength: get('Fluid.Interaction.AutoSplats.autoSplatStrength'),
-    autoSplatDyeStrength: get(
-      'Fluid.Interaction.AutoSplats.autoSplatDyeStrength'
-    ),
-    autoSplatForce: get('Fluid.Interaction.AutoSplats.autoSplatForce'),
-    autoSplatRate: get('Fluid.Interaction.AutoSplats.autoSplatRate'),
-    autoSplatRange: get('Fluid.Interaction.AutoSplats.autoSplatRange'),
-    autoSplatBurst: get('Fluid.Interaction.AutoSplats.autoSplatBurst'),
-    autoSplatCount,
-    autoSplatStarts: getAutoSplatStartsFromLeva(get, autoSplatCount),
-    randomSplatStrength: get(
-      'Fluid.Interaction.RandomBurst.randomSplatStrength'
-    ),
-    randomSplatDyeStrength: get(
-      'Fluid.Interaction.RandomBurst.randomSplatDyeStrength'
-    ),
-    randomSplatForce: get('Fluid.Interaction.RandomBurst.randomSplatForce'),
-    stationarySplatsEnabled: get(
-      'Fluid.Interaction.StationarySplats.stationarySplatsEnabled'
-    ),
-    stationarySplatStrength: get(
-      'Fluid.Interaction.StationarySplats.stationarySplatStrength'
-    ),
-    stationarySplatDyeStrength: get(
-      'Fluid.Interaction.StationarySplats.stationarySplatDyeStrength'
-    ),
-    stationarySplatForce: get(
-      'Fluid.Interaction.StationarySplats.stationarySplatForce'
-    ),
-    stationarySplatDirectionStrength: get(
-      'Fluid.Interaction.StationarySplats.stationarySplatDirectionStrength'
-    ),
-    stationarySplatDirectionAngle: get(
-      'Fluid.Interaction.StationarySplats.stationarySplatDirectionAngle'
-    ),
-    stationarySplatCount: get(
-      'Fluid.Interaction.StationarySplats.stationarySplatCount'
-    ),
-    stationarySplats: getStationarySplatsFromLeva(get, stationarySplatCount),
-    stationaryDebugMarkersEnabled: get(
-      'Fluid.Interaction.StationaryMarkers.stationaryDebugMarkersEnabled'
-    ),
-    stationaryDebugMarkerCount: get(
-      'Fluid.Interaction.StationaryMarkers.stationaryDebugMarkerCount'
-    ),
-    stationaryDebugMarkers: getStationaryDebugMarkersFromLeva(
-      get,
-      stationaryDebugMarkerCount
-    ),
-    handsMaxHands: get('Fluid.Interaction.HandsInput.handsMaxHands'),
-    handsShowVideo: get('Fluid.Interaction.HandsInput.handsShowVideo'),
-    handsShowDebugSkeleton: get(
-      'Fluid.Interaction.HandsInput.handsShowDebugSkeleton'
-    ),
-    handsLandmarkColor: get('Fluid.Interaction.HandsInput.handsLandmarkColor'),
-    handsConnectorColor: get(
-      'Fluid.Interaction.HandsInput.handsConnectorColor'
-    ),
-    handsLandmarkRadius: get(
-      'Fluid.Interaction.HandsInput.handsLandmarkRadius'
-    ),
-    handsConnectorLineWidth: get(
-      'Fluid.Interaction.HandsInput.handsConnectorLineWidth'
-    ),
-    handsModelComplexity: get(
-      'Fluid.Interaction.HandsInput.handsModelComplexity'
-    ),
-    handsMinDetectionConfidence: get(
-      'Fluid.Interaction.HandsInput.handsMinDetectionConfidence'
-    ),
-    handsMinTrackingConfidence: get(
-      'Fluid.Interaction.HandsInput.handsMinTrackingConfidence'
-    ),
-    handsXScale: get('Fluid.Interaction.HandsInput.handsXScale'),
-    handsYScale: get('Fluid.Interaction.HandsInput.handsYScale'),
-    handsZScale: get('Fluid.Interaction.HandsInput.handsZScale'),
-    handsInvertX: get('Fluid.Interaction.HandsInput.handsInvertX'),
-    handsInvertY: get('Fluid.Interaction.HandsInput.handsInvertY'),
-    gesturesEnabled: get('Fluid.Interaction.HandsInput.gesturesEnabled'),
-    shading: get('Fluid.Effects.shading'),
-    bloom: get('Fluid.Effects.bloom'),
-    bloomResolution: get('Fluid.Effects.bloomResolution'),
-    bloomIterations: get('Fluid.Effects.bloomIterations'),
-    bloomIntensity: get('Fluid.Effects.bloomIntensity'),
-    bloomThreshold: get('Fluid.Effects.bloomThreshold'),
-    bloomSoftKnee: get('Fluid.Effects.bloomSoftKnee'),
-    sunrays: get('Fluid.Effects.sunrays'),
-    sunraysResolution: get('Fluid.Effects.sunraysResolution'),
-    sunraysWeight: get('Fluid.Effects.sunraysWeight'),
-    colorA: get('Fluid.Color.colorA'),
-    colorB: get('Fluid.Color.colorB'),
-    colorC: get('Fluid.Color.colorC'),
-    colorful: get('Fluid.Color.colorful'),
-    colorUpdateSpeed: get('Fluid.Color.colorUpdateSpeed'),
-    colorCycleSpeed: get('Fluid.Color.colorCycleSpeed'),
-    bgA: get('Fluid.Display.bgA'),
-    bgB: get('Fluid.Display.bgB'),
-    dithering: get('Fluid.Display.dithering'),
-    ditherStrength: get('Fluid.Display.ditherStrength'),
-    ditherScale: get('Fluid.Display.ditherScale'),
-    brightness: get('Fluid.Display.brightness'),
-    contrast: get('Fluid.Display.contrast'),
-    saturation: get('Fluid.Display.saturation'),
-    blendMode: get('Fluid.Color.blendMode'),
-    debugCursor: get('Fluid.Interaction.PointerTouch.debugCursor'),
-    debugAutoSplat: get('Fluid.Interaction.AutoSplats.debugAutoSplat'),
-    debugStationarySplat: get(
-      'Fluid.Interaction.StationarySplats.debugStationarySplat'
-    ),
-    debugRandomBurst: get('Fluid.Interaction.RandomBurst.debugRandomBurst'),
-    debugPointerColor: get('Fluid.Interaction.PointerTouch.debugPointerColor'),
-    debugAutoColor: get('Fluid.Interaction.AutoSplats.debugAutoColor'),
-    debugAutoWidth: get('Fluid.Interaction.AutoSplats.debugAutoWidth'),
-    debugAutoHeight: get('Fluid.Interaction.AutoSplats.debugAutoHeight'),
-    debugPointerWidth: get('Fluid.Interaction.PointerTouch.debugPointerWidth'),
-    debugPointerHeight: get(
-      'Fluid.Interaction.PointerTouch.debugPointerHeight'
-    ),
-    debugPointerLineWeight: get(
-      'Fluid.Interaction.PointerTouch.debugPointerLineWeight'
-    ),
-    debugPointerFill: get('Fluid.Interaction.PointerTouch.debugPointerFill'),
-    debugPointerRotation: get(
-      'Fluid.Interaction.PointerTouch.debugPointerRotation'
-    ),
-    debugAutoLineWeight: get(
-      'Fluid.Interaction.AutoSplats.debugAutoLineWeight'
-    ),
-    debugAutoFill: get('Fluid.Interaction.AutoSplats.debugAutoFill'),
-    debugAutoRotation: get('Fluid.Interaction.AutoSplats.debugAutoRotation'),
-    debugStationarySplatColor: get(
-      'Fluid.Interaction.StationarySplats.debugStationarySplatColor'
-    ),
-    debugStationarySplatWidth: get(
-      'Fluid.Interaction.StationarySplats.debugStationarySplatWidth'
-    ),
-    debugStationarySplatHeight: get(
-      'Fluid.Interaction.StationarySplats.debugStationarySplatHeight'
-    ),
-    debugStationarySplatLineWeight: get(
-      'Fluid.Interaction.StationarySplats.debugStationarySplatLineWeight'
-    ),
-    debugStationarySplatFill: get(
-      'Fluid.Interaction.StationarySplats.debugStationarySplatFill'
-    ),
-    debugStationarySplatRotation: get(
-      'Fluid.Interaction.StationarySplats.debugStationarySplatRotation'
-    ),
-    debugStationaryMarkerColor: get(
-      'Fluid.Interaction.StationaryMarkers.debugStationaryMarkerColor'
-    ),
-    debugStationaryMarkerWidth: get(
-      'Fluid.Interaction.StationaryMarkers.debugStationaryMarkerWidth'
-    ),
-    debugStationaryMarkerHeight: get(
-      'Fluid.Interaction.StationaryMarkers.debugStationaryMarkerHeight'
-    ),
-    debugStationaryMarkerLineWeight: get(
-      'Fluid.Interaction.StationaryMarkers.debugStationaryMarkerLineWeight'
-    ),
-    debugStationaryMarkerFill: get(
-      'Fluid.Interaction.StationaryMarkers.debugStationaryMarkerFill'
-    ),
-    debugStationaryMarkerRotation: get(
-      'Fluid.Interaction.StationaryMarkers.debugStationaryMarkerRotation'
-    ),
-    debugRandomColor: get('Fluid.Interaction.RandomBurst.debugRandomColor'),
-    debugRandomWidth: get('Fluid.Interaction.RandomBurst.debugRandomWidth'),
-    debugRandomHeight: get('Fluid.Interaction.RandomBurst.debugRandomHeight'),
-    debugRandomLineWeight: get(
-      'Fluid.Interaction.RandomBurst.debugRandomLineWeight'
-    ),
-    debugRandomFill: get('Fluid.Interaction.RandomBurst.debugRandomFill'),
-    debugRandomRotation: get(
-      'Fluid.Interaction.RandomBurst.debugRandomRotation'
-    ),
-    debugContactFadeDuration: get('Fluid.Interaction.debugContactFadeDuration'),
+  return {
+    ...currentControls,
+    paused: p.paused ?? CONTROL_DEFAULTS.paused,
+    simResolution: p.simResolution ?? CONTROL_DEFAULTS.simResolution,
+    pressureRelax: p.pressureRelax ?? CONTROL_DEFAULTS.pressureRelax,
+    pressureIterations:
+      p.pressureIterations ?? CONTROL_DEFAULTS.pressureIterations,
+    vorticity: p.vorticity ?? CONTROL_DEFAULTS.vorticity,
+    velocityDissipation:
+      p.velocityDissipation ?? CONTROL_DEFAULTS.velocityDissipation,
+    densityDissipation:
+      p.densityDissipation ?? CONTROL_DEFAULTS.densityDissipation,
+    splatRadius: p.splatRadius ?? CONTROL_DEFAULTS.splatRadius,
+    autoSplatRadius:
+      p.autoSplatRadius ?? p.splatRadius ?? CONTROL_DEFAULTS.autoSplatRadius,
+    stationarySplatRadius:
+      p.stationarySplatRadius ??
+      p.splatRadius ??
+      CONTROL_DEFAULTS.stationarySplatRadius,
+    randomSplatRadius:
+      p.randomSplatRadius ??
+      p.splatRadius ??
+      CONTROL_DEFAULTS.randomSplatRadius,
+    splatForce: p.splatForce ?? CONTROL_DEFAULTS.splatForce,
+    dyeStrength: p.dyeStrength ?? CONTROL_DEFAULTS.dyeStrength,
+    inputMode: p.inputMode ?? 'pointer',
+    testMode: p.testMode ?? 'plane',
+    autoSplat: p.autoSplat ?? CONTROL_DEFAULTS.autoSplat,
+    autoSplatStrength:
+      p.autoSplatStrength ?? CONTROL_DEFAULTS.autoSplatStrength,
+    autoSplatDyeStrength:
+      p.autoSplatDyeStrength ??
+      p.dyeStrength ??
+      CONTROL_DEFAULTS.autoSplatDyeStrength,
+    autoSplatForce:
+      p.autoSplatForce ?? p.splatForce ?? CONTROL_DEFAULTS.autoSplatForce,
+    autoSplatRate: p.autoSplatRate ?? CONTROL_DEFAULTS.autoSplatRate,
+    autoSplatRange: p.autoSplatRange ?? CONTROL_DEFAULTS.autoSplatRange,
+    autoSplatBurst: p.autoSplatBurst ?? CONTROL_DEFAULTS.autoSplatBurst,
+    autoSplatCount: nextAutoStarts.length,
+    randomSplatStrength:
+      p.randomSplatStrength ?? CONTROL_DEFAULTS.randomSplatStrength,
+    randomSplatDyeStrength:
+      p.randomSplatDyeStrength ??
+      p.dyeStrength ??
+      CONTROL_DEFAULTS.randomSplatDyeStrength,
+    randomSplatForce:
+      p.randomSplatForce ?? p.splatForce ?? CONTROL_DEFAULTS.randomSplatForce,
+    stationarySplatsEnabled:
+      p.stationarySplatsEnabled ?? CONTROL_DEFAULTS.stationarySplatsEnabled,
+    stationarySplatStrength:
+      p.stationarySplatStrength ?? CONTROL_DEFAULTS.stationarySplatStrength,
+    stationarySplatDyeStrength:
+      p.stationarySplatDyeStrength ??
+      p.dyeStrength ??
+      CONTROL_DEFAULTS.stationarySplatDyeStrength,
+    stationarySplatForce:
+      p.stationarySplatForce ??
+      p.splatForce ??
+      CONTROL_DEFAULTS.stationarySplatForce,
+    stationarySplatDirectionStrength:
+      p.stationarySplatDirectionStrength ??
+      CONTROL_DEFAULTS.stationarySplatDirectionStrength,
+    stationarySplatDirectionAngle:
+      p.stationarySplatDirectionAngle ??
+      CONTROL_DEFAULTS.stationarySplatDirectionAngle,
+    stationarySplatCount: nextSplats.length,
+    stationaryDebugMarkersEnabled:
+      p.stationaryDebugMarkersEnabled ??
+      CONTROL_DEFAULTS.stationaryDebugMarkersEnabled,
+    stationaryDebugMarkerCount: nextMarkers.length,
+    debugStationarySplatColor:
+      p.debugStationarySplatColor ??
+      p.debugStationaryColor ??
+      CONTROL_DEFAULTS.debugStationarySplatColor,
+    debugStationarySplatWidth:
+      p.debugStationarySplatWidth ??
+      p.debugStationaryWidth ??
+      CONTROL_DEFAULTS.debugStationarySplatWidth,
+    debugStationarySplatHeight:
+      p.debugStationarySplatHeight ??
+      p.debugStationaryHeight ??
+      CONTROL_DEFAULTS.debugStationarySplatHeight,
+    debugStationarySplatLineWeight:
+      p.debugStationarySplatLineWeight ??
+      p.debugStationaryLineWeight ??
+      CONTROL_DEFAULTS.debugStationarySplatLineWeight,
+    debugStationarySplatFill:
+      p.debugStationarySplatFill ??
+      p.debugStationaryFill ??
+      CONTROL_DEFAULTS.debugStationarySplatFill,
+    debugStationarySplatRotation:
+      p.debugStationarySplatRotation ??
+      p.debugStationaryRotation ??
+      CONTROL_DEFAULTS.debugStationarySplatRotation,
+    debugStationaryMarkerColor:
+      p.debugStationaryMarkerColor ??
+      p.debugStationaryColor ??
+      CONTROL_DEFAULTS.debugStationaryMarkerColor,
+    debugStationaryMarkerWidth:
+      p.debugStationaryMarkerWidth ??
+      p.debugStationaryWidth ??
+      CONTROL_DEFAULTS.debugStationaryMarkerWidth,
+    debugStationaryMarkerHeight:
+      p.debugStationaryMarkerHeight ??
+      p.debugStationaryHeight ??
+      CONTROL_DEFAULTS.debugStationaryMarkerHeight,
+    debugStationaryMarkerLineWeight:
+      p.debugStationaryMarkerLineWeight ??
+      p.debugStationaryLineWeight ??
+      CONTROL_DEFAULTS.debugStationaryMarkerLineWeight,
+    debugStationaryMarkerFill:
+      p.debugStationaryMarkerFill ??
+      p.debugStationaryFill ??
+      CONTROL_DEFAULTS.debugStationaryMarkerFill,
+    debugStationaryMarkerRotation:
+      p.debugStationaryMarkerRotation ??
+      p.debugStationaryRotation ??
+      CONTROL_DEFAULTS.debugStationaryMarkerRotation,
+    shading: p.shading ?? CONTROL_DEFAULTS.shading,
+    bloom: p.bloom ?? CONTROL_DEFAULTS.bloom,
+    bloomResolution: p.bloomResolution ?? CONTROL_DEFAULTS.bloomResolution,
+    bloomIterations: p.bloomIterations ?? CONTROL_DEFAULTS.bloomIterations,
+    bloomIntensity: p.bloomIntensity ?? CONTROL_DEFAULTS.bloomIntensity,
+    bloomThreshold: p.bloomThreshold ?? CONTROL_DEFAULTS.bloomThreshold,
+    bloomSoftKnee: p.bloomSoftKnee ?? CONTROL_DEFAULTS.bloomSoftKnee,
+    sunrays: p.sunrays ?? CONTROL_DEFAULTS.sunrays,
+    sunraysResolution:
+      p.sunraysResolution ?? CONTROL_DEFAULTS.sunraysResolution,
+    sunraysWeight: p.sunraysWeight ?? CONTROL_DEFAULTS.sunraysWeight,
+    colorA: p.colorA ?? CONTROL_DEFAULTS.colorA,
+    colorB: p.colorB ?? CONTROL_DEFAULTS.colorB,
+    colorC: p.colorC ?? CONTROL_DEFAULTS.colorC,
+    colorful: p.colorful ?? CONTROL_DEFAULTS.colorful,
+    colorUpdateSpeed: p.colorUpdateSpeed ?? CONTROL_DEFAULTS.colorUpdateSpeed,
+    colorCycleSpeed: p.colorCycleSpeed ?? CONTROL_DEFAULTS.colorCycleSpeed,
+    blendMode: p.blendMode ?? CONTROL_DEFAULTS.blendMode,
+    bgA: p.bgA ?? CONTROL_DEFAULTS.bgA,
+    bgB: p.bgB ?? CONTROL_DEFAULTS.bgB,
+    dithering: p.dithering ?? CONTROL_DEFAULTS.dithering,
+    ditherStrength: p.ditherStrength ?? CONTROL_DEFAULTS.ditherStrength,
+    ditherScale: p.ditherScale ?? CONTROL_DEFAULTS.ditherScale,
+    brightness: p.brightness ?? CONTROL_DEFAULTS.brightness,
+    contrast: p.contrast ?? CONTROL_DEFAULTS.contrast,
+    saturation: p.saturation ?? CONTROL_DEFAULTS.saturation,
   };
-
-  let text = JSON.stringify(settings, null, 2);
-  text = text.replace(/"([^"]+)":/g, '$1:');
-
-  if (typeof navigator !== 'undefined' && navigator.clipboard?.writeText) {
-    navigator.clipboard.writeText(text).catch(() => {
-      // eslint-disable-next-line no-console
-      console.log(text);
-    });
-  } else {
-    // eslint-disable-next-line no-console
-    console.log(text);
-  }
 }
 
-export default function useFluidControls({
-  randomSplatQueueRef,
-  resetSimRef,
-  initialPreset,
-}) {
-  const initialPresetKey = useMemo(
-    () => getInitialPresetKey(initialPreset),
-    [initialPreset]
+function notifyArrayUpdate(
+  setAutoSplatStarts,
+  setStationarySplats,
+  setStationaryDebugMarkers,
+  presetSnapshot
+) {
+  setAutoSplatStarts(getNormalizedAutoSplatStartsFromPreset(presetSnapshot));
+  setStationarySplats(getNormalizedStationarySplatsFromPreset(presetSnapshot));
+  setStationaryDebugMarkers(
+    getNormalizedStationaryDebugMarkersFromPreset(presetSnapshot)
   );
-  const initialPresetValues = useMemo(
-    () => FLUID_PRESETS[initialPresetKey] || CONTROL_DEFAULTS,
-    [initialPresetKey]
-  );
+}
+
+export default function useFluidControls({ randomSplatQueueRef, resetSimRef }) {
+  const {
+    applyPresetByName,
+    attachSetControls,
+    controlsSnapshotRef,
+    initialPreset,
+    presetsFolder,
+    selectedPreset,
+  } = usePresetsFolder({
+    defaultPreset: DEFAULT_PRESET,
+    getPresetControls,
+    presets: FLUID_PRESETS,
+  });
+
+  const initialPresetSnapshot =
+    FLUID_PRESETS[initialPreset] ||
+    FLUID_PRESETS[DEFAULT_PRESET] ||
+    CONTROL_DEFAULTS;
 
   const setRef = useRef(null);
-  const currentPresetRef = useRef(initialPresetKey);
-  const initializedPresetRef = useRef(false);
-  const [activePresetKey, setActivePresetKey] = useState(initialPresetKey);
   const [presetInitialized, setPresetInitialized] = useState(false);
   const [autoSplatStarts, setAutoSplatStarts] = useState(() =>
-    getNormalizedAutoSplatStartsFromPreset(initialPresetValues)
+    getNormalizedAutoSplatStartsFromPreset(initialPresetSnapshot)
   );
   const [stationarySplats, setStationarySplats] = useState(() =>
-    getNormalizedStationarySplatsFromPreset(initialPresetValues)
+    getNormalizedStationarySplatsFromPreset(initialPresetSnapshot)
   );
   const [stationaryDebugMarkers, setStationaryDebugMarkers] = useState(() =>
-    getNormalizedStationaryDebugMarkersFromPreset(initialPresetValues)
+    getNormalizedStationaryDebugMarkersFromPreset(initialPresetSnapshot)
   );
-
-  const applyPresetValues = (presetValues, presetKey) => {
-    if (!presetValues || !setRef.current) return;
-    const {
-      stationarySplats: _stationarySplats,
-      stationaryDebugMarkers: _stationaryDebugMarkers,
-      autoSplatStarts: _autoSplatStarts,
-      debugStationaryColor: _legacyDebugStationaryColor,
-      debugStationaryWidth: _legacyDebugStationaryWidth,
-      debugStationaryHeight: _legacyDebugStationaryHeight,
-      debugStationaryLineWeight: _legacyDebugStationaryLineWeight,
-      debugStationaryFill: _legacyDebugStationaryFill,
-      debugStationaryRotation: _legacyDebugStationaryRotation,
-      ...levaPresetValues
-    } = presetValues;
-
-    const normalizedAutoSplatStarts =
-      getNormalizedAutoSplatStartsFromPreset(presetValues);
-    const autoSplatCount = normalizedAutoSplatStarts.length;
-
-    const normalizedStationarySplats =
-      getNormalizedStationarySplatsFromPreset(presetValues);
-    const stationarySplatCount = normalizedStationarySplats.length;
-    const normalizedStationaryDebugMarkers =
-      getNormalizedStationaryDebugMarkersFromPreset(presetValues);
-    const stationaryDebugMarkerCount = normalizedStationaryDebugMarkers.length;
-
-    setAutoSplatStarts(normalizedAutoSplatStarts);
-    setStationarySplats(normalizedStationarySplats);
-    setStationaryDebugMarkers(normalizedStationaryDebugMarkers);
-    if (presetKey) {
-      currentPresetRef.current = presetKey;
-      setActivePresetKey(presetKey);
-    }
-
-    setRef.current({
-      ...levaPresetValues,
-      autoSplatRadius:
-        presetValues.autoSplatRadius ??
-        presetValues.splatRadius ??
-        CONTROL_DEFAULTS.autoSplatRadius,
-      stationarySplatRadius:
-        presetValues.stationarySplatRadius ??
-        presetValues.splatRadius ??
-        CONTROL_DEFAULTS.stationarySplatRadius,
-      randomSplatRadius:
-        presetValues.randomSplatRadius ??
-        presetValues.splatRadius ??
-        CONTROL_DEFAULTS.randomSplatRadius,
-      randomSplatDyeStrength:
-        presetValues.randomSplatDyeStrength ??
-        presetValues.dyeStrength ??
-        CONTROL_DEFAULTS.randomSplatDyeStrength,
-      randomSplatForce:
-        presetValues.randomSplatForce ??
-        presetValues.splatForce ??
-        CONTROL_DEFAULTS.randomSplatForce,
-      autoSplatForce:
-        presetValues.autoSplatForce ??
-        presetValues.splatForce ??
-        CONTROL_DEFAULTS.autoSplatForce,
-      autoSplatDyeStrength:
-        presetValues.autoSplatDyeStrength ??
-        presetValues.dyeStrength ??
-        CONTROL_DEFAULTS.autoSplatDyeStrength,
-      stationarySplatDyeStrength:
-        presetValues.stationarySplatDyeStrength ??
-        presetValues.dyeStrength ??
-        CONTROL_DEFAULTS.stationarySplatDyeStrength,
-      stationarySplatDirectionStrength:
-        presetValues.stationarySplatDirectionStrength ??
-        CONTROL_DEFAULTS.stationarySplatDirectionStrength,
-      stationarySplatDirectionAngle:
-        presetValues.stationarySplatDirectionAngle ??
-        CONTROL_DEFAULTS.stationarySplatDirectionAngle,
-      stationarySplatForce:
-        presetValues.stationarySplatForce ??
-        presetValues.splatForce ??
-        CONTROL_DEFAULTS.stationarySplatForce,
-      stationaryDebugMarkersEnabled:
-        presetValues.stationaryDebugMarkersEnabled ??
-        CONTROL_DEFAULTS.stationaryDebugMarkersEnabled,
-      debugStationarySplatColor:
-        presetValues.debugStationarySplatColor ??
-        presetValues.debugStationaryColor ??
-        CONTROL_DEFAULTS.debugStationarySplatColor,
-      debugStationarySplatWidth:
-        presetValues.debugStationarySplatWidth ??
-        presetValues.debugStationaryWidth ??
-        CONTROL_DEFAULTS.debugStationarySplatWidth,
-      debugStationarySplatHeight:
-        presetValues.debugStationarySplatHeight ??
-        presetValues.debugStationaryHeight ??
-        CONTROL_DEFAULTS.debugStationarySplatHeight,
-      debugStationarySplatLineWeight:
-        presetValues.debugStationarySplatLineWeight ??
-        presetValues.debugStationaryLineWeight ??
-        CONTROL_DEFAULTS.debugStationarySplatLineWeight,
-      debugStationarySplatFill:
-        presetValues.debugStationarySplatFill ??
-        presetValues.debugStationaryFill ??
-        CONTROL_DEFAULTS.debugStationarySplatFill,
-      debugStationarySplatRotation:
-        presetValues.debugStationarySplatRotation ??
-        presetValues.debugStationaryRotation ??
-        CONTROL_DEFAULTS.debugStationarySplatRotation,
-      debugStationaryMarkerColor:
-        presetValues.debugStationaryMarkerColor ??
-        presetValues.debugStationaryColor ??
-        CONTROL_DEFAULTS.debugStationaryMarkerColor,
-      debugStationaryMarkerWidth:
-        presetValues.debugStationaryMarkerWidth ??
-        presetValues.debugStationaryWidth ??
-        CONTROL_DEFAULTS.debugStationaryMarkerWidth,
-      debugStationaryMarkerHeight:
-        presetValues.debugStationaryMarkerHeight ??
-        presetValues.debugStationaryHeight ??
-        CONTROL_DEFAULTS.debugStationaryMarkerHeight,
-      debugStationaryMarkerLineWeight:
-        presetValues.debugStationaryMarkerLineWeight ??
-        presetValues.debugStationaryLineWeight ??
-        CONTROL_DEFAULTS.debugStationaryMarkerLineWeight,
-      debugStationaryMarkerFill:
-        presetValues.debugStationaryMarkerFill ??
-        presetValues.debugStationaryFill ??
-        CONTROL_DEFAULTS.debugStationaryMarkerFill,
-      debugStationaryMarkerRotation:
-        presetValues.debugStationaryMarkerRotation ??
-        presetValues.debugStationaryRotation ??
-        CONTROL_DEFAULTS.debugStationaryMarkerRotation,
-      autoSplatCount,
-      stationarySplatCount,
-      stationaryDebugMarkerCount,
-    });
-  };
 
   const controls = useControls(
     'Fluid',
     () => ({
-      Presets: folder({
-        preset: {
-          label: 'Preset',
-          value: initialPresetKey,
-          options: {
-            'Watercolor (Mobile)': 'watercolorSquares',
-            'Watercolor Blue  (Mobile)': 'watercolorSquares_blue',
-            'Cardinals (Mobile)': 'cardinalsMobile',
-            'Ink on Paper': 'inkOnPaper',
-            Freon: 'freon',
-            Pastel: 'pastel',
-            Mobile: 'mobile',
-            'Fast Flow': 'fastFlow',
-            'Viscous Flow': 'viscousFlow',
-            Test: 'test',
-          },
-          onChange: (value) => {
-            const presetValues = FLUID_PRESETS[value];
-            if (!presetValues) return;
-            applyPresetValues(presetValues, value);
-          },
+      Presets: presetsFolder,
+      testMode: {
+        label: 'Mode',
+        value: initialPresetSnapshot.testMode || 'plane',
+        options: {
+          Plane: 'plane',
+          '3D (Sphere)': '3d',
         },
-        testMode: {
-          label: 'Mode',
-          value: 'plane',
-          options: {
-            Plane: 'plane',
-            '3D (Sphere)': '3d',
-          },
-        },
-        resetToPreset: button((get) => {
-          const currentPresetKey =
-            get('Fluid.Presets.preset') ||
-            currentPresetRef.current ||
-            INITIAL_PRESET_KEY;
-          const nextPreset =
-            FLUID_PRESETS[currentPresetKey] || CONTROL_DEFAULTS;
-          applyPresetValues(nextPreset, currentPresetKey);
-        }),
-        copySettings: button((get) => {
-          copySettingsToClipboard(get);
-        }),
-      }),
+      },
       Solver: folder(
         {
           paused: { value: false, label: 'Pause' },
@@ -1709,24 +1424,28 @@ export default function useFluidControls({
   setRef.current = setControls;
 
   useEffect(() => {
-    if (initializedPresetRef.current || !setRef.current) return;
-
-    applyPresetValues(initialPresetValues, initialPresetKey);
-    initializedPresetRef.current = true;
-    setPresetInitialized(true);
-  }, [initialPresetKey, initialPresetValues]);
+    attachSetControls(setControls);
+  }, [attachSetControls, setControls]);
 
   useEffect(() => {
-    if (typeof window === 'undefined') return;
+    controlsSnapshotRef.current = JSON.parse(JSON.stringify(controlValues));
+  }, [controlValues, controlsSnapshotRef]);
 
-    const presetKey =
-      activePresetKey || currentPresetRef.current || initialPresetKey;
-    if (!presetKey || !FLUID_PRESETS[presetKey]) return;
+  useEffect(() => {
+    const presetSnapshot = FLUID_PRESETS[selectedPreset];
+    if (!presetSnapshot) return;
 
-    const params = new URLSearchParams(window.location.search);
-    params.set(PRESET_QUERY_PARAM, presetKey);
-    window.history.replaceState({}, '', `?${params.toString()}`);
-  }, [activePresetKey, initialPresetKey]);
+    applyPresetByName(selectedPreset, {
+      currentControls: controlsSnapshotRef.current,
+    });
+    notifyArrayUpdate(
+      setAutoSplatStarts,
+      setStationarySplats,
+      setStationaryDebugMarkers,
+      presetSnapshot
+    );
+    setPresetInitialized(true);
+  }, [applyPresetByName, controlsSnapshotRef, selectedPreset]);
 
   useEffect(() => {
     if (!presetInitialized) return;

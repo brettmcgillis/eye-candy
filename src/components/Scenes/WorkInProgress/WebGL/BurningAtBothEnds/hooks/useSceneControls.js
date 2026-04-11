@@ -1,98 +1,95 @@
-import { button, folder, useControls } from 'leva';
+import { folder, useControls } from 'leva';
 
-import { useRef } from 'react';
+import { useEffect, useRef } from 'react';
 
-import { localEnv } from '../../../../../../utils/appUtils';
+import useScreenshotControls from '../../../../../../app/scaffold/leva/useScreenshotControls';
+import usePresetsFolder from '../../../../../../hooks/usePresetsFolder';
 import getCandleFolder from '../components/useCandleControls';
 import { SCENE_PRESETS } from '../presets/scenePresets';
 
-const presetNames = Object.keys(SCENE_PRESETS);
-const hasPresets = presetNames.length > 1;
+const DEFAULT_PRESET = 'Enlightened';
+
+function getPresetControls({ presetSnapshot }) {
+  return presetSnapshot;
+}
 
 export default function useSceneControls() {
-  const controlsSnapshotRef = useRef(SCENE_PRESETS.Enlightened);
-  const selectedPresetRef = useRef('Enlightened');
-  const setControlsRef = useRef(null);
+  const selectedPresetNameRef = useRef(DEFAULT_PRESET);
 
-  const applyPreset = (name) => {
-    const preset = SCENE_PRESETS[name];
-    if (!preset || !setControlsRef.current) return;
-    selectedPresetRef.current = name;
-    setControlsRef.current(preset);
-    controlsSnapshotRef.current = { ...preset };
-  };
+  const {
+    attachSetControls,
+    controlsSnapshotRef,
+    initialPreset,
+    presetsFolder,
+    selectedPreset,
+  } = usePresetsFolder({
+    defaultPreset: DEFAULT_PRESET,
+    getPresetControls,
+    presets: SCENE_PRESETS,
+  });
+
+  // keep a ref in sync with selectedPreset state for useScreenshotControls
+  useEffect(() => {
+    selectedPresetNameRef.current = selectedPreset;
+  }, [selectedPreset]);
 
   const [controls, setControls] = useControls(
     'Burning At Both Ends',
     () => ({
-      ...(hasPresets
-        ? {
-            Presets: folder(
-              {
-                preset: {
-                  label: 'Preset',
-                  value: 'Enlightened',
-                  options: presetNames,
-                  onChange: (v) => applyPreset(v),
-                },
-                reset: button(() => applyPreset(selectedPresetRef.current)),
-                ...(localEnv()
-                  ? {
-                      copy: button(() => {
-                        const snap = JSON.stringify(
-                          controlsSnapshotRef.current,
-                          null,
-                          2
-                        );
-                        const literal = snap.replace(/"([^"]+)":/g, '$1:');
-                        navigator.clipboard.writeText(literal);
-                      }),
-                    }
-                  : {}),
-              },
-              { collapsed: true }
-            ),
-          }
-        : {}),
+      Presets: presetsFolder,
       Scene: folder(
         {
-          autoRotate: { label: 'Auto Rotate', value: true },
-          backgroundColor: { label: 'BG', value: '#050507' },
-          groundPlaneColor: { label: 'Ground Color', value: '#111111' },
+          autoRotate: {
+            label: 'Auto Rotate',
+            value: SCENE_PRESETS[initialPreset].autoRotate ?? true,
+          },
+          backgroundColor: {
+            label: 'BG',
+            value: SCENE_PRESETS[initialPreset].backgroundColor ?? '#050507',
+          },
+          groundPlaneColor: {
+            label: 'Ground Color',
+            value: SCENE_PRESETS[initialPreset].groundPlaneColor ?? '#111111',
+          },
           ambientLightIntensity: {
             label: 'Ambient Intensity',
-            value: 0.08,
+            value: SCENE_PRESETS[initialPreset].ambientLightIntensity ?? 0.08,
             min: 0,
             max: 2,
             step: 0.01,
           },
           'Post Processing': folder(
             {
-              bloomEnabled: { label: 'Bloom', value: true },
+              bloomEnabled: {
+                label: 'Bloom',
+                value: SCENE_PRESETS[initialPreset].bloomEnabled ?? true,
+              },
               bloomIntensity: {
                 label: 'Intensity',
-                value: 1.6,
+                value: SCENE_PRESETS[initialPreset].bloomIntensity ?? 1.6,
                 min: 0,
                 max: 6,
                 step: 0.01,
               },
               bloomLuminanceThreshold: {
                 label: 'Lum Threshold',
-                value: 0.5,
+                value:
+                  SCENE_PRESETS[initialPreset].bloomLuminanceThreshold ?? 0.5,
                 min: 0,
                 max: 1,
                 step: 0.01,
               },
               bloomLuminanceSmoothing: {
                 label: 'Lum Smoothing',
-                value: 0.35,
+                value:
+                  SCENE_PRESETS[initialPreset].bloomLuminanceSmoothing ?? 0.35,
                 min: 0,
                 max: 1,
                 step: 0.01,
               },
               bloomRadius: {
                 label: 'Radius',
-                value: 0.6,
+                value: SCENE_PRESETS[initialPreset].bloomRadius ?? 0.6,
                 min: 0,
                 max: 1,
                 step: 0.01,
@@ -108,8 +105,13 @@ export default function useSceneControls() {
     { collapsed: true }
   );
 
-  setControlsRef.current = setControls;
+  attachSetControls(setControls);
   controlsSnapshotRef.current = { ...controls };
+
+  useScreenshotControls({
+    sceneName: 'Burning At Both Ends',
+    presetNameRef: selectedPresetNameRef,
+  });
 
   return controls;
 }

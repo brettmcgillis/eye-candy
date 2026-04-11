@@ -122,7 +122,6 @@ function AutoPointerSquare({
   const initPos = useMemo(() => {
     const start = autoPointersRef.current?.[index];
     return uvToWorld(start?.x ?? 0.5, start?.y ?? 0.5, viewport);
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   if (fill) {

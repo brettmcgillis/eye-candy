@@ -70,7 +70,7 @@ export default function useAppScenes() {
   );
 
   const { mode, area, ig } = useControls(
-    'Scene Select',
+    'App',
     {
       mode: { options: channelOptions, value: initialChannel },
       area: { options: areaOptions, value: initialArea },
@@ -103,7 +103,7 @@ export default function useAppScenes() {
 
   // Re-evaluates when channel / area change (leva deps array)
   const [{ scene: rawSceneId }, setSceneControl] = useControls(
-    'Scene Select',
+    'App',
     () => ({
       scene: { options: sceneOptions, value: sceneDefault },
     }),

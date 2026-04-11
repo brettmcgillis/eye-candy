@@ -18,7 +18,7 @@ export default function AppStats() {
   const showStats = localEnv() || hasStatsQuery();
 
   useControls(
-    'Stats',
+    'App.Stats',
     {
       statsJs: folder(
         {

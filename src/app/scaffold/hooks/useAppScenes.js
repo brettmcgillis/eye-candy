@@ -1,4 +1,4 @@
-import { useControls } from 'leva';
+import { folder, useControls } from 'leva';
 
 import { useEffect, useMemo } from 'react';
 
@@ -69,16 +69,28 @@ export default function useAppScenes() {
     []
   );
 
-  const { mode, area, ig } = useControls(
+  const { ig } = useControls(
+    'App',
+    {
+      Overlay: folder(
+        {
+          ig: {
+            label: 'IG Preset',
+            options: IG_OPTIONS,
+            value: initialIgPreset,
+          },
+        },
+        { collapsed: true }
+      ),
+    },
+    { collapsed: true, render: () => local }
+  );
+
+  const { mode, area } = useControls(
     'App',
     {
       mode: { options: channelOptions, value: initialChannel },
       area: { options: areaOptions, value: initialArea },
-      ig: {
-        label: 'IG Preset',
-        options: IG_OPTIONS,
-        value: initialIgPreset,
-      },
     },
     { collapsed: true, render: () => local }
   );

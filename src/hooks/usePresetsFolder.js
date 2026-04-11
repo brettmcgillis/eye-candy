@@ -68,6 +68,7 @@ export default function usePresetsFolder({
           onChange: (nextPreset) => {
             selectedPresetRef.current = nextPreset;
             setSelectedPreset(nextPreset);
+            applyPresetByName(nextPreset);
           },
         },
         reset: button(() => {

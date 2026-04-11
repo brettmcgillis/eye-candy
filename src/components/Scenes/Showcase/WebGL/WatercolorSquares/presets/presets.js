@@ -1,6 +1,10 @@
 // Fluid config shared across both color variants.
 // All debugXxx flags are false — the squares are rendered as scene geometry.
 const SHARED_FLUID = {
+  brightness: 1.76,
+  contrast: 1.09,
+  saturation: 1.64,
+  blendMode: 0,
   paused: false,
   pressureRelax: 0.84,
   pressureIterations: 14,
@@ -30,52 +34,51 @@ const SHARED_FLUID = {
   randomSplatDyeStrength: 1.71,
   randomSplatForce: 4200,
   stationarySplatsEnabled: true,
-  stationarySplatStrength: 0.51,
-  stationarySplatDyeStrength: 0.51,
-  stationarySplatForce: 4200,
-  stationarySplatDirectionStrength: 0.0005,
+  stationarySplatStrength: 0.5,
+  stationarySplatDyeStrength: 1.5,
+  stationarySplatForce: 6000,
+  stationarySplatDirectionStrength: 0.001,
   stationarySplatDirectionAngle: 270,
   // Positions are in height-normalised design UV space:
-  //   x=0.5, y=0.5 → screen center; ±0.07 in x ≈ ±7% of viewport height.
+  //   x=0.5, y=0.5 → screen centre.
   // WatercolorSquares.jsx converts these to fluid UV via designToFluidUV
   // (aspect-corrected) before passing to the fluid simulation, while
   // WatercolorMarkerLayer uses them directly with uvToConstrainedWorld
   // (height-scaled on both axes).
-  // Positions use height-normalised design UV:
-  //   x=0.5 / y=0.5 → screen centre; ±0.13 in x ≈ ±13 % of viewport height.
-  // Classic argyle geometry: column separation = 0.13, row half-step = 0.075.
-  // Outlined splats (s=0.12) → tip-to-tip = 0.17 h > 0.15 separation → slight
-  // overlap creates the argyle crossing lines.
-  // Filled markers (s=0.09) → tip-to-tip = 0.127 h < 0.15 → sit inside cells.
+  //
+  // Argyle grid geometry — d = size / √2 ≈ 0.085.
+  // Equal column separation and row half-step (d) ensures diagonal neighbours
+  // have |Δx| = |Δy| so diamond edges are collinear, forming a clean grid.
+  // Row step (same column) = 2d = 0.17.
+  // Outlined splats (s=0.12) → tip-to-tip = s√2 ≈ 0.17 = 2d → edges meet.
+  // Filled markers (s=0.10) → tip-to-tip ≈ 0.14 < 2d → sit inside cells.
   stationarySplatCount: 10,
   stationarySplats: [
-    // Centre column – 4 fluid emitters
-    { x: 0.5, y: 0.275 },
-    { x: 0.5, y: 0.425 },
-    { x: 0.5, y: 0.575 },
-    { x: 0.5, y: 0.725 },
-    // Left column – 3 fluid emitters (argyle half-step offset)
-    { x: 0.37, y: 0.35 },
-    { x: 0.37, y: 0.5 },
-    { x: 0.37, y: 0.65 },
-    // Right column – 3 fluid emitters (argyle half-step offset)
-    { x: 0.63, y: 0.35 },
-    { x: 0.63, y: 0.5 },
-    { x: 0.63, y: 0.65 },
+    // Centre column – 4 fluid emitters (y = 0.5 ± d, 0.5 ± 3d)
+    { x: 0.5, y: 0.245 },
+    { x: 0.5, y: 0.415 },
+    { x: 0.5, y: 0.585 },
+    { x: 0.5, y: 0.755 },
+    // Left column – 3 fluid emitters (y = 0.5 − 2d, 0.5, 0.5 + 2d)
+    { x: 0.415, y: 0.33 },
+    { x: 0.415, y: 0.5 },
+    { x: 0.415, y: 0.67 },
+    // Right column – 3 fluid emitters
+    { x: 0.585, y: 0.33 },
+    { x: 0.585, y: 0.5 },
+    { x: 0.585, y: 0.67 },
   ],
   stationaryDebugMarkersEnabled: true,
   stationaryDebugMarkerCount: 7,
   stationaryDebugMarkers: [
-    // Filled diamonds sit at midpoints between the outlined splats.
-    // Centre col splats are at y=0.275/0.425/0.575/0.725 → midpoints 0.350/0.500/0.650
-    // Side col splats are at y=0.350/0.500/0.650 → midpoints 0.425/0.575
-    { x: 0.5, y: 0.35 }, // centre upper-mid
-    { x: 0.5, y: 0.5 }, // centre middle
-    { x: 0.5, y: 0.65 }, // centre lower-mid
-    { x: 0.37, y: 0.425 }, // left upper-mid
-    { x: 0.37, y: 0.575 }, // left lower-mid
-    { x: 0.63, y: 0.425 }, // right upper-mid
-    { x: 0.63, y: 0.575 }, // right lower-mid
+    // Filled diamonds at midpoints between outlined splats.
+    { x: 0.5, y: 0.33 },
+    { x: 0.5, y: 0.5 },
+    { x: 0.5, y: 0.67 },
+    { x: 0.415, y: 0.415 },
+    { x: 0.415, y: 0.585 },
+    { x: 0.585, y: 0.415 },
+    { x: 0.585, y: 0.585 },
   ],
   shading: true,
   bgA: '#4b4b4b',
@@ -103,41 +106,33 @@ const SHARED_FLUID = {
   // The shader debug flags stay false so the display shader does not render
   // its own marker pass.
   debugStationarySplatColor: '#000000',
-  debugStationarySplatWidth: 0.12,
-  debugStationarySplatHeight: 0.12,
+  debugStationarySplatWidth: 0.105,
+  debugStationarySplatHeight: 0.105,
   debugStationarySplatLineWeight: 2,
   debugStationarySplatFill: false,
   debugStationarySplatRotation: 0,
   debugStationaryMarkerColor: '#000000',
-  debugStationaryMarkerWidth: 0.09,
-  debugStationaryMarkerHeight: 0.09,
+  debugStationaryMarkerWidth: 0.1,
+  debugStationaryMarkerHeight: 0.1,
   debugStationaryMarkerLineWeight: 2,
   debugStationaryMarkerFill: true,
   debugStationaryMarkerRotation: 0,
 };
 
 export const WATERCOLOR_SQUARES_PRESETS = {
-  'Warm Red': {
+  Red: {
     ...SHARED_FLUID,
     colorA: '#ff0000',
     colorB: '#ff0000',
     colorC: '#7b0000',
-    brightness: 1.76,
-    contrast: 1.09,
-    saturation: 1.64,
-    blendMode: 0,
   },
   Blue: {
     ...SHARED_FLUID,
     colorA: '#0033ff',
     colorB: '#0033ff',
     colorC: '#001a7b',
-    brightness: 1.76,
-    contrast: 1.09,
-    saturation: 1.64,
-    blendMode: 0,
   },
 };
 
 export const PRESET_NAMES = Object.keys(WATERCOLOR_SQUARES_PRESETS);
-export const DEFAULT_PRESET = 'Warm Red';
+export const DEFAULT_PRESET = 'Red';

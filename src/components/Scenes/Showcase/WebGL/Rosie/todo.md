@@ -10,3 +10,9 @@
 - [x] Hide spark splats behind App/Loader by using useLoader.
 - [x] Load the heart png to a texture in a more performant way.
 - [x] Try to optimize perf.
+
+# // Intent/Use Cases
+
+# // Features
+
+# // Bugs

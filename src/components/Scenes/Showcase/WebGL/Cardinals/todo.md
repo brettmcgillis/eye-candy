@@ -10,3 +10,9 @@
 - [x] fix hands input to allow webcam interaction like in FluidTest.
 - [x] Add a toggle to enable scrolling through presets like in AllMyThoughtsAreSoCumulus. add control to new scene level folder Animations.
 - [x] fix Leva `set` errors for button-type controls (reset, copy, resetSimulation, randomBurst) — fixed in `usePresetsFolder.js` by filtering function values before calling setControls.
+
+# // Intent/Use Cases
+
+# // Features
+
+# // Bugs

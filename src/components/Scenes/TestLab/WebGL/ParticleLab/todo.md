@@ -72,3 +72,7 @@
   - Seed points on an attractor, then advect through divergence-free fields.
 - [x] Hopf fibration sampling
   - Elegant linked-circle structures with distinct geometry.
+
+# // Intent/Use Cases
+
+# // Bugs

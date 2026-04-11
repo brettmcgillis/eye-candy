@@ -15,3 +15,9 @@
 - [ ] Could we replace the text area with the REPL still maintain control?
 - [ ] Could we show strudel visuals on the background of the scene?
 - [x] do a background. keep it on theme
+
+# // Intent/Use Cases
+
+# // Features
+
+# // Bugs

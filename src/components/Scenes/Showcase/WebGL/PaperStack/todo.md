@@ -8,3 +8,9 @@
 - [ ] Add compelling animations
 - [x] create window orientation presets using settings, add preset option control
 - [x] create some preset color arrangements, add controls.
+
+# // Intent/Use Cases
+
+# // Features
+
+# // Bugs

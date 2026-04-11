@@ -11,3 +11,9 @@
 - [x] Fix these
   - installHook.js:1 LEVA: input at path `Watercolor Squares.Markers.markerSplatColor` is not recognized.
     {label: 'Outline Color', value: undefined}
+
+# // Intent/Use Cases
+
+# // Features
+
+# // Bugs

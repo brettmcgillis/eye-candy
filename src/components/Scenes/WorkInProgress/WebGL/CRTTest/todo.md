@@ -69,3 +69,5 @@
 - [ ] Post Reel w/ link
 - [ ] Share Reel Post in stories
 - [ ] Update link in bio
+
+# // Intent/Use Cases

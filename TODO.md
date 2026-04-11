@@ -46,17 +46,15 @@ To Build:
 
 **Showcase**
 
+- [AllMyThoughtsAreSoCumulus](src/components/scenes/Showcase/WebGL/AllMyThoughtsAreSoCumulus/todo.md)
+- [Cardinals](src/components/scenes/Showcase/WebGL/Cardinals/todo.md)
 - [FoldedFrame](src/components/scenes/Showcase/WebGL/FoldedFrame/todo.md)
 - [LoGlow](src/components/scenes/Showcase/WebGL/LoGlow/todo.md)
-- [NewScene](src/components/scenes/Showcase/WebGL/NewScene/todo.md)
+- [Mycellium](src/components/scenes/Showcase/WebGL/Mycellium/todo.md)
 - [PaperStack](src/components/scenes/Showcase/WebGL/PaperStack/todo.md)
-- [PenPlotter](src/components/scenes/Showcase/WebGL/PenPlotter/todo.md)
-  - [PlotScenes](src/components/scenes/Showcase/WebGL/PenPlotter/PlotScenes/todo.md)
-  - [GenerativeGeometry](src/components/scenes/Showcase/WebGL/PenPlotter/PlotScenes/GenerativeGeometry/todo.md)
-  - [NetworkPlot](src/components/scenes/Showcase/WebGL/PenPlotter/PlotScenes/NetworkPlot/todo.md)
-  - [ParticlePlot](src/components/scenes/Showcase/WebGL/PenPlotter/PlotScenes/ParticlePlot/todo.md)
 - [QuinnsDice](src/components/scenes/Showcase/WebGL/QuinnsDice/todo.md)
 - [Rosie](src/components/scenes/Showcase/WebGL/Rosie/todo.md)
+- [WatercolorSquares](src/components/scenes/Showcase/WebGL/WatercolorSquares/todo.md)
 
 **TestLab**
 
@@ -87,7 +85,13 @@ To Build:
 
 **ToolBox**
 
+- [FireTest](src/components/scenes/ToolBox/WebGL/FireTest/todo.md)
 - [HotBox](src/components/scenes/ToolBox/WebGL/HotBox/todo.md)
+- [PenPlotter](src/components/scenes/ToolBox/WebGL/PenPlotter/todo.md)
+  - [PlotScenes](src/components/scenes/ToolBox/WebGL/PenPlotter/PlotScenes/todo.md)
+  - [GenerativeGeometry](src/components/scenes/ToolBox/WebGL/PenPlotter/PlotScenes/GenerativeGeometry/todo.md)
+  - [NetworkPlot](src/components/scenes/ToolBox/WebGL/PenPlotter/PlotScenes/NetworkPlot/todo.md)
+  - [ParticlePlot](src/components/scenes/ToolBox/WebGL/PenPlotter/PlotScenes/ParticlePlot/todo.md)
 - [SmokeTest](src/components/scenes/ToolBox/WebGL/SmokeTest/todo.md)
 - [SplineEditor](src/components/scenes/ToolBox/WebGL/SplineEditor/todo.md)
 

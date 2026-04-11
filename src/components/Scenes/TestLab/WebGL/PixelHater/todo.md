@@ -126,3 +126,7 @@ Naturally, we'll want to have whatever we end up with...
 "We" have made the algorithm public domain for the benefit of all:
 An image (...screenshot) of "our screen-space quantization and refraction GPU function graph." We achieve correct view sorting of transparent mesh rendering via forced depth buffer writes. For Unity (URP); the instruction set + logic is engine-agnostic.
 Samples may be found bundled with the complimentary CD-ROM and archival 3.5" high-density floppy disk affixed to the interior rear sleeve of GPU Guards (1989, 65th Anniversary Commemorative Retroactive Pre-Release Edition).
+
+# // Features
+
+# // Bugs

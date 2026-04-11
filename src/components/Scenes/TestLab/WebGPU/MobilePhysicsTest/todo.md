@@ -11,3 +11,9 @@
 - [x] Update popover to handle both mobile and desktop. Allow decline on mobile. Mention click to set gravity. Dont mention device orientation on desktop. Remove bit about localhost/https.
 - [x] Fix device orientation on iPad.
 - [x] Add a Bret and a reversal inside a glass ball like quinns dice pointer, with spehere collider
+
+# // Intent/Use Cases
+
+# // Features
+
+# // Bugs

@@ -24,3 +24,9 @@
 - [x] Add a preset for each halo type Default Rings, Gradient Rings, Atomic, Network, Record, Plate, in /presets
 - [x] Add Halo Scroll mode to switch between the 6 halo presets we currently have.
 - [x] Fix control layout
+
+# // Intent/Use Cases
+
+# // Features
+
+# // Bugs

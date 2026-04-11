@@ -37,3 +37,9 @@ Best setup will likely be:
 
 - [ ] torus knot
 - [ ] Intersecting cube wireframes
+
+# // Intent/Use Cases
+
+# // Features
+
+# // Bugs

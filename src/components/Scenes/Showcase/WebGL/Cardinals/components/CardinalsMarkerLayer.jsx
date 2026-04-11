@@ -7,89 +7,144 @@ import { useFrame } from '@react-three/fiber';
 
 import { squareWorldSize, uvToWorld } from '../utils/markerUtils';
 
+const DEG_TO_RAD = Math.PI / 180;
+
+// ---------------------------------------------------------------------------
+// Geometry builders
+// ---------------------------------------------------------------------------
+
+/**
+ * Builds an axis-aligned square ring ShapeGeometry (outer square minus inner
+ * square hole). `size` is the outer side length; `lineThickness` is the border
+ * width in the same world units.
+ */
+function makeSquareRingGeometry(size, lineThickness) {
+  const h = size / 2;
+  const innerH = Math.max(0, h - lineThickness);
+
+  const shape = new THREE.Shape();
+  shape.moveTo(-h, -h);
+  shape.lineTo(h, -h);
+  shape.lineTo(h, h);
+  shape.lineTo(-h, h);
+  shape.closePath();
+
+  if (innerH > 0) {
+    const hole = new THREE.Path();
+    hole.moveTo(-innerH, -innerH);
+    hole.lineTo(innerH, -innerH);
+    hole.lineTo(innerH, innerH);
+    hole.lineTo(-innerH, innerH);
+    hole.closePath();
+    shape.holes.push(hole);
+  }
+
+  return new THREE.ShapeGeometry(shape);
+}
+
 // ---------------------------------------------------------------------------
 // Primitives
 // ---------------------------------------------------------------------------
 
-function makeOutlineGeometry(size) {
-  const h = size / 2;
-  const verts = new Float32Array([
-    -h,
-    -h,
-    0,
-    h,
-    -h,
-    0,
-    h,
-    -h,
-    0,
-    h,
-    h,
-    0,
-    h,
-    h,
-    0,
-    -h,
-    h,
-    0,
-    -h,
-    h,
-    0,
-    -h,
-    -h,
-    0,
-  ]);
-  const geo = new THREE.BufferGeometry();
-  geo.setAttribute('position', new THREE.BufferAttribute(verts, 3));
-  return geo;
-}
-
 /**
- * Axis-aligned outlined square. Accepts a ref to the underlying LineSegments
- * for imperative position updates in useFrame.
+ * Axis-aligned filled square.
  */
-const OutlineSquare = forwardRef(function OutlineSquare(
-  { position, size, color },
+const FilledSquare = forwardRef(function FilledSquare(
+  { position, size, color, extraRotation = 0 },
   ref
 ) {
-  const obj = useMemo(() => {
-    const geo = makeOutlineGeometry(size);
-    const mat = new THREE.LineBasicMaterial({ color });
-    return new THREE.LineSegments(geo, mat);
-  }, [size, color]);
+  return (
+    <mesh ref={ref} position={position} rotation-z={extraRotation}>
+      <planeGeometry args={[size, size]} />
+      <meshBasicMaterial color={color} />
+    </mesh>
+  );
+});
+
+/**
+ * Axis-aligned outlined square rendered as a mesh ring (outer minus inner
+ * square). Uses ShapeGeometry so lineThickness is a real world-unit value,
+ * not a WebGL linewidth (which is capped at 1 px on most GPUs).
+ */
+const OutlinedSquare = forwardRef(function OutlinedSquare(
+  { position, size, color, lineThickness, extraRotation = 0 },
+  ref
+) {
+  const thickness = lineThickness ?? size * 0.15;
+
+  const geo = useMemo(
+    () => makeSquareRingGeometry(size, thickness),
+    [size, thickness]
+  );
 
   useEffect(() => {
-    return () => {
-      obj.geometry.dispose();
-      obj.material.dispose();
-    };
-  }, [obj]);
+    return () => geo.dispose();
+  }, [geo]);
 
-  return <primitive ref={ref} object={obj} position={position} />;
+  return (
+    <mesh
+      ref={ref}
+      position={position}
+      rotation-z={extraRotation}
+      geometry={geo}
+    >
+      <meshBasicMaterial color={color} />
+    </mesh>
+  );
 });
 
 // ---------------------------------------------------------------------------
 // Moving auto-pointer square — updates position each frame from the ref
 // ---------------------------------------------------------------------------
 
-function AutoPointerSquare({ index, autoPointersRef, viewport, size, color }) {
+function AutoPointerSquare({
+  index,
+  autoPointersRef,
+  viewport,
+  size,
+  color,
+  fill,
+  lineThickness,
+  rotation,
+}) {
   const objRef = useRef();
 
   useFrame(() => {
     const ap = autoPointersRef.current?.[index];
     if (ap && objRef.current) {
       const [x, y] = uvToWorld(ap.x, ap.y, viewport);
-      objRef.current.position.set(x, y, 0.11);
+      // Offset z-depth slightly to prevent z-fighting between fill/outline
+      const zDepth = fill ? 0.111 : 0.112;
+      objRef.current.position.set(x, y, zDepth);
     }
   });
 
   const initPos = useMemo(() => {
     const start = autoPointersRef.current?.[index];
     return uvToWorld(start?.x ?? 0.5, start?.y ?? 0.5, viewport);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
+  if (fill) {
+    return (
+      <FilledSquare
+        ref={objRef}
+        position={initPos}
+        size={size}
+        color={color}
+        extraRotation={rotation}
+      />
+    );
+  }
   return (
-    <OutlineSquare ref={objRef} position={initPos} size={size} color={color} />
+    <OutlinedSquare
+      ref={objRef}
+      position={initPos}
+      size={size}
+      color={color}
+      lineThickness={lineThickness}
+      extraRotation={rotation}
+    />
   );
 }
 
@@ -97,7 +152,15 @@ function AutoPointerSquare({ index, autoPointersRef, viewport, size, color }) {
 // Cursor square — tracks the pointer ref each frame
 // ---------------------------------------------------------------------------
 
-function CursorSquare({ pointerRef, viewport, size, color }) {
+function CursorSquare({
+  pointerRef,
+  viewport,
+  size,
+  color,
+  fill,
+  lineThickness,
+  rotation,
+}) {
   const objRef = useRef();
 
   useFrame(() => {
@@ -111,13 +174,25 @@ function CursorSquare({ pointerRef, viewport, size, color }) {
       objRef.current.visible = false;
     }
   });
-
+  if (fill) {
+    return (
+      <FilledSquare
+        ref={objRef}
+        position={[0, 0, 0.121]}
+        size={size}
+        color={color}
+        extraRotation={rotation}
+      />
+    );
+  }
   return (
-    <OutlineSquare
+    <OutlinedSquare
       ref={objRef}
-      position={[0, 0, 0.12]}
+      position={[0, 0, 0.122]}
       size={size}
       color={color}
+      lineThickness={lineThickness}
+      extraRotation={rotation}
     />
   );
 }
@@ -128,9 +203,11 @@ function CursorSquare({ pointerRef, viewport, size, color }) {
 
 /**
  * Renders all Cardinals markers as scene geometry:
- *   - Static outlined squares at the 4 corner auto-splat start positions
- *   - Moving outlined squares tracking the current auto-pointer positions
- *   - A cursor square that follows the mouse pointer
+ *   - Moving outlined/filled squares tracking each auto-pointer's position
+ *   - A cursor square that follows the mouse/hand pointer
+ *
+ * All debug visual controls (fill, rotation, line weight, color) from
+ * fluidConfig are wired through to the geometry primitives.
  */
 export default function CardinalsMarkerLayer({
   fluidConfig,
@@ -138,33 +215,56 @@ export default function CardinalsMarkerLayer({
   autoPointersRef,
   pointerRef,
 }) {
+  // — Auto-pointer marker controls —
   const autoSize = squareWorldSize(fluidConfig.debugAutoWidth, viewport);
-  const pointerSize = squareWorldSize(fluidConfig.debugPointerWidth, viewport);
+  // Line weight is a percentage of marker size, not viewport size.
+  const autoLineThickness =
+    autoSize * ((fluidConfig.debugAutoLineWeight ?? 2) / 100);
+  const autoFill = !!fluidConfig.debugAutoFill;
+  const autoRotation = (fluidConfig.debugAutoRotation ?? 0) * DEG_TO_RAD;
   const autoColor = fluidConfig.debugAutoColor;
+  const autoVisible = !!fluidConfig.debugAutoSplat;
+
+  // — Cursor marker controls —
+  const pointerSize = squareWorldSize(fluidConfig.debugPointerWidth, viewport);
+  // Line weight is a percentage of marker size, not viewport size.
+  const pointerLineThickness =
+    pointerSize * ((fluidConfig.debugPointerLineWeight ?? 2) / 100);
+  const pointerFill = !!fluidConfig.debugPointerFill;
+  const pointerRotation = (fluidConfig.debugPointerRotation ?? 0) * DEG_TO_RAD;
   const pointerColor = fluidConfig.debugPointerColor;
+  const pointerVisible = !!fluidConfig.debugCursor;
+
   const starts = fluidConfig.autoSplatStarts ?? [];
 
   return (
     <>
-      {/* Moving markers tracking each auto-pointer's current position */}
-      {starts.map((_, i) => (
-        <AutoPointerSquare
-          key={`auto-${i}`}
-          index={i}
-          autoPointersRef={autoPointersRef}
-          viewport={viewport}
-          size={autoSize}
-          color={autoColor}
-        />
-      ))}
+      {autoVisible &&
+        starts.map((_, i) => (
+          <AutoPointerSquare
+            key={`auto-${i}`}
+            index={i}
+            autoPointersRef={autoPointersRef}
+            viewport={viewport}
+            size={autoSize}
+            color={autoColor}
+            fill={autoFill}
+            lineThickness={autoLineThickness}
+            rotation={autoRotation}
+          />
+        ))}
 
-      {/* Cursor indicator */}
-      <CursorSquare
-        pointerRef={pointerRef}
-        viewport={viewport}
-        size={pointerSize}
-        color={pointerColor}
-      />
+      {pointerVisible && (
+        <CursorSquare
+          pointerRef={pointerRef}
+          viewport={viewport}
+          size={pointerSize}
+          color={pointerColor}
+          fill={pointerFill}
+          lineThickness={pointerLineThickness}
+          rotation={pointerRotation}
+        />
+      )}
     </>
   );
 }

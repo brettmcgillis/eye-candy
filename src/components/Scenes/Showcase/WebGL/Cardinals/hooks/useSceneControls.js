@@ -198,6 +198,7 @@ function getPresetControls({ presetSnapshot, currentControls }) {
     splatForce: p.splatForce ?? 4200,
     splatRadius: p.splatRadius ?? 0.0022,
     debugCursor: p.debugCursor ?? false,
+    debugAutoSplat: p.debugAutoSplat ?? false,
     autoSplat: p.autoSplat ?? true,
     autoSplatStrength: p.autoSplatStrength ?? 0.24,
     autoSplatDyeStrength: p.autoSplatDyeStrength ?? 0.24,

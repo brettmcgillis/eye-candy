@@ -98,7 +98,7 @@ function injectPngMetadata(pngBytes, metadata) {
   return out;
 }
 
-async function captureScreenshot(name = 'screenshot') {
+async function captureScreenshot(name, sceneName) {
   const { default: html2canvas } = await import('html2canvas');
   const canvas = await html2canvas(document.body, {
     useCORS: true,
@@ -114,7 +114,7 @@ async function captureScreenshot(name = 'screenshot') {
       const enriched = injectPngMetadata(new Uint8Array(arrayBuffer), {
         Artist: 'Brett McGillis',
         Copyright: `\u00a9 ${new Date().getFullYear()} Brett McGillis`,
-        Scene: name,
+        Scene: sceneName,
         Software: 'eye-candy',
         Instagram: '@ruinedpaintings',
         'Creation Time': new Date().toISOString(),
@@ -141,20 +141,23 @@ function isMobileDevice() {
   return /iP(hone|ad|od)|Android/.test(navigator.userAgent);
 }
 
-export default function useScreenshotControls() {
-  const nameRef = useRef('screenshot');
+export default function useScreenshotControls({ sceneName, presetNameRef }) {
+  const defaultName = presetNameRef?.current
+    ? `${sceneName} - ${presetNameRef.current}`
+    : sceneName;
+  const nameRef = useRef(defaultName);
 
   useControls(
     'Screenshot',
     {
       name: {
         label: 'filename',
-        value: 'screenshot',
+        value: defaultName,
         onChange: (v) => {
           nameRef.current = v;
         },
       },
-      png: button(() => captureScreenshot(nameRef.current)),
+      png: button(() => captureScreenshot(nameRef.current, sceneName)),
     },
     { collapsed: true, render: () => !isMobileDevice() }
   );
@@ -164,7 +167,7 @@ export default function useScreenshotControls() {
     const handleKeyDown = (e) => {
       if (e.shiftKey && e.key === 'S') {
         e.preventDefault();
-        captureScreenshot(nameRef.current);
+        captureScreenshot(nameRef.current, sceneName);
       }
     };
     window.addEventListener('keydown', handleKeyDown);

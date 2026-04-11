@@ -1,97 +1,18 @@
 /* eslint-disable react/no-array-index-key */
-import * as THREE from 'three';
-
-import React, { forwardRef, useEffect, useMemo, useRef } from 'react';
+import React, { useMemo, useRef } from 'react';
 
 import { useFrame } from '@react-three/fiber';
 
-import { squareWorldSize, uvToWorld } from '../utils/markerUtils';
+import {
+  FilledSquare,
+  OutlinedSquare,
+} from '../../../../../elements/marker/MarkerSquare';
+import {
+  squareWorldSize,
+  uvToWorld,
+} from '../../../../../elements/marker/markerUtils';
 
 const DEG_TO_RAD = Math.PI / 180;
-
-// ---------------------------------------------------------------------------
-// Geometry builders
-// ---------------------------------------------------------------------------
-
-/**
- * Builds an axis-aligned square ring ShapeGeometry (outer square minus inner
- * square hole). `size` is the outer side length; `lineThickness` is the border
- * width in the same world units.
- */
-function makeSquareRingGeometry(size, lineThickness) {
-  const h = size / 2;
-  const innerH = Math.max(0, h - lineThickness);
-
-  const shape = new THREE.Shape();
-  shape.moveTo(-h, -h);
-  shape.lineTo(h, -h);
-  shape.lineTo(h, h);
-  shape.lineTo(-h, h);
-  shape.closePath();
-
-  if (innerH > 0) {
-    const hole = new THREE.Path();
-    hole.moveTo(-innerH, -innerH);
-    hole.lineTo(innerH, -innerH);
-    hole.lineTo(innerH, innerH);
-    hole.lineTo(-innerH, innerH);
-    hole.closePath();
-    shape.holes.push(hole);
-  }
-
-  return new THREE.ShapeGeometry(shape);
-}
-
-// ---------------------------------------------------------------------------
-// Primitives
-// ---------------------------------------------------------------------------
-
-/**
- * Axis-aligned filled square.
- */
-const FilledSquare = forwardRef(function FilledSquare(
-  { position, size, color, extraRotation = 0 },
-  ref
-) {
-  return (
-    <mesh ref={ref} position={position} rotation-z={extraRotation}>
-      <planeGeometry args={[size, size]} />
-      <meshBasicMaterial color={color} />
-    </mesh>
-  );
-});
-
-/**
- * Axis-aligned outlined square rendered as a mesh ring (outer minus inner
- * square). Uses ShapeGeometry so lineThickness is a real world-unit value,
- * not a WebGL linewidth (which is capped at 1 px on most GPUs).
- */
-const OutlinedSquare = forwardRef(function OutlinedSquare(
-  { position, size, color, lineThickness, extraRotation = 0 },
-  ref
-) {
-  const thickness = lineThickness ?? size * 0.15;
-
-  const geo = useMemo(
-    () => makeSquareRingGeometry(size, thickness),
-    [size, thickness]
-  );
-
-  useEffect(() => {
-    return () => geo.dispose();
-  }, [geo]);
-
-  return (
-    <mesh
-      ref={ref}
-      position={position}
-      rotation-z={extraRotation}
-      geometry={geo}
-    >
-      <meshBasicMaterial color={color} />
-    </mesh>
-  );
-});
 
 // ---------------------------------------------------------------------------
 // Moving auto-pointer square — updates position each frame from the ref

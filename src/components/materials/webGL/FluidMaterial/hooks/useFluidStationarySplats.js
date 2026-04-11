@@ -2,7 +2,7 @@ import * as THREE from 'three';
 
 import { useEffect, useRef } from 'react';
 
-import { MAX_STATIONARY_SPLATS } from '../../../../../materials/webGL/FluidMaterial/utils/constants';
+import { MAX_STATIONARY_SPLATS } from '../utils/constants';
 
 function clamp01(value, fallback = 0.5) {
   if (Number.isFinite(value)) {

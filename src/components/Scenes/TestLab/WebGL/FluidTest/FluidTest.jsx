@@ -9,158 +9,24 @@ import {
 } from '@react-three/drei';
 import { useFrame, useThree } from '@react-three/fiber';
 
-import useHandGestureEvents from '../../../../../hooks/hands/useHandGestureEvents';
-import useHandControls, {
-  mapWorldToScreenUv,
-} from '../../../../../hooks/hands/useHandcontrols';
-import useMediaPipeHands from '../../../../../hooks/hands/useMediaPipeHands';
+import { makeRectRingGeometry } from '../../../../elements/marker/MarkerSquare';
+import FluidHandsBridge from '../../../../hands/FluidHandsBridge';
 import FluidMaterial from '../../../../materials/webGL/FluidMaterial/FluidMaterial';
+import useFluidAutoPointers from '../../../../materials/webGL/FluidMaterial/hooks/useFluidAutoPointers';
+import { clamp01 } from '../../../../materials/webGL/FluidMaterial/hooks/useFluidControlHelpers';
+import useFluidHandsConfig from '../../../../materials/webGL/FluidMaterial/hooks/useFluidHandsConfig';
+import useFluidPointerInput from '../../../../materials/webGL/FluidMaterial/hooks/useFluidPointerInput';
+import useFluidRandomSplats from '../../../../materials/webGL/FluidMaterial/hooks/useFluidRandomSplats';
+import useFluidStationarySplats from '../../../../materials/webGL/FluidMaterial/hooks/useFluidStationarySplats';
 import {
   DEBUG_CONTACT_CAP,
   DEBUG_CONTACT_TTL_DEFAULT,
   DEBUG_POINTER_CAP,
   MAX_RANDOM_SPLATS,
 } from '../../../../materials/webGL/FluidMaterial/utils/constants';
-import useFluidAutoPointers from './hooks/useFluidAutoPointers';
 import useFluidControls from './hooks/useFluidControls';
-import useFluidPointerInput from './hooks/useFluidPointerInput';
-import useFluidRandomSplats from './hooks/useFluidRandomSplats';
-import useFluidStationarySplats from './hooks/useFluidStationarySplats';
 
-const GESTURE_BURST_COOLDOWN_MS = 350;
 const DEG_TO_RAD = Math.PI / 180;
-
-function FluidHandsPointerBridge({
-  onPointerChange,
-  onGestureBurst,
-  size,
-  mediaPipeConfig,
-  handControlConfig,
-  invertX,
-  invertY,
-  gesturesEnabled,
-}) {
-  const previousByHandRef = useRef(new Map());
-  const lastGestureBurstRef = useRef(0);
-
-  const handResults = useMediaPipeHands(mediaPipeConfig);
-  const hands = useHandControls(handResults, handControlConfig);
-
-  useHandGestureEvents(hands, {
-    onGestureStart: (gesture) => {
-      if (!gesturesEnabled || gesture === 'IDLE' || !onGestureBurst) return;
-
-      const now = Date.now();
-      if (now - lastGestureBurstRef.current < GESTURE_BURST_COOLDOWN_MS) {
-        return;
-      }
-
-      lastGestureBurstRef.current = now;
-      onGestureBurst(gesture);
-    },
-  });
-
-  useEffect(() => {
-    const handList = hands?.hands || [];
-
-    if (handList.length === 0) {
-      previousByHandRef.current.clear();
-      onPointerChange(null);
-      return;
-    }
-
-    const maxHands = Math.max(1, Math.floor(handControlConfig.maxHands || 1));
-    const activeHands = handList.slice(0, maxHands);
-    const nextPrevByHand = new Map();
-    const nextPointers = [];
-
-    for (let i = 0; i < activeHands.length; i += 1) {
-      const hand = activeHands[i];
-      if (hand?.position) {
-        const mapped = mapWorldToScreenUv(hand.position, {
-          xScale: handControlConfig.xScale || 4,
-          yScale: handControlConfig.yScale || 3,
-          mirrorX: false,
-          mirrorY: true,
-        });
-        const targetX = invertX ? 1 - mapped.x : mapped.x;
-        const targetY = invertY ? 1 - mapped.y : mapped.y;
-        const prev = previousByHandRef.current.get(hand.index);
-
-        const x = prev ? THREE.MathUtils.lerp(prev.x, targetX, 0.35) : targetX;
-        const y = prev ? THREE.MathUtils.lerp(prev.y, targetY, 0.35) : targetY;
-
-        let vx = prev ? x - prev.x : 0;
-        let vy = prev ? y - prev.y : 0;
-
-        if (size.width > size.height) {
-          vx *= size.width / Math.max(1, size.height);
-        } else {
-          vy *= size.height / Math.max(1, size.width);
-        }
-
-        nextPointers.push({ x, y, vx, vy, down: true });
-        nextPrevByHand.set(hand.index, { x, y });
-      }
-    }
-
-    previousByHandRef.current = nextPrevByHand;
-    onPointerChange(nextPointers.length > 0 ? nextPointers : null);
-  }, [
-    handControlConfig.maxHands,
-    handControlConfig.xScale,
-    handControlConfig.yScale,
-    hands,
-    invertX,
-    invertY,
-    onPointerChange,
-    size.height,
-    size.width,
-  ]);
-
-  useEffect(
-    () => () => {
-      previousByHandRef.current.clear();
-      onPointerChange(null);
-    },
-    [onPointerChange]
-  );
-
-  return null;
-}
-
-function clamp01(value, fallback = 0.5) {
-  if (Number.isFinite(value)) {
-    return THREE.MathUtils.clamp(value, 0, 1);
-  }
-  return fallback;
-}
-
-function makeRectRingGeometry(width, height, thickness) {
-  const halfW = width * 0.5;
-  const halfH = height * 0.5;
-  const innerHalfW = Math.max(0, halfW - thickness);
-  const innerHalfH = Math.max(0, halfH - thickness);
-
-  const shape = new THREE.Shape();
-  shape.moveTo(-halfW, -halfH);
-  shape.lineTo(halfW, -halfH);
-  shape.lineTo(halfW, halfH);
-  shape.lineTo(-halfW, halfH);
-  shape.closePath();
-
-  if (innerHalfW > 0 && innerHalfH > 0) {
-    const hole = new THREE.Path();
-    hole.moveTo(-innerHalfW, -innerHalfH);
-    hole.lineTo(innerHalfW, -innerHalfH);
-    hole.lineTo(innerHalfW, innerHalfH);
-    hole.lineTo(-innerHalfW, innerHalfH);
-    hole.closePath();
-    shape.holes.push(hole);
-  }
-
-  return new THREE.ShapeGeometry(shape);
-}
 
 function uvToWorldPosition(u, v, viewport, using3D) {
   const safeU = clamp01(u);
@@ -497,51 +363,8 @@ function FluidTestbed() {
     pointerEvents,
   });
 
-  const mediaPipeConfig = useMemo(
-    () => ({
-      maxHands: fluidValues.handsMaxHands || 1,
-      modelComplexity: fluidValues.handsModelComplexity || 1,
-      minDetectionConfidence: fluidValues.handsMinDetectionConfidence || 0.6,
-      minTrackingConfidence: fluidValues.handsMinTrackingConfidence || 0.6,
-      showVideo: !!fluidValues.handsShowVideo,
-      showDebugSkeleton: !!fluidValues.handsShowDebugSkeleton,
-      landmarkStyle: {
-        color: fluidValues.handsLandmarkColor || '#ff0000',
-        radius: fluidValues.handsLandmarkRadius || 4,
-      },
-      connectorStyle: {
-        color: fluidValues.handsConnectorColor || '#000000',
-        lineWidth: fluidValues.handsConnectorLineWidth || 3,
-      },
-    }),
-    [
-      fluidValues.handsConnectorColor,
-      fluidValues.handsConnectorLineWidth,
-      fluidValues.handsLandmarkColor,
-      fluidValues.handsLandmarkRadius,
-      fluidValues.handsMaxHands,
-      fluidValues.handsMinDetectionConfidence,
-      fluidValues.handsMinTrackingConfidence,
-      fluidValues.handsModelComplexity,
-      fluidValues.handsShowDebugSkeleton,
-      fluidValues.handsShowVideo,
-    ]
-  );
-
-  const handControlConfig = useMemo(
-    () => ({
-      maxHands: fluidValues.handsMaxHands || 1,
-      xScale: fluidValues.handsXScale || 4,
-      yScale: fluidValues.handsYScale || 3,
-      zScale: fluidValues.handsZScale || 5,
-    }),
-    [
-      fluidValues.handsMaxHands,
-      fluidValues.handsXScale,
-      fluidValues.handsYScale,
-      fluidValues.handsZScale,
-    ]
-  );
+  const { mediaPipeConfig, handControlConfig } =
+    useFluidHandsConfig(fluidValues);
 
   const inputMode = fluidValues.inputMode || 'pointer';
   const usingHands = inputMode === 'hands';
@@ -610,7 +433,7 @@ function FluidTestbed() {
         <OrthographicCamera makeDefault position={[0, 0, 10]} />
       )}
       {usingHands && (
-        <FluidHandsPointerBridge
+        <FluidHandsBridge
           gesturesEnabled={!!fluidValues.gesturesEnabled}
           handControlConfig={handControlConfig}
           invertX={!!fluidValues.handsInvertX}

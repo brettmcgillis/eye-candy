@@ -1,29 +1,43 @@
 /* eslint-disable react/no-array-index-key */
 import React from 'react';
 
-import { markerWorldSize, uvToConstrainedWorld } from '../utils/markerUtils';
-import { FilledSquare, OutlinedSquare } from './SquareMarker';
+import {
+  FilledSquare,
+  OutlinedSquare,
+} from '../../../../../elements/marker/MarkerSquare';
+import {
+  markerWorldSize,
+  uvToConstrainedWorld,
+} from '../../../../../elements/marker/markerUtils';
 
 const DEG_TO_RAD = Math.PI / 180;
 
 export default function WatercolorMarkerLayer({ fluidConfig, viewport }) {
   // — Splat (outlined) controls —
-  const splatSize = markerWorldSize(fluidConfig.debugStationarySplatWidth, viewport);
+  const splatSize = markerWorldSize(
+    fluidConfig.debugStationarySplatWidth,
+    viewport
+  );
   const splatThickness = markerWorldSize(
     (fluidConfig.debugStationarySplatLineWeight ?? 2) / 100,
     viewport
   );
   const splatFill = !!fluidConfig.debugStationarySplatFill;
-  const splatRotation = (fluidConfig.debugStationarySplatRotation ?? 0) * DEG_TO_RAD;
+  const splatRotation =
+    (fluidConfig.debugStationarySplatRotation ?? 0) * DEG_TO_RAD;
 
   // — Marker (filled) controls —
-  const markerSize = markerWorldSize(fluidConfig.debugStationaryMarkerWidth, viewport);
+  const markerSize = markerWorldSize(
+    fluidConfig.debugStationaryMarkerWidth,
+    viewport
+  );
   const markerThickness = markerWorldSize(
     (fluidConfig.debugStationaryMarkerLineWeight ?? 2) / 100,
     viewport
   );
   const markerFill = fluidConfig.debugStationaryMarkerFill !== false;
-  const markerRotation = (fluidConfig.debugStationaryMarkerRotation ?? 0) * DEG_TO_RAD;
+  const markerRotation =
+    (fluidConfig.debugStationaryMarkerRotation ?? 0) * DEG_TO_RAD;
   const markersVisible = fluidConfig.stationaryDebugMarkersEnabled !== false;
 
   return (

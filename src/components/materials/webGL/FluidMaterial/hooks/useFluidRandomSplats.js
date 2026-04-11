@@ -2,7 +2,7 @@ import { useRef } from 'react';
 
 import { useFrame } from '@react-three/fiber';
 
-import { MAX_RANDOM_SPLATS } from '../../../../../materials/webGL/FluidMaterial/utils/constants';
+import { MAX_RANDOM_SPLATS } from '../utils/constants';
 
 export default function useFluidRandomSplats({ config, randomSplatQueueRef }) {
   const randomSplatsRef = useRef([]);

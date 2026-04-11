@@ -7,176 +7,22 @@ import { useEffect, useMemo, useState } from 'react';
 
 import usePresetsFolder from '../../../../../../hooks/usePresetsFolder';
 import {
-  MAX_AUTO_SPLATS,
-  MAX_RANDOM_SPLATS,
-  MAX_STATIONARY_SPLATS,
-} from '../../../../../materials/webGL/FluidMaterial/utils/constants';
+  buildAutoSplatStartControls,
+  buildStationaryDebugMarkerControls,
+  buildStationarySplatControls,
+  clampAutoSplatCount,
+  clampStationaryDebugMarkerCount,
+  clampStationarySplatCount,
+  getAutoSplatStartsFromPreset,
+  getStationaryDebugMarkersFromPreset,
+  getStationarySplatsFromPreset,
+  notifyArrayUpdate,
+  rndPos,
+} from '../../../../../materials/webGL/FluidMaterial/hooks/useFluidControlHelpers';
+import { MAX_RANDOM_SPLATS } from '../../../../../materials/webGL/FluidMaterial/utils/constants';
 import { DEFAULT_PRESET, WATERCOLOR_SQUARES_PRESETS } from '../presets/presets';
 
-// ─── helpers ────────────────────────────────────────────────────────────────
-
-function clamp01(v, fallback = 0.5) {
-  return Number.isFinite(v) ? Math.max(0, Math.min(1, v)) : fallback;
-}
-function clampStationarySplatCount(v) {
-  return Number.isFinite(v)
-    ? Math.max(0, Math.min(MAX_STATIONARY_SPLATS, Math.floor(v)))
-    : 0;
-}
-function clampStationaryDebugMarkerCount(v) {
-  return Number.isFinite(v)
-    ? Math.max(0, Math.min(MAX_STATIONARY_SPLATS, Math.floor(v)))
-    : 0;
-}
-function clampAutoSplatCount(v) {
-  return Number.isFinite(v)
-    ? Math.max(1, Math.min(MAX_AUTO_SPLATS, Math.floor(v)))
-    : 1;
-}
-function rndPos() {
-  return { x: 0.1 + Math.random() * 0.8, y: 0.1 + Math.random() * 0.8 };
-}
-
-function normalizeFromPreset(arr, count, fallback = rndPos) {
-  const out = [];
-  for (let i = 0; i < count; i += 1) {
-    const pt = arr?.[i];
-    out.push(pt ? { x: clamp01(pt.x), y: clamp01(pt.y) } : fallback());
-  }
-  return out;
-}
-
-function getAutoSplatStartsFromPreset(p) {
-  const count = clampAutoSplatCount(
-    p?.autoSplatCount ?? p?.autoSplatStarts?.length
-  );
-  return normalizeFromPreset(p?.autoSplatStarts, count);
-}
-function getStationarySplatsFromPreset(p) {
-  const count = clampStationarySplatCount(
-    p?.stationarySplatCount ?? p?.stationarySplats?.length
-  );
-  return normalizeFromPreset(p?.stationarySplats, count);
-}
-function getStationaryDebugMarkersFromPreset(p) {
-  const count = clampStationaryDebugMarkerCount(
-    p?.stationaryDebugMarkerCount ??
-      p?.stationaryDebugMarkers?.length ??
-      p?.stationarySplatCount
-  );
-  const arr = p?.stationaryDebugMarkers ?? p?.stationarySplats;
-  return normalizeFromPreset(arr, count);
-}
-
-function autoSplatKey(i) {
-  return `autoSplat${i + 1}StartPos`;
-}
-function stationarySplatKey(i) {
-  return `stationarySplat${i + 1}Pos`;
-}
-function stationaryDebugMarkerKey(i) {
-  return `stationaryDebugMarker${i + 1}Pos`;
-}
-
-function buildAutoSplatStartControls(starts, setStarts) {
-  const out = {};
-  for (let i = 0; i < MAX_AUTO_SPLATS; i += 1) {
-    const pt = starts[i] || { x: 0.5, y: 0.5 };
-    out[autoSplatKey(i)] = {
-      label: `A${i + 1} Pos`,
-      value: { x: clamp01(pt.x), y: clamp01(pt.y) },
-      min: 0,
-      max: 1,
-      step: 0.001,
-      render: (get) => {
-        const count = clampAutoSplatCount(
-          get('Watercolor Squares.Interaction.AutoSplats.autoSplatCount')
-        );
-        return i < count;
-      },
-      onChange: (next) => {
-        setStarts((prev) => {
-          if (!prev[i]) return prev;
-          const nx = clamp01(next?.x);
-          const ny = clamp01(next?.y);
-          if (prev[i].x === nx && prev[i].y === ny) return prev;
-          const arr = [...prev];
-          arr[i] = { x: nx, y: ny };
-          return arr;
-        });
-      },
-    };
-  }
-  return out;
-}
-
-function buildStationarySplatControls(splats, setSplats) {
-  const out = {};
-  for (let i = 0; i < MAX_STATIONARY_SPLATS; i += 1) {
-    const pt = splats[i] || { x: 0.5, y: 0.5 };
-    out[stationarySplatKey(i)] = {
-      label: `S${i + 1} Pos`,
-      value: { x: clamp01(pt.x), y: clamp01(pt.y) },
-      min: 0,
-      max: 1,
-      step: 0.001,
-      render: (get) => {
-        const count = clampStationarySplatCount(
-          get(
-            'Watercolor Squares.Interaction.StationarySplats.stationarySplatCount'
-          )
-        );
-        return i < count;
-      },
-      onChange: (next) => {
-        setSplats((prev) => {
-          if (!prev[i]) return prev;
-          const nx = clamp01(next?.x);
-          const ny = clamp01(next?.y);
-          if (prev[i].x === nx && prev[i].y === ny) return prev;
-          const arr = [...prev];
-          arr[i] = { x: nx, y: ny };
-          return arr;
-        });
-      },
-    };
-  }
-  return out;
-}
-
-function buildStationaryDebugMarkerControls(markers, setMarkers) {
-  const out = {};
-  for (let i = 0; i < MAX_STATIONARY_SPLATS; i += 1) {
-    const pt = markers[i] || { x: 0.5, y: 0.5 };
-    out[stationaryDebugMarkerKey(i)] = {
-      label: `M${i + 1} Pos`,
-      value: { x: clamp01(pt.x), y: clamp01(pt.y) },
-      min: 0,
-      max: 1,
-      step: 0.001,
-      render: (get) => {
-        const count = clampStationaryDebugMarkerCount(
-          get(
-            'Watercolor Squares.Interaction.StationaryMarkers.stationaryDebugMarkerCount'
-          )
-        );
-        return i < count;
-      },
-      onChange: (next) => {
-        setMarkers((prev) => {
-          if (!prev[i]) return prev;
-          const nx = clamp01(next?.x);
-          const ny = clamp01(next?.y);
-          if (prev[i].x === nx && prev[i].y === ny) return prev;
-          const arr = [...prev];
-          arr[i] = { x: nx, y: ny };
-          return arr;
-        });
-      },
-    };
-  }
-  return out;
-}
+const SCENE_NAME = 'Watercolor Squares';
 
 // ─── hook ───────────────────────────────────────────────────────────────────
 
@@ -256,18 +102,6 @@ function getPresetControls({ presetSnapshot, currentControls }) {
     debugStationaryMarkerWidth: p.debugStationaryMarkerWidth ?? 0.05,
     debugStationaryMarkerHeight: p.debugStationaryMarkerHeight ?? 0.05,
   };
-}
-
-function notifyArrayUpdate(
-  setAutoSplatStarts,
-  setStationarySplats,
-  setStationaryDebugMarkers,
-  presetSnapshot
-) {
-  const p = presetSnapshot;
-  setAutoSplatStarts(getAutoSplatStartsFromPreset(p));
-  setStationarySplats(getStationarySplatsFromPreset(p));
-  setStationaryDebugMarkers(getStationaryDebugMarkersFromPreset(p));
 }
 
 export default function useSceneControls({ matRef, randomSplatQueueRef }) {
@@ -568,7 +402,8 @@ export default function useSceneControls({ matRef, randomSplatQueueRef }) {
               },
               ...buildAutoSplatStartControls(
                 autoSplatStarts,
-                setAutoSplatStarts
+                setAutoSplatStarts,
+                SCENE_NAME
               ),
               debugAutoSplat: {
                 label: 'Debug',
@@ -665,7 +500,8 @@ export default function useSceneControls({ matRef, randomSplatQueueRef }) {
               },
               ...buildStationarySplatControls(
                 stationarySplats,
-                setStationarySplats
+                setStationarySplats,
+                SCENE_NAME
               ),
               debugStationarySplat: {
                 label: 'Debug',
@@ -726,7 +562,8 @@ export default function useSceneControls({ matRef, randomSplatQueueRef }) {
               },
               ...buildStationaryDebugMarkerControls(
                 stationaryDebugMarkers,
-                setStationaryDebugMarkers
+                setStationaryDebugMarkers,
+                SCENE_NAME
               ),
               debugStationaryMarkerColor: {
                 label: 'Debug Color',

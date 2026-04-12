@@ -1,7 +1,5 @@
 import { folder, useControls } from 'leva';
 
-import { useEffect, useRef } from 'react';
-
 import useScreenshotControls from '../../../../../../app/scaffold/leva/useScreenshotControls';
 import usePresetsFolder from '../../../../../../hooks/usePresetsFolder';
 import getCandleFolder from '../components/useCandleControls';
@@ -14,8 +12,6 @@ function getPresetControls({ presetSnapshot }) {
 }
 
 export default function useSceneControls() {
-  const selectedPresetNameRef = useRef(DEFAULT_PRESET);
-
   const {
     attachSetControls,
     controlsSnapshotRef,
@@ -27,11 +23,6 @@ export default function useSceneControls() {
     getPresetControls,
     presets: SCENE_PRESETS,
   });
-
-  // keep a ref in sync with selectedPreset state for useScreenshotControls
-  useEffect(() => {
-    selectedPresetNameRef.current = selectedPreset;
-  }, [selectedPreset]);
 
   const [controls, setControls] = useControls(
     'Burning At Both Ends',
@@ -110,7 +101,7 @@ export default function useSceneControls() {
 
   useScreenshotControls({
     sceneName: 'Burning At Both Ends',
-    presetNameRef: selectedPresetNameRef,
+    presetName: selectedPreset,
   });
 
   return controls;

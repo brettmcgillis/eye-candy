@@ -141,10 +141,8 @@ function isMobileDevice() {
   return /iP(hone|ad|od)|Android/.test(navigator.userAgent);
 }
 
-export default function useScreenshotControls({ sceneName, presetNameRef }) {
-  const defaultName = presetNameRef?.current
-    ? `${sceneName} - ${presetNameRef.current}`
-    : sceneName;
+export default function useScreenshotControls({ sceneName, presetName }) {
+  const defaultName = presetName ? `${sceneName} - ${presetName}` : sceneName;
   const nameRef = useRef(defaultName);
 
   useControls(
@@ -161,6 +159,12 @@ export default function useScreenshotControls({ sceneName, presetNameRef }) {
     },
     { collapsed: true, render: () => !isMobileDevice() }
   );
+
+  // Update screenshot name when preset changes
+  useEffect(() => {
+    const newName = presetName ? `${sceneName} - ${presetName}` : sceneName;
+    nameRef.current = newName;
+  }, [presetName, sceneName]);
 
   // Hotkey: Shift+S — works even when Leva panel is hidden
   useEffect(() => {

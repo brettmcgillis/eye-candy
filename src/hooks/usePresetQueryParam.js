@@ -43,8 +43,7 @@ export function useSyncPresetQueryParam({
   }, [defaultPreset, presetValues, selectedPreset]);
 
   useEffect(() => {
-    // Keep default preset links clean by omitting the param at default.
-    const value = normalizedPreset === defaultPreset ? null : normalizedPreset;
-    writeQueryParam(paramKey, value);
-  }, [defaultPreset, normalizedPreset, paramKey]);
+    // Always persist the active preset so bookmarks remain stable if defaults change.
+    writeQueryParam(paramKey, normalizedPreset);
+  }, [normalizedPreset, paramKey]);
 }

@@ -44,7 +44,8 @@ export default function WatercolorMarkerLayer({ fluidConfig, viewport }) {
     ) * THICKNESS_CORRECTION;
   const markerFill = fluidConfig.debugStationaryMarkerFill !== false;
   const markerRotation =
-    (fluidConfig.debugStationaryMarkerRotation ?? 0) * DEG_TO_RAD + DIAMOND_TILT;
+    (fluidConfig.debugStationaryMarkerRotation ?? 0) * DEG_TO_RAD +
+    DIAMOND_TILT;
   const markersVisible = fluidConfig.stationaryDebugMarkersEnabled !== false;
 
   return (

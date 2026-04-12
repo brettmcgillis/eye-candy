@@ -1,68 +1,83 @@
 import * as THREE from 'three';
 
-import React, { useCallback, useMemo, useState } from 'react';
+import React, { useCallback, useMemo, useRef, useState } from 'react';
 
 import { OrbitControls, PerspectiveCamera } from '@react-three/drei';
 
+import FIRE_PRESETS from '../../../../../presets/fire/firePresets';
+import Attractors from '../../../../elements/attractors/Attractors';
 import Fireball from '../../../../elements/fireball/Fireball';
 import FireballSpline from '../../../../elements/fireball/FireballSpline';
 import Flame from '../../../../elements/flame/Flame';
 import GridBox from '../../../../elements/gridbox/GridBox';
 import SplineLine from '../../../../elements/spline/SplineLine';
 import SplinePoints from '../../../../elements/spline/SplinePoints';
+import SplineGroup from '../../../../elements/splineGroup/SplineGroup';
 import FireballVolume from '../../../../elements/volumetricFire/FireballVolume';
 import VolumetricFire from '../../../../elements/volumetricFire/VolumetricFire';
+import { parsePreset } from '../shared/splineDefaults';
 import useFireTestControls from './hooks/useFireTestControls';
 
-// ─── Default spline control points ───────────────────────────────────────────
-//
-// Positioned to the right of the standalone Fireball (which sits at x ≈ -500).
-// Scale is used as a per-point radius multiplier — scale(1) = baseRadius,
-// scale(2) = 2× baseRadius.  Switch the Leva transform to "scale" to resize
-// individual spheres, or "translate" to reshape the curve.
-
+// ─── Default FireballSpline control points ────────────────────────────────────
 const DEFAULT_SPLINE_POINTS = [
   {
-    position: new THREE.Vector3(-200, 0, 0),
+    position: new THREE.Vector3(-2, 0, 0),
     rotation: new THREE.Euler(),
     scale: new THREE.Vector3(1.0, 1.0, 1.0),
   },
   {
-    position: new THREE.Vector3(-200, 90, 0),
+    position: new THREE.Vector3(-2, 0.9, 0),
     rotation: new THREE.Euler(),
     scale: new THREE.Vector3(0.9, 0.9, 0.9),
   },
   {
-    position: new THREE.Vector3(-185, 180, 0),
+    position: new THREE.Vector3(-1.85, 1.8, 0),
     rotation: new THREE.Euler(),
     scale: new THREE.Vector3(1.0, 1.0, 1.0),
   },
   {
-    position: new THREE.Vector3(-175, 270, 10),
+    position: new THREE.Vector3(-1.75, 2.7, 0.1),
     rotation: new THREE.Euler(),
     scale: new THREE.Vector3(1.3, 1.3, 1.3),
   },
   {
-    position: new THREE.Vector3(-165, 360, 15),
+    position: new THREE.Vector3(-1.65, 3.6, 0.15),
     rotation: new THREE.Euler(),
     scale: new THREE.Vector3(1.6, 1.6, 1.6),
   },
   {
-    position: new THREE.Vector3(-155, 450, 20),
+    position: new THREE.Vector3(-1.55, 4.5, 0.2),
     rotation: new THREE.Euler(),
     scale: new THREE.Vector3(2.0, 2.0, 2.0),
   },
 ];
 
+const DEFAULT_PRESET_KEY = Object.keys(FIRE_PRESETS)[0];
+const { splines: DEFAULT_SPLINES } = parsePreset(
+  FIRE_PRESETS[DEFAULT_PRESET_KEY]
+);
+
 // ─── Component ───────────────────────────────────────────────────────────────
 
 export default function FireTest() {
-  const [splinePoints, setSplinePoints] = useState(DEFAULT_SPLINE_POINTS);
+  const [splines, setSplines] = useState(() => DEFAULT_SPLINES);
 
-  const config = useFireTestControls();
+  const setSplinePoints = useCallback((splineIndex, updater) => {
+    setSplines((prev) =>
+      prev.map((pts, i) => {
+        if (i !== splineIndex) return pts;
+        return typeof updater === 'function' ? updater(pts) : updater;
+      })
+    );
+  }, []);
 
-  // Convert SplinePoints state → FireballSpline controlPoints.
-  // pt.scale.x acts as a radius multiplier over the Leva "Base Radius".
+  const [splinePoints, setLegacySplinePoints] = useState(DEFAULT_SPLINE_POINTS);
+
+  const attractorsRef = useRef([]);
+
+  const config = useFireTestControls(splines, setSplines, attractorsRef);
+
+  // Legacy FireballSpline control points (scale.x = radius multiplier)
   const fireballControlPoints = useMemo(
     () =>
       splinePoints.map((pt) => ({
@@ -72,14 +87,13 @@ export default function FireTest() {
     [splinePoints, config.fireSpline.baseRadius]
   );
 
-  // Flat array of Vector3 positions for the SplineLine preview
   const splinePositions = useMemo(
     () => splinePoints.map((pt) => pt.position),
     [splinePoints]
   );
 
   const handleSetSplinePoints = useCallback((updater) => {
-    setSplinePoints((prev) =>
+    setLegacySplinePoints((prev) =>
       typeof updater === 'function' ? updater(prev) : updater
     );
   }, []);
@@ -90,15 +104,15 @@ export default function FireTest() {
 
       <PerspectiveCamera
         makeDefault
-        position={[0, 200, 800]}
+        position={[0, 2, 10]}
         fov={70}
-        near={1}
-        far={10000}
+        near={0.01}
+        far={1000}
       />
 
       <ambientLight intensity={3} color={0xf0f0f0} />
       <spotLight
-        position={[0, 1500, 200]}
+        position={[0, 15, 2]}
         angle={Math.PI * 0.2}
         intensity={4.5}
         decay={0}
@@ -112,10 +126,25 @@ export default function FireTest() {
 
       <OrbitControls makeDefault dampingFactor={0.2} />
 
+      {/* ── Multi-spline SplineGroups (fire types) ────────────────────────── */}
+      {/* eslint-disable react/no-array-index-key */}
+      {splines.map((points, index) => (
+        <SplineGroup
+          key={index}
+          index={index}
+          points={points}
+          config={config}
+          splineConfig={config.splineConfigs[index] ?? {}}
+          attractorsRef={attractorsRef}
+          setSplinePoints={setSplinePoints}
+        />
+      ))}
+      {/* eslint-enable react/no-array-index-key */}
+
       {/* ── Fireball (Perlin vertex-displacement sphere) ──────────────────── */}
       <Fireball {...config.fireball} />
 
-      {/* ── FireballSpline (variable-radius tube along spline) ────────────── */}
+      {/* ── FireballSpline (legacy standalone spline tube) ────────────────── */}
       <FireballSpline
         controlPoints={fireballControlPoints}
         tubularSegments={config.fireSpline.tubularSegments}
@@ -143,7 +172,7 @@ export default function FireTest() {
         setPoints={handleSetSplinePoints}
         visible={config.showSplinePoints}
         mode={config.pointMode}
-        pointSize={30}
+        pointSize={0.3}
       />
 
       {/* ── Flame (wispy billboard shader flame) ──────────────────────────── */}
@@ -156,6 +185,15 @@ export default function FireTest() {
 
       {/* ── FireballVolume (ray-marched spherical explosion) ──────────────── */}
       <FireballVolume {...config.fireballVolume} />
+
+      <Attractors
+        attractorsRef={attractorsRef}
+        mode={config.attractorMode}
+        visible={config.showAttractors}
+        radius={config.attractorRadius}
+        version={config.attractorVersion}
+        levaPrefix="Fire Test"
+      />
     </>
   );
 }

@@ -111,9 +111,11 @@ function Overlay() {
         </div>
       )}
 
-      <div className="bottom-left overlay-panel">
-        <ExternalLinks />
-      </div>
+      {!hideUI && (
+        <div className="bottom-left overlay-panel">
+          <ExternalLinks />
+        </div>
+      )}
 
       {!hideUI && (
         <div className="bottom-right overlay-panel">

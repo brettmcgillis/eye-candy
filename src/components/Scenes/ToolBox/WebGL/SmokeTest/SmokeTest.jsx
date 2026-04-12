@@ -6,33 +6,17 @@ import { OrbitControls, PerspectiveCamera } from '@react-three/drei';
 
 import SMOKE_PRESETS from '../../../../../presets/smoke/smokePresets';
 import Attractors from '../../../../elements/attractors/Attractors';
+import SplineGroup from '../../../../elements/splineGroup/SplineGroup';
 import GridBox from '../../../../elements/gridbox/GridBox';
 import SmokeBall from '../../../../elements/smokeball/SmokeBall';
 import SmokeBallSpline from '../../../../elements/smokeball/SmokeBallSpline';
 import SplineLine from '../../../../elements/spline/SplineLine';
 import SplinePoints from '../../../../elements/spline/SplinePoints';
-import SmokeSplineGroup from './components/SplineGroup';
 import useSmokeTestControls from './hooks/useSmokeTestControls';
+import { parsePreset } from '../shared/splineDefaults';
 
 const DEFAULT_PRESET_KEY = Object.keys(SMOKE_PRESETS)[0];
-const DEFAULT_PRESET = SMOKE_PRESETS[DEFAULT_PRESET_KEY];
-
-function toRuntimeSplinePoints(preset) {
-  let sourceSplines = [];
-  if (Array.isArray(preset?.splines)) {
-    sourceSplines = preset.splines;
-  } else if (preset?.points) {
-    sourceSplines = [preset];
-  }
-
-  return sourceSplines.map((spline) =>
-    spline.points.map((pt) => ({
-      position: pt.position.clone(),
-      rotation: pt.rotation.clone(),
-      scale: pt.scale ? pt.scale.clone() : new THREE.Vector3(1, 1, 1),
-    }))
-  );
-}
+const { splines: DEFAULT_SPLINES } = parsePreset(SMOKE_PRESETS[DEFAULT_PRESET_KEY]);
 
 // ─── Default SmokeBallSpline control points ──────────────────────────────────
 // Positioned to the left, near the standalone SmokeBall.
@@ -70,9 +54,7 @@ const DEFAULT_SMOKEBALL_SPLINE_POINTS = [
 ];
 
 export default function SmokeTest() {
-  const [splines, setSplines] = useState(() =>
-    toRuntimeSplinePoints(DEFAULT_PRESET)
-  );
+  const [splines, setSplines] = useState(() => DEFAULT_SPLINES);
 
   const setSplinePoints = useCallback((splineIndex, updater) => {
     setSplines((prev) =>
@@ -155,7 +137,7 @@ export default function SmokeTest() {
 
       {/* eslint-disable react/no-array-index-key */}
       {splines.map((points, index) => (
-        <SmokeSplineGroup
+        <SplineGroup
           key={index}
           index={index}
           points={points}

@@ -27,6 +27,7 @@ export default function Flame({
   position = [0, 0, 0],
   inverted = false,
   motion,
+  phaseOffset = 0,
 }) {
   const flameMotion = { ...DEFAULT_MOTION, ...motion };
   const groupRef = useRef();
@@ -40,7 +41,7 @@ export default function Flame({
   }, []);
 
   useFrame(({ clock }, delta) => {
-    const t = clock.getElapsedTime();
+    const t = clock.getElapsedTime() + phaseOffset;
     const speed =
       flameMotion.baseSpeed +
       Math.sin(t * flameMotion.slowFreq) * flameMotion.slowAmp +

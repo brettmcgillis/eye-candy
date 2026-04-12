@@ -1,13 +1,52 @@
-import { folder, useControls } from 'leva';
+import { button, folder, useControls } from 'leva';
+import * as THREE from 'three';
 
-import { useMemo } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 
-export default function useFireTestControls() {
+import FIRE_PRESETS from '../../../../../../presets/fire/firePresets';
+import { localEnv } from '../../../../../../utils/appUtils';
+import buildSplineGroupControls from '../../shared/hooks/useSplineGroupControls';
+import {
+  DEFAULT_SPLINE_CONFIG,
+  parsePreset,
+  serializeSplines,
+} from '../../shared/splineDefaults';
+
+const SCENE_LABEL = 'Fire Test';
+const DEFAULT_PRESET_KEY = Object.keys(FIRE_PRESETS)[0];
+const MAX_ATTRACTORS = 8;
+
+export default function useFireTestControls(
+  splines,
+  setSplines,
+  attractorsRef
+) {
+  const selectedPresetRef = useRef(DEFAULT_PRESET_KEY);
+  const splinesRef = useRef(splines);
+  splinesRef.current = splines;
+
+  const [splineConfigs, setSplineConfigs] = useState(() => {
+    const { splineConfigs: initial } = parsePreset(
+      FIRE_PRESETS[DEFAULT_PRESET_KEY]
+    );
+    return initial;
+  });
+
+  const [attractorVersion, setAttractorVersion] = useState(0);
+  const forceAttractorUpdate = useCallback(
+    () => setAttractorVersion((c) => c + 1),
+    []
+  );
+
   const [
     {
-      // Scene
+      preset,
       bgColor,
       lineColor,
+      attractorStrength,
+      attractorRadius,
+      showAttractors,
+      attractorMode,
       // Fireball
       fbPosX,
       fbPosY,
@@ -17,7 +56,7 @@ export default function useFireTestControls() {
       fbSpeed,
       fbWeight,
       fbAnimated,
-      // FireballSpline
+      // FireballSpline (legacy standalone)
       fsBaseRadius,
       fsTubular,
       fsRadial,
@@ -27,7 +66,6 @@ export default function useFireTestControls() {
       fsAnimated,
       fsSmokeLight,
       fsSmokeDark,
-      // Spline Editor
       showSplinePoints,
       showSplineLine,
       pointMode,
@@ -85,443 +123,547 @@ export default function useFireTestControls() {
       fvDensity,
       fvSteps,
     },
-  ] = useControls('Fire Test', () => ({
-    Scene: folder(
-      {
-        bgColor: { label: 'Background', value: '#000000' },
-        lineColor: { label: 'Grid Lines', value: '#252548' },
-      },
-      { collapsed: false }
-    ),
+  ] = useControls(
+    SCENE_LABEL,
+    () => ({
+      Presets: folder(
+        {
+          preset: {
+            label: 'Preset',
+            value: DEFAULT_PRESET_KEY,
+            options: Object.keys(FIRE_PRESETS),
+          },
+          reset: button(() => {
+            const p = FIRE_PRESETS[selectedPresetRef.current];
+            if (p) {
+              const { splines: nextSplines, splineConfigs: nextConfigs } =
+                parsePreset(p);
+              setSplines(nextSplines);
+              setSplineConfigs(nextConfigs);
+            }
+          }),
+          ...(localEnv()
+            ? {
+                copy: button(
+                  () => {
+                    const code = serializeSplines(
+                      splinesRef.current,
+                      splineConfigs
+                    );
+                    navigator.clipboard.writeText(`splines: [\n${code}\n]`);
+                  },
+                  { label: 'Copy Preset' }
+                ),
+              }
+            : {}),
+        },
+        { collapsed: true }
+      ),
 
-    // ── Fireball (Perlin noise vertex-displacement sphere) ───────────────
-    Fireball: folder(
-      {
-        'FB Position': folder(
-          {
-            fbPosX: {
-              label: 'X',
-              value: -500,
-              min: -1500,
-              max: 1500,
-              step: 1,
-            },
-            fbPosY: {
-              label: 'Y',
-              value: 100,
-              min: -500,
-              max: 1000,
-              step: 1,
-            },
-            fbPosZ: { label: 'Z', value: 0, min: -500, max: 500, step: 1 },
-          },
-          { collapsed: true }
-        ),
-        fbRadius: { label: 'Radius', value: 20, min: 5, max: 400, step: 1 },
-        fbDetail: { label: 'Detail', value: 5, min: 1, max: 7, step: 1 },
-        fbSpeed: { label: 'Speed', value: 1.0, min: 0, max: 5, step: 0.05 },
-        fbWeight: {
-          label: 'Weight',
-          value: 10.0,
-          min: 0,
-          max: 30,
-          step: 0.5,
+      Scene: folder(
+        {
+          bgColor: { label: 'Background', value: '#000000' },
+          lineColor: { label: 'Grid Lines', value: '#252548' },
         },
-        fbAnimated: { label: 'Animated', value: true },
-      },
-      { collapsed: true }
-    ),
+        { collapsed: false }
+      ),
 
-    // ── FireballSpline (variable-radius tube along CatmullRom spline) ────
-    'Fire Spline': folder(
-      {
-        fsBaseRadius: {
-          label: 'Base Radius',
-          value: 60,
-          min: 5,
-          max: 400,
-          step: 1,
-        },
-        fsTubular: {
-          label: 'Tubular Segments',
-          value: 64,
-          min: 8,
-          max: 128,
-          step: 1,
-        },
-        fsRadial: {
-          label: 'Radial Segments',
-          value: 32,
-          min: 8,
-          max: 64,
-          step: 1,
-        },
-        fsCap: {
-          label: 'Cap Segments',
-          value: 8,
-          min: 2,
-          max: 16,
-          step: 1,
-        },
-        fsSpeed: { label: 'Speed', value: 1.0, min: 0, max: 5, step: 0.05 },
-        fsWeight: {
-          label: 'Weight',
-          value: 10.0,
-          min: 0,
-          max: 30,
-          step: 0.5,
-        },
-        'Smoke Colors': folder(
-          {
-            fsSmokeLight: { label: 'Light', value: '#4a4a58' },
-            fsSmokeDark: { label: 'Dark', value: '#1a1a22' },
-          },
-          { collapsed: false }
-        ),
-        fsAnimated: { label: 'Animated', value: true },
-        'Spline Editor': folder(
-          {
-            showSplinePoints: { label: 'Show Points', value: true },
-            showSplineLine: { label: 'Show Curve', value: true },
-            pointMode: {
-              label: 'Transform',
-              value: 'translate',
-              options: ['translate', 'scale'],
+      // ── Fireball (Perlin noise vertex-displacement sphere) ───────────────
+      Fireball: folder(
+        {
+          'FB Position': folder(
+            {
+              fbPosX: { label: 'X', value: -5, min: -20, max: 20, step: 0.1 },
+              fbPosY: { label: 'Y', value: 1, min: -5, max: 15, step: 0.1 },
+              fbPosZ: { label: 'Z', value: 0, min: -10, max: 10, step: 0.1 },
             },
+            { collapsed: true }
+          ),
+          fbRadius: {
+            label: 'Radius',
+            value: 0.4,
+            min: 0.05,
+            max: 5,
+            step: 0.05,
           },
-          { collapsed: true }
-        ),
-      },
-      { collapsed: true }
-    ),
+          fbDetail: { label: 'Detail', value: 5, min: 1, max: 7, step: 1 },
+          fbSpeed: { label: 'Speed', value: 1.0, min: 0, max: 5, step: 0.05 },
+          fbWeight: {
+            label: 'Weight',
+            value: 10.0,
+            min: 0,
+            max: 30,
+            step: 0.5,
+          },
+          fbAnimated: { label: 'Animated', value: true },
+        },
+        { collapsed: true }
+      ),
 
-    // ── Flame (wispy billboard shader flame) ─────────────────────────────
-    Flame: folder(
-      {
-        'FL Position': folder(
-          {
-            flPosX: {
-              label: 'X',
-              value: 0,
-              min: -1500,
-              max: 1500,
-              step: 1,
-            },
-            flPosY: { label: 'Y', value: 0, min: -500, max: 1000, step: 1 },
-            flPosZ: { label: 'Z', value: 0, min: -500, max: 500, step: 1 },
+      // ── FireballSpline (legacy standalone spline tube) ───────────────────
+      'Fire Spline': folder(
+        {
+          fsBaseRadius: {
+            label: 'Base Radius',
+            value: 0.6,
+            min: 0.05,
+            max: 5,
+            step: 0.05,
           },
-          { collapsed: true }
-        ),
-        flGroupScale: {
-          label: 'Scale',
-          value: 120,
-          min: 1,
-          max: 500,
-          step: 1,
+          fsTubular: {
+            label: 'Tubular Segments',
+            value: 64,
+            min: 8,
+            max: 128,
+            step: 1,
+          },
+          fsRadial: {
+            label: 'Radial Segments',
+            value: 32,
+            min: 8,
+            max: 64,
+            step: 1,
+          },
+          fsCap: { label: 'Cap Segments', value: 8, min: 2, max: 16, step: 1 },
+          fsSpeed: { label: 'Speed', value: 1.0, min: 0, max: 5, step: 0.05 },
+          fsWeight: {
+            label: 'Weight',
+            value: 10.0,
+            min: 0,
+            max: 30,
+            step: 0.5,
+          },
+          'Smoke Colors': folder(
+            {
+              fsSmokeLight: { label: 'Light', value: '#4a4a58' },
+              fsSmokeDark: { label: 'Dark', value: '#1a1a22' },
+            },
+            { collapsed: false }
+          ),
+          fsAnimated: { label: 'Animated', value: true },
+          'Spline Editor': folder(
+            {
+              showSplinePoints: { label: 'Show Points', value: true },
+              showSplineLine: { label: 'Show Curve', value: true },
+              pointMode: {
+                label: 'Transform',
+                value: 'translate',
+                options: ['translate', 'scale'],
+              },
+            },
+            { collapsed: true }
+          ),
         },
-        flInverted: { label: 'Inverted', value: false },
-        Motion: folder(
-          {
-            flBaseSpeed: {
-              label: 'Base Speed',
-              value: 1.15,
-              min: 0,
-              max: 5,
-              step: 0.05,
-            },
-            flMinSpeed: {
-              label: 'Min Speed',
-              value: 0.28,
-              min: 0,
-              max: 2,
-              step: 0.01,
-            },
-            flSlowFreq: {
-              label: 'Slow Freq',
-              value: 0.7,
-              min: 0,
-              max: 5,
-              step: 0.1,
-            },
-            flSlowAmp: {
-              label: 'Slow Amp',
-              value: 0.55,
-              min: 0,
-              max: 2,
-              step: 0.05,
-            },
-            flFastFreq: {
-              label: 'Fast Freq',
-              value: 2.6,
-              min: 0,
-              max: 10,
-              step: 0.1,
-            },
-            flFastAmp: {
-              label: 'Fast Amp',
-              value: 0.25,
-              min: 0,
-              max: 2,
-              step: 0.05,
-            },
-            flMicroFreq: {
-              label: 'Micro Freq',
-              value: 5.7,
-              min: 0,
-              max: 20,
-              step: 0.1,
-            },
-            flMicroAmp: {
-              label: 'Micro Amp',
-              value: 0.08,
-              min: 0,
-              max: 1,
-              step: 0.01,
-            },
-            flSwayX: {
-              label: 'Sway X',
-              value: 0.015,
-              min: 0,
-              max: 0.2,
-              step: 0.001,
-            },
-            flSwayZ: {
-              label: 'Sway Z',
-              value: 0.014,
-              min: 0,
-              max: 0.2,
-              step: 0.001,
-            },
-            flPulseFreq: {
-              label: 'Pulse Freq',
-              value: 3.4,
-              min: 0,
-              max: 10,
-              step: 0.1,
-            },
-            flPulseAmp: {
-              label: 'Pulse Amp',
-              value: 0.04,
-              min: 0,
-              max: 0.5,
-              step: 0.01,
-            },
-            flScaleX: {
-              label: 'Scale X',
-              value: 1,
-              min: 0.1,
-              max: 5,
-              step: 0.1,
-            },
-            flScaleY: {
-              label: 'Scale Y',
-              value: 1,
-              min: 0.1,
-              max: 5,
-              step: 0.1,
-            },
-          },
-          { collapsed: true }
-        ),
-      },
-      { collapsed: true }
-    ),
+        { collapsed: true }
+      ),
 
-    // ── VolumetricFire (slice-rendered hexahedron) ───────────────────────
-    'Volumetric Fire': folder(
-      {
-        'VF Position': folder(
-          {
-            vfPosX: {
-              label: 'X',
-              value: 500,
-              min: -1500,
-              max: 1500,
-              step: 1,
+      // ── Flame (wispy billboard shader flame) ─────────────────────────────
+      Flame: folder(
+        {
+          'FL Position': folder(
+            {
+              flPosX: { label: 'X', value: 5, min: -20, max: 20, step: 0.1 },
+              flPosY: { label: 'Y', value: 0, min: -5, max: 15, step: 0.1 },
+              flPosZ: { label: 'Z', value: 0, min: -10, max: 10, step: 0.1 },
             },
-            vfPosY: { label: 'Y', value: 0, min: -500, max: 1000, step: 1 },
-            vfPosZ: { label: 'Z', value: 0, min: -500, max: 500, step: 1 },
+            { collapsed: true }
+          ),
+          flGroupScale: {
+            label: 'Scale',
+            value: 1.2,
+            min: 0.01,
+            max: 5,
+            step: 0.01,
           },
-          { collapsed: true }
-        ),
-        vfWidth: { label: 'Width', value: 80, min: 10, max: 400, step: 5 },
-        vfHeight: {
-          label: 'Height',
-          value: 200,
-          min: 20,
-          max: 800,
-          step: 10,
-        },
-        vfDepth: { label: 'Depth', value: 80, min: 10, max: 400, step: 5 },
-        vfSliceSpacing: {
-          label: 'Slice Spacing',
-          value: 4,
-          min: 1,
-          max: 20,
-          step: 0.5,
-        },
-        vfBendX: {
-          label: 'Bend X',
-          value: 0,
-          min: -200,
-          max: 200,
-          step: 1,
-        },
-        vfBendZ: {
-          label: 'Bend Z',
-          value: 0,
-          min: -200,
-          max: 200,
-          step: 1,
-        },
-        vfAnimated: { label: 'Animated', value: true },
-        vfAnimSpeed: {
-          label: 'Anim Speed',
-          value: 0.5,
-          min: 0,
-          max: 3,
-          step: 0.05,
-        },
-        vfShowSpline: { label: 'Show Spline', value: false },
-        vfShowVolume: { label: 'Show Volume', value: false },
-        'VF Turbulence': folder(
-          {
-            vfMagnitude: {
-              label: 'Magnitude',
-              value: 1.3,
-              min: 0.1,
-              max: 5,
-              step: 0.1,
+          flInverted: { label: 'Inverted', value: false },
+          Motion: folder(
+            {
+              flBaseSpeed: {
+                label: 'Base Speed',
+                value: 1.15,
+                min: 0,
+                max: 5,
+                step: 0.05,
+              },
+              flMinSpeed: {
+                label: 'Min Speed',
+                value: 0.28,
+                min: 0,
+                max: 2,
+                step: 0.01,
+              },
+              flSlowFreq: {
+                label: 'Slow Freq',
+                value: 0.7,
+                min: 0,
+                max: 5,
+                step: 0.1,
+              },
+              flSlowAmp: {
+                label: 'Slow Amp',
+                value: 0.55,
+                min: 0,
+                max: 2,
+                step: 0.05,
+              },
+              flFastFreq: {
+                label: 'Fast Freq',
+                value: 2.6,
+                min: 0,
+                max: 10,
+                step: 0.1,
+              },
+              flFastAmp: {
+                label: 'Fast Amp',
+                value: 0.25,
+                min: 0,
+                max: 2,
+                step: 0.05,
+              },
+              flMicroFreq: {
+                label: 'Micro Freq',
+                value: 5.7,
+                min: 0,
+                max: 20,
+                step: 0.1,
+              },
+              flMicroAmp: {
+                label: 'Micro Amp',
+                value: 0.08,
+                min: 0,
+                max: 1,
+                step: 0.01,
+              },
+              flSwayX: {
+                label: 'Sway X',
+                value: 0.015,
+                min: 0,
+                max: 0.2,
+                step: 0.001,
+              },
+              flSwayZ: {
+                label: 'Sway Z',
+                value: 0.014,
+                min: 0,
+                max: 0.2,
+                step: 0.001,
+              },
+              flPulseFreq: {
+                label: 'Pulse Freq',
+                value: 3.4,
+                min: 0,
+                max: 10,
+                step: 0.1,
+              },
+              flPulseAmp: {
+                label: 'Pulse Amp',
+                value: 0.04,
+                min: 0,
+                max: 0.5,
+                step: 0.01,
+              },
+              flScaleX: {
+                label: 'Scale X',
+                value: 1,
+                min: 0.1,
+                max: 5,
+                step: 0.1,
+              },
+              flScaleY: {
+                label: 'Scale Y',
+                value: 1,
+                min: 0.1,
+                max: 5,
+                step: 0.1,
+              },
             },
-            vfLacunarity: {
-              label: 'Lacunarity',
-              value: 2.0,
-              min: 1,
-              max: 5,
-              step: 0.1,
-            },
-            vfGain: {
-              label: 'Gain',
-              value: 0.5,
-              min: 0.01,
-              max: 1,
-              step: 0.01,
-            },
-          },
-          { collapsed: true }
-        ),
-        'VF Colors': folder(
-          {
-            vfTintColor: { label: 'Tint', value: '#ffffff' },
-            vfSaturation: {
-              label: 'Saturation',
-              value: 1.0,
-              min: 0,
-              max: 3,
-              step: 0.1,
-            },
-            vfBrightness: {
-              label: 'Brightness',
-              value: 1.5,
-              min: 0,
-              max: 5,
-              step: 0.1,
-            },
-          },
-          { collapsed: true }
-        ),
-      },
-      { collapsed: true }
-    ),
+            { collapsed: true }
+          ),
+        },
+        { collapsed: true }
+      ),
 
-    // ── FireballVolume (ray-marched spherical explosion) ─────────────────
-    'Fireball Volume': folder(
-      {
-        'FV Position': folder(
-          {
-            fvPosX: {
-              label: 'X',
-              value: 700,
-              min: -1500,
-              max: 1500,
-              step: 1,
+      // ── VolumetricFire (slice-rendered hexahedron) ───────────────────────
+      'Volumetric Fire': folder(
+        {
+          'VF Position': folder(
+            {
+              vfPosX: { label: 'X', value: 5, min: -20, max: 20, step: 0.1 },
+              vfPosY: { label: 'Y', value: 0, min: -5, max: 15, step: 0.1 },
+              vfPosZ: { label: 'Z', value: 0, min: -10, max: 10, step: 0.1 },
             },
-            fvPosY: {
-              label: 'Y',
-              value: 0,
-              min: -500,
-              max: 1000,
-              step: 1,
-            },
-            fvPosZ: {
-              label: 'Z',
-              value: 0,
-              min: -500,
-              max: 500,
-              step: 1,
-            },
+            { collapsed: true }
+          ),
+          vfWidth: { label: 'Width', value: 0.8, min: 0.1, max: 5, step: 0.05 },
+          vfHeight: {
+            label: 'Height',
+            value: 2.0,
+            min: 0.2,
+            max: 10,
+            step: 0.1,
           },
-          { collapsed: true }
-        ),
-        fvRadius: { label: 'Radius', value: 80, min: 1, max: 400, step: 1 },
-        fvRotSpeed: {
-          label: 'Rotation Speed',
-          value: 0.1,
-          min: 0,
-          max: 2,
-          step: 0.01,
-        },
-        fvNoiseScale: {
-          label: 'Noise Scale',
-          value: 0.5,
-          min: 0.1,
-          max: 2,
-          step: 0.05,
-        },
-        'FV Core': folder(
-          {
-            fvCoreColor: { label: 'Color', value: '#ccffff' },
-            fvCoreIntensity: {
-              label: 'Intensity',
-              value: 7.0,
-              min: 0,
-              max: 20,
-              step: 0.5,
-            },
+          vfDepth: { label: 'Depth', value: 0.8, min: 0.1, max: 5, step: 0.05 },
+          vfSliceSpacing: {
+            label: 'Slice Spacing',
+            value: 0.04,
+            min: 0.01,
+            max: 0.2,
+            step: 0.005,
           },
-          { collapsed: true }
-        ),
-        'FV Edge': folder(
-          {
-            fvEdgeColor: { label: 'Color', value: '#7a877f' },
-            fvEdgeIntensity: {
-              label: 'Intensity',
-              value: 1.5,
-              min: 0,
-              max: 10,
-              step: 0.1,
-            },
+          vfBendX: { label: 'Bend X', value: 0, min: -2, max: 2, step: 0.01 },
+          vfBendZ: { label: 'Bend Z', value: 0, min: -2, max: 2, step: 0.01 },
+          vfAnimated: { label: 'Animated', value: true },
+          vfAnimSpeed: {
+            label: 'Anim Speed',
+            value: 0.5,
+            min: 0,
+            max: 3,
+            step: 0.05,
           },
+          vfShowSpline: { label: 'Show Spline', value: false },
+          vfShowVolume: { label: 'Show Volume', value: false },
+          'VF Turbulence': folder(
+            {
+              vfMagnitude: {
+                label: 'Magnitude',
+                value: 1.3,
+                min: 0.1,
+                max: 5,
+                step: 0.1,
+              },
+              vfLacunarity: {
+                label: 'Lacunarity',
+                value: 2.0,
+                min: 1,
+                max: 5,
+                step: 0.1,
+              },
+              vfGain: {
+                label: 'Gain',
+                value: 0.5,
+                min: 0.01,
+                max: 1,
+                step: 0.01,
+              },
+            },
+            { collapsed: true }
+          ),
+          'VF Colors': folder(
+            {
+              vfTintColor: { label: 'Tint', value: '#ffffff' },
+              vfSaturation: {
+                label: 'Saturation',
+                value: 1.0,
+                min: 0,
+                max: 3,
+                step: 0.1,
+              },
+              vfBrightness: {
+                label: 'Brightness',
+                value: 1.5,
+                min: 0,
+                max: 5,
+                step: 0.1,
+              },
+            },
+            { collapsed: true }
+          ),
+        },
+        { collapsed: true }
+      ),
+
+      // ── FireballVolume (ray-marched spherical explosion) ─────────────────
+      'Fireball Volume': folder(
+        {
+          'FV Position': folder(
+            {
+              fvPosX: { label: 'X', value: 7, min: -20, max: 20, step: 0.1 },
+              fvPosY: { label: 'Y', value: 1, min: -5, max: 15, step: 0.1 },
+              fvPosZ: { label: 'Z', value: 0, min: -10, max: 10, step: 0.1 },
+            },
+            { collapsed: true }
+          ),
+          fvRadius: {
+            label: 'Radius',
+            value: 0.8,
+            min: 0.05,
+            max: 5,
+            step: 0.05,
+          },
+          fvRotSpeed: {
+            label: 'Rotation Speed',
+            value: 0.1,
+            min: 0,
+            max: 2,
+            step: 0.01,
+          },
+          fvNoiseScale: {
+            label: 'Noise Scale',
+            value: 0.5,
+            min: 0.1,
+            max: 2,
+            step: 0.05,
+          },
+          'FV Core': folder(
+            {
+              fvCoreColor: { label: 'Color', value: '#ccffff' },
+              fvCoreIntensity: {
+                label: 'Intensity',
+                value: 7.0,
+                min: 0,
+                max: 20,
+                step: 0.5,
+              },
+            },
+            { collapsed: true }
+          ),
+          'FV Edge': folder(
+            {
+              fvEdgeColor: { label: 'Color', value: '#7a877f' },
+              fvEdgeIntensity: {
+                label: 'Intensity',
+                value: 1.5,
+                min: 0,
+                max: 10,
+                step: 0.1,
+              },
+            },
+            { collapsed: true }
+          ),
+          fvDensity: {
+            label: 'Density',
+            value: 1.0,
+            min: 0,
+            max: 5,
+            step: 0.1,
+          },
+          fvSteps: { label: 'Steps', value: 64, min: 8, max: 128, step: 8 },
+        },
+        { collapsed: true }
+      ),
+
+      // ── Attractors ────────────────────────────────────────────────────────
+      Attractors: folder(
+        {
+          showAttractors: { label: 'Show Helpers', value: true },
+          attractorMode: {
+            label: 'Mode',
+            value: 'translate',
+            options: ['translate', 'rotate', 'scale', 'none'],
+          },
+          attractorStrength: {
+            label: 'Strength',
+            value: 300,
+            min: 0,
+            max: 5000,
+            step: 50,
+          },
+          attractorRadius: {
+            label: 'Radius',
+            value: 300,
+            min: 10,
+            max: 1000,
+            step: 10,
+          },
+          addAttractor: button(() => {
+            if (attractorsRef.current.length >= MAX_ATTRACTORS) return;
+            attractorsRef.current.push({
+              position: [
+                (Math.random() - 0.5) * 6,
+                1 + Math.random() * 5,
+                (Math.random() - 0.5) * 4,
+              ],
+              direction: [0, 1, 0],
+              rotation: [0, 0, 0],
+            });
+            setAttractorVersion((c) => c + 1);
+          }),
+          removeAttractor: button(() => {
+            if (attractorsRef.current.length <= 0) return;
+            attractorsRef.current.pop();
+            setAttractorVersion((c) => c + 1);
+          }),
+          removeAll: button(() => {
+            // eslint-disable-next-line no-param-reassign
+            attractorsRef.current.length = 0;
+            setAttractorVersion((c) => c + 1);
+          }),
+        },
+        { collapsed: true }
+      ),
+
+      // ── Global actions ────────────────────────────────────────────────────
+      Actions: folder(
+        {
+          addSpline: button(
+            () => {
+              const randPt = () => ({
+                position: new THREE.Vector3(
+                  (Math.random() - 0.5) * 4,
+                  Math.random() * 4,
+                  (Math.random() - 0.5) * 4
+                ),
+                rotation: new THREE.Euler(),
+                scale: new THREE.Vector3(1, 1, 1),
+              });
+              setSplines((prev) => [...prev, [randPt(), randPt(), randPt()]]);
+              setSplineConfigs((prev) => [
+                ...prev,
+                { ...DEFAULT_SPLINE_CONFIG, name: `Spline ${prev.length + 1}` },
+              ]);
+            },
+            { label: 'Add Spline' }
+          ),
+        },
+        { collapsed: true }
+      ),
+
+      // ── Per-spline folders ────────────────────────────────────────────────
+      ...splines.reduce((acc, _, index) => {
+        const cfg = splineConfigs[index] ?? DEFAULT_SPLINE_CONFIG;
+        acc[`Spline ${index + 1}`] = folder(
+          buildSplineGroupControls(index, cfg, {
+            sceneLabel: SCENE_LABEL,
+            setSplineConfigs,
+            setSplines,
+            allowedTypes: 'fire',
+          }),
           { collapsed: true }
-        ),
-        fvDensity: {
-          label: 'Density',
-          value: 1.0,
-          min: 0,
-          max: 5,
-          step: 0.1,
-        },
-        fvSteps: {
-          label: 'Steps',
-          value: 64,
-          min: 8,
-          max: 128,
-          step: 8,
-        },
-      },
-      { collapsed: true }
-    ),
-  }));
+        );
+        return acc;
+      }, {}),
+    }),
+    [splines.length]
+  );
+
+  // Track selected preset name
+  useEffect(() => {
+    selectedPresetRef.current = preset;
+  }, [preset]);
+
+  // Apply preset when selection changes
+  const isInitialMount = useRef(true);
+  useEffect(() => {
+    if (isInitialMount.current) {
+      isInitialMount.current = false;
+      return;
+    }
+    const p = FIRE_PRESETS[preset];
+    if (p) {
+      const { splines: nextSplines, splineConfigs: nextConfigs } =
+        parsePreset(p);
+      setSplines(nextSplines);
+      setSplineConfigs(nextConfigs);
+    }
+  }, [preset]);
+
+  // Keep configs in sync with spline count
+  useEffect(() => {
+    setSplineConfigs((prev) => {
+      if (prev.length === splines.length) return prev;
+      return splines.map((_, i) => prev[i] ?? { ...DEFAULT_SPLINE_CONFIG });
+    });
+  }, [splines.length]);
 
   return useMemo(
     () => ({
@@ -530,6 +672,13 @@ export default function useFireTestControls() {
       showSplinePoints,
       showSplineLine,
       pointMode,
+      attractorStrength,
+      attractorRadius,
+      showAttractors,
+      attractorMode,
+      attractorVersion,
+      forceAttractorUpdate,
+      splineConfigs,
       fireball: {
         position: [fbPosX, fbPosY, fbPosZ],
         radius: fbRadius,
@@ -608,6 +757,13 @@ export default function useFireTestControls() {
       showSplinePoints,
       showSplineLine,
       pointMode,
+      attractorStrength,
+      attractorRadius,
+      showAttractors,
+      attractorMode,
+      attractorVersion,
+      forceAttractorUpdate,
+      splineConfigs,
       fbPosX,
       fbPosY,
       fbPosZ,

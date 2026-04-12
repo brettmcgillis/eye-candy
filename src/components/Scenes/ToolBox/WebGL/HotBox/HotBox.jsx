@@ -1,28 +1,25 @@
-import * as THREE from 'three';
-
 import React, { useCallback, useRef, useState } from 'react';
 
 import { OrbitControls, PerspectiveCamera } from '@react-three/drei';
 
 import FIRE_PRESETS from '../../../../../presets/fire/firePresets';
 import Attractors from '../../../../elements/attractors/Attractors';
+import Fireball from '../../../../elements/fireball/Fireball';
+import Flame from '../../../../elements/flame/Flame';
 import GridBox from '../../../../elements/gridbox/GridBox';
-import HotBoxSplineGroup from './components/SplineGroup';
+import SmokeBall from '../../../../elements/smokeball/SmokeBall';
+import SplineGroup from '../../../../elements/splineGroup/SplineGroup';
+import FireballVolume from '../../../../elements/volumetricFire/FireballVolume';
+import { parsePreset } from '../shared/splineDefaults';
 import useHotBoxControls from './hooks/useHotBoxControls';
 
 const DEFAULT_PRESET_KEY = Object.keys(FIRE_PRESETS)[0];
-const DEFAULT_PRESET = FIRE_PRESETS[DEFAULT_PRESET_KEY];
+const { splines: DEFAULT_SPLINES } = parsePreset(
+  FIRE_PRESETS[DEFAULT_PRESET_KEY]
+);
 
 export default function HotBox() {
-  const [splines, setSplines] = useState(() =>
-    DEFAULT_PRESET.splines.map((s) =>
-      s.points.map((pt) => ({
-        position: pt.position.clone(),
-        rotation: pt.rotation.clone(),
-        scale: pt.scale ? pt.scale.clone() : new THREE.Vector3(1, 1, 1),
-      }))
-    )
-  );
+  const [splines, setSplines] = useState(() => DEFAULT_SPLINES);
 
   const setSplinePoints = useCallback((splineIndex, updater) => {
     setSplines((prev) =>
@@ -72,7 +69,7 @@ export default function HotBox() {
 
       {/* eslint-disable react/no-array-index-key */}
       {splines.map((points, index) => (
-        <HotBoxSplineGroup
+        <SplineGroup
           key={index}
           index={index}
           points={points}
@@ -84,12 +81,27 @@ export default function HotBox() {
       ))}
       {/* eslint-enable react/no-array-index-key */}
 
+      {/* ── SmokeBall (Perlin vertex-displacement sphere, greyscale) ────── */}
+      <SmokeBall {...config.smokeBall} />
+
+      {/* ── Fireball (Perlin vertex-displacement sphere, fire colours) ───── */}
+      <Fireball {...config.fireball} />
+
+      {/* ── Flame (wispy billboard shader flame) ─────────────────────────── */}
+      <group position={config.flame.position} scale={config.flame.groupScale}>
+        <Flame inverted={config.flame.inverted} motion={config.flame.motion} />
+      </group>
+
+      {/* ── FireballVolume (ray-marched spherical explosion) ─────────────── */}
+      <FireballVolume {...config.fireballVolume} />
+
       <Attractors
         attractorsRef={attractorsRef}
         mode={config.attractorMode}
         visible={config.showAttractors}
         radius={config.attractorRadius}
         version={config.attractorVersion}
+        levaPrefix="Hot Box"
       />
     </>
   );

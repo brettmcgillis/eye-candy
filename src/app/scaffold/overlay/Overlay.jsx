@@ -46,11 +46,18 @@ function getHideUIFromQueryParam() {
 
 function Overlay() {
   const local = localEnv();
-  const levaIgPreset = levaStore.useStore(
-    (state) => state.data?.['Scene Select.ig']?.value
+  const readLevaValue = (state, keys) => {
+    const values = keys.map((key) => state.data?.[key]?.value);
+    return values.find((value) => value !== undefined);
+  };
+
+  const levaIgPreset = levaStore.useStore((state) =>
+    readLevaValue(state, ['App.Overlay.ig', 'App.ig', 'Scene Select.ig'])
   );
   const overlayIgPreset =
-    normalizeOverlayIgPreset(levaIgPreset) ?? getOverlayIgPreset();
+    levaIgPreset === undefined
+      ? getOverlayIgPreset()
+      : normalizeOverlayIgPreset(levaIgPreset);
   const [showLeva, setShowLeva] = useState(!!local);
   const [hideUI, setHideUI] = useState(() => getHideUIFromQueryParam());
 

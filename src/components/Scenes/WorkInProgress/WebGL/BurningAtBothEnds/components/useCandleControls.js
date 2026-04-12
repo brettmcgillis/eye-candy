@@ -209,6 +209,25 @@ export default function getCandleFolder() {
             },
             { collapsed: true }
           ),
+          'Animation Offset': folder(
+            {
+              topFlamePhaseOffset: {
+                label: 'Top Phase',
+                value: 0.5,
+                min: -2,
+                max: 2,
+                step: 0.05,
+              },
+              bottomFlamePhaseOffset: {
+                label: 'Bottom Phase',
+                value: -0.2,
+                min: -2,
+                max: 2,
+                step: 0.05,
+              },
+            },
+            { collapsed: true }
+          ),
         },
         { collapsed: true }
       ),

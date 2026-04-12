@@ -735,7 +735,10 @@ export default function Candle({ config, position = [0, 0, 0], firePreset }) {
         {useVolumetric ? (
           <VolumetricFire {...vfProps} />
         ) : (
-          <Flame motion={flameMotion} />
+          <Flame
+            motion={flameMotion}
+            phaseOffset={config.topFlamePhaseOffset ?? 0}
+          />
         )}
       </group>
       {smokeActive && (
@@ -770,7 +773,11 @@ export default function Candle({ config, position = [0, 0, 0], firePreset }) {
         {useVolumetric ? (
           <VolumetricFire inverted {...vfProps} />
         ) : (
-          <Flame inverted motion={flameMotion} />
+          <Flame
+            inverted
+            motion={flameMotion}
+            phaseOffset={config.bottomFlamePhaseOffset ?? 0}
+          />
         )}
       </group>
       {smokeActive && (

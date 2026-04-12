@@ -49,6 +49,20 @@ export default function useSceneControls() {
             max: 2,
             step: 0.01,
           },
+          cameraFramePadding: {
+            label: 'Frame Padding',
+            value: SCENE_PRESETS[initialPreset].cameraFramePadding ?? 0.92,
+            min: 0.75,
+            max: 1.25,
+            step: 0.01,
+          },
+          cameraDistanceOffset: {
+            label: 'Camera Offset',
+            value: SCENE_PRESETS[initialPreset].cameraDistanceOffset ?? 1.25,
+            min: 0,
+            max: 6,
+            step: 0.05,
+          },
           'Post Processing': folder(
             {
               bloomEnabled: {

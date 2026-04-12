@@ -29,21 +29,28 @@ export default function BurningAtBothEnds() {
   const cameraFrame = useMemo(() => {
     const flameTipOffset = 2.35;
     const halfSceneHeight = config.height / 2 + flameTipOffset;
-    const framedHeight = halfSceneHeight * 2 * 1.08;
+    const framePadding = config.cameraFramePadding ?? 0.92;
+    const framedHeight = halfSceneHeight * 2 * framePadding;
     const fov = 42;
     const fovRadians = THREE.MathUtils.degToRad(fov);
     const distance = framedHeight / (2 * Math.tan(fovRadians / 2));
     const targetY = candleY;
     const cameraYOffset = Math.max(0.75, config.height * 0.12);
+    const cameraDistanceOffset = config.cameraDistanceOffset ?? 1.25;
 
     return {
       fov,
-      position: [0, targetY + cameraYOffset, distance + 3],
+      position: [0, targetY + cameraYOffset, distance + cameraDistanceOffset],
       target: [0, targetY, 0],
       minDistance: Math.max(8, distance * 0.72),
       maxDistance: Math.max(28, distance * 1.8),
     };
-  }, [candleY, config.height]);
+  }, [
+    candleY,
+    config.cameraDistanceOffset,
+    config.cameraFramePadding,
+    config.height,
+  ]);
   const floorAlphaMap = useMemo(() => {
     const size = 512;
     const canvas = document.createElement('canvas');

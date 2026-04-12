@@ -11,7 +11,9 @@ import React, {
 import { TransformControls } from '@react-three/drei';
 import { useThree } from '@react-three/fiber';
 
-const DEFAULT_POINT_SIZE = 20;
+// Default sized for scene scale (1 unit ≈ 1 metre).
+// Large-world consumers (e.g. SplineEditor) should pass an explicit pointSize.
+const DEFAULT_POINT_SIZE = 0.2;
 
 export default function SplinePoints({
   points,

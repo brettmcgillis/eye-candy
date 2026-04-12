@@ -26,6 +26,8 @@ ${noiseGlsl}
 
 uniform float time;
 uniform float weight;
+uniform float noiseFreq;
+uniform float noiseAmp;
 
 attribute float arcT;
 
@@ -37,7 +39,7 @@ void main() {
   float noise = turbulence(noiseCoord - time);
 
   float displacement = weight * noise;
-  displacement += 5.0 * pnoise(0.05 * position - vec3(2.0 * time), vec3(100.0));
+  displacement += noiseAmp * pnoise(noiseFreq * position - vec3(2.0 * time), vec3(100.0));
 
   ao = noise;
   vArcT = arcT;
@@ -282,6 +284,11 @@ export default function PerlinNoiseSpline({
   capSegments = 16,
   speed = 1.0,
   weight = 10.0,
+  // noiseFreq / noiseAmp control the secondary large-scale pnoise displacement.
+  // Defaults match the original hardcoded values (tuned for large-world scale).
+  // Scene-scale consumers (control points in metres) should pass noiseFreq≈2.0, noiseAmp≈0.15.
+  noiseFreq = 0.05,
+  noiseAmp = 5.0,
   animated = true,
   texturePath = '/images/explosion.png',
   smokeLightColor = '#4a4a58',
@@ -316,6 +323,8 @@ export default function PerlinNoiseSpline({
     tExplosion: { value: tExplosion },
     time: { value: 0.0 },
     weight: { value: weight },
+    noiseFreq: { value: noiseFreq },
+    noiseAmp: { value: noiseAmp },
     smokeLightColor: { value: new THREE.Color(smokeLightColor) },
     smokeDarkColor: { value: new THREE.Color(smokeDarkColor) },
     greyscale: { value: greyscale ? 1.0 : 0.0 },
@@ -324,6 +333,8 @@ export default function PerlinNoiseSpline({
   const uniforms = uniformsRef.current;
   uniforms.tExplosion.value = tExplosion;
   uniforms.weight.value = weight;
+  uniforms.noiseFreq.value = noiseFreq;
+  uniforms.noiseAmp.value = noiseAmp;
   uniforms.smokeLightColor.value.set(smokeLightColor);
   uniforms.smokeDarkColor.value.set(smokeDarkColor);
   uniforms.greyscale.value = greyscale ? 1.0 : 0.0;

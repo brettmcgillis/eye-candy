@@ -2,10 +2,10 @@ import * as THREE from 'three';
 
 import React, { useMemo } from 'react';
 
-// The box is 2000 units on each side, centered at Y=800 so the floor sits at Y=-200
-// matching the spline editor workspace layout.
-const BOX_SIZE = 2000;
-const BOX_CENTER_Y = BOX_SIZE / 2 - 200; // 800
+// Default box matches the SplineEditor workspace (2000-unit world, floor at Y=-200).
+// Pass smaller values (e.g. size=20, gridSize=1) for scene-scale toolbox scenes.
+const DEFAULT_SIZE = 2000;
+const DEFAULT_GRID_SIZE = 100;
 
 const vertexShader = /* glsl */ `
   varying vec3 vLocalPos;
@@ -55,7 +55,13 @@ export default function GridBox({
   bgColor = '#3a4a5c',
   lineColor = '#1a2330',
   lineWidth = 0.025,
+  size = DEFAULT_SIZE,
+  gridSize = DEFAULT_GRID_SIZE,
 }) {
+  // Floor sits 10% of box size below the origin so there's a bit of underground
+  // space — consistent across both large-world and scene-scale toolbox scenes.
+  const boxCenterY = size / 2 - size * 0.1;
+
   const material = useMemo(
     () =>
       new THREE.ShaderMaterial({
@@ -64,17 +70,17 @@ export default function GridBox({
         uniforms: {
           bgColor: { value: hexToRawVec3(bgColor) },
           lineColor: { value: hexToRawVec3(lineColor) },
-          gridSize: { value: 100.0 },
+          gridSize: { value: gridSize },
           lineWidth: { value: lineWidth },
         },
         side: THREE.BackSide,
       }),
-    [bgColor, lineColor, lineWidth]
+    [bgColor, lineColor, lineWidth, gridSize]
   );
 
   return (
-    <mesh position={[0, BOX_CENTER_Y, 0]} material={material}>
-      <boxGeometry args={[BOX_SIZE, BOX_SIZE, BOX_SIZE]} />
+    <mesh position={[0, boxCenterY, 0]} material={material}>
+      <boxGeometry args={[size, size, size]} />
     </mesh>
   );
 }

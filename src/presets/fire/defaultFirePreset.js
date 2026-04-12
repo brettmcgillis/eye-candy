@@ -9,34 +9,37 @@ const P = (x, y, z) => ({
   scale: V(1, 1, 1),
 });
 
-// Floor sits at Y = -200 in the GridBox workspace.
-const FLOOR_Y = -100;
-
+// Points are at scene scale (1 unit ≈ 1 metre).
+// Presets carry both smoke and fire splines so HotBox can display both types.
+// FireTest silently skips the smoke spline via allowedTypes="fire" on SplineGroup.
 const DEFAULT_FIRE_PRESET = {
   splines: [
     {
+      name: 'Default Smoke',
       type: 'Smoke',
       smokeType: 'Particle',
       closed: false,
       tension: 0.7,
       points: [
-        P(0, FLOOR_Y, 0),
-        P(110, 100, 70),
-        P(-40, 400, 140),
-        P(-130, 720, -30),
-        P(60, 1000, -110),
+        P(0, -1, 0),
+        P(1.1, 1, 0.7),
+        P(-0.4, 4, 1.4),
+        P(-1.3, 7.2, -0.3),
+        P(0.6, 10, -1.1),
       ],
     },
     {
+      name: 'Default Fire',
       type: 'Fire',
+      fireType: 'Classic',
       closed: false,
       tension: 0.7,
       points: [
-        P(20, FLOOR_Y, -15),
-        P(80, 120, 120),
-        P(-80, 430, 100),
-        P(-90, 690, -70),
-        P(100, 970, -70),
+        P(0.2, -1, 0.15),
+        P(0.8, 1.2, 0.7),
+        P(-0.4, 4, 1.4),
+        P(-1.3, 7.2, -0.3),
+        P(0.6, 10, -1.1),
       ],
     },
   ],

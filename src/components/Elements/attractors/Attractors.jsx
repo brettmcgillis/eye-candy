@@ -302,8 +302,9 @@ function AttractorHandle({
  * @param {boolean} [props.visible=true]       Hide all markers when false.
  * @param {number}  [props.radius=300]         Default attractor influence
  *        radius.  Per-attractor `radius` overrides this.
- * @param {number}  [props.markerSize=14]      Sphere radius of each marker
- *        (cone / offset scale proportionally).
+ * @param {number}  [props.markerSize=0.14]     Sphere radius of each marker
+ *        (cone / offset scale proportionally). Sized for scene scale
+ *        (1 unit ≈ 1 metre). Large-world consumers should pass a larger value.
  * @param {number}  [props.controlsSize=0.55]  TransformControls gizmo size.
  * @param {number}  [props.version=0]          Bump to force a full re-mount
  *        of handles (e.g. after add / remove).
@@ -314,7 +315,7 @@ export default function Attractors({
   visible = true,
   radius = 300,
   strength = 300,
-  markerSize = 14,
+  markerSize = 0.14,
   controlsSize = 0.55,
   version = 0,
   onUpdate: onUpdateProp,

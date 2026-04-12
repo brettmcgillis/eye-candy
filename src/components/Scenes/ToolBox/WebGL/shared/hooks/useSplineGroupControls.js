@@ -157,9 +157,9 @@ export default function buildSplineGroupControls(index, cfg, opts) {
               [`particleSize_${index}`]: {
                 label: 'Particle Size',
                 value: cfg.particleSize,
-                min: 5,
-                max: 120,
-                step: 1,
+                min: 0.05,
+                max: 2,
+                step: 0.01,
                 onChange: (v) =>
                   updateSplineConfig(
                     setSplineConfigs,
@@ -214,9 +214,9 @@ export default function buildSplineGroupControls(index, cfg, opts) {
               [`buoyancy_${index}`]: {
                 label: 'Buoyancy',
                 value: cfg.buoyancy,
-                min: -200,
-                max: 200,
-                step: 5,
+                min: -2,
+                max: 2,
+                step: 0.05,
                 onChange: (v) =>
                   updateSplineConfig(setSplineConfigs, index, 'buoyancy', v),
               },
@@ -267,8 +267,8 @@ export default function buildSplineGroupControls(index, cfg, opts) {
                 label: 'Turbulence',
                 value: cfg.turbulence,
                 min: 0,
-                max: 800,
-                step: 10,
+                max: 8,
+                step: 0.1,
                 onChange: (v) =>
                   updateSplineConfig(setSplineConfigs, index, 'turbulence', v),
               },
@@ -290,17 +290,17 @@ export default function buildSplineGroupControls(index, cfg, opts) {
                 label: 'Spawn Spread',
                 value: cfg.spawnSpread,
                 min: 0,
-                max: 400,
-                step: 5,
+                max: 5,
+                step: 0.05,
                 onChange: (v) =>
                   updateSplineConfig(setSplineConfigs, index, 'spawnSpread', v),
               },
               [`maxDrift_${index}`]: {
                 label: 'Max Drift',
                 value: cfg.maxDrift,
-                min: 50,
-                max: 2000,
-                step: 50,
+                min: 0.5,
+                max: 20,
+                step: 0.5,
                 onChange: (v) =>
                   updateSplineConfig(setSplineConfigs, index, 'maxDrift', v),
               },
@@ -337,9 +337,9 @@ export default function buildSplineGroupControls(index, cfg, opts) {
               [`volSize_${index}`]: {
                 label: 'Particle Size',
                 value: cfg.volSize,
-                min: 5,
-                max: 200,
-                step: 1,
+                min: 0.05,
+                max: 3,
+                step: 0.05,
                 onChange: (v) =>
                   updateSplineConfig(setSplineConfigs, index, 'volSize', v),
               },
@@ -374,8 +374,8 @@ export default function buildSplineGroupControls(index, cfg, opts) {
                 label: 'Spawn Spread',
                 value: cfg.volSpread,
                 min: 0,
-                max: 600,
-                step: 5,
+                max: 8,
+                step: 0.05,
                 onChange: (v) =>
                   updateSplineConfig(setSplineConfigs, index, 'volSpread', v),
               },
@@ -401,8 +401,8 @@ export default function buildSplineGroupControls(index, cfg, opts) {
                 label: 'Turbulence',
                 value: cfg.volTurbulence,
                 min: 0,
-                max: 800,
-                step: 10,
+                max: 8,
+                step: 0.1,
                 onChange: (v) =>
                   updateSplineConfig(
                     setSplineConfigs,
@@ -428,9 +428,9 @@ export default function buildSplineGroupControls(index, cfg, opts) {
               [`volMaxDrift_${index}`]: {
                 label: 'Max Drift',
                 value: cfg.volMaxDrift,
-                min: 50,
-                max: 2000,
-                step: 50,
+                min: 0.5,
+                max: 20,
+                step: 0.5,
                 onChange: (v) =>
                   updateSplineConfig(setSplineConfigs, index, 'volMaxDrift', v),
               },
@@ -455,9 +455,9 @@ export default function buildSplineGroupControls(index, cfg, opts) {
               [`volBuoyancy_${index}`]: {
                 label: 'Buoyancy',
                 value: cfg.volBuoyancy,
-                min: -200,
-                max: 200,
-                step: 5,
+                min: -2,
+                max: 2,
+                step: 0.05,
                 onChange: (v) =>
                   updateSplineConfig(setSplineConfigs, index, 'volBuoyancy', v),
               },
@@ -476,36 +476,36 @@ export default function buildSplineGroupControls(index, cfg, opts) {
               [`fireWidth_${index}`]: {
                 label: 'Width',
                 value: cfg.fireWidth,
-                min: 10,
-                max: 400,
-                step: 5,
+                min: 0.1,
+                max: 5,
+                step: 0.05,
                 onChange: (v) =>
                   updateSplineConfig(setSplineConfigs, index, 'fireWidth', v),
               },
               [`fireHeight_${index}`]: {
                 label: 'Height',
                 value: cfg.fireHeight,
-                min: 20,
-                max: 800,
-                step: 10,
+                min: 0.2,
+                max: 10,
+                step: 0.1,
                 onChange: (v) =>
                   updateSplineConfig(setSplineConfigs, index, 'fireHeight', v),
               },
               [`fireDepth_${index}`]: {
                 label: 'Depth',
                 value: cfg.fireDepth,
-                min: 10,
-                max: 400,
-                step: 5,
+                min: 0.1,
+                max: 5,
+                step: 0.05,
                 onChange: (v) =>
                   updateSplineConfig(setSplineConfigs, index, 'fireDepth', v),
               },
               [`fireSliceSpacing_${index}`]: {
                 label: 'Slice Spacing',
                 value: cfg.fireSliceSpacing,
-                min: 1,
-                max: 20,
-                step: 0.5,
+                min: 0.005,
+                max: 0.2,
+                step: 0.005,
                 onChange: (v) =>
                   updateSplineConfig(
                     setSplineConfigs,

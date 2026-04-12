@@ -1,16 +1,7 @@
 import * as THREE from 'three';
 
-// Scale factor to convert authoring-space coords to scene units.
-// Scene camera sits at roughly (3, 2.5, 4) looking at origin — smoke
-// needs to be within a few units of the boat (~0..2 range).
-const SCALE = 1 / 300;
-
-const P = (x, y, z) => ({
-  position: new THREE.Vector3(x * SCALE, y * SCALE, z * SCALE),
-  rotation: new THREE.Euler(0, 0, 0),
-  scale: new THREE.Vector3(1, 1, 1),
-});
-
+// Points are at scene scale (1 unit ≈ 1 metre), matching the toolbox editor
+// and the StillPullingForYou WIP scene coordinate system.
 const STILL_PULLING_FOR_YOU_SMOKE = {
   'Still Pulling For You': {
     splines: [

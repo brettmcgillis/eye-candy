@@ -13,6 +13,7 @@ import GridBox from '../../../../elements/gridbox/GridBox';
 import SplineLine from '../../../../elements/spline/SplineLine';
 import SplinePoints from '../../../../elements/spline/SplinePoints';
 import SplineGroup from '../../../../elements/splineGroup/SplineGroup';
+import CS184VolumetricFire from '../../../../elements/volumetricFire/CS184VolumetricFire';
 import FireballVolume from '../../../../elements/volumetricFire/FireballVolume';
 import VolumetricFire from '../../../../elements/volumetricFire/VolumetricFire';
 import { parsePreset } from '../shared/splineDefaults';
@@ -122,6 +123,8 @@ export default function FireTest() {
         bgColor={config.bgColor}
         lineColor={config.lineColor}
         lineWidth={0.02}
+        size={20}
+        gridSize={1}
       />
 
       <OrbitControls makeDefault dampingFactor={0.2} />
@@ -137,6 +140,7 @@ export default function FireTest() {
           splineConfig={config.splineConfigs[index] ?? {}}
           attractorsRef={attractorsRef}
           setSplinePoints={setSplinePoints}
+          allowedTypes="fire"
         />
       ))}
       {/* eslint-enable react/no-array-index-key */}
@@ -152,6 +156,8 @@ export default function FireTest() {
         capSegments={config.fireSpline.capSegments}
         speed={config.fireSpline.speed}
         weight={config.fireSpline.weight}
+        noiseFreq={config.fireSpline.noiseFreq}
+        noiseAmp={config.fireSpline.noiseAmp}
         animated={config.fireSpline.animated}
         smokeLightColor={config.fireSpline.smokeLightColor}
         smokeDarkColor={config.fireSpline.smokeDarkColor}
@@ -182,6 +188,9 @@ export default function FireTest() {
 
       {/* ── VolumetricFire (slice-rendered hexahedron) ────────────────────── */}
       <VolumetricFire {...config.volumetricFire} />
+
+      {/* ── CS184VolumetricFire (ray-marched, ember particles) ───────────── */}
+      <CS184VolumetricFire {...config.cs184Fire} />
 
       {/* ── FireballVolume (ray-marched spherical explosion) ──────────────── */}
       <FireballVolume {...config.fireballVolume} />

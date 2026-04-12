@@ -28,12 +28,14 @@ ${noiseGlsl}
 varying float ao;
 uniform float time;
 uniform float weight;
+uniform float noiseFreq;
+uniform float noiseAmp;
 
 void main() {
   float noise = turbulence( 0.5 * normal + time );
 
   float displacement = - weight * ( 10.0 * -0.10 * noise );
-  displacement += 5.0 * pnoise( 0.05 * position + vec3( 2.0 * time ), vec3( 100.0 ) );
+  displacement += noiseAmp * pnoise( noiseFreq * position + vec3( 2.0 * time ), vec3( 100.0 ) );
 
   ao = noise;
   vec3 newPosition = position + normal * vec3( displacement );
@@ -79,6 +81,11 @@ export default function PerlinNoiseBall({
   detail = 6,
   speed = 1.0,
   weight = 10.0,
+  // noiseFreq / noiseAmp control the secondary large-scale pnoise displacement.
+  // Defaults match the original hardcoded values (tuned for radius ≈ 20 units).
+  // Scene-scale consumers (radius ≈ 0.6 m) should pass noiseFreq≈2.0, noiseAmp≈0.15.
+  noiseFreq = 0.05,
+  noiseAmp = 5.0,
   texturePath = '/images/explosion.png',
   animated = true,
   greyscale = false,
@@ -97,6 +104,8 @@ export default function PerlinNoiseBall({
     tExplosion: { value: tExplosion },
     time: { value: 0.0 },
     weight: { value: weight },
+    noiseFreq: { value: noiseFreq },
+    noiseAmp: { value: noiseAmp },
     greyscale: { value: greyscale ? 1.0 : 0.0 },
     smokeLightColor: { value: new THREE.Color(smokeLightColor) },
     smokeDarkColor: { value: new THREE.Color(smokeDarkColor) },
@@ -105,6 +114,8 @@ export default function PerlinNoiseBall({
   const uniforms = uniformsRef.current;
   uniforms.tExplosion.value = tExplosion;
   uniforms.weight.value = weight;
+  uniforms.noiseFreq.value = noiseFreq;
+  uniforms.noiseAmp.value = noiseAmp;
   uniforms.greyscale.value = greyscale ? 1.0 : 0.0;
   uniforms.smokeLightColor.value.set(smokeLightColor);
   uniforms.smokeDarkColor.value.set(smokeDarkColor);

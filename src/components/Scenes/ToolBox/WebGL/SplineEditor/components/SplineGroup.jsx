@@ -35,6 +35,7 @@ export default function SplineGroup({
         setPoints={setPoints}
         visible={config.showPoints}
         mode={config.pointMode}
+        pointSize={20}
       />
       <SplineLine
         points={positions}

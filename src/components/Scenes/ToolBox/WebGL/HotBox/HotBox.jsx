@@ -40,21 +40,21 @@ export default function HotBox() {
 
       <PerspectiveCamera
         makeDefault
-        position={[0, 250, 1000]}
+        position={[0, 3, 12]}
         fov={70}
-        near={1}
-        far={10000}
+        near={0.01}
+        far={500}
       />
 
       <ambientLight intensity={3} color={0xf0f0f0} />
       <spotLight
-        position={[0, 1500, 200]}
+        position={[0, 15, 2]}
         angle={Math.PI * 0.2}
         intensity={4.5}
         decay={0}
         castShadow
-        shadow-camera-near={200}
-        shadow-camera-far={2000}
+        shadow-camera-near={0.5}
+        shadow-camera-far={50}
         shadow-bias={-0.000222}
         shadow-mapSize={[1024, 1024]}
       />
@@ -63,6 +63,8 @@ export default function HotBox() {
         bgColor={config.bgColor ?? '#ffffff'}
         lineColor="#d1d1d1"
         lineWidth={0.02}
+        size={20}
+        gridSize={1}
       />
 
       <OrbitControls makeDefault dampingFactor={0.2} />

@@ -121,6 +121,9 @@ function FireballFromSpline({ points, config }) {
  *   splineConfig   — per-spline config (type, smokeType, fireType, all params)
  *   attractorsRef  — optional ref to attractors array
  *   setSplinePoints — (index, updater) => void
+ *   allowedTypes   — 'smoke' | 'fire' | 'both' (default 'both').
+ *                    Splines whose type doesn't match are silently skipped,
+ *                    keeping mixed-type presets compatible across all scenes.
  */
 export default function SplineGroup({
   index,
@@ -129,6 +132,7 @@ export default function SplineGroup({
   splineConfig,
   attractorsRef,
   setSplinePoints,
+  allowedTypes = 'both',
 }) {
   const setPoints = useCallback(
     (updater) => setSplinePoints(index, updater),
@@ -145,6 +149,8 @@ export default function SplineGroup({
   );
 
   if (!splineConfig.visible) return null;
+  if (allowedTypes === 'smoke' && splineConfig.type === 'Fire') return null;
+  if (allowedTypes === 'fire' && splineConfig.type === 'Smoke') return null;
 
   const isFire = splineConfig.type === 'Fire';
   const isSmoke = splineConfig.type === 'Smoke';

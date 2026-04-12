@@ -219,11 +219,15 @@ The hook merges preset defaults with override patches before passing down to Spl
 - [x] Standalone Elements section added to HotBox: SmokeBall, Fireball, Flame, FireballVolume (all at scene scale)
 - [x] Feature parity: all smoke types in SmokeTest + HotBox; all fire types in FireTest + HotBox
 
-### Phase 3 — Scale Calibration
-- [ ] Define canonical scene scale (calibrate against a reference WIP scene)
-- [ ] Recalibrate toolbox editor camera and GridBox to match
-- [ ] Re-author all large-space presets at correct scale
-- [ ] Delete SCALE constants and conversion helpers
+### Phase 3 — Scale Calibration ✅
+- [x] Canonical scale defined: 1 unit ≈ 1 metre, matching DumpsterFire / FlyingHigh / PolicePresence / BurningAtBothEnds / StillPullingForYou WIP scenes. ThatsAllFolks intentionally stays large (letterform smoke is an artistic large-world choice).
+- [x] GridBox made configurable (`size` + `gridSize` props; defaults unchanged for SplineEditor backward compat). All three toolbox scenes pass `size={20} gridSize={1}`.
+- [x] SmokeTest camera: `[0,250,1000]` → `[0,3,12]`, near/far: `1/10000` → `0.01/500`, spotlight and shadow planes updated, default SmokeBallSpline points ÷100, default attractor positions ÷100, `pointSize` `30` → `0.3`
+- [x] HotBox camera: same recalibration as SmokeTest
+- [x] FireTest camera was already at scene scale; GridBox props added
+- [x] `useSmokeTestControls`: SmokeBall position defaults `(-500,100,0)` → `(-5,1,0)`, radius `60` → `0.6`, SmokeBallSpline base radius `60` → `0.6`; all ranges updated to scene-unit bounds
+- [x] `defaultSmokePreset.js`: all point coordinates ÷100 to scene scale
+- [x] `stillPullingForYouSmoke.js`: deleted dead `SCALE=1/300` constant and `P()` helper (coordinates were already baked at scene scale)
 
 ### Phase 4 — Dev Tooling & Export
 - [ ] Build `writePresetPlugin.js` Vite middleware

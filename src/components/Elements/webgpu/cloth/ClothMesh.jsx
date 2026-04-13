@@ -1,6 +1,15 @@
+import {
+  cos,
+  mix,
+  uniform as nodeUniform,
+  sin,
+  texture as textureSample,
+  uv,
+  vec2,
+} from 'three/tsl';
 import * as THREE from 'three/webgpu';
 
-import React, { useMemo, useRef } from 'react';
+import React, { useEffect, useMemo, useRef } from 'react';
 
 import { useFrame } from '@react-three/fiber';
 
@@ -42,11 +51,24 @@ export default function ClothMesh({
   windDirZ = 0,
   stiffness = 0.2,
   dampening = 0.99,
+  paused = false,
   // Sphere interaction
   sphereEnabled = true,
   sphereRadius = 0.12,
   sphereWireframe = false,
   sphereColor = '#ff0000',
+  // Tatter — noise-driven face removal for edges/holes
+  tatterSeed = 42,
+  tatterScale = 3,
+  tatterEdge = 0,
+  tatterHoles = 0,
+  // Optional texture URL (applied as material.map)
+  textureUrl = null,
+  // Array of URLs to eagerly preload (avoids Suspense on switch)
+  preloadTextures = [],
+  textureScaleX = 1,
+  textureScaleY = 1,
+  textureRotation = 0,
   // Material properties applied each frame (optional)
   materialProps,
 }) {
@@ -56,6 +78,16 @@ export default function ClothMesh({
     lastPointerY: 0,
   });
   const sphereRef = useRef();
+
+  // Persistent GPU uniforms for texture compositing (stable across frames)
+  const texUniforms = useMemo(
+    () => ({
+      baseColorU: nodeUniform(new THREE.Color(1, 1, 1)),
+      scaleU: nodeUniform(new THREE.Vector2(1, 1)),
+      rotU: nodeUniform(0),
+    }),
+    []
+  );
 
   const { sim, interactionCenter } = useMemo(() => {
     const mat = new THREE.MeshPhysicalNodeMaterial({
@@ -72,6 +104,12 @@ export default function ClothMesh({
       gravity,
       windFrequency,
       windAmplitude,
+      tatter: {
+        seed: tatterSeed,
+        scale: tatterScale,
+        edge: tatterEdge,
+        holes: tatterHoles,
+      },
       material: mat,
     });
     const cx = pinEdge === 'top' ? origin[0] : origin[0] + width / 2;
@@ -81,6 +119,63 @@ export default function ClothMesh({
       interactionCenter: new THREE.Vector3(cx, cy, origin[2]),
     };
   }, []); // GPU buffers built once — intentionally static
+
+  // Eagerly preload all texture URLs into a Map (no Suspense)
+  const textureMap = useMemo(() => {
+    const loader = new THREE.TextureLoader();
+    const map = new Map();
+    preloadTextures.forEach((url) => {
+      if (url && url !== 'None') {
+        map.set(url, loader.load(url));
+      }
+    });
+    return map;
+    // eslint-disable-next-line
+  }, []); // Loaded once at mount — intentionally static
+
+  const texture = textureUrl ? textureMap.get(textureUrl) || null : null;
+
+  useEffect(() => {
+    if (textureUrl && texture) {
+      texture.wrapS = THREE.ClampToEdgeWrapping;
+      texture.wrapT = THREE.ClampToEdgeWrapping;
+
+      // Build UV transform: scale + rotate around center
+      const uvCentered = uv().sub(0.5);
+      const scaled = uvCentered.mul(texUniforms.scaleU);
+      const c = cos(texUniforms.rotU);
+      const s = sin(texUniforms.rotU);
+      const rotated = vec2(
+        scaled.x.mul(c).sub(scaled.y.mul(s)),
+        scaled.x.mul(s).add(scaled.y.mul(c))
+      );
+      const transformedUv = rotated.add(0.5);
+
+      // Alpha-composite: base color where transparent, texture where opaque
+      const texNode = textureSample(texture, transformedUv);
+      sim.material.colorNode = mix(
+        texUniforms.baseColorU,
+        texNode.rgb,
+        texNode.a
+      );
+      sim.material.map = null;
+      sim.material.needsUpdate = true;
+    } else {
+      sim.material.colorNode = null;
+      sim.material.map = null;
+      sim.material.needsUpdate = true;
+    }
+  }, [sim, textureUrl, texture, texUniforms]);
+
+  // Rebuild tatter (index buffer only) when noise params change
+  useEffect(() => {
+    sim.rebuildTatter({
+      seed: tatterSeed,
+      scale: tatterScale,
+      edge: tatterEdge,
+      holes: tatterHoles,
+    });
+  }, [sim, tatterSeed, tatterScale, tatterEdge, tatterHoles]);
 
   const timePerStep = 1 / stepsPerSecond;
 
@@ -93,6 +188,13 @@ export default function ClothMesh({
     sim.stiffnessU.value = stiffness;
     sim.dampeningU.value = dampening;
     sim.sphereRadiusU.value = sphereRadius;
+
+    // Push texture-compositing uniforms
+    texUniforms.scaleU.value.set(1 / textureScaleX, 1 / textureScaleY);
+    texUniforms.rotU.value = (textureRotation * Math.PI) / 180;
+    if (materialProps?.color) {
+      texUniforms.baseColorU.value.set(materialProps.color);
+    }
 
     // Apply dynamic material properties
     if (materialProps) {
@@ -138,12 +240,14 @@ export default function ClothMesh({
     s.lastPointerY = pointer.y;
 
     // Fixed-timestep simulation
-    s.timeSinceLastStep += Math.min(delta, 1 / 60);
+    if (!paused) {
+      s.timeSinceLastStep += Math.min(delta, 1 / 60);
 
-    while (s.timeSinceLastStep >= timePerStep) {
-      s.timeSinceLastStep -= timePerStep;
-      gl.compute(sim.computeSprings);
-      gl.compute(sim.computeVertices);
+      while (s.timeSinceLastStep >= timePerStep) {
+        s.timeSinceLastStep -= timePerStep;
+        gl.compute(sim.computeSprings);
+        gl.compute(sim.computeVertices);
+      }
     }
   });
 

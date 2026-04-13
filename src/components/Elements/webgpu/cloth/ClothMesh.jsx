@@ -46,6 +46,7 @@ export default function ClothMesh({
   sphereEnabled = true,
   sphereRadius = 0.12,
   sphereWireframe = false,
+  sphereColor = '#ff0000',
   // Material properties applied each frame (optional)
   materialProps,
 }) {
@@ -158,7 +159,7 @@ export default function ClothMesh({
           <icosahedronGeometry args={[sphereRadius, 3]} />
           <meshBasicMaterial
             wireframe
-            color="#00ffff"
+            color={sphereColor}
             transparent
             opacity={0.4}
           />

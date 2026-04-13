@@ -51,7 +51,7 @@ export default function useSceneControls() {
       },
     }),
     Wind: folder({
-      wind: { value: 1.5, min: 0, max: 5, step: 0.1, label: 'Strength' },
+      wind: { value: 4.5, min: 0, max: 5, step: 0.1, label: 'Strength' },
       windDirX: {
         value: 1,
         min: -1,
@@ -68,6 +68,20 @@ export default function useSceneControls() {
       },
     }),
     Cloth: folder({
+      clothWidth: {
+        value: 1.0,
+        min: 0.2,
+        max: 3.0,
+        step: 0.05,
+        label: 'Width',
+      },
+      clothHeight: {
+        value: 0.7,
+        min: 0.2,
+        max: 3.0,
+        step: 0.05,
+        label: 'Height',
+      },
       segmentsX: {
         value: 30,
         min: 5,

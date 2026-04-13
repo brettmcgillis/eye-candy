@@ -15,6 +15,8 @@ export default function Surrender() {
     rotateY,
     posX,
     posY,
+    clothWidth,
+    clothHeight,
     wind,
     windDirX,
     windDirZ,
@@ -131,7 +133,9 @@ export default function Surrender() {
         />
         <Flag
           ref={flagRef}
-          key={`${segmentsX}-${segmentsY}`}
+          key={`${clothWidth}-${clothHeight}-${segmentsX}-${segmentsY}`}
+          width={clothWidth}
+          height={clothHeight}
           segmentsX={segmentsX}
           segmentsY={segmentsY}
           wind={wind}

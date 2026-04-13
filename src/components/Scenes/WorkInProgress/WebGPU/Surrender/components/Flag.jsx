@@ -6,6 +6,8 @@ const FLAG_TOP_Y = 0.9;
 
 const Flag = forwardRef(function Flag(
   {
+    width = 1.0,
+    height = 0.7,
     segmentsX = 30,
     segmentsY = 21,
     wind = 1.0,
@@ -46,8 +48,8 @@ const Flag = forwardRef(function Flag(
   return (
     <ClothMesh
       ref={ref}
-      width={1.0}
-      height={0.7}
+      width={width}
+      height={height}
       segmentsX={segmentsX}
       segmentsY={segmentsY}
       pinEdge="left"

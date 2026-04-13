@@ -79,11 +79,15 @@ export default function FlagPole({
         position={[0, POLE_CENTER_Y, 0]}
         geometry={poleGeo}
         material={poleMat}
+        castShadow
+        receiveShadow
       />
       <mesh
         position={[0, FINIAL_Y, 0]}
         geometry={finialGeo}
         material={finialMat}
+        castShadow
+        receiveShadow
       />
       {ringPositions.map((ry) => (
         <mesh
@@ -92,6 +96,8 @@ export default function FlagPole({
           rotation={[Math.PI / 2, 0, 0]}
           geometry={ringGeo}
           material={ringMat}
+          castShadow
+          receiveShadow
         />
       ))}
     </group>

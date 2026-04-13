@@ -66,8 +66,15 @@ export default function Surrender() {
     ambientColor,
     keyIntensity,
     keyColor,
+    keyPosX,
+    keyPosY,
+    keyPosZ,
+    keyShadow,
     fillIntensity,
     fillColor,
+    fillPosX,
+    fillPosY,
+    fillPosZ,
     outlineEnabled,
     edgeStrength,
     edgeThickness,
@@ -101,12 +108,22 @@ export default function Surrender() {
       {/* Soft overcast lighting to match the painting */}
       <ambientLight intensity={ambientIntensity} color={ambientColor} />
       <directionalLight
-        position={[3, 4, 2]}
+        position={[keyPosX, keyPosY, keyPosZ]}
         intensity={keyIntensity}
         color={keyColor}
+        castShadow={keyShadow}
+        shadow-mapSize={[2048, 2048]}
+        shadow-camera-left={-2}
+        shadow-camera-right={2}
+        shadow-camera-top={2}
+        shadow-camera-bottom={-1.5}
+        shadow-camera-near={0.5}
+        shadow-camera-far={20}
+        shadow-bias={-0.001}
+        shadow-normalBias={0.02}
       />
       <directionalLight
-        position={[-2, 1, -1]}
+        position={[fillPosX, fillPosY, fillPosZ]}
         intensity={fillIntensity}
         color={fillColor}
       />

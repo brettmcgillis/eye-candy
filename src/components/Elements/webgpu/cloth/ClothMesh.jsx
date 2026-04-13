@@ -287,6 +287,8 @@ const ClothMesh = forwardRef(function ClothMesh(
         geometry={sim.geometry}
         material={sim.material}
         frustumCulled={false}
+        castShadow
+        receiveShadow
       />
       {sphereWireframe && (
         <mesh ref={sphereRef} frustumCulled={false}>

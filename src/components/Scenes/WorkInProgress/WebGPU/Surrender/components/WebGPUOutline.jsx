@@ -1,5 +1,6 @@
 import { gaussianBlur } from 'three/addons/tsl/display/GaussianBlurNode.js';
 import {
+  mix,
   mx_cell_noise_float as mxCellNoise,
   mx_fractal_noise_float as mxFractalNoise,
   mx_worley_noise_float as mxWorleyNoise,
@@ -107,11 +108,11 @@ export default function WebGPUOutline({
       band = band.mul(lum);
     }
 
-    // Tint and intensity
-    const tinted = band.mul(u.color).mul(u.strength);
+    // Alpha-blend outline over the scene so both light and dark colors work
+    const alpha = band.mul(u.strength).clamp(0.0, 1.0);
 
     const postProcessing = new THREE.PostProcessing(renderer);
-    postProcessing.outputNode = scenePass.add(tinted);
+    postProcessing.outputNode = mix(scenePass, u.color, alpha);
     postRef.current = postProcessing;
 
     return () => {

@@ -1,6 +1,7 @@
 import { folder, useControls } from 'leva';
 
 import { imageFile } from '../../../../../../utils/appUtils';
+import { PATTERN_TYPES } from '../components/WebGPUOutline';
 
 export const TEXTURE_OPTIONS = {
   None: 'None',
@@ -286,7 +287,7 @@ export default function useSceneControls() {
       },
     }),
     Scene: folder({
-      bgColor: { value: '#d0d8e0', label: 'Background' },
+      bgColor: { value: '#838383', label: 'Background' },
       fogNear: { value: 5, min: 0, max: 20, step: 0.5, label: 'Fog Near' },
       fogFar: { value: 14, min: 1, max: 30, step: 0.5, label: 'Fog Far' },
       ambientIntensity: {
@@ -313,6 +314,57 @@ export default function useSceneControls() {
         label: 'Fill Light',
       },
       fillColor: { value: '#ffffff', label: 'Fill Color' },
+    }),
+    Outline: folder({
+      outlineEnabled: { value: true, label: 'Enabled' },
+      edgeStrength: {
+        value: 7,
+        min: 0,
+        max: 10,
+        step: 0.1,
+        label: 'Strength',
+      },
+      edgeThickness: {
+        value: 2.5,
+        min: 0.5,
+        max: 8,
+        step: 0.1,
+        label: 'Thickness',
+      },
+      visibleEdgeColor: { value: '#3eb2ff', label: 'Color' },
+      downSampleRatio: {
+        value: 1,
+        min: 1,
+        max: 4,
+        step: 1,
+        label: 'Downsample',
+      },
+      patternType: {
+        value: 'None',
+        options: PATTERN_TYPES,
+        label: 'Pattern',
+      },
+      patternScale: {
+        value: 5,
+        min: 0.1,
+        max: 40,
+        step: 0.1,
+        label: 'Pattern Scale',
+      },
+      patternOctaves: {
+        value: 3,
+        min: 1,
+        max: 8,
+        step: 1,
+        label: 'Octaves',
+      },
+      patternLacunarity: {
+        value: 2,
+        min: 1,
+        max: 4,
+        step: 0.1,
+        label: 'Lacunarity',
+      },
     }),
   });
 }

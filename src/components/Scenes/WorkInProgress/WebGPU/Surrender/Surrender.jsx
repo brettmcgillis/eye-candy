@@ -1,9 +1,10 @@
-import React from 'react';
+import React, { useRef } from 'react';
 
 import { OrbitControls, PerspectiveCamera } from '@react-three/drei';
 
 import Flag from './components/Flag';
 import FlagPole from './components/FlagPole';
+import WebGPUOutline from './components/WebGPUOutline';
 import useSceneControls, { TEXTURE_URLS } from './hooks/useSceneControls';
 
 export default function Surrender() {
@@ -63,7 +64,18 @@ export default function Surrender() {
     keyColor,
     fillIntensity,
     fillColor,
+    outlineEnabled,
+    edgeStrength,
+    edgeThickness,
+    visibleEdgeColor,
+    downSampleRatio,
+    patternType,
+    patternScale,
+    patternOctaves,
+    patternLacunarity,
   } = useSceneControls();
+
+  const outlineGroupRef = useRef();
 
   return (
     <>
@@ -93,6 +105,7 @@ export default function Surrender() {
       <fog attach="fog" args={[bgColor, fogNear, fogFar]} />
 
       <group
+        ref={outlineGroupRef}
         position={[posX, posY, 0]}
         rotation={[0, (rotateY * Math.PI) / 180, (tiltZ * Math.PI) / 180]}
       >
@@ -145,6 +158,20 @@ export default function Surrender() {
           thickness={thickness}
         />
       </group>
+
+      {outlineEnabled && (
+        <WebGPUOutline
+          meshRef={outlineGroupRef}
+          edgeStrength={edgeStrength}
+          edgeThickness={edgeThickness}
+          visibleEdgeColor={visibleEdgeColor}
+          downSampleRatio={downSampleRatio}
+          patternType={patternType}
+          patternScale={patternScale}
+          patternOctaves={patternOctaves}
+          patternLacunarity={patternLacunarity}
+        />
+      )}
     </>
   );
 }

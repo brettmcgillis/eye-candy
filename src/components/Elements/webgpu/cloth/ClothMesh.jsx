@@ -9,7 +9,7 @@ import {
 } from 'three/tsl';
 import * as THREE from 'three/webgpu';
 
-import React, { useEffect, useMemo, useRef } from 'react';
+import React, { forwardRef, useEffect, useMemo, useRef } from 'react';
 
 import { useFrame } from '@react-three/fiber';
 
@@ -31,47 +31,50 @@ const COLOR_KEYS = new Set([
   'emissive',
 ]);
 
-export default function ClothMesh({
-  // Cloth shape (static — used at creation only)
-  width = 1.0,
-  height = 0.7,
-  segmentsX = 30,
-  segmentsY = 21,
-  pinEdge = 'left',
-  origin = [0, 0, 0],
-  gravity = 0.00005,
-  windFrequency = 1,
-  windAmplitude = 0.0001,
-  stepsPerSecond = 360,
-  // Initial material config (static — constructor only)
-  initialMaterial = {},
-  // Runtime simulation controls
-  wind = 1.0,
-  windDirX = 1,
-  windDirZ = 0,
-  stiffness = 0.2,
-  dampening = 0.99,
-  paused = false,
-  // Sphere interaction
-  sphereEnabled = true,
-  sphereRadius = 0.12,
-  sphereWireframe = false,
-  sphereColor = '#ff0000',
-  // Tatter — noise-driven face removal for edges/holes
-  tatterSeed = 42,
-  tatterScale = 3,
-  tatterEdge = 0,
-  tatterHoles = 0,
-  // Optional texture URL (applied as material.map)
-  textureUrl = null,
-  // Array of URLs to eagerly preload (avoids Suspense on switch)
-  preloadTextures = [],
-  textureScaleX = 1,
-  textureScaleY = 1,
-  textureRotation = 0,
-  // Material properties applied each frame (optional)
-  materialProps,
-}) {
+const ClothMesh = forwardRef(function ClothMesh(
+  {
+    // Cloth shape (static — used at creation only)
+    width = 1.0,
+    height = 0.7,
+    segmentsX = 30,
+    segmentsY = 21,
+    pinEdge = 'left',
+    origin = [0, 0, 0],
+    gravity = 0.00005,
+    windFrequency = 1,
+    windAmplitude = 0.0001,
+    stepsPerSecond = 360,
+    // Initial material config (static — constructor only)
+    initialMaterial = {},
+    // Runtime simulation controls
+    wind = 1.0,
+    windDirX = 1,
+    windDirZ = 0,
+    stiffness = 0.2,
+    dampening = 0.99,
+    paused = false,
+    // Sphere interaction
+    sphereEnabled = true,
+    sphereRadius = 0.12,
+    sphereWireframe = false,
+    sphereColor = '#ff0000',
+    // Tatter — noise-driven face removal for edges/holes
+    tatterSeed = 42,
+    tatterScale = 3,
+    tatterEdge = 0,
+    tatterHoles = 0,
+    // Optional texture URL (applied as material.map)
+    textureUrl = null,
+    // Array of URLs to eagerly preload (avoids Suspense on switch)
+    preloadTextures = [],
+    textureScaleX = 1,
+    textureScaleY = 1,
+    textureRotation = 0,
+    // Material properties applied each frame (optional)
+    materialProps,
+  },
+  ref
+) {
   const simState = useRef({
     timeSinceLastStep: 0,
     lastPointerX: 0,
@@ -254,6 +257,7 @@ export default function ClothMesh({
   return (
     <group>
       <mesh
+        ref={ref}
         geometry={sim.geometry}
         material={sim.material}
         frustumCulled={false}
@@ -271,4 +275,6 @@ export default function ClothMesh({
       )}
     </group>
   );
-}
+});
+
+export default ClothMesh;

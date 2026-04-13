@@ -21,12 +21,12 @@ export const TEXTURE_URLS = Object.values(TEXTURE_OPTIONS);
 export default function useSceneControls() {
   return useControls({
     Orientation: folder({
-      tiltZ: {
-        value: 0,
-        min: -90,
-        max: 90,
+      rotateX: {
+        value: -15,
+        min: -180,
+        max: 180,
         step: 1,
-        label: 'Tilt (deg)',
+        label: 'Rotate X (deg)',
       },
       rotateY: {
         value: 0,
@@ -34,6 +34,13 @@ export default function useSceneControls() {
         max: 180,
         step: 1,
         label: 'Rotate Y (deg)',
+      },
+      rotateZ: {
+        value: 15,
+        min: -90,
+        max: 90,
+        step: 1,
+        label: 'Rotate Z (deg)',
       },
       posX: {
         value: 0,
@@ -51,7 +58,7 @@ export default function useSceneControls() {
       },
     }),
     Wind: folder({
-      wind: { value: 4.5, min: 0, max: 5, step: 0.1, label: 'Strength' },
+      wind: { value: 4.7, min: 0, max: 5, step: 0.1, label: 'Strength' },
       windDirX: {
         value: 1,
         min: -1,
@@ -104,7 +111,7 @@ export default function useSceneControls() {
         label: 'Stiffness',
       },
       dampening: {
-        value: 0.97,
+        value: 0.98,
         min: 0.9,
         max: 1.0,
         step: 0.001,

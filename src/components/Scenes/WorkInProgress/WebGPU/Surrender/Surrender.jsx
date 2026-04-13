@@ -11,8 +11,9 @@ import useSceneControls, { TEXTURE_URLS } from './hooks/useSceneControls';
 
 export default function Surrender() {
   const {
-    tiltZ,
+    rotateX,
     rotateY,
+    rotateZ,
     posX,
     posY,
     clothWidth,
@@ -135,7 +136,11 @@ export default function Surrender() {
       <group
         ref={outlineGroupRef}
         position={[posX, posY, 0]}
-        rotation={[0, (rotateY * Math.PI) / 180, (tiltZ * Math.PI) / 180]}
+        rotation={[
+          (rotateX * Math.PI) / 180,
+          (rotateY * Math.PI) / 180,
+          (rotateZ * Math.PI) / 180,
+        ]}
       >
         <FlagPole
           poleColor={poleColor}

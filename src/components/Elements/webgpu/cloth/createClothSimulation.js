@@ -202,6 +202,7 @@ export default function createClothSimulation({
   const windDirU = uniform(new THREE.Vector3(1, 0, 0));
   const stiffnessU = uniform(0.2);
   const maxVelocityU = uniform(0.01);
+  const gravityDirU = uniform(new THREE.Vector3(0, -1, 0));
 
   // Per-vertex active mask — 0 for orphaned (all faces removed), 1 otherwise.
   // Sphere collision force is multiplied by this so the cursor passes through holes.
@@ -258,8 +259,8 @@ export default function createClothSimulation({
       force.addAssign(sf.mul(factor));
     });
 
-    // gravity
-    force.y.subAssign(gravity);
+    // gravity (direction-aware so rotation of the parent group is respected)
+    force.addAssign(gravityDirU.mul(gravity));
 
     // wind
     const noise = triNoise3D(position, windFrequency, time)
@@ -476,6 +477,7 @@ export default function createClothSimulation({
     stiffnessU,
     dampeningU,
     maxVelocityU,
+    gravityDirU,
     spherePosU,
     sphereU,
     sphereRadiusU,

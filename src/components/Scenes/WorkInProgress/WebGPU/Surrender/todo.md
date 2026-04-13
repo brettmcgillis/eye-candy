@@ -25,11 +25,11 @@
 
 - [x] Wind blown flag.
 - [x] Cursor-flag interaction.
-- [ ] Add cloth params for things like edge tatters, holes.
-- [ ] Cloth should be able to display a texture.
+- [x] Add cloth params for things like edge tatters, holes.
+- [x] Cloth should be able to display a texture.
 - [ ] Maybe add mode for "cutting" the wireframe of the cloth
 
 # // Bugs
 
-- [ ] try to prevent the cloth from crashing.
-- [ ] rotating flag pole does not effect flag cloth appropriately, we got that wrong.
+- [x] try to prevent the cloth from crashing.
+- [x] rotating flag pole does not effect flag cloth appropriately, we got that wrong.

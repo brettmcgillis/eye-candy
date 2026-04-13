@@ -27,6 +27,10 @@ const sharedRaycaster = new THREE.Raycaster();
 const sharedPlane = new THREE.Plane();
 const sharedIntersect = new THREE.Vector3();
 const sharedCameraDir = new THREE.Vector3();
+const sharedWorldQuat = new THREE.Quaternion();
+const sharedGravityDir = new THREE.Vector3();
+const sharedSphereLocal = new THREE.Vector3();
+const sharedWorldMatrix = new THREE.Matrix4();
 
 // Color-type properties on MeshPhysicalNodeMaterial that need .set()
 const COLOR_KEYS = new Set([
@@ -216,6 +220,14 @@ const ClothMesh = forwardRef(function ClothMesh(
     sim.sphereRadiusU.value = sphereRadius;
     sim.maxVelocityU.value = maxVelocity;
 
+    // Compute local-space gravity direction from the mesh's world rotation
+    // so gravity always pulls "world-down" regardless of parent group rotation.
+    if (meshRef.current) {
+      meshRef.current.getWorldQuaternion(sharedWorldQuat);
+      sharedGravityDir.set(0, -1, 0).applyQuaternion(sharedWorldQuat.invert());
+      sim.gravityDirU.value.copy(sharedGravityDir);
+    }
+
     // Push texture-compositing uniforms
     texUniforms.scaleU.value.set(1 / textureScaleX, 1 / textureScaleY);
     texUniforms.rotU.value = (textureRotation * Math.PI) / 180;
@@ -254,9 +266,21 @@ const ClothMesh = forwardRef(function ClothMesh(
       );
       sharedRaycaster.setFromCamera(pointer, camera);
       if (sharedRaycaster.ray.intersectPlane(sharedPlane, sharedIntersect)) {
-        sim.spherePosU.value.copy(sharedIntersect);
+        // Convert world-space hit to cloth's local space for the GPU sim
+        if (meshRef.current) {
+          sharedWorldMatrix.copy(meshRef.current.matrixWorld).invert();
+          sharedSphereLocal
+            .copy(sharedIntersect)
+            .applyMatrix4(sharedWorldMatrix);
+          sim.spherePosU.value.copy(sharedSphereLocal);
+        } else {
+          sim.spherePosU.value.copy(sharedIntersect);
+        }
         if (sphereRef.current) {
-          sphereRef.current.position.copy(sharedIntersect);
+          // Sphere mesh is a child of the rotated group — use local-space pos
+          sphereRef.current.position.copy(
+            meshRef.current ? sharedSphereLocal : sharedIntersect
+          );
         }
       }
       sim.sphereU.value = 1.0;

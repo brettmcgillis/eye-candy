@@ -1,4 +1,6 @@
-import React, { useRef } from 'react';
+import { button, useControls } from 'leva';
+
+import React, { useCallback, useRef } from 'react';
 
 import { OrbitControls, PerspectiveCamera } from '@react-three/drei';
 
@@ -76,6 +78,13 @@ export default function Surrender() {
   } = useSceneControls();
 
   const outlineGroupRef = useRef();
+  const flagRef = useRef();
+
+  const resetSim = useCallback(() => {
+    flagRef.current?.resetSim();
+  }, []);
+
+  useControls('Debug', { 'Reset Sim': button(resetSim) });
 
   return (
     <>
@@ -121,6 +130,7 @@ export default function Surrender() {
           ringRoughness={ringRoughness}
         />
         <Flag
+          ref={flagRef}
           key={`${segmentsX}-${segmentsY}`}
           segmentsX={segmentsX}
           segmentsY={segmentsY}

@@ -27,6 +27,16 @@
 
 # // Intent/Use Cases
 
+# // Presets
+
+- [x] Default Rings
+- [x] Gradient Rings
+- [x] Atomic
+- [x] Network
+- [x] Record
+- [x] Plate
+- [x] Static - CRT static ring, bloom, dark bg
+
 # // Features
 
 # // Bugs

@@ -78,6 +78,8 @@ vec3 textureRGB = tex2D(\_CameraOpaqueTexture, uv_quantized);
 ⚠️ Note: it may be necessary to have a 2D dimensional quantization resolution vector, to allow for aspect ratio adjustments to the steps across the horizontal axis of sampling. The horizontal data resolution over the vertical resolution of the input texture image provides the aspect ratio, which can be used to modulate the horizontal axis of quantization (as unit-resolution), thus maintaining isotropic rendering for each cell -- an aesthetic correction.
 glsl
 
+# // Presets
+
 // Aspect ratio correction (optional).
 // -- improved + more accurate, screen-space cell discretization.
 

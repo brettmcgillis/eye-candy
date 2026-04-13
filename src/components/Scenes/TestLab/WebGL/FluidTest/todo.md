@@ -43,6 +43,8 @@ Long term vision / use cases:
 - [x] Add a clear/reset control for the simulation (both in the public API and Leva).
 - [x] Fix debug markers, shape and size can be unpredicable across screen sizes. add height/width controls, remove aspect controls. default to square dimensions
 
+# // Presets
+
 ## Features
 
 - [x] Add rotation controls for debug cursor, debug auto, and debug stationary markers. min max at 0 - 90 degrees.

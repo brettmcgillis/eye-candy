@@ -13,6 +13,11 @@
 - Intent is to strike a balance between realism and surrealism. The candle, wick and flame should try to get to as real as we can. the inverted candle should be surrel, in that it is like a mirror image of the top candle; there is still a crater at the wick and excess wax flows up the candle stick in symmetry to the wax flowing down.
 - Candle is symmetrical in the same manner as the suicide king in a deck of cards
 
+# // Presets
+
+- [x] Enlightened - Lit candle, volumetric flame
+- [x] Extinguished - Unlit candle, smoke rising
+
 # // Features
 
 - [x] Scene scaffold: BurningAtBothEnds.jsx with Leva controls hook

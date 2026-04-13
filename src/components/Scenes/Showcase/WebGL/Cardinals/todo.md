@@ -13,6 +13,12 @@
 
 # // Intent/Use Cases
 
+# // Presets
+
+- [x] Cardinals - Red fluid, black/white markers
+- [x] Magpies - Ink on paper
+- [x] Bluejays - Blue variant
+
 # // Features
 
 # // Bugs

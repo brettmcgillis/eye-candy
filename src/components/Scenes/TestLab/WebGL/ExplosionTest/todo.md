@@ -19,6 +19,8 @@
 - [x] create a new material that uses the shader from explodable group.
 - [x] Update presets so we have an example of each material type. Include one meshStandard in wireframe mode
 
+# // Presets
+
 # // Bugs
 
 - [x] Seeing issues when exploding the cube. The only points of interaction that seem to work are the vertexes where the faces meet. Interacting with the cube faces doenst make the effect happen. We can explode the face of a plane and a sphere so I suspect we can do the same with a cube

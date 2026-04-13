@@ -78,6 +78,8 @@ To Build:
 - [FlyingHigh](src/components/scenes/WorkInProgress/WebGL/FlyingHigh/todo.md)
 - [RowItAlone](src/components/scenes/WorkInProgress/WebGL/RowItAlone/todo.md)
 - [StayingAfloat](src/components/scenes/WorkInProgress/WebGL/StayingAfloat/todo.md)
+- [Surrender](src/components/scenes/WorkInProgress/WebGPU/Surrender/todo.md)
+- [StayHunted](src/components/scenes/WorkInProgress/WebGPU/StayHunted/todo.md)
 
 **Template**
 
@@ -129,6 +131,8 @@ To Build:
 - [ ] All my thoughts are so cumulus - Plate
 - [ ] All my thoughts are so cumulus - Record
 - [✔] All my thoughts are so cumulus - Static
+- [ ] Surrender
+- [ ] Stay Hunted
 
 - TrophyHusband
 - Yggdraskill

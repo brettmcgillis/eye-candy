@@ -19,6 +19,8 @@
 - I will want our typical presets/reset preset/copy preset controls so I can "save" difficult splines and work on them over time.
 - I will want a way to pin the camera position to a given axis, such that I can create 2d splines.
 
+# // Presets
+
 # // Features
 
 - [ ] Grid snapping control.

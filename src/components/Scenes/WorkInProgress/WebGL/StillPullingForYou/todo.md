@@ -35,6 +35,12 @@
   - Still Pulling - slower, reduced movement
   - Sunk - Off. no smoke at this setting
 
+# // Presets
+
+- [x] Still Pulling - Calm seas, smoke flowing
+- [x] Rough Waters - Stormy, aggressive smoke
+- [x] Sunk - No smoke
+
 # // Features
 
 # // Bugs

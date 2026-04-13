@@ -13,6 +13,12 @@
 - Camera should have a second modality where it follows the die being rolled, and returns home after timeout elapses.
 - Should be very, very performant due to point # 1.
 
+# // Presets
+
+- [x] Default
+- [ ] High Performance - Simplified colliders
+- [ ] Low Performance - Simplified colliders for mobile
+
 # // Features
 
 - [x] custom and trimesh colliders for each dice.

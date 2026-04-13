@@ -24,6 +24,8 @@
 - the scene allows for adjusting the diameter of the ring
 - the scene allows for adjusting the stepped rotation of geo instances in the ring.
 
+# // Presets
+
 # // Features
 
 # // Bugs

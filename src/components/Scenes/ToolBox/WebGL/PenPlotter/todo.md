@@ -21,6 +21,8 @@
 - The left side of the scene should contain a test scene in 3d. This side should determine the perspective we are using for the plotter output. This side should contain orbit controls so we can modify camera position and see it reflected in the plotter output. This side will eventually be used to display ANY scene from the app.
 - The right side of the scene should contain a preview of the plotter output. This side should not have any sort of camera control and is only used to preview the output. Any modifications to camera position on the left side should not modify camera position on this side, only change the contents rendered in the preview.
 
+# // Presets
+
 # // Features
 
 - [x] Support exporting a scene as an SVG, to be printed using an xy pen plotter.

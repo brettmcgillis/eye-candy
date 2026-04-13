@@ -14,6 +14,11 @@
 
 # // Intent/Use Cases
 
+# // Presets
+
+- [x] Red
+- [x] Blue
+
 # // Features
 
 # // Bugs

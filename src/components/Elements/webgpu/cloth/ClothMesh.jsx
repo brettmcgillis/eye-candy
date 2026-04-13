@@ -9,7 +9,13 @@ import {
 } from 'three/tsl';
 import * as THREE from 'three/webgpu';
 
-import React, { forwardRef, useEffect, useMemo, useRef } from 'react';
+import React, {
+  forwardRef,
+  useEffect,
+  useImperativeHandle,
+  useMemo,
+  useRef,
+} from 'react';
 
 import { useFrame } from '@react-three/fiber';
 
@@ -44,6 +50,7 @@ const ClothMesh = forwardRef(function ClothMesh(
     windFrequency = 1,
     windAmplitude = 0.0001,
     stepsPerSecond = 360,
+    maxVelocity = 0.01,
     // Initial material config (static — constructor only)
     initialMaterial = {},
     // Runtime simulation controls
@@ -80,6 +87,7 @@ const ClothMesh = forwardRef(function ClothMesh(
     lastPointerX: 0,
     lastPointerY: 0,
   });
+  const meshRef = useRef();
   const sphereRef = useRef();
 
   // Persistent GPU uniforms for texture compositing (stable across frames)
@@ -122,6 +130,21 @@ const ClothMesh = forwardRef(function ClothMesh(
       interactionCenter: new THREE.Vector3(cx, cy, origin[2]),
     };
   }, []); // GPU buffers built once — intentionally static
+
+  // Expose resetSim on the forwarded ref
+  useImperativeHandle(
+    ref,
+    () => ({
+      get mesh() {
+        return meshRef.current;
+      },
+      resetSim() {
+        sim.reset();
+        simState.current.timeSinceLastStep = 0;
+      },
+    }),
+    [sim]
+  );
 
   // Eagerly preload all texture URLs into a Map (no Suspense)
   const textureMap = useMemo(() => {
@@ -191,6 +214,7 @@ const ClothMesh = forwardRef(function ClothMesh(
     sim.stiffnessU.value = stiffness;
     sim.dampeningU.value = dampening;
     sim.sphereRadiusU.value = sphereRadius;
+    sim.maxVelocityU.value = maxVelocity;
 
     // Push texture-compositing uniforms
     texUniforms.scaleU.value.set(1 / textureScaleX, 1 / textureScaleY);
@@ -245,9 +269,11 @@ const ClothMesh = forwardRef(function ClothMesh(
     // Fixed-timestep simulation
     if (!paused) {
       s.timeSinceLastStep += Math.min(delta, 1 / 60);
+      let steps = 0;
 
-      while (s.timeSinceLastStep >= timePerStep) {
+      while (s.timeSinceLastStep >= timePerStep && steps < 10) {
         s.timeSinceLastStep -= timePerStep;
+        steps += 1;
         gl.compute(sim.computeSprings);
         gl.compute(sim.computeVertices);
       }
@@ -257,7 +283,7 @@ const ClothMesh = forwardRef(function ClothMesh(
   return (
     <group>
       <mesh
-        ref={ref}
+        ref={meshRef}
         geometry={sim.geometry}
         material={sim.material}
         frustumCulled={false}

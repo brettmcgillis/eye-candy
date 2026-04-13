@@ -201,6 +201,7 @@ export default function createClothSimulation({
   const windU = uniform(1.0);
   const windDirU = uniform(new THREE.Vector3(1, 0, 0));
   const stiffnessU = uniform(0.2);
+  const maxVelocityU = uniform(0.01);
 
   // Per-vertex active mask — 0 for orphaned (all faces removed), 1 otherwise.
   // Sphere collision force is multiplied by this so the cursor passes through holes.
@@ -279,6 +280,12 @@ export default function createClothSimulation({
       .mul(sphereU)
       .mul(activeVal);
     force.addAssign(sForce);
+
+    // Clamp velocity to prevent simulation explosion
+    const speed = force.length().toVar();
+    If(speed.greaterThan(maxVelocityU), () => {
+      force.mulAssign(maxVelocityU.div(speed));
+    });
 
     forceBuf.element(instanceIndex).assign(force);
     posBuf.element(instanceIndex).addAssign(force);
@@ -449,16 +456,26 @@ export default function createClothSimulation({
     return v0.add(v1).add(v2).add(v3).mul(0.25);
   })();
 
+  // Reset simulation to initial rest positions and zero velocities.
+  const reset = () => {
+    posBuf.value.array.set(posArr);
+    posBuf.value.needsUpdate = true;
+    forceBuf.value.array.fill(0);
+    forceBuf.value.needsUpdate = true;
+  };
+
   return {
     computeSprings,
     computeVertices,
     rebuildTatter,
+    reset,
     geometry,
     material,
     windU,
     windDirU,
     stiffnessU,
     dampeningU,
+    maxVelocityU,
     spherePosU,
     sphereU,
     sphereRadiusU,

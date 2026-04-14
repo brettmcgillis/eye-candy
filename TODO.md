@@ -31,6 +31,7 @@
 
 To Build:
 
+- [ ] Ghosts
 - [ ] Skeleton with bird in ribcage
 - [ ] Skull & crossbones w/ stained glass spotlight.
 - [ ] Video casette tape with video playing on tape ribbon
@@ -66,6 +67,7 @@ To Build:
 - [StrudelDoodle](src/components/scenes/TestLab/WebGL/StrudelDoodle/todo.md)
 - [MobilePhysicsTest](src/components/scenes/TestLab/WebGPU/MobilePhysicsTest/todo.md)
 - [NetworkTest](src/components/scenes/TestLab/WebGPU/NetworkTest/todo.md)
+- [TheLoom](src/components/scenes/TestLab/WebGPU/TheLoom/todo.md)
 
 **WorkInProgress**
 
@@ -116,6 +118,7 @@ To Build:
 - [ ] SmokeTest
 - [ ] FireTest
 - [ ] HotBox
+- [ ] TheLoom
 - [ ] PixelHater updates
 - [ ] Thats All Folks
 - [ ] Crt Test

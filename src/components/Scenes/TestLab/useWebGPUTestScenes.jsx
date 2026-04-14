@@ -5,6 +5,7 @@ const MobilePhysicsTest = lazy(
   () => import('./WebGPU/MobilePhysicsTest/MobilePhysicsTest')
 );
 const NetworkTest = lazy(() => import('./WebGPU/NetworkTest/NetworkTest'));
+const TheLoom = lazy(() => import('./WebGPU/TheLoom/TheLoom'));
 
 const scenes = [
   {
@@ -24,6 +25,12 @@ const scenes = [
     label: 'Mobile Physics Test',
     icon: '📱',
     Component: MobilePhysicsTest,
+  },
+  {
+    id: 'theLoom',
+    label: 'The Loom',
+    icon: '🧵',
+    Component: TheLoom,
   },
 ];
 

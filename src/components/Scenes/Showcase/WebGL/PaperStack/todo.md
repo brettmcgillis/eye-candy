@@ -14,10 +14,12 @@
 # // Presets
 
 **Color Presets**
+
 - [x] Default - Rainbow spectrum
 - [x] RedAndBlack
 
 **Window Presets**
+
 - [x] Default
 - [x] FourtyFive
 

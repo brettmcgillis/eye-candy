@@ -31,7 +31,6 @@
 
 To Build:
 
-- [ ] Ghosts
 - [ ] Skeleton with bird in ribcage
 - [ ] Skull & crossbones w/ stained glass spotlight.
 - [ ] Video casette tape with video playing on tape ribbon
@@ -80,6 +79,7 @@ To Build:
 - [FlyingHigh](src/components/scenes/WorkInProgress/WebGL/FlyingHigh/todo.md)
 - [RowItAlone](src/components/scenes/WorkInProgress/WebGL/RowItAlone/todo.md)
 - [StayingAfloat](src/components/scenes/WorkInProgress/WebGL/StayingAfloat/todo.md)
+- [Ghosts](src/components/scenes/WorkInProgress/WebGPU/Ghosts/todo.md)
 - [Surrender](src/components/scenes/WorkInProgress/WebGPU/Surrender/todo.md)
 - [StayHunted](src/components/scenes/WorkInProgress/WebGPU/StayHunted/todo.md)
 
@@ -136,6 +136,7 @@ To Build:
 - [✔] All my thoughts are so cumulus - Static
 - [ ] Surrender
 - [ ] Stay Hunted
+- [ ] Ghosts
 
 - TrophyHusband
 - Yggdraskill

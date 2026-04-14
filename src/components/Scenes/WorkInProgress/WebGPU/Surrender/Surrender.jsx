@@ -1,8 +1,9 @@
 import { button, useControls } from 'leva';
 
-import React, { useCallback, useRef } from 'react';
+import React, { useCallback, useMemo, useRef } from 'react';
 
 import { OrbitControls, PerspectiveCamera } from '@react-three/drei';
+import { useThree } from '@react-three/fiber';
 
 import Flag from './components/Flag';
 import FlagPole from './components/FlagPole';
@@ -11,6 +12,7 @@ import useSceneControls, { TEXTURE_URLS } from './hooks/useSceneControls';
 
 export default function Surrender() {
   const {
+    orbitControls,
     rotateX,
     rotateY,
     rotateZ,
@@ -96,14 +98,32 @@ export default function Surrender() {
 
   useControls('Debug', { 'Reset Sim': button(resetSim) });
 
+  // Responsive camera: frame flag + finial, pull back on narrow (mobile) viewports
+  const size = useThree((state) => state.size);
+  const isPortrait = size.width < size.height;
+  const cameraPosition = useMemo(() => {
+    if (isPortrait) {
+      // Mobile/portrait: pull back so the full flag is visible
+      return [-0.5, 0.0, 3.8];
+    }
+    // Desktop/landscape: original framing with upward viewing angle
+    return [-0.5, 0.0, 2.5];
+  }, [isPortrait]);
+
+  const TARGET = [0.25, 0.3, 0];
+
   return (
     <>
-      <PerspectiveCamera makeDefault position={[-0.5, 0.0, 2.5]} fov={35} />
+      <PerspectiveCamera makeDefault position={cameraPosition} fov={35} />
       <OrbitControls
-        target={[0.25, 0.3, 0]}
+        target={TARGET}
         minDistance={1}
         maxDistance={5}
         enableDamping
+        enableRotate={orbitControls}
+        enableZoom={orbitControls}
+        enablePan={orbitControls}
+        makeDefault
       />
 
       {/* Soft overcast lighting to match the painting */}

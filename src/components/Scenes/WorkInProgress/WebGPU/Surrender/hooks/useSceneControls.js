@@ -308,6 +308,7 @@ export default function useSceneControls() {
       },
     }),
     Scene: folder({
+      orbitControls: { value: false, label: 'Orbit Controls' },
       bgColor: { value: '#838383', label: 'Background' },
       fogNear: { value: 5, min: 0, max: 20, step: 0.5, label: 'Fog Near' },
       fogFar: { value: 14, min: 1, max: 30, step: 0.5, label: 'Fog Far' },

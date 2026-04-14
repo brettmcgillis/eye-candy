@@ -2,7 +2,7 @@ import * as THREE from 'three/webgpu';
 
 import React, { memo, useMemo } from 'react';
 
-const POLE_BOTTOM_Y = -0.8;
+const POLE_BOTTOM_Y = -2.55;
 const POLE_TOP_Y = 0.95;
 const POLE_HEIGHT = POLE_TOP_Y - POLE_BOTTOM_Y;
 const POLE_CENTER_Y = (POLE_TOP_Y + POLE_BOTTOM_Y) / 2;

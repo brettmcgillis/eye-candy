@@ -11,7 +11,7 @@
 
 [Back to main TODO](../../../../../../TODO.md)
 
-- [ ] Finalize camera angle, position. Toggle orbit on off, off by default
+- [x] Finalize camera angle, position. Toggle orbit on off, off by default
 - [ ] Finalize bg color, lighting.
 - [ ] Organize scene controls
 - [ ] Improve cursor interaction, feels a little unpredictable

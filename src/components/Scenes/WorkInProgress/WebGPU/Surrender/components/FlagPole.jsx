@@ -1,6 +1,6 @@
 import * as THREE from 'three/webgpu';
 
-import React, { useMemo } from 'react';
+import React, { memo, useMemo } from 'react';
 
 const POLE_BOTTOM_Y = -0.8;
 const POLE_TOP_Y = 0.95;
@@ -20,7 +20,7 @@ const FLAG_TOP_Y = 0.9;
 const CLOTH_HEIGHT = 0.7;
 const NUM_RINGS = 3;
 
-export default function FlagPole({
+const FlagPole = memo(function FlagPole({
   poleColor = '#2a2a2a',
   poleMetalness = 0.6,
   poleRoughness = 0.4,
@@ -102,4 +102,6 @@ export default function FlagPole({
       ))}
     </group>
   );
-}
+});
+
+export default FlagPole;

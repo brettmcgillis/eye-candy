@@ -7,6 +7,7 @@ import {
   uv,
   vec2,
 } from 'three/tsl';
+import { TimestampQuery } from 'three/webgpu';
 import * as THREE from 'three/webgpu';
 
 import React, {
@@ -93,6 +94,7 @@ const ClothMesh = forwardRef(function ClothMesh(
   });
   const meshRef = useRef();
   const sphereRef = useRef();
+  const materialKeysRef = useRef(null);
 
   // Persistent GPU uniforms for texture compositing (stable across frames)
   const texUniforms = useMemo(
@@ -152,7 +154,10 @@ const ClothMesh = forwardRef(function ClothMesh(
 
   // Eagerly preload all texture URLs into a Map (no Suspense)
   const textureMap = useMemo(() => {
-    const loader = new THREE.TextureLoader();
+    // Use a private LoadingManager so these loads don't trigger the global
+    // R3F Loader component's setState during render.
+    const mgr = new THREE.LoadingManager();
+    const loader = new THREE.TextureLoader(mgr);
     const map = new Map();
     preloadTextures.forEach((url) => {
       if (url && url !== 'None') {
@@ -235,9 +240,15 @@ const ClothMesh = forwardRef(function ClothMesh(
       texUniforms.baseColorU.value.set(materialProps.color);
     }
 
-    // Apply dynamic material properties
+    // Apply dynamic material properties (cached keys avoid per-frame allocation)
     if (materialProps) {
-      Object.entries(materialProps).forEach(([key, val]) => {
+      if (!materialKeysRef.current) {
+        materialKeysRef.current = Object.keys(materialProps);
+      }
+      const keys = materialKeysRef.current;
+      for (let k = 0; k < keys.length; k += 1) {
+        const key = keys[k];
+        const val = materialProps[key];
         if (COLOR_KEYS.has(key) && sim.material[key]?.isColor) {
           sim.material[key].set(val);
         } else {
@@ -248,7 +259,7 @@ const ClothMesh = forwardRef(function ClothMesh(
           // eslint-disable-next-line no-param-reassign
           sim.material.transparent = val < 1;
         }
-      });
+      }
     }
 
     // Cursor → sphere interaction
@@ -300,6 +311,11 @@ const ClothMesh = forwardRef(function ClothMesh(
         steps += 1;
         gl.compute(sim.computeSprings);
         gl.compute(sim.computeVertices);
+      }
+
+      // Flush the timestamp query pool so it doesn't overflow
+      if (steps > 0 && gl.resolveTimestampsAsync) {
+        gl.resolveTimestampsAsync(TimestampQuery.COMPUTE);
       }
     }
   });

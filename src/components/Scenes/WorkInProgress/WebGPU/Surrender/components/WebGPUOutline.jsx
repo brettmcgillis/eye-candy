@@ -8,11 +8,10 @@ import {
   screenUV,
   texture,
   uniform,
-  vec2,
 } from 'three/tsl';
 import * as THREE from 'three/webgpu';
 
-import { useEffect, useMemo, useRef } from 'react';
+import { memo, useEffect, useMemo, useRef } from 'react';
 
 import { useFrame, useThree } from '@react-three/fiber';
 
@@ -37,7 +36,7 @@ export const PATTERN_TYPES = ['None', ...Object.keys(PATTERN_BUILDERS)];
  * Procedural TSL noise patterns can modulate the outline band for watercolor /
  * hatching / organic effects — no external images required.
  */
-export default function WebGPUOutline({
+function WebGPUOutline({
   meshRef,
   edgeStrength = 3,
   edgeThickness = 1,
@@ -58,10 +57,18 @@ export default function WebGPUOutline({
       strength: uniform(edgeStrength),
       color: uniform(new THREE.Color(visibleEdgeColor)),
       pScale: uniform(patternScale),
+      aspect: uniform(new THREE.Vector2(1, 1)),
     }),
     // eslint-disable-next-line
     []
   );
+
+  // Resize mask render target when canvas size changes (avoids full pipeline rebuild)
+  useEffect(() => {
+    if (maskRTRef.current) {
+      maskRTRef.current.setSize(size.width, size.height);
+    }
+  }, [size.width, size.height]);
 
   useEffect(() => {
     if (!renderer || !scene || !camera) return undefined;
@@ -98,9 +105,8 @@ export default function WebGPUOutline({
     // Procedural pattern: modulate outline band with TSL noise
     const builder = PATTERN_BUILDERS[patternType];
     if (builder) {
-      const aspect = vec2(size.width / size.height, 1.0);
       const lum = builder(
-        screenUV.mul(aspect),
+        screenUV.mul(u.aspect),
         u.pScale,
         patternOctaves,
         patternLacunarity
@@ -125,7 +131,6 @@ export default function WebGPUOutline({
     renderer,
     scene,
     camera,
-    size,
     downSampleRatio,
     edgeThickness,
     patternType,
@@ -174,6 +179,7 @@ export default function WebGPUOutline({
     u.strength.value = edgeStrength;
     u.color.value.set(visibleEdgeColor);
     u.pScale.value = patternScale;
+    u.aspect.value.set(size.width / size.height, 1.0);
 
     // --- 3. PostProcessing renders beauty + composite ---
     postRef.current.render();
@@ -181,3 +187,5 @@ export default function WebGPUOutline({
 
   return null;
 }
+
+export default memo(WebGPUOutline);

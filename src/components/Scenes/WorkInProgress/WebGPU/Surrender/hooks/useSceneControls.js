@@ -257,7 +257,7 @@ export default function useSceneControls() {
       },
     }),
     Pole: folder({
-      poleColor: { value: '#2a2a2a', label: 'Color' },
+      poleColor: { value: '#c4c4c4', label: 'Color' },
       poleMetalness: {
         value: 0.6,
         min: 0,
@@ -274,7 +274,7 @@ export default function useSceneControls() {
       },
     }),
     Finial: folder({
-      finialColor: { value: '#3a3a3a', label: 'Color' },
+      finialColor: { value: '#efcb5f', label: 'Color' },
       finialMetalness: {
         value: 0.7,
         min: 0,
@@ -291,7 +291,7 @@ export default function useSceneControls() {
       },
     }),
     Rings: folder({
-      ringColor: { value: '#444444', label: 'Color' },
+      ringColor: { value: '#c4c4c4', label: 'Color' },
       ringMetalness: {
         value: 0.8,
         min: 0,

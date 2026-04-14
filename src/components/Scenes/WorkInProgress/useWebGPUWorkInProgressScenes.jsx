@@ -1,7 +1,9 @@
 import { lazy } from 'react';
 
 const NoScene = lazy(() => import('../../../app/scaffold/NoScene'));
-const Ghosts = lazy(() => import('./WebGPU/Ghosts/Ghosts'));
+const AllMyFriendsAreGhosts = lazy(
+  () => import('./WebGPU/AllMyFriendsAreGhosts/AllMyFriendsAreGhosts')
+);
 const Surrender = lazy(() => import('./WebGPU/Surrender/Surrender'));
 const StayHunted = lazy(() => import('./WebGPU/StayHunted/StayHunted'));
 
@@ -13,10 +15,10 @@ const scenes = [
     Component: NoScene,
   },
   {
-    id: 'ghosts',
-    label: 'Ghosts',
+    id: 'allMyFriendsAreGhosts',
+    label: 'All My Friends Are Ghosts',
     icon: '👻',
-    Component: Ghosts,
+    Component: AllMyFriendsAreGhosts,
   },
   {
     id: 'surrender',

@@ -1,4 +1,4 @@
-# Ghosts
+# All My Friends Are Ghosts
 
 # // Intent / Use Cases
 
@@ -18,6 +18,9 @@
 - [ ] Light bloom
 
 # // Presets
+
+- [ ] Default - 2 white ghosts travelling in a figure 8 sin-waving up and down as they go
+- [ ] Retro - 4 ghosts, pac-man colors, path is composed entirely of right angles, still sin-waving up and down though
 
 # // Features
 

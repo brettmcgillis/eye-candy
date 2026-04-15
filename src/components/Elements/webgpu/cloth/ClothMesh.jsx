@@ -49,7 +49,10 @@ const ClothMesh = forwardRef(function ClothMesh(
     height = 0.7,
     segmentsX = 30,
     segmentsY = 21,
-    pinEdge = 'left',
+    pins = [],
+    centered = false,
+    orientation = 'vertical',
+    shape = 'rectangle',
     origin = [0, 0, 0],
     gravity = 0.00005,
     windFrequency = 1,
@@ -65,16 +68,21 @@ const ClothMesh = forwardRef(function ClothMesh(
     stiffness = 0.2,
     dampening = 0.99,
     paused = false,
-    // Sphere interaction
-    sphereEnabled = true,
-    sphereRadius = 0.12,
-    sphereWireframe = false,
-    sphereColor = '#ff0000',
-    // Tatter — noise-driven face removal for edges/holes
-    tatterSeed = 42,
-    tatterScale = 3,
+    // Cursor collider (slot 0) — follows pointer on the cloth plane
+    cursorCollider = true,
+    cursorRadius = 0.12,
+    // Scene-driven colliders (slots 1-3) — array of {position, radius}
+    colliders = [],
+    // Debug: render wireframe spheres for all active colliders
+    debugColliders = false,
+    debugColor = '#ff0000',
+    // Alpha masking — replaces tatter
+    alphaSeed = 42,
+    alphaScale = 3,
+    edgeFade = 0,
+    holeAmount = 0,
     tatterEdge = 0,
-    tatterHoles = 0,
+    cutouts = [],
     // Optional texture URL (applied as material.map)
     textureUrl = null,
     // Array of URLs to eagerly preload (avoids Suspense on switch)
@@ -93,7 +101,7 @@ const ClothMesh = forwardRef(function ClothMesh(
     lastPointerY: 0,
   });
   const meshRef = useRef();
-  const sphereRef = useRef();
+  const cursorSphereRef = useRef();
   const materialKeysRef = useRef(null);
 
   // Persistent GPU uniforms for texture compositing (stable across frames)
@@ -116,24 +124,32 @@ const ClothMesh = forwardRef(function ClothMesh(
       height,
       segmentsX,
       segmentsY,
-      pinEdge,
+      pins,
+      centered,
+      orientation,
+      shape,
       origin,
       gravity,
       windFrequency,
       windAmplitude,
-      tatter: {
-        seed: tatterSeed,
-        scale: tatterScale,
-        edge: tatterEdge,
-        holes: tatterHoles,
+      alpha: {
+        seed: alphaSeed,
+        scale: alphaScale,
+        edgeFade,
+        holeAmount,
+        tatterEdge,
+        cutouts,
       },
       material: mat,
     });
-    const cx = pinEdge === 'top' ? origin[0] : origin[0] + width / 2;
-    const cy = origin[1] - height / 2;
+    const cx = centered ? origin[0] : origin[0] + width / 2;
+    const isHoriz = orientation === 'horizontal';
+    const cy = isHoriz ? origin[1] : origin[1] - height / 2;
+    let cz = origin[2];
+    if (isHoriz) cz = centered ? origin[2] : origin[2] + height / 2;
     return {
       sim: s,
-      interactionCenter: new THREE.Vector3(cx, cy, origin[2]),
+      interactionCenter: new THREE.Vector3(cx, cy, cz),
     };
   }, []); // GPU buffers built once — intentionally static
 
@@ -202,15 +218,21 @@ const ClothMesh = forwardRef(function ClothMesh(
     }
   }, [sim, textureUrl, texture, texUniforms]);
 
-  // Rebuild tatter (index buffer only) when noise params change
+  // Rebuild alpha mask when params change
   useEffect(() => {
-    sim.rebuildTatter({
-      seed: tatterSeed,
-      scale: tatterScale,
-      edge: tatterEdge,
-      holes: tatterHoles,
+    sim.rebuildAlpha({
+      seed: alphaSeed,
+      scale: alphaScale,
+      edgeFade,
+      holeAmount,
+      tatterEdge,
     });
-  }, [sim, tatterSeed, tatterScale, tatterEdge, tatterHoles]);
+  }, [sim, alphaSeed, alphaScale, edgeFade, holeAmount, tatterEdge]);
+
+  // Per-pixel cutouts — push to GPU uniforms (not per-vertex)
+  useEffect(() => {
+    sim.applyCutouts(cutouts);
+  }, [sim, cutouts]);
 
   const timePerStep = 1 / stepsPerSecond;
 
@@ -222,8 +244,21 @@ const ClothMesh = forwardRef(function ClothMesh(
     sim.windDirU.value.set(windDirX, 0, windDirZ).normalize();
     sim.stiffnessU.value = stiffness;
     sim.dampeningU.value = dampening;
-    sim.sphereRadiusU.value = sphereRadius;
+    sim.colliderRadiusU[0].value = cursorRadius;
     sim.maxVelocityU.value = maxVelocity;
+    sim.gravityU.value = gravity;
+
+    // Push scene-driven colliders into slots 1-3
+    for (let c = 1; c < sim.NUM_COLLIDERS; c += 1) {
+      const ext = colliders[c - 1];
+      if (ext) {
+        sim.colliderPosU[c].value.copy(ext.position);
+        sim.colliderRadiusU[c].value = ext.radius;
+        sim.colliderEnabledU[c].value = 1.0;
+      } else {
+        sim.colliderEnabledU[c].value = 0.0;
+      }
+    }
 
     // Compute local-space gravity direction from the mesh's world rotation
     // so gravity always pulls "world-down" regardless of parent group rotation.
@@ -262,13 +297,13 @@ const ClothMesh = forwardRef(function ClothMesh(
       }
     }
 
-    // Cursor → sphere interaction
+    // Cursor → slot 0 collider interaction
     const pointerActive =
       pointer.x !== s.lastPointerX || pointer.y !== s.lastPointerY;
     if (
       pointerActive &&
       (pointer.x !== 0 || pointer.y !== 0) &&
-      sphereEnabled
+      cursorCollider
     ) {
       camera.getWorldDirection(sharedCameraDir);
       sharedPlane.setFromNormalAndCoplanarPoint(
@@ -283,20 +318,19 @@ const ClothMesh = forwardRef(function ClothMesh(
           sharedSphereLocal
             .copy(sharedIntersect)
             .applyMatrix4(sharedWorldMatrix);
-          sim.spherePosU.value.copy(sharedSphereLocal);
+          sim.colliderPosU[0].value.copy(sharedSphereLocal);
         } else {
-          sim.spherePosU.value.copy(sharedIntersect);
+          sim.colliderPosU[0].value.copy(sharedIntersect);
         }
-        if (sphereRef.current) {
-          // Sphere mesh is a child of the rotated group — use local-space pos
-          sphereRef.current.position.copy(
+        if (cursorSphereRef.current) {
+          cursorSphereRef.current.position.copy(
             meshRef.current ? sharedSphereLocal : sharedIntersect
           );
         }
       }
-      sim.sphereU.value = 1.0;
-    } else if (!sphereEnabled) {
-      sim.sphereU.value = 0.0;
+      sim.colliderEnabledU[0].value = 1.0;
+    } else if (!cursorCollider) {
+      sim.colliderEnabledU[0].value = 0.0;
     }
     s.lastPointerX = pointer.x;
     s.lastPointerY = pointer.y;
@@ -330,17 +364,34 @@ const ClothMesh = forwardRef(function ClothMesh(
         castShadow
         receiveShadow
       />
-      {sphereWireframe && (
-        <mesh ref={sphereRef} frustumCulled={false}>
-          <icosahedronGeometry args={[sphereRadius, 3]} />
+      {debugColliders && (
+        <mesh ref={cursorSphereRef} frustumCulled={false}>
+          <icosahedronGeometry args={[cursorRadius, 3]} />
           <meshBasicMaterial
             wireframe
-            color={sphereColor}
+            color={debugColor}
             transparent
             opacity={0.4}
           />
         </mesh>
       )}
+      {debugColliders &&
+        colliders.map((col, idx) => (
+          <mesh
+            // eslint-disable-next-line react/no-array-index-key
+            key={idx}
+            position={[col.position.x, col.position.y, col.position.z]}
+            frustumCulled={false}
+          >
+            <icosahedronGeometry args={[col.radius, 3]} />
+            <meshBasicMaterial
+              wireframe
+              color={debugColor}
+              transparent
+              opacity={0.4}
+            />
+          </mesh>
+        ))}
     </group>
   );
 });

@@ -1,10 +1,7 @@
-import * as THREE from 'three';
-
-import React, { useCallback, useMemo, useRef, useState } from 'react';
+import React, { useRef } from 'react';
 
 import { OrbitControls, PerspectiveCamera } from '@react-three/drei';
 
-import SMOKE_PRESETS from '../../../../../presets/smoke/smokePresets';
 import Attractors from '../../../../elements/attractors/Attractors';
 import GridBox from '../../../../elements/gridbox/GridBox';
 import Smoke2D from '../../../../elements/smoke/Smoke2D';
@@ -13,67 +10,9 @@ import SmokeBallSpline from '../../../../elements/smokeball/SmokeBallSpline';
 import SplineLine from '../../../../elements/spline/SplineLine';
 import SplinePoints from '../../../../elements/spline/SplinePoints';
 import SplineGroup from '../../../../elements/splineGroup/SplineGroup';
-import { parsePreset } from '../shared/splineDefaults';
 import useSmokeTestControls from './hooks/useSmokeTestControls';
 
-const DEFAULT_PRESET_KEY = Object.keys(SMOKE_PRESETS)[0];
-const { splines: DEFAULT_SPLINES } = parsePreset(
-  SMOKE_PRESETS[DEFAULT_PRESET_KEY]
-);
-
-// ─── Default SmokeBallSpline control points ──────────────────────────────────
-// Positioned to the left of centre at scene scale.
-const DEFAULT_SMOKEBALL_SPLINE_POINTS = [
-  {
-    position: new THREE.Vector3(-7, 0, 0),
-    rotation: new THREE.Euler(),
-    scale: new THREE.Vector3(1.0, 1.0, 1.0),
-  },
-  {
-    position: new THREE.Vector3(-7, 0.9, 0),
-    rotation: new THREE.Euler(),
-    scale: new THREE.Vector3(0.9, 0.9, 0.9),
-  },
-  {
-    position: new THREE.Vector3(-6.85, 1.8, 0),
-    rotation: new THREE.Euler(),
-    scale: new THREE.Vector3(1.0, 1.0, 1.0),
-  },
-  {
-    position: new THREE.Vector3(-6.75, 2.7, 0.1),
-    rotation: new THREE.Euler(),
-    scale: new THREE.Vector3(1.3, 1.3, 1.3),
-  },
-  {
-    position: new THREE.Vector3(-6.65, 3.6, 0.15),
-    rotation: new THREE.Euler(),
-    scale: new THREE.Vector3(1.6, 1.6, 1.6),
-  },
-  {
-    position: new THREE.Vector3(-6.55, 4.5, 0.2),
-    rotation: new THREE.Euler(),
-    scale: new THREE.Vector3(2.0, 2.0, 2.0),
-  },
-];
-
 export default function SmokeTest() {
-  const [splines, setSplines] = useState(() => DEFAULT_SPLINES);
-
-  const setSplinePoints = useCallback((splineIndex, updater) => {
-    setSplines((prev) =>
-      prev.map((pts, i) => {
-        if (i !== splineIndex) return pts;
-        return typeof updater === 'function' ? updater(pts) : updater;
-      })
-    );
-  }, []);
-
-  // SmokeBallSpline control-point state
-  const [smokeBallSplinePts, setSmokeBallSplinePts] = useState(
-    DEFAULT_SMOKEBALL_SPLINE_POINTS
-  );
-
-  // Attractors positioned near the particle/volumetric smoke rings (right side)
   const attractorsRef = useRef([
     { position: [7, 3.5, 2], direction: [0, 1, 0], rotation: [0, 0, 0] },
     { position: [3, 3.5, -2], direction: [0, 1, 0], rotation: [0, 0, 0] },
@@ -81,33 +20,26 @@ export default function SmokeTest() {
     { position: [4, 2, 1.5], direction: [0, 1, 0], rotation: [0, 0, 0] },
   ]);
 
-  const config = useSmokeTestControls(splines, setSplines, attractorsRef);
-
-  // Derive SmokeBallSpline control points (scale.x = radius multiplier)
-  const smokeBallControlPoints = useMemo(
-    () =>
-      smokeBallSplinePts.map((pt) => ({
-        position: pt.position,
-        radius: config.smokeBallSpline.baseRadius * (pt.scale?.x ?? 1),
-      })),
-    [smokeBallSplinePts, config.smokeBallSpline.baseRadius]
-  );
-
-  // Flat positions for SplineLine preview
-  const smokeBallSplinePositions = useMemo(
-    () => smokeBallSplinePts.map((pt) => pt.position),
-    [smokeBallSplinePts]
-  );
-
-  const handleSetSmokeBallSplinePts = useCallback((updater) => {
-    setSmokeBallSplinePts((prev) =>
-      typeof updater === 'function' ? updater(prev) : updater
-    );
-  }, []);
+  const {
+    bgColor,
+    lineColor,
+    psInstances,
+    vsInstances,
+    sbInstances,
+    ssInstances,
+    s2dInstances,
+    attractorMode,
+    showAttractors,
+    attractorRadius,
+    attractorVersion,
+    updatePsPoints,
+    updateVsPoints,
+    updateSsPoints,
+  } = useSmokeTestControls(attractorsRef);
 
   return (
     <>
-      <color attach="background" args={[config.bgColor ?? '#ffffff']} />
+      <color attach="background" args={[bgColor ?? '#ffffff']} />
 
       <PerspectiveCamera
         makeDefault
@@ -131,8 +63,8 @@ export default function SmokeTest() {
       />
 
       <GridBox
-        bgColor={config.bgColor ?? '#ffffff'}
-        lineColor="#d1d1d1"
+        bgColor={bgColor ?? '#ffffff'}
+        lineColor={lineColor ?? '#d1d1d1'}
         lineWidth={0.02}
         size={20}
         gridSize={1}
@@ -140,71 +72,122 @@ export default function SmokeTest() {
 
       <OrbitControls makeDefault dampingFactor={0.2} />
 
+      {/* ── Particle Smoke instances ──────────────────────────────────────── */}
       {/* eslint-disable react/no-array-index-key */}
-      {splines.map((points, index) => (
-        <SplineGroup
-          key={index}
-          index={index}
-          points={points}
-          config={config}
-          splineConfig={config.splineConfigs[index] ?? {}}
-          attractorsRef={attractorsRef}
-          setSplinePoints={setSplinePoints}
-          allowedTypes="smoke"
-        />
+      {psInstances.map((inst) => (
+        <group
+          key={inst.id}
+          position={inst.pos}
+          rotation={inst.rot}
+          scale={inst.scale}
+        >
+          <SplineGroup
+            index={inst.id}
+            points={inst.points}
+            config={{ pointMode: inst.pointMode }}
+            splineConfig={{ ...inst.config, showHelpers: inst.showHandles }}
+            attractorsRef={attractorsRef}
+            setSplinePoints={(_i, updater) => updatePsPoints(inst.id, updater)}
+            allowedTypes="smoke"
+          />
+        </group>
+      ))}
+
+      {/* ── Volumetric Smoke instances ────────────────────────────────────── */}
+      {vsInstances.map((inst) => (
+        <group
+          key={inst.id}
+          position={inst.pos}
+          rotation={inst.rot}
+          scale={inst.scale}
+        >
+          <SplineGroup
+            index={inst.id}
+            points={inst.points}
+            config={{ pointMode: inst.pointMode }}
+            splineConfig={{ ...inst.config, showHelpers: inst.showHandles }}
+            attractorsRef={attractorsRef}
+            setSplinePoints={(_i, updater) => updateVsPoints(inst.id, updater)}
+            allowedTypes="smoke"
+          />
+        </group>
       ))}
       {/* eslint-enable react/no-array-index-key */}
 
-      {/* ── Smoke2D (billboard wispy column) ──────────────────────────── */}
-      <Smoke2D
-        position={config.smoke2D.position}
-        inverted={config.smoke2D.inverted}
-        smoke={config.smoke2D.smoke}
-        visible={config.smoke2D.visible}
-      />
+      {/* ── Smoke Ball instances ──────────────────────────────────────────── */}
+      {sbInstances.map((inst) => (
+        <group
+          key={inst.id}
+          position={inst.pos}
+          rotation={inst.rot}
+          scale={inst.scale}
+        >
+          <SmokeBall {...inst.config} />
+        </group>
+      ))}
 
-      {/* ── SmokeBall (Perlin vertex-displacement sphere, greyscale) ────── */}
-      <SmokeBall {...config.smokeBall} />
+      {/* ── Smoke Ball Spline instances ───────────────────────────────────── */}
+      {ssInstances.map((inst) => {
+        const controlPoints = inst.controlPoints.map((pt) => ({
+          position: pt.position,
+          radius: inst.config.baseRadius * (pt.scale?.x ?? 1),
+        }));
+        const splinePositions = inst.controlPoints.map((pt) => pt.position);
 
-      {/* ── SmokeBallSpline (variable-radius tube along spline) ────────── */}
-      <SmokeBallSpline
-        controlPoints={smokeBallControlPoints}
-        tubularSegments={config.smokeBallSpline.tubularSegments}
-        radialSegments={config.smokeBallSpline.radialSegments}
-        capSegments={config.smokeBallSpline.capSegments}
-        speed={config.smokeBallSpline.speed}
-        weight={config.smokeBallSpline.weight}
-        noiseFreq={config.smokeBallSpline.noiseFreq}
-        noiseAmp={config.smokeBallSpline.noiseAmp}
-        animated={config.smokeBallSpline.animated}
-        smokeLightColor={config.smokeBallSpline.smokeLightColor}
-        smokeDarkColor={config.smokeBallSpline.smokeDarkColor}
-      />
+        return (
+          <group
+            key={inst.id}
+            position={inst.pos}
+            rotation={inst.rot}
+            scale={inst.scale}
+          >
+            <SmokeBallSpline
+              controlPoints={controlPoints}
+              tubularSegments={inst.config.tubularSegments}
+              radialSegments={inst.config.radialSegments}
+              capSegments={inst.config.capSegments}
+              speed={inst.config.speed}
+              weight={inst.config.weight}
+              noiseFreq={inst.config.noiseFreq}
+              noiseAmp={inst.config.noiseAmp}
+              animated={inst.config.animated}
+              smokeLightColor={inst.config.smokeLightColor}
+              smokeDarkColor={inst.config.smokeDarkColor}
+            />
+            <SplineLine
+              points={splinePositions}
+              curveType="centripetal"
+              color="#8888aa"
+              visible={inst.showHandles}
+              arcSegments={200}
+            />
+            <SplinePoints
+              points={inst.controlPoints}
+              setPoints={(updater) => updateSsPoints(inst.id, updater)}
+              visible={inst.showHandles}
+              mode={inst.pointMode}
+              pointSize={0.3}
+            />
+          </group>
+        );
+      })}
 
-      {/* ── SmokeBallSpline curve preview ──────────────────────────────── */}
-      <SplineLine
-        points={smokeBallSplinePositions}
-        curveType="centripetal"
-        color="#8888aa"
-        visible={config.showSmokeBallLine}
-        arcSegments={200}
-      />
-
-      {/* ── SmokeBallSpline interactive control-point handles ──────────── */}
-      <SplinePoints
-        points={smokeBallSplinePts}
-        setPoints={handleSetSmokeBallSplinePts}
-        visible={config.showSmokeBallPoints}
-        mode={config.smokeBallPointMode}
-        pointSize={0.3}
-      />
+      {/* ── Billboard Smoke instances ─────────────────────────────────────── */}
+      {s2dInstances.map((inst) => (
+        <Smoke2D
+          key={inst.id}
+          position={inst.pos}
+          inverted={inst.config.inverted}
+          smoke={inst.config}
+        />
+      ))}
 
       <Attractors
         attractorsRef={attractorsRef}
-        mode={config.attractorMode}
-        visible={config.showAttractors}
-        radius={config.attractorRadius}
-        version={config.attractorVersion}
+        mode={attractorMode}
+        visible={showAttractors}
+        radius={attractorRadius}
+        version={attractorVersion}
         levaPrefix="Smoke Test"
       />
     </>

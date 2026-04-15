@@ -5,6 +5,7 @@ import {
   Return,
   attribute,
   cross,
+  float,
   instanceIndex,
   instancedArray,
   select,
@@ -13,8 +14,11 @@ import {
   triNoise3D,
   uint,
   uniform,
+  uv,
 } from 'three/tsl';
 import * as THREE from 'three/webgpu';
+
+import { getShape } from './shapePresets';
 
 // ── CPU-side value noise for tatter face removal ──
 
@@ -70,16 +74,21 @@ function fbm2D(px, py, seed, octaves = 3) {
  * @param {number}  config.height        - Cloth height (or length for ribbons)
  * @param {number}  config.segmentsX     - Horizontal segments
  * @param {number}  config.segmentsY     - Vertical segments
- * @param {'left'|'top'} config.pinEdge  - Fixed edge ('left' column or 'top' row)
+ * @param {number[]} config.pins         - Vertex indices to fix (from pinHelpers)
+ * @param {boolean} config.centered      - Center grid horizontally on origin
+ * @param {'vertical'|'horizontal'} [config.orientation] - Grid plane: 'vertical' = XY (default), 'horizontal' = XZ
  * @param {number[]} config.origin       - [x, y, z] grid origin
  * @param {number}  config.gravity       - Gravity force per step
  * @param {number}  config.windFrequency - triNoise3D frequency
  * @param {number}  config.windAmplitude - Wind noise multiplier
- * @param {Object}  [config.tatter]        - Tatter noise params for edges/holes
- * @param {number}  [config.tatter.seed]    - Noise seed (default: 42)
- * @param {number}  [config.tatter.scale]   - Noise frequency (default: 3)
- * @param {number}  [config.tatter.edge]    - Edge tatter 0–1 (default: 0)
- * @param {number}  [config.tatter.holes]   - Interior holes 0–1 (default: 0)
+ * @param {string}  [config.shape]       - Shape preset name ('rectangle'|'circle'|'ribbon-notched')
+ * @param {Object}  [config.alpha]         - Alpha masking params for edges/holes
+ * @param {number}  [config.alpha.seed]     - Noise seed (default: 42)
+ * @param {number}  [config.alpha.scale]    - Noise frequency (default: 3)
+ * @param {number}  [config.alpha.edgeFade] - Shape-edge alpha fade width 0–1 (default: 0)
+ * @param {number}  [config.alpha.holeAmount] - Interior holes via noise 0–1 (default: 0)
+ * @param {number}  [config.alpha.tatterEdge] - Tatter near free edges 0–1 (default: 0)
+ * @param {Array}   [config.alpha.cutouts]  - Array of {u, v, radius} cutouts
  * @param {THREE.Material} config.material - Material to configure positionNode on
  */
 export default function createClothSimulation({
@@ -87,12 +96,15 @@ export default function createClothSimulation({
   height = 0.7,
   segmentsX = 30,
   segmentsY = 21,
-  pinEdge = 'left',
+  pins = [],
+  centered = false,
+  orientation = 'vertical',
   origin = [0, 0, 0],
   gravity = 0.00005,
   windFrequency = 1,
   windAmplitude = 0.0001,
-  tatter = {},
+  shape = 'rectangle',
+  alpha = {},
   material,
 }) {
   // ── Verlet topology ──
@@ -120,33 +132,53 @@ export default function createClothSimulation({
     springs.push({ id, vertex0: v0, vertex1: v1 });
   };
 
-  // Build vertex grid — layout depends on pinEdge
+  // Build vertex grid
+  const pinSet = new Set(pins);
+  const horiz = orientation === 'horizontal';
+  const xOffset = centered ? -width * 0.5 : 0;
+  const yOffset = horiz && centered ? -height * 0.5 : 0;
+  const shapeFn = getShape(shape);
+  // Per-vertex signed distance from shape boundary (positive = inside)
+  const shapeDistArr = new Float32Array((segmentsX + 1) * (segmentsY + 1));
+
+  // Track which vertices are outside the shape (for spring filtering)
+  const outsideSet = new Set();
+
   for (let x = 0; x <= segmentsX; x += 1) {
     const col = [];
     for (let y = 0; y <= segmentsY; y += 1) {
-      let px;
-      let isFixed;
-      if (pinEdge === 'top') {
-        px = ox + x * (width / segmentsX) - width * 0.5;
-        isFixed = y === 0;
-      } else {
-        px = ox + x * (width / segmentsX);
-        isFixed = x === 0;
-      }
-      const py = oy - y * (height / segmentsY);
-      col.push(addVertex(px, py, oz, isFixed));
+      const px = ox + x * (width / segmentsX) + xOffset;
+      const py = horiz ? oy : oy - y * (height / segmentsY);
+      const pz = horiz ? oz + y * (height / segmentsY) + yOffset : oz;
+      const vtxIdx = x * (segmentsY + 1) + y;
+      const u = x / segmentsX;
+      const v = y / segmentsY;
+      const sd = shapeFn(u, v);
+      shapeDistArr[vtxIdx] = sd;
+      // Vertices outside shape are always fixed (early-return in GPU)
+      const isOutside = sd < 0;
+      if (isOutside) outsideSet.add(vtxIdx);
+      col.push(addVertex(px, py, pz, pinSet.has(vtxIdx) || isOutside));
     }
     columns.push(col);
   }
 
   // Structural + shear springs
+  // Skip springs where either endpoint is outside the shape so that
+  // outside-shape fixed vertices don't anchor the cloth body.
   for (let x = 0; x <= segmentsX; x += 1) {
     for (let y = 0; y <= segmentsY; y += 1) {
       const v0 = columns[x][y];
-      if (x > 0) addSpring(v0, columns[x - 1][y]);
-      if (y > 0) addSpring(v0, columns[x][y - 1]);
-      if (x > 0 && y > 0) addSpring(v0, columns[x - 1][y - 1]);
-      if (x > 0 && y < segmentsY) addSpring(v0, columns[x - 1][y + 1]);
+      if (!outsideSet.has(v0.id)) {
+        if (x > 0 && !outsideSet.has(columns[x - 1][y].id))
+          addSpring(v0, columns[x - 1][y]);
+        if (y > 0 && !outsideSet.has(columns[x][y - 1].id))
+          addSpring(v0, columns[x][y - 1]);
+        if (x > 0 && y > 0 && !outsideSet.has(columns[x - 1][y - 1].id))
+          addSpring(v0, columns[x - 1][y - 1]);
+        if (x > 0 && y < segmentsY && !outsideSet.has(columns[x - 1][y + 1].id))
+          addSpring(v0, columns[x - 1][y + 1]);
+      }
     }
   }
 
@@ -195,19 +227,30 @@ export default function createClothSimulation({
 
   // ── Uniforms ──
   const dampeningU = uniform(0.99);
-  const spherePosU = uniform(new THREE.Vector3(10, 10, 10));
-  const sphereU = uniform(0.0);
-  const sphereRadiusU = uniform(0.12);
   const windU = uniform(1.0);
   const windDirU = uniform(new THREE.Vector3(1, 0, 0));
   const stiffnessU = uniform(0.2);
   const maxVelocityU = uniform(0.01);
+  const gravityU = uniform(gravity);
   const gravityDirU = uniform(new THREE.Vector3(0, -1, 0));
 
-  // Per-vertex active mask — 0 for orphaned (all faces removed), 1 otherwise.
-  // Sphere collision force is multiplied by this so the cursor passes through holes.
-  const activeArr = new Float32Array(vCount).fill(1);
-  const activeBuf = instancedArray(activeArr, 'float');
+  // 4-slot sphere collider system — fixed-size arrays for GPU unrolling.
+  // Slot 0 = cursor (managed by ClothMesh pointer logic).
+  // Slots 1-3 = scene-controlled via `colliders` prop.
+  const NUM_COLLIDERS = 4;
+  const colliderPosU = [];
+  const colliderEnabledU = [];
+  const colliderRadiusU = [];
+  for (let c = 0; c < NUM_COLLIDERS; c += 1) {
+    colliderPosU.push(uniform(new THREE.Vector3(10, 10, 10)));
+    colliderEnabledU.push(uniform(0.0));
+    colliderRadiusU.push(uniform(0.12));
+  }
+
+  // Per-vertex alpha buffer — drives material opacity and collision masking.
+  // 0 = fully transparent (colliders pass through), 1 = fully opaque.
+  const alphaArr = new Float32Array(vCount).fill(1);
+  const alphaBuf = instancedArray(alphaArr, 'float');
 
   // ── Compute shader 1 — spring forces ──
   const computeSprings = Fn(() => {
@@ -260,7 +303,7 @@ export default function createClothSimulation({
     });
 
     // gravity (direction-aware so rotation of the parent group is respected)
-    force.addAssign(gravityDirU.mul(gravity));
+    force.addAssign(gravityDirU.mul(gravityU));
 
     // wind
     const noise = triNoise3D(position, windFrequency, time)
@@ -269,18 +312,21 @@ export default function createClothSimulation({
     const windForce = noise.mul(windU);
     force.addAssign(windDirU.mul(windForce));
 
-    // collision with sphere (disabled for orphaned vertices in tatter holes)
-    const activeVal = activeBuf.element(instanceIndex);
-    const dSphere = position.add(force).sub(spherePosU);
-    const sDist = dSphere.length();
-    const sForce = sphereRadiusU
-      .sub(sDist)
-      .max(0)
-      .mul(dSphere)
-      .div(sDist)
-      .mul(sphereU)
-      .mul(activeVal);
-    force.addAssign(sForce);
+    // collision with sphere colliders (scaled by vertex alpha so cursor passes through holes)
+    const alphaVal = alphaBuf.element(instanceIndex);
+    const projectedPos = position.add(force);
+    for (let c = 0; c < NUM_COLLIDERS; c += 1) {
+      const dSphere = projectedPos.sub(colliderPosU[c]);
+      const sDist = dSphere.length();
+      const sForce = colliderRadiusU[c]
+        .sub(sDist)
+        .max(0)
+        .mul(dSphere)
+        .div(sDist)
+        .mul(colliderEnabledU[c])
+        .mul(alphaVal);
+      force.addAssign(sForce);
+    }
 
     // Clamp velocity to prevent simulation explosion
     const speed = force.length().toVar();
@@ -322,105 +368,153 @@ export default function createClothSimulation({
   const indexArray = new Uint32Array(maxFaces * 6);
   const indexAttr = new THREE.BufferAttribute(indexArray, 1);
 
-  // Rebuild visible faces based on tatter noise — called on param change.
-  // Uses vertex-based noise (averaged per triangle) for organic tear shapes,
-  // then marks orphaned vertices inactive so sphere collision passes through.
-  const rebuildTatter = ({
-    seed: tSeed = 42,
-    scale: tScale = 3,
-    edge: tEdge = 0,
-    holes: tHoles = 0,
-  } = {}) => {
-    // Step 1 — compute noise per simulation vertex
-    const vertexNoise = new Float32Array(vCount);
-    for (let x = 0; x <= segmentsX; x += 1) {
-      for (let y = 0; y <= segmentsY; y += 1) {
-        const vid = columns[x][y].id;
-        const nx = x / segmentsX;
-        const ny = y / segmentsY;
-        vertexNoise[vid] = fbm2D(nx * tScale, ny * tScale, tSeed);
-      }
+  // Per-mesh-quad dead flag: true when ANY of the quad's 4 sim corner vertices
+  // is outside the shape. Dead quads are excluded from all triangles so that
+  // the positionNode (which averages 4 corner positions) never mixes fixed
+  // outside vertices with free inside vertices.
+  const quadDead = new Uint8Array(meshVCount);
+  for (let x = 0; x < segmentsX; x += 1) {
+    for (let y = 0; y < segmentsY; y += 1) {
+      const idx = getIdx(x, y);
+      const c0 = columns[x][y].id;
+      const c1 = columns[x + 1][y].id;
+      const c2 = columns[x][y + 1].id;
+      const c3 = columns[x + 1][y + 1].id;
+      quadDead[idx] =
+        shapeDistArr[c0] < 0 ||
+        shapeDistArr[c1] < 0 ||
+        shapeDistArr[c2] < 0 ||
+        shapeDistArr[c3] < 0
+          ? 1
+          : 0;
     }
+  }
 
-    const edgeDepth = tEdge * 0.5;
-
-    // Evaluate whether a single triangle should be removed.
-    // Uses the average noise of its three simulation vertices for organic shapes.
-    const shouldSkip = (v0id, v1id, v2id, cx, cy) => {
-      if (tEdge === 0 && tHoles === 0) return false;
-
-      const n = (vertexNoise[v0id] + vertexNoise[v1id] + vertexNoise[v2id]) / 3;
-
-      // Edge tattering — faces near free (non-pinned) edges
-      if (tEdge > 0 && edgeDepth > 0) {
-        let minFreeDist;
-        if (pinEdge === 'left') {
-          minFreeDist = Math.min(1 - cx, cy, 1 - cy);
-        } else {
-          minFreeDist = Math.min(cx, 1 - cx, 1 - cy);
-        }
-        if (minFreeDist < edgeDepth) {
-          const t = minFreeDist / edgeDepth;
-          if (n < 0.7 - t * 0.65) return true;
-        }
-      }
-
-      // Interior holes
-      if (tHoles > 0 && n > 1 - tHoles * 0.4) return true;
-
-      return false;
-    };
-
-    // Step 2 — build index buffer + track which vertices still have faces
-    const faceCount = new Uint32Array(vCount);
+  // Build index buffer — excludes triangles that reference any dead mesh quad.
+  // Called once at construction (shape is static).
+  const buildIndexBuffer = () => {
     let count = 0;
 
     for (let x = 1; x < segmentsX; x += 1) {
       for (let y = 1; y < segmentsY; y += 1) {
-        const id00 = columns[x][y].id;
-        const id10 = columns[x - 1][y].id;
-        const id11 = columns[x - 1][y - 1].id;
-        const id01 = columns[x][y - 1].id;
+        const q00 = getIdx(x, y);
+        const q10 = getIdx(x - 1, y);
+        const q11 = getIdx(x - 1, y - 1);
+        const q01 = getIdx(x, y - 1);
 
         // Triangle A: (x,y) → (x-1,y) → (x-1,y-1)
-        const ax = (x + (x - 1) + (x - 1)) / (3 * segmentsX);
-        const ay = (y + y + (y - 1)) / (3 * segmentsY);
-        if (!shouldSkip(id00, id10, id11, ax, ay)) {
-          indexArray[count] = getIdx(x, y);
-          indexArray[count + 1] = getIdx(x - 1, y);
-          indexArray[count + 2] = getIdx(x - 1, y - 1);
+        if (!quadDead[q00] && !quadDead[q10] && !quadDead[q11]) {
+          indexArray[count] = q00;
+          indexArray[count + 1] = q10;
+          indexArray[count + 2] = q11;
           count += 3;
-          faceCount[id00] += 1;
-          faceCount[id10] += 1;
-          faceCount[id11] += 1;
         }
 
         // Triangle B: (x,y) → (x-1,y-1) → (x,y-1)
-        const bx = (x + (x - 1) + x) / (3 * segmentsX);
-        const by = (y + (y - 1) + (y - 1)) / (3 * segmentsY);
-        if (!shouldSkip(id00, id11, id01, bx, by)) {
-          indexArray[count] = getIdx(x, y);
-          indexArray[count + 1] = getIdx(x - 1, y - 1);
-          indexArray[count + 2] = getIdx(x, y - 1);
+        if (!quadDead[q00] && !quadDead[q11] && !quadDead[q01]) {
+          indexArray[count] = q00;
+          indexArray[count + 1] = q11;
+          indexArray[count + 2] = q01;
           count += 3;
-          faceCount[id00] += 1;
-          faceCount[id11] += 1;
-          faceCount[id01] += 1;
         }
       }
     }
-
-    // Step 3 — update per-vertex active mask (orphaned = no surviving faces)
-    for (let i = 0; i < vCount; i += 1) {
-      activeArr[i] = faceCount[i] > 0 ? 1 : 0;
-    }
-    activeBuf.value.needsUpdate = true;
-
     geometry.setDrawRange(0, count);
     indexAttr.needsUpdate = true;
   };
 
-  rebuildTatter(tatter);
+  // Rebuild per-vertex alpha from shape edge fade, noise holes, tatter edges,
+  // and positioned cutouts. Called whenever alpha-related params change.
+  const rebuildAlpha = ({
+    seed: aSeed = 42,
+    scale: aScale = 3,
+    edgeFade: aEdgeFade = 0,
+    holeAmount: aHoles = 0,
+    tatterEdge: aTatterEdge = 0,
+  } = {}) => {
+    // Compute noise per vertex for holes + tatter
+    const vertexNoise = new Float32Array(vCount);
+    if (aHoles > 0 || aTatterEdge > 0) {
+      for (let x = 0; x <= segmentsX; x += 1) {
+        for (let y = 0; y <= segmentsY; y += 1) {
+          const vid = columns[x][y].id;
+          const nx = x / segmentsX;
+          const ny = y / segmentsY;
+          vertexNoise[vid] = fbm2D(nx * aScale, ny * aScale, aSeed);
+        }
+      }
+    }
+
+    // Derive which edges are fully pinned (for tatter edge fade)
+    const edgePinned = {
+      left: (() => {
+        for (let yy = 0; yy <= segmentsY; yy += 1)
+          if (!pinSet.has(yy)) return false;
+        return true;
+      })(),
+      right: (() => {
+        for (let yy = 0; yy <= segmentsY; yy += 1)
+          if (!pinSet.has(segmentsX * (segmentsY + 1) + yy)) return false;
+        return true;
+      })(),
+      top: (() => {
+        for (let xx = 0; xx <= segmentsX; xx += 1)
+          if (!pinSet.has(xx * (segmentsY + 1))) return false;
+        return true;
+      })(),
+      bottom: (() => {
+        for (let xx = 0; xx <= segmentsX; xx += 1)
+          if (!pinSet.has(xx * (segmentsY + 1) + segmentsY)) return false;
+        return true;
+      })(),
+    };
+
+    const tatterDepth = aTatterEdge * 0.5;
+
+    for (let x = 0; x <= segmentsX; x += 1) {
+      for (let y = 0; y <= segmentsY; y += 1) {
+        const vid = columns[x][y].id;
+        const u = x / segmentsX;
+        const v = y / segmentsY;
+        let a = 1;
+
+        // 1. Shape edge fade — smooth falloff near shape boundary
+        if (aEdgeFade > 0) {
+          const sd = shapeDistArr[vid];
+          if (sd < aEdgeFade) {
+            a *= Math.max(0, sd / aEdgeFade);
+          }
+        }
+
+        // 2. Tatter edge — noise-driven transparency near free (non-pinned) edges
+        if (aTatterEdge > 0 && tatterDepth > 0) {
+          const dists = [];
+          if (!edgePinned.left) dists.push(u);
+          if (!edgePinned.right) dists.push(1 - u);
+          if (!edgePinned.top) dists.push(v);
+          if (!edgePinned.bottom) dists.push(1 - v);
+          const minFreeDist = dists.length > 0 ? Math.min(...dists) : 1;
+          if (minFreeDist < tatterDepth) {
+            const t = minFreeDist / tatterDepth;
+            const n = vertexNoise[vid];
+            if (n < 0.7 - t * 0.65) a = 0;
+          }
+        }
+
+        // 3. Interior holes — noise above threshold → transparent
+        if (aHoles > 0) {
+          const n = vertexNoise[vid];
+          if (n > 1 - aHoles * 0.4) a = 0;
+        }
+
+        alphaArr[vid] = a;
+      }
+    }
+    alphaBuf.value.needsUpdate = true;
+  };
+
+  rebuildAlpha(alpha);
+  buildIndexBuffer();
 
   geometry.setAttribute(
     'position',
@@ -457,6 +551,65 @@ export default function createClothSimulation({
     return v0.add(v1).add(v2).add(v3).mul(0.25);
   })();
 
+  // ── Per-pixel cutout uniforms (up to 4 circular cutouts) ──
+  const MAX_CUTOUTS = 4;
+  const cutoutU = [];
+  const cutoutRadiusU = [];
+  const cutoutFadeU = [];
+  const cutoutEnabledU = [];
+  for (let ci = 0; ci < MAX_CUTOUTS; ci += 1) {
+    cutoutU.push(uniform(new THREE.Vector2(0, 0)));
+    cutoutRadiusU.push(uniform(0));
+    cutoutFadeU.push(uniform(0));
+    cutoutEnabledU.push(uniform(0));
+  }
+
+  // Push cutout data from JS array into GPU uniforms
+  const applyCutouts = (cutoutsArr = []) => {
+    for (let ci = 0; ci < MAX_CUTOUTS; ci += 1) {
+      const ct = cutoutsArr[ci];
+      if (ct) {
+        cutoutU[ci].value.set(ct.u, ct.v);
+        cutoutRadiusU[ci].value = ct.radius;
+        cutoutFadeU[ci].value = ct.fade ?? ct.radius * 0.4;
+        cutoutEnabledU[ci].value = 1;
+      } else {
+        cutoutEnabledU[ci].value = 0;
+      }
+    }
+  };
+  applyCutouts(alpha.cutouts);
+
+  // Per-vertex alpha + per-pixel cutout circles → material opacity.
+  // eslint-disable-next-line no-param-reassign
+  material.opacityNode = Fn(() => {
+    const ids = attribute('vertexIds');
+    const a0 = alphaBuf.element(ids.x);
+    const a1 = alphaBuf.element(ids.y);
+    const a2 = alphaBuf.element(ids.z);
+    const a3 = alphaBuf.element(ids.w);
+    const vtxAlpha = a0.add(a1).add(a2).add(a3).mul(0.25).toVar();
+
+    // Evaluate cutout circles per-pixel using interpolated UVs
+    const texUV = uv();
+    for (let ci = 0; ci < MAX_CUTOUTS; ci += 1) {
+      If(cutoutEnabledU[ci].greaterThan(0.5), () => {
+        const diff = texUV.sub(cutoutU[ci]);
+        const dist = diff.length();
+        const inner = cutoutRadiusU[ci].sub(cutoutFadeU[ci]);
+        // smoothstep from 0 (inside inner) to 1 (at radius edge)
+        const t = dist.sub(inner).div(cutoutFadeU[ci]).clamp(0, 1);
+        vtxAlpha.mulAssign(t);
+      });
+    }
+
+    return vtxAlpha;
+  })();
+  // eslint-disable-next-line no-param-reassign
+  material.transparent = true;
+  // eslint-disable-next-line no-param-reassign
+  material.alphaTest = 0.01;
+
   // Reset simulation to initial rest positions and zero velocities.
   const reset = () => {
     posBuf.value.array.set(posArr);
@@ -468,7 +621,8 @@ export default function createClothSimulation({
   return {
     computeSprings,
     computeVertices,
-    rebuildTatter,
+    rebuildAlpha,
+    applyCutouts,
     reset,
     geometry,
     material,
@@ -477,9 +631,12 @@ export default function createClothSimulation({
     stiffnessU,
     dampeningU,
     maxVelocityU,
+    gravityU,
     gravityDirU,
-    spherePosU,
-    sphereU,
-    sphereRadiusU,
+    colliderPosU,
+    colliderEnabledU,
+    colliderRadiusU,
+    NUM_COLLIDERS,
+    shapeDistArr,
   };
 }

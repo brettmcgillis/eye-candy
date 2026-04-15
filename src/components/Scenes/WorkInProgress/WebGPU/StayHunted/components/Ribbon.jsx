@@ -1,6 +1,7 @@
-import React from 'react';
+import React, { useMemo } from 'react';
 
 import ClothMesh from '../../../../../elements/webgpu/cloth/ClothMesh';
+import { pinEdge } from '../../../../../elements/webgpu/cloth/pinHelpers';
 
 export default function Ribbon({
   attachPosition = [0, 0, 0],
@@ -8,13 +9,16 @@ export default function Ribbon({
   stiffness = 0.25,
   dampening = 0.98,
 }) {
+  const pins = useMemo(() => pinEdge('top', 3, 20), []);
+
   return (
     <ClothMesh
       width={0.04}
       height={0.6}
       segmentsX={3}
       segmentsY={20}
-      pinEdge="top"
+      pins={pins}
+      centered
       origin={attachPosition}
       gravity={0.00003}
       windFrequency={1.5}
@@ -25,7 +29,7 @@ export default function Ribbon({
       windDirZ={-1}
       stiffness={stiffness}
       dampening={dampening}
-      sphereRadius={0.05}
+      cursorRadius={0.05}
       initialMaterial={{
         color: '#c43c3c',
         transparent: true,

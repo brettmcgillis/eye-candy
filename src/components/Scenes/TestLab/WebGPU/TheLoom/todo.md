@@ -16,6 +16,8 @@
 
 # // Presets
 
+- [ ] One preset for each cloth variation we develop
+
 # // Features
 
 - The sim needs to stay performant. Its great now, and we need to do our best not to degrade it.

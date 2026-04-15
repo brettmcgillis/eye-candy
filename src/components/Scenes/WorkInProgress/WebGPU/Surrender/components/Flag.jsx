@@ -1,6 +1,7 @@
-import React, { forwardRef, memo } from 'react';
+import React, { forwardRef, memo, useMemo } from 'react';
 
 import ClothMesh from '../../../../../elements/webgpu/cloth/ClothMesh';
+import { pinEdge } from '../../../../../elements/webgpu/cloth/pinHelpers';
 
 const FLAG_TOP_Y = 0.9;
 
@@ -18,14 +19,17 @@ const Flag = memo(
       dampening = 0.99,
       paused = false,
       wireframe = false,
-      sphereEnabled = true,
-      sphereWireframe = false,
-      sphereColor = '#ff0000',
-      sphereRadius = 0.12,
-      tatterSeed = 42,
-      tatterScale = 3,
+      cursorCollider = true,
+      cursorRadius = 0.12,
+      colliders = [],
+      debugColliders = false,
+      debugColor = '#ff0000',
+      alphaSeed = 42,
+      alphaScale = 3,
+      edgeFade = 0,
+      holeAmount = 0,
       tatterEdge = 0,
-      tatterHoles = 0,
+      cutouts = [],
       textureUrl = null,
       preloadTextures = [],
       textureScaleX = 1,
@@ -46,6 +50,11 @@ const Flag = memo(
     },
     ref
   ) {
+    const pins = useMemo(
+      () => pinEdge('left', segmentsX, segmentsY),
+      [segmentsX, segmentsY]
+    );
+
     return (
       <ClothMesh
         ref={ref}
@@ -53,7 +62,7 @@ const Flag = memo(
         height={height}
         segmentsX={segmentsX}
         segmentsY={segmentsY}
-        pinEdge="left"
+        pins={pins}
         origin={[0, FLAG_TOP_Y, 0]}
         gravity={0.00005}
         windFrequency={1}
@@ -65,14 +74,17 @@ const Flag = memo(
         stiffness={stiffness}
         dampening={dampening}
         paused={paused}
-        sphereEnabled={sphereEnabled}
-        sphereRadius={sphereRadius}
-        sphereWireframe={sphereWireframe}
-        sphereColor={sphereColor}
-        tatterSeed={tatterSeed}
-        tatterScale={tatterScale}
+        cursorCollider={cursorCollider}
+        cursorRadius={cursorRadius}
+        colliders={colliders}
+        debugColliders={debugColliders}
+        debugColor={debugColor}
+        alphaSeed={alphaSeed}
+        alphaScale={alphaScale}
+        edgeFade={edgeFade}
+        holeAmount={holeAmount}
         tatterEdge={tatterEdge}
-        tatterHoles={tatterHoles}
+        cutouts={cutouts}
         textureUrl={textureUrl}
         preloadTextures={preloadTextures}
         textureScaleX={textureScaleX}

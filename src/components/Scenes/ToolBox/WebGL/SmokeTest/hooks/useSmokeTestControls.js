@@ -1,11 +1,10 @@
 import { button, folder, useControls } from 'leva';
 import * as THREE from 'three';
 
-import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 
 import SMOKE_PRESETS from '../../../../../../presets/smoke/smokePresets';
 import { localEnv } from '../../../../../../utils/appUtils';
-import buildSplineGroupControls from '../../shared/hooks/useSplineGroupControls';
 import {
   DEFAULT_SPLINE_CONFIG,
   parsePreset,
@@ -16,80 +15,235 @@ const SCENE_LABEL = 'Smoke Test';
 const DEFAULT_PRESET_KEY = Object.keys(SMOKE_PRESETS)[0];
 const MAX_ATTRACTORS = 8;
 
-export default function useSmokeTestControls(
-  splines,
-  setSplines,
-  attractorsRef
-) {
-  const selectedPresetRef = useRef(DEFAULT_PRESET_KEY);
-  const splinesRef = useRef(splines);
-  splinesRef.current = splines;
+// ─── Auto-incrementing ID counter (module-scoped, stable across renders) ──────
+let idCounter = 0;
+// eslint-disable-next-line no-plusplus
+const mkId = () => idCounter++;
 
-  const [splineConfigs, setSplineConfigs] = useState(() => {
-    const { splineConfigs: initial } = parsePreset(
-      SMOKE_PRESETS[DEFAULT_PRESET_KEY]
-    );
-    return initial;
+// ─── Default control-point generator ─────────────────────────────────────────
+const randPt = () => ({
+  position: new THREE.Vector3(
+    (Math.random() - 0.5) * 4,
+    Math.random() * 4,
+    (Math.random() - 0.5) * 4
+  ),
+  rotation: new THREE.Euler(),
+  scale: new THREE.Vector3(1, 1, 1),
+});
+const defaultPoints = () => [randPt(), randPt(), randPt()];
+
+// Default SmokeBallSpline control points (positioned left of centre at scene scale)
+const DEFAULT_SS_CONTROL_POINTS = [
+  {
+    position: new THREE.Vector3(-7, 0, 0),
+    rotation: new THREE.Euler(),
+    scale: new THREE.Vector3(1.0, 1.0, 1.0),
+  },
+  {
+    position: new THREE.Vector3(-7, 0.9, 0),
+    rotation: new THREE.Euler(),
+    scale: new THREE.Vector3(0.9, 0.9, 0.9),
+  },
+  {
+    position: new THREE.Vector3(-6.85, 1.8, 0),
+    rotation: new THREE.Euler(),
+    scale: new THREE.Vector3(1.0, 1.0, 1.0),
+  },
+  {
+    position: new THREE.Vector3(-6.75, 2.7, 0.1),
+    rotation: new THREE.Euler(),
+    scale: new THREE.Vector3(1.3, 1.3, 1.3),
+  },
+  {
+    position: new THREE.Vector3(-6.65, 3.6, 0.15),
+    rotation: new THREE.Euler(),
+    scale: new THREE.Vector3(1.6, 1.6, 1.6),
+  },
+  {
+    position: new THREE.Vector3(-6.55, 4.5, 0.2),
+    rotation: new THREE.Euler(),
+    scale: new THREE.Vector3(2.0, 2.0, 2.0),
+  },
+];
+
+// ─── Default per-type configs ─────────────────────────────────────────────────
+
+const mkPsCfg = () => ({
+  ...DEFAULT_SPLINE_CONFIG,
+  type: 'Smoke',
+  smokeType: 'Particle',
+  name: 'Particle Smoke',
+});
+
+const mkVsCfg = () => ({
+  ...DEFAULT_SPLINE_CONFIG,
+  type: 'Smoke',
+  smokeType: 'Volumetric',
+  name: 'Volumetric Smoke',
+});
+
+const mkSbCfg = () => ({
+  radius: 0.6,
+  detail: 5,
+  speed: 1.0,
+  weight: 0.3,
+  noiseFreq: 2.0,
+  noiseAmp: 0.15,
+  animated: true,
+  smokeLightColor: '#bcbcbc',
+  smokeDarkColor: '#262626',
+});
+
+const mkSsCfg = () => ({
+  baseRadius: 0.6,
+  tubularSegments: 64,
+  radialSegments: 32,
+  capSegments: 8,
+  speed: 1.0,
+  weight: 0.3,
+  noiseFreq: 2.0,
+  noiseAmp: 0.15,
+  animated: true,
+  smokeLightColor: '#bcbcbc',
+  smokeDarkColor: '#262626',
+});
+
+const mkS2dCfg = () => ({
+  inverted: false,
+  width: 1.5,
+  height: 6.0,
+  color: '#b8b8b8',
+  opacity: 1.0,
+  timeFrequency: 0.45,
+  uvFrequencyX: 1.0,
+  uvFrequencyY: 1.5,
+  riseSpeed: 0.35,
+  spreadStrength: 0.18,
+});
+
+// ─── Instance constructors ────────────────────────────────────────────────────
+
+const makePsInst = (pts = null, cfg = null) => ({
+  id: mkId(),
+  pos: [0, 0, 0],
+  rot: [0, 0, 0],
+  scale: [1, 1, 1],
+  showHandles: true,
+  pointMode: 'translate',
+  points: pts ?? defaultPoints(),
+  config: cfg ? { ...mkPsCfg(), ...cfg } : mkPsCfg(),
+});
+
+const makeVsInst = (pts = null, cfg = null) => ({
+  id: mkId(),
+  pos: [0, 0, 0],
+  rot: [0, 0, 0],
+  scale: [1, 1, 1],
+  showHandles: true,
+  pointMode: 'translate',
+  points: pts ?? defaultPoints(),
+  config: cfg ? { ...mkVsCfg(), ...cfg } : mkVsCfg(),
+});
+
+const makeSbInst = (pos = [-5, 1, 0]) => ({
+  id: mkId(),
+  pos,
+  rot: [0, 0, 0],
+  scale: [1, 1, 1],
+  config: mkSbCfg(),
+});
+
+const makeSsInst = () => ({
+  id: mkId(),
+  pos: [0, 0, 0],
+  rot: [0, 0, 0],
+  scale: [1, 1, 1],
+  showHandles: true,
+  pointMode: 'translate',
+  controlPoints: DEFAULT_SS_CONTROL_POINTS.map((p) => ({
+    position: p.position.clone(),
+    rotation: p.rotation.clone(),
+    scale: p.scale.clone(),
+  })),
+  config: mkSsCfg(),
+});
+
+const makeS2dInst = (pos = [-3, 0, 0]) => ({
+  id: mkId(),
+  pos,
+  config: mkS2dCfg(),
+});
+
+// ─── Preset parsing ───────────────────────────────────────────────────────────
+
+function splitPresetByType(presetKey) {
+  const preset = SMOKE_PRESETS[presetKey];
+  if (!preset) return { ps: [makePsInst()], vs: [makeVsInst()] };
+
+  const { splines, splineConfigs } = parsePreset(preset);
+  const ps = [];
+  const vs = [];
+
+  splines.forEach((pts, i) => {
+    const cfg = splineConfigs[i];
+    if (cfg.smokeType === 'Volumetric') {
+      vs.push(makeVsInst(pts, cfg));
+    } else {
+      ps.push(makePsInst(pts, cfg));
+    }
   });
 
-  const [attractorVersion, setAttractorVersion] = useState(0);
-  const forceAttractorUpdate = useCallback(
-    () => setAttractorVersion((c) => c + 1),
-    []
-  );
+  if (ps.length === 0) ps.push(makePsInst());
+  if (vs.length === 0) vs.push(makeVsInst());
 
+  return { ps, vs };
+}
+
+// ─── Hook ─────────────────────────────────────────────────────────────────────
+
+/**
+ * Controls for the SmokeTest scene.
+ *
+ * Manages per-type instance arrays (Particle, Volumetric, SmokeBall,
+ * SmokeBallSpline, Billboard) entirely inside the hook. SmokeTest.jsx
+ * just renders from the returned arrays.
+ *
+ * @param {React.MutableRefObject} attractorsRef
+ */
+export default function useSmokeTestControls(attractorsRef) {
+  const selectedPresetRef = useRef(DEFAULT_PRESET_KEY);
+
+  // ── Per-type instance state ─────────────────────────────────────────────────
+  const [psInstances, setPsInstances] = useState(() => {
+    const { ps } = splitPresetByType(DEFAULT_PRESET_KEY);
+    return ps;
+  });
+  const [vsInstances, setVsInstances] = useState(() => {
+    const { vs } = splitPresetByType(DEFAULT_PRESET_KEY);
+    return vs;
+  });
+  const [sbInstances, setSbInstances] = useState(() => [makeSbInst()]);
+  const [ssInstances, setSsInstances] = useState(() => [makeSsInst()]);
+  const [s2dInstances, setS2dInstances] = useState(() => [makeS2dInst()]);
+  const [attractorVersion, setAttractorVersion] = useState(0);
+
+  // Stable refs for static-schema closures (Copy button needs current arrays)
+  const psRef = useRef(psInstances);
+  psRef.current = psInstances;
+  const vsRef = useRef(vsInstances);
+  vsRef.current = vsInstances;
+
+  // ── Call 1 — static schema: Presets, Scene, Attractors ─────────────────────
+  // deps=[] so this never rebuilds; preset dropdown and scene settings are
+  // preserved across instance-count changes.
   const [
     {
       preset,
-      pointMode,
       bgColor,
-      attractorStrength,
-      attractorRadius,
+      lineColor,
       showAttractors,
       attractorMode,
-      // SmokeBall
-      sbPosX,
-      sbPosY,
-      sbPosZ,
-      sbRadius,
-      sbDetail,
-      sbSpeed,
-      sbWeight,
-      sbNoiseFreq,
-      sbNoiseAmp,
-      sbAnimated,
-      sbSmokeLight,
-      sbSmokeDark,
-      // SmokeBallSpline
-      ssBaseRadius,
-      ssTubular,
-      ssRadial,
-      ssCap,
-      ssSpeed,
-      ssWeight,
-      ssNoiseFreq,
-      ssNoiseAmp,
-      ssAnimated,
-      ssSmokeLight,
-      ssSmokeDark,
-      showSmokeBallPoints,
-      showSmokeBallLine,
-      smokeBallPointMode,
-      // Smoke2D
-      s2dVisible,
-      s2dPosX,
-      s2dPosY,
-      s2dPosZ,
-      s2dInverted,
-      s2dWidth,
-      s2dHeight,
-      s2dColor,
-      s2dOpacity,
-      s2dTimeFreq,
-      s2dUvFreqX,
-      s2dUvFreqY,
-      s2dRiseSpeed,
-      s2dSpreadStrength,
+      attractorRadius,
     },
   ] = useControls(
     SCENE_LABEL,
@@ -102,22 +256,26 @@ export default function useSmokeTestControls(
             options: Object.keys(SMOKE_PRESETS),
           },
           reset: button(() => {
-            const p = SMOKE_PRESETS[selectedPresetRef.current];
-            if (p) {
-              const { splines: nextSplines, splineConfigs: nextConfigs } =
-                parsePreset(p);
-              setSplines(nextSplines);
-              setSplineConfigs(nextConfigs);
-            }
+            const { ps, vs } = splitPresetByType(selectedPresetRef.current);
+            setPsInstances(ps);
+            setVsInstances(vs);
+            setSbInstances([makeSbInst()]);
+            setSsInstances([makeSsInst()]);
+            setS2dInstances([makeS2dInst()]);
           }),
           ...(localEnv()
             ? {
                 copy: button(
                   () => {
-                    const code = serializeSplines(
-                      splinesRef.current,
-                      splineConfigs
-                    );
+                    const allSplines = [
+                      ...psRef.current.map((x) => x.points),
+                      ...vsRef.current.map((x) => x.points),
+                    ];
+                    const allConfigs = [
+                      ...psRef.current.map((x) => x.config),
+                      ...vsRef.current.map((x) => x.config),
+                    ];
+                    const code = serializeSplines(allSplines, allConfigs);
                     navigator.clipboard.writeText(`splines: [\n${code}\n]`);
                   },
                   { label: 'Copy Preset' }
@@ -130,207 +288,8 @@ export default function useSmokeTestControls(
 
       Scene: folder(
         {
-          pointMode: {
-            label: 'Point Mode',
-            value: 'translate',
-            options: ['translate', 'rotate', 'scale'],
-          },
           bgColor: { label: 'Background', value: '#ffffff' },
-        },
-        { collapsed: true }
-      ),
-
-      SmokeBall: folder(
-        {
-          'SB Position': folder(
-            {
-              sbPosX: { label: 'X', value: -5, min: -20, max: 20, step: 0.1 },
-              sbPosY: { label: 'Y', value: 1, min: -5, max: 15, step: 0.1 },
-              sbPosZ: { label: 'Z', value: 0, min: -10, max: 10, step: 0.1 },
-            },
-            { collapsed: true }
-          ),
-          sbRadius: {
-            label: 'Radius',
-            value: 0.6,
-            min: 0.05,
-            max: 5,
-            step: 0.05,
-          },
-          sbDetail: { label: 'Detail', value: 5, min: 1, max: 7, step: 1 },
-          sbSpeed: { label: 'Speed', value: 1.0, min: 0, max: 5, step: 0.05 },
-          sbWeight: {
-            label: 'Weight',
-            value: 0.3,
-            min: 0,
-            max: 3,
-            step: 0.05,
-          },
-          sbNoiseFreq: {
-            label: 'Noise Freq',
-            value: 2.0,
-            min: 0.1,
-            max: 10,
-            step: 0.1,
-          },
-          sbNoiseAmp: {
-            label: 'Noise Amp',
-            value: 0.15,
-            min: 0,
-            max: 1,
-            step: 0.01,
-          },
-          sbAnimated: { label: 'Animated', value: true },
-          'SB Colors': folder(
-            {
-              sbSmokeLight: { label: 'Light', value: '#bcbcbc' },
-              sbSmokeDark: { label: 'Dark', value: '#262626' },
-            },
-            { collapsed: true }
-          ),
-        },
-        { collapsed: true }
-      ),
-
-      'Smoke Ball Spline': folder(
-        {
-          ssBaseRadius: {
-            label: 'Base Radius',
-            value: 0.6,
-            min: 0.05,
-            max: 5,
-            step: 0.05,
-          },
-          ssTubular: {
-            label: 'Tubular Segments',
-            value: 64,
-            min: 8,
-            max: 128,
-            step: 1,
-          },
-          ssRadial: {
-            label: 'Radial Segments',
-            value: 32,
-            min: 8,
-            max: 64,
-            step: 1,
-          },
-          ssCap: { label: 'Cap Segments', value: 8, min: 2, max: 16, step: 1 },
-          ssSpeed: { label: 'Speed', value: 1.0, min: 0, max: 5, step: 0.05 },
-          ssWeight: {
-            label: 'Weight',
-            value: 0.3,
-            min: 0,
-            max: 3,
-            step: 0.05,
-          },
-          ssNoiseFreq: {
-            label: 'Noise Freq',
-            value: 2.0,
-            min: 0.1,
-            max: 10,
-            step: 0.1,
-          },
-          ssNoiseAmp: {
-            label: 'Noise Amp',
-            value: 0.15,
-            min: 0,
-            max: 1,
-            step: 0.01,
-          },
-          'SS Colors': folder(
-            {
-              ssSmokeLight: { label: 'Light', value: '#bcbcbc' },
-              ssSmokeDark: { label: 'Dark', value: '#262626' },
-            },
-            { collapsed: true }
-          ),
-          ssAnimated: { label: 'Animated', value: true },
-          'Spline Editor': folder(
-            {
-              showSmokeBallPoints: { label: 'Show Points', value: true },
-              showSmokeBallLine: { label: 'Show Curve', value: true },
-              smokeBallPointMode: {
-                label: 'Transform',
-                value: 'translate',
-                options: ['translate', 'scale'],
-              },
-            },
-            { collapsed: true }
-          ),
-        },
-        { collapsed: true }
-      ),
-
-      'Smoke 2D': folder(
-        {
-          s2dVisible: { label: 'Visible', value: true },
-          's2D Position': folder(
-            {
-              s2dPosX: { label: 'X', value: -3, min: -20, max: 20, step: 0.1 },
-              s2dPosY: { label: 'Y', value: 0, min: -5, max: 15, step: 0.1 },
-              s2dPosZ: { label: 'Z', value: 0, min: -10, max: 10, step: 0.1 },
-            },
-            { collapsed: true }
-          ),
-          s2dInverted: { label: 'Inverted', value: false },
-          s2dWidth: {
-            label: 'Width',
-            value: 1.5,
-            min: 0.05,
-            max: 5,
-            step: 0.05,
-          },
-          s2dHeight: {
-            label: 'Height',
-            value: 6.0,
-            min: 0.1,
-            max: 15,
-            step: 0.1,
-          },
-          s2dColor: { label: 'Color', value: '#b8b8b8' },
-          s2dOpacity: {
-            label: 'Opacity',
-            value: 1.0,
-            min: 0,
-            max: 1,
-            step: 0.01,
-          },
-          s2dTimeFreq: {
-            label: 'Time Freq',
-            value: 0.45,
-            min: 0,
-            max: 3,
-            step: 0.01,
-          },
-          s2dUvFreqX: {
-            label: 'UV Freq X',
-            value: 1.0,
-            min: 0.1,
-            max: 5,
-            step: 0.05,
-          },
-          s2dUvFreqY: {
-            label: 'UV Freq Y',
-            value: 1.5,
-            min: 0.1,
-            max: 5,
-            step: 0.05,
-          },
-          s2dRiseSpeed: {
-            label: 'Rise Speed',
-            value: 0.35,
-            min: 0,
-            max: 2,
-            step: 0.01,
-          },
-          s2dSpreadStrength: {
-            label: 'Spread',
-            value: 0.18,
-            min: 0,
-            max: 1,
-            step: 0.01,
-          },
+          lineColor: { label: 'Grid Lines', value: '#d1d1d1' },
         },
         { collapsed: true }
       ),
@@ -343,13 +302,6 @@ export default function useSmokeTestControls(
             value: 'translate',
             options: ['translate', 'rotate', 'scale', 'none'],
           },
-          attractorStrength: {
-            label: 'Strength',
-            value: 3,
-            min: 0,
-            max: 50,
-            step: 0.5,
-          },
           attractorRadius: {
             label: 'Radius',
             value: 3,
@@ -357,7 +309,7 @@ export default function useSmokeTestControls(
             max: 20,
             step: 0.1,
           },
-          addAttractor: button(() => {
+          'Add Attractor': button(() => {
             if (attractorsRef.current.length >= MAX_ATTRACTORS) return;
             attractorsRef.current.push({
               position: [
@@ -370,12 +322,7 @@ export default function useSmokeTestControls(
             });
             setAttractorVersion((c) => c + 1);
           }),
-          removeAttractor: button(() => {
-            if (attractorsRef.current.length <= 0) return;
-            attractorsRef.current.pop();
-            setAttractorVersion((c) => c + 1);
-          }),
-          removeAll: button(() => {
+          'Remove All Attractors': button(() => {
             // eslint-disable-next-line no-param-reassign
             attractorsRef.current.length = 0;
             setAttractorVersion((c) => c + 1);
@@ -383,180 +330,962 @@ export default function useSmokeTestControls(
         },
         { collapsed: true }
       ),
-
-      Actions: folder(
-        {
-          addSpline: button(
-            () => {
-              const randPt = () => ({
-                position: new THREE.Vector3(
-                  (Math.random() - 0.5) * 4,
-                  Math.random() * 4,
-                  (Math.random() - 0.5) * 4
-                ),
-                rotation: new THREE.Euler(),
-                scale: new THREE.Vector3(1, 1, 1),
-              });
-              setSplines((prev) => [...prev, [randPt(), randPt(), randPt()]]);
-              setSplineConfigs((prev) => [
-                ...prev,
-                { ...DEFAULT_SPLINE_CONFIG, name: `Spline ${prev.length + 1}` },
-              ]);
-            },
-            { label: 'Add Spline' }
-          ),
-        },
-        { collapsed: true }
-      ),
-
-      // ── Per-spline folders ────────────────────────────────────────────────
-      ...splines.reduce((acc, _, index) => {
-        const cfg = splineConfigs[index] ?? DEFAULT_SPLINE_CONFIG;
-        acc[`Spline ${index + 1}`] = folder(
-          buildSplineGroupControls(index, cfg, {
-            sceneLabel: SCENE_LABEL,
-            setSplineConfigs,
-            setSplines,
-            allowedTypes: 'smoke',
-          }),
-          { collapsed: true }
-        );
-        return acc;
-      }, {}),
     }),
-    [splines.length]
+    [] // static schema — never rebuilds; setters are stable
   );
 
-  // Track selected preset name
+  // ── Call 2 — dynamic schema: Smoke instances ────────────────────────────────
+  // Rebuilds when any instance count changes; all state flows through onChange.
+  useControls(
+    SCENE_LABEL,
+    () => {
+      // ── Particle Smoke ──────────────────────────────────────────────────────
+      const psSection = {
+        'Add Particle Smoke': button(() =>
+          setPsInstances((prev) => [...prev, makePsInst()])
+        ),
+        'Remove All Particle Smoke': button(() => setPsInstances([])),
+        ...psInstances.reduce((acc, inst, i) => {
+          const { id } = inst;
+          const onCfg = (key) => (v) =>
+            setPsInstances((prev) =>
+              prev.map((x) =>
+                x.id === id ? { ...x, config: { ...x.config, [key]: v } } : x
+              )
+            );
+          const onInst = (key) => (v) =>
+            setPsInstances((prev) =>
+              prev.map((x) => (x.id === id ? { ...x, [key]: v } : x))
+            );
+
+          acc[`Particle ${i + 1}`] = folder(
+            {
+              [`ps_pos_${id}`]: {
+                label: 'Position',
+                value: inst.pos,
+                step: 0.1,
+                onChange: onInst('pos'),
+              },
+              [`ps_rot_${id}`]: {
+                label: 'Rotation',
+                value: inst.rot,
+                step: 0.05,
+                onChange: onInst('rot'),
+              },
+              [`ps_scale_${id}`]: {
+                label: 'Scale',
+                value: inst.scale,
+                min: 0.01,
+                max: 10,
+                step: 0.1,
+                onChange: onInst('scale'),
+              },
+              'PS Spline Editor': folder(
+                {
+                  [`ps_handles_${id}`]: {
+                    label: 'Show Handles',
+                    value: inst.showHandles,
+                    onChange: (v) =>
+                      setPsInstances((prev) =>
+                        prev.map((x) =>
+                          x.id === id ? { ...x, showHandles: v } : x
+                        )
+                      ),
+                  },
+                  [`ps_pointMode_${id}`]: {
+                    label: 'Transform',
+                    value: inst.pointMode,
+                    options: ['translate', 'rotate', 'scale'],
+                    onChange: (v) =>
+                      setPsInstances((prev) =>
+                        prev.map((x) =>
+                          x.id === id ? { ...x, pointMode: v } : x
+                        )
+                      ),
+                  },
+                  [`ps_tension_${id}`]: {
+                    label: 'Tension',
+                    value: inst.config.tension,
+                    min: 0,
+                    max: 1,
+                    step: 0.05,
+                    onChange: onCfg('tension'),
+                  },
+                  [`ps_closed_${id}`]: {
+                    label: 'Closed',
+                    value: inst.config.closed,
+                    onChange: onCfg('closed'),
+                  },
+                },
+                { collapsed: true }
+              ),
+              'PS Simulation': folder(
+                {
+                  [`ps_count_${id}`]: {
+                    label: 'Count',
+                    value: inst.config.particleCount,
+                    min: 500,
+                    max: 40000,
+                    step: 500,
+                    onChange: onCfg('particleCount'),
+                  },
+                  [`ps_size_${id}`]: {
+                    label: 'Size',
+                    value: inst.config.particleSize,
+                    min: 0.05,
+                    max: 2,
+                    step: 0.01,
+                    onChange: onCfg('particleSize'),
+                  },
+                  [`ps_color_${id}`]: {
+                    label: 'Color',
+                    value: inst.config.particleColor,
+                    onChange: onCfg('particleColor'),
+                  },
+                  [`ps_opacity_${id}`]: {
+                    label: 'Opacity',
+                    value: inst.config.opacity,
+                    min: 0.005,
+                    max: 1,
+                    step: 0.005,
+                    onChange: onCfg('opacity'),
+                  },
+                  [`ps_growth_${id}`]: {
+                    label: 'Growth',
+                    value: inst.config.growth,
+                    min: 0,
+                    max: 10,
+                    step: 0.1,
+                    onChange: onCfg('growth'),
+                  },
+                  [`ps_fadeExp_${id}`]: {
+                    label: 'Fade Exp',
+                    value: inst.config.fadeExponent,
+                    min: 0.1,
+                    max: 5,
+                    step: 0.1,
+                    onChange: onCfg('fadeExponent'),
+                  },
+                  [`ps_buoyancy_${id}`]: {
+                    label: 'Buoyancy',
+                    value: inst.config.buoyancy,
+                    min: -2,
+                    max: 2,
+                    step: 0.05,
+                    onChange: onCfg('buoyancy'),
+                  },
+                  [`ps_rotSpeed_${id}`]: {
+                    label: 'Rot Speed',
+                    value: inst.config.rotSpeed,
+                    min: 0,
+                    max: 5,
+                    step: 0.05,
+                    onChange: onCfg('rotSpeed'),
+                  },
+                  [`ps_blend_${id}`]: {
+                    label: 'Blend',
+                    value: inst.config.blendMode,
+                    options: ['Normal', 'Additive', 'Subtractive', 'Multiply'],
+                    onChange: onCfg('blendMode'),
+                  },
+                  [`ps_springK_${id}`]: {
+                    label: 'Spring',
+                    value: inst.config.springK,
+                    min: 0,
+                    max: 40,
+                    step: 0.5,
+                    onChange: onCfg('springK'),
+                  },
+                  [`ps_flow_${id}`]: {
+                    label: 'Flow Speed',
+                    value: inst.config.flowSpeed,
+                    min: 0,
+                    max: 0.5,
+                    step: 0.005,
+                    onChange: onCfg('flowSpeed'),
+                  },
+                  [`ps_damping_${id}`]: {
+                    label: 'Damping',
+                    value: inst.config.damping,
+                    min: 0.001,
+                    max: 1,
+                    step: 0.005,
+                    onChange: onCfg('damping'),
+                  },
+                  [`ps_turb_${id}`]: {
+                    label: 'Turbulence',
+                    value: inst.config.turbulence,
+                    min: 0,
+                    max: 8,
+                    step: 0.1,
+                    onChange: onCfg('turbulence'),
+                  },
+                  [`ps_turbSpeed_${id}`]: {
+                    label: 'Turb Speed',
+                    value: inst.config.turbulenceSpeed,
+                    min: 0,
+                    max: 3,
+                    step: 0.05,
+                    onChange: onCfg('turbulenceSpeed'),
+                  },
+                  [`ps_spread_${id}`]: {
+                    label: 'Spawn Spread',
+                    value: inst.config.spawnSpread,
+                    min: 0,
+                    max: 5,
+                    step: 0.05,
+                    onChange: onCfg('spawnSpread'),
+                  },
+                  [`ps_drift_${id}`]: {
+                    label: 'Max Drift',
+                    value: inst.config.maxDrift,
+                    min: 0.5,
+                    max: 20,
+                    step: 0.5,
+                    onChange: onCfg('maxDrift'),
+                  },
+                  [`ps_fadeRate_${id}`]: {
+                    label: 'Fade Rate',
+                    value: inst.config.fadeRate,
+                    min: 1,
+                    max: 50,
+                    step: 1,
+                    onChange: onCfg('fadeRate'),
+                  },
+                },
+                { collapsed: true }
+              ),
+              [`ps_delete_${id}`]: button(
+                () => setPsInstances((prev) => prev.filter((x) => x.id !== id)),
+                { label: 'Delete Instance' }
+              ),
+            },
+            { collapsed: true }
+          );
+          return acc;
+        }, {}),
+      };
+
+      // ── Volumetric Smoke ────────────────────────────────────────────────────
+      const vsSection = {
+        'Add Volumetric Smoke': button(() =>
+          setVsInstances((prev) => [...prev, makeVsInst()])
+        ),
+        'Remove All Volumetric Smoke': button(() => setVsInstances([])),
+        ...vsInstances.reduce((acc, inst, i) => {
+          const { id } = inst;
+          const onCfg = (key) => (v) =>
+            setVsInstances((prev) =>
+              prev.map((x) =>
+                x.id === id ? { ...x, config: { ...x.config, [key]: v } } : x
+              )
+            );
+          const onInst = (key) => (v) =>
+            setVsInstances((prev) =>
+              prev.map((x) => (x.id === id ? { ...x, [key]: v } : x))
+            );
+
+          acc[`Volumetric ${i + 1}`] = folder(
+            {
+              [`vs_pos_${id}`]: {
+                label: 'Position',
+                value: inst.pos,
+                step: 0.1,
+                onChange: onInst('pos'),
+              },
+              [`vs_rot_${id}`]: {
+                label: 'Rotation',
+                value: inst.rot,
+                step: 0.05,
+                onChange: onInst('rot'),
+              },
+              [`vs_scale_${id}`]: {
+                label: 'Scale',
+                value: inst.scale,
+                min: 0.01,
+                max: 10,
+                step: 0.1,
+                onChange: onInst('scale'),
+              },
+              'VS Spline Editor': folder(
+                {
+                  [`vs_handles_${id}`]: {
+                    label: 'Show Handles',
+                    value: inst.showHandles,
+                    onChange: (v) =>
+                      setVsInstances((prev) =>
+                        prev.map((x) =>
+                          x.id === id ? { ...x, showHandles: v } : x
+                        )
+                      ),
+                  },
+                  [`vs_pointMode_${id}`]: {
+                    label: 'Transform',
+                    value: inst.pointMode,
+                    options: ['translate', 'rotate', 'scale'],
+                    onChange: (v) =>
+                      setVsInstances((prev) =>
+                        prev.map((x) =>
+                          x.id === id ? { ...x, pointMode: v } : x
+                        )
+                      ),
+                  },
+                  [`vs_tension_${id}`]: {
+                    label: 'Tension',
+                    value: inst.config.tension,
+                    min: 0,
+                    max: 1,
+                    step: 0.05,
+                    onChange: onCfg('tension'),
+                  },
+                  [`vs_closed_${id}`]: {
+                    label: 'Closed',
+                    value: inst.config.closed,
+                    onChange: onCfg('closed'),
+                  },
+                },
+                { collapsed: true }
+              ),
+              'VS Simulation': folder(
+                {
+                  [`vs_count_${id}`]: {
+                    label: 'Count',
+                    value: inst.config.volParticleCount,
+                    min: 500,
+                    max: 40000,
+                    step: 500,
+                    onChange: onCfg('volParticleCount'),
+                  },
+                  [`vs_size_${id}`]: {
+                    label: 'Size',
+                    value: inst.config.volSize,
+                    min: 0.05,
+                    max: 3,
+                    step: 0.05,
+                    onChange: onCfg('volSize'),
+                  },
+                  [`vs_color_${id}`]: {
+                    label: 'Color',
+                    value: inst.config.volColor,
+                    onChange: onCfg('volColor'),
+                  },
+                  [`vs_opacity_${id}`]: {
+                    label: 'Opacity',
+                    value: inst.config.volOpacity,
+                    min: 0.005,
+                    max: 1,
+                    step: 0.005,
+                    onChange: onCfg('volOpacity'),
+                  },
+                  [`vs_blend_${id}`]: {
+                    label: 'Blend',
+                    value: inst.config.volBlendMode,
+                    options: ['Normal', 'Additive', 'Subtractive', 'Multiply'],
+                    onChange: onCfg('volBlendMode'),
+                  },
+                  [`vs_spread_${id}`]: {
+                    label: 'Spawn Spread',
+                    value: inst.config.volSpread,
+                    min: 0,
+                    max: 8,
+                    step: 0.05,
+                    onChange: onCfg('volSpread'),
+                  },
+                  [`vs_springK_${id}`]: {
+                    label: 'Spring',
+                    value: inst.config.volSpringK,
+                    min: 0,
+                    max: 40,
+                    step: 0.5,
+                    onChange: onCfg('volSpringK'),
+                  },
+                  [`vs_damping_${id}`]: {
+                    label: 'Damping',
+                    value: inst.config.volDamping,
+                    min: 0.001,
+                    max: 1,
+                    step: 0.005,
+                    onChange: onCfg('volDamping'),
+                  },
+                  [`vs_turb_${id}`]: {
+                    label: 'Turbulence',
+                    value: inst.config.volTurbulence,
+                    min: 0,
+                    max: 8,
+                    step: 0.1,
+                    onChange: onCfg('volTurbulence'),
+                  },
+                  [`vs_turbSpeed_${id}`]: {
+                    label: 'Turb Speed',
+                    value: inst.config.volTurbulenceSpeed,
+                    min: 0,
+                    max: 3,
+                    step: 0.05,
+                    onChange: onCfg('volTurbulenceSpeed'),
+                  },
+                  [`vs_drift_${id}`]: {
+                    label: 'Max Drift',
+                    value: inst.config.volMaxDrift,
+                    min: 0.5,
+                    max: 20,
+                    step: 0.5,
+                    onChange: onCfg('volMaxDrift'),
+                  },
+                  [`vs_growth_${id}`]: {
+                    label: 'Growth',
+                    value: inst.config.volGrowth,
+                    min: 0,
+                    max: 10,
+                    step: 0.1,
+                    onChange: onCfg('volGrowth'),
+                  },
+                  [`vs_fadeExp_${id}`]: {
+                    label: 'Fade Exp',
+                    value: inst.config.volFadeExp,
+                    min: 0.1,
+                    max: 5,
+                    step: 0.1,
+                    onChange: onCfg('volFadeExp'),
+                  },
+                  [`vs_buoyancy_${id}`]: {
+                    label: 'Buoyancy',
+                    value: inst.config.volBuoyancy,
+                    min: -2,
+                    max: 2,
+                    step: 0.05,
+                    onChange: onCfg('volBuoyancy'),
+                  },
+                },
+                { collapsed: true }
+              ),
+              [`vs_delete_${id}`]: button(
+                () => setVsInstances((prev) => prev.filter((x) => x.id !== id)),
+                { label: 'Delete Instance' }
+              ),
+            },
+            { collapsed: true }
+          );
+          return acc;
+        }, {}),
+      };
+
+      // ── Smoke Ball ──────────────────────────────────────────────────────────
+      const sbSection = {
+        'Add Smoke Ball': button(() =>
+          setSbInstances((prev) => [
+            ...prev,
+            makeSbInst([
+              (Math.random() - 0.5) * 10,
+              Math.random() * 4,
+              (Math.random() - 0.5) * 6,
+            ]),
+          ])
+        ),
+        'Remove All Smoke Balls': button(() => setSbInstances([])),
+        ...sbInstances.reduce((acc, inst, i) => {
+          const { id } = inst;
+          const onCfg = (key) => (v) =>
+            setSbInstances((prev) =>
+              prev.map((x) =>
+                x.id === id ? { ...x, config: { ...x.config, [key]: v } } : x
+              )
+            );
+          const onInst = (key) => (v) =>
+            setSbInstances((prev) =>
+              prev.map((x) => (x.id === id ? { ...x, [key]: v } : x))
+            );
+
+          acc[`Smoke Ball ${i + 1}`] = folder(
+            {
+              [`sb_pos_${id}`]: {
+                label: 'Position',
+                value: inst.pos,
+                step: 0.1,
+                onChange: onInst('pos'),
+              },
+              [`sb_rot_${id}`]: {
+                label: 'Rotation',
+                value: inst.rot,
+                step: 0.05,
+                onChange: onInst('rot'),
+              },
+              [`sb_scale_${id}`]: {
+                label: 'Scale',
+                value: inst.scale,
+                min: 0.01,
+                max: 10,
+                step: 0.1,
+                onChange: onInst('scale'),
+              },
+              'SB Appearance': folder(
+                {
+                  [`sb_radius_${id}`]: {
+                    label: 'Radius',
+                    value: inst.config.radius,
+                    min: 0.05,
+                    max: 5,
+                    step: 0.05,
+                    onChange: onCfg('radius'),
+                  },
+                  [`sb_detail_${id}`]: {
+                    label: 'Detail',
+                    value: inst.config.detail,
+                    min: 1,
+                    max: 7,
+                    step: 1,
+                    onChange: onCfg('detail'),
+                  },
+                  [`sb_speed_${id}`]: {
+                    label: 'Speed',
+                    value: inst.config.speed,
+                    min: 0,
+                    max: 5,
+                    step: 0.05,
+                    onChange: onCfg('speed'),
+                  },
+                  [`sb_weight_${id}`]: {
+                    label: 'Weight',
+                    value: inst.config.weight,
+                    min: 0,
+                    max: 3,
+                    step: 0.05,
+                    onChange: onCfg('weight'),
+                  },
+                  [`sb_noiseFreq_${id}`]: {
+                    label: 'Noise Freq',
+                    value: inst.config.noiseFreq,
+                    min: 0.1,
+                    max: 10,
+                    step: 0.1,
+                    onChange: onCfg('noiseFreq'),
+                  },
+                  [`sb_noiseAmp_${id}`]: {
+                    label: 'Noise Amp',
+                    value: inst.config.noiseAmp,
+                    min: 0,
+                    max: 1,
+                    step: 0.01,
+                    onChange: onCfg('noiseAmp'),
+                  },
+                  [`sb_animated_${id}`]: {
+                    label: 'Animated',
+                    value: inst.config.animated,
+                    onChange: onCfg('animated'),
+                  },
+                  [`sb_light_${id}`]: {
+                    label: 'Light',
+                    value: inst.config.smokeLightColor,
+                    onChange: onCfg('smokeLightColor'),
+                  },
+                  [`sb_dark_${id}`]: {
+                    label: 'Dark',
+                    value: inst.config.smokeDarkColor,
+                    onChange: onCfg('smokeDarkColor'),
+                  },
+                },
+                { collapsed: true }
+              ),
+              [`sb_delete_${id}`]: button(
+                () => setSbInstances((prev) => prev.filter((x) => x.id !== id)),
+                { label: 'Delete Instance' }
+              ),
+            },
+            { collapsed: true }
+          );
+          return acc;
+        }, {}),
+      };
+
+      // ── Smoke Ball Spline ───────────────────────────────────────────────────
+      const ssSection = {
+        'Add Smoke Ball Spline': button(() =>
+          setSsInstances((prev) => [...prev, makeSsInst()])
+        ),
+        'Remove All Smoke Ball Splines': button(() => setSsInstances([])),
+        ...ssInstances.reduce((acc, inst, i) => {
+          const { id } = inst;
+          const onCfg = (key) => (v) =>
+            setSsInstances((prev) =>
+              prev.map((x) =>
+                x.id === id ? { ...x, config: { ...x.config, [key]: v } } : x
+              )
+            );
+          const onInst = (key) => (v) =>
+            setSsInstances((prev) =>
+              prev.map((x) => (x.id === id ? { ...x, [key]: v } : x))
+            );
+
+          acc[`Smoke Ball Spline ${i + 1}`] = folder(
+            {
+              [`ss_pos_${id}`]: {
+                label: 'Position',
+                value: inst.pos,
+                step: 0.1,
+                onChange: onInst('pos'),
+              },
+              [`ss_rot_${id}`]: {
+                label: 'Rotation',
+                value: inst.rot,
+                step: 0.05,
+                onChange: onInst('rot'),
+              },
+              [`ss_scale_${id}`]: {
+                label: 'Scale',
+                value: inst.scale,
+                min: 0.01,
+                max: 10,
+                step: 0.1,
+                onChange: onInst('scale'),
+              },
+              'SS Spline Editor': folder(
+                {
+                  [`ss_handles_${id}`]: {
+                    label: 'Show Handles',
+                    value: inst.showHandles,
+                    onChange: (v) =>
+                      setSsInstances((prev) =>
+                        prev.map((x) =>
+                          x.id === id ? { ...x, showHandles: v } : x
+                        )
+                      ),
+                  },
+                  [`ss_pointMode_${id}`]: {
+                    label: 'Transform',
+                    value: inst.pointMode,
+                    options: ['translate', 'scale'],
+                    onChange: (v) =>
+                      setSsInstances((prev) =>
+                        prev.map((x) =>
+                          x.id === id ? { ...x, pointMode: v } : x
+                        )
+                      ),
+                  },
+                },
+                { collapsed: true }
+              ),
+              'SS Appearance': folder(
+                {
+                  [`ss_baseRadius_${id}`]: {
+                    label: 'Base Radius',
+                    value: inst.config.baseRadius,
+                    min: 0.05,
+                    max: 5,
+                    step: 0.05,
+                    onChange: onCfg('baseRadius'),
+                  },
+                  [`ss_tubular_${id}`]: {
+                    label: 'Tubular Segs',
+                    value: inst.config.tubularSegments,
+                    min: 8,
+                    max: 128,
+                    step: 1,
+                    onChange: onCfg('tubularSegments'),
+                  },
+                  [`ss_radial_${id}`]: {
+                    label: 'Radial Segs',
+                    value: inst.config.radialSegments,
+                    min: 8,
+                    max: 64,
+                    step: 1,
+                    onChange: onCfg('radialSegments'),
+                  },
+                  [`ss_cap_${id}`]: {
+                    label: 'Cap Segs',
+                    value: inst.config.capSegments,
+                    min: 2,
+                    max: 16,
+                    step: 1,
+                    onChange: onCfg('capSegments'),
+                  },
+                  [`ss_speed_${id}`]: {
+                    label: 'Speed',
+                    value: inst.config.speed,
+                    min: 0,
+                    max: 5,
+                    step: 0.05,
+                    onChange: onCfg('speed'),
+                  },
+                  [`ss_weight_${id}`]: {
+                    label: 'Weight',
+                    value: inst.config.weight,
+                    min: 0,
+                    max: 3,
+                    step: 0.05,
+                    onChange: onCfg('weight'),
+                  },
+                  [`ss_noiseFreq_${id}`]: {
+                    label: 'Noise Freq',
+                    value: inst.config.noiseFreq,
+                    min: 0.1,
+                    max: 10,
+                    step: 0.1,
+                    onChange: onCfg('noiseFreq'),
+                  },
+                  [`ss_noiseAmp_${id}`]: {
+                    label: 'Noise Amp',
+                    value: inst.config.noiseAmp,
+                    min: 0,
+                    max: 1,
+                    step: 0.01,
+                    onChange: onCfg('noiseAmp'),
+                  },
+                  [`ss_animated_${id}`]: {
+                    label: 'Animated',
+                    value: inst.config.animated,
+                    onChange: onCfg('animated'),
+                  },
+                  [`ss_light_${id}`]: {
+                    label: 'Light',
+                    value: inst.config.smokeLightColor,
+                    onChange: onCfg('smokeLightColor'),
+                  },
+                  [`ss_dark_${id}`]: {
+                    label: 'Dark',
+                    value: inst.config.smokeDarkColor,
+                    onChange: onCfg('smokeDarkColor'),
+                  },
+                },
+                { collapsed: true }
+              ),
+              [`ss_delete_${id}`]: button(
+                () => setSsInstances((prev) => prev.filter((x) => x.id !== id)),
+                { label: 'Delete Instance' }
+              ),
+            },
+            { collapsed: true }
+          );
+          return acc;
+        }, {}),
+      };
+
+      // ── Billboard Smoke ─────────────────────────────────────────────────────
+      const s2dSection = {
+        'Add Billboard Smoke': button(() =>
+          setS2dInstances((prev) => [
+            ...prev,
+            makeS2dInst([
+              (Math.random() - 0.5) * 10,
+              0,
+              (Math.random() - 0.5) * 6,
+            ]),
+          ])
+        ),
+        'Remove All Billboard Smoke': button(() => setS2dInstances([])),
+        ...s2dInstances.reduce((acc, inst, i) => {
+          const { id } = inst;
+          const onCfg = (key) => (v) =>
+            setS2dInstances((prev) =>
+              prev.map((x) =>
+                x.id === id ? { ...x, config: { ...x.config, [key]: v } } : x
+              )
+            );
+          const onInst = (key) => (v) =>
+            setS2dInstances((prev) =>
+              prev.map((x) => (x.id === id ? { ...x, [key]: v } : x))
+            );
+
+          acc[`Billboard ${i + 1}`] = folder(
+            {
+              [`s2d_pos_${id}`]: {
+                label: 'Position',
+                value: inst.pos,
+                step: 0.1,
+                onChange: onInst('pos'),
+              },
+              'S2D Appearance': folder(
+                {
+                  [`s2d_inverted_${id}`]: {
+                    label: 'Inverted',
+                    value: inst.config.inverted,
+                    onChange: onCfg('inverted'),
+                  },
+                  [`s2d_width_${id}`]: {
+                    label: 'Width',
+                    value: inst.config.width,
+                    min: 0.05,
+                    max: 5,
+                    step: 0.05,
+                    onChange: onCfg('width'),
+                  },
+                  [`s2d_height_${id}`]: {
+                    label: 'Height',
+                    value: inst.config.height,
+                    min: 0.1,
+                    max: 15,
+                    step: 0.1,
+                    onChange: onCfg('height'),
+                  },
+                  [`s2d_color_${id}`]: {
+                    label: 'Color',
+                    value: inst.config.color,
+                    onChange: onCfg('color'),
+                  },
+                  [`s2d_opacity_${id}`]: {
+                    label: 'Opacity',
+                    value: inst.config.opacity,
+                    min: 0,
+                    max: 1,
+                    step: 0.01,
+                    onChange: onCfg('opacity'),
+                  },
+                  [`s2d_timeFreq_${id}`]: {
+                    label: 'Time Freq',
+                    value: inst.config.timeFrequency,
+                    min: 0,
+                    max: 3,
+                    step: 0.01,
+                    onChange: onCfg('timeFrequency'),
+                  },
+                  [`s2d_uvFreqX_${id}`]: {
+                    label: 'UV Freq X',
+                    value: inst.config.uvFrequencyX,
+                    min: 0.1,
+                    max: 5,
+                    step: 0.05,
+                    onChange: onCfg('uvFrequencyX'),
+                  },
+                  [`s2d_uvFreqY_${id}`]: {
+                    label: 'UV Freq Y',
+                    value: inst.config.uvFrequencyY,
+                    min: 0.1,
+                    max: 5,
+                    step: 0.05,
+                    onChange: onCfg('uvFrequencyY'),
+                  },
+                  [`s2d_riseSpeed_${id}`]: {
+                    label: 'Rise Speed',
+                    value: inst.config.riseSpeed,
+                    min: 0,
+                    max: 2,
+                    step: 0.01,
+                    onChange: onCfg('riseSpeed'),
+                  },
+                  [`s2d_spread_${id}`]: {
+                    label: 'Spread',
+                    value: inst.config.spreadStrength,
+                    min: 0,
+                    max: 1,
+                    step: 0.01,
+                    onChange: onCfg('spreadStrength'),
+                  },
+                },
+                { collapsed: true }
+              ),
+              [`s2d_delete_${id}`]: button(
+                () =>
+                  setS2dInstances((prev) => prev.filter((x) => x.id !== id)),
+                { label: 'Delete Instance' }
+              ),
+            },
+            { collapsed: true }
+          );
+          return acc;
+        }, {}),
+      };
+
+      return {
+        Smoke: folder(
+          {
+            'Particle Smoke': folder(psSection, { collapsed: false }),
+            'Volumetric Smoke': folder(vsSection, { collapsed: true }),
+            'Smoke Ball': folder(sbSection, { collapsed: true }),
+            'Smoke Ball Spline': folder(ssSection, { collapsed: true }),
+            'Billboard Smoke': folder(s2dSection, { collapsed: true }),
+          },
+          { collapsed: false }
+        ),
+      };
+    },
+    // Rebuild schema when instance counts change (new/deleted instances).
+    // Instance data flows through onChange; value fields seed from current state.
+    [
+      psInstances.length,
+      vsInstances.length,
+      sbInstances.length,
+      ssInstances.length,
+      s2dInstances.length,
+    ]
+  );
+
+  // ── Effects ─────────────────────────────────────────────────────────────────
+
+  // Track selected preset name for Reset button
   useEffect(() => {
     selectedPresetRef.current = preset;
   }, [preset]);
 
-  // Apply preset when selection changes
+  // Reload instances when preset dropdown changes
   useEffect(() => {
-    const p = SMOKE_PRESETS[preset];
-    if (p) {
-      const { splines: nextSplines, splineConfigs: nextConfigs } =
-        parsePreset(p);
-      setSplines(nextSplines);
-      setSplineConfigs(nextConfigs);
-    }
-  }, [preset]);
+    const { ps, vs } = splitPresetByType(preset);
+    setPsInstances(ps);
+    setVsInstances(vs);
+    setSbInstances([makeSbInst()]);
+    setSsInstances([makeSsInst()]);
+    setS2dInstances([makeS2dInst()]);
+  }, [preset]); // only preset is the intended dependency
 
-  // Keep configs in sync with spline count
-  useEffect(() => {
-    setSplineConfigs((prev) => {
-      if (prev.length === splines.length) return prev;
-      return splines.map((_, i) => prev[i] ?? { ...DEFAULT_SPLINE_CONFIG });
-    });
-  }, [splines.length]);
+  // ── Point update callbacks (for 3D handle interaction) ──────────────────────
 
-  return useMemo(
-    () => ({
-      pointMode,
-      bgColor,
-      attractorStrength,
-      attractorRadius,
-      showAttractors,
-      attractorMode,
-      attractorVersion,
-      forceAttractorUpdate,
-      splineConfigs,
-      smokeBall: {
-        position: [sbPosX, sbPosY, sbPosZ],
-        radius: sbRadius,
-        detail: sbDetail,
-        speed: sbSpeed,
-        weight: sbWeight,
-        noiseFreq: sbNoiseFreq,
-        noiseAmp: sbNoiseAmp,
-        animated: sbAnimated,
-        smokeLightColor: sbSmokeLight,
-        smokeDarkColor: sbSmokeDark,
-      },
-      smokeBallSpline: {
-        baseRadius: ssBaseRadius,
-        tubularSegments: ssTubular,
-        radialSegments: ssRadial,
-        capSegments: ssCap,
-        speed: ssSpeed,
-        weight: ssWeight,
-        noiseFreq: ssNoiseFreq,
-        noiseAmp: ssNoiseAmp,
-        smokeLightColor: ssSmokeLight,
-        smokeDarkColor: ssSmokeDark,
-        animated: ssAnimated,
-      },
-      showSmokeBallPoints,
-      showSmokeBallLine,
-      smokeBallPointMode,
-      smoke2D: {
-        visible: s2dVisible,
-        position: [s2dPosX, s2dPosY, s2dPosZ],
-        inverted: s2dInverted,
-        smoke: {
-          width: s2dWidth,
-          height: s2dHeight,
-          color: s2dColor,
-          opacity: s2dOpacity,
-          timeFrequency: s2dTimeFreq,
-          uvFrequencyX: s2dUvFreqX,
-          uvFrequencyY: s2dUvFreqY,
-          riseSpeed: s2dRiseSpeed,
-          spreadStrength: s2dSpreadStrength,
-        },
-      },
-    }),
-    [
-      pointMode,
-      bgColor,
-      attractorStrength,
-      attractorRadius,
-      showAttractors,
-      attractorMode,
-      attractorVersion,
-      forceAttractorUpdate,
-      splineConfigs,
-      sbPosX,
-      sbPosY,
-      sbPosZ,
-      sbRadius,
-      sbDetail,
-      sbSpeed,
-      sbWeight,
-      sbNoiseFreq,
-      sbNoiseAmp,
-      sbAnimated,
-      sbSmokeLight,
-      sbSmokeDark,
-      ssBaseRadius,
-      ssTubular,
-      ssRadial,
-      ssCap,
-      ssSpeed,
-      ssWeight,
-      ssNoiseFreq,
-      ssNoiseAmp,
-      ssSmokeLight,
-      ssSmokeDark,
-      ssAnimated,
-      showSmokeBallPoints,
-      showSmokeBallLine,
-      smokeBallPointMode,
-      s2dVisible,
-      s2dPosX,
-      s2dPosY,
-      s2dPosZ,
-      s2dInverted,
-      s2dWidth,
-      s2dHeight,
-      s2dColor,
-      s2dOpacity,
-      s2dTimeFreq,
-      s2dUvFreqX,
-      s2dUvFreqY,
-      s2dRiseSpeed,
-      s2dSpreadStrength,
-    ]
-  );
+  const updatePsPoints = useCallback((id, updater) => {
+    setPsInstances((prev) =>
+      prev.map((x) =>
+        x.id === id
+          ? {
+              ...x,
+              points:
+                typeof updater === 'function' ? updater(x.points) : updater,
+            }
+          : x
+      )
+    );
+  }, []);
+
+  const updateVsPoints = useCallback((id, updater) => {
+    setVsInstances((prev) =>
+      prev.map((x) =>
+        x.id === id
+          ? {
+              ...x,
+              points:
+                typeof updater === 'function' ? updater(x.points) : updater,
+            }
+          : x
+      )
+    );
+  }, []);
+
+  const updateSsPoints = useCallback((id, updater) => {
+    setSsInstances((prev) =>
+      prev.map((x) =>
+        x.id === id
+          ? {
+              ...x,
+              controlPoints:
+                typeof updater === 'function'
+                  ? updater(x.controlPoints)
+                  : updater,
+            }
+          : x
+      )
+    );
+  }, []);
+
+  // ── Return ───────────────────────────────────────────────────────────────────
+
+  return {
+    bgColor,
+    lineColor,
+    psInstances,
+    vsInstances,
+    sbInstances,
+    ssInstances,
+    s2dInstances,
+    attractorMode,
+    showAttractors,
+    attractorRadius,
+    attractorVersion,
+    updatePsPoints,
+    updateVsPoints,
+    updateSsPoints,
+  };
 }

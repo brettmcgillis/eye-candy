@@ -27,16 +27,17 @@ export default function Surrender() {
     dampening,
     segmentsX,
     segmentsY,
-    tatterSeed,
-    tatterScale,
+    alphaSeed,
+    alphaScale,
+    edgeFade,
+    holeAmount,
     tatterEdge,
-    tatterHoles,
     paused,
     wireframe,
-    sphere,
-    sphereWireframe,
-    sphereColor,
-    sphereRadius,
+    cursorCollider,
+    debugColliders,
+    debugColor,
+    cursorRadius,
     textureUrl,
     textureScaleX,
     textureScaleY,
@@ -187,14 +188,15 @@ export default function Surrender() {
           dampening={dampening}
           paused={paused}
           wireframe={wireframe}
-          sphereEnabled={sphere}
-          sphereWireframe={sphereWireframe}
-          sphereColor={sphereColor}
-          sphereRadius={sphereRadius}
-          tatterSeed={tatterSeed}
-          tatterScale={tatterScale}
+          cursorCollider={cursorCollider}
+          cursorRadius={cursorRadius}
+          debugColliders={debugColliders}
+          debugColor={debugColor}
+          alphaSeed={alphaSeed}
+          alphaScale={alphaScale}
+          edgeFade={edgeFade}
+          holeAmount={holeAmount}
           tatterEdge={tatterEdge}
-          tatterHoles={tatterHoles}
           textureUrl={textureUrl === 'None' ? null : textureUrl}
           preloadTextures={TEXTURE_URLS}
           textureScaleX={textureScaleX}

@@ -1,79 +1,30 @@
-import { folder, useControls } from 'leva';
+import * as THREE from 'three';
 
-import React, { useRef } from 'react';
+import React, { useMemo, useRef } from 'react';
 
 import { OrbitControls, PerspectiveCamera } from '@react-three/drei';
 
 import ClothMesh from '../../../../elements/webgpu/cloth/ClothMesh';
+import useTheLoomControls from './useTheLoomControls';
 
 export default function TheLoom() {
   const clothRef = useRef();
+  const { controls, pins, centered, cutouts } = useTheLoomControls();
 
-  const shape = useControls('Cloth', {
-    Shape: folder(
-      {
-        width: { value: 1.0, min: 0.1, max: 5, step: 0.1 },
-        height: { value: 0.7, min: 0.1, max: 5, step: 0.1 },
-        segmentsX: { value: 30, min: 4, max: 80, step: 1 },
-        segmentsY: { value: 21, min: 4, max: 80, step: 1 },
-        pinEdge: { value: 'left', options: ['left', 'top'] },
-      },
-      { collapsed: true }
-    ),
-  });
-
-  const simulation = useControls('Cloth', {
-    Simulation: folder(
-      {
-        wind: { value: 1.0, min: 0, max: 5, step: 0.01 },
-        windDirX: { value: 1, min: -1, max: 1, step: 0.01 },
-        windDirZ: { value: 0, min: -1, max: 1, step: 0.01 },
-        stiffness: { value: 0.2, min: 0, max: 1, step: 0.01 },
-        dampening: { value: 0.99, min: 0.9, max: 1, step: 0.001 },
-        gravity: { value: 0.00005, min: 0, max: 0.001, step: 0.00001 },
-        stepsPerSecond: { value: 360, min: 60, max: 720, step: 10 },
-        maxVelocity: { value: 0.01, min: 0.001, max: 0.1, step: 0.001 },
-        paused: false,
-      },
-      { collapsed: true }
-    ),
-  });
-
-  const sphere = useControls('Cloth', {
-    Sphere: folder(
-      {
-        sphereEnabled: { value: true, label: 'Enabled' },
-        sphereRadius: { value: 0.12, min: 0.01, max: 0.5, step: 0.01 },
-        sphereWireframe: { value: true, label: 'Wireframe' },
-        sphereColor: { value: '#ff0000', label: 'Color' },
-      },
-      { collapsed: true }
-    ),
-  });
-
-  const tatter = useControls('Cloth', {
-    Tatter: folder(
-      {
-        tatterSeed: { value: 42, min: 0, max: 999, step: 1 },
-        tatterScale: { value: 3, min: 0.1, max: 20, step: 0.1 },
-        tatterEdge: { value: 0, min: 0, max: 1, step: 0.01 },
-        tatterHoles: { value: 0, min: 0, max: 1, step: 0.01 },
-      },
-      { collapsed: true }
-    ),
-  });
-
-  const material = useControls('Cloth', {
-    Material: folder(
-      {
-        color: { value: '#8866aa' },
-        roughness: { value: 0.6, min: 0, max: 1, step: 0.01 },
-        metalness: { value: 0.0, min: 0, max: 1, step: 0.01 },
-        opacity: { value: 1, min: 0, max: 1, step: 0.01 },
-      },
-      { collapsed: true }
-    ),
-  });
+  // Force full remount of ClothMesh when creation-only props change
+  const simKey = useMemo(
+    () =>
+      `${controls.width}-${controls.height}-${controls.segmentsX}-${controls.segmentsY}-${controls.shapePreset}-${controls.pinMode}-${controls.orientation}`,
+    [
+      controls.width,
+      controls.height,
+      controls.segmentsX,
+      controls.segmentsY,
+      controls.shapePreset,
+      controls.pinMode,
+      controls.orientation,
+    ]
+  );
 
   return (
     <>
@@ -82,31 +33,62 @@ export default function TheLoom() {
       <directionalLight position={[3, 5, 2]} intensity={1} />
       <color attach="background" args={['#1a1a2e']} />
       <OrbitControls />
+      {controls.sphereEnabled && controls.sphereVisible && (
+        <mesh position={[controls.sphereX, controls.sphereY, controls.sphereZ]}>
+          <sphereGeometry args={[controls.sphereRadius, 32, 32]} />
+          <meshStandardMaterial color="#888888" transparent opacity={0.4} />
+        </mesh>
+      )}
       <ClothMesh
+        key={simKey}
         ref={clothRef}
-        width={shape.width}
-        height={shape.height}
-        segmentsX={shape.segmentsX}
-        segmentsY={shape.segmentsY}
-        pinEdge={shape.pinEdge}
-        gravity={simulation.gravity}
-        stepsPerSecond={simulation.stepsPerSecond}
-        maxVelocity={simulation.maxVelocity}
-        wind={simulation.wind}
-        windDirX={simulation.windDirX}
-        windDirZ={simulation.windDirZ}
-        stiffness={simulation.stiffness}
-        dampening={simulation.dampening}
-        paused={simulation.paused}
-        sphereEnabled={sphere.sphereEnabled}
-        sphereRadius={sphere.sphereRadius}
-        sphereWireframe={sphere.sphereWireframe}
-        sphereColor={sphere.sphereColor}
-        tatterSeed={tatter.tatterSeed}
-        tatterScale={tatter.tatterScale}
-        tatterEdge={tatter.tatterEdge}
-        tatterHoles={tatter.tatterHoles}
-        materialProps={material}
+        width={controls.width}
+        height={controls.height}
+        segmentsX={controls.segmentsX}
+        segmentsY={controls.segmentsY}
+        pins={pins}
+        centered={centered}
+        orientation={controls.orientation}
+        shape={controls.shapePreset}
+        gravity={controls.gravity}
+        stepsPerSecond={controls.stepsPerSecond}
+        maxVelocity={controls.maxVelocity}
+        wind={controls.wind}
+        windDirX={controls.windDirX}
+        windDirZ={controls.windDirZ}
+        stiffness={controls.stiffness}
+        dampening={controls.dampening}
+        paused={controls.paused}
+        cursorCollider={controls.cursorCollider}
+        cursorRadius={controls.cursorRadius}
+        colliders={
+          controls.sphereEnabled
+            ? [
+                {
+                  position: new THREE.Vector3(
+                    controls.sphereX,
+                    controls.sphereY,
+                    controls.sphereZ
+                  ),
+                  radius: controls.sphereRadius,
+                },
+              ]
+            : []
+        }
+        debugColliders={controls.debugColliders}
+        debugColor={controls.debugColor}
+        alphaSeed={controls.alphaSeed}
+        alphaScale={controls.alphaScale}
+        edgeFade={controls.edgeFade}
+        holeAmount={controls.holeAmount}
+        tatterEdge={controls.tatterEdge}
+        cutouts={cutouts}
+        materialProps={{
+          color: controls.color,
+          roughness: controls.roughness,
+          metalness: controls.metalness,
+          opacity: controls.opacity,
+        }}
       />
     </>
   );

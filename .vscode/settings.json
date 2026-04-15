@@ -2,6 +2,7 @@
   "chat.tools.terminal.autoApprove": {
     "npm exec": true,
     "./node_modules/.bin/prettier": true,
-    "./node_modules/.bin/eslint": true
+    "./node_modules/.bin/eslint": true,
+    "npx prettier": true
   }
 }

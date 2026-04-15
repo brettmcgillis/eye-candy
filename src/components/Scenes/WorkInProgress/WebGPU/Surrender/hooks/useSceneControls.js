@@ -118,48 +118,55 @@ export default function useSceneControls() {
         label: 'Dampening',
       },
     }),
-    Tatter: folder({
-      tatterSeed: {
+    Alpha: folder({
+      alphaSeed: {
         value: 42,
         min: 0,
         max: 200,
         step: 1,
         label: 'Seed',
       },
-      tatterScale: {
+      alphaScale: {
         value: 3,
         min: 0.5,
         max: 10,
         step: 0.1,
         label: 'Scale',
       },
-      tatterEdge: {
+      edgeFade: {
         value: 0,
         min: 0,
-        max: 1,
+        max: 0.5,
         step: 0.01,
-        label: 'Edge Amount',
+        label: 'Edge Fade',
       },
-      tatterHoles: {
+      holeAmount: {
         value: 0,
         min: 0,
         max: 1,
         step: 0.01,
         label: 'Holes Amount',
       },
+      tatterEdge: {
+        value: 0,
+        min: 0,
+        max: 1,
+        step: 0.01,
+        label: 'Tatter Edge',
+      },
     }),
     Debug: folder({
       paused: { value: false, label: 'Pause Sim' },
       wireframe: { value: false, label: 'Wireframe' },
-      sphere: { value: true, label: 'Cursor Sphere' },
-      sphereWireframe: { value: false, label: 'Show Sphere' },
-      sphereColor: { value: '#ff0000', label: 'Sphere Color' },
-      sphereRadius: {
+      cursorCollider: { value: true, label: 'Cursor Sphere' },
+      debugColliders: { value: false, label: 'Debug Wireframes' },
+      debugColor: { value: '#ff0000', label: 'Debug Color' },
+      cursorRadius: {
         value: 0.12,
         min: 0.02,
         max: 0.4,
         step: 0.01,
-        label: 'Sphere Radius',
+        label: 'Cursor Radius',
       },
     }),
     'Flag Material': folder({

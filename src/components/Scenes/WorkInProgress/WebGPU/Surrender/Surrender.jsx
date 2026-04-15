@@ -5,9 +5,9 @@ import React, { useCallback, useMemo, useRef } from 'react';
 import { OrbitControls, PerspectiveCamera } from '@react-three/drei';
 import { useThree } from '@react-three/fiber';
 
+import Outline from '../../../../postprocessing/webGPU/Outline';
 import Flag from './components/Flag';
 import FlagPole from './components/FlagPole';
-import WebGPUOutline from './components/WebGPUOutline';
 import useSceneControls, { TEXTURE_URLS } from './hooks/useSceneControls';
 
 export default function Surrender() {
@@ -218,7 +218,7 @@ export default function Surrender() {
       </group>
 
       {outlineEnabled && (
-        <WebGPUOutline
+        <Outline
           meshRef={outlineGroupRef}
           edgeStrength={edgeStrength}
           edgeThickness={edgeThickness}

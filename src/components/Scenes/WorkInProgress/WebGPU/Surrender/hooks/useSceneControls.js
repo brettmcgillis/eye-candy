@@ -1,7 +1,7 @@
 import { folder, useControls } from 'leva';
 
 import { imageFile } from '../../../../../../utils/appUtils';
-import { PATTERN_TYPES } from '../components/WebGPUOutline';
+import { PATTERN_TYPES } from '../../../../../postprocessing/webGPU/Outline';
 
 export const TEXTURE_OPTIONS = {
   None: 'None',

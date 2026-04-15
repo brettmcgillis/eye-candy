@@ -36,7 +36,7 @@ export const PATTERN_TYPES = ['None', ...Object.keys(PATTERN_BUILDERS)];
  * Procedural TSL noise patterns can modulate the outline band for watercolor /
  * hatching / organic effects — no external images required.
  */
-function WebGPUOutline({
+function Outline({
   meshRef,
   edgeStrength = 3,
   edgeThickness = 1,
@@ -188,4 +188,4 @@ function WebGPUOutline({
   return null;
 }
 
-export default memo(WebGPUOutline);
+export default memo(Outline);

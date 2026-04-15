@@ -8,7 +8,7 @@ import { Bloom, EffectComposer } from '@react-three/postprocessing';
 
 import STILL_PULLING_FOR_YOU_SMOKE from '../../../../../presets/smoke/stillPullingForYouSmoke';
 import NurbsWaterColumn from '../../../../elements/water/NurbsWaterColumn';
-import WaterColorEffect from '../../../../postprocessing/waterColorEffect/WaterColorEffect';
+import WaterColorEffect from '../../../../postprocessing/webGL/waterColorEffect/WaterColorEffect';
 import FloatingTugboat from './components/FloatingTugboat';
 import Seafloor from './components/Seafloor';
 import SinkingTugboat from './components/SinkingTugboat';

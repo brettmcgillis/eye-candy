@@ -30,6 +30,7 @@ const GHOST_CLOTH = {
   sphereX: 0,
   sphereY: -0.15,
   sphereZ: 0,
+  sphereVisible: false,
 };
 
 export default GHOST_CLOTH;

@@ -141,7 +141,7 @@ export default function useTheLoomControls() {
             step: 0.01,
             label: 'Z',
           },
-          sphereVisible: { value: true, label: 'Visible' },
+          sphereVisible: { value: p.sphereVisible ?? true, label: 'Visible' },
         },
         { collapsed: true }
       ),

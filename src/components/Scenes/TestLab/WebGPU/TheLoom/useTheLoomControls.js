@@ -166,6 +166,32 @@ export default function useTheLoomControls() {
         },
         { collapsed: true }
       ),
+
+      Scene: folder(
+        {
+          bgColor: { value: '#1a1a2e', label: 'Background' },
+          ambientIntensity: {
+            value: 0.5,
+            min: 0,
+            max: 3,
+            step: 0.05,
+            label: 'Ambient Intensity',
+          },
+          ambientColor: { value: '#ffffff', label: 'Ambient Color' },
+          dirIntensity: {
+            value: 1,
+            min: 0,
+            max: 5,
+            step: 0.05,
+            label: 'Dir Intensity',
+          },
+          dirColor: { value: '#ffffff', label: 'Dir Color' },
+          dirX: { value: 3, min: -10, max: 10, step: 0.1, label: 'Dir X' },
+          dirY: { value: 5, min: -10, max: 10, step: 0.1, label: 'Dir Y' },
+          dirZ: { value: 2, min: -10, max: 10, step: 0.1, label: 'Dir Z' },
+        },
+        { collapsed: true }
+      ),
     }),
     { collapsed: true }
   );

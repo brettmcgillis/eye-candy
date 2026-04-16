@@ -1,8 +1,8 @@
 const GHOST_CLOTH = {
   width: 1.0,
   height: 1.0,
-  segmentsX: 40,
-  segmentsY: 40,
+  segmentsX: 28,
+  segmentsY: 28,
   pinMode: 'center',
   orientation: 'horizontal',
   shapePreset: 'circle',

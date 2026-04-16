@@ -7,7 +7,6 @@ import {
   uv,
   vec2,
 } from 'three/tsl';
-import { TimestampQuery } from 'three/webgpu';
 import * as THREE from 'three/webgpu';
 
 import React, {
@@ -68,6 +67,8 @@ const ClothMesh = forwardRef(function ClothMesh(
     stiffness = 0.2,
     dampening = 0.99,
     paused = false,
+    // When true, caller manages windU/windDirU via sim ref — skip overwrite
+    windManaged = false,
     // Cursor collider (slot 0) — follows pointer on the cloth plane
     cursorCollider = true,
     cursorRadius = 0.12,
@@ -160,6 +161,9 @@ const ClothMesh = forwardRef(function ClothMesh(
       get mesh() {
         return meshRef.current;
       },
+      get sim() {
+        return sim;
+      },
       resetSim() {
         sim.reset();
         simState.current.timeSinceLastStep = 0;
@@ -240,8 +244,10 @@ const ClothMesh = forwardRef(function ClothMesh(
     const s = simState.current;
 
     // Push control values into GPU uniforms
-    sim.windU.value = wind;
-    sim.windDirU.value.set(windDirX, 0, windDirZ).normalize();
+    if (!windManaged) {
+      sim.windU.value = wind;
+      sim.windDirU.value.set(windDirX, 0, windDirZ).normalize();
+    }
     sim.stiffnessU.value = stiffness;
     sim.dampeningU.value = dampening;
     sim.colliderRadiusU[0].value = cursorRadius;
@@ -345,11 +351,6 @@ const ClothMesh = forwardRef(function ClothMesh(
         steps += 1;
         gl.compute(sim.computeSprings);
         gl.compute(sim.computeVertices);
-      }
-
-      // Flush the timestamp query pool so it doesn't overflow
-      if (steps > 0 && gl.resolveTimestampsAsync) {
-        gl.resolveTimestampsAsync(TimestampQuery.COMPUTE);
       }
     }
   });

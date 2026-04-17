@@ -26,6 +26,7 @@ export default function useAnimationInput() {
   });
   const expressionRef = useRef(0);
   const animationRef = useRef(null);
+  const pendingJumpRef = useRef(false);
   const prevGpWaveRef = useRef(false);
   const prevGpNextPresetRef = useRef(false);
   const resultRef = useRef({
@@ -215,8 +216,9 @@ export default function useAnimationInput() {
       result.windStrength = 0;
     }
 
-    result.jumpTriggered = keys.space || gpJump;
+    result.jumpTriggered = keys.space || gpJump || pendingJumpRef.current;
     keys.space = false;
+    pendingJumpRef.current = false;
 
     result.orbitX = gpOrbitX;
     result.orbitY = gpOrbitY;
@@ -240,5 +242,12 @@ export default function useAnimationInput() {
     animationRef.current = name ?? null;
   }, []);
 
-  return useMemo(() => ({ inputRef: resultRef, setAnimation }), [setAnimation]);
+  const triggerJump = useCallback(() => {
+    pendingJumpRef.current = true;
+  }, []);
+
+  return useMemo(
+    () => ({ inputRef: resultRef, setAnimation, triggerJump }),
+    [setAnimation, triggerJump]
+  );
 }

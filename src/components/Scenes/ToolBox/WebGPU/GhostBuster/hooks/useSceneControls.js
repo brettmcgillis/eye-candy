@@ -9,7 +9,7 @@ function getPresetControls({ presetSnapshot }) {
   return presetSnapshot;
 }
 
-export default function useSceneControls(ghostRef, setAnimation) {
+export default function useSceneControls(ghostRef, setAnimation, triggerJump) {
   const {
     applyPresetByName,
     attachSetControls,
@@ -354,6 +354,9 @@ export default function useSceneControls(ghostRef, setAnimation) {
             const current = ghostRef.current?.activeAnimation;
             setAnimation(current === 'wave' ? null : 'wave');
           }
+        }),
+        'Jump (Space)': button(() => {
+          if (triggerJump) triggerJump();
         }),
         Idle: button(() => {
           if (setAnimation) setAnimation(null);

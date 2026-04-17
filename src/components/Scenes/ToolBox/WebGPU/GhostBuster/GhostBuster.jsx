@@ -16,9 +16,13 @@ const orbitSpherical = new THREE.Spherical();
 export default function GhostBuster() {
   const ghostRef = useRef();
   const orbitRef = useRef();
-  const { inputRef: animationInputRef, setAnimation } = useAnimationInput();
+  const {
+    inputRef: animationInputRef,
+    setAnimation,
+    triggerJump,
+  } = useAnimationInput();
   const { applyPresetByName, controls, presetOptions, selectedPreset } =
-    useSceneControls(ghostRef, setAnimation);
+    useSceneControls(ghostRef, setAnimation, triggerJump);
 
   const selectedPresetRef = useRef(selectedPreset);
   selectedPresetRef.current = selectedPreset;

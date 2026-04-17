@@ -57,6 +57,8 @@ const GhostCharacter = forwardRef(function GhostCharacter(
     segmentsY = 28,
     debugColliders = false,
     debugColor = '#ff4444',
+    debugAnchors = false,
+    debugAnchorColor = '#44ff44',
     holeAmount = 0.2,
     edgeFade = 0.15,
     tatterEdge = 0,
@@ -73,6 +75,7 @@ const GhostCharacter = forwardRef(function GhostCharacter(
   const groupRef = useRef();
   const lightLeftRef = useRef();
   const lightRightRef = useRef();
+  const anchorDbgRefs = useRef([]);
 
   // Centre pins only — recomputed when segments change.
   const pins = useMemo(
@@ -388,6 +391,20 @@ const GhostCharacter = forwardRef(function GhostCharacter(
       }
     }
     handRightPos.lerp(sharedTrailTarget, springT);
+
+    // Sync debug anchor markers with live positions
+    const dbgArr = anchorDbgRefs.current;
+    for (let a = 0; a < dbgArr.length; a += 1) {
+      const dbg = dbgArr[a];
+      const anch = anchors[a];
+      if (dbg && anch) {
+        dbg.position.set(
+          anch.position.x + (anch.worldX - anch.restX),
+          anch.position.y - anch.restY,
+          anch.position.z + (anch.worldZ - (anch.restZ || 0))
+        );
+      }
+    }
   });
 
   return (
@@ -432,6 +449,82 @@ const GhostCharacter = forwardRef(function GhostCharacter(
           opacity,
         }}
       />
+
+      {debugAnchors &&
+        anchors.map((anch, i) => {
+          const dx = anch.worldX - anch.restX;
+          const dz = anch.worldZ - (anch.restZ || 0);
+          let dirX;
+          let dirY;
+          let dirZ;
+          if (Math.abs(dx) < 0.0001 && Math.abs(dz) < 0.0001) {
+            dirX = 0;
+            dirY = 1;
+            dirZ = 0;
+          } else {
+            const len = Math.sqrt(dx * dx + dz * dz);
+            dirX = dx / len;
+            dirY = 0;
+            dirZ = dz / len;
+          }
+          const lineLen = 0.12;
+          const startOffset = 0.02;
+          const sx = dirX * startOffset;
+          const sy = dirY * startOffset;
+          const sz = dirZ * startOffset;
+          // eslint-disable-next-line react/no-array-index-key
+          return (
+            <group
+              key={`anchor-dbg-${i}`}
+              ref={(el) => { anchorDbgRefs.current[i] = el; }}
+              position={[
+                anch.position.x + dx,
+                anch.position.y - anch.restY,
+                anch.position.z + dz,
+              ]}
+            >
+              <line>
+                <bufferGeometry>
+                  <bufferAttribute
+                    attach="attributes-position"
+                    array={
+                      new Float32Array([
+                        sx, sy, sz,
+                        dirX * lineLen, dirY * lineLen, dirZ * lineLen,
+                      ])
+                    }
+                    count={2}
+                    itemSize={3}
+                  />
+                </bufferGeometry>
+                <lineBasicMaterial
+                  color={debugAnchorColor}
+                  depthTest={false}
+                />
+              </line>
+            </group>
+          );
+        })}
+
+      {/* Head center pin marker */}
+      {debugAnchors && (
+        <group position={[0, 0, 0]}>
+          <line>
+            <bufferGeometry>
+              <bufferAttribute
+                attach="attributes-position"
+                array={new Float32Array([0, 0, 0, 0, 0.12, 0])}
+                count={2}
+                itemSize={3}
+              />
+            </bufferGeometry>
+            <lineBasicMaterial
+              color={debugAnchorColor}
+              depthTest={false}
+            />
+          </line>
+        </group>
+      )}
 
       <pointLight
         ref={lightLeftRef}

@@ -247,6 +247,11 @@ export default function useSceneControls(ghostRef) {
         },
         debugColliders: { label: 'Show Colliders', value: ini.debugColliders },
         debugColor: { label: 'Collider Color', value: ini.debugColor },
+        debugAnchors: { label: 'Show Anchors', value: ini.debugAnchors },
+        debugAnchorColor: {
+          label: 'Anchor Color',
+          value: ini.debugAnchorColor,
+        },
       },
       { collapsed: true }
     ),

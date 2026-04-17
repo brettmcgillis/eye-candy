@@ -131,6 +131,8 @@ export default function GhostBuster() {
         maxVelocity={controls.maxVelocity}
         debugColliders={controls.debugColliders}
         debugColor={controls.debugColor}
+        debugAnchors={controls.debugAnchors}
+        debugAnchorColor={controls.debugAnchorColor}
         holeAmount={controls.holeAmount}
         edgeFade={controls.edgeFade}
         tatterEdge={controls.tatterEdge}

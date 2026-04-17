@@ -5,7 +5,7 @@ export const SCENE_PRESETS = {
     bgColor: '#1a1a2e',
     // Lighting
     ambientIntensity: 0.5,
-    spotIntensity: 0.2,
+    spotIntensity: 4.2,
     spotHeight: 5,
     // Floor
     floorVisible: true,
@@ -40,8 +40,10 @@ export const SCENE_PRESETS = {
     handSpacing: 0.3,
     handSpring: 8,
     handTrail: 0.08,
-    debugColliders: true,
+    debugColliders: false,
     debugColor: '#ff4444',
+    debugAnchors: false,
+    debugAnchorColor: '#44ff44',
     // Camera
     orbitEnabled: true,
     // Eyes
@@ -97,8 +99,10 @@ export const SCENE_PRESETS = {
     handSpacing: 0.3,
     handSpring: 8,
     handTrail: 0.08,
-    debugColliders: true,
+    debugColliders: false,
     debugColor: '#ff4444',
+    debugAnchors: false,
+    debugAnchorColor: '#44ff44',
     // Camera
     orbitEnabled: true,
     // Eyes
@@ -154,8 +158,10 @@ export const SCENE_PRESETS = {
     handSpacing: 0.3,
     handSpring: 6,
     handTrail: 0.1,
-    debugColliders: true,
+    debugColliders: false,
     debugColor: '#ff4444',
+    debugAnchors: false,
+    debugAnchorColor: '#44ff44',
     // Camera
     orbitEnabled: true,
     // Eyes
@@ -211,8 +217,10 @@ export const SCENE_PRESETS = {
     handSpacing: 0.3,
     handSpring: 8,
     handTrail: 0.08,
-    debugColliders: true,
+    debugColliders: false,
     debugColor: '#ff0000',
+    debugAnchors: false,
+    debugAnchorColor: '#44ff44',
     // Camera
     orbitEnabled: true,
     // Eyes
@@ -268,8 +276,10 @@ export const SCENE_PRESETS = {
     handSpacing: 0.3,
     handSpring: 10,
     handTrail: 0.06,
-    debugColliders: true,
+    debugColliders: false,
     debugColor: '#4488ff',
+    debugAnchors: false,
+    debugAnchorColor: '#44ff44',
     // Camera
     orbitEnabled: true,
     // Eyes
@@ -325,8 +335,10 @@ export const SCENE_PRESETS = {
     handSpacing: 0.3,
     handSpring: 6,
     handTrail: 0.1,
-    debugColliders: true,
+    debugColliders: false,
     debugColor: '#ff4444',
+    debugAnchors: false,
+    debugAnchorColor: '#44ff44',
     // Camera
     orbitEnabled: true,
     // Eyes
@@ -382,8 +394,10 @@ export const SCENE_PRESETS = {
     handSpacing: 0.3,
     handSpring: 8,
     handTrail: 0.08,
-    debugColliders: true,
+    debugColliders: false,
     debugColor: '#ff4444',
+    debugAnchors: false,
+    debugAnchorColor: '#44ff44',
     // Camera
     orbitEnabled: true,
     // Eyes
@@ -439,8 +453,10 @@ export const SCENE_PRESETS = {
     handSpacing: 0.3,
     handSpring: 8,
     handTrail: 0.08,
-    debugColliders: true,
+    debugColliders: false,
     debugColor: '#ff0000',
+    debugAnchors: false,
+    debugAnchorColor: '#44ff44',
     // Camera
     orbitEnabled: true,
     // Eyes

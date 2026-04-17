@@ -3,16 +3,42 @@ import * as THREE from 'three';
 import React, { useRef } from 'react';
 
 import { OrbitControls, PerspectiveCamera } from '@react-three/drei';
+import { useFrame } from '@react-three/fiber';
 
 import GhostCharacter from '../../../../elements/webgpu/ghost/GhostCharacter';
 import { GridMaterial } from '../../../../materials/webGPU/gridMaterial';
 import useAnimationInput from './hooks/useAnimationInput';
 import useSceneControls from './hooks/useSceneControls';
 
+const orbitOffset = new THREE.Vector3();
+const orbitSpherical = new THREE.Spherical();
+
 export default function GhostBuster() {
   const ghostRef = useRef();
-  const controls = useSceneControls(ghostRef);
+  const orbitRef = useRef();
+  const { controls } = useSceneControls(ghostRef);
   const animationInputRef = useAnimationInput();
+
+  // Apply right-stick gamepad input to orbit camera
+  useFrame((_, delta) => {
+    const orbit = orbitRef.current;
+    const input = animationInputRef.current;
+    if (!orbit || (!input.orbitX && !input.orbitY)) return;
+
+    const speed = 2;
+    const { object: camera, target } = orbit;
+    orbitOffset.copy(camera.position).sub(target);
+    orbitSpherical.setFromVector3(orbitOffset);
+    orbitSpherical.theta -= input.orbitX * speed * delta;
+    orbitSpherical.phi += input.orbitY * speed * delta;
+    orbitSpherical.phi = Math.max(
+      0.1,
+      Math.min(Math.PI - 0.1, orbitSpherical.phi)
+    );
+    orbitOffset.setFromSpherical(orbitSpherical);
+    camera.position.copy(target).add(orbitOffset);
+    camera.lookAt(target);
+  });
 
   return (
     <>
@@ -25,7 +51,11 @@ export default function GhostBuster() {
         near={0.01}
         far={100}
       />
-      <OrbitControls makeDefault enabled={controls.orbitEnabled} />
+      <OrbitControls
+        ref={orbitRef}
+        makeDefault
+        enabled={controls.orbitEnabled}
+      />
 
       <ambientLight intensity={controls.ambientIntensity} />
       <spotLight
@@ -46,6 +76,7 @@ export default function GhostBuster() {
         windBoostMul={controls.windBoostMul}
         squashIntensity={controls.squashIntensity}
         color={controls.color}
+        innerColor={controls.innerColor || null}
         eyeColor={controls.eyeColor}
         eyeIntensity={controls.eyeIntensity}
         stiffness={controls.stiffness}

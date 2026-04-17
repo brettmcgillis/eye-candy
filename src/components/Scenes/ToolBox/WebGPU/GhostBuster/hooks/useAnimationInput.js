@@ -28,6 +28,8 @@ export default function useAnimationInput() {
     windStrength: 0,
     jumpTriggered: false,
     expressionKey: 0,
+    orbitX: 0,
+    orbitY: 0,
   });
 
   useEffect(() => {
@@ -126,6 +128,8 @@ export default function useAnimationInput() {
     let gpx = 0;
     let gpz = 0;
     let gpJump = false;
+    let gpOrbitX = 0;
+    let gpOrbitY = 0;
     try {
       const gamepads = navigator.getGamepads?.();
       const gp = gamepads?.[0];
@@ -135,6 +139,11 @@ export default function useAnimationInput() {
         if (Math.abs(gpx) < 0.15) gpx = 0;
         if (Math.abs(gpz) < 0.15) gpz = 0;
         gpJump = gp.buttons[0]?.pressed || false;
+
+        gpOrbitX = gp.axes[2] ?? 0;
+        gpOrbitY = gp.axes[3] ?? 0;
+        if (Math.abs(gpOrbitX) < 0.15) gpOrbitX = 0;
+        if (Math.abs(gpOrbitY) < 0.15) gpOrbitY = 0;
       }
     } catch {
       // Gamepad API unavailable
@@ -156,6 +165,9 @@ export default function useAnimationInput() {
 
     result.jumpTriggered = keys.space || gpJump;
     keys.space = false;
+
+    result.orbitX = gpOrbitX;
+    result.orbitY = gpOrbitY;
 
     result.expressionKey = expressionRef.current;
     expressionRef.current = 0;

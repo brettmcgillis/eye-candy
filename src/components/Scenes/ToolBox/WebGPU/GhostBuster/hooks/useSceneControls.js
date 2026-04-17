@@ -1,10 +1,35 @@
 import { button, folder, useControls } from 'leva';
 
+import usePresetsFolder from '../../../../../../hooks/usePresetsFolder';
+import { SCENE_PRESETS } from '../presets/scenePresets';
+
+const DEFAULT_PRESET = 'Classic';
+
+function getPresetControls({ presetSnapshot }) {
+  return presetSnapshot;
+}
+
 export default function useSceneControls(ghostRef) {
-  const [controls] = useControls('Ghost Buster', () => ({
+  const {
+    attachSetControls,
+    controlsSnapshotRef,
+    initialPreset,
+    presetsFolder,
+    selectedPreset,
+  } = usePresetsFolder({
+    defaultPreset: DEFAULT_PRESET,
+    getPresetControls,
+    presets: SCENE_PRESETS,
+  });
+
+  const ini = SCENE_PRESETS[initialPreset];
+
+  const [controls, setControls] = useControls('Ghost Buster', () => ({
+    Presets: presetsFolder,
+
     Background: folder(
       {
-        bgColor: { label: 'Color', value: '#1a1a2e' },
+        bgColor: { label: 'Color', value: ini.bgColor },
       },
       { collapsed: true }
     ),
@@ -13,21 +38,21 @@ export default function useSceneControls(ghostRef) {
       {
         ambientIntensity: {
           label: 'Ambient',
-          value: 0.5,
+          value: ini.ambientIntensity,
           min: 0,
           max: 5,
           step: 0.1,
         },
         spotIntensity: {
           label: 'Spot',
-          value: 0.2,
+          value: ini.spotIntensity,
           min: 0,
           max: 10,
           step: 0.1,
         },
         spotHeight: {
           label: 'Spot Height',
-          value: 5,
+          value: ini.spotHeight,
           min: 1,
           max: 15,
           step: 0.5,
@@ -38,140 +63,141 @@ export default function useSceneControls(ghostRef) {
 
     Floor: folder(
       {
-        floorVisible: { label: 'Visible', value: true },
+        floorVisible: { label: 'Visible', value: ini.floorVisible },
         gridSize: {
           label: 'Grid Size',
-          value: 1,
+          value: ini.gridSize,
           min: 0.1,
           max: 5,
           step: 0.1,
         },
         gridLineWidth: {
           label: 'Line Width',
-          value: 0.03,
+          value: ini.gridLineWidth,
           min: 0.005,
           max: 0.1,
           step: 0.005,
         },
-        floorColor: { label: 'Floor Color', value: '#3a3a4e' },
-        gridLineColor: { label: 'Line Color', value: '#6a6a8e' },
+        floorColor: { label: 'Floor Color', value: ini.floorColor },
+        gridLineColor: { label: 'Line Color', value: ini.gridLineColor },
       },
       { collapsed: true }
     ),
 
     Character: folder(
       {
-        color: { label: 'Color', value: '#f5f0e8' },
+        color: { label: 'Color', value: ini.color },
+        innerColor: { label: 'Inner Color', value: ini.innerColor },
         stiffness: {
           label: 'Stiffness',
-          value: 0.16,
+          value: ini.stiffness,
           min: 0.01,
           max: 0.5,
           step: 0.01,
         },
         dampening: {
           label: 'Dampening',
-          value: 0.99,
+          value: ini.dampening,
           min: 0.9,
           max: 1,
           step: 0.001,
         },
         gravity: {
           label: 'Gravity',
-          value: 0.00012,
+          value: ini.gravity,
           min: 0,
           max: 0.001,
           step: 0.00001,
         },
         windAmplitude: {
           label: 'Wind Amplitude',
-          value: 0.0004,
+          value: ini.windAmplitude,
           min: 0,
           max: 0.005,
           step: 0.0001,
         },
         maxVelocity: {
           label: 'Max Velocity',
-          value: 0.01,
+          value: ini.maxVelocity,
           min: 0.001,
           max: 0.05,
           step: 0.001,
         },
         holeAmount: {
           label: 'Holes',
-          value: 0.2,
+          value: ini.holeAmount,
           min: 0,
           max: 1,
           step: 0.01,
         },
         edgeFade: {
           label: 'Edge Fade',
-          value: 0.15,
+          value: ini.edgeFade,
           min: 0,
           max: 0.5,
           step: 0.01,
         },
         tatterEdge: {
           label: 'Tatter',
-          value: 0,
+          value: ini.tatterEdge,
           min: 0,
           max: 1,
           step: 0.01,
         },
         alphaScale: {
           label: 'Alpha Scale',
-          value: 4,
+          value: ini.alphaScale,
           min: 0.5,
           max: 20,
           step: 0.5,
         },
         alphaSeed: {
           label: 'Alpha Seed',
-          value: 42,
+          value: ini.alphaSeed,
           min: 0,
           max: 200,
           step: 1,
         },
         roughness: {
           label: 'Roughness',
-          value: 0.8,
+          value: ini.roughness,
           min: 0,
           max: 1,
           step: 0.01,
         },
         metalness: {
           label: 'Metalness',
-          value: 0,
+          value: ini.metalness,
           min: 0,
           max: 1,
           step: 0.01,
         },
         opacity: {
           label: 'Opacity',
-          value: 1,
+          value: ini.opacity,
           min: 0,
           max: 1,
           step: 0.01,
         },
-        paused: { label: 'Paused', value: false },
-        cursorCollider: { label: 'Cursor Collider', value: true },
+        paused: { label: 'Paused', value: ini.paused },
+        cursorCollider: { label: 'Cursor Collider', value: ini.cursorCollider },
         cursorRadius: {
           label: 'Cursor Radius',
-          value: 0.12,
+          value: ini.cursorRadius,
           min: 0.02,
           max: 0.3,
           step: 0.01,
         },
         collisionMargin: {
           label: 'Collision Margin',
-          value: 0.02,
+          value: ini.collisionMargin,
           min: 0,
           max: 0.1,
           step: 0.005,
         },
         clothSegments: {
           label: 'Cloth Segments',
-          value: 46,
+          value: ini.clothSegments,
           min: 12,
           max: 60,
           step: 2,
@@ -184,58 +210,58 @@ export default function useSceneControls(ghostRef) {
       {
         handSize: {
           label: 'Size',
-          value: 0.05,
+          value: ini.handSize,
           min: 0.01,
           max: 0.15,
           step: 0.005,
         },
         handHeight: {
           label: 'Height',
-          value: 0.3,
+          value: ini.handHeight,
           min: 0.02,
           max: 0.3,
           step: 0.005,
         },
         handSpacing: {
           label: 'Spacing',
-          value: 0.3,
+          value: ini.handSpacing,
           min: 0.05,
           max: 0.4,
           step: 0.01,
         },
         handSpring: {
           label: 'Spring',
-          value: 8,
+          value: ini.handSpring,
           min: 1,
           max: 20,
           step: 0.5,
         },
         handTrail: {
           label: 'Trail Distance',
-          value: 0.08,
+          value: ini.handTrail,
           min: 0,
           max: 0.5,
           step: 0.01,
         },
-        debugColliders: { label: 'Show Colliders', value: true },
-        debugColor: { label: 'Collider Color', value: '#ff4444' },
+        debugColliders: { label: 'Show Colliders', value: ini.debugColliders },
+        debugColor: { label: 'Collider Color', value: ini.debugColor },
       },
       { collapsed: true }
     ),
 
     Camera: folder(
       {
-        orbitEnabled: { label: 'Orbit Controls', value: true },
+        orbitEnabled: { label: 'Orbit Controls', value: ini.orbitEnabled },
       },
       { collapsed: true }
     ),
 
     Eyes: folder(
       {
-        eyeColor: { label: 'Color', value: '#88ccff' },
+        eyeColor: { label: 'Color', value: ini.eyeColor },
         eyeIntensity: {
           label: 'Intensity',
-          value: 0.1,
+          value: ini.eyeIntensity,
           min: 0,
           max: 10,
           step: 0.1,
@@ -248,49 +274,49 @@ export default function useSceneControls(ghostRef) {
       {
         bobAmplitude: {
           label: 'Bob Height',
-          value: 0.03,
+          value: ini.bobAmplitude,
           min: 0,
           max: 0.1,
           step: 0.005,
         },
         bobSpeed: {
           label: 'Bob Speed',
-          value: 0.5,
+          value: ini.bobSpeed,
           min: 0,
           max: 5,
           step: 0.1,
         },
         swayAmplitude: {
           label: 'Sway',
-          value: 0.02,
+          value: ini.swayAmplitude,
           min: 0,
           max: 0.1,
           step: 0.005,
         },
         tiltIntensity: {
           label: 'Tilt',
-          value: 0.3,
+          value: ini.tiltIntensity,
           min: 0,
           max: 1,
           step: 0.01,
         },
         baseWind: {
           label: 'Base Wind',
-          value: 0.3,
+          value: ini.baseWind,
           min: 0,
           max: 2,
           step: 0.01,
         },
         windBoostMul: {
           label: 'Wind Boost',
-          value: 2,
+          value: ini.windBoostMul,
           min: 0,
           max: 5,
           step: 0.1,
         },
         squashIntensity: {
           label: 'Jump Squash',
-          value: 0.3,
+          value: ini.squashIntensity,
           min: 0,
           max: 0.5,
           step: 0.01,
@@ -304,5 +330,8 @@ export default function useSceneControls(ghostRef) {
     }),
   }));
 
-  return controls;
+  attachSetControls(setControls);
+  controlsSnapshotRef.current = { ...controls };
+
+  return { controls, selectedPreset };
 }

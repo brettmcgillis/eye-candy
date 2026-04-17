@@ -1,5 +1,6 @@
 import {
   cos,
+  frontFacing,
   mix,
   uniform as nodeUniform,
   sin,
@@ -96,6 +97,8 @@ const ClothMesh = forwardRef(function ClothMesh(
     textureScaleX = 1,
     textureScaleY = 1,
     textureRotation = 0,
+    // Inner (back-face) color — when set, front/back faces render different colors
+    innerColor = null,
     // Material properties applied each frame (optional)
     materialProps,
   },
@@ -110,6 +113,7 @@ const ClothMesh = forwardRef(function ClothMesh(
   const cursorSphereRef = useRef();
   const colliderSphereRefs = useRef([]);
   const materialKeysRef = useRef(null);
+  const outerColorNodeRef = useRef(null);
 
   // Persistent GPU uniforms for texture compositing (stable across frames)
   const texUniforms = useMemo(
@@ -117,6 +121,7 @@ const ClothMesh = forwardRef(function ClothMesh(
       baseColorU: nodeUniform(new THREE.Color(1, 1, 1)),
       scaleU: nodeUniform(new THREE.Vector2(1, 1)),
       rotU: nodeUniform(0),
+      innerColorU: nodeUniform(new THREE.Color(0, 0, 0)),
     }),
     []
   );
@@ -215,19 +220,37 @@ const ClothMesh = forwardRef(function ClothMesh(
 
       // Alpha-composite: base color where transparent, texture where opaque
       const texNode = textureSample(texture, transformedUv);
-      sim.material.colorNode = mix(
+      outerColorNodeRef.current = mix(
         texUniforms.baseColorU,
         texNode.rgb,
         texNode.a
       );
       sim.material.map = null;
-      sim.material.needsUpdate = true;
     } else {
-      sim.material.colorNode = null;
+      outerColorNodeRef.current = null;
       sim.material.map = null;
-      sim.material.needsUpdate = true;
     }
   }, [sim, textureUrl, texture, texUniforms]);
+
+  // Dual-color: back faces (exterior) use material color, front faces (interior) use innerColor.
+  // On a horizontal cloth draped over a sphere, gl_FrontFacing is true for the
+  // interior surface, so frontFacing=1 → innerColor, frontFacing=0 → outer color.
+  // Always sets a defined colorNode to avoid WebGPU shader recompile issues.
+  useEffect(() => {
+    const outerNode = outerColorNodeRef.current || texUniforms.baseColorU;
+
+    if (innerColor) {
+      texUniforms.innerColorU.value.set(innerColor);
+      sim.material.colorNode = mix(
+        outerNode,
+        texUniforms.innerColorU,
+        frontFacing
+      );
+    } else {
+      sim.material.colorNode = outerNode;
+    }
+    sim.material.needsUpdate = true;
+  }, [sim, innerColor, textureUrl, texture, texUniforms]);
 
   // Rebuild alpha mask when params change
   useEffect(() => {

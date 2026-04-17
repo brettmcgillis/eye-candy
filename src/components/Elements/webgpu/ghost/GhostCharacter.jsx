@@ -37,6 +37,7 @@ const GhostCharacter = forwardRef(function GhostCharacter(
     animationInputRef,
     // Cloth & material
     color = '#f5f0e8',
+    innerColor = null,
     eyeColor = '#88ccff',
     eyeIntensity = 3,
     stiffness = 0.15,
@@ -353,7 +354,13 @@ const GhostCharacter = forwardRef(function GhostCharacter(
         tatterEdge={tatterEdge}
         cutouts={CUTOUTS}
         paused={paused}
-        materialProps={{ color, roughness, metalness, opacity }}
+        innerColor={innerColor}
+        materialProps={{
+          color,
+          roughness,
+          metalness,
+          opacity,
+        }}
       />
 
       <pointLight

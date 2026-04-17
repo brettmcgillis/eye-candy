@@ -15,7 +15,7 @@ export const SCENE_PRESETS = {
     gridLineColor: '#6a6a8e',
     // Character
     color: '#ffffff',
-    innerColor: '',
+    innerColor: '#ffffff',
     stiffness: 0.16,
     dampening: 0.99,
     gravity: 0.00012,
@@ -49,6 +49,9 @@ export const SCENE_PRESETS = {
     // Eyes
     eyeColor: '#88ccff',
     eyeIntensity: 0,
+    cutoutRimColor: '#000000',
+    cutoutRimWidth: 0,
+    cutoutRimOffset: 0,
     // Animation
     bobAmplitude: 0.03,
     bobSpeed: 0.5,
@@ -108,6 +111,9 @@ export const SCENE_PRESETS = {
     // Eyes
     eyeColor: '#ff8844',
     eyeIntensity: 2.0,
+    cutoutRimColor: '#000000',
+    cutoutRimWidth: 0,
+    cutoutRimOffset: 0,
     // Animation
     bobAmplitude: 0.03,
     bobSpeed: 0.5,
@@ -167,6 +173,9 @@ export const SCENE_PRESETS = {
     // Eyes
     eyeColor: '#66aa88',
     eyeIntensity: 0.4,
+    cutoutRimColor: '#000000',
+    cutoutRimWidth: 0,
+    cutoutRimOffset: 0,
     // Animation
     bobAmplitude: 0.02,
     bobSpeed: 0.4,
@@ -226,6 +235,9 @@ export const SCENE_PRESETS = {
     // Eyes
     eyeColor: '#ff0000',
     eyeIntensity: 3.0,
+    cutoutRimColor: '#000000',
+    cutoutRimWidth: 0,
+    cutoutRimOffset: 0,
     // Animation
     bobAmplitude: 0.02,
     bobSpeed: 0.35,
@@ -269,7 +281,7 @@ export const SCENE_PRESETS = {
     cursorCollider: true,
     cursorRadius: 0.12,
     collisionMargin: 0.02,
-    clothSegments: 50,
+    clothSegments: 46,
     // Hands
     handSize: 0.05,
     handHeight: 0.3,
@@ -285,6 +297,9 @@ export const SCENE_PRESETS = {
     // Eyes
     eyeColor: '#aaddff',
     eyeIntensity: 1.5,
+    cutoutRimColor: '#000000',
+    cutoutRimWidth: 0,
+    cutoutRimOffset: 0,
     // Animation
     bobAmplitude: 0.04,
     bobSpeed: 0.6,
@@ -344,6 +359,9 @@ export const SCENE_PRESETS = {
     // Eyes
     eyeColor: '#66aa88',
     eyeIntensity: 0.4,
+    cutoutRimColor: '#000000',
+    cutoutRimWidth: 0,
+    cutoutRimOffset: 0,
     // Animation
     bobAmplitude: 0.02,
     bobSpeed: 0.4,
@@ -403,6 +421,9 @@ export const SCENE_PRESETS = {
     // Eyes
     eyeColor: '#88ccff',
     eyeIntensity: 0.1,
+    cutoutRimColor: '#000000',
+    cutoutRimWidth: 0,
+    cutoutRimOffset: 0,
     // Animation
     bobAmplitude: 0.03,
     bobSpeed: 0.5,
@@ -462,10 +483,75 @@ export const SCENE_PRESETS = {
     // Eyes
     eyeColor: '#ff2200',
     eyeIntensity: 0,
+    cutoutRimColor: '#000000',
+    cutoutRimWidth: 0,
+    cutoutRimOffset: 0,
     // Animation
     bobAmplitude: 0.02,
     bobSpeed: 0.35,
     swayAmplitude: 0.03,
+    tiltIntensity: 0.3,
+    baseWind: 0.3,
+    windBoostMul: 2,
+    squashIntensity: 0.3,
+  },
+
+  'Old School': {
+    // Background
+    bgColor: '#1a1a2e',
+    // Lighting
+    ambientIntensity: 0.5,
+    spotIntensity: 4.2,
+    spotHeight: 5,
+    // Floor
+    floorVisible: true,
+    gridSize: 1,
+    gridLineWidth: 0.03,
+    floorColor: '#3a3a4e',
+    gridLineColor: '#6a6a8e',
+    // Character
+    color: '#ffffff',
+    innerColor: '#cc2222',
+    stiffness: 0.16,
+    dampening: 0.99,
+    gravity: 0.00012,
+    windAmplitude: 0.0004,
+    maxVelocity: 0.01,
+    holeAmount: 0.2,
+    edgeFade: 0.15,
+    tatterEdge: 0,
+    alphaScale: 4,
+    alphaSeed: 42,
+    roughness: 0.8,
+    metalness: 0,
+    opacity: 1,
+    paused: false,
+    cursorCollider: true,
+    cursorRadius: 0.12,
+    collisionMargin: 0.02,
+    clothSegments: 46,
+    // Hands
+    handSize: 0.05,
+    handHeight: 0.3,
+    handSpacing: 0.3,
+    handSpring: 8,
+    handTrail: 0.08,
+    debugColliders: false,
+    debugColor: '#ff4444',
+    debugAnchors: false,
+    debugAnchorColor: '#44ff44',
+    // Camera
+    orbitEnabled: true,
+    // Eyes
+    eyeColor: '#88ccff',
+    eyeIntensity: 0,
+    cutoutRimColor: '#000000',
+    cutoutRimWidth: 0.003,
+    cutoutRimOffset: 0,
+    // Animation
+    bobAmplitude: 0.03,
+    bobSpeed: 0.5,
+    swayAmplitude: 0.02,
     tiltIntensity: 0.3,
     baseWind: 0.3,
     windBoostMul: 2,

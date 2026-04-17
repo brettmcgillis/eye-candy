@@ -114,6 +114,9 @@ export default function GhostBuster() {
         innerColor={controls.innerColor || null}
         eyeColor={controls.eyeColor}
         eyeIntensity={controls.eyeIntensity}
+        cutoutRimColor={controls.cutoutRimColor}
+        cutoutRimWidth={controls.cutoutRimWidth}
+        cutoutRimOffset={controls.cutoutRimOffset}
         stiffness={controls.stiffness}
         dampening={controls.dampening}
         handSize={controls.handSize}

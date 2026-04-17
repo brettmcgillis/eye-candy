@@ -273,6 +273,21 @@ export default function useSceneControls(ghostRef) {
           max: 10,
           step: 0.1,
         },
+        cutoutRimColor: { label: 'Rim Color', value: ini.cutoutRimColor },
+        cutoutRimWidth: {
+          label: 'Rim Width',
+          value: ini.cutoutRimWidth,
+          min: 0,
+          max: 0.01,
+          step: 0.0001,
+        },
+        cutoutRimOffset: {
+          label: 'Rim Offset',
+          value: ini.cutoutRimOffset,
+          min: -0.03,
+          max: 0.03,
+          step: 0.001,
+        },
       },
       { collapsed: true }
     ),

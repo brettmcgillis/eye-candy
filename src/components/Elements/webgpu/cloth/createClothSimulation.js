@@ -5,6 +5,7 @@ import {
   Return,
   attribute,
   cross,
+  float,
   instanceIndex,
   instancedArray,
   select,
@@ -374,11 +375,7 @@ export default function createClothSimulation({
                     select(
                       slot.equal(uint(7)),
                       anchorPosU[7],
-                      select(
-                        slot.equal(uint(8)),
-                        anchorPosU[8],
-                        anchorPosU[9]
-                      )
+                      select(slot.equal(uint(8)), anchorPosU[8], anchorPosU[9])
                     )
                   )
                 )
@@ -702,6 +699,41 @@ export default function createClothSimulation({
   };
   applyCutouts(alpha.cutouts);
 
+  // ── Cutout rim (eyeliner) uniforms ──
+  const cutoutRimColorU = uniform(new THREE.Color(0, 0, 0));
+  const cutoutRimWidthU = uniform(0);
+  const cutoutRimOffsetU = uniform(0);
+
+  // Per-pixel rim factor: hard-edged band around the visible cutout edge.
+  // Default (offset 0) = rim sits at the inner edge of the cutout fade,
+  // matching the visible hole boundary. Positive offset = larger ring,
+  // negative = smaller ring (moves inward into the hole).
+  const cutoutRimNode = Fn(() => {
+    const factor = float(0).toVar();
+    If(cutoutRimWidthU.greaterThan(0.0001), () => {
+      const texUV = uv();
+      for (let ci = 0; ci < MAX_CUTOUTS; ci += 1) {
+        If(cutoutEnabledU[ci].greaterThan(0.5), () => {
+          const diff = texUV.sub(cutoutU[ci]);
+          const dist = diff.length();
+          // Anchor at inner edge of cutout fade (visible hole boundary)
+          const innerEdge = cutoutRadiusU[ci].sub(cutoutFadeU[ci]);
+          const rimCenter = innerEdge.add(cutoutRimOffsetU);
+          const edgeDist = dist.sub(rimCenter);
+          // Sharp step: 0 inside rim, 1 at rim start
+          const aboveEdge = edgeDist.mul(10000).clamp(0, 1);
+          // Sharp step: 1 inside rim band, 0 beyond
+          const belowRim = float(1).sub(
+            edgeDist.sub(cutoutRimWidthU).mul(10000).clamp(0, 1)
+          );
+          const t = aboveEdge.mul(belowRim);
+          factor.assign(factor.max(t));
+        });
+      }
+    });
+    return factor;
+  })();
+
   // Per-vertex alpha + per-pixel cutout circles → material opacity.
   // eslint-disable-next-line no-param-reassign
   material.opacityNode = Fn(() => {
@@ -780,6 +812,10 @@ export default function createClothSimulation({
     NUM_COLLIDERS,
     anchorPosU,
     NUM_ANCHORS,
+    cutoutRimColorU,
+    cutoutRimWidthU,
+    cutoutRimOffsetU,
+    cutoutRimNode,
     shapeDistArr,
   };
 }

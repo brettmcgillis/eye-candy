@@ -68,6 +68,9 @@ const GhostCharacter = forwardRef(function GhostCharacter(
     metalness = 0,
     opacity = 1,
     paused = false,
+    cutoutRimColor = '#000000',
+    cutoutRimWidth = 0,
+    cutoutRimOffset = 0,
   },
   ref
 ) {
@@ -440,6 +443,9 @@ const GhostCharacter = forwardRef(function GhostCharacter(
         holeAmount={holeAmount}
         tatterEdge={tatterEdge}
         cutouts={CUTOUTS}
+        cutoutRimColor={cutoutRimColor}
+        cutoutRimWidth={cutoutRimWidth}
+        cutoutRimOffset={cutoutRimOffset}
         paused={paused}
         innerColor={innerColor}
         materialProps={{

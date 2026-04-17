@@ -90,6 +90,10 @@ const ClothMesh = forwardRef(function ClothMesh(
     holeAmount = 0,
     tatterEdge = 0,
     cutouts = [],
+    // Cutout rim (eyeliner outline) — color + width in UV space
+    cutoutRimColor = '#000000',
+    cutoutRimWidth = 0,
+    cutoutRimOffset = 0,
     // Optional texture URL (applied as material.map)
     textureUrl = null,
     // Array of URLs to eagerly preload (avoids Suspense on switch)
@@ -236,18 +240,20 @@ const ClothMesh = forwardRef(function ClothMesh(
   // On a horizontal cloth draped over a sphere, gl_FrontFacing is true for the
   // interior surface, so frontFacing=1 → innerColor, frontFacing=0 → outer color.
   // Always sets a defined colorNode to avoid WebGPU shader recompile issues.
+  // Cutout rim darkening is applied to the outer surface before inner/outer split.
   useEffect(() => {
     const outerNode = outerColorNodeRef.current || texUniforms.baseColorU;
+    const rimmedOuter = mix(outerNode, sim.cutoutRimColorU, sim.cutoutRimNode);
 
     if (innerColor) {
       texUniforms.innerColorU.value.set(innerColor);
       sim.material.colorNode = mix(
-        outerNode,
+        rimmedOuter,
         texUniforms.innerColorU,
         frontFacing
       );
     } else {
-      sim.material.colorNode = outerNode;
+      sim.material.colorNode = rimmedOuter;
     }
     sim.material.needsUpdate = true;
   }, [sim, innerColor, textureUrl, texture, texUniforms]);
@@ -344,6 +350,13 @@ const ClothMesh = forwardRef(function ClothMesh(
         }
       }
     }
+
+    // Cutout rim uniforms
+    if (cutoutRimColor) {
+      sim.cutoutRimColorU.value.set(cutoutRimColor);
+    }
+    sim.cutoutRimWidthU.value = cutoutRimWidth;
+    sim.cutoutRimOffsetU.value = cutoutRimOffset;
 
     // Cursor → slot 0 collider interaction
     const pointerActive =

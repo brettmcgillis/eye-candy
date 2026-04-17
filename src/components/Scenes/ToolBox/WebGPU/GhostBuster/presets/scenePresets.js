@@ -90,7 +90,7 @@ export const SCENE_PRESETS = {
     alphaSeed: 42,
     roughness: 0.5,
     metalness: 0.1,
-    opacity: 0.85,
+    opacity: 1,
     paused: false,
     cursorCollider: true,
     cursorRadius: 0.12,
@@ -276,7 +276,7 @@ export const SCENE_PRESETS = {
     alphaSeed: 42,
     roughness: 0.2,
     metalness: 0.3,
-    opacity: 0.8,
+    opacity: 1,
     paused: false,
     cursorCollider: true,
     cursorRadius: 0.12,
@@ -421,8 +421,8 @@ export const SCENE_PRESETS = {
     // Eyes
     eyeColor: '#88ccff',
     eyeIntensity: 0.1,
-    cutoutRimColor: '#000000',
-    cutoutRimWidth: 0,
+    cutoutRimColor: '#bfbbbb',
+    cutoutRimWidth: 0.003,
     cutoutRimOffset: 0,
     // Animation
     bobAmplitude: 0.03,

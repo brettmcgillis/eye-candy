@@ -6,7 +6,10 @@ import { SCENE_PRESETS } from '../presets/scenePresets';
 const DEFAULT_PRESET = 'Classic';
 
 function getPresetControls({ presetSnapshot }) {
-  return presetSnapshot;
+  const out = { ...presetSnapshot };
+  // Leva color picker rejects empty string — fall back to main color
+  if (!out.innerColor) out.innerColor = out.color;
+  return out;
 }
 
 export default function useSceneControls(ghostRef, setAnimation, triggerJump) {
@@ -71,7 +74,7 @@ export default function useSceneControls(ghostRef, setAnimation, triggerJump) {
             },
             orbitLightIntensity: {
               label: 'Intensity',
-              value: ini.orbitLightIntensity ?? 3,
+              value: ini.orbitLightIntensity ?? 20,
               min: 0,
               max: 20,
               step: 0.1,
@@ -137,7 +140,10 @@ export default function useSceneControls(ghostRef, setAnimation, triggerJump) {
     Character: folder(
       {
         color: { label: 'Color', value: ini.color },
-        innerColor: { label: 'Inner Color', value: ini.innerColor },
+        innerColor: {
+          label: 'Inner Color',
+          value: ini.innerColor || ini.color,
+        },
         stiffness: {
           label: 'Stiffness',
           value: ini.stiffness,

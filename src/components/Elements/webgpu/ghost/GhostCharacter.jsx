@@ -250,6 +250,11 @@ const GhostCharacter = forwardRef(function GhostCharacter(
     prevWindDirZ: 0,
     bankX: 0,
     bankZ: 0,
+    smoothTiltX: 0,
+    smoothTiltZ: 0,
+    smoothWindDirX: 0,
+    smoothWindDirZ: 0,
+    smoothWindStrength: 0,
     jumpTime: -1,
     // Action animation layer
     animClip: null,
@@ -368,23 +373,39 @@ const GhostCharacter = forwardRef(function GhostCharacter(
       wdx = 1;
       wdz = 0;
     }
-    const effectiveWind = baseWind + windStrength * windBoostMul;
 
-    // Turn bank
-    const dirChangeX = wdx * windStrength - state.prevWindDirX;
-    const dirChangeZ = wdz * windStrength - state.prevWindDirZ;
-    state.bankX += dirChangeX * 0.5;
-    state.bankZ += dirChangeZ * 0.5;
-    state.bankX *= Math.exp(-8 * dt);
-    state.bankZ *= Math.exp(-8 * dt);
-    state.prevWindDirX = wdx * windStrength;
-    state.prevWindDirZ = wdz * windStrength;
+    // Smooth wind input — prevents binary keyboard 0→1 snap
+    const windSmooth = 1 - Math.exp(-8 * dt);
+    state.smoothWindDirX += (inputDirX - state.smoothWindDirX) * windSmooth;
+    state.smoothWindDirZ += (inputDirZ - state.smoothWindDirZ) * windSmooth;
+    state.smoothWindStrength +=
+      (windStrength - state.smoothWindStrength) * windSmooth;
 
-    // Tilt
-    const tiltInputX = inputDirX * windStrength;
-    const tiltInputZ = inputDirZ * windStrength;
-    const tiltX = -tiltInputZ * tiltIntensity + state.bankZ * 0.3 + swayX * 0.3;
-    const tiltZ = tiltInputX * tiltIntensity + state.bankX * 0.3 + swayZ * 0.3;
+    const effectiveWind = baseWind + state.smoothWindStrength * windBoostMul;
+
+    // Turn bank — overshoot on direction change, spring-back decay
+    const scaledDirX = wdx * windStrength;
+    const scaledDirZ = wdz * windStrength;
+    const dirChangeX = scaledDirX - state.prevWindDirX;
+    const dirChangeZ = scaledDirZ - state.prevWindDirZ;
+    state.bankX += dirChangeX * 0.8;
+    state.bankZ += dirChangeZ * 0.8;
+    state.bankX *= Math.exp(-6 * dt);
+    state.bankZ *= Math.exp(-6 * dt);
+    state.prevWindDirX = scaledDirX;
+    state.prevWindDirZ = scaledDirZ;
+
+    // Tilt — smooth exponential interpolation toward target
+    const sw = state.smoothWindStrength;
+    const sdx = state.smoothWindDirX;
+    const sdz = state.smoothWindDirZ;
+    const tiltTargetX = -sdz * sw * tiltIntensity;
+    const tiltTargetZ = sdx * sw * tiltIntensity;
+    const tiltSmooth = 1 - Math.exp(-5 * dt);
+    state.smoothTiltX += (tiltTargetX - state.smoothTiltX) * tiltSmooth;
+    state.smoothTiltZ += (tiltTargetZ - state.smoothTiltZ) * tiltSmooth;
+    const tiltX = state.smoothTiltX + state.bankZ * 0.5 + swayX * 0.3;
+    const tiltZ = state.smoothTiltZ + state.bankX * 0.5 + swayZ * 0.3;
 
     // Jump squash/stretch
     if (jumpTriggered && state.jumpTime < 0) {
@@ -540,6 +561,10 @@ const GhostCharacter = forwardRef(function GhostCharacter(
         cutoutRimOffset={cutoutRimOffset}
         paused={paused}
         innerColor={innerColor}
+        emissiveColor={eyeColor}
+        emissiveIntensity={eyeIntensity * 0.4}
+        emissiveFalloff={2.5}
+        emissiveCenter={[0.5, 0.4]}
         materialProps={{
           color,
           roughness,
@@ -624,6 +649,7 @@ const GhostCharacter = forwardRef(function GhostCharacter(
         </group>
       )}
 
+      {/* Inner eye lights — illuminate back face through cutout holes */}
       <pointLight
         ref={lightLeftRef}
         position={[-0.05, SPHERE_BASE_Y, 0]}

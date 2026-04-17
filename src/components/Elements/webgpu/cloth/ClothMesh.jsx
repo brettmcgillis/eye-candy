@@ -1,5 +1,6 @@
 import {
   cos,
+  float,
   frontFacing,
   mix,
   uniform as nodeUniform,
@@ -103,6 +104,13 @@ const ClothMesh = forwardRef(function ClothMesh(
     textureRotation = 0,
     // Inner (back-face) color — when set, front/back faces render different colors
     innerColor = null,
+    // Emissive glow — self-illumination independent of scene lights
+    emissiveColor = null,
+    emissiveIntensity = 0,
+    // Radial falloff: 0 = uniform, >0 = glow fades from emissiveCenter outward
+    emissiveFalloff = 0,
+    // UV origin for the emissive glow [u, v]
+    emissiveCenter = [0.5, 0.5],
     // Material properties applied each frame (optional)
     materialProps,
   },
@@ -126,6 +134,10 @@ const ClothMesh = forwardRef(function ClothMesh(
       scaleU: nodeUniform(new THREE.Vector2(1, 1)),
       rotU: nodeUniform(0),
       innerColorU: nodeUniform(new THREE.Color(0, 0, 0)),
+      emissiveColorU: nodeUniform(new THREE.Color(0, 0, 0)),
+      emissiveIntensityU: nodeUniform(0),
+      emissiveFalloffU: nodeUniform(0),
+      emissiveCenterU: nodeUniform(new THREE.Vector2(0.5, 0.5)),
     }),
     []
   );
@@ -257,6 +269,44 @@ const ClothMesh = forwardRef(function ClothMesh(
     }
     sim.material.needsUpdate = true;
   }, [sim, innerColor, textureUrl, texture, texUniforms]);
+
+  // Emissive glow — radial falloff from emissiveCenter in UV space
+  useEffect(() => {
+    if (emissiveColor) {
+      texUniforms.emissiveColorU.value.set(emissiveColor);
+      texUniforms.emissiveIntensityU.value = emissiveIntensity;
+      texUniforms.emissiveFalloffU.value = emissiveFalloff;
+      texUniforms.emissiveCenterU.value.set(
+        emissiveCenter[0],
+        emissiveCenter[1]
+      );
+
+      let intensityNode = texUniforms.emissiveIntensityU;
+
+      if (emissiveFalloff > 0) {
+        const dist = uv().sub(texUniforms.emissiveCenterU).length();
+        const glow = float(1.0)
+          .sub(dist.mul(texUniforms.emissiveFalloffU))
+          .clamp(0, 1)
+          .pow(2);
+        intensityNode = intensityNode.mul(glow);
+      }
+
+      sim.material.emissiveNode = texUniforms.emissiveColorU.mul(intensityNode);
+    } else {
+      sim.material.emissiveNode = null;
+    }
+    sim.material.needsUpdate = true;
+    // emissiveCenter is an array — track elements individually to avoid
+    // re-running on every render from a new array reference.
+  }, [
+    sim,
+    emissiveColor,
+    emissiveIntensity,
+    emissiveFalloff,
+    emissiveCenter,
+    texUniforms,
+  ]);
 
   // Rebuild alpha mask when params change
   useEffect(() => {

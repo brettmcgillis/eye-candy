@@ -5,6 +5,7 @@ import {
   Return,
   attribute,
   cross,
+  faceDirection,
   float,
   instanceIndex,
   instancedArray,
@@ -664,8 +665,16 @@ export default function createClothSimulation({
     const bitangent = bottom.sub(top).normalize();
     const normal = cross(bitangent, tangent);
 
+    // The index buffer winds triangles CW from the expected viewing
+    // direction, so the GPU marks the visible side as back-facing.
+    // Negate faceDirection to compensate: visible side keeps its geometric
+    // normal, inner side (seen through cutout holes) gets flipped so
+    // lights on that side can illuminate it.
+    // Applied AFTER toVarying() so gl_FrontFacing evaluates in fragment stage.
     // eslint-disable-next-line no-param-reassign
-    mat.normalNode = transformNormalToView(normal).toVarying();
+    mat.normalNode = transformNormalToView(normal)
+      .toVarying()
+      .mul(faceDirection.negate());
 
     return v0.add(v1).add(v2).add(v3).mul(0.25);
   })();

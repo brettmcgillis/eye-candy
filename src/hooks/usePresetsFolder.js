@@ -46,6 +46,9 @@ export default function usePresetsFolder({
 
       if (!setControls || !presetSnapshot) return;
 
+      selectedPresetRef.current = presetName;
+      setSelectedPreset(presetName);
+
       const nextControls = getPresetControls({
         currentControls: context.currentControls || controlsSnapshotRef.current,
         presetName,
@@ -53,7 +56,7 @@ export default function usePresetsFolder({
       });
 
       if (!nextControls) return;
-      setControls(nextControls);
+      setControls({ ...nextControls, preset: presetName });
     },
     [getPresetControls, presets]
   );
@@ -66,6 +69,7 @@ export default function usePresetsFolder({
           value: initialPreset,
           options: presetOptions,
           onChange: (nextPreset) => {
+            if (selectedPresetRef.current === nextPreset) return;
             selectedPresetRef.current = nextPreset;
             setSelectedPreset(nextPreset);
             applyPresetByName(nextPreset);

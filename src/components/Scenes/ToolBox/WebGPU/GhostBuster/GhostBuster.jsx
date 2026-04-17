@@ -1,6 +1,6 @@
 import * as THREE from 'three';
 
-import React, { useRef } from 'react';
+import React, { useCallback, useRef } from 'react';
 
 import { OrbitControls, PerspectiveCamera } from '@react-three/drei';
 import { useFrame } from '@react-three/fiber';
@@ -16,25 +16,60 @@ const orbitSpherical = new THREE.Spherical();
 export default function GhostBuster() {
   const ghostRef = useRef();
   const orbitRef = useRef();
-  const { controls } = useSceneControls(ghostRef);
+  const { applyPresetByName, controls, presetOptions, selectedPreset } =
+    useSceneControls(ghostRef);
   const animationInputRef = useAnimationInput();
 
-  // Apply right-stick gamepad input to orbit camera
+  const selectedPresetRef = useRef(selectedPreset);
+  selectedPresetRef.current = selectedPreset;
+
+  const cyclePreset = useCallback(() => {
+    const idx = presetOptions.indexOf(selectedPresetRef.current);
+    const next = presetOptions[(idx + 1) % presetOptions.length];
+    applyPresetByName(next);
+  }, [applyPresetByName, presetOptions]);
+
+  // Apply right-stick orbit, zoom, and next-preset
   useFrame((_, delta) => {
     const orbit = orbitRef.current;
     const input = animationInputRef.current;
-    if (!orbit || (!input.orbitX && !input.orbitY)) return;
+    if (!orbit) return;
 
-    const speed = 2;
+    // Next preset (one-shot)
+    if (input.nextPreset) {
+      cyclePreset();
+      input.nextPreset = false;
+    }
+
+    const hasOrbit = input.orbitX || input.orbitY;
+    const hasZoom = input.zoom;
+    if (!hasOrbit && !hasZoom) return;
+
     const { object: camera, target } = orbit;
     orbitOffset.copy(camera.position).sub(target);
     orbitSpherical.setFromVector3(orbitOffset);
-    orbitSpherical.theta -= input.orbitX * speed * delta;
-    orbitSpherical.phi += input.orbitY * speed * delta;
-    orbitSpherical.phi = Math.max(
-      0.1,
-      Math.min(Math.PI - 0.1, orbitSpherical.phi)
-    );
+
+    // Orbit
+    if (hasOrbit) {
+      const rotSpeed = 2;
+      orbitSpherical.theta -= input.orbitX * rotSpeed * delta;
+      orbitSpherical.phi += input.orbitY * rotSpeed * delta;
+      orbitSpherical.phi = Math.max(
+        0.1,
+        Math.min(Math.PI - 0.1, orbitSpherical.phi)
+      );
+    }
+
+    // Zoom
+    if (hasZoom) {
+      const zoomSpeed = 3;
+      orbitSpherical.radius -= input.zoom * zoomSpeed * delta;
+      orbitSpherical.radius = Math.max(
+        0.5,
+        Math.min(10, orbitSpherical.radius)
+      );
+    }
+
     orbitOffset.setFromSpherical(orbitSpherical);
     camera.position.copy(target).add(orbitOffset);
     camera.lookAt(target);

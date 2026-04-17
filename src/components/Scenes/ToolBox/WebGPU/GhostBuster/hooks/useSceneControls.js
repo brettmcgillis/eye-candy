@@ -11,9 +11,11 @@ function getPresetControls({ presetSnapshot }) {
 
 export default function useSceneControls(ghostRef) {
   const {
+    applyPresetByName,
     attachSetControls,
     controlsSnapshotRef,
     initialPreset,
+    presetOptions,
     presetsFolder,
     selectedPreset,
   } = usePresetsFolder({
@@ -333,5 +335,5 @@ export default function useSceneControls(ghostRef) {
   attachSetControls(setControls);
   controlsSnapshotRef.current = { ...controls };
 
-  return { controls, selectedPreset };
+  return { applyPresetByName, controls, presetOptions, selectedPreset };
 }

@@ -19,9 +19,13 @@ export default function useAnimationInput() {
     a: false,
     s: false,
     d: false,
+    q: false,
+    e: false,
     space: false,
+    tab: false,
   });
   const expressionRef = useRef(0);
+  const prevGpNextPresetRef = useRef(false);
   const resultRef = useRef({
     windDirX: 0,
     windDirZ: 0,
@@ -30,6 +34,8 @@ export default function useAnimationInput() {
     expressionKey: 0,
     orbitX: 0,
     orbitY: 0,
+    zoom: 0,
+    nextPreset: false,
   });
 
   useEffect(() => {
@@ -58,8 +64,20 @@ export default function useAnimationInput() {
           keys.d = true;
           e.preventDefault();
           break;
+        case 'KeyQ':
+          keys.q = true;
+          e.preventDefault();
+          break;
+        case 'KeyE':
+          keys.e = true;
+          e.preventDefault();
+          break;
         case 'Space':
           if (!e.repeat) keys.space = true;
+          e.preventDefault();
+          break;
+        case 'Tab':
+          if (!e.repeat) keys.tab = true;
           e.preventDefault();
           break;
         case 'Digit1':
@@ -100,6 +118,12 @@ export default function useAnimationInput() {
         case 'ArrowRight':
           keys.d = false;
           break;
+        case 'KeyQ':
+          keys.q = false;
+          break;
+        case 'KeyE':
+          keys.e = false;
+          break;
         default:
           break;
       }
@@ -130,6 +154,8 @@ export default function useAnimationInput() {
     let gpJump = false;
     let gpOrbitX = 0;
     let gpOrbitY = 0;
+    let gpZoom = 0;
+    let gpNextPreset = false;
     try {
       const gamepads = navigator.getGamepads?.();
       const gp = gamepads?.[0];
@@ -144,6 +170,16 @@ export default function useAnimationInput() {
         gpOrbitY = gp.axes[3] ?? 0;
         if (Math.abs(gpOrbitX) < 0.15) gpOrbitX = 0;
         if (Math.abs(gpOrbitY) < 0.15) gpOrbitY = 0;
+
+        // LT (6) = zoom in, RT (7) = zoom out
+        const lt = gp.buttons[6]?.value ?? 0;
+        const rt = gp.buttons[7]?.value ?? 0;
+        gpZoom = lt - rt;
+
+        // RB (5) = next preset (edge-triggered)
+        const rbPressed = gp.buttons[5]?.pressed || false;
+        gpNextPreset = rbPressed && !prevGpNextPresetRef.current;
+        prevGpNextPresetRef.current = rbPressed;
       }
     } catch {
       // Gamepad API unavailable
@@ -168,6 +204,15 @@ export default function useAnimationInput() {
 
     result.orbitX = gpOrbitX;
     result.orbitY = gpOrbitY;
+
+    // Zoom: Q = in (+1), E = out (-1), plus analog triggers
+    let kZoom = 0;
+    if (keys.q) kZoom += 1;
+    if (keys.e) kZoom -= 1;
+    result.zoom = Math.max(-1, Math.min(1, kZoom + gpZoom));
+
+    result.nextPreset = keys.tab || gpNextPreset;
+    keys.tab = false;
 
     result.expressionKey = expressionRef.current;
     expressionRef.current = 0;

@@ -107,20 +107,20 @@ const GhostCharacter = forwardRef(function GhostCharacter(
   );
 
   // Dynamic anchors — vertices near each hand are pinned and move with it.
-  // Slots 0-1: hands. Slots 2-3: eye rings (track head sphere).
+  // Slots 0-5: hands (Y/Z poles). Slots 6-7: ear rings (track head sphere).
   // worldX/Z = initial position on the cloth surface (grid lookup).
   // restX/Y/Z = anchor reference point for offset computation.
   // position = the THREE.Vector3 that gets mutated per frame.
   //
-  // Eye cutout UVs → world: worldX = (u-0.5)*width, worldZ = (v-0.5)*height
-  const eyeLeftWorldX = (CUTOUTS[0].u - 0.5) * 1.0;
-  const eyeLeftWorldZ = (CUTOUTS[0].v - 0.5) * 1.0;
-  const eyeRightWorldX = (CUTOUTS[1].u - 0.5) * 1.0;
-  const eyeRightWorldZ = (CUTOUTS[1].v - 0.5) * 1.0;
+  // Ear cutout UVs → world: worldX = (u-0.5)*width, worldZ = (v-0.5)*height
+  const earLeftWorldX = (CUTOUTS[0].u - 0.5) * 1.0;
+  const earLeftWorldZ = (CUTOUTS[0].v - 0.5) * 1.0;
+  const earRightWorldX = (CUTOUTS[1].u - 0.5) * 1.0;
+  const earRightWorldZ = (CUTOUTS[1].v - 0.5) * 1.0;
 
   const anchors = useMemo(
     () => [
-      // Slot 0: left hand
+      // Slot 0: left hand — Y-pole (top)
       {
         worldX: -handSpacing,
         worldZ: 0,
@@ -130,7 +130,7 @@ const GhostCharacter = forwardRef(function GhostCharacter(
         gridRadius: 2,
         position: handLeftPos,
       },
-      // Slot 1: right hand
+      // Slot 1: right hand — Y-pole (top)
       {
         worldX: handSpacing,
         worldZ: 0,
@@ -140,20 +140,60 @@ const GhostCharacter = forwardRef(function GhostCharacter(
         gridRadius: 2,
         position: handRightPos,
       },
-      // Slot 2: left eye — anchored to head sphere (static)
+      // Slot 2: left hand — +Z-pole (front)
       {
-        worldX: eyeLeftWorldX,
-        worldZ: eyeLeftWorldZ,
+        worldX: -handSpacing,
+        worldZ: handSize,
+        restX: -handSpacing,
+        restY: -handSize,
+        restZ: 0,
+        gridRadius: 2,
+        position: handLeftPos,
+      },
+      // Slot 3: left hand — -Z-pole (back)
+      {
+        worldX: -handSpacing,
+        worldZ: -handSize,
+        restX: -handSpacing,
+        restY: -handSize,
+        restZ: 0,
+        gridRadius: 2,
+        position: handLeftPos,
+      },
+      // Slot 4: right hand — +Z-pole (front)
+      {
+        worldX: handSpacing,
+        worldZ: handSize,
+        restX: handSpacing,
+        restY: -handSize,
+        restZ: 0,
+        gridRadius: 2,
+        position: handRightPos,
+      },
+      // Slot 5: right hand — -Z-pole (back)
+      {
+        worldX: handSpacing,
+        worldZ: -handSize,
+        restX: handSpacing,
+        restY: -handSize,
+        restZ: 0,
+        gridRadius: 2,
+        position: handRightPos,
+      },
+      // Slot 6: left ear — anchored to head sphere (static)
+      {
+        worldX: earLeftWorldX,
+        worldZ: earLeftWorldZ,
         restX: 0,
         restY: SPHERE_BASE_Y,
         restZ: 0,
         gridRadius: 2,
         position: spherePos,
       },
-      // Slot 3: right eye — anchored to head sphere (static)
+      // Slot 7: right ear — anchored to head sphere (static)
       {
-        worldX: eyeRightWorldX,
-        worldZ: eyeRightWorldZ,
+        worldX: earRightWorldX,
+        worldZ: earRightWorldZ,
         restX: 0,
         restY: SPHERE_BASE_Y,
         restZ: 0,

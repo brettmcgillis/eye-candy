@@ -92,14 +92,14 @@ export default function useSceneControls(ghostRef, setAnimation, triggerJump) {
             },
             orbitLightMinY: {
               label: 'Min Height',
-              value: ini.orbitLightMinY ?? -0.5,
+              value: ini.orbitLightMinY ?? -0.6,
               min: -2,
               max: 2,
               step: 0.1,
             },
             orbitLightMaxY: {
               label: 'Max Height',
-              value: ini.orbitLightMaxY ?? 2,
+              value: ini.orbitLightMaxY ?? 1,
               min: 0,
               max: 5,
               step: 0.1,

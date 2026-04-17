@@ -13,8 +13,6 @@ import { useFrame } from '@react-three/fiber';
 import ClothMesh from '../cloth/ClothMesh';
 import { pinRing } from '../cloth/pinHelpers';
 
-const SEG_X = 28;
-const SEG_Y = 28;
 const SPHERE_BASE_Y = -0.15;
 const SPHERE_RADIUS = 0.15;
 
@@ -22,27 +20,6 @@ const CUTOUTS = [
   { u: 0.43, v: 0.4, radius: 0.06 },
   { u: 0.57, v: 0.4, radius: 0.06 },
 ];
-
-// Convert world X/Z to grid coordinates on the centered 1×1 cloth.
-const worldXToGrid = (wx) => Math.round((wx + 0.5) * SEG_X);
-const worldZToGrid = (wz) => Math.round((wz + 0.5) * SEG_Y);
-
-// Build pin set: centre ring + small rings at each hand position.
-function buildPins(handSpacing) {
-  const center = pinRing(
-    Math.round(SEG_X / 2),
-    Math.round(SEG_Y / 2),
-    2,
-    SEG_X,
-    SEG_Y
-  );
-  const leftCol = worldXToGrid(-handSpacing);
-  const rightCol = worldXToGrid(handSpacing);
-  const midRow = worldZToGrid(0);
-  const leftHand = pinRing(leftCol, midRow, 1, SEG_X, SEG_Y);
-  const rightHand = pinRing(rightCol, midRow, 1, SEG_X, SEG_Y);
-  return [...new Set([...center, ...leftHand, ...rightHand])];
-}
 
 const sharedTrailTarget = new THREE.Vector3();
 
@@ -65,14 +42,18 @@ const GhostCharacter = forwardRef(function GhostCharacter(
     stiffness = 0.15,
     dampening = 0.99,
     handSize = 0.04,
+    handHeight = 0.12,
     handSpacing = 0.18,
     handSpring = 8,
     handTrail = 0.15,
     cursorCollider = true,
     cursorRadius = 0.12,
+    collisionMargin = 0.02,
     gravity = 0.00012,
     windAmplitude = 0.0004,
     maxVelocity = 0.01,
+    segmentsX = 28,
+    segmentsY = 28,
     debugColliders = false,
     debugColor = '#ff4444',
     holeAmount = 0.2,
@@ -92,13 +73,26 @@ const GhostCharacter = forwardRef(function GhostCharacter(
   const lightLeftRef = useRef();
   const lightRightRef = useRef();
 
+  // Centre pins only — recomputed when segments change.
+  const pins = useMemo(
+    () =>
+      pinRing(
+        Math.round(segmentsX / 2),
+        Math.round(segmentsY / 2),
+        2,
+        segmentsX,
+        segmentsY
+      ),
+    [segmentsX, segmentsY]
+  );
+
   const spherePos = useMemo(() => new THREE.Vector3(0, SPHERE_BASE_Y, 0), []);
   const handLeftPos = useMemo(
-    () => new THREE.Vector3(-handSpacing, -handSize, 0),
+    () => new THREE.Vector3(-handSpacing, -handHeight, 0),
     [] // eslint-disable-line -- initial position only
   );
   const handRightPos = useMemo(
-    () => new THREE.Vector3(handSpacing, -handSize, 0),
+    () => new THREE.Vector3(handSpacing, -handHeight, 0),
     [] // eslint-disable-line -- initial position only
   );
 
@@ -110,9 +104,6 @@ const GhostCharacter = forwardRef(function GhostCharacter(
     ],
     [spherePos, handLeftPos, handRightPos, handSize]
   );
-
-  // Pin cloth at center and at hand positions
-  const pins = useMemo(() => buildPins(handSpacing), [handSpacing]);
 
   useImperativeHandle(
     ref,
@@ -233,14 +224,14 @@ const GhostCharacter = forwardRef(function GhostCharacter(
 
     sharedTrailTarget.set(
       -handSpacing + wdx * trailScale,
-      -handSize,
+      -handHeight,
       wdz * trailScale
     );
     handLeftPos.lerp(sharedTrailTarget, springT);
 
     sharedTrailTarget.set(
       handSpacing - wdx * trailScale,
-      -handSize,
+      -handHeight,
       -wdz * trailScale
     );
     handRightPos.lerp(sharedTrailTarget, springT);
@@ -249,11 +240,12 @@ const GhostCharacter = forwardRef(function GhostCharacter(
   return (
     <group ref={groupRef}>
       <ClothMesh
+        key={`cloth-${segmentsX}-${segmentsY}`}
         ref={clothRef}
         width={1.0}
         height={1.0}
-        segmentsX={SEG_X}
-        segmentsY={SEG_Y}
+        segmentsX={segmentsX}
+        segmentsY={segmentsY}
         pins={pins}
         centered
         orientation="horizontal"
@@ -267,6 +259,7 @@ const GhostCharacter = forwardRef(function GhostCharacter(
         dampening={dampening}
         cursorCollider={cursorCollider}
         cursorRadius={cursorRadius}
+        collisionMargin={collisionMargin}
         colliders={colliders}
         debugColliders={debugColliders}
         debugColor={debugColor}

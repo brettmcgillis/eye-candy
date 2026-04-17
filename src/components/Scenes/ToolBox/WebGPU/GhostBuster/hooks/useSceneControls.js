@@ -64,7 +64,7 @@ export default function useSceneControls(ghostRef) {
         color: { label: 'Color', value: '#f5f0e8' },
         stiffness: {
           label: 'Stiffness',
-          value: 0.15,
+          value: 0.16,
           min: 0.01,
           max: 0.5,
           step: 0.01,
@@ -162,6 +162,20 @@ export default function useSceneControls(ghostRef) {
           max: 0.3,
           step: 0.01,
         },
+        collisionMargin: {
+          label: 'Collision Margin',
+          value: 0.02,
+          min: 0,
+          max: 0.1,
+          step: 0.005,
+        },
+        clothSegments: {
+          label: 'Cloth Segments',
+          value: 28,
+          min: 12,
+          max: 60,
+          step: 2,
+        },
       },
       { collapsed: false }
     ),
@@ -170,14 +184,21 @@ export default function useSceneControls(ghostRef) {
       {
         handSize: {
           label: 'Size',
-          value: 0.04,
+          value: 0.05,
           min: 0.01,
-          max: 0.1,
+          max: 0.15,
+          step: 0.005,
+        },
+        handHeight: {
+          label: 'Height',
+          value: 0.3,
+          min: 0.02,
+          max: 0.3,
           step: 0.005,
         },
         handSpacing: {
           label: 'Spacing',
-          value: 0.18,
+          value: 0.3,
           min: 0.05,
           max: 0.4,
           step: 0.01,

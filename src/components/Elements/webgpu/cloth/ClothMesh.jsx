@@ -74,6 +74,8 @@ const ClothMesh = forwardRef(function ClothMesh(
     cursorRadius = 0.12,
     // Scene-driven colliders (slots 1-3) — array of {position, radius}
     colliders = [],
+    // Collision margin — enlarges detection volume for small spheres
+    collisionMargin = 0.02,
     // Debug: render wireframe spheres for all active colliders
     debugColliders = false,
     debugColor = '#ff0000',
@@ -253,6 +255,7 @@ const ClothMesh = forwardRef(function ClothMesh(
     sim.colliderRadiusU[0].value = cursorRadius;
     sim.maxVelocityU.value = maxVelocity;
     sim.gravityU.value = gravity;
+    sim.collisionMarginU.value = collisionMargin;
 
     // Push scene-driven colliders into slots 1-3
     for (let c = 1; c < sim.NUM_COLLIDERS; c += 1) {

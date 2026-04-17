@@ -246,6 +246,10 @@ export default function createClothSimulation({
     colliderRadiusU.push(uniform(0.12));
   }
 
+  // Collision margin — enlarges the detection volume beyond the visual radius
+  // so vertices near (but not inside) small spheres still get caught.
+  const collisionMarginU = uniform(0.02);
+
   // Per-vertex alpha buffer — drives material opacity and collision masking.
   // 0 = fully transparent (colliders pass through), 1 = fully opaque.
   const alphaArr = new Float32Array(vCount).fill(1);
@@ -311,30 +315,46 @@ export default function createClothSimulation({
     const windForce = noise.mul(windU);
     force.addAssign(windDirU.mul(windForce));
 
-    // collision with sphere colliders (scaled by vertex alpha so cursor passes through holes)
-    const alphaVal = alphaBuf.element(instanceIndex);
-    const projectedPos = position.add(force);
-    for (let c = 0; c < NUM_COLLIDERS; c += 1) {
-      const dSphere = projectedPos.sub(colliderPosU[c]);
-      const sDist = dSphere.length();
-      const sForce = colliderRadiusU[c]
-        .sub(sDist)
-        .max(0)
-        .mul(dSphere)
-        .div(sDist)
-        .mul(colliderEnabledU[c])
-        .mul(alphaVal);
-      force.addAssign(sForce);
-    }
-
     // Clamp velocity to prevent simulation explosion
     const speed = force.length().toVar();
     If(speed.greaterThan(maxVelocityU), () => {
       force.mulAssign(maxVelocityU.div(speed));
     });
 
+    // Store velocity, then compute candidate position
     forceBuf.element(instanceIndex).assign(force);
-    posBuf.element(instanceIndex).addAssign(force);
+    const newPos = position.add(force).toVar('newPos');
+
+    // Hard sphere collision — project vertex onto sphere surface if inside
+    // the enlarged detection volume (radius + margin). Detection uses the
+    // padded radius so small spheres still catch nearby vertices that would
+    // otherwise slip through the grid. Projection pushes to the padded
+    // surface so the cloth visually wraps the collision volume.
+    const alphaVal = alphaBuf.element(instanceIndex);
+    for (let c = 0; c < NUM_COLLIDERS; c += 1) {
+      const toVertex = newPos.sub(colliderPosU[c]).toVar();
+      const dist = toVertex.length().max(0.000001).toVar();
+      const effectiveRadius = colliderRadiusU[c].add(collisionMarginU);
+      const penetration = effectiveRadius.sub(dist);
+      If(
+        penetration
+          .greaterThan(0)
+          .and(colliderEnabledU[c].greaterThan(0.5))
+          .and(alphaVal.greaterThan(0.01)),
+        () => {
+          const normal = toVertex.div(dist);
+          const surface = colliderPosU[c].add(normal.mul(effectiveRadius));
+          newPos.assign(surface);
+          // Zero out inward velocity component
+          const vDotN = force.dot(normal);
+          If(vDotN.lessThan(0), () => {
+            forceBuf.element(instanceIndex).subAssign(normal.mul(vDotN));
+          });
+        }
+      );
+    }
+
+    posBuf.element(instanceIndex).assign(newPos);
   })()
     .compute(vCount)
     .setName('Cloth Vertex Forces');
@@ -648,6 +668,7 @@ export default function createClothSimulation({
     colliderPosU,
     colliderEnabledU,
     colliderRadiusU,
+    collisionMarginU,
     NUM_COLLIDERS,
     shapeDistArr,
   };

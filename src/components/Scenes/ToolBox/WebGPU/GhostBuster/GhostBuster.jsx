@@ -51,11 +51,15 @@ export default function GhostBuster() {
         stiffness={controls.stiffness}
         dampening={controls.dampening}
         handSize={controls.handSize}
+        handHeight={controls.handHeight}
         handSpacing={controls.handSpacing}
         handSpring={controls.handSpring}
         handTrail={controls.handTrail}
         cursorCollider={controls.cursorCollider}
         cursorRadius={controls.cursorRadius}
+        collisionMargin={controls.collisionMargin}
+        segmentsX={controls.clothSegments}
+        segmentsY={controls.clothSegments}
         gravity={controls.gravity}
         windAmplitude={controls.windAmplitude}
         maxVelocity={controls.maxVelocity}

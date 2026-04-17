@@ -29,7 +29,10 @@ export default function TheLoom() {
   return (
     <>
       <PerspectiveCamera makeDefault position={[0, 0, 2]} fov={50} />
-      <ambientLight intensity={controls.ambientIntensity} color={controls.ambientColor} />
+      <ambientLight
+        intensity={controls.ambientIntensity}
+        color={controls.ambientColor}
+      />
       <directionalLight
         position={[controls.dirX, controls.dirY, controls.dirZ]}
         intensity={controls.dirIntensity}

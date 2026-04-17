@@ -5,7 +5,6 @@ import {
   Return,
   attribute,
   cross,
-  float,
   instanceIndex,
   instancedArray,
   select,
@@ -618,12 +617,25 @@ export default function createClothSimulation({
     forceBuf.value.needsUpdate = true;
   };
 
+  // Update which vertices are pinned (fixed) without rebuilding the sim.
+  // newPins is an array of vertex indices that should be fixed.
+  // Vertices outside the shape boundary are always kept fixed.
+  const updatePins = (newPins) => {
+    const newPinSet = new Set(newPins);
+    const arr = paramsBuf.value.array;
+    for (let i = 0; i < vCount; i += 1) {
+      arr[i * 3] = outsideSet.has(i) || newPinSet.has(i) ? 1 : 0;
+    }
+    paramsBuf.value.needsUpdate = true;
+  };
+
   return {
     computeSprings,
     computeVertices,
     rebuildAlpha,
     applyCutouts,
     reset,
+    updatePins,
     geometry,
     material,
     windU,

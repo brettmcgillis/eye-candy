@@ -20,9 +20,10 @@
 # // Presets
 
 - [ ] Regular all-white sheet gh0st
-- [ ] Fluid material sheet gh0st
 - [ ] Contrasting inner color sheet gh0st.
 - [ ] Tattered Damaged gh0st
+- [ ] Dark Grey gh0st with red sphere eyes (coudld be as simple as a sphere inside the ghost that is slightly smaller than the ghosts head, located at the xyz center of the ghosts head.)
+- [ ] Fluid material sheet gh0st
 
 # // Build Plan
 

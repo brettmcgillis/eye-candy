@@ -77,7 +77,7 @@ export default function GhostBuster() {
       />
 
       {controls.floorVisible && (
-        <mesh position={[0, -0.6, 0]} rotation={[-Math.PI / 2, 0, 0]}>
+        <mesh position={[0, -0.9, 0]} rotation={[-Math.PI / 2, 0, 0]}>
           <planeGeometry args={[20, 20]} />
           <GridMaterial
             gridSize={controls.gridSize}

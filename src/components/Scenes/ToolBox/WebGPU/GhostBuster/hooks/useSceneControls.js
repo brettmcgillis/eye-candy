@@ -9,7 +9,7 @@ function getPresetControls({ presetSnapshot }) {
   return presetSnapshot;
 }
 
-export default function useSceneControls(ghostRef) {
+export default function useSceneControls(ghostRef, setAnimation) {
   const {
     applyPresetByName,
     attachSetControls,
@@ -350,13 +350,13 @@ export default function useSceneControls(ghostRef) {
     Actions: folder(
       {
         'Wave (F)': button(() => {
-          const ghost = ghostRef.current;
-          if (!ghost) return;
-          if (ghost.activeAnimation === 'wave') {
-            ghost.stopAnimation();
-          } else {
-            ghost.playAnimation('wave');
+          if (setAnimation) {
+            const current = ghostRef.current?.activeAnimation;
+            setAnimation(current === 'wave' ? null : 'wave');
           }
+        }),
+        Idle: button(() => {
+          if (setAnimation) setAnimation(null);
         }),
       },
       { collapsed: false }

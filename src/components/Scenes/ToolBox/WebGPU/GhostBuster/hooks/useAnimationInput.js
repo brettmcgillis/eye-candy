@@ -1,4 +1,4 @@
-import { useEffect, useRef } from 'react';
+import { useCallback, useEffect, useMemo, useRef } from 'react';
 
 import { useFrame } from '@react-three/fiber';
 
@@ -236,5 +236,9 @@ export default function useAnimationInput() {
     result.animation = animationRef.current;
   }, -1);
 
-  return resultRef;
+  const setAnimation = useCallback((name) => {
+    animationRef.current = name ?? null;
+  }, []);
+
+  return useMemo(() => ({ inputRef: resultRef, setAnimation }), [setAnimation]);
 }

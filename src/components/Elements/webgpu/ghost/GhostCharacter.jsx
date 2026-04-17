@@ -257,6 +257,7 @@ const GhostCharacter = forwardRef(function GhostCharacter(
     animElapsed: 0,
     animBlend: 0,
     animStopping: false,
+    animImperative: false,
   });
 
   useImperativeHandle(
@@ -277,10 +278,14 @@ const GhostCharacter = forwardRef(function GhostCharacter(
         s.animElapsed = 0;
         s.animBlend = 0;
         s.animStopping = false;
+        s.animImperative = true;
       },
       stopAnimation() {
         const s = animState.current;
-        if (s.animClip) s.animStopping = true;
+        if (s.animClip) {
+          s.animStopping = true;
+          s.animImperative = false;
+        }
       },
       get activeAnimation() {
         return animState.current.animName;
@@ -302,18 +307,21 @@ const GhostCharacter = forwardRef(function GhostCharacter(
     const jumpTriggered = input.jumpTriggered ?? false;
 
     // ── Action animation state machine ──
-    const requestedAnim = input.animation ?? null;
-    if (requestedAnim && requestedAnim !== state.animName) {
-      const clip = getAnimation(requestedAnim);
-      if (clip) {
-        state.animClip = clip;
-        state.animName = requestedAnim;
-        state.animElapsed = 0;
-        state.animBlend = 0;
-        state.animStopping = false;
+    // Declarative path (input.animation) — skipped when imperative is active
+    if (!state.animImperative) {
+      const requestedAnim = input.animation ?? null;
+      if (requestedAnim && requestedAnim !== state.animName) {
+        const clip = getAnimation(requestedAnim);
+        if (clip) {
+          state.animClip = clip;
+          state.animName = requestedAnim;
+          state.animElapsed = 0;
+          state.animBlend = 0;
+          state.animStopping = false;
+        }
+      } else if (!requestedAnim && state.animClip && !state.animStopping) {
+        state.animStopping = true;
       }
-    } else if (!requestedAnim && state.animClip && !state.animStopping) {
-      state.animStopping = true;
     }
 
     let animOverrides = null;

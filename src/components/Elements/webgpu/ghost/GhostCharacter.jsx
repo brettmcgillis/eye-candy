@@ -13,6 +13,7 @@ import { useFrame } from '@react-three/fiber';
 
 import ClothMesh from '../cloth/ClothMesh';
 import { pinRing } from '../cloth/pinHelpers';
+import { getAnimation } from './ghostAnimations';
 
 const SPHERE_BASE_Y = -0.15;
 const SPHERE_RADIUS = 0.15;
@@ -242,6 +243,22 @@ const GhostCharacter = forwardRef(function GhostCharacter(
     [handSpacing, handSize, handLeftPos, handRightPos, spherePos]
   );
 
+  // Animation state (owned by the character)
+  const animState = useRef({
+    time: 0,
+    prevWindDirX: 0,
+    prevWindDirZ: 0,
+    bankX: 0,
+    bankZ: 0,
+    jumpTime: -1,
+    // Action animation layer
+    animClip: null,
+    animName: null,
+    animElapsed: 0,
+    animBlend: 0,
+    animStopping: false,
+  });
+
   useImperativeHandle(
     ref,
     () => ({
@@ -251,19 +268,26 @@ const GhostCharacter = forwardRef(function GhostCharacter(
       resetSim() {
         clothRef.current?.resetSim();
       },
+      playAnimation(name) {
+        const clip = getAnimation(name);
+        if (!clip) return;
+        const s = animState.current;
+        s.animClip = clip;
+        s.animName = name;
+        s.animElapsed = 0;
+        s.animBlend = 0;
+        s.animStopping = false;
+      },
+      stopAnimation() {
+        const s = animState.current;
+        if (s.animClip) s.animStopping = true;
+      },
+      get activeAnimation() {
+        return animState.current.animName;
+      },
     }),
     []
   );
-
-  // Animation state (owned by the character)
-  const animState = useRef({
-    time: 0,
-    prevWindDirX: 0,
-    prevWindDirZ: 0,
-    bankX: 0,
-    bankZ: 0,
-    jumpTime: -1,
-  });
 
   useFrame((_, delta) => {
     const dt = Math.min(delta, 1 / 30);
@@ -276,6 +300,49 @@ const GhostCharacter = forwardRef(function GhostCharacter(
     const inputDirZ = input.windDirZ ?? 0;
     const windStrength = input.windStrength ?? 0;
     const jumpTriggered = input.jumpTriggered ?? false;
+
+    // ── Action animation state machine ──
+    const requestedAnim = input.animation ?? null;
+    if (requestedAnim && requestedAnim !== state.animName) {
+      const clip = getAnimation(requestedAnim);
+      if (clip) {
+        state.animClip = clip;
+        state.animName = requestedAnim;
+        state.animElapsed = 0;
+        state.animBlend = 0;
+        state.animStopping = false;
+      }
+    } else if (!requestedAnim && state.animClip && !state.animStopping) {
+      state.animStopping = true;
+    }
+
+    let animOverrides = null;
+    if (state.animClip) {
+      state.animElapsed += dt;
+      if (state.animStopping) {
+        state.animBlend = Math.max(
+          0,
+          state.animBlend - dt / state.animClip.blendOut
+        );
+        if (state.animBlend <= 0) {
+          state.animClip = null;
+          state.animName = null;
+          state.animStopping = false;
+          state.animElapsed = 0;
+        }
+      } else {
+        state.animBlend = Math.min(
+          1,
+          state.animBlend + dt / state.animClip.blendIn
+        );
+      }
+      if (state.animClip) {
+        animOverrides = state.animClip.sample(state.animElapsed, {
+          handSpacing,
+          handHeight,
+        });
+      }
+    }
 
     // Bob
     const bob = Math.sin(state.time * bobSpeed * Math.PI * 2) * bobAmplitude;
@@ -379,6 +446,14 @@ const GhostCharacter = forwardRef(function GhostCharacter(
         sharedTrailTarget.z *= sL;
       }
     }
+    // Blend with action animation target
+    if (animOverrides?.leftHandTarget && state.animBlend > 0) {
+      const w = state.animBlend;
+      const lt = animOverrides.leftHandTarget;
+      sharedTrailTarget.x = sharedTrailTarget.x * (1 - w) + lt.x * w;
+      sharedTrailTarget.y = sharedTrailTarget.y * (1 - w) + lt.y * w;
+      sharedTrailTarget.z = sharedTrailTarget.z * (1 - w) + lt.z * w;
+    }
     handLeftPos.lerp(sharedTrailTarget, springT);
 
     sharedTrailTarget.set(handSpacing + trailX, -handHeight, trailZ);
@@ -393,6 +468,14 @@ const GhostCharacter = forwardRef(function GhostCharacter(
         sharedTrailTarget.x *= sR;
         sharedTrailTarget.z *= sR;
       }
+    }
+    // Blend with action animation target
+    if (animOverrides?.rightHandTarget && state.animBlend > 0) {
+      const w = state.animBlend;
+      const rt = animOverrides.rightHandTarget;
+      sharedTrailTarget.x = sharedTrailTarget.x * (1 - w) + rt.x * w;
+      sharedTrailTarget.y = sharedTrailTarget.y * (1 - w) + rt.y * w;
+      sharedTrailTarget.z = sharedTrailTarget.z * (1 - w) + rt.z * w;
     }
     handRightPos.lerp(sharedTrailTarget, springT);
 

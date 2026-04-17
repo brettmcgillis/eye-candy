@@ -25,6 +25,8 @@ export default function useAnimationInput() {
     tab: false,
   });
   const expressionRef = useRef(0);
+  const animationRef = useRef(null);
+  const prevGpWaveRef = useRef(false);
   const prevGpNextPresetRef = useRef(false);
   const resultRef = useRef({
     windDirX: 0,
@@ -32,6 +34,7 @@ export default function useAnimationInput() {
     windStrength: 0,
     jumpTriggered: false,
     expressionKey: 0,
+    animation: null,
     orbitX: 0,
     orbitY: 0,
     zoom: 0,
@@ -94,6 +97,12 @@ export default function useAnimationInput() {
           break;
         case 'Digit5':
           expressionRef.current = 5;
+          break;
+        case 'KeyF':
+          if (!e.repeat) {
+            animationRef.current = animationRef.current ? null : 'wave';
+          }
+          e.preventDefault();
           break;
         default:
           break;
@@ -176,6 +185,13 @@ export default function useAnimationInput() {
         const rt = gp.buttons[7]?.value ?? 0;
         gpZoom = lt - rt;
 
+        // B (2) = wave toggle (edge-triggered)
+        const bPressed = gp.buttons[2]?.pressed || false;
+        if (bPressed && !prevGpWaveRef.current) {
+          animationRef.current = animationRef.current ? null : 'wave';
+        }
+        prevGpWaveRef.current = bPressed;
+
         // RB (5) = next preset (edge-triggered)
         const rbPressed = gp.buttons[5]?.pressed || false;
         gpNextPreset = rbPressed && !prevGpNextPresetRef.current;
@@ -216,6 +232,8 @@ export default function useAnimationInput() {
 
     result.expressionKey = expressionRef.current;
     expressionRef.current = 0;
+
+    result.animation = animationRef.current;
   }, -1);
 
   return resultRef;

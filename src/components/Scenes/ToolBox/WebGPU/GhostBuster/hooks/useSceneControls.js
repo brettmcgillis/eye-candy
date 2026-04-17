@@ -347,6 +347,21 @@ export default function useSceneControls(ghostRef) {
       { collapsed: true }
     ),
 
+    Actions: folder(
+      {
+        'Wave (F)': button(() => {
+          const ghost = ghostRef.current;
+          if (!ghost) return;
+          if (ghost.activeAnimation === 'wave') {
+            ghost.stopAnimation();
+          } else {
+            ghost.playAnimation('wave');
+          }
+        }),
+      },
+      { collapsed: false }
+    ),
+
     'Reset Cloth': button(() => {
       ghostRef.current?.resetSim();
     }),

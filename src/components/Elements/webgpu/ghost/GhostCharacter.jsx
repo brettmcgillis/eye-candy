@@ -482,7 +482,9 @@ const GhostCharacter = forwardRef(function GhostCharacter(
           return (
             <group
               key={`anchor-dbg-${i}`}
-              ref={(el) => { anchorDbgRefs.current[i] = el; }}
+              ref={(el) => {
+                anchorDbgRefs.current[i] = el;
+              }}
               position={[
                 anch.position.x + dx,
                 anch.position.y - anch.restY,
@@ -495,18 +497,19 @@ const GhostCharacter = forwardRef(function GhostCharacter(
                     attach="attributes-position"
                     array={
                       new Float32Array([
-                        sx, sy, sz,
-                        dirX * lineLen, dirY * lineLen, dirZ * lineLen,
+                        sx,
+                        sy,
+                        sz,
+                        dirX * lineLen,
+                        dirY * lineLen,
+                        dirZ * lineLen,
                       ])
                     }
                     count={2}
                     itemSize={3}
                   />
                 </bufferGeometry>
-                <lineBasicMaterial
-                  color={debugAnchorColor}
-                  depthTest={false}
-                />
+                <lineBasicMaterial color={debugAnchorColor} depthTest={false} />
               </line>
             </group>
           );
@@ -524,10 +527,7 @@ const GhostCharacter = forwardRef(function GhostCharacter(
                 itemSize={3}
               />
             </bufferGeometry>
-            <lineBasicMaterial
-              color={debugAnchorColor}
-              depthTest={false}
-            />
+            <lineBasicMaterial color={debugAnchorColor} depthTest={false} />
           </line>
         </group>
       )}

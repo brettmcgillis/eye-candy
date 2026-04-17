@@ -105,6 +105,65 @@ const GhostCharacter = forwardRef(function GhostCharacter(
     [spherePos, handLeftPos, handRightPos, handSize]
   );
 
+  // Dynamic anchors — vertices near each hand are pinned and move with it.
+  // Slots 0-1: hands. Slots 2-3: eye rings (track head sphere).
+  // worldX/Z = initial position on the cloth surface (grid lookup).
+  // restX/Y/Z = anchor reference point for offset computation.
+  // position = the THREE.Vector3 that gets mutated per frame.
+  //
+  // Eye cutout UVs → world: worldX = (u-0.5)*width, worldZ = (v-0.5)*height
+  const eyeLeftWorldX = (CUTOUTS[0].u - 0.5) * 1.0;
+  const eyeLeftWorldZ = (CUTOUTS[0].v - 0.5) * 1.0;
+  const eyeRightWorldX = (CUTOUTS[1].u - 0.5) * 1.0;
+  const eyeRightWorldZ = (CUTOUTS[1].v - 0.5) * 1.0;
+
+  const anchors = useMemo(
+    () => [
+      // Slot 0: left hand
+      {
+        worldX: -handSpacing,
+        worldZ: 0,
+        restX: -handSpacing,
+        restY: -handSize,
+        restZ: 0,
+        gridRadius: 2,
+        position: handLeftPos,
+      },
+      // Slot 1: right hand
+      {
+        worldX: handSpacing,
+        worldZ: 0,
+        restX: handSpacing,
+        restY: -handSize,
+        restZ: 0,
+        gridRadius: 2,
+        position: handRightPos,
+      },
+      // Slot 2: left eye — anchored to head sphere (static)
+      {
+        worldX: eyeLeftWorldX,
+        worldZ: eyeLeftWorldZ,
+        restX: 0,
+        restY: SPHERE_BASE_Y,
+        restZ: 0,
+        gridRadius: 2,
+        position: spherePos,
+      },
+      // Slot 3: right eye — anchored to head sphere (static)
+      {
+        worldX: eyeRightWorldX,
+        worldZ: eyeRightWorldZ,
+        restX: 0,
+        restY: SPHERE_BASE_Y,
+        restZ: 0,
+        gridRadius: 2,
+        position: spherePos,
+      },
+    ],
+    // eslint-disable-next-line -- static anchor config, position refs are stable
+    [handSpacing, handSize, handLeftPos, handRightPos, spherePos]
+  );
+
   useImperativeHandle(
     ref,
     () => ({
@@ -218,22 +277,45 @@ const GhostCharacter = forwardRef(function GhostCharacter(
       }
     }
 
-    // Hand trailing
+    // Hand trailing — both hands trail opposite the wind direction together
     const springT = 1 - Math.exp(-handSpring * dt);
     const trailScale = effectiveWind * handTrail;
+    const trailX = -wdx * trailScale;
+    const trailZ = -wdz * trailScale;
 
-    sharedTrailTarget.set(
-      -handSpacing + wdx * trailScale,
-      -handHeight,
-      wdz * trailScale
+    // Min/max distance from head center (XZ plane).
+    // Min prevents hands entering the head; max keeps them close to body.
+    const minDist = SPHERE_RADIUS + handSize;
+    const maxDist = handSpacing + handSize;
+
+    sharedTrailTarget.set(-handSpacing + trailX, -handHeight, trailZ);
+    let dL = Math.sqrt(
+      sharedTrailTarget.x * sharedTrailTarget.x +
+        sharedTrailTarget.z * sharedTrailTarget.z
     );
+    if (dL > 0.0001) {
+      const clamped = Math.max(minDist, Math.min(maxDist, dL));
+      if (clamped !== dL) {
+        const sL = clamped / dL;
+        sharedTrailTarget.x *= sL;
+        sharedTrailTarget.z *= sL;
+      }
+    }
     handLeftPos.lerp(sharedTrailTarget, springT);
 
-    sharedTrailTarget.set(
-      handSpacing - wdx * trailScale,
-      -handHeight,
-      -wdz * trailScale
+    sharedTrailTarget.set(handSpacing + trailX, -handHeight, trailZ);
+    dL = Math.sqrt(
+      sharedTrailTarget.x * sharedTrailTarget.x +
+        sharedTrailTarget.z * sharedTrailTarget.z
     );
+    if (dL > 0.0001) {
+      const clamped = Math.max(minDist, Math.min(maxDist, dL));
+      if (clamped !== dL) {
+        const sR = clamped / dL;
+        sharedTrailTarget.x *= sR;
+        sharedTrailTarget.z *= sR;
+      }
+    }
     handRightPos.lerp(sharedTrailTarget, springT);
   });
 
@@ -261,6 +343,7 @@ const GhostCharacter = forwardRef(function GhostCharacter(
         cursorRadius={cursorRadius}
         collisionMargin={collisionMargin}
         colliders={colliders}
+        anchors={anchors}
         debugColliders={debugColliders}
         debugColor={debugColor}
         alphaSeed={alphaSeed}

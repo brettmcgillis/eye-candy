@@ -14,6 +14,7 @@ import {
   uint,
   uniform,
   uv,
+  vec3,
 } from 'three/tsl';
 import * as THREE from 'three/webgpu';
 
@@ -103,6 +104,7 @@ export default function createClothSimulation({
   windFrequency = 1,
   windAmplitude = 0.0001,
   shape = 'rectangle',
+  anchors = [],
   alpha = {},
   material,
 }) {
@@ -202,6 +204,60 @@ export default function createClothSimulation({
 
   const posBuf = instancedArray(posArr, 'vec3').setPBO(true);
   const forceBuf = instancedArray(vCount, 'vec3');
+
+  // ── Dynamic anchors ──
+  // Anchors pin clusters of vertices that translate rigidly with an
+  // external position each frame. Up to NUM_ANCHORS slots.
+  // paramsBuf.x encoding: 0 = free, 1 = static pin, 2+ = anchor slot.
+  const NUM_ANCHORS = 4;
+  const anchorPosU = [];
+  for (let a = 0; a < NUM_ANCHORS; a += 1) {
+    anchorPosU.push(uniform(new THREE.Vector3(0, 0, 0)));
+  }
+
+  // Per-vertex offset from anchor center (only meaningful for anchored vtx).
+  const anchorOffsetArr = new Float32Array(vCount * 3);
+
+  for (let a = 0; a < Math.min(anchors.length, NUM_ANCHORS); a += 1) {
+    const anch = anchors[a];
+    // Convert anchor world position to grid coordinates
+    const cellW = width / segmentsX;
+    const cellH = height / segmentsY;
+    const gxCenter = Math.round((anch.worldX - ox - xOffset) / cellW);
+    const gyCenter = horiz
+      ? Math.round((anch.worldZ - oz - yOffset) / cellH)
+      : Math.round((oy - anch.worldZ) / cellH);
+    const r = anch.gridRadius ?? 2;
+
+    for (let dx = -r; dx <= r; dx += 1) {
+      for (let dy = -r; dy <= r; dy += 1) {
+        const gx = gxCenter + dx;
+        const gy = gyCenter + dy;
+        if (
+          gx >= 0 &&
+          gx <= segmentsX &&
+          gy >= 0 &&
+          gy <= segmentsY &&
+          dx * dx + dy * dy <= r * r
+        ) {
+          const vtxIdx = gx * (segmentsY + 1) + gy;
+          // Skip vertices outside shape boundary or already statically pinned
+          if (!outsideSet.has(vtxIdx) && !pinSet.has(vtxIdx)) {
+            // Tag as anchor: slot 0 → 2, slot 1 → 3
+            paramsArr[vtxIdx * 3] = 2 + a;
+            // Store offset: vertex rest position minus anchor rest position
+            const vp = vertices[vtxIdx].position;
+            anchorOffsetArr[vtxIdx * 3] = vp.x - anch.restX;
+            anchorOffsetArr[vtxIdx * 3 + 1] = vp.y - anch.restY;
+            anchorOffsetArr[vtxIdx * 3 + 2] = vp.z - anch.restZ;
+          }
+        }
+      }
+    }
+  }
+
+  const anchorOffsetBuf = instancedArray(anchorOffsetArr, 'vec3');
+
   const paramsBuf = instancedArray(paramsArr, 'uvec3');
   const springListBuf = instancedArray(
     new Uint32Array(springListArr),
@@ -287,7 +343,26 @@ export default function createClothSimulation({
     const sNum = p.y;
     const sPtr = p.z;
 
-    If(isFixed, () => Return());
+    // Static pin — vertex stays at its rest position forever.
+    If(isFixed.equal(uint(1)), () => Return());
+
+    // Dynamic anchor — vertex translates rigidly with its anchor position.
+    If(isFixed.greaterThanEqual(uint(2)), () => {
+      const slot = isFixed.sub(uint(2));
+      const offset = anchorOffsetBuf.element(instanceIndex);
+      const target = select(
+        slot.equal(uint(0)),
+        anchorPosU[0],
+        select(
+          slot.equal(uint(1)),
+          anchorPosU[1],
+          select(slot.equal(uint(2)), anchorPosU[2], anchorPosU[3])
+        )
+      );
+      posBuf.element(instanceIndex).assign(target.add(offset));
+      forceBuf.element(instanceIndex).assign(vec3(0, 0, 0));
+      Return();
+    });
 
     const position = posBuf.element(instanceIndex).toVar('vertexPosition');
     const force = forceBuf.element(instanceIndex).toVar('vertexForce');
@@ -640,11 +715,16 @@ export default function createClothSimulation({
   // Update which vertices are pinned (fixed) without rebuilding the sim.
   // newPins is an array of vertex indices that should be fixed.
   // Vertices outside the shape boundary are always kept fixed.
+  // Preserves anchor tags (values >= 2) set at creation time.
   const updatePins = (newPins) => {
     const newPinSet = new Set(newPins);
     const arr = paramsBuf.value.array;
     for (let i = 0; i < vCount; i += 1) {
-      arr[i * 3] = outsideSet.has(i) || newPinSet.has(i) ? 1 : 0;
+      const current = arr[i * 3];
+      // Don't overwrite anchor vertices
+      if (current < 2) {
+        arr[i * 3] = outsideSet.has(i) || newPinSet.has(i) ? 1 : 0;
+      }
     }
     paramsBuf.value.needsUpdate = true;
   };
@@ -670,6 +750,8 @@ export default function createClothSimulation({
     colliderRadiusU,
     collisionMarginU,
     NUM_COLLIDERS,
+    anchorPosU,
+    NUM_ANCHORS,
     shapeDistArr,
   };
 }

@@ -76,6 +76,9 @@ const ClothMesh = forwardRef(function ClothMesh(
     colliders = [],
     // Collision margin — enlarges detection volume for small spheres
     collisionMargin = 0.02,
+    // Dynamic anchors — vertices pinned to moving positions
+    // [{worldX, worldZ, restX, restY, restZ, gridRadius, position: THREE.Vector3}]
+    anchors = [],
     // Debug: render wireframe spheres for all active colliders
     debugColliders = false,
     debugColor = '#ff0000',
@@ -105,6 +108,7 @@ const ClothMesh = forwardRef(function ClothMesh(
   });
   const meshRef = useRef();
   const cursorSphereRef = useRef();
+  const colliderSphereRefs = useRef([]);
   const materialKeysRef = useRef(null);
 
   // Persistent GPU uniforms for texture compositing (stable across frames)
@@ -135,6 +139,7 @@ const ClothMesh = forwardRef(function ClothMesh(
       gravity,
       windFrequency,
       windAmplitude,
+      anchors,
       alpha: {
         seed: alphaSeed,
         scale: alphaScale,
@@ -264,8 +269,19 @@ const ClothMesh = forwardRef(function ClothMesh(
         sim.colliderPosU[c].value.copy(ext.position);
         sim.colliderRadiusU[c].value = ext.radius;
         sim.colliderEnabledU[c].value = 1.0;
+        // Sync debug wireframe sphere with live collider position
+        const dbg = colliderSphereRefs.current[c - 1];
+        if (dbg) dbg.position.copy(ext.position);
       } else {
         sim.colliderEnabledU[c].value = 0.0;
+      }
+    }
+
+    // Push dynamic anchor positions
+    for (let a = 0; a < sim.NUM_ANCHORS; a += 1) {
+      const anch = anchors[a];
+      if (anch?.position) {
+        sim.anchorPosU[a].value.copy(anch.position);
       }
     }
 
@@ -384,7 +400,9 @@ const ClothMesh = forwardRef(function ClothMesh(
           <mesh
             // eslint-disable-next-line react/no-array-index-key
             key={idx}
-            position={[col.position.x, col.position.y, col.position.z]}
+            ref={(el) => {
+              colliderSphereRefs.current[idx] = el;
+            }}
             frustumCulled={false}
           >
             <icosahedronGeometry args={[col.radius, 3]} />

@@ -171,7 +171,7 @@ export default function useSceneControls(ghostRef) {
         },
         clothSegments: {
           label: 'Cloth Segments',
-          value: 28,
+          value: 46,
           min: 12,
           max: 60,
           step: 2,
@@ -212,7 +212,7 @@ export default function useSceneControls(ghostRef) {
         },
         handTrail: {
           label: 'Trail Distance',
-          value: 0.15,
+          value: 0.08,
           min: 0,
           max: 0.5,
           step: 0.01,

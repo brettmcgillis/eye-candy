@@ -138,7 +138,9 @@ To Build:
 - [✔] All my thoughts are so cumulus - Static
 - [ ] Surrender
 - [ ] Stay Hunted
-- [ ] Ghosts
+- [ ] AllMyFriendsAreGhosts
+- [ ] GhostBuster
+- [ ] CharacterController
 
 - TrophyHusband
 - Yggdraskill

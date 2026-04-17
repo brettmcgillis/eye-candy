@@ -19,9 +19,10 @@
 
 # // Presets
 
-- [ ] Regular all-white sheet ghost
-- [ ] Fluid material sheet ghost
-- [ ] Contrasting inner color sheet ghost.
+- [ ] Regular all-white sheet gh0st
+- [ ] Fluid material sheet gh0st
+- [ ] Contrasting inner color sheet gh0st.
+- [ ] Tattered Damaged gh0st
 
 # // Build Plan
 

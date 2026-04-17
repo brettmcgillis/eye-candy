@@ -16,6 +16,7 @@ const orbitSpherical = new THREE.Spherical();
 export default function GhostBuster() {
   const ghostRef = useRef();
   const orbitRef = useRef();
+  const orbitLightRef = useRef();
   const {
     inputRef: animationInputRef,
     setAnimation,
@@ -34,10 +35,23 @@ export default function GhostBuster() {
   }, [applyPresetByName, presetOptions]);
 
   // Apply right-stick orbit, zoom, and next-preset
-  useFrame((_, delta) => {
+  useFrame((state, delta) => {
     const orbit = orbitRef.current;
     const input = animationInputRef.current;
     if (!orbit) return;
+
+    // Orbit light
+    if (controls.orbitLightEnabled && orbitLightRef.current) {
+      const t = state.clock.elapsedTime * controls.orbitLightSpeed;
+      const r = controls.orbitLightRadius;
+      const midY = (controls.orbitLightMinY + controls.orbitLightMaxY) * 0.5;
+      const ampY = (controls.orbitLightMaxY - controls.orbitLightMinY) * 0.5;
+      orbitLightRef.current.position.set(
+        Math.cos(t) * r,
+        midY + Math.sin(t * 0.7) * ampY,
+        Math.sin(t) * r
+      );
+    }
 
     // Next preset (one-shot)
     if (input.nextPreset) {
@@ -103,6 +117,20 @@ export default function GhostBuster() {
         angle={Math.PI * 0.3}
         decay={0}
       />
+
+      {controls.orbitLightEnabled && (
+        <pointLight
+          ref={orbitLightRef}
+          color={controls.orbitLightColor}
+          intensity={controls.orbitLightIntensity}
+          decay={2}
+        >
+          <mesh>
+            <sphereGeometry args={[0.05, 16, 16]} />
+            <meshBasicMaterial color={controls.orbitLightColor} />
+          </mesh>
+        </pointLight>
+      )}
 
       <GhostCharacter
         ref={ghostRef}

@@ -662,7 +662,7 @@ export default function createClothSimulation({
 
     const tangent = right.sub(left).normalize();
     const bitangent = bottom.sub(top).normalize();
-    const normal = cross(tangent, bitangent);
+    const normal = cross(bitangent, tangent);
 
     // eslint-disable-next-line no-param-reassign
     mat.normalNode = transformNormalToView(normal).toVarying();

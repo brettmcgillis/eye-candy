@@ -59,6 +59,54 @@ export default function useSceneControls(ghostRef, setAnimation, triggerJump) {
           max: 15,
           step: 0.5,
         },
+        'Orbit Light': folder(
+          {
+            orbitLightEnabled: {
+              label: 'Enabled',
+              value: ini.orbitLightEnabled ?? false,
+            },
+            orbitLightColor: {
+              label: 'Color',
+              value: ini.orbitLightColor ?? '#ffffff',
+            },
+            orbitLightIntensity: {
+              label: 'Intensity',
+              value: ini.orbitLightIntensity ?? 3,
+              min: 0,
+              max: 20,
+              step: 0.1,
+            },
+            orbitLightRadius: {
+              label: 'Radius',
+              value: ini.orbitLightRadius ?? 2,
+              min: 0.5,
+              max: 6,
+              step: 0.1,
+            },
+            orbitLightSpeed: {
+              label: 'Speed',
+              value: ini.orbitLightSpeed ?? 0.5,
+              min: 0.05,
+              max: 3,
+              step: 0.05,
+            },
+            orbitLightMinY: {
+              label: 'Min Height',
+              value: ini.orbitLightMinY ?? -0.5,
+              min: -2,
+              max: 2,
+              step: 0.1,
+            },
+            orbitLightMaxY: {
+              label: 'Max Height',
+              value: ini.orbitLightMaxY ?? 2,
+              min: 0,
+              max: 5,
+              step: 0.1,
+            },
+          },
+          { collapsed: true }
+        ),
       },
       { collapsed: true }
     ),

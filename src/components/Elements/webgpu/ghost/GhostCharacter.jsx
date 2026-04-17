@@ -107,7 +107,10 @@ const GhostCharacter = forwardRef(function GhostCharacter(
   );
 
   // Dynamic anchors — vertices near each hand are pinned and move with it.
-  // Slots 0-5: hands (Y/Z poles). Slots 6-7: ear rings (track head sphere).
+  // Slots 0-7: hands (Z/X equator poles first, Y top poles last).
+  // Slots 8-9: ear rings (track head sphere).
+  // Equator anchors are processed first so Y-pole overwrites overlapping
+  // center vertices with the correct top-of-sphere offset.
   // worldX/Z = initial position on the cloth surface (grid lookup).
   // restX/Y/Z = anchor reference point for offset computation.
   // position = the THREE.Vector3 that gets mutated per frame.
@@ -120,7 +123,74 @@ const GhostCharacter = forwardRef(function GhostCharacter(
 
   const anchors = useMemo(
     () => [
-      // Slot 0: left hand — Y-pole (top)
+      // ── Equator anchors (Z/X poles) — processed first so Y-pole overwrites
+      //    any overlapping center vertices with the correct top-of-sphere offset.
+
+      // Slot 0: left hand — +Z-pole (front)
+      {
+        worldX: -handSpacing,
+        worldZ: handSize,
+        restX: -handSpacing,
+        restY: 0,
+        restZ: 0,
+        gridRadius: 1,
+        position: handLeftPos,
+      },
+      // Slot 1: left hand — -Z-pole (back)
+      {
+        worldX: -handSpacing,
+        worldZ: -handSize,
+        restX: -handSpacing,
+        restY: 0,
+        restZ: 0,
+        gridRadius: 1,
+        position: handLeftPos,
+      },
+      // Slot 2: right hand — +Z-pole (front)
+      {
+        worldX: handSpacing,
+        worldZ: handSize,
+        restX: handSpacing,
+        restY: 0,
+        restZ: 0,
+        gridRadius: 1,
+        position: handRightPos,
+      },
+      // Slot 3: right hand — -Z-pole (back)
+      {
+        worldX: handSpacing,
+        worldZ: -handSize,
+        restX: handSpacing,
+        restY: 0,
+        restZ: 0,
+        gridRadius: 1,
+        position: handRightPos,
+      },
+      // Slot 4: left hand — outer X-pole
+      {
+        worldX: -handSpacing - handSize,
+        worldZ: 0,
+        restX: -handSpacing,
+        restY: 0,
+        restZ: 0,
+        gridRadius: 1,
+        position: handLeftPos,
+      },
+      // Slot 5: right hand — outer X-pole
+      {
+        worldX: handSpacing + handSize,
+        worldZ: 0,
+        restX: handSpacing,
+        restY: 0,
+        restZ: 0,
+        gridRadius: 1,
+        position: handRightPos,
+      },
+
+      // ── Top anchors (Y-poles) — processed last, overwrite overlapping equator
+      //    vertices so the center cloth still drapes over the top of the sphere.
+
+      // Slot 6: left hand — Y-pole (top)
       {
         worldX: -handSpacing,
         worldZ: 0,
@@ -130,7 +200,7 @@ const GhostCharacter = forwardRef(function GhostCharacter(
         gridRadius: 2,
         position: handLeftPos,
       },
-      // Slot 1: right hand — Y-pole (top)
+      // Slot 7: right hand — Y-pole (top)
       {
         worldX: handSpacing,
         worldZ: 0,
@@ -140,47 +210,7 @@ const GhostCharacter = forwardRef(function GhostCharacter(
         gridRadius: 2,
         position: handRightPos,
       },
-      // Slot 2: left hand — +Z-pole (front)
-      {
-        worldX: -handSpacing,
-        worldZ: handSize,
-        restX: -handSpacing,
-        restY: -handSize,
-        restZ: 0,
-        gridRadius: 2,
-        position: handLeftPos,
-      },
-      // Slot 3: left hand — -Z-pole (back)
-      {
-        worldX: -handSpacing,
-        worldZ: -handSize,
-        restX: -handSpacing,
-        restY: -handSize,
-        restZ: 0,
-        gridRadius: 2,
-        position: handLeftPos,
-      },
-      // Slot 4: right hand — +Z-pole (front)
-      {
-        worldX: handSpacing,
-        worldZ: handSize,
-        restX: handSpacing,
-        restY: -handSize,
-        restZ: 0,
-        gridRadius: 2,
-        position: handRightPos,
-      },
-      // Slot 5: right hand — -Z-pole (back)
-      {
-        worldX: handSpacing,
-        worldZ: -handSize,
-        restX: handSpacing,
-        restY: -handSize,
-        restZ: 0,
-        gridRadius: 2,
-        position: handRightPos,
-      },
-      // Slot 6: left ear — anchored to head sphere (static)
+      // Slot 8: left ear — anchored to head sphere (static)
       {
         worldX: earLeftWorldX,
         worldZ: earLeftWorldZ,
@@ -190,7 +220,7 @@ const GhostCharacter = forwardRef(function GhostCharacter(
         gridRadius: 2,
         position: spherePos,
       },
-      // Slot 7: right ear — anchored to head sphere (static)
+      // Slot 9: right ear — anchored to head sphere (static)
       {
         worldX: earRightWorldX,
         worldZ: earRightWorldZ,

@@ -209,7 +209,7 @@ export default function createClothSimulation({
   // Anchors pin clusters of vertices that translate rigidly with an
   // external position each frame. Up to NUM_ANCHORS slots.
   // paramsBuf.x encoding: 0 = free, 1 = static pin, 2+ = anchor slot.
-  const NUM_ANCHORS = 8;
+  const NUM_ANCHORS = 10;
   const anchorPosU = [];
   for (let a = 0; a < NUM_ANCHORS; a += 1) {
     anchorPosU.push(uniform(new THREE.Vector3(0, 0, 0)));
@@ -371,7 +371,15 @@ export default function createClothSimulation({
                   select(
                     slot.equal(uint(6)),
                     anchorPosU[6],
-                    anchorPosU[7]
+                    select(
+                      slot.equal(uint(7)),
+                      anchorPosU[7],
+                      select(
+                        slot.equal(uint(8)),
+                        anchorPosU[8],
+                        anchorPosU[9]
+                      )
+                    )
                   )
                 )
               )

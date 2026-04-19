@@ -91,6 +91,8 @@ const GhostCharacter = forwardRef(function GhostCharacter(
     maxVelocity = 0.01,
     segmentsX = 28,
     segmentsY = 28,
+    clothWidth = 1.0,
+    clothHeight = 1.0,
     debugColliders = false,
     debugColor = '#ff4444',
     debugAnchors = false,
@@ -665,10 +667,10 @@ const GhostCharacter = forwardRef(function GhostCharacter(
   return (
     <group ref={groupRef}>
       <ClothMesh
-        key={`cloth-${segmentsX}-${segmentsY}`}
+        key={`cloth-${segmentsX}-${segmentsY}-${clothWidth}-${clothHeight}`}
         ref={clothRef}
-        width={1.0}
-        height={1.0}
+        width={clothWidth}
+        height={clothHeight}
         segmentsX={segmentsX}
         segmentsY={segmentsY}
         pins={pins}

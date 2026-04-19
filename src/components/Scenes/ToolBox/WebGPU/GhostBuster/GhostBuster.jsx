@@ -173,6 +173,8 @@ export default function GhostBuster() {
         earColliderRadius={controls.earColliderRadius}
         segmentsX={controls.clothSegments}
         segmentsY={controls.clothSegments}
+        clothWidth={controls.clothWidth}
+        clothHeight={controls.clothHeight}
         gravity={controls.gravity}
         windAmplitude={controls.windAmplitude}
         maxVelocity={controls.maxVelocity}

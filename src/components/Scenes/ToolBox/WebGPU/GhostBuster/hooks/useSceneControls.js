@@ -262,6 +262,20 @@ export default function useSceneControls(ghostRef, setAnimation, triggerJump) {
               max: 60,
               step: 2,
             },
+            clothWidth: {
+              label: 'Width',
+              value: ini.clothWidth ?? 1.0,
+              min: 0.2,
+              max: 3.0,
+              step: 0.05,
+            },
+            clothHeight: {
+              label: 'Height',
+              value: ini.clothHeight ?? 1.0,
+              min: 0.2,
+              max: 3.0,
+              step: 0.05,
+            },
           },
           { collapsed: true }
         ),

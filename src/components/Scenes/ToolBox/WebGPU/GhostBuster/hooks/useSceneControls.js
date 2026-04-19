@@ -3,7 +3,7 @@ import { button, folder, useControls } from 'leva';
 import usePresetsFolder from '../../../../../../hooks/usePresetsFolder';
 import { SCENE_PRESETS } from '../presets/scenePresets';
 
-const DEFAULT_PRESET = 'Classic';
+const DEFAULT_PRESET = 'Plain';
 
 function getPresetControls({ presetSnapshot }) {
   const out = { ...presetSnapshot };
@@ -342,6 +342,32 @@ export default function useSceneControls(ghostRef, setAnimation, triggerJump) {
           max: 0.03,
           step: 0.001,
         },
+        'Ground Light': folder(
+          {
+            groundLightIntensity: {
+              label: 'Intensity',
+              value: ini.groundLightIntensity,
+              min: 0,
+              max: 10,
+              step: 0.1,
+            },
+            groundLightAngle: {
+              label: 'Angle',
+              value: ini.groundLightAngle,
+              min: 0.1,
+              max: 1.5,
+              step: 0.05,
+            },
+            groundLightDistance: {
+              label: 'Distance',
+              value: ini.groundLightDistance,
+              min: 0.5,
+              max: 10,
+              step: 0.5,
+            },
+          },
+          { collapsed: true }
+        ),
       },
       { collapsed: true }
     ),

@@ -4,6 +4,7 @@ import * as THREE from 'three';
 import React, {
   forwardRef,
   memo,
+  useEffect,
   useImperativeHandle,
   useMemo,
   useRef,
@@ -73,6 +74,10 @@ const GhostCharacter = forwardRef(function GhostCharacter(
     cutoutRimColor = '#000000',
     cutoutRimWidth = 0,
     cutoutRimOffset = 0,
+    // Ground light
+    groundLightIntensity = 0,
+    groundLightAngle = 0.8,
+    groundLightDistance = 3,
   },
   ref
 ) {
@@ -80,6 +85,7 @@ const GhostCharacter = forwardRef(function GhostCharacter(
   const groupRef = useRef();
   const lightLeftRef = useRef();
   const lightRightRef = useRef();
+  const groundSpotRef = useRef();
   const anchorDbgRefs = useRef([]);
 
   // Centre pins only — recomputed when segments change.
@@ -96,6 +102,15 @@ const GhostCharacter = forwardRef(function GhostCharacter(
   );
 
   const spherePos = useMemo(() => new THREE.Vector3(0, SPHERE_BASE_Y, 0), []);
+
+  // Point the ground spotlight straight down
+  useEffect(() => {
+    if (groundSpotRef.current) {
+      groundSpotRef.current.target.position.set(0, -2, 0);
+      groundSpotRef.current.target.updateMatrixWorld();
+    }
+  }, []);
+
   const handLeftPos = useMemo(
     () => new THREE.Vector3(-handSpacing, -handHeight, 0),
     [] // eslint-disable-line -- initial position only
@@ -664,6 +679,17 @@ const GhostCharacter = forwardRef(function GhostCharacter(
         color={eyeColor}
         intensity={eyeIntensity * 0.3}
         distance={0.5}
+        decay={2}
+      />
+      {/* Downward spotlight — casts eye-colored glow onto the ground */}
+      <spotLight
+        ref={groundSpotRef}
+        position={[0, SPHERE_BASE_Y, 0]}
+        color={eyeColor}
+        intensity={groundLightIntensity}
+        distance={groundLightDistance}
+        angle={groundLightAngle}
+        penumbra={1}
         decay={2}
       />
     </group>

@@ -7,6 +7,7 @@ import { useFrame } from '@react-three/fiber';
 
 import GhostCharacter from '../../../../elements/webgpu/ghost/GhostCharacter';
 import { GridMaterial } from '../../../../materials/webGPU/gridMaterial';
+import GhostPlacard from './GhostPlacard';
 import useAnimationInput from './hooks/useAnimationInput';
 import useSceneControls from './hooks/useSceneControls';
 
@@ -177,6 +178,16 @@ export default function GhostBuster() {
         metalness={controls.metalness}
         opacity={controls.opacity}
         paused={controls.paused}
+        groundLightIntensity={controls.groundLightIntensity}
+        groundLightAngle={controls.groundLightAngle}
+        groundLightDistance={controls.groundLightDistance}
+      />
+
+      <GhostPlacard
+        variantName={selectedPreset}
+        clothSegments={controls.clothSegments}
+        animationInputRef={animationInputRef}
+        ghostRef={ghostRef}
       />
 
       {controls.floorVisible && (

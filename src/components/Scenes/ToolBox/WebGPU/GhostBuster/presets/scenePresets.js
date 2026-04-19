@@ -1,6 +1,6 @@
 // eslint-disable-next-line import/prefer-default-export
 export const SCENE_PRESETS = {
-  Classic: {
+  Plain: {
     // Background
     bgColor: '#1a1a2e',
     // Lighting
@@ -52,6 +52,10 @@ export const SCENE_PRESETS = {
     cutoutRimColor: '#000000',
     cutoutRimWidth: 0,
     cutoutRimOffset: 0,
+    // Ground light
+    groundLightIntensity: 0,
+    groundLightAngle: 0.4,
+    groundLightDistance: 3,
     // Animation
     bobAmplitude: 0.03,
     bobSpeed: 0.5,
@@ -114,6 +118,10 @@ export const SCENE_PRESETS = {
     cutoutRimColor: '#000000',
     cutoutRimWidth: 0,
     cutoutRimOffset: 0,
+    // Ground light
+    groundLightIntensity: 1.5,
+    groundLightAngle: 0.4,
+    groundLightDistance: 3,
     // Animation
     bobAmplitude: 0.03,
     bobSpeed: 0.5,
@@ -124,7 +132,7 @@ export const SCENE_PRESETS = {
     squashIntensity: 0.3,
   },
 
-  Tattered: {
+  Toxic: {
     // Background
     bgColor: '#1a1a1a',
     // Lighting
@@ -176,6 +184,10 @@ export const SCENE_PRESETS = {
     cutoutRimColor: '#000000',
     cutoutRimWidth: 0,
     cutoutRimOffset: 0,
+    // Ground light
+    groundLightIntensity: 1,
+    groundLightAngle: 0.4,
+    groundLightDistance: 3,
     // Animation
     bobAmplitude: 0.02,
     bobSpeed: 0.4,
@@ -238,6 +250,10 @@ export const SCENE_PRESETS = {
     cutoutRimColor: '#000000',
     cutoutRimWidth: 0,
     cutoutRimOffset: 0,
+    // Ground light
+    groundLightIntensity: 2.0,
+    groundLightAngle: 0.4,
+    groundLightDistance: 3,
     // Animation
     bobAmplitude: 0.02,
     bobSpeed: 0.35,
@@ -300,6 +316,10 @@ export const SCENE_PRESETS = {
     cutoutRimColor: '#000000',
     cutoutRimWidth: 0,
     cutoutRimOffset: 0,
+    // Ground light
+    groundLightIntensity: 1.0,
+    groundLightAngle: 0.4,
+    groundLightDistance: 3,
     // Animation
     bobAmplitude: 0.04,
     bobSpeed: 0.6,
@@ -310,7 +330,7 @@ export const SCENE_PRESETS = {
     squashIntensity: 0.25,
   },
 
-  'Tattered 2': {
+  Ripped: {
     // Background
     bgColor: '#1a1a1a',
     // Lighting
@@ -362,6 +382,10 @@ export const SCENE_PRESETS = {
     cutoutRimColor: '#000000',
     cutoutRimWidth: 0,
     cutoutRimOffset: 0,
+    // Ground light
+    groundLightIntensity: 1,
+    groundLightAngle: 0.4,
+    groundLightDistance: 3,
     // Animation
     bobAmplitude: 0.02,
     bobSpeed: 0.4,
@@ -424,6 +448,10 @@ export const SCENE_PRESETS = {
     cutoutRimColor: '#bfbbbb',
     cutoutRimWidth: 0.003,
     cutoutRimOffset: 0,
+    // Ground light
+    groundLightIntensity: 0,
+    groundLightAngle: 0.4,
+    groundLightDistance: 3,
     // Animation
     bobAmplitude: 0.03,
     bobSpeed: 0.5,
@@ -486,6 +514,10 @@ export const SCENE_PRESETS = {
     cutoutRimColor: '#000000',
     cutoutRimWidth: 0,
     cutoutRimOffset: 0,
+    // Ground light
+    groundLightIntensity: 0,
+    groundLightAngle: 0.4,
+    groundLightDistance: 3,
     // Animation
     bobAmplitude: 0.02,
     bobSpeed: 0.35,
@@ -496,7 +528,7 @@ export const SCENE_PRESETS = {
     squashIntensity: 0.3,
   },
 
-  'Old School': {
+  Hero: {
     // Background
     bgColor: '#1a1a2e',
     // Lighting
@@ -548,6 +580,10 @@ export const SCENE_PRESETS = {
     cutoutRimColor: '#000000',
     cutoutRimWidth: 0.003,
     cutoutRimOffset: 0,
+    // Ground light
+    groundLightIntensity: 0,
+    groundLightAngle: 0.4,
+    groundLightDistance: 3,
     // Animation
     bobAmplitude: 0.03,
     bobSpeed: 0.5,

@@ -282,26 +282,26 @@ function drawPlacard(ctx, allProps) {
   const outerLines = JSON.stringify(outerData, null, 2).split('\n');
 
   // ── Draw three columns with syntax highlighting
-  ctx.font = "10px 'Courier New', Courier, monospace";
+  ctx.font = "11px 'Courier New', Courier, monospace";
   ctx.textAlign = 'left';
   ctx.textBaseline = 'top';
 
   const col1X = 16;
   const col2X = 272;
   const col3X = 528;
-  const startY = 60;
-  const lineHeight = 12;
+  const startY = 56;
+  const lineHeight = 13;
 
   leftLines.forEach((line, i) => {
-    drawJsonLine(ctx, line, col1X, startY + i * lineHeight, 6);
+    drawJsonLine(ctx, line, col1X, startY + i * lineHeight, 6.6);
   });
 
   innerLines.forEach((line, i) => {
-    drawJsonLine(ctx, line, col2X, startY + i * lineHeight, 6);
+    drawJsonLine(ctx, line, col2X, startY + i * lineHeight, 6.6);
   });
 
   outerLines.forEach((line, i) => {
-    drawJsonLine(ctx, line, col3X, startY + i * lineHeight, 6);
+    drawJsonLine(ctx, line, col3X, startY + i * lineHeight, 6.6);
   });
 }
 

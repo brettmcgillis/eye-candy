@@ -31,6 +31,18 @@ const EAR_RIGHT_WORLD_X = (CUTOUTS[1].u - 0.5) * 1.0;
 const EAR_RIGHT_WORLD_Z = (CUTOUTS[1].v - 0.5) * 1.0;
 const CROWN_WORLD_X = 0;
 const CROWN_WORLD_Z = (CUTOUTS[0].v - 0.5) * 1.0;
+// World Y of the crown pin, on the head-sphere surface at (CROWN_WORLD_X, CROWN_WORLD_Z).
+// Pinning here keeps the cloth flush on the sphere instead of lifting a third nub.
+const CROWN_WORLD_Y =
+  SPHERE_BASE_Y +
+  Math.sqrt(
+    Math.max(
+      0,
+      SPHERE_RADIUS * SPHERE_RADIUS -
+        CROWN_WORLD_X * CROWN_WORLD_X -
+        CROWN_WORLD_Z * CROWN_WORLD_Z
+    )
+  );
 
 const sharedTrailTarget = new THREE.Vector3();
 
@@ -127,11 +139,26 @@ const GhostCharacter = forwardRef(function GhostCharacter(
 
   const spherePos = useMemo(() => new THREE.Vector3(0, SPHERE_BASE_Y, 0), []);
 
-  // Ear anchor positions — these vectors hold the actual world position of
-  // each ear (used by both the anchor and its sphere collider). The anchor
-  // entries below set rest = (worldX, 0, worldZ) so the offset cancels out
-  // and `position` IS the world coordinate.
+  // Ear anchor positions — encoded in the original "head sphere" frame so the
+  // debug-viz V points back from the head, matching legacy behavior. World
+  // position is `position + (worldX - restX, -restY, worldZ - restZ)`.
+  // With restX/Z = 0 and restY = SPHERE_BASE_Y this reduces to
+  //   world = position + (EAR_*_WORLD_X, -SPHERE_BASE_Y, EAR_*_WORLD_Z)
+  // so to lift / push back / spread an ear we shift `position` accordingly.
   const earLeftPos = useMemo(
+    () => new THREE.Vector3(-earSpread, SPHERE_BASE_Y + earLiftY, -earPushBack),
+    [earLiftY, earPushBack, earSpread]
+  );
+  const earRightPos = useMemo(
+    () => new THREE.Vector3(earSpread, SPHERE_BASE_Y + earLiftY, -earPushBack),
+    [earLiftY, earPushBack, earSpread]
+  );
+
+  // Actual world position of each ear — used by the sphere collider AND the
+  // anchor pin (slot 8/9). When the collider is on we shift the anchor back
+  // off the eye cutout so the pin grabs visible cloth that can actually be
+  // lifted up to the bulb position.
+  const earLeftWorld = useMemo(
     () =>
       new THREE.Vector3(
         EAR_LEFT_WORLD_X - earSpread,
@@ -140,7 +167,7 @@ const GhostCharacter = forwardRef(function GhostCharacter(
       ),
     [earLiftY, earPushBack, earSpread]
   );
-  const earRightPos = useMemo(
+  const earRightWorld = useMemo(
     () =>
       new THREE.Vector3(
         EAR_RIGHT_WORLD_X + earSpread,
@@ -148,12 +175,6 @@ const GhostCharacter = forwardRef(function GhostCharacter(
         EAR_RIGHT_WORLD_Z - earPushBack
       ),
     [earLiftY, earPushBack, earSpread]
-  );
-
-  // Crown anchor — fixed at the cloth plane between the ear cutouts.
-  const crownPos = useMemo(
-    () => new THREE.Vector3(CROWN_WORLD_X, 0, CROWN_WORLD_Z),
-    []
   );
 
   const emissiveCenter = useMemo(
@@ -185,16 +206,17 @@ const GhostCharacter = forwardRef(function GhostCharacter(
       { position: handRightPos, radius: handSize },
     ];
     if (earColliderRadius > 0) {
-      // Drop the sphere centers down by one radius so the ear anchors land
-      // on the +Y pole — the cloth drapes over the nub like the hands do.
+      // Drop the collider one radius so its top is tangent to the anchor:
+      // the pin sits at the +Y pole of the sphere, sphere body fully below.
+      // Cloth pinned at the pole drapes down around the sphere, wrapping it.
       const drop = new THREE.Vector3(0, -earColliderRadius, 0);
       list.push(
         {
-          position: earLeftPos.clone().add(drop),
+          position: earLeftWorld.clone().add(drop),
           radius: earColliderRadius,
         },
         {
-          position: earRightPos.clone().add(drop),
+          position: earRightWorld.clone().add(drop),
           radius: earColliderRadius,
         }
       );
@@ -205,8 +227,8 @@ const GhostCharacter = forwardRef(function GhostCharacter(
     handLeftPos,
     handRightPos,
     handSize,
-    earLeftPos,
-    earRightPos,
+    earLeftWorld,
+    earRightWorld,
     earColliderRadius,
   ]);
 
@@ -310,38 +332,41 @@ const GhostCharacter = forwardRef(function GhostCharacter(
         gridRadius: 2,
         position: handRightPos,
       },
-      // Slot 8: left ear — `position` is world coords; rest matches worldX/Z so
-      //         the offset cancels (vertex world = position + (vp - rest)).
-      //         gridRadius 1 → tight 5-vertex cross so the surrounding cloth
-      //         can drape down over the ear collider's sides.
+      // Slot 8: left ear — head-sphere-anchored. With no ear collider, a wide
+      //         gridRadius=2 disc gives the legacy ghost its broad ear nub;
+      //         with a collider, the pin is shifted backward off the eye
+      //         cutout so it grabs visible cloth that can be lifted.
       {
         worldX: EAR_LEFT_WORLD_X,
         worldZ: EAR_LEFT_WORLD_Z,
-        restX: EAR_LEFT_WORLD_X,
-        restY: 0,
-        restZ: EAR_LEFT_WORLD_Z,
-        gridRadius: 1,
+        restX: 0,
+        restY: SPHERE_BASE_Y,
+        restZ: 0,
+        gridRadius: earColliderRadius > 0 ? 1 : 2,
         position: earLeftPos,
       },
       // Slot 9: right ear — same encoding as slot 8.
       {
         worldX: EAR_RIGHT_WORLD_X,
         worldZ: EAR_RIGHT_WORLD_Z,
-        restX: EAR_RIGHT_WORLD_X,
-        restY: 0,
-        restZ: EAR_RIGHT_WORLD_Z,
-        gridRadius: 1,
+        restX: 0,
+        restY: SPHERE_BASE_Y,
+        restZ: 0,
+        gridRadius: earColliderRadius > 0 ? 1 : 2,
         position: earRightPos,
       },
-      // Slot 10: head crown — fixed pin between the ears at the cloth plane.
+      // Slot 10: head crown — fixed pin between the ears, sitting on the
+      //          head-sphere surface (not the cloth XZ plane) so it holds the
+      //          cloth flush instead of lifting a third middle nub. Tight
+      //          gridRadius=1 keeps the pinned region small.
       {
         worldX: CROWN_WORLD_X,
         worldZ: CROWN_WORLD_Z,
-        restX: CROWN_WORLD_X,
-        restY: 0,
-        restZ: CROWN_WORLD_Z,
+        restX: 0,
+        restY: SPHERE_BASE_Y - CROWN_WORLD_Y,
+        restZ: 0,
         gridRadius: 1,
-        position: crownPos,
+        position: spherePos,
       },
     ],
     // eslint-disable-next-line -- static anchor config, position refs are stable
@@ -352,7 +377,8 @@ const GhostCharacter = forwardRef(function GhostCharacter(
       handRightPos,
       earLeftPos,
       earRightPos,
-      crownPos,
+      spherePos,
+      earColliderRadius,
     ]
   );
 

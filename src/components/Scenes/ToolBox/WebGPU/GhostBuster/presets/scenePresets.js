@@ -853,10 +853,10 @@ export const SCENE_PRESETS = {
     handSpring: 8,
     handTrail: 0.08,
     // Ears — lifted, pushed back, spread apart, with sphere colliders for volume
-    earLiftY: 0.18,
+    earLiftY: 0.06,
     earPushBack: 0.08,
-    earSpread: 0.06,
-    earColliderRadius: 0.04,
+    earSpread: 0,
+    earColliderRadius: 0.01,
     debugColliders: false,
     debugColor: '#ff4444',
     debugAnchors: false,

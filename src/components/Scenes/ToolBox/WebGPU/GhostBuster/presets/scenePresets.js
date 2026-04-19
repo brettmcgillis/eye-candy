@@ -8,6 +8,7 @@ export const SCENE_PRESETS = {
     spotIntensity: 4.2,
     spotHeight: 5,
     sceneEnvIntensity: 0,
+    envRotationY: 0,
     studioLightIntensity: 0,
     // Floor
     floorVisible: true,
@@ -96,6 +97,7 @@ export const SCENE_PRESETS = {
     spotIntensity: 0.4,
     spotHeight: 6,
     sceneEnvIntensity: 0,
+    envRotationY: 0,
     studioLightIntensity: 0,
     // Floor
     floorVisible: true,
@@ -184,6 +186,7 @@ export const SCENE_PRESETS = {
     spotIntensity: 0.3,
     spotHeight: 5,
     sceneEnvIntensity: 0,
+    envRotationY: 0,
     studioLightIntensity: 0,
     // Floor
     floorVisible: true,
@@ -272,6 +275,7 @@ export const SCENE_PRESETS = {
     spotIntensity: 0.1,
     spotHeight: 5,
     sceneEnvIntensity: 0,
+    envRotationY: 0,
     studioLightIntensity: 0,
     // Floor
     floorVisible: true,
@@ -360,6 +364,7 @@ export const SCENE_PRESETS = {
     spotIntensity: 0.5,
     spotHeight: 6,
     sceneEnvIntensity: 0,
+    envRotationY: 0,
     studioLightIntensity: 0,
     // Floor
     floorVisible: true,
@@ -448,6 +453,7 @@ export const SCENE_PRESETS = {
     spotIntensity: 0.3,
     spotHeight: 5,
     sceneEnvIntensity: 0,
+    envRotationY: 0,
     studioLightIntensity: 0,
     // Floor
     floorVisible: true,
@@ -536,6 +542,7 @@ export const SCENE_PRESETS = {
     spotIntensity: 0.7,
     spotHeight: 5,
     sceneEnvIntensity: 0,
+    envRotationY: 0,
     studioLightIntensity: 0,
     // Floor
     floorVisible: true,
@@ -624,6 +631,7 @@ export const SCENE_PRESETS = {
     spotIntensity: 1.0,
     spotHeight: 5,
     sceneEnvIntensity: 0,
+    envRotationY: 0,
     studioLightIntensity: 0,
     // Floor
     floorVisible: true,
@@ -704,7 +712,7 @@ export const SCENE_PRESETS = {
     squashIntensity: 0.3,
   },
 
-  Wireframe: {
+  Matrix: {
     // Background
     bgColor: '#0a1420',
     // Lighting
@@ -712,6 +720,7 @@ export const SCENE_PRESETS = {
     spotIntensity: 1.0,
     spotHeight: 5,
     sceneEnvIntensity: 0,
+    envRotationY: 0,
     studioLightIntensity: 0,
     // Floor
     floorVisible: true,
@@ -801,6 +810,7 @@ export const SCENE_PRESETS = {
     spotIntensity: 4.2,
     spotHeight: 5,
     sceneEnvIntensity: 0,
+    envRotationY: 0,
     studioLightIntensity: 0,
     // Floor
     floorVisible: true,
@@ -889,7 +899,8 @@ export const SCENE_PRESETS = {
     spotIntensity: 6.0,
     spotHeight: 5,
     sceneEnvIntensity: 1,
-    studioLightIntensity: 10,
+    envRotationY: Math.PI,
+    studioLightIntensity: 0,
     orbitLightEnabled: true,
     orbitLightColor: '#e8f0ff',
     orbitLightIntensity: 15,
@@ -949,7 +960,7 @@ export const SCENE_PRESETS = {
     orbitEnabled: true,
     // Eyes
     eyeColor: '#ffffff',
-    eyeIntensity: 1.2,
+    eyeIntensity: 0,
     cutoutRimColor: '#e0e0e0',
     cutoutRimWidth: 0.003,
     cutoutRimOffset: 0,
@@ -984,6 +995,7 @@ export const SCENE_PRESETS = {
     spotIntensity: 4.2,
     spotHeight: 5,
     sceneEnvIntensity: 0,
+    envRotationY: 0,
     studioLightIntensity: 0,
     // Floor
     floorVisible: true,

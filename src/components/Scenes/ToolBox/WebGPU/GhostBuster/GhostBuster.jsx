@@ -4,6 +4,7 @@ import React, { useCallback, useRef } from 'react';
 
 import {
   Environment,
+  Lightformer,
   OrbitControls,
   PerspectiveCamera,
 } from '@react-three/drei';
@@ -11,7 +12,7 @@ import { useFrame } from '@react-three/fiber';
 
 import GhostCharacter from '../../../../elements/webgpu/ghost/GhostCharacter';
 import { GridMaterial } from '../../../../materials/webGPU/gridMaterial';
-import GhostPlacard from './GhostPlacard';
+import GhostPlacard from './components/GhostPlacard';
 import useAnimationInput from './hooks/useAnimationInput';
 import useSceneControls from './hooks/useSceneControls';
 
@@ -22,6 +23,7 @@ export default function GhostBuster() {
   const ghostRef = useRef();
   const orbitRef = useRef();
   const orbitLightRef = useRef();
+  const orbitLightformerRef = useRef();
   const {
     inputRef: animationInputRef,
     setAnimation,
@@ -46,16 +48,27 @@ export default function GhostBuster() {
     if (!orbit) return;
 
     // Orbit light
-    if (controls.orbitLightEnabled && orbitLightRef.current) {
+    if (controls.orbitLightEnabled) {
       const t = state.clock.elapsedTime * controls.orbitLightSpeed;
       const r = controls.orbitLightRadius;
       const midY = (controls.orbitLightMinY + controls.orbitLightMaxY) * 0.5;
       const ampY = (controls.orbitLightMaxY - controls.orbitLightMinY) * 0.5;
-      orbitLightRef.current.position.set(
-        Math.cos(t) * r,
-        midY + Math.sin(t * 0.7) * ampY,
-        Math.sin(t) * r
-      );
+      const ox = Math.cos(t) * r;
+      const oy = midY + Math.sin(t * 0.7) * ampY;
+      const oz = Math.sin(t) * r;
+      if (orbitLightRef.current) orbitLightRef.current.position.set(ox, oy, oz);
+      if (orbitLightformerRef.current) {
+        // Three.js applies envRotationY to the sampling direction, so pre-rotate the
+        // Lightformer by envRotationY so the IBL reflection appears at the correct world position.
+        const envRot = controls.envRotationY ?? 0;
+        const cosR = Math.cos(envRot);
+        const sinR = Math.sin(envRot);
+        orbitLightformerRef.current.position.set(
+          cosR * ox + sinR * oz,
+          oy,
+          -sinR * ox + cosR * oz
+        );
+      }
     }
 
     // Next preset (one-shot)
@@ -116,11 +129,36 @@ export default function GhostBuster() {
       />
 
       <Environment
-        preset="warehouse"
         background={false}
         environmentIntensity={controls.sceneEnvIntensity}
         rotation={[0, controls.envRotationY ?? 0, 0]}
-      />
+        frames={controls.orbitLightEnabled ? Infinity : 1}
+      >
+        {/* Top */}
+        <Lightformer form="rect" intensity={6} position={[0, 5, 0]} scale={[2, 2, 1]} target={[0, 0, 0]} />
+        {/* Front left/right strips */}
+        <Lightformer form="rect" intensity={5} position={[-2.5, 1, 5]} scale={[0.4, 5, 1]} target={[0, 0, 0]} />
+        <Lightformer form="rect" intensity={5} position={[2.5, 1, 5]} scale={[0.4, 5, 1]} target={[0, 0, 0]} />
+        {/* Left/right side walls */}
+        <Lightformer form="rect" intensity={3} position={[-5, 1, 0]} scale={[0.3, 5, 5]} target={[0, 0, 0]} />
+        <Lightformer form="rect" intensity={3} position={[5, 1, 0]} scale={[0.3, 5, 5]} target={[0, 0, 0]} />
+        {/* Back strips */}
+        <Lightformer form="rect" intensity={3} position={[-2.5, 1, -5]} scale={[0.4, 5, 1]} target={[0, 0, 0]} />
+        <Lightformer form="rect" intensity={3} position={[2.5, 1, -5]} scale={[0.4, 5, 1]} target={[0, 0, 0]} />
+        {/* Bottom fill */}
+        <Lightformer form="rect" intensity={0.8} position={[0, -3, 0]} scale={[3, 3, 1]} target={[0, 0, 0]} />
+        {/* Orbit light — moving reflection in chrome */}
+        {controls.orbitLightEnabled && (
+          <Lightformer
+            ref={orbitLightformerRef}
+            form="circle"
+            intensity={controls.orbitLightIntensity * 1.5}
+            color={controls.orbitLightColor}
+            scale={[0.25, 0.25, 1]}
+            position={[0, 1, 0]}
+          />
+        )}
+      </Environment>
 
       <ambientLight intensity={controls.ambientIntensity} />
       <spotLight
@@ -142,53 +180,6 @@ export default function GhostBuster() {
             <meshBasicMaterial color={controls.orbitLightColor} />
           </mesh>
         </pointLight>
-      )}
-
-      {controls.studioLightIntensity > 0 && (
-        <>
-          {/* Front key left — specular on front-facing cloth */}
-          <pointLight
-            position={[-1.8, 0.5, 2.5]}
-            intensity={controls.studioLightIntensity * 0.8}
-            color={controls.orbitLightColor}
-            decay={2}
-          />
-          {/* Front key right */}
-          <pointLight
-            position={[1.8, 0.5, 2.5]}
-            intensity={controls.studioLightIntensity * 0.8}
-            color={controls.orbitLightColor}
-            decay={2}
-          />
-          {/* Front top — reveals head dome curvature */}
-          <pointLight
-            position={[0, 2.5, 1.5]}
-            intensity={controls.studioLightIntensity * 0.5}
-            color={controls.orbitLightColor}
-            decay={2}
-          />
-          {/* Below-front — chrome visible from top-down view */}
-          <pointLight
-            position={[0, -2, 1.5]}
-            intensity={controls.studioLightIntensity}
-            color={controls.orbitLightColor}
-            decay={0}
-          />
-          {/* Below-back */}
-          <pointLight
-            position={[0, -2, -1.5]}
-            intensity={controls.studioLightIntensity * 0.6}
-            color={controls.orbitLightColor}
-            decay={0}
-          />
-          {/* Side fill */}
-          <pointLight
-            position={[-3, 0.5, 0]}
-            intensity={controls.studioLightIntensity * 0.4}
-            color={controls.orbitLightColor}
-            decay={0}
-          />
-        </>
       )}
 
       <GhostCharacter

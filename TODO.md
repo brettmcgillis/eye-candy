@@ -36,6 +36,7 @@ To Build:
 - [ ] Video casette tape with video playing on tape ribbon
 - [ ] CSG Skull. Knock a reversal out of its forehead.
 - [ ] Metaball (marching cubes) lava lamp
+- [ ] Can we use ecctrl & click to move to make Quinn's board game playable?
 - [ ] We should do a scene with Quinns seal, 3rd person camera, player controls w/keyboard and controller.
       Scene should include quinns dice in the environment. Get low-LOD versions.
       Scene should include various art images on planes in the environment.

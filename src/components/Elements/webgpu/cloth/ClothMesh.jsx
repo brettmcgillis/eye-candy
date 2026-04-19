@@ -344,31 +344,22 @@ const ClothMesh = forwardRef(function ClothMesh(
     texUniforms,
   ]);
 
-  useEffect(() => {
-    if (innerRoughness !== null) {
-      sim.material.roughnessNode = mix(
-        texUniforms.outerRoughnessU,
-        texUniforms.innerRoughnessU,
-        frontFacing
-      );
-    } else {
-      sim.material.roughnessNode = null;
-    }
-    sim.material.needsUpdate = true;
-  }, [sim, innerRoughness, texUniforms]);
-
-  useEffect(() => {
-    if (innerMetalness !== null) {
-      sim.material.metalnessNode = mix(
-        texUniforms.outerMetalnessU,
-        texUniforms.innerMetalnessU,
-        frontFacing
-      );
-    } else {
-      sim.material.metalnessNode = null;
-    }
-    sim.material.needsUpdate = true;
-  }, [sim, innerMetalness, texUniforms]);
+  // Set per-face roughness/metalness nodes synchronously before first render.
+  // Using useMemo (not useEffect) so the nodes are established before the
+  // shader compiles — avoids a recompile cycle that drops the computed normalNode.
+  // Uniform values are pushed each frame in useFrame; node structure never changes.
+  useMemo(() => {
+    sim.material.roughnessNode = mix(
+      texUniforms.outerRoughnessU,
+      texUniforms.innerRoughnessU,
+      frontFacing
+    );
+    sim.material.metalnessNode = mix(
+      texUniforms.outerMetalnessU,
+      texUniforms.innerMetalnessU,
+      frontFacing
+    );
+  }, [sim, texUniforms]); // sim and texUniforms are both stable (empty deps useMemo)
 
   // Rebuild alpha mask when params change
   useEffect(() => {
@@ -449,14 +440,12 @@ const ClothMesh = forwardRef(function ClothMesh(
     if (materialProps?.color) {
       texUniforms.baseColorU.value.set(materialProps.color);
     }
-    if (innerRoughness !== null && materialProps?.roughness !== undefined) {
-      texUniforms.outerRoughnessU.value = materialProps.roughness;
-      texUniforms.innerRoughnessU.value = innerRoughness;
-    }
-    if (innerMetalness !== null && materialProps?.metalness !== undefined) {
-      texUniforms.outerMetalnessU.value = materialProps.metalness;
-      texUniforms.innerMetalnessU.value = innerMetalness;
-    }
+    const outerR = materialProps?.roughness ?? 0.8;
+    texUniforms.outerRoughnessU.value = outerR;
+    texUniforms.innerRoughnessU.value = innerRoughness !== null ? innerRoughness : outerR;
+    const outerM = materialProps?.metalness ?? 0;
+    texUniforms.outerMetalnessU.value = outerM;
+    texUniforms.innerMetalnessU.value = innerMetalness !== null ? innerMetalness : outerM;
 
     // Apply dynamic material properties (cached keys avoid per-frame allocation)
     if (materialProps) {

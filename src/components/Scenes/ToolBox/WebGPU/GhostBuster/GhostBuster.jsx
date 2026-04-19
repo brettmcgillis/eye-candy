@@ -135,18 +135,66 @@ export default function GhostBuster() {
         frames={controls.orbitLightEnabled ? Infinity : 1}
       >
         {/* Top */}
-        <Lightformer form="rect" intensity={6} position={[0, 5, 0]} scale={[2, 2, 1]} target={[0, 0, 0]} />
+        <Lightformer
+          form="rect"
+          intensity={6}
+          position={[0, 5, 0]}
+          scale={[2, 2, 1]}
+          target={[0, 0, 0]}
+        />
         {/* Front left/right strips */}
-        <Lightformer form="rect" intensity={5} position={[-2.5, 1, 5]} scale={[0.4, 5, 1]} target={[0, 0, 0]} />
-        <Lightformer form="rect" intensity={5} position={[2.5, 1, 5]} scale={[0.4, 5, 1]} target={[0, 0, 0]} />
+        <Lightformer
+          form="rect"
+          intensity={5}
+          position={[-2.5, 1, 5]}
+          scale={[0.4, 5, 1]}
+          target={[0, 0, 0]}
+        />
+        <Lightformer
+          form="rect"
+          intensity={5}
+          position={[2.5, 1, 5]}
+          scale={[0.4, 5, 1]}
+          target={[0, 0, 0]}
+        />
         {/* Left/right side walls */}
-        <Lightformer form="rect" intensity={3} position={[-5, 1, 0]} scale={[0.3, 5, 5]} target={[0, 0, 0]} />
-        <Lightformer form="rect" intensity={3} position={[5, 1, 0]} scale={[0.3, 5, 5]} target={[0, 0, 0]} />
+        <Lightformer
+          form="rect"
+          intensity={3}
+          position={[-5, 1, 0]}
+          scale={[0.3, 5, 5]}
+          target={[0, 0, 0]}
+        />
+        <Lightformer
+          form="rect"
+          intensity={3}
+          position={[5, 1, 0]}
+          scale={[0.3, 5, 5]}
+          target={[0, 0, 0]}
+        />
         {/* Back strips */}
-        <Lightformer form="rect" intensity={3} position={[-2.5, 1, -5]} scale={[0.4, 5, 1]} target={[0, 0, 0]} />
-        <Lightformer form="rect" intensity={3} position={[2.5, 1, -5]} scale={[0.4, 5, 1]} target={[0, 0, 0]} />
+        <Lightformer
+          form="rect"
+          intensity={3}
+          position={[-2.5, 1, -5]}
+          scale={[0.4, 5, 1]}
+          target={[0, 0, 0]}
+        />
+        <Lightformer
+          form="rect"
+          intensity={3}
+          position={[2.5, 1, -5]}
+          scale={[0.4, 5, 1]}
+          target={[0, 0, 0]}
+        />
         {/* Bottom fill */}
-        <Lightformer form="rect" intensity={0.8} position={[0, -3, 0]} scale={[3, 3, 1]} target={[0, 0, 0]} />
+        <Lightformer
+          form="rect"
+          intensity={0.8}
+          position={[0, -3, 0]}
+          scale={[3, 3, 1]}
+          target={[0, 0, 0]}
+        />
         {/* Orbit light — moving reflection in chrome */}
         {controls.orbitLightEnabled && (
           <Lightformer

@@ -71,6 +71,8 @@ const ClothMesh = forwardRef(function ClothMesh(
     paused = false,
     // When true, caller manages windU/windDirU via sim ref — skip overwrite
     windManaged = false,
+    // When true, caller manages gravityU via sim ref — skip overwrite
+    gravityManaged = false,
     // Cursor collider (slot 0) — follows pointer on the cloth plane
     cursorCollider = true,
     cursorRadius = 0.12,
@@ -374,7 +376,7 @@ const ClothMesh = forwardRef(function ClothMesh(
     sim.dampeningU.value = dampening;
     sim.colliderRadiusU[0].value = cursorRadius;
     sim.maxVelocityU.value = maxVelocity;
-    sim.gravityU.value = gravity;
+    if (!gravityManaged) sim.gravityU.value = gravity;
     sim.collisionMarginU.value = collisionMargin;
 
     // Push scene-driven colliders into slots 1-3

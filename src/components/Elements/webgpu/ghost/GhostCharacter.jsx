@@ -548,26 +548,30 @@ const GhostCharacter = forwardRef(function GhostCharacter(
     const tiltX = state.smoothTiltX + state.bankZ * 0.5 + swayX * 0.3;
     const tiltZ = state.smoothTiltZ + state.bankX * 0.5 + swayZ * 0.3;
 
-    // Jump squash/stretch
+    // Jump squash/stretch + gravity modulation
     if (jumpTriggered && state.jumpTime < 0) {
       state.jumpTime = 0;
     }
     let squash = 1;
-    let windDirY = 0;
+    let gravityScale = 1;
     if (state.jumpTime >= 0) {
       const t = state.jumpTime;
       state.jumpTime += dt;
       if (t < 0.15) {
-        squash = 1 - squashIntensity * Math.sin((t / 0.15) * Math.PI * 0.5);
-        windDirY = 0.3;
+        // Squash/crouch: cloth drags down as body compresses
+        const p = t / 0.15;
+        squash = 1 - squashIntensity * Math.sin(p * Math.PI * 0.5);
+        gravityScale = 1 + p * 0.5; // 1× → 1.5×
       } else if (t < 0.35) {
-        squash =
-          1 + squashIntensity * 0.8 * Math.sin(((t - 0.15) / 0.2) * Math.PI);
-        windDirY = -0.4;
+        // Stretch/ascent: gravity eases 1.5× → 0 as body shoots up, cloth trails then floats
+        const p = (t - 0.15) / 0.2;
+        squash = 1 + squashIntensity * 0.8 * Math.sin(p * Math.PI);
+        gravityScale = 1.5 * (1 - p); // 1.5× → 0
       } else if (t < 0.65) {
+        // Descent/settle: gravity dips slightly negative (cloth lifts gently) then eases back to 1×
         const p = (t - 0.35) / 0.3;
         squash = 1 + squashIntensity * 0.2 * Math.sin(p * Math.PI) * (1 - p);
-        windDirY = 0.2 * (1 - p);
+        gravityScale = -0.8 * Math.sin(p * Math.PI) + p; // 0 → −0.3× → +1×
       } else {
         state.jumpTime = -1;
       }
@@ -582,13 +586,14 @@ const GhostCharacter = forwardRef(function GhostCharacter(
       group.scale.set(1, squash, 1);
     }
 
-    // Push wind to cloth sim
+    // Push wind and gravity to cloth sim
     const sim = clothRef.current?.sim;
     if (sim) {
+      sim.gravityU.value = gravity * gravityScale;
       sim.windU.value = effectiveWind;
-      const len = Math.sqrt(wdx * wdx + windDirY * windDirY + wdz * wdz);
+      const len = Math.sqrt(wdx * wdx + wdz * wdz);
       if (len > 0.0001) {
-        sim.windDirU.value.set(wdx / len, windDirY / len, wdz / len);
+        sim.windDirU.value.set(wdx / len, 0, wdz / len);
       }
     }
 
@@ -682,6 +687,7 @@ const GhostCharacter = forwardRef(function GhostCharacter(
         stepsPerSecond={360}
         maxVelocity={maxVelocity}
         windManaged
+        gravityManaged
         stiffness={stiffness}
         dampening={dampening}
         cursorCollider={cursorCollider}

@@ -204,6 +204,14 @@ export default function GhostBuster() {
         clothSegments={controls.clothSegments}
         animationInputRef={animationInputRef}
         ghostRef={ghostRef}
+        innerColor={controls.innerColor}
+        innerEmissive={controls.innerEmissiveColor}
+        innerIntensity={controls.innerEmissiveIntensity}
+        innerFalloff={controls.emissiveFalloff}
+        outerColor={controls.color}
+        outerEmissive={controls.outerEmissiveColor}
+        outerIntensity={controls.outerEmissiveIntensity}
+        outerFalloff={controls.emissiveFalloff}
       />
 
       {controls.floorVisible && (

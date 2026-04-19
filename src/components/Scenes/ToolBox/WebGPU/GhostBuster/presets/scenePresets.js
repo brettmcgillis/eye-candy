@@ -1,6 +1,6 @@
 // eslint-disable-next-line import/prefer-default-export
 export const SCENE_PRESETS = {
-  Plain: {
+  Original: {
     // Background
     bgColor: '#1a1a2e',
     // Lighting

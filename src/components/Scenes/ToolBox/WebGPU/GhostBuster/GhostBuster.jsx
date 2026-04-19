@@ -100,7 +100,7 @@ export default function GhostBuster() {
 
       <PerspectiveCamera
         makeDefault
-        position={[0, 0.3, 2.5]}
+        position={[0, 1, 3.5]}
         fov={50}
         near={0.01}
         far={100}
@@ -145,6 +145,13 @@ export default function GhostBuster() {
         squashIntensity={controls.squashIntensity}
         color={controls.color}
         innerColor={controls.innerColor || null}
+        outerEmissiveColor={controls.outerEmissiveColor}
+        outerEmissiveIntensity={controls.outerEmissiveIntensity}
+        innerEmissiveColor={controls.innerEmissiveColor}
+        innerEmissiveIntensity={controls.innerEmissiveIntensity}
+        emissiveFalloff={controls.emissiveFalloff}
+        emissiveCenterU={controls.emissiveCenterU}
+        emissiveCenterV={controls.emissiveCenterV}
         eyeColor={controls.eyeColor}
         eyeIntensity={controls.eyeIntensity}
         cutoutRimColor={controls.cutoutRimColor}
@@ -169,15 +176,18 @@ export default function GhostBuster() {
         debugColor={controls.debugColor}
         debugAnchors={controls.debugAnchors}
         debugAnchorColor={controls.debugAnchorColor}
+        debugWireframe={controls.debugWireframe}
         holeAmount={controls.holeAmount}
         edgeFade={controls.edgeFade}
         tatterEdge={controls.tatterEdge}
+        smoothEdges={controls.smoothEdges}
         alphaScale={controls.alphaScale}
         alphaSeed={controls.alphaSeed}
         roughness={controls.roughness}
         metalness={controls.metalness}
         opacity={controls.opacity}
         paused={controls.paused}
+        groundLightColor={controls.groundLightColor}
         groundLightIntensity={controls.groundLightIntensity}
         groundLightAngle={controls.groundLightAngle}
         groundLightDistance={controls.groundLightDistance}

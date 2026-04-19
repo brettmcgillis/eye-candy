@@ -9,13 +9,18 @@ import {
   float,
   instanceIndex,
   instancedArray,
+  min,
+  mix,
   select,
+  smoothstep,
+  texture,
   time,
   transformNormalToView,
   triNoise3D,
   uint,
   uniform,
   uv,
+  vec2,
   vec3,
 } from 'three/tsl';
 import * as THREE from 'three/webgpu';
@@ -90,6 +95,7 @@ function fbm2D(px, py, seed, octaves = 3) {
  * @param {number}  [config.alpha.edgeFade] - Shape-edge alpha fade width 0–1 (default: 0)
  * @param {number}  [config.alpha.holeAmount] - Interior holes via noise 0–1 (default: 0)
  * @param {number}  [config.alpha.tatterEdge] - Tatter near free edges 0–1 (default: 0)
+ * @param {boolean} [config.alpha.smoothEdges] - Soft-threshold holes/tatters for curved edges (default: false)
  * @param {Array}   [config.alpha.cutouts]  - Array of {u, v, radius} cutouts
  * @param {THREE.Material} config.material - Material to configure positionNode on
  */
@@ -308,10 +314,68 @@ export default function createClothSimulation({
   // so vertices near (but not inside) small spheres still get caught.
   const collisionMarginU = uniform(0.02);
 
-  // Per-vertex alpha buffer — drives material opacity and collision masking.
+  // Per-vertex alpha buffer — drives collision masking (verlet death).
   // 0 = fully transparent (colliders pass through), 1 = fully opaque.
   const alphaArr = new Float32Array(vCount).fill(1);
   const alphaBuf = instancedArray(alphaArr, 'float');
+
+  // Render-only alpha. Mirrors alphaBuf in non-smooth mode; in smoothEdges
+  // mode it omits the binary kill so per-pixel shader noise alone defines
+  // the visible boundary, producing curves at sub-vertex resolution.
+  const renderAlphaArr = new Float32Array(vCount).fill(1);
+  const renderAlphaBuf = instancedArray(renderAlphaArr, 'float');
+
+  // Noise texture for per-pixel hole/tatter alpha. Same fbm field as the CPU
+  // pass so the shader's smooth boundary aligns with the verlet kill region.
+  const NOISE_TEX_SIZE = 256;
+  const noiseTexData = new Float32Array(NOISE_TEX_SIZE * NOISE_TEX_SIZE);
+  const noiseTexture = new THREE.DataTexture(
+    noiseTexData,
+    NOISE_TEX_SIZE,
+    NOISE_TEX_SIZE,
+    THREE.RedFormat,
+    THREE.FloatType
+  );
+  noiseTexture.minFilter = THREE.LinearFilter;
+  noiseTexture.magFilter = THREE.LinearFilter;
+  noiseTexture.wrapS = THREE.ClampToEdgeWrapping;
+  noiseTexture.wrapT = THREE.ClampToEdgeWrapping;
+
+  const smoothEdgesU = uniform(0);
+  const holeAmountU = uniform(0);
+  const tatterEdgeU = uniform(0);
+  // (left, right, top, bottom) — 1 if that edge is fully pinned
+  const edgePinnedU = uniform(new THREE.Vector4(0, 0, 0, 0));
+
+  // Edge-pinned flags depend only on pinSet, which is fixed after construction.
+  const edgePinned = {
+    left: (() => {
+      for (let yy = 0; yy <= segmentsY; yy += 1)
+        if (!pinSet.has(yy)) return false;
+      return true;
+    })(),
+    right: (() => {
+      for (let yy = 0; yy <= segmentsY; yy += 1)
+        if (!pinSet.has(segmentsX * (segmentsY + 1) + yy)) return false;
+      return true;
+    })(),
+    top: (() => {
+      for (let xx = 0; xx <= segmentsX; xx += 1)
+        if (!pinSet.has(xx * (segmentsY + 1))) return false;
+      return true;
+    })(),
+    bottom: (() => {
+      for (let xx = 0; xx <= segmentsX; xx += 1)
+        if (!pinSet.has(xx * (segmentsY + 1) + segmentsY)) return false;
+      return true;
+    })(),
+  };
+  edgePinnedU.value.set(
+    edgePinned.left ? 1 : 0,
+    edgePinned.right ? 1 : 0,
+    edgePinned.top ? 1 : 0,
+    edgePinned.bottom ? 1 : 0
+  );
 
   // ── Compute shader 1 — spring forces ──
   const computeSprings = Fn(() => {
@@ -545,14 +609,45 @@ export default function createClothSimulation({
 
   // Rebuild per-vertex alpha from shape edge fade, noise holes, tatter edges,
   // and positioned cutouts. Called whenever alpha-related params change.
+  // Maintains two parallel buffers:
+  //   alphaBuf       — physics/collision (binary kill always applied)
+  //   renderAlphaBuf — rendering. In smoothEdges mode, kill is omitted so the
+  //                    per-pixel shader noise alone defines the visible edge.
+  let lastNoiseScale = -1;
+  let lastNoiseSeed = -1;
   const rebuildAlpha = ({
     seed: aSeed = 42,
     scale: aScale = 3,
     edgeFade: aEdgeFade = 0,
     holeAmount: aHoles = 0,
     tatterEdge: aTatterEdge = 0,
+    smoothEdges: aSmoothEdges = false,
   } = {}) => {
-    // Compute noise per vertex for holes + tatter
+    // Re-bake noise texture only when seed/scale change (sampled per-fragment
+    // by the shader). Stored row-major with v unflipped — shader compensates
+    // for the geometry's inverted UV.
+    if (aScale !== lastNoiseScale || aSeed !== lastNoiseSeed) {
+      for (let ty = 0; ty < NOISE_TEX_SIZE; ty += 1) {
+        const v = ty / (NOISE_TEX_SIZE - 1);
+        for (let tx = 0; tx < NOISE_TEX_SIZE; tx += 1) {
+          const u = tx / (NOISE_TEX_SIZE - 1);
+          noiseTexData[ty * NOISE_TEX_SIZE + tx] = fbm2D(
+            u * aScale,
+            v * aScale,
+            aSeed
+          );
+        }
+      }
+      noiseTexture.needsUpdate = true;
+      lastNoiseScale = aScale;
+      lastNoiseSeed = aSeed;
+    }
+
+    smoothEdgesU.value = aSmoothEdges ? 1 : 0;
+    holeAmountU.value = aHoles;
+    tatterEdgeU.value = aTatterEdge;
+
+    // Per-vertex noise drives binary kill (verlet death + collider pass).
     const vertexNoise = new Float32Array(vCount);
     if (aHoles > 0 || aTatterEdge > 0) {
       for (let x = 0; x <= segmentsX; x += 1) {
@@ -565,30 +660,6 @@ export default function createClothSimulation({
       }
     }
 
-    // Derive which edges are fully pinned (for tatter edge fade)
-    const edgePinned = {
-      left: (() => {
-        for (let yy = 0; yy <= segmentsY; yy += 1)
-          if (!pinSet.has(yy)) return false;
-        return true;
-      })(),
-      right: (() => {
-        for (let yy = 0; yy <= segmentsY; yy += 1)
-          if (!pinSet.has(segmentsX * (segmentsY + 1) + yy)) return false;
-        return true;
-      })(),
-      top: (() => {
-        for (let xx = 0; xx <= segmentsX; xx += 1)
-          if (!pinSet.has(xx * (segmentsY + 1))) return false;
-        return true;
-      })(),
-      bottom: (() => {
-        for (let xx = 0; xx <= segmentsX; xx += 1)
-          if (!pinSet.has(xx * (segmentsY + 1) + segmentsY)) return false;
-        return true;
-      })(),
-    };
-
     const tatterDepth = aTatterEdge * 0.5;
 
     for (let x = 0; x <= segmentsX; x += 1) {
@@ -596,17 +667,18 @@ export default function createClothSimulation({
         const vid = columns[x][y].id;
         const u = x / segmentsX;
         const v = y / segmentsY;
-        let a = 1;
+        let softA = 1;
+        let killed = 0;
 
         // 1. Shape edge fade — smooth falloff near shape boundary
         if (aEdgeFade > 0) {
           const sd = shapeDistArr[vid];
           if (sd < aEdgeFade) {
-            a *= Math.max(0, sd / aEdgeFade);
+            softA *= Math.max(0, sd / aEdgeFade);
           }
         }
 
-        // 2. Tatter edge — noise-driven transparency near free (non-pinned) edges
+        // 2. Tatter edge — noise-driven kill near free (non-pinned) edges
         if (aTatterEdge > 0 && tatterDepth > 0) {
           const dists = [];
           if (!edgePinned.left) dists.push(u);
@@ -617,20 +689,25 @@ export default function createClothSimulation({
           if (minFreeDist < tatterDepth) {
             const t = minFreeDist / tatterDepth;
             const n = vertexNoise[vid];
-            if (n < 0.7 - t * 0.65) a = 0;
+            const threshold = 0.7 - t * 0.65;
+            if (n < threshold) killed = 1;
           }
         }
 
-        // 3. Interior holes — noise above threshold → transparent
+        // 3. Interior holes — noise above threshold → kill
         if (aHoles > 0) {
           const n = vertexNoise[vid];
-          if (n > 1 - aHoles * 0.4) a = 0;
+          const threshold = 1 - aHoles * 0.4;
+          if (n > threshold) killed = 1;
         }
 
-        alphaArr[vid] = a;
+        const visible = killed ? 0 : softA;
+        alphaArr[vid] = visible;
+        renderAlphaArr[vid] = aSmoothEdges ? softA : visible;
       }
     }
     alphaBuf.value.needsUpdate = true;
+    renderAlphaBuf.value.needsUpdate = true;
   };
 
   rebuildAlpha(alpha);
@@ -743,18 +820,64 @@ export default function createClothSimulation({
     return factor;
   })();
 
-  // Per-vertex alpha + per-pixel cutout circles → material opacity.
+  // Per-vertex alpha + per-pixel hole/tatter (smoothEdges) + cutouts.
   // eslint-disable-next-line no-param-reassign
   material.opacityNode = Fn(() => {
     const ids = attribute('vertexIds');
-    const a0 = alphaBuf.element(ids.x);
-    const a1 = alphaBuf.element(ids.y);
-    const a2 = alphaBuf.element(ids.z);
-    const a3 = alphaBuf.element(ids.w);
+    const a0 = renderAlphaBuf.element(ids.x);
+    const a1 = renderAlphaBuf.element(ids.y);
+    const a2 = renderAlphaBuf.element(ids.z);
+    const a3 = renderAlphaBuf.element(ids.w);
     const vtxAlpha = a0.add(a1).add(a2).add(a3).mul(0.25).toVar();
 
-    // Evaluate cutout circles per-pixel using interpolated UVs
     const texUV = uv();
+
+    // Per-pixel hole/tatter — sampled from the same noise field the CPU pass
+    // uses for verlet kill, so the smooth shader boundary follows the same
+    // contour as the physical rip. Geometry UV.y is inverted vs. grid v, so
+    // flip y when sampling the (unflipped) noise texture.
+    const noiseUV = vec2(texUV.x, float(1).sub(texUV.y));
+    const n = texture(noiseTexture, noiseUV).r;
+    const W = float(0.08);
+
+    // Holes — alpha drops smoothly across threshold. holeAmount=0 → threshold
+    // 1.0, smoothstep returns ~0 for typical fbm values, so output stays ~1.
+    const holeThresh = float(1).sub(holeAmountU.mul(0.4));
+    const holeAlpha = float(1).sub(
+      smoothstep(holeThresh.sub(W), holeThresh.add(W), n)
+    );
+
+    // Tatter — threshold tightens near free edges. tatterEdge=0 → tDepth
+    // clamps to 1 and the mix below collapses tatterAlpha to 1 (no effect).
+    const tatterDepth = tatterEdgeU.mul(0.5);
+    const dLeft = mix(float(1), texUV.x, float(1).sub(edgePinnedU.x));
+    const dRight = mix(
+      float(1),
+      float(1).sub(texUV.x),
+      float(1).sub(edgePinnedU.y)
+    );
+    const dTop = mix(
+      float(1),
+      float(1).sub(texUV.y),
+      float(1).sub(edgePinnedU.z)
+    );
+    const dBottom = mix(float(1), texUV.y, float(1).sub(edgePinnedU.w));
+    const minDist = min(min(dLeft, dRight), min(dTop, dBottom));
+    const tDepth = minDist.div(tatterDepth.add(0.0001)).clamp(0, 1);
+    const tatterThresh = float(0.7).sub(tDepth.mul(0.65));
+    const tatterAlphaRaw = smoothstep(
+      tatterThresh.sub(W),
+      tatterThresh.add(W),
+      n
+    );
+    // Outside the tatter zone (tDepth=1) blend to 1 so the body stays opaque.
+    const tatterAlpha = mix(tatterAlphaRaw, float(1), tDepth);
+
+    const perPixelAlpha = holeAlpha.mul(tatterAlpha);
+    // Gate by smoothEdgesU (0/1): off → keep per-vertex behavior unchanged.
+    vtxAlpha.mulAssign(mix(float(1), perPixelAlpha, smoothEdgesU));
+
+    // Per-pixel circular cutouts (eye holes etc.)
     for (let ci = 0; ci < MAX_CUTOUTS; ci += 1) {
       If(cutoutEnabledU[ci].greaterThan(0.5), () => {
         const diff = texUV.sub(cutoutU[ci]);

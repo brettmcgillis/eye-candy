@@ -90,6 +90,7 @@ const ClothMesh = forwardRef(function ClothMesh(
     edgeFade = 0,
     holeAmount = 0,
     tatterEdge = 0,
+    smoothEdges = false,
     cutouts = [],
     // Cutout rim (eyeliner outline) — color + width in UV space
     cutoutRimColor = '#000000',
@@ -104,9 +105,12 @@ const ClothMesh = forwardRef(function ClothMesh(
     textureRotation = 0,
     // Inner (back-face) color — when set, front/back faces render different colors
     innerColor = null,
-    // Emissive glow — self-illumination independent of scene lights
-    emissiveColor = null,
-    emissiveIntensity = 0,
+    // Emissive glow — self-illumination independent of scene lights.
+    // Inner/outer split follows the same frontFacing rule as innerColor.
+    outerEmissiveColor = null,
+    outerEmissiveIntensity = 0,
+    innerEmissiveColor = null,
+    innerEmissiveIntensity = 0,
     // Radial falloff: 0 = uniform, >0 = glow fades from emissiveCenter outward
     emissiveFalloff = 0,
     // UV origin for the emissive glow [u, v]
@@ -134,8 +138,10 @@ const ClothMesh = forwardRef(function ClothMesh(
       scaleU: nodeUniform(new THREE.Vector2(1, 1)),
       rotU: nodeUniform(0),
       innerColorU: nodeUniform(new THREE.Color(0, 0, 0)),
-      emissiveColorU: nodeUniform(new THREE.Color(0, 0, 0)),
-      emissiveIntensityU: nodeUniform(0),
+      outerEmissiveColorU: nodeUniform(new THREE.Color(0, 0, 0)),
+      outerEmissiveIntensityU: nodeUniform(0),
+      innerEmissiveColorU: nodeUniform(new THREE.Color(0, 0, 0)),
+      innerEmissiveIntensityU: nodeUniform(0),
       emissiveFalloffU: nodeUniform(0),
       emissiveCenterU: nodeUniform(new THREE.Vector2(0.5, 0.5)),
     }),
@@ -270,29 +276,48 @@ const ClothMesh = forwardRef(function ClothMesh(
     sim.material.needsUpdate = true;
   }, [sim, innerColor, textureUrl, texture, texUniforms]);
 
-  // Emissive glow — radial falloff from emissiveCenter in UV space
+  // Emissive glow — radial falloff from emissiveCenter in UV space.
+  // Inner/outer are selected by frontFacing, same rule as innerColor.
   useEffect(() => {
-    if (emissiveColor) {
-      texUniforms.emissiveColorU.value.set(emissiveColor);
-      texUniforms.emissiveIntensityU.value = emissiveIntensity;
+    if (outerEmissiveColor || innerEmissiveColor) {
+      texUniforms.outerEmissiveColorU.value.set(outerEmissiveColor || '#000');
+      texUniforms.outerEmissiveIntensityU.value = outerEmissiveColor
+        ? outerEmissiveIntensity
+        : 0;
+      texUniforms.innerEmissiveColorU.value.set(innerEmissiveColor || '#000');
+      texUniforms.innerEmissiveIntensityU.value = innerEmissiveColor
+        ? innerEmissiveIntensity
+        : 0;
       texUniforms.emissiveFalloffU.value = emissiveFalloff;
       texUniforms.emissiveCenterU.value.set(
         emissiveCenter[0],
         emissiveCenter[1]
       );
 
-      let intensityNode = texUniforms.emissiveIntensityU;
-
+      let glowNode = null;
       if (emissiveFalloff > 0) {
         const dist = uv().sub(texUniforms.emissiveCenterU).length();
-        const glow = float(1.0)
+        glowNode = float(1.0)
           .sub(dist.mul(texUniforms.emissiveFalloffU))
           .clamp(0, 1)
           .pow(2);
-        intensityNode = intensityNode.mul(glow);
       }
 
-      sim.material.emissiveNode = texUniforms.emissiveColorU.mul(intensityNode);
+      const outerI = glowNode
+        ? texUniforms.outerEmissiveIntensityU.mul(glowNode)
+        : texUniforms.outerEmissiveIntensityU;
+      const innerI = glowNode
+        ? texUniforms.innerEmissiveIntensityU.mul(glowNode)
+        : texUniforms.innerEmissiveIntensityU;
+
+      const outerEmissive = texUniforms.outerEmissiveColorU.mul(outerI);
+      const innerEmissive = texUniforms.innerEmissiveColorU.mul(innerI);
+
+      sim.material.emissiveNode = mix(
+        outerEmissive,
+        innerEmissive,
+        frontFacing
+      );
     } else {
       sim.material.emissiveNode = null;
     }
@@ -301,8 +326,10 @@ const ClothMesh = forwardRef(function ClothMesh(
     // re-running on every render from a new array reference.
   }, [
     sim,
-    emissiveColor,
-    emissiveIntensity,
+    outerEmissiveColor,
+    outerEmissiveIntensity,
+    innerEmissiveColor,
+    innerEmissiveIntensity,
     emissiveFalloff,
     emissiveCenter,
     texUniforms,
@@ -316,8 +343,17 @@ const ClothMesh = forwardRef(function ClothMesh(
       edgeFade,
       holeAmount,
       tatterEdge,
+      smoothEdges,
     });
-  }, [sim, alphaSeed, alphaScale, edgeFade, holeAmount, tatterEdge]);
+  }, [
+    sim,
+    alphaSeed,
+    alphaScale,
+    edgeFade,
+    holeAmount,
+    tatterEdge,
+    smoothEdges,
+  ]);
 
   // Per-pixel cutouts — push to GPU uniforms (not per-vertex)
   useEffect(() => {

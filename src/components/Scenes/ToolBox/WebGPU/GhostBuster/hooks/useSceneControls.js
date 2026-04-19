@@ -137,127 +137,175 @@ export default function useSceneControls(ghostRef, setAnimation, triggerJump) {
       { collapsed: true }
     ),
 
+    Camera: folder(
+      {
+        orbitEnabled: { label: 'Orbit Controls', value: ini.orbitEnabled },
+      },
+      { collapsed: true }
+    ),
+
     Character: folder(
       {
-        color: { label: 'Color', value: ini.color },
-        innerColor: {
-          label: 'Inner Color',
-          value: ini.innerColor || ini.color,
-        },
-        stiffness: {
-          label: 'Stiffness',
-          value: ini.stiffness,
-          min: 0.01,
-          max: 0.5,
-          step: 0.01,
-        },
-        dampening: {
-          label: 'Dampening',
-          value: ini.dampening,
-          min: 0.9,
-          max: 1,
-          step: 0.001,
-        },
-        gravity: {
-          label: 'Gravity',
-          value: ini.gravity,
-          min: 0,
-          max: 0.001,
-          step: 0.00001,
-        },
-        windAmplitude: {
-          label: 'Wind Amplitude',
-          value: ini.windAmplitude,
-          min: 0,
-          max: 0.005,
-          step: 0.0001,
-        },
-        maxVelocity: {
-          label: 'Max Velocity',
-          value: ini.maxVelocity,
-          min: 0.001,
-          max: 0.05,
-          step: 0.001,
-        },
-        holeAmount: {
-          label: 'Holes',
-          value: ini.holeAmount,
-          min: 0,
-          max: 1,
-          step: 0.01,
-        },
-        edgeFade: {
-          label: 'Edge Fade',
-          value: ini.edgeFade,
-          min: 0,
-          max: 0.5,
-          step: 0.01,
-        },
-        tatterEdge: {
-          label: 'Tatter',
-          value: ini.tatterEdge,
-          min: 0,
-          max: 1,
-          step: 0.01,
-        },
-        alphaScale: {
-          label: 'Alpha Scale',
-          value: ini.alphaScale,
-          min: 0.5,
-          max: 20,
-          step: 0.5,
-        },
-        alphaSeed: {
-          label: 'Alpha Seed',
-          value: ini.alphaSeed,
-          min: 0,
-          max: 200,
-          step: 1,
-        },
-        roughness: {
-          label: 'Roughness',
-          value: ini.roughness,
-          min: 0,
-          max: 1,
-          step: 0.01,
-        },
-        metalness: {
-          label: 'Metalness',
-          value: ini.metalness,
-          min: 0,
-          max: 1,
-          step: 0.01,
-        },
-        opacity: {
-          label: 'Opacity',
-          value: ini.opacity,
-          min: 0,
-          max: 1,
-          step: 0.01,
-        },
-        paused: { label: 'Paused', value: ini.paused },
-        cursorCollider: { label: 'Cursor Collider', value: ini.cursorCollider },
-        cursorRadius: {
-          label: 'Cursor Radius',
-          value: ini.cursorRadius,
-          min: 0.02,
-          max: 0.3,
-          step: 0.01,
-        },
-        collisionMargin: {
-          label: 'Collision Margin',
-          value: ini.collisionMargin,
-          min: 0,
-          max: 0.1,
-          step: 0.005,
-        },
-        clothSegments: {
-          label: 'Cloth Segments',
-          value: ini.clothSegments,
-          min: 12,
-          max: 60,
-          step: 2,
-        },
+        Material: folder(
+          {
+            color: { label: 'Color', value: ini.color },
+            innerColor: {
+              label: 'Inner Color',
+              value: ini.innerColor || ini.color,
+            },
+            roughness: {
+              label: 'Roughness',
+              value: ini.roughness,
+              min: 0,
+              max: 1,
+              step: 0.01,
+            },
+            metalness: {
+              label: 'Metalness',
+              value: ini.metalness,
+              min: 0,
+              max: 1,
+              step: 0.01,
+            },
+            opacity: {
+              label: 'Opacity',
+              value: ini.opacity,
+              min: 0,
+              max: 1,
+              step: 0.01,
+            },
+            Emissive: folder(
+              {
+                outerEmissiveColor: {
+                  label: 'Outer Color',
+                  value: ini.outerEmissiveColor,
+                },
+                outerEmissiveIntensity: {
+                  label: 'Outer Intensity',
+                  value: ini.outerEmissiveIntensity,
+                  min: 0,
+                  max: 5,
+                  step: 0.05,
+                },
+                innerEmissiveColor: {
+                  label: 'Inner Color',
+                  value: ini.innerEmissiveColor,
+                },
+                innerEmissiveIntensity: {
+                  label: 'Inner Intensity',
+                  value: ini.innerEmissiveIntensity,
+                  min: 0,
+                  max: 5,
+                  step: 0.05,
+                },
+                emissiveFalloff: {
+                  label: 'Falloff',
+                  value: ini.emissiveFalloff,
+                  min: 0,
+                  max: 10,
+                  step: 0.1,
+                },
+                emissiveCenterU: {
+                  label: 'Center U',
+                  value: ini.emissiveCenterU,
+                  min: 0,
+                  max: 1,
+                  step: 0.01,
+                },
+                emissiveCenterV: {
+                  label: 'Center V',
+                  value: ini.emissiveCenterV,
+                  min: 0,
+                  max: 1,
+                  step: 0.01,
+                },
+              },
+              { collapsed: true }
+            ),
+          },
+          { collapsed: false }
+        ),
+        Cloth: folder(
+          {
+            stiffness: {
+              label: 'Stiffness',
+              value: ini.stiffness,
+              min: 0.01,
+              max: 0.5,
+              step: 0.01,
+            },
+            dampening: {
+              label: 'Dampening',
+              value: ini.dampening,
+              min: 0.9,
+              max: 1,
+              step: 0.001,
+            },
+            gravity: {
+              label: 'Gravity',
+              value: ini.gravity,
+              min: 0,
+              max: 0.001,
+              step: 0.00001,
+            },
+            maxVelocity: {
+              label: 'Max Velocity',
+              value: ini.maxVelocity,
+              min: 0.001,
+              max: 0.05,
+              step: 0.001,
+            },
+            clothSegments: {
+              label: 'Segments',
+              value: ini.clothSegments,
+              min: 12,
+              max: 60,
+              step: 2,
+            },
+          },
+          { collapsed: true }
+        ),
+        Alpha: folder(
+          {
+            holeAmount: {
+              label: 'Holes',
+              value: ini.holeAmount,
+              min: 0,
+              max: 1,
+              step: 0.01,
+            },
+            edgeFade: {
+              label: 'Edge Fade',
+              value: ini.edgeFade,
+              min: 0,
+              max: 0.5,
+              step: 0.01,
+            },
+            tatterEdge: {
+              label: 'Tatter',
+              value: ini.tatterEdge,
+              min: 0,
+              max: 1,
+              step: 0.01,
+            },
+            alphaScale: {
+              label: 'Alpha Scale',
+              value: ini.alphaScale,
+              min: 0.5,
+              max: 20,
+              step: 0.5,
+            },
+            alphaSeed: {
+              label: 'Alpha Seed',
+              value: ini.alphaSeed,
+              min: 0,
+              max: 200,
+              step: 1,
+            },
+            smoothEdges: { label: 'Smooth Edges', value: ini.smoothEdges },
+          },
+          { collapsed: true }
+        ),
       },
       { collapsed: false }
     ),
@@ -299,20 +347,21 @@ export default function useSceneControls(ghostRef, setAnimation, triggerJump) {
           max: 0.5,
           step: 0.01,
         },
-        debugColliders: { label: 'Show Colliders', value: ini.debugColliders },
-        debugColor: { label: 'Collider Color', value: ini.debugColor },
-        debugAnchors: { label: 'Show Anchors', value: ini.debugAnchors },
-        debugAnchorColor: {
-          label: 'Anchor Color',
-          value: ini.debugAnchorColor,
+        cursorCollider: { label: 'Cursor Collider', value: ini.cursorCollider },
+        cursorRadius: {
+          label: 'Cursor Radius',
+          value: ini.cursorRadius,
+          min: 0.02,
+          max: 0.3,
+          step: 0.01,
         },
-      },
-      { collapsed: true }
-    ),
-
-    Camera: folder(
-      {
-        orbitEnabled: { label: 'Orbit Controls', value: ini.orbitEnabled },
+        collisionMargin: {
+          label: 'Collision Margin',
+          value: ini.collisionMargin,
+          min: 0,
+          max: 0.1,
+          step: 0.005,
+        },
       },
       { collapsed: true }
     ),
@@ -344,6 +393,10 @@ export default function useSceneControls(ghostRef, setAnimation, triggerJump) {
         },
         'Ground Light': folder(
           {
+            groundLightColor: {
+              label: 'Color',
+              value: ini.groundLightColor,
+            },
             groundLightIntensity: {
               label: 'Intensity',
               value: ini.groundLightIntensity,
@@ -416,12 +469,37 @@ export default function useSceneControls(ghostRef, setAnimation, triggerJump) {
           max: 5,
           step: 0.1,
         },
+        windAmplitude: {
+          label: 'Wind Amplitude',
+          value: ini.windAmplitude,
+          min: 0,
+          max: 0.005,
+          step: 0.0001,
+        },
         squashIntensity: {
           label: 'Jump Squash',
           value: ini.squashIntensity,
           min: 0,
           max: 0.5,
           step: 0.01,
+        },
+      },
+      { collapsed: true }
+    ),
+
+    Debug: folder(
+      {
+        paused: { label: 'Paused', value: ini.paused },
+        debugColliders: { label: 'Show Colliders', value: ini.debugColliders },
+        debugColor: { label: 'Collider Color', value: ini.debugColor },
+        debugAnchors: { label: 'Show Anchors', value: ini.debugAnchors },
+        debugAnchorColor: {
+          label: 'Anchor Color',
+          value: ini.debugAnchorColor,
+        },
+        debugWireframe: {
+          label: 'Cloth Wireframe',
+          value: ini.debugWireframe ?? false,
         },
       },
       { collapsed: true }

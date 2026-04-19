@@ -41,6 +41,15 @@ const GhostCharacter = forwardRef(function GhostCharacter(
     // Cloth & material
     color = '#f5f0e8',
     innerColor = null,
+    // Cloth emissive glow — independent of eye/ground lights
+    outerEmissiveColor = null,
+    outerEmissiveIntensity = 0,
+    innerEmissiveColor = null,
+    innerEmissiveIntensity = 0,
+    emissiveFalloff = 2.5,
+    emissiveCenterU = 0.5,
+    emissiveCenterV = 0.4,
+    // Eye pointLights (through the cutouts)
     eyeColor = '#88ccff',
     eyeIntensity = 3,
     stiffness = 0.15,
@@ -62,9 +71,11 @@ const GhostCharacter = forwardRef(function GhostCharacter(
     debugColor = '#ff4444',
     debugAnchors = false,
     debugAnchorColor = '#44ff44',
+    debugWireframe = false,
     holeAmount = 0.2,
     edgeFade = 0.15,
     tatterEdge = 0,
+    smoothEdges = false,
     alphaScale = 4,
     alphaSeed = 42,
     roughness = 0.8,
@@ -75,6 +86,7 @@ const GhostCharacter = forwardRef(function GhostCharacter(
     cutoutRimWidth = 0,
     cutoutRimOffset = 0,
     // Ground light
+    groundLightColor = '#88ccff',
     groundLightIntensity = 0,
     groundLightAngle = 0.8,
     groundLightDistance = 3,
@@ -102,6 +114,11 @@ const GhostCharacter = forwardRef(function GhostCharacter(
   );
 
   const spherePos = useMemo(() => new THREE.Vector3(0, SPHERE_BASE_Y, 0), []);
+
+  const emissiveCenter = useMemo(
+    () => [emissiveCenterU, emissiveCenterV],
+    [emissiveCenterU, emissiveCenterV]
+  );
 
   // Point the ground spotlight straight down
   useEffect(() => {
@@ -570,21 +587,25 @@ const GhostCharacter = forwardRef(function GhostCharacter(
         edgeFade={edgeFade}
         holeAmount={holeAmount}
         tatterEdge={tatterEdge}
+        smoothEdges={smoothEdges}
         cutouts={CUTOUTS}
         cutoutRimColor={cutoutRimColor}
         cutoutRimWidth={cutoutRimWidth}
         cutoutRimOffset={cutoutRimOffset}
         paused={paused}
         innerColor={innerColor}
-        emissiveColor={eyeColor}
-        emissiveIntensity={eyeIntensity * 0.4}
-        emissiveFalloff={2.5}
-        emissiveCenter={[0.5, 0.4]}
+        outerEmissiveColor={outerEmissiveColor}
+        outerEmissiveIntensity={outerEmissiveIntensity}
+        innerEmissiveColor={innerEmissiveColor}
+        innerEmissiveIntensity={innerEmissiveIntensity}
+        emissiveFalloff={emissiveFalloff}
+        emissiveCenter={emissiveCenter}
         materialProps={{
           color,
           roughness,
           metalness,
           opacity,
+          wireframe: debugWireframe,
         }}
       />
 
@@ -681,11 +702,11 @@ const GhostCharacter = forwardRef(function GhostCharacter(
         distance={0.5}
         decay={2}
       />
-      {/* Downward spotlight — casts eye-colored glow onto the ground */}
+      {/* Downward spotlight — independently colored ground glow */}
       <spotLight
         ref={groundSpotRef}
         position={[0, SPHERE_BASE_Y, 0]}
-        color={eyeColor}
+        color={groundLightColor}
         intensity={groundLightIntensity}
         distance={groundLightDistance}
         angle={groundLightAngle}

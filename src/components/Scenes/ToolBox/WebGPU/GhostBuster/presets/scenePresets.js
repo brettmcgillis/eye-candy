@@ -24,6 +24,7 @@ export const SCENE_PRESETS = {
     holeAmount: 0.2,
     edgeFade: 0.15,
     tatterEdge: 0,
+    smoothEdges: false,
     alphaScale: 4,
     alphaSeed: 42,
     roughness: 0.8,
@@ -47,12 +48,21 @@ export const SCENE_PRESETS = {
     // Camera
     orbitEnabled: true,
     // Eyes
-    eyeColor: '#88ccff',
-    eyeIntensity: 0,
+    eyeColor: '#000000',
+    eyeIntensity: 0.2,
     cutoutRimColor: '#000000',
     cutoutRimWidth: 0,
     cutoutRimOffset: 0,
+    // Cloth emissive
+    outerEmissiveColor: '#88ccff',
+    outerEmissiveIntensity: 0,
+    innerEmissiveColor: '#88ccff',
+    innerEmissiveIntensity: 0,
+    emissiveFalloff: 2.5,
+    emissiveCenterU: 0.5,
+    emissiveCenterV: 0.4,
     // Ground light
+    groundLightColor: '#88ccff',
     groundLightIntensity: 0,
     groundLightAngle: 0.4,
     groundLightDistance: 3,
@@ -90,6 +100,7 @@ export const SCENE_PRESETS = {
     holeAmount: 0.15,
     edgeFade: 0.1,
     tatterEdge: 0,
+    smoothEdges: false,
     alphaScale: 4,
     alphaSeed: 42,
     roughness: 0.5,
@@ -118,7 +129,16 @@ export const SCENE_PRESETS = {
     cutoutRimColor: '#000000',
     cutoutRimWidth: 0,
     cutoutRimOffset: 0,
+    // Cloth emissive
+    outerEmissiveColor: '#ff8844',
+    outerEmissiveIntensity: 0.8,
+    innerEmissiveColor: '#ffc945',
+    innerEmissiveIntensity: 4.5,
+    emissiveFalloff: 2.5,
+    emissiveCenterU: 0.5,
+    emissiveCenterV: 0.4,
     // Ground light
+    groundLightColor: '#ff8844',
     groundLightIntensity: 1.5,
     groundLightAngle: 0.4,
     groundLightDistance: 3,
@@ -134,7 +154,7 @@ export const SCENE_PRESETS = {
 
   Toxic: {
     // Background
-    bgColor: '#1a1a1a',
+    bgColor: '#0e1408',
     // Lighting
     ambientIntensity: 0.4,
     spotIntensity: 0.3,
@@ -143,21 +163,22 @@ export const SCENE_PRESETS = {
     floorVisible: true,
     gridSize: 1,
     gridLineWidth: 0.03,
-    floorColor: '#2e2e2e',
-    gridLineColor: '#4e4e4e',
+    floorColor: '#1a2410',
+    gridLineColor: '#3a5024',
     // Character
-    color: '#c8c0b0',
-    innerColor: '',
+    color: '#9aa824',
+    innerColor: '#1a3a18',
     stiffness: 0.1,
     dampening: 0.985,
     gravity: 0.00015,
     windAmplitude: 0.0006,
     maxVelocity: 0.012,
-    holeAmount: 0.7,
-    edgeFade: 0.35,
-    tatterEdge: 0.8,
-    alphaScale: 6,
-    alphaSeed: 77,
+    holeAmount: 0,
+    edgeFade: 0,
+    tatterEdge: 0,
+    smoothEdges: false,
+    alphaScale: 4,
+    alphaSeed: 42,
     roughness: 0.95,
     metalness: 0,
     opacity: 1,
@@ -179,14 +200,23 @@ export const SCENE_PRESETS = {
     // Camera
     orbitEnabled: true,
     // Eyes
-    eyeColor: '#66aa88',
-    eyeIntensity: 0.4,
+    eyeColor: '#aaff33',
+    eyeIntensity: 1.8,
     cutoutRimColor: '#000000',
     cutoutRimWidth: 0,
     cutoutRimOffset: 0,
+    // Cloth emissive
+    outerEmissiveColor: '#88ff22',
+    outerEmissiveIntensity: 1.2,
+    innerEmissiveColor: '#f4ff44',
+    innerEmissiveIntensity: 3.0,
+    emissiveFalloff: 3.5,
+    emissiveCenterU: 0.5,
+    emissiveCenterV: 0.4,
     // Ground light
-    groundLightIntensity: 1,
-    groundLightAngle: 0.4,
+    groundLightColor: '#88ff22',
+    groundLightIntensity: 2.5,
+    groundLightAngle: 0.5,
     groundLightDistance: 3,
     // Animation
     bobAmplitude: 0.02,
@@ -200,20 +230,20 @@ export const SCENE_PRESETS = {
 
   Hot: {
     // Background
-    bgColor: '#0a0a0a',
+    bgColor: '#070202',
     // Lighting
-    ambientIntensity: 0.2,
-    spotIntensity: 0.15,
+    ambientIntensity: 0.15,
+    spotIntensity: 0.1,
     spotHeight: 5,
     // Floor
     floorVisible: true,
     gridSize: 1,
     gridLineWidth: 0.03,
-    floorColor: '#1a1a1a',
-    gridLineColor: '#333333',
+    floorColor: '#180808',
+    gridLineColor: '#3a1a10',
     // Character
-    color: '#3a3a3a',
-    innerColor: '#1a0a0a',
+    color: '#3a0a04',
+    innerColor: '#1a0202',
     stiffness: 0.18,
     dampening: 0.99,
     gravity: 0.00012,
@@ -222,6 +252,7 @@ export const SCENE_PRESETS = {
     holeAmount: 0.1,
     edgeFade: 0.1,
     tatterEdge: 0.1,
+    smoothEdges: false,
     alphaScale: 4,
     alphaSeed: 42,
     roughness: 0.7,
@@ -245,13 +276,22 @@ export const SCENE_PRESETS = {
     // Camera
     orbitEnabled: true,
     // Eyes
-    eyeColor: '#ff0000',
-    eyeIntensity: 3.0,
+    eyeColor: '#ff2200',
+    eyeIntensity: 3.5,
     cutoutRimColor: '#000000',
     cutoutRimWidth: 0,
     cutoutRimOffset: 0,
+    // Cloth emissive
+    outerEmissiveColor: '#aa0000',
+    outerEmissiveIntensity: 3.0,
+    innerEmissiveColor: '#ff3300',
+    innerEmissiveIntensity: 4.5,
+    emissiveFalloff: 3.5,
+    emissiveCenterU: 0.5,
+    emissiveCenterV: 0.45,
     // Ground light
-    groundLightIntensity: 2.0,
+    groundLightColor: '#ff1100',
+    groundLightIntensity: 3.0,
     groundLightAngle: 0.4,
     groundLightDistance: 3,
     // Animation
@@ -288,6 +328,7 @@ export const SCENE_PRESETS = {
     holeAmount: 0,
     edgeFade: 0.05,
     tatterEdge: 0,
+    smoothEdges: false,
     alphaScale: 4,
     alphaSeed: 42,
     roughness: 0.2,
@@ -316,7 +357,16 @@ export const SCENE_PRESETS = {
     cutoutRimColor: '#000000',
     cutoutRimWidth: 0,
     cutoutRimOffset: 0,
+    // Cloth emissive
+    outerEmissiveColor: '#aaddff',
+    outerEmissiveIntensity: 0.6,
+    innerEmissiveColor: '#aaddff',
+    innerEmissiveIntensity: 0.6,
+    emissiveFalloff: 2.5,
+    emissiveCenterU: 0.5,
+    emissiveCenterV: 0.4,
     // Ground light
+    groundLightColor: '#aaddff',
     groundLightIntensity: 1.0,
     groundLightAngle: 0.4,
     groundLightDistance: 3,
@@ -330,7 +380,7 @@ export const SCENE_PRESETS = {
     squashIntensity: 0.25,
   },
 
-  Ripped: {
+  Damaged: {
     // Background
     bgColor: '#1a1a1a',
     // Lighting
@@ -354,6 +404,7 @@ export const SCENE_PRESETS = {
     holeAmount: 0.7,
     edgeFade: 0.35,
     tatterEdge: 0.8,
+    smoothEdges: false,
     alphaScale: 6,
     alphaSeed: 77,
     roughness: 0.95,
@@ -382,7 +433,16 @@ export const SCENE_PRESETS = {
     cutoutRimColor: '#000000',
     cutoutRimWidth: 0,
     cutoutRimOffset: 0,
+    // Cloth emissive
+    outerEmissiveColor: '#66aa88',
+    outerEmissiveIntensity: 0.16,
+    innerEmissiveColor: '#66aa88',
+    innerEmissiveIntensity: 0.16,
+    emissiveFalloff: 2.5,
+    emissiveCenterU: 0.5,
+    emissiveCenterV: 0.4,
     // Ground light
+    groundLightColor: '#66aa88',
     groundLightIntensity: 1,
     groundLightAngle: 0.4,
     groundLightDistance: 3,
@@ -420,6 +480,7 @@ export const SCENE_PRESETS = {
     holeAmount: 0.2,
     edgeFade: 0.15,
     tatterEdge: 0,
+    smoothEdges: false,
     alphaScale: 4,
     alphaSeed: 42,
     roughness: 0.8,
@@ -448,7 +509,16 @@ export const SCENE_PRESETS = {
     cutoutRimColor: '#bfbbbb',
     cutoutRimWidth: 0.003,
     cutoutRimOffset: 0,
+    // Cloth emissive
+    outerEmissiveColor: '#88ccff',
+    outerEmissiveIntensity: 0.04,
+    innerEmissiveColor: '#88ccff',
+    innerEmissiveIntensity: 0.04,
+    emissiveFalloff: 2.5,
+    emissiveCenterU: 0.5,
+    emissiveCenterV: 0.4,
     // Ground light
+    groundLightColor: '#88ccff',
     groundLightIntensity: 0,
     groundLightAngle: 0.4,
     groundLightDistance: 3,
@@ -486,6 +556,7 @@ export const SCENE_PRESETS = {
     holeAmount: 0.3,
     edgeFade: 0.2,
     tatterEdge: 0.3,
+    smoothEdges: false,
     alphaScale: 5,
     alphaSeed: 66,
     roughness: 0.95,
@@ -514,7 +585,16 @@ export const SCENE_PRESETS = {
     cutoutRimColor: '#000000',
     cutoutRimWidth: 0,
     cutoutRimOffset: 0,
+    // Cloth emissive
+    outerEmissiveColor: '#ff2200',
+    outerEmissiveIntensity: 0,
+    innerEmissiveColor: '#ff2200',
+    innerEmissiveIntensity: 0,
+    emissiveFalloff: 2.5,
+    emissiveCenterU: 0.5,
+    emissiveCenterV: 0.4,
     // Ground light
+    groundLightColor: '#ff2200',
     groundLightIntensity: 0,
     groundLightAngle: 0.4,
     groundLightDistance: 3,
@@ -552,6 +632,7 @@ export const SCENE_PRESETS = {
     holeAmount: 0.2,
     edgeFade: 0.15,
     tatterEdge: 0,
+    smoothEdges: false,
     alphaScale: 4,
     alphaSeed: 42,
     roughness: 0.8,
@@ -575,12 +656,21 @@ export const SCENE_PRESETS = {
     // Camera
     orbitEnabled: true,
     // Eyes
-    eyeColor: '#88ccff',
-    eyeIntensity: 0,
+    eyeColor: '#000000',
+    eyeIntensity: 0.2,
     cutoutRimColor: '#000000',
     cutoutRimWidth: 0.003,
     cutoutRimOffset: 0,
+    // Cloth emissive
+    outerEmissiveColor: '#88ccff',
+    outerEmissiveIntensity: 0,
+    innerEmissiveColor: '#88ccff',
+    innerEmissiveIntensity: 0,
+    emissiveFalloff: 2.5,
+    emissiveCenterU: 0.5,
+    emissiveCenterV: 0.4,
     // Ground light
+    groundLightColor: '#88ccff',
     groundLightIntensity: 0,
     groundLightAngle: 0.4,
     groundLightDistance: 3,

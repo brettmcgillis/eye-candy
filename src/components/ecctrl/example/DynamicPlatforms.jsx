@@ -1,13 +1,14 @@
-import { Text } from "@react-three/drei";
-import { useFrame } from "@react-three/fiber";
+import * as THREE from 'three';
+
+import { useMemo, useRef } from 'react';
+
+import { Text } from '@react-three/drei';
+import { useFrame } from '@react-three/fiber';
 import {
   CuboidCollider,
   CylinderCollider,
-  RapierRigidBody,
   RigidBody,
-} from "@react-three/rapier";
-import { useRef, useMemo } from "react";
-import * as THREE from "three";
+} from '@react-three/rapier';
 
 export default function DynamicPlatforms() {
   const sideMovePlatformRef = useRef();
@@ -73,7 +74,7 @@ export default function DynamicPlatforms() {
         <CuboidCollider args={[2.5, 0.1, 2.5]} />
         <mesh receiveShadow castShadow>
           <boxGeometry args={[5, 0.2, 5]} />
-          <meshStandardMaterial color={"moccasin"} />
+          <meshStandardMaterial color="moccasin" />
         </mesh>
       </RigidBody>
 
@@ -97,7 +98,7 @@ export default function DynamicPlatforms() {
         <CuboidCollider args={[2.5, 0.1, 2.5]} />
         <mesh receiveShadow castShadow>
           <boxGeometry args={[5, 0.2, 5]} />
-          <meshStandardMaterial color={"moccasin"} />
+          <meshStandardMaterial color="moccasin" />
         </mesh>
       </RigidBody>
 
@@ -120,7 +121,7 @@ export default function DynamicPlatforms() {
         <CuboidCollider args={[2.5, 0.1, 2.5]} />
         <mesh receiveShadow castShadow>
           <boxGeometry args={[5, 0.2, 5]} />
-          <meshStandardMaterial color={"moccasin"} />
+          <meshStandardMaterial color="moccasin" />
         </mesh>
       </RigidBody>
 
@@ -144,7 +145,7 @@ export default function DynamicPlatforms() {
           <CylinderCollider args={[5, 1]} />
           <mesh receiveShadow>
             <cylinderGeometry args={[1, 1, 10]} />
-            <meshStandardMaterial color={"moccasin"} />
+            <meshStandardMaterial color="moccasin" />
           </mesh>
         </group>
       </RigidBody>

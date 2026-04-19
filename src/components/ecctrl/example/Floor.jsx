@@ -1,4 +1,4 @@
-import { RigidBody } from "@react-three/rapier";
+import { RigidBody } from '@react-three/rapier';
 
 export default function Floor() {
   return (

@@ -1,25 +1,28 @@
+import { useControls } from 'leva';
+import * as THREE from 'three';
+
+import { Suspense, useEffect, useMemo, useRef, useState } from 'react';
+
 import {
+  SpriteAnimator,
+  Trail,
   useAnimations,
   useGLTF,
-  useTexture,
-  Trail,
-  SpriteAnimator,
   useSpriteLoader,
-} from "@react-three/drei";
-import { useControls } from "leva";
-import { Suspense, useEffect, useRef, useMemo, useState } from "react";
-import * as THREE from "three";
-import { useGame } from "../src/stores/useGame";
-import { BallCollider, RapierCollider, vec3 } from "@react-three/rapier";
-import { useFrame } from "@react-three/fiber";
+  useTexture,
+} from '@react-three/drei';
+import { useFrame } from '@react-three/fiber';
+import { BallCollider, vec3 } from '@react-three/rapier';
+
+import { useGame } from '../src/stores/useGame';
 
 export default function CharacterModel(props) {
   // Change the character src to yours
   const group = useRef();
-  const { nodes, animations } = useGLTF("/Floating Character.glb")
+  const { nodes, animations } = useGLTF('/Floating Character.glb');
   const { actions } = useAnimations(animations, group);
   // gradientMapTexture for MeshToonMaterial
-  const gradientMapTexture = useTexture("./textures/3.jpg");
+  const gradientMapTexture = useTexture('./textures/3.jpg');
   gradientMapTexture.minFilter = THREE.NearestFilter;
   gradientMapTexture.magFilter = THREE.NearestFilter;
   gradientMapTexture.generateMipmaps = false;
@@ -42,7 +45,7 @@ export default function CharacterModel(props) {
   /**
    * Prepare punch effect sprite
    */
-  const { spriteObj } = useSpriteLoader("./punchEffect.png", null, null, 7)
+  const { spriteObj } = useSpriteLoader('./punchEffect.png', null, null, 7);
   const [punchEffectProps, setPunchEffectProp] = useState({
     visible: false,
     scale: [1, 1, 1],
@@ -55,11 +58,11 @@ export default function CharacterModel(props) {
    * Debug settings
    */
   const { mainColor, outlineColor, trailColor } = useControls(
-    "Character Model",
+    'Character Model',
     {
-      mainColor: "mediumslateblue",
-      outlineColor: "black",
-      trailColor: "violet",
+      mainColor: 'mediumslateblue',
+      outlineColor: 'black',
+      trailColor: 'violet',
     }
   );
 
@@ -95,17 +98,17 @@ export default function CharacterModel(props) {
 
   // Rename your character animations here
   const animationSet = {
-    idle: "Idle",
-    walk: "Walk",
-    run: "Run",
-    jump: "Jump_Start",
-    jumpIdle: "Jump_Idle",
-    jumpLand: "Jump_Land",
-    fall: "Climbing", // This is for falling from high sky
-    action1: "Wave",
-    action2: "Dance",
-    action3: "Cheer",
-    action4: "Attack(1h)",
+    idle: 'Idle',
+    walk: 'Walk',
+    run: 'Run',
+    jump: 'Jump_Start',
+    jumpIdle: 'Jump_Idle',
+    jumpLand: 'Jump_Land',
+    fall: 'Climbing', // This is for falling from high sky
+    action1: 'Wave',
+    action2: 'Dance',
+    action3: 'Cheer',
+    action4: 'Attack(1h)',
   };
 
   useEffect(() => {
@@ -117,11 +120,11 @@ export default function CharacterModel(props) {
     group.current.traverse((obj) => {
       // Prepare both hands bone object
       if (obj instanceof THREE.Bone) {
-        if (obj.name === "handSlotRight") rightHand = obj;
-        if (obj.name === "handSlotLeft") leftHand = obj;
+        if (obj.name === 'handSlotRight') rightHand = obj;
+        if (obj.name === 'handSlotLeft') leftHand = obj;
       }
       // Prepare mug model for cheer action
-      if (obj.name === "mug") {
+      if (obj.name === 'mug') {
         mugModel = obj;
         mugModel.visible = false;
       }
@@ -139,8 +142,14 @@ export default function CharacterModel(props) {
       // Apply hands position to hand colliders
       if (rightHandColliderRef.current) {
         // check if parent group autobalance is on or off
-        if (group.current.parent.quaternion.y === 0 && group.current.parent.quaternion.w === 1) {
-          rightHandRef.current.position.copy(rightHandPos).sub(bodyPos).applyQuaternion(bodyRot.conjugate());
+        if (
+          group.current.parent.quaternion.y === 0 &&
+          group.current.parent.quaternion.w === 1
+        ) {
+          rightHandRef.current.position
+            .copy(rightHandPos)
+            .sub(bodyPos)
+            .applyQuaternion(bodyRot.conjugate());
         } else {
           rightHandRef.current.position.copy(rightHandPos).sub(bodyPos);
         }
@@ -153,7 +162,7 @@ export default function CharacterModel(props) {
 
   useEffect(() => {
     // Play animation
-    const action = actions[curAnimation ? curAnimation : animationSet.jumpIdle];
+    const action = actions[curAnimation || animationSet.jumpIdle];
 
     // For jump and jump land animation, only play once and clamp when finish
     if (
@@ -164,11 +173,7 @@ export default function CharacterModel(props) {
       curAnimation === animationSet.action3 ||
       curAnimation === animationSet.action4
     ) {
-      action
-        .reset()
-        .fadeIn(0.2)
-        .setLoop(THREE.LoopOnce, undefined)
-        .play();
+      action.reset().fadeIn(0.2).setLoop(THREE.LoopOnce, undefined).play();
       action.clampWhenFinished = true;
       // Only show mug during cheer action
       if (curAnimation === animationSet.action3) {
@@ -182,22 +187,22 @@ export default function CharacterModel(props) {
     }
 
     // When any action is clamp and finished reset animation
-    action._mixer.addEventListener("finished", () => resetAnimation());
+    action._mixer.addEventListener('finished', () => resetAnimation());
 
     return () => {
       // Fade out previous action
       action.fadeOut(0.2);
 
       // Clean up mixer listener, and empty the _listeners array
-      action._mixer.removeEventListener("finished", () =>
-        resetAnimation()
-      );
+      action._mixer.removeEventListener('finished', () => resetAnimation());
       action._mixer._listeners = [];
 
       // Move hand collider back to initial position after action
       if (curAnimation === animationSet.action4) {
         if (rightHandColliderRef.current) {
-          rightHandColliderRef.current.setTranslationWrtParent(vec3({ x: 0, y: 0, z: 0 }))
+          rightHandColliderRef.current.setTranslationWrtParent(
+            vec3({ x: 0, y: 0, z: 0 })
+          );
         }
       }
     };
@@ -239,11 +244,7 @@ export default function CharacterModel(props) {
       <group ref={leftHandRef} />
       <BallCollider args={[0.1]} ref={leftHandColliderRef} />
       {/* Character model */}
-      <group
-        ref={group}
-        {...props}
-        dispose={null}
-      >
+      <group ref={group} {...props} dispose={null}>
         <group name="Scene" scale={0.8} position={[0, -0.6, 0]}>
           <group name="KayKit_Animated_Character">
             <skinnedMesh
@@ -275,7 +276,7 @@ export default function CharacterModel(props) {
           scale={punchEffectProps.scale}
           position={punchEffectProps.position}
           startFrame={punchEffectProps.startFrame}
-          loop={true}
+          loop
           onLoopEnd={() => {
             setPunchEffectProp((prev) => ({
               ...prev,
@@ -287,7 +288,7 @@ export default function CharacterModel(props) {
           numberOfFrames={7}
           alphaTest={0.01}
           // textureImageURL={"./punchEffect.png"}
-          asSprite={true}
+          asSprite
           spriteDataset={spriteObj}
         />
       </group>
@@ -296,4 +297,4 @@ export default function CharacterModel(props) {
 }
 
 // Change the character src to yours
-useGLTF.preload("/Floating Character.glb");
+useGLTF.preload('/Floating Character.glb');

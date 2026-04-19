@@ -1,8 +1,11 @@
-import { useGLTF, useAnimations } from "@react-three/drei";
-import { useEffect, useRef, Suspense } from "react";
-import * as THREE from "three";
-import { useGame, type AnimationSet } from "./stores/useGame";
-import React from "react";
+import * as THREE from 'three';
+
+import { Suspense, useEffect, useRef } from 'react';
+import React from 'react';
+
+import { useAnimations, useGLTF } from '@react-three/drei';
+
+import { type AnimationSet, useGame } from './stores/useGame';
 
 export function EcctrlAnimation(props: EcctrlAnimationProps) {
   // Change the character src to yours
@@ -31,7 +34,7 @@ export function EcctrlAnimation(props: EcctrlAnimationProps) {
     const action = key ? actions[key] : null;
 
     // For jump and jump land animation, only play once and clamp when finish
-    if (action === null) return
+    if (action === null) return;
 
     if (
       curAnimation === props.animationSet.jump ||
@@ -48,14 +51,14 @@ export function EcctrlAnimation(props: EcctrlAnimationProps) {
     }
 
     // When any action is clamp and finished reset animation
-    (action as any)._mixer.addEventListener("finished", () => resetAnimation());
+    (action as any)._mixer.addEventListener('finished', () => resetAnimation());
 
     return () => {
       // Fade out previous action
       action.fadeOut(0.2);
 
       // Clean up mixer listener, and empty the _listeners array
-      (action as any)._mixer.removeEventListener("finished", () =>
+      (action as any)._mixer.removeEventListener('finished', () =>
         resetAnimation()
       );
       (action as any)._mixer._listeners = [];
@@ -64,7 +67,11 @@ export function EcctrlAnimation(props: EcctrlAnimationProps) {
 
   return (
     <Suspense fallback={null}>
-      <group ref={group} dispose={null} userData={{ camExcludeCollision: true }}>
+      <group
+        ref={group}
+        dispose={null}
+        userData={{ camExcludeCollision: true }}
+      >
         {/* Replace character model here */}
         {props.children}
       </group>

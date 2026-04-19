@@ -1,11 +1,13 @@
-import { RigidBody } from "@react-three/rapier";
-import { useGLTF, Text } from "@react-three/drei";
-import { useEffect } from "react";
-import * as THREE from "three";
+import * as THREE from 'three';
+
+import { useEffect } from 'react';
+
+import { Text, useGLTF } from '@react-three/drei';
+import { RigidBody } from '@react-three/rapier';
 
 export default function Slopes() {
   // Load models
-  const slopes = useGLTF("./slopes.glb");
+  const slopes = useGLTF('./slopes.glb');
 
   useEffect(() => {
     // Receive Shadows

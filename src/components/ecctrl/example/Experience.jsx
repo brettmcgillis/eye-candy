@@ -1,19 +1,22 @@
-import { Grid, KeyboardControls } from "@react-three/drei";
-import { Perf } from "r3f-perf";
-import { Physics } from "@react-three/rapier";
-import Ecctrl from "../src/Ecctrl";
-import Floor from "./Floor";
-import Lights from "./Lights";
-import Steps from "./Steps";
-import Slopes from "./Slopes";
-import RoughPlane from "./RoughPlane";
-import RigidObjects from "./RigidObjects";
-import FloatingPlatform from "./FloatingPlatform";
-import DynamicPlatforms from "./DynamicPlatforms";
-import ShotCube from "./ShotCube";
-import { useControls } from "leva";
-import CharacterModel from "./CharacterModel";
-import React, { useEffect, useState } from "react";
+import { useControls } from 'leva';
+import { Perf } from 'r3f-perf';
+
+import React, { useEffect, useState } from 'react';
+
+import { Grid, KeyboardControls } from '@react-three/drei';
+import { Physics } from '@react-three/rapier';
+
+import Ecctrl from '../src/Ecctrl';
+import CharacterModel from './CharacterModel';
+import DynamicPlatforms from './DynamicPlatforms';
+import FloatingPlatform from './FloatingPlatform';
+import Floor from './Floor';
+import Lights from './Lights';
+import RigidObjects from './RigidObjects';
+import RoughPlane from './RoughPlane';
+import ShotCube from './ShotCube';
+import Slopes from './Slopes';
+import Steps from './Steps';
 
 export default function Experience() {
   /**
@@ -31,26 +34,29 @@ export default function Experience() {
   /**
    * Debug settings
    */
-  const { physics, disableControl, disableFollowCam } = useControls("World Settings", {
-    physics: false,
-    disableControl: false,
-    disableFollowCam: false,
-  });
+  const { physics, disableControl, disableFollowCam } = useControls(
+    'World Settings',
+    {
+      physics: false,
+      disableControl: false,
+      disableFollowCam: false,
+    }
+  );
 
   /**
    * Keyboard control preset
    */
   const keyboardMap = [
-    { name: "forward", keys: ["ArrowUp", "KeyW"] },
-    { name: "backward", keys: ["ArrowDown", "KeyS"] },
-    { name: "leftward", keys: ["ArrowLeft", "KeyA"] },
-    { name: "rightward", keys: ["ArrowRight", "KeyD"] },
-    { name: "jump", keys: ["Space"] },
-    { name: "run", keys: ["Shift"] },
-    { name: "action1", keys: ["1"] },
-    { name: "action2", keys: ["2"] },
-    { name: "action3", keys: ["3"] },
-    { name: "action4", keys: ["KeyF"] },
+    { name: 'forward', keys: ['ArrowUp', 'KeyW'] },
+    { name: 'backward', keys: ['ArrowDown', 'KeyS'] },
+    { name: 'leftward', keys: ['ArrowLeft', 'KeyA'] },
+    { name: 'rightward', keys: ['ArrowRight', 'KeyD'] },
+    { name: 'jump', keys: ['Space'] },
+    { name: 'run', keys: ['Shift'] },
+    { name: 'action1', keys: ['1'] },
+    { name: 'action2', keys: ['2'] },
+    { name: 'action3', keys: ['3'] },
+    { name: 'action4', keys: ['KeyF'] },
   ];
 
   return (
@@ -59,8 +65,8 @@ export default function Experience() {
 
       <Grid
         args={[300, 300]}
-        sectionColor={"lightgray"}
-        cellColor={"gray"}
+        sectionColor="lightgray"
+        cellColor="gray"
         position={[0, -0.99, 0]}
         userData={{ camExcludeCollision: true }} // this won't be collide by camera ray
       />
@@ -112,7 +118,7 @@ export default function Experience() {
 
         {/* Shoting cubes */}
         <ShotCube />
-      </Physics >
+      </Physics>
     </>
   );
 }

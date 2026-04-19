@@ -1,7 +1,9 @@
-import * as THREE from "three";
-import { useThree } from "@react-three/fiber";
-import { RapierRigidBody, RigidBody } from "@react-three/rapier";
-import { useRef, useMemo, useState, useEffect } from "react";
+import * as THREE from 'three';
+
+import { useEffect, useMemo, useRef, useState } from 'react';
+
+import { useThree } from '@react-three/fiber';
+import { RigidBody } from '@react-three/rapier';
 
 export default function ShotCube() {
   const { camera } = useThree();
@@ -14,7 +16,11 @@ export default function ShotCube() {
     if (document.pointerLockElement) {
       const newMesh = (
         <mesh
-          position={[camera.position.x, camera.position.y - 0.5, camera.position.z]}
+          position={[
+            camera.position.x,
+            camera.position.y - 0.5,
+            camera.position.z,
+          ]}
           castShadow
           receiveShadow
         >
@@ -41,10 +47,10 @@ export default function ShotCube() {
   }, [cubeMesh]);
 
   useEffect(() => {
-    window.addEventListener("click", () => clickToCreateBox());
+    window.addEventListener('click', () => clickToCreateBox());
 
     return () => {
-      window.removeEventListener("click", () => clickToCreateBox());
+      window.removeEventListener('click', () => clickToCreateBox());
     };
   }, []);
 

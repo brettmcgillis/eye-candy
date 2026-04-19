@@ -1,11 +1,13 @@
-import { RigidBody } from "@react-three/rapier";
-import { useGLTF } from "@react-three/drei";
-import { useEffect } from "react";
-import * as THREE from "three";
+import * as THREE from 'three';
+
+import { useEffect } from 'react';
+
+import { useGLTF } from '@react-three/drei';
+import { RigidBody } from '@react-three/rapier';
 
 export default function RoughPlane() {
   // Load models
-  const roughPlane = useGLTF("./roughPlane.glb");
+  const roughPlane = useGLTF('./roughPlane.glb');
 
   useEffect(() => {
     // Receive Shadows

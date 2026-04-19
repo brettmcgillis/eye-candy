@@ -366,6 +366,40 @@ export default function useSceneControls(ghostRef, setAnimation, triggerJump) {
       { collapsed: true }
     ),
 
+    Ears: folder(
+      {
+        earLiftY: {
+          label: 'Lift',
+          value: ini.earLiftY ?? 0,
+          min: 0,
+          max: 0.4,
+          step: 0.005,
+        },
+        earPushBack: {
+          label: 'Push Back',
+          value: ini.earPushBack ?? 0,
+          min: -0.2,
+          max: 0.3,
+          step: 0.005,
+        },
+        earSpread: {
+          label: 'Spread',
+          value: ini.earSpread ?? 0,
+          min: 0,
+          max: 0.3,
+          step: 0.005,
+        },
+        earColliderRadius: {
+          label: 'Nub Size',
+          value: ini.earColliderRadius ?? 0,
+          min: 0,
+          max: 0.1,
+          step: 0.005,
+        },
+      },
+      { collapsed: true }
+    ),
+
     Eyes: folder(
       {
         eyeColor: { label: 'Color', value: ini.eyeColor },

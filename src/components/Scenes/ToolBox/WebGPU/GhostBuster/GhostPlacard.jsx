@@ -79,12 +79,12 @@ function drawCompass(ctx, cx, cy, r, windDirX, windDirZ, windStrength) {
     ctx.moveTo(tipX, tipY);
     ctx.lineTo(
       tipX - headLen * Math.cos(angle - Math.PI / 6),
-      tipY - headLen * Math.sin(angle - Math.PI / 6),
+      tipY - headLen * Math.sin(angle - Math.PI / 6)
     );
     ctx.moveTo(tipX, tipY);
     ctx.lineTo(
       tipX - headLen * Math.cos(angle + Math.PI / 6),
-      tipY - headLen * Math.sin(angle + Math.PI / 6),
+      tipY - headLen * Math.sin(angle + Math.PI / 6)
     );
     ctx.stroke();
     ctx.lineCap = 'butt';
@@ -99,7 +99,7 @@ function drawCompass(ctx, cx, cy, r, windDirX, windDirZ, windStrength) {
 
 function drawPlacard(
   ctx,
-  { variantName, clothSegments, windDirX, windDirZ, windStrength, activeAnim },
+  { variantName, clothSegments, windDirX, windDirZ, windStrength, activeAnim }
 ) {
   ctx.clearRect(0, 0, CW, CH);
 
@@ -118,52 +118,76 @@ function drawPlacard(
 
   // ── "Gh0st" heading — SF Mono / Menlo render the zero with a slashed crossbar
   ctx.font = "bold 28px 'SF Mono', Menlo, Monaco, monospace";
-  ctx.fillStyle = '#eef0ff';
+  ctx.fillStyle = '#ffffff';
   ctx.textAlign = 'left';
   ctx.textBaseline = 'top';
-  ctx.fillText('Gh0st', 22, 10);
+  ctx.fillText('Gh0st', 22, 20);
 
   // ── SKIN row (preset name)
   ctx.font = "11px 'Courier New', Courier, monospace";
-  ctx.fillStyle = '#3d4e77';
-  ctx.fillText('SKIN', 22, 42);
+  ctx.fillStyle = '#b0b0b0';
+  ctx.fillText('SKIN', 22, 54);
   ctx.font = "bold 18px 'Courier New', Courier, monospace";
-  ctx.fillStyle = '#b0c8ff';
-  ctx.fillText(variantName ?? 'Unknown', 22, 55);
+  ctx.fillStyle = '#ffffff';
+  ctx.fillText(variantName ?? 'Unknown', 22, 67);
 
   // ── Compass (right side, vertically centred in the header block)
-  drawCompass(ctx, CW - 46, 36, 26, windDirX, windDirZ, windStrength);
+  drawCompass(ctx, CW - 46, 48, 26, windDirX, windDirZ, windStrength);
 
   // ── Separator
   ctx.strokeStyle = 'rgba(255, 255, 255, 0.07)';
   ctx.lineWidth = 1;
   ctx.beginPath();
-  ctx.moveTo(22, 76);
-  ctx.lineTo(CW - 22, 76);
+  ctx.moveTo(22, 96);
+  ctx.lineTo(CW - 22, 96);
   ctx.stroke();
 
-  // ── Stats rows
+  // ── Stats grid — 2 columns × 2 rows
+  // Cloth is 1.0 × 1.0 world units; assuming 1 unit = 1 m → 3.28 ft
+  const clothFt = (1.0 * 3.28084).toFixed(1);
+
   const windValue =
     windStrength > 0.01
       ? `${windArrowChar(windDirX, windDirZ)}  ${(windStrength * 100).toFixed(0)}%`
       : 'calm';
 
-  const rows = [
-    ['CLOTH', `${clothSegments} × ${clothSegments}`],
-    ['ANIM', activeAnim ?? 'idle'],
-    ['WIND', windValue],
+  // [left, right] pairs per row
+  const grid = [
+    [
+      ['SEGMENTS', `${clothSegments} × ${clothSegments}`],
+      ['ANIM', activeAnim ?? 'idle'],
+    ],
+    [
+      ['SIZE', `${clothFt} × ${clothFt} ft`],
+      ['WIND', windValue],
+    ],
   ];
 
-  rows.forEach(([label, value], i) => {
-    const baseY = 86 + i * 56;
-    ctx.font = "12px 'Courier New', Courier, monospace";
-    ctx.fillStyle = '#3d4e77';
-    ctx.textAlign = 'left';
-    ctx.textBaseline = 'top';
-    ctx.fillText(label, 22, baseY);
-    ctx.font = "bold 20px 'Courier New', Courier, monospace";
-    ctx.fillStyle = '#b0c8ff';
-    ctx.fillText(value, 22, baseY + 16);
+  const colX = [22, 274]; // left / right column x offsets
+  const rowH = 58;
+  const startY = 116;
+
+  // Subtle vertical divider at canvas midpoint
+  ctx.strokeStyle = 'rgba(255, 255, 255, 0.05)';
+  ctx.lineWidth = 1;
+  ctx.beginPath();
+  ctx.moveTo(254, 100);
+  ctx.lineTo(254, startY + grid.length * rowH - 4);
+  ctx.stroke();
+
+  grid.forEach((row, rowIdx) => {
+    row.forEach(([label, value], colIdx) => {
+      const x = colX[colIdx];
+      const baseY = startY + rowIdx * rowH;
+      ctx.font = "12px 'Courier New', Courier, monospace";
+      ctx.fillStyle = '#b0b0b0';
+      ctx.textAlign = 'left';
+      ctx.textBaseline = 'top';
+      ctx.fillText(label, x, baseY);
+      ctx.font = "bold 20px 'Courier New', Courier, monospace";
+      ctx.fillStyle = '#ffffff';
+      ctx.fillText(value, x, baseY + 16);
+    });
   });
 }
 

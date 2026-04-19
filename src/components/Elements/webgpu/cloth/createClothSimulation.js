@@ -217,7 +217,7 @@ export default function createClothSimulation({
   // Anchors pin clusters of vertices that translate rigidly with an
   // external position each frame. Up to NUM_ANCHORS slots.
   // paramsBuf.x encoding: 0 = free, 1 = static pin, 2+ = anchor slot.
-  const NUM_ANCHORS = 10;
+  const NUM_ANCHORS = 11;
   const anchorPosU = [];
   for (let a = 0; a < NUM_ANCHORS; a += 1) {
     anchorPosU.push(uniform(new THREE.Vector3(0, 0, 0)));
@@ -297,10 +297,10 @@ export default function createClothSimulation({
   const gravityU = uniform(gravity);
   const gravityDirU = uniform(new THREE.Vector3(0, -1, 0));
 
-  // 4-slot sphere collider system — fixed-size arrays for GPU unrolling.
+  // 6-slot sphere collider system — fixed-size arrays for GPU unrolling.
   // Slot 0 = cursor (managed by ClothMesh pointer logic).
-  // Slots 1-3 = scene-controlled via `colliders` prop.
-  const NUM_COLLIDERS = 4;
+  // Slots 1-5 = scene-controlled via `colliders` prop.
+  const NUM_COLLIDERS = 6;
   const colliderPosU = [];
   const colliderEnabledU = [];
   const colliderRadiusU = [];
@@ -440,7 +440,15 @@ export default function createClothSimulation({
                     select(
                       slot.equal(uint(7)),
                       anchorPosU[7],
-                      select(slot.equal(uint(8)), anchorPosU[8], anchorPosU[9])
+                      select(
+                        slot.equal(uint(8)),
+                        anchorPosU[8],
+                        select(
+                          slot.equal(uint(9)),
+                          anchorPosU[9],
+                          anchorPosU[10]
+                        )
+                      )
                     )
                   )
                 )

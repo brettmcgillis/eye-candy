@@ -24,6 +24,14 @@ const CUTOUTS = [
   { u: 0.57, v: 0.4, radius: 0.06 },
 ];
 
+// Ear/crown rest positions in world (cloth XZ plane, y=0).
+const EAR_LEFT_WORLD_X = (CUTOUTS[0].u - 0.5) * 1.0;
+const EAR_LEFT_WORLD_Z = (CUTOUTS[0].v - 0.5) * 1.0;
+const EAR_RIGHT_WORLD_X = (CUTOUTS[1].u - 0.5) * 1.0;
+const EAR_RIGHT_WORLD_Z = (CUTOUTS[1].v - 0.5) * 1.0;
+const CROWN_WORLD_X = 0;
+const CROWN_WORLD_Z = (CUTOUTS[0].v - 0.5) * 1.0;
+
 const sharedTrailTarget = new THREE.Vector3();
 
 const GhostCharacter = forwardRef(function GhostCharacter(
@@ -62,6 +70,10 @@ const GhostCharacter = forwardRef(function GhostCharacter(
     cursorCollider = true,
     cursorRadius = 0.12,
     collisionMargin = 0.02,
+    earLiftY = 0,
+    earPushBack = 0,
+    earSpread = 0,
+    earColliderRadius = 0,
     gravity = 0.00012,
     windAmplitude = 0.0004,
     maxVelocity = 0.01,
@@ -115,6 +127,35 @@ const GhostCharacter = forwardRef(function GhostCharacter(
 
   const spherePos = useMemo(() => new THREE.Vector3(0, SPHERE_BASE_Y, 0), []);
 
+  // Ear anchor positions — these vectors hold the actual world position of
+  // each ear (used by both the anchor and its sphere collider). The anchor
+  // entries below set rest = (worldX, 0, worldZ) so the offset cancels out
+  // and `position` IS the world coordinate.
+  const earLeftPos = useMemo(
+    () =>
+      new THREE.Vector3(
+        EAR_LEFT_WORLD_X - earSpread,
+        earLiftY,
+        EAR_LEFT_WORLD_Z - earPushBack
+      ),
+    [earLiftY, earPushBack, earSpread]
+  );
+  const earRightPos = useMemo(
+    () =>
+      new THREE.Vector3(
+        EAR_RIGHT_WORLD_X + earSpread,
+        earLiftY,
+        EAR_RIGHT_WORLD_Z - earPushBack
+      ),
+    [earLiftY, earPushBack, earSpread]
+  );
+
+  // Crown anchor — fixed at the cloth plane between the ear cutouts.
+  const crownPos = useMemo(
+    () => new THREE.Vector3(CROWN_WORLD_X, 0, CROWN_WORLD_Z),
+    []
+  );
+
   const emissiveCenter = useMemo(
     () => [emissiveCenterU, emissiveCenterV],
     [emissiveCenterU, emissiveCenterV]
@@ -137,30 +178,49 @@ const GhostCharacter = forwardRef(function GhostCharacter(
     [] // eslint-disable-line -- initial position only
   );
 
-  const colliders = useMemo(
-    () => [
+  const colliders = useMemo(() => {
+    const list = [
       { position: spherePos, radius: SPHERE_RADIUS },
       { position: handLeftPos, radius: handSize },
       { position: handRightPos, radius: handSize },
-    ],
-    [spherePos, handLeftPos, handRightPos, handSize]
-  );
+    ];
+    if (earColliderRadius > 0) {
+      // Drop the sphere centers down by one radius so the ear anchors land
+      // on the +Y pole — the cloth drapes over the nub like the hands do.
+      const drop = new THREE.Vector3(0, -earColliderRadius, 0);
+      list.push(
+        {
+          position: earLeftPos.clone().add(drop),
+          radius: earColliderRadius,
+        },
+        {
+          position: earRightPos.clone().add(drop),
+          radius: earColliderRadius,
+        }
+      );
+    }
+    return list;
+  }, [
+    spherePos,
+    handLeftPos,
+    handRightPos,
+    handSize,
+    earLeftPos,
+    earRightPos,
+    earColliderRadius,
+  ]);
 
   // Dynamic anchors — vertices near each hand are pinned and move with it.
   // Slots 0-7: hands (Z/X equator poles first, Y top poles last).
-  // Slots 8-9: ear rings (track head sphere).
+  // Slots 8-9: ear rings (track head sphere with optional offset).
+  // Slot 10: head crown — pin between the ears so the cloth stays seated
+  //          on top of the head when the ears are spread/lifted.
   // Equator anchors are processed first so Y-pole overwrites overlapping
   // center vertices with the correct top-of-sphere offset.
   // worldX/Z = initial position on the cloth surface (grid lookup).
   // restX/Y/Z = anchor reference point for offset computation.
   // position = the THREE.Vector3 that gets mutated per frame.
   //
-  // Ear cutout UVs → world: worldX = (u-0.5)*width, worldZ = (v-0.5)*height
-  const earLeftWorldX = (CUTOUTS[0].u - 0.5) * 1.0;
-  const earLeftWorldZ = (CUTOUTS[0].v - 0.5) * 1.0;
-  const earRightWorldX = (CUTOUTS[1].u - 0.5) * 1.0;
-  const earRightWorldZ = (CUTOUTS[1].v - 0.5) * 1.0;
-
   const anchors = useMemo(
     () => [
       // ── Equator anchors (Z/X poles) — processed first so Y-pole overwrites
@@ -250,29 +310,50 @@ const GhostCharacter = forwardRef(function GhostCharacter(
         gridRadius: 2,
         position: handRightPos,
       },
-      // Slot 8: left ear — anchored to head sphere (static)
+      // Slot 8: left ear — `position` is world coords; rest matches worldX/Z so
+      //         the offset cancels (vertex world = position + (vp - rest)).
+      //         gridRadius 1 → tight 5-vertex cross so the surrounding cloth
+      //         can drape down over the ear collider's sides.
       {
-        worldX: earLeftWorldX,
-        worldZ: earLeftWorldZ,
-        restX: 0,
-        restY: SPHERE_BASE_Y,
-        restZ: 0,
-        gridRadius: 2,
-        position: spherePos,
+        worldX: EAR_LEFT_WORLD_X,
+        worldZ: EAR_LEFT_WORLD_Z,
+        restX: EAR_LEFT_WORLD_X,
+        restY: 0,
+        restZ: EAR_LEFT_WORLD_Z,
+        gridRadius: 1,
+        position: earLeftPos,
       },
-      // Slot 9: right ear — anchored to head sphere (static)
+      // Slot 9: right ear — same encoding as slot 8.
       {
-        worldX: earRightWorldX,
-        worldZ: earRightWorldZ,
-        restX: 0,
-        restY: SPHERE_BASE_Y,
-        restZ: 0,
-        gridRadius: 2,
-        position: spherePos,
+        worldX: EAR_RIGHT_WORLD_X,
+        worldZ: EAR_RIGHT_WORLD_Z,
+        restX: EAR_RIGHT_WORLD_X,
+        restY: 0,
+        restZ: EAR_RIGHT_WORLD_Z,
+        gridRadius: 1,
+        position: earRightPos,
+      },
+      // Slot 10: head crown — fixed pin between the ears at the cloth plane.
+      {
+        worldX: CROWN_WORLD_X,
+        worldZ: CROWN_WORLD_Z,
+        restX: CROWN_WORLD_X,
+        restY: 0,
+        restZ: CROWN_WORLD_Z,
+        gridRadius: 1,
+        position: crownPos,
       },
     ],
     // eslint-disable-next-line -- static anchor config, position refs are stable
-    [handSpacing, handSize, handLeftPos, handRightPos, spherePos]
+    [
+      handSpacing,
+      handSize,
+      handLeftPos,
+      handRightPos,
+      earLeftPos,
+      earRightPos,
+      crownPos,
+    ]
   );
 
   // Animation state (owned by the character)

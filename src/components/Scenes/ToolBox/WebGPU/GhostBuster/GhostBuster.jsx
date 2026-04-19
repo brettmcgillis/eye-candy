@@ -167,6 +167,10 @@ export default function GhostBuster() {
         cursorCollider={controls.cursorCollider}
         cursorRadius={controls.cursorRadius}
         collisionMargin={controls.collisionMargin}
+        earLiftY={controls.earLiftY}
+        earPushBack={controls.earPushBack}
+        earSpread={controls.earSpread}
+        earColliderRadius={controls.earColliderRadius}
         segmentsX={controls.clothSegments}
         segmentsY={controls.clothSegments}
         gravity={controls.gravity}

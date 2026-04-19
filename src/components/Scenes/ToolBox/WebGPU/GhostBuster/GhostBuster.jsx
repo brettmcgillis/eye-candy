@@ -215,6 +215,12 @@ export default function GhostBuster() {
         angle={Math.PI * 0.3}
         decay={0}
       />
+      {controls.debugLights && (
+        <mesh position={[0, controls.spotHeight, 2]}>
+          <sphereGeometry args={[0.06, 8, 8]} />
+          <meshBasicMaterial color="yellow" depthTest={false} />
+        </mesh>
+      )}
 
       {controls.orbitLightEnabled && (
         <pointLight
@@ -280,6 +286,7 @@ export default function GhostBuster() {
         debugAnchors={controls.debugAnchors}
         debugAnchorColor={controls.debugAnchorColor}
         debugWireframe={controls.debugWireframe}
+        debugLights={controls.debugLights}
         holeAmount={controls.holeAmount}
         edgeFade={controls.edgeFade}
         tatterEdge={controls.tatterEdge}

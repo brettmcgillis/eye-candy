@@ -605,6 +605,10 @@ export default function useSceneControls(ghostRef, setAnimation, triggerJump) {
           label: 'Cloth Wireframe',
           value: ini.debugWireframe ?? false,
         },
+        debugLights: {
+          label: 'Show Lights',
+          value: false,
+        },
       },
       { collapsed: true }
     ),

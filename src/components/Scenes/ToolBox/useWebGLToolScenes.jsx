@@ -6,7 +6,9 @@ const HotBox = lazy(() => import('./WebGL/HotBox/HotBox'));
 const PenPlotter = lazy(() => import('./WebGL/PenPlotter/PenPlotter'));
 const SplineEditor = lazy(() => import('./WebGL/SplineEditor/SplineEditor'));
 const SmokeTest = lazy(() => import('./WebGL/SmokeTest/SmokeTest'));
-
+const CharacterController = lazy(
+  () => import('./WebGPU/CharacterController/CharacterController')
+);
 const scenes = [
   {
     id: 'noScene',
@@ -43,6 +45,12 @@ const scenes = [
     label: 'Smoke Test',
     icon: '💨',
     Component: SmokeTest,
+  },
+  {
+    id: 'characterController',
+    label: 'Character Controller',
+    icon: '🏃',
+    Component: CharacterController,
   },
 ];
 

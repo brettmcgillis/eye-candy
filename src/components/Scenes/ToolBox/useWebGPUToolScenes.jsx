@@ -2,6 +2,9 @@ import { lazy } from 'react';
 
 const NoScene = lazy(() => import('../../../app/scaffold/NoScene'));
 const GhostBuster = lazy(() => import('./WebGPU/GhostBuster/GhostBuster'));
+const CharacterController = lazy(
+  () => import('./WebGPU/CharacterController/CharacterController')
+);
 
 const scenes = [
   {
@@ -15,6 +18,12 @@ const scenes = [
     label: 'Ghost Buster',
     icon: '👻',
     Component: GhostBuster,
+  },
+  {
+    id: 'characterController',
+    label: 'Character Controller',
+    icon: '🏃',
+    Component: CharacterController,
   },
 ];
 

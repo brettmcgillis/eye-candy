@@ -5,3 +5,7 @@
   - day mode and night mode
 - remove any unecesssary screenshots
 - can we avoid adding mobile joysticks outside of main canvas? if not we need a way to selectively render it based on scene. ie, only show for characterController scene, and future showcase game scene
+- make shot cube a sphere + collider w/ ghost
+- do we refactor||fork ecctrl for webgpu?
+- do we refactor||fork ClothMesh for webgl?
+- every good game has double jump

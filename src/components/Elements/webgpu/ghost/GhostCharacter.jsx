@@ -98,6 +98,7 @@ const GhostCharacter = forwardRef(function GhostCharacter(
     debugAnchors = false,
     debugAnchorColor = '#44ff44',
     debugWireframe = false,
+    debugLights = false,
     holeAmount = 0.2,
     edgeFade = 0.15,
     tatterEdge = 0,
@@ -838,6 +839,27 @@ const GhostCharacter = forwardRef(function GhostCharacter(
         penumbra={1}
         decay={2}
       />
+
+      {debugLights && (
+        <>
+          <mesh position={[-0.05, SPHERE_BASE_Y, 0]}>
+            <sphereGeometry args={[0.02, 8, 8]} />
+            <meshBasicMaterial color={eyeColor} depthTest={false} />
+          </mesh>
+          <mesh position={[0.05, SPHERE_BASE_Y, 0]}>
+            <sphereGeometry args={[0.02, 8, 8]} />
+            <meshBasicMaterial color={eyeColor} depthTest={false} />
+          </mesh>
+          <mesh position={[0, SPHERE_BASE_Y, 0]}>
+            <sphereGeometry args={[0.025, 8, 8]} />
+            <meshBasicMaterial
+              color={groundLightColor}
+              depthTest={false}
+              wireframe
+            />
+          </mesh>
+        </>
+      )}
     </group>
   );
 });

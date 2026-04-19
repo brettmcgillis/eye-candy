@@ -1,0 +1,29 @@
+import * as THREE from 'three';
+
+import { useEffect } from 'react';
+
+import { useGLTF } from '@react-three/drei';
+import { RigidBody } from '@react-three/rapier';
+
+export default function RoughPlane() {
+  const roughPlane = useGLTF('/roughPlane.glb');
+
+  useEffect(() => {
+    roughPlane.scene.traverse((child) => {
+      if (
+        child instanceof THREE.Mesh &&
+        child.material instanceof THREE.MeshStandardMaterial
+      ) {
+        child.receiveShadow = true;
+      }
+    });
+  }, []);
+
+  return (
+    <RigidBody type="fixed" colliders="trimesh" position={[10, -1.2, 10]}>
+      <primitive object={roughPlane.scene} />
+    </RigidBody>
+  );
+}
+
+useGLTF.preload('/roughPlane.glb');

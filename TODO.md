@@ -31,7 +31,7 @@
 
 To Build:
 
-- [ ] Skeleton with bird in ribcage
+- [ ] Skeleton with bird in ribcage (all assets grabbed, need to pose skeleton)
 - [ ] Skull & crossbones w/ stained glass spotlight.
 - [ ] Video casette tape with video playing on tape ribbon
 - [ ] CSG Skull. Knock a reversal out of its forehead.

@@ -2,7 +2,11 @@ import * as THREE from 'three';
 
 import React, { useCallback, useRef } from 'react';
 
-import { OrbitControls, PerspectiveCamera } from '@react-three/drei';
+import {
+  Environment,
+  OrbitControls,
+  PerspectiveCamera,
+} from '@react-three/drei';
 import { useFrame } from '@react-three/fiber';
 
 import GhostCharacter from '../../../../elements/webgpu/ghost/GhostCharacter';
@@ -111,6 +115,13 @@ export default function GhostBuster() {
         enabled={controls.orbitEnabled}
       />
 
+      <Environment
+        preset="warehouse"
+        background={false}
+        environmentIntensity={controls.sceneEnvIntensity}
+        rotation={[0, controls.envRotationY ?? 0, 0]}
+      />
+
       <ambientLight intensity={controls.ambientIntensity} />
       <spotLight
         position={[0, controls.spotHeight, 2]}
@@ -131,6 +142,53 @@ export default function GhostBuster() {
             <meshBasicMaterial color={controls.orbitLightColor} />
           </mesh>
         </pointLight>
+      )}
+
+      {controls.studioLightIntensity > 0 && (
+        <>
+          {/* Front key left — specular on front-facing cloth */}
+          <pointLight
+            position={[-1.8, 0.5, 2.5]}
+            intensity={controls.studioLightIntensity * 0.8}
+            color={controls.orbitLightColor}
+            decay={2}
+          />
+          {/* Front key right */}
+          <pointLight
+            position={[1.8, 0.5, 2.5]}
+            intensity={controls.studioLightIntensity * 0.8}
+            color={controls.orbitLightColor}
+            decay={2}
+          />
+          {/* Front top — reveals head dome curvature */}
+          <pointLight
+            position={[0, 2.5, 1.5]}
+            intensity={controls.studioLightIntensity * 0.5}
+            color={controls.orbitLightColor}
+            decay={2}
+          />
+          {/* Below-front — chrome visible from top-down view */}
+          <pointLight
+            position={[0, -2, 1.5]}
+            intensity={controls.studioLightIntensity}
+            color={controls.orbitLightColor}
+            decay={0}
+          />
+          {/* Below-back */}
+          <pointLight
+            position={[0, -2, -1.5]}
+            intensity={controls.studioLightIntensity * 0.6}
+            color={controls.orbitLightColor}
+            decay={0}
+          />
+          {/* Side fill */}
+          <pointLight
+            position={[-3, 0.5, 0]}
+            intensity={controls.studioLightIntensity * 0.4}
+            color={controls.orbitLightColor}
+            decay={0}
+          />
+        </>
       )}
 
       <GhostCharacter
@@ -191,6 +249,11 @@ export default function GhostBuster() {
         alphaSeed={controls.alphaSeed}
         roughness={controls.roughness}
         metalness={controls.metalness}
+        envMapIntensity={controls.envMapIntensity}
+        clearcoat={controls.clearcoat}
+        clearcoatRoughness={controls.clearcoatRoughness}
+        innerRoughness={controls.innerRoughness ?? null}
+        innerMetalness={controls.innerMetalness ?? null}
         opacity={controls.opacity}
         paused={controls.paused}
         groundLightColor={controls.groundLightColor}
@@ -204,6 +267,10 @@ export default function GhostBuster() {
         clothSegments={controls.clothSegments}
         animationInputRef={animationInputRef}
         ghostRef={ghostRef}
+        stiffness={controls.stiffness}
+        dampening={controls.dampening}
+        holeAmount={controls.holeAmount}
+        tatterEdge={controls.tatterEdge}
         innerColor={controls.innerColor}
         innerEmissive={controls.innerEmissiveColor}
         innerIntensity={controls.innerEmissiveIntensity}
@@ -212,6 +279,8 @@ export default function GhostBuster() {
         outerEmissive={controls.outerEmissiveColor}
         outerIntensity={controls.outerEmissiveIntensity}
         outerFalloff={controls.emissiveFalloff}
+        roughness={controls.roughness}
+        metalness={controls.metalness}
       />
 
       {controls.floorVisible && (

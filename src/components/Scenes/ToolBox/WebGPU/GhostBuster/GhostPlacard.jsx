@@ -4,8 +4,8 @@ import React, { useMemo, useRef } from 'react';
 
 import { useFrame } from '@react-three/fiber';
 
-// Canvas resolution — 2:1 matches the world plane aspect ratio
-const CW = 512;
+// Canvas resolution — 3:1 for three columns
+const CW = 768;
 const CH = 256;
 
 // ── Drawing helpers ──────────────────────────────────────────────────────────
@@ -236,56 +236,72 @@ function drawPlacard(ctx, allProps) {
   ctx.lineTo(CW - 22, 54);
   ctx.stroke();
 
-  // ── Left column: variant, segments, animation, wind
+  // ── Left column: variant, segments, animation, wind, cloth physics
   const leftData = {
     variant: allProps.variantName ?? 'unknown',
     segments: allProps.clothSegments ?? 0,
     animation: allProps.activeAnim ?? 'idle',
     wind: {
-      direction: `${windArrowChar(allProps.windDirX ?? 0, allProps.windDirZ ?? 0)}`,
-      strength: parseFloat((allProps.windStrength ?? 0 * 100).toFixed(1)),
+      dir: `${windArrowChar(allProps.windDirX ?? 0, allProps.windDirZ ?? 0)}`,
+      strength: parseFloat(((allProps.windStrength ?? 0) * 100).toFixed(1)),
+    },
+    cloth: {
+      stiffness: parseFloat((allProps.stiffness ?? 1).toFixed(3)),
+      dampening: parseFloat((allProps.dampening ?? 0).toFixed(3)),
+      holes: parseFloat((allProps.holeAmount ?? 0).toFixed(3)),
+      tatter: parseFloat((allProps.tatterEdge ?? 0).toFixed(3)),
     },
   };
 
-  // ── Right column: inner & outer materials
-  const rightData = {
+  // ── Center column: inner material
+  const innerData = {
     innerMaterial: {
       color: allProps.innerColor ?? '#ffffff',
       emissive: allProps.innerEmissive ?? '#000000',
       intensity: parseFloat((allProps.innerIntensity ?? 1).toFixed(2)),
       falloff: parseFloat((allProps.innerFalloff ?? 1).toFixed(2)),
+      roughness: parseFloat((allProps.roughness ?? 0).toFixed(2)),
+      metalness: parseFloat((allProps.metalness ?? 0).toFixed(2)),
     },
+  };
+
+  // ── Right column: outer material
+  const outerData = {
     outerMaterial: {
       color: allProps.outerColor ?? '#ffffff',
       emissive: allProps.outerEmissive ?? '#000000',
       intensity: parseFloat((allProps.outerIntensity ?? 1).toFixed(2)),
       falloff: parseFloat((allProps.outerFalloff ?? 1).toFixed(2)),
+      roughness: parseFloat((allProps.roughness ?? 0).toFixed(2)),
+      metalness: parseFloat((allProps.metalness ?? 0).toFixed(2)),
     },
   };
 
-  const leftStr = JSON.stringify(leftData, null, 2);
-  const rightStr = JSON.stringify(rightData, null, 2);
-  const leftLines = leftStr.split('\n');
-  const rightLines = rightStr.split('\n');
+  const leftLines = JSON.stringify(leftData, null, 2).split('\n');
+  const innerLines = JSON.stringify(innerData, null, 2).split('\n');
+  const outerLines = JSON.stringify(outerData, null, 2).split('\n');
 
-  // ── Draw both columns with syntax highlighting
+  // ── Draw three columns with syntax highlighting
   ctx.font = "10px 'Courier New', Courier, monospace";
   ctx.textAlign = 'left';
   ctx.textBaseline = 'top';
 
-  const col1X = 22;
-  const col2X = 262;
+  const col1X = 16;
+  const col2X = 272;
+  const col3X = 528;
   const startY = 60;
   const lineHeight = 12;
 
-  // Left column
   leftLines.forEach((line, i) => {
     drawJsonLine(ctx, line, col1X, startY + i * lineHeight, 6);
   });
 
-  // Right column
-  rightLines.forEach((line, i) => {
+  innerLines.forEach((line, i) => {
     drawJsonLine(ctx, line, col2X, startY + i * lineHeight, 6);
+  });
+
+  outerLines.forEach((line, i) => {
+    drawJsonLine(ctx, line, col3X, startY + i * lineHeight, 6);
   });
 }
 
@@ -301,16 +317,22 @@ function drawPlacard(ctx, allProps) {
  *   clothSegments         — current cloth segment count (number)
  *   animationInputRef     — ref to animation input { windDirX, windDirZ, windStrength }
  *   ghostRef              — ref to GhostCharacter imperative handle for live animation state
+ *   stiffness, dampening  — cloth physics props
  *   innerColor, outerColor — hex color strings
  *   innerEmissive, outerEmissive — hex color strings
  *   innerIntensity, outerIntensity — emissive brightness 0–2
  *   innerFalloff, outerFalloff — emissive falloff 0–1
+ *   roughness, metalness  — shared PBR material props
  */
 export default function GhostPlacard({
   variantName,
   clothSegments,
   animationInputRef,
   ghostRef,
+  stiffness,
+  dampening,
+  holeAmount,
+  tatterEdge,
   innerColor,
   innerEmissive,
   innerIntensity,
@@ -319,6 +341,8 @@ export default function GhostPlacard({
   outerEmissive,
   outerIntensity,
   outerFalloff,
+  roughness,
+  metalness,
 }) {
   const anisotropySet = useRef(false);
   const { ctx, texture } = useMemo(() => {
@@ -354,6 +378,10 @@ export default function GhostPlacard({
       windDirZ: input.windDirZ ?? 0,
       windStrength: input.windStrength ?? 0,
       activeAnim,
+      stiffness,
+      dampening,
+      holeAmount,
+      tatterEdge,
       innerColor,
       innerEmissive,
       innerIntensity,
@@ -362,6 +390,8 @@ export default function GhostPlacard({
       outerEmissive,
       outerIntensity,
       outerFalloff,
+      roughness,
+      metalness,
     });
 
     texture.needsUpdate = true;
@@ -372,9 +402,15 @@ export default function GhostPlacard({
   //   The bottom edge rests just above the floor (y ≈ -0.9);
   //   the top edge leans toward the ghost at roughly y ≈ -0.54.
   return (
-    <mesh position={[0, -0.7, 0.9]} rotation={[-Math.PI / 3, 0, 0]}>
-      <planeGeometry args={[1.5, 0.75]} />
-      <meshBasicMaterial map={texture} transparent />
-    </mesh>
+    <group position={[0, -0.7, 0.9]} rotation={[-Math.PI / 3, 0, 0]}>
+      <mesh>
+        <planeGeometry args={[2.25, 0.75]} />
+        <meshBasicMaterial map={texture} side={THREE.FrontSide} transparent />
+      </mesh>
+      <mesh>
+        <planeGeometry args={[2.25, 0.75]} />
+        <meshBasicMaterial color="#000000" side={THREE.BackSide} />
+      </mesh>
+    </group>
   );
 }

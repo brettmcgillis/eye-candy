@@ -62,6 +62,27 @@ export default function useSceneControls(ghostRef, setAnimation, triggerJump) {
           max: 15,
           step: 0.5,
         },
+        sceneEnvIntensity: {
+          label: 'Env Intensity',
+          value: ini.sceneEnvIntensity ?? 1,
+          min: 0,
+          max: 5,
+          step: 0.05,
+        },
+        envRotationY: {
+          label: 'Env Rotation',
+          value: ini.envRotationY ?? 0,
+          min: -Math.PI,
+          max: Math.PI,
+          step: 0.05,
+        },
+        studioLightIntensity: {
+          label: 'Studio Panels',
+          value: ini.studioLightIntensity ?? 0,
+          min: 0,
+          max: 30,
+          step: 0.5,
+        },
         'Orbit Light': folder(
           {
             orbitLightEnabled: {
@@ -163,6 +184,41 @@ export default function useSceneControls(ghostRef, setAnimation, triggerJump) {
             metalness: {
               label: 'Metalness',
               value: ini.metalness,
+              min: 0,
+              max: 1,
+              step: 0.01,
+            },
+            innerRoughness: {
+              label: 'Inner Roughness',
+              value: ini.innerRoughness ?? ini.roughness,
+              min: 0,
+              max: 1,
+              step: 0.01,
+            },
+            innerMetalness: {
+              label: 'Inner Metalness',
+              value: ini.innerMetalness ?? ini.metalness,
+              min: 0,
+              max: 1,
+              step: 0.01,
+            },
+            envMapIntensity: {
+              label: 'Env Reflect',
+              value: ini.envMapIntensity ?? 1,
+              min: 0,
+              max: 5,
+              step: 0.05,
+            },
+            clearcoat: {
+              label: 'Clearcoat',
+              value: ini.clearcoat ?? 0,
+              min: 0,
+              max: 1,
+              step: 0.01,
+            },
+            clearcoatRoughness: {
+              label: 'Coat Roughness',
+              value: ini.clearcoatRoughness ?? 0,
               min: 0,
               max: 1,
               step: 0.01,

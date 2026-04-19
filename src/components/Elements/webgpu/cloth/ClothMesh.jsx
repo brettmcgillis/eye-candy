@@ -107,6 +107,9 @@ const ClothMesh = forwardRef(function ClothMesh(
     textureRotation = 0,
     // Inner (back-face) color — when set, front/back faces render different colors
     innerColor = null,
+    // Per-face roughness/metalness — activates roughnessNode/metalnessNode when non-null
+    innerRoughness = null,
+    innerMetalness = null,
     // Emissive glow — self-illumination independent of scene lights.
     // Inner/outer split follows the same frontFacing rule as innerColor.
     outerEmissiveColor = null,
@@ -146,6 +149,10 @@ const ClothMesh = forwardRef(function ClothMesh(
       innerEmissiveIntensityU: nodeUniform(0),
       emissiveFalloffU: nodeUniform(0),
       emissiveCenterU: nodeUniform(new THREE.Vector2(0.5, 0.5)),
+      outerRoughnessU: nodeUniform(0.8),
+      innerRoughnessU: nodeUniform(0.8),
+      outerMetalnessU: nodeUniform(0),
+      innerMetalnessU: nodeUniform(0),
     }),
     []
   );
@@ -337,6 +344,32 @@ const ClothMesh = forwardRef(function ClothMesh(
     texUniforms,
   ]);
 
+  useEffect(() => {
+    if (innerRoughness !== null) {
+      sim.material.roughnessNode = mix(
+        texUniforms.outerRoughnessU,
+        texUniforms.innerRoughnessU,
+        frontFacing
+      );
+    } else {
+      sim.material.roughnessNode = null;
+    }
+    sim.material.needsUpdate = true;
+  }, [sim, innerRoughness, texUniforms]);
+
+  useEffect(() => {
+    if (innerMetalness !== null) {
+      sim.material.metalnessNode = mix(
+        texUniforms.outerMetalnessU,
+        texUniforms.innerMetalnessU,
+        frontFacing
+      );
+    } else {
+      sim.material.metalnessNode = null;
+    }
+    sim.material.needsUpdate = true;
+  }, [sim, innerMetalness, texUniforms]);
+
   // Rebuild alpha mask when params change
   useEffect(() => {
     sim.rebuildAlpha({
@@ -415,6 +448,14 @@ const ClothMesh = forwardRef(function ClothMesh(
     texUniforms.rotU.value = (textureRotation * Math.PI) / 180;
     if (materialProps?.color) {
       texUniforms.baseColorU.value.set(materialProps.color);
+    }
+    if (innerRoughness !== null && materialProps?.roughness !== undefined) {
+      texUniforms.outerRoughnessU.value = materialProps.roughness;
+      texUniforms.innerRoughnessU.value = innerRoughness;
+    }
+    if (innerMetalness !== null && materialProps?.metalness !== undefined) {
+      texUniforms.outerMetalnessU.value = materialProps.metalness;
+      texUniforms.innerMetalnessU.value = innerMetalness;
     }
 
     // Apply dynamic material properties (cached keys avoid per-frame allocation)

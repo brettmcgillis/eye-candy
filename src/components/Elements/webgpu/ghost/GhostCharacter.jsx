@@ -106,6 +106,11 @@ const GhostCharacter = forwardRef(function GhostCharacter(
     alphaSeed = 42,
     roughness = 0.8,
     metalness = 0,
+    envMapIntensity = 1,
+    clearcoat = 0,
+    clearcoatRoughness = 0,
+    innerRoughness = null,
+    innerMetalness = null,
     opacity = 1,
     paused = false,
     cutoutRimColor = '#000000',
@@ -715,10 +720,15 @@ const GhostCharacter = forwardRef(function GhostCharacter(
         innerEmissiveIntensity={innerEmissiveIntensity}
         emissiveFalloff={emissiveFalloff}
         emissiveCenter={emissiveCenter}
+        innerRoughness={innerRoughness}
+        innerMetalness={innerMetalness}
         materialProps={{
           color,
           roughness,
           metalness,
+          envMapIntensity,
+          clearcoat,
+          clearcoatRoughness,
           opacity,
           wireframe: debugWireframe,
         }}

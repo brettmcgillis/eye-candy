@@ -561,6 +561,12 @@ export default function useSceneControls(ghostRef, setAnimation, triggerJump) {
             setAnimation(current === 'wave' ? null : 'wave');
           }
         }),
+        'Clap (G)': button(() => {
+          if (setAnimation) {
+            const current = ghostRef.current?.activeAnimation;
+            setAnimation(current === 'clap' ? null : 'clap');
+          }
+        }),
         'Jump (Space)': button(() => {
           if (triggerJump) triggerJump();
         }),

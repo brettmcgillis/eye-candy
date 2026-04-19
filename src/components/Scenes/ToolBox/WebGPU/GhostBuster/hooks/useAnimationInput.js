@@ -28,6 +28,7 @@ export default function useAnimationInput() {
   const animationRef = useRef(null);
   const pendingJumpRef = useRef(false);
   const prevGpWaveRef = useRef(false);
+  const prevGpClapRef = useRef(false);
   const prevGpNextPresetRef = useRef(false);
   const resultRef = useRef({
     windDirX: 0,
@@ -101,7 +102,13 @@ export default function useAnimationInput() {
           break;
         case 'KeyF':
           if (!e.repeat) {
-            animationRef.current = animationRef.current ? null : 'wave';
+            animationRef.current = animationRef.current === 'wave' ? null : 'wave';
+          }
+          e.preventDefault();
+          break;
+        case 'KeyG':
+          if (!e.repeat) {
+            animationRef.current = animationRef.current === 'clap' ? null : 'clap';
           }
           e.preventDefault();
           break;
@@ -189,9 +196,16 @@ export default function useAnimationInput() {
         // B (2) = wave toggle (edge-triggered)
         const bPressed = gp.buttons[2]?.pressed || false;
         if (bPressed && !prevGpWaveRef.current) {
-          animationRef.current = animationRef.current ? null : 'wave';
+          animationRef.current = animationRef.current === 'wave' ? null : 'wave';
         }
         prevGpWaveRef.current = bPressed;
+
+        // Y (3) = clap toggle (edge-triggered)
+        const yPressed = gp.buttons[3]?.pressed || false;
+        if (yPressed && !prevGpClapRef.current) {
+          animationRef.current = animationRef.current === 'clap' ? null : 'clap';
+        }
+        prevGpClapRef.current = yPressed;
 
         // RB (5) = next preset (edge-triggered)
         const rbPressed = gp.buttons[5]?.pressed || false;

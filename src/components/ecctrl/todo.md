@@ -1,0 +1,4 @@
+- Fix gamepad handling. camera and player controls seem inverted. provide toggle just in case
+- refactor Example out to CharacterController. Replace model with Ghost character & add an npc lol.
+- remove any unecesssary screenshots
+- can we avoid adding mobile joysticks outside of main canvas? if not we need a way to selectively render it based on scene. ie, only show for characterController scene, and future showcase game scene

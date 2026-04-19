@@ -11,16 +11,18 @@ const CH = 256;
 // ── Drawing helpers ──────────────────────────────────────────────────────────
 
 function roundRectPath(ctx, x, y, w, h, r) {
+  const radius = Math.min(r, w * 0.5, h * 0.5);
+
   ctx.beginPath();
-  ctx.moveTo(x + r, y);
-  ctx.lineTo(x + w - r, y);
-  ctx.arcTo(x + w, y, x + w, y + r, r);
-  ctx.lineTo(x + w, y + h - r);
-  ctx.arcTo(x + w, y + h, x + w - r, y + h, r);
-  ctx.lineTo(x + r, y + h);
-  ctx.arcTo(x, y + h, x, y + h - r, r);
-  ctx.lineTo(x, y + r);
-  ctx.arcTo(x, y, x + r, y, r);
+  ctx.moveTo(x + radius, y);
+  ctx.lineTo(x + w - radius, y);
+  ctx.arcTo(x + w, y, x + w, y + radius, radius);
+  ctx.lineTo(x + w, y + h - radius);
+  ctx.arcTo(x + w, y + h, x + w - radius, y + h, radius);
+  ctx.lineTo(x + radius, y + h);
+  ctx.arcTo(x, y + h, x, y + h - radius, radius);
+  ctx.lineTo(x, y + radius);
+  ctx.arcTo(x, y, x + radius, y, radius);
   ctx.closePath();
 }
 
@@ -34,16 +36,108 @@ function windArrowChar(dx, dz) {
   return ['↑', '↗', '→', '↘', '↓', '↙', '←', '↖'][idx];
 }
 
+/**
+ * Draw syntax-highlighted JSON representation with proper color coding
+ * Returns the y position after drawing
+ */
+function drawJsonLine(ctx, line, x, y, charWidth = 6.8) {
+  const colorMap = {
+    key: '#ffb86c', // orange
+    string: '#a1efa3', // green
+    number: '#bd93f9', // purple
+    boolean: '#ff79c6', // pink
+    null: '#888888', // gray
+    symbol: '#f8f8f2', // light gray (brackets, colons, commas)
+  };
+  const colorValuePattern = /^"#(?:[0-9a-fA-F]{3}|[0-9a-fA-F]{6})"$/;
+
+  let i = 0;
+  let currentX = x;
+  let currentKey = null;
+
+  while (i < line.length) {
+    if (line[i] === ' ') {
+      currentX += charWidth;
+      i += 1;
+    } else if (line[i] === '"') {
+      // Find closing quote (string key or value)
+      let end = i + 1;
+      while (end < line.length && line[end] !== '"') {
+        if (line[end] === '\\') end += 1;
+        end += 1;
+      }
+      const str = line.slice(i, end + 1);
+      // Check if it's a key (followed by :)
+      const isKey = line[end + 1] === ':';
+      ctx.fillStyle = isKey ? colorMap.key : colorMap.string;
+      ctx.fillText(str, currentX, y);
+
+      if (isKey) {
+        currentKey = str.slice(1, -1);
+      } else if (
+        currentKey &&
+        /(color|emissive)/i.test(currentKey) &&
+        colorValuePattern.test(str)
+      ) {
+        const chipSize = 8;
+        const chipX = currentX + str.length * charWidth + 6;
+        const chipY = y + 2;
+
+        roundRectPath(ctx, chipX, chipY, chipSize, chipSize, 2);
+        ctx.fillStyle = str.slice(1, -1);
+        ctx.fill();
+        ctx.strokeStyle = 'rgba(255, 255, 255, 0.35)';
+        ctx.lineWidth = 1;
+        ctx.stroke();
+      }
+
+      currentX += str.length * charWidth;
+      i = end + 1;
+    } else if (/[0-9.-]/.test(line[i])) {
+      // Number
+      let end = i;
+      while (end < line.length && /[0-9.eE+-]/.test(line[end])) end += 1;
+      const num = line.slice(i, end);
+      ctx.fillStyle = colorMap.number;
+      ctx.fillText(num, currentX, y);
+      currentX += num.length * charWidth;
+      i = end;
+    } else if (
+      line.slice(i, i + 4) === 'true' ||
+      line.slice(i, i + 5) === 'false'
+    ) {
+      const bool = line.slice(i, i + (line[i + 4] === 'e' ? 5 : 4));
+      ctx.fillStyle = colorMap.boolean;
+      ctx.fillText(bool, currentX, y);
+      currentX += bool.length * charWidth;
+      i += bool.length;
+    } else if (line.slice(i, i + 4) === 'null') {
+      ctx.fillStyle = colorMap.null;
+      ctx.fillText('null', currentX, y);
+      currentX += 4 * charWidth;
+      i += 4;
+    } else {
+      // Symbols: : , { } [ ]
+      ctx.fillStyle = colorMap.symbol;
+      ctx.fillText(line[i], currentX, y);
+      currentX += charWidth;
+      i += 1;
+    }
+  }
+
+  return y + 13;
+}
+
 function drawCompass(ctx, cx, cy, r, windDirX, windDirZ, windStrength) {
   // Ring
-  ctx.strokeStyle = 'rgba(100, 140, 255, 0.25)';
+  ctx.strokeStyle = 'rgb(255, 255, 255)';
   ctx.lineWidth = 1;
   ctx.beginPath();
   ctx.arc(cx, cy, r, 0, Math.PI * 2);
   ctx.stroke();
 
   // Cardinal tick marks
-  ctx.strokeStyle = 'rgba(100, 140, 255, 0.18)';
+  ctx.strokeStyle = 'rgb(200, 200, 200)';
   ctx.lineWidth = 1;
   for (let i = 0; i < 4; i += 1) {
     const a = (i * Math.PI) / 2;
@@ -64,7 +158,7 @@ function drawCompass(ctx, cx, cy, r, windDirX, windDirZ, windStrength) {
     const angle = Math.atan2(ay, ax);
     const headLen = 7;
 
-    ctx.strokeStyle = '#7799ee';
+    ctx.strokeStyle = 'rgb(200, 200, 200)';
     ctx.lineWidth = 2;
     ctx.lineCap = 'round';
 
@@ -90,17 +184,14 @@ function drawCompass(ctx, cx, cy, r, windDirX, windDirZ, windStrength) {
     ctx.lineCap = 'butt';
   } else {
     // Calm — small filled dot
-    ctx.fillStyle = 'rgba(80, 105, 200, 0.45)';
+    ctx.strokeStyle = 'rgb(200, 200, 200)';
     ctx.beginPath();
     ctx.arc(cx, cy, 3, 0, Math.PI * 2);
     ctx.fill();
   }
 }
 
-function drawPlacard(
-  ctx,
-  { variantName, clothSegments, windDirX, windDirZ, windStrength, activeAnim }
-) {
+function drawPlacard(ctx, allProps) {
   ctx.clearRect(0, 0, CW, CH);
 
   // ── Background + border
@@ -112,82 +203,89 @@ function drawPlacard(
   ctx.stroke();
 
   // Subtle top highlight strip (gives a "screen" look)
-  roundRectPath(ctx, 2, 2, CW - 4, 5, 14);
-  ctx.fillStyle = 'rgba(140, 160, 255, 0.15)';
-  ctx.fill();
+  ctx.save();
+  roundRectPath(ctx, 2, 2, CW - 4, CH - 4, 14);
+  ctx.clip();
+  ctx.fillStyle = 'rgba(140, 160, 255, 0.12)';
+  ctx.fillRect(16, 3, CW - 32, 3);
+  ctx.restore();
 
-  // ── "Gh0st" heading — SF Mono / Menlo render the zero with a slashed crossbar
+  // ── "Gh0st" heading
   ctx.font = "bold 28px 'SF Mono', Menlo, Monaco, monospace";
   ctx.fillStyle = '#ffffff';
   ctx.textAlign = 'left';
   ctx.textBaseline = 'top';
-  ctx.fillText('Gh0st', 22, 20);
+  ctx.fillText('Gh0st', 22, 12);
 
-  // ── SKIN row (preset name)
-  ctx.font = "11px 'Courier New', Courier, monospace";
-  ctx.fillStyle = '#b0b0b0';
-  ctx.fillText('SKIN', 22, 54);
-  ctx.font = "bold 18px 'Courier New', Courier, monospace";
-  ctx.fillStyle = '#ffffff';
-  ctx.fillText(variantName ?? 'Unknown', 22, 67);
-
-  // ── Compass (right side, vertically centred in the header block)
-  drawCompass(ctx, CW - 46, 48, 26, windDirX, windDirZ, windStrength);
+  // ── Compass (right side, vertically centred in header)
+  drawCompass(
+    ctx,
+    CW - 46,
+    34,
+    20,
+    allProps.windDirX ?? 0,
+    allProps.windDirZ ?? 0,
+    allProps.windStrength ?? 0
+  );
 
   // ── Separator
   ctx.strokeStyle = 'rgba(255, 255, 255, 0.07)';
   ctx.lineWidth = 1;
   ctx.beginPath();
-  ctx.moveTo(22, 96);
-  ctx.lineTo(CW - 22, 96);
+  ctx.moveTo(22, 54);
+  ctx.lineTo(CW - 22, 54);
   ctx.stroke();
 
-  // ── Stats grid — 2 columns × 2 rows
-  // Cloth is 1.0 × 1.0 world units; assuming 1 unit = 1 m → 3.28 ft
-  const clothFt = (1.0 * 3.28084).toFixed(1);
+  // ── Left column: variant, segments, animation, wind
+  const leftData = {
+    variant: allProps.variantName ?? 'unknown',
+    segments: allProps.clothSegments ?? 0,
+    animation: allProps.activeAnim ?? 'idle',
+    wind: {
+      direction: `${windArrowChar(allProps.windDirX ?? 0, allProps.windDirZ ?? 0)}`,
+      strength: parseFloat((allProps.windStrength ?? 0 * 100).toFixed(1)),
+    },
+  };
 
-  const windValue =
-    windStrength > 0.01
-      ? `${windArrowChar(windDirX, windDirZ)}  ${(windStrength * 100).toFixed(0)}%`
-      : 'calm';
+  // ── Right column: inner & outer materials
+  const rightData = {
+    innerMaterial: {
+      color: allProps.innerColor ?? '#ffffff',
+      emissive: allProps.innerEmissive ?? '#000000',
+      intensity: parseFloat((allProps.innerIntensity ?? 1).toFixed(2)),
+      falloff: parseFloat((allProps.innerFalloff ?? 1).toFixed(2)),
+    },
+    outerMaterial: {
+      color: allProps.outerColor ?? '#ffffff',
+      emissive: allProps.outerEmissive ?? '#000000',
+      intensity: parseFloat((allProps.outerIntensity ?? 1).toFixed(2)),
+      falloff: parseFloat((allProps.outerFalloff ?? 1).toFixed(2)),
+    },
+  };
 
-  // [left, right] pairs per row
-  const grid = [
-    [
-      ['SEGMENTS', `${clothSegments} × ${clothSegments}`],
-      ['ANIM', activeAnim ?? 'idle'],
-    ],
-    [
-      ['SIZE', `${clothFt} × ${clothFt} ft`],
-      ['WIND', windValue],
-    ],
-  ];
+  const leftStr = JSON.stringify(leftData, null, 2);
+  const rightStr = JSON.stringify(rightData, null, 2);
+  const leftLines = leftStr.split('\n');
+  const rightLines = rightStr.split('\n');
 
-  const colX = [22, 274]; // left / right column x offsets
-  const rowH = 58;
-  const startY = 116;
+  // ── Draw both columns with syntax highlighting
+  ctx.font = "10px 'Courier New', Courier, monospace";
+  ctx.textAlign = 'left';
+  ctx.textBaseline = 'top';
 
-  // Subtle vertical divider at canvas midpoint
-  ctx.strokeStyle = 'rgba(255, 255, 255, 0.05)';
-  ctx.lineWidth = 1;
-  ctx.beginPath();
-  ctx.moveTo(254, 100);
-  ctx.lineTo(254, startY + grid.length * rowH - 4);
-  ctx.stroke();
+  const col1X = 22;
+  const col2X = 262;
+  const startY = 60;
+  const lineHeight = 12;
 
-  grid.forEach((row, rowIdx) => {
-    row.forEach(([label, value], colIdx) => {
-      const x = colX[colIdx];
-      const baseY = startY + rowIdx * rowH;
-      ctx.font = "12px 'Courier New', Courier, monospace";
-      ctx.fillStyle = '#b0b0b0';
-      ctx.textAlign = 'left';
-      ctx.textBaseline = 'top';
-      ctx.fillText(label, x, baseY);
-      ctx.font = "bold 20px 'Courier New', Courier, monospace";
-      ctx.fillStyle = '#ffffff';
-      ctx.fillText(value, x, baseY + 16);
-    });
+  // Left column
+  leftLines.forEach((line, i) => {
+    drawJsonLine(ctx, line, col1X, startY + i * lineHeight, 6);
+  });
+
+  // Right column
+  rightLines.forEach((line, i) => {
+    drawJsonLine(ctx, line, col2X, startY + i * lineHeight, 6);
   });
 }
 
@@ -199,19 +297,30 @@ function drawPlacard(
  * regardless of scene lighting.
  *
  * Props:
- *   variantName       — current preset name string
- *   clothSegments     — current cloth segment count (number)
- *   animationInputRef — ref to the animation input object { windDirX, windDirZ, windStrength }
- *   ghostRef          — ref to the GhostCharacter imperative handle
+ *   variantName           — current preset name string
+ *   clothSegments         — current cloth segment count (number)
+ *   animationInputRef     — ref to animation input { windDirX, windDirZ, windStrength }
+ *   ghostRef              — ref to GhostCharacter imperative handle for live animation state
+ *   innerColor, outerColor — hex color strings
+ *   innerEmissive, outerEmissive — hex color strings
+ *   innerIntensity, outerIntensity — emissive brightness 0–2
+ *   innerFalloff, outerFalloff — emissive falloff 0–1
  */
 export default function GhostPlacard({
   variantName,
   clothSegments,
   animationInputRef,
   ghostRef,
+  innerColor,
+  innerEmissive,
+  innerIntensity,
+  innerFalloff,
+  outerColor,
+  outerEmissive,
+  outerIntensity,
+  outerFalloff,
 }) {
   const anisotropySet = useRef(false);
-
   const { ctx, texture } = useMemo(() => {
     const cvs = document.createElement('canvas');
     cvs.width = CW;
@@ -225,11 +334,6 @@ export default function GhostPlacard({
     return { ctx: context, texture: tex };
   }, []);
 
-  // Keep latest props accessible inside useFrame without stale closure issues
-  const propsRef = useRef({ variantName, clothSegments });
-  propsRef.current.variantName = variantName;
-  propsRef.current.clothSegments = clothSegments;
-
   useFrame((state) => {
     // Set anisotropy once after renderer is available — helps text at oblique angles.
     // WebGPU renderers don't expose capabilities.getMaxAnisotropy, so guard it.
@@ -239,16 +343,25 @@ export default function GhostPlacard({
       anisotropySet.current = true;
     }
 
+    // Read live animation data from ref
     const input = animationInputRef?.current ?? {};
-    const activeAnim = ghostRef?.current?.activeAnimation ?? null;
+    const activeAnim = ghostRef?.current?.activeAnimation ?? 'idle';
 
     drawPlacard(ctx, {
-      variantName: propsRef.current.variantName,
-      clothSegments: propsRef.current.clothSegments,
+      variantName,
+      clothSegments,
       windDirX: input.windDirX ?? 0,
       windDirZ: input.windDirZ ?? 0,
       windStrength: input.windStrength ?? 0,
       activeAnim,
+      innerColor,
+      innerEmissive,
+      innerIntensity,
+      innerFalloff,
+      outerColor,
+      outerEmissive,
+      outerIntensity,
+      outerFalloff,
     });
 
     texture.needsUpdate = true;
@@ -259,8 +372,8 @@ export default function GhostPlacard({
   //   The bottom edge rests just above the floor (y ≈ -0.9);
   //   the top edge leans toward the ghost at roughly y ≈ -0.54.
   return (
-    <mesh position={[0, -0.71, 0.9]} rotation={[-Math.PI / 4, 0, 0]}>
-      <planeGeometry args={[1.0, 0.5]} />
+    <mesh position={[0, -0.7, 0.9]} rotation={[-Math.PI / 3, 0, 0]}>
+      <planeGeometry args={[1.5, 0.75]} />
       <meshBasicMaterial map={texture} transparent />
     </mesh>
   );

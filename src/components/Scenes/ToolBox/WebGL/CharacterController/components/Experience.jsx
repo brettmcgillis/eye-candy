@@ -124,10 +124,10 @@ export default function Experience() {
           options: ['Day', 'Night'],
         },
         bgColor: {
-          value: '#ffffff',
+          value: '#a8c8e8',
         },
-        gridSectionColor: '#ccc',
-        gridCellColor: '#888',
+        gridSectionColor: { value: '#d9d9d9' },
+        gridCellColor: { value: '#222222' },
       },
       { collapsed: false }
     ),

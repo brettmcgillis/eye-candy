@@ -125,8 +125,8 @@ export default function Experience() {
           options: ['Day', 'Night'],
         },
         bgColor: { value: '#a8c8e8' },
-        gridBgColor: [0.85, 0.85, 0.85],
-        gridLineColor: [0.6, 0.6, 0.6],
+        gridBgColor: { value: '#d9d9d9' },
+        gridLineColor: { value: '#26262c' },
       },
       { collapsed: false }
     ),

@@ -2,7 +2,7 @@ import { folder, useControls } from 'leva';
 
 import React, { useEffect, useState } from 'react';
 
-import { Grid, KeyboardControls } from '@react-three/drei';
+import { KeyboardControls } from '@react-three/drei';
 import { useThree } from '@react-three/fiber';
 import { Physics } from '@react-three/rapier';
 
@@ -58,7 +58,7 @@ export default function Experience() {
       gridCellColor: '#222222',
     },
     Night: {
-      bgColor: '#1a1a2e',
+      bgColor: '#0f1419',
       gridSectionColor: '#40404c',
       gridCellColor: '#26262c',
     },
@@ -216,24 +216,6 @@ export default function Experience() {
 
   return (
     <>
-      <Grid
-        args={[300, 300]}
-        sectionColor={effectiveGridSectionColor}
-        cellColor={effectiveGridCellColor}
-        position={[0, -0.99, 0]}
-        userData={{ camExcludeCollision: true }}
-      />
-
-      <mesh
-        receiveShadow
-        position={[0, -0.989, 0]}
-        rotation={[-Math.PI / 2, 0, 0]}
-        userData={{ camExcludeCollision: true }}
-      >
-        <planeGeometry args={[300, 300]} />
-        <shadowMaterial opacity={0.35} transparent />
-      </mesh>
-
       <Lights mode={mode} />
 
       <color attach="background" args={[effectiveBgColor]} />
@@ -282,7 +264,10 @@ export default function Experience() {
         <RigidObjects />
         <FloatingPlatform />
         <DynamicPlatforms />
-        <Floor />
+        <Floor
+          gridSectionColor={effectiveGridSectionColor}
+          gridCellColor={effectiveGridCellColor}
+        />
         {shotsEnabled && <ShotCube />}
       </Physics>
     </>

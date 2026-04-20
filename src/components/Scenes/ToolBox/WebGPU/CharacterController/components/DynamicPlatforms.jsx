@@ -3,13 +3,13 @@ import * as THREE from 'three';
 import React, { useMemo, useRef } from 'react';
 
 import { useFrame } from '@react-three/fiber';
-
-import Label3D from './Label3D';
 import {
   CuboidCollider,
   CylinderCollider,
   RigidBody,
 } from '@react-three/rapier';
+
+import Label3D from './Label3D';
 
 export default function DynamicPlatforms() {
   const sideMovePlatformRef = useRef();
@@ -56,7 +56,11 @@ export default function DynamicPlatforms() {
         ref={sideMovePlatformRef}
         colliders={false}
       >
-        <Label3D text="Kinematic Moving Platform" position={[0, 2.5, 0]} />
+        <Label3D
+          text="Kinematic Moving Platform"
+          position={[0, 2.5, 0]}
+          scale={2}
+        />
         <CuboidCollider args={[2.5, 0.1, 2.5]} />
         <mesh receiveShadow castShadow>
           <boxGeometry args={[5, 0.2, 5]} />
@@ -70,7 +74,11 @@ export default function DynamicPlatforms() {
         ref={verticalMovePlatformRef}
         colliders={false}
       >
-        <Label3D text="Kinematic Elevating Platform" position={[0, 2.5, 0]} />
+        <Label3D
+          text="Kinematic Elevating Platform"
+          position={[0, 2.5, 0]}
+          scale={2}
+        />
         <CuboidCollider args={[2.5, 0.1, 2.5]} />
         <mesh receiveShadow castShadow>
           <boxGeometry args={[5, 0.2, 5]} />
@@ -84,7 +92,11 @@ export default function DynamicPlatforms() {
         ref={rotatePlatformRef}
         colliders={false}
       >
-        <Label3D text="Kinematic Rotating Platform" position={[0, 2.5, 0]} />
+        <Label3D
+          text="Kinematic Rotating Platform"
+          position={[0, 2.5, 0]}
+          scale={2}
+        />
         <CuboidCollider args={[2.5, 0.1, 2.5]} />
         <mesh receiveShadow castShadow>
           <boxGeometry args={[5, 0.2, 5]} />
@@ -92,7 +104,11 @@ export default function DynamicPlatforms() {
         </mesh>
       </RigidBody>
 
-      <Label3D text="Kinematic Rotating Drum" position={[-15, 1.5, -15]} />
+      <Label3D
+        text="Kinematic Rotating Drum"
+        position={[-15, 1.5, -15]}
+        scale={2}
+      />
       <RigidBody
         colliders={false}
         type="kinematicPosition"

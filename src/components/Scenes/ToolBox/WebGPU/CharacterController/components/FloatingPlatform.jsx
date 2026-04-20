@@ -3,9 +3,9 @@ import * as THREE from 'three';
 import React, { useEffect, useMemo, useRef } from 'react';
 
 import { useFrame } from '@react-three/fiber';
+import { CuboidCollider, RigidBody, useRapier } from '@react-three/rapier';
 
 import Label3D from './Label3D';
-import { CuboidCollider, RigidBody, useRapier } from '@react-three/rapier';
 
 export default function FloatingPlatform() {
   const floatingPlateRef = useRef();
@@ -146,7 +146,11 @@ export default function FloatingPlatform() {
         colliders={false}
         ref={floatingPlateRef}
       >
-        <Label3D text="Floating Platform — push to move" position={[0, 2.5, 0]} />
+        <Label3D
+          text="Floating Platform — push to move"
+          position={[0, 2.5, 0]}
+          scale={2}
+        />
         <CuboidCollider args={[2.5, 0.1, 2.5]} />
         <mesh receiveShadow castShadow>
           <boxGeometry args={[5, 0.2, 5]} />
@@ -160,7 +164,11 @@ export default function FloatingPlatform() {
         colliders={false}
         ref={floatingPlateRef2}
       >
-        <Label3D text="Floating Platform — push to rotate" position={[0, 2.5, 0]} />
+        <Label3D
+          text="Floating Platform — push to rotate"
+          position={[0, 2.5, 0]}
+          scale={2}
+        />
         <CuboidCollider args={[2.5, 0.1, 2.5]} />
         <mesh receiveShadow castShadow>
           <boxGeometry args={[5, 0.2, 5]} />
@@ -174,7 +182,11 @@ export default function FloatingPlatform() {
         colliders={false}
         ref={floatingMovingPlateRef}
       >
-        <Label3D text="Floating & Moving Platform" position={[0, 2.5, 0]} />
+        <Label3D
+          text="Floating & Moving Platform"
+          position={[0, 2.5, 0]}
+          scale={2}
+        />
         <CuboidCollider args={[1.25, 0.1, 1.25]} />
         <mesh receiveShadow castShadow>
           <boxGeometry args={[2.5, 0.2, 2.5]} />

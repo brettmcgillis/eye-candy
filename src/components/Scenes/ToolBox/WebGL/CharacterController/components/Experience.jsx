@@ -50,6 +50,20 @@ export default function Experience() {
     return () => canvas.removeEventListener('click', lock);
   }, [gl]);
 
+  // Day/Night mode helper
+  const dayNightPresets = {
+    Day: {
+      bgColor: '#ffffff',
+      gridSectionColor: 'lightgray',
+      gridCellColor: 'gray',
+    },
+    Night: {
+      bgColor: '#1a1a2e',
+      gridSectionColor: '#444444',
+      gridCellColor: '#222222',
+    },
+  };
+
   const {
     characterModel,
     physics,
@@ -87,6 +101,11 @@ export default function Experience() {
     camMinDis,
     camFollowMult,
     camLerpMult,
+    // Scene
+    mode,
+    bgColor,
+    gridSectionColor,
+    gridCellColor,
   } = useControls('World Settings', {
     Character: folder(
       {
@@ -96,6 +115,21 @@ export default function Experience() {
         },
       },
       { collapsed: true }
+    ),
+
+    Scene: folder(
+      {
+        mode: {
+          value: 'Day',
+          options: ['Day', 'Night'],
+        },
+        bgColor: {
+          value: '#ffffff',
+        },
+        gridSectionColor: '#ccc',
+        gridCellColor: '#888',
+      },
+      { collapsed: false }
     ),
 
     physics: false,
@@ -166,12 +200,26 @@ export default function Experience() {
     ),
   });
 
+  // Update colors when mode changes
+  React.useEffect(() => {
+    if (mode && dayNightPresets[mode]) {
+      // Mode changed, colors will be applied below
+    }
+  }, [mode]);
+
+  // Determine effective colors based on mode
+  const preset = mode && dayNightPresets[mode] ? dayNightPresets[mode] : null;
+  const effectiveBgColor = preset?.bgColor ?? bgColor;
+  const effectiveGridSectionColor =
+    preset?.gridSectionColor ?? gridSectionColor;
+  const effectiveGridCellColor = preset?.gridCellColor ?? gridCellColor;
+
   return (
     <>
       <Grid
         args={[300, 300]}
-        sectionColor="lightgray"
-        cellColor="gray"
+        sectionColor={effectiveGridSectionColor}
+        cellColor={effectiveGridCellColor}
         position={[0, -0.99, 0]}
         userData={{ camExcludeCollision: true }}
       />
@@ -186,9 +234,9 @@ export default function Experience() {
         <shadowMaterial opacity={0.35} transparent />
       </mesh>
 
-      <Lights />
+      <Lights mode={mode} />
 
-      <color attach="background" args={['#ffffff']} />
+      <color attach="background" args={[effectiveBgColor]} />
 
       <Physics debug={physics} paused={pausedPhysics}>
         <KeyboardControls map={keyboardMap}>

@@ -1,23 +1,30 @@
 import React from 'react';
 
-export default function Lights() {
+export default function Lights({ mode = 'Day' }) {
+  const isNight = mode === 'Night';
+  const ambientIntensity = isNight ? 0.2 : 2;
+  const spotIntensity = isNight ? 0.8 : 4;
+
   return (
     <>
-      <directionalLight
-        castShadow
-        shadow-normalBias={0.06}
-        position={[20, 30, 10]}
-        intensity={5}
-        shadow-mapSize={[2048, 2048]}
-        shadow-camera-near={1}
-        shadow-camera-far={60}
-        shadow-camera-top={12}
-        shadow-camera-right={12}
-        shadow-camera-bottom={-12}
-        shadow-camera-left={-12}
-        name="followLight"
+      <ambientLight intensity={ambientIntensity} />
+      <spotLight
+        position={[8, 6, 6]}
+        intensity={spotIntensity}
+        angle={Math.PI * 0.3}
+        decay={0}
+        target-position={[0, 0, 0]}
       />
-      <ambientLight intensity={2} />
+
+      {isNight && (
+        <pointLight
+          position={[-6, 3, -6]}
+          color="#4488ff"
+          intensity={0.3}
+          decay={2}
+          distance={15}
+        />
+      )}
     </>
   );
 }

@@ -51,6 +51,20 @@ export default function Experience() {
     return () => canvas.removeEventListener('click', lock);
   }, [gl]);
 
+  // Day/Night mode helper
+  const dayNightPresets = {
+    Day: {
+      bgColor: '#a8c8e8',
+      gridBgColor: [0.85, 0.85, 0.85],
+      gridLineColor: [0.6, 0.6, 0.6],
+    },
+    Night: {
+      bgColor: '#0f1419',
+      gridBgColor: [0.25, 0.25, 0.3],
+      gridLineColor: [0.15, 0.15, 0.2],
+    },
+  };
+
   const {
     characterModel,
     physics,
@@ -88,6 +102,11 @@ export default function Experience() {
     camMinDis,
     camFollowMult,
     camLerpMult,
+    // Scene
+    mode,
+    bgColor,
+    gridBgColor,
+    gridLineColor,
   } = useControls('World Settings', {
     Character: folder(
       {
@@ -97,6 +116,19 @@ export default function Experience() {
         },
       },
       { collapsed: true }
+    ),
+
+    Scene: folder(
+      {
+        mode: {
+          value: 'Day',
+          options: ['Day', 'Night'],
+        },
+        bgColor: { value: '#a8c8e8' },
+        gridBgColor: [0.85, 0.85, 0.85],
+        gridLineColor: [0.6, 0.6, 0.6],
+      },
+      { collapsed: false }
     ),
 
     physics: false,
@@ -167,6 +199,19 @@ export default function Experience() {
     ),
   });
 
+  // Update colors when mode changes
+  React.useEffect(() => {
+    if (mode && dayNightPresets[mode]) {
+      // Mode changed, colors will be applied below
+    }
+  }, [mode]);
+
+  // Determine effective colors based on mode
+  const preset = mode && dayNightPresets[mode] ? dayNightPresets[mode] : null;
+  const effectiveBgColor = preset?.bgColor ?? bgColor;
+  const effectiveGridBgColor = preset?.gridBgColor ?? gridBgColor;
+  const effectiveGridLineColor = preset?.gridLineColor ?? gridLineColor;
+
   return (
     <>
       <mesh
@@ -178,8 +223,8 @@ export default function Experience() {
         <GridMaterial
           gridSize={1}
           lineWidth={0.03}
-          bgColor={[0.85, 0.85, 0.85]}
-          lineColor={[0.6, 0.6, 0.6]}
+          bgColor={effectiveGridBgColor}
+          lineColor={effectiveGridLineColor}
         />
       </mesh>
 
@@ -193,9 +238,9 @@ export default function Experience() {
         <shadowMaterial opacity={0.35} transparent />
       </mesh>
 
-      <Lights />
+      <Lights mode={mode} />
 
-      <color attach="background" args={['#a8c8e8']} />
+      <color attach="background" args={[effectiveBgColor]} />
 
       <Physics debug={physics} paused={pausedPhysics}>
         <KeyboardControls map={keyboardMap}>

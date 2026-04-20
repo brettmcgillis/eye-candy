@@ -1,13 +1,19 @@
-- Replace model with Ghost character
-- add an npc lol.
-- day mode and night mode
-- come up with good materials for joysticks
-- make shot cube a sphere + collider w/ ghost
-- every good game has double jump
-- fix ghost. should be able to chose skin.
-- fix ghost capsule. too tall
-- fix ghost wind/movement animation
-- fix ghost wire up animations to key presses
-- fix seal capsule. make horizontal
-- fix seal activate animation while moving
-- Update both CharacterController scenes with BGColor, Floor/Grid color
+// Hard
+
+- [ ] add an npc
+- [ ] come up with good materials for joysticks
+- [ ] make shot cube a sphere + collider w/ ghost
+- [ ] every good game has double jump
+- [ ] fix ghost. should be able to chose skin.
+
+// Easy
+
+- [ ] create a wrapper component for ghost w/ collider baked in
+- [ ] fix ghost capsule, currently too tall
+- [ ] fix ghost scale. make a bit bigger (1.2x?)
+- [ ] fix ghost wind/movement animation
+- [ ] fix ghost wire up animations to key presses
+
+- [ ] create a wrapper component for ghost w/ collider baked in
+- [ ] fix seal capsule. make horizontal
+- [ ] fix seal activate animation while moving

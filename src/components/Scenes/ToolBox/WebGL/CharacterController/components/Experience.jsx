@@ -53,14 +53,14 @@ export default function Experience() {
   // Day/Night mode helper
   const dayNightPresets = {
     Day: {
-      bgColor: '#ffffff',
-      gridSectionColor: 'lightgray',
-      gridCellColor: 'gray',
+      bgColor: '#a8c8e8',
+      gridSectionColor: '#d9d9d9',
+      gridCellColor: '#222222',
     },
     Night: {
       bgColor: '#1a1a2e',
-      gridSectionColor: '#444444',
-      gridCellColor: '#222222',
+      gridSectionColor: '#40404c',
+      gridCellColor: '#26262c',
     },
   };
 

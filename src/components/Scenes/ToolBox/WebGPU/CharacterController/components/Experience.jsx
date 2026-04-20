@@ -55,13 +55,13 @@ export default function Experience() {
   const dayNightPresets = {
     Day: {
       bgColor: '#a8c8e8',
-      gridBgColor: [0.85, 0.85, 0.85],
-      gridLineColor: [0.6, 0.6, 0.6],
+      gridBgColor: '#d9d9d9',
+      gridLineColor: '#222222',
     },
     Night: {
       bgColor: '#0f1419',
-      gridBgColor: [0.25, 0.25, 0.3],
-      gridLineColor: [0.15, 0.15, 0.2],
+      gridBgColor: '#40404c',
+      gridLineColor: '#26262c',
     },
   };
 

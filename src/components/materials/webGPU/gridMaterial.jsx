@@ -21,12 +21,49 @@ import { extend } from '@react-three/fiber';
 
 extend(THREE);
 
+function normalizeColor(colorInput, fallback = [1, 1, 1]) {
+  if (Array.isArray(colorInput)) {
+    const [r = fallback[0], g = fallback[1], b = fallback[2]] = colorInput;
+    const uses255Range = r > 1 || g > 1 || b > 1;
+
+    return uses255Range
+      ? [r / 255, g / 255, b / 255]
+      : [
+          Number.isFinite(r) ? r : fallback[0],
+          Number.isFinite(g) ? g : fallback[1],
+          Number.isFinite(b) ? b : fallback[2],
+        ];
+  }
+
+  if (
+    typeof colorInput === 'string' ||
+    typeof colorInput === 'number' ||
+    colorInput?.isColor
+  ) {
+    const c = new THREE.Color();
+    c.set(colorInput);
+    return [c.r, c.g, c.b];
+  }
+
+  return fallback;
+}
+
 export function useGridMaterial({
   gridSize = 2,
   lineWidth = 0.03,
   bgColor = [0.45, 0.45, 0.45],
   lineColor = [0.85, 0.85, 0.85],
 } = {}) {
+  const resolvedBgColor = useMemo(
+    () => normalizeColor(bgColor, [0.45, 0.45, 0.45]),
+    [bgColor]
+  );
+
+  const resolvedLineColor = useMemo(
+    () => normalizeColor(lineColor, [0.85, 0.85, 0.85]),
+    [lineColor]
+  );
+
   const gridColorNode = useMemo(() => {
     const gridNode = Fn(() => {
       const cellSize = float(gridSize);
@@ -68,14 +105,22 @@ export function useGridMaterial({
       const line = max(step(f.x, width), step(f.y, width));
 
       // Colors
-      const bg = vec3(bgColor[0], bgColor[1], bgColor[2]);
-      const ln = vec3(lineColor[0], lineColor[1], lineColor[2]);
+      const bg = vec3(
+        resolvedBgColor[0],
+        resolvedBgColor[1],
+        resolvedBgColor[2]
+      );
+      const ln = vec3(
+        resolvedLineColor[0],
+        resolvedLineColor[1],
+        resolvedLineColor[2]
+      );
 
       return mix(bg, ln, line);
     });
 
     return gridNode();
-  }, [gridSize, lineWidth, bgColor, lineColor]);
+  }, [gridSize, lineWidth, resolvedBgColor, resolvedLineColor]);
 
   return { gridColorNode };
 }

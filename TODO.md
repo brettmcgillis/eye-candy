@@ -140,7 +140,7 @@ To Build:
 - [ ] Surrender
 - [ ] Stay Hunted
 - [ ] AllMyFriendsAreGhosts
-- [ ] GhostBuster
+- [✔] GhostBuster
 - [ ] CharacterController
 
 - TrophyHusband

@@ -165,6 +165,16 @@ export default function Experience() {
         userData={{ camExcludeCollision: true }}
       />
 
+      <mesh
+        receiveShadow
+        position={[0, -0.989, 0]}
+        rotation={[-Math.PI / 2, 0, 0]}
+        userData={{ camExcludeCollision: true }}
+      >
+        <planeGeometry args={[300, 300]} />
+        <shadowMaterial opacity={0.35} transparent />
+      </mesh>
+
       <Lights />
 
       <color attach="background" args={['#ffffff']} />

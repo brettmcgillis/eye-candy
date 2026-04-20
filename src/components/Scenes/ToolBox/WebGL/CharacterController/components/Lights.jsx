@@ -10,11 +10,11 @@ export default function Lights() {
         intensity={5}
         shadow-mapSize={[2048, 2048]}
         shadow-camera-near={1}
-        shadow-camera-far={50}
-        shadow-camera-top={50}
-        shadow-camera-right={50}
-        shadow-camera-bottom={-50}
-        shadow-camera-left={-50}
+        shadow-camera-far={60}
+        shadow-camera-top={12}
+        shadow-camera-right={12}
+        shadow-camera-bottom={-12}
+        shadow-camera-left={-12}
         name="followLight"
       />
       <ambientLight intensity={2} />

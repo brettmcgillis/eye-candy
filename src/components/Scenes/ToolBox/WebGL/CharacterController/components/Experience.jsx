@@ -2,12 +2,11 @@ import { folder, useControls } from 'leva';
 
 import React, { useEffect, useState } from 'react';
 
-import { KeyboardControls } from '@react-three/drei';
+import { Grid, KeyboardControls } from '@react-three/drei';
 import { useThree } from '@react-three/fiber';
 import { Physics } from '@react-three/rapier';
 
 import Ecctrl from '../../../../../ecctrl/Ecctrl';
-import { GridMaterial } from '../../../../../materials/webGPU/gridMaterial';
 import CharacterModel from './CharacterModel';
 import DynamicPlatforms from './DynamicPlatforms';
 import FloatingPlatform from './FloatingPlatform';
@@ -144,23 +143,17 @@ export default function Experience() {
 
   return (
     <>
-      <mesh
+      <Grid
+        args={[300, 300]}
+        sectionColor="lightgray"
+        cellColor="gray"
         position={[0, -0.99, 0]}
-        rotation={[-Math.PI / 2, 0, 0]}
         userData={{ camExcludeCollision: true }}
-      >
-        <planeGeometry args={[300, 300]} />
-        <GridMaterial
-          gridSize={1}
-          lineWidth={0.03}
-          bgColor={[0.85, 0.85, 0.85]}
-          lineColor={[0.6, 0.6, 0.6]}
-        />
-      </mesh>
+      />
 
       <Lights />
 
-      <color attach="background" args={['#a8c8e8']} />
+      <color attach="background" args={['#ffffff']} />
 
       <Physics debug={physics} paused={pausedPhysics}>
         <KeyboardControls map={keyboardMap}>

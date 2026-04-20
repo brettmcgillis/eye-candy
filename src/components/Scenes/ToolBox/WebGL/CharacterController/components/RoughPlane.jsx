@@ -1,4 +1,3 @@
-/* eslint-disable no-param-reassign */
 import * as THREE from 'three';
 
 import React, { useEffect } from 'react';
@@ -15,6 +14,7 @@ export default function RoughPlane() {
         child instanceof THREE.Mesh &&
         child.material instanceof THREE.MeshStandardMaterial
       ) {
+        // eslint-disable-next-line no-param-reassign
         child.receiveShadow = true;
       }
     });

@@ -3,10 +3,8 @@ import * as THREE from 'three';
 
 import React, { useEffect } from 'react';
 
-import { useGLTF } from '@react-three/drei';
+import { Text, useGLTF } from '@react-three/drei';
 import { RigidBody } from '@react-three/rapier';
-
-import Label3D from './Label3D';
 
 export default function Slopes() {
   const slopes = useGLTF('/slopes.glb');
@@ -27,9 +25,30 @@ export default function Slopes() {
       <RigidBody type="fixed" colliders="trimesh" rotation={[0, Math.PI, 0]}>
         <primitive object={slopes.scene} />
       </RigidBody>
-      <Label3D text="23.5 Deg" position={[3.5, 3, 0]} />
-      <Label3D text="43.1 Deg" position={[0, 4.5, 0]} />
-      <Label3D text="62.7 Deg" position={[-3.5, 7, 0]} />
+      <Text
+        rotation={[0, Math.PI, 0]}
+        position={[3.5, 3, 0]}
+        color="black"
+        fontSize={0.5}
+      >
+        23.5 Deg
+      </Text>
+      <Text
+        rotation={[0, Math.PI, 0]}
+        position={[0, 4.5, 0]}
+        color="black"
+        fontSize={0.5}
+      >
+        43.1 Deg
+      </Text>
+      <Text
+        rotation={[0, Math.PI, 0]}
+        position={[-3.5, 7, 0]}
+        color="black"
+        fontSize={0.5}
+      >
+        62.7 Deg
+      </Text>
     </group>
   );
 }

@@ -7,7 +7,7 @@ const PenPlotter = lazy(() => import('./WebGL/PenPlotter/PenPlotter'));
 const SplineEditor = lazy(() => import('./WebGL/SplineEditor/SplineEditor'));
 const SmokeTest = lazy(() => import('./WebGL/SmokeTest/SmokeTest'));
 const CharacterController = lazy(
-  () => import('./WebGPU/CharacterController/CharacterController')
+  () => import('./WebGL/CharacterController/CharacterController')
 );
 const scenes = [
   {

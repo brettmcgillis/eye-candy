@@ -2,7 +2,7 @@ import * as THREE from 'three';
 
 import React, { useEffect, useMemo, useRef } from 'react';
 
-import { Html } from '@react-three/drei';
+import { Text } from '@react-three/drei';
 import { useFrame } from '@react-three/fiber';
 import { CuboidCollider, RigidBody, useRapier } from '@react-three/rapier';
 
@@ -145,13 +145,15 @@ export default function FloatingPlatform() {
         colliders={false}
         ref={floatingPlateRef}
       >
-        <Html center position={[0, 2.5, 0]}>
-          <span
-            style={{ color: 'black', fontSize: '12px', whiteSpace: 'nowrap' }}
-          >
-            Floating Platform — push to move
-          </span>
-        </Html>
+        <Text
+          scale={0.5}
+          color="black"
+          maxWidth={10}
+          textAlign="center"
+          position={[0, 2.5, 0]}
+        >
+          Floating Platform push to move
+        </Text>
         <CuboidCollider args={[2.5, 0.1, 2.5]} />
         <mesh receiveShadow castShadow>
           <boxGeometry args={[5, 0.2, 5]} />
@@ -165,13 +167,15 @@ export default function FloatingPlatform() {
         colliders={false}
         ref={floatingPlateRef2}
       >
-        <Html center position={[0, 2.5, 0]}>
-          <span
-            style={{ color: 'black', fontSize: '12px', whiteSpace: 'nowrap' }}
-          >
-            Floating Platform — push to rotate
-          </span>
-        </Html>
+        <Text
+          scale={0.5}
+          color="black"
+          maxWidth={10}
+          textAlign="center"
+          position={[0, 2.5, 0]}
+        >
+          Floating Platform push to rotate
+        </Text>
         <CuboidCollider args={[2.5, 0.1, 2.5]} />
         <mesh receiveShadow castShadow>
           <boxGeometry args={[5, 0.2, 5]} />
@@ -185,13 +189,15 @@ export default function FloatingPlatform() {
         colliders={false}
         ref={floatingMovingPlateRef}
       >
-        <Html center position={[0, 2.5, 0]}>
-          <span
-            style={{ color: 'black', fontSize: '12px', whiteSpace: 'nowrap' }}
-          >
-            Floating & Moving Platform
-          </span>
-        </Html>
+        <Text
+          scale={0.5}
+          color="black"
+          maxWidth={10}
+          textAlign="center"
+          position={[0, 2.5, 0]}
+        >
+          Floating &amp; Moving Platform (rigidbody)
+        </Text>
         <CuboidCollider args={[1.25, 0.1, 1.25]} />
         <mesh receiveShadow castShadow>
           <boxGeometry args={[2.5, 0.2, 2.5]} />

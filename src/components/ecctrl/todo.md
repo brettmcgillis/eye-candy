@@ -1,11 +1,13 @@
-- Fix gamepad handling. camera and player controls seem inverted. provide toggle just in case
-- refactor Example out to CharacterController.
-  - Replace model with Ghost character
-  - add an npc lol.
-  - day mode and night mode
-- remove any unecesssary screenshots
-- can we avoid adding mobile joysticks outside of main canvas? if not we need a way to selectively render it based on scene. ie, only show for characterController scene, and future showcase game scene
+- Replace model with Ghost character
+- add an npc lol.
+- day mode and night mode
+- come up with good materials for joysticks
 - make shot cube a sphere + collider w/ ghost
-- do we refactor||fork ecctrl for webgpu?
-- do we refactor||fork ClothMesh for webgl?
 - every good game has double jump
+- fix ghost. should be able to chose skin.
+- fix ghost capsule. too tall
+- fix ghost wind/movement animation
+- fix ghost wire up animations to key presses
+- fix seal capsule. make horizontal
+- fix seal activate animation while moving
+- Update both CharacterController scenes with BGColor, Floor/Grid color

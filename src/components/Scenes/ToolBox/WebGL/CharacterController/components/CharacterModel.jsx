@@ -1,6 +1,7 @@
 import React, { useEffect } from 'react';
 
 import { useGame } from '../../../../../ecctrl/stores/useGame';
+import LowPolySeal from '../../../../../elements/lowPolySeal/LowPolySeal';
 
 // Placeholder capsule — replace with Ghost character when bringing in Ghost
 const animationSet = {
@@ -17,7 +18,7 @@ const animationSet = {
   action4: 'action4',
 };
 
-export default function CharacterModel() {
+export default function CharacterModel({ variant = 'Capsule' }) {
   const initializeAnimationSet = useGame(
     (state) => state.initializeAnimationSet
   );
@@ -25,6 +26,18 @@ export default function CharacterModel() {
   useEffect(() => {
     initializeAnimationSet(animationSet);
   }, []);
+
+  const selectedVariant = variant.toLowerCase();
+
+  if (selectedVariant === 'seal') {
+    return (
+      <LowPolySeal
+        scale={0.42}
+        position={[0, -0.82, 0.15]}
+        rotation={[0, Math.PI / 2, 0]}
+      />
+    );
+  }
 
   return (
     <>

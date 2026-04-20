@@ -51,6 +51,7 @@ export default function Experience() {
   }, [gl]);
 
   const {
+    characterModel,
     physics,
     shotsEnabled,
     disableControl,
@@ -87,6 +88,16 @@ export default function Experience() {
     camFollowMult,
     camLerpMult,
   } = useControls('World Settings', {
+    Character: folder(
+      {
+        characterModel: {
+          value: 'Capsule',
+          options: ['Capsule', 'Seal'],
+        },
+      },
+      { collapsed: true }
+    ),
+
     physics: false,
     shotsEnabled: false,
     disableControl: false,
@@ -213,7 +224,7 @@ export default function Experience() {
             camFollowMult={camFollowMult}
             camLerpMult={camLerpMult}
           >
-            <CharacterModel />
+            <CharacterModel variant={characterModel} />
           </Ecctrl>
         </KeyboardControls>
 

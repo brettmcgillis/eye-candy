@@ -14,8 +14,8 @@ export default function LowPolySeal(props) {
       <group name="Sketchfab_Scene">
         <group
           name="Sketchfab_model"
-          position={[0.001, 0, 1.925]}
-          rotation={[-Math.PI / 2, 0, -Math.PI]}
+          scale={[0.5, 0.5, 0.5]}
+          rotation={[-Math.PI / 2, 0, Math.PI / 2]}
         >
           <group name="root">
             <group name="GLTF_SceneRootNode" rotation={[Math.PI / 2, 0, 0]}>

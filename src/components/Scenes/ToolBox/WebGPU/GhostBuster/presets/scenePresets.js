@@ -690,8 +690,8 @@ export const SCENE_PRESETS = {
     cutoutRimWidth: 0,
     cutoutRimOffset: 0,
     // Cloth emissive
-    outerEmissiveColor: '#aa0000',
-    outerEmissiveIntensity: 3.0,
+    outerEmissiveColor: '#ab3300',
+    outerEmissiveIntensity: 5.0,
     innerEmissiveColor: '#ff3300',
     innerEmissiveIntensity: 4.5,
     emissiveFalloff: 3.5,

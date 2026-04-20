@@ -55,6 +55,10 @@ export default function Experience() {
     shotsEnabled,
     disableControl,
     disableFollowCam,
+    invertGamepadMovX,
+    invertGamepadMovY,
+    invertGamepadCamX,
+    invertGamepadCamY,
     // Movement
     maxVelLimit,
     turnVelMultiplier,
@@ -87,6 +91,16 @@ export default function Experience() {
     shotsEnabled: false,
     disableControl: false,
     disableFollowCam: false,
+
+    Gamepad: folder(
+      {
+        invertGamepadMovX: false,
+        invertGamepadMovY: true,
+        invertGamepadCamX: false,
+        invertGamepadCamY: false,
+      },
+      { collapsed: true }
+    ),
 
     Movement: folder(
       {
@@ -162,6 +176,10 @@ export default function Experience() {
             followLight
             disableControl={disableControl}
             disableFollowCam={disableFollowCam}
+            invertGamepadMovX={invertGamepadMovX}
+            invertGamepadMovY={invertGamepadMovY}
+            invertGamepadCamX={invertGamepadCamX}
+            invertGamepadCamY={invertGamepadCamY}
             maxVelLimit={maxVelLimit}
             turnVelMultiplier={turnVelMultiplier}
             turnSpeed={turnSpeed}

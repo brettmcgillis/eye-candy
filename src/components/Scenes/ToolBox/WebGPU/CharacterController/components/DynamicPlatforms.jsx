@@ -2,8 +2,9 @@ import * as THREE from 'three';
 
 import React, { useMemo, useRef } from 'react';
 
-import { Html } from '@react-three/drei';
 import { useFrame } from '@react-three/fiber';
+
+import Label3D from './Label3D';
 import {
   CuboidCollider,
   CylinderCollider,
@@ -55,13 +56,7 @@ export default function DynamicPlatforms() {
         ref={sideMovePlatformRef}
         colliders={false}
       >
-        <Html center position={[0, 2.5, 0]}>
-          <span
-            style={{ color: 'black', fontSize: '12px', whiteSpace: 'nowrap' }}
-          >
-            Kinematic Moving Platform
-          </span>
-        </Html>
+        <Label3D text="Kinematic Moving Platform" position={[0, 2.5, 0]} />
         <CuboidCollider args={[2.5, 0.1, 2.5]} />
         <mesh receiveShadow castShadow>
           <boxGeometry args={[5, 0.2, 5]} />
@@ -75,13 +70,7 @@ export default function DynamicPlatforms() {
         ref={verticalMovePlatformRef}
         colliders={false}
       >
-        <Html center position={[0, 2.5, 0]}>
-          <span
-            style={{ color: 'black', fontSize: '12px', whiteSpace: 'nowrap' }}
-          >
-            Kinematic Elevating Platform
-          </span>
-        </Html>
+        <Label3D text="Kinematic Elevating Platform" position={[0, 2.5, 0]} />
         <CuboidCollider args={[2.5, 0.1, 2.5]} />
         <mesh receiveShadow castShadow>
           <boxGeometry args={[5, 0.2, 5]} />
@@ -95,13 +84,7 @@ export default function DynamicPlatforms() {
         ref={rotatePlatformRef}
         colliders={false}
       >
-        <Html center position={[0, 2.5, 0]}>
-          <span
-            style={{ color: 'black', fontSize: '12px', whiteSpace: 'nowrap' }}
-          >
-            Kinematic Rotating Platform
-          </span>
-        </Html>
+        <Label3D text="Kinematic Rotating Platform" position={[0, 2.5, 0]} />
         <CuboidCollider args={[2.5, 0.1, 2.5]} />
         <mesh receiveShadow castShadow>
           <boxGeometry args={[5, 0.2, 5]} />
@@ -109,13 +92,7 @@ export default function DynamicPlatforms() {
         </mesh>
       </RigidBody>
 
-      <Html center position={[-15, 1.5, -15]}>
-        <span
-          style={{ color: 'black', fontSize: '12px', whiteSpace: 'nowrap' }}
-        >
-          Kinematic Rotating Drum
-        </span>
-      </Html>
+      <Label3D text="Kinematic Rotating Drum" position={[-15, 1.5, -15]} />
       <RigidBody
         colliders={false}
         type="kinematicPosition"

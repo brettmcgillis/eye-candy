@@ -178,7 +178,7 @@ export const SCENE_PRESETS = {
     squashIntensity: 0.3,
   },
 
-  'Battle Damaged': {
+  'Damage@93%': {
     // Background
     bgColor: '#1a1a2e',
     // Lighting
@@ -356,7 +356,7 @@ export const SCENE_PRESETS = {
     squashIntensity: 0.3,
   },
 
-  'Dark Mode': {
+  darkMode: {
     // Background
     bgColor: '#2a2a2a',
     // Lighting

@@ -27,9 +27,21 @@ export default function Slopes() {
       <RigidBody type="fixed" colliders="trimesh" rotation={[0, Math.PI, 0]}>
         <primitive object={slopes.scene} />
       </RigidBody>
-      <Label3D text="23.5 Deg" position={[3.5, 3, 0]} />
-      <Label3D text="43.1 Deg" position={[0, 4.5, 0]} />
-      <Label3D text="62.7 Deg" position={[-3.5, 7, 0]} />
+      <Label3D
+        text="23.5 Deg"
+        position={[3.5, 3, 0]}
+        rotation={[0, Math.PI, 0]}
+      />
+      <Label3D
+        text="43.1 Deg"
+        position={[0, 4.5, 0]}
+        rotation={[0, Math.PI, 0]}
+      />
+      <Label3D
+        text="62.7 Deg"
+        position={[-3.5, 7, 0]}
+        rotation={[0, Math.PI, 0]}
+      />
     </group>
   );
 }

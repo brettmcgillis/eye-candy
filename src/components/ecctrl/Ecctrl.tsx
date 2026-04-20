@@ -124,6 +124,10 @@ const Ecctrl: ForwardRefRenderFunction<CustomEcctrlRigidBody, EcctrlProps> = ({
   mode = null,
   // Controller setups
   controllerKeys = { forward: 12, backward: 13, leftward: 14, rightward: 15, jump: 2, action1: 11, action2: 3, action3: 1, action4: 0 },
+  invertGamepadMovX = false,
+  invertGamepadMovY = false,
+  invertGamepadCamX = false,
+  invertGamepadCamY = false,
   // Point-to-move setups
   bodySensorSize = [capsuleHalfHeight / 2, capsuleRadius],
   bodySensorPosition = { x: 0, y: 0, z: capsuleRadius / 2 },
@@ -523,9 +527,12 @@ const Ecctrl: ForwardRefRenderFunction<CustomEcctrlRigidBody, EcctrlProps> = ({
   }
 
   const handleSticks = (axes: readonly number[]) => {
+    const DEADZONE = 0.1
     // Gamepad first joystick trigger the EcctrlJoystick event to move the character
-    if (Math.abs(axes[0]) > 0 || Math.abs(axes[1]) > 0) {
-      gamepadJoystickVec2.set(axes[0], -axes[1])
+    if (Math.abs(axes[0]) > DEADZONE || Math.abs(axes[1]) > DEADZONE) {
+      const movX = invertGamepadMovX ? -axes[0] : axes[0]
+      const movY = invertGamepadMovY ? axes[1] : -axes[1]
+      gamepadJoystickVec2.set(movX, movY)
       gamepadJoystickDis = Math.min(Math.sqrt(Math.pow(gamepadJoystickVec2.x, 2) + Math.pow(gamepadJoystickVec2.y, 2)), 1)
       gamepadJoystickAng = gamepadJoystickVec2.angle()
       const runState = gamepadJoystickDis > 0.7
@@ -536,8 +543,10 @@ const Ecctrl: ForwardRefRenderFunction<CustomEcctrlRigidBody, EcctrlProps> = ({
       resetJoystick()
     }
     // Gamepad second joystick trigger the useFollowCam event to move the camera
-    if (Math.abs(axes[2]) > 0 || Math.abs(axes[3]) > 0) {
-      joystickCamMove(axes[2], axes[3])
+    if (Math.abs(axes[2]) > DEADZONE || Math.abs(axes[3]) > DEADZONE) {
+      const camX = invertGamepadCamX ? -axes[2] : axes[2]
+      const camY = invertGamepadCamY ? -axes[3] : axes[3]
+      joystickCamMove(camX, camY)
     }
   }
 
@@ -822,20 +831,30 @@ const Ecctrl: ForwardRefRenderFunction<CustomEcctrlRigidBody, EcctrlProps> = ({
     crossVecOnY.copy(modelFacingVec).cross(bodyFacingVecOnY);
     crossVecOnZ.copy(vectorY).cross(bodyBalanceVecOnZ);
 
+    const angvel = characterRef.current.angvel();
+    // Guard against non-finite angvel (can occur after a physics spike)
+    if (!isFinite(angvel.x) || !isFinite(angvel.y) || !isFinite(angvel.z)) return;
+
     dragAngForce.set(
       (crossVecOnX.x < 0 ? 1 : -1) *
       autoBalanceSpringK * (bodyBalanceVecOnX.angleTo(vectorY))
-      - characterRef.current.angvel().x * autoBalanceDampingC,
+      - angvel.x * autoBalanceDampingC,
       (crossVecOnY.y < 0 ? 1 : -1) *
       autoBalanceSpringOnY * (modelFacingVec.angleTo(bodyFacingVecOnY))
-      - characterRef.current.angvel().y * autoBalanceDampingOnY,
+      - angvel.y * autoBalanceDampingOnY,
       (crossVecOnZ.z < 0 ? 1 : -1) *
       autoBalanceSpringK * (bodyBalanceVecOnZ.angleTo(vectorY))
-      - characterRef.current.angvel().z * autoBalanceDampingC,
+      - angvel.z * autoBalanceDampingC,
     );
 
+    // Clamp torque magnitude to prevent runaway forces from crashing Rapier
+    const torqueLen = dragAngForce.length();
+    if (torqueLen > 10) dragAngForce.multiplyScalar(10 / torqueLen);
+
     // Apply balance torque impulse
-    characterRef.current.applyTorqueImpulse(dragAngForce, true)
+    if (isFinite(dragAngForce.x) && isFinite(dragAngForce.y) && isFinite(dragAngForce.z)) {
+      characterRef.current.applyTorqueImpulse(dragAngForce, true)
+    }
   };
 
   /**
@@ -1689,6 +1708,10 @@ export interface EcctrlProps extends RigidBodyProps {
   mode?: string | null;
   // Controller setups
   controllerKeys?: { forward?: number, backward?: number, leftward?: number, rightward?: number, jump?: number, action1?: number, action2?: number, action3?: number, action4?: number }
+  invertGamepadMovX?: boolean
+  invertGamepadMovY?: boolean
+  invertGamepadCamX?: boolean
+  invertGamepadCamY?: boolean
   // Point-to-move setups
   bodySensorSize?: Array<number>;
   bodySensorPosition?: { x: number, y: number, z: number }

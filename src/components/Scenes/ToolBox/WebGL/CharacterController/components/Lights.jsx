@@ -8,7 +8,7 @@ export default function Lights() {
         shadow-normalBias={0.06}
         position={[20, 30, 10]}
         intensity={5}
-        shadow-mapSize={[1024, 1024]}
+        shadow-mapSize={[2048, 2048]}
         shadow-camera-near={1}
         shadow-camera-far={50}
         shadow-camera-top={50}

@@ -215,7 +215,7 @@ function drawPlacard(ctx, allProps) {
   ctx.fillStyle = '#ffffff';
   ctx.textAlign = 'left';
   ctx.textBaseline = 'top';
-  ctx.fillText('Gh0st', 22, 12);
+  ctx.fillText(`Gh0st://${allProps.variantName ?? 'unknown'}`, 22, 12);
 
   // ── Compass (right side, vertically centred in header)
   drawCompass(
@@ -238,7 +238,6 @@ function drawPlacard(ctx, allProps) {
 
   // ── Left column: variant, segments, animation, wind, cloth physics
   const leftData = {
-    variant: allProps.variantName ?? 'unknown',
     segments: allProps.clothSegments ?? 0,
     animation: allProps.activeAnim ?? 'idle',
     wind: {

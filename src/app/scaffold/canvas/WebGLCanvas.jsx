@@ -6,7 +6,7 @@ export default function WebGLCanvas({ children }) {
   return (
     <Canvas
       dpr={[1, 1.5]}
-      shadows
+      shadows="soft"
       gl={{
         antialias: false,
         preserveDrawingBuffer: true,

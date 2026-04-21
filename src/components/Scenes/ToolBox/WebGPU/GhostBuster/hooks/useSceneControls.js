@@ -279,7 +279,7 @@ export default function useSceneControls(ghostRef, setAnimation, triggerJump) {
               { collapsed: true }
             ),
           },
-          { collapsed: false }
+          { collapsed: true }
         ),
         Cloth: folder(
           {

@@ -4,15 +4,54 @@ import { RoundedBoxGeometry } from 'three/examples/jsm/geometries/RoundedBoxGeom
 
 import React, { useEffect, useLayoutEffect, useMemo, useRef } from 'react';
 
-import { useThree } from '@react-three/fiber';
+import { useFrame, useThree } from '@react-three/fiber';
+
+const vertexShader = /* glsl */ `
+  varying vec3 vCenterWorld;
+
+  void main() {
+    vec4 centerWorld = modelMatrix * instanceMatrix * vec4(0.0, 0.0, 0.0, 1.0);
+    vCenterWorld = centerWorld.xyz;
+
+    vec4 worldPos = modelMatrix * instanceMatrix * vec4(position, 1.0);
+    gl_Position = projectionMatrix * viewMatrix * worldPos;
+  }
+`;
+
+const fragmentShader = /* glsl */ `
+  uniform sampler2D fullSceneTexture;
+  uniform vec2 resolution;
+  uniform vec3 fallbackColor;
+  uniform mat4 viewProjectionMatrix;
+  varying vec3 vCenterWorld;
+
+  vec2 clampUv(vec2 uv, vec2 texel) {
+    return clamp(uv, texel * 0.5, vec2(1.0) - texel * 0.5);
+  }
+
+  void main() {
+    vec2 texel = 1.0 / resolution;
+
+    vec4 clip = viewProjectionMatrix * vec4(vCenterWorld, 1.0);
+    vec2 ndc = clip.xy / max(clip.w, 0.000001);
+    vec2 uv = clampUv(ndc * 0.5 + 0.5, texel);
+
+    vec4 color = texture2D(fullSceneTexture, uv);
+    if (color.a < 0.001) {
+      color = vec4(fallbackColor, 1.0);
+    }
+
+    gl_FragColor = vec4(color.rgb, 1.0);
+
+    #include <tonemapping_fragment>
+    #include <colorspace_fragment>
+  }
+`;
 
 const LOCAL_VOXEL_BOX = new THREE.Box3(
   new THREE.Vector3(-0.5, -0.5, -0.5),
   new THREE.Vector3(0.5, 0.5, 0.5)
 );
-
-const SURFACE_COLOR = new THREE.Color('#f1f1f1');
-const INSIDE_COLOR = new THREE.Color('#ffc107').convertSRGBToLinear();
 
 const bvhCache = new WeakMap();
 
@@ -46,7 +85,12 @@ export default function VoxelInteriorCensor({
   const shapeRef = useRef();
   const instancesRef = useRef();
 
-  const { scene } = useThree();
+  const { gl, scene, camera } = useThree();
+
+  const fullSceneTarget = useMemo(() => new THREE.WebGLRenderTarget(1, 1), []);
+  const sizeVec = useMemo(() => new THREE.Vector2(), []);
+  const clearColor = useMemo(() => new THREE.Color(), []);
+  const viewProjectionMatrix = useMemo(() => new THREE.Matrix4(), []);
 
   const cubeGeometry = useMemo(() => {
     if (cornerRadius > 0) {
@@ -57,10 +101,17 @@ export default function VoxelInteriorCensor({
 
   const material = useMemo(
     () =>
-      new THREE.MeshStandardMaterial({
-        vertexColors: true,
-        roughness: 0.65,
-        metalness: 0.1,
+      new THREE.ShaderMaterial({
+        vertexShader,
+        fragmentShader,
+        uniforms: {
+          fullSceneTexture: { value: null },
+          resolution: { value: new THREE.Vector2() },
+          fallbackColor: { value: new THREE.Color(1, 1, 1) },
+          viewProjectionMatrix: { value: new THREE.Matrix4() },
+        },
+        transparent: false,
+        depthWrite: true,
       }),
     []
   );
@@ -73,10 +124,11 @@ export default function VoxelInteriorCensor({
 
   useEffect(() => {
     return () => {
+      fullSceneTarget.dispose();
       cubeGeometry.dispose();
       material.dispose();
     };
-  }, [cubeGeometry, material]);
+  }, [fullSceneTarget, cubeGeometry, material]);
 
   // Demo-like voxelization: sample scene geometry occupancy inside container bounds.
   useLayoutEffect(() => {
@@ -120,9 +172,6 @@ export default function VoxelInteriorCensor({
     if (voxelSources.length === 0) {
       instancedMesh.count = 0;
       instancedMesh.instanceMatrix.needsUpdate = true;
-      if (instancedMesh.instanceColor) {
-        instancedMesh.instanceColor.needsUpdate = true;
-      }
       return;
     }
 
@@ -182,9 +231,6 @@ export default function VoxelInteriorCensor({
             );
             if (source.bvh.intersectsBox(LOCAL_VOXEL_BOX, boxToMeshLocal)) {
               surfaceHit = true;
-              if (!insideOnly) {
-                break;
-              }
             }
 
             if (!surfaceHit || insideOnly) {
@@ -200,10 +246,6 @@ export default function VoxelInteriorCensor({
 
           if ((surfaceHit && !insideOnly) || insideHit) {
             instancedMesh.setMatrixAt(count, localVoxelMatrix);
-            instancedMesh.setColorAt(
-              count,
-              insideHit ? INSIDE_COLOR : SURFACE_COLOR
-            );
             count += 1;
           }
         }
@@ -214,10 +256,55 @@ export default function VoxelInteriorCensor({
 
     instancedMesh.count = count;
     instancedMesh.instanceMatrix.needsUpdate = true;
-    if (instancedMesh.instanceColor) {
-      instancedMesh.instanceColor.needsUpdate = true;
-    }
   }, [voxelSize, insideOnly, maxInstances, scene]);
+
+  useFrame(() => {
+    const group = groupRef.current;
+    if (!group) return;
+
+    gl.getDrawingBufferSize(sizeVec);
+    if (
+      fullSceneTarget.width !== sizeVec.x ||
+      fullSceneTarget.height !== sizeVec.y
+    ) {
+      fullSceneTarget.setSize(sizeVec.x, sizeVec.y);
+    }
+
+    material.uniforms.resolution.value.copy(sizeVec);
+    viewProjectionMatrix.multiplyMatrices(
+      camera.projectionMatrix,
+      camera.matrixWorldInverse
+    );
+    material.uniforms.viewProjectionMatrix.value.copy(viewProjectionMatrix);
+
+    const previousRT = gl.getRenderTarget();
+    const savedToneMapping = gl.toneMapping;
+    const savedClearAlpha = gl.getClearAlpha();
+    gl.getClearColor(clearColor);
+
+    gl.toneMapping = THREE.NoToneMapping;
+
+    if (scene.background && scene.background.isColor) {
+      material.uniforms.fallbackColor.value.copy(scene.background);
+    } else {
+      material.uniforms.fallbackColor.value.setRGB(1, 1, 1);
+    }
+
+    group.visible = false;
+
+    gl.setClearColor(clearColor, savedClearAlpha);
+    gl.setRenderTarget(fullSceneTarget);
+    gl.clear();
+    gl.render(scene, camera);
+
+    gl.setRenderTarget(previousRT);
+    gl.toneMapping = savedToneMapping;
+    gl.setClearColor(clearColor, savedClearAlpha);
+
+    group.visible = true;
+
+    material.uniforms.fullSceneTexture.value = fullSceneTarget.texture;
+  });
 
   return (
     <group ref={groupRef} {...props}>

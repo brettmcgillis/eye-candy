@@ -4,7 +4,13 @@ import { CuboidCollider, RigidBody } from '@react-three/rapier';
 
 import GridMaterial from '../../../../../materials/webGL/gridMaterial';
 
-export default function Floor({ gridSectionColor, gridCellColor }) {
+export default function Floor({
+  gridSectionColor,
+  gridCellColor,
+  onPointerMove,
+  onPointerDown,
+  onPointerUp,
+}) {
   return (
     <>
       <mesh
@@ -12,6 +18,9 @@ export default function Floor({ gridSectionColor, gridCellColor }) {
         rotation={[-Math.PI / 2, 0, 0]}
         renderOrder={0}
         userData={{ camExcludeCollision: true }}
+        onPointerMove={onPointerMove}
+        onPointerDown={onPointerDown}
+        onPointerUp={onPointerUp}
       >
         <planeGeometry args={[300, 300]} />
         <GridMaterial

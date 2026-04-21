@@ -1,12 +1,12 @@
 import { folder, useControls } from 'leva';
 
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 
 import { KeyboardControls } from '@react-three/drei';
 import { useThree } from '@react-three/fiber';
 import { Physics } from '@react-three/rapier';
 
-import Ecctrl from '../../../../../ecctrl/Ecctrl';
+import Ecctrl, { useGame } from '../../../../../ecctrl/Ecctrl';
 import CharacterModel from './CharacterModel';
 import DynamicPlatforms from './DynamicPlatforms';
 import FloatingPlatform from './FloatingPlatform';
@@ -33,6 +33,10 @@ const keyboardMap = [
 
 export default function Experience() {
   const { gl } = useThree();
+  const setMoveToPoint = useGame((state) => state.setMoveToPoint);
+  const pointerDownAtRef = useRef(0);
+  const [hoverPoint, setHoverPoint] = useState(null);
+  const [moveTargetPoint, setMoveTargetPoint] = useState(null);
 
   const [pausedPhysics, setPausedPhysics] = useState(true);
   useEffect(() => {
@@ -94,6 +98,7 @@ export default function Experience() {
     ecctrlMode,
     // Scene
     sceneMode,
+    fpsMode,
     bgColor,
     gridSectionColor,
     gridCellColor,
@@ -123,6 +128,7 @@ export default function Experience() {
             PointToMove: 'PointToMove',
           },
         },
+        fpsMode: false,
         bgColor: {
           value: '#a8c8e8',
         },
@@ -214,11 +220,52 @@ export default function Experience() {
   const effectiveGridSectionColor =
     preset?.gridSectionColor ?? gridSectionColor;
   const effectiveGridCellColor = preset?.gridCellColor ?? gridCellColor;
+  const effectiveEcctrlMode = fpsMode ? 'CameraBasedMovement' : ecctrlMode;
+  const pointToMoveActive = effectiveEcctrlMode === 'PointToMove';
+  const effectiveTurnVelMultiplier = fpsMode ? 1 : turnVelMultiplier;
+  const effectiveTurnSpeed = fpsMode ? 100 : turnSpeed;
+  const effectiveCamCollision = !fpsMode;
+  const effectiveCamInitDis = fpsMode ? -0.01 : camInitDis;
+  const effectiveCamMaxDis = fpsMode ? -0.01 : camMaxDis;
+  const effectiveCamMinDis = fpsMode ? -0.01 : camMinDis;
+  const effectiveCamFollowMult = fpsMode ? 1000 : camFollowMult;
+  const effectiveCamLerpMult = fpsMode ? 1000 : camLerpMult;
+  const ecctrlInstanceKey = fpsMode ? 'fps-on' : 'fps-off';
+
+  const handlePointToMoveHover = React.useCallback(
+    (event) => {
+      if (!pointToMoveActive) return;
+      event.stopPropagation();
+      setHoverPoint(event.point.clone());
+    },
+    [pointToMoveActive]
+  );
+
+  const handlePointToMoveDown = React.useCallback(
+    (event) => {
+      if (!pointToMoveActive) return;
+      event.stopPropagation();
+      pointerDownAtRef.current = Date.now();
+    },
+    [pointToMoveActive]
+  );
+
+  const handlePointToMoveUp = React.useCallback(
+    (event) => {
+      if (!pointToMoveActive) return;
+      event.stopPropagation();
+      if (Date.now() - pointerDownAtRef.current >= 220) return;
+      const point = event.point.clone();
+      setMoveToPoint(point);
+      setMoveTargetPoint(point);
+    },
+    [pointToMoveActive, setMoveToPoint]
+  );
 
   useEffect(() => {
     const canvas = gl.domElement;
 
-    if (ecctrlMode === 'PointToMove') {
+    if (pointToMoveActive) {
       if (document.pointerLockElement === canvas) {
         document.exitPointerLock();
       }
@@ -232,7 +279,55 @@ export default function Experience() {
 
     canvas.addEventListener('click', lock);
     return () => canvas.removeEventListener('click', lock);
-  }, [gl, ecctrlMode]);
+  }, [gl, pointToMoveActive]);
+
+  useEffect(() => {
+    if (!pointToMoveActive) {
+      setMoveToPoint(null);
+      setHoverPoint(null);
+      setMoveTargetPoint(null);
+    }
+  }, [pointToMoveActive, setMoveToPoint]);
+
+  const characterController = (
+    <Ecctrl
+      key={ecctrlInstanceKey}
+      animated
+      followLight
+      disableControl={disableControl}
+      disableFollowCam={disableFollowCam}
+      invertGamepadMovX={invertGamepadMovX}
+      invertGamepadMovY={invertGamepadMovY}
+      invertGamepadCamX={invertGamepadCamX}
+      invertGamepadCamY={invertGamepadCamY}
+      maxVelLimit={maxVelLimit}
+      turnVelMultiplier={effectiveTurnVelMultiplier}
+      turnSpeed={effectiveTurnSpeed}
+      sprintMult={sprintMult}
+      jumpVel={jumpVel}
+      airDragMultiplier={airDragMultiplier}
+      fallingGravityScale={fallingGravityScale}
+      capsuleHalfHeight={capsuleHalfHeight}
+      capsuleRadius={capsuleRadius}
+      floatHeight={floatHeight}
+      springK={springK}
+      dampingC={dampingC}
+      autoBalance={autoBalance}
+      autoBalanceSpringK={autoBalanceSpringK}
+      autoBalanceDampingC={autoBalanceDampingC}
+      autoBalanceSpringOnY={autoBalanceSpringOnY}
+      autoBalanceDampingOnY={autoBalanceDampingOnY}
+      camCollision={effectiveCamCollision}
+      camInitDis={effectiveCamInitDis}
+      camMaxDis={effectiveCamMaxDis}
+      camMinDis={effectiveCamMinDis}
+      camFollowMult={effectiveCamFollowMult}
+      camLerpMult={effectiveCamLerpMult}
+      mode={effectiveEcctrlMode}
+    >
+      <CharacterModel variant={characterModel} />
+    </Ecctrl>
+  );
 
   return (
     <>
@@ -240,44 +335,40 @@ export default function Experience() {
 
       <color attach="background" args={[effectiveBgColor]} />
 
+      {pointToMoveActive && hoverPoint && (
+        <mesh
+          position={[hoverPoint.x, hoverPoint.y + 0.01, hoverPoint.z]}
+          rotation={[-Math.PI / 2, 0, 0]}
+          userData={{ camExcludeCollision: true }}
+        >
+          <ringGeometry args={[0.18, 0.28, 48]} />
+          <meshBasicMaterial color="#000000" transparent opacity={0.2} />
+        </mesh>
+      )}
+
+      {pointToMoveActive && moveTargetPoint && (
+        <mesh
+          position={[
+            moveTargetPoint.x,
+            moveTargetPoint.y + 0.012,
+            moveTargetPoint.z,
+          ]}
+          rotation={[-Math.PI / 2, 0, 0]}
+          userData={{ camExcludeCollision: true }}
+        >
+          <ringGeometry args={[0.22, 0.34, 48]} />
+          <meshBasicMaterial color="#ff7a00" transparent opacity={0.75} />
+        </mesh>
+      )}
+
       <Physics debug={physics} paused={pausedPhysics}>
-        <KeyboardControls map={keyboardMap}>
-          <Ecctrl
-            animated
-            followLight
-            disableControl={disableControl}
-            disableFollowCam={disableFollowCam}
-            invertGamepadMovX={invertGamepadMovX}
-            invertGamepadMovY={invertGamepadMovY}
-            invertGamepadCamX={invertGamepadCamX}
-            invertGamepadCamY={invertGamepadCamY}
-            maxVelLimit={maxVelLimit}
-            turnVelMultiplier={turnVelMultiplier}
-            turnSpeed={turnSpeed}
-            sprintMult={sprintMult}
-            jumpVel={jumpVel}
-            airDragMultiplier={airDragMultiplier}
-            fallingGravityScale={fallingGravityScale}
-            capsuleHalfHeight={capsuleHalfHeight}
-            capsuleRadius={capsuleRadius}
-            floatHeight={floatHeight}
-            springK={springK}
-            dampingC={dampingC}
-            autoBalance={autoBalance}
-            autoBalanceSpringK={autoBalanceSpringK}
-            autoBalanceDampingC={autoBalanceDampingC}
-            autoBalanceSpringOnY={autoBalanceSpringOnY}
-            autoBalanceDampingOnY={autoBalanceDampingOnY}
-            camInitDis={camInitDis}
-            camMaxDis={camMaxDis}
-            camMinDis={camMinDis}
-            camFollowMult={camFollowMult}
-            camLerpMult={camLerpMult}
-            mode={ecctrlMode}
-          >
-            <CharacterModel variant={characterModel} />
-          </Ecctrl>
-        </KeyboardControls>
+        {pointToMoveActive ? (
+          characterController
+        ) : (
+          <KeyboardControls map={keyboardMap}>
+            {characterController}
+          </KeyboardControls>
+        )}
 
         <RoughPlane />
         <Slopes />
@@ -288,6 +379,9 @@ export default function Experience() {
         <Floor
           gridSectionColor={effectiveGridSectionColor}
           gridCellColor={effectiveGridCellColor}
+          onPointerMove={handlePointToMoveHover}
+          onPointerDown={handlePointToMoveDown}
+          onPointerUp={handlePointToMoveUp}
         />
         {shotsEnabled && <ShotCube />}
       </Physics>

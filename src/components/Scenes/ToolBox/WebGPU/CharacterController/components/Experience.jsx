@@ -41,16 +41,6 @@ export default function Experience() {
     return () => clearTimeout(t);
   }, []);
 
-  useEffect(() => {
-    const canvas = gl.domElement;
-    const lock = () => {
-      const p = canvas.requestPointerLock();
-      if (p && typeof p.catch === 'function') p.catch(() => {});
-    };
-    canvas.addEventListener('click', lock);
-    return () => canvas.removeEventListener('click', lock);
-  }, [gl]);
-
   // Day/Night mode helper
   const dayNightPresets = {
     Day: {
@@ -102,8 +92,9 @@ export default function Experience() {
     camMinDis,
     camFollowMult,
     camLerpMult,
+    ecctrlMode,
     // Scene
-    mode,
+    sceneMode,
     bgColor,
     gridBgColor,
     gridLineColor,
@@ -120,9 +111,18 @@ export default function Experience() {
 
     Scene: folder(
       {
-        mode: {
+        sceneMode: {
           value: 'Day',
           options: ['Day', 'Night'],
+        },
+        ecctrlMode: {
+          value: null,
+          options: {
+            Off: null,
+            CameraBasedMovement: 'CameraBasedMovement',
+            FixedCamera: 'FixedCamera',
+            PointToMove: 'PointToMove',
+          },
         },
         bgColor: { value: '#a8c8e8' },
         gridBgColor: { value: '#d9d9d9' },
@@ -201,16 +201,36 @@ export default function Experience() {
 
   // Update colors when mode changes
   React.useEffect(() => {
-    if (mode && dayNightPresets[mode]) {
+    if (sceneMode && dayNightPresets[sceneMode]) {
       // Mode changed, colors will be applied below
     }
-  }, [mode]);
+  }, [sceneMode]);
 
   // Determine effective colors based on mode
-  const preset = mode && dayNightPresets[mode] ? dayNightPresets[mode] : null;
+  const preset =
+    sceneMode && dayNightPresets[sceneMode] ? dayNightPresets[sceneMode] : null;
   const effectiveBgColor = preset?.bgColor ?? bgColor;
   const effectiveGridBgColor = preset?.gridBgColor ?? gridBgColor;
   const effectiveGridLineColor = preset?.gridLineColor ?? gridLineColor;
+
+  useEffect(() => {
+    const canvas = gl.domElement;
+
+    if (ecctrlMode === 'PointToMove') {
+      if (document.pointerLockElement === canvas) {
+        document.exitPointerLock();
+      }
+      return undefined;
+    }
+
+    const lock = () => {
+      const p = canvas.requestPointerLock();
+      if (p && typeof p.catch === 'function') p.catch(() => {});
+    };
+
+    canvas.addEventListener('click', lock);
+    return () => canvas.removeEventListener('click', lock);
+  }, [gl, ecctrlMode]);
 
   return (
     <>
@@ -238,7 +258,7 @@ export default function Experience() {
         <shadowMaterial opacity={0.35} transparent />
       </mesh>
 
-      <Lights mode={mode} />
+      <Lights mode={sceneMode} />
 
       <color attach="background" args={[effectiveBgColor]} />
 
@@ -275,6 +295,7 @@ export default function Experience() {
             camMinDis={camMinDis}
             camFollowMult={camFollowMult}
             camLerpMult={camLerpMult}
+            mode={ecctrlMode}
           >
             <CharacterModel variant={characterModel} />
           </Ecctrl>

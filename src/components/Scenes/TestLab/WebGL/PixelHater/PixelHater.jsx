@@ -22,7 +22,21 @@ export default function PixelHater() {
     planeHeight,
     planeWidth,
     refraction,
+    voxelSize,
+    voxelSteps,
+    cornerRadius,
+    insideOnly,
   } = usePixelHaterControls();
+
+  const censorModeByEffect = {
+    Censor: 'pixel',
+    VoxelScreen: 'voxelScreen',
+    VoxelRaymarch: 'voxelRaymarch',
+    VoxelInstanced: 'voxelInstanced',
+    VoxelInterior: 'voxelInterior',
+  };
+  const censorMode = censorModeByEffect[pixelEffect] ?? null;
+  const usePostEffect = pixelEffect === 'Yours' || pixelEffect === 'Mine';
 
   return (
     <>
@@ -44,18 +58,23 @@ export default function PixelHater() {
       </mesh>
 
       {/* V2 — forward-rendered censor material (no postprocessing) */}
-      {pixelEffect === 'Censor' && (
+      {censorMode && (
         <CensorShapes
           effectShape={effectShape}
           pixelSize={pixelSize}
           refraction={refraction}
           planeWidth={planeWidth}
           planeHeight={planeHeight}
+          voxelMode={censorMode}
+          voxelSize={voxelSize}
+          voxelSteps={voxelSteps}
+          cornerRadius={cornerRadius}
+          insideOnly={insideOnly}
         />
       )}
 
       {/* V0/V1 — postprocessing effects */}
-      {pixelEffect !== 'Censor' && (
+      {usePostEffect && (
         <EffectComposer multisampling={0} enableNormalPass>
           {pixelEffect === 'Yours' && <Pixelation granularity={pixelSize} />}
           {pixelEffect === 'Mine' && (
@@ -80,10 +99,9 @@ export default function PixelHater() {
                   </>
                 )}
                 {effectShape === 'Cube' && (
-                  <mesh position={(0, 0, 0)}>
+                  <mesh position={[0, 0, 0]}>
                     <boxGeometry args={[1, 1, 1]} />
                     <meshBasicMaterial />
-                    ``
                   </mesh>
                 )}
                 {effectShape === 'Cubes' && (

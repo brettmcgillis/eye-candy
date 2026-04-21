@@ -45,6 +45,10 @@ export default function usePixelHaterControls() {
           Yours: 'Yours',
           Mine: 'Mine',
           Censor: 'Censor',
+          'Voxel Screen': 'VoxelScreen',
+          'Voxel Raymarch': 'VoxelRaymarch',
+          'Voxel Instanced': 'VoxelInstanced',
+          'Voxel Interior': 'VoxelInterior',
         },
         value: 'Censor',
       },
@@ -82,6 +86,47 @@ export default function usePixelHaterControls() {
         min: 0,
         max: 0.15,
         step: 0.005,
+        render: (get) => {
+          const effect = get('👾.pixelEffect');
+          return effect === 'Censor';
+        },
+      },
+      voxelSize: {
+        label: 'Voxel Size',
+        value: 0.25,
+        min: 0.01,
+        max: 2.0,
+        step: 0.001,
+        render: (get) => {
+          const effect = get('👾.pixelEffect');
+          return (
+            effect === 'VoxelScreen' ||
+            effect === 'VoxelRaymarch' ||
+            effect === 'VoxelInstanced' ||
+            effect === 'VoxelInterior'
+          );
+        },
+      },
+      voxelSteps: {
+        label: 'Voxel Steps',
+        value: 24,
+        min: 4,
+        max: 96,
+        step: 1,
+        render: (get) => get('👾.pixelEffect') === 'VoxelRaymarch',
+      },
+      cornerRadius: {
+        label: 'Corner Radius',
+        value: 0,
+        min: 0,
+        max: 0.49,
+        step: 0.01,
+        render: (get) => get('👾.pixelEffect') === 'VoxelInterior',
+      },
+      insideOnly: {
+        label: 'Inside Only',
+        value: false,
+        render: (get) => get('👾.pixelEffect') === 'VoxelInterior',
       },
     },
     { collapsed: true }

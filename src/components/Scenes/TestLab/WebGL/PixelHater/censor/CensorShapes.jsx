@@ -1,6 +1,9 @@
 import React from 'react';
 
 import Censor from './Censor';
+import VoxelCensor from './VoxelCensor';
+import VoxelInstancedCensor from './VoxelInstancedCensor';
+import VoxelInteriorCensor from './VoxelInteriorCensor';
 
 export default function CensorShapes({
   effectShape,
@@ -8,61 +11,93 @@ export default function CensorShapes({
   refraction,
   planeWidth,
   planeHeight,
+  voxelMode,
+  voxelSize,
+  voxelSteps,
+  cornerRadius,
+  insideOnly,
 }) {
+  const isVoxelMode = voxelMode !== 'pixel';
+  let CensorComponent = Censor;
+  if (isVoxelMode) {
+    if (voxelMode === 'voxelInstanced') {
+      CensorComponent = VoxelInstancedCensor;
+    } else if (voxelMode === 'voxelInterior') {
+      CensorComponent = VoxelInteriorCensor;
+    } else {
+      CensorComponent = VoxelCensor;
+    }
+  }
+
+  let variantProps = {};
+  if (isVoxelMode) {
+    if (voxelMode === 'voxelInstanced') {
+      variantProps = { voxelSize };
+    } else if (voxelMode === 'voxelInterior') {
+      variantProps = { voxelSize, cornerRadius, insideOnly };
+    } else {
+      variantProps = {
+        mode: voxelMode,
+        voxelSize,
+        voxelSteps,
+      };
+    }
+  }
+  const sharedCensorProps = isVoxelMode
+    ? {
+        pixelSize,
+        ...variantProps,
+      }
+    : {
+        pixelSize,
+        refraction,
+      };
+
   return (
     <>
       {effectShape === 'Plane' && (
-        <Censor pixelSize={pixelSize} refraction={refraction}>
+        <CensorComponent {...sharedCensorProps}>
           <planeGeometry args={[planeWidth, planeHeight]} />
-        </Censor>
+        </CensorComponent>
       )}
       {effectShape === 'TwoPanes' && (
         <>
-          <Censor
-            pixelSize={pixelSize}
-            refraction={refraction}
-            position={[0.5, 0.5, 0]}
-          >
+          <CensorComponent {...sharedCensorProps} position={[0.5, 0.5, 0]}>
             <planeGeometry args={[1, 1]} />
-          </Censor>
-          <Censor
-            pixelSize={pixelSize}
-            refraction={refraction}
-            position={[-0.5, -0.5, 0]}
-          >
+          </CensorComponent>
+          <CensorComponent {...sharedCensorProps} position={[-0.5, -0.5, 0]}>
             <planeGeometry args={[1, 1]} />
-          </Censor>
+          </CensorComponent>
         </>
       )}
       {effectShape === 'Cube' && (
-        <Censor pixelSize={pixelSize} refraction={refraction}>
+        <CensorComponent {...sharedCensorProps}>
           <boxGeometry args={[1, 1, 1]} />
-        </Censor>
+        </CensorComponent>
       )}
       {effectShape === 'Cubes' && (
-        <Censor
-          pixelSize={pixelSize}
-          refraction={refraction}
+        <CensorComponent
+          {...sharedCensorProps}
           clipOffset={0.5}
           position={[0, 0, 1]}
         >
           <boxGeometry args={[1, 1, 1]} />
-        </Censor>
+        </CensorComponent>
       )}
       {effectShape === 'Torus' && (
-        <Censor pixelSize={pixelSize} refraction={refraction}>
+        <CensorComponent {...sharedCensorProps}>
           <torusGeometry args={[0.5, 0.15, 16, 100]} />
-        </Censor>
+        </CensorComponent>
       )}
       {effectShape === 'Sphere' && (
-        <Censor pixelSize={pixelSize} refraction={refraction}>
+        <CensorComponent {...sharedCensorProps}>
           <sphereGeometry args={[0.4, 32, 32]} />
-        </Censor>
+        </CensorComponent>
       )}
       {effectShape === 'Knot' && (
-        <Censor pixelSize={pixelSize} refraction={refraction}>
+        <CensorComponent {...sharedCensorProps}>
           <torusKnotGeometry args={[0.5, 0.1, 100, 16]} />
-        </Censor>
+        </CensorComponent>
       )}
     </>
   );

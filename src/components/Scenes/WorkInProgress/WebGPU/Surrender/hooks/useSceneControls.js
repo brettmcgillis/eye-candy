@@ -1,7 +1,7 @@
 import { folder, useControls } from 'leva';
 
 import { imageFile } from '../../../../../../utils/appUtils';
-import { PATTERN_TYPES } from '../../../../../postprocessing/webGPU/Outline';
+import { OUTLINE_MODES } from '../../../../../postprocessing/webGPU/outline/Outline';
 
 export const TEXTURE_OPTIONS = {
   None: 'None',
@@ -196,7 +196,7 @@ export default function useSceneControls() {
         step: 1,
         label: 'Texture Rotation',
       },
-      color: { value: '#f5f0e8', label: 'Color' },
+      flagColor: { value: '#f5f0e8', label: 'Color' },
       roughness: {
         value: 0.65,
         min: 0,
@@ -255,7 +255,7 @@ export default function useSceneControls() {
         step: 0.01,
         label: 'IOR',
       },
-      thickness: {
+      materialThickness: {
         value: 0.0,
         min: 0,
         max: 2,
@@ -388,22 +388,43 @@ export default function useSceneControls() {
       },
     }),
     Outline: folder({
-      outlineEnabled: { value: true, label: 'Enabled' },
-      edgeStrength: {
+      enabled: { value: true, label: 'Enabled' },
+      mode: {
+        value: 'outline',
+        options: OUTLINE_MODES,
+        label: 'Mode',
+      },
+      strength: {
         value: 7,
         min: 0,
         max: 10,
         step: 0.1,
         label: 'Strength',
       },
-      edgeThickness: {
-        value: 2.5,
-        min: 0.5,
-        max: 8,
+      thickness: {
+        value: 12,
+        min: 0.1,
+        max: 80,
         step: 0.1,
         label: 'Thickness',
       },
-      visibleEdgeColor: { value: '#3eb2ff', label: 'Color' },
+      color: { value: '#3eb2ff', label: 'Color' },
+      hiddenColor: { value: '#000000', label: 'Hidden Color' },
+      hiddenStrength: {
+        value: 0,
+        min: 0,
+        max: 1,
+        step: 0.01,
+        label: 'Hidden Strength',
+      },
+      glow: {
+        value: 0.35,
+        min: 0,
+        max: 2,
+        step: 0.01,
+        label: 'Glow',
+      },
+      inside: { value: false, label: 'Inside' },
       downSampleRatio: {
         value: 1,
         min: 1,
@@ -411,15 +432,10 @@ export default function useSceneControls() {
         step: 1,
         label: 'Downsample',
       },
-      patternType: {
-        value: 'None',
-        options: PATTERN_TYPES,
-        label: 'Pattern',
-      },
       patternScale: {
-        value: 5,
-        min: 0.1,
-        max: 40,
+        value: 8,
+        min: 0.25,
+        max: 120,
         step: 0.1,
         label: 'Pattern Scale',
       },
@@ -436,6 +452,20 @@ export default function useSceneControls() {
         max: 4,
         step: 0.1,
         label: 'Lacunarity',
+      },
+      ringStride: {
+        value: 10,
+        min: 2,
+        max: 80,
+        step: 1,
+        label: 'Ring Stride',
+      },
+      halftoneScale: {
+        value: 1,
+        min: 0.25,
+        max: 4,
+        step: 0.05,
+        label: 'Dot Size',
       },
     }),
   });

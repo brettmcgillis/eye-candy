@@ -12,7 +12,7 @@ import React, {
 
 import { useFrame, useLoader } from '@react-three/fiber';
 
-import OutlineTSL from '../../../postprocessing/webGPU/OutlineTSL';
+import Outline from '../../../postprocessing/webGPU/outline/Outline';
 import ClothMesh from '../cloth/ClothMesh';
 import { pinRing } from '../cloth/pinHelpers';
 import { getAnimation } from './ghostAnimations';
@@ -126,13 +126,20 @@ const GhostCharacter = forwardRef(function GhostCharacter(
     textureProjection = 'uv',
     textureSide = 'both',
     outlineEnabled = false,
+    outlineMode = 'outline',
     outlineColor = '#ffffff',
-    outlineVisibleEdgeColor = null,
-    outlineHiddenEdgeColor = '#000000',
-    outlineHiddenEdgeStrength = 0,
-    outlineEdgeStrength = null,
-    outlineEdgeGlow = 0.35,
-    outlineEdgeThickness = null,
+    outlineHiddenColor = '#000000',
+    outlineHiddenStrength = 0,
+    outlineStrength = 3,
+    outlineGlow = 0.35,
+    outlineThickness = 1,
+    outlineInside = false,
+    outlineDownSampleRatio = 1,
+    outlinePatternScale = 1,
+    outlinePatternOctaves = 3,
+    outlinePatternLacunarity = 2,
+    outlineRingStride = 15,
+    outlineHalftoneScale = 14,
     opacity = 1,
     paused = false,
     cutoutRimColor = '#000000',
@@ -944,17 +951,24 @@ const GhostCharacter = forwardRef(function GhostCharacter(
           </>
         )}
       </group>
-      {outlineEnabled && (
-        <OutlineTSL
-          targetRef={clothRef}
-          edgeStrength={outlineEdgeStrength ?? 3}
-          edgeGlow={outlineEdgeGlow}
-          edgeThickness={outlineEdgeThickness ?? 1}
-          visibleEdgeColor={outlineVisibleEdgeColor || outlineColor}
-          hiddenEdgeColor={outlineHiddenEdgeColor}
-          hiddenEdgeStrength={outlineHiddenEdgeStrength}
-        />
-      )}
+      <Outline
+        enabled={outlineEnabled}
+        targetRef={clothRef}
+        mode={outlineMode}
+        color={outlineColor}
+        hiddenColor={outlineHiddenColor}
+        hiddenStrength={outlineHiddenStrength}
+        strength={outlineStrength}
+        glow={outlineGlow}
+        thickness={outlineThickness}
+        inside={outlineInside}
+        downSampleRatio={outlineDownSampleRatio}
+        patternScale={outlinePatternScale}
+        patternOctaves={outlinePatternOctaves}
+        patternLacunarity={outlinePatternLacunarity}
+        ringStride={outlineRingStride}
+        halftoneScale={outlineHalftoneScale}
+      />
     </>
   );
 });

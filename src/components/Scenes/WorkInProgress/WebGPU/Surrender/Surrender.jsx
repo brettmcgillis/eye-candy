@@ -5,7 +5,7 @@ import React, { useCallback, useMemo, useRef } from 'react';
 import { OrbitControls, PerspectiveCamera } from '@react-three/drei';
 import { useThree } from '@react-three/fiber';
 
-import Outline from '../../../../postprocessing/webGPU/Outline';
+import OutlineFX from '../../../../postprocessing/webGPU/outline/Outline';
 import Flag from './components/Flag';
 import FlagPole from './components/FlagPole';
 import useSceneControls, { TEXTURE_URLS } from './hooks/useSceneControls';
@@ -42,7 +42,7 @@ export default function Surrender() {
     textureScaleX,
     textureScaleY,
     textureRotation,
-    color,
+    flagColor,
     roughness,
     metalness,
     opacity,
@@ -53,7 +53,7 @@ export default function Surrender() {
     clearcoatRoughness,
     transmission,
     ior,
-    thickness,
+    materialThickness,
     poleColor,
     poleMetalness,
     poleRoughness,
@@ -79,15 +79,21 @@ export default function Surrender() {
     fillPosX,
     fillPosY,
     fillPosZ,
-    outlineEnabled,
-    edgeStrength,
-    edgeThickness,
-    visibleEdgeColor,
+    enabled,
+    mode,
+    strength,
+    thickness: outlineThickness,
+    color: outlineColor,
+    hiddenColor,
+    hiddenStrength,
+    glow,
+    inside,
     downSampleRatio,
-    patternType,
     patternScale,
     patternOctaves,
     patternLacunarity,
+    ringStride,
+    halftoneScale,
   } = useSceneControls();
 
   const outlineGroupRef = useRef();
@@ -202,7 +208,7 @@ export default function Surrender() {
           textureScaleX={textureScaleX}
           textureScaleY={textureScaleY}
           textureRotation={textureRotation}
-          color={color}
+          color={flagColor}
           roughness={roughness}
           metalness={metalness}
           opacity={opacity}
@@ -213,23 +219,28 @@ export default function Surrender() {
           clearcoatRoughness={clearcoatRoughness}
           transmission={transmission}
           ior={ior}
-          thickness={thickness}
+          thickness={materialThickness}
         />
       </group>
 
-      {outlineEnabled && (
-        <Outline
-          meshRef={outlineGroupRef}
-          edgeStrength={edgeStrength}
-          edgeThickness={edgeThickness}
-          visibleEdgeColor={visibleEdgeColor}
-          downSampleRatio={downSampleRatio}
-          patternType={patternType}
-          patternScale={patternScale}
-          patternOctaves={patternOctaves}
-          patternLacunarity={patternLacunarity}
-        />
-      )}
+      <OutlineFX
+        enabled={enabled}
+        targetRef={outlineGroupRef}
+        mode={mode}
+        color={outlineColor}
+        hiddenColor={hiddenColor}
+        hiddenStrength={hiddenStrength}
+        strength={strength}
+        thickness={outlineThickness}
+        glow={glow}
+        inside={inside}
+        downSampleRatio={downSampleRatio}
+        patternScale={patternScale}
+        patternOctaves={patternOctaves}
+        patternLacunarity={patternLacunarity}
+        ringStride={ringStride}
+        halftoneScale={halftoneScale}
+      />
     </>
   );
 }

@@ -401,7 +401,11 @@ export default function GhostPlacard({
   //   The bottom edge rests just above the floor (y ≈ -0.9);
   //   the top edge leans toward the ghost at roughly y ≈ -0.54.
   return (
-    <group position={[0, -0.7, 0.9]} rotation={[-Math.PI / 3, 0, 0]}>
+    <group
+      position={[0, -0.7, 0.9]}
+      rotation={[-Math.PI / 3, 0, 0]}
+      userData={{ outlineOccluder: true }}
+    >
       <mesh>
         <planeGeometry args={[2.25, 0.75]} />
         <meshBasicMaterial map={texture} side={THREE.FrontSide} transparent />

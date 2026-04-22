@@ -1,12 +1,14 @@
 import { button, folder, useControls } from 'leva';
 
 import usePresetsFolder from '../../../../../../hooks/usePresetsFolder';
+import { OUTLINE_MODES } from '../../../../../postprocessing/webGPU/outline/Outline';
 import { GHOST_TEXTURE_OPTIONS, SCENE_PRESETS } from '../presets/scenePresets';
 
-const DEFAULT_PRESET = 'Plain';
+const DEFAULT_PRESET = 'Original';
 
 function getPresetControls({ presetSnapshot }) {
   const out = { ...presetSnapshot };
+
   // Leva color picker rejects empty string — fall back to main color
   if (!out.innerColor) out.innerColor = out.color;
   return out;
@@ -288,44 +290,92 @@ export default function useSceneControls(ghostRef, setAnimation, triggerJump) {
                   label: 'Enabled',
                   value: ini.outlineEnabled ?? false,
                 },
-                outlineVisibleEdgeColor: {
-                  label: 'Visible Color',
-                  value:
-                    ini.outlineVisibleEdgeColor ??
-                    ini.outlineColor ??
-                    '#ffffff',
+                outlineMode: {
+                  value: ini.outlineMode ?? 'outline',
+                  options: OUTLINE_MODES,
+                  label: 'Mode',
                 },
-                outlineHiddenEdgeColor: {
+                outlineColor: {
+                  label: 'Color',
+                  value: ini.outlineColor ?? '#ffffff',
+                },
+                outlineHiddenColor: {
                   label: 'Hidden Color',
-                  value: ini.outlineHiddenEdgeColor ?? '#000000',
+                  value: ini.outlineHiddenColor ?? '#000000',
                 },
-                outlineHiddenEdgeStrength: {
+                outlineHiddenStrength: {
                   label: 'Hidden Strength',
-                  value: ini.outlineHiddenEdgeStrength ?? 0,
+                  value: ini.outlineHiddenStrength ?? 0,
                   min: 0,
                   max: 1,
                   step: 0.01,
                 },
-                outlineEdgeStrength: {
+                outlineStrength: {
                   label: 'Strength',
-                  value: ini.outlineEdgeStrength ?? 3,
+                  value: ini.outlineStrength ?? 3,
                   min: 0,
                   max: 10,
                   step: 0.1,
                 },
-                outlineEdgeGlow: {
+                outlineThickness: {
+                  label: 'Thickness',
+                  value: ini.outlineThickness ?? 12,
+                  min: 0.1,
+                  max: 80,
+                  step: 0.1,
+                },
+                outlineGlow: {
                   label: 'Glow',
-                  value: ini.outlineEdgeGlow ?? 0.35,
+                  value: ini.outlineGlow ?? 0.35,
                   min: 0,
                   max: 2,
                   step: 0.01,
                 },
-                outlineEdgeThickness: {
-                  label: 'Thickness',
-                  value: ini.outlineEdgeThickness ?? 1,
+                outlineInside: {
+                  value: ini.outlineInside ?? false,
+                  label: 'Inside',
+                },
+                outlineDownSampleRatio: {
+                  value: ini.outlineDownSampleRatio ?? 1,
+                  min: 1,
+                  max: 4,
+                  step: 1,
+                  label: 'Downsample',
+                },
+                outlinePatternScale: {
+                  value: ini.outlinePatternScale ?? 8,
+                  min: 0.25,
+                  max: 120,
+                  step: 0.1,
+                  label: 'Pattern Scale',
+                },
+                outlinePatternOctaves: {
+                  value: ini.outlinePatternOctaves ?? 3,
+                  min: 1,
+                  max: 8,
+                  step: 1,
+                  label: 'Octaves',
+                },
+                outlinePatternLacunarity: {
+                  value: ini.outlinePatternLacunarity ?? 2,
                   min: 1,
                   max: 4,
                   step: 0.1,
+                  label: 'Lacunarity',
+                },
+                outlineRingStride: {
+                  value: ini.outlineRingStride ?? 10,
+                  min: 2,
+                  max: 80,
+                  step: 1,
+                  label: 'Ring Stride',
+                },
+                outlineHalftoneScale: {
+                  value: ini.outlineHalftoneScale ?? 1,
+                  min: 0.25,
+                  max: 4,
+                  step: 0.05,
+                  label: 'Dot Size',
                 },
               },
               { collapsed: true }

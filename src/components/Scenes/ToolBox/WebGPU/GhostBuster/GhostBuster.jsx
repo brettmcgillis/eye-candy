@@ -288,12 +288,20 @@ export default function GhostBuster() {
         textureBlend={controls.textureBlend}
         textureProjection={controls.textureProjection}
         outlineEnabled={controls.outlineEnabled}
-        outlineVisibleEdgeColor={controls.outlineVisibleEdgeColor}
-        outlineHiddenEdgeColor={controls.outlineHiddenEdgeColor}
-        outlineHiddenEdgeStrength={controls.outlineHiddenEdgeStrength}
-        outlineEdgeStrength={controls.outlineEdgeStrength}
-        outlineEdgeGlow={controls.outlineEdgeGlow}
-        outlineEdgeThickness={controls.outlineEdgeThickness}
+        outlineMode={controls.outlineMode}
+        outlineColor={controls.outlineColor}
+        outlineHiddenColor={controls.outlineHiddenColor}
+        outlineHiddenStrength={controls.outlineHiddenStrength}
+        outlineStrength={controls.outlineStrength}
+        outlineGlow={controls.outlineGlow}
+        outlineThickness={controls.outlineThickness}
+        outlineInside={controls.outlineInside}
+        outlineDownSampleRatio={controls.outlineDownSampleRatio}
+        outlinePatternScale={controls.outlinePatternScale}
+        outlinePatternOctaves={controls.outlinePatternOctaves}
+        outlinePatternLacunarity={controls.outlinePatternLacunarity}
+        outlineRingStride={controls.outlineRingStride}
+        outlineHalftoneScale={controls.outlineHalftoneScale}
         opacity={controls.opacity}
         paused={controls.paused}
         groundLightColor={controls.groundLightColor}
@@ -324,7 +332,11 @@ export default function GhostBuster() {
       />
 
       {controls.floorVisible && (
-        <mesh position={[0, -0.9, 0]} rotation={[-Math.PI / 2, 0, 0]}>
+        <mesh
+          position={[0, -0.9, 0]}
+          rotation={[-Math.PI / 2, 0, 0]}
+          userData={{ outlineOccluder: false }}
+        >
           <planeGeometry args={[20, 20]} />
           <GridMaterial
             key={`grid-${controls.gridSize}-${controls.gridLineWidth}-${controls.floorColor}-${controls.gridLineColor}`}

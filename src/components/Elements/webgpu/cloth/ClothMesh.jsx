@@ -1,9 +1,14 @@
 import {
+  Fn,
+  attribute,
   cos,
+  cross,
   float,
   frontFacing,
   mix,
   uniform as nodeUniform,
+  positionWorld,
+  screenUV,
   sin,
   texture as textureSample,
   uv,
@@ -100,11 +105,21 @@ const ClothMesh = forwardRef(function ClothMesh(
     cutoutRimOffset = 0,
     // Optional texture URL (applied as material.map)
     textureUrl = null,
-    // Array of URLs to eagerly preload (avoids Suspense on switch)
-    preloadTextures = [],
+    // Resolved texture object (loaded upstream)
+    texture = null,
     textureScaleX = 1,
     textureScaleY = 1,
     textureRotation = 0,
+    textureBlend = 1,
+    // uv | world | screen
+    textureProjection = 'uv',
+    // Texture application side: both | inner | outer
+    textureSide = 'both',
+    // Lightweight silhouette outline
+    outlineEnabled = false,
+    outlineColor = '#ffffff',
+    outlineThickness = 0.015,
+    outlineOpacity = 1,
     // Inner (back-face) color — when set, front/back faces render different colors
     innerColor = null,
     // Per-face roughness/metalness — activates roughnessNode/metalnessNode when non-null
@@ -142,6 +157,7 @@ const ClothMesh = forwardRef(function ClothMesh(
       baseColorU: nodeUniform(new THREE.Color(1, 1, 1)),
       scaleU: nodeUniform(new THREE.Vector2(1, 1)),
       rotU: nodeUniform(0),
+      textureBlendU: nodeUniform(1),
       innerColorU: nodeUniform(new THREE.Color(0, 0, 0)),
       outerEmissiveColorU: nodeUniform(new THREE.Color(0, 0, 0)),
       outerEmissiveIntensityU: nodeUniform(0),
@@ -197,6 +213,47 @@ const ClothMesh = forwardRef(function ClothMesh(
     };
   }, []); // GPU buffers built once — intentionally static
 
+  const outlineThicknessU = useMemo(() => nodeUniform(outlineThickness), []);
+
+  const outlineMaterial = useMemo(() => {
+    const mat = new THREE.MeshBasicNodeMaterial({
+      color: outlineColor,
+      side: THREE.BackSide,
+      transparent: true,
+      opacity: outlineOpacity,
+      depthTest: true,
+      depthWrite: false,
+    });
+    // Build a positionNode that reads from the same GPU storage buffer as the
+    // cloth, computes the geometric normal at each quad, and pushes outward.
+    // This is the only correct approach — the cloth positions live only in
+    // posBuf; scaling static geometry has nothing to scale.
+    mat.positionNode = Fn(() => {
+      const ids = attribute('vertexIds');
+      const v0 = sim.posBuf.element(ids.x).toVar();
+      const v1 = sim.posBuf.element(ids.y).toVar();
+      const v2 = sim.posBuf.element(ids.z).toVar();
+      const v3 = sim.posBuf.element(ids.w).toVar();
+      const top = v0.add(v1);
+      const right = v1.add(v3);
+      const bottom = v2.add(v3);
+      const left = v0.add(v2);
+      const tangent = right.sub(left).normalize();
+      const bitangent = bottom.sub(top).normalize();
+      const normal = cross(bitangent, tangent);
+      const pos = v0.add(v1).add(v2).add(v3).mul(0.25);
+      return pos.add(normal.mul(outlineThicknessU));
+    })();
+    return mat;
+  }, [sim, outlineThicknessU]);
+
+  useEffect(
+    () => () => {
+      outlineMaterial.dispose();
+    },
+    [outlineMaterial]
+  );
+
   // Expose resetSim on the forwarded ref
   useImperativeHandle(
     ref,
@@ -215,32 +272,28 @@ const ClothMesh = forwardRef(function ClothMesh(
     [sim]
   );
 
-  // Eagerly preload all texture URLs into a Map (no Suspense)
-  const textureMap = useMemo(() => {
-    // Use a private LoadingManager so these loads don't trigger the global
-    // R3F Loader component's setState during render.
-    const mgr = new THREE.LoadingManager();
-    const loader = new THREE.TextureLoader(mgr);
-    const map = new Map();
-    preloadTextures.forEach((url) => {
-      if (url && url !== 'None') {
-        map.set(url, loader.load(url));
-      }
-    });
-    return map;
-    // eslint-disable-next-line
-  }, []); // Loaded once at mount — intentionally static
-
-  const texture = textureUrl ? textureMap.get(textureUrl) || null : null;
+  const textureReady = Boolean(texture);
 
   useEffect(() => {
-    if (textureUrl && texture) {
-      texture.wrapS = THREE.ClampToEdgeWrapping;
-      texture.wrapT = THREE.ClampToEdgeWrapping;
+    if (textureUrl && textureReady) {
+      const tex = texture;
+      tex.wrapS = THREE.RepeatWrapping;
+      tex.wrapT = THREE.RepeatWrapping;
+      tex.needsUpdate = true;
 
       // Build UV transform: scale + rotate around center
       const uvCentered = uv().sub(0.5);
-      const scaled = uvCentered.mul(texUniforms.scaleU);
+      const worldProjected = vec2(positionWorld.x, positionWorld.z);
+      const screenProjected = screenUV.sub(0.5);
+      let sourceUv = uvCentered;
+
+      if (textureProjection === 'world') {
+        sourceUv = worldProjected;
+      } else if (textureProjection === 'screen') {
+        sourceUv = screenProjected;
+      }
+
+      const scaled = sourceUv.mul(texUniforms.scaleU);
       const c = cos(texUniforms.rotU);
       const s = sin(texUniforms.rotU);
       const rotated = vec2(
@@ -249,41 +302,97 @@ const ClothMesh = forwardRef(function ClothMesh(
       );
       const transformedUv = rotated.add(0.5);
 
-      // Alpha-composite: base color where transparent, texture where opaque
-      const texNode = textureSample(texture, transformedUv);
-      outerColorNodeRef.current = mix(
+      // Alpha-composite: base color where transparent, texture where opaque.
+      // Then blend texture amount and optionally restrict it to inner/outer side.
+      const texNode = textureSample(tex, transformedUv);
+      const alphaComposited = mix(
         texUniforms.baseColorU,
         texNode.rgb,
         texNode.a
       );
+      const texturedColor = mix(
+        texUniforms.baseColorU,
+        alphaComposited,
+        texUniforms.textureBlendU
+      );
+
+      if (textureSide === 'inner') {
+        outerColorNodeRef.current = mix(
+          texUniforms.baseColorU,
+          texturedColor,
+          frontFacing
+        );
+      } else if (textureSide === 'outer') {
+        outerColorNodeRef.current = mix(
+          texturedColor,
+          texUniforms.baseColorU,
+          frontFacing
+        );
+      } else {
+        outerColorNodeRef.current = texturedColor;
+      }
       sim.material.map = null;
     } else {
       outerColorNodeRef.current = null;
       sim.material.map = null;
     }
-  }, [sim, textureUrl, texture, texUniforms]);
+  }, [
+    sim,
+    textureUrl,
+    texture,
+    textureReady,
+    texUniforms,
+    textureSide,
+    textureProjection,
+  ]);
 
-  // Dual-color: back faces (exterior) use material color, front faces (interior) use innerColor.
-  // On a horizontal cloth draped over a sphere, gl_FrontFacing is true for the
-  // interior surface, so frontFacing=1 → innerColor, frontFacing=0 → outer color.
-  // Always sets a defined colorNode to avoid WebGPU shader recompile issues.
-  // Cutout rim darkening is applied to the outer surface before inner/outer split.
   useEffect(() => {
-    const outerNode = outerColorNodeRef.current || texUniforms.baseColorU;
+    outlineMaterial.color.set(outlineColor);
+    outlineMaterial.opacity = outlineOpacity;
+    outlineThicknessU.value = outlineThickness;
+  }, [
+    outlineMaterial,
+    outlineColor,
+    outlineOpacity,
+    outlineThickness,
+    outlineThicknessU,
+  ]);
+
+  // Dual-color: back faces (exterior) use material color, front faces (interior)
+  // use innerColor unless the texture mode is targeting that side. On a horizontal
+  // cloth draped over a sphere, gl_FrontFacing is true for the interior surface,
+  // so frontFacing=1 → inner side, frontFacing=0 → outer side.
+  // Cutout rim darkening is applied only to the outer surface before the final
+  // inner/outer split so the eye-hole edge stays readable.
+  useEffect(() => {
+    const hasTexture = Boolean(textureUrl && textureReady);
+    const baseOuterNode = texUniforms.baseColorU;
+    const texturedNode = outerColorNodeRef.current || texUniforms.baseColorU;
+    const outerNode =
+      hasTexture && (textureSide === 'outer' || textureSide === 'both')
+        ? texturedNode
+        : baseOuterNode;
+
+    const innerBaseNode = innerColor ? texUniforms.innerColorU : baseOuterNode;
+    const innerNode =
+      hasTexture && (textureSide === 'inner' || textureSide === 'both')
+        ? texturedNode
+        : innerBaseNode;
+
     const rimmedOuter = mix(outerNode, sim.cutoutRimColorU, sim.cutoutRimNode);
 
-    if (innerColor) {
-      texUniforms.innerColorU.value.set(innerColor);
-      sim.material.colorNode = mix(
-        rimmedOuter,
-        texUniforms.innerColorU,
-        frontFacing
-      );
-    } else {
-      sim.material.colorNode = rimmedOuter;
-    }
+    if (innerColor) texUniforms.innerColorU.value.set(innerColor);
+    sim.material.colorNode = mix(rimmedOuter, innerNode, frontFacing);
     sim.material.needsUpdate = true;
-  }, [sim, innerColor, textureUrl, texture, texUniforms]);
+  }, [
+    sim,
+    innerColor,
+    textureUrl,
+    texture,
+    textureReady,
+    textureSide,
+    texUniforms,
+  ]);
 
   // Emissive glow — radial falloff from emissiveCenter in UV space.
   // Inner/outer are selected by frontFacing, same rule as innerColor.
@@ -437,15 +546,18 @@ const ClothMesh = forwardRef(function ClothMesh(
     // Push texture-compositing uniforms
     texUniforms.scaleU.value.set(1 / textureScaleX, 1 / textureScaleY);
     texUniforms.rotU.value = (textureRotation * Math.PI) / 180;
+    texUniforms.textureBlendU.value = Math.max(0, Math.min(1, textureBlend));
     if (materialProps?.color) {
       texUniforms.baseColorU.value.set(materialProps.color);
     }
     const outerR = materialProps?.roughness ?? 0.8;
     texUniforms.outerRoughnessU.value = outerR;
-    texUniforms.innerRoughnessU.value = innerRoughness !== null ? innerRoughness : outerR;
+    texUniforms.innerRoughnessU.value =
+      innerRoughness !== null ? innerRoughness : outerR;
     const outerM = materialProps?.metalness ?? 0;
     texUniforms.outerMetalnessU.value = outerM;
-    texUniforms.innerMetalnessU.value = innerMetalness !== null ? innerMetalness : outerM;
+    texUniforms.innerMetalnessU.value =
+      innerMetalness !== null ? innerMetalness : outerM;
 
     // Apply dynamic material properties (cached keys avoid per-frame allocation)
     if (materialProps) {
@@ -538,6 +650,11 @@ const ClothMesh = forwardRef(function ClothMesh(
         castShadow
         receiveShadow
       />
+      {outlineEnabled && (
+        <mesh geometry={sim.geometry} frustumCulled={false} renderOrder={2}>
+          <primitive attach="material" object={outlineMaterial} />
+        </mesh>
+      )}
       {debugColliders && (
         <mesh ref={cursorSphereRef} frustumCulled={false}>
           <icosahedronGeometry args={[cursorRadius, 3]} />

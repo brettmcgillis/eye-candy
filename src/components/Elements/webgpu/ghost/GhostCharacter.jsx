@@ -10,8 +10,9 @@ import React, {
   useRef,
 } from 'react';
 
-import { useFrame } from '@react-three/fiber';
+import { useFrame, useLoader } from '@react-three/fiber';
 
+import OutlineTSL from '../../../postprocessing/webGPU/OutlineTSL';
 import ClothMesh from '../cloth/ClothMesh';
 import { pinRing } from '../cloth/pinHelpers';
 import { getAnimation } from './ghostAnimations';
@@ -103,6 +104,8 @@ const GhostCharacter = forwardRef(function GhostCharacter(
     edgeFade = 0.15,
     tatterEdge = 0,
     smoothEdges = false,
+    smoothOutline = false,
+    outlineFade = 0.04,
     alphaScale = 4,
     alphaSeed = 42,
     roughness = 0.8,
@@ -112,6 +115,22 @@ const GhostCharacter = forwardRef(function GhostCharacter(
     clearcoatRoughness = 0,
     innerRoughness = null,
     innerMetalness = null,
+    textureUrl = null,
+    preloadTextures = [],
+    textureScaleX = 1,
+    textureScaleY = 1,
+    textureRotation = 0,
+    textureBlend = 1,
+    textureProjection = 'uv',
+    textureSide = 'both',
+    outlineEnabled = false,
+    outlineColor = '#ffffff',
+    outlineVisibleEdgeColor = null,
+    outlineHiddenEdgeColor = '#000000',
+    outlineHiddenEdgeStrength = 0,
+    outlineEdgeStrength = null,
+    outlineEdgeGlow = 0.35,
+    outlineEdgeThickness = null,
     opacity = 1,
     paused = false,
     cutoutRimColor = '#000000',
@@ -189,6 +208,38 @@ const GhostCharacter = forwardRef(function GhostCharacter(
     () => [emissiveCenterU, emissiveCenterV],
     [emissiveCenterU, emissiveCenterV]
   );
+
+  // Load ghost textures at the character level so ClothMesh can stay purely
+  // render/sim focused and avoid touching loader state.
+  const preloadTextureKey = useMemo(
+    () =>
+      (Array.isArray(preloadTextures) ? preloadTextures : [])
+        .filter((url) => Boolean(url) && url !== 'None')
+        .join('|'),
+    [preloadTextures]
+  );
+
+  const textureUrls = useMemo(() => {
+    const urls = new Set(
+      preloadTextureKey ? preloadTextureKey.split('|').filter(Boolean) : []
+    );
+    if (textureUrl && textureUrl !== 'None') urls.add(textureUrl);
+    return Array.from(urls);
+  }, [preloadTextureKey, textureUrl]);
+
+  const loadedTextures = useLoader(THREE.TextureLoader, textureUrls);
+
+  const loadedTextureMap = useMemo(() => {
+    const map = new Map();
+    textureUrls.forEach((url, i) => {
+      map.set(url, loadedTextures[i]);
+    });
+    return map;
+  }, [textureUrls, loadedTextures]);
+
+  const resolvedTexture = textureUrl
+    ? loadedTextureMap.get(textureUrl) || null
+    : null;
 
   // Point the ground spotlight straight down
   useEffect(() => {
@@ -676,191 +727,217 @@ const GhostCharacter = forwardRef(function GhostCharacter(
   });
 
   return (
-    <group ref={groupRef}>
-      <ClothMesh
-        key={`cloth-${segmentsX}-${segmentsY}-${clothWidth}-${clothHeight}`}
-        ref={clothRef}
-        width={clothWidth}
-        height={clothHeight}
-        segmentsX={segmentsX}
-        segmentsY={segmentsY}
-        pins={pins}
-        centered
-        orientation="horizontal"
-        shape="circle"
-        gravity={gravity}
-        windAmplitude={windAmplitude}
-        stepsPerSecond={360}
-        maxVelocity={maxVelocity}
-        windManaged
-        gravityManaged
-        stiffness={stiffness}
-        dampening={dampening}
-        cursorCollider={cursorCollider}
-        cursorRadius={cursorRadius}
-        collisionMargin={collisionMargin}
-        colliders={colliders}
-        anchors={anchors}
-        debugColliders={debugColliders}
-        debugColor={debugColor}
-        alphaSeed={alphaSeed}
-        alphaScale={alphaScale}
-        edgeFade={edgeFade}
-        holeAmount={holeAmount}
-        tatterEdge={tatterEdge}
-        smoothEdges={smoothEdges}
-        cutouts={CUTOUTS}
-        cutoutRimColor={cutoutRimColor}
-        cutoutRimWidth={cutoutRimWidth}
-        cutoutRimOffset={cutoutRimOffset}
-        paused={paused}
-        innerColor={innerColor}
-        outerEmissiveColor={outerEmissiveColor}
-        outerEmissiveIntensity={outerEmissiveIntensity}
-        innerEmissiveColor={innerEmissiveColor}
-        innerEmissiveIntensity={innerEmissiveIntensity}
-        emissiveFalloff={emissiveFalloff}
-        emissiveCenter={emissiveCenter}
-        innerRoughness={innerRoughness}
-        innerMetalness={innerMetalness}
-        materialProps={{
-          color,
-          roughness,
-          metalness,
-          envMapIntensity,
-          clearcoat,
-          clearcoatRoughness,
-          opacity,
-          wireframe: debugWireframe,
-        }}
-      />
+    <>
+      <group ref={groupRef}>
+        <ClothMesh
+          key={`cloth-${segmentsX}-${segmentsY}-${clothWidth}-${clothHeight}`}
+          ref={clothRef}
+          width={clothWidth}
+          height={clothHeight}
+          segmentsX={segmentsX}
+          segmentsY={segmentsY}
+          pins={pins}
+          centered
+          orientation="horizontal"
+          shape="circle"
+          gravity={gravity}
+          windAmplitude={windAmplitude}
+          stepsPerSecond={360}
+          maxVelocity={maxVelocity}
+          windManaged
+          gravityManaged
+          stiffness={stiffness}
+          dampening={dampening}
+          cursorCollider={cursorCollider}
+          cursorRadius={cursorRadius}
+          collisionMargin={collisionMargin}
+          colliders={colliders}
+          anchors={anchors}
+          debugColliders={debugColliders}
+          debugColor={debugColor}
+          alphaSeed={alphaSeed}
+          alphaScale={alphaScale}
+          edgeFade={edgeFade}
+          holeAmount={holeAmount}
+          tatterEdge={tatterEdge}
+          smoothEdges={smoothEdges}
+          smoothOutline={smoothOutline}
+          outlineFade={outlineFade}
+          cutouts={CUTOUTS}
+          cutoutRimColor={cutoutRimColor}
+          cutoutRimWidth={cutoutRimWidth}
+          cutoutRimOffset={cutoutRimOffset}
+          paused={paused}
+          innerColor={innerColor}
+          outerEmissiveColor={outerEmissiveColor}
+          outerEmissiveIntensity={outerEmissiveIntensity}
+          innerEmissiveColor={innerEmissiveColor}
+          innerEmissiveIntensity={innerEmissiveIntensity}
+          emissiveFalloff={emissiveFalloff}
+          emissiveCenter={emissiveCenter}
+          innerRoughness={innerRoughness}
+          innerMetalness={innerMetalness}
+          textureUrl={textureUrl}
+          texture={resolvedTexture}
+          textureScaleX={textureScaleX}
+          textureScaleY={textureScaleY}
+          textureRotation={textureRotation}
+          textureBlend={textureBlend}
+          textureProjection={textureProjection}
+          textureSide={textureSide}
+          materialProps={{
+            color,
+            roughness,
+            metalness,
+            envMapIntensity,
+            clearcoat,
+            clearcoatRoughness,
+            opacity,
+            wireframe: debugWireframe,
+          }}
+        />
 
-      {debugAnchors &&
-        anchors.map((anch, i) => {
-          const dx = anch.worldX - anch.restX;
-          const dz = anch.worldZ - (anch.restZ || 0);
-          let dirX;
-          let dirY;
-          let dirZ;
-          if (Math.abs(dx) < 0.0001 && Math.abs(dz) < 0.0001) {
-            dirX = 0;
-            dirY = 1;
-            dirZ = 0;
-          } else {
-            const len = Math.sqrt(dx * dx + dz * dz);
-            dirX = dx / len;
-            dirY = 0;
-            dirZ = dz / len;
-          }
-          const lineLen = 0.12;
-          const startOffset = 0.02;
-          const sx = dirX * startOffset;
-          const sy = dirY * startOffset;
-          const sz = dirZ * startOffset;
-          // eslint-disable-next-line react/no-array-index-key
-          return (
-            <group
-              key={`anchor-dbg-${i}`}
-              ref={(el) => {
-                anchorDbgRefs.current[i] = el;
-              }}
-              position={[
-                anch.position.x + dx,
-                anch.position.y - anch.restY,
-                anch.position.z + dz,
-              ]}
-            >
-              <line>
-                <bufferGeometry>
-                  <bufferAttribute
-                    attach="attributes-position"
-                    array={
-                      new Float32Array([
-                        sx,
-                        sy,
-                        sz,
-                        dirX * lineLen,
-                        dirY * lineLen,
-                        dirZ * lineLen,
-                      ])
-                    }
-                    count={2}
-                    itemSize={3}
+        {debugAnchors &&
+          anchors.map((anch, i) => {
+            const dx = anch.worldX - anch.restX;
+            const dz = anch.worldZ - (anch.restZ || 0);
+            let dirX;
+            let dirY;
+            let dirZ;
+            if (Math.abs(dx) < 0.0001 && Math.abs(dz) < 0.0001) {
+              dirX = 0;
+              dirY = 1;
+              dirZ = 0;
+            } else {
+              const len = Math.sqrt(dx * dx + dz * dz);
+              dirX = dx / len;
+              dirY = 0;
+              dirZ = dz / len;
+            }
+            const lineLen = 0.12;
+            const startOffset = 0.02;
+            const sx = dirX * startOffset;
+            const sy = dirY * startOffset;
+            const sz = dirZ * startOffset;
+            // eslint-disable-next-line react/no-array-index-key
+            return (
+              <group
+                key={`anchor-dbg-${i}`}
+                ref={(el) => {
+                  anchorDbgRefs.current[i] = el;
+                }}
+                position={[
+                  anch.position.x + dx,
+                  anch.position.y - anch.restY,
+                  anch.position.z + dz,
+                ]}
+              >
+                <line>
+                  <bufferGeometry>
+                    <bufferAttribute
+                      attach="attributes-position"
+                      array={
+                        new Float32Array([
+                          sx,
+                          sy,
+                          sz,
+                          dirX * lineLen,
+                          dirY * lineLen,
+                          dirZ * lineLen,
+                        ])
+                      }
+                      count={2}
+                      itemSize={3}
+                    />
+                  </bufferGeometry>
+                  <lineBasicMaterial
+                    color={debugAnchorColor}
+                    depthTest={false}
                   />
-                </bufferGeometry>
-                <lineBasicMaterial color={debugAnchorColor} depthTest={false} />
-              </line>
-            </group>
-          );
-        })}
+                </line>
+              </group>
+            );
+          })}
 
-      {/* Head center pin marker */}
-      {debugAnchors && (
-        <group position={[0, 0, 0]}>
-          <line>
-            <bufferGeometry>
-              <bufferAttribute
-                attach="attributes-position"
-                array={new Float32Array([0, 0, 0, 0, 0.12, 0])}
-                count={2}
-                itemSize={3}
+        {/* Head center pin marker */}
+        {debugAnchors && (
+          <group position={[0, 0, 0]}>
+            <line>
+              <bufferGeometry>
+                <bufferAttribute
+                  attach="attributes-position"
+                  array={new Float32Array([0, 0, 0, 0, 0.12, 0])}
+                  count={2}
+                  itemSize={3}
+                />
+              </bufferGeometry>
+              <lineBasicMaterial color={debugAnchorColor} depthTest={false} />
+            </line>
+          </group>
+        )}
+
+        {/* Inner eye lights — illuminate back face through cutout holes */}
+        <pointLight
+          ref={lightLeftRef}
+          position={[-0.05, SPHERE_BASE_Y, 0]}
+          color={eyeColor}
+          intensity={eyeIntensity * 0.3}
+          distance={0.5}
+          decay={2}
+        />
+        <pointLight
+          ref={lightRightRef}
+          position={[0.05, SPHERE_BASE_Y, 0]}
+          color={eyeColor}
+          intensity={eyeIntensity * 0.3}
+          distance={0.5}
+          decay={2}
+        />
+        {/* Downward spotlight — independently colored ground glow */}
+        <spotLight
+          ref={groundSpotRef}
+          position={[0, SPHERE_BASE_Y, 0]}
+          color={groundLightColor}
+          intensity={groundLightIntensity}
+          distance={groundLightDistance}
+          angle={groundLightAngle}
+          penumbra={1}
+          decay={2}
+        />
+
+        {debugLights && (
+          <>
+            <mesh position={[-0.05, SPHERE_BASE_Y, 0]}>
+              <sphereGeometry args={[0.02, 8, 8]} />
+              <meshBasicMaterial color={eyeColor} depthTest={false} />
+            </mesh>
+            <mesh position={[0.05, SPHERE_BASE_Y, 0]}>
+              <sphereGeometry args={[0.02, 8, 8]} />
+              <meshBasicMaterial color={eyeColor} depthTest={false} />
+            </mesh>
+            <mesh position={[0, SPHERE_BASE_Y, 0]}>
+              <sphereGeometry args={[0.025, 8, 8]} />
+              <meshBasicMaterial
+                color={groundLightColor}
+                depthTest={false}
+                wireframe
               />
-            </bufferGeometry>
-            <lineBasicMaterial color={debugAnchorColor} depthTest={false} />
-          </line>
-        </group>
+            </mesh>
+          </>
+        )}
+      </group>
+      {outlineEnabled && (
+        <OutlineTSL
+          targetRef={clothRef}
+          edgeStrength={outlineEdgeStrength ?? 3}
+          edgeGlow={outlineEdgeGlow}
+          edgeThickness={outlineEdgeThickness ?? 1}
+          visibleEdgeColor={outlineVisibleEdgeColor || outlineColor}
+          hiddenEdgeColor={outlineHiddenEdgeColor}
+          hiddenEdgeStrength={outlineHiddenEdgeStrength}
+        />
       )}
-
-      {/* Inner eye lights — illuminate back face through cutout holes */}
-      <pointLight
-        ref={lightLeftRef}
-        position={[-0.05, SPHERE_BASE_Y, 0]}
-        color={eyeColor}
-        intensity={eyeIntensity * 0.3}
-        distance={0.5}
-        decay={2}
-      />
-      <pointLight
-        ref={lightRightRef}
-        position={[0.05, SPHERE_BASE_Y, 0]}
-        color={eyeColor}
-        intensity={eyeIntensity * 0.3}
-        distance={0.5}
-        decay={2}
-      />
-      {/* Downward spotlight — independently colored ground glow */}
-      <spotLight
-        ref={groundSpotRef}
-        position={[0, SPHERE_BASE_Y, 0]}
-        color={groundLightColor}
-        intensity={groundLightIntensity}
-        distance={groundLightDistance}
-        angle={groundLightAngle}
-        penumbra={1}
-        decay={2}
-      />
-
-      {debugLights && (
-        <>
-          <mesh position={[-0.05, SPHERE_BASE_Y, 0]}>
-            <sphereGeometry args={[0.02, 8, 8]} />
-            <meshBasicMaterial color={eyeColor} depthTest={false} />
-          </mesh>
-          <mesh position={[0.05, SPHERE_BASE_Y, 0]}>
-            <sphereGeometry args={[0.02, 8, 8]} />
-            <meshBasicMaterial color={eyeColor} depthTest={false} />
-          </mesh>
-          <mesh position={[0, SPHERE_BASE_Y, 0]}>
-            <sphereGeometry args={[0.025, 8, 8]} />
-            <meshBasicMaterial
-              color={groundLightColor}
-              depthTest={false}
-              wireframe
-            />
-          </mesh>
-        </>
-      )}
-    </group>
+    </>
   );
 });
 

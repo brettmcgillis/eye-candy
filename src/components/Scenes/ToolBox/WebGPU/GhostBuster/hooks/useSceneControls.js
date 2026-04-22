@@ -1,7 +1,7 @@
 import { button, folder, useControls } from 'leva';
 
 import usePresetsFolder from '../../../../../../hooks/usePresetsFolder';
-import { SCENE_PRESETS } from '../presets/scenePresets';
+import { GHOST_TEXTURE_OPTIONS, SCENE_PRESETS } from '../presets/scenePresets';
 
 const DEFAULT_PRESET = 'Plain';
 
@@ -230,6 +230,110 @@ export default function useSceneControls(ghostRef, setAnimation, triggerJump) {
               max: 1,
               step: 0.01,
             },
+            'Space Portal': folder(
+              {
+                textureUrl: {
+                  label: 'Texture',
+                  value: ini.textureUrl ?? '',
+                  options: GHOST_TEXTURE_OPTIONS,
+                },
+                textureSide: {
+                  label: 'Texture Side',
+                  value: ini.textureSide ?? 'inner',
+                  options: {
+                    Both: 'both',
+                    Inner: 'inner',
+                    Outer: 'outer',
+                  },
+                },
+                textureBlend: {
+                  label: 'Texture Blend',
+                  value: ini.textureBlend ?? 1,
+                  min: 0,
+                  max: 1,
+                  step: 0.01,
+                },
+                textureProjection: {
+                  label: 'Projection',
+                  value: ini.textureProjection ?? 'uv',
+                  options: {
+                    UV: 'uv',
+                    World: 'world',
+                    Screen: 'screen',
+                  },
+                },
+                textureScaleX: {
+                  label: 'Scale X',
+                  value: ini.textureScaleX ?? 1,
+                  min: 0.25,
+                  max: 8,
+                  step: 0.01,
+                },
+                textureScaleY: {
+                  label: 'Scale Y',
+                  value: ini.textureScaleY ?? 1,
+                  min: 0.25,
+                  max: 8,
+                  step: 0.01,
+                },
+                textureRotation: {
+                  label: 'Rotation',
+                  value: ini.textureRotation ?? 0,
+                  min: -180,
+                  max: 180,
+                  step: 1,
+                },
+              },
+              { collapsed: true }
+            ),
+            Outline: folder(
+              {
+                outlineEnabled: {
+                  label: 'Enabled',
+                  value: ini.outlineEnabled ?? false,
+                },
+                outlineVisibleEdgeColor: {
+                  label: 'Visible Color',
+                  value:
+                    ini.outlineVisibleEdgeColor ??
+                    ini.outlineColor ??
+                    '#ffffff',
+                },
+                outlineHiddenEdgeColor: {
+                  label: 'Hidden Color',
+                  value: ini.outlineHiddenEdgeColor ?? '#000000',
+                },
+                outlineHiddenEdgeStrength: {
+                  label: 'Hidden Strength',
+                  value: ini.outlineHiddenEdgeStrength ?? 0,
+                  min: 0,
+                  max: 1,
+                  step: 0.01,
+                },
+                outlineEdgeStrength: {
+                  label: 'Strength',
+                  value: ini.outlineEdgeStrength ?? 3,
+                  min: 0,
+                  max: 10,
+                  step: 0.1,
+                },
+                outlineEdgeGlow: {
+                  label: 'Glow',
+                  value: ini.outlineEdgeGlow ?? 0.35,
+                  min: 0,
+                  max: 2,
+                  step: 0.01,
+                },
+                outlineEdgeThickness: {
+                  label: 'Thickness',
+                  value: ini.outlineEdgeThickness ?? 1,
+                  min: 1,
+                  max: 4,
+                  step: 0.1,
+                },
+              },
+              { collapsed: true }
+            ),
             Emissive: folder(
               {
                 outerEmissiveColor: {
@@ -373,6 +477,17 @@ export default function useSceneControls(ghostRef, setAnimation, triggerJump) {
               step: 1,
             },
             smoothEdges: { label: 'Smooth Edges', value: ini.smoothEdges },
+            smoothOutline: {
+              label: 'Smooth Outline',
+              value: ini.smoothOutline ?? false,
+            },
+            outlineFade: {
+              label: 'Outline Fade',
+              value: ini.outlineFade ?? 0.04,
+              min: 0,
+              max: 1,
+              step: 0.005,
+            },
           },
           { collapsed: true }
         ),

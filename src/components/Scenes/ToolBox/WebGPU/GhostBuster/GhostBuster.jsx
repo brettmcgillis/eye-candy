@@ -15,6 +15,7 @@ import { GridMaterial } from '../../../../materials/webGPU/gridMaterial';
 import GhostPlacard from './components/GhostPlacard';
 import useAnimationInput from './hooks/useAnimationInput';
 import useSceneControls from './hooks/useSceneControls';
+import { GHOST_TEXTURE_PRELOADS } from './presets/scenePresets';
 
 const orbitOffset = new THREE.Vector3();
 const orbitSpherical = new THREE.Spherical();
@@ -23,7 +24,6 @@ export default function GhostBuster() {
   const ghostRef = useRef();
   const orbitRef = useRef();
   const orbitLightRef = useRef();
-  const orbitLightformerRef = useRef();
   const {
     inputRef: animationInputRef,
     setAnimation,
@@ -57,18 +57,6 @@ export default function GhostBuster() {
       const oy = midY + Math.sin(t * 0.7) * ampY;
       const oz = Math.sin(t) * r;
       if (orbitLightRef.current) orbitLightRef.current.position.set(ox, oy, oz);
-      if (orbitLightformerRef.current) {
-        // Three.js applies envRotationY to the sampling direction, so pre-rotate the
-        // Lightformer by envRotationY so the IBL reflection appears at the correct world position.
-        const envRot = controls.envRotationY ?? 0;
-        const cosR = Math.cos(envRot);
-        const sinR = Math.sin(envRot);
-        orbitLightformerRef.current.position.set(
-          cosR * ox + sinR * oz,
-          oy,
-          -sinR * ox + cosR * oz
-        );
-      }
     }
 
     // Next preset (one-shot)
@@ -132,7 +120,7 @@ export default function GhostBuster() {
         background={false}
         environmentIntensity={controls.sceneEnvIntensity}
         rotation={[0, controls.envRotationY ?? 0, 0]}
-        frames={controls.orbitLightEnabled ? Infinity : 1}
+        frames={1}
       >
         {/* Top */}
         <Lightformer
@@ -195,17 +183,6 @@ export default function GhostBuster() {
           scale={[3, 3, 1]}
           target={[0, 0, 0]}
         />
-        {/* Orbit light — moving reflection in chrome */}
-        {controls.orbitLightEnabled && (
-          <Lightformer
-            ref={orbitLightformerRef}
-            form="circle"
-            intensity={controls.orbitLightIntensity * 1.5}
-            color={controls.orbitLightColor}
-            scale={[0.25, 0.25, 1]}
-            position={[0, 1, 0]}
-          />
-        )}
       </Environment>
 
       <ambientLight intensity={controls.ambientIntensity} />
@@ -291,6 +268,8 @@ export default function GhostBuster() {
         edgeFade={controls.edgeFade}
         tatterEdge={controls.tatterEdge}
         smoothEdges={controls.smoothEdges}
+        smoothOutline={controls.smoothOutline}
+        outlineFade={controls.outlineFade}
         alphaScale={controls.alphaScale}
         alphaSeed={controls.alphaSeed}
         roughness={controls.roughness}
@@ -300,6 +279,21 @@ export default function GhostBuster() {
         clearcoatRoughness={controls.clearcoatRoughness}
         innerRoughness={controls.innerRoughness ?? null}
         innerMetalness={controls.innerMetalness ?? null}
+        textureUrl={controls.textureUrl || null}
+        preloadTextures={GHOST_TEXTURE_PRELOADS}
+        textureScaleX={controls.textureScaleX}
+        textureScaleY={controls.textureScaleY}
+        textureRotation={controls.textureRotation}
+        textureBlend={controls.textureBlend}
+        textureProjection={controls.textureProjection}
+        textureSide={controls.textureSide}
+        outlineEnabled={controls.outlineEnabled}
+        outlineVisibleEdgeColor={controls.outlineVisibleEdgeColor}
+        outlineHiddenEdgeColor={controls.outlineHiddenEdgeColor}
+        outlineHiddenEdgeStrength={controls.outlineHiddenEdgeStrength}
+        outlineEdgeStrength={controls.outlineEdgeStrength}
+        outlineEdgeGlow={controls.outlineEdgeGlow}
+        outlineEdgeThickness={controls.outlineEdgeThickness}
         opacity={controls.opacity}
         paused={controls.paused}
         groundLightColor={controls.groundLightColor}

@@ -938,6 +938,7 @@ export default function createClothSimulation({
     updatePins,
     geometry,
     material,
+    posBuf,
     windU,
     windDirU,
     stiffnessU,

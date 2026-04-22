@@ -38,3 +38,7 @@ export function videoFile(fileName) {
 export function imageFile(fileName) {
   return assetPath(`/images/${fileName}`);
 }
+
+export function textureFile(fileName) {
+  return assetPath(`/textures/${fileName}`);
+}

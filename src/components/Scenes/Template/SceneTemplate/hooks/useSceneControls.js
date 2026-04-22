@@ -1,6 +1,6 @@
 import { useControls } from 'leva';
 
-import useComponentControls from '../components/useComponentControls';
+import getComponentControls from '../components/getComponentControls';
 
 // useSceneControls is a companion hook to SceneTemplate provides
 // all of the scene configuration that will be used in SceneTemplate.
@@ -13,10 +13,11 @@ import useComponentControls from '../components/useComponentControls';
 export default function useSceneControls() {
   const [sceneControls, setSceneControls] = useControls(
     'Scene Template',
-    {},
+    {
+      Component: getComponentControls('My Component'),
+    },
     { collapsed: true }
   );
-  const [controls, setControls] = useComponentControls('My Component');
 
   return sceneControls;
 }

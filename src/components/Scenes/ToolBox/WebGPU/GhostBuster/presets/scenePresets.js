@@ -21,7 +21,9 @@ export const GHOST_TEXTURE_OPTIONS = {
   'Starfield 8': STARFIELD_8,
 };
 
-export const GHOST_TEXTURE_PRELOADS = [PURPLE_NEBULA_1, PURPLE_NEBULA_8];
+export const GHOST_TEXTURE_PRELOADS = Object.values(
+  GHOST_TEXTURE_OPTIONS
+).filter(Boolean);
 
 // eslint-disable-next-line import/prefer-default-export
 export const SCENE_PRESETS = {
@@ -44,7 +46,8 @@ export const SCENE_PRESETS = {
     // Character
     color: '#ffffff',
     innerColor: '#ffffff',
-    textureUrl: '',
+    outerTextureUrl: '',
+    innerTextureUrl: '',
     outlineEnabled: false,
     stiffness: 0.16,
     dampening: 0.99,
@@ -137,7 +140,8 @@ export const SCENE_PRESETS = {
     // Character
     color: '#ffffff',
     innerColor: '#cc2222',
-    textureUrl: '',
+    outerTextureUrl: '',
+    innerTextureUrl: '',
     outlineEnabled: false,
     stiffness: 0.16,
     dampening: 0.99,
@@ -230,7 +234,8 @@ export const SCENE_PRESETS = {
     // Character
     color: '#ffffff',
     innerColor: '#cc2222',
-    textureUrl: '',
+    outerTextureUrl: '',
+    innerTextureUrl: '',
     outlineEnabled: false,
     stiffness: 0.16,
     dampening: 0.99,
@@ -323,7 +328,8 @@ export const SCENE_PRESETS = {
     // Character
     color: '#c8c0b0',
     innerColor: '#2a1a1a',
-    textureUrl: '',
+    outerTextureUrl: '',
+    innerTextureUrl: '',
     outlineEnabled: false,
     stiffness: 0.1,
     dampening: 0.985,
@@ -416,7 +422,8 @@ export const SCENE_PRESETS = {
     // Character
     color: '#3a3a3a',
     innerColor: '',
-    textureUrl: '',
+    outerTextureUrl: '',
+    innerTextureUrl: '',
     outlineEnabled: false,
     stiffness: 0.16,
     dampening: 0.99,
@@ -509,7 +516,8 @@ export const SCENE_PRESETS = {
     // Character
     color: '#1a1a1a',
     innerColor: '#cc2222',
-    textureUrl: '',
+    outerTextureUrl: '',
+    innerTextureUrl: '',
     outlineEnabled: false,
     stiffness: 0.14,
     dampening: 0.99,
@@ -602,7 +610,8 @@ export const SCENE_PRESETS = {
     // Character
     color: '#e8e0d4',
     innerColor: '#2a1a2e',
-    textureUrl: '',
+    outerTextureUrl: '',
+    innerTextureUrl: '',
     outlineEnabled: false,
     stiffness: 0.16,
     dampening: 0.99,
@@ -695,7 +704,8 @@ export const SCENE_PRESETS = {
     // Character
     color: '#3a0a04',
     innerColor: '#1a0202',
-    textureUrl: '',
+    outerTextureUrl: '',
+    innerTextureUrl: '',
     outlineEnabled: false,
     stiffness: 0.18,
     dampening: 0.99,
@@ -788,7 +798,8 @@ export const SCENE_PRESETS = {
     // Character
     color: '#4466aa',
     innerColor: '#0a1a2e',
-    textureUrl: '',
+    outerTextureUrl: '',
+    innerTextureUrl: '',
     outlineEnabled: false,
     stiffness: 0.12,
     dampening: 0.995,
@@ -881,7 +892,8 @@ export const SCENE_PRESETS = {
     // Character
     color: '#9aa824',
     innerColor: '#1a3a18',
-    textureUrl: '',
+    outerTextureUrl: '',
+    innerTextureUrl: '',
     outlineEnabled: false,
     stiffness: 0.1,
     dampening: 0.985,
@@ -974,7 +986,8 @@ export const SCENE_PRESETS = {
     // Character
     color: '#9aa824',
     innerColor: '#1a3a18',
-    textureUrl: '',
+    outerTextureUrl: '',
+    innerTextureUrl: '',
     outlineEnabled: false,
     stiffness: 0.1,
     dampening: 0.985,
@@ -1067,7 +1080,8 @@ export const SCENE_PRESETS = {
     // Character
     color: '#ffffff',
     innerColor: '#ffb0c0',
-    textureUrl: '',
+    outerTextureUrl: '',
+    innerTextureUrl: '',
     outlineEnabled: false,
     stiffness: 0.16,
     dampening: 0.99,
@@ -1168,7 +1182,8 @@ export const SCENE_PRESETS = {
     // Character
     color: '#c8c8c8',
     innerColor: '#8090a0',
-    textureUrl: '',
+    outerTextureUrl: '',
+    innerTextureUrl: '',
     outlineEnabled: false,
     stiffness: 0.2,
     dampening: 0.99,
@@ -1244,6 +1259,114 @@ export const SCENE_PRESETS = {
 
   Nebula: {
     // Background
+    bgColor: '#7f7e7e',
+    // Lighting
+    ambientIntensity: 0.25,
+    spotIntensity: 4.4,
+    spotHeight: 5,
+    sceneEnvIntensity: 0,
+    envRotationY: 0,
+    studioLightIntensity: 0,
+    orbitLightEnabled: true,
+    orbitLightColor: '#e8f0ff',
+    orbitLightIntensity: 15,
+    orbitLightRadius: 2.5,
+    orbitLightSpeed: 0.7,
+    orbitLightMinY: 0.2,
+    orbitLightMaxY: 2.2,
+    // Floor
+    floorVisible: true,
+    gridSize: 1,
+    gridLineWidth: 0.03,
+    floorColor: '#ffffff',
+    gridLineColor: '#7f7e7e',
+    // Character
+    color: '#140d24',
+    innerColor: '#140d24',
+    outerTextureUrl: PURPLE_NEBULA_8,
+    innerTextureUrl: STARFIELD_8,
+    textureBlend: 1,
+    textureProjection: 'screen',
+    textureScaleX: 0.25,
+    textureScaleY: 0.25,
+    textureRotation: 0,
+    outlineEnabled: true,
+    outlineVisibleEdgeColor: '#000000',
+    outlineEdgeStrength: 7.6,
+    outlineEdgeThickness: 0.1,
+    stiffness: 0.16,
+    dampening: 0.99,
+    gravity: 0.00012,
+    windAmplitude: 0.00035,
+    maxVelocity: 0.01,
+    holeAmount: 0,
+    edgeFade: 0.08,
+    tatterEdge: 0,
+    smoothEdges: false,
+    smoothOutline: false,
+    outlineFade: 0.04,
+    alphaScale: 4,
+    alphaSeed: 42,
+    roughness: 1,
+    metalness: 0.94,
+    innerRoughness: 1,
+    innerMetalness: 0.94,
+    envMapIntensity: 0.6,
+    clearcoat: 0,
+    clearcoatRoughness: 0,
+    opacity: 1,
+    paused: false,
+    cursorCollider: true,
+    cursorRadius: 0.12,
+    collisionMargin: 0.02,
+    clothSegments: 46,
+    // Hands
+    handSize: 0.05,
+    handHeight: 0.3,
+    handSpacing: 0.3,
+    handSpring: 8,
+    handTrail: 0.08,
+    earLiftY: 0,
+    earPushBack: 0,
+    earSpread: 0,
+    earColliderRadius: 0,
+    debugColliders: false,
+    debugColor: '#ff4444',
+    debugAnchors: false,
+    debugAnchorColor: '#44ff44',
+    debugWireframe: false,
+    // Camera
+    orbitEnabled: true,
+    // Eyes
+    eyeColor: '#000000',
+    eyeIntensity: 0.15,
+    cutoutRimColor: '#f8f0ff',
+    cutoutRimWidth: 0.0035,
+    cutoutRimOffset: 0,
+    // Cloth emissive
+    outerEmissiveColor: '#a471ff',
+    outerEmissiveIntensity: 0,
+    innerEmissiveColor: '#a471ff',
+    innerEmissiveIntensity: 0.25,
+    emissiveFalloff: 1.8,
+    emissiveCenterU: 0.5,
+    emissiveCenterV: 0.45,
+    // Ground light
+    groundLightColor: '#7f5dff',
+    groundLightIntensity: 0,
+    groundLightAngle: 0.4,
+    groundLightDistance: 3,
+    // Animation
+    bobAmplitude: 0.025,
+    bobSpeed: 0.45,
+    swayAmplitude: 0.02,
+    tiltIntensity: 0.3,
+    baseWind: 0.3,
+    windBoostMul: 2,
+    squashIntensity: 0.3,
+  },
+  Starfield: {
+    // Background
     bgColor: '#07030f',
     // Lighting
     ambientIntensity: 0.25,
@@ -1268,8 +1391,8 @@ export const SCENE_PRESETS = {
     // Character
     color: '#140d24',
     innerColor: '#140d24',
-    textureUrl: PURPLE_NEBULA_8,
-    textureSide: 'outer',
+    outerTextureUrl: STARFIELD_8,
+    innerTextureUrl: GREEN_NEBULA_5,
     textureBlend: 1,
     textureProjection: 'screen',
     textureScaleX: 0.25,

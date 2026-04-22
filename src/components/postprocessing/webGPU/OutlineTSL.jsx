@@ -1,6 +1,6 @@
 /* eslint-disable no-underscore-dangle */
 import { outline } from 'three/addons/tsl/display/OutlineNode.js';
-import { pass, uniform } from 'three/tsl';
+import { mix, pass, uniform } from 'three/tsl';
 import * as THREE from 'three/webgpu';
 
 import { memo, useEffect, useMemo, useRef } from 'react';
@@ -76,11 +76,17 @@ function OutlineTSL({
       .mul(u.visibleColor)
       .add(hiddenEdge.mul(u.hiddenColor).mul(u.hiddenStrength))
       .mul(u.strength);
+    const edgeMask = visibleEdge
+      .add(hiddenEdge.mul(u.hiddenStrength))
+      .mul(u.strength)
+      .clamp(0, 1);
 
     const scenePass = pass(scene, camera);
 
     const postProcessing = new THREE.PostProcessing(renderer);
-    postProcessing.outputNode = outlineColor.add(scenePass);
+    // Additive composition cannot darken pixels, so black outlines vanish on
+    // bright backgrounds. Blend with an edge mask so dark outline colors work.
+    postProcessing.outputNode = mix(scenePass, outlineColor, edgeMask);
     postRef.current = postProcessing;
 
     return () => {

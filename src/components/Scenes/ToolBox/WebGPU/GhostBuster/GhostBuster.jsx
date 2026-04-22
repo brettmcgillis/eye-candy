@@ -279,14 +279,14 @@ export default function GhostBuster() {
         clearcoatRoughness={controls.clearcoatRoughness}
         innerRoughness={controls.innerRoughness ?? null}
         innerMetalness={controls.innerMetalness ?? null}
-        textureUrl={controls.textureUrl || null}
+        outerTextureUrl={controls.outerTextureUrl || null}
+        innerTextureUrl={controls.innerTextureUrl || null}
         preloadTextures={GHOST_TEXTURE_PRELOADS}
         textureScaleX={controls.textureScaleX}
         textureScaleY={controls.textureScaleY}
         textureRotation={controls.textureRotation}
         textureBlend={controls.textureBlend}
         textureProjection={controls.textureProjection}
-        textureSide={controls.textureSide}
         outlineEnabled={controls.outlineEnabled}
         outlineVisibleEdgeColor={controls.outlineVisibleEdgeColor}
         outlineHiddenEdgeColor={controls.outlineHiddenEdgeColor}
@@ -327,6 +327,7 @@ export default function GhostBuster() {
         <mesh position={[0, -0.9, 0]} rotation={[-Math.PI / 2, 0, 0]}>
           <planeGeometry args={[20, 20]} />
           <GridMaterial
+            key={`grid-${controls.gridSize}-${controls.gridLineWidth}-${controls.floorColor}-${controls.gridLineColor}`}
             gridSize={controls.gridSize}
             lineWidth={controls.gridLineWidth}
             bgColor={new THREE.Color(controls.floorColor).toArray()}

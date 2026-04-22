@@ -116,6 +116,8 @@ const GhostCharacter = forwardRef(function GhostCharacter(
     innerRoughness = null,
     innerMetalness = null,
     textureUrl = null,
+    outerTextureUrl = null,
+    innerTextureUrl = null,
     preloadTextures = [],
     textureScaleX = 1,
     textureScaleY = 1,
@@ -224,8 +226,14 @@ const GhostCharacter = forwardRef(function GhostCharacter(
       preloadTextureKey ? preloadTextureKey.split('|').filter(Boolean) : []
     );
     if (textureUrl && textureUrl !== 'None') urls.add(textureUrl);
+    if (outerTextureUrl && outerTextureUrl !== 'None') {
+      urls.add(outerTextureUrl);
+    }
+    if (innerTextureUrl && innerTextureUrl !== 'None') {
+      urls.add(innerTextureUrl);
+    }
     return Array.from(urls);
-  }, [preloadTextureKey, textureUrl]);
+  }, [preloadTextureKey, textureUrl, outerTextureUrl, innerTextureUrl]);
 
   const loadedTextures = useLoader(THREE.TextureLoader, textureUrls);
 
@@ -239,6 +247,12 @@ const GhostCharacter = forwardRef(function GhostCharacter(
 
   const resolvedTexture = textureUrl
     ? loadedTextureMap.get(textureUrl) || null
+    : null;
+  const resolvedOuterTexture = outerTextureUrl
+    ? loadedTextureMap.get(outerTextureUrl) || null
+    : null;
+  const resolvedInnerTexture = innerTextureUrl
+    ? loadedTextureMap.get(innerTextureUrl) || null
     : null;
 
   // Point the ground spotlight straight down
@@ -779,6 +793,10 @@ const GhostCharacter = forwardRef(function GhostCharacter(
           innerMetalness={innerMetalness}
           textureUrl={textureUrl}
           texture={resolvedTexture}
+          outerTextureUrl={outerTextureUrl}
+          outerTexture={resolvedOuterTexture}
+          innerTextureUrl={innerTextureUrl}
+          innerTexture={resolvedInnerTexture}
           textureScaleX={textureScaleX}
           textureScaleY={textureScaleY}
           textureRotation={textureRotation}

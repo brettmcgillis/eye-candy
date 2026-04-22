@@ -232,19 +232,15 @@ export default function useSceneControls(ghostRef, setAnimation, triggerJump) {
             },
             'Space Portal': folder(
               {
-                textureUrl: {
-                  label: 'Texture',
-                  value: ini.textureUrl ?? '',
+                outerTextureUrl: {
+                  label: 'Outer Texture',
+                  value: ini.outerTextureUrl ?? '',
                   options: GHOST_TEXTURE_OPTIONS,
                 },
-                textureSide: {
-                  label: 'Texture Side',
-                  value: ini.textureSide ?? 'inner',
-                  options: {
-                    Both: 'both',
-                    Inner: 'inner',
-                    Outer: 'outer',
-                  },
+                innerTextureUrl: {
+                  label: 'Inner Texture',
+                  value: ini.innerTextureUrl ?? '',
+                  options: GHOST_TEXTURE_OPTIONS,
                 },
                 textureBlend: {
                   label: 'Texture Blend',

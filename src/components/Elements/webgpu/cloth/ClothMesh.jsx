@@ -103,10 +103,16 @@ const ClothMesh = forwardRef(function ClothMesh(
     cutoutRimColor = '#000000',
     cutoutRimWidth = 0,
     cutoutRimOffset = 0,
-    // Optional texture URL (applied as material.map)
+    // Legacy single texture URL. Use outerTextureUrl / innerTextureUrl for
+    // discrete per-side textures.
     textureUrl = null,
-    // Resolved texture object (loaded upstream)
+    // Legacy resolved texture object (loaded upstream)
     texture = null,
+    // Discrete per-side texture URLs / resolved textures.
+    outerTextureUrl = null,
+    outerTexture = null,
+    innerTextureUrl = null,
+    innerTexture = null,
     textureScaleX = 1,
     textureScaleY = 1,
     textureRotation = 0,
@@ -149,7 +155,8 @@ const ClothMesh = forwardRef(function ClothMesh(
   const cursorSphereRef = useRef();
   const colliderSphereRefs = useRef([]);
   const materialKeysRef = useRef(null);
-  const outerColorNodeRef = useRef(null);
+  const outerTextureNodeRef = useRef(null);
+  const innerTextureNodeRef = useRef(null);
 
   // Persistent GPU uniforms for texture compositing (stable across frames)
   const texUniforms = useMemo(
@@ -273,10 +280,15 @@ const ClothMesh = forwardRef(function ClothMesh(
   );
 
   const textureReady = Boolean(texture);
+  const outerTextureReady = Boolean(outerTexture);
+  const innerTextureReady = Boolean(innerTexture);
+  const hasDiscreteTextureTargets = Boolean(
+    (outerTextureUrl && outerTextureReady) ||
+      (innerTextureUrl && innerTextureReady)
+  );
 
   useEffect(() => {
-    if (textureUrl && textureReady) {
-      const tex = texture;
+    const buildTexturedColor = (tex) => {
       tex.wrapS = THREE.RepeatWrapping;
       tex.wrapT = THREE.RepeatWrapping;
       tex.needsUpdate = true;
@@ -316,31 +328,47 @@ const ClothMesh = forwardRef(function ClothMesh(
         texUniforms.textureBlendU
       );
 
-      if (textureSide === 'inner') {
-        outerColorNodeRef.current = mix(
-          texUniforms.baseColorU,
-          texturedColor,
-          frontFacing
-        );
-      } else if (textureSide === 'outer') {
-        outerColorNodeRef.current = mix(
-          texturedColor,
-          texUniforms.baseColorU,
-          frontFacing
-        );
-      } else {
-        outerColorNodeRef.current = texturedColor;
+      return texturedColor;
+    };
+
+    let nextOuterTextureNode = null;
+    let nextInnerTextureNode = null;
+
+    if (hasDiscreteTextureTargets) {
+      if (outerTextureUrl && outerTextureReady) {
+        nextOuterTextureNode = buildTexturedColor(outerTexture);
       }
-      sim.material.map = null;
-    } else {
-      outerColorNodeRef.current = null;
-      sim.material.map = null;
+      if (innerTextureUrl && innerTextureReady) {
+        nextInnerTextureNode = buildTexturedColor(innerTexture);
+      }
+    } else if (textureUrl && textureReady) {
+      const legacyTexturedColor = buildTexturedColor(texture);
+
+      if (textureSide === 'inner') {
+        nextInnerTextureNode = legacyTexturedColor;
+      } else if (textureSide === 'outer') {
+        nextOuterTextureNode = legacyTexturedColor;
+      } else {
+        nextOuterTextureNode = legacyTexturedColor;
+        nextInnerTextureNode = legacyTexturedColor;
+      }
     }
+
+    outerTextureNodeRef.current = nextOuterTextureNode;
+    innerTextureNodeRef.current = nextInnerTextureNode;
+    sim.material.map = null;
   }, [
     sim,
     textureUrl,
     texture,
     textureReady,
+    outerTextureUrl,
+    outerTexture,
+    outerTextureReady,
+    innerTextureUrl,
+    innerTexture,
+    innerTextureReady,
+    hasDiscreteTextureTargets,
     texUniforms,
     textureSide,
     textureProjection,
@@ -365,19 +393,11 @@ const ClothMesh = forwardRef(function ClothMesh(
   // Cutout rim darkening is applied only to the outer surface before the final
   // inner/outer split so the eye-hole edge stays readable.
   useEffect(() => {
-    const hasTexture = Boolean(textureUrl && textureReady);
     const baseOuterNode = texUniforms.baseColorU;
-    const texturedNode = outerColorNodeRef.current || texUniforms.baseColorU;
-    const outerNode =
-      hasTexture && (textureSide === 'outer' || textureSide === 'both')
-        ? texturedNode
-        : baseOuterNode;
+    const outerNode = outerTextureNodeRef.current || baseOuterNode;
 
     const innerBaseNode = innerColor ? texUniforms.innerColorU : baseOuterNode;
-    const innerNode =
-      hasTexture && (textureSide === 'inner' || textureSide === 'both')
-        ? texturedNode
-        : innerBaseNode;
+    const innerNode = innerTextureNodeRef.current || innerBaseNode;
 
     const rimmedOuter = mix(outerNode, sim.cutoutRimColorU, sim.cutoutRimNode);
 
@@ -390,6 +410,12 @@ const ClothMesh = forwardRef(function ClothMesh(
     textureUrl,
     texture,
     textureReady,
+    outerTextureUrl,
+    outerTexture,
+    outerTextureReady,
+    innerTextureUrl,
+    innerTexture,
+    innerTextureReady,
     textureSide,
     texUniforms,
   ]);

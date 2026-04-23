@@ -114,7 +114,7 @@ To Build:
 
 ## Show
 
-- [ ] SVG Renderer
+- [ ] PenPlotter
 - [ ] Explosion Test
 - [ ] Particle Lab
 - [ ] Spline Editor
@@ -122,7 +122,7 @@ To Build:
 - [ ] FireTest
 - [ ] HotBox
 - [ ] TheLoom
-- [ ] PixelHater updates
+- [ ] PixelHater updates (censor, voxels)
 - [ ] Thats All Folks
 - [ ] Crt Test
 - [ ] Still Pulling For You
@@ -130,17 +130,17 @@ To Build:
 - [ ] Police Presence
 - [ ] Flying High
 - [ ] Dumpster Fire
-- [✔] Mycelium
+- [x] Mycelium
 - [ ] All my thoughts are so cumulus - Atomic
 - [ ] All my thoughts are so cumulus - Censored Rings
 - [ ] All my thoughts are so cumulus - Network
 - [ ] All my thoughts are so cumulus - Plate
 - [ ] All my thoughts are so cumulus - Record
-- [✔] All my thoughts are so cumulus - Static
+- [x] All my thoughts are so cumulus - Static
 - [ ] Surrender
 - [ ] Stay Hunted
 - [ ] AllMyFriendsAreGhosts
-- [✔] GhostBuster
+- [x] GhostBuster
 - [ ] CharacterController
 
 - TrophyHusband

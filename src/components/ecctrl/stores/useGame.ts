@@ -18,11 +18,11 @@ export const useGame = /* @__PURE__ */ create(
       animationSet: {} as AnimationSet,
 
       initializeAnimationSet: (animationSet: AnimationSet) => {
-        set((state) => {
-          if (Object.keys(state.animationSet).length === 0) {
-            return { animationSet };
-          }
-          return {};
+        set(() => {
+          return {
+            animationSet,
+            curAnimation: animationSet.idle ?? null,
+          };
         });
       },
 

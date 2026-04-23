@@ -6,14 +6,16 @@ import { KeyboardControls } from '@react-three/drei';
 import { useThree } from '@react-three/fiber';
 import { Physics } from '@react-three/rapier';
 
-import Ecctrl, { useGame } from '../../../../../ecctrl/Ecctrl';
-import CharacterModel from './CharacterModel';
+import Ecctrl, { useGame } from '../../../../../ecctrl/Ecctrl.tsx';
+import CapsuleCharacter from './CapsuleCharacter';
 import DynamicPlatforms from './DynamicPlatforms';
+import ExampleCharacterModel from './ExampleCharacterModel';
 import FloatingPlatform from './FloatingPlatform';
 import Floor from './Floor';
 import Lights from './Lights';
 import RigidObjects from './RigidObjects';
 import RoughPlane from './RoughPlane';
+import SealCharacter from './SealCharacter';
 import ShotCube from './ShotCube';
 import Slopes from './Slopes';
 import Steps from './Steps';
@@ -231,6 +233,8 @@ export default function Experience() {
   const effectiveCamFollowMult = fpsMode ? 1000 : camFollowMult;
   const effectiveCamLerpMult = fpsMode ? 1000 : camLerpMult;
   const ecctrlInstanceKey = fpsMode ? 'fps-on' : 'fps-off';
+  const selectedVariant = characterModel.toLowerCase();
+  const isExampleCharacter = characterModel === 'Example Character';
 
   const handlePointToMoveHover = React.useCallback(
     (event) => {
@@ -289,6 +293,16 @@ export default function Experience() {
     }
   }, [pointToMoveActive, setMoveToPoint]);
 
+  let characterContent;
+
+  if (selectedVariant === 'seal') {
+    characterContent = <SealCharacter />;
+  } else if (isExampleCharacter) {
+    characterContent = <ExampleCharacterModel />;
+  } else {
+    characterContent = <CapsuleCharacter />;
+  }
+
   const characterController = (
     <Ecctrl
       key={ecctrlInstanceKey}
@@ -325,7 +339,7 @@ export default function Experience() {
       camLerpMult={effectiveCamLerpMult}
       mode={effectiveEcctrlMode}
     >
-      <CharacterModel variant={characterModel} />
+      {characterContent}
     </Ecctrl>
   );
 

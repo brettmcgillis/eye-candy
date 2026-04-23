@@ -6,15 +6,17 @@ import { KeyboardControls } from '@react-three/drei';
 import { useThree } from '@react-three/fiber';
 import { Physics } from '@react-three/rapier';
 
-import Ecctrl, { useGame } from '../../../../../ecctrl/Ecctrl';
-import { GridMaterial } from '../../../../../materials/webGPU/gridMaterial';
-import CharacterModel from './CharacterModel';
+import Ecctrl, { useGame } from '../../../../../ecctrl/Ecctrl.tsx';
+import CapsuleCharacter from './CapsuleCharacter';
 import DynamicPlatforms from './DynamicPlatforms';
+import ExampleCharacterModel from './ExampleCharacterModel';
 import FloatingPlatform from './FloatingPlatform';
 import Floor from './Floor';
+import GhostCharacter from './GhostCharacter';
 import Lights from './Lights';
 import RigidObjects from './RigidObjects';
 import RoughPlane from './RoughPlane';
+import SealCharacter from './SealCharacter';
 import ShotCube from './ShotCube';
 import Slopes from './Slopes';
 import Steps from './Steps';
@@ -49,13 +51,13 @@ export default function Experience() {
   const dayNightPresets = {
     Day: {
       bgColor: '#a8c8e8',
-      gridBgColor: '#d9d9d9',
-      gridLineColor: '#222222',
+      gridSectionColor: '#d9d9d9',
+      gridCellColor: '#222222',
     },
     Night: {
       bgColor: '#0f1419',
-      gridBgColor: '#40404c',
-      gridLineColor: '#26262c',
+      gridSectionColor: '#40404c',
+      gridCellColor: '#26262c',
     },
   };
 
@@ -101,8 +103,8 @@ export default function Experience() {
     sceneMode,
     fpsMode,
     bgColor,
-    gridBgColor,
-    gridLineColor,
+    gridSectionColor,
+    gridCellColor,
   } = useControls('World Settings', {
     Character: folder(
       {
@@ -131,8 +133,8 @@ export default function Experience() {
         },
         fpsMode: false,
         bgColor: { value: '#a8c8e8' },
-        gridBgColor: { value: '#d9d9d9' },
-        gridLineColor: { value: '#26262c' },
+        gridSectionColor: { value: '#d9d9d9' },
+        gridCellColor: { value: '#26262c' },
       },
       { collapsed: false }
     ),
@@ -216,8 +218,9 @@ export default function Experience() {
   const preset =
     sceneMode && dayNightPresets[sceneMode] ? dayNightPresets[sceneMode] : null;
   const effectiveBgColor = preset?.bgColor ?? bgColor;
-  const effectiveGridBgColor = preset?.gridBgColor ?? gridBgColor;
-  const effectiveGridLineColor = preset?.gridLineColor ?? gridLineColor;
+  const effectiveGridSectionColor =
+    preset?.gridSectionColor ?? gridSectionColor;
+  const effectiveGridCellColor = preset?.gridCellColor ?? gridCellColor;
   const effectiveEcctrlMode = fpsMode ? 'CameraBasedMovement' : ecctrlMode;
   const pointToMoveActive = effectiveEcctrlMode === 'PointToMove';
   const effectiveTurnVelMultiplier = fpsMode ? 1 : turnVelMultiplier;
@@ -229,6 +232,8 @@ export default function Experience() {
   const effectiveCamFollowMult = fpsMode ? 1000 : camFollowMult;
   const effectiveCamLerpMult = fpsMode ? 1000 : camLerpMult;
   const ecctrlInstanceKey = fpsMode ? 'fps-on' : 'fps-off';
+  const selectedVariant = characterModel.toLowerCase();
+  const isExampleCharacter = characterModel === 'Example Character';
 
   const handlePointToMoveHover = React.useCallback(
     (event) => {
@@ -287,6 +292,18 @@ export default function Experience() {
     }
   }, [pointToMoveActive, setMoveToPoint]);
 
+  let characterContent;
+
+  if (selectedVariant === 'seal') {
+    characterContent = <SealCharacter />;
+  } else if (selectedVariant === 'gh0st') {
+    characterContent = <GhostCharacter />;
+  } else if (isExampleCharacter) {
+    characterContent = <ExampleCharacterModel />;
+  } else {
+    characterContent = <CapsuleCharacter />;
+  }
+
   const characterController = (
     <Ecctrl
       key={ecctrlInstanceKey}
@@ -323,39 +340,12 @@ export default function Experience() {
       camLerpMult={effectiveCamLerpMult}
       mode={effectiveEcctrlMode}
     >
-      <CharacterModel variant={characterModel} />
+      {characterContent}
     </Ecctrl>
   );
 
   return (
     <>
-      <mesh
-        position={[0, -0.99, 0]}
-        rotation={[-Math.PI / 2, 0, 0]}
-        userData={{ camExcludeCollision: true }}
-        onPointerMove={handlePointToMoveHover}
-        onPointerDown={handlePointToMoveDown}
-        onPointerUp={handlePointToMoveUp}
-      >
-        <planeGeometry args={[300, 300]} />
-        <GridMaterial
-          gridSize={1}
-          lineWidth={0.03}
-          bgColor={effectiveGridBgColor}
-          lineColor={effectiveGridLineColor}
-        />
-      </mesh>
-
-      <mesh
-        receiveShadow
-        position={[0, -0.989, 0]}
-        rotation={[-Math.PI / 2, 0, 0]}
-        userData={{ camExcludeCollision: true }}
-      >
-        <planeGeometry args={[300, 300]} />
-        <shadowMaterial opacity={0.35} transparent />
-      </mesh>
-
       <Lights mode={sceneMode} />
 
       <color attach="background" args={[effectiveBgColor]} />
@@ -401,7 +391,13 @@ export default function Experience() {
         <RigidObjects />
         <FloatingPlatform />
         <DynamicPlatforms />
-        <Floor />
+        <Floor
+          gridSectionColor={effectiveGridSectionColor}
+          gridCellColor={effectiveGridCellColor}
+          onPointerMove={handlePointToMoveHover}
+          onPointerDown={handlePointToMoveDown}
+          onPointerUp={handlePointToMoveUp}
+        />
         {shotsEnabled && <ShotCube />}
       </Physics>
     </>

@@ -108,7 +108,7 @@ export default function Experience() {
       {
         characterModel: {
           value: 'Capsule',
-          options: ['Capsule', 'Gh0st', 'Seal'],
+          options: ['Capsule', 'Gh0st', 'Seal', 'Example Character'],
         },
       },
       { collapsed: true }

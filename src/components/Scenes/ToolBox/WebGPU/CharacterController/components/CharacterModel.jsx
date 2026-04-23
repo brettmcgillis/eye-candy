@@ -3,6 +3,7 @@ import React, { useEffect } from 'react';
 import { useGame } from '../../../../../ecctrl/stores/useGame';
 import LowPolySeal from '../../../../../elements/lowPolySeal/LowPolySeal';
 import GhostCharacter from '../../../../../elements/webgpu/ghost/GhostCharacter';
+import ExampleCharacterModel from './ExampleCharacterModel';
 
 // Placeholder capsule — replace with Ghost character when bringing in Ghost
 const animationSet = {
@@ -25,8 +26,9 @@ export default function CharacterModel({ variant = 'Capsule' }) {
   );
 
   useEffect(() => {
+    if (variant === 'Example Character') return;
     initializeAnimationSet(animationSet);
-  }, []);
+  }, [initializeAnimationSet, variant]);
 
   const selectedVariant = variant.toLowerCase();
 
@@ -38,6 +40,10 @@ export default function CharacterModel({ variant = 'Capsule' }) {
         rotation={[0, Math.PI / 2, 0]}
       />
     );
+  }
+
+  if (variant === 'Example Character') {
+    return <ExampleCharacterModel />;
   }
 
   if (selectedVariant === 'gh0st') {

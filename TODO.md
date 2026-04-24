@@ -83,6 +83,8 @@ To Build:
 - [Ghosts](src/components/scenes/WorkInProgress/WebGPU/Ghosts/todo.md)
 - [Surrender](src/components/scenes/WorkInProgress/WebGPU/Surrender/todo.md)
 - [StayHunted](src/components/scenes/WorkInProgress/WebGPU/StayHunted/todo.md)
+- [GhostStories](src/components/scenes/WorkInProgress/WebGPU/GhostStories/todo.md)
+- [QuinnsPlayground](src/components/scenes/WorkInProgress/WebGL/QuinnsPlayground/todo.md)
 
 **Template**
 
@@ -142,6 +144,8 @@ To Build:
 - [ ] AllMyFriendsAreGhosts
 - [x] GhostBuster
 - [ ] CharacterController
+- [ ] GhostStories
+- [ ] Quinn'sPlayground
 
 - TrophyHusband
 - Yggdraskill

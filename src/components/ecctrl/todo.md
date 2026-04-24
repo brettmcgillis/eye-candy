@@ -17,7 +17,12 @@
 
 // Medium
 
-- [ ]
+- [ ] custom ecctrlJoystick "skins" for my character controller scenes, and have them selectable from the leva controls. looks like we can pass in material props. want the following:
+  - default normals material
+  - stereo typical arcade joystick/button color set
+  - highquality bloodshot eyeball joystick with sinewey stick and "blood splatter" base, splatter buttons,
+  - Ghost themed control set.
+  - Seal fur themed control set.
 
 // Harder
 

@@ -63,6 +63,7 @@
     "three-mesh-bvh": "^0.9.9",
     "three-plotter-renderer": "^1.1.1",
     "three-stdlib": "^2.36.1",
+    "three-subdivide": "^1.1.5",
     "zustand": "^5.0.12"
   },
   "devDependencies": {

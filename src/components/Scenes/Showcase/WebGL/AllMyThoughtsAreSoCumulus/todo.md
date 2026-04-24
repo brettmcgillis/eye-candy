@@ -25,6 +25,8 @@
 - [x] Add Halo Scroll mode to switch between the 6 halo presets we currently have.
 - [x] Fix control layout
 
+- [ ] Build solar system model, akin to atomic model. planets have textured materials. sun is emissive, realistic looking. We have a great looking sun locally. we can use dev/examples/Solar-System-3D for the rest. this contains many great planet textures and a good looking solar system
+
 # // Intent/Use Cases
 
 # // Presets
@@ -36,6 +38,7 @@
 - [x] Record
 - [x] Plate
 - [x] Static - CRT static ring, bloom, dark bg
+- [ ] Universal - Solar System model halo inside skull @ cloud position, cloud hidden, bloom, dark bg.,
 
 # // Features
 

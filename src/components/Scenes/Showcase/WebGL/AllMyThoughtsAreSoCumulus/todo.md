@@ -38,7 +38,7 @@
 - [x] Record
 - [x] Plate
 - [x] Static - CRT static ring, bloom, dark bg
-- [ ] Universal - Solar System model halo inside skull @ cloud position, cloud hidden, bloom, dark bg.,
+- [ ] Universal - Solar System model inside skull @ cloud position, cloud hidden, bloom, dark bg., camera zoomed in on solar system
 
 # // Features
 

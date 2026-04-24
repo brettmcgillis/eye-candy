@@ -17,7 +17,7 @@
 
 // Medium
 
-- [ ] add custom ecctrlJoystick "skins" for my character controller scenes, and have them selectable from the leva controls. looks like we can pass in material props. skins should be want the following:
+- [ ] add custom ecctrlJoystick "skins" for my character controller scenes, and have them selectable from the leva controls. These should be reusable code located in ecctrl/skins/. looks like we can pass in material props. skins should be want the following:
   - default normals material
   - stereotypical arcade joystick/button color set
   - highquality bloodshot eyeball joystick with sinewey stick and "blood splatter" base, splatter buttons,
@@ -25,6 +25,8 @@
   - Seal fur themed control set.
 
 // Harder
+
+- [ ] EcctrlJoystick should support webgpu canvas so that we can use tsl materials on the joysticks
 
 - [ ] fix ghost: we need to tune ghost's colliders and/or capsule size. need colliders for hand positions and head. ideally we can configure things such that we can update shots mode to support shotcube & shotsphere, where shotsphere can get passed throught to ghost; if i shoot a sphere at ghost i should see his cloth react.
 

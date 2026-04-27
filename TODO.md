@@ -102,7 +102,10 @@ To Build:
 - [SmokeTest](src/components/scenes/ToolBox/WebGL/SmokeTest/todo.md)
 - [SplineEditor](src/components/scenes/ToolBox/WebGL/SplineEditor/todo.md)
 - [GhostBuster](src/components/scenes/ToolBox/WebGPU/GhostBuster/todo.md)
-- [CharacterController](src/components/scenes/ToolBox/WebGPU/CharacterController/todo.md)
+- [CharacterController (webGPU)](src/components/scenes/ToolBox/WebGPU/CharacterController/todo.md)
+- [CharacterController (webGL)](src/components/scenes/ToolBox/WebGL/CharacterController/todo.md)
+- [MultiplayerMadness (webGPU)](src/components/scenes/ToolBox/WebGPU/MultiplayerMadness/todo.md)
+- [MultiplayerMadness (webGL)](src/components/scenes/ToolBox/WebGL/MultiplayerMadness/todo.md)
 
 ### ELEMENTS
 
@@ -144,6 +147,7 @@ To Build:
 - [ ] AllMyFriendsAreGhosts
 - [x] GhostBuster
 - [ ] CharacterController
+- [ ] MultiplayerMadness
 - [ ] GhostStories
 - [ ] Quinn'sPlayground
 

@@ -5,6 +5,9 @@ const GhostBuster = lazy(() => import('./WebGPU/GhostBuster/GhostBuster'));
 const CharacterController = lazy(
   () => import('./WebGPU/CharacterController/CharacterController')
 );
+const MultiplayerMadness = lazy(
+  () => import('./WebGPU/MultiplayerMadness/MultiplayerMadness')
+);
 
 const scenes = [
   {
@@ -24,6 +27,12 @@ const scenes = [
     label: 'Character Controller',
     icon: '🏃',
     Component: CharacterController,
+  },
+  {
+    id: 'multiplayerMadness',
+    label: 'Multiplayer Madness',
+    icon: '🏃🏃',
+    Component: MultiplayerMadness,
   },
 ];
 

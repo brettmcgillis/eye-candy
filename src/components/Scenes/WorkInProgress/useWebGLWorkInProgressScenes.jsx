@@ -16,7 +16,9 @@ const StillPullingForYou = lazy(
 );
 const RowItAlone = lazy(() => import('./WebGL/RowItAlone/RowItAlone'));
 const StayingAfloat = lazy(() => import('./WebGL/StayingAfloat/StayingAfloat'));
-
+const QuinnsPlayground = lazy(
+  () => import('./WebGL/QuinnsPlayground/QuinnsPlayground')
+);
 const scenes = [
   {
     id: 'noScene',
@@ -77,6 +79,12 @@ const scenes = [
     label: 'Staying Afloat',
     icon: '🛟',
     Component: StayingAfloat,
+  },
+  {
+    id: 'quinnsPlayground',
+    label: "Quinn's Playground",
+    icon: '🦭',
+    Component: QuinnsPlayground,
   },
 ];
 

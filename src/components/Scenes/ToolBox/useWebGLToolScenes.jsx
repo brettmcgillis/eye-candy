@@ -9,6 +9,9 @@ const SmokeTest = lazy(() => import('./WebGL/SmokeTest/SmokeTest'));
 const CharacterController = lazy(
   () => import('./WebGL/CharacterController/CharacterController')
 );
+const MultiplayerMadness = lazy(
+  () => import('./WebGL/MultiplayerMadness/MultiplayerMadness')
+);
 const scenes = [
   {
     id: 'noScene',
@@ -51,6 +54,12 @@ const scenes = [
     label: 'Character Controller',
     icon: '🏃',
     Component: CharacterController,
+  },
+  {
+    id: 'multiplayerMadness',
+    label: 'Multiplayer Madness',
+    icon: '🏃🏃',
+    Component: MultiplayerMadness,
   },
 ];
 

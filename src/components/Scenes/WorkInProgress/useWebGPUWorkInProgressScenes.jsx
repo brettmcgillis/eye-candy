@@ -6,7 +6,7 @@ const AllMyFriendsAreGhosts = lazy(
 );
 const Surrender = lazy(() => import('./WebGPU/Surrender/Surrender'));
 const StayHunted = lazy(() => import('./WebGPU/StayHunted/StayHunted'));
-
+const GhostStories = lazy(() => import('./WebGPU/GhostStories/GhostStories'));
 const scenes = [
   {
     id: 'noScene',
@@ -31,6 +31,12 @@ const scenes = [
     label: 'Stay Hunted',
     icon: '🐇',
     Component: StayHunted,
+  },
+  {
+    id: 'ghostStories',
+    label: 'Ghost Stories',
+    icon: '📖👻',
+    Component: GhostStories,
   },
 ];
 

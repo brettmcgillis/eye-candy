@@ -1,31 +1,29 @@
-import "./style.css";
-import ReactDOM from "react-dom/client";
-import { Canvas } from "@react-three/fiber";
-import Experience from "./Experience";
-import { Leva } from "leva";
-import { EcctrlJoystick } from "../src/EcctrlJoystick";
-import { Suspense, useEffect, useState } from "react";
-import { Bvh } from "@react-three/drei";
+import { Leva } from 'leva';
 
-const root = ReactDOM.createRoot(document.querySelector("#root"));
+import { Suspense, useEffect, useState } from 'react';
+import ReactDOM from 'react-dom/client';
+
+import { Bvh } from '@react-three/drei';
+import { Canvas } from '@react-three/fiber';
+
+import { EcctrlJoystick } from '../src/EcctrlJoystick';
+import Experience from './Experience';
+import './style.css';
+
+const root = ReactDOM.createRoot(document.querySelector('#root'));
 
 const EcctrlJoystickControls = () => {
-  const [isTouchScreen, setIsTouchScreen] = useState(false)
+  const [isTouchScreen, setIsTouchScreen] = useState(false);
   useEffect(() => {
     // Check if using a touch control device, show/hide joystick
-    if (('ontouchstart' in window) ||
-      (navigator.maxTouchPoints > 0)) {
-      setIsTouchScreen(true)
+    if ('ontouchstart' in window || navigator.maxTouchPoints > 0) {
+      setIsTouchScreen(true);
     } else {
-      setIsTouchScreen(false)
+      setIsTouchScreen(false);
     }
-  }, [])
-  return (
-    <>
-      {isTouchScreen && <EcctrlJoystick buttonNumber={5} />}
-    </>
-  )
-}
+  }, []);
+  return <>{isTouchScreen && <EcctrlJoystick buttonNumber={5} />}</>;
+};
 
 root.render(
   <>
@@ -40,7 +38,7 @@ root.render(
       }}
       onPointerDown={(e) => {
         if (e.pointerType === 'mouse') {
-          e.target.requestPointerLock()
+          e.target.requestPointerLock();
         }
       }}
     >

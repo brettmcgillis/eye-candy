@@ -51,7 +51,7 @@ npm install ecctrl
 ```
 
 ```js
-import Ecctrl, { EcctrlAnimation } from "ecctrl";
+import Ecctrl, { EcctrlAnimation } from 'ecctrl';
 ```
 
 To get started, set up your keyboard map using [KeyboardControls](https://github.com/pmndrs/drei#keyboardcontrols). Then, wrap your character model within `<Ecctrl>`:
@@ -246,17 +246,17 @@ For advanced animation setups, download all files and follow these steps:
 ```js
 // Rename your character animations here
 const animationSet = {
-  idle: "Idle",
-  walk: "Walk",
-  run: "Run",
-  jump: "Jump_Start",
-  jumpIdle: "Jump_Idle",
-  jumpLand: "Jump_Land",
-  fall: "Climbing",
-  action1: "Wave",
-  action2: "Dance",
-  action3: "Cheer",
-  action4: "Attack(1h)", // This is special action which can be trigger while walking or running
+  idle: 'Idle',
+  walk: 'Walk',
+  run: 'Run',
+  jump: 'Jump_Start',
+  jumpIdle: 'Jump_Idle',
+  jumpLand: 'Jump_Land',
+  fall: 'Climbing',
+  action1: 'Wave',
+  action2: 'Dance',
+  action3: 'Cheer',
+  action4: 'Attack(1h)', // This is special action which can be trigger while walking or running
   //additinalAnimation: "additinalAnimationName",
 };
 ```
@@ -317,7 +317,7 @@ const action4Animation = useGame((state) => state.action4);
 To get start, simply import `EcctrlJoystick` from `ecctrl`
 
 ```js
-import { EcctrlJoystick } from "ecctrl";
+import { EcctrlJoystick } from 'ecctrl';
 ```
 
 Place `<EcctrlJoystick>` outside of your canvas component, and you're done!
@@ -406,7 +406,8 @@ EcctrlJoystickProps: {
 If you prefer to use your custom joystick or buttons, you can leverage the `useJoystickControls` hook from `ecctrl`. Import the hook and call the appropriate functions::
 
 ```js
-import { useJoystickControls } from "ecctrl";
+import { useJoystickControls } from 'ecctrl';
+
 //...
 const setJoystick = useJoystickControls((state) => state.setJoystick);
 const resetJoystick = useJoystickControls((state) => state.resetJoystick);
@@ -431,7 +432,8 @@ Activate different modes in Ecctrl by including the desired mode inside Ecctrl c
 This mode doesn't require keyboard controls and is designed for click-to-move or path-following features.
 
 ```js
-import { useGame } from "ecctrl";
+import { useGame } from 'ecctrl';
+
 // ...
 const setMoveToPoint = useGame((state) => state.setMoveToPoint);
 // ...

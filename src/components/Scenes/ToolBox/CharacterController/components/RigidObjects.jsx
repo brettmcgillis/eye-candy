@@ -7,7 +7,7 @@ import {
   RigidBody,
 } from '@react-three/rapier';
 
-import Label3D from './Label3D';
+import SceneLabel from './SceneLabel';
 
 export default function RigidObjects() {
   return (
@@ -25,7 +25,7 @@ export default function RigidObjects() {
         </mesh>
       </RigidBody>
       <RigidBody position={[15, 0, 0]} colliders={false} mass={1}>
-        <Label3D
+        <SceneLabel
           text="Mass: 1"
           position={[0, 1, 0]}
           rotation={[0, -Math.PI / 2, 0]}
@@ -38,7 +38,7 @@ export default function RigidObjects() {
         </mesh>
       </RigidBody>
       <RigidBody position={[15, 0, -2]} colliders={false} mass={3.375}>
-        <Label3D
+        <SceneLabel
           text="Mass: 3.375"
           position={[0, 1.5, 0]}
           rotation={[0, -Math.PI / 2, 0]}
@@ -51,7 +51,7 @@ export default function RigidObjects() {
         </mesh>
       </RigidBody>
       <RigidBody position={[15, 0, -5]} colliders={false} mass={8}>
-        <Label3D
+        <SceneLabel
           text="Mass: 8"
           position={[0, 2, 0]}
           rotation={[0, -Math.PI / 2, 0]}
@@ -64,7 +64,7 @@ export default function RigidObjects() {
         </mesh>
       </RigidBody>
       <RigidBody colliders={false} position={[15, 5, -10]} mass={1.24}>
-        <Label3D
+        <SceneLabel
           text="Mass: 1.24"
           position={[0, 1.5, 0]}
           rotation={[0, -Math.PI / 2, 0]}

@@ -6,7 +6,7 @@ import { KeyboardControls } from '@react-three/drei';
 import { useThree } from '@react-three/fiber';
 import { Physics } from '@react-three/rapier';
 
-import Ecctrl, { useGame } from '../../../../../ecctrl/Ecctrl.tsx';
+import Ecctrl, { useGame } from '../../../../../../modules/ecctrl/Ecctrl.tsx';
 import CapsuleCharacter from './CapsuleCharacter';
 import DynamicPlatforms from './DynamicPlatforms';
 import ExampleCharacterModel from './ExampleCharacterModel';
@@ -34,7 +34,8 @@ const keyboardMap = [
   { name: 'action4', keys: ['KeyF'] },
 ];
 
-export default function Experience() {
+export default function Experience({ renderer = 'webgpu' }) {
+  const isWebGPU = renderer === 'webgpu';
   const { gl } = useThree();
   const setMoveToPoint = useGame((state) => state.setMoveToPoint);
   const pointerDownAtRef = useRef(0);
@@ -110,7 +111,9 @@ export default function Experience() {
       {
         characterModel: {
           value: 'Capsule',
-          options: ['Capsule', 'Gh0st', 'Seal', 'Example Character'],
+          options: isWebGPU
+            ? ['Capsule', 'Gh0st', 'Seal', 'Example Character']
+            : ['Capsule', 'Seal', 'Example Character'],
         },
       },
       { collapsed: true }
@@ -134,7 +137,7 @@ export default function Experience() {
         fpsMode: false,
         bgColor: { value: '#a8c8e8' },
         gridSectionColor: { value: '#d9d9d9' },
-        gridCellColor: { value: '#26262c' },
+        gridCellColor: { value: isWebGPU ? '#26262c' : '#222222' },
       },
       { collapsed: false }
     ),
@@ -296,7 +299,7 @@ export default function Experience() {
 
   if (selectedVariant === 'seal') {
     characterContent = <SealCharacter />;
-  } else if (selectedVariant === 'gh0st') {
+  } else if (isWebGPU && selectedVariant === 'gh0st') {
     characterContent = <GhostCharacter />;
   } else if (isExampleCharacter) {
     characterContent = <ExampleCharacterModel />;
@@ -386,12 +389,13 @@ export default function Experience() {
         )}
 
         <RoughPlane />
-        <Slopes />
+        <Slopes renderer={renderer} />
         <Steps />
-        <RigidObjects />
-        <FloatingPlatform />
-        <DynamicPlatforms />
+        <RigidObjects renderer={renderer} />
+        <FloatingPlatform renderer={renderer} />
+        <DynamicPlatforms renderer={renderer} />
         <Floor
+          renderer={renderer}
           gridSectionColor={effectiveGridSectionColor}
           gridCellColor={effectiveGridCellColor}
           onPointerMove={handlePointToMoveHover}

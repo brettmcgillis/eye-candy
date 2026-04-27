@@ -1,6 +1,7 @@
 import React, { useEffect } from 'react';
 
-import { useGame } from '../../../../../ecctrl/Ecctrl.tsx';
+import { useGame } from '../../../../../modules/ecctrl/Ecctrl.js';
+import BaseGhostCharacter from '../../../../elements/webgpu/ghost/GhostCharacter';
 
 const defaultAnimationSet = {
   idle: 'idle',
@@ -16,7 +17,7 @@ const defaultAnimationSet = {
   action4: 'action4',
 };
 
-export default function CapsuleCharacter() {
+export default function GhostCharacter() {
   const initializeAnimationSet = useGame(
     (state) => state.initializeAnimationSet
   );
@@ -26,15 +27,11 @@ export default function CapsuleCharacter() {
   }, [initializeAnimationSet]);
 
   return (
-    <>
-      <mesh castShadow>
-        <capsuleGeometry args={[0.3, 0.7]} />
-        <meshStandardMaterial color="mediumpurple" />
-      </mesh>
-      <mesh castShadow position={[0, 0.2, 0.2]}>
-        <boxGeometry args={[0.5, 0.2, 0.3]} />
-        <meshStandardMaterial color="mediumpurple" />
-      </mesh>
-    </>
+    <BaseGhostCharacter
+      color="#f5f0e8"
+      eyeColor="#88ccff"
+      eyeIntensity={2.25}
+      groundLightIntensity={0}
+    />
   );
 }

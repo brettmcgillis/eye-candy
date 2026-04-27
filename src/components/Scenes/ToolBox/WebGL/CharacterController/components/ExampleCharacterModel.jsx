@@ -17,8 +17,8 @@ import {
 import { useFrame } from '@react-three/fiber';
 import { BallCollider, vec3 } from '@react-three/rapier';
 
+import { useGame } from '../../../../../../modules/ecctrl/stores/useGame';
 import { textureFile } from '../../../../../../utils/appUtils';
-import { useGame } from '../../../../../ecctrl/stores/useGame';
 
 const animationSet = {
   idle: 'Idle',

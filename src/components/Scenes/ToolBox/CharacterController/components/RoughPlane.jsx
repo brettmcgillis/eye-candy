@@ -1,3 +1,4 @@
+/* eslint-disable no-param-reassign */
 import * as THREE from 'three';
 
 import React, { useEffect } from 'react';
@@ -5,7 +6,7 @@ import React, { useEffect } from 'react';
 import { useGLTF } from '@react-three/drei';
 import { RigidBody } from '@react-three/rapier';
 
-import { modelFile } from '../../../../../../utils/appUtils';
+import { modelFile } from '../../../../../utils/appUtils';
 
 export default function RoughPlane() {
   const roughPlane = useGLTF(modelFile('/roughPlane.glb'));
@@ -16,7 +17,6 @@ export default function RoughPlane() {
         child instanceof THREE.Mesh &&
         child.material instanceof THREE.MeshStandardMaterial
       ) {
-        // eslint-disable-next-line no-param-reassign
         child.receiveShadow = true;
       }
     });

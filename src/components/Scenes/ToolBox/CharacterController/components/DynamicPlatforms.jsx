@@ -9,7 +9,7 @@ import {
   RigidBody,
 } from '@react-three/rapier';
 
-import Label3D from './Label3D';
+import SceneLabel from './SceneLabel';
 
 export default function DynamicPlatforms() {
   const sideMovePlatformRef = useRef();
@@ -56,7 +56,7 @@ export default function DynamicPlatforms() {
         ref={sideMovePlatformRef}
         colliders={false}
       >
-        <Label3D
+        <SceneLabel
           text="Kinematic Moving Platform"
           position={[0, 2.5, 0]}
           scale={2}
@@ -74,7 +74,7 @@ export default function DynamicPlatforms() {
         ref={verticalMovePlatformRef}
         colliders={false}
       >
-        <Label3D
+        <SceneLabel
           text="Kinematic Elevating Platform"
           position={[0, 2.5, 0]}
           scale={2}
@@ -92,7 +92,7 @@ export default function DynamicPlatforms() {
         ref={rotatePlatformRef}
         colliders={false}
       >
-        <Label3D
+        <SceneLabel
           text="Kinematic Rotating Platform"
           position={[0, 2.5, 0]}
           scale={2}
@@ -104,7 +104,7 @@ export default function DynamicPlatforms() {
         </mesh>
       </RigidBody>
 
-      <Label3D
+      <SceneLabel
         text="Kinematic Rotating Drum"
         position={[-15, 1.5, -15]}
         scale={2}

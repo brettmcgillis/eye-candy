@@ -2,8 +2,8 @@ import React, { useEffect, useRef } from 'react';
 
 import { useAnimations, useGLTF } from '@react-three/drei';
 
+import { useGame } from '../../../modules/ecctrl/stores/useGame';
 import { modelFile } from '../../../utils/appUtils';
-import { useGame } from '../../ecctrl/stores/useGame.ts';
 
 const sealAnimationMap = {
   sealIdle: { clip: 'Idle', timeScale: 1 },

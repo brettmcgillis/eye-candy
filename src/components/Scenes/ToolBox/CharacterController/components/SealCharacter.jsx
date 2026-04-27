@@ -1,7 +1,7 @@
 import React, { useEffect } from 'react';
 
-import { useGame } from '../../../../../ecctrl/Ecctrl.tsx';
-import LowPolySeal from '../../../../../elements/lowPolySeal/LowPolySeal';
+import { useGame } from '../../../../../modules/ecctrl/Ecctrl.js';
+import LowPolySeal from '../../../../elements/lowPolySeal/LowPolySeal';
 
 const sealAnimationSet = {
   idle: 'sealIdle',

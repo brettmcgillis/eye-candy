@@ -3,10 +3,11 @@ import * as THREE from 'three';
 
 import React, { useEffect } from 'react';
 
-import { Text, useGLTF } from '@react-three/drei';
+import { useGLTF } from '@react-three/drei';
 import { RigidBody } from '@react-three/rapier';
 
-import { modelFile } from '../../../../../../utils/appUtils';
+import { modelFile } from '../../../../../utils/appUtils';
+import SceneLabel from './SceneLabel';
 
 export default function Slopes() {
   const slopes = useGLTF(modelFile('/slopes.glb'));
@@ -27,30 +28,24 @@ export default function Slopes() {
       <RigidBody type="fixed" colliders="trimesh" rotation={[0, Math.PI, 0]}>
         <primitive object={slopes.scene} />
       </RigidBody>
-      <Text
-        rotation={[0, Math.PI, 0]}
+      <SceneLabel
+        text="23.5 Deg"
         position={[3.5, 3, 0]}
-        color="black"
-        fontSize={0.5}
-      >
-        23.5 Deg
-      </Text>
-      <Text
         rotation={[0, Math.PI, 0]}
+        scale={2}
+      />
+      <SceneLabel
+        text="43.1 Deg"
         position={[0, 4.5, 0]}
-        color="black"
-        fontSize={0.5}
-      >
-        43.1 Deg
-      </Text>
-      <Text
         rotation={[0, Math.PI, 0]}
+        scale={2}
+      />
+      <SceneLabel
+        text="62.7 Deg"
         position={[-3.5, 7, 0]}
-        color="black"
-        fontSize={0.5}
-      >
-        62.7 Deg
-      </Text>
+        rotation={[0, Math.PI, 0]}
+        scale={2}
+      />
     </group>
   );
 }

@@ -6,12 +6,13 @@ import { KeyboardControls } from '@react-three/drei';
 import { useThree } from '@react-three/fiber';
 import { Physics } from '@react-three/rapier';
 
-import Ecctrl, { useGame } from '../../../../../ecctrl/Ecctrl.tsx';
+import Ecctrl, { useGame } from '../../../../../modules/ecctrl/Ecctrl.js';
 import CapsuleCharacter from './CapsuleCharacter';
 import DynamicPlatforms from './DynamicPlatforms';
 import ExampleCharacterModel from './ExampleCharacterModel';
 import FloatingPlatform from './FloatingPlatform';
 import Floor from './Floor';
+import GhostCharacter from './GhostCharacter';
 import Lights from './Lights';
 import RigidObjects from './RigidObjects';
 import RoughPlane from './RoughPlane';
@@ -19,6 +20,7 @@ import SealCharacter from './SealCharacter';
 import ShotCube from './ShotCube';
 import Slopes from './Slopes';
 import Steps from './Steps';
+import TouchJoystickOverlay from './TouchJoystickOverlay';
 
 const keyboardMap = [
   { name: 'forward', keys: ['ArrowUp', 'KeyW'] },
@@ -35,6 +37,7 @@ const keyboardMap = [
 
 export default function Experience() {
   const { gl } = useThree();
+  const isWebGPU = gl?.isWebGPURenderer === true;
   const setMoveToPoint = useGame((state) => state.setMoveToPoint);
   const pointerDownAtRef = useRef(0);
   const [hoverPoint, setHoverPoint] = useState(null);
@@ -109,7 +112,9 @@ export default function Experience() {
       {
         characterModel: {
           value: 'Capsule',
-          options: ['Capsule', 'Seal', 'Example Character'],
+          options: isWebGPU
+            ? ['Capsule', 'Gh0st', 'Seal', 'Example Character']
+            : ['Capsule', 'Seal', 'Example Character'],
         },
       },
       { collapsed: true }
@@ -131,11 +136,9 @@ export default function Experience() {
           },
         },
         fpsMode: false,
-        bgColor: {
-          value: '#a8c8e8',
-        },
+        bgColor: { value: '#a8c8e8' },
         gridSectionColor: { value: '#d9d9d9' },
-        gridCellColor: { value: '#222222' },
+        gridCellColor: { value: isWebGPU ? '#26262c' : '#222222' },
       },
       { collapsed: false }
     ),
@@ -297,6 +300,8 @@ export default function Experience() {
 
   if (selectedVariant === 'seal') {
     characterContent = <SealCharacter />;
+  } else if (isWebGPU && selectedVariant === 'gh0st') {
+    characterContent = <GhostCharacter />;
   } else if (isExampleCharacter) {
     characterContent = <ExampleCharacterModel />;
   } else {
@@ -345,6 +350,8 @@ export default function Experience() {
 
   return (
     <>
+      <TouchJoystickOverlay />
+
       <Lights mode={sceneMode} />
 
       <color attach="background" args={[effectiveBgColor]} />

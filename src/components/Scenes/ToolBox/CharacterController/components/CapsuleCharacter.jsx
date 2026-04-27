@@ -1,6 +1,6 @@
 import React, { useEffect } from 'react';
 
-import { useGame } from '../../../../../ecctrl/Ecctrl.tsx';
+import { useGame } from '../../../../../modules/ecctrl/Ecctrl.js';
 
 const defaultAnimationSet = {
   idle: 'idle',

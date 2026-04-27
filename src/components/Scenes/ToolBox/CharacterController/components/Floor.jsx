@@ -1,8 +1,10 @@
 import React from 'react';
 
+import { useThree } from '@react-three/fiber';
 import { CuboidCollider, RigidBody } from '@react-three/rapier';
 
-import { GridMaterial } from '../../../../../materials/webGPU/gridMaterial';
+import WebGLGridMaterial from '../../../../materials/webGL/gridMaterial';
+import { GridMaterial as WebGPUGridMaterial } from '../../../../materials/webGPU/gridMaterial';
 
 export default function Floor({
   gridSectionColor,
@@ -11,6 +13,11 @@ export default function Floor({
   onPointerDown,
   onPointerUp,
 }) {
+  const { gl } = useThree();
+  const isWebGPU = gl?.isWebGPURenderer === true;
+  const GridMaterial = isWebGPU ? WebGPUGridMaterial : WebGLGridMaterial;
+  const lineWidth = isWebGPU ? 0.03 : 0.8;
+
   return (
     <>
       <mesh
@@ -25,7 +32,7 @@ export default function Floor({
         <planeGeometry args={[300, 300]} />
         <GridMaterial
           gridSize={1}
-          lineWidth={0.03}
+          lineWidth={lineWidth}
           bgColor={gridSectionColor}
           lineColor={gridCellColor}
         />

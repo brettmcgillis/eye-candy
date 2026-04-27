@@ -17,6 +17,7 @@ import {
 import { useFrame } from '@react-three/fiber';
 import { BallCollider, vec3 } from '@react-three/rapier';
 
+import { textureFile } from '../../../../../../utils/appUtils';
 import { useGame } from '../../../../../ecctrl/stores/useGame';
 
 const animationSet = {
@@ -79,7 +80,7 @@ export default function ExampleCharacterModel(props) {
   const rightHandBoneRef = useRef(null);
   const mugModelRef = useRef(null);
 
-  const { nodes, animations } = useGLTF('/Floating Character.glb');
+  const { nodes, animations } = useGLTF(modelFile('/Floating Character.glb'));
   const { actions } = useAnimations(animations, group);
 
   const gradientMapTexture = useTexture('./textures/3.jpg');
@@ -91,7 +92,12 @@ export default function ExampleCharacterModel(props) {
   const bodyPos = useMemo(() => new THREE.Vector3(), []);
   const bodyRot = useMemo(() => new THREE.Quaternion(), []);
 
-  const { spriteObj } = useSpriteLoader('/punchEffect.png', null, null, 7);
+  const { spriteObj } = useSpriteLoader(
+    textureFile('/punchEffect.png'),
+    null,
+    null,
+    7
+  );
   const [punchEffectProps, setPunchEffectProp] = useState({
     visible: false,
     scale: [1, 1, 1],
@@ -312,4 +318,4 @@ export default function ExampleCharacterModel(props) {
   );
 }
 
-useGLTF.preload('/Floating Character.glb');
+useGLTF.preload(modelFile('/Floating Character.glb'));

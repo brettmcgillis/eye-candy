@@ -5,8 +5,10 @@ import React, { useEffect } from 'react';
 import { useGLTF } from '@react-three/drei';
 import { RigidBody } from '@react-three/rapier';
 
+import { modelFile } from '../../../../../../utils/appUtils';
+
 export default function RoughPlane() {
-  const roughPlane = useGLTF('/roughPlane.glb');
+  const roughPlane = useGLTF(modelFile('/roughPlane.glb'));
 
   useEffect(() => {
     roughPlane.scene.traverse((child) => {
@@ -27,4 +29,4 @@ export default function RoughPlane() {
   );
 }
 
-useGLTF.preload('/roughPlane.glb');
+useGLTF.preload(modelFile('/roughPlane.glb'));

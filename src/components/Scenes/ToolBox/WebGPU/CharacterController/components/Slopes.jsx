@@ -6,10 +6,11 @@ import React, { useEffect } from 'react';
 import { useGLTF } from '@react-three/drei';
 import { RigidBody } from '@react-three/rapier';
 
+import { modelFile } from '../../../../../../utils/appUtils';
 import Label3D from './Label3D';
 
 export default function Slopes() {
-  const slopes = useGLTF('/slopes.glb');
+  const slopes = useGLTF(modelFile('/slopes.glb'));
 
   useEffect(() => {
     slopes.scene.traverse((child) => {
@@ -49,4 +50,4 @@ export default function Slopes() {
   );
 }
 
-useGLTF.preload('/slopes.glb');
+useGLTF.preload(modelFile('/slopes.glb'));

@@ -1,0 +1,10 @@
+{
+  "$schema": "https://www.partykit.io/schema.json",
+  "name": "eye-candy-party",
+  "main": "src/server.ts",
+  "compatibilityDate": "2026-04-27",
+  "serve": {
+    "path": "public",
+    "build": "src/client.ts"
+  }
+}

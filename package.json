@@ -66,12 +66,11 @@
     "three-plotter-renderer": "^1.1.1",
     "three-stdlib": "^2.36.1",
     "three-subdivide": "^1.1.5",
-    "zustand": "^5.0.12"
+    "zustand": "^5.0.12",
+    "partysocket": "1.1.18"
   },
   "devDependencies": {
     "@trivago/prettier-plugin-sort-imports": "^4.3.0",
-    "@typescript-eslint/eslint-plugin": "^8.59.0",
-    "@typescript-eslint/parser": "^8.59.0",
     "@vitejs/plugin-basic-ssl": "^2.1.4",
     "@vitejs/plugin-react": "^5.1.2",
     "eslint": "^8.56.0",
@@ -86,8 +85,8 @@
     "eslint-plugin-unused-imports": "^4.3.0",
     "prettier": "^3.2.4",
     "prettier-package-json": "^2.8.0",
-    "typescript": "^6.0.3",
-    "vite": "^7.3.1"
+    "vite": "^7.3.1",
+    "partykit": "0.0.115"
   },
   "browserslist": {
     "production": [

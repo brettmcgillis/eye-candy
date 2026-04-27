@@ -1,7 +1,7 @@
 import React, { useEffect, useRef, useState } from 'react';
 import { createRoot } from 'react-dom/client';
 
-import { EcctrlJoystick } from '../../../../../modules/ecctrl/EcctrlJoystick.js';
+import { EcctrlJoystick } from '../../../../../modules/ecctrl/EcctrlJoystick.tsx';
 
 function supportsTouchUi() {
   if (typeof window === 'undefined') return false;

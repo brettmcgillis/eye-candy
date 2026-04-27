@@ -10,14 +10,14 @@ Limits define numeric constraints on resources. Every WebGPU implementation guar
 
 Common limits you may need to increase:
 
-| Limit | Default | When to Increase |
-|-------|---------|------------------|
-| `maxBufferSize` | 268435456 (256 MiB) | Large storage/vertex buffers |
-| `maxStorageBufferBindingSize` | 134217728 (128 MiB) | Large compute storage buffers |
-| `maxStorageBuffersPerShaderStage` | 8 | Many storage buffers in one shader |
-| `maxComputeWorkgroupSizeX` | 128 | Large workgroup dimensions |
-| `maxComputeInvocationsPerWorkgroup` | 128 | Dense compute workgroups |
-| `maxColorAttachments` | 8 | Many render targets |
+| Limit                               | Default             | When to Increase                   |
+| ----------------------------------- | ------------------- | ---------------------------------- |
+| `maxBufferSize`                     | 268435456 (256 MiB) | Large storage/vertex buffers       |
+| `maxStorageBufferBindingSize`       | 134217728 (128 MiB) | Large compute storage buffers      |
+| `maxStorageBuffersPerShaderStage`   | 8                   | Many storage buffers in one shader |
+| `maxComputeWorkgroupSizeX`          | 128                 | Large workgroup dimensions         |
+| `maxComputeInvocationsPerWorkgroup` | 128                 | Dense compute workgroups           |
+| `maxColorAttachments`               | 8                   | Many render targets                |
 
 ### Querying Adapter Limits
 
@@ -32,11 +32,12 @@ console.log(adapter.limits.maxStorageBufferBindingSize);
 You must request higher limits when creating the device — otherwise you get the defaults, not the adapter's maximums.
 
 **Raw WebGPU:**
+
 ```javascript
 const adapter = await navigator.gpu?.requestAdapter();
 const device = await adapter.requestDevice({
   requiredLimits: {
-    maxBufferSize: 1024 * 1024 * 1024,            // 1 GiB
+    maxBufferSize: 1024 * 1024 * 1024, // 1 GiB
     maxStorageBufferBindingSize: 1024 * 1024 * 512, // 512 MiB
   },
 });
@@ -49,7 +50,7 @@ Three.js accepts `requiredLimits` as a renderer constructor option, which gets p
 ```javascript
 const renderer = new THREE.WebGPURenderer({
   requiredLimits: {
-    maxBufferSize: 1024 * 1024 * 1024,            // 1 GiB
+    maxBufferSize: 1024 * 1024 * 1024, // 1 GiB
     maxStorageBufferBindingSize: 1024 * 1024 * 512, // 512 MiB
   },
 });
@@ -95,19 +96,19 @@ console.log(adapter.features.has('shader-f16'));
 
 ### Common Optional Features
 
-| Feature | Purpose |
-|---------|---------|
-| `float32-filterable` | Linear filtering on float32 textures |
-| `float32-blendable` | Blending on float32 render targets |
-| `shader-f16` | 16-bit floats in shaders |
-| `texture-compression-bc` | BC (desktop) texture compression |
-| `texture-compression-etc2` | ETC2 (mobile) texture compression |
-| `texture-compression-astc` | ASTC (mobile) texture compression |
-| `timestamp-query` | GPU timing measurements |
-| `depth-clip-control` | Disable depth clipping |
-| `dual-source-blending` | Two blend sources from one shader |
-| `subgroups` | Subgroup operations in compute |
-| `clip-distances` | Custom clip planes in vertex shader |
+| Feature                    | Purpose                              |
+| -------------------------- | ------------------------------------ |
+| `float32-filterable`       | Linear filtering on float32 textures |
+| `float32-blendable`        | Blending on float32 render targets   |
+| `shader-f16`               | 16-bit floats in shaders             |
+| `texture-compression-bc`   | BC (desktop) texture compression     |
+| `texture-compression-etc2` | ETC2 (mobile) texture compression    |
+| `texture-compression-astc` | ASTC (mobile) texture compression    |
+| `timestamp-query`          | GPU timing measurements              |
+| `depth-clip-control`       | Disable depth clipping               |
+| `dual-source-blending`     | Two blend sources from one shader    |
+| `subgroups`                | Subgroup operations in compute       |
+| `clip-distances`           | Custom clip planes in vertex shader  |
 
 ## Best Practices
 
@@ -123,7 +124,9 @@ If you're hitting buffer size errors or validation failures:
 ```javascript
 // Log all adapter limits
 const adapter = await navigator.gpu?.requestAdapter();
-for (const [key, value] of Object.entries(Object.getPrototypeOf(adapter.limits))) {
+for (const [key, value] of Object.entries(
+  Object.getPrototypeOf(adapter.limits)
+)) {
   if (typeof value !== 'function') {
     console.log(`${key}: ${adapter.limits[key]}`);
   }

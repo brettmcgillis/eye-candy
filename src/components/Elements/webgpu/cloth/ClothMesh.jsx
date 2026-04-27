@@ -284,7 +284,7 @@ const ClothMesh = forwardRef(function ClothMesh(
   const innerTextureReady = Boolean(innerTexture);
   const hasDiscreteTextureTargets = Boolean(
     (outerTextureUrl && outerTextureReady) ||
-      (innerTextureUrl && innerTextureReady)
+    (innerTextureUrl && innerTextureReady)
   );
 
   useEffect(() => {

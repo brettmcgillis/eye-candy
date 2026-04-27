@@ -7,8 +7,8 @@ Post-processing applies effects to the rendered image. TSL provides both built-i
 ## Basic Setup
 
 ```javascript
-import * as THREE from 'three/webgpu';
 import { pass } from 'three/tsl';
+import * as THREE from 'three/webgpu';
 
 // Create renderer
 const renderer = new THREE.WebGPURenderer();
@@ -26,7 +26,7 @@ renderPipeline.outputNode = scenePassColor;
 
 // Render with post-processing
 function animate() {
-  renderPipeline.render();  // Not renderer.render()
+  renderPipeline.render(); // Not renderer.render()
 }
 ```
 
@@ -44,9 +44,9 @@ const scenePassColor = scenePass.getTextureNode('output');
 const bloomPass = bloom(scenePassColor);
 
 // Configure
-bloomPass.threshold.value = 0.5;   // Brightness threshold
-bloomPass.strength.value = 1.0;    // Bloom intensity
-bloomPass.radius.value = 0.5;      // Blur radius
+bloomPass.threshold.value = 0.5; // Brightness threshold
+bloomPass.strength.value = 1.0; // Bloom intensity
+bloomPass.radius.value = 0.5; // Blur radius
 
 // Combine original + bloom
 renderPipeline.outputNode = scenePassColor.add(bloomPass);
@@ -142,7 +142,7 @@ import { film } from 'three/addons/tsl/display/FilmNode.js';
 
 const filmPass = film(scenePassColor, {
   intensity: 0.5,
-  grayscale: false
+  grayscale: false,
 });
 renderPipeline.outputNode = filmPass;
 ```
@@ -157,7 +157,7 @@ const outlinePass = outline(scene, camera, selectedObjects, {
   edgeGlow: 0.0,
   edgeThickness: 1.0,
   visibleEdgeColor: new THREE.Color(0xffffff),
-  hiddenEdgeColor: new THREE.Color(0x190a05)
+  hiddenEdgeColor: new THREE.Color(0x190a05),
 });
 
 renderPipeline.outputNode = scenePassColor.add(outlinePass);
@@ -169,7 +169,7 @@ renderPipeline.outputNode = scenePassColor.add(outlinePass);
 import { chromaticAberration } from 'three/addons/tsl/display/ChromaticAberrationNode.js';
 
 const caPass = chromaticAberration(scenePassColor, {
-  offset: vec2(0.002, 0.002)
+  offset: vec2(0.002, 0.002),
 });
 renderPipeline.outputNode = caPass;
 ```
@@ -241,7 +241,7 @@ renderPipeline.outputNode = lut3D(scenePassColor, lutTexture, size);
 ### Basic Custom Effect
 
 ```javascript
-import { Fn, screenUV, float, vec4 } from 'three/tsl';
+import { Fn, float, screenUV, vec4 } from 'three/tsl';
 
 const customEffect = Fn(() => {
   const color = scenePassColor.toVar();
@@ -317,7 +317,12 @@ const pixelSize = uniform(8.0);
 
 const pixelate = Fn(() => {
   const uv = screenUV;
-  const pixelUV = uv.mul(screenSize).div(pixelSize).floor().mul(pixelSize).div(screenSize);
+  const pixelUV = uv
+    .mul(screenSize)
+    .div(pixelSize)
+    .floor()
+    .mul(pixelSize)
+    .div(screenSize);
   return texture(scenePassColor, pixelUV);
 });
 
@@ -332,14 +337,30 @@ const sobelEdge = Fn(() => {
   const texelSize = vec2(1.0).div(screenSize);
 
   // Sample 3x3 kernel
-  const tl = luminance(texture(scenePassColor, uv.add(texelSize.mul(vec2(-1, -1)))));
-  const tc = luminance(texture(scenePassColor, uv.add(texelSize.mul(vec2(0, -1)))));
-  const tr = luminance(texture(scenePassColor, uv.add(texelSize.mul(vec2(1, -1)))));
-  const ml = luminance(texture(scenePassColor, uv.add(texelSize.mul(vec2(-1, 0)))));
-  const mr = luminance(texture(scenePassColor, uv.add(texelSize.mul(vec2(1, 0)))));
-  const bl = luminance(texture(scenePassColor, uv.add(texelSize.mul(vec2(-1, 1)))));
-  const bc = luminance(texture(scenePassColor, uv.add(texelSize.mul(vec2(0, 1)))));
-  const br = luminance(texture(scenePassColor, uv.add(texelSize.mul(vec2(1, 1)))));
+  const tl = luminance(
+    texture(scenePassColor, uv.add(texelSize.mul(vec2(-1, -1))))
+  );
+  const tc = luminance(
+    texture(scenePassColor, uv.add(texelSize.mul(vec2(0, -1))))
+  );
+  const tr = luminance(
+    texture(scenePassColor, uv.add(texelSize.mul(vec2(1, -1))))
+  );
+  const ml = luminance(
+    texture(scenePassColor, uv.add(texelSize.mul(vec2(-1, 0))))
+  );
+  const mr = luminance(
+    texture(scenePassColor, uv.add(texelSize.mul(vec2(1, 0))))
+  );
+  const bl = luminance(
+    texture(scenePassColor, uv.add(texelSize.mul(vec2(-1, 1))))
+  );
+  const bc = luminance(
+    texture(scenePassColor, uv.add(texelSize.mul(vec2(0, 1))))
+  );
+  const br = luminance(
+    texture(scenePassColor, uv.add(texelSize.mul(vec2(1, 1))))
+  );
 
   // Sobel operators
   const gx = tl.add(ml.mul(2)).add(bl).sub(tr).sub(mr.mul(2)).sub(br);
@@ -363,11 +384,13 @@ import { mrt, output } from 'three/tsl';
 const scenePass = pass(scene, camera);
 
 // Set up MRT
-scenePass.setMRT(mrt({
-  output: output,           // Color output
-  normal: normalView,       // View-space normals
-  depth: depth              // Depth buffer
-}));
+scenePass.setMRT(
+  mrt({
+    output: output, // Color output
+    normal: normalView, // View-space normals
+    depth: depth, // Depth buffer
+  })
+);
 
 // Access individual targets
 const colorTexture = scenePass.getTextureNode('output');
@@ -380,17 +403,19 @@ const depthTexture = scenePass.getTextureNode('depth');
 Bloom only emissive objects by rendering emissive to a separate target:
 
 ```javascript
-import { pass, mrt, output, emissive } from 'three/tsl';
 import { bloom } from 'three/addons/tsl/display/BloomNode.js';
+import { emissive, mrt, output, pass } from 'three/tsl';
 
 const renderPipeline = new THREE.RenderPipeline(renderer);
 const scenePass = pass(scene, camera);
 
 // Render both color and emissive to separate targets
-scenePass.setMRT(mrt({
-  output: output,
-  emissive: emissive
-}));
+scenePass.setMRT(
+  mrt({
+    output: output,
+    emissive: emissive,
+  })
+);
 
 // Get the texture nodes
 const colorTexture = scenePass.getTextureNode('output');
@@ -398,7 +423,7 @@ const emissiveTexture = scenePass.getTextureNode('emissive');
 
 // Apply bloom only to emissive
 const bloomPass = bloom(emissiveTexture);
-bloomPass.threshold.value = 0.0;  // Bloom all emissive
+bloomPass.threshold.value = 0.0; // Bloom all emissive
 bloomPass.strength.value = 1.5;
 bloomPass.radius.value = 0.5;
 
@@ -465,7 +490,7 @@ const transitionPass = transition(
   scenePassA.getTextureNode('output'),
   scenePassB.getTextureNode('output'),
   transitionProgress,
-  texture(transitionTexture)  // Optional transition texture
+  texture(transitionTexture) // Optional transition texture
 );
 
 renderPipeline.outputNode = transitionPass;
@@ -483,33 +508,30 @@ These effects were added in recent Three.js releases:
 
 ```javascript
 // Volumetric god rays (r183)
-import { godrays } from 'three/addons/tsl/display/GodraysNode.js';
-const godraysPass = godrays(scenePassColor, depthNode, camera, lightPosition);
-
-// Retro/CRT effect (r183)
-import { retroPass } from 'three/addons/tsl/display/RetroNode.js';
-
 // Anamorphic lens flare
 import { anamorphic } from 'three/addons/tsl/display/AnamorphicNode.js';
-const anamorphicPass = anamorphic(scenePassColor);
-
-// Lens flare
-import { lensflare } from 'three/addons/tsl/display/LensflareNode.js';
-
+// Single-pass
+import { bilateralBlur } from 'three/addons/tsl/display/BilateralBlurNode.js';
+// Alternative blur modes
+import { boxBlur } from 'three/addons/tsl/display/BoxBlurNode.js';
 // Denoising
 import { denoise } from 'three/addons/tsl/display/DenoiseNode.js';
-
+import { godrays } from 'three/addons/tsl/display/GodraysNode.js';
+// Mobile-friendly
+import { hashBlur } from 'three/addons/tsl/display/HashBlurNode.js';
+// Lens flare
+import { lensflare } from 'three/addons/tsl/display/LensflareNode.js';
+// Retro/CRT effect (r183)
+import { retroPass } from 'three/addons/tsl/display/RetroNode.js';
 // Screen-space global illumination
 import { ssgi } from 'three/addons/tsl/display/SSGINode.js';
-
 // Temporal anti-aliasing (replaces FXAA/SMAA for better quality)
 import { traa } from 'three/addons/tsl/display/TRAANode.js';
-
-// Alternative blur modes
-import { boxBlur } from 'three/addons/tsl/display/BoxBlurNode.js';       // Mobile-friendly
-import { hashBlur } from 'three/addons/tsl/display/HashBlurNode.js';     // Single-pass
-import { bilateralBlur } from 'three/addons/tsl/display/BilateralBlurNode.js'; // Edge-preserving
-
+// Edge-preserving
 // 3D texture sampling (r182)
-import { texture3DLoad, texture3DLevel } from 'three/tsl';
+import { texture3DLevel, texture3DLoad } from 'three/tsl';
+
+const godraysPass = godrays(scenePassColor, depthNode, camera, lightPosition);
+
+const anamorphicPass = anamorphic(scenePassColor);
 ```

@@ -8,12 +8,12 @@ Compute shaders run on the GPU for parallel processing of data. TSL makes them a
 
 ### What Works vs What Doesn't
 
-| Pattern | Works? | Why |
-|---------|--------|-----|
-| `node.y = value` | ✅ | Property setter - TSL intercepts |
-| `node.x.assign(value)` | ✅ | TSL method call |
-| `buffer.element(i).assign(v)` | ✅ | TSL method call |
-| `variable = variable.add(1)` | ❌ | JS variable reassignment - TSL can't see it |
+| Pattern                       | Works? | Why                                         |
+| ----------------------------- | ------ | ------------------------------------------- |
+| `node.y = value`              | ✅     | Property setter - TSL intercepts            |
+| `node.x.assign(value)`        | ✅     | TSL method call                             |
+| `buffer.element(i).assign(v)` | ✅     | TSL method call                             |
+| `variable = variable.add(1)`  | ❌     | JS variable reassignment - TSL can't see it |
 
 ### This WORKS (property assignment on vec3):
 
@@ -23,7 +23,7 @@ const computeShader = Fn(() => {
   const result = vec3(position);
 
   If(result.y.greaterThan(limit), () => {
-    result.y = limit;  // TSL intercepts property setters!
+    result.y = limit; // TSL intercepts property setters!
   });
 
   return result;
@@ -35,13 +35,13 @@ const computeShader = Fn(() => {
 ```javascript
 // ❌ WRONG - JavaScript variable reassignment inside If()
 const computeShader = Fn(() => {
-  let value = buffer.element(index).toFloat();  // Scalar float - no .x/.y properties
+  let value = buffer.element(index).toFloat(); // Scalar float - no .x/.y properties
 
   If(condition, () => {
-    value = value.add(1.0);  // JS reassigns variable to NEW node - TSL can't track this!
+    value = value.add(1.0); // JS reassigns variable to NEW node - TSL can't track this!
   });
 
-  buffer.element(index).assign(value);  // Uses ORIGINAL node, not the add result!
+  buffer.element(index).assign(value); // Uses ORIGINAL node, not the add result!
 })().compute(count);
 ```
 
@@ -59,8 +59,8 @@ const computeShader = Fn(() => {
   // select(condition, valueIfTrue, valueIfFalse)
   const newValue = select(
     condition,
-    currentValue.add(1.0),  // If true
-    currentValue            // If false
+    currentValue.add(1.0), // If true
+    currentValue // If false
   );
 
   buffer.element(index).assign(newValue);
@@ -90,7 +90,7 @@ const computeShader = Fn(() => {
   const value = buffer.element(index).toFloat().toVar();
 
   If(condition, () => {
-    value.assign(value.add(1.0));  // This works with .toVar()!
+    value.assign(value.add(1.0)); // This works with .toVar()!
   });
 
   buffer.element(index).assign(value);
@@ -99,12 +99,12 @@ const computeShader = Fn(() => {
 
 ### Quick Reference: When to Use What
 
-| Pattern | Use Case |
-|---------|----------|
-| `select(cond, a, b)` | Simple conditional value selection |
-| `element.assign()` inside `If()` | Direct buffer writes |
-| `.toVar()` + `assign()` | Complex logic with multiple conditionals |
-| Regular `If()` with direct assigns | Multiple buffer element updates |
+| Pattern                            | Use Case                                 |
+| ---------------------------------- | ---------------------------------------- |
+| `select(cond, a, b)`               | Simple conditional value selection       |
+| `element.assign()` inside `If()`   | Direct buffer writes                     |
+| `.toVar()` + `assign()`            | Complex logic with multiple conditionals |
+| Regular `If()` with direct assigns | Multiple buffer element updates          |
 
 ### Example: Correct Stamp/Fade Pattern
 
@@ -134,8 +134,8 @@ const computeShader = Fn(() => {
 ## Basic Setup
 
 ```javascript
+import { Fn, instanceIndex, instancedArray, vec3 } from 'three/tsl';
 import * as THREE from 'three/webgpu';
-import { Fn, instancedArray, instanceIndex, vec3 } from 'three/tsl';
 
 // Create storage buffer
 const count = 100000;
@@ -285,7 +285,9 @@ const computeAttract = Fn(() => {
   const direction = toAttractor.normalize();
 
   // Apply force (inverse square falloff)
-  const force = direction.mul(attractorStrength).div(distance.mul(distance).add(0.1));
+  const force = direction
+    .mul(attractorStrength)
+    .div(distance.mul(distance).add(0.1));
   velocity.addAssign(force.mul(deltaTimeUniform));
 })().compute(count);
 ```
@@ -367,8 +369,14 @@ const compute2D = Fn(() => {
 
 ```javascript
 import {
-  globalId, localId, workgroupId, numWorkgroups, subgroupSize,
-  invocationLocalIndex, invocationSubgroupIndex, subgroupIndex
+  globalId,
+  invocationLocalIndex,
+  invocationSubgroupIndex,
+  localId,
+  numWorkgroups,
+  subgroupIndex,
+  subgroupSize,
+  workgroupId,
 } from 'three/tsl';
 
 const computeShader = Fn(() => {
@@ -389,7 +397,7 @@ const computeShader = Fn(() => {
 ### Barriers
 
 ```javascript
-import { workgroupBarrier, storageBarrier, textureBarrier } from 'three/tsl';
+import { storageBarrier, textureBarrier, workgroupBarrier } from 'three/tsl';
 
 const computeShader = Fn(() => {
   // Write data
@@ -408,7 +416,15 @@ const computeShader = Fn(() => {
 For thread-safe read-modify-write operations:
 
 ```javascript
-import { atomicAdd, atomicSub, atomicMax, atomicMin, atomicAnd, atomicOr, atomicXor } from 'three/tsl';
+import {
+  atomicAdd,
+  atomicAnd,
+  atomicMax,
+  atomicMin,
+  atomicOr,
+  atomicSub,
+  atomicXor,
+} from 'three/tsl';
 
 const counter = instancedArray(1, 'uint');
 
@@ -444,7 +460,10 @@ scene.add(mesh);
 
 ```javascript
 const geometry = new THREE.BufferGeometry();
-geometry.setAttribute('position', new THREE.Float32BufferAttribute(new Float32Array(count * 3), 3));
+geometry.setAttribute(
+  'position',
+  new THREE.Float32BufferAttribute(new Float32Array(count * 3), 3)
+);
 
 const material = new THREE.PointsNodeMaterial();
 material.positionNode = positions.element(instanceIndex);
@@ -482,7 +501,10 @@ const readBuffer = new Float32Array(count * 3);
 // Read data back from GPU
 await renderer.readRenderTargetPixelsAsync(
   computeTexture,
-  0, 0, width, height,
+  0,
+  0,
+  width,
+  height,
   readBuffer
 );
 ```
@@ -490,11 +512,18 @@ await renderer.readRenderTargetPixelsAsync(
 ## Complete Example: Particle System
 
 ```javascript
-import * as THREE from 'three/webgpu';
 import {
-  Fn, If, instancedArray, instanceIndex, uniform,
-  vec3, float, hash, time
+  Fn,
+  If,
+  float,
+  hash,
+  instanceIndex,
+  instancedArray,
+  time,
+  uniform,
+  vec3,
 } from 'three/tsl';
+import * as THREE from 'three/webgpu';
 
 // Setup
 const count = 50000;
@@ -545,11 +574,17 @@ const computeUpdate = Fn(() => {
   If(life.lessThan(0), () => {
     pos.assign(emitterPos);
     const angle = hash(instanceIndex.add(time.mul(1000))).mul(Math.PI * 2);
-    const speed = hash(instanceIndex.add(time.mul(1000)).add(1)).mul(2).add(1);
+    const speed = hash(instanceIndex.add(time.mul(1000)).add(1))
+      .mul(2)
+      .add(1);
     vel.x.assign(angle.cos().mul(speed).mul(0.3));
     vel.y.assign(speed);
     vel.z.assign(angle.sin().mul(speed).mul(0.3));
-    life.assign(hash(instanceIndex.add(time.mul(1000)).add(2)).mul(2).add(1));
+    life.assign(
+      hash(instanceIndex.add(time.mul(1000)).add(2))
+        .mul(2)
+        .add(1)
+    );
   });
 })().compute(count);
 
@@ -561,7 +596,10 @@ material.colorNode = vec3(1, 0.5, 0.2);
 
 // Geometry (dummy positions)
 const geometry = new THREE.BufferGeometry();
-geometry.setAttribute('position', new THREE.Float32BufferAttribute(new Float32Array(count * 3), 3));
+geometry.setAttribute(
+  'position',
+  new THREE.Float32BufferAttribute(new Float32Array(count * 3), 3)
+);
 
 const points = new THREE.Points(geometry, material);
 scene.add(points);

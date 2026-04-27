@@ -6,7 +6,7 @@ import { KeyboardControls } from '@react-three/drei';
 import { useThree } from '@react-three/fiber';
 import { Physics } from '@react-three/rapier';
 
-import Ecctrl, { useGame } from '../../../../../modules/ecctrl/Ecctrl.js';
+import Ecctrl, { useGame } from '../../../../../modules/ecctrl/Ecctrl.tsx';
 import CapsuleCharacter from './CapsuleCharacter';
 import DynamicPlatforms from './DynamicPlatforms';
 import ExampleCharacterModel from './ExampleCharacterModel';

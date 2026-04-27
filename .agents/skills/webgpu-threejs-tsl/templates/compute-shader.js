@@ -12,30 +12,28 @@
  * 3. Implement your update logic
  * 4. Customize visualization
  */
-
-import * as THREE from 'three/webgpu';
+import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
 import {
   Fn,
   If,
   Loop,
+  clamp,
+  color,
+  deltaTime,
   float,
-  int,
+  hash,
+  instanceIndex,
+  instancedArray,
+  int, // Use for conditional value selection
+  max,
+  select,
+  time,
+  uniform,
   vec2,
   vec3,
   vec4,
-  color,
-  uniform,
-  instancedArray,
-  instanceIndex,
-  hash,
-  time,
-  deltaTime,
-  select,  // Use for conditional value selection
-  max,
-  clamp
 } from 'three/tsl';
-
-import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
+import * as THREE from 'three/webgpu';
 
 // ============================================
 // CONFIGURATION
@@ -263,7 +261,12 @@ async function init() {
   scene.background = new THREE.Color(0x111122);
 
   // Camera
-  camera = new THREE.PerspectiveCamera(60, window.innerWidth / window.innerHeight, 0.1, 100);
+  camera = new THREE.PerspectiveCamera(
+    60,
+    window.innerWidth / window.innerHeight,
+    0.1,
+    100
+  );
   camera.position.set(0, 5, 15);
 
   // Lights
@@ -339,5 +342,5 @@ export {
   dt,
   computeInit,
   computeUpdate,
-  computeInteraction
+  computeInteraction,
 };

@@ -3,7 +3,9 @@ import * as THREE from 'three';
 import { useEffect, useRef } from 'react';
 
 import useHandGestureEvents from '../../hooks/hands/useHandGestureEvents';
-import useHandControls, { mapWorldToScreenUv } from '../../hooks/hands/useHandcontrols';
+import useHandControls, {
+  mapWorldToScreenUv,
+} from '../../hooks/hands/useHandcontrols';
 import useMediaPipeHands from '../../hooks/hands/useMediaPipeHands';
 
 const GESTURE_BURST_COOLDOWN_MS = 350;

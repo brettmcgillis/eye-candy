@@ -13,51 +13,35 @@
  * 2. Install Three.js: npm install three
  * 3. Replace placeholder content with your scene
  */
-
-import * as THREE from 'three/webgpu';
+import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
 import {
-  // Types
-  float,
-  vec2,
-  vec3,
-  vec4,
-  color,
-  uniform,
-
-  // Geometry
-  positionLocal,
-  positionWorld,
-  normalLocal,
-  normalWorld,
-  uv,
-
-  // Camera
-  cameraPosition,
-
-  // Time
-  time,
-  deltaTime,
-
-  // Math
-  mix,
-  smoothstep,
-  clamp,
-  sin,
-  cos,
-
-  // Texture
-  texture,
-
   // Functions
   Fn,
   If,
-  Loop,
-
-  // Post-processing
-  pass
+  Loop, // Camera
+  cameraPosition,
+  clamp,
+  color,
+  cos,
+  deltaTime, // Types
+  float, // Math
+  mix,
+  normalLocal,
+  normalWorld, // Post-processing
+  pass, // Geometry
+  positionLocal,
+  positionWorld,
+  sin,
+  smoothstep, // Texture
+  texture, // Time
+  time,
+  uniform,
+  uv,
+  vec2,
+  vec3,
+  vec4,
 } from 'three/tsl';
-
-import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
+import * as THREE from 'three/webgpu';
 
 // ============================================
 // CONFIGURATION
@@ -79,7 +63,7 @@ const CONFIG = {
 
   // Controls
   enableDamping: true,
-  dampingFactor: 0.05
+  dampingFactor: 0.05,
 };
 
 // ============================================
@@ -175,7 +159,7 @@ function setupScene() {
   // Example: Add a floor
   const floorGeometry = new THREE.PlaneGeometry(10, 10);
   const floorMaterial = new THREE.MeshStandardNodeMaterial({
-    color: 0x333333
+    color: 0x333333,
   });
   const floor = new THREE.Mesh(floorGeometry, floorMaterial);
   floor.rotation.x = -Math.PI / 2;
@@ -203,7 +187,9 @@ function createExampleMaterial() {
   // Example: Simple fresnel rim
   material.emissiveNode = Fn(() => {
     const viewDir = cameraPosition.sub(positionWorld).normalize();
-    const fresnel = float(1.0).sub(normalWorld.dot(viewDir).saturate()).pow(3.0);
+    const fresnel = float(1.0)
+      .sub(normalWorld.dot(viewDir).saturate())
+      .pow(3.0);
     return color(0x00ffff).mul(fresnel).mul(0.5);
   })();
 
@@ -218,7 +204,6 @@ let postProcessing;
 
 function setupPostProcessing() {
   // Uncomment and customize as needed
-
   // postProcessing = new THREE.RenderPipeline(renderer);
   // const scenePass = pass(scene, camera);
   // const sceneColor = scenePass.getTextureNode('output');

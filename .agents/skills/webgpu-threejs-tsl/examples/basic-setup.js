@@ -7,10 +7,9 @@
  * Based on Three.js examples (MIT License)
  * https://github.com/mrdoob/three.js
  */
-
-import * as THREE from 'three/webgpu';
-import { color, time, oscSine, positionLocal, normalWorld } from 'three/tsl';
 import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
+import { color, normalWorld, oscSine, positionLocal, time } from 'three/tsl';
+import * as THREE from 'three/webgpu';
 
 let camera, scene, renderer, controls;
 

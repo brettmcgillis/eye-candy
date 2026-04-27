@@ -9,21 +9,20 @@
  * Based on Three.js webgpu_compute_particles example (MIT License)
  * https://github.com/mrdoob/three.js
  */
-
-import * as THREE from 'three/webgpu';
+import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
 import {
   Fn,
   If,
-  uniform,
-  float,
-  vec3,
   color,
-  instancedArray,
-  instanceIndex,
+  float,
   hash,
-  time
+  instanceIndex,
+  instancedArray,
+  time,
+  uniform,
+  vec3,
 } from 'three/tsl';
-import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
+import * as THREE from 'three/webgpu';
 
 let camera, scene, renderer, controls;
 let computeInit, computeUpdate, computeHit;
@@ -45,7 +44,12 @@ const hitStrength = uniform(5.0);
 
 async function init() {
   // Camera
-  camera = new THREE.PerspectiveCamera(60, window.innerWidth / window.innerHeight, 0.1, 100);
+  camera = new THREE.PerspectiveCamera(
+    60,
+    window.innerWidth / window.innerHeight,
+    0.1,
+    100
+  );
   camera.position.set(0, 5, 15);
 
   // Scene
@@ -61,7 +65,7 @@ async function init() {
   // Floor
   const floorGeometry = new THREE.PlaneGeometry(30, 30);
   const floorMaterial = new THREE.MeshStandardNodeMaterial({
-    color: 0x333333
+    color: 0x333333,
   });
   const floor = new THREE.Mesh(floorGeometry, floorMaterial);
   floor.rotation.x = -Math.PI / 2;
@@ -176,7 +180,11 @@ function createComputeShaders() {
       const force = float(3.0).sub(distance).div(3.0).mul(hitStrength);
 
       // Add randomness
-      const randomForce = force.mul(hash(instanceIndex.add(time.mul(1000))).mul(0.5).add(0.75));
+      const randomForce = force.mul(
+        hash(instanceIndex.add(time.mul(1000)))
+          .mul(0.5)
+          .add(0.75)
+      );
 
       velocity.addAssign(direction.mul(randomForce));
       velocity.y.addAssign(randomForce.mul(0.5));

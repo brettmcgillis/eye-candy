@@ -1,8 +1,5 @@
 /* eslint-disable no-param-reassign */
-import {
-  MAX_AUTO_SPLATS,
-  MAX_STATIONARY_SPLATS,
-} from '../utils/constants';
+import { MAX_AUTO_SPLATS, MAX_STATIONARY_SPLATS } from '../utils/constants';
 
 // ─── Clamping helpers ───────────────────────────────────────────────────────
 

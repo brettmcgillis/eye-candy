@@ -1,7 +1,10 @@
-import { useEffect, useRef, useState } from 'react';
-import * as THREE from 'three';
+/* eslint-disable no-underscore-dangle */
 import PartySocket from 'partysocket';
-import { useGame } from '../../../../../modules/ecctrl/Ecctrl.tsx';
+import * as THREE from 'three';
+
+import { useEffect, useRef, useState } from 'react';
+
+import { useGame } from '../../../../../modules/ecctrl/Ecctrl';
 
 declare const __PARTY_HOST__: string;
 
@@ -141,7 +144,10 @@ export function useMultiplayer({
           }
 
           case 'shot-fired': {
-            const d = message.data as { position: number[]; direction: number[] };
+            const d = message.data as {
+              position: number[];
+              direction: number[];
+            };
             const shot: RemoteShot = {
               id: `${message.playerId}-${message.timestamp}`,
               position: d.position,
@@ -149,7 +155,8 @@ export function useMultiplayer({
             };
             setRemoteShots((prev) => [...prev, shot]);
             setTimeout(
-              () => setRemoteShots((prev) => prev.filter((s) => s.id !== shot.id)),
+              () =>
+                setRemoteShots((prev) => prev.filter((s) => s.id !== shot.id)),
               8000
             );
             break;

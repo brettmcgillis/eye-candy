@@ -6,23 +6,23 @@ import { KeyboardControls } from '@react-three/drei';
 import { useThree } from '@react-three/fiber';
 import { Physics } from '@react-three/rapier';
 
-import Ecctrl, { useGame } from '../../../../../modules/ecctrl/Ecctrl.tsx';
-import CapsuleCharacter from './CapsuleCharacter';
-import CharacterTracker from './CharacterTracker';
-import DynamicPlatforms from './DynamicPlatforms';
-import ExampleCharacterModel from './ExampleCharacterModel';
-import FloatingPlatform from './FloatingPlatform';
-import Floor from './Floor';
-import GhostCharacter from './GhostCharacter';
-import Lights from './Lights';
-import RemotePlayers from './RemotePlayers';
-import RigidObjects from './RigidObjects';
-import RoughPlane from './RoughPlane';
-import SealCharacter from './SealCharacter';
-import ShotCube from './ShotCube';
-import Slopes from './Slopes';
-import Steps from './Steps';
-import TouchJoystickOverlay from './TouchJoystickOverlay';
+import Ecctrl, { useGame } from '../../../../modules/ecctrl/Ecctrl.js';
+import CapsuleCharacter from './components/CapsuleCharacter.jsx';
+import CharacterTracker from './components/CharacterTracker.jsx';
+import DynamicPlatforms from './components/DynamicPlatforms.jsx';
+import ExampleCharacterModel from './components/ExampleCharacterModel.jsx';
+import FloatingPlatform from './components/FloatingPlatform.jsx';
+import Floor from './components/Floor.jsx';
+import GhostCharacter from './components/GhostCharacter.jsx';
+import Lights from './components/Lights.jsx';
+import RemotePlayers from './components/RemotePlayers.jsx';
+import RigidObjects from './components/RigidObjects.jsx';
+import RoughPlane from './components/RoughPlane.jsx';
+import SealCharacter from './components/SealCharacter.jsx';
+import ShotCube from './components/ShotCube.jsx';
+import Slopes from './components/Slopes.jsx';
+import Steps from './components/Steps.jsx';
+import TouchJoystickOverlay from './components/TouchJoystickOverlay.jsx';
 
 const keyboardMap = [
   { name: 'forward', keys: ['ArrowUp', 'KeyW'] },

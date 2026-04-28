@@ -1,10 +1,10 @@
 import React, { useRef, useState } from 'react';
 
-import Experience from './components/Experience';
+import Experience from './Experience';
 import { useMultiplayer } from './hooks/useMultiplayer.ts';
 import { generatePlayerColor } from './utils/playerColors';
 
-export default function MultiplayerMadness({ roomId = 'default-room' }) {
+export default function MultiplayerExperience({ roomId = 'default-room' }) {
   const [playerId] = useState(
     () => `player-${Date.now()}-${Math.random().toString(36).slice(2)}`
   );

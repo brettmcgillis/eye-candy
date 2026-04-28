@@ -43,7 +43,6 @@ export default function Floor({
         renderOrder={1}
         position={[0, -0.98, 0]}
         rotation={[-Math.PI / 2, 0, 0]}
-        userData={{ camExcludeCollision: true }}
       >
         <planeGeometry args={[300, 300]} />
         <shadowMaterial

@@ -7,7 +7,7 @@
       content="width=device-width, initial-scale=1.0, shrink-to-fit=no"
     />
     <meta http-equiv="X-UA-Compatible" content="IE=edge" />
-    <title>PartyKit: Everything's better with friends!</title>
+    <title>PartyKit Debug Dashboard</title>
     <!-- Favicon -->
     <link rel="icon" href="/favicon.ico" sizes="any" />
     <!-- Primary Meta Tags -->
@@ -18,12 +18,352 @@
     <meta name="theme-color" content="#ffffff" />
 
     <link rel="stylesheet" href="/normalize.css" />
-    <link rel="stylesheet" href="/dist/client.css" />
+    <style>
+      * {
+        margin: 0;
+        padding: 0;
+        box-sizing: border-box;
+      }
+      body {
+        font-family:
+          -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+        background: #0f1419;
+        color: #e0e0e0;
+        padding: 20px;
+      }
+      .container {
+        max-width: 1400px;
+        margin: 0 auto;
+      }
+      h1 {
+        margin-bottom: 10px;
+        color: #4da6ff;
+      }
+      .header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 20px;
+        padding-bottom: 15px;
+        border-bottom: 1px solid #40404c;
+      }
+      .room-info {
+        display: flex;
+        gap: 20px;
+        align-items: center;
+      }
+      .info-item {
+        display: flex;
+        flex-direction: column;
+        gap: 5px;
+      }
+      .info-label {
+        font-size: 12px;
+        text-transform: uppercase;
+        color: #999;
+        letter-spacing: 1px;
+      }
+      .info-value {
+        font-size: 16px;
+        font-weight: 600;
+        color: #4da6ff;
+      }
+      .status {
+        display: inline-block;
+        width: 12px;
+        height: 12px;
+        border-radius: 50%;
+        background: #4caf50;
+        animation: pulse 2s infinite;
+      }
+      .status.disconnected {
+        background: #f44336;
+        animation: none;
+      }
+      @keyframes pulse {
+        0%,
+        100% {
+          opacity: 1;
+        }
+        50% {
+          opacity: 0.5;
+        }
+      }
+      .section {
+        margin-bottom: 30px;
+      }
+      .section-title {
+        font-size: 18px;
+        font-weight: 600;
+        margin-bottom: 15px;
+        color: #4da6ff;
+        padding-bottom: 10px;
+        border-bottom: 1px solid #40404c;
+      }
+      table {
+        width: 100%;
+        border-collapse: collapse;
+        background: #1a1f26;
+        border: 1px solid #40404c;
+        border-radius: 4px;
+        overflow: hidden;
+      }
+      th {
+        padding: 12px;
+        text-align: left;
+        background: #262d35;
+        font-weight: 600;
+        font-size: 13px;
+        text-transform: uppercase;
+        color: #999;
+        letter-spacing: 0.5px;
+        border-bottom: 1px solid #40404c;
+      }
+      td {
+        padding: 12px;
+        border-bottom: 1px solid #262d35;
+        font-size: 13px;
+      }
+      tr:last-child td {
+        border-bottom: none;
+      }
+      tr:hover {
+        background: #262d35;
+      }
+      .conn-id {
+        font-family: 'Monaco', 'Courier New', monospace;
+        font-size: 11px;
+        color: #8ab4f8;
+        word-break: break-all;
+      }
+      .position {
+        font-family: 'Monaco', 'Courier New', monospace;
+        font-size: 12px;
+        color: #81c995;
+      }
+      .empty-state {
+        padding: 30px;
+        text-align: center;
+        color: #666;
+      }
+      .event-log {
+        background: #1a1f26;
+        border: 1px solid #40404c;
+        border-radius: 4px;
+        padding: 12px;
+        height: 300px;
+        overflow-y: auto;
+        font-family: 'Monaco', 'Courier New', monospace;
+        font-size: 11px;
+      }
+      .event-item {
+        padding: 4px 0;
+        border-bottom: 1px solid #262d35;
+        color: #999;
+      }
+      .event-item:last-child {
+        border-bottom: none;
+      }
+      .event-item.info {
+        color: #4da6ff;
+      }
+      .event-item.state {
+        color: #81c995;
+      }
+      .event-item.join {
+        color: #4caf50;
+      }
+      .event-item.leave {
+        color: #f44336;
+      }
+      .timestamp {
+        color: #666;
+        margin-right: 8px;
+      }
+    </style>
   </head>
   <body>
-    <div id="app">
-      <h1>🎈 Welcome to PartyKit!</h1>
+    <div class="container">
+      <div class="header">
+        <div>
+          <h1>EyeCandy PartyKit Server Debug</h1>
+          <p style="color: #999; font-size: 14px">
+            Real-time multiplayer state monitor
+          </p>
+        </div>
+        <div class="room-info">
+          <div class="info-item">
+            <div class="info-label">Status</div>
+            <div style="display: flex; align-items: center; gap: 8px">
+              <div class="status" id="status"></div>
+              <span id="statusText">Disconnected</span>
+            </div>
+          </div>
+          <div class="info-item">
+            <div class="info-label">Room</div>
+            <div class="info-value" id="roomName">-</div>
+          </div>
+          <div class="info-item">
+            <div class="info-label">Connected Players</div>
+            <div class="info-value" id="playerCount">0</div>
+          </div>
+        </div>
+      </div>
+
+      <div class="section">
+        <div class="section-title">Connected Players</div>
+        <table id="playersTable">
+          <thead>
+            <tr>
+              <th style="width: 30%">Player ID</th>
+              <th style="width: 30%">Connection ID</th>
+              <th style="width: 20%">Position</th>
+              <th style="width: 10%">Last Update</th>
+            </tr>
+          </thead>
+          <tbody id="playersBody">
+            <tr>
+              <td colspan="4" class="empty-state">Waiting for players...</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+
+      <div class="section">
+        <div class="section-title">Event Log (Last 50)</div>
+        <div class="event-log" id="eventLog"></div>
+      </div>
     </div>
-    <script type="module" src="/dist/client.js"></script>
+
+    <script type="module">
+      import PartySocket from 'https://cdn.jsdelivr.net/npm/partysocket@latest/+esm';
+
+      const roomId = 'default-room';
+      let socket = null;
+      let players = new Map();
+      let events = [];
+      const maxEvents = 50;
+
+      function updateUI() {
+        document.getElementById('playerCount').textContent = players.size;
+        updatePlayersTable();
+      }
+
+      function updatePlayersTable() {
+        const tbody = document.getElementById('playersBody');
+        if (players.size === 0) {
+          tbody.innerHTML =
+            '<tr><td colspan="4" class="empty-state">Waiting for players...</td></tr>';
+          return;
+        }
+
+        tbody.innerHTML = Array.from(players.values())
+          .map(
+            (player) => `
+          <tr>
+            <td><span class="conn-id">${player.id}</span></td>
+            <td><span class="conn-id">${player.connId}</span></td>
+            <td><span class="position">${player.x?.toFixed(2) || '0.00'}, ${player.y?.toFixed(2) || '0.00'}, ${player.z?.toFixed(2) || '0.00'}</span></td>
+            <td>${player.lastUpdate || '-'}</td>
+          </tr>
+        `
+          )
+          .join('');
+      }
+
+      function addEvent(type, message) {
+        const now = new Date().toLocaleTimeString();
+        events.unshift({ type, message, time: now });
+        if (events.length > maxEvents) events.pop();
+
+        const eventLog = document.getElementById('eventLog');
+        eventLog.innerHTML = events
+          .map(
+            (e) =>
+              `<div class="event-item ${e.type}"><span class="timestamp">${e.time}</span>${e.message}</div>`
+          )
+          .join('');
+      }
+
+      function connect() {
+        const host = window.location.host;
+
+        socket = new PartySocket({
+          host,
+          room: roomId,
+        });
+
+        socket.addEventListener('open', () => {
+          document.getElementById('status').className = 'status';
+          document.getElementById('statusText').textContent = 'Connected';
+          document.getElementById('roomName').textContent = roomId;
+          addEvent('info', 'Connected to room');
+        });
+
+        socket.addEventListener('message', (event) => {
+          try {
+            const msg = JSON.parse(event.data);
+
+            switch (msg.type) {
+              case 'player-joined':
+                addEvent('join', `Player joined: ${msg.playerId}`);
+                break;
+
+              case 'player-left':
+                if (players.has(msg.playerId)) {
+                  players.delete(msg.playerId);
+                  addEvent('leave', `Player left: ${msg.playerId}`);
+                  updateUI();
+                }
+                break;
+
+              case 'existing-players':
+                addEvent(
+                  'info',
+                  `Existing players: ${msg.players?.length || 0}`
+                );
+                break;
+
+              case 'player-state':
+                if (msg.data?.position) {
+                  const player = {
+                    id: msg.playerId,
+                    connId: msg.playerId,
+                    x: msg.data.position.x,
+                    y: msg.data.position.y,
+                    z: msg.data.position.z,
+                    lastUpdate: new Date().toLocaleTimeString(),
+                  };
+                  players.set(msg.playerId, player);
+                  addEvent(
+                    'state',
+                    `${msg.playerId}: pos(${msg.data.position.x.toFixed(1)}, ${msg.data.position.y.toFixed(1)}, ${msg.data.position.z.toFixed(1)})`
+                  );
+                  updateUI();
+                }
+                break;
+
+              default:
+                addEvent('info', `Message: ${msg.type}`);
+            }
+          } catch (err) {
+            // Non-JSON message, ignore
+          }
+        });
+
+        socket.addEventListener('close', () => {
+          document.getElementById('status').className = 'status disconnected';
+          document.getElementById('statusText').textContent = 'Disconnected';
+          addEvent('info', 'Disconnected from room');
+        });
+
+        socket.addEventListener('error', (err) => {
+          addEvent('info', `Error: ${err.message}`);
+        });
+      }
+
+      // Connect on load
+      connect();
+    </script>
   </body>
 </html>

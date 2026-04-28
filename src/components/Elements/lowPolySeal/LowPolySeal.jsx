@@ -1,6 +1,9 @@
-import React, { useEffect, useRef } from 'react';
+import React, { useEffect, useMemo, useRef } from 'react';
 
+import * as THREE from 'three';
+import { clone as cloneSkeleton } from 'three/examples/jsm/utils/SkeletonUtils.js';
 import { useAnimations, useGLTF } from '@react-three/drei';
+import { useGraph } from '@react-three/fiber';
 
 import { useGame } from '../../../modules/ecctrl/stores/useGame';
 import { modelFile } from '../../../utils/appUtils';
@@ -15,11 +18,22 @@ const sealAnimationMap = {
   sealFall: { clip: 'Swim', timeScale: 0.85 },
 };
 
-export default function LowPolySeal(props) {
+export default function LowPolySeal({ color, curAnimation: curAnimationProp, ...props }) {
   const group = useRef();
-  const { nodes, materials, animations } = useGLTF(modelFile('/seal.glb'));
-  const { actions } = useAnimations(animations, group);
-  const curAnimation = useGame((state) => state.curAnimation);
+  const { scene, materials, animations } = useGLTF(modelFile('/seal.glb'));
+  const clonedScene = useMemo(() => cloneSkeleton(scene), [scene]);
+  const { nodes } = useGraph(clonedScene);
+  const clonedAnimations = useMemo(() => animations.map((clip) => clip.clone()), [animations]);
+  const { actions } = useAnimations(clonedAnimations, group);
+  const storeAnimation = useGame((state) => state.curAnimation);
+  const curAnimation = curAnimationProp ?? storeAnimation;
+
+  const sealMaterial = useMemo(() => {
+    if (color) {
+      return new THREE.MeshStandardMaterial({ color });
+    }
+    return materials.Seal;
+  }, [color, materials]);
 
   useEffect(() => {
     const mapping = sealAnimationMap[curAnimation] ?? sealAnimationMap.sealIdle;
@@ -59,7 +73,7 @@ export default function LowPolySeal(props) {
                   <skinnedMesh
                     name="Object_7"
                     geometry={nodes.Object_7.geometry}
-                    material={materials.Seal}
+                    material={sealMaterial}
                     skeleton={nodes.Object_7.skeleton}
                   />
                   <group name="Seal_14" />

@@ -1,6 +1,6 @@
-import React, { useEffect } from 'react';
+import React, { useEffect, useMemo } from 'react';
 
-import { useGame } from '../../../../../modules/ecctrl/Ecctrl.js';
+import { useGame } from '../../../../../modules/ecctrl/Ecctrl.tsx';
 
 const defaultAnimationSet = {
   idle: 'idle',
@@ -16,10 +16,19 @@ const defaultAnimationSet = {
   action4: 'action4',
 };
 
-export default function CapsuleCharacter() {
+function generateRandomColor() {
+  const hue = Math.random() * 360;
+  const saturation = 60 + Math.random() * 30;
+  const lightness = 40 + Math.random() * 30;
+  return `hsl(${hue}, ${saturation}%, ${lightness}%)`;
+}
+
+export default function CapsuleCharacter({ color }) {
   const initializeAnimationSet = useGame(
     (state) => state.initializeAnimationSet
   );
+
+  const characterColor = useMemo(() => color || generateRandomColor(), [color]);
 
   useEffect(() => {
     initializeAnimationSet(defaultAnimationSet);
@@ -29,11 +38,11 @@ export default function CapsuleCharacter() {
     <>
       <mesh castShadow>
         <capsuleGeometry args={[0.3, 0.7]} />
-        <meshStandardMaterial color="mediumpurple" />
+        <meshStandardMaterial color={characterColor} />
       </mesh>
       <mesh castShadow position={[0, 0.2, 0.2]}>
         <boxGeometry args={[0.5, 0.2, 0.3]} />
-        <meshStandardMaterial color="mediumpurple" />
+        <meshStandardMaterial color={characterColor} />
       </mesh>
     </>
   );

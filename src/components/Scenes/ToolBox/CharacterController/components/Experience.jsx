@@ -8,12 +8,14 @@ import { Physics } from '@react-three/rapier';
 
 import Ecctrl, { useGame } from '../../../../../modules/ecctrl/Ecctrl.tsx';
 import CapsuleCharacter from './CapsuleCharacter';
+import CharacterTracker from './CharacterTracker';
 import DynamicPlatforms from './DynamicPlatforms';
 import ExampleCharacterModel from './ExampleCharacterModel';
 import FloatingPlatform from './FloatingPlatform';
 import Floor from './Floor';
 import GhostCharacter from './GhostCharacter';
 import Lights from './Lights';
+import RemotePlayers from './RemotePlayers';
 import RigidObjects from './RigidObjects';
 import RoughPlane from './RoughPlane';
 import SealCharacter from './SealCharacter';
@@ -35,13 +37,28 @@ const keyboardMap = [
   { name: 'action4', keys: ['KeyF'] },
 ];
 
-export default function Experience() {
+export default function Experience({
+  ecctrlRef: providedEcctrlRef = null,
+  color = null,
+  remotePlayers = null,
+  remoteShots = [],
+  onShotFired = null,
+  onModelChange = null,
+}) {
   const { gl } = useThree();
   const isWebGPU = gl?.isWebGPURenderer === true;
   const setMoveToPoint = useGame((state) => state.setMoveToPoint);
+  const internalEcctrlRef = useRef(null);
+  const ecctrlRef = providedEcctrlRef || internalEcctrlRef;
   const pointerDownAtRef = useRef(0);
   const [hoverPoint, setHoverPoint] = useState(null);
   const [moveTargetPoint, setMoveTargetPoint] = useState(null);
+
+  const [spawnPos] = useState(() => {
+    const angle = Math.random() * Math.PI * 2;
+    const r = 1.5 + Math.random() * 2;
+    return [Math.cos(angle) * r, 0, Math.sin(angle) * r];
+  });
 
   const [pausedPhysics, setPausedPhysics] = useState(true);
   useEffect(() => {
@@ -183,7 +200,7 @@ export default function Experience() {
     'Floating Spring': folder(
       {
         springK: { value: 1.2, min: 0, max: 5, step: 0.05 },
-        dampingC: { value: 0.08, min: 0, max: 1, step: 0.01 },
+        dampingC: { value: 0.15, min: 0, max: 1, step: 0.01 },
       },
       { collapsed: true }
     ),
@@ -210,6 +227,10 @@ export default function Experience() {
       { collapsed: true }
     ),
   });
+
+  React.useEffect(() => {
+    onModelChange?.(characterModel);
+  }, [characterModel, onModelChange]);
 
   // Update colors when mode changes
   React.useEffect(() => {
@@ -299,18 +320,20 @@ export default function Experience() {
   let characterContent;
 
   if (selectedVariant === 'seal') {
-    characterContent = <SealCharacter />;
+    characterContent = <SealCharacter color={color} />;
   } else if (isWebGPU && selectedVariant === 'gh0st') {
-    characterContent = <GhostCharacter />;
+    characterContent = <GhostCharacter color={color} />;
   } else if (isExampleCharacter) {
-    characterContent = <ExampleCharacterModel />;
+    characterContent = <ExampleCharacterModel color={color} />;
   } else {
-    characterContent = <CapsuleCharacter />;
+    characterContent = <CapsuleCharacter color={color} />;
   }
 
   const characterController = (
     <Ecctrl
+      ref={ecctrlRef}
       key={ecctrlInstanceKey}
+      position={spawnPos}
       animated
       followLight
       disableControl={disableControl}
@@ -382,7 +405,7 @@ export default function Experience() {
         </mesh>
       )}
 
-      <Physics debug={physics} paused={pausedPhysics}>
+      <Physics debug={physics} paused={pausedPhysics} timeStep="vary">
         {pointToMoveActive ? (
           characterController
         ) : (
@@ -390,6 +413,8 @@ export default function Experience() {
             {characterController}
           </KeyboardControls>
         )}
+
+        <CharacterTracker ecctrlRef={ecctrlRef} />
 
         <RoughPlane />
         <Slopes />
@@ -404,7 +429,10 @@ export default function Experience() {
           onPointerDown={handlePointToMoveDown}
           onPointerUp={handlePointToMoveUp}
         />
-        {shotsEnabled && <ShotCube />}
+        {shotsEnabled && (
+          <ShotCube onFire={onShotFired} remoteShots={remoteShots} />
+        )}
+        <RemotePlayers remotePlayers={remotePlayers} />
       </Physics>
     </>
   );

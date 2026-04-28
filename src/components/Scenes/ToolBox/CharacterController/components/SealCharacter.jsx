@@ -17,7 +17,7 @@ const sealAnimationSet = {
   action4: 'sealAction4',
 };
 
-export default function SealCharacter() {
+export default function SealCharacter({ color, curAnimation }) {
   const initializeAnimationSet = useGame(
     (state) => state.initializeAnimationSet
   );
@@ -31,6 +31,7 @@ export default function SealCharacter() {
       scale={0.42}
       position={[0, -0.82, 0.15]}
       rotation={[0, Math.PI / 2, 0]}
+      curAnimation={curAnimation}
     />
   );
 }

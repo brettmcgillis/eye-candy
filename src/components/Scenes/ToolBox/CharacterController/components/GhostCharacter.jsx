@@ -1,6 +1,6 @@
 import React, { useEffect } from 'react';
 
-import { useGame } from '../../../../../modules/ecctrl/Ecctrl.js';
+import { useGame } from '../../../../../modules/ecctrl/Ecctrl.tsx';
 import BaseGhostCharacter from '../../../../elements/webgpu/ghost/GhostCharacter';
 
 const defaultAnimationSet = {
@@ -17,7 +17,7 @@ const defaultAnimationSet = {
   action4: 'action4',
 };
 
-export default function GhostCharacter() {
+export default function GhostCharacter({ color }) {
   const initializeAnimationSet = useGame(
     (state) => state.initializeAnimationSet
   );
@@ -28,7 +28,7 @@ export default function GhostCharacter() {
 
   return (
     <BaseGhostCharacter
-      color="#f5f0e8"
+      color={color || '#f5f0e8'}
       eyeColor="#88ccff"
       eyeIntensity={2.25}
       groundLightIntensity={0}

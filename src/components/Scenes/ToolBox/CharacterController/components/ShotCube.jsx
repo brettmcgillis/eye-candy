@@ -26,15 +26,14 @@ function Cube({ position, direction }) {
   );
 }
 
-export default function ShotCube() {
+export default function ShotCube({ onFire, remoteShots = [] }) {
   const { camera } = useThree();
   const [cubes, setCubes] = useState([]);
 
-  // Keep a stable ref to camera so the click handler never goes stale
   const cameraRef = useRef(camera);
-  useEffect(() => {
-    cameraRef.current = camera;
-  });
+  const onFireRef = useRef(onFire);
+  useEffect(() => { cameraRef.current = camera; });
+  useEffect(() => { onFireRef.current = onFire; });
 
   useEffect(() => {
     const dir = new THREE.Vector3();
@@ -42,14 +41,10 @@ export default function ShotCube() {
     const handleClick = () => {
       const cam = cameraRef.current;
       cam.getWorldDirection(dir);
-      setCubes((prev) => [
-        ...prev,
-        {
-          id: Date.now() + Math.random(),
-          position: [cam.position.x, cam.position.y - 0.5, cam.position.z],
-          direction: [dir.x, dir.y, dir.z],
-        },
-      ]);
+      const position = [cam.position.x, cam.position.y - 0.5, cam.position.z];
+      const direction = [dir.x, dir.y, dir.z];
+      setCubes((prev) => [...prev, { id: Date.now() + Math.random(), position, direction }]);
+      onFireRef.current?.(position, direction);
     };
 
     window.addEventListener('click', handleClick);
@@ -59,11 +54,10 @@ export default function ShotCube() {
   return (
     <>
       {cubes.map((cube) => (
-        <Cube
-          key={cube.id}
-          position={cube.position}
-          direction={cube.direction}
-        />
+        <Cube key={cube.id} position={cube.position} direction={cube.direction} />
+      ))}
+      {remoteShots.map((shot) => (
+        <Cube key={shot.id} position={shot.position} direction={shot.direction} />
       ))}
     </>
   );

@@ -184,7 +184,7 @@ const Ecctrl: ForwardRefRenderFunction<CustomEcctrlRigidBody, EcctrlProps> = (
     ref,
     () => ({
       get group() {
-        return characterRef.current;
+        return characterModelRef.current;
       },
       rotateCamera,
       rotateCharacterOnY,
@@ -604,7 +604,7 @@ const Ecctrl: ForwardRefRenderFunction<CustomEcctrlRigidBody, EcctrlProps> = (
     setControllerIndex(null);
   };
   const mergedKeys = useMemo(
-    () => Object.assign({}, defaultControllerKeys, controllerKeys),
+    () => ({ ...defaultControllerKeys, ...controllerKeys }),
     [controllerKeys]
   );
   const handleButtons = (buttons: readonly GamepadButton[]) => {
@@ -637,10 +637,7 @@ const Ecctrl: ForwardRefRenderFunction<CustomEcctrlRigidBody, EcctrlProps> = (
       const movY = invertGamepadMovY ? axes[1] : -axes[1];
       gamepadJoystickVec2.set(movX, movY);
       gamepadJoystickDis = Math.min(
-        Math.sqrt(
-          Math.pow(gamepadJoystickVec2.x, 2) +
-            Math.pow(gamepadJoystickVec2.y, 2)
-        ),
+        Math.sqrt(gamepadJoystickVec2.x ** 2 + gamepadJoystickVec2.y ** 2),
         1
       );
       gamepadJoystickAng = gamepadJoystickVec2.angle();
@@ -770,7 +767,7 @@ const Ecctrl: ForwardRefRenderFunction<CustomEcctrlRigidBody, EcctrlProps> = (
   const rayCast = new rapier.Ray(rayOrigin, rayDir);
   let rayHit: RayColliderHit | null = null;
 
-  /**Test shape ray */
+  /** Test shape ray */
   // const shape = new rapier.Capsule(0.2,0.1)
 
   /**
@@ -1055,7 +1052,7 @@ const Ecctrl: ForwardRefRenderFunction<CustomEcctrlRigidBody, EcctrlProps> = (
     movingObjectVelocity: THREE.Vector3,
     functionKeyDown: boolean
   ) => {
-    const moveToPoint = getMoveToPoint().moveToPoint;
+    const { moveToPoint } = getMoveToPoint();
     if (moveToPoint) {
       pointToPoint.set(
         moveToPoint.x - currentPos.x,
@@ -1231,9 +1228,9 @@ const Ecctrl: ForwardRefRenderFunction<CustomEcctrlRigidBody, EcctrlProps> = (
   useEffect(() => {
     // Lock character rotations at Y axis
     characterRef.current?.setEnabledRotations(
-      autoBalance ? true : false,
-      autoBalance ? true : false,
-      autoBalance ? true : false,
+      !!autoBalance,
+      !!autoBalance,
+      !!autoBalance,
       false
     );
 
@@ -1443,7 +1440,7 @@ const Ecctrl: ForwardRefRenderFunction<CustomEcctrlRigidBody, EcctrlProps> = (
       }
     );
 
-    /**Test shape ray */
+    /** Test shape ray */
     // rayHit = world.castShape(
     //   currentPos,
     //   { w: 0, x: 0, y: 0, z: 0 },
@@ -1682,7 +1679,7 @@ const Ecctrl: ForwardRefRenderFunction<CustomEcctrlRigidBody, EcctrlProps> = (
     /**
      * Detect character falling state
      */
-    isFalling = currentVel.y < 0 && !canJump ? true : false;
+    isFalling = !!(currentVel.y < 0 && !canJump);
 
     /**
      * Setup max falling speed && extra falling gravity
@@ -1693,20 +1690,18 @@ const Ecctrl: ForwardRefRenderFunction<CustomEcctrlRigidBody, EcctrlProps> = (
         if (characterRef.current.gravityScale() !== 0) {
           characterRef.current.setGravityScale(0, true);
         }
-      } else {
-        if (
-          !isFalling &&
-          characterRef.current.gravityScale() !== initialGravityScale
-        ) {
-          // Apply initial gravity after landed
-          characterRef.current.setGravityScale(initialGravityScale, true);
-        } else if (
-          isFalling &&
-          characterRef.current.gravityScale() !== fallingGravityScale
-        ) {
-          // Apply larger gravity when falling (if initialGravityScale === fallingGravityScale, won't trigger this)
-          characterRef.current.setGravityScale(fallingGravityScale, true);
-        }
+      } else if (
+        !isFalling &&
+        characterRef.current.gravityScale() !== initialGravityScale
+      ) {
+        // Apply initial gravity after landed
+        characterRef.current.setGravityScale(initialGravityScale, true);
+      } else if (
+        isFalling &&
+        characterRef.current.gravityScale() !== fallingGravityScale
+      ) {
+        // Apply larger gravity when falling (if initialGravityScale === fallingGravityScale, won't trigger this)
+        characterRef.current.setGravityScale(fallingGravityScale, true);
       }
     }
 
@@ -1917,7 +1912,7 @@ type AutoBalanceForceSchema = {
 export type camListenerTargetType = 'document' | 'domElement';
 
 export interface CustomEcctrlRigidBody {
-  group: RapierRigidBody | null;
+  group: THREE.Group | null;
   rotateCamera: (x: number, y: number) => void;
   rotateCharacterOnY: (rad: number) => void;
 }

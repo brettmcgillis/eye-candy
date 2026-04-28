@@ -71,7 +71,7 @@ const animationSet = {
 //   'Wave')
 // ];
 
-export default function ExampleCharacterModel(props) {
+export default function ExampleCharacterModel({ color, curAnimation: curAnimationProp, ...props }) {
   const group = useRef();
   const rightHandRef = useRef();
   const rightHandColliderRef = useRef();
@@ -106,7 +106,7 @@ export default function ExampleCharacterModel(props) {
     startFrame: 0,
   });
 
-  const { mainColor, outlineColor, trailColor } = useControls(
+  const { mainColor: controlMainColor, outlineColor, trailColor } = useControls(
     'Character Model',
     {
       mainColor: 'mediumslateblue',
@@ -114,6 +114,8 @@ export default function ExampleCharacterModel(props) {
       trailColor: 'violet',
     }
   );
+
+  const mainColor = color || controlMainColor;
 
   const outlineMaterial = useMemo(
     () =>
@@ -134,7 +136,8 @@ export default function ExampleCharacterModel(props) {
     [mainColor, gradientMapTexture]
   );
 
-  const curAnimation = useGame((state) => state.curAnimation);
+  const storeAnimation = useGame((state) => state.curAnimation);
+  const curAnimation = curAnimationProp ?? storeAnimation;
   const resetAnimation = useGame((state) => state.reset);
   const initializeAnimationSet = useGame(
     (state) => state.initializeAnimationSet

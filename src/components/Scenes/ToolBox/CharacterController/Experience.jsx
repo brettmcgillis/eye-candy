@@ -57,7 +57,7 @@ export default function Experience({
   const [spawnPos] = useState(() => {
     const angle = Math.random() * Math.PI * 2;
     const r = 1.5 + Math.random() * 2;
-    return [Math.cos(angle) * r, 0, Math.sin(angle) * r];
+    return [Math.cos(angle) * r, 5, Math.sin(angle) * r];
   });
 
   const [pausedPhysics, setPausedPhysics] = useState(true);
@@ -200,7 +200,7 @@ export default function Experience({
     'Floating Spring': folder(
       {
         springK: { value: 1.2, min: 0, max: 5, step: 0.05 },
-        dampingC: { value: 0.15, min: 0, max: 1, step: 0.01 },
+        dampingC: { value: 0.08, min: 0, max: 1, step: 0.01 },
       },
       { collapsed: true }
     ),
@@ -405,7 +405,11 @@ export default function Experience({
         </mesh>
       )}
 
-      <Physics debug={physics} paused={pausedPhysics} timeStep="vary">
+      <Physics
+        debug={physics}
+        paused={pausedPhysics}
+        // timeStep="vary"
+      >
         {pointToMoveActive ? (
           characterController
         ) : (

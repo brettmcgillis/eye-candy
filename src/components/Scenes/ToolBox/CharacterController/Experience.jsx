@@ -7,23 +7,15 @@ import { useThree } from '@react-three/fiber';
 import { Physics } from '@react-three/rapier';
 
 import Ecctrl, { useGame } from '../../../../modules/ecctrl/Ecctrl.tsx';
-import Boundaries from './components/Boundaries';
 import CapsuleCharacter from './components/CapsuleCharacter';
 import CharacterTracker from './components/CharacterTracker';
-import DynamicPlatforms from './components/DynamicPlatforms';
 import ExampleCharacterModel from './components/ExampleCharacterModel';
-import FloatingPlatform from './components/FloatingPlatform';
-import Floor from './components/Floor';
 import GhostCharacter from './components/GhostCharacter';
+import Level from './components/Level';
 import Lights from './components/Lights';
-import Pool from './components/Pool';
 import RemotePlayers from './components/RemotePlayers';
-import RigidObjects from './components/RigidObjects';
-import RoughPlane from './components/RoughPlane';
 import SealCharacter from './components/SealCharacter';
 import ShotCube from './components/ShotCube';
-import Slopes from './components/Slopes';
-import Steps from './components/Steps';
 import TouchJoystickOverlay from './components/TouchJoystickOverlay';
 
 const keyboardMap = [
@@ -444,15 +436,7 @@ export default function Experience({
 
         <CharacterTracker ecctrlRef={ecctrlRef} />
 
-        <RoughPlane />
-        <Slopes />
-        <Steps />
-        <RigidObjects />
-        <FloatingPlatform />
-        <DynamicPlatforms />
-        <Pool />
-        <Boundaries gridSectionColor={effectiveGridSectionColor} />
-        <Floor
+        <Level
           gridSectionColor={effectiveGridSectionColor}
           gridCellColor={effectiveGridCellColor}
           onPointerMove={handlePointToMoveHover}

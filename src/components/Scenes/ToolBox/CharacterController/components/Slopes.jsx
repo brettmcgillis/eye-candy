@@ -9,7 +9,7 @@ import { RigidBody } from '@react-three/rapier';
 import { modelFile } from '../../../../../utils/appUtils';
 import SceneLabel from './SceneLabel';
 
-export default function Slopes() {
+export default function Slopes({ position = [-10, -1, 10] }) {
   const slopes = useGLTF(modelFile('/slopes.glb'));
 
   useEffect(() => {
@@ -24,7 +24,7 @@ export default function Slopes() {
   }, []);
 
   return (
-    <group position={[-10, -1, 10]}>
+    <group position={position}>
       <RigidBody type="fixed" colliders="trimesh" rotation={[0, Math.PI, 0]}>
         <primitive object={slopes.scene} />
       </RigidBody>

@@ -17,7 +17,7 @@ const FLOOR_CLEARANCE = 0.02;
 const MIN_PLATFORM_CENTER_Y =
   FLOOR_TOP_Y + PLATFORM_HALF_HEIGHT + FLOOR_CLEARANCE;
 
-export default function FloatingPlatform() {
+export default function FloatingPlatform({ position = [0, 0, 0] }) {
   const floatingPlateRef = useRef();
   const floatingPlateRef2 = useRef();
   const floatingMovingPlateRef = useRef();
@@ -122,9 +122,9 @@ export default function FloatingPlatform() {
     const movingPlatform = floatingMovingPlateRef.current;
     if (movingPlatform) {
       const translation = movingPlatform.translation();
-      if (translation.x > 10) {
+      if (translation.x > position[0] + 10) {
         movingDir.current = -1;
-      } else if (translation.x < -5) {
+      } else if (translation.x < position[0] - 5) {
         movingDir.current = 1;
       }
 
@@ -147,7 +147,7 @@ export default function FloatingPlatform() {
   });
 
   return (
-    <>
+    <group position={position}>
       <RigidBody
         position={[0, 5, -10]}
         mass={1}
@@ -201,6 +201,6 @@ export default function FloatingPlatform() {
           <meshStandardMaterial color="lightsteelblue" />
         </mesh>
       </RigidBody>
-    </>
+    </group>
   );
 }

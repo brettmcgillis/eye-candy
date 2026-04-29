@@ -4,7 +4,6 @@ import { useThree } from '@react-three/fiber';
 import { InstancedRigidBodies, RigidBody } from '@react-three/rapier';
 
 const FLOOR_Y = -1;
-const POOL_CENTER = [-28, 10];
 const INNER_SIZE = 10;
 const WALL_THICKNESS = 0.5;
 const WALL_HEIGHT = 2;
@@ -18,7 +17,7 @@ const RAMP_Y = (POOL_FLOOR_Y + WALL_TOP_Y) / 2;
 const RAMP_ANGLE = Math.PI * 0.17;
 const RAMP_SIZE = [4.6, 0.35, 2.4];
 
-export default function Pool() {
+export default function Pool({ position = [-28, 0, 10] }) {
   const { gl } = useThree();
   const isWebGPU = gl?.isWebGPURenderer === true;
 
@@ -29,8 +28,8 @@ export default function Pool() {
     const layers = isWebGPU ? 3 : 4;
     const spacing = SPHERE_RADIUS * 2.15;
 
-    const baseX = POOL_CENTER[0] - ((columns - 1) * spacing) / 2;
-    const baseZ = POOL_CENTER[1] - ((rows - 1) * spacing) / 2;
+    const baseX = position[0] - ((columns - 1) * spacing) / 2;
+    const baseZ = position[2] - ((rows - 1) * spacing) / 2;
     const baseY = POOL_FLOOR_Y + FLOOR_THICKNESS / 2 + SPHERE_RADIUS + 0.05;
 
     let id = 0;
@@ -51,7 +50,7 @@ export default function Pool() {
     }
 
     return configs;
-  }, [isWebGPU]);
+  }, [isWebGPU, position[0], position[2]]);
 
   return (
     <group>
@@ -59,7 +58,7 @@ export default function Pool() {
       <RigidBody type="fixed" friction={1.25} restitution={0.05}>
         <mesh
           receiveShadow
-          position={[POOL_CENTER[0], POOL_FLOOR_Y, POOL_CENTER[1]]}
+          position={[position[0], POOL_FLOOR_Y, position[2]]}
         >
           <boxGeometry
             args={[
@@ -77,9 +76,9 @@ export default function Pool() {
         <mesh
           receiveShadow
           position={[
-            POOL_CENTER[0],
+            position[0],
             POOL_WALL_CENTER_Y,
-            POOL_CENTER[1] - INNER_SIZE / 2,
+            position[2] - INNER_SIZE / 2,
           ]}
         >
           <boxGeometry args={[INNER_SIZE, WALL_HEIGHT, WALL_THICKNESS]} />
@@ -90,9 +89,9 @@ export default function Pool() {
         <mesh
           receiveShadow
           position={[
-            POOL_CENTER[0],
+            position[0],
             POOL_WALL_CENTER_Y,
-            POOL_CENTER[1] + INNER_SIZE / 2,
+            position[2] + INNER_SIZE / 2,
           ]}
         >
           <boxGeometry args={[INNER_SIZE, WALL_HEIGHT, WALL_THICKNESS]} />
@@ -103,9 +102,9 @@ export default function Pool() {
         <mesh
           receiveShadow
           position={[
-            POOL_CENTER[0] - INNER_SIZE / 2,
+            position[0] - INNER_SIZE / 2,
             POOL_WALL_CENTER_Y,
-            POOL_CENTER[1],
+            position[2],
           ]}
         >
           <boxGeometry args={[WALL_THICKNESS, WALL_HEIGHT, INNER_SIZE]} />
@@ -116,9 +115,9 @@ export default function Pool() {
         <mesh
           receiveShadow
           position={[
-            POOL_CENTER[0] + INNER_SIZE / 2,
+            position[0] + INNER_SIZE / 2,
             POOL_WALL_CENTER_Y,
-            POOL_CENTER[1],
+            position[2],
           ]}
         >
           <boxGeometry args={[WALL_THICKNESS, WALL_HEIGHT, INNER_SIZE]} />
@@ -131,9 +130,9 @@ export default function Pool() {
         <mesh
           receiveShadow
           position={[
-            POOL_CENTER[0],
+            position[0],
             RAMP_Y,
-            POOL_CENTER[1] + INNER_SIZE / 2 - RAMP_HALF_RUN,
+            position[2] + INNER_SIZE / 2 - RAMP_HALF_RUN,
           ]}
           rotation={[-RAMP_ANGLE, Math.PI / 2, 0]}
         >
@@ -147,9 +146,9 @@ export default function Pool() {
         <mesh
           receiveShadow
           position={[
-            POOL_CENTER[0],
+            position[0],
             RAMP_Y,
-            POOL_CENTER[1] + INNER_SIZE / 2 + RAMP_HALF_RUN,
+            position[2] + INNER_SIZE / 2 + RAMP_HALF_RUN,
           ]}
           rotation={[RAMP_ANGLE, Math.PI / 2, 0]}
         >

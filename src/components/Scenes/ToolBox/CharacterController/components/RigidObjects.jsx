@@ -9,9 +9,9 @@ import {
 
 import SceneLabel from './SceneLabel';
 
-export default function RigidObjects() {
+export default function RigidObjects({ position = [0, 0, 0] }) {
   return (
-    <>
+    <group position={position}>
       <RigidBody position={[15, 1, 2]} mass={0.5}>
         <mesh receiveShadow castShadow>
           <boxGeometry args={[0.5, 0.5, 0.5]} />
@@ -77,6 +77,6 @@ export default function RigidObjects() {
           <meshStandardMaterial color="lightsteelblue" />
         </mesh>
       </RigidBody>
-    </>
+    </group>
   );
 }

@@ -8,7 +8,7 @@ import { RigidBody } from '@react-three/rapier';
 
 import { modelFile } from '../../../../../utils/appUtils';
 
-export default function RoughPlane() {
+export default function RoughPlane({ position = [10, -1.2, 10] }) {
   const roughPlane = useGLTF(modelFile('/roughPlane.glb'));
 
   useEffect(() => {
@@ -23,7 +23,7 @@ export default function RoughPlane() {
   }, []);
 
   return (
-    <RigidBody type="fixed" colliders="trimesh" position={[10, -1.2, 10]}>
+    <RigidBody type="fixed" colliders="trimesh" position={position}>
       <primitive object={roughPlane.scene} />
     </RigidBody>
   );

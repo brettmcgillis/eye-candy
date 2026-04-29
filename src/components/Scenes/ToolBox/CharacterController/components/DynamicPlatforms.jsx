@@ -13,7 +13,7 @@ import SceneLabel from './SceneLabel';
 
 const PHYSICS_STEP = 1 / 60;
 
-export default function DynamicPlatforms() {
+export default function DynamicPlatforms({ position = [0, 0, 0] }) {
   const sideMovePlatformRef = useRef();
   const verticalMovePlatformRef = useRef();
   const rotatePlatformRef = useRef();
@@ -28,15 +28,15 @@ export default function DynamicPlatforms() {
     time.current += PHYSICS_STEP;
 
     sideMovePlatformRef.current?.setNextKinematicTranslation({
-      x: 5 * Math.sin(time.current / 2) - 12,
-      y: -0.5,
-      z: -10,
+      x: 5 * Math.sin(time.current / 2) - 12 + position[0],
+      y: -0.5 + position[1],
+      z: -10 + position[2],
     });
 
     verticalMovePlatformRef.current?.setNextKinematicTranslation({
-      x: -25,
-      y: 2 * Math.sin(time.current / 2) + 2,
-      z: 0,
+      x: -25 + position[0],
+      y: 2 * Math.sin(time.current / 2) + 2 + position[1],
+      z: position[2],
     });
     verticalMovePlatformRef.current?.setNextKinematicRotation(
       quaternionRotation.setFromAxisAngle(yRotationAxies, time.current * 0.5)
@@ -52,7 +52,7 @@ export default function DynamicPlatforms() {
   });
 
   return (
-    <>
+    <group position={position}>
       <RigidBody
         type="kinematicPosition"
         ref={sideMovePlatformRef}
@@ -125,6 +125,6 @@ export default function DynamicPlatforms() {
           </mesh>
         </group>
       </RigidBody>
-    </>
+    </group>
   );
 }

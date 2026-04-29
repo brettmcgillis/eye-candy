@@ -2,9 +2,9 @@ import React from 'react';
 
 import { RigidBody } from '@react-three/rapier';
 
-export default function Steps() {
+export default function Steps({ position = [0, 0, 0] }) {
   return (
-    <>
+    <group position={position}>
       <RigidBody type="fixed" position={[0, -0.9, 5]}>
         <mesh receiveShadow>
           <boxGeometry args={[4, 0.2, 0.2]} />
@@ -35,6 +35,6 @@ export default function Steps() {
           <meshStandardMaterial color="lightpink" />
         </mesh>
       </RigidBody>
-    </>
+    </group>
   );
 }

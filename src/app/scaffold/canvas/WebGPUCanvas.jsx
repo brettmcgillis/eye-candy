@@ -7,6 +7,7 @@ import { Canvas } from '@react-three/fiber';
 export default function WebGPUCanvas({ children }) {
   return (
     <Canvas
+      dpr={[1, 1.5]}
       shadows="basic"
       gl={async (props) => {
         const renderer = new THREE.WebGPURenderer({

@@ -2,50 +2,52 @@ import * as THREE from 'three';
 
 import React, { useMemo, useRef } from 'react';
 
-import { useFrame } from '@react-three/fiber';
 import {
   CuboidCollider,
   CylinderCollider,
   RigidBody,
+  useBeforePhysicsStep,
 } from '@react-three/rapier';
 
 import SceneLabel from './SceneLabel';
+
+const PHYSICS_STEP = 1 / 60;
 
 export default function DynamicPlatforms() {
   const sideMovePlatformRef = useRef();
   const verticalMovePlatformRef = useRef();
   const rotatePlatformRef = useRef();
   const rotationDrumRef = useRef();
+  const time = useRef(0);
 
-  let time = null;
-  const xRotationAxies = new THREE.Vector3(1, 0, 0);
-  const yRotationAxies = new THREE.Vector3(0, 1, 0);
+  const xRotationAxies = useMemo(() => new THREE.Vector3(1, 0, 0), []);
+  const yRotationAxies = useMemo(() => new THREE.Vector3(0, 1, 0), []);
   const quaternionRotation = useMemo(() => new THREE.Quaternion(), []);
 
-  useFrame((state) => {
-    time = state.clock.elapsedTime;
+  useBeforePhysicsStep(() => {
+    time.current += PHYSICS_STEP;
 
     sideMovePlatformRef.current?.setNextKinematicTranslation({
-      x: 5 * Math.sin(time / 2) - 12,
+      x: 5 * Math.sin(time.current / 2) - 12,
       y: -0.5,
       z: -10,
     });
 
     verticalMovePlatformRef.current?.setNextKinematicTranslation({
       x: -25,
-      y: 2 * Math.sin(time / 2) + 2,
+      y: 2 * Math.sin(time.current / 2) + 2,
       z: 0,
     });
     verticalMovePlatformRef.current?.setNextKinematicRotation(
-      quaternionRotation.setFromAxisAngle(yRotationAxies, time * 0.5)
+      quaternionRotation.setFromAxisAngle(yRotationAxies, time.current * 0.5)
     );
 
     rotatePlatformRef.current?.setNextKinematicRotation(
-      quaternionRotation.setFromAxisAngle(yRotationAxies, time * 0.5)
+      quaternionRotation.setFromAxisAngle(yRotationAxies, time.current * 0.5)
     );
 
     rotationDrumRef.current?.setNextKinematicRotation(
-      quaternionRotation.setFromAxisAngle(xRotationAxies, time * 0.5)
+      quaternionRotation.setFromAxisAngle(xRotationAxies, time.current * 0.5)
     );
   });
 

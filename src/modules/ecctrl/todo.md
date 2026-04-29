@@ -8,8 +8,8 @@
     - <ecctrl {...useCharacterValue.CurrentEcctrlProps}>
       - <useCharacterValue.CurrentCharacterComponent>
 
-- [ ] Add spheres to the experience that we can push around.
-- [ ] Add boundaries so its not infinite space.
+- [x] Add a "pool" half-filled with instanced spheres to the experience that we can push around. Could be located next to the "diving board" that extends off the slopes so the user can jump in. Walls should be high enough to prevent speheres rolling out, but low enough for user to get out. if they need to be high walls we should offer the user stairs or ramp.
+- [x] Add boundaries so its not infinite space. lets do tall walls w/ colliders and the same Grid material as the floor. walls should be ~250 from center of scene.
 - [ ] Should/can we instance shotcubes?
 - [ ] Should we have a shotcube reset button to clear them
 - [ ] Should we have a game reset button for when physics goes nuts

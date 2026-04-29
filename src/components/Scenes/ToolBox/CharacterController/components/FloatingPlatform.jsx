@@ -1,39 +1,97 @@
 import * as THREE from 'three';
 
-import React, { useEffect, useMemo, useRef } from 'react';
+import React, { useCallback, useEffect, useMemo, useRef } from 'react';
 
-import { useFrame } from '@react-three/fiber';
-import { CuboidCollider, RigidBody, useRapier } from '@react-three/rapier';
+import {
+  CuboidCollider,
+  RigidBody,
+  useBeforePhysicsStep,
+  useRapier,
+} from '@react-three/rapier';
 
 import SceneLabel from './SceneLabel';
+
+const FLOOR_TOP_Y = -1;
+const PLATFORM_HALF_HEIGHT = 0.1;
+const FLOOR_CLEARANCE = 0.02;
+const MIN_PLATFORM_CENTER_Y =
+  FLOOR_TOP_Y + PLATFORM_HALF_HEIGHT + FLOOR_CLEARANCE;
 
 export default function FloatingPlatform() {
   const floatingPlateRef = useRef();
   const floatingPlateRef2 = useRef();
   const floatingMovingPlateRef = useRef();
   const { rapier, world } = useRapier();
+  const movingDir = useRef(1);
 
   const rayLength = 0.8;
   const rayDir = { x: 0, y: -1, z: 0 };
   const springDirVec = useMemo(() => new THREE.Vector3(), []);
   const origin = useMemo(() => new THREE.Vector3(), []);
-  const rayCast = new rapier.Ray(origin, rayDir);
-  let rayHit = null;
+  const rayCast = useMemo(
+    () => new rapier.Ray(origin, rayDir),
+    [rapier, origin]
+  );
   const floatingDis = 0.8;
   const springK = 2.5;
   const dampingC = 0.15;
 
   const springDirVec2 = useMemo(() => new THREE.Vector3(), []);
   const origin2 = useMemo(() => new THREE.Vector3(), []);
-  const rayCast2 = new rapier.Ray(origin2, rayDir);
-  let rayHit2 = null;
+  const rayCast2 = useMemo(
+    () => new rapier.Ray(origin2, rayDir),
+    [rapier, origin2]
+  );
 
   const springDirVecMove = useMemo(() => new THREE.Vector3(), []);
   const originMove = useMemo(() => new THREE.Vector3(), []);
-  const rayCastMove = new rapier.Ray(originMove, rayDir);
+  const rayCastMove = useMemo(
+    () => new rapier.Ray(originMove, rayDir),
+    [rapier, originMove]
+  );
   const movingVel = useMemo(() => new THREE.Vector3(), []);
-  let movingDir = 1;
-  let rayHitMove = null;
+
+  const clampBodyAboveFloor = useCallback((rb) => {
+    if (!rb) return;
+    const t = rb.translation();
+    if (t.y >= MIN_PLATFORM_CENTER_Y) return;
+
+    rb.setTranslation({ x: t.x, y: MIN_PLATFORM_CENTER_Y, z: t.z }, true);
+
+    const lv = rb.linvel();
+    if (lv.y < 0) {
+      rb.setLinvel({ x: lv.x, y: 0, z: lv.z }, true);
+    }
+  }, []);
+
+  const updatePlatformSpring = useCallback(
+    (rb, ray, rayOrigin, springVec) => {
+      if (!rb) return;
+
+      const translation = rb.translation();
+      rayOrigin.set(translation.x, translation.y, translation.z);
+
+      const rayHit = world.castRay(
+        ray,
+        rayLength,
+        false,
+        undefined,
+        undefined,
+        undefined,
+        rb
+      );
+
+      if (rayHit?.collider.parent()) {
+        const force =
+          springK * (floatingDis - rayHit.timeOfImpact) -
+          rb.linvel().y * dampingC;
+        rb.applyImpulse(springVec.set(0, force, 0), true);
+      }
+
+      clampBodyAboveFloor(rb);
+    },
+    [clampBodyAboveFloor, world]
+  );
 
   useEffect(() => {
     floatingPlateRef.current.lockRotations(true);
@@ -47,95 +105,45 @@ export default function FloatingPlatform() {
     floatingMovingPlateRef.current.setEnabledTranslations(true, true, false);
   }, []);
 
-  useFrame(() => {
-    if (floatingPlateRef.current) {
-      origin.set(
-        floatingPlateRef.current.translation().x,
-        floatingPlateRef.current.translation().y,
-        floatingPlateRef.current.translation().z
-      );
-      rayHit = world.castRay(
-        rayCast,
-        rayLength,
-        false,
-        undefined,
-        undefined,
-        undefined,
-        floatingPlateRef.current
-      );
-    }
-    if (floatingPlateRef2.current) {
-      origin2.set(
-        floatingPlateRef2.current.translation().x,
-        floatingPlateRef2.current.translation().y,
-        floatingPlateRef2.current.translation().z
-      );
-      rayHit2 = world.castRay(
-        rayCast2,
-        rayLength,
-        false,
-        undefined,
-        undefined,
-        undefined,
-        floatingPlateRef2.current
-      );
-    }
-    if (floatingMovingPlateRef.current) {
-      originMove.set(
-        floatingMovingPlateRef.current.translation().x,
-        floatingMovingPlateRef.current.translation().y,
-        floatingMovingPlateRef.current.translation().z
-      );
-      rayHitMove = world.castRay(
-        rayCastMove,
-        rayLength,
-        false,
-        undefined,
-        undefined,
-        undefined,
-        floatingMovingPlateRef.current
-      );
-      if (floatingMovingPlateRef.current.translation().x > 10) {
-        movingDir = -1;
-      } else if (floatingMovingPlateRef.current.translation().x < -5) {
-        movingDir = 1;
+  useBeforePhysicsStep(() => {
+    updatePlatformSpring(
+      floatingPlateRef.current,
+      rayCast,
+      origin,
+      springDirVec
+    );
+    updatePlatformSpring(
+      floatingPlateRef2.current,
+      rayCast2,
+      origin2,
+      springDirVec2
+    );
+
+    const movingPlatform = floatingMovingPlateRef.current;
+    if (movingPlatform) {
+      const translation = movingPlatform.translation();
+      if (translation.x > 10) {
+        movingDir.current = -1;
+      } else if (translation.x < -5) {
+        movingDir.current = 1;
       }
-      floatingMovingPlateRef.current.setLinvel(
+
+      movingPlatform.setLinvel(
         movingVel.set(
-          movingDir > 0 ? 2 : -2,
-          floatingMovingPlateRef.current.linvel().y,
+          movingDir.current > 0 ? 2 : -2,
+          movingPlatform.linvel().y,
           0
-        )
+        ),
+        true
       );
     }
 
-    if (rayHit?.collider.parent()) {
-      const force =
-        springK * (floatingDis - rayHit.timeOfImpact) -
-        floatingPlateRef.current.linvel().y * dampingC;
-      floatingPlateRef.current.applyImpulse(
-        springDirVec.set(0, force, 0),
-        true
-      );
-    }
-    if (rayHit2?.collider.parent()) {
-      const force2 =
-        springK * (floatingDis - rayHit2.timeOfImpact) -
-        floatingPlateRef2.current.linvel().y * dampingC;
-      floatingPlateRef2.current.applyImpulse(
-        springDirVec2.set(0, force2, 0),
-        true
-      );
-    }
-    if (rayHitMove?.collider.parent()) {
-      const forceMove =
-        springK * (floatingDis - rayHitMove.timeOfImpact) -
-        floatingMovingPlateRef.current.linvel().y * dampingC;
-      floatingMovingPlateRef.current.applyImpulse(
-        springDirVecMove.set(0, forceMove, 0),
-        true
-      );
-    }
+    updatePlatformSpring(
+      movingPlatform,
+      rayCastMove,
+      originMove,
+      springDirVecMove
+    );
   });
 
   return (

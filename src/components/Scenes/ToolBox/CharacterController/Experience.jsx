@@ -6,23 +6,25 @@ import { KeyboardControls } from '@react-three/drei';
 import { useThree } from '@react-three/fiber';
 import { Physics } from '@react-three/rapier';
 
-import Ecctrl, { useGame } from '../../../../modules/ecctrl/Ecctrl.js';
-import CapsuleCharacter from './components/CapsuleCharacter.jsx';
-import CharacterTracker from './components/CharacterTracker.jsx';
-import DynamicPlatforms from './components/DynamicPlatforms.jsx';
-import ExampleCharacterModel from './components/ExampleCharacterModel.jsx';
-import FloatingPlatform from './components/FloatingPlatform.jsx';
-import Floor from './components/Floor.jsx';
-import GhostCharacter from './components/GhostCharacter.jsx';
-import Lights from './components/Lights.jsx';
-import RemotePlayers from './components/RemotePlayers.jsx';
-import RigidObjects from './components/RigidObjects.jsx';
-import RoughPlane from './components/RoughPlane.jsx';
-import SealCharacter from './components/SealCharacter.jsx';
-import ShotCube from './components/ShotCube.jsx';
-import Slopes from './components/Slopes.jsx';
-import Steps from './components/Steps.jsx';
-import TouchJoystickOverlay from './components/TouchJoystickOverlay.jsx';
+import Ecctrl, { useGame } from '../../../../modules/ecctrl/Ecctrl.tsx';
+import Boundaries from './components/Boundaries';
+import CapsuleCharacter from './components/CapsuleCharacter';
+import CharacterTracker from './components/CharacterTracker';
+import DynamicPlatforms from './components/DynamicPlatforms';
+import ExampleCharacterModel from './components/ExampleCharacterModel';
+import FloatingPlatform from './components/FloatingPlatform';
+import Floor from './components/Floor';
+import GhostCharacter from './components/GhostCharacter';
+import Lights from './components/Lights';
+import Pool from './components/Pool';
+import RemotePlayers from './components/RemotePlayers';
+import RigidObjects from './components/RigidObjects';
+import RoughPlane from './components/RoughPlane';
+import SealCharacter from './components/SealCharacter';
+import ShotCube from './components/ShotCube';
+import Slopes from './components/Slopes';
+import Steps from './components/Steps';
+import TouchJoystickOverlay from './components/TouchJoystickOverlay';
 
 const keyboardMap = [
   { name: 'forward', keys: ['ArrowUp', 'KeyW'] },
@@ -37,11 +39,61 @@ const keyboardMap = [
   { name: 'action4', keys: ['KeyF'] },
 ];
 
+const EMPTY_SHOTS = [];
+const DAY_NIGHT_PRESETS = {
+  Day: {
+    bgColor: '#a8c8e8',
+    gridSectionColor: '#d9d9d9',
+    gridCellColor: '#222222',
+  },
+  Night: {
+    bgColor: '#0f1419',
+    gridSectionColor: '#40404c',
+    gridCellColor: '#26262c',
+  },
+};
+const CAM_EXCLUDE_COLLISION_USER_DATA = { camExcludeCollision: true };
+
+const PointToMoveIndicators = React.memo(function PointToMoveIndicators({
+  hoverPoint,
+  moveTargetPoint,
+}) {
+  return (
+    <>
+      {hoverPoint && (
+        <mesh
+          position={[hoverPoint.x, hoverPoint.y + 0.01, hoverPoint.z]}
+          rotation={[-Math.PI / 2, 0, 0]}
+          userData={CAM_EXCLUDE_COLLISION_USER_DATA}
+        >
+          <ringGeometry args={[0.18, 0.28, 48]} />
+          <meshBasicMaterial color="#000000" transparent opacity={0.2} />
+        </mesh>
+      )}
+
+      {moveTargetPoint && (
+        <mesh
+          position={[
+            moveTargetPoint.x,
+            moveTargetPoint.y + 0.012,
+            moveTargetPoint.z,
+          ]}
+          rotation={[-Math.PI / 2, 0, 0]}
+          userData={CAM_EXCLUDE_COLLISION_USER_DATA}
+        >
+          <ringGeometry args={[0.22, 0.34, 48]} />
+          <meshBasicMaterial color="#ff7a00" transparent opacity={0.75} />
+        </mesh>
+      )}
+    </>
+  );
+});
+
 export default function Experience({
   ecctrlRef: providedEcctrlRef = null,
   color = null,
   remotePlayers = null,
-  remoteShots = [],
+  remoteShots = EMPTY_SHOTS,
   onShotFired = null,
   onModelChange = null,
 }) {
@@ -65,20 +117,6 @@ export default function Experience({
     const t = setTimeout(() => setPausedPhysics(false), 500);
     return () => clearTimeout(t);
   }, []);
-
-  // Day/Night mode helper
-  const dayNightPresets = {
-    Day: {
-      bgColor: '#a8c8e8',
-      gridSectionColor: '#d9d9d9',
-      gridCellColor: '#222222',
-    },
-    Night: {
-      bgColor: '#0f1419',
-      gridSectionColor: '#40404c',
-      gridCellColor: '#26262c',
-    },
-  };
 
   const {
     characterModel,
@@ -205,8 +243,8 @@ export default function Experience({
 
     'Floating Spring': folder(
       {
-        springK: { value: 1.2, min: 0, max: 5, step: 0.05 },
-        dampingC: { value: 0.08, min: 0, max: 1, step: 0.01 },
+        springK: { value: 2, min: 0, max: 5, step: 0.05 },
+        dampingC: { value: 0.2, min: 0, max: 1, step: 0.01 },
       },
       { collapsed: true }
     ),
@@ -238,16 +276,11 @@ export default function Experience({
     onModelChange?.(characterModel);
   }, [characterModel, onModelChange]);
 
-  // Update colors when mode changes
-  React.useEffect(() => {
-    if (sceneMode && dayNightPresets[sceneMode]) {
-      // Mode changed, colors will be applied below
-    }
-  }, [sceneMode]);
-
   // Determine effective colors based on mode
   const preset =
-    sceneMode && dayNightPresets[sceneMode] ? dayNightPresets[sceneMode] : null;
+    sceneMode && DAY_NIGHT_PRESETS[sceneMode]
+      ? DAY_NIGHT_PRESETS[sceneMode]
+      : null;
   const effectiveBgColor = preset?.bgColor ?? bgColor;
   const effectiveGridSectionColor =
     preset?.gridSectionColor ?? gridSectionColor;
@@ -388,36 +421,18 @@ export default function Experience({
 
       <color attach="background" args={[effectiveBgColor]} />
 
-      {pointToMoveActive && hoverPoint && (
-        <mesh
-          position={[hoverPoint.x, hoverPoint.y + 0.01, hoverPoint.z]}
-          rotation={[-Math.PI / 2, 0, 0]}
-          userData={{ camExcludeCollision: true }}
-        >
-          <ringGeometry args={[0.18, 0.28, 48]} />
-          <meshBasicMaterial color="#000000" transparent opacity={0.2} />
-        </mesh>
-      )}
-
-      {pointToMoveActive && moveTargetPoint && (
-        <mesh
-          position={[
-            moveTargetPoint.x,
-            moveTargetPoint.y + 0.012,
-            moveTargetPoint.z,
-          ]}
-          rotation={[-Math.PI / 2, 0, 0]}
-          userData={{ camExcludeCollision: true }}
-        >
-          <ringGeometry args={[0.22, 0.34, 48]} />
-          <meshBasicMaterial color="#ff7a00" transparent opacity={0.75} />
-        </mesh>
+      {pointToMoveActive && (
+        <PointToMoveIndicators
+          hoverPoint={hoverPoint}
+          moveTargetPoint={moveTargetPoint}
+        />
       )}
 
       <Physics
         debug={physics}
         paused={pausedPhysics}
-        // timeStep="vary"
+        timeStep={1 / 60}
+        interpolate
       >
         {pointToMoveActive ? (
           characterController
@@ -435,6 +450,8 @@ export default function Experience({
         <RigidObjects />
         <FloatingPlatform />
         <DynamicPlatforms />
+        <Pool />
+        <Boundaries gridSectionColor={effectiveGridSectionColor} />
         <Floor
           gridSectionColor={effectiveGridSectionColor}
           gridCellColor={effectiveGridCellColor}

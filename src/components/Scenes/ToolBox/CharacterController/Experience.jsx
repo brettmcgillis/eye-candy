@@ -96,6 +96,9 @@ export default function Experience({
     turnSpeed,
     sprintMult,
     jumpVel,
+    enableDoubleJump,
+    maxAirJumps,
+    airJumpVelMultiplier,
     airDragMultiplier,
     fallingGravityScale,
     // Capsule
@@ -182,6 +185,9 @@ export default function Experience({
         turnSpeed: { value: 15, min: 1, max: 30, step: 0.5 },
         sprintMult: { value: 2, min: 1, max: 5, step: 0.1 },
         jumpVel: { value: 4, min: 0, max: 20, step: 0.1 },
+        enableDoubleJump: false,
+        maxAirJumps: { value: 1, min: 0, max: 3, step: 1 },
+        airJumpVelMultiplier: { value: 1, min: 0.2, max: 2, step: 0.05 },
         airDragMultiplier: { value: 0.2, min: 0, max: 1, step: 0.01 },
         fallingGravityScale: { value: 2.5, min: 0, max: 10, step: 0.1 },
       },
@@ -347,6 +353,9 @@ export default function Experience({
       turnSpeed={effectiveTurnSpeed}
       sprintMult={sprintMult}
       jumpVel={jumpVel}
+      enableDoubleJump={enableDoubleJump}
+      maxAirJumps={maxAirJumps}
+      airJumpVelMultiplier={airJumpVelMultiplier}
       airDragMultiplier={airDragMultiplier}
       fallingGravityScale={fallingGravityScale}
       capsuleHalfHeight={capsuleHalfHeight}

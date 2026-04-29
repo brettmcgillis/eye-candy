@@ -42,7 +42,21 @@
 - [ ] add an npc
 - [ ] come up with good materials presets for joysticks
 - [ ] make shot cube a sphere + collider w/ ghost
-- [ ] every good game has double jump. add this, with toggle to enable,disable
+- [x] every good game has double jump. add this, with toggle to enable,disable
 - [ ] swim/fly mode
+- [ ] car mode
 
 - [ ] fix ghost. should be able to chose any skin we have in GhostBuster when the character is selected. Extract ghostbuster presets to scene+ghost pairs. move ghost presets into ghost character folder.
+
+SHOW
+
+- physics
+- mass
+- kinetics
+- slopes
+- shots
+- fixed camera
+- camera based
+- click to move
+- fps
+- characters

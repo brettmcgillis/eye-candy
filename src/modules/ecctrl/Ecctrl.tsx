@@ -97,6 +97,9 @@ const Ecctrl: ForwardRefRenderFunction<CustomEcctrlRigidBody, EcctrlProps> = (
     turnSpeed = 15,
     sprintMult = 2,
     jumpVel = 4,
+    enableDoubleJump = false,
+    maxAirJumps = 1,
+    airJumpVelMultiplier = 1,
     jumpForceToGroundMult = 5,
     slopJumpMult = 0.25,
     sprintJumpMult = 1.2,
@@ -659,6 +662,9 @@ const Ecctrl: ForwardRefRenderFunction<CustomEcctrlRigidBody, EcctrlProps> = (
   // can jump setup
   let canJump: boolean = false;
   let isFalling: boolean = false;
+  const wasJumpPressedRef = useRef(false);
+  const airJumpsUsedRef = useRef(0);
+  const maxAirJumpsClamped = Math.max(0, Math.floor(maxAirJumps));
   const initialGravityScale: number = useMemo(
     () => props.gravityScale ?? 1,
     []
@@ -1260,6 +1266,7 @@ const Ecctrl: ForwardRefRenderFunction<CustomEcctrlRigidBody, EcctrlProps> = (
 
   useFrame((state, delta) => {
     if (delta > 1) delta %= 1;
+    let didAirJumpThisFrame = false;
 
     // Character current position/velocity
     if (!characterRef.current) return;
@@ -1358,6 +1365,15 @@ const Ecctrl: ForwardRefRenderFunction<CustomEcctrlRigidBody, EcctrlProps> = (
      */
     const { forward, backward, leftward, rightward, jump, run } =
       isInsideKeyboardControls && getKeys ? getKeys() : presetKeys;
+    const jumpPressed = jump || button1Pressed;
+    const jumpPressedThisFrame = enableDoubleJump
+      ? jumpPressed && !wasJumpPressedRef.current
+      : false;
+    if (enableDoubleJump) {
+      wasJumpPressedRef.current = jumpPressed;
+    } else if (wasJumpPressedRef.current) {
+      wasJumpPressedRef.current = false;
+    }
 
     // Getting moving directions (IIFE)
     modelEuler.y = ((movingDirection) =>
@@ -1399,6 +1415,22 @@ const Ecctrl: ForwardRefRenderFunction<CustomEcctrlRigidBody, EcctrlProps> = (
       rayHit?.collider
         .parent()
         ?.applyImpulseAtPoint(characterMassForce, standingForcePoint, true);
+    }
+    if (
+      jumpPressedThisFrame &&
+      !canJump &&
+      enableDoubleJump &&
+      airJumpsUsedRef.current < maxAirJumpsClamped
+    ) {
+      didAirJumpThisFrame = true;
+      const baseJumpVel = run ? sprintJumpMult * jumpVel : jumpVel;
+      const jumpVelY = baseJumpVel * airJumpVelMultiplier;
+      jumpVelocityVec.set(currentVel.x, jumpVelY, currentVel.z);
+      characterRef.current.setLinvel(
+        jumpDirection.set(jumpVelocityVec.x, jumpVelY, jumpVelocityVec.z),
+        true
+      );
+      airJumpsUsedRef.current += 1;
     }
 
     // Rotate character Indicator
@@ -1459,6 +1491,9 @@ const Ecctrl: ForwardRefRenderFunction<CustomEcctrlRigidBody, EcctrlProps> = (
       }
     } else {
       canJump = false;
+    }
+    if (enableDoubleJump && canJump && airJumpsUsedRef.current !== 0) {
+      airJumpsUsedRef.current = 0;
     }
 
     /**
@@ -1782,6 +1817,8 @@ const Ecctrl: ForwardRefRenderFunction<CustomEcctrlRigidBody, EcctrlProps> = (
         idleAnimation && idleAnimation();
       } else if ((jump || button1Pressed) && canJump) {
         jumpAnimation && jumpAnimation();
+      } else if (didAirJumpThisFrame) {
+        jumpAnimation && jumpAnimation();
       } else if (
         canJump &&
         (forward ||
@@ -1870,6 +1907,9 @@ type CharacterControlsSchema = {
   turnSpeed: number;
   sprintMult: number;
   jumpVel: number;
+  enableDoubleJump: boolean;
+  maxAirJumps: number;
+  airJumpVelMultiplier: number;
   jumpForceToGroundMult: number;
   slopJumpMult: number;
   sprintJumpMult: number;
@@ -1952,6 +1992,9 @@ export interface EcctrlProps extends RigidBodyProps {
   turnSpeed?: number;
   sprintMult?: number;
   jumpVel?: number;
+  enableDoubleJump?: boolean;
+  maxAirJumps?: number;
+  airJumpVelMultiplier?: number;
   jumpForceToGroundMult?: number;
   slopJumpMult?: number;
   sprintJumpMult?: number;

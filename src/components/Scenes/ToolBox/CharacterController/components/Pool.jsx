@@ -163,8 +163,6 @@ export default function Pool() {
         instances={sphereConfigs}
         colliders="ball"
         mass={0.1}
-        linearDamping={0.08}
-        angularDamping={0.1}
       >
         <instancedMesh
           receiveShadow={false}

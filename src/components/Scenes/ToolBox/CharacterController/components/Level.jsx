@@ -8,6 +8,7 @@ import Pool from './Pool';
 import RigidObjects from './RigidObjects';
 import RoughPlane from './RoughPlane';
 import Slopes from './Slopes';
+import SoccerField from './SoccerField';
 import Steps from './Steps';
 
 // Layout positions — single source of truth for where each level piece lives.
@@ -18,6 +19,7 @@ const RIGID_OBJECTS_POSITION = [0, 0, 0];
 const FLOATING_PLATFORM_POSITION = [0, 0, 0];
 const DYNAMIC_PLATFORMS_POSITION = [0, 0, 0];
 const POOL_POSITION = [-28, 0, 10]; // [x, y, z] — pool is centered on xz plane
+const SOCCER_FIELD_POSITION = [0, 0, -40]; // placed behind the spawn, away from other objects
 
 export default function Level({
   gridSectionColor,
@@ -35,6 +37,7 @@ export default function Level({
       <FloatingPlatform position={FLOATING_PLATFORM_POSITION} />
       <DynamicPlatforms position={DYNAMIC_PLATFORMS_POSITION} />
       <Pool position={POOL_POSITION} />
+      <SoccerField position={SOCCER_FIELD_POSITION} />
       <Boundaries gridSectionColor={gridSectionColor} />
       <Floor
         gridSectionColor={gridSectionColor}

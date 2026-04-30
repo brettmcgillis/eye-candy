@@ -1,9 +1,25 @@
 import * as THREE from 'three';
 
-import React, { useEffect, useMemo, useRef, useState } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 
 import { useThree } from '@react-three/fiber';
-import { InstancedRigidBodies } from '@react-three/rapier';
+import { RigidBody } from '@react-three/rapier';
+
+function ShotCubeInstance({ position, velocity }) {
+  return (
+    <RigidBody
+      position={position}
+      linearVelocity={velocity}
+      mass={0.6}
+      colliders="cuboid"
+    >
+      <mesh castShadow receiveShadow>
+        <boxGeometry args={[0.5, 0.5, 0.5]} />
+        <meshStandardMaterial color="orange" />
+      </mesh>
+    </RigidBody>
+  );
+}
 
 export default function ShotCube({ onFire, remoteShots = [] }) {
   const { camera } = useThree();
@@ -25,56 +41,38 @@ export default function ShotCube({ onFire, remoteShots = [] }) {
       const cam = cameraRef.current;
       cam.getWorldDirection(dir);
       const position = [cam.position.x, cam.position.y - 0.5, cam.position.z];
-      const direction = [dir.x, dir.y, dir.z];
+      const velocity = [dir.x * 20, dir.y * 20 + 2, dir.z * 20];
       setCubes((prev) => [
         ...prev,
-        { id: Date.now() + Math.random(), position, direction },
+        { id: Date.now() + Math.random(), position, velocity },
       ]);
-      onFireRef.current?.(position, direction);
+      onFireRef.current?.(position, [dir.x, dir.y, dir.z]);
     };
 
     window.addEventListener('click', handleClick);
     return () => window.removeEventListener('click', handleClick);
   }, []);
 
-  const shotInstances = useMemo(
-    () => [
-      ...cubes.map((cube) => ({
-        key: `local-${cube.id}`,
-        position: cube.position,
-        linearVelocity: {
-          x: cube.direction[0] * 20,
-          y: cube.direction[1] * 20 + 2,
-          z: cube.direction[2] * 20,
-        },
-      })),
-      ...remoteShots.map((shot) => ({
-        key: `remote-${shot.id}`,
-        position: shot.position,
-        linearVelocity: {
-          x: shot.direction[0] * 20,
-          y: shot.direction[1] * 20 + 2,
-          z: shot.direction[2] * 20,
-        },
-      })),
-    ],
-    [cubes, remoteShots]
-  );
-
   return (
-    <InstancedRigidBodies
-      instances={shotInstances}
-      mass={0.6}
-      colliders="cuboid"
-    >
-      <instancedMesh
-        castShadow
-        receiveShadow
-        args={[null, null, shotInstances.length]}
-      >
-        <boxGeometry args={[0.5, 0.5, 0.5]} />
-        <meshStandardMaterial color="orange" />
-      </instancedMesh>
-    </InstancedRigidBodies>
+    <>
+      {cubes.map((cube) => (
+        <ShotCubeInstance
+          key={`local-${cube.id}`}
+          position={cube.position}
+          velocity={cube.velocity}
+        />
+      ))}
+      {remoteShots.map((shot) => (
+        <ShotCubeInstance
+          key={`remote-${shot.id}`}
+          position={shot.position}
+          velocity={[
+            shot.direction[0] * 20,
+            shot.direction[1] * 20 + 2,
+            shot.direction[2] * 20,
+          ]}
+        />
+      ))}
+    </>
   );
 }

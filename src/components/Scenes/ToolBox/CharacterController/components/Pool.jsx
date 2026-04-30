@@ -9,13 +9,13 @@ const WALL_THICKNESS = 0.5;
 const WALL_HEIGHT = 2;
 const FLOOR_THICKNESS = 0.4;
 const SPHERE_RADIUS = 0.3;
-const POOL_WALL_CENTER_Y = FLOOR_Y + WALL_HEIGHT / 2 - 0.02;
-const POOL_FLOOR_Y = FLOOR_Y - 0.8;
-const WALL_TOP_Y = POOL_WALL_CENTER_Y + WALL_HEIGHT / 2;
-const RAMP_HALF_RUN = 2.1;
-const RAMP_Y = (POOL_FLOOR_Y + WALL_TOP_Y) / 2;
-const RAMP_ANGLE = Math.PI * 0.17;
-const RAMP_SIZE = [4.6, 0.35, 2.4];
+const POOL_WALL_CENTER_Y = FLOOR_Y + WALL_HEIGHT / 2; // bottom face at FLOOR_Y, top at FLOOR_Y + WALL_HEIGHT
+const POOL_FLOOR_Y = FLOOR_Y - FLOOR_THICKNESS / 2 + 0.005; // top face 5mm above grid plane to prevent z-fighting
+const WALL_TOP_Y = FLOOR_Y + WALL_HEIGHT; // = 1.0
+const RAMP_HALF_RUN = 2.8;
+const RAMP_Y = (FLOOR_Y + WALL_TOP_Y) / 2; // = 0.0
+const RAMP_ANGLE = Math.atan(WALL_HEIGHT / (RAMP_HALF_RUN * 2)); // ≈ 19.7°
+const RAMP_SIZE = [6.0, 0.35, 2.4];
 
 export default function Pool({ position = [-28, 0, 10] }) {
   const { gl } = useThree();
@@ -56,10 +56,7 @@ export default function Pool({ position = [-28, 0, 10] }) {
     <group>
       {/* Pool floor */}
       <RigidBody type="fixed" friction={1.25} restitution={0.05}>
-        <mesh
-          receiveShadow
-          position={[position[0], POOL_FLOOR_Y, position[2]]}
-        >
+        <mesh receiveShadow position={[position[0], POOL_FLOOR_Y, position[2]]}>
           <boxGeometry
             args={[
               INNER_SIZE + WALL_THICKNESS * 2,

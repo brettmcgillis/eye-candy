@@ -7,6 +7,8 @@ import { useThree } from '@react-three/fiber';
 import { Physics } from '@react-three/rapier';
 
 import Ecctrl, { useGame } from '../../../../modules/ecctrl/Ecctrl.tsx';
+import { useRideableState } from '../../../../modules/ecctrl/rideables/useRideableState.ts';
+import RideableRcCar from '../../../elements/models/rcCar/RideableRcCar';
 import CapsuleCharacter from './components/CapsuleCharacter';
 import CharacterTracker from './components/CharacterTracker';
 import ExampleCharacterModel from './components/ExampleCharacterModel';
@@ -157,6 +159,7 @@ export default function Experience({
     bgColor,
     gridSectionColor,
     gridCellColor,
+    rideablesEnabled,
   } = useControls('World Settings', {
     Character: folder(
       {
@@ -195,6 +198,7 @@ export default function Experience({
 
     physics: false,
     shotsEnabled: false,
+    rideablesEnabled: { value: true, label: 'Rideables' },
     disableControl: false,
     disableFollowCam: false,
 
@@ -268,6 +272,8 @@ export default function Experience({
     onModelChange?.(characterModel);
   }, [characterModel, onModelChange]);
 
+  const { mountedId, mount, dismount } = useRideableState();
+
   // Determine effective colors based on mode
   const preset =
     sceneMode && DAY_NIGHT_PRESETS[sceneMode]
@@ -288,6 +294,7 @@ export default function Experience({
   const effectiveCamFollowMult = fpsMode ? 1000 : camFollowMult;
   const effectiveCamLerpMult = fpsMode ? 1000 : camLerpMult;
   const ecctrlInstanceKey = fpsMode ? 'fps-on' : 'fps-off';
+  const effectiveDisableControl = disableControl || !!mountedId;
   const selectedVariant = characterModel.toLowerCase();
   const isExampleCharacter = characterModel === 'Example Character';
 
@@ -367,8 +374,8 @@ export default function Experience({
       position={spawnPos}
       animated
       followLight
-      disableControl={disableControl}
-      disableFollowCam={disableFollowCam}
+      disableControl={effectiveDisableControl}
+      disableFollowCam={disableFollowCam || !!mountedId}
       invertGamepadMovX={invertGamepadMovX}
       invertGamepadMovY={invertGamepadMovY}
       invertGamepadCamX={invertGamepadCamX}
@@ -431,6 +438,16 @@ export default function Experience({
         ) : (
           <KeyboardControls map={keyboardMap}>
             {characterController}
+            {rideablesEnabled && (
+              <RideableRcCar
+                id="rccar-1"
+                position={[4, 0.5, 4]}
+                ecctrlRef={ecctrlRef}
+                mounted={mountedId === 'rccar-1'}
+                onMount={mount}
+                onDismount={dismount}
+              />
+            )}
           </KeyboardControls>
         )}
 

@@ -191,6 +191,20 @@ const Ecctrl: ForwardRefRenderFunction<CustomEcctrlRigidBody, EcctrlProps> = (
       },
       rotateCamera,
       rotateCharacterOnY,
+      setPosition: (pos: THREE.Vector3) => {
+        characterRef.current?.setTranslation(pos, true);
+        characterRef.current?.setLinvel({ x: 0, y: 0, z: 0 }, true);
+      },
+      setBodyType: (type: number) => {
+        if (characterRef.current) {
+          characterRef.current.setBodyType(type, true);
+          if (type === 0) {
+            // Restore dynamic: clear any inherited kinematic velocity
+            characterRef.current.setLinvel({ x: 0, y: 0, z: 0 }, true);
+            characterRef.current.setAngvel({ x: 0, y: 0, z: 0 }, true);
+          }
+        }
+      },
     }),
     []
   );
@@ -1955,6 +1969,9 @@ export interface CustomEcctrlRigidBody {
   group: THREE.Group | null;
   rotateCamera: (x: number, y: number) => void;
   rotateCharacterOnY: (rad: number) => void;
+  setPosition: (pos: THREE.Vector3) => void;
+  /** 0 = Dynamic, 2 = KinematicPositionBased */
+  setBodyType: (type: number) => void;
 }
 
 export interface EcctrlProps extends RigidBodyProps {

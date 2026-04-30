@@ -5,6 +5,7 @@ import * as THREE from 'three';
 import { useEffect, useRef, useState } from 'react';
 
 import { useGame } from '../../../../../modules/ecctrl/Ecctrl';
+import { useRideableState } from '../../../../../modules/ecctrl/rideables/useRideableState';
 
 declare const __PARTY_HOST__: string;
 
@@ -18,6 +19,7 @@ export interface CharacterStateData {
   color: string;
   curAnimation?: string;
   name?: string;
+  mountedRideableId?: string | null;
 }
 
 export interface RemotePlayer extends CharacterStateData {
@@ -217,6 +219,7 @@ export function useMultiplayer({
             model: playerModelRef.current,
             color: playerColor,
             curAnimation: useGame.getState().curAnimation,
+            mountedRideableId: useRideableState.getState().mountedId ?? null,
           },
         })
       );

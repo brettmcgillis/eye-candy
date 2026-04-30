@@ -18,7 +18,7 @@ const STEPS_POSITION = [0, 0, 0];
 const RIGID_OBJECTS_POSITION = [0, 0, 0];
 const FLOATING_PLATFORM_POSITION = [0, 0, 0];
 const DYNAMIC_PLATFORMS_POSITION = [0, 0, 0];
-const POOL_POSITION = [-28, 0, 10]; // [x, y, z] — pool is centered on xz plane
+const POOL_POSITION = [-32, 0, 15]; // [x, y, z] — pool is centered on xz plane
 const SOCCER_FIELD_POSITION = [0, 0, -40]; // placed behind the spawn, away from other objects
 
 export default function Level({

@@ -4,7 +4,7 @@ import { useThree } from '@react-three/fiber';
 import { InstancedRigidBodies, RigidBody } from '@react-three/rapier';
 
 const FLOOR_Y = -1;
-const INNER_SIZE = 10;
+const INNER_SIZE = 20;
 const WALL_THICKNESS = 0.5;
 const WALL_HEIGHT = 2;
 const FLOOR_THICKNESS = 0.4;
@@ -15,9 +15,9 @@ const WALL_TOP_Y = FLOOR_Y + WALL_HEIGHT; // = 1.0
 const RAMP_HALF_RUN = 2.8;
 const RAMP_Y = (FLOOR_Y + WALL_TOP_Y) / 2; // = 0.0
 const RAMP_ANGLE = Math.atan(WALL_HEIGHT / (RAMP_HALF_RUN * 2)); // ≈ 19.7°
-const RAMP_SIZE = [6.0, 0.35, 2.4];
+const RAMP_SIZE = [6.0, 0.35, 5];
 
-export default function Pool({ position = [-28, 0, 10] }) {
+export default function Pool({ position = [-38, 10, 10] }) {
   const { gl } = useThree();
   const isWebGPU = gl?.isWebGPURenderer === true;
 

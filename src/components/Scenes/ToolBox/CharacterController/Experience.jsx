@@ -28,7 +28,7 @@ const keyboardMap = [
   { name: 'jump', keys: ['Space'] },
   { name: 'run', keys: ['Shift'] },
   { name: 'action1', keys: ['1'] },
-  { name: 'action2', keys: ['2'] },
+  { name: 'action2', keys: ['2', 'KeyB'] },
   { name: 'action3', keys: ['3'] },
   { name: 'action4', keys: ['KeyF'] },
 ];
@@ -294,7 +294,7 @@ export default function Experience({
   const effectiveCamFollowMult = fpsMode ? 1000 : camFollowMult;
   const effectiveCamLerpMult = fpsMode ? 1000 : camLerpMult;
   const ecctrlInstanceKey = fpsMode ? 'fps-on' : 'fps-off';
-  const effectiveDisableControl = disableControl || !!mountedId;
+  const effectiveDisableMovementControl = !!mountedId;
   const selectedVariant = characterModel.toLowerCase();
   const isExampleCharacter = characterModel === 'Example Character';
 
@@ -374,8 +374,9 @@ export default function Experience({
       position={spawnPos}
       animated
       followLight
-      disableControl={effectiveDisableControl}
-      disableFollowCam={disableFollowCam || !!mountedId}
+      disableControl={disableControl}
+      disableMovementControl={effectiveDisableMovementControl}
+      disableFollowCam={disableFollowCam}
       invertGamepadMovX={invertGamepadMovX}
       invertGamepadMovY={invertGamepadMovY}
       invertGamepadCamX={invertGamepadCamX}

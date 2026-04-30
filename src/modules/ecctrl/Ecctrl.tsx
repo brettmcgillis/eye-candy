@@ -71,6 +71,7 @@ const Ecctrl: ForwardRefRenderFunction<CustomEcctrlRigidBody, EcctrlProps> = (
     characterInitDir = 0, // in rad
     followLight = false,
     disableControl = false,
+    disableMovementControl = false,
     disableFollowCam = false,
     disableFollowCamPos = null,
     disableFollowCamTarget = null,
@@ -191,9 +192,18 @@ const Ecctrl: ForwardRefRenderFunction<CustomEcctrlRigidBody, EcctrlProps> = (
       },
       rotateCamera,
       rotateCharacterOnY,
+      faceCameraDirection,
+      setCharacterRotationOnY,
       setPosition: (pos: THREE.Vector3) => {
-        characterRef.current?.setTranslation(pos, true);
-        characterRef.current?.setLinvel({ x: 0, y: 0, z: 0 }, true);
+        if (!characterRef.current) return;
+
+        if (characterRef.current.bodyType() === 2) {
+          characterRef.current.setNextKinematicTranslation(pos);
+          return;
+        }
+
+        characterRef.current.setTranslation(pos, true);
+        characterRef.current.setLinvel({ x: 0, y: 0, z: 0 }, true);
       },
       setBodyType: (type: number) => {
         if (characterRef.current) {
@@ -1123,6 +1133,38 @@ const Ecctrl: ForwardRefRenderFunction<CustomEcctrlRigidBody, EcctrlProps> = (
     modelEuler.y += rad;
   };
 
+  const setCharacterRotationOnY = (rad: number) => {
+    modelEuler.y = rad;
+    modelQuat.setFromEuler(modelEuler);
+    characterModelIndicator.quaternion.copy(modelQuat);
+    if (characterModelRef.current) {
+      characterModelRef.current.quaternion.copy(modelQuat);
+    }
+  };
+
+  function faceCameraDirection() {
+    modelEuler.y = pivot.rotation.y;
+    modelQuat.setFromEuler(modelEuler);
+    characterModelIndicator.quaternion.copy(modelQuat);
+
+    // Snap the physics body to upright with Y-only rotation matching camera direction.
+    // Clears any tilt accumulated during kinematic (mounted) mode so auto-balance
+    // starts from the correct orientation and doesn't fight for several frames.
+    if (characterRef.current) {
+      characterRef.current.setRotation(
+        { x: modelQuat.x, y: modelQuat.y, z: modelQuat.z, w: modelQuat.w },
+        true
+      );
+      characterRef.current.setAngvel({ x: 0, y: 0, z: 0 }, true);
+    }
+
+    // Reset the model group to identity — the physics body now carries the
+    // world orientation, so stacking modelQuat on top would double the rotation.
+    if (characterModelRef.current) {
+      characterModelRef.current.quaternion.identity();
+    }
+  }
+
   useEffect(() => {
     // Initialize directional light
     if (followLight && characterModelRef.current) {
@@ -1349,16 +1391,18 @@ const Ecctrl: ForwardRefRenderFunction<CustomEcctrlRigidBody, EcctrlProps> = (
       handleButtons(gamepad.buttons);
       handleSticks(gamepad.axes);
       // Getting moving directions (IIFE)
-      modelEuler.y = ((movingDirection) =>
-        movingDirection === null ? modelEuler.y : movingDirection)(
-        getMovingDirection(
-          gamepadKeys.forward,
-          gamepadKeys.backward,
-          gamepadKeys.leftward,
-          gamepadKeys.rightward,
-          pivot
-        )
-      );
+      if (!disableMovementControl) {
+        modelEuler.y = ((movingDirection) =>
+          movingDirection === null ? modelEuler.y : movingDirection)(
+          getMovingDirection(
+            gamepadKeys.forward,
+            gamepadKeys.backward,
+            gamepadKeys.leftward,
+            gamepadKeys.rightward,
+            pivot
+          )
+        );
+      }
     }
 
     /**
@@ -1368,7 +1412,7 @@ const Ecctrl: ForwardRefRenderFunction<CustomEcctrlRigidBody, EcctrlProps> = (
       getJoystickValues();
 
     // Move character to the moving direction (joystick controls)
-    if (joystickDis > 0) {
+    if (!disableMovementControl && joystickDis > 0) {
       // Apply camera rotation to character model
       modelEuler.y = pivot.rotation.y + (joystickAng - Math.PI / 2);
       moveCharacter(delta, runState, slopeAngle, movingObjectVelocity);
@@ -1390,62 +1434,102 @@ const Ecctrl: ForwardRefRenderFunction<CustomEcctrlRigidBody, EcctrlProps> = (
     }
 
     // Getting moving directions (IIFE)
-    modelEuler.y = ((movingDirection) =>
-      movingDirection === null ? modelEuler.y : movingDirection)(
-      getMovingDirection(forward, backward, leftward, rightward, pivot)
-    );
+    if (!disableMovementControl) {
+      modelEuler.y = ((movingDirection) =>
+        movingDirection === null ? modelEuler.y : movingDirection)(
+        getMovingDirection(forward, backward, leftward, rightward, pivot)
+      );
 
-    // Move character to the moving direction
-    if (
-      forward ||
-      backward ||
-      leftward ||
-      rightward ||
-      gamepadKeys.forward ||
-      gamepadKeys.backward ||
-      gamepadKeys.leftward ||
-      gamepadKeys.rightward
-    )
-      moveCharacter(delta, run, slopeAngle, movingObjectVelocity);
+      // Move character to the moving direction
+      if (
+        forward ||
+        backward ||
+        leftward ||
+        rightward ||
+        gamepadKeys.forward ||
+        gamepadKeys.backward ||
+        gamepadKeys.leftward ||
+        gamepadKeys.rightward
+      ) {
+        moveCharacter(delta, run, slopeAngle, movingObjectVelocity);
+      }
 
-    // Jump impulse
-    if ((jump || button1Pressed) && canJump) {
-      // characterRef.current.applyImpulse(jumpDirection.set(0, 0.5, 0), true);
-      jumpVelocityVec.set(
-        currentVel.x,
-        run ? sprintJumpMult * jumpVel : jumpVel,
-        currentVel.z
-      );
-      // Apply slope normal to jump direction
-      characterRef.current.setLinvel(
-        jumpDirection
-          .set(0, (run ? sprintJumpMult * jumpVel : jumpVel) * slopJumpMult, 0)
-          .projectOnVector(actualSlopeNormalVec)
-          .add(jumpVelocityVec),
-        true
-      );
-      // Apply jump force downward to the standing platform
-      characterMassForce.y *= jumpForceToGroundMult;
-      rayHit?.collider
-        .parent()
-        ?.applyImpulseAtPoint(characterMassForce, standingForcePoint, true);
+      // Jump impulse
+      if ((jump || button1Pressed) && canJump) {
+        // characterRef.current.applyImpulse(jumpDirection.set(0, 0.5, 0), true);
+        jumpVelocityVec.set(
+          currentVel.x,
+          run ? sprintJumpMult * jumpVel : jumpVel,
+          currentVel.z
+        );
+        // Apply slope normal to jump direction
+        characterRef.current.setLinvel(
+          jumpDirection
+            .set(
+              0,
+              (run ? sprintJumpMult * jumpVel : jumpVel) * slopJumpMult,
+              0
+            )
+            .projectOnVector(actualSlopeNormalVec)
+            .add(jumpVelocityVec),
+          true
+        );
+        // Apply jump force downward to the standing platform
+        characterMassForce.y *= jumpForceToGroundMult;
+        rayHit?.collider
+          .parent()
+          ?.applyImpulseAtPoint(characterMassForce, standingForcePoint, true);
+      }
+      if (
+        jumpPressedThisFrame &&
+        !canJump &&
+        enableDoubleJump &&
+        airJumpsUsedRef.current < maxAirJumpsClamped
+      ) {
+        didAirJumpThisFrame = true;
+        const baseJumpVel = run ? sprintJumpMult * jumpVel : jumpVel;
+        const jumpVelY = baseJumpVel * airJumpVelMultiplier;
+        jumpVelocityVec.set(currentVel.x, jumpVelY, currentVel.z);
+        characterRef.current.setLinvel(
+          jumpDirection.set(jumpVelocityVec.x, jumpVelY, jumpVelocityVec.z),
+          true
+        );
+        airJumpsUsedRef.current += 1;
+      }
     }
-    if (
-      jumpPressedThisFrame &&
-      !canJump &&
-      enableDoubleJump &&
-      airJumpsUsedRef.current < maxAirJumpsClamped
-    ) {
-      didAirJumpThisFrame = true;
-      const baseJumpVel = run ? sprintJumpMult * jumpVel : jumpVel;
-      const jumpVelY = baseJumpVel * airJumpVelMultiplier;
-      jumpVelocityVec.set(currentVel.x, jumpVelY, currentVel.z);
-      characterRef.current.setLinvel(
-        jumpDirection.set(jumpVelocityVec.x, jumpVelY, jumpVelocityVec.z),
-        true
-      );
-      airJumpsUsedRef.current += 1;
+
+    /**
+     * Fixed camera feature
+     */
+    if (isModeFixedCamera) {
+      if (
+        leftward ||
+        gamepadKeys.leftward ||
+        (joystickDis > 0 &&
+          joystickAng > (2 * Math.PI) / 3 &&
+          joystickAng < (4 * Math.PI) / 3) ||
+        (gamepadJoystickDis > 0 &&
+          gamepadJoystickAng > (2 * Math.PI) / 3 &&
+          gamepadJoystickAng < (4 * Math.PI) / 3)
+      ) {
+        pivot.rotation.y += run
+          ? delta * sprintMult * fixedCamRotMult
+          : delta * fixedCamRotMult;
+      } else if (
+        rightward ||
+        gamepadKeys.rightward ||
+        (joystickDis > 0 && joystickAng < Math.PI / 3) ||
+        joystickAng > (5 * Math.PI) / 3 ||
+        (gamepadJoystickDis > 0 && gamepadJoystickAng < Math.PI / 3) ||
+        gamepadJoystickAng > (5 * Math.PI) / 3
+      ) {
+        pivot.rotation.y -= run
+          ? delta * sprintMult * fixedCamRotMult
+          : delta * fixedCamRotMult;
+      }
     }
+
+    if (disableMovementControl) return;
 
     // Rotate character Indicator
     modelQuat.setFromEuler(modelEuler);
@@ -1779,37 +1863,6 @@ const Ecctrl: ForwardRefRenderFunction<CustomEcctrlRigidBody, EcctrlProps> = (
     }
 
     /**
-     * Fixed camera feature
-     */
-    if (isModeFixedCamera) {
-      if (
-        leftward ||
-        gamepadKeys.leftward ||
-        (joystickDis > 0 &&
-          joystickAng > (2 * Math.PI) / 3 &&
-          joystickAng < (4 * Math.PI) / 3) ||
-        (gamepadJoystickDis > 0 &&
-          gamepadJoystickAng > (2 * Math.PI) / 3 &&
-          gamepadJoystickAng < (4 * Math.PI) / 3)
-      ) {
-        pivot.rotation.y += run
-          ? delta * sprintMult * fixedCamRotMult
-          : delta * fixedCamRotMult;
-      } else if (
-        rightward ||
-        gamepadKeys.rightward ||
-        (joystickDis > 0 && joystickAng < Math.PI / 3) ||
-        joystickAng > (5 * Math.PI) / 3 ||
-        (gamepadJoystickDis > 0 && gamepadJoystickAng < Math.PI / 3) ||
-        gamepadJoystickAng > (5 * Math.PI) / 3
-      ) {
-        pivot.rotation.y -= run
-          ? delta * sprintMult * fixedCamRotMult
-          : delta * fixedCamRotMult;
-      }
-    }
-
-    /**
      * Apply all the animations
      */
     if (animated) {
@@ -1969,6 +2022,8 @@ export interface CustomEcctrlRigidBody {
   group: THREE.Group | null;
   rotateCamera: (x: number, y: number) => void;
   rotateCharacterOnY: (rad: number) => void;
+  faceCameraDirection: () => void;
+  setCharacterRotationOnY: (rad: number) => void;
   setPosition: (pos: THREE.Vector3) => void;
   /** 0 = Dynamic, 2 = KinematicPositionBased */
   setBodyType: (type: number) => void;
@@ -1983,6 +2038,7 @@ export interface EcctrlProps extends RigidBodyProps {
   characterInitDir?: number;
   followLight?: boolean;
   disableControl?: boolean;
+  disableMovementControl?: boolean;
   disableFollowCam?: boolean;
   disableFollowCamPos?: { x: number; y: number; z: number } | null;
   disableFollowCamTarget?: { x: number; y: number; z: number } | null;

@@ -6,8 +6,10 @@ import React, {
 } from 'react';
 
 import { Text } from '@react-three/drei';
-import { useFrame } from '@react-three/fiber';
+import { useFrame, useThree } from '@react-three/fiber';
 import { BallCollider, CuboidCollider, RigidBody } from '@react-three/rapier';
+
+import Label3D from './Label3D';
 
 // Field dimensions
 const FIELD_W = 30; // x
@@ -132,6 +134,8 @@ const SoccerBall = forwardRef(function SoccerBall(
 });
 
 export default function SoccerField({ position = [0, 0, 40] }) {
+  const { gl } = useThree();
+  const isWebGPU = gl?.isWebGPURenderer === true;
   const [score, setScore] = useState({ home: 0, away: 0 });
   const scoreRef = useRef({ home: 0, away: 0 });
   const [lastGoal, setLastGoal] = useState(null);
@@ -193,31 +197,49 @@ export default function SoccerField({ position = [0, 0, 40] }) {
       </mesh>
 
       {/* Score display on pitch floor */}
-      <Text
-        position={[0, PITCH_Y + 0.01, 0]}
-        rotation={[-Math.PI / 2, 0, 0]}
-        fontSize={1.6}
-        color="white"
-        anchorX="center"
-        anchorY="middle"
-        userData={{ camExcludeCollision: true }}
-      >
-        {scoreText}
-      </Text>
-
-      {/* Goal flash label */}
-      {lastGoal && (
+      {isWebGPU ? (
+        <Label3D
+          text={scoreText}
+          color="white"
+          maxWidth={8}
+          position={[0, PITCH_Y + 0.01, 0]}
+          rotation={[-Math.PI / 2, 0, 0]}
+        />
+      ) : (
         <Text
-          position={[0, FLOOR_Y + 4, 0]}
-          fontSize={1.4}
-          color="#ffdd00"
+          position={[0, PITCH_Y + 0.01, 0]}
+          rotation={[-Math.PI / 2, 0, 0]}
+          fontSize={1.6}
+          color="white"
           anchorX="center"
           anchorY="middle"
           userData={{ camExcludeCollision: true }}
         >
-          {`GOAL! — ${lastGoal}`}
+          {scoreText}
         </Text>
       )}
+
+      {/* Goal flash label */}
+      {lastGoal &&
+        (isWebGPU ? (
+          <Label3D
+            text={`GOAL! — ${lastGoal}`}
+            color="#ffdd00"
+            maxWidth={8}
+            position={[0, FLOOR_Y + 4, 0]}
+          />
+        ) : (
+          <Text
+            position={[0, FLOOR_Y + 4, 0]}
+            fontSize={1.4}
+            color="#ffdd00"
+            anchorX="center"
+            anchorY="middle"
+            userData={{ camExcludeCollision: true }}
+          >
+            {`GOAL! — ${lastGoal}`}
+          </Text>
+        ))}
 
       {/* ── Perimeter walls ── */}
       {/* +Z wall */}

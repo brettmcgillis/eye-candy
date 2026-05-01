@@ -27,6 +27,7 @@ export default function Level({
   onPointerMove,
   onPointerDown,
   onPointerUp,
+  soccerFieldRef,
 }) {
   return (
     <>
@@ -37,7 +38,7 @@ export default function Level({
       <FloatingPlatform position={FLOATING_PLATFORM_POSITION} />
       <DynamicPlatforms position={DYNAMIC_PLATFORMS_POSITION} />
       <Pool position={POOL_POSITION} />
-      <SoccerField position={SOCCER_FIELD_POSITION} />
+      <SoccerField ref={soccerFieldRef} position={SOCCER_FIELD_POSITION} />
       <Boundaries gridSectionColor={gridSectionColor} />
       <Floor
         gridSectionColor={gridSectionColor}

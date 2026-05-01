@@ -81,7 +81,7 @@ const SoccerBall = forwardRef(function SoccerBall(
     rb.current.setAngvel({ x: 0, y: 0, z: 0 }, true);
   };
 
-  useImperativeHandle(ref, () => ({ reset }));
+  useImperativeHandle(ref, () => ({ reset, getRb: () => rb.current }));
 
   useFrame(({ clock }) => {
     if (!rb.current) return;
@@ -133,13 +133,35 @@ const SoccerBall = forwardRef(function SoccerBall(
   );
 });
 
-export default function SoccerField({ position = [0, 0, 40] }) {
+const SoccerField = forwardRef(function SoccerField({ position = [0, 0, 40] }, ref) {
   const { gl } = useThree();
   const isWebGPU = gl?.isWebGPURenderer === true;
   const [score, setScore] = useState({ home: 0, away: 0 });
   const scoreRef = useRef({ home: 0, away: 0 });
   const [lastGoal, setLastGoal] = useState(null);
   const ballRef = useRef(null);
+
+  useImperativeHandle(ref, () => ({
+    getBallState: () => {
+      const rb = ballRef.current?.getRb?.();
+      if (!rb) return null;
+      const t = rb.translation();
+      const lv = rb.linvel();
+      const av = rb.angvel();
+      return {
+        position: { x: t.x, y: t.y, z: t.z },
+        linearVelocity: { x: lv.x, y: lv.y, z: lv.z },
+        angularVelocity: { x: av.x, y: av.y, z: av.z },
+      };
+    },
+    setBallState: (state) => {
+      const rb = ballRef.current?.getRb?.();
+      if (!rb) return;
+      rb.setTranslation(state.position, true);
+      rb.setLinvel(state.linearVelocity, true);
+      rb.setAngvel(state.angularVelocity, true);
+    },
+  }));
 
   const px = position[0];
   const py = position[1];
@@ -283,4 +305,6 @@ export default function SoccerField({ position = [0, 0, 40] }) {
       />
     </group>
   );
-}
+});
+
+export default SoccerField;

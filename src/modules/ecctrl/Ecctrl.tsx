@@ -1408,14 +1408,15 @@ const Ecctrl: ForwardRefRenderFunction<CustomEcctrlRigidBody, EcctrlProps> = (
     /**
      * Getting all joystick control values
      */
-    const { joystickDis, joystickAng, runState, button1Pressed } =
+    const { joystickDis, joystickAng, runState, button1Pressed, button2Pressed } =
       getJoystickValues();
+    const effectiveRunState = runState || button2Pressed;
 
     // Move character to the moving direction (joystick controls)
     if (!disableMovementControl && joystickDis > 0) {
       // Apply camera rotation to character model
       modelEuler.y = pivot.rotation.y + (joystickAng - Math.PI / 2);
-      moveCharacter(delta, runState, slopeAngle, movingObjectVelocity);
+      moveCharacter(delta, effectiveRunState, slopeAngle, movingObjectVelocity);
     }
 
     /**
@@ -1899,7 +1900,7 @@ const Ecctrl: ForwardRefRenderFunction<CustomEcctrlRigidBody, EcctrlProps> = (
           gamepadKeys.leftward ||
           gamepadKeys.rightward)
       ) {
-        run || runState
+        run || effectiveRunState
           ? runAnimation && runAnimation()
           : walkAnimation && walkAnimation();
       } else if (!canJump) {

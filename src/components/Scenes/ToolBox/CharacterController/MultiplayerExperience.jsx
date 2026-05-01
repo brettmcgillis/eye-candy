@@ -11,6 +11,7 @@ export default function MultiplayerExperience({ roomId = 'default-room' }) {
   const [playerColor] = useState(() => generatePlayerColor(playerId));
   const [playerModel, setPlayerModel] = useState('Capsule');
   const ecctrlRef = useRef(null);
+  const soccerFieldRef = useRef(null);
 
   const { remotePlayers, remoteShots, sendShot } = useMultiplayer({
     roomId,
@@ -19,6 +20,8 @@ export default function MultiplayerExperience({ roomId = 'default-room' }) {
     playerColor,
     playerModel,
     enabled: true,
+    getBallState: () => soccerFieldRef.current?.getBallState() ?? null,
+    onBallState: (state) => soccerFieldRef.current?.setBallState(state),
   });
 
   return (
@@ -29,6 +32,7 @@ export default function MultiplayerExperience({ roomId = 'default-room' }) {
       remoteShots={remoteShots}
       onShotFired={sendShot}
       onModelChange={setPlayerModel}
+      soccerFieldRef={soccerFieldRef}
     />
   );
 }

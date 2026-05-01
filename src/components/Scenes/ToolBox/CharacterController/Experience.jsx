@@ -90,6 +90,7 @@ export default function Experience({
   remoteShots = EMPTY_SHOTS,
   onShotFired = null,
   onModelChange = null,
+  soccerFieldRef = null,
 }) {
   const { gl } = useThree();
   const isWebGPU = gl?.isWebGPURenderer === true;
@@ -460,6 +461,7 @@ export default function Experience({
           onPointerMove={handlePointToMoveHover}
           onPointerDown={handlePointToMoveDown}
           onPointerUp={handlePointToMoveUp}
+          soccerFieldRef={soccerFieldRef}
         />
         {shotsEnabled && (
           <ShotCube onFire={onShotFired} remoteShots={remoteShots} />

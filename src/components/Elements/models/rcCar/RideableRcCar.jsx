@@ -198,7 +198,7 @@ function RcCarPhysics({
     }
   }, [mounted, standalone, ecctrlRef]);
 
-  // ── Mount / dismount via action1 ─────────────────────────────────────────────
+  // ── Mount / dismount via action1 (keyboard) ──────────────────────────────────
   useEffect(() => {
     if (standalone || !subscribeKeys) return;
     return subscribeKeys(
@@ -213,6 +213,22 @@ function RcCarPhysics({
       }
     );
   }, [id, onMount, onDismount, standalone, subscribeKeys]);
+
+  // ── Mount / dismount via button4 (joystick) ───────────────────────────────────
+  useEffect(() => {
+    if (standalone) return;
+    return useJoystickControls.subscribe(
+      (state) => state.curButton4Pressed,
+      (pressed) => {
+        if (!pressed) return;
+        if (!mountedRef.current && nearPlayerRef.current) {
+          onMount?.(id, chassisGroupRef);
+        } else if (mountedRef.current) {
+          onDismount?.();
+        }
+      }
+    );
+  }, [id, onMount, onDismount, standalone]);
 
   // ── Physics frame loop ───────────────────────────────────────────────────────
   useFrame((state, delta) => {
@@ -234,22 +250,22 @@ function RcCarPhysics({
     let backward = keys.backward ?? false;
     let leftward = keys.leftward ?? false;
     let rightward = keys.rightward ?? false;
-    const sprinting = keys.run ?? false;
+    let sprinting = keys.run ?? false;
     let jumping = keys.jump ?? false;
     let braking = keys.action2 ?? false;
     let handbraking = keys.action4 ?? false;
 
     if (joystick?.joystickDis > 0) {
-      const jx = Math.sin(joystick.joystickAng);
-      const jy = Math.cos(joystick.joystickAng);
+      const jx = Math.cos(joystick.joystickAng);
+      const jy = Math.sin(joystick.joystickAng);
       if (jy > 0.3) forward = true;
       if (jy < -0.3) backward = true;
-      if (jx > 0.3) leftward = true;
-      if (jx < -0.3) rightward = true;
+      if (jx > 0.3) rightward = true;
+      if (jx < -0.3) leftward = true;
     }
     jumping = jumping || joystick?.button1Pressed || false;
-    braking = braking || joystick?.button2Pressed || false;
-    handbraking = handbraking || joystick?.button4Pressed || false;
+    sprinting = sprinting || joystick?.button2Pressed || false;
+    handbraking = handbraking || joystick?.button3Pressed || false;
 
     // Only drive when someone is in the car
     const isActive = standalone || mounted;

@@ -9,6 +9,12 @@ import { useRideableState } from '../../../../../modules/ecctrl/rideables/useRid
 
 declare const __PARTY_HOST__: string;
 
+export interface BallState {
+  position: { x: number; y: number; z: number };
+  linearVelocity: { x: number; y: number; z: number };
+  angularVelocity: { x: number; y: number; z: number };
+}
+
 export interface CharacterStateData {
   position: { x: number; y: number; z: number };
   rotation: number;
@@ -20,6 +26,9 @@ export interface CharacterStateData {
   curAnimation?: string;
   name?: string;
   mountedRideableId?: string | null;
+  rideablePosition?: { x: number; y: number; z: number } | null;
+  rideableRotation?: { x: number; y: number; z: number; w: number } | null;
+  ballState?: BallState | null;
 }
 
 export interface RemotePlayer extends CharacterStateData {
@@ -34,6 +43,8 @@ interface UseMultiplayerProps {
   playerColor: string;
   playerModel?: string;
   enabled?: boolean;
+  getBallState?: () => BallState | null;
+  onBallState?: (state: BallState) => void;
 }
 
 interface ServerMessage {
@@ -57,6 +68,8 @@ export function useMultiplayer({
   playerColor,
   playerModel = 'Capsule',
   enabled = true,
+  getBallState,
+  onBallState,
 }: UseMultiplayerProps) {
   const [remotePlayers, setRemotePlayers] = useState<RemotePlayer[]>([]);
   const [remoteShots, setRemoteShots] = useState<RemoteShot[]>([]);
@@ -67,6 +80,14 @@ export function useMultiplayer({
   const stateHistoryRef = useRef<
     Map<string, Array<CharacterStateData & { timestamp: number }>>
   >(new Map());
+  // Track all known remote player IDs for ball authority computation
+  const knownRemoteIdsRef = useRef<Set<string>>(new Set());
+  // Keep callback refs stable across renders
+  const getBallStateRef = useRef(getBallState);
+  getBallStateRef.current = getBallState;
+  const onBallStateRef = useRef(onBallState);
+  onBallStateRef.current = onBallState;
+
   const SYNC_INTERVAL = 100; // ms between state broadcasts
 
   useEffect(() => {
@@ -101,6 +122,7 @@ export function useMultiplayer({
               prev.filter((p) => p.id !== message.playerId)
             );
             stateHistoryRef.current.delete(message.playerId!);
+            knownRemoteIdsRef.current.delete(message.playerId!);
             break;
 
           case 'existing-players':
@@ -111,8 +133,22 @@ export function useMultiplayer({
             const remotePlayerId = message.playerId;
             if (remotePlayerId === playerId) return;
 
+            knownRemoteIdsRef.current.add(remotePlayerId!);
+
             const stateData = message.data as CharacterStateData;
             const timestamp = message.timestamp || Date.now();
+
+            // Ball authority: player with the lexicographically lowest ID controls the ball.
+            // Non-authority clients apply the authority's ball state to their physics body.
+            const allIds = [playerId, ...knownRemoteIdsRef.current].sort();
+            const authorityId = allIds[0];
+            if (
+              remotePlayerId === authorityId &&
+              stateData.ballState &&
+              onBallStateRef.current
+            ) {
+              onBallStateRef.current(stateData.ballState);
+            }
 
             // Store state history for interpolation
             if (!stateHistoryRef.current.has(remotePlayerId!)) {
@@ -180,6 +216,7 @@ export function useMultiplayer({
 
     return () => {
       socket.close();
+      knownRemoteIdsRef.current.clear();
     };
   }, [roomId, playerId, enabled]);
 
@@ -202,6 +239,24 @@ export function useMultiplayer({
       group.getWorldQuaternion(worldQuat);
       const worldEuler = new THREE.Euler().setFromQuaternion(worldQuat, 'YXZ');
 
+      const rideableState = useRideableState.getState();
+      const mountedId = rideableState.mountedId ?? null;
+      let rideablePosition = null;
+      let rideableRotation = null;
+      if (mountedId && rideableState.mountedGroupRef?.current) {
+        const carPos = new THREE.Vector3();
+        const carQuat = new THREE.Quaternion();
+        rideableState.mountedGroupRef.current.getWorldPosition(carPos);
+        rideableState.mountedGroupRef.current.getWorldQuaternion(carQuat);
+        rideablePosition = { x: carPos.x, y: carPos.y, z: carPos.z };
+        rideableRotation = { x: carQuat.x, y: carQuat.y, z: carQuat.z, w: carQuat.w };
+      }
+
+      // Ball authority: only the player with the lowest sorted ID broadcasts ball state.
+      const allIds = [playerId, ...knownRemoteIdsRef.current].sort();
+      const isAuthority = allIds[0] === playerId;
+      const ballState = isAuthority ? (getBallStateRef.current?.() ?? null) : null;
+
       socketRef.current!.send(
         JSON.stringify({
           type: 'player-state',
@@ -219,7 +274,10 @@ export function useMultiplayer({
             model: playerModelRef.current,
             color: playerColor,
             curAnimation: useGame.getState().curAnimation,
-            mountedRideableId: useRideableState.getState().mountedId ?? null,
+            mountedRideableId: mountedId,
+            rideablePosition,
+            rideableRotation,
+            ballState,
           },
         })
       );

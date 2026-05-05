@@ -36,8 +36,7 @@ export default function Square({
   position,
   color,
   settings,
-  isMainHighlighted = false,
-  isMirrorHighlighted = false,
+  isHighlighted = false,
   highlightColor = '#ff2020',
   highlightEmissiveIntensity = 1.5,
   highlightStrength = 1,
@@ -51,49 +50,26 @@ export default function Square({
   roughnessTexture.wrapT = RepeatWrapping;
   roughnessTexture.repeat.set(2, 2);
   const [x, y] = position;
-  const mirror = settings.symmetric && (x !== 0 || y !== 0);
-  const materialColor = isMainHighlighted ? highlightColor : color;
-  const emissiveColor = isMainHighlighted ? highlightColor : '#000000';
-  const emissiveIntensity = isMainHighlighted
-    ? highlightEmissiveIntensity * highlightStrength
-    : 0;
-  const mirrorMaterialColor = isMirrorHighlighted ? highlightColor : color;
-  const mirrorEmissiveColor = isMirrorHighlighted ? highlightColor : '#000000';
-  const mirrorEmissiveIntensity = isMirrorHighlighted
+  const materialColor = isHighlighted ? highlightColor : color;
+  const emissiveColor = isHighlighted ? highlightColor : '#000000';
+  const emissiveIntensity = isHighlighted
     ? highlightEmissiveIntensity * highlightStrength
     : 0;
 
   return (
-    <>
-      <mesh position={[x, y, 0]}>
-        <boxGeometry args={[size, size, settings.paperDepth]} />
-        <SquareMaterial
-          color={materialColor}
-          emissive={emissiveColor}
-          emissiveIntensity={emissiveIntensity}
-          roughness={roughness}
-          metalness={metalness}
-          flatShading={flatShading}
-          watercolor={watercolor}
-          roughnessTexture={roughnessTexture}
-        />
-      </mesh>
-      {mirror && (
-        <mesh castShadow receiveShadow position={[-x, -y, 0]}>
-          <boxGeometry args={[size, size, settings.paperDepth]} />
-          <SquareMaterial
-            color={mirrorMaterialColor}
-            emissive={mirrorEmissiveColor}
-            emissiveIntensity={mirrorEmissiveIntensity}
-            roughness={roughness}
-            metalness={metalness}
-            flatShading={flatShading}
-            watercolor={watercolor}
-            roughnessTexture={roughnessTexture}
-          />
-        </mesh>
-      )}
-    </>
+    <mesh position={[x, y, 0]}>
+      <boxGeometry args={[size, size, settings.paperDepth]} />
+      <SquareMaterial
+        color={materialColor}
+        emissive={emissiveColor}
+        emissiveIntensity={emissiveIntensity}
+        roughness={roughness}
+        metalness={metalness}
+        flatShading={flatShading}
+        watercolor={watercolor}
+        roughnessTexture={roughnessTexture}
+      />
+    </mesh>
   );
 }
 

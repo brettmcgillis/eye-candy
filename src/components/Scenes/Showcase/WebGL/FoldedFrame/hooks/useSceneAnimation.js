@@ -116,9 +116,10 @@ function buildMorseSegments(text) {
 function pickPulseTarget(pulseIndex, pulseTargets, seed) {
   if (!pulseTargets.length) return null;
   const n = Math.max(1, pulseTargets.length);
-  const hashed =
-    Math.abs((pulseIndex + 1) * 48271 + seed * 69621 + pulseIndex * 31) % n;
-  return pulseTargets[hashed];
+  const safePulseIndex = Math.max(0, Math.floor(pulseIndex));
+  const safeSeed = Math.max(1, Math.floor(seed || 1));
+  const offset = safeSeed % n;
+  return pulseTargets[(safePulseIndex + offset) % n];
 }
 
 function pulseEnvelope(phase, segmentUnits) {
@@ -129,14 +130,13 @@ function pulseEnvelope(phase, segmentUnits) {
   return Math.min(inRamp, outRamp);
 }
 
-export default function useSceneAnimation({ controls, frameLayers, settings }) {
+export default function useSceneAnimation({ controls, frameLayers }) {
   const [animationState, setAnimationState] = useState({
     depthBuffer: 1,
     colorRangeStart: null,
     colorRangeEnd: null,
     highlightedLayerIndex: -1,
     highlightedSquareIndex: -1,
-    highlightedIsMirror: false,
     morsePulseStrength: 0,
   });
 
@@ -153,13 +153,8 @@ export default function useSceneAnimation({ controls, frameLayers, settings }) {
   const pulseTargets = useMemo(() => {
     const targets = [];
     frameLayers.forEach((layer, layerIndex) => {
-      layer.forEach((square, squareIndex) => {
-        targets.push({ layerIndex, squareIndex, isMirror: false });
-        const [x, y] = square.position;
-        const hasMirror = settings?.symmetric && (x !== 0 || y !== 0);
-        if (hasMirror) {
-          targets.push({ layerIndex, squareIndex, isMirror: true });
-        }
+      layer.forEach((_, squareIndex) => {
+        targets.push({ layerIndex, squareIndex });
       });
     });
 
@@ -174,7 +169,7 @@ export default function useSceneAnimation({ controls, frameLayers, settings }) {
     }
 
     return shuffled;
-  }, [frameLayers, settings, controls.morseSeed]);
+  }, [frameLayers, controls.morseSeed]);
 
   useFrame(({ clock }) => {
     const t = clock.getElapsedTime();
@@ -184,7 +179,6 @@ export default function useSceneAnimation({ controls, frameLayers, settings }) {
     let colorRangeEnd = null;
     let highlightedLayerIndex = -1;
     let highlightedSquareIndex = -1;
-    let highlightedIsMirror = false;
     let morsePulseStrength = 0;
 
     if (controls.animationMode === 'layerFade') {
@@ -252,7 +246,6 @@ export default function useSceneAnimation({ controls, frameLayers, settings }) {
           if (target) {
             highlightedLayerIndex = target.layerIndex;
             highlightedSquareIndex = target.squareIndex;
-            highlightedIsMirror = target.isMirror || false;
             morsePulseStrength = pulseEnvelope(
               segmentPhase,
               activeSegment?.units || 1
@@ -268,7 +261,6 @@ export default function useSceneAnimation({ controls, frameLayers, settings }) {
       colorRangeEnd,
       highlightedLayerIndex,
       highlightedSquareIndex,
-      highlightedIsMirror,
       morsePulseStrength,
     });
   });

@@ -8,6 +8,7 @@ import {
   PerspectiveCamera,
   RandomizedLight,
 } from '@react-three/drei';
+import { useThree } from '@react-three/fiber';
 
 import getColorsInRange from '../../../../../utils/colors';
 import { fourtyFiveDegrees } from '../../../../../utils/math';
@@ -18,6 +19,7 @@ import useSceneAnimation from './hooks/useSceneAnimation';
 import useSceneControls from './hooks/useSceneControls';
 
 function FoldedFrame() {
+  const { size } = useThree();
   const [controls] = useSceneControls();
 
   const {
@@ -53,9 +55,8 @@ function FoldedFrame() {
     colorRangeEnd: animatedColorEnd,
     highlightedLayerIndex,
     highlightedSquareIndex,
-    highlightedIsMirror,
     morsePulseStrength,
-  } = useSceneAnimation({ controls, frameLayers, settings });
+  } = useSceneAnimation({ controls, frameLayers });
 
   const renderFrameLayers = useMemo(() => {
     if (!animatedColorStart || !animatedColorEnd) return frameLayers;
@@ -75,6 +76,10 @@ function FoldedFrame() {
   }, [frameLayers, animatedColorStart, animatedColorEnd]);
 
   const groupRef = useRef();
+  const aspect = size.width / Math.max(1, size.height);
+  const isMobile = size.width <= 768;
+  const portraitBoost = Math.max(0, 1 - aspect);
+  const cameraZ = isMobile ? 4.2 + portraitBoost * 1.2 : 3;
 
   return (
     <>
@@ -89,7 +94,7 @@ function FoldedFrame() {
 
       <PerspectiveCamera
         makeDefault
-        position={[0, 1.1, 3]}
+        position={[0, 1.1, cameraZ]}
         rotation={[0, 0, 0]}
       />
       <AccumulativeShadows
@@ -143,9 +148,6 @@ function FoldedFrame() {
               settings={settings}
               highlightedSquareIndex={
                 highlightedLayerIndex === index ? highlightedSquareIndex : -1
-              }
-              highlightedIsMirror={
-                highlightedLayerIndex === index ? highlightedIsMirror : false
               }
               highlightColor={morseColor}
               highlightEmissiveIntensity={morseEmissiveIntensity}

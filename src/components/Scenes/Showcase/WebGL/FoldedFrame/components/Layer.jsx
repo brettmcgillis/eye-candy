@@ -9,7 +9,6 @@ export default function Layer({
   depth,
   settings,
   highlightedSquareIndex = -1,
-  highlightedIsMirror = false,
   highlightColor,
   highlightEmissiveIntensity,
   highlightStrength = 1,
@@ -21,9 +20,6 @@ export default function Layer({
   return (
     <group castShadow receiveShadow position={[0, 0, depth]}>
       {squares.map((square, index) => {
-        const isTargeted = highlightedSquareIndex === index;
-        const isMainHighlighted = isTargeted && !highlightedIsMirror;
-        const isMirrorHighlighted = isTargeted && highlightedIsMirror;
         return (
           <Square
             key={`sq-${index}`}
@@ -31,8 +27,7 @@ export default function Layer({
             layer={layer}
             {...square}
             settings={settings}
-            isMainHighlighted={isMainHighlighted}
-            isMirrorHighlighted={isMirrorHighlighted}
+            isHighlighted={highlightedSquareIndex === index}
             highlightColor={highlightColor}
             highlightEmissiveIntensity={highlightEmissiveIntensity}
             highlightStrength={highlightStrength}

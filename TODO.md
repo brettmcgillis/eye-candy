@@ -135,6 +135,9 @@ To Build:
 - [ ] Police Presence
 - [ ] Flying High
 - [ ] Dumpster Fire
+- [x] Burning At Both Ends - Enlightened
+- [x] Burning At Both Ends - Extinguished
+- [x] Burning At Both Ends - Lenticular
 - [x] Mycelium
 - [ ] All my thoughts are so cumulus - Atomic
 - [ ] All my thoughts are so cumulus - Censored Rings
@@ -153,6 +156,13 @@ To Build:
 
 - TrophyHusband
 - Yggdraskill
+
+## Lenticulars
+
+- [ ] Burning At Both Ends
+- [ ] Still Pulling For you - Rough Waters
+- [ ] Still Pulling For you - Triptych
+- [ ] All My Thoughts Are So Cumulus - Static
 
 ## Firescale
 

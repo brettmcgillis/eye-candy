@@ -4,6 +4,7 @@ import React, { useMemo, useState } from 'react';
 
 import { animated, useSpring } from '@react-spring/three';
 import { useGLTF } from '@react-three/drei';
+import { useFrame } from '@react-three/fiber';
 
 import { modelFile } from '../../../utils/appUtils';
 
@@ -23,7 +24,7 @@ export function BretBase({
   return (
     <group {...props} dispose={null}>
       <group rotation={[Math.PI / 2, 0, 0]}>
-        <mesh
+        <animated.mesh
           castShadow
           receiveShadow
           geometry={nodes['bret-in'].geometry}
@@ -100,40 +101,43 @@ export default function Bret({
 
 export function InteractiveBret({
   pressDepth = 0.012,
-  glowIntensity = 2.5,
+  emissiveIntensity = 2.5,
+  innerColor = '#ff0000',
+  outerColor = '#000000',
   onClick,
   ...props
 }) {
-  const [isOn, setIsOn] = useState(false);
+  const [isOn, setIsOn] = useState(true);
   const [isPressed, setIsPressed] = useState(false);
 
   const innerMaterial = useMemo(
     () =>
       new THREE.MeshStandardMaterial({
-        color: '#ff0000',
-        emissive: '#ff0000',
+        color: innerColor,
+        emissive: innerColor,
         emissiveIntensity: 0,
         side: THREE.DoubleSide,
       }),
-    []
+    [innerColor]
   );
 
   const outerMaterial = useMemo(
     () =>
       new THREE.MeshStandardMaterial({
-        color: '#000000',
+        color: outerColor,
         side: THREE.DoubleSide,
       }),
-    []
+    [outerColor]
   );
 
-  const { pressY, emissive } = useSpring({
+  const { pressY } = useSpring({
     pressY: isPressed ? -pressDepth : 0,
-    emissive: isOn ? glowIntensity : 0,
-    config: (key) =>
-      key === 'pressY'
-        ? { mass: 0.6, tension: 320, friction: 16 }
-        : { mass: 1, tension: 140, friction: 20 },
+    config: { mass: 0.6, tension: 320, friction: 16 },
+  });
+
+  useFrame(() => {
+    if (!innerMaterial) return;
+    innerMaterial.emissiveIntensity = isOn ? emissiveIntensity : 0;
   });
 
   return (
@@ -142,7 +146,7 @@ export function InteractiveBret({
       innerMaterial={innerMaterial}
       outerMaterial={outerMaterial}
       innerProps={{
-        positionY: pressY,
+        'position-y': pressY,
         onPointerDown: (e) => {
           e.stopPropagation();
           setIsPressed(true);
@@ -154,15 +158,6 @@ export function InteractiveBret({
           onClick?.();
         },
         onPointerLeave: () => setIsPressed(false),
-        children: (
-          <animated.meshStandardMaterial
-            attach="material"
-            color="#ff0000"
-            emissive="#ff0000"
-            emissiveIntensity={emissive}
-            side={THREE.DoubleSide}
-          />
-        ),
       }}
       outerProps={{
         onPointerDown: (e) => {

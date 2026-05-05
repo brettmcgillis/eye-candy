@@ -6,21 +6,21 @@ import { animated, useSpring } from '@react-spring/three';
 import { useGLTF } from '@react-three/drei';
 import { useFrame } from '@react-three/fiber';
 
-import { modelFile } from '../../../utils/appUtils';
+import { modelFile } from '../../../../../../utils/appUtils';
+import neonFlicker from '../utils/neonFlicker';
 
-/* ========================================================================
-   Generic base (new third variation)
-======================================================================== */
+/* -------------------------------------------------------
+   LoGlow-specific interactive Reversal with neon flicker
+------------------------------------------------------- */
 
-export function ReversalBase({
-  innerMaterial = null,
-  outerMaterial = null,
+function ReversalBase({
+  innerMaterial,
+  outerMaterial,
   innerProps = {},
   outerProps = {},
   ...props
 }) {
   const { nodes } = useGLTF(modelFile('Reversal.glb'));
-
   const isJSX = (m) => React.isValidElement(m);
 
   return (
@@ -41,7 +41,6 @@ export function ReversalBase({
             )}
           </animated.mesh>
         )}
-
         {outerMaterial && (
           <mesh
             castShadow
@@ -62,57 +61,12 @@ export function ReversalBase({
   );
 }
 
-/* ========================================================================
-   Static colored version (existing default export)
-======================================================================== */
-
-export default function Reversal({
-  innerColor = '#FF0000',
-  innerColorEmissive = false,
-  innerColorEmissiveIntensity = 0,
-  outerColor = '#000000',
-  outerColorEmissive = false,
-  outerColorEmissiveIntensity = 0,
-  ...props
-}) {
-  const innerMaterial = useMemo(() => {
-    if (!innerColor) return null;
-
-    return new THREE.MeshStandardMaterial({
-      color: innerColorEmissive ? null : innerColor,
-      emissive: innerColorEmissive ? innerColor : null,
-      emissiveIntensity: innerColorEmissiveIntensity,
-      side: THREE.DoubleSide,
-    });
-  }, [innerColor, innerColorEmissive, innerColorEmissiveIntensity]);
-
-  const outerMaterial = useMemo(() => {
-    if (!outerColor) return null;
-
-    return new THREE.MeshStandardMaterial({
-      color: outerColorEmissive ? null : outerColor,
-      emissive: outerColorEmissive ? outerColor : null,
-      emissiveIntensity: outerColorEmissiveIntensity,
-      side: THREE.DoubleSide,
-    });
-  }, [outerColor, outerColorEmissive, outerColorEmissiveIntensity]);
-
-  return (
-    <ReversalBase
-      {...props}
-      innerMaterial={innerMaterial}
-      outerMaterial={outerMaterial}
-    />
-  );
-}
-
-/* ========================================================================
-   Interactive animated version
-======================================================================== */
-
-export function InteractiveReversal({
+export default function InteractiveReversal({
   pressDepth = 0.015,
   emissiveIntensity = 2.5,
+  enableNeonFlicker = true,
+  neonFlickerIntensity = 2,
+  neonFlickerFrequency = 10,
   innerColor = '#ff0000',
   outerColor = '#000000',
   onClick,
@@ -146,9 +100,20 @@ export function InteractiveReversal({
     config: { mass: 0.6, tension: 300, friction: 14 },
   });
 
-  useFrame(() => {
+  useFrame(({ clock }) => {
     if (!innerMaterial) return;
-    innerMaterial.emissiveIntensity = isOn ? emissiveIntensity : 0;
+    let intensity = 0;
+    if (isOn && enableNeonFlicker) {
+      intensity = neonFlicker(
+        clock.getElapsedTime(),
+        emissiveIntensity,
+        neonFlickerIntensity,
+        neonFlickerFrequency
+      );
+    } else if (isOn) {
+      intensity = emissiveIntensity;
+    }
+    innerMaterial.emissiveIntensity = intensity;
   });
 
   const pointerHandlers = {
@@ -171,16 +136,7 @@ export function InteractiveReversal({
       innerMaterial={innerMaterial}
       outerMaterial={outerMaterial}
       outerProps={pointerHandlers}
-      innerProps={{
-        'position-y': pressY,
-        ...pointerHandlers,
-      }}
+      innerProps={{ 'position-y': pressY, ...pointerHandlers }}
     />
   );
 }
-
-/* ========================================================================
-   Preload
-======================================================================== */
-
-useGLTF.preload(modelFile('Reversal.glb'));

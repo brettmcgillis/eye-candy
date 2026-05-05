@@ -1,12 +1,10 @@
-import { folder, useControls } from 'leva';
-
-import React, { useRef } from 'react';
+import React, { useMemo, useRef } from 'react';
 
 import { useFrame } from '@react-three/fiber';
 
 import { radians, sineWave } from '../../../utils/math';
-import Bret from '../bret/Bret';
-import Reversal from '../reversal/Reversal';
+import InteractiveBret from '../../scenes/Showcase/WebGL/LoGlow/components/InteractiveBret';
+import InteractiveReversal from '../../scenes/Showcase/WebGL/LoGlow/components/InteractiveReversal';
 
 function waitAndFlip(time, waitPeriod, rotationPeriod) {
   const cycleTime = time % (waitPeriod + rotationPeriod);
@@ -23,98 +21,54 @@ export default function Logo({
   bretPosition = { x: 0, y: 0, z: 0 },
   bretRotation = { x: 0, y: 0, z: 0 },
   bretInnerColor = '#FF0000',
-  bretInnerColorEmissive = false,
   bretInnerColorEmissiveIntensity = 0,
   bretOuterColor = '#000000',
-  bretOuterColorEmissive = false,
-  bretOuterColorEmissiveIntensity = 0,
   reversalPosition = { x: 0.9, y: -0.4, z: 0 },
   reversalRotation = { x: 0, y: 0, z: 0 },
   reversalInnerColor = '#FF0000',
-  reversalInnerColorEmissive = false,
   reversalInnerColorEmissiveIntensity = 0,
   reversalOuterColor = '#000000',
-  reversalOuterColorEmissive = false,
-  reversalOuterColorEmissiveIntensity = 0,
+  float = true,
+  floatSpeed = 1,
+  floatIntensity = 0.05,
+  flip = true,
+  flipDelay = 4,
+  flipDuration = 2,
+  spin = true,
+  spinRotation = 33,
+  spinSpeed = 0.4,
+  enableNeonFlicker = true,
+  neonFlickerIntensity = 2,
+  neonFlickerFrequency = 10,
+  bretPressDepth = 0.012,
+  reversalPressDepth = 0.015,
   ...props
 }) {
-  const {
-    float,
-    floatSpeed,
-    floatIntensity,
-    flip,
-    flipDelay,
-    flipDuration,
-    spin,
-    spinRotation,
-    spinSpeed,
-  } = useControls(
-    'Logo',
-    {
-      Float: folder(
-        {
-          float: { label: 'Float', value: true },
-          floatSpeed: {
-            label: 'Speed',
-            value: 1,
-            min: 0,
-            max: 10,
-            step: 0.01,
-          },
-          floatIntensity: {
-            label: 'Intensity',
-            value: 0.05,
-            min: 0,
-            max: 1,
-            step: 0.01,
-          },
-        },
-        { collapsed: true }
-      ),
-      Spin: folder(
-        {
-          spin: { label: 'Spin', value: true },
-          spinRotation: {
-            label: 'Rotation',
-            value: 33,
-            min: 0,
-            max: 360,
-            step: 1,
-          },
-          spinSpeed: { label: 'Speed', value: 0.4, min: 0, max: 1, step: 0.01 },
-        },
-        { collapsed: true }
-      ),
-      Flip: folder(
-        {
-          flip: { label: 'Flip', value: true },
-          flipDuration: {
-            label: 'Duration',
-            value: 2,
-            min: 1,
-            max: 2,
-            step: 0.01,
-          },
-          flipDelay: {
-            label: 'Delay',
-            value: 4,
-            min: 0,
-            max: 10,
-            step: 0.01,
-          },
-        },
-        { collapsed: true }
-      ),
-    },
-    { collapsed: true }
-  );
-
   const logoRef = useRef();
-  const bretRef = useRef();
   const reversalRef = useRef();
+
+  const logoCenterOffset = useMemo(
+    () => ({
+      x: (bretPosition.x + reversalPosition.x) / 2,
+      y: (bretPosition.y + reversalPosition.y) / 2,
+      z: (bretPosition.z + reversalPosition.z) / 2,
+    }),
+    [
+      bretPosition.x,
+      bretPosition.y,
+      bretPosition.z,
+      reversalPosition.x,
+      reversalPosition.y,
+      reversalPosition.z,
+    ]
+  );
 
   useFrame(({ clock }) => {
     const time = clock.getElapsedTime();
+    if (!logoRef.current || !reversalRef.current) {
+      return;
+    }
+
     if (float) {
       logoRef.current.position.y = sineWave(time, floatSpeed, floatIntensity);
     } else if (logoRef.current.position.y !== 0) {
@@ -152,29 +106,32 @@ export default function Logo({
     <group {...props} dispose={null}>
       <group ref={logoRef}>
         <group
-          position={[bretPosition.x, bretPosition.y, bretPosition.z]}
+          position={[
+            bretPosition.x - logoCenterOffset.x,
+            bretPosition.y - logoCenterOffset.y,
+            bretPosition.z - logoCenterOffset.z,
+          ]}
           rotation={[
             radians(bretRotation.x),
             radians(bretRotation.y),
             radians(bretRotation.z),
           ]}
         >
-          <group ref={bretRef}>
-            <Bret
-              innerColor={bretInnerColor}
-              innerColorEmissive={bretInnerColorEmissive}
-              innerColorEmissiveIntensity={bretInnerColorEmissiveIntensity}
-              outerColor={bretOuterColor}
-              outerColorEmissive={bretOuterColorEmissive}
-              outerColorEmissiveIntensity={bretOuterColorEmissiveIntensity}
-            />
-          </group>
+          <InteractiveBret
+            pressDepth={bretPressDepth}
+            emissiveIntensity={bretInnerColorEmissiveIntensity}
+            enableNeonFlicker={enableNeonFlicker}
+            neonFlickerIntensity={neonFlickerIntensity}
+            neonFlickerFrequency={neonFlickerFrequency}
+            innerColor={bretInnerColor}
+            outerColor={bretOuterColor}
+          />
         </group>
         <group
           position={[
-            reversalPosition.x,
-            reversalPosition.y,
-            reversalPosition.z,
+            reversalPosition.x - logoCenterOffset.x,
+            reversalPosition.y - logoCenterOffset.y,
+            reversalPosition.z - logoCenterOffset.z,
           ]}
           rotation={[
             radians(reversalRotation.x),
@@ -183,13 +140,14 @@ export default function Logo({
           ]}
         >
           <group ref={reversalRef}>
-            <Reversal
+            <InteractiveReversal
+              pressDepth={reversalPressDepth}
+              emissiveIntensity={reversalInnerColorEmissiveIntensity}
+              enableNeonFlicker={enableNeonFlicker}
+              neonFlickerIntensity={neonFlickerIntensity}
+              neonFlickerFrequency={neonFlickerFrequency}
               innerColor={reversalInnerColor}
-              innerColorEmissive={reversalInnerColorEmissive}
-              innerColorEmissiveIntensity={reversalInnerColorEmissiveIntensity}
               outerColor={reversalOuterColor}
-              outerColorEmissive={reversalOuterColorEmissive}
-              outerColorEmissiveIntensity={reversalOuterColorEmissiveIntensity}
             />
           </group>
         </group>

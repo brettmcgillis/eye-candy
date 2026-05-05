@@ -1,11 +1,9 @@
-import { lazy } from 'react';
-import { FaCloud, FaHeart, FaMicroscope } from 'react-icons/fa';
+import React, { lazy } from 'react';
+import { FaCloud, FaHeart } from 'react-icons/fa';
 import {
   GiDiceEightFacesEight,
   GiDiceTwentyFacesTwenty,
-  GiMoonOrbit,
   GiPapers,
-  GiRose,
 } from 'react-icons/gi';
 import { IoDice } from 'react-icons/io5';
 import {
@@ -13,8 +11,11 @@ import {
   PiDiamondsFourFill,
   PiDiamondsFourThin,
   PiSkullDuotone,
+  PiVirusDuotone,
 } from 'react-icons/pi';
 import { TbSquare } from 'react-icons/tb';
+
+import { iconFile } from '../../../utils/appUtils';
 
 const NoScene = lazy(() => import('../../../app/scaffold/NoScene'));
 const Cardinals = lazy(() => import('./WebGL/Cardinals/Cardinals'));
@@ -31,54 +32,91 @@ const WatercolorSquares = lazy(
   () => import('./WebGL/WatercolorSquares/WatercolorSquares')
 );
 
+function NoSceneIcon() {
+  return <PiSkullDuotone color="#888" />;
+}
+function LoGlowIcon() {
+  return (
+    <img
+      src={iconFile('bret-inner.png')}
+      alt="LoGlow"
+      style={{
+        width: 'auto',
+        height: 'calc(var(--overlay-icon-size) * 1.4)',
+        verticalAlign: 'middle',
+        objectFit: 'contain',
+      }}
+    />
+  );
+}
+function PaperStackSceneIcon() {
+  return <GiPapers color="#111827" />;
+}
+function MyceliumIcon() {
+  return (
+    <>
+      <PiVirusDuotone color="#9ca3af" />
+      <PiVirusDuotone color="#dc2626" style={{ transform: 'rotate(180deg)' }} />
+    </>
+  );
+}
+
 function FoldedFrameIcon() {
   return (
     <>
-      <TbSquare style={{ fontSize: '1em' }} />
-      <TbSquare style={{ fontSize: '0.7em' }} />
-      <TbSquare style={{ fontSize: '0.45em' }} />
+      <TbSquare color="#111827" style={{ fontSize: '1em' }} />
+      <TbSquare color="#374151" style={{ fontSize: '0.7em' }} />
+      <TbSquare color="#6b7280" style={{ fontSize: '0.45em' }} />
     </>
   );
 }
 function CumulusIcon() {
   return (
     <>
-      <PiSkullDuotone />
-      <FaCloud />
+      <PiSkullDuotone color="#94a3b8" />
+      <FaCloud color="#7dd3fc" />
     </>
   );
 }
 function RosieIcon() {
   return (
     <>
-      <FaHeart />
-      <GiRose />
+      <FaHeart color="#f43f5e" />
+      <img
+        src="/images/rose.png"
+        alt="Rosie"
+        style={{
+          width: 'var(--overlay-icon-size)',
+          height: 'var(--overlay-icon-size)',
+          verticalAlign: 'middle',
+        }}
+      />
     </>
   );
 }
 function DiceIcon() {
   return (
     <>
-      <GiDiceEightFacesEight />
-      <IoDice />
-      <GiDiceTwentyFacesTwenty />
+      <GiDiceEightFacesEight color="#dc2626" />
+      <IoDice color="#3b82f6" />
+      <GiDiceTwentyFacesTwenty color="#ec4899" />
     </>
   );
 }
 function WatercolorIcon() {
   return (
     <>
-      <PiDiamondsFourThin />
-      <PiDiamondsFourFill />
-      <PiDiamondsFourThin />
+      <PiDiamondsFourThin color="#111827" />
+      <PiDiamondsFourFill color="#374151" />
+      <PiDiamondsFourThin color="#111827" />
     </>
   );
 }
 function CardinalsIcon() {
   return (
     <>
-      <PiBirdDuotone />
-      <PiBirdDuotone />
+      <PiBirdDuotone color="#dc2626" />
+      <PiBirdDuotone color="#ef4444" />
     </>
   );
 }
@@ -86,7 +124,7 @@ const scenes = [
   {
     id: 'noScene',
     label: 'None',
-    icon: PiSkullDuotone,
+    icon: NoSceneIcon,
     Component: NoScene,
   },
   {
@@ -98,7 +136,7 @@ const scenes = [
   {
     id: 'loGlow',
     label: 'LoGlow',
-    icon: GiMoonOrbit,
+    icon: LoGlowIcon,
     Component: LoGlow,
   },
   {
@@ -110,7 +148,7 @@ const scenes = [
   {
     id: 'paperStack',
     label: 'Paper Stack',
-    icon: GiPapers,
+    icon: PaperStackSceneIcon,
     Component: PaperStack,
   },
   {
@@ -122,7 +160,7 @@ const scenes = [
   {
     id: 'mycelium',
     label: 'Mycelium',
-    icon: FaMicroscope,
+    icon: MyceliumIcon,
     Component: Mycelium,
   },
   {

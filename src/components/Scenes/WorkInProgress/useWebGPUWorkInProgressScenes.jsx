@@ -1,9 +1,28 @@
-import { lazy } from 'react';
+import React, { lazy } from 'react';
 import { FaBook, FaFlag, FaGhost } from 'react-icons/fa';
-import { PiSkullDuotone } from 'react-icons/pi';
 import { GiRabbit } from 'react-icons/gi';
+import { PiSkullDuotone } from 'react-icons/pi';
 
-const GhostStoriesIcon = () => <><FaBook /><FaGhost /></>;
+function GhostStoriesIcon() {
+  return (
+    <>
+      <FaBook color="#4f46e5" />
+      <FaGhost color="#e2e8f0" />
+    </>
+  );
+}
+function NoSceneIcon() {
+  return <PiSkullDuotone color="#888" />;
+}
+function GhostIcon() {
+  return <FaGhost color="#cbd5e1" />;
+}
+function FlagIcon() {
+  return <FaFlag color="#e2e8f0" />;
+}
+function RabbitIcon() {
+  return <GiRabbit color="#d1d5db" />;
+}
 
 const NoScene = lazy(() => import('../../../app/scaffold/NoScene'));
 const AllMyFriendsAreGhosts = lazy(
@@ -16,25 +35,25 @@ const scenes = [
   {
     id: 'noScene',
     label: 'None',
-    icon: PiSkullDuotone,
+    icon: NoSceneIcon,
     Component: NoScene,
   },
   {
     id: 'allMyFriendsAreGhosts',
     label: 'All My Friends Are Ghosts',
-    icon: FaGhost,
+    icon: GhostIcon,
     Component: AllMyFriendsAreGhosts,
   },
   {
     id: 'surrender',
     label: 'Surrender',
-    icon: FaFlag,
+    icon: FlagIcon,
     Component: Surrender,
   },
   {
     id: 'stayHunted',
     label: 'Stay Hunted',
-    icon: GiRabbit,
+    icon: RabbitIcon,
     Component: StayHunted,
   },
   {

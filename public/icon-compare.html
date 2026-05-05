@@ -1,0 +1,620 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <title>Icon Comparison</title>
+    <script type="importmap">
+      {
+        "imports": {
+          "react": "https://esm.sh/react@18",
+          "react-dom/client": "https://esm.sh/react-dom@18/client",
+          "react-icons/fa": "https://esm.sh/react-icons@5/fa?external=react",
+          "react-icons/gi": "https://esm.sh/react-icons@5/gi?external=react",
+          "react-icons/md": "https://esm.sh/react-icons@5/md?external=react",
+          "react-icons/tb": "https://esm.sh/react-icons@5/tb?external=react",
+          "react-icons/pi": "https://esm.sh/react-icons@5/pi?external=react",
+          "react-icons/bi": "https://esm.sh/react-icons@5/bi?external=react",
+          "react-icons/im": "https://esm.sh/react-icons@5/im?external=react",
+          "react-icons/io5": "https://esm.sh/react-icons@5/io5?external=react",
+          "react-icons/lia": "https://esm.sh/react-icons@5/lia?external=react",
+          "react-icons/ai": "https://esm.sh/react-icons@5/ai?external=react",
+          "react-icons/wi": "https://esm.sh/react-icons@5/wi?external=react"
+        }
+      }
+    </script>
+    <style>
+      body {
+        font-family: system-ui, sans-serif;
+        background: #ffffff;
+        color: #111827;
+        padding: 2rem;
+      }
+      h2 {
+        color: #6b7280;
+        font-size: 0.85rem;
+        text-transform: uppercase;
+        letter-spacing: 0.1em;
+        margin: 2rem 0 0.5rem;
+        border-top: 1px solid #e5e7eb;
+        padding-top: 1rem;
+      }
+      table {
+        border-collapse: collapse;
+        width: 100%;
+        max-width: 760px;
+        margin-bottom: 1rem;
+      }
+      th {
+        text-align: left;
+        font-size: 0.75rem;
+        color: #6b7280;
+        padding: 0.3rem 0.75rem;
+      }
+      td {
+        padding: 0.4rem 0.75rem;
+        border-bottom: 1px solid #f3f4f6;
+        vertical-align: middle;
+      }
+      td:nth-child(2) {
+        font-size: 1.4rem;
+      }
+      td:nth-child(3) {
+        font-size: 1.4rem;
+      }
+      td:nth-child(4) {
+        font-size: 0.72rem;
+        color: #6b7280;
+        font-family: monospace;
+      }
+      .label {
+        font-size: 0.85rem;
+        color: #374151;
+      }
+    </style>
+  </head>
+  <body>
+    <h1 style="font-size: 1.2rem; margin-bottom: 0">
+      react-icons — colored icon reference
+    </h1>
+    <p style="color: #6b7280; font-size: 0.8rem; margin-top: 0.25rem">
+      All scene, area, and UI icons with their colors
+    </p>
+    <div id="root"></div>
+
+    <script type="module">
+      import React from 'react';
+      import { createRoot } from 'react-dom/client';
+
+      /* ── imports ────────────────────────────────── */
+      import {
+        FaBomb,
+        FaBook,
+        FaCloud,
+        FaFlag,
+        FaFlask,
+        FaGhost,
+        FaHandPaper,
+        FaMobileAlt,
+        FaMusic,
+        FaPaw,
+        FaPen,
+        FaPlane,
+        FaToolbox,
+        FaTools,
+      } from 'react-icons/fa';
+      import { BiSolidInvader } from 'react-icons/bi';
+      import {
+        GiAtomCore,
+        GiBrightExplosion,
+        GiCandleLight,
+        GiDiceEightFacesEight,
+        GiDiceTwentyFacesTwenty,
+        GiPaperBoat,
+        GiPapers,
+        GiPistolGun,
+        GiPoliceBadge,
+        GiRabbit,
+        GiSewingString,
+        GiSinkingShip,
+        GiSmokeBomb,
+        GiSpiderWeb,
+      } from 'react-icons/gi';
+      import { ImLifebuoy } from 'react-icons/im';
+      import { IoDice } from 'react-icons/io5';
+      import { LiaDumpsterFireSolid } from 'react-icons/lia';
+      import { MdDirectionsRun } from 'react-icons/md';
+      import {
+        PiBirdDuotone,
+        PiDiamondsFourFill,
+        PiDiamondsFourThin,
+        PiSkullDuotone,
+        PiVirusDuotone,
+      } from 'react-icons/pi';
+      import {
+        TbDeviceTvOldFilled,
+        TbSquare,
+        TbVectorSpline,
+      } from 'react-icons/tb';
+      import { WiSmoke } from 'react-icons/wi';
+
+      /* ── helpers ────────────────────────────────── */
+      const e = React.createElement;
+      const c = (C, color) => e(C, { color });
+      const cs = (C, color, style) => e(C, { color, style });
+      const frag = (...children) => e(React.Fragment, null, ...children);
+      const imgIcon = (src, alt = 'Icon') =>
+        e('img', {
+          src,
+          alt,
+          style: {
+            width: '1em',
+            height: '1em',
+            verticalAlign: 'middle',
+            objectFit: 'contain',
+          },
+        });
+      const fire = (alt = 'Fire') =>
+        e('img', {
+          src: '/icons/fire-icon.svg',
+          alt,
+          style: { width: '1em', height: '1em', verticalAlign: 'middle' },
+        });
+
+      /* ── compound icons ─────────────────────────── */
+      const FoldedFrameIcon = () =>
+        frag(
+          cs(TbSquare, '#111827', { fontSize: '1em' }),
+          cs(TbSquare, '#374151', { fontSize: '0.7em' }),
+          cs(TbSquare, '#6b7280', { fontSize: '0.45em' })
+        );
+      const PaperStackIcon = () => c(GiPapers, '#111827');
+      const MyceliumIcon = () =>
+        frag(
+          c(PiVirusDuotone, '#9ca3af'),
+          cs(PiVirusDuotone, '#dc2626', { transform: 'rotate(180deg)' })
+        );
+      const CumulusIcon = () =>
+        frag(c(PiSkullDuotone, '#94a3b8'), c(FaCloud, '#7dd3fc'));
+      const RosieIcon = () => imgIcon('/icons/rose.png', 'Rosie');
+      const DiceIcon = () =>
+        frag(
+          c(GiDiceEightFacesEight, '#dc2626'),
+          c(IoDice, '#3b82f6'),
+          c(GiDiceTwentyFacesTwenty, '#ec4899')
+        );
+      const WatercolorIcon = () =>
+        frag(
+          c(PiDiamondsFourThin, '#111827'),
+          c(PiDiamondsFourFill, '#374151'),
+          c(PiDiamondsFourThin, '#111827')
+        );
+      const CardinalsIcon = () =>
+        frag(c(PiBirdDuotone, '#dc2626'), c(PiBirdDuotone, '#ef4444'));
+      const ThatsAllFolks = () =>
+        frag(c(GiPistolGun, '#374151'), c(WiSmoke, '#9ca3af'));
+      const HotBoxIcon = () => frag(fire('Hot Box'), c(GiSmokeBomb, '#7dd3fc'));
+      const MultiplayerGL = () =>
+        frag(c(MdDirectionsRun, '#10b981'), c(MdDirectionsRun, '#6ee7b7'));
+      const GhostStoriesIcon = () =>
+        frag(c(FaBook, '#4f46e5'), c(FaGhost, '#e2e8f0'));
+      const LevaTitleIcon = () =>
+        frag(
+          c(FaBomb, '#374151'),
+          fire('Leva Fire'),
+          c(GiBrightExplosion, '#fbbf24')
+        );
+
+      /* ── sections data ──────────────────────────── */
+      const SECTIONS = [
+        {
+          title: 'UI / System',
+          rows: [
+            {
+              label: 'Debug toggle (Scenemoji)',
+              icon: () =>
+                e('img', {
+                  src: '/icons/reversal-inner.png',
+                  alt: 'Debug',
+                  style: {
+                    width: '1em',
+                    height: '1em',
+                    verticalAlign: 'middle',
+                  },
+                }),
+              name: '/icons/reversal-inner.png',
+            },
+            {
+              label: 'Leva title bar',
+              icon: () => e(LevaTitleIcon, null),
+              name: 'FaBomb #374151 · fire-icon.svg · GiBrightExplosion #fbbf24',
+            },
+            {
+              label: 'Fallback / noScene (all)',
+              icon: () => c(PiSkullDuotone, '#888'),
+              name: 'PiSkullDuotone #888',
+            },
+          ],
+        },
+        {
+          title: 'Custom PNG Icons',
+          rows: [
+            {
+              label: 'Turbo Flex',
+              icon: () => imgIcon('/icons/turbo_flex.png', 'Turbo Flex'),
+              name: '/icons/turbo_flex.png',
+            },
+            {
+              label: 'Reversal',
+              icon: () => imgIcon('/icons/reversal.png', 'Reversal'),
+              name: '/icons/reversal.png',
+            },
+            {
+              label: 'Reversal Inner',
+              icon: () =>
+                imgIcon('/icons/reversal-inner.png', 'Reversal Inner'),
+              name: '/icons/reversal-inner.png',
+            },
+            {
+              label: 'Reversal Outer',
+              icon: () =>
+                imgIcon('/icons/reversal-outer-empty.png', 'Reversal Outer'),
+              name: '/icons/reversal-outer-empty.png',
+            },
+            {
+              label: 'Bret',
+              icon: () => imgIcon('/icons/bret.png', 'Bret'),
+              name: '/icons/bret.png',
+            },
+            {
+              label: 'Bret Inner',
+              icon: () => imgIcon('/icons/bret-inner.png', 'Bret Inner'),
+              name: '/icons/bret-inner.png',
+            },
+            {
+              label: 'Bret Circled',
+              icon: () => imgIcon('/icons/bret-circled.png', 'Bret Circled'),
+              name: '/icons/bret-circled.png',
+            },
+          ],
+        },
+        {
+          title: 'Area Icons',
+          rows: [
+            {
+              label: 'WIP',
+              icon: () => c(FaTools, '#94a3b8'),
+              name: 'FaTools #94a3b8',
+            },
+            {
+              label: 'TestLab',
+              icon: () => c(FaFlask, '#22c55e'),
+              name: 'FaFlask #22c55e',
+            },
+            {
+              label: 'Toolbox',
+              icon: () => c(FaToolbox, '#dc2626'),
+              name: 'FaToolbox #dc2626',
+            },
+          ],
+        },
+        {
+          title: 'Showcase — WebGL',
+          rows: [
+            {
+              label: 'Folded Frame',
+              icon: () => e(FoldedFrameIcon, null),
+              name: 'TbSquare #111827 / #374151 / #6b7280',
+            },
+            {
+              label: 'LoGlow',
+              icon: () => imgIcon('/icons/bret-inner.png', 'LoGlow'),
+              name: '/icons/bret-inner.png',
+            },
+            {
+              label: 'All My Thoughts Are So Cumulus',
+              icon: () => e(CumulusIcon, null),
+              name: 'PiSkullDuotone #94a3b8 · FaCloud #7dd3fc',
+            },
+            {
+              label: 'Paper Stack',
+              icon: () => e(PaperStackIcon, null),
+              name: 'GiPapers #111827',
+            },
+            {
+              label: "Quinn's Dice",
+              icon: () => e(DiceIcon, null),
+              name: 'GiDice8 #dc2626 · IoDice #3b82f6 · GiDice20 #ec4899',
+            },
+            {
+              label: 'Mycelium',
+              icon: () => e(MyceliumIcon, null),
+              name: 'PiVirusDuotone #9ca3af · PiVirusDuotone #dc2626 (rotated 180deg)',
+            },
+            {
+              label: 'Rosie',
+              icon: () => e(RosieIcon, null),
+              name: 'rose.png',
+            },
+            {
+              label: 'Cardinals',
+              icon: () => e(CardinalsIcon, null),
+              name: 'PiBirdDuotone #dc2626 · #ef4444',
+            },
+            {
+              label: 'Watercolor Squares',
+              icon: () => e(WatercolorIcon, null),
+              name: 'PiDiamondsFourThin #111827 · Fill #374151 · Thin #111827',
+            },
+          ],
+        },
+        {
+          title: 'Work In Progress — WebGL',
+          rows: [
+            {
+              label: 'CRT Test',
+              icon: () => c(TbDeviceTvOldFilled, '#111827'),
+              name: 'TbDeviceTvOldFilled #111827',
+            },
+            {
+              label: 'Dumpster Fire',
+              icon: () => c(LiaDumpsterFireSolid, '#111827'),
+              name: 'LiaDumpsterFireSolid #111827',
+            },
+            {
+              label: 'Burning At Both Ends',
+              icon: () => c(GiCandleLight, '#fbbf24'),
+              name: 'GiCandleLight #fbbf24',
+            },
+            {
+              label: "That's All Folks",
+              icon: () => e(ThatsAllFolks, null),
+              name: 'GiPistolGun #374151 · WiSmoke #9ca3af',
+            },
+            {
+              label: 'Flying High',
+              icon: () => c(FaPlane, '#111827'),
+              name: 'FaPlane #111827',
+            },
+            {
+              label: 'Police Presence',
+              icon: () => c(GiPoliceBadge, '#111827'),
+              name: 'GiPoliceBadge #111827',
+            },
+            {
+              label: 'Still Pulling For You',
+              icon: () => c(GiSinkingShip, '#1e40af'),
+              name: 'GiSinkingShip #1e40af',
+            },
+            {
+              label: 'Row It Alone',
+              icon: () => c(GiPaperBoat, '#93c5fd'),
+              name: 'GiPaperBoat #93c5fd',
+            },
+            {
+              label: 'Staying Afloat',
+              icon: () => c(ImLifebuoy, '#ef4444'),
+              name: 'ImLifebuoy #ef4444',
+            },
+            {
+              label: "Quinn's Playground",
+              icon: () => c(FaPaw, '#a78bfa'),
+              name: 'FaPaw #a78bfa',
+            },
+          ],
+        },
+        {
+          title: 'Work In Progress — WebGPU',
+          rows: [
+            {
+              label: 'All My Friends Are Ghosts',
+              icon: () => c(FaGhost, '#cbd5e1'),
+              name: 'FaGhost #cbd5e1',
+            },
+            {
+              label: 'Surrender',
+              icon: () => c(FaFlag, '#e2e8f0'),
+              name: 'FaFlag #e2e8f0',
+            },
+            {
+              label: 'Stay Hunted',
+              icon: () => c(GiRabbit, '#d1d5db'),
+              name: 'GiRabbit #d1d5db',
+            },
+            {
+              label: 'Ghost Stories',
+              icon: () => e(GhostStoriesIcon, null),
+              name: 'FaBook #4f46e5 · FaGhost #e2e8f0',
+            },
+          ],
+        },
+        {
+          title: 'Toolbox — WebGL',
+          rows: [
+            {
+              label: 'Fire Test',
+              icon: () => fire('Fire Test'),
+              name: 'fire-icon.svg · exact match',
+            },
+            {
+              label: 'Hot Box',
+              icon: () => e(HotBoxIcon, null),
+              name: 'fire-icon.svg · GiSmokeBomb #7dd3fc',
+            },
+            {
+              label: 'Pen Plotter',
+              icon: () => c(FaPen, '#1e293b'),
+              name: 'FaPen #1e293b',
+            },
+            {
+              label: 'Spline Editor',
+              icon: () => c(TbVectorSpline, '#a855f7'),
+              name: 'TbVectorSpline #a855f7',
+            },
+            {
+              label: 'Smoke Test',
+              icon: () => c(GiSmokeBomb, '#93c5fd'),
+              name: 'GiSmokeBomb #93c5fd',
+            },
+            {
+              label: 'Character Controller',
+              icon: () => c(MdDirectionsRun, '#10b981'),
+              name: 'MdDirectionsRun #10b981',
+            },
+            {
+              label: 'Multiplayer Madness',
+              icon: () => e(MultiplayerGL, null),
+              name: 'MdDirectionsRun #10b981 · #6ee7b7',
+            },
+          ],
+        },
+        {
+          title: 'Toolbox — WebGPU',
+          rows: [
+            {
+              label: 'Ghost Buster',
+              icon: () => c(FaGhost, '#cbd5e1'),
+              name: 'FaGhost #cbd5e1',
+            },
+            {
+              label: 'Character Controller',
+              icon: () => c(MdDirectionsRun, '#10b981'),
+              name: 'MdDirectionsRun #10b981',
+            },
+            {
+              label: 'Multiplayer Madness',
+              icon: () => e(MultiplayerGL, null),
+              name: 'MdDirectionsRun #10b981 · #6ee7b7',
+            },
+          ],
+        },
+        {
+          title: 'Test Lab — WebGL',
+          rows: [
+            {
+              label: 'Fluid Test',
+              icon: () => c(ImLifebuoy, '#ef4444'),
+              name: 'ImLifebuoy #ef4444',
+            },
+            {
+              label: 'Hand Stuff',
+              icon: () => c(FaHandPaper, '#fbbf24'),
+              name: 'FaHandPaper #fbbf24',
+            },
+            {
+              label: 'PixelHater',
+              icon: () => c(BiSolidInvader, '#a855f7'),
+              name: 'BiSolidInvader #a855f7',
+            },
+            {
+              label: 'Particle Lab',
+              icon: () => c(GiAtomCore, '#991b1b'),
+              name: 'GiAtomCore #991b1b',
+            },
+            {
+              label: 'StrudelDoodle',
+              icon: () => c(FaMusic, '#e879f9'),
+              name: 'FaMusic #e879f9',
+            },
+            {
+              label: 'Explosion Test',
+              icon: () => c(FaBomb, '#374151'),
+              name: 'FaBomb #374151',
+            },
+          ],
+        },
+        {
+          title: 'Test Lab — WebGPU',
+          rows: [
+            {
+              label: 'Network Test',
+              icon: () => c(GiSpiderWeb, '#94a3b8'),
+              name: 'GiSpiderWeb #94a3b8',
+            },
+            {
+              label: 'Mobile Physics Test',
+              icon: () => c(FaMobileAlt, '#64748b'),
+              name: 'FaMobileAlt #64748b',
+            },
+            {
+              label: 'The Loom',
+              icon: () => c(GiSewingString, '#e2e8f0'),
+              name: 'GiSewingString #e2e8f0',
+            },
+          ],
+        },
+      ];
+
+      /* ── components ─────────────────────────────── */
+      function Row({ label, icon: renderIcon, name }) {
+        const swatch = name.match(/#([0-9a-fA-F]{3,6})/)?.[0];
+        return e(
+          'tr',
+          null,
+          e('td', { className: 'label' }, label),
+          e('td', null, renderIcon()),
+          e(
+            'td',
+            { className: 'name' },
+            swatch
+              ? e(
+                  'span',
+                  null,
+                  e('span', {
+                    style: {
+                      display: 'inline-block',
+                      width: '0.65em',
+                      height: '0.65em',
+                      borderRadius: '50%',
+                      background: swatch,
+                      marginRight: '0.35em',
+                      verticalAlign: 'middle',
+                      border: '1px solid #d1d5db',
+                    },
+                  }),
+                  name
+                )
+              : name
+          )
+        );
+      }
+
+      function Section({ title, rows }) {
+        return e(
+          React.Fragment,
+          null,
+          e('h2', null, title),
+          e(
+            'table',
+            null,
+            e(
+              'thead',
+              null,
+              e(
+                'tr',
+                null,
+                e('th', null, 'Scene / Use'),
+                e('th', null, 'Icon'),
+                e('th', null, 'Component · color')
+              )
+            ),
+            e(
+              'tbody',
+              null,
+              rows.map((r) => e(Row, { key: r.label, ...r }))
+            )
+          )
+        );
+      }
+
+      function App() {
+        return e(
+          'div',
+          null,
+          SECTIONS.map((s) => e(Section, { key: s.title, ...s }))
+        );
+      }
+
+      createRoot(document.getElementById('root')).render(e(App, null));
+    </script>
+  </body>
+</html>

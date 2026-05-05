@@ -1,7 +1,5 @@
-import { lazy } from 'react';
-import { FaFlag, FaPaw, FaPlane } from 'react-icons/fa';
-import { TbDeviceTvOldFilled } from 'react-icons/tb';
-import { WiSmoke } from 'react-icons/wi';
+import React, { lazy } from 'react';
+import { FaPaw, FaPlane } from 'react-icons/fa';
 import {
   GiCandleLight,
   GiPaperBoat,
@@ -12,8 +10,47 @@ import {
 import { ImLifebuoy } from 'react-icons/im';
 import { LiaDumpsterFireSolid } from 'react-icons/lia';
 import { PiSkullDuotone } from 'react-icons/pi';
+import { TbDeviceTvOldFilled } from 'react-icons/tb';
+import { WiSmoke } from 'react-icons/wi';
 
-const ThatsAllFolksIcon = () => <><GiPistolGun /><WiSmoke /></>;
+function NoSceneIcon() {
+  return <PiSkullDuotone color="#888" />;
+}
+function CrtTestIcon() {
+  return <TbDeviceTvOldFilled color="#111827" />;
+}
+function DumpsterFireIcon() {
+  return <LiaDumpsterFireSolid color="#111827" />;
+}
+function CandleLightIcon() {
+  return <GiCandleLight color="#fbbf24" />;
+}
+function FlyingHighIcon() {
+  return <FaPlane color="#111827" />;
+}
+function PoliceBadgeIcon() {
+  return <GiPoliceBadge color="#111827" />;
+}
+function SinkingShipIcon() {
+  return <GiSinkingShip color="#1e40af" />;
+}
+function PaperBoatIcon() {
+  return <GiPaperBoat color="#93c5fd" />;
+}
+function LifebuoyIcon() {
+  return <ImLifebuoy color="#ef4444" />;
+}
+function PawIcon() {
+  return <FaPaw color="#a78bfa" />;
+}
+function ThatsAllFolksIcon() {
+  return (
+    <>
+      <GiPistolGun color="#374151" />
+      <WiSmoke color="#9ca3af" />
+    </>
+  );
+}
 
 const NoScene = lazy(() => import('../../../app/scaffold/NoScene'));
 const BurningAtBothEnds = lazy(
@@ -38,25 +75,25 @@ const scenes = [
   {
     id: 'noScene',
     label: 'None',
-    icon: PiSkullDuotone,
+    icon: NoSceneIcon,
     Component: NoScene,
   },
   {
     id: 'crtTest',
     label: 'CRT Test',
-    icon: TbDeviceTvOldFilled,
+    icon: CrtTestIcon,
     Component: CrtTest,
   },
   {
     id: 'dumpsterFire',
     label: 'Dumpster Fire',
-    icon: LiaDumpsterFireSolid,
+    icon: DumpsterFireIcon,
     Component: DumpsterFire,
   },
   {
     id: 'burningAtBothEnds',
     label: 'Burning At Both Ends',
-    icon: GiCandleLight,
+    icon: CandleLightIcon,
     Component: BurningAtBothEnds,
   },
   {
@@ -68,37 +105,37 @@ const scenes = [
   {
     id: 'flyingHigh',
     label: 'Flying High',
-    icon: FaPlane,
+    icon: FlyingHighIcon,
     Component: FlyingHigh,
   },
   {
     id: 'policePresence',
     label: 'Police Presence',
-    icon: GiPoliceBadge,
+    icon: PoliceBadgeIcon,
     Component: PolicePresence,
   },
   {
     id: 'stillPullingForYou',
     label: 'Still Pulling For You',
-    icon: GiSinkingShip,
+    icon: SinkingShipIcon,
     Component: StillPullingForYou,
   },
   {
     id: 'rowItAlone',
     label: 'Row It Alone',
-    icon: GiPaperBoat,
+    icon: PaperBoatIcon,
     Component: RowItAlone,
   },
   {
     id: 'stayingAfloat',
     label: 'Staying Afloat',
-    icon: ImLifebuoy,
+    icon: LifebuoyIcon,
     Component: StayingAfloat,
   },
   {
     id: 'quinnsPlayground',
     label: "Quinn's Playground",
-    icon: FaPaw,
+    icon: PawIcon,
     Component: QuinnsPlayground,
   },
 ];

@@ -5,12 +5,15 @@ import { useEffect, useMemo, useRef } from 'react';
 import { useFBO, useTexture } from '@react-three/drei';
 import { useFrame, useThree } from '@react-three/fiber';
 
+import { textureFile } from '../../../../utils/appUtils';
 import BLOOM_BLUR_FRAGMENT from './shaders/bloomBlurFragment';
 import BLOOM_COMPOSITE_FRAGMENT from './shaders/bloomCompositeFragment';
 import FINAL_FRAGMENT from './shaders/finalFragment';
 import KUWAHARA_FRAGMENT from './shaders/kuwaharaFragment';
 import TENSOR_FRAGMENT from './shaders/tensorFragment';
 import makePassScene from './utils/makePassScene';
+
+useTexture.preload(textureFile('watercolor.png'));
 
 // Must match the layer used in BoatLights bloom sprites
 const BLOOM_LAYER = 1;
@@ -40,7 +43,7 @@ export default function WaterColorEffect({
   // Separate ref for the half-resolution used by the tensor and kuwahara passes.
   const halfResRef = useRef(new THREE.Vector4());
 
-  const paperTexture = useTexture('/images/watercolor.png');
+  const paperTexture = useTexture(textureFile('watercolor.png'));
   paperTexture.minFilter = THREE.LinearMipmapLinearFilter;
   paperTexture.magFilter = THREE.LinearFilter;
   paperTexture.generateMipmaps = true;

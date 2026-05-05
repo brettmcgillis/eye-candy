@@ -6,6 +6,8 @@ import { useTexture } from '@react-three/drei';
 
 import { textureFile } from '../../../utils/appUtils';
 
+useTexture.preload(textureFile('moonTexture.jpg'));
+
 export default function WebGLMoon({
   position = [0, 0, 0],
   scale = 1,

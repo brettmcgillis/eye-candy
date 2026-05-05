@@ -1,20 +1,28 @@
 import { Leva } from 'leva';
 
 import React from 'react';
-import { FaBomb, FaFire } from 'react-icons/fa';
+import { FaBomb } from 'react-icons/fa';
 import { GiBrightExplosion } from 'react-icons/gi';
 
 import { a, to, useSpring } from '@react-spring/web';
 
-import { localEnv } from '../../../../utils/appUtils';
+import { iconFile, localEnv } from '../../../../utils/appUtils';
 import LevaTheme from '../levaTheme';
 
 function LevaTitle() {
   return (
     <span style={{ fontSize: 'var(--overlay-icon-size)' }}>
-      <FaBomb />
-      <FaFire />
-      <GiBrightExplosion />
+      <FaBomb color="#374151" />
+      <img
+        src={iconFile('fire-icon.svg')}
+        alt="Fire"
+        style={{
+          width: 'var(--overlay-icon-size)',
+          height: 'var(--overlay-icon-size)',
+          verticalAlign: 'middle',
+        }}
+      />
+      <GiBrightExplosion color="#fbbf24" />
     </span>
   );
 }

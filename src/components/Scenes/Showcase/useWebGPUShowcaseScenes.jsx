@@ -1,5 +1,9 @@
-import { lazy } from 'react';
+import React, { lazy } from 'react';
 import { PiSkullDuotone } from 'react-icons/pi';
+
+function NoSceneIcon() {
+  return <PiSkullDuotone color="#888" />;
+}
 
 const NoScene = lazy(() => import('../../../app/scaffold/NoScene'));
 
@@ -7,7 +11,7 @@ const scenes = [
   {
     id: 'noScene',
     label: 'None',
-    icon: PiSkullDuotone,
+    icon: NoSceneIcon,
     Component: NoScene,
   },
 ];

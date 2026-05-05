@@ -42,3 +42,7 @@ export function imageFile(fileName) {
 export function textureFile(fileName) {
   return assetPath(`/textures/${fileName}`);
 }
+
+export function iconFile(fileName) {
+  return assetPath(`/icons/${fileName}`);
+}

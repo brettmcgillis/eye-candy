@@ -1,9 +1,25 @@
-import { lazy } from 'react';
+import React, { lazy } from 'react';
 import { FaGhost } from 'react-icons/fa';
-import { PiSkullDuotone } from 'react-icons/pi';
 import { MdDirectionsRun } from 'react-icons/md';
+import { PiSkullDuotone } from 'react-icons/pi';
 
-const MultiplayerIcon = () => <><MdDirectionsRun /><MdDirectionsRun /></>;
+function NoSceneIcon() {
+  return <PiSkullDuotone color="#888" />;
+}
+function GhostBusterIcon() {
+  return <FaGhost color="#cbd5e1" />;
+}
+function CharacterControllerIcon() {
+  return <MdDirectionsRun color="#10b981" />;
+}
+function MultiplayerIcon() {
+  return (
+    <>
+      <MdDirectionsRun color="#10b981" />
+      <MdDirectionsRun color="#6ee7b7" />
+    </>
+  );
+}
 
 const NoScene = lazy(() => import('../../../app/scaffold/NoScene'));
 const GhostBuster = lazy(() => import('./WebGPU/GhostBuster/GhostBuster'));
@@ -18,19 +34,19 @@ const scenes = [
   {
     id: 'noScene',
     label: 'None',
-    icon: PiSkullDuotone,
+    icon: NoSceneIcon,
     Component: NoScene,
   },
   {
     id: 'ghostBuster',
     label: 'Ghost Buster',
-    icon: FaGhost,
+    icon: GhostBusterIcon,
     Component: GhostBuster,
   },
   {
     id: 'characterController',
     label: 'Character Controller',
-    icon: MdDirectionsRun,
+    icon: CharacterControllerIcon,
     Component: CharacterController,
   },
   {

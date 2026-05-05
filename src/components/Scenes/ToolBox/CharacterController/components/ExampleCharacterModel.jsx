@@ -17,7 +17,7 @@ import {
 import { useFrame } from '@react-three/fiber';
 import { BallCollider, vec3 } from '@react-three/rapier';
 
-import { useGame } from '../../../../../modules/ecctrl/stores/useGame';
+import { useGame } from '../../../../../modules/ecctrl/stores/useGame.ts';
 import { modelFile, textureFile } from '../../../../../utils/appUtils';
 
 const animationSet = {
@@ -71,7 +71,13 @@ const animationSet = {
 //   'Wave')
 // ];
 
-export default function ExampleCharacterModel({ color, curAnimation: curAnimationProp, ...props }) {
+useTexture.preload(textureFile('3.jpg'));
+
+export default function ExampleCharacterModel({
+  color,
+  curAnimation: curAnimationProp,
+  ...props
+}) {
   const group = useRef();
   const rightHandRef = useRef();
   const rightHandColliderRef = useRef();
@@ -83,7 +89,7 @@ export default function ExampleCharacterModel({ color, curAnimation: curAnimatio
   const { nodes, animations } = useGLTF(modelFile('/Floating Character.glb'));
   const { actions } = useAnimations(animations, group);
 
-  const gradientMapTexture = useTexture('./textures/3.jpg');
+  const gradientMapTexture = useTexture(textureFile('3.jpg'));
   gradientMapTexture.minFilter = THREE.NearestFilter;
   gradientMapTexture.magFilter = THREE.NearestFilter;
   gradientMapTexture.generateMipmaps = false;
@@ -106,14 +112,15 @@ export default function ExampleCharacterModel({ color, curAnimation: curAnimatio
     startFrame: 0,
   });
 
-  const { mainColor: controlMainColor, outlineColor, trailColor } = useControls(
-    'Character Model',
-    {
-      mainColor: 'mediumslateblue',
-      outlineColor: 'black',
-      trailColor: 'violet',
-    }
-  );
+  const {
+    mainColor: controlMainColor,
+    outlineColor,
+    trailColor,
+  } = useControls('Character Model', {
+    mainColor: 'mediumslateblue',
+    outlineColor: 'black',
+    trailColor: 'violet',
+  });
 
   const mainColor = color || controlMainColor;
 

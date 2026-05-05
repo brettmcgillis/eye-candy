@@ -17,6 +17,7 @@ import React, { useMemo, useRef } from 'react';
 
 import { useFrame, useLoader } from '@react-three/fiber';
 
+import { textureFile } from '../../../utils/appUtils';
 import noiseGlsl from './noiseGlsl';
 
 // ─── Vertex shader (displacement + per-vertex arc-length) ────────────────────
@@ -290,7 +291,7 @@ export default function PerlinNoiseSpline({
   noiseFreq = 0.05,
   noiseAmp = 5.0,
   animated = true,
-  texturePath = '/images/explosion.png',
+  texturePath = 'explosion.png',
   smokeLightColor = '#4a4a58',
   smokeDarkColor = '#1a1a22',
   greyscale = false,
@@ -298,7 +299,10 @@ export default function PerlinNoiseSpline({
 }) {
   const startTime = useMemo(() => Date.now(), []);
 
-  const tExplosionRaw = useLoader(THREE.TextureLoader, texturePath);
+  const tExplosionRaw = useLoader(
+    THREE.TextureLoader,
+    textureFile(texturePath)
+  );
   const tExplosion = useMemo(() => {
     tExplosionRaw.colorSpace = THREE.NoColorSpace;
     return tExplosionRaw;

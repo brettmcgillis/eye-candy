@@ -1,12 +1,13 @@
 import { levaStore } from 'leva';
 
 import React from 'react';
-import { AiTwotoneFire } from 'react-icons/ai';
 import { PiSkullDuotone } from 'react-icons/pi';
 
 import useScenes, { AREA_ICONS } from '../../../useScenes';
 
-const FallbackIcon = PiSkullDuotone;
+function FallbackIcon() {
+  return <PiSkullDuotone color="#888" />;
+}
 
 export default function Scenemoji({ onDebugToggle }) {
   const registry = useScenes();
@@ -37,7 +38,16 @@ export default function Scenemoji({ onDebugToggle }) {
   return (
     <>
       <span className="debug" onClick={onDebugToggle}>
-        <AiTwotoneFire />
+        <img
+          src="/images/reversal-inner.png"
+          alt="Debug"
+          style={{
+            width: 'auto',
+            height: 'calc(var(--overlay-icon-size) * 1.4)',
+            verticalAlign: 'middle',
+            objectFit: 'contain',
+          }}
+        />
       </span>
       {AreaIcon ? (
         <>

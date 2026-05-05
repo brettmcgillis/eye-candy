@@ -1,11 +1,60 @@
-import { lazy } from 'react';
-import { FaFire, FaPen, FaWind } from 'react-icons/fa';
-import { PiSkullDuotone } from 'react-icons/pi';
+import React, { lazy } from 'react';
+import { FaPen } from 'react-icons/fa';
+import { GiSmokeBomb } from 'react-icons/gi';
 import { MdDirectionsRun } from 'react-icons/md';
+import { PiSkullDuotone } from 'react-icons/pi';
 import { TbVectorSpline } from 'react-icons/tb';
 
-const HotBoxIcon = () => <><FaFire /><FaWind /></>;
-const MultiplayerIcon = () => <><MdDirectionsRun /><MdDirectionsRun /></>;
+import { iconFile } from '../../../utils/appUtils';
+
+function FireIconImage({ alt = 'Fire' }) {
+  return (
+    <img
+      src={iconFile('fire-icon.svg')}
+      alt={alt}
+      style={{
+        width: 'var(--overlay-icon-size)',
+        height: 'var(--overlay-icon-size)',
+        verticalAlign: 'middle',
+      }}
+    />
+  );
+}
+
+function NoSceneIcon() {
+  return <PiSkullDuotone color="#888" />;
+}
+function FireTestIcon() {
+  return <FireIconImage alt="Fire Test" />;
+}
+function PenPlotterIcon() {
+  return <FaPen color="#1e293b" />;
+}
+function SplineIcon() {
+  return <TbVectorSpline color="#a855f7" />;
+}
+function SmokeTestIcon() {
+  return <GiSmokeBomb color="#93c5fd" />;
+}
+function CharacterControllerIcon() {
+  return <MdDirectionsRun color="#10b981" />;
+}
+function HotBoxIcon() {
+  return (
+    <>
+      <FireIconImage alt="Hot Box" />
+      <GiSmokeBomb color="#7dd3fc" />
+    </>
+  );
+}
+function MultiplayerIcon() {
+  return (
+    <>
+      <MdDirectionsRun color="#10b981" />
+      <MdDirectionsRun color="#6ee7b7" />
+    </>
+  );
+}
 
 const NoScene = lazy(() => import('../../../app/scaffold/NoScene'));
 const FireTest = lazy(() => import('./WebGL/FireTest/FireTest'));
@@ -23,13 +72,13 @@ const scenes = [
   {
     id: 'noScene',
     label: 'None',
-    icon: PiSkullDuotone,
+    icon: NoSceneIcon,
     Component: NoScene,
   },
   {
     id: 'fireTest',
     label: 'Fire Test',
-    icon: FaFire,
+    icon: FireTestIcon,
     Component: FireTest,
   },
   {
@@ -41,25 +90,25 @@ const scenes = [
   {
     id: 'penPlotter',
     label: 'Pen Plotter',
-    icon: FaPen,
+    icon: PenPlotterIcon,
     Component: PenPlotter,
   },
   {
     id: 'splineEditor',
     label: 'Spline Editor',
-    icon: TbVectorSpline,
+    icon: SplineIcon,
     Component: SplineEditor,
   },
   {
     id: 'smokeTest',
     label: 'Smoke Test',
-    icon: FaWind,
+    icon: SmokeTestIcon,
     Component: SmokeTest,
   },
   {
     id: 'characterController',
     label: 'Character Controller',
-    icon: MdDirectionsRun,
+    icon: CharacterControllerIcon,
     Component: CharacterController,
   },
   {

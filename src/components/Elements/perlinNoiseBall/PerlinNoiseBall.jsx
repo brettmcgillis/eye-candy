@@ -14,11 +14,12 @@ import React, { useMemo, useRef } from 'react';
 
 import { useFrame, useLoader } from '@react-three/fiber';
 
+import { textureFile } from '../../../utils/appUtils';
 import noiseGlsl from './noiseGlsl';
 
 // Pre-cache the default texture so useLoader won't trigger a loading-manager
 // state update (which causes "Cannot update Loader while rendering PerlinNoiseBall").
-useLoader.preload(THREE.TextureLoader, '/images/explosion.png');
+useLoader.preload(THREE.TextureLoader, textureFile('explosion.png'));
 
 // ─── Vertex shader ───────────────────────────────────────────────────────────
 
@@ -86,7 +87,7 @@ export default function PerlinNoiseBall({
   // Scene-scale consumers (radius ≈ 0.6 m) should pass noiseFreq≈2.0, noiseAmp≈0.15.
   noiseFreq = 0.05,
   noiseAmp = 5.0,
-  texturePath = '/images/explosion.png',
+  texturePath = 'explosion.png',
   animated = true,
   greyscale = false,
   smokeLightColor = '#4a4a58',
@@ -94,7 +95,10 @@ export default function PerlinNoiseBall({
 }) {
   const startTime = useMemo(() => Date.now(), []);
 
-  const tExplosionRaw = useLoader(THREE.TextureLoader, texturePath);
+  const tExplosionRaw = useLoader(
+    THREE.TextureLoader,
+    textureFile(texturePath)
+  );
   const tExplosion = useMemo(() => {
     tExplosionRaw.colorSpace = THREE.NoColorSpace;
     return tExplosionRaw;

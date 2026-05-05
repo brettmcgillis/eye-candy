@@ -1,8 +1,20 @@
-import { lazy } from 'react';
+import React, { lazy } from 'react';
 import { FaMobileAlt } from 'react-icons/fa';
-import { GiSpiderWeb } from 'react-icons/gi';
+import { GiSewingString, GiSpiderWeb } from 'react-icons/gi';
 import { PiSkullDuotone } from 'react-icons/pi';
-import { GiSewingNeedle } from 'react-icons/gi';
+
+function NoSceneIcon() {
+  return <PiSkullDuotone color="#888" />;
+}
+function NetworkTestIcon() {
+  return <GiSpiderWeb color="#94a3b8" />;
+}
+function MobilePhysicsIcon() {
+  return <FaMobileAlt color="#64748b" />;
+}
+function TheLoomIcon() {
+  return <GiSewingString color="#e2e8f0" />;
+}
 
 const NoScene = lazy(() => import('../../../app/scaffold/NoScene'));
 const MobilePhysicsTest = lazy(
@@ -15,25 +27,25 @@ const scenes = [
   {
     id: 'noScene',
     label: 'None',
-    icon: PiSkullDuotone,
+    icon: NoSceneIcon,
     Component: NoScene,
   },
   {
     id: 'networkTest',
     label: 'Network Test',
-    icon: GiSpiderWeb,
+    icon: NetworkTestIcon,
     Component: NetworkTest,
   },
   {
     id: 'mobilePhysicsTest',
     label: 'Mobile Physics Test',
-    icon: FaMobileAlt,
+    icon: MobilePhysicsIcon,
     Component: MobilePhysicsTest,
   },
   {
     id: 'theLoom',
     label: 'The Loom',
-    icon: GiSewingNeedle,
+    icon: TheLoomIcon,
     Component: TheLoom,
   },
 ];

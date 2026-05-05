@@ -1,3 +1,4 @@
+import React from 'react';
 import { FaFlask, FaToolbox, FaTools } from 'react-icons/fa';
 
 import useWebGLShowcaseScenes from '../components/scenes/Showcase/useWebGLShowcaseScenes';
@@ -8,6 +9,16 @@ import useWebGLToolScenes from '../components/scenes/ToolBox/useWebGLToolScenes'
 import useWebGPUToolScenes from '../components/scenes/ToolBox/useWebGPUToolScenes';
 import useWebGLWorkInProgressScenes from '../components/scenes/WorkInProgress/useWebGLWorkInProgressScenes';
 import useWebGPUWorkInProgressScenes from '../components/scenes/WorkInProgress/useWebGPUWorkInProgressScenes';
+
+function WipAreaIcon() {
+  return <FaTools color="#94a3b8" />;
+}
+function TestlabAreaIcon() {
+  return <FaFlask color="#22c55e" />;
+}
+function ToolboxAreaIcon() {
+  return <FaToolbox color="#dc2626" />;
+}
 
 export const CHANNELS = {
   webgl: 'WebGL',
@@ -23,9 +34,9 @@ export const AREAS = {
 
 export const AREA_ICONS = {
   showcase: null,
-  wip: FaTools,
-  testlab: FaFlask,
-  toolbox: FaToolbox,
+  wip: WipAreaIcon,
+  testlab: TestlabAreaIcon,
+  toolbox: ToolboxAreaIcon,
 };
 
 export default function useScenes() {

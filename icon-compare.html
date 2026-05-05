@@ -1,0 +1,344 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <title>Icon Comparison</title>
+  <script type="importmap">
+  {
+    "imports": {
+      "react":            "https://esm.sh/react@18",
+      "react-dom/client": "https://esm.sh/react-dom@18/client",
+      "react-icons/fa":   "https://esm.sh/react-icons@5/fa?external=react",
+      "react-icons/gi":   "https://esm.sh/react-icons@5/gi?external=react",
+      "react-icons/md":   "https://esm.sh/react-icons@5/md?external=react",
+      "react-icons/tb":   "https://esm.sh/react-icons@5/tb?external=react",
+      "react-icons/pi":   "https://esm.sh/react-icons@5/pi?external=react",
+      "react-icons/bi":   "https://esm.sh/react-icons@5/bi?external=react",
+      "react-icons/im":   "https://esm.sh/react-icons@5/im?external=react",
+      "react-icons/io5":  "https://esm.sh/react-icons@5/io5?external=react",
+      "react-icons/lia":  "https://esm.sh/react-icons@5/lia?external=react",
+      "react-icons/ai":   "https://esm.sh/react-icons@5/ai?external=react",
+      "react-icons/wi":   "https://esm.sh/react-icons@5/wi?external=react"
+    }
+  }
+  </script>
+  <style>
+    body { font-family: system-ui, sans-serif; background: #111; color: #eee; padding: 2rem; }
+    h2 { color: #aaa; font-size: 0.85rem; text-transform: uppercase; letter-spacing: 0.1em; margin: 2rem 0 0.5rem; border-top: 1px solid #333; padding-top: 1rem; }
+    table { border-collapse: collapse; width: 100%; max-width: 700px; margin-bottom: 1rem; }
+    th { text-align: left; font-size: 0.75rem; color: #666; padding: 0.3rem 0.75rem; }
+    td { padding: 0.4rem 0.75rem; border-bottom: 1px solid #222; vertical-align: middle; }
+    td:nth-child(2) { font-size: 1.4rem; }
+    td:nth-child(3) { font-size: 1.2rem; }
+    td:nth-child(4) { font-size: 0.75rem; color: #666; font-family: monospace; }
+    .label { font-size: 0.85rem; color: #ccc; }
+    .match { color: #4c4; }
+    .warn  { color: #fa0; }
+  </style>
+</head>
+<body>
+  <h1 style="font-size:1.2rem;margin-bottom:0">Emoji → react-icons comparison</h1>
+  <p style="color:#666;font-size:0.8rem;margin-top:0.25rem">Live render of every old emoji vs new icon</p>
+  <div id="root"></div>
+
+  <script type="module">
+    import React from 'react';
+    import { createRoot } from 'react-dom/client';
+    import { FaCloud, FaFire, FaFlag, FaGhost, FaHandPaper, FaHeart, FaMicroscope, FaMobileAlt, FaMusic, FaPaw, FaPen, FaPlane, FaWind, FaBook } from 'react-icons/fa';
+    import { WiSmoke } from 'react-icons/wi';
+    import { GiBoatFishing, GiCandleLight, GiDiceEightFacesEight, GiDiceTwentyFacesTwenty, GiMoonOrbit, GiPaperBoat, GiPapers, GiPistolGun, GiPoliceBadge, GiRabbit, GiRose, GiSewingNeedle, GiSinkingShip, GiSpiderWeb } from 'react-icons/gi';
+    import { MdDirectionsRun } from 'react-icons/md';
+    import { TbDeviceTvOldFilled, TbSquare, TbVectorSpline } from 'react-icons/tb';
+    import { PiBirdDuotone, PiDiamondsFourFill, PiDiamondsFourThin, PiSkullDuotone } from 'react-icons/pi';
+    import { BiSolidInvader } from 'react-icons/bi';
+    import { ImLifebuoy } from 'react-icons/im';
+    import { IoDice } from 'react-icons/io5';
+    import { LiaDumpsterFireSolid } from 'react-icons/lia';
+    import { AiTwotoneFire } from 'react-icons/ai';
+    import { FaFlask, FaToolbox, FaTools, FaBomb } from 'react-icons/fa';
+
+    const e = React.createElement;
+    const icon = (C) => e(C, null);
+    const pair = (A, B) => e(React.Fragment, null, e(A, null), e(B, null));
+    const triple = (A, B, C) => e(React.Fragment, null, e(A, null), e(B, null), e(C, null));
+
+    const FoldedFrameIcon = () => e(React.Fragment, null,
+      e(TbSquare, { style: { fontSize: '1em' } }),
+      e(TbSquare, { style: { fontSize: '0.7em' } }),
+      e(TbSquare, { style: { fontSize: '0.45em' } }),
+    );
+
+    const SECTIONS = [
+      {
+        title: 'Area Icons',
+        rows: [
+          { label: 'WIP',      emoji: '🛠️', icon: () => icon(FaTools),   name: 'FaTools' },
+          { label: 'Test Lab', emoji: '🧪', icon: () => icon(FaFlask),   name: 'FaFlask' },
+          { label: 'Toolbox',  emoji: '🧰', icon: () => icon(FaToolbox), name: 'FaToolbox' },
+        ],
+      },
+      {
+        title: 'Debug Toggle (Scenemoji)',
+        rows: [
+          { label: 'Debug', emoji: '🔥', icon: () => icon(AiTwotoneFire), name: 'AiTwotoneFire' },
+        ],
+      },
+      {
+        title: 'Showcase — WebGL',
+        rows: [
+          { label: 'None',                           emoji: '💀',      icon: () => icon(PiSkullDuotone),                          name: 'PiSkullDuotone' },
+          { label: 'Folded Frame',                   emoji: '⬜️◻️▫️', icon: () => e(FoldedFrameIcon, null),                     name: 'TbSquare ×3 descending' },
+          { label: 'LoGlow',                         emoji: '🌑',      icon: () => icon(GiMoonOrbit),                             name: 'GiMoonOrbit' },
+          { label: 'All My Thoughts Are So Cumulus', emoji: '💀☁️',   icon: () => pair(PiSkullDuotone, FaCloud),                 name: 'PiSkullDuotone + FaCloud' },
+          { label: 'Paper Stack',                    emoji: '📄',      icon: () => icon(GiPapers),                                name: 'GiPapers' },
+          { label: "Quinn's Dice",                   emoji: '🎲',      icon: () => triple(GiDiceEightFacesEight, IoDice, GiDiceTwentyFacesTwenty), name: 'GiDiceEightFacesEight + IoDice + GiDiceTwentyFacesTwenty' },
+          { label: 'Mycelium',                       emoji: '🔬',      icon: () => icon(FaMicroscope),                            name: 'FaMicroscope' },
+          { label: 'Rosie',                          emoji: '❤️🌹',   icon: () => pair(FaHeart, GiRose),                         name: 'FaHeart + GiRose' },
+          { label: 'Cardinals',                      emoji: '🔴',      icon: () => pair(PiBirdDuotone,PiBirdDuotone),                           name: 'PiBirdDuotone' },
+          { label: 'Watercolor Squares',             emoji: '◇◆◇',    icon: () => triple(PiDiamondsFourThin, PiDiamondsFourFill, PiDiamondsFourThin), name: 'PiDiamondsFourThin + PiDiamondsFourFill + PiDiamondsFourThin' },
+        ],
+      },
+      {
+        title: 'Work In Progress — WebGL',
+        rows: [
+          { label: 'None',                  emoji: '💀',    icon: () => icon(PiSkullDuotone),      name: 'PiSkullDuotone' },
+          { label: 'CRT Test',              emoji: '📺',    icon: () => icon(TbDeviceTvOldFilled), name: 'TbDeviceTvOldFilled' },
+          { label: 'Dumpster Fire',         emoji: '🔥🗑️', icon: () => icon(LiaDumpsterFireSolid),name: 'LiaDumpsterFireSolid' },
+          { label: 'Burning At Both Ends',  emoji: '🕯️',   icon: () => icon(GiCandleLight),       name: 'GiCandleLight' },
+          { label: "That's All Folks",      emoji: '🔫💨',  icon: () => pair(GiPistolGun, WiSmoke), name: 'GiPistolGun + WiSmoke' },
+          { label: 'Flying High',           emoji: '✈️',    icon: () => icon(FaPlane),             name: 'FaPlane' },
+          { label: 'Police Presence',       emoji: '🚓',    icon: () => icon(GiPoliceBadge),       name: 'GiPoliceBadge' },
+          { label: 'Still Pulling For You', emoji: '🚢',    icon: () => icon(GiSinkingShip),       name: 'GiSinkingShip' },
+          { label: 'Row It Alone',          emoji: '🚣',    icon: () => icon(GiPaperBoat),         name: 'GiPaperBoat' },
+          { label: 'Staying Afloat',        emoji: '🛟',    icon: () => icon(ImLifebuoy),          name: 'ImLifebuoy' },
+          { label: "Quinn's Playground",    emoji: '🦭',    icon: () => icon(FaPaw),               name: 'FaPaw' },
+        ],
+      },
+      {
+        title: 'Work In Progress — WebGPU',
+        rows: [
+          { label: 'None',                     emoji: '💀',   icon: () => icon(PiSkullDuotone),        name: 'PiSkullDuotone' },
+          { label: 'All My Friends Are Ghosts', emoji: '👻',  icon: () => icon(FaGhost),               name: 'FaGhost' },
+          { label: 'Surrender',                emoji: '🏳️',  icon: () => icon(FaFlag),                name: 'FaFlag' },
+          { label: 'Stay Hunted',              emoji: '🐇',   icon: () => icon(GiRabbit),              name: 'GiRabbit' },
+          { label: 'Ghost Stories',            emoji: '📖👻', icon: () => pair(FaBook, FaGhost),       name: 'FaBook + FaGhost' },
+        ],
+      },
+      {
+        title: 'Toolbox — WebGL',
+        rows: [
+          { label: 'None',                 emoji: '💀',   icon: () => icon(PiSkullDuotone),                          name: 'PiSkullDuotone' },
+          { label: 'Fire Test',            emoji: '🔥',   icon: () => icon(FaFire),                                  name: 'FaFire' },
+          { label: 'Hot Box',              emoji: '🔥💨', icon: () => pair(FaFire, FaWind),                          name: 'FaFire + FaWind' },
+          { label: 'Pen Plotter',          emoji: '🖊️',  icon: () => icon(FaPen),                                   name: 'FaPen' },
+          { label: 'Spline Editor',        emoji: '➰',    icon: () => icon(TbVectorSpline),                          name: 'TbVectorSpline' },
+          { label: 'Smoke Test',           emoji: '💨',   icon: () => icon(FaWind),                                  name: 'FaWind' },
+          { label: 'Character Controller', emoji: '🏃',   icon: () => icon(MdDirectionsRun),                         name: 'MdDirectionsRun' },
+          { label: 'Multiplayer Madness',  emoji: '🏃🏃', icon: () => pair(MdDirectionsRun, MdDirectionsRun),        name: 'MdDirectionsRun ×2' },
+        ],
+      },
+      {
+        title: 'Toolbox — WebGPU',
+        rows: [
+          { label: 'None',                 emoji: '💀',   icon: () => icon(PiSkullDuotone),                          name: 'PiSkullDuotone' },
+          { label: 'Ghost Buster',         emoji: '👻',   icon: () => icon(FaGhost),                                 name: 'FaGhost' },
+          { label: 'Character Controller', emoji: '🏃',   icon: () => icon(MdDirectionsRun),                         name: 'MdDirectionsRun' },
+          { label: 'Multiplayer Madness',  emoji: '🏃🏃', icon: () => pair(MdDirectionsRun, MdDirectionsRun),        name: 'MdDirectionsRun ×2' },
+        ],
+      },
+      {
+        title: 'Test Lab — WebGL',
+        rows: [
+          { label: 'None',           emoji: '💀', icon: () => icon(PiSkullDuotone), name: 'PiSkullDuotone' },
+          { label: 'Fluid Test',     emoji: '🌊', icon: () => icon(ImLifebuoy),     name: 'ImLifebuoy' },
+          { label: 'Hand Stuff',     emoji: '🤚', icon: () => icon(FaHandPaper),    name: 'FaHandPaper' },
+          { label: 'PixelHater',     emoji: '👾', icon: () => icon(BiSolidInvader), name: 'BiSolidInvader' },
+          { label: 'Particle Lab',   emoji: '🔬', icon: () => icon(FaMicroscope),   name: 'FaMicroscope' },
+          { label: 'StrudelDoodle',  emoji: '🎵', icon: () => icon(FaMusic),        name: 'FaMusic' },
+          { label: 'Explosion Test', emoji: '💥', icon: () => icon(FaBomb),         name: 'FaBomb' },
+        ],
+      },
+      {
+        title: 'Test Lab — WebGPU',
+        rows: [
+          { label: 'None',                emoji: '💀',  icon: () => icon(PiSkullDuotone), name: 'PiSkullDuotone' },
+          { label: 'Network Test',        emoji: '🕸️', icon: () => icon(GiSpiderWeb),    name: 'GiSpiderWeb' },
+          { label: 'Mobile Physics Test', emoji: '📱',  icon: () => icon(FaMobileAlt),    name: 'FaMobileAlt' },
+          { label: 'The Loom',            emoji: '🧵',  icon: () => icon(GiSewingNeedle), name: 'GiSewingNeedle' },
+        ],
+      },
+    ];
+
+    function Row({ label, emoji, icon: renderIcon, name }) {
+      return e('tr', null,
+        e('td', { className: 'label' }, label),
+        e('td', null, emoji),
+        e('td', null, renderIcon()),
+        e('td', { className: 'name' }, name),
+      );
+    }
+
+    function Section({ title, rows }) {
+      return e(React.Fragment, null,
+        e('h2', null, title),
+        e('table', null,
+          e('thead', null,
+            e('tr', null,
+              e('th', null, 'Scene'),
+              e('th', null, 'Old emoji'),
+              e('th', null, 'New icon'),
+              e('th', null, 'Name'),
+            ),
+          ),
+          e('tbody', null, rows.map((r) => e(Row, { key: r.label, ...r }))),
+        ),
+      );
+    }
+
+    function App() {
+      return e('div', null, SECTIONS.map((s) => e(Section, { key: s.title, ...s })));
+    }
+
+    createRoot(document.getElementById('root')).render(e(App, null));
+  </script>
+
+    const e = React.createElement;
+
+    const icon = (C) => e(C, null);
+    const pair = (A, B) => e(React.Fragment, null, e(A, null), e(B, null));
+
+    const SECTIONS = [
+      {
+        title: 'Area Icons',
+        rows: [
+          { label: 'WIP',      emoji: '🛠️',  icon: () => icon(FaTools),      name: 'FaTools' },
+          { label: 'Test Lab', emoji: '🧪',  icon: () => icon(FaFlask),      name: 'FaFlask' },
+          { label: 'Toolbox',  emoji: '🧰',  icon: () => icon(FaToolbox),    name: 'FaToolbox' },
+        ],
+      },
+      {
+        title: 'Debug Toggle (Scenemoji)',
+        rows: [
+          { label: 'Debug', emoji: '🔥', icon: () => icon(FaBug), name: 'FaBug', warn: true },
+        ],
+      },
+      {
+        title: 'Showcase — WebGL',
+        rows: [
+          { label: 'None',                           emoji: '💀',      icon: () => icon(FaSkull),                      name: 'FaSkull' },
+          { label: 'Folded Frame',                   emoji: '⬜️◻️▫️', icon: () => pair(TbSquare, TbSquareFilled),     name: 'TbSquare + TbSquareFilled' },
+          { label: 'LoGlow',                         emoji: '🌑',      icon: () => icon(FaMoon),                       name: 'FaMoon' },
+          { label: 'All My Thoughts Are So Cumulus', emoji: '💀☁️',   icon: () => pair(FaSkull, FaCloud),             name: 'FaSkull + FaCloud' },
+          { label: 'Paper Stack',                    emoji: '📄',      icon: () => icon(FaFileAlt),                    name: 'FaFileAlt' },
+          { label: "Quinn's Dice",                   emoji: '🎲',      icon: () => icon(FaDice),                       name: 'FaDice' },
+          { label: 'Mycelium',                       emoji: '🔬',      icon: () => icon(FaMicroscope),                 name: 'FaMicroscope' },
+          { label: 'Rosie',                          emoji: '❤️🌹',   icon: () => pair(FaHeart, FaLeaf),              name: 'FaHeart + FaLeaf', warn: true },
+          { label: 'Cardinals',                      emoji: '🔴',      icon: () => icon(FaCircle),                     name: 'FaCircle' },
+          { label: 'Watercolor Squares',             emoji: '◇◆◇',    icon: () => pair(TbDiamond, TbDiamondFilled),   name: 'TbDiamond + TbDiamondFilled' },
+        ],
+      },
+      {
+        title: 'Work In Progress — WebGL',
+        rows: [
+          { label: 'None',                  emoji: '💀',    icon: () => icon(FaSkull),              name: 'FaSkull' },
+          { label: 'CRT Test',              emoji: '📺',    icon: () => icon(FaTv),                 name: 'FaTv' },
+          { label: 'Dumpster Fire',         emoji: '🔥🗑️', icon: () => pair(FaFire, FaTrash),      name: 'FaFire + FaTrash' },
+          { label: 'Burning At Both Ends',  emoji: '🕯️',   icon: () => icon(GiCandleLight),        name: 'GiCandleLight' },
+          { label: "That's All Folks",      emoji: '🔫💨',  icon: () => pair(FaBan, FaWind),        name: 'FaBan + FaWind', warn: true },
+          { label: 'Flying High',           emoji: '✈️',    icon: () => icon(FaPlane),              name: 'FaPlane' },
+          { label: 'Police Presence',       emoji: '🚓',    icon: () => icon(FaCar),                name: 'FaCar', warn: true },
+          { label: 'Still Pulling For You', emoji: '🚢',    icon: () => icon(FaShip),               name: 'FaShip' },
+          { label: 'Row It Alone',          emoji: '🚣',    icon: () => icon(GiBoatFishing),        name: 'GiBoatFishing', warn: true },
+          { label: 'Staying Afloat',        emoji: '🛟',    icon: () => icon(FaLifeRing),           name: 'FaLifeRing' },
+          { label: "Quinn's Playground",    emoji: '🦭',    icon: () => icon(FaPaw),                name: 'FaPaw', warn: true },
+        ],
+      },
+      {
+        title: 'Work In Progress — WebGPU',
+        rows: [
+          { label: 'None',                     emoji: '💀',   icon: () => icon(FaSkull),          name: 'FaSkull' },
+          { label: 'All My Friends Are Ghosts', emoji: '👻',  icon: () => icon(FaGhost),          name: 'FaGhost' },
+          { label: 'Surrender',                emoji: '🏳️',  icon: () => icon(FaFlag),           name: 'FaFlag', warn: true },
+          { label: 'Stay Hunted',              emoji: '🐇',   icon: () => icon(GiRabbit),         name: 'GiRabbit' },
+          { label: 'Ghost Stories',            emoji: '📖👻', icon: () => pair(FaBook, FaGhost),  name: 'FaBook + FaGhost' },
+        ],
+      },
+      {
+        title: 'Toolbox — WebGL',
+        rows: [
+          { label: 'None',                 emoji: '💀',   icon: () => icon(FaSkull),                          name: 'FaSkull' },
+          { label: 'Fire Test',            emoji: '🔥',   icon: () => icon(FaFire),                           name: 'FaFire' },
+          { label: 'Hot Box',              emoji: '🔥💨', icon: () => pair(FaFire, FaWind),                   name: 'FaFire + FaWind' },
+          { label: 'Pen Plotter',          emoji: '🖊️',  icon: () => icon(FaPen),                            name: 'FaPen' },
+          { label: 'Spline Editor',        emoji: '➰',    icon: () => icon(TbVectorSpline),                   name: 'TbVectorSpline' },
+          { label: 'Smoke Test',           emoji: '💨',   icon: () => icon(FaWind),                           name: 'FaWind' },
+          { label: 'Character Controller', emoji: '🏃',   icon: () => icon(MdDirectionsRun),                  name: 'MdDirectionsRun' },
+          { label: 'Multiplayer Madness',  emoji: '🏃🏃', icon: () => pair(MdDirectionsRun, MdDirectionsRun), name: 'MdDirectionsRun ×2' },
+        ],
+      },
+      {
+        title: 'Toolbox — WebGPU',
+        rows: [
+          { label: 'None',                 emoji: '💀',   icon: () => icon(FaSkull),                          name: 'FaSkull' },
+          { label: 'Ghost Buster',         emoji: '👻',   icon: () => icon(FaGhost),                          name: 'FaGhost' },
+          { label: 'Character Controller', emoji: '🏃',   icon: () => icon(MdDirectionsRun),                  name: 'MdDirectionsRun' },
+          { label: 'Multiplayer Madness',  emoji: '🏃🏃', icon: () => pair(MdDirectionsRun, MdDirectionsRun), name: 'MdDirectionsRun ×2' },
+        ],
+      },
+      {
+        title: 'Test Lab — WebGL',
+        rows: [
+          { label: 'None',           emoji: '💀', icon: () => icon(FaSkull),      name: 'FaSkull' },
+          { label: 'Fluid Test',     emoji: '🌊', icon: () => icon(FaWater),      name: 'FaWater' },
+          { label: 'Hand Stuff',     emoji: '🤚', icon: () => icon(FaHandPaper),  name: 'FaHandPaper' },
+          { label: 'PixelHater',     emoji: '👾', icon: () => icon(FaGamepad),    name: 'FaGamepad', warn: true },
+          { label: 'Particle Lab',   emoji: '🔬', icon: () => icon(FaMicroscope), name: 'FaMicroscope' },
+          { label: 'StrudelDoodle',  emoji: '🎵', icon: () => icon(FaMusic),      name: 'FaMusic' },
+          { label: 'Explosion Test', emoji: '💥', icon: () => icon(FaBomb),       name: 'FaBomb', warn: true },
+        ],
+      },
+      {
+        title: 'Test Lab — WebGPU',
+        rows: [
+          { label: 'None',                emoji: '💀',  icon: () => icon(FaSkull),        name: 'FaSkull' },
+          { label: 'Network Test',        emoji: '🕸️', icon: () => icon(FaNetworkWired), name: 'FaNetworkWired' },
+          { label: 'Mobile Physics Test', emoji: '📱',  icon: () => icon(FaMobileAlt),    name: 'FaMobileAlt' },
+          { label: 'The Loom',            emoji: '🧵',  icon: () => icon(GiSewingNeedle), name: 'GiSewingNeedle', warn: true },
+        ],
+      },
+    ];
+
+    function Row({ label, emoji, icon: renderIcon, name, warn }) {
+      return e('tr', null,
+        e('td', { className: 'label' }, label),
+        e('td', null, emoji),
+        e('td', null, renderIcon()),
+        e('td', { className: warn ? 'warn' : 'match' }, name + (warn ? ' ⚠' : ' ✓')),
+      );
+    }
+
+    function Section({ title, rows }) {
+      return e(React.Fragment, null,
+        e('h2', null, title),
+        e('table', null,
+          e('thead', null,
+            e('tr', null,
+              e('th', null, 'Scene'),
+              e('th', null, 'Old emoji'),
+              e('th', null, 'New icon'),
+              e('th', null, 'Name'),
+            ),
+          ),
+          e('tbody', null, rows.map((r) => e(Row, { key: r.label, ...r }))),
+        ),
+      );
+    }
+
+    function App() {
+      return e('div', null, SECTIONS.map((s) => e(Section, { key: s.title, ...s })));
+    }
+
+    createRoot(document.getElementById('root')).render(e(App, null));
+  </script>
+</body>
+</html>

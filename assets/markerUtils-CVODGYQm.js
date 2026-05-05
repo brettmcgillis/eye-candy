@@ -1,0 +1,1 @@
+function e(t,n,i){return[(t-.5)*i.width,(n-.5)*i.height,.1]}function h(t,n,i){return[(t-.5)*i.height,(n-.5)*i.height,.1]}function u(t,n,i){const r=i.height/i.width;return{x:(t-.5)*r+.5,y:n}}function o(t,n){return t*Math.min(n.width,n.height)}function a(t,n){return t*n.height}export{h as a,u as d,a as m,o as s,e as u};

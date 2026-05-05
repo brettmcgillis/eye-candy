@@ -1,0 +1,1 @@
+function a(n){return n*(Math.PI/180)}function o(n,r){const t=Math.random();return n+Math.floor(t*(r-n))}function s(n,r,t){return Math.sin(n*r)*t}const u=a(45),c=a(90);export{u as f,o as g,c as n,a as r,s};

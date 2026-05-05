@@ -32,7 +32,7 @@ export default function useSceneControls() {
     FOLDED_FRAME_PRESETS[DEFAULT_PRESET_NAME];
 
   const [controls, setControls] = useControls(
-    'Folded Frame',
+    'Paper Cuts',
     () => ({
       Presets: presetsFolder,
 

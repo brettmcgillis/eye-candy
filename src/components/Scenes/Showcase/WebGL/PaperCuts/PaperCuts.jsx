@@ -18,7 +18,7 @@ import useFrameLayers from './hooks/useFrameLayers';
 import useSceneAnimation from './hooks/useSceneAnimation';
 import useSceneControls from './hooks/useSceneControls';
 
-function FoldedFrame() {
+function PaperCuts() {
   const { size } = useThree();
   const [controls] = useSceneControls();
 
@@ -164,4 +164,4 @@ function FoldedFrame() {
   );
 }
 
-export default FoldedFrame;
+export default PaperCuts;

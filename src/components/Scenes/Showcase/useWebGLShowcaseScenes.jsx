@@ -19,7 +19,7 @@ import { iconFile } from '../../../utils/appUtils';
 
 const NoScene = lazy(() => import('../../../app/scaffold/NoScene'));
 const Cardinals = lazy(() => import('./WebGL/Cardinals/Cardinals'));
-const FoldedFrame = lazy(() => import('./WebGL/FoldedFrame/FoldedFrame'));
+const PaperCuts = lazy(() => import('./WebGL/PaperCuts/PaperCuts'));
 const LoGlow = lazy(() => import('./WebGL/LoGlow/LoGlow'));
 const AllMyThoughtsAreSoCumulus = lazy(
   () => import('./WebGL/AllMyThoughtsAreSoCumulus/AllMyThoughtsAreSoCumulus')
@@ -61,7 +61,7 @@ function MyceliumIcon() {
   );
 }
 
-function FoldedFrameIcon() {
+function PaperCutsIcon() {
   return (
     <>
       <TbSquare color="#111827" style={{ fontSize: '1em' }} />
@@ -128,10 +128,10 @@ const scenes = [
     Component: NoScene,
   },
   {
-    id: 'foldedFrame',
-    label: 'Folded Frame',
-    icon: FoldedFrameIcon,
-    Component: FoldedFrame,
+    id: 'paperCuts',
+    label: 'Paper Cuts',
+    icon: PaperCutsIcon,
+    Component: PaperCuts,
   },
   {
     id: 'loGlow',

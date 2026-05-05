@@ -49,7 +49,7 @@ To Build:
 
 - [AllMyThoughtsAreSoCumulus](src/components/scenes/Showcase/WebGL/AllMyThoughtsAreSoCumulus/todo.md)
 - [Cardinals](src/components/scenes/Showcase/WebGL/Cardinals/todo.md)
-- [FoldedFrame](src/components/scenes/Showcase/WebGL/FoldedFrame/todo.md)
+- [PaperCuts](src/components/scenes/Showcase/WebGL/PaperCuts/todo.md)
 - [LoGlow](src/components/scenes/Showcase/WebGL/LoGlow/todo.md)
 - [Mycelium](src/components/scenes/Showcase/WebGL/Mycelum/todo.md)
 - [PaperStack](src/components/scenes/Showcase/WebGL/PaperStack/todo.md)

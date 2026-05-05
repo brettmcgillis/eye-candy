@@ -46,6 +46,11 @@
   overflow: auto;
 }
 
+.overlay-panel svg {
+  font-size: var(--overlay-icon-size);
+  vertical-align: middle;
+}
+
 /* -------------------------------- */
 /* Overlay positions                */
 /* -------------------------------- */

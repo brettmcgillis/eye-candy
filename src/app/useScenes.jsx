@@ -1,3 +1,5 @@
+import { FaFlask, FaToolbox, FaTools } from 'react-icons/fa';
+
 import useWebGLShowcaseScenes from '../components/scenes/Showcase/useWebGLShowcaseScenes';
 import useWebGPUShowcaseScenes from '../components/scenes/Showcase/useWebGPUShowcaseScenes';
 import useWebGLTestScenes from '../components/scenes/TestLab/useWebGLTestScenes';
@@ -20,10 +22,10 @@ export const AREAS = {
 };
 
 export const AREA_ICONS = {
-  showcase: '',
-  wip: '🛠️',
-  testlab: '🧪',
-  toolbox: '🧰',
+  showcase: null,
+  wip: FaTools,
+  testlab: FaFlask,
+  toolbox: FaToolbox,
 };
 
 export default function useScenes() {

@@ -1,11 +1,23 @@
 import { Leva } from 'leva';
 
 import React from 'react';
+import { FaBomb, FaFire } from 'react-icons/fa';
+import { GiBrightExplosion } from 'react-icons/gi';
 
 import { a, to, useSpring } from '@react-spring/web';
 
 import { localEnv } from '../../../../utils/appUtils';
 import LevaTheme from '../levaTheme';
+
+function LevaTitle() {
+  return (
+    <span style={{ fontSize: 'var(--overlay-icon-size)' }}>
+      <FaBomb />
+      <FaFire />
+      <GiBrightExplosion />
+    </span>
+  );
+}
 
 export default function LevaPanel({ visible }) {
   const local = localEnv();
@@ -53,7 +65,7 @@ export default function LevaPanel({ visible }) {
           persist={false}
           theme={LevaTheme}
           fill
-          titleBar={{ title: '💣🔥💥', filter: true, drag: false }}
+          titleBar={{ title: <LevaTitle />, filter: true, drag: false }}
         />
       </a.div>
     </a.div>

@@ -1,4 +1,9 @@
 import { lazy } from 'react';
+import { FaGhost } from 'react-icons/fa';
+import { PiSkullDuotone } from 'react-icons/pi';
+import { MdDirectionsRun } from 'react-icons/md';
+
+const MultiplayerIcon = () => <><MdDirectionsRun /><MdDirectionsRun /></>;
 
 const NoScene = lazy(() => import('../../../app/scaffold/NoScene'));
 const GhostBuster = lazy(() => import('./WebGPU/GhostBuster/GhostBuster'));
@@ -13,25 +18,25 @@ const scenes = [
   {
     id: 'noScene',
     label: 'None',
-    icon: '💀',
+    icon: PiSkullDuotone,
     Component: NoScene,
   },
   {
     id: 'ghostBuster',
     label: 'Ghost Buster',
-    icon: '👻',
+    icon: FaGhost,
     Component: GhostBuster,
   },
   {
     id: 'characterController',
     label: 'Character Controller',
-    icon: '🏃',
+    icon: MdDirectionsRun,
     Component: CharacterController,
   },
   {
     id: 'multiplayerMadness',
     label: 'Multiplayer Madness',
-    icon: '🏃🏃',
+    icon: MultiplayerIcon,
     Component: MultiplayerMadness,
   },
 ];

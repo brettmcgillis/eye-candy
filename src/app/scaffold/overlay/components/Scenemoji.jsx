@@ -1,10 +1,12 @@
 import { levaStore } from 'leva';
 
 import React from 'react';
+import { AiTwotoneFire } from 'react-icons/ai';
+import { PiSkullDuotone } from 'react-icons/pi';
 
 import useScenes, { AREA_ICONS } from '../../../useScenes';
 
-const FALLBACK_ICON = '💀';
+const FallbackIcon = PiSkullDuotone;
 
 export default function Scenemoji({ onDebugToggle }) {
   const registry = useScenes();
@@ -29,16 +31,23 @@ export default function Scenemoji({ onDebugToggle }) {
 
   const scenes = registry[channel]?.[area] ?? [];
   const scene = scenes.find((s) => s.id === sceneId);
-  const sceneIcon = scene?.icon ?? FALLBACK_ICON;
-  const areaIcon = AREA_ICONS[area];
+  const SceneIcon = scene?.icon ?? FallbackIcon;
+  const AreaIcon = AREA_ICONS[area];
 
   return (
     <>
       <span className="debug" onClick={onDebugToggle}>
-        🔥
+        <AiTwotoneFire />
       </span>
-      {areaIcon ? ` — ${areaIcon} — ` : ' — '}
-      {sceneIcon}
+      {AreaIcon ? (
+        <>
+          {' '}
+          — <AreaIcon /> —{' '}
+        </>
+      ) : (
+        ' — '
+      )}
+      <SceneIcon />
     </>
   );
 }

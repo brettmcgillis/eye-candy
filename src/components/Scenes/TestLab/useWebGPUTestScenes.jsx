@@ -1,4 +1,8 @@
 import { lazy } from 'react';
+import { FaMobileAlt } from 'react-icons/fa';
+import { GiSpiderWeb } from 'react-icons/gi';
+import { PiSkullDuotone } from 'react-icons/pi';
+import { GiSewingNeedle } from 'react-icons/gi';
 
 const NoScene = lazy(() => import('../../../app/scaffold/NoScene'));
 const MobilePhysicsTest = lazy(
@@ -11,25 +15,25 @@ const scenes = [
   {
     id: 'noScene',
     label: 'None',
-    icon: '💀',
+    icon: PiSkullDuotone,
     Component: NoScene,
   },
   {
     id: 'networkTest',
     label: 'Network Test',
-    icon: '🕸️',
+    icon: GiSpiderWeb,
     Component: NetworkTest,
   },
   {
     id: 'mobilePhysicsTest',
     label: 'Mobile Physics Test',
-    icon: '📱',
+    icon: FaMobileAlt,
     Component: MobilePhysicsTest,
   },
   {
     id: 'theLoom',
     label: 'The Loom',
-    icon: '🧵',
+    icon: GiSewingNeedle,
     Component: TheLoom,
   },
 ];

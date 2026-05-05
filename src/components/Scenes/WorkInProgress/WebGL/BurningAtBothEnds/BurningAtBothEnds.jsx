@@ -7,6 +7,7 @@ import {
   OrbitControls,
   PerspectiveCamera,
 } from '@react-three/drei';
+import { useThree } from '@react-three/fiber';
 import { Bloom, EffectComposer } from '@react-three/postprocessing';
 
 import BURNING_AT_BOTH_ENDS_FIRE from '../../../../../presets/fire/burningAtBothEndsFire';
@@ -14,6 +15,7 @@ import Candle from './components/Candle';
 import useSceneControls from './hooks/useSceneControls';
 
 export default function BurningAtBothEnds() {
+  const { size } = useThree();
   const config = useSceneControls();
   const {
     backgroundColor,
@@ -29,7 +31,11 @@ export default function BurningAtBothEnds() {
   const cameraFrame = useMemo(() => {
     const flameTipOffset = 2.35;
     const halfSceneHeight = config.height / 2 + flameTipOffset;
-    const framePadding = config.cameraFramePadding ?? 0.92;
+    const isMobileViewport = size.width <= 768;
+    const framePaddingBase = config.cameraFramePadding ?? 0.92;
+    const framePadding = isMobileViewport
+      ? framePaddingBase * 1.14
+      : framePaddingBase;
     const framedHeight = halfSceneHeight * 2 * framePadding;
     const fov = 42;
     const fovRadians = THREE.MathUtils.degToRad(fov);
@@ -50,27 +56,28 @@ export default function BurningAtBothEnds() {
     config.cameraDistanceOffset,
     config.cameraFramePadding,
     config.height,
+    size.width,
   ]);
   const floorAlphaMap = useMemo(() => {
-    const size = 512;
+    const alphaMapSize = 512;
     const canvas = document.createElement('canvas');
-    canvas.width = size;
-    canvas.height = size;
+    canvas.width = alphaMapSize;
+    canvas.height = alphaMapSize;
 
     const ctx = canvas.getContext('2d');
     const gradient = ctx.createRadialGradient(
-      size / 2,
-      size / 2,
+      alphaMapSize / 2,
+      alphaMapSize / 2,
       0,
-      size / 2,
-      size / 2,
-      size / 2
+      alphaMapSize / 2,
+      alphaMapSize / 2,
+      alphaMapSize / 2
     );
     gradient.addColorStop(0, 'rgba(255,255,255,1)');
     gradient.addColorStop(0.72, 'rgba(255,255,255,1)');
     gradient.addColorStop(1, 'rgba(0,0,0,0)');
     ctx.fillStyle = gradient;
-    ctx.fillRect(0, 0, size, size);
+    ctx.fillRect(0, 0, alphaMapSize, alphaMapSize);
 
     const texture = new THREE.CanvasTexture(canvas);
     texture.needsUpdate = true;

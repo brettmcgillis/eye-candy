@@ -1,4 +1,8 @@
 import { lazy } from 'react';
+import { FaBomb, FaHandPaper, FaMicroscope, FaMusic } from 'react-icons/fa';
+import { BiSolidInvader } from 'react-icons/bi';
+import { ImLifebuoy } from 'react-icons/im';
+import { PiSkullDuotone } from 'react-icons/pi';
 
 const NoScene = lazy(() => import('../../../app/scaffold/NoScene'));
 const ExplosionTest = lazy(() => import('./WebGL/ExplosionTest/ExplosionTest'));
@@ -12,43 +16,43 @@ const scenes = [
   {
     id: 'noScene',
     label: 'None',
-    icon: '💀',
+    icon: PiSkullDuotone,
     Component: NoScene,
   },
   {
     id: 'fluidTest',
     label: 'Fluid Test',
-    icon: '🌊',
+    icon: ImLifebuoy,
     Component: FluidTest,
   },
   {
     id: 'handStuff',
     label: 'Hand Stuff',
-    icon: '🤚',
+    icon: FaHandPaper,
     Component: HandStuff,
   },
   {
     id: 'pixelHater',
     label: 'PixelHater',
-    icon: '👾',
+    icon: BiSolidInvader,
     Component: PixelHater,
   },
   {
     id: 'particleLab',
     label: 'Particle Lab',
-    icon: '🔬',
+    icon: FaMicroscope,
     Component: ParticleLab,
   },
   {
     id: 'strudelDoodle',
     label: 'StrudelDoodle',
-    icon: '🎵',
+    icon: FaMusic,
     Component: StrudelDoodle,
   },
   {
     id: 'explosionTest',
     label: 'Explosion Test',
-    icon: '💥',
+    icon: FaBomb,
     Component: ExplosionTest,
   },
 ];

@@ -1,4 +1,11 @@
 import { lazy } from 'react';
+import { FaFire, FaPen, FaWind } from 'react-icons/fa';
+import { PiSkullDuotone } from 'react-icons/pi';
+import { MdDirectionsRun } from 'react-icons/md';
+import { TbVectorSpline } from 'react-icons/tb';
+
+const HotBoxIcon = () => <><FaFire /><FaWind /></>;
+const MultiplayerIcon = () => <><MdDirectionsRun /><MdDirectionsRun /></>;
 
 const NoScene = lazy(() => import('../../../app/scaffold/NoScene'));
 const FireTest = lazy(() => import('./WebGL/FireTest/FireTest'));
@@ -16,49 +23,49 @@ const scenes = [
   {
     id: 'noScene',
     label: 'None',
-    icon: '💀',
+    icon: PiSkullDuotone,
     Component: NoScene,
   },
   {
     id: 'fireTest',
     label: 'Fire Test',
-    icon: '🔥',
+    icon: FaFire,
     Component: FireTest,
   },
   {
     id: 'hotBox',
     label: 'Hot Box',
-    icon: '🔥💨',
+    icon: HotBoxIcon,
     Component: HotBox,
   },
   {
     id: 'penPlotter',
     label: 'Pen Plotter',
-    icon: '🖊️',
+    icon: FaPen,
     Component: PenPlotter,
   },
   {
     id: 'splineEditor',
     label: 'Spline Editor',
-    icon: '➰',
+    icon: TbVectorSpline,
     Component: SplineEditor,
   },
   {
     id: 'smokeTest',
     label: 'Smoke Test',
-    icon: '💨',
+    icon: FaWind,
     Component: SmokeTest,
   },
   {
     id: 'characterController',
     label: 'Character Controller',
-    icon: '🏃',
+    icon: MdDirectionsRun,
     Component: CharacterController,
   },
   {
     id: 'multiplayerMadness',
     label: 'Multiplayer Madness',
-    icon: '🏃🏃',
+    icon: MultiplayerIcon,
     Component: MultiplayerMadness,
   },
 ];

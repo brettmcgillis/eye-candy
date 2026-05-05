@@ -1,4 +1,20 @@
 import { lazy } from 'react';
+import { FaCloud, FaHeart, FaMicroscope } from 'react-icons/fa';
+import {
+  GiDiceEightFacesEight,
+  GiDiceTwentyFacesTwenty,
+  GiMoonOrbit,
+  GiPapers,
+  GiRose,
+} from 'react-icons/gi';
+import { IoDice } from 'react-icons/io5';
+import {
+  PiBirdDuotone,
+  PiDiamondsFourFill,
+  PiDiamondsFourThin,
+  PiSkullDuotone,
+} from 'react-icons/pi';
+import { TbSquare } from 'react-icons/tb';
 
 const NoScene = lazy(() => import('../../../app/scaffold/NoScene'));
 const Cardinals = lazy(() => import('./WebGL/Cardinals/Cardinals'));
@@ -15,65 +31,116 @@ const WatercolorSquares = lazy(
   () => import('./WebGL/WatercolorSquares/WatercolorSquares')
 );
 
+function FoldedFrameIcon() {
+  return (
+    <>
+      <TbSquare style={{ fontSize: '1em' }} />
+      <TbSquare style={{ fontSize: '0.7em' }} />
+      <TbSquare style={{ fontSize: '0.45em' }} />
+    </>
+  );
+}
+function CumulusIcon() {
+  return (
+    <>
+      <PiSkullDuotone />
+      <FaCloud />
+    </>
+  );
+}
+function RosieIcon() {
+  return (
+    <>
+      <FaHeart />
+      <GiRose />
+    </>
+  );
+}
+function DiceIcon() {
+  return (
+    <>
+      <GiDiceEightFacesEight />
+      <IoDice />
+      <GiDiceTwentyFacesTwenty />
+    </>
+  );
+}
+function WatercolorIcon() {
+  return (
+    <>
+      <PiDiamondsFourThin />
+      <PiDiamondsFourFill />
+      <PiDiamondsFourThin />
+    </>
+  );
+}
+function CardinalsIcon() {
+  return (
+    <>
+      <PiBirdDuotone />
+      <PiBirdDuotone />
+    </>
+  );
+}
 const scenes = [
   {
     id: 'noScene',
     label: 'None',
-    icon: '💀',
+    icon: PiSkullDuotone,
     Component: NoScene,
   },
   {
     id: 'foldedFrame',
     label: 'Folded Frame',
-    icon: '⬜️◻️▫️',
+    icon: FoldedFrameIcon,
     Component: FoldedFrame,
   },
   {
     id: 'loGlow',
     label: 'LoGlow',
-    icon: '🌑',
+    icon: GiMoonOrbit,
     Component: LoGlow,
   },
   {
     id: 'allMyThoughtsAreSoCumulus',
     label: 'All My Thoughts Are So Cumulus',
-    icon: '💀☁️',
+    icon: CumulusIcon,
     Component: AllMyThoughtsAreSoCumulus,
   },
   {
     id: 'paperStack',
     label: 'Paper Stack',
-    icon: '📄',
+    icon: GiPapers,
     Component: PaperStack,
   },
   {
     id: 'dice',
     label: "Quinn's Dice",
-    icon: '🎲',
+    icon: DiceIcon,
     Component: QuinnsDice,
   },
   {
     id: 'mycelium',
     label: 'Mycelium',
-    icon: '🔬',
+    icon: FaMicroscope,
     Component: Mycelium,
   },
   {
     id: 'rosie',
     label: 'Rosie',
-    icon: '❤️🌹',
+    icon: RosieIcon,
     Component: Rosie,
   },
   {
     id: 'cardinals',
     label: 'Cardinals',
-    icon: '🔴',
+    icon: CardinalsIcon,
     Component: Cardinals,
   },
   {
     id: 'watercolorSquares',
     label: 'Watercolor Squares',
-    icon: '◇◆◇',
+    icon: WatercolorIcon,
     Component: WatercolorSquares,
   },
 ];

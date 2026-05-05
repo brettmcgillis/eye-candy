@@ -17,7 +17,7 @@ export default function ExternalLinks() {
             rel="noreferrer"
             aria-label="Instagram"
           >
-            <FaInstagram size={16} color="#000000" />
+            <FaInstagram color="#000000" />
           </a>
           <a
             href="https://www.linkedin.com/in/brett-mcgillis-61b93a125/"
@@ -25,7 +25,7 @@ export default function ExternalLinks() {
             rel="noreferrer"
             aria-label="LinkedIn"
           >
-            <FaLinkedin size={16} color="#000000" />
+            <FaLinkedin color="#000000" />
           </a>
         </>
       )}

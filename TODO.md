@@ -153,6 +153,8 @@ To Build:
 - [ ] MultiplayerMadness
 - [ ] GhostStories
 - [ ] Quinn'sPlayground
+- [ ] PaperCuts - Morse Code
+- [ ] PaperCuts - Layer Fade
 
 - TrophyHusband
 - Yggdraskill

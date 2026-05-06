@@ -3,6 +3,7 @@ import { levaStore } from 'leva';
 import React from 'react';
 import { PiSkullDuotone } from 'react-icons/pi';
 
+import { iconFile } from '../../../../utils/appUtils';
 import useScenes, { AREA_ICONS } from '../../../useScenes';
 
 function FallbackIcon() {
@@ -39,7 +40,7 @@ export default function Scenemoji({ onDebugToggle }) {
     <>
       <span className="debug" onClick={onDebugToggle}>
         <img
-          src="/images/reversal-inner.png"
+          src={iconFile('reversal-inner.png')}
           alt="Debug"
           style={{
             width: 'auto',

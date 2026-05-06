@@ -5,7 +5,7 @@ import getMyceliumFolder from './useMyceliumControls';
 
 export default function useSceneControls() {
   const scene = useControls(
-    'Scene',
+    'Mycelium',
     {
       Environment: folder(
         {
@@ -25,11 +25,11 @@ export default function useSceneControls() {
     { collapsed: true }
   );
 
-  const [cloudA, setCloudA] = useControls('Scene', () => ({
+  const [cloudA, setCloudA] = useControls('Mycelium', () => ({
     Hyphae: getMyceliumFolder(CLOUD_A_DEFAULTS),
   }));
 
-  const [cloudB, setCloudB] = useControls('Scene', () => ({
+  const [cloudB, setCloudB] = useControls('Mycelium', () => ({
     Physarum: getMyceliumFolder(CLOUD_B_DEFAULTS),
   }));
 

@@ -83,7 +83,7 @@ function RosieIcon() {
     <>
       <FaHeart color="#f43f5e" />
       <img
-        src="/images/rose.png"
+        src={iconFile('rose.png')}
         alt="Rosie"
         style={{
           width: 'var(--overlay-icon-size)',

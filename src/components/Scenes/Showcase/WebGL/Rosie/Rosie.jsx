@@ -14,7 +14,7 @@ import useSplatDataTexture from './useSplatDataTexture';
 
 export default function Rosie() {
   const render = useControls(
-    'Render',
+    'Rosie',
     {
       mode: {
         options: {

@@ -164,7 +164,7 @@ To Build:
 
 ## Lenticulars
 
-- [ ] Burning At Both Ends
+- [x] Burning At Both Ends
 - [ ] Still Pulling For you - Rough Waters
 - [ ] Still Pulling For you - Triptych
 - [ ] All My Thoughts Are So Cumulus - Static

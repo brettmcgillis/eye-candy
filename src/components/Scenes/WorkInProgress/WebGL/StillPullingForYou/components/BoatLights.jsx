@@ -17,9 +17,9 @@ function BoatLights({
   headlightY = 0.6,
   headlightZ = -5,
   headlightIntensity = 2,
-  headlightDistance = 8,
   headlightColor = '#ffe8b0',
   headlightMode = 'static',
+  headlightMaterialRef,
   cabinVisible = true,
   cabinX = 0,
   cabinY = 1.2,
@@ -29,7 +29,6 @@ function BoatLights({
   cabinColor = '#ffd080',
   cabinMode = 'static',
 }) {
-  const headlightRef = useRef();
   const cabinRef = useRef();
   const headGlowRef = useRef();
   const cabinGlowRef = useRef();
@@ -46,7 +45,7 @@ function BoatLights({
     const t = clock.getElapsedTime();
 
     // Headlight flicker
-    if (headlightRef.current && headlightMode !== 'static') {
+    if (headlightMode !== 'static') {
       const s = headState.current;
       if (t >= s.nextChange) {
         if (headlightMode === 'shorting') {
@@ -67,7 +66,12 @@ function BoatLights({
           }
         }
       }
-      headlightRef.current.intensity = s.on ? headlightIntensity : 0;
+      if (headlightMaterialRef?.current) {
+        // eslint-disable-next-line no-param-reassign
+        headlightMaterialRef.current.emissiveIntensity = s.on
+          ? headlightIntensity
+          : 0;
+      }
       if (headGlowRef.current) {
         headGlowRef.current.material.opacity = s.on ? 1 : 0;
       }
@@ -104,16 +108,6 @@ function BoatLights({
 
   return (
     <>
-      {headlightVisible && (
-        <pointLight
-          ref={headlightRef}
-          position={[headlightX, headlightY, headlightZ]}
-          intensity={headlightIntensity}
-          distance={headlightDistance}
-          decay={2}
-          color={headlightColor}
-        />
-      )}
       {/* Bloom-only emissive sprite for headlight */}
       {headlightVisible && (
         <mesh

@@ -33,6 +33,7 @@ function FloatingTugboat({
   lightConfig,
 }) {
   const waveRef = useRef();
+  const headlightMaterialRef = useRef();
 
   // Set initial position/orientation so there's no visible snap on mount
   useLayoutEffect(() => {
@@ -85,8 +86,12 @@ function FloatingTugboat({
   return (
     <group position={[position[0], 0, position[2]]}>
       <group ref={waveRef} scale={scale}>
-        <TugBoat />
-        <BoatLights {...lightConfig} />
+        <TugBoat
+          headlightMaterialRef={headlightMaterialRef}
+          headlightColor={lightConfig.headlightColor}
+          headlightEmissiveIntensity={lightConfig.headlightIntensity}
+        />
+        <BoatLights {...lightConfig} headlightMaterialRef={headlightMaterialRef} />
       </group>
     </group>
   );

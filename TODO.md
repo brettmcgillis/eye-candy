@@ -153,8 +153,11 @@ To Build:
 - [ ] MultiplayerMadness
 - [ ] GhostStories
 - [ ] Quinn'sPlayground
-- [ ] PaperCuts - Morse Code
+- [x] PaperCuts - Default
+- [x] PaperCuts - Morse Code
 - [ ] PaperCuts - Layer Fade
+- [ ] PaperCuts - Argyle (2)
+- [ ] PaperCuts - 11 (3)
 
 - TrophyHusband
 - Yggdraskill

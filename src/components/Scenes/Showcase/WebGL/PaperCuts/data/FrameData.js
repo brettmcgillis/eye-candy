@@ -1,81 +1,58 @@
-function cSq(size, position, color) {
+import frameData1 from './frameData1';
+import frameData2 from './frameData2';
+import frameData3 from './frameData3';
+import gptFrames from './gpt_data';
+import sonnetFrames from './sonnet_data';
+
+const FRAME_SAFE_HALF_EXTENT = 3.5;
+
+function getFrameHalfExtent(layers) {
+  return layers.reduce((frameMax, layer) => {
+    return Math.max(
+      frameMax,
+      ...layer.map(({ size, position: [x, y] }) => {
+        const halfSize = size / 2;
+        return Math.max(Math.abs(x) + halfSize, Math.abs(y) + halfSize);
+      })
+    );
+  }, 0);
+}
+
+function normalizeFrameFit(frame) {
+  const frameHalfExtent = getFrameHalfExtent(frame.layers);
+  const computedMultiplier =
+    frameHalfExtent > FRAME_SAFE_HALF_EXTENT
+      ? FRAME_SAFE_HALF_EXTENT / frameHalfExtent
+      : 1;
+
   return {
-    size,
-    position,
-    color,
+    ...frame,
+    settings: {
+      ...frame.settings,
+      dataScaleMultiplier:
+        frame.settings.dataScaleMultiplier ?? computedMultiplier,
+    },
   };
 }
 
-function sq(size, position) {
-  return cSq(size, position, 'white');
-}
-
-const FrameData1 = {
-  settings: {
-    paperDepth: 1 / 16,
-  },
-  layers: [
-    // 1
-    [sq(1, [0, 0])],
-    // 2
-    [sq(2, [0, 0]), sq(1, [1.5, 1.5]), sq(1, [-1.5, -1.5])],
-    // 3
-    [
-      sq(2, [1.5, 1.5]),
-      sq(2, [-1.5, -1.5]),
-      sq(1, [-0.75, 0.75]),
-      sq(1, [0.75, -0.75]),
-    ],
-    // 4
-    [
-      sq(1, [0.75, 0.75]),
-      sq(1, [-0.75, -0.75]),
-      sq(1, [0.75, 2.25]),
-      sq(1, [-0.75, -2.25]),
-      sq(1, [2.25, 0.75]),
-      sq(1, [-2.25, -0.75]),
-      sq(1, [2.25, 2.25]),
-      sq(1, [-2.25, -2.25]),
-    ],
-    // 5
-    [
-      sq(1, [-1.25, 1.25]),
-      sq(1, [1.25, -1.25]),
-      sq(1, [0, 1.5]),
-      sq(1, [0, -1.5]),
-      sq(1, [1.5, 0]),
-      sq(1, [-1.5, 0]),
-      sq(1, [0.5, 2.5]),
-      sq(1, [-0.5, -2.5]),
-      sq(1, [2.5, 0.5]),
-      sq(1, [-2.5, -0.5]),
-      sq(1, [1.5, 3]),
-      sq(1, [-1.5, -3]),
-      sq(1, [3, 1.5]),
-      sq(1, [-3, -1.5]),
-      sq(1, [2.5, 2.5]),
-      sq(1, [-2.5, -2.5]),
-    ],
-    // 6
-    [sq(2, [-1.25, 1.25]), sq(2, [1.25, -1.25])],
-    // 7
-    [
-      sq(2, [0, 2.5]),
-      sq(2, [0, -2.5]),
-      sq(2, [2.5, 0]),
-      sq(2, [-2.5, 0]),
-      sq(2, [2.5, 2.5]),
-      sq(2, [-2.5, -2.5]),
-      sq(1, [-2, 2]),
-      sq(1, [2, -2]),
-    ],
-  ],
-};
+const FRAMES = [
+  { name: '1', frame: normalizeFrameFit(frameData1) },
+  { name: '2', frame: normalizeFrameFit(frameData2) },
+  { name: '3', frame: normalizeFrameFit(frameData3) },
+  ...gptFrames.map((frameEntry) => ({
+    ...frameEntry,
+    frame: normalizeFrameFit(frameEntry.frame),
+  })),
+  ...sonnetFrames.map((frameEntry) => ({
+    ...frameEntry,
+    frame: normalizeFrameFit(frameEntry.frame),
+  })),
+];
 
 export function getFrames() {
-  return [{ name: '1', frame: FrameData1 }];
+  return FRAMES;
 }
 
 export function getFrameData(name) {
-  return getFrames().find((f) => f.name === name)?.frame;
+  return FRAMES.find((frameEntry) => frameEntry.name === name)?.frame;
 }

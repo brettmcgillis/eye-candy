@@ -75,6 +75,8 @@ function PaperCuts() {
     );
   }, [frameLayers, animatedColorStart, animatedColorEnd]);
 
+  const frameDataScale = dataScale * (settings.dataScaleMultiplier ?? 1);
+
   const groupRef = useRef();
   const aspect = size.width / Math.max(1, size.height);
   const isMobile = size.width <= 768;
@@ -136,7 +138,7 @@ function PaperCuts() {
           castShadow
           receiveShadow
           position={[dataPosition.x, dataPosition.y, dataPosition.z]}
-          scale={dataScale}
+          scale={frameDataScale}
           rotation={[0, 0, rotate ? -fourtyFiveDegrees : 0]}
         >
           {renderFrameLayers.map((layer, index) => (

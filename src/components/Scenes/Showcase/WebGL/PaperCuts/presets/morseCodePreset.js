@@ -1,8 +1,8 @@
 const MORSE_CODE_PRESET = {
   frame: '1',
   backgroundColor: '#050505',
-  colorRangeStart: '#1b1b1b',
-  colorRangeEnd: '#050505',
+  colorRangeStart: '#535353',
+  colorRangeEnd: '#282828',
   rotate: true,
   dataScale: 0.1,
   dataPosition: { x: 0, y: 1.1, z: 0.08 },
@@ -27,8 +27,8 @@ const MORSE_CODE_PRESET = {
   morseText: 'SOS',
   morseUnitSeconds: 0.22,
   morsePauseUnits: 12,
-  morseColor: '#ff2a2a',
-  morseEmissiveIntensity: 3,
+  morseColor: '#ff0000',
+  morseEmissiveIntensity: 0.8,
   morseSeed: 13,
 };
 

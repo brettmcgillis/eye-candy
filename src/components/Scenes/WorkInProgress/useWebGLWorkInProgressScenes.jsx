@@ -1,7 +1,6 @@
 import React, { lazy } from 'react';
 import { FaPaw, FaPlane } from 'react-icons/fa';
 import {
-  GiCandleLight,
   GiPaperBoat,
   GiPistolGun,
   GiPoliceBadge,
@@ -21,9 +20,6 @@ function CrtTestIcon() {
 }
 function DumpsterFireIcon() {
   return <LiaDumpsterFireSolid color="#111827" />;
-}
-function CandleLightIcon() {
-  return <GiCandleLight color="#fbbf24" />;
 }
 function FlyingHighIcon() {
   return <FaPlane color="#111827" />;
@@ -53,9 +49,6 @@ function ThatsAllFolksIcon() {
 }
 
 const NoScene = lazy(() => import('../../../app/scaffold/NoScene'));
-const BurningAtBothEnds = lazy(
-  () => import('./WebGL/BurningAtBothEnds/BurningAtBothEnds')
-);
 const CrtTest = lazy(() => import('./WebGL/CRTTest/CrtTest'));
 const DumpsterFire = lazy(() => import('./WebGL/DumpsterFire/DumpsterFire'));
 const ThatsAllFolks = lazy(() => import('./WebGL/ThatsAllFolks/ThatsAllFolks'));
@@ -89,12 +82,6 @@ const scenes = [
     label: 'Dumpster Fire',
     icon: DumpsterFireIcon,
     Component: DumpsterFire,
-  },
-  {
-    id: 'burningAtBothEnds',
-    label: 'Burning At Both Ends',
-    icon: CandleLightIcon,
-    Component: BurningAtBothEnds,
   },
   {
     id: 'thatsAllFolks',

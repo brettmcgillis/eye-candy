@@ -1,6 +1,7 @@
 import React, { lazy } from 'react';
 import { FaCloud, FaHeart } from 'react-icons/fa';
 import {
+  GiCandleLight,
   GiDiceEightFacesEight,
   GiDiceTwentyFacesTwenty,
   GiPapers,
@@ -18,6 +19,9 @@ import { TbSquare } from 'react-icons/tb';
 import { iconFile } from '../../../utils/appUtils';
 
 const NoScene = lazy(() => import('../../../app/scaffold/NoScene'));
+const BurningAtBothEnds = lazy(
+  () => import('./WebGL/BurningAtBothEnds/BurningAtBothEnds')
+);
 const Cardinals = lazy(() => import('./WebGL/Cardinals/Cardinals'));
 const PaperCuts = lazy(() => import('./WebGL/PaperCuts/PaperCuts'));
 const LoGlow = lazy(() => import('./WebGL/LoGlow/LoGlow'));
@@ -34,6 +38,9 @@ const WatercolorSquares = lazy(
 
 function NoSceneIcon() {
   return <PiSkullDuotone color="#888" />;
+}
+function CandleLightIcon() {
+  return <GiCandleLight color="#fbbf24" />;
 }
 function LoGlowIcon() {
   return (
@@ -126,6 +133,12 @@ const scenes = [
     label: 'None',
     icon: NoSceneIcon,
     Component: NoScene,
+  },
+  {
+    id: 'burningAtBothEnds',
+    label: 'Burning At Both Ends',
+    icon: CandleLightIcon,
+    Component: BurningAtBothEnds,
   },
   {
     id: 'paperCuts',

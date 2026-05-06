@@ -41,7 +41,7 @@ export default function Scenemoji({ onDebugToggle }) {
       <span className="debug" onClick={onDebugToggle}>
         <img
           src={iconFile('reversal-inner.png')}
-          alt="Debug"
+          alt="Reversal"
           style={{
             width: 'auto',
             height: 'calc(var(--overlay-icon-size) * 1.4)',

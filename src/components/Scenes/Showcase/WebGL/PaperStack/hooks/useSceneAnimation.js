@@ -1,6 +1,9 @@
-import { useRef } from 'react';
+/* eslint-disable no-param-reassign */
 
+/* eslint-disable no-underscore-dangle */
 import * as THREE from 'three';
+
+import { useRef } from 'react';
 
 import { useFrame } from '@react-three/fiber';
 
@@ -27,14 +30,28 @@ export default function useSceneAnimation({
   colors,
 }) {
   const configRef = useRef({});
-  configRef.current = { mode, color, emissive, emissiveIntensity, speed, stackMaterials, chipsMaterials, colors };
+  configRef.current = {
+    mode,
+    color,
+    emissive,
+    emissiveIntensity,
+    speed,
+    stackMaterials,
+    chipsMaterials,
+    colors,
+  };
 
   const timeRef = useRef(0);
   const prevModeRef = useRef('None');
 
   useFrame((_, delta) => {
     const cfg = configRef.current;
-    const { mode: currentMode, stackMaterials: sMats, chipsMaterials: cMats, colors: baseColors } = cfg;
+    const {
+      mode: currentMode,
+      stackMaterials: sMats,
+      chipsMaterials: cMats,
+      colors: baseColors,
+    } = cfg;
 
     if (currentMode === 'None') {
       if (prevModeRef.current !== 'None') {
@@ -49,7 +66,12 @@ export default function useSceneAnimation({
     prevModeRef.current = currentMode;
 
     if (currentMode === 'Scanner') {
-      const { color: animColor, emissive: animEmissive, emissiveIntensity: animEmissiveIntensity, speed: animSpeed } = cfg;
+      const {
+        color: animColor,
+        emissive: animEmissive,
+        emissiveIntensity: animEmissiveIntensity,
+        speed: animSpeed,
+      } = cfg;
 
       const layerCount = sMats.length;
       const validCount = layerCount - 2; // skip index 0 and N-1
@@ -59,7 +81,7 @@ export default function useSceneAnimation({
 
       const cycleIndex = Math.floor(timeRef.current) % validCount;
       const stackActiveIndex = layerCount - 2 - cycleIndex; // back → front: N-2 → 1
-      const chipsActiveIndex = 1 + cycleIndex;              // bottom → top: 1 → N-2
+      const chipsActiveIndex = 1 + cycleIndex; // bottom → top: 1 → N-2
       const pulse = Math.sin((timeRef.current % 1) * Math.PI);
 
       _override.set(animColor);

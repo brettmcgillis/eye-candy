@@ -146,6 +146,7 @@ To Build:
 - [ ] All my thoughts are so cumulus - Record
 - [x] All my thoughts are so cumulus - Static
 - [ ] Surrender
+- [ ] Surrender Now
 - [ ] Stay Hunted
 - [ ] AllMyFriendsAreGhosts
 - [x] GhostBuster
@@ -158,6 +159,7 @@ To Build:
 - [ ] PaperCuts - Layer Fade
 - [ ] PaperCuts - Argyle (2)
 - [ ] PaperCuts - 11 (3)
+- [x] PaperStack - Gradient Scan
 
 - TrophyHusband
 - Yggdraskill

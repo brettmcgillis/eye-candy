@@ -1,5 +1,3 @@
-import { button, useControls } from 'leva';
-
 import React, { useCallback, useMemo, useRef } from 'react';
 
 import { OrbitControls, PerspectiveCamera } from '@react-three/drei';
@@ -8,9 +6,16 @@ import { useThree } from '@react-three/fiber';
 import OutlineFX from '../../../../postprocessing/webGPU/outline/Outline';
 import Flag from './components/Flag';
 import FlagPole from './components/FlagPole';
-import useSceneControls, { TEXTURE_URLS } from './hooks/useSceneControls';
+import useSceneControls from './hooks/useSceneControls';
 
 export default function Surrender() {
+  const outlineGroupRef = useRef();
+  const flagRef = useRef();
+
+  const resetSim = useCallback(() => {
+    flagRef.current?.resetSim();
+  }, []);
+
   const {
     orbitControls,
     rotateX,
@@ -32,6 +37,7 @@ export default function Surrender() {
     edgeFade,
     holeAmount,
     tatterEdge,
+    smoothEdges,
     paused,
     wireframe,
     cursorCollider,
@@ -39,6 +45,7 @@ export default function Surrender() {
     debugColor,
     cursorRadius,
     textureUrl,
+    textureTile,
     textureScaleX,
     textureScaleY,
     textureRotation,
@@ -94,16 +101,7 @@ export default function Surrender() {
     patternLacunarity,
     ringStride,
     halftoneScale,
-  } = useSceneControls();
-
-  const outlineGroupRef = useRef();
-  const flagRef = useRef();
-
-  const resetSim = useCallback(() => {
-    flagRef.current?.resetSim();
-  }, []);
-
-  useControls('Debug', { 'Reset Sim': button(resetSim) });
+  } = useSceneControls({ onResetSim: resetSim });
 
   // Responsive camera: frame flag + finial, pull back on narrow (mobile) viewports
   const size = useThree((state) => state.size);
@@ -203,8 +201,9 @@ export default function Surrender() {
           edgeFade={edgeFade}
           holeAmount={holeAmount}
           tatterEdge={tatterEdge}
+          smoothEdges={smoothEdges}
           textureUrl={textureUrl === 'None' ? null : textureUrl}
-          preloadTextures={TEXTURE_URLS}
+          textureTile={textureTile}
           textureScaleX={textureScaleX}
           textureScaleY={textureScaleY}
           textureRotation={textureRotation}

@@ -117,6 +117,8 @@ const ClothMesh = forwardRef(function ClothMesh(
     textureScaleY = 1,
     textureRotation = 0,
     textureBlend = 1,
+    // When false, clamps texture to edges instead of repeating/tiling
+    textureTile = true,
     // uv | world | screen
     textureProjection = 'uv',
     // Texture application side: both | inner | outer
@@ -289,8 +291,9 @@ const ClothMesh = forwardRef(function ClothMesh(
 
   useEffect(() => {
     const buildTexturedColor = (tex) => {
-      tex.wrapS = THREE.RepeatWrapping;
-      tex.wrapT = THREE.RepeatWrapping;
+      const wrap = textureTile ? THREE.RepeatWrapping : THREE.ClampToEdgeWrapping;
+      tex.wrapS = wrap;
+      tex.wrapT = wrap;
       tex.needsUpdate = true;
 
       // Build UV transform: scale + rotate around center
@@ -372,6 +375,7 @@ const ClothMesh = forwardRef(function ClothMesh(
     texUniforms,
     textureSide,
     textureProjection,
+    textureTile,
   ]);
 
   useEffect(() => {

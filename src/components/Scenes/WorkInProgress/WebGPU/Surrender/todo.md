@@ -13,13 +13,31 @@
 
 - [x] Finalize camera angle, position. Toggle orbit on off, off by default
 - [ ] Finalize bg color, lighting.
-- [ ] Organize scene controls
+- [x] Organize scene controls
+- Surrender
+  - Scene
+    - Camera
+    - Background
+    - Lighting
+  - Flag
+    - Orientation
+    - Cloth
+      - Alpha
+    - Material
+    - Pole
+    - Finial
+    - Rings
+  - Wind
+  - Postprocessing
+    - Outline
+  - Debug
+
 - [ ] Improve cursor interaction, feels a little unpredictable
 
 # // Presets
 
-- [ ] Surrender - White flag
-- [ ] Surrender Now - Black flag, turbo flex
+- [x] Surrender - White flag
+- [x] Surrender Now - Black flag, turbo flex
 
 # // Features
 

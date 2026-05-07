@@ -1,6 +1,6 @@
 import React, { lazy } from 'react';
-import { FaBook, FaFlag, FaGhost } from 'react-icons/fa';
-import { GiRabbit, GiSinkingShip } from 'react-icons/gi';
+import { FaBook, FaGhost } from 'react-icons/fa';
+import { GiBlackFlag, GiRabbit, GiSinkingShip } from 'react-icons/gi';
 import { PiSkullDuotone } from 'react-icons/pi';
 
 function GhostStoriesIcon() {
@@ -18,7 +18,7 @@ function GhostIcon() {
   return <FaGhost color="#cbd5e1" />;
 }
 function FlagIcon() {
-  return <FaFlag color="#e2e8f0" />;
+  return <GiBlackFlag color="#000000" size={24} />;
 }
 function RabbitIcon() {
   return <GiRabbit color="#d1d5db" />;

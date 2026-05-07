@@ -26,7 +26,6 @@ function Bloom({
       threshold: uniform(threshold),
       strength: uniform(strength),
     }),
-    // eslint-disable-next-line
     []
   );
 

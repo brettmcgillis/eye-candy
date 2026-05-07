@@ -4,7 +4,11 @@ import { OrbitControls, PerspectiveCamera } from '@react-three/drei';
 import { useThree } from '@react-three/fiber';
 
 import OutlineFX from '../../../../postprocessing/webGPU/outline/Outline';
-import FallingLeaves, { BLOSSOM_SPRITES, LEAF_SPRITES, SNOWFLAKE_SPRITES } from './components/FallingLeaves';
+import FallingLeaves, {
+  BLOSSOM_SPRITES,
+  LEAF_SPRITES,
+  SNOWFLAKE_SPRITES,
+} from './components/FallingLeaves';
 import Flag from './components/Flag';
 import FlagPole from './components/FlagPole';
 import useSceneControls from './hooks/useSceneControls';
@@ -116,9 +120,11 @@ export default function Surrender() {
   } = useSceneControls({ onResetSim: resetSim });
 
   const leafSprites =
-    leafType === 'Blossoms' ? BLOSSOM_SPRITES :
-    leafType === 'Snowflakes' ? SNOWFLAKE_SPRITES :
-    LEAF_SPRITES;
+    leafType === 'Blossoms'
+      ? BLOSSOM_SPRITES
+      : leafType === 'Snowflakes'
+        ? SNOWFLAKE_SPRITES
+        : LEAF_SPRITES;
   const flowMode = leafType === 'Snowflakes' ? 'vertical' : 'horizontal';
 
   // Responsive camera: frame flag + finial, pull back on narrow (mobile) viewports

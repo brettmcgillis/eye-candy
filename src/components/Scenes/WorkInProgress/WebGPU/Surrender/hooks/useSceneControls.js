@@ -488,7 +488,7 @@ export default function useSceneControls({ onResetSim } = {}) {
           leafCount: {
             value: p.leafCount,
             min: 50,
-            max: 1000,
+            max: 2000,
             step: 50,
             label: 'Count',
           },

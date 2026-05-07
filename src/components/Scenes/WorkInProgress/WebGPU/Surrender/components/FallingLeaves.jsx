@@ -1,17 +1,18 @@
 import {
-  color as tslColor,
   instancedBufferAttribute,
   mod,
   positionLocal,
   rotate,
-  texture as tslTexture,
   time,
+  texture as tslTexture,
   uniform,
   uv,
   vec3,
 } from 'three/tsl';
 import * as THREE from 'three/webgpu';
+
 import { Suspense, memo, useEffect, useMemo } from 'react';
+
 import { useTexture } from '@react-three/drei';
 import { useFrame, useThree } from '@react-three/fiber';
 
@@ -35,7 +36,8 @@ export const BLOSSOM_SPRITES = [
 
 export const SNOWFLAKE_SPRITES = ['/textures/snowflake.png'];
 
-// Project camera ray to a z plane, return world-space x extent.
+const ATLAS_SIZE = 256;
+
 function getXExtentAtZ(camera, aspect, zPlane) {
   const vFovRad = THREE.MathUtils.degToRad(camera.fov);
   const hFovHalf = Math.atan(Math.tan(vFovRad / 2) * aspect);
@@ -47,7 +49,6 @@ function getXExtentAtZ(camera, aspect, zPlane) {
   return { leftEdge: centerX - halfWidth, rightEdge: centerX + halfWidth };
 }
 
-// Project camera ray to a z plane, return world-space y extent.
 function getYExtentAtZ(camera, zPlane) {
   const vFovHalf = THREE.MathUtils.degToRad(camera.fov / 2);
   const dir = new THREE.Vector3();
@@ -58,135 +59,101 @@ function getYExtentAtZ(camera, zPlane) {
   return { topEdge: centerY + halfHeight, bottomEdge: centerY - halfHeight };
 }
 
-// ------------------------------------------------------------------
-// LeafLayer — one instanced mesh per sprite/color combo
-// ------------------------------------------------------------------
-function LeafLayer({
-  count, hexColor, sprite, leafSize, speed, cycleTravel, tumble, curvature,
-  windUniforms, flowMode,
-  spawnXMin, spawnXMax, spawnYMin, spawnYMax,
-}) {
-  const mesh = useMemo(() => {
-    const positions = [];
-    const rotations = [];
-    const timeOffsets = [];
+// Build a DataArrayTexture from already-loaded THREE.Texture objects.
+// All source images must be 256×256 (ATLAS_SIZE).
+function buildArrayTexture(loadedTextures) {
+  const N = loadedTextures.length;
+  const W = ATLAS_SIZE;
+  const H = ATLAS_SIZE;
+  const data = new Uint8Array(W * H * 4 * N);
 
-    for (let i = 0; i < count; i++) {
-      const x = flowMode === 'vertical'
-        ? THREE.MathUtils.randFloat(spawnXMin, spawnXMax)
-        : THREE.MathUtils.randFloat(spawnXMin, spawnXMax);
-      const y = flowMode === 'vertical'
-        ? THREE.MathUtils.randFloat(spawnYMin, spawnYMax)
-        : THREE.MathUtils.randFloat(-2, 4);
-      positions.push(x, y, THREE.MathUtils.randFloat(-1, 1));
-      rotations.push(Math.random(), Math.random(), Math.random());
-      timeOffsets.push(i / count);
-    }
+  const canvas = document.createElement('canvas');
+  canvas.width = W;
+  canvas.height = H;
+  const ctx = canvas.getContext('2d');
 
-    const posAttr = new THREE.InstancedBufferAttribute(new Float32Array(positions), 3);
-    const rotAttr = new THREE.InstancedBufferAttribute(new Float32Array(rotations), 3);
-    const timeAttr = new THREE.InstancedBufferAttribute(new Float32Array(timeOffsets), 1);
+  loadedTextures.forEach((tex, i) => {
+    ctx.clearRect(0, 0, W, H);
+    ctx.drawImage(tex.image, 0, 0, W, H);
+    data.set(ctx.getImageData(0, 0, W, H).data, i * W * H * 4);
+  });
 
-    const geometry = new THREE.PlaneGeometry(leafSize, leafSize, 8, 8);
-    const material = new THREE.MeshBasicNodeMaterial({
-      side: THREE.DoubleSide,
-      forceSinglePass: true,
-      transparent: true,
-    });
-
-    const texNode = tslTexture(sprite);
-    material.colorNode = tslColor(hexColor).mul(texNode.rgb);
-    material.opacityNode = texNode.a;
-
-    const instancePosition = instancedBufferAttribute(posAttr);
-    const instanceRotation = instancedBufferAttribute(rotAttr);
-    const instanceTime = instancedBufferAttribute(timeAttr);
-    const { windDirXU, windDirZU } = windUniforms;
-
-    const localTime = instanceTime.add(time.mul(speed));
-    const modTime = mod(localTime, 1.0);
-
-    // Paraboloid cup: displace z by (dx² + dy²) * scale, center stays flat, edges curve back.
-    // Scale by leafSize so curvature=1 means full-depth cup regardless of sprite size.
-    const leafUV = uv();
-    const dx = leafUV.x.sub(0.5);
-    const dy = leafUV.y.sub(0.5);
-    const bendScale = curvature * leafSize * 2;
-    const bent = positionLocal.add(vec3(0, 0, dx.mul(dx).add(dy.mul(dy)).mul(bendScale)));
-
-    const rotated = rotate(bent, instanceRotation.mul(modTime.mul(tumble)));
-
-    // Horizontal (leaves/blossoms): blow sideways with slight downward drift
-    // Vertical (snow): fall downward with slight wind drift
-    const travelDir = flowMode === 'vertical'
-      ? vec3(windDirXU.mul(0.15), -1, windDirZU.mul(0.15)).normalize().mul(cycleTravel).mul(modTime)
-      : vec3(windDirXU, -0.25, windDirZU).normalize().mul(cycleTravel).mul(modTime);
-
-    material.positionNode = rotated.add(instancePosition).add(travelDir);
-
-    const m = new THREE.Mesh(geometry, material);
-    m.count = count;
-    m.frustumCulled = false;
-    return m;
-  }, [count, hexColor, sprite, leafSize, speed, cycleTravel, tumble, curvature, windUniforms, flowMode, spawnXMin, spawnXMax, spawnYMin, spawnYMax]);
-
-  useEffect(() => {
-    return () => {
-      mesh.geometry.dispose();
-      mesh.material.dispose();
-    };
-  }, [mesh]);
-
-  return <primitive object={mesh} />;
+  const arrayTex = new THREE.DataArrayTexture(data, W, H, N);
+  arrayTex.format = THREE.RGBAFormat;
+  arrayTex.type = THREE.UnsignedByteType;
+  arrayTex.colorSpace = THREE.SRGBColorSpace;
+  arrayTex.minFilter = THREE.LinearFilter;
+  arrayTex.magFilter = THREE.LinearFilter;
+  arrayTex.needsUpdate = true;
+  return arrayTex;
 }
 
 // ------------------------------------------------------------------
-// FallingLeavesInner — loads all sprites, renders one layer per sprite
+// FallingLeavesInner — single mesh, one draw call
 // ------------------------------------------------------------------
 function FallingLeavesInner({
-  count, colors, sprites: spriteUrls, leafSize, speed, cycleTravel, tumble, curvature,
-  wind, windDirX, windDirZ, flowMode,
+  count,
+  colors,
+  sprites: spriteUrls,
+  leafSize,
+  speed,
+  cycleTravel,
+  tumble,
+  curvature,
+  wind,
+  windDirX,
+  windDirZ,
+  flowMode,
 }) {
-  const sprites = useTexture(spriteUrls);
+  const loadedSprites = useTexture(spriteUrls);
   const { camera, size } = useThree();
 
-  const { spawnXMin, spawnXMax, spawnYMin, spawnYMax, safeTravel } = useMemo(() => {
-    const aspect = size.width / size.height;
-    const margin = 1.5;
+  // Pack all sprites into one DataArrayTexture
+  const arrayTex = useMemo(
+    () =>
+      buildArrayTexture(
+        Array.isArray(loadedSprites) ? loadedSprites : [loadedSprites]
+      ),
+    [loadedSprites]
+  );
 
-    if (flowMode === 'vertical') {
-      // Snow: spawn above screen, fall downward. Use z=-1 for widest frustum.
+  // Frustum-derived spawn bounds (z=-1 = widest cross-section in leaf depth range)
+  const { spawnXMin, spawnXMax, spawnYMin, spawnYMax, safeTravel } =
+    useMemo(() => {
+      const aspect = size.width / size.height;
+      const margin = 1.5;
+
+      if (flowMode === 'vertical') {
+        const { leftEdge, rightEdge } = getXExtentAtZ(camera, aspect, -1);
+        const { topEdge, bottomEdge } = getYExtentAtZ(camera, -1);
+        const spawnYMin = topEdge + margin * 0.5;
+        const spawnYMax = topEdge + margin * 2;
+        const windNorm = Math.sqrt(
+          (windDirX * 0.15) ** 2 + 1 + (windDirZ * 0.15) ** 2
+        );
+        const yComp = 1 / windNorm;
+        return {
+          spawnXMin: leftEdge - margin,
+          spawnXMax: rightEdge + margin,
+          spawnYMin,
+          spawnYMax,
+          safeTravel: (spawnYMax - bottomEdge + margin) / yComp,
+        };
+      }
+
       const { leftEdge, rightEdge } = getXExtentAtZ(camera, aspect, -1);
-      const { topEdge, bottomEdge } = getYExtentAtZ(camera, -1);
-
-      const spawnYMin = topEdge + margin * 0.5;
-      const spawnYMax = topEdge + margin * 2;
-
-      // Travel needed so spawnYMin reaches past bottomEdge - margin (downward, negative y)
-      // travel_y = cycleTravel * normalize(windX*0.15, -1, windZ*0.15).y
-      const windNorm = Math.sqrt((windDirX * 0.15) ** 2 + 1 + (windDirZ * 0.15) ** 2);
-      const yComp = 1 / windNorm; // magnitude of -1 component after normalization
-      const safeTravel = (spawnYMax - bottomEdge + margin) / yComp;
-
+      const windNorm = Math.sqrt(windDirX ** 2 + 0.0625 + windDirZ ** 2);
+      const windXComp = Math.max(windDirX / windNorm, 0.5);
+      const spawnXMax = leftEdge - margin * 0.5;
+      const spawnXMin = leftEdge - margin * 2;
       return {
-        spawnXMin: leftEdge - margin,
-        spawnXMax: rightEdge + margin,
-        spawnYMin,
-        spawnYMax,
-        safeTravel,
+        spawnXMin,
+        spawnXMax,
+        spawnYMin: -2,
+        spawnYMax: 4,
+        safeTravel: (rightEdge - spawnXMax + margin) / windXComp,
       };
-    }
-
-    // Horizontal (leaves/blossoms): spawn off-screen left, blow right.
-    const { leftEdge, rightEdge } = getXExtentAtZ(camera, aspect, -1);
-    const windNorm = Math.sqrt(windDirX ** 2 + 0.0625 + windDirZ ** 2);
-    const windXComp = Math.max(windDirX / windNorm, 0.5);
-    const spawnXMax = leftEdge - margin * 0.5;
-    const spawnXMin = leftEdge - margin * 2;
-    const safeTravel = (rightEdge - spawnXMax + margin) / windXComp;
-
-    return { spawnXMin, spawnXMax, spawnYMin: -2, spawnYMax: 4, safeTravel };
-  }, [camera, size, flowMode, windDirX, windDirZ]);
+    }, [camera, size, flowMode, windDirX, windDirZ]);
 
   const effectiveTravel = Math.max(cycleTravel, safeTravel);
 
@@ -196,7 +163,6 @@ function FallingLeavesInner({
       windDirXU: uniform(windDirX),
       windDirZU: uniform(windDirZ),
     }),
-    // eslint-disable-next-line react-hooks/exhaustive-deps
     []
   );
 
@@ -206,31 +172,148 @@ function FallingLeavesInner({
     windUniforms.windDirZU.value = windDirZ;
   });
 
-  const perLayer = Math.max(1, Math.floor(count / spriteUrls.length));
+  // Single mesh — all instances, all sprites, all colors, one draw call
+  const mesh = useMemo(() => {
+    const numSprites = spriteUrls.length;
+    const numColors = colors.length;
+    const totalCombos = numSprites * numColors;
 
-  return (
-    <>
-      {sprites.map((sprite, i) => (
-        <LeafLayer
-          key={i}
-          count={perLayer}
-          hexColor={colors[i % colors.length]}
-          sprite={sprite}
-          leafSize={leafSize}
-          speed={speed}
-          cycleTravel={effectiveTravel}
-          tumble={tumble}
-          curvature={curvature}
-          windUniforms={windUniforms}
-          flowMode={flowMode}
-          spawnXMin={spawnXMin}
-          spawnXMax={spawnXMax}
-          spawnYMin={spawnYMin}
-          spawnYMax={spawnYMax}
-        />
-      ))}
-    </>
-  );
+    const positions = [];
+    const rotations = [];
+    const timeOffsets = [];
+    const spriteIndices = [];
+    const instanceColors = [];
+
+    const col = new THREE.Color();
+
+    for (let i = 0; i < count; i++) {
+      const combo = i % totalCombos;
+      const si = combo % numSprites;
+      const ci = Math.floor(combo / numSprites) % numColors;
+      col.set(colors[ci]);
+
+      const x =
+        flowMode === 'vertical'
+          ? THREE.MathUtils.randFloat(spawnXMin, spawnXMax)
+          : THREE.MathUtils.randFloat(spawnXMin, spawnXMax);
+      const y =
+        flowMode === 'vertical'
+          ? THREE.MathUtils.randFloat(spawnYMin, spawnYMax)
+          : THREE.MathUtils.randFloat(-2, 4);
+
+      positions.push(x, y, THREE.MathUtils.randFloat(-1, 1));
+      rotations.push(Math.random(), Math.random(), Math.random());
+      timeOffsets.push(i / count);
+      spriteIndices.push(si);
+      instanceColors.push(col.r, col.g, col.b);
+    }
+
+    const posAttr = new THREE.InstancedBufferAttribute(
+      new Float32Array(positions),
+      3
+    );
+    const rotAttr = new THREE.InstancedBufferAttribute(
+      new Float32Array(rotations),
+      3
+    );
+    const timeAttr = new THREE.InstancedBufferAttribute(
+      new Float32Array(timeOffsets),
+      1
+    );
+    const spriteAttr = new THREE.InstancedBufferAttribute(
+      new Float32Array(spriteIndices),
+      1
+    );
+    const colorAttr = new THREE.InstancedBufferAttribute(
+      new Float32Array(instanceColors),
+      3
+    );
+
+    const geometry = new THREE.PlaneGeometry(leafSize, leafSize, 8, 8);
+
+    const material = new THREE.MeshBasicNodeMaterial({
+      side: THREE.DoubleSide,
+      forceSinglePass: true,
+      transparent: true,
+    });
+
+    // TSL instance nodes
+    const instancePosition = instancedBufferAttribute(posAttr);
+    const instanceRotation = instancedBufferAttribute(rotAttr);
+    const instanceTime = instancedBufferAttribute(timeAttr);
+    const instanceSpriteIdx = instancedBufferAttribute(spriteAttr);
+    const instanceColor = instancedBufferAttribute(colorAttr);
+
+    const { windDirXU, windDirZU } = windUniforms;
+
+    const localTime = instanceTime.add(time.mul(speed));
+    const modTime = mod(localTime, 1.0);
+
+    // Paraboloid cup: bend z before rotation so the cup follows the tumble
+    const leafUV = uv();
+    const dx = leafUV.x.sub(0.5);
+    const dy = leafUV.y.sub(0.5);
+    const bent = positionLocal.add(
+      vec3(
+        0,
+        0,
+        dx
+          .mul(dx)
+          .add(dy.mul(dy))
+          .mul(curvature * leafSize * 2)
+      )
+    );
+    const rotated = rotate(bent, instanceRotation.mul(modTime.mul(tumble)));
+
+    const travelDir =
+      flowMode === 'vertical'
+        ? vec3(windDirXU.mul(0.15), -1, windDirZU.mul(0.15))
+            .normalize()
+            .mul(effectiveTravel)
+            .mul(modTime)
+        : vec3(windDirXU, -0.25, windDirZU)
+            .normalize()
+            .mul(effectiveTravel)
+            .mul(modTime);
+
+    material.positionNode = rotated.add(instancePosition).add(travelDir);
+
+    // Sample DataArrayTexture: uv as vec2, layer as separate depth int
+    const texSample = tslTexture(arrayTex, leafUV).depth(instanceSpriteIdx);
+    material.colorNode = instanceColor.mul(texSample.rgb);
+    material.opacityNode = texSample.a;
+
+    const m = new THREE.Mesh(geometry, material);
+    m.count = count;
+    m.frustumCulled = false;
+    return m;
+  }, [
+    count,
+    colors,
+    spriteUrls,
+    arrayTex,
+    leafSize,
+    speed,
+    effectiveTravel,
+    tumble,
+    curvature,
+    windUniforms,
+    flowMode,
+    spawnXMin,
+    spawnXMax,
+    spawnYMin,
+    spawnYMax,
+  ]);
+
+  useEffect(() => {
+    return () => {
+      mesh.geometry.dispose();
+      mesh.material.dispose();
+      arrayTex.dispose();
+    };
+  }, [mesh, arrayTex]);
+
+  return <primitive object={mesh} />;
 }
 
 // ------------------------------------------------------------------

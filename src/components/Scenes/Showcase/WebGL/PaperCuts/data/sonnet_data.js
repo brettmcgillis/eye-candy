@@ -159,11 +159,7 @@ export const stagger = {
     // 7 (back/base) — outermost NE–SW course: the largest slabs form the base.
     //     Cardinal size-3.5 slabs just-touch at [3.5,0]/[0,3.5]; diagonal
     //     size-2 accents at [±5.5, ±3.5] fill the outer corners cleanly.
-    [
-      ...r180(3.5, [0, 3.5]),
-      ...r180(3.5, [3.5, 0]),
-      ...r180x4(2, [5.5, 3.5]),
-    ],
+    [...r180(3.5, [0, 3.5]), ...r180(3.5, [3.5, 0]), ...r180x4(2, [5.5, 3.5])],
   ],
 };
 

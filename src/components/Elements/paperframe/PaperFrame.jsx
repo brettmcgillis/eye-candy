@@ -1,7 +1,8 @@
+import { RepeatWrapping } from 'three';
+
 import React, { useMemo } from 'react';
 
 import { useGLTF, useTexture } from '@react-three/drei';
-import { RepeatWrapping } from 'three';
 
 import { modelFile, textureFile } from '../../../utils/appUtils';
 
@@ -9,7 +10,12 @@ const WATERCOLOR_URL = textureFile('watercolor.png');
 
 export default function PaperFrame(props) {
   const { nodes, materials } = useGLTF(modelFile(`FoldedFrame.glb`));
-  const { frameColor, frameRoughness = 0.5, frameWatercolor = false, ...groupProps } = props;
+  const {
+    frameColor,
+    frameRoughness = 0.5,
+    frameWatercolor = false,
+    ...groupProps
+  } = props;
 
   const watercolorTexture = useTexture(WATERCOLOR_URL);
 
@@ -31,7 +37,13 @@ export default function PaperFrame(props) {
       material.needsUpdate = true;
     }
     return material || materials['Material.002'];
-  }, [materials, frameColor, frameRoughness, frameWatercolor, watercolorTexture]);
+  }, [
+    materials,
+    frameColor,
+    frameRoughness,
+    frameWatercolor,
+    watercolorTexture,
+  ]);
 
   return (
     <group {...groupProps} dispose={null}>

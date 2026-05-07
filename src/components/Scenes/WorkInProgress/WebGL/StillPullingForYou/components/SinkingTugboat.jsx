@@ -12,7 +12,10 @@ function SinkingTugboat({ position, rotation, scale, lightConfig }) {
         headlightColor={lightConfig.headlightColor}
         headlightEmissiveIntensity={lightConfig.headlightIntensity}
       />
-      <BoatLights {...lightConfig} headlightMaterialRef={headlightMaterialRef} />
+      <BoatLights
+        {...lightConfig}
+        headlightMaterialRef={headlightMaterialRef}
+      />
     </group>
   );
 }

@@ -91,7 +91,10 @@ function FloatingTugboat({
           headlightColor={lightConfig.headlightColor}
           headlightEmissiveIntensity={lightConfig.headlightIntensity}
         />
-        <BoatLights {...lightConfig} headlightMaterialRef={headlightMaterialRef} />
+        <BoatLights
+          {...lightConfig}
+          headlightMaterialRef={headlightMaterialRef}
+        />
       </group>
     </group>
   );

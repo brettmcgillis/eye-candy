@@ -147,7 +147,12 @@ export default function Surrender() {
     return [-0.5, 0.0, 2.5];
   }, [isPortrait]);
 
-  const TARGET = useMemo(() => [0.25, 0.3, 0], []);
+  // Orbit target tracks the group position so posX/posY feel like translation, not rotation.
+  // Portrait shifts the look-at leftward to center the narrower viewport on the pole.
+  const TARGET = useMemo(
+    () => (isPortrait ? [posX, posY + 0.3, 0] : [posX + 0.25, posY + 0.3, 0]),
+    [isPortrait, posX, posY]
+  );
 
   return (
     <>

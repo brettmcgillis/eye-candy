@@ -248,6 +248,7 @@ function FallingLeavesInner({
       side: THREE.DoubleSide,
       forceSinglePass: true,
       transparent: true,
+      alphaTest: 0.1,
     });
 
     // TSL instance nodes

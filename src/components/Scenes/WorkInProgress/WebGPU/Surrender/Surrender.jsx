@@ -120,13 +120,20 @@ export default function Surrender() {
     leafColor3,
   } = useSceneControls({ onResetSim: resetSim });
 
-  const leafSprites =
-    leafType === 'Blossoms'
-      ? BLOSSOM_SPRITES
-      : leafType === 'Snowflakes'
-        ? SNOWFLAKE_SPRITES
-        : LEAF_SPRITES;
+  const leafSprites = useMemo(
+    () =>
+      leafType === 'Blossoms'
+        ? BLOSSOM_SPRITES
+        : leafType === 'Snowflakes'
+          ? SNOWFLAKE_SPRITES
+          : LEAF_SPRITES,
+    [leafType]
+  );
   const flowMode = leafType === 'Snowflakes' ? 'vertical' : 'horizontal';
+  const leafColors = useMemo(
+    () => [leafColor1, leafColor2, leafColor3],
+    [leafColor1, leafColor2, leafColor3]
+  );
 
   // Responsive camera: frame flag + finial, pull back on narrow (mobile) viewports
   const size = useThree((state) => state.size);
@@ -140,7 +147,7 @@ export default function Surrender() {
     return [-0.5, 0.0, 2.5];
   }, [isPortrait]);
 
-  const TARGET = [0.25, 0.3, 0];
+  const TARGET = useMemo(() => [0.25, 0.3, 0], []);
 
   return (
     <>
@@ -253,7 +260,7 @@ export default function Surrender() {
           flowMode={flowMode}
           count={leafCount}
           curvature={leafCurvature}
-          colors={[leafColor1, leafColor2, leafColor3]}
+          colors={leafColors}
           leafSize={leafSize}
           speed={leafSpeed}
           cycleTravel={leafTravel}

@@ -113,7 +113,8 @@ function FallingLeavesInner({
   flowMode,
 }) {
   const loadedSprites = useTexture(spriteUrls);
-  const { camera, size } = useThree();
+  const camera = useThree((s) => s.camera);
+  const size = useThree((s) => s.size);
 
   // Pack all sprites into one DataArrayTexture
   const arrayTex = useMemo(

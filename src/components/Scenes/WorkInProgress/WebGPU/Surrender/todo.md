@@ -11,43 +11,16 @@
 
 [Back to main TODO](../../../../../../TODO.md)
 
-- [x] Finalize camera angle, position. Toggle orbit on off, off by default
-- [ ] Finalize bg color, lighting.
-- [x] Organize scene controls
-- Surrender
-  - Scene
-    - Camera
-    - Background
-    - Lighting
-  - Flag
-    - Orientation
-    - Cloth
-      - Alpha
-    - Material
-    - Pole
-    - Finial
-    - Rings
-  - Wind
-  - Postprocessing
-    - Outline
-  - Debug
-
-- [ ] Improve cursor interaction, feels a little unpredictable
-
 # // Presets
 
-- [x] Surrender - White flag
+- [x] Surrender - White flag, blue glow
 - [x] Surrender Now - Black flag, turbo flex
+- [x] Autumn - White flag, dark green outline, green background, falling leaves
+- [x] Winter - Grey flag, minimal wind, dark background, falling snowflakes
+- [x] Spring - White flag, light wind, pink background, falling cherry blossoms
 
 # // Features
 
-- [x] Wind blown flag.
-- [x] Cursor-flag interaction.
-- [x] Add cloth params for things like edge tatters, holes.
-- [x] Cloth should be able to display a texture.
 - [ ] Maybe add mode for "cutting" the wireframe of the cloth
 
 # // Bugs
-
-- [x] try to prevent the cloth from crashing.
-- [x] rotating flag pole does not effect flag cloth appropriately, we got that wrong.

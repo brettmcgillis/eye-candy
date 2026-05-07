@@ -1,0 +1,400 @@
+import React from 'react';
+
+import {
+  CX,
+  CY,
+  CanvasFrame,
+  INK,
+  SQ,
+  clipToPattern,
+  diamondCenter,
+  drawDrip,
+  drawPatternBase,
+  drawSplatter,
+  ease,
+  phase,
+  useLoaderCanvas,
+  useSquares,
+} from './primitives';
+
+// 01 — Drip Reveal
+export function Loader01() {
+  const squares = useSquares();
+  const dripSquares = React.useMemo(
+    () => [...squares].sort((a, b) => b.sx + b.sy - (a.sx + a.sy)).slice(0, 5),
+    [squares]
+  );
+
+  const canvasRef = useLoaderCanvas((ctx, t) => {
+    const p = phase(t, 2.4);
+    drawPatternBase(ctx, squares);
+    dripSquares.forEach((sq, i) => {
+      const src = diamondCenter(sq.sx, sq.sy);
+      const local = (p + i * 0.13) % 1;
+      const len = ease.out(local) * (28 + (i % 3) * 14);
+      const op = local > 0.85 ? (1 - local) / 0.15 : 1;
+      const startY = src.y + SQ * 0.707;
+      drawDrip(
+        ctx,
+        src.x,
+        startY,
+        len,
+        3,
+        sq.layer === 'b' ? INK.red : INK.black,
+        op
+      );
+    });
+  });
+
+  return <CanvasFrame canvasRef={canvasRef} />;
+}
+
+// 02 — Inner Spin: 4 black squares spin on their own centers, red ring stays.
+export function Loader02() {
+  const squares = useSquares();
+
+  const canvasRef = useLoaderCanvas((ctx, t) => {
+    const overrides = {};
+    squares
+      .filter((s) => s.layer === 't')
+      .forEach((s, idx) => {
+        overrides[s.i] = {
+          extraRotation: ease.inOut(phase(t, 1.6, idx * 0.05)) * 360,
+        };
+      });
+    drawPatternBase(ctx, squares, overrides);
+  });
+
+  return <CanvasFrame canvasRef={canvasRef} />;
+}
+
+// 03 — Pulse Wave: each square scales independently in a radial wave.
+export function Loader03() {
+  const squares = useSquares();
+
+  const canvasRef = useLoaderCanvas((ctx, t) => {
+    const overrides = {};
+    squares.forEach((s) => {
+      const dist = Math.hypot(s.sx, s.sy);
+      const phasedT = phase(t, 1.8, -dist * 0.18);
+      const sc = 0.4 + 0.6 * Math.sin(phasedT * Math.PI) ** 2;
+      overrides[s.i] = { scale: sc };
+    });
+    drawPatternBase(ctx, squares, overrides);
+  });
+
+  return <CanvasFrame canvasRef={canvasRef} />;
+}
+
+// 04 — Build: squares drop in one at a time, then loop.
+const BUILD_ORDER = [1, 2, 4, 3, 5, 6, 0, 7, 8, 9, 10];
+
+export function Loader04() {
+  const squares = useSquares();
+
+  const canvasRef = useLoaderCanvas((ctx, t) => {
+    const p = phase(t, 3.2);
+    const overrides = {};
+    BUILD_ORDER.forEach((i, idx) => {
+      const start = (idx / BUILD_ORDER.length) * 0.85;
+      const local = Math.max(0, Math.min(1, (p - start) / 0.12));
+      const fall = (1 - ease.out(local)) * 4;
+      overrides[i] = { dsx: -fall, dsy: -fall, opacity: local };
+    });
+    drawPatternBase(ctx, squares, overrides);
+    drawSplatter(ctx, {
+      seed: Math.floor(t * 4),
+      count: Math.floor(p * 25),
+      radius: 120,
+      color: INK.red,
+      opacity: 0.45,
+    });
+  });
+
+  return <CanvasFrame canvasRef={canvasRef} />;
+}
+
+// 05 — Ink Bleed: each square expands from a tiny dot via blur+scale.
+export function Loader05() {
+  const squares = useSquares();
+
+  const canvasRef = useLoaderCanvas((ctx, t) => {
+    const overrides = {};
+    squares.forEach((s, idx) => {
+      const p = phase(t, 1.6, -idx * 0.06);
+      const sc = ease.out(p);
+      const blur = (1 - p) * 6;
+      const op = ease.out(Math.min(1, p * 2)) * (p > 0.85 ? (1 - p) / 0.15 : 1);
+      overrides[s.i] = { scale: sc, blur, opacity: op };
+    });
+    drawPatternBase(ctx, squares, overrides);
+  });
+
+  return <CanvasFrame canvasRef={canvasRef} />;
+}
+
+// 06 — Stamp: each square slams down with a splatter halo, in sequence.
+export function Loader06() {
+  const squares = useSquares();
+
+  const canvasRef = useLoaderCanvas((ctx, t) => {
+    const p = phase(t, 2.6);
+    const order = squares.map((s) => s.i);
+    const stampIdx = Math.floor(p * order.length);
+    const local = p * order.length - stampIdx;
+    const overrides = {};
+    order.forEach((i, idx) => {
+      if (idx < stampIdx) overrides[i] = {};
+      else if (idx === stampIdx) {
+        overrides[i] = {
+          dsy: -2.5 * (1 - ease.in(local)),
+          scale: 1 + (1 - local) * 0.3,
+          opacity: local,
+        };
+      } else {
+        overrides[i] = { skip: true };
+      }
+    });
+    drawPatternBase(ctx, squares, overrides);
+    if (local > 0.85) {
+      const stampingSquare = squares.find((s) => s.i === order[stampIdx]);
+      if (stampingSquare) {
+        const haloCenter = diamondCenter(stampingSquare.sx, stampingSquare.sy);
+        drawSplatter(ctx, {
+          seed: stampIdx + 1,
+          count: 14,
+          cx: haloCenter.x,
+          cy: haloCenter.y,
+          radius: 50,
+          color: stampingSquare.layer === 'b' ? INK.red : INK.black,
+          opacity: ((1 - local) / 0.15) * 0.6,
+        });
+      }
+    }
+  });
+
+  return <CanvasFrame canvasRef={canvasRef} />;
+}
+
+// 07 — Vertical Wipe: ink fills inside the squares from top down.
+export function Loader07() {
+  const squares = useSquares();
+
+  const canvasRef = useLoaderCanvas((ctx, t) => {
+    const p = phase(t, 2.2);
+    const ghostOverrides = {};
+    squares.forEach((s) => {
+      ghostOverrides[s.i] = { opacity: 0.15 };
+    });
+    drawPatternBase(ctx, squares, ghostOverrides);
+
+    ctx.save();
+    clipToPattern(ctx, squares);
+    const fillY = ease.inOut(p) * 256;
+    ctx.fillStyle = INK.red;
+    ctx.globalAlpha = 0.9;
+    ctx.fillRect(0, 0, 256, fillY);
+    ctx.restore();
+  });
+
+  return <CanvasFrame canvasRef={canvasRef} />;
+}
+
+// 08 — Inner Orbit: 4 inner squares orbit around center, return home.
+export function Loader08() {
+  const squares = useSquares();
+
+  const canvasRef = useLoaderCanvas((ctx, t) => {
+    const p = phase(t, 2.6);
+    const angle = ease.inOut(p) * Math.PI * 2;
+    const overrides = {};
+    squares
+      .filter((s) => s.layer === 't')
+      .forEach((s) => {
+        const r = Math.hypot(s.sx, s.sy);
+        const baseA = Math.atan2(s.sy, s.sx);
+        const a = baseA + angle;
+        overrides[s.i] = {
+          sx: Math.cos(a) * r,
+          sy: Math.sin(a) * r,
+          extraRotation: (angle * 180) / Math.PI,
+        };
+      });
+    drawPatternBase(ctx, squares, overrides);
+  });
+
+  return <CanvasFrame canvasRef={canvasRef} />;
+}
+
+// 09 — Bleed Lines: streaks pass over outline ghost, clipped to shapes.
+export function Loader09() {
+  const squares = useSquares();
+
+  const canvasRef = useLoaderCanvas((ctx, t) => {
+    const ghostOverrides = {};
+    squares.forEach((s) => {
+      ghostOverrides[s.i] = { opacity: 0.22 };
+    });
+    drawPatternBase(ctx, squares, ghostOverrides);
+
+    ctx.save();
+    clipToPattern(ctx, squares);
+    [0, 0.33, 0.66].forEach((off, i) => {
+      const p = phase(t, 1.8, off);
+      const y = p * 320 - 32;
+      ctx.fillStyle = i % 2 === 0 ? INK.red : INK.black;
+      ctx.globalAlpha = 0.85;
+      ctx.fillRect(-20, y, 296, 28);
+    });
+    ctx.restore();
+  });
+
+  return <CanvasFrame canvasRef={canvasRef} />;
+}
+
+// 12 — Flicker: each square fades in/out at offset rates.
+export function Loader12() {
+  const squares = useSquares();
+
+  const canvasRef = useLoaderCanvas((ctx, t) => {
+    const overrides = {};
+    squares.forEach((s, idx) => {
+      const p = phase(t, 1.0 + idx * 0.07);
+      overrides[s.i] = {
+        opacity: 0.25 + 0.75 * (Math.sin(p * Math.PI * 2) * 0.5 + 0.5),
+      };
+    });
+    drawPatternBase(ctx, squares, overrides);
+  });
+
+  return <CanvasFrame canvasRef={canvasRef} />;
+}
+
+// 16 — Misregister: CMYK-style channel drift.
+export function Loader16() {
+  const squares = useSquares();
+
+  const canvasRef = useLoaderCanvas((ctx, t) => {
+    const off = Math.sin(t * 3) * 4;
+
+    drawPatternBase(ctx, squares, {}, off, off * 0.6, 0.55);
+
+    const blueOverrides = {};
+    squares.forEach((s) => {
+      blueOverrides[s.i] = { color: s.layer === 'b' ? '#3aa6ff' : INK.black };
+    });
+    drawPatternBase(ctx, squares, blueOverrides, -off, -off * 0.6, 0.55);
+
+    drawPatternBase(ctx, squares, {}, 0, 0, 0.85);
+  });
+
+  return <CanvasFrame canvasRef={canvasRef} />;
+}
+
+// 17 — Snake Trail: progress trail through squares.
+const SNAKE_ORDER = [4, 1, 5, 3, 2, 6, 0, 7, 8, 10, 9];
+
+export function Loader17() {
+  const squares = useSquares();
+
+  const canvasRef = useLoaderCanvas((ctx, t) => {
+    const p = phase(t, 2.4);
+    const head = p * SNAKE_ORDER.length;
+    const overrides = {};
+    squares.forEach((s) => {
+      const slot = SNAKE_ORDER.indexOf(s.i);
+      const dist = (head - slot + SNAKE_ORDER.length) % SNAKE_ORDER.length;
+      overrides[s.i] = { opacity: Math.max(0.1, 1 - dist / 5) };
+    });
+    drawPatternBase(ctx, squares, overrides);
+  });
+
+  return <CanvasFrame canvasRef={canvasRef} />;
+}
+
+// 18 — Burst & Snap: explodes outward, snaps back.
+export function Loader18() {
+  const squares = useSquares();
+
+  const canvasRef = useLoaderCanvas((ctx, t) => {
+    const p = phase(t, 2.0);
+    const k = p < 0.5 ? ease.out(p / 0.5) : 1 - ease.out((p - 0.5) / 0.5);
+    const overrides = {};
+    squares.forEach((s) => {
+      const r = Math.hypot(s.sx, s.sy) || 1;
+      overrides[s.i] = {
+        dsx: (s.sx / r) * k * 2,
+        dsy: (s.sy / r) * k * 2,
+        extraRotation: k * 180,
+      };
+    });
+    drawPatternBase(ctx, squares, overrides);
+  });
+
+  return <CanvasFrame canvasRef={canvasRef} />;
+}
+
+// 19 — Drip Fill: outlines fill with ink top-down.
+export function Loader19() {
+  const squares = useSquares();
+
+  const canvasRef = useLoaderCanvas((ctx, t) => {
+    const p = phase(t, 3.0);
+
+    // Outline-only pass
+    ctx.save();
+    ctx.translate(CX, CY);
+    ctx.rotate(Math.PI / 4);
+    squares.forEach((s) => {
+      ctx.strokeStyle = s.layer === 'b' ? INK.red : INK.black;
+      ctx.lineWidth = 2.5;
+      ctx.strokeRect(s.sx * SQ - SQ / 2, s.sy * SQ - SQ / 2, SQ, SQ);
+    });
+    ctx.restore();
+
+    // Clipped fill from top down
+    ctx.save();
+    clipToPattern(ctx, squares);
+    ctx.fillStyle = INK.red;
+    ctx.globalAlpha = 0.9;
+    ctx.fillRect(0, 0, 256, ease.inOut(p) * 256);
+    ctx.fillStyle = INK.black;
+    ctx.globalAlpha = 0.45;
+    ctx.fillRect(0, 0, 256, ease.inOut(Math.max(0, p - 0.1)) * 256);
+    ctx.restore();
+  });
+
+  return <CanvasFrame canvasRef={canvasRef} />;
+}
+
+Loader01.cycleDuration = 2.4;
+Loader02.cycleDuration = 1.6;
+Loader03.cycleDuration = 1.8;
+Loader04.cycleDuration = 3.2;
+Loader05.cycleDuration = 1.6;
+Loader06.cycleDuration = 2.6;
+Loader07.cycleDuration = 2.2;
+Loader08.cycleDuration = 2.6;
+Loader09.cycleDuration = 1.8;
+Loader12.cycleDuration = 1.8;
+Loader16.cycleDuration = 2.1;
+Loader17.cycleDuration = 2.4;
+Loader18.cycleDuration = 2.0;
+Loader19.cycleDuration = 3.0;
+
+export const ALL_LOADERS = [
+  Loader01,
+  Loader02,
+  Loader03,
+  Loader04,
+  Loader05,
+  Loader06,
+  Loader07,
+  Loader08,
+  Loader09,
+  Loader12,
+  Loader16,
+  Loader17,
+  Loader18,
+  Loader19,
+];

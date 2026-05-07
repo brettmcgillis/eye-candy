@@ -1,12 +1,1 @@
-.Loader {
-  display: flex;
-  flex-direction: column;
-
-  justify-content: center;
-
-  width: 20vw;
-}
-
-.Text-container {
-  font-weight: bold;
-}
+/* Loader styles are handled inline in Loader.jsx and LoaderFrame. */

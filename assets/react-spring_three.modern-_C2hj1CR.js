@@ -1,1 +1,0 @@
-import{a0 as e,a1 as t,a2 as r,a3 as s,a4 as o,a5 as i,a6 as p,z as c}from"./index-CQMuuBZp.js";var l=["primitive"].concat(Object.keys(t).filter(a=>/^[A-Z]/.test(a)).map(a=>a[0].toLowerCase()+a.slice(1)));r.assign({createStringInterpolator:o,colors:s,frameLoop:"demand"});i(()=>{p.advance()});var n=e(l,{applyAnimatedValues:c}),d=n.animated;export{d as a};

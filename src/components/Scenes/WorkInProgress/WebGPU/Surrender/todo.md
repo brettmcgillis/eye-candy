@@ -21,6 +21,7 @@
 
 # // Features
 
-- [ ] Maybe add mode for "cutting" the wireframe of the cloth
+- [ ] Add mode for "cutting" the wireframe of the cloth, with a way to reset.
+- [ ] Add audio-reactivity. As the user blows into the mic harder or makes more noise, the power of the wind increases. low to no noise - no wind, loud noise - max power wind (more than 10?).
 
 # // Bugs

@@ -4,6 +4,7 @@ import { OrbitControls, PerspectiveCamera } from '@react-three/drei';
 import { useThree } from '@react-three/fiber';
 
 import OutlineFX from '../../../../postprocessing/webGPU/outline/Outline';
+import FallingLeaves, { BLOSSOM_SPRITES, LEAF_SPRITES, SNOWFLAKE_SPRITES } from './components/FallingLeaves';
 import Flag from './components/Flag';
 import FlagPole from './components/FlagPole';
 import useSceneControls from './hooks/useSceneControls';
@@ -101,7 +102,24 @@ export default function Surrender() {
     patternLacunarity,
     ringStride,
     halftoneScale,
+    leavesEnabled,
+    leafType,
+    leafCount,
+    leafSize,
+    leafSpeed,
+    leafTravel,
+    leafTumble,
+    leafCurvature,
+    leafColor1,
+    leafColor2,
+    leafColor3,
   } = useSceneControls({ onResetSim: resetSim });
+
+  const leafSprites =
+    leafType === 'Blossoms' ? BLOSSOM_SPRITES :
+    leafType === 'Snowflakes' ? SNOWFLAKE_SPRITES :
+    LEAF_SPRITES;
+  const flowMode = leafType === 'Snowflakes' ? 'vertical' : 'horizontal';
 
   // Responsive camera: frame flag + finial, pull back on narrow (mobile) viewports
   const size = useThree((state) => state.size);
@@ -221,6 +239,23 @@ export default function Surrender() {
           thickness={materialThickness}
         />
       </group>
+
+      {leavesEnabled && (
+        <FallingLeaves
+          sprites={leafSprites}
+          flowMode={flowMode}
+          count={leafCount}
+          curvature={leafCurvature}
+          colors={[leafColor1, leafColor2, leafColor3]}
+          leafSize={leafSize}
+          speed={leafSpeed}
+          cycleTravel={leafTravel}
+          tumble={leafTumble}
+          wind={wind}
+          windDirX={windDirX}
+          windDirZ={windDirZ}
+        />
+      )}
 
       <OutlineFX
         enabled={enabled}

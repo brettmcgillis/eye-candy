@@ -147,6 +147,9 @@ To Build:
 - [x] All my thoughts are so cumulus - Static
 - [ ] Surrender
 - [ ] Surrender Now
+- [ ] Surrender - Autumn
+- [ ] Surrender - Spring
+- [ ] Surrender - Winter
 - [ ] Stay Hunted
 - [ ] AllMyFriendsAreGhosts
 - [x] GhostBuster

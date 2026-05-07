@@ -477,6 +477,63 @@ export default function useSceneControls({ onResetSim } = {}) {
         C
       ),
 
+      Leaves: folder(
+        {
+          leavesEnabled: { value: p.leavesEnabled, label: 'Enabled' },
+          leafType: {
+            value: p.leafType,
+            options: ['Leaves', 'Blossoms', 'Snowflakes'],
+            label: 'Type',
+          },
+          leafCount: {
+            value: p.leafCount,
+            min: 50,
+            max: 1000,
+            step: 50,
+            label: 'Count',
+          },
+          leafSize: {
+            value: p.leafSize,
+            min: 0.01,
+            max: 0.3,
+            step: 0.005,
+            label: 'Size',
+          },
+          leafSpeed: {
+            value: p.leafSpeed,
+            min: 0.01,
+            max: 0.5,
+            step: 0.01,
+            label: 'Speed',
+          },
+          leafTravel: {
+            value: p.leafTravel,
+            min: 1,
+            max: 30,
+            step: 0.5,
+            label: 'Travel',
+          },
+          leafTumble: {
+            value: p.leafTumble,
+            min: 0,
+            max: 50,
+            step: 1,
+            label: 'Tumble',
+          },
+          leafCurvature: {
+            value: p.leafCurvature,
+            min: 0,
+            max: 1,
+            step: 0.05,
+            label: 'Curvature',
+          },
+          leafColor1: { value: p.leafColor1, label: 'Color 1' },
+          leafColor2: { value: p.leafColor2, label: 'Color 2' },
+          leafColor3: { value: p.leafColor3, label: 'Color 3' },
+        },
+        C
+      ),
+
       Postprocessing: folder(
         {
           Outline: folder(

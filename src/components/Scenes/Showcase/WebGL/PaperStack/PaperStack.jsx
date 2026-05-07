@@ -1,17 +1,19 @@
 /* eslint-disable react/no-array-index-key */
 import * as THREE from 'three';
 
-import React, { useMemo } from 'react';
+import React, { useCallback, useMemo } from 'react';
 
 import { Base, Geometry, Subtraction } from '@react-three/csg';
 import {
   AccumulativeShadows,
+  OrbitControls,
   PerspectiveCamera,
-  PresentationControls,
   RandomizedLight,
 } from '@react-three/drei';
+import { useThree } from '@react-three/fiber';
 
-import usePaperStackControls from './usePaperStackControls';
+import useSceneAnimation from './useSceneAnimation';
+import useSceneControls from './useSceneControls';
 
 function getWindowTransform(baseOffset, layer, config) {
   const angle = config.patternRotation + layer.spiral;
@@ -132,9 +134,37 @@ function Chips({ config, materials }) {
 }
 
 export default function PaperStack() {
-  const config = usePaperStackControls();
+  const config = useSceneControls();
+  const { size } = useThree();
 
-  const materials = useMemo(
+  const aspect = size.width / Math.max(1, size.height);
+
+  // Look at the geometric center of the stack
+  const stackCenterY = config.stackY + config.layerHeight * 0.5;
+
+  // Scene bounding estimate: stack spans layerWidth in X, chips extend in Z
+  const sceneRadius = Math.max(config.layerWidth / 2, config.chipsZ * 0.8);
+
+  // Fit in the tightest FOV direction (portrait clips horizontally)
+  const halfVFov = THREE.MathUtils.degToRad(22.5); // half of 45° vertical FOV
+  const halfHFov = Math.atan(Math.tan(halfVFov) * Math.max(0.3, aspect));
+  const minHalfFov = Math.min(halfVFov, halfHFov);
+  const distance = (sceneRadius / Math.tan(minHalfFov)) * 1.4;
+
+  // Fixed angle: ~30° left of center, ~30° elevated — shows depth, shadows, chips
+  const azimuth = THREE.MathUtils.degToRad(-30);
+  const elevation = THREE.MathUtils.degToRad(30);
+
+  const cameraX =
+    config.stackX + distance * Math.sin(azimuth) * Math.cos(elevation);
+  const cameraY = stackCenterY + distance * Math.sin(elevation);
+  const cameraZ =
+    config.stackZ + distance * Math.cos(azimuth) * Math.cos(elevation);
+
+  const cameraPos = [cameraX, cameraY, cameraZ];
+  const orbitTarget = [config.stackX, stackCenterY, config.stackZ];
+
+  const makeMaterials = useCallback(
     () =>
       config.colors.map(
         (c) =>
@@ -149,54 +179,57 @@ export default function PaperStack() {
     [config.colors]
   );
 
+  const stackMaterials = useMemo(makeMaterials, [makeMaterials]);
+  const chipsMaterials = useMemo(makeMaterials, [makeMaterials]);
+
+  useSceneAnimation({
+    ...config.animation,
+    stackMaterials,
+    chipsMaterials,
+    colors: config.colors,
+  });
+
   return (
     <>
-      <color attach="background" args={[config.shadows.backgroundColor]} />
-      <ambientLight intensity={1} />
-      <PerspectiveCamera
+      <color attach="background" args={[config.scene.backgroundColor]} />
+      <ambientLight intensity={config.scene.ambientIntensity} />
+      <PerspectiveCamera makeDefault position={cameraPos} fov={45} />
+      <OrbitControls
         makeDefault
-        position={[-5, 3.5, 12]}
-        fov={45}
-        onUpdate={(self) => self.lookAt(0, 2, 0)}
+        target={orbitTarget}
+        enableDamping
+        dampingFactor={0.08}
+        minPolarAngle={0}
+        maxPolarAngle={Math.PI / 2}
       />
 
-      <PresentationControls
-        global
-        speed={1.15}
-        zoom={0.85}
-        config={{ mass: 1.2, tension: 220, friction: 28 }}
-        rotation={[0, 0, 0]}
-        polar={[0, Math.PI / 4]}
-        azimuth={[-Math.PI / 4, Math.PI / 4]}
+      <AccumulativeShadows
+        temporal
+        frames={config.shadows.accumFrames}
+        color={config.shadows.accumColor}
+        colorBlend={config.shadows.accumColorBlend}
+        opacity={config.shadows.accumOpacity}
+        scale={config.shadows.accumScale}
+        alphaTest={config.shadows.accumAlphaTest}
+        position={config.shadows.accumPosition}
       >
-        <AccumulativeShadows
-          temporal
-          frames={config.shadows.accumFrames}
-          color={config.shadows.accumColor}
-          colorBlend={config.shadows.accumColorBlend}
-          opacity={config.shadows.accumOpacity}
-          scale={config.shadows.accumScale}
-          alphaTest={config.shadows.accumAlphaTest}
-          position={config.shadows.accumPosition}
-        >
-          <RandomizedLight
-            amount={config.shadows.lightAmount}
-            radius={config.shadows.lightRadius}
-            ambient={config.shadows.lightAmbient}
-            position={config.shadows.lightPosition}
-            bias={config.shadows.lightBias}
-          />
-        </AccumulativeShadows>
-        {config.shadows.lightDebug && (
-          <mesh position={config.shadows.lightPosition}>
-            <boxGeometry args={[1, 1, 1]} />
-            <meshBasicMaterial color="#ff0000" wireframe />
-          </mesh>
-        )}
+        <RandomizedLight
+          amount={config.shadows.lightAmount}
+          radius={config.shadows.lightRadius}
+          ambient={config.shadows.lightAmbient}
+          position={config.shadows.lightPosition}
+          bias={config.shadows.lightBias}
+        />
+      </AccumulativeShadows>
+      {config.shadows.lightDebug && (
+        <mesh position={config.shadows.lightPosition}>
+          <boxGeometry args={[1, 1, 1]} />
+          <meshBasicMaterial color="#ff0000" wireframe />
+        </mesh>
+      )}
 
-        <Stack config={config} materials={materials} />
-        <Chips config={config} materials={materials} />
-      </PresentationControls>
+      <Stack config={config} materials={stackMaterials} />
+      <Chips config={config} materials={chipsMaterials} />
     </>
   );
 }

@@ -3,12 +3,15 @@ import * as THREE from 'three';
 
 import { useEffect, useMemo, useRef, useState } from 'react';
 
-import { localEnv } from '../../../../../../utils/appUtils';
+import usePresetsFolder from '../../../../../../hooks/usePresetsFolder';
 import { SCENE_PRESETS } from '../presets/presets';
 
 const SCENE_PRESET_NAMES = Object.keys(SCENE_PRESETS);
 const DEFAULT_SCENE_PRESET = SCENE_PRESET_NAMES[0];
-const D = SCENE_PRESETS[DEFAULT_SCENE_PRESET];
+
+function getPresetControls({ presetSnapshot }) {
+  return presetSnapshot;
+}
 
 const DEFAULT_SPLINE_CONFIG = {
   name: '',
@@ -69,8 +72,19 @@ export default function useSceneControls(
   setSplines,
   initialSplineConfigs
 ) {
-  const controlsSnapshotRef = useRef({ ...D });
-  const selectedScenePresetRef = useRef(DEFAULT_SCENE_PRESET);
+  const {
+    attachSetControls,
+    controlsSnapshotRef,
+    initialPreset,
+    presetsFolder,
+  } = usePresetsFolder({
+    defaultPreset: DEFAULT_SCENE_PRESET,
+    getPresetControls,
+    presets: SCENE_PRESETS,
+  });
+
+  const D = SCENE_PRESETS[initialPreset];
+
   const splinesRef = useRef(splines);
   splinesRef.current = splines;
   const [splineConfigs, setSplineConfigs] = useState(
@@ -78,45 +92,10 @@ export default function useSceneControls(
       initialSplineConfigs || splines.map(() => ({ ...DEFAULT_SPLINE_CONFIG }))
   );
 
-  // Ref-based helper so button closures can call it safely.
-  const safeApplyRef = useRef(null);
-
   const [controls, setControls] = useControls(
     'Still Pulling For You',
     () => ({
-      'Scene Presets': folder(
-        {
-          scenePreset: {
-            label: 'Preset',
-            value: DEFAULT_SCENE_PRESET,
-            options: SCENE_PRESET_NAMES,
-          },
-          resetScene: button(() => {
-            const values = SCENE_PRESETS[selectedScenePresetRef.current] || D;
-            safeApplyRef.current(values);
-          }),
-          ...(localEnv()
-            ? {
-                copyScene: button(
-                  () => {
-                    const json = JSON.stringify(
-                      controlsSnapshotRef.current,
-                      null,
-                      2
-                    );
-                    const literal = json.replace(
-                      /"([A-Za-z_$][A-Za-z0-9_$]*)":/g,
-                      '$1:'
-                    );
-                    navigator.clipboard.writeText(literal);
-                  },
-                  { label: 'Copy Scene Preset' }
-                ),
-              }
-            : {}),
-        },
-        { collapsed: true }
-      ),
+      Presets: presetsFolder,
 
       Scene: folder(
         {
@@ -1271,26 +1250,8 @@ export default function useSceneControls(
     [splines.length, splineConfigs]
   );
 
+  attachSetControls(setControls);
   controlsSnapshotRef.current = { ...controls };
-
-  // Populate the ref now that setControls is available
-  safeApplyRef.current = (values) => {
-    const known = Object.keys(controlsSnapshotRef.current);
-    const filtered = Object.fromEntries(
-      Object.entries(values).filter(([k]) => known.includes(k))
-    );
-    setControls(filtered);
-  };
-
-  // Apply scene preset when selection changes
-  const prevScenePresetRef = useRef(controls.scenePreset);
-  useEffect(() => {
-    if (controls.scenePreset === prevScenePresetRef.current) return;
-    prevScenePresetRef.current = controls.scenePreset;
-    selectedScenePresetRef.current = controls.scenePreset;
-    const values = SCENE_PRESETS[controls.scenePreset];
-    if (values) safeApplyRef.current(values);
-  }, [controls, setControls]);
 
   // Keep configs array in sync with spline count
   useEffect(() => {

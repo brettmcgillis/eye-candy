@@ -4,14 +4,14 @@ import React, { useCallback, useMemo, useState } from 'react';
 
 import { OrbitControls, PerspectiveCamera } from '@react-three/drei';
 import { useThree } from '@react-three/fiber';
-import { Bloom, EffectComposer } from '@react-three/postprocessing';
 
 import STILL_PULLING_FOR_YOU_SMOKE from '../../../../../presets/smoke/stillPullingForYouSmoke';
-import NurbsWaterColumn from '../../../../elements/water/NurbsWaterColumn';
+import NurbsWaterColumnGPU from '../../../../elements/water/NurbsWaterColumnGPU';
+import BloomFX from '../../../../postprocessing/webGPU/bloom/Bloom';
 import FloatingTugboat from './components/FloatingTugboat';
 import Seafloor from './components/Seafloor';
 import SinkingTugboat from './components/SinkingTugboat';
-import SmokeSplineGroup from './components/SmokeSplineGroup';
+import SmokeSplineGroupGPU from './components/SmokeSplineGroupGPU';
 import useSceneControls, {
   DEFAULT_SPLINE_CONFIG,
 } from './hooks/useSceneControls';
@@ -54,7 +54,7 @@ function toRuntimeSplineConfigs(preset) {
 }
 
 // ── Main Scene ──────────────────────────────────────────────────────────────
-export default function StillPullingForYou() {
+export default function StillPullingForYouGPU() {
   const [splines, setSplines] = useState(() =>
     toRuntimeSplinePoints(DEFAULT_PRESET)
   );
@@ -63,6 +63,8 @@ export default function StillPullingForYou() {
     toRuntimeSplineConfigs(DEFAULT_PRESET)
   );
 
+  // setSplinePoints kept so the controls hook can wire spline editing; smoke
+  // won't render but the controls panel remains functional for future use.
   const setSplinePoints = useCallback((splineIndex, updater) => {
     setSplines((prev) =>
       prev.map((pts, i) => {
@@ -87,7 +89,6 @@ export default function StillPullingForYou() {
   const isOrbit = config.cameraMode === 'Orbit';
   const isFloating = config.boatMode === 'Floating';
 
-  // Responsive camera: pull back on narrow (mobile) viewports
   const size = useThree((state) => state.size);
   const cameraPosition = useMemo(() => {
     const aspect = size.width / size.height;
@@ -182,25 +183,7 @@ export default function StillPullingForYou() {
         />
       )}
 
-      {/* Smoke splines — editable */}
-      {config.smokeVisible && (
-        <>
-          {/* eslint-disable react/no-array-index-key */}
-          {splines.map((points, index) => (
-            <SmokeSplineGroup
-              key={index}
-              index={index}
-              points={points}
-              splineConfig={config.splineConfigs[index] ?? {}}
-              editSplines={config.editSplines}
-              setSplinePoints={setSplinePoints}
-            />
-          ))}
-          {/* eslint-enable react/no-array-index-key */}
-        </>
-      )}
-
-      {/* Bumpy seafloor beneath the water */}
+      {/* Seafloor — MeshStandardMaterial, WebGPU compatible */}
       <Seafloor
         visible={config.seafloorVisible}
         color={config.seafloorColor}
@@ -209,13 +192,12 @@ export default function StillPullingForYou() {
         bumpDetail={config.bumpDetail}
       />
 
-      {/* NURBS water column */}
+      {/* Water column — TSL MeshPhysicalNodeMaterial */}
       {config.waterVisible && (
-        <NurbsWaterColumn
+        <NurbsWaterColumnGPU
           width={config.waterWidth}
           depth={config.waterDepth}
           height={config.waterHeight}
-          segments={config.waterSegments}
           topColor={config.waterTopColor}
           bottomColor={config.waterBottomColor}
           opacity={config.waterOpacity}
@@ -226,22 +208,39 @@ export default function StillPullingForYou() {
           waveHeight={config.waveHeight}
           waveChoppiness={config.waveChoppiness}
           waveSpeed={config.waveSpeed}
-          showEdges={config.waterShowEdges}
           edgeColor={config.waterEdgeColor}
           edgeOpacity={config.waterEdgeOpacity}
+          showEdges={config.waterShowEdges}
         />
       )}
-      {/* Post Processing */}
+
+      {/* Smoke splines — TSL PointsNodeMaterial */}
+      {config.smokeVisible && (
+        <>
+          {/* eslint-disable react/no-array-index-key */}
+          {splines.map((pts, index) => (
+            <SmokeSplineGroupGPU
+              key={index}
+              index={index}
+              points={pts}
+              splineConfig={
+                config.splineConfigs[index] ?? DEFAULT_SPLINE_CONFIG
+              }
+              editSplines={config.editSplines}
+              setSplinePoints={setSplinePoints}
+            />
+          ))}
+          {/* eslint-enable react/no-array-index-key */}
+        </>
+      )}
+
+      {/* Post Processing — WebGPU-native bloom via TSL */}
       {config.bloomEnabled && (
-        <EffectComposer disableNormalPass>
-          <Bloom
-            intensity={config.bloomIntensity}
-            luminanceThreshold={0.6}
-            luminanceSmoothing={0.3}
-            mipmapBlur
-            radius={config.bloomRadius}
-          />
-        </EffectComposer>
+        <BloomFX
+          threshold={0.6}
+          strength={config.bloomIntensity}
+          radius={config.bloomRadius}
+        />
       )}
     </>
   );

@@ -1,9 +1,20 @@
-import * as THREE from 'three';
+// SeafloorGPU — WebGPU/TSL port of the WebGL Seafloor component.
+// The WebGL version injects GLSL via onBeforeCompile which is not supported by
+// WebGPURenderer. This version uses MeshStandardNodeMaterial + TSL colorNode
+// for the same height-gradient colour effect.
 import { NURBSSurface, ParametricGeometry } from 'three-stdlib';
+import { clamp, mix, positionLocal, uniform } from 'three/tsl';
+import * as THREE from 'three/webgpu';
 
 import React, { useEffect, useMemo } from 'react';
 
-// ── NURBS dirt column that matches the water column footprint ────────
+// ── Constants ─────────────────────────────────────────────────────────────────
+
+const SEGMENTS = 20;
+// Top of the seafloor aligns with the water column bottom (waterHeight / 2 = 1.0)
+const TOP_Y = -1.0;
+
+// ── Geometry builders (identical logic to WebGL Seafloor) ─────────────────────
 
 function buildTopSurface(hw, hd, topY) {
   const knots = [0, 0, 0, 0, 1, 1, 1, 1];
@@ -12,21 +23,6 @@ function buildTopSurface(hw, hd, topY) {
   const zs = [-hd, -hd / 3, hd / 3, hd];
   const cp = xs.map((x) => zs.map((z) => new THREE.Vector4(x, topY, z, 1)));
   return new NURBSSurface(3, 3, knots, knots, cp);
-}
-
-// Layered sine bumps for organic terrain — fades to 0 at edges
-function seafloorBump(x, z, hw, hd, height, freq, detail) {
-  // Edge fade: 0 at boundary, 1 in interior
-  const ex = 1 - (Math.abs(x) / hw) ** 4;
-  const ez = 1 - (Math.abs(z) / hd) ** 4;
-  const fade = Math.max(0, ex * ez);
-
-  const f = freq;
-  const bump =
-    Math.sin(x * 3.2 * f + 0.5) * Math.cos(z * 2.8 * f + 1.1) * height +
-    Math.sin(x * 7.1 * f + z * 5.3 * f) * height * 0.5 * detail +
-    Math.sin(x * 13 * f - z * 11 * f) * height * 0.19 * detail;
-  return bump * fade;
 }
 
 function buildBottomSurface(hw, hd, botY) {
@@ -90,8 +86,22 @@ function buildAllSurfaces({ width, depth, height, topY }) {
   };
 }
 
+// Layered sine bumps for organic terrain — fades to 0 at edges
+function seafloorBump(x, z, hw, hd, bumpHeight, freq, detail) {
+  const ex = 1 - (Math.abs(x) / hw) ** 4;
+  const ez = 1 - (Math.abs(z) / hd) ** 4;
+  const fade = Math.max(0, ex * ez);
+
+  const f = freq;
+  const bump =
+    Math.sin(x * 3.2 * f + 0.5) * Math.cos(z * 2.8 * f + 1.1) * bumpHeight +
+    Math.sin(x * 7.1 * f + z * 5.3 * f) * bumpHeight * 0.5 * detail +
+    Math.sin(x * 13 * f - z * 11 * f) * bumpHeight * 0.19 * detail;
+  return bump * fade;
+}
+
 function buildGeometries(surfaces, segments, height, maxDim, hw, hd, bump) {
-  const topSegs = segments * 2; // higher res for bumpy detail
+  const topSegs = segments * 2;
   const heightSegs = Math.max(8, Math.round(segments * (height / maxDim)));
   const lowSegs = Math.max(4, Math.round(segments / 4));
   const evalFn = (surface) => (u, v, target) => surface.getPoint(u, v, target);
@@ -120,41 +130,9 @@ function buildGeometries(surfaces, segments, height, maxDim, hw, hd, bump) {
   ];
 }
 
-// ── Height-gradient colour via shader injection ─────────────────────
+// ── Component ─────────────────────────────────────────────────────────────────
 
-const VERT_COMMON = /* glsl */ `
-  #include <common>
-  uniform float uColumnTop;
-  uniform float uColumnBottom;
-  varying float vNormHeight;
-`;
-
-const BEGIN_VERTEX = /* glsl */ `
-  vec3 transformed = vec3(position);
-  vNormHeight = clamp(
-    (transformed.y - uColumnBottom) / (uColumnTop - uColumnBottom), 0.0, 1.0
-  );
-  #ifdef USE_ALPHAHASH
-    vPosition = vec3(position);
-  #endif
-`;
-
-const FRAG_COMMON = /* glsl */ `
-  uniform vec3 uTopColor;
-  uniform vec3 uBottomColor;
-  varying float vNormHeight;
-`;
-
-const COLOR_FRAG = /* glsl */ `
-  #include <color_fragment>
-  diffuseColor.rgb = mix(uBottomColor, uTopColor, vNormHeight);
-`;
-
-// ── Component ───────────────────────────────────────────────────────
-
-const SEGMENTS = 20;
-
-function Seafloor({
+export default function SeafloorGPU({
   visible,
   color,
   width = 4.0,
@@ -164,31 +142,43 @@ function Seafloor({
   bumpFrequency = 1.0,
   bumpDetail = 1.0,
 }) {
-  // Top aligns exactly with the water column bottom (water height / 2)
-  const topY = -1.0;
-
-  const uniforms = useMemo(
+  // ── TSL uniform nodes ──────────────────────────────────────────────────────
+  const u = useMemo(
     () => ({
-      uColumnTop: { value: topY },
-      uColumnBottom: { value: topY - height },
-      uTopColor: { value: new THREE.Color(color) },
-      uBottomColor: {
-        value: new THREE.Color(color).multiplyScalar(0.55),
-      },
+      colTop: uniform(TOP_Y),
+      colBot: uniform(TOP_Y - height),
+      topColor: uniform(new THREE.Color(color)),
+      botColor: uniform(new THREE.Color(color).multiplyScalar(0.55)),
     }),
-    [] // created once — values updated imperatively in useEffect below
+    [] // created once — values updated imperatively in useEffect
   );
 
-  // Update uniform values when color/dimensions change without recreating material
   useEffect(() => {
-    uniforms.uColumnTop.value = topY;
-    uniforms.uColumnBottom.value = topY - height;
-    uniforms.uTopColor.value.set(color);
-    uniforms.uBottomColor.value.set(color).multiplyScalar(0.55);
-  }, [color, topY, height, uniforms]);
+    u.colTop.value = TOP_Y;
+    u.colBot.value = TOP_Y - height;
+    u.topColor.value.set(color);
+    u.botColor.value.set(color).multiplyScalar(0.55);
+  }, [color, height, u]);
 
+  // ── TSL material with height-gradient colorNode ────────────────────────────
+  const material = useMemo(() => {
+    const normY = clamp(
+      positionLocal.y.sub(u.colBot).div(u.colTop.sub(u.colBot)),
+      0.0,
+      1.0
+    );
+
+    const mat = new THREE.MeshStandardNodeMaterial({
+      roughness: 0.95,
+      metalness: 0.05,
+    });
+    mat.colorNode = mix(u.botColor, u.topColor, normY);
+    return mat;
+  }, [u]);
+
+  // ── NURBS geometries ───────────────────────────────────────────────────────
   const geometries = useMemo(() => {
-    const surfaces = buildAllSurfaces({ width, depth, height, topY });
+    const surfaces = buildAllSurfaces({ width, depth, height, topY: TOP_Y });
     const hw = width / 2;
     const hd = depth / 2;
     const bump = {
@@ -205,45 +195,7 @@ function Seafloor({
       hd,
       bump
     );
-  }, [width, depth, height, topY, bumpHeight, bumpFrequency, bumpDetail]);
-
-  const material = useMemo(() => {
-    const mat = new THREE.MeshStandardMaterial({
-      roughness: 0.95,
-      metalness: 0.05,
-      side: THREE.FrontSide,
-    });
-
-    // Force a unique shader program so onBeforeCompile isn't skipped due to
-    // Three.js reusing a cached program from another MeshStandardMaterial.
-    mat.customProgramCacheKey = () => 'seafloor';
-
-    mat.onBeforeCompile = (s) => {
-      const sh = s;
-      Object.entries(uniforms).forEach(([key, u]) => {
-        sh.uniforms[key] = u;
-      });
-
-      sh.vertexShader = sh.vertexShader.replace(
-        '#include <common>',
-        VERT_COMMON
-      );
-      sh.vertexShader = sh.vertexShader.replace(
-        '#include <begin_vertex>',
-        BEGIN_VERTEX
-      );
-      sh.fragmentShader = sh.fragmentShader.replace(
-        '#include <common>',
-        `#include <common>\n${FRAG_COMMON}`
-      );
-      sh.fragmentShader = sh.fragmentShader.replace(
-        '#include <color_fragment>',
-        COLOR_FRAG
-      );
-    };
-
-    return mat;
-  }, []); // created once — uniform values live-updated via useEffect
+  }, [width, depth, height, bumpHeight, bumpFrequency, bumpDetail]);
 
   if (!visible) return null;
 
@@ -256,5 +208,3 @@ function Seafloor({
     </group>
   );
 }
-
-export default React.memo(Seafloor);

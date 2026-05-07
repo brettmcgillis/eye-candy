@@ -64,7 +64,7 @@ function updateSplineConfig(setter, index, key, value) {
 
 export { DEFAULT_SPLINE_CONFIG };
 
-export default function useStillPullingForYouControls(
+export default function useSceneControls(
   splines,
   setSplines,
   initialSplineConfigs
@@ -316,6 +316,54 @@ export default function useStillPullingForYouControls(
                     label: 'Mode',
                     value: D.cabinMode,
                     options: ['static', 'shorting', 'dying'],
+                  },
+                },
+                { collapsed: true }
+              ),
+              Sparkles: folder(
+                {
+                  sparklesVisible: {
+                    label: 'Visible',
+                    value: D.sparklesVisible,
+                  },
+                  sparklesCount: {
+                    label: 'Count',
+                    value: D.sparklesCount,
+                    min: 1,
+                    max: 50,
+                    step: 1,
+                  },
+                  sparklesSize: {
+                    label: 'Size',
+                    value: D.sparklesSize,
+                    min: 0.1,
+                    max: 10,
+                    step: 0.1,
+                  },
+                  sparklesSpeed: {
+                    label: 'Speed',
+                    value: D.sparklesSpeed,
+                    min: 0,
+                    max: 5,
+                    step: 0.1,
+                  },
+                  sparklesScale: {
+                    label: 'Scale',
+                    value: D.sparklesScale,
+                    min: 0.5,
+                    max: 20,
+                    step: 0.5,
+                  },
+                  sparklesColor: {
+                    label: 'Color',
+                    value: D.sparklesColor,
+                  },
+                  sparklesIntensity: {
+                    label: 'Intensity',
+                    value: D.sparklesIntensity,
+                    min: 0.5,
+                    max: 10,
+                    step: 0.1,
                   },
                 },
                 { collapsed: true }
@@ -1215,107 +1263,6 @@ export default function useStillPullingForYouControls(
             max: 1,
             step: 0.01,
           },
-          painterlyEnabled: {
-            label: 'Painterly',
-            value: D.painterlyEnabled,
-          },
-          painterlyRadius: {
-            label: 'Painterly Radius',
-            value: D.painterlyRadius,
-            min: 1,
-            max: 10,
-            step: 1,
-          },
-          painterlyAlpha: {
-            label: 'Stroke Direction',
-            value: D.painterlyAlpha,
-            min: 1,
-            max: 100,
-            step: 1,
-          },
-          painterlyQuantize: {
-            label: 'Quantize Levels',
-            value: D.painterlyQuantize,
-            min: 2,
-            max: 32,
-            step: 1,
-          },
-          painterlySaturation: {
-            label: 'Saturation',
-            value: D.painterlySaturation,
-            min: 0,
-            max: 3,
-            step: 0.05,
-          },
-          painterlyPaper: {
-            label: 'Paper Strength',
-            value: D.painterlyPaper,
-            min: 0,
-            max: 1,
-            step: 0.05,
-          },
-          'Ink + Hatch': folder(
-            {
-              outlineEnabled: {
-                label: 'Outline',
-                value: D.outlineEnabled,
-              },
-              outlineStrength: {
-                label: 'Outline Strength',
-                value: D.outlineStrength,
-                min: 0,
-                max: 2,
-                step: 0.01,
-              },
-              outlineThreshold: {
-                label: 'Outline Threshold',
-                value: D.outlineThreshold,
-                min: 0,
-                max: 1,
-                step: 0.01,
-              },
-              outlineSoftness: {
-                label: 'Outline Softness',
-                value: D.outlineSoftness,
-                min: 0.001,
-                max: 1,
-                step: 0.005,
-              },
-              hatchingEnabled: {
-                label: 'Hatching',
-                value: D.hatchingEnabled,
-              },
-              hatchScale: {
-                label: 'Hatch Scale',
-                value: D.hatchScale,
-                min: 1,
-                max: 24,
-                step: 0.1,
-              },
-              hatchIntensity: {
-                label: 'Hatch Intensity',
-                value: D.hatchIntensity,
-                min: 0,
-                max: 1,
-                step: 0.01,
-              },
-              hatchThickness: {
-                label: 'Hatch Thickness',
-                value: D.hatchThickness,
-                min: 0.1,
-                max: 2,
-                step: 0.01,
-              },
-              hatchRotation: {
-                label: 'Hatch Rotation',
-                value: D.hatchRotation,
-                min: -Math.PI,
-                max: Math.PI,
-                step: 0.01,
-              },
-            },
-            { collapsed: true }
-          ),
         },
         { collapsed: true }
       ),

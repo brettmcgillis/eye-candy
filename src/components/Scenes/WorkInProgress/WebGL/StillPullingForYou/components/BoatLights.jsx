@@ -2,6 +2,8 @@ import React, { useCallback, useRef } from 'react';
 
 import { useFrame } from '@react-three/fiber';
 
+import BugSparkles from '../../../../../elements/BugSparkles';
+
 // Bloom layer — meshes on this layer are rendered only in the bloom pass
 const BLOOM_LAYER = 1;
 
@@ -28,6 +30,13 @@ function BoatLights({
   cabinDistance = 5,
   cabinColor = '#ffd080',
   cabinMode = 'static',
+  sparklesVisible = false,
+  sparklesCount = 6,
+  sparklesSize = 2,
+  sparklesSpeed = 1.5,
+  sparklesScale = 3,
+  sparklesColor = '#ffedb1',
+  sparklesIntensity = 3,
 }) {
   const cabinRef = useRef();
   const headGlowRef = useRef();
@@ -130,6 +139,17 @@ function BoatLights({
           <sphereGeometry args={[0.3, 8, 6]} />
           <meshBasicMaterial color={headlightColor} wireframe />
         </mesh>
+      )}
+      {headlightVisible && sparklesVisible && (
+        <BugSparkles
+          position={[headlightX, headlightY, headlightZ]}
+          count={sparklesCount}
+          color={sparklesColor}
+          intensity={sparklesIntensity}
+          size={sparklesSize}
+          speed={sparklesSpeed}
+          scale={sparklesScale}
+        />
       )}
       {cabinVisible && (
         <pointLight

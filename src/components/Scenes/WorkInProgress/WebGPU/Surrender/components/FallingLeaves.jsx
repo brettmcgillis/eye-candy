@@ -34,7 +34,14 @@ export const BLOSSOM_SPRITES = [
   '/textures/flowers/blossom2.png',
 ];
 
-export const SNOWFLAKE_SPRITES = ['/textures/snowflake.png'];
+export const SNOWFLAKE_SPRITES = [
+  '/textures/snow/snowflake_01.png',
+  '/textures/snow/snowflake_02.png',
+  '/textures/snow/snowflake_03.png',
+  '/textures/snow/snowflake_04.png',
+  '/textures/snow/snowflake_05.png',
+  '/textures/snow/snowflake_06.png',
+];
 
 const ATLAS_SIZE = 256;
 
@@ -183,6 +190,7 @@ function FallingLeavesInner({
     const timeOffsets = [];
     const spriteIndices = [];
     const instanceColors = [];
+    const instanceScales = [];
 
     const col = new THREE.Color();
 
@@ -192,20 +200,21 @@ function FallingLeavesInner({
       const ci = Math.floor(combo / numSprites) % numColors;
       col.set(colors[ci]);
 
-      const x =
-        flowMode === 'vertical'
-          ? THREE.MathUtils.randFloat(spawnXMin, spawnXMax)
-          : THREE.MathUtils.randFloat(spawnXMin, spawnXMax);
+      const x = THREE.MathUtils.randFloat(spawnXMin, spawnXMax);
       const y =
         flowMode === 'vertical'
           ? THREE.MathUtils.randFloat(spawnYMin, spawnYMax)
           : THREE.MathUtils.randFloat(-2, 4);
 
-      positions.push(x, y, THREE.MathUtils.randFloat(-1, 1));
+      // Extend z toward camera (at z=2.5) so some particles pass close
+      const z = THREE.MathUtils.randFloat(-2, 2.1);
+      positions.push(x, y, z);
       rotations.push(Math.random(), Math.random(), Math.random());
       timeOffsets.push(i / count);
       spriteIndices.push(si);
       instanceColors.push(col.r, col.g, col.b);
+      // Natural size variation — closer particles also appear larger via perspective
+      instanceScales.push(THREE.MathUtils.randFloat(0.5, 1.8));
     }
 
     const posAttr = new THREE.InstancedBufferAttribute(
@@ -228,6 +237,10 @@ function FallingLeavesInner({
       new Float32Array(instanceColors),
       3
     );
+    const scaleAttr = new THREE.InstancedBufferAttribute(
+      new Float32Array(instanceScales),
+      1
+    );
 
     const geometry = new THREE.PlaneGeometry(leafSize, leafSize, 8, 8);
 
@@ -243,6 +256,7 @@ function FallingLeavesInner({
     const instanceTime = instancedBufferAttribute(timeAttr);
     const instanceSpriteIdx = instancedBufferAttribute(spriteAttr);
     const instanceColor = instancedBufferAttribute(colorAttr);
+    const instanceScale = instancedBufferAttribute(scaleAttr);
 
     const { windDirXU, windDirZU } = windUniforms;
 
@@ -263,7 +277,7 @@ function FallingLeavesInner({
           .mul(curvature * leafSize * 2)
       )
     );
-    const rotated = rotate(bent, instanceRotation.mul(modTime.mul(tumble)));
+    const rotated = rotate(bent.mul(instanceScale), instanceRotation.mul(modTime.mul(tumble)));
 
     const travelDir =
       flowMode === 'vertical'

@@ -6,9 +6,7 @@ import {
   CanvasFrame,
   INK,
   SQ,
-  clipToPattern,
   diamondCenter,
-  drawDrip,
   drawPatternBase,
   drawSplatter,
   ease,
@@ -16,38 +14,6 @@ import {
   useLoaderCanvas,
   useSquares,
 } from './primitives';
-
-// 01 — Drip Reveal
-export function Loader01() {
-  const squares = useSquares();
-  const dripSquares = React.useMemo(
-    () => [...squares].sort((a, b) => b.sx + b.sy - (a.sx + a.sy)).slice(0, 5),
-    [squares]
-  );
-
-  const canvasRef = useLoaderCanvas((ctx, t) => {
-    const p = phase(t, 2.4);
-    drawPatternBase(ctx, squares);
-    dripSquares.forEach((sq, i) => {
-      const src = diamondCenter(sq.sx, sq.sy);
-      const local = (p + i * 0.13) % 1;
-      const len = ease.out(local) * (28 + (i % 3) * 14);
-      const op = local > 0.85 ? (1 - local) / 0.15 : 1;
-      const startY = src.y + SQ * 0.707;
-      drawDrip(
-        ctx,
-        src.x,
-        startY,
-        len,
-        3,
-        sq.layer === 'b' ? INK.red : INK.black,
-        op
-      );
-    });
-  });
-
-  return <CanvasFrame canvasRef={canvasRef} />;
-}
 
 // 02 — Inner Spin: 4 black squares spin on their own centers, red ring stays.
 export function Loader02() {
@@ -176,7 +142,7 @@ export function Loader06() {
   return <CanvasFrame canvasRef={canvasRef} />;
 }
 
-// 07 — Vertical Wipe: ink fills inside the squares from top down.
+// 07 — Vertical Wipe: correct colors fill top-down over a ghost.
 export function Loader07() {
   const squares = useSquares();
 
@@ -188,12 +154,12 @@ export function Loader07() {
     });
     drawPatternBase(ctx, squares, ghostOverrides);
 
+    // Clip to the filled region and redraw with each square's correct color
     ctx.save();
-    clipToPattern(ctx, squares);
-    const fillY = ease.inOut(p) * 256;
-    ctx.fillStyle = INK.red;
-    ctx.globalAlpha = 0.9;
-    ctx.fillRect(0, 0, 256, fillY);
+    ctx.beginPath();
+    ctx.rect(0, 0, 256, ease.inOut(p) * 256);
+    ctx.clip();
+    drawPatternBase(ctx, squares);
     ctx.restore();
   });
 
@@ -226,7 +192,7 @@ export function Loader08() {
   return <CanvasFrame canvasRef={canvasRef} />;
 }
 
-// 09 — Bleed Lines: streaks pass over outline ghost, clipped to shapes.
+// 09 — Bleed Lines: bands sweep down revealing correct colors per square.
 export function Loader09() {
   const squares = useSquares();
 
@@ -237,16 +203,17 @@ export function Loader09() {
     });
     drawPatternBase(ctx, squares, ghostOverrides);
 
-    ctx.save();
-    clipToPattern(ctx, squares);
-    [0, 0.33, 0.66].forEach((off, i) => {
+    // Each band clips to its strip and reveals the pattern's true colors
+    [0, 0.33, 0.66].forEach((off) => {
       const p = phase(t, 1.8, off);
       const y = p * 320 - 32;
-      ctx.fillStyle = i % 2 === 0 ? INK.red : INK.black;
-      ctx.globalAlpha = 0.85;
-      ctx.fillRect(-20, y, 296, 28);
+      ctx.save();
+      ctx.beginPath();
+      ctx.rect(-20, y, 296, 28);
+      ctx.clip();
+      drawPatternBase(ctx, squares);
+      ctx.restore();
     });
-    ctx.restore();
   });
 
   return <CanvasFrame canvasRef={canvasRef} />;
@@ -265,6 +232,32 @@ export function Loader12() {
       };
     });
     drawPatternBase(ctx, squares, overrides);
+  });
+
+  return <CanvasFrame canvasRef={canvasRef} />;
+}
+
+// 14 — Color Invert: pattern crossfades between normal and inverted palette.
+export function Loader14() {
+  const squares = useSquares();
+
+  const canvasRef = useLoaderCanvas((ctx, t) => {
+    const p = phase(t, 2.2);
+    const k = ease.inOut(Math.sin(p * Math.PI) ** 2);
+
+    // Normal colors (b=red, t=black) fading out
+    if (k < 1) {
+      drawPatternBase(ctx, squares, {}, 0, 0, 1 - k);
+    }
+
+    // Inverted colors (b=black, t=red) fading in
+    if (k > 0) {
+      const overrides = {};
+      squares.forEach((s) => {
+        overrides[s.i] = { color: s.layer === 'b' ? INK.black : INK.red };
+      });
+      drawPatternBase(ctx, squares, overrides, 0, 0, k);
+    }
   });
 
   return <CanvasFrame canvasRef={canvasRef} />;
@@ -334,14 +327,14 @@ export function Loader18() {
   return <CanvasFrame canvasRef={canvasRef} />;
 }
 
-// 19 — Drip Fill: outlines fill with ink top-down.
+// 19 — Drip Fill: outlines fill with correct colors top-down.
 export function Loader19() {
   const squares = useSquares();
 
   const canvasRef = useLoaderCanvas((ctx, t) => {
     const p = phase(t, 3.0);
 
-    // Outline-only pass
+    // Outline-only pass (persists throughout)
     ctx.save();
     ctx.translate(CX, CY);
     ctx.rotate(Math.PI / 4);
@@ -352,22 +345,88 @@ export function Loader19() {
     });
     ctx.restore();
 
-    // Clipped fill from top down
+    // Clip to wipe region and redraw with each square's correct color
     ctx.save();
-    clipToPattern(ctx, squares);
-    ctx.fillStyle = INK.red;
-    ctx.globalAlpha = 0.9;
-    ctx.fillRect(0, 0, 256, ease.inOut(p) * 256);
-    ctx.fillStyle = INK.black;
-    ctx.globalAlpha = 0.45;
-    ctx.fillRect(0, 0, 256, ease.inOut(Math.max(0, p - 0.1)) * 256);
+    ctx.beginPath();
+    ctx.rect(0, 0, 256, ease.inOut(p) * 256);
+    ctx.clip();
+    drawPatternBase(ctx, squares);
     ctx.restore();
   });
 
   return <CanvasFrame canvasRef={canvasRef} />;
 }
 
-Loader01.cycleDuration = 2.4;
+// 20 — Outline Orbit: all squares as strokes, inner four orbit the center.
+export function Loader20() {
+  const squares = useSquares();
+
+  const canvasRef = useLoaderCanvas((ctx, t) => {
+    const p = phase(t, 2.6);
+    const angle = ease.inOut(p) * Math.PI * 2;
+
+    ctx.save();
+    ctx.translate(CX, CY);
+    ctx.rotate(Math.PI / 4);
+
+    squares.forEach((s) => {
+      let { sx } = s;
+      let { sy } = s;
+      let rot = 0;
+
+      if (s.layer === 't') {
+        const r = Math.hypot(s.sx, s.sy);
+        const baseA = Math.atan2(s.sy, s.sx);
+        const a = baseA + angle;
+        sx = Math.cos(a) * r;
+        sy = Math.sin(a) * r;
+        rot = angle;
+      }
+
+      ctx.save();
+      ctx.translate(sx * SQ, sy * SQ);
+      ctx.rotate(rot);
+      ctx.strokeStyle = s.layer === 'b' ? INK.red : INK.black;
+      ctx.lineWidth = 2.5;
+      ctx.strokeRect(-SQ / 2, -SQ / 2, SQ, SQ);
+      ctx.restore();
+    });
+
+    ctx.restore();
+  });
+
+  return <CanvasFrame canvasRef={canvasRef} />;
+}
+
+// 21 — Ghost Outline: hard outlines over ghost fills that breathe in a radial wave.
+export function Loader21() {
+  const squares = useSquares();
+
+  const canvasRef = useLoaderCanvas((ctx, t) => {
+    // Ghost fills — radial wave pulses outward from center
+    const overrides = {};
+    squares.forEach((s) => {
+      const dist = Math.hypot(s.sx, s.sy);
+      const p = phase(t, 2.4, -dist * 0.15);
+      overrides[s.i] = { opacity: 0.06 + 0.14 * Math.sin(p * Math.PI) ** 2 };
+    });
+    drawPatternBase(ctx, squares, overrides);
+
+    // Hard outlines on top — correct color per square, always sharp
+    ctx.save();
+    ctx.translate(CX, CY);
+    ctx.rotate(Math.PI / 4);
+    squares.forEach((s) => {
+      ctx.strokeStyle = s.layer === 'b' ? INK.red : INK.black;
+      ctx.lineWidth = 2.5;
+      ctx.strokeRect(s.sx * SQ - SQ / 2, s.sy * SQ - SQ / 2, SQ, SQ);
+    });
+    ctx.restore();
+  });
+
+  return <CanvasFrame canvasRef={canvasRef} />;
+}
+
 Loader02.cycleDuration = 1.6;
 Loader03.cycleDuration = 1.8;
 Loader04.cycleDuration = 3.2;
@@ -377,13 +436,15 @@ Loader07.cycleDuration = 2.2;
 Loader08.cycleDuration = 2.6;
 Loader09.cycleDuration = 1.8;
 Loader12.cycleDuration = 1.8;
+Loader14.cycleDuration = 2.2;
 Loader16.cycleDuration = 2.1;
 Loader17.cycleDuration = 2.4;
 Loader18.cycleDuration = 2.0;
 Loader19.cycleDuration = 3.0;
+Loader20.cycleDuration = 2.6;
+Loader21.cycleDuration = 2.4;
 
 export const ALL_LOADERS = [
-  Loader01,
   Loader02,
   Loader03,
   Loader04,
@@ -393,8 +454,11 @@ export const ALL_LOADERS = [
   Loader08,
   Loader09,
   Loader12,
+  Loader14,
   Loader16,
   Loader17,
   Loader18,
   Loader19,
+  Loader20,
+  Loader21,
 ];

@@ -163,6 +163,8 @@ To Build:
 - [ ] PaperCuts - Argyle (2)
 - [ ] PaperCuts - 11 (3)
 - [x] PaperStack - Gradient Scan
+- [ ] LoaderPattern
+- [ ] Iconography
 
 - TrophyHusband
 - Yggdraskill

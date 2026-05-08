@@ -1,14 +1,13 @@
 import { folder, useControls } from 'leva';
 
-import { useEffect, useMemo } from 'react';
+import { useEffect, useMemo, useRef } from 'react';
+import { useNavigate, useParams, useSearchParams } from 'react-router-dom';
 
 import { localEnv } from '../../../utils/appUtils';
 import useScenes, { AREAS, CHANNELS } from '../../useScenes';
 import WebGLCanvas from '../canvas/WebGLCanvas';
 import WebGPUCanvas from '../canvas/WebGPUCanvas';
 
-const DEFAULT_CHANNEL = 'webgl';
-const DEFAULT_AREA = 'showcase';
 const DEFAULT_SCENE = 'loGlow';
 const IG_QUERY_PARAM = 'ig';
 
@@ -19,55 +18,53 @@ const IG_OPTIONS = {
   Post: 'post',
 };
 
-function getQueryParam(key) {
-  if (typeof window === 'undefined') return null;
-  const params = new URLSearchParams(window.location.search);
-  return params.get(key);
+// Flat map: sceneId → { channel, area, sceneDef }
+// First match wins — webgl is listed before webgpu in useScenes, so webgl
+// wins for the three IDs that exist in both renderers.
+function buildFlatMap(registry) {
+  const map = {};
+  for (const [channel, areas] of Object.entries(registry)) {
+    for (const [area, scenes] of Object.entries(areas)) {
+      for (const scene of scenes) {
+        if (!map[scene.id]) {
+          map[scene.id] = { channel, area, sceneDef: scene };
+        }
+      }
+    }
+  }
+  return map;
 }
 
 export default function useAppScenes() {
   const local = localEnv();
   const registry = useScenes();
+  const navigate = useNavigate();
+  const { sceneId: routeSceneId } = useParams();
+  const [searchParams, setSearchParams] = useSearchParams();
 
-  // --- initial values from URL (captured once) ---
+  // --- flat registry lookup ---
 
-  const initialChannel = useMemo(() => {
-    const mode = getQueryParam('mode');
-    return mode && mode in registry ? mode : DEFAULT_CHANNEL;
-  }, []);
+  const flatMap = useMemo(() => buildFlatMap(registry), [registry]);
 
-  const initialArea = useMemo(() => {
-    const raw = getQueryParam('area');
-    return raw && raw in AREAS ? raw : DEFAULT_AREA;
-  }, []);
+  const match = flatMap[routeSceneId] ??
+    flatMap[DEFAULT_SCENE] ?? {
+      channel: 'webgl',
+      area: 'showcase',
+      sceneDef: null,
+    };
 
-  const initialScene = useMemo(() => {
-    const raw = getQueryParam('scene');
-    const scenes = registry[initialChannel]?.[initialArea] ?? [];
-    if (raw && scenes.some((s) => s.id === raw)) return raw;
-    if (scenes.some((s) => s.id === DEFAULT_SCENE)) return DEFAULT_SCENE;
-    return scenes[0]?.id ?? 'noScene';
-  }, []);
-
-  const initialIgPreset = useMemo(() => {
-    const raw = getQueryParam(IG_QUERY_PARAM);
-    if (!raw) return '';
-
-    const normalized = raw.trim().toLowerCase();
-    return Object.values(IG_OPTIONS).includes(normalized) ? normalized : '';
-  }, []);
-
-  // --- Leva controls ---
+  // --- Leva option maps ---
 
   const channelOptions = useMemo(
     () => Object.fromEntries(Object.entries(CHANNELS).map(([k, v]) => [v, k])),
     []
   );
-
   const areaOptions = useMemo(
     () => Object.fromEntries(Object.entries(AREAS).map(([k, v]) => [v, k])),
     []
   );
+
+  // --- Leva controls ---
 
   const { ig } = useControls(
     'App',
@@ -77,7 +74,7 @@ export default function useAppScenes() {
           ig: {
             label: 'IG Preset',
             options: IG_OPTIONS,
-            value: initialIgPreset,
+            value: searchParams.get(IG_QUERY_PARAM) ?? '',
           },
         },
         { collapsed: true }
@@ -86,16 +83,22 @@ export default function useAppScenes() {
     { collapsed: true, render: () => local }
   );
 
-  const { mode, area } = useControls(
+  const [{ mode, area }, setNav] = useControls(
     'App',
-    {
-      mode: { options: channelOptions, value: initialChannel },
-      area: { options: areaOptions, value: initialArea },
-    },
-    { collapsed: true, render: () => local }
+    () => ({
+      mode: { options: channelOptions, value: match.channel },
+      area: { options: areaOptions, value: match.area },
+    }),
+    { collapsed: true, render: () => local },
+    []
   );
 
-  // --- scenes for current channel + area ---
+  // Sync Leva mode/area when the URL changes (browser back/forward)
+  useEffect(() => {
+    setNav({ mode: match.channel, area: match.area });
+  }, [routeSceneId]); // eslint-disable-line react-hooks/exhaustive-deps
+
+  // --- scene dropdown (rebuilds when mode/area change) ---
 
   const scenes = useMemo(
     () => registry[mode]?.[area] ?? [],
@@ -108,78 +111,71 @@ export default function useAppScenes() {
   );
 
   const sceneDefault = useMemo(() => {
-    if (scenes.some((s) => s.id === initialScene)) return initialScene;
+    if (scenes.some((s) => s.id === routeSceneId)) return routeSceneId;
     if (scenes.some((s) => s.id === DEFAULT_SCENE)) return DEFAULT_SCENE;
     return scenes[0]?.id ?? 'noScene';
-  }, [scenes, initialScene]);
+  }, [scenes, routeSceneId]);
 
-  // Re-evaluates when channel / area change (leva deps array)
-  const [{ scene: rawSceneId }, setSceneControl] = useControls(
+  const [{ scene: levaSceneId }, setSceneControl] = useControls(
     'App',
-    () => ({
-      scene: { options: sceneOptions, value: sceneDefault },
-    }),
+    () => ({ scene: { options: sceneOptions, value: sceneDefault } }),
     { collapsed: true, render: () => local },
     [mode, area]
   );
 
-  // --- guard against stale value after area/channel switch ---
-
+  // Guard stale Leva scene value after area/channel switch
   const sceneMap = useMemo(
     () => Object.fromEntries(scenes.map((s) => [s.id, s])),
     [scenes]
   );
 
-  const sceneId = sceneMap[rawSceneId] ? rawSceneId : sceneDefault;
-
   useEffect(() => {
-    if (!sceneMap[rawSceneId]) {
+    if (!sceneMap[levaSceneId]) {
       setSceneControl({ scene: sceneDefault });
     }
-  }, [rawSceneId, sceneMap, sceneDefault, setSceneControl]);
+  }, [levaSceneId, sceneMap, sceneDefault, setSceneControl]);
 
-  // --- URL sync ---
+  // Navigate when Leva scene dropdown changes
+  const prevLevaScene = useRef(levaSceneId);
+  useEffect(() => {
+    if (levaSceneId !== prevLevaScene.current && sceneMap[levaSceneId]) {
+      prevLevaScene.current = levaSceneId;
+      navigate(`/${levaSceneId}`);
+    }
+  }, [levaSceneId, navigate, sceneMap]);
+
+  // Navigate when mode/area changes and the current route scene isn't in the new list
+  useEffect(() => {
+    if (!scenes.some((s) => s.id === routeSceneId)) {
+      navigate(`/${sceneDefault}`, { replace: true });
+    }
+  }, [mode, area]); // eslint-disable-line react-hooks/exhaustive-deps
+
+  // --- ig → search param ---
 
   useEffect(() => {
-    if (typeof window === 'undefined') return;
-    const params = new URLSearchParams(window.location.search);
-    params.set('mode', mode);
-    params.set('area', area);
-    params.set('scene', sceneId);
-
-    if (ig) {
-      params.set(IG_QUERY_PARAM, ig);
-    } else {
-      params.delete(IG_QUERY_PARAM);
-    }
-
-    // remove legacy params
-    params.delete('webglShowcaseScene');
-    params.delete('webgpuShowcaseScene');
-    params.delete('webglTestScene');
-    params.delete('webgpuTestScene');
-    params.delete('webglWipScene');
-    params.delete('webgpuWipScene');
-    params.delete('webglToolScene');
-    params.delete('webgpuToolScene');
-
-    window.history.replaceState({}, '', `?${params.toString()}`);
-  }, [mode, area, sceneId, ig]);
+    setSearchParams(
+      (prev) => {
+        if (ig) prev.set(IG_QUERY_PARAM, ig);
+        else prev.delete(IG_QUERY_PARAM);
+        return prev;
+      },
+      { replace: true }
+    );
+  }, [ig]); // eslint-disable-line react-hooks/exhaustive-deps
 
   // --- resolve ---
 
-  const sceneDef = sceneMap[sceneId];
-  const SceneComponent = sceneDef?.Component;
-  const CanvasWrapper = mode === 'webgpu' ? WebGPUCanvas : WebGLCanvas;
+  const CanvasWrapper = match.channel === 'webgpu' ? WebGPUCanvas : WebGLCanvas;
 
   return {
     local,
-    channel: mode,
-    area,
-    sceneId,
-    sceneDef,
-    SceneComponent,
+    channel: match.channel,
+    area: match.area,
+    sceneId: routeSceneId,
+    sceneDef: match.sceneDef,
+    SceneComponent: match.sceneDef?.Component,
     CanvasWrapper,
-    renderer: mode,
+    renderer: match.channel,
   };
 }

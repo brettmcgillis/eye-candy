@@ -4,6 +4,7 @@
   width: 100dvw;
   width: -webkit-fill-available;
   display: block;
+  overflow: hidden;
 }
 
 body {

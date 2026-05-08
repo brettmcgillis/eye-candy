@@ -4,23 +4,17 @@
     <meta charset="UTF-8" />
     <script>
       // spa-github-pages — https://github.com/rafgraph/spa-github-pages
-      // Keeps the first path segment (the repo name: /eye-candy) and encodes
-      // the rest as ?p=/ so index.html can restore it before React boots.
+      // Encodes the path after the repo segment into the search string so
+      // index.html can restore it before React boots.
+      // Uses /?/ as the separator so decoded[0] is the full path (with leading /)
+      // and the restore script can concatenate directly without adding an extra /.
       var l = window.location;
       l.replace(
-        l.protocol +
-          '//' +
-          l.host +
-          l.pathname.split('/').slice(0, 2).join('/') +
-          '/?p=/' +
-          l.pathname
-            .slice(1)
-            .split('/')
-            .slice(1)
-            .join('/')
-            .replace(/&/g, '~and~') +
-          (l.search ? '&q=' + l.search.slice(1).replace(/&/g, '~and~') : '') +
-          l.hash
+        l.protocol + '//' + l.host +
+        l.pathname.split('/').slice(0, 2).join('/') + '/?/' +
+        l.pathname.slice(1).split('/').slice(1).join('/').replace(/&/g, '~and~') +
+        (l.search ? '&' + l.search.slice(1).replace(/&/g, '~and~') : '') +
+        l.hash
       );
     </script>
   </head>

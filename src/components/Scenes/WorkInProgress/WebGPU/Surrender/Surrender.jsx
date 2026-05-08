@@ -8,6 +8,7 @@ import OutlineFX from '../../../../postprocessing/webGPU/outline/Outline';
 import FallingLeaves, {
   BLOSSOM_SPRITES,
   LEAF_SPRITES,
+  RAIN_SPRITES,
   SNOWFLAKE_SPRITES,
 } from './components/FallingLeaves';
 import Flag from './components/Flag';
@@ -118,18 +119,17 @@ export default function Surrender() {
     leafColor1,
     leafColor2,
     leafColor3,
+    leafAspect,
+    leafWindInfluence,
   } = useSceneControls({ onResetSim: resetSim });
 
-  const leafSprites = useMemo(
-    () =>
-      leafType === 'Blossoms'
-        ? BLOSSOM_SPRITES
-        : leafType === 'Snowflakes'
-          ? SNOWFLAKE_SPRITES
-          : LEAF_SPRITES,
-    [leafType]
-  );
-  const flowMode = leafType === 'Snowflakes' ? 'vertical' : 'horizontal';
+  const leafSprites = useMemo(() => {
+    if (leafType === 'Blossoms') return BLOSSOM_SPRITES;
+    if (leafType === 'Snowflakes') return SNOWFLAKE_SPRITES;
+    if (leafType === 'Rain') return RAIN_SPRITES;
+    return LEAF_SPRITES;
+  }, [leafType]);
+  const flowMode = leafType === 'Snowflakes' || leafType === 'Rain' ? 'vertical' : 'horizontal';
   const leafColors = useMemo(
     () => [leafColor1, leafColor2, leafColor3],
     [leafColor1, leafColor2, leafColor3]
@@ -267,12 +267,15 @@ export default function Surrender() {
           curvature={leafCurvature}
           colors={leafColors}
           leafSize={leafSize}
+          leafAspect={leafAspect}
           speed={leafSpeed}
           cycleTravel={leafTravel}
           tumble={leafTumble}
           wind={wind}
           windDirX={windDirX}
           windDirZ={windDirZ}
+          windInfluence={leafWindInfluence}
+          alignToWind={leafType === 'Rain'}
         />
       )}
 

@@ -43,6 +43,31 @@ export const SNOWFLAKE_SPRITES = [
   '/textures/snow/snowflake_06.png',
 ];
 
+function makeRainStreakDataUri(widthFrac, alpha) {
+  const W = 256;
+  const H = 256;
+  const canvas = document.createElement('canvas');
+  canvas.width = W;
+  canvas.height = H;
+  const ctx = canvas.getContext('2d');
+  const streakW = Math.max(2, Math.round(W * widthFrac));
+  const x0 = (W - streakW) / 2;
+  const grad = ctx.createLinearGradient(0, 0, 0, H);
+  grad.addColorStop(0.0, `rgba(255,255,255,0)`);
+  grad.addColorStop(0.05, `rgba(255,255,255,${alpha})`);
+  grad.addColorStop(0.8, `rgba(255,255,255,${alpha * 0.5})`);
+  grad.addColorStop(1.0, `rgba(255,255,255,0)`);
+  ctx.fillStyle = grad;
+  ctx.fillRect(x0, 0, streakW, H);
+  return canvas.toDataURL('image/png');
+}
+
+export const RAIN_SPRITES = [
+  makeRainStreakDataUri(0.05, 0.9),
+  makeRainStreakDataUri(0.04, 0.65),
+  makeRainStreakDataUri(0.06, 0.75),
+];
+
 const ATLAS_SIZE = 256;
 
 function getXExtentAtZ(camera, aspect, zPlane) {
@@ -103,6 +128,7 @@ function FallingLeavesInner({
   colors,
   sprites: spriteUrls,
   leafSize,
+  leafAspect,
   speed,
   cycleTravel,
   tumble,
@@ -110,7 +136,9 @@ function FallingLeavesInner({
   wind,
   windDirX,
   windDirZ,
+  windInfluence,
   flowMode,
+  alignToWind,
 }) {
   const loadedSprites = useTexture(spriteUrls);
   const camera = useThree((s) => s.camera);
@@ -170,6 +198,8 @@ function FallingLeavesInner({
       windU: uniform(wind),
       windDirXU: uniform(windDirX),
       windDirZU: uniform(windDirZ),
+      windInfluenceU: uniform(windInfluence),
+      windTiltU: uniform(0),
     }),
     []
   );
@@ -178,6 +208,8 @@ function FallingLeavesInner({
     windUniforms.windU.value = wind;
     windUniforms.windDirXU.value = windDirX;
     windUniforms.windDirZU.value = windDirZ;
+    windUniforms.windInfluenceU.value = windInfluence;
+    windUniforms.windTiltU.value = alignToWind ? -Math.atan(windDirX * windInfluence) : 0;
   });
 
   // Single mesh — all instances, all sprites, all colors, one draw call
@@ -243,7 +275,7 @@ function FallingLeavesInner({
       1
     );
 
-    const geometry = new THREE.PlaneGeometry(leafSize, leafSize, 8, 8);
+    const geometry = new THREE.PlaneGeometry(leafSize, leafSize * leafAspect, 8, 8);
 
     const material = new THREE.MeshBasicNodeMaterial({
       side: THREE.DoubleSide,
@@ -260,7 +292,7 @@ function FallingLeavesInner({
     const instanceColor = instancedBufferAttribute(colorAttr);
     const instanceScale = instancedBufferAttribute(scaleAttr);
 
-    const { windDirXU, windDirZU } = windUniforms;
+    const { windDirXU, windDirZU, windInfluenceU, windTiltU } = windUniforms;
 
     const localTime = instanceTime.add(time.mul(speed));
     const modTime = mod(localTime, 1.0);
@@ -279,11 +311,13 @@ function FallingLeavesInner({
           .mul(curvature * leafSize * 2)
       )
     );
-    const rotated = rotate(bent.mul(instanceScale), instanceRotation.mul(modTime.mul(tumble)));
+    // windTiltU is 0 for normal particles; for rain it aligns the streak to travel direction.
+    // tumble is 0 for rain, so the two terms are mutually exclusive in practice.
+    const rotated = rotate(bent.mul(instanceScale), instanceRotation.mul(modTime.mul(tumble)).add(vec3(0, 0, windTiltU)));
 
     const travelDir =
       flowMode === 'vertical'
-        ? vec3(windDirXU.mul(0.15), -1, windDirZU.mul(0.15))
+        ? vec3(windDirXU.mul(windInfluenceU), -1, windDirZU.mul(windInfluenceU))
             .normalize()
             .mul(effectiveTravel)
             .mul(modTime)
@@ -309,6 +343,7 @@ function FallingLeavesInner({
     spriteUrls,
     arrayTex,
     leafSize,
+    leafAspect,
     speed,
     effectiveTravel,
     tumble,
@@ -340,6 +375,7 @@ function FallingLeaves({
   colors = ['#d70654', '#ffd95f', '#b8d576'],
   sprites = LEAF_SPRITES,
   leafSize = 0.08,
+  leafAspect = 1,
   speed = 0.08,
   cycleTravel = 5,
   tumble = 20,
@@ -347,7 +383,9 @@ function FallingLeaves({
   wind = 1,
   windDirX = 1,
   windDirZ = 0,
+  windInfluence = 0.15,
   flowMode = 'horizontal',
+  alignToWind = false,
 }) {
   return (
     <Suspense fallback={null}>
@@ -356,6 +394,7 @@ function FallingLeaves({
         colors={colors}
         sprites={sprites}
         leafSize={leafSize}
+        leafAspect={leafAspect}
         speed={speed}
         cycleTravel={cycleTravel}
         tumble={tumble}
@@ -363,7 +402,9 @@ function FallingLeaves({
         wind={wind}
         windDirX={windDirX}
         windDirZ={windDirZ}
+        windInfluence={windInfluence}
         flowMode={flowMode}
+        alignToWind={alignToWind}
       />
     </Suspense>
   );

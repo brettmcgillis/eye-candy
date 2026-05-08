@@ -482,7 +482,7 @@ export default function useSceneControls({ onResetSim } = {}) {
           leavesEnabled: { value: p.leavesEnabled, label: 'Enabled' },
           leafType: {
             value: p.leafType,
-            options: ['Leaves', 'Blossoms', 'Snowflakes'],
+            options: ['Leaves', 'Blossoms', 'Snowflakes', 'Rain'],
             label: 'Type',
           },
           leafCount: {
@@ -526,6 +526,20 @@ export default function useSceneControls({ onResetSim } = {}) {
             max: 1,
             step: 0.05,
             label: 'Curvature',
+          },
+          leafAspect: {
+            value: p.leafAspect,
+            min: 1,
+            max: 12,
+            step: 0.5,
+            label: 'Aspect',
+          },
+          leafWindInfluence: {
+            value: p.leafWindInfluence,
+            min: 0.05,
+            max: 2,
+            step: 0.05,
+            label: 'Wind Influence',
           },
           leafColor1: { value: p.leafColor1, label: 'Color 1' },
           leafColor2: { value: p.leafColor2, label: 'Color 2' },

@@ -6,9 +6,7 @@ import {
   CanvasFrame,
   INK,
   SQ,
-  diamondCenter,
   drawPatternBase,
-  drawSplatter,
   ease,
   phase,
   useLoaderCanvas,
@@ -68,13 +66,6 @@ export function Loader04() {
       overrides[i] = { dsx: -fall, dsy: -fall, opacity: local };
     });
     drawPatternBase(ctx, squares, overrides);
-    drawSplatter(ctx, {
-      seed: Math.floor(t * 4),
-      count: Math.floor(p * 25),
-      radius: 120,
-      color: INK.red,
-      opacity: 0.45,
-    });
   });
 
   return <CanvasFrame canvasRef={canvasRef} />;
@@ -106,8 +97,12 @@ export function Loader06() {
   const canvasRef = useLoaderCanvas((ctx, t) => {
     const p = phase(t, 2.6);
     const order = squares.map((s) => s.i);
-    const stampIdx = Math.floor(p * order.length);
-    const local = p * order.length - stampIdx;
+    const N = order.length;
+    // Drive over N+1 slots: the extra slot lets the last stamp fully land
+    // and holds the complete pattern before the cycle resets.
+    const stampP = p * (N + 1);
+    const stampIdx = Math.min(Math.floor(stampP), N - 1);
+    const local = Math.min(stampP - stampIdx, 1);
     const overrides = {};
     order.forEach((i, idx) => {
       if (idx < stampIdx) overrides[i] = {};
@@ -122,21 +117,6 @@ export function Loader06() {
       }
     });
     drawPatternBase(ctx, squares, overrides);
-    if (local > 0.85) {
-      const stampingSquare = squares.find((s) => s.i === order[stampIdx]);
-      if (stampingSquare) {
-        const haloCenter = diamondCenter(stampingSquare.sx, stampingSquare.sy);
-        drawSplatter(ctx, {
-          seed: stampIdx + 1,
-          count: 14,
-          cx: haloCenter.x,
-          cy: haloCenter.y,
-          radius: 50,
-          color: stampingSquare.layer === 'b' ? INK.red : INK.black,
-          opacity: ((1 - local) / 0.15) * 0.6,
-        });
-      }
-    }
   });
 
   return <CanvasFrame canvasRef={canvasRef} />;
@@ -444,6 +424,46 @@ Loader19.cycleDuration = 3.0;
 Loader20.cycleDuration = 2.6;
 Loader21.cycleDuration = 2.4;
 
+// 22 — Figure Eight: black squares stay solid; red squares trail through an ∞ path.
+// 8-step cycle: 6 → 0 → 5 → 1 → 4 → 0 → 3 → 2 → repeat.
+// Square 0 (center) appears twice (slots 1 and 5), so we pick the closer slot.
+const FIGURE8_ORDER = [6, 0, 5, 1, 4, 0, 3, 2];
+
+export function Loader22() {
+  const squares = useSquares();
+
+  const canvasRef = useLoaderCanvas((ctx, t) => {
+    const N = FIGURE8_ORDER.length; // 8
+    const p = phase(t, 2.4);
+    const head = p * N;
+    const overrides = {};
+
+    squares.forEach((s) => {
+      if (s.layer === 't') {
+        // Black squares: always fully lit
+        overrides[s.i] = { opacity: 1 };
+      } else {
+        // Red squares: a square may appear more than once in the path (center square i:0
+        // is at slots 1 and 5). Compute minimum circular distance to any of its slots.
+        let minDist = N;
+        FIGURE8_ORDER.forEach((id, slot) => {
+          if (id === s.i) {
+            const dist = (head - slot + N) % N;
+            if (dist < minDist) minDist = dist;
+          }
+        });
+        overrides[s.i] = { opacity: Math.max(0.08, 1 - minDist / 4) };
+      }
+    });
+
+    drawPatternBase(ctx, squares, overrides);
+  });
+
+  return <CanvasFrame canvasRef={canvasRef} />;
+}
+
+Loader22.cycleDuration = 2.4;
+
 export const ALL_LOADERS = [
   Loader02,
   Loader03,
@@ -461,4 +481,5 @@ export const ALL_LOADERS = [
   Loader19,
   Loader20,
   Loader21,
+  Loader22,
 ];

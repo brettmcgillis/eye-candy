@@ -148,6 +148,27 @@ export default function useSceneControls({ onResetSim } = {}) {
             },
             C
           ),
+          Audio: folder(
+            {
+              thunderEnabled: {
+                value: p.thunderEnabled,
+                label: 'Thunder & Lightning',
+              },
+              springAudio: {
+                value: p.springAudio,
+                label: 'Spring Audio',
+              },
+              winterAudio: {
+                value: p.winterAudio,
+                label: 'Winter Audio',
+              },
+              autumnAudio: {
+                value: p.autumnAudio,
+                label: 'Autumn Audio',
+              },
+            },
+            C
+          ),
         },
         C
       ),
@@ -505,6 +526,13 @@ export default function useSceneControls({ onResetSim } = {}) {
             max: 0.5,
             step: 0.01,
             label: 'Speed',
+          },
+          leafSpeedJitter: {
+            value: p.leafSpeedJitter,
+            min: 0,
+            max: 0.5,
+            step: 0.01,
+            label: 'Speed Jitter',
           },
           leafTravel: {
             value: p.leafTravel,

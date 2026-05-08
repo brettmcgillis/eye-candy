@@ -11,7 +11,7 @@ import {
 } from 'three/tsl';
 import * as THREE from 'three/webgpu';
 
-import { Suspense, memo, useEffect, useMemo } from 'react';
+import React, { Suspense, memo, useEffect, useMemo } from 'react';
 
 import { useTexture } from '@react-three/drei';
 import { useFrame, useThree } from '@react-three/fiber';
@@ -130,6 +130,7 @@ function FallingLeavesInner({
   leafSize,
   leafAspect,
   speed,
+  speedJitter,
   cycleTravel,
   tumble,
   curvature,
@@ -209,7 +210,9 @@ function FallingLeavesInner({
     windUniforms.windDirXU.value = windDirX;
     windUniforms.windDirZU.value = windDirZ;
     windUniforms.windInfluenceU.value = windInfluence;
-    windUniforms.windTiltU.value = alignToWind ? -Math.atan(windDirX * windInfluence) : 0;
+    windUniforms.windTiltU.value = alignToWind
+      ? -Math.atan(windDirX * windInfluence)
+      : 0;
   });
 
   // Single mesh — all instances, all sprites, all colors, one draw call
@@ -219,7 +222,7 @@ function FallingLeavesInner({
     const totalCombos = numSprites * numColors;
 
     const positions = [];
-    const rotations = [];
+    const rotations = []; // vec4: xyz = euler angles, w = speed multiplier
     const timeOffsets = [];
     const spriteIndices = [];
     const instanceColors = [];
@@ -242,7 +245,13 @@ function FallingLeavesInner({
       // Extend z toward camera (at z=2.5) so some particles pass close
       const z = THREE.MathUtils.randFloat(-2, 2.1);
       positions.push(x, y, z);
-      rotations.push(Math.random(), Math.random(), Math.random());
+      // Pack speed multiplier into w to avoid exceeding WebGPU's 8-buffer limit
+      rotations.push(
+        Math.random(),
+        Math.random(),
+        Math.random(),
+        1 + (Math.random() * 2 - 1) * speedJitter
+      );
       timeOffsets.push(i / count);
       spriteIndices.push(si);
       instanceColors.push(col.r, col.g, col.b);
@@ -256,7 +265,7 @@ function FallingLeavesInner({
     );
     const rotAttr = new THREE.InstancedBufferAttribute(
       new Float32Array(rotations),
-      3
+      4
     );
     const timeAttr = new THREE.InstancedBufferAttribute(
       new Float32Array(timeOffsets),
@@ -275,7 +284,12 @@ function FallingLeavesInner({
       1
     );
 
-    const geometry = new THREE.PlaneGeometry(leafSize, leafSize * leafAspect, 8, 8);
+    const geometry = new THREE.PlaneGeometry(
+      leafSize,
+      leafSize * leafAspect,
+      8,
+      8
+    );
 
     const material = new THREE.MeshBasicNodeMaterial({
       side: THREE.DoubleSide,
@@ -286,7 +300,9 @@ function FallingLeavesInner({
 
     // TSL instance nodes
     const instancePosition = instancedBufferAttribute(posAttr);
-    const instanceRotation = instancedBufferAttribute(rotAttr);
+    const rotAndSpeed = instancedBufferAttribute(rotAttr); // vec4
+    const instanceRotation = rotAndSpeed.xyz;
+    const instanceSpeedMult = rotAndSpeed.w;
     const instanceTime = instancedBufferAttribute(timeAttr);
     const instanceSpriteIdx = instancedBufferAttribute(spriteAttr);
     const instanceColor = instancedBufferAttribute(colorAttr);
@@ -294,7 +310,7 @@ function FallingLeavesInner({
 
     const { windDirXU, windDirZU, windInfluenceU, windTiltU } = windUniforms;
 
-    const localTime = instanceTime.add(time.mul(speed));
+    const localTime = instanceTime.add(time.mul(speed).mul(instanceSpeedMult));
     const modTime = mod(localTime, 1.0);
 
     // Paraboloid cup: bend z before rotation so the cup follows the tumble
@@ -313,7 +329,10 @@ function FallingLeavesInner({
     );
     // windTiltU is 0 for normal particles; for rain it aligns the streak to travel direction.
     // tumble is 0 for rain, so the two terms are mutually exclusive in practice.
-    const rotated = rotate(bent.mul(instanceScale), instanceRotation.mul(modTime.mul(tumble)).add(vec3(0, 0, windTiltU)));
+    const rotated = rotate(
+      bent.mul(instanceScale),
+      instanceRotation.mul(modTime.mul(tumble)).add(vec3(0, 0, windTiltU))
+    );
 
     const travelDir =
       flowMode === 'vertical'
@@ -345,6 +364,7 @@ function FallingLeavesInner({
     leafSize,
     leafAspect,
     speed,
+    speedJitter,
     effectiveTravel,
     tumble,
     curvature,
@@ -377,6 +397,7 @@ function FallingLeaves({
   leafSize = 0.08,
   leafAspect = 1,
   speed = 0.08,
+  speedJitter = 0.15,
   cycleTravel = 5,
   tumble = 20,
   curvature = 0.4,
@@ -396,6 +417,7 @@ function FallingLeaves({
         leafSize={leafSize}
         leafAspect={leafAspect}
         speed={speed}
+        speedJitter={speedJitter}
         cycleTravel={cycleTravel}
         tumble={tumble}
         curvature={curvature}

@@ -4,6 +4,8 @@ import React, { useCallback, useMemo, useRef } from 'react';
 import { OrbitControls, PerspectiveCamera } from '@react-three/drei';
 import { useThree } from '@react-three/fiber';
 
+import AudioToggleOverlay from '../../../../../app/scaffold/overlay/components/AudioToggleOverlay';
+import Bloom from '../../../../postprocessing/webGPU/bloom/Bloom';
 import OutlineFX from '../../../../postprocessing/webGPU/outline/Outline';
 import FallingLeaves, {
   BLOSSOM_SPRITES,
@@ -13,6 +15,10 @@ import FallingLeaves, {
 } from './components/FallingLeaves';
 import Flag from './components/Flag';
 import FlagPole from './components/FlagPole';
+import ThunderLightning from './components/ThunderLightning';
+import useAutumnAmbience from './components/useAutumnAmbience';
+import useSpringAmbience from './components/useSpringAmbience';
+import useWindAmbience from './components/useWindAmbience';
 import useSceneControls from './hooks/useSceneControls';
 
 export default function Surrender() {
@@ -113,6 +119,7 @@ export default function Surrender() {
     leafCount,
     leafSize,
     leafSpeed,
+    leafSpeedJitter,
     leafTravel,
     leafTumble,
     leafCurvature,
@@ -121,7 +128,15 @@ export default function Surrender() {
     leafColor3,
     leafAspect,
     leafWindInfluence,
+    thunderEnabled,
+    springAudio,
+    winterAudio,
+    autumnAudio,
   } = useSceneControls({ onResetSim: resetSim });
+
+  useSpringAmbience({ enabled: springAudio });
+  useWindAmbience({ enabled: winterAudio });
+  useAutumnAmbience({ enabled: autumnAudio });
 
   const leafSprites = useMemo(() => {
     if (leafType === 'Blossoms') return BLOSSOM_SPRITES;
@@ -129,7 +144,10 @@ export default function Surrender() {
     if (leafType === 'Rain') return RAIN_SPRITES;
     return LEAF_SPRITES;
   }, [leafType]);
-  const flowMode = leafType === 'Snowflakes' || leafType === 'Rain' ? 'vertical' : 'horizontal';
+  const flowMode =
+    leafType === 'Snowflakes' || leafType === 'Rain'
+      ? 'vertical'
+      : 'horizontal';
   const leafColors = useMemo(
     () => [leafColor1, leafColor2, leafColor3],
     [leafColor1, leafColor2, leafColor3]
@@ -259,6 +277,9 @@ export default function Surrender() {
         />
       </group>
 
+      <AudioToggleOverlay />
+      {thunderEnabled && <ThunderLightning bgBaseColor={bgColor} />}
+
       {leavesEnabled && (
         <FallingLeaves
           sprites={leafSprites}
@@ -269,6 +290,7 @@ export default function Surrender() {
           leafSize={leafSize}
           leafAspect={leafAspect}
           speed={leafSpeed}
+          speedJitter={leafSpeedJitter}
           cycleTravel={leafTravel}
           tumble={leafTumble}
           wind={wind}
@@ -279,24 +301,33 @@ export default function Surrender() {
         />
       )}
 
-      <OutlineFX
-        enabled={enabled}
-        targetRef={outlineGroupRef}
-        mode={mode}
-        color={outlineColor}
-        hiddenColor={hiddenColor}
-        hiddenStrength={hiddenStrength}
-        strength={strength}
-        thickness={outlineThickness}
-        glow={glow}
-        inside={inside}
-        downSampleRatio={downSampleRatio}
-        patternScale={patternScale}
-        patternOctaves={patternOctaves}
-        patternLacunarity={patternLacunarity}
-        ringStride={ringStride}
-        halftoneScale={halftoneScale}
-      />
+      {thunderEnabled ? (
+        <Bloom
+          threshold={1.6}
+          strength={0.5}
+          radius={0.6}
+          downSampleRatio={2}
+        />
+      ) : (
+        <OutlineFX
+          enabled={enabled}
+          targetRef={outlineGroupRef}
+          mode={mode}
+          color={outlineColor}
+          hiddenColor={hiddenColor}
+          hiddenStrength={hiddenStrength}
+          strength={strength}
+          thickness={outlineThickness}
+          glow={glow}
+          inside={inside}
+          downSampleRatio={downSampleRatio}
+          patternScale={patternScale}
+          patternOctaves={patternOctaves}
+          patternLacunarity={patternLacunarity}
+          ringStride={ringStride}
+          halftoneScale={halftoneScale}
+        />
+      )}
     </>
   );
 }

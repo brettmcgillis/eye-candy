@@ -82,6 +82,7 @@ const PRESETS = {
     leafCount: 300,
     leafSize: 0.08,
     leafSpeed: 0.08,
+    leafSpeedJitter: 0.2,
     leafTravel: 5,
     leafTumble: 20,
     leafCurvature: 0.0,
@@ -90,6 +91,11 @@ const PRESETS = {
     leafColor1: '#d70654',
     leafColor2: '#ffd95f',
     leafColor3: '#b8d576',
+    // Thunder & Lightning
+    thunderEnabled: false,
+    springAudio: false,
+    winterAudio: false,
+    autumnAudio: false,
     // Postprocessing - Outline
     enabled: true,
     mode: 'glow',
@@ -119,7 +125,7 @@ const PRESETS = {
     // Scene - Camera
     orbitControls: false,
     // Scene - Background
-    bgColor: '#3c3c3c',
+    bgColor: '#000000',
     fogNear: 6,
     fogFar: 16,
     // Scene - Lighting
@@ -162,7 +168,7 @@ const PRESETS = {
     textureScaleX: 0.7,
     textureScaleY: 0.7,
     textureRotation: 0,
-    flagColor: '#000000',
+    flagColor: '#4b4b4b',
     roughness: 0.9,
     metalness: 0.0,
     opacity: 1.0,
@@ -175,17 +181,17 @@ const PRESETS = {
     ior: 1.5,
     materialThickness: 0.0,
     // Flag - Pole
-    poleColor: '#1a1a1a',
-    poleMetalness: 0.4,
+    poleColor: '#777676',
+    poleMetalness: 0.97,
     poleRoughness: 0.7,
     // Flag - Finial
     finialColor: '#c8a84b',
     finialMetalness: 0.8,
     finialRoughness: 0.2,
     // Flag - Rings
-    ringColor: '#1a1a1a',
-    ringMetalness: 0.4,
-    ringRoughness: 0.7,
+    ringColor: '#b2b1b1',
+    ringMetalness: 1,
+    ringRoughness: 0.38,
     // Wind
     wind: 10,
     windDirX: 1,
@@ -195,7 +201,8 @@ const PRESETS = {
     leafType: 'Rain',
     leafCount: 1500,
     leafSize: 0.01,
-    leafSpeed: 0.1,
+    leafSpeed: 0.25,
+    leafSpeedJitter: 0.15,
     leafTravel: 8,
     leafTumble: 0,
     leafCurvature: 0,
@@ -204,6 +211,11 @@ const PRESETS = {
     leafColor1: '#8aaec8',
     leafColor2: '#aac4d8',
     leafColor3: '#6888a0',
+    // Thunder & Lightning
+    thunderEnabled: true,
+    springAudio: false,
+    winterAudio: false,
+    autumnAudio: false,
     // Postprocessing - Outline
     enabled: false,
     mode: 'worley',
@@ -310,6 +322,7 @@ const PRESETS = {
     leafCount: 400,
     leafSize: 0.06,
     leafSpeed: 0.02,
+    leafSpeedJitter: 0.3,
     leafTravel: 8,
     leafTumble: 20,
     leafCurvature: 0.4,
@@ -318,6 +331,11 @@ const PRESETS = {
     leafColor1: '#e03010',
     leafColor2: '#d06000',
     leafColor3: '#702010',
+    // Thunder & Lightning
+    thunderEnabled: false,
+    springAudio: false,
+    winterAudio: false,
+    autumnAudio: true,
     // Postprocessing - Outline
     enabled: true,
     mode: 'glow',
@@ -423,6 +441,7 @@ const PRESETS = {
     leafCount: 700,
     leafSize: 0.06,
     leafSpeed: 0.01,
+    leafSpeedJitter: 0.25,
     leafTravel: 5,
     leafTumble: 35,
     leafCurvature: 1,
@@ -431,6 +450,11 @@ const PRESETS = {
     leafColor1: '#c6c8d6',
     leafColor2: '#f7c3ea',
     leafColor3: '#d0baca',
+    // Thunder & Lightning
+    thunderEnabled: false,
+    springAudio: true,
+    winterAudio: false,
+    autumnAudio: false,
     // Postprocessing - Outline
     enabled: true,
     mode: 'outline',
@@ -537,6 +561,7 @@ const PRESETS = {
     leafCount: 2000,
     leafSize: 0.02,
     leafSpeed: 0.015,
+    leafSpeedJitter: 0.25,
     leafTravel: 5,
     leafTumble: 3,
     leafCurvature: 0.0,
@@ -545,6 +570,11 @@ const PRESETS = {
     leafColor1: '#ffffff',
     leafColor2: '#ddeeff',
     leafColor3: '#ffffff',
+    // Thunder & Lightning
+    thunderEnabled: false,
+    springAudio: false,
+    winterAudio: true,
+    autumnAudio: false,
     // Postprocessing - Outline
     enabled: false,
     mode: 'glow',

@@ -162,7 +162,8 @@
   }
 
   .bottom-left,
-  .bottom-right {
+  .bottom-right,
+  .bottom-center {
     bottom: calc(var(--overlay-inset-mobile) + var(--overlay-ig-bottom-offset));
   }
 

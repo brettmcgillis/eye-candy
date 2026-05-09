@@ -79,7 +79,9 @@ const FlagWithTexture = forwardRef(function FlagWithTexture(
   ref
 ) {
   const texture = useTexture(textureUrl);
-  return <FlagCloth ref={ref} texture={texture} textureUrl={textureUrl} {...rest} />;
+  return (
+    <FlagCloth ref={ref} texture={texture} textureUrl={textureUrl} {...rest} />
+  );
 });
 
 // Public API — holds rendering until texture is ready when one is provided.

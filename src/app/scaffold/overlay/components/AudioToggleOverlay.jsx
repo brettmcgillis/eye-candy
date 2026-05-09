@@ -10,7 +10,8 @@ export default function AudioToggleOverlay() {
   useEffect(() => {
     const container = document.createElement('div');
     container.dataset.audioTogglePortal = 'true';
-    document.body.appendChild(container);
+    const mountTarget = document.querySelector('.overlay') ?? document.body;
+    mountTarget.appendChild(container);
 
     containerRef.current = container;
     rootRef.current = createRoot(container);

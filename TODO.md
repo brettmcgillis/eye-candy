@@ -56,6 +56,7 @@ To Build:
 - [QuinnsDice](src/components/scenes/Showcase/WebGL/QuinnsDice/todo.md)
 - [Rosie](src/components/scenes/Showcase/WebGL/Rosie/todo.md)
 - [WatercolorSquares](src/components/scenes/Showcase/WebGL/WatercolorSquares/todo.md)
+- [Surrender](src/components/scenes/Showcase/WebGPU/Surrender/todo.md)
 
 **TestLab**
 
@@ -81,7 +82,7 @@ To Build:
 - [RowItAlone](src/components/scenes/WorkInProgress/WebGL/RowItAlone/todo.md)
 - [StayingAfloat](src/components/scenes/WorkInProgress/WebGL/StayingAfloat/todo.md)
 - [Ghosts](src/components/scenes/WorkInProgress/WebGPU/Ghosts/todo.md)
-- [Surrender](src/components/scenes/WorkInProgress/WebGPU/Surrender/todo.md)
+
 - [StayHunted](src/components/scenes/WorkInProgress/WebGPU/StayHunted/todo.md)
 - [GhostStories](src/components/scenes/WorkInProgress/WebGPU/GhostStories/todo.md)
 - [QuinnsPlayground](src/components/scenes/WorkInProgress/WebGL/QuinnsPlayground/todo.md)

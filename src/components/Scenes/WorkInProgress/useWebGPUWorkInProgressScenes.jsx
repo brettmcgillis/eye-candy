@@ -1,6 +1,6 @@
 import React, { lazy } from 'react';
 import { FaBook, FaGhost } from 'react-icons/fa';
-import { GiBlackFlag, GiRabbit, GiSinkingShip } from 'react-icons/gi';
+import { GiRabbit, GiSinkingShip } from 'react-icons/gi';
 import { PiSkullDuotone } from 'react-icons/pi';
 
 function GhostStoriesIcon() {
@@ -17,9 +17,7 @@ function NoSceneIcon() {
 function GhostIcon() {
   return <FaGhost color="#cbd5e1" />;
 }
-function FlagIcon() {
-  return <GiBlackFlag color="#000000" size={24} />;
-}
+
 function RabbitIcon() {
   return <GiRabbit color="#d1d5db" />;
 }
@@ -31,7 +29,6 @@ const NoScene = lazy(() => import('../../../app/scaffold/NoScene'));
 const AllMyFriendsAreGhosts = lazy(
   () => import('./WebGPU/AllMyFriendsAreGhosts/AllMyFriendsAreGhosts')
 );
-const Surrender = lazy(() => import('./WebGPU/Surrender/Surrender'));
 const StayHunted = lazy(() => import('./WebGPU/StayHunted/StayHunted'));
 const GhostStories = lazy(() => import('./WebGPU/GhostStories/GhostStories'));
 const StillPullingForYouGPU = lazy(
@@ -50,12 +47,7 @@ const scenes = [
     icon: GhostIcon,
     Component: AllMyFriendsAreGhosts,
   },
-  {
-    id: 'surrender',
-    label: 'Surrender',
-    icon: FlagIcon,
-    Component: Surrender,
-  },
+
   {
     id: 'stayHunted',
     label: 'Stay Hunted',

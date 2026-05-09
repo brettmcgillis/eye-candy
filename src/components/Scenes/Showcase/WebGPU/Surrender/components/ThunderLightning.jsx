@@ -7,7 +7,7 @@ import { useFrame, useThree } from '@react-three/fiber';
 
 import useSceneAudioStore from '../../../../../../store/useSceneAudioStore';
 import { audioFile } from '../../../../../../utils/appUtils';
-import useStormSounds from './useStormSounds';
+import useStormSounds from '../hooks/useStormSounds';
 
 // Multi-frequency sine noise — convincing flicker without an external noise library.
 // Layering three incommensurable frequencies produces an irregular, non-repeating pattern.

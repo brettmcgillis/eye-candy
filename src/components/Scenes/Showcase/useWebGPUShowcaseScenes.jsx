@@ -1,11 +1,15 @@
 import React, { lazy } from 'react';
+import { GiBlackFlag } from 'react-icons/gi';
 import { PiSkullDuotone } from 'react-icons/pi';
 
 function NoSceneIcon() {
   return <PiSkullDuotone color="#888" />;
 }
-
+function FlagIcon() {
+  return <GiBlackFlag color="#000000" size={24} />;
+}
 const NoScene = lazy(() => import('../../../app/scaffold/NoScene'));
+const Surrender = lazy(() => import('./WebGPU/Surrender/Surrender'));
 
 const scenes = [
   {
@@ -13,6 +17,12 @@ const scenes = [
     label: 'None',
     icon: NoSceneIcon,
     Component: NoScene,
+  },
+  {
+    id: 'surrender',
+    label: 'Surrender',
+    icon: FlagIcon,
+    Component: Surrender,
   },
 ];
 

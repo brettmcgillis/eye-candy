@@ -11,7 +11,7 @@ import FallingLeaves from './components/FallingLeaves';
 import Flag from './components/Flag';
 import FlagPole from './components/FlagPole';
 import ThunderLightning from './components/ThunderLightning';
-import useAmbienceSound from './components/useAmbienceSound';
+import useAmbienceSound from './hooks/useAmbienceSound';
 import useSceneControls from './hooks/useSceneControls';
 
 export default function Surrender() {

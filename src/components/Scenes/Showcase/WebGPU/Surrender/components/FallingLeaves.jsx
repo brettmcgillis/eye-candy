@@ -1,3 +1,6 @@
+/* eslint-disable no-plusplus */
+
+/* eslint-disable no-shadow */
 import {
   instancedBufferAttribute,
   mod,
@@ -417,9 +420,14 @@ function FallingLeaves({
 }) {
   const sprites = SPRITES_BY_TYPE[leafType] ?? LEAF_SPRITES;
   const flowMode =
-    leafType === 'Snowflakes' || leafType === 'Rain' ? 'vertical' : 'horizontal';
+    leafType === 'Snowflakes' || leafType === 'Rain'
+      ? 'vertical'
+      : 'horizontal';
   const alignToWind = leafType === 'Rain';
-  const colors = useMemo(() => [color1, color2, color3], [color1, color2, color3]);
+  const colors = useMemo(
+    () => [color1, color2, color3],
+    [color1, color2, color3]
+  );
 
   return (
     <Suspense fallback={null}>

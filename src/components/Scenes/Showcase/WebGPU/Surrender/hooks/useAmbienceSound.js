@@ -1,3 +1,4 @@
+/* eslint-disable consistent-return */
 import { Howl } from 'howler';
 
 import { useEffect, useRef } from 'react';

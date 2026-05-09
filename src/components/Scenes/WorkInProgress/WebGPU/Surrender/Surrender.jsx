@@ -7,12 +7,7 @@ import { useThree } from '@react-three/fiber';
 import AudioToggleOverlay from '../../../../../app/scaffold/overlay/components/AudioToggleOverlay';
 import Bloom from '../../../../postprocessing/webGPU/bloom/Bloom';
 import OutlineFX from '../../../../postprocessing/webGPU/outline/Outline';
-import FallingLeaves, {
-  BLOSSOM_SPRITES,
-  LEAF_SPRITES,
-  RAIN_SPRITES,
-  SNOWFLAKE_SPRITES,
-} from './components/FallingLeaves';
+import FallingLeaves from './components/FallingLeaves';
 import Flag from './components/Flag';
 import FlagPole from './components/FlagPole';
 import ThunderLightning from './components/ThunderLightning';
@@ -132,16 +127,6 @@ export default function Surrender() {
 
   useAmbienceSound(ambienceTrack);
 
-  const leafSprites = useMemo(() => {
-    if (leafType === 'Blossoms') return BLOSSOM_SPRITES;
-    if (leafType === 'Snowflakes') return SNOWFLAKE_SPRITES;
-    if (leafType === 'Rain') return RAIN_SPRITES;
-    return LEAF_SPRITES;
-  }, [leafType]);
-  const flowMode =
-    leafType === 'Snowflakes' || leafType === 'Rain'
-      ? 'vertical'
-      : 'horizontal';
   const leafColors = useMemo(
     () => [leafColor1, leafColor2, leafColor3],
     [leafColor1, leafColor2, leafColor3]
@@ -276,8 +261,7 @@ export default function Surrender() {
 
       {leavesEnabled && (
         <FallingLeaves
-          sprites={leafSprites}
-          flowMode={flowMode}
+          leafType={leafType}
           count={leafCount}
           curvature={leafCurvature}
           colors={leafColors}
@@ -291,7 +275,6 @@ export default function Surrender() {
           windDirX={windDirX}
           windDirZ={windDirZ}
           windInfluence={leafWindInfluence}
-          alignToWind={leafType === 'Rain'}
         />
       )}
 

@@ -16,7 +16,7 @@ import React, { Suspense, memo, useEffect, useMemo } from 'react';
 import { useTexture } from '@react-three/drei';
 import { useFrame, useThree } from '@react-three/fiber';
 
-export const LEAF_SPRITES = [
+const LEAF_SPRITES = [
   '/textures/leaves/willow.png',
   '/textures/leaves/bay.png',
   '/textures/leaves/broadleaf.png',
@@ -29,12 +29,12 @@ export const LEAF_SPRITES = [
   '/textures/leaves/linden.png',
 ];
 
-export const BLOSSOM_SPRITES = [
+const BLOSSOM_SPRITES = [
   '/textures/flowers/blossom1.png',
   '/textures/flowers/blossom2.png',
 ];
 
-export const SNOWFLAKE_SPRITES = [
+const SNOWFLAKE_SPRITES = [
   '/textures/snow/snowflake_01.png',
   '/textures/snow/snowflake_02.png',
   '/textures/snow/snowflake_03.png',
@@ -390,10 +390,17 @@ function FallingLeavesInner({
 // ------------------------------------------------------------------
 // FallingLeaves — public export
 // ------------------------------------------------------------------
+const SPRITES_BY_TYPE = {
+  Leaves: LEAF_SPRITES,
+  Blossoms: BLOSSOM_SPRITES,
+  Snowflakes: SNOWFLAKE_SPRITES,
+  Rain: RAIN_SPRITES,
+};
+
 function FallingLeaves({
+  leafType = 'Leaves',
   count = 300,
   colors = ['#d70654', '#ffd95f', '#b8d576'],
-  sprites = LEAF_SPRITES,
   leafSize = 0.08,
   leafAspect = 1,
   speed = 0.08,
@@ -405,9 +412,14 @@ function FallingLeaves({
   windDirX = 1,
   windDirZ = 0,
   windInfluence = 0.15,
-  flowMode = 'horizontal',
-  alignToWind = false,
 }) {
+  const sprites = SPRITES_BY_TYPE[leafType] ?? LEAF_SPRITES;
+  const flowMode =
+    leafType === 'Snowflakes' || leafType === 'Rain'
+      ? 'vertical'
+      : 'horizontal';
+  const alignToWind = leafType === 'Rain';
+
   return (
     <Suspense fallback={null}>
       <FallingLeavesInner

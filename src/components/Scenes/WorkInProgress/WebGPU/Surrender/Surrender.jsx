@@ -127,11 +127,6 @@ export default function Surrender() {
 
   useAmbienceSound(ambienceTrack);
 
-  const leafColors = useMemo(
-    () => [leafColor1, leafColor2, leafColor3],
-    [leafColor1, leafColor2, leafColor3]
-  );
-
   // Responsive camera: frame flag + finial, pull back on narrow (mobile) viewports
   const size = useThree((state) => state.size);
   const isPortrait = size.width < size.height;
@@ -147,7 +142,8 @@ export default function Surrender() {
   // Orbit target tracks the group position so posX/posY feel like translation, not rotation.
   // Portrait shifts the look-at leftward to center the narrower viewport on the pole.
   const TARGET = useMemo(
-    () => (isPortrait ? [posX, posY + 0.3, 0] : [posX + 0.25, posY + 0.3, 0]),
+    () =>
+      isPortrait ? [posX + 0.1, posY + 0.5, 0] : [posX + 0.25, posY + 0.3, 0],
     [isPortrait, posX, posY]
   );
 
@@ -264,7 +260,9 @@ export default function Surrender() {
           leafType={leafType}
           count={leafCount}
           curvature={leafCurvature}
-          colors={leafColors}
+          color1={leafColor1}
+          color2={leafColor2}
+          color3={leafColor3}
           leafSize={leafSize}
           leafAspect={leafAspect}
           speed={leafSpeed}

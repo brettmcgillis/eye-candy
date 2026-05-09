@@ -400,7 +400,9 @@ const SPRITES_BY_TYPE = {
 function FallingLeaves({
   leafType = 'Leaves',
   count = 300,
-  colors = ['#d70654', '#ffd95f', '#b8d576'],
+  color1 = '#d70654',
+  color2 = '#ffd95f',
+  color3 = '#b8d576',
   leafSize = 0.08,
   leafAspect = 1,
   speed = 0.08,
@@ -415,10 +417,9 @@ function FallingLeaves({
 }) {
   const sprites = SPRITES_BY_TYPE[leafType] ?? LEAF_SPRITES;
   const flowMode =
-    leafType === 'Snowflakes' || leafType === 'Rain'
-      ? 'vertical'
-      : 'horizontal';
+    leafType === 'Snowflakes' || leafType === 'Rain' ? 'vertical' : 'horizontal';
   const alignToWind = leafType === 'Rain';
+  const colors = useMemo(() => [color1, color2, color3], [color1, color2, color3]);
 
   return (
     <Suspense fallback={null}>

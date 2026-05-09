@@ -93,9 +93,7 @@ const PRESETS = {
     leafColor3: '#b8d576',
     // Thunder & Lightning
     thunderEnabled: false,
-    springAudio: false,
-    winterAudio: false,
-    autumnAudio: false,
+    ambienceTrack: '',
     // Postprocessing - Outline
     enabled: true,
     mode: 'glow',
@@ -213,9 +211,7 @@ const PRESETS = {
     leafColor3: '#6888a0',
     // Thunder & Lightning
     thunderEnabled: true,
-    springAudio: false,
-    winterAudio: false,
-    autumnAudio: false,
+    ambienceTrack: '',
     // Postprocessing - Outline
     enabled: false,
     mode: 'worley',
@@ -333,9 +329,7 @@ const PRESETS = {
     leafColor3: '#702010',
     // Thunder & Lightning
     thunderEnabled: false,
-    springAudio: false,
-    winterAudio: false,
-    autumnAudio: true,
+    ambienceTrack: 'wind-and-leaves.mp3',
     // Postprocessing - Outline
     enabled: true,
     mode: 'glow',
@@ -452,9 +446,7 @@ const PRESETS = {
     leafColor3: '#d0baca',
     // Thunder & Lightning
     thunderEnabled: false,
-    springAudio: true,
-    winterAudio: false,
-    autumnAudio: false,
+    ambienceTrack: 'spring-birds-loop.mp3',
     // Postprocessing - Outline
     enabled: true,
     mode: 'outline',
@@ -572,9 +564,7 @@ const PRESETS = {
     leafColor3: '#ffffff',
     // Thunder & Lightning
     thunderEnabled: false,
-    springAudio: false,
-    winterAudio: true,
-    autumnAudio: false,
+    ambienceTrack: 'wind-draft-loop.mp3',
     // Postprocessing - Outline
     enabled: false,
     mode: 'glow',

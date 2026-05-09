@@ -11,7 +11,8 @@ export default function useStormSounds({
   rainVolume = 0.5,
   ambienceVolume = 0.4,
 } = {}) {
-  const setHasAudio = useSceneAudioStore((s) => s.setHasAudio);
+  const registerAudio = useSceneAudioStore((s) => s.registerAudio);
+  const unregisterAudio = useSceneAudioStore((s) => s.unregisterAudio);
   const audioEnabled = useSceneAudioStore((s) => s.audioEnabled);
 
   const sounds = useMemo(
@@ -32,17 +33,16 @@ export default function useStormSounds({
     []
   );
 
-  // Register that this scene has audio, clean up on unmount
   useEffect(() => {
-    setHasAudio(true);
+    registerAudio();
     return () => {
-      setHasAudio(false);
+      unregisterAudio();
       sounds.rain.stop();
       sounds.ambience.stop();
       sounds.rain.unload();
       sounds.ambience.unload();
     };
-  }, [sounds, setHasAudio]);
+  }, [sounds, registerAudio, unregisterAudio]);
 
   // React to the user's audio toggle
   useEffect(() => {

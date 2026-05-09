@@ -154,17 +154,15 @@ export default function useSceneControls({ onResetSim } = {}) {
                 value: p.thunderEnabled,
                 label: 'Thunder & Lightning',
               },
-              springAudio: {
-                value: p.springAudio,
-                label: 'Spring Audio',
-              },
-              winterAudio: {
-                value: p.winterAudio,
-                label: 'Winter Audio',
-              },
-              autumnAudio: {
-                value: p.autumnAudio,
-                label: 'Autumn Audio',
+              ambienceTrack: {
+                value: p.ambienceTrack,
+                options: {
+                  None: '',
+                  Spring: 'spring-birds-loop.mp3',
+                  Autumn: 'wind-and-leaves.mp3',
+                  Winter: 'wind-draft-loop.mp3',
+                },
+                label: 'Ambience',
               },
             },
             C

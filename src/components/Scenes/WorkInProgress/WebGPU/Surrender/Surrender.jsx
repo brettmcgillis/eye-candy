@@ -16,9 +16,7 @@ import FallingLeaves, {
 import Flag from './components/Flag';
 import FlagPole from './components/FlagPole';
 import ThunderLightning from './components/ThunderLightning';
-import useAutumnAmbience from './components/useAutumnAmbience';
-import useSpringAmbience from './components/useSpringAmbience';
-import useWindAmbience from './components/useWindAmbience';
+import useAmbienceSound from './components/useAmbienceSound';
 import useSceneControls from './hooks/useSceneControls';
 
 export default function Surrender() {
@@ -129,14 +127,10 @@ export default function Surrender() {
     leafAspect,
     leafWindInfluence,
     thunderEnabled,
-    springAudio,
-    winterAudio,
-    autumnAudio,
+    ambienceTrack,
   } = useSceneControls({ onResetSim: resetSim });
 
-  useSpringAmbience({ enabled: springAudio });
-  useWindAmbience({ enabled: winterAudio });
-  useAutumnAmbience({ enabled: autumnAudio });
+  useAmbienceSound(ambienceTrack);
 
   const leafSprites = useMemo(() => {
     if (leafType === 'Blossoms') return BLOSSOM_SPRITES;

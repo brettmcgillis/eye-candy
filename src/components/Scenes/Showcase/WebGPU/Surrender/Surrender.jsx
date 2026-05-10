@@ -158,7 +158,10 @@ export default function Surrender() {
     windDirX,
     windDirZ,
     cursorCollider:
-      leavesEnabled && leafModeNormalized === 'cloth' && cursorCollider,
+      leavesEnabled &&
+      (leafModeNormalized === 'cloth' ||
+        (leafModeNormalized === 'billboard' && leafType === 'Blossoms')) &&
+      cursorCollider,
     cursorRadius,
   });
 

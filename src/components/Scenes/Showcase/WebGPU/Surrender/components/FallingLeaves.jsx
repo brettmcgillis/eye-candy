@@ -3,6 +3,7 @@
 /* eslint-disable no-shadow */
 import {
   Fn,
+  float,
   instancedBufferAttribute,
   mod,
   positionLocal,
@@ -150,10 +151,12 @@ function FallingLeavesInner({
   flowMode,
   alignToWind,
   wireframe,
+  scenePhysics,
 }) {
   const loadedSprites = useTexture(spriteUrls);
   const camera = useThree((s) => s.camera);
   const size = useThree((s) => s.size);
+  const sceneCursorSphere = scenePhysics?.cursorSphere ?? null;
 
   // Pack all sprites into one DataArrayTexture
   const arrayTex = useMemo(
@@ -215,6 +218,15 @@ function FallingLeavesInner({
     []
   );
 
+  const cursorUniforms = useMemo(
+    () => ({
+      cursorPosU: uniform(new THREE.Vector3(10, 10, 10)),
+      cursorRadiusU: uniform(0.12),
+      cursorEnabledU: uniform(0),
+    }),
+    []
+  );
+
   useFrame(() => {
     windUniforms.windU.value = wind;
     windUniforms.windDirXU.value = windDirX;
@@ -223,6 +235,14 @@ function FallingLeavesInner({
     windUniforms.windTiltU.value = alignToWind
       ? -Math.atan(windDirX * windInfluence)
       : 0;
+
+    if (sceneCursorSphere) {
+      cursorUniforms.cursorPosU.value.copy(sceneCursorSphere.position);
+      cursorUniforms.cursorRadiusU.value = sceneCursorSphere.radius;
+      cursorUniforms.cursorEnabledU.value = sceneCursorSphere.enabled ? 1 : 0;
+    } else {
+      cursorUniforms.cursorEnabledU.value = 0;
+    }
   });
 
   // Single mesh — all instances, all sprites, all colors, one draw call
@@ -321,9 +341,13 @@ function FallingLeavesInner({
     const instanceScale = instancedBufferAttribute(scaleAttr);
 
     const { windDirXU, windDirZU, windInfluenceU, windTiltU } = windUniforms;
+    const { cursorPosU, cursorRadiusU, cursorEnabledU } = cursorUniforms;
 
     const localTime = instanceTime.add(time.mul(speed).mul(instanceSpeedMult));
     const modTime = mod(localTime, 1.0);
+    const cursorReactionRange = leafSize * 4;
+    const cursorPushStrength = leafSize * 4;
+    const cursorSpinStrength = 1.4;
 
     // Paraboloid cup: bend z before rotation so the cup follows the tumble
     const leafUV = uv();
@@ -339,12 +363,6 @@ function FallingLeavesInner({
           .mul(curvature * leafSize * 2)
       )
     );
-    // windTiltU is 0 for normal particles; for rain it aligns the streak to travel direction.
-    // tumble is 0 for rain, so the two terms are mutually exclusive in practice.
-    const rotated = rotate(
-      bent.mul(instanceScale),
-      instanceRotation.mul(modTime.mul(tumble)).add(vec3(0, 0, windTiltU))
-    );
 
     const travelDir =
       flowMode === 'vertical'
@@ -357,7 +375,35 @@ function FallingLeavesInner({
             .mul(effectiveTravel)
             .mul(modTime);
 
-    material.positionNode = rotated.add(instancePosition).add(travelDir);
+    const basePosition = instancePosition.add(travelDir);
+    const cursorDelta = basePosition.sub(cursorPosU);
+    const cursorDistance = cursorDelta.length().max(float(0.0001));
+    const cursorReach = cursorRadiusU.add(float(cursorReactionRange));
+    const cursorResponse = cursorReach
+      .sub(cursorDistance)
+      .div(cursorReach)
+      .clamp(0, 1)
+      .mul(cursorEnabledU);
+    const cursorOffset = cursorDelta
+      .div(cursorDistance)
+      .mul(cursorResponse.mul(cursorPushStrength));
+    const cursorSpin = vec3(
+      cursorResponse.mul(cursorSpinStrength),
+      cursorResponse.mul(cursorSpinStrength * 0.6),
+      cursorResponse.mul(cursorSpinStrength * 0.25)
+    );
+
+    // windTiltU is 0 for normal particles; for rain it aligns the streak to travel direction.
+    // tumble is 0 for rain, so the two terms are mutually exclusive in practice.
+    const rotated = rotate(
+      bent.mul(instanceScale),
+      instanceRotation
+        .mul(modTime.mul(tumble))
+        .add(vec3(0, 0, windTiltU))
+        .add(cursorSpin)
+    );
+
+    material.positionNode = rotated.add(basePosition).add(cursorOffset);
 
     // Sample DataArrayTexture: uv as vec2, layer as separate depth int
     const texSample = tslTexture(arrayTex, leafUV).depth(instanceSpriteIdx);
@@ -386,6 +432,7 @@ function FallingLeavesInner({
     tumble,
     curvature,
     windUniforms,
+    cursorUniforms,
     flowMode,
     spawnXMin,
     spawnXMax,
@@ -496,6 +543,7 @@ function FallingLeaves({
         flowMode={flowMode}
         alignToWind={alignToWind}
         wireframe={wireframe}
+        scenePhysics={scenePhysics}
       />
     </Suspense>
   );

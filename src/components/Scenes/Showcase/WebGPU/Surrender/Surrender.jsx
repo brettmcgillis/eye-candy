@@ -13,6 +13,7 @@ import FlagPole from './components/FlagPole';
 import ThunderLightning from './components/ThunderLightning';
 import useAmbienceSound from './hooks/useAmbienceSound';
 import useSceneControls from './hooks/useSceneControls';
+import useSurrenderPhysicsState from './hooks/useSurrenderPhysicsState';
 
 export default function Surrender() {
   const outlineGroupRef = useRef();
@@ -148,6 +149,19 @@ export default function Surrender() {
     [isPortrait, posX, posY]
   );
 
+  const leafModeNormalized = leafMode?.toLowerCase() ?? 'billboard';
+  const scenePhysics = useSurrenderPhysicsState({
+    outlineGroupRef,
+    clothWidth,
+    clothHeight,
+    wind,
+    windDirX,
+    windDirZ,
+    cursorCollider:
+      leavesEnabled && leafModeNormalized === 'cloth' && cursorCollider,
+    cursorRadius,
+  });
+
   return (
     <>
       <PerspectiveCamera makeDefault position={cameraPosition} fov={35} />
@@ -258,7 +272,7 @@ export default function Surrender() {
 
       {leavesEnabled && (
         <FallingLeaves
-          mode={leafMode?.toLowerCase() ?? 'billboard'}
+          mode={leafModeNormalized}
           leafType={leafType}
           count={leafCount}
           curvature={leafCurvature}
@@ -276,6 +290,7 @@ export default function Surrender() {
           windDirX={windDirX}
           windDirZ={windDirZ}
           windInfluence={leafWindInfluence}
+          scenePhysics={scenePhysics}
         />
       )}
 

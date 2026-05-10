@@ -241,22 +241,28 @@ export default function useSceneControls({ onResetSim } = {}) {
           ),
           Audio: folder(
             {
-              thunderEnabled: {
-                value: p.thunderEnabled,
-                label: 'Thunder & Lightning',
-              },
-              ambienceTrack: {
-                value: p.ambienceTrack,
-                options: {
-                  None: '',
-                  Spring: 'spring-birds-loop.mp3',
-                  Autumn: 'wind-and-leaves.mp3',
-                  Winter: 'wind-draft-loop.mp3',
+              Ambience: folder(
+                {
+                  ambienceTrack: {
+                    value: p.ambienceTrack,
+                    options: {
+                      None: '',
+                      Spring: 'spring-birds-loop.mp3',
+                      Autumn: 'wind-and-leaves.mp3',
+                      Winter: 'wind-draft-loop.mp3',
+                    },
+                    label: 'Ambience',
+                  },
                 },
-                label: 'Ambience',
-              },
+                { collapsed: true }
+              ),
+
               Thunder: folder(
                 {
+                  thunderEnabled: {
+                    value: p.thunderEnabled,
+                    label: 'Enabled',
+                  },
                   thunderLightColor: {
                     value: p.thunderLightColor,
                     label: 'Flash Color',

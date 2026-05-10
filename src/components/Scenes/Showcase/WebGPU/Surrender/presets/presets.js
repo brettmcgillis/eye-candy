@@ -706,10 +706,13 @@ const PRESETS = {
     cursorRadius: 0.12,
   },
   'Weather Any Storm': {
+    // Scene - Camera
     orbitControls: false,
+    // Scene - Background
     bgColor: '#000000',
     fogNear: 6,
     fogFar: 16,
+    // Scene - Lighting
     ambientIntensity: 0.04,
     ambientColor: '#0a1525',
     keyIntensity: 0.08,
@@ -723,6 +726,7 @@ const PRESETS = {
     fillPosX: 2,
     fillPosY: 1,
     fillPosZ: -1,
+    // Moonlight
     moonColor: '#b8ccf0',
     moonPeakIntensity: 280,
     moonPosX: -3,
@@ -732,31 +736,29 @@ const PRESETS = {
     cloudScale: 10.8,
     cloudDensity: -0.2,
     cloudContrast: 0.5,
-    cloudFloor: 0.15,
     cloudSpeed: 2.2,
-    thunderEnabled: true,
-    ambienceTrack: '',
-    thunderLightColor: '#c8c4ff',
-    thunderPeakIntensity: 58,
-    thunderMinGap: 3,
-    thunderMaxGap: 8,
+    cloudFloor: 0.15,
+    // Flag - Orientation
     rotateX: -15,
     rotateY: 0,
     rotateZ: 15,
     posX: 0,
     posY: 0,
+    // Flag - Cloth
     clothWidth: 1,
     clothHeight: 0.7,
     segmentsX: 30,
     segmentsY: 21,
     stiffness: 0.5,
     dampening: 0.98,
+    // Flag - Cloth - Alpha
     alphaSeed: 57,
     alphaScale: 9.2,
     edgeFade: 0,
     holeAmount: 1,
     tatterEdge: 1,
     smoothEdges: true,
+    // Flag - Material
     textureUrl: 'None',
     textureTile: false,
     textureScaleX: 0.7,
@@ -767,25 +769,30 @@ const PRESETS = {
     metalness: 0,
     opacity: 1,
     sheen: 1,
-    sheenRoughness: 0.15999999999999998,
+    sheenRoughness: 0.16,
     sheenColor: '#ffffff',
     clearcoat: 1,
     clearcoatRoughness: 0.11,
     transmission: 0,
     ior: 1,
     materialThickness: 0,
+    // Flag - Pole
     poleColor: '#a8a6a6',
     poleMetalness: 0.97,
     poleRoughness: 0.7,
+    // Flag - Finial
     finialColor: '#e2ba42',
     finialMetalness: 0.8,
     finialRoughness: 0.2,
+    // Flag - Rings
     ringColor: '#c9c7c7',
     ringMetalness: 1,
     ringRoughness: 0.14,
+    // Wind
     wind: 10,
     windDirX: 1,
     windDirZ: -0.2,
+    // Leaves
     leavesEnabled: true,
     leafMode: 'Billboard',
     leafType: 'Rain',
@@ -801,11 +808,20 @@ const PRESETS = {
     leafColor1: '#8aaec8',
     leafColor2: '#aac4d8',
     leafColor3: '#6888a0',
+    // Thunder & Lightning
+    thunderEnabled: true,
+    thunderLightColor: '#c8c4ff',
+    thunderPeakIntensity: 58,
+    thunderMinGap: 3,
+    thunderMaxGap: 8,
+    ambienceTrack: '',
+    // Postprocessing - Bloom
     bloomEnabled: true,
     bloomThreshold: 1.6,
     bloomStrength: 0.5,
     bloomRadius: 0.6,
     bloomDownSampleRatio: 2,
+    // Postprocessing - Outline
     enabled: false,
     mode: 'worley',
     strength: 7,
@@ -821,6 +837,7 @@ const PRESETS = {
     patternLacunarity: 2,
     ringStride: 10,
     halftoneScale: 1,
+    // Debug
     paused: false,
     wireframe: false,
     cursorCollider: true,

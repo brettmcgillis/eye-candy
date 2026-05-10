@@ -19,6 +19,8 @@ import React, { Suspense, memo, useEffect, useMemo } from 'react';
 import { useTexture } from '@react-three/drei';
 import { useFrame, useThree } from '@react-three/fiber';
 
+import ClothLeaves from './ClothLeaves';
+
 const LEAF_SPRITES = [
   '/textures/leaves/willow.png',
   '/textures/leaves/bay.png',
@@ -30,11 +32,13 @@ const LEAF_SPRITES = [
   '/textures/leaves/iris.png',
   '/textures/leaves/grass.png',
   '/textures/leaves/linden.png',
+  '/textures/leaves/mapleleaf.png',
 ];
 
 const BLOSSOM_SPRITES = [
   '/textures/flowers/blossom1.png',
   '/textures/flowers/blossom2.png',
+  '/textures/flowers/sakurapetal.png',
 ];
 
 const SNOWFLAKE_SPRITES = [
@@ -52,7 +56,7 @@ function makeRainStreakDataUri(widthFrac, alpha) {
   const canvas = document.createElement('canvas');
   canvas.width = W;
   canvas.height = H;
-  const ctx = canvas.getContext('2d');
+  const ctx = canvas.getContext('2d', { willReadFrequently: true });
   const streakW = Math.max(2, Math.round(W * widthFrac));
   const x0 = (W - streakW) / 2;
   const grad = ctx.createLinearGradient(0, 0, 0, H);
@@ -105,7 +109,7 @@ function buildArrayTexture(loadedTextures) {
   const canvas = document.createElement('canvas');
   canvas.width = W;
   canvas.height = H;
-  const ctx = canvas.getContext('2d');
+  const ctx = canvas.getContext('2d', { willReadFrequently: true });
 
   loadedTextures.forEach((tex, i) => {
     ctx.clearRect(0, 0, W, H);
@@ -401,6 +405,7 @@ const SPRITES_BY_TYPE = {
 };
 
 function FallingLeaves({
+  mode = 'billboard',
   leafType = 'Leaves',
   count = 300,
   color1 = '#d70654',
@@ -418,6 +423,23 @@ function FallingLeaves({
   windDirZ = 0,
   windInfluence = 0.15,
 }) {
+  // Cloth mode only supports Leaves and Blossoms (physics-based, ignores billboard-only params)
+  if (mode === 'cloth' && (leafType === 'Leaves' || leafType === 'Blossoms')) {
+    return (
+      <ClothLeaves
+        leafType={leafType}
+        count={count}
+        speed={speed}
+        cycleTravel={cycleTravel}
+        windDirX={windDirX}
+        windDirZ={windDirZ}
+        color1={color1}
+        color2={color2}
+        color3={color3}
+      />
+    );
+  }
+
   const sprites = SPRITES_BY_TYPE[leafType] ?? LEAF_SPRITES;
   const flowMode =
     leafType === 'Snowflakes' || leafType === 'Rain'

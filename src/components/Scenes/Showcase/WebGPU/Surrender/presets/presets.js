@@ -78,6 +78,7 @@ const PRESETS = {
     windDirZ: -0.2,
     // Leaves
     leavesEnabled: false,
+    leafMode: 'Billboard',
     leafType: 'Leaves',
     leafCount: 300,
     leafSize: 0.08,
@@ -196,6 +197,7 @@ const PRESETS = {
     windDirZ: -0.2,
     // Leaves
     leavesEnabled: true,
+    leafMode: 'Billboard',
     leafType: 'Rain',
     leafCount: 1500,
     leafSize: 0.01,
@@ -314,6 +316,7 @@ const PRESETS = {
     windDirZ: -0.2,
     // Leaves
     leavesEnabled: true,
+    leafMode: 'Billboard',
     leafType: 'Leaves',
     leafCount: 400,
     leafSize: 0.06,
@@ -431,6 +434,7 @@ const PRESETS = {
     windDirZ: -0.2,
     // Leaves
     leavesEnabled: true,
+    leafMode: 'Billboard',
     leafType: 'Blossoms',
     leafCount: 700,
     leafSize: 0.06,
@@ -549,6 +553,7 @@ const PRESETS = {
     windDirZ: 0,
     // Leaves
     leavesEnabled: true,
+    leafMode: 'Billboard',
     leafType: 'Snowflakes',
     leafCount: 2000,
     leafSize: 0.02,

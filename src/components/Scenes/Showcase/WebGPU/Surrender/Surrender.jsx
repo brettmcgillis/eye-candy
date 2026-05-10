@@ -108,6 +108,7 @@ export default function Surrender() {
     ringStride,
     halftoneScale,
     leavesEnabled,
+    leafMode,
     leafType,
     leafCount,
     leafSize,
@@ -257,6 +258,7 @@ export default function Surrender() {
 
       {leavesEnabled && (
         <FallingLeaves
+          mode={leafMode?.toLowerCase() ?? 'billboard'}
           leafType={leafType}
           count={leafCount}
           curvature={leafCurvature}

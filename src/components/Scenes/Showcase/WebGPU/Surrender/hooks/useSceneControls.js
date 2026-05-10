@@ -499,6 +499,11 @@ export default function useSceneControls({ onResetSim } = {}) {
       Leaves: folder(
         {
           leavesEnabled: { value: p.leavesEnabled, label: 'Enabled' },
+          leafMode: {
+            value: p.leafMode ?? 'Billboard',
+            options: ['Billboard', 'Cloth'],
+            label: 'Mode',
+          },
           leafType: {
             value: p.leafType,
             options: ['Leaves', 'Blossoms', 'Snowflakes', 'Rain'],

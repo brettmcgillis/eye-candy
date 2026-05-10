@@ -629,6 +629,10 @@ function Outline({
     uniformsRef.activeJfaIndex.value = activeIndex;
 
     post.render();
+
+    // if (renderer.backend?.trackTimestamp) {
+    //   renderer.resolveTimestampsAsync(THREE.TimestampQuery.RENDER);
+    // }
   }, 1);
 
   return null;

@@ -15,7 +15,10 @@ import {
 } from 'three/tsl';
 import * as THREE from 'three/webgpu';
 
-import { StructuredArray } from './StructuredArray.js';
+import { StructuredArray } from './StructuredArray';
+
+const MAX_SPHERE_COLLIDERS = 4;
+const SPHERE_COLLISION_MARGIN = 0.02;
 
 export class VerletPhysics {
   vertices = [];
@@ -23,6 +26,10 @@ export class VerletPhysics {
   springs = [];
 
   colliders = [];
+
+  bvhColliders = [];
+
+  sphereColliders = [];
 
   forces = [];
 
@@ -87,15 +94,41 @@ export class VerletPhysics {
   async bake(renderer, opts = {}) {
     this.renderer = renderer;
     // null disables the floor entirely (use for freely-floating objects like cloth leaves)
-    this.yFloor = Object.prototype.hasOwnProperty.call(opts, 'yFloor') ? opts.yFloor : 0;
+    this.yFloor = Object.prototype.hasOwnProperty.call(opts, 'yFloor')
+      ? opts.yFloor
+      : 0;
     this.vertexCount = this.vertices.length;
     this.springCount = this.springs.length;
     this.objectCount = this.objects.length;
+
+    this.bvhColliders = [];
+    this.sphereColliders = [];
+    this.colliders.forEach((collider) => {
+      if (collider?.findClosestPoint) {
+        this.bvhColliders.push(collider);
+      } else if (collider?.position && typeof collider.radius === 'number') {
+        if (this.sphereColliders.length < MAX_SPHERE_COLLIDERS) {
+          this.sphereColliders.push(collider);
+        }
+      }
+    });
 
     this.uniforms.dampening = uniform(0.995);
     this.uniforms.time = uniform(0.0);
     this.uniforms.stiffness = uniform(0.8);
     this.uniforms.friction = uniform(0.0);
+    this.uniforms.maxVelocity = uniform(0.01);
+    this.uniforms.sphereColliderPos = [];
+    this.uniforms.sphereColliderRadius = [];
+    this.uniforms.sphereColliderEnabled = [];
+
+    for (let i = 0; i < MAX_SPHERE_COLLIDERS; i += 1) {
+      this.uniforms.sphereColliderPos.push(
+        uniform(new THREE.Vector3(10, 10, 10))
+      );
+      this.uniforms.sphereColliderRadius.push(uniform(0.12));
+      this.uniforms.sphereColliderEnabled.push(uniform(0.0));
+    }
 
     const vertexStruct = {
       position: 'vec3',
@@ -210,7 +243,15 @@ export class VerletPhysics {
         force.addAssign(f(position, this.uniforms.time));
       });
 
+      // Clamp velocity to prevent simulation explosion when spring forces spike
+      // during collision (same guard as createClothSimulation's maxVelocityU).
+      const speed = force.length().max(0.000001).toVar('verletSpeed');
+      If(speed.greaterThan(this.uniforms.maxVelocity), () => {
+        force.mulAssign(this.uniforms.maxVelocity.div(speed));
+      });
+
       const projectedPoint = position.add(force).toVar();
+      const forceSet = force.toVar();
 
       if (this.yFloor !== null) {
         const yFloorVal = float(this.yFloor);
@@ -220,25 +261,65 @@ export class VerletPhysics {
         });
       }
 
-      if (this.colliders.length > 0) {
-        // Use a minimum search radius large enough to reliably catch the thin pole geometry
-        const searchDistSq = float(0.0025); // 0.05 unit radius
-        const [closestPoint, closestNormal] =
-          this.colliders[0].findClosestPoint(projectedPoint, searchDistSq);
+      this.bvhColliders.forEach((collider, colliderIndex) => {
+        // Use a minimum search radius large enough to reliably catch the thin pole geometry.
+        const searchDistSq = float(0.0025);
+        const [closestPoint, closestNormal] = collider.findClosestPoint(
+          projectedPoint,
+          searchDistSq
+        );
         const closestPointDelta = closestPoint
           .sub(projectedPoint)
-          .toVar('closestPointDelta');
-        const forceSet = force.toVar();
+          .toVar(`closestPointDelta${colliderIndex}`);
         If(dot(closestPointDelta, closestNormal).greaterThan(0), () => {
-          force.assign(closestPoint.sub(position));
-          forceSet.assign(force.mul(this.uniforms.friction.oneMinus()));
+          projectedPoint.assign(closestPoint);
+          // Remove inward velocity component so the vertex doesn't build up
+          // speed into the collider and explode on the next frame.
+          const vDotN = forceSet
+            .dot(closestNormal)
+            .toVar(`bvhVDotN${colliderIndex}`);
+          If(vDotN.lessThan(0), () => {
+            forceSet.subAssign(closestNormal.mul(vDotN));
+          });
         });
-        this.vertexBuffer.element(instanceIndex).get('force').assign(forceSet);
-      } else {
-        this.vertexBuffer.element(instanceIndex).get('force').assign(force);
+      });
+
+      for (let i = 0; i < MAX_SPHERE_COLLIDERS; i += 1) {
+        const spherePos = this.uniforms.sphereColliderPos[i];
+        const sphereRadius = this.uniforms.sphereColliderRadius[i];
+        const sphereEnabled = this.uniforms.sphereColliderEnabled[i];
+        const toSphere = projectedPoint.sub(spherePos).toVar(`sphereDelta${i}`);
+        const dist = toSphere.length().max(0.000001).toVar(`sphereDist${i}`);
+        const effectiveRadius = sphereRadius
+          .add(SPHERE_COLLISION_MARGIN)
+          .toVar(`sphereRadius${i}`);
+
+        If(
+          sphereEnabled
+            .greaterThan(0.5)
+            .and(effectiveRadius.sub(dist).greaterThan(0)),
+          () => {
+            const normal = toSphere.div(dist).toVar(`sphereNormal${i}`);
+            const surface = spherePos.add(normal.mul(effectiveRadius));
+            projectedPoint.assign(surface);
+            // Remove inward velocity component — prevents velocity buildup that
+            // causes vertices to shoot to infinity on the next frame.
+            const vDotN = forceSet.dot(normal).toVar(`sphereVDotN${i}`);
+            If(vDotN.lessThan(0), () => {
+              forceSet.subAssign(normal.mul(vDotN));
+            });
+          }
+        );
       }
 
-      this.vertexBuffer.element(instanceIndex).get('position').addAssign(force);
+      this.vertexBuffer.element(instanceIndex).get('force').assign(forceSet);
+
+      // Use projectedPoint (which reflects collision snapping) rather than
+      // position + force, so collision response is applied correctly.
+      this.vertexBuffer
+        .element(instanceIndex)
+        .get('position')
+        .assign(projectedPoint);
     })().compute(this.vertexCount);
 
     this.kernels.smoothPositions = Fn(() => {
@@ -300,7 +381,12 @@ export class VerletPhysics {
     });
   }
 
-  async resetObject(id, position, quaternion = new THREE.Quaternion(), scale = 1) {
+  async resetObject(
+    id,
+    position,
+    quaternion = new THREE.Quaternion(),
+    scale = 1
+  ) {
     this.objects[id].position.copy(position);
     const scaleVec = new THREE.Vector3(scale, scale, scale);
     const matrix = new THREE.Matrix4().compose(position, quaternion, scaleVec);
@@ -322,12 +408,19 @@ export class VerletPhysics {
   async update(delta) {
     if (!this.isBaked) return;
 
-    this.frameNum++;
-
-    // Read back CPU-side positions every 50 frames for recycling checks
-    if (this.frameNum % 50 === 0) {
-      this.readPositions();
+    for (let i = 0; i < MAX_SPHERE_COLLIDERS; i += 1) {
+      const collider = this.sphereColliders[i];
+      if (collider) {
+        this.uniforms.sphereColliderPos[i].value.copy(collider.position);
+        this.uniforms.sphereColliderRadius[i].value = collider.radius;
+        this.uniforms.sphereColliderEnabled[i].value =
+          collider.enabled === false ? 0 : 1;
+      } else {
+        this.uniforms.sphereColliderEnabled[i].value = 0;
+      }
     }
+
+    this.frameNum++;
 
     const stepsPerSecond = 360;
     const timePerStep = 1 / stepsPerSecond;

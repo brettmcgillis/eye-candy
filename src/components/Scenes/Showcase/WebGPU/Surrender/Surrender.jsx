@@ -271,6 +271,7 @@ export default function Surrender() {
           speedJitter={leafSpeedJitter}
           cycleTravel={leafTravel}
           tumble={leafTumble}
+          wireframe={wireframe}
           wind={wind}
           windDirX={windDirX}
           windDirZ={windDirZ}

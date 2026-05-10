@@ -291,7 +291,9 @@ const ClothMesh = forwardRef(function ClothMesh(
 
   useEffect(() => {
     const buildTexturedColor = (tex) => {
-      const wrap = textureTile ? THREE.RepeatWrapping : THREE.ClampToEdgeWrapping;
+      const wrap = textureTile
+        ? THREE.RepeatWrapping
+        : THREE.ClampToEdgeWrapping;
       tex.wrapS = wrap;
       tex.wrapT = wrap;
       tex.needsUpdate = true;
@@ -545,7 +547,7 @@ const ClothMesh = forwardRef(function ClothMesh(
     // Push scene-driven colliders into slots 1-3
     for (let c = 1; c < sim.NUM_COLLIDERS; c += 1) {
       const ext = colliders[c - 1];
-      if (ext) {
+      if (ext && ext.enabled !== false) {
         sim.colliderPosU[c].value.copy(ext.position);
         sim.colliderRadiusU[c].value = ext.radius;
         sim.colliderEnabledU[c].value = 1.0;
@@ -668,6 +670,10 @@ const ClothMesh = forwardRef(function ClothMesh(
         gl.compute(sim.computeVertices);
       }
     }
+
+    // if (gl.backend?.trackTimestamp) {
+    //   gl.resolveTimestampsAsync(THREE.TimestampQuery.COMPUTE);
+    // }
   });
 
   return (
@@ -685,7 +691,7 @@ const ClothMesh = forwardRef(function ClothMesh(
           <primitive attach="material" object={outlineMaterial} />
         </mesh>
       )}
-      {debugColliders && (
+      {debugColliders && cursorCollider && (
         <mesh ref={cursorSphereRef} frustumCulled={false}>
           <icosahedronGeometry args={[cursorRadius, 3]} />
           <meshBasicMaterial

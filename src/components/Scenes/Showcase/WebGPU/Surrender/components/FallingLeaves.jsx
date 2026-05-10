@@ -149,6 +149,7 @@ function FallingLeavesInner({
   windInfluence,
   flowMode,
   alignToWind,
+  wireframe,
 }) {
   const loadedSprites = useTexture(spriteUrls);
   const camera = useThree((s) => s.camera);
@@ -306,6 +307,7 @@ function FallingLeavesInner({
       forceSinglePass: true,
       transparent: true,
       alphaTest: alphaClip,
+      wireframe,
     });
 
     // TSL instance nodes
@@ -399,6 +401,12 @@ function FallingLeavesInner({
     };
   }, [mesh, arrayTex]);
 
+  useEffect(() => {
+    if (mesh.material.wireframe === wireframe) return;
+    mesh.material.wireframe = wireframe;
+    mesh.material.needsUpdate = true;
+  }, [mesh, wireframe]);
+
   return <primitive object={mesh} />;
 }
 
@@ -430,6 +438,8 @@ function FallingLeaves({
   windDirX = 1,
   windDirZ = 0,
   windInfluence = 0.15,
+  wireframe = false,
+  scenePhysics = null,
 }) {
   // Cloth mode only supports Leaves and Blossoms (physics-based, ignores billboard-only params)
   if (mode === 'cloth' && (leafType === 'Leaves' || leafType === 'Blossoms')) {
@@ -443,11 +453,14 @@ function FallingLeaves({
         curvature={curvature}
         speed={speed}
         cycleTravel={cycleTravel}
+        tumble={tumble}
         windDirX={windDirX}
         windDirZ={windDirZ}
         color1={color1}
         color2={color2}
         color3={color3}
+        wireframe={wireframe}
+        scenePhysics={scenePhysics}
       />
     );
   }
@@ -482,6 +495,7 @@ function FallingLeaves({
         windInfluence={windInfluence}
         flowMode={flowMode}
         alignToWind={alignToWind}
+        wireframe={wireframe}
       />
     </Suspense>
   );

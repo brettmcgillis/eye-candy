@@ -9,6 +9,7 @@ import OutlineFX from '../../../../postprocessing/webGPU/outline/Outline';
 import FallingLeaves from './components/FallingLeaves';
 import Flag from './components/Flag';
 import FlagPole from './components/FlagPole';
+import MoonlightProjector from './components/MoonlightProjector';
 import ThunderLightning from './components/ThunderLightning';
 import useAmbienceSound from './hooks/useAmbienceSound';
 import useCamera from './hooks/useCamera';
@@ -124,6 +125,21 @@ export default function Surrender() {
     leafAspect,
     leafWindInfluence,
     thunderEnabled,
+    thunderPeakIntensity,
+    thunderMinGap,
+    thunderMaxGap,
+    thunderLightColor,
+    moonColor,
+    moonPeakIntensity,
+    moonPosX,
+    moonPosY,
+    moonPosZ,
+    moonAngle,
+    cloudDensity,
+    cloudContrast,
+    cloudScale,
+    cloudSpeed,
+    cloudFloor,
     bloomEnabled,
     bloomThreshold,
     bloomStrength,
@@ -257,7 +273,30 @@ export default function Surrender() {
       </group>
 
       <AudioToggleOverlay />
-      {thunderEnabled && <ThunderLightning bgBaseColor={bgColor} />}
+      {thunderEnabled && (
+        <ThunderLightning
+          bgBaseColor={bgColor}
+          peakIntensity={thunderPeakIntensity}
+          minGap={thunderMinGap}
+          maxGap={thunderMaxGap}
+          lightColor={thunderLightColor}
+        />
+      )}
+      {thunderEnabled && (
+        <MoonlightProjector
+          color={moonColor}
+          peakIntensity={moonPeakIntensity}
+          posX={moonPosX}
+          posY={moonPosY}
+          posZ={moonPosZ}
+          angle={moonAngle}
+          cloudDensity={cloudDensity}
+          cloudContrast={cloudContrast}
+          cloudScale={cloudScale}
+          cloudSpeed={cloudSpeed}
+          cloudFloor={cloudFloor}
+        />
+      )}
 
       {leavesEnabled && (
         <FallingLeaves

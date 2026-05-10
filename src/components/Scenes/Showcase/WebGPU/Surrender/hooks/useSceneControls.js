@@ -78,73 +78,164 @@ export default function useSceneControls({ onResetSim } = {}) {
           ),
           Lighting: folder(
             {
-              ambientIntensity: {
-                value: p.ambientIntensity,
-                min: 0,
-                max: 2,
-                step: 0.01,
-                label: 'Ambient',
-              },
-              ambientColor: { value: p.ambientColor, label: 'Ambient Color' },
-              keyIntensity: {
-                value: p.keyIntensity,
-                min: 0,
-                max: 3,
-                step: 0.01,
-                label: 'Key Light',
-              },
-              keyColor: { value: p.keyColor, label: 'Key Color' },
-              keyPosX: {
-                value: p.keyPosX,
-                min: -10,
-                max: 10,
-                step: 0.1,
-                label: 'Key Pos X',
-              },
-              keyPosY: {
-                value: p.keyPosY,
-                min: 0,
-                max: 10,
-                step: 0.1,
-                label: 'Key Pos Y',
-              },
-              keyPosZ: {
-                value: p.keyPosZ,
-                min: -10,
-                max: 10,
-                step: 0.1,
-                label: 'Key Pos Z',
-              },
-              keyShadow: { value: p.keyShadow, label: 'Key Shadows' },
-              fillIntensity: {
-                value: p.fillIntensity,
-                min: 0,
-                max: 2,
-                step: 0.01,
-                label: 'Fill Light',
-              },
-              fillColor: { value: p.fillColor, label: 'Fill Color' },
-              fillPosX: {
-                value: p.fillPosX,
-                min: -10,
-                max: 10,
-                step: 0.1,
-                label: 'Fill Pos X',
-              },
-              fillPosY: {
-                value: p.fillPosY,
-                min: 0,
-                max: 10,
-                step: 0.1,
-                label: 'Fill Pos Y',
-              },
-              fillPosZ: {
-                value: p.fillPosZ,
-                min: -10,
-                max: 10,
-                step: 0.1,
-                label: 'Fill Pos Z',
-              },
+              Ambient: folder(
+                {
+                  ambientIntensity: {
+                    value: p.ambientIntensity,
+                    min: 0,
+                    max: 2,
+                    step: 0.01,
+                    label: 'Intensity',
+                  },
+                  ambientColor: { value: p.ambientColor, label: 'Color' },
+                },
+                C
+              ),
+              Key: folder(
+                {
+                  keyIntensity: {
+                    value: p.keyIntensity,
+                    min: 0,
+                    max: 3,
+                    step: 0.01,
+                    label: 'Intensity',
+                  },
+                  keyColor: { value: p.keyColor, label: 'Color' },
+                  keyPosX: {
+                    value: p.keyPosX,
+                    min: -10,
+                    max: 10,
+                    step: 0.1,
+                    label: 'Pos X',
+                  },
+                  keyPosY: {
+                    value: p.keyPosY,
+                    min: 0,
+                    max: 10,
+                    step: 0.1,
+                    label: 'Pos Y',
+                  },
+                  keyPosZ: {
+                    value: p.keyPosZ,
+                    min: -10,
+                    max: 10,
+                    step: 0.1,
+                    label: 'Pos Z',
+                  },
+                  keyShadow: { value: p.keyShadow, label: 'Shadows' },
+                },
+                C
+              ),
+              Fill: folder(
+                {
+                  fillIntensity: {
+                    value: p.fillIntensity,
+                    min: 0,
+                    max: 2,
+                    step: 0.01,
+                    label: 'Intensity',
+                  },
+                  fillColor: { value: p.fillColor, label: 'Color' },
+                  fillPosX: {
+                    value: p.fillPosX,
+                    min: -10,
+                    max: 10,
+                    step: 0.1,
+                    label: 'Pos X',
+                  },
+                  fillPosY: {
+                    value: p.fillPosY,
+                    min: 0,
+                    max: 10,
+                    step: 0.1,
+                    label: 'Pos Y',
+                  },
+                  fillPosZ: {
+                    value: p.fillPosZ,
+                    min: -10,
+                    max: 10,
+                    step: 0.1,
+                    label: 'Pos Z',
+                  },
+                },
+                C
+              ),
+              Moonlight: folder(
+                {
+                  moonColor: { value: p.moonColor, label: 'Color' },
+                  moonPeakIntensity: {
+                    value: p.moonPeakIntensity,
+                    min: 0,
+                    max: 400,
+                    step: 5,
+                    label: 'Peak Intensity',
+                  },
+                  moonPosX: {
+                    value: p.moonPosX,
+                    min: -15,
+                    max: 15,
+                    step: 0.5,
+                    label: 'Pos X',
+                  },
+                  moonPosY: {
+                    value: p.moonPosY,
+                    min: 1,
+                    max: 25,
+                    step: 0.5,
+                    label: 'Pos Y',
+                  },
+                  moonPosZ: {
+                    value: p.moonPosZ,
+                    min: -15,
+                    max: 15,
+                    step: 0.5,
+                    label: 'Pos Z',
+                  },
+                  moonAngle: {
+                    value: p.moonAngle,
+                    min: 5,
+                    max: 60,
+                    step: 1,
+                    label: 'Cone Angle (°)',
+                  },
+                  cloudScale: {
+                    value: p.cloudScale,
+                    min: 0.5,
+                    max: 12,
+                    step: 0.1,
+                    label: 'Cloud Scale',
+                  },
+                  cloudDensity: {
+                    value: p.cloudDensity,
+                    min: -0.5,
+                    max: 0.8,
+                    step: 0.01,
+                    label: 'Cloud Density',
+                  },
+                  cloudContrast: {
+                    value: p.cloudContrast,
+                    min: 0.05,
+                    max: 1.0,
+                    step: 0.01,
+                    label: 'Cloud Contrast',
+                  },
+                  cloudFloor: {
+                    value: p.cloudFloor,
+                    min: 0,
+                    max: 1,
+                    step: 0.01,
+                    label: 'Min Moonlight',
+                  },
+                  cloudSpeed: {
+                    value: p.cloudSpeed,
+                    min: 0.1,
+                    max: 3,
+                    step: 0.05,
+                    label: 'Cloud Speed',
+                  },
+                },
+                C
+              ),
             },
             C
           ),
@@ -164,6 +255,36 @@ export default function useSceneControls({ onResetSim } = {}) {
                 },
                 label: 'Ambience',
               },
+              Thunder: folder(
+                {
+                  thunderLightColor: {
+                    value: p.thunderLightColor,
+                    label: 'Flash Color',
+                  },
+                  thunderPeakIntensity: {
+                    value: p.thunderPeakIntensity,
+                    min: 0,
+                    max: 60,
+                    step: 0.5,
+                    label: 'Peak Intensity',
+                  },
+                  thunderMinGap: {
+                    value: p.thunderMinGap,
+                    min: 2,
+                    max: 30,
+                    step: 1,
+                    label: 'Min Gap (s)',
+                  },
+                  thunderMaxGap: {
+                    value: p.thunderMaxGap,
+                    min: 5,
+                    max: 60,
+                    step: 1,
+                    label: 'Max Gap (s)',
+                  },
+                },
+                C
+              ),
             },
             C
           ),

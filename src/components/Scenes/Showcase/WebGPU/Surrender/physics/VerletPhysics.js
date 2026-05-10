@@ -84,8 +84,10 @@ export class VerletPhysics {
     return id;
   }
 
-  async bake(renderer) {
+  async bake(renderer, opts = {}) {
     this.renderer = renderer;
+    // null disables the floor entirely (use for freely-floating objects like cloth leaves)
+    this.yFloor = Object.prototype.hasOwnProperty.call(opts, 'yFloor') ? opts.yFloor : 0;
     this.vertexCount = this.vertices.length;
     this.springCount = this.springs.length;
     this.objectCount = this.objects.length;
@@ -210,10 +212,13 @@ export class VerletPhysics {
 
       const projectedPoint = position.add(force).toVar();
 
-      If(projectedPoint.y.lessThan(0), () => {
-        force.y.subAssign(projectedPoint.y);
-        projectedPoint.y.assign(0);
-      });
+      if (this.yFloor !== null) {
+        const yFloorVal = float(this.yFloor);
+        If(projectedPoint.y.lessThan(yFloorVal), () => {
+          force.y.subAssign(projectedPoint.y.sub(yFloorVal));
+          projectedPoint.y.assign(yFloorVal);
+        });
+      }
 
       if (this.colliders.length > 0) {
         // Use a minimum search radius large enough to reliably catch the thin pole geometry
@@ -295,10 +300,10 @@ export class VerletPhysics {
     });
   }
 
-  async resetObject(id, position, quaternion = new THREE.Quaternion()) {
+  async resetObject(id, position, quaternion = new THREE.Quaternion(), scale = 1) {
     this.objects[id].position.copy(position);
-    const scale = new THREE.Vector3(1, 1, 1);
-    const matrix = new THREE.Matrix4().compose(position, quaternion, scale);
+    const scaleVec = new THREE.Vector3(scale, scale, scale);
+    const matrix = new THREE.Matrix4().compose(position, quaternion, scaleVec);
     if (this.isBaked) {
       this.uniforms.resetMatrix.value.copy(matrix);
       this.uniforms.resetVertexStart.value = this.objects[id].vertexStart;

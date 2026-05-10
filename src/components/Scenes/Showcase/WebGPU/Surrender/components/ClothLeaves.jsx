@@ -1,16 +1,14 @@
 /* eslint-disable no-plusplus */
 import * as BufferGeometryUtils from 'three/addons/utils/BufferGeometryUtils.js';
 import {
-  Discard,
   Fn,
-  If,
   attribute,
   cross,
   float,
-  smoothstep,
   transformNormalToView,
   texture as tslTexture,
   uniform,
+  uv,
   vec3,
   vec4,
 } from 'three/tsl';
@@ -32,32 +30,60 @@ import { BVH } from '../physics/BVH';
 import { VerletPhysics } from '../physics/VerletPhysics';
 import { triNoise3Dvec } from '../physics/noise';
 
+const ATLAS_SIZE = 256;
+
+function buildArrayTexture(loadedTextures) {
+  const texArray = Array.isArray(loadedTextures) ? loadedTextures : [loadedTextures];
+  const N = texArray.length;
+  const W = ATLAS_SIZE;
+  const H = ATLAS_SIZE;
+  const data = new Uint8Array(W * H * 4 * N);
+  const canvas = document.createElement('canvas');
+  canvas.width = W;
+  canvas.height = H;
+  const ctx = canvas.getContext('2d', { willReadFrequently: true });
+  texArray.forEach((tex, i) => {
+    ctx.clearRect(0, 0, W, H);
+    ctx.drawImage(tex.image, 0, 0, W, H);
+    data.set(ctx.getImageData(0, 0, W, H).data, i * W * H * 4);
+  });
+  const arrayTex = new THREE.DataArrayTexture(data, W, H, N);
+  arrayTex.format = THREE.RGBAFormat;
+  arrayTex.type = THREE.UnsignedByteType;
+  arrayTex.colorSpace = THREE.SRGBColorSpace;
+  arrayTex.minFilter = THREE.LinearFilter;
+  arrayTex.magFilter = THREE.LinearFilter;
+  arrayTex.needsUpdate = true;
+  return arrayTex;
+}
+
 // Pole geometry constants — must match FlagPole.jsx
 const POLE_BOTTOM_Y = -2.55;
 const POLE_TOP_Y = 0.95;
 const POLE_HEIGHT = POLE_TOP_Y - POLE_BOTTOM_Y;
 const POLE_CENTER_Y = (POLE_TOP_Y + POLE_BOTTOM_Y) / 2;
-// Thicker collision radius so thin pole acts as a meaningful deflector
 const COLLIDER_RADIUS = 0.05;
 const FINIAL_Y = POLE_TOP_Y;
 const FINIAL_COLLIDER_RADIUS = 0.045;
 
-// Spawn / recycle bounds in world space (Surrender scene coordinates)
-const SPAWN_X_MIN = -1.8;
-const SPAWN_X_MAX = -1.4;
-const RECYCLE_X = 1.8;
-const SPAWN_Y_MIN = -0.3;
-const SPAWN_Y_MAX = 3.5;
-const SPAWN_Z_MIN = -1.5;
-const SPAWN_Z_MAX = 1.5;
+// Match billboard Z range exactly for consistent depth distribution
+const SPAWN_Z_MIN = -2;
+const SPAWN_Z_MAX = 2.1;
 
-// Per-type cloth geometry config
-const LEAF_CONFIG = {
-  widthSegments: 10,
-  heightSegments: 10,
-  segmentSize: 0.008,
-};
-const PETAL_CONFIG = { widthSegments: 4, heightSegments: 4, segmentSize: 0.01 };
+const LEAF_SEGMENTS = { width: 10, height: 10 };
+const PETAL_SEGMENTS = { width: 4, height: 4 };
+
+// Mirror billboard's frustum-derived X extent calculation
+function getXExtentAtZ(camera, aspect, zPlane) {
+  const vFovRad = THREE.MathUtils.degToRad(camera.fov);
+  const hFovHalf = Math.atan(Math.tan(vFovRad / 2) * aspect);
+  const dir = new THREE.Vector3();
+  camera.getWorldDirection(dir);
+  const t = (zPlane - camera.position.z) / dir.z;
+  const centerX = camera.position.x + dir.x * t;
+  const halfWidth = Math.tan(hFovHalf) * Math.abs(camera.position.z - zPlane);
+  return { leftEdge: centerX - halfWidth, rightEdge: centerX + halfWidth };
+}
 
 function buildPoleColliderGeometry() {
   const cylinderGeo = new THREE.CylinderGeometry(
@@ -69,23 +95,9 @@ function buildPoleColliderGeometry() {
   cylinderGeo.applyMatrix4(
     new THREE.Matrix4().makeTranslation(0, POLE_CENTER_Y, 0)
   );
-
   const sphereGeo = new THREE.SphereGeometry(FINIAL_COLLIDER_RADIUS, 12, 12);
   sphereGeo.applyMatrix4(new THREE.Matrix4().makeTranslation(0, FINIAL_Y, 0));
-
   return BufferGeometryUtils.mergeGeometries([cylinderGeo, sphereGeo]);
-}
-
-function randomSpawnPosition(isInitial = false) {
-  // Initial: scatter across full scene; recycle: wide band so arrivals stay staggered
-  const x = isInitial
-    ? THREE.MathUtils.randFloat(SPAWN_X_MIN - 2.0, RECYCLE_X)
-    : THREE.MathUtils.randFloat(SPAWN_X_MIN - 4.0, SPAWN_X_MAX);
-  return new THREE.Vector3(
-    x,
-    THREE.MathUtils.randFloat(SPAWN_Y_MIN, SPAWN_Y_MAX),
-    THREE.MathUtils.randFloat(SPAWN_Z_MIN, SPAWN_Z_MAX)
-  );
 }
 
 function randomRotation() {
@@ -98,18 +110,22 @@ function randomRotation() {
   );
 }
 
-// Builds cloth-particle geometry + material for N instances
-// segmentSize controls per-particle physical + visual size
 function buildClothGeometry(
   physics,
   widthSegments,
   heightSegments,
-  segmentSize,
+  leafSize,
+  leafAspect,
+  curvature,
   instances,
-  texture,
+  arrayTex,
+  numSprites,
   colorBuffer
 ) {
-  // Template vertex layout — one leaf shape shared across all instances
+  // Compensate for center-of-cell shrink: rendered surface spans (N-1)/N of the
+  // physics grid, so scale segment size up by N/(N-1) to match the true leaf footprint.
+  const segmentSize = leafSize / (widthSegments - 1);
+
   const vertexRows = [];
   const templateVertices = [];
   const templateSprings = [];
@@ -130,14 +146,18 @@ function buildClothGeometry(
     for (let x = 0; x <= widthSegments; x++) {
       const jx = (Math.random() * 2 - 1) * segmentSize * 0.2;
       const jy = (Math.random() * 2 - 1) * segmentSize * 0.2;
+      const u = x / widthSegments - 0.5;
+      const v = y / heightSegments - 0.5;
+      const curveX = curvature * leafSize * 2 * (u * u + v * v);
       const pos = new THREE.Vector3(
-        0,
+        curveX,
         (x - widthSegments * 0.5) * segmentSize + jx,
-        (y - heightSegments * 0.5) * segmentSize + jy
+        (y - heightSegments * 0.5) * segmentSize * leafAspect + jy
       );
       row.push(addVertex(pos));
     }
   }
+
   for (let y = 0; y <= heightSegments; y++) {
     for (let x = 0; x <= widthSegments; x++) {
       const v = vertexRows[y][x];
@@ -150,7 +170,6 @@ function buildClothGeometry(
     }
   }
 
-  // Register each instance in the physics sim
   const physicsInstances = instances.map(() => {
     const instance = physics.addObject();
     const pVerts = templateVertices.map(({ position, fixed }) =>
@@ -162,7 +181,7 @@ function buildClothGeometry(
     return instance;
   });
 
-  // Dual-plane geometry (front + back for proper two-sided normals)
+  // Dual-plane geometry (front + back for two-sided normals)
   const plane0 = new THREE.PlaneGeometry(
     1,
     1,
@@ -235,7 +254,6 @@ function buildClothGeometry(
   geometry.setAttribute('side', new THREE.BufferAttribute(sideArray, 3, false));
   geometry.setAttribute('uv', new THREE.BufferAttribute(uvArray, 2, false));
 
-  // Per-instance vertex offset into physics buffer
   const vertexOffsetArray = new Uint32Array(physicsInstances.length);
   physicsInstances.forEach((inst, i) => {
     vertexOffsetArray[i] = inst.vertexStart;
@@ -244,42 +262,44 @@ function buildClothGeometry(
     'vertexOffset',
     new THREE.InstancedBufferAttribute(vertexOffsetArray, 1, false)
   );
-
-  // Per-instance color tint
   geometry.setAttribute('instanceColor', colorBuffer);
+
+  const spriteIdxArray = new Float32Array(physicsInstances.length);
+  physicsInstances.forEach((_, i) => {
+    spriteIdxArray[i] = i % numSprites;
+  });
+  geometry.setAttribute(
+    'instanceSpriteIdx',
+    new THREE.InstancedBufferAttribute(spriteIdxArray, 1, false)
+  );
 
   geometry.instanceCount = physicsInstances.length;
 
-  // TSL material — position driven by physics vertex buffer
-  const map = texture.clone();
-  map.wrapS = THREE.ClampToEdgeWrapping;
-  map.wrapT = THREE.ClampToEdgeWrapping;
-  map.needsUpdate = true;
+  const vClothNormal = vec3().toVarying('vClothNormal');
+  const vClothOpacity = float(0).toVarying('vClothOpacity');
+  const alphaClip = 0.1;
 
   const material = new THREE.MeshPhysicalNodeMaterial({
     transparent: true,
+    alphaTest: alphaClip,
     roughness: 0.8,
   });
 
   material.colorNode = Fn(() => {
-    const color = tslTexture(map);
-    If(color.a.lessThan(0.9), () => {
-      Discard();
-    });
+    const spriteIdx = attribute('instanceSpriteIdx');
+    const leafUV = uv();
+    const texColor = tslTexture(arrayTex, leafUV).depth(spriteIdx);
     const tint = attribute('instanceColor');
-    return color.mul(vec4(tint.mul(0.9), 1));
+    return vec4(texColor.rgb.mul(vec3(tint.mul(0.9))), texColor.a.mul(vClothOpacity));
   })();
 
   material.castShadowNode = Fn(() => {
-    const color = tslTexture(map);
-    If(color.a.lessThan(0.9), () => {
-      Discard();
-    });
-    return color.a.oneMinus();
+    const spriteIdx = attribute('instanceSpriteIdx');
+    const leafUV = uv();
+    const texColor = tslTexture(arrayTex, leafUV).depth(spriteIdx);
+    texColor.a.mul(vClothOpacity).lessThanEqual(alphaClip).discard();
+    return vec4(0, 0, 0, 1);
   })();
-
-  const vNormal = vec3().toVarying('vNormal');
-  const vOpacity = float(0).toVarying('vOpacity');
 
   material.positionNode = Fn(() => {
     const side = attribute('side');
@@ -318,19 +338,16 @@ function buildClothGeometry(
       .normalize()
       .toVar();
 
-    vNormal.assign(transformNormalToView(normal));
+    vClothNormal.assign(transformNormalToView(normal));
 
-    const position = v0.add(v1).add(v2).add(v3).mul(0.25).toVar();
-    // Fade in from left spawn zone, fade out at right recycle boundary
-    const leftFade = smoothstep(float(-2.0), float(-1.5), position.x);
-    const rightFade = smoothstep(float(1.5), float(1.9), position.x).oneMinus();
-    vOpacity.assign(leftFade.mul(rightFade));
+    // No X-position fade — leaves spawn off-screen and recycle off-screen,
+    // matching the billboard approach of relying on off-screen margins.
+    vClothOpacity.assign(float(1.0));
 
-    return position;
+    return v0.add(v1).add(v2).add(v3).mul(0.25);
   })();
 
-  material.normalNode = vNormal.normalize();
-  material.opacityNode = vOpacity;
+  material.normalNode = vClothNormal.normalize();
 
   const mesh = new THREE.Mesh(geometry, material);
   mesh.frustumCulled = false;
@@ -346,6 +363,10 @@ function buildClothGeometry(
 function ClothLeavesInner({
   leafType,
   count,
+  sprites,
+  leafSize,
+  leafAspect,
+  curvature,
   speed,
   cycleTravel,
   windDirX,
@@ -354,24 +375,26 @@ function ClothLeavesInner({
   color2,
   color3,
 }) {
-  const textureUrl =
-    leafType === 'Blossoms'
-      ? '/textures/flowers/sakurapetal.png'
-      : '/textures/leaves/mapleleaf.png';
-
-  const loadedTexture = useTexture(textureUrl);
+  const loadedSprites = useTexture(sprites);
   const gl = useThree((s) => s.gl);
+  const camera = useThree((s) => s.camera);
+  const size = useThree((s) => s.size);
+
+  const arrayTex = useMemo(
+    () =>
+      buildArrayTexture(Array.isArray(loadedSprites) ? loadedSprites : [loadedSprites]),
+    [loadedSprites]
+  );
 
   const [mesh, setMesh] = useState(null);
   const physicsRef = useRef(null);
   const instancesRef = useRef([]);
-  const windUniformsRef = useRef({
-    windDirXU: null,
-    windDirZU: null,
-  });
+  const windUniformsRef = useRef({ windDirXU: null, windDirZU: null });
   const computingRef = useRef(false);
+  // Spawn function and recycle X stored in refs so useFrame can access them
+  const spawnFnRef = useRef(null);
+  const recycleXRef = useRef(2.0);
 
-  // Build per-instance color buffer from the three color props
   const colorBuffer = useMemo(() => {
     const colors = [color1, color2, color3];
     const arr = new Float32Array(count * 3);
@@ -389,54 +412,75 @@ function ClothLeavesInner({
     let cancelled = false;
 
     const init = async () => {
-      const config = leafType === 'Blossoms' ? PETAL_CONFIG : LEAF_CONFIG;
+      const segments = leafType === 'Blossoms' ? PETAL_SEGMENTS : LEAF_SEGMENTS;
 
-      // Pole + finial BVH collider
+      // Frustum-derived X spawn bounds — mirrors billboard's horizontal mode exactly
+      const aspect = size.width / size.height;
+      const margin = 1.5;
+      const { leftEdge, rightEdge } = getXExtentAtZ(camera, aspect, -1);
+      const windNorm = Math.sqrt(windDirX ** 2 + 0.0625 + windDirZ ** 2);
+      const windXComp = Math.max(windDirX / windNorm, 0.5);
+      const spawnXMax = leftEdge - margin * 0.5;
+      const spawnXMin = leftEdge - margin * 2;
+      const recycleX = rightEdge + margin * 0.5;
+      const safeTravel = (recycleX - spawnXMax) / windXComp;
+      const effectiveTravel = Math.max(cycleTravel, safeTravel);
+
+      recycleXRef.current = recycleX;
+
+      // Y and Z match billboard's hardcoded ranges
+      spawnFnRef.current = (isInitial) =>
+        new THREE.Vector3(
+          isInitial
+            ? THREE.MathUtils.randFloat(spawnXMin, recycleX)
+            : THREE.MathUtils.randFloat(spawnXMin - 2, spawnXMax),
+          THREE.MathUtils.randFloat(-2, 4),
+          THREE.MathUtils.randFloat(SPAWN_Z_MIN, SPAWN_Z_MAX)
+        );
+
       const poleGeo = buildPoleColliderGeometry();
       const bvh = new BVH(poleGeo);
 
-      // Wind uniforms (referenced inside TSL force function)
       const windDirXU = uniform(windDirX);
       const windDirZU = uniform(windDirZ);
       windUniformsRef.current = { windDirXU, windDirZU };
 
-      // Match billboard speed: terminal_velocity = speed * cycleTravel units/sec
-      // Verlet at 360 steps/sec, dampening=0.995 → F_ext = v_target * (1-d) / steps
-      const baseForce = (speed * cycleTravel * 0.005) / 360;
+      // Terminal X velocity = speed * effectiveTravel units/sec
+      const baseForce = (speed * effectiveTravel * 0.005) / 360;
 
-      // Physics
       const physics = new VerletPhysics();
       physics.addCollider(bvh);
       physics.addForce((position, time) => {
         const force = vec3(0).toVar();
-        force.y.subAssign(baseForce * 0.24);
-        // Small noise for organic feel — x/y only to prevent camera drift
+        // X-only noise for organic tumble — Y omitted to preserve spawn Y distribution
+        // across the full transit (avoids upward drift from noise bias)
         const noise = triNoise3Dvec(position.mul(0.2), 0.5, time)
           .sub(vec3(0.285, 0.285, 0.285))
           .mul(baseForce * 0.15);
         force.x.addAssign(noise.x);
-        force.y.addAssign(noise.y);
-        // Directional wind
+        // Directional wind drives X trajectory matching billboard's analytic path
         force.addAssign(vec3(windDirXU, 0, windDirZU).mul(baseForce));
-        // Soft Z boundary walls to keep leaves in the [-1.9, 1.6] range
-        force.z.subAssign(position.z.sub(float(1.6)).max(float(0)).mul(0.0003));
-        force.z.addAssign(
-          float(-1.9).sub(position.z).max(float(0)).mul(0.0003)
-        );
+        // Soft boundary walls matching billboard's -2/4 Y and -2/2.1 Z spawn ranges
+        force.y.subAssign(position.y.sub(float(4.5)).max(float(0)).mul(0.0003));
+        force.y.addAssign(float(-2.5).sub(position.y).max(float(0)).mul(0.0003));
+        force.z.subAssign(position.z.sub(float(2.0)).max(float(0)).mul(0.0003));
+        force.z.addAssign(float(-1.9).sub(position.z).max(float(0)).mul(0.0003));
         return force;
       });
 
-      // Placeholder instances array (count slots, filled by buildClothGeometry)
       const placeholderInstances = Array.from({ length: count }, (_, i) => i);
+      const numSprites = Array.isArray(loadedSprites) ? loadedSprites.length : 1;
 
-      // Build geometry + register all instances in physics
       const { mesh: clothMesh, physicsInstances } = buildClothGeometry(
         physics,
-        config.widthSegments,
-        config.heightSegments,
-        config.segmentSize,
+        segments.width,
+        segments.height,
+        leafSize,
+        leafAspect,
+        curvature,
         placeholderInstances,
-        loadedTexture,
+        arrayTex,
+        numSprites,
         colorBuffer
       );
 
@@ -446,15 +490,24 @@ function ClothLeavesInner({
         return;
       }
 
-      // Set initial scattered positions before baking
       for (let i = 0; i < physicsInstances.length; i++) {
-        const pos = randomSpawnPosition(true);
+        // Per-instance scale matching billboard's 0.5–1.8 distribution
+        physicsInstances[i].scale = THREE.MathUtils.randFloat(0.5, 1.8);
+        const pos = spawnFnRef.current(true);
         const quat = randomRotation();
-        await physics.resetObject(physicsInstances[i].id, pos, quat);
+        await physics.resetObject(
+          physicsInstances[i].id,
+          pos,
+          quat,
+          physicsInstances[i].scale
+        );
         if (cancelled) return;
       }
 
-      await physics.bake(gl);
+      // Disable the Y=0 floor — cloth leaves float freely, recycling handles OOB.
+      // The hard floor was clamping all negative-Y leaves to Y=0, collapsing the
+      // bottom half of the spawn volume and causing the "cloud too high" appearance.
+      await physics.bake(gl, { yFloor: null });
       if (cancelled) {
         clothMesh.geometry.dispose();
         clothMesh.material.dispose();
@@ -471,7 +524,6 @@ function ClothLeavesInner({
     return () => {
       cancelled = true;
       if (physicsRef.current) {
-        // Dispose GPU resources on unmount
         const p = physicsRef.current;
         if (p.vertexBuffer) p.vertexBuffer.buffer.value = null;
         if (p.springBuffer) p.springBuffer.buffer.value = null;
@@ -486,7 +538,12 @@ function ClothLeavesInner({
     };
   }, [gl, leafType, count]); // eslint-disable-line react-hooks/exhaustive-deps
 
-  // Update wind uniforms each frame (cheap, avoids re-init)
+  useEffect(() => {
+    return () => {
+      arrayTex.dispose();
+    };
+  }, [arrayTex]);
+
   useFrame((_, delta) => {
     const { windDirXU, windDirZU } = windUniformsRef.current;
     if (windDirXU) {
@@ -504,20 +561,20 @@ function ClothLeavesInner({
 
     const physics = physicsRef.current;
     const instances = instancesRef.current;
+    const recycleX = recycleXRef.current;
+    const spawnFn = spawnFnRef.current;
 
     const doUpdate = async () => {
       await physics.update(delta);
 
-      // Recycle instances that have blown past the right boundary
-      // Check a batch per frame to spread GPU readback cost
       const checksPerFrame = Math.min(50, instances.length);
       for (let i = 0; i < checksPerFrame; i++) {
         const inst =
           instances[(physics.frameNum * checksPerFrame + i) % instances.length];
-        if (physics.objects[inst.id].position.x > RECYCLE_X) {
-          const pos = randomSpawnPosition(false);
+        if (physics.objects[inst.id].position.x > recycleX) {
+          const pos = spawnFn(false);
           const quat = randomRotation();
-          await physics.resetObject(inst.id, pos, quat);
+          await physics.resetObject(inst.id, pos, quat, inst.scale);
         }
       }
 
@@ -537,6 +594,10 @@ function ClothLeavesInner({
 function ClothLeaves({
   leafType = 'Leaves',
   count = 300,
+  sprites = ['/textures/leaves/mapleleaf.png'],
+  leafSize = 0.08,
+  leafAspect = 1,
+  curvature = 0.4,
   speed = 0.08,
   cycleTravel = 5,
   windDirX = 1,
@@ -550,6 +611,10 @@ function ClothLeaves({
       <ClothLeavesInner
         leafType={leafType}
         count={count}
+        sprites={sprites}
+        leafSize={leafSize}
+        leafAspect={leafAspect}
+        curvature={curvature}
         speed={speed}
         cycleTravel={cycleTravel}
         windDirX={windDirX}

@@ -2,6 +2,7 @@
 
 /* eslint-disable no-shadow */
 import {
+  Fn,
   instancedBufferAttribute,
   mod,
   positionLocal,
@@ -11,6 +12,7 @@ import {
   uniform,
   uv,
   vec3,
+  vec4,
 } from 'three/tsl';
 import * as THREE from 'three/webgpu';
 
@@ -297,12 +299,13 @@ function FallingLeavesInner({
       8,
       8
     );
+    const alphaClip = 0.1;
 
     const material = new THREE.MeshBasicNodeMaterial({
       side: THREE.DoubleSide,
       forceSinglePass: true,
       transparent: true,
-      alphaTest: 0.1,
+      alphaTest: alphaClip,
     });
 
     // TSL instance nodes
@@ -358,9 +361,14 @@ function FallingLeavesInner({
     const texSample = tslTexture(arrayTex, leafUV).depth(instanceSpriteIdx);
     material.colorNode = instanceColor.mul(texSample.rgb);
     material.opacityNode = texSample.a;
+    material.castShadowNode = Fn(() => {
+      texSample.a.lessThanEqual(alphaClip).discard();
+      return vec4(0, 0, 0, 1);
+    })();
 
     const m = new THREE.Mesh(geometry, material);
     m.count = count;
+    m.castShadow = true;
     m.frustumCulled = false;
     return m;
   }, [
@@ -429,6 +437,10 @@ function FallingLeaves({
       <ClothLeaves
         leafType={leafType}
         count={count}
+        sprites={SPRITES_BY_TYPE[leafType] ?? LEAF_SPRITES}
+        leafSize={leafSize}
+        leafAspect={leafAspect}
+        curvature={curvature}
         speed={speed}
         cycleTravel={cycleTravel}
         windDirX={windDirX}

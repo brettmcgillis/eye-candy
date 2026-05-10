@@ -1,8 +1,7 @@
 /* eslint-disable no-nested-ternary */
-import React, { useCallback, useMemo, useRef } from 'react';
+import React, { useCallback, useRef } from 'react';
 
 import { OrbitControls, PerspectiveCamera } from '@react-three/drei';
-import { useThree } from '@react-three/fiber';
 
 import AudioToggleOverlay from '../../../../../app/scaffold/overlay/components/AudioToggleOverlay';
 import Bloom from '../../../../postprocessing/webGPU/bloom/Bloom';
@@ -12,6 +11,7 @@ import Flag from './components/Flag';
 import FlagPole from './components/FlagPole';
 import ThunderLightning from './components/ThunderLightning';
 import useAmbienceSound from './hooks/useAmbienceSound';
+import useCamera from './hooks/useCamera';
 import useSceneControls from './hooks/useSceneControls';
 import useSurrenderPhysicsState from './hooks/useSurrenderPhysicsState';
 
@@ -124,30 +124,16 @@ export default function Surrender() {
     leafAspect,
     leafWindInfluence,
     thunderEnabled,
+    bloomEnabled,
+    bloomThreshold,
+    bloomStrength,
+    bloomRadius,
+    bloomDownSampleRatio,
     ambienceTrack,
   } = useSceneControls({ onResetSim: resetSim });
 
   useAmbienceSound(ambienceTrack);
-
-  // Responsive camera: frame flag + finial, pull back on narrow (mobile) viewports
-  const size = useThree((state) => state.size);
-  const isPortrait = size.width < size.height;
-  const cameraPosition = useMemo(() => {
-    if (isPortrait) {
-      // Mobile/portrait: pull back so the full flag is visible
-      return [-0.5, 0.0, 3.8];
-    }
-    // Desktop/landscape: original framing with upward viewing angle
-    return [-0.5, 0.0, 2.5];
-  }, [isPortrait]);
-
-  // Orbit target tracks the group position so posX/posY feel like translation, not rotation.
-  // Portrait shifts the look-at leftward to center the narrower viewport on the pole.
-  const TARGET = useMemo(
-    () =>
-      isPortrait ? [posX + 0.1, posY + 0.5, 0] : [posX + 0.25, posY + 0.3, 0],
-    [isPortrait, posX, posY]
-  );
+  const { cameraPosition, orbitTarget } = useCamera({ posX, posY });
 
   const leafModeNormalized = leafMode?.toLowerCase() ?? 'billboard';
   const scenePhysics = useSurrenderPhysicsState({
@@ -169,7 +155,7 @@ export default function Surrender() {
     <>
       <PerspectiveCamera makeDefault position={cameraPosition} fov={35} />
       <OrbitControls
-        target={TARGET}
+        target={orbitTarget}
         minDistance={1}
         maxDistance={5}
         enableDamping
@@ -297,33 +283,32 @@ export default function Surrender() {
         />
       )}
 
-      {thunderEnabled ? (
+      {bloomEnabled && (
         <Bloom
-          threshold={1.6}
-          strength={0.5}
-          radius={0.6}
-          downSampleRatio={2}
-        />
-      ) : (
-        <OutlineFX
-          enabled={enabled}
-          targetRef={outlineGroupRef}
-          mode={mode}
-          color={outlineColor}
-          hiddenColor={hiddenColor}
-          hiddenStrength={hiddenStrength}
-          strength={strength}
-          thickness={outlineThickness}
-          glow={glow}
-          inside={inside}
-          downSampleRatio={downSampleRatio}
-          patternScale={patternScale}
-          patternOctaves={patternOctaves}
-          patternLacunarity={patternLacunarity}
-          ringStride={ringStride}
-          halftoneScale={halftoneScale}
+          threshold={bloomThreshold}
+          strength={bloomStrength}
+          radius={bloomRadius}
+          downSampleRatio={bloomDownSampleRatio}
         />
       )}
+      <OutlineFX
+        enabled={enabled}
+        targetRef={outlineGroupRef}
+        mode={mode}
+        color={outlineColor}
+        hiddenColor={hiddenColor}
+        hiddenStrength={hiddenStrength}
+        strength={strength}
+        thickness={outlineThickness}
+        glow={glow}
+        inside={inside}
+        downSampleRatio={downSampleRatio}
+        patternScale={patternScale}
+        patternOctaves={patternOctaves}
+        patternLacunarity={patternLacunarity}
+        ringStride={ringStride}
+        halftoneScale={halftoneScale}
+      />
     </>
   );
 }

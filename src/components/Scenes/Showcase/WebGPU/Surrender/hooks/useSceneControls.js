@@ -581,6 +581,40 @@ export default function useSceneControls({ onResetSim } = {}) {
 
       Postprocessing: folder(
         {
+          Bloom: folder(
+            {
+              bloomEnabled: { value: p.bloomEnabled, label: 'Enabled' },
+              bloomThreshold: {
+                value: p.bloomThreshold,
+                min: 0,
+                max: 4,
+                step: 0.05,
+                label: 'Threshold',
+              },
+              bloomStrength: {
+                value: p.bloomStrength,
+                min: 0,
+                max: 4,
+                step: 0.05,
+                label: 'Strength',
+              },
+              bloomRadius: {
+                value: p.bloomRadius,
+                min: 0,
+                max: 2,
+                step: 0.05,
+                label: 'Radius',
+              },
+              bloomDownSampleRatio: {
+                value: p.bloomDownSampleRatio,
+                min: 1,
+                max: 4,
+                step: 1,
+                label: 'Downsample',
+              },
+            },
+            C
+          ),
           Outline: folder(
             {
               enabled: { value: p.enabled, label: 'Enabled' },

@@ -95,6 +95,12 @@ const PRESETS = {
     // Thunder & Lightning
     thunderEnabled: false,
     ambienceTrack: '',
+    // Postprocessing - Bloom
+    bloomEnabled: false,
+    bloomThreshold: 1.6,
+    bloomStrength: 0.5,
+    bloomRadius: 0.6,
+    bloomDownSampleRatio: 2,
     // Postprocessing - Outline
     enabled: true,
     mode: 'glow',
@@ -214,6 +220,12 @@ const PRESETS = {
     // Thunder & Lightning
     thunderEnabled: true,
     ambienceTrack: '',
+    // Postprocessing - Bloom
+    bloomEnabled: true,
+    bloomThreshold: 1.6,
+    bloomStrength: 0.5,
+    bloomRadius: 0.6,
+    bloomDownSampleRatio: 2,
     // Postprocessing - Outline
     enabled: false,
     mode: 'worley',
@@ -333,6 +345,12 @@ const PRESETS = {
     // Thunder & Lightning
     thunderEnabled: false,
     ambienceTrack: 'wind-and-leaves.mp3',
+    // Postprocessing - Bloom
+    bloomEnabled: false,
+    bloomThreshold: 1.6,
+    bloomStrength: 0.5,
+    bloomRadius: 0.6,
+    bloomDownSampleRatio: 2,
     // Postprocessing - Outline
     enabled: true,
     mode: 'glow',
@@ -451,6 +469,12 @@ const PRESETS = {
     // Thunder & Lightning
     thunderEnabled: false,
     ambienceTrack: 'spring-birds-loop.mp3',
+    // Postprocessing - Bloom
+    bloomEnabled: false,
+    bloomThreshold: 1.6,
+    bloomStrength: 0.5,
+    bloomRadius: 0.6,
+    bloomDownSampleRatio: 2,
     // Postprocessing - Outline
     enabled: true,
     mode: 'outline',
@@ -570,6 +594,12 @@ const PRESETS = {
     // Thunder & Lightning
     thunderEnabled: false,
     ambienceTrack: 'wind-draft-loop.mp3',
+    // Postprocessing - Bloom
+    bloomEnabled: false,
+    bloomThreshold: 1.6,
+    bloomStrength: 0.5,
+    bloomRadius: 0.6,
+    bloomDownSampleRatio: 2,
     // Postprocessing - Outline
     enabled: false,
     mode: 'glow',

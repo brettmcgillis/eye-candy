@@ -140,17 +140,18 @@ To Build:
 - [x] Burning At Both Ends - Extinguished
 - [x] Burning At Both Ends - Lenticular
 - [x] Mycelium
-- [ ] All my thoughts are so cumulus - Atomic
-- [ ] All my thoughts are so cumulus - Censored Rings
-- [ ] All my thoughts are so cumulus - Network
-- [ ] All my thoughts are so cumulus - Plate
-- [ ] All my thoughts are so cumulus - Record
-- [x] All my thoughts are so cumulus - Static
+- [ ] All my Thoughts Are So Cumulus - Atomic
+- [ ] All my Thoughts Are So Cumulus - Censored Rings
+- [ ] All my Thoughts Are So Cumulus - Network
+- [ ] All my Thoughts Are So Cumulus - Plate
+- [ ] All my Thoughts Are So Cumulus - Record
+- [x] All my Thoughts Are So Cumulus - Static
 - [ ] Surrender
 - [ ] Surrender Now
 - [ ] Surrender - Autumn
-- [ ] Surrender - Spring
+- [x] Surrender - Spring
 - [ ] Surrender - Winter
+- [ ] Surrender - Weather Any Storm
 - [ ] Stay Hunted
 - [ ] AllMyFriendsAreGhosts
 - [x] GhostBuster
@@ -164,7 +165,7 @@ To Build:
 - [ ] PaperCuts - Argyle (2)
 - [ ] PaperCuts - 11 (3)
 - [x] PaperStack - Gradient Scan
-- [ ] LoaderPattern
+- [x] LoaderPattern(s)
 - [ ] Iconography
 
 - TrophyHusband
@@ -173,9 +174,11 @@ To Build:
 ## Lenticulars
 
 - [x] Burning At Both Ends
-- [ ] Still Pulling For you - Rough Waters
 - [ ] Still Pulling For you - Triptych
-- [ ] All My Thoughts Are So Cumulus - Static
+  - [ ] Rough Waters
+  - [ ] Still Pulling
+  - [ ] Sunk
+- [ ] All my Thoughts Are So Cumulus - Static
 
 ## Firescale
 

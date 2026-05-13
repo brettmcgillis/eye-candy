@@ -4,6 +4,7 @@ import React, { useCallback, useRef } from 'react';
 import { OrbitControls, PerspectiveCamera } from '@react-three/drei';
 
 import AudioToggleOverlay from '../../../../../app/scaffold/overlay/components/AudioToggleOverlay';
+import useLoopedSceneAudio from '../../../../../hooks/useLoopedSceneAudio';
 import Bloom from '../../../../postprocessing/webGPU/bloom/Bloom';
 import OutlineFX from '../../../../postprocessing/webGPU/outline/Outline';
 import FallingLeaves from './components/FallingLeaves';
@@ -11,7 +12,6 @@ import Flag from './components/Flag';
 import FlagPole from './components/FlagPole';
 import MoonlightProjector from './components/MoonlightProjector';
 import ThunderLightning from './components/ThunderLightning';
-import useAmbienceSound from './hooks/useAmbienceSound';
 import useCamera from './hooks/useCamera';
 import useSceneControls from './hooks/useSceneControls';
 import useSurrenderPhysicsState from './hooks/useSurrenderPhysicsState';
@@ -148,7 +148,7 @@ export default function Surrender() {
     ambienceTrack,
   } = useSceneControls({ onResetSim: resetSim });
 
-  useAmbienceSound(ambienceTrack);
+  useLoopedSceneAudio(ambienceTrack);
   const { cameraPosition, orbitTarget } = useCamera({ posX, posY });
 
   const leafModeNormalized = leafMode?.toLowerCase() ?? 'billboard';

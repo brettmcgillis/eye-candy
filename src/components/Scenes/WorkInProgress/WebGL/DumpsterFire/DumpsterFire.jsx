@@ -16,6 +16,8 @@ import {
   RigidBody,
 } from '@react-three/rapier';
 
+import AudioToggleOverlay from '../../../../../app/scaffold/overlay/components/AudioToggleOverlay';
+import useLoopedSceneAudio from '../../../../../hooks/useLoopedSceneAudio';
 import { modelFile } from '../../../../../utils/appUtils';
 import { radians } from '../../../../../utils/math';
 import AppleCore from '../../../../elements/appleCore/AppleCore';
@@ -69,8 +71,16 @@ const FLOOR_COLLIDER_POSITION = [
 const POINTER_TAP_THRESHOLD = 8;
 const SHOT_SPAWN_OFFSET = 1.25;
 const SHOT_SPEED = 20;
-const SHOT_VERTICAL_BOOST = 5.5;
+const SHOT_BASE_VERTICAL_BOOST = 2.5;
+const SHOT_POINTER_VERTICAL_BOOST = 4.5;
 const SHOT_POOL_SLOTS_PER_ASSET = 10;
+const SHOT_AIM_PLANE_POINT = [
+  SCENE_ROOT_POSITION[0],
+  GROUND_Y + 1.5,
+  SCENE_ROOT_POSITION[2] + 0.5,
+];
+const FIRE_LOOP_TRACK = 'looped-fire.mp3';
+const FIRE_LOOP_VOLUME = 0.35;
 
 const GARBAGE_BAG_MATERIAL_PROPS = {
   color: '#050505',
@@ -826,19 +836,45 @@ function InstancedTrashBodies({ asset, bodyRefsMap }) {
   );
 }
 
-function createTrashBlast(camera) {
-  const direction = new THREE.Vector3();
+function getNormalizedPointerPosition(clientX, clientY, domElement) {
+  const bounds = domElement.getBoundingClientRect();
+
+  return new THREE.Vector2(
+    ((clientX - bounds.left) / bounds.width) * 2 - 1,
+    -(((clientY - bounds.top) / bounds.height) * 2 - 1)
+  );
+}
+
+function createTrashBlast(camera, pointerPosition = new THREE.Vector2(0, 0)) {
+  const raycaster = new THREE.Raycaster();
+  const rayDirection = new THREE.Vector3();
+  const shotDirection = new THREE.Vector3();
   const spawnPosition = new THREE.Vector3();
-  camera.getWorldDirection(direction);
-  direction.normalize();
+  const aimPlaneNormal = new THREE.Vector3();
+  const aimPlanePoint = new THREE.Vector3(...SHOT_AIM_PLANE_POINT);
+  const aimPlane = new THREE.Plane();
+  const aimTarget = new THREE.Vector3();
+
+  raycaster.setFromCamera(pointerPosition, camera);
+  rayDirection.copy(raycaster.ray.direction).normalize();
+
+  camera.getWorldDirection(aimPlaneNormal);
+  aimPlane.setFromNormalAndCoplanarPoint(aimPlaneNormal, aimPlanePoint);
 
   spawnPosition
     .copy(camera.position)
-    .addScaledVector(direction, SHOT_SPAWN_OFFSET);
+    .addScaledVector(rayDirection, SHOT_SPAWN_OFFSET);
   spawnPosition.y -= 0.45;
 
-  const velocity = direction.clone().multiplyScalar(SHOT_SPEED);
-  velocity.y += SHOT_VERTICAL_BOOST;
+  if (raycaster.ray.intersectPlane(aimPlane, aimTarget)) {
+    shotDirection.copy(aimTarget).sub(spawnPosition).normalize();
+  } else {
+    shotDirection.copy(rayDirection);
+  }
+
+  const velocity = shotDirection.clone().multiplyScalar(SHOT_SPEED);
+  velocity.y +=
+    SHOT_BASE_VERTICAL_BOOST + pointerPosition.y * SHOT_POINTER_VERTICAL_BOOST;
 
   return {
     id: `${Date.now()}-${Math.random().toString(36).slice(2)}`,
@@ -874,8 +910,8 @@ function TrashBlaster() {
   useEffect(() => {
     const { domElement } = gl;
 
-    const fireShot = () => {
-      const shot = createTrashBlast(cameraRef.current);
+    const fireShot = (pointerPosition = new THREE.Vector2(0, 0)) => {
+      const shot = createTrashBlast(cameraRef.current, pointerPosition);
       const poolMeta = INSTANCED_TRASH_POOL_META[shot.asset.key];
       const bodies = shotBodiesRef.current[shot.asset.key];
 
@@ -936,7 +972,9 @@ function TrashBlaster() {
       );
 
       if (distance <= POINTER_TAP_THRESHOLD) {
-        fireShot();
+        fireShot(
+          getNormalizedPointerPosition(event.clientX, event.clientY, domElement)
+        );
       }
     };
 
@@ -967,6 +1005,8 @@ function TrashBlaster() {
 }
 
 export default function DumpsterFire() {
+  useLoopedSceneAudio(FIRE_LOOP_TRACK, { volume: FIRE_LOOP_VOLUME });
+
   return (
     <>
       <PerspectiveCamera makeDefault position={[-2.5, 3.2, 20]} fov={40} />
@@ -1015,6 +1055,7 @@ export default function DumpsterFire() {
       </Physics>
 
       <Environment preset="city" />
+      <AudioToggleOverlay />
     </>
   );
 }

@@ -19,7 +19,7 @@
 - [x] Add Physics. Dumpster is immovable. All other trash is movable
 - [x] Add Garbage Toss functionality
 - [ ] Add Smoke and Fire back in, once core interactive mechanic and visuals are in place.
-- [ ] Add ambient looped fire audio, and toggle, like in Surrender
+- [x] Add ambient looped fire audio, and toggle, like in Surrender
 
 # // Presets
 

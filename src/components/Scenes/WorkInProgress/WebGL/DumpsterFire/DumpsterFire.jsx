@@ -1,16 +1,24 @@
 import * as THREE from 'three';
 
-import React, { useEffect, useRef, useState } from 'react';
+import React, { useEffect, useMemo, useRef } from 'react';
 
 import {
   Environment,
   OrbitControls,
   PerspectiveCamera,
+  useGLTF,
 } from '@react-three/drei';
 import { useThree } from '@react-three/fiber';
-import { CuboidCollider, Physics, RigidBody } from '@react-three/rapier';
+import {
+  CuboidCollider,
+  InstancedRigidBodies,
+  Physics,
+  RigidBody,
+} from '@react-three/rapier';
 
+import { modelFile } from '../../../../../utils/appUtils';
 import { radians } from '../../../../../utils/math';
+import AppleCore from '../../../../elements/appleCore/AppleCore';
 import {
   BeerBottle1,
   BeerBottle2,
@@ -58,11 +66,19 @@ const FLOOR_COLLIDER_POSITION = [
   GROUND_Y - FLOOR_COLLIDER_HALF_EXTENTS[1],
   1,
 ];
-const MAX_ACTIVE_SHOTS = 24;
 const POINTER_TAP_THRESHOLD = 8;
 const SHOT_SPAWN_OFFSET = 1.25;
 const SHOT_SPEED = 20;
 const SHOT_VERTICAL_BOOST = 5.5;
+const SHOT_POOL_SLOTS_PER_ASSET = 10;
+
+const GARBAGE_BAG_MATERIAL_PROPS = {
+  color: '#050505',
+  roughness: 0.258,
+  metalness: 0,
+  specularIntensity: 1,
+  ior: 1.45,
+};
 
 export const SHOT_ASSET_OPTIONS = [
   {
@@ -100,6 +116,13 @@ export const SHOT_ASSET_OPTIONS = [
     Component: StarbucksCup,
     scale: 1,
     mass: 0.28,
+    colliders: 'hull',
+  },
+  {
+    key: 'apple-core',
+    Component: AppleCore,
+    scale: 1,
+    mass: 0.18,
     colliders: 'hull',
   },
   {
@@ -400,7 +423,7 @@ const DYNAMIC_SCENE_ITEMS = [
     key: 'starbucks-cup',
     Component: StarbucksCup,
     position: [-1.1, 0.02, 1.95],
-    rotation: [0, Math.PI / 5, 0],
+    rotation: [Math.PI / 2, Math.PI / 5, 0],
     scale: 1,
     mass: 0.28,
     colliders: 'hull',
@@ -410,9 +433,29 @@ const DYNAMIC_SCENE_ITEMS = [
     key: 'starbucks-cup',
     Component: StarbucksCup,
     position: [3.55, 0.02, 1.05],
-    rotation: [0, -Math.PI / 3, 0],
+    rotation: [Math.PI / 2, -Math.PI / 3, 0],
     scale: 1,
     mass: 0.28,
+    colliders: 'hull',
+  },
+  {
+    id: 'front-apple-core',
+    key: 'apple-core',
+    Component: AppleCore,
+    position: [0.15, 0.03, 2.05],
+    rotation: [Math.PI / 5, -Math.PI / 6, Math.PI / 7],
+    scale: 1,
+    mass: 0.18,
+    colliders: 'hull',
+  },
+  {
+    id: 'left-apple-core',
+    key: 'apple-core',
+    Component: AppleCore,
+    position: [3.4, 0.03, 1.85],
+    rotation: [Math.PI / 6, Math.PI / 4, -Math.PI / 5],
+    scale: 1,
+    mass: 0.18,
     colliders: 'hull',
   },
   {
@@ -493,8 +536,186 @@ const DYNAMIC_SCENE_ITEMS = [
   },
 ];
 
+const INSTANCED_TRASH_ASSET_DEFS = {
+  'garbage-bag': {
+    modelPath: '/garbage_bag.glb',
+    geometryName: 'Obj_Bags_5_asset__0',
+    customMaterialProps: GARBAGE_BAG_MATERIAL_PROPS,
+    transformChain: [{ scale: 0.01 }],
+  },
+  'garbage-bag-1': {
+    modelPath: '/garbage_bag_1.glb',
+    geometryName: 'Obj_Bags_4_asset__0',
+    customMaterialProps: GARBAGE_BAG_MATERIAL_PROPS,
+    transformChain: [{ scale: 0.01 }],
+  },
+  'cardboard-box-1': {
+    modelPath: '/cardboardbox1.glb',
+    geometryName: 'cardboard_box_1',
+    materialName: 'zOther_Props_01_2',
+    transformChain: [{ scale: 0.01 }],
+  },
+  'cardboard-box-2': {
+    modelPath: '/cardboardbox2.glb',
+    geometryName: 'cardboard_box_2',
+    materialName: 'zOther_Props_01_2',
+    transformChain: [{ scale: 0.01 }],
+  },
+  'cardboard-box-3': {
+    modelPath: '/cardboardbox3.glb',
+    geometryName: 'cardboard_box_3',
+    materialName: 'zOther_Props_01_2',
+    transformChain: [{ scale: 0.01 }],
+  },
+  'starbucks-cup': {
+    modelPath: '/starbucks.glb',
+    geometryName: 'starbuckscup2_0',
+    materialName: 'starbuckscup2_0_mat',
+    transformChain: [
+      { rotation: [-Math.PI / 2, 0, 0], scale: 0.05 },
+      { position: [0, 0, 6.705], rotation: [0, 0, -0.351], scale: 0.13 },
+    ],
+  },
+  'apple-core': {
+    modelPath: '/apple_core.glb',
+    geometryName: 'AppleCore001',
+    materialName: 'AppleCore.001_mat',
+    transformChain: [{ rotation: [-Math.PI / 2, 0, 0], scale: 0.1 }],
+  },
+  'cardboard-box-4': {
+    modelPath: '/cardboardBox4.glb',
+    geometryName: 'Object_122',
+    materialName: 'sm36_002_Cardboard01A_A_Mat',
+    transformChain: [{ rotation: [Math.PI / 2, 0, 0], scale: 0.01 }],
+  },
+  'cardboard-box-5': {
+    modelPath: '/cardboardBox5.glb',
+    geometryName: 'Object_124',
+    materialName: 'sm36_004_Cardboard03A_A_Mat',
+    transformChain: [{ rotation: [Math.PI / 2, 0, -0.05], scale: 0.019 }],
+  },
+  'beer-case-1': {
+    modelPath: '/beerCase1.glb',
+    geometryName: 'Object_118',
+    materialName: 'sm32_143_BeerCase01A_A_Mat',
+    transformChain: [{ rotation: [Math.PI / 2, 0, -0.016], scale: 0.01 }],
+  },
+  'beer-case-2': {
+    modelPath: '/beerCase2.glb',
+    geometryName: 'Object_116',
+    materialName: 'sm32_128_BeerCase01A_A_Mat',
+    transformChain: [{ rotation: [Math.PI / 2, 0, -0.016], scale: 0.01 }],
+  },
+  'whiskey-bottle': {
+    modelPath: '/whiskeyBottle.glb',
+    geometryName: 'Object_114001',
+    materialName: 'sm32_163_DrinkBottle02A_A_Mat',
+    transformChain: [{ rotation: [Math.PI / 2, 0, 0], scale: 0.013 }],
+  },
+  'beer-bottle-1': {
+    modelPath: '/beerBottle1.glb',
+    geometryName: 'Object_138',
+    materialName: 'sm32_159_DrinkBottle01A_A_Mat.001',
+    transformChain: [{ rotation: [Math.PI / 2, 0, -Math.PI / 2], scale: 0.02 }],
+  },
+  'beer-bottle-2': {
+    modelPath: '/beerBottle2.glb',
+    geometryName: 'Object_140',
+    materialName: 'sm32_159_DrinkBottle01A_A_Mat.002',
+    transformChain: [
+      { rotation: [Math.PI / 2, 0, -Math.PI / 2], scale: 0.018 },
+    ],
+  },
+  bucket: {
+    modelPath: '/bucket.glb',
+    geometryName: 'Object_142',
+    materialName: 'sm30_072_PlasticBucket01A_A',
+    transformChain: [{ rotation: [Math.PI / 2, 0, 0], scale: 0.01 }],
+  },
+};
+
+const INSTANCED_TRASH_POOL_META = SHOT_ASSET_OPTIONS.reduce(
+  (meta, asset, assetIndex) => ({
+    ...meta,
+    [asset.key]: {
+      assetIndex,
+    },
+  }),
+  {}
+);
+
+function toScaleVector(scale = 1) {
+  if (Array.isArray(scale)) {
+    return new THREE.Vector3(scale[0], scale[1], scale[2]);
+  }
+
+  return new THREE.Vector3(scale, scale, scale);
+}
+
+function buildTransformMatrix(transform = {}) {
+  const position = new THREE.Vector3(...(transform.position ?? [0, 0, 0]));
+  const rotation = new THREE.Euler(...(transform.rotation ?? [0, 0, 0]));
+  const quaternion = new THREE.Quaternion().setFromEuler(rotation);
+  const scale = toScaleVector(transform.scale ?? 1);
+
+  return new THREE.Matrix4().compose(position, quaternion, scale);
+}
+
+function bakeInstancedGeometry(geometry, transformChain = []) {
+  const bakedGeometry = geometry.clone();
+  const transformMatrix = new THREE.Matrix4();
+
+  transformChain.forEach((transform) => {
+    transformMatrix.multiply(buildTransformMatrix(transform));
+  });
+
+  bakedGeometry.applyMatrix4(transformMatrix);
+  bakedGeometry.computeBoundingBox();
+  bakedGeometry.computeBoundingSphere();
+
+  return bakedGeometry;
+}
+
+function getParkedShotPosition(assetKey, slotIndex) {
+  const { assetIndex } = INSTANCED_TRASH_POOL_META[assetKey];
+
+  return [220 + assetIndex * 14, -160 - slotIndex * 8, 0];
+}
+
 function getSceneItemKey({ id, key, position = [0, 0, 0] }) {
   return id ?? `${key}-${position.join('-')}`;
+}
+
+function useInstancedTrashVisual(assetKey) {
+  const assetDef = INSTANCED_TRASH_ASSET_DEFS[assetKey];
+  const { nodes, materials } = useGLTF(modelFile(assetDef.modelPath));
+
+  const geometry = useMemo(
+    () =>
+      bakeInstancedGeometry(
+        nodes[assetDef.geometryName].geometry,
+        assetDef.transformChain
+      ),
+    [assetDef.geometryName, assetDef.transformChain, nodes]
+  );
+
+  const material = useMemo(() => {
+    if (assetDef.customMaterialProps) {
+      return new THREE.MeshPhysicalMaterial(assetDef.customMaterialProps);
+    }
+
+    return materials[assetDef.materialName].clone();
+  }, [assetDef.customMaterialProps, assetDef.materialName, materials]);
+
+  useEffect(
+    () => () => {
+      geometry.dispose();
+      material.dispose?.();
+    },
+    [geometry, material]
+  );
+
+  return { geometry, material };
 }
 
 function FixedSceneAsset({ item }) {
@@ -556,51 +777,56 @@ function DynamicSceneAsset({ item }) {
   );
 }
 
-function TrashShot({ shot }) {
-  const bodyRef = useRef(null);
-  const {
-    asset,
-    position,
-    rotation = [0, 0, 0],
-    velocity,
-    spin = [0, 0, 0],
-  } = shot;
-  const {
-    Component,
-    scale = 1,
-    componentProps,
-    colliders = 'cuboid',
-    mass = 0.65,
-  } = asset;
+function InstancedTrashBodies({ asset, bodyRefsMap }) {
+  const bodyRefsStore = bodyRefsMap.current;
+  const { geometry, material } = useInstancedTrashVisual(asset.key);
+  const bodiesRef = useRef([]);
+
+  const instances = useMemo(
+    () =>
+      Array.from({ length: SHOT_POOL_SLOTS_PER_ASSET }, (_, slotIndex) => ({
+        key: `${asset.key}-shot-slot-${slotIndex}`,
+        position: getParkedShotPosition(asset.key, slotIndex),
+        rotation: [0, 0, 0],
+        scale: asset.scale ?? 1,
+        mass: asset.mass ?? 0.5,
+      })),
+    [asset.key, asset.mass, asset.scale]
+  );
 
   useEffect(() => {
-    if (!bodyRef.current) return;
+    bodyRefsStore[asset.key] = bodiesRef.current;
 
-    bodyRef.current.setAngvel({ x: spin[0], y: spin[1], z: spin[2] }, true);
-  }, [spin]);
+    return () => {
+      delete bodyRefsStore[asset.key];
+    };
+  }, [asset.key, bodyRefsStore]);
 
   return (
-    <RigidBody
-      ref={bodyRef}
-      colliders={colliders}
-      position={position}
-      rotation={rotation}
-      scale={scale}
-      linearVelocity={velocity}
-      mass={mass}
-      friction={1}
-      restitution={0.14}
-      linearDamping={0.45}
-      angularDamping={0.8}
+    <InstancedRigidBodies
+      instances={instances}
+      colliders={asset.colliders ?? 'cuboid'}
+      mass={asset.mass ?? 0.5}
+      friction={1.2}
+      restitution={0.08}
+      linearDamping={1.2}
+      angularDamping={1.6}
       canSleep
       ccd
+      ref={bodiesRef}
     >
-      <Component {...componentProps} />
-    </RigidBody>
+      <instancedMesh
+        castShadow
+        receiveShadow
+        frustumCulled={false}
+        args={[geometry, material, instances.length]}
+        count={instances.length}
+      />
+    </InstancedRigidBodies>
   );
 }
 
-function createTrashShot(camera) {
+function createTrashBlast(camera) {
   const direction = new THREE.Vector3();
   const spawnPosition = new THREE.Vector3();
   camera.getWorldDirection(direction);
@@ -632,11 +858,14 @@ function createTrashShot(camera) {
   };
 }
 
-function TrashShooter() {
+function TrashBlaster() {
   const { camera, gl } = useThree();
-  const [shots, setShots] = useState([]);
   const cameraRef = useRef(camera);
   const pointerDownRef = useRef(null);
+  const shotBodiesRef = useRef({});
+  const nextShotSlotRef = useRef(
+    Object.fromEntries(SHOT_ASSET_OPTIONS.map((asset) => [asset.key, 0]))
+  );
 
   useEffect(() => {
     cameraRef.current = camera;
@@ -646,8 +875,44 @@ function TrashShooter() {
     const { domElement } = gl;
 
     const fireShot = () => {
-      const shot = createTrashShot(cameraRef.current);
-      setShots((prev) => [...prev.slice(-(MAX_ACTIVE_SHOTS - 1)), shot]);
+      const shot = createTrashBlast(cameraRef.current);
+      const poolMeta = INSTANCED_TRASH_POOL_META[shot.asset.key];
+      const bodies = shotBodiesRef.current[shot.asset.key];
+
+      if (!poolMeta || !bodies?.length) {
+        return;
+      }
+
+      const nextSlotOffset = nextShotSlotRef.current[shot.asset.key] ?? 0;
+      const slotIndex = nextSlotOffset;
+      const body = bodies[slotIndex];
+
+      nextShotSlotRef.current[shot.asset.key] =
+        (nextSlotOffset + 1) % SHOT_POOL_SLOTS_PER_ASSET;
+
+      if (!body) {
+        return;
+      }
+
+      const [x, y, z] = shot.position;
+      const [vx, vy, vz] = shot.velocity;
+      const [sx, sy, sz] = shot.spin;
+      const quaternion = new THREE.Quaternion().setFromEuler(
+        new THREE.Euler(...shot.rotation)
+      );
+
+      body.setTranslation({ x, y, z }, true);
+      body.setRotation(
+        {
+          x: quaternion.x,
+          y: quaternion.y,
+          z: quaternion.z,
+          w: quaternion.w,
+        },
+        true
+      );
+      body.setLinvel({ x: vx, y: vy, z: vz }, true);
+      body.setAngvel({ x: sx, y: sy, z: sz }, true);
     };
 
     const handlePointerDown = (event) => {
@@ -692,7 +957,13 @@ function TrashShooter() {
     };
   }, [gl]);
 
-  return shots.map((shot) => <TrashShot key={shot.id} shot={shot} />);
+  return SHOT_ASSET_OPTIONS.map((asset) => (
+    <InstancedTrashBodies
+      key={asset.key}
+      asset={asset}
+      bodyRefsMap={shotBodiesRef}
+    />
+  ));
 }
 
 export default function DumpsterFire() {
@@ -740,7 +1011,7 @@ export default function DumpsterFire() {
           ))}
         </group>
 
-        <TrashShooter />
+        <TrashBlaster />
       </Physics>
 
       <Environment preset="city" />

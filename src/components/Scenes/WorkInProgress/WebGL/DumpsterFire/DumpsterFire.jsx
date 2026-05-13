@@ -1,11 +1,9 @@
 import React from 'react';
 
 import {
-  Billboard,
   Environment,
   OrbitControls,
   PerspectiveCamera,
-  Text,
 } from '@react-three/drei';
 
 import { radians } from '../../../../../utils/math';
@@ -13,7 +11,6 @@ import {
   CardboardBox,
   CardboardFlat,
   CardboardFlat2,
-  CardboardLeaning,
   CardboardLeaning2,
 } from '../../../../elements/cardboard/Cardboard';
 import {
@@ -21,6 +18,7 @@ import {
   CardboardBox2,
   CardboardBox3,
 } from '../../../../elements/cardboardBoxes/CardboardBoxes';
+import CigaretteButts from '../../../../elements/cigaretteButts/CigaretteButts';
 import Dumpster from '../../../../elements/dumpster/Dumpster';
 import {
   GarbageBag,
@@ -30,118 +28,15 @@ import {
   GarbageBagsPile,
 } from '../../../../elements/garbageBags/GarbageBags';
 import { Litter, Litter2 } from '../../../../elements/litter/Litter';
+import NewspaperStack from '../../../../elements/newsPaperStack/NewsPaperStack';
+import {
+  NewsPaper1,
+  NewsPaper2,
+  NewsPaper3,
+} from '../../../../elements/newsPapers/NewsPapers';
 
 const GROUND_Y = -1;
-const REFERENCE_GRID_POSITION = [7.5, 0, 0];
 const SCENE_ROOT_POSITION = [-9, GROUND_Y, 1];
-
-const REFERENCE_ASSETS = [
-  {
-    key: 'cardboard-box',
-    Component: CardboardBox,
-    position: [-4.5, GROUND_Y + 0.35, 4.5],
-    rotation: [0, 90, 0],
-    scale: 1,
-  },
-  {
-    key: 'cardboard-flat',
-    Component: CardboardFlat,
-    position: [-2.25, GROUND_Y, 4.5],
-    rotation: [0, 0, 0],
-    scale: 1,
-  },
-  {
-    key: 'cardboard-flat-2',
-    Component: CardboardFlat2,
-    position: [0, GROUND_Y, 4.5],
-    rotation: [0, 0, 0],
-    scale: 1,
-  },
-  {
-    key: 'cardboard-leaning',
-    Component: CardboardLeaning,
-    position: [2.25, GROUND_Y + 0.35, 4.5],
-    rotation: [0, 0, 0],
-    scale: 1,
-  },
-  {
-    key: 'cardboard-leaning-2',
-    Component: CardboardLeaning2,
-    position: [4.5, GROUND_Y + 0.35, 4.5],
-    rotation: [0, 0, 0],
-    scale: 1,
-  },
-  {
-    key: 'cardboard-box-1',
-    Component: CardboardBox1,
-    position: [-4.5, GROUND_Y + 0.2, 1.25],
-    rotation: [0, 0, 0],
-    scale: 1,
-  },
-  {
-    key: 'cardboard-box-2',
-    Component: CardboardBox2,
-    position: [-2.25, GROUND_Y + 0.2, 1.25],
-    rotation: [0, 0, 0],
-    scale: 1,
-  },
-  {
-    key: 'cardboard-box-3',
-    Component: CardboardBox3,
-    position: [0, GROUND_Y + 0.2, 1.25],
-    rotation: [0, 0, 0],
-    scale: 1,
-  },
-  {
-    key: 'garbage-bag',
-    Component: GarbageBag,
-    position: [2.25, GROUND_Y, 1.25],
-    rotation: [0, 0, 0],
-    scale: 1,
-  },
-  {
-    key: 'garbage-bag-1',
-    Component: GarbageBag1,
-    position: [4.5, GROUND_Y, 1.25],
-    rotation: [0, 0, 0],
-    scale: 1,
-  },
-  {
-    key: 'garbage-bags-1',
-    Component: GarbageBags1,
-    position: [-4.5, GROUND_Y, -2],
-    rotation: [0, 0, 0],
-    scale: 1,
-  },
-  {
-    key: 'garbage-bags-2',
-    Component: GarbageBags2,
-    position: [-2.25, GROUND_Y, -2],
-    rotation: [0, 0, 0],
-    scale: 1,
-  },
-  {
-    key: 'garbage-bags-pile',
-    Component: GarbageBagsPile,
-    position: [0, GROUND_Y + 0.5, -5],
-    rotation: [0, 0, 0],
-    scale: 1,
-  },
-  {
-    key: 'litter',
-    Component: Litter,
-    position: [2.25, GROUND_Y, -2],
-    rotation: [0, 0, 0],
-    scale: 1,
-  },
-  {
-    key: 'litter-2',
-    Component: Litter2,
-    position: [4.5, GROUND_Y, -2],
-    rotation: [0, 0, 0],
-    scale: 1,
-  },
-];
 
 const SCENE_ITEMS = [
   {
@@ -199,6 +94,13 @@ const SCENE_ITEMS = [
     rotation: [0, 90, 0],
     scale: 1,
   },
+  {
+    key: 'newspaper-1',
+    Component: NewsPaper1,
+    position: [-1, 0, 1.4],
+    rotation: [0, 90, 0],
+    scale: 1,
+  },
   // Right of Dumpster
   {
     key: 'litter-2',
@@ -249,7 +151,35 @@ const SCENE_ITEMS = [
     rotation: [0, Math.PI / 2, 0],
     scale: 1,
   },
+  {
+    key: 'newspaper-2',
+    Component: NewsPaper2,
+    position: [-5, 0, 2],
+    rotation: [0, 90, 0],
+    scale: 1,
+  },
   // Front of Dumpster
+  {
+    key: 'cigarette-butts',
+    Component: CigaretteButts,
+    position: [0, 0, 1.7],
+    rotation: [0, -Math.PI / 1.5, 0],
+    scale: 0.75,
+  },
+  {
+    key: 'cigarette-butts',
+    Component: CigaretteButts,
+    position: [0.7, 0, 1.2],
+    rotation: [0, Math.PI / 2.5, 0],
+    scale: 0.75,
+  },
+  {
+    key: 'newspaper-stack',
+    Component: NewspaperStack,
+    position: [-1.5, 0.1, 1.25],
+    rotation: [0, -Math.PI / 1.5, 0],
+    scale: 1.25,
+  },
   {
     key: 'cardboard-flat-2',
     Component: CardboardFlat2,
@@ -287,6 +217,13 @@ const SCENE_ITEMS = [
     scale: 1,
   },
   {
+    key: 'cigarette-butts',
+    Component: CigaretteButts,
+    position: [3, 0, 1.6],
+    rotation: [0, Math.PI, 0],
+    scale: 0.75,
+  },
+  {
     key: 'garbage-bags-2',
     Component: GarbageBags2,
     position: [2.5, 0, 0],
@@ -314,14 +251,21 @@ const SCENE_ITEMS = [
     rotation: [0, 0, 0],
     scale: 0.8,
   },
+  {
+    key: 'newspaper-stack',
+    Component: NewspaperStack,
+    position: [2.6, 0.1, 1.25],
+    rotation: [0, -Math.PI / 1.5, 0],
+    scale: 1.25,
+  },
+  {
+    key: 'newspaper-3',
+    Component: NewsPaper3,
+    position: [4.5, 0, 1.2],
+    rotation: [0, 90, 0],
+    scale: 1,
+  },
 ];
-
-function formatAssetLabel(key) {
-  return key
-    .split('-')
-    .map((segment) => segment.charAt(0).toUpperCase() + segment.slice(1))
-    .join(' ');
-}
 
 function SceneAsset({
   Component,
@@ -337,36 +281,6 @@ function SceneAsset({
       scale={scale}
       {...componentProps}
     />
-  );
-}
-
-function ReferenceAsset({ asset }) {
-  const {
-    key,
-    Component,
-    position = [0, 0, 0],
-    rotation = [0, 0, 0],
-    scale = 1,
-    componentProps,
-  } = asset;
-
-  return (
-    <group position={position}>
-      <Component rotation={rotation} scale={scale} {...componentProps} />
-      <Billboard position={[0, 1.7, 0]}>
-        <Text
-          anchorX="center"
-          anchorY="bottom"
-          color="#111111"
-          fontSize={0.26}
-          maxWidth={2.5}
-          outlineColor="#e8e8e8"
-          outlineWidth={0.02}
-        >
-          {formatAssetLabel(key)}
-        </Text>
-      </Billboard>
-    </group>
   );
 }
 
@@ -396,14 +310,12 @@ export default function DumpsterFire() {
       />
 
       <group position={SCENE_ROOT_POSITION}>
-        {SCENE_ITEMS.map(({ key, ...asset }) => (
-          <SceneAsset key={key} {...asset} />
-        ))}
-      </group>
-
-      <group position={REFERENCE_GRID_POSITION}>
-        {REFERENCE_ASSETS.map((asset) => (
-          <ReferenceAsset key={asset.key} asset={asset} />
+        {SCENE_ITEMS.map(({ key, position, ...asset }) => (
+          <SceneAsset
+            key={`${key}-${position.join('-')}`}
+            position={position}
+            {...asset}
+          />
         ))}
       </group>
 

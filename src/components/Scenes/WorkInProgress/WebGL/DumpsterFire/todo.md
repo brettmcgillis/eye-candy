@@ -7,23 +7,21 @@
 - The scene has a white background.
 - The scene contains some volumetric fire emerging from the dumpster.
 - The scene contains a smoke system emerging from the dumpster and flowing up and to the right of the scene.
+- The scene contains additional garbage props scattered around the dumpster
+- The scene contains an interactive element that allows the user to click, tap, or space bar, to throw a garbage bag, similar to how we are doing ShotCubes in CharacterController.
 
 # // TODO:
 
 [Back to main TODO](../../../../../../TODO.md)
 
-- [x] Totally broken. see console for err. cant switch scenes
-- [x] Remove Drei Clouds, GridHelper, AccumulativeShadows
-- [ ] Add VolumetricFire emerging from dumpster opening
-- [ ] Add VolumetricSmokeParticles on spline flowing up-right
-
-- [ ] Tune Smoke + fire
-- [ ] Design and add scene controls
+- [ ] Add all trash assets to the scene
+- [ ] Arrange all trash assets
+- [ ] Add Physics. Dumpster is immovable. All other trash is movable
+- [ ] Add Garbage Toss functionality
+- [ ] Add Smoke and Fire back in, once core interactive mechanic and visuals are in place.
 
 # // Presets
 
 # // Features
 
 # // Bugs
-
-- [ ] Fix dumpster lids, one should be closed

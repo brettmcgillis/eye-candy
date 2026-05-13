@@ -7,7 +7,7 @@ import { modelFile } from '../../../utils/appUtils';
 export function CardboardBox1(props) {
   const { nodes, materials } = useGLTF(modelFile('/cardboardbox1.glb'));
   return (
-    <group {...props} dispose={null}>
+    <group {...props} dispose={null} scale={0.01}>
       <mesh
         castShadow
         receiveShadow
@@ -21,7 +21,7 @@ export function CardboardBox1(props) {
 export function CardboardBox2(props) {
   const { nodes, materials } = useGLTF(modelFile('/cardboardbox2.glb'));
   return (
-    <group {...props} dispose={null}>
+    <group {...props} dispose={null} scale={0.01}>
       <mesh
         castShadow
         receiveShadow
@@ -35,7 +35,7 @@ export function CardboardBox2(props) {
 export function CardboardBox3(props) {
   const { nodes, materials } = useGLTF(modelFile('/cardboardbox3.glb'));
   return (
-    <group {...props} dispose={null}>
+    <group {...props} dispose={null} scale={0.01}>
       <mesh
         castShadow
         receiveShadow

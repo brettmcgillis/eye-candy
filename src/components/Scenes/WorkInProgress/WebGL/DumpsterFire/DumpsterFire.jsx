@@ -1,10 +1,14 @@
-import React from 'react';
+import * as THREE from 'three';
+
+import React, { useEffect, useRef, useState } from 'react';
 
 import {
   Environment,
   OrbitControls,
   PerspectiveCamera,
 } from '@react-three/drei';
+import { useThree } from '@react-three/fiber';
+import { CuboidCollider, Physics, RigidBody } from '@react-three/rapier';
 
 import { radians } from '../../../../../utils/math';
 import {
@@ -34,17 +38,74 @@ import {
   NewsPaper2,
   NewsPaper3,
 } from '../../../../elements/newsPapers/NewsPapers';
+import StarbucksCup from '../../../../elements/starbucksCup/StarbucksCup';
 
 const GROUND_Y = -1;
 const SCENE_ROOT_POSITION = [-9, GROUND_Y, 1];
+const FLOOR_COLLIDER_HALF_EXTENTS = [15, 0.25, 9];
+const FLOOR_COLLIDER_POSITION = [
+  -2.25,
+  GROUND_Y - FLOOR_COLLIDER_HALF_EXTENTS[1],
+  1,
+];
+const MAX_ACTIVE_SHOTS = 24;
+const POINTER_TAP_THRESHOLD = 8;
+const SHOT_SPAWN_OFFSET = 1.25;
+const SHOT_SPEED = 20;
+const SHOT_VERTICAL_BOOST = 5.5;
 
-const SCENE_ITEMS = [
+export const SHOT_ASSET_OPTIONS = [
+  {
+    key: 'garbage-bag',
+    Component: GarbageBag,
+    scale: 0.75,
+    mass: 0.45,
+  },
+  {
+    key: 'garbage-bag-1',
+    Component: GarbageBag1,
+    scale: 0.8,
+    mass: 0.5,
+  },
+  {
+    key: 'cardboard-box-1',
+    Component: CardboardBox1,
+    scale: 1,
+    mass: 0.7,
+  },
+  {
+    key: 'cardboard-box-2',
+    Component: CardboardBox2,
+    scale: 1,
+    mass: 0.75,
+  },
+  {
+    key: 'cardboard-box-3',
+    Component: CardboardBox3,
+    scale: 1,
+    mass: 0.8,
+  },
+  {
+    key: 'starbucks-cup',
+    Component: StarbucksCup,
+    scale: 1,
+    mass: 0.28,
+    colliders: 'hull',
+  },
+];
+
+export function getRandomShotAsset(random = Math.random) {
+  return SHOT_ASSET_OPTIONS[Math.floor(random() * SHOT_ASSET_OPTIONS.length)];
+}
+
+const FIXED_SCENE_ITEMS = [
   {
     key: 'dumpster',
     Component: Dumpster,
     position: [0, 0, 0],
     rotation: [0, 0, 0],
     scale: 2,
+    colliders: 'trimesh',
     componentProps: {
       rightLidRotation: -radians(521),
       leftLidRotation: -radians(521),
@@ -122,13 +183,6 @@ const SCENE_ITEMS = [
     position: [-2.2, 0.35, 1.2],
     rotation: [0, 90, 0],
     scale: 1,
-  },
-  {
-    key: 'garbage-bag',
-    Component: GarbageBag,
-    position: [-4.0, 0, 0.2],
-    rotation: [0, Math.PI / 1.5, 0],
-    scale: 0.75,
   },
   {
     key: 'cardboard-box-1',
@@ -245,13 +299,6 @@ const SCENE_ITEMS = [
     scale: 1,
   },
   {
-    key: 'garbage-bag-1',
-    Component: GarbageBag1,
-    position: [4, 0, 0.25],
-    rotation: [0, 0, 0],
-    scale: 0.8,
-  },
-  {
     key: 'newspaper-stack',
     Component: NewspaperStack,
     position: [2.6, 0.1, 1.25],
@@ -267,21 +314,247 @@ const SCENE_ITEMS = [
   },
 ];
 
-function SceneAsset({
-  Component,
-  position = [0, 0, 0],
-  rotation = [0, 0, 0],
-  scale = 1,
-  componentProps,
-}) {
+const DYNAMIC_SCENE_ITEMS = [
+  {
+    id: 'right-garbage-bag',
+    key: 'garbage-bag',
+    Component: GarbageBag,
+    position: [-4.0, 0, 0.2],
+    rotation: [0, Math.PI / 1.5, 0],
+    scale: 0.75,
+    mass: 0.45,
+  },
+  {
+    id: 'left-garbage-bag',
+    key: 'garbage-bag-1',
+    Component: GarbageBag1,
+    position: [4, 0, 0.25],
+    rotation: [0, 0, 0],
+    scale: 0.8,
+    mass: 0.5,
+  },
+  {
+    id: 'front-right-cup',
+    key: 'starbucks-cup',
+    Component: StarbucksCup,
+    position: [-1.1, 0.02, 1.95],
+    rotation: [0, Math.PI / 5, 0],
+    scale: 1,
+    mass: 0.28,
+    colliders: 'hull',
+  },
+  {
+    id: 'left-side-cup',
+    key: 'starbucks-cup',
+    Component: StarbucksCup,
+    position: [3.55, 0.02, 1.05],
+    rotation: [0, -Math.PI / 3, 0],
+    scale: 1,
+    mass: 0.28,
+    colliders: 'hull',
+  },
+];
+
+function getSceneItemKey({ id, key, position = [0, 0, 0] }) {
+  return id ?? `${key}-${position.join('-')}`;
+}
+
+function FixedSceneAsset({ item }) {
+  const {
+    Component,
+    position = [0, 0, 0],
+    rotation = [0, 0, 0],
+    scale = 1,
+    componentProps,
+    colliders = 'cuboid',
+    rigidBodyProps,
+  } = item;
+
   return (
-    <Component
+    <RigidBody
+      type="fixed"
+      colliders={colliders}
       position={position}
       rotation={rotation}
       scale={scale}
-      {...componentProps}
-    />
+      friction={1.1}
+      restitution={0.05}
+      {...rigidBodyProps}
+    >
+      <Component {...componentProps} />
+    </RigidBody>
   );
+}
+
+function DynamicSceneAsset({ item }) {
+  const {
+    Component,
+    position = [0, 0, 0],
+    rotation = [0, 0, 0],
+    scale = 1,
+    componentProps,
+    colliders = 'cuboid',
+    mass = 0.5,
+    rigidBodyProps,
+  } = item;
+
+  return (
+    <RigidBody
+      colliders={colliders}
+      position={position}
+      rotation={rotation}
+      scale={scale}
+      mass={mass}
+      friction={1.2}
+      restitution={0.08}
+      linearDamping={1.2}
+      angularDamping={1.6}
+      canSleep
+      ccd
+      {...rigidBodyProps}
+    >
+      <Component {...componentProps} />
+    </RigidBody>
+  );
+}
+
+function TrashShot({ shot }) {
+  const bodyRef = useRef(null);
+  const {
+    asset,
+    position,
+    rotation = [0, 0, 0],
+    velocity,
+    spin = [0, 0, 0],
+  } = shot;
+  const {
+    Component,
+    scale = 1,
+    componentProps,
+    colliders = 'cuboid',
+    mass = 0.65,
+  } = asset;
+
+  useEffect(() => {
+    if (!bodyRef.current) return;
+
+    bodyRef.current.setAngvel({ x: spin[0], y: spin[1], z: spin[2] }, true);
+  }, [spin]);
+
+  return (
+    <RigidBody
+      ref={bodyRef}
+      colliders={colliders}
+      position={position}
+      rotation={rotation}
+      scale={scale}
+      linearVelocity={velocity}
+      mass={mass}
+      friction={1}
+      restitution={0.14}
+      linearDamping={0.45}
+      angularDamping={0.8}
+      canSleep
+      ccd
+    >
+      <Component {...componentProps} />
+    </RigidBody>
+  );
+}
+
+function createTrashShot(camera) {
+  const direction = new THREE.Vector3();
+  const spawnPosition = new THREE.Vector3();
+  camera.getWorldDirection(direction);
+  direction.normalize();
+
+  spawnPosition
+    .copy(camera.position)
+    .addScaledVector(direction, SHOT_SPAWN_OFFSET);
+  spawnPosition.y -= 0.45;
+
+  const velocity = direction.clone().multiplyScalar(SHOT_SPEED);
+  velocity.y += SHOT_VERTICAL_BOOST;
+
+  return {
+    id: `${Date.now()}-${Math.random().toString(36).slice(2)}`,
+    asset: getRandomShotAsset(),
+    position: [spawnPosition.x, spawnPosition.y, spawnPosition.z],
+    rotation: [
+      THREE.MathUtils.randFloatSpread(Math.PI),
+      THREE.MathUtils.randFloatSpread(Math.PI),
+      THREE.MathUtils.randFloatSpread(Math.PI),
+    ],
+    velocity: [velocity.x, velocity.y, velocity.z],
+    spin: [
+      THREE.MathUtils.randFloatSpread(6),
+      THREE.MathUtils.randFloatSpread(12),
+      THREE.MathUtils.randFloatSpread(6),
+    ],
+  };
+}
+
+function TrashShooter() {
+  const { camera, gl } = useThree();
+  const [shots, setShots] = useState([]);
+  const cameraRef = useRef(camera);
+  const pointerDownRef = useRef(null);
+
+  useEffect(() => {
+    cameraRef.current = camera;
+  }, [camera]);
+
+  useEffect(() => {
+    const { domElement } = gl;
+
+    const fireShot = () => {
+      const shot = createTrashShot(cameraRef.current);
+      setShots((prev) => [...prev.slice(-(MAX_ACTIVE_SHOTS - 1)), shot]);
+    };
+
+    const handlePointerDown = (event) => {
+      if (event.button !== 0) return;
+
+      pointerDownRef.current = {
+        x: event.clientX,
+        y: event.clientY,
+      };
+    };
+
+    const handlePointerUp = (event) => {
+      const pointerDown = pointerDownRef.current;
+      pointerDownRef.current = null;
+
+      if (!pointerDown || event.button !== 0) return;
+
+      const distance = Math.hypot(
+        event.clientX - pointerDown.x,
+        event.clientY - pointerDown.y
+      );
+
+      if (distance <= POINTER_TAP_THRESHOLD) {
+        fireShot();
+      }
+    };
+
+    const handleKeyDown = (event) => {
+      if (event.code !== 'Space' || event.repeat) return;
+      event.preventDefault();
+      fireShot();
+    };
+
+    domElement.addEventListener('pointerdown', handlePointerDown);
+    domElement.addEventListener('pointerup', handlePointerUp);
+    window.addEventListener('keydown', handleKeyDown);
+
+    return () => {
+      domElement.removeEventListener('pointerdown', handlePointerDown);
+      domElement.removeEventListener('pointerup', handlePointerUp);
+      window.removeEventListener('keydown', handleKeyDown);
+    };
+  }, [gl]);
+
+  return shots.map((shot) => <TrashShot key={shot.id} shot={shot} />);
 }
 
 export default function DumpsterFire() {
@@ -309,15 +582,28 @@ export default function DumpsterFire() {
         position={[-2.25, GROUND_Y + 0.001, 1]}
       />
 
-      <group position={SCENE_ROOT_POSITION}>
-        {SCENE_ITEMS.map(({ key, position, ...asset }) => (
-          <SceneAsset
-            key={`${key}-${position.join('-')}`}
-            position={position}
-            {...asset}
+      <Physics timeStep={1 / 60} interpolate>
+        <RigidBody type="fixed" colliders={false}>
+          <CuboidCollider
+            args={FLOOR_COLLIDER_HALF_EXTENTS}
+            position={FLOOR_COLLIDER_POSITION}
+            friction={1.4}
+            restitution={0.05}
           />
-        ))}
-      </group>
+        </RigidBody>
+
+        <group position={SCENE_ROOT_POSITION}>
+          {FIXED_SCENE_ITEMS.map((item) => (
+            <FixedSceneAsset key={getSceneItemKey(item)} item={item} />
+          ))}
+
+          {DYNAMIC_SCENE_ITEMS.map((item) => (
+            <DynamicSceneAsset key={getSceneItemKey(item)} item={item} />
+          ))}
+        </group>
+
+        <TrashShooter />
+      </Physics>
 
       <Environment preset="city" />
     </>

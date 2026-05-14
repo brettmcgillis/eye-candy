@@ -1,0 +1,1 @@
+import{j as s}from"./index-B8ahIfg7.js";import{P as t}from"./splineDefaults-DMDw3WGz.js";function l({smokeLightColor:r="#bcbcbc",smokeDarkColor:e="#262626",...o}){return s.jsx(t,{...o,greyscale:!0,smokeLightColor:r,smokeDarkColor:e})}export{l as S};

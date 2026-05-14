@@ -1,11 +1,19 @@
 import * as THREE from 'three';
 
-import React, { useEffect, useMemo, useRef } from 'react';
+import React, {
+  useEffect,
+  useLayoutEffect,
+  useMemo,
+  useRef,
+  useState,
+} from 'react';
 
 import {
+  Billboard,
   Environment,
   OrbitControls,
   PerspectiveCamera,
+  Text,
   useGLTF,
 } from '@react-three/drei';
 import { useThree } from '@react-three/fiber';
@@ -51,7 +59,9 @@ import {
   GarbageBags2,
   GarbageBagsPile,
 } from '../../../../elements/garbageBags/GarbageBags';
+import HappyMeal from '../../../../elements/happyMeal/HappyMeal';
 import { Litter, Litter2 } from '../../../../elements/litter/Litter';
+import McDonaldsCup from '../../../../elements/mcdonaldsCup/McDonaldsCup';
 import NewspaperStack from '../../../../elements/newsPaperStack/NewsPaperStack';
 import {
   NewsPaper1,
@@ -81,6 +91,11 @@ const SHOT_AIM_PLANE_POINT = [
 ];
 const FIRE_LOOP_TRACK = 'looped-fire.mp3';
 const FIRE_LOOP_VOLUME = 0.35;
+const ASSET_GRID_COLUMNS = 6;
+const ASSET_GRID_COLUMN_SPACING = 2.2;
+const ASSET_GRID_ROW_SPACING = 3.05;
+const ASSET_GRID_POSITION = [4.75, GROUND_Y, 2.2];
+const ASSET_GRID_LABEL_HEIGHT = 1.6;
 
 const GARBAGE_BAG_MATERIAL_PROPS = {
   color: '#050505',
@@ -187,6 +202,21 @@ export const SHOT_ASSET_OPTIONS = [
     mass: 0.6,
     colliders: 'hull',
   },
+  {
+    key: 'happy-meal',
+    Component: HappyMeal,
+    scale: 1,
+    mass: 0.24,
+    poolType: 'component',
+  },
+  {
+    key: 'mcdonalds-cup',
+    Component: McDonaldsCup,
+    scale: 0.1,
+    mass: 0.26,
+    colliders: 'hull',
+    poolType: 'component',
+  },
 ];
 
 export function getRandomShotAsset(random = Math.random) {
@@ -256,6 +286,7 @@ const FIXED_SCENE_ITEMS = [
     position: [-1, 0, 1.4],
     rotation: [0, 90, 0],
     scale: 1,
+    showcaseYOffset: 0.01,
   },
   // Right of Dumpster
   {
@@ -306,6 +337,7 @@ const FIXED_SCENE_ITEMS = [
     position: [-5, 0, 2],
     rotation: [0, 90, 0],
     scale: 1,
+    showcaseYOffset: 0.01,
   },
   // Front of Dumpster
   {
@@ -314,6 +346,7 @@ const FIXED_SCENE_ITEMS = [
     position: [0, 0, 1.7],
     rotation: [0, -Math.PI / 1.5, 0],
     scale: 0.75,
+    showcaseYOffset: 0.01,
   },
   {
     key: 'cigarette-butts',
@@ -406,6 +439,7 @@ const FIXED_SCENE_ITEMS = [
     position: [4.5, 0, 1.2],
     rotation: [0, 90, 0],
     scale: 1,
+    showcaseYOffset: 0.01,
   },
 ];
 
@@ -696,6 +730,68 @@ function getSceneItemKey({ id, key, position = [0, 0, 0] }) {
   return id ?? `${key}-${position.join('-')}`;
 }
 
+function collectUniqueGridAssets(...assetGroups) {
+  const seenKeys = new Set();
+
+  return assetGroups.flat().filter((asset) => {
+    if (asset.key === 'dumpster' || seenKeys.has(asset.key)) {
+      return false;
+    }
+
+    seenKeys.add(asset.key);
+    return true;
+  });
+}
+
+const ASSET_GRID_OPTIONS = collectUniqueGridAssets(
+  SHOT_ASSET_OPTIONS,
+  FIXED_SCENE_ITEMS,
+  DYNAMIC_SCENE_ITEMS
+).map((asset) => ({
+  ...asset,
+  showcaseYOffset: asset.showcaseYOffset ?? 0,
+}));
+
+function formatAssetStat(value) {
+  if (Array.isArray(value)) {
+    return value.map((entry) => formatAssetStat(entry)).join(' x ');
+  }
+
+  return Number(value)
+    .toFixed(2)
+    .replace(/\.00$/, '')
+    .replace(/(\.\d)0$/, '$1');
+}
+
+function getAssetComponentName(asset) {
+  return asset.Component.displayName ?? asset.Component.name ?? asset.key;
+}
+
+function getAssetShowcaseLabel(asset) {
+  const lines = [
+    getAssetComponentName(asset),
+    `scale ${formatAssetStat(asset.scale ?? 1)}`,
+  ];
+
+  if (typeof asset.mass === 'number') {
+    lines.push(`mass ${formatAssetStat(asset.mass)}`);
+  }
+
+  return lines.join('\n');
+}
+
+function getAssetGridCellPosition(index) {
+  const row = Math.floor(index / ASSET_GRID_COLUMNS);
+  const column = index % ASSET_GRID_COLUMNS;
+  const rowCount = Math.ceil(ASSET_GRID_OPTIONS.length / ASSET_GRID_COLUMNS);
+
+  return [
+    (column - (ASSET_GRID_COLUMNS - 1) / 2) * ASSET_GRID_COLUMN_SPACING,
+    0,
+    ((rowCount - 1) / 2 - row) * ASSET_GRID_ROW_SPACING,
+  ];
+}
+
 function useInstancedTrashVisual(assetKey) {
   const assetDef = INSTANCED_TRASH_ASSET_DEFS[assetKey];
   const { nodes, materials } = useGLTF(modelFile(assetDef.modelPath));
@@ -833,6 +929,152 @@ function InstancedTrashBodies({ asset, bodyRefsMap }) {
         count={instances.length}
       />
     </InstancedRigidBodies>
+  );
+}
+
+function ComponentTrashBodies({ asset, bodyRefsMap }) {
+  const bodyRefsStore = bodyRefsMap.current;
+  const bodiesRef = useRef([]);
+  const { Component } = asset;
+
+  const instances = useMemo(
+    () =>
+      Array.from({ length: SHOT_POOL_SLOTS_PER_ASSET }, (_, slotIndex) => ({
+        key: `${asset.key}-shot-slot-${slotIndex}`,
+        position: getParkedShotPosition(asset.key, slotIndex),
+        rotation: [0, 0, 0],
+      })),
+    [asset.key]
+  );
+
+  useEffect(() => {
+    bodyRefsStore[asset.key] = bodiesRef.current;
+
+    return () => {
+      delete bodyRefsStore[asset.key];
+    };
+  }, [asset.key, bodyRefsStore]);
+
+  return instances.map((instance, slotIndex) => (
+    <RigidBody
+      key={instance.key}
+      colliders={asset.colliders ?? 'cuboid'}
+      position={instance.position}
+      rotation={instance.rotation}
+      scale={asset.scale ?? 1}
+      mass={asset.mass ?? 0.5}
+      friction={1.2}
+      restitution={0.08}
+      linearDamping={1.2}
+      angularDamping={1.6}
+      canSleep
+      ccd
+      ref={(body) => {
+        bodiesRef.current[slotIndex] = body;
+      }}
+    >
+      <Component />
+    </RigidBody>
+  ));
+}
+
+function AssetShowcaseCell({ asset, position }) {
+  const { Component } = asset;
+  const anchorRef = useRef(null);
+  const contentRef = useRef(null);
+  const [measuredYOffset, setMeasuredYOffset] = useState(0);
+  const label = getAssetShowcaseLabel(asset);
+
+  useLayoutEffect(() => {
+    if (!anchorRef.current || !contentRef.current) {
+      return;
+    }
+
+    const anchorPosition = new THREE.Vector3();
+    const bounds = new THREE.Box3();
+
+    anchorRef.current.updateWorldMatrix(true, true);
+    contentRef.current.updateWorldMatrix(true, true);
+    anchorRef.current.getWorldPosition(anchorPosition);
+    bounds.setFromObject(contentRef.current);
+
+    if (Number.isFinite(bounds.min.y)) {
+      setMeasuredYOffset(
+        anchorPosition.y - bounds.min.y + (asset.showcaseYOffset ?? 0)
+      );
+    }
+  }, [asset]);
+
+  return (
+    <group position={position}>
+      <mesh position={[0, 0.04, 0]} receiveShadow>
+        <boxGeometry args={[1.9, 0.08, 1.9]} />
+        <meshStandardMaterial color="#f6f2ea" />
+      </mesh>
+
+      <group
+        ref={anchorRef}
+        position={[0, 0.08, 0]}
+        rotation={[0, Math.PI / 6, 0]}
+      >
+        <group
+          ref={contentRef}
+          position={[0, measuredYOffset, 0]}
+          scale={asset.scale ?? 1}
+        >
+          <Component {...asset.componentProps} />
+        </group>
+      </group>
+
+      <Billboard position={[0, ASSET_GRID_LABEL_HEIGHT, 0]}>
+        <Text
+          anchorX="center"
+          anchorY="bottom"
+          color="#171717"
+          fontSize={0.24}
+          lineHeight={1.18}
+          maxWidth={2.4}
+          outlineColor="#fbfaf6"
+          outlineWidth={0.02}
+          textAlign="center"
+        >
+          {label}
+        </Text>
+      </Billboard>
+    </group>
+  );
+}
+
+function AssetShowcaseGrid() {
+  const titleOffsetZ =
+    ((Math.ceil(ASSET_GRID_OPTIONS.length / ASSET_GRID_COLUMNS) - 1) / 2 +
+      0.9) *
+    ASSET_GRID_ROW_SPACING;
+
+  return (
+    <group position={ASSET_GRID_POSITION}>
+      <Billboard position={[0, 3.25, titleOffsetZ]}>
+        <Text
+          anchorX="center"
+          anchorY="bottom"
+          color="#101010"
+          fontSize={0.38}
+          outlineColor="#fbfaf6"
+          outlineWidth={0.022}
+          textAlign="center"
+        >
+          Trash Asset Grid
+        </Text>
+      </Billboard>
+
+      {ASSET_GRID_OPTIONS.map((asset, index) => (
+        <AssetShowcaseCell
+          key={`asset-showcase-${asset.key}`}
+          asset={asset}
+          position={getAssetGridCellPosition(index)}
+        />
+      ))}
+    </group>
   );
 }
 
@@ -995,13 +1237,21 @@ function TrashBlaster() {
     };
   }, [gl]);
 
-  return SHOT_ASSET_OPTIONS.map((asset) => (
-    <InstancedTrashBodies
-      key={asset.key}
-      asset={asset}
-      bodyRefsMap={shotBodiesRef}
-    />
-  ));
+  return SHOT_ASSET_OPTIONS.map((asset) =>
+    asset.poolType === 'component' ? (
+      <ComponentTrashBodies
+        key={asset.key}
+        asset={asset}
+        bodyRefsMap={shotBodiesRef}
+      />
+    ) : (
+      <InstancedTrashBodies
+        key={asset.key}
+        asset={asset}
+        bodyRefsMap={shotBodiesRef}
+      />
+    )
+  );
 }
 
 export default function DumpsterFire() {
@@ -1030,6 +1280,8 @@ export default function DumpsterFire() {
         args={[30, 15, '#cdcdcd', '#d9d9d9']}
         position={[-2.25, GROUND_Y + 0.001, 1]}
       />
+
+      <AssetShowcaseGrid />
 
       <Physics timeStep={1 / 60} interpolate>
         <RigidBody type="fixed" colliders={false}>

@@ -21,6 +21,12 @@
 - [ ] Add Smoke and Fire back in, once core interactive mechanic and visuals are in place.
 - [x] Add ambient looped fire audio, and toggle, like in Surrender
 
+- [ ] Add empty trash button next to audio toggle
+
+- [ ] Add a hook for setting camera position on desktop & mobile, like in Surrender. If possible extract to a reusable shared hook useCameraFitToViewport?
+
+- [ ] Break the scene down into it's smallest components. Hooks in ./hooks, components in ./compoents
+
 # // Presets
 
 # // Features

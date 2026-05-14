@@ -146,7 +146,7 @@ export default function useScreenshotControls({ sceneName, presetName }) {
   const nameRef = useRef(defaultName);
 
   useControls(
-    'Screenshot',
+    'App.Screenshot',
     {
       name: {
         label: 'filename',

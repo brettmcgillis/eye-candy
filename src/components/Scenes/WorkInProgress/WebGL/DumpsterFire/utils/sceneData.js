@@ -1,11 +1,23 @@
 import { radians } from '../../../../../../utils/math';
-import AppleCore from '../../../../../elements/appleCore/AppleCore';
+import AppleCore, {
+  AppleCoreInstance,
+  AppleCoreInstances,
+} from '../../../../../elements/appleCore/AppleCore';
 import {
   BeerBottle1,
+  BeerBottle1Instance,
+  BeerBottle1Instances,
   BeerBottle2,
+  BeerBottle2Instance,
+  BeerBottle2Instances,
   WhiskeyBottle,
+  WhiskeyBottleInstance,
+  WhiskeyBottleInstances,
 } from '../../../../../elements/bottles/Bottles';
-import Bucket from '../../../../../elements/bucket/Bucket';
+import Bucket, {
+  BucketInstance,
+  BucketInstances,
+} from '../../../../../elements/bucket/Bucket';
 import {
   CardboardBox,
   CardboardFlat,
@@ -14,40 +26,59 @@ import {
 } from '../../../../../elements/cardboard/Cardboard';
 import {
   BeerCase1,
+  BeerCase1Instance,
+  BeerCase1Instances,
   BeerCase2,
+  BeerCase2Instance,
+  BeerCase2Instances,
   CardboardBox1,
+  CardboardBox1Instance,
+  CardboardBox1Instances,
   CardboardBox2,
+  CardboardBox2Instance,
+  CardboardBox2Instances,
   CardboardBox3,
+  CardboardBox3Instance,
+  CardboardBox3Instances,
   CardboardBox4,
+  CardboardBox4Instance,
+  CardboardBox4Instances,
   CardboardBox5,
+  CardboardBox5Instance,
+  CardboardBox5Instances,
 } from '../../../../../elements/cardboardBoxes/CardboardBoxes';
 import CigaretteButts from '../../../../../elements/cigaretteButts/CigaretteButts';
 import Dumpster from '../../../../../elements/dumpster/Dumpster';
 import {
   GarbageBag,
   GarbageBag1,
+  GarbageBag1Instance,
+  GarbageBag1Instances,
+  GarbageBagInstance,
+  GarbageBagInstances,
   GarbageBags1,
   GarbageBags2,
   GarbageBagsPile,
 } from '../../../../../elements/garbageBags/GarbageBags';
-import HappyMeal from '../../../../../elements/happyMeal/HappyMeal';
+import HappyMeal, {
+  HappyMealInstance,
+  HappyMealInstances,
+} from '../../../../../elements/happyMeal/HappyMeal';
 import { Litter, Litter2 } from '../../../../../elements/litter/Litter';
-import McCup from '../../../../../elements/mcCup/McCup';
+import McCup, {
+  McCupInstance,
+  McCupInstances,
+} from '../../../../../elements/mcCup/McCup';
 import NewspaperStack from '../../../../../elements/newsPaperStack/NewsPaperStack';
 import {
   NewsPaper1,
   NewsPaper2,
   NewsPaper3,
 } from '../../../../../elements/newsPapers/NewsPapers';
-import StarbucksCup from '../../../../../elements/starbucksCup/StarbucksCup';
-
-const GARBAGE_BAG_MATERIAL_PROPS = {
-  color: '#050505',
-  roughness: 0.258,
-  metalness: 0,
-  specularIntensity: 1,
-  ior: 1.45,
-};
+import StarbucksCup, {
+  StarbucksCupInstance,
+  StarbucksCupInstances,
+} from '../../../../../elements/starbucksCup/StarbucksCup';
 
 export const GROUND_Y = -1;
 export const SCENE_ROOT_POSITION = [-9, GROUND_Y, 1];
@@ -102,92 +133,126 @@ export const ASSET_GRID_LABEL_HEIGHT = 1.6;
 const TRASH_ASSET_CONFIGS = {
   'garbage-bag': {
     Component: GarbageBag,
+    InstanceComponent: GarbageBagInstance,
+    InstancesComponent: GarbageBagInstances,
     scale: 0.75,
     mass: 0.45,
   },
   'garbage-bag-1': {
     Component: GarbageBag1,
+    InstanceComponent: GarbageBag1Instance,
+    InstancesComponent: GarbageBag1Instances,
     scale: 0.8,
     mass: 0.5,
   },
   'cardboard-box-1': {
     Component: CardboardBox1,
+    InstanceComponent: CardboardBox1Instance,
+    InstancesComponent: CardboardBox1Instances,
     scale: 1,
     mass: 0.7,
   },
   'cardboard-box-2': {
     Component: CardboardBox2,
+    InstanceComponent: CardboardBox2Instance,
+    InstancesComponent: CardboardBox2Instances,
     scale: 1,
     mass: 0.75,
   },
   'cardboard-box-3': {
     Component: CardboardBox3,
+    InstanceComponent: CardboardBox3Instance,
+    InstancesComponent: CardboardBox3Instances,
     scale: 1,
     mass: 0.8,
   },
   'starbucks-cup': {
     Component: StarbucksCup,
+    InstanceComponent: StarbucksCupInstance,
+    InstancesComponent: StarbucksCupInstances,
     scale: 1,
     mass: 0.28,
     colliders: 'hull',
   },
   'apple-core': {
     Component: AppleCore,
+    InstanceComponent: AppleCoreInstance,
+    InstancesComponent: AppleCoreInstances,
     scale: 1,
     mass: 0.18,
     colliders: 'hull',
   },
   'cardboard-box-4': {
     Component: CardboardBox4,
+    InstanceComponent: CardboardBox4Instance,
+    InstancesComponent: CardboardBox4Instances,
     scale: 1,
     mass: 0.85,
   },
   'cardboard-box-5': {
     Component: CardboardBox5,
+    InstanceComponent: CardboardBox5Instance,
+    InstancesComponent: CardboardBox5Instances,
     scale: 1,
     mass: 0.9,
   },
   'beer-case-1': {
     Component: BeerCase1,
+    InstanceComponent: BeerCase1Instance,
+    InstancesComponent: BeerCase1Instances,
     scale: 1,
     mass: 1.1,
   },
   'beer-case-2': {
     Component: BeerCase2,
+    InstanceComponent: BeerCase2Instance,
+    InstancesComponent: BeerCase2Instances,
     scale: 1,
     mass: 1.15,
   },
   'whiskey-bottle': {
     Component: WhiskeyBottle,
+    InstanceComponent: WhiskeyBottleInstance,
+    InstancesComponent: WhiskeyBottleInstances,
     scale: 1,
     mass: 0.38,
     colliders: 'hull',
   },
   'beer-bottle-1': {
     Component: BeerBottle1,
+    InstanceComponent: BeerBottle1Instance,
+    InstancesComponent: BeerBottle1Instances,
     scale: 1,
     mass: 0.32,
     colliders: 'hull',
   },
   'beer-bottle-2': {
     Component: BeerBottle2,
+    InstanceComponent: BeerBottle2Instance,
+    InstancesComponent: BeerBottle2Instances,
     scale: 1,
     mass: 0.34,
     colliders: 'hull',
   },
   bucket: {
     Component: Bucket,
+    InstanceComponent: BucketInstance,
+    InstancesComponent: BucketInstances,
     scale: 1.4,
     mass: 0.6,
     colliders: 'hull',
   },
   'happy-meal': {
     Component: HappyMeal,
+    InstanceComponent: HappyMealInstance,
+    InstancesComponent: HappyMealInstances,
     scale: 1,
     mass: 0.24,
   },
   'mc-cup': {
     Component: McCup,
+    InstanceComponent: McCupInstance,
+    InstancesComponent: McCupInstances,
     scale: 0.1,
     mass: 0.26,
     colliders: 'hull',
@@ -519,122 +584,6 @@ export const DYNAMIC_SCENE_ITEMS = [
     rotation: [0, -Math.PI / 8, 0],
   }),
 ];
-
-export const INSTANCED_TRASH_ASSET_DEFS = {
-  'garbage-bag': {
-    modelPath: '/garbage_bag.glb',
-    geometryName: 'Obj_Bags_5_asset__0',
-    customMaterialProps: GARBAGE_BAG_MATERIAL_PROPS,
-    transformChain: [{ scale: 0.01 }],
-  },
-  'garbage-bag-1': {
-    modelPath: '/garbage_bag_1.glb',
-    geometryName: 'Obj_Bags_4_asset__0',
-    customMaterialProps: GARBAGE_BAG_MATERIAL_PROPS,
-    transformChain: [{ scale: 0.01 }],
-  },
-  'cardboard-box-1': {
-    modelPath: '/cardboardbox1.glb',
-    geometryName: 'cardboard_box_1',
-    materialName: 'zOther_Props_01_2',
-    transformChain: [{ scale: 0.01 }],
-  },
-  'cardboard-box-2': {
-    modelPath: '/cardboardbox2.glb',
-    geometryName: 'cardboard_box_2',
-    materialName: 'zOther_Props_01_2',
-    transformChain: [{ scale: 0.01 }],
-  },
-  'cardboard-box-3': {
-    modelPath: '/cardboardbox3.glb',
-    geometryName: 'cardboard_box_3',
-    materialName: 'zOther_Props_01_2',
-    transformChain: [{ scale: 0.01 }],
-  },
-  'starbucks-cup': {
-    modelPath: '/starbucks.glb',
-    geometryName: 'starbuckscup2_0',
-    materialName: 'starbuckscup2_0_mat',
-    transformChain: [
-      { rotation: [-Math.PI / 2, 0, 0], scale: 0.05 },
-      { position: [0, 0, 6.705], rotation: [0, 0, -0.351], scale: 0.13 },
-    ],
-  },
-  'apple-core': {
-    modelPath: '/apple_core.glb',
-    geometryName: 'AppleCore001',
-    materialName: 'AppleCore.001_mat',
-    transformChain: [{ rotation: [-Math.PI / 2, 0, 0], scale: 0.1 }],
-  },
-  'cardboard-box-4': {
-    modelPath: '/cardboardBox4.glb',
-    geometryName: 'Object_122',
-    materialName: 'sm36_002_Cardboard01A_A_Mat',
-    transformChain: [{ rotation: [Math.PI / 2, 0, 0], scale: 0.01 }],
-  },
-  'cardboard-box-5': {
-    modelPath: '/cardboardBox5.glb',
-    geometryName: 'Object_124',
-    materialName: 'sm36_004_Cardboard03A_A_Mat',
-    transformChain: [{ rotation: [Math.PI / 2, 0, -0.05], scale: 0.019 }],
-  },
-  'beer-case-1': {
-    modelPath: '/beerCase1.glb',
-    geometryName: 'Object_118',
-    materialName: 'sm32_143_BeerCase01A_A_Mat',
-    transformChain: [{ rotation: [Math.PI / 2, 0, -0.016], scale: 0.01 }],
-  },
-  'beer-case-2': {
-    modelPath: '/beerCase2.glb',
-    geometryName: 'Object_116',
-    materialName: 'sm32_128_BeerCase01A_A_Mat',
-    transformChain: [{ rotation: [Math.PI / 2, 0, -0.016], scale: 0.01 }],
-  },
-  'whiskey-bottle': {
-    modelPath: '/whiskeyBottle.glb',
-    geometryName: 'Object_114001',
-    materialName: 'sm32_163_DrinkBottle02A_A_Mat',
-    transformChain: [{ rotation: [Math.PI / 2, 0, 0], scale: 0.013 }],
-  },
-  'beer-bottle-1': {
-    modelPath: '/beerBottle1.glb',
-    geometryName: 'Object_138',
-    materialName: 'sm32_159_DrinkBottle01A_A_Mat.001',
-    transformChain: [{ rotation: [Math.PI / 2, 0, -Math.PI / 2], scale: 0.02 }],
-  },
-  'beer-bottle-2': {
-    modelPath: '/beerBottle2.glb',
-    geometryName: 'Object_140',
-    materialName: 'sm32_159_DrinkBottle01A_A_Mat.002',
-    transformChain: [
-      { rotation: [Math.PI / 2, 0, -Math.PI / 2], scale: 0.018 },
-    ],
-  },
-  bucket: {
-    modelPath: '/bucket.glb',
-    geometryName: 'Object_142',
-    materialName: 'sm30_072_PlasticBucket01A_A',
-    transformChain: [{ rotation: [Math.PI / 2, 0, 0], scale: 0.015 }],
-  },
-  'happy-meal': {
-    modelPath: '/happyMeal.glb',
-    geometryName: 'Object_3',
-    materialName: 'Material.001',
-    transformChain: [
-      { scale: 0.35 },
-      { position: [0, 1.774, 0], rotation: [-Math.PI / 2, 0, 0] },
-    ],
-  },
-  'mc-cup': {
-    modelPath: '/mcCup.glb',
-    geometryName: 'Cup',
-    materialName: 'Material',
-    transformChain: [
-      { scale: 0.01 },
-      { position: [0, 263.293, 0], rotation: [-Math.PI / 2, 0, 0], scale: 100 },
-    ],
-  },
-};
 
 export const INSTANCED_TRASH_POOL_META = SHOT_ASSET_OPTIONS.reduce(
   (meta, asset, assetIndex) => ({

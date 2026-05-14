@@ -1,4 +1,4 @@
-import React, { Suspense, lazy, useState } from 'react';
+import React, { Suspense, lazy, useCallback, useEffect, useState } from 'react';
 import { Navigate, Route, Routes } from 'react-router-dom';
 
 import './App.css';
@@ -10,6 +10,16 @@ import Overlay from './scaffold/overlay/Overlay';
 const LoadersPage = lazy(() => import('./pages/dev/LoadersPage'));
 const IconsPage = lazy(() => import('./pages/dev/IconsPage'));
 
+// Renders as the Suspense fallback inside the Canvas. Signals to the parent
+// that the scene is suspended so the Loader overlay stays visible.
+function SuspenseSignal({ onSuspend }) {
+  useEffect(() => {
+    onSuspend(true);
+    return () => onSuspend(false);
+  }, [onSuspend]);
+  return null;
+}
+
 /* ── Scene shell ─────────────────────────────────────────────
    Rendered at /:sceneId. Owns the canvas, overlay, and loader.
    useAppScenes reads sceneId from useParams() internally.
@@ -17,6 +27,8 @@ const IconsPage = lazy(() => import('./pages/dev/IconsPage'));
 function SceneShell() {
   const { CanvasWrapper, SceneComponent, renderer } = useAppScenes();
   const [loaderVisible, setLoaderVisible] = useState(true);
+  const [suspended, setSuspended] = useState(false);
+  const handleSuspend = useCallback((val) => setSuspended(val), []);
 
   return (
     <>
@@ -24,11 +36,16 @@ function SceneShell() {
       <div className="App">
         <CanvasWrapper key={renderer}>
           <AppStats />
-          <Suspense fallback={null}>
+          <Suspense fallback={<SuspenseSignal onSuspend={handleSuspend} />}>
             {SceneComponent && <SceneComponent />}
           </Suspense>
         </CanvasWrapper>
-        {loaderVisible && <Loader onComplete={() => setLoaderVisible(false)} />}
+        {loaderVisible && (
+          <Loader
+            onComplete={() => setLoaderVisible(false)}
+            suspended={suspended}
+          />
+        )}
       </div>
     </>
   );

@@ -7,9 +7,7 @@ export default function ClearTrashButton() {
   const hasThrowables = useTrashBlasterStore((s) => s.hasThrowables);
   const clearTrash = useTrashBlasterStore((s) => s.clearTrash);
   const TrashIcon = hasThrowables ? CgTrash : CgTrashEmpty;
-  const tooltipLabel = hasThrowables
-    ? 'Clear thrown trash'
-    : 'No thrown trash to clear';
+  const tooltipLabel = hasThrowables ? 'Clean up your mess' : 'All clean';
 
   return (
     <button
@@ -19,12 +17,12 @@ export default function ClearTrashButton() {
       aria-label={tooltipLabel}
       disabled={!hasThrowables}
       style={{
-        cursor: hasThrowables ? 'crosshair' : 'not-allowed',
+        cursor: 'crosshair',
         background: 'transparent',
         border: 0,
         padding: 0,
         color: 'inherit',
-        opacity: hasThrowables ? 1 : 0.55,
+        opacity: 1,
         display: 'flex',
         alignItems: 'center',
         justifyContent: 'center',

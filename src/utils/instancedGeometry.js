@@ -17,7 +17,7 @@ function buildTransformMatrix(transform = {}) {
   return new THREE.Matrix4().compose(position, quaternion, scale);
 }
 
-export function bakeInstancedGeometry(geometry, transformChain = []) {
+export default function bakeInstancedGeometry(geometry, transformChain = []) {
   const bakedGeometry = geometry.clone();
   const transformMatrix = new THREE.Matrix4();
 

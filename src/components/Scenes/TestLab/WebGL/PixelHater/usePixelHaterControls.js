@@ -1,4 +1,4 @@
-import { useControls } from 'leva';
+import { folder, useControls } from 'leva';
 
 export default function usePixelHaterControls() {
   return useControls(
@@ -39,6 +39,54 @@ export default function usePixelHaterControls() {
         value: '#111111',
         render: (get) => get('👾.bgType') === 'color',
       },
+      'Lighting Rig': folder(
+        {
+          'Point Light': folder(
+            {
+              plPosition: {
+                label: 'Position',
+                value: { x: 3, y: 3, z: 5 },
+              },
+              plDecay: {
+                label: 'Decay',
+                value: 0,
+                min: -10,
+                max: 10,
+                step: 0.1,
+              },
+              plDistance: {
+                label: 'Distance',
+                value: -1,
+                min: -10,
+                max: 10,
+                step: 0.1,
+              },
+              plIntensity: {
+                label: 'Intensity',
+                value: 0.8,
+                min: 0,
+                max: 10,
+                step: 0.1,
+              },
+              plCastShadow: { label: 'Cast Shadow', value: true },
+            },
+            { collapsed: true }
+          ),
+          'Ambient Light': folder(
+            {
+              ambientLightIntensity: {
+                label: 'Intensity',
+                value: 0,
+                min: 0,
+                max: 1,
+                step: 0.1,
+              },
+            },
+            { collapsed: true }
+          ),
+        },
+        { collapsed: true }
+      ),
       pixelEffect: {
         label: 'Effect',
         options: {

@@ -4,7 +4,6 @@ import { Environment, OrbitControls, Plane } from '@react-three/drei';
 import { EffectComposer, Pixelation } from '@react-three/postprocessing';
 
 import Record from '../../../../elements/record/Record';
-import LightingRig from '../../../../rigging/LightingRig';
 import CensorShapes from './censor/CensorShapes';
 import PixelMask from './composed/PixelMask';
 import PixelMaskEffect from './composed/PixelMaskEffectComponent';
@@ -26,6 +25,12 @@ export default function PixelHater() {
     voxelSteps,
     cornerRadius,
     insideOnly,
+    plPosition,
+    plDecay,
+    plDistance,
+    plIntensity,
+    plCastShadow,
+    ambientLightIntensity,
   } = usePixelHaterControls();
 
   const censorModeByEffect = {
@@ -40,7 +45,17 @@ export default function PixelHater() {
 
   return (
     <>
-      <LightingRig />
+      <group>
+        <ambientLight intensity={ambientLightIntensity} />
+        <pointLight
+          position={[plPosition.x, plPosition.y, plPosition.z]}
+          decay={plDecay}
+          distance={plDistance}
+          intensity={plIntensity}
+          castShadow={plCastShadow}
+        />
+      </group>
+
       <OrbitControls enableDamping enablePan enableRotate enableZoom />
 
       <Environment

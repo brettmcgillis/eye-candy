@@ -107,10 +107,6 @@ To Build:
 
 - [ ] Refactor like we did with bret/reversal to offer a generic that takes props, and specialized versions
 
-### LIGHTINGRIG
-
-- [ ] Get rid of it.
-
 ## Show
 
 - [ ] PenPlotter

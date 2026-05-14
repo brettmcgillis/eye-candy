@@ -25,7 +25,7 @@
 
 - [ ] Add a hook for setting camera position on desktop & mobile, like in Surrender. If possible extract to a reusable shared hook useCameraFitToViewport?
 
-- [ ] Break the scene down into it's smallest components. Hooks in ./hooks, components in ./compoents
+- [x] Break the scene down into its smallest components. Hooks in ./hooks, components in ./components
 
 # // Presets
 

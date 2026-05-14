@@ -32,7 +32,7 @@ import {
 } from '../../../../../elements/garbageBags/GarbageBags';
 import HappyMeal from '../../../../../elements/happyMeal/HappyMeal';
 import { Litter, Litter2 } from '../../../../../elements/litter/Litter';
-import McDonaldsCup from '../../../../../elements/mcdonaldsCup/McDonaldsCup';
+import McCup from '../../../../../elements/mcCup/McCup';
 import NewspaperStack from '../../../../../elements/newsPaperStack/NewsPaperStack';
 import {
   NewsPaper1,
@@ -204,8 +204,8 @@ export const SHOT_ASSET_OPTIONS = [
     poolType: 'component',
   },
   {
-    key: 'mcdonalds-cup',
-    Component: McDonaldsCup,
+    key: 'mc-cup',
+    Component: McCup,
     scale: 0.1,
     mass: 0.26,
     colliders: 'hull',

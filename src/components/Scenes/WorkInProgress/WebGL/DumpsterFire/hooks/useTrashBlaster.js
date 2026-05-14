@@ -13,13 +13,24 @@ import {
 import {
   createTrashBlast,
   getNormalizedPointerPosition,
+  getParkedShotPosition,
 } from '../utils/sceneUtils';
+import useTrashBlasterStore from './useTrashBlasterStore';
 
 export default function useTrashBlaster() {
   const { camera, gl } = useThree();
   const cameraRef = useRef(camera);
   const pointerDownRef = useRef(null);
   const shotBodiesRef = useRef({});
+  const markThrowableSpawned = useTrashBlasterStore(
+    (s) => s.markThrowableSpawned
+  );
+  const registerClearTrashHandler = useTrashBlasterStore(
+    (s) => s.registerClearTrashHandler
+  );
+  const unregisterClearTrashHandler = useTrashBlasterStore(
+    (s) => s.unregisterClearTrashHandler
+  );
   const nextShotSlotRef = useRef(
     Object.fromEntries(SHOT_ASSET_OPTIONS.map((asset) => [asset.key, 0]))
   );
@@ -27,6 +38,41 @@ export default function useTrashBlaster() {
   useEffect(() => {
     cameraRef.current = camera;
   }, [camera]);
+
+  useEffect(() => {
+    const parkShotBody = (body, assetKey, slotIndex) => {
+      if (!body) {
+        return;
+      }
+
+      const [x, y, z] = getParkedShotPosition(assetKey, slotIndex);
+
+      body.setTranslation({ x, y, z }, true);
+      body.setRotation({ x: 0, y: 0, z: 0, w: 1 }, true);
+      body.setLinvel({ x: 0, y: 0, z: 0 }, true);
+      body.setAngvel({ x: 0, y: 0, z: 0 }, true);
+    };
+
+    const clearTrash = () => {
+      SHOT_ASSET_OPTIONS.forEach((asset) => {
+        const bodies = shotBodiesRef.current[asset.key];
+
+        bodies?.forEach((body, slotIndex) => {
+          parkShotBody(body, asset.key, slotIndex);
+        });
+      });
+
+      nextShotSlotRef.current = Object.fromEntries(
+        SHOT_ASSET_OPTIONS.map((asset) => [asset.key, 0])
+      );
+    };
+
+    registerClearTrashHandler(clearTrash);
+
+    return () => {
+      unregisterClearTrashHandler();
+    };
+  }, [registerClearTrashHandler, unregisterClearTrashHandler]);
 
   useEffect(() => {
     const { domElement } = gl;
@@ -70,6 +116,8 @@ export default function useTrashBlaster() {
       );
       body.setLinvel({ x: vx, y: vy, z: vz }, true);
       body.setAngvel({ x: sx, y: sy, z: sz }, true);
+      body.wakeUp?.();
+      markThrowableSpawned();
     };
 
     const handlePointerDown = (event) => {
@@ -121,7 +169,7 @@ export default function useTrashBlaster() {
       domElement.removeEventListener('pointerup', handlePointerUp);
       window.removeEventListener('keydown', handleKeyDown);
     };
-  }, [gl]);
+  }, [gl, markThrowableSpawned]);
 
   return shotBodiesRef;
 }

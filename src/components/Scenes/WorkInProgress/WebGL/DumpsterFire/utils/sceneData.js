@@ -201,7 +201,6 @@ export const SHOT_ASSET_OPTIONS = [
     Component: HappyMeal,
     scale: 1,
     mass: 0.24,
-    poolType: 'component',
   },
   {
     key: 'mc-cup',
@@ -209,7 +208,6 @@ export const SHOT_ASSET_OPTIONS = [
     scale: 0.1,
     mass: 0.26,
     colliders: 'hull',
-    poolType: 'component',
   },
 ];
 
@@ -664,6 +662,24 @@ export const INSTANCED_TRASH_ASSET_DEFS = {
     geometryName: 'Object_142',
     materialName: 'sm30_072_PlasticBucket01A_A',
     transformChain: [{ rotation: [Math.PI / 2, 0, 0], scale: 0.01 }],
+  },
+  'happy-meal': {
+    modelPath: '/happyMeal.glb',
+    geometryName: 'Object_3',
+    materialName: 'Material.001',
+    transformChain: [
+      { scale: 0.4 },
+      { position: [0, 1.774, 0], rotation: [-Math.PI / 2, 0, 0] },
+    ],
+  },
+  'mc-cup': {
+    modelPath: '/mcCup.glb',
+    geometryName: 'Cup',
+    materialName: 'Material',
+    transformChain: [
+      { scale: 0.01 },
+      { position: [0, 263.293, 0], rotation: [-Math.PI / 2, 0, 0], scale: 100 },
+    ],
   },
 };
 

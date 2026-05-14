@@ -2,25 +2,18 @@
 
 ### GENERAL
 
-- [x] Add scripts to update major, minor, hotfix versions
-- [x] Add scripts to deploy next maj, min, hotfix
 - [ ] add/update screenshot(s) on readme for each scene
-- [x] Fix dbg layout on mobile
+- [ ] Add info button and stylized byline to showcase scenes. ByLine should be a modal. Should allow for text, images, links, and dismissal.
+- [ ] Finalize move from Querystring to routes.
 
 ### REPO
 
-- [x] springs? got it
-- [x] maath
-
 ### EXPLORE/EXPLODE
 
-- [x] pixelation component. did a pixelhater
 - [ ] Check out Tone.js for audio. Could be a good solution to bridging Strudel, Mp3, etc.
 
 ### APP
 
-- [x] fix icon used in manifest, logo192 is not the right size, causes console err
-- [x] serve up multiple scenes. portal(s)?, picture frames?, routing?
 - [ ] if were doing screen cap then move it out of scenes and into something at app layer
   - Overhaul. Should support screenshot and screenrec.
   - Make sure output includes a watermark & some cool hiddnen fileinfo

@@ -14,7 +14,7 @@ import MoonlightProjector from './components/MoonlightProjector';
 import ThunderLightning from './components/ThunderLightning';
 import useCamera from './hooks/useCamera';
 import useSceneControls from './hooks/useSceneControls';
-import useSurrenderPhysicsState from './hooks/useSurrenderPhysicsState';
+import usePhysicsState from './hooks/usePhysicsState';
 
 export default function Surrender() {
   const outlineGroupRef = useRef();
@@ -152,7 +152,7 @@ export default function Surrender() {
   const { cameraPosition, orbitTarget } = useCamera({ posX, posY });
 
   const leafModeNormalized = leafMode?.toLowerCase() ?? 'billboard';
-  const scenePhysics = useSurrenderPhysicsState({
+  const scenePhysics = usePhysicsState({
     outlineGroupRef,
     clothWidth,
     clothHeight,

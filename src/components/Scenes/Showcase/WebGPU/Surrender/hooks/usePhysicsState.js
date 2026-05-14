@@ -14,7 +14,7 @@ const sharedFlagCenterLocal = new THREE.Vector3();
 const sharedFlagCenterWorld = new THREE.Vector3();
 const sharedInverseMatrix = new THREE.Matrix4();
 
-export default function useSurrenderPhysicsState({
+export default function usePhysicsState({
   outlineGroupRef,
   clothWidth,
   clothHeight,

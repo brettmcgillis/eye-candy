@@ -1063,7 +1063,7 @@ function AssetShowcaseGrid() {
           outlineWidth={0.022}
           textAlign="center"
         >
-          Trash Asset Grid
+          Trash Collection
         </Text>
       </Billboard>
 

@@ -10,15 +10,34 @@ export default function AudioToggle() {
 
   if (!hasAudio) return null;
   const AudioIcon = audioEnabled ? FaVolumeUp : FaVolumeMute;
+  const tooltipLabel = audioEnabled ? 'Mute audio' : 'Unmute audio';
+
   return (
     <div
       className="bottom-center overlay-panel"
-      aria-label={audioEnabled ? 'Mute audio' : 'Unmute audio'}
       style={{
         cursor: 'crosshair',
       }}
     >
-      <AudioIcon onClick={toggleAudio} />
+      <button
+        type="button"
+        onClick={toggleAudio}
+        title={tooltipLabel}
+        aria-label={tooltipLabel}
+        aria-pressed={audioEnabled}
+        style={{
+          cursor: 'crosshair',
+          background: 'transparent',
+          border: 0,
+          padding: 0,
+          color: 'inherit',
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center',
+        }}
+      >
+        <AudioIcon />
+      </button>
     </div>
   );
 }

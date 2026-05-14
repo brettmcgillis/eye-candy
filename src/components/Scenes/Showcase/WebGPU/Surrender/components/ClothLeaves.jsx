@@ -612,8 +612,7 @@ function ClothLeavesInner({
       const recycleInstances = async (index = 0) => {
         if (index >= instances.length) return;
 
-        const inst =
-          instances[(physics.frameNum + index) % instances.length];
+        const inst = instances[(physics.frameNum + index) % instances.length];
         if (physics.objects[inst.id].position.x > recycleX) {
           const pos = spawnFn(false);
           const quat = randomRotation();

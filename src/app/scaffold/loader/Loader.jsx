@@ -1,3 +1,4 @@
+/* eslint-disable consistent-return */
 import React, { useEffect, useRef, useState } from 'react';
 
 import { useProgress } from '@react-three/drei';

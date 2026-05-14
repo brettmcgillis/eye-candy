@@ -278,7 +278,7 @@ export const FIXED_SCENE_ITEMS = [
     position: [-1, 0, 1.4],
     rotation: [0, 90, 0],
     scale: 1,
-    showcaseYOffset: 0.01,
+    showcaseYOffset: 0.02,
   },
   {
     key: 'litter-2',
@@ -328,7 +328,7 @@ export const FIXED_SCENE_ITEMS = [
     position: [-5, 0, 2],
     rotation: [0, 90, 0],
     scale: 1,
-    showcaseYOffset: 0.01,
+    showcaseYOffset: 0.02,
   },
   {
     key: 'cigarette-butts',
@@ -336,7 +336,7 @@ export const FIXED_SCENE_ITEMS = [
     position: [0, 0, 1.7],
     rotation: [0, -Math.PI / 1.5, 0],
     scale: 0.75,
-    showcaseYOffset: 0.01,
+    showcaseYOffset: 0.02,
   },
   {
     key: 'cigarette-butts',
@@ -428,7 +428,7 @@ export const FIXED_SCENE_ITEMS = [
     position: [4.5, 0, 1.2],
     rotation: [0, 90, 0],
     scale: 1,
-    showcaseYOffset: 0.01,
+    showcaseYOffset: 0.02,
   },
 ];
 

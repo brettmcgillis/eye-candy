@@ -8,7 +8,7 @@ export default function HappyMeal(props) {
   const { nodes, materials } = useGLTF(modelFile('/happyMeal.glb'));
   return (
     <group {...props} dispose={null}>
-      <group scale={0.4}>
+      <group scale={0.35}>
         <mesh
           castShadow
           receiveShadow

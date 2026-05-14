@@ -7,14 +7,14 @@ import {
 } from '@react-three/drei';
 
 import {
-  DUMPSTER_FIRE_BACKGROUND,
-  DUMPSTER_FIRE_CAMERA,
-  DUMPSTER_FIRE_FOG_RANGE,
-  DUMPSTER_FIRE_GRID,
-  DUMPSTER_FIRE_GROUND,
-  DUMPSTER_FIRE_LIGHTING,
+  BACKGROUND,
+  CAMERA,
   FLOOR_COLLIDER_POSITION,
+  FOG_RANGE,
+  GRID,
+  GROUND,
   GROUND_Y,
+  LIGHTING,
 } from '../utils/sceneData';
 
 export default function SceneEnvironment() {
@@ -24,25 +24,18 @@ export default function SceneEnvironment() {
     <>
       <PerspectiveCamera
         makeDefault
-        position={DUMPSTER_FIRE_CAMERA.position}
-        fov={DUMPSTER_FIRE_CAMERA.fov}
+        position={CAMERA.position}
+        fov={CAMERA.fov}
       />
       <OrbitControls />
 
-      <color attach="background" args={[DUMPSTER_FIRE_BACKGROUND]} />
-      <fog
-        attach="fog"
-        args={[
-          DUMPSTER_FIRE_BACKGROUND,
-          DUMPSTER_FIRE_FOG_RANGE[0],
-          DUMPSTER_FIRE_FOG_RANGE[1],
-        ]}
-      />
+      <color attach="background" args={[BACKGROUND]} />
+      <fog attach="fog" args={[BACKGROUND, FOG_RANGE[0], FOG_RANGE[1]]} />
 
-      <ambientLight intensity={DUMPSTER_FIRE_LIGHTING.ambientIntensity} />
+      <ambientLight intensity={LIGHTING.ambientIntensity} />
       <directionalLight
-        position={DUMPSTER_FIRE_LIGHTING.directionalPosition}
-        intensity={DUMPSTER_FIRE_LIGHTING.directionalIntensity}
+        position={LIGHTING.directionalPosition}
+        intensity={LIGHTING.directionalIntensity}
       />
 
       <mesh
@@ -50,12 +43,12 @@ export default function SceneEnvironment() {
         position={[groundX, GROUND_Y - 0.02, groundZ]}
         receiveShadow
       >
-        <planeGeometry args={DUMPSTER_FIRE_GROUND.size} />
-        <meshStandardMaterial color={DUMPSTER_FIRE_GROUND.color} />
+        <planeGeometry args={GROUND.size} />
+        <meshStandardMaterial color={GROUND.color} />
       </mesh>
 
       <gridHelper
-        args={DUMPSTER_FIRE_GRID.args}
+        args={GRID.args}
         position={[groundX, GROUND_Y + 0.001, groundZ]}
       />
 

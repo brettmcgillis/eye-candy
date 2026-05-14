@@ -58,21 +58,21 @@ export const FLOOR_COLLIDER_POSITION = [
   1,
 ];
 
-export const DUMPSTER_FIRE_CAMERA = {
+export const CAMERA = {
   position: [-2.5, 3.2, 20],
   fov: 40,
 };
 
-export const DUMPSTER_FIRE_BACKGROUND = '#e8e8e8';
-export const DUMPSTER_FIRE_FOG_RANGE = [18, 34];
-export const DUMPSTER_FIRE_GROUND = {
+export const BACKGROUND = '#e8e8e8';
+export const FOG_RANGE = [18, 34];
+export const GROUND = {
   color: '#efefef',
   size: [30, 18],
 };
-export const DUMPSTER_FIRE_GRID = {
+export const GRID = {
   args: [30, 15, '#cdcdcd', '#d9d9d9'],
 };
-export const DUMPSTER_FIRE_LIGHTING = {
+export const LIGHTING = {
   ambientIntensity: 0.85,
   directionalPosition: [8, 12, 10],
   directionalIntensity: 1.15,
@@ -99,116 +99,133 @@ export const ASSET_GRID_ROW_SPACING = 3.05;
 export const ASSET_GRID_POSITION = [4.75, GROUND_Y, 2.2];
 export const ASSET_GRID_LABEL_HEIGHT = 1.6;
 
-export const SHOT_ASSET_OPTIONS = [
-  {
-    key: 'garbage-bag',
+const TRASH_ASSET_CONFIGS = {
+  'garbage-bag': {
     Component: GarbageBag,
     scale: 0.75,
     mass: 0.45,
   },
-  {
-    key: 'garbage-bag-1',
+  'garbage-bag-1': {
     Component: GarbageBag1,
     scale: 0.8,
     mass: 0.5,
   },
-  {
-    key: 'cardboard-box-1',
+  'cardboard-box-1': {
     Component: CardboardBox1,
     scale: 1,
     mass: 0.7,
   },
-  {
-    key: 'cardboard-box-2',
+  'cardboard-box-2': {
     Component: CardboardBox2,
     scale: 1,
     mass: 0.75,
   },
-  {
-    key: 'cardboard-box-3',
+  'cardboard-box-3': {
     Component: CardboardBox3,
     scale: 1,
     mass: 0.8,
   },
-  {
-    key: 'starbucks-cup',
+  'starbucks-cup': {
     Component: StarbucksCup,
     scale: 1,
     mass: 0.28,
     colliders: 'hull',
   },
-  {
-    key: 'apple-core',
+  'apple-core': {
     Component: AppleCore,
     scale: 1,
     mass: 0.18,
     colliders: 'hull',
   },
-  {
-    key: 'cardboard-box-4',
+  'cardboard-box-4': {
     Component: CardboardBox4,
     scale: 1,
     mass: 0.85,
   },
-  {
-    key: 'cardboard-box-5',
+  'cardboard-box-5': {
     Component: CardboardBox5,
     scale: 1,
     mass: 0.9,
   },
-  {
-    key: 'beer-case-1',
+  'beer-case-1': {
     Component: BeerCase1,
     scale: 1,
     mass: 1.1,
   },
-  {
-    key: 'beer-case-2',
+  'beer-case-2': {
     Component: BeerCase2,
     scale: 1,
     mass: 1.15,
   },
-  {
-    key: 'whiskey-bottle',
+  'whiskey-bottle': {
     Component: WhiskeyBottle,
     scale: 1,
     mass: 0.38,
     colliders: 'hull',
   },
-  {
-    key: 'beer-bottle-1',
+  'beer-bottle-1': {
     Component: BeerBottle1,
     scale: 1,
     mass: 0.32,
     colliders: 'hull',
   },
-  {
-    key: 'beer-bottle-2',
+  'beer-bottle-2': {
     Component: BeerBottle2,
     scale: 1,
     mass: 0.34,
     colliders: 'hull',
   },
-  {
-    key: 'bucket',
+  bucket: {
     Component: Bucket,
     scale: 1.4,
     mass: 0.6,
     colliders: 'hull',
   },
-  {
-    key: 'happy-meal',
+  'happy-meal': {
     Component: HappyMeal,
     scale: 1,
     mass: 0.24,
   },
-  {
-    key: 'mc-cup',
+  'mc-cup': {
     Component: McCup,
     scale: 0.1,
     mass: 0.26,
     colliders: 'hull',
   },
+};
+
+function createTrashAsset(key, overrides = {}) {
+  const assetConfig = TRASH_ASSET_CONFIGS[key];
+
+  if (!assetConfig) {
+    throw new Error(`Unknown trash asset: ${key}`);
+  }
+
+  return {
+    key,
+    ...assetConfig,
+    ...overrides,
+  };
+}
+
+export const SHOT_ASSET_OPTIONS = [
+  createTrashAsset('garbage-bag'),
+  createTrashAsset('garbage-bag-1'),
+  createTrashAsset('cardboard-box-1'),
+  createTrashAsset('cardboard-box-2'),
+  createTrashAsset('cardboard-box-3'),
+  createTrashAsset('starbucks-cup'),
+  createTrashAsset('apple-core'),
+  createTrashAsset('cardboard-box-4'),
+  createTrashAsset('cardboard-box-5'),
+  createTrashAsset('beer-case-1'),
+  createTrashAsset('beer-case-2'),
+  createTrashAsset('whiskey-bottle'),
+  createTrashAsset('beer-bottle-1'),
+  createTrashAsset('beer-bottle-2'),
+  createTrashAsset('bucket'),
+  createTrashAsset('happy-meal'),
+  createTrashAsset('mc-cup'),
 ];
 
 export function getRandomShotAsset(random = Math.random) {
@@ -431,140 +448,76 @@ export const FIXED_SCENE_ITEMS = [
 ];
 
 export const DYNAMIC_SCENE_ITEMS = [
-  {
+  createTrashAsset('garbage-bag', {
     id: 'right-garbage-bag',
-    key: 'garbage-bag',
-    Component: GarbageBag,
     position: [-4.0, 0, 0.2],
     rotation: [0, Math.PI / 1.5, 0],
-    scale: 0.75,
-    mass: 0.45,
-  },
-  {
+  }),
+  createTrashAsset('garbage-bag-1', {
     id: 'left-garbage-bag',
-    key: 'garbage-bag-1',
-    Component: GarbageBag1,
     position: [4, 0, 0.25],
     rotation: [0, 0, 0],
-    scale: 0.8,
-    mass: 0.5,
-  },
-  {
+  }),
+  createTrashAsset('starbucks-cup', {
     id: 'front-right-cup',
-    key: 'starbucks-cup',
-    Component: StarbucksCup,
     position: [-1.1, 0.02, 1.95],
     rotation: [Math.PI / 2, Math.PI / 5, 0],
-    scale: 1,
-    mass: 0.28,
-    colliders: 'hull',
-  },
-  {
+  }),
+  createTrashAsset('starbucks-cup', {
     id: 'left-side-cup',
-    key: 'starbucks-cup',
-    Component: StarbucksCup,
     position: [3.55, 0.02, 1.05],
     rotation: [Math.PI / 2, -Math.PI / 3, 0],
-    scale: 1,
-    mass: 0.28,
-    colliders: 'hull',
-  },
-  {
+  }),
+  createTrashAsset('apple-core', {
     id: 'front-apple-core',
-    key: 'apple-core',
-    Component: AppleCore,
     position: [0.15, 0.03, 2.05],
     rotation: [Math.PI / 5, -Math.PI / 6, Math.PI / 7],
-    scale: 1,
-    mass: 0.18,
-    colliders: 'hull',
-  },
-  {
+  }),
+  createTrashAsset('apple-core', {
     id: 'left-apple-core',
-    key: 'apple-core',
-    Component: AppleCore,
     position: [3.4, 0.03, 1.85],
     rotation: [Math.PI / 6, Math.PI / 4, -Math.PI / 5],
-    scale: 1,
-    mass: 0.18,
-    colliders: 'hull',
-  },
-  {
+  }),
+  createTrashAsset('cardboard-box-4', {
     id: 'front-left-box-4',
-    key: 'cardboard-box-4',
-    Component: CardboardBox4,
     position: [-2.4, 0.02, 2.2],
     rotation: [0, Math.PI / 7, 0],
-    scale: 1,
-    mass: 0.85,
-  },
-  {
+  }),
+  createTrashAsset('cardboard-box-5', {
     id: 'front-right-box-5',
-    key: 'cardboard-box-5',
-    Component: CardboardBox5,
     position: [1.85, 0.02, 2.1],
     rotation: [0, -Math.PI / 6, 0],
-    scale: 1,
-    mass: 0.9,
-  },
-  {
+  }),
+  createTrashAsset('beer-case-1', {
     id: 'right-side-beer-case-1',
-    key: 'beer-case-1',
-    Component: BeerCase1,
     position: [-5.1, 0.02, 0.95],
     rotation: [0, Math.PI / 9, 0],
-    scale: 1,
-    mass: 1.1,
-  },
-  {
+  }),
+  createTrashAsset('beer-case-2', {
     id: 'left-side-beer-case-2',
-    key: 'beer-case-2',
-    Component: BeerCase2,
     position: [4.8, 0.02, -0.2],
     rotation: [0, -Math.PI / 4, 0],
-    scale: 1,
-    mass: 1.15,
-  },
-  {
+  }),
+  createTrashAsset('whiskey-bottle', {
     id: 'front-whiskey-bottle',
-    key: 'whiskey-bottle',
-    Component: WhiskeyBottle,
     position: [-0.2, 0.04, 2.5],
     rotation: [0, Math.PI / 3, Math.PI / 2],
-    scale: 1,
-    mass: 0.38,
-    colliders: 'hull',
-  },
-  {
+  }),
+  createTrashAsset('beer-bottle-1', {
     id: 'right-beer-bottle-1',
-    key: 'beer-bottle-1',
-    Component: BeerBottle1,
     position: [-4.55, 0.03, 1.55],
     rotation: [Math.PI / 10, 0, Math.PI / 2],
-    scale: 1,
-    mass: 0.32,
-    colliders: 'hull',
-  },
-  {
+  }),
+  createTrashAsset('beer-bottle-2', {
     id: 'left-beer-bottle-2',
-    key: 'beer-bottle-2',
-    Component: BeerBottle2,
     position: [4.15, 0.03, 1.55],
     rotation: [Math.PI / 12, 0, -Math.PI / 2],
-    scale: 1,
-    mass: 0.34,
-    colliders: 'hull',
-  },
-  {
+  }),
+  createTrashAsset('bucket', {
     id: 'front-bucket',
-    key: 'bucket',
-    Component: Bucket,
     position: [0.95, 0.02, 2.35],
     rotation: [0, -Math.PI / 8, 0],
-    scale: 1,
-    mass: 0.6,
-    colliders: 'hull',
-  },
+  }),
 ];
 
 export const INSTANCED_TRASH_ASSET_DEFS = {
@@ -661,14 +614,14 @@ export const INSTANCED_TRASH_ASSET_DEFS = {
     modelPath: '/bucket.glb',
     geometryName: 'Object_142',
     materialName: 'sm30_072_PlasticBucket01A_A',
-    transformChain: [{ rotation: [Math.PI / 2, 0, 0], scale: 0.01 }],
+    transformChain: [{ rotation: [Math.PI / 2, 0, 0], scale: 0.015 }],
   },
   'happy-meal': {
     modelPath: '/happyMeal.glb',
     geometryName: 'Object_3',
     materialName: 'Material.001',
     transformChain: [
-      { scale: 0.4 },
+      { scale: 0.35 },
       { position: [0, 1.774, 0], rotation: [-Math.PI / 2, 0, 0] },
     ],
   },
@@ -707,9 +660,9 @@ function collectUniqueGridAssets(...assetGroups) {
 }
 
 export const ASSET_GRID_OPTIONS = collectUniqueGridAssets(
-  SHOT_ASSET_OPTIONS,
   FIXED_SCENE_ITEMS,
-  DYNAMIC_SCENE_ITEMS
+  DYNAMIC_SCENE_ITEMS,
+  SHOT_ASSET_OPTIONS
 ).map((asset) => ({
   ...asset,
   showcaseYOffset: asset.showcaseYOffset ?? 0,

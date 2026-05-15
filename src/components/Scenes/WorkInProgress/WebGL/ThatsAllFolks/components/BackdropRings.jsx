@@ -1,38 +1,42 @@
+/* eslint-disable react/no-array-index-key */
 import * as THREE from 'three';
 
 import React, { useMemo } from 'react';
 
-import { Base, Geometry, Subtraction } from '@react-three/csg';
+import getColorsInRange from '../../../../../../utils/colors';
+import Halo from '../../../../../elements/halo/Halo';
 
-const WARM_LAYER_COLORS = [
-  '#ffc14a',
-  '#f18724',
-  '#d95918',
-  '#b63a15',
-  '#8f2b15',
-];
+const LAYER_COUNT = 5;
+const GRADIENT_STEPS = 24;
+const BACK_START = '#e1a03c';
+const FRONT_START = '#ffd975';
+const BACK_END = '#6a2314';
+const FRONT_END = '#8f2b15';
 
-function createBackdropMaterials() {
-  return {
-    back: new THREE.MeshStandardMaterial({
-      color: '#2220cc',
-      roughness: 0.52,
-      metalness: 0.08,
-      emissive: new THREE.Color('#2220cc'),
-      emissiveIntensity: 0.1,
-    }),
-    warm: WARM_LAYER_COLORS.map((color, index) => {
-      const t = index / (WARM_LAYER_COLORS.length - 1);
+function createCoreMaterial() {
+  return new THREE.MeshStandardMaterial({
+    color: '#261cff',
+    roughness: 0.5,
+    metalness: 0.06,
+    emissive: new THREE.Color('#3a2cff'),
+    emissiveIntensity: 0.24,
+    side: THREE.DoubleSide,
+  });
+}
 
-      return new THREE.MeshStandardMaterial({
-        color,
-        roughness: THREE.MathUtils.lerp(0.78, 0.58, t),
-        metalness: 0.05,
-        emissive: new THREE.Color(color),
-        emissiveIntensity: THREE.MathUtils.lerp(0.06, 0.18, t),
-      });
-    }),
-  };
+function buildGradientRings(
+  innerRadius,
+  outerRadius,
+  startColor,
+  endColor,
+  steps
+) {
+  const width = outerRadius - innerRadius;
+
+  return getColorsInRange(startColor, endColor, steps).map((color) => ({
+    width: width / steps,
+    color,
+  }));
 }
 
 export default function BackdropRings({
@@ -41,73 +45,53 @@ export default function BackdropRings({
   layerDepth = 0.18,
   layerGap = 0.06,
 }) {
-  const backDepth = layerDepth * 1.15;
+  const depthStep = layerDepth + layerGap;
 
-  const layers = useMemo(() => {
-    const smallestHoleRadius = outerRadius * 0.46;
-    const largestHoleRadius = outerRadius * 0.9;
+  const layerConfigs = useMemo(() => {
+    const startColors = getColorsInRange(FRONT_START, BACK_START, LAYER_COUNT);
+    const endColors = getColorsInRange(FRONT_END, BACK_END, LAYER_COUNT);
 
-    return WARM_LAYER_COLORS.map((color, index) => ({
-      color,
-      holeRadius: THREE.MathUtils.lerp(
-        smallestHoleRadius,
-        largestHoleRadius,
-        index / (WARM_LAYER_COLORS.length - 1)
-      ),
-      z: (index + 1) * (layerDepth + layerGap),
-    }));
-  }, [outerRadius, layerDepth, layerGap]);
+    return Array.from({ length: LAYER_COUNT }, (_value, index) => {
+      const t = index / (LAYER_COUNT - 1);
+      const layerInnerRadius =
+        outerRadius * THREE.MathUtils.lerp(0.44, 0.82, t);
+      const layerOuterRadius = outerRadius * THREE.MathUtils.lerp(0.58, 1.0, t);
 
-  const backGeometry = useMemo(
-    () => new THREE.CylinderGeometry(outerRadius, outerRadius, backDepth, 96),
-    [outerRadius, backDepth]
+      return {
+        innerRadius: layerInnerRadius,
+        outerRadius: layerOuterRadius,
+        rings: buildGradientRings(
+          layerInnerRadius,
+          layerOuterRadius,
+          startColors[index],
+          endColors[index],
+          GRADIENT_STEPS
+        ),
+        z: index * depthStep,
+      };
+    });
+  }, [depthStep, outerRadius]);
+
+  const coreRadius = useMemo(
+    () => layerConfigs[0].innerRadius * 1.02,
+    [layerConfigs]
   );
 
-  const ringGeometry = useMemo(
-    () => new THREE.CylinderGeometry(outerRadius, outerRadius, layerDepth, 96),
-    [outerRadius, layerDepth]
-  );
-
-  const holeGeometries = useMemo(
-    () =>
-      layers.map(
-        (layer) =>
-          new THREE.CylinderGeometry(
-            layer.holeRadius,
-            layer.holeRadius,
-            layerDepth * 4,
-            96
-          )
-      ),
-    [layers, layerDepth]
-  );
-
-  const materials = useMemo(() => createBackdropMaterials(), []);
+  const coreMaterial = useMemo(() => createCoreMaterial(), []);
 
   return (
     <group position={position}>
-      <mesh
-        castShadow
-        receiveShadow
-        geometry={backGeometry}
-        material={materials.back}
-        rotation={[Math.PI / 2, 0, 0]}
-      />
+      <mesh material={coreMaterial} position={[0, 0, -depthStep * 0.55]}>
+        <circleGeometry args={[coreRadius, 128]} />
+      </mesh>
 
-      {layers.map((layer, index) => (
-        <mesh
-          key={layer.color}
-          castShadow
-          receiveShadow
-          material={materials.warm[index]}
+      {layerConfigs.map((layer, index) => (
+        <Halo
+          key={`backdrop-layer-${index}`}
+          rings={layer.rings}
+          innerRadius={layer.innerRadius}
           position={[0, 0, layer.z]}
-          rotation={[Math.PI / 2, 0, 0]}
-        >
-          <Geometry computeVertexNormals>
-            <Base geometry={ringGeometry} />
-            <Subtraction geometry={holeGeometries[index]} />
-          </Geometry>
-        </mesh>
+        />
       ))}
     </group>
   );

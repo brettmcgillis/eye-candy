@@ -1,37 +1,21 @@
-import { levaStore } from 'leva';
-
 import React from 'react';
 import { PiSkullDuotone } from 'react-icons/pi';
+import { useLocation } from 'react-router-dom';
 
 import { iconFile } from '../../../../utils/appUtils';
-import sceneRegistry, { AREA_ICONS } from '../../../sceneRegistry';
+import sceneRegistry, { AREA_ICONS, resolveScenePath } from '../../../sceneRegistry';
 
 function FallbackIcon() {
   return <PiSkullDuotone color="#888" />;
 }
 
 export default function Scenemoji({ onDebugToggle }) {
-  const readLevaValue = (state, keys) => {
-    const values = keys.map((key) => state.data?.[key]?.value);
-    return values.find((value) => value !== undefined);
-  };
+  const location = useLocation();
+  const match = resolveScenePath(location.pathname) ?? sceneRegistry.defaultScene;
 
-  const channel =
-    levaStore.useStore((state) =>
-      readLevaValue(state, ['App.mode', 'Scene Select.mode'])
-    ) ?? 'webgl';
-
-  const area =
-    levaStore.useStore((state) =>
-      readLevaValue(state, ['App.area', 'Scene Select.area'])
-    ) ?? 'showcase';
-
-  const sceneId = levaStore.useStore((state) =>
-    readLevaValue(state, ['App.scene', 'Scene Select.scene'])
-  );
-
+  const { channel, area } = match;
   const scenes = sceneRegistry.byArea[channel]?.[area] ?? [];
-  const scene = scenes.find((s) => s.id === sceneId);
+  const scene = scenes.find((s) => s.id === match.id);
   const SceneIcon = scene?.icon ?? FallbackIcon;
   const AreaIcon = AREA_ICONS[area];
 

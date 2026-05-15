@@ -68,8 +68,10 @@ To Build:
 
 - [CRTTest](src/components/scenes/WorkInProgress/WebGL/CRTTest/todo.md)
 - [DumpsterFire](src/components/scenes/WorkInProgress/WebGL/DumpsterFire/todo.md)
-- [ThatsAllFolks](src/components/scenes/WorkInProgress/WebGL/ThatsAllFolks/todo.md)
-- [StillPullingForYou](src/components/scenes/WorkInProgress/WebGL/StillPullingForYou/todo.md)
+- [ThatsAllFolks WebGL](src/components/scenes/WorkInProgress/WebGL/ThatsAllFolks/todo.md)
+- [ThatsAllFolks WebGPU](src/components/scenes/WorkInProgress/WebGPU/ThatsAllFolks/todo.md)
+- [StillPullingForYou WebGL](src/components/scenes/WorkInProgress/WebGL/StillPullingForYou/todo.md)
+- [StillPullingForYou WebGPU](src/components/scenes/WorkInProgress/WebGPU/StillPullingForYou/todo.md)
 - [PolicePresence](src/components/scenes/WorkInProgress/WebGL/PolicePresence/todo.md)
 - [FlyingHigh](src/components/scenes/WorkInProgress/WebGL/FlyingHigh/todo.md)
 - [RowItAlone](src/components/scenes/WorkInProgress/WebGL/RowItAlone/todo.md)
@@ -155,7 +157,8 @@ To Build:
 
 ### Scenes finish before post
 
-- [ ] Thats All Folks
+- [ ] Thats All Folks - Smoke
+- [ ] Thats All Folks - Bang
 - [ ] Crt Test
 - [ ] Still Pulling For You - Rough Waters
 - [ ] Still Pulling For You - Still Pulling

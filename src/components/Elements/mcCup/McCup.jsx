@@ -9,25 +9,28 @@ import { modelFile } from '../../../utils/appUtils';
 import bakeInstancedGeometry from '../../../utils/instancedGeometry';
 
 const MC_CUP_MODEL_PATH = '/mcCup.glb';
+const MC_CUP_MODEL_FILE = modelFile(MC_CUP_MODEL_PATH);
 const MC_CUP_ROTATION = [-Math.PI / 2, 0, 0];
+const MC_CUP_Y_OFFSET = 263.293 * 0.01;
 const MC_CUP_TRANSFORM_CHAIN = [
-  { scale: 0.01 },
-  { position: [0, 263.293, 0], rotation: MC_CUP_ROTATION, scale: 100 },
+  { position: [0, MC_CUP_Y_OFFSET, 0], rotation: MC_CUP_ROTATION },
 ];
 
 const [McCupInstancesRoot, McCupInstanceRoot] = createInstances();
 
-export function McCupInstances({ children, material, ...props }) {
-  const { nodes, materials } = useGLTF(modelFile(MC_CUP_MODEL_PATH));
-  const baseGeometry = nodes.Cup.geometry;
-  const sourceMaterial = materials.Material;
+function useMcCupModel() {
+  const { nodes, materials } = useGLTF(MC_CUP_MODEL_FILE);
+
+  return {
+    baseGeometry: nodes.Cup.geometry,
+    sourceMaterial: materials.Material,
+  };
+}
+
+function useMcCupGeometry(baseGeometry) {
   const geometry = useMemo(
     () => bakeInstancedGeometry(baseGeometry, MC_CUP_TRANSFORM_CHAIN),
     [baseGeometry]
-  );
-  const instanceMaterial = useMemo(
-    () => material ?? sourceMaterial.clone(),
-    [material, sourceMaterial]
   );
 
   useEffect(() => {
@@ -35,6 +38,17 @@ export function McCupInstances({ children, material, ...props }) {
       geometry.dispose?.();
     };
   }, [geometry]);
+
+  return geometry;
+}
+
+export function McCupInstances({ children, material, ...props }) {
+  const { baseGeometry, sourceMaterial } = useMcCupModel();
+  const geometry = useMcCupGeometry(baseGeometry);
+  const instanceMaterial = useMemo(
+    () => material ?? sourceMaterial.clone(),
+    [material, sourceMaterial]
+  );
 
   useEffect(() => {
     if (material) {
@@ -62,22 +76,19 @@ export function McCupInstance(props) {
 }
 
 export default function McCup(props) {
-  const { nodes, materials } = useGLTF(modelFile(MC_CUP_MODEL_PATH));
+  const { baseGeometry, sourceMaterial } = useMcCupModel();
+  const geometry = useMcCupGeometry(baseGeometry);
+
   return (
     <group {...props} dispose={null}>
-      <group scale={0.01}>
-        <mesh
-          castShadow
-          receiveShadow
-          geometry={nodes.Cup.geometry}
-          material={materials.Material}
-          position={[0, 263.293, 0]}
-          rotation={MC_CUP_ROTATION}
-          scale={100}
-        />
-      </group>
+      <mesh
+        castShadow
+        receiveShadow
+        geometry={geometry}
+        material={sourceMaterial}
+      />
     </group>
   );
 }
 
-useGLTF.preload(modelFile(MC_CUP_MODEL_PATH));
+useGLTF.preload(MC_CUP_MODEL_FILE);

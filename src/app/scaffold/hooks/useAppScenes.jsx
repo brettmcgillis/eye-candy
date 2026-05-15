@@ -84,6 +84,9 @@ export default function useAppScenes() {
   useEffect(() => {
     matchRef.current = match;
   }, [match]);
+  // Set by buttonGroup handlers to suppress the stale levaSceneId that Leva
+  // preserves in the store across channel/area reinits.
+  const buttonNavRef = useRef(false);
 
   const noSceneFor = (channel, area) =>
     sceneRegistry.byArea?.[channel]?.[area]?.find((s) => s.id === 'noScene') ??
@@ -97,12 +100,14 @@ export default function useAppScenes() {
         opts: {
           WebGL: () => {
             const m = matchRef.current;
+            buttonNavRef.current = true;
             navigateRef.current(noSceneFor('webgl', m.area).path, {
               replace: true,
             });
           },
           WebGPU: () => {
             const m = matchRef.current;
+            buttonNavRef.current = true;
             navigateRef.current(noSceneFor('webgpu', m.area).path, {
               replace: true,
             });
@@ -114,12 +119,14 @@ export default function useAppScenes() {
         opts: {
           Showcase: () => {
             const m = matchRef.current;
+            buttonNavRef.current = true;
             navigateRef.current(noSceneFor(m.channel, 'showcase').path, {
               replace: true,
             });
           },
           WIP: () => {
             const m = matchRef.current;
+            buttonNavRef.current = true;
             navigateRef.current(noSceneFor(m.channel, 'wip').path, {
               replace: true,
             });
@@ -131,12 +138,14 @@ export default function useAppScenes() {
         opts: {
           TestLab: () => {
             const m = matchRef.current;
+            buttonNavRef.current = true;
             navigateRef.current(noSceneFor(m.channel, 'testlab').path, {
               replace: true,
             });
           },
           Toolbox: () => {
             const m = matchRef.current;
+            buttonNavRef.current = true;
             navigateRef.current(noSceneFor(m.channel, 'toolbox').path, {
               replace: true,
             });
@@ -201,6 +210,10 @@ export default function useAppScenes() {
 
   // Navigate when Leva scene dropdown changes
   useEffect(() => {
+    if (buttonNavRef.current) {
+      buttonNavRef.current = false;
+      return;
+    }
     if (
       !redirectPath &&
       levaSceneId !== prevLevaScene.current &&

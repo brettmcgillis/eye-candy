@@ -39,6 +39,9 @@
 
 # // Presets
 
+- [ ] Day
+- [ ] NightMode
+
 # // Features
 
 # // Bugs

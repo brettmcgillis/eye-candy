@@ -40,7 +40,7 @@ function MoonlightProjectorInner({
       speed: uniform(cloudSpeed),
       floor: uniform(cloudFloor),
     }),
-    [] // eslint-disable-line react-hooks/exhaustive-deps
+    []
   );
 
   // Cloud colorNode — SpotLightNode.setupDirect checks light.colorNode and calls
@@ -53,9 +53,14 @@ function MoonlightProjectorInner({
       const noisePos = vec3(
         lightCoord.x.mul(noiseScale).add(time.mul(speed.mul(float(0.022)))),
         lightCoord.y.mul(noiseScale).add(time.mul(speed.mul(float(0.009)))),
-        time.mul(speed.mul(float(0.018))),
+        time.mul(speed.mul(float(0.018)))
       );
-      const cloud = mx_fractal_noise_float(noisePos, int(4), float(2.0), float(0.45));
+      const cloud = mx_fractal_noise_float(
+        noisePos,
+        int(4),
+        float(2.0),
+        float(0.45)
+      );
       // density controls where in the noise range light starts breaking through
       // (negative = more light overall, positive = heavier overcast)
       const transmission = smoothstep(density, density.add(contrast), cloud);

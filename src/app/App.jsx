@@ -1,11 +1,16 @@
 import React, { Suspense, lazy, useCallback, useEffect, useState } from 'react';
-import { Navigate, Route, Routes } from 'react-router-dom';
+import { Navigate, Route, Routes, useLocation } from 'react-router-dom';
 
 import './App.css';
 import useAppScenes from './scaffold/hooks/useAppScenes';
 import AppStats from './scaffold/leva/AppStats';
 import Loader from './scaffold/loader/Loader';
 import Overlay from './scaffold/overlay/Overlay';
+import {
+  DEFAULT_SCENE_PATH,
+  getAreaDefaultPath,
+  resolveSceneRoute,
+} from './sceneRegistry';
 
 const LoadersPage = lazy(() => import('./pages/dev/LoadersPage'));
 const IconsPage = lazy(() => import('./pages/dev/IconsPage'));
@@ -21,14 +26,18 @@ function SuspenseSignal({ onSuspend }) {
 }
 
 /* ── Scene shell ─────────────────────────────────────────────
-   Rendered at /:sceneId. Owns the canvas, overlay, and loader.
-   useAppScenes reads sceneId from useParams() internally.
+   Renders the current scene route and owns the canvas, overlay, and loader.
 ──────────────────────────────────────────────────────────── */
 function SceneShell() {
-  const { CanvasWrapper, SceneComponent, renderer } = useAppScenes();
+  const { CanvasWrapper, SceneComponent, redirectPath, renderer } =
+    useAppScenes();
   const [loaderVisible, setLoaderVisible] = useState(true);
   const [suspended, setSuspended] = useState(false);
   const handleSuspend = useCallback((val) => setSuspended(val), []);
+
+  if (redirectPath) {
+    return <Navigate to={redirectPath} replace />;
+  }
 
   return (
     <>
@@ -51,12 +60,26 @@ function SceneShell() {
   );
 }
 
+function AreaSceneRedirect({ area }) {
+  return <Navigate to={getAreaDefaultPath(area)} replace />;
+}
+
+function SceneRoute() {
+  const location = useLocation();
+  const { scene, redirectPath } = resolveSceneRoute(location.pathname);
+
+  if (!scene) {
+    return <Navigate to={redirectPath} replace />;
+  }
+
+  return <SceneShell />;
+}
+
 /* ── App root ─────────────────────────────────────────────── */
 export default function AppRoot() {
   return (
     <Routes>
-      {/* Landing placeholder — swap this for <Landing /> when ready */}
-      <Route path="/" element={<Navigate to="/loGlow" replace />} />
+      <Route path="/" element={<Navigate to={DEFAULT_SCENE_PATH} replace />} />
 
       {/* Dev utility pages — lazy-loaded, no app shell */}
       <Route
@@ -76,9 +99,12 @@ export default function AppRoot() {
         }
       />
 
-      {/* All scenes by ID — showcase routes are clean/shareable,
-          other areas work too (Leva is the nav for those) */}
-      <Route path="/:sceneId" element={<SceneShell />} />
+      <Route path="/testlab" element={<AreaSceneRedirect area="testlab" />} />
+      <Route path="/toolbox" element={<AreaSceneRedirect area="toolbox" />} />
+      <Route path="/wip" element={<AreaSceneRedirect area="wip" />} />
+
+      <Route path="/:areaSegment/:sceneSlug" element={<SceneRoute />} />
+      <Route path="/:sceneSlug" element={<SceneRoute />} />
     </Routes>
   );
 }

@@ -1,10 +1,10 @@
 import React from 'react';
 
+import { getScenesFor } from '../../../app/sceneRegistry';
 import useSubSceneSelector from '../../../hooks/useSubSceneSelector';
-import useWebGLShowcaseScenes from './useWebGLShowcaseScenes';
 
 export default function WebGLShowcase() {
-  const { scenes } = useWebGLShowcaseScenes();
+  const scenes = getScenesFor('webgl', 'showcase');
   const { SceneComponent } = useSubSceneSelector({
     scenes,
     defaultSceneId: 'noScene',

@@ -4,14 +4,13 @@ import React from 'react';
 import { PiSkullDuotone } from 'react-icons/pi';
 
 import { iconFile } from '../../../../utils/appUtils';
-import useScenes, { AREA_ICONS } from '../../../useScenes';
+import sceneRegistry, { AREA_ICONS } from '../../../sceneRegistry';
 
 function FallbackIcon() {
   return <PiSkullDuotone color="#888" />;
 }
 
 export default function Scenemoji({ onDebugToggle }) {
-  const registry = useScenes();
   const readLevaValue = (state, keys) => {
     const values = keys.map((key) => state.data?.[key]?.value);
     return values.find((value) => value !== undefined);
@@ -31,7 +30,7 @@ export default function Scenemoji({ onDebugToggle }) {
     readLevaValue(state, ['App.scene', 'Scene Select.scene'])
   );
 
-  const scenes = registry[channel]?.[area] ?? [];
+  const scenes = sceneRegistry.byArea[channel]?.[area] ?? [];
   const scene = scenes.find((s) => s.id === sceneId);
   const SceneIcon = scene?.icon ?? FallbackIcon;
   const AreaIcon = AREA_ICONS[area];

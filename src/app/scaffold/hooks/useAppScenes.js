@@ -1,14 +1,18 @@
 import { folder, useControls } from 'leva';
 
 import { useEffect, useMemo, useRef } from 'react';
-import { useNavigate, useParams, useSearchParams } from 'react-router-dom';
+import { useLocation, useNavigate, useSearchParams } from 'react-router-dom';
 
 import { localEnv } from '../../../utils/appUtils';
-import useScenes, { AREAS, CHANNELS } from '../../useScenes';
+import sceneRegistry, {
+  AREAS,
+  CHANNELS,
+  resolveLegacyScenePath,
+  resolveScenePath,
+} from '../../sceneRegistry';
 import WebGLCanvas from '../canvas/WebGLCanvas';
 import WebGPUCanvas from '../canvas/WebGPUCanvas';
 
-const DEFAULT_SCENE = 'loGlow';
 const IG_QUERY_PARAM = 'ig';
 
 const IG_OPTIONS = {
@@ -18,40 +22,40 @@ const IG_OPTIONS = {
   Post: 'post',
 };
 
-// Flat map: sceneId → { channel, area, sceneDef }
-// First match wins — webgl is listed before webgpu in useScenes, so webgl
-// wins for the three IDs that exist in both renderers.
-function buildFlatMap(registry) {
-  const map = {};
-  for (const [channel, areas] of Object.entries(registry)) {
-    for (const [area, scenes] of Object.entries(areas)) {
-      for (const scene of scenes) {
-        if (!map[scene.id]) {
-          map[scene.id] = { channel, area, sceneDef: scene };
-        }
-      }
-    }
-  }
-  return map;
+function normalizePath(pathname) {
+  if (!pathname || pathname === '/') return '/';
+  return pathname.replace(/\/+$/, '');
 }
 
 export default function useAppScenes() {
   const local = localEnv();
-  const registry = useScenes();
+  const location = useLocation();
   const navigate = useNavigate();
-  const { sceneId: routeSceneId } = useParams();
   const [searchParams, setSearchParams] = useSearchParams();
+  const currentPath = normalizePath(location.pathname);
 
-  // --- flat registry lookup ---
+  const routeMatch = useMemo(
+    () => resolveScenePath(currentPath),
+    [currentPath]
+  );
 
-  const flatMap = useMemo(() => buildFlatMap(registry), [registry]);
+  const redirectPath = useMemo(() => {
+    if (routeMatch) return null;
 
-  const match = flatMap[routeSceneId] ??
-    flatMap[DEFAULT_SCENE] ?? {
-      channel: 'webgl',
-      area: 'showcase',
-      sceneDef: null,
-    };
+    const pathSegments = currentPath.split('/').filter(Boolean);
+
+    if (pathSegments.length === 1) {
+      return (
+        resolveLegacyScenePath(pathSegments[0]) ||
+        sceneRegistry.defaultScene?.path ||
+        null
+      );
+    }
+
+    return sceneRegistry.defaultScene?.path || null;
+  }, [currentPath, routeMatch]);
+
+  const match = routeMatch || sceneRegistry.defaultScene;
 
   // --- Leva option maps ---
 
@@ -96,13 +100,13 @@ export default function useAppScenes() {
   // Sync Leva mode/area when the URL changes (browser back/forward)
   useEffect(() => {
     setNav({ mode: match.channel, area: match.area });
-  }, [routeSceneId]); // eslint-disable-line react-hooks/exhaustive-deps
+  }, [match.area, match.channel, setNav]);
 
   // --- scene dropdown (rebuilds when mode/area change) ---
 
   const scenes = useMemo(
-    () => registry[mode]?.[area] ?? [],
-    [registry, mode, area]
+    () => sceneRegistry.byArea[mode]?.[area] ?? [],
+    [mode, area]
   );
 
   const sceneOptions = useMemo(
@@ -110,11 +114,19 @@ export default function useAppScenes() {
     [scenes]
   );
 
+  const areaDefaultScene =
+    sceneRegistry.areaDefaults[mode]?.[area] || sceneRegistry.defaultScene;
+
   const sceneDefault = useMemo(() => {
-    if (scenes.some((s) => s.id === routeSceneId)) return routeSceneId;
-    if (scenes.some((s) => s.id === DEFAULT_SCENE)) return DEFAULT_SCENE;
+    if (scenes.some((scene) => scene.id === match?.id)) return match.id;
+    if (
+      areaDefaultScene?.id &&
+      scenes.some((scene) => scene.id === areaDefaultScene.id)
+    ) {
+      return areaDefaultScene.id;
+    }
     return scenes[0]?.id ?? 'noScene';
-  }, [scenes, routeSceneId]);
+  }, [areaDefaultScene, match?.id, scenes]);
 
   const [{ scene: levaSceneId }, setSceneControl] = useControls(
     'App',
@@ -129,27 +141,51 @@ export default function useAppScenes() {
     [scenes]
   );
 
+  const prevLevaScene = useRef(sceneDefault);
+
   useEffect(() => {
-    if (!sceneMap[levaSceneId]) {
-      setSceneControl({ scene: sceneDefault });
-    }
-  }, [levaSceneId, sceneMap, sceneDefault, setSceneControl]);
+    const nextSceneId = sceneMap[match?.id] ? match.id : sceneDefault;
+
+    if (!nextSceneId || prevLevaScene.current === nextSceneId) return;
+
+    prevLevaScene.current = nextSceneId;
+    setSceneControl({ scene: nextSceneId });
+  }, [match?.id, match?.path, sceneDefault, sceneMap, setSceneControl]);
 
   // Navigate when Leva scene dropdown changes
-  const prevLevaScene = useRef(levaSceneId);
   useEffect(() => {
-    if (levaSceneId !== prevLevaScene.current && sceneMap[levaSceneId]) {
+    if (
+      !redirectPath &&
+      levaSceneId !== prevLevaScene.current &&
+      sceneMap[levaSceneId]
+    ) {
       prevLevaScene.current = levaSceneId;
-      navigate(`/${levaSceneId}`);
+      if (sceneMap[levaSceneId].path !== currentPath) {
+        navigate(sceneMap[levaSceneId].path);
+      }
     }
-  }, [levaSceneId, navigate, sceneMap]);
+  }, [currentPath, levaSceneId, navigate, redirectPath, sceneMap]);
 
-  // Navigate when mode/area changes and the current route scene isn't in the new list
+  // Navigate when mode/area changes and the current route is no longer the selected scene.
   useEffect(() => {
-    if (!scenes.some((s) => s.id === routeSceneId)) {
-      navigate(`/${sceneDefault}`, { replace: true });
+    if (redirectPath) return;
+
+    const currentScene = sceneMap[match?.id];
+    const nextScene = currentScene || areaDefaultScene;
+
+    if (nextScene?.path && nextScene.path !== currentPath) {
+      navigate(nextScene.path, { replace: true });
     }
-  }, [mode, area]); // eslint-disable-line react-hooks/exhaustive-deps
+  }, [
+    area,
+    areaDefaultScene,
+    currentPath,
+    match?.id,
+    mode,
+    navigate,
+    redirectPath,
+    sceneMap,
+  ]);
 
   // --- ig → search param ---
 
@@ -162,7 +198,7 @@ export default function useAppScenes() {
       },
       { replace: true }
     );
-  }, [ig]); // eslint-disable-line react-hooks/exhaustive-deps
+  }, [ig]);
 
   // --- resolve ---
 
@@ -170,11 +206,12 @@ export default function useAppScenes() {
 
   return {
     local,
+    redirectPath,
     channel: match.channel,
     area: match.area,
-    sceneId: routeSceneId,
-    sceneDef: match.sceneDef,
-    SceneComponent: match.sceneDef?.Component,
+    sceneId: match.id,
+    sceneDef: match,
+    SceneComponent: match?.Component,
     CanvasWrapper,
     renderer: match.channel,
   };

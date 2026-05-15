@@ -1,10 +1,10 @@
 import React from 'react';
 
+import { getScenesFor } from '../../../app/sceneRegistry';
 import useSubSceneSelector from '../../../hooks/useSubSceneSelector';
-import useWebGPUWorkInProgressScenes from './useWebGPUWorkInProgressScenes';
 
 export default function WebGPUWorkInProgress() {
-  const { scenes } = useWebGPUWorkInProgressScenes();
+  const scenes = getScenesFor('webgpu', 'wip');
   const { SceneComponent } = useSubSceneSelector({
     scenes,
     defaultSceneId: 'noScene',

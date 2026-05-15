@@ -4,7 +4,7 @@
 
 - [ ] add/update screenshot(s) on readme for each scene
 - [ ] Add info button and stylized byline to showcase scenes. ByLine should be a modal. Should allow for text, images, links, and dismissal.
-- [ ] Finalize move from Querystring to routes.
+- [x] Finalize move from Querystring to routes for accessing scenes.
 
 ### REPO
 
@@ -41,15 +41,17 @@ To Build:
 **Showcase**
 
 - [AllMyThoughtsAreSoCumulus](src/components/scenes/Showcase/WebGL/AllMyThoughtsAreSoCumulus/todo.md)
+- [BurningAtBothEnds](src/components/scenes/Showcase/WebGL/BurningAtBothEnds/todo.md)
 - [Cardinals](src/components/scenes/Showcase/WebGL/Cardinals/todo.md)
-- [PaperCuts](src/components/scenes/Showcase/WebGL/PaperCuts/todo.md)
+
 - [LoGlow](src/components/scenes/Showcase/WebGL/LoGlow/todo.md)
 - [Mycelium](src/components/scenes/Showcase/WebGL/Mycelum/todo.md)
+- [PaperCuts](src/components/scenes/Showcase/WebGL/PaperCuts/todo.md)
 - [PaperStack](src/components/scenes/Showcase/WebGL/PaperStack/todo.md)
 - [QuinnsDice](src/components/scenes/Showcase/WebGL/QuinnsDice/todo.md)
 - [Rosie](src/components/scenes/Showcase/WebGL/Rosie/todo.md)
-- [WatercolorSquares](src/components/scenes/Showcase/WebGL/WatercolorSquares/todo.md)
 - [Surrender](src/components/scenes/Showcase/WebGPU/Surrender/todo.md)
+- [WatercolorSquares](src/components/scenes/Showcase/WebGL/WatercolorSquares/todo.md)
 
 **TestLab**
 
@@ -65,7 +67,6 @@ To Build:
 
 **WorkInProgress**
 
-- [BurningAtBothEnds](src/components/scenes/WorkInProgress/WebGL/BurningAtBothEnds/todo.md)
 - [CRTTest](src/components/scenes/WorkInProgress/WebGL/CRTTest/todo.md)
 - [DumpsterFire](src/components/scenes/WorkInProgress/WebGL/DumpsterFire/todo.md)
 - [ThatsAllFolks](src/components/scenes/WorkInProgress/WebGL/ThatsAllFolks/todo.md)
@@ -74,7 +75,7 @@ To Build:
 - [FlyingHigh](src/components/scenes/WorkInProgress/WebGL/FlyingHigh/todo.md)
 - [RowItAlone](src/components/scenes/WorkInProgress/WebGL/RowItAlone/todo.md)
 - [StayingAfloat](src/components/scenes/WorkInProgress/WebGL/StayingAfloat/todo.md)
-- [Ghosts](src/components/scenes/WorkInProgress/WebGPU/Ghosts/todo.md)
+- [AllMyFriendsAreGhosts](src/components/scenes/WorkInProgress/WebGPU/AllMyFriendsAreGhosts/todo.md)
 
 - [StayHunted](src/components/scenes/WorkInProgress/WebGPU/StayHunted/todo.md)
 - [GhostStories](src/components/scenes/WorkInProgress/WebGPU/GhostStories/todo.md)

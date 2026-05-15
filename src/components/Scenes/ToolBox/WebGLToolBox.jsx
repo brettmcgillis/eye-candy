@@ -1,10 +1,10 @@
 import React from 'react';
 
+import { getScenesFor } from '../../../app/sceneRegistry';
 import useSubSceneSelector from '../../../hooks/useSubSceneSelector';
-import useWebGLToolScenes from './useWebGLToolScenes';
 
 export default function WebGLToolBox() {
-  const { scenes } = useWebGLToolScenes();
+  const scenes = getScenesFor('webgl', 'toolbox');
   const { SceneComponent } = useSubSceneSelector({
     scenes,
     defaultSceneId: 'noScene',

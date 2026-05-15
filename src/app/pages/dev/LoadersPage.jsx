@@ -2,7 +2,6 @@ import React, { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
 
 import { ALL_LOADERS } from '../../scaffold/loader/loaders';
-import Overlay from '../../scaffold/overlay/Overlay';
 import {
   CX,
   CY,
@@ -14,6 +13,8 @@ import {
   useLoaderCanvas,
   useSquares,
 } from '../../scaffold/loader/primitives';
+import Overlay from '../../scaffold/overlay/Overlay';
+import { DEFAULT_SCENE_PATH } from '../../sceneRegistry';
 
 const styles = {
   page: {
@@ -116,7 +117,9 @@ function LoaderGrid({ orientation, onSelect }) {
 // from viewport size — so clicking an H thumbnail always shows H on mobile.
 function LoaderPreview({ LoaderComponent, orientation, onClose }) {
   useEffect(() => {
-    const handler = (e) => { if (e.key === 'Escape') onClose(); };
+    const handler = (e) => {
+      if (e.key === 'Escape') onClose();
+    };
     window.addEventListener('keydown', handler);
     return () => window.removeEventListener('keydown', handler);
   }, [onClose]);
@@ -126,7 +129,9 @@ function LoaderPreview({ LoaderComponent, orientation, onClose }) {
       // Tap anywhere outside the overlay to close.
       // Clicks on .overlay elements (pills, leva) are excluded so they
       // remain interactive without accidentally dismissing the preview.
-      onClick={(e) => { if (!e.target.closest('.overlay')) onClose(); }}
+      onClick={(e) => {
+        if (!e.target.closest('.overlay')) onClose();
+      }}
       style={{
         position: 'fixed',
         inset: 0,
@@ -139,7 +144,9 @@ function LoaderPreview({ LoaderComponent, orientation, onClose }) {
     >
       {/* Loader — same sizing as the real Loader.jsx, orientation locked */}
       <OrientationProvider orientation={orientation}>
-        <div style={{ width: 'min(60vmin, 320px)', height: 'min(60vmin, 320px)' }}>
+        <div
+          style={{ width: 'min(60vmin, 320px)', height: 'min(60vmin, 320px)' }}
+        >
           <LoaderComponent />
         </div>
       </OrientationProvider>
@@ -161,15 +168,24 @@ export default function LoadersPage() {
   return (
     <div style={styles.page}>
       <nav style={styles.nav}>
-        <Link to="/loGlow" style={styles.back}>
+        <Link to={DEFAULT_SCENE_PATH} style={styles.back}>
           ← back to app
         </Link>
       </nav>
 
       <h1 style={styles.heading}>Loader Gallery</h1>
-      <p style={styles.sub}>{ALL_LOADERS.length} animations · canvas-based · click to preview</p>
+      <p style={styles.sub}>
+        {ALL_LOADERS.length} animations · canvas-based · click to preview
+      </p>
 
-      <h2 style={{ ...styles.sectionHeading, borderTop: 'none', paddingTop: 0, margin: '0 0 1rem' }}>
+      <h2
+        style={{
+          ...styles.sectionHeading,
+          borderTop: 'none',
+          paddingTop: 0,
+          margin: '0 0 1rem',
+        }}
+      >
         Horizontal
       </h2>
       <LoaderGrid orientation="h" onSelect={selectPreview} />
@@ -183,7 +199,16 @@ export default function LoadersPage() {
       </p>
       <div style={{ display: 'flex', gap: '2rem', flexWrap: 'wrap' }}>
         <div>
-          <p style={{ color: '#6b7280', fontSize: '0.72rem', fontFamily: 'monospace', margin: '0 0 0.5rem' }}>horizontal</p>
+          <p
+            style={{
+              color: '#6b7280',
+              fontSize: '0.72rem',
+              fontFamily: 'monospace',
+              margin: '0 0 0.5rem',
+            }}
+          >
+            horizontal
+          </p>
           <div style={{ width: 160, height: 160 }}>
             <OrientationProvider orientation="h">
               <PatternIndex />
@@ -191,7 +216,16 @@ export default function LoadersPage() {
           </div>
         </div>
         <div>
-          <p style={{ color: '#6b7280', fontSize: '0.72rem', fontFamily: 'monospace', margin: '0 0 0.5rem' }}>vertical</p>
+          <p
+            style={{
+              color: '#6b7280',
+              fontSize: '0.72rem',
+              fontFamily: 'monospace',
+              margin: '0 0 0.5rem',
+            }}
+          >
+            vertical
+          </p>
           <div style={{ width: 160, height: 160 }}>
             <OrientationProvider orientation="v">
               <PatternIndex />

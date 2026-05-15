@@ -1,10 +1,10 @@
 import React from 'react';
 
+import { getScenesFor } from '../../../app/sceneRegistry';
 import useSubSceneSelector from '../../../hooks/useSubSceneSelector';
-import useWebGPUToolScenes from './useWebGPUToolScenes';
 
 export default function WebGPUToolBox() {
-  const { scenes } = useWebGPUToolScenes();
+  const scenes = getScenesFor('webgpu', 'toolbox');
   const { SceneComponent } = useSubSceneSelector({
     scenes,
     defaultSceneId: 'noScene',

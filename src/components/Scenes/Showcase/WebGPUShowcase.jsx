@@ -1,10 +1,10 @@
 import React from 'react';
 
+import { getScenesFor } from '../../../app/sceneRegistry';
 import useSubSceneSelector from '../../../hooks/useSubSceneSelector';
-import useWebGPUShowcaseScenes from './useWebGPUShowcaseScenes';
 
 export default function WebGPUShowcase() {
-  const { scenes } = useWebGPUShowcaseScenes();
+  const scenes = getScenesFor('webgpu', 'showcase');
   const { SceneComponent } = useSubSceneSelector({
     scenes,
     defaultSceneId: 'noScene',

@@ -1,10 +1,10 @@
 import React from 'react';
 
+import { getScenesFor } from '../../../app/sceneRegistry';
 import useSubSceneSelector from '../../../hooks/useSubSceneSelector';
-import useWebGLWorkInProgressScenes from './useWebGLWorkInProgressScenes';
 
 export default function WebGLWorkInProgress() {
-  const { scenes } = useWebGLWorkInProgressScenes();
+  const scenes = getScenesFor('webgl', 'wip');
   const { SceneComponent } = useSubSceneSelector({
     scenes,
     defaultSceneId: 'noScene',

@@ -4,7 +4,6 @@
 
 - [ ] add/update screenshot(s) on readme for each scene
 - [ ] Add info button and stylized byline to showcase scenes. ByLine should be a modal. Should allow for text, images, links, and dismissal.
-- [x] Finalize move from Querystring to routes for accessing scenes.
 
 ### REPO
 
@@ -43,7 +42,6 @@ To Build:
 - [AllMyThoughtsAreSoCumulus](src/components/scenes/Showcase/WebGL/AllMyThoughtsAreSoCumulus/todo.md)
 - [BurningAtBothEnds](src/components/scenes/Showcase/WebGL/BurningAtBothEnds/todo.md)
 - [Cardinals](src/components/scenes/Showcase/WebGL/Cardinals/todo.md)
-
 - [LoGlow](src/components/scenes/Showcase/WebGL/LoGlow/todo.md)
 - [Mycelium](src/components/scenes/Showcase/WebGL/Mycelum/todo.md)
 - [PaperCuts](src/components/scenes/Showcase/WebGL/PaperCuts/todo.md)
@@ -76,7 +74,6 @@ To Build:
 - [RowItAlone](src/components/scenes/WorkInProgress/WebGL/RowItAlone/todo.md)
 - [StayingAfloat](src/components/scenes/WorkInProgress/WebGL/StayingAfloat/todo.md)
 - [AllMyFriendsAreGhosts](src/components/scenes/WorkInProgress/WebGPU/AllMyFriendsAreGhosts/todo.md)
-
 - [StayHunted](src/components/scenes/WorkInProgress/WebGPU/StayHunted/todo.md)
 - [GhostStories](src/components/scenes/WorkInProgress/WebGPU/GhostStories/todo.md)
 - [QuinnsPlayground](src/components/scenes/WorkInProgress/WebGL/QuinnsPlayground/todo.md)
@@ -110,22 +107,18 @@ To Build:
 
 ## Show
 
+### Tools/TestLab To Demo
+
 - [ ] PenPlotter
 - [ ] Explosion Test
 - [ ] Particle Lab
-- [ ] Spline Editor
-- [ ] SmokeTest
-- [ ] FireTest
-- [ ] HotBox
-- [ ] TheLoom
 - [ ] PixelHater updates (censor, voxels)
-- [ ] Thats All Folks
-- [ ] Crt Test
-- [ ] Still Pulling For You
-- [ ] Row It Alone
-- [ ] Police Presence
-- [ ] Flying High
-- [ ] Dumpster Fire
+- [x] GhostBuster
+- [ ] CharacterController
+- [ ] MultiplayerMadness
+
+### Scenes to post
+
 - [x] Burning At Both Ends - Enlightened
 - [x] Burning At Both Ends - Extinguished
 - [x] Burning At Both Ends - Lenticular
@@ -142,13 +135,6 @@ To Build:
 - [x] Surrender - Spring
 - [ ] Surrender - Winter
 - [ ] Surrender - Weather Any Storm
-- [ ] Stay Hunted
-- [ ] AllMyFriendsAreGhosts
-- [x] GhostBuster
-- [ ] CharacterController
-- [ ] MultiplayerMadness
-- [ ] GhostStories
-- [ ] Quinn'sPlayground
 - [x] PaperCuts - Default
 - [x] PaperCuts - Morse Code
 - [ ] PaperCuts - Layer Fade
@@ -156,10 +142,31 @@ To Build:
 - [ ] PaperCuts - 11 (3)
 - [x] PaperStack - Gradient Scan
 - [x] LoaderPattern(s)
-- [ ] Iconography
 
-- TrophyHusband
-- Yggdraskill
+### Toolbox/TestLab to finish before demo
+
+- [ ] Spline Editor
+- [ ] SmokeTest
+- [ ] FireTest
+- [ ] HotBox
+- [ ] TheLoom
+
+### Scenes finish before post
+
+- [ ] Thats All Folks
+- [ ] Crt Test
+- [ ] Still Pulling For You
+- [ ] Row It Alone
+- [ ] Police Presence
+- [ ] Flying High
+- [ ] Dumpster Fire
+- [ ] Stay Hunted
+- [ ] AllMyFriendsAreGhosts
+
+### Scenes to build
+
+- [ ] GhostStories
+- [ ] Quinn'sPlayground
 
 ## Lenticulars
 

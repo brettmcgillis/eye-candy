@@ -1247,13 +1247,13 @@ export default function useSmokeTestControls(attractorsRef) {
       return {
         Smoke: folder(
           {
-            'Particle Smoke': folder(psSection, { collapsed: false }),
+            'Particle Smoke': folder(psSection, { collapsed: true }),
             'Volumetric Smoke': folder(vsSection, { collapsed: true }),
             'Smoke Ball': folder(sbSection, { collapsed: true }),
             'Smoke Ball Spline': folder(ssSection, { collapsed: true }),
             'Billboard Smoke': folder(s2dSection, { collapsed: true }),
           },
-          { collapsed: false }
+          { collapsed: true }
         ),
       };
     },

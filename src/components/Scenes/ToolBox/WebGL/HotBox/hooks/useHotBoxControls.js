@@ -841,7 +841,7 @@ export default function useHotBoxControls(splines, setSplines, attractorsRef) {
                 return typeAcc;
               }, {}),
             },
-            { collapsed: smokeType !== 'Particle' }
+            { collapsed: true }
           );
 
           return acc;
@@ -876,7 +876,7 @@ export default function useHotBoxControls(splines, setSplines, attractorsRef) {
                 return typeAcc;
               }, {}),
             },
-            { collapsed: fireType !== 'Classic' }
+            { collapsed: true }
           );
 
           return acc;
@@ -2248,7 +2248,7 @@ export default function useHotBoxControls(splines, setSplines, attractorsRef) {
               collapsed: true,
             }),
           },
-          { collapsed: false }
+          { collapsed: true }
         ),
         Fire: folder(
           {
@@ -2261,7 +2261,7 @@ export default function useHotBoxControls(splines, setSplines, attractorsRef) {
             }),
             'CS184 Fire': folder(cs184FireSection, { collapsed: true }),
           },
-          { collapsed: false }
+          { collapsed: true }
         ),
       };
     },

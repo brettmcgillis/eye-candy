@@ -494,7 +494,7 @@ export default function useFireTestControls(
                 return typeAcc;
               }, {}),
             },
-            { collapsed: fireType !== 'Classic' }
+            { collapsed: true }
           );
 
           return acc;
@@ -1444,7 +1444,7 @@ export default function useFireTestControls(
             }),
             'CS184 Fire': folder(cs184FireSection, { collapsed: true }),
           },
-          { collapsed: false }
+          { collapsed: true }
         ),
       };
     },

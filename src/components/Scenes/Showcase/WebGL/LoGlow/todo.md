@@ -10,4 +10,8 @@
 
 # // Features
 
+# // Interactivity
+
+- [ ] Interactive/clickable models
+
 # // Bugs

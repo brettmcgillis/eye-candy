@@ -21,4 +21,9 @@
 
 # // Features
 
+# // Interactivity
+
+- [ ] Fluid/Cursor interaction
+- [ ] Fluid/Cursor/Hands interaction
+
 # // Bugs

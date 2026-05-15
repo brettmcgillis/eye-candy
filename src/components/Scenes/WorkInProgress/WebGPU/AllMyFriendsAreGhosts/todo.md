@@ -29,6 +29,11 @@
 
 - [ ] Consider adding "hands" for the ghosts. ie, smaller spheres located lower to the left and right of the main sphere. Could animate "hand movements".
 
+# // Interactivity
+
+- [ ] Ghost/Cursor interaction
+- [ ] Ghost/Cursor/Hands interaction
+
 # // Bugs
 
 - [x] Sparkles are WAY too big even on smallest setting

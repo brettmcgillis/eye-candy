@@ -73,3 +73,12 @@
 # // Presets
 
 # // Intent/Use Cases
+
+# // Features
+
+# // Interactivity
+
+- [ ] Click to change channel
+- [ ] Click to mute/unmute
+
+# // Bugs

@@ -22,6 +22,11 @@
 
 # // Features
 
+# // Interactivity
+
+- [ ] Smoke/Cursor interaction
+- [ ] Smoke/Cursor/Hands interaction
+
 # // Bugs
 
 - [ ] Fix top bar lights. Currently it looks like 2 lights, red + blue, traversing the length of the light bar. Should instead be 2 x 2 lights, red+blue, back to back, and rotating.

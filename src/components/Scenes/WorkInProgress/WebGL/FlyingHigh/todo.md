@@ -44,6 +44,11 @@
 
 # // Features
 
+# // Interactivity
+
+- [ ] Smoke/Cursor interaction
+- [ ] Smoke/Cursor/Hands interaction
+
 # // Bugs
 
 - [x] Fix Sky panel. Make plane an oval that fades at the edges

@@ -21,4 +21,9 @@
 - [ ] Wind blown arrow ribbon.
 - [ ] Cursor-ribbon interaction.
 
+# // Interactivity
+
+- [ ] Ribbon/Cursor interaction
+- [ ] Ribbon/Cursor/Hands interaction
+
 # // Bugs

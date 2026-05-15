@@ -22,4 +22,6 @@
 - [ ] Have an llm look at the data for the first frame and generate some variations to test
 - [ ] Build the two other variations in references
 
+# // Interactivity
+
 # // Bugs

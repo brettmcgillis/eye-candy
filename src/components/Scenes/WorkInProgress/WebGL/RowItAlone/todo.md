@@ -21,6 +21,11 @@
 
 # // Features
 
+# // Interactivity
+
+- [ ] Water Surface/Cursor interaction
+- [ ] Water Surface/Cursor/Hands interaction
+
 # // Bugs
 
 - [ ] Fix water, it only appears to wave in 1 direction (ex north-south) should probably be all 4 (ex, north-south + east-west)

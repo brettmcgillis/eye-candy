@@ -43,6 +43,14 @@
 
 # // Features
 
+# // Interactivity
+
+- [ ] Smoke/Cursor interaction
+- [ ] Smoke/Cursor/Hands interaction
+
+- [ ] Water Surface/Cursor interaction
+- [ ] Water Surface/Cursor/Hands interaction
+
 # // Bugs
 
 - [x] Fix camera angle, cant see boat or most of water volume

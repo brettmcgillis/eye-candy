@@ -30,7 +30,10 @@
 
 # // Features
 
-- [ ] Cursor/smoke interaction.
+# // Interactivity
+
+- [ ] Smoke/Cursor interaction
+- [ ] Smoke/Cursor/Hands interaction
 
 # // Bugs
 

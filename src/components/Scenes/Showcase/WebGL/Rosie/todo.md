@@ -17,4 +17,9 @@
 
 # // Features
 
+# // Interactivity
+
+- [ ] Click to focus on splat
+- [ ] Space bar to cycle area of focus
+
 # // Bugs

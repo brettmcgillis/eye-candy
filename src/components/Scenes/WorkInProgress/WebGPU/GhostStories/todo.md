@@ -30,4 +30,8 @@
 
 # // Features
 
+# // Interactivity
+
+- [ ] Character Control and world-space exploration
+
 # // Bugs

@@ -42,6 +42,11 @@
 - [ ] Design and add scene controls
 - [ ] Should we use a metaballs shader to make dripping wax droplets?
 
+# // Interactivity
+
+- [ ] Smoke/Cursor interaction
+- [ ] Smoke/Cursor/Hands interaction
+
 # // Bugs
 
 - [x] default camera position is farther back and higher up, looking toward candle center

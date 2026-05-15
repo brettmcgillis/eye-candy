@@ -54,6 +54,11 @@
 
 # // Features
 
+# // Interactivity
+
+- [ ] Water Surface/Cursor interaction
+- [ ] Water Surface/Cursor/Hands interaction
+
 # // Bugs
 
 - [x] Scale tiger shark down to size of hammerhead

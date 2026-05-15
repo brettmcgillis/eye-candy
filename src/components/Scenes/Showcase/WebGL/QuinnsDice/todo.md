@@ -31,6 +31,14 @@
 
 - [x] Add an 'Auto' pointer mode, where the glass ball continuously moves in a figure 8 crossing the center point
 
+- [ ] Add a die roll overlay button like we did in DumpsterFire with clear trash
+
+# // Interactivity
+
+- [ ] Die/Cursor interaction
+- [ ] Die/Cursor/Hands interaction
+- [ ] Die roll interaction
+
 # // Bugs
 
 - [x] Improve performance, too few fps right now, very slow.

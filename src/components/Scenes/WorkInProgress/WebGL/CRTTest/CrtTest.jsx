@@ -1,60 +1,15 @@
-/* eslint-disable react/no-array-index-key */
-
-/* eslint-disable no-unused-vars */
-
-/* eslint-disable unused-imports/no-unused-imports */
-// CrtTest.js
-import { folder, useControls } from 'leva';
-import * as THREE from 'three';
-
-import React, { useCallback, useMemo, useRef, useState } from 'react';
+import React from 'react';
 
 import {
   Environment,
   MeshReflectorMaterial,
   OrbitControls,
   PerspectiveCamera,
-  Stats,
 } from '@react-three/drei';
-import { Bloom, EffectComposer } from '@react-three/postprocessing';
 
-import Reversal, {
-  InteractiveReversal,
-} from '../../../../elements/reversal/Reversal';
 import InteractiveTvController from './TVParts/InteractiveTvController';
 import { TvInstances } from './TVParts/TvInstances';
 import TestPanels from './TestPanels';
-
-export default function CRTTest() {
-  return (
-    <>
-      <PerspectiveCamera makeDefault position={[0, 7, 11]} near={1} far={100} />
-      <OrbitControls makeDefault minDistance={0} />
-      <ambientLight intensity={0.1} />
-      <directionalLight
-        position={[5, 6, 4]}
-        intensity={0.2}
-        lookAt={[0, 0, 0]}
-      />
-      <directionalLight
-        position={[-5, 6, -4]}
-        intensity={0.2}
-        lookAt={[0, 0, 0]}
-      />
-      <Stats />
-      <SeentIt />
-      <TestPanels />
-      <Floor />
-      <RingLight />
-
-      <color attach="background" args={['#000000']} />
-      <Environment preset="city" />
-      {/* <EffectComposer>
-        <Bloom />
-      </EffectComposer> */}
-    </>
-  );
-}
 
 function SeentIt() {
   /* ---------------------------------------------
@@ -134,5 +89,35 @@ function RingLight() {
         />
       </mesh>
     </group>
+  );
+}
+
+export default function CRTTest() {
+  return (
+    <>
+      <PerspectiveCamera makeDefault position={[0, 7, 11]} near={1} far={100} />
+      <OrbitControls makeDefault minDistance={0} />
+      <ambientLight intensity={0.1} />
+      <directionalLight
+        position={[5, 6, 4]}
+        intensity={0.2}
+        lookAt={[0, 0, 0]}
+      />
+      <directionalLight
+        position={[-5, 6, -4]}
+        intensity={0.2}
+        lookAt={[0, 0, 0]}
+      />
+      <SeentIt />
+      <TestPanels />
+      <Floor />
+      <RingLight />
+
+      <color attach="background" args={['#000000']} />
+      <Environment preset="city" />
+      {/* <EffectComposer>
+        <Bloom />
+      </EffectComposer> */}
+    </>
   );
 }

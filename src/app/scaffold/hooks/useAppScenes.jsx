@@ -1,12 +1,11 @@
-import { folder, useControls } from 'leva';
+import { buttonGroup, folder, useControls } from 'leva';
 
-import { useEffect, useMemo, useRef } from 'react';
+import React, { useEffect, useMemo, useRef } from 'react';
+import { IoInvertMode, IoInvertModeOutline } from 'react-icons/io5';
 import { useLocation, useNavigate, useSearchParams } from 'react-router-dom';
 
 import { localEnv } from '../../../utils/appUtils';
 import sceneRegistry, {
-  AREAS,
-  CHANNELS,
   resolveLegacyScenePath,
   resolveScenePath,
 } from '../../sceneRegistry';
@@ -57,17 +56,6 @@ export default function useAppScenes() {
 
   const match = routeMatch || sceneRegistry.defaultScene;
 
-  // --- Leva option maps ---
-
-  const channelOptions = useMemo(
-    () => Object.fromEntries(Object.entries(CHANNELS).map(([k, v]) => [v, k])),
-    []
-  );
-  const areaOptions = useMemo(
-    () => Object.fromEntries(Object.entries(AREAS).map(([k, v]) => [v, k])),
-    []
-  );
-
   // --- Leva controls ---
 
   const { ig } = useControls(
@@ -87,26 +75,84 @@ export default function useAppScenes() {
     { collapsed: true, render: () => local }
   );
 
-  const [{ mode, area }, setNav] = useControls(
+  // Stable refs so buttonGroup handlers don't go stale
+  const navigateRef = useRef(navigate);
+  useEffect(() => {
+    navigateRef.current = navigate;
+  }, [navigate]);
+  const matchRef = useRef(match);
+  useEffect(() => {
+    matchRef.current = match;
+  }, [match]);
+
+  const noSceneFor = (channel, area) =>
+    sceneRegistry.byArea?.[channel]?.[area]?.find((s) => s.id === 'noScene') ??
+    sceneRegistry.defaultScene;
+
+  useControls(
     'App',
     () => ({
-      mode: { options: channelOptions, value: match.channel },
-      area: { options: areaOptions, value: match.area },
+      Mode: buttonGroup({
+        label: <IoInvertMode />,
+        opts: {
+          WebGL: () => {
+            const m = matchRef.current;
+            navigateRef.current(noSceneFor('webgl', m.area).path, {
+              replace: true,
+            });
+          },
+          WebGPU: () => {
+            const m = matchRef.current;
+            navigateRef.current(noSceneFor('webgpu', m.area).path, {
+              replace: true,
+            });
+          },
+        },
+      }),
+      Area: buttonGroup({
+        label: <IoInvertModeOutline />,
+        opts: {
+          Showcase: () => {
+            const m = matchRef.current;
+            navigateRef.current(noSceneFor(m.channel, 'showcase').path, {
+              replace: true,
+            });
+          },
+          TestLab: () => {
+            const m = matchRef.current;
+            navigateRef.current(noSceneFor(m.channel, 'testlab').path, {
+              replace: true,
+            });
+          },
+        },
+      }),
+      Area2: buttonGroup({
+        label: '',
+        opts: {
+          Toolbox: () => {
+            const m = matchRef.current;
+            navigateRef.current(noSceneFor(m.channel, 'toolbox').path, {
+              replace: true,
+            });
+          },
+          WIP: () => {
+            const m = matchRef.current;
+            navigateRef.current(noSceneFor(m.channel, 'wip').path, {
+              replace: true,
+            });
+          },
+        },
+      }),
     }),
     { collapsed: true, render: () => local },
     []
   );
 
-  // Sync Leva mode/area when the URL changes (browser back/forward)
-  useEffect(() => {
-    setNav({ mode: match.channel, area: match.area });
-  }, [match.area, match.channel, setNav]);
-
-  // --- scene dropdown (rebuilds when mode/area change) ---
+  // --- scene dropdown (rebuilds when channel/area change) ---
 
   const scenes = useMemo(
-    () => sceneRegistry.byArea[mode]?.[area] ?? [],
-    [mode, area]
+    () => sceneRegistry.byArea[match.channel]?.[match.area] ?? [],
+    [match.channel, match.area]
   );
 
   const sceneOptions = useMemo(
@@ -115,7 +161,8 @@ export default function useAppScenes() {
   );
 
   const areaDefaultScene =
-    sceneRegistry.areaDefaults[mode]?.[area] || sceneRegistry.defaultScene;
+    sceneRegistry.areaDefaults[match.channel]?.[match.area] ||
+    sceneRegistry.defaultScene;
 
   const sceneDefault = useMemo(() => {
     if (scenes.some((scene) => scene.id === match?.id)) return match.id;
@@ -132,7 +179,7 @@ export default function useAppScenes() {
     'App',
     () => ({ scene: { options: sceneOptions, value: sceneDefault } }),
     { collapsed: true, render: () => local },
-    [mode, area]
+    [match.channel, match.area]
   );
 
   // Guard stale Leva scene value after area/channel switch
@@ -165,27 +212,6 @@ export default function useAppScenes() {
       }
     }
   }, [currentPath, levaSceneId, navigate, redirectPath, sceneMap]);
-
-  // Navigate when mode/area changes and the current route is no longer the selected scene.
-  useEffect(() => {
-    if (redirectPath) return;
-
-    const currentScene = sceneMap[match?.id];
-    const nextScene = currentScene || areaDefaultScene;
-
-    if (nextScene?.path && nextScene.path !== currentPath) {
-      navigate(nextScene.path, { replace: true });
-    }
-  }, [
-    area,
-    areaDefaultScene,
-    currentPath,
-    match?.id,
-    mode,
-    navigate,
-    redirectPath,
-    sceneMap,
-  ]);
 
   // --- ig → search param ---
 

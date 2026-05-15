@@ -114,34 +114,37 @@ export default function NoScene() {
   }
 
   return (
-    <Html center zIndexRange={[0, 0]} style={{ pointerEvents: 'none' }}>
-      <div
-        style={{
-          position: 'relative',
-          display: 'flex',
-          alignItems: 'center',
-          justifyContent: 'center',
-          width: responsiveSize.frameSize,
-          height: responsiveSize.frameSize,
-          pointerEvents: 'none',
-        }}
-      >
-        <img
-          src={currentImage.src}
-          alt=""
-          aria-hidden="true"
+    <>
+      <color attach="background" args={['#fff']} />
+      <Html center zIndexRange={[0, 0]} style={{ pointerEvents: 'none' }}>
+        <div
           style={{
-            width: currentImage.width,
-            height: currentImage.height,
-            transform: `scale(${imageScale})`,
-            transformOrigin: 'center center',
-            objectFit: 'contain',
-            opacity: 1,
+            position: 'relative',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            width: responsiveSize.frameSize,
+            height: responsiveSize.frameSize,
             pointerEvents: 'none',
-            userSelect: 'none',
           }}
-        />
-      </div>
-    </Html>
+        >
+          <img
+            src={currentImage.src}
+            alt=""
+            aria-hidden="true"
+            style={{
+              width: currentImage.width,
+              height: currentImage.height,
+              transform: `scale(${imageScale})`,
+              transformOrigin: 'center center',
+              objectFit: 'contain',
+              opacity: 1,
+              pointerEvents: 'none',
+              userSelect: 'none',
+            }}
+          />
+        </div>
+      </Html>
+    </>
   );
 }

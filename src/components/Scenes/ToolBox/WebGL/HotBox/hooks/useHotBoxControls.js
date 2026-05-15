@@ -338,9 +338,7 @@ const hydrateSmokeBallInst = (seed = {}) => ({
   config: { ...mkSmokeBallCfg(), ...(seed.config ?? {}) },
 });
 
-const makeSmokeBallSplineInst = (
-  pos = DEFAULT_SMOKE_BALL_SPLINE_POSITION
-) => ({
+const makeSmokeBallSplineInst = (pos = DEFAULT_SMOKE_BALL_SPLINE_POSITION) => ({
   id: mkId(),
   pos: [...pos],
   rot: [0, 0, 0],
@@ -412,7 +410,9 @@ const hydrateFireSplineInst = (seed = {}) => ({
   showHandles: seed.showHandles ?? true,
   showSpline: seed.showSpline ?? true,
   pointMode: seed.pointMode ?? 'translate',
-  controlPoints: cloneControlPoints(seed.controlPoints ?? DEFAULT_FIRE_SPLINE_POINTS),
+  controlPoints: cloneControlPoints(
+    seed.controlPoints ?? DEFAULT_FIRE_SPLINE_POINTS
+  ),
   config: { ...mkFireSplineCfg(), ...(seed.config ?? {}) },
 });
 
@@ -499,9 +499,8 @@ export default function useHotBoxControls(splines, setSplines, attractorsRef) {
 
   const initialStandaloneDefaultsRef = useRef(null);
   if (!initialStandaloneDefaultsRef.current) {
-    initialStandaloneDefaultsRef.current = getStandaloneDefaults(
-      DEFAULT_PRESET_KEY
-    );
+    initialStandaloneDefaultsRef.current =
+      getStandaloneDefaults(DEFAULT_PRESET_KEY);
   }
 
   const [splineConfigs, setSplineConfigs] = useState(() => {
@@ -709,1577 +708,1574 @@ export default function useHotBoxControls(splines, setSplines, attractorsRef) {
     []
   );
 
-  useControls(
-    SCENE_LABEL,
-    () => {
-      const typedSplineEntries = splines.reduce(
-        (acc, _points, index) => {
-          const cfg = splineConfigs[index] ?? DEFAULT_SPLINE_CONFIG;
+  useControls(SCENE_LABEL, () => {
+    const typedSplineEntries = splines.reduce(
+      (acc, _points, index) => {
+        const cfg = splineConfigs[index] ?? DEFAULT_SPLINE_CONFIG;
 
-          if ((cfg.type ?? DEFAULT_SPLINE_CONFIG.type) === 'Fire') {
-            const fireType = cfg.fireType ?? DEFAULT_SPLINE_CONFIG.fireType;
-            acc.fire[fireType].push({ index, cfg });
-          } else {
-            const smokeType = cfg.smokeType ?? DEFAULT_SPLINE_CONFIG.smokeType;
-            acc.smoke[smokeType].push({ index, cfg });
-          }
-
-          return acc;
-        },
-        {
-          smoke: { Particle: [], Volumetric: [] },
-          fire: { Classic: [], RayMarch: [], Fireball: [] },
+        if ((cfg.type ?? DEFAULT_SPLINE_CONFIG.type) === 'Fire') {
+          const fireType = cfg.fireType ?? DEFAULT_SPLINE_CONFIG.fireType;
+          acc.fire[fireType].push({ index, cfg });
+        } else {
+          const smokeType = cfg.smokeType ?? DEFAULT_SPLINE_CONFIG.smokeType;
+          acc.smoke[smokeType].push({ index, cfg });
         }
-      );
 
-      const addSmokeSpline = (smokeType) => {
+        return acc;
+      },
+      {
+        smoke: { Particle: [], Volumetric: [] },
+        fire: { Classic: [], RayMarch: [], Fireball: [] },
+      }
+    );
+
+    const addSmokeSpline = (smokeType) => {
+      const typeLabel = SMOKE_SPLINE_TYPE_LABELS[smokeType];
+      const nextCount = typedSplineEntries.smoke[smokeType].length + 1;
+
+      setSplines((prev) => [...prev, [randPt(), randPt(), randPt()]]);
+      setSplineConfigs((prev) => [
+        ...prev,
+        makeTypedSplineConfig({
+          type: 'Smoke',
+          smokeType,
+          name: `${typeLabel} ${nextCount}`,
+        }),
+      ]);
+      setHotBoxSchemaVersion((count) => count + 1);
+    };
+
+    const addFireSpline = (fireType) => {
+      const typeLabel = FIRE_SPLINE_TYPE_LABELS[fireType];
+      const nextCount = typedSplineEntries.fire[fireType].length + 1;
+
+      setSplines((prev) => [...prev, [randPt(), randPt(), randPt()]]);
+      setSplineConfigs((prev) => [
+        ...prev,
+        makeTypedSplineConfig({
+          type: 'Fire',
+          fireType,
+          name: `${typeLabel} ${nextCount}`,
+        }),
+      ]);
+      setHotBoxSchemaVersion((count) => count + 1);
+    };
+
+    const removeAllSmokeSplines = (smokeType) => {
+      setSplines((prev) =>
+        prev.filter(
+          (_points, index) =>
+            !(
+              (splineConfigs[index]?.type ?? DEFAULT_SPLINE_CONFIG.type) ===
+                'Smoke' &&
+              (splineConfigs[index]?.smokeType ??
+                DEFAULT_SPLINE_CONFIG.smokeType) === smokeType
+            )
+        )
+      );
+      setSplineConfigs((prev) =>
+        prev.filter(
+          (config) =>
+            !(
+              (config?.type ?? DEFAULT_SPLINE_CONFIG.type) === 'Smoke' &&
+              (config?.smokeType ?? DEFAULT_SPLINE_CONFIG.smokeType) ===
+                smokeType
+            )
+        )
+      );
+      setHotBoxSchemaVersion((count) => count + 1);
+    };
+
+    const removeAllFireSplines = (fireType) => {
+      setSplines((prev) =>
+        prev.filter(
+          (_points, index) =>
+            !(
+              (splineConfigs[index]?.type ?? DEFAULT_SPLINE_CONFIG.type) ===
+                'Fire' &&
+              (splineConfigs[index]?.fireType ??
+                DEFAULT_SPLINE_CONFIG.fireType) === fireType
+            )
+        )
+      );
+      setSplineConfigs((prev) =>
+        prev.filter(
+          (config) =>
+            !(
+              (config?.type ?? DEFAULT_SPLINE_CONFIG.type) === 'Fire' &&
+              (config?.fireType ?? DEFAULT_SPLINE_CONFIG.fireType) === fireType
+            )
+        )
+      );
+      setHotBoxSchemaVersion((count) => count + 1);
+    };
+
+    const smokeSplineSections = SMOKE_SPLINE_TYPE_ORDER.reduce(
+      (acc, smokeType) => {
         const typeLabel = SMOKE_SPLINE_TYPE_LABELS[smokeType];
-        const nextCount = typedSplineEntries.smoke[smokeType].length + 1;
+        const typeFolderPath = `${SMOKE_FOLDER_PATH}.${typeLabel}`;
+        const entries = typedSplineEntries.smoke[smokeType];
 
-        setSplines((prev) => [...prev, [randPt(), randPt(), randPt()]]);
-        setSplineConfigs((prev) => [
-          ...prev,
-          makeTypedSplineConfig({
-            type: 'Smoke',
-            smokeType,
-            name: `${typeLabel} ${nextCount}`,
-          }),
-        ]);
-        setHotBoxSchemaVersion((count) => count + 1);
-      };
+        acc[typeLabel] = folder(
+          {
+            [`Add ${typeLabel}`]: button(() => addSmokeSpline(smokeType)),
+            [`Remove All ${typeLabel}`]: button(() =>
+              removeAllSmokeSplines(smokeType)
+            ),
+            ...entries.reduce((typeAcc, entry, typeIndex) => {
+              const folderLabel = `${typeLabel} ${typeIndex + 1}`;
+              typeAcc[folderLabel] = folder(
+                buildSplineGroupControls(entry.index, entry.cfg, {
+                  sceneLabel: typeFolderPath,
+                  folderLabel,
+                  setSplineConfigs,
+                  setSplines,
+                  allowedTypes: 'smoke',
+                }),
+                { collapsed: true }
+              );
+              return typeAcc;
+            }, {}),
+          },
+          { collapsed: true }
+        );
 
-      const addFireSpline = (fireType) => {
+        return acc;
+      },
+      {}
+    );
+
+    const fireSplineSections = FIRE_SPLINE_TYPE_ORDER.reduce(
+      (acc, fireType) => {
         const typeLabel = FIRE_SPLINE_TYPE_LABELS[fireType];
-        const nextCount = typedSplineEntries.fire[fireType].length + 1;
+        const typeFolderPath = `${FIRE_FOLDER_PATH}.${typeLabel}`;
+        const entries = typedSplineEntries.fire[fireType];
 
-        setSplines((prev) => [...prev, [randPt(), randPt(), randPt()]]);
-        setSplineConfigs((prev) => [
+        acc[typeLabel] = folder(
+          {
+            [`Add ${typeLabel}`]: button(() => addFireSpline(fireType)),
+            [`Remove All ${typeLabel}`]: button(() =>
+              removeAllFireSplines(fireType)
+            ),
+            ...entries.reduce((typeAcc, entry, typeIndex) => {
+              const folderLabel = `${typeLabel} ${typeIndex + 1}`;
+              typeAcc[folderLabel] = folder(
+                buildSplineGroupControls(entry.index, entry.cfg, {
+                  sceneLabel: typeFolderPath,
+                  folderLabel,
+                  setSplineConfigs,
+                  setSplines,
+                  allowedTypes: 'fire',
+                }),
+                { collapsed: true }
+              );
+              return typeAcc;
+            }, {}),
+          },
+          { collapsed: true }
+        );
+
+        return acc;
+      },
+      {}
+    );
+
+    const smokeBallSection = {
+      'Add Smoke Ball': button(() =>
+        setSmokeBallInstances((prev) => [
           ...prev,
-          makeTypedSplineConfig({
-            type: 'Fire',
-            fireType,
-            name: `${typeLabel} ${nextCount}`,
+          makeSmokeBallInst(offsetPosition(DEFAULT_SMOKEBALL_POSITION)),
+        ])
+      ),
+      'Remove All Smoke Balls': button(() => setSmokeBallInstances([])),
+      ...smokeBallInstances.reduce((acc, instance, index) => {
+        const { id } = instance;
+        const onCfg = (key) => (value) =>
+          setSmokeBallInstances((prev) =>
+            prev.map((item) =>
+              item.id === id
+                ? { ...item, config: { ...item.config, [key]: value } }
+                : item
+            )
+          );
+        const onInst = (key) => (value) =>
+          setSmokeBallInstances((prev) =>
+            prev.map((item) =>
+              item.id === id ? { ...item, [key]: value } : item
+            )
+          );
+
+        acc[`Smoke Ball ${index + 1}`] = folder(
+          {
+            [`sb_pos_${id}`]: {
+              label: 'Position',
+              value: instance.pos,
+              step: 0.1,
+              onChange: onInst('pos'),
+            },
+            [`sb_rot_${id}`]: {
+              label: 'Rotation',
+              value: instance.rot,
+              step: 0.05,
+              onChange: onInst('rot'),
+            },
+            [`sb_scale_${id}`]: {
+              label: 'Scale',
+              value: instance.scale,
+              min: 0.01,
+              max: 10,
+              step: 0.1,
+              onChange: onInst('scale'),
+            },
+            'SB Appearance': folder(
+              {
+                [`sb_radius_${id}`]: {
+                  label: 'Radius',
+                  value: instance.config.radius,
+                  min: 0.05,
+                  max: 5,
+                  step: 0.05,
+                  onChange: onCfg('radius'),
+                },
+                [`sb_detail_${id}`]: {
+                  label: 'Detail',
+                  value: instance.config.detail,
+                  min: 1,
+                  max: 7,
+                  step: 1,
+                  onChange: onCfg('detail'),
+                },
+                [`sb_speed_${id}`]: {
+                  label: 'Speed',
+                  value: instance.config.speed,
+                  min: 0,
+                  max: 5,
+                  step: 0.05,
+                  onChange: onCfg('speed'),
+                },
+                [`sb_weight_${id}`]: {
+                  label: 'Weight',
+                  value: instance.config.weight,
+                  min: 0,
+                  max: 3,
+                  step: 0.05,
+                  onChange: onCfg('weight'),
+                },
+                [`sb_noiseFreq_${id}`]: {
+                  label: 'Noise Freq',
+                  value: instance.config.noiseFreq,
+                  min: 0.1,
+                  max: 10,
+                  step: 0.1,
+                  onChange: onCfg('noiseFreq'),
+                },
+                [`sb_noiseAmp_${id}`]: {
+                  label: 'Noise Amp',
+                  value: instance.config.noiseAmp,
+                  min: 0,
+                  max: 1,
+                  step: 0.01,
+                  onChange: onCfg('noiseAmp'),
+                },
+                [`sb_animated_${id}`]: {
+                  label: 'Animated',
+                  value: instance.config.animated,
+                  onChange: onCfg('animated'),
+                },
+                [`sb_light_${id}`]: {
+                  label: 'Light',
+                  value: instance.config.smokeLightColor,
+                  onChange: onCfg('smokeLightColor'),
+                },
+                [`sb_dark_${id}`]: {
+                  label: 'Dark',
+                  value: instance.config.smokeDarkColor,
+                  onChange: onCfg('smokeDarkColor'),
+                },
+              },
+              { collapsed: true }
+            ),
+            [`sb_delete_${id}`]: button(
+              () =>
+                setSmokeBallInstances((prev) =>
+                  prev.filter((item) => item.id !== id)
+                ),
+              { label: 'Delete Instance' }
+            ),
+          },
+          { collapsed: true }
+        );
+        return acc;
+      }, {}),
+    };
+
+    const smokeBallSplineSection = {
+      'Add Smoke Ball Spline': button(() =>
+        setSmokeBallSplineInstances((prev) => [
+          ...prev,
+          makeSmokeBallSplineInst(
+            offsetPosition(DEFAULT_SMOKE_BALL_SPLINE_POSITION)
+          ),
+        ])
+      ),
+      'Remove All Smoke Ball Splines': button(() =>
+        setSmokeBallSplineInstances([])
+      ),
+      ...smokeBallSplineInstances.reduce((acc, instance, index) => {
+        const { id } = instance;
+        const onCfg = (key) => (value) =>
+          setSmokeBallSplineInstances((prev) =>
+            prev.map((item) =>
+              item.id === id
+                ? { ...item, config: { ...item.config, [key]: value } }
+                : item
+            )
+          );
+        const onInst = (key) => (value) =>
+          setSmokeBallSplineInstances((prev) =>
+            prev.map((item) =>
+              item.id === id ? { ...item, [key]: value } : item
+            )
+          );
+
+        acc[`Smoke Ball Spline ${index + 1}`] = folder(
+          {
+            [`ss_pos_${id}`]: {
+              label: 'Position',
+              value: instance.pos,
+              step: 0.1,
+              onChange: onInst('pos'),
+            },
+            [`ss_rot_${id}`]: {
+              label: 'Rotation',
+              value: instance.rot,
+              step: 0.05,
+              onChange: onInst('rot'),
+            },
+            [`ss_scale_${id}`]: {
+              label: 'Scale',
+              value: instance.scale,
+              min: 0.01,
+              max: 10,
+              step: 0.1,
+              onChange: onInst('scale'),
+            },
+            'SS Spline Editor': folder(
+              {
+                [`ss_handles_${id}`]: {
+                  label: 'Show Handles',
+                  value: instance.showHandles,
+                  onChange: onInst('showHandles'),
+                },
+                [`ss_pointMode_${id}`]: {
+                  label: 'Transform',
+                  value: instance.pointMode,
+                  options: ['translate', 'scale'],
+                  onChange: onInst('pointMode'),
+                },
+              },
+              { collapsed: true }
+            ),
+            'SS Appearance': folder(
+              {
+                [`ss_baseRadius_${id}`]: {
+                  label: 'Base Radius',
+                  value: instance.config.baseRadius,
+                  min: 0.05,
+                  max: 5,
+                  step: 0.05,
+                  onChange: onCfg('baseRadius'),
+                },
+                [`ss_tubular_${id}`]: {
+                  label: 'Tubular Segs',
+                  value: instance.config.tubularSegments,
+                  min: 8,
+                  max: 128,
+                  step: 1,
+                  onChange: onCfg('tubularSegments'),
+                },
+                [`ss_radial_${id}`]: {
+                  label: 'Radial Segs',
+                  value: instance.config.radialSegments,
+                  min: 8,
+                  max: 64,
+                  step: 1,
+                  onChange: onCfg('radialSegments'),
+                },
+                [`ss_cap_${id}`]: {
+                  label: 'Cap Segs',
+                  value: instance.config.capSegments,
+                  min: 2,
+                  max: 16,
+                  step: 1,
+                  onChange: onCfg('capSegments'),
+                },
+                [`ss_speed_${id}`]: {
+                  label: 'Speed',
+                  value: instance.config.speed,
+                  min: 0,
+                  max: 5,
+                  step: 0.05,
+                  onChange: onCfg('speed'),
+                },
+                [`ss_weight_${id}`]: {
+                  label: 'Weight',
+                  value: instance.config.weight,
+                  min: 0,
+                  max: 3,
+                  step: 0.05,
+                  onChange: onCfg('weight'),
+                },
+                [`ss_noiseFreq_${id}`]: {
+                  label: 'Noise Freq',
+                  value: instance.config.noiseFreq,
+                  min: 0.1,
+                  max: 10,
+                  step: 0.1,
+                  onChange: onCfg('noiseFreq'),
+                },
+                [`ss_noiseAmp_${id}`]: {
+                  label: 'Noise Amp',
+                  value: instance.config.noiseAmp,
+                  min: 0,
+                  max: 1,
+                  step: 0.01,
+                  onChange: onCfg('noiseAmp'),
+                },
+                [`ss_animated_${id}`]: {
+                  label: 'Animated',
+                  value: instance.config.animated,
+                  onChange: onCfg('animated'),
+                },
+                [`ss_light_${id}`]: {
+                  label: 'Light',
+                  value: instance.config.smokeLightColor,
+                  onChange: onCfg('smokeLightColor'),
+                },
+                [`ss_dark_${id}`]: {
+                  label: 'Dark',
+                  value: instance.config.smokeDarkColor,
+                  onChange: onCfg('smokeDarkColor'),
+                },
+              },
+              { collapsed: true }
+            ),
+            [`ss_delete_${id}`]: button(
+              () =>
+                setSmokeBallSplineInstances((prev) =>
+                  prev.filter((item) => item.id !== id)
+                ),
+              { label: 'Delete Instance' }
+            ),
+          },
+          { collapsed: true }
+        );
+        return acc;
+      }, {}),
+    };
+
+    const billboardSmokeSection = {
+      'Add Billboard Smoke': button(() =>
+        setBillboardSmokeInstances((prev) => [
+          ...prev,
+          makeBillboardSmokeInst(
+            offsetPosition(DEFAULT_BILLBOARD_SMOKE_POSITION)
+          ),
+        ])
+      ),
+      'Remove All Billboard Smoke': button(() =>
+        setBillboardSmokeInstances([])
+      ),
+      ...billboardSmokeInstances.reduce((acc, instance, index) => {
+        const { id } = instance;
+        const onCfg = (key) => (value) =>
+          setBillboardSmokeInstances((prev) =>
+            prev.map((item) =>
+              item.id === id
+                ? { ...item, config: { ...item.config, [key]: value } }
+                : item
+            )
+          );
+        const onInst = (key) => (value) =>
+          setBillboardSmokeInstances((prev) =>
+            prev.map((item) =>
+              item.id === id ? { ...item, [key]: value } : item
+            )
+          );
+
+        acc[`Billboard ${index + 1}`] = folder(
+          {
+            [`s2d_pos_${id}`]: {
+              label: 'Position',
+              value: instance.pos,
+              step: 0.1,
+              onChange: onInst('pos'),
+            },
+            'S2D Appearance': folder(
+              {
+                [`s2d_inverted_${id}`]: {
+                  label: 'Inverted',
+                  value: instance.config.inverted,
+                  onChange: onCfg('inverted'),
+                },
+                [`s2d_width_${id}`]: {
+                  label: 'Width',
+                  value: instance.config.width,
+                  min: 0.05,
+                  max: 5,
+                  step: 0.05,
+                  onChange: onCfg('width'),
+                },
+                [`s2d_height_${id}`]: {
+                  label: 'Height',
+                  value: instance.config.height,
+                  min: 0.1,
+                  max: 15,
+                  step: 0.1,
+                  onChange: onCfg('height'),
+                },
+                [`s2d_color_${id}`]: {
+                  label: 'Color',
+                  value: instance.config.color,
+                  onChange: onCfg('color'),
+                },
+                [`s2d_opacity_${id}`]: {
+                  label: 'Opacity',
+                  value: instance.config.opacity,
+                  min: 0,
+                  max: 1,
+                  step: 0.01,
+                  onChange: onCfg('opacity'),
+                },
+                [`s2d_timeFreq_${id}`]: {
+                  label: 'Time Freq',
+                  value: instance.config.timeFrequency,
+                  min: 0,
+                  max: 3,
+                  step: 0.01,
+                  onChange: onCfg('timeFrequency'),
+                },
+                [`s2d_uvFreqX_${id}`]: {
+                  label: 'UV Freq X',
+                  value: instance.config.uvFrequencyX,
+                  min: 0.1,
+                  max: 5,
+                  step: 0.05,
+                  onChange: onCfg('uvFrequencyX'),
+                },
+                [`s2d_uvFreqY_${id}`]: {
+                  label: 'UV Freq Y',
+                  value: instance.config.uvFrequencyY,
+                  min: 0.1,
+                  max: 5,
+                  step: 0.05,
+                  onChange: onCfg('uvFrequencyY'),
+                },
+                [`s2d_riseSpeed_${id}`]: {
+                  label: 'Rise Speed',
+                  value: instance.config.riseSpeed,
+                  min: 0,
+                  max: 2,
+                  step: 0.01,
+                  onChange: onCfg('riseSpeed'),
+                },
+                [`s2d_spread_${id}`]: {
+                  label: 'Spread',
+                  value: instance.config.spreadStrength,
+                  min: 0,
+                  max: 1,
+                  step: 0.01,
+                  onChange: onCfg('spreadStrength'),
+                },
+              },
+              { collapsed: true }
+            ),
+            [`s2d_delete_${id}`]: button(
+              () =>
+                setBillboardSmokeInstances((prev) =>
+                  prev.filter((item) => item.id !== id)
+                ),
+              { label: 'Delete Instance' }
+            ),
+          },
+          { collapsed: true }
+        );
+        return acc;
+      }, {}),
+    };
+
+    const fireballSection = {
+      'Add Fireball': button(() =>
+        setFireballInstances((prev) => [
+          ...prev,
+          makeFireballInst(offsetPosition(DEFAULT_FIREBALL_POSITION)),
+        ])
+      ),
+      'Remove All Fireballs': button(() => setFireballInstances([])),
+      ...fireballInstances.reduce((acc, instance, index) => {
+        const { id } = instance;
+        const onCfg = (key) => (value) =>
+          setFireballInstances((prev) =>
+            prev.map((item) =>
+              item.id === id
+                ? { ...item, config: { ...item.config, [key]: value } }
+                : item
+            )
+          );
+        const onInst = (key) => (value) =>
+          setFireballInstances((prev) =>
+            prev.map((item) =>
+              item.id === id ? { ...item, [key]: value } : item
+            )
+          );
+
+        acc[`Fireball ${index + 1}`] = folder(
+          {
+            [`fb_pos_${id}`]: {
+              label: 'Position',
+              value: instance.pos,
+              step: 0.1,
+              onChange: onInst('pos'),
+            },
+            [`fb_rot_${id}`]: {
+              label: 'Rotation',
+              value: instance.rot,
+              step: 0.05,
+              onChange: onInst('rot'),
+            },
+            [`fb_scale_${id}`]: {
+              label: 'Scale',
+              value: instance.scale,
+              min: 0.01,
+              max: 10,
+              step: 0.1,
+              onChange: onInst('scale'),
+            },
+            'FB Appearance': folder(
+              {
+                [`fb_radius_${id}`]: {
+                  label: 'Radius',
+                  value: instance.config.radius,
+                  min: 0.05,
+                  max: 5,
+                  step: 0.05,
+                  onChange: onCfg('radius'),
+                },
+                [`fb_detail_${id}`]: {
+                  label: 'Detail',
+                  value: instance.config.detail,
+                  min: 1,
+                  max: 7,
+                  step: 1,
+                  onChange: onCfg('detail'),
+                },
+                [`fb_speed_${id}`]: {
+                  label: 'Speed',
+                  value: instance.config.speed,
+                  min: 0,
+                  max: 5,
+                  step: 0.05,
+                  onChange: onCfg('speed'),
+                },
+                [`fb_weight_${id}`]: {
+                  label: 'Weight',
+                  value: instance.config.weight,
+                  min: 0,
+                  max: 3,
+                  step: 0.05,
+                  onChange: onCfg('weight'),
+                },
+                [`fb_noiseFreq_${id}`]: {
+                  label: 'Noise Freq',
+                  value: instance.config.noiseFreq,
+                  min: 0.1,
+                  max: 10,
+                  step: 0.1,
+                  onChange: onCfg('noiseFreq'),
+                },
+                [`fb_noiseAmp_${id}`]: {
+                  label: 'Noise Amp',
+                  value: instance.config.noiseAmp,
+                  min: 0,
+                  max: 1,
+                  step: 0.01,
+                  onChange: onCfg('noiseAmp'),
+                },
+                [`fb_animated_${id}`]: {
+                  label: 'Animated',
+                  value: instance.config.animated,
+                  onChange: onCfg('animated'),
+                },
+              },
+              { collapsed: true }
+            ),
+            [`fb_delete_${id}`]: button(
+              () =>
+                setFireballInstances((prev) =>
+                  prev.filter((item) => item.id !== id)
+                ),
+              { label: 'Delete Instance' }
+            ),
+          },
+          { collapsed: true }
+        );
+        return acc;
+      }, {}),
+    };
+
+    const fireSplineSection = {
+      'Add Fire Spline': button(() =>
+        setFireSplineInstances((prev) => [
+          ...prev,
+          makeFireSplineInst(offsetPosition(DEFAULT_FIRE_SPLINE_POSITION)),
+        ])
+      ),
+      'Remove All Fire Splines': button(() => setFireSplineInstances([])),
+      ...fireSplineInstances.reduce((acc, instance, index) => {
+        const { id } = instance;
+        const onCfg = (key) => (value) =>
+          setFireSplineInstances((prev) =>
+            prev.map((item) =>
+              item.id === id
+                ? { ...item, config: { ...item.config, [key]: value } }
+                : item
+            )
+          );
+        const onInst = (key) => (value) =>
+          setFireSplineInstances((prev) =>
+            prev.map((item) =>
+              item.id === id ? { ...item, [key]: value } : item
+            )
+          );
+
+        acc[`Fire Spline ${index + 1}`] = folder(
+          {
+            [`fs_pos_${id}`]: {
+              label: 'Position',
+              value: instance.pos,
+              step: 0.1,
+              onChange: onInst('pos'),
+            },
+            [`fs_rot_${id}`]: {
+              label: 'Rotation',
+              value: instance.rot,
+              step: 0.05,
+              onChange: onInst('rot'),
+            },
+            [`fs_scale_${id}`]: {
+              label: 'Scale',
+              value: instance.scale,
+              min: 0.01,
+              max: 10,
+              step: 0.1,
+              onChange: onInst('scale'),
+            },
+            'FS Spline Editor': folder(
+              {
+                [`fs_handles_${id}`]: {
+                  label: 'Show Handles',
+                  value: instance.showHandles,
+                  onChange: onInst('showHandles'),
+                },
+                [`fs_showSpline_${id}`]: {
+                  label: 'Show Curve',
+                  value: instance.showSpline,
+                  onChange: onInst('showSpline'),
+                },
+                [`fs_pointMode_${id}`]: {
+                  label: 'Transform',
+                  value: instance.pointMode,
+                  options: ['translate', 'scale'],
+                  onChange: onInst('pointMode'),
+                },
+              },
+              { collapsed: true }
+            ),
+            'FS Appearance': folder(
+              {
+                [`fs_baseRadius_${id}`]: {
+                  label: 'Base Radius',
+                  value: instance.config.baseRadius,
+                  min: 0.05,
+                  max: 5,
+                  step: 0.05,
+                  onChange: onCfg('baseRadius'),
+                },
+                [`fs_tubular_${id}`]: {
+                  label: 'Tubular Segs',
+                  value: instance.config.tubularSegments,
+                  min: 8,
+                  max: 128,
+                  step: 1,
+                  onChange: onCfg('tubularSegments'),
+                },
+                [`fs_radial_${id}`]: {
+                  label: 'Radial Segs',
+                  value: instance.config.radialSegments,
+                  min: 8,
+                  max: 64,
+                  step: 1,
+                  onChange: onCfg('radialSegments'),
+                },
+                [`fs_cap_${id}`]: {
+                  label: 'Cap Segs',
+                  value: instance.config.capSegments,
+                  min: 2,
+                  max: 16,
+                  step: 1,
+                  onChange: onCfg('capSegments'),
+                },
+                [`fs_speed_${id}`]: {
+                  label: 'Speed',
+                  value: instance.config.speed,
+                  min: 0,
+                  max: 5,
+                  step: 0.05,
+                  onChange: onCfg('speed'),
+                },
+                [`fs_weight_${id}`]: {
+                  label: 'Weight',
+                  value: instance.config.weight,
+                  min: 0,
+                  max: 3,
+                  step: 0.05,
+                  onChange: onCfg('weight'),
+                },
+                [`fs_noiseFreq_${id}`]: {
+                  label: 'Noise Freq',
+                  value: instance.config.noiseFreq,
+                  min: 0.1,
+                  max: 10,
+                  step: 0.1,
+                  onChange: onCfg('noiseFreq'),
+                },
+                [`fs_noiseAmp_${id}`]: {
+                  label: 'Noise Amp',
+                  value: instance.config.noiseAmp,
+                  min: 0,
+                  max: 1,
+                  step: 0.01,
+                  onChange: onCfg('noiseAmp'),
+                },
+                [`fs_animated_${id}`]: {
+                  label: 'Animated',
+                  value: instance.config.animated,
+                  onChange: onCfg('animated'),
+                },
+                [`fs_light_${id}`]: {
+                  label: 'Light',
+                  value: instance.config.smokeLightColor,
+                  onChange: onCfg('smokeLightColor'),
+                },
+                [`fs_dark_${id}`]: {
+                  label: 'Dark',
+                  value: instance.config.smokeDarkColor,
+                  onChange: onCfg('smokeDarkColor'),
+                },
+              },
+              { collapsed: true }
+            ),
+            [`fs_delete_${id}`]: button(
+              () =>
+                setFireSplineInstances((prev) =>
+                  prev.filter((item) => item.id !== id)
+                ),
+              { label: 'Delete Instance' }
+            ),
+          },
+          { collapsed: true }
+        );
+        return acc;
+      }, {}),
+    };
+
+    const flameSection = {
+      'Add Flame': button(() =>
+        setFlameInstances((prev) => [
+          ...prev,
+          makeFlameInst(offsetPosition(DEFAULT_FLAME_POSITION)),
+        ])
+      ),
+      'Remove All Flames': button(() => setFlameInstances([])),
+      ...flameInstances.reduce((acc, instance, index) => {
+        const { id } = instance;
+        const onCfg = (key) => (value) =>
+          setFlameInstances((prev) =>
+            prev.map((item) =>
+              item.id === id
+                ? { ...item, config: { ...item.config, [key]: value } }
+                : item
+            )
+          );
+        const onMotion = (key) => (value) =>
+          setFlameInstances((prev) =>
+            prev.map((item) =>
+              item.id === id
+                ? {
+                    ...item,
+                    config: {
+                      ...item.config,
+                      motion: { ...item.config.motion, [key]: value },
+                    },
+                  }
+                : item
+            )
+          );
+        const onInst = (key) => (value) =>
+          setFlameInstances((prev) =>
+            prev.map((item) =>
+              item.id === id ? { ...item, [key]: value } : item
+            )
+          );
+
+        acc[`Flame ${index + 1}`] = folder(
+          {
+            [`fl_pos_${id}`]: {
+              label: 'Position',
+              value: instance.pos,
+              step: 0.1,
+              onChange: onInst('pos'),
+            },
+            [`fl_rot_${id}`]: {
+              label: 'Rotation',
+              value: instance.rot,
+              step: 0.05,
+              onChange: onInst('rot'),
+            },
+            [`fl_scale_${id}`]: {
+              label: 'Scale',
+              value: instance.scale,
+              min: 0.01,
+              max: 10,
+              step: 0.1,
+              onChange: onInst('scale'),
+            },
+            [`fl_inverted_${id}`]: {
+              label: 'Inverted',
+              value: instance.config.inverted,
+              onChange: onCfg('inverted'),
+            },
+            'FL Motion': folder(
+              {
+                [`fl_baseSpeed_${id}`]: {
+                  label: 'Base Speed',
+                  value: instance.config.motion.baseSpeed,
+                  min: 0,
+                  max: 5,
+                  step: 0.05,
+                  onChange: onMotion('baseSpeed'),
+                },
+                [`fl_minSpeed_${id}`]: {
+                  label: 'Min Speed',
+                  value: instance.config.motion.minSpeed,
+                  min: 0,
+                  max: 2,
+                  step: 0.01,
+                  onChange: onMotion('minSpeed'),
+                },
+                [`fl_slowFreq_${id}`]: {
+                  label: 'Slow Freq',
+                  value: instance.config.motion.slowFreq,
+                  min: 0,
+                  max: 5,
+                  step: 0.1,
+                  onChange: onMotion('slowFreq'),
+                },
+                [`fl_slowAmp_${id}`]: {
+                  label: 'Slow Amp',
+                  value: instance.config.motion.slowAmp,
+                  min: 0,
+                  max: 2,
+                  step: 0.05,
+                  onChange: onMotion('slowAmp'),
+                },
+                [`fl_fastFreq_${id}`]: {
+                  label: 'Fast Freq',
+                  value: instance.config.motion.fastFreq,
+                  min: 0,
+                  max: 10,
+                  step: 0.1,
+                  onChange: onMotion('fastFreq'),
+                },
+                [`fl_fastAmp_${id}`]: {
+                  label: 'Fast Amp',
+                  value: instance.config.motion.fastAmp,
+                  min: 0,
+                  max: 2,
+                  step: 0.05,
+                  onChange: onMotion('fastAmp'),
+                },
+                [`fl_microFreq_${id}`]: {
+                  label: 'Micro Freq',
+                  value: instance.config.motion.microFreq,
+                  min: 0,
+                  max: 20,
+                  step: 0.1,
+                  onChange: onMotion('microFreq'),
+                },
+                [`fl_microAmp_${id}`]: {
+                  label: 'Micro Amp',
+                  value: instance.config.motion.microAmp,
+                  min: 0,
+                  max: 1,
+                  step: 0.01,
+                  onChange: onMotion('microAmp'),
+                },
+                [`fl_swayX_${id}`]: {
+                  label: 'Sway X',
+                  value: instance.config.motion.swayX,
+                  min: 0,
+                  max: 0.2,
+                  step: 0.001,
+                  onChange: onMotion('swayX'),
+                },
+                [`fl_swayZ_${id}`]: {
+                  label: 'Sway Z',
+                  value: instance.config.motion.swayZ,
+                  min: 0,
+                  max: 0.2,
+                  step: 0.001,
+                  onChange: onMotion('swayZ'),
+                },
+                [`fl_pulseFreq_${id}`]: {
+                  label: 'Pulse Freq',
+                  value: instance.config.motion.pulseFreq,
+                  min: 0,
+                  max: 10,
+                  step: 0.1,
+                  onChange: onMotion('pulseFreq'),
+                },
+                [`fl_pulseAmp_${id}`]: {
+                  label: 'Pulse Amp',
+                  value: instance.config.motion.pulseAmp,
+                  min: 0,
+                  max: 0.5,
+                  step: 0.01,
+                  onChange: onMotion('pulseAmp'),
+                },
+                [`fl_scaleX_${id}`]: {
+                  label: 'Scale X',
+                  value: instance.config.motion.scaleX,
+                  min: 0.1,
+                  max: 5,
+                  step: 0.1,
+                  onChange: onMotion('scaleX'),
+                },
+                [`fl_scaleY_${id}`]: {
+                  label: 'Scale Y',
+                  value: instance.config.motion.scaleY,
+                  min: 0.1,
+                  max: 5,
+                  step: 0.1,
+                  onChange: onMotion('scaleY'),
+                },
+              },
+              { collapsed: true }
+            ),
+            [`fl_delete_${id}`]: button(
+              () =>
+                setFlameInstances((prev) =>
+                  prev.filter((item) => item.id !== id)
+                ),
+              { label: 'Delete Instance' }
+            ),
+          },
+          { collapsed: true }
+        );
+        return acc;
+      }, {}),
+    };
+
+    const volumetricFireSection = {
+      'Add Volumetric Fire': button(() =>
+        setVolumetricFireInstances((prev) => [
+          ...prev,
+          makeVolumetricFireInst(
+            offsetPosition(DEFAULT_VOLUMETRIC_FIRE_POSITION)
+          ),
+        ])
+      ),
+      'Remove All Volumetric Fire': button(() =>
+        setVolumetricFireInstances([])
+      ),
+      ...volumetricFireInstances.reduce((acc, instance, index) => {
+        const { id } = instance;
+        const onCfg = (key) => (value) =>
+          setVolumetricFireInstances((prev) =>
+            prev.map((item) =>
+              item.id === id
+                ? { ...item, config: { ...item.config, [key]: value } }
+                : item
+            )
+          );
+        const onInst = (key) => (value) =>
+          setVolumetricFireInstances((prev) =>
+            prev.map((item) =>
+              item.id === id ? { ...item, [key]: value } : item
+            )
+          );
+
+        acc[`Volumetric Fire ${index + 1}`] = folder(
+          {
+            [`vf_pos_${id}`]: {
+              label: 'Position',
+              value: instance.pos,
+              step: 0.1,
+              onChange: onInst('pos'),
+            },
+            [`vf_rot_${id}`]: {
+              label: 'Rotation',
+              value: instance.rot,
+              step: 0.05,
+              onChange: onInst('rot'),
+            },
+            [`vf_scale_${id}`]: {
+              label: 'Scale',
+              value: instance.scale,
+              min: 0.01,
+              max: 10,
+              step: 0.1,
+              onChange: onInst('scale'),
+            },
+            'VF Volume': folder(
+              {
+                [`vf_width_${id}`]: {
+                  label: 'Width',
+                  value: instance.config.width,
+                  min: 0.1,
+                  max: 5,
+                  step: 0.05,
+                  onChange: onCfg('width'),
+                },
+                [`vf_height_${id}`]: {
+                  label: 'Height',
+                  value: instance.config.height,
+                  min: 0.2,
+                  max: 10,
+                  step: 0.1,
+                  onChange: onCfg('height'),
+                },
+                [`vf_depth_${id}`]: {
+                  label: 'Depth',
+                  value: instance.config.depth,
+                  min: 0.1,
+                  max: 5,
+                  step: 0.05,
+                  onChange: onCfg('depth'),
+                },
+                [`vf_sliceSpacing_${id}`]: {
+                  label: 'Slice Spacing',
+                  value: instance.config.sliceSpacing,
+                  min: 0.01,
+                  max: 0.2,
+                  step: 0.005,
+                  onChange: onCfg('sliceSpacing'),
+                },
+                [`vf_bendX_${id}`]: {
+                  label: 'Bend X',
+                  value: instance.config.bendX,
+                  min: -2,
+                  max: 2,
+                  step: 0.01,
+                  onChange: onCfg('bendX'),
+                },
+                [`vf_bendZ_${id}`]: {
+                  label: 'Bend Z',
+                  value: instance.config.bendZ,
+                  min: -2,
+                  max: 2,
+                  step: 0.01,
+                  onChange: onCfg('bendZ'),
+                },
+                [`vf_animated_${id}`]: {
+                  label: 'Animated',
+                  value: instance.config.animated,
+                  onChange: onCfg('animated'),
+                },
+                [`vf_animSpeed_${id}`]: {
+                  label: 'Anim Speed',
+                  value: instance.config.animSpeed,
+                  min: 0,
+                  max: 3,
+                  step: 0.05,
+                  onChange: onCfg('animSpeed'),
+                },
+                [`vf_showSpline_${id}`]: {
+                  label: 'Show Spline',
+                  value: instance.config.showSpline,
+                  onChange: onCfg('showSpline'),
+                },
+                [`vf_showVolume_${id}`]: {
+                  label: 'Show Volume',
+                  value: instance.config.showVolume,
+                  onChange: onCfg('showVolume'),
+                },
+              },
+              { collapsed: true }
+            ),
+            'VF Turbulence': folder(
+              {
+                [`vf_magnitude_${id}`]: {
+                  label: 'Magnitude',
+                  value: instance.config.magnitude,
+                  min: 0.1,
+                  max: 5,
+                  step: 0.1,
+                  onChange: onCfg('magnitude'),
+                },
+                [`vf_lacunarity_${id}`]: {
+                  label: 'Lacunarity',
+                  value: instance.config.lacunarity,
+                  min: 1,
+                  max: 5,
+                  step: 0.1,
+                  onChange: onCfg('lacunarity'),
+                },
+                [`vf_gain_${id}`]: {
+                  label: 'Gain',
+                  value: instance.config.gain,
+                  min: 0.01,
+                  max: 1,
+                  step: 0.01,
+                  onChange: onCfg('gain'),
+                },
+              },
+              { collapsed: true }
+            ),
+            'VF Colors': folder(
+              {
+                [`vf_tint_${id}`]: {
+                  label: 'Tint',
+                  value: instance.config.tintColor,
+                  onChange: onCfg('tintColor'),
+                },
+                [`vf_saturation_${id}`]: {
+                  label: 'Saturation',
+                  value: instance.config.saturation,
+                  min: 0,
+                  max: 3,
+                  step: 0.1,
+                  onChange: onCfg('saturation'),
+                },
+                [`vf_brightness_${id}`]: {
+                  label: 'Brightness',
+                  value: instance.config.brightness,
+                  min: 0,
+                  max: 5,
+                  step: 0.1,
+                  onChange: onCfg('brightness'),
+                },
+              },
+              { collapsed: true }
+            ),
+            [`vf_delete_${id}`]: button(
+              () =>
+                setVolumetricFireInstances((prev) =>
+                  prev.filter((item) => item.id !== id)
+                ),
+              { label: 'Delete Instance' }
+            ),
+          },
+          { collapsed: true }
+        );
+        return acc;
+      }, {}),
+    };
+
+    const cs184FireSection = {
+      'Add CS184 Fire': button(() =>
+        setCs184FireInstances((prev) => [
+          ...prev,
+          makeCs184FireInst(offsetPosition(DEFAULT_CS184_FIRE_POSITION)),
+        ])
+      ),
+      'Remove All CS184 Fire': button(() => setCs184FireInstances([])),
+      ...cs184FireInstances.reduce((acc, instance, index) => {
+        const { id } = instance;
+        const onCfg = (key) => (value) =>
+          setCs184FireInstances((prev) =>
+            prev.map((item) =>
+              item.id === id
+                ? { ...item, config: { ...item.config, [key]: value } }
+                : item
+            )
+          );
+        const onInst = (key) => (value) =>
+          setCs184FireInstances((prev) =>
+            prev.map((item) =>
+              item.id === id ? { ...item, [key]: value } : item
+            )
+          );
+
+        acc[`CS184 Fire ${index + 1}`] = folder(
+          {
+            [`cf_pos_${id}`]: {
+              label: 'Position',
+              value: instance.pos,
+              step: 0.1,
+              onChange: onInst('pos'),
+            },
+            [`cf_rot_${id}`]: {
+              label: 'Rotation',
+              value: instance.rot,
+              step: 0.05,
+              onChange: onInst('rot'),
+            },
+            [`cf_scale_${id}`]: {
+              label: 'Scale',
+              value: instance.scale,
+              min: 0.01,
+              max: 10,
+              step: 0.1,
+              onChange: onInst('scale'),
+            },
+            'CF Volume': folder(
+              {
+                [`cf_width_${id}`]: {
+                  label: 'Width',
+                  value: instance.config.width,
+                  min: 0.1,
+                  max: 5,
+                  step: 0.05,
+                  onChange: onCfg('width'),
+                },
+                [`cf_height_${id}`]: {
+                  label: 'Height',
+                  value: instance.config.height,
+                  min: 0.2,
+                  max: 10,
+                  step: 0.1,
+                  onChange: onCfg('height'),
+                },
+                [`cf_depth_${id}`]: {
+                  label: 'Depth',
+                  value: instance.config.depth,
+                  min: 0.1,
+                  max: 5,
+                  step: 0.05,
+                  onChange: onCfg('depth'),
+                },
+                [`cf_bendX_${id}`]: {
+                  label: 'Bend X',
+                  value: instance.config.bendX,
+                  min: -2,
+                  max: 2,
+                  step: 0.01,
+                  onChange: onCfg('bendX'),
+                },
+                [`cf_bendZ_${id}`]: {
+                  label: 'Bend Z',
+                  value: instance.config.bendZ,
+                  min: -2,
+                  max: 2,
+                  step: 0.01,
+                  onChange: onCfg('bendZ'),
+                },
+                [`cf_animated_${id}`]: {
+                  label: 'Animated',
+                  value: instance.config.animated,
+                  onChange: onCfg('animated'),
+                },
+                [`cf_animSpeed_${id}`]: {
+                  label: 'Anim Speed',
+                  value: instance.config.animSpeed,
+                  min: 0,
+                  max: 3,
+                  step: 0.05,
+                  onChange: onCfg('animSpeed'),
+                },
+              },
+              { collapsed: true }
+            ),
+            'CF Turbulence': folder(
+              {
+                [`cf_magnitude_${id}`]: {
+                  label: 'Magnitude',
+                  value: instance.config.magnitude,
+                  min: 0.1,
+                  max: 5,
+                  step: 0.1,
+                  onChange: onCfg('magnitude'),
+                },
+                [`cf_lacunarity_${id}`]: {
+                  label: 'Lacunarity',
+                  value: instance.config.lacunarity,
+                  min: 1,
+                  max: 5,
+                  step: 0.1,
+                  onChange: onCfg('lacunarity'),
+                },
+                [`cf_gain_${id}`]: {
+                  label: 'Gain',
+                  value: instance.config.gain,
+                  min: 0.01,
+                  max: 1,
+                  step: 0.01,
+                  onChange: onCfg('gain'),
+                },
+                [`cf_speed_${id}`]: {
+                  label: 'Speed',
+                  value: instance.config.speed,
+                  min: 0,
+                  max: 3,
+                  step: 0.05,
+                  onChange: onCfg('speed'),
+                },
+                [`cf_density_${id}`]: {
+                  label: 'Density',
+                  value: instance.config.density,
+                  min: 0,
+                  max: 5,
+                  step: 0.1,
+                  onChange: onCfg('density'),
+                },
+              },
+              { collapsed: true }
+            ),
+            'CF Appearance': folder(
+              {
+                [`cf_brightness_${id}`]: {
+                  label: 'Brightness',
+                  value: instance.config.brightness,
+                  min: 0,
+                  max: 5,
+                  step: 0.1,
+                  onChange: onCfg('brightness'),
+                },
+                [`cf_saturation_${id}`]: {
+                  label: 'Saturation',
+                  value: instance.config.saturation,
+                  min: 0,
+                  max: 3,
+                  step: 0.1,
+                  onChange: onCfg('saturation'),
+                },
+                [`cf_tint_${id}`]: {
+                  label: 'Tint',
+                  value: instance.config.tintColor,
+                  onChange: onCfg('tintColor'),
+                },
+                [`cf_core_${id}`]: {
+                  label: 'Core',
+                  value: instance.config.coreColor,
+                  onChange: onCfg('coreColor'),
+                },
+                [`cf_border_${id}`]: {
+                  label: 'Border',
+                  value: instance.config.borderColor,
+                  onChange: onCfg('borderColor'),
+                },
+                [`cf_smoke_${id}`]: {
+                  label: 'Smoke',
+                  value: instance.config.smokeColor,
+                  onChange: onCfg('smokeColor'),
+                },
+              },
+              { collapsed: true }
+            ),
+            'CF Embers': folder(
+              {
+                [`cf_emberDensity_${id}`]: {
+                  label: 'Density',
+                  value: instance.config.emberDensity,
+                  min: 0,
+                  max: 1,
+                  step: 0.01,
+                  onChange: onCfg('emberDensity'),
+                },
+                [`cf_emberSize_${id}`]: {
+                  label: 'Size',
+                  value: instance.config.emberSize,
+                  min: 0.05,
+                  max: 1,
+                  step: 0.01,
+                  onChange: onCfg('emberSize'),
+                },
+                [`cf_emberColor_${id}`]: {
+                  label: 'Color',
+                  value: instance.config.emberColor,
+                  onChange: onCfg('emberColor'),
+                },
+              },
+              { collapsed: true }
+            ),
+            'CF Quality': folder(
+              {
+                [`cf_steps_${id}`]: {
+                  label: 'Steps',
+                  value: instance.config.steps,
+                  min: 8,
+                  max: 128,
+                  step: 8,
+                  onChange: onCfg('steps'),
+                },
+                [`cf_stepSize_${id}`]: {
+                  label: 'Step Size',
+                  value: instance.config.stepSize,
+                  min: 0.1,
+                  max: 3,
+                  step: 0.1,
+                  onChange: onCfg('stepSize'),
+                },
+              },
+              { collapsed: true }
+            ),
+            [`cf_delete_${id}`]: button(
+              () =>
+                setCs184FireInstances((prev) =>
+                  prev.filter((item) => item.id !== id)
+                ),
+              { label: 'Delete Instance' }
+            ),
+          },
+          { collapsed: true }
+        );
+        return acc;
+      }, {}),
+    };
+
+    return {
+      Smoke: folder(
+        {
+          ...smokeSplineSections,
+          'Smoke Ball': folder(smokeBallSection, { collapsed: true }),
+          'Smoke Ball Spline': folder(smokeBallSplineSection, {
+            collapsed: true,
           }),
-        ]);
-        setHotBoxSchemaVersion((count) => count + 1);
-      };
-
-      const removeAllSmokeSplines = (smokeType) => {
-        setSplines((prev) =>
-          prev.filter(
-            (_points, index) =>
-              !(
-                (splineConfigs[index]?.type ?? DEFAULT_SPLINE_CONFIG.type) ===
-                  'Smoke' &&
-                (splineConfigs[index]?.smokeType ??
-                  DEFAULT_SPLINE_CONFIG.smokeType) === smokeType
-              )
-          )
-        );
-        setSplineConfigs((prev) =>
-          prev.filter(
-            (config) =>
-              !(
-                (config?.type ?? DEFAULT_SPLINE_CONFIG.type) === 'Smoke' &&
-                (config?.smokeType ?? DEFAULT_SPLINE_CONFIG.smokeType) ===
-                  smokeType
-              )
-          )
-        );
-        setHotBoxSchemaVersion((count) => count + 1);
-      };
-
-      const removeAllFireSplines = (fireType) => {
-        setSplines((prev) =>
-          prev.filter(
-            (_points, index) =>
-              !(
-                (splineConfigs[index]?.type ?? DEFAULT_SPLINE_CONFIG.type) ===
-                  'Fire' &&
-                (splineConfigs[index]?.fireType ??
-                  DEFAULT_SPLINE_CONFIG.fireType) === fireType
-              )
-          )
-        );
-        setSplineConfigs((prev) =>
-          prev.filter(
-            (config) =>
-              !(
-                (config?.type ?? DEFAULT_SPLINE_CONFIG.type) === 'Fire' &&
-                (config?.fireType ?? DEFAULT_SPLINE_CONFIG.fireType) ===
-                  fireType
-              )
-          )
-        );
-        setHotBoxSchemaVersion((count) => count + 1);
-      };
-
-      const smokeSplineSections = SMOKE_SPLINE_TYPE_ORDER.reduce(
-        (acc, smokeType) => {
-          const typeLabel = SMOKE_SPLINE_TYPE_LABELS[smokeType];
-          const typeFolderPath = `${SMOKE_FOLDER_PATH}.${typeLabel}`;
-          const entries = typedSplineEntries.smoke[smokeType];
-
-          acc[typeLabel] = folder(
-            {
-              [`Add ${typeLabel}`]: button(() => addSmokeSpline(smokeType)),
-              [`Remove All ${typeLabel}`]: button(() =>
-                removeAllSmokeSplines(smokeType)
-              ),
-              ...entries.reduce((typeAcc, entry, typeIndex) => {
-                const folderLabel = `${typeLabel} ${typeIndex + 1}`;
-                typeAcc[folderLabel] = folder(
-                  buildSplineGroupControls(entry.index, entry.cfg, {
-                    sceneLabel: typeFolderPath,
-                    folderLabel,
-                    setSplineConfigs,
-                    setSplines,
-                    allowedTypes: 'smoke',
-                  }),
-                  { collapsed: true }
-                );
-                return typeAcc;
-              }, {}),
-            },
-            { collapsed: true }
-          );
-
-          return acc;
+          'Billboard Smoke': folder(billboardSmokeSection, {
+            collapsed: true,
+          }),
         },
-        {}
-      );
-
-      const fireSplineSections = FIRE_SPLINE_TYPE_ORDER.reduce(
-        (acc, fireType) => {
-          const typeLabel = FIRE_SPLINE_TYPE_LABELS[fireType];
-          const typeFolderPath = `${FIRE_FOLDER_PATH}.${typeLabel}`;
-          const entries = typedSplineEntries.fire[fireType];
-
-          acc[typeLabel] = folder(
-            {
-              [`Add ${typeLabel}`]: button(() => addFireSpline(fireType)),
-              [`Remove All ${typeLabel}`]: button(() =>
-                removeAllFireSplines(fireType)
-              ),
-              ...entries.reduce((typeAcc, entry, typeIndex) => {
-                const folderLabel = `${typeLabel} ${typeIndex + 1}`;
-                typeAcc[folderLabel] = folder(
-                  buildSplineGroupControls(entry.index, entry.cfg, {
-                    sceneLabel: typeFolderPath,
-                    folderLabel,
-                    setSplineConfigs,
-                    setSplines,
-                    allowedTypes: 'fire',
-                  }),
-                  { collapsed: true }
-                );
-                return typeAcc;
-              }, {}),
-            },
-            { collapsed: true }
-          );
-
-          return acc;
+        { collapsed: true }
+      ),
+      Fire: folder(
+        {
+          ...fireSplineSections,
+          Fireball: folder(fireballSection, { collapsed: true }),
+          'Fire Spline': folder(fireSplineSection, { collapsed: true }),
+          Flame: folder(flameSection, { collapsed: true }),
+          'Volumetric Fire': folder(volumetricFireSection, {
+            collapsed: true,
+          }),
+          'CS184 Fire': folder(cs184FireSection, { collapsed: true }),
         },
-        {}
-      );
-
-      const smokeBallSection = {
-        'Add Smoke Ball': button(() =>
-          setSmokeBallInstances((prev) => [
-            ...prev,
-            makeSmokeBallInst(offsetPosition(DEFAULT_SMOKEBALL_POSITION)),
-          ])
-        ),
-        'Remove All Smoke Balls': button(() => setSmokeBallInstances([])),
-        ...smokeBallInstances.reduce((acc, instance, index) => {
-          const { id } = instance;
-          const onCfg = (key) => (value) =>
-            setSmokeBallInstances((prev) =>
-              prev.map((item) =>
-                item.id === id
-                  ? { ...item, config: { ...item.config, [key]: value } }
-                  : item
-              )
-            );
-          const onInst = (key) => (value) =>
-            setSmokeBallInstances((prev) =>
-              prev.map((item) =>
-                item.id === id ? { ...item, [key]: value } : item
-              )
-            );
-
-          acc[`Smoke Ball ${index + 1}`] = folder(
-            {
-              [`sb_pos_${id}`]: {
-                label: 'Position',
-                value: instance.pos,
-                step: 0.1,
-                onChange: onInst('pos'),
-              },
-              [`sb_rot_${id}`]: {
-                label: 'Rotation',
-                value: instance.rot,
-                step: 0.05,
-                onChange: onInst('rot'),
-              },
-              [`sb_scale_${id}`]: {
-                label: 'Scale',
-                value: instance.scale,
-                min: 0.01,
-                max: 10,
-                step: 0.1,
-                onChange: onInst('scale'),
-              },
-              'SB Appearance': folder(
-                {
-                  [`sb_radius_${id}`]: {
-                    label: 'Radius',
-                    value: instance.config.radius,
-                    min: 0.05,
-                    max: 5,
-                    step: 0.05,
-                    onChange: onCfg('radius'),
-                  },
-                  [`sb_detail_${id}`]: {
-                    label: 'Detail',
-                    value: instance.config.detail,
-                    min: 1,
-                    max: 7,
-                    step: 1,
-                    onChange: onCfg('detail'),
-                  },
-                  [`sb_speed_${id}`]: {
-                    label: 'Speed',
-                    value: instance.config.speed,
-                    min: 0,
-                    max: 5,
-                    step: 0.05,
-                    onChange: onCfg('speed'),
-                  },
-                  [`sb_weight_${id}`]: {
-                    label: 'Weight',
-                    value: instance.config.weight,
-                    min: 0,
-                    max: 3,
-                    step: 0.05,
-                    onChange: onCfg('weight'),
-                  },
-                  [`sb_noiseFreq_${id}`]: {
-                    label: 'Noise Freq',
-                    value: instance.config.noiseFreq,
-                    min: 0.1,
-                    max: 10,
-                    step: 0.1,
-                    onChange: onCfg('noiseFreq'),
-                  },
-                  [`sb_noiseAmp_${id}`]: {
-                    label: 'Noise Amp',
-                    value: instance.config.noiseAmp,
-                    min: 0,
-                    max: 1,
-                    step: 0.01,
-                    onChange: onCfg('noiseAmp'),
-                  },
-                  [`sb_animated_${id}`]: {
-                    label: 'Animated',
-                    value: instance.config.animated,
-                    onChange: onCfg('animated'),
-                  },
-                  [`sb_light_${id}`]: {
-                    label: 'Light',
-                    value: instance.config.smokeLightColor,
-                    onChange: onCfg('smokeLightColor'),
-                  },
-                  [`sb_dark_${id}`]: {
-                    label: 'Dark',
-                    value: instance.config.smokeDarkColor,
-                    onChange: onCfg('smokeDarkColor'),
-                  },
-                },
-                { collapsed: true }
-              ),
-              [`sb_delete_${id}`]: button(
-                () =>
-                  setSmokeBallInstances((prev) =>
-                    prev.filter((item) => item.id !== id)
-                  ),
-                { label: 'Delete Instance' }
-              ),
-            },
-            { collapsed: true }
-          );
-          return acc;
-        }, {}),
-      };
-
-      const smokeBallSplineSection = {
-        'Add Smoke Ball Spline': button(() =>
-          setSmokeBallSplineInstances((prev) => [
-            ...prev,
-            makeSmokeBallSplineInst(
-              offsetPosition(DEFAULT_SMOKE_BALL_SPLINE_POSITION)
-            ),
-          ])
-        ),
-        'Remove All Smoke Ball Splines': button(() =>
-          setSmokeBallSplineInstances([])
-        ),
-        ...smokeBallSplineInstances.reduce((acc, instance, index) => {
-          const { id } = instance;
-          const onCfg = (key) => (value) =>
-            setSmokeBallSplineInstances((prev) =>
-              prev.map((item) =>
-                item.id === id
-                  ? { ...item, config: { ...item.config, [key]: value } }
-                  : item
-              )
-            );
-          const onInst = (key) => (value) =>
-            setSmokeBallSplineInstances((prev) =>
-              prev.map((item) =>
-                item.id === id ? { ...item, [key]: value } : item
-              )
-            );
-
-          acc[`Smoke Ball Spline ${index + 1}`] = folder(
-            {
-              [`ss_pos_${id}`]: {
-                label: 'Position',
-                value: instance.pos,
-                step: 0.1,
-                onChange: onInst('pos'),
-              },
-              [`ss_rot_${id}`]: {
-                label: 'Rotation',
-                value: instance.rot,
-                step: 0.05,
-                onChange: onInst('rot'),
-              },
-              [`ss_scale_${id}`]: {
-                label: 'Scale',
-                value: instance.scale,
-                min: 0.01,
-                max: 10,
-                step: 0.1,
-                onChange: onInst('scale'),
-              },
-              'SS Spline Editor': folder(
-                {
-                  [`ss_handles_${id}`]: {
-                    label: 'Show Handles',
-                    value: instance.showHandles,
-                    onChange: onInst('showHandles'),
-                  },
-                  [`ss_pointMode_${id}`]: {
-                    label: 'Transform',
-                    value: instance.pointMode,
-                    options: ['translate', 'scale'],
-                    onChange: onInst('pointMode'),
-                  },
-                },
-                { collapsed: true }
-              ),
-              'SS Appearance': folder(
-                {
-                  [`ss_baseRadius_${id}`]: {
-                    label: 'Base Radius',
-                    value: instance.config.baseRadius,
-                    min: 0.05,
-                    max: 5,
-                    step: 0.05,
-                    onChange: onCfg('baseRadius'),
-                  },
-                  [`ss_tubular_${id}`]: {
-                    label: 'Tubular Segs',
-                    value: instance.config.tubularSegments,
-                    min: 8,
-                    max: 128,
-                    step: 1,
-                    onChange: onCfg('tubularSegments'),
-                  },
-                  [`ss_radial_${id}`]: {
-                    label: 'Radial Segs',
-                    value: instance.config.radialSegments,
-                    min: 8,
-                    max: 64,
-                    step: 1,
-                    onChange: onCfg('radialSegments'),
-                  },
-                  [`ss_cap_${id}`]: {
-                    label: 'Cap Segs',
-                    value: instance.config.capSegments,
-                    min: 2,
-                    max: 16,
-                    step: 1,
-                    onChange: onCfg('capSegments'),
-                  },
-                  [`ss_speed_${id}`]: {
-                    label: 'Speed',
-                    value: instance.config.speed,
-                    min: 0,
-                    max: 5,
-                    step: 0.05,
-                    onChange: onCfg('speed'),
-                  },
-                  [`ss_weight_${id}`]: {
-                    label: 'Weight',
-                    value: instance.config.weight,
-                    min: 0,
-                    max: 3,
-                    step: 0.05,
-                    onChange: onCfg('weight'),
-                  },
-                  [`ss_noiseFreq_${id}`]: {
-                    label: 'Noise Freq',
-                    value: instance.config.noiseFreq,
-                    min: 0.1,
-                    max: 10,
-                    step: 0.1,
-                    onChange: onCfg('noiseFreq'),
-                  },
-                  [`ss_noiseAmp_${id}`]: {
-                    label: 'Noise Amp',
-                    value: instance.config.noiseAmp,
-                    min: 0,
-                    max: 1,
-                    step: 0.01,
-                    onChange: onCfg('noiseAmp'),
-                  },
-                  [`ss_animated_${id}`]: {
-                    label: 'Animated',
-                    value: instance.config.animated,
-                    onChange: onCfg('animated'),
-                  },
-                  [`ss_light_${id}`]: {
-                    label: 'Light',
-                    value: instance.config.smokeLightColor,
-                    onChange: onCfg('smokeLightColor'),
-                  },
-                  [`ss_dark_${id}`]: {
-                    label: 'Dark',
-                    value: instance.config.smokeDarkColor,
-                    onChange: onCfg('smokeDarkColor'),
-                  },
-                },
-                { collapsed: true }
-              ),
-              [`ss_delete_${id}`]: button(
-                () =>
-                  setSmokeBallSplineInstances((prev) =>
-                    prev.filter((item) => item.id !== id)
-                  ),
-                { label: 'Delete Instance' }
-              ),
-            },
-            { collapsed: true }
-          );
-          return acc;
-        }, {}),
-      };
-
-      const billboardSmokeSection = {
-        'Add Billboard Smoke': button(() =>
-          setBillboardSmokeInstances((prev) => [
-            ...prev,
-            makeBillboardSmokeInst(offsetPosition(DEFAULT_BILLBOARD_SMOKE_POSITION)),
-          ])
-        ),
-        'Remove All Billboard Smoke': button(() =>
-          setBillboardSmokeInstances([])
-        ),
-        ...billboardSmokeInstances.reduce((acc, instance, index) => {
-          const { id } = instance;
-          const onCfg = (key) => (value) =>
-            setBillboardSmokeInstances((prev) =>
-              prev.map((item) =>
-                item.id === id
-                  ? { ...item, config: { ...item.config, [key]: value } }
-                  : item
-              )
-            );
-          const onInst = (key) => (value) =>
-            setBillboardSmokeInstances((prev) =>
-              prev.map((item) =>
-                item.id === id ? { ...item, [key]: value } : item
-              )
-            );
-
-          acc[`Billboard ${index + 1}`] = folder(
-            {
-              [`s2d_pos_${id}`]: {
-                label: 'Position',
-                value: instance.pos,
-                step: 0.1,
-                onChange: onInst('pos'),
-              },
-              'S2D Appearance': folder(
-                {
-                  [`s2d_inverted_${id}`]: {
-                    label: 'Inverted',
-                    value: instance.config.inverted,
-                    onChange: onCfg('inverted'),
-                  },
-                  [`s2d_width_${id}`]: {
-                    label: 'Width',
-                    value: instance.config.width,
-                    min: 0.05,
-                    max: 5,
-                    step: 0.05,
-                    onChange: onCfg('width'),
-                  },
-                  [`s2d_height_${id}`]: {
-                    label: 'Height',
-                    value: instance.config.height,
-                    min: 0.1,
-                    max: 15,
-                    step: 0.1,
-                    onChange: onCfg('height'),
-                  },
-                  [`s2d_color_${id}`]: {
-                    label: 'Color',
-                    value: instance.config.color,
-                    onChange: onCfg('color'),
-                  },
-                  [`s2d_opacity_${id}`]: {
-                    label: 'Opacity',
-                    value: instance.config.opacity,
-                    min: 0,
-                    max: 1,
-                    step: 0.01,
-                    onChange: onCfg('opacity'),
-                  },
-                  [`s2d_timeFreq_${id}`]: {
-                    label: 'Time Freq',
-                    value: instance.config.timeFrequency,
-                    min: 0,
-                    max: 3,
-                    step: 0.01,
-                    onChange: onCfg('timeFrequency'),
-                  },
-                  [`s2d_uvFreqX_${id}`]: {
-                    label: 'UV Freq X',
-                    value: instance.config.uvFrequencyX,
-                    min: 0.1,
-                    max: 5,
-                    step: 0.05,
-                    onChange: onCfg('uvFrequencyX'),
-                  },
-                  [`s2d_uvFreqY_${id}`]: {
-                    label: 'UV Freq Y',
-                    value: instance.config.uvFrequencyY,
-                    min: 0.1,
-                    max: 5,
-                    step: 0.05,
-                    onChange: onCfg('uvFrequencyY'),
-                  },
-                  [`s2d_riseSpeed_${id}`]: {
-                    label: 'Rise Speed',
-                    value: instance.config.riseSpeed,
-                    min: 0,
-                    max: 2,
-                    step: 0.01,
-                    onChange: onCfg('riseSpeed'),
-                  },
-                  [`s2d_spread_${id}`]: {
-                    label: 'Spread',
-                    value: instance.config.spreadStrength,
-                    min: 0,
-                    max: 1,
-                    step: 0.01,
-                    onChange: onCfg('spreadStrength'),
-                  },
-                },
-                { collapsed: true }
-              ),
-              [`s2d_delete_${id}`]: button(
-                () =>
-                  setBillboardSmokeInstances((prev) =>
-                    prev.filter((item) => item.id !== id)
-                  ),
-                { label: 'Delete Instance' }
-              ),
-            },
-            { collapsed: true }
-          );
-          return acc;
-        }, {}),
-      };
-
-      const fireballSection = {
-        'Add Fireball': button(() =>
-          setFireballInstances((prev) => [
-            ...prev,
-            makeFireballInst(offsetPosition(DEFAULT_FIREBALL_POSITION)),
-          ])
-        ),
-        'Remove All Fireballs': button(() => setFireballInstances([])),
-        ...fireballInstances.reduce((acc, instance, index) => {
-          const { id } = instance;
-          const onCfg = (key) => (value) =>
-            setFireballInstances((prev) =>
-              prev.map((item) =>
-                item.id === id
-                  ? { ...item, config: { ...item.config, [key]: value } }
-                  : item
-              )
-            );
-          const onInst = (key) => (value) =>
-            setFireballInstances((prev) =>
-              prev.map((item) =>
-                item.id === id ? { ...item, [key]: value } : item
-              )
-            );
-
-          acc[`Fireball ${index + 1}`] = folder(
-            {
-              [`fb_pos_${id}`]: {
-                label: 'Position',
-                value: instance.pos,
-                step: 0.1,
-                onChange: onInst('pos'),
-              },
-              [`fb_rot_${id}`]: {
-                label: 'Rotation',
-                value: instance.rot,
-                step: 0.05,
-                onChange: onInst('rot'),
-              },
-              [`fb_scale_${id}`]: {
-                label: 'Scale',
-                value: instance.scale,
-                min: 0.01,
-                max: 10,
-                step: 0.1,
-                onChange: onInst('scale'),
-              },
-              'FB Appearance': folder(
-                {
-                  [`fb_radius_${id}`]: {
-                    label: 'Radius',
-                    value: instance.config.radius,
-                    min: 0.05,
-                    max: 5,
-                    step: 0.05,
-                    onChange: onCfg('radius'),
-                  },
-                  [`fb_detail_${id}`]: {
-                    label: 'Detail',
-                    value: instance.config.detail,
-                    min: 1,
-                    max: 7,
-                    step: 1,
-                    onChange: onCfg('detail'),
-                  },
-                  [`fb_speed_${id}`]: {
-                    label: 'Speed',
-                    value: instance.config.speed,
-                    min: 0,
-                    max: 5,
-                    step: 0.05,
-                    onChange: onCfg('speed'),
-                  },
-                  [`fb_weight_${id}`]: {
-                    label: 'Weight',
-                    value: instance.config.weight,
-                    min: 0,
-                    max: 3,
-                    step: 0.05,
-                    onChange: onCfg('weight'),
-                  },
-                  [`fb_noiseFreq_${id}`]: {
-                    label: 'Noise Freq',
-                    value: instance.config.noiseFreq,
-                    min: 0.1,
-                    max: 10,
-                    step: 0.1,
-                    onChange: onCfg('noiseFreq'),
-                  },
-                  [`fb_noiseAmp_${id}`]: {
-                    label: 'Noise Amp',
-                    value: instance.config.noiseAmp,
-                    min: 0,
-                    max: 1,
-                    step: 0.01,
-                    onChange: onCfg('noiseAmp'),
-                  },
-                  [`fb_animated_${id}`]: {
-                    label: 'Animated',
-                    value: instance.config.animated,
-                    onChange: onCfg('animated'),
-                  },
-                },
-                { collapsed: true }
-              ),
-              [`fb_delete_${id}`]: button(
-                () =>
-                  setFireballInstances((prev) =>
-                    prev.filter((item) => item.id !== id)
-                  ),
-                { label: 'Delete Instance' }
-              ),
-            },
-            { collapsed: true }
-          );
-          return acc;
-        }, {}),
-      };
-
-      const fireSplineSection = {
-        'Add Fire Spline': button(() =>
-          setFireSplineInstances((prev) => [
-            ...prev,
-            makeFireSplineInst(offsetPosition(DEFAULT_FIRE_SPLINE_POSITION)),
-          ])
-        ),
-        'Remove All Fire Splines': button(() => setFireSplineInstances([])),
-        ...fireSplineInstances.reduce((acc, instance, index) => {
-          const { id } = instance;
-          const onCfg = (key) => (value) =>
-            setFireSplineInstances((prev) =>
-              prev.map((item) =>
-                item.id === id
-                  ? { ...item, config: { ...item.config, [key]: value } }
-                  : item
-              )
-            );
-          const onInst = (key) => (value) =>
-            setFireSplineInstances((prev) =>
-              prev.map((item) =>
-                item.id === id ? { ...item, [key]: value } : item
-              )
-            );
-
-          acc[`Fire Spline ${index + 1}`] = folder(
-            {
-              [`fs_pos_${id}`]: {
-                label: 'Position',
-                value: instance.pos,
-                step: 0.1,
-                onChange: onInst('pos'),
-              },
-              [`fs_rot_${id}`]: {
-                label: 'Rotation',
-                value: instance.rot,
-                step: 0.05,
-                onChange: onInst('rot'),
-              },
-              [`fs_scale_${id}`]: {
-                label: 'Scale',
-                value: instance.scale,
-                min: 0.01,
-                max: 10,
-                step: 0.1,
-                onChange: onInst('scale'),
-              },
-              'FS Spline Editor': folder(
-                {
-                  [`fs_handles_${id}`]: {
-                    label: 'Show Handles',
-                    value: instance.showHandles,
-                    onChange: onInst('showHandles'),
-                  },
-                  [`fs_showSpline_${id}`]: {
-                    label: 'Show Curve',
-                    value: instance.showSpline,
-                    onChange: onInst('showSpline'),
-                  },
-                  [`fs_pointMode_${id}`]: {
-                    label: 'Transform',
-                    value: instance.pointMode,
-                    options: ['translate', 'scale'],
-                    onChange: onInst('pointMode'),
-                  },
-                },
-                { collapsed: true }
-              ),
-              'FS Appearance': folder(
-                {
-                  [`fs_baseRadius_${id}`]: {
-                    label: 'Base Radius',
-                    value: instance.config.baseRadius,
-                    min: 0.05,
-                    max: 5,
-                    step: 0.05,
-                    onChange: onCfg('baseRadius'),
-                  },
-                  [`fs_tubular_${id}`]: {
-                    label: 'Tubular Segs',
-                    value: instance.config.tubularSegments,
-                    min: 8,
-                    max: 128,
-                    step: 1,
-                    onChange: onCfg('tubularSegments'),
-                  },
-                  [`fs_radial_${id}`]: {
-                    label: 'Radial Segs',
-                    value: instance.config.radialSegments,
-                    min: 8,
-                    max: 64,
-                    step: 1,
-                    onChange: onCfg('radialSegments'),
-                  },
-                  [`fs_cap_${id}`]: {
-                    label: 'Cap Segs',
-                    value: instance.config.capSegments,
-                    min: 2,
-                    max: 16,
-                    step: 1,
-                    onChange: onCfg('capSegments'),
-                  },
-                  [`fs_speed_${id}`]: {
-                    label: 'Speed',
-                    value: instance.config.speed,
-                    min: 0,
-                    max: 5,
-                    step: 0.05,
-                    onChange: onCfg('speed'),
-                  },
-                  [`fs_weight_${id}`]: {
-                    label: 'Weight',
-                    value: instance.config.weight,
-                    min: 0,
-                    max: 3,
-                    step: 0.05,
-                    onChange: onCfg('weight'),
-                  },
-                  [`fs_noiseFreq_${id}`]: {
-                    label: 'Noise Freq',
-                    value: instance.config.noiseFreq,
-                    min: 0.1,
-                    max: 10,
-                    step: 0.1,
-                    onChange: onCfg('noiseFreq'),
-                  },
-                  [`fs_noiseAmp_${id}`]: {
-                    label: 'Noise Amp',
-                    value: instance.config.noiseAmp,
-                    min: 0,
-                    max: 1,
-                    step: 0.01,
-                    onChange: onCfg('noiseAmp'),
-                  },
-                  [`fs_animated_${id}`]: {
-                    label: 'Animated',
-                    value: instance.config.animated,
-                    onChange: onCfg('animated'),
-                  },
-                  [`fs_light_${id}`]: {
-                    label: 'Light',
-                    value: instance.config.smokeLightColor,
-                    onChange: onCfg('smokeLightColor'),
-                  },
-                  [`fs_dark_${id}`]: {
-                    label: 'Dark',
-                    value: instance.config.smokeDarkColor,
-                    onChange: onCfg('smokeDarkColor'),
-                  },
-                },
-                { collapsed: true }
-              ),
-              [`fs_delete_${id}`]: button(
-                () =>
-                  setFireSplineInstances((prev) =>
-                    prev.filter((item) => item.id !== id)
-                  ),
-                { label: 'Delete Instance' }
-              ),
-            },
-            { collapsed: true }
-          );
-          return acc;
-        }, {}),
-      };
-
-      const flameSection = {
-        'Add Flame': button(() =>
-          setFlameInstances((prev) => [
-            ...prev,
-            makeFlameInst(offsetPosition(DEFAULT_FLAME_POSITION)),
-          ])
-        ),
-        'Remove All Flames': button(() => setFlameInstances([])),
-        ...flameInstances.reduce((acc, instance, index) => {
-          const { id } = instance;
-          const onCfg = (key) => (value) =>
-            setFlameInstances((prev) =>
-              prev.map((item) =>
-                item.id === id
-                  ? { ...item, config: { ...item.config, [key]: value } }
-                  : item
-              )
-            );
-          const onMotion = (key) => (value) =>
-            setFlameInstances((prev) =>
-              prev.map((item) =>
-                item.id === id
-                  ? {
-                      ...item,
-                      config: {
-                        ...item.config,
-                        motion: { ...item.config.motion, [key]: value },
-                      },
-                    }
-                  : item
-              )
-            );
-          const onInst = (key) => (value) =>
-            setFlameInstances((prev) =>
-              prev.map((item) =>
-                item.id === id ? { ...item, [key]: value } : item
-              )
-            );
-
-          acc[`Flame ${index + 1}`] = folder(
-            {
-              [`fl_pos_${id}`]: {
-                label: 'Position',
-                value: instance.pos,
-                step: 0.1,
-                onChange: onInst('pos'),
-              },
-              [`fl_rot_${id}`]: {
-                label: 'Rotation',
-                value: instance.rot,
-                step: 0.05,
-                onChange: onInst('rot'),
-              },
-              [`fl_scale_${id}`]: {
-                label: 'Scale',
-                value: instance.scale,
-                min: 0.01,
-                max: 10,
-                step: 0.1,
-                onChange: onInst('scale'),
-              },
-              [`fl_inverted_${id}`]: {
-                label: 'Inverted',
-                value: instance.config.inverted,
-                onChange: onCfg('inverted'),
-              },
-              'FL Motion': folder(
-                {
-                  [`fl_baseSpeed_${id}`]: {
-                    label: 'Base Speed',
-                    value: instance.config.motion.baseSpeed,
-                    min: 0,
-                    max: 5,
-                    step: 0.05,
-                    onChange: onMotion('baseSpeed'),
-                  },
-                  [`fl_minSpeed_${id}`]: {
-                    label: 'Min Speed',
-                    value: instance.config.motion.minSpeed,
-                    min: 0,
-                    max: 2,
-                    step: 0.01,
-                    onChange: onMotion('minSpeed'),
-                  },
-                  [`fl_slowFreq_${id}`]: {
-                    label: 'Slow Freq',
-                    value: instance.config.motion.slowFreq,
-                    min: 0,
-                    max: 5,
-                    step: 0.1,
-                    onChange: onMotion('slowFreq'),
-                  },
-                  [`fl_slowAmp_${id}`]: {
-                    label: 'Slow Amp',
-                    value: instance.config.motion.slowAmp,
-                    min: 0,
-                    max: 2,
-                    step: 0.05,
-                    onChange: onMotion('slowAmp'),
-                  },
-                  [`fl_fastFreq_${id}`]: {
-                    label: 'Fast Freq',
-                    value: instance.config.motion.fastFreq,
-                    min: 0,
-                    max: 10,
-                    step: 0.1,
-                    onChange: onMotion('fastFreq'),
-                  },
-                  [`fl_fastAmp_${id}`]: {
-                    label: 'Fast Amp',
-                    value: instance.config.motion.fastAmp,
-                    min: 0,
-                    max: 2,
-                    step: 0.05,
-                    onChange: onMotion('fastAmp'),
-                  },
-                  [`fl_microFreq_${id}`]: {
-                    label: 'Micro Freq',
-                    value: instance.config.motion.microFreq,
-                    min: 0,
-                    max: 20,
-                    step: 0.1,
-                    onChange: onMotion('microFreq'),
-                  },
-                  [`fl_microAmp_${id}`]: {
-                    label: 'Micro Amp',
-                    value: instance.config.motion.microAmp,
-                    min: 0,
-                    max: 1,
-                    step: 0.01,
-                    onChange: onMotion('microAmp'),
-                  },
-                  [`fl_swayX_${id}`]: {
-                    label: 'Sway X',
-                    value: instance.config.motion.swayX,
-                    min: 0,
-                    max: 0.2,
-                    step: 0.001,
-                    onChange: onMotion('swayX'),
-                  },
-                  [`fl_swayZ_${id}`]: {
-                    label: 'Sway Z',
-                    value: instance.config.motion.swayZ,
-                    min: 0,
-                    max: 0.2,
-                    step: 0.001,
-                    onChange: onMotion('swayZ'),
-                  },
-                  [`fl_pulseFreq_${id}`]: {
-                    label: 'Pulse Freq',
-                    value: instance.config.motion.pulseFreq,
-                    min: 0,
-                    max: 10,
-                    step: 0.1,
-                    onChange: onMotion('pulseFreq'),
-                  },
-                  [`fl_pulseAmp_${id}`]: {
-                    label: 'Pulse Amp',
-                    value: instance.config.motion.pulseAmp,
-                    min: 0,
-                    max: 0.5,
-                    step: 0.01,
-                    onChange: onMotion('pulseAmp'),
-                  },
-                  [`fl_scaleX_${id}`]: {
-                    label: 'Scale X',
-                    value: instance.config.motion.scaleX,
-                    min: 0.1,
-                    max: 5,
-                    step: 0.1,
-                    onChange: onMotion('scaleX'),
-                  },
-                  [`fl_scaleY_${id}`]: {
-                    label: 'Scale Y',
-                    value: instance.config.motion.scaleY,
-                    min: 0.1,
-                    max: 5,
-                    step: 0.1,
-                    onChange: onMotion('scaleY'),
-                  },
-                },
-                { collapsed: true }
-              ),
-              [`fl_delete_${id}`]: button(
-                () =>
-                  setFlameInstances((prev) =>
-                    prev.filter((item) => item.id !== id)
-                  ),
-                { label: 'Delete Instance' }
-              ),
-            },
-            { collapsed: true }
-          );
-          return acc;
-        }, {}),
-      };
-
-      const volumetricFireSection = {
-        'Add Volumetric Fire': button(() =>
-          setVolumetricFireInstances((prev) => [
-            ...prev,
-            makeVolumetricFireInst(
-              offsetPosition(DEFAULT_VOLUMETRIC_FIRE_POSITION)
-            ),
-          ])
-        ),
-        'Remove All Volumetric Fire': button(() =>
-          setVolumetricFireInstances([])
-        ),
-        ...volumetricFireInstances.reduce((acc, instance, index) => {
-          const { id } = instance;
-          const onCfg = (key) => (value) =>
-            setVolumetricFireInstances((prev) =>
-              prev.map((item) =>
-                item.id === id
-                  ? { ...item, config: { ...item.config, [key]: value } }
-                  : item
-              )
-            );
-          const onInst = (key) => (value) =>
-            setVolumetricFireInstances((prev) =>
-              prev.map((item) =>
-                item.id === id ? { ...item, [key]: value } : item
-              )
-            );
-
-          acc[`Volumetric Fire ${index + 1}`] = folder(
-            {
-              [`vf_pos_${id}`]: {
-                label: 'Position',
-                value: instance.pos,
-                step: 0.1,
-                onChange: onInst('pos'),
-              },
-              [`vf_rot_${id}`]: {
-                label: 'Rotation',
-                value: instance.rot,
-                step: 0.05,
-                onChange: onInst('rot'),
-              },
-              [`vf_scale_${id}`]: {
-                label: 'Scale',
-                value: instance.scale,
-                min: 0.01,
-                max: 10,
-                step: 0.1,
-                onChange: onInst('scale'),
-              },
-              'VF Volume': folder(
-                {
-                  [`vf_width_${id}`]: {
-                    label: 'Width',
-                    value: instance.config.width,
-                    min: 0.1,
-                    max: 5,
-                    step: 0.05,
-                    onChange: onCfg('width'),
-                  },
-                  [`vf_height_${id}`]: {
-                    label: 'Height',
-                    value: instance.config.height,
-                    min: 0.2,
-                    max: 10,
-                    step: 0.1,
-                    onChange: onCfg('height'),
-                  },
-                  [`vf_depth_${id}`]: {
-                    label: 'Depth',
-                    value: instance.config.depth,
-                    min: 0.1,
-                    max: 5,
-                    step: 0.05,
-                    onChange: onCfg('depth'),
-                  },
-                  [`vf_sliceSpacing_${id}`]: {
-                    label: 'Slice Spacing',
-                    value: instance.config.sliceSpacing,
-                    min: 0.01,
-                    max: 0.2,
-                    step: 0.005,
-                    onChange: onCfg('sliceSpacing'),
-                  },
-                  [`vf_bendX_${id}`]: {
-                    label: 'Bend X',
-                    value: instance.config.bendX,
-                    min: -2,
-                    max: 2,
-                    step: 0.01,
-                    onChange: onCfg('bendX'),
-                  },
-                  [`vf_bendZ_${id}`]: {
-                    label: 'Bend Z',
-                    value: instance.config.bendZ,
-                    min: -2,
-                    max: 2,
-                    step: 0.01,
-                    onChange: onCfg('bendZ'),
-                  },
-                  [`vf_animated_${id}`]: {
-                    label: 'Animated',
-                    value: instance.config.animated,
-                    onChange: onCfg('animated'),
-                  },
-                  [`vf_animSpeed_${id}`]: {
-                    label: 'Anim Speed',
-                    value: instance.config.animSpeed,
-                    min: 0,
-                    max: 3,
-                    step: 0.05,
-                    onChange: onCfg('animSpeed'),
-                  },
-                  [`vf_showSpline_${id}`]: {
-                    label: 'Show Spline',
-                    value: instance.config.showSpline,
-                    onChange: onCfg('showSpline'),
-                  },
-                  [`vf_showVolume_${id}`]: {
-                    label: 'Show Volume',
-                    value: instance.config.showVolume,
-                    onChange: onCfg('showVolume'),
-                  },
-                },
-                { collapsed: true }
-              ),
-              'VF Turbulence': folder(
-                {
-                  [`vf_magnitude_${id}`]: {
-                    label: 'Magnitude',
-                    value: instance.config.magnitude,
-                    min: 0.1,
-                    max: 5,
-                    step: 0.1,
-                    onChange: onCfg('magnitude'),
-                  },
-                  [`vf_lacunarity_${id}`]: {
-                    label: 'Lacunarity',
-                    value: instance.config.lacunarity,
-                    min: 1,
-                    max: 5,
-                    step: 0.1,
-                    onChange: onCfg('lacunarity'),
-                  },
-                  [`vf_gain_${id}`]: {
-                    label: 'Gain',
-                    value: instance.config.gain,
-                    min: 0.01,
-                    max: 1,
-                    step: 0.01,
-                    onChange: onCfg('gain'),
-                  },
-                },
-                { collapsed: true }
-              ),
-              'VF Colors': folder(
-                {
-                  [`vf_tint_${id}`]: {
-                    label: 'Tint',
-                    value: instance.config.tintColor,
-                    onChange: onCfg('tintColor'),
-                  },
-                  [`vf_saturation_${id}`]: {
-                    label: 'Saturation',
-                    value: instance.config.saturation,
-                    min: 0,
-                    max: 3,
-                    step: 0.1,
-                    onChange: onCfg('saturation'),
-                  },
-                  [`vf_brightness_${id}`]: {
-                    label: 'Brightness',
-                    value: instance.config.brightness,
-                    min: 0,
-                    max: 5,
-                    step: 0.1,
-                    onChange: onCfg('brightness'),
-                  },
-                },
-                { collapsed: true }
-              ),
-              [`vf_delete_${id}`]: button(
-                () =>
-                  setVolumetricFireInstances((prev) =>
-                    prev.filter((item) => item.id !== id)
-                  ),
-                { label: 'Delete Instance' }
-              ),
-            },
-            { collapsed: true }
-          );
-          return acc;
-        }, {}),
-      };
-
-      const cs184FireSection = {
-        'Add CS184 Fire': button(() =>
-          setCs184FireInstances((prev) => [
-            ...prev,
-            makeCs184FireInst(offsetPosition(DEFAULT_CS184_FIRE_POSITION)),
-          ])
-        ),
-        'Remove All CS184 Fire': button(() => setCs184FireInstances([])),
-        ...cs184FireInstances.reduce((acc, instance, index) => {
-          const { id } = instance;
-          const onCfg = (key) => (value) =>
-            setCs184FireInstances((prev) =>
-              prev.map((item) =>
-                item.id === id
-                  ? { ...item, config: { ...item.config, [key]: value } }
-                  : item
-              )
-            );
-          const onInst = (key) => (value) =>
-            setCs184FireInstances((prev) =>
-              prev.map((item) =>
-                item.id === id ? { ...item, [key]: value } : item
-              )
-            );
-
-          acc[`CS184 Fire ${index + 1}`] = folder(
-            {
-              [`cf_pos_${id}`]: {
-                label: 'Position',
-                value: instance.pos,
-                step: 0.1,
-                onChange: onInst('pos'),
-              },
-              [`cf_rot_${id}`]: {
-                label: 'Rotation',
-                value: instance.rot,
-                step: 0.05,
-                onChange: onInst('rot'),
-              },
-              [`cf_scale_${id}`]: {
-                label: 'Scale',
-                value: instance.scale,
-                min: 0.01,
-                max: 10,
-                step: 0.1,
-                onChange: onInst('scale'),
-              },
-              'CF Volume': folder(
-                {
-                  [`cf_width_${id}`]: {
-                    label: 'Width',
-                    value: instance.config.width,
-                    min: 0.1,
-                    max: 5,
-                    step: 0.05,
-                    onChange: onCfg('width'),
-                  },
-                  [`cf_height_${id}`]: {
-                    label: 'Height',
-                    value: instance.config.height,
-                    min: 0.2,
-                    max: 10,
-                    step: 0.1,
-                    onChange: onCfg('height'),
-                  },
-                  [`cf_depth_${id}`]: {
-                    label: 'Depth',
-                    value: instance.config.depth,
-                    min: 0.1,
-                    max: 5,
-                    step: 0.05,
-                    onChange: onCfg('depth'),
-                  },
-                  [`cf_bendX_${id}`]: {
-                    label: 'Bend X',
-                    value: instance.config.bendX,
-                    min: -2,
-                    max: 2,
-                    step: 0.01,
-                    onChange: onCfg('bendX'),
-                  },
-                  [`cf_bendZ_${id}`]: {
-                    label: 'Bend Z',
-                    value: instance.config.bendZ,
-                    min: -2,
-                    max: 2,
-                    step: 0.01,
-                    onChange: onCfg('bendZ'),
-                  },
-                  [`cf_animated_${id}`]: {
-                    label: 'Animated',
-                    value: instance.config.animated,
-                    onChange: onCfg('animated'),
-                  },
-                  [`cf_animSpeed_${id}`]: {
-                    label: 'Anim Speed',
-                    value: instance.config.animSpeed,
-                    min: 0,
-                    max: 3,
-                    step: 0.05,
-                    onChange: onCfg('animSpeed'),
-                  },
-                },
-                { collapsed: true }
-              ),
-              'CF Turbulence': folder(
-                {
-                  [`cf_magnitude_${id}`]: {
-                    label: 'Magnitude',
-                    value: instance.config.magnitude,
-                    min: 0.1,
-                    max: 5,
-                    step: 0.1,
-                    onChange: onCfg('magnitude'),
-                  },
-                  [`cf_lacunarity_${id}`]: {
-                    label: 'Lacunarity',
-                    value: instance.config.lacunarity,
-                    min: 1,
-                    max: 5,
-                    step: 0.1,
-                    onChange: onCfg('lacunarity'),
-                  },
-                  [`cf_gain_${id}`]: {
-                    label: 'Gain',
-                    value: instance.config.gain,
-                    min: 0.01,
-                    max: 1,
-                    step: 0.01,
-                    onChange: onCfg('gain'),
-                  },
-                  [`cf_speed_${id}`]: {
-                    label: 'Speed',
-                    value: instance.config.speed,
-                    min: 0,
-                    max: 3,
-                    step: 0.05,
-                    onChange: onCfg('speed'),
-                  },
-                  [`cf_density_${id}`]: {
-                    label: 'Density',
-                    value: instance.config.density,
-                    min: 0,
-                    max: 5,
-                    step: 0.1,
-                    onChange: onCfg('density'),
-                  },
-                },
-                { collapsed: true }
-              ),
-              'CF Appearance': folder(
-                {
-                  [`cf_brightness_${id}`]: {
-                    label: 'Brightness',
-                    value: instance.config.brightness,
-                    min: 0,
-                    max: 5,
-                    step: 0.1,
-                    onChange: onCfg('brightness'),
-                  },
-                  [`cf_saturation_${id}`]: {
-                    label: 'Saturation',
-                    value: instance.config.saturation,
-                    min: 0,
-                    max: 3,
-                    step: 0.1,
-                    onChange: onCfg('saturation'),
-                  },
-                  [`cf_tint_${id}`]: {
-                    label: 'Tint',
-                    value: instance.config.tintColor,
-                    onChange: onCfg('tintColor'),
-                  },
-                  [`cf_core_${id}`]: {
-                    label: 'Core',
-                    value: instance.config.coreColor,
-                    onChange: onCfg('coreColor'),
-                  },
-                  [`cf_border_${id}`]: {
-                    label: 'Border',
-                    value: instance.config.borderColor,
-                    onChange: onCfg('borderColor'),
-                  },
-                  [`cf_smoke_${id}`]: {
-                    label: 'Smoke',
-                    value: instance.config.smokeColor,
-                    onChange: onCfg('smokeColor'),
-                  },
-                },
-                { collapsed: true }
-              ),
-              'CF Embers': folder(
-                {
-                  [`cf_emberDensity_${id}`]: {
-                    label: 'Density',
-                    value: instance.config.emberDensity,
-                    min: 0,
-                    max: 1,
-                    step: 0.01,
-                    onChange: onCfg('emberDensity'),
-                  },
-                  [`cf_emberSize_${id}`]: {
-                    label: 'Size',
-                    value: instance.config.emberSize,
-                    min: 0.05,
-                    max: 1,
-                    step: 0.01,
-                    onChange: onCfg('emberSize'),
-                  },
-                  [`cf_emberColor_${id}`]: {
-                    label: 'Color',
-                    value: instance.config.emberColor,
-                    onChange: onCfg('emberColor'),
-                  },
-                },
-                { collapsed: true }
-              ),
-              'CF Quality': folder(
-                {
-                  [`cf_steps_${id}`]: {
-                    label: 'Steps',
-                    value: instance.config.steps,
-                    min: 8,
-                    max: 128,
-                    step: 8,
-                    onChange: onCfg('steps'),
-                  },
-                  [`cf_stepSize_${id}`]: {
-                    label: 'Step Size',
-                    value: instance.config.stepSize,
-                    min: 0.1,
-                    max: 3,
-                    step: 0.1,
-                    onChange: onCfg('stepSize'),
-                  },
-                },
-                { collapsed: true }
-              ),
-              [`cf_delete_${id}`]: button(
-                () =>
-                  setCs184FireInstances((prev) =>
-                    prev.filter((item) => item.id !== id)
-                  ),
-                { label: 'Delete Instance' }
-              ),
-            },
-            { collapsed: true }
-          );
-          return acc;
-        }, {}),
-      };
-
-      return {
-        Smoke: folder(
-          {
-            ...smokeSplineSections,
-            'Smoke Ball': folder(smokeBallSection, { collapsed: true }),
-            'Smoke Ball Spline': folder(smokeBallSplineSection, {
-              collapsed: true,
-            }),
-            'Billboard Smoke': folder(billboardSmokeSection, {
-              collapsed: true,
-            }),
-          },
-          { collapsed: true }
-        ),
-        Fire: folder(
-          {
-            ...fireSplineSections,
-            Fireball: folder(fireballSection, { collapsed: true }),
-            'Fire Spline': folder(fireSplineSection, { collapsed: true }),
-            Flame: folder(flameSection, { collapsed: true }),
-            'Volumetric Fire': folder(volumetricFireSection, {
-              collapsed: true,
-            }),
-            'CS184 Fire': folder(cs184FireSection, { collapsed: true }),
-          },
-          { collapsed: true }
-        ),
-      };
-    },
-    [
-      preset,
-      hotBoxSchemaVersion,
-      splines.length,
-      splineTypeSignature,
-      smokeBallInstances.length,
-      smokeBallSplineInstances.length,
-      billboardSmokeInstances.length,
-      fireballInstances.length,
-      fireSplineInstances.length,
-      flameInstances.length,
-      volumetricFireInstances.length,
-      cs184FireInstances.length,
-    ]
-  );
+        { collapsed: true }
+      ),
+    };
+  }, [
+    preset,
+    hotBoxSchemaVersion,
+    splines.length,
+    splineTypeSignature,
+    smokeBallInstances.length,
+    smokeBallSplineInstances.length,
+    billboardSmokeInstances.length,
+    fireballInstances.length,
+    fireSplineInstances.length,
+    flameInstances.length,
+    volumetricFireInstances.length,
+    cs184FireInstances.length,
+  ]);
 
   useEffect(() => {
     selectedPresetRef.current = preset;

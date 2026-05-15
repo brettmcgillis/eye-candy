@@ -22,8 +22,8 @@ const CANVAS_TO_LEGACY_WORLD = 0.82;
 const SCALE = CANVAS_TO_LEGACY_WORLD * LEGACY_WORLD_TO_SCENE;
 
 export function toScene(pts) {
-  return pts.map(({ x, y }) =>
-    new THREE.Vector3(x * SCALE, (CANVAS_H - y) * SCALE, 0)
+  return pts.map(
+    ({ x, y }) => new THREE.Vector3(x * SCALE, (CANVAS_H - y) * SCALE, 0)
   );
 }
 

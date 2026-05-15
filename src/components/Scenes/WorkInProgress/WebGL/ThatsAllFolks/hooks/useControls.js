@@ -270,8 +270,20 @@ export default function useSceneControls() {
           max: s(2000),
           step: s(10),
         },
-        gunX: { label: 'X', value: s(-200), min: s(-800), max: s(800), step: s(5) },
-        gunY: { label: 'Y', value: s(250), min: s(-400), max: s(600), step: s(5) },
+        gunX: {
+          label: 'X',
+          value: s(-200),
+          min: s(-800),
+          max: s(800),
+          step: s(5),
+        },
+        gunY: {
+          label: 'Y',
+          value: s(250),
+          min: s(-400),
+          max: s(600),
+          step: s(5),
+        },
         gunZ: { label: 'Z', value: 0, min: s(-800), max: s(800), step: s(5) },
       },
       { collapsed: true }
@@ -297,9 +309,27 @@ export default function useSceneControls() {
           max: 4,
           step: 0.05,
         },
-        smokeX: { label: 'X', value: s(-350), min: s(-800), max: s(800), step: s(5) },
-        smokeY: { label: 'Y', value: s(550), min: s(-400), max: s(800), step: s(5) },
-        smokeZ: { label: 'Z', value: s(34), min: s(-800), max: s(800), step: s(5) },
+        smokeX: {
+          label: 'X',
+          value: s(-350),
+          min: s(-800),
+          max: s(800),
+          step: s(5),
+        },
+        smokeY: {
+          label: 'Y',
+          value: s(550),
+          min: s(-400),
+          max: s(800),
+          step: s(5),
+        },
+        smokeZ: {
+          label: 'Z',
+          value: s(34),
+          min: s(-800),
+          max: s(800),
+          step: s(5),
+        },
         showHelpers: { label: 'Show Helpers', value: false },
 
         'Particle Physics': folder(
@@ -444,31 +474,91 @@ export default function useSceneControls() {
           {
             "That's": folder(
               {
-                thatsX: { label: 'X', value: s(-4), min: s(-500), max: s(500), step: s(1) },
-                thatsY: { label: 'Y', value: s(2), min: s(-500), max: s(500), step: s(1) },
-                thatsZ: { label: 'Z', value: 0, min: s(-500), max: s(500), step: s(1) },
+                thatsX: {
+                  label: 'X',
+                  value: s(-4),
+                  min: s(-500),
+                  max: s(500),
+                  step: s(1),
+                },
+                thatsY: {
+                  label: 'Y',
+                  value: s(2),
+                  min: s(-500),
+                  max: s(500),
+                  step: s(1),
+                },
+                thatsZ: {
+                  label: 'Z',
+                  value: 0,
+                  min: s(-500),
+                  max: s(500),
+                  step: s(1),
+                },
               },
               { collapsed: true }
             ),
             All: folder(
               {
-                allX: { label: 'X', value: s(5), min: s(-500), max: s(500), step: s(1) },
-                allY: { label: 'Y', value: s(2), min: s(-500), max: s(500), step: s(1) },
-                allZ: { label: 'Z', value: 0, min: s(-500), max: s(500), step: s(1) },
+                allX: {
+                  label: 'X',
+                  value: s(5),
+                  min: s(-500),
+                  max: s(500),
+                  step: s(1),
+                },
+                allY: {
+                  label: 'Y',
+                  value: s(2),
+                  min: s(-500),
+                  max: s(500),
+                  step: s(1),
+                },
+                allZ: {
+                  label: 'Z',
+                  value: 0,
+                  min: s(-500),
+                  max: s(500),
+                  step: s(1),
+                },
               },
               { collapsed: true }
             ),
             Folks: folder(
               {
-                folksX: { label: 'X', value: 0, min: s(-500), max: s(500), step: s(1) },
-                folksY: { label: 'Y', value: 0, min: s(-500), max: s(500), step: s(1) },
-                folksZ: { label: 'Z', value: 0, min: s(-500), max: s(500), step: s(1) },
+                folksX: {
+                  label: 'X',
+                  value: 0,
+                  min: s(-500),
+                  max: s(500),
+                  step: s(1),
+                },
+                folksY: {
+                  label: 'Y',
+                  value: 0,
+                  min: s(-500),
+                  max: s(500),
+                  step: s(1),
+                },
+                folksZ: {
+                  label: 'Z',
+                  value: 0,
+                  min: s(-500),
+                  max: s(500),
+                  step: s(1),
+                },
               },
               { collapsed: true }
             ),
             Exclamation: folder(
               {
-                exclamX: { label: 'X', value: s(7), min: s(-500), max: s(500), step: s(1) },
+                exclamX: {
+                  label: 'X',
+                  value: s(7),
+                  min: s(-500),
+                  max: s(500),
+                  step: s(1),
+                },
                 exclamY: {
                   label: 'Y',
                   value: s(12),
@@ -476,7 +566,13 @@ export default function useSceneControls() {
                   max: s(500),
                   step: s(1),
                 },
-                exclamZ: { label: 'Z', value: 0, min: s(-500), max: s(500), step: s(1) },
+                exclamZ: {
+                  label: 'Z',
+                  value: 0,
+                  min: s(-500),
+                  max: s(500),
+                  step: s(1),
+                },
               },
               { collapsed: true }
             ),

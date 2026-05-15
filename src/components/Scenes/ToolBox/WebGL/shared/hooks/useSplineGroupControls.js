@@ -845,7 +845,6 @@ export default function buildSplineGroupControls(index, cfg, opts) {
             },
             { collapsed: true, render: isRayMarch }
           ),
-
         }
       : {};
 

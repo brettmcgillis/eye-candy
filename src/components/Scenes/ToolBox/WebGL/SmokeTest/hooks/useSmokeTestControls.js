@@ -196,12 +196,8 @@ function getStandaloneDefaults(presetKey) {
 
   return {
     sb: (elements.smokeBall ?? []).map((element) => makeSbInst(element)),
-    ss: (elements.smokeBallSpline ?? []).map((element) =>
-      makeSsInst(element)
-    ),
-    s2d: (elements.billboardSmoke ?? []).map((element) =>
-      makeS2dInst(element)
-    ),
+    ss: (elements.smokeBallSpline ?? []).map((element) => makeSsInst(element)),
+    s2d: (elements.billboardSmoke ?? []).map((element) => makeS2dInst(element)),
   };
 }
 

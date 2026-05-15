@@ -17,8 +17,8 @@ import CS184VolumetricFire from '../../../../elements/volumetricFire/CS184Volume
 import VolumetricFire from '../../../../elements/volumetricFire/VolumetricFire';
 import { parsePreset } from '../shared/splineDefaults';
 import useHotBoxControls, {
-  getHotBoxPreset,
   HOTBOX_DEFAULT_PRESET_KEY,
+  getHotBoxPreset,
 } from './hooks/useHotBoxControls';
 
 const { splines: DEFAULT_SPLINES } = parsePreset(

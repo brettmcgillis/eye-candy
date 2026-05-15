@@ -145,8 +145,7 @@ export function parsePreset(preset) {
 export function filterParsedPresetByType(parsedPreset, type) {
   return parsedPreset.splines.reduce(
     (acc, points, index) => {
-      const config =
-        parsedPreset.splineConfigs[index] ?? DEFAULT_SPLINE_CONFIG;
+      const config = parsedPreset.splineConfigs[index] ?? DEFAULT_SPLINE_CONFIG;
 
       if ((config.type ?? DEFAULT_SPLINE_CONFIG.type) !== type) {
         return acc;

@@ -25,8 +25,6 @@
 - [ ] Add Smoke and Fire back in, once core interactive mechanic and visuals are in place.
 - [ ] Add a hook for setting camera position on desktop & mobile, like in Surrender. If possible extract to a reusable shared hook useCameraFitToViewport?
 
-- [ ] Fix scene loading behind suspense/custom loader
-
 # // Presets
 
 # // Features

@@ -1,6 +1,4 @@
-import * as THREE from 'three';
-
-import React, { useCallback, useMemo, useRef, useState } from 'react';
+import React, { useCallback, useRef, useState } from 'react';
 
 import { OrbitControls, PerspectiveCamera } from '@react-three/drei';
 
@@ -18,40 +16,6 @@ import FireballVolume from '../../../../elements/volumetricFire/FireballVolume';
 import VolumetricFire from '../../../../elements/volumetricFire/VolumetricFire';
 import { parsePreset } from '../shared/splineDefaults';
 import useFireTestControls from './hooks/useFireTestControls';
-
-// ─── Default FireballSpline control points ────────────────────────────────────
-const DEFAULT_SPLINE_POINTS = [
-  {
-    position: new THREE.Vector3(-2, 0, 0),
-    rotation: new THREE.Euler(),
-    scale: new THREE.Vector3(1.0, 1.0, 1.0),
-  },
-  {
-    position: new THREE.Vector3(-2, 0.9, 0),
-    rotation: new THREE.Euler(),
-    scale: new THREE.Vector3(0.9, 0.9, 0.9),
-  },
-  {
-    position: new THREE.Vector3(-1.85, 1.8, 0),
-    rotation: new THREE.Euler(),
-    scale: new THREE.Vector3(1.0, 1.0, 1.0),
-  },
-  {
-    position: new THREE.Vector3(-1.75, 2.7, 0.1),
-    rotation: new THREE.Euler(),
-    scale: new THREE.Vector3(1.3, 1.3, 1.3),
-  },
-  {
-    position: new THREE.Vector3(-1.65, 3.6, 0.15),
-    rotation: new THREE.Euler(),
-    scale: new THREE.Vector3(1.6, 1.6, 1.6),
-  },
-  {
-    position: new THREE.Vector3(-1.55, 4.5, 0.2),
-    rotation: new THREE.Euler(),
-    scale: new THREE.Vector3(2.0, 2.0, 2.0),
-  },
-];
 
 const DEFAULT_PRESET_KEY = Object.keys(FIRE_PRESETS)[0];
 const { splines: DEFAULT_SPLINES } = parsePreset(
@@ -72,32 +36,9 @@ export default function FireTest() {
     );
   }, []);
 
-  const [splinePoints, setLegacySplinePoints] = useState(DEFAULT_SPLINE_POINTS);
-
   const attractorsRef = useRef([]);
 
   const config = useFireTestControls(splines, setSplines, attractorsRef);
-
-  // Legacy FireballSpline control points (scale.x = radius multiplier)
-  const fireballControlPoints = useMemo(
-    () =>
-      splinePoints.map((pt) => ({
-        position: pt.position,
-        radius: config.fireSpline.baseRadius * (pt.scale?.x ?? 1),
-      })),
-    [splinePoints, config.fireSpline.baseRadius]
-  );
-
-  const splinePositions = useMemo(
-    () => splinePoints.map((pt) => pt.position),
-    [splinePoints]
-  );
-
-  const handleSetSplinePoints = useCallback((updater) => {
-    setLegacySplinePoints((prev) =>
-      typeof updater === 'function' ? updater(prev) : updater
-    );
-  }, []);
 
   return (
     <>
@@ -145,55 +86,114 @@ export default function FireTest() {
       ))}
       {/* eslint-enable react/no-array-index-key */}
 
-      {/* ── Fireball (Perlin vertex-displacement sphere) ──────────────────── */}
-      <Fireball {...config.fireball} />
+      {config.fireballInstances.map((instance) => (
+        <group
+          key={instance.id}
+          position={instance.pos}
+          rotation={instance.rot}
+          scale={instance.scale}
+        >
+          <Fireball {...instance.config} />
+        </group>
+      ))}
 
-      {/* ── FireballSpline (legacy standalone spline tube) ────────────────── */}
-      <FireballSpline
-        controlPoints={fireballControlPoints}
-        tubularSegments={config.fireSpline.tubularSegments}
-        radialSegments={config.fireSpline.radialSegments}
-        capSegments={config.fireSpline.capSegments}
-        speed={config.fireSpline.speed}
-        weight={config.fireSpline.weight}
-        noiseFreq={config.fireSpline.noiseFreq}
-        noiseAmp={config.fireSpline.noiseAmp}
-        animated={config.fireSpline.animated}
-        smokeLightColor={config.fireSpline.smokeLightColor}
-        smokeDarkColor={config.fireSpline.smokeDarkColor}
-      />
+      {config.fireSplineInstances.map((instance) => {
+        const fireballControlPoints = instance.controlPoints.map((point) => ({
+          position: point.position,
+          radius: instance.config.baseRadius * (point.scale?.x ?? 1),
+        }));
+        const splinePositions = instance.controlPoints.map(
+          (point) => point.position
+        );
 
-      {/* ── Spline curve preview ──────────────────────────────────────────── */}
-      <SplineLine
-        points={splinePositions}
-        curveType="centripetal"
-        color="#ff8844"
-        visible={config.showSplineLine}
-        arcSegments={200}
-      />
+        return (
+          <group
+            key={instance.id}
+            position={instance.pos}
+            rotation={instance.rot}
+            scale={instance.scale}
+          >
+            <FireballSpline
+              controlPoints={fireballControlPoints}
+              tubularSegments={instance.config.tubularSegments}
+              radialSegments={instance.config.radialSegments}
+              capSegments={instance.config.capSegments}
+              speed={instance.config.speed}
+              weight={instance.config.weight}
+              noiseFreq={instance.config.noiseFreq}
+              noiseAmp={instance.config.noiseAmp}
+              animated={instance.config.animated}
+              smokeLightColor={instance.config.smokeLightColor}
+              smokeDarkColor={instance.config.smokeDarkColor}
+            />
 
-      {/* ── Interactive control-point handles ─────────────────────────────── */}
-      <SplinePoints
-        points={splinePoints}
-        setPoints={handleSetSplinePoints}
-        visible={config.showSplinePoints}
-        mode={config.pointMode}
-        pointSize={0.3}
-      />
+            <SplineLine
+              points={splinePositions}
+              curveType="centripetal"
+              color="#ff8844"
+              visible={instance.showSpline}
+              arcSegments={200}
+            />
 
-      {/* ── Flame (wispy billboard shader flame) ──────────────────────────── */}
-      <group position={config.flame.position} scale={config.flame.groupScale}>
-        <Flame inverted={config.flame.inverted} motion={config.flame.motion} />
-      </group>
+            <SplinePoints
+              points={instance.controlPoints}
+              setPoints={(updater) =>
+                config.setFireSplinePoints(instance.id, updater)
+              }
+              visible={instance.showHandles}
+              mode={instance.pointMode}
+              pointSize={0.3}
+            />
+          </group>
+        );
+      })}
 
-      {/* ── VolumetricFire (slice-rendered hexahedron) ────────────────────── */}
-      <VolumetricFire {...config.volumetricFire} />
+      {config.flameInstances.map((instance) => (
+        <group
+          key={instance.id}
+          position={instance.pos}
+          rotation={instance.rot}
+          scale={instance.scale}
+        >
+          <Flame
+            inverted={instance.config.inverted}
+            motion={instance.config.motion}
+          />
+        </group>
+      ))}
 
-      {/* ── CS184VolumetricFire (ray-marched, ember particles) ───────────── */}
-      <CS184VolumetricFire {...config.cs184Fire} />
+      {config.volumetricFireInstances.map((instance) => (
+        <group
+          key={instance.id}
+          position={instance.pos}
+          rotation={instance.rot}
+          scale={instance.scale}
+        >
+          <VolumetricFire {...instance.config} />
+        </group>
+      ))}
 
-      {/* ── FireballVolume (ray-marched spherical explosion) ──────────────── */}
-      <FireballVolume {...config.fireballVolume} />
+      {config.cs184FireInstances.map((instance) => (
+        <group
+          key={instance.id}
+          position={instance.pos}
+          rotation={instance.rot}
+          scale={instance.scale}
+        >
+          <CS184VolumetricFire {...instance.config} />
+        </group>
+      ))}
+
+      {config.fireballVolumeInstances.map((instance) => (
+        <group
+          key={instance.id}
+          position={instance.pos}
+          rotation={instance.rot}
+          scale={instance.scale}
+        >
+          <FireballVolume {...instance.config} />
+        </group>
+      ))}
 
       <Attractors
         attractorsRef={attractorsRef}
@@ -201,7 +201,7 @@ export default function FireTest() {
         visible={config.showAttractors}
         radius={config.attractorRadius}
         version={config.attractorVersion}
-        levaPrefix="Fire Test"
+        levaPrefix="Fire Test.Attractors"
       />
     </>
   );

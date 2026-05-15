@@ -83,19 +83,52 @@ export default function HotBox() {
       ))}
       {/* eslint-enable react/no-array-index-key */}
 
-      {/* ── SmokeBall (Perlin vertex-displacement sphere, greyscale) ────── */}
-      <SmokeBall {...config.smokeBall} />
+      {config.smokeBallInstances.map((instance) => (
+        <group
+          key={instance.id}
+          position={instance.pos}
+          rotation={instance.rot}
+          scale={instance.scale}
+        >
+          <SmokeBall {...instance.config} />
+        </group>
+      ))}
 
-      {/* ── Fireball (Perlin vertex-displacement sphere, fire colours) ───── */}
-      <Fireball {...config.fireball} />
+      {config.fireballInstances.map((instance) => (
+        <group
+          key={instance.id}
+          position={instance.pos}
+          rotation={instance.rot}
+          scale={instance.scale}
+        >
+          <Fireball {...instance.config} />
+        </group>
+      ))}
 
-      {/* ── Flame (wispy billboard shader flame) ─────────────────────────── */}
-      <group position={config.flame.position} scale={config.flame.groupScale}>
-        <Flame inverted={config.flame.inverted} motion={config.flame.motion} />
-      </group>
+      {config.flameInstances.map((instance) => (
+        <group
+          key={instance.id}
+          position={instance.pos}
+          rotation={instance.rot}
+          scale={instance.scale}
+        >
+          <Flame
+            inverted={instance.config.inverted}
+            motion={instance.config.motion}
+          />
+        </group>
+      ))}
 
-      {/* ── FireballVolume (ray-marched spherical explosion) ─────────────── */}
-      <FireballVolume {...config.fireballVolume} />
+      {config.fireballVolumeInstances.map((instance) => (
+        <group
+          key={instance.id}
+          position={instance.pos}
+          rotation={instance.rot}
+          scale={instance.scale}
+        >
+          <FireballVolume {...instance.config} />
+        </group>
+      ))}
 
       <Attractors
         attractorsRef={attractorsRef}
@@ -103,7 +136,7 @@ export default function HotBox() {
         visible={config.showAttractors}
         radius={config.attractorRadius}
         version={config.attractorVersion}
-        levaPrefix="Hot Box"
+        levaPrefix="Hot Box.Attractors"
       />
     </>
   );

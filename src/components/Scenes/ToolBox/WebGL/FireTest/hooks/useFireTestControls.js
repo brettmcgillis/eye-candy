@@ -1,7 +1,7 @@
 import { button, folder, useControls } from 'leva';
 import * as THREE from 'three';
 
-import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 
 import FIRE_PRESETS from '../../../../../../presets/fire/firePresets';
 import { localEnv } from '../../../../../../utils/appUtils';
@@ -13,8 +13,266 @@ import {
 } from '../../shared/splineDefaults';
 
 const SCENE_LABEL = 'Fire Test';
+const FIRE_FOLDER_PATH = `${SCENE_LABEL}.Fire`;
 const DEFAULT_PRESET_KEY = Object.keys(FIRE_PRESETS)[0];
 const MAX_ATTRACTORS = 8;
+const FIRE_SPLINE_TYPE_ORDER = ['Classic', 'RayMarch', 'Fireball'];
+const FIRE_SPLINE_TYPE_LABELS = {
+  Classic: 'Classic Fire',
+  RayMarch: 'RayMarch Fire',
+  Fireball: 'Fireball Fire',
+};
+
+const shouldSeedDefaultStandaloneElements = (presetKey) =>
+  presetKey === DEFAULT_PRESET_KEY;
+
+let idCounter = 0;
+const mkId = () => idCounter++;
+
+const randPt = () => ({
+  position: new THREE.Vector3(
+    (Math.random() - 0.5) * 4,
+    Math.random() * 4,
+    (Math.random() - 0.5) * 4
+  ),
+  rotation: new THREE.Euler(),
+  scale: new THREE.Vector3(1, 1, 1),
+});
+
+const DEFAULT_FIREBALL_POSITION = [-5, 1, 0];
+const DEFAULT_FIRE_SPLINE_POSITION = [0, 0, 0];
+const DEFAULT_FLAME_POSITION = [5, 0, 0];
+const DEFAULT_VOLUMETRIC_FIRE_POSITION = [3, 0, 0];
+const DEFAULT_CS184_FIRE_POSITION = [-3, 0, 0];
+const DEFAULT_FIREBALL_VOLUME_POSITION = [7, 1, 0];
+
+const DEFAULT_FIRE_SPLINE_POINTS = [
+  {
+    position: new THREE.Vector3(-2, 0, 0),
+    rotation: new THREE.Euler(),
+    scale: new THREE.Vector3(1.0, 1.0, 1.0),
+  },
+  {
+    position: new THREE.Vector3(-2, 0.9, 0),
+    rotation: new THREE.Euler(),
+    scale: new THREE.Vector3(0.9, 0.9, 0.9),
+  },
+  {
+    position: new THREE.Vector3(-1.85, 1.8, 0),
+    rotation: new THREE.Euler(),
+    scale: new THREE.Vector3(1.0, 1.0, 1.0),
+  },
+  {
+    position: new THREE.Vector3(-1.75, 2.7, 0.1),
+    rotation: new THREE.Euler(),
+    scale: new THREE.Vector3(1.3, 1.3, 1.3),
+  },
+  {
+    position: new THREE.Vector3(-1.65, 3.6, 0.15),
+    rotation: new THREE.Euler(),
+    scale: new THREE.Vector3(1.6, 1.6, 1.6),
+  },
+  {
+    position: new THREE.Vector3(-1.55, 4.5, 0.2),
+    rotation: new THREE.Euler(),
+    scale: new THREE.Vector3(2.0, 2.0, 2.0),
+  },
+];
+
+const cloneFireSplinePoints = () =>
+  DEFAULT_FIRE_SPLINE_POINTS.map((point) => ({
+    position: point.position.clone(),
+    rotation: point.rotation.clone(),
+    scale: point.scale.clone(),
+  }));
+
+const offsetPosition = (base, spread = [4, 3, 4]) => [
+  base[0] + (Math.random() - 0.5) * spread[0],
+  base[1] + Math.random() * spread[1],
+  base[2] + (Math.random() - 0.5) * spread[2],
+];
+
+const mkFireballCfg = () => ({
+  radius: 0.4,
+  detail: 5,
+  speed: 1.0,
+  weight: 0.3,
+  noiseFreq: 2.0,
+  noiseAmp: 0.15,
+  animated: true,
+});
+
+const mkFireSplineCfg = () => ({
+  baseRadius: 0.6,
+  tubularSegments: 64,
+  radialSegments: 32,
+  capSegments: 8,
+  speed: 1.0,
+  weight: 0.3,
+  noiseFreq: 2.0,
+  noiseAmp: 0.15,
+  animated: true,
+  smokeLightColor: '#4a4a58',
+  smokeDarkColor: '#1a1a22',
+});
+
+const mkFlameCfg = () => ({
+  inverted: false,
+  motion: {
+    baseSpeed: 1.15,
+    minSpeed: 0.28,
+    slowFreq: 0.7,
+    slowAmp: 0.55,
+    fastFreq: 2.6,
+    fastAmp: 0.25,
+    microFreq: 5.7,
+    microAmp: 0.08,
+    swayX: 0.015,
+    swayZ: 0.014,
+    pulseFreq: 3.4,
+    pulseAmp: 0.04,
+    scaleX: 1,
+    scaleY: 1,
+  },
+});
+
+const mkVolumetricFireCfg = () => ({
+  width: 0.8,
+  height: 2.0,
+  depth: 0.8,
+  sliceSpacing: 0.04,
+  bendX: 0,
+  bendZ: 0,
+  animated: true,
+  animSpeed: 0.5,
+  showSpline: false,
+  showVolume: false,
+  magnitude: 1.3,
+  lacunarity: 2.0,
+  gain: 0.5,
+  tintColor: '#ffffff',
+  saturation: 1.0,
+  brightness: 1.5,
+});
+
+const mkCs184FireCfg = () => ({
+  width: 0.5,
+  height: 1.5,
+  depth: 0.5,
+  bendX: 0,
+  bendZ: 0,
+  animated: true,
+  animSpeed: 0.5,
+  magnitude: 1.3,
+  lacunarity: 2.0,
+  gain: 0.5,
+  speed: 0.8,
+  density: 1.2,
+  brightness: 1.8,
+  saturation: 1.0,
+  tintColor: '#ffffff',
+  coreColor: '#ffffcc',
+  borderColor: '#ff6600',
+  smokeColor: '#330000',
+  emberDensity: 0.15,
+  emberSize: 0.25,
+  emberColor: '#ff4400',
+  steps: 64,
+  stepSize: 1.0,
+});
+
+const mkFireballVolumeCfg = () => ({
+  radius: 0.8,
+  rotSpeed: 0.1,
+  noiseScale: 0.5,
+  coreColor: '#ccffff',
+  coreIntensity: 7.0,
+  edgeColor: '#7a877f',
+  edgeIntensity: 1.5,
+  density: 1.0,
+  steps: 64,
+});
+
+const makeTypedFireSplineConfig = (fireType, name) => ({
+  ...DEFAULT_SPLINE_CONFIG,
+  type: 'Fire',
+  fireType,
+  name,
+});
+
+const makeFireballInst = (pos = DEFAULT_FIREBALL_POSITION) => ({
+  id: mkId(),
+  pos: [...pos],
+  rot: [0, 0, 0],
+  scale: [1, 1, 1],
+  config: mkFireballCfg(),
+});
+
+const makeFireSplineInst = (pos = DEFAULT_FIRE_SPLINE_POSITION) => ({
+  id: mkId(),
+  pos: [...pos],
+  rot: [0, 0, 0],
+  scale: [1, 1, 1],
+  showHandles: true,
+  showSpline: true,
+  pointMode: 'translate',
+  controlPoints: cloneFireSplinePoints(),
+  config: mkFireSplineCfg(),
+});
+
+const makeFlameInst = (pos = DEFAULT_FLAME_POSITION) => ({
+  id: mkId(),
+  pos: [...pos],
+  rot: [0, 0, 0],
+  scale: [1.2, 1.2, 1.2],
+  config: mkFlameCfg(),
+});
+
+const makeVolumetricFireInst = (pos = DEFAULT_VOLUMETRIC_FIRE_POSITION) => ({
+  id: mkId(),
+  pos: [...pos],
+  rot: [0, 0, 0],
+  scale: [1, 1, 1],
+  config: mkVolumetricFireCfg(),
+});
+
+const makeCs184FireInst = (pos = DEFAULT_CS184_FIRE_POSITION) => ({
+  id: mkId(),
+  pos: [...pos],
+  rot: [0, 0, 0],
+  scale: [1, 1, 1],
+  config: mkCs184FireCfg(),
+});
+
+const makeFireballVolumeInst = (pos = DEFAULT_FIREBALL_VOLUME_POSITION) => ({
+  id: mkId(),
+  pos: [...pos],
+  rot: [0, 0, 0],
+  scale: [1, 1, 1],
+  config: mkFireballVolumeCfg(),
+});
+
+function getStandaloneDefaults(presetKey) {
+  if (!shouldSeedDefaultStandaloneElements(presetKey)) {
+    return {
+      fireball: [],
+      fireSpline: [],
+      flame: [],
+      volumetricFire: [],
+      cs184Fire: [],
+      fireballVolume: [],
+    };
+  }
+
+  return {
+    fireball: [makeFireballInst()],
+    fireSpline: [makeFireSplineInst()],
+    flame: [makeFlameInst()],
+    volumetricFire: [makeVolumetricFireInst()],
+    cs184Fire: [makeCs184FireInst()],
+    fireballVolume: [makeFireballVolumeInst()],
+  };
+}
 
 export default function useFireTestControls(
   splines,
@@ -25,134 +283,100 @@ export default function useFireTestControls(
   const splinesRef = useRef(splines);
   splinesRef.current = splines;
 
+  const initialStandaloneDefaultsRef = useRef(null);
+  if (!initialStandaloneDefaultsRef.current) {
+    initialStandaloneDefaultsRef.current = getStandaloneDefaults(
+      DEFAULT_PRESET_KEY
+    );
+  }
+
   const [splineConfigs, setSplineConfigs] = useState(() => {
     const { splineConfigs: initial } = parsePreset(
       FIRE_PRESETS[DEFAULT_PRESET_KEY]
     );
     return initial;
   });
+  const splineConfigsRef = useRef(splineConfigs);
+  splineConfigsRef.current = splineConfigs;
 
+  const [fireballInstances, setFireballInstances] = useState(
+    () => initialStandaloneDefaultsRef.current.fireball
+  );
+  const [fireSplineInstances, setFireSplineInstances] = useState(
+    () => initialStandaloneDefaultsRef.current.fireSpline
+  );
+  const [flameInstances, setFlameInstances] = useState(
+    () => initialStandaloneDefaultsRef.current.flame
+  );
+  const [volumetricFireInstances, setVolumetricFireInstances] = useState(
+    () => initialStandaloneDefaultsRef.current.volumetricFire
+  );
+  const [cs184FireInstances, setCs184FireInstances] = useState(
+    () => initialStandaloneDefaultsRef.current.cs184Fire
+  );
+  const [fireballVolumeInstances, setFireballVolumeInstances] = useState(
+    () => initialStandaloneDefaultsRef.current.fireballVolume
+  );
   const [attractorVersion, setAttractorVersion] = useState(0);
+  const [fireSchemaVersion, setFireSchemaVersion] = useState(0);
+  const fireTypeSignature = splineConfigs
+    .map((config) => config?.fireType ?? 'Classic')
+    .join('|');
+
   const forceAttractorUpdate = useCallback(
-    () => setAttractorVersion((c) => c + 1),
+    () => setAttractorVersion((count) => count + 1),
     []
   );
+
+  const applyPresetState = useCallback(
+    (presetKey) => {
+      const presetValue = FIRE_PRESETS[presetKey];
+      if (presetValue) {
+        const { splines: nextSplines, splineConfigs: nextConfigs } =
+          parsePreset(presetValue);
+        setSplines(nextSplines);
+        setSplineConfigs(nextConfigs);
+      }
+
+      const defaults = getStandaloneDefaults(presetKey);
+      setFireballInstances(defaults.fireball);
+      setFireSplineInstances(defaults.fireSpline);
+      setFlameInstances(defaults.flame);
+      setVolumetricFireInstances(defaults.volumetricFire);
+      setCs184FireInstances(defaults.cs184Fire);
+      setFireballVolumeInstances(defaults.fireballVolume);
+      attractorsRef.current = [];
+      setAttractorVersion((count) => count + 1);
+      setFireSchemaVersion((count) => count + 1);
+    },
+    [attractorsRef, setSplines]
+  );
+
+  const setFireSplinePoints = useCallback((id, updater) => {
+    setFireSplineInstances((prev) =>
+      prev.map((instance) => {
+        if (instance.id !== id) return instance;
+        return {
+          ...instance,
+          controlPoints:
+            typeof updater === 'function'
+              ? updater(instance.controlPoints)
+              : updater,
+        };
+      })
+    );
+  }, []);
 
   const [
     {
       preset,
+      pointMode,
       bgColor,
       lineColor,
       attractorStrength,
       attractorRadius,
       showAttractors,
       attractorMode,
-      // Fireball
-      fbPosX,
-      fbPosY,
-      fbPosZ,
-      fbRadius,
-      fbDetail,
-      fbSpeed,
-      fbWeight,
-      fbNoiseFreq,
-      fbNoiseAmp,
-      fbAnimated,
-      // FireballSpline (legacy standalone)
-      fsBaseRadius,
-      fsTubular,
-      fsRadial,
-      fsCap,
-      fsSpeed,
-      fsWeight,
-      fsNoiseFreq,
-      fsNoiseAmp,
-      fsAnimated,
-      fsSmokeLight,
-      fsSmokeDark,
-      showSplinePoints,
-      showSplineLine,
-      pointMode,
-      // Flame
-      flPosX,
-      flPosY,
-      flPosZ,
-      flGroupScale,
-      flInverted,
-      flBaseSpeed,
-      flMinSpeed,
-      flSlowFreq,
-      flSlowAmp,
-      flFastFreq,
-      flFastAmp,
-      flMicroFreq,
-      flMicroAmp,
-      flSwayX,
-      flSwayZ,
-      flPulseFreq,
-      flPulseAmp,
-      flScaleX,
-      flScaleY,
-      // VolumetricFire
-      vfPosX,
-      vfPosY,
-      vfPosZ,
-      vfWidth,
-      vfHeight,
-      vfDepth,
-      vfSliceSpacing,
-      vfBendX,
-      vfBendZ,
-      vfAnimated,
-      vfAnimSpeed,
-      vfShowSpline,
-      vfShowVolume,
-      vfMagnitude,
-      vfLacunarity,
-      vfGain,
-      vfTintColor,
-      vfSaturation,
-      vfBrightness,
-      // CS184VolumetricFire
-      cfPosX,
-      cfPosY,
-      cfPosZ,
-      cfWidth,
-      cfHeight,
-      cfDepth,
-      cfBendX,
-      cfBendZ,
-      cfAnimated,
-      cfAnimSpeed,
-      cfMagnitude,
-      cfLacunarity,
-      cfGain,
-      cfSpeed,
-      cfDensity,
-      cfBrightness,
-      cfSaturation,
-      cfTintColor,
-      cfCoreColor,
-      cfBorderColor,
-      cfSmokeColor,
-      cfEmberDensity,
-      cfEmberSize,
-      cfEmberColor,
-      cfSteps,
-      cfStepSize,
-      // FireballVolume
-      fvPosX,
-      fvPosY,
-      fvPosZ,
-      fvRadius,
-      fvRotSpeed,
-      fvNoiseScale,
-      fvCoreColor,
-      fvCoreIntensity,
-      fvEdgeColor,
-      fvEdgeIntensity,
-      fvDensity,
-      fvSteps,
     },
   ] = useControls(
     SCENE_LABEL,
@@ -164,22 +388,14 @@ export default function useFireTestControls(
             value: DEFAULT_PRESET_KEY,
             options: Object.keys(FIRE_PRESETS),
           },
-          reset: button(() => {
-            const p = FIRE_PRESETS[selectedPresetRef.current];
-            if (p) {
-              const { splines: nextSplines, splineConfigs: nextConfigs } =
-                parsePreset(p);
-              setSplines(nextSplines);
-              setSplineConfigs(nextConfigs);
-            }
-          }),
+          reset: button(() => applyPresetState(selectedPresetRef.current)),
           ...(localEnv()
             ? {
                 copy: button(
                   () => {
                     const code = serializeSplines(
                       splinesRef.current,
-                      splineConfigs
+                      splineConfigsRef.current
                     );
                     navigator.clipboard.writeText(`splines: [\n${code}\n]`);
                   },
@@ -193,563 +409,17 @@ export default function useFireTestControls(
 
       Scene: folder(
         {
+          pointMode: {
+            label: 'Point Mode',
+            value: 'translate',
+            options: ['translate', 'scale'],
+          },
           bgColor: { label: 'Background', value: '#000000' },
           lineColor: { label: 'Grid Lines', value: '#252548' },
         },
         { collapsed: false }
       ),
 
-      // ── Fireball (Perlin noise vertex-displacement sphere) ───────────────
-      Fireball: folder(
-        {
-          'FB Position': folder(
-            {
-              fbPosX: { label: 'X', value: -5, min: -20, max: 20, step: 0.1 },
-              fbPosY: { label: 'Y', value: 1, min: -5, max: 15, step: 0.1 },
-              fbPosZ: { label: 'Z', value: 0, min: -10, max: 10, step: 0.1 },
-            },
-            { collapsed: true }
-          ),
-          fbRadius: {
-            label: 'Radius',
-            value: 0.4,
-            min: 0.05,
-            max: 5,
-            step: 0.05,
-          },
-          fbDetail: { label: 'Detail', value: 5, min: 1, max: 7, step: 1 },
-          fbSpeed: { label: 'Speed', value: 1.0, min: 0, max: 5, step: 0.05 },
-          fbWeight: {
-            label: 'Weight',
-            value: 0.3,
-            min: 0,
-            max: 3,
-            step: 0.05,
-          },
-          fbNoiseFreq: {
-            label: 'Noise Freq',
-            value: 2.0,
-            min: 0.1,
-            max: 10,
-            step: 0.1,
-          },
-          fbNoiseAmp: {
-            label: 'Noise Amp',
-            value: 0.15,
-            min: 0,
-            max: 1,
-            step: 0.01,
-          },
-          fbAnimated: { label: 'Animated', value: true },
-        },
-        { collapsed: true }
-      ),
-
-      // ── FireballSpline (legacy standalone spline tube) ───────────────────
-      'Fire Spline': folder(
-        {
-          fsBaseRadius: {
-            label: 'Base Radius',
-            value: 0.6,
-            min: 0.05,
-            max: 5,
-            step: 0.05,
-          },
-          fsTubular: {
-            label: 'Tubular Segments',
-            value: 64,
-            min: 8,
-            max: 128,
-            step: 1,
-          },
-          fsRadial: {
-            label: 'Radial Segments',
-            value: 32,
-            min: 8,
-            max: 64,
-            step: 1,
-          },
-          fsCap: { label: 'Cap Segments', value: 8, min: 2, max: 16, step: 1 },
-          fsSpeed: { label: 'Speed', value: 1.0, min: 0, max: 5, step: 0.05 },
-          fsWeight: {
-            label: 'Weight',
-            value: 0.3,
-            min: 0,
-            max: 3,
-            step: 0.05,
-          },
-          fsNoiseFreq: {
-            label: 'Noise Freq',
-            value: 2.0,
-            min: 0.1,
-            max: 10,
-            step: 0.1,
-          },
-          fsNoiseAmp: {
-            label: 'Noise Amp',
-            value: 0.15,
-            min: 0,
-            max: 1,
-            step: 0.01,
-          },
-          'Smoke Colors': folder(
-            {
-              fsSmokeLight: { label: 'Light', value: '#4a4a58' },
-              fsSmokeDark: { label: 'Dark', value: '#1a1a22' },
-            },
-            { collapsed: false }
-          ),
-          fsAnimated: { label: 'Animated', value: true },
-          'Spline Editor': folder(
-            {
-              showSplinePoints: { label: 'Show Points', value: true },
-              showSplineLine: { label: 'Show Curve', value: true },
-              pointMode: {
-                label: 'Transform',
-                value: 'translate',
-                options: ['translate', 'scale'],
-              },
-            },
-            { collapsed: true }
-          ),
-        },
-        { collapsed: true }
-      ),
-
-      // ── Flame (wispy billboard shader flame) ─────────────────────────────
-      Flame: folder(
-        {
-          'FL Position': folder(
-            {
-              flPosX: { label: 'X', value: 5, min: -20, max: 20, step: 0.1 },
-              flPosY: { label: 'Y', value: 0, min: -5, max: 15, step: 0.1 },
-              flPosZ: { label: 'Z', value: 0, min: -10, max: 10, step: 0.1 },
-            },
-            { collapsed: true }
-          ),
-          flGroupScale: {
-            label: 'Scale',
-            value: 1.2,
-            min: 0.01,
-            max: 5,
-            step: 0.01,
-          },
-          flInverted: { label: 'Inverted', value: false },
-          Motion: folder(
-            {
-              flBaseSpeed: {
-                label: 'Base Speed',
-                value: 1.15,
-                min: 0,
-                max: 5,
-                step: 0.05,
-              },
-              flMinSpeed: {
-                label: 'Min Speed',
-                value: 0.28,
-                min: 0,
-                max: 2,
-                step: 0.01,
-              },
-              flSlowFreq: {
-                label: 'Slow Freq',
-                value: 0.7,
-                min: 0,
-                max: 5,
-                step: 0.1,
-              },
-              flSlowAmp: {
-                label: 'Slow Amp',
-                value: 0.55,
-                min: 0,
-                max: 2,
-                step: 0.05,
-              },
-              flFastFreq: {
-                label: 'Fast Freq',
-                value: 2.6,
-                min: 0,
-                max: 10,
-                step: 0.1,
-              },
-              flFastAmp: {
-                label: 'Fast Amp',
-                value: 0.25,
-                min: 0,
-                max: 2,
-                step: 0.05,
-              },
-              flMicroFreq: {
-                label: 'Micro Freq',
-                value: 5.7,
-                min: 0,
-                max: 20,
-                step: 0.1,
-              },
-              flMicroAmp: {
-                label: 'Micro Amp',
-                value: 0.08,
-                min: 0,
-                max: 1,
-                step: 0.01,
-              },
-              flSwayX: {
-                label: 'Sway X',
-                value: 0.015,
-                min: 0,
-                max: 0.2,
-                step: 0.001,
-              },
-              flSwayZ: {
-                label: 'Sway Z',
-                value: 0.014,
-                min: 0,
-                max: 0.2,
-                step: 0.001,
-              },
-              flPulseFreq: {
-                label: 'Pulse Freq',
-                value: 3.4,
-                min: 0,
-                max: 10,
-                step: 0.1,
-              },
-              flPulseAmp: {
-                label: 'Pulse Amp',
-                value: 0.04,
-                min: 0,
-                max: 0.5,
-                step: 0.01,
-              },
-              flScaleX: {
-                label: 'Scale X',
-                value: 1,
-                min: 0.1,
-                max: 5,
-                step: 0.1,
-              },
-              flScaleY: {
-                label: 'Scale Y',
-                value: 1,
-                min: 0.1,
-                max: 5,
-                step: 0.1,
-              },
-            },
-            { collapsed: true }
-          ),
-        },
-        { collapsed: true }
-      ),
-
-      // ── VolumetricFire (slice-rendered hexahedron) ───────────────────────
-      'Volumetric Fire': folder(
-        {
-          'VF Position': folder(
-            {
-              vfPosX: { label: 'X', value: 3, min: -20, max: 20, step: 0.1 },
-              vfPosY: { label: 'Y', value: 0, min: -5, max: 15, step: 0.1 },
-              vfPosZ: { label: 'Z', value: 0, min: -10, max: 10, step: 0.1 },
-            },
-            { collapsed: true }
-          ),
-          vfWidth: { label: 'Width', value: 0.8, min: 0.1, max: 5, step: 0.05 },
-          vfHeight: {
-            label: 'Height',
-            value: 2.0,
-            min: 0.2,
-            max: 10,
-            step: 0.1,
-          },
-          vfDepth: { label: 'Depth', value: 0.8, min: 0.1, max: 5, step: 0.05 },
-          vfSliceSpacing: {
-            label: 'Slice Spacing',
-            value: 0.04,
-            min: 0.01,
-            max: 0.2,
-            step: 0.005,
-          },
-          vfBendX: { label: 'Bend X', value: 0, min: -2, max: 2, step: 0.01 },
-          vfBendZ: { label: 'Bend Z', value: 0, min: -2, max: 2, step: 0.01 },
-          vfAnimated: { label: 'Animated', value: true },
-          vfAnimSpeed: {
-            label: 'Anim Speed',
-            value: 0.5,
-            min: 0,
-            max: 3,
-            step: 0.05,
-          },
-          vfShowSpline: { label: 'Show Spline', value: false },
-          vfShowVolume: { label: 'Show Volume', value: false },
-          'VF Turbulence': folder(
-            {
-              vfMagnitude: {
-                label: 'Magnitude',
-                value: 1.3,
-                min: 0.1,
-                max: 5,
-                step: 0.1,
-              },
-              vfLacunarity: {
-                label: 'Lacunarity',
-                value: 2.0,
-                min: 1,
-                max: 5,
-                step: 0.1,
-              },
-              vfGain: {
-                label: 'Gain',
-                value: 0.5,
-                min: 0.01,
-                max: 1,
-                step: 0.01,
-              },
-            },
-            { collapsed: true }
-          ),
-          'VF Colors': folder(
-            {
-              vfTintColor: { label: 'Tint', value: '#ffffff' },
-              vfSaturation: {
-                label: 'Saturation',
-                value: 1.0,
-                min: 0,
-                max: 3,
-                step: 0.1,
-              },
-              vfBrightness: {
-                label: 'Brightness',
-                value: 1.5,
-                min: 0,
-                max: 5,
-                step: 0.1,
-              },
-            },
-            { collapsed: true }
-          ),
-        },
-        { collapsed: true }
-      ),
-
-      // ── CS184VolumetricFire (ray-marched, embers, 3-zone gradient) ──────
-      'CS184 Fire': folder(
-        {
-          'CF Position': folder(
-            {
-              cfPosX: { label: 'X', value: -3, min: -20, max: 20, step: 0.1 },
-              cfPosY: { label: 'Y', value: 0, min: -5, max: 15, step: 0.1 },
-              cfPosZ: { label: 'Z', value: 0, min: -10, max: 10, step: 0.1 },
-            },
-            { collapsed: true }
-          ),
-          cfWidth: { label: 'Width', value: 0.5, min: 0.1, max: 5, step: 0.05 },
-          cfHeight: {
-            label: 'Height',
-            value: 1.5,
-            min: 0.2,
-            max: 10,
-            step: 0.1,
-          },
-          cfDepth: { label: 'Depth', value: 0.5, min: 0.1, max: 5, step: 0.05 },
-          cfBendX: {
-            label: 'Bend X',
-            value: 0,
-            min: -2,
-            max: 2,
-            step: 0.01,
-          },
-          cfBendZ: {
-            label: 'Bend Z',
-            value: 0,
-            min: -2,
-            max: 2,
-            step: 0.01,
-          },
-          cfAnimated: { label: 'Animated', value: true },
-          cfAnimSpeed: {
-            label: 'Anim Speed',
-            value: 0.5,
-            min: 0,
-            max: 3,
-            step: 0.05,
-          },
-          'CF Turbulence': folder(
-            {
-              cfMagnitude: {
-                label: 'Magnitude',
-                value: 1.3,
-                min: 0.1,
-                max: 5,
-                step: 0.1,
-              },
-              cfLacunarity: {
-                label: 'Lacunarity',
-                value: 2.0,
-                min: 1,
-                max: 5,
-                step: 0.1,
-              },
-              cfGain: {
-                label: 'Gain',
-                value: 0.5,
-                min: 0.01,
-                max: 1,
-                step: 0.01,
-              },
-              cfSpeed: {
-                label: 'Speed',
-                value: 0.8,
-                min: 0,
-                max: 3,
-                step: 0.05,
-              },
-              cfDensity: {
-                label: 'Density',
-                value: 1.2,
-                min: 0,
-                max: 5,
-                step: 0.1,
-              },
-            },
-            { collapsed: true }
-          ),
-          'CF Appearance': folder(
-            {
-              cfBrightness: {
-                label: 'Brightness',
-                value: 1.8,
-                min: 0,
-                max: 5,
-                step: 0.1,
-              },
-              cfSaturation: {
-                label: 'Saturation',
-                value: 1.0,
-                min: 0,
-                max: 3,
-                step: 0.1,
-              },
-              cfTintColor: { label: 'Tint', value: '#ffffff' },
-              cfCoreColor: { label: 'Core', value: '#ffffcc' },
-              cfBorderColor: { label: 'Border', value: '#ff6600' },
-              cfSmokeColor: { label: 'Smoke', value: '#330000' },
-            },
-            { collapsed: true }
-          ),
-          'CF Embers': folder(
-            {
-              cfEmberDensity: {
-                label: 'Density',
-                value: 0.15,
-                min: 0,
-                max: 1,
-                step: 0.01,
-              },
-              cfEmberSize: {
-                label: 'Size',
-                value: 0.25,
-                min: 0.05,
-                max: 1,
-                step: 0.01,
-              },
-              cfEmberColor: { label: 'Color', value: '#ff4400' },
-            },
-            { collapsed: true }
-          ),
-          'CF Quality': folder(
-            {
-              cfSteps: {
-                label: 'Steps',
-                value: 64,
-                min: 8,
-                max: 128,
-                step: 8,
-              },
-              cfStepSize: {
-                label: 'Step Size',
-                value: 1.0,
-                min: 0.1,
-                max: 3,
-                step: 0.1,
-              },
-            },
-            { collapsed: true }
-          ),
-        },
-        { collapsed: true }
-      ),
-
-      // ── FireballVolume (ray-marched spherical explosion) ─────────────────
-      'Fireball Volume': folder(
-        {
-          'FV Position': folder(
-            {
-              fvPosX: { label: 'X', value: 7, min: -20, max: 20, step: 0.1 },
-              fvPosY: { label: 'Y', value: 1, min: -5, max: 15, step: 0.1 },
-              fvPosZ: { label: 'Z', value: 0, min: -10, max: 10, step: 0.1 },
-            },
-            { collapsed: true }
-          ),
-          fvRadius: {
-            label: 'Radius',
-            value: 0.8,
-            min: 0.05,
-            max: 5,
-            step: 0.05,
-          },
-          fvRotSpeed: {
-            label: 'Rotation Speed',
-            value: 0.1,
-            min: 0,
-            max: 2,
-            step: 0.01,
-          },
-          fvNoiseScale: {
-            label: 'Noise Scale',
-            value: 0.5,
-            min: 0.1,
-            max: 2,
-            step: 0.05,
-          },
-          'FV Core': folder(
-            {
-              fvCoreColor: { label: 'Color', value: '#ccffff' },
-              fvCoreIntensity: {
-                label: 'Intensity',
-                value: 7.0,
-                min: 0,
-                max: 20,
-                step: 0.5,
-              },
-            },
-            { collapsed: true }
-          ),
-          'FV Edge': folder(
-            {
-              fvEdgeColor: { label: 'Color', value: '#7a877f' },
-              fvEdgeIntensity: {
-                label: 'Intensity',
-                value: 1.5,
-                min: 0,
-                max: 10,
-                step: 0.1,
-              },
-            },
-            { collapsed: true }
-          ),
-          fvDensity: {
-            label: 'Density',
-            value: 1.0,
-            min: 0,
-            max: 5,
-            step: 0.1,
-          },
-          fvSteps: { label: 'Steps', value: 64, min: 8, max: 128, step: 8 },
-        },
-        { collapsed: true }
-      ),
-
-      // ── Attractors ────────────────────────────────────────────────────────
       Attractors: folder(
         {
           showAttractors: { label: 'Show Helpers', value: true },
@@ -772,8 +442,9 @@ export default function useFireTestControls(
             max: 20,
             step: 0.1,
           },
-          addAttractor: button(() => {
+          'Add Attractor': button(() => {
             if (attractorsRef.current.length >= MAX_ATTRACTORS) return;
+
             attractorsRef.current.push({
               position: [
                 (Math.random() - 0.5) * 6,
@@ -783,321 +454,1252 @@ export default function useFireTestControls(
               direction: [0, 1, 0],
               rotation: [0, 0, 0],
             });
-            setAttractorVersion((c) => c + 1);
+            setAttractorVersion((count) => count + 1);
           }),
-          removeAttractor: button(() => {
+          'Remove Attractor': button(() => {
             if (attractorsRef.current.length <= 0) return;
             attractorsRef.current.pop();
-            setAttractorVersion((c) => c + 1);
+            setAttractorVersion((count) => count + 1);
           }),
-          removeAll: button(() => {
+          'Remove All Attractors': button(() => {
             // eslint-disable-next-line no-param-reassign
             attractorsRef.current.length = 0;
-            setAttractorVersion((c) => c + 1);
+            setAttractorVersion((count) => count + 1);
           }),
         },
         { collapsed: true }
       ),
-
-      // ── Global actions ────────────────────────────────────────────────────
-      Actions: folder(
-        {
-          addSpline: button(
-            () => {
-              const randPt = () => ({
-                position: new THREE.Vector3(
-                  (Math.random() - 0.5) * 4,
-                  Math.random() * 4,
-                  (Math.random() - 0.5) * 4
-                ),
-                rotation: new THREE.Euler(),
-                scale: new THREE.Vector3(1, 1, 1),
-              });
-              setSplines((prev) => [...prev, [randPt(), randPt(), randPt()]]);
-              setSplineConfigs((prev) => [
-                ...prev,
-                { ...DEFAULT_SPLINE_CONFIG, name: `Spline ${prev.length + 1}` },
-              ]);
-            },
-            { label: 'Add Spline' }
-          ),
-        },
-        { collapsed: true }
-      ),
-
-      // ── Per-spline folders ────────────────────────────────────────────────
-      ...splines.reduce((acc, _, index) => {
-        const cfg = splineConfigs[index] ?? DEFAULT_SPLINE_CONFIG;
-        acc[`Spline ${index + 1}`] = folder(
-          buildSplineGroupControls(index, cfg, {
-            sceneLabel: SCENE_LABEL,
-            setSplineConfigs,
-            setSplines,
-            allowedTypes: 'fire',
-          }),
-          { collapsed: true }
-        );
-        return acc;
-      }, {}),
     }),
-    [splines.length]
+    []
   );
 
-  // Track selected preset name
+  useControls(
+    SCENE_LABEL,
+    () => {
+      const typedSplineEntries = splines.reduce((acc, _points, index) => {
+        const cfg = splineConfigs[index] ?? DEFAULT_SPLINE_CONFIG;
+        const fireType = cfg.fireType ?? 'Classic';
+        if (!acc[fireType]) acc[fireType] = [];
+        acc[fireType].push({ index, cfg });
+        return acc;
+      }, {});
+
+      const addTypedSpline = (fireType) => {
+        const nextCount =
+          (typedSplineEntries[fireType]?.length ?? 0) + 1;
+        const typeLabel = FIRE_SPLINE_TYPE_LABELS[fireType];
+
+        setSplines((prev) => [...prev, [randPt(), randPt(), randPt()]]);
+        setSplineConfigs((prev) => [
+          ...prev,
+          makeTypedFireSplineConfig(fireType, `${typeLabel} ${nextCount}`),
+        ]);
+        setFireSchemaVersion((count) => count + 1);
+      };
+
+      const removeAllTypedSplines = (fireType) => {
+        setSplines((prev) =>
+          prev.filter(
+            (_points, index) =>
+              (splineConfigs[index]?.fireType ?? 'Classic') !== fireType
+          )
+        );
+        setSplineConfigs((prev) =>
+          prev.filter(
+            (config) => (config?.fireType ?? 'Classic') !== fireType
+          )
+        );
+        setFireSchemaVersion((count) => count + 1);
+      };
+
+      const fireSplineTypeSections = FIRE_SPLINE_TYPE_ORDER.reduce(
+        (acc, fireType) => {
+          const typeLabel = FIRE_SPLINE_TYPE_LABELS[fireType];
+          const typeFolderPath = `${FIRE_FOLDER_PATH}.${typeLabel}`;
+          const entries = typedSplineEntries[fireType] ?? [];
+
+          acc[typeLabel] = folder(
+            {
+              [`Add ${typeLabel}`]: button(() => addTypedSpline(fireType)),
+              [`Remove All ${typeLabel}`]: button(() =>
+                removeAllTypedSplines(fireType)
+              ),
+              ...entries.reduce((typeAcc, entry, typeIndex) => {
+                const folderLabel = `${typeLabel} ${typeIndex + 1}`;
+                typeAcc[folderLabel] = folder(
+                  buildSplineGroupControls(entry.index, entry.cfg, {
+                    sceneLabel: typeFolderPath,
+                    folderLabel,
+                    setSplineConfigs,
+                    setSplines,
+                    allowedTypes: 'fire',
+                  }),
+                  { collapsed: true }
+                );
+                return typeAcc;
+              }, {}),
+            },
+            { collapsed: fireType !== 'Classic' }
+          );
+
+          return acc;
+        },
+        {}
+      );
+
+      const fireballSection = {
+        'Add Fireball': button(() =>
+          setFireballInstances((prev) => [
+            ...prev,
+            makeFireballInst(offsetPosition(DEFAULT_FIREBALL_POSITION)),
+          ])
+        ),
+        'Remove All Fireballs': button(() => setFireballInstances([])),
+        ...fireballInstances.reduce((acc, instance, index) => {
+          const { id } = instance;
+          const onCfg = (key) => (value) =>
+            setFireballInstances((prev) =>
+              prev.map((item) =>
+                item.id === id
+                  ? { ...item, config: { ...item.config, [key]: value } }
+                  : item
+              )
+            );
+          const onInst = (key) => (value) =>
+            setFireballInstances((prev) =>
+              prev.map((item) =>
+                item.id === id ? { ...item, [key]: value } : item
+              )
+            );
+
+          acc[`Fireball ${index + 1}`] = folder(
+            {
+              [`fb_pos_${id}`]: {
+                label: 'Position',
+                value: instance.pos,
+                step: 0.1,
+                onChange: onInst('pos'),
+              },
+              [`fb_rot_${id}`]: {
+                label: 'Rotation',
+                value: instance.rot,
+                step: 0.05,
+                onChange: onInst('rot'),
+              },
+              [`fb_scale_${id}`]: {
+                label: 'Scale',
+                value: instance.scale,
+                min: 0.01,
+                max: 10,
+                step: 0.1,
+                onChange: onInst('scale'),
+              },
+              'FB Appearance': folder(
+                {
+                  [`fb_radius_${id}`]: {
+                    label: 'Radius',
+                    value: instance.config.radius,
+                    min: 0.05,
+                    max: 5,
+                    step: 0.05,
+                    onChange: onCfg('radius'),
+                  },
+                  [`fb_detail_${id}`]: {
+                    label: 'Detail',
+                    value: instance.config.detail,
+                    min: 1,
+                    max: 7,
+                    step: 1,
+                    onChange: onCfg('detail'),
+                  },
+                  [`fb_speed_${id}`]: {
+                    label: 'Speed',
+                    value: instance.config.speed,
+                    min: 0,
+                    max: 5,
+                    step: 0.05,
+                    onChange: onCfg('speed'),
+                  },
+                  [`fb_weight_${id}`]: {
+                    label: 'Weight',
+                    value: instance.config.weight,
+                    min: 0,
+                    max: 3,
+                    step: 0.05,
+                    onChange: onCfg('weight'),
+                  },
+                  [`fb_noiseFreq_${id}`]: {
+                    label: 'Noise Freq',
+                    value: instance.config.noiseFreq,
+                    min: 0.1,
+                    max: 10,
+                    step: 0.1,
+                    onChange: onCfg('noiseFreq'),
+                  },
+                  [`fb_noiseAmp_${id}`]: {
+                    label: 'Noise Amp',
+                    value: instance.config.noiseAmp,
+                    min: 0,
+                    max: 1,
+                    step: 0.01,
+                    onChange: onCfg('noiseAmp'),
+                  },
+                  [`fb_animated_${id}`]: {
+                    label: 'Animated',
+                    value: instance.config.animated,
+                    onChange: onCfg('animated'),
+                  },
+                },
+                { collapsed: true }
+              ),
+              [`fb_delete_${id}`]: button(
+                () =>
+                  setFireballInstances((prev) =>
+                    prev.filter((item) => item.id !== id)
+                  ),
+                { label: 'Delete Instance' }
+              ),
+            },
+            { collapsed: true }
+          );
+          return acc;
+        }, {}),
+      };
+
+      const fireSplineSection = {
+        'Add Fire Spline': button(() =>
+          setFireSplineInstances((prev) => [
+            ...prev,
+            makeFireSplineInst(offsetPosition(DEFAULT_FIRE_SPLINE_POSITION)),
+          ])
+        ),
+        'Remove All Fire Splines': button(() => setFireSplineInstances([])),
+        ...fireSplineInstances.reduce((acc, instance, index) => {
+          const { id } = instance;
+          const onCfg = (key) => (value) =>
+            setFireSplineInstances((prev) =>
+              prev.map((item) =>
+                item.id === id
+                  ? { ...item, config: { ...item.config, [key]: value } }
+                  : item
+              )
+            );
+          const onInst = (key) => (value) =>
+            setFireSplineInstances((prev) =>
+              prev.map((item) =>
+                item.id === id ? { ...item, [key]: value } : item
+              )
+            );
+
+          acc[`Fire Spline ${index + 1}`] = folder(
+            {
+              [`fs_pos_${id}`]: {
+                label: 'Position',
+                value: instance.pos,
+                step: 0.1,
+                onChange: onInst('pos'),
+              },
+              [`fs_rot_${id}`]: {
+                label: 'Rotation',
+                value: instance.rot,
+                step: 0.05,
+                onChange: onInst('rot'),
+              },
+              [`fs_scale_${id}`]: {
+                label: 'Scale',
+                value: instance.scale,
+                min: 0.01,
+                max: 10,
+                step: 0.1,
+                onChange: onInst('scale'),
+              },
+              'FS Spline Editor': folder(
+                {
+                  [`fs_handles_${id}`]: {
+                    label: 'Show Handles',
+                    value: instance.showHandles,
+                    onChange: onInst('showHandles'),
+                  },
+                  [`fs_showSpline_${id}`]: {
+                    label: 'Show Curve',
+                    value: instance.showSpline,
+                    onChange: onInst('showSpline'),
+                  },
+                  [`fs_pointMode_${id}`]: {
+                    label: 'Transform',
+                    value: instance.pointMode,
+                    options: ['translate', 'scale'],
+                    onChange: onInst('pointMode'),
+                  },
+                },
+                { collapsed: true }
+              ),
+              'FS Appearance': folder(
+                {
+                  [`fs_baseRadius_${id}`]: {
+                    label: 'Base Radius',
+                    value: instance.config.baseRadius,
+                    min: 0.05,
+                    max: 5,
+                    step: 0.05,
+                    onChange: onCfg('baseRadius'),
+                  },
+                  [`fs_tubular_${id}`]: {
+                    label: 'Tubular Segs',
+                    value: instance.config.tubularSegments,
+                    min: 8,
+                    max: 128,
+                    step: 1,
+                    onChange: onCfg('tubularSegments'),
+                  },
+                  [`fs_radial_${id}`]: {
+                    label: 'Radial Segs',
+                    value: instance.config.radialSegments,
+                    min: 8,
+                    max: 64,
+                    step: 1,
+                    onChange: onCfg('radialSegments'),
+                  },
+                  [`fs_cap_${id}`]: {
+                    label: 'Cap Segs',
+                    value: instance.config.capSegments,
+                    min: 2,
+                    max: 16,
+                    step: 1,
+                    onChange: onCfg('capSegments'),
+                  },
+                  [`fs_speed_${id}`]: {
+                    label: 'Speed',
+                    value: instance.config.speed,
+                    min: 0,
+                    max: 5,
+                    step: 0.05,
+                    onChange: onCfg('speed'),
+                  },
+                  [`fs_weight_${id}`]: {
+                    label: 'Weight',
+                    value: instance.config.weight,
+                    min: 0,
+                    max: 3,
+                    step: 0.05,
+                    onChange: onCfg('weight'),
+                  },
+                  [`fs_noiseFreq_${id}`]: {
+                    label: 'Noise Freq',
+                    value: instance.config.noiseFreq,
+                    min: 0.1,
+                    max: 10,
+                    step: 0.1,
+                    onChange: onCfg('noiseFreq'),
+                  },
+                  [`fs_noiseAmp_${id}`]: {
+                    label: 'Noise Amp',
+                    value: instance.config.noiseAmp,
+                    min: 0,
+                    max: 1,
+                    step: 0.01,
+                    onChange: onCfg('noiseAmp'),
+                  },
+                  [`fs_animated_${id}`]: {
+                    label: 'Animated',
+                    value: instance.config.animated,
+                    onChange: onCfg('animated'),
+                  },
+                  [`fs_light_${id}`]: {
+                    label: 'Light',
+                    value: instance.config.smokeLightColor,
+                    onChange: onCfg('smokeLightColor'),
+                  },
+                  [`fs_dark_${id}`]: {
+                    label: 'Dark',
+                    value: instance.config.smokeDarkColor,
+                    onChange: onCfg('smokeDarkColor'),
+                  },
+                },
+                { collapsed: true }
+              ),
+              [`fs_delete_${id}`]: button(
+                () =>
+                  setFireSplineInstances((prev) =>
+                    prev.filter((item) => item.id !== id)
+                  ),
+                { label: 'Delete Instance' }
+              ),
+            },
+            { collapsed: true }
+          );
+          return acc;
+        }, {}),
+      };
+
+      const flameSection = {
+        'Add Flame': button(() =>
+          setFlameInstances((prev) => [
+            ...prev,
+            makeFlameInst(offsetPosition(DEFAULT_FLAME_POSITION)),
+          ])
+        ),
+        'Remove All Flames': button(() => setFlameInstances([])),
+        ...flameInstances.reduce((acc, instance, index) => {
+          const { id } = instance;
+          const onCfg = (key) => (value) =>
+            setFlameInstances((prev) =>
+              prev.map((item) =>
+                item.id === id
+                  ? { ...item, config: { ...item.config, [key]: value } }
+                  : item
+              )
+            );
+          const onMotion = (key) => (value) =>
+            setFlameInstances((prev) =>
+              prev.map((item) =>
+                item.id === id
+                  ? {
+                      ...item,
+                      config: {
+                        ...item.config,
+                        motion: { ...item.config.motion, [key]: value },
+                      },
+                    }
+                  : item
+              )
+            );
+          const onInst = (key) => (value) =>
+            setFlameInstances((prev) =>
+              prev.map((item) =>
+                item.id === id ? { ...item, [key]: value } : item
+              )
+            );
+
+          acc[`Flame ${index + 1}`] = folder(
+            {
+              [`fl_pos_${id}`]: {
+                label: 'Position',
+                value: instance.pos,
+                step: 0.1,
+                onChange: onInst('pos'),
+              },
+              [`fl_rot_${id}`]: {
+                label: 'Rotation',
+                value: instance.rot,
+                step: 0.05,
+                onChange: onInst('rot'),
+              },
+              [`fl_scale_${id}`]: {
+                label: 'Scale',
+                value: instance.scale,
+                min: 0.01,
+                max: 10,
+                step: 0.1,
+                onChange: onInst('scale'),
+              },
+              [`fl_inverted_${id}`]: {
+                label: 'Inverted',
+                value: instance.config.inverted,
+                onChange: onCfg('inverted'),
+              },
+              'FL Motion': folder(
+                {
+                  [`fl_baseSpeed_${id}`]: {
+                    label: 'Base Speed',
+                    value: instance.config.motion.baseSpeed,
+                    min: 0,
+                    max: 5,
+                    step: 0.05,
+                    onChange: onMotion('baseSpeed'),
+                  },
+                  [`fl_minSpeed_${id}`]: {
+                    label: 'Min Speed',
+                    value: instance.config.motion.minSpeed,
+                    min: 0,
+                    max: 2,
+                    step: 0.01,
+                    onChange: onMotion('minSpeed'),
+                  },
+                  [`fl_slowFreq_${id}`]: {
+                    label: 'Slow Freq',
+                    value: instance.config.motion.slowFreq,
+                    min: 0,
+                    max: 5,
+                    step: 0.1,
+                    onChange: onMotion('slowFreq'),
+                  },
+                  [`fl_slowAmp_${id}`]: {
+                    label: 'Slow Amp',
+                    value: instance.config.motion.slowAmp,
+                    min: 0,
+                    max: 2,
+                    step: 0.05,
+                    onChange: onMotion('slowAmp'),
+                  },
+                  [`fl_fastFreq_${id}`]: {
+                    label: 'Fast Freq',
+                    value: instance.config.motion.fastFreq,
+                    min: 0,
+                    max: 10,
+                    step: 0.1,
+                    onChange: onMotion('fastFreq'),
+                  },
+                  [`fl_fastAmp_${id}`]: {
+                    label: 'Fast Amp',
+                    value: instance.config.motion.fastAmp,
+                    min: 0,
+                    max: 2,
+                    step: 0.05,
+                    onChange: onMotion('fastAmp'),
+                  },
+                  [`fl_microFreq_${id}`]: {
+                    label: 'Micro Freq',
+                    value: instance.config.motion.microFreq,
+                    min: 0,
+                    max: 20,
+                    step: 0.1,
+                    onChange: onMotion('microFreq'),
+                  },
+                  [`fl_microAmp_${id}`]: {
+                    label: 'Micro Amp',
+                    value: instance.config.motion.microAmp,
+                    min: 0,
+                    max: 1,
+                    step: 0.01,
+                    onChange: onMotion('microAmp'),
+                  },
+                  [`fl_swayX_${id}`]: {
+                    label: 'Sway X',
+                    value: instance.config.motion.swayX,
+                    min: 0,
+                    max: 0.2,
+                    step: 0.001,
+                    onChange: onMotion('swayX'),
+                  },
+                  [`fl_swayZ_${id}`]: {
+                    label: 'Sway Z',
+                    value: instance.config.motion.swayZ,
+                    min: 0,
+                    max: 0.2,
+                    step: 0.001,
+                    onChange: onMotion('swayZ'),
+                  },
+                  [`fl_pulseFreq_${id}`]: {
+                    label: 'Pulse Freq',
+                    value: instance.config.motion.pulseFreq,
+                    min: 0,
+                    max: 10,
+                    step: 0.1,
+                    onChange: onMotion('pulseFreq'),
+                  },
+                  [`fl_pulseAmp_${id}`]: {
+                    label: 'Pulse Amp',
+                    value: instance.config.motion.pulseAmp,
+                    min: 0,
+                    max: 0.5,
+                    step: 0.01,
+                    onChange: onMotion('pulseAmp'),
+                  },
+                  [`fl_scaleX_${id}`]: {
+                    label: 'Scale X',
+                    value: instance.config.motion.scaleX,
+                    min: 0.1,
+                    max: 5,
+                    step: 0.1,
+                    onChange: onMotion('scaleX'),
+                  },
+                  [`fl_scaleY_${id}`]: {
+                    label: 'Scale Y',
+                    value: instance.config.motion.scaleY,
+                    min: 0.1,
+                    max: 5,
+                    step: 0.1,
+                    onChange: onMotion('scaleY'),
+                  },
+                },
+                { collapsed: true }
+              ),
+              [`fl_delete_${id}`]: button(
+                () =>
+                  setFlameInstances((prev) =>
+                    prev.filter((item) => item.id !== id)
+                  ),
+                { label: 'Delete Instance' }
+              ),
+            },
+            { collapsed: true }
+          );
+          return acc;
+        }, {}),
+      };
+
+      const volumetricFireSection = {
+        'Add Volumetric Fire': button(() =>
+          setVolumetricFireInstances((prev) => [
+            ...prev,
+            makeVolumetricFireInst(
+              offsetPosition(DEFAULT_VOLUMETRIC_FIRE_POSITION)
+            ),
+          ])
+        ),
+        'Remove All Volumetric Fire': button(() =>
+          setVolumetricFireInstances([])
+        ),
+        ...volumetricFireInstances.reduce((acc, instance, index) => {
+          const { id } = instance;
+          const onCfg = (key) => (value) =>
+            setVolumetricFireInstances((prev) =>
+              prev.map((item) =>
+                item.id === id
+                  ? { ...item, config: { ...item.config, [key]: value } }
+                  : item
+              )
+            );
+          const onInst = (key) => (value) =>
+            setVolumetricFireInstances((prev) =>
+              prev.map((item) =>
+                item.id === id ? { ...item, [key]: value } : item
+              )
+            );
+
+          acc[`Volumetric Fire ${index + 1}`] = folder(
+            {
+              [`vf_pos_${id}`]: {
+                label: 'Position',
+                value: instance.pos,
+                step: 0.1,
+                onChange: onInst('pos'),
+              },
+              [`vf_rot_${id}`]: {
+                label: 'Rotation',
+                value: instance.rot,
+                step: 0.05,
+                onChange: onInst('rot'),
+              },
+              [`vf_scale_${id}`]: {
+                label: 'Scale',
+                value: instance.scale,
+                min: 0.01,
+                max: 10,
+                step: 0.1,
+                onChange: onInst('scale'),
+              },
+              'VF Volume': folder(
+                {
+                  [`vf_width_${id}`]: {
+                    label: 'Width',
+                    value: instance.config.width,
+                    min: 0.1,
+                    max: 5,
+                    step: 0.05,
+                    onChange: onCfg('width'),
+                  },
+                  [`vf_height_${id}`]: {
+                    label: 'Height',
+                    value: instance.config.height,
+                    min: 0.2,
+                    max: 10,
+                    step: 0.1,
+                    onChange: onCfg('height'),
+                  },
+                  [`vf_depth_${id}`]: {
+                    label: 'Depth',
+                    value: instance.config.depth,
+                    min: 0.1,
+                    max: 5,
+                    step: 0.05,
+                    onChange: onCfg('depth'),
+                  },
+                  [`vf_sliceSpacing_${id}`]: {
+                    label: 'Slice Spacing',
+                    value: instance.config.sliceSpacing,
+                    min: 0.01,
+                    max: 0.2,
+                    step: 0.005,
+                    onChange: onCfg('sliceSpacing'),
+                  },
+                  [`vf_bendX_${id}`]: {
+                    label: 'Bend X',
+                    value: instance.config.bendX,
+                    min: -2,
+                    max: 2,
+                    step: 0.01,
+                    onChange: onCfg('bendX'),
+                  },
+                  [`vf_bendZ_${id}`]: {
+                    label: 'Bend Z',
+                    value: instance.config.bendZ,
+                    min: -2,
+                    max: 2,
+                    step: 0.01,
+                    onChange: onCfg('bendZ'),
+                  },
+                  [`vf_animated_${id}`]: {
+                    label: 'Animated',
+                    value: instance.config.animated,
+                    onChange: onCfg('animated'),
+                  },
+                  [`vf_animSpeed_${id}`]: {
+                    label: 'Anim Speed',
+                    value: instance.config.animSpeed,
+                    min: 0,
+                    max: 3,
+                    step: 0.05,
+                    onChange: onCfg('animSpeed'),
+                  },
+                  [`vf_showSpline_${id}`]: {
+                    label: 'Show Spline',
+                    value: instance.config.showSpline,
+                    onChange: onCfg('showSpline'),
+                  },
+                  [`vf_showVolume_${id}`]: {
+                    label: 'Show Volume',
+                    value: instance.config.showVolume,
+                    onChange: onCfg('showVolume'),
+                  },
+                },
+                { collapsed: true }
+              ),
+              'VF Turbulence': folder(
+                {
+                  [`vf_magnitude_${id}`]: {
+                    label: 'Magnitude',
+                    value: instance.config.magnitude,
+                    min: 0.1,
+                    max: 5,
+                    step: 0.1,
+                    onChange: onCfg('magnitude'),
+                  },
+                  [`vf_lacunarity_${id}`]: {
+                    label: 'Lacunarity',
+                    value: instance.config.lacunarity,
+                    min: 1,
+                    max: 5,
+                    step: 0.1,
+                    onChange: onCfg('lacunarity'),
+                  },
+                  [`vf_gain_${id}`]: {
+                    label: 'Gain',
+                    value: instance.config.gain,
+                    min: 0.01,
+                    max: 1,
+                    step: 0.01,
+                    onChange: onCfg('gain'),
+                  },
+                },
+                { collapsed: true }
+              ),
+              'VF Colors': folder(
+                {
+                  [`vf_tint_${id}`]: {
+                    label: 'Tint',
+                    value: instance.config.tintColor,
+                    onChange: onCfg('tintColor'),
+                  },
+                  [`vf_saturation_${id}`]: {
+                    label: 'Saturation',
+                    value: instance.config.saturation,
+                    min: 0,
+                    max: 3,
+                    step: 0.1,
+                    onChange: onCfg('saturation'),
+                  },
+                  [`vf_brightness_${id}`]: {
+                    label: 'Brightness',
+                    value: instance.config.brightness,
+                    min: 0,
+                    max: 5,
+                    step: 0.1,
+                    onChange: onCfg('brightness'),
+                  },
+                },
+                { collapsed: true }
+              ),
+              [`vf_delete_${id}`]: button(
+                () =>
+                  setVolumetricFireInstances((prev) =>
+                    prev.filter((item) => item.id !== id)
+                  ),
+                { label: 'Delete Instance' }
+              ),
+            },
+            { collapsed: true }
+          );
+          return acc;
+        }, {}),
+      };
+
+      const cs184FireSection = {
+        'Add CS184 Fire': button(() =>
+          setCs184FireInstances((prev) => [
+            ...prev,
+            makeCs184FireInst(offsetPosition(DEFAULT_CS184_FIRE_POSITION)),
+          ])
+        ),
+        'Remove All CS184 Fire': button(() => setCs184FireInstances([])),
+        ...cs184FireInstances.reduce((acc, instance, index) => {
+          const { id } = instance;
+          const onCfg = (key) => (value) =>
+            setCs184FireInstances((prev) =>
+              prev.map((item) =>
+                item.id === id
+                  ? { ...item, config: { ...item.config, [key]: value } }
+                  : item
+              )
+            );
+          const onInst = (key) => (value) =>
+            setCs184FireInstances((prev) =>
+              prev.map((item) =>
+                item.id === id ? { ...item, [key]: value } : item
+              )
+            );
+
+          acc[`CS184 Fire ${index + 1}`] = folder(
+            {
+              [`cf_pos_${id}`]: {
+                label: 'Position',
+                value: instance.pos,
+                step: 0.1,
+                onChange: onInst('pos'),
+              },
+              [`cf_rot_${id}`]: {
+                label: 'Rotation',
+                value: instance.rot,
+                step: 0.05,
+                onChange: onInst('rot'),
+              },
+              [`cf_scale_${id}`]: {
+                label: 'Scale',
+                value: instance.scale,
+                min: 0.01,
+                max: 10,
+                step: 0.1,
+                onChange: onInst('scale'),
+              },
+              'CF Volume': folder(
+                {
+                  [`cf_width_${id}`]: {
+                    label: 'Width',
+                    value: instance.config.width,
+                    min: 0.1,
+                    max: 5,
+                    step: 0.05,
+                    onChange: onCfg('width'),
+                  },
+                  [`cf_height_${id}`]: {
+                    label: 'Height',
+                    value: instance.config.height,
+                    min: 0.2,
+                    max: 10,
+                    step: 0.1,
+                    onChange: onCfg('height'),
+                  },
+                  [`cf_depth_${id}`]: {
+                    label: 'Depth',
+                    value: instance.config.depth,
+                    min: 0.1,
+                    max: 5,
+                    step: 0.05,
+                    onChange: onCfg('depth'),
+                  },
+                  [`cf_bendX_${id}`]: {
+                    label: 'Bend X',
+                    value: instance.config.bendX,
+                    min: -2,
+                    max: 2,
+                    step: 0.01,
+                    onChange: onCfg('bendX'),
+                  },
+                  [`cf_bendZ_${id}`]: {
+                    label: 'Bend Z',
+                    value: instance.config.bendZ,
+                    min: -2,
+                    max: 2,
+                    step: 0.01,
+                    onChange: onCfg('bendZ'),
+                  },
+                  [`cf_animated_${id}`]: {
+                    label: 'Animated',
+                    value: instance.config.animated,
+                    onChange: onCfg('animated'),
+                  },
+                  [`cf_animSpeed_${id}`]: {
+                    label: 'Anim Speed',
+                    value: instance.config.animSpeed,
+                    min: 0,
+                    max: 3,
+                    step: 0.05,
+                    onChange: onCfg('animSpeed'),
+                  },
+                },
+                { collapsed: true }
+              ),
+              'CF Turbulence': folder(
+                {
+                  [`cf_magnitude_${id}`]: {
+                    label: 'Magnitude',
+                    value: instance.config.magnitude,
+                    min: 0.1,
+                    max: 5,
+                    step: 0.1,
+                    onChange: onCfg('magnitude'),
+                  },
+                  [`cf_lacunarity_${id}`]: {
+                    label: 'Lacunarity',
+                    value: instance.config.lacunarity,
+                    min: 1,
+                    max: 5,
+                    step: 0.1,
+                    onChange: onCfg('lacunarity'),
+                  },
+                  [`cf_gain_${id}`]: {
+                    label: 'Gain',
+                    value: instance.config.gain,
+                    min: 0.01,
+                    max: 1,
+                    step: 0.01,
+                    onChange: onCfg('gain'),
+                  },
+                  [`cf_speed_${id}`]: {
+                    label: 'Speed',
+                    value: instance.config.speed,
+                    min: 0,
+                    max: 3,
+                    step: 0.05,
+                    onChange: onCfg('speed'),
+                  },
+                  [`cf_density_${id}`]: {
+                    label: 'Density',
+                    value: instance.config.density,
+                    min: 0,
+                    max: 5,
+                    step: 0.1,
+                    onChange: onCfg('density'),
+                  },
+                },
+                { collapsed: true }
+              ),
+              'CF Appearance': folder(
+                {
+                  [`cf_brightness_${id}`]: {
+                    label: 'Brightness',
+                    value: instance.config.brightness,
+                    min: 0,
+                    max: 5,
+                    step: 0.1,
+                    onChange: onCfg('brightness'),
+                  },
+                  [`cf_saturation_${id}`]: {
+                    label: 'Saturation',
+                    value: instance.config.saturation,
+                    min: 0,
+                    max: 3,
+                    step: 0.1,
+                    onChange: onCfg('saturation'),
+                  },
+                  [`cf_tint_${id}`]: {
+                    label: 'Tint',
+                    value: instance.config.tintColor,
+                    onChange: onCfg('tintColor'),
+                  },
+                  [`cf_core_${id}`]: {
+                    label: 'Core',
+                    value: instance.config.coreColor,
+                    onChange: onCfg('coreColor'),
+                  },
+                  [`cf_border_${id}`]: {
+                    label: 'Border',
+                    value: instance.config.borderColor,
+                    onChange: onCfg('borderColor'),
+                  },
+                  [`cf_smoke_${id}`]: {
+                    label: 'Smoke',
+                    value: instance.config.smokeColor,
+                    onChange: onCfg('smokeColor'),
+                  },
+                },
+                { collapsed: true }
+              ),
+              'CF Embers': folder(
+                {
+                  [`cf_emberDensity_${id}`]: {
+                    label: 'Density',
+                    value: instance.config.emberDensity,
+                    min: 0,
+                    max: 1,
+                    step: 0.01,
+                    onChange: onCfg('emberDensity'),
+                  },
+                  [`cf_emberSize_${id}`]: {
+                    label: 'Size',
+                    value: instance.config.emberSize,
+                    min: 0.05,
+                    max: 1,
+                    step: 0.01,
+                    onChange: onCfg('emberSize'),
+                  },
+                  [`cf_emberColor_${id}`]: {
+                    label: 'Color',
+                    value: instance.config.emberColor,
+                    onChange: onCfg('emberColor'),
+                  },
+                },
+                { collapsed: true }
+              ),
+              'CF Quality': folder(
+                {
+                  [`cf_steps_${id}`]: {
+                    label: 'Steps',
+                    value: instance.config.steps,
+                    min: 8,
+                    max: 128,
+                    step: 8,
+                    onChange: onCfg('steps'),
+                  },
+                  [`cf_stepSize_${id}`]: {
+                    label: 'Step Size',
+                    value: instance.config.stepSize,
+                    min: 0.1,
+                    max: 3,
+                    step: 0.1,
+                    onChange: onCfg('stepSize'),
+                  },
+                },
+                { collapsed: true }
+              ),
+              [`cf_delete_${id}`]: button(
+                () =>
+                  setCs184FireInstances((prev) =>
+                    prev.filter((item) => item.id !== id)
+                  ),
+                { label: 'Delete Instance' }
+              ),
+            },
+            { collapsed: true }
+          );
+          return acc;
+        }, {}),
+      };
+
+      const fireballVolumeSection = {
+        'Add Fireball Volume': button(() =>
+          setFireballVolumeInstances((prev) => [
+            ...prev,
+            makeFireballVolumeInst(
+              offsetPosition(DEFAULT_FIREBALL_VOLUME_POSITION)
+            ),
+          ])
+        ),
+        'Remove All Fireball Volumes': button(() =>
+          setFireballVolumeInstances([])
+        ),
+        ...fireballVolumeInstances.reduce((acc, instance, index) => {
+          const { id } = instance;
+          const onCfg = (key) => (value) =>
+            setFireballVolumeInstances((prev) =>
+              prev.map((item) =>
+                item.id === id
+                  ? { ...item, config: { ...item.config, [key]: value } }
+                  : item
+              )
+            );
+          const onInst = (key) => (value) =>
+            setFireballVolumeInstances((prev) =>
+              prev.map((item) =>
+                item.id === id ? { ...item, [key]: value } : item
+              )
+            );
+
+          acc[`Fireball Volume ${index + 1}`] = folder(
+            {
+              [`fv_pos_${id}`]: {
+                label: 'Position',
+                value: instance.pos,
+                step: 0.1,
+                onChange: onInst('pos'),
+              },
+              [`fv_rot_${id}`]: {
+                label: 'Rotation',
+                value: instance.rot,
+                step: 0.05,
+                onChange: onInst('rot'),
+              },
+              [`fv_scale_${id}`]: {
+                label: 'Scale',
+                value: instance.scale,
+                min: 0.01,
+                max: 10,
+                step: 0.1,
+                onChange: onInst('scale'),
+              },
+              'FV Appearance': folder(
+                {
+                  [`fv_radius_${id}`]: {
+                    label: 'Radius',
+                    value: instance.config.radius,
+                    min: 0.05,
+                    max: 5,
+                    step: 0.05,
+                    onChange: onCfg('radius'),
+                  },
+                  [`fv_rotSpeed_${id}`]: {
+                    label: 'Rotation Speed',
+                    value: instance.config.rotSpeed,
+                    min: 0,
+                    max: 2,
+                    step: 0.01,
+                    onChange: onCfg('rotSpeed'),
+                  },
+                  [`fv_noiseScale_${id}`]: {
+                    label: 'Noise Scale',
+                    value: instance.config.noiseScale,
+                    min: 0.1,
+                    max: 2,
+                    step: 0.05,
+                    onChange: onCfg('noiseScale'),
+                  },
+                  [`fv_density_${id}`]: {
+                    label: 'Density',
+                    value: instance.config.density,
+                    min: 0,
+                    max: 5,
+                    step: 0.1,
+                    onChange: onCfg('density'),
+                  },
+                  [`fv_steps_${id}`]: {
+                    label: 'Steps',
+                    value: instance.config.steps,
+                    min: 8,
+                    max: 128,
+                    step: 8,
+                    onChange: onCfg('steps'),
+                  },
+                },
+                { collapsed: true }
+              ),
+              'FV Core': folder(
+                {
+                  [`fv_coreColor_${id}`]: {
+                    label: 'Color',
+                    value: instance.config.coreColor,
+                    onChange: onCfg('coreColor'),
+                  },
+                  [`fv_coreIntensity_${id}`]: {
+                    label: 'Intensity',
+                    value: instance.config.coreIntensity,
+                    min: 0,
+                    max: 20,
+                    step: 0.5,
+                    onChange: onCfg('coreIntensity'),
+                  },
+                },
+                { collapsed: true }
+              ),
+              'FV Edge': folder(
+                {
+                  [`fv_edgeColor_${id}`]: {
+                    label: 'Color',
+                    value: instance.config.edgeColor,
+                    onChange: onCfg('edgeColor'),
+                  },
+                  [`fv_edgeIntensity_${id}`]: {
+                    label: 'Intensity',
+                    value: instance.config.edgeIntensity,
+                    min: 0,
+                    max: 10,
+                    step: 0.1,
+                    onChange: onCfg('edgeIntensity'),
+                  },
+                },
+                { collapsed: true }
+              ),
+              [`fv_delete_${id}`]: button(
+                () =>
+                  setFireballVolumeInstances((prev) =>
+                    prev.filter((item) => item.id !== id)
+                  ),
+                { label: 'Delete Instance' }
+              ),
+            },
+            { collapsed: true }
+          );
+          return acc;
+        }, {}),
+      };
+
+      return {
+        Fire: folder(
+          {
+            ...fireSplineTypeSections,
+            Fireball: folder(fireballSection, { collapsed: true }),
+            'Fire Spline': folder(fireSplineSection, { collapsed: true }),
+            Flame: folder(flameSection, { collapsed: true }),
+            'Volumetric Fire': folder(volumetricFireSection, {
+              collapsed: true,
+            }),
+            'CS184 Fire': folder(cs184FireSection, { collapsed: true }),
+            'Fireball Volume': folder(fireballVolumeSection, {
+              collapsed: true,
+            }),
+          },
+          { collapsed: false }
+        ),
+      };
+    },
+    [
+      preset,
+      fireSchemaVersion,
+      splines.length,
+      fireTypeSignature,
+      fireballInstances.length,
+      fireSplineInstances.length,
+      flameInstances.length,
+      volumetricFireInstances.length,
+      cs184FireInstances.length,
+      fireballVolumeInstances.length,
+    ]
+  );
+
   useEffect(() => {
     selectedPresetRef.current = preset;
   }, [preset]);
 
-  // Apply preset when selection changes
   const isInitialMount = useRef(true);
   useEffect(() => {
     if (isInitialMount.current) {
       isInitialMount.current = false;
       return;
     }
-    const p = FIRE_PRESETS[preset];
-    if (p) {
-      const { splines: nextSplines, splineConfigs: nextConfigs } =
-        parsePreset(p);
-      setSplines(nextSplines);
-      setSplineConfigs(nextConfigs);
-    }
-  }, [preset]);
+    applyPresetState(preset);
+  }, [applyPresetState, preset]);
 
-  // Keep configs in sync with spline count
   useEffect(() => {
     setSplineConfigs((prev) => {
       if (prev.length === splines.length) return prev;
-      return splines.map((_, i) => prev[i] ?? { ...DEFAULT_SPLINE_CONFIG });
+      return splines.map(
+        (_, index) =>
+          prev[index] ?? {
+            ...DEFAULT_SPLINE_CONFIG,
+            type: 'Fire',
+            name: `Spline ${index + 1}`,
+          }
+      );
     });
   }, [splines.length]);
 
-  return useMemo(
-    () => ({
-      bgColor,
-      lineColor,
-      showSplinePoints,
-      showSplineLine,
-      pointMode,
-      attractorStrength,
-      attractorRadius,
-      showAttractors,
-      attractorMode,
-      attractorVersion,
-      forceAttractorUpdate,
-      splineConfigs,
-      fireball: {
-        position: [fbPosX, fbPosY, fbPosZ],
-        radius: fbRadius,
-        detail: fbDetail,
-        speed: fbSpeed,
-        weight: fbWeight,
-        noiseFreq: fbNoiseFreq,
-        noiseAmp: fbNoiseAmp,
-        animated: fbAnimated,
-      },
-      fireSpline: {
-        baseRadius: fsBaseRadius,
-        tubularSegments: fsTubular,
-        radialSegments: fsRadial,
-        capSegments: fsCap,
-        speed: fsSpeed,
-        weight: fsWeight,
-        noiseFreq: fsNoiseFreq,
-        noiseAmp: fsNoiseAmp,
-        smokeLightColor: fsSmokeLight,
-        smokeDarkColor: fsSmokeDark,
-        animated: fsAnimated,
-      },
-      flame: {
-        position: [flPosX, flPosY, flPosZ],
-        groupScale: flGroupScale,
-        inverted: flInverted,
-        motion: {
-          baseSpeed: flBaseSpeed,
-          minSpeed: flMinSpeed,
-          slowFreq: flSlowFreq,
-          slowAmp: flSlowAmp,
-          fastFreq: flFastFreq,
-          fastAmp: flFastAmp,
-          microFreq: flMicroFreq,
-          microAmp: flMicroAmp,
-          swayX: flSwayX,
-          swayZ: flSwayZ,
-          pulseFreq: flPulseFreq,
-          pulseAmp: flPulseAmp,
-          scaleX: flScaleX,
-          scaleY: flScaleY,
-        },
-      },
-      volumetricFire: {
-        position: [vfPosX, vfPosY, vfPosZ],
-        width: vfWidth,
-        height: vfHeight,
-        depth: vfDepth,
-        sliceSpacing: vfSliceSpacing,
-        bendX: vfBendX,
-        bendZ: vfBendZ,
-        animated: vfAnimated,
-        animSpeed: vfAnimSpeed,
-        showSpline: vfShowSpline,
-        showVolume: vfShowVolume,
-        magnitude: vfMagnitude,
-        lacunarity: vfLacunarity,
-        gain: vfGain,
-        tintColor: vfTintColor,
-        saturation: vfSaturation,
-        brightness: vfBrightness,
-      },
-      cs184Fire: {
-        position: [cfPosX, cfPosY, cfPosZ],
-        width: cfWidth,
-        height: cfHeight,
-        depth: cfDepth,
-        bendX: cfBendX,
-        bendZ: cfBendZ,
-        animated: cfAnimated,
-        animSpeed: cfAnimSpeed,
-        magnitude: cfMagnitude,
-        lacunarity: cfLacunarity,
-        gain: cfGain,
-        speed: cfSpeed,
-        density: cfDensity,
-        brightness: cfBrightness,
-        saturation: cfSaturation,
-        tintColor: cfTintColor,
-        coreColor: cfCoreColor,
-        borderColor: cfBorderColor,
-        smokeColor: cfSmokeColor,
-        emberDensity: cfEmberDensity,
-        emberSize: cfEmberSize,
-        emberColor: cfEmberColor,
-        steps: cfSteps,
-        stepSize: cfStepSize,
-      },
-      fireballVolume: {
-        position: [fvPosX, fvPosY, fvPosZ],
-        radius: fvRadius,
-        rotSpeed: fvRotSpeed,
-        noiseScale: fvNoiseScale,
-        coreColor: fvCoreColor,
-        coreIntensity: fvCoreIntensity,
-        edgeColor: fvEdgeColor,
-        edgeIntensity: fvEdgeIntensity,
-        density: fvDensity,
-        steps: fvSteps,
-      },
-    }),
-    [
-      bgColor,
-      lineColor,
-      showSplinePoints,
-      showSplineLine,
-      pointMode,
-      attractorStrength,
-      attractorRadius,
-      showAttractors,
-      attractorMode,
-      attractorVersion,
-      forceAttractorUpdate,
-      splineConfigs,
-      fbPosX,
-      fbPosY,
-      fbPosZ,
-      fbRadius,
-      fbDetail,
-      fbSpeed,
-      fbWeight,
-      fbNoiseFreq,
-      fbNoiseAmp,
-      fbAnimated,
-      fsBaseRadius,
-      fsTubular,
-      fsRadial,
-      fsCap,
-      fsSpeed,
-      fsWeight,
-      fsNoiseFreq,
-      fsNoiseAmp,
-      fsSmokeLight,
-      fsSmokeDark,
-      fsAnimated,
-      flPosX,
-      flPosY,
-      flPosZ,
-      flGroupScale,
-      flInverted,
-      flBaseSpeed,
-      flMinSpeed,
-      flSlowFreq,
-      flSlowAmp,
-      flFastFreq,
-      flFastAmp,
-      flMicroFreq,
-      flMicroAmp,
-      flSwayX,
-      flSwayZ,
-      flPulseFreq,
-      flPulseAmp,
-      flScaleX,
-      flScaleY,
-      vfPosX,
-      vfPosY,
-      vfPosZ,
-      vfWidth,
-      vfHeight,
-      vfDepth,
-      vfSliceSpacing,
-      vfBendX,
-      vfBendZ,
-      vfAnimated,
-      vfAnimSpeed,
-      vfShowSpline,
-      vfShowVolume,
-      vfMagnitude,
-      vfLacunarity,
-      vfGain,
-      vfTintColor,
-      vfSaturation,
-      vfBrightness,
-      cfPosX,
-      cfPosY,
-      cfPosZ,
-      cfWidth,
-      cfHeight,
-      cfDepth,
-      cfBendX,
-      cfBendZ,
-      cfAnimated,
-      cfAnimSpeed,
-      cfMagnitude,
-      cfLacunarity,
-      cfGain,
-      cfSpeed,
-      cfDensity,
-      cfBrightness,
-      cfSaturation,
-      cfTintColor,
-      cfCoreColor,
-      cfBorderColor,
-      cfSmokeColor,
-      cfEmberDensity,
-      cfEmberSize,
-      cfEmberColor,
-      cfSteps,
-      cfStepSize,
-      fvPosX,
-      fvPosY,
-      fvPosZ,
-      fvRadius,
-      fvRotSpeed,
-      fvNoiseScale,
-      fvCoreColor,
-      fvCoreIntensity,
-      fvEdgeColor,
-      fvEdgeIntensity,
-      fvDensity,
-      fvSteps,
-    ]
-  );
+  return {
+    bgColor,
+    lineColor,
+    pointMode,
+    attractorStrength,
+    attractorRadius,
+    showAttractors,
+    attractorMode,
+    attractorVersion,
+    forceAttractorUpdate,
+    splineConfigs,
+    fireballInstances,
+    fireSplineInstances,
+    flameInstances,
+    volumetricFireInstances,
+    cs184FireInstances,
+    fireballVolumeInstances,
+    setFireSplinePoints,
+  };
 }

@@ -391,7 +391,7 @@ function SplineIcon() {
 }
 
 function SmokeTestIcon() {
-  return <GiSmokeBomb color="#93c5fd" />;
+  return <GiSmokeBomb color="#373839" />;
 }
 
 function CharacterControllerIcon() {
@@ -402,7 +402,7 @@ function HotBoxIcon() {
   return (
     <>
       <FireIconImage alt="Hot Box" />
-      <GiSmokeBomb color="#7dd3fc" />
+      <GiSmokeBomb color="#373839" />
     </>
   );
 }

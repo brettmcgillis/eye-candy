@@ -260,7 +260,7 @@ The hook merges preset defaults with override patches before passing down to Spl
 
 ### Phase 3.5 - Realignment
 
-Status: in progress. SmokeTest has been realigned; FireTest and HotBox still need the same treatment.
+Status: in progress. SmokeTest, FireTest, and HotBox have been realigned.
 
 Target control layout for each toolbox scene:
 
@@ -286,17 +286,17 @@ Default scene / preset authority:
 
 FireTest:
 
-- [ ] Reorganize FireTest into the same top-level folder structure as SmokeTest
-- [ ] Replace singleton standalone fire controls with per-type instance sections
-- [ ] Move FireTest attractor instance folders under `Attractors`
-- [ ] Make non-default FireTest presets authoritative for standalone elements and attractors
+- [x] Reorganize FireTest into the same top-level folder structure as SmokeTest
+- [x] Replace singleton standalone fire controls with per-type instance sections
+- [x] Move FireTest attractor instance folders under `Attractors`
+- [x] Make non-default FireTest presets authoritative for standalone elements and attractors
 
 HotBox:
 
-- [ ] Reorganize HotBox into the same top-level folder structure as SmokeTest
-- [ ] Split HotBox controls into clear `Smoke`, `Fire`, and `Attractors` sections with per-type instance flows
-- [ ] Move HotBox attractor instance folders under `Attractors`
-- [ ] Make non-default HotBox presets authoritative for standalone elements and attractors
+- [x] Reorganize HotBox into the same top-level folder structure as SmokeTest
+- [x] Split HotBox controls into clear `Smoke`, `Fire`, and `Attractors` sections with per-type instance flows
+- [x] Move HotBox attractor instance folders under `Attractors`
+- [x] Make non-default HotBox presets authoritative for standalone elements and attractors
 
 Cross-scene cleanup:
 

@@ -10,6 +10,7 @@ import { DEFAULT_SPLINE_CONFIG, updateSplineConfig } from '../splineDefaults';
  * @param {object} cfg   — current splineConfigs[index]
  * @param {object} opts
  *   @param {string}   opts.sceneLabel       — top-level useControls label (e.g. 'Hot Box')
+ *   @param {string}   [opts.folderLabel]    — explicit folder label/path segment for this spline instance
  *   @param {Function} opts.setSplineConfigs — state setter for splineConfigs
  *   @param {Function} opts.setSplines       — state setter for splines array
  *   @param {'smoke'|'fire'|'both'} opts.allowedTypes
@@ -22,6 +23,7 @@ import { DEFAULT_SPLINE_CONFIG, updateSplineConfig } from '../splineDefaults';
 export default function buildSplineGroupControls(index, cfg, opts) {
   const {
     sceneLabel,
+    folderLabel,
     setSplineConfigs,
     setSplines,
     allowedTypes = 'both',
@@ -29,7 +31,8 @@ export default function buildSplineGroupControls(index, cfg, opts) {
 
   // ── Leva render-path helpers ───────────────────────────────────────────────
   // Path format: 'SceneLabel.Folder Name.fieldKey'
-  const splineFolderPath = `${sceneLabel}.Spline ${index + 1}`;
+  const resolvedFolderLabel = folderLabel ?? `Spline ${index + 1}`;
+  const splineFolderPath = `${sceneLabel}.${resolvedFolderLabel}`;
   const getType = (get) => get(`${splineFolderPath}.type_${index}`);
   const getSmokeType = (get) => get(`${splineFolderPath}.smokeType_${index}`);
   const getFireType = (get) => get(`${splineFolderPath}.fireType_${index}`);

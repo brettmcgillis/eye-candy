@@ -33,7 +33,10 @@ function SceneShell() {
     useAppScenes();
   const [loaderVisible, setLoaderVisible] = useState(true);
   const [suspended, setSuspended] = useState(false);
-  const handleSuspend = useCallback((val) => setSuspended(val), []);
+  const handleSuspend = useCallback((val) => {
+    setSuspended(val);
+    if (val) setLoaderVisible(true);
+  }, []);
 
   if (redirectPath) {
     return <Navigate to={redirectPath} replace />;

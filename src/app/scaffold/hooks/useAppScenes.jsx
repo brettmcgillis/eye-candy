@@ -118,9 +118,9 @@ export default function useAppScenes() {
               replace: true,
             });
           },
-          TestLab: () => {
+          WIP: () => {
             const m = matchRef.current;
-            navigateRef.current(noSceneFor(m.channel, 'testlab').path, {
+            navigateRef.current(noSceneFor(m.channel, 'wip').path, {
               replace: true,
             });
           },
@@ -129,15 +129,15 @@ export default function useAppScenes() {
       Area2: buttonGroup({
         label: '',
         opts: {
-          Toolbox: () => {
+          TestLab: () => {
             const m = matchRef.current;
-            navigateRef.current(noSceneFor(m.channel, 'toolbox').path, {
+            navigateRef.current(noSceneFor(m.channel, 'testlab').path, {
               replace: true,
             });
           },
-          WIP: () => {
+          Toolbox: () => {
             const m = matchRef.current;
-            navigateRef.current(noSceneFor(m.channel, 'wip').path, {
+            navigateRef.current(noSceneFor(m.channel, 'toolbox').path, {
               replace: true,
             });
           },

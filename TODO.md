@@ -59,6 +59,7 @@ To Build:
 - [ParticleLab](src/components/scenes/TestLab/WebGL/ParticleLab/todo.md)
 - [PixelHater](src/components/scenes/TestLab/WebGL/PixelHater/todo.md)
 - [StrudelDoodle](src/components/scenes/TestLab/WebGL/StrudelDoodle/todo.md)
+- [TheBoneZone](src/components/scenes/TestLab/WebGL/TheBoneZone/todo.md)
 - [MobilePhysicsTest](src/components/scenes/TestLab/WebGPU/MobilePhysicsTest/todo.md)
 - [NetworkTest](src/components/scenes/TestLab/WebGPU/NetworkTest/todo.md)
 - [TheLoom](src/components/scenes/TestLab/WebGPU/TheLoom/todo.md)

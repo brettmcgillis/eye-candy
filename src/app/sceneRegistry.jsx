@@ -2,6 +2,7 @@ import React, { lazy } from 'react';
 import { BiSolidInvader } from 'react-icons/bi';
 import {
   FaBomb,
+  FaBone,
   FaBook,
   FaCloud,
   FaFlask,
@@ -95,6 +96,9 @@ const FluidTest = lazy(
 );
 const HandStuff = lazy(
   () => import('../components/scenes/TestLab/WebGL/HandStuff/HandStuff')
+);
+const TheBoneZone = lazy(
+  () => import('../components/scenes/TestLab/WebGL/TheBoneZone/TheBoneZone')
 );
 const ParticleLab = lazy(
   () => import('../components/scenes/TestLab/WebGL/ParticleLab/ParticleLab')
@@ -326,6 +330,10 @@ function FluidTestIcon() {
 
 function HandStuffIcon() {
   return <FaHandPaper color="#fbbf24" />;
+}
+
+function TheBoneZoneIcon() {
+  return <FaBone color="#e2e8f0" />;
 }
 
 function PixelHaterIcon() {
@@ -754,6 +762,15 @@ export const EYE_CANDIES = [
     route: 'handStuff',
     icon: HandStuffIcon,
     Component: HandStuff,
+  },
+  {
+    id: 'theBoneZone',
+    label: 'TheBoneZone',
+    channel: 'webgl',
+    area: 'testlab',
+    route: 'theBoneZone',
+    icon: TheBoneZoneIcon,
+    Component: TheBoneZone,
   },
   {
     id: 'pixelHater',

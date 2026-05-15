@@ -2,12 +2,16 @@ import { folder, useControls } from 'leva';
 
 import { useMemo } from 'react';
 
+import { LEGACY_WORLD_TO_SCENE } from '../splineData';
+
+const s = (value) => Number((value * LEGACY_WORLD_TO_SCENE).toFixed(3));
+
 // ─── Per-curve Leva folder definition helper ─────────────────────────────────
 function curveDef(defaults = {}) {
   const {
     visible = true,
     particleCount = 3000,
-    particleSize = 22,
+    particleSize = s(22),
     opacity = 0.036,
     flowSpeed = 0.022,
   } = defaults;
@@ -23,9 +27,9 @@ function curveDef(defaults = {}) {
     particleSize: {
       label: 'Size',
       value: particleSize,
-      min: 5,
-      max: 100,
-      step: 1,
+      min: s(5),
+      max: s(100),
+      step: s(1),
     },
     opacity: {
       label: 'Opacity',
@@ -228,24 +232,24 @@ export default function useSceneControls() {
                 },
                 spotX: {
                   label: 'X',
-                  value: 500,
-                  min: -2000,
-                  max: 2000,
-                  step: 10,
+                  value: s(500),
+                  min: s(-2000),
+                  max: s(2000),
+                  step: s(10),
                 },
                 spotY: {
                   label: 'Y',
-                  value: 1400,
-                  min: -2000,
-                  max: 3000,
-                  step: 10,
+                  value: s(1400),
+                  min: s(-2000),
+                  max: s(3000),
+                  step: s(10),
                 },
                 spotZ: {
                   label: 'Z',
-                  value: 700,
-                  min: -2000,
-                  max: 2000,
-                  step: 10,
+                  value: s(700),
+                  min: s(-2000),
+                  max: s(2000),
+                  step: s(10),
                 },
               },
               { collapsed: true }
@@ -259,10 +263,16 @@ export default function useSceneControls() {
 
     Gun: folder(
       {
-        gunScale: { label: 'Scale', value: 1500, min: 50, max: 2000, step: 10 },
-        gunX: { label: 'X', value: -200, min: -800, max: 800, step: 5 },
-        gunY: { label: 'Y', value: 250, min: -400, max: 600, step: 5 },
-        gunZ: { label: 'Z', value: 0, min: -800, max: 800, step: 5 },
+        gunScale: {
+          label: 'Scale',
+          value: s(1500),
+          min: s(50),
+          max: s(2000),
+          step: s(10),
+        },
+        gunX: { label: 'X', value: s(-200), min: s(-800), max: s(800), step: s(5) },
+        gunY: { label: 'Y', value: s(250), min: s(-400), max: s(600), step: s(5) },
+        gunZ: { label: 'Z', value: 0, min: s(-800), max: s(800), step: s(5) },
       },
       { collapsed: true }
     ),
@@ -282,14 +292,14 @@ export default function useSceneControls() {
         particleColor: { label: 'Color', value: '#d0cdc9' },
         smokeScale: {
           label: 'Scale',
-          value: 1.5,
+          value: 1,
           min: 0.1,
           max: 4,
           step: 0.05,
         },
-        smokeX: { label: 'X', value: -350, min: -800, max: 800, step: 5 },
-        smokeY: { label: 'Y', value: 550, min: -400, max: 800, step: 5 },
-        smokeZ: { label: 'Z', value: 34, min: -800, max: 800, step: 5 },
+        smokeX: { label: 'X', value: s(-350), min: s(-800), max: s(800), step: s(5) },
+        smokeY: { label: 'Y', value: s(550), min: s(-400), max: s(800), step: s(5) },
+        smokeZ: { label: 'Z', value: s(34), min: s(-800), max: s(800), step: s(5) },
         showHelpers: { label: 'Show Helpers', value: false },
 
         'Particle Physics': folder(
@@ -310,10 +320,10 @@ export default function useSceneControls() {
             },
             turbulence: {
               label: 'Turbulence',
-              value: 45,
+              value: s(45),
               min: 0,
-              max: 600,
-              step: 5,
+              max: s(600),
+              step: s(5),
             },
             turbulenceSpeed: {
               label: 'Turb Speed',
@@ -324,17 +334,17 @@ export default function useSceneControls() {
             },
             spawnSpread: {
               label: 'Spawn Spread',
-              value: 35,
+              value: s(35),
               min: 0,
-              max: 400,
-              step: 5,
+              max: s(400),
+              step: s(5),
             },
             maxDrift: {
               label: 'Max Drift',
-              value: 160,
-              min: 50,
-              max: 2000,
-              step: 50,
+              value: s(160),
+              min: s(50),
+              max: s(2000),
+              step: s(50),
             },
             fadeRate: {
               label: 'Fade Rate',
@@ -359,10 +369,10 @@ export default function useSceneControls() {
             },
             buoyancy: {
               label: 'Buoyancy',
-              value: 5,
+              value: s(5),
               min: 0,
-              max: 200,
-              step: 5,
+              max: s(200),
+              step: s(5),
             },
             rotSpeed: {
               label: 'Rot Speed',
@@ -393,10 +403,10 @@ export default function useSceneControls() {
             },
             volTurbulence: {
               label: 'Turbulence',
-              value: 180,
+              value: s(180),
               min: 0,
-              max: 800,
-              step: 10,
+              max: s(800),
+              step: s(10),
             },
             volTurbulenceSpeed: {
               label: 'Turb Speed',
@@ -407,17 +417,17 @@ export default function useSceneControls() {
             },
             volSpread: {
               label: 'Spawn Spread',
-              value: 120,
+              value: s(120),
               min: 0,
-              max: 600,
-              step: 5,
+              max: s(600),
+              step: s(5),
             },
             volMaxDrift: {
               label: 'Max Drift',
-              value: 900,
-              min: 50,
-              max: 2000,
-              step: 50,
+              value: s(900),
+              min: s(50),
+              max: s(2000),
+              step: s(50),
             },
             volFadeRate: {
               label: 'Fade Rate',
@@ -434,39 +444,39 @@ export default function useSceneControls() {
           {
             "That's": folder(
               {
-                thatsX: { label: 'X', value: -4, min: -500, max: 500, step: 1 },
-                thatsY: { label: 'Y', value: 2, min: -500, max: 500, step: 1 },
-                thatsZ: { label: 'Z', value: 0, min: -500, max: 500, step: 1 },
+                thatsX: { label: 'X', value: s(-4), min: s(-500), max: s(500), step: s(1) },
+                thatsY: { label: 'Y', value: s(2), min: s(-500), max: s(500), step: s(1) },
+                thatsZ: { label: 'Z', value: 0, min: s(-500), max: s(500), step: s(1) },
               },
               { collapsed: true }
             ),
             All: folder(
               {
-                allX: { label: 'X', value: 5, min: -500, max: 500, step: 1 },
-                allY: { label: 'Y', value: 2, min: -500, max: 500, step: 1 },
-                allZ: { label: 'Z', value: 0, min: -500, max: 500, step: 1 },
+                allX: { label: 'X', value: s(5), min: s(-500), max: s(500), step: s(1) },
+                allY: { label: 'Y', value: s(2), min: s(-500), max: s(500), step: s(1) },
+                allZ: { label: 'Z', value: 0, min: s(-500), max: s(500), step: s(1) },
               },
               { collapsed: true }
             ),
             Folks: folder(
               {
-                folksX: { label: 'X', value: 0, min: -500, max: 500, step: 1 },
-                folksY: { label: 'Y', value: 0, min: -500, max: 500, step: 1 },
-                folksZ: { label: 'Z', value: 0, min: -500, max: 500, step: 1 },
+                folksX: { label: 'X', value: 0, min: s(-500), max: s(500), step: s(1) },
+                folksY: { label: 'Y', value: 0, min: s(-500), max: s(500), step: s(1) },
+                folksZ: { label: 'Z', value: 0, min: s(-500), max: s(500), step: s(1) },
               },
               { collapsed: true }
             ),
             Exclamation: folder(
               {
-                exclamX: { label: 'X', value: 7, min: -500, max: 500, step: 1 },
+                exclamX: { label: 'X', value: s(7), min: s(-500), max: s(500), step: s(1) },
                 exclamY: {
                   label: 'Y',
-                  value: 12,
-                  min: -500,
-                  max: 500,
-                  step: 1,
+                  value: s(12),
+                  min: s(-500),
+                  max: s(500),
+                  step: s(1),
                 },
-                exclamZ: { label: 'Z', value: 0, min: -500, max: 500, step: 1 },
+                exclamZ: { label: 'Z', value: 0, min: s(-500), max: s(500), step: s(1) },
               },
               { collapsed: true }
             ),

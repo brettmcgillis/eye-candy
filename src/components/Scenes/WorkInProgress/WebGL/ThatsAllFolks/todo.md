@@ -28,12 +28,17 @@
 
 # // Presets
 
+- [ ] Default, Thats All Folks smoke
+- [ ] Bang. Use a cylinder geometry, a cloth sim and a texture to create the old-school gag gun with the waving Bang! flag
+
 # // Features
 
 # // Interactivity
 
 - [ ] Smoke/Cursor interaction
 - [ ] Smoke/Cursor/Hands interaction
+- [ ] Flag/Cursor interaction
+- [ ] Flag/Cursor/Hands interaction
 
 # // Bugs
 

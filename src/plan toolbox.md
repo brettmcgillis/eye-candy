@@ -249,7 +249,7 @@ The hook merges preset defaults with override patches before passing down to Spl
 
 ### Phase 3 — Scale Calibration ✅
 
-- [x] Canonical scale defined: 1 unit ≈ 1 metre, matching DumpsterFire / FlyingHigh / PolicePresence / BurningAtBothEnds / StillPullingForYou WIP scenes. ThatsAllFolks intentionally stays large (letterform smoke is an artistic large-world choice).
+- [x] Canonical scale defined: 1 unit ≈ 1 metre, matching DumpsterFire / FlyingHigh / PolicePresence / BurningAtBothEnds / StillPullingForYou / ThatsAllFolks WIP scenes.
 - [x] GridBox made configurable (`size` + `gridSize` props; defaults unchanged for SplineEditor backward compat). All three toolbox scenes pass `size={20} gridSize={1}`.
 - [x] SmokeTest camera: `[0,250,1000]` → `[0,3,12]`, near/far: `1/10000` → `0.01/500`, spotlight and shadow planes updated, default SmokeBallSpline points ÷100, default attractor positions ÷100, `pointSize` `30` → `0.3`
 - [x] HotBox camera: same recalibration as SmokeTest

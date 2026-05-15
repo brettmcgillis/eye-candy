@@ -10,15 +10,21 @@ import * as THREE from 'three';
 // local origin (0, 0). The smoke <group> in ThatsAllFolks.jsx handles
 // world positioning via Leva X / Y / Z controls.
 //   canvas y=CANVAS_H → local y=0
-//   canvas y=0        → local y=CANVAS_H*SCALE ≈ 365
+//   canvas y=0        → local y=CANVAS_H*SCALE ≈ 3.65
 //
-// Scene units: 1 unit ≈ 1 cm.
+// Legacy authoring used centimetre-like world units. The extra
+// LEGACY_WORLD_TO_SCENE factor normalizes the shared preset data so both
+// SmokeTest and ThatsAllFolks render at scene scale (1 unit ≈ 1 metre).
 
 const CANVAS_H = 445;
-const SCALE = 0.82;
+export const LEGACY_WORLD_TO_SCENE = 0.01;
+const CANVAS_TO_LEGACY_WORLD = 0.82;
+const SCALE = CANVAS_TO_LEGACY_WORLD * LEGACY_WORLD_TO_SCENE;
 
 export function toScene(pts) {
-  return pts.map(({ x, y }) => new THREE.Vector3(x, (CANVAS_H - y) * SCALE, 0));
+  return pts.map(({ x, y }) =>
+    new THREE.Vector3(x * SCALE, (CANVAS_H - y) * SCALE, 0)
+  );
 }
 
 // ─── Per-letterform canvas control-points (x→right, y→down) ─────────────────
@@ -209,7 +215,7 @@ export const EXCLAMATION_DOT = [
 // "olks" + connecting tail (redesigned).
 // Barrel approach (Option C wide-S) prepended. Smoke emits from ~y=578,
 // runs right briefly, S-curves up, then joins the letterforms.
-// Use smokeX ≈ -296 to position the emitter at the gun barrel tip.
+// Use smokeX around -3 to position the emitter at the gun barrel tip.
 export const OLKS_TAIL = [
   // ── barrel approach — Option C (wide S, clean) ─────────────────────────
   { x: 270, y: 578 },

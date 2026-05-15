@@ -34,5 +34,6 @@
 - [ ] Smoke/Cursor interaction
 - [ ] Smoke/Cursor/Hands interaction
 - [ ] Click to throw trash
+- [ ] Click to drag trash
 
 # // Bugs

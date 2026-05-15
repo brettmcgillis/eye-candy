@@ -14,18 +14,6 @@
 
 [Back to main TODO](../../../../../../TODO.md)
 
-- [x] Build 'Thats all folks cursive' writing spline(s) based on the text in the jpg.
-- [ ] Build the spline/attractor/particle system(s) to flow the smoke. Smoke test is not fully complete yet though.
-- [ ] Make the splines 3d
-- [ ] Finalize particle settings for each spline.
-- [ ] Finalize physics setting for composition
-- [ ] fix smoke shadows?
-- [ ] fix background/background color
-- [ ] Starts to look pretty good with a shitload of particles. Might need to scale up the smoke and space the words out a bit more.
-- [ ] Fix particle system init. they seem to start distributed around the spline, need to get spawned in from start pos. Might be fixed if we reuse SmokeTest components
-
-- [ ] Tune up the smoke
-
 # // Presets
 
 - [ ] Default, Thats All Folks smoke
@@ -41,6 +29,3 @@
 - [ ] Flag/Cursor/Hands interaction
 
 # // Bugs
-
-- [x] Scene locks when adjusting particle counts
-- [ ] Smoke is currently broken/not visible.

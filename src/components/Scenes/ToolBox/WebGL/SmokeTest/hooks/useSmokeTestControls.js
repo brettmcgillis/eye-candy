@@ -15,6 +15,19 @@ const SCENE_LABEL = 'Smoke Test';
 const DEFAULT_PRESET_KEY = Object.keys(SMOKE_PRESETS)[0];
 const MAX_ATTRACTORS = 8;
 
+const shouldSeedDefaultAssets = (presetKey) => presetKey === DEFAULT_PRESET_KEY;
+
+const getDefaultAttractors = (presetKey) => {
+  if (!shouldSeedDefaultAssets(presetKey)) return [];
+
+  return [
+    { position: [7, 3.5, 2], direction: [0, 1, 0], rotation: [0, 0, 0] },
+    { position: [3, 3.5, -2], direction: [0, 1, 0], rotation: [0, 0, 0] },
+    { position: [6, -0.5, 0], direction: [0, 1, 0], rotation: [0, 0, 0] },
+    { position: [4, 2, 1.5], direction: [0, 1, 0], rotation: [0, 0, 0] },
+  ];
+};
+
 // ─── Auto-incrementing ID counter (module-scoped, stable across renders) ──────
 let idCounter = 0;
 // eslint-disable-next-line no-plusplus
@@ -153,9 +166,9 @@ const makeSbInst = (pos = [-5, 1, 0]) => ({
   config: mkSbCfg(),
 });
 
-const makeSsInst = () => ({
+const makeSsInst = (pos = [0, 0, 0]) => ({
   id: mkId(),
-  pos: [0, 0, 0],
+  pos,
   rot: [0, 0, 0],
   scale: [1, 1, 1],
   showHandles: true,
@@ -173,6 +186,18 @@ const makeS2dInst = (pos = [-3, 0, 0]) => ({
   pos,
   config: mkS2dCfg(),
 });
+
+function getStandaloneDefaults(presetKey) {
+  if (!shouldSeedDefaultAssets(presetKey)) {
+    return { sb: [], ss: [], s2d: [] };
+  }
+
+  return {
+    sb: [makeSbInst()],
+    ss: [makeSsInst()],
+    s2d: [makeS2dInst()],
+  };
+}
 
 // ─── Preset parsing ───────────────────────────────────────────────────────────
 
@@ -193,8 +218,10 @@ function splitPresetByType(presetKey) {
     }
   });
 
-  if (ps.length === 0) ps.push(makePsInst());
-  if (vs.length === 0) vs.push(makeVsInst());
+  if (shouldSeedDefaultAssets(presetKey)) {
+    if (ps.length === 0) ps.push(makePsInst());
+    if (vs.length === 0) vs.push(makeVsInst());
+  }
 
   return { ps, vs };
 }
@@ -222,9 +249,15 @@ export default function useSmokeTestControls(attractorsRef) {
     const { vs } = splitPresetByType(DEFAULT_PRESET_KEY);
     return vs;
   });
-  const [sbInstances, setSbInstances] = useState(() => [makeSbInst()]);
-  const [ssInstances, setSsInstances] = useState(() => [makeSsInst()]);
-  const [s2dInstances, setS2dInstances] = useState(() => [makeS2dInst()]);
+  const [sbInstances, setSbInstances] = useState(
+    () => getStandaloneDefaults(DEFAULT_PRESET_KEY).sb
+  );
+  const [ssInstances, setSsInstances] = useState(
+    () => getStandaloneDefaults(DEFAULT_PRESET_KEY).ss
+  );
+  const [s2dInstances, setS2dInstances] = useState(
+    () => getStandaloneDefaults(DEFAULT_PRESET_KEY).s2d
+  );
   const [attractorVersion, setAttractorVersion] = useState(0);
 
   // Stable refs for static-schema closures (Copy button needs current arrays)
@@ -257,11 +290,18 @@ export default function useSmokeTestControls(attractorsRef) {
           },
           reset: button(() => {
             const { ps, vs } = splitPresetByType(selectedPresetRef.current);
+            const { sb, ss, s2d } = getStandaloneDefaults(
+              selectedPresetRef.current
+            );
+            attractorsRef.current = getDefaultAttractors(
+              selectedPresetRef.current
+            );
             setPsInstances(ps);
             setVsInstances(vs);
-            setSbInstances([makeSbInst()]);
-            setSsInstances([makeSsInst()]);
-            setS2dInstances([makeS2dInst()]);
+            setSbInstances(sb);
+            setSsInstances(ss);
+            setS2dInstances(s2d);
+            setAttractorVersion((c) => c + 1);
           }),
           ...(localEnv()
             ? {
@@ -899,7 +939,14 @@ export default function useSmokeTestControls(attractorsRef) {
       // ── Smoke Ball Spline ───────────────────────────────────────────────────
       const ssSection = {
         'Add Smoke Ball Spline': button(() =>
-          setSsInstances((prev) => [...prev, makeSsInst()])
+          setSsInstances((prev) => [
+            ...prev,
+            makeSsInst([
+              (Math.random() - 0.5) * 10,
+              Math.random() * 4,
+              (Math.random() - 0.5) * 6,
+            ]),
+          ])
         ),
         'Remove All Smoke Ball Splines': button(() => setSsInstances([])),
         ...ssInstances.reduce((acc, inst, i) => {
@@ -1217,11 +1264,14 @@ export default function useSmokeTestControls(attractorsRef) {
   // Reload instances when preset dropdown changes
   useEffect(() => {
     const { ps, vs } = splitPresetByType(preset);
+    const { sb, ss, s2d } = getStandaloneDefaults(preset);
+    attractorsRef.current = getDefaultAttractors(preset);
     setPsInstances(ps);
     setVsInstances(vs);
-    setSbInstances([makeSbInst()]);
-    setSsInstances([makeSsInst()]);
-    setS2dInstances([makeS2dInst()]);
+    setSbInstances(sb);
+    setSsInstances(ss);
+    setS2dInstances(s2d);
+    setAttractorVersion((c) => c + 1);
   }, [preset]); // only preset is the intended dependency
 
   // ── Point update callbacks (for 3D handle interaction) ──────────────────────

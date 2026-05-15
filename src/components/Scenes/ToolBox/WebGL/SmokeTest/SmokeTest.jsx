@@ -188,7 +188,7 @@ export default function SmokeTest() {
         visible={showAttractors}
         radius={attractorRadius}
         version={attractorVersion}
-        levaPrefix="Smoke Test"
+        levaPrefix="Smoke Test.Attractors"
       />
     </>
   );

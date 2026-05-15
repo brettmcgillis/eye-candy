@@ -260,43 +260,48 @@ The hook merges preset defaults with override patches before passing down to Spl
 
 ### Phase 3.5 - Realignment
 
-We've made some significant changes to the scenes. theyre working well but this change has revealed some of the real user-needs were trying to address.
+Status: in progress. SmokeTest has been realigned; FireTest and HotBox still need the same treatment.
 
-It feels like we need to reorganize the controls which will help guide the solution from a code perspective. Here is an example of a more ideal layout. I may be missing some controls or some detail. The intent is not to remove any functionality but to organize what is available and make scene editing easier.
+Target control layout for each toolbox scene:
 
-- {Scene Name}
-  - Presets (folder)
-  - Scene
-    - Bg color
-    - grid line color
-  - Smoke (when supported by scene)
-    - {type} (folder) (one for each available smoke type)
-      - Add instance (button)
-      - Remove All (button)
-      - Instance {n} (folder)
-        - Position
-        - Rotation
-        - Scale
-        - {type} controls
-        - Delete instance (button)
-  - Fire (when supported by scene)
-    - {type} (folder) (one for each available smoke type)
-    - Add instance (button)
-    - Remove All (button)
-    - Instance {n} (folder)
-      - Position
-      - Rotation
-      - Scale
-      - {type} controls
-      - Delete instance (button)
-  - Attractors/Repellers (when supported by scene)
-    - Add instance (button)
-    - Remove All (button)
-    - Instance {n} (folder)
-      - Position
-      - Attractor/Repeller controls
+- [x] Confirm the intended top-level hierarchy: `Presets`, `Scene`, `Smoke`, `Fire`, `Attractors/Repellers`
+- [x] Confirm the intended per-type pattern: `Add instance`, `Remove All`, `Instance {n}`, transform controls, type-specific controls, `Delete instance`
 
-We should also look at updating default scenes. Currently editor scenes are displaying all avalilable types by default. The editor scenes are driven off presets so it stands to reason that the default scene should be encapsulated in a preset. For example, the default preset file for the SmokeTest scene should include one instance of each smoke type, whereas the preset file for a scene like burning at both ends would only contain the type(s) used in scene.
+SmokeTest:
+
+- [x] Reorganize SmokeTest controls around top-level `Presets`, `Scene`, `Smoke`, and `Attractors`
+- [x] Group SmokeTest smoke controls by smoke type instead of mixing all controls at scene root
+- [x] Support per-instance add/remove/delete flows for SmokeTest smoke assets
+- [x] Nest `Attractor {n}` folders under the `Attractors` folder
+- [x] Randomize newly added `SmokeBallSpline` instance placement so new instances do not stack on the original
+- [x] Make non-default SmokeTest presets authoritative for spline content
+- [x] Make non-default SmokeTest presets authoritative for standalone smoke assets
+- [x] Make non-default SmokeTest presets authoritative for attractors
+
+Default scene / preset authority:
+
+- [ ] Encode the full SmokeTest default sandbox in preset data instead of hook-seeded defaults
+- [ ] Decide whether SmokeTest default standalone assets should live in a unified preset `elements` block or remain temporary scene bootstrapping until Phase 4 export exists
+- [ ] Ensure default editor scenes are driven entirely by preset files rather than implicit code defaults
+
+FireTest:
+
+- [ ] Reorganize FireTest into the same top-level folder structure as SmokeTest
+- [ ] Replace singleton standalone fire controls with per-type instance sections
+- [ ] Move FireTest attractor instance folders under `Attractors`
+- [ ] Make non-default FireTest presets authoritative for standalone elements and attractors
+
+HotBox:
+
+- [ ] Reorganize HotBox into the same top-level folder structure as SmokeTest
+- [ ] Split HotBox controls into clear `Smoke`, `Fire`, and `Attractors` sections with per-type instance flows
+- [ ] Move HotBox attractor instance folders under `Attractors`
+- [ ] Make non-default HotBox presets authoritative for standalone elements and attractors
+
+Cross-scene cleanup:
+
+- [ ] Align folder ordering, labels, and collapse defaults across SmokeTest, FireTest, and HotBox
+- [ ] Verify all toolbox scenes preserve existing functionality while matching the realigned control model
 
 ### Phase 4 — Dev Tooling & Export
 

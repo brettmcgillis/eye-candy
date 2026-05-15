@@ -30,6 +30,7 @@ export default function SmokeTest() {
     s2dInstances,
     attractorMode,
     showAttractors,
+    attractorStrength,
     attractorRadius,
     attractorVersion,
     updatePsPoints,
@@ -84,7 +85,11 @@ export default function SmokeTest() {
           <SplineGroup
             index={inst.id}
             points={inst.points}
-            config={{ pointMode: inst.pointMode }}
+            config={{
+              pointMode: inst.pointMode,
+              attractorStrength,
+              attractorRadius,
+            }}
             splineConfig={{ ...inst.config, showHelpers: inst.showHandles }}
             attractorsRef={attractorsRef}
             setSplinePoints={(_i, updater) => updatePsPoints(inst.id, updater)}
@@ -104,7 +109,11 @@ export default function SmokeTest() {
           <SplineGroup
             index={inst.id}
             points={inst.points}
-            config={{ pointMode: inst.pointMode }}
+            config={{
+              pointMode: inst.pointMode,
+              attractorStrength,
+              attractorRadius,
+            }}
             splineConfig={{ ...inst.config, showHelpers: inst.showHandles }}
             attractorsRef={attractorsRef}
             setSplinePoints={(_i, updater) => updateVsPoints(inst.id, updater)}
@@ -186,6 +195,7 @@ export default function SmokeTest() {
         attractorsRef={attractorsRef}
         mode={attractorMode}
         visible={showAttractors}
+        strength={attractorStrength}
         radius={attractorRadius}
         version={attractorVersion}
         levaPrefix="Smoke Test.Attractors"

@@ -280,6 +280,7 @@ export default function useSmokeTestControls(attractorsRef) {
       lineColor,
       showAttractors,
       attractorMode,
+      attractorStrength,
       attractorRadius,
     },
   ] = useControls(
@@ -346,8 +347,15 @@ export default function useSmokeTestControls(attractorsRef) {
             value: 'translate',
             options: ['translate', 'rotate', 'scale', 'none'],
           },
+          attractorStrength: {
+            label: 'Default Strength',
+            value: 3,
+            min: 0,
+            max: 50,
+            step: 0.5,
+          },
           attractorRadius: {
-            label: 'Radius',
+            label: 'Default Radius',
             value: 3,
             min: 0.1,
             max: 20,
@@ -1338,6 +1346,7 @@ export default function useSmokeTestControls(attractorsRef) {
     s2dInstances,
     attractorMode,
     showAttractors,
+    attractorStrength,
     attractorRadius,
     attractorVersion,
     updatePsPoints,

@@ -260,7 +260,7 @@ The hook merges preset defaults with override patches before passing down to Spl
 
 ### Phase 3.5 - Realignment
 
-Status: in progress. SmokeTest, FireTest, and HotBox have been realigned.
+Status: complete. SmokeTest, FireTest, and HotBox are realigned, and the default SmokeTest sandbox is preset-driven.
 
 Target control layout for each toolbox scene:
 
@@ -280,9 +280,9 @@ SmokeTest:
 
 Default scene / preset authority:
 
-- [ ] Encode the full SmokeTest default sandbox in preset data instead of hook-seeded defaults
-- [ ] Decide whether SmokeTest default standalone assets should live in a unified preset `elements` block or remain temporary scene bootstrapping until Phase 4 export exists
-- [ ] Ensure default editor scenes are driven entirely by preset files rather than implicit code defaults
+- [x] Encode the full SmokeTest default sandbox in preset data instead of hook-seeded defaults
+- [x] Decide whether SmokeTest default standalone assets should live in a unified preset `elements` block or remain temporary scene bootstrapping until Phase 4 export exists
+- [x] Ensure default editor scenes are driven entirely by preset files rather than implicit code defaults
 
 FireTest:
 
@@ -300,8 +300,8 @@ HotBox:
 
 Cross-scene cleanup:
 
-- [ ] Align folder ordering, labels, and collapse defaults across SmokeTest, FireTest, and HotBox
-- [ ] Verify all toolbox scenes preserve existing functionality while matching the realigned control model
+- [x] Align folder ordering, labels, and collapse defaults across SmokeTest, FireTest, and HotBox
+- [x] Verify all toolbox scenes preserve existing functionality while matching the realigned control model
 
 ### Phase 4 — Dev Tooling & Export
 

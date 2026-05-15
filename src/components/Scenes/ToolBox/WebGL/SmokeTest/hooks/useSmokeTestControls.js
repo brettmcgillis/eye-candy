@@ -15,18 +15,8 @@ const SCENE_LABEL = 'Smoke Test';
 const DEFAULT_PRESET_KEY = Object.keys(SMOKE_PRESETS)[0];
 const MAX_ATTRACTORS = 8;
 
-const shouldSeedDefaultAssets = (presetKey) => presetKey === DEFAULT_PRESET_KEY;
-
-const getDefaultAttractors = (presetKey) => {
-  if (!shouldSeedDefaultAssets(presetKey)) return [];
-
-  return [
-    { position: [7, 3.5, 2], direction: [0, 1, 0], rotation: [0, 0, 0] },
-    { position: [3, 3.5, -2], direction: [0, 1, 0], rotation: [0, 0, 0] },
-    { position: [6, -0.5, 0], direction: [0, 1, 0], rotation: [0, 0, 0] },
-    { position: [4, 2, 1.5], direction: [0, 1, 0], rotation: [0, 0, 0] },
-  ];
-};
+const getSmokePreset = (presetKey) =>
+  SMOKE_PRESETS[presetKey] ?? SMOKE_PRESETS[DEFAULT_PRESET_KEY];
 
 // ─── Auto-incrementing ID counter (module-scoped, stable across renders) ──────
 let idCounter = 0;
@@ -134,6 +124,23 @@ const mkS2dCfg = () => ({
   spreadStrength: 0.18,
 });
 
+const cloneTuple = (value, fallback) =>
+  Array.isArray(value) ? [...value] : [...fallback];
+
+const cloneControlPoints = (controlPoints = DEFAULT_SS_CONTROL_POINTS) =>
+  controlPoints.map((point) => ({
+    position: point.position.clone(),
+    rotation: (point.rotation ?? new THREE.Euler()).clone(),
+    scale: (point.scale ?? new THREE.Vector3(1, 1, 1)).clone(),
+  }));
+
+const cloneAttractors = (attractors = []) =>
+  attractors.map((attractor) => ({
+    position: cloneTuple(attractor.position, [0, 0, 0]),
+    direction: cloneTuple(attractor.direction, [0, 1, 0]),
+    rotation: cloneTuple(attractor.rotation, [0, 0, 0]),
+  }));
+
 // ─── Instance constructors ────────────────────────────────────────────────────
 
 const makePsInst = (pts = null, cfg = null) => ({
@@ -158,52 +165,54 @@ const makeVsInst = (pts = null, cfg = null) => ({
   config: cfg ? { ...mkVsCfg(), ...cfg } : mkVsCfg(),
 });
 
-const makeSbInst = (pos = [-5, 1, 0]) => ({
+const makeSbInst = (seed = {}) => ({
   id: mkId(),
-  pos,
-  rot: [0, 0, 0],
-  scale: [1, 1, 1],
-  config: mkSbCfg(),
+  pos: cloneTuple(seed.pos, [-5, 1, 0]),
+  rot: cloneTuple(seed.rot, [0, 0, 0]),
+  scale: cloneTuple(seed.scale, [1, 1, 1]),
+  config: { ...mkSbCfg(), ...(seed.config ?? {}) },
 });
 
-const makeSsInst = (pos = [0, 0, 0]) => ({
+const makeSsInst = (seed = {}) => ({
   id: mkId(),
-  pos,
-  rot: [0, 0, 0],
-  scale: [1, 1, 1],
-  showHandles: true,
-  pointMode: 'translate',
-  controlPoints: DEFAULT_SS_CONTROL_POINTS.map((p) => ({
-    position: p.position.clone(),
-    rotation: p.rotation.clone(),
-    scale: p.scale.clone(),
-  })),
-  config: mkSsCfg(),
+  pos: cloneTuple(seed.pos, [0, 0, 0]),
+  rot: cloneTuple(seed.rot, [0, 0, 0]),
+  scale: cloneTuple(seed.scale, [1, 1, 1]),
+  showHandles: seed.showHandles ?? true,
+  pointMode: seed.pointMode ?? 'translate',
+  controlPoints: cloneControlPoints(seed.controlPoints),
+  config: { ...mkSsCfg(), ...(seed.config ?? {}) },
 });
 
-const makeS2dInst = (pos = [-3, 0, 0]) => ({
+const makeS2dInst = (seed = {}) => ({
   id: mkId(),
-  pos,
-  config: mkS2dCfg(),
+  pos: cloneTuple(seed.pos, [-3, 0, 0]),
+  config: { ...mkS2dCfg(), ...(seed.config ?? {}) },
 });
 
 function getStandaloneDefaults(presetKey) {
-  if (!shouldSeedDefaultAssets(presetKey)) {
-    return { sb: [], ss: [], s2d: [] };
-  }
+  const preset = getSmokePreset(presetKey);
+  const elements = preset?.elements ?? {};
 
   return {
-    sb: [makeSbInst()],
-    ss: [makeSsInst()],
-    s2d: [makeS2dInst()],
+    sb: (elements.smokeBall ?? []).map((element) => makeSbInst(element)),
+    ss: (elements.smokeBallSpline ?? []).map((element) =>
+      makeSsInst(element)
+    ),
+    s2d: (elements.billboardSmoke ?? []).map((element) =>
+      makeS2dInst(element)
+    ),
   };
+}
+
+function getPresetAttractors(presetKey) {
+  return cloneAttractors(getSmokePreset(presetKey)?.attractors ?? []);
 }
 
 // ─── Preset parsing ───────────────────────────────────────────────────────────
 
 function splitPresetByType(presetKey) {
-  const preset = SMOKE_PRESETS[presetKey];
-  if (!preset) return { ps: [makePsInst()], vs: [makeVsInst()] };
+  const preset = getSmokePreset(presetKey);
 
   const { splines, splineConfigs } = parsePreset(preset);
   const ps = [];
@@ -217,11 +226,6 @@ function splitPresetByType(presetKey) {
       ps.push(makePsInst(pts, cfg));
     }
   });
-
-  if (shouldSeedDefaultAssets(presetKey)) {
-    if (ps.length === 0) ps.push(makePsInst());
-    if (vs.length === 0) vs.push(makeVsInst());
-  }
 
   return { ps, vs };
 }
@@ -293,7 +297,7 @@ export default function useSmokeTestControls(attractorsRef) {
             const { sb, ss, s2d } = getStandaloneDefaults(
               selectedPresetRef.current
             );
-            attractorsRef.current = getDefaultAttractors(
+            attractorsRef.current = getPresetAttractors(
               selectedPresetRef.current
             );
             setPsInstances(ps);
@@ -814,11 +818,13 @@ export default function useSmokeTestControls(attractorsRef) {
         'Add Smoke Ball': button(() =>
           setSbInstances((prev) => [
             ...prev,
-            makeSbInst([
-              (Math.random() - 0.5) * 10,
-              Math.random() * 4,
-              (Math.random() - 0.5) * 6,
-            ]),
+            makeSbInst({
+              pos: [
+                (Math.random() - 0.5) * 10,
+                Math.random() * 4,
+                (Math.random() - 0.5) * 6,
+              ],
+            }),
           ])
         ),
         'Remove All Smoke Balls': button(() => setSbInstances([])),
@@ -941,11 +947,13 @@ export default function useSmokeTestControls(attractorsRef) {
         'Add Smoke Ball Spline': button(() =>
           setSsInstances((prev) => [
             ...prev,
-            makeSsInst([
-              (Math.random() - 0.5) * 10,
-              Math.random() * 4,
-              (Math.random() - 0.5) * 6,
-            ]),
+            makeSsInst({
+              pos: [
+                (Math.random() - 0.5) * 10,
+                Math.random() * 4,
+                (Math.random() - 0.5) * 6,
+              ],
+            }),
           ])
         ),
         'Remove All Smoke Ball Splines': button(() => setSsInstances([])),
@@ -1110,11 +1118,9 @@ export default function useSmokeTestControls(attractorsRef) {
         'Add Billboard Smoke': button(() =>
           setS2dInstances((prev) => [
             ...prev,
-            makeS2dInst([
-              (Math.random() - 0.5) * 10,
-              0,
-              (Math.random() - 0.5) * 6,
-            ]),
+            makeS2dInst({
+              pos: [(Math.random() - 0.5) * 10, 0, (Math.random() - 0.5) * 6],
+            }),
           ])
         ),
         'Remove All Billboard Smoke': button(() => setS2dInstances([])),
@@ -1265,7 +1271,7 @@ export default function useSmokeTestControls(attractorsRef) {
   useEffect(() => {
     const { ps, vs } = splitPresetByType(preset);
     const { sb, ss, s2d } = getStandaloneDefaults(preset);
-    attractorsRef.current = getDefaultAttractors(preset);
+    attractorsRef.current = getPresetAttractors(preset);
     setPsInstances(ps);
     setVsInstances(vs);
     setSbInstances(sb);

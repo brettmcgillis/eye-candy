@@ -1,9 +1,8 @@
-import React, { useCallback, useRef, useState } from 'react';
+import React, { useCallback, useState } from 'react';
 
 import { OrbitControls, PerspectiveCamera } from '@react-three/drei';
 
 import FIRE_PRESETS from '../../../../../presets/fire/firePresets';
-import Attractors from '../../../../elements/attractors/Attractors';
 import Fireball from '../../../../elements/fireball/Fireball';
 import FireballSpline from '../../../../elements/fireball/FireballSpline';
 import Flame from '../../../../elements/flame/Flame';
@@ -12,14 +11,17 @@ import SplineLine from '../../../../elements/spline/SplineLine';
 import SplinePoints from '../../../../elements/spline/SplinePoints';
 import SplineGroup from '../../../../elements/splineGroup/SplineGroup';
 import CS184VolumetricFire from '../../../../elements/volumetricFire/CS184VolumetricFire';
-import FireballVolume from '../../../../elements/volumetricFire/FireballVolume';
 import VolumetricFire from '../../../../elements/volumetricFire/VolumetricFire';
-import { parsePreset } from '../shared/splineDefaults';
+import {
+  filterParsedPresetByType,
+  parsePreset,
+} from '../shared/splineDefaults';
 import useFireTestControls from './hooks/useFireTestControls';
 
 const DEFAULT_PRESET_KEY = Object.keys(FIRE_PRESETS)[0];
-const { splines: DEFAULT_SPLINES } = parsePreset(
-  FIRE_PRESETS[DEFAULT_PRESET_KEY]
+const { splines: DEFAULT_SPLINES } = filterParsedPresetByType(
+  parsePreset(FIRE_PRESETS[DEFAULT_PRESET_KEY]),
+  'Fire'
 );
 
 // ─── Component ───────────────────────────────────────────────────────────────
@@ -36,9 +38,7 @@ export default function FireTest() {
     );
   }, []);
 
-  const attractorsRef = useRef([]);
-
-  const config = useFireTestControls(splines, setSplines, attractorsRef);
+  const config = useFireTestControls(splines, setSplines);
 
   return (
     <>
@@ -79,7 +79,6 @@ export default function FireTest() {
           points={points}
           config={config}
           splineConfig={config.splineConfigs[index] ?? {}}
-          attractorsRef={attractorsRef}
           setSplinePoints={setSplinePoints}
           allowedTypes="fire"
         />
@@ -183,26 +182,6 @@ export default function FireTest() {
           <CS184VolumetricFire {...instance.config} />
         </group>
       ))}
-
-      {config.fireballVolumeInstances.map((instance) => (
-        <group
-          key={instance.id}
-          position={instance.pos}
-          rotation={instance.rot}
-          scale={instance.scale}
-        >
-          <FireballVolume {...instance.config} />
-        </group>
-      ))}
-
-      <Attractors
-        attractorsRef={attractorsRef}
-        mode={config.attractorMode}
-        visible={config.showAttractors}
-        radius={config.attractorRadius}
-        version={config.attractorVersion}
-        levaPrefix="Fire Test.Attractors"
-      />
     </>
   );
 }

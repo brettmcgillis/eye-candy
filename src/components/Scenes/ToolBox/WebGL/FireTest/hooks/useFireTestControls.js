@@ -8,6 +8,7 @@ import { localEnv } from '../../../../../../utils/appUtils';
 import buildSplineGroupControls from '../../shared/hooks/useSplineGroupControls';
 import {
   DEFAULT_SPLINE_CONFIG,
+  filterParsedPresetByType,
   parsePreset,
   serializeSplines,
 } from '../../shared/splineDefaults';
@@ -15,16 +16,17 @@ import {
 const SCENE_LABEL = 'Fire Test';
 const FIRE_FOLDER_PATH = `${SCENE_LABEL}.Fire`;
 const DEFAULT_PRESET_KEY = Object.keys(FIRE_PRESETS)[0];
-const MAX_ATTRACTORS = 8;
-const FIRE_SPLINE_TYPE_ORDER = ['Classic', 'RayMarch', 'Fireball'];
+const FIRE_SPLINE_TYPE_ORDER = ['Classic', 'RayMarch'];
 const FIRE_SPLINE_TYPE_LABELS = {
   Classic: 'Classic Fire',
   RayMarch: 'RayMarch Fire',
-  Fireball: 'Fireball Fire',
 };
 
-const shouldSeedDefaultStandaloneElements = (presetKey) =>
-  presetKey === DEFAULT_PRESET_KEY;
+const getFirePreset = (presetKey) =>
+  FIRE_PRESETS[presetKey] ?? FIRE_PRESETS[DEFAULT_PRESET_KEY];
+
+const getFireSplineState = (presetKey) =>
+  filterParsedPresetByType(parsePreset(getFirePreset(presetKey)), 'Fire');
 
 let idCounter = 0;
 const mkId = () => idCounter++;
@@ -44,7 +46,6 @@ const DEFAULT_FIRE_SPLINE_POSITION = [0, 0, 0];
 const DEFAULT_FLAME_POSITION = [5, 0, 0];
 const DEFAULT_VOLUMETRIC_FIRE_POSITION = [3, 0, 0];
 const DEFAULT_CS184_FIRE_POSITION = [-3, 0, 0];
-const DEFAULT_FIREBALL_VOLUME_POSITION = [7, 1, 0];
 
 const DEFAULT_FIRE_SPLINE_POINTS = [
   {
@@ -79,11 +80,14 @@ const DEFAULT_FIRE_SPLINE_POINTS = [
   },
 ];
 
-const cloneFireSplinePoints = () =>
-  DEFAULT_FIRE_SPLINE_POINTS.map((point) => ({
+const cloneTuple = (value, fallback) =>
+  Array.isArray(value) ? [...value] : [...fallback];
+
+const cloneFireSplinePoints = (points = DEFAULT_FIRE_SPLINE_POINTS) =>
+  points.map((point) => ({
     position: point.position.clone(),
-    rotation: point.rotation.clone(),
-    scale: point.scale.clone(),
+    rotation: (point.rotation ?? new THREE.Euler()).clone(),
+    scale: (point.scale ?? new THREE.Vector3(1, 1, 1)).clone(),
   }));
 
 const offsetPosition = (base, spread = [4, 3, 4]) => [
@@ -181,18 +185,6 @@ const mkCs184FireCfg = () => ({
   stepSize: 1.0,
 });
 
-const mkFireballVolumeCfg = () => ({
-  radius: 0.8,
-  rotSpeed: 0.1,
-  noiseScale: 0.5,
-  coreColor: '#ccffff',
-  coreIntensity: 7.0,
-  edgeColor: '#7a877f',
-  edgeIntensity: 1.5,
-  density: 1.0,
-  steps: 64,
-});
-
 const makeTypedFireSplineConfig = (fireType, name) => ({
   ...DEFAULT_SPLINE_CONFIG,
   type: 'Fire',
@@ -208,6 +200,14 @@ const makeFireballInst = (pos = DEFAULT_FIREBALL_POSITION) => ({
   config: mkFireballCfg(),
 });
 
+const hydrateFireballInst = (seed = {}) => ({
+  id: mkId(),
+  pos: cloneTuple(seed.pos, DEFAULT_FIREBALL_POSITION),
+  rot: cloneTuple(seed.rot, [0, 0, 0]),
+  scale: cloneTuple(seed.scale, [1, 1, 1]),
+  config: { ...mkFireballCfg(), ...(seed.config ?? {}) },
+});
+
 const makeFireSplineInst = (pos = DEFAULT_FIRE_SPLINE_POSITION) => ({
   id: mkId(),
   pos: [...pos],
@@ -220,12 +220,39 @@ const makeFireSplineInst = (pos = DEFAULT_FIRE_SPLINE_POSITION) => ({
   config: mkFireSplineCfg(),
 });
 
+const hydrateFireSplineInst = (seed = {}) => ({
+  id: mkId(),
+  pos: cloneTuple(seed.pos, DEFAULT_FIRE_SPLINE_POSITION),
+  rot: cloneTuple(seed.rot, [0, 0, 0]),
+  scale: cloneTuple(seed.scale, [1, 1, 1]),
+  showHandles: seed.showHandles ?? true,
+  showSpline: seed.showSpline ?? true,
+  pointMode: seed.pointMode ?? 'translate',
+  controlPoints: cloneFireSplinePoints(seed.controlPoints),
+  config: { ...mkFireSplineCfg(), ...(seed.config ?? {}) },
+});
+
 const makeFlameInst = (pos = DEFAULT_FLAME_POSITION) => ({
   id: mkId(),
   pos: [...pos],
   rot: [0, 0, 0],
   scale: [1.2, 1.2, 1.2],
   config: mkFlameCfg(),
+});
+
+const hydrateFlameInst = (seed = {}) => ({
+  id: mkId(),
+  pos: cloneTuple(seed.pos, DEFAULT_FLAME_POSITION),
+  rot: cloneTuple(seed.rot, [0, 0, 0]),
+  scale: cloneTuple(seed.scale, [1.2, 1.2, 1.2]),
+  config: {
+    ...mkFlameCfg(),
+    ...(seed.config ?? {}),
+    motion: {
+      ...mkFlameCfg().motion,
+      ...(seed.config?.motion ?? {}),
+    },
+  },
 });
 
 const makeVolumetricFireInst = (pos = DEFAULT_VOLUMETRIC_FIRE_POSITION) => ({
@@ -236,6 +263,14 @@ const makeVolumetricFireInst = (pos = DEFAULT_VOLUMETRIC_FIRE_POSITION) => ({
   config: mkVolumetricFireCfg(),
 });
 
+const hydrateVolumetricFireInst = (seed = {}) => ({
+  id: mkId(),
+  pos: cloneTuple(seed.pos, DEFAULT_VOLUMETRIC_FIRE_POSITION),
+  rot: cloneTuple(seed.rot, [0, 0, 0]),
+  scale: cloneTuple(seed.scale, [1, 1, 1]),
+  config: { ...mkVolumetricFireCfg(), ...(seed.config ?? {}) },
+});
+
 const makeCs184FireInst = (pos = DEFAULT_CS184_FIRE_POSITION) => ({
   id: mkId(),
   pos: [...pos],
@@ -244,40 +279,31 @@ const makeCs184FireInst = (pos = DEFAULT_CS184_FIRE_POSITION) => ({
   config: mkCs184FireCfg(),
 });
 
-const makeFireballVolumeInst = (pos = DEFAULT_FIREBALL_VOLUME_POSITION) => ({
+const hydrateCs184FireInst = (seed = {}) => ({
   id: mkId(),
-  pos: [...pos],
-  rot: [0, 0, 0],
-  scale: [1, 1, 1],
-  config: mkFireballVolumeCfg(),
+  pos: cloneTuple(seed.pos, DEFAULT_CS184_FIRE_POSITION),
+  rot: cloneTuple(seed.rot, [0, 0, 0]),
+  scale: cloneTuple(seed.scale, [1, 1, 1]),
+  config: { ...mkCs184FireCfg(), ...(seed.config ?? {}) },
 });
 
 function getStandaloneDefaults(presetKey) {
-  if (!shouldSeedDefaultStandaloneElements(presetKey)) {
-    return {
-      fireball: [],
-      fireSpline: [],
-      flame: [],
-      volumetricFire: [],
-      cs184Fire: [],
-      fireballVolume: [],
-    };
-  }
+  const elements = getFirePreset(presetKey)?.elements ?? {};
 
   return {
-    fireball: [makeFireballInst()],
-    fireSpline: [makeFireSplineInst()],
-    flame: [makeFlameInst()],
-    volumetricFire: [makeVolumetricFireInst()],
-    cs184Fire: [makeCs184FireInst()],
-    fireballVolume: [makeFireballVolumeInst()],
+    fireball: (elements.fireball ?? []).map(hydrateFireballInst),
+    fireSpline: (elements.fireSpline ?? []).map(hydrateFireSplineInst),
+    flame: (elements.flame ?? []).map(hydrateFlameInst),
+    volumetricFire: (elements.volumetricFire ?? []).map(
+      hydrateVolumetricFireInst
+    ),
+    cs184Fire: (elements.cs184Fire ?? []).map(hydrateCs184FireInst),
   };
 }
 
 export default function useFireTestControls(
   splines,
-  setSplines,
-  attractorsRef
+  setSplines
 ) {
   const selectedPresetRef = useRef(DEFAULT_PRESET_KEY);
   const splinesRef = useRef(splines);
@@ -291,9 +317,7 @@ export default function useFireTestControls(
   }
 
   const [splineConfigs, setSplineConfigs] = useState(() => {
-    const { splineConfigs: initial } = parsePreset(
-      FIRE_PRESETS[DEFAULT_PRESET_KEY]
-    );
+    const { splineConfigs: initial } = getFireSplineState(DEFAULT_PRESET_KEY);
     return initial;
   });
   const splineConfigsRef = useRef(splineConfigs);
@@ -314,29 +338,17 @@ export default function useFireTestControls(
   const [cs184FireInstances, setCs184FireInstances] = useState(
     () => initialStandaloneDefaultsRef.current.cs184Fire
   );
-  const [fireballVolumeInstances, setFireballVolumeInstances] = useState(
-    () => initialStandaloneDefaultsRef.current.fireballVolume
-  );
-  const [attractorVersion, setAttractorVersion] = useState(0);
   const [fireSchemaVersion, setFireSchemaVersion] = useState(0);
   const fireTypeSignature = splineConfigs
     .map((config) => config?.fireType ?? 'Classic')
     .join('|');
 
-  const forceAttractorUpdate = useCallback(
-    () => setAttractorVersion((count) => count + 1),
-    []
-  );
-
   const applyPresetState = useCallback(
     (presetKey) => {
-      const presetValue = FIRE_PRESETS[presetKey];
-      if (presetValue) {
-        const { splines: nextSplines, splineConfigs: nextConfigs } =
-          parsePreset(presetValue);
-        setSplines(nextSplines);
-        setSplineConfigs(nextConfigs);
-      }
+      const { splines: nextSplines, splineConfigs: nextConfigs } =
+        getFireSplineState(presetKey);
+      setSplines(nextSplines);
+      setSplineConfigs(nextConfigs);
 
       const defaults = getStandaloneDefaults(presetKey);
       setFireballInstances(defaults.fireball);
@@ -344,12 +356,9 @@ export default function useFireTestControls(
       setFlameInstances(defaults.flame);
       setVolumetricFireInstances(defaults.volumetricFire);
       setCs184FireInstances(defaults.cs184Fire);
-      setFireballVolumeInstances(defaults.fireballVolume);
-      attractorsRef.current = [];
-      setAttractorVersion((count) => count + 1);
       setFireSchemaVersion((count) => count + 1);
     },
-    [attractorsRef, setSplines]
+    [setSplines]
   );
 
   const setFireSplinePoints = useCallback((id, updater) => {
@@ -373,10 +382,6 @@ export default function useFireTestControls(
       pointMode,
       bgColor,
       lineColor,
-      attractorStrength,
-      attractorRadius,
-      showAttractors,
-      attractorMode,
     },
   ] = useControls(
     SCENE_LABEL,
@@ -416,56 +421,6 @@ export default function useFireTestControls(
           },
           bgColor: { label: 'Background', value: '#000000' },
           lineColor: { label: 'Grid Lines', value: '#252548' },
-        },
-        { collapsed: false }
-      ),
-
-      Attractors: folder(
-        {
-          showAttractors: { label: 'Show Helpers', value: true },
-          attractorMode: {
-            label: 'Mode',
-            value: 'translate',
-            options: ['translate', 'rotate', 'scale', 'none'],
-          },
-          attractorStrength: {
-            label: 'Strength',
-            value: 3,
-            min: 0,
-            max: 50,
-            step: 0.5,
-          },
-          attractorRadius: {
-            label: 'Radius',
-            value: 3,
-            min: 0.1,
-            max: 20,
-            step: 0.1,
-          },
-          'Add Attractor': button(() => {
-            if (attractorsRef.current.length >= MAX_ATTRACTORS) return;
-
-            attractorsRef.current.push({
-              position: [
-                (Math.random() - 0.5) * 6,
-                1 + Math.random() * 5,
-                (Math.random() - 0.5) * 4,
-              ],
-              direction: [0, 1, 0],
-              rotation: [0, 0, 0],
-            });
-            setAttractorVersion((count) => count + 1);
-          }),
-          'Remove Attractor': button(() => {
-            if (attractorsRef.current.length <= 0) return;
-            attractorsRef.current.pop();
-            setAttractorVersion((count) => count + 1);
-          }),
-          'Remove All Attractors': button(() => {
-            // eslint-disable-next-line no-param-reassign
-            attractorsRef.current.length = 0;
-            setAttractorVersion((count) => count + 1);
-          }),
         },
         { collapsed: true }
       ),
@@ -1477,152 +1432,6 @@ export default function useFireTestControls(
         }, {}),
       };
 
-      const fireballVolumeSection = {
-        'Add Fireball Volume': button(() =>
-          setFireballVolumeInstances((prev) => [
-            ...prev,
-            makeFireballVolumeInst(
-              offsetPosition(DEFAULT_FIREBALL_VOLUME_POSITION)
-            ),
-          ])
-        ),
-        'Remove All Fireball Volumes': button(() =>
-          setFireballVolumeInstances([])
-        ),
-        ...fireballVolumeInstances.reduce((acc, instance, index) => {
-          const { id } = instance;
-          const onCfg = (key) => (value) =>
-            setFireballVolumeInstances((prev) =>
-              prev.map((item) =>
-                item.id === id
-                  ? { ...item, config: { ...item.config, [key]: value } }
-                  : item
-              )
-            );
-          const onInst = (key) => (value) =>
-            setFireballVolumeInstances((prev) =>
-              prev.map((item) =>
-                item.id === id ? { ...item, [key]: value } : item
-              )
-            );
-
-          acc[`Fireball Volume ${index + 1}`] = folder(
-            {
-              [`fv_pos_${id}`]: {
-                label: 'Position',
-                value: instance.pos,
-                step: 0.1,
-                onChange: onInst('pos'),
-              },
-              [`fv_rot_${id}`]: {
-                label: 'Rotation',
-                value: instance.rot,
-                step: 0.05,
-                onChange: onInst('rot'),
-              },
-              [`fv_scale_${id}`]: {
-                label: 'Scale',
-                value: instance.scale,
-                min: 0.01,
-                max: 10,
-                step: 0.1,
-                onChange: onInst('scale'),
-              },
-              'FV Appearance': folder(
-                {
-                  [`fv_radius_${id}`]: {
-                    label: 'Radius',
-                    value: instance.config.radius,
-                    min: 0.05,
-                    max: 5,
-                    step: 0.05,
-                    onChange: onCfg('radius'),
-                  },
-                  [`fv_rotSpeed_${id}`]: {
-                    label: 'Rotation Speed',
-                    value: instance.config.rotSpeed,
-                    min: 0,
-                    max: 2,
-                    step: 0.01,
-                    onChange: onCfg('rotSpeed'),
-                  },
-                  [`fv_noiseScale_${id}`]: {
-                    label: 'Noise Scale',
-                    value: instance.config.noiseScale,
-                    min: 0.1,
-                    max: 2,
-                    step: 0.05,
-                    onChange: onCfg('noiseScale'),
-                  },
-                  [`fv_density_${id}`]: {
-                    label: 'Density',
-                    value: instance.config.density,
-                    min: 0,
-                    max: 5,
-                    step: 0.1,
-                    onChange: onCfg('density'),
-                  },
-                  [`fv_steps_${id}`]: {
-                    label: 'Steps',
-                    value: instance.config.steps,
-                    min: 8,
-                    max: 128,
-                    step: 8,
-                    onChange: onCfg('steps'),
-                  },
-                },
-                { collapsed: true }
-              ),
-              'FV Core': folder(
-                {
-                  [`fv_coreColor_${id}`]: {
-                    label: 'Color',
-                    value: instance.config.coreColor,
-                    onChange: onCfg('coreColor'),
-                  },
-                  [`fv_coreIntensity_${id}`]: {
-                    label: 'Intensity',
-                    value: instance.config.coreIntensity,
-                    min: 0,
-                    max: 20,
-                    step: 0.5,
-                    onChange: onCfg('coreIntensity'),
-                  },
-                },
-                { collapsed: true }
-              ),
-              'FV Edge': folder(
-                {
-                  [`fv_edgeColor_${id}`]: {
-                    label: 'Color',
-                    value: instance.config.edgeColor,
-                    onChange: onCfg('edgeColor'),
-                  },
-                  [`fv_edgeIntensity_${id}`]: {
-                    label: 'Intensity',
-                    value: instance.config.edgeIntensity,
-                    min: 0,
-                    max: 10,
-                    step: 0.1,
-                    onChange: onCfg('edgeIntensity'),
-                  },
-                },
-                { collapsed: true }
-              ),
-              [`fv_delete_${id}`]: button(
-                () =>
-                  setFireballVolumeInstances((prev) =>
-                    prev.filter((item) => item.id !== id)
-                  ),
-                { label: 'Delete Instance' }
-              ),
-            },
-            { collapsed: true }
-          );
-          return acc;
-        }, {}),
-      };
-
       return {
         Fire: folder(
           {
@@ -1634,9 +1443,6 @@ export default function useFireTestControls(
               collapsed: true,
             }),
             'CS184 Fire': folder(cs184FireSection, { collapsed: true }),
-            'Fireball Volume': folder(fireballVolumeSection, {
-              collapsed: true,
-            }),
           },
           { collapsed: false }
         ),
@@ -1652,7 +1458,6 @@ export default function useFireTestControls(
       flameInstances.length,
       volumetricFireInstances.length,
       cs184FireInstances.length,
-      fireballVolumeInstances.length,
     ]
   );
 
@@ -1687,19 +1492,12 @@ export default function useFireTestControls(
     bgColor,
     lineColor,
     pointMode,
-    attractorStrength,
-    attractorRadius,
-    showAttractors,
-    attractorMode,
-    attractorVersion,
-    forceAttractorUpdate,
     splineConfigs,
     fireballInstances,
     fireSplineInstances,
     flameInstances,
     volumetricFireInstances,
     cs184FireInstances,
-    fireballVolumeInstances,
     setFireSplinePoints,
   };
 }

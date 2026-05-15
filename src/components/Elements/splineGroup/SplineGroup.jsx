@@ -8,7 +8,6 @@ import VolumetricSmokeParticles from '../smoke/VolumetricSmokeParticles';
 import SplineLine from '../spline/SplineLine';
 import SplinePoints from '../spline/SplinePoints';
 import CS184VolumetricFire from '../volumetricFire/CS184VolumetricFire';
-import FireballVolume from '../volumetricFire/FireballVolume';
 import VolumetricFire from '../volumetricFire/VolumetricFire';
 
 // ─── Fire sub-renderers ───────────────────────────────────────────────────────
@@ -82,30 +81,6 @@ function CS184FireFromSpline({ points, config }) {
       animated={config.cs184Animated}
       animSpeed={config.cs184AnimSpeed}
     />
-  );
-}
-
-// Renders one FireballVolume per control point, sized by point scale.x.
-function FireballFromSpline({ points, config }) {
-  return (
-    <>
-      {points.map((pt, i) => (
-        <FireballVolume
-          // eslint-disable-next-line react/no-array-index-key
-          key={i}
-          position={pt.position}
-          radius={config.fireballRadius * (pt.scale?.x ?? 1)}
-          rotSpeed={config.fireballRotSpeed}
-          noiseScale={config.fireballNoiseScale}
-          coreColor={config.fireballCoreColor}
-          coreIntensity={config.fireballCoreIntensity}
-          edgeColor={config.fireballEdgeColor}
-          edgeIntensity={config.fireballEdgeIntensity}
-          density={config.fireballDensity}
-          steps={config.fireballSteps}
-        />
-      ))}
-    </>
   );
 }
 
@@ -221,10 +196,6 @@ export default function SplineGroup({
 
       {isFire && fireType === 'RayMarch' && (
         <CS184FireFromSpline points={points} config={mergedConfig} />
-      )}
-
-      {isFire && fireType === 'Fireball' && (
-        <FireballFromSpline points={points} config={mergedConfig} />
       )}
     </>
   );

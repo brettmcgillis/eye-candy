@@ -47,7 +47,6 @@ export default function buildSplineGroupControls(index, cfg, opts) {
     isSmoke(get) && getSmokeType(get) === 'Volumetric';
   const isClassic = (get) => isFire(get) && getFireType(get) === 'Classic';
   const isRayMarch = (get) => isFire(get) && getFireType(get) === 'RayMarch';
-  const isFireball = (get) => isFire(get) && getFireType(get) === 'Fireball';
 
   // ── Type selectors (only shown in 'both' mode) ────────────────────────────
   const typeSelectors =
@@ -78,7 +77,7 @@ export default function buildSplineGroupControls(index, cfg, opts) {
           [`fireType_${index}`]: {
             label: 'Fire Rendering',
             value: cfg.fireType ?? 'Classic',
-            options: ['Classic', 'RayMarch', 'Fireball'],
+            options: ['Classic', 'RayMarch'],
             render: (get) => getType(get) === 'Fire',
             onChange: (v) =>
               updateSplineConfig(setSplineConfigs, index, 'fireType', v),
@@ -118,7 +117,7 @@ export default function buildSplineGroupControls(index, cfg, opts) {
                 [`fireType_${index}`]: {
                   label: 'Fire Rendering',
                   value: cfg.fireType ?? 'Classic',
-                  options: ['Classic', 'RayMarch', 'Fireball'],
+                  options: ['Classic', 'RayMarch'],
                   onChange: (v) =>
                     updateSplineConfig(setSplineConfigs, index, 'fireType', v),
                 },
@@ -847,133 +846,6 @@ export default function buildSplineGroupControls(index, cfg, opts) {
             { collapsed: true, render: isRayMarch }
           ),
 
-          [`Fireball Fire ${index}`]: folder(
-            {
-              [`fireballRadius_${index}`]: {
-                label: 'Radius',
-                value: cfg.fireballRadius,
-                min: 0.1,
-                max: 20,
-                step: 0.1,
-                hint: 'World-space sphere radius per control point',
-                onChange: (v) =>
-                  updateSplineConfig(
-                    setSplineConfigs,
-                    index,
-                    'fireballRadius',
-                    v
-                  ),
-              },
-              [`fireballRotSpeed_${index}`]: {
-                label: 'Rotation Speed',
-                value: cfg.fireballRotSpeed,
-                min: 0,
-                max: 2,
-                step: 0.01,
-                onChange: (v) =>
-                  updateSplineConfig(
-                    setSplineConfigs,
-                    index,
-                    'fireballRotSpeed',
-                    v
-                  ),
-              },
-              [`fireballNoiseScale_${index}`]: {
-                label: 'Noise Scale',
-                value: cfg.fireballNoiseScale,
-                min: 0.1,
-                max: 2,
-                step: 0.05,
-                onChange: (v) =>
-                  updateSplineConfig(
-                    setSplineConfigs,
-                    index,
-                    'fireballNoiseScale',
-                    v
-                  ),
-              },
-              [`fireballCoreColor_${index}`]: {
-                label: 'Core Color',
-                value: cfg.fireballCoreColor,
-                onChange: (v) =>
-                  updateSplineConfig(
-                    setSplineConfigs,
-                    index,
-                    'fireballCoreColor',
-                    v
-                  ),
-              },
-              [`fireballCoreIntensity_${index}`]: {
-                label: 'Core Intensity',
-                value: cfg.fireballCoreIntensity,
-                min: 0,
-                max: 20,
-                step: 0.5,
-                hint: 'HDR brightness multiplier — values > 1 produce bloom',
-                onChange: (v) =>
-                  updateSplineConfig(
-                    setSplineConfigs,
-                    index,
-                    'fireballCoreIntensity',
-                    v
-                  ),
-              },
-              [`fireballEdgeColor_${index}`]: {
-                label: 'Edge Color',
-                value: cfg.fireballEdgeColor,
-                onChange: (v) =>
-                  updateSplineConfig(
-                    setSplineConfigs,
-                    index,
-                    'fireballEdgeColor',
-                    v
-                  ),
-              },
-              [`fireballEdgeIntensity_${index}`]: {
-                label: 'Edge Intensity',
-                value: cfg.fireballEdgeIntensity,
-                min: 0,
-                max: 10,
-                step: 0.1,
-                onChange: (v) =>
-                  updateSplineConfig(
-                    setSplineConfigs,
-                    index,
-                    'fireballEdgeIntensity',
-                    v
-                  ),
-              },
-              [`fireballDensity_${index}`]: {
-                label: 'Density',
-                value: cfg.fireballDensity,
-                min: 0,
-                max: 5,
-                step: 0.1,
-                onChange: (v) =>
-                  updateSplineConfig(
-                    setSplineConfigs,
-                    index,
-                    'fireballDensity',
-                    v
-                  ),
-              },
-              [`fireballSteps_${index}`]: {
-                label: 'Steps',
-                value: cfg.fireballSteps,
-                min: 8,
-                max: 128,
-                step: 8,
-                onChange: (v) =>
-                  updateSplineConfig(
-                    setSplineConfigs,
-                    index,
-                    'fireballSteps',
-                    v
-                  ),
-              },
-            },
-            { collapsed: true, render: isFireball }
-          ),
         }
       : {};
 

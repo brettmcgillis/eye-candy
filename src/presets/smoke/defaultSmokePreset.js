@@ -2,10 +2,17 @@ import * as THREE from 'three';
 
 const V = (x, y, z) => new THREE.Vector3(x, y, z);
 const E = (x, y, z) => new THREE.Euler(x, y, z);
+const S = (x, y, z) => new THREE.Vector3(x, y, z);
 
 const P = (x, y, z) => ({
   position: V(x, y, z),
   rotation: E(0, 0, 0),
+});
+
+const C = (px, py, pz, sx, sy, sz, rx = 0, ry = 0, rz = 0) => ({
+  position: V(px, py, pz),
+  rotation: E(rx, ry, rz),
+  scale: S(sx, sy, sz),
 });
 
 // Points authored at scene scale (1 unit ≈ 1 metre).
@@ -42,6 +49,79 @@ const DEFAULT_SMOKE_PRESET = {
         closed: true,
         points: [P(5, 1.5, -2), P(5, 3.5, 0), P(5, 1.5, 2), P(5, -0.5, 0)],
       },
+    ],
+    elements: {
+      smokeBall: [
+        {
+          pos: [-5, 1, 0],
+          rot: [0, 0, 0],
+          scale: [1, 1, 1],
+          config: {
+            radius: 0.6,
+            detail: 5,
+            speed: 1.0,
+            weight: 0.3,
+            noiseFreq: 2.0,
+            noiseAmp: 0.15,
+            animated: true,
+            smokeLightColor: '#bcbcbc',
+            smokeDarkColor: '#262626',
+          },
+        },
+      ],
+      smokeBallSpline: [
+        {
+          pos: [0, 0, 0],
+          rot: [0, 0, 0],
+          scale: [1, 1, 1],
+          showHandles: true,
+          pointMode: 'translate',
+          controlPoints: [
+            C(-7, 0, 0, 1.0, 1.0, 1.0),
+            C(-7, 0.9, 0, 0.9, 0.9, 0.9),
+            C(-6.85, 1.8, 0, 1.0, 1.0, 1.0),
+            C(-6.75, 2.7, 0.1, 1.3, 1.3, 1.3),
+            C(-6.65, 3.6, 0.15, 1.6, 1.6, 1.6),
+            C(-6.55, 4.5, 0.2, 2.0, 2.0, 2.0),
+          ],
+          config: {
+            baseRadius: 0.6,
+            tubularSegments: 64,
+            radialSegments: 32,
+            capSegments: 8,
+            speed: 1.0,
+            weight: 0.3,
+            noiseFreq: 2.0,
+            noiseAmp: 0.15,
+            animated: true,
+            smokeLightColor: '#bcbcbc',
+            smokeDarkColor: '#262626',
+          },
+        },
+      ],
+      billboardSmoke: [
+        {
+          pos: [-3, 0, 0],
+          config: {
+            inverted: false,
+            width: 1.5,
+            height: 6.0,
+            color: '#b8b8b8',
+            opacity: 1.0,
+            timeFrequency: 0.45,
+            uvFrequencyX: 1.0,
+            uvFrequencyY: 1.5,
+            riseSpeed: 0.35,
+            spreadStrength: 0.18,
+          },
+        },
+      ],
+    },
+    attractors: [
+      { position: [7, 3.5, 2], direction: [0, 1, 0], rotation: [0, 0, 0] },
+      { position: [3, 3.5, -2], direction: [0, 1, 0], rotation: [0, 0, 0] },
+      { position: [6, -0.5, 0], direction: [0, 1, 0], rotation: [0, 0, 0] },
+      { position: [4, 2, 1.5], direction: [0, 1, 0], rotation: [0, 0, 0] },
     ],
   },
 };

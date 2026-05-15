@@ -2,20 +2,27 @@ import React, { useCallback, useRef, useState } from 'react';
 
 import { OrbitControls, PerspectiveCamera } from '@react-three/drei';
 
-import FIRE_PRESETS from '../../../../../presets/fire/firePresets';
 import Attractors from '../../../../elements/attractors/Attractors';
 import Fireball from '../../../../elements/fireball/Fireball';
+import FireballSpline from '../../../../elements/fireball/FireballSpline';
 import Flame from '../../../../elements/flame/Flame';
 import GridBox from '../../../../elements/gridbox/GridBox';
+import Smoke2D from '../../../../elements/smoke/Smoke2D';
 import SmokeBall from '../../../../elements/smokeball/SmokeBall';
+import SmokeBallSpline from '../../../../elements/smokeball/SmokeBallSpline';
+import SplineLine from '../../../../elements/spline/SplineLine';
+import SplinePoints from '../../../../elements/spline/SplinePoints';
 import SplineGroup from '../../../../elements/splineGroup/SplineGroup';
-import FireballVolume from '../../../../elements/volumetricFire/FireballVolume';
+import CS184VolumetricFire from '../../../../elements/volumetricFire/CS184VolumetricFire';
+import VolumetricFire from '../../../../elements/volumetricFire/VolumetricFire';
 import { parsePreset } from '../shared/splineDefaults';
-import useHotBoxControls from './hooks/useHotBoxControls';
+import useHotBoxControls, {
+  getHotBoxPreset,
+  HOTBOX_DEFAULT_PRESET_KEY,
+} from './hooks/useHotBoxControls';
 
-const DEFAULT_PRESET_KEY = Object.keys(FIRE_PRESETS)[0];
 const { splines: DEFAULT_SPLINES } = parsePreset(
-  FIRE_PRESETS[DEFAULT_PRESET_KEY]
+  getHotBoxPreset(HOTBOX_DEFAULT_PRESET_KEY)
 );
 
 export default function HotBox() {
@@ -94,6 +101,64 @@ export default function HotBox() {
         </group>
       ))}
 
+      {config.smokeBallSplineInstances.map((instance) => {
+        const controlPoints = instance.controlPoints.map((point) => ({
+          position: point.position,
+          radius: instance.config.baseRadius * (point.scale?.x ?? 1),
+        }));
+        const splinePositions = instance.controlPoints.map(
+          (point) => point.position
+        );
+
+        return (
+          <group
+            key={instance.id}
+            position={instance.pos}
+            rotation={instance.rot}
+            scale={instance.scale}
+          >
+            <SmokeBallSpline
+              controlPoints={controlPoints}
+              tubularSegments={instance.config.tubularSegments}
+              radialSegments={instance.config.radialSegments}
+              capSegments={instance.config.capSegments}
+              speed={instance.config.speed}
+              weight={instance.config.weight}
+              noiseFreq={instance.config.noiseFreq}
+              noiseAmp={instance.config.noiseAmp}
+              animated={instance.config.animated}
+              smokeLightColor={instance.config.smokeLightColor}
+              smokeDarkColor={instance.config.smokeDarkColor}
+            />
+            <SplineLine
+              points={splinePositions}
+              curveType="centripetal"
+              color="#8888aa"
+              visible={instance.showHandles}
+              arcSegments={200}
+            />
+            <SplinePoints
+              points={instance.controlPoints}
+              setPoints={(updater) =>
+                config.setSmokeBallSplinePoints(instance.id, updater)
+              }
+              visible={instance.showHandles}
+              mode={instance.pointMode}
+              pointSize={0.3}
+            />
+          </group>
+        );
+      })}
+
+      {config.billboardSmokeInstances.map((instance) => (
+        <Smoke2D
+          key={instance.id}
+          position={instance.pos}
+          inverted={instance.config.inverted}
+          smoke={instance.config}
+        />
+      ))}
+
       {config.fireballInstances.map((instance) => (
         <group
           key={instance.id}
@@ -104,6 +169,57 @@ export default function HotBox() {
           <Fireball {...instance.config} />
         </group>
       ))}
+
+      {config.fireSplineInstances.map((instance) => {
+        const fireballControlPoints = instance.controlPoints.map((point) => ({
+          position: point.position,
+          radius: instance.config.baseRadius * (point.scale?.x ?? 1),
+        }));
+        const splinePositions = instance.controlPoints.map(
+          (point) => point.position
+        );
+
+        return (
+          <group
+            key={instance.id}
+            position={instance.pos}
+            rotation={instance.rot}
+            scale={instance.scale}
+          >
+            <FireballSpline
+              controlPoints={fireballControlPoints}
+              tubularSegments={instance.config.tubularSegments}
+              radialSegments={instance.config.radialSegments}
+              capSegments={instance.config.capSegments}
+              speed={instance.config.speed}
+              weight={instance.config.weight}
+              noiseFreq={instance.config.noiseFreq}
+              noiseAmp={instance.config.noiseAmp}
+              animated={instance.config.animated}
+              smokeLightColor={instance.config.smokeLightColor}
+              smokeDarkColor={instance.config.smokeDarkColor}
+            />
+
+            <SplineLine
+              points={splinePositions}
+              curveType="centripetal"
+              color="#ff8844"
+              visible={instance.showSpline}
+              arcSegments={200}
+            />
+
+            <SplinePoints
+              points={instance.controlPoints}
+              setPoints={(updater) =>
+                config.setFireSplinePoints(instance.id, updater)
+              }
+              visible={instance.showHandles}
+              mode={instance.pointMode}
+              pointSize={0.3}
+            />
+          </group>
+        );
+      })}
 
       {config.flameInstances.map((instance) => (
         <group
@@ -119,14 +235,25 @@ export default function HotBox() {
         </group>
       ))}
 
-      {config.fireballVolumeInstances.map((instance) => (
+      {config.volumetricFireInstances.map((instance) => (
         <group
           key={instance.id}
           position={instance.pos}
           rotation={instance.rot}
           scale={instance.scale}
         >
-          <FireballVolume {...instance.config} />
+          <VolumetricFire {...instance.config} />
+        </group>
+      ))}
+
+      {config.cs184FireInstances.map((instance) => (
+        <group
+          key={instance.id}
+          position={instance.pos}
+          rotation={instance.rot}
+          scale={instance.scale}
+        >
+          <CS184VolumetricFire {...instance.config} />
         </group>
       ))}
 

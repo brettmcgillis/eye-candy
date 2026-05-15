@@ -11,7 +11,7 @@ export const DEFAULT_SPLINE_CONFIG = {
   visible: true,
   type: 'Smoke', // 'Smoke' | 'Fire'
   smokeType: 'Particle', // 'Particle' | 'Volumetric'
-  fireType: 'Classic', // 'Classic' | 'RayMarch' | 'Fireball'
+  fireType: 'Classic', // 'Classic' | 'RayMarch'
   tension: 1,
   closed: true,
   showSpline: true,
@@ -86,16 +86,6 @@ export const DEFAULT_SPLINE_CONFIG = {
   cs184StepSize: 1.0,
   cs184Animated: true,
   cs184AnimSpeed: 0.5,
-  // ── Fireball (FireballVolume) ─────────────────────────────────────────────
-  fireballRadius: 0.8,
-  fireballRotSpeed: 0.1,
-  fireballNoiseScale: 0.5,
-  fireballCoreColor: '#ccffff',
-  fireballCoreIntensity: 7.0,
-  fireballEdgeColor: '#7a877f',
-  fireballEdgeIntensity: 1.5,
-  fireballDensity: 1.0,
-  fireballSteps: 64,
 };
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -150,6 +140,24 @@ export function parsePreset(preset) {
   });
 
   return { splines, splineConfigs };
+}
+
+export function filterParsedPresetByType(parsedPreset, type) {
+  return parsedPreset.splines.reduce(
+    (acc, points, index) => {
+      const config =
+        parsedPreset.splineConfigs[index] ?? DEFAULT_SPLINE_CONFIG;
+
+      if ((config.type ?? DEFAULT_SPLINE_CONFIG.type) !== type) {
+        return acc;
+      }
+
+      acc.splines.push(points);
+      acc.splineConfigs.push(config);
+      return acc;
+    },
+    { splines: [], splineConfigs: [] }
+  );
 }
 
 /**

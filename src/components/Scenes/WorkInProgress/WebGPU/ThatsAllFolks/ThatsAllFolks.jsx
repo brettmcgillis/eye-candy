@@ -8,7 +8,9 @@ import {
   PerspectiveCamera,
 } from '@react-three/drei';
 
-import THATS_ALL_FOLKS_SMOKE from '../../../../../presets/smoke/thatsAllFolksSmoke';
+import THATS_ALL_FOLKS_SMOKE, {
+  LEGACY_WORLD_TO_SCENE,
+} from '../../../../../presets/smoke/thatsAllFolksSmoke';
 import Magnum from '../../../../elements/magnum/Magnum';
 import SmokeParticles from '../../../../elements/smoke/SmokeParticlesGPU';
 import VolumetricSmokeParticles from '../../../../elements/smoke/VolumetricSmokeParticlesGPU';
@@ -16,7 +18,6 @@ import SplineLine from '../../../../elements/spline/SplineLine';
 import BackdropRings from './components/BackdropRings';
 import useSceneControls from './hooks/useControls';
 
-const LEGACY_WORLD_TO_SCENE = 0.01;
 const s = (value) => value * LEGACY_WORLD_TO_SCENE;
 
 // ─── Helpers ─────────────────────────────────────────────────────────────────

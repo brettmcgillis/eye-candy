@@ -2,7 +2,7 @@ import { folder, useControls } from 'leva';
 
 import { useMemo } from 'react';
 
-import { LEGACY_WORLD_TO_SCENE } from '../splineData';
+import { LEGACY_WORLD_TO_SCENE } from '../../../../../../presets/smoke/thatsAllFolksSmoke';
 
 const s = (value) => Number((value * LEGACY_WORLD_TO_SCENE).toFixed(3));
 

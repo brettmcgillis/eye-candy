@@ -18,11 +18,6 @@ export const PRESET_REGISTRY = {
     'Flying High': 'src/presets/fire/flyingHighFire.js',
     'Police Presence': 'src/presets/fire/policePresenceFire.js',
   },
-  cloth: {
-    Default: 'src/presets/cloth/defaultCloth.js',
-    Ghost: 'src/presets/cloth/ghostCloth.js',
-    Ribbon: 'src/presets/cloth/ribbonCloth.js',
-  },
 };
 
 /**

@@ -3,13 +3,13 @@ import { folder, useControls } from 'leva';
 import { useMemo } from 'react';
 
 import usePresetsFolder from '../../../../../hooks/usePresetsFolder';
-import DEFAULT_CLOTH from '../../../../../presets/cloth/defaultCloth';
-import GHOST_CLOTH from '../../../../../presets/cloth/ghostCloth';
-import RIBBON_CLOTH from '../../../../../presets/cloth/ribbonCloth';
 import {
   pinEdge,
   pinPoint,
 } from '../../../../elements/webgpu/cloth/pinHelpers';
+import DEFAULT_CLOTH from './presets/cloth/defaultCloth';
+import GHOST_CLOTH from './presets/cloth/ghostCloth';
+import RIBBON_CLOTH from './presets/cloth/ribbonCloth';
 
 const CLOTH_PRESETS = {
   Default: DEFAULT_CLOTH,

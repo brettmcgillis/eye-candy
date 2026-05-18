@@ -92,6 +92,7 @@ export default function BeautysInTheEyeOfTheBeheaded() {
           density={controls.projectorVolumeDensity}
           distance={controls.projectorDistance}
           layer={PROJECTOR_VOLUME_LAYER}
+          noiseSpeed={controls.projectorVolumeNoiseSpeed}
           onMaterialChange={setProjectorVolumeMaterial}
           position={controls.projectorPosition}
           steps={controls.projectorVolumeSteps}

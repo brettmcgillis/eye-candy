@@ -428,6 +428,13 @@ export default function useSceneControls() {
                     max: 3,
                     step: 0.01,
                   },
+                  projectorVolumeNoiseSpeed: {
+                    label: 'Noise Speed',
+                    value: preset.projectorVolumeNoiseSpeed,
+                    min: 0,
+                    max: 1,
+                    step: 0.01,
+                  },
                   projectorVolumeSteps: {
                     label: 'Steps',
                     value: preset.projectorVolumeSteps,

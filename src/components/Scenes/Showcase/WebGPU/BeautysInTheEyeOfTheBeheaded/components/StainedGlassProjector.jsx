@@ -26,6 +26,8 @@ const StainedGlassProjector = memo(function StainedGlassProjector({
   causticSpeed = 0.35,
   penumbra,
   position,
+  shadowAutoUpdate = true,
+  shadowUpdateKey = null,
   angle,
   target,
   decay,
@@ -73,10 +75,12 @@ const StainedGlassProjector = memo(function StainedGlassProjector({
       mapWrapT={THREE.RepeatWrapping}
       penumbra={penumbra}
       position={projectorPosition}
+      shadowAutoUpdate={shadowAutoUpdate}
       shadowBias={-0.0008}
       shadowFar={14}
       shadowFocus={focus}
       shadowNormalBias={0.02}
+      shadowUpdateKey={shadowUpdateKey}
       shadowMapSize={[2048, 2048]}
       shadowNear={0.5}
       target={projectorTarget}

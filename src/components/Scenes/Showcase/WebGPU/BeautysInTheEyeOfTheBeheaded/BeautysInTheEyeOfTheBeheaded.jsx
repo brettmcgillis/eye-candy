@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useMemo, useState } from 'react';
 
 import { OrbitControls, PerspectiveCamera } from '@react-three/drei';
 
@@ -21,6 +21,67 @@ const PROJECTOR_VOLUME_LAYER = 10;
 export default function BeautysInTheEyeOfTheBeheaded() {
   const { controls } = useSceneControls();
   const [projectorVolumeMaterial, setProjectorVolumeMaterial] = useState(null);
+  const projectorShadowUpdateKey = useMemo(
+    () =>
+      [
+        controls.projectorCastShadow,
+        controls.projectorPosition.x,
+        controls.projectorPosition.y,
+        controls.projectorPosition.z,
+        controls.projectorTarget.x,
+        controls.projectorTarget.y,
+        controls.projectorTarget.z,
+        controls.projectorAngle,
+        controls.projectorFocus,
+        controls.leftFemurPosition.x,
+        controls.leftFemurPosition.y,
+        controls.leftFemurPosition.z,
+        controls.leftFemurRotation.x,
+        controls.leftFemurRotation.y,
+        controls.leftFemurRotation.z,
+        controls.rightFemurPosition.x,
+        controls.rightFemurPosition.y,
+        controls.rightFemurPosition.z,
+        controls.rightFemurRotation.x,
+        controls.rightFemurRotation.y,
+        controls.rightFemurRotation.z,
+        controls.skullPosition.x,
+        controls.skullPosition.y,
+        controls.skullPosition.z,
+        controls.skullRotation.x,
+        controls.skullRotation.y,
+        controls.skullRotation.z,
+      ].join('|'),
+    [
+      controls.leftFemurPosition.x,
+      controls.leftFemurPosition.y,
+      controls.leftFemurPosition.z,
+      controls.leftFemurRotation.x,
+      controls.leftFemurRotation.y,
+      controls.leftFemurRotation.z,
+      controls.projectorAngle,
+      controls.projectorCastShadow,
+      controls.projectorFocus,
+      controls.projectorPosition.x,
+      controls.projectorPosition.y,
+      controls.projectorPosition.z,
+      controls.projectorTarget.x,
+      controls.projectorTarget.y,
+      controls.projectorTarget.z,
+      controls.rightFemurPosition.x,
+      controls.rightFemurPosition.y,
+      controls.rightFemurPosition.z,
+      controls.rightFemurRotation.x,
+      controls.rightFemurRotation.y,
+      controls.rightFemurRotation.z,
+      controls.skullPosition.x,
+      controls.skullPosition.y,
+      controls.skullPosition.z,
+      controls.skullRotation.x,
+      controls.skullRotation.y,
+      controls.skullRotation.z,
+    ]
+  );
   const { cameraFov, cameraPosition, cameraTarget } = useResponsiveCamera({
     desktopFov: controls.desktopCameraFov,
     desktopPosition: controls.desktopCameraPosition,
@@ -50,7 +111,7 @@ export default function BeautysInTheEyeOfTheBeheaded() {
         enableZoom
         enablePan
         autoRotate
-        autoRotateSpeed={1}
+        autoRotateSpeed={16}
         maxDistance={10}
         minDistance={2.5}
         target={cameraTarget}
@@ -81,6 +142,8 @@ export default function BeautysInTheEyeOfTheBeheaded() {
         penumbra={controls.projectorPenumbra}
         position={controls.projectorPosition}
         repeat={controls.projectorRepeat}
+        shadowAutoUpdate={false}
+        shadowUpdateKey={projectorShadowUpdateKey}
         target={controls.projectorTarget}
         tintColor={controls.projectorTintColor}
         tintStrength={controls.projectorTintStrength}

@@ -19,7 +19,7 @@ const PRESETS = {
     },
     mobileCameraTarget: {
       x: 0,
-      y: 0.55,
+      y: 1.55,
       z: 0.35,
     },
     ambientIntensity: 0.025,

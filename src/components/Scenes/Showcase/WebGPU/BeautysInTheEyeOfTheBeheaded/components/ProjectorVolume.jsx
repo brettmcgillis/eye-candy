@@ -119,9 +119,12 @@ const ProjectorVolume = memo(function ProjectorVolume({
   useEffect(() => {
     uniforms.density.value = density;
     uniforms.noiseSpeed.value = noiseSpeed;
+  }, [density, noiseSpeed, uniforms]);
+
+  useEffect(() => {
     material.steps = steps;
     material.needsUpdate = true;
-  }, [density, material, noiseSpeed, steps, uniforms]);
+  }, [material, steps]);
 
   useEffect(() => {
     onMaterialChange?.(material);

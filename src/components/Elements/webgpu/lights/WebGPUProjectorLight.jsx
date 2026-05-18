@@ -102,7 +102,9 @@ function WebGPUProjectorLightInner({
   shadowFocus = 1,
   shadowBias = 0,
   shadowNormalBias = 0,
+  shadowAutoUpdate = true,
   shadowAspect = null,
+  shadowUpdateKey = null,
   colorNode = null,
   mapUrl = null,
   mapColorSpace = THREE.SRGBColorSpace,
@@ -493,6 +495,7 @@ function WebGPUProjectorLightInner({
     light.shadow.camera.near = shadowNear;
     light.shadow.camera.far = shadowFar;
     light.shadow.focus = usesProjectedSampling ? 1 : shadowFocus;
+    light.shadow.autoUpdate = castShadow && shadowAutoUpdate;
     light.shadow.bias = shadowBias;
     light.shadow.normalBias = shadowNormalBias;
     light.shadow.camera.updateProjectionMatrix();
@@ -518,10 +521,12 @@ function WebGPUProjectorLightInner({
     shadowBias,
     shadowFar,
     shadowFocus,
+    shadowAutoUpdate,
     shadowAspect,
     shadowMapSize,
     shadowNear,
     shadowNormalBias,
+    shadowUpdateKey,
     target,
     usesProjectedSampling,
   ]);

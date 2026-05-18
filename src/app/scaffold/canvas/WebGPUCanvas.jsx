@@ -8,7 +8,7 @@ export default function WebGPUCanvas({ children }) {
   return (
     <Canvas
       dpr={[1, 1.5]}
-      shadows="basic"
+      shadows="soft"
       gl={async (props) => {
         const renderer = new THREE.WebGPURenderer({
           ...props,

@@ -14,6 +14,7 @@ import {
   FaPaw,
   FaPen,
   FaPlane,
+  FaSkullCrossbones,
   FaToolbox,
   FaTools,
 } from 'react-icons/fa';
@@ -211,6 +212,11 @@ const StillPullingForYouWebGPU = lazy(
     import('../components/scenes/WorkInProgress/WebGPU/StillPullingForYou/StillPullingForYou')
 );
 
+const BeautysInTheEyeOfTheBeheaded = lazy(
+  () =>
+    import('../components/scenes/WorkInProgress/WebGPU/BeautysInTheEyeOfTheBeheaded/BeautysInTheEyeOfTheBeheaded')
+);
+
 function WipAreaIcon() {
   return <FaTools color="#94a3b8" />;
 }
@@ -224,7 +230,7 @@ function ToolboxAreaIcon() {
 }
 
 function NoSceneIcon() {
-  return <PiSkullDuotone color="#888" />;
+  return <PiSkullDuotone color="#2b2b2b" />;
 }
 
 function CandleLightIcon() {
@@ -484,6 +490,10 @@ function RabbitIcon() {
 
 function TugboatIcon() {
   return <GiSinkingShip color="#1e40af" />;
+}
+
+function BeautysInTheEyeOfTheBeheadedIcon() {
+  return <FaSkullCrossbones color="#111827" />;
 }
 
 export const AREA_ROUTE_SEGMENTS = {
@@ -1101,6 +1111,15 @@ export const EYE_CANDIES = [
     route: 'thatsAllFolks-webgpu',
     icon: ThatsAllFolksIcon,
     Component: ThatsAllFolksWebGPU,
+  },
+  {
+    id: 'beautysInTheEyeOfTheBeheaded',
+    label: "Beauty's In The Eye Of The Beheaded",
+    channel: 'webgpu',
+    area: 'wip',
+    route: 'beautysInTheEyeOfTheBeheaded',
+    icon: BeautysInTheEyeOfTheBeheadedIcon,
+    Component: BeautysInTheEyeOfTheBeheaded,
   },
 ];
 

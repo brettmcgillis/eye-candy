@@ -9,11 +9,10 @@ import {
   uniform,
   vec3,
 } from 'three/tsl';
-import * as THREE from 'three/webgpu';
 
-import { memo, useEffect, useMemo, useRef } from 'react';
+import { memo, useEffect, useMemo } from 'react';
 
-import { useThree } from '@react-three/fiber';
+import WebGPUProjectorLight from '../../../../../elements/webgpu/lights/WebGPUProjectorLight';
 
 function MoonlightProjectorInner({
   color = '#b8ccf0',
@@ -28,10 +27,6 @@ function MoonlightProjectorInner({
   cloudSpeed = 1.0,
   cloudFloor = 0.15,
 }) {
-  const { scene } = useThree();
-  const lightRef = useRef(null);
-
-  // Uniform nodes — created once, values updated on prop changes
   const uniforms = useMemo(
     () => ({
       noiseScale: uniform(cloudScale),
@@ -43,16 +38,12 @@ function MoonlightProjectorInner({
     []
   );
 
-  // Cloud colorNode — SpotLightNode.setupDirect checks light.colorNode and calls
-  // it with lightProjectionUV ([0,1] UV across the cone). Unlike ProjectorLight
-  // which uses lightShadowMatrix (needs castShadow=true, causes frustum-corner
-  // triangle artifacts), SpotLight's lightProjectionUV needs no shadow matrix.
   const colorNode = useMemo(() => {
     const { noiseScale, density, contrast, speed, floor: floorU } = uniforms;
-    return Fn(([lightCoord]) => {
+    return Fn(([projectorUV]) => {
       const noisePos = vec3(
-        lightCoord.x.mul(noiseScale).add(time.mul(speed.mul(float(0.022)))),
-        lightCoord.y.mul(noiseScale).add(time.mul(speed.mul(float(0.009)))),
+        projectorUV.x.mul(noiseScale).add(time.mul(speed.mul(float(0.022)))),
+        projectorUV.y.mul(noiseScale).add(time.mul(speed.mul(float(0.009)))),
         time.mul(speed.mul(float(0.018)))
       );
       const cloud = mx_fractal_noise_float(
@@ -87,46 +78,24 @@ function MoonlightProjectorInner({
     uniforms.floor.value = cloudFloor;
   }, [cloudFloor, uniforms]);
 
-  // Build the light once; re-run only if scene or colorNode changes
-  useEffect(() => {
-    const target = new THREE.Object3D();
-    target.position.set(0, 0.5, 0);
-    scene.add(target);
-
-    const light = new THREE.SpotLight(new THREE.Color(color), peakIntensity);
-    light.colorNode = colorNode;
-    light.position.set(posX, posY, posZ);
-    light.angle = (angle * Math.PI) / 180;
-    light.penumbra = 0.5;
-    light.decay = 2;
-    light.distance = 0;
-    light.castShadow = false;
-    light.target = target;
-    scene.add(light);
-    lightRef.current = light;
-
-    return () => {
-      scene.remove(light);
-      scene.remove(target);
-      lightRef.current = null;
-    };
-  }, [scene, colorNode]);
-
-  // Sync mutable light properties when controls change
-  useEffect(() => {
-    if (lightRef.current) lightRef.current.color.set(color);
-  }, [color]);
-  useEffect(() => {
-    if (lightRef.current) lightRef.current.intensity = peakIntensity;
-  }, [peakIntensity]);
-  useEffect(() => {
-    if (lightRef.current) lightRef.current.position.set(posX, posY, posZ);
-  }, [posX, posY, posZ]);
-  useEffect(() => {
-    if (lightRef.current) lightRef.current.angle = (angle * Math.PI) / 180;
-  }, [angle]);
-
-  return null;
+  return (
+    <WebGPUProjectorLight
+      angle={(angle * Math.PI) / 180}
+      castShadow={false}
+      color={color}
+      colorNode={colorNode}
+      decay={2}
+      distance={0}
+      intensity={peakIntensity}
+      penumbra={0.5}
+      position={[posX, posY, posZ]}
+      shadowFar={24}
+      shadowFocus={1}
+      shadowMapSize={[2048, 2048]}
+      shadowNear={0.5}
+      target={[0, 0.5, 0]}
+    />
+  );
 }
 
 export default memo(MoonlightProjectorInner);

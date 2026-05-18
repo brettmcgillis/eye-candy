@@ -24,7 +24,6 @@
 To Build:
 
 - [ ] Skeleton with bird in ribcage (all assets grabbed, need to pose skeleton)
-- [ ] Skull & crossbones w/ stained glass spotlight.
 - [ ] Video casette tape with video playing on tape ribbon
 - [ ] CSG Skull. Knock a reversal out of its forehead.
 - [ ] Metaball (marching cubes) lava lamp
@@ -66,6 +65,7 @@ To Build:
 
 **WorkInProgress**
 
+- [Beautys in the eye of the beheaded](src/components/scenes/WorkInProgress/WebGPU/BeautysInTheEyeOfTheBeheaded/todo.md)
 - [CRTTest](src/components/scenes/WorkInProgress/WebGL/CRTTest/todo.md)
 - [DumpsterFire](src/components/scenes/WorkInProgress/WebGL/DumpsterFire/todo.md)
 - [ThatsAllFolks WebGL](src/components/scenes/WorkInProgress/WebGL/ThatsAllFolks/todo.md)

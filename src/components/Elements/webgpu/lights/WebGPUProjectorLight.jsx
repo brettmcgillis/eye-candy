@@ -120,6 +120,7 @@ function WebGPUProjectorLightInner({
   mapCausticScale = 6,
   mapCausticContrast = 0.22,
   mapCausticSpeed = 0.35,
+  extraLayers = [],
   debug = false,
 }) {
   const { scene } = useThree();
@@ -242,12 +243,11 @@ function WebGPUProjectorLightInner({
         mix(vec3(1, 1, 1), tintColor, tintStrength)
       );
       const animatedTime = time.mul(causticSpeed);
-      const causticUv = tiledUv.mul(causticScale).add(
-        vec2(
-          animatedTime.mul(float(0.021)),
-          animatedTime.mul(float(-0.014))
-        )
+      const causticOffset = vec2(
+        animatedTime.mul(float(0.021)),
+        animatedTime.mul(float(-0.014))
       );
+      const causticUv = tiledUv.mul(causticScale).add(causticOffset);
       const broadNoise = mxFractalNoise(
         vec3(causticUv, animatedTime.mul(float(0.013))),
         int(3),
@@ -475,6 +475,13 @@ function WebGPUProjectorLightInner({
     light.decay = decay;
     light.distance = distance;
     light.castShadow = castShadow;
+    light.layers.disableAll();
+    light.layers.enable(0);
+    extraLayers.forEach((layer) => {
+      if (Number.isInteger(layer)) {
+        light.layers.enable(layer);
+      }
+    });
     light.colorNode = effectiveColorNode;
     light.map = effectiveColorNode ? null : textureRef.current;
     lightTarget.position.set(target[0], target[1], target[2]);
@@ -504,6 +511,7 @@ function WebGPUProjectorLightInner({
     decay,
     distance,
     effectiveColorNode,
+    extraLayers,
     intensity,
     penumbra,
     position,

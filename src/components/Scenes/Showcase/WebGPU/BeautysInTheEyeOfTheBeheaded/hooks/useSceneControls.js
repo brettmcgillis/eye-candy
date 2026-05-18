@@ -366,63 +366,6 @@ export default function useSceneControls() {
                 },
                 C
               ),
-              Candle: folder(
-                {
-                  candleEnabled: {
-                    label: 'Enabled',
-                    value: preset.candleEnabled,
-                  },
-                  candleIntensity: {
-                    label: 'Intensity',
-                    value: preset.candleIntensity,
-                    min: 0,
-                    max: 1,
-                    step: 0.01,
-                  },
-                  candleColor: {
-                    label: 'Color',
-                    value: preset.candleColor,
-                  },
-                  candlePosition: {
-                    label: 'Position',
-                    value: preset.candlePosition,
-                    step: 0.05,
-                  },
-                  candleDistance: {
-                    label: 'Distance',
-                    value: preset.candleDistance,
-                    min: 0,
-                    max: 10,
-                    step: 0.1,
-                  },
-                  candleDecay: {
-                    label: 'Decay',
-                    value: preset.candleDecay,
-                    min: 1,
-                    max: 2,
-                    step: 0.01,
-                  },
-                  candleFlickerAmount: {
-                    label: 'Flicker Amount',
-                    value: preset.candleFlickerAmount,
-                    min: 0,
-                    max: 0.5,
-                    step: 0.01,
-                  },
-                  candleFlickerSpeed: {
-                    label: 'Flicker Speed',
-                    value: preset.candleFlickerSpeed,
-                    min: 0,
-                    max: 8,
-                    step: 0.05,
-                  },
-                  candleDebug: {
-                    label: 'Debug',
-                    value: preset.candleDebug,
-                  },
-                },
-                C
-              ),
             },
             C
           ),
@@ -461,6 +404,50 @@ export default function useSceneControls() {
                     min: 1,
                     max: 4,
                     step: 1,
+                  },
+                },
+                C
+              ),
+              'Projector Volume': folder(
+                {
+                  projectorVolumeEnabled: {
+                    label: 'Enabled',
+                    value: preset.projectorVolumeEnabled,
+                  },
+                  projectorVolumeIntensity: {
+                    label: 'Intensity',
+                    value: preset.projectorVolumeIntensity,
+                    min: 0,
+                    max: 2,
+                    step: 0.01,
+                  },
+                  projectorVolumeDensity: {
+                    label: 'Density',
+                    value: preset.projectorVolumeDensity,
+                    min: 0,
+                    max: 3,
+                    step: 0.01,
+                  },
+                  projectorVolumeSteps: {
+                    label: 'Steps',
+                    value: preset.projectorVolumeSteps,
+                    min: 2,
+                    max: 24,
+                    step: 1,
+                  },
+                  projectorVolumeBlur: {
+                    label: 'Denoise',
+                    value: preset.projectorVolumeBlur,
+                    min: 0,
+                    max: 1,
+                    step: 0.01,
+                  },
+                  projectorVolumeResolutionScale: {
+                    label: 'Resolution',
+                    value: preset.projectorVolumeResolutionScale,
+                    min: 0.1,
+                    max: 1,
+                    step: 0.05,
                   },
                 },
                 C

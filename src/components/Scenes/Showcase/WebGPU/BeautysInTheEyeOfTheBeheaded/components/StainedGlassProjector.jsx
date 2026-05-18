@@ -16,6 +16,7 @@ const StainedGlassProjector = memo(function StainedGlassProjector({
   color,
   debug,
   distance,
+  extraLayers = [],
   intensity,
   focus,
   blur = 0,
@@ -56,6 +57,7 @@ const StainedGlassProjector = memo(function StainedGlassProjector({
       debug={debug}
       decay={decay}
       distance={distance}
+      extraLayers={extraLayers}
       intensity={intensity}
       mapBlur={blur}
       mapCausticAmount={causticAmount}

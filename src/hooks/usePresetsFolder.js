@@ -1,17 +1,28 @@
 import { button, folder } from 'leva';
 
-import { useCallback, useMemo, useRef, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 
 import { localEnv } from '../utils/appUtils';
-import {
-  getInitialPresetFromQuery,
-  useSyncPresetQueryParam,
-} from './usePresetQueryParam';
+import { readQueryParam, writeQueryParam } from '../utils/queryParams';
+import { useSyncPresetQueryParam } from './usePresetQueryParam';
 
 function toObjectLiteral(snapshot) {
   return JSON.stringify(snapshot, null, 2).replace(
     /"([A-Za-z_$][A-Za-z0-9_$]*)":/g,
     '$1:'
+  );
+}
+
+function resolvePresetOption(value, presetOptions) {
+  if (typeof value !== 'string') return null;
+
+  const normalizedValue = value.trim().toLowerCase();
+  if (!normalizedValue) return null;
+
+  return (
+    presetOptions.find((presetOption) => {
+      return presetOption.toLowerCase() === normalizedValue;
+    }) || null
   );
 }
 
@@ -23,14 +34,15 @@ export default function usePresetsFolder({
 }) {
   const local = localEnv();
   const presetOptions = useMemo(() => Object.keys(presets), [presets]);
+  const requestedPreset = readQueryParam('preset');
 
   const initialPreset = useMemo(() => {
-    return getInitialPresetFromQuery({
-      defaultPreset,
-      paramKey: 'preset',
-      presetValues: presetOptions,
-    });
-  }, [defaultPreset, presetOptions]);
+    return resolvePresetOption(requestedPreset, presetOptions) || defaultPreset;
+  }, [defaultPreset, presetOptions, requestedPreset]);
+
+  const needsPresetQueryRepair = useMemo(() => {
+    return requestedPreset !== null && requestedPreset !== initialPreset;
+  }, [initialPreset, requestedPreset]);
 
   const controlsSnapshotRef = useRef(
     presets[initialPreset] || presets[defaultPreset] || {}
@@ -38,6 +50,9 @@ export default function usePresetsFolder({
   const selectedPresetRef = useRef(initialPreset);
   const [selectedPreset, setSelectedPreset] = useState(initialPreset);
   const setControlsRef = useRef(null);
+  const pendingPresetRepairRef = useRef(
+    needsPresetQueryRepair ? initialPreset : null
+  );
 
   const applyPresetByName = useCallback(
     (presetName, context = {}) => {
@@ -93,9 +108,26 @@ export default function usePresetsFolder({
     );
   }, [applyPresetByName, copyTransform, initialPreset, local, presetOptions]);
 
-  const attachSetControls = useCallback((setControls) => {
-    setControlsRef.current = setControls;
-  }, []);
+  const attachSetControls = useCallback(
+    (setControls) => {
+      setControlsRef.current = setControls;
+      const pendingPreset = pendingPresetRepairRef.current;
+
+      if (!pendingPreset) return;
+
+      pendingPresetRepairRef.current = null;
+      applyPresetByName(pendingPreset, {
+        currentControls: controlsSnapshotRef.current,
+      });
+    },
+    [applyPresetByName]
+  );
+
+  useEffect(() => {
+    if (!needsPresetQueryRepair) return;
+
+    writeQueryParam('preset', initialPreset);
+  }, [initialPreset, needsPresetQueryRepair]);
 
   useSyncPresetQueryParam({
     defaultPreset,

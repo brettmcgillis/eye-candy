@@ -934,15 +934,15 @@ export default function useSceneControls() {
 
       Femur: folder(
         {
-          'Femur Appearance': folder(
+          Appearance: folder(
             {
               femurPosition: {
                 label: 'Position',
-                value: { x: -3, y: -3, z: -0.05 },
+                value: { x: 0.3, y: 0, z: -0.6 },
               },
               femurRotation: {
                 label: 'Rotation',
-                value: { x: 0, y: 0, z: -66 },
+                value: { x: -8, y: 173, z: -26 },
               },
               femurScale: {
                 label: 'Scale',

@@ -4,56 +4,24 @@ import { useGLTF } from '@react-three/drei';
 
 import { modelFile } from '../../../utils/appUtils';
 
+const FEMUR_MODEL_PATH = modelFile('femur.glb');
+
 export default function Femur(props) {
-  const { nodes, materials } = useGLTF(modelFile(`Femur.gltf`));
+  const { nodes, materials } = useGLTF(FEMUR_MODEL_PATH);
   return (
     <group {...props} dispose={null}>
-      <group position={[-4.28, 3.792, 4.512]} rotation={[-3.127, 0.467, 1.865]}>
-        <mesh
-          castShadow
-          receiveShadow
-          geometry={nodes.Object_2.geometry}
-          material={materials.material_0}
-        />
-        <mesh
-          castShadow
-          receiveShadow
-          geometry={nodes.Object_3.geometry}
-          material={materials.material_0}
-        />
-        <mesh
-          castShadow
-          receiveShadow
-          geometry={nodes.Object_4.geometry}
-          material={materials.material_0}
-        />
-        <mesh
-          castShadow
-          receiveShadow
-          geometry={nodes.Object_5.geometry}
-          material={materials.material_0}
-        />
-        <mesh
-          castShadow
-          receiveShadow
-          geometry={nodes.Object_6.geometry}
-          material={materials.material_0}
-        />
-        <mesh
-          castShadow
-          receiveShadow
-          geometry={nodes.Object_7.geometry}
-          material={materials.material_0}
-        />
-        <mesh
-          castShadow
-          receiveShadow
-          geometry={nodes.Object_8.geometry}
-          material={materials.material_0}
-        />
-      </group>
+      <mesh
+        castShadow
+        receiveShadow
+        geometry={nodes.Femur.geometry}
+        material={materials.material_0}
+      />
     </group>
   );
 }
 
-useGLTF.preload(modelFile(`Femur.gltf`));
+export function Model(props) {
+  return <Femur {...props} />;
+}
+
+useGLTF.preload(FEMUR_MODEL_PATH);

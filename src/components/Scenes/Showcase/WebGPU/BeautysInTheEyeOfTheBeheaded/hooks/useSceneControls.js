@@ -160,6 +160,37 @@ export default function useSceneControls() {
                 },
                 C
               ),
+              Rim: folder(
+                {
+                  rimEnabled: {
+                    label: 'Enabled',
+                    value: preset.rimEnabled,
+                  },
+                  rimIntensity: {
+                    label: 'Intensity',
+                    value: preset.rimIntensity,
+                    min: 0,
+                    max: 1,
+                    step: 0.01,
+                  },
+                  rimColor: { label: 'Color', value: preset.rimColor },
+                  rimPosition: {
+                    label: 'Position',
+                    value: preset.rimPosition,
+                    step: 0.05,
+                  },
+                  rimTarget: {
+                    label: 'Target',
+                    value: preset.rimTarget,
+                    step: 0.05,
+                  },
+                  rimDebug: {
+                    label: 'Debug',
+                    value: preset.rimDebug,
+                  },
+                },
+                C
+              ),
               Spot: folder(
                 {
                   spotIntensity: {
@@ -285,6 +316,105 @@ export default function useSceneControls() {
                   projectorDebug: {
                     label: 'Debug',
                     value: preset.projectorDebug,
+                  },
+                },
+                C
+              ),
+              Candle: folder(
+                {
+                  candleEnabled: {
+                    label: 'Enabled',
+                    value: preset.candleEnabled,
+                  },
+                  candleIntensity: {
+                    label: 'Intensity',
+                    value: preset.candleIntensity,
+                    min: 0,
+                    max: 1,
+                    step: 0.01,
+                  },
+                  candleColor: {
+                    label: 'Color',
+                    value: preset.candleColor,
+                  },
+                  candlePosition: {
+                    label: 'Position',
+                    value: preset.candlePosition,
+                    step: 0.05,
+                  },
+                  candleDistance: {
+                    label: 'Distance',
+                    value: preset.candleDistance,
+                    min: 0,
+                    max: 10,
+                    step: 0.1,
+                  },
+                  candleDecay: {
+                    label: 'Decay',
+                    value: preset.candleDecay,
+                    min: 1,
+                    max: 2,
+                    step: 0.01,
+                  },
+                  candleFlickerAmount: {
+                    label: 'Flicker Amount',
+                    value: preset.candleFlickerAmount,
+                    min: 0,
+                    max: 0.5,
+                    step: 0.01,
+                  },
+                  candleFlickerSpeed: {
+                    label: 'Flicker Speed',
+                    value: preset.candleFlickerSpeed,
+                    min: 0,
+                    max: 8,
+                    step: 0.05,
+                  },
+                  candleDebug: {
+                    label: 'Debug',
+                    value: preset.candleDebug,
+                  },
+                },
+                C
+              ),
+            },
+            C
+          ),
+          Post: folder(
+            {
+              Bloom: folder(
+                {
+                  bloomEnabled: {
+                    label: 'Enabled',
+                    value: preset.bloomEnabled,
+                  },
+                  bloomThreshold: {
+                    label: 'Threshold',
+                    value: preset.bloomThreshold,
+                    min: 0,
+                    max: 1.5,
+                    step: 0.01,
+                  },
+                  bloomStrength: {
+                    label: 'Strength',
+                    value: preset.bloomStrength,
+                    min: 0,
+                    max: 1,
+                    step: 0.01,
+                  },
+                  bloomRadius: {
+                    label: 'Radius',
+                    value: preset.bloomRadius,
+                    min: 0.1,
+                    max: 1,
+                    step: 0.01,
+                  },
+                  bloomDownSampleRatio: {
+                    label: 'Downsample',
+                    value: preset.bloomDownSampleRatio,
+                    min: 1,
+                    max: 4,
+                    step: 1,
                   },
                 },
                 C

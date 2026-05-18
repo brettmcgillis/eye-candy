@@ -39,6 +39,7 @@ To Build:
 **Showcase**
 
 - [AllMyThoughtsAreSoCumulus](src/components/scenes/Showcase/WebGL/AllMyThoughtsAreSoCumulus/todo.md)
+- [Beautys in the eye of the beheaded](src/components/scenes/Showcase/WebGPU/BeautysInTheEyeOfTheBeheaded/todo.md)
 - [BurningAtBothEnds](src/components/scenes/Showcase/WebGL/BurningAtBothEnds/todo.md)
 - [Cardinals](src/components/scenes/Showcase/WebGL/Cardinals/todo.md)
 - [LoGlow](src/components/scenes/Showcase/WebGL/LoGlow/todo.md)
@@ -65,7 +66,6 @@ To Build:
 
 **WorkInProgress**
 
-- [Beautys in the eye of the beheaded](src/components/scenes/WorkInProgress/WebGPU/BeautysInTheEyeOfTheBeheaded/todo.md)
 - [CRTTest](src/components/scenes/WorkInProgress/WebGL/CRTTest/todo.md)
 - [DumpsterFire](src/components/scenes/WorkInProgress/WebGL/DumpsterFire/todo.md)
 - [ThatsAllFolks WebGL](src/components/scenes/WorkInProgress/WebGL/ThatsAllFolks/todo.md)

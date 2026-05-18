@@ -214,7 +214,7 @@ const StillPullingForYouWebGPU = lazy(
 
 const BeautysInTheEyeOfTheBeheaded = lazy(
   () =>
-    import('../components/scenes/WorkInProgress/WebGPU/BeautysInTheEyeOfTheBeheaded/BeautysInTheEyeOfTheBeheaded')
+    import('../components/scenes/Showcase/WebGPU/BeautysInTheEyeOfTheBeheaded/BeautysInTheEyeOfTheBeheaded')
 );
 
 function WipAreaIcon() {
@@ -1116,7 +1116,7 @@ export const EYE_CANDIES = [
     id: 'beautysInTheEyeOfTheBeheaded',
     label: "Beauty's In The Eye Of The Beheaded",
     channel: 'webgpu',
-    area: 'wip',
+    area: 'showcase',
     route: 'beautysInTheEyeOfTheBeheaded',
     icon: BeautysInTheEyeOfTheBeheadedIcon,
     Component: BeautysInTheEyeOfTheBeheaded,

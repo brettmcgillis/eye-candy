@@ -3,9 +3,10 @@ import * as THREE from 'three/webgpu';
 import React, { useEffect, useRef } from 'react';
 
 import { OrbitControls, PerspectiveCamera } from '@react-three/drei';
-import { useThree } from '@react-three/fiber';
+import { useFrame, useThree } from '@react-three/fiber';
 
 import { radians } from '../../../../../utils/math';
+import Bloom from '../../../../postprocessing/webGPU/bloom/Bloom';
 import GroundPlane from './components/GroundPlane';
 import SceneFemur from './components/SceneFemur';
 import SceneSkull from './components/SceneSkull';
@@ -42,6 +43,68 @@ function AmbientDebugMarker({ color, visible }) {
       <octahedronGeometry args={[0.16, 0]} />
       <meshBasicMaterial color={color} toneMapped={false} wireframe />
     </mesh>
+  );
+}
+
+function CandleDebugMarker({ color, position, visible }) {
+  if (!visible) {
+    return null;
+  }
+
+  return (
+    <mesh position={position}>
+      <sphereGeometry args={[0.06, 10, 10]} />
+      <meshBasicMaterial color={color} toneMapped={false} wireframe />
+    </mesh>
+  );
+}
+
+function CandleLight({
+  color,
+  decay,
+  debug,
+  distance,
+  flickerAmount,
+  flickerSpeed,
+  intensity,
+  position,
+}) {
+  const lightRef = useRef(null);
+  const phaseRef = useRef(1.37);
+
+  useFrame((state) => {
+    const light = lightRef.current;
+
+    if (!light) {
+      return;
+    }
+
+    const time = state.clock.elapsedTime * flickerSpeed + phaseRef.current;
+    const layeredWave =
+      Math.sin(time * 2.3) * 0.55 +
+      Math.sin(time * 4.9 + 0.7) * 0.3 +
+      Math.sin(time * 8.2 + 1.4) * 0.15;
+    const normalizedFlicker = (layeredWave + 1) * 0.5;
+    const flickerScale =
+      1 - flickerAmount + normalizedFlicker * flickerAmount * 2;
+
+    // Keep the candle motion cheap and subtle so it reads as practical light.
+    light.intensity = Math.max(0, intensity * flickerScale);
+  });
+
+  return (
+    <>
+      <pointLight
+        ref={lightRef}
+        castShadow={false}
+        color={color}
+        decay={decay}
+        distance={distance}
+        intensity={intensity}
+        position={position}
+      />
+      <CandleDebugMarker color={color} position={position} visible={debug} />
+    </>
   );
 }
 
@@ -224,6 +287,8 @@ export default function BeautysInTheEyeOfTheBeheaded() {
         enableDamping
         enableZoom
         enablePan
+        autoRotate
+        autoRotateSpeed={-1}
         maxDistance={10}
         minDistance={2.5}
         target={cameraTarget}
@@ -272,6 +337,24 @@ export default function BeautysInTheEyeOfTheBeheaded() {
         ]}
       />
 
+      {controls.rimEnabled && (
+        <KeyLight
+          color={controls.rimColor}
+          debug={controls.rimDebug}
+          intensity={controls.rimIntensity}
+          position={[
+            controls.rimPosition.x,
+            controls.rimPosition.y,
+            controls.rimPosition.z,
+          ]}
+          target={[
+            controls.rimTarget.x,
+            controls.rimTarget.y,
+            controls.rimTarget.z,
+          ]}
+        />
+      )}
+
       <SceneSpotLight
         angle={radians(controls.spotAngle)}
         color={controls.spotColor}
@@ -307,6 +390,23 @@ export default function BeautysInTheEyeOfTheBeheaded() {
         target={controls.projectorTarget}
       />
 
+      {controls.candleEnabled && (
+        <CandleLight
+          color={controls.candleColor}
+          decay={controls.candleDecay}
+          debug={controls.candleDebug}
+          distance={controls.candleDistance}
+          flickerAmount={controls.candleFlickerAmount}
+          flickerSpeed={controls.candleFlickerSpeed}
+          intensity={controls.candleIntensity}
+          position={[
+            controls.candlePosition.x,
+            controls.candlePosition.y,
+            controls.candlePosition.z,
+          ]}
+        />
+      )}
+
       <GroundPlane extraLightLayer={FLOOR_FILL_LIGHT_LAYER} />
 
       <SceneFemur
@@ -324,6 +424,15 @@ export default function BeautysInTheEyeOfTheBeheaded() {
         rotation={controls.skullRotation}
         scale={SKULL_SCALE}
       />
+
+      {controls.bloomEnabled && (
+        <Bloom
+          downSampleRatio={controls.bloomDownSampleRatio}
+          radius={controls.bloomRadius}
+          strength={controls.bloomStrength}
+          threshold={controls.bloomThreshold}
+        />
+      )}
     </>
   );
 }

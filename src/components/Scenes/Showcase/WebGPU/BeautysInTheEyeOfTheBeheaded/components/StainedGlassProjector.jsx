@@ -18,6 +18,11 @@ const StainedGlassProjector = memo(function StainedGlassProjector({
   distance,
   intensity,
   focus,
+  blur = 0,
+  causticAmount = 0,
+  causticContrast = 0.22,
+  causticScale = 6,
+  causticSpeed = 0.35,
   penumbra,
   position,
   angle,
@@ -25,6 +30,8 @@ const StainedGlassProjector = memo(function StainedGlassProjector({
   decay,
   castShadow,
   repeat = { x: 1, y: 1 },
+  tintColor = '#ffffff',
+  tintStrength = 0,
 }) {
   const projectorPosition = useMemo(
     () => [position.x, position.y, position.z],
@@ -50,8 +57,15 @@ const StainedGlassProjector = memo(function StainedGlassProjector({
       decay={decay}
       distance={distance}
       intensity={intensity}
+      mapBlur={blur}
+      mapCausticAmount={causticAmount}
+      mapCausticContrast={causticContrast}
+      mapCausticScale={causticScale}
+      mapCausticSpeed={causticSpeed}
       mapGenerateMipmaps={false}
       mapRepeat={projectorRepeat}
+      mapTintColor={tintColor}
+      mapTintStrength={tintStrength}
       mapUrl={PROJECTOR_MAP_URL}
       mapWrapS={THREE.RepeatWrapping}
       mapWrapT={THREE.RepeatWrapping}

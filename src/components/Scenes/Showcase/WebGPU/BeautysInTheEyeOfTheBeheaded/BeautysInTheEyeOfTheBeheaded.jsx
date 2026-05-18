@@ -6,9 +6,9 @@ import { OrbitControls, PerspectiveCamera } from '@react-three/drei';
 import { useFrame, useThree } from '@react-three/fiber';
 
 import { radians } from '../../../../../utils/math';
-import Bloom from '../../../../postprocessing/webGPU/bloom/Bloom';
 import GroundPlane from './components/GroundPlane';
 import SceneFemur from './components/SceneFemur';
+import ScenePostEffects from './components/ScenePostEffects';
 import SceneSkull from './components/SceneSkull';
 import StainedGlassProjector from './components/StainedGlassProjector';
 import useResponsiveCamera from './hooks/useResponsiveCamera';
@@ -288,7 +288,7 @@ export default function BeautysInTheEyeOfTheBeheaded() {
         enableZoom
         enablePan
         autoRotate
-        autoRotateSpeed={-1}
+        autoRotateSpeed={1}
         maxDistance={10}
         minDistance={2.5}
         target={cameraTarget}
@@ -377,6 +377,11 @@ export default function BeautysInTheEyeOfTheBeheaded() {
 
       <StainedGlassProjector
         angle={controls.projectorAngle}
+        blur={controls.projectorBlur}
+        causticAmount={controls.projectorCausticAmount}
+        causticContrast={controls.projectorCausticContrast}
+        causticScale={controls.projectorCausticScale}
+        causticSpeed={controls.projectorCausticSpeed}
         castShadow={controls.projectorCastShadow}
         color={controls.projectorColor}
         debug={controls.projectorDebug}
@@ -388,6 +393,8 @@ export default function BeautysInTheEyeOfTheBeheaded() {
         position={controls.projectorPosition}
         repeat={controls.projectorRepeat}
         target={controls.projectorTarget}
+        tintColor={controls.projectorTintColor}
+        tintStrength={controls.projectorTintStrength}
       />
 
       {controls.candleEnabled && (
@@ -425,14 +432,13 @@ export default function BeautysInTheEyeOfTheBeheaded() {
         scale={SKULL_SCALE}
       />
 
-      {controls.bloomEnabled && (
-        <Bloom
-          downSampleRatio={controls.bloomDownSampleRatio}
-          radius={controls.bloomRadius}
-          strength={controls.bloomStrength}
-          threshold={controls.bloomThreshold}
-        />
-      )}
+      <ScenePostEffects
+        bloomDownSampleRatio={controls.bloomDownSampleRatio}
+        bloomEnabled={controls.bloomEnabled}
+        bloomRadius={controls.bloomRadius}
+        bloomStrength={controls.bloomStrength}
+        bloomThreshold={controls.bloomThreshold}
+      />
     </>
   );
 }

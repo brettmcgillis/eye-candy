@@ -2,10 +2,16 @@ import { TextureLoader } from 'three';
 import {
   Fn,
   clamp,
+  float,
   fract,
+  int,
   mix,
+  mx_fractal_noise_float as mxFractalNoise,
+  mx_worley_noise_float as mxWorleyNoise,
   positionWorld,
+  smoothstep,
   texture as textureSample,
+  time,
   uniform,
   vec2,
   vec3,
@@ -107,6 +113,13 @@ function WebGPUProjectorLightInner({
   mapOffset = [0, 0],
   mapWrapS = THREE.ClampToEdgeWrapping,
   mapWrapT = THREE.ClampToEdgeWrapping,
+  mapTintColor = '#ffffff',
+  mapTintStrength = 0,
+  mapBlur = 0,
+  mapCausticAmount = 0,
+  mapCausticScale = 6,
+  mapCausticContrast = 0.22,
+  mapCausticSpeed = 0.35,
   debug = false,
 }) {
   const { scene } = useThree();
@@ -132,6 +145,19 @@ function WebGPUProjectorLightInner({
     }),
     []
   );
+  const projectedEffectUniforms = useMemo(
+    () => ({
+      tintColor: uniform(new THREE.Color('#ffffff')),
+      tintStrength: uniform(0),
+      blurAmount: uniform(0),
+      causticAmount: uniform(0),
+      causticScale: uniform(6),
+      causticContrast: uniform(0.22),
+      causticSpeed: uniform(0.35),
+      texelSize: uniform(new THREE.Vector2(1, 1)),
+    }),
+    []
+  );
 
   const usesMapTransform =
     mapRepeat[0] !== 1 ||
@@ -140,9 +166,14 @@ function WebGPUProjectorLightInner({
     mapOffset[1] !== 0 ||
     mapWrapS !== THREE.ClampToEdgeWrapping ||
     mapWrapT !== THREE.ClampToEdgeWrapping;
+  const usesProjectedSampling =
+    usesMapTransform ||
+    mapTintStrength > 0 ||
+    mapBlur > 0 ||
+    mapCausticAmount > 0;
 
   const effectiveColorNode = useMemo(() => {
-    if (colorNode || !projectedTextureNode || !usesMapTransform) {
+    if (colorNode || !projectedTextureNode || !usesProjectedSampling) {
       return colorNode || null;
     }
 
@@ -156,6 +187,25 @@ function WebGPUProjectorLightInner({
       projectorUp,
       repeat,
     } = projectedMapUniforms;
+    const {
+      blurAmount,
+      causticAmount,
+      causticContrast,
+      causticScale,
+      causticSpeed,
+      texelSize,
+      tintColor,
+      tintStrength,
+    } = projectedEffectUniforms;
+
+    const sampleProjectedTexture = (uvNode) =>
+      textureSample(
+        projectedTextureNode,
+        vec2(
+          applyWrapMode(uvNode.x, mapWrapS),
+          applyWrapMode(uvNode.y, mapWrapT)
+        )
+      );
 
     return Fn(() => {
       const localPosition = positionWorld.sub(projectorPosition);
@@ -168,21 +218,86 @@ function WebGPUProjectorLightInner({
         .mul(repeat.mul(focusZoom))
         .add(0.5)
         .add(offset);
-      const wrappedUv = vec2(
-        applyWrapMode(tiledUv.x, mapWrapS),
-        applyWrapMode(tiledUv.y, mapWrapT)
+      const blurOffset = texelSize.mul(blurAmount).mul(repeat.mul(focusZoom));
+      const centerSample = sampleProjectedTexture(tiledUv);
+      const leftSample = sampleProjectedTexture(
+        tiledUv.sub(vec2(blurOffset.x, float(0.0)))
       );
-      const texNode = textureSample(projectedTextureNode, wrappedUv);
+      const rightSample = sampleProjectedTexture(
+        tiledUv.add(vec2(blurOffset.x, float(0.0)))
+      );
+      const downSample = sampleProjectedTexture(
+        tiledUv.sub(vec2(float(0.0), blurOffset.y))
+      );
+      const upSample = sampleProjectedTexture(
+        tiledUv.add(vec2(float(0.0), blurOffset.y))
+      );
+      const blurredSample = centerSample
+        .mul(float(0.4))
+        .add(leftSample.mul(float(0.15)))
+        .add(rightSample.mul(float(0.15)))
+        .add(downSample.mul(float(0.15)))
+        .add(upSample.mul(float(0.15)));
+      const tintedColor = blurredSample.rgb.mul(
+        mix(vec3(1, 1, 1), tintColor, tintStrength)
+      );
+      const animatedTime = time.mul(causticSpeed);
+      const causticUv = tiledUv.mul(causticScale).add(
+        vec2(
+          animatedTime.mul(float(0.021)),
+          animatedTime.mul(float(-0.014))
+        )
+      );
+      const broadNoise = mxFractalNoise(
+        vec3(causticUv, animatedTime.mul(float(0.013))),
+        int(3),
+        float(2.0),
+        float(0.5)
+      )
+        .mul(float(0.5))
+        .add(float(0.5));
+      const cellNoise = float(1.0).sub(
+        mxWorleyNoise(causticUv.mul(float(1.35)), float(1.0), 0).clamp(0.0, 1.0)
+      );
+      const causticPattern = smoothstep(
+        float(0.52).sub(causticContrast),
+        float(0.95),
+        broadNoise.mul(float(0.45)).add(cellNoise.mul(float(0.55)))
+      );
+      const causticVisibility = tintedColor
+        .dot(vec3(0.2126, 0.7152, 0.0722))
+        .mul(float(0.7))
+        .add(float(0.3));
+      const causticStrength = causticAmount.mul(causticVisibility);
+      const causticPatternCentered = causticPattern
+        .mul(float(2.0))
+        .sub(float(1.0));
+      const causticEnergy = clamp(
+        float(1.0).add(
+          causticPatternCentered.mul(causticStrength.mul(float(1.35)))
+        ),
+        float(0.2),
+        float(2.0)
+      );
+      const projectionMask = clamp(
+        blurredSample.a.add(
+          causticPatternCentered.mul(causticStrength.mul(float(0.18)))
+        ),
+        float(0.0),
+        float(1.0)
+      );
+      const projectedColor = tintedColor.mul(causticEnergy);
 
-      return mix(vec3(1, 1, 1), texNode.rgb, texNode.a);
+      return mix(vec3(1, 1, 1), projectedColor, projectionMask);
     });
   }, [
     colorNode,
     mapWrapS,
     mapWrapT,
+    projectedEffectUniforms,
     projectedMapUniforms,
     projectedTextureNode,
-    usesMapTransform,
+    usesProjectedSampling,
   ]);
 
   useEffect(() => {
@@ -213,6 +328,39 @@ function WebGPUProjectorLightInner({
     shadowFocus,
     target,
   ]);
+
+  useEffect(() => {
+    projectedEffectUniforms.tintColor.value.set(mapTintColor);
+    projectedEffectUniforms.tintStrength.value = mapTintStrength;
+    projectedEffectUniforms.blurAmount.value = mapBlur;
+    projectedEffectUniforms.causticAmount.value = mapCausticAmount;
+    projectedEffectUniforms.causticScale.value = mapCausticScale;
+    projectedEffectUniforms.causticContrast.value = mapCausticContrast;
+    projectedEffectUniforms.causticSpeed.value = mapCausticSpeed;
+  }, [
+    mapBlur,
+    mapCausticAmount,
+    mapCausticContrast,
+    mapCausticScale,
+    mapCausticSpeed,
+    mapTintColor,
+    mapTintStrength,
+    projectedEffectUniforms,
+  ]);
+
+  useEffect(() => {
+    const image = mapTexture?.image;
+
+    if (!image?.width || !image?.height) {
+      projectedEffectUniforms.texelSize.value.set(1, 1);
+      return;
+    }
+
+    projectedEffectUniforms.texelSize.value.set(
+      1 / image.width,
+      1 / image.height
+    );
+  }, [mapTexture, projectedEffectUniforms]);
 
   useEffect(() => {
     // SpotLight supports both map cookies and colorNode projection while
@@ -276,7 +424,7 @@ function WebGPUProjectorLightInner({
 
       textureRef.current = texture;
       setMapTexture(texture);
-      light.map = colorNode || usesMapTransform ? null : texture;
+      light.map = colorNode || usesProjectedSampling ? null : texture;
       light.shadow.aspect = shadowAspect || getTextureAspect(texture);
       light.shadow.camera.updateProjectionMatrix();
 
@@ -310,7 +458,7 @@ function WebGPUProjectorLightInner({
     mapWrapS,
     mapWrapT,
     shadowAspect,
-    usesMapTransform,
+    usesProjectedSampling,
   ]);
 
   useEffect(() => {
@@ -337,7 +485,7 @@ function WebGPUProjectorLightInner({
       shadowAspect || getTextureAspect(textureRef.current) || 1;
     light.shadow.camera.near = shadowNear;
     light.shadow.camera.far = shadowFar;
-    light.shadow.focus = usesMapTransform ? 1 : shadowFocus;
+    light.shadow.focus = usesProjectedSampling ? 1 : shadowFocus;
     light.shadow.bias = shadowBias;
     light.shadow.normalBias = shadowNormalBias;
     light.shadow.camera.updateProjectionMatrix();
@@ -367,7 +515,7 @@ function WebGPUProjectorLightInner({
     shadowNear,
     shadowNormalBias,
     target,
-    usesMapTransform,
+    usesProjectedSampling,
   ]);
 
   useEffect(() => {

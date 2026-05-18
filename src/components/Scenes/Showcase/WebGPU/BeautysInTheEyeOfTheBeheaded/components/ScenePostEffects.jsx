@@ -65,9 +65,10 @@ const ScenePostEffects = memo(function ScenePostEffects({
             volumetricPass.setLayers(volumetricLayer);
             volumetricPass.setResolutionScale(projectorVolumeResolutionScale);
 
-            return gaussianBlur(volumetricPass, uniforms.projectorVolumeBlur).mul(
-              uniforms.projectorVolumeIntensity
-            );
+            return gaussianBlur(
+              volumetricPass,
+              uniforms.projectorVolumeBlur
+            ).mul(uniforms.projectorVolumeIntensity);
           })()
         : vec4(0, 0, 0, 0);
 

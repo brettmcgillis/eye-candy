@@ -6,8 +6,6 @@ import { useThree } from '@react-three/fiber';
 
 import { radians } from '../../../../../../utils/math';
 
-const AMBIENT_DEBUG_POSITION = [-1.35, 1.8, 1.45];
-
 function TargetDebug({ color, position, visible }) {
   if (!visible) {
     return null;
@@ -16,19 +14,6 @@ function TargetDebug({ color, position, visible }) {
   return (
     <mesh position={position}>
       <sphereGeometry args={[0.08, 10, 10]} />
-      <meshBasicMaterial color={color} toneMapped={false} wireframe />
-    </mesh>
-  );
-}
-
-function AmbientDebug({ color, visible }) {
-  if (!visible) {
-    return null;
-  }
-
-  return (
-    <mesh position={AMBIENT_DEBUG_POSITION}>
-      <octahedronGeometry args={[0.16, 0]} />
       <meshBasicMaterial color={color} toneMapped={false} wireframe />
     </mesh>
   );
@@ -193,16 +178,6 @@ function SpotLightRig({
 const Lighting = memo(function Lighting({ controls, floorFillLightLayer }) {
   return (
     <>
-      <ambientLight
-        color={controls.ambientColor}
-        intensity={controls.ambientIntensity}
-      />
-
-      <AmbientDebug
-        color={controls.ambientColor}
-        visible={controls.ambientDebug}
-      />
-
       <DirectionalLightRig
         color={controls.keyColor}
         debug={controls.keyDebug}

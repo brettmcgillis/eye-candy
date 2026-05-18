@@ -110,7 +110,7 @@ export default function BeautysInTheEyeOfTheBeheaded() {
         enableDamping
         enableZoom
         enablePan
-        autoRotate
+        autoRotate={false}
         autoRotateSpeed={16}
         maxDistance={10}
         minDistance={2.5}

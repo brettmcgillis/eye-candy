@@ -83,26 +83,6 @@ export default function useSceneControls() {
           ),
           Lighting: folder(
             {
-              Ambient: folder(
-                {
-                  ambientIntensity: {
-                    label: 'Intensity',
-                    value: preset.ambientIntensity,
-                    min: 0,
-                    max: 1,
-                    step: 0.01,
-                  },
-                  ambientColor: {
-                    label: 'Color',
-                    value: preset.ambientColor,
-                  },
-                  ambientDebug: {
-                    label: 'Debug',
-                    value: preset.ambientDebug,
-                  },
-                },
-                C
-              ),
               Key: folder(
                 {
                   keyIntensity: {

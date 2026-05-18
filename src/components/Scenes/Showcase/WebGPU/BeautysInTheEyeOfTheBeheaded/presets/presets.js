@@ -22,9 +22,6 @@ const PRESETS = {
       y: 1.55,
       z: 0.35,
     },
-    ambientIntensity: 0.025,
-    ambientColor: '#74685a',
-    ambientDebug: false,
     keyIntensity: 0.14,
     keyColor: '#efc29d',
     keyPosition: {

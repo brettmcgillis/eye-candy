@@ -122,29 +122,32 @@ To Build:
 
 ### Scenes to post
 
-- [x] Burning At Both Ends - Enlightened
-- [x] Burning At Both Ends - Extinguished
-- [x] Burning At Both Ends - Lenticular
-- [x] Mycelium
 - [ ] All my Thoughts Are So Cumulus - Atomic
 - [ ] All my Thoughts Are So Cumulus - Censored Rings
 - [ ] All my Thoughts Are So Cumulus - Network
 - [ ] All my Thoughts Are So Cumulus - Plate
 - [ ] All my Thoughts Are So Cumulus - Record
 - [x] All my Thoughts Are So Cumulus - Static
-- [ ] Surrender
-- [ ] Surrender Now
-- [ ] Surrender - Autumn
-- [x] Surrender - Spring
-- [ ] Surrender - Winter
-- [ ] Surrender - Weather Any Storm
+- [x] Burning At Both Ends - Enlightened
+- [x] Burning At Both Ends - Extinguished
+- [x] Burning At Both Ends - Lenticular
+- [x] Cardinals - Cardinals
+- [ ] Cardinals - Bluejays
+- [ ] Cardinals - Magpies
+- [x] LoaderPattern(s)
+- [x] Mycelium
 - [x] PaperCuts - Default
 - [x] PaperCuts - Morse Code
 - [ ] PaperCuts - Layer Fade
 - [ ] PaperCuts - Argyle (2)
 - [ ] PaperCuts - 11 (3)
 - [x] PaperStack - Gradient Scan
-- [x] LoaderPattern(s)
+- [ ] Surrender
+- [ ] Surrender Now
+- [ ] Surrender - Autumn
+- [x] Surrender - Spring
+- [ ] Surrender - Winter
+- [ ] Surrender - Weather Any Storm
 
 ### Toolbox/TestLab to finish before demo
 

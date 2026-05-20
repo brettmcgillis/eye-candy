@@ -3,7 +3,12 @@ import React, { memo, useMemo } from 'react';
 import { radians } from '../../../../../../utils/math';
 import Femur from '../../../../../elements/femur/Femur';
 
-const SceneFemur = memo(function SceneFemur({ position, rotation, scale, visible }) {
+const SceneFemur = memo(function SceneFemur({
+  position,
+  rotation,
+  scale,
+  visible,
+}) {
   const femurPosition = useMemo(
     () => [position.x, position.y, position.z],
     [position.x, position.y, position.z]

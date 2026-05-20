@@ -81,7 +81,7 @@ const StainedGlassProjector = memo(function StainedGlassProjector({
       shadowFocus={focus}
       shadowNormalBias={0.02}
       shadowUpdateKey={shadowUpdateKey}
-      shadowMapSize={[2048, 2048]}
+      shadowMapSize={[1024, 1024]}
       shadowNear={0.5}
       target={projectorTarget}
     />

@@ -118,9 +118,9 @@ const PRESETS = {
     projectorVolumeIntensity: 1.86,
     projectorVolumeDensity: 0.28,
     projectorVolumeNoiseSpeed: 1,
-    projectorVolumeSteps: 14,
+    projectorVolumeSteps: 10,
     projectorVolumeBlur: 0.88,
-    projectorVolumeResolutionScale: 0.5,
+    projectorVolumeResolutionScale: 0.3,
     skullPosition: {
       x: 0,
       y: 0.7,

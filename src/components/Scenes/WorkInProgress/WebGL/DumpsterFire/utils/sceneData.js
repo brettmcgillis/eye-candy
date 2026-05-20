@@ -123,6 +123,14 @@ export const SHOT_AIM_PLANE_POINT = [
 
 export const FIRE_LOOP_TRACK = 'looped-fire.mp3';
 export const FIRE_LOOP_VOLUME = 0.35;
+export const TRASH_CLEANUP_PLANE_SIZE = [100, 100];
+export const TRASH_CLEANUP_PLANE_Y = -10;
+export const TRASH_CLEANUP_COLLIDER_HALF_EXTENTS = [
+  TRASH_CLEANUP_PLANE_SIZE[0] / 2,
+  0.25,
+  TRASH_CLEANUP_PLANE_SIZE[1] / 2,
+];
+export const TRASH_CLEANUP_POSITION = [0, TRASH_CLEANUP_PLANE_Y, 0];
 
 export const ASSET_GRID_COLUMNS = 6;
 export const ASSET_GRID_COLUMN_SPACING = 2.2;

@@ -9,7 +9,7 @@ const HAPPY_MEAL_MODEL_PATH = '/happyMeal.glb';
 const HAPPY_MEAL_MATERIAL_NAME = 'Material.001';
 const HAPPY_MEAL_ROTATION = [-Math.PI / 2, 0, 0];
 const HAPPY_MEAL_TRANSFORM_CHAIN = [
-  { scale: 0.35 },
+  { scale: 0.3 },
   { position: [0, 1.774, 0], rotation: HAPPY_MEAL_ROTATION },
 ];
 
@@ -63,7 +63,7 @@ export default function HappyMeal(props) {
   const { nodes, materials } = useGLTF(modelFile(HAPPY_MEAL_MODEL_PATH));
   return (
     <group {...props} dispose={null}>
-      <group scale={0.35}>
+      <group scale={0.3}>
         <mesh
           castShadow
           receiveShadow

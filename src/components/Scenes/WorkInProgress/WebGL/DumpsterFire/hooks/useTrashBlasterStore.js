@@ -6,6 +6,7 @@ const useTrashBlasterStore = create((set, get) => ({
   hasThrowables: false,
   clearTrashHandler: NOOP,
   markThrowableSpawned: () => set({ hasThrowables: true }),
+  setHasThrowables: (hasThrowables) => set({ hasThrowables }),
   registerClearTrashHandler: (clearTrashHandler) => set({ clearTrashHandler }),
   unregisterClearTrashHandler: () =>
     set({

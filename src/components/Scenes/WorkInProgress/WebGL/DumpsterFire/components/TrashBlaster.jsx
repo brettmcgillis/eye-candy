@@ -6,6 +6,8 @@ import useTrashBlaster from '../hooks/useTrashBlaster';
 import {
   SHOT_ASSET_OPTIONS,
   SHOT_POOL_SLOTS_PER_ASSET,
+  TRASH_CLEANUP_PLANE_SIZE,
+  TRASH_CLEANUP_POSITION,
 } from '../utils/sceneData';
 import { getParkedShotPosition } from '../utils/sceneUtils';
 
@@ -16,7 +18,26 @@ function createShotInstances(asset) {
     rotation: [0, 0, 0],
     scale: asset.scale ?? 1,
     mass: asset.mass ?? 0.5,
+    userData: {
+      assetKey: asset.key,
+      slotIndex,
+      isTrashProjectile: true,
+      isActiveThrowable: false,
+    },
   }));
+}
+
+function CleanupPlane() {
+  return (
+    <mesh
+      visible={false}
+      position={TRASH_CLEANUP_POSITION}
+      rotation={[-Math.PI / 2, 0, 0]}
+    >
+      <planeGeometry args={TRASH_CLEANUP_PLANE_SIZE} />
+      <meshBasicMaterial transparent opacity={0} />
+    </mesh>
+  );
 }
 
 function InstancedTrashBodies({ asset, bodyRefsMap }) {
@@ -76,13 +97,19 @@ function InstancedTrashBodies({ asset, bodyRefsMap }) {
 }
 
 export default function TrashBlaster() {
-  const shotBodiesRef = useTrashBlaster();
+  const { shotBodiesRef } = useTrashBlaster();
 
-  return SHOT_ASSET_OPTIONS.map((asset) => (
-    <InstancedTrashBodies
-      key={asset.key}
-      asset={asset}
-      bodyRefsMap={shotBodiesRef}
-    />
-  ));
+  return (
+    <>
+      <CleanupPlane />
+
+      {SHOT_ASSET_OPTIONS.map((asset) => (
+        <InstancedTrashBodies
+          key={asset.key}
+          asset={asset}
+          bodyRefsMap={shotBodiesRef}
+        />
+      ))}
+    </>
+  );
 }

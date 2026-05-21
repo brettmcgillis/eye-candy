@@ -2,7 +2,7 @@ import React from 'react';
 
 import { RigidBody } from '@react-three/rapier';
 
-export function FixedSceneAsset({ item }) {
+export function FixedSceneAsset({ item, onCollisionEnter }) {
   const {
     Component,
     position = [0, 0, 0],
@@ -22,6 +22,7 @@ export function FixedSceneAsset({ item }) {
       scale={scale}
       friction={1.1}
       restitution={0.05}
+      onCollisionEnter={onCollisionEnter}
       {...rigidBodyProps}
     >
       <Component {...componentProps} />

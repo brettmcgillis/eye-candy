@@ -15,13 +15,17 @@ import { DynamicSceneAsset, FixedSceneAsset } from './SceneAssetRigidBody';
 import SceneEffects from './SceneEffects';
 import TrashBlaster from './TrashBlaster';
 
-function SceneComposition() {
+function SceneComposition({ onTrashCollision }) {
   return (
     <group position={SCENE_ROOT_POSITION}>
       <SceneEffects />
 
       {FIXED_SCENE_ITEMS.map((item) => (
-        <FixedSceneAsset key={getSceneItemKey(item)} item={item} />
+        <FixedSceneAsset
+          key={getSceneItemKey(item)}
+          item={item}
+          onCollisionEnter={onTrashCollision}
+        />
       ))}
 
       {DYNAMIC_SCENE_ITEMS.map((item) => (
@@ -31,7 +35,7 @@ function SceneComposition() {
   );
 }
 
-export default function PhysicsScene() {
+const PhysicsScene = React.memo(function PhysicsScene({ onTrashCollision }) {
   return (
     <Physics timeStep={1 / 60} interpolate debug>
       <RigidBody type="fixed" colliders={false}>
@@ -40,12 +44,15 @@ export default function PhysicsScene() {
           position={FLOOR_COLLIDER_POSITION}
           friction={1.4}
           restitution={0.05}
+          onCollisionEnter={onTrashCollision}
         />
       </RigidBody>
 
-      <SceneComposition />
+      <SceneComposition onTrashCollision={onTrashCollision} />
       <AssetShowcaseGrid />
       <TrashBlaster />
     </Physics>
   );
-}
+});
+
+export default PhysicsScene;

@@ -691,5 +691,5 @@ export default function VolumetricSmokeParticlesGPU({
     }
   });
 
-  return particleMesh ? <primitive object={particleMesh} /> : null;
+  return particleMesh ? <primitive object={particleMesh} renderOrder={1} /> : null;
 }

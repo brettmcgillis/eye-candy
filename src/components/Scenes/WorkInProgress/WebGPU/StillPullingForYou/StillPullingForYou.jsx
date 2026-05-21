@@ -192,6 +192,26 @@ export default function StillPullingForYouGPU() {
         bumpDetail={config.bumpDetail}
       />
 
+      {/* Smoke splines — TSL PointsNodeMaterial */}
+      {config.smokeVisible && (
+        <>
+          {/* eslint-disable react/no-array-index-key */}
+          {splines.map((pts, index) => (
+            <SmokeSplineGroupGPU
+              key={index}
+              index={index}
+              points={pts}
+              splineConfig={
+                config.splineConfigs[index] ?? DEFAULT_SPLINE_CONFIG
+              }
+              editSplines={config.editSplines}
+              setSplinePoints={setSplinePoints}
+            />
+          ))}
+          {/* eslint-enable react/no-array-index-key */}
+        </>
+      )}
+
       {/* Water column — TSL MeshPhysicalNodeMaterial */}
       {config.waterVisible && (
         <NurbsWaterColumnGPU
@@ -212,26 +232,6 @@ export default function StillPullingForYouGPU() {
           edgeOpacity={config.waterEdgeOpacity}
           showEdges={config.waterShowEdges}
         />
-      )}
-
-      {/* Smoke splines — TSL PointsNodeMaterial */}
-      {config.smokeVisible && (
-        <>
-          {/* eslint-disable react/no-array-index-key */}
-          {splines.map((pts, index) => (
-            <SmokeSplineGroupGPU
-              key={index}
-              index={index}
-              points={pts}
-              splineConfig={
-                config.splineConfigs[index] ?? DEFAULT_SPLINE_CONFIG
-              }
-              editSplines={config.editSplines}
-              setSplinePoints={setSplinePoints}
-            />
-          ))}
-          {/* eslint-enable react/no-array-index-key */}
-        </>
       )}
 
       {/* Post Processing — WebGPU-native bloom via TSL */}

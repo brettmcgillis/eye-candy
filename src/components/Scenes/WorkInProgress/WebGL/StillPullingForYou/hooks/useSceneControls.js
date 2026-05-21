@@ -22,7 +22,7 @@ const DEFAULT_SPLINE_CONFIG = {
   arcSegments: 200,
   // Particle Smoke
   particleCount: 3000,
-  particleSize: 25,
+  particleSize: 0.4,
   particleColor: '#a8a8a0',
   opacity: 0.35,
   growth: 2.0,
@@ -40,7 +40,7 @@ const DEFAULT_SPLINE_CONFIG = {
   blendMode: 'Normal',
   // Volumetric Smoke
   volParticleCount: 3000,
-  volSize: 30,
+  volSize: 0.6,
   volColor: '#9090a0',
   volOpacity: 0.06,
   volFlowSpeed: 0.04,
@@ -461,9 +461,9 @@ export default function useSceneControls(
                     [`particleSize_${index}`]: {
                       label: 'Size',
                       value: cfg.particleSize,
-                      min: 1,
-                      max: 100,
-                      step: 1,
+                      min: 0.05,
+                      max: 2,
+                      step: 0.01,
                       onChange: (v) =>
                         updateSplineConfig(
                           setSplineConfigs,
@@ -704,9 +704,9 @@ export default function useSceneControls(
                     [`volSize_${index}`]: {
                       label: 'Size',
                       value: cfg.volSize,
-                      min: 1,
-                      max: 200,
-                      step: 1,
+                      min: 0.05,
+                      max: 3,
+                      step: 0.05,
                       onChange: (v) =>
                         updateSplineConfig(
                           setSplineConfigs,

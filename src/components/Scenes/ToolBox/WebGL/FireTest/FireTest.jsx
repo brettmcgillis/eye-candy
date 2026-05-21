@@ -3,6 +3,7 @@ import React, { useCallback, useState } from 'react';
 import { OrbitControls, PerspectiveCamera } from '@react-three/drei';
 
 import FIRE_PRESETS from '../../../../../presets/fire/firePresets';
+import FireAndSmoke from '../../../../elements/fireAndSmoke/FireAndSmoke';
 import Fireball from '../../../../elements/fireball/Fireball';
 import FireballSpline from '../../../../elements/fireball/FireballSpline';
 import Flame from '../../../../elements/flame/Flame';
@@ -182,6 +183,44 @@ export default function FireTest() {
           <CS184VolumetricFire {...instance.config} />
         </group>
       ))}
+
+      {config.fireAndSmokeInstances.map((instance) => {
+        const splinePositions = instance.controlPoints.map(
+          (point) => point.position
+        );
+
+        return (
+          <group
+            key={instance.id}
+            position={instance.pos}
+            rotation={instance.rot}
+            scale={instance.scale}
+          >
+            <FireAndSmoke
+              controlPoints={instance.controlPoints}
+              {...instance.config}
+            />
+
+            <SplineLine
+              points={splinePositions}
+              curveType="centripetal"
+              color={instance.config.particleColor}
+              visible={instance.showSpline}
+              arcSegments={200}
+            />
+
+            <SplinePoints
+              points={instance.controlPoints}
+              setPoints={(updater) =>
+                config.setFireAndSmokePoints(instance.id, updater)
+              }
+              visible={instance.showHandles}
+              mode={instance.pointMode}
+              pointSize={0.3}
+            />
+          </group>
+        );
+      })}
     </>
   );
 }

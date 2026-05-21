@@ -6,6 +6,12 @@ import { useCallback, useEffect, useRef, useState } from 'react';
 import SMOKE_PRESETS from '../../../../../../presets/smoke/smokePresets';
 import { localEnv } from '../../../../../../utils/appUtils';
 import {
+  cloneFireAndSmokeControlPoints,
+  makeFireAndSmokeConfig,
+  makeFireAndSmokeSmokeConfig,
+} from '../../../../../elements/fireAndSmoke/fireAndSmokeDefaults';
+import buildFireAndSmokeControls from '../../shared/hooks/buildFireAndSmokeControls';
+import {
   DEFAULT_SPLINE_CONFIG,
   parsePreset,
   serializeSplines,
@@ -124,6 +130,8 @@ const mkS2dCfg = () => ({
   spreadStrength: 0.18,
 });
 
+const DEFAULT_FIRE_AND_SMOKE_POSITION = [-0.5, 0, -4.25];
+
 const cloneTuple = (value, fallback) =>
   Array.isArray(value) ? [...value] : [...fallback];
 
@@ -190,6 +198,30 @@ const makeS2dInst = (seed = {}) => ({
   config: { ...mkS2dCfg(), ...(seed.config ?? {}) },
 });
 
+const makeFireAndSmokeInst = (seed = {}) => ({
+  id: mkId(),
+  pos: cloneTuple(seed.pos, DEFAULT_FIRE_AND_SMOKE_POSITION),
+  rot: cloneTuple(seed.rot, [0, 0, 0]),
+  scale: cloneTuple(seed.scale, [1, 1, 1]),
+  showHandles: seed.showHandles ?? true,
+  showSpline: seed.showSpline ?? true,
+  pointMode: seed.pointMode ?? 'translate',
+  controlPoints: cloneFireAndSmokeControlPoints(seed.controlPoints),
+  config: makeFireAndSmokeSmokeConfig(seed.config ?? {}),
+});
+
+const hydrateFireAndSmokeInst = (seed = {}) => ({
+  id: mkId(),
+  pos: cloneTuple(seed.pos, DEFAULT_FIRE_AND_SMOKE_POSITION),
+  rot: cloneTuple(seed.rot, [0, 0, 0]),
+  scale: cloneTuple(seed.scale, [1, 1, 1]),
+  showHandles: seed.showHandles ?? true,
+  showSpline: seed.showSpline ?? true,
+  pointMode: seed.pointMode ?? 'translate',
+  controlPoints: cloneFireAndSmokeControlPoints(seed.controlPoints),
+  config: makeFireAndSmokeConfig(seed.config ?? {}),
+});
+
 function getStandaloneDefaults(presetKey) {
   const preset = getSmokePreset(presetKey);
   const elements = preset?.elements ?? {};
@@ -198,6 +230,7 @@ function getStandaloneDefaults(presetKey) {
     sb: (elements.smokeBall ?? []).map((element) => makeSbInst(element)),
     ss: (elements.smokeBallSpline ?? []).map((element) => makeSsInst(element)),
     s2d: (elements.billboardSmoke ?? []).map((element) => makeS2dInst(element)),
+    fireAndSmoke: (elements.fireAndSmoke ?? []).map(hydrateFireAndSmokeInst),
   };
 }
 
@@ -258,6 +291,9 @@ export default function useSmokeTestControls(attractorsRef) {
   const [s2dInstances, setS2dInstances] = useState(
     () => getStandaloneDefaults(DEFAULT_PRESET_KEY).s2d
   );
+  const [fireAndSmokeInstances, setFireAndSmokeInstances] = useState(
+    () => getStandaloneDefaults(DEFAULT_PRESET_KEY).fireAndSmoke
+  );
   const [attractorVersion, setAttractorVersion] = useState(0);
 
   // Stable refs for static-schema closures (Copy button needs current arrays)
@@ -294,6 +330,9 @@ export default function useSmokeTestControls(attractorsRef) {
             const { sb, ss, s2d } = getStandaloneDefaults(
               selectedPresetRef.current
             );
+            const { fireAndSmoke } = getStandaloneDefaults(
+              selectedPresetRef.current
+            );
             attractorsRef.current = getPresetAttractors(
               selectedPresetRef.current
             );
@@ -302,6 +341,7 @@ export default function useSmokeTestControls(attractorsRef) {
             setSbInstances(sb);
             setSsInstances(ss);
             setS2dInstances(s2d);
+            setFireAndSmokeInstances(fireAndSmoke);
             setAttractorVersion((c) => c + 1);
           }),
           ...(localEnv()
@@ -1240,6 +1280,19 @@ export default function useSmokeTestControls(attractorsRef) {
         }, {}),
       };
 
+      const fireAndSmokeSection = buildFireAndSmokeControls({
+        instances: fireAndSmokeInstances,
+        setInstances: setFireAndSmokeInstances,
+        addInstance: () =>
+          makeFireAndSmokeInst({
+            pos: [
+              (Math.random() - 0.5) * 10,
+              Math.random() * 2,
+              (Math.random() - 0.5) * 6,
+            ],
+          }),
+      });
+
       return {
         Smoke: folder(
           {
@@ -1248,6 +1301,9 @@ export default function useSmokeTestControls(attractorsRef) {
             'Smoke Ball': folder(sbSection, { collapsed: true }),
             'Smoke Ball Spline': folder(ssSection, { collapsed: true }),
             'Billboard Smoke': folder(s2dSection, { collapsed: true }),
+            'Fire And Smoke': folder(fireAndSmokeSection, {
+              collapsed: true,
+            }),
           },
           { collapsed: true }
         ),
@@ -1261,6 +1317,7 @@ export default function useSmokeTestControls(attractorsRef) {
       sbInstances.length,
       ssInstances.length,
       s2dInstances.length,
+      fireAndSmokeInstances.length,
     ]
   );
 
@@ -1274,13 +1331,14 @@ export default function useSmokeTestControls(attractorsRef) {
   // Reload instances when preset dropdown changes
   useEffect(() => {
     const { ps, vs } = splitPresetByType(preset);
-    const { sb, ss, s2d } = getStandaloneDefaults(preset);
+    const { sb, ss, s2d, fireAndSmoke } = getStandaloneDefaults(preset);
     attractorsRef.current = getPresetAttractors(preset);
     setPsInstances(ps);
     setVsInstances(vs);
     setSbInstances(sb);
     setSsInstances(ss);
     setS2dInstances(s2d);
+    setFireAndSmokeInstances(fireAndSmoke);
     setAttractorVersion((c) => c + 1);
   }, [preset]); // only preset is the intended dependency
 
@@ -1330,6 +1388,22 @@ export default function useSmokeTestControls(attractorsRef) {
     );
   }, []);
 
+  const updateFireAndSmokePoints = useCallback((id, updater) => {
+    setFireAndSmokeInstances((prev) =>
+      prev.map((x) =>
+        x.id === id
+          ? {
+              ...x,
+              controlPoints:
+                typeof updater === 'function'
+                  ? updater(x.controlPoints)
+                  : updater,
+            }
+          : x
+      )
+    );
+  }, []);
+
   // ── Return ───────────────────────────────────────────────────────────────────
 
   return {
@@ -1340,6 +1414,7 @@ export default function useSmokeTestControls(attractorsRef) {
     sbInstances,
     ssInstances,
     s2dInstances,
+    fireAndSmokeInstances,
     attractorMode,
     showAttractors,
     attractorStrength,
@@ -1348,5 +1423,6 @@ export default function useSmokeTestControls(attractorsRef) {
     updatePsPoints,
     updateVsPoints,
     updateSsPoints,
+    updateFireAndSmokePoints,
   };
 }

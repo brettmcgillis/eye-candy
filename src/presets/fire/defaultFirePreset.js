@@ -1,5 +1,10 @@
 import * as THREE from 'three';
 
+import {
+  cloneFireAndSmokeControlPoints,
+  makeFireAndSmokeFireConfig,
+} from '../../components/elements/fireAndSmoke/fireAndSmokeDefaults';
+
 const V = (x, y, z) => new THREE.Vector3(x, y, z);
 const E = (x, y, z) => new THREE.Euler(x, y, z);
 const S = (x, y, z) => new THREE.Vector3(x, y, z);
@@ -175,6 +180,18 @@ const DEFAULT_FIRE_PRESET = {
           steps: 64,
           stepSize: 1.0,
         },
+      },
+    ],
+    fireAndSmoke: [
+      {
+        pos: [7, 0, 3],
+        rot: [0, 0, 0],
+        scale: [1, 1, 1],
+        showHandles: true,
+        showSpline: true,
+        pointMode: 'translate',
+        controlPoints: cloneFireAndSmokeControlPoints(),
+        config: makeFireAndSmokeFireConfig(),
       },
     ],
   },

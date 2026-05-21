@@ -9,7 +9,7 @@ import React, {
 } from 'react';
 
 import { TransformControls } from '@react-three/drei';
-import { useThree } from '@react-three/fiber';
+import { createPortal, useThree } from '@react-three/fiber';
 
 // Default sized for scene scale (1 unit ≈ 1 metre).
 // Large-world consumers (e.g. SplineEditor) should pass an explicit pointSize.
@@ -27,6 +27,7 @@ export default function SplinePoints({
     [pointSize]
   );
   const controls = useThree((state) => state.controls);
+  const scene = useThree((state) => state.scene);
   const transformRef = useRef();
   const pointMeshRefs = useRef([]);
   const [selectedIndex, setSelectedIndex] = useState(null);
@@ -200,13 +201,16 @@ export default function SplinePoints({
         ))}
       {/* eslint-enable react/no-array-index-key */}
 
-      {visible && selectedIndex !== null && (
-        <TransformControls
-          ref={transformRef}
-          mode={mode}
-          onObjectChange={handleObjectChange}
-        />
-      )}
+      {visible &&
+        selectedIndex !== null &&
+        createPortal(
+          <TransformControls
+            ref={transformRef}
+            mode={mode}
+            onObjectChange={handleObjectChange}
+          />,
+          scene
+        )}
     </>
   );
 }

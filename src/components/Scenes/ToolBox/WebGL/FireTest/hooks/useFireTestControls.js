@@ -5,6 +5,12 @@ import { useCallback, useEffect, useRef, useState } from 'react';
 
 import FIRE_PRESETS from '../../../../../../presets/fire/firePresets';
 import { localEnv } from '../../../../../../utils/appUtils';
+import {
+  cloneFireAndSmokeControlPoints,
+  makeFireAndSmokeConfig,
+  makeFireAndSmokeFireConfig,
+} from '../../../../../elements/fireAndSmoke/fireAndSmokeDefaults';
+import buildFireAndSmokeControls from '../../shared/hooks/buildFireAndSmokeControls';
 import buildSplineGroupControls from '../../shared/hooks/useSplineGroupControls';
 import {
   DEFAULT_SPLINE_CONFIG,
@@ -46,6 +52,7 @@ const DEFAULT_FIRE_SPLINE_POSITION = [0, 0, 0];
 const DEFAULT_FLAME_POSITION = [5, 0, 0];
 const DEFAULT_VOLUMETRIC_FIRE_POSITION = [3, 0, 0];
 const DEFAULT_CS184_FIRE_POSITION = [-3, 0, 0];
+const DEFAULT_FIRE_AND_SMOKE_POSITION = [7, 0, 3];
 
 const DEFAULT_FIRE_SPLINE_POINTS = [
   {
@@ -287,6 +294,30 @@ const hydrateCs184FireInst = (seed = {}) => ({
   config: { ...mkCs184FireCfg(), ...(seed.config ?? {}) },
 });
 
+const makeFireAndSmokeInst = (seed = {}) => ({
+  id: mkId(),
+  pos: cloneTuple(seed.pos, DEFAULT_FIRE_AND_SMOKE_POSITION),
+  rot: cloneTuple(seed.rot, [0, 0, 0]),
+  scale: cloneTuple(seed.scale, [1, 1, 1]),
+  showHandles: seed.showHandles ?? true,
+  showSpline: seed.showSpline ?? true,
+  pointMode: seed.pointMode ?? 'translate',
+  controlPoints: cloneFireAndSmokeControlPoints(seed.controlPoints),
+  config: makeFireAndSmokeFireConfig(seed.config ?? {}),
+});
+
+const hydrateFireAndSmokeInst = (seed = {}) => ({
+  id: mkId(),
+  pos: cloneTuple(seed.pos, DEFAULT_FIRE_AND_SMOKE_POSITION),
+  rot: cloneTuple(seed.rot, [0, 0, 0]),
+  scale: cloneTuple(seed.scale, [1, 1, 1]),
+  showHandles: seed.showHandles ?? true,
+  showSpline: seed.showSpline ?? true,
+  pointMode: seed.pointMode ?? 'translate',
+  controlPoints: cloneFireAndSmokeControlPoints(seed.controlPoints),
+  config: makeFireAndSmokeConfig(seed.config ?? {}),
+});
+
 function getStandaloneDefaults(presetKey) {
   const elements = getFirePreset(presetKey)?.elements ?? {};
 
@@ -298,6 +329,7 @@ function getStandaloneDefaults(presetKey) {
       hydrateVolumetricFireInst
     ),
     cs184Fire: (elements.cs184Fire ?? []).map(hydrateCs184FireInst),
+    fireAndSmoke: (elements.fireAndSmoke ?? []).map(hydrateFireAndSmokeInst),
   };
 }
 
@@ -334,6 +366,9 @@ export default function useFireTestControls(splines, setSplines) {
   const [cs184FireInstances, setCs184FireInstances] = useState(
     () => initialStandaloneDefaultsRef.current.cs184Fire
   );
+  const [fireAndSmokeInstances, setFireAndSmokeInstances] = useState(
+    () => initialStandaloneDefaultsRef.current.fireAndSmoke
+  );
   const [fireSchemaVersion, setFireSchemaVersion] = useState(0);
   const fireTypeSignature = splineConfigs
     .map((config) => config?.fireType ?? 'Classic')
@@ -352,6 +387,7 @@ export default function useFireTestControls(splines, setSplines) {
       setFlameInstances(defaults.flame);
       setVolumetricFireInstances(defaults.volumetricFire);
       setCs184FireInstances(defaults.cs184Fire);
+      setFireAndSmokeInstances(defaults.fireAndSmoke);
       setFireSchemaVersion((count) => count + 1);
     },
     [setSplines]
@@ -359,6 +395,21 @@ export default function useFireTestControls(splines, setSplines) {
 
   const setFireSplinePoints = useCallback((id, updater) => {
     setFireSplineInstances((prev) =>
+      prev.map((instance) => {
+        if (instance.id !== id) return instance;
+        return {
+          ...instance,
+          controlPoints:
+            typeof updater === 'function'
+              ? updater(instance.controlPoints)
+              : updater,
+        };
+      })
+    );
+  }, []);
+
+  const setFireAndSmokePoints = useCallback((id, updater) => {
+    setFireAndSmokeInstances((prev) =>
       prev.map((instance) => {
         if (instance.id !== id) return instance;
         return {
@@ -1416,6 +1467,15 @@ export default function useFireTestControls(splines, setSplines) {
       }, {}),
     };
 
+    const fireAndSmokeSection = buildFireAndSmokeControls({
+      instances: fireAndSmokeInstances,
+      setInstances: setFireAndSmokeInstances,
+      addInstance: () =>
+        makeFireAndSmokeInst({
+          pos: offsetPosition(DEFAULT_FIRE_AND_SMOKE_POSITION),
+        }),
+    });
+
     return {
       Fire: folder(
         {
@@ -1427,6 +1487,9 @@ export default function useFireTestControls(splines, setSplines) {
             collapsed: true,
           }),
           'CS184 Fire': folder(cs184FireSection, { collapsed: true }),
+          'Fire And Smoke': folder(fireAndSmokeSection, {
+            collapsed: true,
+          }),
         },
         { collapsed: true }
       ),
@@ -1441,6 +1504,7 @@ export default function useFireTestControls(splines, setSplines) {
     flameInstances.length,
     volumetricFireInstances.length,
     cs184FireInstances.length,
+    fireAndSmokeInstances.length,
   ]);
 
   useEffect(() => {
@@ -1480,6 +1544,8 @@ export default function useFireTestControls(splines, setSplines) {
     flameInstances,
     volumetricFireInstances,
     cs184FireInstances,
+    fireAndSmokeInstances,
     setFireSplinePoints,
+    setFireAndSmokePoints,
   };
 }

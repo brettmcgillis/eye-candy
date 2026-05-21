@@ -6,6 +6,12 @@ import { useCallback, useEffect, useRef, useState } from 'react';
 import FIRE_PRESETS from '../../../../../../presets/fire/firePresets';
 import SMOKE_PRESETS from '../../../../../../presets/smoke/smokePresets';
 import { localEnv } from '../../../../../../utils/appUtils';
+import {
+  cloneFireAndSmokeControlPoints,
+  makeFireAndSmokeConfig,
+  makeFireAndSmokeFireConfig,
+} from '../../../../../elements/fireAndSmoke/fireAndSmokeDefaults';
+import buildFireAndSmokeControls from '../../shared/hooks/buildFireAndSmokeControls';
 import buildSplineGroupControls from '../../shared/hooks/useSplineGroupControls';
 import {
   DEFAULT_SPLINE_CONFIG,
@@ -67,6 +73,10 @@ export const getHotBoxPreset = (presetKey) => {
       flame: firePreset.elements?.flame ?? [],
       volumetricFire: firePreset.elements?.volumetricFire ?? [],
       cs184Fire: firePreset.elements?.cs184Fire ?? [],
+      fireAndSmoke: [
+        ...(smokePreset.elements?.fireAndSmoke ?? []),
+        ...(firePreset.elements?.fireAndSmoke ?? []),
+      ],
     },
     attractors: smokePreset.attractors ?? [],
   };
@@ -93,6 +103,7 @@ const DEFAULT_FIRE_SPLINE_POSITION = [0, 0, 0];
 const DEFAULT_FLAME_POSITION = [5, 0, 0];
 const DEFAULT_VOLUMETRIC_FIRE_POSITION = [3, 0, 0];
 const DEFAULT_CS184_FIRE_POSITION = [-3, 0, 0];
+const DEFAULT_FIRE_AND_SMOKE_POSITION = [7, 0, 3];
 
 const DEFAULT_SMOKE_BALL_SPLINE_POINTS = [
   {
@@ -471,6 +482,30 @@ const hydrateCs184FireInst = (seed = {}) => ({
   config: { ...mkCs184FireCfg(), ...(seed.config ?? {}) },
 });
 
+const makeFireAndSmokeInst = (seed = {}) => ({
+  id: mkId(),
+  pos: cloneTuple(seed.pos, DEFAULT_FIRE_AND_SMOKE_POSITION),
+  rot: cloneTuple(seed.rot, [0, 0, 0]),
+  scale: cloneTuple(seed.scale, [1, 1, 1]),
+  showHandles: seed.showHandles ?? true,
+  showSpline: seed.showSpline ?? true,
+  pointMode: seed.pointMode ?? 'translate',
+  controlPoints: cloneFireAndSmokeControlPoints(seed.controlPoints),
+  config: makeFireAndSmokeFireConfig(seed.config ?? {}),
+});
+
+const hydrateFireAndSmokeInst = (seed = {}) => ({
+  id: mkId(),
+  pos: cloneTuple(seed.pos, DEFAULT_FIRE_AND_SMOKE_POSITION),
+  rot: cloneTuple(seed.rot, [0, 0, 0]),
+  scale: cloneTuple(seed.scale, [1, 1, 1]),
+  showHandles: seed.showHandles ?? true,
+  showSpline: seed.showSpline ?? true,
+  pointMode: seed.pointMode ?? 'translate',
+  controlPoints: cloneFireAndSmokeControlPoints(seed.controlPoints),
+  config: makeFireAndSmokeConfig(seed.config ?? {}),
+});
+
 function getStandaloneDefaults(presetKey) {
   const elements = getHotBoxPreset(presetKey)?.elements ?? {};
 
@@ -489,6 +524,7 @@ function getStandaloneDefaults(presetKey) {
       hydrateVolumetricFireInst
     ),
     cs184Fire: (elements.cs184Fire ?? []).map(hydrateCs184FireInst),
+    fireAndSmoke: (elements.fireAndSmoke ?? []).map(hydrateFireAndSmokeInst),
   };
 }
 
@@ -536,6 +572,9 @@ export default function useHotBoxControls(splines, setSplines, attractorsRef) {
   const [cs184FireInstances, setCs184FireInstances] = useState(
     () => initialStandaloneDefaultsRef.current.cs184Fire
   );
+  const [fireAndSmokeInstances, setFireAndSmokeInstances] = useState(
+    () => initialStandaloneDefaultsRef.current.fireAndSmoke
+  );
   const [attractorVersion, setAttractorVersion] = useState(0);
   const [hotBoxSchemaVersion, setHotBoxSchemaVersion] = useState(0);
   const splineTypeSignature = splineConfigs
@@ -567,6 +606,7 @@ export default function useHotBoxControls(splines, setSplines, attractorsRef) {
       setFlameInstances(defaults.flame);
       setVolumetricFireInstances(defaults.volumetricFire);
       setCs184FireInstances(defaults.cs184Fire);
+      setFireAndSmokeInstances(defaults.fireAndSmoke);
       attractorsRef.current = getPresetAttractors(presetKey);
       setAttractorVersion((count) => count + 1);
       setHotBoxSchemaVersion((count) => count + 1);
@@ -591,6 +631,21 @@ export default function useHotBoxControls(splines, setSplines, attractorsRef) {
 
   const setFireSplinePoints = useCallback((id, updater) => {
     setFireSplineInstances((prev) =>
+      prev.map((instance) => {
+        if (instance.id !== id) return instance;
+        return {
+          ...instance,
+          controlPoints:
+            typeof updater === 'function'
+              ? updater(instance.controlPoints)
+              : updater,
+        };
+      })
+    );
+  }, []);
+
+  const setFireAndSmokePoints = useCallback((id, updater) => {
+    setFireAndSmokeInstances((prev) =>
       prev.map((instance) => {
         if (instance.id !== id) return instance;
         return {
@@ -2234,6 +2289,15 @@ export default function useHotBoxControls(splines, setSplines, attractorsRef) {
       }, {}),
     };
 
+    const fireAndSmokeSection = buildFireAndSmokeControls({
+      instances: fireAndSmokeInstances,
+      setInstances: setFireAndSmokeInstances,
+      addInstance: () =>
+        makeFireAndSmokeInst({
+          pos: offsetPosition(DEFAULT_FIRE_AND_SMOKE_POSITION),
+        }),
+    });
+
     return {
       Smoke: folder(
         {
@@ -2261,6 +2325,7 @@ export default function useHotBoxControls(splines, setSplines, attractorsRef) {
         },
         { collapsed: true }
       ),
+      'Fire And Smoke': folder(fireAndSmokeSection, { collapsed: true }),
     };
   }, [
     preset,
@@ -2275,6 +2340,7 @@ export default function useHotBoxControls(splines, setSplines, attractorsRef) {
     flameInstances.length,
     volumetricFireInstances.length,
     cs184FireInstances.length,
+    fireAndSmokeInstances.length,
   ]);
 
   useEffect(() => {
@@ -2312,7 +2378,9 @@ export default function useHotBoxControls(splines, setSplines, attractorsRef) {
     flameInstances,
     volumetricFireInstances,
     cs184FireInstances,
+    fireAndSmokeInstances,
     setSmokeBallSplinePoints,
     setFireSplinePoints,
+    setFireAndSmokePoints,
   };
 }

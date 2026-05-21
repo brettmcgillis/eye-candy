@@ -3,6 +3,7 @@ import React, { useRef } from 'react';
 import { OrbitControls, PerspectiveCamera } from '@react-three/drei';
 
 import Attractors from '../../../../elements/attractors/Attractors';
+import FireAndSmoke from '../../../../elements/fireAndSmoke/FireAndSmoke';
 import GridBox from '../../../../elements/gridbox/GridBox';
 import Smoke2D from '../../../../elements/smoke/Smoke2D';
 import SmokeBall from '../../../../elements/smokeball/SmokeBall';
@@ -28,6 +29,7 @@ export default function SmokeTest() {
     sbInstances,
     ssInstances,
     s2dInstances,
+    fireAndSmokeInstances,
     attractorMode,
     showAttractors,
     attractorStrength,
@@ -36,6 +38,7 @@ export default function SmokeTest() {
     updatePsPoints,
     updateVsPoints,
     updateSsPoints,
+    updateFireAndSmokePoints,
   } = useSmokeTestControls(attractorsRef);
 
   return (
@@ -190,6 +193,37 @@ export default function SmokeTest() {
           smoke={inst.config}
         />
       ))}
+
+      {fireAndSmokeInstances.map((inst) => {
+        const splinePositions = inst.controlPoints.map((point) => point.position);
+
+        return (
+          <group
+            key={inst.id}
+            position={inst.pos}
+            rotation={inst.rot}
+            scale={inst.scale}
+          >
+            <FireAndSmoke controlPoints={inst.controlPoints} {...inst.config} />
+
+            <SplineLine
+              points={splinePositions}
+              curveType="centripetal"
+              color={inst.config.particleColor}
+              visible={inst.showSpline}
+              arcSegments={200}
+            />
+
+            <SplinePoints
+              points={inst.controlPoints}
+              setPoints={(updater) => updateFireAndSmokePoints(inst.id, updater)}
+              visible={inst.showHandles}
+              mode={inst.pointMode}
+              pointSize={0.3}
+            />
+          </group>
+        );
+      })}
 
       <Attractors
         attractorsRef={attractorsRef}

@@ -163,10 +163,6 @@ const DumpsterFire = lazy(
   () =>
     import('../components/scenes/WorkInProgress/WebGL/DumpsterFire/DumpsterFire')
 );
-const ThatsAllFolksWebGL = lazy(
-  () =>
-    import('../components/scenes/WorkInProgress/WebGL/ThatsAllFolks/ThatsAllFolks')
-);
 const ThatsAllFolksWebGPU = lazy(
   () =>
     import('../components/scenes/WorkInProgress/WebGPU/ThatsAllFolks/ThatsAllFolks')
@@ -996,15 +992,6 @@ export const EYE_CANDIES = [
     Component: DumpsterFire,
   },
   {
-    id: 'thatsAllFolks',
-    label: "That's All Folks",
-    channel: 'webgl',
-    area: 'wip',
-    route: 'thatsAllFolks',
-    icon: ThatsAllFolksIcon,
-    Component: ThatsAllFolksWebGL,
-  },
-  {
     id: 'flyingHigh',
     label: 'Flying High',
     channel: 'webgl',
@@ -1108,7 +1095,7 @@ export const EYE_CANDIES = [
     label: "That's All Folks",
     channel: 'webgpu',
     area: 'wip',
-    route: 'thatsAllFolks-webgpu',
+    route: 'thatsAllFolks',
     icon: ThatsAllFolksIcon,
     Component: ThatsAllFolksWebGPU,
   },

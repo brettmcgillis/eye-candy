@@ -68,8 +68,7 @@ To Build:
 
 - [CRTTest](src/components/scenes/WorkInProgress/WebGL/CRTTest/todo.md)
 - [DumpsterFire](src/components/scenes/WorkInProgress/WebGL/DumpsterFire/todo.md)
-- [ThatsAllFolks WebGL](src/components/scenes/WorkInProgress/WebGL/ThatsAllFolks/todo.md)
-- [ThatsAllFolks WebGPU](src/components/scenes/WorkInProgress/WebGPU/ThatsAllFolks/todo.md)
+- [ThatsAllFolks](src/components/scenes/WorkInProgress/WebGPU/ThatsAllFolks/todo.md)
 - [StillPullingForYou WebGL](src/components/scenes/WorkInProgress/WebGL/StillPullingForYou/todo.md)
 - [StillPullingForYou WebGPU](src/components/scenes/WorkInProgress/WebGPU/StillPullingForYou/todo.md)
 - [PolicePresence](src/components/scenes/WorkInProgress/WebGL/PolicePresence/todo.md)
@@ -160,19 +159,19 @@ To Build:
 
 ### Scenes finish before post
 
-- [ ] Thats All Folks - Smoke
-- [ ] Thats All Folks - Bang
+- [ ] AllMyFriendsAreGhosts
 - [ ] Crt Test
+- [ ] Dumpster Fire
+- [ ] Flying High - Day
+- [ ] Flying High - NightMode
+- [ ] Police Presence
+- [ ] Row It Alone
+- [ ] Stay Hunted
 - [ ] Still Pulling For You - Rough Waters
 - [ ] Still Pulling For You - Still Pulling
 - [ ] Still Pulling For You - Sunk
-- [ ] Row It Alone
-- [ ] Police Presence
-- [ ] Flying High - Day
-- [ ] Flying High - NightMode
-- [ ] Dumpster Fire
-- [ ] Stay Hunted
-- [ ] AllMyFriendsAreGhosts
+- [ ] Thats All Folks - Smoke
+- [ ] Thats All Folks - Bang
 
 ### Scenes to build
 

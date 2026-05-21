@@ -18,7 +18,7 @@ const STILL_PULLING_FOR_YOU_SMOKE = {
         opacity: 0.02,
         growth: 1.3,
         fadeExponent: 1,
-        springK: 4.300000000000001,
+        springK: 4.3,
         flowSpeed: 0,
         damping: 0.93,
         turbulence: 0.4,

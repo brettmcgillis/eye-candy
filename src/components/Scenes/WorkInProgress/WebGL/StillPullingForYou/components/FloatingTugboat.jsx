@@ -1,7 +1,7 @@
 /* eslint-disable no-underscore-dangle */
 import * as THREE from 'three';
 
-import React, { useLayoutEffect, useRef } from 'react';
+import React, { useCallback, useLayoutEffect, useRef } from 'react';
 
 import { useFrame } from '@react-three/fiber';
 
@@ -31,9 +31,24 @@ function FloatingTugboat({
   waveSpeed,
   tiltDamping = 0.3,
   lightConfig,
+  boatRef,
+  smokeAnchorRef,
 }) {
   const waveRef = useRef();
   const headlightMaterialRef = useRef();
+
+  const setWaveGroupRef = useCallback(
+    (node) => {
+      waveRef.current = node;
+      if (!boatRef) return;
+      if (typeof boatRef === 'function') {
+        boatRef(node);
+        return;
+      }
+      boatRef.current = node;
+    },
+    [boatRef]
+  );
 
   // Set initial position/orientation so there's no visible snap on mount
   useLayoutEffect(() => {
@@ -85,11 +100,12 @@ function FloatingTugboat({
 
   return (
     <group position={[position[0], 0, position[2]]}>
-      <group ref={waveRef} scale={scale}>
+      <group ref={setWaveGroupRef} scale={scale}>
         <TugBoat
           headlightMaterialRef={headlightMaterialRef}
           headlightColor={lightConfig.headlightColor}
           headlightEmissiveIntensity={lightConfig.headlightIntensity}
+          smokeAnchorRef={smokeAnchorRef}
         />
         <BoatLights
           {...lightConfig}

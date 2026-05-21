@@ -128,8 +128,8 @@ const ROUGH_WATERS = {
   sparklesColor: '#ffedb1',
   sparklesIntensity: 3,
 
-  // Smoke — hidden
-  smokeVisible: false,
+  // Smoke — visible, with the tail pinned behind the boat
+  smokeVisible: true,
   editSplines: false,
 
   // Water — very wavy

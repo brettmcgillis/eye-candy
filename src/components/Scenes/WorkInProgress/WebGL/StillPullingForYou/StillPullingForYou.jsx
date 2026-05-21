@@ -1,6 +1,6 @@
 import * as THREE from 'three';
 
-import React, { useCallback, useMemo, useState } from 'react';
+import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 
 import { OrbitControls, PerspectiveCamera } from '@react-three/drei';
 import { useThree } from '@react-three/fiber';
@@ -12,11 +12,18 @@ import FloatingTugboat from './components/FloatingTugboat';
 import Seafloor from './components/Seafloor';
 import SinkingTugboat from './components/SinkingTugboat';
 import SmokeSplineGroup from './components/SmokeSplineGroup';
+import useRuntimeSmokeSplines from './hooks/useRuntimeSmokeSplines';
 import useSceneControls, {
   DEFAULT_SPLINE_CONFIG,
 } from './hooks/useSceneControls';
 
-const DEFAULT_PRESET = STILL_PULLING_FOR_YOU_SMOKE['Still Pulling For You'];
+const DEFAULT_PRESET =
+  STILL_PULLING_FOR_YOU_SMOKE['Still Pulling'] ||
+  STILL_PULLING_FOR_YOU_SMOKE['Still Pulling For You'];
+
+function getSmokePreset(presetName) {
+  return STILL_PULLING_FOR_YOU_SMOKE[presetName] || DEFAULT_PRESET;
+}
 
 function toRuntimeSplinePoints(preset) {
   let sourceSplines = [];
@@ -58,6 +65,7 @@ export default function StillPullingForYou() {
   const [splines, setSplines] = useState(() =>
     toRuntimeSplinePoints(DEFAULT_PRESET)
   );
+  const smokeAnchorRef = useRef();
 
   const [initialSplineConfigs] = useState(() =>
     toRuntimeSplineConfigs(DEFAULT_PRESET)
@@ -73,6 +81,16 @@ export default function StillPullingForYou() {
   }, []);
 
   const config = useSceneControls(splines, setSplines, initialSplineConfigs);
+
+  useEffect(() => {
+    setSplines(toRuntimeSplinePoints(getSmokePreset(config.preset)));
+  }, [config.preset]);
+
+  const renderSplines = useRuntimeSmokeSplines({
+    splines,
+    smokeAnchorRef,
+    presetName: config.preset,
+  });
 
   const boatPosition = [
     config.boatPosition.x,
@@ -171,6 +189,7 @@ export default function StillPullingForYou() {
           waveSpeed={config.waveSpeed}
           tiltDamping={config.tiltDamping}
           lightConfig={lightConfig}
+          smokeAnchorRef={smokeAnchorRef}
         />
       )}
       {config.boatVisible && !isFloating && (
@@ -179,6 +198,7 @@ export default function StillPullingForYou() {
           rotation={boatRotation}
           scale={config.boatScale}
           lightConfig={lightConfig}
+          smokeAnchorRef={smokeAnchorRef}
         />
       )}
 
@@ -186,7 +206,7 @@ export default function StillPullingForYou() {
       {config.smokeVisible && (
         <>
           {/* eslint-disable react/no-array-index-key */}
-          {splines.map((points, index) => (
+          {renderSplines.map((points, index) => (
             <SmokeSplineGroup
               key={index}
               index={index}

@@ -2,6 +2,14 @@ import * as THREE from 'three';
 
 // Points are at scene scale (1 unit ≈ 1 metre), matching the toolbox editor
 // and the StillPullingForYou WIP scene coordinate system.
+function point(x, y, z) {
+  return {
+    position: new THREE.Vector3(x, y, z),
+    rotation: new THREE.Euler(0.0, 0.0, 0.0),
+    scale: new THREE.Vector3(1.0, 1.0, 1.0),
+  };
+}
+
 const STILL_PULLING_FOR_YOU_SMOKE = {
   'Still Pulling For You': {
     splines: [
@@ -168,6 +176,45 @@ const STILL_PULLING_FOR_YOU_SMOKE = {
       },
     ],
   },
+};
+
+const roughWatersParticlePoints = [
+  point(-0.406, 1.869, -0.226),
+  point(-0.443, 2.319, -0.273),
+  point(-0.518, 2.819, -0.367),
+  point(-0.748, 3.219, -0.657),
+  point(-1.121, 3.219, -1.127),
+  point(-1.494, 3.219, -1.597),
+];
+
+const roughWatersVolumetricPoints = [
+  point(-0.406, 1.869, -0.226),
+  point(-0.456, 2.248, -0.289),
+  point(-0.568, 2.688, -0.43),
+  point(-0.872, 3.188, -0.813),
+  point(-1.245, 3.188, -1.283),
+  point(-1.618, 3.188, -1.753),
+];
+
+const stillPullingSplines =
+  STILL_PULLING_FOR_YOU_SMOKE['Still Pulling For You'].splines;
+
+STILL_PULLING_FOR_YOU_SMOKE['Still Pulling'] =
+  STILL_PULLING_FOR_YOU_SMOKE['Still Pulling For You'];
+
+STILL_PULLING_FOR_YOU_SMOKE['Rough Waters'] = {
+  splines: [
+    {
+      ...stillPullingSplines[0],
+      name: 'Rough Waters Spline 1',
+      points: roughWatersParticlePoints,
+    },
+    {
+      ...stillPullingSplines[1],
+      name: 'Rough Waters Spline 2',
+      points: roughWatersVolumetricPoints,
+    },
+  ],
 };
 
 export default STILL_PULLING_FOR_YOU_SMOKE;

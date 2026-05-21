@@ -8,6 +8,7 @@ export default function TugBoat({
   headlightMaterialRef,
   headlightColor = '#ffe8b0',
   headlightEmissiveIntensity = 3,
+  smokeAnchorRef,
   ...props
 }) {
   const { nodes, materials } = useGLTF(modelFile('/tugboat.glb'));
@@ -83,6 +84,13 @@ export default function TugBoat({
           emissiveIntensity={headlightEmissiveIntensity}
         />
       </mesh>
+      <mesh
+        name="SFX_Anchor_Smokestack"
+        ref={smokeAnchorRef}
+        geometry={nodes.SFX_Anchor_Smokestack.geometry}
+        material={materials.SFX_Anchor_Invisible}
+        position={[-4.49, 11.94, -1.506]}
+      />
     </group>
   );
 }

@@ -12,47 +12,57 @@ import THATS_ALL_FOLKS_SMOKE, {
   LEGACY_WORLD_TO_SCENE,
 } from '../../../../../presets/smoke/thatsAllFolksSmoke';
 import Magnum from '../../../../elements/magnum/Magnum';
-import SmokeParticles from '../../../../elements/smoke/SmokeParticlesGPU';
-import VolumetricSmokeParticles from '../../../../elements/smoke/VolumetricSmokeParticlesGPU';
-import SplineLine from '../../../../elements/spline/SplineLine';
+import SplineGroup from '../../../../elements/splineGroup/SplineGroup';
 import BackdropRings from './components/BackdropRings';
 import useSceneControls from './hooks/useControls';
 
 const s = (value) => value * LEGACY_WORLD_TO_SCENE;
 
+const NOOP_SET_SPLINE_POINTS = () => {};
+
+const SMOKE_TYPE_MAP = {
+  particle: 'Particle',
+  volumetric: 'Volumetric',
+  both: 'Both',
+};
+
+const CURVE_RENDER_GROUPS = [
+  {
+    groupKey: 'thats',
+    positionKeys: ['thatsX', 'thatsY', 'thatsZ'],
+    curves: [
+      { key: 'capitalT', index: 0, color: '#ff6644', arcSegments: 200 },
+      { key: 'hats', index: 1, color: '#ff44aa', arcSegments: 300 },
+      { key: 'crossbar', index: 2, color: '#ffcc44', arcSegments: 60 },
+      { key: 'apostrophe', index: 3, color: '#44ffcc', arcSegments: 60 },
+    ],
+  },
+  {
+    groupKey: 'all',
+    positionKeys: ['allX', 'allY', 'allZ'],
+    curves: [
+      { key: 'allLetters', index: 4, color: '#44ff88', arcSegments: 300 },
+    ],
+  },
+  {
+    groupKey: 'folks',
+    positionKeys: ['folksX', 'folksY', 'folksZ'],
+    curves: [
+      { key: 'capitalF', index: 5, color: '#4488ff', arcSegments: 200 },
+      { key: 'olksTail', index: 6, color: '#44ccff', arcSegments: 400 },
+    ],
+  },
+  {
+    groupKey: 'exclam',
+    positionKeys: ['exclamX', 'exclamY', 'exclamZ'],
+    curves: [
+      { key: 'exclamLine', index: 7, color: '#cc44ff', arcSegments: 60 },
+      { key: 'exclamDot', index: 8, color: '#ff44cc', arcSegments: 60 },
+    ],
+  },
+];
+
 // ─── Helpers ─────────────────────────────────────────────────────────────────
-
-// Merge global config with a curve's per-curve overrides.
-// particleColor and all physics params come from the global config;
-// particleCount / particleSize / opacity / flowSpeed come from the curve.
-function mergeCurveConfig(globalConfig, curveConfig) {
-  return {
-    ...globalConfig,
-    particleCount: curveConfig.particleCount,
-    particleSize: curveConfig.particleSize,
-    opacity: curveConfig.opacity,
-    flowSpeed: curveConfig.flowSpeed,
-    blendMode: globalConfig.blendMode,
-  };
-}
-
-// Volumetric variant — maps per-curve overrides and bridges the shared physics
-// param names (springK, turbulence, …) to the vol* names that
-// VolumetricSmokeParticles reads, so the Leva panel controls both modes.
-function mergeVolCurveConfig(globalConfig, curveConfig) {
-  return {
-    ...globalConfig,
-    volParticleCount: curveConfig.particleCount,
-    flowSpeed: curveConfig.flowSpeed,
-    // curve-level appearance overrides
-    volColor: globalConfig.particleColor,
-    volOpacity: curveConfig.opacity,
-    volSize: curveConfig.particleSize,
-    // bridge blendMode → volBlendMode; vol physics spread in via ...globalConfig
-    volBlendMode: globalConfig.blendMode,
-    fadeRate: globalConfig.volFadeRate,
-  };
-}
 
 const CURVE_GROUP_OFFSETS = {
   capitalT: ['thatsX', 'thatsY', 'thatsZ'],
@@ -75,7 +85,8 @@ function getBackdropLayout(curves, config) {
     const groupY = config[offsetYKey] ?? 0;
     const groupZ = config[offsetZKey] ?? 0;
 
-    return (curve?.positions ?? [])
+    return (curve ?? [])
+      .map((point) => point.position)
       .filter((position) => position.y + groupY >= 0)
       .map(
         (position) =>
@@ -132,40 +143,34 @@ function getBackdropLayout(curves, config) {
   };
 }
 
-// ─── Per-curve smoke renderer ────────────────────────────────────────────────
-// Renders particle, volumetric, or both layers for a single curve.
-// Using a named component (not inline) keeps Three.js from unmounting/remounting
-// the geometry on every parent re-render.
-function SmokeCurve({ smokeType, curve, globalConfig, curveConfig }) {
-  const showParticle = smokeType === 'particle' || smokeType === 'both';
-  const showVolumetric = smokeType === 'volumetric' || smokeType === 'both';
-  return (
-    <>
-      {showParticle && (
-        <SmokeParticles
-          points={curve.positions}
-          pointRotations={curve.rotations}
-          pointScales={curve.scales}
-          config={mergeCurveConfig(globalConfig, curveConfig)}
-        />
-      )}
-      {showVolumetric && (
-        <VolumetricSmokeParticles
-          points={curve.positions}
-          pointRotations={curve.rotations}
-          pointScales={curve.scales}
-          config={mergeVolCurveConfig(globalConfig, curveConfig)}
-        />
-      )}
-    </>
-  );
+function buildCurveSplineConfig(globalConfig, curveConfig, curveMeta) {
+  return {
+    type: 'Smoke',
+    smokeType: SMOKE_TYPE_MAP[globalConfig.smokeType] ?? 'Particle',
+    visible: curveConfig.visible,
+    tension: globalConfig.tension,
+    closed: globalConfig.closed,
+    arcSegments: curveMeta.arcSegments,
+    showSpline: globalConfig.showHelpers,
+    showHelpers: false,
+    particleCount: curveConfig.particleCount,
+    particleSize: curveConfig.particleSize,
+    opacity: curveConfig.opacity,
+    flowSpeed: curveConfig.flowSpeed,
+    volParticleCount: curveConfig.particleCount,
+    volSize: curveConfig.particleSize,
+    volColor: globalConfig.particleColor,
+    volOpacity: curveConfig.opacity,
+    volFlowSpeed: curveConfig.flowSpeed,
+    volBlendMode: globalConfig.blendMode,
+    volFadeRate: globalConfig.volFadeRate,
+  };
 }
 
 // ─── Scene ───────────────────────────────────────────────────────────────────
 
 export default function ThatsAllFolks() {
   const config = useSceneControls();
-  const { smokeType } = config;
 
   // Build all 9 curve point arrays from the preset — world positioning is
   // handled by the smoke <group> transform controlled via Leva.
@@ -188,11 +193,11 @@ export default function ThatsAllFolks() {
         const key = curveNameToKey[spline.name];
         return [
           key,
-          {
-            positions: spline.points.map((point) => point.position),
-            rotations: spline.points.map((point) => point.rotation),
-            scales: spline.points.map((point) => point.scale),
-          },
+          spline.points.map((point) => ({
+            position: point.position,
+            rotation: point.rotation,
+            scale: point.scale,
+          })),
         ];
       })
     );
@@ -277,179 +282,36 @@ export default function ThatsAllFolks() {
         position={[config.smokeX, config.smokeY, config.smokeZ]}
         scale={config.smokeScale}
       >
-        {/* ── Smoke systems — one per letterform curve ──────────────────────── */}
+        {CURVE_RENDER_GROUPS.map((group) => (
+          <group
+            key={group.groupKey}
+            position={group.positionKeys.map((key) => config[key])}
+          >
+            {group.curves.map((curveMeta) => {
+              const points = pts[curveMeta.key];
+              const curveConfig = curves[curveMeta.key];
+              if (!points || !curveConfig) return null;
 
-        {/* That's — Capital T + hats + crossbar + apostrophe */}
-        <group position={[config.thatsX, config.thatsY, config.thatsZ]}>
-          {curves.capitalT.visible && (
-            <SmokeCurve
-              smokeType={smokeType}
-              curve={pts.capitalT}
-              globalConfig={config}
-              curveConfig={curves.capitalT}
-            />
-          )}
-          {curves.hats.visible && (
-            <SmokeCurve
-              smokeType={smokeType}
-              curve={pts.hats}
-              globalConfig={config}
-              curveConfig={curves.hats}
-            />
-          )}
-          {curves.crossbar.visible && (
-            <SmokeCurve
-              smokeType={smokeType}
-              curve={pts.crossbar}
-              globalConfig={config}
-              curveConfig={curves.crossbar}
-            />
-          )}
-          {curves.apostrophe.visible && (
-            <SmokeCurve
-              smokeType={smokeType}
-              curve={pts.apostrophe}
-              globalConfig={config}
-              curveConfig={curves.apostrophe}
-            />
-          )}
-        </group>
-
-        {/* All */}
-        <group position={[config.allX, config.allY, config.allZ]}>
-          {curves.allLetters.visible && (
-            <SmokeCurve
-              smokeType={smokeType}
-              curve={pts.allLetters}
-              globalConfig={config}
-              curveConfig={curves.allLetters}
-            />
-          )}
-        </group>
-
-        {/* Folks — Capital F + olks tail */}
-        <group position={[config.folksX, config.folksY, config.folksZ]}>
-          {curves.capitalF.visible && (
-            <SmokeCurve
-              smokeType={smokeType}
-              curve={pts.capitalF}
-              globalConfig={config}
-              curveConfig={curves.capitalF}
-            />
-          )}
-          {curves.olksTail.visible && (
-            <SmokeCurve
-              smokeType={smokeType}
-              curve={pts.olksTail}
-              globalConfig={config}
-              curveConfig={curves.olksTail}
-            />
-          )}
-        </group>
-
-        {/* Exclamation — line + dot */}
-        <group position={[config.exclamX, config.exclamY, config.exclamZ]}>
-          {curves.exclamLine.visible && (
-            <SmokeCurve
-              smokeType={smokeType}
-              curve={pts.exclamLine}
-              globalConfig={config}
-              curveConfig={curves.exclamLine}
-            />
-          )}
-          {curves.exclamDot.visible && (
-            <SmokeCurve
-              smokeType={smokeType}
-              curve={pts.exclamDot}
-              globalConfig={config}
-              curveConfig={curves.exclamDot}
-            />
-          )}
-        </group>
-
-        {/* ── Spline helpers — per-curve colour-coded debug lines ───────────── */}
-        {config.showHelpers && (
-          <>
-            {/* That's helpers */}
-            <group position={[config.thatsX, config.thatsY, config.thatsZ]}>
-              <SplineLine
-                points={pts.capitalT.positions}
-                visible={curves.capitalT.visible}
-                color="#ff6644"
-                tension={0.8}
-                arcSegments={200}
-              />
-              <SplineLine
-                points={pts.hats.positions}
-                visible={curves.hats.visible}
-                color="#ff44aa"
-                tension={0.8}
-                arcSegments={300}
-              />
-              <SplineLine
-                points={pts.crossbar.positions}
-                visible={curves.crossbar.visible}
-                color="#ffcc44"
-                tension={0.8}
-                arcSegments={60}
-              />
-              <SplineLine
-                points={pts.apostrophe.positions}
-                visible={curves.apostrophe.visible}
-                color="#44ffcc"
-                tension={0.8}
-                arcSegments={60}
-              />
-            </group>
-
-            {/* All helper */}
-            <group position={[config.allX, config.allY, config.allZ]}>
-              <SplineLine
-                points={pts.allLetters.positions}
-                visible={curves.allLetters.visible}
-                color="#44ff88"
-                tension={0.8}
-                arcSegments={300}
-              />
-            </group>
-
-            {/* Folks helpers */}
-            <group position={[config.folksX, config.folksY, config.folksZ]}>
-              <SplineLine
-                points={pts.capitalF.positions}
-                visible={curves.capitalF.visible}
-                color="#4488ff"
-                tension={0.8}
-                arcSegments={200}
-              />
-              <SplineLine
-                points={pts.olksTail.positions}
-                visible={curves.olksTail.visible}
-                color="#44ccff"
-                tension={0.8}
-                arcSegments={400}
-              />
-            </group>
-
-            {/* Exclamation helpers */}
-            <group position={[config.exclamX, config.exclamY, config.exclamZ]}>
-              <SplineLine
-                points={pts.exclamLine.positions}
-                visible={curves.exclamLine.visible}
-                color="#cc44ff"
-                tension={0.8}
-                arcSegments={60}
-              />
-              <SplineLine
-                points={pts.exclamDot.positions}
-                visible={curves.exclamDot.visible}
-                color="#ff44cc"
-                tension={0.8}
-                arcSegments={60}
-              />
-            </group>
-          </>
-        )}
+              return (
+                <SplineGroup
+                  key={curveMeta.key}
+                  index={curveMeta.index}
+                  points={points}
+                  config={config}
+                  splineConfig={buildCurveSplineConfig(
+                    config,
+                    curveConfig,
+                    curveMeta
+                  )}
+                  setSplinePoints={NOOP_SET_SPLINE_POINTS}
+                  allowedTypes="smoke"
+                  renderer="webgpu"
+                  splineColor={curveMeta.color}
+                />
+              );
+            })}
+          </group>
+        ))}
       </group>
 
       {/* Post-processing */}

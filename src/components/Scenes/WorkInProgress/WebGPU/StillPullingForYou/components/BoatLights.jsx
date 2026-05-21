@@ -1,3 +1,4 @@
+/* eslint-disable no-param-reassign */
 import React, { useCallback, useRef } from 'react';
 
 import { useFrame } from '@react-three/fiber';

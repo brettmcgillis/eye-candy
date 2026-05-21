@@ -12,16 +12,18 @@ import { OrbitControls, PerspectiveCamera } from '@react-three/drei';
 import { useThree } from '@react-three/fiber';
 
 import STILL_PULLING_FOR_YOU_SMOKE from '../../../../../presets/smoke/stillPullingForYouSmoke';
+import SplineGroup from '../../../../elements/splineGroup/SplineGroup';
 import NurbsWaterColumnGPU from '../../../../elements/water/NurbsWaterColumnGPU';
 import BloomFX from '../../../../postprocessing/webGPU/bloom/Bloom';
 import FloatingTugboat from './components/FloatingTugboat';
 import Seafloor from './components/Seafloor';
 import SinkingTugboat from './components/SinkingTugboat';
-import SmokeSplineGroupGPU from './components/SmokeSplineGroupGPU';
 import useRuntimeSmokeSplines from './hooks/useRuntimeSmokeSplines';
 import useSceneControls, {
   DEFAULT_SPLINE_CONFIG,
 } from './hooks/useSceneControls';
+
+const SPLINE_GROUP_CONFIG = { pointMode: 'translate' };
 
 const DEFAULT_PRESET =
   STILL_PULLING_FOR_YOU_SMOKE['Still Pulling'] ||
@@ -62,6 +64,10 @@ function toRuntimeSplineConfigs(preset) {
     configKeys.forEach((key) => {
       if (key in spline) cfg[key] = spline[key];
     });
+    if (spline.type === 'Particle' || spline.type === 'Volumetric') {
+      cfg.type = 'Smoke';
+      cfg.smokeType = spline.type;
+    }
     return cfg;
   });
 }
@@ -223,15 +229,21 @@ export default function StillPullingForYouGPU() {
         <>
           {/* eslint-disable react/no-array-index-key */}
           {renderSplines.map((pts, index) => (
-            <SmokeSplineGroupGPU
+            <SplineGroup
               key={index}
               index={index}
               points={pts}
-              splineConfig={
-                config.splineConfigs[index] ?? DEFAULT_SPLINE_CONFIG
-              }
-              editSplines={config.editSplines}
+              config={SPLINE_GROUP_CONFIG}
+              splineConfig={{
+                ...(config.splineConfigs[index] ?? DEFAULT_SPLINE_CONFIG),
+                showSpline: config.editSplines,
+                showHelpers: config.editSplines,
+              }}
               setSplinePoints={setSplinePoints}
+              allowedTypes="smoke"
+              renderer="webgpu"
+              splineColor="#ff4444"
+              pointSize={0.15}
             />
           ))}
           {/* eslint-enable react/no-array-index-key */}

@@ -4,6 +4,10 @@ import * as THREE from 'three';
 import { useEffect, useMemo, useRef, useState } from 'react';
 
 import usePresetsFolder from '../../../../../../hooks/usePresetsFolder';
+import {
+  DEFAULT_SPLINE_CONFIG as BASE_DEFAULT_SPLINE_CONFIG,
+  updateSplineConfig,
+} from '../../../../../elements/splineGroup/splineDefaults';
 import { SCENE_PRESETS } from '../presets/presets';
 
 const SCENE_PRESET_NAMES = Object.keys(SCENE_PRESETS);
@@ -14,13 +18,14 @@ function getPresetControls({ presetSnapshot }) {
 }
 
 const DEFAULT_SPLINE_CONFIG = {
-  name: '',
-  type: 'Particle',
-  visible: true,
+  ...BASE_DEFAULT_SPLINE_CONFIG,
+  type: 'Smoke',
+  smokeType: 'Particle',
   tension: 0.6,
   closed: false,
+  showSpline: false,
+  showHelpers: false,
   arcSegments: 200,
-  // Particle Smoke
   particleCount: 3000,
   particleSize: 0.4,
   particleColor: '#a8a8a0',
@@ -38,7 +43,6 @@ const DEFAULT_SPLINE_CONFIG = {
   buoyancy: 0,
   rotSpeed: 0,
   blendMode: 'Normal',
-  // Volumetric Smoke
   volParticleCount: 3000,
   volSize: 0.6,
   volColor: '#9090a0',
@@ -56,14 +60,6 @@ const DEFAULT_SPLINE_CONFIG = {
   volBuoyancy: 0,
   volBlendMode: 'Normal',
 };
-
-function updateSplineConfig(setter, index, key, value) {
-  setter((prev) => {
-    const next = [...prev];
-    next[index] = { ...next[index], [key]: value };
-    return next;
-  });
-}
 
 export { DEFAULT_SPLINE_CONFIG };
 
@@ -406,7 +402,16 @@ export default function useSceneControls(
                         return `      { position: new THREE.Vector3(${p.x.toFixed(3)}, ${p.y.toFixed(3)}, ${p.z.toFixed(3)}), rotation: new THREE.Euler(${r.x.toFixed(3)}, ${r.y.toFixed(3)}, ${r.z.toFixed(3)}), scale: new THREE.Vector3(${s.x.toFixed(3)}, ${s.y.toFixed(3)}, ${s.z.toFixed(3)}) }`;
                       });
                       const cfgLines = Object.entries(cfg)
-                        .filter(([k]) => k !== 'name')
+                        .filter(
+                          ([k]) =>
+                            ![
+                              'name',
+                              'showSpline',
+                              'showHelpers',
+                              'showSmokeVolume',
+                              'showFireVolume',
+                            ].includes(k)
+                        )
                         .map(([k, v]) =>
                           typeof v === 'string'
                             ? `    ${k}: '${v}'`
@@ -435,12 +440,12 @@ export default function useSceneControls(
                   onChange: (v) =>
                     updateSplineConfig(setSplineConfigs, index, 'name', v),
                 },
-                [`type_${index}`]: {
+                [`smokeType_${index}`]: {
                   label: 'Type',
-                  value: cfg.type ?? 'Particle',
+                  value: cfg.smokeType ?? 'Particle',
                   options: ['Particle', 'Volumetric'],
                   onChange: (v) =>
-                    updateSplineConfig(setSplineConfigs, index, 'type', v),
+                    updateSplineConfig(setSplineConfigs, index, 'smokeType', v),
                 },
                 [`Particle Smoke ${index}`]: folder(
                   {

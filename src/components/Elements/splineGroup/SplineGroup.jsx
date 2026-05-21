@@ -3,8 +3,10 @@ import * as THREE from 'three';
 import React, { useCallback, useMemo } from 'react';
 
 import SmokeParticles from '../smoke/SmokeParticles';
+import SmokeParticlesGPU from '../smoke/SmokeParticlesGPU';
 import SmokeVolumeMesh from '../smoke/SmokeVolumeMesh';
 import VolumetricSmokeParticles from '../smoke/VolumetricSmokeParticles';
+import VolumetricSmokeParticlesGPU from '../smoke/VolumetricSmokeParticlesGPU';
 import SplineLine from '../spline/SplineLine';
 import SplinePoints from '../spline/SplinePoints';
 import CS184VolumetricFire from '../volumetricFire/CS184VolumetricFire';
@@ -108,6 +110,9 @@ export default function SplineGroup({
   attractorsRef,
   setSplinePoints,
   allowedTypes = 'both',
+  renderer = 'webgl',
+  splineColor = '#aaaaaa',
+  pointSize,
 }) {
   const setPoints = useCallback(
     (updater) => setSplinePoints(index, updater),
@@ -123,13 +128,30 @@ export default function SplineGroup({
     [config, splineConfig]
   );
 
-  if (!splineConfig.visible) return null;
-  if (allowedTypes === 'smoke' && splineConfig.type === 'Fire') return null;
-  if (allowedTypes === 'fire' && splineConfig.type === 'Smoke') return null;
+  const usesLegacySmokeType =
+    splineConfig.type === 'Particle' || splineConfig.type === 'Volumetric';
+  const normalizedType = usesLegacySmokeType ? 'Smoke' : splineConfig.type;
+  const smokeType = usesLegacySmokeType
+    ? splineConfig.type
+    : (splineConfig.smokeType ?? 'Particle');
+  const fireType = splineConfig.fireType ?? 'Classic';
+  const ParticleSmokeComponent =
+    renderer === 'webgpu' ? SmokeParticlesGPU : SmokeParticles;
+  const VolumetricSmokeComponent =
+    renderer === 'webgpu'
+      ? VolumetricSmokeParticlesGPU
+      : VolumetricSmokeParticles;
 
-  const isFire = splineConfig.type === 'Fire';
-  const isSmoke = splineConfig.type === 'Smoke';
-  const { smokeType = 'Particle', fireType = 'Classic' } = splineConfig;
+  if (!splineConfig.visible) return null;
+  if (allowedTypes === 'smoke' && normalizedType === 'Fire') return null;
+  if (allowedTypes === 'fire' && normalizedType === 'Smoke') return null;
+
+  const isFire = normalizedType === 'Fire';
+  const isSmoke = normalizedType === 'Smoke';
+  const showParticleSmoke =
+    isSmoke && (smokeType === 'Particle' || smokeType === 'Both');
+  const showVolumetricSmoke =
+    isSmoke && (smokeType === 'Volumetric' || smokeType === 'Both');
 
   return (
     <>
@@ -137,7 +159,8 @@ export default function SplineGroup({
         points={points}
         setPoints={setPoints}
         visible={splineConfig.showHelpers}
-        mode={config.pointMode}
+        mode={config.pointMode ?? 'translate'}
+        pointSize={pointSize}
       />
 
       <SplineLine
@@ -145,13 +168,13 @@ export default function SplineGroup({
         tension={splineConfig.tension}
         closed={splineConfig.closed}
         curveType="catmullrom"
-        color="#aaaaaa"
+        color={splineColor}
         visible={splineConfig.showSpline}
         arcSegments={splineConfig.arcSegments}
       />
 
-      {isSmoke && smokeType === 'Particle' && (
-        <SmokeParticles
+      {showParticleSmoke && (
+        <ParticleSmokeComponent
           points={positions}
           pointRotations={rotations}
           pointScales={scales}
@@ -160,8 +183,8 @@ export default function SplineGroup({
         />
       )}
 
-      {isSmoke && smokeType === 'Volumetric' && (
-        <VolumetricSmokeParticles
+      {showVolumetricSmoke && (
+        <VolumetricSmokeComponent
           points={positions}
           pointRotations={rotations}
           pointScales={scales}

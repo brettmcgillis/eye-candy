@@ -12,6 +12,7 @@ import THATS_ALL_FOLKS_SMOKE, {
   LEGACY_WORLD_TO_SCENE,
 } from '../../../../../presets/smoke/thatsAllFolksSmoke';
 import Magnum from '../../../../elements/magnum/Magnum';
+import { getSplineWorldPoints } from '../../../../elements/splineGroup/splineDefaults';
 import SplineGroup from '../../../../elements/splineGroup/SplineGroup';
 import BackdropRings from './components/BackdropRings';
 import useSceneControls from './hooks/useControls';
@@ -193,7 +194,7 @@ export default function ThatsAllFolks() {
         const key = curveNameToKey[spline.name];
         return [
           key,
-          spline.points.map((point) => ({
+          getSplineWorldPoints(spline).map((point) => ({
             position: point.position,
             rotation: point.rotation,
             scale: point.scale,

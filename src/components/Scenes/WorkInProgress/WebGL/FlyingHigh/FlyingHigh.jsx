@@ -5,6 +5,7 @@ import { Bloom, EffectComposer } from '@react-three/postprocessing';
 
 import FLYING_HIGH_FIRE from '../../../../../presets/fire/flyingHighFire';
 import Boeing737 from '../../../../elements/boeing737/Boeing737';
+import { getSplineWorldPoints } from '../../../../elements/splineGroup/splineDefaults';
 import EngineFire from './components/EngineFire';
 import SceneClouds from './components/SceneClouds';
 import SkyPanel from './components/SkyPanel';
@@ -46,11 +47,13 @@ export default function FlyingHigh() {
     };
   }, []);
   const leftSmokePoints = useMemo(
-    () => leftEngineSmokeTrail?.points?.map((pt) => pt.position.clone()) ?? [],
+    () =>
+      getSplineWorldPoints(leftEngineSmokeTrail).map((pt) => pt.position.clone()),
     [leftEngineSmokeTrail]
   );
   const rightSmokePoints = useMemo(
-    () => rightEngineSmokeTrail?.points?.map((pt) => pt.position.clone()) ?? [],
+    () =>
+      getSplineWorldPoints(rightEngineSmokeTrail).map((pt) => pt.position.clone()),
     [rightEngineSmokeTrail]
   );
 

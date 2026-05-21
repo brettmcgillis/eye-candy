@@ -4,6 +4,7 @@ import {
   cloneFireAndSmokeControlPoints,
   makeFireAndSmokeSmokeConfig,
 } from '../../components/elements/fireAndSmoke/fireAndSmokeDefaults';
+import { normalizeSplinePreset } from '../../components/elements/splineGroup/splineDefaults';
 
 const V = (x, y, z) => new THREE.Vector3(x, y, z);
 const E = (x, y, z) => new THREE.Euler(x, y, z);
@@ -142,5 +143,9 @@ const DEFAULT_SMOKE_PRESET = {
     ],
   },
 };
+
+DEFAULT_SMOKE_PRESET.Default.splines = DEFAULT_SMOKE_PRESET.Default.splines.map(
+  normalizeSplinePreset
+);
 
 export default DEFAULT_SMOKE_PRESET;

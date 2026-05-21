@@ -20,7 +20,7 @@ import {
 import useFireTestControls from './hooks/useFireTestControls';
 
 const DEFAULT_PRESET_KEY = Object.keys(FIRE_PRESETS)[0];
-const { splines: DEFAULT_SPLINES } = filterParsedPresetByType(
+const { splineInstances: DEFAULT_SPLINES } = filterParsedPresetByType(
   parsePreset(FIRE_PRESETS[DEFAULT_PRESET_KEY]),
   'Fire'
 );
@@ -32,9 +32,13 @@ export default function FireTest() {
 
   const setSplinePoints = useCallback((splineIndex, updater) => {
     setSplines((prev) =>
-      prev.map((pts, i) => {
-        if (i !== splineIndex) return pts;
-        return typeof updater === 'function' ? updater(pts) : updater;
+      prev.map((spline, i) => {
+        if (i !== splineIndex) return spline;
+        return {
+          ...spline,
+          points:
+            typeof updater === 'function' ? updater(spline.points) : updater,
+        };
       })
     );
   }, []);
@@ -73,16 +77,22 @@ export default function FireTest() {
 
       {/* ── Multi-spline SplineGroups (fire types) ────────────────────────── */}
       {/* eslint-disable react/no-array-index-key */}
-      {splines.map((points, index) => (
-        <SplineGroup
+      {splines.map((spline, index) => (
+        <group
           key={index}
-          index={index}
-          points={points}
-          config={config}
-          splineConfig={config.splineConfigs[index] ?? {}}
-          setSplinePoints={setSplinePoints}
-          allowedTypes="fire"
-        />
+          position={spline.pos}
+          rotation={spline.rot}
+          scale={spline.scale}
+        >
+          <SplineGroup
+            index={index}
+            points={spline.points}
+            config={config}
+            splineConfig={config.splineConfigs[index] ?? {}}
+            setSplinePoints={setSplinePoints}
+            allowedTypes="fire"
+          />
+        </group>
       ))}
       {/* eslint-enable react/no-array-index-key */}
 

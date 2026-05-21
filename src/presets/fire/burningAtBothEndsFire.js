@@ -1,5 +1,7 @@
 import * as THREE from 'three';
 
+import { normalizeSplinePreset } from '../../components/elements/splineGroup/splineDefaults';
+
 const V = (x, y, z) => new THREE.Vector3(x, y, z);
 const E = (x, y, z) => new THREE.Euler(x, y, z);
 
@@ -117,5 +119,9 @@ const BURNING_AT_BOTH_ENDS_FIRE = {
     },
   ],
 };
+
+BURNING_AT_BOTH_ENDS_FIRE.splines = BURNING_AT_BOTH_ENDS_FIRE.splines.map(
+  normalizeSplinePreset
+);
 
 export default BURNING_AT_BOTH_ENDS_FIRE;

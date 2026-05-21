@@ -1,5 +1,3 @@
-import * as THREE from 'three';
-
 import React, {
   useCallback,
   useEffect,
@@ -13,6 +11,7 @@ import { useThree } from '@react-three/fiber';
 
 import STILL_PULLING_FOR_YOU_SMOKE from '../../../../../presets/smoke/stillPullingForYouSmoke';
 import SplineGroup from '../../../../elements/splineGroup/SplineGroup';
+import { getSplineWorldPoints } from '../../../../elements/splineGroup/splineDefaults';
 import NurbsWaterColumnGPU from '../../../../elements/water/NurbsWaterColumnGPU';
 import BloomFX from '../../../../postprocessing/webGPU/bloom/Bloom';
 import FloatingTugboat from './components/FloatingTugboat';
@@ -41,13 +40,7 @@ function toRuntimeSplinePoints(preset) {
     sourceSplines = [preset];
   }
 
-  return sourceSplines.map((spline) =>
-    spline.points.map((pt) => ({
-      position: pt.position.clone(),
-      rotation: pt.rotation ? pt.rotation.clone() : new THREE.Euler(0, 0, 0),
-      scale: pt.scale ? pt.scale.clone() : new THREE.Vector3(1, 1, 1),
-    }))
-  );
+  return sourceSplines.map((spline) => getSplineWorldPoints(spline));
 }
 
 function toRuntimeSplineConfigs(preset) {

@@ -6,6 +6,10 @@ import { useFrame } from '@react-three/fiber';
 import POLICE_PRESENCE_FIRE from '../../../../../presets/fire/policePresenceFire';
 import PoliceCruiser from '../../../../elements/policeCruiser/PoliceCruiser';
 import SmokeParticles from '../../../../elements/smoke/SmokeParticles';
+import {
+  getSplineWorldOrigin,
+  getSplineWorldPoints,
+} from '../../../../elements/splineGroup/splineDefaults';
 import VolumetricFire from '../../../../elements/volumetricFire/VolumetricFire';
 
 // ─── Animated siren lights on the light bar ───────────────────────────────
@@ -135,7 +139,7 @@ export default function PolicePresence() {
     };
   }, []);
   const smokePoints = useMemo(
-    () => smokeColumn?.points?.map((pt) => pt.position.clone()) ?? [],
+    () => getSplineWorldPoints(smokeColumn).map((pt) => pt.position.clone()),
     [smokeColumn]
   );
 
@@ -159,7 +163,9 @@ export default function PolicePresence() {
       {/* Windshield — main blaze, tall and wide */}
       <VolumetricFire
         position={
-          windshieldFire?.points?.[0]?.position?.toArray() ?? [0.6, 1.1, -4.0]
+          windshieldFire
+            ? getSplineWorldOrigin(windshieldFire).toArray()
+            : [0.6, 1.1, -4.0]
         }
         width={windshieldFire?.fireWidth ?? 1.2}
         depth={windshieldFire?.fireDepth ?? 0.8}
@@ -174,9 +180,9 @@ export default function PolicePresence() {
       {/* Driver window — flames licking out sideways */}
       <VolumetricFire
         position={
-          driverWindowFire?.points?.[0]?.position?.toArray() ?? [
-            0.0, 1.0, -4.72,
-          ]
+          driverWindowFire
+            ? getSplineWorldOrigin(driverWindowFire).toArray()
+            : [0.0, 1.0, -4.72]
         }
         width={driverWindowFire?.fireWidth ?? 0.6}
         depth={driverWindowFire?.fireDepth ?? 0.5}
@@ -191,9 +197,9 @@ export default function PolicePresence() {
       {/* Passenger window — mirrored */}
       <VolumetricFire
         position={
-          passengerWindowFire?.points?.[0]?.position?.toArray() ?? [
-            0.0, 1.0, -3.28,
-          ]
+          passengerWindowFire
+            ? getSplineWorldOrigin(passengerWindowFire).toArray()
+            : [0.0, 1.0, -3.28]
         }
         width={passengerWindowFire?.fireWidth ?? 0.6}
         depth={passengerWindowFire?.fireDepth ?? 0.5}
@@ -208,7 +214,7 @@ export default function PolicePresence() {
       {/* Hood / engine area — lower, wider */}
       <VolumetricFire
         position={
-          hoodFire?.points?.[0]?.position?.toArray() ?? [1.4, 0.85, -4.0]
+          hoodFire ? getSplineWorldOrigin(hoodFire).toArray() : [1.4, 0.85, -4.0]
         }
         width={hoodFire?.fireWidth ?? 0.9}
         depth={hoodFire?.fireDepth ?? 0.7}
@@ -223,7 +229,7 @@ export default function PolicePresence() {
       {/* Roof wrap-back — broad draping fire */}
       <VolumetricFire
         position={
-          roofFire?.points?.[0]?.position?.toArray() ?? [-0.4, 1.25, -4.0]
+          roofFire ? getSplineWorldOrigin(roofFire).toArray() : [-0.4, 1.25, -4.0]
         }
         width={roofFire?.fireWidth ?? 1.0}
         depth={roofFire?.fireDepth ?? 0.9}

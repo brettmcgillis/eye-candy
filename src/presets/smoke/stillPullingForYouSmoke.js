@@ -1,5 +1,7 @@
 import * as THREE from 'three';
 
+import { normalizeSplinePreset } from '../../components/elements/splineGroup/splineDefaults';
+
 // Points are at scene scale (1 unit ≈ 1 metre), matching the toolbox editor
 // and the StillPullingForYou WIP scene coordinate system.
 function point(x, y, z) {
@@ -216,5 +218,11 @@ STILL_PULLING_FOR_YOU_SMOKE['Rough Waters'] = {
     },
   ],
 };
+
+Object.values(STILL_PULLING_FOR_YOU_SMOKE).forEach((preset) => {
+  if (!Array.isArray(preset?.splines)) return;
+  const normalizedSplines = preset.splines.map(normalizeSplinePreset);
+  Object.assign(preset, { splines: normalizedSplines });
+});
 
 export default STILL_PULLING_FOR_YOU_SMOKE;

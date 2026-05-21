@@ -22,7 +22,7 @@ import useHotBoxControls, {
   getHotBoxPreset,
 } from './hooks/useHotBoxControls';
 
-const { splines: DEFAULT_SPLINES } = parsePreset(
+const { splineInstances: DEFAULT_SPLINES } = parsePreset(
   getHotBoxPreset(HOTBOX_DEFAULT_PRESET_KEY)
 );
 
@@ -31,9 +31,13 @@ export default function HotBox() {
 
   const setSplinePoints = useCallback((splineIndex, updater) => {
     setSplines((prev) =>
-      prev.map((pts, i) => {
-        if (i !== splineIndex) return pts;
-        return typeof updater === 'function' ? updater(pts) : updater;
+      prev.map((spline, i) => {
+        if (i !== splineIndex) return spline;
+        return {
+          ...spline,
+          points:
+            typeof updater === 'function' ? updater(spline.points) : updater,
+        };
       })
     );
   }, []);
@@ -78,16 +82,22 @@ export default function HotBox() {
       <OrbitControls makeDefault dampingFactor={0.2} />
 
       {/* eslint-disable react/no-array-index-key */}
-      {splines.map((points, index) => (
-        <SplineGroup
+      {splines.map((spline, index) => (
+        <group
           key={index}
-          index={index}
-          points={points}
-          config={config}
-          splineConfig={config.splineConfigs[index] ?? {}}
-          attractorsRef={attractorsRef}
-          setSplinePoints={setSplinePoints}
-        />
+          position={spline.pos}
+          rotation={spline.rot}
+          scale={spline.scale}
+        >
+          <SplineGroup
+            index={index}
+            points={spline.points}
+            config={config}
+            splineConfig={config.splineConfigs[index] ?? {}}
+            attractorsRef={attractorsRef}
+            setSplinePoints={setSplinePoints}
+          />
+        </group>
       ))}
       {/* eslint-enable react/no-array-index-key */}
 

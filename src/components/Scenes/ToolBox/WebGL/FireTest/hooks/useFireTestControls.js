@@ -13,7 +13,9 @@ import {
 import buildFireAndSmokeControls from '../../shared/hooks/buildFireAndSmokeControls';
 import buildSplineGroupControls from '../../shared/hooks/useSplineGroupControls';
 import {
+  cloneSplineInstance,
   DEFAULT_SPLINE_CONFIG,
+  DEFAULT_SPLINE_INSTANCE_TRANSFORM,
   filterParsedPresetByType,
   parsePreset,
   serializeSplines,
@@ -37,15 +39,23 @@ const getFireSplineState = (presetKey) =>
 let idCounter = 0;
 const mkId = () => idCounter++;
 
-const randPt = () => ({
-  position: new THREE.Vector3(
-    (Math.random() - 0.5) * 4,
-    Math.random() * 4,
-    (Math.random() - 0.5) * 4
-  ),
-  rotation: new THREE.Euler(),
-  scale: new THREE.Vector3(1, 1, 1),
-});
+function randPt() {
+  return {
+    position: new THREE.Vector3(
+      (Math.random() - 0.5) * 4,
+      Math.random() * 4,
+      (Math.random() - 0.5) * 4
+    ),
+    rotation: new THREE.Euler(),
+    scale: new THREE.Vector3(1, 1, 1),
+  };
+}
+
+const makeGenericSplineInstance = (points = [randPt(), randPt(), randPt()]) =>
+  cloneSplineInstance({
+    ...DEFAULT_SPLINE_INSTANCE_TRANSFORM,
+    points,
+  });
 
 const DEFAULT_FIREBALL_POSITION = [-5, 1, 0];
 const DEFAULT_FIRE_SPLINE_POSITION = [0, 0, 0];
@@ -376,7 +386,7 @@ export default function useFireTestControls(splines, setSplines) {
 
   const applyPresetState = useCallback(
     (presetKey) => {
-      const { splines: nextSplines, splineConfigs: nextConfigs } =
+      const { splineInstances: nextSplines, splineConfigs: nextConfigs } =
         getFireSplineState(presetKey);
       setSplines(nextSplines);
       setSplineConfigs(nextConfigs);
@@ -481,7 +491,7 @@ export default function useFireTestControls(splines, setSplines) {
       const nextCount = (typedSplineEntries[fireType]?.length ?? 0) + 1;
       const typeLabel = FIRE_SPLINE_TYPE_LABELS[fireType];
 
-      setSplines((prev) => [...prev, [randPt(), randPt(), randPt()]]);
+      setSplines((prev) => [...prev, makeGenericSplineInstance()]);
       setSplineConfigs((prev) => [
         ...prev,
         makeTypedFireSplineConfig(fireType, `${typeLabel} ${nextCount}`),
@@ -520,6 +530,7 @@ export default function useFireTestControls(splines, setSplines) {
                 buildSplineGroupControls(entry.index, entry.cfg, {
                   sceneLabel: typeFolderPath,
                   folderLabel,
+                  splineInstance: splines[entry.index],
                   setSplineConfigs,
                   setSplines,
                   allowedTypes: 'fire',

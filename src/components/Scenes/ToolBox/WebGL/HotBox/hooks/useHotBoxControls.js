@@ -14,7 +14,9 @@ import {
 import buildFireAndSmokeControls from '../../shared/hooks/buildFireAndSmokeControls';
 import buildSplineGroupControls from '../../shared/hooks/useSplineGroupControls';
 import {
+  cloneSplineInstance,
   DEFAULT_SPLINE_CONFIG,
+  DEFAULT_SPLINE_INSTANCE_TRANSFORM,
   parsePreset,
   serializeSplines,
 } from '../../shared/splineDefaults';
@@ -85,15 +87,17 @@ export const getHotBoxPreset = (presetKey) => {
 let idCounter = 0;
 const mkId = () => idCounter++;
 
-const randPt = () => ({
-  position: new THREE.Vector3(
-    (Math.random() - 0.5) * 4,
-    Math.random() * 4,
-    (Math.random() - 0.5) * 4
-  ),
-  rotation: new THREE.Euler(),
-  scale: new THREE.Vector3(1, 1, 1),
-});
+function randPt() {
+  return {
+    position: new THREE.Vector3(
+      (Math.random() - 0.5) * 4,
+      Math.random() * 4,
+      (Math.random() - 0.5) * 4
+    ),
+    rotation: new THREE.Euler(),
+    scale: new THREE.Vector3(1, 1, 1),
+  };
+}
 
 const DEFAULT_SMOKEBALL_POSITION = [-5, 1, 0];
 const DEFAULT_SMOKE_BALL_SPLINE_POSITION = [0, 0, 0];
@@ -176,6 +180,12 @@ const offsetPosition = (base, spread = [4, 3, 4]) => [
   base[1] + Math.random() * spread[1],
   base[2] + (Math.random() - 0.5) * spread[2],
 ];
+
+const makeGenericSplineInstance = (points = [randPt(), randPt(), randPt()]) =>
+  cloneSplineInstance({
+    ...DEFAULT_SPLINE_INSTANCE_TRANSFORM,
+    points,
+  });
 
 const cloneTuple = (value, fallback) =>
   Array.isArray(value) ? [...value] : [...fallback];
@@ -591,7 +601,10 @@ export default function useHotBoxControls(splines, setSplines, attractorsRef) {
 
   const applyPresetState = useCallback(
     (presetKey) => {
-      const { splines: nextSplines, splineConfigs: nextConfigs } = parsePreset(
+      const {
+        splineInstances: nextSplines,
+        splineConfigs: nextConfigs,
+      } = parsePreset(
         getHotBoxPreset(presetKey)
       );
       setSplines(nextSplines);
@@ -788,7 +801,7 @@ export default function useHotBoxControls(splines, setSplines, attractorsRef) {
       const typeLabel = SMOKE_SPLINE_TYPE_LABELS[smokeType];
       const nextCount = typedSplineEntries.smoke[smokeType].length + 1;
 
-      setSplines((prev) => [...prev, [randPt(), randPt(), randPt()]]);
+      setSplines((prev) => [...prev, makeGenericSplineInstance()]);
       setSplineConfigs((prev) => [
         ...prev,
         makeTypedSplineConfig({
@@ -804,7 +817,7 @@ export default function useHotBoxControls(splines, setSplines, attractorsRef) {
       const typeLabel = FIRE_SPLINE_TYPE_LABELS[fireType];
       const nextCount = typedSplineEntries.fire[fireType].length + 1;
 
-      setSplines((prev) => [...prev, [randPt(), randPt(), randPt()]]);
+      setSplines((prev) => [...prev, makeGenericSplineInstance()]);
       setSplineConfigs((prev) => [
         ...prev,
         makeTypedSplineConfig({
@@ -883,6 +896,7 @@ export default function useHotBoxControls(splines, setSplines, attractorsRef) {
                 buildSplineGroupControls(entry.index, entry.cfg, {
                   sceneLabel: typeFolderPath,
                   folderLabel,
+                  splineInstance: splines[entry.index],
                   setSplineConfigs,
                   setSplines,
                   allowedTypes: 'smoke',
@@ -918,6 +932,7 @@ export default function useHotBoxControls(splines, setSplines, attractorsRef) {
                 buildSplineGroupControls(entry.index, entry.cfg, {
                   sceneLabel: typeFolderPath,
                   folderLabel,
+                  splineInstance: splines[entry.index],
                   setSplineConfigs,
                   setSplines,
                   allowedTypes: 'fire',

@@ -1,5 +1,171 @@
 import * as THREE from 'three';
 
+const DEFAULT_SPLINE_POS = [0, 0, 0];
+const DEFAULT_SPLINE_ROT = [0, 0, 0];
+const DEFAULT_SPLINE_SCALE = [1, 1, 1];
+
+const _groupPosition = new THREE.Vector3();
+const _groupQuaternion = new THREE.Quaternion();
+const _groupScale = new THREE.Vector3();
+const _pointQuaternion = new THREE.Quaternion();
+const _worldQuaternion = new THREE.Quaternion();
+const _worldEuler = new THREE.Euler();
+const _worldPosition = new THREE.Vector3();
+const _localPosition = new THREE.Vector3();
+const _transformMatrix = new THREE.Matrix4();
+const _inverseTransformMatrix = new THREE.Matrix4();
+
+export const DEFAULT_SPLINE_INSTANCE_TRANSFORM = {
+  pos: [...DEFAULT_SPLINE_POS],
+  rot: [...DEFAULT_SPLINE_ROT],
+  scale: [...DEFAULT_SPLINE_SCALE],
+};
+
+const cloneTuple = (value, fallback) =>
+  Array.isArray(value) ? [...value] : [...fallback];
+
+function clonePoint(point) {
+  return {
+    position: point.position.clone(),
+    rotation: point.rotation
+      ? point.rotation.clone()
+      : new THREE.Euler(0, 0, 0),
+    scale: point.scale ? point.scale.clone() : new THREE.Vector3(1, 1, 1),
+  };
+}
+
+export function cloneSplinePoints(points = []) {
+  return points.map(clonePoint);
+}
+
+export function cloneSplineInstanceTransform(source = {}) {
+  return {
+    pos: cloneTuple(source.pos, DEFAULT_SPLINE_POS),
+    rot: cloneTuple(source.rot, DEFAULT_SPLINE_ROT),
+    scale: cloneTuple(source.scale, DEFAULT_SPLINE_SCALE),
+  };
+}
+
+export function cloneSplineInstance(instance = {}) {
+  return {
+    ...instance,
+    ...cloneSplineInstanceTransform(instance),
+    points: cloneSplinePoints(instance.points ?? []),
+  };
+}
+
+function hasExplicitSplineTransform(spline = {}) {
+  return (
+    Array.isArray(spline.pos) ||
+    Array.isArray(spline.rot) ||
+    Array.isArray(spline.scale)
+  );
+}
+
+function composeSplineTransformMatrix(transform, out) {
+  _groupPosition.fromArray(transform.pos);
+  _groupQuaternion.setFromEuler(
+    new THREE.Euler(transform.rot[0], transform.rot[1], transform.rot[2])
+  );
+  _groupScale.fromArray(transform.scale);
+  out.compose(_groupPosition, _groupQuaternion, _groupScale);
+  return out;
+}
+
+function normalizeLegacySpline(spline) {
+  const points = cloneSplinePoints(spline.points ?? []);
+  const origin = points[0]?.position.clone() ?? new THREE.Vector3(0, 0, 0);
+
+  points.forEach((point) => {
+    point.position.sub(origin);
+  });
+
+  return {
+    ...spline,
+    pos: origin.toArray(),
+    rot: [...DEFAULT_SPLINE_ROT],
+    scale: [...DEFAULT_SPLINE_SCALE],
+    points,
+  };
+}
+
+export function normalizeSplinePreset(spline = {}) {
+  if (!hasExplicitSplineTransform(spline)) {
+    return normalizeLegacySpline(spline);
+  }
+
+  return {
+    ...spline,
+    ...cloneSplineInstanceTransform(spline),
+    points: cloneSplinePoints(spline.points ?? []),
+  };
+}
+
+export function getSplineWorldPoints(spline = {}) {
+  const normalizedSpline = normalizeSplinePreset(spline);
+  const transform = cloneSplineInstanceTransform(normalizedSpline);
+
+  composeSplineTransformMatrix(transform, _transformMatrix);
+
+  return normalizedSpline.points.map((point) => {
+    _worldPosition.copy(point.position).applyMatrix4(_transformMatrix);
+    _pointQuaternion.setFromEuler(
+      point.rotation ? point.rotation.clone() : new THREE.Euler(0, 0, 0)
+    );
+    _groupQuaternion.setFromEuler(
+      new THREE.Euler(transform.rot[0], transform.rot[1], transform.rot[2])
+    );
+    _worldQuaternion.copy(_groupQuaternion).multiply(_pointQuaternion);
+    _worldEuler.setFromQuaternion(_worldQuaternion);
+
+    return {
+      position: _worldPosition.clone(),
+      rotation: _worldEuler.clone(),
+      scale: new THREE.Vector3(
+        (point.scale?.x ?? 1) * transform.scale[0],
+        (point.scale?.y ?? 1) * transform.scale[1],
+        (point.scale?.z ?? 1) * transform.scale[2]
+      ),
+    };
+  });
+}
+
+export function getSplineWorldOrigin(spline = {}) {
+  return getSplineWorldPoints(spline)[0]?.position ?? new THREE.Vector3();
+}
+
+export function worldPointsToSplineInstance(points = [], base = {}) {
+  if (!points.length) {
+    return {
+      ...base,
+      ...cloneSplineInstanceTransform(base),
+      points: [],
+    };
+  }
+
+  const transform = cloneSplineInstanceTransform(base);
+  composeSplineTransformMatrix(transform, _transformMatrix);
+  _inverseTransformMatrix.copy(_transformMatrix).invert();
+
+  const localPoints = points.map((point) => {
+    _localPosition.copy(point.position).applyMatrix4(_inverseTransformMatrix);
+
+    return {
+      position: _localPosition.clone(),
+      rotation: point.rotation
+        ? point.rotation.clone()
+        : new THREE.Euler(0, 0, 0),
+      scale: point.scale ? point.scale.clone() : new THREE.Vector3(1, 1, 1),
+    };
+  });
+
+  return {
+    ...base,
+    ...transform,
+    points: localPoints,
+  };
+}
+
 export const DEFAULT_SPLINE_CONFIG = {
   name: '',
   visible: true,
@@ -92,16 +258,20 @@ export function parsePreset(preset) {
     sourceSplines = [preset];
   }
 
-  const splines = sourceSplines.map((spline) =>
-    spline.points.map((pt) => ({
-      position: pt.position.clone(),
-      rotation: pt.rotation ? pt.rotation.clone() : new THREE.Euler(0, 0, 0),
-      scale: pt.scale ? pt.scale.clone() : new THREE.Vector3(1, 1, 1),
-    }))
+  const splineInstances = sourceSplines.map(normalizeSplinePreset);
+
+  const splines = splineInstances.map((spline) =>
+    cloneSplinePoints(spline.points)
   );
 
-  const splineConfigs = sourceSplines.map((spline) => {
-    const { points: _pts, ...splineData } = spline;
+  const splineConfigs = splineInstances.map((spline) => {
+    const {
+      points: _pts,
+      pos: _pos,
+      rot: _rot,
+      scale: _scale,
+      ...splineData
+    } = spline;
 
     let migratedData = { ...splineData };
     if (splineData.type === 'Particle' || splineData.type === 'Volumetric') {
@@ -115,29 +285,30 @@ export function parsePreset(preset) {
     return { ...DEFAULT_SPLINE_CONFIG, ...migratedData };
   });
 
-  return { splines, splineConfigs };
+  return { splineInstances, splines, splineConfigs };
 }
 
 export function filterParsedPresetByType(parsedPreset, type) {
-  return parsedPreset.splines.reduce(
-    (acc, points, index) => {
+  return parsedPreset.splineInstances.reduce(
+    (acc, spline, index) => {
       const config = parsedPreset.splineConfigs[index] ?? DEFAULT_SPLINE_CONFIG;
 
       if ((config.type ?? DEFAULT_SPLINE_CONFIG.type) !== type) {
         return acc;
       }
 
-      acc.splines.push(points);
+      acc.splineInstances.push(cloneSplineInstance(spline));
+      acc.splines.push(cloneSplinePoints(spline.points));
       acc.splineConfigs.push(config);
       return acc;
     },
-    { splines: [], splineConfigs: [] }
+    { splineInstances: [], splines: [], splineConfigs: [] }
   );
 }
 
 export function serializeSplines(splines, splineConfigs) {
   return splines
-    .map((pts, idx) => {
+    .map((splineOrPoints, idx) => {
       const cfg = splineConfigs[idx] ?? DEFAULT_SPLINE_CONFIG;
       const {
         showSpline: _ss,
@@ -147,7 +318,14 @@ export function serializeSplines(splines, splineConfigs) {
         ...presetCfg
       } = cfg;
 
-      const pointStrs = pts.map((pt) => {
+      const spline = Array.isArray(splineOrPoints)
+        ? {
+            ...DEFAULT_SPLINE_INSTANCE_TRANSFORM,
+            points: cloneSplinePoints(splineOrPoints),
+          }
+        : cloneSplineInstance(splineOrPoints);
+
+      const pointStrs = spline.points.map((pt) => {
         const p = pt.position;
         const r = pt.rotation ?? new THREE.Euler();
         const s = pt.scale ?? new THREE.Vector3(1, 1, 1);
@@ -165,7 +343,15 @@ export function serializeSplines(splines, splineConfigs) {
         })
         .join(',\n');
 
-      return `  {\n${cfgEntries},\n    points: [\n${pointStrs.join(',\n')}\n    ]\n  }`;
+      const posEntries = spline.pos.map((value) => value.toFixed(3)).join(', ');
+      const rotEntries = spline.rot.map((value) => value.toFixed(3)).join(', ');
+      const scaleEntries = spline.scale
+        .map((value) => value.toFixed(3))
+        .join(', ');
+
+      const cfgBlock = cfgEntries ? `${cfgEntries},\n` : '';
+
+      return `  {\n${cfgBlock}    pos: [${posEntries}],\n    rot: [${rotEntries}],\n    scale: [${scaleEntries}],\n    points: [\n${pointStrs.join(',\n')}\n    ]\n  }`;
     })
     .join(',\n');
 }

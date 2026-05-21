@@ -1,6 +1,7 @@
 import React, { memo } from 'react';
 
 import SmokeParticles from '../../../../../elements/smoke/SmokeParticles';
+import { getSplineWorldOrigin } from '../../../../../elements/splineGroup/splineDefaults';
 import VolumetricFire from '../../../../../elements/volumetricFire/VolumetricFire';
 
 function EngineFire({
@@ -18,9 +19,9 @@ function EngineFire({
       {/* Warm point lights at engines — give fire a glow spread */}
       <pointLight
         position={
-          leftEngineMainFire?.points?.[0]?.position?.toArray() ?? [
-            -1.8, -0.1, 0.4,
-          ]
+          leftEngineMainFire
+            ? getSplineWorldOrigin(leftEngineMainFire).toArray()
+            : [-1.8, -0.1, 0.4]
         }
         color="#ff6600"
         intensity={4}
@@ -29,9 +30,9 @@ function EngineFire({
       />
       <pointLight
         position={
-          rightEngineMainFire?.points?.[0]?.position?.toArray() ?? [
-            1.8, -0.1, 0.4,
-          ]
+          rightEngineMainFire
+            ? getSplineWorldOrigin(rightEngineMainFire).toArray()
+            : [1.8, -0.1, 0.4]
         }
         color="#ff6600"
         intensity={4}
@@ -42,9 +43,9 @@ function EngineFire({
       {/* Volumetric fire at left engine — flame bends backward in airstream */}
       <VolumetricFire
         position={
-          leftEngineMainFire?.points?.[0]?.position?.toArray() ?? [
-            -1.8, 0.0, 0.3,
-          ]
+          leftEngineMainFire
+            ? getSplineWorldOrigin(leftEngineMainFire).toArray()
+            : [-1.8, 0.0, 0.3]
         }
         width={leftEngineMainFire?.fireWidth ?? 0.5}
         height={leftEngineMainFire?.fireHeight ?? 1.8}
@@ -63,9 +64,9 @@ function EngineFire({
       {/* Volumetric fire at right engine */}
       <VolumetricFire
         position={
-          rightEngineMainFire?.points?.[0]?.position?.toArray() ?? [
-            1.8, 0.0, 0.3,
-          ]
+          rightEngineMainFire
+            ? getSplineWorldOrigin(rightEngineMainFire).toArray()
+            : [1.8, 0.0, 0.3]
         }
         width={rightEngineMainFire?.fireWidth ?? 0.5}
         height={rightEngineMainFire?.fireHeight ?? 1.8}
@@ -84,9 +85,9 @@ function EngineFire({
       {/* Secondary smaller flames — wing wrapping effect */}
       <VolumetricFire
         position={
-          leftWingSecondaryFire?.points?.[0]?.position?.toArray() ?? [
-            -1.4, 0.3, -0.2,
-          ]
+          leftWingSecondaryFire
+            ? getSplineWorldOrigin(leftWingSecondaryFire).toArray()
+            : [-1.4, 0.3, -0.2]
         }
         width={leftWingSecondaryFire?.fireWidth ?? 0.35}
         height={leftWingSecondaryFire?.fireHeight ?? 1.2}
@@ -103,9 +104,9 @@ function EngineFire({
       />
       <VolumetricFire
         position={
-          rightWingSecondaryFire?.points?.[0]?.position?.toArray() ?? [
-            1.4, 0.3, -0.2,
-          ]
+          rightWingSecondaryFire
+            ? getSplineWorldOrigin(rightWingSecondaryFire).toArray()
+            : [1.4, 0.3, -0.2]
         }
         width={rightWingSecondaryFire?.fireWidth ?? 0.35}
         height={rightWingSecondaryFire?.fireHeight ?? 1.2}

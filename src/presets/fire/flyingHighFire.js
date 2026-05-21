@@ -1,5 +1,7 @@
 import * as THREE from 'three';
 
+import { normalizeSplinePreset } from '../../components/elements/splineGroup/splineDefaults';
+
 const V = (x, y, z) => new THREE.Vector3(x, y, z);
 const E = (x, y, z) => new THREE.Euler(x, y, z);
 
@@ -159,5 +161,7 @@ const FLYING_HIGH_FIRE = {
     },
   ],
 };
+
+FLYING_HIGH_FIRE.splines = FLYING_HIGH_FIRE.splines.map(normalizeSplinePreset);
 
 export default FLYING_HIGH_FIRE;

@@ -1,5 +1,7 @@
 import * as THREE from 'three';
 
+import { normalizeSplinePreset } from '../../components/elements/splineGroup/splineDefaults';
+
 const V = (x, y, z) => new THREE.Vector3(x, y, z);
 const E = (x, y, z) => new THREE.Euler(x, y, z);
 
@@ -96,5 +98,7 @@ const DUMPSTER_FIRE = {
     },
   ],
 };
+
+DUMPSTER_FIRE.splines = DUMPSTER_FIRE.splines.map(normalizeSplinePreset);
 
 export default DUMPSTER_FIRE;

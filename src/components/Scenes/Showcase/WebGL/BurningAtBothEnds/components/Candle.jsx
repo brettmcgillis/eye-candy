@@ -9,6 +9,10 @@ import { useFrame } from '@react-three/fiber';
 
 import Flame from '../../../../../elements/flame/Flame';
 import Smoke2D from '../../../../../elements/smoke/Smoke2D';
+import {
+  getSplineWorldOrigin,
+  getSplineWorldPoints,
+} from '../../../../../elements/splineGroup/splineDefaults';
 import VolumetricSmokeParticles from '../../../../../elements/smoke/VolumetricSmokeParticles';
 import VolumetricFire from '../../../../../elements/volumetricFire/VolumetricFire';
 import Candlewick from './Candlewick';
@@ -374,28 +378,30 @@ export default function Candle({ config, position = [0, 0, 0], firePreset }) {
   const useVolumetric = config.flameType === 'Volumetric';
   const useVolumetricSmoke = config.smokeType === 'Volumetric';
   const volShowSpline = config.volShowSpline ?? false;
-  const topFireOrigin = topFireSpline?.points?.[0]?.position?.toArray() ?? [
-    0.06,
-    height / 2 + 0.21,
-    0.06,
-  ];
-  const bottomFireOrigin =
-    bottomFireSpline?.points?.[0]?.position?.toArray() ?? [
-      0.06,
-      -(height / 2 + 0.21),
-      0.06,
-    ];
-  const topSmokeOrigin = topSmokeSpline?.points?.[0]?.position?.toArray() ?? [
+  const topSmokeWorldPoints = useMemo(
+    () => (topSmokeSpline ? getSplineWorldPoints(topSmokeSpline) : []),
+    [topSmokeSpline]
+  );
+  const bottomSmokeWorldPoints = useMemo(
+    () => (bottomSmokeSpline ? getSplineWorldPoints(bottomSmokeSpline) : []),
+    [bottomSmokeSpline]
+  );
+  const topFireOrigin = topFireSpline
+    ? getSplineWorldOrigin(topFireSpline).toArray()
+    : [0.06, height / 2 + 0.21, 0.06];
+  const bottomFireOrigin = bottomFireSpline
+    ? getSplineWorldOrigin(bottomFireSpline).toArray()
+    : [0.06, -(height / 2 + 0.21), 0.06];
+  const topSmokeOrigin = topSmokeWorldPoints[0]?.position?.toArray() ?? [
     0.18,
     height / 2 + 0.34,
     0.088,
   ];
-  const bottomSmokeOrigin =
-    bottomSmokeSpline?.points?.[0]?.position?.toArray() ?? [
-      0.18,
-      -(height / 2 + 0.34),
-      0.088,
-    ];
+  const bottomSmokeOrigin = bottomSmokeWorldPoints[0]?.position?.toArray() ?? [
+    0.18,
+    -(height / 2 + 0.34),
+    0.088,
+  ];
   const vfProps = {
     width: config.vfWidth ?? topFireSpline?.fireWidth ?? 0.8,
     height: config.vfHeight ?? topFireSpline?.fireHeight ?? 2.0,
@@ -499,9 +505,9 @@ export default function Candle({ config, position = [0, 0, 0], firePreset }) {
   );
   const smokeHeight = config.smokeHeight ?? 3.0;
   const topSmokePoints = useMemo(() => {
-    if (topSmokeSpline?.points) {
-      const origin = topSmokeSpline.points[0].position;
-      return topSmokeSpline.points.map((point) =>
+    if (topSmokeWorldPoints.length) {
+      const origin = topSmokeWorldPoints[0].position;
+      return topSmokeWorldPoints.map((point) =>
         point.position.clone().sub(origin)
       );
     }
@@ -512,11 +518,11 @@ export default function Candle({ config, position = [0, 0, 0], firePreset }) {
       new THREE.Vector3(0, smokeHeight * 0.75, 0),
       new THREE.Vector3(0, smokeHeight, 0),
     ];
-  }, [smokeHeight, topSmokeSpline]);
+  }, [smokeHeight, topSmokeWorldPoints]);
   const bottomSmokePoints = useMemo(() => {
-    if (bottomSmokeSpline?.points) {
-      const origin = bottomSmokeSpline.points[0].position;
-      return bottomSmokeSpline.points.map((point) =>
+    if (bottomSmokeWorldPoints.length) {
+      const origin = bottomSmokeWorldPoints[0].position;
+      return bottomSmokeWorldPoints.map((point) =>
         point.position.clone().sub(origin)
       );
     }
@@ -527,7 +533,7 @@ export default function Candle({ config, position = [0, 0, 0], firePreset }) {
       new THREE.Vector3(0, -smokeHeight * 0.75, 0),
       new THREE.Vector3(0, -smokeHeight, 0),
     ];
-  }, [bottomSmokeSpline, smokeHeight]);
+  }, [bottomSmokeWorldPoints, smokeHeight]);
   const topLightRef = useRef();
   const bottomLightRef = useRef();
 

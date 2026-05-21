@@ -12,6 +12,7 @@ import {
 } from '../../../../../elements/fireAndSmoke/fireAndSmokeDefaults';
 import buildFireAndSmokeControls from '../../shared/hooks/buildFireAndSmokeControls';
 import {
+  cloneSplinePoints,
   DEFAULT_SPLINE_CONFIG,
   parsePreset,
   serializeSplines,
@@ -151,27 +152,41 @@ const cloneAttractors = (attractors = []) =>
 
 // ─── Instance constructors ────────────────────────────────────────────────────
 
-const makePsInst = (pts = null, cfg = null) => ({
-  id: mkId(),
-  pos: [0, 0, 0],
-  rot: [0, 0, 0],
-  scale: [1, 1, 1],
-  showHandles: true,
-  pointMode: 'translate',
-  points: pts ?? defaultPoints(),
-  config: cfg ? { ...mkPsCfg(), ...cfg } : mkPsCfg(),
-});
+const makePsInst = (pointsOrSeed = null, cfg = null) => {
+  const seed =
+    Array.isArray(pointsOrSeed) || pointsOrSeed === null
+      ? { points: pointsOrSeed, config: cfg }
+      : pointsOrSeed;
 
-const makeVsInst = (pts = null, cfg = null) => ({
-  id: mkId(),
-  pos: [0, 0, 0],
-  rot: [0, 0, 0],
-  scale: [1, 1, 1],
-  showHandles: true,
-  pointMode: 'translate',
-  points: pts ?? defaultPoints(),
-  config: cfg ? { ...mkVsCfg(), ...cfg } : mkVsCfg(),
-});
+  return {
+    id: mkId(),
+    pos: cloneTuple(seed.pos, [0, 0, 0]),
+    rot: cloneTuple(seed.rot, [0, 0, 0]),
+    scale: cloneTuple(seed.scale, [1, 1, 1]),
+    showHandles: seed.showHandles ?? true,
+    pointMode: seed.pointMode ?? 'translate',
+    points: cloneSplinePoints(seed.points ?? defaultPoints()),
+    config: { ...mkPsCfg(), ...(seed.config ?? {}) },
+  };
+};
+
+const makeVsInst = (pointsOrSeed = null, cfg = null) => {
+  const seed =
+    Array.isArray(pointsOrSeed) || pointsOrSeed === null
+      ? { points: pointsOrSeed, config: cfg }
+      : pointsOrSeed;
+
+  return {
+    id: mkId(),
+    pos: cloneTuple(seed.pos, [0, 0, 0]),
+    rot: cloneTuple(seed.rot, [0, 0, 0]),
+    scale: cloneTuple(seed.scale, [1, 1, 1]),
+    showHandles: seed.showHandles ?? true,
+    pointMode: seed.pointMode ?? 'translate',
+    points: cloneSplinePoints(seed.points ?? defaultPoints()),
+    config: { ...mkVsCfg(), ...(seed.config ?? {}) },
+  };
+};
 
 const makeSbInst = (seed = {}) => ({
   id: mkId(),
@@ -243,16 +258,24 @@ function getPresetAttractors(presetKey) {
 function splitPresetByType(presetKey) {
   const preset = getSmokePreset(presetKey);
 
-  const { splines, splineConfigs } = parsePreset(preset);
+  const { splineInstances, splineConfigs } = parsePreset(preset);
   const ps = [];
   const vs = [];
 
-  splines.forEach((pts, i) => {
+  splineInstances.forEach((instance, i) => {
     const cfg = splineConfigs[i];
+    const seed = {
+      pos: instance.pos,
+      rot: instance.rot,
+      scale: instance.scale,
+      points: instance.points,
+      config: cfg,
+    };
+
     if (cfg.smokeType === 'Volumetric') {
-      vs.push(makeVsInst(pts, cfg));
+      vs.push(makeVsInst(seed));
     } else {
-      ps.push(makePsInst(pts, cfg));
+      ps.push(makePsInst(seed));
     }
   });
 
@@ -349,8 +372,18 @@ export default function useSmokeTestControls(attractorsRef) {
                 copy: button(
                   () => {
                     const allSplines = [
-                      ...psRef.current.map((x) => x.points),
-                      ...vsRef.current.map((x) => x.points),
+                      ...psRef.current.map((x) => ({
+                        pos: x.pos,
+                        rot: x.rot,
+                        scale: x.scale,
+                        points: x.points,
+                      })),
+                      ...vsRef.current.map((x) => ({
+                        pos: x.pos,
+                        rot: x.rot,
+                        scale: x.scale,
+                        points: x.points,
+                      })),
                     ];
                     const allConfigs = [
                       ...psRef.current.map((x) => x.config),

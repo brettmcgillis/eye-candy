@@ -1,5 +1,7 @@
 import * as THREE from 'three';
 
+import { normalizeSplinePreset } from '../../components/elements/splineGroup/splineDefaults';
+
 export const LEGACY_WORLD_TO_SCENE = 0.01;
 
 const THATS_ALL_FOLKS_SMOKE = {
@@ -1210,5 +1212,9 @@ const THATS_ALL_FOLKS_SMOKE = {
     ],
   },
 };
+
+THATS_ALL_FOLKS_SMOKE["That's All Folks"].splines = THATS_ALL_FOLKS_SMOKE[
+  "That's All Folks"
+].splines.map(normalizeSplinePreset);
 
 export default THATS_ALL_FOLKS_SMOKE;

@@ -1,5 +1,7 @@
 import * as THREE from 'three';
 
+import { normalizeSplinePreset } from '../../components/elements/splineGroup/splineDefaults';
+
 const V = (x, y, z) => new THREE.Vector3(x, y, z);
 const E = (x, y, z) => new THREE.Euler(x, y, z);
 
@@ -121,5 +123,9 @@ const POLICE_PRESENCE_FIRE = {
     },
   ],
 };
+
+POLICE_PRESENCE_FIRE.splines = POLICE_PRESENCE_FIRE.splines.map(
+  normalizeSplinePreset
+);
 
 export default POLICE_PRESENCE_FIRE;

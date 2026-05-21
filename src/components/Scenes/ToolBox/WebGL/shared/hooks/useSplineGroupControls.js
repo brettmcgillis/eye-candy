@@ -24,10 +24,17 @@ export default function buildSplineGroupControls(index, cfg, opts) {
   const {
     sceneLabel,
     folderLabel,
+    splineInstance,
     setSplineConfigs,
     setSplines,
     allowedTypes = 'both',
   } = opts;
+  const resolvedSplineInstance = splineInstance ?? {
+    pos: [0, 0, 0],
+    rot: [0, 0, 0],
+    scale: [1, 1, 1],
+    points: [],
+  };
 
   // ── Leva render-path helpers ───────────────────────────────────────────────
   // Path format: 'SceneLabel.Folder Name.fieldKey'
@@ -848,6 +855,49 @@ export default function buildSplineGroupControls(index, cfg, opts) {
         }
       : {};
 
+  const transformFolder = {
+    [`Transform ${index}`]: folder(
+      {
+        [`position_${index}`]: {
+          label: 'Position',
+          value: resolvedSplineInstance.pos ?? [0, 0, 0],
+          step: 0.1,
+          onChange: (value) =>
+            setSplines((prev) =>
+              prev.map((spline, i) =>
+                i === index ? { ...spline, pos: value } : spline
+              )
+            ),
+        },
+        [`rotation_${index}`]: {
+          label: 'Rotation',
+          value: resolvedSplineInstance.rot ?? [0, 0, 0],
+          step: 0.05,
+          onChange: (value) =>
+            setSplines((prev) =>
+              prev.map((spline, i) =>
+                i === index ? { ...spline, rot: value } : spline
+              )
+            ),
+        },
+        [`scale_${index}`]: {
+          label: 'Scale',
+          value: resolvedSplineInstance.scale ?? [1, 1, 1],
+          min: 0.01,
+          max: 10,
+          step: 0.1,
+          onChange: (value) =>
+            setSplines((prev) =>
+              prev.map((spline, i) =>
+                i === index ? { ...spline, scale: value } : spline
+              )
+            ),
+        },
+      },
+      { collapsed: true }
+    ),
+  };
+
   // ── Config + Actions ──────────────────────────────────────────────────────
   const configFolder = {
     [`Config ${index}`]: folder(
@@ -911,11 +961,19 @@ export default function buildSplineGroupControls(index, cfg, opts) {
         [`cloneSpline_${index}`]: button(
           () => {
             setSplines((prev) => {
-              const cloned = prev[index].map((pt) => ({
-                position: pt.position.clone(),
-                rotation: pt.rotation ? pt.rotation.clone() : new THREE.Euler(),
-                scale: pt.scale ? pt.scale.clone() : new THREE.Vector3(1, 1, 1),
-              }));
+              const source = prev[index] ?? resolvedSplineInstance;
+              const cloned = {
+                ...source,
+                pos: [...(source.pos ?? [0, 0, 0])],
+                rot: [...(source.rot ?? [0, 0, 0])],
+                scale: [...(source.scale ?? [1, 1, 1])],
+                points: (source.points ?? []).map((pt) => ({
+                  position: pt.position.clone(),
+                  rotation: pt.rotation ? pt.rotation.clone() : new THREE.Euler(),
+                  scale: pt.scale ? pt.scale.clone() : new THREE.Vector3(1, 1, 1),
+                })),
+              };
+
               return [...prev, cloned];
             });
             setSplineConfigs((prev) => [
@@ -942,22 +1000,27 @@ export default function buildSplineGroupControls(index, cfg, opts) {
         [`addPoint_${index}`]: button(
           () => {
             setSplines((prev) =>
-              prev.map((pts, i) => {
-                if (i !== index) return pts;
+              prev.map((spline, i) => {
+                if (i !== index) return spline;
+                const points = spline.points ?? [];
                 const lastPos =
-                  pts[pts.length - 1]?.position ?? new THREE.Vector3(0, 0, 0);
-                return [
-                  ...pts,
-                  {
-                    position: new THREE.Vector3(
-                      lastPos.x + (Math.random() - 0.5) * 2,
-                      lastPos.y + 0.5 + Math.random() * 1,
-                      lastPos.z + (Math.random() - 0.5) * 2
-                    ),
-                    rotation: new THREE.Euler(),
-                    scale: new THREE.Vector3(1, 1, 1),
-                  },
-                ];
+                  points[points.length - 1]?.position ?? new THREE.Vector3(0, 0, 0);
+
+                return {
+                  ...spline,
+                  points: [
+                    ...points,
+                    {
+                      position: new THREE.Vector3(
+                        lastPos.x + (Math.random() - 0.5) * 2,
+                        lastPos.y + 0.5 + Math.random() * 1,
+                        lastPos.z + (Math.random() - 0.5) * 2
+                      ),
+                      rotation: new THREE.Euler(),
+                      scale: new THREE.Vector3(1, 1, 1),
+                    },
+                  ],
+                };
               })
             );
           },
@@ -966,9 +1029,13 @@ export default function buildSplineGroupControls(index, cfg, opts) {
         [`removePoint_${index}`]: button(
           () => {
             setSplines((prev) =>
-              prev.map((pts, i) => {
-                if (i !== index) return pts;
-                return pts.length > 2 ? pts.slice(0, -1) : pts;
+              prev.map((spline, i) => {
+                if (i !== index) return spline;
+                const points = spline.points ?? [];
+                return {
+                  ...spline,
+                  points: points.length > 2 ? points.slice(0, -1) : points,
+                };
               })
             );
           },
@@ -983,6 +1050,7 @@ export default function buildSplineGroupControls(index, cfg, opts) {
     ...typeSelectors,
     ...smokeFolders,
     ...fireFolders,
+    ...transformFolder,
     ...configFolder,
     ...actionsFolder,
   };

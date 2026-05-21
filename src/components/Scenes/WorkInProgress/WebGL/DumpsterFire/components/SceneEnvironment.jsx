@@ -1,7 +1,7 @@
 import React from 'react';
 
 import {
-  Environment as DreiEnvironment,
+  Environment,
   OrbitControls,
   PerspectiveCamera,
 } from '@react-three/drei';
@@ -52,7 +52,7 @@ export default function SceneEnvironment() {
         position={[groundX, GROUND_Y + 0.001, groundZ]}
       />
 
-      <DreiEnvironment preset="city" />
+      <Environment preset="city" />
     </>
   );
 }

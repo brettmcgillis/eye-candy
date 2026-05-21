@@ -3,6 +3,7 @@ import * as THREE from 'three';
 import React, { useLayoutEffect, useRef, useState } from 'react';
 
 import { Billboard, Text } from '@react-three/drei';
+import { RigidBody } from '@react-three/rapier';
 
 import {
   ASSET_GRID_COLUMNS,
@@ -16,11 +17,14 @@ import {
   getAssetShowcaseLabel,
 } from '../utils/sceneUtils';
 
+const SHOWCASE_BODY_POSITION = [0, 0.08, 0];
+const SHOWCASE_BODY_ROTATION = [0, Math.PI / 6, 0];
+
 function AssetShowcaseCell({ asset, position }) {
   const { Component } = asset;
   const anchorRef = useRef(null);
   const contentRef = useRef(null);
-  const [measuredYOffset, setMeasuredYOffset] = useState(0);
+  const [measuredYOffset, setMeasuredYOffset] = useState(null);
   const label = getAssetShowcaseLabel(asset);
 
   useLayoutEffect(() => {
@@ -50,19 +54,31 @@ function AssetShowcaseCell({ asset, position }) {
         <meshStandardMaterial color="#f6f2ea" />
       </mesh>
 
-      <group
-        ref={anchorRef}
-        position={[0, 0.08, 0]}
-        rotation={[0, Math.PI / 6, 0]}
-      >
+      {measuredYOffset == null ? (
         <group
-          ref={contentRef}
-          position={[0, measuredYOffset, 0]}
-          scale={asset.scale ?? 1}
+          ref={anchorRef}
+          position={SHOWCASE_BODY_POSITION}
+          rotation={SHOWCASE_BODY_ROTATION}
+          visible={false}
         >
-          <Component {...asset.componentProps} />
+          <group ref={contentRef} scale={asset.scale ?? 1}>
+            <Component {...asset.componentProps} />
+          </group>
         </group>
-      </group>
+      ) : (
+        <RigidBody
+          type="fixed"
+          colliders={asset.colliders ?? 'cuboid'}
+          position={SHOWCASE_BODY_POSITION}
+          rotation={SHOWCASE_BODY_ROTATION}
+          friction={1.1}
+          restitution={0.05}
+        >
+          <group position={[0, measuredYOffset, 0]} scale={asset.scale ?? 1}>
+            <Component {...asset.componentProps} />
+          </group>
+        </RigidBody>
+      )}
 
       <Billboard position={[0, ASSET_GRID_LABEL_HEIGHT, 0]}>
         <Text

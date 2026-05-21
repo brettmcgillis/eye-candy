@@ -10,6 +10,7 @@ import {
   SCENE_ROOT_POSITION,
 } from '../utils/sceneData';
 import { getSceneItemKey } from '../utils/sceneUtils';
+import AssetShowcaseGrid from './AssetShowcaseGrid';
 import { DynamicSceneAsset, FixedSceneAsset } from './SceneAssetRigidBody';
 import SceneEffects from './SceneEffects';
 import TrashBlaster from './TrashBlaster';
@@ -32,7 +33,7 @@ function SceneComposition() {
 
 export default function PhysicsScene() {
   return (
-    <Physics timeStep={1 / 60} interpolate>
+    <Physics timeStep={1 / 60} interpolate debug>
       <RigidBody type="fixed" colliders={false}>
         <CuboidCollider
           args={FLOOR_COLLIDER_HALF_EXTENTS}
@@ -43,6 +44,7 @@ export default function PhysicsScene() {
       </RigidBody>
 
       <SceneComposition />
+      <AssetShowcaseGrid />
       <TrashBlaster />
     </Physics>
   );

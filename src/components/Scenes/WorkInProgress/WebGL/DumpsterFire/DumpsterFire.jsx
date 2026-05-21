@@ -1,7 +1,6 @@
 import React from 'react';
 
 import useLoopedSceneAudio from '../../../../../hooks/useLoopedSceneAudio';
-import AssetShowcaseGrid from './components/AssetShowcaseGrid';
 import PhysicsScene from './components/PhysicsScene';
 import SceneEnvironment from './components/SceneEnvironment';
 import TrashBlasterOverlay from './components/TrashBlasterOverlay';
@@ -13,7 +12,6 @@ export default function DumpsterFire() {
   return (
     <>
       <SceneEnvironment />
-      <AssetShowcaseGrid />
       <PhysicsScene />
       <TrashBlasterOverlay />
     </>

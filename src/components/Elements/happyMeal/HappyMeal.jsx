@@ -6,6 +6,7 @@ import { modelFile } from '../../../utils/appUtils';
 import bakeInstancedGeometry from '../../../utils/instancedGeometry';
 
 const HAPPY_MEAL_MODEL_PATH = '/happyMeal.glb';
+const HAPPY_MEAL_MODEL_FILE = modelFile(HAPPY_MEAL_MODEL_PATH);
 const HAPPY_MEAL_MATERIAL_NAME = 'Material.001';
 const HAPPY_MEAL_ROTATION = [-Math.PI / 2, 0, 0];
 const HAPPY_MEAL_TRANSFORM_CHAIN = [
@@ -15,17 +16,19 @@ const HAPPY_MEAL_TRANSFORM_CHAIN = [
 
 const [HappyMealInstancesRoot, HappyMealInstanceRoot] = createInstances();
 
-export function HappyMealInstances({ children, material, ...props }) {
-  const { nodes, materials } = useGLTF(modelFile(HAPPY_MEAL_MODEL_PATH));
-  const baseGeometry = nodes.Object_3.geometry;
-  const sourceMaterial = materials[HAPPY_MEAL_MATERIAL_NAME];
+function useHappyMealModel() {
+  const { nodes, materials } = useGLTF(HAPPY_MEAL_MODEL_FILE);
+
+  return {
+    baseGeometry: nodes.Object_3.geometry,
+    sourceMaterial: materials[HAPPY_MEAL_MATERIAL_NAME],
+  };
+}
+
+function useHappyMealGeometry(baseGeometry) {
   const geometry = useMemo(
     () => bakeInstancedGeometry(baseGeometry, HAPPY_MEAL_TRANSFORM_CHAIN),
     [baseGeometry]
-  );
-  const instanceMaterial = useMemo(
-    () => material ?? sourceMaterial.clone(),
-    [material, sourceMaterial]
   );
 
   useEffect(() => {
@@ -33,6 +36,17 @@ export function HappyMealInstances({ children, material, ...props }) {
       geometry.dispose?.();
     };
   }, [geometry]);
+
+  return geometry;
+}
+
+export function HappyMealInstances({ children, material, ...props }) {
+  const { baseGeometry, sourceMaterial } = useHappyMealModel();
+  const geometry = useHappyMealGeometry(baseGeometry);
+  const instanceMaterial = useMemo(
+    () => material ?? sourceMaterial.clone(),
+    [material, sourceMaterial]
+  );
 
   useEffect(() => {
     if (material) {
@@ -60,21 +74,19 @@ export function HappyMealInstance(props) {
 }
 
 export default function HappyMeal(props) {
-  const { nodes, materials } = useGLTF(modelFile(HAPPY_MEAL_MODEL_PATH));
+  const { baseGeometry, sourceMaterial } = useHappyMealModel();
+  const geometry = useHappyMealGeometry(baseGeometry);
+
   return (
     <group {...props} dispose={null}>
-      <group scale={0.3}>
-        <mesh
-          castShadow
-          receiveShadow
-          geometry={nodes.Object_3.geometry}
-          material={materials[HAPPY_MEAL_MATERIAL_NAME]}
-          position={[0, 1.774, 0]}
-          rotation={HAPPY_MEAL_ROTATION}
-        />
-      </group>
+      <mesh
+        castShadow
+        receiveShadow
+        geometry={geometry}
+        material={sourceMaterial}
+      />
     </group>
   );
 }
 
-useGLTF.preload(modelFile(HAPPY_MEAL_MODEL_PATH));
+useGLTF.preload(HAPPY_MEAL_MODEL_FILE);

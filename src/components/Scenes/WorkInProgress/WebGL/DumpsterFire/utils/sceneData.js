@@ -145,6 +145,7 @@ const TRASH_ASSET_CONFIGS = {
     InstancesComponent: GarbageBagInstances,
     scale: 0.75,
     mass: 0.45,
+    colliders: 'hull',
   },
   'garbage-bag-1': {
     Component: GarbageBag1,
@@ -152,6 +153,7 @@ const TRASH_ASSET_CONFIGS = {
     InstancesComponent: GarbageBag1Instances,
     scale: 0.8,
     mass: 0.5,
+    colliders: 'hull',
   },
   'cardboard-box-1': {
     Component: CardboardBox1,
@@ -159,6 +161,7 @@ const TRASH_ASSET_CONFIGS = {
     InstancesComponent: CardboardBox1Instances,
     scale: 1,
     mass: 0.7,
+    colliders: 'hull',
   },
   'cardboard-box-2': {
     Component: CardboardBox2,
@@ -166,6 +169,7 @@ const TRASH_ASSET_CONFIGS = {
     InstancesComponent: CardboardBox2Instances,
     scale: 1,
     mass: 0.75,
+    colliders: 'hull',
   },
   'cardboard-box-3': {
     Component: CardboardBox3,
@@ -173,6 +177,7 @@ const TRASH_ASSET_CONFIGS = {
     InstancesComponent: CardboardBox3Instances,
     scale: 1,
     mass: 0.8,
+    colliders: 'hull',
   },
   'starbucks-cup': {
     Component: StarbucksCup,
@@ -196,6 +201,7 @@ const TRASH_ASSET_CONFIGS = {
     InstancesComponent: CardboardBox4Instances,
     scale: 1,
     mass: 0.85,
+    colliders: 'hull',
   },
   'cardboard-box-5': {
     Component: CardboardBox5,
@@ -203,6 +209,7 @@ const TRASH_ASSET_CONFIGS = {
     InstancesComponent: CardboardBox5Instances,
     scale: 1,
     mass: 0.9,
+    colliders: 'hull',
   },
   'beer-case-1': {
     Component: BeerCase1,
@@ -256,6 +263,7 @@ const TRASH_ASSET_CONFIGS = {
     InstancesComponent: HappyMealInstances,
     scale: 1,
     mass: 0.24,
+    colliders: 'hull',
   },
   'mc-cup': {
     Component: McCup,
@@ -324,6 +332,7 @@ export const FIXED_SCENE_ITEMS = [
     position: [0, 1, 0.1],
     rotation: [0, 0, 0],
     scale: 0.65,
+    colliders: 'hull',
   },
   {
     key: 'garbage-bags-2',
@@ -331,6 +340,7 @@ export const FIXED_SCENE_ITEMS = [
     position: [-1, 2, 0.1],
     rotation: [0, 0, 0],
     scale: 0.8,
+    colliders: 'hull',
   },
   {
     key: 'litter',
@@ -381,6 +391,7 @@ export const FIXED_SCENE_ITEMS = [
     position: [-2.7, 0, 0],
     rotation: [0, 90, 0],
     scale: 1,
+    colliders: 'hull',
   },
   {
     key: 'cardboard-box',
@@ -388,6 +399,7 @@ export const FIXED_SCENE_ITEMS = [
     position: [-2.2, 0.35, 1.2],
     rotation: [0, 90, 0],
     scale: 1,
+    colliders: 'hull',
   },
   {
     key: 'cardboard-box-1',
@@ -395,6 +407,7 @@ export const FIXED_SCENE_ITEMS = [
     position: [-3.2, 0.15, 1.2],
     rotation: [0, Math.PI / 3, 0],
     scale: 1,
+    colliders: 'hull',
   },
   {
     key: 'cardboard-box-1',
@@ -402,6 +415,7 @@ export const FIXED_SCENE_ITEMS = [
     position: [-3.75, 0.15, 1.2],
     rotation: [0, Math.PI / 1.7, 0],
     scale: 1,
+    colliders: 'hull',
   },
   {
     key: 'cardboard-box-1',
@@ -409,6 +423,7 @@ export const FIXED_SCENE_ITEMS = [
     position: [-3.45, 0.45, 1.2],
     rotation: [0, Math.PI / 2, 0],
     scale: 1,
+    colliders: 'hull',
   },
   {
     key: 'newspaper-2',
@@ -439,6 +454,7 @@ export const FIXED_SCENE_ITEMS = [
     position: [-1.5, 0.1, 1.25],
     rotation: [0, -Math.PI / 1.5, 0],
     scale: 1.25,
+    colliders: 'hull',
   },
   {
     key: 'cardboard-flat-2',
@@ -453,6 +469,7 @@ export const FIXED_SCENE_ITEMS = [
     position: [2, 0.18, 1.55],
     rotation: [0, -Math.PI / 2, 0],
     scale: 1,
+    colliders: 'hull',
   },
   {
     key: 'cardboard-box-1',
@@ -460,6 +477,7 @@ export const FIXED_SCENE_ITEMS = [
     position: [1.4, 0.16, 1.3],
     rotation: [0, Math.PI / 3, 0],
     scale: 1,
+    colliders: 'hull',
   },
   {
     key: 'cardboard-leaning-2',
@@ -467,6 +485,7 @@ export const FIXED_SCENE_ITEMS = [
     position: [2.17, 0.25, 0],
     rotation: [0, Math.PI / 2, 0],
     scale: 1,
+    colliders: 'hull',
   },
   {
     key: 'litter',
@@ -488,6 +507,7 @@ export const FIXED_SCENE_ITEMS = [
     position: [2.5, 0, 0],
     rotation: [0, -Math.PI / 1.3, 0],
     scale: 1,
+    colliders: 'hull',
   },
   {
     key: 'cardboard-box-2',
@@ -495,6 +515,7 @@ export const FIXED_SCENE_ITEMS = [
     position: [3.1, 0.2, 0.35],
     rotation: [0, Math.PI / 2, 0],
     scale: 1,
+    colliders: 'hull',
   },
   {
     key: 'cardboard-box',
@@ -502,6 +523,7 @@ export const FIXED_SCENE_ITEMS = [
     position: [3.1, 0.4, -0.75],
     rotation: [0, Math.PI / 7, 0],
     scale: 1,
+    colliders: 'hull',
   },
   {
     key: 'newspaper-stack',
@@ -509,6 +531,7 @@ export const FIXED_SCENE_ITEMS = [
     position: [2.6, 0.1, 1.25],
     rotation: [0, -Math.PI / 1.5, 0],
     scale: 1.25,
+    colliders: 'hull',
   },
   {
     key: 'newspaper-3',

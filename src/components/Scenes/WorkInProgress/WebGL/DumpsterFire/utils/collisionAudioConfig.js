@@ -6,15 +6,26 @@ export const DUMPSTER_FIRE_COLLISION_AUDIO_DEFAULTS = {
 };
 
 export const DUMPSTER_FIRE_COLLISION_AUDIO_GROUPS = {
+  appleCore: {
+    sources: ['dumpsterfire/appleCore.mp3'],
+    volumeRange: [0.22, 0.32],
+    rateRange: [0.96, 1.04],
+    minImpactSpeed: 1.85,
+    cooldownMs: 170,
+  },
   bucket: {
-    sources: ['bucket_drop1.mp3', 'bucket_drop2.mp3', 'bucket_drop3.mp3'],
+    sources: [
+      'dumpsterfire/bucket_drop1.mp3',
+      'dumpsterfire/bucket_drop2.mp3',
+      'dumpsterfire/bucket_drop3.mp3',
+    ],
     volumeRange: [0.24, 0.4],
     rateRange: [0.94, 1.04],
     minImpactSpeed: 2.4,
     cooldownMs: 200,
   },
   cardboard: {
-    source: 'cardboardBoxDropSprites.mp3',
+    source: 'dumpsterfire/cardboardBoxDropSprites.mp3',
     sprites: {
       cardboardBoxDrop1: [1040, 280],
       cardboardBoxDrop2: [3440, 390],
@@ -36,9 +47,9 @@ export const DUMPSTER_FIRE_COLLISION_AUDIO_GROUPS = {
   },
   glass: {
     sources: [
-      'glassBottleDrop.mp3',
-      'glassBottleDrop2.mp3',
-      'glassBottleDrop3.wav',
+      'dumpsterfire/glassBottleDrop.mp3',
+      'dumpsterfire/glassBottleDrop2.mp3',
+      'dumpsterfire/glassBottleDrop3.mp3',
     ],
     volumeRange: [0.26, 0.42],
     rateRange: [0.97, 1.03],
@@ -46,14 +57,17 @@ export const DUMPSTER_FIRE_COLLISION_AUDIO_GROUPS = {
     cooldownMs: 220,
   },
   lightTrash: {
-    sources: ['paperCupFalling.wav', 'paperCupFalling2.mp3'],
+    sources: [
+      'dumpsterfire/paperCupFalling.mp3',
+      'dumpsterfire/paperCupFalling2.mp3',
+    ],
     volumeRange: [0.16, 0.26],
     rateRange: [0.93, 1.06],
     minImpactSpeed: 2,
     cooldownMs: 160,
   },
   trashBag: {
-    sources: ['trashbagFall.wav'],
+    sources: ['dumpsterfire/trashbagFall.mp3'],
     volumeRange: [0.18, 0.28],
     rateRange: [0.96, 1.04],
     minImpactSpeed: 1.9,
@@ -72,7 +86,7 @@ export const DUMPSTER_FIRE_COLLISION_AUDIO_BY_ASSET = {
   'beer-case-1': 'cardboard',
   'beer-case-2': 'cardboard',
   'starbucks-cup': 'lightTrash',
-  'apple-core': 'lightTrash',
+  'apple-core': 'appleCore',
   'whiskey-bottle': 'glass',
   'beer-bottle-1': 'glass',
   'beer-bottle-2': 'glass',

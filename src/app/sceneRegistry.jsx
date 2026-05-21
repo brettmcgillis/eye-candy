@@ -175,10 +175,6 @@ const PolicePresence = lazy(
   () =>
     import('../components/scenes/WorkInProgress/WebGL/PolicePresence/PolicePresence')
 );
-const StillPullingForYouWebGL = lazy(
-  () =>
-    import('../components/scenes/WorkInProgress/WebGL/StillPullingForYou/StillPullingForYou')
-);
 const RowItAlone = lazy(
   () =>
     import('../components/scenes/WorkInProgress/WebGL/RowItAlone/RowItAlone')
@@ -431,7 +427,7 @@ function CrtTestIcon() {
 }
 
 function DumpsterFireIcon() {
-  return <LiaDumpsterFireSolid color="#111827" />;
+  return <LiaDumpsterFireSolid color="#111827" size={25} />;
 }
 
 function FlyingHighIcon() {
@@ -1010,15 +1006,6 @@ export const EYE_CANDIES = [
     Component: PolicePresence,
   },
   {
-    id: 'stillPullingForYou',
-    label: 'Still Pulling For You',
-    channel: 'webgl',
-    area: 'wip',
-    route: 'stillPullingForYou',
-    icon: SinkingShipIcon,
-    Component: StillPullingForYouWebGL,
-  },
-  {
     id: 'rowItAlone',
     label: 'Row It Alone',
     channel: 'webgl',
@@ -1086,7 +1073,7 @@ export const EYE_CANDIES = [
     label: 'Still Pulling For You',
     channel: 'webgpu',
     area: 'wip',
-    route: 'stillPullingForYou-webgpu',
+    route: 'stillPullingForYou',
     icon: TugboatIcon,
     Component: StillPullingForYouWebGPU,
   },

@@ -15,7 +15,7 @@ import {
   GROUND,
   GROUND_POSITION,
   LIGHTING,
-} from './sceneData';
+} from '../utils/sceneData';
 
 export default function SceneEnvironment() {
   return (

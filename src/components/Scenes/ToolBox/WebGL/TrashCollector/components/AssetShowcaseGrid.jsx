@@ -9,8 +9,11 @@ import {
   ASSET_GRID_LABEL_HEIGHT,
   ASSET_GRID_OPTIONS,
   ASSET_GRID_POSITION,
-} from './sceneData';
-import { getAssetGridCellPosition, getAssetShowcaseLabel } from './sceneUtils';
+} from '../utils/sceneData';
+import {
+  getAssetGridCellPosition,
+  getAssetShowcaseLabel,
+} from '../utils/sceneUtils';
 
 const SHOWCASE_BODY_POSITION = [0, 0.08, 0];
 const SHOWCASE_BODY_ROTATION = [0, Math.PI / 6, 0];

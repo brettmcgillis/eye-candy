@@ -2,7 +2,7 @@ import {
   DYNAMIC_SCENE_ITEMS,
   FIXED_SCENE_ITEMS,
   SHOT_ASSET_OPTIONS,
-} from '../../../shared/trashCollectionSource';
+} from '../../../../shared/trashCollectionSource';
 
 export const GROUND_Y = -1;
 

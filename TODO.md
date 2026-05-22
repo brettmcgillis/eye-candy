@@ -94,6 +94,7 @@ To Build:
   - [ParticlePlot](src/components/scenes/ToolBox/WebGL/PenPlotter/PlotScenes/ParticlePlot/todo.md)
 - [SmokeTest](src/components/scenes/ToolBox/SmokeTest/todo.md)
 - [SplineEditor](src/components/scenes/ToolBox/WebGL/SplineEditor/todo.md)
+- [TrashCollector](src/components/scenes/ToolBox/WebGL/TrashCollector/todo.md)
 - [GhostBuster](src/components/scenes/ToolBox/WebGPU/GhostBuster/todo.md)
 - [CharacterController (webGPU)](src/components/scenes/ToolBox/WebGPU/CharacterController/todo.md)
 - [CharacterController (webGL)](src/components/scenes/ToolBox/WebGL/CharacterController/todo.md)

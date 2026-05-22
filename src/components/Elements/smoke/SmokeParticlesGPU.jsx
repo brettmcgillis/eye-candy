@@ -605,13 +605,14 @@ export default function SmokeParticlesGPU({
             const aR = attractors[a].radius ?? attractorRadius;
             const falloff = aR * aR;
             const aStr = attractors[a].strength ?? attractorStrength;
-            const radialStrength = (aStr * falloff) / (dist2 + falloff);
+            const sign = attractors[a].type === 'repeller' ? -1 : 1;
+            const radialStrength = sign * ((aStr * falloff) / (dist2 + falloff));
             vx += (adx / dist) * radialStrength * dt;
             vy += (ady / dist) * radialStrength * dt;
             vz += (adz / dist) * radialStrength * dt;
             const dir = attractors[a].direction;
             if (dir) {
-              const dirStrength = (aStr * 0.4 * falloff) / (dist2 + falloff);
+              const dirStrength = sign * ((aStr * 0.4 * falloff) / (dist2 + falloff));
               vx += dir[0] * dirStrength * dt;
               vy += dir[1] * dirStrength * dt;
               vz += dir[2] * dirStrength * dt;

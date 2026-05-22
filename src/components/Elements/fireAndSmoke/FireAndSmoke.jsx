@@ -33,6 +33,7 @@ const TRAVEL_DURATION_MS = Math.min(
 );
 const FRAME_MS = 1000 / 60;
 const FRAME_SEGMENTS = 256;
+const MAX_SIM_DELTA_SECONDS = 0.05;
 
 const flameVertexShader = /* glsl */ `
 vec3 mod289(vec3 x) {
@@ -703,7 +704,7 @@ export default function FireAndSmoke({
   }, [curveData, flamePool]);
 
   useFrame((_, deltaSeconds) => {
-    const deltaMs = deltaSeconds * 1000;
+    const deltaMs = Math.min(deltaSeconds, MAX_SIM_DELTA_SECONDS) * 1000;
     const scaledDeltaMs = deltaMs * timeScale;
     const frameScale = scaledDeltaMs / FRAME_MS;
     const particleState = particleStateRef.current;

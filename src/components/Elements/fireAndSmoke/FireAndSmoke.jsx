@@ -1,3 +1,10 @@
+/* eslint-disable no-continue */
+
+/* eslint-disable react/no-array-index-key */
+
+/* eslint-disable no-param-reassign */
+
+/* eslint-disable no-underscore-dangle */
 import * as THREE from 'three';
 
 import React, { useEffect, useMemo, useRef } from 'react';
@@ -27,10 +34,8 @@ const TOTAL_FLAME_LIFETIME_MS =
   SPAWN_DOWN_INTERVAL +
   FLOATING_INTERVAL +
   IDLE_INTERVAL;
-const TRAVEL_DURATION_MS = Math.min(
-  TOTAL_FLAME_LIFETIME_MS,
-  MAXIMUM_PARTICLE_LIVE_TIME
-);
+const FLAME_TRAVEL_DURATION_MS = TOTAL_FLAME_LIFETIME_MS;
+const PARTICLE_TRAVEL_DURATION_MS = MAXIMUM_PARTICLE_LIVE_TIME;
 const FRAME_MS = 1000 / 60;
 const FRAME_SEGMENTS = 256;
 const MAX_SIM_DELTA_SECONDS = 0.05;
@@ -854,8 +859,11 @@ export default function FireAndSmoke({
       updateFlamePalette(flame, palette);
 
       const curveT = wrapCurveT(
-        THREE.MathUtils.clamp(flame.timeCount / TRAVEL_DURATION_MS, 0, 1) *
-          pathTravel,
+        THREE.MathUtils.clamp(
+          flame.timeCount / FLAME_TRAVEL_DURATION_MS,
+          0,
+          1
+        ) * pathTravel,
         closed
       );
 
@@ -920,7 +928,8 @@ export default function FireAndSmoke({
 
       const curveT = wrapCurveT(
         THREE.MathUtils.clamp(
-          (particleState.particleTime[index] * 1000) / TRAVEL_DURATION_MS,
+          (particleState.particleTime[index] * 1000) /
+            PARTICLE_TRAVEL_DURATION_MS,
           0,
           1
         ) * pathTravel,

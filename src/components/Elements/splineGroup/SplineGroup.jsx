@@ -7,8 +7,8 @@ import SmokeVolumeMesh from '../smoke/SmokeVolumeMesh';
 import VolumetricSmokeParticles from '../smoke/VolumetricSmokeParticles';
 import SplineLine from '../spline/SplineLine';
 import SplinePoints from '../spline/SplinePoints';
-import CS184VolumetricFire from '../volumetricFire/CS184VolumetricFireRenderer';
-import VolumetricFire from '../volumetricFire/VolumetricFireRenderer';
+import CS184VolumetricFire from '../volumetricFire/CS184VolumetricFire';
+import VolumetricFire from '../volumetricFire/VolumetricFire';
 
 // ─── Fire sub-renderers ───────────────────────────────────────────────────────
 

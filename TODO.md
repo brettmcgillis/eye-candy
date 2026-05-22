@@ -85,14 +85,14 @@ To Build:
 
 **ToolBox**
 
-- [FireTest](src/components/scenes/ToolBox/WebGL/FireTest/todo.md)
-- [HotBox](src/components/scenes/ToolBox/WebGL/HotBox/todo.md)
+- [FireTest](src/components/scenes/ToolBox/FireTest/todo.md)
+- [HotBox](src/components/scenes/ToolBox/HotBox/todo.md)
 - [PenPlotter](src/components/scenes/ToolBox/WebGL/PenPlotter/todo.md)
   - [PlotScenes](src/components/scenes/ToolBox/WebGL/PenPlotter/PlotScenes/todo.md)
   - [GenerativeGeometry](src/components/scenes/ToolBox/WebGL/PenPlotter/PlotScenes/GenerativeGeometry/todo.md)
   - [NetworkPlot](src/components/scenes/ToolBox/WebGL/PenPlotter/PlotScenes/NetworkPlot/todo.md)
   - [ParticlePlot](src/components/scenes/ToolBox/WebGL/PenPlotter/PlotScenes/ParticlePlot/todo.md)
-- [SmokeTest](src/components/scenes/ToolBox/WebGL/SmokeTest/todo.md)
+- [SmokeTest](src/components/scenes/ToolBox/SmokeTest/todo.md)
 - [SplineEditor](src/components/scenes/ToolBox/WebGL/SplineEditor/todo.md)
 - [GhostBuster](src/components/scenes/ToolBox/WebGPU/GhostBuster/todo.md)
 - [CharacterController (webGPU)](src/components/scenes/ToolBox/WebGPU/CharacterController/todo.md)

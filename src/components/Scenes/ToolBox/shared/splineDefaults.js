@@ -1,1 +1,1 @@
-export * from '../WebGL/shared/splineDefaults';
+export * from '../../../elements/splineGroup/splineDefaults';

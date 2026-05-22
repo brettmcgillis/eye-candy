@@ -1,11 +1,17 @@
-//
-// FireballSpline — fire-coloured Perlin-noise spline.
-// Thin wrapper around PerlinNoiseSpline with greyscale off.
-//
 import React from 'react';
 
-import PerlinNoiseSpline from '../perlinNoiseBall/PerlinNoiseSpline';
+import { useThree } from '@react-three/fiber';
+
+import FireballSplineGL from './FireballSplineGL';
+import FireballSplineGPU from './FireballSplineGPU';
 
 export default function FireballSpline(props) {
-  return <PerlinNoiseSpline {...props} greyscale={false} />;
+  const gl = useThree((state) => state.gl);
+  const isWebGPU = gl?.isWebGPURenderer === true;
+
+  if (isWebGPU) {
+    return <FireballSplineGPU {...props} />;
+  }
+
+  return <FireballSplineGL {...props} />;
 }

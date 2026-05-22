@@ -1,11 +1,17 @@
-//
-// Fireball — fire-coloured Perlin-noise ball.
-// Thin wrapper around PerlinNoiseBall with greyscale off.
-//
 import React from 'react';
 
-import PerlinNoiseBall from '../perlinNoiseBall/PerlinNoiseBall';
+import { useThree } from '@react-three/fiber';
+
+import FireballGL from './FireballGL';
+import FireballGPU from './FireballGPU';
 
 export default function Fireball(props) {
-  return <PerlinNoiseBall {...props} greyscale={false} />;
+  const gl = useThree((state) => state.gl);
+  const isWebGPU = gl?.isWebGPURenderer === true;
+
+  if (isWebGPU) {
+    return <FireballGPU {...props} />;
+  }
+
+  return <FireballGL {...props} />;
 }

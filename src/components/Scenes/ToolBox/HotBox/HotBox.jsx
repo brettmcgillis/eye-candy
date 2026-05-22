@@ -4,13 +4,13 @@ import { OrbitControls, PerspectiveCamera } from '@react-three/drei';
 
 import Attractors from '../../../elements/attractors/Attractors';
 import FireAndSmoke from '../../../elements/fireAndSmoke/FireAndSmoke';
-import Fireball from '../../../elements/fireball/FireballRenderer';
-import FireballSpline from '../../../elements/fireball/FireballSplineRenderer';
+import Fireball from '../../../elements/fireball/Fireball';
+import FireballSpline from '../../../elements/fireball/FireballSpline';
 import Flame from '../../../elements/flame/FlameRenderer';
 import GridBox from '../../../elements/gridbox/GridBoxRenderer';
 import Smoke2D from '../../../elements/smoke/Smoke2DRenderer';
-import SmokeBall from '../../../elements/smokeball/SmokeBallRenderer';
-import SmokeBallSpline from '../../../elements/smokeball/SmokeBallSplineRenderer';
+import SmokeBall from '../../../elements/smokeball/SmokeBall';
+import SmokeBallSpline from '../../../elements/smokeball/SmokeBallSpline';
 import SplineLine from '../../../elements/spline/SplineLine';
 import SplinePoints from '../../../elements/spline/SplinePoints';
 import SplineGroup from '../../../elements/splineGroup/SplineGroup';

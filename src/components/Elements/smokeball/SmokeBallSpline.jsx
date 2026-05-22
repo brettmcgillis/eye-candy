@@ -1,22 +1,17 @@
-//
-// SmokeBallSpline — greyscale Perlin-noise spline (smoke variant of FireballSpline).
-// Reuses the same explosion texture, desaturated through a smoke palette.
-//
 import React from 'react';
 
-import PerlinNoiseSpline from '../perlinNoiseBall/PerlinNoiseSpline';
+import { useThree } from '@react-three/fiber';
 
-export default function SmokeBallSpline({
-  smokeLightColor = '#bcbcbc',
-  smokeDarkColor = '#262626',
-  ...rest
-}) {
-  return (
-    <PerlinNoiseSpline
-      {...rest}
-      greyscale
-      smokeLightColor={smokeLightColor}
-      smokeDarkColor={smokeDarkColor}
-    />
-  );
+import SmokeBallSplineGL from './SmokeBallSplineGL';
+import SmokeBallSplineGPU from './SmokeBallSplineGPU';
+
+export default function SmokeBallSpline(props) {
+  const gl = useThree((state) => state.gl);
+  const isWebGPU = gl?.isWebGPURenderer === true;
+
+  if (isWebGPU) {
+    return <SmokeBallSplineGPU {...props} />;
+  }
+
+  return <SmokeBallSplineGL {...props} />;
 }

@@ -386,7 +386,12 @@ function buildFlamePool(poolSize, detailMin, detailMax) {
   }));
 }
 
-function createParticleState(particleCount, particleSizeMin, particleSizeMax) {
+function createParticleState(
+  particleCount,
+  particleSizeMin,
+  particleSizeMax,
+  particleSize
+) {
   const positions = new Float32Array(particleCount * 3);
   const colors = new Float32Array(particleCount * 3);
   const sizes = new Float32Array(particleCount);
@@ -409,7 +414,7 @@ function createParticleState(particleCount, particleSizeMin, particleSizeMax) {
       Math.random()
     );
     sizes[index] = 0;
-    originalSizes[index] = size;
+    originalSizes[index] = size * particleSize;
   }
 
   return {
@@ -701,6 +706,7 @@ export default function FireAndSmoke({
   particleCount = DEFAULT_FIRE_AND_SMOKE_CONFIG.particleCount,
   particleSpread = DEFAULT_FIRE_AND_SMOKE_CONFIG.particleSpread,
   particleColor = DEFAULT_FIRE_AND_SMOKE_CONFIG.particleColor,
+  particleSize = DEFAULT_FIRE_AND_SMOKE_CONFIG.particleSize,
   particleSizeMin = DEFAULT_FIRE_AND_SMOKE_CONFIG.particleSizeMin,
   particleSizeMax = DEFAULT_FIRE_AND_SMOKE_CONFIG.particleSizeMax,
   particlePointScale = DEFAULT_FIRE_AND_SMOKE_CONFIG.particlePointScale,
@@ -759,7 +765,8 @@ export default function FireAndSmoke({
     particleStateRef.current = createParticleState(
       particleCount,
       particleSizeMin,
-      particleSizeMax
+      particleSizeMax,
+      particleSize
     );
   }
 
@@ -812,7 +819,8 @@ export default function FireAndSmoke({
     const particleState = createParticleState(
       particleCount,
       particleSizeMin,
-      particleSizeMax
+      particleSizeMax,
+      particleSize
     );
     particleStateRef.current = particleState;
 
@@ -837,7 +845,13 @@ export default function FireAndSmoke({
     particleGeometry.attributes.position.needsUpdate = true;
     particleGeometry.attributes.customColor.needsUpdate = true;
     particleGeometry.attributes.size.needsUpdate = true;
-  }, [particleCount, particleGeometry, particleSizeMax, particleSizeMin]);
+  }, [
+    particleCount,
+    particleGeometry,
+    particleSize,
+    particleSizeMax,
+    particleSizeMin,
+  ]);
 
   useEffect(() => {
     const particleUniforms = particleMaterial.uniforms;

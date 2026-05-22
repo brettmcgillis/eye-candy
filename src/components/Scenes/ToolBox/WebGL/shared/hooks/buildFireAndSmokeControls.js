@@ -128,6 +128,14 @@ export default function buildFireAndSmokeControls({
                 step: 50,
                 onChange: onCfg('particleCount'),
               },
+              [`${keyPrefix}_particleSize_${id}`]: {
+                label: 'Particle Size',
+                value: instance.config.particleSize,
+                min: 0.05,
+                max: 4,
+                step: 0.05,
+                onChange: onCfg('particleSize'),
+              },
               [`${keyPrefix}_particleSpread_${id}`]: {
                 label: 'Particle Spread',
                 value: instance.config.particleSpread,

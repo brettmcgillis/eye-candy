@@ -4,15 +4,15 @@ import { OrbitControls, PerspectiveCamera } from '@react-three/drei';
 
 import FIRE_PRESETS from '../../../../../presets/fire/firePresets';
 import FireAndSmoke from '../../../../elements/fireAndSmoke/FireAndSmoke';
-import Fireball from '../../../../elements/fireball/Fireball';
-import FireballSpline from '../../../../elements/fireball/FireballSpline';
-import Flame from '../../../../elements/flame/Flame';
-import GridBox from '../../../../elements/gridbox/GridBox';
+import Fireball from '../../../../elements/fireball/FireballRenderer';
+import FireballSpline from '../../../../elements/fireball/FireballSplineRenderer';
+import Flame from '../../../../elements/flame/FlameRenderer';
+import GridBox from '../../../../elements/gridbox/GridBoxRenderer';
 import SplineLine from '../../../../elements/spline/SplineLine';
 import SplinePoints from '../../../../elements/spline/SplinePoints';
 import SplineGroup from '../../../../elements/splineGroup/SplineGroup';
-import CS184VolumetricFire from '../../../../elements/volumetricFire/CS184VolumetricFire';
-import VolumetricFire from '../../../../elements/volumetricFire/VolumetricFire';
+import CS184VolumetricFire from '../../../../elements/volumetricFire/CS184VolumetricFireRenderer';
+import VolumetricFire from '../../../../elements/volumetricFire/VolumetricFireRenderer';
 import {
   filterParsedPresetByType,
   parsePreset,

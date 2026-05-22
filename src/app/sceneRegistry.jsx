@@ -136,6 +136,15 @@ const SplineEditor = lazy(
 const SmokeTest = lazy(
   () => import('../components/scenes/ToolBox/WebGL/SmokeTest/SmokeTest')
 );
+const FireTestWebGPU = lazy(
+  () => import('../components/scenes/ToolBox/WebGPU/FireTest/FireTest')
+);
+const HotBoxWebGPU = lazy(
+  () => import('../components/scenes/ToolBox/WebGPU/HotBox/HotBox')
+);
+const SmokeTestWebGPU = lazy(
+  () => import('../components/scenes/ToolBox/WebGPU/SmokeTest/SmokeTest')
+);
 const CharacterControllerWebGL = lazy(
   () =>
     import('../components/scenes/ToolBox/WebGL/CharacterController/CharacterController')
@@ -931,6 +940,33 @@ export const EYE_CANDIES = [
     route: 'noScene-webgpu',
     icon: NoSceneIcon,
     Component: NoScene,
+  },
+  {
+    id: 'fireTest',
+    label: 'Fire Test',
+    channel: 'webgpu',
+    area: 'toolbox',
+    route: 'fireTest-webgpu',
+    icon: FireTestIcon,
+    Component: FireTestWebGPU,
+  },
+  {
+    id: 'hotBox',
+    label: 'Hot Box',
+    channel: 'webgpu',
+    area: 'toolbox',
+    route: 'hotBox-webgpu',
+    icon: HotBoxIcon,
+    Component: HotBoxWebGPU,
+  },
+  {
+    id: 'smokeTest',
+    label: 'Smoke Test',
+    channel: 'webgpu',
+    area: 'toolbox',
+    route: 'smokeTest-webgpu',
+    icon: SmokeTestIcon,
+    Component: SmokeTestWebGPU,
   },
   {
     id: 'ghostBuster',

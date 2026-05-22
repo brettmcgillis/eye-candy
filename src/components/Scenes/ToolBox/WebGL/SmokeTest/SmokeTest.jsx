@@ -204,7 +204,13 @@ export default function SmokeTest() {
             rotation={inst.rot}
             scale={inst.scale}
           >
-            <FireAndSmoke controlPoints={inst.controlPoints} {...inst.config} />
+            <FireAndSmoke
+              controlPoints={inst.controlPoints}
+              {...inst.config}
+              attractorsRef={attractorsRef}
+              attractorStrength={attractorStrength}
+              attractorRadius={attractorRadius}
+            />
 
             <SplineLine
               points={splinePositions}

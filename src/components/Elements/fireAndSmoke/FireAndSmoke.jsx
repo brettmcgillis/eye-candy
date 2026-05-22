@@ -39,6 +39,16 @@ const PARTICLE_TRAVEL_DURATION_MS = MAXIMUM_PARTICLE_LIVE_TIME;
 const FRAME_MS = 1000 / 60;
 const FRAME_SEGMENTS = 256;
 const MAX_SIM_DELTA_SECONDS = 0.05;
+const DEFAULT_ATTRACTOR_STRENGTH = 3;
+const DEFAULT_ATTRACTOR_RADIUS = 3;
+const FLAME_ATTRACTOR_RETURN_STRENGTH = 7;
+const FLAME_ATTRACTOR_DAMPING = 0.08;
+const FLAME_ATTRACTOR_MAX_OFFSET_FACTOR = 0.35;
+const FLAME_ATTRACTOR_DIRECTION_SCALE = 0.25;
+const PARTICLE_ATTRACTOR_RETURN_STRENGTH = 4.5;
+const PARTICLE_ATTRACTOR_DAMPING = 0.12;
+const PARTICLE_ATTRACTOR_MAX_OFFSET_FACTOR = 0.5;
+const PARTICLE_ATTRACTOR_DIRECTION_SCALE = 0.4;
 
 const flameVertexShader = /* glsl */ `
 vec3 mod289(vec3 x) {
@@ -215,6 +225,27 @@ const _sampleBinormal = new THREE.Vector3();
 const _localOffset = new THREE.Vector3();
 const _localPosition = new THREE.Vector3();
 const _identityScale = new THREE.Vector3(1, 1, 1);
+const _rootWorldQuaternion = new THREE.Quaternion();
+const _inverseRootWorldQuaternion = new THREE.Quaternion();
+const _interactionPosition = new THREE.Vector3();
+const _particleBasePosition = new THREE.Vector3();
+const _particleInteractionOffset = new THREE.Vector3();
+const _particleInteractionVelocity = new THREE.Vector3();
+const _attractorDelta = new THREE.Vector3();
+
+function isFiniteVec3Tuple(value) {
+  return (
+    Array.isArray(value) &&
+    value.length >= 3 &&
+    value.every((entry) => Number.isFinite(entry))
+  );
+}
+
+function clearArrayVec3(array, offset) {
+  array[offset] = 0;
+  array[offset + 1] = 0;
+  array[offset + 2] = 0;
+}
 
 function wrapCurveT(t, closed) {
   if (closed) {
@@ -350,6 +381,8 @@ function buildFlamePool(poolSize, detailMin, detailMax) {
     colorTransitionRandom: 0,
     pathStartT: 0,
     idleStartY: 0,
+    interactionOffset: new THREE.Vector3(),
+    interactionVelocity: new THREE.Vector3(),
   }));
 }
 
@@ -362,6 +395,8 @@ function createParticleState(particleCount, particleSizeMin, particleSizeMax) {
   const particleTime = new Float32Array(particleCount);
   const active = new Array(particleCount).fill(false);
   const startT = new Float32Array(particleCount);
+  const interactionOffsets = new Float32Array(particleCount * 3);
+  const interactionVelocities = new Float32Array(particleCount * 3);
 
   for (let index = 0; index < particleCount; index += 1) {
     const offset = index * 3;
@@ -386,6 +421,8 @@ function createParticleState(particleCount, particleSizeMin, particleSizeMax) {
     particleTime,
     active,
     startT,
+    interactionOffsets,
+    interactionVelocities,
     elapsed: 0,
     spawnElapsed: 0,
     spawnInterval: 1,
@@ -406,6 +443,8 @@ function resetParticleState(state) {
     state.particleTime[index] = 0;
     state.active[index] = false;
     state.startT[index] = 0;
+    clearArrayVec3(state.interactionOffsets, offset);
+    clearArrayVec3(state.interactionVelocities, offset);
   }
 }
 
@@ -520,6 +559,137 @@ function updateFlamePalette(flame, palette) {
   );
 }
 
+function resolveLocalAttractors(
+  attractorsRef,
+  rootGroup,
+  fallbackStrength,
+  fallbackRadius,
+  out
+) {
+  out.length = 0;
+
+  const attractors = attractorsRef?.current;
+  if (!rootGroup || !attractors?.length) {
+    return out;
+  }
+
+  rootGroup.updateWorldMatrix(true, false);
+  rootGroup.getWorldQuaternion(_rootWorldQuaternion);
+  _inverseRootWorldQuaternion.copy(_rootWorldQuaternion).invert();
+
+  let count = 0;
+  for (let index = 0; index < attractors.length; index += 1) {
+    const attractor = attractors[index];
+    if (!isFiniteVec3Tuple(attractor?.position)) {
+      // eslint-disable-next-line no-continue
+      continue;
+    }
+
+    const strength = attractor.strength ?? fallbackStrength;
+    const radius = attractor.radius ?? fallbackRadius;
+    if (
+      !Number.isFinite(strength) ||
+      !Number.isFinite(radius) ||
+      strength === 0 ||
+      radius <= 0
+    ) {
+      // eslint-disable-next-line no-continue
+      continue;
+    }
+
+    const resolved = out[count] ?? {
+      position: new THREE.Vector3(),
+      direction: new THREE.Vector3(),
+      radius: fallbackRadius,
+      strength: fallbackStrength,
+      sign: 1,
+    };
+
+    resolved.position.set(
+      attractor.position[0],
+      attractor.position[1],
+      attractor.position[2]
+    );
+    rootGroup.worldToLocal(resolved.position);
+
+    if (isFiniteVec3Tuple(attractor.direction)) {
+      resolved.direction
+        .set(
+          attractor.direction[0],
+          attractor.direction[1],
+          attractor.direction[2]
+        )
+        .applyQuaternion(_inverseRootWorldQuaternion);
+
+      if (resolved.direction.lengthSq() > 1e-6) {
+        resolved.direction.normalize();
+      } else {
+        resolved.direction.set(0, 0, 0);
+      }
+    } else {
+      resolved.direction.set(0, 0, 0);
+    }
+
+    resolved.radius = radius;
+    resolved.strength = strength;
+    resolved.sign = attractor.type === 'repeller' ? -1 : 1;
+
+    out[count] = resolved;
+    count += 1;
+  }
+
+  out.length = count;
+  return out;
+}
+
+function integrateAttractorOffset(
+  basePosition,
+  offset,
+  velocity,
+  attractors,
+  dt,
+  returnStrength,
+  damping,
+  maxOffset,
+  directionalScale
+) {
+  if (dt <= 0) {
+    return;
+  }
+
+  velocity.addScaledVector(offset, -returnStrength * dt);
+  _interactionPosition.copy(basePosition).add(offset);
+
+  for (let index = 0; index < attractors.length; index += 1) {
+    const attractor = attractors[index];
+    _attractorDelta.subVectors(attractor.position, _interactionPosition);
+
+    const distSq = Math.max(_attractorDelta.lengthSq(), 0.0001);
+    const dist = Math.sqrt(distSq);
+    const falloff = attractor.radius * attractor.radius;
+    const radialForce = (attractor.strength * falloff) / (distSq + falloff);
+    const radialStrength = attractor.sign * radialForce;
+
+    velocity.addScaledVector(_attractorDelta, (radialStrength * dt) / dist);
+
+    if (attractor.direction.lengthSq() > 0) {
+      const directionalStrength =
+        attractor.sign *
+        ((attractor.strength * directionalScale * falloff) /
+          (distSq + falloff));
+      velocity.addScaledVector(attractor.direction, directionalStrength * dt);
+    }
+  }
+
+  velocity.multiplyScalar(damping ** dt);
+  offset.addScaledVector(velocity, dt);
+
+  if (maxOffset > 0 && offset.lengthSq() > maxOffset * maxOffset) {
+    offset.setLength(maxOffset);
+    velocity.multiplyScalar(0.5);
+  }
+}
+
 export default function FireAndSmoke({
   controlPoints = DEFAULT_FIRE_AND_SMOKE_CONTROL_POINTS,
   closed = DEFAULT_FIRE_AND_SMOKE_CONFIG.closed,
@@ -549,6 +719,9 @@ export default function FireAndSmoke({
   darkColor2 = DEFAULT_FIRE_AND_SMOKE_CONFIG.darkColor2,
   greyColor = DEFAULT_FIRE_AND_SMOKE_CONFIG.greyColor,
   darkColor = DEFAULT_FIRE_AND_SMOKE_CONFIG.darkColor,
+  attractorsRef = null,
+  attractorStrength = DEFAULT_ATTRACTOR_STRENGTH,
+  attractorRadius = DEFAULT_ATTRACTOR_RADIUS,
 }) {
   const geometry = useMemo(() => new THREE.IcosahedronGeometry(1, 3), []);
   const particleTexture = useMemo(() => createParticleTexture(), []);
@@ -593,6 +766,8 @@ export default function FireAndSmoke({
   const flameMeshRefs = useRef([]);
   const particlePointsRef = useRef();
   const flameSpawnElapsedRef = useRef(0);
+  const rootGroupRef = useRef();
+  const resolvedAttractorsRef = useRef([]);
 
   const palette = useMemo(
     () => ({
@@ -696,6 +871,8 @@ export default function FireAndSmoke({
       flame.offsetY = 0;
       flame.offsetZ = 0;
       flame.idleStartY = 0;
+      flame.interactionOffset.set(0, 0, 0);
+      flame.interactionVelocity.set(0, 0, 0);
       flame.material.uniforms.time.value = 0;
       flame.material.uniforms.opacity.value = 0;
 
@@ -711,8 +888,33 @@ export default function FireAndSmoke({
   useFrame((_, deltaSeconds) => {
     const deltaMs = Math.min(deltaSeconds, MAX_SIM_DELTA_SECONDS) * 1000;
     const scaledDeltaMs = deltaMs * timeScale;
+    const scaledDeltaSeconds = scaledDeltaMs / 1000;
     const frameScale = scaledDeltaMs / FRAME_MS;
     const particleState = particleStateRef.current;
+    const resolvedAttractors = resolveLocalAttractors(
+      attractorsRef,
+      rootGroupRef.current,
+      attractorStrength,
+      attractorRadius,
+      resolvedAttractorsRef.current
+    );
+
+    let maxResolvedAttractorRadius = attractorRadius;
+    for (let index = 0; index < resolvedAttractors.length; index += 1) {
+      maxResolvedAttractorRadius = Math.max(
+        maxResolvedAttractorRadius,
+        resolvedAttractors[index].radius
+      );
+    }
+
+    const flameMaxInteractionOffset = Math.max(
+      0.25,
+      maxResolvedAttractorRadius * FLAME_ATTRACTOR_MAX_OFFSET_FACTOR
+    );
+    const particleMaxInteractionOffset = Math.max(
+      0.35,
+      maxResolvedAttractorRadius * PARTICLE_ATTRACTOR_MAX_OFFSET_FACTOR
+    );
 
     const spawnFlame = () => {
       const flame = flamePool.find((item) => !item.isActive);
@@ -745,6 +947,8 @@ export default function FireAndSmoke({
       flame.colorTransitionRandom = Math.random() * 2000 - 1000;
       flame.pathStartT = 0;
       flame.idleStartY = 0;
+      flame.interactionOffset.set(0, 0, 0);
+      flame.interactionVelocity.set(0, 0, 0);
       flame.material.uniforms.baseRadius.value = flame.baseRadius;
       flame.material.uniforms.opacity.value = 1;
     };
@@ -755,9 +959,12 @@ export default function FireAndSmoke({
       particleState.spawnInterval = Math.random() * 300 + 50;
       for (let index = 0; index < particleState.active.length; index += 1) {
         if (!particleState.active[index]) {
+          const offset = index * 3;
           particleState.active[index] = true;
           particleState.particleTime[index] = 0;
           particleState.startT[index] = 0;
+          clearArrayVec3(particleState.interactionOffsets, offset);
+          clearArrayVec3(particleState.interactionVelocities, offset);
           break;
         }
       }
@@ -812,6 +1019,8 @@ export default function FireAndSmoke({
         flame.isActive = false;
         mesh.visible = false;
         mesh.scale.setScalar(0.0001);
+        flame.interactionOffset.set(0, 0, 0);
+        flame.interactionVelocity.set(0, 0, 0);
         flame.material.uniforms.opacity.value = 0;
         return;
       }
@@ -882,6 +1091,18 @@ export default function FireAndSmoke({
         .multiplyScalar(worldScale);
 
       _localPosition.copy(_curvePos).add(_localOffset);
+      integrateAttractorOffset(
+        _localPosition,
+        flame.interactionOffset,
+        flame.interactionVelocity,
+        resolvedAttractors,
+        scaledDeltaSeconds,
+        FLAME_ATTRACTOR_RETURN_STRENGTH,
+        FLAME_ATTRACTOR_DAMPING,
+        flameMaxInteractionOffset,
+        FLAME_ATTRACTOR_DIRECTION_SCALE
+      );
+      _localPosition.add(flame.interactionOffset);
 
       mesh.visible = true;
       mesh.position.copy(_localPosition);
@@ -923,6 +1144,8 @@ export default function FireAndSmoke({
         positions[offset] = 0;
         positions[offset + 1] = 0;
         positions[offset + 2] = 0;
+        clearArrayVec3(particleState.interactionOffsets, offset);
+        clearArrayVec3(particleState.interactionVelocities, offset);
         continue;
       }
 
@@ -966,20 +1189,56 @@ export default function FireAndSmoke({
         particleState.originalSizes[index] *
         (3 + Math.sin(0.4 * index + particleState.elapsed));
 
-      positions[offset] =
+      _particleBasePosition.set(
         _curvePos.x +
-        _sampleNormal.x * radialNormalOffset +
-        _sampleBinormal.x * radialBinormalOffset;
-      positions[offset + 1] =
+          _sampleNormal.x * radialNormalOffset +
+          _sampleBinormal.x * radialBinormalOffset,
         _curvePos.y +
-        _sampleNormal.y * radialNormalOffset +
-        _sampleBinormal.y * radialBinormalOffset;
-      positions[offset + 2] =
+          _sampleNormal.y * radialNormalOffset +
+          _sampleBinormal.y * radialBinormalOffset,
         _curvePos.z +
-        _sampleNormal.z * radialNormalOffset +
-        _sampleBinormal.z * radialBinormalOffset;
+          _sampleNormal.z * radialNormalOffset +
+          _sampleBinormal.z * radialBinormalOffset
+      );
 
-      particleState.particleTime[index] += (deltaMs * timeScale) / 1000;
+      _particleInteractionOffset.fromArray(
+        particleState.interactionOffsets,
+        offset
+      );
+      _particleInteractionVelocity.fromArray(
+        particleState.interactionVelocities,
+        offset
+      );
+
+      integrateAttractorOffset(
+        _particleBasePosition,
+        _particleInteractionOffset,
+        _particleInteractionVelocity,
+        resolvedAttractors,
+        scaledDeltaSeconds,
+        PARTICLE_ATTRACTOR_RETURN_STRENGTH,
+        PARTICLE_ATTRACTOR_DAMPING,
+        particleMaxInteractionOffset,
+        PARTICLE_ATTRACTOR_DIRECTION_SCALE
+      );
+
+      _particleInteractionOffset.toArray(
+        particleState.interactionOffsets,
+        offset
+      );
+      _particleInteractionVelocity.toArray(
+        particleState.interactionVelocities,
+        offset
+      );
+
+      positions[offset] =
+        _particleBasePosition.x + _particleInteractionOffset.x;
+      positions[offset + 1] =
+        _particleBasePosition.y + _particleInteractionOffset.y;
+      positions[offset + 2] =
+        _particleBasePosition.z + _particleInteractionOffset.z;
+
+      particleState.particleTime[index] += scaledDeltaSeconds;
     }
 
     particleGeometry.attributes.position.needsUpdate = true;
@@ -992,7 +1251,7 @@ export default function FireAndSmoke({
   });
 
   return (
-    <group>
+    <group ref={rootGroupRef}>
       {flamePool.map((flame, index) => (
         <mesh
           key={index}

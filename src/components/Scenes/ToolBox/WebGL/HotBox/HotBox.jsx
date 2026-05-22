@@ -283,6 +283,9 @@ export default function HotBox() {
             <FireAndSmoke
               controlPoints={instance.controlPoints}
               {...instance.config}
+              attractorsRef={attractorsRef}
+              attractorStrength={config.attractorStrength}
+              attractorRadius={config.attractorRadius}
             />
 
             <SplineLine
@@ -310,6 +313,7 @@ export default function HotBox() {
         attractorsRef={attractorsRef}
         mode={config.attractorMode}
         visible={config.showAttractors}
+        strength={config.attractorStrength}
         radius={config.attractorRadius}
         version={config.attractorVersion}
         levaPrefix="Hot Box.Attractors"

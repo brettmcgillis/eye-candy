@@ -23,22 +23,12 @@ import React, { useMemo, useRef } from 'react';
 
 import { useFrame } from '@react-three/fiber';
 
-const DEFAULT_MOTION = {
-  baseSpeed: 1.15,
-  minSpeed: 0.28,
-  slowFreq: 0.7,
-  slowAmp: 0.55,
-  fastFreq: 2.6,
-  fastAmp: 0.25,
-  microFreq: 5.7,
-  microAmp: 0.08,
-  swayX: 0.015,
-  swayZ: 0.014,
-  pulseFreq: 3.4,
-  pulseAmp: 0.04,
-  scaleX: 1,
-  scaleY: 1,
-};
+import {
+  FLAME_DEFAULT_MOTION,
+  FLAME_SHADER_CONSTANTS,
+  FLAME_Y_ROTATION,
+  createFlameGeometry,
+} from './flameShared';
 
 const random2 = Fn(([stInput]) => {
   const st = vec2(stInput).toVar();
@@ -72,133 +62,239 @@ const noise2 = Fn(([stInput]) => {
 });
 
 function createFlameNodeMaterial(side) {
+  const {
+    alpha: alphaConstants,
+    baseScale,
+    bend,
+    color: colorConstants,
+    opacity: opacityConstants,
+    shimmer: shimmerConstants,
+    vertical,
+  } = FLAME_SHADER_CONSTANTS;
   const uniforms = {
     time: uniform(0),
   };
 
   const localPosition = positionLocal;
-  const flameUv = uv();
-  const hValue = localPosition.y;
-  const baseScale = vec3(0.8, 2.0, 0.725);
-  const basePosition = localPosition.mul(baseScale);
+  const flameUv = uv().toVarying('vFlameUv');
+  const hValue = localPosition.y.toVarying('vFlameHeight');
+  const basePosition = localPosition.mul(vec3(...baseScale));
   const posXZLength = localPosition.xz.length();
-  const verticalNoise = cos(posXZLength.add(0.25).mul(Math.PI))
-    .mul(0.25)
-    .add(noise2(vec2(0.0, uniforms.time)).mul(0.125))
+  const verticalNoise = cos(
+    posXZLength.add(vertical.cosOffset).mul(vertical.pi)
+  )
+    .mul(vertical.cosAmp)
+    .add(noise2(vec2(0.0, uniforms.time)).mul(vertical.staticNoiseAmp))
     .add(
       noise2(
         vec2(
           localPosition.x.add(uniforms.time),
           localPosition.z.add(uniforms.time)
         )
-      ).mul(0.5)
+      ).mul(vertical.flowNoiseAmp)
     );
   const posY = basePosition.y.mul(
     float(1.0).add(verticalNoise.mul(localPosition.y))
   );
 
   const signedNoiseX = noise2(
-    vec2(uniforms.time.mul(2.0), localPosition.y.sub(uniforms.time).mul(4.0))
+    vec2(
+      uniforms.time.mul(bend.timeScale),
+      localPosition.y.sub(uniforms.time).mul(bend.heightScale)
+    )
   )
     .mul(2.0)
     .sub(1.0);
   const signedNoiseZ = noise2(
-    vec2(localPosition.y.sub(uniforms.time).mul(4.0), uniforms.time.mul(2.0))
+    vec2(
+      localPosition.y.sub(uniforms.time).mul(bend.heightScale),
+      uniforms.time.mul(bend.timeScale)
+    )
   )
     .mul(2.0)
     .sub(1.0);
-  const bendEnvelope = pow(clamp(hValue, 0.0, 1.0), 1.2);
-  const scoopCycle = sin(uniforms.time.mul(0.48));
-  const scoopCrossCycle = sin(uniforms.time.mul(0.36).add(1.8));
-  const driftX = sin(uniforms.time.mul(0.72).add(hValue.mul(6.2))).mul(0.012);
-  const driftZ = cos(uniforms.time.mul(0.58).add(hValue.mul(5.1)).add(1.2)).mul(
-    0.01
+  const bendEnvelope = pow(clamp(hValue, 0.0, 1.0), bend.power);
+  const scoopCycle = sin(uniforms.time.mul(bend.scoopFreq));
+  const scoopCrossCycle = sin(
+    uniforms.time.mul(bend.scoopCrossFreq).add(bend.scoopCrossPhase)
   );
+  const driftX = sin(
+    uniforms.time.mul(bend.driftXFreq).add(hValue.mul(bend.driftXHeightFreq))
+  ).mul(bend.driftXAmp);
+  const driftZ = cos(
+    uniforms.time
+      .mul(bend.driftZFreq)
+      .add(hValue.mul(bend.driftZHeightFreq))
+      .add(bend.driftZPhase)
+  ).mul(bend.driftZAmp);
   const posX = basePosition.x.add(
     scoopCycle
-      .mul(0.05)
-      .add(signedNoiseX.mul(0.016))
+      .mul(bend.scoopAmp)
+      .add(signedNoiseX.mul(bend.signedNoiseXAmp))
       .add(driftX)
       .mul(bendEnvelope)
   );
   const posZ = basePosition.z.add(
     scoopCrossCycle
-      .mul(0.026)
-      .add(signedNoiseZ.mul(0.014))
+      .mul(bend.scoopCrossAmp)
+      .add(signedNoiseZ.mul(bend.signedNoiseZAmp))
       .add(driftZ)
       .mul(bendEnvelope)
   );
 
   const center = abs(flameUv.x.sub(0.5)).mul(2.0);
   const radialFalloff = float(1.0).sub(center);
-  const heightMask = smoothstep(0.02, 0.16, hValue).mul(
-    float(1.0).sub(smoothstep(0.93, 1.02, hValue))
+  const heightMask = smoothstep(
+    alphaConstants.heightStart,
+    alphaConstants.heightPeak,
+    hValue
+  ).mul(
+    float(1.0).sub(
+      smoothstep(alphaConstants.tipFadeStart, alphaConstants.tipFadeEnd, hValue)
+    )
   );
-  const taperedWidth = mix(0.62, 0.12, smoothstep(0.02, 0.98, hValue));
+  const taperedWidth = mix(
+    alphaConstants.widthBase,
+    alphaConstants.widthTip,
+    smoothstep(
+      alphaConstants.widthTaperStart,
+      alphaConstants.widthTaperEnd,
+      hValue
+    )
+  );
   const edgeNoise = noise2(
     vec2(
-      center.mul(5.0).add(uniforms.time.mul(0.35)),
-      hValue.mul(6.5).sub(uniforms.time.mul(1.8))
+      center
+        .mul(alphaConstants.edgeNoiseXScale)
+        .add(uniforms.time.mul(alphaConstants.edgeNoiseTimeScale)),
+      hValue
+        .mul(alphaConstants.edgeNoiseYScale)
+        .sub(uniforms.time.mul(alphaConstants.edgeNoiseTimeSpeed))
     )
   );
   const edgeMask = float(1.0).sub(
     smoothstep(
       taperedWidth,
-      taperedWidth.add(0.18).add(edgeNoise.mul(0.08)),
+      taperedWidth
+        .add(alphaConstants.edgeSoftness)
+        .add(edgeNoise.mul(alphaConstants.edgeNoiseAmp)),
       center
     )
   );
-  const alpha = heightMask.mul(edgeMask);
+  const alphaMask = heightMask.mul(edgeMask);
 
   const blueBase = float(1.0)
-    .sub(smoothstep(0.0, 0.12, hValue))
-    .mul(smoothstep(0.18, 0.95, radialFalloff));
-  const innerCore = smoothstep(0.08, 0.22, hValue)
-    .mul(float(1.0).sub(smoothstep(0.34, 0.72, hValue)))
-    .mul(smoothstep(0.28, 0.98, radialFalloff));
-  const warmBody = smoothstep(0.04, 0.34, hValue).mul(
-    float(1.0).sub(smoothstep(0.74, 1.0, hValue))
+    .sub(
+      smoothstep(
+        colorConstants.blueBaseFadeStart,
+        colorConstants.blueBaseFadeEnd,
+        hValue
+      )
+    )
+    .mul(
+      smoothstep(
+        colorConstants.blueBaseRadialStart,
+        colorConstants.blueBaseRadialEnd,
+        radialFalloff
+      )
+    );
+  const innerCore = smoothstep(
+    colorConstants.innerCoreHeightStart,
+    colorConstants.innerCoreHeightPeak,
+    hValue
+  )
+    .mul(
+      float(1.0).sub(
+        smoothstep(
+          colorConstants.innerCoreFadeStart,
+          colorConstants.innerCoreFadeEnd,
+          hValue
+        )
+      )
+    )
+    .mul(
+      smoothstep(
+        colorConstants.innerCoreRadialStart,
+        colorConstants.innerCoreRadialEnd,
+        radialFalloff
+      )
+    );
+  const warmBody = smoothstep(
+    colorConstants.warmBodyStart,
+    colorConstants.warmBodyEnd,
+    hValue
+  ).mul(
+    float(1.0).sub(
+      smoothstep(
+        colorConstants.warmBodyFadeStart,
+        colorConstants.warmBodyFadeEnd,
+        hValue
+      )
+    )
   );
-  const emberTip = smoothstep(0.78, 1.0, hValue).mul(
-    smoothstep(0.08, 0.65, center)
+  const emberTip = smoothstep(
+    colorConstants.emberTipStart,
+    colorConstants.emberTipEnd,
+    hValue
+  ).mul(
+    smoothstep(
+      colorConstants.emberCenterStart,
+      colorConstants.emberCenterEnd,
+      center
+    )
   );
 
   const outerColor = mix(
-    vec3(1.0, 0.36, 0.05),
-    vec3(1.0, 0.78, 0.22),
-    smoothstep(0.08, 0.58, hValue)
+    vec3(...colorConstants.outerLow),
+    vec3(...colorConstants.outerHigh),
+    smoothstep(colorConstants.outerMixStart, colorConstants.outerMixEnd, hValue)
   );
-  const blueColor = vec3(0.08, 0.18, 1.0).mul(blueBase).mul(0.95);
-  const warmColor = vec3(1.0, 0.54, 0.1)
+  const blueColor = vec3(...colorConstants.blue)
+    .mul(blueBase)
+    .mul(colorConstants.blueScale);
+  const warmColor = vec3(...colorConstants.warm)
     .mul(warmBody)
     .mul(radialFalloff)
-    .mul(0.18);
-  const shimmer = noise2(
+    .mul(colorConstants.warmScale);
+  const shimmerNode = noise2(
     vec2(
-      flameUv.x.mul(7.0).sub(uniforms.time.mul(0.9)),
-      hValue.mul(5.5).add(uniforms.time.mul(0.6))
+      flameUv.x
+        .mul(shimmerConstants.xScale)
+        .sub(uniforms.time.mul(shimmerConstants.timeScale)),
+      hValue
+        .mul(shimmerConstants.yScale)
+        .add(uniforms.time.mul(shimmerConstants.timeSpeed))
     )
   )
-    .mul(0.16)
-    .add(0.92);
+    .mul(shimmerConstants.amp)
+    .add(shimmerConstants.base);
 
-  let color = outerColor.add(blueColor);
-  color = mix(color, vec3(1.0, 0.98, 0.93), innerCore);
-  color = color.add(warmColor);
-  color = mix(color, vec3(0.92, 0.28, 0.04), emberTip.mul(0.35));
-  color = color.mul(shimmer);
-  const opacity = alpha.mul(float(0.92).add(innerCore.mul(0.08)));
+  let flameColor = outerColor.add(blueColor);
+  flameColor = mix(flameColor, vec3(...colorConstants.core), innerCore);
+  flameColor = flameColor.add(warmColor);
+  flameColor = mix(
+    flameColor,
+    vec3(...colorConstants.ember),
+    emberTip.mul(colorConstants.emberMix)
+  );
+  flameColor = flameColor.mul(shimmerNode);
+  const flameOpacity = alphaMask.mul(
+    float(opacityConstants.base).add(
+      innerCore.mul(opacityConstants.innerCoreBoost)
+    )
+  );
 
   const material = new THREE.MeshBasicNodeMaterial({
     transparent: true,
     depthWrite: false,
     toneMapped: false,
+    blending: THREE.NormalBlending,
     side,
   });
 
   material.positionNode = vec3(posX, posY, posZ);
-  material.colorNode = color;
-  material.opacityNode = opacity;
+  material.colorNode = flameColor;
+  material.opacityNode = flameOpacity;
   material.uniforms = uniforms;
 
   return material;
@@ -210,14 +306,10 @@ export default function FlameGPU({
   motion,
   phaseOffset = 0,
 }) {
-  const flameMotion = { ...DEFAULT_MOTION, ...motion };
+  const flameMotion = { ...FLAME_DEFAULT_MOTION, ...motion };
   const groupRef = useRef();
   const phaseRef = useRef(0);
-  const flameGeometry = useMemo(() => {
-    const geometry = new THREE.SphereGeometry(0.5, 32, 32);
-    geometry.translate(0, 0.5, 0);
-    return geometry;
-  }, []);
+  const flameGeometry = useMemo(() => createFlameGeometry(THREE), []);
   const frontMaterial = useMemo(
     () => createFlameNodeMaterial(THREE.FrontSide),
     []
@@ -264,12 +356,12 @@ export default function FlameGPU({
       rotation={inverted ? [Math.PI, 0, 0] : [0, 0, 0]}
     >
       <mesh
-        rotation-y={THREE.MathUtils.degToRad(-45)}
+        rotation-y={FLAME_Y_ROTATION}
         geometry={flameGeometry}
         material={frontMaterial}
       />
       <mesh
-        rotation-y={THREE.MathUtils.degToRad(-45)}
+        rotation-y={FLAME_Y_ROTATION}
         geometry={flameGeometry}
         material={backMaterial}
       />

@@ -5,6 +5,13 @@ import React from 'react';
 import { shaderMaterial } from '@react-three/drei';
 import { extend } from '@react-three/fiber';
 
+import { FLAME_SHADER_CONSTANTS } from '../../elements/flame/flameShared';
+
+const vec3Literal = (value) => `vec3(${value.join(', ')})`;
+
+const { alpha, baseScale, bend, color, opacity, shimmer, vertical } =
+  FLAME_SHADER_CONSTANTS;
+
 const FLAME_VERT = /* glsl */ `
   uniform float time;
   varying vec2 vUv;
@@ -30,23 +37,23 @@ const FLAME_VERT = /* glsl */ `
   void main() {
     vUv = uv;
     vec3 pos = position;
-    pos *= vec3(0.8, 2.0, 0.725);
+    pos *= ${vec3Literal(baseScale)};
     hValue = position.y;
     float posXZlen = length(position.xz);
-    pos.y *= 1.0 + (cos((posXZlen + 0.25) * 3.1415926) * 0.25
-           + noise(vec2(0.0, time)) * 0.125
-           + noise(vec2(position.x + time, position.z + time)) * 0.5) * position.y;
+    pos.y *= 1.0 + (cos((posXZlen + ${vertical.cosOffset}) * ${vertical.pi}) * ${vertical.cosAmp}
+           + noise(vec2(0.0, time)) * ${vertical.staticNoiseAmp}
+           + noise(vec2(position.x + time, position.z + time)) * ${vertical.flowNoiseAmp}) * position.y;
 
-    float signedNoiseX = noise(vec2(time * 2.0, (position.y - time) * 4.0)) * 2.0 - 1.0;
-    float signedNoiseZ = noise(vec2((position.y - time) * 4.0, time * 2.0)) * 2.0 - 1.0;
-    float bendEnvelope = pow(clamp(hValue, 0.0, 1.0), 1.2);
-    float scoopCycle = sin(time * 0.48);
-    float scoopCrossCycle = sin(time * 0.36 + 1.8);
-    float driftX = sin(time * 0.72 + hValue * 6.2) * 0.012;
-    float driftZ = cos(time * 0.58 + hValue * 5.1 + 1.2) * 0.01;
+    float signedNoiseX = noise(vec2(time * ${bend.timeScale}, (position.y - time) * ${bend.heightScale})) * 2.0 - 1.0;
+    float signedNoiseZ = noise(vec2((position.y - time) * ${bend.heightScale}, time * ${bend.timeScale})) * 2.0 - 1.0;
+    float bendEnvelope = pow(clamp(hValue, 0.0, 1.0), ${bend.power});
+    float scoopCycle = sin(time * ${bend.scoopFreq});
+    float scoopCrossCycle = sin(time * ${bend.scoopCrossFreq} + ${bend.scoopCrossPhase});
+    float driftX = sin(time * ${bend.driftXFreq} + hValue * ${bend.driftXHeightFreq}) * ${bend.driftXAmp};
+    float driftZ = cos(time * ${bend.driftZFreq} + hValue * ${bend.driftZHeightFreq} + ${bend.driftZPhase}) * ${bend.driftZAmp};
 
-    pos.x += (scoopCycle * 0.05 + signedNoiseX * 0.016 + driftX) * bendEnvelope;
-    pos.z += (scoopCrossCycle * 0.026 + signedNoiseZ * 0.014 + driftZ) * bendEnvelope;
+    pos.x += (scoopCycle * ${bend.scoopAmp} + signedNoiseX * ${bend.signedNoiseXAmp} + driftX) * bendEnvelope;
+    pos.z += (scoopCrossCycle * ${bend.scoopCrossAmp} + signedNoiseZ * ${bend.signedNoiseZAmp} + driftZ) * bendEnvelope;
     gl_Position = projectionMatrix * modelViewMatrix * vec4(pos, 1.0);
   }
 `;
@@ -76,37 +83,37 @@ const FLAME_FRAG = /* glsl */ `
   void main() {
     float center = abs(vUv.x - 0.5) * 2.0;
     float radialFalloff = 1.0 - center;
-    float heightMask = smoothstep(0.02, 0.16, hValue) * (1.0 - smoothstep(0.93, 1.02, hValue));
-    float taperedWidth = mix(0.62, 0.12, smoothstep(0.02, 0.98, hValue));
-    float edgeNoise = noise(vec2(center * 5.0 + time * 0.35, hValue * 6.5 - time * 1.8));
-    float edgeMask = 1.0 - smoothstep(taperedWidth, taperedWidth + 0.18 + edgeNoise * 0.08, center);
+    float heightMask = smoothstep(${alpha.heightStart}, ${alpha.heightPeak}, hValue) * (1.0 - smoothstep(${alpha.tipFadeStart}, ${alpha.tipFadeEnd}, hValue));
+    float taperedWidth = mix(${alpha.widthBase}, ${alpha.widthTip}, smoothstep(${alpha.widthTaperStart}, ${alpha.widthTaperEnd}, hValue));
+    float edgeNoise = noise(vec2(center * ${alpha.edgeNoiseXScale} + time * ${alpha.edgeNoiseTimeScale}, hValue * ${alpha.edgeNoiseYScale} - time * ${alpha.edgeNoiseTimeSpeed}));
+    float edgeMask = 1.0 - smoothstep(taperedWidth, taperedWidth + ${alpha.edgeSoftness} + edgeNoise * ${alpha.edgeNoiseAmp}, center);
     float alpha = heightMask * edgeMask;
 
-    float blueBase = (1.0 - smoothstep(0.0, 0.12, hValue)) * smoothstep(0.18, 0.95, radialFalloff);
+    float blueBase = (1.0 - smoothstep(${color.blueBaseFadeStart}, ${color.blueBaseFadeEnd}, hValue)) * smoothstep(${color.blueBaseRadialStart}, ${color.blueBaseRadialEnd}, radialFalloff);
     float innerCore =
-      smoothstep(0.08, 0.22, hValue) *
-      (1.0 - smoothstep(0.34, 0.72, hValue)) *
-      smoothstep(0.28, 0.98, radialFalloff);
+      smoothstep(${color.innerCoreHeightStart}, ${color.innerCoreHeightPeak}, hValue) *
+      (1.0 - smoothstep(${color.innerCoreFadeStart}, ${color.innerCoreFadeEnd}, hValue)) *
+      smoothstep(${color.innerCoreRadialStart}, ${color.innerCoreRadialEnd}, radialFalloff);
     float warmBody =
-      smoothstep(0.04, 0.34, hValue) *
-      (1.0 - smoothstep(0.74, 1.0, hValue));
-    float emberTip = smoothstep(0.78, 1.0, hValue) * smoothstep(0.08, 0.65, center);
+      smoothstep(${color.warmBodyStart}, ${color.warmBodyEnd}, hValue) *
+      (1.0 - smoothstep(${color.warmBodyFadeStart}, ${color.warmBodyFadeEnd}, hValue));
+    float emberTip = smoothstep(${color.emberTipStart}, ${color.emberTipEnd}, hValue) * smoothstep(${color.emberCenterStart}, ${color.emberCenterEnd}, center);
 
     vec3 outerColor = mix(
-      vec3(1.0, 0.36, 0.05),
-      vec3(1.0, 0.78, 0.22),
-      smoothstep(0.08, 0.58, hValue)
+      ${vec3Literal(color.outerLow)},
+      ${vec3Literal(color.outerHigh)},
+      smoothstep(${color.outerMixStart}, ${color.outerMixEnd}, hValue)
     );
 
     vec3 color = outerColor;
-    color += vec3(0.08, 0.18, 1.0) * blueBase * 0.95;
-    color = mix(color, vec3(1.0, 0.98, 0.93), innerCore);
-    color += vec3(1.0, 0.54, 0.1) * warmBody * radialFalloff * 0.18;
-    color = mix(color, vec3(0.92, 0.28, 0.04), emberTip * 0.35);
+    color += ${vec3Literal(color.blue)} * blueBase * ${color.blueScale};
+    color = mix(color, ${vec3Literal(color.core)}, innerCore);
+    color += ${vec3Literal(color.warm)} * warmBody * radialFalloff * ${color.warmScale};
+    color = mix(color, ${vec3Literal(color.ember)}, emberTip * ${color.emberMix});
 
-    float shimmer = 0.92 + noise(vec2(vUv.x * 7.0 - time * 0.9, hValue * 5.5 + time * 0.6)) * 0.16;
+    float shimmer = ${shimmer.base} + noise(vec2(vUv.x * ${shimmer.xScale} - time * ${shimmer.timeScale}, hValue * ${shimmer.yScale} + time * ${shimmer.timeSpeed})) * ${shimmer.amp};
     color *= shimmer;
-    alpha *= 0.92 + innerCore * 0.08;
+    alpha *= ${opacity.base} + innerCore * ${opacity.innerCoreBoost};
 
     gl_FragColor = vec4(color, alpha);
   }
@@ -124,6 +131,7 @@ const FlameMaterial = React.forwardRef(function FlameMaterial(
     <flameMaterialImpl
       ref={forwardedRef}
       transparent
+      blending={THREE.NormalBlending}
       side={side}
       depthWrite={false}
       toneMapped={false}

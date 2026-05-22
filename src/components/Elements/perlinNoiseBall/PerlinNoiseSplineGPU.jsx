@@ -2,9 +2,7 @@ import {
   attribute,
   dot,
   float,
-  int,
   mix,
-  mx_fractal_noise_float as mxFractalNoise,
   normalLocal,
   positionLocal,
   texture as tslTexture,
@@ -20,6 +18,11 @@ import { useTexture } from '@react-three/drei';
 import { useFrame } from '@react-three/fiber';
 
 import { textureFile } from '../../../utils/appUtils';
+import {
+  approximateTurbulence,
+  signedPerlinApprox,
+  smokeGradient,
+} from './perlinNoiseNodes';
 import {
   DEFAULT_CONTROL_POINTS,
   buildPlumeGeometry,
@@ -97,41 +100,33 @@ export default function PerlinNoiseSplineGPU({
   ]);
 
   const material = useMemo(() => {
-    const arcT = attribute('arcT', 'float');
+    const arcTAttr = attribute('arcT', 'float');
+    const arcT = arcTAttr.toVarying('vPerlinNoiseSplineArcT');
     const timeVec = vec3(uniforms.time, uniforms.time, uniforms.time);
     const arcNoise = vec3(
-      arcT.mul(float(2.0)),
-      arcT.mul(float(2.0)),
-      arcT.mul(float(2.0))
+      arcTAttr.mul(float(2.0)),
+      arcTAttr.mul(float(2.0)),
+      arcTAttr.mul(float(2.0))
     );
 
-    const turbulence = mxFractalNoise(
-      normalLocal.mul(float(0.5)).add(arcNoise).sub(timeVec),
-      int(6),
-      float(2.0),
-      float(0.5)
-    )
-      .mul(float(0.5))
-      .add(float(0.5))
-      .clamp(0.0, 1.0);
-
-    const billow = mxFractalNoise(
-      positionLocal.mul(uniforms.noiseFreq).sub(timeVec.mul(float(2.0))),
-      int(4),
-      float(2.0),
-      float(0.5)
-    )
-      .mul(float(2.0))
-      .sub(float(1.0));
+    const aoNode = approximateTurbulence(
+      normalLocal.mul(float(0.5)).add(arcNoise).sub(timeVec)
+    );
+    const ao = aoNode.toVarying('vPerlinNoiseSplineAo');
+    const billow = signedPerlinApprox(
+      positionLocal.mul(uniforms.noiseFreq).sub(timeVec.mul(float(2.0)))
+    );
 
     const displacement = uniforms.weight
-      .mul(turbulence)
-      .mul(float(0.1))
+      .mul(aoNode)
       .add(uniforms.noiseAmp.mul(billow));
 
-    const paletteT = turbulence
-      .mul(float(0.75))
-      .add(float(0.15))
+    const jitter = float(0.0);
+    const paletteT = ao
+      .mul(float(1.1))
+      .add(float(1.0))
+      .div(float(1.1))
+      .add(jitter)
       .clamp(0.0, 1.0);
     const fireColor = tslTexture(tExplosion, vec2(0.5, paletteT)).rgb;
     const luminance = dot(fireColor, vec3(0.2126, 0.7152, 0.0722));
@@ -141,14 +136,15 @@ export default function PerlinNoiseSplineGPU({
       luminance
     );
     const fireResult = mix(fireColor, fireDesaturated, uniforms.greyscale);
-    const smokeHeat = turbulence
-      .mul(float(0.75))
-      .add(float(0.25))
+    const smokeHeat = ao
+      .mul(float(2.0))
+      .add(float(0.5))
+      .add(jitter)
       .clamp(0.0, 1.0);
-    const smokeColor = mix(
+    const smokeColor = smokeGradient(
+      smokeHeat,
       uniforms.smokeDarkColor,
-      uniforms.smokeLightColor,
-      smokeHeat
+      uniforms.smokeLightColor
     );
 
     const materialNode = new THREE.MeshBasicNodeMaterial({

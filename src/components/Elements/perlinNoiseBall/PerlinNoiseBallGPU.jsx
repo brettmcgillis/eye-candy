@@ -1,9 +1,7 @@
 import {
   dot,
   float,
-  int,
   mix,
-  mx_fractal_noise_float as mxFractalNoise,
   normalLocal,
   positionLocal,
   texture as tslTexture,
@@ -19,6 +17,7 @@ import { useTexture } from '@react-three/drei';
 import { useFrame } from '@react-three/fiber';
 
 import { textureFile } from '../../../utils/appUtils';
+import { approximateTurbulence, signedPerlinApprox } from './perlinNoiseNodes';
 
 useTexture.preload(textureFile('explosion.png'));
 
@@ -75,33 +74,21 @@ export default function PerlinNoiseBallGPU({
 
   const material = useMemo(() => {
     const timeVec = vec3(uniforms.time, uniforms.time, uniforms.time);
-    const turbulence = mxFractalNoise(
-      normalLocal.mul(float(0.5)).add(timeVec),
-      int(6),
-      float(2.0),
-      float(0.5)
-    )
-      .mul(float(0.5))
-      .add(float(0.5))
-      .clamp(0.0, 1.0);
-
-    const billow = mxFractalNoise(
-      positionLocal.mul(uniforms.noiseFreq).add(timeVec.mul(float(2.0))),
-      int(4),
-      float(2.0),
-      float(0.5)
-    )
-      .mul(float(2.0))
-      .sub(float(1.0));
-
+    const aoNode = approximateTurbulence(
+      normalLocal.mul(float(0.5)).add(timeVec)
+    );
+    const ao = aoNode.toVarying('vPerlinNoiseBallAo');
+    const billow = signedPerlinApprox(
+      positionLocal.mul(uniforms.noiseFreq).add(timeVec.mul(float(2.0)))
+    );
     const displacement = uniforms.weight
-      .mul(turbulence)
-      .mul(float(0.1))
+      .mul(aoNode)
       .add(uniforms.noiseAmp.mul(billow));
 
-    const paletteT = turbulence
-      .mul(float(0.75))
-      .add(float(0.15))
+    const paletteT = ao
+      .mul(float(1.1))
+      .add(float(1.0))
+      .div(float(1.1))
       .clamp(0.0, 1.0);
     const texColor = tslTexture(tExplosion, vec2(0.5, paletteT)).rgb;
     const luminance = dot(texColor, vec3(0.2126, 0.7152, 0.0722));

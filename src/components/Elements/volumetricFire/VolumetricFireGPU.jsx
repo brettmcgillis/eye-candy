@@ -1,121 +1,137 @@
+/* eslint-disable no-underscore-dangle */
 import {
+  Fn,
+  If,
+  Loop,
   attribute,
   dot,
   float,
+  floor,
+  fract,
   int,
   mix,
-  mx_fractal_noise_float as mxFractalNoise,
-  normalLocal,
-  positionLocal,
+  mod,
+  smoothstep,
+  texture as tslTexture,
   uniform,
+  vec2,
   vec3,
+  vec4,
 } from 'three/tsl';
 import * as THREE from 'three/webgpu';
 
 import React, { useEffect, useMemo, useRef } from 'react';
 
-import { useFrame } from '@react-three/fiber';
+import { useFrame, useThree } from '@react-three/fiber';
 
 import {
-  buildVolumetricFireCurve,
-  buildVolumetricFireGeometry,
-  buildVolumetricFireGuideGeometry,
-  resolveVolumetricFireControlPoints,
-} from './volumetricFireGPUShared';
+  GUIDE_POINTS,
+  VolumetricFireMesh,
+  fillControlPoints,
+  getFireProfileTexture,
+  getNoiseTexture,
+  makeControlPointPool,
+} from './volumetricFireShared';
 
 const LUMINANCE = vec3(0.2126, 0.7152, 0.0722);
+const NOISE_MODULUS = float(61.0);
+const DEFAULT_NOISE_SCALE = new THREE.Vector4(1.0, 2.0, 1.0, 0.3);
 
-function createOuterMaterial(uniforms) {
-  const arcT = attribute('arcT', 'float');
-  const animatedOffset = vec3(
-    uniforms.time.mul(uniforms.animSpeed).mul(0.28),
-    arcT.mul(2.4),
-    uniforms.time.mul(uniforms.animSpeed).mul(0.18)
-  );
-  const turbulence = mxFractalNoise(
-    normalLocal.mul(float(0.7)).add(animatedOffset),
-    int(5),
-    uniforms.lacunarity,
-    uniforms.gain
-  )
-    .mul(float(0.5))
-    .add(float(0.5))
-    .clamp(0.0, 1.0);
-  const billow = mxFractalNoise(
-    positionLocal.sub(
-      vec3(0.0, uniforms.time.mul(uniforms.animSpeed).mul(0.5), 0.0)
-    ),
-    int(4),
-    uniforms.lacunarity,
-    uniforms.gain
-  )
-    .mul(float(2.0))
-    .sub(float(1.0));
-  const envelope = float(1.0).sub(arcT.mul(0.78)).clamp(0.12, 1.0);
-  const displacement = turbulence
-    .mul(uniforms.magnitude)
-    .mul(float(0.07))
-    .add(billow.mul(uniforms.magnitude).mul(float(0.028)))
-    .mul(envelope);
-  const heat = turbulence
-    .mul(float(0.45))
-    .add(float(1.0).sub(arcT).mul(float(0.7)))
-    .clamp(0.0, 1.0);
-  const outerColor = mix(
-    vec3(0.42, 0.08, 0.02),
-    vec3(1.0, 0.38, 0.06),
-    heat
-  );
-  const hotColor = mix(outerColor, uniforms.tintColor, heat.mul(float(0.7)));
-  const luminance = dot(hotColor, LUMINANCE);
+function createSliceMaterial(uniforms, noiseTexture, fireProfileTexture) {
+  const texCoord = attribute('tex', 'vec3').toVarying('vVolumetricFireTex');
+
+  const mBBS = Fn(([valueInput, modulusInput]) => {
+    const wrapped = mod(valueInput, modulusInput).toVar();
+
+    return mod(wrapped.mul(wrapped), modulusInput);
+  });
+
+  const mnoise = Fn(([posInput]) => {
+    const intArg = floor(posInput.z).toVar();
+    const fracArg = fract(posInput.z).toVar();
+    const hash = mBBS(
+      vec2(intArg.mul(3.0), intArg.mul(3.0).add(3.0)),
+      NOISE_MODULUS
+    ).toVar();
+    const g0 = tslTexture(
+      noiseTexture,
+      vec2(posInput.x, posInput.y.add(hash.x)).div(NOISE_MODULUS)
+    )
+      .xy.mul(2.0)
+      .sub(1.0)
+      .toVar();
+    const g1 = tslTexture(
+      noiseTexture,
+      vec2(posInput.x, posInput.y.add(hash.y)).div(NOISE_MODULUS)
+    )
+      .xy.mul(2.0)
+      .sub(1.0)
+      .toVar();
+
+    return mix(
+      g0.x.add(g0.y.mul(fracArg)),
+      g1.x.add(g1.y.mul(fracArg.sub(1.0))),
+      smoothstep(0.0, 1.0, fracArg)
+    );
+  });
+
+  const turbulence = Fn(([posInput]) => {
+    const sum = float(0).toVar();
+    const freq = float(1).toVar();
+    const amp = float(1).toVar();
+
+    Loop({ start: int(0), end: int(4), type: 'int', condition: '<' }, () => {
+      sum.addAssign(mnoise(posInput.mul(freq)).abs().mul(amp));
+      freq.mulAssign(uniforms.lacunarity);
+      amp.mulAssign(uniforms.gain);
+    });
+
+    return sum;
+  });
+
+  const sampleFire = Fn(() => {
+    const locXZ = texCoord.xz.mul(2.0).sub(1.0).toVar();
+    const st = vec2(dot(locXZ, locXZ).sqrt(), texCoord.y).toVar();
+    const sampleLoc = vec3(
+      locXZ.x,
+      texCoord.y.sub(uniforms.time.mul(uniforms.noiseScale.w)),
+      locXZ.y
+    ).toVar();
+
+    sampleLoc.mulAssign(uniforms.noiseScale.xyz);
+
+    const offset = st.y
+      .sqrt()
+      .mul(uniforms.magnitude)
+      .mul(turbulence(sampleLoc))
+      .toVar();
+
+    st.y.addAssign(offset);
+
+    const result = vec4(0.0, 0.0, 0.0, 0.0).toVar();
+
+    If(st.y.lessThanEqual(1.0), () => {
+      result.assign(tslTexture(fireProfileTexture, st));
+
+      If(st.y.lessThan(0.1), () => {
+        result.mulAssign(st.y.div(0.1));
+      });
+    });
+
+    return result;
+  });
+
+  const sampledFire = sampleFire().toVar();
+  const tinted = sampledFire.rgb
+    .mul(uniforms.colorTint)
+    .mul(uniforms.brightness)
+    .toVar();
+  const luminance = dot(tinted, LUMINANCE).toVar();
   const saturated = mix(
     vec3(luminance, luminance, luminance),
-    hotColor,
+    tinted,
     uniforms.saturation
-  ).mul(uniforms.brightness);
-  const opacity = envelope.mul(turbulence.mul(0.55).add(0.25));
-
-  const material = new THREE.MeshBasicNodeMaterial({
-    transparent: true,
-    depthWrite: false,
-    toneMapped: false,
-    side: THREE.DoubleSide,
-    blending: THREE.AdditiveBlending,
-  });
-
-  material.positionNode = positionLocal.add(normalLocal.mul(displacement));
-  material.colorNode = saturated;
-  material.opacityNode = opacity;
-  material.uniforms = uniforms;
-
-  return material;
-}
-
-function createCoreMaterial(uniforms) {
-  const arcT = attribute('arcT', 'float');
-  const animatedOffset = vec3(
-    uniforms.time.mul(uniforms.animSpeed).mul(0.34),
-    arcT.mul(3.0),
-    uniforms.time.mul(uniforms.animSpeed).mul(0.2)
   );
-  const turbulence = mxFractalNoise(
-    normalLocal.mul(float(0.45)).add(animatedOffset),
-    int(4),
-    uniforms.lacunarity,
-    uniforms.gain
-  )
-    .mul(float(0.5))
-    .add(float(0.5))
-    .clamp(0.0, 1.0);
-  const coreHeat = turbulence
-    .mul(float(0.35))
-    .add(float(1.0).sub(arcT).mul(float(0.95)))
-    .clamp(0.0, 1.0);
-  const coreColor = mix(vec3(1.0, 0.45, 0.08), uniforms.tintColor, coreHeat);
-  const opacity = float(1.0)
-    .sub(arcT.mul(0.82))
-    .clamp(0.1, 1.0)
-    .mul(turbulence.mul(0.4).add(0.45));
 
   const material = new THREE.MeshBasicNodeMaterial({
     transparent: true,
@@ -125,9 +141,8 @@ function createCoreMaterial(uniforms) {
     blending: THREE.AdditiveBlending,
   });
 
-  material.positionNode = positionLocal;
-  material.colorNode = coreColor.mul(uniforms.brightness.mul(1.05));
-  material.opacityNode = opacity;
+  material.colorNode = saturated;
+  material.opacityNode = sampledFire.a;
   material.uniforms = uniforms;
 
   return material;
@@ -155,133 +170,177 @@ export default function VolumetricFireGPU({
   brightness = 1.5,
   controlPoints = null,
 }) {
-  const groupRef = useRef();
-  const swayTimeRef = useRef(0);
+  const { camera } = useThree();
+  const animTimeRef = useRef(0);
+  const baseBendRef = useRef({ x: bendX, z: bendZ });
+  const cpPoolRef = useRef(null);
+
+  if (!cpPoolRef.current) {
+    cpPoolRef.current = makeControlPointPool(5);
+  }
+
+  const noiseTexture = useMemo(() => getNoiseTexture(), []);
+  const fireProfileTexture = useMemo(() => getFireProfileTexture(), []);
+
   const uniforms = useMemo(
     () => ({
       time: uniform(0),
       magnitude: uniform(magnitude),
       lacunarity: uniform(lacunarity),
       gain: uniform(gain),
-      tintColor: uniform(new THREE.Color(tintColor)),
+      noiseScale: uniform(DEFAULT_NOISE_SCALE.clone()),
+      colorTint: uniform(new THREE.Color(tintColor)),
       saturation: uniform(saturation),
       brightness: uniform(brightness),
-      animSpeed: uniform(Math.max(animSpeed, 0.0001)),
     }),
     []
   );
 
-  const plumeControlPoints = useMemo(
-    () =>
-      resolveVolumetricFireControlPoints({
-        controlPoints,
-        width,
-        height,
-        depth,
-        bendX,
-        bendZ,
-      }),
-    [bendX, bendZ, controlPoints, depth, height, width]
-  );
-
-  const curve = useMemo(
-    () => buildVolumetricFireCurve(plumeControlPoints),
-    [plumeControlPoints]
-  );
-  const tubularSegments = useMemo(
-    () =>
-      Math.min(
-        180,
-        Math.max(
-          48,
-          segments * 6,
-          Math.round(height / Math.max(sliceSpacing, 0.03)) * 4
-        )
-      ),
-    [height, segments, sliceSpacing]
-  );
-  const geometry = useMemo(
-    () =>
-      buildVolumetricFireGeometry(curve, plumeControlPoints, {
-        tubularSegments,
-        radialSegments: 28,
-        capSegments: 10,
-      }),
-    [curve, plumeControlPoints, tubularSegments]
-  );
-  const guideGeometry = useMemo(
-    () => buildVolumetricFireGuideGeometry(curve),
-    [curve]
-  );
-  const outerMaterial = useMemo(() => createOuterMaterial(uniforms), [uniforms]);
-  const coreMaterial = useMemo(() => createCoreMaterial(uniforms), [uniforms]);
-  const volumeMaterial = useMemo(() => {
-    const material = new THREE.MeshBasicNodeMaterial({
-      wireframe: true,
-      transparent: true,
-      depthWrite: false,
-      toneMapped: false,
-      side: THREE.DoubleSide,
+  const fire = useMemo(() => {
+    const mesh = new VolumetricFireMesh({
+      width,
+      height,
+      depth,
+      sliceSpacing,
+      segments,
+      camera,
+      textureNoise: noiseTexture,
+      textureProfile: fireProfileTexture,
     });
+    const originalMaterial = mesh.material;
 
-    material.colorNode = vec3(0.27, 0.67, 1.0);
-    material.opacityNode = float(0.18);
+    mesh.material = createSliceMaterial(
+      uniforms,
+      noiseTexture,
+      fireProfileTexture
+    );
+    originalMaterial.dispose();
 
-    return material;
+    return mesh;
+  }, [
+    camera,
+    depth,
+    fireProfileTexture,
+    height,
+    noiseTexture,
+    segments,
+    sliceSpacing,
+    uniforms,
+    width,
+  ]);
+
+  const guideGeo = useMemo(() => {
+    const geometry = new THREE.BufferGeometry();
+
+    geometry.setAttribute(
+      'position',
+      new THREE.BufferAttribute(new Float32Array(GUIDE_POINTS * 3), 3)
+    );
+
+    return geometry;
   }, []);
 
   useEffect(() => {
-    uniforms.magnitude.value = magnitude;
-    uniforms.lacunarity.value = lacunarity;
-    uniforms.gain.value = gain;
-    uniforms.tintColor.value.set(tintColor);
-    uniforms.saturation.value = saturation;
-    uniforms.brightness.value = brightness;
-    uniforms.animSpeed.value = Math.max(animSpeed, 0.0001);
-  }, [animSpeed, brightness, gain, lacunarity, magnitude, saturation, tintColor, uniforms]);
+    noiseTexture.colorSpace = THREE.NoColorSpace;
+    noiseTexture.needsUpdate = true;
+    fireProfileTexture.colorSpace = THREE.NoColorSpace;
+    fireProfileTexture.needsUpdate = true;
+  }, [fireProfileTexture, noiseTexture]);
+
+  useEffect(() => {
+    fire.material.uniforms.magnitude.value = magnitude;
+    fire.material.uniforms.lacunarity.value = lacunarity;
+    fire.material.uniforms.gain.value = gain;
+  }, [fire, gain, lacunarity, magnitude]);
+
+  useEffect(() => {
+    fire.material.uniforms.colorTint.value.set(tintColor);
+  }, [fire, tintColor]);
+
+  useEffect(() => {
+    fire.material.uniforms.saturation.value = saturation;
+    fire.material.uniforms.brightness.value = brightness;
+  }, [brightness, fire, saturation]);
+
+  useEffect(() => {
+    fire._sliceSpacing = sliceSpacing;
+  }, [fire, sliceSpacing]);
+
+  useEffect(() => {
+    fire.setShowVolume(showVolume);
+  }, [fire, showVolume]);
+
+  useEffect(() => {
+    baseBendRef.current = { x: bendX, z: bendZ };
+  }, [bendX, bendZ]);
 
   useEffect(
     () => () => {
-      geometry.dispose();
-      guideGeometry.dispose();
-      outerMaterial.dispose();
-      coreMaterial.dispose();
-      volumeMaterial.dispose();
+      fire.geometry.dispose();
+      fire.material.dispose();
     },
-    [coreMaterial, geometry, guideGeometry, outerMaterial, volumeMaterial]
+    [fire]
   );
 
+  useEffect(() => () => guideGeo.dispose(), [guideGeo]);
+
   useFrame(({ clock }, delta) => {
-    uniforms.time.value = clock.getElapsedTime();
+    if (controlPoints) {
+      fire.setControlPoints(controlPoints);
+    } else {
+      let bx = baseBendRef.current.x;
+      let bz = baseBendRef.current.z;
 
-    if (!groupRef.current) {
-      return;
+      if (animated) {
+        animTimeRef.current += delta * animSpeed;
+        const t = animTimeRef.current;
+
+        bx += Math.sin(t * 0.8) * 0.14 + Math.sin(t * 2.1 + 0.5) * 0.04;
+        bz += Math.cos(t * 0.65 + 1.2) * 0.07 + Math.cos(t * 1.7) * 0.03;
+      }
+
+      fillControlPoints(cpPoolRef.current, height, width, depth, bx, bz);
+      fire.setControlPoints(cpPoolRef.current);
     }
 
-    groupRef.current.rotation.x = inverted ? Math.PI : 0;
-    groupRef.current.rotation.z = 0;
+    fire.update(clock.getElapsedTime());
 
-    if (!animated || controlPoints?.length >= 2) {
-      return;
+    if (showSpline) {
+      const curve = fire._posCurve;
+
+      if (curve?.points?.length > 1) {
+        const points = curve.getPoints(GUIDE_POINTS - 1);
+        const positionAttr = guideGeo.attributes.position;
+
+        for (let index = 0; index < points.length; index += 1) {
+          positionAttr.setXYZ(
+            index,
+            points[index].x,
+            points[index].y,
+            points[index].z
+          );
+        }
+
+        positionAttr.needsUpdate = true;
+      }
     }
-
-    swayTimeRef.current += delta * animSpeed;
-    const t = swayTimeRef.current;
-    groupRef.current.rotation.x += Math.sin(t * 0.8) * 0.12;
-    groupRef.current.rotation.z =
-      Math.cos(t * 0.65 + 1.2) * 0.07 + Math.cos(t * 1.7) * 0.03;
   });
 
+  const halfH = controlPoints ? 0 : height / 2;
+
   return (
-    <group ref={groupRef} position={position}>
-      <mesh geometry={geometry} material={outerMaterial} />
-      <mesh geometry={geometry} material={coreMaterial} scale={[0.72, 1, 0.72]} />
-      {showVolume && <mesh geometry={geometry} material={volumeMaterial} />}
-      {showSpline && (
-        <line geometry={guideGeometry}>
-          <lineBasicMaterial color={0x44aaff} transparent opacity={0.7} />
-        </line>
-      )}
+    <group
+      position={position}
+      rotation={inverted ? [Math.PI, 0, 0] : [0, 0, 0]}
+    >
+      <group position={[0, halfH, 0]}>
+        <primitive object={fire} />
+        {showSpline && (
+          <line geometry={guideGeo}>
+            <lineBasicMaterial color={0x44aaff} transparent opacity={0.7} />
+          </line>
+        )}
+      </group>
     </group>
   );
 }

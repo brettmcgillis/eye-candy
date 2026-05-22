@@ -1,3 +1,4 @@
+/* eslint-disable no-param-reassign */
 import { button, folder, useControls } from 'leva';
 import * as THREE from 'three';
 
@@ -12,8 +13,8 @@ import {
 } from '../../../../elements/fireAndSmoke/fireAndSmokeDefaults';
 import buildFireAndSmokeControls from '../../shared/hooks/buildFireAndSmokeControls';
 import {
-  cloneSplinePoints,
   DEFAULT_SPLINE_CONFIG,
+  cloneSplinePoints,
   parsePreset,
   serializeSplines,
 } from '../../shared/splineDefaults';

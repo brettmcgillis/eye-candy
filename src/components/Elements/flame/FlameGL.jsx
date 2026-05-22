@@ -5,23 +5,11 @@ import React, { useMemo, useRef } from 'react';
 import { useFrame } from '@react-three/fiber';
 
 import FlameMaterial from '../../materials/webGL/flameMaterial';
-
-const DEFAULT_MOTION = {
-  baseSpeed: 1.15,
-  minSpeed: 0.28,
-  slowFreq: 0.7,
-  slowAmp: 0.55,
-  fastFreq: 2.6,
-  fastAmp: 0.25,
-  microFreq: 5.7,
-  microAmp: 0.08,
-  swayX: 0.015,
-  swayZ: 0.014,
-  pulseFreq: 3.4,
-  pulseAmp: 0.04,
-  scaleX: 1,
-  scaleY: 1,
-};
+import {
+  FLAME_DEFAULT_MOTION,
+  FLAME_Y_ROTATION,
+  createFlameGeometry,
+} from './flameShared';
 
 export default function FlameGL({
   position = [0, 0, 0],
@@ -29,16 +17,12 @@ export default function FlameGL({
   motion,
   phaseOffset = 0,
 }) {
-  const flameMotion = { ...DEFAULT_MOTION, ...motion };
+  const flameMotion = { ...FLAME_DEFAULT_MOTION, ...motion };
   const groupRef = useRef();
   const frontRef = useRef();
   const backRef = useRef();
   const phaseRef = useRef(0);
-  const flameGeometry = useMemo(() => {
-    const geometry = new THREE.SphereGeometry(0.5, 32, 32);
-    geometry.translate(0, 0.5, 0);
-    return geometry;
-  }, []);
+  const flameGeometry = useMemo(() => createFlameGeometry(THREE), []);
 
   useFrame(({ clock }, delta) => {
     const t = clock.getElapsedTime() + phaseOffset;
@@ -77,11 +61,11 @@ export default function FlameGL({
       position={position}
       rotation={inverted ? [Math.PI, 0, 0] : [0, 0, 0]}
     >
-      <mesh rotation-y={THREE.MathUtils.degToRad(-45)}>
+      <mesh rotation-y={FLAME_Y_ROTATION}>
         <primitive object={flameGeometry} attach="geometry" />
         <FlameMaterial ref={frontRef} side={THREE.FrontSide} />
       </mesh>
-      <mesh rotation-y={THREE.MathUtils.degToRad(-45)}>
+      <mesh rotation-y={FLAME_Y_ROTATION}>
         <primitive object={flameGeometry} attach="geometry" />
         <FlameMaterial ref={backRef} side={THREE.BackSide} />
       </mesh>

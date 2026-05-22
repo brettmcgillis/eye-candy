@@ -18,6 +18,7 @@ import {
   FaToolbox,
   FaTools,
 } from 'react-icons/fa';
+import { FcFullTrash } from 'react-icons/fc';
 import {
   GiAtomCore,
   GiBlackFlag,
@@ -130,6 +131,10 @@ const PenPlotter = lazy(
 );
 const SplineEditor = lazy(
   () => import('../components/scenes/ToolBox/WebGL/SplineEditor/SplineEditor')
+);
+const TrashCollector = lazy(
+  () =>
+    import('../components/scenes/ToolBox/WebGL/TrashCollector/TrashCollector')
 );
 const SmokeTest = lazy(
   () => import('../components/scenes/ToolBox/SmokeTest/SmokeTest')
@@ -392,6 +397,10 @@ function SplineIcon() {
 
 function SmokeTestIcon() {
   return <GiSmokeBomb color="#373839" />;
+}
+
+function TrashCollectorIcon() {
+  return <FcFullTrash />;
 }
 
 function CharacterControllerIcon() {
@@ -898,6 +907,15 @@ export const EYE_CANDIES = [
     route: 'smokeTest',
     icon: SmokeTestIcon,
     Component: SmokeTest,
+  },
+  {
+    id: 'trashcollector',
+    label: 'TrashCollector',
+    channel: 'webgl',
+    area: 'toolbox',
+    route: 'trashcollector',
+    icon: TrashCollectorIcon,
+    Component: TrashCollector,
   },
   {
     id: 'characterController',

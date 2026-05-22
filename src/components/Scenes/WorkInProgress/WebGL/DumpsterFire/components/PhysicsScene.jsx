@@ -10,7 +10,6 @@ import {
   SCENE_ROOT_POSITION,
 } from '../utils/sceneData';
 import { getSceneItemKey } from '../utils/sceneUtils';
-import AssetShowcaseGrid from './AssetShowcaseGrid';
 import { DynamicSceneAsset, FixedSceneAsset } from './SceneAssetRigidBody';
 import SceneEffects from './SceneEffects';
 import TrashBlaster from './TrashBlaster';
@@ -49,7 +48,6 @@ const PhysicsScene = React.memo(function PhysicsScene({ onTrashCollision }) {
       </RigidBody>
 
       <SceneComposition onTrashCollision={onTrashCollision} />
-      <AssetShowcaseGrid />
       <TrashBlaster />
     </Physics>
   );

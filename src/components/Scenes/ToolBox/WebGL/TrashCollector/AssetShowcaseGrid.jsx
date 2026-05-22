@@ -6,16 +6,11 @@ import { Billboard, Text } from '@react-three/drei';
 import { RigidBody } from '@react-three/rapier';
 
 import {
-  ASSET_GRID_COLUMNS,
   ASSET_GRID_LABEL_HEIGHT,
   ASSET_GRID_OPTIONS,
   ASSET_GRID_POSITION,
-  ASSET_GRID_ROW_SPACING,
-} from '../utils/sceneData';
-import {
-  getAssetGridCellPosition,
-  getAssetShowcaseLabel,
-} from '../utils/sceneUtils';
+} from './sceneData';
+import { getAssetGridCellPosition, getAssetShowcaseLabel } from './sceneUtils';
 
 const SHOWCASE_BODY_POSITION = [0, 0.08, 0];
 const SHOWCASE_BODY_ROTATION = [0, Math.PI / 6, 0];
@@ -101,16 +96,11 @@ function AssetShowcaseCell({ asset, position }) {
 
 export default function AssetShowcaseGrid({
   position = ASSET_GRID_POSITION,
-  title = 'Behold, My Trash Collection',
+  title = 'Trash Collection',
 }) {
-  const titleOffsetZ =
-    ((Math.ceil(ASSET_GRID_OPTIONS.length / ASSET_GRID_COLUMNS) - 1) / 2 +
-      0.9) *
-    ASSET_GRID_ROW_SPACING;
-
   return (
     <group position={position}>
-      <Billboard position={[0, 3.25, titleOffsetZ]}>
+      <Billboard position={[0, 4.25, 0]}>
         <Text
           anchorX="center"
           anchorY="bottom"

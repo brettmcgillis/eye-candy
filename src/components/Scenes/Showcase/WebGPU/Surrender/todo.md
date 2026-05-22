@@ -29,8 +29,8 @@
 
 # // Interactivity
 
-- [ ] Flag/Cursor interaction
-- [ ] Flag/Cursor/Hand interaction
+- [x] Flag/Cursor interaction
+- [ ] Flag/Hands interaction
 - [ ] Audio-reactivity. As the user blows into the mic harder or makes more noise, the power of the wind increases. low to no noise - no wind, loud noise - max power wind (more than 10?).
 
 # // Bugs

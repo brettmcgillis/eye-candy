@@ -23,7 +23,7 @@
 
 # // Interactivity
 
-- [ ] Fluid/Cursor interaction
-- [ ] Fluid/Cursor/Hands interaction
+- [x] Fluid/Cursor interaction
+- [ ] Fluid/Hands interaction
 
 # // Bugs

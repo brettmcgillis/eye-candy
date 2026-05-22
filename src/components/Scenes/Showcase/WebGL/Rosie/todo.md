@@ -19,7 +19,7 @@
 
 # // Interactivity
 
-- [ ] Click to focus on splat
-- [ ] Space bar to cycle area of focus
+- [x] Click to focus on splat
+- [x] Space bar to cycle area of focus
 
 # // Bugs

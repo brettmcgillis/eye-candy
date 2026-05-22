@@ -32,7 +32,7 @@
 # // Interactivity
 
 - [ ] Ghost/Cursor interaction
-- [ ] Ghost/Cursor/Hands interaction
+- [ ] Ghost/Hands interaction
 
 # // Bugs
 

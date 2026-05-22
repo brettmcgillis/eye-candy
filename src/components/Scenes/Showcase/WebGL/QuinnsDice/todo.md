@@ -35,9 +35,10 @@
 
 # // Interactivity
 
-- [ ] Die/Cursor interaction
-- [ ] Die/Cursor/Hands interaction
-- [ ] Die roll interaction
+- [x] Die/Cursor interaction
+- [x] Die/Cursor/Hands interaction
+- [x] Die roll interaction
+- [ ] Overlay button click die roll interaction
 
 # // Bugs
 

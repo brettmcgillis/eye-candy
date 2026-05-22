@@ -32,7 +32,7 @@ const CARDBOARD_BOX_5_TRANSFORM_CHAIN = [
 
 const BEER_CASE_1_MODEL_PATH = '/beerCase1.glb';
 const BEER_CASE_1_ROTATION = [Math.PI / 2, 0, -0.016];
-const BEER_CASE_1_SCALE = 0.01;
+const BEER_CASE_1_SCALE = 0.02;
 const BEER_CASE_1_MATERIAL_NAME = 'sm32_143_BeerCase01A_A_Mat';
 const BEER_CASE_1_TRANSFORM_CHAIN = [
   { rotation: BEER_CASE_1_ROTATION, scale: BEER_CASE_1_SCALE },
@@ -40,7 +40,7 @@ const BEER_CASE_1_TRANSFORM_CHAIN = [
 
 const BEER_CASE_2_MODEL_PATH = '/beerCase2.glb';
 const BEER_CASE_2_ROTATION = [Math.PI / 2, 0, -0.016];
-const BEER_CASE_2_SCALE = 0.01;
+const BEER_CASE_2_SCALE = 0.016;
 const BEER_CASE_2_MATERIAL_NAME = 'sm32_128_BeerCase01A_A_Mat';
 const BEER_CASE_2_TRANSFORM_CHAIN = [
   { rotation: BEER_CASE_2_ROTATION, scale: BEER_CASE_2_SCALE },

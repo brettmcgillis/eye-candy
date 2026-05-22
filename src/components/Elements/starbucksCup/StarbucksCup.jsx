@@ -58,7 +58,7 @@ export function StarbucksCupInstance(props) {
   return <StarbucksCupInstanceRoot {...props} />;
 }
 
-export default function StarbucksCup(props) {
+export function StarbucksCup(props) {
   const { nodes, materials } = useGLTF(modelFile(STARBUCKS_MODEL_PATH));
 
   return (

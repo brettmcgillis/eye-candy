@@ -10,7 +10,7 @@ import bakeInstancedGeometry from '../../../utils/instancedGeometry';
 
 const WHISKEY_BOTTLE_MODEL_PATH = '/whiskeyBottle.glb';
 const WHISKEY_BOTTLE_ROTATION = [Math.PI / 2, 0, 0];
-const WHISKEY_BOTTLE_SCALE = 0.013;
+const WHISKEY_BOTTLE_SCALE = 0.02;
 const WHISKEY_BOTTLE_MATERIAL_NAME = 'sm32_163_DrinkBottle02A_A_Mat';
 const WHISKEY_BOTTLE_TRANSFORM_CHAIN = [
   { rotation: WHISKEY_BOTTLE_ROTATION, scale: WHISKEY_BOTTLE_SCALE },

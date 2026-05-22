@@ -75,7 +75,7 @@ export function McCupInstance(props) {
   return <McCupInstanceRoot {...props} />;
 }
 
-export default function McCup(props) {
+export function McCup(props) {
   const { baseGeometry, sourceMaterial } = useMcCupModel();
   const geometry = useMcCupGeometry(baseGeometry);
 

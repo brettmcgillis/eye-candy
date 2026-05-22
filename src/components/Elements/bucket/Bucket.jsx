@@ -7,7 +7,7 @@ import bakeInstancedGeometry from '../../../utils/instancedGeometry';
 
 const BUCKET_MODEL_PATH = '/bucket.glb';
 const BUCKET_ROTATION = [Math.PI / 2, 0, 0];
-const BUCKET_SCALE = 0.015;
+const BUCKET_SCALE = 0.02;
 const BUCKET_MATERIAL_NAME = 'sm30_072_PlasticBucket01A_A';
 const BUCKET_TRANSFORM_CHAIN = [
   { rotation: BUCKET_ROTATION, scale: BUCKET_SCALE },
@@ -59,7 +59,7 @@ export function BucketInstance(props) {
   return <BucketInstanceRoot {...props} />;
 }
 
-export default function Bucket(props) {
+export function Bucket(props) {
   const { nodes, materials } = useGLTF(modelFile(BUCKET_MODEL_PATH));
   return (
     <group {...props} dispose={null}>

@@ -72,11 +72,13 @@ export function getAssetComponentName(asset) {
 }
 
 export function getAssetShowcaseLabel(asset) {
-  const lines = [
-    getAssetComponentName(asset),
-    `scale: ${formatAssetStat(asset.scale ?? 1)}`,
-    `collider: ${asset.colliders ?? 'cuboid'}`,
-  ];
+  const lines = [getAssetComponentName(asset)];
+
+  if (typeof asset.expectedSizeMeters === 'number') {
+    lines.push(`expected: ${formatAssetStat(asset.expectedSizeMeters)} m`);
+  }
+
+  lines.push(`scale: ${formatAssetStat(asset.scale ?? 1)}`);
 
   if (typeof asset.mass === 'number') {
     lines.push(`mass: ${formatAssetStat(asset.mass)}`);

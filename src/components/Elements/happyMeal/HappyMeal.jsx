@@ -73,7 +73,7 @@ export function HappyMealInstance(props) {
   return <HappyMealInstanceRoot {...props} />;
 }
 
-export default function HappyMeal(props) {
+export function HappyMeal(props) {
   const { baseGeometry, sourceMaterial } = useHappyMealModel();
   const geometry = useHappyMealGeometry(baseGeometry);
 

@@ -59,7 +59,7 @@ export function AppleCoreInstance(props) {
   return <AppleCoreInstanceRoot {...props} />;
 }
 
-export default function AppleCore(props) {
+export function AppleCore(props) {
   const { nodes, materials } = useGLTF(modelFile(APPLE_CORE_MODEL_PATH));
 
   return (

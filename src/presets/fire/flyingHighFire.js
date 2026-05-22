@@ -1,19 +1,8 @@
-import * as THREE from 'three';
-
-import { normalizeSplinePreset } from '../../components/elements/splineGroup/splineDefaults';
-
-const V = (x, y, z) => new THREE.Vector3(x, y, z);
-const E = (x, y, z) => new THREE.Euler(x, y, z);
-
-const P = (x, y, z) => ({
-  position: V(x, y, z),
-  rotation: E(0, 0, 0),
-  scale: V(1, 1, 1),
-});
+import { makeSpline } from '../splineAuthoring';
 
 const FLYING_HIGH_FIRE = {
   splines: [
-    {
+    makeSpline({
       name: 'Left Engine Main Fire',
       type: 'Fire',
       fireType: 'Classic',
@@ -29,14 +18,15 @@ const FLYING_HIGH_FIRE = {
       fireAnimated: true,
       fireAnimSpeed: 0.85,
       fireTintColor: '#ffcc44',
+      pos: [-1.8, 0.0, 0.3],
       points: [
-        P(-1.8, 0.0, 0.3),
-        P(-2.0, 0.5, -0.8),
-        P(-2.2, 1.2, -2.1),
-        P(-2.2, 2.0, -3.6),
+        [0, 0, 0],
+        [-0.2, 0.5, -1.1],
+        [-0.4, 1.2, -2.4],
+        [-0.4, 2, -3.9],
       ],
-    },
-    {
+    }),
+    makeSpline({
       name: 'Right Engine Main Fire',
       type: 'Fire',
       fireType: 'Classic',
@@ -52,14 +42,15 @@ const FLYING_HIGH_FIRE = {
       fireAnimated: true,
       fireAnimSpeed: 0.75,
       fireTintColor: '#ffcc44',
+      pos: [1.8, 0.0, 0.3],
       points: [
-        P(1.8, 0.0, 0.3),
-        P(2.0, 0.5, -0.8),
-        P(2.2, 1.2, -2.1),
-        P(2.2, 2.0, -3.6),
+        [0, 0, 0],
+        [0.2, 0.5, -1.1],
+        [0.4, 1.2, -2.4],
+        [0.4, 2, -3.9],
       ],
-    },
-    {
+    }),
+    makeSpline({
       name: 'Left Wing Secondary Fire',
       type: 'Fire',
       fireType: 'Classic',
@@ -74,9 +65,14 @@ const FLYING_HIGH_FIRE = {
       fireAnimated: true,
       fireAnimSpeed: 1.1,
       fireTintColor: '#ff8833',
-      points: [P(-1.4, 0.3, -0.2), P(-1.5, 0.8, -1.1), P(-1.6, 1.3, -2.0)],
-    },
-    {
+      pos: [-1.4, 0.3, -0.2],
+      points: [
+        [0, 0, 0],
+        [-0.1, 0.5, -0.9],
+        [-0.2, 1.0, -1.8],
+      ],
+    }),
+    makeSpline({
       name: 'Right Wing Secondary Fire',
       type: 'Fire',
       fireType: 'Classic',
@@ -91,9 +87,14 @@ const FLYING_HIGH_FIRE = {
       fireAnimated: true,
       fireAnimSpeed: 1.0,
       fireTintColor: '#ff8833',
-      points: [P(1.4, 0.3, -0.2), P(1.5, 0.8, -1.1), P(1.6, 1.3, -2.0)],
-    },
-    {
+      pos: [1.4, 0.3, -0.2],
+      points: [
+        [0, 0, 0],
+        [0.1, 0.5, -0.9],
+        [0.2, 1.0, -1.8],
+      ],
+    }),
+    makeSpline({
       name: 'Left Engine Smoke Trail',
       type: 'Smoke',
       smokeType: 'Particle',
@@ -118,15 +119,16 @@ const FLYING_HIGH_FIRE = {
       attractorStrength: 0,
       attractorRadius: 0,
       maxDrift: 10,
+      pos: [-1.8, -0.1, 0.3],
       points: [
-        P(-1.8, -0.1, 0.3),
-        P(-2.0, 0.6, -1.5),
-        P(-2.2, 1.6, -3.5),
-        P(-2.0, 3.0, -5.5),
-        P(-1.6, 5.0, -7.5),
+        [0, 0, 0],
+        [-0.2, 0.7, -1.8],
+        [-0.4, 1.7, -3.8],
+        [-0.2, 3.1, -5.8],
+        [0.2, 5.1, -7.8],
       ],
-    },
-    {
+    }),
+    makeSpline({
       name: 'Right Engine Smoke Trail',
       type: 'Smoke',
       smokeType: 'Particle',
@@ -151,17 +153,16 @@ const FLYING_HIGH_FIRE = {
       attractorStrength: 0,
       attractorRadius: 0,
       maxDrift: 10,
+      pos: [1.8, -0.1, 0.3],
       points: [
-        P(1.8, -0.1, 0.3),
-        P(2.0, 0.6, -1.5),
-        P(2.2, 1.6, -3.5),
-        P(2.0, 3.0, -5.5),
-        P(1.6, 5.0, -7.5),
+        [0, 0, 0],
+        [0.2, 0.7, -1.8],
+        [0.4, 1.7, -3.8],
+        [0.2, 3.1, -5.8],
+        [-0.2, 5.1, -7.8],
       ],
-    },
+    }),
   ],
 };
-
-FLYING_HIGH_FIRE.splines = FLYING_HIGH_FIRE.splines.map(normalizeSplinePreset);
 
 export default FLYING_HIGH_FIRE;

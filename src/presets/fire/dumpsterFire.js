@@ -1,19 +1,8 @@
-import * as THREE from 'three';
-
-import { normalizeSplinePreset } from '../../components/elements/splineGroup/splineDefaults';
-
-const V = (x, y, z) => new THREE.Vector3(x, y, z);
-const E = (x, y, z) => new THREE.Euler(x, y, z);
-
-const P = (x, y, z) => ({
-  position: V(x, y, z),
-  rotation: E(0, 0, 0),
-  scale: V(1, 1, 1),
-});
+import { makeSpline } from '../splineAuthoring';
 
 const DUMPSTER_FIRE = {
   splines: [
-    {
+    makeSpline({
       name: 'Dumpster Core Fire',
       type: 'Fire',
       fireType: 'Classic',
@@ -26,9 +15,14 @@ const DUMPSTER_FIRE = {
       fireBrightness: 1.6,
       fireAnimated: true,
       fireAnimSpeed: 0.5,
-      points: [P(-2.0, 0.5, 0.0), P(-1.95, 1.0, 0.0), P(-1.9, 1.6, 0.0)],
-    },
-    {
+      pos: [-2.0, 0.5, 0.0],
+      points: [
+        [0, 0, 0],
+        [0.05, 0.5, 0],
+        [0.1, 1.1, 0],
+      ],
+    }),
+    makeSpline({
       name: 'Dumpster Plume Volumetric',
       type: 'Smoke',
       smokeType: 'Volumetric',
@@ -47,20 +41,21 @@ const DUMPSTER_FIRE = {
       volMaxDrift: 350,
       flowSpeed: 0.03,
       fadeRate: 4,
+      pos: [-1.0, 1.4, 0.0],
       points: [
-        P(-1.0, 1.4, 0.0),
-        P(-0.6, 1.9, 0.05),
-        P(-0.1, 2.4, 0.1),
-        P(0.5, 2.9, 0.0),
-        P(1.2, 3.3, -0.08),
-        P(2.0, 3.8, 0.1),
-        P(3.0, 4.3, -0.05),
-        P(4.2, 4.8, 0.15),
-        P(5.5, 5.3, -0.1),
-        P(7.0, 5.8, 0.0),
+        [0, 0, 0],
+        [0.4, 0.5, 0.05],
+        [0.9, 1, 0.1],
+        [1.5, 1.5, 0],
+        [2.2, 1.9, -0.08],
+        [3, 2.4, 0.1],
+        [4, 2.9, -0.05],
+        [5.2, 3.4, 0.15],
+        [6.5, 3.9, -0.1],
+        [8, 4.4, 0],
       ],
-    },
-    {
+    }),
+    makeSpline({
       name: 'Dumpster Plume Particle',
       type: 'Smoke',
       smokeType: 'Particle',
@@ -83,22 +78,21 @@ const DUMPSTER_FIRE = {
       buoyancy: 8,
       rotSpeed: 0.15,
       fadeRate: 4,
+      pos: [-1.0, 1.4, 0.0],
       points: [
-        P(-1.0, 1.4, 0.0),
-        P(-0.6, 1.9, 0.05),
-        P(-0.1, 2.4, 0.1),
-        P(0.5, 2.9, 0.0),
-        P(1.2, 3.3, -0.08),
-        P(2.0, 3.8, 0.1),
-        P(3.0, 4.3, -0.05),
-        P(4.2, 4.8, 0.15),
-        P(5.5, 5.3, -0.1),
-        P(7.0, 5.8, 0.0),
+        [0, 0, 0],
+        [0.4, 0.5, 0.05],
+        [0.9, 1, 0.1],
+        [1.5, 1.5, 0],
+        [2.2, 1.9, -0.08],
+        [3, 2.4, 0.1],
+        [4, 2.9, -0.05],
+        [5.2, 3.4, 0.15],
+        [6.5, 3.9, -0.1],
+        [8, 4.4, 0],
       ],
-    },
+    }),
   ],
 };
-
-DUMPSTER_FIRE.splines = DUMPSTER_FIRE.splines.map(normalizeSplinePreset);
 
 export default DUMPSTER_FIRE;

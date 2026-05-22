@@ -1,19 +1,8 @@
-import * as THREE from 'three';
-
-import { normalizeSplinePreset } from '../../components/elements/splineGroup/splineDefaults';
-
-const V = (x, y, z) => new THREE.Vector3(x, y, z);
-const E = (x, y, z) => new THREE.Euler(x, y, z);
-
-const P = (x, y, z) => ({
-  position: V(x, y, z),
-  rotation: E(0, 0, 0),
-  scale: V(1, 1, 1),
-});
+import { makeSpline } from '../splineAuthoring';
 
 const POLICE_PRESENCE_FIRE = {
   splines: [
-    {
+    makeSpline({
       name: 'Windshield Fire',
       type: 'Fire',
       fireType: 'Classic',
@@ -26,9 +15,14 @@ const POLICE_PRESENCE_FIRE = {
       fireAnimSpeed: 0.6,
       fireMagnitude: 1.5,
       fireBrightness: 1.6,
-      points: [P(0.6, 1.1, -4.0), P(0.5, 1.9, -4.1), P(0.4, 2.8, -4.2)],
-    },
-    {
+      pos: [0.6, 1.1, -4.0],
+      points: [
+        [0, 0, 0],
+        [-0.1, 0.8, -0.1],
+        [-0.2, 1.7, -0.2],
+      ],
+    }),
+    makeSpline({
       name: 'Driver Window Fire',
       type: 'Fire',
       fireType: 'Classic',
@@ -41,9 +35,14 @@ const POLICE_PRESENCE_FIRE = {
       fireAnimSpeed: 0.5,
       fireMagnitude: 1.3,
       fireBrightness: 1.4,
-      points: [P(0.0, 1.0, -4.72), P(-0.2, 1.7, -4.9), P(-0.35, 2.3, -5.1)],
-    },
-    {
+      pos: [0.0, 1.0, -4.72],
+      points: [
+        [0, 0, 0],
+        [-0.2, 0.7, -0.18],
+        [-0.35, 1.3, -0.38],
+      ],
+    }),
+    makeSpline({
       name: 'Passenger Window Fire',
       type: 'Fire',
       fireType: 'Classic',
@@ -56,9 +55,14 @@ const POLICE_PRESENCE_FIRE = {
       fireAnimSpeed: 0.55,
       fireMagnitude: 1.3,
       fireBrightness: 1.4,
-      points: [P(0.0, 1.0, -3.28), P(-0.2, 1.7, -3.1), P(-0.35, 2.3, -2.9)],
-    },
-    {
+      pos: [0.0, 1.0, -3.28],
+      points: [
+        [0, 0, 0],
+        [-0.2, 0.7, 0.18],
+        [-0.35, 1.3, 0.38],
+      ],
+    }),
+    makeSpline({
       name: 'Hood Fire',
       type: 'Fire',
       fireType: 'Classic',
@@ -71,9 +75,14 @@ const POLICE_PRESENCE_FIRE = {
       fireAnimSpeed: 0.45,
       fireMagnitude: 1.1,
       fireBrightness: 1.3,
-      points: [P(1.4, 0.85, -4.0), P(1.5, 1.4, -4.0), P(1.6, 2.0, -4.0)],
-    },
-    {
+      pos: [1.4, 0.85, -4.0],
+      points: [
+        [0, 0, 0],
+        [0.1, 0.55, 0],
+        [0.2, 1.15, 0],
+      ],
+    }),
+    makeSpline({
       name: 'Roof Fire',
       type: 'Fire',
       fireType: 'Classic',
@@ -86,9 +95,14 @@ const POLICE_PRESENCE_FIRE = {
       fireAnimSpeed: 0.55,
       fireMagnitude: 1.4,
       fireBrightness: 1.5,
-      points: [P(-0.4, 1.25, -4.0), P(-0.6, 2.0, -4.1), P(-0.8, 2.9, -4.3)],
-    },
-    {
+      pos: [-0.4, 1.25, -4.0],
+      points: [
+        [0, 0, 0],
+        [-0.2, 0.75, -0.1],
+        [-0.4, 1.65, -0.3],
+      ],
+    }),
+    makeSpline({
       name: 'Smoke Column',
       type: 'Smoke',
       smokeType: 'Particle',
@@ -113,19 +127,16 @@ const POLICE_PRESENCE_FIRE = {
       fadeRate: 1.5,
       spawnSpread: 0.9,
       blendMode: 'Normal',
+      pos: [0.3, 1.8, -4.0],
       points: [
-        P(0.3, 1.8, -4.0),
-        P(0.1, 3.2, -4.1),
-        P(-0.2, 5.0, -4.3),
-        P(-0.6, 7.5, -4.5),
-        P(-1.0, 10.0, -4.8),
+        [0, 0, 0],
+        [-0.2, 1.4, -0.1],
+        [-0.5, 3.2, -0.3],
+        [-0.9, 5.7, -0.5],
+        [-1.3, 8.2, -0.8],
       ],
-    },
+    }),
   ],
 };
-
-POLICE_PRESENCE_FIRE.splines = POLICE_PRESENCE_FIRE.splines.map(
-  normalizeSplinePreset
-);
 
 export default POLICE_PRESENCE_FIRE;

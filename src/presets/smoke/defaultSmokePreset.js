@@ -4,16 +4,11 @@ import {
   cloneFireAndSmokeControlPoints,
   makeFireAndSmokeSmokeConfig,
 } from '../../components/elements/fireAndSmoke/fireAndSmokeDefaults';
-import { normalizeSplinePreset } from '../../components/elements/splineGroup/splineDefaults';
+import { makeSpline } from '../splineAuthoring';
 
 const V = (x, y, z) => new THREE.Vector3(x, y, z);
 const E = (x, y, z) => new THREE.Euler(x, y, z);
 const S = (x, y, z) => new THREE.Vector3(x, y, z);
-
-const P = (x, y, z) => ({
-  position: V(x, y, z),
-  rotation: E(0, 0, 0),
-});
 
 const C = (px, py, pz, sx, sy, sz, rx = 0, ry = 0, rz = 0) => ({
   position: V(px, py, pz),
@@ -27,34 +22,47 @@ const DEFAULT_SMOKE_PRESET = {
   Default: {
     splines: [
       // Centre upward column — mirrors the default smoke spline used in HotBox.
-      {
+      makeSpline({
         name: 'Default Smoke',
         type: 'Smoke',
         smokeType: 'Particle',
         closed: false,
         tension: 0.7,
+        pos: [0, -1, 0],
         points: [
-          P(0, -1, 0),
-          P(1.1, 1, 0.7),
-          P(-0.4, 4, 1.4),
-          P(-1.3, 7.2, -0.3),
-          P(0.6, 10, -1.1),
+          [0, 0, 0],
+          [1.1, 2, 0.7],
+          [-0.4, 5, 1.4],
+          [-1.3, 8.2, -0.3],
+          [0.6, 11, -1.1],
         ],
-      },
-      {
+      }),
+      makeSpline({
         name: 'Particle Smoke',
         type: 'Particle',
         tension: 0.5,
         closed: true,
-        points: [P(7, 1.5, 0), P(5, 3.5, 2), P(3, 1.5, 0), P(5, -0.5, -2)],
-      },
-      {
+        pos: [7, 1.5, 0],
+        points: [
+          [0, 0, 0],
+          [-2, 2, 2],
+          [-4, 0, 0],
+          [-2, -2, -2],
+        ],
+      }),
+      makeSpline({
         name: 'Volumetric Smoke',
         type: 'Volumetric',
         tension: 0.5,
         closed: true,
-        points: [P(5, 1.5, -2), P(5, 3.5, 0), P(5, 1.5, 2), P(5, -0.5, 0)],
-      },
+        pos: [5, 1.5, -2],
+        points: [
+          [0, 0, 0],
+          [0, 2, 2],
+          [0, 0, 4],
+          [0, -2, 2],
+        ],
+      }),
     ],
     elements: {
       smokeBall: [
@@ -143,9 +151,5 @@ const DEFAULT_SMOKE_PRESET = {
     ],
   },
 };
-
-DEFAULT_SMOKE_PRESET.Default.splines = DEFAULT_SMOKE_PRESET.Default.splines.map(
-  normalizeSplinePreset
-);
 
 export default DEFAULT_SMOKE_PRESET;

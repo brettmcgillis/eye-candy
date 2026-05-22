@@ -4,17 +4,11 @@ import {
   cloneFireAndSmokeControlPoints,
   makeFireAndSmokeFireConfig,
 } from '../../components/elements/fireAndSmoke/fireAndSmokeDefaults';
-import { normalizeSplinePreset } from '../../components/elements/splineGroup/splineDefaults';
+import { makeSpline } from '../splineAuthoring';
 
 const V = (x, y, z) => new THREE.Vector3(x, y, z);
 const E = (x, y, z) => new THREE.Euler(x, y, z);
 const S = (x, y, z) => new THREE.Vector3(x, y, z);
-
-const P = (x, y, z) => ({
-  position: V(x, y, z),
-  rotation: E(0, 0, 0),
-  scale: V(1, 1, 1),
-});
 
 const C = (px, py, pz, sx, sy, sz, rx = 0, ry = 0, rz = 0) => ({
   position: V(px, py, pz),
@@ -22,35 +16,38 @@ const C = (px, py, pz, sx, sy, sz, rx = 0, ry = 0, rz = 0) => ({
   scale: S(sx, sy, sz),
 });
 
-const risingCurve = (x, z = 0) => [
-  P(x, -1, z),
-  P(x + 0.8, 1.2, z + 0.7),
-  P(x - 0.4, 4, z + 1.4),
-  P(x - 1.3, 7.2, z - 0.3),
-  P(x + 0.6, 10, z - 1.1),
-];
+const risingCurve = (x, z = 0) => ({
+  pos: [x, -1, z],
+  points: [
+    [0, 0, 0],
+    [0.8, 2.2, 0.7],
+    [-0.4, 5, 1.4],
+    [-1.3, 8.2, -0.3],
+    [0.6, 11, -1.1],
+  ],
+});
 
 // Points are at scene scale (1 unit ≈ 1 metre).
 // HotBox composes its mixed default sandbox by merging this fire-only preset
 // with the smoke default preset, keeping smoke-owned defaults in one place.
 const DEFAULT_FIRE_PRESET = {
   splines: [
-    {
+    makeSpline({
       name: 'Classic Fire',
       type: 'Fire',
       fireType: 'Classic',
       closed: false,
       tension: 0.7,
-      points: risingCurve(-5.5, 2.2),
-    },
-    {
+      ...risingCurve(-5.5, 2.2),
+    }),
+    makeSpline({
       name: 'RayMarch Fire',
       type: 'Fire',
       fireType: 'RayMarch',
       closed: false,
       tension: 0.7,
-      points: risingCurve(5.75, 1.6),
-    },
+      ...risingCurve(5.75, 1.6),
+    }),
   ],
   elements: {
     fireball: [
@@ -197,9 +194,5 @@ const DEFAULT_FIRE_PRESET = {
     ],
   },
 };
-
-DEFAULT_FIRE_PRESET.splines = DEFAULT_FIRE_PRESET.splines.map(
-  normalizeSplinePreset
-);
 
 export default DEFAULT_FIRE_PRESET;

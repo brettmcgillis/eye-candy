@@ -1,3 +1,6 @@
+/* eslint-disable @typescript-eslint/no-unused-vars */
+
+/* eslint-disable no-underscore-dangle */
 import * as THREE from 'three';
 
 const DEFAULT_SPLINE_POS = [0, 0, 0];
@@ -72,7 +75,7 @@ function composeSplineTransformMatrix(transform, out) {
   return out;
 }
 
-function normalizeLegacySpline(spline) {
+function legacySplineToInstance(spline) {
   const points = cloneSplinePoints(spline.points ?? []);
   const origin = points[0]?.position.clone() ?? new THREE.Vector3(0, 0, 0);
 
@@ -89,9 +92,9 @@ function normalizeLegacySpline(spline) {
   };
 }
 
-export function normalizeSplinePreset(spline = {}) {
+function toSplineInstance(spline = {}) {
   if (!hasExplicitSplineTransform(spline)) {
-    return normalizeLegacySpline(spline);
+    return legacySplineToInstance(spline);
   }
 
   return {
@@ -102,12 +105,12 @@ export function normalizeSplinePreset(spline = {}) {
 }
 
 export function getSplineWorldPoints(spline = {}) {
-  const normalizedSpline = normalizeSplinePreset(spline);
-  const transform = cloneSplineInstanceTransform(normalizedSpline);
+  const splineInstance = toSplineInstance(spline);
+  const transform = cloneSplineInstanceTransform(splineInstance);
 
   composeSplineTransformMatrix(transform, _transformMatrix);
 
-  return normalizedSpline.points.map((point) => {
+  return splineInstance.points.map((point) => {
     _worldPosition.copy(point.position).applyMatrix4(_transformMatrix);
     _pointQuaternion.setFromEuler(
       point.rotation ? point.rotation.clone() : new THREE.Euler(0, 0, 0)
@@ -258,7 +261,7 @@ export function parsePreset(preset) {
     sourceSplines = [preset];
   }
 
-  const splineInstances = sourceSplines.map(normalizeSplinePreset);
+  const splineInstances = sourceSplines.map(toSplineInstance);
 
   const splines = splineInstances.map((spline) =>
     cloneSplinePoints(spline.points)

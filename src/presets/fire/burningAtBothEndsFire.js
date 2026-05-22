@@ -1,19 +1,8 @@
-import * as THREE from 'three';
-
-import { normalizeSplinePreset } from '../../components/elements/splineGroup/splineDefaults';
-
-const V = (x, y, z) => new THREE.Vector3(x, y, z);
-const E = (x, y, z) => new THREE.Euler(x, y, z);
-
-const P = (x, y, z) => ({
-  position: V(x, y, z),
-  rotation: E(0, 0, 0),
-  scale: V(1, 1, 1),
-});
+import { makeSpline } from '../splineAuthoring';
 
 const BURNING_AT_BOTH_ENDS_FIRE = {
   splines: [
-    {
+    makeSpline({
       name: 'Top Wick Fire',
       type: 'Fire',
       fireType: 'Classic',
@@ -31,14 +20,15 @@ const BURNING_AT_BOTH_ENDS_FIRE = {
       fireBrightness: 1.5,
       fireAnimated: true,
       fireAnimSpeed: 0.5,
+      pos: [0.06, 3.21, 0.06],
       points: [
-        P(0.06, 3.21, 0.06),
-        P(0.07, 3.52, 0.06),
-        P(0.08, 3.86, 0.06),
-        P(0.08, 4.22, 0.06),
+        [0, 0, 0],
+        [0.01, 0.31, 0],
+        [0.02, 0.65, 0],
+        [0.02, 1.01, 0],
       ],
-    },
-    {
+    }),
+    makeSpline({
       name: 'Bottom Wick Fire',
       type: 'Fire',
       fireType: 'Classic',
@@ -56,14 +46,15 @@ const BURNING_AT_BOTH_ENDS_FIRE = {
       fireBrightness: 1.5,
       fireAnimated: true,
       fireAnimSpeed: 0.5,
+      pos: [0.06, -3.21, 0.06],
       points: [
-        P(0.06, -3.21, 0.06),
-        P(0.07, -3.52, 0.06),
-        P(0.08, -3.86, 0.06),
-        P(0.08, -4.22, 0.06),
+        [0, 0, 0],
+        [0.01, -0.31, 0],
+        [0.02, -0.65, 0],
+        [0.02, -1.01, 0],
       ],
-    },
-    {
+    }),
+    makeSpline({
       name: 'Top Wick Smoke',
       type: 'Smoke',
       smokeType: 'Volumetric',
@@ -82,15 +73,16 @@ const BURNING_AT_BOTH_ENDS_FIRE = {
       volMaxDrift: 2.4,
       flowSpeed: 0.04,
       fadeRate: 4,
+      pos: [0.18, 3.34, 0.088],
       points: [
-        P(0.18, 3.34, 0.088),
-        P(0.18, 4.09, 0.088),
-        P(0.18, 4.84, 0.088),
-        P(0.18, 5.59, 0.088),
-        P(0.18, 6.34, 0.088),
+        [0, 0, 0],
+        [0, 0.75, 0],
+        [0, 1.5, 0],
+        [0, 2.25, 0],
+        [0, 3, 0],
       ],
-    },
-    {
+    }),
+    makeSpline({
       name: 'Bottom Wick Smoke',
       type: 'Smoke',
       smokeType: 'Volumetric',
@@ -109,19 +101,16 @@ const BURNING_AT_BOTH_ENDS_FIRE = {
       volMaxDrift: 2.4,
       flowSpeed: 0.04,
       fadeRate: 4,
+      pos: [0.18, -3.34, 0.088],
       points: [
-        P(0.18, -3.34, 0.088),
-        P(0.18, -4.09, 0.088),
-        P(0.18, -4.84, 0.088),
-        P(0.18, -5.59, 0.088),
-        P(0.18, -6.34, 0.088),
+        [0, 0, 0],
+        [0, -0.75, 0],
+        [0, -1.5, 0],
+        [0, -2.25, 0],
+        [0, -3, 0],
       ],
-    },
+    }),
   ],
 };
-
-BURNING_AT_BOTH_ENDS_FIRE.splines = BURNING_AT_BOTH_ENDS_FIRE.splines.map(
-  normalizeSplinePreset
-);
 
 export default BURNING_AT_BOTH_ENDS_FIRE;

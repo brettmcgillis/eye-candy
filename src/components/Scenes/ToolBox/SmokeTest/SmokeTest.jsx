@@ -2,15 +2,15 @@ import React, { useRef } from 'react';
 
 import { OrbitControls, PerspectiveCamera } from '@react-three/drei';
 
-import Attractors from '../../../../elements/attractors/Attractors';
-import FireAndSmoke from '../../../../elements/fireAndSmoke/FireAndSmoke';
-import GridBox from '../../../../elements/gridbox/GridBoxRenderer';
-import Smoke2D from '../../../../elements/smoke/Smoke2DRenderer';
-import SmokeBall from '../../../../elements/smokeball/SmokeBallRenderer';
-import SmokeBallSpline from '../../../../elements/smokeball/SmokeBallSplineRenderer';
-import SplineLine from '../../../../elements/spline/SplineLine';
-import SplinePoints from '../../../../elements/spline/SplinePoints';
-import SplineGroup from '../../../../elements/splineGroup/SplineGroup';
+import Attractors from '../../../elements/attractors/Attractors';
+import FireAndSmoke from '../../../elements/fireAndSmoke/FireAndSmoke';
+import GridBox from '../../../elements/gridbox/GridBoxRenderer';
+import Smoke2D from '../../../elements/smoke/Smoke2DRenderer';
+import SmokeBall from '../../../elements/smokeball/SmokeBallRenderer';
+import SmokeBallSpline from '../../../elements/smokeball/SmokeBallSplineRenderer';
+import SplineLine from '../../../elements/spline/SplineLine';
+import SplinePoints from '../../../elements/spline/SplinePoints';
+import SplineGroup from '../../../elements/splineGroup/SplineGroup';
 import useSmokeTestControls from './hooks/useSmokeTestControls';
 
 export default function SmokeTest() {
@@ -76,8 +76,6 @@ export default function SmokeTest() {
 
       <OrbitControls makeDefault dampingFactor={0.2} />
 
-      {/* ── Particle Smoke instances ──────────────────────────────────────── */}
-      {/* eslint-disable react/no-array-index-key */}
       {psInstances.map((inst) => (
         <group
           key={inst.id}
@@ -101,7 +99,6 @@ export default function SmokeTest() {
         </group>
       ))}
 
-      {/* ── Volumetric Smoke instances ────────────────────────────────────── */}
       {vsInstances.map((inst) => (
         <group
           key={inst.id}
@@ -124,9 +121,7 @@ export default function SmokeTest() {
           />
         </group>
       ))}
-      {/* eslint-enable react/no-array-index-key */}
 
-      {/* ── Smoke Ball instances ──────────────────────────────────────────── */}
       {sbInstances.map((inst) => (
         <group
           key={inst.id}
@@ -138,7 +133,6 @@ export default function SmokeTest() {
         </group>
       ))}
 
-      {/* ── Smoke Ball Spline instances ───────────────────────────────────── */}
       {ssInstances.map((inst) => {
         const controlPoints = inst.controlPoints.map((pt) => ({
           position: pt.position,
@@ -184,7 +178,6 @@ export default function SmokeTest() {
         );
       })}
 
-      {/* ── Billboard Smoke instances ─────────────────────────────────────── */}
       {s2dInstances.map((inst) => (
         <Smoke2D
           key={inst.id}
@@ -195,7 +188,9 @@ export default function SmokeTest() {
       ))}
 
       {fireAndSmokeInstances.map((inst) => {
-        const splinePositions = inst.controlPoints.map((point) => point.position);
+        const splinePositions = inst.controlPoints.map(
+          (point) => point.position
+        );
 
         return (
           <group
@@ -222,7 +217,9 @@ export default function SmokeTest() {
 
             <SplinePoints
               points={inst.controlPoints}
-              setPoints={(updater) => updateFireAndSmokePoints(inst.id, updater)}
+              setPoints={(updater) =>
+                updateFireAndSmokePoints(inst.id, updater)
+              }
               visible={inst.showHandles}
               mode={inst.pointMode}
               pointSize={0.3}

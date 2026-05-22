@@ -2,20 +2,20 @@ import React, { useCallback, useRef, useState } from 'react';
 
 import { OrbitControls, PerspectiveCamera } from '@react-three/drei';
 
-import Attractors from '../../../../elements/attractors/Attractors';
-import FireAndSmoke from '../../../../elements/fireAndSmoke/FireAndSmoke';
-import Fireball from '../../../../elements/fireball/FireballRenderer';
-import FireballSpline from '../../../../elements/fireball/FireballSplineRenderer';
-import Flame from '../../../../elements/flame/FlameRenderer';
-import GridBox from '../../../../elements/gridbox/GridBoxRenderer';
-import Smoke2D from '../../../../elements/smoke/Smoke2DRenderer';
-import SmokeBall from '../../../../elements/smokeball/SmokeBallRenderer';
-import SmokeBallSpline from '../../../../elements/smokeball/SmokeBallSplineRenderer';
-import SplineLine from '../../../../elements/spline/SplineLine';
-import SplinePoints from '../../../../elements/spline/SplinePoints';
-import SplineGroup from '../../../../elements/splineGroup/SplineGroup';
-import CS184VolumetricFire from '../../../../elements/volumetricFire/CS184VolumetricFireRenderer';
-import VolumetricFire from '../../../../elements/volumetricFire/VolumetricFireRenderer';
+import Attractors from '../../../elements/attractors/Attractors';
+import FireAndSmoke from '../../../elements/fireAndSmoke/FireAndSmoke';
+import Fireball from '../../../elements/fireball/FireballRenderer';
+import FireballSpline from '../../../elements/fireball/FireballSplineRenderer';
+import Flame from '../../../elements/flame/FlameRenderer';
+import GridBox from '../../../elements/gridbox/GridBoxRenderer';
+import Smoke2D from '../../../elements/smoke/Smoke2DRenderer';
+import SmokeBall from '../../../elements/smokeball/SmokeBallRenderer';
+import SmokeBallSpline from '../../../elements/smokeball/SmokeBallSplineRenderer';
+import SplineLine from '../../../elements/spline/SplineLine';
+import SplinePoints from '../../../elements/spline/SplinePoints';
+import SplineGroup from '../../../elements/splineGroup/SplineGroup';
+import CS184VolumetricFire from '../../../elements/volumetricFire/CS184VolumetricFireRenderer';
+import VolumetricFire from '../../../elements/volumetricFire/VolumetricFireRenderer';
 import { parsePreset } from '../shared/splineDefaults';
 import useHotBoxControls, {
   HOTBOX_DEFAULT_PRESET_KEY,

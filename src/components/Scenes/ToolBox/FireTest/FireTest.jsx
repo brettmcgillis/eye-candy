@@ -2,17 +2,17 @@ import React, { useCallback, useState } from 'react';
 
 import { OrbitControls, PerspectiveCamera } from '@react-three/drei';
 
-import FIRE_PRESETS from '../../../../../presets/fire/firePresets';
-import FireAndSmoke from '../../../../elements/fireAndSmoke/FireAndSmoke';
-import Fireball from '../../../../elements/fireball/FireballRenderer';
-import FireballSpline from '../../../../elements/fireball/FireballSplineRenderer';
-import Flame from '../../../../elements/flame/FlameRenderer';
-import GridBox from '../../../../elements/gridbox/GridBoxRenderer';
-import SplineLine from '../../../../elements/spline/SplineLine';
-import SplinePoints from '../../../../elements/spline/SplinePoints';
-import SplineGroup from '../../../../elements/splineGroup/SplineGroup';
-import CS184VolumetricFire from '../../../../elements/volumetricFire/CS184VolumetricFireRenderer';
-import VolumetricFire from '../../../../elements/volumetricFire/VolumetricFireRenderer';
+import FIRE_PRESETS from '../../../../presets/fire/firePresets';
+import FireAndSmoke from '../../../elements/fireAndSmoke/FireAndSmoke';
+import Fireball from '../../../elements/fireball/FireballRenderer';
+import FireballSpline from '../../../elements/fireball/FireballSplineRenderer';
+import Flame from '../../../elements/flame/FlameRenderer';
+import GridBox from '../../../elements/gridbox/GridBoxRenderer';
+import SplineLine from '../../../elements/spline/SplineLine';
+import SplinePoints from '../../../elements/spline/SplinePoints';
+import SplineGroup from '../../../elements/splineGroup/SplineGroup';
+import CS184VolumetricFire from '../../../elements/volumetricFire/CS184VolumetricFireRenderer';
+import VolumetricFire from '../../../elements/volumetricFire/VolumetricFireRenderer';
 import {
   filterParsedPresetByType,
   parsePreset,
@@ -24,8 +24,6 @@ const { splineInstances: DEFAULT_SPLINES } = filterParsedPresetByType(
   parsePreset(FIRE_PRESETS[DEFAULT_PRESET_KEY]),
   'Fire'
 );
-
-// ─── Component ───────────────────────────────────────────────────────────────
 
 export default function FireTest() {
   const [splines, setSplines] = useState(() => DEFAULT_SPLINES);
@@ -75,7 +73,6 @@ export default function FireTest() {
 
       <OrbitControls makeDefault dampingFactor={0.2} />
 
-      {/* ── Multi-spline SplineGroups (fire types) ────────────────────────── */}
       {/* eslint-disable react/no-array-index-key */}
       {splines.map((spline, index) => (
         <group

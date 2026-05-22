@@ -122,11 +122,9 @@ const TheLoom = lazy(
 );
 
 const FireTest = lazy(
-  () => import('../components/scenes/ToolBox/WebGL/FireTest/FireTest')
+  () => import('../components/scenes/ToolBox/FireTest/FireTest')
 );
-const HotBox = lazy(
-  () => import('../components/scenes/ToolBox/WebGL/HotBox/HotBox')
-);
+const HotBox = lazy(() => import('../components/scenes/ToolBox/HotBox/HotBox'));
 const PenPlotter = lazy(
   () => import('../components/scenes/ToolBox/WebGL/PenPlotter/PenPlotter')
 );
@@ -134,16 +132,7 @@ const SplineEditor = lazy(
   () => import('../components/scenes/ToolBox/WebGL/SplineEditor/SplineEditor')
 );
 const SmokeTest = lazy(
-  () => import('../components/scenes/ToolBox/WebGL/SmokeTest/SmokeTest')
-);
-const FireTestWebGPU = lazy(
-  () => import('../components/scenes/ToolBox/WebGPU/FireTest/FireTest')
-);
-const HotBoxWebGPU = lazy(
-  () => import('../components/scenes/ToolBox/WebGPU/HotBox/HotBox')
-);
-const SmokeTestWebGPU = lazy(
-  () => import('../components/scenes/ToolBox/WebGPU/SmokeTest/SmokeTest')
+  () => import('../components/scenes/ToolBox/SmokeTest/SmokeTest')
 );
 const CharacterControllerWebGL = lazy(
   () =>
@@ -445,10 +434,6 @@ function FlyingHighIcon() {
 
 function PoliceBadgeIcon() {
   return <GiPoliceBadge color="#111827" />;
-}
-
-function SinkingShipIcon() {
-  return <GiSinkingShip color="#1e40af" />;
 }
 
 function PaperBoatIcon() {
@@ -948,7 +933,7 @@ export const EYE_CANDIES = [
     area: 'toolbox',
     route: 'fireTest-webgpu',
     icon: FireTestIcon,
-    Component: FireTestWebGPU,
+    Component: FireTest,
   },
   {
     id: 'hotBox',
@@ -957,7 +942,7 @@ export const EYE_CANDIES = [
     area: 'toolbox',
     route: 'hotBox-webgpu',
     icon: HotBoxIcon,
-    Component: HotBoxWebGPU,
+    Component: HotBox,
   },
   {
     id: 'smokeTest',
@@ -966,7 +951,7 @@ export const EYE_CANDIES = [
     area: 'toolbox',
     route: 'smokeTest-webgpu',
     icon: SmokeTestIcon,
-    Component: SmokeTestWebGPU,
+    Component: SmokeTest,
   },
   {
     id: 'ghostBuster',

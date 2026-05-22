@@ -2,6 +2,8 @@ import * as THREE from 'three';
 
 import React, { useCallback, useMemo } from 'react';
 
+import { useThree } from '@react-three/fiber';
+
 import SmokeParticles from '../smoke/SmokeParticles';
 import SmokeParticlesGPU from '../smoke/SmokeParticlesGPU';
 import SmokeVolumeMesh from '../smoke/SmokeVolumeMesh';
@@ -110,10 +112,12 @@ export default function SplineGroup({
   attractorsRef,
   setSplinePoints,
   allowedTypes = 'both',
-  renderer = 'webgl',
   splineColor = '#aaaaaa',
   pointSize,
 }) {
+  const gl = useThree((state) => state.gl);
+  const isWebGPU = gl?.isWebGPURenderer === true;
+
   const setPoints = useCallback(
     (updater) => setSplinePoints(index, updater),
     [index, setSplinePoints]
@@ -135,12 +139,10 @@ export default function SplineGroup({
     ? splineConfig.type
     : (splineConfig.smokeType ?? 'Particle');
   const fireType = splineConfig.fireType ?? 'Classic';
-  const ParticleSmokeComponent =
-    renderer === 'webgpu' ? SmokeParticlesGPU : SmokeParticles;
-  const VolumetricSmokeComponent =
-    renderer === 'webgpu'
-      ? VolumetricSmokeParticlesGPU
-      : VolumetricSmokeParticles;
+  const ParticleSmokeComponent = isWebGPU ? SmokeParticlesGPU : SmokeParticles;
+  const VolumetricSmokeComponent = isWebGPU
+    ? VolumetricSmokeParticlesGPU
+    : VolumetricSmokeParticles;
 
   if (!splineConfig.visible) return null;
   if (allowedTypes === 'smoke' && normalizedType === 'Fire') return null;

@@ -306,7 +306,6 @@ export default function ThatsAllFolks() {
                   )}
                   setSplinePoints={NOOP_SET_SPLINE_POINTS}
                   allowedTypes="smoke"
-                  renderer="webgpu"
                   splineColor={curveMeta.color}
                 />
               );

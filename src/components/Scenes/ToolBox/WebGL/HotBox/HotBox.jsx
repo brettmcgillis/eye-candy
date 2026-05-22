@@ -3,7 +3,7 @@ import React, { useCallback, useRef, useState } from 'react';
 import { OrbitControls, PerspectiveCamera } from '@react-three/drei';
 
 import Attractors from '../../../../elements/attractors/Attractors';
-import FireAndSmoke from '../../../../elements/fireAndSmoke/FireAndSmoke';
+import FireAndSmokeRenderer from '../../../../elements/fireAndSmoke/FireAndSmokeRenderer';
 import Fireball from '../../../../elements/fireball/Fireball';
 import FireballSpline from '../../../../elements/fireball/FireballSpline';
 import Flame from '../../../../elements/flame/Flame';
@@ -280,7 +280,7 @@ export default function HotBox() {
             rotation={instance.rot}
             scale={instance.scale}
           >
-            <FireAndSmoke
+            <FireAndSmokeRenderer
               controlPoints={instance.controlPoints}
               {...instance.config}
               attractorsRef={attractorsRef}

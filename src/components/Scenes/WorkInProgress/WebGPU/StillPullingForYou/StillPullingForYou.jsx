@@ -234,7 +234,6 @@ export default function StillPullingForYouGPU() {
               }}
               setSplinePoints={setSplinePoints}
               allowedTypes="smoke"
-              renderer="webgpu"
               splineColor="#ff4444"
               pointSize={0.15}
             />

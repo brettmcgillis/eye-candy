@@ -3,7 +3,7 @@ import React, { useCallback, useState } from 'react';
 import { OrbitControls, PerspectiveCamera } from '@react-three/drei';
 
 import FIRE_PRESETS from '../../../../../presets/fire/firePresets';
-import FireAndSmoke from '../../../../elements/fireAndSmoke/FireAndSmoke';
+import FireAndSmokeRenderer from '../../../../elements/fireAndSmoke/FireAndSmokeRenderer';
 import Fireball from '../../../../elements/fireball/Fireball';
 import FireballSpline from '../../../../elements/fireball/FireballSpline';
 import Flame from '../../../../elements/flame/Flame';
@@ -206,7 +206,7 @@ export default function FireTest() {
             rotation={instance.rot}
             scale={instance.scale}
           >
-            <FireAndSmoke
+            <FireAndSmokeRenderer
               controlPoints={instance.controlPoints}
               {...instance.config}
             />

@@ -3,7 +3,7 @@ import React, { useRef } from 'react';
 import { OrbitControls, PerspectiveCamera } from '@react-three/drei';
 
 import Attractors from '../../../../elements/attractors/Attractors';
-import FireAndSmokeRenderer from '../../../../elements/fireAndSmoke/FireAndSmokeRenderer';
+import FireAndSmoke from '../../../../elements/fireAndSmoke/FireAndSmoke';
 import GridBox from '../../../../elements/gridbox/GridBox';
 import Smoke2D from '../../../../elements/smoke/Smoke2D';
 import SmokeBall from '../../../../elements/smokeball/SmokeBall';
@@ -204,7 +204,7 @@ export default function SmokeTest() {
             rotation={inst.rot}
             scale={inst.scale}
           >
-            <FireAndSmokeRenderer
+            <FireAndSmoke
               controlPoints={inst.controlPoints}
               {...inst.config}
               attractorsRef={attractorsRef}

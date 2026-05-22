@@ -7,7 +7,7 @@
 /* eslint-disable no-underscore-dangle */
 import * as THREE from 'three';
 
-import React, { useEffect, useMemo, useRef } from 'react';
+import React, { useEffect, useMemo, useRef, useState } from 'react';
 
 import { useFrame } from '@react-three/fiber';
 
@@ -334,7 +334,7 @@ function createParticleTexture() {
   return texture;
 }
 
-function createFlameMaterial(seed, detail) {
+function createFlameMaterial(seed, detail = 1) {
   return new THREE.ShaderMaterial({
     uniforms: {
       time: { value: 0 },
@@ -354,12 +354,9 @@ function createFlameMaterial(seed, detail) {
   });
 }
 
-function buildFlamePool(poolSize, detailMin, detailMax) {
+function buildFlamePool(poolSize) {
   return Array.from({ length: poolSize }, () => ({
-    material: createFlameMaterial(
-      Math.random() * 1000,
-      THREE.MathUtils.lerp(detailMin, detailMax, Math.random())
-    ),
+    material: createFlameMaterial(Math.random() * 1000),
     radius: 0,
     baseRadius: 10.5,
     currentTime: 0,
@@ -379,6 +376,7 @@ function buildFlamePool(poolSize, detailMin, detailMax) {
     randFlyX: 0,
     randFlyZ: 0,
     colorTransitionRandom: 0,
+    detailRatio: Math.random(),
     pathStartT: 0,
     idleStartY: 0,
     interactionOffset: new THREE.Vector3(),
@@ -386,16 +384,28 @@ function buildFlamePool(poolSize, detailMin, detailMax) {
   }));
 }
 
-function createParticleState(
-  particleCount,
-  particleSizeMin,
-  particleSizeMax,
-  particleSize
-) {
+function initializeParticleSlot(state, index) {
+  const offset = index * 3;
+  state.positions[offset] = 0;
+  state.positions[offset + 1] = 0;
+  state.positions[offset + 2] = 0;
+  state.sizes[index] = 0;
+  state.sizeRatios[index] = Math.random();
+  state.moveDest[offset] = Math.random() * 200 - 100;
+  state.moveDest[offset + 1] = Math.random() * 0.3 + 0.45;
+  state.moveDest[offset + 2] = Math.random() * 200 - 100;
+  state.particleTime[index] = 0;
+  state.active[index] = false;
+  state.startT[index] = 0;
+  clearArrayVec3(state.interactionOffsets, offset);
+  clearArrayVec3(state.interactionVelocities, offset);
+}
+
+function createParticleState(particleCount) {
   const positions = new Float32Array(particleCount * 3);
   const colors = new Float32Array(particleCount * 3);
   const sizes = new Float32Array(particleCount);
-  const originalSizes = new Float32Array(particleCount);
+  const sizeRatios = new Float32Array(particleCount);
   const moveDest = new Float32Array(particleCount * 3);
   const particleTime = new Float32Array(particleCount);
   const active = new Array(particleCount).fill(false);
@@ -403,25 +413,11 @@ function createParticleState(
   const interactionOffsets = new Float32Array(particleCount * 3);
   const interactionVelocities = new Float32Array(particleCount * 3);
 
-  for (let index = 0; index < particleCount; index += 1) {
-    const offset = index * 3;
-    moveDest[offset] = Math.random() * 200 - 100;
-    moveDest[offset + 1] = Math.random() * 0.3 + 0.45;
-    moveDest[offset + 2] = Math.random() * 200 - 100;
-    const size = THREE.MathUtils.lerp(
-      particleSizeMin,
-      particleSizeMax,
-      Math.random()
-    );
-    sizes[index] = 0;
-    originalSizes[index] = size * particleSize;
-  }
-
-  return {
+  const state = {
     positions,
     colors,
     sizes,
-    originalSizes,
+    sizeRatios,
     moveDest,
     particleTime,
     active,
@@ -431,26 +427,62 @@ function createParticleState(
     elapsed: 0,
     spawnElapsed: 0,
     spawnInterval: 1,
+    targetCount: particleCount,
   };
+
+  for (let index = 0; index < particleCount; index += 1) {
+    initializeParticleSlot(state, index);
+  }
+
+  return state;
 }
 
-function resetParticleState(state) {
-  state.elapsed = 0;
-  state.spawnElapsed = 0;
-  state.spawnInterval = 1;
-
-  for (let index = 0; index < state.active.length; index += 1) {
-    const offset = index * 3;
-    state.positions[offset] = 0;
-    state.positions[offset + 1] = 0;
-    state.positions[offset + 2] = 0;
-    state.sizes[index] = 0;
-    state.particleTime[index] = 0;
-    state.active[index] = false;
-    state.startT[index] = 0;
-    clearArrayVec3(state.interactionOffsets, offset);
-    clearArrayVec3(state.interactionVelocities, offset);
+function resizeParticleState(state, particleCount) {
+  if (!state) {
+    return createParticleState(particleCount);
   }
+
+  state.targetCount = particleCount;
+  const currentCount = state.active.length;
+  if (currentCount >= particleCount) {
+    return state;
+  }
+
+  const nextState = {
+    positions: new Float32Array(particleCount * 3),
+    colors: new Float32Array(particleCount * 3),
+    sizes: new Float32Array(particleCount),
+    sizeRatios: new Float32Array(particleCount),
+    moveDest: new Float32Array(particleCount * 3),
+    particleTime: new Float32Array(particleCount),
+    active: [
+      ...state.active,
+      ...Array(particleCount - currentCount).fill(false),
+    ],
+    startT: new Float32Array(particleCount),
+    interactionOffsets: new Float32Array(particleCount * 3),
+    interactionVelocities: new Float32Array(particleCount * 3),
+    elapsed: state.elapsed,
+    spawnElapsed: state.spawnElapsed,
+    spawnInterval: state.spawnInterval,
+    targetCount: particleCount,
+  };
+
+  nextState.positions.set(state.positions);
+  nextState.colors.set(state.colors);
+  nextState.sizes.set(state.sizes);
+  nextState.sizeRatios.set(state.sizeRatios);
+  nextState.moveDest.set(state.moveDest);
+  nextState.particleTime.set(state.particleTime);
+  nextState.startT.set(state.startT);
+  nextState.interactionOffsets.set(state.interactionOffsets);
+  nextState.interactionVelocities.set(state.interactionVelocities);
+
+  for (let index = currentCount; index < particleCount; index += 1) {
+    initializeParticleSlot(nextState, index);
+  }
+
+  return nextState;
 }
 
 function applyTransitionColor(target, startColor, endColor, t) {
@@ -731,10 +763,7 @@ export default function FireAndSmoke({
 }) {
   const geometry = useMemo(() => new THREE.IcosahedronGeometry(1, 3), []);
   const particleTexture = useMemo(() => createParticleTexture(), []);
-  const particleGeometry = useMemo(() => {
-    const nextGeometry = new THREE.BufferGeometry();
-    return nextGeometry;
-  }, [particleCount]);
+  const particleGeometry = useMemo(() => new THREE.BufferGeometry(), []);
   const particleMaterial = useMemo(
     () =>
       new THREE.ShaderMaterial({
@@ -750,25 +779,18 @@ export default function FireAndSmoke({
         blending: THREE.NormalBlending,
         toneMapped: false,
       }),
-    [particlePointScale, particleTexture]
+    [particleTexture]
   );
   const effectivePoolSize = Math.max(
     poolSize,
     Math.ceil(TOTAL_FLAME_LIFETIME_MS / Math.max(1, spawnIntervalMs)) + 1
   );
-  const flamePool = useMemo(
-    () => buildFlamePool(effectivePoolSize, detailMin, detailMax),
-    [effectivePoolSize, detailMin, detailMax]
+  const [flamePool, setFlamePool] = useState(() =>
+    buildFlamePool(effectivePoolSize)
   );
   const particleStateRef = useRef(null);
-  if (!particleStateRef.current) {
-    particleStateRef.current = createParticleState(
-      particleCount,
-      particleSizeMin,
-      particleSizeMax,
-      particleSize
-    );
-  }
+  const flamePoolRef = useRef(flamePool);
+  const initializedFlameCountRef = useRef(0);
 
   const flameMeshRefs = useRef([]);
   const particlePointsRef = useRef();
@@ -816,13 +838,15 @@ export default function FireAndSmoke({
   }, [controlPoints, closed]);
 
   useEffect(() => {
-    const particleState = createParticleState(
-      particleCount,
-      particleSizeMin,
-      particleSizeMax,
-      particleSize
-    );
+    const prevState = particleStateRef.current;
+    const particleState = resizeParticleState(prevState, particleCount);
     particleStateRef.current = particleState;
+
+    const needsNewAttributes =
+      !particleGeometry.getAttribute('position') || particleState !== prevState;
+    if (!needsNewAttributes) {
+      return;
+    }
 
     particleGeometry.setAttribute(
       'position',
@@ -845,13 +869,25 @@ export default function FireAndSmoke({
     particleGeometry.attributes.position.needsUpdate = true;
     particleGeometry.attributes.customColor.needsUpdate = true;
     particleGeometry.attributes.size.needsUpdate = true;
-  }, [
-    particleCount,
-    particleGeometry,
-    particleSize,
-    particleSizeMax,
-    particleSizeMin,
-  ]);
+  }, [particleCount, particleGeometry]);
+
+  useEffect(() => {
+    flamePoolRef.current = flamePool;
+  }, [flamePool]);
+
+  useEffect(() => {
+    if (effectivePoolSize <= flamePool.length) {
+      return;
+    }
+
+    setFlamePool((prev) => {
+      if (prev.length >= effectivePoolSize) {
+        return prev;
+      }
+
+      return [...prev, ...buildFlamePool(effectivePoolSize - prev.length)];
+    });
+  }, [effectivePoolSize, flamePool.length]);
 
   useEffect(() => {
     const particleUniforms = particleMaterial.uniforms;
@@ -864,16 +900,19 @@ export default function FireAndSmoke({
       particleGeometry.dispose();
       particleMaterial.dispose();
       particleTexture.dispose();
-      flamePool.forEach((flame) => flame.material.dispose());
+      flamePoolRef.current.forEach((flame) => flame.material.dispose());
     },
-    [flamePool, geometry, particleGeometry, particleMaterial, particleTexture]
+    [geometry, particleGeometry, particleMaterial, particleTexture]
   );
 
   useEffect(() => {
-    flameSpawnElapsedRef.current = 0;
-    resetParticleState(particleStateRef.current);
-
-    flamePool.forEach((flame, index) => {
+    // Keep existing flames alive; only initialize newly appended pool entries.
+    for (
+      let index = initializedFlameCountRef.current;
+      index < flamePool.length;
+      index += 1
+    ) {
+      const flame = flamePool[index];
       flame.currentTime = 0;
       flame.timeCount = 0;
       flame.state = STATE_BEFORE_START;
@@ -888,6 +927,11 @@ export default function FireAndSmoke({
       flame.interactionOffset.set(0, 0, 0);
       flame.interactionVelocity.set(0, 0, 0);
       flame.material.uniforms.time.value = 0;
+      flame.material.uniforms.detail.value = THREE.MathUtils.lerp(
+        detailMin,
+        detailMax,
+        flame.detailRatio
+      );
       flame.material.uniforms.opacity.value = 0;
 
       const mesh = flameMeshRefs.current[index];
@@ -896,8 +940,10 @@ export default function FireAndSmoke({
         mesh.position.set(0, 0, 0);
         mesh.scale.setScalar(0.0001);
       }
-    });
-  }, [curveData, flamePool]);
+    }
+
+    initializedFlameCountRef.current = flamePool.length;
+  }, [detailMax, detailMin, flamePool]);
 
   useFrame((_, deltaSeconds) => {
     const deltaMs = Math.min(deltaSeconds, MAX_SIM_DELTA_SECONDS) * 1000;
@@ -905,6 +951,9 @@ export default function FireAndSmoke({
     const scaledDeltaSeconds = scaledDeltaMs / 1000;
     const frameScale = scaledDeltaMs / FRAME_MS;
     const particleState = particleStateRef.current;
+    if (!particleState) {
+      return;
+    }
     const resolvedAttractors = resolveLocalAttractors(
       attractorsRef,
       rootGroupRef.current,
@@ -931,7 +980,15 @@ export default function FireAndSmoke({
     );
 
     const spawnFlame = () => {
-      const flame = flamePool.find((item) => !item.isActive);
+      let flame = null;
+      const flameLimit = Math.min(effectivePoolSize, flamePool.length);
+      for (let index = 0; index < flameLimit; index += 1) {
+        if (!flamePool[index].isActive) {
+          flame = flamePool[index];
+          break;
+        }
+      }
+
       if (!flame) return;
 
       const radiusRatio = Math.random();
@@ -959,11 +1016,17 @@ export default function FireAndSmoke({
       flame.randFlyX = Math.random() * 0.1 - 0.05;
       flame.randFlyZ = Math.random() * 0.1 - 0.05;
       flame.colorTransitionRandom = Math.random() * 2000 - 1000;
+      flame.detailRatio = Math.random();
       flame.pathStartT = 0;
       flame.idleStartY = 0;
       flame.interactionOffset.set(0, 0, 0);
       flame.interactionVelocity.set(0, 0, 0);
       flame.material.uniforms.baseRadius.value = flame.baseRadius;
+      flame.material.uniforms.detail.value = THREE.MathUtils.lerp(
+        detailMin,
+        detailMax,
+        flame.detailRatio
+      );
       flame.material.uniforms.opacity.value = 1;
     };
 
@@ -971,7 +1034,7 @@ export default function FireAndSmoke({
     if (particleState.spawnElapsed > particleState.spawnInterval) {
       particleState.spawnElapsed = 0;
       particleState.spawnInterval = Math.random() * 300 + 50;
-      for (let index = 0; index < particleState.active.length; index += 1) {
+      for (let index = 0; index < particleState.targetCount; index += 1) {
         if (!particleState.active[index]) {
           const offset = index * 3;
           particleState.active[index] = true;
@@ -1078,6 +1141,11 @@ export default function FireAndSmoke({
       flame.material.uniforms.time.value +=
         0.0005 * scaledDeltaMs * flame.animationTimeRatio * flame.flowRatio;
       flame.material.uniforms.baseRadius.value = flame.baseRadius;
+      flame.material.uniforms.detail.value = THREE.MathUtils.lerp(
+        detailMin,
+        detailMax,
+        flame.detailRatio
+      );
       flame.material.uniforms.opacity.value = flame.opacity;
       updateFlamePalette(flame, palette);
 
@@ -1140,6 +1208,18 @@ export default function FireAndSmoke({
       colors[offset + 1] = palette.particleColor.g;
       colors[offset + 2] = palette.particleColor.b;
 
+      if (index >= particleState.targetCount) {
+        particleState.active[index] = false;
+        particleState.particleTime[index] = 0;
+        sizes[index] = 0;
+        positions[offset] = 0;
+        positions[offset + 1] = 0;
+        positions[offset + 2] = 0;
+        clearArrayVec3(particleState.interactionOffsets, offset);
+        clearArrayVec3(particleState.interactionVelocities, offset);
+        continue;
+      }
+
       if (!particleState.active[index] || !showParticles) {
         sizes[index] = 0;
         positions[offset] = 0;
@@ -1200,7 +1280,12 @@ export default function FireAndSmoke({
         worldScale;
 
       sizes[index] =
-        particleState.originalSizes[index] *
+        particleSize *
+        THREE.MathUtils.lerp(
+          particleSizeMin,
+          particleSizeMax,
+          particleState.sizeRatios[index]
+        ) *
         (3 + Math.sin(0.4 * index + particleState.elapsed));
 
       _particleBasePosition.set(

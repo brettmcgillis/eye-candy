@@ -7,7 +7,9 @@ export default function ClearTrashButton() {
   const hasThrowables = useTrashBlasterStore((s) => s.hasThrowables);
   const clearTrash = useTrashBlasterStore((s) => s.clearTrash);
   const TrashIcon = hasThrowables ? CgTrash : CgTrashEmpty;
-  const tooltipLabel = hasThrowables ? 'Clean up your mess' : 'All clean';
+  const tooltipLabel = hasThrowables
+    ? 'Clean up your mess'
+    : 'Reset dumpster scene';
 
   return (
     <button
@@ -15,7 +17,6 @@ export default function ClearTrashButton() {
       onClick={clearTrash}
       title={tooltipLabel}
       aria-label={tooltipLabel}
-      disabled={!hasThrowables}
       style={{
         cursor: 'crosshair',
         background: 'transparent',

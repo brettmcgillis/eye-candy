@@ -6,6 +6,7 @@ import {
   PerspectiveCamera,
 } from '@react-three/drei';
 
+import useTrashBlasterStore from '../hooks/useTrashBlasterStore';
 import {
   BACKGROUND,
   CAMERA,
@@ -19,6 +20,9 @@ import {
 
 export default function SceneEnvironment() {
   const [groundX, , groundZ] = FLOOR_COLLIDER_POSITION;
+  const isPointerInteractionActive = useTrashBlasterStore(
+    (s) => s.isPointerInteractionActive
+  );
 
   return (
     <>
@@ -27,7 +31,7 @@ export default function SceneEnvironment() {
         position={CAMERA.position}
         fov={CAMERA.fov}
       />
-      <OrbitControls />
+      <OrbitControls enabled={!isPointerInteractionActive} />
 
       <color attach="background" args={[BACKGROUND]} />
       <fog attach="fog" args={[BACKGROUND, FOG_RANGE[0], FOG_RANGE[1]]} />

@@ -3,6 +3,7 @@ import React, { useEffect, useMemo, useRef } from 'react';
 import { InstancedRigidBodies } from '@react-three/rapier';
 
 import useTrashBlaster from '../hooks/useTrashBlaster';
+import useTrashBlasterStore from '../hooks/useTrashBlasterStore';
 import {
   SHOT_ASSET_OPTIONS,
   SHOT_POOL_SLOTS_PER_ASSET,
@@ -43,6 +44,13 @@ function CleanupPlane() {
 function InstancedTrashBodies({ asset, bodyRefsMap }) {
   const bodyRefsStore = bodyRefsMap.current;
   const bodiesRef = useRef([]);
+  const interactiveRootRef = useRef(null);
+  const registerInteractiveTarget = useTrashBlasterStore(
+    (s) => s.registerInteractiveTarget
+  );
+  const unregisterInteractiveTarget = useTrashBlasterStore(
+    (s) => s.unregisterInteractiveTarget
+  );
   const { InstanceComponent, InstancesComponent } = asset;
 
   if (!InstancesComponent || !InstanceComponent) {
@@ -62,37 +70,72 @@ function InstancedTrashBodies({ asset, bodyRefsMap }) {
     };
   }, [asset.key, bodyRefsStore]);
 
+  useEffect(() => {
+    const targetId = `shot-pool-${asset.key}`;
+
+    registerInteractiveTarget(targetId, {
+      getObject: () => interactiveRootRef.current,
+      buildSession: ({ intersection, clientX, clientY }) => {
+        const instanceId = intersection.instanceId;
+
+        if (!Number.isInteger(instanceId)) {
+          return null;
+        }
+
+        const body = bodiesRef.current[instanceId];
+
+        if (!body?.userData?.isActiveThrowable) {
+          return null;
+        }
+
+        return {
+          kind: 'body',
+          body,
+          point: intersection.point.clone(),
+          clientX,
+          clientY,
+        };
+      },
+    });
+
+    return () => {
+      unregisterInteractiveTarget(targetId);
+    };
+  }, [asset.key, registerInteractiveTarget, unregisterInteractiveTarget]);
+
   return (
-    <InstancedRigidBodies
-      instances={instances}
-      colliders={asset.colliders ?? 'cuboid'}
-      mass={asset.mass ?? 0.5}
-      friction={1.2}
-      restitution={0.08}
-      linearDamping={1.2}
-      angularDamping={1.6}
-      canSleep
-      ccd
-      ref={bodiesRef}
-    >
-      <InstancesComponent
-        castShadow
-        receiveShadow
-        frustumCulled={false}
-        limit={instances.length}
-        range={instances.length}
-        frames={1}
+    <group ref={interactiveRootRef}>
+      <InstancedRigidBodies
+        instances={instances}
+        colliders={asset.colliders ?? 'cuboid'}
+        mass={asset.mass ?? 0.5}
+        friction={1.2}
+        restitution={0.08}
+        linearDamping={1.2}
+        angularDamping={1.6}
+        canSleep
+        ccd
+        ref={bodiesRef}
       >
-        {instances.map((instance) => (
-          <InstanceComponent
-            key={instance.key}
-            position={instance.position}
-            rotation={instance.rotation}
-            scale={instance.scale}
-          />
-        ))}
-      </InstancesComponent>
-    </InstancedRigidBodies>
+        <InstancesComponent
+          castShadow
+          receiveShadow
+          frustumCulled={false}
+          limit={instances.length}
+          range={instances.length}
+          frames={1}
+        >
+          {instances.map((instance) => (
+            <InstanceComponent
+              key={instance.key}
+              position={instance.position}
+              rotation={instance.rotation}
+              scale={instance.scale}
+            />
+          ))}
+        </InstancesComponent>
+      </InstancedRigidBodies>
+    </group>
   );
 }
 

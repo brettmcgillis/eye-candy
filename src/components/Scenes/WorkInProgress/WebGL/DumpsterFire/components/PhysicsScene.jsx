@@ -19,13 +19,27 @@ function SceneComposition({ onTrashCollision }) {
     <group position={SCENE_ROOT_POSITION}>
       <SceneEffects />
 
-      {FIXED_SCENE_ITEMS.map((item) => (
-        <FixedSceneAsset
-          key={getSceneItemKey(item)}
-          item={item}
-          onCollisionEnter={onTrashCollision}
-        />
-      ))}
+      {FIXED_SCENE_ITEMS.map((item) => {
+        const PhysicsComponent = item.PhysicsComponent;
+
+        if (PhysicsComponent) {
+          return (
+            <PhysicsComponent
+              key={getSceneItemKey(item)}
+              item={item}
+              onCollisionEnter={onTrashCollision}
+            />
+          );
+        }
+
+        return (
+          <FixedSceneAsset
+            key={getSceneItemKey(item)}
+            item={item}
+            onCollisionEnter={onTrashCollision}
+          />
+        );
+      })}
 
       {DYNAMIC_SCENE_ITEMS.map((item) => (
         <DynamicSceneAsset key={getSceneItemKey(item)} item={item} />

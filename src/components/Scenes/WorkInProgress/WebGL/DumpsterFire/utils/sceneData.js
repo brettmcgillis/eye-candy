@@ -109,6 +109,7 @@ import {
   LowPolyVHSTapeInstance,
   LowPolyVHSTapeInstances,
 } from '../../../../../elements/vhsTape/LowPolyVHSTape';
+import ArticulatedDumpster from '../components/ArticulatedDumpster';
 
 export const GROUND_Y = -1;
 export const SCENE_ROOT_POSITION = [-9, GROUND_Y, 1];
@@ -432,6 +433,7 @@ export const FIXED_SCENE_ITEMS = [
   {
     key: 'dumpster',
     Component: Dumpster,
+    PhysicsComponent: ArticulatedDumpster,
     position: [0, 0, 0],
     rotation: [0, 0, 0],
     scale: 2,
@@ -766,7 +768,7 @@ export const DYNAMIC_SCENE_ITEMS = [
   }),
   createTrashAsset('bucket', {
     id: 'front-bucket',
-    position: [0.95, 0.02, 2.35],
+    position: [0.95, 0.4, 2.35],
     rotation: [0, -Math.PI / 8, 0],
   }),
 ];

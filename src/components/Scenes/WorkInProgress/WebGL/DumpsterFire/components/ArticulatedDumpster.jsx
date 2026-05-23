@@ -256,8 +256,7 @@ function isOccludedByObject({
     .intersectObject(occluderObject, true)
     .some(
       (intersection) =>
-        intersection.distance <
-        targetDistance - LID_OCCLUSION_DISTANCE_EPSILON
+        intersection.distance < targetDistance - LID_OCCLUSION_DISTANCE_EPSILON
     );
 }
 

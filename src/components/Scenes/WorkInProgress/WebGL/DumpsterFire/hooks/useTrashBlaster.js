@@ -400,19 +400,17 @@ export default function useTrashBlaster() {
         event.clientY - pointerDown.y
       );
 
-      if (
-        !interaction.started &&
-        interaction.kind === 'body' &&
-        distance <= POINTER_TAP_THRESHOLD
-      ) {
+      if (!interaction.started && distance <= POINTER_TAP_THRESHOLD) {
         return;
       }
 
-      if (!interaction.started && interaction.kind === 'body') {
-        startBodyDragSession(interaction, rapier);
-      }
+      if (!interaction.started) {
+        if (interaction.kind === 'body') {
+          startBodyDragSession(interaction, rapier);
+        }
 
-      interaction.started = true;
+        interaction.started = true;
+      }
 
       if (interaction.kind === 'body') {
         updateBodyDragSession(
@@ -440,18 +438,29 @@ export default function useTrashBlaster() {
         return;
       }
 
-      if (pointerDown.interaction) {
-        if (pointerDown.interaction.kind === 'body') {
-          endBodyDragSession(pointerDown.interaction, rapier);
-        }
-
-        return;
-      }
-
       const distance = Math.hypot(
         event.clientX - pointerDown.x,
         event.clientY - pointerDown.y
       );
+
+      if (pointerDown.interaction) {
+        if (pointerDown.interaction.kind === 'body') {
+          endBodyDragSession(pointerDown.interaction, rapier);
+          return;
+        }
+
+        if (
+          pointerDown.interaction.kind === 'lid' &&
+          !pointerDown.interaction.started &&
+          distance <= POINTER_TAP_THRESHOLD
+        ) {
+          fireShot(
+            getNormalizedPointerPosition(event.clientX, event.clientY, domElement)
+          );
+        }
+
+        return;
+      }
 
       if (distance <= POINTER_TAP_THRESHOLD) {
         fireShot(

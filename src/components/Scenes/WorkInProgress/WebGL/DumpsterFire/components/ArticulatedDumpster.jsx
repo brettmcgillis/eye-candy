@@ -13,13 +13,19 @@ import {
 } from '../../../../../elements/dumpster/Dumpster';
 import useTrashBlasterStore from '../hooks/useTrashBlasterStore';
 import { SCENE_ROOT_POSITION } from '../utils/sceneData';
-import { getSceneItemKey } from '../utils/sceneUtils';
+import {
+  getNormalizedPointerPosition,
+  getSceneItemKey,
+} from '../utils/sceneUtils';
 
 const DUMPSTER_LEFT_LID_CLOSED_ANGLE = 1.833;
 const DUMPSTER_RIGHT_LID_CLOSED_ANGLE = Math.PI / 4;
 const DUMPSTER_LID_HANDLE_LOCAL_OFFSET = [0, 0.3, 51.276];
 const LID_DRAG_AXIS_PROBE_EPSILON = 0.08;
 const LID_DRAG_RADIANS_PER_PIXEL = 0.01;
+const LID_OCCLUSION_DISTANCE_EPSILON = 1e-3;
+
+const sharedOcclusionRaycaster = new THREE.Raycaster();
 
 function wrapToPi(angle) {
   let wrapped = angle;
@@ -229,6 +235,32 @@ function setLidBodyPose(body, pose) {
   body.wakeUp?.();
 }
 
+function isOccludedByObject({
+  occluderObject,
+  targetDistance,
+  clientX,
+  clientY,
+  camera,
+  domElement,
+}) {
+  if (!occluderObject) {
+    return false;
+  }
+
+  sharedOcclusionRaycaster.setFromCamera(
+    getNormalizedPointerPosition(clientX, clientY, domElement),
+    camera
+  );
+
+  return sharedOcclusionRaycaster
+    .intersectObject(occluderObject, true)
+    .some(
+      (intersection) =>
+        intersection.distance <
+        targetDistance - LID_OCCLUSION_DISTANCE_EPSILON
+    );
+}
+
 export default function ArticulatedDumpster({ item, onCollisionEnter }) {
   const registerInteractiveTarget = useTrashBlasterStore(
     (s) => s.registerInteractiveTarget
@@ -294,6 +326,7 @@ export default function ArticulatedDumpster({ item, onCollisionEnter }) {
   );
 
   const dumpsterBodyRef = useRef(null);
+  const dumpsterShellRootRef = useRef(null);
   const leftLidRef = useRef(null);
   const rightLidRef = useRef(null);
   const leftLidDragRootRef = useRef(null);
@@ -314,8 +347,22 @@ export default function ArticulatedDumpster({ item, onCollisionEnter }) {
       angleRange,
       angleRef: lidAngleRef,
       bodyRef,
+      occluderRef,
     }) => {
-      return ({ clientX, clientY, camera, domElement }) => {
+      return ({ intersection, clientX, clientY, camera, domElement }) => {
+        if (
+          isOccludedByObject({
+            occluderObject: occluderRef.current,
+            targetDistance: intersection.distance,
+            clientX,
+            clientY,
+            camera,
+            domElement,
+          })
+        ) {
+          return null;
+        }
+
         const sessionAngleRef = lidAngleRef;
         const startAngle = sessionAngleRef.current;
         const dragAxis = getLidScreenDragAxis({
@@ -373,6 +420,7 @@ export default function ArticulatedDumpster({ item, onCollisionEnter }) {
         angleRange: leftLidAngleRange,
         angleRef: leftLidAngleRef,
         bodyRef: leftLidRef,
+        occluderRef: dumpsterShellRootRef,
       }),
     });
     registerInteractiveTarget(rightTargetId, {
@@ -383,6 +431,7 @@ export default function ArticulatedDumpster({ item, onCollisionEnter }) {
         angleRange: rightLidAngleRange,
         angleRef: rightLidAngleRef,
         bodyRef: rightLidRef,
+        occluderRef: dumpsterShellRootRef,
       }),
     });
 
@@ -445,13 +494,15 @@ export default function ArticulatedDumpster({ item, onCollisionEnter }) {
         restitution={0.05}
         onCollisionEnter={onCollisionEnter}
       >
-        <DumpsterShell
-          frontLeftWheelRotation={frontLeftWheelRotation}
-          frontRightWheelRotation={frontRightWheelRotation}
-          rearLeftWheelRotation={rearLeftWheelRotation}
-          rearRightWheelRotation={rearRightWheelRotation}
-          scale={scale}
-        />
+        <group ref={dumpsterShellRootRef}>
+          <DumpsterShell
+            frontLeftWheelRotation={frontLeftWheelRotation}
+            frontRightWheelRotation={frontRightWheelRotation}
+            rearLeftWheelRotation={rearLeftWheelRotation}
+            rearRightWheelRotation={rearRightWheelRotation}
+            scale={scale}
+          />
+        </group>
       </RigidBody>
 
       <RigidBody

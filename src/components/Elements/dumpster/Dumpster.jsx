@@ -307,3 +307,95 @@ export default function Dumpster({
 }
 
 useGLTF.preload(modelFile(`Dumpster.glb`));
+
+export function DebugDumpster({
+  leftLidRotation = 1.833,
+  rightLidRotation = Math.PI / 4,
+  ...props
+}) {
+  const { nodes, materials } = useGLTF(modelFile(`Dumpster.glb`));
+  return (
+    <group {...props} dispose={null}>
+      <group scale={0.01}>
+        <group rotation={[-Math.PI / 2, 0, 0]}>
+          <group position={[0, 2.238, 122.206]}>
+            <mesh
+              castShadow
+              receiveShadow
+              geometry={nodes.C2.geometry}
+              material={materials['Dumpster_02.001']}
+              position={[90, -49.761, -24.038]}
+              rotation={[0, -1.571, 0]}
+            />
+          </group>
+          <group position={[-83.16, -30, 16.669]} rotation={[0, 0, -Math.PI]}>
+            <mesh
+              castShadow
+              receiveShadow
+              geometry={nodes.FLW2.geometry}
+              material={materials['Dumpster_02.001']}
+              position={[6.84, -17.523, 81.499]}
+              rotation={[0, -1.571, 0]}
+            />
+          </group>
+          <group position={[83.16, -30, 16.669]}>
+            <mesh
+              castShadow
+              receiveShadow
+              geometry={nodes.FRW2.geometry}
+              material={materials['Dumpster_02.001']}
+              position={[6.84, -17.523, 81.499]}
+              rotation={[0, -1.571, 0]}
+            />
+          </group>
+          {/* left Lid */}
+          <group
+            position={[-47.5, 51.999, 146.244]}
+            rotation={[leftLidRotation, 0, 0]}
+          >
+            <mesh
+              castShadow
+              receiveShadow
+              geometry={nodes.LL2.geometry}
+              material={materials['Dumpster_02.001']}
+              position={[0, 0.3, 51.276]}
+            />
+          </group>
+          <group position={[-83.16, 30, 16.669]} rotation={[0, 0, Math.PI]}>
+            <mesh
+              castShadow
+              receiveShadow
+              geometry={nodes.RLW2.geometry}
+              material={materials['Dumpster_02.001']}
+              position={[6.84, -17.523, 81.499]}
+              rotation={[0, -1.571, 0]}
+            />
+          </group>
+          <group position={[83.16, 33.131, 16.669]}>
+            <mesh
+              castShadow
+              receiveShadow
+              geometry={nodes.RRW2.geometry}
+              material={materials['Dumpster_02.001']}
+              position={[6.84, -17.523, 81.499]}
+              rotation={[0, -1.571, 0]}
+            />
+          </group>
+          {/* right Lid */}
+          <group
+            position={[47.5, 51.999, 146.244]}
+            rotation={[rightLidRotation, 0, 0]}
+          >
+            <mesh
+              castShadow
+              receiveShadow
+              geometry={nodes.RL2.geometry}
+              material={materials['Dumpster_02.001']}
+              position={[0, 0.3, 51.276]}
+            />
+          </group>
+        </group>
+      </group>
+    </group>
+  );
+}

@@ -31,7 +31,7 @@ export default function SceneEnvironment() {
         position={CAMERA.position}
         fov={CAMERA.fov}
       />
-      <OrbitControls enabled={!isPointerInteractionActive} />
+      <OrbitControls makeDefault enabled={!isPointerInteractionActive} />
 
       <color attach="background" args={[BACKGROUND]} />
       <fog attach="fog" args={[BACKGROUND, FOG_RANGE[0], FOG_RANGE[1]]} />

@@ -103,14 +103,22 @@ export default function SplinePoints({
 
   // Immediately disable orbit on pointerdown on a point mesh so that orbit
   // never starts on the same event that selects / starts a drag.
-  const handlePointPointerDown = useCallback(() => {
-    if (controls) controls.enabled = false;
-  }, [controls]);
+  const handlePointPointerDown = useCallback(
+    (event) => {
+      event.stopPropagation();
+      if (controls) controls.enabled = false;
+    },
+    [controls]
+  );
 
   // Re-enable orbit on pointerup anywhere on the canvas
-  const handlePointPointerUp = useCallback(() => {
-    if (controls) controls.enabled = true;
-  }, [controls]);
+  const handlePointPointerUp = useCallback(
+    (event) => {
+      event.stopPropagation();
+      if (controls) controls.enabled = true;
+    },
+    [controls]
+  );
 
   const handleSelect = useCallback((index) => {
     setSelectedIndex((prev) => (prev === index ? null : index));

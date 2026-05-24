@@ -1,9 +1,12 @@
 import { button, folder } from 'leva';
 
+import buildSplineInstanceActions from './buildSplineInstanceActions';
+
 export default function buildFireAndSmokeControls({
   instances,
   setInstances,
   addInstance,
+  cloneInstance,
   sectionLabel = 'Fire And Smoke',
   instanceLabel = 'Fire And Smoke',
   keyPrefix = 'fas',
@@ -32,6 +35,11 @@ export default function buildFireAndSmokeControls({
 
       acc[`${instanceLabel} ${index + 1}`] = folder(
         {
+          [`${keyPrefix}_visible_${id}`]: {
+            label: 'Visible',
+            value: instance.visible ?? true,
+            onChange: onInst('visible'),
+          },
           [`${keyPrefix}_pos_${id}`]: {
             label: 'Position',
             value: instance.pos,
@@ -135,6 +143,30 @@ export default function buildFireAndSmokeControls({
                 max: 4,
                 step: 0.05,
                 onChange: onCfg('particleSize'),
+              },
+              [`${keyPrefix}_particleSizeMin_${id}`]: {
+                label: 'Particle Size Min',
+                value: instance.config.particleSizeMin,
+                min: 0.01,
+                max: 4,
+                step: 0.01,
+                onChange: onCfg('particleSizeMin'),
+              },
+              [`${keyPrefix}_particleSizeMax_${id}`]: {
+                label: 'Particle Size Max',
+                value: instance.config.particleSizeMax,
+                min: 0.01,
+                max: 4,
+                step: 0.01,
+                onChange: onCfg('particleSizeMax'),
+              },
+              [`${keyPrefix}_particlePointScale_${id}`]: {
+                label: 'Point Scale',
+                value: instance.config.particlePointScale,
+                min: 1,
+                max: 100,
+                step: 1,
+                onChange: onCfg('particlePointScale'),
               },
               [`${keyPrefix}_particleSpread_${id}`]: {
                 label: 'Particle Spread',
@@ -265,6 +297,15 @@ export default function buildFireAndSmokeControls({
             () => setInstances((prev) => prev.filter((item) => item.id !== id)),
             { label: 'Delete Instance' }
           ),
+          ...(cloneInstance
+            ? buildSplineInstanceActions({
+                id,
+                setInstances,
+                keyPrefix,
+                pointsKey: 'controlPoints',
+                cloneInstance,
+              })
+            : {}),
         },
         { collapsed: true }
       );

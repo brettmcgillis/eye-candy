@@ -1,6 +1,6 @@
 import * as THREE from 'three';
 
-import React, { useEffect, useMemo, useRef } from 'react';
+import React, { useEffect, useId, useMemo, useRef } from 'react';
 
 import { RigidBody } from '@react-three/rapier';
 
@@ -12,8 +12,6 @@ import {
   DumpsterShell,
 } from '../../../../../elements/dumpster/Dumpster';
 import useTrashBlasterStore from '../hooks/useTrashBlasterStore';
-import { SCENE_ROOT_POSITION } from '../utils/sceneData';
-import { getSceneItemKey } from '../utils/sceneUtils';
 
 const DEG = Math.PI / 180;
 const DUMPSTER_LID_MIN_ANGLE = -180 * DEG;
@@ -42,57 +40,29 @@ function clampLidAngle(angle, [minAngle, maxAngle]) {
   return Math.min(maxAngle, Math.max(minAngle, angle));
 }
 
-function getLidResetPose({ lidAngle, pivotPosition, position, rotation }) {
-  const scenePosition = new THREE.Vector3(
-    SCENE_ROOT_POSITION[0] + position[0],
-    SCENE_ROOT_POSITION[1] + position[1],
-    SCENE_ROOT_POSITION[2] + position[2]
-  );
+function getLidWorldRotation(lidAngle, itemRotation) {
   const bodyQuaternion = new THREE.Quaternion().setFromEuler(
-    new THREE.Euler(...rotation)
+    new THREE.Euler(...itemRotation)
   );
   const lidQuaternion = new THREE.Quaternion().setFromEuler(
     new THREE.Euler(lidAngle, 0, 0)
   );
-  const lidPosition = new THREE.Vector3(...pivotPosition)
-    .applyQuaternion(bodyQuaternion)
-    .add(scenePosition);
-  const worldQuaternion = bodyQuaternion.clone().multiply(lidQuaternion);
+  const worldQuaternion = bodyQuaternion.multiply(lidQuaternion);
 
   return {
-    position: {
-      x: lidPosition.x,
-      y: lidPosition.y,
-      z: lidPosition.z,
-    },
-    rotation: {
-      x: worldQuaternion.x,
-      y: worldQuaternion.y,
-      z: worldQuaternion.z,
-      w: worldQuaternion.w,
-    },
+    x: worldQuaternion.x,
+    y: worldQuaternion.y,
+    z: worldQuaternion.z,
+    w: worldQuaternion.w,
   };
 }
 
-function resetLidBody(body, pose) {
+function setLidBodyAngle(body, lidAngle, itemRotation) {
   if (!body) {
     return;
   }
 
-  body.setTranslation(pose.position, true);
-  body.setRotation(pose.rotation, true);
-  body.setLinvel({ x: 0, y: 0, z: 0 }, true);
-  body.setAngvel({ x: 0, y: 0, z: 0 }, true);
-  body.wakeUp?.();
-}
-
-function setLidBodyPose(body, pose) {
-  if (!body) {
-    return;
-  }
-
-  body.setTranslation(pose.position, true);
-  body.setRotation(pose.rotation, true);
+  body.setRotation(getLidWorldRotation(lidAngle, itemRotation), true);
   body.wakeUp?.();
 }
 
@@ -121,7 +91,7 @@ export default function ArticulatedDumpster({ item, onCollisionEnter }) {
   const rightLidInitialRotation = DUMPSTER_LID_INITIAL_ANGLE;
   const leftLidAngleRef = useRef(leftLidInitialRotation);
   const rightLidAngleRef = useRef(rightLidInitialRotation);
-  const sceneItemKey = getSceneItemKey(item);
+  const instanceId = useId();
 
   const scaleVector = useMemo(() => toScaleVector(scale), [scale]);
   const leftLidPivotPosition = useMemo(
@@ -157,7 +127,7 @@ export default function ArticulatedDumpster({ item, onCollisionEnter }) {
 
   useEffect(() => {
     const buildLidSession =
-      ({ pivotPositionScene, angleRef: lidAngleRef, bodyRef }) =>
+      ({ angleRef: lidAngleRef, bodyRef }) =>
       ({ clientX, clientY }) => {
         const startAngle = lidAngleRef.current;
         const session = {
@@ -191,28 +161,20 @@ export default function ArticulatedDumpster({ item, onCollisionEnter }) {
         };
 
         session.applyDraggedAngle = (angle) => {
+          // eslint-disable-next-line no-param-reassign
           lidAngleRef.current = angle;
-          setLidBodyPose(
-            bodyRef.current,
-            getLidResetPose({
-              lidAngle: angle,
-              pivotPosition: pivotPositionScene,
-              position,
-              rotation,
-            })
-          );
+          setLidBodyAngle(bodyRef.current, angle, rotation);
         };
 
         return session;
       };
 
-    const leftTargetId = `${sceneItemKey}-left-lid`;
-    const rightTargetId = `${sceneItemKey}-right-lid`;
+    const leftTargetId = `${instanceId}-left-lid`;
+    const rightTargetId = `${instanceId}-right-lid`;
 
     registerInteractiveTarget(leftTargetId, {
       getObject: () => leftLidDragRootRef.current,
       buildSession: buildLidSession({
-        pivotPositionScene: leftLidPivotPosition,
         angleRef: leftLidAngleRef,
         bodyRef: leftLidRef,
       }),
@@ -220,7 +182,6 @@ export default function ArticulatedDumpster({ item, onCollisionEnter }) {
     registerInteractiveTarget(rightTargetId, {
       getObject: () => rightLidDragRootRef.current,
       buildSession: buildLidSession({
-        pivotPositionScene: rightLidPivotPosition,
         angleRef: rightLidAngleRef,
         bodyRef: rightLidRef,
       }),
@@ -231,12 +192,9 @@ export default function ArticulatedDumpster({ item, onCollisionEnter }) {
       unregisterInteractiveTarget(rightTargetId);
     };
   }, [
-    leftLidPivotPosition,
-    position,
+    instanceId,
     registerInteractiveTarget,
-    rightLidPivotPosition,
     rotation,
-    sceneItemKey,
     unregisterInteractiveTarget,
   ]);
 
@@ -244,33 +202,9 @@ export default function ArticulatedDumpster({ item, onCollisionEnter }) {
     leftLidAngleRef.current = leftLidInitialRotation;
     rightLidAngleRef.current = rightLidInitialRotation;
 
-    resetLidBody(
-      leftLidRef.current,
-      getLidResetPose({
-        lidAngle: leftLidInitialRotation,
-        pivotPosition: leftLidPivotPosition,
-        position,
-        rotation,
-      })
-    );
-    resetLidBody(
-      rightLidRef.current,
-      getLidResetPose({
-        lidAngle: rightLidInitialRotation,
-        pivotPosition: rightLidPivotPosition,
-        position,
-        rotation,
-      })
-    );
-  }, [
-    cleanupNonce,
-    leftLidInitialRotation,
-    leftLidPivotPosition,
-    position,
-    rightLidInitialRotation,
-    rightLidPivotPosition,
-    rotation,
-  ]);
+    setLidBodyAngle(leftLidRef.current, leftLidInitialRotation, rotation);
+    setLidBodyAngle(rightLidRef.current, rightLidInitialRotation, rotation);
+  }, [cleanupNonce, leftLidInitialRotation, rightLidInitialRotation, rotation]);
 
   return (
     <group position={position} rotation={rotation}>

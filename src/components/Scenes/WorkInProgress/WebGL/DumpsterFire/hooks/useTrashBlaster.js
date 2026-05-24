@@ -445,7 +445,16 @@ export default function useTrashBlaster() {
 
       if (pointerDown.interaction) {
         if (pointerDown.interaction.kind === 'body') {
-          endBodyDragSession(pointerDown.interaction, rapier);
+          if (
+            !pointerDown.interaction.started &&
+            distance <= POINTER_TAP_THRESHOLD
+          ) {
+            fireShot(
+              getNormalizedPointerPosition(event.clientX, event.clientY, domElement)
+            );
+          } else {
+            endBodyDragSession(pointerDown.interaction, rapier);
+          }
           return;
         }
 

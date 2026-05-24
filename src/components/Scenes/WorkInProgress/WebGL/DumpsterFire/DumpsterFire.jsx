@@ -1,7 +1,6 @@
 import React from 'react';
 
 import useLoopedSceneAudio from '../../../../../hooks/useLoopedSceneAudio';
-import DebugDumpster from './components/DebugDumpster';
 import PhysicsScene from './components/PhysicsScene';
 import SceneEnvironment from './components/SceneEnvironment';
 import TrashBlasterOverlay from './components/TrashBlasterOverlay';
@@ -16,7 +15,6 @@ export default function DumpsterFire() {
     <>
       <SceneEnvironment />
       <PhysicsScene onTrashCollision={playCollision} />
-      <DebugDumpster />
       <TrashBlasterOverlay />
     </>
   );

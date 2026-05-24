@@ -14,9 +14,9 @@ import {
 import useTrashBlasterStore from '../hooks/useTrashBlasterStore';
 
 const DEG = Math.PI / 180;
-const DUMPSTER_LID_MIN_ANGLE = -180 * DEG;
-const DUMPSTER_LID_MAX_ANGLE = 90 * DEG;
-const DUMPSTER_LID_INITIAL_ANGLE = -180 * DEG;
+const DUMPSTER_LID_MIN_ANGLE = -159 * DEG;
+const DUMPSTER_LID_MAX_ANGLE = 105 * DEG;
+const DUMPSTER_LID_INITIAL_ANGLE = -159 * DEG;
 const DUMPSTER_LID_ANGLE_RANGE = [
   DUMPSTER_LID_MIN_ANGLE,
   DUMPSTER_LID_MAX_ANGLE,

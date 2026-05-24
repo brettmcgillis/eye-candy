@@ -20,7 +20,7 @@ function SceneComposition({ onTrashCollision }) {
       <SceneEffects />
 
       {FIXED_SCENE_ITEMS.map((item) => {
-        const PhysicsComponent = item.PhysicsComponent;
+        const { PhysicsComponent } = item;
 
         if (PhysicsComponent) {
           return (

@@ -11,14 +11,11 @@ import {
 } from '../utils/sceneData';
 import { getSceneItemKey } from '../utils/sceneUtils';
 import { DynamicSceneAsset, FixedSceneAsset } from './SceneAssetRigidBody';
-import SceneEffects from './SceneEffects';
 import TrashBlaster from './TrashBlaster';
 
 function SceneComposition({ onTrashCollision }) {
   return (
     <group position={SCENE_ROOT_POSITION}>
-      <SceneEffects />
-
       {FIXED_SCENE_ITEMS.map((item) => {
         const { PhysicsComponent } = item;
 

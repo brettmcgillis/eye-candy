@@ -4,7 +4,7 @@ import { useGLTF } from '@react-three/drei';
 
 import { modelFile } from '../../../utils/appUtils';
 
-export function GodlFish(props) {
+export function GoldFish(props) {
   const { nodes, materials } = useGLTF(modelFile('/goldfish.glb'));
   return (
     <group {...props} dispose={null}>

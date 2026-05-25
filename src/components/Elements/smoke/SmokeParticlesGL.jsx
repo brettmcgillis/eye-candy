@@ -22,6 +22,9 @@ attribute float aRotation;
 varying float vAlpha;
 varying float vAge;
 varying float vRotation;
+
+#include <fog_pars_vertex>
+
 void main() {
   vAlpha = aAlpha;
   vAge = aAge;
@@ -29,6 +32,7 @@ void main() {
   vec4 mvPosition = modelViewMatrix * vec4(position, 1.0);
   gl_PointSize = uSize * (1.0 + aAge * uGrowth) * uScale / (-mvPosition.z);
   gl_Position = projectionMatrix * mvPosition;
+  #include <fog_vertex>
 }
 `;
 
@@ -40,6 +44,9 @@ uniform float uFadeExp;
 varying float vAlpha;
 varying float vAge;
 varying float vRotation;
+
+#include <fog_pars_fragment>
+
 void main() {
   // Rotate texture coords around particle centre — each particle gets unique orientation
   vec2 uv = gl_PointCoord - 0.5;
@@ -51,6 +58,7 @@ void main() {
   float a = tex.a * uOpacity * vAlpha * ageFade;
   if (a < 0.001) discard;
   gl_FragColor = vec4(uColor, a);
+  #include <fog_fragment>
 }
 `;
 
@@ -823,6 +831,7 @@ export default function SmokeParticlesGL({
 
   const uniforms = useMemo(
     () => ({
+      ...THREE.UniformsUtils.clone(THREE.UniformsLib.fog),
       uSize: { value: 40 },
       uScale: { value: 400 },
       uColor: { value: new THREE.Color('#cac8c5') },
@@ -847,6 +856,7 @@ export default function SmokeParticlesGL({
           blending={THREE.NormalBlending}
           depthWrite={false}
           depthTest
+          fog
         />
       </points>
     </group>

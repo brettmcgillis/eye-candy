@@ -146,13 +146,17 @@ uniform float seed;
 uniform float detail;
 uniform float baseRadius;
 
+#include <fog_pars_vertex>
+
 void main() {
   vec3 basePosition = position * baseRadius;
   noise = detail * -0.10 * turbulence(0.6 * normal + time + seed);
   float billow = 2.0 * pnoise(0.05 * basePosition + vec3(2.0 * time), vec3(100.0));
   float displacement = -10.0 * noise + billow;
   vec3 newPosition = basePosition + normal * displacement;
-  gl_Position = projectionMatrix * modelViewMatrix * vec4(newPosition, 1.0);
+  vec4 mvPosition = modelViewMatrix * vec4(newPosition, 1.0);
+  gl_Position = projectionMatrix * mvPosition;
+  #include <fog_vertex>
 }
 `;
 
@@ -162,6 +166,8 @@ uniform vec3 colLight;
 uniform vec3 colNormal;
 uniform vec3 colDark;
 uniform float opacity;
+
+#include <fog_pars_fragment>
 
 vec3 blend(vec3 a, vec3 b, float t) {
   return vec3(
@@ -184,6 +190,7 @@ void main() {
   }
 
   gl_FragColor = vec4(col, opacity);
+  #include <fog_fragment>
 }
 `;
 
@@ -193,12 +200,15 @@ attribute vec3 customColor;
 varying vec3 vColor;
 uniform float pointScale;
 
+#include <fog_pars_vertex>
+
 void main() {
   vColor = customColor;
   vec4 mvPosition = modelViewMatrix * vec4(position, 1.0);
   float cameraDist = max(0.0001, length(mvPosition.xyz - position.xyz));
   gl_PointSize = size * pointScale / cameraDist;
   gl_Position = projectionMatrix * mvPosition;
+  #include <fog_vertex>
 }
 `;
 
@@ -206,10 +216,13 @@ const particleFragmentShader = /* glsl */ `
 uniform sampler2D map;
 varying vec3 vColor;
 
+#include <fog_pars_fragment>
+
 void main() {
   vec4 texel = texture2D(map, gl_PointCoord);
   if (texel.a < 0.01) discard;
   gl_FragColor = vec4(vColor, 1.0) * texel;
+  #include <fog_fragment>
 }
 `;
 
@@ -337,6 +350,7 @@ function createParticleTexture() {
 function createFlameMaterial(seed, detail = 1) {
   return new THREE.ShaderMaterial({
     uniforms: {
+      ...THREE.UniformsUtils.clone(THREE.UniformsLib.fog),
       time: { value: 0 },
       seed: { value: seed },
       detail: { value: detail },
@@ -350,6 +364,7 @@ function createFlameMaterial(seed, detail = 1) {
     fragmentShader: flameFragmentShader,
     transparent: true,
     depthWrite: false,
+    fog: true,
     toneMapped: false,
   });
 }
@@ -768,6 +783,7 @@ export default function FireAndSmokeGL({
     () =>
       new THREE.ShaderMaterial({
         uniforms: {
+          ...THREE.UniformsUtils.clone(THREE.UniformsLib.fog),
           map: { value: particleTexture },
           pointScale: { value: particlePointScale },
         },
@@ -777,6 +793,7 @@ export default function FireAndSmokeGL({
         depthTest: false,
         depthWrite: false,
         blending: THREE.NormalBlending,
+        fog: true,
         toneMapped: false,
       }),
     [particleTexture]

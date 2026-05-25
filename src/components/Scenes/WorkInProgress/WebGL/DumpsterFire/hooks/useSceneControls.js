@@ -19,6 +19,7 @@ import {
   makeNextDumpsterParticleSmokeSpline,
   serializeDumpsterParticleSmokeSplines,
 } from '../utils/particleSmokeAuthoring';
+import { BACKGROUND, FOG_RANGE, GRID, GROUND } from '../utils/sceneData';
 
 const SCENE_LABEL = 'Dumpster Fire';
 const PARTICLE_SMOKE_FOLDER_PATH = `${SCENE_LABEL}.Particle Smoke`;
@@ -41,6 +42,15 @@ const DEFAULT_FIRE_LIGHT_RIG = Object.freeze({
   rightX: 1.15,
   rightY: 0.45,
   rightZ: 0,
+});
+
+const DEFAULT_SCENE_ENVIRONMENT = Object.freeze({
+  backgroundColor: BACKGROUND,
+  floorColor: GROUND.color,
+  gridColor: GRID.args[3],
+  fogColor: BACKGROUND,
+  fogNear: FOG_RANGE[0],
+  fogFar: FOG_RANGE[1],
 });
 
 let idCounter = 0;
@@ -150,6 +160,12 @@ export default function useSceneControls() {
       cursorAttractorMode,
       cursorAttractorStrength,
       cursorAttractorRadius,
+      sceneBackgroundColor,
+      sceneFloorColor,
+      sceneGridColor,
+      sceneFogColor,
+      sceneFogNear,
+      sceneFogFar,
       fireLightEnabled,
       fireLightColor,
       fireLightIntensity,
@@ -209,6 +225,41 @@ ${allEntries}
                 }),
               }
             : {}),
+        },
+        { collapsed: false }
+      ),
+      Scene: folder(
+        {
+          sceneBackgroundColor: {
+            label: 'Background',
+            value: DEFAULT_SCENE_ENVIRONMENT.backgroundColor,
+          },
+          sceneFloorColor: {
+            label: 'Floor',
+            value: DEFAULT_SCENE_ENVIRONMENT.floorColor,
+          },
+          sceneGridColor: {
+            label: 'Grid Lines',
+            value: DEFAULT_SCENE_ENVIRONMENT.gridColor,
+          },
+          sceneFogColor: {
+            label: 'Fog',
+            value: DEFAULT_SCENE_ENVIRONMENT.fogColor,
+          },
+          sceneFogNear: {
+            label: 'Fog Near',
+            value: DEFAULT_SCENE_ENVIRONMENT.fogNear,
+            min: 0,
+            max: 100,
+            step: 0.1,
+          },
+          sceneFogFar: {
+            label: 'Fog Far',
+            value: DEFAULT_SCENE_ENVIRONMENT.fogFar,
+            min: 0,
+            max: 150,
+            step: 0.1,
+          },
         },
         { collapsed: false }
       ),
@@ -423,6 +474,14 @@ ${allEntries}
     cursorAttractorMode,
     cursorAttractorStrength,
     cursorAttractorRadius,
+    sceneEnvironment: {
+      backgroundColor: sceneBackgroundColor,
+      floorColor: sceneFloorColor,
+      gridColor: sceneGridColor,
+      fogColor: sceneFogColor,
+      fogNear: sceneFogNear,
+      fogFar: sceneFogFar,
+    },
     fireLightRig: {
       enabled: fireLightEnabled,
       color: fireLightColor,

@@ -155,6 +155,10 @@ export default function SplinePoints({
 
   // Keyboard shortcuts: A = add point, Delete/Backspace = remove selected
   useEffect(() => {
+    if (!visible) {
+      return undefined;
+    }
+
     const onKey = (e) => {
       if (e.target !== document.body) return;
       if (e.key === 'a' || e.key === 'A') {
@@ -174,7 +178,7 @@ export default function SplinePoints({
     };
     window.addEventListener('keydown', onKey);
     return () => window.removeEventListener('keydown', onKey);
-  }, [addPoint, selectedIndex, setPoints]);
+  }, [addPoint, selectedIndex, setPoints, visible]);
 
   return (
     <>

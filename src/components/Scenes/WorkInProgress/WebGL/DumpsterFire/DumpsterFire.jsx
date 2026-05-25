@@ -30,6 +30,7 @@ export default function DumpsterFire() {
     cursorAttractorStrength,
     cursorAttractorRadius,
     sceneEnvironment,
+    operatorCamera,
     fireLightRig,
     setFireAndSmokePoints,
     setParticleSmokePoints,
@@ -40,6 +41,7 @@ export default function DumpsterFire() {
       <SceneEnvironment
         sceneEnvironment={sceneEnvironment}
         cameraMode={cameraMode}
+        operatorCamera={operatorCamera}
       />
       <CursorAttractor
         attractorsRef={attractorsRef}

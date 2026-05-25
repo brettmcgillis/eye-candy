@@ -1,6 +1,6 @@
 import * as THREE from 'three';
 
-import { useEffect, useRef } from 'react';
+import { useCallback, useEffect, useRef } from 'react';
 
 import { useFrame, useThree } from '@react-three/fiber';
 import { useRapier } from '@react-three/rapier';
@@ -86,16 +86,23 @@ function hydrateInteractiveSession(interaction, camera) {
 }
 
 function startBodyDragSession(session, rapier) {
-  session.body.setBodyType(rapier.RigidBodyType.KinematicPositionBased, true);
-  session.body.setLinvel({ x: 0, y: 0, z: 0 }, true);
-  session.body.setAngvel({ x: 0, y: 0, z: 0 }, true);
-  session.body.setNextKinematicTranslation(session.lastTargetPosition);
-  session.body.setNextKinematicRotation(session.lockedRotation);
-  session.body.wakeUp?.();
+  const body = session.body;
+
+  body.setBodyType(rapier.RigidBodyType.KinematicPositionBased, true);
+  body.setLinvel({ x: 0, y: 0, z: 0 }, true);
+  body.setAngvel({ x: 0, y: 0, z: 0 }, true);
+  body.setNextKinematicTranslation(session.lastTargetPosition);
+  body.setNextKinematicRotation(session.lockedRotation);
+  body.wakeUp?.();
+
+  // eslint-disable-next-line no-param-reassign
   session.lastMovedAt = performance.now();
 }
 
 function updateBodyDragSession(session, clientX, clientY, domElement, camera) {
+  const body = session.body;
+  const releaseVelocity = session.releaseVelocity;
+  const lastTargetPosition = session.lastTargetPosition;
   const pointerPosition = getNormalizedPointerPosition(
     clientX,
     clientY,
@@ -108,23 +115,27 @@ function updateBodyDragSession(session, clientX, clientY, domElement, camera) {
     session.planePoint
   );
 
-  if (!sharedRaycaster.ray.intersectPlane(sharedDragPlane, sharedDragIntersection)) {
+  if (
+    !sharedRaycaster.ray.intersectPlane(
+      sharedDragPlane,
+      sharedDragIntersection
+    )
+  ) {
     return;
   }
 
   sharedDragTarget.copy(sharedDragIntersection).add(session.dragOffset);
-  session.body.setNextKinematicTranslation(sharedDragTarget);
-  session.body.setNextKinematicRotation(session.lockedRotation);
+  body.setNextKinematicTranslation(sharedDragTarget);
+  body.setNextKinematicRotation(session.lockedRotation);
 
   const now = performance.now();
   const deltaSeconds = Math.max((now - session.lastMovedAt) / 1000, 1 / 120);
 
-  session.releaseVelocity
-    .copy(sharedDragTarget)
-    .sub(session.lastTargetPosition)
-    .divideScalar(deltaSeconds);
-  clampVectorLength(session.releaseVelocity, DRAG_RELEASE_SPEED_LIMIT);
-  session.lastTargetPosition.copy(sharedDragTarget);
+  releaseVelocity.copy(sharedDragTarget).sub(lastTargetPosition).divideScalar(deltaSeconds);
+  clampVectorLength(releaseVelocity, DRAG_RELEASE_SPEED_LIMIT);
+  lastTargetPosition.copy(sharedDragTarget);
+
+  // eslint-disable-next-line no-param-reassign
   session.lastMovedAt = now;
 }
 
@@ -144,6 +155,8 @@ function endBodyDragSession(session, rapier) {
 }
 
 function updateLidDragSession(session, clientX, clientY) {
+  const angleRef = session.angleRef;
+  const applyDraggedAngle = session.applyDraggedAngle;
   const nextAngle = session.getDraggedAngle
     ? session.getDraggedAngle(clientX, clientY)
     : session.normalizeAngle(
@@ -152,8 +165,8 @@ function updateLidDragSession(session, clientX, clientY) {
             (session.radiansPerPixel ?? LID_DRAG_RADIANS_PER_PIXEL)
       );
 
-  session.angleRef.current = nextAngle;
-  session.applyDraggedAngle?.(nextAngle);
+  angleRef.current = nextAngle;
+  applyDraggedAngle?.(nextAngle);
 }
 
 function setThrowableActiveState(body, isActiveThrowable) {
@@ -161,8 +174,10 @@ function setThrowableActiveState(body, isActiveThrowable) {
     return;
   }
 
-  body.userData = {
-    ...body.userData,
+  const targetBody = body;
+
+  targetBody.userData = {
+    ...targetBody.userData,
     isActiveThrowable,
   };
 }
@@ -199,6 +214,9 @@ export default function useTrashBlaster() {
   const registerClearTrashHandler = useTrashBlasterStore(
     (s) => s.registerClearTrashHandler
   );
+  const registerFireTrashHandler = useTrashBlasterStore(
+    (s) => s.registerFireTrashHandler
+  );
   const setPointerInteractionActive = useTrashBlasterStore(
     (s) => s.setPointerInteractionActive
   );
@@ -206,24 +224,71 @@ export default function useTrashBlaster() {
   const unregisterClearTrashHandler = useTrashBlasterStore(
     (s) => s.unregisterClearTrashHandler
   );
+  const unregisterFireTrashHandler = useTrashBlasterStore(
+    (s) => s.unregisterFireTrashHandler
+  );
   const nextShotSlotRef = useRef(
     Object.fromEntries(SHOT_ASSET_OPTIONS.map((asset) => [asset.key, 0]))
   );
 
-  const recycleShotBody = (body) => {
-    const { assetKey, slotIndex } = body?.userData ?? {};
-
-    if (typeof assetKey !== 'string' || typeof slotIndex !== 'number') {
-      return;
-    }
-
-    parkShotBody(body, assetKey, slotIndex);
-    setHasThrowables(hasActiveShotBodies(shotBodiesRef.current));
-  };
-
   useEffect(() => {
     cameraRef.current = camera;
   }, [camera]);
+
+  const fireShot = useCallback(
+    (pointerPosition = new THREE.Vector2(0, 0)) => {
+      const shot = createTrashBlast(cameraRef.current, pointerPosition);
+      const poolMeta = INSTANCED_TRASH_POOL_META[shot.asset.key];
+      const bodies = shotBodiesRef.current[shot.asset.key];
+
+      if (!poolMeta || !bodies?.length) {
+        return;
+      }
+
+      const nextSlotOffset = nextShotSlotRef.current[shot.asset.key] ?? 0;
+      const slotIndex = nextSlotOffset;
+      const body = bodies[slotIndex];
+
+      nextShotSlotRef.current[shot.asset.key] =
+        (nextSlotOffset + 1) % SHOT_POOL_SLOTS_PER_ASSET;
+
+      if (!body) {
+        return;
+      }
+
+      const [x, y, z] = shot.position;
+      const [vx, vy, vz] = shot.velocity;
+      const [sx, sy, sz] = shot.spin;
+      const quaternion = new THREE.Quaternion().setFromEuler(
+        new THREE.Euler(...shot.rotation)
+      );
+
+      body.setTranslation({ x, y, z }, true);
+      body.setRotation(
+        {
+          x: quaternion.x,
+          y: quaternion.y,
+          z: quaternion.z,
+          w: quaternion.w,
+        },
+        true
+      );
+      body.setLinvel({ x: vx, y: vy, z: vz }, true);
+      body.setAngvel({ x: sx, y: sy, z: sz }, true);
+      setThrowableActiveState(body, true);
+      body.wakeUp?.();
+      markThrowableSpawned();
+    },
+    [markThrowableSpawned]
+  );
+
+  useEffect(() => {
+    registerFireTrashHandler(fireShot);
+
+    return () => {
+      unregisterFireTrashHandler();
+    };
+  }, [fireShot, registerFireTrashHandler, unregisterFireTrashHandler]);
 
   useFrame(() => {
     let recycledShot = false;
@@ -306,69 +371,26 @@ export default function useTrashBlaster() {
             domElement,
           });
 
-          if (!interaction) {
-            continue;
-          }
+          if (interaction) {
+            if (
+              !nearestSession ||
+              intersections[index].distance < nearestSession.distance
+            ) {
+              nearestSession = {
+                distance: intersections[index].distance,
+                session: hydrateInteractiveSession(
+                  interaction,
+                  cameraRef.current
+                ),
+              };
+            }
 
-          if (
-            !nearestSession ||
-            intersections[index].distance < nearestSession.distance
-          ) {
-            nearestSession = {
-              distance: intersections[index].distance,
-              session: hydrateInteractiveSession(interaction, cameraRef.current),
-            };
+            break;
           }
-
-          break;
         }
       });
 
       return nearestSession?.session ?? null;
-    };
-
-    const fireShot = (pointerPosition = new THREE.Vector2(0, 0)) => {
-      const shot = createTrashBlast(cameraRef.current, pointerPosition);
-      const poolMeta = INSTANCED_TRASH_POOL_META[shot.asset.key];
-      const bodies = shotBodiesRef.current[shot.asset.key];
-
-      if (!poolMeta || !bodies?.length) {
-        return;
-      }
-
-      const nextSlotOffset = nextShotSlotRef.current[shot.asset.key] ?? 0;
-      const slotIndex = nextSlotOffset;
-      const body = bodies[slotIndex];
-
-      nextShotSlotRef.current[shot.asset.key] =
-        (nextSlotOffset + 1) % SHOT_POOL_SLOTS_PER_ASSET;
-
-      if (!body) {
-        return;
-      }
-
-      const [x, y, z] = shot.position;
-      const [vx, vy, vz] = shot.velocity;
-      const [sx, sy, sz] = shot.spin;
-      const quaternion = new THREE.Quaternion().setFromEuler(
-        new THREE.Euler(...shot.rotation)
-      );
-
-      body.setTranslation({ x, y, z }, true);
-      body.setRotation(
-        {
-          x: quaternion.x,
-          y: quaternion.y,
-          z: quaternion.z,
-          w: quaternion.w,
-        },
-        true
-      );
-      body.setLinvel({ x: vx, y: vy, z: vz }, true);
-      body.setAngvel({ x: sx, y: sy, z: sz }, true);
-      setThrowableActiveState(body, true);
-      body.wakeUp?.();
-      markThrowableSpawned();
     };
 
     const handlePointerDown = (event) => {
@@ -376,7 +398,10 @@ export default function useTrashBlaster() {
         return;
       }
 
-      const interaction = resolveInteractiveSession(event.clientX, event.clientY);
+      const interaction = resolveInteractiveSession(
+        event.clientX,
+        event.clientY
+      );
 
       pointerDownRef.current = {
         x: event.clientX,
@@ -450,7 +475,11 @@ export default function useTrashBlaster() {
             distance <= POINTER_TAP_THRESHOLD
           ) {
             fireShot(
-              getNormalizedPointerPosition(event.clientX, event.clientY, domElement)
+              getNormalizedPointerPosition(
+                event.clientX,
+                event.clientY,
+                domElement
+              )
             );
           } else {
             endBodyDragSession(pointerDown.interaction, rapier);
@@ -464,7 +493,11 @@ export default function useTrashBlaster() {
           distance <= POINTER_TAP_THRESHOLD
         ) {
           fireShot(
-            getNormalizedPointerPosition(event.clientX, event.clientY, domElement)
+            getNormalizedPointerPosition(
+              event.clientX,
+              event.clientY,
+              domElement
+            )
           );
         }
 
@@ -473,7 +506,11 @@ export default function useTrashBlaster() {
 
       if (distance <= POINTER_TAP_THRESHOLD) {
         fireShot(
-          getNormalizedPointerPosition(event.clientX, event.clientY, domElement)
+          getNormalizedPointerPosition(
+            event.clientX,
+            event.clientY,
+            domElement
+          )
         );
       }
     };
@@ -513,7 +550,7 @@ export default function useTrashBlaster() {
       window.removeEventListener('blur', cancelInteraction);
       window.removeEventListener('keydown', handleKeyDown);
     };
-  }, [gl, markThrowableSpawned, rapier, setPointerInteractionActive]);
+  }, [fireShot, gl, rapier, setPointerInteractionActive]);
 
   return { shotBodiesRef };
 }

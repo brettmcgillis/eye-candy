@@ -7,11 +7,14 @@ const useTrashBlasterStore = create((set, get) => ({
   isPointerInteractionActive: false,
   cleanupNonce: 0,
   clearTrashHandler: NOOP,
+  fireTrashHandler: NOOP,
   interactiveTargets: {},
   markThrowableSpawned: () => set({ hasThrowables: true }),
   setHasThrowables: (hasThrowables) => set({ hasThrowables }),
   setPointerInteractionActive: (isPointerInteractionActive) =>
     set({ isPointerInteractionActive }),
+  registerFireTrashHandler: (fireTrashHandler) => set({ fireTrashHandler }),
+  unregisterFireTrashHandler: () => set({ fireTrashHandler: NOOP }),
   registerInteractiveTarget: (targetId, target) =>
     set((state) => ({
       interactiveTargets: {
@@ -46,6 +49,11 @@ const useTrashBlasterStore = create((set, get) => ({
       cleanupNonce: cleanupNonce + 1,
       hasThrowables: false,
     });
+  },
+  fireTrash: (pointerPosition) => {
+    const { fireTrashHandler } = get();
+
+    fireTrashHandler(pointerPosition);
   },
 }));
 

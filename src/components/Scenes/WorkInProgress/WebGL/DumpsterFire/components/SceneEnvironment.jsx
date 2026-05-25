@@ -7,6 +7,8 @@ import {
 } from '@react-three/drei';
 
 import useCameraFitToViewport from '../../../../../../hooks/useCameraFitToViewport';
+import useOperatorFreeCamera from '../../../../../../hooks/useOperatorFreeCamera';
+import useOperatorInput from '../../../../../../hooks/useOperatorInput';
 import useTrashBlasterStore from '../hooks/useTrashBlasterStore';
 import {
   BACKGROUND,
@@ -31,11 +33,14 @@ const DEFAULT_SCENE_ENVIRONMENT = Object.freeze({
 export default function SceneEnvironment({
   sceneEnvironment,
   cameraMode = 'Fixed',
+  operatorCamera,
 }) {
   const [groundX, , groundZ] = FLOOR_COLLIDER_POSITION;
   const isPointerInteractionActive = useTrashBlasterStore(
     (s) => s.isPointerInteractionActive
   );
+  const clearTrash = useTrashBlasterStore((s) => s.clearTrash);
+  const fireTrash = useTrashBlasterStore((s) => s.fireTrash);
   const [cameraNode, setCameraNode] = useState(null);
   const [controlsNode, setControlsNode] = useState(null);
   const config = {
@@ -44,11 +49,29 @@ export default function SceneEnvironment({
   };
   const fogNear = Math.min(config.fogNear, config.fogFar);
   const fogFar = Math.max(config.fogNear, config.fogFar);
+  const operatorEnabled = cameraMode === 'Operator';
   const orbitEnabled = cameraMode === 'Orbit' && !isPointerInteractionActive;
   const { cameraPosition, cameraTarget, cameraFov } =
     useCameraFitToViewport(CAMERA);
+  const operatorInputRef = useOperatorInput({ enabled: operatorEnabled });
+
+  useOperatorFreeCamera({
+    enabled: operatorEnabled,
+    inputRef: operatorInputRef,
+    config: operatorCamera,
+    actions: {
+      action1: fireTrash,
+      action2: clearTrash,
+    },
+    shouldBlockPointerLook: () =>
+      useTrashBlasterStore.getState().isPointerInteractionActive,
+  });
 
   useLayoutEffect(() => {
+    if (operatorEnabled) {
+      return;
+    }
+
     const camera = cameraNode;
     const controls = controlsNode;
 
@@ -74,6 +97,7 @@ export default function SceneEnvironment({
     cameraPosition,
     cameraTarget,
     controlsNode,
+    operatorEnabled,
   ]);
 
   return (

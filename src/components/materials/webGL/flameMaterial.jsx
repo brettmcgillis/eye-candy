@@ -7,10 +7,31 @@ import { extend } from '@react-three/fiber';
 
 import { FLAME_SHADER_CONSTANTS } from '../../elements/flame/flameShared';
 
+const glslNumberLiteral = (value) =>
+  Number.isInteger(value) ? `${value}.0` : `${value}`;
+
+const glslLiteral = (value) => {
+  if (typeof value === 'number') {
+    return glslNumberLiteral(value);
+  }
+
+  if (Array.isArray(value)) {
+    return value.map((entry) => glslLiteral(entry));
+  }
+
+  if (value && typeof value === 'object') {
+    return Object.fromEntries(
+      Object.entries(value).map(([key, entry]) => [key, glslLiteral(entry)])
+    );
+  }
+
+  return value;
+};
+
 const vec3Literal = (value) => `vec3(${value.join(', ')})`;
 
 const { alpha, baseScale, bend, color, opacity, shimmer, vertical } =
-  FLAME_SHADER_CONSTANTS;
+  glslLiteral(FLAME_SHADER_CONSTANTS);
 
 const FLAME_VERT = /* glsl */ `
   uniform float time;

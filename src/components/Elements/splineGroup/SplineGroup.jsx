@@ -2,6 +2,7 @@ import * as THREE from 'three';
 
 import React, { useCallback, useMemo } from 'react';
 
+import FireAndSmoke from '../fireAndSmoke/FireAndSmoke';
 import SmokeParticles from '../smoke/SmokeParticles';
 import SmokeVolumeMesh from '../smoke/SmokeVolumeMesh';
 import VolumetricSmokeParticles from '../smoke/VolumetricSmokeParticles';
@@ -132,10 +133,12 @@ export default function SplineGroup({
     ? splineConfig.type
     : (splineConfig.smokeType ?? 'Particle');
   const fireType = splineConfig.fireType ?? 'Classic';
+  const isFireAndSmoke = normalizedType === 'FireAndSmoke';
 
   if (!splineConfig.visible) return null;
   if (allowedTypes === 'smoke' && normalizedType === 'Fire') return null;
   if (allowedTypes === 'fire' && normalizedType === 'Smoke') return null;
+  if (allowedTypes !== 'both' && isFireAndSmoke) return null;
 
   const isFire = normalizedType === 'Fire';
   const isSmoke = normalizedType === 'Smoke';
@@ -198,6 +201,16 @@ export default function SplineGroup({
               mergedConfig.volSpread ?? 0
             ) || 120
           }
+        />
+      )}
+
+      {isFireAndSmoke && (
+        <FireAndSmoke
+          controlPoints={points}
+          {...mergedConfig}
+          attractorsRef={attractorsRef}
+          attractorStrength={config.attractorStrength}
+          attractorRadius={config.attractorRadius}
         />
       )}
 

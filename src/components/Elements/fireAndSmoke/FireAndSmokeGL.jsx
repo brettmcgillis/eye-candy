@@ -790,7 +790,7 @@ export default function FireAndSmokeGL({
         vertexShader: particleVertexShader,
         fragmentShader: particleFragmentShader,
         transparent: true,
-        depthTest: false,
+        depthTest: true,
         depthWrite: false,
         blending: THREE.NormalBlending,
         fog: true,

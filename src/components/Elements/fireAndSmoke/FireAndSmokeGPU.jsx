@@ -672,7 +672,7 @@ export default function FireAndSmokeGPU({
 
     const material = new THREE.PointsNodeMaterial({
       transparent: true,
-      depthTest: false,
+      depthTest: true,
       depthWrite: false,
       blending: THREE.NormalBlending,
       sizeAttenuation: false,

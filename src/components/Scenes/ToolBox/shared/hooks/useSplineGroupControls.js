@@ -304,6 +304,18 @@ export default function buildSplineGroupControls(index, cfg, opts) {
                 onChange: (v) =>
                   updateSplineConfig(setSplineConfigs, index, 'spawnSpread', v),
               },
+              [`prefillOnStart_${index}`]: {
+                label: 'Prefill On Start',
+                value: cfg.prefillOnStart ?? true,
+                hint: 'Open splines only — when off, particles begin queued at the emitter',
+                onChange: (v) =>
+                  updateSplineConfig(
+                    setSplineConfigs,
+                    index,
+                    'prefillOnStart',
+                    v
+                  ),
+              },
               [`maxDrift_${index}`]: {
                 label: 'Max Drift',
                 value: cfg.maxDrift,
@@ -969,8 +981,12 @@ export default function buildSplineGroupControls(index, cfg, opts) {
                 scale: [...(source.scale ?? [1, 1, 1])],
                 points: (source.points ?? []).map((pt) => ({
                   position: pt.position.clone(),
-                  rotation: pt.rotation ? pt.rotation.clone() : new THREE.Euler(),
-                  scale: pt.scale ? pt.scale.clone() : new THREE.Vector3(1, 1, 1),
+                  rotation: pt.rotation
+                    ? pt.rotation.clone()
+                    : new THREE.Euler(),
+                  scale: pt.scale
+                    ? pt.scale.clone()
+                    : new THREE.Vector3(1, 1, 1),
                 })),
               };
 
@@ -980,7 +996,10 @@ export default function buildSplineGroupControls(index, cfg, opts) {
               ...prev,
               {
                 ...(prev[index] ?? DEFAULT_SPLINE_CONFIG),
-                name: `${(prev[index] ?? DEFAULT_SPLINE_CONFIG).name || `Spline ${index + 1}`} Copy`,
+                name: `${
+                  (prev[index] ?? DEFAULT_SPLINE_CONFIG).name ||
+                  `Spline ${index + 1}`
+                } Copy`,
               },
             ]);
           },

@@ -58,6 +58,11 @@ export default function ParticleSmokeLayer({
           >
             {showParticleSmoke ? (
               <SmokeParticles
+                key={`${splineConfig.name ?? 'particle-smoke'}-${(
+                  spline.pos ?? []
+                ).join('-')}-${
+                  mergedConfig.prefillOnStart === false ? 'queued' : 'prefilled'
+                }`}
                 points={positions}
                 pointRotations={rotations}
                 pointScales={scales}

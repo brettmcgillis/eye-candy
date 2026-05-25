@@ -396,33 +396,42 @@ export default function SmokeParticlesGL({
       }
 
       const [initSX, initSY, initSZ] = lookup;
+      const prefillOnStart = config.prefillOnStart ?? true;
       const tOffset = config.closed ? 0 : -1.0;
       const tRange = config.closed ? 1.0 : 2.0;
 
       for (let i = 0; i < N; i += 1) {
-        const t = tOffset + (i / N) * tRange;
-        splineT[i] = t;
-        if (t < 0) {
+        if (!config.closed && !prefillOnStart) {
+          splineT[i] = -(i / N) * 2.0;
           alphas[i] = 0;
           positions[i * 3] = initSX;
           positions[i * 3 + 1] = initSY;
           positions[i * 3 + 2] = initSZ;
         } else {
-          curve.getPoint(t, curveTmp);
-          const spread = config.spawnSpread;
-          const tIdx = Math.max(
-            0,
-            Math.min(CURVE_SAMPLES - 1, Math.floor(t * (CURVE_SAMPLES - 1)))
-          );
-          const off = spawnWithRotation(
-            spread,
-            initRotLookup,
-            initScaleLookup,
-            tIdx
-          );
-          positions[i * 3] = curveTmp.x + off.x;
-          positions[i * 3 + 1] = curveTmp.y + off.y;
-          positions[i * 3 + 2] = curveTmp.z + off.z;
+          const t = tOffset + (i / N) * tRange;
+          splineT[i] = t;
+          if (t < 0) {
+            alphas[i] = 0;
+            positions[i * 3] = initSX;
+            positions[i * 3 + 1] = initSY;
+            positions[i * 3 + 2] = initSZ;
+          } else {
+            curve.getPoint(t, curveTmp);
+            const spread = config.spawnSpread;
+            const tIdx = Math.max(
+              0,
+              Math.min(CURVE_SAMPLES - 1, Math.floor(t * (CURVE_SAMPLES - 1)))
+            );
+            const off = spawnWithRotation(
+              spread,
+              initRotLookup,
+              initScaleLookup,
+              tIdx
+            );
+            positions[i * 3] = curveTmp.x + off.x;
+            positions[i * 3 + 1] = curveTmp.y + off.y;
+            positions[i * 3 + 2] = curveTmp.z + off.z;
+          }
         }
       }
 

@@ -197,6 +197,7 @@ export const DEFAULT_SPLINE_CONFIG = {
   turbulence: 1.2,
   turbulenceSpeed: 0.3,
   spawnSpread: 1.2,
+  prefillOnStart: true,
   maxDrift: 6,
   fadeRate: 8,
   volParticleCount: 12000,

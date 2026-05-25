@@ -659,6 +659,12 @@ export default function useSmokeTestControls(attractorsRef) {
                     step: 0.05,
                     onChange: onCfg('spawnSpread'),
                   },
+                  [`ps_prefillOnStart_${id}`]: {
+                    label: 'Prefill On Start',
+                    value: inst.config.prefillOnStart ?? true,
+                    hint: 'Open splines only — when off, particles begin queued at the emitter',
+                    onChange: onCfg('prefillOnStart'),
+                  },
                   [`ps_drift_${id}`]: {
                     label: 'Max Drift',
                     value: inst.config.maxDrift,

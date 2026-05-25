@@ -210,6 +210,7 @@ const DUMPSTER_FIRE = {
       turbulence: 1.6500000000000001,
       turbulenceSpeed: 0.35000000000000003,
       spawnSpread: 0,
+      prefillOnStart: false,
       maxDrift: 18.2,
       fadeRate: 1,
       volParticleCount: 2400,

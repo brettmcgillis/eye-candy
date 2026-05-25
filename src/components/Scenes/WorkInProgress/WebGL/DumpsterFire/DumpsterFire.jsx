@@ -28,6 +28,7 @@ export default function DumpsterFire() {
     cursorAttractorMode,
     cursorAttractorStrength,
     cursorAttractorRadius,
+    fireLightRig,
     setFireAndSmokePoints,
     setParticleSmokePoints,
   } = useSceneControls();
@@ -60,6 +61,7 @@ export default function DumpsterFire() {
         attractorsRef={attractorsRef}
         attractorStrength={cursorAttractorStrength}
         attractorRadius={cursorAttractorRadius}
+        fireLightRig={fireLightRig}
       />
       <TrashBlasterOverlay />
     </>

@@ -23,6 +23,26 @@ import {
 const SCENE_LABEL = 'Dumpster Fire';
 const PARTICLE_SMOKE_FOLDER_PATH = `${SCENE_LABEL}.Particle Smoke`;
 
+const DEFAULT_FIRE_LIGHT_RIG = Object.freeze({
+  enabled: true,
+  color: '#ff7a1f',
+  intensity: 12,
+  intensityJitter: 3.75,
+  secondaryJitter: 1.25,
+  distance: 2,
+  decay: 1.4,
+  flickerSpeed: 7,
+  swayX: 0.08,
+  swayY: 0.05,
+  swayZ: 0.08,
+  leftX: 0.15,
+  leftY: 0.45,
+  leftZ: 0,
+  rightX: 1.15,
+  rightY: 0.45,
+  rightZ: 0,
+});
+
 let idCounter = 0;
 const mkId = () => idCounter++;
 
@@ -130,6 +150,23 @@ export default function useSceneControls() {
       cursorAttractorMode,
       cursorAttractorStrength,
       cursorAttractorRadius,
+      fireLightEnabled,
+      fireLightColor,
+      fireLightIntensity,
+      fireLightIntensityJitter,
+      fireLightSecondaryJitter,
+      fireLightDistance,
+      fireLightDecay,
+      fireLightFlickerSpeed,
+      fireLightSwayX,
+      fireLightSwayY,
+      fireLightSwayZ,
+      fireLightLeftX,
+      fireLightLeftY,
+      fireLightLeftZ,
+      fireLightRightX,
+      fireLightRightY,
+      fireLightRightZ,
     },
   ] = useControls(
     SCENE_LABEL,
@@ -142,7 +179,7 @@ export default function useSceneControls() {
           },
           editSplines: {
             label: 'Edit Mode',
-            value: true,
+            value: false,
           },
           ...(localEnv()
             ? {
@@ -183,7 +220,7 @@ ${allEntries}
           },
           showCursorAttractor: {
             label: 'Show Helper',
-            value: true,
+            value: false,
           },
           cursorAttractorMode: {
             label: 'Mode',
@@ -211,10 +248,128 @@ ${allEntries}
         {
           physicsDebug: {
             label: 'Debug',
-            value: true,
+            value: false,
           },
         },
         { collapsed: true }
+      ),
+      'Fire Lights': folder(
+        {
+          fireLightEnabled: {
+            label: 'Enabled',
+            value: DEFAULT_FIRE_LIGHT_RIG.enabled,
+          },
+          fireLightColor: {
+            label: 'Color',
+            value: DEFAULT_FIRE_LIGHT_RIG.color,
+          },
+          fireLightIntensity: {
+            label: 'Intensity',
+            value: DEFAULT_FIRE_LIGHT_RIG.intensity,
+            min: 0,
+            max: 40,
+            step: 0.1,
+          },
+          fireLightIntensityJitter: {
+            label: 'Flicker Amount',
+            value: DEFAULT_FIRE_LIGHT_RIG.intensityJitter,
+            min: 0,
+            max: 20,
+            step: 0.05,
+          },
+          fireLightSecondaryJitter: {
+            label: 'Flicker Detail',
+            value: DEFAULT_FIRE_LIGHT_RIG.secondaryJitter,
+            min: 0,
+            max: 10,
+            step: 0.05,
+          },
+          fireLightDistance: {
+            label: 'Distance',
+            value: DEFAULT_FIRE_LIGHT_RIG.distance,
+            min: 0,
+            max: 30,
+            step: 0.1,
+          },
+          fireLightDecay: {
+            label: 'Decay',
+            value: DEFAULT_FIRE_LIGHT_RIG.decay,
+            min: 0,
+            max: 4,
+            step: 0.05,
+          },
+          fireLightFlickerSpeed: {
+            label: 'Flicker Speed',
+            value: DEFAULT_FIRE_LIGHT_RIG.flickerSpeed,
+            min: 0,
+            max: 30,
+            step: 0.1,
+          },
+          fireLightSwayX: {
+            label: 'Sway X',
+            value: DEFAULT_FIRE_LIGHT_RIG.swayX,
+            min: 0,
+            max: 1,
+            step: 0.01,
+          },
+          fireLightSwayY: {
+            label: 'Sway Y',
+            value: DEFAULT_FIRE_LIGHT_RIG.swayY,
+            min: 0,
+            max: 1,
+            step: 0.01,
+          },
+          fireLightSwayZ: {
+            label: 'Sway Z',
+            value: DEFAULT_FIRE_LIGHT_RIG.swayZ,
+            min: 0,
+            max: 1,
+            step: 0.01,
+          },
+          fireLightLeftX: {
+            label: 'Left X',
+            value: DEFAULT_FIRE_LIGHT_RIG.leftX,
+            min: -3,
+            max: 3,
+            step: 0.01,
+          },
+          fireLightLeftY: {
+            label: 'Left Y',
+            value: DEFAULT_FIRE_LIGHT_RIG.leftY,
+            min: -1,
+            max: 4,
+            step: 0.01,
+          },
+          fireLightLeftZ: {
+            label: 'Left Z',
+            value: DEFAULT_FIRE_LIGHT_RIG.leftZ,
+            min: -3,
+            max: 3,
+            step: 0.01,
+          },
+          fireLightRightX: {
+            label: 'Right X',
+            value: DEFAULT_FIRE_LIGHT_RIG.rightX,
+            min: -3,
+            max: 3,
+            step: 0.01,
+          },
+          fireLightRightY: {
+            label: 'Right Y',
+            value: DEFAULT_FIRE_LIGHT_RIG.rightY,
+            min: -1,
+            max: 4,
+            step: 0.01,
+          },
+          fireLightRightZ: {
+            label: 'Right Z',
+            value: DEFAULT_FIRE_LIGHT_RIG.rightZ,
+            min: -3,
+            max: 3,
+            step: 0.01,
+          },
+        },
+        { collapsed: false }
       ),
       'Particle Smoke': folder(
         {
@@ -268,6 +423,25 @@ ${allEntries}
     cursorAttractorMode,
     cursorAttractorStrength,
     cursorAttractorRadius,
+    fireLightRig: {
+      enabled: fireLightEnabled,
+      color: fireLightColor,
+      intensity: fireLightIntensity,
+      intensityJitter: fireLightIntensityJitter,
+      secondaryJitter: fireLightSecondaryJitter,
+      distance: fireLightDistance,
+      decay: fireLightDecay,
+      flickerSpeed: fireLightFlickerSpeed,
+      swayX: fireLightSwayX,
+      swayY: fireLightSwayY,
+      swayZ: fireLightSwayZ,
+      leftX: fireLightLeftX,
+      leftY: fireLightLeftY,
+      leftZ: fireLightLeftZ,
+      rightX: fireLightRightX,
+      rightY: fireLightRightY,
+      rightZ: fireLightRightZ,
+    },
     setFireAndSmokePoints,
     setParticleSmokePoints,
   };

@@ -166,6 +166,7 @@ export default function SplineGroup({
 
       {showParticleSmoke && (
         <SmokeParticles
+          key={mergedConfig.prefillOnStart === false ? 'queued' : 'prefilled'}
           points={positions}
           pointRotations={rotations}
           pointScales={scales}

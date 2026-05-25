@@ -6,6 +6,7 @@ import { useFrame, useThree } from '@react-three/fiber';
 import { useRapier } from '@react-three/rapier';
 
 import {
+  DEFAULT_SHOT_TUNING,
   INSTANCED_TRASH_POOL_META,
   POINTER_TAP_THRESHOLD,
   SHOT_ASSET_OPTIONS,
@@ -86,7 +87,7 @@ function hydrateInteractiveSession(interaction, camera) {
 }
 
 function startBodyDragSession(session, rapier) {
-  const body = session.body;
+  const { body } = session;
 
   body.setBodyType(rapier.RigidBodyType.KinematicPositionBased, true);
   body.setLinvel({ x: 0, y: 0, z: 0 }, true);
@@ -100,9 +101,9 @@ function startBodyDragSession(session, rapier) {
 }
 
 function updateBodyDragSession(session, clientX, clientY, domElement, camera) {
-  const body = session.body;
-  const releaseVelocity = session.releaseVelocity;
-  const lastTargetPosition = session.lastTargetPosition;
+  const { body } = session;
+  const { releaseVelocity } = session;
+  const { lastTargetPosition } = session;
   const pointerPosition = getNormalizedPointerPosition(
     clientX,
     clientY,
@@ -116,10 +117,7 @@ function updateBodyDragSession(session, clientX, clientY, domElement, camera) {
   );
 
   if (
-    !sharedRaycaster.ray.intersectPlane(
-      sharedDragPlane,
-      sharedDragIntersection
-    )
+    !sharedRaycaster.ray.intersectPlane(sharedDragPlane, sharedDragIntersection)
   ) {
     return;
   }
@@ -131,7 +129,10 @@ function updateBodyDragSession(session, clientX, clientY, domElement, camera) {
   const now = performance.now();
   const deltaSeconds = Math.max((now - session.lastMovedAt) / 1000, 1 / 120);
 
-  releaseVelocity.copy(sharedDragTarget).sub(lastTargetPosition).divideScalar(deltaSeconds);
+  releaseVelocity
+    .copy(sharedDragTarget)
+    .sub(lastTargetPosition)
+    .divideScalar(deltaSeconds);
   clampVectorLength(releaseVelocity, DRAG_RELEASE_SPEED_LIMIT);
   lastTargetPosition.copy(sharedDragTarget);
 
@@ -155,8 +156,8 @@ function endBodyDragSession(session, rapier) {
 }
 
 function updateLidDragSession(session, clientX, clientY) {
-  const angleRef = session.angleRef;
-  const applyDraggedAngle = session.applyDraggedAngle;
+  const { angleRef } = session;
+  const { applyDraggedAngle } = session;
   const nextAngle = session.getDraggedAngle
     ? session.getDraggedAngle(clientX, clientY)
     : session.normalizeAngle(
@@ -202,11 +203,12 @@ function hasActiveShotBodies(shotBodiesMap) {
   );
 }
 
-export default function useTrashBlaster() {
+export default function useTrashBlaster(shotConfig = DEFAULT_SHOT_TUNING) {
   const { camera, gl } = useThree();
   const { rapier } = useRapier();
   const cameraRef = useRef(camera);
   const pointerDownRef = useRef(null);
+  const shotConfigRef = useRef(shotConfig);
   const shotBodiesRef = useRef({});
   const markThrowableSpawned = useTrashBlasterStore(
     (s) => s.markThrowableSpawned
@@ -235,9 +237,17 @@ export default function useTrashBlaster() {
     cameraRef.current = camera;
   }, [camera]);
 
+  useEffect(() => {
+    shotConfigRef.current = shotConfig;
+  }, [shotConfig]);
+
   const fireShot = useCallback(
     (pointerPosition = new THREE.Vector2(0, 0)) => {
-      const shot = createTrashBlast(cameraRef.current, pointerPosition);
+      const shot = createTrashBlast(
+        cameraRef.current,
+        pointerPosition,
+        shotConfigRef.current
+      );
       const poolMeta = INSTANCED_TRASH_POOL_META[shot.asset.key];
       const bodies = shotBodiesRef.current[shot.asset.key];
 
@@ -506,11 +516,7 @@ export default function useTrashBlaster() {
 
       if (distance <= POINTER_TAP_THRESHOLD) {
         fireShot(
-          getNormalizedPointerPosition(
-            event.clientX,
-            event.clientY,
-            domElement
-          )
+          getNormalizedPointerPosition(event.clientX, event.clientY, domElement)
         );
       }
     };

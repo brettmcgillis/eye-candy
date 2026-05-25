@@ -76,7 +76,7 @@ function InstancedTrashBodies({ asset, bodyRefsMap }) {
     registerInteractiveTarget(targetId, {
       getObject: () => interactiveRootRef.current,
       buildSession: ({ intersection, clientX, clientY }) => {
-        const instanceId = intersection.instanceId;
+        const { instanceId } = intersection;
 
         if (!Number.isInteger(instanceId)) {
           return null;
@@ -139,8 +139,8 @@ function InstancedTrashBodies({ asset, bodyRefsMap }) {
   );
 }
 
-export default function TrashBlaster() {
-  const { shotBodiesRef } = useTrashBlaster();
+export default function TrashBlaster({ shotConfig }) {
+  const { shotBodiesRef } = useTrashBlaster(shotConfig);
 
   return (
     <>

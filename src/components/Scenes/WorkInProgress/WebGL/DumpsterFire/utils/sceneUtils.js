@@ -5,12 +5,9 @@ import {
   ASSET_GRID_COLUMN_SPACING,
   ASSET_GRID_OPTIONS,
   ASSET_GRID_ROW_SPACING,
+  DEFAULT_SHOT_TUNING,
   INSTANCED_TRASH_POOL_META,
   SHOT_AIM_PLANE_POINT,
-  SHOT_BASE_VERTICAL_BOOST,
-  SHOT_POINTER_VERTICAL_BOOST,
-  SHOT_SPAWN_OFFSET,
-  SHOT_SPEED,
   getRandomShotAsset,
 } from './sceneData';
 
@@ -110,7 +107,8 @@ export function getNormalizedPointerPosition(clientX, clientY, domElement) {
 
 export function createTrashBlast(
   camera,
-  pointerPosition = new THREE.Vector2(0, 0)
+  pointerPosition = new THREE.Vector2(0, 0),
+  shotConfig = DEFAULT_SHOT_TUNING
 ) {
   const raycaster = new THREE.Raycaster();
   const rayDirection = new THREE.Vector3();
@@ -120,6 +118,15 @@ export function createTrashBlast(
   const aimPlanePoint = new THREE.Vector3(...SHOT_AIM_PLANE_POINT);
   const aimPlane = new THREE.Plane();
   const aimTarget = new THREE.Vector3();
+  const {
+    spawnOffset = DEFAULT_SHOT_TUNING.spawnOffset,
+    speed = DEFAULT_SHOT_TUNING.speed,
+    baseVerticalBoost = DEFAULT_SHOT_TUNING.baseVerticalBoost,
+    pointerVerticalBoost = DEFAULT_SHOT_TUNING.pointerVerticalBoost,
+    spinX = DEFAULT_SHOT_TUNING.spinX,
+    spinY = DEFAULT_SHOT_TUNING.spinY,
+    spinZ = DEFAULT_SHOT_TUNING.spinZ,
+  } = shotConfig;
 
   raycaster.setFromCamera(pointerPosition, camera);
   rayDirection.copy(raycaster.ray.direction).normalize();
@@ -129,7 +136,7 @@ export function createTrashBlast(
 
   spawnPosition
     .copy(camera.position)
-    .addScaledVector(rayDirection, SHOT_SPAWN_OFFSET);
+    .addScaledVector(rayDirection, spawnOffset);
   spawnPosition.y -= 0.45;
 
   if (raycaster.ray.intersectPlane(aimPlane, aimTarget)) {
@@ -138,9 +145,8 @@ export function createTrashBlast(
     shotDirection.copy(rayDirection);
   }
 
-  const velocity = shotDirection.clone().multiplyScalar(SHOT_SPEED);
-  velocity.y +=
-    SHOT_BASE_VERTICAL_BOOST + pointerPosition.y * SHOT_POINTER_VERTICAL_BOOST;
+  const velocity = shotDirection.clone().multiplyScalar(speed);
+  velocity.y += baseVerticalBoost + pointerPosition.y * pointerVerticalBoost;
 
   return {
     id: `${Date.now()}-${Math.random().toString(36).slice(2)}`,
@@ -153,9 +159,9 @@ export function createTrashBlast(
     ],
     velocity: [velocity.x, velocity.y, velocity.z],
     spin: [
-      THREE.MathUtils.randFloatSpread(6),
-      THREE.MathUtils.randFloatSpread(12),
-      THREE.MathUtils.randFloatSpread(6),
+      THREE.MathUtils.randFloatSpread(spinX),
+      THREE.MathUtils.randFloatSpread(spinY),
+      THREE.MathUtils.randFloatSpread(spinZ),
     ],
   };
 }

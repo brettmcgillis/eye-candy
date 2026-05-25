@@ -152,6 +152,34 @@ export const SHOT_SPAWN_OFFSET = 1.25;
 export const SHOT_SPEED = 20;
 export const SHOT_BASE_VERTICAL_BOOST = 2.5;
 export const SHOT_POINTER_VERTICAL_BOOST = 4.5;
+export const SHOT_SPIN_SPREAD = Object.freeze({
+  x: 6,
+  y: 12,
+  z: 6,
+});
+export const SHOT_TUNING_PRESETS = Object.freeze({
+  Realistic: Object.freeze({
+    spawnOffset: SHOT_SPAWN_OFFSET,
+    speed: SHOT_SPEED,
+    baseVerticalBoost: SHOT_BASE_VERTICAL_BOOST,
+    pointerVerticalBoost: SHOT_POINTER_VERTICAL_BOOST,
+    spinX: SHOT_SPIN_SPREAD.x,
+    spinY: SHOT_SPIN_SPREAD.y,
+    spinZ: SHOT_SPIN_SPREAD.z,
+  }),
+  Fun: Object.freeze({
+    spawnOffset: 1.5,
+    speed: 80,
+    baseVerticalBoost: 8,
+    pointerVerticalBoost: 10,
+    spinX: 10,
+    spinY: 18,
+    spinZ: 10,
+  }),
+});
+export const DEFAULT_SHOT_TUNING_MODE = 'Realistic';
+export const DEFAULT_SHOT_TUNING =
+  SHOT_TUNING_PRESETS[DEFAULT_SHOT_TUNING_MODE];
 export const SHOT_POOL_SLOTS_PER_ASSET = 10;
 export const SHOT_AIM_PLANE_POINT = [
   SCENE_ROOT_POSITION[0],

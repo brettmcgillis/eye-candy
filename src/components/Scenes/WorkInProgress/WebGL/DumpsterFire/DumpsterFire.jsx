@@ -32,6 +32,7 @@ export default function DumpsterFire() {
     sceneEnvironment,
     operatorCamera,
     fireLightRig,
+    trashShotConfig,
     setFireAndSmokePoints,
     setParticleSmokePoints,
   } = useSceneControls();
@@ -51,7 +52,11 @@ export default function DumpsterFire() {
         strength={cursorAttractorStrength}
         visible={showCursorAttractor}
       />
-      <PhysicsScene debug={physicsDebug} onTrashCollision={playCollision} />
+      <PhysicsScene
+        debug={physicsDebug}
+        onTrashCollision={playCollision}
+        shotConfig={trashShotConfig}
+      />
       <ParticleSmokeLayer
         splines={particleSmokeSplines}
         splineConfigs={particleSmokeConfigs}

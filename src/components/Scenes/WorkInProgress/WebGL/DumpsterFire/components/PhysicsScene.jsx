@@ -48,6 +48,7 @@ function SceneComposition({ onTrashCollision }) {
 const PhysicsScene = React.memo(function PhysicsScene({
   debug = true,
   onTrashCollision,
+  shotConfig,
 }) {
   return (
     <Physics timeStep={1 / 60} interpolate debug={debug}>
@@ -62,7 +63,7 @@ const PhysicsScene = React.memo(function PhysicsScene({
       </RigidBody>
 
       <SceneComposition onTrashCollision={onTrashCollision} />
-      <TrashBlaster />
+      <TrashBlaster shotConfig={shotConfig} />
     </Physics>
   );
 });

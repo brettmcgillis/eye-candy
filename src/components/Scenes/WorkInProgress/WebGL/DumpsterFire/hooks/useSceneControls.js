@@ -19,10 +19,17 @@ import {
   makeNextDumpsterParticleSmokeSpline,
   serializeDumpsterParticleSmokeSplines,
 } from '../utils/particleSmokeAuthoring';
-import { BACKGROUND, FOG_RANGE, GRID, GROUND } from '../utils/sceneData';
+import {
+  BACKGROUND,
+  DEFAULT_SHOT_TUNING_MODE,
+  FOG_RANGE,
+  GRID,
+  GROUND,
+  SHOT_TUNING_PRESETS,
+} from '../utils/sceneData';
 
 const SCENE_LABEL = 'Dumpster Fire';
-const PARTICLE_SMOKE_FOLDER_PATH = `${SCENE_LABEL}.Simulation.Particle Smoke`;
+const PARTICLE_SMOKE_FOLDER_PATH = `${SCENE_LABEL}.Combustion.Particle Smoke`;
 
 const DEFAULT_FIRE_LIGHT_RIG = Object.freeze({
   enabled: true,
@@ -52,6 +59,7 @@ const DEFAULT_SCENE_ENVIRONMENT = Object.freeze({
   fogNear: FOG_RANGE[0],
   fogFar: FOG_RANGE[1],
 });
+const SHOT_TUNING_MODE_OPTIONS = Object.keys(SHOT_TUNING_PRESETS);
 
 let idCounter = 0;
 const mkId = () => idCounter++;
@@ -77,6 +85,27 @@ function unwrapSerializedEntries(serialized) {
   return trimmed.replace(/^\[\n?/, '').replace(/\n?\]$/, '');
 }
 
+function getShotTuningPreset(mode = DEFAULT_SHOT_TUNING_MODE) {
+  return (
+    SHOT_TUNING_PRESETS[mode] ?? SHOT_TUNING_PRESETS[DEFAULT_SHOT_TUNING_MODE]
+  );
+}
+
+function getShotTuningControls(mode = DEFAULT_SHOT_TUNING_MODE) {
+  const preset = getShotTuningPreset(mode);
+
+  return {
+    shotMode: mode,
+    shotSpawnOffset: preset.spawnOffset,
+    shotSpeed: preset.speed,
+    shotBaseVerticalBoost: preset.baseVerticalBoost,
+    shotPointerVerticalBoost: preset.pointerVerticalBoost,
+    shotSpinX: preset.spinX,
+    shotSpinY: preset.spinY,
+    shotSpinZ: preset.spinZ,
+  };
+}
+
 export default function useSceneControls() {
   const [fireAndSmokeInstances, setFireAndSmokeInstances] = useState(() =>
     hydrateFireAndSmokeInstances(cloneDumpsterFireAndSmokeSeeds())
@@ -90,9 +119,27 @@ export default function useSceneControls() {
   const fireAndSmokeInstancesRef = useRef(fireAndSmokeInstances);
   const particleSmokeSplinesRef = useRef(particleSmokeSplines);
   const particleSmokeConfigsRef = useRef(particleSmokeConfigs);
+  const setControlsRef = useRef(null);
+  const shotModeRef = useRef(DEFAULT_SHOT_TUNING_MODE);
+  const applyingShotModeRef = useRef(false);
+  const initialShotTuningControls = getShotTuningControls();
   fireAndSmokeInstancesRef.current = fireAndSmokeInstances;
   particleSmokeSplinesRef.current = particleSmokeSplines;
   particleSmokeConfigsRef.current = particleSmokeConfigs;
+
+  const applyShotMode = useCallback((mode) => {
+    const setControls = setControlsRef.current;
+
+    shotModeRef.current = mode;
+
+    if (!setControls) {
+      return;
+    }
+
+    applyingShotModeRef.current = true;
+    setControls(getShotTuningControls(mode));
+    applyingShotModeRef.current = false;
+  }, []);
 
   const setFireAndSmokePoints = useCallback((id, updater) => {
     setFireAndSmokeInstances((prev) =>
@@ -192,7 +239,16 @@ export default function useSceneControls() {
       fireLightRightX,
       fireLightRightY,
       fireLightRightZ,
+      shotMode,
+      shotSpawnOffset,
+      shotSpeed,
+      shotBaseVerticalBoost,
+      shotPointerVerticalBoost,
+      shotSpinX,
+      shotSpinY,
+      shotSpinZ,
     },
+    setControls,
   ] = useControls(
     SCENE_LABEL,
     () => ({
@@ -306,7 +362,76 @@ export default function useSceneControls() {
         },
         { collapsed: true }
       ),
-      Simulation: folder(
+      'Trash Blaster': folder(
+        {
+          shotMode: {
+            label: 'Mode',
+            value: DEFAULT_SHOT_TUNING_MODE,
+            options: SHOT_TUNING_MODE_OPTIONS,
+            onChange: (nextMode) => {
+              if (!nextMode || applyingShotModeRef.current) {
+                return;
+              }
+
+              applyShotMode(nextMode);
+            },
+          },
+          resetShotMode: button(() => {
+            applyShotMode(shotModeRef.current);
+          }),
+          shotSpeed: {
+            label: 'Speed',
+            value: initialShotTuningControls.shotSpeed,
+            min: 1,
+            max: 80,
+            step: 0.5,
+          },
+          shotBaseVerticalBoost: {
+            label: 'Base Lift',
+            value: initialShotTuningControls.shotBaseVerticalBoost,
+            min: -10,
+            max: 20,
+            step: 0.1,
+          },
+          shotPointerVerticalBoost: {
+            label: 'Pointer Lift',
+            value: initialShotTuningControls.shotPointerVerticalBoost,
+            min: -10,
+            max: 20,
+            step: 0.1,
+          },
+          shotSpawnOffset: {
+            label: 'Spawn Offset',
+            value: initialShotTuningControls.shotSpawnOffset,
+            min: 0.1,
+            max: 6,
+            step: 0.05,
+          },
+          shotSpinX: {
+            label: 'Spin X',
+            value: initialShotTuningControls.shotSpinX,
+            min: 0,
+            max: 30,
+            step: 0.1,
+          },
+          shotSpinY: {
+            label: 'Spin Y',
+            value: initialShotTuningControls.shotSpinY,
+            min: 0,
+            max: 30,
+            step: 0.1,
+          },
+          shotSpinZ: {
+            label: 'Spin Z',
+            value: initialShotTuningControls.shotSpinZ,
+            min: 0,
+            max: 30,
+            step: 0.1,
+          },
+        },
+        { collapsed: true }
+      ),
+      Combustion: folder(
         {
           Authoring: folder(
             {
@@ -549,6 +674,9 @@ ${allEntries}
     [fireAndSmokeInstances.length, particleSmokeSplines.length]
   );
 
+  setControlsRef.current = setControls;
+  shotModeRef.current = shotMode;
+
   return {
     fireAndSmokeInstances,
     particleSmokeSplines,
@@ -598,6 +726,16 @@ ${allEntries}
       rightX: fireLightRightX,
       rightY: fireLightRightY,
       rightZ: fireLightRightZ,
+    },
+    trashShotConfig: {
+      mode: shotMode,
+      spawnOffset: shotSpawnOffset,
+      speed: shotSpeed,
+      baseVerticalBoost: shotBaseVerticalBoost,
+      pointerVerticalBoost: shotPointerVerticalBoost,
+      spinX: shotSpinX,
+      spinY: shotSpinY,
+      spinZ: shotSpinZ,
     },
     setFireAndSmokePoints,
     setParticleSmokePoints,

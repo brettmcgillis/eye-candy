@@ -1,6 +1,6 @@
 import * as THREE from 'three';
 
-import React, { useLayoutEffect, useRef, useState } from 'react';
+import React, { useCallback, useLayoutEffect, useRef, useState } from 'react';
 
 import { Billboard, Text } from '@react-three/drei';
 import { RigidBody } from '@react-three/rapier';
@@ -18,12 +18,24 @@ import {
 const SHOWCASE_BODY_POSITION = [0, 0.08, 0];
 const SHOWCASE_BODY_ROTATION = [0, Math.PI / 6, 0];
 
-function AssetShowcaseCell({ asset, position }) {
+function AssetShowcaseCell({ asset, onAssetPreview, position }) {
   const { Component } = asset;
   const anchorRef = useRef(null);
   const contentRef = useRef(null);
   const [measuredYOffset, setMeasuredYOffset] = useState(null);
   const label = getAssetShowcaseLabel(asset);
+
+  const handleClick = useCallback(
+    (event) => {
+      if (!onAssetPreview) {
+        return;
+      }
+
+      event.stopPropagation();
+      onAssetPreview(asset.key);
+    },
+    [asset.key, onAssetPreview]
+  );
 
   useLayoutEffect(() => {
     if (!anchorRef.current || !contentRef.current) {
@@ -46,7 +58,7 @@ function AssetShowcaseCell({ asset, position }) {
   }, [asset]);
 
   return (
-    <group position={position}>
+    <group position={position} onClick={handleClick}>
       <mesh position={[0, 0.04, 0]} receiveShadow>
         <boxGeometry args={[1.9, 0.08, 1.9]} />
         <meshStandardMaterial color="#f6f2ea" />
@@ -98,6 +110,7 @@ function AssetShowcaseCell({ asset, position }) {
 }
 
 export default function AssetShowcaseGrid({
+  onAssetPreview,
   position = ASSET_GRID_POSITION,
   title = 'Trash Collection',
 }) {
@@ -121,6 +134,7 @@ export default function AssetShowcaseGrid({
         <AssetShowcaseCell
           key={`asset-showcase-${asset.key}`}
           asset={asset}
+          onAssetPreview={onAssetPreview}
           position={getAssetGridCellPosition(index)}
         />
       ))}

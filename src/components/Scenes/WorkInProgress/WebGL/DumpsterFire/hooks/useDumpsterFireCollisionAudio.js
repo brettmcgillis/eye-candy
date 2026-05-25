@@ -5,9 +5,9 @@ import { useCallback, useEffect, useMemo, useRef } from 'react';
 import useSceneAudioStore from '../../../../../../store/useSceneAudioStore';
 import { audioFile } from '../../../../../../utils/appUtils';
 import {
-  DUMPSTER_FIRE_COLLISION_AUDIO_BY_ASSET,
   DUMPSTER_FIRE_COLLISION_AUDIO_DEFAULTS,
   DUMPSTER_FIRE_COLLISION_AUDIO_GROUPS,
+  getTrashCollisionAudioGroupKey,
 } from '../utils/collisionAudioConfig';
 
 function randomInRange([min, max]) {
@@ -16,6 +16,10 @@ function randomInRange([min, max]) {
 
 function pickRandomItem(items) {
   return items[Math.floor(Math.random() * items.length)];
+}
+
+function midpoint([min, max]) {
+  return min + (max - min) / 2;
 }
 
 function getImpactSpeed(body) {
@@ -85,6 +89,23 @@ function unloadSoundBank(soundBank) {
   });
 }
 
+function playSoundEntry(soundEntry, { volume, rate }) {
+  if (soundEntry.type === 'sprite') {
+    const clipKey = pickRandomItem(soundEntry.config.clipKeys);
+    const playbackId = soundEntry.howl.play(clipKey);
+
+    soundEntry.howl.volume(volume, playbackId);
+    soundEntry.howl.rate(rate, playbackId);
+    return;
+  }
+
+  const howl = pickRandomItem(soundEntry.howls);
+  const playbackId = howl.play();
+
+  howl.volume(volume, playbackId);
+  howl.rate(rate, playbackId);
+}
+
 export default function useDumpsterFireCollisionAudio() {
   const registerAudio = useSceneAudioStore((s) => s.registerAudio);
   const unregisterAudio = useSceneAudioStore((s) => s.unregisterAudio);
@@ -127,7 +148,7 @@ export default function useDumpsterFireCollisionAudio() {
         return;
       }
 
-      const groupKey = DUMPSTER_FIRE_COLLISION_AUDIO_BY_ASSET[assetKey];
+      const groupKey = getTrashCollisionAudioGroupKey(assetKey);
       const soundEntry = soundBank[groupKey];
 
       if (!soundEntry) {
@@ -157,23 +178,34 @@ export default function useDumpsterFireCollisionAudio() {
       const volume = randomInRange(config.volumeRange);
       const rate = randomInRange(config.rateRange);
 
-      if (soundEntry.type === 'sprite') {
-        const clipKey = pickRandomItem(soundEntry.config.clipKeys);
-        const playbackId = soundEntry.howl.play(clipKey);
-
-        soundEntry.howl.volume(volume, playbackId);
-        soundEntry.howl.rate(rate, playbackId);
-        return;
-      }
-
-      const howl = pickRandomItem(soundEntry.howls);
-      const playbackId = howl.play();
-
-      howl.volume(volume, playbackId);
-      howl.rate(rate, playbackId);
+      playSoundEntry(soundEntry, { volume, rate });
     },
     [soundBank]
   );
 
-  return { playCollision };
+  const playAssetPreview = useCallback(
+    (assetKey) => {
+      const groupKey = getTrashCollisionAudioGroupKey(assetKey);
+      const soundEntry = soundBank[groupKey];
+
+      if (!soundEntry) {
+        return false;
+      }
+
+      const config = {
+        ...DUMPSTER_FIRE_COLLISION_AUDIO_DEFAULTS,
+        ...soundEntry.config,
+      };
+
+      playSoundEntry(soundEntry, {
+        volume: midpoint(config.volumeRange),
+        rate: midpoint(config.rateRange),
+      });
+
+      return true;
+    },
+    [soundBank]
+  );
+
+  return { playCollision, playAssetPreview };
 }

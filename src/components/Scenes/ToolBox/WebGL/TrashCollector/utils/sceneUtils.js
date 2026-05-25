@@ -1,9 +1,14 @@
+import { getTrashCollisionAudioGroupKey } from '../../../../WorkInProgress/WebGL/DumpsterFire/utils/collisionAudioConfig';
 import {
   ASSET_GRID_COLUMNS,
   ASSET_GRID_COLUMN_SPACING,
   ASSET_GRID_OPTIONS,
   ASSET_GRID_ROW_SPACING,
 } from './sceneData';
+
+function formatAudioGroupLabel(groupKey) {
+  return groupKey.replace(/([a-z])([A-Z])/g, '$1 $2').toLowerCase();
+}
 
 function formatAssetStat(value) {
   if (Array.isArray(value)) {
@@ -22,6 +27,11 @@ function getAssetComponentName(asset) {
 
 export function getAssetShowcaseLabel(asset) {
   const lines = [getAssetComponentName(asset)];
+  const audioGroupKey = getTrashCollisionAudioGroupKey(asset.key);
+
+  if (audioGroupKey) {
+    lines.push(`audio: ${formatAudioGroupLabel(audioGroupKey)}`);
+  }
 
   if (typeof asset.expectedSizeMeters === 'number') {
     lines.push(`expected: ${formatAssetStat(asset.expectedSizeMeters)} m`);

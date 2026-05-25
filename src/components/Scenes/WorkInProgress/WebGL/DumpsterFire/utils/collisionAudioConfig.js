@@ -99,3 +99,50 @@ export const DUMPSTER_FIRE_COLLISION_AUDIO_BY_ASSET = {
   'happy-meal': 'lightTrash',
   'mc-cup': 'lightTrash',
 };
+
+export function getTrashCollisionAudioGroupKey(assetKey) {
+  if (typeof assetKey !== 'string') {
+    return null;
+  }
+
+  const explicitGroupKey = DUMPSTER_FIRE_COLLISION_AUDIO_BY_ASSET[assetKey];
+
+  if (explicitGroupKey) {
+    return explicitGroupKey;
+  }
+
+  if (assetKey === 'bucket') {
+    return 'bucket';
+  }
+
+  if (assetKey === 'apple-core') {
+    return 'appleCore';
+  }
+
+  if (assetKey.includes('bottle')) {
+    return 'glass';
+  }
+
+  if (assetKey.startsWith('garbage-bag')) {
+    return 'trashBag';
+  }
+
+  if (assetKey.startsWith('cardboard') || assetKey.startsWith('beer-case')) {
+    return 'cardboard';
+  }
+
+  if (
+    assetKey.startsWith('newspaper') ||
+    assetKey.startsWith('litter') ||
+    assetKey === 'cigarette-butts' ||
+    assetKey.endsWith('-cup') ||
+    assetKey.startsWith('cassette-tape') ||
+    assetKey === 'vhs-tape' ||
+    assetKey === 'floppy-disk' ||
+    assetKey === 'happy-meal'
+  ) {
+    return 'lightTrash';
+  }
+
+  return null;
+}

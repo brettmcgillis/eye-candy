@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useLayoutEffect, useState } from 'react';
 
 import {
   Environment,
@@ -6,6 +6,7 @@ import {
   PerspectiveCamera,
 } from '@react-three/drei';
 
+import useCameraFitToViewport from '../../../../../../hooks/useCameraFitToViewport';
 import useTrashBlasterStore from '../hooks/useTrashBlasterStore';
 import {
   BACKGROUND,
@@ -27,26 +28,71 @@ const DEFAULT_SCENE_ENVIRONMENT = Object.freeze({
   fogFar: FOG_RANGE[1],
 });
 
-export default function SceneEnvironment({ sceneEnvironment }) {
+export default function SceneEnvironment({
+  sceneEnvironment,
+  cameraMode = 'Fixed',
+}) {
   const [groundX, , groundZ] = FLOOR_COLLIDER_POSITION;
   const isPointerInteractionActive = useTrashBlasterStore(
     (s) => s.isPointerInteractionActive
   );
+  const [cameraNode, setCameraNode] = useState(null);
+  const [controlsNode, setControlsNode] = useState(null);
   const config = {
     ...DEFAULT_SCENE_ENVIRONMENT,
     ...sceneEnvironment,
   };
   const fogNear = Math.min(config.fogNear, config.fogFar);
   const fogFar = Math.max(config.fogNear, config.fogFar);
+  const orbitEnabled = cameraMode === 'Orbit' && !isPointerInteractionActive;
+  const { cameraPosition, cameraTarget, cameraFov } =
+    useCameraFitToViewport(CAMERA);
+
+  useLayoutEffect(() => {
+    const camera = cameraNode;
+    const controls = controlsNode;
+
+    if (!camera) {
+      return;
+    }
+
+    camera.position.set(...cameraPosition);
+    camera.fov = cameraFov;
+    camera.updateProjectionMatrix();
+
+    if (!controls) {
+      camera.lookAt(...cameraTarget);
+      return;
+    }
+
+    controls.target.set(...cameraTarget);
+    controls.update();
+  }, [
+    cameraFov,
+    cameraMode,
+    cameraNode,
+    cameraPosition,
+    cameraTarget,
+    controlsNode,
+  ]);
 
   return (
     <>
       <PerspectiveCamera
+        ref={setCameraNode}
         makeDefault
-        position={CAMERA.position}
-        fov={CAMERA.fov}
+        position={cameraPosition}
+        fov={cameraFov}
       />
-      <OrbitControls makeDefault enabled={!isPointerInteractionActive} />
+      <OrbitControls
+        ref={setControlsNode}
+        makeDefault
+        target={cameraTarget}
+        enabled={orbitEnabled}
+        enableRotate={cameraMode === 'Orbit'}
+        enableZoom={cameraMode === 'Orbit'}
+        enablePan={cameraMode === 'Orbit'}
+      />
 
       <color attach="background" args={[config.backgroundColor]} />
       <fog attach="fog" args={[config.fogColor, fogNear, fogFar]} />

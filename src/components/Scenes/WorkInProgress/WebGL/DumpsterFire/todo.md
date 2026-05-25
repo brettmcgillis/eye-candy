@@ -14,17 +14,6 @@
 
 [Back to main TODO](../../../../../../TODO.md)
 
-- [x] Add all trash assets to the scene
-- [x] Arrange all trash assets
-- [x] Add Physics. Dumpster is immovable. All other trash is movable
-- [x] Add Garbage Toss functionality
-- [x] Add ambient looped fire audio, and toggle, like in Surrender
-- [x] Break the scene down into its smallest components. Hooks in ./hooks, components in ./components
-- [x] Add empty trash button next to audio toggle, use cgTrash when there are throwables to clear, cgTrashEmpty when none.
-
-- [ ] Add Smoke and Fire back in, once core interactive mechanic and visuals are in place.
-- [ ] Add a hook for setting camera position on desktop & mobile, like in Surrender. If possible extract to a reusable shared hook useCameraFitToViewport?
-
 # // Presets
 
 # // Features

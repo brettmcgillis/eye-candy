@@ -122,7 +122,14 @@ export const FLOOR_COLLIDER_POSITION = [
 
 export const CAMERA = {
   position: [-2.5, 3.2, 20],
+  target: [0, 0, 0],
   fov: 40,
+  desktopPosition: [-8, 4.2, 16],
+  desktopTarget: [-6, 0, 0],
+  desktopFov: 50,
+  mobilePosition: [-6, 4.2, 16],
+  mobileTarget: [-6, 0, 0],
+  mobileFov: 70,
 };
 
 export const BACKGROUND = '#e8e8e8';

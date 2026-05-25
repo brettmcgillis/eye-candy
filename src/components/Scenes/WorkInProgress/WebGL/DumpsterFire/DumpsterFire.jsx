@@ -23,6 +23,7 @@ export default function DumpsterFire() {
     showEffects,
     editSplines,
     physicsDebug,
+    cameraMode,
     cursorAttractorEnabled,
     showCursorAttractor,
     cursorAttractorMode,
@@ -36,7 +37,10 @@ export default function DumpsterFire() {
 
   return (
     <>
-      <SceneEnvironment sceneEnvironment={sceneEnvironment} />
+      <SceneEnvironment
+        sceneEnvironment={sceneEnvironment}
+        cameraMode={cameraMode}
+      />
       <CursorAttractor
         attractorsRef={attractorsRef}
         enabled={cursorAttractorEnabled}

@@ -22,7 +22,7 @@ import {
 import { BACKGROUND, FOG_RANGE, GRID, GROUND } from '../utils/sceneData';
 
 const SCENE_LABEL = 'Dumpster Fire';
-const PARTICLE_SMOKE_FOLDER_PATH = `${SCENE_LABEL}.Particle Smoke`;
+const PARTICLE_SMOKE_FOLDER_PATH = `${SCENE_LABEL}.Simulation.Particle Smoke`;
 
 const DEFAULT_FIRE_LIGHT_RIG = Object.freeze({
   enabled: true,
@@ -160,6 +160,7 @@ export default function useSceneControls() {
       cursorAttractorMode,
       cursorAttractorStrength,
       cursorAttractorRadius,
+      cameraMode,
       sceneBackgroundColor,
       sceneFloorColor,
       sceneGridColor,
@@ -187,47 +188,6 @@ export default function useSceneControls() {
   ] = useControls(
     SCENE_LABEL,
     () => ({
-      Authoring: folder(
-        {
-          showEffects: {
-            label: 'Visible',
-            value: true,
-          },
-          editSplines: {
-            label: 'Edit Mode',
-            value: false,
-          },
-          ...(localEnv()
-            ? {
-                copySeeds: button(() => {
-                  const fireAndSmokeEntries = unwrapSerializedEntries(
-                    serializeDumpsterFireAndSmokeSeeds(
-                      fireAndSmokeInstancesRef.current
-                    )
-                  );
-                  const particleSmokeEntries = unwrapSerializedEntries(
-                    serializeDumpsterParticleSmokeSplines(
-                      particleSmokeSplinesRef.current,
-                      particleSmokeConfigsRef.current
-                    )
-                  );
-                  const allEntries = [fireAndSmokeEntries, particleSmokeEntries]
-                    .filter(Boolean)
-                    .join(',\n');
-
-                  navigator.clipboard.writeText(
-                    allEntries
-                      ? `[
-${allEntries}
-]`
-                      : '[]'
-                  );
-                }),
-              }
-            : {}),
-        },
-        { collapsed: false }
-      ),
       Scene: folder(
         {
           sceneBackgroundColor: {
@@ -261,39 +221,17 @@ ${allEntries}
             step: 0.1,
           },
         },
-        { collapsed: false }
+        { collapsed: true }
       ),
-      Attractor: folder(
+      Camera: folder(
         {
-          cursorAttractorEnabled: {
-            label: 'Enabled',
-            value: true,
-          },
-          showCursorAttractor: {
-            label: 'Show Helper',
-            value: false,
-          },
-          cursorAttractorMode: {
+          cameraMode: {
             label: 'Mode',
-            value: 'attractor',
-            options: ['attractor', 'repeller'],
-          },
-          cursorAttractorStrength: {
-            label: 'Strength',
-            value: 3,
-            min: 0,
-            max: 50,
-            step: 0.5,
-          },
-          cursorAttractorRadius: {
-            label: 'Radius',
-            value: 3,
-            min: 0.1,
-            max: 20,
-            step: 0.1,
+            value: 'Fixed',
+            options: ['Fixed', 'Orbit'],
           },
         },
-        { collapsed: false }
+        { collapsed: true }
       ),
       Physics: folder(
         {
@@ -304,159 +242,244 @@ ${allEntries}
         },
         { collapsed: true }
       ),
-      'Fire Lights': folder(
+      Simulation: folder(
         {
-          fireLightEnabled: {
-            label: 'Enabled',
-            value: DEFAULT_FIRE_LIGHT_RIG.enabled,
-          },
-          fireLightColor: {
-            label: 'Color',
-            value: DEFAULT_FIRE_LIGHT_RIG.color,
-          },
-          fireLightIntensity: {
-            label: 'Intensity',
-            value: DEFAULT_FIRE_LIGHT_RIG.intensity,
-            min: 0,
-            max: 40,
-            step: 0.1,
-          },
-          fireLightIntensityJitter: {
-            label: 'Flicker Amount',
-            value: DEFAULT_FIRE_LIGHT_RIG.intensityJitter,
-            min: 0,
-            max: 20,
-            step: 0.05,
-          },
-          fireLightSecondaryJitter: {
-            label: 'Flicker Detail',
-            value: DEFAULT_FIRE_LIGHT_RIG.secondaryJitter,
-            min: 0,
-            max: 10,
-            step: 0.05,
-          },
-          fireLightDistance: {
-            label: 'Distance',
-            value: DEFAULT_FIRE_LIGHT_RIG.distance,
-            min: 0,
-            max: 30,
-            step: 0.1,
-          },
-          fireLightDecay: {
-            label: 'Decay',
-            value: DEFAULT_FIRE_LIGHT_RIG.decay,
-            min: 0,
-            max: 4,
-            step: 0.05,
-          },
-          fireLightFlickerSpeed: {
-            label: 'Flicker Speed',
-            value: DEFAULT_FIRE_LIGHT_RIG.flickerSpeed,
-            min: 0,
-            max: 30,
-            step: 0.1,
-          },
-          fireLightSwayX: {
-            label: 'Sway X',
-            value: DEFAULT_FIRE_LIGHT_RIG.swayX,
-            min: 0,
-            max: 1,
-            step: 0.01,
-          },
-          fireLightSwayY: {
-            label: 'Sway Y',
-            value: DEFAULT_FIRE_LIGHT_RIG.swayY,
-            min: 0,
-            max: 1,
-            step: 0.01,
-          },
-          fireLightSwayZ: {
-            label: 'Sway Z',
-            value: DEFAULT_FIRE_LIGHT_RIG.swayZ,
-            min: 0,
-            max: 1,
-            step: 0.01,
-          },
-          fireLightLeftX: {
-            label: 'Left X',
-            value: DEFAULT_FIRE_LIGHT_RIG.leftX,
-            min: -3,
-            max: 3,
-            step: 0.01,
-          },
-          fireLightLeftY: {
-            label: 'Left Y',
-            value: DEFAULT_FIRE_LIGHT_RIG.leftY,
-            min: -1,
-            max: 4,
-            step: 0.01,
-          },
-          fireLightLeftZ: {
-            label: 'Left Z',
-            value: DEFAULT_FIRE_LIGHT_RIG.leftZ,
-            min: -3,
-            max: 3,
-            step: 0.01,
-          },
-          fireLightRightX: {
-            label: 'Right X',
-            value: DEFAULT_FIRE_LIGHT_RIG.rightX,
-            min: -3,
-            max: 3,
-            step: 0.01,
-          },
-          fireLightRightY: {
-            label: 'Right Y',
-            value: DEFAULT_FIRE_LIGHT_RIG.rightY,
-            min: -1,
-            max: 4,
-            step: 0.01,
-          },
-          fireLightRightZ: {
-            label: 'Right Z',
-            value: DEFAULT_FIRE_LIGHT_RIG.rightZ,
-            min: -3,
-            max: 3,
-            step: 0.01,
-          },
+          Authoring: folder(
+            {
+              showEffects: {
+                label: 'Visible',
+                value: true,
+              },
+              editSplines: {
+                label: 'Edit Mode',
+                value: false,
+              },
+              ...(localEnv()
+                ? {
+                    copySeeds: button(() => {
+                      const fireAndSmokeEntries = unwrapSerializedEntries(
+                        serializeDumpsterFireAndSmokeSeeds(
+                          fireAndSmokeInstancesRef.current
+                        )
+                      );
+                      const particleSmokeEntries = unwrapSerializedEntries(
+                        serializeDumpsterParticleSmokeSplines(
+                          particleSmokeSplinesRef.current,
+                          particleSmokeConfigsRef.current
+                        )
+                      );
+                      const allEntries = [
+                        fireAndSmokeEntries,
+                        particleSmokeEntries,
+                      ]
+                        .filter(Boolean)
+                        .join(',\n');
+
+                      navigator.clipboard.writeText(
+                        allEntries
+                          ? `[
+${allEntries}
+]`
+                          : '[]'
+                      );
+                    }),
+                  }
+                : {}),
+            },
+            { collapsed: true }
+          ),
+          Attractor: folder(
+            {
+              cursorAttractorEnabled: {
+                label: 'Enabled',
+                value: true,
+              },
+              showCursorAttractor: {
+                label: 'Show Helper',
+                value: false,
+              },
+              cursorAttractorMode: {
+                label: 'Mode',
+                value: 'attractor',
+                options: ['attractor', 'repeller'],
+              },
+              cursorAttractorStrength: {
+                label: 'Strength',
+                value: 3,
+                min: 0,
+                max: 50,
+                step: 0.5,
+              },
+              cursorAttractorRadius: {
+                label: 'Radius',
+                value: 3,
+                min: 0.1,
+                max: 20,
+                step: 0.1,
+              },
+            },
+            { collapsed: true }
+          ),
+          'Fire And Smoke': folder(
+            buildFireAndSmokeControls({
+              instances: fireAndSmokeInstances,
+              setInstances: setFireAndSmokeInstances,
+              addInstance: () =>
+                hydrateFireAndSmokeInstance(
+                  makeNextDumpsterFireAndSmokeSeed(
+                    fireAndSmokeInstancesRef.current
+                  )
+                ),
+              cloneInstance: (source) =>
+                hydrateFireAndSmokeInstance(
+                  cloneDumpsterFireAndSmokeSeed(source)
+                ),
+              sectionLabel: 'Splines',
+              instanceLabel: 'Spline',
+              keyPrefix: 'df_fas',
+            }),
+            { collapsed: true }
+          ),
+          'Particle Smoke': folder(
+            {
+              'Add Particle Smoke': button(() => {
+                setParticleSmokeSplines((prev) => [
+                  ...prev,
+                  makeNextDumpsterParticleSmokeSpline(prev),
+                ]);
+                setParticleSmokeConfigs((prev) => [
+                  ...prev,
+                  makeNextDumpsterParticleSmokeConfig(prev),
+                ]);
+              }),
+              'Remove All Particle Smoke': button(() => {
+                setParticleSmokeSplines([]);
+                setParticleSmokeConfigs([]);
+              }),
+              ...particleSmokeSections,
+            },
+            { collapsed: true }
+          ),
+          Lights: folder(
+            {
+              fireLightEnabled: {
+                label: 'Enabled',
+                value: DEFAULT_FIRE_LIGHT_RIG.enabled,
+              },
+              fireLightColor: {
+                label: 'Color',
+                value: DEFAULT_FIRE_LIGHT_RIG.color,
+              },
+              fireLightIntensity: {
+                label: 'Intensity',
+                value: DEFAULT_FIRE_LIGHT_RIG.intensity,
+                min: 0,
+                max: 40,
+                step: 0.1,
+              },
+              fireLightIntensityJitter: {
+                label: 'Flicker Amount',
+                value: DEFAULT_FIRE_LIGHT_RIG.intensityJitter,
+                min: 0,
+                max: 20,
+                step: 0.05,
+              },
+              fireLightSecondaryJitter: {
+                label: 'Flicker Detail',
+                value: DEFAULT_FIRE_LIGHT_RIG.secondaryJitter,
+                min: 0,
+                max: 10,
+                step: 0.05,
+              },
+              fireLightDistance: {
+                label: 'Distance',
+                value: DEFAULT_FIRE_LIGHT_RIG.distance,
+                min: 0,
+                max: 30,
+                step: 0.1,
+              },
+              fireLightDecay: {
+                label: 'Decay',
+                value: DEFAULT_FIRE_LIGHT_RIG.decay,
+                min: 0,
+                max: 4,
+                step: 0.05,
+              },
+              fireLightFlickerSpeed: {
+                label: 'Flicker Speed',
+                value: DEFAULT_FIRE_LIGHT_RIG.flickerSpeed,
+                min: 0,
+                max: 30,
+                step: 0.1,
+              },
+              fireLightSwayX: {
+                label: 'Sway X',
+                value: DEFAULT_FIRE_LIGHT_RIG.swayX,
+                min: 0,
+                max: 1,
+                step: 0.01,
+              },
+              fireLightSwayY: {
+                label: 'Sway Y',
+                value: DEFAULT_FIRE_LIGHT_RIG.swayY,
+                min: 0,
+                max: 1,
+                step: 0.01,
+              },
+              fireLightSwayZ: {
+                label: 'Sway Z',
+                value: DEFAULT_FIRE_LIGHT_RIG.swayZ,
+                min: 0,
+                max: 1,
+                step: 0.01,
+              },
+              fireLightLeftX: {
+                label: 'Left X',
+                value: DEFAULT_FIRE_LIGHT_RIG.leftX,
+                min: -3,
+                max: 3,
+                step: 0.01,
+              },
+              fireLightLeftY: {
+                label: 'Left Y',
+                value: DEFAULT_FIRE_LIGHT_RIG.leftY,
+                min: -1,
+                max: 4,
+                step: 0.01,
+              },
+              fireLightLeftZ: {
+                label: 'Left Z',
+                value: DEFAULT_FIRE_LIGHT_RIG.leftZ,
+                min: -3,
+                max: 3,
+                step: 0.01,
+              },
+              fireLightRightX: {
+                label: 'Right X',
+                value: DEFAULT_FIRE_LIGHT_RIG.rightX,
+                min: -3,
+                max: 3,
+                step: 0.01,
+              },
+              fireLightRightY: {
+                label: 'Right Y',
+                value: DEFAULT_FIRE_LIGHT_RIG.rightY,
+                min: -1,
+                max: 4,
+                step: 0.01,
+              },
+              fireLightRightZ: {
+                label: 'Right Z',
+                value: DEFAULT_FIRE_LIGHT_RIG.rightZ,
+                min: -3,
+                max: 3,
+                step: 0.01,
+              },
+            },
+            { collapsed: true }
+          ),
         },
-        { collapsed: false }
-      ),
-      'Particle Smoke': folder(
-        {
-          'Add Particle Smoke': button(() => {
-            setParticleSmokeSplines((prev) => [
-              ...prev,
-              makeNextDumpsterParticleSmokeSpline(prev),
-            ]);
-            setParticleSmokeConfigs((prev) => [
-              ...prev,
-              makeNextDumpsterParticleSmokeConfig(prev),
-            ]);
-          }),
-          'Remove All Particle Smoke': button(() => {
-            setParticleSmokeSplines([]);
-            setParticleSmokeConfigs([]);
-          }),
-          ...particleSmokeSections,
-        },
-        { collapsed: false }
-      ),
-      'Fire And Smoke': folder(
-        buildFireAndSmokeControls({
-          instances: fireAndSmokeInstances,
-          setInstances: setFireAndSmokeInstances,
-          addInstance: () =>
-            hydrateFireAndSmokeInstance(
-              makeNextDumpsterFireAndSmokeSeed(fireAndSmokeInstancesRef.current)
-            ),
-          cloneInstance: (source) =>
-            hydrateFireAndSmokeInstance(cloneDumpsterFireAndSmokeSeed(source)),
-          sectionLabel: 'Splines',
-          instanceLabel: 'Spline',
-          keyPrefix: 'df_fas',
-        }),
-        { collapsed: false }
+        { collapsed: true }
       ),
     }),
     [fireAndSmokeInstances.length, particleSmokeSplines.length]
@@ -469,6 +492,7 @@ ${allEntries}
     showEffects,
     editSplines,
     physicsDebug,
+    cameraMode,
     cursorAttractorEnabled,
     showCursorAttractor,
     cursorAttractorMode,

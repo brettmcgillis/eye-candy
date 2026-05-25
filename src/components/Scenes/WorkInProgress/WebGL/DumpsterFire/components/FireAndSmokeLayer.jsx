@@ -11,6 +11,9 @@ export default function FireAndSmokeLayer({
   showEffects,
   editSplines,
   setFireAndSmokePoints,
+  attractorsRef,
+  attractorStrength,
+  attractorRadius,
 }) {
   const setPointerInteractionActive = useTrashBlasterStore(
     (s) => s.setPointerInteractionActive
@@ -42,6 +45,9 @@ export default function FireAndSmokeLayer({
               <FireAndSmoke
                 controlPoints={instance.controlPoints}
                 {...instance.config}
+                attractorsRef={attractorsRef}
+                attractorStrength={attractorStrength}
+                attractorRadius={attractorRadius}
               />
             ) : null}
 

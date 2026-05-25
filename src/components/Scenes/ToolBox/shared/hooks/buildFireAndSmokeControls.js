@@ -293,10 +293,6 @@ export default function buildFireAndSmokeControls({
             },
             { collapsed: true }
           ),
-          [`${keyPrefix}_delete_${id}`]: button(
-            () => setInstances((prev) => prev.filter((item) => item.id !== id)),
-            { label: 'Delete Instance' }
-          ),
           ...(cloneInstance
             ? buildSplineInstanceActions({
                 id,
@@ -305,7 +301,15 @@ export default function buildFireAndSmokeControls({
                 pointsKey: 'controlPoints',
                 cloneInstance,
               })
-            : {}),
+            : {
+                [`${keyPrefix}_delete_${id}`]: button(
+                  () =>
+                    setInstances((prev) =>
+                      prev.filter((item) => item.id !== id)
+                    ),
+                  { label: 'Delete Instance' }
+                ),
+              }),
         },
         { collapsed: true }
       );

@@ -1485,6 +1485,7 @@ export default function useFireTestControls(splines, setSplines) {
         makeFireAndSmokeInst({
           pos: offsetPosition(DEFAULT_FIRE_AND_SMOKE_POSITION),
         }),
+      cloneInstance: (source) => makeFireAndSmokeInst(source),
     });
 
     return {

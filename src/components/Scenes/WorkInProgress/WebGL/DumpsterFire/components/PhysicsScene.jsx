@@ -45,9 +45,12 @@ function SceneComposition({ onTrashCollision }) {
   );
 }
 
-const PhysicsScene = React.memo(function PhysicsScene({ onTrashCollision }) {
+const PhysicsScene = React.memo(function PhysicsScene({
+  debug = true,
+  onTrashCollision,
+}) {
   return (
-    <Physics timeStep={1 / 60} interpolate debug>
+    <Physics timeStep={1 / 60} interpolate debug={debug}>
       <RigidBody type="fixed" colliders={false}>
         <CuboidCollider
           args={FLOOR_COLLIDER_HALF_EXTENTS}

@@ -74,8 +74,114 @@ function createSmokeTexture() {
 // ── Shared helpers (identical to SmokeParticles.jsx) ─────────────────────────
 
 const curveTmp = new THREE.Vector3();
+const attractorWorldPositionTmp = new THREE.Vector3();
+const attractorDirectionTmp = new THREE.Vector3();
+const rootWorldQuaternionTmp = new THREE.Quaternion();
+const inverseRootWorldQuaternionTmp = new THREE.Quaternion();
 const rotQuatTmp = new THREE.Quaternion();
 const spreadOffTmp = new THREE.Vector3();
+
+function isFiniteVec3Tuple(value) {
+  return (
+    Array.isArray(value) &&
+    value.length >= 3 &&
+    value.every((entry) => Number.isFinite(entry))
+  );
+}
+
+function resolveLocalAttractors(
+  attractorsRef,
+  rootGroup,
+  fallbackStrength,
+  fallbackRadius,
+  out
+) {
+  const resolvedAttractors = out;
+
+  if (!attractorsRef?.current?.length || !rootGroup) {
+    resolvedAttractors.length = 0;
+    return resolvedAttractors;
+  }
+
+  rootGroup.getWorldQuaternion(rootWorldQuaternionTmp);
+  inverseRootWorldQuaternionTmp.copy(rootWorldQuaternionTmp).invert();
+
+  let count = 0;
+
+  for (let index = 0; index < attractorsRef.current.length; index += 1) {
+    const attractor = attractorsRef.current[index];
+
+    if (!isFiniteVec3Tuple(attractor?.position)) {
+      // eslint-disable-next-line no-continue
+      continue;
+    }
+
+    const strength = attractor.strength ?? fallbackStrength;
+    const radius = attractor.radius ?? fallbackRadius;
+
+    if (
+      !Number.isFinite(strength) ||
+      !Number.isFinite(radius) ||
+      strength === 0 ||
+      radius <= 0
+    ) {
+      // eslint-disable-next-line no-continue
+      continue;
+    }
+
+    const resolved = resolvedAttractors[count] ?? {
+      position: [0, 0, 0],
+      direction: [0, 0, 0],
+      radius: fallbackRadius,
+      strength: fallbackStrength,
+      type: 'attractor',
+    };
+
+    attractorWorldPositionTmp.set(
+      attractor.position[0],
+      attractor.position[1],
+      attractor.position[2]
+    );
+    rootGroup.worldToLocal(attractorWorldPositionTmp);
+    resolved.position[0] = attractorWorldPositionTmp.x;
+    resolved.position[1] = attractorWorldPositionTmp.y;
+    resolved.position[2] = attractorWorldPositionTmp.z;
+
+    if (isFiniteVec3Tuple(attractor.direction)) {
+      attractorDirectionTmp
+        .set(
+          attractor.direction[0],
+          attractor.direction[1],
+          attractor.direction[2]
+        )
+        .applyQuaternion(inverseRootWorldQuaternionTmp);
+
+      if (attractorDirectionTmp.lengthSq() > 1e-6) {
+        attractorDirectionTmp.normalize();
+      } else {
+        attractorDirectionTmp.set(0, 0, 0);
+      }
+
+      resolved.direction[0] = attractorDirectionTmp.x;
+      resolved.direction[1] = attractorDirectionTmp.y;
+      resolved.direction[2] = attractorDirectionTmp.z;
+    } else {
+      resolved.direction[0] = 0;
+      resolved.direction[1] = 0;
+      resolved.direction[2] = 0;
+    }
+
+    resolved.radius = radius;
+    resolved.strength = strength;
+    resolved.type = attractor.type ?? 'attractor';
+
+    resolvedAttractors[count] = resolved;
+    count += 1;
+  }
+
+  resolvedAttractors.length = count;
+  return resolvedAttractors;
+}
 
 function buildRotationLookup(eulers, nSamples, closed, out, scratchQuats) {
   const nPts = eulers.length;
@@ -165,9 +271,11 @@ export default function SmokeParticlesGPU({
   config,
   attractorsRef = null,
 }) {
+  const rootRef = useRef();
   const geometryRef = useRef();
   const timeRef = useRef(0);
   const stateRef = useRef(null);
+  const localAttractorsRef = useRef([]);
   const rotLookupRef = useRef(new Float32Array(CURVE_SAMPLES * 4));
   const scaleLookupRef = useRef(new Float32Array(CURVE_SAMPLES * 3));
   const ctrlQuatsRef = useRef(
@@ -493,7 +601,13 @@ export default function SmokeParticlesGPU({
       rotSpeed = 0,
     } = config;
 
-    const attractors = attractorsRef ? attractorsRef.current : null;
+    const attractors = resolveLocalAttractors(
+      attractorsRef,
+      rootRef.current,
+      attractorStrength,
+      attractorRadius,
+      localAttractorsRef.current
+    );
 
     timeRef.current += dt;
     const time = timeRef.current;
@@ -594,7 +708,7 @@ export default function SmokeParticlesGPU({
         vy += (sy - py) * springK * dt;
         vz += (sz - pz) * springK * dt;
 
-        if (attractors) {
+        if (attractors.length > 0) {
           for (let a = 0; a < attractors.length; a += 1) {
             const ap = attractors[a].position;
             const adx = ap[0] - px;
@@ -606,13 +720,15 @@ export default function SmokeParticlesGPU({
             const falloff = aR * aR;
             const aStr = attractors[a].strength ?? attractorStrength;
             const sign = attractors[a].type === 'repeller' ? -1 : 1;
-            const radialStrength = sign * ((aStr * falloff) / (dist2 + falloff));
+            const radialStrength =
+              sign * ((aStr * falloff) / (dist2 + falloff));
             vx += (adx / dist) * radialStrength * dt;
             vy += (ady / dist) * radialStrength * dt;
             vz += (adz / dist) * radialStrength * dt;
             const dir = attractors[a].direction;
             if (dir) {
-              const dirStrength = sign * ((aStr * 0.4 * falloff) / (dist2 + falloff));
+              const dirStrength =
+                sign * ((aStr * 0.4 * falloff) / (dist2 + falloff));
               vx += dir[0] * dirStrength * dt;
               vy += dir[1] * dirStrength * dt;
               vz += dir[2] * dirStrength * dt;
@@ -698,5 +814,11 @@ export default function SmokeParticlesGPU({
     [smokeTexMap]
   );
 
-  return particleMesh ? <primitive object={particleMesh} renderOrder={1} /> : null;
+  return (
+    <group ref={rootRef}>
+      {particleMesh ? (
+        <primitive object={particleMesh} renderOrder={1} />
+      ) : null}
+    </group>
+  );
 }

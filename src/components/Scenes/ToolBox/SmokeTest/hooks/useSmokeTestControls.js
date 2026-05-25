@@ -12,6 +12,7 @@ import {
   makeFireAndSmokeSmokeConfig,
 } from '../../../../elements/fireAndSmoke/fireAndSmokeDefaults';
 import buildFireAndSmokeControls from '../../shared/hooks/buildFireAndSmokeControls';
+import buildSplineInstanceActions from '../../shared/hooks/buildSplineInstanceActions';
 import {
   DEFAULT_SPLINE_CONFIG,
   cloneSplinePoints,
@@ -677,10 +678,13 @@ export default function useSmokeTestControls(attractorsRef) {
                 },
                 { collapsed: true }
               ),
-              [`ps_delete_${id}`]: button(
-                () => setPsInstances((prev) => prev.filter((x) => x.id !== id)),
-                { label: 'Delete Instance' }
-              ),
+              ...buildSplineInstanceActions({
+                id,
+                setInstances: setPsInstances,
+                keyPrefix: 'ps',
+                pointsKey: 'points',
+                cloneInstance: (source) => makePsInst(source),
+              }),
             },
             { collapsed: true }
           );
@@ -880,10 +884,13 @@ export default function useSmokeTestControls(attractorsRef) {
                 },
                 { collapsed: true }
               ),
-              [`vs_delete_${id}`]: button(
-                () => setVsInstances((prev) => prev.filter((x) => x.id !== id)),
-                { label: 'Delete Instance' }
-              ),
+              ...buildSplineInstanceActions({
+                id,
+                setInstances: setVsInstances,
+                keyPrefix: 'vs',
+                pointsKey: 'points',
+                cloneInstance: (source) => makeVsInst(source),
+              }),
             },
             { collapsed: true }
           );
@@ -1180,10 +1187,13 @@ export default function useSmokeTestControls(attractorsRef) {
                 },
                 { collapsed: true }
               ),
-              [`ss_delete_${id}`]: button(
-                () => setSsInstances((prev) => prev.filter((x) => x.id !== id)),
-                { label: 'Delete Instance' }
-              ),
+              ...buildSplineInstanceActions({
+                id,
+                setInstances: setSsInstances,
+                keyPrefix: 'ss',
+                pointsKey: 'controlPoints',
+                cloneInstance: (source) => makeSsInst(source),
+              }),
             },
             { collapsed: true }
           );
@@ -1325,6 +1335,7 @@ export default function useSmokeTestControls(attractorsRef) {
               (Math.random() - 0.5) * 6,
             ],
           }),
+        cloneInstance: (source) => makeFireAndSmokeInst(source),
       });
 
       return {

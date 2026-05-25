@@ -31,9 +31,10 @@
 
 # // Interactivity
 
-- [ ] Smoke/Cursor interaction
+- [x] Smoke/Cursor interaction
 - [ ] Smoke/Cursor/Hands interaction
 - [x] Click to throw trash
-- [x] Click to drag trash
+- [x] Click/drag to move trash
+- [x] Click/drag to move dumpster lids
 
 # // Bugs

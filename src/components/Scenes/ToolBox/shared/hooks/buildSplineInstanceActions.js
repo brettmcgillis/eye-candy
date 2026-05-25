@@ -60,9 +60,7 @@ export default function buildSplineInstanceActions({
         ),
         [`${keyPrefix}_removeSpline_${id}`]: button(
           () => {
-            setInstances((prev) =>
-              prev.length > 1 ? prev.filter((item) => item.id !== id) : prev
-            );
+            setInstances((prev) => prev.filter((item) => item.id !== id));
           },
           { label: 'Remove Spline' }
         ),
@@ -89,8 +87,7 @@ export default function buildSplineInstanceActions({
                 const points = item[pointsKey] ?? [];
                 return {
                   ...item,
-                  [pointsKey]:
-                    points.length > 2 ? points.slice(0, -1) : points,
+                  [pointsKey]: points.length > 2 ? points.slice(0, -1) : points,
                 };
               })
             );

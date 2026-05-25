@@ -12,6 +12,7 @@ import {
   makeFireAndSmokeFireConfig,
 } from '../../../../elements/fireAndSmoke/fireAndSmokeDefaults';
 import buildFireAndSmokeControls from '../../shared/hooks/buildFireAndSmokeControls';
+import buildSplineInstanceActions from '../../shared/hooks/buildSplineInstanceActions';
 import buildSplineGroupControls from '../../shared/hooks/useSplineGroupControls';
 import {
   cloneSplineInstance,
@@ -1230,13 +1231,13 @@ export default function useHotBoxControls(splines, setSplines, attractorsRef) {
               },
               { collapsed: true }
             ),
-            [`ss_delete_${id}`]: button(
-              () =>
-                setSmokeBallSplineInstances((prev) =>
-                  prev.filter((item) => item.id !== id)
-                ),
-              { label: 'Delete Instance' }
-            ),
+            ...buildSplineInstanceActions({
+              id,
+              setInstances: setSmokeBallSplineInstances,
+              keyPrefix: 'ss',
+              pointsKey: 'controlPoints',
+              cloneInstance: (source) => hydrateSmokeBallSplineInst(source),
+            }),
           },
           { collapsed: true }
         );
@@ -2311,6 +2312,7 @@ export default function useHotBoxControls(splines, setSplines, attractorsRef) {
         makeFireAndSmokeInst({
           pos: offsetPosition(DEFAULT_FIRE_AND_SMOKE_POSITION),
         }),
+      cloneInstance: (source) => makeFireAndSmokeInst(source),
     });
 
     return {

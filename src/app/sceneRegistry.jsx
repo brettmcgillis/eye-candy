@@ -20,6 +20,7 @@ import {
 } from 'react-icons/fa';
 import { FcFullTrash } from 'react-icons/fc';
 import {
+  GiAquarium,
   GiAtomCore,
   GiBlackFlag,
   GiCandleLight,
@@ -201,6 +202,10 @@ const StayHunted = lazy(
 const GhostStories = lazy(
   () =>
     import('../components/scenes/WorkInProgress/WebGPU/GhostStories/GhostStories')
+);
+const MyHeartIsABrokenFishTank = lazy(
+  () =>
+    import('../components/scenes/WorkInProgress/WebGPU/MyHeartIsABrokenFishTank/MyHeartIsABrokenFishTank')
 );
 const StillPullingForYouWebGPU = lazy(
   () =>
@@ -473,6 +478,10 @@ function GhostStoriesIcon() {
       <FaGhost color="#e2e8f0" />
     </>
   );
+}
+
+function BrokenFishTankIcon() {
+  return <GiAquarium color="#00125a" size={26} />;
 }
 
 function GhostIcon() {
@@ -1106,6 +1115,15 @@ export const EYE_CANDIES = [
     route: 'ghostStories',
     icon: GhostStoriesIcon,
     Component: GhostStories,
+  },
+  {
+    id: 'myHeartIsABrokenFishTank',
+    label: 'My Heart Is A Broken Fish Tank',
+    channel: 'webgpu',
+    area: 'wip',
+    route: 'myHeartIsABrokenFishTank',
+    icon: BrokenFishTankIcon,
+    Component: MyHeartIsABrokenFishTank,
   },
   {
     id: 'stillPullingForYou',

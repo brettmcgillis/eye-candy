@@ -123,6 +123,9 @@ export default function NurbsWaterColumnGPU({
   waveHeight = 0.15,
   waveChoppiness = 0.5,
   waveSpeed = 0.6,
+  waveHeightRef = null,
+  waveChoppinessRef = null,
+  waveSpeedRef = null,
   edgeColor = '#1f4455',
   edgeOpacity = 0.65,
   showEdges = true,
@@ -253,14 +256,17 @@ export default function NurbsWaterColumnGPU({
   useFrame((state, delta) => {
     timeRef.current += delta;
     const t = timeRef.current;
+    const liveWaveHeight = waveHeightRef?.current ?? waveHeight;
+    const liveWaveSpeed = waveSpeedRef?.current ?? waveSpeed;
+    const liveWaveChoppiness = waveChoppinessRef?.current ?? waveChoppiness;
 
     // Keep WebGL module waveTime in sync so FloatingTugboat CPU sampling works
     setWaveTime(t);
 
     u.time.value = t;
-    u.waveHeight.value = waveHeight;
-    u.waveSpeed.value = waveSpeed;
-    u.waveChop.value = waveChoppiness;
+    u.waveHeight.value = liveWaveHeight;
+    u.waveSpeed.value = liveWaveSpeed;
+    u.waveChop.value = liveWaveChoppiness;
     u.topColor.value.set(topColor);
     u.botColor.value.set(bottomColor);
 
@@ -276,9 +282,9 @@ export default function NurbsWaterColumnGPU({
       const wY = sampleWaveHeight(
         cx,
         cz,
-        waveHeight,
-        waveChoppiness,
-        waveSpeed
+        liveWaveHeight,
+        liveWaveChoppiness,
+        liveWaveSpeed
       );
       const arr = geo.attributes.position.array;
       arr[4] = topY + wY; // second point Y
@@ -297,9 +303,9 @@ export default function NurbsWaterColumnGPU({
         const wY = sampleWaveHeight(
           px,
           pz,
-          waveHeight,
-          waveChoppiness,
-          waveSpeed
+          liveWaveHeight,
+          liveWaveChoppiness,
+          liveWaveSpeed
         );
         arr[i * 3 + 1] = topY + wY;
       }

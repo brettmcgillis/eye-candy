@@ -31,6 +31,7 @@
     "release:major": "npm run publish:major && npm run push:tags"
   },
   "dependencies": {
+    "@dgreenheck/three-pinata": "^2.0.1",
     "@dimforge/rapier3d-compat": "0.19.2",
     "@mediapipe/camera_utils": "^0.3.1675466862",
     "@mediapipe/drawing_utils": "^0.3.1675466124",

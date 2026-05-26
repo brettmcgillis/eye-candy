@@ -301,29 +301,60 @@ export default function useSceneControls() {
                 step: 0.05,
                 value: preset.tankDepth,
               },
+            },
+            { collapsed: true }
+          ),
+          Glass: folder(
+            {
               glassThickness: {
-                label: 'Glass',
+                label: 'Thickness',
                 max: 0.4,
                 min: 0.01,
                 step: 0.01,
                 value: preset.glassThickness,
               },
-            },
-            { collapsed: true }
-          ),
-          Materials: folder(
-            {
               glassColor: {
-                label: 'Glass Color',
+                label: 'Color',
                 value: preset.glassColor,
               },
               glassOpacity: {
-                label: 'Glass Opacity',
+                label: 'Opacity',
                 max: 1,
                 min: 0,
                 step: 0.01,
                 value: preset.glassOpacity,
               },
+              'Break Impulse': folder(
+                {
+                  splashBreakImpulseStrength: {
+                    label: 'Strength',
+                    max: 8,
+                    min: 0,
+                    step: 0.05,
+                    value: preset.splashBreakImpulseStrength,
+                  },
+                  splashBreakImpulseRadius: {
+                    label: 'Radius',
+                    max: 12,
+                    min: 0.1,
+                    step: 0.1,
+                    value: preset.splashBreakImpulseRadius,
+                  },
+                  splashBreakImpulseDuration: {
+                    label: 'Duration',
+                    max: 2,
+                    min: 0.01,
+                    step: 0.01,
+                    value: preset.splashBreakImpulseDuration,
+                  },
+                },
+                { collapsed: true }
+              ),
+            },
+            { collapsed: true }
+          ),
+          Materials: folder(
+            {
               sandColor: {
                 label: 'Sand Color',
                 value: preset.sandColor,
@@ -453,32 +484,6 @@ export default function useSceneControls() {
                 step: 0.05,
                 value: preset.splashWallStiffness,
               },
-              'Break Impulse': folder(
-                {
-                  splashBreakImpulseStrength: {
-                    label: 'Strength',
-                    max: 8,
-                    min: 0,
-                    step: 0.05,
-                    value: preset.splashBreakImpulseStrength,
-                  },
-                  splashBreakImpulseRadius: {
-                    label: 'Radius',
-                    max: 12,
-                    min: 0.1,
-                    step: 0.1,
-                    value: preset.splashBreakImpulseRadius,
-                  },
-                  splashBreakImpulseDuration: {
-                    label: 'Duration',
-                    max: 2,
-                    min: 0.01,
-                    step: 0.01,
-                    value: preset.splashBreakImpulseDuration,
-                  },
-                },
-                { collapsed: true }
-              ),
             },
             { collapsed: true }
           ),

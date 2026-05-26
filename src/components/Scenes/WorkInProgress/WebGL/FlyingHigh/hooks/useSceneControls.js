@@ -1,135 +1,82 @@
-import { button, folder, useControls } from 'leva';
+import { folder, useControls } from 'leva';
 
-import { useRef } from 'react';
-
-import { localEnv } from '../../../../../../utils/appUtils';
+import usePresetsFolder from '../../../../../../hooks/usePresetsFolder';
+import { DEFAULT_PRESET, PRESETS } from '../presets';
 
 const DEG2RAD = Math.PI / 180;
 
-const DEFAULTS = {
-  background: '#ffffff',
-  ambientIntensity: 0.5,
-  directionalIntensity: 1.0,
-  hemisphereIntensity: 0.25,
-  skyColor: '#87CEEB',
-  skyPosX: 0,
-  skyPosY: 1,
-  skyPosZ: -12,
-  skyWidth: 40,
-  skyHeight: 24,
-  skyEdgeSoftness: 0.22,
-  skyWarpStrength: 0.1,
-  skyBrushStrength: 1.0,
-  skyBleedAmount: 0.12,
-  skyPoolingStrength: 1.0,
-  skyGrainAmount: 0.035,
-  planeScale: 0.6,
-  planePosX: 0,
-  planePosY: 0,
-  planePosZ: 0,
-  planeRotXDeg: 2.9,
-  planeRotYDeg: -36,
-  planeRotZDeg: -1.7,
-  c1Scale: 1.0,
-  c1PosX: -10,
-  c1PosY: 5,
-  c1PosZ: -8,
-  c1Speed: 0.2,
-  c1Opacity: 0.6,
-  c1Width: 8,
-  c1Depth: 2,
-  c1Segments: 35,
-  c1Color: '#f0f0f0',
-  c2Scale: 1.0,
-  c2PosX: 8,
-  c2PosY: 7,
-  c2PosZ: -9,
-  c2Speed: 0.15,
-  c2Opacity: 0.5,
-  c2Width: 10,
-  c2Depth: 3,
-  c2Segments: 35,
-  c2Color: '#f0f0f0',
-  c3Scale: 1.0,
-  c3PosX: -4,
-  c3PosY: -2,
-  c3PosZ: -6,
-  c3Speed: 0.1,
-  c3Opacity: 0.45,
-  c3Width: 6,
-  c3Depth: 2,
-  c3Segments: 30,
-  c3Color: '#f0f0f0',
-};
+function getPresetControls({ presetSnapshot }) {
+  return presetSnapshot;
+}
 
-function cloudFolder(prefix) {
+function cloudFolder(prefix, preset) {
   return {
     [`${prefix}Scale`]: {
       label: 'Scale',
-      value: DEFAULTS[`${prefix}Scale`],
+      value: preset[`${prefix}Scale`],
       min: 0.1,
       max: 5,
       step: 0.1,
     },
     [`${prefix}PosX`]: {
       label: 'X',
-      value: DEFAULTS[`${prefix}PosX`],
+      value: preset[`${prefix}PosX`],
       min: -30,
       max: 30,
       step: 0.5,
     },
     [`${prefix}PosY`]: {
       label: 'Y',
-      value: DEFAULTS[`${prefix}PosY`],
+      value: preset[`${prefix}PosY`],
       min: -10,
       max: 20,
       step: 0.5,
     },
     [`${prefix}PosZ`]: {
       label: 'Z',
-      value: DEFAULTS[`${prefix}PosZ`],
+      value: preset[`${prefix}PosZ`],
       min: -20,
       max: 5,
       step: 0.5,
     },
     [`${prefix}Speed`]: {
       label: 'Speed',
-      value: DEFAULTS[`${prefix}Speed`],
+      value: preset[`${prefix}Speed`],
       min: 0,
       max: 1,
       step: 0.05,
     },
     [`${prefix}Opacity`]: {
       label: 'Opacity',
-      value: DEFAULTS[`${prefix}Opacity`],
+      value: preset[`${prefix}Opacity`],
       min: 0,
       max: 1,
       step: 0.05,
     },
     [`${prefix}Width`]: {
       label: 'Width',
-      value: DEFAULTS[`${prefix}Width`],
+      value: preset[`${prefix}Width`],
       min: 1,
       max: 30,
       step: 1,
     },
     [`${prefix}Depth`]: {
       label: 'Depth',
-      value: DEFAULTS[`${prefix}Depth`],
+      value: preset[`${prefix}Depth`],
       min: 0.5,
       max: 10,
       step: 0.5,
     },
     [`${prefix}Segments`]: {
       label: 'Segments',
-      value: DEFAULTS[`${prefix}Segments`],
+      value: preset[`${prefix}Segments`],
       min: 5,
       max: 60,
       step: 1,
     },
     [`${prefix}Color`]: {
       label: 'Color',
-      value: DEFAULTS[`${prefix}Color`],
+      value: preset[`${prefix}Color`],
     },
   };
 }
@@ -151,50 +98,45 @@ function readCloud(cfg, prefix) {
   };
 }
 
-export default function useFlyingHighControls() {
-  const controlsSnapshotRef = useRef(null);
+export default function useSceneControls() {
+  const {
+    attachSetControls,
+    controlsSnapshotRef,
+    initialPreset,
+    presetsFolder,
+  } = usePresetsFolder({
+    defaultPreset: DEFAULT_PRESET,
+    getPresetControls,
+    presets: PRESETS,
+  });
+  const initialPresetSnapshot =
+    PRESETS[initialPreset] || PRESETS[DEFAULT_PRESET];
 
   const [config, setControls] = useControls('Flying High', () => ({
-    Dev: folder(
-      {
-        reset: button(() => setControls(DEFAULTS)),
-        ...(localEnv()
-          ? {
-              copy: button(() => {
-                if (!controlsSnapshotRef.current) return;
-                const str = JSON.stringify(
-                  controlsSnapshotRef.current,
-                  null,
-                  2
-                ).replace(/"([A-Za-z_$][A-Za-z0-9_$]*)":/g, '$1:');
-                navigator.clipboard.writeText(str);
-              }),
-            }
-          : {}),
-      },
-      { collapsed: true }
-    ),
-
+    Presets: presetsFolder,
     Scene: folder(
       {
-        background: { label: 'Background', value: DEFAULTS.background },
+        background: {
+          label: 'Background',
+          value: initialPresetSnapshot.background,
+        },
         ambientIntensity: {
           label: 'Ambient',
-          value: DEFAULTS.ambientIntensity,
+          value: initialPresetSnapshot.ambientIntensity,
           min: 0,
           max: 2,
           step: 0.05,
         },
         directionalIntensity: {
           label: 'Directional',
-          value: DEFAULTS.directionalIntensity,
+          value: initialPresetSnapshot.directionalIntensity,
           min: 0,
           max: 3,
           step: 0.05,
         },
         hemisphereIntensity: {
           label: 'Hemisphere',
-          value: DEFAULTS.hemisphereIntensity,
+          value: initialPresetSnapshot.hemisphereIntensity,
           min: 0,
           max: 2,
           step: 0.05,
@@ -205,38 +147,38 @@ export default function useFlyingHighControls() {
 
     Sky: folder(
       {
-        skyColor: { label: 'Color', value: DEFAULTS.skyColor },
+        skyColor: { label: 'Color', value: initialPresetSnapshot.skyColor },
         skyPosX: {
           label: 'X',
-          value: DEFAULTS.skyPosX,
+          value: initialPresetSnapshot.skyPosX,
           min: -20,
           max: 20,
           step: 0.5,
         },
         skyPosY: {
           label: 'Y',
-          value: DEFAULTS.skyPosY,
+          value: initialPresetSnapshot.skyPosY,
           min: -20,
           max: 20,
           step: 0.5,
         },
         skyPosZ: {
           label: 'Z',
-          value: DEFAULTS.skyPosZ,
+          value: initialPresetSnapshot.skyPosZ,
           min: -30,
           max: 0,
           step: 0.5,
         },
         skyWidth: {
           label: 'Width',
-          value: DEFAULTS.skyWidth,
+          value: initialPresetSnapshot.skyWidth,
           min: 10,
           max: 80,
           step: 1,
         },
         skyHeight: {
           label: 'Height',
-          value: DEFAULTS.skyHeight,
+          value: initialPresetSnapshot.skyHeight,
           min: 6,
           max: 50,
           step: 1,
@@ -245,42 +187,42 @@ export default function useFlyingHighControls() {
           {
             skyEdgeSoftness: {
               label: 'Edge Softness',
-              value: DEFAULTS.skyEdgeSoftness,
+              value: initialPresetSnapshot.skyEdgeSoftness,
               min: 0.05,
               max: 0.4,
               step: 0.01,
             },
             skyWarpStrength: {
               label: 'Warp',
-              value: DEFAULTS.skyWarpStrength,
+              value: initialPresetSnapshot.skyWarpStrength,
               min: 0,
               max: 0.3,
               step: 0.01,
             },
             skyBrushStrength: {
               label: 'Brush',
-              value: DEFAULTS.skyBrushStrength,
+              value: initialPresetSnapshot.skyBrushStrength,
               min: 0,
               max: 3,
               step: 0.1,
             },
             skyBleedAmount: {
               label: 'Bleed',
-              value: DEFAULTS.skyBleedAmount,
+              value: initialPresetSnapshot.skyBleedAmount,
               min: 0,
               max: 0.5,
               step: 0.01,
             },
             skyPoolingStrength: {
               label: 'Pooling',
-              value: DEFAULTS.skyPoolingStrength,
+              value: initialPresetSnapshot.skyPoolingStrength,
               min: 0,
               max: 2,
               step: 0.1,
             },
             skyGrainAmount: {
               label: 'Grain',
-              value: DEFAULTS.skyGrainAmount,
+              value: initialPresetSnapshot.skyGrainAmount,
               min: 0,
               max: 0.1,
               step: 0.005,
@@ -296,52 +238,119 @@ export default function useFlyingHighControls() {
       {
         planeScale: {
           label: 'Scale',
-          value: DEFAULTS.planeScale,
+          value: initialPresetSnapshot.planeScale,
           min: 0.1,
           max: 2,
           step: 0.05,
         },
         planePosX: {
           label: 'X',
-          value: DEFAULTS.planePosX,
+          value: initialPresetSnapshot.planePosX,
           min: -20,
           max: 20,
           step: 0.1,
         },
         planePosY: {
           label: 'Y',
-          value: DEFAULTS.planePosY,
+          value: initialPresetSnapshot.planePosY,
           min: -20,
           max: 20,
           step: 0.1,
         },
         planePosZ: {
           label: 'Z',
-          value: DEFAULTS.planePosZ,
+          value: initialPresetSnapshot.planePosZ,
           min: -20,
           max: 20,
           step: 0.1,
         },
         planeRotXDeg: {
-          label: 'Rot X (\u00B0)',
-          value: DEFAULTS.planeRotXDeg,
+          label: 'Rot X (°)',
+          value: initialPresetSnapshot.planeRotXDeg,
           min: -180,
           max: 180,
           step: 0.5,
         },
         planeRotYDeg: {
-          label: 'Rot Y (\u00B0)',
-          value: DEFAULTS.planeRotYDeg,
+          label: 'Rot Y (°)',
+          value: initialPresetSnapshot.planeRotYDeg,
           min: -180,
           max: 180,
           step: 0.5,
         },
         planeRotZDeg: {
-          label: 'Rot Z (\u00B0)',
-          value: DEFAULTS.planeRotZDeg,
+          label: 'Rot Z (°)',
+          value: initialPresetSnapshot.planeRotZDeg,
           min: -180,
           max: 180,
           step: 0.5,
+        },
+      },
+      { collapsed: true }
+    ),
+
+    Moon: folder(
+      {
+        moonVisible: {
+          label: 'Visible',
+          value: initialPresetSnapshot.moonVisible,
+        },
+        moonPosX: {
+          label: 'X',
+          value: initialPresetSnapshot.moonPosX,
+          min: -20,
+          max: 20,
+          step: 0.1,
+        },
+        moonPosY: {
+          label: 'Y',
+          value: initialPresetSnapshot.moonPosY,
+          min: -20,
+          max: 20,
+          step: 0.1,
+        },
+        moonPosZ: {
+          label: 'Z',
+          value: initialPresetSnapshot.moonPosZ,
+          min: -20,
+          max: 0,
+          step: 0.1,
+        },
+        moonScale: {
+          label: 'Scale',
+          value: initialPresetSnapshot.moonScale,
+          min: 0.1,
+          max: 10,
+          step: 0.1,
+        },
+        moonColor: {
+          label: 'Color',
+          value: initialPresetSnapshot.moonColor,
+        },
+        moonEmissive: {
+          label: 'Emissive',
+          value: initialPresetSnapshot.moonEmissive,
+        },
+        moonEmissiveIntensity: {
+          label: 'Emissive Intensity',
+          value: initialPresetSnapshot.moonEmissiveIntensity,
+          min: 0,
+          max: 4,
+          step: 0.05,
+        },
+        moonMetalness: {
+          label: 'Metalness',
+          value: initialPresetSnapshot.moonMetalness,
+          min: 0,
+          max: 1,
+          step: 0.01,
+        },
+        moonRoughness: {
+          label: 'Roughness',
+          value: initialPresetSnapshot.moonRoughness,
+          min: 0,
+          max: 1,
+          step: 0.01,
         },
       },
       { collapsed: true }
@@ -349,14 +358,21 @@ export default function useFlyingHighControls() {
 
     Clouds: folder(
       {
-        'Cloud 1': folder(cloudFolder('c1'), { collapsed: true }),
-        'Cloud 2': folder(cloudFolder('c2'), { collapsed: true }),
-        'Cloud 3': folder(cloudFolder('c3'), { collapsed: true }),
+        'Cloud 1': folder(cloudFolder('c1', initialPresetSnapshot), {
+          collapsed: true,
+        }),
+        'Cloud 2': folder(cloudFolder('c2', initialPresetSnapshot), {
+          collapsed: true,
+        }),
+        'Cloud 3': folder(cloudFolder('c3', initialPresetSnapshot), {
+          collapsed: true,
+        }),
       },
       { collapsed: true }
     ),
   }));
 
+  attachSetControls(setControls);
   controlsSnapshotRef.current = config;
 
   return {
@@ -388,6 +404,16 @@ export default function useFlyingHighControls() {
         config.planeRotYDeg * DEG2RAD,
         config.planeRotZDeg * DEG2RAD,
       ],
+    },
+    moon: {
+      visible: config.moonVisible,
+      position: [config.moonPosX, config.moonPosY, config.moonPosZ],
+      scale: config.moonScale,
+      color: config.moonColor,
+      emissive: config.moonEmissive,
+      emissiveIntensity: config.moonEmissiveIntensity,
+      metalness: config.moonMetalness,
+      roughness: config.moonRoughness,
     },
     clouds: [
       readCloud(config, 'c1'),

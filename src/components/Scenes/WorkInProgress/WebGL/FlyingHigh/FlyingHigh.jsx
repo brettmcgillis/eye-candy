@@ -5,16 +5,17 @@ import { Bloom, EffectComposer } from '@react-three/postprocessing';
 
 import FLYING_HIGH_FIRE from '../../../../../presets/fire/flyingHighFire';
 import Boeing737 from '../../../../elements/boeing737/Boeing737';
+import Moon from '../../../../elements/moon/Moon';
 import { getSplineWorldPoints } from '../../../../elements/splineGroup/splineDefaults';
 import EngineFire from './components/EngineFire';
 import SceneClouds from './components/SceneClouds';
 import SkyPanel from './components/SkyPanel';
-import useFlyingHighControls from './hooks/useFlyingHighControls';
+import useSceneControls from './hooks/useSceneControls';
 
 // ─── Scene ───────────────────────────────────────────────────────────────────
 
 export default function FlyingHigh() {
-  const { scene, sky, plane, clouds } = useFlyingHighControls();
+  const { scene, sky, plane, moon, clouds } = useSceneControls();
 
   const {
     leftEngineMainFire,
@@ -48,12 +49,16 @@ export default function FlyingHigh() {
   }, []);
   const leftSmokePoints = useMemo(
     () =>
-      getSplineWorldPoints(leftEngineSmokeTrail).map((pt) => pt.position.clone()),
+      getSplineWorldPoints(leftEngineSmokeTrail).map((pt) =>
+        pt.position.clone()
+      ),
     [leftEngineSmokeTrail]
   );
   const rightSmokePoints = useMemo(
     () =>
-      getSplineWorldPoints(rightEngineSmokeTrail).map((pt) => pt.position.clone()),
+      getSplineWorldPoints(rightEngineSmokeTrail).map((pt) =>
+        pt.position.clone()
+      ),
     [rightEngineSmokeTrail]
   );
 
@@ -73,13 +78,25 @@ export default function FlyingHigh() {
         color="#fff5e0"
       />
       <hemisphereLight
-        skyColor="#87CEEB"
+        skyColor={sky.color}
         groundColor="#443322"
         intensity={scene.hemisphereIntensity}
       />
 
       {/* Painted sky oval backdrop */}
       <SkyPanel sky={sky} />
+
+      {moon.visible ? (
+        <Moon
+          position={moon.position}
+          scale={moon.scale}
+          color={moon.color}
+          emissive={moon.emissive}
+          emissiveIntensity={moon.emissiveIntensity}
+          metalness={moon.metalness}
+          roughness={moon.roughness}
+        />
+      ) : null}
 
       {/* Drei clouds for depth */}
       <SceneClouds clouds={clouds} />

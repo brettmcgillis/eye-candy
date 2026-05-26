@@ -14,6 +14,8 @@ const HALO_TYPE_PATH = 'All My Thoughts Are So Cumulus.Halo.haloType';
 const RINGS_STYLE_PATH = 'All My Thoughts Are So Cumulus.Halo.Rings.ringsStyle';
 const CAMERA_MODE_PATH =
   'All My Thoughts Are So Cumulus.Scene.Camera.cameraMode';
+const ORBIT_CUSTOM_TARGET_PATH =
+  'All My Thoughts Are So Cumulus.Scene.Camera.orbitCameraUseCustomTarget';
 const DEFAULT_RINGS_INNER_RADIUS = 0.5;
 const DEFAULT_RINGS_OUTER_RADIUS = 2;
 const DEFAULT_PRESET = 'Default Rings';
@@ -33,7 +35,7 @@ export default function useSceneControls() {
         ...base,
         ...presetSnapshot,
         preset: presetName,
-        cameraMode: currentControls.cameraMode,
+        cameraMode: presetSnapshot.cameraMode ?? currentControls.cameraMode,
         haloScrollEnabled: currentControls.haloScrollEnabled,
         haloScrollInterval: currentControls.haloScrollInterval,
       };
@@ -181,7 +183,9 @@ export default function useSceneControls() {
                 label: 'Mode',
                 value: 'orbit',
                 options: {
+                  Fixed: 'fixed',
                   Orbit: 'orbit',
+                  Operator: 'operator',
                   'Spline Motion': 'spline',
                 },
               },
@@ -192,6 +196,120 @@ export default function useSceneControls() {
                 max: 50,
                 render: (get) => get(CAMERA_MODE_PATH) === 'orbit',
               },
+              orbitCameraUseCustomTarget: {
+                label: 'Custom Target',
+                value: false,
+                render: (get) => get(CAMERA_MODE_PATH) === 'orbit',
+              },
+              orbitCameraTarget: {
+                label: 'Orbit Target',
+                value: { x: 0, y: 1, z: 0 },
+                render: (get) =>
+                  get(CAMERA_MODE_PATH) === 'orbit' &&
+                  get(ORBIT_CUSTOM_TARGET_PATH),
+              },
+              'Fixed Camera': folder(
+                {
+                  fixedCameraDesktopPosition: {
+                    label: 'Desktop Position',
+                    value: { x: -4.7, y: 2.6, z: 5.9 },
+                  },
+                  fixedCameraDesktopTarget: {
+                    label: 'Desktop Target',
+                    value: { x: 0, y: 1, z: 0 },
+                  },
+                  fixedCameraDesktopFov: {
+                    label: 'Desktop FOV',
+                    value: 20,
+                    min: 5,
+                    max: 90,
+                    step: 1,
+                  },
+                  fixedCameraMobilePosition: {
+                    label: 'Mobile Position',
+                    value: { x: -4, y: 2.4, z: 7 },
+                  },
+                  fixedCameraMobileTarget: {
+                    label: 'Mobile Target',
+                    value: { x: 0, y: 0.9, z: 0 },
+                  },
+                  fixedCameraMobileFov: {
+                    label: 'Mobile FOV',
+                    value: 26,
+                    min: 5,
+                    max: 100,
+                    step: 1,
+                  },
+                },
+                {
+                  collapsed: true,
+                  render: (get) => get(CAMERA_MODE_PATH) === 'fixed',
+                }
+              ),
+              Operator: folder(
+                {
+                  operatorMoveSpeed: {
+                    label: 'Move Speed',
+                    value: 8,
+                    min: 0.5,
+                    max: 40,
+                    step: 0.1,
+                  },
+                  operatorLiftSpeed: {
+                    label: 'Lift Speed',
+                    value: 6,
+                    min: 0.5,
+                    max: 30,
+                    step: 0.1,
+                  },
+                  operatorBoostMultiplier: {
+                    label: 'Boost Multiplier',
+                    value: 2.2,
+                    min: 1,
+                    max: 8,
+                    step: 0.1,
+                  },
+                  operatorPointerLookSensitivity: {
+                    label: 'Pointer Look',
+                    value: 0.0032,
+                    min: 0.0005,
+                    max: 0.02,
+                    step: 0.0001,
+                  },
+                  operatorStickLookSpeed: {
+                    label: 'Stick Look',
+                    value: 2.6,
+                    min: 0.1,
+                    max: 15,
+                    step: 0.1,
+                  },
+                  operatorZoomSpeed: {
+                    label: 'Zoom Speed',
+                    value: 32,
+                    min: 1,
+                    max: 120,
+                    step: 0.5,
+                  },
+                  operatorMinFov: {
+                    label: 'Min FOV',
+                    value: 24,
+                    min: 5,
+                    max: 90,
+                    step: 1,
+                  },
+                  operatorMaxFov: {
+                    label: 'Max FOV',
+                    value: 80,
+                    min: 5,
+                    max: 120,
+                    step: 1,
+                  },
+                },
+                {
+                  collapsed: true,
+                  render: (get) => get(CAMERA_MODE_PATH) === 'operator',
+                }
+              ),
               'Spline Motion': folder(
                 {
                   cameraSplinePreset: {
@@ -246,7 +364,7 @@ export default function useSceneControls() {
                 },
                 {
                   collapsed: true,
-                  // render: (get) => get(CAMERA_MODE_PATH) === 'spline',
+                  render: (get) => get(CAMERA_MODE_PATH) === 'spline',
                 }
               ),
             },
@@ -341,7 +459,10 @@ export default function useSceneControls() {
                 },
                 {
                   collapsed: true,
-                  render: (get) => get(HALO_TYPE_PATH) === 'crtStaticRing',
+                  render: (get) =>
+                    ['crtStaticRing', 'solarSystem'].includes(
+                      get(HALO_TYPE_PATH)
+                    ),
                 }
               ),
             },
@@ -363,6 +484,7 @@ export default function useSceneControls() {
               Plate: 'plate',
               Atomic: 'atomic',
               Static: 'crtStaticRing',
+              'Solar System': 'solarSystem',
             },
           },
 
@@ -808,6 +930,98 @@ export default function useSceneControls() {
             {
               collapsed: true,
               render: (get) => get(HALO_TYPE_PATH) === 'crtStaticRing',
+            }
+          ),
+
+          'Solar System': folder(
+            {
+              Appearance: folder(
+                {
+                  solarSystemPosition: {
+                    label: 'Position',
+                    value: { x: 0, y: 0.75, z: 0 },
+                  },
+                  solarSystemRotation: {
+                    label: 'Rotation',
+                    value: { x: 0, y: 0, z: 0 },
+                  },
+                  solarSystemVisible: { label: 'Visible', value: true },
+                },
+                { collapsed: true }
+              ),
+              solarSystemScale: {
+                label: 'Scale',
+                value: 0.18,
+                min: 0.01,
+                max: 2,
+                step: 0.01,
+              },
+              solarSystemOrbitSpeed: {
+                label: 'Orbit Speed',
+                value: 1,
+                min: 0,
+                max: 5,
+                step: 0.01,
+              },
+              solarSystemRotationSpeed: {
+                label: 'Spin Speed',
+                value: 1,
+                min: 0,
+                max: 5,
+                step: 0.01,
+              },
+              solarSystemShowOrbits: {
+                label: 'Show Orbits',
+                value: true,
+              },
+              solarSystemOrbitOpacity: {
+                label: 'Orbit Opacity',
+                value: 0.14,
+                min: 0,
+                max: 1,
+                step: 0.01,
+              },
+              solarSystemOrbitColor: {
+                label: 'Orbit Color',
+                value: '#8ea2ff',
+              },
+              solarSystemAsteroidBeltsVisible: {
+                label: 'Asteroid Belts',
+                value: true,
+              },
+              solarSystemAsteroidMode: {
+                label: 'Asteroid Mode',
+                value: 'mesh',
+                options: {
+                  'Instanced Rocks': 'mesh',
+                  'Sprite Impostors': 'sprite',
+                },
+              },
+              solarSystemSunRadius: {
+                label: 'Sun Radius',
+                value: 0.48,
+                min: 0.1,
+                max: 1.2,
+                step: 0.01,
+              },
+              solarSystemSunEmissiveIntensity: {
+                label: 'Sun Glow',
+                value: 2.8,
+                min: 0,
+                max: 8,
+                step: 0.05,
+              },
+              solarSystemSunLightIntensity: {
+                label: 'Sun Light',
+                value: 18,
+                min: 0,
+                max: 100,
+                step: 0.5,
+              },
+            },
+            {
+              collapsed: true,
+              render: (get) => get(HALO_TYPE_PATH) === 'solarSystem',
             }
           ),
         },

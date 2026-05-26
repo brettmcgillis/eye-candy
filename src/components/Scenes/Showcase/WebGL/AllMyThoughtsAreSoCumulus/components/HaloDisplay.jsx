@@ -5,6 +5,7 @@ import { useFrame } from '@react-three/fiber';
 import { radians } from '../../../../../../utils/math';
 import Lb45Plate from '../../../../../elements/45lbPlate/45lbPlate';
 import Atom from '../../../../../elements/Atom/Atom';
+import SolarSystem from '../../../../../elements/SolarSystem/SolarSystem';
 import Halo from '../../../../../elements/halo/Halo';
 import NeuralNetwork from '../../../../../elements/network/NeuralNetwork';
 import Record from '../../../../../elements/record/Record';
@@ -84,6 +85,12 @@ const HaloDisplay = memo(function HaloDisplay({ controls, setControls }) {
       rotation: controls.crtStaticRingRotation,
       visible: controls.crtStaticRingVisible,
       scale: controls.crtStaticRingScale ?? controls.haloScale ?? 0.9,
+    },
+    solarSystem: {
+      position: controls.solarSystemPosition,
+      rotation: controls.solarSystemRotation,
+      visible: controls.solarSystemVisible,
+      scale: controls.solarSystemScale ?? controls.haloScale ?? 0.18,
     },
   };
 
@@ -205,6 +212,20 @@ const HaloDisplay = memo(function HaloDisplay({ controls, setControls }) {
             rfSpeed={controls.crtStaticRingRFSpeed}
             curvature={controls.crtStaticRingCurvature}
             vignette={controls.crtStaticRingVignette}
+          />
+        )}
+        {haloType === 'solarSystem' && (
+          <SolarSystem
+            asteroidMode={controls.solarSystemAsteroidMode}
+            orbitSpeed={controls.solarSystemOrbitSpeed}
+            rotationSpeed={controls.solarSystemRotationSpeed}
+            showAsteroidBelts={controls.solarSystemAsteroidBeltsVisible}
+            showOrbits={controls.solarSystemShowOrbits}
+            orbitOpacity={controls.solarSystemOrbitOpacity}
+            orbitColor={controls.solarSystemOrbitColor}
+            sunRadius={controls.solarSystemSunRadius}
+            sunEmissiveIntensity={controls.solarSystemSunEmissiveIntensity}
+            sunLightIntensity={controls.solarSystemSunLightIntensity}
           />
         )}
       </group>

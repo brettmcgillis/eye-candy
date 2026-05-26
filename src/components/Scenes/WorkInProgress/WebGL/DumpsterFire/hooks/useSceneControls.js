@@ -1,11 +1,18 @@
 /* eslint-disable no-plusplus */
 import { button, folder, useControls } from 'leva';
 
-import { useCallback, useRef, useState } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 
+import usePresetsFolder from '../../../../../../hooks/usePresetsFolder';
 import { localEnv } from '../../../../../../utils/appUtils';
 import buildFireAndSmokeControls from '../../../../ToolBox/shared/hooks/buildFireAndSmokeControls';
 import buildSplineGroupControls from '../../../../ToolBox/shared/hooks/useSplineGroupControls';
+import {
+  DEFAULT_FIRE_LIGHT_RIG,
+  DEFAULT_PRESET,
+  PRESETS,
+  PRESET_CONTROL_KEYS,
+} from '../presets';
 import {
   cloneDumpsterFireAndSmokeSeed,
   cloneDumpsterFireAndSmokeSeeds,
@@ -20,45 +27,12 @@ import {
   serializeDumpsterParticleSmokeSplines,
 } from '../utils/particleSmokeAuthoring';
 import {
-  BACKGROUND,
   DEFAULT_SHOT_TUNING_MODE,
-  FOG_RANGE,
-  GRID,
-  GROUND,
   SHOT_TUNING_PRESETS,
 } from '../utils/sceneData';
 
 const SCENE_LABEL = 'Dumpster Fire';
 const PARTICLE_SMOKE_FOLDER_PATH = `${SCENE_LABEL}.Combustion.Particle Smoke`;
-
-const DEFAULT_FIRE_LIGHT_RIG = Object.freeze({
-  enabled: true,
-  color: '#ff7a1f',
-  intensity: 12,
-  intensityJitter: 3.75,
-  secondaryJitter: 1.25,
-  distance: 2,
-  decay: 1.4,
-  flickerSpeed: 7,
-  swayX: 0.08,
-  swayY: 0.05,
-  swayZ: 0.08,
-  leftX: 0.15,
-  leftY: 0.45,
-  leftZ: 0,
-  rightX: 1.15,
-  rightY: 0.45,
-  rightZ: 0,
-});
-
-const DEFAULT_SCENE_ENVIRONMENT = Object.freeze({
-  backgroundColor: BACKGROUND,
-  floorColor: GROUND.color,
-  gridColor: GRID.args[3],
-  fogColor: BACKGROUND,
-  fogNear: FOG_RANGE[0],
-  fogFar: FOG_RANGE[1],
-});
 const SHOT_TUNING_MODE_OPTIONS = Object.keys(SHOT_TUNING_PRESETS);
 
 let idCounter = 0;
@@ -106,23 +80,176 @@ function getShotTuningControls(mode = DEFAULT_SHOT_TUNING_MODE) {
   };
 }
 
+function cloneSnapshot(snapshot) {
+  return JSON.parse(JSON.stringify(snapshot));
+}
+
+function toObjectLiteral(snapshot) {
+  return JSON.stringify(snapshot, null, 2).replace(
+    /"([A-Za-z_$][A-Za-z0-9_$]*)":/g,
+    '$1:'
+  );
+}
+
+function formatPresetKey(presetName = DEFAULT_PRESET) {
+  if (/^[A-Za-z_$][A-Za-z0-9_$]*$/.test(presetName)) {
+    return presetName;
+  }
+
+  return `'${presetName.replace(/'/g, "\\'")}'`;
+}
+
+function pickPresetControlValues(snapshot = {}) {
+  return PRESET_CONTROL_KEYS.reduce((acc, key) => {
+    if (snapshot[key] !== undefined) {
+      acc[key] = snapshot[key];
+    }
+
+    return acc;
+  }, {});
+}
+
+function buildParticleSmokeColorOverrides(particleSmokeConfigs = []) {
+  const baselineConfigs = cloneDumpsterParticleSmokeConfigs();
+  const particleSmokeColorOverrides = baselineConfigs.map(
+    (baselineConfig, index) => {
+      const overrideValue = particleSmokeConfigs[index]?.particleColor;
+
+      if (overrideValue === baselineConfig.particleColor) {
+        return null;
+      }
+
+      return overrideValue ?? null;
+    }
+  );
+  const particleSmokeVolumeColorOverrides = baselineConfigs.map(
+    (baselineConfig, index) => {
+      const overrideValue = particleSmokeConfigs[index]?.volColor;
+
+      if (overrideValue === baselineConfig.volColor) {
+        return null;
+      }
+
+      return overrideValue ?? null;
+    }
+  );
+
+  return {
+    ...(particleSmokeColorOverrides.some(Boolean)
+      ? { particleSmokeColorOverrides }
+      : {}),
+    ...(particleSmokeVolumeColorOverrides.some(Boolean)
+      ? { particleSmokeVolumeColorOverrides }
+      : {}),
+  };
+}
+
+function buildPresetCopySnapshot({ controlsSnapshot, particleSmokeConfigs }) {
+  const presetSnapshot = pickPresetControlValues(controlsSnapshot ?? {});
+
+  return {
+    ...presetSnapshot,
+    ...buildParticleSmokeColorOverrides(particleSmokeConfigs),
+  };
+}
+
+function getPresetControls({ currentControls, presetSnapshot }) {
+  return {
+    ...currentControls,
+    ...pickPresetControlValues(presetSnapshot),
+  };
+}
+
+function getInitialShotTuningControls(presetSnapshot = {}) {
+  const shotControls = getShotTuningControls(
+    presetSnapshot.shotMode ?? DEFAULT_SHOT_TUNING_MODE
+  );
+
+  return {
+    shotMode: presetSnapshot.shotMode ?? shotControls.shotMode,
+    shotSpawnOffset:
+      presetSnapshot.shotSpawnOffset ?? shotControls.shotSpawnOffset,
+    shotSpeed: presetSnapshot.shotSpeed ?? shotControls.shotSpeed,
+    shotBaseVerticalBoost:
+      presetSnapshot.shotBaseVerticalBoost ??
+      shotControls.shotBaseVerticalBoost,
+    shotPointerVerticalBoost:
+      presetSnapshot.shotPointerVerticalBoost ??
+      shotControls.shotPointerVerticalBoost,
+    shotSpinX: presetSnapshot.shotSpinX ?? shotControls.shotSpinX,
+    shotSpinY: presetSnapshot.shotSpinY ?? shotControls.shotSpinY,
+    shotSpinZ: presetSnapshot.shotSpinZ ?? shotControls.shotSpinZ,
+  };
+}
+
+function getFireAndSmokeInstancesFromPreset() {
+  return hydrateFireAndSmokeInstances(cloneDumpsterFireAndSmokeSeeds());
+}
+
+function getParticleSmokeStateFromPreset(presetSnapshot = {}) {
+  const particleSmokeColorOverrides =
+    presetSnapshot.particleSmokeColorOverrides ?? [];
+  const particleSmokeVolumeColorOverrides =
+    presetSnapshot.particleSmokeVolumeColorOverrides ?? [];
+
+  return {
+    splines: cloneDumpsterParticleSmokeSplines(),
+    configs: cloneDumpsterParticleSmokeConfigs().map((config, index) => ({
+      ...config,
+      ...(typeof particleSmokeColorOverrides[index] === 'string'
+        ? { particleColor: particleSmokeColorOverrides[index] }
+        : {}),
+      ...(typeof particleSmokeVolumeColorOverrides[index] === 'string'
+        ? { volColor: particleSmokeVolumeColorOverrides[index] }
+        : {}),
+    })),
+  };
+}
+
 export default function useSceneControls() {
+  const [presetRevision, setPresetRevision] = useState(0);
+  const fireAndSmokeInstancesRef = useRef([]);
+  const particleSmokeSplinesRef = useRef([]);
+  const particleSmokeConfigsRef = useRef([]);
+  const copyTransform = useCallback((controlsSnapshot) => {
+    const presetName = controlsSnapshot?.preset ?? DEFAULT_PRESET;
+    const presetSnapshot = buildPresetCopySnapshot({
+      controlsSnapshot,
+      particleSmokeConfigs: particleSmokeConfigsRef.current,
+    });
+
+    return `${formatPresetKey(presetName)}: ${toObjectLiteral(presetSnapshot)},`;
+  }, []);
+  const {
+    applyPresetByName,
+    attachSetControls,
+    controlsSnapshotRef,
+    initialPreset,
+    presetsFolder,
+    selectedPreset,
+  } = usePresetsFolder({
+    copyTransform,
+    defaultPreset: DEFAULT_PRESET,
+    getPresetControls,
+    presets: PRESETS,
+  });
+  const initialPresetSnapshot =
+    PRESETS[initialPreset] || PRESETS[DEFAULT_PRESET];
+  const initialShotTuningControls = getInitialShotTuningControls(
+    initialPresetSnapshot
+  );
   const [fireAndSmokeInstances, setFireAndSmokeInstances] = useState(() =>
-    hydrateFireAndSmokeInstances(cloneDumpsterFireAndSmokeSeeds())
+    getFireAndSmokeInstancesFromPreset()
   );
-  const [particleSmokeSplines, setParticleSmokeSplines] = useState(() =>
-    cloneDumpsterParticleSmokeSplines()
+  const [particleSmokeSplines, setParticleSmokeSplines] = useState(
+    () => getParticleSmokeStateFromPreset(initialPresetSnapshot).splines
   );
-  const [particleSmokeConfigs, setParticleSmokeConfigs] = useState(() =>
-    cloneDumpsterParticleSmokeConfigs()
+  const [particleSmokeConfigs, setParticleSmokeConfigs] = useState(
+    () => getParticleSmokeStateFromPreset(initialPresetSnapshot).configs
   );
-  const fireAndSmokeInstancesRef = useRef(fireAndSmokeInstances);
-  const particleSmokeSplinesRef = useRef(particleSmokeSplines);
-  const particleSmokeConfigsRef = useRef(particleSmokeConfigs);
   const setControlsRef = useRef(null);
   const shotModeRef = useRef(DEFAULT_SHOT_TUNING_MODE);
   const applyingShotModeRef = useRef(false);
-  const initialShotTuningControls = getShotTuningControls();
   fireAndSmokeInstancesRef.current = fireAndSmokeInstances;
   particleSmokeSplinesRef.current = particleSmokeSplines;
   particleSmokeConfigsRef.current = particleSmokeConfigs;
@@ -197,89 +324,39 @@ export default function useSceneControls() {
     {}
   );
 
-  const [
-    {
-      showEffects,
-      editSplines,
-      physicsDebug,
-      cursorAttractorEnabled,
-      showCursorAttractor,
-      cursorAttractorMode,
-      cursorAttractorStrength,
-      cursorAttractorRadius,
-      cameraMode,
-      operatorMoveSpeed,
-      operatorLiftSpeed,
-      operatorBoostMultiplier,
-      operatorPointerLookSensitivity,
-      operatorStickLookSpeed,
-      operatorZoomSpeed,
-      operatorMinFov,
-      operatorMaxFov,
-      sceneBackgroundColor,
-      sceneFloorColor,
-      sceneGridColor,
-      sceneFogColor,
-      sceneFogNear,
-      sceneFogFar,
-      fireLightEnabled,
-      fireLightColor,
-      fireLightIntensity,
-      fireLightIntensityJitter,
-      fireLightSecondaryJitter,
-      fireLightDistance,
-      fireLightDecay,
-      fireLightFlickerSpeed,
-      fireLightSwayX,
-      fireLightSwayY,
-      fireLightSwayZ,
-      fireLightLeftX,
-      fireLightLeftY,
-      fireLightLeftZ,
-      fireLightRightX,
-      fireLightRightY,
-      fireLightRightZ,
-      shotMode,
-      shotSpawnOffset,
-      shotSpeed,
-      shotBaseVerticalBoost,
-      shotPointerVerticalBoost,
-      shotSpinX,
-      shotSpinY,
-      shotSpinZ,
-    },
-    setControls,
-  ] = useControls(
+  const [controls, setControls] = useControls(
     SCENE_LABEL,
     () => ({
+      Presets: presetsFolder,
+
       Scene: folder(
         {
           sceneBackgroundColor: {
             label: 'Background',
-            value: DEFAULT_SCENE_ENVIRONMENT.backgroundColor,
+            value: initialPresetSnapshot.sceneBackgroundColor,
           },
           sceneFloorColor: {
             label: 'Floor',
-            value: DEFAULT_SCENE_ENVIRONMENT.floorColor,
+            value: initialPresetSnapshot.sceneFloorColor,
           },
           sceneGridColor: {
             label: 'Grid Lines',
-            value: DEFAULT_SCENE_ENVIRONMENT.gridColor,
+            value: initialPresetSnapshot.sceneGridColor,
           },
           sceneFogColor: {
             label: 'Fog',
-            value: DEFAULT_SCENE_ENVIRONMENT.fogColor,
+            value: initialPresetSnapshot.sceneFogColor,
           },
           sceneFogNear: {
             label: 'Fog Near',
-            value: DEFAULT_SCENE_ENVIRONMENT.fogNear,
+            value: initialPresetSnapshot.sceneFogNear,
             min: 0,
             max: 100,
             step: 0.1,
           },
           sceneFogFar: {
             label: 'Fog Far',
-            value: DEFAULT_SCENE_ENVIRONMENT.fogFar,
+            value: initialPresetSnapshot.sceneFogFar,
             min: 0,
             max: 150,
             step: 0.1,
@@ -291,61 +368,61 @@ export default function useSceneControls() {
         {
           cameraMode: {
             label: 'Mode',
-            value: 'Fixed',
+            value: initialPresetSnapshot.cameraMode,
             options: ['Fixed', 'Orbit', 'Operator'],
           },
           operatorMoveSpeed: {
             label: 'Move Speed',
-            value: 8,
+            value: initialPresetSnapshot.operatorMoveSpeed,
             min: 0.5,
             max: 40,
             step: 0.1,
           },
           operatorLiftSpeed: {
             label: 'Lift Speed',
-            value: 6,
+            value: initialPresetSnapshot.operatorLiftSpeed,
             min: 0.5,
             max: 30,
             step: 0.1,
           },
           operatorBoostMultiplier: {
             label: 'Boost Multiplier',
-            value: 2.2,
+            value: initialPresetSnapshot.operatorBoostMultiplier,
             min: 1,
             max: 8,
             step: 0.1,
           },
           operatorPointerLookSensitivity: {
             label: 'Pointer Look',
-            value: 0.0032,
+            value: initialPresetSnapshot.operatorPointerLookSensitivity,
             min: 0.0005,
             max: 0.02,
             step: 0.0001,
           },
           operatorStickLookSpeed: {
             label: 'Stick Look',
-            value: 2.6,
+            value: initialPresetSnapshot.operatorStickLookSpeed,
             min: 0.1,
             max: 15,
             step: 0.1,
           },
           operatorZoomSpeed: {
             label: 'Zoom Speed',
-            value: 32,
+            value: initialPresetSnapshot.operatorZoomSpeed,
             min: 1,
             max: 120,
             step: 0.5,
           },
           operatorMinFov: {
             label: 'Min FOV',
-            value: 24,
+            value: initialPresetSnapshot.operatorMinFov,
             min: 5,
             max: 90,
             step: 1,
           },
           operatorMaxFov: {
             label: 'Max FOV',
-            value: 80,
+            value: initialPresetSnapshot.operatorMaxFov,
             min: 5,
             max: 120,
             step: 1,
@@ -357,7 +434,7 @@ export default function useSceneControls() {
         {
           physicsDebug: {
             label: 'Debug',
-            value: false,
+            value: initialPresetSnapshot.physicsDebug,
           },
         },
         { collapsed: true }
@@ -366,7 +443,7 @@ export default function useSceneControls() {
         {
           shotMode: {
             label: 'Mode',
-            value: DEFAULT_SHOT_TUNING_MODE,
+            value: initialShotTuningControls.shotMode,
             options: SHOT_TUNING_MODE_OPTIONS,
             onChange: (nextMode) => {
               if (!nextMode || applyingShotModeRef.current) {
@@ -437,11 +514,11 @@ export default function useSceneControls() {
             {
               showEffects: {
                 label: 'Visible',
-                value: true,
+                value: initialPresetSnapshot.showEffects,
               },
               editSplines: {
                 label: 'Edit Mode',
-                value: false,
+                value: initialPresetSnapshot.editSplines,
               },
               ...(localEnv()
                 ? {
@@ -481,27 +558,27 @@ ${allEntries}
             {
               cursorAttractorEnabled: {
                 label: 'Enabled',
-                value: true,
+                value: initialPresetSnapshot.cursorAttractorEnabled,
               },
               showCursorAttractor: {
                 label: 'Show Helper',
-                value: false,
+                value: initialPresetSnapshot.showCursorAttractor,
               },
               cursorAttractorMode: {
                 label: 'Mode',
-                value: 'attractor',
+                value: initialPresetSnapshot.cursorAttractorMode,
                 options: ['attractor', 'repeller'],
               },
               cursorAttractorStrength: {
                 label: 'Strength',
-                value: 3,
+                value: initialPresetSnapshot.cursorAttractorStrength,
                 min: 0,
                 max: 50,
                 step: 0.5,
               },
               cursorAttractorRadius: {
                 label: 'Radius',
-                value: 3,
+                value: initialPresetSnapshot.cursorAttractorRadius,
                 min: 0.1,
                 max: 20,
                 step: 0.1,
@@ -553,113 +630,147 @@ ${allEntries}
             {
               fireLightEnabled: {
                 label: 'Enabled',
-                value: DEFAULT_FIRE_LIGHT_RIG.enabled,
+                value:
+                  initialPresetSnapshot.fireLightEnabled ??
+                  DEFAULT_FIRE_LIGHT_RIG.enabled,
               },
               fireLightColor: {
                 label: 'Color',
-                value: DEFAULT_FIRE_LIGHT_RIG.color,
+                value:
+                  initialPresetSnapshot.fireLightColor ??
+                  DEFAULT_FIRE_LIGHT_RIG.color,
               },
               fireLightIntensity: {
                 label: 'Intensity',
-                value: DEFAULT_FIRE_LIGHT_RIG.intensity,
+                value:
+                  initialPresetSnapshot.fireLightIntensity ??
+                  DEFAULT_FIRE_LIGHT_RIG.intensity,
                 min: 0,
                 max: 40,
                 step: 0.1,
               },
               fireLightIntensityJitter: {
                 label: 'Flicker Amount',
-                value: DEFAULT_FIRE_LIGHT_RIG.intensityJitter,
+                value:
+                  initialPresetSnapshot.fireLightIntensityJitter ??
+                  DEFAULT_FIRE_LIGHT_RIG.intensityJitter,
                 min: 0,
                 max: 20,
                 step: 0.05,
               },
               fireLightSecondaryJitter: {
                 label: 'Flicker Detail',
-                value: DEFAULT_FIRE_LIGHT_RIG.secondaryJitter,
+                value:
+                  initialPresetSnapshot.fireLightSecondaryJitter ??
+                  DEFAULT_FIRE_LIGHT_RIG.secondaryJitter,
                 min: 0,
                 max: 10,
                 step: 0.05,
               },
               fireLightDistance: {
                 label: 'Distance',
-                value: DEFAULT_FIRE_LIGHT_RIG.distance,
+                value:
+                  initialPresetSnapshot.fireLightDistance ??
+                  DEFAULT_FIRE_LIGHT_RIG.distance,
                 min: 0,
                 max: 30,
                 step: 0.1,
               },
               fireLightDecay: {
                 label: 'Decay',
-                value: DEFAULT_FIRE_LIGHT_RIG.decay,
+                value:
+                  initialPresetSnapshot.fireLightDecay ??
+                  DEFAULT_FIRE_LIGHT_RIG.decay,
                 min: 0,
                 max: 4,
                 step: 0.05,
               },
               fireLightFlickerSpeed: {
                 label: 'Flicker Speed',
-                value: DEFAULT_FIRE_LIGHT_RIG.flickerSpeed,
+                value:
+                  initialPresetSnapshot.fireLightFlickerSpeed ??
+                  DEFAULT_FIRE_LIGHT_RIG.flickerSpeed,
                 min: 0,
                 max: 30,
                 step: 0.1,
               },
               fireLightSwayX: {
                 label: 'Sway X',
-                value: DEFAULT_FIRE_LIGHT_RIG.swayX,
+                value:
+                  initialPresetSnapshot.fireLightSwayX ??
+                  DEFAULT_FIRE_LIGHT_RIG.swayX,
                 min: 0,
                 max: 1,
                 step: 0.01,
               },
               fireLightSwayY: {
                 label: 'Sway Y',
-                value: DEFAULT_FIRE_LIGHT_RIG.swayY,
+                value:
+                  initialPresetSnapshot.fireLightSwayY ??
+                  DEFAULT_FIRE_LIGHT_RIG.swayY,
                 min: 0,
                 max: 1,
                 step: 0.01,
               },
               fireLightSwayZ: {
                 label: 'Sway Z',
-                value: DEFAULT_FIRE_LIGHT_RIG.swayZ,
+                value:
+                  initialPresetSnapshot.fireLightSwayZ ??
+                  DEFAULT_FIRE_LIGHT_RIG.swayZ,
                 min: 0,
                 max: 1,
                 step: 0.01,
               },
               fireLightLeftX: {
                 label: 'Left X',
-                value: DEFAULT_FIRE_LIGHT_RIG.leftX,
+                value:
+                  initialPresetSnapshot.fireLightLeftX ??
+                  DEFAULT_FIRE_LIGHT_RIG.leftX,
                 min: -3,
                 max: 3,
                 step: 0.01,
               },
               fireLightLeftY: {
                 label: 'Left Y',
-                value: DEFAULT_FIRE_LIGHT_RIG.leftY,
+                value:
+                  initialPresetSnapshot.fireLightLeftY ??
+                  DEFAULT_FIRE_LIGHT_RIG.leftY,
                 min: -1,
                 max: 4,
                 step: 0.01,
               },
               fireLightLeftZ: {
                 label: 'Left Z',
-                value: DEFAULT_FIRE_LIGHT_RIG.leftZ,
+                value:
+                  initialPresetSnapshot.fireLightLeftZ ??
+                  DEFAULT_FIRE_LIGHT_RIG.leftZ,
                 min: -3,
                 max: 3,
                 step: 0.01,
               },
               fireLightRightX: {
                 label: 'Right X',
-                value: DEFAULT_FIRE_LIGHT_RIG.rightX,
+                value:
+                  initialPresetSnapshot.fireLightRightX ??
+                  DEFAULT_FIRE_LIGHT_RIG.rightX,
                 min: -3,
                 max: 3,
                 step: 0.01,
               },
               fireLightRightY: {
                 label: 'Right Y',
-                value: DEFAULT_FIRE_LIGHT_RIG.rightY,
+                value:
+                  initialPresetSnapshot.fireLightRightY ??
+                  DEFAULT_FIRE_LIGHT_RIG.rightY,
                 min: -1,
                 max: 4,
                 step: 0.01,
               },
               fireLightRightZ: {
                 label: 'Right Z',
-                value: DEFAULT_FIRE_LIGHT_RIG.rightZ,
+                value:
+                  initialPresetSnapshot.fireLightRightZ ??
+                  DEFAULT_FIRE_LIGHT_RIG.rightZ,
                 min: -3,
                 max: 3,
                 step: 0.01,
@@ -671,11 +782,90 @@ ${allEntries}
         { collapsed: true }
       ),
     }),
-    [fireAndSmokeInstances.length, particleSmokeSplines.length]
+    [
+      fireAndSmokeInstances.length,
+      particleSmokeSplines.length,
+      presetRevision,
+      presetsFolder,
+    ]
   );
 
-  setControlsRef.current = setControls;
-  shotModeRef.current = shotMode;
+  const {
+    showEffects,
+    editSplines,
+    physicsDebug,
+    cursorAttractorEnabled,
+    showCursorAttractor,
+    cursorAttractorMode,
+    cursorAttractorStrength,
+    cursorAttractorRadius,
+    cameraMode,
+    operatorMoveSpeed,
+    operatorLiftSpeed,
+    operatorBoostMultiplier,
+    operatorPointerLookSensitivity,
+    operatorStickLookSpeed,
+    operatorZoomSpeed,
+    operatorMinFov,
+    operatorMaxFov,
+    sceneBackgroundColor,
+    sceneFloorColor,
+    sceneGridColor,
+    sceneFogColor,
+    sceneFogNear,
+    sceneFogFar,
+    fireLightEnabled,
+    fireLightColor,
+    fireLightIntensity,
+    fireLightIntensityJitter,
+    fireLightSecondaryJitter,
+    fireLightDistance,
+    fireLightDecay,
+    fireLightFlickerSpeed,
+    fireLightSwayX,
+    fireLightSwayY,
+    fireLightSwayZ,
+    fireLightLeftX,
+    fireLightLeftY,
+    fireLightLeftZ,
+    fireLightRightX,
+    fireLightRightY,
+    fireLightRightZ,
+    shotMode,
+    shotSpawnOffset,
+    shotSpeed,
+    shotBaseVerticalBoost,
+    shotPointerVerticalBoost,
+    shotSpinX,
+    shotSpinY,
+    shotSpinZ,
+  } = controls;
+
+  useEffect(() => {
+    attachSetControls(setControls);
+    setControlsRef.current = setControls;
+  }, [attachSetControls, setControls]);
+
+  useEffect(() => {
+    controlsSnapshotRef.current = cloneSnapshot(controls);
+  }, [controls, controlsSnapshotRef]);
+
+  useEffect(() => {
+    const presetSnapshot = PRESETS[selectedPreset] || PRESETS[DEFAULT_PRESET];
+    const particleSmokeState = getParticleSmokeStateFromPreset(presetSnapshot);
+
+    applyPresetByName(selectedPreset, {
+      currentControls: controlsSnapshotRef.current,
+    });
+    setFireAndSmokeInstances(getFireAndSmokeInstancesFromPreset());
+    setParticleSmokeSplines(particleSmokeState.splines);
+    setParticleSmokeConfigs(particleSmokeState.configs);
+    setPresetRevision((previousValue) => previousValue + 1);
+  }, [applyPresetByName, controlsSnapshotRef, selectedPreset]);
+
+  useEffect(() => {
+    shotModeRef.current = shotMode;
+  }, [shotMode]);
 
   return {
     fireAndSmokeInstances,

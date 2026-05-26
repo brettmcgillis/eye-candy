@@ -3,7 +3,6 @@ import * as THREE from 'three';
 import DUMPSTER_FIRE from '../../../../../../presets/fire/dumpsterFire';
 import {
   DEFAULT_SPLINE_CONFIG,
-  cloneSplineInstance,
   filterParsedPresetByType,
   parsePreset,
 } from '../../../../ToolBox/shared/splineDefaults';
@@ -14,6 +13,9 @@ const DEFAULT_SMOKE_TYPE = 'Particle';
 const DEFAULT_POSITION = [-1, 1.42, 0];
 const DEFAULT_ROTATION = [0, 0, 0];
 const DEFAULT_SCALE = [1, 1, 1];
+const DEFAULT_POINT_POSITION = [0, 0, 0];
+const DEFAULT_POINT_ROTATION = [0, 0, 0];
+const DEFAULT_POINT_SCALE = [1, 1, 1];
 const DEFAULT_POINT_MODE = 'translate';
 const NEW_INSTANCE_OFFSET = [0.22, 0.12, 0.16];
 
@@ -139,19 +141,54 @@ const FALLBACK_SPLINE = {
 const cloneTuple = (value, fallback) =>
   Array.isArray(value) ? [...value] : [...fallback];
 
-function toDumpsterParticleSmokeSpline(spline = {}) {
-  const clonedSpline = cloneSplineInstance(spline);
+function toVectorTuple(value, fallback) {
+  if (Array.isArray(value)) {
+    return [...value];
+  }
 
+  if (typeof value?.toArray === 'function') {
+    return value.toArray();
+  }
+
+  if (typeof value?.x === 'number') {
+    return [value.x, value.y ?? fallback[1], value.z ?? fallback[2]];
+  }
+
+  return [...fallback];
+}
+
+function toVector3(value, fallback) {
+  return new THREE.Vector3(...toVectorTuple(value, fallback));
+}
+
+function toEuler(value, fallback) {
+  const [x, y, z] = toVectorTuple(value, fallback);
+  return new THREE.Euler(x, y, z, value?.order ?? 'XYZ');
+}
+
+function normalizePoint(point = {}) {
   return {
-    ...clonedSpline,
-    pos: cloneTuple(clonedSpline.pos, DEFAULT_POSITION),
-    rot: cloneTuple(clonedSpline.rot, DEFAULT_ROTATION),
-    scale: cloneTuple(clonedSpline.scale, DEFAULT_SCALE),
-    pointMode: clonedSpline.pointMode ?? DEFAULT_POINT_MODE,
+    position: toVector3(point.position, DEFAULT_POINT_POSITION),
+    rotation: toEuler(point.rotation, DEFAULT_POINT_ROTATION),
+    scale: toVector3(point.scale, DEFAULT_POINT_SCALE),
+  };
+}
+
+function normalizePoints(points = DEFAULT_POINTS) {
+  return points.map((point) => normalizePoint(point));
+}
+
+function toDumpsterParticleSmokeSpline(spline = {}) {
+  return {
+    ...spline,
+    pos: cloneTuple(spline.pos, DEFAULT_POSITION),
+    rot: cloneTuple(spline.rot, DEFAULT_ROTATION),
+    scale: cloneTuple(spline.scale, DEFAULT_SCALE),
+    pointMode: spline.pointMode ?? DEFAULT_POINT_MODE,
     points:
-      clonedSpline.points?.length > 0
-        ? clonedSpline.points
-        : cloneSplineInstance(FALLBACK_SPLINE).points,
+      spline.points?.length > 0
+        ? normalizePoints(spline.points)
+        : normalizePoints(FALLBACK_SPLINE.points),
   };
 }
 

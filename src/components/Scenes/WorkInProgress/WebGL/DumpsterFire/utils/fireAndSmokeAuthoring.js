@@ -1,5 +1,8 @@
+import * as THREE from 'three';
+
 import DUMPSTER_FIRE from '../../../../../../presets/fire/dumpsterFire';
 import {
+  DEFAULT_FIRE_AND_SMOKE_CONTROL_POINTS,
   cloneFireAndSmokeControlPoints,
   makeFireAndSmokeConfig,
 } from '../../../../../elements/fireAndSmoke/fireAndSmokeDefaults';
@@ -9,10 +12,52 @@ const DEFAULT_TYPE = 'FireAndSmoke';
 const DEFAULT_POSITION = [-1, 1.4, 0];
 const DEFAULT_ROTATION = [0, 0, 0];
 const DEFAULT_SCALE = [1, 1, 1];
+const DEFAULT_POINT_POSITION = [0, 0, 0];
+const DEFAULT_POINT_ROTATION = [0, 0, 0];
+const DEFAULT_POINT_SCALE = [1, 1, 1];
 const NEW_INSTANCE_OFFSET = [0.6, 0, 0.15];
 
 const cloneTuple = (value, fallback) =>
   Array.isArray(value) ? [...value] : [...fallback];
+
+function toVectorTuple(value, fallback) {
+  if (Array.isArray(value)) {
+    return [...value];
+  }
+
+  if (typeof value?.toArray === 'function') {
+    return value.toArray();
+  }
+
+  if (typeof value?.x === 'number') {
+    return [value.x, value.y ?? fallback[1], value.z ?? fallback[2]];
+  }
+
+  return [...fallback];
+}
+
+function toVector3(value, fallback) {
+  return new THREE.Vector3(...toVectorTuple(value, fallback));
+}
+
+function toEuler(value, fallback) {
+  const [x, y, z] = toVectorTuple(value, fallback);
+  return new THREE.Euler(x, y, z, value?.order ?? 'XYZ');
+}
+
+function normalizeControlPoint(point = {}) {
+  return {
+    position: toVector3(point.position, DEFAULT_POINT_POSITION),
+    rotation: toEuler(point.rotation, DEFAULT_POINT_ROTATION),
+    scale: toVector3(point.scale, DEFAULT_POINT_SCALE),
+  };
+}
+
+function normalizeControlPoints(
+  points = DEFAULT_FIRE_AND_SMOKE_CONTROL_POINTS
+) {
+  return points.map((point) => normalizeControlPoint(point));
+}
 
 function toDumpsterFireAndSmokeSeed(seed = {}) {
   const {
@@ -25,8 +70,10 @@ function toDumpsterFireAndSmokeSeed(seed = {}) {
     pos,
     rot,
     scale,
+    controlPoints,
     points,
-    ...config
+    config: nestedConfig,
+    ...configOverrides
   } = seed;
 
   return {
@@ -39,8 +86,8 @@ function toDumpsterFireAndSmokeSeed(seed = {}) {
     showHandles,
     showSpline,
     pointMode,
-    controlPoints: cloneFireAndSmokeControlPoints(points),
-    config: makeFireAndSmokeConfig(config),
+    controlPoints: normalizeControlPoints(controlPoints ?? points),
+    config: makeFireAndSmokeConfig(nestedConfig ?? configOverrides),
   };
 }
 
@@ -118,18 +165,34 @@ function formatConfigEntries(config) {
 }
 
 export function cloneDumpsterFireAndSmokeSeed(seed = {}) {
+  const {
+    name = DEFAULT_NAME,
+    type = DEFAULT_TYPE,
+    pos,
+    rot,
+    scale,
+    visible = true,
+    showHandles = true,
+    showSpline = true,
+    pointMode = 'translate',
+    controlPoints,
+    points,
+    config,
+    ...configOverrides
+  } = seed;
+
   return {
-    name: seed.name ?? DEFAULT_NAME,
-    type: seed.type ?? DEFAULT_TYPE,
-    pos: cloneTuple(seed.pos, DEFAULT_POSITION),
-    rot: cloneTuple(seed.rot, DEFAULT_ROTATION),
-    scale: cloneTuple(seed.scale, DEFAULT_SCALE),
-    visible: seed.visible ?? true,
-    showHandles: seed.showHandles ?? true,
-    showSpline: seed.showSpline ?? true,
-    pointMode: seed.pointMode ?? 'translate',
-    controlPoints: cloneFireAndSmokeControlPoints(seed.controlPoints),
-    config: makeFireAndSmokeConfig(seed.config ?? {}),
+    name,
+    type,
+    pos: cloneTuple(pos, DEFAULT_POSITION),
+    rot: cloneTuple(rot, DEFAULT_ROTATION),
+    scale: cloneTuple(scale, DEFAULT_SCALE),
+    visible,
+    showHandles,
+    showSpline,
+    pointMode,
+    controlPoints: normalizeControlPoints(controlPoints ?? points),
+    config: makeFireAndSmokeConfig(config ?? configOverrides),
   };
 }
 

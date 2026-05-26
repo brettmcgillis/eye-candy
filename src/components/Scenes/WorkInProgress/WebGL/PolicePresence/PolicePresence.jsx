@@ -1,9 +1,15 @@
+import { MathUtils } from 'three';
+
 import React, { useMemo, useRef } from 'react';
 
 import { OrbitControls, PerspectiveCamera } from '@react-three/drei';
 import { useFrame } from '@react-three/fiber';
 
 import POLICE_PRESENCE_FIRE from '../../../../../presets/fire/policePresenceFire';
+import CinderBlock1 from '../../../../elements/cinderblocks/CinderBlock1';
+import CinderBlock2 from '../../../../elements/cinderblocks/CinderBlock2';
+import CinderBlock3 from '../../../../elements/cinderblocks/CinderBlock3';
+import CinderBlock4 from '../../../../elements/cinderblocks/CinderBlock4';
 import PoliceCruiser from '../../../../elements/policeCruiser/PoliceCruiser';
 import SmokeParticles from '../../../../elements/smoke/SmokeParticles';
 import {
@@ -11,6 +17,27 @@ import {
   getSplineWorldPoints,
 } from '../../../../elements/splineGroup/splineDefaults';
 import VolumetricFire from '../../../../elements/volumetricFire/VolumetricFire';
+import useSceneControls from './hooks/useSceneControls';
+import { CINDERBLOCK_CONFIGS, FIRE_INSTANCE_CONFIGS } from './presets';
+
+const CINDERBLOCK_COMPONENTS = {
+  cinderBlock1: CinderBlock1,
+  cinderBlock2: CinderBlock2,
+  cinderBlock3: CinderBlock3,
+  cinderBlock4: CinderBlock4,
+};
+
+function toVector3Array(value = {}) {
+  return [value.x ?? 0, value.y ?? 0, value.z ?? 0];
+}
+
+function toEulerArray(value = {}) {
+  return [
+    MathUtils.degToRad(value.x ?? 0),
+    MathUtils.degToRad(value.y ?? 0),
+    MathUtils.degToRad(value.z ?? 0),
+  ];
+}
 
 // ─── Animated siren lights on the light bar ───────────────────────────────
 function SirenLights() {
@@ -118,132 +145,186 @@ function FireGlow() {
 // Main scene
 // ═══════════════════════════════════════════════════════════════════════════
 export default function PolicePresence() {
-  const {
-    windshieldFire,
-    driverWindowFire,
-    passengerWindowFire,
-    hoodFire,
-    roofFire,
-    smokeColumn,
-  } = useMemo(() => {
+  const controls = useSceneControls();
+
+  const splineLookup = useMemo(() => {
     const splines = POLICE_PRESENCE_FIRE.splines ?? [];
+
     return {
-      windshieldFire: splines.find((s) => s.name === 'Windshield Fire'),
-      driverWindowFire: splines.find((s) => s.name === 'Driver Window Fire'),
-      passengerWindowFire: splines.find(
-        (s) => s.name === 'Passenger Window Fire'
+      ...FIRE_INSTANCE_CONFIGS.reduce(
+        (lookup, config) => ({
+          ...lookup,
+          [config.id]: splines.find(
+            (spline) => spline.name === config.splineName
+          ),
+        }),
+        {}
       ),
-      hoodFire: splines.find((s) => s.name === 'Hood Fire'),
-      roofFire: splines.find((s) => s.name === 'Roof Fire'),
       smokeColumn: splines.find((s) => s.name === 'Smoke Column'),
     };
   }, []);
-  const smokePoints = useMemo(
-    () => getSplineWorldPoints(smokeColumn).map((pt) => pt.position.clone()),
-    [smokeColumn]
+
+  const smokePointData = useMemo(
+    () => getSplineWorldPoints(splineLookup.smokeColumn),
+    [splineLookup]
   );
+
+  const smokePoints = useMemo(
+    () => smokePointData.map((point) => point.position.clone()),
+    [smokePointData]
+  );
+
+  const smokePointRotations = useMemo(
+    () => smokePointData.map((point) => point.rotation.clone()),
+    [smokePointData]
+  );
+
+  const smokePointScales = useMemo(
+    () => smokePointData.map((point) => point.scale.clone()),
+    [smokePointData]
+  );
+
+  const smokeConfig = splineLookup.smokeColumn
+    ? {
+        ...splineLookup.smokeColumn,
+        closed: controls.smokeClosed,
+        tension: controls.smokeTension,
+        prefillOnStart: controls.smokePrefillOnStart,
+        particleCount: controls.smokeParticleCount,
+        particleSize: controls.smokeParticleSize,
+        particleColor: controls.smokeParticleColor,
+        opacity: controls.smokeOpacity,
+        growth: controls.smokeGrowth,
+        fadeExponent: controls.smokeFadeExponent,
+        springK: controls.smokeSpringK,
+        flowSpeed: controls.smokeFlowSpeed,
+        damping: controls.smokeDamping,
+        turbulence: controls.smokeTurbulence,
+        turbulenceSpeed: controls.smokeTurbulenceSpeed,
+        buoyancy: controls.smokeBuoyancy,
+        rotSpeed: controls.smokeRotSpeed,
+        fadeRate: controls.smokeFadeRate,
+        spawnSpread: controls.smokeSpawnSpread,
+        maxDrift: controls.smokeMaxDrift,
+        blendMode: controls.smokeBlendMode,
+      }
+    : null;
+
+  const fireInstances = FIRE_INSTANCE_CONFIGS.map((config) => {
+    const spline = splineLookup[config.id];
+
+    return {
+      ...config,
+      visible: controls[`${config.id}Visible`],
+      position: spline
+        ? getSplineWorldOrigin(spline).toArray()
+        : toVector3Array(config.fallbackPosition),
+      width: controls[`${config.id}Width`],
+      depth: controls[`${config.id}Depth`],
+      height: controls[`${config.id}Height`],
+      bendX: controls[`${config.id}BendX`],
+      bendZ: controls[`${config.id}BendZ`],
+      animated: controls[`${config.id}Animated`],
+      animSpeed: controls[`${config.id}AnimSpeed`],
+      magnitude: controls[`${config.id}Magnitude`],
+      brightness: controls[`${config.id}Brightness`],
+    };
+  });
 
   return (
     <>
       {/* ── Background ───────────────────────────────────────────────── */}
-      <color attach="background" args={['#f5f5f5']} />
+      <color attach="background" args={[controls.backgroundColor]} />
 
       {/* ── Camera + controls ────────────────────────────────────────── */}
-      <PerspectiveCamera makeDefault position={[7, 3.5, -1]} fov={45} />
-      <OrbitControls target={[0, 1.0, -4]} enableDamping dampingFactor={0.06} />
+      <PerspectiveCamera
+        makeDefault
+        position={toVector3Array(controls.cameraPosition)}
+        fov={controls.cameraFov}
+      />
+      <OrbitControls
+        target={toVector3Array(controls.cameraTarget)}
+        enableDamping
+        dampingFactor={0.06}
+      />
 
       {/* ── Base lighting ────────────────────────────────────────────── */}
-      <ambientLight intensity={0.6} />
-      <directionalLight position={[5, 6, 2]} intensity={0.8} />
+      <ambientLight
+        color={controls.ambientLightColor}
+        intensity={controls.ambientLightIntensity}
+      />
+      <directionalLight
+        color={controls.directionalLightColor}
+        position={toVector3Array(controls.directionalLightPosition)}
+        intensity={controls.directionalLightIntensity}
+      />
+
+      {controls.floorVisible ? (
+        <mesh
+          position={toVector3Array(controls.floorPosition)}
+          rotation={toEulerArray(controls.floorRotation)}
+          scale={toVector3Array(controls.floorScale)}
+          receiveShadow
+        >
+          <planeGeometry args={[1, 1]} />
+          <meshStandardMaterial
+            color={controls.floorColor}
+            roughness={controls.floorRoughness}
+            metalness={controls.floorMetalness}
+          />
+        </mesh>
+      ) : null}
 
       {/* ── Police cruiser model ─────────────────────────────────────── */}
-      <PoliceCruiser />
+      <PoliceCruiser showTires={controls.showTires} />
+
+      {controls.showCinderblocks
+        ? CINDERBLOCK_CONFIGS.map((config) => {
+            const CinderBlockComponent = CINDERBLOCK_COMPONENTS[config.id];
+
+            return (
+              <CinderBlockComponent
+                key={config.id}
+                position={toVector3Array(controls[`${config.id}Position`])}
+                rotation={toEulerArray(controls[`${config.id}Rotation`])}
+                scale={toVector3Array(controls[`${config.id}Scale`])}
+              />
+            );
+          })
+        : null}
 
       {/* ── Volumetric fire ──────────────────────────────────────────── */}
-      {/* Windshield — main blaze, tall and wide */}
-      <VolumetricFire
-        position={
-          windshieldFire
-            ? getSplineWorldOrigin(windshieldFire).toArray()
-            : [0.6, 1.1, -4.0]
+      {fireInstances.map((fire) => {
+        if (!fire.visible) {
+          return null;
         }
-        width={windshieldFire?.fireWidth ?? 1.2}
-        depth={windshieldFire?.fireDepth ?? 0.8}
-        height={windshieldFire?.fireHeight ?? 2.8}
-        bendX={-0.3}
-        bendZ={0.15}
-        animated={windshieldFire?.fireAnimated ?? true}
-        animSpeed={windshieldFire?.fireAnimSpeed ?? 0.6}
-        magnitude={windshieldFire?.fireMagnitude ?? 1.5}
-        brightness={windshieldFire?.fireBrightness ?? 1.6}
-      />
-      {/* Driver window — flames licking out sideways */}
-      <VolumetricFire
-        position={
-          driverWindowFire
-            ? getSplineWorldOrigin(driverWindowFire).toArray()
-            : [0.0, 1.0, -4.72]
-        }
-        width={driverWindowFire?.fireWidth ?? 0.6}
-        depth={driverWindowFire?.fireDepth ?? 0.5}
-        height={driverWindowFire?.fireHeight ?? 1.8}
-        bendX={-0.1}
-        bendZ={-0.4}
-        animated={driverWindowFire?.fireAnimated ?? true}
-        animSpeed={driverWindowFire?.fireAnimSpeed ?? 0.5}
-        magnitude={driverWindowFire?.fireMagnitude ?? 1.3}
-        brightness={driverWindowFire?.fireBrightness ?? 1.4}
-      />
-      {/* Passenger window — mirrored */}
-      <VolumetricFire
-        position={
-          passengerWindowFire
-            ? getSplineWorldOrigin(passengerWindowFire).toArray()
-            : [0.0, 1.0, -3.28]
-        }
-        width={passengerWindowFire?.fireWidth ?? 0.6}
-        depth={passengerWindowFire?.fireDepth ?? 0.5}
-        height={passengerWindowFire?.fireHeight ?? 1.8}
-        bendX={-0.1}
-        bendZ={0.4}
-        animated={passengerWindowFire?.fireAnimated ?? true}
-        animSpeed={passengerWindowFire?.fireAnimSpeed ?? 0.55}
-        magnitude={passengerWindowFire?.fireMagnitude ?? 1.3}
-        brightness={passengerWindowFire?.fireBrightness ?? 1.4}
-      />
-      {/* Hood / engine area — lower, wider */}
-      <VolumetricFire
-        position={
-          hoodFire ? getSplineWorldOrigin(hoodFire).toArray() : [1.4, 0.85, -4.0]
-        }
-        width={hoodFire?.fireWidth ?? 0.9}
-        depth={hoodFire?.fireDepth ?? 0.7}
-        height={hoodFire?.fireHeight ?? 1.5}
-        bendX={0.2}
-        bendZ={0.1}
-        animated={hoodFire?.fireAnimated ?? true}
-        animSpeed={hoodFire?.fireAnimSpeed ?? 0.45}
-        magnitude={hoodFire?.fireMagnitude ?? 1.1}
-        brightness={hoodFire?.fireBrightness ?? 1.3}
-      />
-      {/* Roof wrap-back — broad draping fire */}
-      <VolumetricFire
-        position={
-          roofFire ? getSplineWorldOrigin(roofFire).toArray() : [-0.4, 1.25, -4.0]
-        }
-        width={roofFire?.fireWidth ?? 1.0}
-        depth={roofFire?.fireDepth ?? 0.9}
-        height={roofFire?.fireHeight ?? 2.2}
-        bendX={-0.5}
-        bendZ={-0.1}
-        animated={roofFire?.fireAnimated ?? true}
-        animSpeed={roofFire?.fireAnimSpeed ?? 0.55}
-        magnitude={roofFire?.fireMagnitude ?? 1.4}
-        brightness={roofFire?.fireBrightness ?? 1.5}
-      />
+
+        return (
+          <VolumetricFire
+            key={fire.id}
+            position={fire.position}
+            width={fire.width}
+            depth={fire.depth}
+            height={fire.height}
+            bendX={fire.bendX}
+            bendZ={fire.bendZ}
+            animated={fire.animated}
+            animSpeed={fire.animSpeed}
+            magnitude={fire.magnitude}
+            brightness={fire.brightness}
+          />
+        );
+      })}
 
       {/* ── Smoke column ─────────────────────────────────────────────── */}
-      <SmokeParticles points={smokePoints} config={smokeColumn} />
+      {controls.smokeVisible && smokeConfig && smokePoints.length > 1 ? (
+        <SmokeParticles
+          points={smokePoints}
+          pointRotations={smokePointRotations}
+          pointScales={smokePointScales}
+          config={smokeConfig}
+        />
+      ) : null}
 
       {/* ── Fire glow (casts orange light on car) ────────────────────── */}
       <FireGlow />

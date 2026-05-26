@@ -4,7 +4,7 @@ import { useGLTF } from '@react-three/drei';
 
 import { modelFile } from '../../../utils/appUtils';
 
-export default function PoliceCruiser(props) {
+export default function PoliceCruiser({ showTires = true, ...props }) {
   const { nodes, materials } = useGLTF(modelFile('/policeCruiser.glb'));
   return (
     <group {...props} dispose={null}>
@@ -46,66 +46,70 @@ export default function PoliceCruiser(props) {
               position={[-0.191, 0.341, 4.75]}
             />
           </group>
-          <group
-            position={[1.417, 0.303, -4.737]}
-            rotation={[Math.PI, 0, Math.PI]}
-            scale={[0.79, 0.79, 0.589]}
-          >
-            <mesh
-              castShadow
-              receiveShadow
-              geometry={
-                nodes.Fairheaven_LT80_WheelStamp_FL_RB1c_Tire_1k_0.geometry
-              }
-              material={materials.RB1c_Tire_1k}
-              position={[-0.001, 0, 0.179]}
-            />
-          </group>
-          <group
-            position={[-1.234, 0.303, -4.737]}
-            rotation={[Math.PI, 0, Math.PI]}
-            scale={[0.79, 0.79, 0.589]}
-          >
-            <mesh
-              castShadow
-              receiveShadow
-              geometry={
-                nodes.Fairheaven_LT80_WheelStamp_RL_RB1c_Tire_1k_0.geometry
-              }
-              material={materials.RB1c_Tire_1k}
-              position={[-0.001, 0, 0.179]}
-            />
-          </group>
-          <group
-            position={[1.417, 0.303, -3.261]}
-            rotation={[0, 0, -Math.PI]}
-            scale={[0.79, 0.79, 0.589]}
-          >
-            <mesh
-              castShadow
-              receiveShadow
-              geometry={
-                nodes.Fairheaven_LT80_WheelStamp_FR_RB1c_Tire_1k_0.geometry
-              }
-              material={materials.RB1c_Tire_1k}
-              position={[-0.001, 0, 0.179]}
-            />
-          </group>
-          <group
-            position={[-1.234, 0.303, -3.261]}
-            rotation={[0, 0, -Math.PI]}
-            scale={[0.79, 0.79, 0.589]}
-          >
-            <mesh
-              castShadow
-              receiveShadow
-              geometry={
-                nodes.Fairheaven_LT80_WheelStamp_RR_RB1c_Tire_1k_0.geometry
-              }
-              material={materials.RB1c_Tire_1k}
-              position={[-0.001, 0, 0.179]}
-            />
-          </group>
+          {showTires ? (
+            <>
+              <group
+                position={[1.417, 0.303, -4.737]}
+                rotation={[Math.PI, 0, Math.PI]}
+                scale={[0.79, 0.79, 0.589]}
+              >
+                <mesh
+                  castShadow
+                  receiveShadow
+                  geometry={
+                    nodes.Fairheaven_LT80_WheelStamp_FL_RB1c_Tire_1k_0.geometry
+                  }
+                  material={materials.RB1c_Tire_1k}
+                  position={[-0.001, 0, 0.179]}
+                />
+              </group>
+              <group
+                position={[-1.234, 0.303, -4.737]}
+                rotation={[Math.PI, 0, Math.PI]}
+                scale={[0.79, 0.79, 0.589]}
+              >
+                <mesh
+                  castShadow
+                  receiveShadow
+                  geometry={
+                    nodes.Fairheaven_LT80_WheelStamp_RL_RB1c_Tire_1k_0.geometry
+                  }
+                  material={materials.RB1c_Tire_1k}
+                  position={[-0.001, 0, 0.179]}
+                />
+              </group>
+              <group
+                position={[1.417, 0.303, -3.261]}
+                rotation={[0, 0, -Math.PI]}
+                scale={[0.79, 0.79, 0.589]}
+              >
+                <mesh
+                  castShadow
+                  receiveShadow
+                  geometry={
+                    nodes.Fairheaven_LT80_WheelStamp_FR_RB1c_Tire_1k_0.geometry
+                  }
+                  material={materials.RB1c_Tire_1k}
+                  position={[-0.001, 0, 0.179]}
+                />
+              </group>
+              <group
+                position={[-1.234, 0.303, -3.261]}
+                rotation={[0, 0, -Math.PI]}
+                scale={[0.79, 0.79, 0.589]}
+              >
+                <mesh
+                  castShadow
+                  receiveShadow
+                  geometry={
+                    nodes.Fairheaven_LT80_WheelStamp_RR_RB1c_Tire_1k_0.geometry
+                  }
+                  material={materials.RB1c_Tire_1k}
+                  position={[-0.001, 0, 0.179]}
+                />
+              </group>
+            </>
+          ) : null}
           <group
             position={[-2.383, 0.668, -3.999]}
             rotation={[-1.571, -1.484, -1.571]}

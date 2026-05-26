@@ -182,7 +182,7 @@ export const PRESETS = {
     floatSpeed: 0,
     animate: false,
     wobble: false,
-    solarSystemPosition: { x: 0, y: 0.75, z: 0 },
+    solarSystemPosition: { x: 0.07, y: 0.75, z: 0 },
     solarSystemRotation: { x: 0, y: 0, z: 0 },
     solarSystemVisible: true,
     solarSystemScale: 0.09,

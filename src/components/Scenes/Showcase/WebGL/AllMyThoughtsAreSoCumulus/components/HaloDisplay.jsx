@@ -217,6 +217,7 @@ const HaloDisplay = memo(function HaloDisplay({ controls, setControls }) {
         {haloType === 'solarSystem' && (
           <SolarSystem
             asteroidMode={controls.solarSystemAsteroidMode}
+            enableShadows={controls.solarSystemShadowsEnabled}
             orbitSpeed={controls.solarSystemOrbitSpeed}
             rotationSpeed={controls.solarSystemRotationSpeed}
             showAsteroidBelts={controls.solarSystemAsteroidBeltsVisible}
@@ -226,6 +227,12 @@ const HaloDisplay = memo(function HaloDisplay({ controls, setControls }) {
             sunRadius={controls.solarSystemSunRadius}
             sunEmissiveIntensity={controls.solarSystemSunEmissiveIntensity}
             sunLightIntensity={controls.solarSystemSunLightIntensity}
+            sunLightColor={controls.solarSystemSunLightColor}
+            sunLightDecay={controls.solarSystemSunLightDecay}
+            sunSurfaceDetailScale={controls.solarSystemSunSurfaceDetailScale}
+            sunSurfaceDisplacementScale={
+              controls.solarSystemSunSurfaceDisplacementScale
+            }
           />
         )}
       </group>

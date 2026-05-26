@@ -997,12 +997,30 @@ export default function useSceneControls() {
                   'Sprite Impostors': 'sprite',
                 },
               },
+              solarSystemShadowsEnabled: {
+                label: 'Shadows',
+                value: false,
+              },
               solarSystemSunRadius: {
                 label: 'Sun Radius',
                 value: 0.48,
                 min: 0.1,
                 max: 1.2,
                 step: 0.01,
+              },
+              solarSystemSunSurfaceDetailScale: {
+                label: 'Surface Detail',
+                value: 1,
+                min: 0.25,
+                max: 2,
+                step: 0.01,
+              },
+              solarSystemSunSurfaceDisplacementScale: {
+                label: 'Surface Displacement',
+                value: 0.15,
+                min: 0.01,
+                max: 0.35,
+                step: 0.005,
               },
               solarSystemSunEmissiveIntensity: {
                 label: 'Sun Glow',
@@ -1017,6 +1035,17 @@ export default function useSceneControls() {
                 min: 0,
                 max: 100,
                 step: 0.5,
+              },
+              solarSystemSunLightColor: {
+                label: 'Sun Light Color',
+                value: '#ffcf37',
+              },
+              solarSystemSunLightDecay: {
+                label: 'Sun Light Decay',
+                value: 2,
+                min: 0,
+                max: 4,
+                step: 0.01,
               },
             },
             {

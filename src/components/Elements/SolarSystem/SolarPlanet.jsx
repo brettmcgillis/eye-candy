@@ -39,6 +39,7 @@ const SolarPlanet = memo(function SolarPlanet({
   orbitOpacity = 0.14,
   orbitSpeedMultiplier = 1,
   rotationSpeedMultiplier = 1,
+  shadowsEnabled = false,
   textures: providedTextures,
 }) {
   const loadedTextures = useSolarSystemTextures();
@@ -135,7 +136,11 @@ const SolarPlanet = memo(function SolarPlanet({
 
       <group ref={orbitRef} position={[config.orbitRadius, 0, 0]}>
         <group rotation={[0, 0, THREE.MathUtils.degToRad(config.axialTilt)]}>
-          <mesh ref={planetRef}>
+          <mesh
+            ref={planetRef}
+            castShadow={shadowsEnabled}
+            receiveShadow={shadowsEnabled}
+          >
             <sphereGeometry args={[config.radius, 32, 32]} />
             <meshStandardMaterial
               map={textures[config.colorMap]}
@@ -152,7 +157,11 @@ const SolarPlanet = memo(function SolarPlanet({
           </mesh>
 
           {config.atmosphereMap ? (
-            <mesh ref={atmosphereRef} scale={1.08}>
+            <mesh
+              ref={atmosphereRef}
+              scale={1.08}
+              receiveShadow={shadowsEnabled}
+            >
               <sphereGeometry args={[config.radius, 32, 32]} />
               <meshStandardMaterial
                 map={textures[config.atmosphereMap]}
@@ -166,7 +175,10 @@ const SolarPlanet = memo(function SolarPlanet({
           ) : null}
 
           {config.ring ? (
-            <mesh rotation={[-Math.PI / 2, 0, 0]}>
+            <mesh
+              rotation={[-Math.PI / 2, 0, 0]}
+              receiveShadow={shadowsEnabled}
+            >
               <ringGeometry
                 args={[config.ring.innerRadius, config.ring.outerRadius, 128]}
               />
@@ -201,6 +213,8 @@ const SolarPlanet = memo(function SolarPlanet({
                     mesh: node,
                   };
                 }}
+                castShadow={shadowsEnabled}
+                receiveShadow={shadowsEnabled}
               >
                 <sphereGeometry args={[moon.radius, 24, 24]} />
                 <meshStandardMaterial

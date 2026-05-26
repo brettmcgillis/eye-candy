@@ -22,6 +22,7 @@ export {
 export default function SolarSystem({
   asteroidBelts = SOLAR_SYSTEM_ASTEROID_BELTS,
   asteroidMode = 'mesh',
+  enableShadows = false,
   orbitSpeed = 1,
   orbitOpacity = 0.14,
   orbitColor = '#8ea2ff',
@@ -31,15 +32,24 @@ export default function SolarSystem({
   sunRadius = SOLAR_SYSTEM_DEFAULT_SUN_RADIUS,
   sunEmissiveIntensity = 2.8,
   sunLightIntensity = 18,
+  sunLightColor = '#ffcf37',
+  sunLightDecay = 2,
+  sunSurfaceDetailScale = 1.0,
+  sunSurfaceDisplacementScale = 0.15,
 }) {
   const textures = useSolarSystemTextures();
 
   return (
     <group>
       <Sun
+        castShadow={enableShadows}
         radius={sunRadius}
         emissiveIntensity={sunEmissiveIntensity}
         lightIntensity={sunLightIntensity}
+        lightColor={sunLightColor}
+        lightDecay={sunLightDecay}
+        surfaceDetailScale={sunSurfaceDetailScale}
+        surfaceDisplacementScale={sunSurfaceDisplacementScale}
       />
 
       {showAsteroidBelts
@@ -72,7 +82,8 @@ export default function SolarSystem({
           orbitOpacity={orbitOpacity}
           orbitSpeedMultiplier={orbitSpeed}
           rotationSpeedMultiplier={rotationSpeed}
-          showOrbits={showOrbits}
+          shadowsEnabled={enableShadows}
+          showOrbit={showOrbits}
           textures={textures}
         />
       ))}

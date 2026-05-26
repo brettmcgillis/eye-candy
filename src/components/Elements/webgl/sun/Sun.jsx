@@ -9,10 +9,17 @@ import noiseGLSL from './noise.glsl?raw';
 const SUN_GEOMETRY_SEGMENTS = 48;
 
 const SunMaterial = shaderMaterial(
-  { emissiveIntensity: 1.0, time: 0 },
+  {
+    emissiveIntensity: 1.0,
+    surfaceDetailScale: 1.0,
+    surfaceDisplacementScale: 0.15,
+    time: 0,
+  },
   // Vertex Shader
   `
     uniform float time;
+    uniform float surfaceDetailScale;
+    uniform float surfaceDisplacementScale;
     varying vec2 vUv;
     varying vec3 vPosition;
     varying vec3 vWorldPosition;
@@ -30,13 +37,13 @@ const SunMaterial = shaderMaterial(
       vec3 p = normalize(position);
             
       // Multi-octave noise for smooth base surface
-      float displacement = fbm(p * 2.0 + vec3(t * 0.3)) * 0.5;
+      float displacement = fbm(p * 2.0 * surfaceDetailScale + vec3(t * 0.3)) * 0.5;
             
       // Add medium-scale churning (like solar granulation)
-      displacement += fbm(p * 4.0 + vec3(t * 0.5, -t * 0.4, t * 0.2)) * 0.25;
+      displacement += fbm(p * 4.0 * surfaceDetailScale + vec3(t * 0.5, -t * 0.4, t * 0.2)) * 0.25;
             
       // Fine detail layer
-      displacement += noise(p * 8.0 + vec3(sin(t * 0.3), cos(t * 0.3), t)) * 0.1;
+      displacement += noise(p * 8.0 * surfaceDetailScale + vec3(sin(t * 0.3), cos(t * 0.3), t)) * 0.1;
             
       // Solar flare prominences
       vec3 flarePos = p * 1.5 + vec3(cos(t * 0.2) * 2.0, sin(t * 0.15) * 2.0, t * 0.3);
@@ -56,13 +63,13 @@ const SunMaterial = shaderMaterial(
       vec3 tangent1 = vec3(delta, 0.0, 0.0);
       vec3 tangent2 = vec3(0.0, delta, 0.0);
             
-      float h1 = fbm((p + tangent1) * 2.0 + vec3(t * 0.3)) * 0.5;
-      float h2 = fbm((p + tangent2) * 2.0 + vec3(t * 0.3)) * 0.5;
+      float h1 = fbm((p + tangent1) * 2.0 * surfaceDetailScale + vec3(t * 0.3)) * 0.5;
+      float h2 = fbm((p + tangent2) * 2.0 * surfaceDetailScale + vec3(t * 0.3)) * 0.5;
             
       vec3 smoothNormal = normalize(normal + (h1 - displacement) * tangent1 + (h2 - displacement) * tangent2);
             
       // Apply displacement along smooth normal
-      vec3 newPosition = position + smoothNormal * displacement * 0.15;
+      vec3 newPosition = position + smoothNormal * displacement * surfaceDisplacementScale;
             
       vec4 worldPosition = modelMatrix * vec4(newPosition, 1.0);
       vWorldPosition = worldPosition.xyz;
@@ -145,12 +152,20 @@ const SunMaterial = shaderMaterial(
 extend({ SunMaterial });
 
 function Sun({
+  castShadow = false,
+  surfaceDetailScale = 1.0,
+  surfaceDisplacementScale = 0.15,
   radius = 5,
   emissiveIntensity = 5.0,
   lightIntensity = 50000,
   lightColor = 'rgb(255, 207, 55)',
   lightDistance = 0,
   lightDecay = 2,
+  shadowBias = -0.0002,
+  shadowCameraFar = 18,
+  shadowCameraNear = 0.1,
+  shadowMapSize = 512,
+  shadowNormalBias = 0.02,
 }) {
   const shaderRef = useRef();
 
@@ -172,6 +187,8 @@ function Sun({
         <sunMaterial
           ref={shaderRef}
           emissiveIntensity={emissiveIntensity}
+          surfaceDetailScale={surfaceDetailScale}
+          surfaceDisplacementScale={surfaceDisplacementScale}
           time={0}
         />
       </mesh>
@@ -182,6 +199,13 @@ function Sun({
         color={lightColor}
         distance={lightDistance}
         decay={lightDecay}
+        castShadow={castShadow && lightIntensity > 0}
+        shadow-bias={shadowBias}
+        shadow-camera-far={shadowCameraFar}
+        shadow-camera-near={shadowCameraNear}
+        shadow-mapSize-height={shadowMapSize}
+        shadow-mapSize-width={shadowMapSize}
+        shadow-normalBias={shadowNormalBias}
       />
     </>
   );

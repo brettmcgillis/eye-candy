@@ -1,10 +1,8 @@
 import * as THREE from 'three';
-import { TextureLoader } from 'three';
-import { Water } from 'three/addons/objects/Water.js';
 
 import React, { useCallback, useEffect, useMemo } from 'react';
 
-import { useFrame, useLoader } from '@react-three/fiber';
+import { useFrame } from '@react-three/fiber';
 
 function getSunDirection({ azimuth, elevation }) {
   const phi = THREE.MathUtils.degToRad(90 - elevation);
@@ -13,7 +11,7 @@ function getSunDirection({ azimuth, elevation }) {
   return new THREE.Vector3().setFromSphericalCoords(1, phi, theta);
 }
 
-const WAVE_VERTEX_PREAMBLE = [
+const MATERIAL_VERTEX_PREAMBLE = [
   'uniform float uTime;',
   'uniform float uSwellAmplitude;',
   'uniform float uSwellFrequency;',
@@ -27,9 +25,6 @@ const WAVE_VERTEX_PREAMBLE = [
   'uniform float uNormalEpsilon;',
   'uniform sampler2D uInteractionHeightmap;',
   'uniform float uInteractionBounds;',
-  'varying float vInteractionHeight;',
-  'varying float vWaveHeight;',
-  'varying vec3 vWaveNormal;',
   '',
   'const int SWELL_COUNT = 3;',
   'const int CHOP_COUNT = 3;',
@@ -106,85 +101,25 @@ const WAVE_VERTEX_PREAMBLE = [
   '  float back = sampleOceanHeight(xz - vec2(0.0, epsilon));',
   '  float front = sampleOceanHeight(xz + vec2(0.0, epsilon));',
   '',
-  '  return normalize(vec3(left - right, epsilon * 2.0, back - front));',
+  '  return normalize(vec3(left - right, back - front, epsilon * 2.0));',
   '}',
 ].join('\n');
 
-const WATER_VERTEX_REPLACE = [
+const BEGIN_NORMAL_REPLACE = [
   'initOceanWaves();',
-  'vec2 oceanCoord = position.xy;',
-  'float interactiveHeight = sampleInteractiveHeight(oceanCoord);',
-  'float oceanHeight = sampleBaseOceanHeight(oceanCoord) + interactiveHeight;',
-  'vec3 transformedPosition = vec3(',
-  '  position.x,',
-  '  position.y,',
-  '  position.z + oceanHeight',
-  ');',
-  'vInteractionHeight = interactiveHeight;',
-  'vWaveHeight = oceanHeight;',
-  'vWaveNormal = sampleOceanNormal(oceanCoord);',
-  'mirrorCoord = modelMatrix * vec4( transformedPosition, 1.0 );',
-  'worldPosition = mirrorCoord.xyzw;',
-  'mirrorCoord = textureMatrix * mirrorCoord;',
-  'vec4 mvPosition = modelViewMatrix * vec4( transformedPosition, 1.0 );',
-  'gl_Position = projectionMatrix * mvPosition;',
+  'vec3 objectNormal = sampleOceanNormal(position.xy);',
+  '#ifdef USE_TANGENT',
+  '  vec3 objectTangent = vec3( tangent.xyz );',
+  '#endif',
 ].join('\n');
 
-const FRAGMENT_PREAMBLE = [
-  'uniform float uSwellAmplitude;',
-  'uniform vec3 uDeepColor;',
-  'uniform vec3 uShallowColor;',
-  'uniform vec3 uHorizonColor;',
-  'uniform vec3 uFoamColor;',
-  'uniform float uFresnelPower;',
-  'uniform float uFresnelStrength;',
-  'uniform float uFoamStrength;',
-  'uniform float uFoamThreshold;',
-  'uniform float uFoamSoftness;',
-  'uniform float uFoamWaveInfluence;',
-  'varying float vInteractionHeight;',
-  'varying float vWaveHeight;',
-  'varying vec3 vWaveNormal;',
-].join('\n');
-
-const RIPPLE_OUTGOING_LIGHT_REPLACE = [
-  'float interactionFoam = smoothstep(0.003, 0.035, abs(vInteractionHeight));',
-  'vec3 waveNormal = normalize(vWaveNormal);',
-  'float fresnel = pow(',
-  '  1.0 - max(dot(waveNormal, eyeDirection), 0.0),',
-  '  max(uFresnelPower, 0.001)',
-  ');',
-  'float waveBand = smoothstep(',
-  '  -uSwellAmplitude * 1.3,',
-  '  uSwellAmplitude * 1.3,',
-  '  vWaveHeight',
-  ');',
-  'float foam = smoothstep(',
-  '  uFoamThreshold,',
-  '  uFoamThreshold + uFoamSoftness,',
-  '  (1.0 - waveNormal.y) + max(vWaveHeight, 0.0) * uFoamWaveInfluence',
-  ');',
-  'vec3 reflectedView = normalize(reflect(-eyeDirection, waveNormal));',
-  'vec3 waterTint = mix(',
-  '  uDeepColor,',
-  '  uShallowColor,',
-  '  clamp(waveBand * 0.72 + (1.0 - waveNormal.y) * 0.2, 0.0, 1.0)',
-  ');',
-  'vec3 reflectedSky = mix(',
-  '  waterTint,',
-  '  uHorizonColor,',
-  '  smoothstep(-0.05, 0.85, reflectedView.y)',
-  ');',
-  'vec3 stylizedWater = mix(',
-  '  albedo + waterTint * 0.08,',
-  '  reflectedSky + reflectionSample * 0.65,',
-  '  clamp(fresnel * uFresnelStrength, 0.0, 1.0)',
-  ');',
-  'vec3 outgoingLight = mix(',
-  '  stylizedWater,',
-  '  uFoamColor,',
-  '  clamp(foam * uFoamStrength + interactionFoam * 0.2, 0.0, 1.0)',
-  ');',
+const BEGIN_VERTEX_REPLACE = [
+  'float interactionHeight = sampleInteractiveHeight(position.xy);',
+  'float oceanHeight = sampleBaseOceanHeight(position.xy) + interactionHeight;',
+  'vec3 transformed = vec3(position.x, position.y, position.z + oceanHeight);',
+  '#ifdef USE_ALPHAHASH',
+  '  vPosition = vec3( position );',
+  '#endif',
 ].join('\n');
 
 export default function OceanSurface({ ocean, runtime, sun }) {
@@ -198,82 +133,57 @@ export default function OceanSurface({ ocean, runtime, sun }) {
       ),
     [ocean.planeSegments, ocean.planeSize]
   );
-  const waterNormals = useLoader(TextureLoader, '/textures/waternormals.jpg');
   const sunDirection = useMemo(
     () => getSunDirection(sun),
     [sun.azimuth, sun.elevation]
   );
 
-  useEffect(() => {
-    waterNormals.wrapS = THREE.RepeatWrapping;
-    waterNormals.wrapT = THREE.RepeatWrapping;
-    waterNormals.colorSpace = THREE.NoColorSpace;
-  }, [waterNormals]);
-
-  const water = useMemo(() => {
-    const waterMesh = new Water(geometry, {
-      alpha: ocean.opacity,
+  const material = useMemo(() => {
+    const surfaceMaterial = new THREE.MeshStandardMaterial({
+      color: ocean.shallowColor,
+      emissive: ocean.deepColor,
+      emissiveIntensity: 0.08,
       fog: true,
-      sunColor: sun.color,
-      sunDirection: sunDirection.clone(),
-      textureHeight: 512,
-      textureWidth: 512,
-      waterColor: ocean.deepColor,
-      waterNormals,
-      distortionScale: ocean.distortionScale,
+      metalness: 0.82,
+      opacity: ocean.opacity,
+      roughness: 0.12,
+      side: THREE.DoubleSide,
+      transparent: ocean.opacity < 0.999,
     });
 
-    waterMesh.rotation.x = -Math.PI / 2;
-    waterMesh.receiveShadow = true;
+    surfaceMaterial.onBeforeCompile = (shader) => {
+      const compiledShader = shader;
 
-    const { material } = waterMesh;
+      Object.entries(runtime.uniforms).forEach(([key, uniform]) => {
+        compiledShader.uniforms[key] = uniform;
+      });
 
-    Object.entries(runtime.uniforms).forEach(([key, uniform]) => {
-      material.uniforms[key] = uniform;
-    });
+      compiledShader.vertexShader = compiledShader.vertexShader.replace(
+        '#include <common>',
+        ['#include <common>', MATERIAL_VERTEX_PREAMBLE].join('\n')
+      );
+      compiledShader.vertexShader = compiledShader.vertexShader.replace(
+        '#include <beginnormal_vertex>',
+        BEGIN_NORMAL_REPLACE
+      );
+      compiledShader.vertexShader = compiledShader.vertexShader.replace(
+        '#include <begin_vertex>',
+        BEGIN_VERTEX_REPLACE
+      );
 
-    material.uniforms.alpha.value = ocean.opacity;
-    material.uniforms.size.value = ocean.normalMapSize;
-    material.vertexShader = material.vertexShader.replace(
-      'varying vec4 worldPosition;',
-      ['varying vec4 worldPosition;', WAVE_VERTEX_PREAMBLE].join('\n')
-    );
-    material.vertexShader = material.vertexShader.replace(
-      [
-        'mirrorCoord = modelMatrix * vec4( position, 1.0 );',
-        'worldPosition = mirrorCoord.xyzw;',
-        'mirrorCoord = textureMatrix * mirrorCoord;',
-        'vec4 mvPosition =  modelViewMatrix * vec4( position, 1.0 );',
-        'gl_Position = projectionMatrix * mvPosition;',
-      ].join('\n'),
-      WATER_VERTEX_REPLACE
-    );
-    material.fragmentShader = material.fragmentShader.replace(
-      'varying vec4 worldPosition;',
-      ['varying vec4 worldPosition;', FRAGMENT_PREAMBLE].join('\n')
-    );
-    material.fragmentShader = material.fragmentShader.replace(
-      'vec3 surfaceNormal = normalize( noise.xzy * vec3( 1.5, 1.0, 1.5 ) );',
-      'vec3 surfaceNormal = normalize(mix(noise.xzy * vec3( 1.5, 1.0, 1.5 ), vWaveNormal, 0.92));'
-    );
-    material.fragmentShader = material.fragmentShader.replace(
-      'vec3 outgoingLight = albedo;',
-      RIPPLE_OUTGOING_LIGHT_REPLACE
-    );
-    material.customProgramCacheKey = () => 'row-it-alone-water-heightfield';
-    material.needsUpdate = true;
+      surfaceMaterial.userData.shader = compiledShader;
+    };
 
-    return waterMesh;
+    surfaceMaterial.customProgramCacheKey = () =>
+      'row-it-alone-water-heightmap-mesh';
+
+    return surfaceMaterial;
   }, [
     geometry,
     ocean.deepColor,
-    ocean.distortionScale,
-    ocean.normalMapSize,
     ocean.opacity,
+    ocean.shallowColor,
     runtime.uniforms,
-    sun.color,
-    sunDirection,
-    waterNormals,
   ]);
 
   const handlePointerMove = useCallback(
@@ -297,32 +207,50 @@ export default function OceanSurface({ ocean, runtime, sun }) {
   );
 
   useEffect(() => {
-    water.material.uniforms.distortionScale.value = ocean.distortionScale;
-    water.material.uniforms.alpha.value = ocean.opacity;
-    water.material.uniforms.size.value = ocean.normalMapSize;
-    water.material.uniforms.sunColor.value.set(sun.color);
-    water.material.uniforms.waterColor.value.set(ocean.deepColor);
-    water.material.depthWrite = ocean.opacity >= 0.999;
-    water.material.transparent = ocean.opacity < 0.999;
+    material.color.set(ocean.shallowColor);
+    material.emissive.set(ocean.deepColor);
+    material.emissiveIntensity = 0.08;
+    material.depthWrite = ocean.opacity >= 0.999;
+    material.metalness = THREE.MathUtils.clamp(
+      0.45 + ocean.fresnelStrength * 0.32,
+      0,
+      1
+    );
+    material.opacity = ocean.opacity;
+    material.roughness = THREE.MathUtils.clamp(
+      0.24 - ocean.fresnelStrength * 0.08,
+      0.02,
+      0.3
+    );
+    material.transparent = ocean.opacity < 0.999;
+    material.userData.sunDirection = sunDirection.clone();
   }, [
     ocean.deepColor,
-    ocean.distortionScale,
-    ocean.normalMapSize,
+    ocean.fresnelStrength,
     ocean.opacity,
-    sun.color,
-    water,
+    ocean.shallowColor,
+    material,
+    sunDirection,
   ]);
 
   useFrame(() => {
-    water.material.uniforms.sunDirection.value.copy(sunDirection).normalize();
-    water.material.uniforms.time.value = runtime.timeRef.current;
+    if (material.userData.shader) {
+      material.userData.shader.uniforms.uTime.value = runtime.timeRef.current;
+    }
   });
 
   return (
     <>
-      <primitive object={water} />
+      <mesh
+        castShadow
+        geometry={geometry}
+        material={material}
+        receiveShadow
+        rotation-x={-Math.PI / 2}
+      />
       <mesh
         geometry={geometry}
+        onPointerDown={handlePointerMove}
         onPointerMove={handlePointerMove}
         onPointerOut={handlePointerOut}
         position-y={0.02}

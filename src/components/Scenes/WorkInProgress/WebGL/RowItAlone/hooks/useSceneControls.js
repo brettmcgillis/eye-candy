@@ -318,20 +318,6 @@ export default function useSceneControls() {
             max: 0.999,
             step: 0.001,
           },
-          interactionInterval: {
-            label: 'Emit Interval',
-            value: 0.02,
-            min: 0.01,
-            max: 0.5,
-            step: 0.01,
-          },
-          interactionMinDistance: {
-            label: 'Emit Distance',
-            value: 0.05,
-            min: 0.01,
-            max: 2,
-            step: 0.01,
-          },
           cursorColliderEnabled: { label: 'Cursor Collider', value: true },
           showCursorCollider: { label: 'Show Cursor', value: false },
           cursorColliderRadius: {

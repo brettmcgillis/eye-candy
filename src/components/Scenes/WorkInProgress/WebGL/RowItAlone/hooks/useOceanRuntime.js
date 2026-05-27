@@ -72,7 +72,7 @@ function sampleInteractionHeightAt(x, z, bounds, state) {
   return THREE.MathUtils.lerp(top, bottom, ty);
 }
 
-function stepInteractionState(state, interaction, impulses) {
+function stepInteractionState(state, interaction, pointerTarget) {
   const { bounds } = interaction;
   const { current, next, previous, size, texture, textureData } = state;
 
@@ -97,24 +97,16 @@ function stepInteractionState(state, interaction, impulses) {
         ((north + south + east + west) * 0.5 - previous[index]) *
         interaction.viscosity;
 
-      for (
-        let impulseIndex = 0;
-        impulseIndex < impulses.length;
-        impulseIndex += 1
-      ) {
-        const impulse = impulses[impulseIndex];
-        const dx = worldX - impulse.x;
-        const dz = worldZ - impulse.z;
-        const distance = Math.sqrt(dx * dx + dz * dz);
+      if (interaction.enabled && pointerTarget.active) {
+        const dx = worldX - pointerTarget.x;
+        const dz = worldZ - pointerTarget.z;
+        const phase = Math.min(
+          Math.PI,
+          (Math.sqrt(dx * dx + dz * dz) * Math.PI) /
+            Math.max(interaction.radius, 0.0001)
+        );
 
-        if (distance <= impulse.radius) {
-          const phase = Math.min(
-            Math.PI,
-            (distance * Math.PI) / Math.max(impulse.radius, 0.0001)
-          );
-
-          nextHeight -= (Math.cos(phase) + 1) * impulse.depth;
-        }
+        nextHeight -= (Math.cos(phase) + 1) * interaction.depth;
       }
 
       next[index] = nextHeight;
@@ -236,12 +228,7 @@ function updateColorUniform(uniform, value) {
 }
 
 export default function useOceanRuntime({ interaction, ocean }) {
-  const interactionImpulsesRef = useRef([]);
   const interactionStateRef = useRef();
-  const lastEmissionTimeRef = useRef(-Infinity);
-  const lastRipplePointRef = useRef(
-    new THREE.Vector2(Number.POSITIVE_INFINITY, Number.POSITIVE_INFINITY)
-  );
   const pointerTargetRef = useRef({ active: false, x: 0, z: 0 });
   const timeRef = useRef(0);
   const interactionState = useMemo(
@@ -280,22 +267,6 @@ export default function useOceanRuntime({ interaction, ocean }) {
     [interaction.bounds, interactionState.texture, ocean]
   );
 
-  const addRipple = useCallback(
-    (x, z, strength = interaction.depth) => {
-      if (!interaction.enabled) {
-        return;
-      }
-
-      interactionImpulsesRef.current.push({
-        depth: strength,
-        radius: interaction.radius,
-        x,
-        z,
-      });
-    },
-    [interaction.depth, interaction.enabled, interaction.radius]
-  );
-
   const setPointerTarget = useCallback((x, z) => {
     pointerTargetRef.current.active = true;
     pointerTargetRef.current.x = x;
@@ -306,39 +277,26 @@ export default function useOceanRuntime({ interaction, ocean }) {
     pointerTargetRef.current.active = false;
   }, []);
 
+  const addRipple = useCallback(
+    (x, z) => {
+      if (!interaction.enabled) {
+        return;
+      }
+
+      setPointerTarget(x, z);
+    },
+    [interaction.enabled, setPointerTarget]
+  );
+
   const emitInteractiveRipple = useCallback(
     (x, z) => {
       if (!interaction.enabled) {
         return;
       }
 
-      const now = timeRef.current;
-
-      if (now - lastEmissionTimeRef.current < interaction.interval) {
-        return;
-      }
-
-      const dx = lastRipplePointRef.current.x - x;
-      const dz = lastRipplePointRef.current.y - z;
-
-      if (
-        dx * dx + dz * dz <
-        interaction.minDistance * interaction.minDistance
-      ) {
-        return;
-      }
-
-      lastEmissionTimeRef.current = now;
-      lastRipplePointRef.current.set(x, z);
-      addRipple(x, z, interaction.depth);
+      setPointerTarget(x, z);
     },
-    [
-      addRipple,
-      interaction.depth,
-      interaction.enabled,
-      interaction.interval,
-      interaction.minDistance,
-    ]
+    [interaction.enabled, setPointerTarget]
   );
 
   const sampleHeight = useCallback(
@@ -377,7 +335,7 @@ export default function useOceanRuntime({ interaction, ocean }) {
     interactionStateRef.current = stepInteractionState(
       interactionStateRef.current,
       interaction,
-      interactionImpulsesRef.current.splice(0)
+      pointerTargetRef.current
     );
 
     uniforms.uTime.value = timeRef.current;

@@ -27,7 +27,7 @@ export default function SplineLine({
   }
 
   useFrame(() => {
-    if (!visible || !lineRef.current || points.length < 2) return;
+    if (!lineRef.current || points.length < 2) return;
     const curve = new THREE.CatmullRomCurve3(
       [...points],
       closed,
@@ -42,12 +42,14 @@ export default function SplineLine({
       pos.setXYZ(i, tmp.x, tmp.y, tmp.z);
     }
     pos.needsUpdate = true;
+    lineRef.current.geometry.computeBoundingBox();
+    lineRef.current.geometry.computeBoundingSphere();
   });
 
-  if (!visible || points.length < 2) return null;
+  if (points.length < 2) return null;
 
   return (
-    <line ref={lineRef} geometry={geoRef.current}>
+    <line ref={lineRef} geometry={geoRef.current} visible={visible}>
       <lineBasicMaterial color={color} transparent opacity={0.85} />
     </line>
   );

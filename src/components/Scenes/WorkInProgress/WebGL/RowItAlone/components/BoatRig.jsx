@@ -3,10 +3,10 @@ import * as THREE from 'three';
 import React, { useMemo, useRef } from 'react';
 
 import { useGLTF } from '@react-three/drei';
-import { useFrame } from '@react-three/fiber';
 import {
   RigidBody,
   interactionGroups,
+  useBeforePhysicsStep,
   useRevoluteJoint,
 } from '@react-three/rapier';
 
@@ -34,6 +34,36 @@ const HULL_COLLISION_GROUP = 0;
 const OAR_COLLISION_GROUP = 1;
 const CURSOR_COLLISION_GROUP = 2;
 const JOINT_AXIS = new THREE.Vector3(0, 1, 0);
+
+function applyLinearDragImpulse({
+  body,
+  bodyQuaternion,
+  linearVelocity,
+  timeStep,
+  forwardDrag,
+  lateralDrag,
+  verticalDrag,
+  target,
+}) {
+  const {
+    inverseQuaternion,
+    localVelocity,
+    localImpulse,
+    worldImpulse,
+  } = target;
+
+  inverseQuaternion.copy(bodyQuaternion).invert();
+  localVelocity.copy(linearVelocity).applyQuaternion(inverseQuaternion);
+
+  localImpulse.set(
+    -localVelocity.x * lateralDrag * timeStep,
+    -localVelocity.y * verticalDrag * timeStep,
+    -localVelocity.z * forwardDrag * timeStep
+  );
+
+  worldImpulse.copy(localImpulse).applyQuaternion(bodyQuaternion);
+  body.applyImpulse(worldImpulse, true);
+}
 
 function getOarProbePoint(geometry, anchor) {
   const { min, max } = geometry.boundingBox;
@@ -80,7 +110,7 @@ function OarBody({
     [rotationY]
   );
 
-  useFrame(() => {
+  useBeforePhysicsStep(() => {
     const body = bodyRef.current;
 
     if (!body || !meshRef.current) {
@@ -180,6 +210,8 @@ function HullBody({
   const bodyPositionRef = useRef(new THREE.Vector3());
   const bodyQuaternionRef = useRef(new THREE.Quaternion());
   const forceRef = useRef(new THREE.Vector3());
+  const forwardRef = useRef(new THREE.Vector3());
+  const rightRef = useRef(new THREE.Vector3());
   const linearVelocityRef = useRef(new THREE.Vector3());
   const localProbePointsRef = useRef([
     new THREE.Vector3(),
@@ -187,6 +219,12 @@ function HullBody({
     new THREE.Vector3(),
     new THREE.Vector3(),
   ]);
+  const dragTargetsRef = useRef({
+    inverseQuaternion: new THREE.Quaternion(),
+    localImpulse: new THREE.Vector3(),
+    localVelocity: new THREE.Vector3(),
+    worldImpulse: new THREE.Vector3(),
+  });
   const pointOffsetRef = useRef(new THREE.Vector3());
   const pointVelocityRef = useRef(new THREE.Vector3());
   const worldProbePointsRef = useRef([
@@ -196,7 +234,7 @@ function HullBody({
     new THREE.Vector3(),
   ]);
 
-  useFrame(() => {
+  useBeforePhysicsStep(() => {
     const body = hullRef.current;
 
     if (!body) {
@@ -208,6 +246,7 @@ function HullBody({
     const probeSide = Math.min(boat.probeSide, asset.maxProbeSide);
     const bodyPosition = bodyPositionRef.current;
     const bodyQuaternion = bodyQuaternionRef.current;
+    const dragTargets = dragTargetsRef.current;
     const linearVelocity = linearVelocityRef.current;
     const angularVelocityVector = angularVelocityRef.current;
     const force = forceRef.current;
@@ -228,6 +267,17 @@ function HullBody({
       angularVelocity.y,
       angularVelocity.z
     );
+
+    applyLinearDragImpulse({
+      body,
+      bodyQuaternion,
+      forwardDrag: boat.forwardDrag,
+      lateralDrag: boat.lateralDrag,
+      linearVelocity,
+      target: dragTargets,
+      timeStep: physics.timeStep,
+      verticalDrag: boat.verticalDrag,
+    });
 
     localProbePoints[0].set(-probeSide, asset.probeY, probeForward);
     localProbePoints[1].set(probeSide, asset.probeY, probeForward);
@@ -279,8 +329,6 @@ function HullBody({
       ccd
       collisionGroups={interactionGroups(HULL_COLLISION_GROUP, [])}
       colliders="hull"
-      enabledRotations={[true, false, true]}
-      enabledTranslations={[false, true, false]}
       linearDamping={boat.linearDamping}
       mass={boat.mass}
       position={boat.startPosition}
@@ -397,6 +445,7 @@ export default function BoatRig({ boat, oars, physics, runtime }) {
     const rightAnchor = getGeometryCenter(geometries.rightLock);
 
     return {
+      centerOfBuoyancyOffset: hullBounds.min.y + hullHeight * 0.24,
       geometries,
       leftAnchor,
       leftProbe: getOarProbePoint(geometries.leftOar, leftAnchor),
@@ -449,7 +498,13 @@ export default function BoatRig({ boat, oars, physics, runtime }) {
     <>
       <HullBody
         asset={asset}
-        boat={{ ...boat, startPosition }}
+        boat={{
+          ...boat,
+          forwardDrag: boat.linearDamping * boat.mass * 0.75,
+          lateralDrag: boat.linearDamping * boat.mass * 1.35,
+          startPosition,
+          verticalDrag: boat.linearDamping * boat.mass * 0.95,
+        }}
         geometries={asset.geometries}
         hullRef={hullRef}
         materials={materials}

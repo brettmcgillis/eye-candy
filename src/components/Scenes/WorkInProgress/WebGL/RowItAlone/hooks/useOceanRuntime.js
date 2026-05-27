@@ -5,6 +5,7 @@ import { useCallback, useMemo, useRef } from 'react';
 import { useFrame } from '@react-three/fiber';
 
 export const MAX_RIPPLES = 8;
+const MAX_RUNTIME_STEP = 1 / 30;
 
 function createInteractionState(size) {
   const textureData = new Float32Array(size * size * 4);
@@ -229,6 +230,7 @@ function updateColorUniform(uniform, value) {
 
 export default function useOceanRuntime({ interaction, ocean }) {
   const interactionStateRef = useRef();
+  const interactionTargetRef = useRef({ active: false, x: 0, z: 0 });
   const pointerTargetRef = useRef({ active: false, x: 0, z: 0 });
   const timeRef = useRef(0);
   const interactionState = useMemo(
@@ -277,15 +279,25 @@ export default function useOceanRuntime({ interaction, ocean }) {
     pointerTargetRef.current.active = false;
   }, []);
 
+  const setInteractionTarget = useCallback((x, z) => {
+    interactionTargetRef.current.active = true;
+    interactionTargetRef.current.x = x;
+    interactionTargetRef.current.z = z;
+  }, []);
+
+  const clearInteractionTarget = useCallback(() => {
+    interactionTargetRef.current.active = false;
+  }, []);
+
   const addRipple = useCallback(
     (x, z) => {
       if (!interaction.enabled) {
         return;
       }
 
-      setPointerTarget(x, z);
+      setInteractionTarget(x, z);
     },
-    [interaction.enabled, setPointerTarget]
+    [interaction.enabled, setInteractionTarget]
   );
 
   const emitInteractiveRipple = useCallback(
@@ -294,9 +306,9 @@ export default function useOceanRuntime({ interaction, ocean }) {
         return;
       }
 
-      setPointerTarget(x, z);
+      setInteractionTarget(x, z);
     },
-    [interaction.enabled, setPointerTarget]
+    [interaction.enabled, setInteractionTarget]
   );
 
   const sampleHeight = useCallback(
@@ -329,48 +341,62 @@ export default function useOceanRuntime({ interaction, ocean }) {
     [ocean.normalEpsilon, sampleHeight]
   );
 
+  const advance = useCallback(
+    (delta) => {
+      const boundedDelta = Math.min(Math.max(delta, 0), MAX_RUNTIME_STEP);
+
+      timeRef.current += boundedDelta;
+
+      interactionStateRef.current = stepInteractionState(
+        interactionStateRef.current,
+        interaction,
+        interactionTargetRef.current
+      );
+
+      uniforms.uTime.value = timeRef.current;
+      uniforms.uSwellAmplitude.value = ocean.swellAmplitude;
+      uniforms.uSwellFrequency.value = ocean.swellFrequency;
+      uniforms.uSwellSpeed.value = ocean.swellSpeed;
+      uniforms.uChopAmplitude.value = ocean.chopAmplitude;
+      uniforms.uChopFrequency.value = ocean.chopFrequency;
+      uniforms.uChopSpeed.value = ocean.chopSpeed;
+      uniforms.uDetailAmplitude.value = ocean.detailAmplitude;
+      uniforms.uDetailFrequency.value = ocean.detailFrequency;
+      uniforms.uDetailSpeed.value = ocean.detailSpeed;
+      uniforms.uNormalEpsilon.value = ocean.normalEpsilon;
+      uniforms.uInteractionBounds.value = interaction.bounds;
+      uniforms.uInteractionHeightmap.value =
+        interactionStateRef.current.texture;
+      uniforms.uFresnelPower.value = ocean.fresnelPower;
+      uniforms.uFresnelStrength.value = ocean.fresnelStrength;
+      uniforms.uFoamStrength.value = ocean.foamStrength;
+      uniforms.uFoamThreshold.value = ocean.foamThreshold;
+      uniforms.uFoamSoftness.value = ocean.foamSoftness;
+      uniforms.uFoamWaveInfluence.value = ocean.foamWaveInfluence;
+
+      updateColorUniform(uniforms.uDeepColor, ocean.deepColor);
+      updateColorUniform(uniforms.uShallowColor, ocean.shallowColor);
+      updateColorUniform(uniforms.uHorizonColor, ocean.horizonColor);
+      updateColorUniform(uniforms.uFoamColor, ocean.foamColor);
+    },
+    [interaction, ocean, uniforms]
+  );
+
   useFrame((_, delta) => {
-    timeRef.current += delta;
-
-    interactionStateRef.current = stepInteractionState(
-      interactionStateRef.current,
-      interaction,
-      pointerTargetRef.current
-    );
-
-    uniforms.uTime.value = timeRef.current;
-    uniforms.uSwellAmplitude.value = ocean.swellAmplitude;
-    uniforms.uSwellFrequency.value = ocean.swellFrequency;
-    uniforms.uSwellSpeed.value = ocean.swellSpeed;
-    uniforms.uChopAmplitude.value = ocean.chopAmplitude;
-    uniforms.uChopFrequency.value = ocean.chopFrequency;
-    uniforms.uChopSpeed.value = ocean.chopSpeed;
-    uniforms.uDetailAmplitude.value = ocean.detailAmplitude;
-    uniforms.uDetailFrequency.value = ocean.detailFrequency;
-    uniforms.uDetailSpeed.value = ocean.detailSpeed;
-    uniforms.uNormalEpsilon.value = ocean.normalEpsilon;
-    uniforms.uInteractionBounds.value = interaction.bounds;
-    uniforms.uInteractionHeightmap.value = interactionStateRef.current.texture;
-    uniforms.uFresnelPower.value = ocean.fresnelPower;
-    uniforms.uFresnelStrength.value = ocean.fresnelStrength;
-    uniforms.uFoamStrength.value = ocean.foamStrength;
-    uniforms.uFoamThreshold.value = ocean.foamThreshold;
-    uniforms.uFoamSoftness.value = ocean.foamSoftness;
-    uniforms.uFoamWaveInfluence.value = ocean.foamWaveInfluence;
-
-    updateColorUniform(uniforms.uDeepColor, ocean.deepColor);
-    updateColorUniform(uniforms.uShallowColor, ocean.shallowColor);
-    updateColorUniform(uniforms.uHorizonColor, ocean.horizonColor);
-    updateColorUniform(uniforms.uFoamColor, ocean.foamColor);
+    advance(delta);
   });
 
   return {
+    advance,
     addRipple,
+    clearInteractionTarget,
     clearPointerTarget,
     emitInteractiveRipple,
+    interactionTargetRef,
     pointerTargetRef,
     sampleHeight,
     sampleNormal,
+    setInteractionTarget,
     setPointerTarget,
     timeRef,
     uniforms,

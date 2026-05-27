@@ -45,12 +45,8 @@ function applyLinearDragImpulse({
   verticalDrag,
   target,
 }) {
-  const {
-    inverseQuaternion,
-    localVelocity,
-    localImpulse,
-    worldImpulse,
-  } = target;
+  const { inverseQuaternion, localVelocity, localImpulse, worldImpulse } =
+    target;
 
   inverseQuaternion.copy(bodyQuaternion).invert();
   localVelocity.copy(linearVelocity).applyQuaternion(inverseQuaternion);
@@ -210,8 +206,6 @@ function HullBody({
   const bodyPositionRef = useRef(new THREE.Vector3());
   const bodyQuaternionRef = useRef(new THREE.Quaternion());
   const forceRef = useRef(new THREE.Vector3());
-  const forwardRef = useRef(new THREE.Vector3());
-  const rightRef = useRef(new THREE.Vector3());
   const linearVelocityRef = useRef(new THREE.Vector3());
   const localProbePointsRef = useRef([
     new THREE.Vector3(),

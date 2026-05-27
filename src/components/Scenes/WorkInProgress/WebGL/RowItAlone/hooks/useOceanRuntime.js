@@ -6,6 +6,141 @@ import { useFrame } from '@react-three/fiber';
 
 export const MAX_RIPPLES = 8;
 
+function createInteractionState(size) {
+  const textureData = new Float32Array(size * size * 4);
+
+  for (let index = 0; index < size * size; index += 1) {
+    textureData[index * 4 + 3] = 1;
+  }
+
+  const texture = new THREE.DataTexture(
+    textureData,
+    size,
+    size,
+    THREE.RGBAFormat,
+    THREE.FloatType
+  );
+
+  texture.colorSpace = THREE.NoColorSpace;
+  texture.generateMipmaps = false;
+  texture.magFilter = THREE.LinearFilter;
+  texture.minFilter = THREE.LinearFilter;
+  texture.needsUpdate = true;
+  texture.wrapS = THREE.ClampToEdgeWrapping;
+  texture.wrapT = THREE.ClampToEdgeWrapping;
+
+  return {
+    current: new Float32Array(size * size),
+    previous: new Float32Array(size * size),
+    next: new Float32Array(size * size),
+    size,
+    texture,
+    textureData,
+  };
+}
+
+function toSimulationUv(x, z, bounds) {
+  return {
+    u: x / bounds + 0.5,
+    v: 0.5 - z / bounds,
+  };
+}
+
+function sampleInteractionHeightAt(x, z, bounds, state) {
+  const { current, size } = state;
+  const { u, v } = toSimulationUv(x, z, bounds);
+
+  if (u < 0 || u > 1 || v < 0 || v > 1) {
+    return 0;
+  }
+
+  const px = u * (size - 1);
+  const py = v * (size - 1);
+  const x0 = Math.floor(px);
+  const y0 = Math.floor(py);
+  const x1 = Math.min(x0 + 1, size - 1);
+  const y1 = Math.min(y0 + 1, size - 1);
+  const tx = px - x0;
+  const ty = py - y0;
+  const topLeft = current[y0 * size + x0];
+  const topRight = current[y0 * size + x1];
+  const bottomLeft = current[y1 * size + x0];
+  const bottomRight = current[y1 * size + x1];
+  const top = THREE.MathUtils.lerp(topLeft, topRight, tx);
+  const bottom = THREE.MathUtils.lerp(bottomLeft, bottomRight, tx);
+
+  return THREE.MathUtils.lerp(top, bottom, ty);
+}
+
+function stepInteractionState(state, interaction, impulses) {
+  const { bounds } = interaction;
+  const { current, next, previous, size, texture, textureData } = state;
+
+  for (let y = 0; y < size; y += 1) {
+    const v = y / (size - 1);
+    const worldZ = (0.5 - v) * bounds;
+    const northRow = Math.max(y - 1, 0) * size;
+    const row = y * size;
+    const southRow = Math.min(y + 1, size - 1) * size;
+
+    for (let x = 0; x < size; x += 1) {
+      const u = x / (size - 1);
+      const worldX = (u - 0.5) * bounds;
+      const westIndex = row + Math.max(x - 1, 0);
+      const eastIndex = row + Math.min(x + 1, size - 1);
+      const index = row + x;
+      const north = current[northRow + x];
+      const south = current[southRow + x];
+      const east = current[eastIndex];
+      const west = current[westIndex];
+      let nextHeight =
+        ((north + south + east + west) * 0.5 - previous[index]) *
+        interaction.viscosity;
+
+      for (
+        let impulseIndex = 0;
+        impulseIndex < impulses.length;
+        impulseIndex += 1
+      ) {
+        const impulse = impulses[impulseIndex];
+        const dx = worldX - impulse.x;
+        const dz = worldZ - impulse.z;
+        const distance = Math.sqrt(dx * dx + dz * dz);
+
+        if (distance <= impulse.radius) {
+          const phase = Math.min(
+            Math.PI,
+            (distance * Math.PI) / Math.max(impulse.radius, 0.0001)
+          );
+
+          nextHeight -= (Math.cos(phase) + 1) * impulse.depth;
+        }
+      }
+
+      next[index] = nextHeight;
+    }
+  }
+
+  const nextState = state;
+
+  nextState.previous = current;
+  nextState.current = next;
+  nextState.next = previous;
+
+  for (let index = 0; index < size * size; index += 1) {
+    const offset = index * 4;
+
+    textureData[offset] = nextState.current[index];
+    textureData[offset + 1] = nextState.previous[index];
+    textureData[offset + 2] = 0;
+    textureData[offset + 3] = 1;
+  }
+
+  texture.needsUpdate = true;
+
+  return nextState;
+}
+
 const SWELL_WAVES = [
   { x: 0.86, z: 0.51, freq: 0.42, amp: 1.0 },
   { x: -0.34, z: 0.94, freq: 0.66, amp: 0.72 },
@@ -23,8 +158,6 @@ const DETAIL_WAVES = [
   { x: 0.49, z: 0.87, freq: 5.1, amp: 0.58 },
   { x: -0.17, z: -0.98, freq: 6.6, amp: 0.32 },
 ];
-
-const ripplePointScratch = new THREE.Vector2();
 
 function normalizeWaveSet(waves) {
   return waves.map((wave) => {
@@ -66,41 +199,7 @@ function sampleWaveSet(
   return value;
 }
 
-function sampleRippleHeight(x, z, time, ripples, interaction) {
-  if (!interaction.rippleEnabled) {
-    return 0;
-  }
-
-  let value = 0;
-
-  for (let index = 0; index < ripples.length; index += 1) {
-    const ripple = ripples[index];
-    const age = time - ripple.start;
-
-    if (ripple.strength > 0 && age >= 0) {
-      const radius =
-        interaction.rippleRadius + age * interaction.rippleExpansion;
-      const dx = x - ripple.x;
-      const dz = z - ripple.z;
-      const distance = Math.sqrt(dx * dx + dz * dz);
-
-      if (distance <= radius) {
-        const influence =
-          1 - THREE.MathUtils.smoothstep(distance, radius * 0.35, radius);
-        const decay = Math.exp(-age * interaction.rippleDecay);
-        const oscillation = Math.sin(
-          distance * interaction.rippleFrequency - age * interaction.rippleSpeed
-        );
-
-        value += oscillation * influence * decay * ripple.strength;
-      }
-    }
-  }
-
-  return value;
-}
-
-function sampleOceanHeightAt(x, z, time, ocean, interaction, ripples) {
+function sampleOceanHeightAt(x, z, time, ocean) {
   return (
     sampleWaveSet(
       x,
@@ -128,8 +227,7 @@ function sampleOceanHeightAt(x, z, time, ocean, interaction, ripples) {
       ocean.detailAmplitude,
       ocean.detailFrequency,
       ocean.detailSpeed
-    ) +
-    sampleRippleHeight(x, z, time, ripples, interaction)
+    )
   );
 }
 
@@ -138,29 +236,21 @@ function updateColorUniform(uniform, value) {
 }
 
 export default function useOceanRuntime({ interaction, ocean }) {
+  const interactionImpulsesRef = useRef([]);
+  const interactionStateRef = useRef();
   const lastEmissionTimeRef = useRef(-Infinity);
   const lastRipplePointRef = useRef(
     new THREE.Vector2(Number.POSITIVE_INFINITY, Number.POSITIVE_INFINITY)
   );
   const pointerTargetRef = useRef({ active: false, x: 0, z: 0 });
-  const rippleCursorRef = useRef(0);
-  const ripplesRef = useRef(
-    Array.from({ length: MAX_RIPPLES }, () => ({
-      start: -1000,
-      strength: 0,
-      x: 0,
-      z: 0,
-    }))
-  );
   const timeRef = useRef(0);
-  const rippleData = useMemo(
-    () =>
-      Array.from(
-        { length: MAX_RIPPLES },
-        () => new THREE.Vector4(0, 0, -1000, 0)
-      ),
-    []
+  const interactionState = useMemo(
+    () => createInteractionState(interaction.resolution),
+    [interaction.resolution]
   );
+
+  interactionStateRef.current = interactionState;
+
   const uniforms = useMemo(
     () => ({
       uTime: { value: 0 },
@@ -174,13 +264,8 @@ export default function useOceanRuntime({ interaction, ocean }) {
       uDetailFrequency: { value: ocean.detailFrequency },
       uDetailSpeed: { value: ocean.detailSpeed },
       uNormalEpsilon: { value: ocean.normalEpsilon },
-      uRippleRadius: { value: interaction.rippleRadius },
-      uRippleExpansion: { value: interaction.rippleExpansion },
-      uRippleFrequency: { value: interaction.rippleFrequency },
-      uRippleSpeed: { value: interaction.rippleSpeed },
-      uRippleDecay: { value: interaction.rippleDecay },
-      uRippleVisualStrength: { value: interaction.rippleVisualStrength },
-      uRippleData: { value: rippleData },
+      uInteractionBounds: { value: interaction.bounds },
+      uInteractionHeightmap: { value: interactionState.texture },
       uDeepColor: { value: new THREE.Color(ocean.deepColor) },
       uShallowColor: { value: new THREE.Color(ocean.shallowColor) },
       uHorizonColor: { value: new THREE.Color(ocean.horizonColor) },
@@ -192,26 +277,23 @@ export default function useOceanRuntime({ interaction, ocean }) {
       uFoamSoftness: { value: ocean.foamSoftness },
       uFoamWaveInfluence: { value: ocean.foamWaveInfluence },
     }),
-    [interaction, ocean, rippleData]
+    [interaction.bounds, interactionState.texture, ocean]
   );
 
   const addRipple = useCallback(
-    (x, z, strength = interaction.rippleStrength) => {
-      if (!interaction.rippleEnabled) {
+    (x, z, strength = interaction.depth) => {
+      if (!interaction.enabled) {
         return;
       }
 
-      const slot = rippleCursorRef.current % MAX_RIPPLES;
-      const ripple = ripplesRef.current[slot];
-
-      ripple.x = x;
-      ripple.z = z;
-      ripple.start = timeRef.current;
-      ripple.strength = strength;
-      rippleData[slot].set(x, z, ripple.start, strength);
-      rippleCursorRef.current += 1;
+      interactionImpulsesRef.current.push({
+        depth: strength,
+        radius: interaction.radius,
+        x,
+        z,
+      });
     },
-    [interaction.rippleEnabled, interaction.rippleStrength, rippleData]
+    [interaction.depth, interaction.enabled, interaction.radius]
   );
 
   const setPointerTarget = useCallback((x, z) => {
@@ -226,94 +308,78 @@ export default function useOceanRuntime({ interaction, ocean }) {
 
   const emitInteractiveRipple = useCallback(
     (x, z) => {
-      if (!interaction.rippleEnabled) {
+      if (!interaction.enabled) {
         return;
       }
 
       const now = timeRef.current;
 
-      if (now - lastEmissionTimeRef.current < interaction.rippleInterval) {
+      if (now - lastEmissionTimeRef.current < interaction.interval) {
         return;
       }
 
-      ripplePointScratch.set(x, z);
+      const dx = lastRipplePointRef.current.x - x;
+      const dz = lastRipplePointRef.current.y - z;
 
       if (
-        lastRipplePointRef.current.distanceToSquared(ripplePointScratch) <
-        interaction.rippleMinDistance * interaction.rippleMinDistance
+        dx * dx + dz * dz <
+        interaction.minDistance * interaction.minDistance
       ) {
         return;
       }
 
       lastEmissionTimeRef.current = now;
-      lastRipplePointRef.current.copy(ripplePointScratch);
-      addRipple(x, z, interaction.rippleStrength);
+      lastRipplePointRef.current.set(x, z);
+      addRipple(x, z, interaction.depth);
     },
     [
       addRipple,
-      interaction.rippleEnabled,
-      interaction.rippleInterval,
-      interaction.rippleMinDistance,
-      interaction.rippleStrength,
+      interaction.depth,
+      interaction.enabled,
+      interaction.interval,
+      interaction.minDistance,
     ]
   );
 
   const sampleHeight = useCallback(
-    (x, z) =>
-      sampleOceanHeightAt(
-        x,
-        z,
-        timeRef.current,
-        ocean,
-        interaction,
-        ripplesRef.current
-      ),
+    (x, z) => {
+      const baseHeight = sampleOceanHeightAt(x, z, timeRef.current, ocean);
+
+      return (
+        baseHeight +
+        sampleInteractionHeightAt(
+          x,
+          z,
+          interaction.bounds,
+          interactionStateRef.current
+        )
+      );
+    },
     [interaction, ocean]
   );
 
   const sampleNormal = useCallback(
     (x, z, target = new THREE.Vector3()) => {
       const epsilon = Math.max(0.01, ocean.normalEpsilon);
-      const left = sampleOceanHeightAt(
-        x - epsilon,
-        z,
-        timeRef.current,
-        ocean,
-        interaction,
-        ripplesRef.current
-      );
-      const right = sampleOceanHeightAt(
-        x + epsilon,
-        z,
-        timeRef.current,
-        ocean,
-        interaction,
-        ripplesRef.current
-      );
-      const back = sampleOceanHeightAt(
-        x,
-        z - epsilon,
-        timeRef.current,
-        ocean,
-        interaction,
-        ripplesRef.current
-      );
-      const front = sampleOceanHeightAt(
-        x,
-        z + epsilon,
-        timeRef.current,
-        ocean,
-        interaction,
-        ripplesRef.current
-      );
+      const left = sampleHeight(x - epsilon, z);
+      const right = sampleHeight(x + epsilon, z);
+      const back = sampleHeight(x, z - epsilon);
+      const front = sampleHeight(x, z + epsilon);
 
       return target.set(left - right, epsilon * 2, back - front).normalize();
     },
-    [interaction, ocean]
+    [ocean.normalEpsilon, sampleHeight]
   );
 
   useFrame((_, delta) => {
     timeRef.current += delta;
+
+    interactionStateRef.current = stepInteractionState(
+      interactionStateRef.current,
+      interaction,
+      interactionImpulsesRef.current.splice(0)
+    );
+
     uniforms.uTime.value = timeRef.current;
     uniforms.uSwellAmplitude.value = ocean.swellAmplitude;
     uniforms.uSwellFrequency.value = ocean.swellFrequency;
@@ -325,12 +391,8 @@ export default function useOceanRuntime({ interaction, ocean }) {
     uniforms.uDetailFrequency.value = ocean.detailFrequency;
     uniforms.uDetailSpeed.value = ocean.detailSpeed;
     uniforms.uNormalEpsilon.value = ocean.normalEpsilon;
-    uniforms.uRippleRadius.value = interaction.rippleRadius;
-    uniforms.uRippleExpansion.value = interaction.rippleExpansion;
-    uniforms.uRippleFrequency.value = interaction.rippleFrequency;
-    uniforms.uRippleSpeed.value = interaction.rippleSpeed;
-    uniforms.uRippleDecay.value = interaction.rippleDecay;
-    uniforms.uRippleVisualStrength.value = interaction.rippleVisualStrength;
+    uniforms.uInteractionBounds.value = interaction.bounds;
+    uniforms.uInteractionHeightmap.value = interactionStateRef.current.texture;
     uniforms.uFresnelPower.value = ocean.fresnelPower;
     uniforms.uFresnelStrength.value = ocean.fresnelStrength;
     uniforms.uFoamStrength.value = ocean.foamStrength;
@@ -342,15 +404,6 @@ export default function useOceanRuntime({ interaction, ocean }) {
     updateColorUniform(uniforms.uShallowColor, ocean.shallowColor);
     updateColorUniform(uniforms.uHorizonColor, ocean.horizonColor);
     updateColorUniform(uniforms.uFoamColor, ocean.foamColor);
-
-    for (let index = 0; index < ripplesRef.current.length; index += 1) {
-      const ripple = ripplesRef.current[index];
-
-      if (timeRef.current - ripple.start > 8) {
-        ripple.strength = 0;
-        rippleData[index].w = 0;
-      }
-    }
   });
 
   return {

@@ -6,12 +6,15 @@ import { useFrame, useThree } from '@react-three/fiber';
 
 const HEIGHT_FOG_PARS_VERTEX = [
   THREE.ShaderChunk.fog_pars_vertex,
+  '#ifdef USE_FOG',
   'varying vec3 vHeightFogWorldPosition;',
+  '#endif',
 ].join('\n');
 
 const HEIGHT_FOG_VERTEX = [
   THREE.ShaderChunk.fog_vertex,
-  'vec4 heightFogWorldPosition = vec4(transformed, 1.0);',
+  '#ifdef USE_FOG',
+  'vec4 heightFogWorldPosition = vec4(position, 1.0);',
   '#ifdef USE_BATCHING',
   '  heightFogWorldPosition = batchingMatrix * heightFogWorldPosition;',
   '#endif',
@@ -20,10 +23,12 @@ const HEIGHT_FOG_VERTEX = [
   '#endif',
   'heightFogWorldPosition = modelMatrix * heightFogWorldPosition;',
   'vHeightFogWorldPosition = heightFogWorldPosition.xyz;',
+  '#endif',
 ].join('\n');
 
 const HEIGHT_FOG_PARS_FRAGMENT = [
   THREE.ShaderChunk.fog_pars_fragment,
+  '#ifdef USE_FOG',
   'varying vec3 vHeightFogWorldPosition;',
   'uniform float uHeightFogFloor;',
   'uniform float uHeightFogCeiling;',
@@ -73,11 +78,12 @@ const HEIGHT_FOG_PARS_FRAGMENT = [
   '',
   '  return value;',
   '}',
+  '#endif',
 ].join('\n');
 
 const HEIGHT_FOG_FRAGMENT = [
   '#ifdef USE_FOG',
-  'float fogDepth = length(vViewPosition);',
+  'float fogDepth = vFogDepth;',
   'float expFactor = 1.0 - exp(-fogDensity * fogDensity * fogDepth * fogDepth);',
   'float heightFactor = 1.0 - smoothstep(',
   '  uHeightFogFloor,',

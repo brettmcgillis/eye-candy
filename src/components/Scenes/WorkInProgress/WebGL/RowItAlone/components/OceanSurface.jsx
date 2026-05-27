@@ -101,21 +101,23 @@ const MATERIAL_VERTEX_PREAMBLE = [
   '  float back = sampleOceanHeight(xz - vec2(0.0, epsilon));',
   '  float front = sampleOceanHeight(xz + vec2(0.0, epsilon));',
   '',
-  '  return normalize(vec3(left - right, back - front, epsilon * 2.0));',
+  '  return normalize(vec3(left - right, front - back, epsilon * 2.0));',
   '}',
 ].join('\n');
 
 const BEGIN_NORMAL_REPLACE = [
   'initOceanWaves();',
-  'vec3 objectNormal = sampleOceanNormal(position.xy);',
+  'vec2 normalCoord = vec2(position.x, -position.y);',
+  'vec3 objectNormal = sampleOceanNormal(normalCoord);',
   '#ifdef USE_TANGENT',
   '  vec3 objectTangent = vec3( tangent.xyz );',
   '#endif',
 ].join('\n');
 
 const BEGIN_VERTEX_REPLACE = [
-  'float interactionHeight = sampleInteractiveHeight(position.xy);',
-  'float oceanHeight = sampleBaseOceanHeight(position.xy) + interactionHeight;',
+  'vec2 heightCoord = vec2(position.x, -position.y);',
+  'float interactionHeight = sampleInteractiveHeight(heightCoord);',
+  'float oceanHeight = sampleBaseOceanHeight(heightCoord) + interactionHeight;',
   'vec3 transformed = vec3(position.x, position.y, position.z + oceanHeight);',
   '#ifdef USE_ALPHAHASH',
   '  vPosition = vec3( position );',

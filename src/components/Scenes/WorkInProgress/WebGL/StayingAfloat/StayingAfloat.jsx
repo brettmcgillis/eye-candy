@@ -29,6 +29,23 @@ export default function StayingAfloat() {
       ),
     };
   }, []);
+  const sharkFollowConfig = useMemo(
+    () => ({
+      hammerhead: {
+        bodySpanScale: 0.9,
+        bodyCenterBlend: 1,
+      },
+      tiger1: {
+        bodySpanScale: 0.85,
+        bodyCenterBlend: 1,
+      },
+      tiger2: {
+        bodySpanScale: 0.85,
+        bodyCenterBlend: 1,
+      },
+    }),
+    []
+  );
 
   return (
     <>
@@ -98,6 +115,8 @@ export default function StayingAfloat() {
         headingOffset={Math.PI}
         visible={controls.hammerheadVisible}
         showSpline={controls.hammerheadSplineVisible}
+        bodySpanScale={sharkFollowConfig.hammerhead.bodySpanScale}
+        bodyCenterBlend={sharkFollowConfig.hammerhead.bodyCenterBlend}
       />
 
       <SplineShark
@@ -108,6 +127,8 @@ export default function StayingAfloat() {
         headingOffset={Math.PI}
         visible={controls.tiger1Visible}
         showSpline={controls.tiger1SplineVisible}
+        bodySpanScale={sharkFollowConfig.tiger1.bodySpanScale}
+        bodyCenterBlend={sharkFollowConfig.tiger1.bodyCenterBlend}
         sharkProps={{ excludeAnimations: ['attack'] }}
       />
 
@@ -120,6 +141,8 @@ export default function StayingAfloat() {
         clockwise={false}
         visible={controls.tiger2Visible}
         showSpline={controls.tiger2SplineVisible}
+        bodySpanScale={sharkFollowConfig.tiger2.bodySpanScale}
+        bodyCenterBlend={sharkFollowConfig.tiger2.bodyCenterBlend}
         sharkProps={{ excludeAnimations: ['attack'] }}
       />
 

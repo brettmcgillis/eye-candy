@@ -1,6 +1,6 @@
 import * as THREE from 'three';
 
-import React, { useMemo } from 'react';
+import React, { useMemo, useRef } from 'react';
 
 import {
   Environment,
@@ -12,9 +12,11 @@ import THATS_ALL_FOLKS_SMOKE, {
   LEGACY_WORLD_TO_SCENE,
 } from '../../../../../presets/smoke/thatsAllFolksSmoke';
 import Magnum from '../../../../elements/magnum/Magnum';
-import { getSplineWorldPoints } from '../../../../elements/splineGroup/splineDefaults';
 import SplineGroup from '../../../../elements/splineGroup/SplineGroup';
+import { getSplineWorldPoints } from '../../../../elements/splineGroup/splineDefaults';
 import BackdropRings from './components/BackdropRings';
+import BangRig from './components/BangRig';
+import CursorAttractor from './components/CursorAttractor';
 import useSceneControls from './hooks/useControls';
 
 const s = (value) => value * LEGACY_WORLD_TO_SCENE;
@@ -158,6 +160,8 @@ function buildCurveSplineConfig(globalConfig, curveConfig, curveMeta) {
     particleSize: curveConfig.particleSize,
     opacity: curveConfig.opacity,
     flowSpeed: curveConfig.flowSpeed,
+    attractorStrength: globalConfig.cursorAttractorStrength,
+    attractorRadius: globalConfig.cursorAttractorRadius,
     volParticleCount: curveConfig.particleCount,
     volSize: curveConfig.particleSize,
     volColor: globalConfig.particleColor,
@@ -172,6 +176,7 @@ function buildCurveSplineConfig(globalConfig, curveConfig, curveMeta) {
 
 export default function ThatsAllFolks() {
   const config = useSceneControls();
+  const attractorsRef = useRef([]);
 
   // Build all 9 curve point arrays from the preset — world positioning is
   // handled by the smoke <group> transform controlled via Leva.
@@ -204,7 +209,35 @@ export default function ThatsAllFolks() {
     );
   }, []);
 
-  const backdrop = useMemo(() => getBackdropLayout(pts, config), [pts, config]);
+  const backdrop = useMemo(() => {
+    if (!config.showSmoke) return null;
+    return getBackdropLayout(pts, config);
+  }, [pts, config]);
+
+  const bangRigPosition = useMemo(
+    () => [
+      config.gunX + config.bangRigX,
+      config.gunY + config.bangRigY,
+      config.gunZ + config.bangRigZ,
+    ],
+    [
+      config.gunX,
+      config.gunY,
+      config.gunZ,
+      config.bangRigX,
+      config.bangRigY,
+      config.bangRigZ,
+    ]
+  );
+
+  const bangRigRotation = useMemo(
+    () => [
+      THREE.MathUtils.degToRad(config.bangRigRotateX),
+      THREE.MathUtils.degToRad(config.bangRigRotateY),
+      THREE.MathUtils.degToRad(config.bangRigRotateZ),
+    ],
+    [config.bangRigRotateX, config.bangRigRotateY, config.bangRigRotateZ]
+  );
 
   const { curves } = config;
 
@@ -251,6 +284,16 @@ export default function ThatsAllFolks() {
         color="#5080b0"
       />
 
+      <CursorAttractor
+        attractorsRef={attractorsRef}
+        enabled={config.showSmoke && config.cursorAttractorEnabled}
+        mode={config.cursorAttractorMode}
+        planeZ={config.smokeZ}
+        radius={config.cursorAttractorRadius}
+        strength={config.cursorAttractorStrength}
+        visible={config.showSmoke && config.showCursorAttractor}
+      />
+
       {/* Shadow-receiving floor */}
       <mesh
         rotation={[-Math.PI / 2, 0, 0]}
@@ -278,41 +321,52 @@ export default function ThatsAllFolks() {
         <Magnum rotation={[0, Math.PI / 2, 0]} />
       </group>
 
-      {/* ── Smoke + spline helpers — positioned/scaled as one group ──────── */}
-      <group
-        position={[config.smokeX, config.smokeY, config.smokeZ]}
-        scale={config.smokeScale}
-      >
-        {CURVE_RENDER_GROUPS.map((group) => (
-          <group
-            key={group.groupKey}
-            position={group.positionKeys.map((key) => config[key])}
-          >
-            {group.curves.map((curveMeta) => {
-              const points = pts[curveMeta.key];
-              const curveConfig = curves[curveMeta.key];
-              if (!points || !curveConfig) return null;
+      {config.showBangFlag && (
+        <BangRig
+          config={config}
+          position={bangRigPosition}
+          rotation={bangRigRotation}
+        />
+      )}
 
-              return (
-                <SplineGroup
-                  key={curveMeta.key}
-                  index={curveMeta.index}
-                  points={points}
-                  config={config}
-                  splineConfig={buildCurveSplineConfig(
-                    config,
-                    curveConfig,
-                    curveMeta
-                  )}
-                  setSplinePoints={NOOP_SET_SPLINE_POINTS}
-                  allowedTypes="smoke"
-                  splineColor={curveMeta.color}
-                />
-              );
-            })}
-          </group>
-        ))}
-      </group>
+      {/* ── Smoke + spline helpers — positioned/scaled as one group ──────── */}
+      {config.showSmoke && (
+        <group
+          position={[config.smokeX, config.smokeY, config.smokeZ]}
+          scale={config.smokeScale}
+        >
+          {CURVE_RENDER_GROUPS.map((group) => (
+            <group
+              key={group.groupKey}
+              position={group.positionKeys.map((key) => config[key])}
+            >
+              {group.curves.map((curveMeta) => {
+                const points = pts[curveMeta.key];
+                const curveConfig = curves[curveMeta.key];
+                if (!points || !curveConfig) return null;
+
+                return (
+                  <SplineGroup
+                    key={curveMeta.key}
+                    index={curveMeta.index}
+                    points={points}
+                    config={config}
+                    splineConfig={buildCurveSplineConfig(
+                      config,
+                      curveConfig,
+                      curveMeta
+                    )}
+                    attractorsRef={attractorsRef}
+                    setSplinePoints={NOOP_SET_SPLINE_POINTS}
+                    allowedTypes="smoke"
+                    splineColor={curveMeta.color}
+                  />
+                );
+              })}
+            </group>
+          ))}
+        </group>
+      )}
 
       {/* Post-processing */}
       {/* <EffectComposer>

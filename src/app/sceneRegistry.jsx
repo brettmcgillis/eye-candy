@@ -174,6 +174,10 @@ const RaisedByTV = lazy(
   () =>
     import('../components/scenes/WorkInProgress/WebGPU/RaisedByTV/RaisedByTV')
 );
+const RowItAloneWebGPU = lazy(
+  () =>
+    import('../components/scenes/WorkInProgress/WebGPU/RowItAlone/RowItAlone')
+);
 const ThatsAllFolksWebGPU = lazy(
   () =>
     import('../components/scenes/WorkInProgress/WebGPU/ThatsAllFolks/ThatsAllFolks')
@@ -1113,6 +1117,15 @@ export const EYE_CANDIES = [
     route: 'raisedByTv',
     icon: CrtTestIcon,
     Component: RaisedByTV,
+  },
+  {
+    id: 'rowItAloneWebgpu',
+    label: 'Row It Alone',
+    channel: 'webgpu',
+    area: 'wip',
+    route: 'rowItAloneWebgpu',
+    icon: PaperBoatIcon,
+    Component: RowItAloneWebGPU,
   },
   {
     id: 'allMyFriendsAreGhosts',

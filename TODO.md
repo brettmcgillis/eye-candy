@@ -74,6 +74,7 @@ To Build:
 - [PolicePresence](src/components/scenes/WorkInProgress/WebGL/PolicePresence/todo.md)
 - [FlyingHigh](src/components/scenes/WorkInProgress/WebGL/FlyingHigh/todo.md)
 - [RowItAlone](src/components/scenes/WorkInProgress/WebGL/RowItAlone/todo.md)
+- [RowItAlone-WebGPU](src/components/scenes/WorkInProgress/WebGPU/RowItAlone/todo.md)
 - [StayingAfloat](src/components/scenes/WorkInProgress/WebGL/StayingAfloat/todo.md)
 - [AllMyFriendsAreGhosts](src/components/scenes/WorkInProgress/WebGPU/AllMyFriendsAreGhosts/todo.md)
 - [StayHunted](src/components/scenes/WorkInProgress/WebGPU/StayHunted/todo.md)

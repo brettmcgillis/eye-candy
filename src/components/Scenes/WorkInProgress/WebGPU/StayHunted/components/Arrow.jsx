@@ -2,6 +2,8 @@ import * as THREE from 'three/webgpu';
 
 import React, { useMemo } from 'react';
 
+import Ribbon from './Ribbon';
+
 // ── Arrow dimensions ──
 const SHAFT_RADIUS = 0.008;
 const SHAFT_LENGTH = 2.0;
@@ -11,10 +13,15 @@ const NOCK_LENGTH = 0.03;
 const NOCK_RADIUS = 0.01;
 
 // ── Fletching dimensions ──
-const VANE_LENGTH = 0.18;
-const VANE_HEIGHT = 0.03;
+const VANE_LENGTH = 0.28;
+const VANE_HEIGHT = 0.028;
 const VANE_COUNT = 3;
-const VANE_OFFSET = 0.15; // distance from nock end
+const VANE_OFFSET = 0.08; // distance from nock end
+
+const TIE_BAND_RADIUS = 0.011;
+const TIE_BAND_TUBE_RADIUS = 0.0018;
+const TIE_KNOT_LENGTH = 0.018;
+const TIE_KNOT_RADIUS = 0.0028;
 
 function createArrowGeometries() {
   const shaft = new THREE.CylinderGeometry(
@@ -30,9 +37,31 @@ function createArrowGeometries() {
     NOCK_LENGTH,
     6
   );
-  const vane = new THREE.PlaneGeometry(VANE_LENGTH, VANE_HEIGHT);
+  const vaneShape = new THREE.Shape();
+  vaneShape.moveTo(0, -VANE_LENGTH * 0.5);
+  vaneShape.lineTo(0, VANE_LENGTH * 0.5);
+  vaneShape.lineTo(VANE_HEIGHT * 0.7, VANE_LENGTH * 0.2);
+  vaneShape.lineTo(VANE_HEIGHT, 0);
+  vaneShape.lineTo(VANE_HEIGHT * 0.72, -VANE_LENGTH * 0.18);
+  vaneShape.closePath();
 
-  return { shaft, head, nock, vane };
+  const vane = new THREE.ShapeGeometry(vaneShape, 6);
+  vane.translate(SHAFT_RADIUS + 0.0015, 0, 0);
+
+  const tieBand = new THREE.TorusGeometry(
+    TIE_BAND_RADIUS,
+    TIE_BAND_TUBE_RADIUS,
+    8,
+    24
+  );
+  const tieKnot = new THREE.CylinderGeometry(
+    TIE_KNOT_RADIUS,
+    TIE_KNOT_RADIUS,
+    TIE_KNOT_LENGTH,
+    6
+  );
+
+  return { shaft, head, nock, tieBand, tieKnot, vane };
 }
 
 function createArrowMaterials() {
@@ -52,13 +81,22 @@ function createArrowMaterials() {
     metalness: 0.0,
     side: THREE.DoubleSide,
   });
+  const binding = new THREE.MeshStandardNodeMaterial({
+    color: new THREE.Color('#9f3c3c'),
+    roughness: 0.55,
+    metalness: 0.05,
+  });
 
-  return { wood, metal, feather };
+  return { wood, metal, feather, binding };
 }
 
 export default function Arrow({
+  hasRibbon = false,
   position = [0, 0, 0],
   rotation = [0, 0, 0],
+  ribbonDampening = 0.98,
+  ribbonStiffness = 0.25,
+  ribbonWind = 1.5,
   scale = 1,
 }) {
   const geos = useMemo(createArrowGeometries, []);
@@ -66,21 +104,20 @@ export default function Arrow({
 
   const halfShaft = SHAFT_LENGTH / 2;
   const headY = halfShaft + HEAD_LENGTH / 2;
+  const headTipY = halfShaft + HEAD_LENGTH;
   const nockY = -halfShaft - NOCK_LENGTH / 2;
+  const ribbonTieY = -halfShaft + VANE_OFFSET + VANE_LENGTH * 0.35;
+  const ribbonTieX = TIE_BAND_RADIUS - TIE_BAND_TUBE_RADIUS * 0.3;
 
-  // Build fletching vanes evenly spaced around shaft, near nock end
+  // Build swept fletching vanes around the shaft, near the nock end.
   const vanes = useMemo(() => {
     const configs = [];
     for (let i = 0; i < VANE_COUNT; i += 1) {
       const angle = (i / VANE_COUNT) * Math.PI * 2;
       configs.push({
         key: `vane-${i}`,
-        position: [
-          Math.cos(angle) * SHAFT_RADIUS,
-          -halfShaft + VANE_OFFSET + VANE_LENGTH / 2,
-          Math.sin(angle) * SHAFT_RADIUS,
-        ],
-        rotation: [0, -angle, 0],
+        position: [0, -halfShaft + VANE_OFFSET + VANE_LENGTH * 0.5, 0],
+        rotation: [0, angle, 0],
       });
     }
     return configs;
@@ -88,33 +125,58 @@ export default function Arrow({
 
   return (
     <group position={position} rotation={rotation} scale={scale}>
-      {/* Shaft */}
-      <mesh geometry={geos.shaft} material={mats.wood} />
+      <group position={[0, -headTipY, 0]}>
+        {/* Shaft */}
+        <mesh geometry={geos.shaft} material={mats.wood} />
 
-      {/* Arrowhead */}
-      <mesh
-        geometry={geos.head}
-        material={mats.metal}
-        position={[0, headY, 0]}
-      />
-
-      {/* Nock */}
-      <mesh
-        geometry={geos.nock}
-        material={mats.wood}
-        position={[0, nockY, 0]}
-      />
-
-      {/* Fletching vanes */}
-      {vanes.map((v) => (
+        {/* Arrowhead */}
         <mesh
-          key={v.key}
-          geometry={geos.vane}
-          material={mats.feather}
-          position={v.position}
-          rotation={v.rotation}
+          geometry={geos.head}
+          material={mats.metal}
+          position={[0, headY, 0]}
         />
-      ))}
+
+        {/* Nock */}
+        <mesh
+          geometry={geos.nock}
+          material={mats.wood}
+          position={[0, nockY, 0]}
+        />
+
+        {/* Fletching vanes */}
+        {vanes.map((v) => (
+          <mesh
+            key={v.key}
+            geometry={geos.vane}
+            material={mats.feather}
+            position={v.position}
+            rotation={v.rotation}
+          />
+        ))}
+
+        {hasRibbon && (
+          <>
+            <mesh
+              geometry={geos.tieBand}
+              material={mats.binding}
+              position={[0, ribbonTieY, 0]}
+              rotation={[Math.PI / 2, 0, 0]}
+            />
+            <mesh
+              geometry={geos.tieKnot}
+              material={mats.binding}
+              position={[ribbonTieX * 0.9, ribbonTieY, 0]}
+              rotation={[0, 0, Math.PI / 2]}
+            />
+            <Ribbon
+              position={[ribbonTieX, ribbonTieY, 0]}
+              dampening={ribbonDampening}
+              stiffness={ribbonStiffness}
+              wind={ribbonWind}
+            />
+          </>
+        )}
+      </group>
     </group>
   );
 }

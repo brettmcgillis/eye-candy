@@ -1,39 +1,42 @@
-import React from 'react';
+import React, { useRef } from 'react';
 
 import { OrbitControls, PerspectiveCamera } from '@react-three/drei';
 
-import Arrow from './components/Arrow';
+import ArrowAnchor from './components/ArrowAnchor';
 import GrassPatch from './components/GrassPatch';
 import Rabbit from './components/Rabbit';
-import Ribbon from './components/Ribbon';
 import useSceneControls from './hooks/useSceneControls';
 
-// Arrow configs — several arrows protruding from the rabbit's hind/back area
-// Matching the painting: arrows angle outward-right from the body, slightly fanned
+// Arrow anchors are authored in rabbit bone-local space so they stay embedded
+// in the hindquarters throughout the eat-to-upright animation cycle.
 const ARROWS = [
   {
     key: 'arrow-1',
-    position: [0.05, 0.12, -0.02],
-    rotation: [0.2, 0, -0.9],
+    boneName: 'Pelvis_02',
     hasRibbon: false,
+    localNormal: [0.44, -0.05, 0.9],
+    localPosition: [-2.6, 2.25, -0.95],
   },
   {
     key: 'arrow-2',
-    position: [0.08, 0.15, 0.01],
-    rotation: [0.1, 0.15, -0.75],
-    hasRibbon: true, // this arrow carries the red ribbon
+    boneName: 'Pelvis_02',
+    hasRibbon: true,
+    localNormal: [0.18, 0.06, 0.98],
+    localPosition: [-0.95, 2.85, -0.25],
   },
   {
     key: 'arrow-3',
-    position: [0.03, 0.1, -0.04],
-    rotation: [-0.15, -0.1, -1.05],
+    boneName: 'Pelvis_02',
     hasRibbon: false,
+    localNormal: [-0.5, -0.08, 0.86],
+    localPosition: [2.4, 2.05, -1.1],
   },
   {
     key: 'arrow-4',
-    position: [0.1, 0.08, 0.03],
-    rotation: [0.3, 0.2, -0.6],
+    boneName: 'Pelvis_02',
     hasRibbon: false,
+    localNormal: [-0.28, -0.18, 0.94],
+    localPosition: [1.05, 1.65, -1.95],
   },
 ];
 
@@ -41,7 +44,7 @@ const ARROWS = [
 const GRASS_PATCHES = [
   {
     key: 'grass-1',
-    position: [-0.15, -0.18, 0.1],
+    position: [-0.24, -0.18, 0.12],
     radius: 0.15,
     bladeCount: 120,
     cloverCount: 3,
@@ -49,7 +52,7 @@ const GRASS_PATCHES = [
   },
   {
     key: 'grass-2',
-    position: [0.1, -0.18, 0.15],
+    position: [0.02, -0.18, 0.17],
     radius: 0.12,
     bladeCount: 90,
     cloverCount: 2,
@@ -57,18 +60,40 @@ const GRASS_PATCHES = [
   },
   {
     key: 'grass-3',
-    position: [-0.05, -0.18, -0.12],
+    position: [-0.12, -0.18, -0.16],
     radius: 0.1,
     bladeCount: 80,
     cloverCount: 2,
     seed: 73,
   },
+  {
+    key: 'grass-4',
+    position: [0.08, -0.18, -0.05],
+    radius: 0.11,
+    bladeCount: 88,
+    cloverCount: 2,
+    seed: 101,
+  },
+  {
+    key: 'grass-5',
+    position: [-0.31, -0.18, -0.01],
+    radius: 0.13,
+    bladeCount: 96,
+    cloverCount: 3,
+    seed: 205,
+  },
+  {
+    key: 'grass-6',
+    position: [-0.04, -0.18, 0.28],
+    radius: 0.12,
+    bladeCount: 92,
+    cloverCount: 2,
+    seed: 319,
+  },
 ];
 
-// Ribbon attachment point relative to its arrow — sits near the fletching end
-const RIBBON_ARROW = ARROWS.find((a) => a.hasRibbon);
-
 export default function StayHunted() {
+  const rabbitRef = useRef();
   const { wind, stiffness, dampening } = useSceneControls();
 
   return (
@@ -90,30 +115,24 @@ export default function StayHunted() {
       <color attach="background" args={['#f5f0e0']} />
 
       {/* Rabbit — centered, sitting, slightly left */}
-      <Rabbit position={[-0.1, -0.18, 0]} scale={0.3} />
+      <Rabbit ref={rabbitRef} position={[-0.1, -0.18, 0]} scale={0.3} />
 
-      {/* Arrows protruding from the rabbit */}
+      {/* Arrows stay pinned to the animated hind pose instead of scene space. */}
       {ARROWS.map((arrow) => (
-        <Arrow
+        <ArrowAnchor
           key={arrow.key}
-          position={arrow.position}
-          rotation={arrow.rotation}
+          boneName={arrow.boneName}
+          embedDepth={0.01}
+          hasRibbon={arrow.hasRibbon}
+          localNormal={arrow.localNormal}
+          localPosition={arrow.localPosition}
+          rabbitRef={rabbitRef}
+          ribbonDampening={dampening}
+          ribbonStiffness={stiffness}
+          ribbonWind={wind}
+          scale={0.18}
         />
       ))}
-
-      {/* Red ribbon on the designated arrow */}
-      {RIBBON_ARROW && (
-        <Ribbon
-          attachPosition={[
-            RIBBON_ARROW.position[0] + 0.35,
-            RIBBON_ARROW.position[1] + 0.3,
-            RIBBON_ARROW.position[2],
-          ]}
-          wind={wind}
-          stiffness={stiffness}
-          dampening={dampening}
-        />
-      )}
 
       {/* Grass patches with red clover */}
       {GRASS_PATCHES.map((patch) => (

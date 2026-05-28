@@ -38,6 +38,7 @@ const sharedWorldQuat = new THREE.Quaternion();
 const sharedGravityDir = new THREE.Vector3();
 const sharedSphereLocal = new THREE.Vector3();
 const sharedWorldMatrix = new THREE.Matrix4();
+const sharedInteractionCenterWorld = new THREE.Vector3();
 
 // Color-type properties on MeshPhysicalNodeMaterial that need .set()
 const COLOR_KEYS = new Set([
@@ -629,9 +630,14 @@ const ClothMesh = forwardRef(function ClothMesh(
       cursorCollider
     ) {
       camera.getWorldDirection(sharedCameraDir);
+      const interactionPoint = meshRef.current
+        ? meshRef.current.localToWorld(
+            sharedInteractionCenterWorld.copy(interactionCenter)
+          )
+        : sharedInteractionCenterWorld.copy(interactionCenter);
       sharedPlane.setFromNormalAndCoplanarPoint(
         sharedCameraDir,
-        interactionCenter
+        interactionPoint
       );
       sharedRaycaster.setFromCamera(pointer, camera);
       if (sharedRaycaster.ray.intersectPlane(sharedPlane, sharedIntersect)) {

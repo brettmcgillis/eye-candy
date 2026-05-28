@@ -1,6 +1,13 @@
 // Scene presets for the WebGPU StillPullingForYou scene.
 // WebGL-only post-processing keys (painterly, outline, hatching) are omitted.
 
+const DEFAULT_CURSOR_ATTRACTOR = {
+  showCursorAttractor: false,
+  cursorAttractorMode: 'attractor',
+  cursorAttractorStrength: 3,
+  cursorAttractorRadius: 3,
+};
+
 const STILL_PULLING = {
   // Scene
   backgroundColor: '#00101f',
@@ -49,6 +56,8 @@ const STILL_PULLING = {
   // Smoke — visible
   smokeVisible: true,
   editSplines: false,
+  ...DEFAULT_CURSOR_ATTRACTOR,
+  cursorAttractorEnabled: true,
 
   // Water — wavy
   waterVisible: true,
@@ -136,6 +145,8 @@ const ROUGH_WATERS = {
   // Smoke — visible, with the tail pinned behind the boat
   smokeVisible: true,
   editSplines: false,
+  ...DEFAULT_CURSOR_ATTRACTOR,
+  cursorAttractorEnabled: true,
 
   // Water — very wavy
   waterVisible: true,
@@ -223,6 +234,8 @@ const SUNK = {
   // Smoke — hidden
   smokeVisible: false,
   editSplines: false,
+  ...DEFAULT_CURSOR_ATTRACTOR,
+  cursorAttractorEnabled: false,
 
   // Water — calm
   waterVisible: true,

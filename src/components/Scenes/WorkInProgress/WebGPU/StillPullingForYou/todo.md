@@ -45,7 +45,7 @@
 
 # // Interactivity
 
-- [ ] Smoke/Cursor interaction
+- [x] Smoke/Cursor interaction
 - [ ] Smoke/Cursor/Hands interaction
 
 - [x] Water Surface/Cursor interaction

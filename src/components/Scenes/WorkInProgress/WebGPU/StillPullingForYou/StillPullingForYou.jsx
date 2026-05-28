@@ -15,6 +15,7 @@ import { getSplineWorldPoints } from '../../../../elements/splineGroup/splineDef
 import NurbsWaterColumn from '../../../../elements/water/NurbsWaterColumn';
 import useNurbsWaterInteractionRuntime from '../../../../elements/water/waterInteraction';
 import BloomFX from '../../../../postprocessing/webGPU/bloom/Bloom';
+import CursorAttractor from './components/CursorAttractor';
 import FloatingTugboat from './components/FloatingTugboat';
 import Seafloor from './components/Seafloor';
 import SinkingTugboat from './components/SinkingTugboat';
@@ -71,6 +72,7 @@ export default function StillPullingForYouGPU() {
   const [splines, setSplines] = useState(() =>
     toRuntimeSplinePoints(DEFAULT_PRESET)
   );
+  const attractorsRef = useRef([]);
   const smokeAnchorRef = useRef();
 
   const [initialSplineConfigs] = useState(() =>
@@ -110,6 +112,10 @@ export default function StillPullingForYouGPU() {
     config.boatRotation.y,
     config.boatRotation.z,
   ];
+  const cursorAttractorFallbackPosition = useMemo(
+    () => [boatPosition[0], -10, boatPosition[2]],
+    [boatPosition[0], boatPosition[2]]
+  );
   const isOrbit = config.cameraMode === 'Orbit';
   const isFloating = config.boatMode === 'Floating';
   const waterInteraction = useNurbsWaterInteractionRuntime({
@@ -219,6 +225,17 @@ export default function StillPullingForYouGPU() {
         />
       )}
 
+      <CursorAttractor
+        attractorsRef={attractorsRef}
+        enabled={config.cursorAttractorEnabled}
+        mode={config.cursorAttractorMode}
+        radius={config.cursorAttractorRadius}
+        strength={config.cursorAttractorStrength}
+        visible={config.showCursorAttractor}
+        planeZ={boatPosition[2]}
+        fallbackPosition={cursorAttractorFallbackPosition}
+      />
+
       {/* Seafloor — MeshStandardMaterial, WebGPU compatible */}
       <Seafloor
         visible={config.seafloorVisible}
@@ -243,6 +260,7 @@ export default function StillPullingForYouGPU() {
                 showSpline: config.editSplines,
                 showHelpers: config.editSplines,
               }}
+              attractorsRef={attractorsRef}
               setSplinePoints={setSplinePoints}
               allowedTypes="smoke"
               splineColor="#ff4444"

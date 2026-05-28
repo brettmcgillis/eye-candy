@@ -1063,6 +1063,39 @@ export default function useSceneControls(
         { collapsed: true }
       ),
 
+      Attractor: folder(
+        {
+          cursorAttractorEnabled: {
+            label: 'Enabled',
+            value: D.cursorAttractorEnabled ?? false,
+          },
+          showCursorAttractor: {
+            label: 'Show Helper',
+            value: D.showCursorAttractor ?? false,
+          },
+          cursorAttractorMode: {
+            label: 'Mode',
+            value: D.cursorAttractorMode ?? 'attractor',
+            options: ['attractor', 'repeller'],
+          },
+          cursorAttractorStrength: {
+            label: 'Strength',
+            value: D.cursorAttractorStrength ?? 3,
+            min: 0,
+            max: 50,
+            step: 0.5,
+          },
+          cursorAttractorRadius: {
+            label: 'Radius',
+            value: D.cursorAttractorRadius ?? 3,
+            min: 0.1,
+            max: 20,
+            step: 0.1,
+          },
+        },
+        { collapsed: true }
+      ),
+
       Water: folder(
         {
           waterVisible: {

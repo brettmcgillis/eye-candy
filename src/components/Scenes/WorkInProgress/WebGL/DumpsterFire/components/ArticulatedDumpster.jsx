@@ -21,8 +21,6 @@ const DUMPSTER_LID_ANGLE_RANGE = [
   DUMPSTER_LID_MIN_ANGLE,
   DUMPSTER_LID_MAX_ANGLE,
 ];
-const LID_DRAG_RADIANS_PER_PIXEL = 0.01;
-const LID_DRAG_DIRECTION_THRESHOLD_PX = 3;
 
 function toScaleVector(scale) {
   if (Array.isArray(scale)) {
@@ -126,38 +124,110 @@ export default function ArticulatedDumpster({ item, onCollisionEnter }) {
   }, [rightLidInitialRotation]);
 
   useEffect(() => {
+    // Hinge-aware lid drag: the lid rotates about its hinge axis so that the
+    // grab point follows the pointer's projection onto the hinge plane.
+    // This matches how a real lid feels — wherever you grab it, that point
+    // tracks under the cursor.
     const buildLidSession =
       ({ angleRef: lidAngleRef, bodyRef }) =>
-      ({ clientX, clientY }) => {
+      ({ intersection, camera, domElement }) => {
         const startAngle = lidAngleRef.current;
+
+        // Hinge axis = parent group's local X axis in world space.
+        // (Rotation around X preserves X, so the lid's current angle doesn't
+        // affect the hinge direction.)
+        const hingeAxis = new THREE.Vector3(1, 0, 0)
+          .applyEuler(new THREE.Euler(...rotation))
+          .normalize();
+
+        // Pivot = world position of the lid's kinematic body.
+        const bodyTranslation = bodyRef.current?.translation();
+        const pivotWorld = bodyTranslation
+          ? new THREE.Vector3(
+              bodyTranslation.x,
+              bodyTranslation.y,
+              bodyTranslation.z
+            )
+          : new THREE.Vector3();
+
+        // Reference radial = vector from pivot to initial hit point, projected
+        // onto the hinge plane.
+        const refRadial = intersection.point.clone().sub(pivotWorld);
+        refRadial.addScaledVector(hingeAxis, -refRadial.dot(hingeAxis));
+
         const session = {
           kind: 'lid',
           startAngle,
           angleRef: lidAngleRef,
-          dragDirection: null,
+          lastDelta: 0,
+          hasValidReference: refRadial.lengthSq() >= 1e-8,
         };
 
+        if (session.hasValidReference) {
+          refRadial.normalize();
+        }
+
+        const plane = new THREE.Plane().setFromNormalAndCoplanarPoint(
+          hingeAxis,
+          pivotWorld
+        );
+        const raycaster = new THREE.Raycaster();
+        const hit = new THREE.Vector3();
+        const curRadial = new THREE.Vector3();
+        const cross = new THREE.Vector3();
+        const ndc = new THREE.Vector2();
+
         session.getDraggedAngle = (nextClientX, nextClientY) => {
-          const dx = nextClientX - clientX;
-          const dy = nextClientY - clientY;
-
-          if (!session.dragDirection) {
-            const distance = Math.hypot(dx, dy);
-
-            if (distance < LID_DRAG_DIRECTION_THRESHOLD_PX) {
-              return startAngle;
-            }
-
-            session.dragDirection = { x: dx / distance, y: dy / distance };
+          if (!session.hasValidReference) {
+            return startAngle;
           }
 
-          const signedDistance =
-            dx * session.dragDirection.x + dy * session.dragDirection.y;
-
-          return clampLidAngle(
-            startAngle + signedDistance * LID_DRAG_RADIANS_PER_PIXEL,
-            DUMPSTER_LID_ANGLE_RANGE
+          const bounds = domElement.getBoundingClientRect();
+          ndc.set(
+            ((nextClientX - bounds.left) / bounds.width) * 2 - 1,
+            -(((nextClientY - bounds.top) / bounds.height) * 2 - 1)
           );
+
+          raycaster.setFromCamera(ndc, camera);
+
+          if (!raycaster.ray.intersectPlane(plane, hit)) {
+            // Ray is parallel to hinge plane — hold last valid angle.
+            return clampLidAngle(
+              startAngle + session.lastDelta,
+              DUMPSTER_LID_ANGLE_RANGE
+            );
+          }
+
+          curRadial.copy(hit).sub(pivotWorld);
+          curRadial.addScaledVector(hingeAxis, -curRadial.dot(hingeAxis));
+
+          if (curRadial.lengthSq() < 1e-8) {
+            return clampLidAngle(
+              startAngle + session.lastDelta,
+              DUMPSTER_LID_ANGLE_RANGE
+            );
+          }
+
+          curRadial.normalize();
+          cross.crossVectors(refRadial, curRadial);
+
+          let delta = Math.atan2(
+            cross.dot(hingeAxis),
+            refRadial.dot(curRadial)
+          );
+
+          // Unwrap relative to the previous delta so a drag can travel more
+          // than 180° without flipping sign at the atan2 branch cut.
+          const prev = session.lastDelta;
+          while (delta - prev > Math.PI) {
+            delta -= 2 * Math.PI;
+          }
+          while (delta - prev < -Math.PI) {
+            delta += 2 * Math.PI;
+          }
+          session.lastDelta = delta;
+
+          return clampLidAngle(startAngle + delta, DUMPSTER_LID_ANGLE_RANGE);
         };
 
         session.applyDraggedAngle = (angle) => {

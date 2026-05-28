@@ -11,7 +11,7 @@ import TugBoat from '../../../../../elements/tugboat/TugBoat';
 import {
   sampleWaveHeight,
   sampleWaveNormal,
-} from '../../../../../elements/water/NurbsWaterColumn';
+} from '../../../../../elements/water/waterUtils';
 import BoatLights from './BoatLights';
 
 const _up = new THREE.Vector3(0, 1, 0);
@@ -30,6 +30,7 @@ function FloatingTugboat({
   waveHeight,
   waveChoppiness,
   waveSpeed,
+  interactionRuntime,
   tiltDamping = 0.3,
   lightConfig,
   boatRef,
@@ -57,11 +58,30 @@ function FloatingTugboat({
 
     const x = position[0];
     const z = position[2];
-    const waveY = sampleWaveHeight(x, z, waveHeight, waveChoppiness, waveSpeed);
+    const waveY = interactionRuntime
+      ? interactionRuntime.sampleHeight(
+          x,
+          z,
+          waveHeight,
+          waveChoppiness,
+          waveSpeed
+        )
+      : sampleWaveHeight(x, z, waveHeight, waveChoppiness, waveSpeed);
     g.position.y = waveY + floatDraft;
 
-    const n = sampleWaveNormal(x, z, waveHeight, waveChoppiness, waveSpeed);
-    _normalVec.set(n.x, n.y, n.z).normalize();
+    if (interactionRuntime) {
+      interactionRuntime.sampleNormal(
+        x,
+        z,
+        waveHeight,
+        waveChoppiness,
+        waveSpeed,
+        _normalVec
+      );
+    } else {
+      const n = sampleWaveNormal(x, z, waveHeight, waveChoppiness, waveSpeed);
+      _normalVec.set(n.x, n.y, n.z).normalize();
+    }
     _normalVec.lerp(_up, 1 - tiltDamping).normalize();
     _waveQuat.setFromUnitVectors(_up, _normalVec);
     _baseQuat.setFromEuler(
@@ -78,11 +98,30 @@ function FloatingTugboat({
     const x = position[0];
     const z = position[2];
 
-    const waveY = sampleWaveHeight(x, z, waveHeight, waveChoppiness, waveSpeed);
+    const waveY = interactionRuntime
+      ? interactionRuntime.sampleHeight(
+          x,
+          z,
+          waveHeight,
+          waveChoppiness,
+          waveSpeed
+        )
+      : sampleWaveHeight(x, z, waveHeight, waveChoppiness, waveSpeed);
     g.position.y = waveY + floatDraft;
 
-    const n = sampleWaveNormal(x, z, waveHeight, waveChoppiness, waveSpeed);
-    _normalVec.set(n.x, n.y, n.z).normalize();
+    if (interactionRuntime) {
+      interactionRuntime.sampleNormal(
+        x,
+        z,
+        waveHeight,
+        waveChoppiness,
+        waveSpeed,
+        _normalVec
+      );
+    } else {
+      const n = sampleWaveNormal(x, z, waveHeight, waveChoppiness, waveSpeed);
+      _normalVec.set(n.x, n.y, n.z).normalize();
+    }
     _normalVec.lerp(_up, 1 - tiltDamping).normalize();
     _waveQuat.setFromUnitVectors(_up, _normalVec);
 

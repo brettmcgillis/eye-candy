@@ -48,11 +48,7 @@
 - [ ] Smoke/Cursor interaction
 - [ ] Smoke/Cursor/Hands interaction
 
-- [ ] Water Surface/Cursor interaction
+- [x] Water Surface/Cursor interaction
 - [ ] Water Surface/Cursor/Hands interaction
 
 # // Bugs
-
-- [x] Fix camera angle, cant see boat or most of water volume
-- [x] Fix boat. Dont bob up & down, stay fixed position
-- [x] Fix ocean floor. Currently its a bumpy plane, but this doesnt look right as it doesnt align with the bttom of the water column. I think I need another NURBS component like the water column, dirt column.

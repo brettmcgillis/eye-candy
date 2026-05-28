@@ -12,7 +12,8 @@ import { useThree } from '@react-three/fiber';
 import STILL_PULLING_FOR_YOU_SMOKE from '../../../../../presets/smoke/stillPullingForYouSmoke';
 import SplineGroup from '../../../../elements/splineGroup/SplineGroup';
 import { getSplineWorldPoints } from '../../../../elements/splineGroup/splineDefaults';
-import NurbsWaterColumnGPU from '../../../../elements/water/NurbsWaterColumnGPU';
+import NurbsWaterColumn from '../../../../elements/water/NurbsWaterColumn';
+import useNurbsWaterInteractionRuntime from '../../../../elements/water/waterInteraction';
 import BloomFX from '../../../../postprocessing/webGPU/bloom/Bloom';
 import FloatingTugboat from './components/FloatingTugboat';
 import Seafloor from './components/Seafloor';
@@ -111,6 +112,15 @@ export default function StillPullingForYouGPU() {
   ];
   const isOrbit = config.cameraMode === 'Orbit';
   const isFloating = config.boatMode === 'Floating';
+  const waterInteraction = useNurbsWaterInteractionRuntime({
+    depth: config.waterDepth,
+    enabled: config.interactionEnabled,
+    radius: config.interactionRadius,
+    resolution: config.interactionResolution,
+    rippleDepth: config.interactionDepth,
+    viscosity: config.interactionViscosity,
+    width: config.waterWidth,
+  });
 
   const size = useThree((state) => state.size);
   const cameraPosition = useMemo(() => {
@@ -193,6 +203,7 @@ export default function StillPullingForYouGPU() {
           waveHeight={config.waveHeight}
           waveChoppiness={config.waveChoppiness}
           waveSpeed={config.waveSpeed}
+          interactionRuntime={waterInteraction}
           tiltDamping={config.tiltDamping}
           lightConfig={lightConfig}
           smokeAnchorRef={smokeAnchorRef}
@@ -244,10 +255,11 @@ export default function StillPullingForYouGPU() {
 
       {/* Water column — TSL MeshPhysicalNodeMaterial */}
       {config.waterVisible && (
-        <NurbsWaterColumnGPU
+        <NurbsWaterColumn
           width={config.waterWidth}
           depth={config.waterDepth}
           height={config.waterHeight}
+          segments={config.waterSegments}
           topColor={config.waterTopColor}
           bottomColor={config.waterBottomColor}
           opacity={config.waterOpacity}
@@ -258,6 +270,7 @@ export default function StillPullingForYouGPU() {
           waveHeight={config.waveHeight}
           waveChoppiness={config.waveChoppiness}
           waveSpeed={config.waveSpeed}
+          interactionRuntime={waterInteraction}
           edgeColor={config.waterEdgeColor}
           edgeOpacity={config.waterEdgeOpacity}
           showEdges={config.waterShowEdges}

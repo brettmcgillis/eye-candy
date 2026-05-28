@@ -30,6 +30,11 @@ const DEFAULTS = {
   waveHeight: 0.15,
   waveChoppiness: 0.5,
   waveSpeed: 0.6,
+  interactionEnabled: true,
+  interactionRadius: 0.28,
+  interactionDepth: 0.012,
+  interactionResolution: 96,
+  interactionViscosity: 0.92,
   edgeColor: '#333333',
   edgeOpacity: 1,
   edgeLineWidth: 3.5,
@@ -223,6 +228,43 @@ export default function useStayingAfloatControls() {
             max: 2,
             step: 0.01,
           },
+          Interaction: folder(
+            {
+              interactionEnabled: {
+                label: 'Cursor Ripple',
+                value: DEFAULTS.interactionEnabled,
+              },
+              interactionRadius: {
+                label: 'Radius',
+                value: DEFAULTS.interactionRadius,
+                min: 0.05,
+                max: 1,
+                step: 0.01,
+              },
+              interactionDepth: {
+                label: 'Depth',
+                value: DEFAULTS.interactionDepth,
+                min: 0.001,
+                max: 0.05,
+                step: 0.001,
+              },
+              interactionViscosity: {
+                label: 'Viscosity',
+                value: DEFAULTS.interactionViscosity,
+                min: 0.85,
+                max: 0.99,
+                step: 0.001,
+              },
+              interactionResolution: {
+                label: 'Resolution',
+                value: DEFAULTS.interactionResolution,
+                min: 32,
+                max: 192,
+                step: 32,
+              },
+            },
+            { collapsed: true }
+          ),
           Edges: folder(
             {
               showEdges: {

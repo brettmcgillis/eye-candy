@@ -1168,6 +1168,43 @@ export default function useSceneControls(
             },
             { collapsed: true }
           ),
+          Interaction: folder(
+            {
+              interactionEnabled: {
+                label: 'Cursor Ripple',
+                value: D.interactionEnabled,
+              },
+              interactionRadius: {
+                label: 'Radius',
+                value: D.interactionRadius,
+                min: 0.05,
+                max: 1,
+                step: 0.01,
+              },
+              interactionDepth: {
+                label: 'Depth',
+                value: D.interactionDepth,
+                min: 0.001,
+                max: 0.05,
+                step: 0.001,
+              },
+              interactionViscosity: {
+                label: 'Viscosity',
+                value: D.interactionViscosity,
+                min: 0.85,
+                max: 0.99,
+                step: 0.001,
+              },
+              interactionResolution: {
+                label: 'Resolution',
+                value: D.interactionResolution,
+                min: 32,
+                max: 192,
+                step: 32,
+              },
+            },
+            { collapsed: true }
+          ),
           Edges: folder(
             {
               waterShowEdges: {

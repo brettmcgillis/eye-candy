@@ -6,6 +6,7 @@ import STAYING_AFLOAT_SPLINES from '../../../../../presets/spline/stayingAfloatS
 import HammerHead from '../../../../elements/hammerHead/HammerHead';
 import TigerShark from '../../../../elements/tigerShark/TigerShark';
 import NurbsWaterColumn from '../../../../elements/water/NurbsWaterColumn';
+import useNurbsWaterInteractionRuntime from '../../../../elements/water/waterInteraction';
 import WaterColorEffect from '../../../../postprocessing/webGL/waterColorEffect/WaterColorEffect';
 import FloatingPreserver from './components/FloatingPreserver';
 import SplineShark from './components/SplineShark';
@@ -13,6 +14,15 @@ import useStayingAfloatControls from './hooks/useStayingAfloatControls';
 
 export default function StayingAfloat() {
   const controls = useStayingAfloatControls();
+  const waterInteraction = useNurbsWaterInteractionRuntime({
+    depth: controls.columnDepth,
+    enabled: controls.interactionEnabled,
+    radius: controls.interactionRadius,
+    resolution: controls.interactionResolution,
+    rippleDepth: controls.interactionDepth,
+    viscosity: controls.interactionViscosity,
+    width: controls.columnWidth,
+  });
 
   const { hammerheadPath, tigerSharkPath, tigerSharkPath2 } = useMemo(() => {
     const preset = STAYING_AFLOAT_SPLINES['Staying Afloat'];
@@ -96,12 +106,15 @@ export default function StayingAfloat() {
         waveHeight={controls.waveHeight}
         waveChoppiness={controls.waveChoppiness}
         waveSpeed={controls.waveSpeed}
+        interactionRuntime={waterInteraction}
         edgeColor={controls.edgeColor}
         edgeOpacity={controls.edgeOpacity}
         edgeLineWidth={controls.edgeLineWidth}
         showEdges={controls.showEdges}
       />
       <FloatingPreserver
+        interactionRuntime={waterInteraction}
+        waterTop={controls.columnHeight / 2}
         waveHeight={controls.waveHeight}
         waveChoppiness={controls.waveChoppiness}
         waveSpeed={controls.waveSpeed}

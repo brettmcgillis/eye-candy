@@ -4,7 +4,7 @@ import React, { useMemo, useRef } from 'react';
 
 import { useFrame, useThree } from '@react-three/fiber';
 
-import NurbsWaterColumnGPU from '../../../../../elements/water/NurbsWaterColumnGPU';
+import NurbsWaterColumn from '../../../../../elements/water/NurbsWaterColumn';
 import getTankLayout from '../utils/tankLayout';
 import TankWaterSplash from './water/splash/TankWaterSplash';
 
@@ -123,7 +123,7 @@ function FallbackTankWater({ fluidCouplersRef, runtime, tank }) {
 
   return (
     <group ref={groupRef} visible={tank.waterLevel > MIN_VISIBLE_WATER_LEVEL}>
-      <NurbsWaterColumnGPU
+      <NurbsWaterColumn
         bottomColor={bottomColor}
         depth={1}
         height={1}

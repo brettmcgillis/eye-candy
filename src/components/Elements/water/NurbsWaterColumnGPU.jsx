@@ -1,8 +1,3 @@
-// NurbsWaterColumnGPU — WebGPU/TSL port of NurbsWaterColumn.
-// Geometry is built via shared waterUtils (NURBSSurface + ParametricGeometry).
-// Wave displacement, normal perturbation, and colour gradient are expressed
-// as TSL node graphs on MeshPhysicalNodeMaterial instead of onBeforeCompile
-// GLSL injection. Edge lines use THREE.Line (no fat-line dependency).
 import {
   Fn,
   clamp,
@@ -15,16 +10,18 @@ import {
   positionLocal,
   sin,
   smoothstep,
+  texture as tslTexture,
   uniform,
   vec2,
   vec3,
 } from 'three/tsl';
 import * as THREE from 'three/webgpu';
 
-import React, { useMemo, useRef } from 'react';
+import React, { useCallback, useEffect, useMemo, useRef } from 'react';
 
 import { useFrame } from '@react-three/fiber';
 
+import { sampleWaterInteractionHeight } from './waterInteraction';
 import {
   WAVES,
   buildAllSurfaces,
@@ -34,8 +31,6 @@ import {
 } from './waterUtils';
 
 const EDGE_SEGS = 32;
-
-// ── Edge geometry helpers (WebGPU: use THREE.BufferGeometry + THREE.Line) ───
 
 const CORNER_OFFSETS = [
   [-1, -1],
@@ -51,10 +46,9 @@ const TOP_EDGE_PAIRS = [
   [3, 0],
 ];
 
-function buildEdgeData(hw, hd, topY, botY, mat) {
+function buildEdgeData(hw, hd, topY, botY, edgeMat) {
   const group = new THREE.Group();
 
-  // Bottom rectangle (static, closed loop — 5 points)
   const bottomPts = [
     new THREE.Vector3(-hw, botY, -hd),
     new THREE.Vector3(hw, botY, -hd),
@@ -63,10 +57,9 @@ function buildEdgeData(hw, hd, topY, botY, mat) {
     new THREE.Vector3(-hw, botY, -hd),
   ];
   group.add(
-    new THREE.Line(new THREE.BufferGeometry().setFromPoints(bottomPts), mat)
+    new THREE.Line(new THREE.BufferGeometry().setFromPoints(bottomPts), edgeMat)
   );
 
-  // 4 vertical corner lines — top Y is dynamic (follows wave)
   const corners = CORNER_OFFSETS.map(([sx, sz]) => {
     const cx = sx * hw;
     const cz = sz * hd;
@@ -74,39 +67,59 @@ function buildEdgeData(hw, hd, topY, botY, mat) {
     const geo = new THREE.BufferGeometry();
     geo.setAttribute('position', new THREE.BufferAttribute(positions, 3));
     geo.attributes.position.usage = THREE.DynamicDrawUsage;
-    group.add(new THREE.Line(geo, mat));
+    group.add(new THREE.Line(geo, edgeMat));
     return { geo, cx, cz };
   });
 
-  // Corners by index for edge referencing
   const cornerPositions = CORNER_OFFSETS.map(([sx, sz]) => ({
     x: sx * hw,
     z: sz * hd,
   }));
 
-  // 4 top edge lines — each subdivided so Y follows the wave surface
   const topEdges = TOP_EDGE_PAIRS.map(([ia, ib]) => {
     const a = cornerPositions[ia];
     const b = cornerPositions[ib];
-    const n = EDGE_SEGS + 1;
-    const positions = new Float32Array(n * 3);
-    for (let i = 0; i < n; i += 1) {
+    const count = EDGE_SEGS + 1;
+    const positions = new Float32Array(count * 3);
+
+    for (let i = 0; i < count; i += 1) {
       const t = i / EDGE_SEGS;
       positions[i * 3] = a.x + (b.x - a.x) * t;
       positions[i * 3 + 1] = topY;
       positions[i * 3 + 2] = a.z + (b.z - a.z) * t;
     }
+
     const geo = new THREE.BufferGeometry();
     geo.setAttribute('position', new THREE.BufferAttribute(positions, 3));
     geo.attributes.position.usage = THREE.DynamicDrawUsage;
-    group.add(new THREE.Line(geo, mat));
+    group.add(new THREE.Line(geo, edgeMat));
+
     return { geo, a, b };
   });
 
-  return { group, corners, topEdges };
+  return { corners, edgeMat, group, topEdges };
 }
 
-// ── Component ───────────────────────────────────────────────────────────────
+function createFallbackInteractionTexture() {
+  const textureData = new Float32Array([0, 0, 0, 1]);
+  const texture = new THREE.DataTexture(
+    textureData,
+    1,
+    1,
+    THREE.RGBAFormat,
+    THREE.FloatType
+  );
+
+  texture.colorSpace = THREE.NoColorSpace;
+  texture.generateMipmaps = false;
+  texture.magFilter = THREE.LinearFilter;
+  texture.minFilter = THREE.LinearFilter;
+  texture.needsUpdate = true;
+  texture.wrapS = THREE.ClampToEdgeWrapping;
+  texture.wrapT = THREE.ClampToEdgeWrapping;
+
+  return texture;
+}
 
 export default function NurbsWaterColumnGPU({
   width = 3.6,
@@ -129,119 +142,236 @@ export default function NurbsWaterColumnGPU({
   edgeColor = '#1f4455',
   edgeOpacity = 0.65,
   showEdges = true,
+  interactionRuntime = null,
 }) {
+  const groupRef = useRef();
+  const pointerPointRef = useRef(new THREE.Vector3());
   const timeRef = useRef(0);
-
-  // ── TSL uniform nodes — one set per mounted instance ──────────────────────
-  const u = useMemo(
-    () => ({
-      time: uniform(0),
-      waveHeight: uniform(waveHeight),
-      waveSpeed: uniform(waveSpeed),
-      waveChop: uniform(waveChoppiness),
-      colTop: uniform(height / 2),
-      colBot: uniform(-height / 2),
-      topColor: uniform(new THREE.Color(topColor)),
-      botColor: uniform(new THREE.Color(bottomColor)),
-    }),
-    [] // stable — all values updated imperatively in useFrame
+  const fallbackInteractionTexture = useMemo(
+    () => createFallbackInteractionTexture(),
+    []
+  );
+  const interactionHeightmapNode = useMemo(
+    () => new THREE.TextureNode(fallbackInteractionTexture),
+    [fallbackInteractionTexture]
   );
 
-  // ── TSL material ───────────────────────────────────────────────────────────
-  const material = useMemo(() => {
-    const {
-      time,
-      waveHeight: uWH,
-      waveSpeed: uWS,
-      waveChop,
-      colTop,
-      colBot,
-      topColor: uTC,
-      botColor: uBC,
-    } = u;
+  const u = useMemo(
+    () => ({
+      botColor: uniform(new THREE.Color(bottomColor)),
+      colBot: uniform(-height / 2),
+      colTop: uniform(height / 2),
+      interactionBounds: uniform(new THREE.Vector2(width, depth)),
+      interactionEnabled: uniform(0),
+      interactionResolution: uniform(1),
+      time: uniform(0),
+      topColor: uniform(new THREE.Color(topColor)),
+      waveChop: uniform(waveChoppiness),
+      waveHeight: uniform(waveHeight),
+      waveSpeed: uniform(waveSpeed),
+    }),
+    [
+      bottomColor,
+      depth,
+      height,
+      topColor,
+      waveChoppiness,
+      waveHeight,
+      waveSpeed,
+      width,
+    ]
+  );
 
-    // Y-only wave displacement — walls stay vertical, top surface undulates
-    const dispY = Fn(() => {
-      const pos = positionLocal;
-      const normY = clamp(pos.y.sub(colBot).div(colTop.sub(colBot)), 0.0, 1.0);
-      const blend = smoothstep(0.5, 1.0, normY);
-      const d = float(0).toVar();
-      WAVES.forEach(({ dx, dz, freq, amp }) => {
-        const theta = dot(vec2(dx, dz), pos.xz)
-          .mul(freq)
-          .add(time.mul(uWS).mul(freq));
-        d.addAssign(float(amp).mul(uWH).mul(cos(theta)));
-      });
-      return d.mul(blend);
+  useEffect(
+    () => () => fallbackInteractionTexture.dispose(),
+    [fallbackInteractionTexture]
+  );
+
+  const material = useMemo(() => {
+    const interactionUv = Fn(() => {
+      const safeWidth = u.interactionBounds.x.max(float(0.0001));
+      const safeDepth = u.interactionBounds.y.max(float(0.0001));
+
+      return vec2(
+        positionLocal.x.div(safeWidth).add(0.5),
+        float(0.5).sub(positionLocal.z.div(safeDepth))
+      );
     });
 
-    // Wave normal blended over top-facing surfaces near the top rim
-    const waveNorm = Fn(() => {
-      const pos = positionLocal;
-      const normY = clamp(pos.y.sub(colBot).div(colTop.sub(colBot)), 0.0, 1.0);
-      const isTop = normalLocal.y.greaterThan(0.5);
-      const nBlend = isTop.select(smoothstep(0.8, 1.0, normY), float(0));
+    const sampleInteractionHeightNode = Fn(() => {
+      return tslTexture(interactionHeightmapNode, interactionUv()).x.mul(
+        u.interactionEnabled
+      );
+    });
 
+    const sampleInteractionNormalNode = Fn(() => {
+      const uvCoord = interactionUv();
+      const safeResolution = u.interactionResolution.max(float(1.0));
+      const texel = float(1.0).div(safeResolution);
+      const worldTexelX = u.interactionBounds.x
+        .div(safeResolution)
+        .max(float(0.0001));
+      const worldTexelY = u.interactionBounds.y
+        .div(safeResolution)
+        .max(float(0.0001));
+      const left = tslTexture(
+        interactionHeightmapNode,
+        uvCoord.add(vec2(texel.negate(), 0.0))
+      ).x.mul(u.interactionEnabled);
+      const right = tslTexture(
+        interactionHeightmapNode,
+        uvCoord.add(vec2(texel, 0.0))
+      ).x.mul(u.interactionEnabled);
+      const back = tslTexture(
+        interactionHeightmapNode,
+        uvCoord.add(vec2(0.0, texel.negate()))
+      ).x.mul(u.interactionEnabled);
+      const front = tslTexture(
+        interactionHeightmapNode,
+        uvCoord.add(vec2(0.0, texel))
+      ).x.mul(u.interactionEnabled);
+
+      return normalize(
+        vec3(
+          left.sub(right).div(worldTexelX.mul(2.0)),
+          1.0,
+          back.sub(front).div(worldTexelY.mul(2.0))
+        )
+      );
+    });
+
+    const sampleBaseWaveHeightNode = Fn(() => {
+      const d = float(0).toVar();
+
+      WAVES.forEach(({ dx, dz, freq, amp }) => {
+        const theta = dot(vec2(dx, dz), positionLocal.xz)
+          .mul(freq)
+          .add(u.time.mul(u.waveSpeed).mul(freq));
+        d.addAssign(float(amp).mul(u.waveHeight).mul(cos(theta)));
+      });
+
+      return d;
+    });
+
+    const displacementY = Fn(() => {
+      const normY = clamp(
+        positionLocal.y.sub(u.colBot).div(u.colTop.sub(u.colBot)),
+        0.0,
+        1.0
+      );
+      const blend = smoothstep(0.5, 1.0, normY);
+
+      return sampleBaseWaveHeightNode()
+        .add(sampleInteractionHeightNode())
+        .mul(blend);
+    });
+
+    const baseWaveNormal = Fn(() => {
       const nx = float(0).toVar();
       const ny = float(1).toVar();
       const nz = float(0).toVar();
 
       WAVES.forEach(({ dx, dz, freq, amp }) => {
-        const Q = waveChop.div(freq * amp * 4.0);
-        const WA = float(freq * amp);
-        const theta = dot(vec2(dx, dz), pos.xz)
+        const Q = u.waveChop.div(freq * amp * 4.0);
+        const WA = float(freq * amp).mul(u.waveHeight);
+        const theta = dot(vec2(dx, dz), positionLocal.xz)
           .mul(freq)
-          .add(time.mul(uWS).mul(freq));
+          .add(u.time.mul(u.waveSpeed).mul(freq));
         nx.subAssign(float(dx).mul(WA).mul(sin(theta)));
         nz.subAssign(float(dz).mul(WA).mul(sin(theta)));
         ny.subAssign(Q.mul(WA).mul(cos(theta)));
       });
 
-      return mix(normalLocal, normalize(vec3(nx, ny, nz)), nBlend);
+      return normalize(vec3(nx, ny, nz));
     });
 
-    // Height-based colour gradient (bottom → top)
-    const gradColor = Fn(() => {
+    const combinedWaveNormal = Fn(() => {
       const normY = clamp(
-        positionLocal.y.sub(colBot).div(colTop.sub(colBot)),
+        positionLocal.y.sub(u.colBot).div(u.colTop.sub(u.colBot)),
         0.0,
         1.0
       );
-      return mix(uBC, uTC, normY);
+      const normalBlend = normalLocal.y
+        .greaterThan(0.5)
+        .select(smoothstep(0.8, 1.0, normY), float(0));
+      const baseNormal = baseWaveNormal();
+      const interactionNormal = sampleInteractionNormalNode();
+      const safeBaseY = baseNormal.y.abs().max(float(0.0001));
+      const safeInteractionY = interactionNormal.y.abs().max(float(0.0001));
+      const baseSlope = baseNormal.xz.negate().div(safeBaseY);
+      const interactionSlope = interactionNormal.xz
+        .negate()
+        .div(safeInteractionY);
+      const combined = normalize(
+        vec3(
+          baseSlope.x.add(interactionSlope.x).negate(),
+          1.0,
+          baseSlope.y.add(interactionSlope.y).negate()
+        )
+      );
+
+      return mix(normalLocal, combined, normalBlend);
     });
 
-    const mat = new THREE.MeshPhysicalNodeMaterial({
+    const gradientColor = Fn(() => {
+      const surfaceY = positionLocal.y.add(displacementY());
+      const normalizedHeight = clamp(
+        surfaceY.sub(u.colBot).div(u.colTop.sub(u.colBot)),
+        0.0,
+        1.0
+      );
+
+      return mix(u.botColor, u.topColor, normalizedHeight);
+    });
+
+    const nextMaterial = new THREE.MeshPhysicalNodeMaterial({
       transparent: true,
       side: THREE.FrontSide,
       depthWrite: true,
     });
 
-    mat.opacity = opacity;
-    mat.transmission = transmission;
-    mat.roughness = roughness;
-    mat.metalness = 0;
-    mat.ior = ior;
-    mat.thickness = thickness;
+    nextMaterial.color.set(topColor);
+    nextMaterial.attenuationColor.set(bottomColor);
+    nextMaterial.opacity = opacity;
+    // WebGPU transmission currently samples back as black in this water path,
+    // which wipes out the gradient tint. Keep the tinted surface shading and
+    // skip the transmission code path until the backdrop sampling is reliable.
+    nextMaterial.transmission = transmission * 0;
+    nextMaterial.roughness = roughness;
+    nextMaterial.metalness = 0;
+    nextMaterial.ior = ior;
+    nextMaterial.thickness = thickness;
 
-    mat.positionNode = positionLocal.add(vec3(0, dispY(), 0));
-    mat.normalNode = waveNorm();
-    mat.colorNode = gradColor();
+    nextMaterial.positionNode = positionLocal.add(
+      vec3(0.0, displacementY(), 0.0)
+    );
+    nextMaterial.normalNode = combinedWaveNormal();
+    nextMaterial.colorNode = gradientColor();
 
-    return mat;
-  }, [u, opacity, transmission, roughness, ior, thickness]);
+    return nextMaterial;
+  }, [
+    bottomColor,
+    ior,
+    interactionHeightmapNode,
+    opacity,
+    roughness,
+    thickness,
+    transmission,
+    topColor,
+    u,
+  ]);
 
-  // ── NURBS mesh geometries ──────────────────────────────────────────────────
   const geometries = useMemo(() => {
     const surfaces = buildAllSurfaces({ width, depth, height });
     return buildGeometries(surfaces, segments, height, Math.max(width, depth));
-  }, [width, depth, height, segments]);
+  }, [depth, height, segments, width]);
 
-  // ── Edge line objects ──────────────────────────────────────────────────────
   const edgeData = useMemo(() => {
-    if (!showEdges) return null;
-    const hw = width / 2;
-    const hd = depth / 2;
-    const mat = new THREE.LineBasicNodeMaterial({
+    if (!showEdges) {
+      return null;
+    }
+
+    const edgeMat = new THREE.LineBasicNodeMaterial({
       color: new THREE.Color(edgeColor),
       opacity: edgeOpacity,
       transparent: true,
@@ -249,35 +379,84 @@ export default function NurbsWaterColumnGPU({
       depthWrite: false,
       toneMapped: false,
     });
-    return buildEdgeData(hw, hd, height / 2, -height / 2, mat);
-  }, [showEdges, width, height, depth]); // intentionally excludes edgeColor/edgeOpacity — updated imperatively in useFrame
 
-  // ── Animation loop ─────────────────────────────────────────────────────────
-  useFrame((state, delta) => {
+    return buildEdgeData(
+      width / 2,
+      depth / 2,
+      height / 2,
+      -height / 2,
+      edgeMat
+    );
+  }, [depth, edgeColor, edgeOpacity, height, showEdges, width]);
+
+  const interactionHitGeometry = useMemo(
+    () => new THREE.PlaneGeometry(width, depth, 1, 1),
+    [depth, width]
+  );
+  const interactionHitY = useMemo(
+    () => height / 2 + Math.max(waveHeight * 1.5 + 0.048, 0.02),
+    [height, waveHeight]
+  );
+
+  const clearPointerTarget = useCallback(() => {
+    interactionRuntime?.clearPointerTarget();
+  }, [interactionRuntime]);
+
+  const handlePointerMove = useCallback(
+    (event) => {
+      if (!groupRef.current || !interactionRuntime) {
+        return;
+      }
+
+      event.stopPropagation();
+
+      const point = groupRef.current.worldToLocal(
+        pointerPointRef.current.copy(event.point)
+      );
+
+      interactionRuntime.setPointerTarget(
+        THREE.MathUtils.clamp(point.x, -width / 2, width / 2),
+        THREE.MathUtils.clamp(point.z, -depth / 2, depth / 2)
+      );
+    },
+    [depth, interactionRuntime, width]
+  );
+
+  useFrame((_, delta) => {
     timeRef.current += delta;
     const t = timeRef.current;
     const liveWaveHeight = waveHeightRef?.current ?? waveHeight;
     const liveWaveSpeed = waveSpeedRef?.current ?? waveSpeed;
     const liveWaveChoppiness = waveChoppinessRef?.current ?? waveChoppiness;
+    const interactionState = interactionRuntime?.interactionStateRef.current;
+    const interactionEnabled = interactionRuntime?.configRef.current.enabled;
 
-    // Keep WebGL module waveTime in sync so FloatingTugboat CPU sampling works
     setWaveTime(t);
+    interactionRuntime?.advance(delta);
 
     u.time.value = t;
     u.waveHeight.value = liveWaveHeight;
     u.waveSpeed.value = liveWaveSpeed;
     u.waveChop.value = liveWaveChoppiness;
+    u.colTop.value = height / 2;
+    u.colBot.value = -height / 2;
     u.topColor.value.set(topColor);
     u.botColor.value.set(bottomColor);
+    u.interactionBounds.value.set(width, depth);
+    u.interactionEnabled.value = interactionEnabled ? 1 : 0;
+    interactionHeightmapNode.value =
+      interactionState?.texture ?? fallbackInteractionTexture;
+    u.interactionResolution.value = interactionState?.size ?? 1;
 
-    if (!showEdges || !edgeData) return;
+    if (!showEdges || !edgeData) {
+      return;
+    }
+
+    edgeData.edgeMat.color.set(edgeColor);
+    edgeData.edgeMat.opacity = edgeOpacity;
 
     const topY = height / 2;
 
-    edgeData.edgeMat?.color.set(edgeColor);
-    if (edgeData.edgeMat) edgeData.edgeMat.opacity = edgeOpacity;
-
-    // Update vertical corner top endpoints
     edgeData.corners.forEach(({ geo, cx, cz }) => {
       const wY = sampleWaveHeight(
         cx,
@@ -286,20 +465,24 @@ export default function NurbsWaterColumnGPU({
         liveWaveChoppiness,
         liveWaveSpeed
       );
-      const arr = geo.attributes.position.array;
-      arr[4] = topY + wY; // second point Y
-      // eslint-disable-next-line no-param-reassign
-      geo.attributes.position.needsUpdate = true;
+      const interactionY = interactionEnabled
+        ? sampleWaterInteractionHeight(cx, cz, width, depth, interactionState)
+        : 0;
+      const positionAttribute = geo.attributes.position;
+      const positions = positionAttribute.array;
+      positions[4] = topY + wY + interactionY;
+      positionAttribute.needsUpdate = true;
     });
 
-    // Update subdivided top edge lines
     edgeData.topEdges.forEach(({ geo, a, b }) => {
-      const arr = geo.attributes.position.array;
-      const n = EDGE_SEGS + 1;
-      for (let i = 0; i < n; i += 1) {
-        const tv = i / EDGE_SEGS;
-        const px = a.x + (b.x - a.x) * tv;
-        const pz = a.z + (b.z - a.z) * tv;
+      const positionAttribute = geo.attributes.position;
+      const positions = positionAttribute.array;
+      const count = EDGE_SEGS + 1;
+
+      for (let i = 0; i < count; i += 1) {
+        const tValue = i / EDGE_SEGS;
+        const px = a.x + (b.x - a.x) * tValue;
+        const pz = a.z + (b.z - a.z) * tValue;
         const wY = sampleWaveHeight(
           px,
           pz,
@@ -307,19 +490,36 @@ export default function NurbsWaterColumnGPU({
           liveWaveChoppiness,
           liveWaveSpeed
         );
-        arr[i * 3 + 1] = topY + wY;
+        const interactionY = interactionEnabled
+          ? sampleWaterInteractionHeight(px, pz, width, depth, interactionState)
+          : 0;
+        positions[i * 3 + 1] = topY + wY + interactionY;
       }
-      // eslint-disable-next-line no-param-reassign
-      geo.attributes.position.needsUpdate = true;
+
+      positionAttribute.needsUpdate = true;
     });
   });
 
   return (
-    <group>
+    <group ref={groupRef}>
       {geometries.map((geo, idx) => (
         // eslint-disable-next-line react/no-array-index-key
         <mesh key={idx} geometry={geo} material={material} />
       ))}
+
+      {interactionRuntime && (
+        <mesh
+          geometry={interactionHitGeometry}
+          onPointerMove={handlePointerMove}
+          onPointerOut={clearPointerTarget}
+          onPointerOver={handlePointerMove}
+          position={[0, interactionHitY, 0]}
+          rotation-x={-Math.PI / 2}
+        >
+          <meshBasicMaterial depthWrite={false} opacity={0} transparent />
+        </mesh>
+      )}
+
       {showEdges && edgeData && <primitive object={edgeData.group} />}
     </group>
   );

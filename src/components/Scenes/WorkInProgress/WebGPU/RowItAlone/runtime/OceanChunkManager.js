@@ -8,6 +8,7 @@ import SkyDome from './Sky';
 const sharedCameraPosition = new THREE.Vector3();
 const sharedScenePosition = new THREE.Vector3();
 const sharedPatchOffset = new THREE.Vector3();
+const sharedRelativeCameraPosition = new THREE.Vector3();
 
 const DEFAULT_PATCH_SIZE = 160;
 const DEFAULT_PATCH_RESOLUTION = 192;
@@ -34,19 +35,7 @@ export default class OceanChunkManager {
   }
 
   init() {
-    this.cubeRenderTarget = new THREE.WebGLCubeRenderTarget(256);
-    this.cubeRenderTarget.texture.format = THREE.RGBAFormat;
-    this.cubeRenderTarget.texture.type = THREE.HalfFloatType;
-    this.cubeRenderTarget.texture.minFilter = THREE.LinearMipMapLinearFilter;
-    this.cubeRenderTarget.texture.magFilter = THREE.LinearFilter;
-    this.cubeRenderTarget.texture.generateMipmaps = true;
-
-    this.cubeCamera = new THREE.CubeCamera(1, 1000000, this.cubeRenderTarget);
-    this.cubeCamera.rotation.z = Math.PI / 2;
-    this.cubeCamera.layers.set(2);
-
     const oceanMaterial = new OceanMaterial({
-      environment: this.cubeRenderTarget.texture,
       foamStrength: this.params.waveGenerator.foamStrength,
       foamThreshold: this.params.waveGenerator.foamThreshold,
       ifftResolution: this.params.waveGenerator.size,
@@ -145,13 +134,12 @@ export default class OceanChunkManager {
     this.params.camera.getWorldPosition(sharedCameraPosition);
     this.params.scene.getWorldPosition(sharedScenePosition);
 
-    const relativeCameraPosition = sharedCameraPosition
-      .clone()
-      .sub(sharedScenePosition);
+    sharedRelativeCameraPosition.subVectors(
+      sharedCameraPosition,
+      sharedScenePosition
+    );
 
-    this.sky.parameters.cameraPosition.value.copy(relativeCameraPosition);
-    this.cubeCamera.position.copy(relativeCameraPosition);
-    this.cubeCamera.update(this.params.renderer, this.params.scene);
+    this.sky.parameters.cameraPosition.value.copy(sharedRelativeCameraPosition);
 
     if (this.patch) {
       this.patch.show();
@@ -159,7 +147,9 @@ export default class OceanChunkManager {
         this.currentConfig?.ocean?.wireframe ?? false;
     }
 
-    this.materialParameters.cameraPosition.value.copy(relativeCameraPosition);
+    this.materialParameters.cameraPosition.value.copy(
+      sharedRelativeCameraPosition
+    );
     this.materialParameters.sunPosition.value.copy(this.sun);
   }
 
@@ -171,7 +161,6 @@ export default class OceanChunkManager {
     this.params.scene.remove(this.group);
     this.params.scene.remove(this.sky);
     this.material.dispose();
-    this.cubeRenderTarget.dispose();
     this.sky.geometry.dispose();
     this.sky.material.dispose();
   }

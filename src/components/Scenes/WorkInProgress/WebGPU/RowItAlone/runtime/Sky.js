@@ -20,7 +20,7 @@ export default class SkyDome extends THREE.Mesh {
 
     const material = new THREE.MeshBasicNodeMaterial();
     material.colorNode = skyFragmentStageWGSL(parameters);
-    material.side = THREE.DoubleSide;
+    material.side = THREE.BackSide;
     material.colorSpace = THREE.SRGBColorSpace;
 
     super(new THREE.BoxGeometry(1, 1, 1), material);

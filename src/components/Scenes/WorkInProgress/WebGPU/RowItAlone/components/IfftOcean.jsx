@@ -5,7 +5,11 @@ import { useFrame, useThree } from '@react-three/fiber';
 import OceanChunkManager from '../runtime/OceanChunkManager';
 import WaveGenerator from '../runtime/waves/WaveGenerator';
 
-const FIXED_STEP_MS = 1000 / 60;
+function getWaveStepMs(config) {
+  const waveUpdateHz = Math.max(1, config?.performance?.waveUpdateHz ?? 30);
+
+  return 1000 / waveUpdateHz;
+}
 
 export default function IfftOcean({ config }) {
   const camera = useThree((state) => state.camera);
@@ -13,13 +17,17 @@ export default function IfftOcean({ config }) {
   const scene = useThree((state) => state.scene);
   const runtimeRef = useRef(null);
   const accumulatorRef = useRef(0);
+  const quality = config?.performance?.quality;
 
   useEffect(() => {
     if (!gl?.isWebGPURenderer) {
       return undefined;
     }
 
-    const waveGenerator = new WaveGenerator({ renderer: gl });
+    const waveGenerator = new WaveGenerator({
+      quality,
+      renderer: gl,
+    });
     waveGenerator.init();
 
     const oceanManager = new OceanChunkManager({
@@ -43,7 +51,7 @@ export default function IfftOcean({ config }) {
       oceanManager.dispose();
       waveGenerator.dispose?.();
     };
-  }, [camera, gl, scene]);
+  }, [camera, gl, quality, scene]);
 
   useFrame((state, delta) => {
     const runtime = runtimeRef.current;
@@ -51,17 +59,19 @@ export default function IfftOcean({ config }) {
       return;
     }
 
+    const fixedStepMs = getWaveStepMs(config);
+
     runtime.waveGenerator.applyWaveSettings(config.waveSettings);
     runtime.oceanManager.applyConfig(config);
 
     accumulatorRef.current = Math.min(
       accumulatorRef.current + delta * 1000,
-      FIXED_STEP_MS * 3
+      fixedStepMs * 3
     );
 
-    while (accumulatorRef.current >= FIXED_STEP_MS) {
-      runtime.waveGenerator.update(FIXED_STEP_MS);
-      accumulatorRef.current -= FIXED_STEP_MS;
+    while (accumulatorRef.current >= fixedStepMs) {
+      runtime.waveGenerator.update(fixedStepMs);
+      accumulatorRef.current -= fixedStepMs;
     }
 
     runtime.oceanManager.update(state.camera);

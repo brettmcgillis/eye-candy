@@ -61,4 +61,9 @@ export default class InitialSpectrum {
     this.params.renderer.compute(this.initialSpectrum);
     this.params.renderer.compute(this.initialSpectrumWithInverse);
   }
+
+  dispose() {
+    this.spectrumBuffer?.dispose?.();
+    this.waveDataBuffer?.dispose?.();
+  }
 }

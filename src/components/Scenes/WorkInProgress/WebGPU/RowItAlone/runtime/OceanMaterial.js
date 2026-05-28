@@ -1,4 +1,4 @@
-import { attribute, cubeTexture, texture, uniform, vec3 } from 'three/tsl';
+import { attribute, texture, uniform, vec3 } from 'three/tsl';
 import * as THREE from 'three/webgpu';
 
 import {
@@ -48,8 +48,6 @@ export default class OceanMaterial {
         params.cascades[1].params.lengthScale,
         params.cascades[2].params.lengthScale
       ),
-      envTexture: cubeTexture(params.environment),
-      envTexture_sampler: cubeTexture(params.environment),
       sunPosition: uniform(params.sunPosition),
       vMorphedPosition,
       vDisplacedPosition,
@@ -59,9 +57,9 @@ export default class OceanMaterial {
     const material = new THREE.MeshBasicNodeMaterial();
     material.positionNode = oceanVertexStageWGSL(shaderParams);
     material.colorNode = oceanFragmentStageWGSL(shaderParams);
-    material.side = THREE.DoubleSide;
+    material.side = THREE.FrontSide;
     material.colorSpace = THREE.SRGBColorSpace;
-    material.transparent = true;
+    material.transparent = false;
 
     this.material = material;
     this.parameters = shaderParams;

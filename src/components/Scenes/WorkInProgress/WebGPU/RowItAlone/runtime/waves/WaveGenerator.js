@@ -4,23 +4,26 @@ import * as THREE from 'three/webgpu';
 import { butterflyWGSL } from '../shaders/ifftShaders';
 import WaveCascade from './WaveCascade';
 import {
+  DEFAULT_WAVE_QUALITY,
   FIRST_WAVE_DATASET,
   FOAM_STRENGTH,
   FOAM_THRESHOLD,
-  IFFT_RESOLUTION,
   LAMBDA,
   LENGTH_SCALES,
   LOD_SCALE,
   SECOND_WAVE_DATASET,
+  getWaveQualityPreset,
 } from './waveConstants';
 
 export default class WaveGenerator {
   constructor(params) {
     this.params = params;
+    this.quality = params.quality ?? DEFAULT_WAVE_QUALITY;
   }
 
   init() {
-    this.size = IFFT_RESOLUTION;
+    this.qualityPreset = getWaveQualityPreset(this.quality);
+    this.size = this.qualityPreset.resolution;
     this.butterflyBuffer = new THREE.StorageBufferAttribute(
       new Float32Array(Math.log2(this.size) * this.size * 4),
       4
@@ -127,5 +130,13 @@ export default class WaveGenerator {
     this.cascades.forEach((cascade) => {
       cascade.update(deltaTimeMs);
     });
+  }
+
+  dispose() {
+    this.cascades.forEach((cascade) => {
+      cascade.dispose?.();
+    });
+    this.cascades = [];
+    this.butterflyBuffer?.dispose?.();
   }
 }

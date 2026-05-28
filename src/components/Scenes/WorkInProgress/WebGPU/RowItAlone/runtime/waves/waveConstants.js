@@ -1,12 +1,25 @@
 import { uniform } from 'three/tsl';
 
 export const WORKGROUP = [16, 16, 1];
-export const IFFT_RESOLUTION = 512;
 export const LENGTH_SCALES = [250, 17, 5];
 export const LAMBDA = [0.9, 0.9, 0.9];
+export const WAVE_QUALITY_PRESETS = Object.freeze({
+  Low: Object.freeze({ resolution: 128 }),
+  Medium: Object.freeze({ resolution: 256 }),
+  High: Object.freeze({ resolution: 512 }),
+});
+export const DEFAULT_WAVE_QUALITY = 'Medium';
+export const IFFT_RESOLUTION =
+  WAVE_QUALITY_PRESETS[DEFAULT_WAVE_QUALITY].resolution;
 export const FOAM_STRENGTH = uniform(0.8);
 export const FOAM_THRESHOLD = uniform(2.7);
 export const LOD_SCALE = uniform(3.7);
+
+export function getWaveQualityPreset(quality = DEFAULT_WAVE_QUALITY) {
+  return (
+    WAVE_QUALITY_PRESETS[quality] || WAVE_QUALITY_PRESETS[DEFAULT_WAVE_QUALITY]
+  );
+}
 
 export const FIRST_WAVE_DATASET = {
   depth: uniform(20),

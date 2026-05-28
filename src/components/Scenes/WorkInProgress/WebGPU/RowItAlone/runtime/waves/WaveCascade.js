@@ -72,17 +72,17 @@ export default class WaveCascade {
     this.derivative.type = THREE.HalfFloatType;
     this.jacobian.type = THREE.FloatType;
 
-    this.displacement.generateMipmaps = true;
-    this.derivative.generateMipmaps = true;
-    this.jacobian.generateMipmaps = true;
+    this.displacement.generateMipmaps = false;
+    this.derivative.generateMipmaps = false;
+    this.jacobian.generateMipmaps = false;
 
     this.displacement.magFilter = THREE.LinearFilter;
     this.derivative.magFilter = THREE.LinearFilter;
     this.jacobian.magFilter = THREE.LinearFilter;
 
-    this.displacement.minFilter = THREE.LinearMipMapLinearFilter;
-    this.derivative.minFilter = THREE.LinearMipMapLinearFilter;
-    this.jacobian.minFilter = THREE.LinearMipMapLinearFilter;
+    this.displacement.minFilter = THREE.LinearFilter;
+    this.derivative.minFilter = THREE.LinearFilter;
+    this.jacobian.minFilter = THREE.LinearFilter;
 
     this.displacement.wrapS = THREE.RepeatWrapping;
     this.displacement.wrapT = THREE.RepeatWrapping;
@@ -90,10 +90,6 @@ export default class WaveCascade {
     this.derivative.wrapT = THREE.RepeatWrapping;
     this.jacobian.wrapS = THREE.RepeatWrapping;
     this.jacobian.wrapT = THREE.RepeatWrapping;
-
-    this.displacement.anisotropy = this.params.renderer.getMaxAnisotropy();
-    this.derivative.anisotropy = this.params.renderer.getMaxAnisotropy();
-    this.jacobian.anisotropy = this.params.renderer.getMaxAnisotropy();
 
     this.workgroupSize = WORKGROUP;
     this.dispatchSize = [
@@ -318,5 +314,12 @@ export default class WaveCascade {
     }
 
     this.params.renderer.compute(this.computePermute, this.dispatchSize);
+  }
+
+  dispose() {
+    this.displacement?.dispose?.();
+    this.derivative?.dispose?.();
+    this.jacobian?.dispose?.();
+    this.initialSpectrum?.dispose?.();
   }
 }

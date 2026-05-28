@@ -1,10 +1,12 @@
 import { folder, useControls } from 'leva';
 
 import {
+  DEFAULT_WAVE_QUALITY,
   FIRST_WAVE_BORDERS,
   FIRST_WAVE_DATASET,
   SECOND_WAVE_BORDERS,
   SECOND_WAVE_DATASET,
+  WAVE_QUALITY_PRESETS,
 } from '../runtime/waves/waveConstants';
 
 function buildSpectrumControls(prefix, dataset, borders) {
@@ -95,6 +97,16 @@ export default function useSceneControls() {
       },
       { collapsed: false }
     ),
+    Performance: folder(
+      {
+        quality: {
+          options: Object.keys(WAVE_QUALITY_PRESETS),
+          value: DEFAULT_WAVE_QUALITY,
+        },
+        waveUpdateHz: { value: 30, min: 5, max: 60, step: 1 },
+      },
+      { collapsed: true }
+    ),
   });
 
   return {
@@ -124,6 +136,10 @@ export default function useSceneControls() {
       rayleigh: controls.rayleigh,
       turbidity: controls.turbidity,
       up: [0, 1, 0],
+    },
+    performance: {
+      quality: controls.quality,
+      waveUpdateHz: controls.waveUpdateHz,
     },
     waveSettings: {
       ...readSpectrumValues(controls, 'first_', FIRST_WAVE_DATASET),

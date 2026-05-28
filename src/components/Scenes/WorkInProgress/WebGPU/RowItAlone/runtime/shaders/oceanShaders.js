@@ -177,8 +177,6 @@ export const oceanFragmentStageWGSL = wgslFn(`
         vMorphedPosition: vec3<f32>,
         vDisplacedPosition: vec3<f32>,
         vCascadeScales: vec3<f32>,
-        envTexture: texture_cube<f32>,
-        envTexture_sampler: sampler,
         sunPosition: vec3<f32>,
     ) -> vec4<f32> {
 
@@ -209,10 +207,9 @@ export const oceanFragmentStageWGSL = wgslFn(`
         var fresnel = fresnelSchlick(0.02, normalOcean, -viewDir, 5.0);
         var specular = specularLight2(normalOcean, sunDir, viewDir, 8.0) * 1.3;
         var reflected = reflect(-viewDir, normalOcean);
-        var texcoord = vec3<f32>(reflected.y, reflected.x, -reflected.z);
-        var reflectionColorEnv = textureSample(envTexture, envTexture_sampler, texcoord).rgb;
-
-        var reflectionColor = reflectionColorEnv;
+        var skyMix = clamp(reflected.y * 0.5 + 0.5, 0.0, 1.0);
+        var reflectionColor = mix(HORIZONCOLOR, SKYCOLOR, skyMix);
+        reflectionColor += pow(max(dot(reflected, sunDir), 0.0), 96.0) * SUNCOLOR * 0.35;
         var refractionColor = SEACOLOR;
         var waterColor = mix(refractionColor, reflectionColor, fresnel);
 
@@ -230,6 +227,9 @@ export const oceanFragmentStageWGSL = wgslFn(`
     }
 
     const SEACOLOR: vec3<f32> = vec3<f32>(0.004, 0.016, 0.047);
+    const HORIZONCOLOR: vec3<f32> = vec3<f32>(0.42, 0.62, 0.82);
+    const SKYCOLOR: vec3<f32> = vec3<f32>(0.08, 0.21, 0.39);
+    const SUNCOLOR: vec3<f32> = vec3<f32>(1.0, 0.9, 0.72);
     const WAVECOLOR: vec3<f32> = vec3<f32>(0.14, 0.25, 0.18);
 
     fn saturate(value: f32) -> f32 {

@@ -4,6 +4,8 @@ import React, { useCallback, useEffect, useMemo } from 'react';
 
 import { useFrame } from '@react-three/fiber';
 
+import oceanShaderChunks from '../shaders/oceanShaderChunks';
+
 function getSunDirection({ azimuth, elevation }) {
   const phi = THREE.MathUtils.degToRad(90 - elevation);
   const theta = THREE.MathUtils.degToRad(azimuth);
@@ -12,97 +14,17 @@ function getSunDirection({ azimuth, elevation }) {
 }
 
 const MATERIAL_VERTEX_PREAMBLE = [
-  'uniform float uTime;',
-  'uniform float uSwellAmplitude;',
-  'uniform float uSwellFrequency;',
-  'uniform float uSwellSpeed;',
-  'uniform float uChopAmplitude;',
-  'uniform float uChopFrequency;',
-  'uniform float uChopSpeed;',
-  'uniform float uDetailAmplitude;',
-  'uniform float uDetailFrequency;',
-  'uniform float uDetailSpeed;',
-  'uniform float uNormalEpsilon;',
-  'uniform sampler2D uInteractionHeightmap;',
-  'uniform float uInteractionBounds;',
-  '',
-  'const int SWELL_COUNT = 3;',
-  'const int CHOP_COUNT = 3;',
-  'const int DETAIL_COUNT = 3;',
-  'vec4 swellWaves[SWELL_COUNT];',
-  'vec4 chopWaves[CHOP_COUNT];',
-  'vec4 detailWaves[DETAIL_COUNT];',
-  '',
-  'void initOceanWaves() {',
-  '  swellWaves[0] = vec4(0.86, 0.51, 0.42, 1.0);',
-  '  swellWaves[1] = vec4(-0.34, 0.94, 0.66, 0.72);',
-  '  swellWaves[2] = vec4(0.57, -0.82, 0.92, 0.48);',
-  '',
-  '  chopWaves[0] = vec4(0.91, -0.21, 1.55, 1.0);',
-  '  chopWaves[1] = vec4(-0.72, -0.69, 2.1, 0.65);',
-  '  chopWaves[2] = vec4(0.18, 0.98, 2.65, 0.4);',
-  '',
-  '  detailWaves[0] = vec4(-0.9, 0.43, 4.2, 1.0);',
-  '  detailWaves[1] = vec4(0.49, 0.87, 5.1, 0.58);',
-  '  detailWaves[2] = vec4(-0.17, -0.98, 6.6, 0.32);',
-  '}',
-  '',
-  'float sampleBaseOceanHeight(vec2 xz) {',
-  '  float height = 0.0;',
-  '',
-  '  for (int i = 0; i < SWELL_COUNT; i++) {',
-  '    vec2 direction = normalize(swellWaves[i].xy);',
-  '    float theta =',
-  '      dot(direction, xz) * swellWaves[i].z * uSwellFrequency +',
-  '      uTime * uSwellSpeed * (0.55 + float(i) * 0.23);',
-  '    height += sin(theta) * swellWaves[i].w * uSwellAmplitude;',
-  '  }',
-  '',
-  '  for (int i = 0; i < CHOP_COUNT; i++) {',
-  '    vec2 direction = normalize(chopWaves[i].xy);',
-  '    float theta =',
-  '      dot(direction, xz) * chopWaves[i].z * uChopFrequency +',
-  '      uTime * uChopSpeed * (0.55 + float(i) * 0.23);',
-  '    height += sin(theta) * chopWaves[i].w * uChopAmplitude;',
-  '  }',
-  '',
-  '  for (int i = 0; i < DETAIL_COUNT; i++) {',
-  '    vec2 direction = normalize(detailWaves[i].xy);',
-  '    float theta =',
-  '      dot(direction, xz) * detailWaves[i].z * uDetailFrequency +',
-  '      uTime * uDetailSpeed * (0.55 + float(i) * 0.23);',
-  '    height += sin(theta) * detailWaves[i].w * uDetailAmplitude;',
-  '  }',
-  '',
-  '  return height;',
-  '}',
-  '',
-  'float sampleInteractiveHeight(vec2 xz) {',
-  '  vec2 uv = vec2(',
-  '    xz.x / uInteractionBounds + 0.5,',
-  '    0.5 - xz.y / uInteractionBounds',
-  '  );',
-  '',
-  '  if (uv.x < 0.0 || uv.x > 1.0 || uv.y < 0.0 || uv.y > 1.0) {',
-  '    return 0.0;',
-  '  }',
-  '',
-  '  return texture2D(uInteractionHeightmap, uv).x;',
-  '}',
-  '',
-  'float sampleOceanHeight(vec2 xz) {',
-  '  return sampleBaseOceanHeight(xz) + sampleInteractiveHeight(xz);',
-  '}',
-  '',
-  'vec3 sampleOceanNormal(vec2 xz) {',
-  '  float epsilon = max(uNormalEpsilon, 0.01);',
-  '  float left = sampleOceanHeight(xz - vec2(epsilon, 0.0));',
-  '  float right = sampleOceanHeight(xz + vec2(epsilon, 0.0));',
-  '  float back = sampleOceanHeight(xz - vec2(0.0, epsilon));',
-  '  float front = sampleOceanHeight(xz + vec2(0.0, epsilon));',
-  '',
-  '  return normalize(vec3(left - right, front - back, epsilon * 2.0));',
-  '}',
+  'varying vec3 vRowItAloneWorldPosition;',
+  oceanShaderChunks.OCEAN_HEIGHT_GLSL,
+  oceanShaderChunks.OCEAN_NORMAL_GLSL,
+].join('\n');
+
+const MATERIAL_FRAGMENT_PREAMBLE = [
+  'uniform sampler2D uMaskTexture;',
+  'uniform vec2 uMaskCenter;',
+  'uniform float uMaskScale;',
+  'uniform float uMaskDebug;',
+  'varying vec3 vRowItAloneWorldPosition;',
 ].join('\n');
 
 const BEGIN_NORMAL_REPLACE = [
@@ -119,12 +41,36 @@ const BEGIN_VERTEX_REPLACE = [
   'float interactionHeight = sampleInteractiveHeight(heightCoord);',
   'float oceanHeight = sampleBaseOceanHeight(heightCoord) + interactionHeight;',
   'vec3 transformed = vec3(position.x, position.y, position.z + oceanHeight);',
+  'vRowItAloneWorldPosition = (modelMatrix * vec4(transformed, 1.0)).xyz;',
   '#ifdef USE_ALPHAHASH',
   '  vPosition = vec3( position );',
   '#endif',
 ].join('\n');
 
-export default function OceanSurface({ ocean, runtime, sun }) {
+const DITHERING_FRAGMENT_REPLACE = [
+  '#include <dithering_fragment>',
+  'vec2 maskUV =',
+  '  (vec2(-vRowItAloneWorldPosition.x, -vRowItAloneWorldPosition.z) -',
+  '    vec2(-uMaskCenter.x, -uMaskCenter.y)) / uMaskScale + 0.5;',
+  'float maskValue = texture2D(uMaskTexture, maskUV).r;',
+  '',
+  'if (maskValue < 0.5) {',
+  '  if (uMaskDebug > 0.5) {',
+  '    gl_FragColor.rgb = vec3(1.0, 0.18, 0.1);',
+  '    gl_FragColor.a = max(gl_FragColor.a, 0.95);',
+  '  } else {',
+  '    discard;',
+  '  }',
+  '}',
+].join('\n');
+
+export default function OceanSurface({
+  maskDebug = false,
+  maskPass,
+  ocean,
+  runtime,
+  sun,
+}) {
   const geometry = useMemo(
     () =>
       new THREE.PlaneGeometry(
@@ -139,6 +85,7 @@ export default function OceanSurface({ ocean, runtime, sun }) {
     () => getSunDirection(sun),
     [sun.azimuth, sun.elevation]
   );
+  const maskDebugUniform = useMemo(() => ({ value: 0 }), []);
 
   const material = useMemo(() => {
     const surfaceMaterial = new THREE.MeshStandardMaterial({
@@ -159,6 +106,10 @@ export default function OceanSurface({ ocean, runtime, sun }) {
       Object.entries(runtime.uniforms).forEach(([key, uniform]) => {
         compiledShader.uniforms[key] = uniform;
       });
+      compiledShader.uniforms.uMaskCenter = maskPass.maskCenterUniform;
+      compiledShader.uniforms.uMaskDebug = maskDebugUniform;
+      compiledShader.uniforms.uMaskScale = maskPass.maskScaleUniform;
+      compiledShader.uniforms.uMaskTexture = maskPass.maskTextureUniform;
 
       compiledShader.vertexShader = compiledShader.vertexShader.replace(
         '#include <common>',
@@ -172,19 +123,30 @@ export default function OceanSurface({ ocean, runtime, sun }) {
         '#include <begin_vertex>',
         BEGIN_VERTEX_REPLACE
       );
+      compiledShader.fragmentShader = compiledShader.fragmentShader.replace(
+        '#include <common>',
+        ['#include <common>', MATERIAL_FRAGMENT_PREAMBLE].join('\n')
+      );
+      compiledShader.fragmentShader = compiledShader.fragmentShader.replace(
+        '#include <dithering_fragment>',
+        DITHERING_FRAGMENT_REPLACE
+      );
 
       surfaceMaterial.userData.shader = compiledShader;
     };
 
     surfaceMaterial.customProgramCacheKey = () =>
-      'row-it-alone-water-heightmap-mesh';
+      'row-it-alone-water-heightmap-hero-mask';
 
     return surfaceMaterial;
   }, [
-    geometry,
     ocean.deepColor,
     ocean.opacity,
     ocean.shallowColor,
+    maskDebugUniform,
+    maskPass.maskCenterUniform,
+    maskPass.maskScaleUniform,
+    maskPass.maskTextureUniform,
     runtime.uniforms,
   ]);
 
@@ -198,11 +160,13 @@ export default function OceanSurface({ ocean, runtime, sun }) {
   );
 
   const handlePointerOut = useCallback(() => {
+    runtime.clearInteractionTarget();
     runtime.clearPointerTarget();
   }, [runtime]);
 
   useEffect(
     () => () => {
+      runtime.clearInteractionTarget();
       runtime.clearPointerTarget();
     },
     [runtime]
@@ -235,6 +199,10 @@ export default function OceanSurface({ ocean, runtime, sun }) {
     sunDirection,
   ]);
 
+  useEffect(() => {
+    maskDebugUniform.value = maskDebug ? 1 : 0;
+  }, [maskDebug, maskDebugUniform]);
+
   useFrame(() => {
     if (material.userData.shader) {
       material.userData.shader.uniforms.uTime.value = runtime.timeRef.current;
@@ -248,6 +216,7 @@ export default function OceanSurface({ ocean, runtime, sun }) {
         geometry={geometry}
         material={material}
         receiveShadow
+        renderOrder={20}
         rotation-x={-Math.PI / 2}
       />
       <mesh

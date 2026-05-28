@@ -14,9 +14,12 @@ export default function WebGLCanvas({ children }) {
         preserveDrawingBuffer: true,
         depth: true,
         alpha: true,
+        stencil: true,
       }}
       onCreated={({ gl }) => {
-        gl.shadowMap.type = THREE.PCFSoftShadowMap;
+        const renderer = gl;
+
+        renderer.shadowMap.type = THREE.PCFSoftShadowMap;
       }}
     >
       {children}

@@ -228,7 +228,11 @@ function updateColorUniform(uniform, value) {
   uniform.value.set(value);
 }
 
-export default function useOceanRuntime({ interaction, ocean }) {
+export default function useOceanRuntime({
+  interaction,
+  ocean,
+  stepMode = 'render',
+}) {
   const interactionStateRef = useRef();
   const interactionTargetRef = useRef({ active: false, x: 0, z: 0 });
   const pointerTargetRef = useRef({ active: false, x: 0, z: 0 });
@@ -341,6 +345,33 @@ export default function useOceanRuntime({ interaction, ocean }) {
     [ocean.normalEpsilon, sampleHeight]
   );
 
+  const syncUniforms = useCallback(() => {
+    uniforms.uTime.value = timeRef.current;
+    uniforms.uSwellAmplitude.value = ocean.swellAmplitude;
+    uniforms.uSwellFrequency.value = ocean.swellFrequency;
+    uniforms.uSwellSpeed.value = ocean.swellSpeed;
+    uniforms.uChopAmplitude.value = ocean.chopAmplitude;
+    uniforms.uChopFrequency.value = ocean.chopFrequency;
+    uniforms.uChopSpeed.value = ocean.chopSpeed;
+    uniforms.uDetailAmplitude.value = ocean.detailAmplitude;
+    uniforms.uDetailFrequency.value = ocean.detailFrequency;
+    uniforms.uDetailSpeed.value = ocean.detailSpeed;
+    uniforms.uNormalEpsilon.value = ocean.normalEpsilon;
+    uniforms.uInteractionBounds.value = interaction.bounds;
+    uniforms.uInteractionHeightmap.value = interactionStateRef.current.texture;
+    uniforms.uFresnelPower.value = ocean.fresnelPower;
+    uniforms.uFresnelStrength.value = ocean.fresnelStrength;
+    uniforms.uFoamStrength.value = ocean.foamStrength;
+    uniforms.uFoamThreshold.value = ocean.foamThreshold;
+    uniforms.uFoamSoftness.value = ocean.foamSoftness;
+    uniforms.uFoamWaveInfluence.value = ocean.foamWaveInfluence;
+
+    updateColorUniform(uniforms.uDeepColor, ocean.deepColor);
+    updateColorUniform(uniforms.uShallowColor, ocean.shallowColor);
+    updateColorUniform(uniforms.uHorizonColor, ocean.horizonColor);
+    updateColorUniform(uniforms.uFoamColor, ocean.foamColor);
+  }, [interaction.bounds, ocean, uniforms]);
+
   const advance = useCallback(
     (delta) => {
       const boundedDelta = Math.min(Math.max(delta, 0), MAX_RUNTIME_STEP);
@@ -353,36 +384,18 @@ export default function useOceanRuntime({ interaction, ocean }) {
         interactionTargetRef.current
       );
 
-      uniforms.uTime.value = timeRef.current;
-      uniforms.uSwellAmplitude.value = ocean.swellAmplitude;
-      uniforms.uSwellFrequency.value = ocean.swellFrequency;
-      uniforms.uSwellSpeed.value = ocean.swellSpeed;
-      uniforms.uChopAmplitude.value = ocean.chopAmplitude;
-      uniforms.uChopFrequency.value = ocean.chopFrequency;
-      uniforms.uChopSpeed.value = ocean.chopSpeed;
-      uniforms.uDetailAmplitude.value = ocean.detailAmplitude;
-      uniforms.uDetailFrequency.value = ocean.detailFrequency;
-      uniforms.uDetailSpeed.value = ocean.detailSpeed;
-      uniforms.uNormalEpsilon.value = ocean.normalEpsilon;
-      uniforms.uInteractionBounds.value = interaction.bounds;
-      uniforms.uInteractionHeightmap.value =
-        interactionStateRef.current.texture;
-      uniforms.uFresnelPower.value = ocean.fresnelPower;
-      uniforms.uFresnelStrength.value = ocean.fresnelStrength;
-      uniforms.uFoamStrength.value = ocean.foamStrength;
-      uniforms.uFoamThreshold.value = ocean.foamThreshold;
-      uniforms.uFoamSoftness.value = ocean.foamSoftness;
-      uniforms.uFoamWaveInfluence.value = ocean.foamWaveInfluence;
-
-      updateColorUniform(uniforms.uDeepColor, ocean.deepColor);
-      updateColorUniform(uniforms.uShallowColor, ocean.shallowColor);
-      updateColorUniform(uniforms.uHorizonColor, ocean.horizonColor);
-      updateColorUniform(uniforms.uFoamColor, ocean.foamColor);
+      syncUniforms();
     },
-    [interaction, ocean, uniforms]
+    [interaction, syncUniforms]
   );
 
   useFrame((_, delta) => {
+    if (stepMode === 'physics') {
+      syncUniforms();
+
+      return;
+    }
+
     advance(delta);
   });
 
@@ -396,6 +409,7 @@ export default function useOceanRuntime({ interaction, ocean }) {
     pointerTargetRef,
     sampleHeight,
     sampleNormal,
+    syncUniforms,
     setInteractionTarget,
     setPointerTarget,
     timeRef,

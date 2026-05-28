@@ -3,7 +3,7 @@ import { Sky as ThreeSky } from 'three/addons/objects/Sky.js';
 
 import React, { useEffect, useLayoutEffect, useMemo, useRef } from 'react';
 
-import { PerspectiveCamera } from '@react-three/drei';
+import { OrbitControls, PerspectiveCamera } from '@react-three/drei';
 import { useThree } from '@react-three/fiber';
 
 import HeightFog from './HeightFog';
@@ -96,6 +96,11 @@ export default function SceneEnvironment({ fog, scene: sceneConfig, sky }) {
         fov={sceneConfig.cameraFov}
         near={0.1}
         position={sceneConfig.cameraPosition}
+      />
+      <OrbitControls
+        makeDefault
+        target={sceneConfig.cameraTarget}
+        enableDamping
       />
       <ambientLight
         color={sceneConfig.ambientColor}

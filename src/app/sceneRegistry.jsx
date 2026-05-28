@@ -127,6 +127,9 @@ const FireTest = lazy(
   () => import('../components/scenes/ToolBox/FireTest/FireTest')
 );
 const HotBox = lazy(() => import('../components/scenes/ToolBox/HotBox/HotBox'));
+const CrtTestWebGL = lazy(
+  () => import('../components/scenes/ToolBox/WebGL/CRTTest/CRTTest')
+);
 const PenPlotter = lazy(
   () => import('../components/scenes/ToolBox/WebGL/PenPlotter/PenPlotter')
 );
@@ -151,6 +154,9 @@ const MultiplayerMadnessWebGL = lazy(
 const GhostBuster = lazy(
   () => import('../components/scenes/ToolBox/WebGPU/GhostBuster/GhostBuster')
 );
+const CrtTestWebGPU = lazy(
+  () => import('../components/scenes/ToolBox/WebGPU/CRTTest/CRTTest')
+);
 const CharacterControllerWebGPU = lazy(
   () =>
     import('../components/scenes/ToolBox/WebGPU/CharacterController/CharacterController')
@@ -160,12 +166,13 @@ const MultiplayerMadnessWebGPU = lazy(
     import('../components/scenes/ToolBox/WebGPU/MultiplayerMadness/MultiplayerMadness')
 );
 
-const CrtTest = lazy(
-  () => import('../components/scenes/WorkInProgress/WebGL/CRTTest/CrtTest')
-);
 const DumpsterFire = lazy(
   () =>
     import('../components/scenes/WorkInProgress/WebGL/DumpsterFire/DumpsterFire')
+);
+const RaisedByTV = lazy(
+  () =>
+    import('../components/scenes/WorkInProgress/WebGPU/RaisedByTV/RaisedByTV')
 );
 const ThatsAllFolksWebGPU = lazy(
   () =>
@@ -891,6 +898,15 @@ export const EYE_CANDIES = [
     Component: HotBox,
   },
   {
+    id: 'crtTest',
+    label: 'CRT Test',
+    channel: 'webgl',
+    area: 'toolbox',
+    route: 'crtTest',
+    icon: CrtTestIcon,
+    Component: CrtTestWebGL,
+  },
+  {
     id: 'penPlotter',
     label: 'Pen Plotter',
     channel: 'webgl',
@@ -990,6 +1006,15 @@ export const EYE_CANDIES = [
     Component: GhostBuster,
   },
   {
+    id: 'crtTest',
+    label: 'CRT Test',
+    channel: 'webgpu',
+    area: 'toolbox',
+    route: 'crtTest-webgpu',
+    icon: CrtTestIcon,
+    Component: CrtTestWebGPU,
+  },
+  {
     id: 'characterController',
     label: 'Character Controller',
     channel: 'webgpu',
@@ -1016,15 +1041,6 @@ export const EYE_CANDIES = [
     route: 'noScene',
     icon: NoSceneIcon,
     Component: NoScene,
-  },
-  {
-    id: 'crtTest',
-    label: 'CRT Test',
-    channel: 'webgl',
-    area: 'wip',
-    route: 'crtTest',
-    icon: CrtTestIcon,
-    Component: CrtTest,
   },
   {
     id: 'dumpsterFire',
@@ -1088,6 +1104,15 @@ export const EYE_CANDIES = [
     route: 'noScene-webgpu',
     icon: NoSceneIcon,
     Component: NoScene,
+  },
+  {
+    id: 'raisedByTv',
+    label: 'Raised By TV',
+    channel: 'webgpu',
+    area: 'wip',
+    route: 'raisedByTv',
+    icon: CrtTestIcon,
+    Component: RaisedByTV,
   },
   {
     id: 'allMyFriendsAreGhosts',

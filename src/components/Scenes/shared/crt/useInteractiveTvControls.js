@@ -1,6 +1,6 @@
 import { folder, useControls } from 'leva';
 
-import { asciiSkull } from '../../../../../utils/ascii';
+import { asciiSkull } from '../../../../utils/ascii';
 
 const fonts = [
   /* ----------------- CRT / UI ----------------- */ 'Arial Black',

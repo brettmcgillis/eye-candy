@@ -1,4 +1,6 @@
 /* eslint-disable no-unused-vars */
+
+/* eslint-disable no-console */
 import * as THREE from 'three';
 
 import { useEffect, useMemo, useRef, useState } from 'react';
@@ -7,7 +9,6 @@ import { useFrame } from '@react-three/fiber';
 
 import useStrudelTrack from '../../../../../../hooks/useStrudelTrack';
 import { audioFile } from '../../../../../../utils/appUtils';
-import useCableSubscription from './useCableSubscription';
 
 /* -------------------------------------------------
    useRcaCables — TV brain + A/V bus (with Strudel)
@@ -17,6 +18,7 @@ export default function useRcaCables({
   defaultChannelKey,
   surfChannels = false,
   initialMuted = false,
+  channels: providedChannels,
 } = {}) {
   /* ---------- audio core ---------- */
 
@@ -27,7 +29,7 @@ export default function useRcaCables({
   const currentSource = useRef(null);
   const currentGain = useRef(null);
 
-  // 🔑 reactive AudioContext so Strudel waits for it
+  // reactive AudioContext so Strudel waits for it
   const [audioCtx, setAudioCtx] = useState(null);
 
   /* ---------- tv state ---------- */
@@ -39,7 +41,7 @@ export default function useRcaCables({
 
   /* ---------- channels ---------- */
 
-  const { channels } = useCableSubscription();
+  const channels = providedChannels ?? [];
 
   const channelIndexMap = useMemo(() => {
     const map = {};
@@ -61,7 +63,7 @@ export default function useRcaCables({
   /* ---------- audio graph ---------- */
 
   useEffect(() => {
-    console.log('[rca] creating AudioContext…');
+    console.log('[rca] creating AudioContext...');
 
     const ctx = new AudioContext();
 
@@ -101,33 +103,29 @@ export default function useRcaCables({
 
   /* ---------- Strudel engine (owned by RCA) ---------- */
 
-  // ⚠️ Only instantiate once audioCtx exists
   const strudel = useStrudelTrack(audioCtx ? { audioContext: audioCtx } : null);
 
-  // Patch Strudel into the TV bus once ready
   useEffect(() => {
     if (!strudel?.ready || !strudel.output || !tvInput.current) return;
 
-    console.log('[rca] attempting to patch strudel…');
+    console.log('[rca] attempting to patch strudel...');
     console.log('[rca] RCA ctx:', ctxRef.current);
     console.log('[rca] Strudel ctx:', strudel.ctx || strudel.audioContext);
 
     if (strudel.ctx && ctxRef.current && strudel.ctx !== ctxRef.current) {
-      console.error('[rca] ❌ AUDIO CONTEXT MISMATCH — aborting patch');
+      console.error('[rca] AUDIO CONTEXT MISMATCH - aborting patch');
       return;
     }
 
     try {
-      // Remove default speaker routing
       strudel.output.disconnect();
     } catch (e) {
       console.warn('[rca] strudel output disconnect failed', e);
     }
 
-    // Strudel now becomes a physical TV input
     strudel.output.connect(tvInput.current);
 
-    console.log('[rca] ✅ strudel patched into tv bus');
+    console.log('[rca] strudel patched into tv bus');
   }, [strudel?.ready]);
 
   /* ---------- mute bus ---------- */
@@ -151,7 +149,7 @@ export default function useRcaCables({
     const ctx = ctxRef.current;
     if (!ctx || ctx.state === 'running') return;
 
-    console.log('[rca] unlocking audio…');
+    console.log('[rca] unlocking audio...');
     await ctx.resume();
     await strudel?.unlock?.();
     setUnlocked(true);
@@ -263,6 +261,7 @@ export default function useRcaCables({
   /* ---------- channels ---------- */
 
   function nextChannel() {
+    if (!channels.length) return;
     setChannelIndex((i) => (i + 1) % channels.length);
   }
 
@@ -283,6 +282,7 @@ export default function useRcaCables({
     if (surfTimer.current >= nextInterval.current) {
       surfTimer.current = 0;
       nextInterval.current = 0.6 + Math.random() * 0.9;
+      if (!channels.length) return;
       setChannelIndex((i) => (i + 1) % channels.length);
     }
   });
@@ -308,7 +308,6 @@ export default function useRcaCables({
     gain.gain.value = volume;
     src.buffer = buf;
 
-    // SFX bypass mute bus
     src.connect(gain).connect(ctx.destination);
     src.start();
 
@@ -342,7 +341,6 @@ export default function useRcaCables({
   /* ---------- public API ---------- */
 
   return {
-    /* state */
     channels,
     activeChannel,
     channelIndex,
@@ -352,7 +350,6 @@ export default function useRcaCables({
     muted,
     unlocked,
 
-    /* controls */
     powerOn,
     powerOff,
     togglePower,
@@ -368,13 +365,11 @@ export default function useRcaCables({
     surfOff,
     toggleSurfing,
 
-    /* audio */
     knobClick,
     dialClick,
     unlockAudio,
     attachToObject,
 
-    // optional: expose strudel for UI / debugging
     strudel,
   };
 }

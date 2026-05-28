@@ -9,7 +9,7 @@ import * as THREE from 'three';
 
 import React, { useEffect, useMemo, useState } from 'react';
 
-import useRcaCables from '../Hooks/useRcaCables';
+import useRcaCables from '../hooks/useRcaCables';
 import InstancedTvInteractive from './InstancedTvInteractive';
 import { TvInstances } from './TvInstances';
 
@@ -19,6 +19,7 @@ export default function InteractiveTvController({
   defaultChannel = 'snow',
   isSurfingChannels = false,
   isOnMute = false,
+  channels: channelDefinitions,
   ...props
 }) {
   /* ---------- shared tv materials ---------- */
@@ -48,41 +49,30 @@ export default function InteractiveTvController({
 
   const {
     /* state */
-    channels,
     activeChannel,
     channelIndex,
     channelKey,
     power,
     surfing,
     muted,
-    unlocked,
 
     /* controls */
-    powerOn,
-    powerOff,
     togglePower,
-
-    muteOn,
-    muteOff,
     toggleMute,
 
     nextChannel,
     setChannelByKey,
-
-    surfOn,
-    surfOff,
     toggleSurfing,
 
     /* audio */
     knobClick,
     dialClick,
-    unlockAudio,
-    attachToObject,
   } = useRcaCables({
     initialPower: isTurnedOn,
     defaultChannelKey: defaultChannel,
     surfChannels: isSurfingChannels,
     initialMuted: isOnMute,
+    channels: channelDefinitions,
   });
 
   /* ---------- tv state ---------- */
@@ -140,9 +130,7 @@ export default function InteractiveTvController({
     toggleMute();
   }
 
-  function handleKnob02Click() {
-    console.log('knob 2 clicked (reserved)');
-  }
+  function handleKnob02Click() {}
 
   /* ---------- render ---------- */
 

@@ -9,6 +9,7 @@ import useSceneControls from './hooks/useSceneControls';
 export default function Aisle9() {
   const config = useSceneControls();
   const isStoreWarp = config.presentationMode === 'storeWarp';
+  const { cameraPosition, cameraTarget } = config;
 
   return (
     <>
@@ -17,7 +18,7 @@ export default function Aisle9() {
         fov={config.cameraFov}
         near={config.cameraNear}
         far={config.cameraFar}
-        position={[config.cameraX, config.cameraY, config.cameraZ]}
+        position={[cameraPosition.x, cameraPosition.y, cameraPosition.z]}
       />
       <OrbitControls
         makeDefault
@@ -26,11 +27,7 @@ export default function Aisle9() {
         rotateSpeed={config.cameraRotateSpeed}
         minDistance={config.cameraMinDistance}
         maxDistance={config.cameraMaxDistance}
-        target={[
-          config.cameraTargetX,
-          config.cameraTargetY,
-          config.cameraTargetZ,
-        ]}
+        target={[cameraTarget.x, cameraTarget.y, cameraTarget.z]}
       />
 
       <color attach="background" args={[config.starBackgroundColor]} />

@@ -18,21 +18,17 @@ const PRESENTATION_MODE_OPTIONS = {
   'Source Background': 'backgroundField',
 };
 
-const CAMERA_KEYS = [
+const CAMERA_SCALAR_KEYS = [
   'cameraFov',
   'cameraNear',
   'cameraFar',
-  'cameraX',
-  'cameraY',
-  'cameraZ',
-  'cameraTargetX',
-  'cameraTargetY',
-  'cameraTargetZ',
   'cameraMinDistance',
   'cameraMaxDistance',
   'cameraRotateSpeed',
   'cameraDampingFactor',
 ];
+
+const CAMERA_KEYS = [...CAMERA_SCALAR_KEYS, 'cameraPosition', 'cameraTarget'];
 
 const BLACK_HOLE_KEYS = [
   'presentationMode',
@@ -52,6 +48,8 @@ const DISK_GEOMETRY_KEYS = ['diskInnerRadius', 'diskOuterRadius'];
 
 const DISK_APPEARANCE_KEYS = [
   'diskBrightness',
+  'diskOpacity',
+  'diskOpacityFloor',
   'diskTemperature',
   'temperatureFalloff',
   'diskEdgeSoftnessInner',
@@ -126,12 +124,8 @@ const CONTROL_SCHEMA = {
   cameraFov: { label: 'FOV', min: 20, max: 100, step: 1 },
   cameraNear: { label: 'Near', min: 0.01, max: 10, step: 0.01 },
   cameraFar: { label: 'Far', min: 50, max: 5000, step: 10 },
-  cameraX: { label: 'X', min: -50, max: 50, step: 0.1 },
-  cameraY: { label: 'Y', min: -50, max: 50, step: 0.1 },
-  cameraZ: { label: 'Z', min: 1, max: 200, step: 0.1 },
-  cameraTargetX: { label: 'Target X', min: -20, max: 20, step: 0.1 },
-  cameraTargetY: { label: 'Target Y', min: -20, max: 20, step: 0.1 },
-  cameraTargetZ: { label: 'Target Z', min: -20, max: 20, step: 0.1 },
+  cameraPosition: { label: 'Position', min: -50, max: 200, step: 0.1 },
+  cameraTarget: { label: 'Target', min: -20, max: 20, step: 0.1 },
   cameraMinDistance: {
     label: 'Min Distance',
     min: 1,
@@ -195,6 +189,8 @@ const CONTROL_SCHEMA = {
   diskInnerRadius: { label: 'Inner Radius', min: 2, max: 5, step: 0.1 },
   diskOuterRadius: { label: 'Outer Radius', min: 6, max: 20, step: 0.5 },
   diskBrightness: { label: 'Brightness', min: 0.5, max: 8, step: 0.1 },
+  diskOpacity: { label: 'Opacity', min: 0, max: 2, step: 0.01 },
+  diskOpacityFloor: { label: 'Opacity Floor', min: 0, max: 1, step: 0.01 },
   diskTemperature: { label: 'Peak Temp', min: 1, max: 50, step: 1 },
   temperatureFalloff: {
     label: 'Temp Falloff',
@@ -214,9 +210,9 @@ const CONTROL_SCHEMA = {
     max: 0.5,
     step: 0.01,
   },
-  diskInnerColor: { label: 'Inner Tint' },
-  diskMidColor: { label: 'Mid Tint' },
-  diskOuterColor: { label: 'Outer Tint' },
+  diskInnerColor: { label: 'Inner Color' },
+  diskMidColor: { label: 'Mid Color' },
+  diskOuterColor: { label: 'Outer Color' },
   diskTintStrength: {
     label: 'Tint Strength',
     min: 0,
@@ -365,21 +361,26 @@ export default function useSceneControls() {
     presets: PRESETS,
   });
 
-  const preset = useMemo(
+  const presetSnapshot = useMemo(
     () => PRESETS[initialPreset] || PRESETS[DEFAULT_PRESET],
     [initialPreset]
+  );
+
+  const presetControls = useMemo(
+    () => getPresetControls({ presetSnapshot }),
+    [presetSnapshot]
   );
 
   const [controls, setControls] = useControls(
     'Aisle 9',
     () => ({
       Presets: presetsFolder,
-      Camera: folder(createFolderControls(CAMERA_KEYS, preset), C),
+      Camera: folder(createFolderControls(CAMERA_KEYS, presetControls), C),
       BlackHole: folder(
         {
-          ...createFolderControls(BLACK_HOLE_KEYS, preset),
+          ...createFolderControls(BLACK_HOLE_KEYS, presetControls),
           Transform: folder(
-            createFolderControls(BLACK_HOLE_TRANSFORM_KEYS, preset),
+            createFolderControls(BLACK_HOLE_TRANSFORM_KEYS, presetControls),
             C
           ),
         },
@@ -387,35 +388,47 @@ export default function useSceneControls() {
       ),
       Disk: folder(
         {
-          Geometry: folder(createFolderControls(DISK_GEOMETRY_KEYS, preset), C),
-          Appearance: folder(
-            createFolderControls(DISK_APPEARANCE_KEYS, preset),
+          Geometry: folder(
+            createFolderControls(DISK_GEOMETRY_KEYS, presetControls),
             C
           ),
-          Turbulence: folder(createFolderControls(TURBULENCE_KEYS, preset), C),
+          Appearance: folder(
+            createFolderControls(DISK_APPEARANCE_KEYS, presetControls),
+            C
+          ),
+          Turbulence: folder(
+            createFolderControls(TURBULENCE_KEYS, presetControls),
+            C
+          ),
         },
         C
       ),
-      Stars: folder(createFolderControls(STARS_KEYS, preset), C),
+      Stars: folder(createFolderControls(STARS_KEYS, presetControls), C),
       Nebula: folder(
         {
-          Layer1: folder(createFolderControls(NEBULA_LAYER_1_KEYS, preset), C),
-          Layer2: folder(createFolderControls(NEBULA_LAYER_2_KEYS, preset), C),
+          Layer1: folder(
+            createFolderControls(NEBULA_LAYER_1_KEYS, presetControls),
+            C
+          ),
+          Layer2: folder(
+            createFolderControls(NEBULA_LAYER_2_KEYS, presetControls),
+            C
+          ),
         },
         C
       ),
       Store: folder(
         {
-          ...createFolderControls(STORE_KEYS, preset),
+          ...createFolderControls(STORE_KEYS, presetControls),
           Transform: folder(
-            createFolderControls(STORE_TRANSFORM_KEYS, preset),
+            createFolderControls(STORE_TRANSFORM_KEYS, presetControls),
             C
           ),
         },
         C
       ),
-      Bloom: folder(createFolderControls(BLOOM_KEYS, preset), C),
-      Legacy: folder(createLegacyControls(preset), C),
+      Bloom: folder(createFolderControls(BLOOM_KEYS, presetControls), C),
+      Legacy: folder(createLegacyControls(presetControls), C),
     }),
     { collapsed: true }
   );

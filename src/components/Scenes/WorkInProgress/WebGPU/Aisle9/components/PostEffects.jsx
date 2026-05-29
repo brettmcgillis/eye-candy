@@ -255,7 +255,7 @@ const PostEffects = memo(function PostEffects({ config }) {
             );
             const dimmedStore = warpedStore.mul(
               float(1.0).sub(
-                visibleLensMask.mul(0.08).add(blackHoleAlpha.mul(0.18))
+                visibleLensMask.mul(0.08).add(blackHoleAlpha.mul(0.45))
               )
             );
             const withBlackHole = dimmedStore

@@ -13,6 +13,7 @@ import {
   floor,
   fract,
   length,
+  max,
   mix,
   normalize,
   pow,
@@ -345,12 +346,14 @@ const createAccretionDiskColor = (uniforms) =>
       clamp(normR.sub(0.5).mul(2), 0, 1)
     );
     const diskTint = mix(innerToMidTint, midToOuterTint, step(0.5, normR));
-    const tintMix = mix(
-      vec3(1, 1, 1),
-      diskTint,
-      clamp(uniforms.diskTintStrength, 0, 1)
+    const tintStrength = clamp(uniforms.diskTintStrength, 0, 1);
+    const diskLuminance = clamp(
+      dot(diskColor, vec3(0.2126, 0.7152, 0.0722)),
+      float(0.0001),
+      float(10)
     );
-    diskColor.mulAssign(tintMix);
+    const tintedDiskColor = diskTint.mul(diskLuminance);
+    diskColor.assign(mix(diskColor, tintedDiskColor, tintStrength));
 
     const rotationSign = sign(uniforms.diskRotationSpeed);
     const velocityDir = vec3(
@@ -414,7 +417,15 @@ const createAccretionDiskColor = (uniforms) =>
       pow(clamp(turbulence, float(0), float(1)), uniforms.turbulenceSharpness)
     );
 
-    const finalOpacity = ringOpacity.mul(edgeFalloff);
+    const texturedOpacity = ringOpacity
+      .mul(edgeFalloff)
+      .mul(uniforms.diskOpacity);
+    const baseOpacity = edgeFalloff.mul(uniforms.diskOpacityFloor);
+    const finalOpacity = clamp(
+      max(texturedOpacity, baseOpacity),
+      float(0),
+      float(1)
+    );
     const finalColor = diskColor.mul(uniforms.diskBrightness);
     return vec4(finalColor, finalOpacity);
   });

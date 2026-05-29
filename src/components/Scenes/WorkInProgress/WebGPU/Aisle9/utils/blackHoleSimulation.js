@@ -11,6 +11,8 @@ function createUniforms(config, size) {
     diskTemperature: uniform(config.diskTemperature ?? 10),
     temperatureFalloff: uniform(config.temperatureFalloff ?? 0.75),
     diskBrightness: uniform(config.diskBrightness ?? 2),
+    diskOpacity: uniform(config.diskOpacity ?? 1),
+    diskOpacityFloor: uniform(config.diskOpacityFloor ?? 0),
     diskInnerColor: uniform(
       new THREE.Color(config.diskInnerColor ?? '#ffffff')
     ),
@@ -18,7 +20,7 @@ function createUniforms(config, size) {
     diskOuterColor: uniform(
       new THREE.Color(config.diskOuterColor ?? '#ffffff')
     ),
-    diskTintStrength: uniform(config.diskTintStrength ?? 1),
+    diskTintStrength: uniform(config.diskTintStrength ?? 0),
     diskRotationSpeed: uniform(config.diskRotationSpeed ?? 0.3),
     turbulenceScale: uniform(config.turbulenceScale ?? 1),
     turbulenceStretch: uniform(config.turbulenceStretch ?? 5),
@@ -107,6 +109,12 @@ export class BlackHoleSimulation {
     }
     if (config.diskBrightness !== undefined) {
       u.diskBrightness.value = config.diskBrightness;
+    }
+    if (config.diskOpacity !== undefined) {
+      u.diskOpacity.value = config.diskOpacity;
+    }
+    if (config.diskOpacityFloor !== undefined) {
+      u.diskOpacityFloor.value = config.diskOpacityFloor;
     }
     if (config.diskInnerColor !== undefined) {
       u.diskInnerColor.value.set(config.diskInnerColor);

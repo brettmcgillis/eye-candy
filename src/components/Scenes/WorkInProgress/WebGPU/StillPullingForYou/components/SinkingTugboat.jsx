@@ -7,16 +7,20 @@ function SinkingTugboat({
   position,
   rotation,
   scale,
+  flagAnchorRef,
   lightConfig,
+  showUpperDeckFlag = true,
   smokeAnchorRef,
 }) {
   const headlightMaterialRef = useRef();
   return (
     <group position={position} rotation={rotation} scale={scale}>
       <TugBoat
+        flagAnchorRef={flagAnchorRef}
         headlightMaterialRef={headlightMaterialRef}
         headlightColor={lightConfig.headlightColor}
         headlightEmissiveIntensity={lightConfig.headlightIntensity}
+        showUpperDeckFlag={showUpperDeckFlag}
         smokeAnchorRef={smokeAnchorRef}
       />
       <BoatLights

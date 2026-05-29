@@ -8,6 +8,36 @@ const DEFAULT_CURSOR_ATTRACTOR = {
   cursorAttractorRadius: 3,
 };
 
+const DEFAULT_FLAG_CLOTH = {
+  flagVisible: true,
+  flagWidthScale: 1.0,
+  flagHeightScale: 1.0,
+  flagReverseWidth: false,
+  flagSegmentsX: 16,
+  flagSegmentsY: 24,
+  flagColor: '#7a2e22',
+  flagOpacity: 0.95,
+  flagRoughness: 0.88,
+  flagMetalness: 0,
+  flagGravity: 0.00009,
+  flagWind: 0.9,
+  flagWindDirX: 1,
+  flagWindDirZ: 0.15,
+  flagStiffness: 0.24,
+  flagDampening: 0.985,
+  flagMaxVelocity: 0.018,
+  flagCursorCollider: true,
+  flagCursorRadius: 0.12,
+  flagPaused: false,
+  flagWaterContactEnabled: false,
+  flagWaterContactRadius: 0.055,
+  flagWaterContactPoints: 4,
+  flagWaterContactSpanStart: 0.35,
+  flagWaterContactSpanEnd: 0.95,
+  flagWaterContactLift: 0.012,
+  flagFreezeAfterMs: 0,
+};
+
 const STILL_PULLING = {
   // Scene
   backgroundColor: '#00101f',
@@ -52,6 +82,18 @@ const STILL_PULLING = {
   sparklesScale: 3,
   sparklesColor: '#ffedb1',
   sparklesIntensity: 3,
+
+  // Flag cloth — long enough to drag into the water
+  ...DEFAULT_FLAG_CLOTH,
+  flagWidthScale: 1.0,
+  flagHeightScale: 1.3,
+  flagWind: 0.18,
+  flagWindDirX: 0.25,
+  flagWindDirZ: -0.6,
+  flagStiffness: 0.2,
+  flagDampening: 0.976,
+  flagGravity: 0.00011,
+  flagWaterContactEnabled: true,
 
   // Smoke — visible
   smokeVisible: true,
@@ -142,6 +184,17 @@ const ROUGH_WATERS = {
   sparklesColor: '#ffedb1',
   sparklesIntensity: 3,
 
+  // Flag cloth — active, wind-driven motion
+  ...DEFAULT_FLAG_CLOTH,
+  flagWidthScale: 1.0,
+  flagHeightScale: 1.05,
+  flagWind: 4.2,
+  flagWindDirX: 1,
+  flagWindDirZ: 0.35,
+  flagStiffness: 0.38,
+  flagDampening: 0.982,
+  flagGravity: 0.00008,
+
   // Smoke — visible, with the tail pinned behind the boat
   smokeVisible: true,
   editSplines: false,
@@ -230,6 +283,17 @@ const SUNK = {
   sparklesScale: 3,
   sparklesColor: '#ffedb1',
   sparklesIntensity: 3,
+
+  // Flag cloth — settles, then freezes still
+  ...DEFAULT_FLAG_CLOTH,
+  flagWidthScale: 1.0,
+  flagHeightScale: 1.1,
+  flagWind: 0,
+  flagWindDirX: 0,
+  flagWindDirZ: 0,
+  flagStiffness: 0.22,
+  flagDampening: 0.94,
+  flagFreezeAfterMs: 1200,
 
   // Smoke — hidden
   smokeVisible: false,

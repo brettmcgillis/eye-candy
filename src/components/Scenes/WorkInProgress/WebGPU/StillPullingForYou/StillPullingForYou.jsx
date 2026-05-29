@@ -16,6 +16,7 @@ import NurbsWaterColumn from '../../../../elements/water/NurbsWaterColumn';
 import useNurbsWaterInteractionRuntime from '../../../../elements/water/waterInteraction';
 import BloomFX from '../../../../postprocessing/webGPU/bloom/Bloom';
 import CursorAttractor from './components/CursorAttractor';
+import FlagCloth from './components/FlagCloth';
 import FloatingTugboat from './components/FloatingTugboat';
 import Seafloor from './components/Seafloor';
 import SinkingTugboat from './components/SinkingTugboat';
@@ -73,7 +74,10 @@ export default function StillPullingForYouGPU() {
     toRuntimeSplinePoints(DEFAULT_PRESET)
   );
   const attractorsRef = useRef([]);
+  const flagAnchorRef = useRef();
+  const flagClothRef = useRef();
   const smokeAnchorRef = useRef();
+  const [flagPaused, setFlagPaused] = useState(false);
 
   const [initialSplineConfigs] = useState(() =>
     toRuntimeSplineConfigs(DEFAULT_PRESET)
@@ -118,6 +122,7 @@ export default function StillPullingForYouGPU() {
   );
   const isOrbit = config.cameraMode === 'Orbit';
   const isFloating = config.boatMode === 'Floating';
+  const showFlagCloth = config.boatVisible && config.flagVisible;
   const waterInteraction = useNurbsWaterInteractionRuntime({
     depth: config.waterDepth,
     enabled: config.interactionEnabled,
@@ -162,6 +167,49 @@ export default function StillPullingForYouGPU() {
     sparklesIntensity: config.sparklesIntensity,
   };
 
+  const flagMountVersion = useMemo(
+    () =>
+      [
+        config.preset,
+        config.boatMode,
+        config.boatScale,
+        config.flagReverseWidth ? 'rev' : 'fwd',
+      ].join('-'),
+    [config.boatMode, config.boatScale, config.flagReverseWidth, config.preset]
+  );
+
+  useEffect(() => {
+    setFlagPaused(false);
+    if (!showFlagCloth) return undefined;
+
+    const frameId = window.requestAnimationFrame(() => {
+      flagClothRef.current?.resetSim();
+      if (!config.flagFreezeAfterMs) {
+        setFlagPaused(config.flagPaused);
+      }
+    });
+
+    if (config.flagFreezeAfterMs > 0) {
+      const timeoutId = window.setTimeout(() => {
+        setFlagPaused(true);
+      }, config.flagFreezeAfterMs);
+
+      return () => {
+        window.cancelAnimationFrame(frameId);
+        window.clearTimeout(timeoutId);
+      };
+    }
+
+    return () => {
+      window.cancelAnimationFrame(frameId);
+    };
+  }, [
+    config.flagFreezeAfterMs,
+    config.flagPaused,
+    flagMountVersion,
+    showFlagCloth,
+  ]);
+
   return (
     <>
       {/* Background */}
@@ -202,6 +250,7 @@ export default function StillPullingForYouGPU() {
       {/* Tugboat */}
       {config.boatVisible && isFloating && (
         <FloatingTugboat
+          flagAnchorRef={flagAnchorRef}
           position={boatPosition}
           rotation={boatRotation}
           scale={config.boatScale}
@@ -212,16 +261,64 @@ export default function StillPullingForYouGPU() {
           interactionRuntime={waterInteraction}
           tiltDamping={config.tiltDamping}
           lightConfig={lightConfig}
+          showUpperDeckFlag={!showFlagCloth}
           smokeAnchorRef={smokeAnchorRef}
         />
       )}
       {config.boatVisible && !isFloating && (
         <SinkingTugboat
+          flagAnchorRef={flagAnchorRef}
           position={boatPosition}
           rotation={boatRotation}
           scale={config.boatScale}
           lightConfig={lightConfig}
+          showUpperDeckFlag={!showFlagCloth}
           smokeAnchorRef={smokeAnchorRef}
+        />
+      )}
+
+      {showFlagCloth && (
+        <FlagCloth
+          ref={flagClothRef}
+          key={[
+            config.preset,
+            config.boatMode,
+            config.flagSegmentsX,
+            config.flagSegmentsY,
+            config.flagWidthScale,
+            config.flagHeightScale,
+          ].join('-')}
+          flagAnchorRef={flagAnchorRef}
+          mountVersion={flagMountVersion}
+          widthScale={config.flagWidthScale}
+          heightScale={config.flagHeightScale}
+          reverseWidth={config.flagReverseWidth}
+          segmentsX={config.flagSegmentsX}
+          segmentsY={config.flagSegmentsY}
+          color={config.flagColor}
+          roughness={config.flagRoughness}
+          metalness={config.flagMetalness}
+          opacity={config.flagOpacity}
+          gravity={config.flagGravity}
+          wind={config.flagWind}
+          windDirX={config.flagWindDirX}
+          windDirZ={config.flagWindDirZ}
+          stiffness={config.flagStiffness}
+          dampening={config.flagDampening}
+          maxVelocity={config.flagMaxVelocity}
+          cursorCollider={config.flagCursorCollider}
+          cursorRadius={config.flagCursorRadius}
+          paused={flagPaused}
+          waterContactEnabled={config.flagWaterContactEnabled}
+          waterContactRadius={config.flagWaterContactRadius}
+          waterContactPoints={config.flagWaterContactPoints}
+          waterContactSpanStart={config.flagWaterContactSpanStart}
+          waterContactSpanEnd={config.flagWaterContactSpanEnd}
+          waterContactLift={config.flagWaterContactLift}
+          interactionRuntime={waterInteraction}
+          waveHeight={config.waveHeight}
+          waveChoppiness={config.waveChoppiness}
+          waveSpeed={config.waveSpeed}
         />
       )}
 

@@ -82,7 +82,7 @@ const ClothMesh = forwardRef(function ClothMesh(
     // Cursor collider (slot 0) — follows pointer on the cloth plane
     cursorCollider = true,
     cursorRadius = 0.12,
-    // Scene-driven colliders (slots 1-3) — array of {position, radius}
+    // Scene-driven colliders (slots 1+) — array of {position, radius}
     colliders = [],
     // Collision margin — enlarges detection volume for small spheres
     collisionMargin = 0.02,
@@ -545,7 +545,7 @@ const ClothMesh = forwardRef(function ClothMesh(
     if (!gravityManaged) sim.gravityU.value = gravity;
     sim.collisionMarginU.value = collisionMargin;
 
-    // Push scene-driven colliders into slots 1-3
+    // Push scene-driven colliders into external slots after the cursor slot
     for (let c = 1; c < sim.NUM_COLLIDERS; c += 1) {
       const ext = colliders[c - 1];
       if (ext && ext.enabled !== false) {

@@ -26,6 +26,7 @@ function FloatingTugboat({
   position,
   rotation,
   scale,
+  flagAnchorRef,
   floatDraft,
   waveHeight,
   waveChoppiness,
@@ -34,6 +35,7 @@ function FloatingTugboat({
   tiltDamping = 0.3,
   lightConfig,
   boatRef,
+  showUpperDeckFlag = true,
   smokeAnchorRef,
 }) {
   const waveRef = useRef();
@@ -139,9 +141,11 @@ function FloatingTugboat({
     <group position={[position[0], 0, position[2]]}>
       <group ref={setWaveGroupRef} scale={scale}>
         <TugBoat
+          flagAnchorRef={flagAnchorRef}
           headlightMaterialRef={headlightMaterialRef}
           headlightColor={lightConfig.headlightColor}
           headlightEmissiveIntensity={lightConfig.headlightIntensity}
+          showUpperDeckFlag={showUpperDeckFlag}
           smokeAnchorRef={smokeAnchorRef}
         />
         <BoatLights

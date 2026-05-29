@@ -8,6 +8,8 @@ export default function TugBoat({
   headlightMaterialRef,
   headlightColor = '#ffe8b0',
   headlightEmissiveIntensity = 3,
+  flagAnchorRef,
+  showUpperDeckFlag = true,
   smokeAnchorRef,
   ...props
 }) {
@@ -64,8 +66,10 @@ export default function TugBoat({
       </mesh>
       <mesh
         name="UpperDeckFlag"
+        ref={flagAnchorRef}
         castShadow
         receiveShadow
+        visible={showUpperDeckFlag}
         geometry={nodes.UpperDeckFlag.geometry}
         material={materials.Deck_Mat}
         rotation={[Math.PI / 2, 0, 0]}

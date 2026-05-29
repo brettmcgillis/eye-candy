@@ -297,10 +297,10 @@ export default function createClothSimulation({
   const gravityU = uniform(gravity);
   const gravityDirU = uniform(new THREE.Vector3(0, -1, 0));
 
-  // 6-slot sphere collider system — fixed-size arrays for GPU unrolling.
+  // 12-slot sphere collider system — fixed-size arrays for GPU unrolling.
   // Slot 0 = cursor (managed by ClothMesh pointer logic).
-  // Slots 1-5 = scene-controlled via `colliders` prop.
-  const NUM_COLLIDERS = 6;
+  // Slots 1-11 = scene-controlled via `colliders` prop.
+  const NUM_COLLIDERS = 12;
   const colliderPosU = [];
   const colliderEnabledU = [];
   const colliderRadiusU = [];

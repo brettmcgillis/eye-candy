@@ -183,6 +183,197 @@ export default function useSceneControls(
             },
             { collapsed: true }
           ),
+          'Flag Cloth': folder(
+            {
+              flagVisible: {
+                label: 'Visible',
+                value: D.flagVisible,
+              },
+              flagReverseWidth: {
+                label: 'Reverse Width',
+                value: D.flagReverseWidth,
+              },
+              flagWidthScale: {
+                label: 'Width Scale',
+                value: D.flagWidthScale,
+                min: 0.5,
+                max: 4,
+                step: 0.05,
+              },
+              flagHeightScale: {
+                label: 'Height Scale',
+                value: D.flagHeightScale,
+                min: 0.5,
+                max: 8,
+                step: 0.05,
+              },
+              flagSegmentsX: {
+                label: 'Segments X',
+                value: D.flagSegmentsX,
+                min: 6,
+                max: 32,
+                step: 1,
+              },
+              flagSegmentsY: {
+                label: 'Segments Y',
+                value: D.flagSegmentsY,
+                min: 8,
+                max: 40,
+                step: 1,
+              },
+              Appearance: folder(
+                {
+                  flagColor: {
+                    label: 'Color',
+                    value: D.flagColor,
+                  },
+                  flagOpacity: {
+                    label: 'Opacity',
+                    value: D.flagOpacity,
+                    min: 0.1,
+                    max: 1,
+                    step: 0.01,
+                  },
+                  flagRoughness: {
+                    label: 'Roughness',
+                    value: D.flagRoughness,
+                    min: 0,
+                    max: 1,
+                    step: 0.01,
+                  },
+                  flagMetalness: {
+                    label: 'Metalness',
+                    value: D.flagMetalness,
+                    min: 0,
+                    max: 1,
+                    step: 0.01,
+                  },
+                },
+                { collapsed: true }
+              ),
+              Physics: folder(
+                {
+                  flagGravity: {
+                    label: 'Gravity',
+                    value: D.flagGravity,
+                    min: 0,
+                    max: 0.001,
+                    step: 0.00001,
+                  },
+                  flagWind: {
+                    label: 'Wind',
+                    value: D.flagWind,
+                    min: 0,
+                    max: 8,
+                    step: 0.05,
+                  },
+                  flagWindDirX: {
+                    label: 'Wind X',
+                    value: D.flagWindDirX,
+                    min: -1,
+                    max: 1,
+                    step: 0.05,
+                  },
+                  flagWindDirZ: {
+                    label: 'Wind Z',
+                    value: D.flagWindDirZ,
+                    min: -1,
+                    max: 1,
+                    step: 0.05,
+                  },
+                  flagStiffness: {
+                    label: 'Stiffness',
+                    value: D.flagStiffness,
+                    min: 0,
+                    max: 1,
+                    step: 0.01,
+                  },
+                  flagDampening: {
+                    label: 'Dampening',
+                    value: D.flagDampening,
+                    min: 0.85,
+                    max: 1,
+                    step: 0.001,
+                  },
+                  flagMaxVelocity: {
+                    label: 'Max Velocity',
+                    value: D.flagMaxVelocity,
+                    min: 0.001,
+                    max: 0.05,
+                    step: 0.001,
+                  },
+                  flagCursorCollider: {
+                    label: 'Cursor Collider',
+                    value: D.flagCursorCollider,
+                  },
+                  flagCursorRadius: {
+                    label: 'Cursor Radius',
+                    value: D.flagCursorRadius,
+                    min: 0.02,
+                    max: 0.4,
+                    step: 0.01,
+                  },
+                  flagPaused: {
+                    label: 'Paused',
+                    value: D.flagPaused,
+                  },
+                  flagFreezeAfterMs: {
+                    label: 'Freeze After Ms',
+                    value: D.flagFreezeAfterMs,
+                    min: 0,
+                    max: 4000,
+                    step: 50,
+                  },
+                },
+                { collapsed: true }
+              ),
+              Water: folder(
+                {
+                  flagWaterContactEnabled: {
+                    label: 'Contact Enabled',
+                    value: D.flagWaterContactEnabled,
+                  },
+                  flagWaterContactRadius: {
+                    label: 'Radius',
+                    value: D.flagWaterContactRadius,
+                    min: 0.01,
+                    max: 0.2,
+                    step: 0.005,
+                  },
+                  flagWaterContactPoints: {
+                    label: 'Points',
+                    value: D.flagWaterContactPoints,
+                    min: 1,
+                    max: 5,
+                    step: 1,
+                  },
+                  flagWaterContactSpanStart: {
+                    label: 'Span Start',
+                    value: D.flagWaterContactSpanStart,
+                    min: 0,
+                    max: 1,
+                    step: 0.01,
+                  },
+                  flagWaterContactSpanEnd: {
+                    label: 'Span End',
+                    value: D.flagWaterContactSpanEnd,
+                    min: 0,
+                    max: 1,
+                    step: 0.01,
+                  },
+                  flagWaterContactLift: {
+                    label: 'Lift',
+                    value: D.flagWaterContactLift,
+                    min: 0,
+                    max: 0.1,
+                    step: 0.001,
+                  },
+                },
+                { collapsed: true }
+              ),
+            },
+            { collapsed: true }
+          ),
           Lights: folder(
             {
               lightDebug: {

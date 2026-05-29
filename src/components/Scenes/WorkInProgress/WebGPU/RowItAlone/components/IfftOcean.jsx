@@ -18,6 +18,7 @@ export default function IfftOcean({ config }) {
   const runtimeRef = useRef(null);
   const accumulatorRef = useRef(0);
   const quality = config?.performance?.quality;
+  const pauseWater = config?.performance?.pauseWater ?? false;
 
   useEffect(() => {
     if (!gl?.isWebGPURenderer) {
@@ -59,10 +60,17 @@ export default function IfftOcean({ config }) {
       return;
     }
 
-    const fixedStepMs = getWaveStepMs(config);
-
     runtime.waveGenerator.applyWaveSettings(config.waveSettings);
     runtime.oceanManager.applyConfig(config);
+
+    if (pauseWater) {
+      accumulatorRef.current = 0;
+      runtime.oceanManager.update(state.camera);
+
+      return;
+    }
+
+    const fixedStepMs = getWaveStepMs(config);
 
     accumulatorRef.current = Math.min(
       accumulatorRef.current + delta * 1000,

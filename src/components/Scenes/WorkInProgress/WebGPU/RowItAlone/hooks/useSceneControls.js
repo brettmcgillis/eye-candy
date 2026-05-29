@@ -103,6 +103,7 @@ export default function useSceneControls() {
           options: Object.keys(WAVE_QUALITY_PRESETS),
           value: DEFAULT_WAVE_QUALITY,
         },
+        pauseWater: { label: 'Pause water', value: false },
         waveUpdateHz: { value: 30, min: 5, max: 60, step: 1 },
       },
       { collapsed: true }
@@ -138,6 +139,7 @@ export default function useSceneControls() {
       up: [0, 1, 0],
     },
     performance: {
+      pauseWater: controls.pauseWater,
       quality: controls.quality,
       waveUpdateHz: controls.waveUpdateHz,
     },

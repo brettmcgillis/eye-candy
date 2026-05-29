@@ -1,5 +1,6 @@
 import React, { lazy } from 'react';
 import { BiSolidInvader } from 'react-icons/bi';
+import { BsLightningFill } from 'react-icons/bs';
 import {
   FaBomb,
   FaBone,
@@ -44,6 +45,7 @@ import {
   PiBirdDuotone,
   PiDiamondsFourFill,
   PiDiamondsFourThin,
+  PiHairDryerDuotone,
   PiSkullDuotone,
   PiVirusDuotone,
 } from 'react-icons/pi';
@@ -97,6 +99,9 @@ const ExplosionTest = lazy(
 const FluidTest = lazy(
   () => import('../components/scenes/TestLab/WebGL/FluidTest/FluidTest')
 );
+const FurLabWebGL = lazy(
+  () => import('../components/scenes/TestLab/WebGL/FurLab/FurLab')
+);
 const HandStuff = lazy(
   () => import('../components/scenes/TestLab/WebGL/HandStuff/HandStuff')
 );
@@ -112,6 +117,9 @@ const PixelHater = lazy(
 const StrudelDoodle = lazy(
   () => import('../components/scenes/TestLab/WebGL/StrudelDoodle/StrudelDoodle')
 );
+const LightningLabWebGL = lazy(
+  () => import('../components/scenes/TestLab/WebGL/LightningLab/LightningLab')
+);
 const MobilePhysicsTest = lazy(
   () =>
     import('../components/scenes/TestLab/WebGPU/MobilePhysicsTest/MobilePhysicsTest')
@@ -121,6 +129,12 @@ const NetworkTest = lazy(
 );
 const TheLoom = lazy(
   () => import('../components/scenes/TestLab/WebGPU/TheLoom/TheLoom')
+);
+const LightningLabWebGPU = lazy(
+  () => import('../components/scenes/TestLab/WebGPU/LightningLab/LightningLab')
+);
+const FurLabWebGPU = lazy(
+  () => import('../components/scenes/TestLab/WebGPU/FurLab/FurLab')
 );
 
 const FireTest = lazy(
@@ -349,6 +363,10 @@ function FluidTestIcon() {
   return <ImLifebuoy color="#ef4444" />;
 }
 
+function FurLabIcon() {
+  return <PiHairDryerDuotone color="#a78bfa" />;
+}
+
 function HandStuffIcon() {
   return <FaHandPaper color="#fbbf24" />;
 }
@@ -371,6 +389,16 @@ function StrudelDoodleIcon() {
 
 function ExplosionIcon() {
   return <FaBomb color="#374151" />;
+}
+
+function LightningLabIcon() {
+  return (
+    <>
+      <BsLightningFill color="#fef08a" />
+      <BsLightningFill color="#fde047" />
+      <BsLightningFill color="#f59e0b" />
+    </>
+  );
 }
 
 function NetworkTestIcon() {
@@ -784,6 +812,24 @@ export const EYE_CANDIES = [
     Component: FluidTest,
   },
   {
+    id: 'furLab',
+    label: 'Fur Lab',
+    channel: 'webgl',
+    area: 'testlab',
+    route: 'furLab',
+    icon: FurLabIcon,
+    Component: FurLabWebGL,
+  },
+  {
+    id: 'lightningLab',
+    label: 'Lightning Lab',
+    channel: 'webgl',
+    area: 'testlab',
+    route: 'lightningLab',
+    icon: LightningLabIcon,
+    Component: LightningLabWebGL,
+  },
+  {
     id: 'handStuff',
     label: 'Hand Stuff',
     channel: 'webgl',
@@ -854,6 +900,24 @@ export const EYE_CANDIES = [
     route: 'networkTest',
     icon: NetworkTestIcon,
     Component: NetworkTest,
+  },
+  {
+    id: 'furLab',
+    label: 'Fur Lab',
+    channel: 'webgpu',
+    area: 'testlab',
+    route: 'furLabWebgpu',
+    icon: FurLabIcon,
+    Component: FurLabWebGPU,
+  },
+  {
+    id: 'lightningLab',
+    label: 'Lightning Lab',
+    channel: 'webgpu',
+    area: 'testlab',
+    route: 'lightningLab',
+    icon: LightningLabIcon,
+    Component: LightningLabWebGPU,
   },
   {
     id: 'mobilePhysicsTest',

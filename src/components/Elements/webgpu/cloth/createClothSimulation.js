@@ -721,10 +721,18 @@ export default function createClothSimulation({
   rebuildAlpha(alpha);
   buildIndexBuffer();
 
+  // Physical node materials may still validate the geometry's normal
+  // attribute even when shading uses the computed normalNode below.
+  const normalArr = new Float32Array(meshVCount * 3);
+  for (let i = 2; i < normalArr.length; i += 3) {
+    normalArr[i] = 1;
+  }
+
   geometry.setAttribute(
     'position',
     new THREE.BufferAttribute(new Float32Array(meshVCount * 3), 3)
   );
+  geometry.setAttribute('normal', new THREE.BufferAttribute(normalArr, 3));
   geometry.setAttribute(
     'vertexIds',
     new THREE.BufferAttribute(vtxIdArr, 4, false)

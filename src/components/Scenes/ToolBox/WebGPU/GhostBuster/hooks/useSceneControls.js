@@ -5,13 +5,18 @@ import { OUTLINE_MODES } from '../../../../../postprocessing/webGPU/outline/Outl
 import { GHOST_TEXTURE_OPTIONS, SCENE_PRESETS } from '../presets/scenePresets';
 
 const DEFAULT_PRESET = 'Original';
+const DEFAULT_PRESET_SNAPSHOT = SCENE_PRESETS[DEFAULT_PRESET];
 
-function getPresetControls({ presetSnapshot }) {
-  const out = { ...presetSnapshot };
+function normalizePresetSnapshot(presetSnapshot = {}) {
+  const out = { ...DEFAULT_PRESET_SNAPSHOT, ...presetSnapshot };
 
   // Leva color picker rejects empty string — fall back to main color
   if (!out.innerColor) out.innerColor = out.color;
   return out;
+}
+
+function getPresetControls({ presetSnapshot }) {
+  return normalizePresetSnapshot(presetSnapshot);
 }
 
 export default function useSceneControls(ghostRef, setAnimation, triggerJump) {
@@ -29,7 +34,7 @@ export default function useSceneControls(ghostRef, setAnimation, triggerJump) {
     presets: SCENE_PRESETS,
   });
 
-  const ini = SCENE_PRESETS[initialPreset];
+  const ini = normalizePresetSnapshot(SCENE_PRESETS[initialPreset]);
 
   const [controls, setControls] = useControls('Ghost Buster', () => ({
     Presets: presetsFolder,
@@ -211,6 +216,24 @@ export default function useSceneControls(ghostRef, setAnimation, triggerJump) {
               max: 5,
               step: 0.05,
             },
+            sheen: {
+              label: 'Sheen',
+              value: ini.sheen ?? 0,
+              min: 0,
+              max: 1,
+              step: 0.01,
+            },
+            sheenRoughness: {
+              label: 'Sheen Roughness',
+              value: ini.sheenRoughness ?? 1,
+              min: 0,
+              max: 1,
+              step: 0.01,
+            },
+            sheenColor: {
+              label: 'Sheen Color',
+              value: ini.sheenColor ?? '#ffffff',
+            },
             clearcoat: {
               label: 'Clearcoat',
               value: ini.clearcoat ?? 0,
@@ -258,6 +281,19 @@ export default function useSceneControls(ghostRef, setAnimation, triggerJump) {
                     UV: 'uv',
                     World: 'world',
                     Screen: 'screen',
+                  },
+                },
+                textureTile: {
+                  label: 'Tile Texture',
+                  value: ini.textureTile ?? true,
+                },
+                textureSide: {
+                  label: 'Texture Side',
+                  value: ini.textureSide ?? 'both',
+                  options: {
+                    Both: 'both',
+                    Inner: 'inner',
+                    Outer: 'outer',
                   },
                 },
                 textureScaleX: {

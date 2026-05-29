@@ -111,6 +111,9 @@ const GhostCharacter = forwardRef(function GhostCharacter(
     roughness = 0.8,
     metalness = 0,
     envMapIntensity = 1,
+    sheen = 0,
+    sheenRoughness = 1,
+    sheenColor = '#ffffff',
     clearcoat = 0,
     clearcoatRoughness = 0,
     innerRoughness = null,
@@ -123,6 +126,7 @@ const GhostCharacter = forwardRef(function GhostCharacter(
     textureScaleY = 1,
     textureRotation = 0,
     textureBlend = 1,
+    textureTile = true,
     textureProjection = 'uv',
     textureSide = 'both',
     outlineEnabled = false,
@@ -808,6 +812,7 @@ const GhostCharacter = forwardRef(function GhostCharacter(
           textureScaleY={textureScaleY}
           textureRotation={textureRotation}
           textureBlend={textureBlend}
+          textureTile={textureTile}
           textureProjection={textureProjection}
           textureSide={textureSide}
           materialProps={{
@@ -815,6 +820,9 @@ const GhostCharacter = forwardRef(function GhostCharacter(
             roughness,
             metalness,
             envMapIntensity,
+            sheen,
+            sheenRoughness,
+            sheenColor,
             clearcoat,
             clearcoatRoughness,
             opacity,

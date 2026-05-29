@@ -275,6 +275,9 @@ export default function GhostBuster() {
         roughness={controls.roughness}
         metalness={controls.metalness}
         envMapIntensity={controls.envMapIntensity}
+        sheen={controls.sheen}
+        sheenRoughness={controls.sheenRoughness}
+        sheenColor={controls.sheenColor}
         clearcoat={controls.clearcoat}
         clearcoatRoughness={controls.clearcoatRoughness}
         innerRoughness={controls.innerRoughness ?? null}
@@ -286,7 +289,9 @@ export default function GhostBuster() {
         textureScaleY={controls.textureScaleY}
         textureRotation={controls.textureRotation}
         textureBlend={controls.textureBlend}
+        textureTile={controls.textureTile}
         textureProjection={controls.textureProjection}
+        textureSide={controls.textureSide}
         outlineEnabled={controls.outlineEnabled}
         outlineMode={controls.outlineMode}
         outlineColor={controls.outlineColor}

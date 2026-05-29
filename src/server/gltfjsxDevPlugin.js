@@ -1,0 +1,64 @@
+import {
+  RequestError,
+  convertGltfJsxRequest,
+  getGltfJsxCapabilities,
+  readJsonBody,
+} from './gltfjsxService';
+
+const CAPABILITIES_PATH = '/dev-api/gltfjsx/capabilities';
+const CONVERT_PATH = '/dev-api/gltfjsx/convert';
+
+function sendJson(res, statusCode, payload) {
+  res.statusCode = statusCode;
+  res.setHeader('Content-Type', 'application/json; charset=utf-8');
+  res.end(JSON.stringify(payload, null, 2));
+}
+
+export default function gltfjsxDevPlugin() {
+  return {
+    name: 'gltfjsx-dev-plugin',
+    apply: 'serve',
+    configureServer(server) {
+      server.middlewares.use(async (req, res, next) => {
+        const pathname = req.url?.split('?')[0];
+
+        if (req.method === 'GET' && pathname === CAPABILITIES_PATH) {
+          const payload = await getGltfJsxCapabilities(server.config.root);
+          sendJson(res, 200, payload);
+          return;
+        }
+
+        if (req.method === 'POST' && pathname === CONVERT_PATH) {
+          try {
+            const body = await readJsonBody(req);
+            const payload = await convertGltfJsxRequest({
+              payload: body,
+              rootDir: server.config.root,
+            });
+            sendJson(res, 200, payload);
+          } catch (error) {
+            if (error instanceof RequestError) {
+              sendJson(res, error.statusCode, {
+                ok: false,
+                code: error.code,
+                details: error.details ?? null,
+                message: error.message,
+              });
+              return;
+            }
+
+            sendJson(res, 500, {
+              ok: false,
+              code: 'INTERNAL_ERROR',
+              message:
+                error instanceof Error ? error.message : 'Unexpected error.',
+            });
+          }
+          return;
+        }
+
+        next();
+      });
+    },
+  };
+}

@@ -1,20 +1,22 @@
 // vite.config.js
 import os from 'os';
-
 import { defineConfig } from 'vite';
 
 import basicSsl from '@vitejs/plugin-basic-ssl';
 import react from '@vitejs/plugin-react';
 
 import pkg from './package.json';
+import gltfjsxDevPlugin from './src/server/gltfjsxDevPlugin';
 
 function getLanIP() {
-  for (const addrs of Object.values(os.networkInterfaces())) {
-    for (const addr of addrs ?? []) {
-      if (addr.family === 'IPv4' && !addr.internal) return addr.address;
-    }
-  }
-  return 'localhost';
+  const interfaces = Object.values(os.networkInterfaces()).flatMap(
+    (addrs) => addrs ?? []
+  );
+
+  return (
+    interfaces.find((addr) => addr.family === 'IPv4' && !addr.internal)
+      ?.address || 'localhost'
+  );
 }
 
 export default defineConfig(({ command, mode }) => {
@@ -26,10 +28,15 @@ export default defineConfig(({ command, mode }) => {
   //   - one consistent room regardless of which IP the client used
   //   - no mixed-content block: HTTPS pages use wss:// to Vite, Vite forwards as ws:// internally
   // Prod: set VITE_PARTY_HOST to your deployed partykit.dev URL.
-  const partyHost = process.env.VITE_PARTY_HOST ?? (isBuild ? '' : `${getLanIP()}:3000`);
+  const partyHost =
+    process.env.VITE_PARTY_HOST ?? (isBuild ? '' : `${getLanIP()}:3000`);
 
   return {
-    plugins: [react(), useHttps && basicSsl()].filter(Boolean),
+    plugins: [
+      react(),
+      !isBuild && gltfjsxDevPlugin(),
+      useHttps && basicSsl(),
+    ].filter(Boolean),
 
     // GitHub Pages base path ONLY for build
     base: isBuild ? '/eye-candy/' : '/',

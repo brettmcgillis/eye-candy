@@ -46,6 +46,7 @@ import {
   PiDiamondsFourFill,
   PiDiamondsFourThin,
   PiHairDryerDuotone,
+  PiPlanetFill,
   PiSkullDuotone,
   PiVirusDuotone,
 } from 'react-icons/pi';
@@ -187,6 +188,9 @@ const DumpsterFire = lazy(
 const RaisedByTV = lazy(
   () =>
     import('../components/scenes/WorkInProgress/WebGPU/RaisedByTV/RaisedByTV')
+);
+const Aisle9 = lazy(
+  () => import('../components/scenes/WorkInProgress/WebGPU/Aisle9/Aisle9')
 );
 const RowItAloneWebGPU = lazy(
   () =>
@@ -525,6 +529,10 @@ function BrokenFishTankIcon() {
 
 function GhostIcon() {
   return <FaGhost color="#cbd5e1" />;
+}
+
+function Aisle9Icon() {
+  return <PiPlanetFill color="#f59e0b" />;
 }
 
 function RabbitIcon() {
@@ -1181,6 +1189,15 @@ export const EYE_CANDIES = [
     route: 'raisedByTv',
     icon: CrtTestIcon,
     Component: RaisedByTV,
+  },
+  {
+    id: 'aisle9',
+    label: 'Aisle 9',
+    channel: 'webgpu',
+    area: 'wip',
+    route: 'aisle9',
+    icon: Aisle9Icon,
+    Component: Aisle9,
   },
   {
     id: 'rowItAloneWebgpu',

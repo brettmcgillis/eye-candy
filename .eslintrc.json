@@ -69,7 +69,7 @@
       }
     },
     {
-      "files": ["vite.config.*", "vitest.config.*"],
+      "files": ["vite.config.*", "vitest.config.*", "src/server/**/*.js"],
       "env": {
         "node": true
       },

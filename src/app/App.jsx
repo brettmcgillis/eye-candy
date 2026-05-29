@@ -14,6 +14,7 @@ import {
 
 const LoadersPage = lazy(() => import('./pages/dev/LoadersPage'));
 const IconsPage = lazy(() => import('./pages/dev/IconsPage'));
+const GltfJsxPage = lazy(() => import('./pages/dev/GltfJsxPage'));
 
 // Renders as the Suspense fallback inside the Canvas. Signals to the parent
 // that the scene is suspended so the Loader overlay stays visible.
@@ -98,6 +99,14 @@ export default function AppRoot() {
         element={
           <Suspense fallback={null}>
             <IconsPage />
+          </Suspense>
+        }
+      />
+      <Route
+        path="/dev/gltfjsx"
+        element={
+          <Suspense fallback={null}>
+            <GltfJsxPage />
           </Suspense>
         }
       />

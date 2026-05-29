@@ -5,6 +5,8 @@ import React, { useCallback, useEffect, useMemo, useRef } from 'react';
 
 import { extend, useFrame } from '@react-three/fiber';
 
+import NurbsWaterLightningHitPlane from './NurbsWaterLightningHitPlane';
+import createNurbsWaterLightningTargetAdapter from './createNurbsWaterLightningTargetAdapter';
 import { sampleWaterInteractionHeight } from './waterInteraction';
 import {
   buildAllSurfaces,
@@ -306,8 +308,10 @@ export default function NurbsWaterColumnGL({
   edgeLineWidth = 1,
   showEdges = true,
   interactionRuntime = null,
+  lightningTarget = false,
 }) {
   const groupRef = useRef();
+  const interactionHitRef = useRef();
   const pointerPointRef = useRef(new THREE.Vector3());
   const timeRef = useRef(0);
   const fallbackInteractionTexture = useMemo(
@@ -408,6 +412,38 @@ export default function NurbsWaterColumnGL({
     () => height / 2 + Math.max(waveHeight * 1.5 + 0.048, 0.02),
     [height, waveHeight]
   );
+  const lightningTargetEnabled = Boolean(lightningTarget);
+  const lightningTargetAdapter = useMemo(() => {
+    if (!lightningTargetEnabled) {
+      return null;
+    }
+
+    return createNurbsWaterLightningTargetAdapter({
+      depth,
+      groupRef,
+      height,
+      interactionRuntime,
+      waveChoppiness,
+      waveChoppinessRef,
+      waveHeight,
+      waveHeightRef,
+      waveSpeed,
+      waveSpeedRef,
+      width,
+    });
+  }, [
+    depth,
+    height,
+    interactionRuntime,
+    lightningTargetEnabled,
+    waveChoppiness,
+    waveChoppinessRef,
+    waveHeight,
+    waveHeightRef,
+    waveSpeed,
+    waveSpeedRef,
+    width,
+  ]);
 
   const clearPointerTarget = useCallback(() => {
     interactionRuntime?.clearPointerTarget();
@@ -437,6 +473,27 @@ export default function NurbsWaterColumnGL({
     () => () => fallbackInteractionTexture.dispose(),
     [fallbackInteractionTexture]
   );
+
+  useEffect(() => {
+    const group = groupRef.current;
+
+    if (!group) {
+      return undefined;
+    }
+
+    if (lightningTargetAdapter) {
+      group.userData.lightningSurfaceType = 'water';
+      group.userData.lightningTargetAdapter = lightningTargetAdapter;
+    } else {
+      delete group.userData.lightningSurfaceType;
+      delete group.userData.lightningTargetAdapter;
+    }
+
+    return () => {
+      delete group.userData.lightningSurfaceType;
+      delete group.userData.lightningTargetAdapter;
+    };
+  }, [lightningTargetAdapter]);
 
   useFrame((state, delta) => {
     timeRef.current += delta;
@@ -523,17 +580,15 @@ export default function NurbsWaterColumnGL({
         <mesh key={idx} geometry={geo} material={material} />
       ))}
 
-      {interactionRuntime && (
-        <mesh
+      {(interactionRuntime || lightningTargetEnabled) && (
+        <NurbsWaterLightningHitPlane
           geometry={interactionHitGeometry}
-          onPointerMove={handlePointerMove}
-          onPointerOut={clearPointerTarget}
-          onPointerOver={handlePointerMove}
-          position={[0, interactionHitY, 0]}
-          rotation-x={-Math.PI / 2}
-        >
-          <meshBasicMaterial depthWrite={false} opacity={0} transparent />
-        </mesh>
+          hitRef={interactionHitRef}
+          interactionHitY={interactionHitY}
+          onPointerMove={interactionRuntime ? handlePointerMove : undefined}
+          onPointerOut={interactionRuntime ? clearPointerTarget : undefined}
+          onPointerOver={interactionRuntime ? handlePointerMove : undefined}
+        />
       )}
 
       {showEdges && edgeData && (

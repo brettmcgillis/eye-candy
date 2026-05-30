@@ -347,6 +347,81 @@ function normalizeModelAssetPath(assetPath) {
   return normalizedPath;
 }
 
+function isTransformedAssetPath(assetPath) {
+  return /-transformed\.[^.]+$/u.test(String(assetPath || ''));
+}
+
+function buildCanonicalGeneratedAssetPath(
+  primaryRelativePath,
+  generatedRelativePath
+) {
+  const directory = path.posix.dirname(primaryRelativePath);
+  const baseName = path.posix.basename(
+    primaryRelativePath,
+    path.posix.extname(primaryRelativePath)
+  );
+  const extension =
+    path.posix.extname(generatedRelativePath) ||
+    path.posix.extname(primaryRelativePath);
+  const fileName = `${baseName}${extension}`;
+
+  return directory === '.' ? fileName : path.posix.join(directory, fileName);
+}
+
+function reconcileGeneratedAssetFiles({
+  assetPath,
+  primaryRelativePath,
+  stagedAssetFiles,
+  stagedFiles,
+}) {
+  const generatedAssetFile = stagedAssetFiles.find(
+    (file) => file.relativePath === assetPath
+  );
+
+  if (!generatedAssetFile || !isTransformedAssetPath(assetPath)) {
+    return {
+      assetPath,
+      files: stagedAssetFiles,
+      modelEntryRelativePath: primaryRelativePath,
+    };
+  }
+
+  const canonicalAssetPath = buildCanonicalGeneratedAssetPath(
+    primaryRelativePath,
+    generatedAssetFile.relativePath
+  );
+  const uploadedRelativePaths = new Set(
+    stagedFiles.map((file) => file.relativePath)
+  );
+  const nextFiles = [];
+
+  stagedAssetFiles.forEach((file) => {
+    if (uploadedRelativePaths.has(file.relativePath)) {
+      return;
+    }
+
+    if (file.relativePath === generatedAssetFile.relativePath) {
+      nextFiles.push({
+        ...file,
+        relativePath: canonicalAssetPath,
+      });
+      return;
+    }
+
+    nextFiles.push(file);
+  });
+
+  return {
+    assetPath: canonicalAssetPath,
+    files: nextFiles,
+    modelEntryRelativePath: canonicalAssetPath,
+  };
+}
+
+function stripGeneratedComponentComments(code) {
+  return String(code || '').replace(/^\/\*[\s\S]*?\*\/\s*/u, '');
+}
+
 async function formatComponent(code, filePath) {
   const resolvedConfig = (await prettier.resolveConfig(filePath)) ?? {};
   return prettier.format(code, {
@@ -433,6 +508,8 @@ function normalizeGeneratedComponent({
     /import React from 'react';?\n/,
     `import React from 'react';\nimport { modelFile } from '${modelImportPath}';\n`
   );
+
+  nextCode = stripGeneratedComponentComments(nextCode);
 
   if (nextCode.includes('._')) {
     nextCode = `/* eslint-disable no-underscore-dangle */\n${nextCode}`;
@@ -841,10 +918,23 @@ export async function convertGltfJsxRequest({ payload, rootDir }) {
     execution = await runCommand(binaryPath, commandArgs, resolvedRootDir);
     const generatedCode = await fs.readFile(tempOutputPath, 'utf8');
     const assetReference = extractAssetReference(generatedCode);
-    const assetPath = normalizeModelAssetPath(assetReference.assetPath);
-    const stagedAssetFiles = (
+    const generatedAssetPath = normalizeModelAssetPath(
+      assetReference.assetPath
+    );
+    const collectedAssetFiles = (
       await collectFilesRecursive(stageModelsRoot)
     ).filter((file) => file.absolutePath !== tempOutputPath);
+    const generatedAssetOutput = reconcileGeneratedAssetFiles({
+      assetPath: generatedAssetPath,
+      primaryRelativePath: staged.primaryRelativePath,
+      stagedAssetFiles: collectedAssetFiles,
+      stagedFiles: staged.files,
+    });
+    const {
+      assetPath,
+      modelEntryRelativePath,
+      files: stagedAssetFiles,
+    } = generatedAssetOutput;
 
     if (!overwrite && assetDirectoryMode === 'root') {
       const existingAssetFile = (
@@ -941,11 +1031,11 @@ export async function convertGltfJsxRequest({ payload, rootDir }) {
       },
       model: {
         directoryMode: assetDirectoryMode,
-        entryFileName: path.posix.basename(staged.primaryRelativePath),
+        entryFileName: path.posix.basename(modelEntryRelativePath),
         folderName: assetDirectoryMode === 'folder' ? modelFolderName : null,
         directory: toPosix(path.relative(resolvedRootDir, finalModelDir)),
         entryPath: toPosix(
-          path.join(MODEL_ROOT_RELATIVE, staged.primaryRelativePath)
+          path.join(MODEL_ROOT_RELATIVE, modelEntryRelativePath)
         ),
       },
       options,

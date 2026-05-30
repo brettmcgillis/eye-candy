@@ -65,8 +65,8 @@ const DEFAULT_OPTIONS = {
   instance: false,
   instanceall: false,
   keepgroups: false,
-  keepmaterials: false,
-  keepmeshes: false,
+  keepmaterials: true,
+  keepmeshes: true,
   keepnames: false,
   meta: false,
   precision: 3,
@@ -75,7 +75,7 @@ const DEFAULT_OPTIONS = {
   resolution: 1024,
   shadows: true,
   simplify: false,
-  transform: false,
+  transform: true,
   types: false,
   verbose: false,
 };
@@ -837,7 +837,7 @@ export default function GltfJsxPage() {
   const [primaryFilePath, setPrimaryFilePath] = useState('');
   const [modelSlug, setModelSlug] = useState('model');
   const [componentName, setComponentName] = useState('Model');
-  const [assetDirectoryMode, setAssetDirectoryMode] = useState('folder');
+  const [assetDirectoryMode, setAssetDirectoryMode] = useState('root');
   const [renamePrimaryFile, setRenamePrimaryFile] = useState(true);
   const [primaryOutputName, setPrimaryOutputName] = useState('model');
   const [overwrite, setOverwrite] = useState(false);

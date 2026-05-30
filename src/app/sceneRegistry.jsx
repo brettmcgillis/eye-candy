@@ -182,8 +182,7 @@ const MultiplayerMadnessWebGPU = lazy(
 );
 
 const DumpsterFire = lazy(
-  () =>
-    import('../components/scenes/WorkInProgress/WebGL/DumpsterFire/DumpsterFire')
+  () => import('../components/scenes/Showcase/WebGL/DumpsterFire/DumpsterFire')
 );
 const RaisedByTV = lazy(
   () =>
@@ -1122,7 +1121,7 @@ export const EYE_CANDIES = [
     id: 'dumpsterFire',
     label: 'Dumpster Fire',
     channel: 'webgl',
-    area: 'wip',
+    area: 'showcase',
     route: 'dumpsterFire',
     icon: DumpsterFireIcon,
     Component: DumpsterFire,

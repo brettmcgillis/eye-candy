@@ -2,7 +2,6 @@
 
 # // Intent / Use Cases
 
-- This should be a small, but fully formed composition with no presets.
 - The scene features our dumpster engulfed in flames and smoke.
 - The scene has a white background.
 - The scene contains some volumetric fire emerging from the dumpster.

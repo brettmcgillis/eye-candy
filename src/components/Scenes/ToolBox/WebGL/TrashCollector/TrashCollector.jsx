@@ -5,7 +5,7 @@ import React, { useCallback } from 'react';
 import { CuboidCollider, Physics, RigidBody } from '@react-three/rapier';
 
 import useSceneAudioStore from '../../../../../store/useSceneAudioStore';
-import useDumpsterFireCollisionAudio from '../../../WorkInProgress/WebGL/DumpsterFire/hooks/useDumpsterFireCollisionAudio';
+import useDumpsterFireCollisionAudio from '../../../Showcase/WebGL/DumpsterFire/hooks/useDumpsterFireCollisionAudio';
 import AssetShowcaseGrid from './components/AssetShowcaseGrid';
 import SceneEnvironment from './components/SceneEnvironment';
 import { GROUND, GROUND_POSITION } from './utils/sceneData';

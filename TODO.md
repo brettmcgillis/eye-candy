@@ -42,6 +42,7 @@ To Build:
 - [Beautys in the eye of the beheaded](src/components/scenes/Showcase/WebGPU/BeautysInTheEyeOfTheBeheaded/todo.md)
 - [BurningAtBothEnds](src/components/scenes/Showcase/WebGL/BurningAtBothEnds/todo.md)
 - [Cardinals](src/components/scenes/Showcase/WebGL/Cardinals/todo.md)
+- [DumpsterFire](src/components/scenes/Showcase/WebGL/DumpsterFire/todo.md)
 - [LoGlow](src/components/scenes/Showcase/WebGL/LoGlow/todo.md)
 - [Mycelium](src/components/scenes/Showcase/WebGL/Mycelum/todo.md)
 - [PaperCuts](src/components/scenes/Showcase/WebGL/PaperCuts/todo.md)
@@ -72,7 +73,6 @@ To Build:
 
 - [Aisle9](src/components/scenes/WorkInProgress/WebGPU/Aisle9/todo.md)
 - [RaisedByTV](src/components/scenes/WorkInProgress/WebGPU/RaisedByTV/todo.md)
-- [DumpsterFire](src/components/scenes/WorkInProgress/WebGL/DumpsterFire/todo.md)
 - [ThatsAllFolks](src/components/scenes/WorkInProgress/WebGPU/ThatsAllFolks/todo.md)
 - [StillPullingForYou](src/components/scenes/WorkInProgress/WebGPU/StillPullingForYou/todo.md)
 - [My Heart Is A Broken Fish Tank](src/components/scenes/WorkInProgress/WebGPU/MyHeartIsABrokenFishTank/todo.md)
@@ -151,6 +151,7 @@ To Build:
 - [x] Cardinals - Cardinals
 - [ ] Cardinals - Bluejays
 - [ ] Cardinals - Magpies
+- [ ] Dumpster Fire
 - [x] LoaderPattern(s)
 - [x] Mycelium
 - [x] PaperCuts - Default
@@ -177,7 +178,6 @@ To Build:
 - [ ] Aisle 9 - By The Cat Food
 - [ ] All My Friends Are Ghosts
 - [ ] Crt Test
-- [ ] Dumpster Fire
 - [ ] Flying High - Day
 - [ ] Flying High - NightMode
 - [ ] My Heart Is A Broken Fish Tank

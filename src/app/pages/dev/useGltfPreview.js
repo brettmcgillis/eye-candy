@@ -120,6 +120,22 @@ async function loadSavedGltf(url) {
   }
 }
 
+function stripPreviewCacheKey(url) {
+  return String(url || '').replace(/\?.*$/, '');
+}
+
+function formatSavedPreviewError(error, url) {
+  const message =
+    error instanceof Error ? error.message : 'Preview could not be loaded.';
+  const cleanUrl = stripPreviewCacheKey(url);
+
+  if (/Unexpected token '<'|<!doctype/i.test(message)) {
+    return `Saved preview fetched HTML instead of model data from ${cleanUrl}. That usually means the resolved asset path does not point at a written .glb or .gltf file. Compare Write Summary, Saved Files, and CLI Output for the last attempt.`;
+  }
+
+  return `Saved preview failed at ${cleanUrl}: ${message}`;
+}
+
 export default function useGltfPreview(previewAsset) {
   const [state, setState] = useState({
     error: null,
@@ -152,11 +168,16 @@ export default function useGltfPreview(previewAsset) {
         }
       } catch (error) {
         if (!cancelled) {
+          let previewError = 'Preview could not be loaded.';
+
+          if (previewAsset.type === 'saved') {
+            previewError = formatSavedPreviewError(error, previewAsset.url);
+          } else if (error instanceof Error) {
+            previewError = error.message;
+          }
+
           setState({
-            error:
-              error instanceof Error
-                ? error.message
-                : 'Preview could not be loaded.',
+            error: previewError,
             gltf: null,
             status: 'error',
           });

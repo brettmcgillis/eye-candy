@@ -134,6 +134,7 @@ To Build:
 - [ ] HotBox
 - [ ] LightningLab
 - [ ] FurLab
+- [ ] GLTF Workbench
 
 ### Scenes to post
 

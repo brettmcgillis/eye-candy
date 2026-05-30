@@ -5,6 +5,7 @@ import path from 'node:path';
 import * as prettier from 'prettier';
 
 const MAX_REQUEST_BYTES = 250 * 1024 * 1024;
+const MAX_DIAGNOSTIC_OUTPUT_CHARS = 12000;
 const MODEL_ROOT_RELATIVE = path.join('public', 'models');
 const COMPONENT_ROOT_RELATIVE = path.join('src', 'components', 'elements');
 const ENTRY_EXTENSIONS = new Set(['.glb', '.gltf']);
@@ -212,6 +213,62 @@ function buildCliCommandString({ inputPath, outputPath, rootPath, options }) {
   return parts.join(' ');
 }
 
+function trimDiagnosticOutput(value) {
+  const text = String(value || '').trim();
+
+  if (!text) {
+    return null;
+  }
+
+  if (text.length <= MAX_DIAGNOSTIC_OUTPUT_CHARS) {
+    return text;
+  }
+
+  return [
+    `[output truncated to last ${MAX_DIAGNOSTIC_OUTPUT_CHARS} chars]`,
+    text.slice(-MAX_DIAGNOSTIC_OUTPUT_CHARS),
+  ].join('\n');
+}
+
+function buildExecutionDiagnostics(execution) {
+  if (!execution) {
+    return {};
+  }
+
+  return {
+    exitCode: Number.isFinite(execution.code) ? execution.code : null,
+    stderr: trimDiagnosticOutput(execution.stderr),
+    stdout: trimDiagnosticOutput(execution.stdout),
+  };
+}
+
+function withDiagnosticDetails(error, nextDetails) {
+  const details = Object.fromEntries(
+    Object.entries({
+      ...(error instanceof RequestError ? error.details || {} : {}),
+      ...nextDetails,
+    }).filter(
+      ([, value]) => value !== null && value !== undefined && value !== ''
+    )
+  );
+
+  if (error instanceof RequestError) {
+    return new RequestError(
+      error.statusCode,
+      error.code,
+      error.message,
+      details
+    );
+  }
+
+  return new RequestError(
+    500,
+    'INTERNAL_ERROR',
+    error instanceof Error ? error.message : 'Unexpected error.',
+    details
+  );
+}
+
 async function runCommand(binaryPath, args, cwd) {
   return new Promise((resolve, reject) => {
     const child = spawn(binaryPath, args, {
@@ -257,8 +314,8 @@ async function runCommand(binaryPath, args, cwd) {
   });
 }
 
-function extractAssetPath(code) {
-  const match = code.match(/useGLTF\('([^']+)'/);
+function extractAssetReference(code) {
+  const match = code.match(/useGLTF\s*\(\s*(['"])([^'"]+)\1/);
 
   if (!match) {
     throw new RequestError(
@@ -268,7 +325,26 @@ function extractAssetPath(code) {
     );
   }
 
-  return match[1];
+  return {
+    assetPath: match[2],
+    quote: match[1],
+  };
+}
+
+function normalizeModelAssetPath(assetPath) {
+  const normalizedPath = toPosix(String(assetPath || '').trim())
+    .replace(/^\/+/, '')
+    .replace(/^models\//, '');
+
+  if (!normalizedPath) {
+    throw new RequestError(
+      500,
+      'INVALID_GENERATED_CODE',
+      'The generated asset path is empty.'
+    );
+  }
+
+  return normalizedPath;
 }
 
 async function formatComponent(code, filePath) {
@@ -294,9 +370,12 @@ async function collectFilesRecursive(rootDir, baseDir = rootDir) {
         return [];
       }
 
+      const stats = await fs.stat(absolutePath);
+
       return [
         {
           absolutePath,
+          bytes: stats.size,
           relativePath: toPosix(path.relative(baseDir, absolutePath)),
         },
       ];
@@ -306,8 +385,25 @@ async function collectFilesRecursive(rootDir, baseDir = rootDir) {
   return nestedFiles.flat();
 }
 
+function isMeaningfulWorkspaceFile(relativePath) {
+  return relativePath
+    .split('/')
+    .every((segment) => segment && !segment.startsWith('.'));
+}
+
+async function directoryHasMeaningfulFiles(rootDir) {
+  if (!(await pathExists(rootDir))) {
+    return false;
+  }
+
+  const files = await collectFilesRecursive(rootDir);
+  return files.some((file) => isMeaningfulWorkspaceFile(file.relativePath));
+}
+
 function normalizeGeneratedComponent({
-  assetPath,
+  normalizedAssetPath,
+  rawAssetPath,
+  rawAssetQuote,
   code,
   commandString,
   componentDir,
@@ -316,8 +412,8 @@ function normalizeGeneratedComponent({
   stageRoot,
 }) {
   const modelImportPath = getRepoModelFileImport(componentDir, rootDir);
-  const assetLiteral = `'${assetPath}'`;
-  const assetExpression = `modelFile('${assetPath}')`;
+  const assetLiteral = `${rawAssetQuote}${rawAssetPath}${rawAssetQuote}`;
+  const assetExpression = `modelFile('${normalizedAssetPath}')`;
   const normalizedStageRoot = toPosix(stageRoot);
   const normalizedRootDir = toPosix(rootDir);
 
@@ -663,7 +759,10 @@ export async function convertGltfJsxRequest({ payload, rootDir }) {
   );
 
   if (!overwrite) {
-    if (assetDirectoryMode === 'folder' && (await pathExists(finalModelDir))) {
+    if (
+      assetDirectoryMode === 'folder' &&
+      (await directoryHasMeaningfulFiles(finalModelDir))
+    ) {
       throw new RequestError(
         409,
         'MODEL_EXISTS',
@@ -674,7 +773,7 @@ export async function convertGltfJsxRequest({ payload, rootDir }) {
       );
     }
 
-    if (await pathExists(finalComponentDir)) {
+    if (await directoryHasMeaningfulFiles(finalComponentDir)) {
       throw new RequestError(
         409,
         'COMPONENT_EXISTS',
@@ -698,6 +797,8 @@ export async function convertGltfJsxRequest({ payload, rootDir }) {
     stageModelDir,
     `__${componentName}.generated.${componentExtension}`
   );
+  let commandString = null;
+  let execution = null;
 
   try {
     await fs.mkdir(stageModelDir, { recursive: true });
@@ -721,7 +822,7 @@ export async function convertGltfJsxRequest({ payload, rootDir }) {
       toPosix(path.relative(stageModelsRoot, tempOutputPath))
     );
 
-    const commandString = buildCliCommandString({
+    commandString = buildCliCommandString({
       inputPath: repoRelativeInputPath,
       options,
       outputPath: repoRelativeTempOutputPath,
@@ -737,13 +838,10 @@ export async function convertGltfJsxRequest({ payload, rootDir }) {
       ...buildCliFlags(options),
     ];
 
-    const execution = await runCommand(
-      binaryPath,
-      commandArgs,
-      resolvedRootDir
-    );
+    execution = await runCommand(binaryPath, commandArgs, resolvedRootDir);
     const generatedCode = await fs.readFile(tempOutputPath, 'utf8');
-    const assetPath = extractAssetPath(generatedCode);
+    const assetReference = extractAssetReference(generatedCode);
+    const assetPath = normalizeModelAssetPath(assetReference.assetPath);
     const stagedAssetFiles = (
       await collectFilesRecursive(stageModelsRoot)
     ).filter((file) => file.absolutePath !== tempOutputPath);
@@ -780,11 +878,13 @@ export async function convertGltfJsxRequest({ payload, rootDir }) {
     }
 
     const normalizedCode = normalizeGeneratedComponent({
-      assetPath,
       code: generatedCode,
       commandString,
       componentDir: finalComponentDir,
       componentName,
+      normalizedAssetPath: assetPath,
+      rawAssetPath: assetReference.assetPath,
+      rawAssetQuote: assetReference.quote,
       rootDir: resolvedRootDir,
       stageRoot,
     });
@@ -831,7 +931,9 @@ export async function convertGltfJsxRequest({ payload, rootDir }) {
       assetPath,
       code: formattedCode,
       command: commandString,
+      diagnostics: buildExecutionDiagnostics(execution),
       component: {
+        bytes: Buffer.byteLength(formattedCode, 'utf8'),
         name: componentName,
         relativePath: toPosix(
           path.relative(resolvedRootDir, finalComponentPath)
@@ -848,6 +950,7 @@ export async function convertGltfJsxRequest({ payload, rootDir }) {
       },
       options,
       savedFiles: stagedAssetFiles.map((file) => ({
+        bytes: file.bytes,
         outputPath: toPosix(path.join(MODEL_ROOT_RELATIVE, file.relativePath)),
         sourcePath:
           staged.files.find(
@@ -857,6 +960,15 @@ export async function convertGltfJsxRequest({ payload, rootDir }) {
       stderr: execution.stderr.trim() || null,
       stdout: execution.stdout.trim() || null,
     };
+  } catch (error) {
+    throw withDiagnosticDetails(error, {
+      command: commandString,
+      componentPath: toPosix(
+        path.relative(resolvedRootDir, finalComponentPath)
+      ),
+      modelDirectory: toPosix(path.relative(resolvedRootDir, finalModelDir)),
+      ...buildExecutionDiagnostics(execution),
+    });
   } finally {
     await fs.rm(stageRoot, { force: true, recursive: true });
   }

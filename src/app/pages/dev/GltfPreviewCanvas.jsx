@@ -1,4 +1,10 @@
-import React, { useLayoutEffect, useRef } from 'react';
+import React, {
+  Suspense,
+  useEffect,
+  useLayoutEffect,
+  useRef,
+  useState,
+} from 'react';
 
 import { OrbitControls, Stage } from '@react-three/drei';
 import { Canvas } from '@react-three/fiber';
@@ -56,44 +62,142 @@ const styles = {
   },
 };
 
-function PreviewScene({ gltf, previewOptions }) {
-  const controlsRef = useRef(null);
+function applyPreviewMeshProps(root, shadows) {
+  root.traverse((node) => {
+    if (!node.isMesh) return;
+
+    const mesh = node;
+    mesh.castShadow = shadows;
+    mesh.receiveShadow = shadows;
+
+    if (mesh.material && 'envMapIntensity' in mesh.material) {
+      mesh.material.envMapIntensity = 0.8;
+    }
+  });
+}
+
+function useGeneratedComponentPreview(previewComponent) {
+  const [state, setState] = useState({
+    Component: null,
+    error: null,
+    status: previewComponent ? 'loading' : 'idle',
+  });
+
+  useEffect(() => {
+    if (!previewComponent?.modulePath) {
+      setState({ Component: null, error: null, status: 'idle' });
+      return undefined;
+    }
+
+    let cancelled = false;
+
+    async function loadComponent() {
+      setState({ Component: null, error: null, status: 'loading' });
+
+      try {
+        const module = await import(
+          /* @vite-ignore */ `${previewComponent.modulePath}?t=${previewComponent.version}`
+        );
+        const Component =
+          module.default || module[previewComponent.exportName] || null;
+
+        if (!Component) {
+          throw new Error(
+            'Generated component preview could not find a renderable export.'
+          );
+        }
+
+        if (!cancelled) {
+          setState({ Component, error: null, status: 'ready' });
+        }
+      } catch (error) {
+        if (!cancelled) {
+          setState({
+            Component: null,
+            error:
+              error instanceof Error
+                ? error.message
+                : 'Generated component preview could not be loaded.',
+            status: 'error',
+          });
+        }
+      }
+    }
+
+    loadComponent();
+
+    return () => {
+      cancelled = true;
+    };
+  }, [
+    previewComponent?.exportName,
+    previewComponent?.modulePath,
+    previewComponent?.version,
+  ]);
+
+  return state;
+}
+
+function AssetPreviewContent({ gltf, shadows }) {
   const scene = gltf?.scene ?? null;
 
   useLayoutEffect(() => {
     if (!scene) return;
 
-    scene.traverse((node) => {
-      if (!node.isMesh) return;
-
-      const mesh = node;
-      mesh.castShadow = previewOptions.shadows;
-      mesh.receiveShadow = previewOptions.shadows;
-
-      if (mesh.material && 'envMapIntensity' in mesh.material) {
-        mesh.material.envMapIntensity = 0.8;
-      }
-    });
-  }, [scene, previewOptions.shadows]);
+    applyPreviewMeshProps(scene, shadows);
+  }, [scene, shadows]);
 
   if (!scene) return null;
+
+  return <primitive object={scene} />;
+}
+
+function GeneratedComponentPreviewContent({ Component, shadows }) {
+  const groupRef = useRef(null);
+
+  useLayoutEffect(() => {
+    if (!groupRef.current) return;
+
+    applyPreviewMeshProps(groupRef.current, shadows);
+  }, [Component, shadows]);
+
+  return (
+    <group ref={groupRef}>
+      <Component />
+    </group>
+  );
+}
+
+function PreviewScene({ gltf, PreviewComponent, previewOptions }) {
+  const controlsRef = useRef(null);
+
+  if (!gltf?.scene && !PreviewComponent) return null;
 
   return (
     <>
       <color attach="background" args={['#020617']} />
       <ambientLight intensity={0.25} />
-      <Stage
-        adjustCamera
-        controls={controlsRef}
-        environment={previewOptions.environment || null}
-        intensity={previewOptions.intensity}
-        preset="rembrandt"
-        shadows={
-          previewOptions.contactShadow ? 'contact' : previewOptions.shadows
-        }
-      >
-        <primitive object={scene} />
-      </Stage>
+      <Suspense fallback={null}>
+        <Stage
+          adjustCamera
+          controls={controlsRef}
+          environment={previewOptions.environment || null}
+          intensity={previewOptions.intensity}
+          preset="rembrandt"
+          shadows={
+            previewOptions.contactShadow ? 'contact' : previewOptions.shadows
+          }
+        >
+          {PreviewComponent ? (
+            <GeneratedComponentPreviewContent
+              Component={PreviewComponent}
+              shadows={previewOptions.shadows}
+            />
+          ) : (
+            <AssetPreviewContent gltf={gltf} shadows={previewOptions.shadows} />
+          )}
+        </Stage>
+      </Suspense>
       <OrbitControls
         autoRotate={previewOptions.autoRotate}
         autoRotateSpeed={1.1}
@@ -103,10 +207,26 @@ function PreviewScene({ gltf, previewOptions }) {
   );
 }
 
-export default function GltfPreviewCanvas({ previewAsset, previewOptions }) {
-  const previewState = useGltfPreview(previewAsset);
+export default function GltfPreviewCanvas({
+  previewAsset,
+  previewComponent,
+  previewOptions,
+}) {
+  const assetPreviewState = useGltfPreview(
+    previewComponent ? null : previewAsset
+  );
+  const componentPreviewState = useGeneratedComponentPreview(previewComponent);
+  const previewState = previewComponent
+    ? componentPreviewState
+    : assetPreviewState;
+  const PreviewComponent = previewComponent
+    ? componentPreviewState.Component
+    : null;
+  const previewLabel = previewComponent
+    ? 'Generated component ready'
+    : 'Preview ready';
 
-  if (!previewAsset) {
+  if (!previewAsset && !previewComponent) {
     return (
       <div style={styles.empty}>
         Drop a `.glb` or `.gltf` bundle to preview it here.
@@ -121,9 +241,7 @@ export default function GltfPreviewCanvas({ previewAsset, previewOptions }) {
   return (
     <div style={styles.shell}>
       <div style={styles.overlay}>
-        {previewState.status === 'loading'
-          ? 'Loading preview'
-          : 'Preview ready'}
+        {previewState.status === 'loading' ? 'Loading preview' : previewLabel}
       </div>
       <Canvas
         camera={{ fov: 50, position: [0, 0, 150] }}
@@ -132,7 +250,8 @@ export default function GltfPreviewCanvas({ previewAsset, previewOptions }) {
         style={styles.canvas}
       >
         <PreviewScene
-          gltf={previewState.gltf}
+          gltf={assetPreviewState.gltf}
+          PreviewComponent={PreviewComponent}
           previewOptions={previewOptions}
         />
       </Canvas>

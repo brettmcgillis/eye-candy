@@ -29,6 +29,19 @@ const ENVIRONMENT_OPTIONS = [
   'lobby',
 ];
 
+const TEXTURE_FORMAT_OPTIONS = [
+  { label: 'WebP', value: 'webp' },
+  { label: 'JPEG', value: 'jpeg' },
+  { label: 'PNG', value: 'png' },
+];
+
+const TEXTURE_RESOLUTION_OPTIONS = [128, 256, 512, 1024, 2048, 4096].map(
+  (value) => ({
+    label: `${value}px`,
+    value: String(value),
+  })
+);
+
 const ASSET_DIRECTORY_OPTIONS = [
   {
     label: 'Dedicated folder in public/models',
@@ -75,6 +88,8 @@ const DEFAULT_PREVIEW_OPTIONS = {
   shadows: true,
 };
 
+const PREVIEW_SOURCE_ORDER = ['uploaded', 'saved', 'component'];
+
 const styles = {
   page: {
     minHeight: '100vh',
@@ -104,9 +119,21 @@ const styles = {
     gridTemplateColumns: 'minmax(22rem, 30rem) minmax(0, 1fr)',
     alignItems: 'start',
   },
-  stack: {
+  leftStack: {
     display: 'grid',
     gap: '1rem',
+    alignSelf: 'start',
+    maxHeight: 'calc(100vh - 3rem)',
+    overflowY: 'auto',
+    overscrollBehavior: 'contain',
+    paddingRight: '0.25rem',
+    position: 'sticky',
+    top: '1.5rem',
+  },
+  rightStack: {
+    display: 'grid',
+    gap: '1rem',
+    minWidth: 0,
   },
   panel: {
     borderRadius: '24px',
@@ -282,6 +309,31 @@ const styles = {
     fontSize: '0.88rem',
     lineHeight: 1.5,
   },
+  diagnosticHeader: {
+    display: 'flex',
+    flexWrap: 'wrap',
+    justifyContent: 'space-between',
+    gap: '0.75rem',
+    alignItems: 'center',
+  },
+  diagnosticCode: {
+    display: 'inline-flex',
+    alignItems: 'center',
+    borderRadius: '999px',
+    padding: '0.2rem 0.55rem',
+    border: '1px solid rgba(159, 18, 57, 0.24)',
+    background: 'rgba(255, 255, 255, 0.45)',
+    fontSize: '0.72rem',
+    letterSpacing: '0.06em',
+    textTransform: 'uppercase',
+  },
+  diagnosticList: {
+    display: 'grid',
+    gap: '0.35rem',
+  },
+  diagnosticItem: {
+    fontSize: '0.82rem',
+  },
   error: {
     background: '#fff1f2',
     border: '1px solid #fda4af',
@@ -307,6 +359,34 @@ const styles = {
   statsGrid: {
     display: 'grid',
     gap: '0.65rem',
+  },
+  compareGrid: {
+    display: 'grid',
+    gap: '1rem',
+    gridTemplateColumns: 'repeat(auto-fit, minmax(19rem, 1fr))',
+  },
+  compareCard: {
+    display: 'grid',
+    gap: '0.75rem',
+  },
+  compareHeader: {
+    display: 'flex',
+    justifyContent: 'space-between',
+    gap: '1rem',
+    alignItems: 'baseline',
+  },
+  compareStatsGrid: {
+    display: 'grid',
+    gap: '0.85rem',
+    gridTemplateColumns: 'repeat(auto-fit, minmax(14rem, 1fr))',
+  },
+  compareStatCard: {
+    display: 'grid',
+    gap: '0.3rem',
+    borderRadius: '16px',
+    padding: '0.9rem 1rem',
+    background: 'rgba(248, 250, 252, 0.95)',
+    border: '1px solid rgba(226, 232, 240, 0.95)',
   },
   statRow: {
     display: 'grid',
@@ -360,6 +440,14 @@ function sanitizeAssetBaseName(value) {
   );
 }
 
+function toBrowserModulePath(relativePath) {
+  const normalized = String(relativePath || '')
+    .replace(/\\/g, '/')
+    .replace(/^\/+/, '');
+
+  return `/${normalized}`;
+}
+
 function toPascalCase(value) {
   const parts = String(value || '')
     .replace(/([a-z0-9])([A-Z])/g, '$1 $2')
@@ -373,15 +461,61 @@ function toPascalCase(value) {
 }
 
 function formatFileSize(bytes) {
-  if (bytes >= 1024 * 1024) {
-    return `${(bytes / (1024 * 1024)).toFixed(2)} MB`;
+  const normalizedBytes = Number(bytes || 0);
+
+  if (!Number.isFinite(normalizedBytes) || normalizedBytes <= 0) {
+    return '0 B';
   }
 
-  if (bytes >= 1024) {
-    return `${(bytes / 1024).toFixed(1)} KB`;
+  if (normalizedBytes >= 1024 * 1024) {
+    return `${(normalizedBytes / (1024 * 1024)).toFixed(2)} MB`;
   }
 
-  return `${bytes} B`;
+  if (normalizedBytes >= 1024) {
+    return `${(normalizedBytes / 1024).toFixed(1)} KB`;
+  }
+
+  return `${normalizedBytes} B`;
+}
+
+function sumBytes(values) {
+  return values.reduce((total, value) => total + Number(value || 0), 0);
+}
+
+function normalizeAssetPath(assetPath) {
+  return String(assetPath || '')
+    .replace(/\\/g, '/')
+    .replace(/^\/+/, '');
+}
+
+function getRuntimeAssetOutputPath(assetPath) {
+  const normalized = normalizeAssetPath(assetPath);
+  return normalized ? `public/models/${normalized}` : '';
+}
+
+function formatSizeDelta(beforeBytes, afterBytes) {
+  const deltaBytes = Number(afterBytes || 0) - Number(beforeBytes || 0);
+
+  if (deltaBytes === 0) {
+    return 'No size change';
+  }
+
+  return deltaBytes < 0
+    ? `${formatFileSize(Math.abs(deltaBytes))} smaller`
+    : `${formatFileSize(deltaBytes)} larger`;
+}
+
+function formatPercentDelta(beforeBytes, afterBytes) {
+  const normalizedBefore = Number(beforeBytes || 0);
+
+  if (!normalizedBefore) {
+    return null;
+  }
+
+  const deltaPercent =
+    ((Number(afterBytes || 0) - normalizedBefore) / normalizedBefore) * 100;
+  const sign = deltaPercent > 0 ? '+' : '';
+  return `${sign}${deltaPercent.toFixed(1)}%`;
 }
 
 function fileToBase64(file) {
@@ -474,6 +608,154 @@ function describeServerState(isLocal, serverState) {
   };
 }
 
+async function readJsonResponse(response) {
+  const rawText = await response.text();
+
+  if (!rawText) {
+    return {};
+  }
+
+  try {
+    return JSON.parse(rawText);
+  } catch {
+    throw new Error(
+      response.ok
+        ? 'The local GLTF JSX API returned invalid JSON.'
+        : `The local GLTF JSX API returned ${response.status} ${response.statusText || 'an invalid response'} instead of JSON.`
+    );
+  }
+}
+
+function pushHint(hints, hint) {
+  if (hint && !hints.includes(hint)) {
+    hints.push(hint);
+  }
+}
+
+function buildConversionHints({ code, details, message, options }) {
+  const hints = [];
+  const outputText = `${details?.stderr || ''}\n${details?.stdout || ''}`;
+
+  if (code === 'GLTFJSX_FAILED') {
+    pushHint(
+      hints,
+      'Retry by enabling one expensive transform at a time: transform only first, then simplify, then instancing.'
+    );
+  }
+
+  if (options.transform && options.simplify) {
+    pushHint(
+      hints,
+      'Simplify is the first switch to disable when transformed output gets unstable on a large or gnarly model.'
+    );
+  }
+
+  if (options.transform && options.resolution >= 2048) {
+    pushHint(
+      hints,
+      'If textures are part of the failure, drop Resolution to 1024 or 512 and retry before changing multiple other flags.'
+    );
+  }
+
+  if (options.transform && options.format === 'webp') {
+    pushHint(
+      hints,
+      'If the CLI output mentions images or texture processing, retry with JPEG or PNG to rule out WebP conversion issues.'
+    );
+  }
+
+  if (options.instanceall || options.instance) {
+    pushHint(
+      hints,
+      'Instancing changes the output path and scene structure. If the model is rigged or unusual, retry once with instancing off.'
+    );
+  }
+
+  if (options.bones && (options.instanceall || options.instance)) {
+    pushHint(
+      hints,
+      'Bones plus instancing is an aggressive combo. For a first pass on skinned assets, keep bones on and turn instancing off.'
+    );
+  }
+
+  if (/draco/i.test(outputText)) {
+    pushHint(
+      hints,
+      'The CLI output mentions Draco. If you customized the Draco path, verify it; otherwise retry without the custom path.'
+    );
+  }
+
+  if (/simplify|meshopt|meshoptimizer/i.test(outputText)) {
+    pushHint(
+      hints,
+      'The CLI output points at simplification or mesh optimization. Retry with Simplify off before changing anything else.'
+    );
+  }
+
+  if (/texture|image|sharp|webp|jpeg|png/i.test(outputText)) {
+    pushHint(
+      hints,
+      'The CLI output points at texture processing. Lower the resize target or switch texture format for the next run.'
+    );
+  }
+
+  if (/Unexpected token '<'|<!doctype/i.test(message || '')) {
+    pushHint(
+      hints,
+      'That message means the preview fetched HTML instead of a model file. Compare Resolved asset path, Saved Files, and the CLI command for the last attempt.'
+    );
+  }
+
+  return hints;
+}
+
+function normalizeConversionError(payload, options) {
+  return {
+    code: payload?.code || null,
+    details: payload?.details || null,
+    hints: buildConversionHints({
+      code: payload?.code || null,
+      details: payload?.details || null,
+      message: payload?.message || 'Conversion failed.',
+      options,
+    }),
+    message: payload?.message || 'Conversion failed.',
+  };
+}
+
+function normalizeUnexpectedConversionError(error) {
+  return {
+    code: null,
+    details: null,
+    hints: [],
+    message: error instanceof Error ? error.message : 'Conversion failed.',
+  };
+}
+
+function formatCliOutput(diagnostics) {
+  if (!diagnostics) {
+    return 'No CLI output captured yet.';
+  }
+
+  const sections = [];
+
+  if (diagnostics.exitCode !== null && diagnostics.exitCode !== undefined) {
+    sections.push(`Exit code: ${diagnostics.exitCode}`);
+  }
+
+  if (diagnostics.stderr) {
+    sections.push(`stderr:\n${diagnostics.stderr}`);
+  }
+
+  if (diagnostics.stdout) {
+    sections.push(`stdout:\n${diagnostics.stdout}`);
+  }
+
+  return sections.length
+    ? sections.join('\n\n')
+    : 'gltfjsx did not write any stdout or stderr for the last attempt.';
+}
+
 function Field({ children, hint, label }) {
   return (
     <div style={styles.field}>
@@ -561,6 +843,7 @@ export default function GltfJsxPage() {
   const [overwrite, setOverwrite] = useState(false);
   const [options, setOptions] = useState(DEFAULT_OPTIONS);
   const [previewOptions, setPreviewOptions] = useState(DEFAULT_PREVIEW_OPTIONS);
+  const [previewSource, setPreviewSource] = useState('uploaded');
   const [serverState, setServerState] = useState({
     data: null,
     error: null,
@@ -582,15 +865,7 @@ export default function GltfJsxPage() {
 
   const deferredCode = useDeferredValue(conversionResult?.code || '');
   const serverDescription = describeServerState(isLocal, serverState);
-
-  const previewAsset = useMemo(() => {
-    if (conversionResult?.assetPath) {
-      return {
-        type: 'saved',
-        url: `${modelFile(conversionResult.assetPath)}?t=${conversionResult.generatedAt}`,
-      };
-    }
-
+  const uploadedPreviewAsset = useMemo(() => {
     if (!primaryFilePath || !entryFiles.length) {
       return null;
     }
@@ -600,7 +875,152 @@ export default function GltfJsxPage() {
       primaryFilePath,
       type: 'uploaded',
     };
-  }, [conversionResult, entryFiles.length, primaryFilePath, uploadedFiles]);
+  }, [entryFiles.length, primaryFilePath, uploadedFiles]);
+
+  const savedPreviewAsset = useMemo(() => {
+    if (!conversionResult?.assetPath) {
+      return null;
+    }
+
+    return {
+      type: 'saved',
+      url: `${modelFile(conversionResult.assetPath)}?t=${conversionResult.generatedAt}`,
+    };
+  }, [conversionResult]);
+  const previewSourceOptions = useMemo(() => {
+    const nextOptions = [];
+
+    if (entryFiles.length && primaryFilePath) {
+      nextOptions.push({
+        label: 'Uploaded asset',
+        value: 'uploaded',
+      });
+    }
+
+    if (conversionResult?.assetPath) {
+      nextOptions.push({
+        label: 'Written asset',
+        value: 'saved',
+      });
+    }
+
+    if (
+      conversionResult?.component?.relativePath &&
+      conversionResult.generatedAt
+    ) {
+      nextOptions.push({
+        label: 'Generated component',
+        value: 'component',
+      });
+    }
+
+    return PREVIEW_SOURCE_ORDER.map(
+      (value) => nextOptions.find((option) => option.value === value) || null
+    ).filter(Boolean);
+  }, [conversionResult, entryFiles.length, primaryFilePath]);
+
+  const previewAsset = useMemo(() => {
+    if (previewSource === 'saved') {
+      return savedPreviewAsset;
+    }
+
+    if (previewSource !== 'uploaded') {
+      return null;
+    }
+
+    return uploadedPreviewAsset;
+  }, [previewSource, savedPreviewAsset, uploadedPreviewAsset]);
+
+  const previewComponent = useMemo(() => {
+    if (
+      previewSource !== 'component' ||
+      !conversionResult?.component?.relativePath ||
+      !conversionResult.generatedAt
+    ) {
+      return null;
+    }
+
+    return {
+      exportName: conversionResult.component.name,
+      modulePath: toBrowserModulePath(conversionResult.component.relativePath),
+      version: conversionResult.generatedAt,
+    };
+  }, [conversionResult, previewSource]);
+  const uploadedPrimaryFile = useMemo(() => {
+    return (
+      uploadedFiles.find(
+        (file) => getFileRelativePath(file) === primaryFilePath
+      ) || null
+    );
+  }, [primaryFilePath, uploadedFiles]);
+  const uploadedBundleBytes = useMemo(() => {
+    return sumBytes(uploadedFiles.map((file) => file.size));
+  }, [uploadedFiles]);
+  const runtimeOutputPath = useMemo(() => {
+    return getRuntimeAssetOutputPath(conversionResult?.assetPath);
+  }, [conversionResult?.assetPath]);
+  const writtenRuntimeFile = useMemo(() => {
+    if (!conversionResult?.savedFiles?.length || !runtimeOutputPath) {
+      return null;
+    }
+
+    return (
+      conversionResult.savedFiles.find(
+        (file) => file.outputPath === runtimeOutputPath
+      ) || null
+    );
+  }, [conversionResult, runtimeOutputPath]);
+  const writtenBundleBytes = useMemo(() => {
+    return sumBytes(
+      (conversionResult?.savedFiles || []).map((file) => file.bytes)
+    );
+  }, [conversionResult]);
+  const activeCommand = useMemo(() => {
+    return conversionError?.details?.command || conversionResult?.command || '';
+  }, [conversionError, conversionResult]);
+  const activeDiagnostics = useMemo(() => {
+    return conversionError?.details || conversionResult?.diagnostics || null;
+  }, [conversionError, conversionResult]);
+  const cliOutput = useMemo(() => {
+    return formatCliOutput(activeDiagnostics);
+  }, [activeDiagnostics]);
+  const hasCliOutput = useMemo(() => {
+    if (!activeDiagnostics) {
+      return false;
+    }
+
+    const hasExitCode =
+      activeDiagnostics.exitCode !== null &&
+      activeDiagnostics.exitCode !== undefined;
+
+    return Boolean(
+      hasExitCode || activeDiagnostics.stderr || activeDiagnostics.stdout
+    );
+  }, [activeDiagnostics]);
+  const compareSummary = useMemo(() => {
+    if (!conversionResult || !uploadedPrimaryFile || !writtenRuntimeFile) {
+      return null;
+    }
+
+    return {
+      bundle: {
+        afterBytes: writtenBundleBytes,
+        beforeBytes: uploadedBundleBytes,
+      },
+      runtime: {
+        afterBytes: writtenRuntimeFile.bytes,
+        afterPath: writtenRuntimeFile.outputPath,
+        beforeBytes: uploadedPrimaryFile.size,
+        beforePath: getFileRelativePath(uploadedPrimaryFile),
+      },
+    };
+  }, [
+    conversionResult,
+    uploadedBundleBytes,
+    uploadedPrimaryFile,
+    writtenBundleBytes,
+    writtenRuntimeFile,
+  ]);
 
   useEffect(() => {
     if (!isLocal) return undefined;
@@ -648,6 +1068,7 @@ export default function GltfJsxPage() {
     startTransition(() => {
       setConversionResult(null);
       setConversionError(null);
+      setPreviewSource('uploaded');
     });
   }
 
@@ -710,22 +1131,22 @@ export default function GltfJsxPage() {
         },
         method: 'POST',
       });
-      const payload = await response.json();
+      const payload = await readJsonResponse(response);
 
       if (!response.ok) {
-        throw new Error(payload.message || 'Conversion failed.');
+        setConversionError(normalizeConversionError(payload, options));
+        return;
       }
 
       startTransition(() => {
+        setPreviewSource('saved');
         setConversionResult({
           ...payload,
           generatedAt: Date.now(),
         });
       });
     } catch (error) {
-      setConversionError(
-        error instanceof Error ? error.message : 'Conversion failed.'
-      );
+      setConversionError(normalizeUnexpectedConversionError(error));
     } finally {
       setConversionState('idle');
     }
@@ -778,7 +1199,7 @@ export default function GltfJsxPage() {
       </header>
 
       <div style={styles.layout}>
-        <div style={styles.stack}>
+        <div style={styles.leftStack}>
           <section style={styles.panel}>
             <h2 style={styles.panelTitle}>Upload</h2>
             <p style={styles.panelLead}>
@@ -1076,20 +1497,21 @@ export default function GltfJsxPage() {
                 onChange={(value) => updateOption('keepmaterials', value)}
               />
               <div style={styles.twoCol}>
-                <TextField
+                <SelectField
                   label="Resolution"
-                  hint="Default texture resize target."
-                  type="number"
+                  hint="Default texture resize target. Common powers-of-two map cleanly to gltfjsx texture transforms."
                   value={String(options.resolution)}
                   onChange={(value) =>
                     updateOption('resolution', Number(value))
                   }
+                  options={TEXTURE_RESOLUTION_OPTIONS}
                 />
-                <TextField
+                <SelectField
                   label="Format"
                   hint="Texture output format used by gltfjsx transform."
                   value={options.format}
                   onChange={(value) => updateOption('format', value)}
+                  options={TEXTURE_FORMAT_OPTIONS}
                 />
               </div>
               <div style={styles.twoCol}>
@@ -1114,31 +1536,39 @@ export default function GltfJsxPage() {
                 value={options.degrade}
                 onChange={(value) => updateOption('degrade', value)}
               />
-              <TextField
+              <SelectField
                 label="Degrade resolution"
                 hint="Resolution used for textures that match the degrade pattern."
-                type="number"
                 value={String(options.degraderesolution)}
                 onChange={(value) =>
                   updateOption('degraderesolution', Number(value))
                 }
+                options={TEXTURE_RESOLUTION_OPTIONS}
               />
             </div>
           </section>
         </div>
 
-        <div style={styles.stack}>
+        <div style={styles.rightStack}>
           <section style={styles.panel}>
             <div style={{ ...styles.labelRow, marginBottom: '0.9rem' }}>
               <div>
                 <h2 style={styles.panelTitle}>Preview</h2>
                 <p style={styles.panelLead}>
-                  Upload preview is immediate. After conversion, the viewer
-                  reloads from the written `public/models` asset.
+                  Upload preview is immediate. After conversion, you can switch
+                  between the raw upload, the written asset in `public/models`,
+                  and the generated component itself.
                 </p>
               </div>
             </div>
             <div style={styles.grid}>
+              <SelectField
+                label="Preview source"
+                hint="Compare the original upload, the written transformed asset, and the generated component after conversion."
+                value={previewSource}
+                onChange={setPreviewSource}
+                options={previewSourceOptions}
+              />
               <div style={styles.twoCol}>
                 <ToggleField
                   checked={previewOptions.autoRotate}
@@ -1186,10 +1616,126 @@ export default function GltfJsxPage() {
             <div style={{ marginTop: '1rem' }}>
               <GltfPreviewCanvas
                 previewAsset={previewAsset}
+                previewComponent={previewComponent}
                 previewOptions={previewOptions}
               />
             </div>
           </section>
+
+          {compareSummary && uploadedPreviewAsset && savedPreviewAsset ? (
+            <section style={styles.panel}>
+              <div style={{ ...styles.labelRow, marginBottom: '0.9rem' }}>
+                <div>
+                  <h2 style={styles.panelTitle}>Before / After</h2>
+                  <p style={styles.panelLead}>
+                    Compare the original upload against the converted runtime
+                    asset. Use Preview source above if you also want to inspect
+                    the generated component itself.
+                  </p>
+                </div>
+              </div>
+              <div style={styles.compareGrid}>
+                <div style={styles.compareCard}>
+                  <div style={styles.compareHeader}>
+                    <span style={styles.panelTitle}>Before</span>
+                    <span style={styles.fileMeta}>
+                      {formatFileSize(compareSummary.runtime.beforeBytes)}
+                    </span>
+                  </div>
+                  <GltfPreviewCanvas
+                    previewAsset={uploadedPreviewAsset}
+                    previewOptions={previewOptions}
+                  />
+                </div>
+                <div style={styles.compareCard}>
+                  <div style={styles.compareHeader}>
+                    <span style={styles.panelTitle}>After</span>
+                    <span style={styles.fileMeta}>
+                      {formatFileSize(compareSummary.runtime.afterBytes)}
+                    </span>
+                  </div>
+                  <GltfPreviewCanvas
+                    previewAsset={savedPreviewAsset}
+                    previewOptions={previewOptions}
+                  />
+                </div>
+              </div>
+              <div style={{ ...styles.compareStatsGrid, marginTop: '1rem' }}>
+                <div style={styles.compareStatCard}>
+                  <span style={styles.statLabel}>Runtime asset</span>
+                  <span style={styles.statValue}>
+                    {formatFileSize(compareSummary.runtime.beforeBytes)} →{' '}
+                    {formatFileSize(compareSummary.runtime.afterBytes)}
+                  </span>
+                  <span style={styles.hint}>
+                    {compareSummary.runtime.beforePath}
+                  </span>
+                  <span style={styles.hint}>
+                    {compareSummary.runtime.afterPath}
+                  </span>
+                  <span
+                    style={{
+                      ...styles.hint,
+                      color:
+                        compareSummary.runtime.afterBytes <=
+                        compareSummary.runtime.beforeBytes
+                          ? '#166534'
+                          : '#9f1239',
+                    }}
+                  >
+                    {formatSizeDelta(
+                      compareSummary.runtime.beforeBytes,
+                      compareSummary.runtime.afterBytes
+                    )}
+                    {formatPercentDelta(
+                      compareSummary.runtime.beforeBytes,
+                      compareSummary.runtime.afterBytes
+                    )
+                      ? ` (${formatPercentDelta(
+                          compareSummary.runtime.beforeBytes,
+                          compareSummary.runtime.afterBytes
+                        )})`
+                      : ''}
+                  </span>
+                </div>
+                <div style={styles.compareStatCard}>
+                  <span style={styles.statLabel}>Full bundle</span>
+                  <span style={styles.statValue}>
+                    {formatFileSize(compareSummary.bundle.beforeBytes)} →{' '}
+                    {formatFileSize(compareSummary.bundle.afterBytes)}
+                  </span>
+                  <span style={styles.hint}>
+                    Sum of uploaded files vs all files written to the target
+                    model directory.
+                  </span>
+                  <span
+                    style={{
+                      ...styles.hint,
+                      color:
+                        compareSummary.bundle.afterBytes <=
+                        compareSummary.bundle.beforeBytes
+                          ? '#166534'
+                          : '#9f1239',
+                    }}
+                  >
+                    {formatSizeDelta(
+                      compareSummary.bundle.beforeBytes,
+                      compareSummary.bundle.afterBytes
+                    )}
+                    {formatPercentDelta(
+                      compareSummary.bundle.beforeBytes,
+                      compareSummary.bundle.afterBytes
+                    )
+                      ? ` (${formatPercentDelta(
+                          compareSummary.bundle.beforeBytes,
+                          compareSummary.bundle.afterBytes
+                        )})`
+                      : ''}
+                  </span>
+                </div>
+              </div>
+            </section>
+          ) : null}
 
           <section style={styles.panel}>
             <div style={styles.buttonRow}>
@@ -1226,10 +1772,28 @@ export default function GltfJsxPage() {
                 style={{
                   ...styles.message,
                   ...styles.error,
+                  display: 'grid',
+                  gap: '0.65rem',
                   marginTop: '0.9rem',
                 }}
               >
-                {conversionError}
+                <div style={styles.diagnosticHeader}>
+                  <strong>{conversionError.message}</strong>
+                  {conversionError.code ? (
+                    <span style={styles.diagnosticCode}>
+                      {conversionError.code}
+                    </span>
+                  ) : null}
+                </div>
+                {conversionError.hints?.length ? (
+                  <div style={styles.diagnosticList}>
+                    {conversionError.hints.map((hint) => (
+                      <div key={hint} style={styles.diagnosticItem}>
+                        • {hint}
+                      </div>
+                    ))}
+                  </div>
+                ) : null}
               </div>
             ) : null}
             {conversionResult ? (
@@ -1279,24 +1843,58 @@ export default function GltfJsxPage() {
                   {conversionResult?.assetPath || 'Pending conversion'}
                 </span>
               </div>
+              <div style={styles.statRow}>
+                <span style={styles.statLabel}>Runtime asset size</span>
+                <span style={styles.statValue}>
+                  {writtenRuntimeFile
+                    ? formatFileSize(writtenRuntimeFile.bytes)
+                    : 'Pending conversion'}
+                </span>
+              </div>
+              <div style={styles.statRow}>
+                <span style={styles.statLabel}>Written bundle size</span>
+                <span style={styles.statValue}>
+                  {conversionResult?.savedFiles?.length
+                    ? formatFileSize(writtenBundleBytes)
+                    : 'Pending conversion'}
+                </span>
+              </div>
             </div>
           </section>
 
           <CodeBlockPanel
             title="CLI Command"
             value={
-              conversionResult?.command ||
-              'The raw gltfjsx command will appear here after conversion.'
+              activeCommand ||
+              'The raw gltfjsx command will appear here after a conversion attempt.'
             }
             actions={
-              conversionResult?.command ? (
+              activeCommand ? (
                 <div style={styles.buttonRow}>
                   <button
                     type="button"
                     style={styles.secondaryButton}
-                    onClick={() => copyText(conversionResult.command)}
+                    onClick={() => copyText(activeCommand)}
                   >
                     Copy command
+                  </button>
+                </div>
+              ) : null
+            }
+          />
+
+          <CodeBlockPanel
+            title="CLI Output"
+            value={cliOutput}
+            actions={
+              hasCliOutput ? (
+                <div style={styles.buttonRow}>
+                  <button
+                    type="button"
+                    style={styles.secondaryButton}
+                    onClick={() => copyText(cliOutput)}
+                  >
+                    Copy output
                   </button>
                 </div>
               ) : null
@@ -1328,7 +1926,9 @@ export default function GltfJsxPage() {
                 {conversionResult.savedFiles.map((file) => (
                   <div key={file.outputPath} style={styles.fileItem}>
                     <span>{file.outputPath}</span>
-                    <span style={styles.fileMeta}>from {file.sourcePath}</span>
+                    <span style={styles.fileMeta}>
+                      {formatFileSize(file.bytes)} from {file.sourcePath}
+                    </span>
                   </div>
                 ))}
               </div>

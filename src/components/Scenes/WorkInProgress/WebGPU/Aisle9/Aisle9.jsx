@@ -10,6 +10,7 @@ import React, {
 
 import { OrbitControls, PerspectiveCamera } from '@react-three/drei';
 
+import useCameraFitToViewport from '../../../../../hooks/useCameraFitToViewport';
 import useCameraSpline from '../../../../../hooks/useCameraSpline';
 import AISLE9_CAMERA_SPLINES from '../../../../../presets/spline/aisle9CameraSplines';
 import CENTER_STORE_REF_POSITION from '../../../../elements/sevenEleven/sevenElevenAnchors';
@@ -20,10 +21,16 @@ import useSceneControls from './hooks/useSceneControls';
 export default function Aisle9() {
   const config = useSceneControls();
   const cameraRef = useRef(null);
+  const [cameraNode, setCameraNode] = useState(null);
+  const [controlsNode, setControlsNode] = useState(null);
   const [resolvedStoreSpace, setResolvedStoreSpace] = useState(null);
   const isStoreWarp = config.presentationMode === 'storeWarp';
   const isFixedMode = config.cameraMode === 'fixed';
   const isSplineMode = config.cameraMode === 'spline';
+  const handleCameraRef = useCallback((node) => {
+    cameraRef.current = node;
+    setCameraNode(node);
+  }, []);
   const handleStoreSpaceChange = useCallback(
     ({ centerStoreRefWorldPosition, storeLocalToWorldMatrix }) => {
       setResolvedStoreSpace({
@@ -64,7 +71,6 @@ export default function Aisle9() {
     }),
     [config, effectiveBlackHolePosition]
   );
-  const { cameraPosition, cameraTarget } = config;
   const cameraSplinePreset = AISLE9_CAMERA_SPLINES[config.cameraSplinePreset];
   const cameraSplineClosed = cameraSplinePreset?.closed ?? true;
   const storeLocalToWorldMatrix =
@@ -72,11 +78,106 @@ export default function Aisle9() {
       ? resolvedStoreSpace.storeLocalToWorldMatrix
       : null;
 
-  const fixedCameraPosition = useMemo(() => {
-    const position = new THREE.Vector3(
+  const orbitCameraFitConfig = useMemo(
+    () => ({
+      desktopPosition: [
+        config.cameraPosition.x,
+        config.cameraPosition.y,
+        config.cameraPosition.z,
+      ],
+      desktopTarget: [
+        config.cameraTarget.x,
+        config.cameraTarget.y,
+        config.cameraTarget.z,
+      ],
+      desktopFov: config.cameraFov,
+      mobilePosition: [
+        config.cameraMobilePosition.x,
+        config.cameraMobilePosition.y,
+        config.cameraMobilePosition.z,
+      ],
+      mobileTarget: [
+        config.cameraMobileTarget.x,
+        config.cameraMobileTarget.y,
+        config.cameraMobileTarget.z,
+      ],
+      mobileFov: config.cameraMobileFov,
+    }),
+    [
+      config.cameraFov,
+      config.cameraMobileFov,
+      config.cameraMobilePosition.x,
+      config.cameraMobilePosition.y,
+      config.cameraMobilePosition.z,
+      config.cameraMobileTarget.x,
+      config.cameraMobileTarget.y,
+      config.cameraMobileTarget.z,
+      config.cameraPosition.x,
+      config.cameraPosition.y,
+      config.cameraPosition.z,
+      config.cameraTarget.x,
+      config.cameraTarget.y,
+      config.cameraTarget.z,
+    ]
+  );
+  const {
+    cameraFov: responsiveCameraFov,
+    cameraPosition: responsiveOrbitCameraPosition,
+    cameraTarget: responsiveOrbitCameraTarget,
+  } = useCameraFitToViewport(orbitCameraFitConfig);
+
+  const fixedCameraFitConfig = useMemo(
+    () => ({
+      desktopPosition: [
+        config.fixedCameraPosition.x,
+        config.fixedCameraPosition.y,
+        config.fixedCameraPosition.z,
+      ],
+      desktopTarget: [
+        config.fixedCameraTarget.x,
+        config.fixedCameraTarget.y,
+        config.fixedCameraTarget.z,
+      ],
+      desktopFov: config.cameraFov,
+      mobilePosition: [
+        config.fixedCameraMobilePosition.x,
+        config.fixedCameraMobilePosition.y,
+        config.fixedCameraMobilePosition.z,
+      ],
+      mobileTarget: [
+        config.fixedCameraMobileTarget.x,
+        config.fixedCameraMobileTarget.y,
+        config.fixedCameraMobileTarget.z,
+      ],
+      mobileFov: config.cameraMobileFov,
+    }),
+    [
+      config.cameraFov,
+      config.cameraMobileFov,
+      config.fixedCameraMobilePosition.x,
+      config.fixedCameraMobilePosition.y,
+      config.fixedCameraMobilePosition.z,
+      config.fixedCameraMobileTarget.x,
+      config.fixedCameraMobileTarget.y,
+      config.fixedCameraMobileTarget.z,
       config.fixedCameraPosition.x,
       config.fixedCameraPosition.y,
-      config.fixedCameraPosition.z
+      config.fixedCameraPosition.z,
+      config.fixedCameraTarget.x,
+      config.fixedCameraTarget.y,
+      config.fixedCameraTarget.z,
+    ]
+  );
+  const {
+    cameraPosition: responsiveFixedCameraPosition,
+    cameraTarget: responsiveFixedCameraTarget,
+  } = useCameraFitToViewport(fixedCameraFitConfig);
+
+  const fixedCameraPosition = useMemo(() => {
+    const position = new THREE.Vector3(
+      responsiveFixedCameraPosition[0],
+      responsiveFixedCameraPosition[1],
+      responsiveFixedCameraPosition[2]
     );
 
     if (storeLocalToWorldMatrix) {
@@ -84,18 +185,13 @@ export default function Aisle9() {
     }
 
     return position;
-  }, [
-    config.fixedCameraPosition.x,
-    config.fixedCameraPosition.y,
-    config.fixedCameraPosition.z,
-    storeLocalToWorldMatrix,
-  ]);
+  }, [responsiveFixedCameraPosition, storeLocalToWorldMatrix]);
 
   const fixedCameraTarget = useMemo(() => {
     const target = new THREE.Vector3(
-      config.fixedCameraTarget.x,
-      config.fixedCameraTarget.y,
-      config.fixedCameraTarget.z
+      responsiveFixedCameraTarget[0],
+      responsiveFixedCameraTarget[1],
+      responsiveFixedCameraTarget[2]
     );
 
     if (storeLocalToWorldMatrix) {
@@ -103,18 +199,13 @@ export default function Aisle9() {
     }
 
     return target;
-  }, [
-    config.fixedCameraTarget.x,
-    config.fixedCameraTarget.y,
-    config.fixedCameraTarget.z,
-    storeLocalToWorldMatrix,
-  ]);
+  }, [responsiveFixedCameraTarget, storeLocalToWorldMatrix]);
 
   const orbitCameraTarget = useMemo(() => {
     const target = new THREE.Vector3(
-      config.cameraTarget.x,
-      config.cameraTarget.y,
-      config.cameraTarget.z
+      responsiveOrbitCameraTarget[0],
+      responsiveOrbitCameraTarget[1],
+      responsiveOrbitCameraTarget[2]
     );
 
     if (storeLocalToWorldMatrix) {
@@ -122,12 +213,7 @@ export default function Aisle9() {
     }
 
     return target;
-  }, [
-    config.cameraTarget.x,
-    config.cameraTarget.y,
-    config.cameraTarget.z,
-    storeLocalToWorldMatrix,
-  ]);
+  }, [responsiveOrbitCameraTarget, storeLocalToWorldMatrix]);
 
   const cameraSplinePoints = useMemo(() => {
     const sourcePoints = cameraSplinePreset?.points || [];
@@ -204,17 +290,15 @@ export default function Aisle9() {
       return [x, y, z];
     }
 
-    return [cameraPosition.x, cameraPosition.y, cameraPosition.z];
+    return responsiveOrbitCameraPosition;
   }, [
-    cameraPosition.x,
-    cameraPosition.y,
-    cameraPosition.z,
     cameraSplinePoints,
     fixedCameraPosition.x,
     fixedCameraPosition.y,
     fixedCameraPosition.z,
     isFixedMode,
     isSplineMode,
+    responsiveOrbitCameraPosition,
   ]);
 
   const activeOrbitTarget = useMemo(() => {
@@ -222,25 +306,51 @@ export default function Aisle9() {
       return [orbitCameraTarget.x, orbitCameraTarget.y, orbitCameraTarget.z];
     }
 
-    return [cameraTarget.x, cameraTarget.y, cameraTarget.z];
+    return responsiveOrbitCameraTarget;
   }, [
-    cameraTarget.x,
-    cameraTarget.y,
-    cameraTarget.z,
     isStoreWarp,
     orbitCameraTarget.x,
     orbitCameraTarget.y,
     orbitCameraTarget.z,
+    responsiveOrbitCameraTarget,
   ]);
 
   useLayoutEffect(() => {
-    if (!isFixedMode || !cameraRef.current) {
+    if (!cameraNode) {
       return;
     }
 
-    cameraRef.current.lookAt(fixedCameraTarget);
-    cameraRef.current.updateProjectionMatrix();
-  }, [fixedCameraTarget, isFixedMode]);
+    cameraNode.fov = responsiveCameraFov;
+    cameraNode.updateProjectionMatrix();
+
+    if (isSplineMode) {
+      return;
+    }
+
+    cameraNode.position.set(...activeCameraPosition);
+
+    if (isFixedMode) {
+      cameraNode.lookAt(fixedCameraTarget);
+      return;
+    }
+
+    if (!controlsNode) {
+      cameraNode.lookAt(...activeOrbitTarget);
+      return;
+    }
+
+    controlsNode.target.set(...activeOrbitTarget);
+    controlsNode.update();
+  }, [
+    activeCameraPosition,
+    activeOrbitTarget,
+    cameraNode,
+    controlsNode,
+    fixedCameraTarget,
+    isFixedMode,
+    isSplineMode,
+    responsiveCameraFov,
+  ]);
 
   useCameraSpline({
     enabled: isSplineMode,
@@ -259,15 +369,16 @@ export default function Aisle9() {
   return (
     <>
       <PerspectiveCamera
-        ref={cameraRef}
+        ref={handleCameraRef}
         makeDefault
-        fov={config.cameraFov}
+        fov={responsiveCameraFov}
         near={config.cameraNear}
         far={config.cameraFar}
         position={activeCameraPosition}
       />
       {!isSplineMode && !isFixedMode ? (
         <OrbitControls
+          ref={setControlsNode}
           makeDefault
           autoRotate={config.cameraAutoRotate}
           enableDamping

@@ -30,6 +30,7 @@ const CAMERA_MODE_KEYS = ['cameraMode'];
 
 const CAMERA_SCALAR_KEYS = [
   'cameraFov',
+  'cameraMobileFov',
   'cameraNear',
   'cameraFar',
   'cameraAutoRotate',
@@ -41,7 +42,14 @@ const CAMERA_SCALAR_KEYS = [
 
 const CAMERA_KEYS = [...CAMERA_SCALAR_KEYS, 'cameraPosition', 'cameraTarget'];
 
+const CAMERA_MOBILE_KEYS = ['cameraMobilePosition', 'cameraMobileTarget'];
+
 const CAMERA_FIXED_KEYS = ['fixedCameraPosition', 'fixedCameraTarget'];
+
+const CAMERA_FIXED_MOBILE_KEYS = [
+  'fixedCameraMobilePosition',
+  'fixedCameraMobileTarget',
+];
 
 const CAMERA_SPLINE_KEYS = [
   'cameraSplinePreset',
@@ -130,7 +138,9 @@ const STORE_TRANSFORM_KEYS = ['storePosition', 'storeRotation'];
 const EXPLICIT_KEYS = new Set([
   ...CAMERA_MODE_KEYS,
   ...CAMERA_KEYS,
+  ...CAMERA_MOBILE_KEYS,
   ...CAMERA_FIXED_KEYS,
+  ...CAMERA_FIXED_MOBILE_KEYS,
   ...CAMERA_SPLINE_KEYS,
   ...BLACK_HOLE_KEYS,
   ...BLACK_HOLE_TRANSFORM_KEYS,
@@ -151,11 +161,24 @@ const CONTROL_SCHEMA = {
     options: CAMERA_MODE_OPTIONS,
   },
   cameraFov: { label: 'FOV', min: 20, max: 100, step: 1 },
+  cameraMobileFov: { label: 'Mobile FOV', min: 20, max: 100, step: 1 },
   cameraNear: { label: 'Near', min: 0.01, max: 10, step: 0.01 },
   cameraFar: { label: 'Far', min: 50, max: 5000, step: 10 },
   cameraAutoRotate: { label: 'Auto Rotate' },
   cameraPosition: { label: 'Position', min: -50, max: 200, step: 0.1 },
   cameraTarget: { label: 'Target', min: -20, max: 20, step: 0.1 },
+  cameraMobilePosition: {
+    label: 'Mobile Position',
+    min: -50,
+    max: 200,
+    step: 0.1,
+  },
+  cameraMobileTarget: {
+    label: 'Mobile Target',
+    min: -20,
+    max: 20,
+    step: 0.1,
+  },
   cameraMinDistance: {
     label: 'Min Distance',
     min: 1,
@@ -188,6 +211,18 @@ const CONTROL_SCHEMA = {
   },
   fixedCameraTarget: {
     label: 'Target',
+    min: -100,
+    max: 100,
+    step: 0.1,
+  },
+  fixedCameraMobilePosition: {
+    label: 'Mobile Position',
+    min: -100,
+    max: 100,
+    step: 0.1,
+  },
+  fixedCameraMobileTarget: {
+    label: 'Mobile Target',
     min: -100,
     max: 100,
     step: 0.1,
@@ -455,8 +490,18 @@ export default function useSceneControls() {
         {
           ...createFolderControls(CAMERA_MODE_KEYS, presetControls),
           ...createFolderControls(CAMERA_KEYS, presetControls),
+          'Viewport Fit': folder(
+            createFolderControls(CAMERA_MOBILE_KEYS, presetControls),
+            C
+          ),
           'Fixed Camera': folder(
-            createFolderControls(CAMERA_FIXED_KEYS, presetControls),
+            {
+              ...createFolderControls(CAMERA_FIXED_KEYS, presetControls),
+              'Viewport Fit': folder(
+                createFolderControls(CAMERA_FIXED_MOBILE_KEYS, presetControls),
+                C
+              ),
+            },
             {
               collapsed: true,
               render: (get) => get(CAMERA_MODE_PATH) === 'fixed',

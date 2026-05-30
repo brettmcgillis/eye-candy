@@ -532,7 +532,7 @@ function GhostIcon() {
 }
 
 function Aisle9Icon() {
-  return <PiPlanetFill color="#f59e0b" />;
+  return <PiPlanetFill color="#202020" />;
 }
 
 function RabbitIcon() {

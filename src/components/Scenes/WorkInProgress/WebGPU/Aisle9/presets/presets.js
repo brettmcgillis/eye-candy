@@ -14,6 +14,33 @@ function cloneCenterStoreRef() {
   };
 }
 
+// Up to three bodies orbiting the hole (sim-space units, same scale as the
+// disk radii). They are intersected inside the bent ray loop, so they get
+// gravitationally lensed as they pass behind the singularity.
+const BLACK_HOLE_BODIES_OFF = {
+  body1Enabled: false,
+  body1Color: '#9ec5ff',
+  body1Size: 0.9,
+  body1OrbitRadius: 9,
+  body1OrbitSpeed: 0.6,
+  body1OrbitPhase: 0,
+  body1Height: 0,
+  body2Enabled: false,
+  body2Color: '#ffd27f',
+  body2Size: 0.6,
+  body2OrbitRadius: 12.5,
+  body2OrbitSpeed: -0.42,
+  body2OrbitPhase: 120,
+  body2Height: 1.5,
+  body3Enabled: false,
+  body3Color: '#ff8fa3',
+  body3Size: 1.3,
+  body3OrbitRadius: 16,
+  body3OrbitSpeed: 0.28,
+  body3OrbitPhase: 240,
+  body3Height: -2,
+};
+
 const DEFAULT_CAMERA_SPLINE_SETTINGS = {
   cameraMode: 'orbit',
   cameraAutoRotate: false,
@@ -34,6 +61,7 @@ const DEFAULT_CAMERA_SPLINE_SETTINGS = {
 
 const SPACE_SCENE_PRESET = {
   ...DEFAULT_CAMERA_SPLINE_SETTINGS,
+  ...BLACK_HOLE_BODIES_OFF,
   presentationMode: 'backgroundField',
   blackHoleMass: 0.4,
   diskInnerRadius: 4.1,
@@ -149,6 +177,9 @@ const SPACE_SCENE_PRESET = {
 
 const STORE_SCENE_PRESET = {
   ...DEFAULT_CAMERA_SPLINE_SETTINGS,
+  ...BLACK_HOLE_BODIES_OFF,
+  body1Enabled: true,
+  body2Enabled: true,
   cameraFov: 60,
   cameraMobileFov: 85,
   cameraNear: 0.1,

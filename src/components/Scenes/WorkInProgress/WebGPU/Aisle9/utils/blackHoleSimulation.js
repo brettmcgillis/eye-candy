@@ -2,6 +2,18 @@ import { uniform, vec3 } from 'three/tsl';
 import * as THREE from 'three/webgpu';
 
 import createBlackHoleShader from './blackHoleShader';
+import createBlackHoleVolumeShader from './blackHoleVolumeShader';
+
+export const BLACK_HOLE_BODY_COUNT = 3;
+
+function createBodyUniforms() {
+  return Array.from({ length: BLACK_HOLE_BODY_COUNT }, () => ({
+    position: uniform(new THREE.Vector3(0, 0, 0)),
+    color: uniform(new THREE.Color('#ffffff')),
+    radius: uniform(1),
+    enabled: uniform(0),
+  }));
+}
 
 function createUniforms(config, size) {
   return {
@@ -33,6 +45,8 @@ function createUniforms(config, size) {
     gravitationalLensing: uniform(config.gravitationalLensing ?? 1.5),
     dopplerStrength: uniform(config.dopplerStrength ?? 1),
     stepSize: uniform(config.stepSize ?? 0.3),
+    raySteps: uniform(Math.max(1, Math.round(config.raySteps ?? 64)), 'int'),
+    maxRayDistance: uniform(config.maxRayDistance ?? 100),
     starsEnabled: uniform(config.starsEnabled ? 1 : 0),
     starBackgroundColor: uniform(
       new THREE.Color(config.starBackgroundColor ?? '#000000')
@@ -54,6 +68,9 @@ function createUniforms(config, size) {
     resolution: uniform(new THREE.Vector2(size.width, size.height)),
     cameraPosition: uniform(new THREE.Vector3(0, 0, 20)),
     cameraTarget: uniform(new THREE.Vector3(0, 0, 0)),
+    tanHalfFov: uniform(Math.tan(THREE.MathUtils.degToRad(60) * 0.5)),
+    cameraInside: uniform(0),
+    bodies: createBodyUniforms(),
   };
 }
 
@@ -75,6 +92,25 @@ export class BlackHoleSimulation {
   createMaterial() {
     const material = new THREE.MeshBasicNodeMaterial();
     material.colorNode = createBlackHoleShader(this.uniforms);
+    return material;
+  }
+
+  // In-scene volumetric material (Tier 1). Drawn over the store with the bright
+  // disk/core; transparent where rays escape so the store shows through. The
+  // shader writes the per-pixel depth of the first hit (depthNode), so store
+  // geometry occludes the hole (and vice-versa) via the normal depth test.
+  createVolumeMaterial() {
+    const material = new THREE.MeshBasicNodeMaterial({
+      transparent: true,
+      depthWrite: false,
+      depthTest: true,
+      side: THREE.FrontSide,
+    });
+    const result = createBlackHoleVolumeShader(this.uniforms);
+    const colorOut = result.get('color');
+    material.colorNode = colorOut.rgb;
+    material.opacityNode = colorOut.a;
+    material.depthNode = result.get('depth');
     return material;
   }
 
@@ -164,6 +200,12 @@ export class BlackHoleSimulation {
     if (config.stepSize !== undefined) {
       u.stepSize.value = config.stepSize;
     }
+    if (config.raySteps !== undefined) {
+      u.raySteps.value = Math.max(1, Math.round(config.raySteps));
+    }
+    if (config.maxRayDistance !== undefined) {
+      u.maxRayDistance.value = config.maxRayDistance;
+    }
     if (config.starsEnabled !== undefined) {
       u.starsEnabled.value = config.starsEnabled ? 1 : 0;
     }
@@ -213,6 +255,13 @@ export class BlackHoleSimulation {
 
   update(deltaTime, camera, worldToLocalMatrix) {
     this.uniforms.time.value += deltaTime;
+    this.uniforms.tanHalfFov.value = Math.tan(
+      THREE.MathUtils.degToRad(
+        typeof camera.getEffectiveFOV === 'function'
+          ? camera.getEffectiveFOV()
+          : (camera.fov ?? 60)
+      ) * 0.5
+    );
 
     this.cameraDirection.set(0, 0, -1).applyQuaternion(camera.quaternion);
     this.cameraTarget

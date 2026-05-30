@@ -135,6 +135,33 @@ const STORE_KEYS = ['storeScale'];
 
 const STORE_TRANSFORM_KEYS = ['storePosition', 'storeRotation'];
 
+const BODY_FIELDS = [
+  'Enabled',
+  'Color',
+  'Size',
+  'OrbitRadius',
+  'OrbitSpeed',
+  'OrbitPhase',
+  'Height',
+];
+
+const bodyKeys = (index) => BODY_FIELDS.map((field) => `body${index}${field}`);
+
+const BODY_1_KEYS = bodyKeys(1);
+const BODY_2_KEYS = bodyKeys(2);
+const BODY_3_KEYS = bodyKeys(3);
+const BODY_KEYS = [...BODY_1_KEYS, ...BODY_2_KEYS, ...BODY_3_KEYS];
+
+const BODY_FIELD_SCHEMA = {
+  Enabled: { label: 'Enabled' },
+  Color: { label: 'Color' },
+  Size: { label: 'Size', min: 0.2, max: 4, step: 0.1 },
+  OrbitRadius: { label: 'Orbit Radius', min: 2, max: 19, step: 0.1 },
+  OrbitSpeed: { label: 'Orbit Speed', min: -3, max: 3, step: 0.01 },
+  OrbitPhase: { label: 'Orbit Phase', min: 0, max: 360, step: 1 },
+  Height: { label: 'Height', min: -8, max: 8, step: 0.1 },
+};
+
 const EXPLICIT_KEYS = new Set([
   ...CAMERA_MODE_KEYS,
   ...CAMERA_KEYS,
@@ -153,6 +180,7 @@ const EXPLICIT_KEYS = new Set([
   ...BLOOM_KEYS,
   ...STORE_KEYS,
   ...STORE_TRANSFORM_KEYS,
+  ...BODY_KEYS,
 ]);
 
 const CONTROL_SCHEMA = {
@@ -438,7 +466,10 @@ function createControl(key, value) {
     };
   }
 
-  const schema = CONTROL_SCHEMA[key] || {};
+  const bodyMatch = key.match(/^body\d(.+)$/);
+  const schema = bodyMatch
+    ? BODY_FIELD_SCHEMA[bodyMatch[1]] || {}
+    : CONTROL_SCHEMA[key] || {};
   return {
     label: schema.label || humanizeKey(key),
     value,
@@ -522,6 +553,23 @@ export default function useSceneControls() {
           ...createFolderControls(BLACK_HOLE_KEYS, presetControls),
           Transform: folder(
             createFolderControls(BLACK_HOLE_TRANSFORM_KEYS, presetControls),
+            C
+          ),
+        },
+        C
+      ),
+      Bodies: folder(
+        {
+          'Body 1': folder(
+            createFolderControls(BODY_1_KEYS, presetControls),
+            C
+          ),
+          'Body 2': folder(
+            createFolderControls(BODY_2_KEYS, presetControls),
+            C
+          ),
+          'Body 3': folder(
+            createFolderControls(BODY_3_KEYS, presetControls),
             C
           ),
         },

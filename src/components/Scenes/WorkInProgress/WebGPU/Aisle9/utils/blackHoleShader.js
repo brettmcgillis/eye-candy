@@ -12,6 +12,7 @@ import {
   float,
   floor,
   fract,
+  int,
   length,
   max,
   mix,
@@ -27,6 +28,8 @@ import {
   vec3,
   vec4,
 } from 'three/tsl';
+
+const MAX_RAY_STEPS = 256;
 
 const hash21 = Fn(([p]) => {
   const n = sin(dot(p, vec2(127.1, 311.7))).mul(43758.5453);
@@ -277,7 +280,7 @@ const blackbodyColor = Fn(([tempK]) => {
   return vec3(r, g, b);
 });
 
-const createStarField = (uniforms) =>
+export const createStarField = (uniforms) =>
   Fn(([rayDir]) => {
     const theta = atan(rayDir.z, rayDir.x);
     const phi = asin(clamp(rayDir.y, float(-1), float(1)));
@@ -306,7 +309,7 @@ const createStarField = (uniforms) =>
     return starColor.mul(starIntensity).mul(uniforms.starBrightness);
   });
 
-const createNebulaField = (uniforms) =>
+export const createNebulaField = (uniforms) =>
   Fn(([rayDir]) => {
     const noisePos1 = rayDir.mul(uniforms.nebula1Scale);
     const n1 = fbm(noisePos1, float(2), float(0.5)).mul(2).sub(1);
@@ -325,7 +328,7 @@ const createNebulaField = (uniforms) =>
     return color1.add(color2);
   });
 
-const createAccretionDiskColor = (uniforms) =>
+export const createAccretionDiskColor = (uniforms) =>
   Fn(([hitR, hitAngle, time, rayDir]) => {
     const innerR = uniforms.diskInnerRadius;
     const outerR = uniforms.diskOuterRadius;
@@ -439,7 +442,10 @@ export default function createBlackHoleShader(uniforms) {
     const rs = uniforms.blackHoleMass.mul(2);
     const uv = screenUV.sub(0.5).mul(2);
     const aspect = uniforms.resolution.x.div(uniforms.resolution.y);
-    const screenPos = vec2(uv.x.mul(aspect), uv.y);
+    const screenPos = vec2(
+      uv.x.mul(aspect).mul(uniforms.tanHalfFov),
+      uv.y.mul(uniforms.tanHalfFov)
+    );
 
     const camPos = uniforms.cameraPosition;
     const camTarget = uniforms.cameraTarget;
@@ -457,6 +463,7 @@ export default function createBlackHoleShader(uniforms) {
 
     const rayPos = camPos.toVar('rayPos');
     const prevPos = camPos.toVar('prevPos');
+    const rayTravel = float(0).toVar('rayTravel');
     const color = vec3(0, 0, 0).toVar('color');
     const alpha = float(0).toVar('alpha');
     const escaped = float(0).toVar('escaped');
@@ -464,64 +471,105 @@ export default function createBlackHoleShader(uniforms) {
 
     const innerR = uniforms.diskInnerRadius;
     const outerR = uniforms.diskOuterRadius;
+    const marchRadius = outerR
+      .add(
+        max(
+          float(8),
+          uniforms.stepSize.mul(uniforms.raySteps.toFloat()).mul(0.25)
+        )
+      )
+      .toVar('marchRadius');
+    const marchRadiusSq = marchRadius.mul(marchRadius).toVar('marchRadiusSq');
+    const startDistanceSq = dot(rayPos, rayPos).toVar('startDistanceSq');
 
-    Loop(64, () => {
-      If(
-        escaped
-          .greaterThan(0.5)
-          .or(captured.greaterThan(0.5))
-          .or(alpha.greaterThan(0.99)),
-        () => {
-          Break();
-        }
-      );
+    // Skip empty space when the straight ray actually enters the black-hole neighborhood.
+    If(startDistanceSq.greaterThan(marchRadiusSq), () => {
+      const entryB = dot(rayPos, rayDir).toVar('entryB');
+      const entryC = startDistanceSq.sub(marchRadiusSq).toVar('entryC');
+      const entryDiscriminant = entryB
+        .mul(entryB)
+        .sub(entryC)
+        .toVar('entryDiscriminant');
 
-      const r = length(rayPos);
+      If(entryDiscriminant.greaterThan(0), () => {
+        const entryDistance = max(
+          float(0),
+          entryB.negate().sub(sqrt(entryDiscriminant))
+        ).toVar('entryDistance');
 
-      If(r.lessThan(rs.mul(1.01)), () => {
-        captured.assign(1);
-        Break();
-      });
-
-      If(r.greaterThan(100), () => {
-        escaped.assign(1);
-        Break();
-      });
-
-      const toCenter = rayPos.negate().div(r);
-      const bendStrength = rs
-        .div(r.mul(r))
-        .mul(uniforms.stepSize)
-        .mul(uniforms.gravitationalLensing);
-      rayDir.addAssign(toCenter.mul(bendStrength));
-      rayDir.assign(normalize(rayDir));
-
-      prevPos.assign(rayPos);
-      rayPos.addAssign(rayDir.mul(uniforms.stepSize));
-
-      const crossedPlane = prevPos.y.mul(rayPos.y).lessThan(0);
-
-      If(crossedPlane.and(alpha.lessThan(0.99)), () => {
-        const t = prevPos.y.negate().div(rayPos.y.sub(prevPos.y));
-        const hitPos = mix(prevPos, rayPos, t);
-        const hitR = sqrt(hitPos.x.mul(hitPos.x).add(hitPos.z.mul(hitPos.z)));
-        const inDisk = hitR.greaterThan(innerR).and(hitR.lessThan(outerR));
-
-        If(inDisk, () => {
-          const hitAngle = atan(hitPos.z, hitPos.x);
-          const diskResult = accretionDiskColor(
-            hitR,
-            hitAngle,
-            uniforms.time,
-            rayDir
-          );
-
-          const remainingAlpha = float(1).sub(alpha);
-          color.addAssign(diskResult.xyz.mul(diskResult.w).mul(remainingAlpha));
-          alpha.addAssign(remainingAlpha.mul(diskResult.w));
-        });
+        rayPos.addAssign(rayDir.mul(entryDistance));
+        prevPos.assign(rayPos);
+        rayTravel.addAssign(entryDistance);
       });
     });
+
+    Loop(
+      { start: int(0), end: int(MAX_RAY_STEPS), type: 'int', condition: '<' },
+      ({ i }) => {
+        If(i.greaterThanEqual(uniforms.raySteps), () => {
+          Break();
+        });
+
+        If(
+          escaped
+            .greaterThan(0.5)
+            .or(captured.greaterThan(0.5))
+            .or(alpha.greaterThan(0.99)),
+          () => {
+            Break();
+          }
+        );
+
+        const r = length(rayPos);
+
+        If(r.lessThan(rs.mul(1.01)), () => {
+          captured.assign(1);
+          Break();
+        });
+
+        If(rayTravel.greaterThan(uniforms.maxRayDistance), () => {
+          escaped.assign(1);
+          Break();
+        });
+
+        const toCenter = rayPos.negate().div(r);
+        const bendStrength = rs
+          .div(r.mul(r))
+          .mul(uniforms.stepSize)
+          .mul(uniforms.gravitationalLensing);
+        rayDir.addAssign(toCenter.mul(bendStrength));
+        rayDir.assign(normalize(rayDir));
+
+        prevPos.assign(rayPos);
+        rayPos.addAssign(rayDir.mul(uniforms.stepSize));
+        rayTravel.addAssign(uniforms.stepSize);
+
+        const crossedPlane = prevPos.y.mul(rayPos.y).lessThan(0);
+
+        If(crossedPlane.and(alpha.lessThan(0.99)), () => {
+          const t = prevPos.y.negate().div(rayPos.y.sub(prevPos.y));
+          const hitPos = mix(prevPos, rayPos, t);
+          const hitR = sqrt(hitPos.x.mul(hitPos.x).add(hitPos.z.mul(hitPos.z)));
+          const inDisk = hitR.greaterThan(innerR).and(hitR.lessThan(outerR));
+
+          If(inDisk, () => {
+            const hitAngle = atan(hitPos.z, hitPos.x);
+            const diskResult = accretionDiskColor(
+              hitR,
+              hitAngle,
+              uniforms.time,
+              rayDir
+            );
+
+            const remainingAlpha = float(1).sub(alpha);
+            color.addAssign(
+              diskResult.xyz.mul(diskResult.w).mul(remainingAlpha)
+            );
+            alpha.addAssign(remainingAlpha.mul(diskResult.w));
+          });
+        });
+      }
+    );
 
     If(captured.lessThan(0.5), () => {
       escaped.assign(1);

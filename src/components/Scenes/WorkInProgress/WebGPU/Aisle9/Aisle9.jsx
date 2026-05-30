@@ -14,7 +14,9 @@ import useCameraFitToViewport from '../../../../../hooks/useCameraFitToViewport'
 import useCameraSpline from '../../../../../hooks/useCameraSpline';
 import AISLE9_CAMERA_SPLINES from '../../../../../presets/spline/aisle9CameraSplines';
 import CENTER_STORE_REF_POSITION from '../../../../elements/sevenEleven/sevenElevenAnchors';
+import BlackHoleVolume from './components/BlackHoleVolume';
 import PostEffects from './components/PostEffects';
+import ScenePost from './components/ScenePost';
 import SevenElevenStage from './components/SevenElevenStage';
 import useSceneControls from './hooks/useSceneControls';
 
@@ -227,6 +229,7 @@ export default function Aisle9() {
       config.cameraSplineScale.y,
       config.cameraSplineScale.z
     );
+
     return sourcePoints.map((point, index) => {
       const transformedPoint = {};
       const position = point.position
@@ -272,8 +275,7 @@ export default function Aisle9() {
     config.cameraSplineScale.x,
     config.cameraSplineScale.y,
     config.cameraSplineScale.z,
-    isStoreWarp,
-    resolvedStoreSpace,
+    storeLocalToWorldMatrix,
   ]);
 
   const activeCameraPosition = useMemo(() => {
@@ -407,15 +409,19 @@ export default function Aisle9() {
       />
 
       {isStoreWarp ? (
-        <SevenElevenStage
-          onStoreSpaceChange={handleStoreSpaceChange}
-          storeScale={config.storeScale}
-          storePosition={config.storePosition}
-          storeRotation={config.storeRotation}
-        />
-      ) : null}
-
-      <PostEffects config={effectiveConfig} />
+        <>
+          <SevenElevenStage
+            onStoreSpaceChange={handleStoreSpaceChange}
+            storeScale={config.storeScale}
+            storePosition={config.storePosition}
+            storeRotation={config.storeRotation}
+          />
+          <BlackHoleVolume config={effectiveConfig} />
+          <ScenePost config={effectiveConfig} />
+        </>
+      ) : (
+        <PostEffects config={effectiveConfig} />
+      )}
     </>
   );
 }

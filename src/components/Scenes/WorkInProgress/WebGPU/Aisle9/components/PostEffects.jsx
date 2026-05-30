@@ -31,10 +31,6 @@ const DEFAULT_BLACK_HOLE_ROTATION = Object.freeze({ x: 0, y: 0, z: 0 });
 const DEFAULT_BLACK_HOLE_SCALE = Object.freeze({ x: 1, y: 1, z: 1 });
 const MIN_BLACK_HOLE_SCALE = 0.001;
 
-function clamp01(value) {
-  return Math.min(Math.max(value, 0), 1);
-}
-
 function setVector3FromControl(target, value, fallback) {
   target.set(
     value?.x ?? fallback.x,
@@ -76,6 +72,7 @@ const PostEffects = memo(function PostEffects({ config }) {
   const { gl: renderer, scene, camera, size } = useThree();
   const postRef = useRef(null);
   const originProjectionRef = useRef(new THREE.Vector3());
+  const originViewRef = useRef(new THREE.Vector3());
   const innerProjectionRef = useRef(new THREE.Vector3());
   const outerProjectionRef = useRef(new THREE.Vector3());
   const innerWorldRef = useRef(new THREE.Vector3());
@@ -133,6 +130,7 @@ const PostEffects = memo(function PostEffects({ config }) {
     () => ({
       aspect: uniform(size.width / Math.max(size.height, 1)),
       center: uniform(new THREE.Vector2(0.5, 0.5)),
+      effectVisibility: uniform(1),
       holeDepth: uniform(1),
       blackHoleMass: uniform(config.blackHoleMass),
       gravitationalLensing: uniform(config.gravitationalLensing),
@@ -199,6 +197,7 @@ const PostEffects = memo(function PostEffects({ config }) {
       config.presentationMode === 'backgroundField'
         ? blackHolePass
         : (() => {
+            const effectVisibility = uniforms.effectVisibility.clamp(0.0, 1.0);
             const centeredUv = vec2(
               screenUV.x.sub(uniforms.center.x).mul(uniforms.aspect),
               screenUV.y.sub(uniforms.center.y)
@@ -221,7 +220,7 @@ const PostEffects = memo(function PostEffects({ config }) {
             const holeVisibleMask = step(
               uniforms.holeDepth.sub(0.0015),
               sceneDepth.sample(screenUV)
-            );
+            ).mul(effectVisibility);
             const blackHoleAlpha = blackHoleMask.r
               .mul(holeVisibleMask)
               .clamp(0.0, 1.0);
@@ -260,7 +259,7 @@ const PostEffects = memo(function PostEffects({ config }) {
             );
             const withBlackHole = dimmedStore
               .mul(float(1.0).sub(blackHoleAlpha))
-              .add(blackHoleColor.rgb);
+              .add(blackHoleColor.rgb.mul(effectVisibility));
 
             return vec4(withBlackHole, 1.0);
           })();
@@ -331,6 +330,9 @@ const PostEffects = memo(function PostEffects({ config }) {
     originProjectionRef.current
       .copy(blackHoleTransform.originWorld)
       .project(camera);
+    originViewRef.current
+      .copy(blackHoleTransform.originWorld)
+      .applyMatrix4(camera.matrixWorldInverse);
 
     simulation.update(deltaTime, camera, blackHoleTransform.worldToLocalMatrix);
 
@@ -380,27 +382,58 @@ const PostEffects = memo(function PostEffects({ config }) {
         aspect
       )
     );
+    const safeProjectedInnerRadius = Number.isFinite(projectedInnerRadius)
+      ? projectedInnerRadius
+      : 0;
+    const safeProjectedOuterRadius = Number.isFinite(projectedOuterRadius)
+      ? projectedOuterRadius
+      : 0;
     const radiusScale =
-      projectedOuterRadius > MAX_SCREEN_OUTER_RADIUS
-        ? MAX_SCREEN_OUTER_RADIUS / projectedOuterRadius
+      safeProjectedOuterRadius > MAX_SCREEN_OUTER_RADIUS
+        ? MAX_SCREEN_OUTER_RADIUS / safeProjectedOuterRadius
         : 1;
-    const screenInnerRadius = Math.max(
-      projectedInnerRadius * radiusScale,
-      0.02
-    );
-    const screenOuterRadius = Math.max(
-      projectedOuterRadius * radiusScale,
-      screenInnerRadius + 0.02
-    );
+    const screenInnerRadius = safeProjectedInnerRadius
+      ? Math.max(safeProjectedInnerRadius * radiusScale, 0.02)
+      : 0;
+    const screenOuterRadius = safeProjectedOuterRadius
+      ? Math.max(
+          safeProjectedOuterRadius * radiusScale,
+          screenInnerRadius + 0.02
+        )
+      : 0;
+    const rawCenterX = originProjectionRef.current.x * 0.5 + 0.5;
+    const rawCenterY = originProjectionRef.current.y * 0.5 + 0.5;
+    const projectedDepthSamples = [
+      originProjectionRef.current.z,
+      innerProjectionRef.current.z,
+      outerProjectionRef.current.z,
+      blackHoleTransform.innerDepthProjection.z,
+      blackHoleTransform.outerDepthProjection.z,
+    ]
+      .map((projectionZ) => projectionZ * 0.5 + 0.5)
+      .filter((depth) => Number.isFinite(depth) && depth >= 0 && depth <= 1);
+    const holeInFront = originViewRef.current.z < -config.cameraNear;
+    const intersectsViewport =
+      rawCenterX + screenOuterRadius >= 0 &&
+      rawCenterX - screenOuterRadius <= 1 &&
+      rawCenterY + screenOuterRadius >= 0 &&
+      rawCenterY - screenOuterRadius <= 1;
+    const effectVisibility =
+      holeInFront &&
+      Number.isFinite(rawCenterX) &&
+      Number.isFinite(rawCenterY) &&
+      screenOuterRadius > 0 &&
+      projectedDepthSamples.length > 0 &&
+      intersectsViewport
+        ? 1
+        : 0;
+    const holeDepth =
+      effectVisibility > 0 ? Math.min(...projectedDepthSamples) : 1;
 
     uniforms.aspect.value = aspect;
-    uniforms.center.value.set(
-      clamp01(originProjectionRef.current.x * 0.5 + 0.5),
-      clamp01(originProjectionRef.current.y * 0.5 + 0.5)
-    );
-    uniforms.holeDepth.value = clamp01(
-      originProjectionRef.current.z * 0.5 + 0.5
-    );
+    uniforms.center.value.set(rawCenterX, rawCenterY);
+    uniforms.effectVisibility.value = effectVisibility;
+    uniforms.holeDepth.value = holeDepth;
     uniforms.screenInnerRadius.value = screenInnerRadius;
     uniforms.screenOuterRadius.value = screenOuterRadius;
 

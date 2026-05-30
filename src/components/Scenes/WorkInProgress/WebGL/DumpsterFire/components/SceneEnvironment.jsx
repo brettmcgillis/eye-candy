@@ -9,16 +9,19 @@ import {
 import useCameraFitToViewport from '../../../../../../hooks/useCameraFitToViewport';
 import useOperatorFreeCamera from '../../../../../../hooks/useOperatorFreeCamera';
 import useOperatorInput from '../../../../../../hooks/useOperatorInput';
+import PersianRug from '../../../../../elements/PersianRug/PersianRug';
 import useTrashBlasterStore from '../hooks/useTrashBlasterStore';
 import {
   BACKGROUND,
   CAMERA,
+  DECOR_RUG,
   FLOOR_COLLIDER_POSITION,
   FOG_RANGE,
   GRID,
   GROUND,
   GROUND_Y,
   LIGHTING,
+  SCENE_ROOT_POSITION,
 } from '../utils/sceneData';
 
 const DEFAULT_SCENE_ENVIRONMENT = Object.freeze({
@@ -36,6 +39,11 @@ export default function SceneEnvironment({
   operatorCamera,
 }) {
   const [groundX, , groundZ] = FLOOR_COLLIDER_POSITION;
+  const rugPosition = [
+    SCENE_ROOT_POSITION[0] + DECOR_RUG.position[0],
+    SCENE_ROOT_POSITION[1] + DECOR_RUG.position[1],
+    SCENE_ROOT_POSITION[2] + DECOR_RUG.position[2],
+  ];
   const isPointerInteractionActive = useTrashBlasterStore(
     (s) => s.isPointerInteractionActive
   );
@@ -135,6 +143,12 @@ export default function SceneEnvironment({
         <planeGeometry args={GROUND.size} />
         <meshStandardMaterial color={config.floorColor} />
       </mesh>
+
+      <PersianRug
+        position={rugPosition}
+        rotation={DECOR_RUG.rotation}
+        scale={DECOR_RUG.scale}
+      />
 
       <gridHelper
         args={[GRID.args[0], GRID.args[1], config.gridColor, config.gridColor]}

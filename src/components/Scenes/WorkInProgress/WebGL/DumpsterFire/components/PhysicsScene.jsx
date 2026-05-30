@@ -3,6 +3,8 @@ import React from 'react';
 import { CuboidCollider, Physics, RigidBody } from '@react-three/rapier';
 
 import {
+  DECOR_RUG,
+  DECOR_RUG_COLLIDER_POSITION,
   DYNAMIC_SCENE_ITEMS,
   FIXED_SCENE_ITEMS,
   FLOOR_COLLIDER_HALF_EXTENTS,
@@ -59,6 +61,19 @@ const PhysicsScene = React.memo(function PhysicsScene({
           friction={1.4}
           restitution={0.05}
           onCollisionEnter={onTrashCollision}
+        />
+      </RigidBody>
+
+      <RigidBody
+        type="fixed"
+        colliders={false}
+        position={DECOR_RUG_COLLIDER_POSITION}
+        rotation={DECOR_RUG.rotation}
+      >
+        <CuboidCollider
+          args={DECOR_RUG.colliderHalfExtents}
+          friction={1.6}
+          restitution={0.02}
         />
       </RigidBody>
 

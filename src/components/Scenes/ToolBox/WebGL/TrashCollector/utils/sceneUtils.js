@@ -1,4 +1,3 @@
-import { getTrashCollisionAudioGroupKey } from '../../../../WorkInProgress/WebGL/DumpsterFire/utils/collisionAudioConfig';
 import {
   ASSET_GRID_COLUMNS,
   ASSET_GRID_COLUMN_SPACING,
@@ -6,44 +5,39 @@ import {
   ASSET_GRID_ROW_SPACING,
 } from './sceneData';
 
-function formatAudioGroupLabel(groupKey) {
-  return groupKey.replace(/([a-z])([A-Z])/g, '$1 $2').toLowerCase();
-}
+const ASSET_LABEL_SEGMENT_OVERRIDES = Object.freeze({
+  mc: 'Mc',
+  vhs: 'VHS',
+});
 
-function formatAssetStat(value) {
-  if (Array.isArray(value)) {
-    return value.map((entry) => formatAssetStat(entry)).join(' x ');
-  }
+function formatAssetKey(assetKey) {
+  return assetKey
+    .split('-')
+    .filter(Boolean)
+    .map((segment) => {
+      if (ASSET_LABEL_SEGMENT_OVERRIDES[segment]) {
+        return ASSET_LABEL_SEGMENT_OVERRIDES[segment];
+      }
 
-  return Number(value)
-    .toFixed(2)
-    .replace(/\.00$/, '')
-    .replace(/(\.\d)0$/, '$1');
+      if (/^\d+$/.test(segment)) {
+        return segment;
+      }
+
+      return segment.charAt(0).toUpperCase() + segment.slice(1);
+    })
+    .join(' ');
 }
 
 function getAssetComponentName(asset) {
-  return asset.Component.displayName ?? asset.Component.name ?? asset.key;
+  if (typeof asset.Component.displayName === 'string') {
+    return asset.Component.displayName;
+  }
+
+  return formatAssetKey(asset.key);
 }
 
 export function getAssetShowcaseLabel(asset) {
-  const lines = [getAssetComponentName(asset)];
-  const audioGroupKey = getTrashCollisionAudioGroupKey(asset.key);
-
-  if (audioGroupKey) {
-    lines.push(`audio: ${formatAudioGroupLabel(audioGroupKey)}`);
-  }
-
-  if (typeof asset.expectedSizeMeters === 'number') {
-    lines.push(`expected: ${formatAssetStat(asset.expectedSizeMeters)} m`);
-  }
-
-  lines.push(`scale: ${formatAssetStat(asset.scale ?? 1)}`);
-
-  if (typeof asset.mass === 'number') {
-    lines.push(`mass: ${formatAssetStat(asset.mass)}`);
-  }
-
-  return lines.join('\n');
+  return getAssetComponentName(asset);
 }
 
 export function getAssetGridCellPosition(index) {

@@ -2,13 +2,14 @@ import * as THREE from 'three';
 
 import React, { useCallback, useLayoutEffect, useRef, useState } from 'react';
 
-import { Billboard, Text } from '@react-three/drei';
+import { Text } from '@react-three/drei';
 import { RigidBody } from '@react-three/rapier';
 
 import {
-  ASSET_GRID_LABEL_HEIGHT,
+  ASSET_GRID_COLUMNS,
   ASSET_GRID_OPTIONS,
   ASSET_GRID_POSITION,
+  ASSET_GRID_ROW_SPACING,
 } from '../utils/sceneData';
 import {
   getAssetGridCellPosition,
@@ -17,6 +18,14 @@ import {
 
 const SHOWCASE_BODY_POSITION = [0, 0.08, 0];
 const SHOWCASE_BODY_ROTATION = [0, Math.PI / 6, 0];
+const SHOWCASE_PANEL_SIZE = [1.9, 0.08, 1.9];
+const SHOWCASE_LABEL_PLATE_SIZE = [1.55, 0.012, 0.46];
+const SHOWCASE_LABEL_PLATE_POSITION = [0, 0.087, 0.58];
+const SHOWCASE_LABEL_POSITION = [0, 0.102, SHOWCASE_LABEL_PLATE_POSITION[2]];
+const FLAT_TEXT_ROTATION = [-Math.PI / 2, 0, 0];
+const TITLE_BANNER_SIZE = [6.8, 0.08, 1.15];
+const TITLE_BANNER_TEXT_Y = 0.104;
+const TITLE_BANNER_FRONT_PADDING = 2.2;
 
 function AssetShowcaseCell({ asset, onAssetPreview, position }) {
   const { Component } = asset;
@@ -59,9 +68,14 @@ function AssetShowcaseCell({ asset, onAssetPreview, position }) {
 
   return (
     <group position={position} onClick={handleClick}>
-      <mesh position={[0, 0.04, 0]} receiveShadow>
-        <boxGeometry args={[1.9, 0.08, 1.9]} />
+      <mesh position={[0, SHOWCASE_PANEL_SIZE[1] / 2, 0]} receiveShadow>
+        <boxGeometry args={SHOWCASE_PANEL_SIZE} />
         <meshStandardMaterial color="#f6f2ea" />
+      </mesh>
+
+      <mesh position={SHOWCASE_LABEL_PLATE_POSITION} receiveShadow>
+        <boxGeometry args={SHOWCASE_LABEL_PLATE_SIZE} />
+        <meshStandardMaterial color="#e9decd" />
       </mesh>
 
       {measuredYOffset == null ? (
@@ -90,21 +104,20 @@ function AssetShowcaseCell({ asset, onAssetPreview, position }) {
         </RigidBody>
       )}
 
-      <Billboard position={[0, ASSET_GRID_LABEL_HEIGHT, 0]}>
-        <Text
-          anchorX="center"
-          anchorY="bottom"
-          color="#171717"
-          fontSize={0.24}
-          lineHeight={1.18}
-          maxWidth={2.4}
-          outlineColor="#fbfaf6"
-          outlineWidth={0.02}
-          textAlign="center"
-        >
-          {label}
-        </Text>
-      </Billboard>
+      <Text
+        position={SHOWCASE_LABEL_POSITION}
+        rotation={FLAT_TEXT_ROTATION}
+        anchorX="center"
+        anchorY="middle"
+        color="#171717"
+        fontSize={0.14}
+        lineHeight={0.9}
+        maxWidth={SHOWCASE_LABEL_PLATE_SIZE[0] - 0.18}
+        textAlign="center"
+        userData={{ camExcludeCollision: true }}
+      >
+        {label}
+      </Text>
     </group>
   );
 }
@@ -114,21 +127,37 @@ export default function AssetShowcaseGrid({
   position = ASSET_GRID_POSITION,
   title = 'Trash Collection',
 }) {
+  const rowCount = Math.ceil(ASSET_GRID_OPTIONS.length / ASSET_GRID_COLUMNS);
+  const titleBannerPosition = [
+    0,
+    TITLE_BANNER_SIZE[1] / 2,
+    ((rowCount - 1) / 2) * ASSET_GRID_ROW_SPACING + TITLE_BANNER_FRONT_PADDING,
+  ];
+
   return (
     <group position={position}>
-      <Billboard position={[0, 4.25, 0]}>
-        <Text
-          anchorX="center"
-          anchorY="bottom"
-          color="#101010"
-          fontSize={0.38}
-          outlineColor="#fbfaf6"
-          outlineWidth={0.022}
-          textAlign="center"
-        >
-          {title}
-        </Text>
-      </Billboard>
+      <mesh position={titleBannerPosition} receiveShadow>
+        <boxGeometry args={TITLE_BANNER_SIZE} />
+        <meshStandardMaterial color="#efe3d0" />
+      </mesh>
+
+      <Text
+        position={[
+          titleBannerPosition[0],
+          TITLE_BANNER_TEXT_Y,
+          titleBannerPosition[2],
+        ]}
+        rotation={FLAT_TEXT_ROTATION}
+        anchorX="center"
+        anchorY="middle"
+        color="#101010"
+        fontSize={0.28}
+        maxWidth={TITLE_BANNER_SIZE[0] - 0.5}
+        textAlign="center"
+        userData={{ camExcludeCollision: true }}
+      >
+        {title}
+      </Text>
 
       {ASSET_GRID_OPTIONS.map((asset, index) => (
         <AssetShowcaseCell

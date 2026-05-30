@@ -151,6 +151,24 @@ export const GROUND = {
 export const GRID = {
   args: [30, 15, '#cdcdcd', '#d9d9d9'],
 };
+export const DECOR_RUG = Object.freeze({
+  position: [0, -0.012, 0.55],
+  rotation: [0, Math.PI / 2, 0],
+  scale: 1.2,
+  colliderHalfExtents: [2.35, 0.02, 5.15],
+  fixedItemLift: 0.04,
+  fixedItemLiftByKey: Object.freeze({
+    litter: 0.085,
+    'litter-2': 0.085,
+    'cardboard-flat': 0.06,
+    'cardboard-flat-2': 0.06,
+  }),
+});
+export const DECOR_RUG_COLLIDER_POSITION = [
+  SCENE_ROOT_POSITION[0] + DECOR_RUG.position[0],
+  GROUND_Y + DECOR_RUG.fixedItemLift / 2,
+  SCENE_ROOT_POSITION[2] + DECOR_RUG.position[2],
+];
 export const LIGHTING = {
   ambientIntensity: 0.85,
   directionalPosition: [8, 12, 10],
@@ -499,7 +517,37 @@ export function getRandomShotAsset(random = Math.random) {
   return SHOT_ASSET_OPTIONS[Math.floor(random() * SHOT_ASSET_OPTIONS.length)];
 }
 
-export const FIXED_SCENE_ITEMS = [
+function isWithinDecorRugFootprint(position = [0, 0, 0]) {
+  const [halfX, , halfZ] = DECOR_RUG.colliderHalfExtents;
+  const deltaX = position[0] - DECOR_RUG.position[0];
+  const deltaZ = position[2] - DECOR_RUG.position[2];
+  const inverseRotationY = -(DECOR_RUG.rotation?.[1] ?? 0);
+  const cosine = Math.cos(inverseRotationY);
+  const sine = Math.sin(inverseRotationY);
+  const localX = deltaX * cosine - deltaZ * sine;
+  const localZ = deltaX * sine + deltaZ * cosine;
+
+  return Math.abs(localX) <= halfX && Math.abs(localZ) <= halfZ;
+}
+
+function liftFixedSceneItemForDecorRug(item) {
+  const position = item.position ?? [0, 0, 0];
+
+  if (!isWithinDecorRugFootprint(position)) {
+    return item;
+  }
+
+  const keyedLift = DECOR_RUG.fixedItemLiftByKey?.[item.key];
+  const liftAmount =
+    typeof keyedLift === 'number' ? keyedLift : DECOR_RUG.fixedItemLift;
+
+  return {
+    ...item,
+    position: [position[0], position[1] + liftAmount, position[2]],
+  };
+}
+
+const BASE_FIXED_SCENE_ITEMS = [
   {
     key: 'dumpster',
     Component: Dumpster,
@@ -693,7 +741,7 @@ export const FIXED_SCENE_ITEMS = [
   {
     key: 'cardboard-box-3',
     Component: CardboardBox3,
-    position: [2, 0.18, 1.55],
+    position: [2, 0.25, 1.55],
     rotation: [0, -Math.PI / 2, 0],
     scale: 1,
     colliders: 'hull',
@@ -769,6 +817,10 @@ export const FIXED_SCENE_ITEMS = [
     showcaseYOffset: 0.02,
   },
 ];
+
+export const FIXED_SCENE_ITEMS = BASE_FIXED_SCENE_ITEMS.map(
+  liftFixedSceneItemForDecorRug
+);
 
 export const DYNAMIC_SCENE_ITEMS = [
   createTrashAsset('garbage-bag', {

@@ -8,7 +8,7 @@ import React, {
 } from 'react';
 import { Link } from 'react-router-dom';
 
-import { localEnv, modelFile } from '../../../utils/appUtils';
+import { iconFile, localEnv, modelFile } from '../../../utils/appUtils';
 import { DEFAULT_SCENE_PATH } from '../../sceneRegistry';
 import GltfPreviewCanvas from './GltfPreviewCanvas';
 
@@ -153,6 +153,17 @@ const styles = {
     margin: '0.4rem 0 0.55rem',
     fontSize: 'clamp(2rem, 4vw, 3.4rem)',
     lineHeight: 0.95,
+  },
+  titleRow: {
+    display: 'inline-flex',
+    alignItems: 'center',
+    gap: '0.38em',
+  },
+  titleIcon: {
+    width: '0.92em',
+    height: '0.92em',
+    objectFit: 'contain',
+    flexShrink: 0,
   },
   lead: {
     margin: 0,
@@ -1184,7 +1195,17 @@ export default function GltfJsxPage() {
       <header style={styles.header}>
         <div>
           <p style={styles.eyebrow}>Dev Authoring</p>
-          <h1 style={styles.title}>GLTF JSX Workbench</h1>
+          <h1 style={styles.title}>
+            <span style={styles.titleRow}>
+              <span>GLTF JSX Workbench</span>
+              <img
+                src={iconFile('turbo_flex.png')}
+                alt=""
+                aria-hidden="true"
+                style={styles.titleIcon}
+              />
+            </span>
+          </h1>
           <p style={styles.lead}>
             This page recreates the GLTF-to-R3F workflow, but writes repo-native
             output. Drop a model bundle in, preview it, drive the full gltfjsx

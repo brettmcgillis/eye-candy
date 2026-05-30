@@ -3,6 +3,7 @@ import { createRoot } from 'react-dom/client';
 
 import { AudioToggleButton } from '../../../../../../app/scaffold/overlay/components/AudioToggle';
 import ClearTrashButton from './ClearTrashButton';
+import ShootTrashButton from './ShootTrashButton';
 
 function TrashBlasterControls() {
   return (
@@ -17,6 +18,7 @@ function TrashBlasterControls() {
       }}
     >
       <AudioToggleButton />
+      <ShootTrashButton />
       <ClearTrashButton />
     </div>
   );

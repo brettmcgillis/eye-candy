@@ -10,6 +10,7 @@ export default function buildFireAndSmokeControls({
   sectionLabel = 'Fire And Smoke',
   instanceLabel = 'Fire And Smoke',
   keyPrefix = 'fas',
+  supportsAttractors = false,
 }) {
   return {
     [`Add ${sectionLabel}`]: button(() =>
@@ -60,6 +61,15 @@ export default function buildFireAndSmokeControls({
             step: 0.1,
             onChange: onInst('scale'),
           },
+          ...(supportsAttractors
+            ? {
+                [`${keyPrefix}_enableAttractors_${id}`]: {
+                  label: 'Enable Attractors',
+                  value: instance.config.enableAttractors ?? true,
+                  onChange: onCfg('enableAttractors'),
+                },
+              }
+            : {}),
           'FAS Spline Editor': folder(
             {
               [`${keyPrefix}_handles_${id}`]: {

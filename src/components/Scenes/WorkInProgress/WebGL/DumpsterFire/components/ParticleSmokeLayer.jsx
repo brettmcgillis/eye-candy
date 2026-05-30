@@ -28,6 +28,8 @@ export default function ParticleSmokeLayer({
         const splineConfig = splineConfigs[index] ?? {};
         const isVisible = splineConfig.visible ?? true;
         const smokeType = splineConfig.smokeType ?? 'Particle';
+        const systemAttractorsRef =
+          splineConfig.enableAttractors === false ? null : attractorsRef;
         const points = spline.points ?? [];
         const positions = points.map((point) => point.position);
         const rotations = points.map((point) => point.rotation);
@@ -67,7 +69,7 @@ export default function ParticleSmokeLayer({
                 pointRotations={rotations}
                 pointScales={scales}
                 config={mergedConfig}
-                attractorsRef={attractorsRef}
+                attractorsRef={systemAttractorsRef}
               />
             ) : null}
 
@@ -77,7 +79,7 @@ export default function ParticleSmokeLayer({
                 pointRotations={rotations}
                 pointScales={scales}
                 config={mergedConfig}
-                attractorsRef={attractorsRef}
+                attractorsRef={systemAttractorsRef}
               />
             ) : null}
 

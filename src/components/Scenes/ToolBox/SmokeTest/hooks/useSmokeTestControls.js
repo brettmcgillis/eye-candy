@@ -1342,6 +1342,7 @@ export default function useSmokeTestControls(attractorsRef) {
             ],
           }),
         cloneInstance: (source) => makeFireAndSmokeInst(source),
+        supportsAttractors: true,
       });
 
       return {

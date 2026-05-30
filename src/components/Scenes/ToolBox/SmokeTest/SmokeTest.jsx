@@ -202,7 +202,9 @@ export default function SmokeTest() {
             <FireAndSmoke
               controlPoints={inst.controlPoints}
               {...inst.config}
-              attractorsRef={attractorsRef}
+              attractorsRef={
+                inst.config.enableAttractors === false ? null : attractorsRef
+              }
               attractorStrength={attractorStrength}
               attractorRadius={attractorRadius}
             />

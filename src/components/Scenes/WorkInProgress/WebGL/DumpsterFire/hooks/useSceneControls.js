@@ -315,6 +315,7 @@ export default function useSceneControls() {
           setSplineConfigs: setParticleSmokeConfigs,
           setSplines: setParticleSmokeSplines,
           allowedTypes: 'smoke',
+          supportsAttractors: true,
         }),
         { collapsed: true }
       );
@@ -603,6 +604,7 @@ ${allEntries}
               sectionLabel: 'Splines',
               instanceLabel: 'Spline',
               keyPrefix: 'df_fas',
+              supportsAttractors: true,
             }),
             { collapsed: true }
           ),

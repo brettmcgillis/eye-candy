@@ -283,7 +283,11 @@ export default function HotBox() {
             <FireAndSmoke
               controlPoints={instance.controlPoints}
               {...instance.config}
-              attractorsRef={attractorsRef}
+              attractorsRef={
+                instance.config.enableAttractors === false
+                  ? null
+                  : attractorsRef
+              }
               attractorStrength={config.attractorStrength}
               attractorRadius={config.attractorRadius}
             />

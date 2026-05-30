@@ -59,6 +59,7 @@ export const DEFAULT_FIRE_AND_SMOKE_CONTROL_POINTS = [
 
 export const DEFAULT_FIRE_AND_SMOKE_CONFIG = {
   closed: false,
+  enableAttractors: true,
   timeScale: 3,
   spawnIntervalMs: 200,
   pathTravel: 1,

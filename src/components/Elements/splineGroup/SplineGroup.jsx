@@ -146,6 +146,8 @@ export default function SplineGroup({
     isSmoke && (smokeType === 'Particle' || smokeType === 'Both');
   const showVolumetricSmoke =
     isSmoke && (smokeType === 'Volumetric' || smokeType === 'Both');
+  const resolvedAttractorsRef =
+    mergedConfig.enableAttractors === false ? null : attractorsRef;
 
   return (
     <>
@@ -174,7 +176,7 @@ export default function SplineGroup({
           pointRotations={rotations}
           pointScales={scales}
           config={mergedConfig}
-          attractorsRef={attractorsRef}
+          attractorsRef={resolvedAttractorsRef}
         />
       )}
 
@@ -184,7 +186,7 @@ export default function SplineGroup({
           pointRotations={rotations}
           pointScales={scales}
           config={mergedConfig}
-          attractorsRef={attractorsRef}
+          attractorsRef={resolvedAttractorsRef}
         />
       )}
 
@@ -208,7 +210,7 @@ export default function SplineGroup({
         <FireAndSmoke
           controlPoints={points}
           {...mergedConfig}
-          attractorsRef={attractorsRef}
+          attractorsRef={resolvedAttractorsRef}
           attractorStrength={config.attractorStrength}
           attractorRadius={config.attractorRadius}
         />

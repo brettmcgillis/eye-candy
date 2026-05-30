@@ -172,6 +172,7 @@ export function worldPointsToSplineInstance(points = [], base = {}) {
 export const DEFAULT_SPLINE_CONFIG = {
   name: '',
   visible: true,
+  enableAttractors: true,
   type: 'Smoke',
   smokeType: 'Particle',
   fireType: 'Classic',

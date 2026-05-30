@@ -28,6 +28,7 @@ export default function buildSplineGroupControls(index, cfg, opts) {
     setSplineConfigs,
     setSplines,
     allowedTypes = 'both',
+    supportsAttractors = false,
   } = opts;
   const resolvedSplineInstance = splineInstance ?? {
     pos: [0, 0, 0],
@@ -147,6 +148,22 @@ export default function buildSplineGroupControls(index, cfg, opts) {
   const smokeFolders =
     allowedTypes !== 'fire'
       ? {
+          ...(supportsAttractors
+            ? {
+                [`enableAttractors_${index}`]: {
+                  label: 'Enable Attractors',
+                  value: cfg.enableAttractors ?? true,
+                  render: isParticle,
+                  onChange: (v) =>
+                    updateSplineConfig(
+                      setSplineConfigs,
+                      index,
+                      'enableAttractors',
+                      v
+                    ),
+                },
+              }
+            : {}),
           [`Particle Smoke ${index}`]: folder(
             {
               [`particleCount_${index}`]: {
@@ -1023,7 +1040,8 @@ export default function buildSplineGroupControls(index, cfg, opts) {
                 if (i !== index) return spline;
                 const points = spline.points ?? [];
                 const lastPos =
-                  points[points.length - 1]?.position ?? new THREE.Vector3(0, 0, 0);
+                  points[points.length - 1]?.position ??
+                  new THREE.Vector3(0, 0, 0);
 
                 return {
                   ...spline,

@@ -131,6 +131,8 @@ export default function FireAndSmokeLayer({
         );
         const isVisible = instance.visible ?? true;
         const emitsFireLight = /fire/i.test(instance.name ?? '');
+        const instanceAttractorsRef =
+          instance.config.enableAttractors === false ? null : attractorsRef;
 
         return (
           <group
@@ -143,7 +145,7 @@ export default function FireAndSmokeLayer({
               <FireAndSmoke
                 controlPoints={instance.controlPoints}
                 {...instance.config}
-                attractorsRef={attractorsRef}
+                attractorsRef={instanceAttractorsRef}
                 attractorStrength={attractorStrength}
                 attractorRadius={attractorRadius}
               />

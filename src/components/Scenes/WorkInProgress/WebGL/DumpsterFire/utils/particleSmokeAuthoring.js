@@ -24,6 +24,7 @@ const SERIALIZED_SMOKE_CONFIG_KEYS = [
   'type',
   'smokeType',
   'visible',
+  'enableAttractors',
   'tension',
   'closed',
   'showSpline',

@@ -901,6 +901,7 @@ export default function useHotBoxControls(splines, setSplines, attractorsRef) {
                   setSplineConfigs,
                   setSplines,
                   allowedTypes: 'smoke',
+                  supportsAttractors: true,
                 }),
                 { collapsed: true }
               );
@@ -2313,6 +2314,7 @@ export default function useHotBoxControls(splines, setSplines, attractorsRef) {
           pos: offsetPosition(DEFAULT_FIRE_AND_SMOKE_POSITION),
         }),
       cloneInstance: (source) => makeFireAndSmokeInst(source),
+      supportsAttractors: true,
     });
 
     return {

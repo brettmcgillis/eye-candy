@@ -4,6 +4,8 @@
   "version": "0.1.0",
   "homepage": "https://brettmcgillis.github.io/eye-candy",
   "scripts": {
+    "audio:normalize": "node scripts/normalize-audio.mjs",
+    "audio:sprites": "node scripts/extract-sprites.mjs",
     "build": "vite build",
     "bump:major": "npm version major",
     "bump:minor": "npm version minor",

@@ -1,8 +1,17 @@
-import { useEffect, useRef } from 'react';
+import { useEffect, useMemo, useRef } from 'react';
 
 import { useFrame } from '@react-three/fiber';
 
 const DEFAULT_GAMEPAD_DEADZONE = 0.14;
+const DEFAULT_GAMEPAD_MAPPING = Object.freeze({
+  moveUpButton: 12,
+  moveDownButton: 13,
+  zoomInButton: 6,
+  zoomOutButton: 7,
+  boostButtons: Object.freeze([4, 5]),
+  action1Button: 0,
+  action2Button: 1,
+});
 
 function isTypingTarget(target) {
   if (!target) {
@@ -35,7 +44,28 @@ function applyDeadzone(value, deadzone) {
   return (value - Math.sign(value) * deadzone) / (1 - deadzone);
 }
 
-export default function useOperatorInput({ enabled = false } = {}) {
+function getButtonAmount(gamepad, buttonIndex) {
+  const button = gamepad.buttons[buttonIndex];
+
+  if (!button) {
+    return 0;
+  }
+
+  if (typeof button.value === 'number' && button.value > 0) {
+    return button.value;
+  }
+
+  return button.pressed ? 1 : 0;
+}
+
+function isButtonPressed(gamepad, buttonIndex) {
+  return getButtonAmount(gamepad, buttonIndex) > 0;
+}
+
+export default function useOperatorInput({
+  enabled = false,
+  gamepadMapping = null,
+} = {}) {
   const keyStateRef = useRef({
     forward: false,
     backward: false,
@@ -66,6 +96,15 @@ export default function useOperatorInput({ enabled = false } = {}) {
     action1: false,
     action2: false,
   });
+  const resolvedGamepadMapping = useMemo(
+    () => ({
+      ...DEFAULT_GAMEPAD_MAPPING,
+      ...gamepadMapping,
+      boostButtons:
+        gamepadMapping?.boostButtons ?? DEFAULT_GAMEPAD_MAPPING.boostButtons,
+    }),
+    [gamepadMapping]
+  );
 
   useEffect(() => {
     const keyState = keyStateRef.current;
@@ -261,19 +300,37 @@ export default function useOperatorInput({ enabled = false } = {}) {
         DEFAULT_GAMEPAD_DEADZONE
       );
 
-      const moveUpPressed = gamepad.buttons[12]?.pressed ?? false;
-      const moveDownPressed = gamepad.buttons[13]?.pressed ?? false;
-      gamepadMoveY = (moveUpPressed ? 1 : 0) - (moveDownPressed ? 1 : 0);
+      const moveUpAmount = getButtonAmount(
+        gamepad,
+        resolvedGamepadMapping.moveUpButton
+      );
+      const moveDownAmount = getButtonAmount(
+        gamepad,
+        resolvedGamepadMapping.moveDownButton
+      );
+      gamepadMoveY = clampAxis(moveUpAmount - moveDownAmount);
 
-      const zoomInAmount = gamepad.buttons[6]?.value ?? 0;
-      const zoomOutAmount = gamepad.buttons[7]?.value ?? 0;
-      gamepadZoom = zoomInAmount - zoomOutAmount;
-      gamepadBoost =
-        (gamepad.buttons[4]?.pressed ?? false) ||
-        (gamepad.buttons[5]?.pressed ?? false);
+      const zoomInAmount = getButtonAmount(
+        gamepad,
+        resolvedGamepadMapping.zoomInButton
+      );
+      const zoomOutAmount = getButtonAmount(
+        gamepad,
+        resolvedGamepadMapping.zoomOutButton
+      );
+      gamepadZoom = clampAxis(zoomInAmount - zoomOutAmount);
+      gamepadBoost = resolvedGamepadMapping.boostButtons.some((buttonIndex) =>
+        isButtonPressed(gamepad, buttonIndex)
+      );
 
-      const isAction1Pressed = gamepad.buttons[0]?.pressed ?? false;
-      const isAction2Pressed = gamepad.buttons[1]?.pressed ?? false;
+      const isAction1Pressed = isButtonPressed(
+        gamepad,
+        resolvedGamepadMapping.action1Button
+      );
+      const isAction2Pressed = isButtonPressed(
+        gamepad,
+        resolvedGamepadMapping.action2Button
+      );
       gamepadAction1 = isAction1Pressed && !previousGamepadButtons.action1;
       gamepadAction2 = isAction2Pressed && !previousGamepadButtons.action2;
       previousGamepadButtons.action1 = isAction1Pressed;

@@ -340,6 +340,7 @@ export default function useSceneCamera({
   camera,
   actions,
   orbitAutoFitFrame,
+  operatorInputOptions,
   orbitControlsProps = {},
   orbitInteractionEnabled = true,
   shouldBlockPointerLook,
@@ -541,7 +542,10 @@ export default function useSceneCamera({
     orbitInteractionActive,
   ]);
 
-  const operatorInputRef = useOperatorInput({ enabled: isOperatorMode });
+  const operatorInputRef = useOperatorInput({
+    ...operatorInputOptions,
+    enabled: isOperatorMode,
+  });
 
   useOperatorFreeCamera({
     actions,

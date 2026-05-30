@@ -26,6 +26,16 @@ const DEFAULT_SCENE_ENVIRONMENT = Object.freeze({
   fogFar: FOG_RANGE[1],
 });
 
+const DUMPSTER_FIRE_OPERATOR_INPUT_OPTIONS = Object.freeze({
+  gamepadMapping: Object.freeze({
+    moveUpButton: 7,
+    moveDownButton: 6,
+    zoomInButton: 4,
+    zoomOutButton: 5,
+    boostButtons: Object.freeze([2]),
+  }),
+});
+
 export default function SceneEnvironment({
   camera,
   cameraApiRef = null,
@@ -64,6 +74,7 @@ export default function SceneEnvironment({
         apiRef={cameraApiRef}
         camera={camera}
         orbitAutoFitFrame={orbitAutoFitFrame}
+        operatorInputOptions={DUMPSTER_FIRE_OPERATOR_INPUT_OPTIONS}
         orbitInteractionEnabled={!isPointerInteractionActive}
         shouldBlockPointerLook={shouldBlockPointerLook}
       />

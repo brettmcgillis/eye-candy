@@ -1,12 +1,31 @@
 import * as THREE from 'three';
 
-import { useEffect, useRef } from 'react';
+import { useEffect, useMemo, useRef } from 'react';
 
 import { useFrame } from '@react-three/fiber';
 
 /**
  * Moves a camera along a spline path, optionally interpolating authored lookAt targets.
  */
+const DEFAULT_ORIENTATION_MODE = 'target';
+const DEFAULT_FORWARD_DISTANCE = 1;
+
+function resolveOrientationMode(orientationMode, points) {
+  const normalized = `${orientationMode ?? ''}`.trim().toLowerCase();
+
+  if (normalized === 'authored' || normalized === 'forward') {
+    return normalized;
+  }
+
+  if (normalized === 'target') {
+    return DEFAULT_ORIENTATION_MODE;
+  }
+
+  return points.some((point) => point?.lookAt instanceof THREE.Vector3)
+    ? 'authored'
+    : DEFAULT_ORIENTATION_MODE;
+}
+
 export default function useCameraSpline({
   enabled = false,
   cameraRef = null,
@@ -15,11 +34,16 @@ export default function useCameraSpline({
   tension = 0.5,
   closed = true,
   lookAt = [0, 0, 0],
+  orientationMode = DEFAULT_ORIENTATION_MODE,
+  forwardDistance = DEFAULT_FORWARD_DISTANCE,
 } = {}) {
   const startTimeRef = useRef(null);
   const positionCurveRef = useRef(null);
   const lookAtCurveRef = useRef(null);
   const globalLookAtRef = useRef(new THREE.Vector3());
+  const resolvedOrientationMode = useMemo(() => {
+    return resolveOrientationMode(orientationMode, points);
+  }, [orientationMode, points]);
 
   useEffect(() => {
     globalLookAtRef.current.set(lookAt[0], lookAt[1], lookAt[2]);
@@ -36,7 +60,9 @@ export default function useCameraSpline({
       tension
     );
 
-    const hasPerPointLookAt = points[0]?.lookAt instanceof THREE.Vector3;
+    const hasPerPointLookAt =
+      resolvedOrientationMode === 'authored' &&
+      points[0]?.lookAt instanceof THREE.Vector3;
 
     if (hasPerPointLookAt) {
       const targets = points.map((point) =>
@@ -56,7 +82,7 @@ export default function useCameraSpline({
     }
 
     startTimeRef.current = Date.now();
-  }, [closed, enabled, points, tension]);
+  }, [closed, enabled, points, resolvedOrientationMode, tension]);
 
   useFrame((state) => {
     const activeCamera = cameraRef?.current || state.camera;
@@ -80,7 +106,18 @@ export default function useCameraSpline({
 
     const target = new THREE.Vector3();
 
-    if (lookAtCurveRef.current) {
+    if (resolvedOrientationMode === 'forward') {
+      const tangent = new THREE.Vector3();
+      positionCurveRef.current.getTangent(progress, tangent);
+
+      if (tangent.lengthSq() > 0) {
+        target
+          .copy(position)
+          .addScaledVector(tangent.normalize(), forwardDistance);
+      } else {
+        target.copy(globalLookAtRef.current);
+      }
+    } else if (lookAtCurveRef.current) {
       lookAtCurveRef.current.getPoint(progress, target);
     } else {
       target.copy(globalLookAtRef.current);
@@ -91,6 +128,7 @@ export default function useCameraSpline({
 
   return {
     camera: cameraRef?.current || null,
+    orientationMode: resolvedOrientationMode,
     startTime: startTimeRef.current,
   };
 }

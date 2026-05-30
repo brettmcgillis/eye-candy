@@ -20,6 +20,7 @@ import { useThree } from '@react-three/fiber';
 import { Bloom, EffectComposer } from '@react-three/postprocessing';
 
 import useCameraFitToViewport from '../../../../../hooks/useCameraFitToViewport';
+import useCameraSpline from '../../../../../hooks/useCameraSpline';
 import useOperatorFreeCamera from '../../../../../hooks/useOperatorFreeCamera';
 import useOperatorInput from '../../../../../hooks/useOperatorInput';
 import CAMERA_SPLINE_PRESETS from '../../../../../presets/spline/cameraSplinePresets';
@@ -29,7 +30,6 @@ import HaloDisplay from './components/HaloDisplay';
 import SceneCloud from './components/SceneCloud';
 import SceneFemur from './components/SceneFemur';
 import SceneSkull from './components/SceneSkull';
-import useCameraSpline from './hooks/useCameraSpline';
 import useSceneControls from './hooks/useSceneControls';
 
 // ---------------------------------------------------------------------------

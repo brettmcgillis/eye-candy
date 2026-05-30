@@ -19,34 +19,82 @@ function toRotationArray(rotation = DEFAULT_STORE_ROTATION) {
 }
 
 export default function SevenElevenStage({
+  onStoreSpaceChange = null,
   storeScale = DEFAULT_STORE_SCALE,
   storePosition = DEFAULT_STORE_POSITION,
   storeRotation = DEFAULT_STORE_ROTATION,
 }) {
-  const contentRef = useRef(null);
+  const offsetGroupRef = useRef(null);
+  const storeRootRef = useRef(null);
   const [offset, setOffset] = useState([0, 0, 0]);
 
   useLayoutEffect(() => {
-    if (!contentRef.current) return;
+    if (!storeRootRef.current || !offsetGroupRef.current) return;
 
-    contentRef.current.updateWorldMatrix(true, true);
+    storeRootRef.current.updateWorldMatrix(true, true);
 
-    const box = new THREE.Box3().setFromObject(contentRef.current);
+    const centerStoreRef =
+      storeRootRef.current.getObjectByName('CenterStoreRef');
+
+    if (centerStoreRef) {
+      const anchorWorldPosition = centerStoreRef.getWorldPosition(
+        new THREE.Vector3()
+      );
+      const anchorOffset =
+        offsetGroupRef.current.worldToLocal(anchorWorldPosition);
+
+      setOffset([-anchorOffset.x, -anchorOffset.y, -anchorOffset.z]);
+      return;
+    }
+
+    const box = new THREE.Box3().setFromObject(storeRootRef.current);
 
     if (box.isEmpty()) return;
 
-    const center = box.getCenter(new THREE.Vector3());
+    const center = offsetGroupRef.current.worldToLocal(
+      box.getCenter(new THREE.Vector3())
+    );
     setOffset([-center.x, -center.y, -center.z]);
   }, [storeScale]);
+
+  useLayoutEffect(() => {
+    if (!onStoreSpaceChange || !storeRootRef.current) return;
+
+    storeRootRef.current.updateWorldMatrix(true, true);
+
+    const storeLocalToWorldMatrix = storeRootRef.current.matrixWorld.clone();
+    const centerStoreRef =
+      storeRootRef.current.getObjectByName('CenterStoreRef');
+    const centerStoreRefWorldPosition = new THREE.Vector3();
+
+    if (centerStoreRef) {
+      centerStoreRef.getWorldPosition(centerStoreRefWorldPosition);
+    }
+
+    onStoreSpaceChange({
+      centerStoreRefWorldPosition,
+      storeLocalToWorldMatrix,
+    });
+  }, [
+    offset,
+    onStoreSpaceChange,
+    storePosition.x,
+    storePosition.y,
+    storePosition.z,
+    storeRotation.x,
+    storeRotation.y,
+    storeRotation.z,
+    storeScale,
+  ]);
 
   return (
     <group
       position={toPositionArray(storePosition)}
       rotation={toRotationArray(storeRotation)}
     >
-      <group position={offset}>
-        <group ref={contentRef}>
-          <SevenEleven scale={storeScale} />
+      <group ref={offsetGroupRef} position={offset}>
+        <group ref={storeRootRef} scale={storeScale}>
+          <SevenEleven />
         </group>
       </group>
     </group>

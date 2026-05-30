@@ -3,9 +3,11 @@ import { folder, useControls } from 'leva';
 import { useEffect, useMemo } from 'react';
 
 import usePresetsFolder from '../../../../../../hooks/usePresetsFolder';
+import AISLE9_CAMERA_SPLINES from '../../../../../../presets/spline/aisle9CameraSplines';
 import { DEFAULT_PRESET, PRESETS } from '../presets/presets';
 
 const C = { collapsed: true };
+const CAMERA_MODE_PATH = 'Aisle 9.Camera.cameraMode';
 
 const QUALITY_PRESET_OPTIONS = {
   Low: 'low',
@@ -13,15 +15,24 @@ const QUALITY_PRESET_OPTIONS = {
   High: 'high',
 };
 
+const CAMERA_MODE_OPTIONS = {
+  Fixed: 'fixed',
+  Orbit: 'orbit',
+  'Spline Motion': 'spline',
+};
+
 const PRESENTATION_MODE_OPTIONS = {
   'Store Warp': 'storeWarp',
   'Source Background': 'backgroundField',
 };
 
+const CAMERA_MODE_KEYS = ['cameraMode'];
+
 const CAMERA_SCALAR_KEYS = [
   'cameraFov',
   'cameraNear',
   'cameraFar',
+  'cameraAutoRotate',
   'cameraMinDistance',
   'cameraMaxDistance',
   'cameraRotateSpeed',
@@ -29,6 +40,17 @@ const CAMERA_SCALAR_KEYS = [
 ];
 
 const CAMERA_KEYS = [...CAMERA_SCALAR_KEYS, 'cameraPosition', 'cameraTarget'];
+
+const CAMERA_FIXED_KEYS = ['fixedCameraPosition', 'fixedCameraTarget'];
+
+const CAMERA_SPLINE_KEYS = [
+  'cameraSplinePreset',
+  'cameraSplinePosition',
+  'cameraSplineScale',
+  'cameraSplineDuration',
+  'cameraSplineTension',
+  'cameraSplineLookAt',
+];
 
 const BLACK_HOLE_KEYS = [
   'presentationMode',
@@ -106,7 +128,10 @@ const STORE_KEYS = ['storeScale'];
 const STORE_TRANSFORM_KEYS = ['storePosition', 'storeRotation'];
 
 const EXPLICIT_KEYS = new Set([
+  ...CAMERA_MODE_KEYS,
   ...CAMERA_KEYS,
+  ...CAMERA_FIXED_KEYS,
+  ...CAMERA_SPLINE_KEYS,
   ...BLACK_HOLE_KEYS,
   ...BLACK_HOLE_TRANSFORM_KEYS,
   ...DISK_GEOMETRY_KEYS,
@@ -121,9 +146,14 @@ const EXPLICIT_KEYS = new Set([
 ]);
 
 const CONTROL_SCHEMA = {
+  cameraMode: {
+    label: 'Mode',
+    options: CAMERA_MODE_OPTIONS,
+  },
   cameraFov: { label: 'FOV', min: 20, max: 100, step: 1 },
   cameraNear: { label: 'Near', min: 0.01, max: 10, step: 0.01 },
   cameraFar: { label: 'Far', min: 50, max: 5000, step: 10 },
+  cameraAutoRotate: { label: 'Auto Rotate' },
   cameraPosition: { label: 'Position', min: -50, max: 200, step: 0.1 },
   cameraTarget: { label: 'Target', min: -20, max: 20, step: 0.1 },
   cameraMinDistance: {
@@ -149,6 +179,52 @@ const CONTROL_SCHEMA = {
     min: 0,
     max: 0.2,
     step: 0.005,
+  },
+  fixedCameraPosition: {
+    label: 'Position',
+    min: -100,
+    max: 100,
+    step: 0.1,
+  },
+  fixedCameraTarget: {
+    label: 'Target',
+    min: -100,
+    max: 100,
+    step: 0.1,
+  },
+  cameraSplinePreset: {
+    label: 'Path',
+    options: Object.keys(AISLE9_CAMERA_SPLINES),
+  },
+  cameraSplinePosition: {
+    label: 'Position',
+    min: -100,
+    max: 100,
+    step: 0.1,
+  },
+  cameraSplineScale: {
+    label: 'Scale',
+    min: 0.1,
+    max: 5,
+    step: 0.1,
+  },
+  cameraSplineDuration: {
+    label: 'Loop Duration (s)',
+    min: 5,
+    max: 120,
+    step: 1,
+  },
+  cameraSplineTension: {
+    label: 'Curve Tension',
+    min: 0,
+    max: 1,
+    step: 0.1,
+  },
+  cameraSplineLookAt: {
+    label: 'Look At',
+    min: -100,
+    max: 100,
+    step: 0.1,
   },
   presentationMode: {
     label: 'Presentation',
@@ -375,7 +451,27 @@ export default function useSceneControls() {
     'Aisle 9',
     () => ({
       Presets: presetsFolder,
-      Camera: folder(createFolderControls(CAMERA_KEYS, presetControls), C),
+      Camera: folder(
+        {
+          ...createFolderControls(CAMERA_MODE_KEYS, presetControls),
+          ...createFolderControls(CAMERA_KEYS, presetControls),
+          'Fixed Camera': folder(
+            createFolderControls(CAMERA_FIXED_KEYS, presetControls),
+            {
+              collapsed: true,
+              render: (get) => get(CAMERA_MODE_PATH) === 'fixed',
+            }
+          ),
+          'Spline Motion': folder(
+            createFolderControls(CAMERA_SPLINE_KEYS, presetControls),
+            {
+              collapsed: true,
+              render: (get) => get(CAMERA_MODE_PATH) === 'spline',
+            }
+          ),
+        },
+        C
+      ),
       BlackHole: folder(
         {
           ...createFolderControls(BLACK_HOLE_KEYS, presetControls),

@@ -55,6 +55,7 @@ To Build:
 
 - [ExplosionTest](src/components/scenes/TestLab/WebGL/ExplosionTest/todo.md)
 - [FluidTest](src/components/scenes/TestLab/WebGL/FluidTest/todo.md)
+- [FurLab (webGL)](src/components/scenes/TestLab/WebGL/FurLab/todo.md)
 - [HandStuff](src/components/scenes/TestLab/WebGL/HandStuff/todo.md)
 - [ParticleLab](src/components/scenes/TestLab/WebGL/ParticleLab/todo.md)
 - [PixelHater](src/components/scenes/TestLab/WebGL/PixelHater/todo.md)
@@ -62,10 +63,14 @@ To Build:
 - [TheBoneZone](src/components/scenes/TestLab/WebGL/TheBoneZone/todo.md)
 - [MobilePhysicsTest](src/components/scenes/TestLab/WebGPU/MobilePhysicsTest/todo.md)
 - [NetworkTest](src/components/scenes/TestLab/WebGPU/NetworkTest/todo.md)
+- [FurLab (webGPU)](src/components/scenes/TestLab/WebGPU/FurLab/todo.md)
 - [TheLoom](src/components/scenes/TestLab/WebGPU/TheLoom/todo.md)
+- [LightningLab (webGL)](src/components/scenes/TestLab/WebGL/LightningLab/todo.md)
+- [LightningLab (webGPU)](src/components/scenes/TestLab/WebGPU/LightningLab/todo.md)
 
 **WorkInProgress**
 
+- [Aisle9](src/components/scenes/WorkInProgress/WebGPU/Aisle9/todo.md)
 - [RaisedByTV](src/components/scenes/WorkInProgress/WebGPU/RaisedByTV/todo.md)
 - [DumpsterFire](src/components/scenes/WorkInProgress/WebGL/DumpsterFire/todo.md)
 - [ThatsAllFolks](src/components/scenes/WorkInProgress/WebGPU/ThatsAllFolks/todo.md)
@@ -127,6 +132,8 @@ To Build:
 - [ ] SmokeTest
 - [ ] FireTest
 - [ ] HotBox
+- [ ] LightningLab
+- [ ] FurLab
 
 ### Scenes to post
 
@@ -136,9 +143,10 @@ To Build:
 - [ ] All my Thoughts Are So Cumulus - Plate
 - [ ] All my Thoughts Are So Cumulus - Record
 - [x] All my Thoughts Are So Cumulus - Static
+- [ ] All my Thoughts Are So Cumulus - Universal
 - [x] Burning At Both Ends - Enlightened
 - [x] Burning At Both Ends - Extinguished
-- [x] Burning At Both Ends - Lenticular
+- [x] Burning At Both Ends - Lenticular Print
 - [x] Cardinals - Cardinals
 - [ ] Cardinals - Bluejays
 - [ ] Cardinals - Magpies
@@ -164,8 +172,9 @@ To Build:
 
 ### Scenes finish before post
 
+- [ ] Aisle 9
+- [ ] Aisle 9 - By The Cat Food
 - [ ] All My Friends Are Ghosts
-- [ ] All my Thoughts Are So Cumulus - Universal
 - [ ] Crt Test
 - [ ] Dumpster Fire
 - [ ] Flying High - Day

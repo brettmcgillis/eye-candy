@@ -1,7 +1,34 @@
+import { DEFAULT_AISLE9_CAMERA_SPLINE } from '../../../../../../presets/spline/aisle9CameraSplines';
+import CENTER_STORE_REF_POSITION from '../../../../../elements/sevenEleven/sevenElevenAnchors';
+
 export const DEFAULT_PRESET = 'Store';
+export const GUIDED_TOUR_PRESET = 'Guided Tour';
+export const SURVEILLANCE_PRESET = 'Surveillance';
 export const SPACE_PRESET = 'Space';
 
+function cloneCenterStoreRef() {
+  return {
+    x: CENTER_STORE_REF_POSITION.x,
+    y: CENTER_STORE_REF_POSITION.y,
+    z: CENTER_STORE_REF_POSITION.z,
+  };
+}
+
+const DEFAULT_CAMERA_SPLINE_SETTINGS = {
+  cameraMode: 'orbit',
+  cameraAutoRotate: false,
+  fixedCameraPosition: { x: 3, y: 2.5, z: -4 },
+  fixedCameraTarget: cloneCenterStoreRef(),
+  cameraSplinePreset: DEFAULT_AISLE9_CAMERA_SPLINE,
+  cameraSplinePosition: { x: 0, y: 0, z: 0 },
+  cameraSplineScale: { x: 1, y: 1, z: 1 },
+  cameraSplineDuration: 38,
+  cameraSplineTension: 0.45,
+  cameraSplineLookAt: cloneCenterStoreRef(),
+};
+
 const SPACE_SCENE_PRESET = {
+  ...DEFAULT_CAMERA_SPLINE_SETTINGS,
   presentationMode: 'backgroundField',
   blackHoleMass: 0.4,
   diskInnerRadius: 4.1,
@@ -116,11 +143,13 @@ const SPACE_SCENE_PRESET = {
 };
 
 const STORE_SCENE_PRESET = {
+  ...DEFAULT_CAMERA_SPLINE_SETTINGS,
   cameraFov: 60,
   cameraNear: 0.1,
   cameraFar: 5000,
+  cameraAutoRotate: true,
   cameraPosition: { x: 0, y: -5, z: 20 },
-  cameraTarget: { x: 0, y: 0, z: 0 },
+  cameraTarget: cloneCenterStoreRef(),
   cameraMinDistance: 5,
   cameraMaxDistance: 160,
   cameraRotateSpeed: -0.5,
@@ -131,9 +160,7 @@ const STORE_SCENE_PRESET = {
   dopplerStrength: 1,
   stepSize: 1,
   blackHolePosition: {
-    x: 0,
-    y: 0,
-    z: 0,
+    ...cloneCenterStoreRef(),
   },
   blackHoleRotation: {
     x: 0,
@@ -249,7 +276,27 @@ const STORE_SCENE_PRESET = {
   temporalFrames: 16,
 };
 
+const GUIDED_TOUR_SCENE_PRESET = {
+  ...STORE_SCENE_PRESET,
+  cameraMode: 'spline',
+  cameraSplinePreset: DEFAULT_AISLE9_CAMERA_SPLINE,
+  cameraSplineDuration: 42,
+  cameraSplineTension: 0.45,
+  cameraSplineLookAt: cloneCenterStoreRef(),
+};
+
+const SURVEILLANCE_SCENE_PRESET = {
+  ...STORE_SCENE_PRESET,
+  cameraMode: 'fixed',
+  cameraFov: 80,
+  blackHoleScale: { x: 20, y: 20, z: 20 },
+  fixedCameraPosition: { x: 3, y: 2.5, z: -4 },
+  fixedCameraTarget: cloneCenterStoreRef(),
+};
+
 export const PRESETS = {
   [DEFAULT_PRESET]: STORE_SCENE_PRESET,
+  [GUIDED_TOUR_PRESET]: GUIDED_TOUR_SCENE_PRESET,
+  [SURVEILLANCE_PRESET]: SURVEILLANCE_SCENE_PRESET,
   [SPACE_PRESET]: SPACE_SCENE_PRESET,
 };

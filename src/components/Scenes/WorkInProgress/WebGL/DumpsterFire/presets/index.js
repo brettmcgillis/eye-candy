@@ -1,5 +1,7 @@
+import { buildSceneCameraControlValues } from '../../../../../../hooks/sceneCameraUtils';
 import {
   BACKGROUND,
+  CAMERA,
   DEFAULT_SHOT_TUNING_MODE,
   FOG_RANGE,
   GRID,
@@ -38,17 +40,9 @@ const DEFAULT_SCENE_ENVIRONMENT = Object.freeze({
   sceneFogFar: FOG_RANGE[1],
 });
 
-const DEFAULT_CAMERA_CONTROLS = Object.freeze({
-  cameraMode: 'Fixed',
-  operatorMoveSpeed: 8,
-  operatorLiftSpeed: 6,
-  operatorBoostMultiplier: 2.2,
-  operatorPointerLookSensitivity: 0.0032,
-  operatorStickLookSpeed: 2.6,
-  operatorZoomSpeed: 32,
-  operatorMinFov: 24,
-  operatorMaxFov: 80,
-});
+const DEFAULT_CAMERA_CONTROLS = Object.freeze(
+  buildSceneCameraControlValues(CAMERA)
+);
 
 const DEFAULT_COMBUSTION_CONTROLS = Object.freeze({
   showEffects: true,

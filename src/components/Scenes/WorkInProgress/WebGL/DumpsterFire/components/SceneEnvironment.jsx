@@ -1,19 +1,12 @@
-import React, { useLayoutEffect, useState } from 'react';
+import React, { useCallback } from 'react';
 
-import {
-  Environment,
-  OrbitControls,
-  PerspectiveCamera,
-} from '@react-three/drei';
+import { Environment } from '@react-three/drei';
 
-import useCameraFitToViewport from '../../../../../../hooks/useCameraFitToViewport';
-import useOperatorFreeCamera from '../../../../../../hooks/useOperatorFreeCamera';
-import useOperatorInput from '../../../../../../hooks/useOperatorInput';
 import PersianRug from '../../../../../elements/PersianRug/PersianRug';
+import CameraRig from '../../../../../rigging/CameraRig';
 import useTrashBlasterStore from '../hooks/useTrashBlasterStore';
 import {
   BACKGROUND,
-  CAMERA,
   DECOR_RUG,
   FLOOR_COLLIDER_POSITION,
   FOG_RANGE,
@@ -34,9 +27,9 @@ const DEFAULT_SCENE_ENVIRONMENT = Object.freeze({
 });
 
 export default function SceneEnvironment({
+  camera,
+  cameraApiRef = null,
   sceneEnvironment,
-  cameraMode = 'Fixed',
-  operatorCamera,
 }) {
   const [groundX, , groundZ] = FLOOR_COLLIDER_POSITION;
   const rugPosition = [
@@ -49,81 +42,30 @@ export default function SceneEnvironment({
   );
   const clearTrash = useTrashBlasterStore((s) => s.clearTrash);
   const fireTrash = useTrashBlasterStore((s) => s.fireTrash);
-  const [cameraNode, setCameraNode] = useState(null);
-  const [controlsNode, setControlsNode] = useState(null);
   const config = {
     ...DEFAULT_SCENE_ENVIRONMENT,
     ...sceneEnvironment,
   };
   const fogNear = Math.min(config.fogNear, config.fogFar);
   const fogFar = Math.max(config.fogNear, config.fogFar);
-  const operatorEnabled = cameraMode === 'Operator';
-  const orbitEnabled = cameraMode === 'Orbit' && !isPointerInteractionActive;
-  const { cameraPosition, cameraTarget, cameraFov } =
-    useCameraFitToViewport(CAMERA);
-  const operatorInputRef = useOperatorInput({ enabled: operatorEnabled });
-
-  useOperatorFreeCamera({
-    enabled: operatorEnabled,
-    inputRef: operatorInputRef,
-    config: operatorCamera,
-    actions: {
-      action1: fireTrash,
-      action2: clearTrash,
-    },
-    shouldBlockPointerLook: () =>
-      useTrashBlasterStore.getState().isPointerInteractionActive,
-  });
-
-  useLayoutEffect(() => {
-    if (operatorEnabled) {
-      return;
-    }
-
-    const camera = cameraNode;
-    const controls = controlsNode;
-
-    if (!camera) {
-      return;
-    }
-
-    camera.position.set(...cameraPosition);
-    camera.fov = cameraFov;
-    camera.updateProjectionMatrix();
-
-    if (!controls) {
-      camera.lookAt(...cameraTarget);
-      return;
-    }
-
-    controls.target.set(...cameraTarget);
-    controls.update();
-  }, [
-    cameraFov,
-    cameraMode,
-    cameraNode,
-    cameraPosition,
-    cameraTarget,
-    controlsNode,
-    operatorEnabled,
-  ]);
+  const orbitAutoFitFrame =
+    camera?.fixed?.shots?.[camera?.fixed?.activeShot] ?? null;
+  const shouldBlockPointerLook = useCallback(() => {
+    return useTrashBlasterStore.getState().isPointerInteractionActive;
+  }, []);
 
   return (
     <>
-      <PerspectiveCamera
-        ref={setCameraNode}
-        makeDefault
-        position={cameraPosition}
-        fov={cameraFov}
-      />
-      <OrbitControls
-        ref={setControlsNode}
-        makeDefault
-        target={cameraTarget}
-        enabled={orbitEnabled}
-        enableRotate={cameraMode === 'Orbit'}
-        enableZoom={cameraMode === 'Orbit'}
-        enablePan={cameraMode === 'Orbit'}
+      <CameraRig
+        actions={{
+          action1: fireTrash,
+          action2: clearTrash,
+        }}
+        apiRef={cameraApiRef}
+        camera={camera}
+        orbitAutoFitFrame={orbitAutoFitFrame}
+        orbitInteractionEnabled={!isPointerInteractionActive}
+        shouldBlockPointerLook={shouldBlockPointerLook}
       />
 
       <color attach="background" args={[config.backgroundColor]} />

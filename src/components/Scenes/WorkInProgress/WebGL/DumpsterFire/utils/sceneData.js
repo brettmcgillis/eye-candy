@@ -130,16 +130,79 @@ export const FLOOR_COLLIDER_POSITION = [
   1,
 ];
 
+const DUMPSTER_CAMERA_DESKTOP_TARGET = [-6, 1, 0];
+const DUMPSTER_CAMERA_MOBILE_TARGET = [-6, 0, 0];
+const DUMPSTER_CAMERA_SPLINE_POINTS = [
+  { position: [-7.5, 5.2, 16.5] },
+  { position: [-13.5, 6.25, 11.5] },
+  { position: [-14.75, 4.2, 1.25] },
+  { position: [-10.75, 3.3, -7.5] },
+  { position: [-3.5, 4.5, 6] },
+];
+
 export const CAMERA = {
-  position: [-2.5, 3.2, 20],
-  target: [0, 0, 0],
-  fov: 40,
-  desktopPosition: [-8, 6.2, 16],
-  desktopTarget: [-6, 1, 0],
-  desktopFov: 50,
-  mobilePosition: [-6, 4.2, 16],
-  mobileTarget: [-6, 0, 0],
-  mobileFov: 70,
+  defaultMode: 'fixed',
+  cameraAutoFit: true,
+  fixed: {
+    behavior: 'single',
+    activeShot: 'establishing',
+    shots: {
+      establishing: {
+        desktop: {
+          position: [-8, 6.2, 16],
+          target: DUMPSTER_CAMERA_DESKTOP_TARGET,
+          fov: 50,
+        },
+        mobile: {
+          position: [-6, 4.2, 16],
+          target: DUMPSTER_CAMERA_MOBILE_TARGET,
+          fov: 70,
+        },
+      },
+    },
+  },
+  orbit: {
+    desktop: {
+      position: [-7.1, 5.1, 13.25],
+      target: DUMPSTER_CAMERA_DESKTOP_TARGET,
+      pivot: DUMPSTER_CAMERA_DESKTOP_TARGET,
+      fov: 46,
+    },
+    mobile: {
+      position: [-5.5, 4, 13.8],
+      target: [-6, 0.8, 0],
+      pivot: [-6, 0.8, 0],
+      fov: 60,
+    },
+  },
+  spline: {
+    desktop: {
+      target: DUMPSTER_CAMERA_DESKTOP_TARGET,
+      fov: 50,
+    },
+    mobile: {
+      target: DUMPSTER_CAMERA_MOBILE_TARGET,
+      fov: 64,
+    },
+    closed: true,
+    duration: 28,
+    orientationMode: 'target',
+    showPath: false,
+    tension: 0.45,
+    path: {
+      points: DUMPSTER_CAMERA_SPLINE_POINTS,
+    },
+  },
+  operator: {
+    moveSpeed: 8,
+    liftSpeed: 6,
+    boostMultiplier: 2.2,
+    pointerLookSensitivity: 0.0032,
+    stickLookSpeed: 2.6,
+    zoomSpeed: 32,
+    minFov: 24,
+    maxFov: 80,
+  },
 };
 
 export const BACKGROUND = '#e8e8e8';

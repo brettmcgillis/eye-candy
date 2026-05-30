@@ -1,9 +1,10 @@
 /* eslint-disable no-plusplus */
 import { button, folder, useControls } from 'leva';
 
-import { useCallback, useEffect, useRef, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 
 import usePresetsFolder from '../../../../../../hooks/usePresetsFolder';
+import useSceneCameraControls from '../../../../../../hooks/useSceneCameraControls';
 import { localEnv } from '../../../../../../utils/appUtils';
 import buildFireAndSmokeControls from '../../../../ToolBox/shared/hooks/buildFireAndSmokeControls';
 import buildSplineGroupControls from '../../../../ToolBox/shared/hooks/useSplineGroupControls';
@@ -27,11 +28,13 @@ import {
   serializeDumpsterParticleSmokeSplines,
 } from '../utils/particleSmokeAuthoring';
 import {
+  CAMERA,
   DEFAULT_SHOT_TUNING_MODE,
   SHOT_TUNING_PRESETS,
 } from '../utils/sceneData';
 
 const SCENE_LABEL = 'Dumpster Fire';
+const CAMERA_FOLDER_PATH = `${SCENE_LABEL}.Camera`;
 const PARTICLE_SMOKE_FOLDER_PATH = `${SCENE_LABEL}.Combustion.Particle Smoke`;
 const SHOT_TUNING_MODE_OPTIONS = Object.keys(SHOT_TUNING_PRESETS);
 
@@ -247,6 +250,7 @@ export default function useSceneControls() {
   const [particleSmokeConfigs, setParticleSmokeConfigs] = useState(
     () => getParticleSmokeStateFromPreset(initialPresetSnapshot).configs
   );
+  const cameraApiRef = useRef(null);
   const setControlsRef = useRef(null);
   const shotModeRef = useRef(DEFAULT_SHOT_TUNING_MODE);
   const applyingShotModeRef = useRef(false);
@@ -324,6 +328,20 @@ export default function useSceneControls() {
     },
     {}
   );
+  const cameraControlOverrides = useMemo(() => {
+    return {
+      cameraAutoFit: {
+        render: (get) => get(`${CAMERA_FOLDER_PATH}.cameraMode`) === 'orbit',
+      },
+    };
+  }, []);
+  const { buildCamera, cameraControls } = useSceneCameraControls({
+    apiRef: cameraApiRef,
+    camera: CAMERA,
+    cameraFolderPath: CAMERA_FOLDER_PATH,
+    controlsSnapshotRef,
+    controlOverrides: cameraControlOverrides,
+  });
 
   const [controls, setControls] = useControls(
     SCENE_LABEL,
@@ -365,72 +383,7 @@ export default function useSceneControls() {
         },
         { collapsed: true }
       ),
-      Camera: folder(
-        {
-          cameraMode: {
-            label: 'Mode',
-            value: initialPresetSnapshot.cameraMode,
-            options: ['Fixed', 'Orbit', 'Operator'],
-          },
-          operatorMoveSpeed: {
-            label: 'Move Speed',
-            value: initialPresetSnapshot.operatorMoveSpeed,
-            min: 0.5,
-            max: 40,
-            step: 0.1,
-          },
-          operatorLiftSpeed: {
-            label: 'Lift Speed',
-            value: initialPresetSnapshot.operatorLiftSpeed,
-            min: 0.5,
-            max: 30,
-            step: 0.1,
-          },
-          operatorBoostMultiplier: {
-            label: 'Boost Multiplier',
-            value: initialPresetSnapshot.operatorBoostMultiplier,
-            min: 1,
-            max: 8,
-            step: 0.1,
-          },
-          operatorPointerLookSensitivity: {
-            label: 'Pointer Look',
-            value: initialPresetSnapshot.operatorPointerLookSensitivity,
-            min: 0.0005,
-            max: 0.02,
-            step: 0.0001,
-          },
-          operatorStickLookSpeed: {
-            label: 'Stick Look',
-            value: initialPresetSnapshot.operatorStickLookSpeed,
-            min: 0.1,
-            max: 15,
-            step: 0.1,
-          },
-          operatorZoomSpeed: {
-            label: 'Zoom Speed',
-            value: initialPresetSnapshot.operatorZoomSpeed,
-            min: 1,
-            max: 120,
-            step: 0.5,
-          },
-          operatorMinFov: {
-            label: 'Min FOV',
-            value: initialPresetSnapshot.operatorMinFov,
-            min: 5,
-            max: 90,
-            step: 1,
-          },
-          operatorMaxFov: {
-            label: 'Max FOV',
-            value: initialPresetSnapshot.operatorMaxFov,
-            min: 5,
-            max: 120,
-            step: 1,
-          },
-        },
-        { collapsed: true }
-      ),
+      Camera: folder(cameraControls, { collapsed: true }),
       Physics: folder(
         {
           physicsDebug: {
@@ -785,6 +738,7 @@ ${allEntries}
       ),
     }),
     [
+      cameraControls,
       fireAndSmokeInstances.length,
       particleSmokeSplines.length,
       presetRevision,
@@ -801,15 +755,6 @@ ${allEntries}
     cursorAttractorMode,
     cursorAttractorStrength,
     cursorAttractorRadius,
-    cameraMode,
-    operatorMoveSpeed,
-    operatorLiftSpeed,
-    operatorBoostMultiplier,
-    operatorPointerLookSensitivity,
-    operatorStickLookSpeed,
-    operatorZoomSpeed,
-    operatorMinFov,
-    operatorMaxFov,
     sceneBackgroundColor,
     sceneFloorColor,
     sceneGridColor,
@@ -869,6 +814,10 @@ ${allEntries}
     shotModeRef.current = shotMode;
   }, [shotMode]);
 
+  const camera = useMemo(() => {
+    return buildCamera(controls);
+  }, [buildCamera, controls]);
+
   return {
     fireAndSmokeInstances,
     particleSmokeSplines,
@@ -876,7 +825,8 @@ ${allEntries}
     showEffects,
     editSplines,
     physicsDebug,
-    cameraMode,
+    camera,
+    cameraApiRef,
     cursorAttractorEnabled,
     showCursorAttractor,
     cursorAttractorMode,
@@ -889,16 +839,6 @@ ${allEntries}
       fogColor: sceneFogColor,
       fogNear: sceneFogNear,
       fogFar: sceneFogFar,
-    },
-    operatorCamera: {
-      moveSpeed: operatorMoveSpeed,
-      liftSpeed: operatorLiftSpeed,
-      boostMultiplier: operatorBoostMultiplier,
-      pointerLookSensitivity: operatorPointerLookSensitivity,
-      stickLookSpeed: operatorStickLookSpeed,
-      zoomSpeed: operatorZoomSpeed,
-      minFov: Math.min(operatorMinFov, operatorMaxFov),
-      maxFov: Math.max(operatorMinFov, operatorMaxFov),
     },
     fireLightRig: {
       enabled: fireLightEnabled,

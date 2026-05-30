@@ -71,6 +71,9 @@ function createUniforms(config, size) {
     tanHalfFov: uniform(Math.tan(THREE.MathUtils.degToRad(60) * 0.5)),
     cameraInside: uniform(0),
     bodies: createBodyUniforms(),
+    // Black-hole local -> world and world -> clip, for per-pixel hit depth.
+    localToWorldMatrix: uniform(new THREE.Matrix4()),
+    viewProjectionMatrix: uniform(new THREE.Matrix4()),
   };
 }
 
@@ -91,7 +94,7 @@ export class BlackHoleSimulation {
 
   createMaterial() {
     const material = new THREE.MeshBasicNodeMaterial();
-    material.colorNode = createBlackHoleShader(this.uniforms);
+    material.colorNode = createBlackHoleShader(this.uniforms).get('color');
     return material;
   }
 
@@ -114,14 +117,18 @@ export class BlackHoleSimulation {
     return material;
   }
 
+  // Renders the hole's alpha into the color attachment and the per-pixel hit
+  // depth into the depth attachment, so the compositor can occlude the hole
+  // against scene geometry per-pixel (read via the pass's depth texture).
   createMaskMaterial() {
     const material = new THREE.MeshBasicNodeMaterial({
-      depthWrite: false,
+      depthWrite: true,
       depthTest: false,
       toneMapped: false,
     });
     const shaderNode = createBlackHoleShader(this.uniforms);
-    material.colorNode = vec3(shaderNode.a);
+    material.colorNode = vec3(shaderNode.get('color').a);
+    material.depthNode = shaderNode.get('depth');
     return material;
   }
 
@@ -253,7 +260,7 @@ export class BlackHoleSimulation {
     }
   }
 
-  update(deltaTime, camera, worldToLocalMatrix) {
+  update(deltaTime, camera, worldToLocalMatrix, localToWorldMatrix) {
     this.uniforms.time.value += deltaTime;
     this.uniforms.tanHalfFov.value = Math.tan(
       THREE.MathUtils.degToRad(
@@ -262,6 +269,17 @@ export class BlackHoleSimulation {
           : (camera.fov ?? 60)
       ) * 0.5
     );
+
+    // Matrices for converting a local-space hit position to device depth.
+    this.uniforms.viewProjectionMatrix.value.multiplyMatrices(
+      camera.projectionMatrix,
+      camera.matrixWorldInverse
+    );
+    if (localToWorldMatrix) {
+      this.uniforms.localToWorldMatrix.value.copy(localToWorldMatrix);
+    } else {
+      this.uniforms.localToWorldMatrix.value.identity();
+    }
 
     this.cameraDirection.set(0, 0, -1).applyQuaternion(camera.quaternion);
     this.cameraTarget

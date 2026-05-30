@@ -14,9 +14,8 @@ import useCameraFitToViewport from '../../../../../hooks/useCameraFitToViewport'
 import useCameraSpline from '../../../../../hooks/useCameraSpline';
 import AISLE9_CAMERA_SPLINES from '../../../../../presets/spline/aisle9CameraSplines';
 import CENTER_STORE_REF_POSITION from '../../../../elements/sevenEleven/sevenElevenAnchors';
-import BlackHoleVolume from './components/BlackHoleVolume';
+import OrbitingProps from './components/OrbitingProps';
 import PostEffects from './components/PostEffects';
-import ScenePost from './components/ScenePost';
 import SevenElevenStage from './components/SevenElevenStage';
 import useSceneControls from './hooks/useSceneControls';
 
@@ -73,6 +72,8 @@ export default function Aisle9() {
     }),
     [config, effectiveBlackHolePosition]
   );
+  const shouldRenderOrbitingBodies =
+    config.body1Enabled || config.body2Enabled || config.body3Enabled;
   const cameraSplinePreset = AISLE9_CAMERA_SPLINES[config.cameraSplinePreset];
   const cameraSplineClosed = cameraSplinePreset?.closed ?? true;
   const storeLocalToWorldMatrix =
@@ -409,19 +410,17 @@ export default function Aisle9() {
       />
 
       {isStoreWarp ? (
-        <>
-          <SevenElevenStage
-            onStoreSpaceChange={handleStoreSpaceChange}
-            storeScale={config.storeScale}
-            storePosition={config.storePosition}
-            storeRotation={config.storeRotation}
-          />
-          <BlackHoleVolume config={effectiveConfig} />
-          <ScenePost config={effectiveConfig} />
-        </>
-      ) : (
-        <PostEffects config={effectiveConfig} />
-      )}
+        <SevenElevenStage
+          onStoreSpaceChange={handleStoreSpaceChange}
+          storeScale={config.storeScale}
+          storePosition={config.storePosition}
+          storeRotation={config.storeRotation}
+        />
+      ) : null}
+      {shouldRenderOrbitingBodies ? (
+        <OrbitingProps config={effectiveConfig} />
+      ) : null}
+      <PostEffects config={effectiveConfig} />
     </>
   );
 }

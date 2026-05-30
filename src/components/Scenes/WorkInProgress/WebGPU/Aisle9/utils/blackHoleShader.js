@@ -24,12 +24,21 @@ import {
   smoothstep,
   sqrt,
   step,
+  struct,
   vec2,
   vec3,
   vec4,
 } from 'three/tsl';
 
 const MAX_RAY_STEPS = 256;
+
+// Color + per-pixel device depth of the first disk/core hit, so the compositor
+// can occlude the hole per-pixel against scene geometry (instead of a single
+// scalar depth for the whole disk).
+const BlackHoleShaderResult = struct(
+  { color: 'vec4', depth: 'float' },
+  'BlackHoleShaderResult'
+);
 
 const hash21 = Fn(([p]) => {
   const n = sin(dot(p, vec2(127.1, 311.7))).mul(43758.5453);
@@ -468,6 +477,9 @@ export default function createBlackHoleShader(uniforms) {
     const alpha = float(0).toVar('alpha');
     const escaped = float(0).toVar('escaped');
     const captured = float(0).toVar('captured');
+    // Local-space position of the first visible hit (disk or core), for depth.
+    const hitLocal = vec3(0, 0, 0).toVar('hitLocal');
+    const hitRecorded = float(0).toVar('hitRecorded');
 
     const innerR = uniforms.diskInnerRadius;
     const outerR = uniforms.diskOuterRadius;
@@ -523,6 +535,10 @@ export default function createBlackHoleShader(uniforms) {
         const r = length(rayPos);
 
         If(r.lessThan(rs.mul(1.01)), () => {
+          If(hitRecorded.lessThan(0.5), () => {
+            hitLocal.assign(rayPos);
+            hitRecorded.assign(1);
+          });
           captured.assign(1);
           Break();
         });
@@ -566,6 +582,14 @@ export default function createBlackHoleShader(uniforms) {
               diskResult.xyz.mul(diskResult.w).mul(remainingAlpha)
             );
             alpha.addAssign(remainingAlpha.mul(diskResult.w));
+            // Record the first meaningfully-opaque disk hit for depth.
+            If(
+              hitRecorded.lessThan(0.5).and(diskResult.w.greaterThan(0.05)),
+              () => {
+                hitLocal.assign(hitPos);
+                hitRecorded.assign(1);
+              }
+            );
           });
         });
       }
@@ -592,6 +616,16 @@ export default function createBlackHoleShader(uniforms) {
     const holeAlpha = captured.max(alpha);
     const finalAlpha = mix(holeAlpha, float(1), uniforms.backgroundOpacity);
     const finalColor = pow(color, vec3(1 / 2.2));
-    return vec4(finalColor, finalAlpha);
+
+    // Per-pixel device depth of the first hit (local -> world -> clip). Empty /
+    // escaped pixels stay at the far plane so they never occlude scene geometry.
+    const depthValue = float(1).toVar('depthValue');
+    If(hitRecorded.greaterThan(0.5), () => {
+      const worldHit = uniforms.localToWorldMatrix.mul(vec4(hitLocal, 1));
+      const clipHit = uniforms.viewProjectionMatrix.mul(worldHit);
+      depthValue.assign(clipHit.z.div(clipHit.w));
+    });
+
+    return BlackHoleShaderResult(vec4(finalColor, finalAlpha), depthValue);
   })();
 }

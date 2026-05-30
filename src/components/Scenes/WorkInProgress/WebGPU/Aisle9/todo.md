@@ -26,5 +26,6 @@
 # // Bugs
 
 - [ ] Audit the legacy control values that are currently exposed but not consumed by the ported shader/runtime
-- [ ] Fix visibility on Surveillance.
-- [ ] Fix visibility on Guided tour
+- [ ] Fix disc visibility on Surveillance.
+- [ ] Fix disc visibility on Guided tour
+- [ ] Fix bodies visibility on Space2

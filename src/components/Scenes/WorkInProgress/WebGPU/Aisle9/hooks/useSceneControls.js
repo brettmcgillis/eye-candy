@@ -156,7 +156,7 @@ const BODY_FIELD_SCHEMA = {
   Enabled: { label: 'Enabled' },
   Color: { label: 'Color' },
   Size: { label: 'Size', min: 0.2, max: 4, step: 0.1 },
-  OrbitRadius: { label: 'Orbit Radius', min: 2, max: 19, step: 0.1 },
+  OrbitRadius: { label: 'Orbit Radius', min: 2, max: 30, step: 0.1 },
   OrbitSpeed: { label: 'Orbit Speed', min: -3, max: 3, step: 0.01 },
   OrbitPhase: { label: 'Orbit Phase', min: 0, max: 360, step: 1 },
   Height: { label: 'Height', min: -8, max: 8, step: 0.1 },

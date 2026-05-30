@@ -192,10 +192,73 @@ const PostEffects = memo(function PostEffects({ config }) {
     const blackHoleColor = blackHolePass.getTextureNode();
     const blackHoleMaskPass = pass(blackHoleMaskScene, camera);
     const blackHoleMask = blackHoleMaskPass.getTextureNode();
+    // Per-pixel device depth of the hole's disk/core hit (far plane where empty).
+    const blackHoleDepth = blackHoleMaskPass.getTextureNode('depth');
 
     const baseScene =
       config.presentationMode === 'backgroundField'
-        ? blackHolePass
+        ? (() => {
+            // Gravitationally warp the scene (orbiting bodies) toward the hole,
+            // matching the store branch, so the moons get lensed near the hole.
+            const effectVisibility = uniforms.effectVisibility.clamp(0.0, 1.0);
+            const centeredUv = vec2(
+              screenUV.x.sub(uniforms.center.x).mul(uniforms.aspect),
+              screenUV.y.sub(uniforms.center.y)
+            );
+            const dist = length(centeredUv);
+            const innerRadius = uniforms.screenInnerRadius.max(0.02);
+            const outerRadius = uniforms.screenOuterRadius.max(
+              innerRadius.add(0.02)
+            );
+            const coreRadius = innerRadius
+              .mul(0.58)
+              .max(uniforms.blackHoleMass.mul(0.015));
+            const lensRadius = outerRadius.mul(1.35).add(coreRadius.mul(0.55));
+            const safeDist = dist.max(0.0001);
+            const direction = centeredUv.div(safeDist);
+            const directionUv = vec2(
+              direction.x.div(uniforms.aspect),
+              direction.y
+            );
+            const lensMask = float(1.0)
+              .sub(smoothstep(coreRadius, lensRadius, dist))
+              .mul(effectVisibility);
+            const warpStrength = uniforms.gravitationalLensing
+              .mul(lensMask.mul(lensMask).add(lensMask.mul(0.2)))
+              .mul(outerRadius.mul(0.32).add(coreRadius.mul(0.65)));
+            const warpedUvRaw = vec2(
+              screenUV.x.sub(directionUv.x.mul(warpStrength)),
+              screenUV.y.sub(directionUv.y.mul(warpStrength))
+            );
+            const safeWarpedUv = vec2(
+              clamp(warpedUvRaw.x, 0.0, 1.0),
+              clamp(warpedUvRaw.y, 0.0, 1.0)
+            );
+
+            // Sample the (lensed) scene; per-pixel hole depth resolves whether a
+            // body is in front of or behind the hole — no more flat-plane pop.
+            const sampledSceneDepth = sceneDepth.sample(safeWarpedUv);
+            const sampledHoleDepth = blackHoleDepth.sample(screenUV);
+            const sceneGeometryMask = float(1.0).sub(
+              step(0.9999, sampledSceneDepth)
+            );
+            const objectInFrontOfHoleMask = step(
+              sampledSceneDepth,
+              sampledHoleDepth.sub(0.0015)
+            );
+            const visibleSceneMask = sceneGeometryMask.mul(
+              max(
+                float(1.0).sub(blackHoleMask.r.clamp(0.0, 1.0)),
+                objectInFrontOfHoleMask
+              )
+            );
+
+            return mix(
+              blackHoleColor,
+              sceneColor.sample(safeWarpedUv),
+              visibleSceneMask
+            );
+          })()
         : (() => {
             const effectVisibility = uniforms.effectVisibility.clamp(0.0, 1.0);
             const centeredUv = vec2(
@@ -218,7 +281,7 @@ const PostEffects = memo(function PostEffects({ config }) {
               direction.y
             );
             const holeVisibleMask = step(
-              uniforms.holeDepth.sub(0.0015),
+              blackHoleDepth.sample(screenUV).sub(0.0015),
               sceneDepth.sample(screenUV)
             ).mul(effectVisibility);
             const blackHoleAlpha = blackHoleMask.r
@@ -334,7 +397,12 @@ const PostEffects = memo(function PostEffects({ config }) {
       .copy(blackHoleTransform.originWorld)
       .applyMatrix4(camera.matrixWorldInverse);
 
-    simulation.update(deltaTime, camera, blackHoleTransform.worldToLocalMatrix);
+    simulation.update(
+      deltaTime,
+      camera,
+      blackHoleTransform.worldToLocalMatrix,
+      blackHoleTransform.localToWorldMatrix
+    );
 
     innerWorldRef.current
       .set(config.diskInnerRadius, 0, 0)

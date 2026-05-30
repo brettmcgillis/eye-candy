@@ -4,7 +4,10 @@ import CENTER_STORE_REF_POSITION from '../../../../../elements/sevenEleven/seven
 export const DEFAULT_PRESET = 'Store';
 export const GUIDED_TOUR_PRESET = 'Guided Tour';
 export const SURVEILLANCE_PRESET = 'Surveillance';
+export const SURVEILLANCE_2_PRESET = 'Surveillance 2';
+export const SURVEILLANCE_3_PRESET = 'Surveillance 3';
 export const SPACE_PRESET = 'Space';
+export const SPACE_2_PRESET = 'Space 2';
 
 function cloneCenterStoreRef() {
   return {
@@ -20,22 +23,22 @@ function cloneCenterStoreRef() {
 const BLACK_HOLE_BODIES_OFF = {
   body1Enabled: false,
   body1Color: '#9ec5ff',
-  body1Size: 0.9,
-  body1OrbitRadius: 9,
+  body1Size: 2.3,
+  body1OrbitRadius: 19,
   body1OrbitSpeed: 0.6,
   body1OrbitPhase: 0,
   body1Height: 0,
   body2Enabled: false,
   body2Color: '#ffd27f',
-  body2Size: 0.6,
-  body2OrbitRadius: 12.5,
+  body2Size: 1.8,
+  body2OrbitRadius: 23.5,
   body2OrbitSpeed: -0.42,
   body2OrbitPhase: 120,
   body2Height: 1.5,
   body3Enabled: false,
   body3Color: '#ff8fa3',
-  body3Size: 1.3,
-  body3OrbitRadius: 16,
+  body3Size: 4,
+  body3OrbitRadius: 21,
   body3OrbitSpeed: 0.28,
   body3OrbitPhase: 240,
   body3Height: -2,
@@ -179,7 +182,11 @@ const STORE_SCENE_PRESET = {
   ...DEFAULT_CAMERA_SPLINE_SETTINGS,
   ...BLACK_HOLE_BODIES_OFF,
   body1Enabled: true,
+  body1OrbitRadius: 18,
   body2Enabled: true,
+  body2OrbitRadius: 21,
+  body3Enabled: true,
+  body3OrbitRadius: 24,
   cameraFov: 60,
   cameraMobileFov: 85,
   cameraNear: 0.1,
@@ -315,6 +322,31 @@ const STORE_SCENE_PRESET = {
   temporalFrames: 16,
 };
 
+const SPACE_2_SCENE_PRESET = {
+  ...SPACE_SCENE_PRESET,
+  body1Enabled: true,
+  body1Color: '#d7dcff',
+  body1Size: 2.6,
+  body1OrbitRadius: 17.5,
+  body1OrbitSpeed: 0.52,
+  body1OrbitPhase: 0,
+  body1Height: -0.75,
+  body2Enabled: true,
+  body2Color: '#ffd9b5',
+  body2Size: 1.7,
+  body2OrbitRadius: 22.5,
+  body2OrbitSpeed: -0.34,
+  body2OrbitPhase: 115,
+  body2Height: 1.6,
+  body3Enabled: true,
+  body3Color: '#d7b8ff',
+  body3Size: 3.4,
+  body3OrbitRadius: 26,
+  body3OrbitSpeed: 0.22,
+  body3OrbitPhase: 245,
+  body3Height: 2.8,
+};
+
 const GUIDED_TOUR_SCENE_PRESET = {
   ...STORE_SCENE_PRESET,
   cameraMode: 'spline',
@@ -328,14 +360,36 @@ const SURVEILLANCE_SCENE_PRESET = {
   ...STORE_SCENE_PRESET,
   cameraMode: 'fixed',
   cameraFov: 80,
-  blackHoleScale: { x: 20, y: 20, z: 20 },
+  // Uniform scale only: the raymarch views the disk in local units, so the
+  // camera's distance in disk-radii = worldDistance / scale. ~8 sits the camera
+  // a couple disk-radii out (full ring visible); larger engulfs the camera.
+  blackHoleScale: { x: 8, y: 8, z: 8 },
   fixedCameraPosition: { x: 3, y: 2.5, z: -4 },
   fixedCameraTarget: cloneCenterStoreRef(),
+};
+
+const SURVEILLANCE_2_SCENE_PRESET = {
+  ...SURVEILLANCE_SCENE_PRESET,
+  fixedCameraPosition: { x: 5, y: 2.5, z: 1.5 },
+  fixedCameraMobilePosition: { x: 5, y: 2.5, z: 1.5 },
+  fixedCameraTarget: cloneCenterStoreRef(),
+  fixedCameraMobileTarget: cloneCenterStoreRef(),
+};
+
+const SURVEILLANCE_3_SCENE_PRESET = {
+  ...SURVEILLANCE_SCENE_PRESET,
+  fixedCameraPosition: { x: -5.5, y: 2.5, z: -2 },
+  fixedCameraMobilePosition: { x: -5.5, y: 2.5, z: -2 },
+  fixedCameraTarget: cloneCenterStoreRef(),
+  fixedCameraMobileTarget: cloneCenterStoreRef(),
 };
 
 export const PRESETS = {
   [DEFAULT_PRESET]: STORE_SCENE_PRESET,
   [GUIDED_TOUR_PRESET]: GUIDED_TOUR_SCENE_PRESET,
   [SURVEILLANCE_PRESET]: SURVEILLANCE_SCENE_PRESET,
+  [SURVEILLANCE_2_PRESET]: SURVEILLANCE_2_SCENE_PRESET,
+  [SURVEILLANCE_3_PRESET]: SURVEILLANCE_3_SCENE_PRESET,
   [SPACE_PRESET]: SPACE_SCENE_PRESET,
+  [SPACE_2_PRESET]: SPACE_2_SCENE_PRESET,
 };

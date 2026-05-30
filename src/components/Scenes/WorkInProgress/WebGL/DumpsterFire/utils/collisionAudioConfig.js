@@ -98,6 +98,8 @@ export const DUMPSTER_FIRE_COLLISION_AUDIO_BY_ASSET = {
   bucket: 'bucket',
   'happy-meal': 'lightTrash',
   'mc-cup': 'lightTrash',
+  'soda-can': 'lightTrash',
+  snickers: 'lightTrash',
 };
 
 export function getTrashCollisionAudioGroupKey(assetKey) {

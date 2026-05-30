@@ -1,5 +1,15 @@
 import { radians } from '../../../../../../utils/math';
 import {
+  Snickers,
+  SnickersInstance,
+  SnickersInstances,
+} from '../../../../../elements/Snickers/Snickers';
+import {
+  SodaCan,
+  SodaCanInstance,
+  SodaCanInstances,
+} from '../../../../../elements/SodaCan/SodaCan';
+import {
   AppleCore,
   AppleCoreInstance,
   AppleCoreInstances,
@@ -241,7 +251,9 @@ const EXPECTED_GRID_ASSET_SIZE_METERS = {
   'starbucks-cup': 0.17,
   'happy-meal': 0.16,
   'mc-cup': 0.14,
+  'soda-can': 0.13,
   'cigarette-butts': 0.12,
+  snickers: 0.11,
   'cassette-tape-1': 0.1,
   'cassette-tape-2': 0.1,
   'cassette-tape-3': 0.1,
@@ -424,6 +436,22 @@ const TRASH_ASSET_CONFIGS = {
     mass: 0.26,
     colliders: 'hull',
   },
+  'soda-can': {
+    Component: SodaCan,
+    InstanceComponent: SodaCanInstance,
+    InstancesComponent: SodaCanInstances,
+    scale: 0.048,
+    mass: 0.24,
+    colliders: 'hull',
+  },
+  snickers: {
+    Component: Snickers,
+    InstanceComponent: SnickersInstance,
+    InstancesComponent: SnickersInstances,
+    scale: 0.088,
+    mass: 0.18,
+    colliders: 'hull',
+  },
 };
 
 function createTrashAsset(key, overrides = {}) {
@@ -463,6 +491,8 @@ export const SHOT_ASSET_OPTIONS = [
   createTrashAsset('bucket'),
   createTrashAsset('happy-meal'),
   createTrashAsset('mc-cup'),
+  createTrashAsset('soda-can'),
+  createTrashAsset('snickers'),
 ];
 
 export function getRandomShotAsset(random = Math.random) {
@@ -805,6 +835,26 @@ export const DYNAMIC_SCENE_ITEMS = [
     id: 'left-beer-bottle-2',
     position: [4.15, 0.03, 1.55],
     rotation: [Math.PI / 12, 0, -Math.PI / 2],
+  }),
+  createTrashAsset('soda-can', {
+    id: 'front-left-soda-can',
+    position: [-3.05, 0.03, 2.7],
+    rotation: [1, 1, 1],
+  }),
+  createTrashAsset('soda-can', {
+    id: 'front-right-soda-can',
+    position: [2.75, 0.03, 2.65],
+    rotation: [2, -2, 2],
+  }),
+  createTrashAsset('snickers', {
+    id: 'right-side-snickers',
+    position: [-5.35, 0.03, 1.85],
+    rotation: [0, Math.PI / 8, 0],
+  }),
+  createTrashAsset('snickers', {
+    id: 'left-side-snickers',
+    position: [4.85, 0.03, 2.15],
+    rotation: [0, -Math.PI / 7, 0],
   }),
   createTrashAsset('bucket', {
     id: 'front-bucket',

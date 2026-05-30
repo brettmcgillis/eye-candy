@@ -7,25 +7,93 @@ License: CC-BY-4.0 (http://creativecommons.org/licenses/by/4.0/)
 Source: https://sketchfab.com/3d-models/snickers-free-c5c716bba063443da8d6112ff1bd7123
 Title: Snickers (FREE)
 */
-import React from 'react';
+import React, { useEffect, useMemo } from 'react';
 
-import { useGLTF } from '@react-three/drei';
+import { createInstances, useGLTF } from '@react-three/drei';
 
 import { modelFile } from '../../../utils/appUtils';
+import bakeInstancedGeometry from '../../../utils/instancedGeometry';
 
-export default function Snickers(props) {
-  const { nodes, materials } = useGLTF(modelFile('snickers.glb'));
+const SNICKERS_MODEL_PATH = '/snickers.glb';
+const SNICKERS_MODEL_FILE = modelFile(SNICKERS_MODEL_PATH);
+const SNICKERS_MATERIAL_NAME = 'snickers';
+const SNICKERS_TRANSFORM_CHAIN = [{ position: [0, 0.531, 2.006] }];
+
+const [SnickersInstancesRoot, SnickersInstanceRoot] = createInstances();
+
+function useSnickersModel() {
+  const { nodes, materials } = useGLTF(SNICKERS_MODEL_FILE);
+
+  return {
+    baseGeometry: nodes.Object_4.geometry,
+    sourceMaterial: materials[SNICKERS_MATERIAL_NAME],
+  };
+}
+
+function useSnickersGeometry(baseGeometry) {
+  const geometry = useMemo(
+    () => bakeInstancedGeometry(baseGeometry, SNICKERS_TRANSFORM_CHAIN),
+    [baseGeometry]
+  );
+
+  useEffect(() => {
+    return () => {
+      geometry.dispose?.();
+    };
+  }, [geometry]);
+
+  return geometry;
+}
+
+export function SnickersInstances({ children, material, ...props }) {
+  const { baseGeometry, sourceMaterial } = useSnickersModel();
+  const geometry = useSnickersGeometry(baseGeometry);
+  const instanceMaterial = useMemo(
+    () => material ?? sourceMaterial.clone(),
+    [material, sourceMaterial]
+  );
+
+  useEffect(() => {
+    if (material) {
+      return undefined;
+    }
+
+    return () => {
+      instanceMaterial.dispose?.();
+    };
+  }, [instanceMaterial, material]);
+
+  return (
+    <SnickersInstancesRoot
+      geometry={geometry}
+      material={instanceMaterial}
+      {...props}
+    >
+      {children}
+    </SnickersInstancesRoot>
+  );
+}
+
+export function SnickersInstance(props) {
+  return <SnickersInstanceRoot {...props} />;
+}
+
+export function Snickers(props) {
+  const { baseGeometry, sourceMaterial } = useSnickersModel();
+  const geometry = useSnickersGeometry(baseGeometry);
+
   return (
     <group {...props} dispose={null}>
       <mesh
         castShadow
         receiveShadow
-        geometry={nodes.Object_4.geometry}
-        material={materials.snickers}
-        position={[0, 0.531, 2.006]}
+        geometry={geometry}
+        material={sourceMaterial}
       />
     </group>
   );
 }
 
-useGLTF.preload(modelFile('snickers.glb'));
+useGLTF.preload(SNICKERS_MODEL_FILE);
+
+export default Snickers;

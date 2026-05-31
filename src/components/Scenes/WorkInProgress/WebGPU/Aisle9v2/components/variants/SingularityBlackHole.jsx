@@ -55,7 +55,9 @@ function createUniforms(config) {
 }
 
 const SingularityBlackHole = memo(function SingularityBlackHole({ config }) {
-  const noiseTexture = useTexture('/textures/blackhole/singularity-noise-deep.png');
+  const noiseTexture = useTexture(
+    '/textures/blackhole/singularity-noise-deep.png'
+  );
   const uniforms = useMemo(() => createUniforms(config), []);
   const geometry = useMemo(() => new THREE.SphereGeometry(1, 72, 48), []);
 
@@ -71,7 +73,9 @@ const SingularityBlackHole = memo(function SingularityBlackHole({ config }) {
   }, [noiseTexture]);
 
   const material = useMemo(() => {
-    const shaderNode = createSingularityBlackHoleVolumeShader(uniforms, { noiseTextureNode });
+    const shaderNode = createSingularityBlackHoleVolumeShader(uniforms, {
+      noiseTextureNode,
+    });
     const nodeMaterial = new THREE.MeshBasicNodeMaterial({
       depthTest: true,
       depthWrite: false,
@@ -88,11 +92,13 @@ const SingularityBlackHole = memo(function SingularityBlackHole({ config }) {
 
   const position = config.blackHolePosition ?? { x: 0, y: 0, z: 0 };
   const metricWorldScale = config.metricWorldScale ?? 1;
-  const lensDiameter = config.singularityLensDiameter ?? config.mockLensDiameter ?? 1.55;
+  const lensDiameter =
+    config.singularityLensDiameter ?? config.mockLensDiameter ?? 1.55;
   const lensRadius = lensDiameter * metricWorldScale * 0.5;
 
   useEffect(() => {
-    const lensDiam = config.singularityLensDiameter ?? config.mockLensDiameter ?? 1.55;
+    const lensDiam =
+      config.singularityLensDiameter ?? config.mockLensDiameter ?? 1.55;
     const blackHoleDiam = config.mockBlackHoleDiameter ?? 0.3048;
     const diskDiam = config.mockDiskDiameter ?? 1.08;
     const sharedCoreRadius = blackHoleDiam / Math.max(lensDiam, 0.0001);
@@ -186,16 +192,6 @@ const SingularityBlackHole = memo(function SingularityBlackHole({ config }) {
         material={material}
         renderOrder={3}
       />
-      <mesh renderOrder={2}>
-        <sphereGeometry args={[1, 36, 24]} />
-        <meshBasicMaterial
-          color={config.webgpuLensColor ?? config.mockLensColor ?? '#8fb9ff'}
-          depthTest
-          depthWrite={false}
-          opacity={0.08}
-          transparent
-        />
-      </mesh>
     </group>
   );
 });

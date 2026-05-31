@@ -6,11 +6,17 @@ import CENTER_STORE_REF_POSITION from '../../../../elements/sevenEleven/sevenEle
 import CameraRig from '../../../../rigging/CameraRig';
 import BlackHoleHero from './components/BlackHoleHero';
 import OrbitingBodies from './components/OrbitingBodies';
+import SingularityParityEffects from './components/SingularityParityEffects';
 import SpaceEnvironment from './components/SpaceEnvironment';
 import StoreStage from './components/StoreStage';
 import SurveillanceOverlay from './components/SurveillanceOverlay';
 import useSceneControls from './hooks/useSceneControls';
-import { ENVIRONMENT_SPACE } from './presets/presets';
+import {
+  BLACK_HOLE_VARIANT_LEGACY_PORT,
+  BLACK_HOLE_VARIANT_MOCK,
+  BLACK_HOLE_VARIANT_SINGULARITY,
+  ENVIRONMENT_SPACE,
+} from './presets/presets';
 
 function toVector3(value) {
   if (value instanceof THREE.Vector3) return value.clone();
@@ -111,10 +117,25 @@ function getStoreFallbackPosition() {
   };
 }
 
+function getActiveLensDiameter(config) {
+  switch (config.blackHoleVariant) {
+    case BLACK_HOLE_VARIANT_MOCK:
+      return config.mockLensDiameter;
+    case BLACK_HOLE_VARIANT_LEGACY_PORT:
+      return config.legacyLensDiameter;
+    case BLACK_HOLE_VARIANT_SINGULARITY:
+      return config.singularityLensDiameter;
+    default:
+      return config.webgpuLensDiameter;
+  }
+}
+
 export default function Aisle9v2() {
   const config = useSceneControls();
   const [storeSpace, setStoreSpace] = useState(null);
   const isSpace = config.environment === ENVIRONMENT_SPACE;
+  const isSingularity =
+    config.blackHoleVariant === BLACK_HOLE_VARIANT_SINGULARITY;
   const transformMatrix =
     !isSpace && storeSpace?.storeLocalToWorldMatrix
       ? storeSpace.storeLocalToWorldMatrix
@@ -130,17 +151,19 @@ export default function Aisle9v2() {
     if (isSpace) return config.blackHolePosition;
 
     const center = storeSpace?.centerStoreRefWorldPosition;
+
     if (!center) return getStoreFallbackPosition();
 
     return { x: center.x, y: center.y, z: center.z };
   }, [config.blackHolePosition, isSpace, storeSpace]);
   const metricWorldScale = isSpace ? 1 : config.storeScale;
+  const activeLensDiameter = getActiveLensDiameter(config);
   const orbitMinDistance = isSpace
     ? 0.45
-    : Math.max(140, config.lensDiameter * metricWorldScale * 0.55);
+    : Math.max(140, activeLensDiameter * metricWorldScale * 0.55);
   const orbitMaxDistance = isSpace
     ? 10
-    : Math.max(1400, config.lensDiameter * metricWorldScale * 2.5);
+    : Math.max(1400, activeLensDiameter * metricWorldScale * 2.5);
   const effectiveConfig = useMemo(
     () => ({ ...config, blackHolePosition, metricWorldScale }),
     [blackHolePosition, config, metricWorldScale]
@@ -206,6 +229,10 @@ export default function Aisle9v2() {
         position={keyLightPosition}
       />
       <directionalLight color="#d9ecff" intensity={2.2} position={[4, 7, 5]} />
+
+      {isSingularity ? (
+        <SingularityParityEffects bloomEnabled={config.bloomEnabled} />
+      ) : null}
 
       <BlackHoleHero config={effectiveConfig} />
       <OrbitingBodies config={effectiveConfig} />

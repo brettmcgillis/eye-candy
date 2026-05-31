@@ -192,13 +192,14 @@ const WebGPUBlackHole = memo(function WebGPUBlackHole({ config }) {
 
   const position = config.blackHolePosition ?? { x: 0, y: 0, z: 0 };
   const metricWorldScale = config.metricWorldScale ?? 1;
-  const lensRadius = config.lensDiameter * metricWorldScale * 0.5;
+  const lensRadius = config.webgpuLensDiameter * metricWorldScale * 0.5;
 
   useEffect(() => {
     const coreRadius =
-      config.blackHoleDiameter / Math.max(config.lensDiameter, 0.0001);
+      config.webgpuBlackHoleDiameter /
+      Math.max(config.webgpuLensDiameter, 0.0001);
     const outerRadius =
-      config.diskDiameter / Math.max(config.lensDiameter, 0.0001);
+      config.webgpuDiskDiameter / Math.max(config.webgpuLensDiameter, 0.0001);
     const sourceOuterRadius = Math.max(
       0.0001,
       config.webgpuDiskOuterRadius ?? WEBGPU_SOURCE_DEFAULTS.diskOuterRadius
@@ -344,7 +345,7 @@ const WebGPUBlackHole = memo(function WebGPUBlackHole({ config }) {
       <mesh renderOrder={2}>
         <sphereGeometry args={[1, 36, 24]} />
         <meshBasicMaterial
-          color={config.lensColor}
+          color={config.webgpuLensColor}
           depthTest
           depthWrite={false}
           opacity={0.1}

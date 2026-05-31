@@ -3,176 +3,114 @@ import * as THREE from 'three/webgpu';
 
 import React, { memo, useEffect, useMemo } from 'react';
 
-import { useTexture } from '@react-three/drei';
 import { useFrame } from '@react-three/fiber';
 
 import { ENVIRONMENT_SPACE } from '../../presets/presets';
 import createSingularityBlackHoleVolumeShader from '../../utils/createSingularityBlackHoleVolumeShader';
 
-const SINGULARITY_DEFAULTS = {
-  iterations: 128,
-  stepSize: 0.0071,
-  noiseFactor: 0.01,
-  power: 0.3,
-  originRadius: 0.13,
-  bandWidth: 0.03,
-  rampPos1: 0.05,
-  rampPos2: 0.425,
-  rampPos3: 1,
-  rampColor1: '#f2b670',
-  rampColor2: '#240d08',
-  rampColor3: '#050505',
-  emissionStrength: 2,
-  emissionColor: '#242117',
-};
-
-const SINGULARITY_NOISE_TEXTURE_PATH =
-  '/textures/blackhole/singularity-noise-deep.png';
-const SINGULARITY_ENVIRONMENT_TEXTURE_PATH =
-  '/textures/blackhole/singularity-nebula.png';
-
 function createUniforms(config) {
   return {
     time: uniform(0),
+    cameraInside: uniform(0),
     iterations: uniform(
-      Math.max(
-        24,
-        Math.round(
-          config.singularityIterations ?? SINGULARITY_DEFAULTS.iterations
-        )
-      ),
+      Math.max(24, Math.round(config.singularityIterations ?? 112)),
       'int'
     ),
-    stepSize: uniform(
-      config.singularityStepSize ?? SINGULARITY_DEFAULTS.stepSize
-    ),
-    noiseFactor: uniform(
-      config.singularityNoiseFactor ?? SINGULARITY_DEFAULTS.noiseFactor
-    ),
-    power: uniform(config.singularityPower ?? SINGULARITY_DEFAULTS.power),
-    originRadius: uniform(SINGULARITY_DEFAULTS.originRadius),
-    bandWidth: uniform(
-      config.singularityBandWidth ?? SINGULARITY_DEFAULTS.bandWidth
-    ),
-    emissionStrength: uniform(
-      config.singularityEmissionStrength ??
-        SINGULARITY_DEFAULTS.emissionStrength
-    ),
-    emissionColor: uniform(
-      new THREE.Color(
-        config.singularityEmissionColor ?? SINGULARITY_DEFAULTS.emissionColor
-      )
-    ),
-    rampPos1: uniform(
-      config.singularityRampPos1 ?? SINGULARITY_DEFAULTS.rampPos1
-    ),
-    rampPos2: uniform(
-      config.singularityRampPos2 ?? SINGULARITY_DEFAULTS.rampPos2
-    ),
-    rampPos3: uniform(
-      config.singularityRampPos3 ?? SINGULARITY_DEFAULTS.rampPos3
-    ),
+    stepSize: uniform(config.singularityStepSize ?? 0.011),
+    power: uniform(config.singularityPower ?? 0.26),
+    originRadius: uniform(0.11),
+    bandWidth: uniform(config.singularityBandWidth ?? 0.058),
+    fieldRadius: uniform(0.72),
+    fieldScale: uniform(3.8),
+    emissionStrength: uniform(config.singularityEmissionStrength ?? 1.9),
+    rampPos1: uniform(0.05),
+    rampPos2: uniform(0.425),
+    rampPos3: uniform(1),
     rampColor1: uniform(
-      new THREE.Color(
-        config.singularityRampColor1 ?? SINGULARITY_DEFAULTS.rampColor1
-      )
+      new THREE.Color(config.singularityRampColor1 ?? '#f2b670')
     ),
     rampColor2: uniform(
-      new THREE.Color(
-        config.singularityRampColor2 ?? SINGULARITY_DEFAULTS.rampColor2
-      )
+      new THREE.Color(config.singularityRampColor2 ?? '#3d180a')
     ),
     rampColor3: uniform(
-      new THREE.Color(
-        config.singularityRampColor3 ?? SINGULARITY_DEFAULTS.rampColor3
-      )
+      new THREE.Color(config.singularityRampColor3 ?? '#050505')
     ),
-    backgroundIntensity: uniform(2),
     useBackground: uniform(0),
+    starBackgroundColor: uniform(
+      new THREE.Color(config.starBackgroundColor ?? '#03040a')
+    ),
+    starDensity: uniform(0.0065),
+    starSize: uniform(1.35),
+    starBrightness: uniform(0.8),
+    nebula1Scale: uniform(2),
+    nebula1Density: uniform(0.35),
+    nebula1Brightness: uniform(0.08),
+    nebula1Color: uniform(new THREE.Color('#10163b')),
+    nebula2Scale: uniform(5.5),
+    nebula2Density: uniform(0.15),
+    nebula2Brightness: uniform(0.12),
+    nebula2Color: uniform(new THREE.Color('#20070f')),
   };
 }
 
 const SingularityBlackHole = memo(function SingularityBlackHole({ config }) {
-  const [noiseTexture, environmentTexture] = useTexture([
-    SINGULARITY_NOISE_TEXTURE_PATH,
-    SINGULARITY_ENVIRONMENT_TEXTURE_PATH,
-  ]);
   const uniforms = useMemo(() => createUniforms(config), []);
   const geometry = useMemo(() => new THREE.SphereGeometry(1, 72, 48), []);
-  const noiseTextureNode = useMemo(
-    () => new THREE.TextureNode(noiseTexture),
-    [noiseTexture]
-  );
-  const environmentTextureNode = useMemo(
-    () => new THREE.TextureNode(environmentTexture),
-    [environmentTexture]
-  );
-
-  useEffect(() => {
-    noiseTexture.wrapS = THREE.RepeatWrapping;
-    noiseTexture.wrapT = THREE.RepeatWrapping;
-    noiseTexture.needsUpdate = true;
-    environmentTexture.colorSpace = THREE.SRGBColorSpace;
-    environmentTexture.mapping = THREE.EquirectangularReflectionMapping;
-    environmentTexture.needsUpdate = true;
-  }, [environmentTexture, noiseTexture]);
-
   const material = useMemo(() => {
-    const colorNode = createSingularityBlackHoleVolumeShader(uniforms, {
-      environmentTextureNode,
-      noiseTextureNode,
+    const shaderNode = createSingularityBlackHoleVolumeShader(uniforms);
+    const nodeMaterial = new THREE.MeshBasicNodeMaterial({
+      depthTest: true,
+      depthWrite: false,
+      transparent: true,
+      side: THREE.FrontSide,
+      toneMapped: false,
     });
-    const nodeMaterial = new THREE.MeshStandardNodeMaterial({
-      side: THREE.DoubleSide,
-    });
-    nodeMaterial.colorNode = colorNode;
-    nodeMaterial.emissiveNode = colorNode;
+    const color = shaderNode.get('color');
+    nodeMaterial.colorNode = color.rgb;
+    nodeMaterial.opacityNode = color.a;
+    nodeMaterial.depthNode = shaderNode.get('depth');
     return nodeMaterial;
-  }, [environmentTextureNode, noiseTextureNode, uniforms]);
+  }, [uniforms]);
 
   const position = config.blackHolePosition ?? { x: 0, y: 0, z: 0 };
   const metricWorldScale = config.metricWorldScale ?? 1;
-  const lensRadius = config.lensDiameter * metricWorldScale * 0.5;
+  const lensDiameter = config.singularityLensDiameter ?? config.mockLensDiameter ?? 1.55;
+  const lensRadius = lensDiameter * metricWorldScale * 0.5;
 
   useEffect(() => {
+    const lensDiam = config.singularityLensDiameter ?? config.mockLensDiameter ?? 1.55;
+    const blackHoleDiam = config.mockBlackHoleDiameter ?? 0.3048;
+    const diskDiam = config.mockDiskDiameter ?? 1.08;
+    const sharedCoreRadius = blackHoleDiam / Math.max(lensDiam, 0.0001);
+    const sharedFieldRadius = diskDiam / Math.max(lensDiam, 0.0001);
     uniforms.iterations.value = Math.max(
       24,
-      Math.round(
-        config.singularityIterations ?? SINGULARITY_DEFAULTS.iterations
-      )
+      Math.round(config.singularityIterations ?? uniforms.iterations.value)
     );
     uniforms.stepSize.value =
-      config.singularityStepSize ?? SINGULARITY_DEFAULTS.stepSize;
-    uniforms.noiseFactor.value =
-      config.singularityNoiseFactor ?? SINGULARITY_DEFAULTS.noiseFactor;
-    uniforms.power.value =
-      config.singularityPower ?? SINGULARITY_DEFAULTS.power;
-    uniforms.originRadius.value =
-      config.singularityOriginRadius ?? SINGULARITY_DEFAULTS.originRadius;
+      config.singularityStepSize ?? uniforms.stepSize.value;
+    uniforms.power.value = config.singularityPower ?? uniforms.power.value;
+    uniforms.originRadius.value = Math.min(
+      0.7,
+      Math.max(
+        0.02,
+        sharedCoreRadius * ((config.singularityOriginRadius ?? 0.11) / 0.11)
+      )
+    );
     uniforms.bandWidth.value =
-      config.singularityBandWidth ?? SINGULARITY_DEFAULTS.bandWidth;
+      config.singularityBandWidth ?? uniforms.bandWidth.value;
+    uniforms.fieldRadius.value = Math.min(
+      0.95,
+      Math.max(uniforms.originRadius.value * 1.6, sharedFieldRadius)
+    );
     uniforms.emissionStrength.value =
-      config.singularityEmissionStrength ??
-      SINGULARITY_DEFAULTS.emissionStrength;
-    uniforms.emissionColor.value.set(
-      config.singularityEmissionColor ?? SINGULARITY_DEFAULTS.emissionColor
+      config.singularityEmissionStrength ?? uniforms.emissionStrength.value;
+    uniforms.rampColor1.value.set(config.singularityRampColor1 ?? '#f2b670');
+    uniforms.rampColor2.value.set(config.singularityRampColor2 ?? '#3d180a');
+    uniforms.rampColor3.value.set(config.singularityRampColor3 ?? '#050505');
+    uniforms.starBackgroundColor.value.set(
+      config.starBackgroundColor ?? '#03040a'
     );
-    uniforms.rampPos1.value =
-      config.singularityRampPos1 ?? SINGULARITY_DEFAULTS.rampPos1;
-    uniforms.rampPos2.value =
-      config.singularityRampPos2 ?? SINGULARITY_DEFAULTS.rampPos2;
-    uniforms.rampPos3.value =
-      config.singularityRampPos3 ?? SINGULARITY_DEFAULTS.rampPos3;
-    uniforms.rampColor1.value.set(
-      config.singularityRampColor1 ?? SINGULARITY_DEFAULTS.rampColor1
-    );
-    uniforms.rampColor2.value.set(
-      config.singularityRampColor2 ?? SINGULARITY_DEFAULTS.rampColor2
-    );
-    uniforms.rampColor3.value.set(
-      config.singularityRampColor3 ?? SINGULARITY_DEFAULTS.rampColor3
-    );
-    uniforms.backgroundIntensity.value = 2;
     uniforms.useBackground.value =
       config.environment === ENVIRONMENT_SPACE &&
       config.singularityUseBackground
@@ -189,6 +127,12 @@ const SingularityBlackHole = memo(function SingularityBlackHole({ config }) {
 
   useFrame((state, delta) => {
     uniforms.time.value += delta;
+    const dx = state.camera.position.x - (position.x ?? 0);
+    const dy = state.camera.position.y - (position.y ?? 0);
+    const dz = state.camera.position.z - (position.z ?? 0);
+    const isInside = dx * dx + dy * dy + dz * dz < lensRadius * lensRadius;
+    uniforms.cameraInside.value = isInside ? 1 : 0;
+    material.side = isInside ? THREE.BackSide : THREE.FrontSide;
   });
 
   return (
@@ -202,6 +146,16 @@ const SingularityBlackHole = memo(function SingularityBlackHole({ config }) {
         material={material}
         renderOrder={3}
       />
+      <mesh renderOrder={2}>
+        <sphereGeometry args={[1, 36, 24]} />
+        <meshBasicMaterial
+          color={config.webgpuLensColor ?? config.mockLensColor ?? '#8fb9ff'}
+          depthTest
+          depthWrite={false}
+          opacity={0.08}
+          transparent
+        />
+      </mesh>
     </group>
   );
 });

@@ -61,18 +61,19 @@ const BlackHoleV2 = memo(function BlackHoleV2({ config }) {
   const lensRef = useRef(null);
   const position = vectorFromObject(config.blackHolePosition);
   const metricWorldScale = config.metricWorldScale ?? 1;
-  const coreRadius = config.blackHoleDiameter * metricWorldScale * 0.5;
-  const diskRadius = config.diskDiameter * metricWorldScale * 0.5;
+  const coreRadius = config.mockBlackHoleDiameter * metricWorldScale * 0.5;
+  const diskRadius = config.mockDiskDiameter * metricWorldScale * 0.5;
   const diskTubeRadius =
-    Math.max(config.diskThickness, 0.004) * metricWorldScale;
-  const lensRadius = config.lensDiameter * metricWorldScale * 0.5;
+    Math.max(config.mockDiskThickness, 0.004) * metricWorldScale;
+  const lensRadius = config.mockLensDiameter * metricWorldScale * 0.5;
   const diskTexture = useMemo(
-    () => createDiskTexture(config.diskInnerColor, config.diskOuterColor),
-    [config.diskInnerColor, config.diskOuterColor]
+    () =>
+      createDiskTexture(config.mockDiskInnerColor, config.mockDiskOuterColor),
+    [config.mockDiskInnerColor, config.mockDiskOuterColor]
   );
   const lensColor = useMemo(
-    () => new THREE.Color(config.lensColor),
-    [config.lensColor]
+    () => new THREE.Color(config.mockLensColor),
+    [config.mockLensColor]
   );
 
   useEffect(() => {
@@ -123,7 +124,7 @@ const BlackHoleV2 = memo(function BlackHoleV2({ config }) {
         />
         <meshBasicMaterial
           blending={THREE.AdditiveBlending}
-          color={config.diskInnerColor}
+          color={config.mockDiskInnerColor}
           depthTest
           depthWrite={false}
           opacity={0.85}

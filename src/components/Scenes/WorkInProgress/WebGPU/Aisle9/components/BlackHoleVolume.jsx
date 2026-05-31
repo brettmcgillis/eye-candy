@@ -1,12 +1,9 @@
 import * as THREE from 'three/webgpu';
 
-import React, { memo, useEffect, useMemo, useRef } from 'react';
+import React, { memo, useEffect, useMemo } from 'react';
 
 import { useFrame, useThree } from '@react-three/fiber';
 
-import BigGulp from '../../../../../elements/BigGulp/BigGulp';
-import Snickers from '../../../../../elements/Snickers/Snickers';
-import SodaCan from '../../../../../elements/SodaCan/SodaCan';
 import {
   BLACK_HOLE_BODY_COUNT,
   BlackHoleSimulation,
@@ -17,26 +14,6 @@ const DEG_TO_RAD = Math.PI / 180;
 const DEFAULT_POSITION = Object.freeze({ x: 0, y: 0, z: 0 });
 const DEFAULT_ROTATION = Object.freeze({ x: 0, y: 0, z: 0 });
 const DEFAULT_SCALE = Object.freeze({ x: 1, y: 1, z: 1 });
-const BODY_VISUALS = [
-  {
-    Component: SodaCan,
-    baseScale: 0.12,
-    modelRotation: [0.2, 0, 0],
-    spinSpeed: 1.6,
-  },
-  {
-    Component: BigGulp,
-    baseScale: 0.08,
-    modelRotation: [0, Math.PI / 5, 0],
-    spinSpeed: -1.1,
-  },
-  {
-    Component: Snickers,
-    baseScale: 0.18,
-    modelRotation: [-0.2, Math.PI / 2, 0],
-    spinSpeed: 1.3,
-  },
-];
 
 function readBodyConfig(config, index) {
   const n = index + 1;
@@ -52,15 +29,15 @@ function readBodyConfig(config, index) {
 }
 
 /**
- * Tier 1 black hole: a bounding-sphere mesh whose material raymarches the core,
- * disk, lensing and orbiting bodies in object space. Because it is a real mesh
- * rasterized by the real camera, the full system renders correctly from every
- * camera and scale — fixing the Surveillance / Guided Tour visibility bugs.
+ * Tier-1 black hole: bounding-sphere mesh whose shader raymarches the disk,
+ * core, and gravitational lensing in object space. Renders correctly from every
+ * camera angle — fixes Surveillance / Guided Tour orientation bugs.
+ *
+ * Visual body meshes live in OrbitingProps; this component only maintains the
+ * shader body-position uniforms (for future lensing use, currently disabled).
  */
 const BlackHoleVolume = memo(function BlackHoleVolume({ config }) {
   const { size } = useThree();
-  const groupRef = useRef(null);
-  const bodyRefs = useRef([]);
   const simulation = useMemo(() => new BlackHoleSimulation(config, size), []);
   const geometry = useMemo(
     () => new THREE.SphereGeometry(BLACK_HOLE_VOLUME_BOUND, 48, 48),
@@ -74,18 +51,17 @@ const BlackHoleVolume = memo(function BlackHoleVolume({ config }) {
   const position = config.blackHolePosition ?? DEFAULT_POSITION;
   const rotation = config.blackHoleRotation ?? DEFAULT_ROTATION;
   const scale = config.blackHoleScale ?? DEFAULT_SCALE;
+
   const orbitingBodies = useMemo(
     () =>
-      Array.from({ length: BLACK_HOLE_BODY_COUNT }, (_, index) => ({
-        ...readBodyConfig(config, index),
-        ...BODY_VISUALS[index % BODY_VISUALS.length],
-      })),
+      Array.from({ length: BLACK_HOLE_BODY_COUNT }, (_, i) =>
+        readBodyConfig(config, i)
+      ),
     [config]
   );
 
-  // In store mode the hole must be transparent where rays escape so the store
-  // shows through; in space mode escaped rays paint the lensed star/nebula
-  // background. Mirrors the legacy compositor's config massaging.
+  // In store mode escaped rays are transparent so the store shows through;
+  // in space mode they paint the lensed star/nebula background.
   const blackHoleConfig = useMemo(
     () =>
       config.presentationMode === 'storeWarp'
@@ -119,7 +95,6 @@ const BlackHoleVolume = memo(function BlackHoleVolume({ config }) {
     const { uniforms } = simulation;
     uniforms.time.value += deltaTime;
 
-    // Is the camera inside the bounding volume? Drives ray seeding + face side.
     const maxScale = Math.max(scale.x ?? 1, scale.y ?? 1, scale.z ?? 1);
     const worldBound = BLACK_HOLE_VOLUME_BOUND * maxScale;
     const dx = state.camera.position.x - (position.x ?? 0);
@@ -132,40 +107,26 @@ const BlackHoleVolume = memo(function BlackHoleVolume({ config }) {
     const { value: time } = uniforms.time;
     orbitingBodies.forEach((body, index) => {
       const target = uniforms.bodies.at(index);
-      const bodyRef = bodyRefs.current.at(index);
-
-      if (!target) {
-        return;
-      }
+      if (!target) return;
 
       target.radius.value = body.radius;
       target.color.value.set(body.color);
 
       const angle = time * body.orbitSpeed + body.orbitPhase;
-      const bodyX = Math.cos(angle) * body.orbitRadius;
-      const bodyY = body.height;
-      const bodyZ = Math.sin(angle) * body.orbitRadius;
-
-      target.enabled.value = 0;
-      target.position.value.set(bodyX, bodyY, bodyZ);
-
-      if (bodyRef) {
-        bodyRef.visible = Boolean(body.enabled);
-
-        if (body.enabled) {
-          bodyRef.position.set(bodyX, bodyY, bodyZ);
-          bodyRef.rotation.set(0, angle + time * body.spinSpeed, 0);
-          bodyRef.scale.setScalar(
-            Math.max(body.radius * body.baseScale, 0.001)
-          );
-        }
-      }
+      // Enable shader body intersection only when the body's orbit actually falls
+      // inside the bounding sphere — rays escape before reaching outside bodies.
+      target.enabled.value =
+        body.enabled && body.orbitRadius < BLACK_HOLE_VOLUME_BOUND ? 1 : 0;
+      target.position.value.set(
+        Math.cos(angle) * body.orbitRadius,
+        body.height,
+        Math.sin(angle) * body.orbitRadius
+      );
     });
   });
 
   return (
     <group
-      ref={groupRef}
       position={[position.x ?? 0, position.y ?? 0, position.z ?? 0]}
       rotation={[
         (rotation.x ?? 0) * DEG_TO_RAD,
@@ -175,19 +136,6 @@ const BlackHoleVolume = memo(function BlackHoleVolume({ config }) {
       scale={[scale.x ?? 1, scale.y ?? 1, scale.z ?? 1]}
     >
       <mesh geometry={geometry} material={material} frustumCulled={false} />
-      {orbitingBodies.map(({ Component, enabled, modelRotation }, index) => (
-        <group
-          key={`black-hole-body-${index + 1}`}
-          ref={(node) => {
-            bodyRefs.current[index] = node;
-          }}
-          visible={Boolean(enabled)}
-        >
-          <group rotation={modelRotation}>
-            <Component />
-          </group>
-        </group>
-      ))}
     </group>
   );
 });

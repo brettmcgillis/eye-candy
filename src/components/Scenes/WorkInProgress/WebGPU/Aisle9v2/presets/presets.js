@@ -18,21 +18,21 @@ export const BLACK_HOLE_VARIANT_SINGULARITY = 'singularity';
 
 export const DEFAULT_PRESET = 'Store';
 
-const CONTROL_KEYS = [
-  'environment',
-  'cameraMode',
-  'fixedCameraShot',
-  'blackHoleVariant',
-  'storeScale',
-  'storePosition',
-  'storeRotation',
-  'blackHoleDiameter',
-  'diskDiameter',
-  'diskThickness',
-  'lensDiameter',
-  'diskInnerColor',
-  'diskOuterColor',
-  'lensColor',
+const MOCK_CONTROL_KEYS = [
+  'mockBlackHoleDiameter',
+  'mockDiskDiameter',
+  'mockDiskThickness',
+  'mockLensDiameter',
+  'mockDiskInnerColor',
+  'mockDiskOuterColor',
+  'mockLensColor',
+];
+
+const LEGACY_CONTROL_KEYS = [
+  'legacyBlackHoleDiameter',
+  'legacyDiskDiameter',
+  'legacyLensDiameter',
+  'legacyLensColor',
   'legacyGravityStrength',
   'legacyStepCount',
   'legacyDiskBrightness',
@@ -44,6 +44,13 @@ const CONTROL_KEYS = [
   'legacyStarBrightness',
   'legacyGalaxyBrightness',
   'legacyUseBackground',
+];
+
+const WEBGPU_CONTROL_KEYS = [
+  'webgpuBlackHoleDiameter',
+  'webgpuDiskDiameter',
+  'webgpuLensDiameter',
+  'webgpuLensColor',
   'webgpuMass',
   'webgpuDiskInnerRadius',
   'webgpuDiskOuterRadius',
@@ -77,6 +84,10 @@ const CONTROL_KEYS = [
   'webgpuNebula2Brightness',
   'webgpuNebula2Color',
   'webgpuUseBackground',
+];
+
+const SINGULARITY_CONTROL_KEYS = [
+  'singularityLensDiameter',
   'singularityIterations',
   'singularityStepSize',
   'singularityNoiseFactor',
@@ -92,6 +103,20 @@ const CONTROL_KEYS = [
   'singularityEmissionStrength',
   'singularityEmissionColor',
   'singularityUseBackground',
+];
+
+const CONTROL_KEYS = [
+  'environment',
+  'cameraMode',
+  'fixedCameraShot',
+  'blackHoleVariant',
+  'storeScale',
+  'storePosition',
+  'storeRotation',
+  ...MOCK_CONTROL_KEYS,
+  ...LEGACY_CONTROL_KEYS,
+  ...WEBGPU_CONTROL_KEYS,
+  ...SINGULARITY_CONTROL_KEYS,
   'bodyOrbitRadius',
   'bodyOrbitHeight',
   'bodyOrbitSpeed',
@@ -109,6 +134,8 @@ const BLACK_HOLE_DIAMETER_METERS = 0.3048;
 const DISK_DIAMETER_METERS = 1.08;
 const V1_GUIDED_TOUR_SPLINE =
   AISLE9_CAMERA_SPLINES[DEFAULT_AISLE9_CAMERA_SPLINE];
+
+const DEFAULT_LENS_DIAMETER = 1.55;
 
 function vectorToTuple(vector) {
   return [vector.x, vector.y, vector.z];
@@ -187,15 +214,21 @@ const STORE_GUIDED_PATH = V1_GUIDED_TOUR_SPLINE.points.map((point) => ({
   position: vectorToTuple(point.position),
 }));
 
-const BASE_BLACK_HOLE = {
-  blackHoleVariant: BLACK_HOLE_VARIANT_WEBGPU,
-  blackHoleDiameter: BLACK_HOLE_DIAMETER_METERS,
-  diskDiameter: DISK_DIAMETER_METERS,
-  diskThickness: 0.055,
-  lensDiameter: 1.55,
-  diskInnerColor: '#fff4c7',
-  diskOuterColor: '#ff5b19',
-  lensColor: '#8fb9ff',
+const BASE_MOCK_BLACK_HOLE = {
+  mockBlackHoleDiameter: BLACK_HOLE_DIAMETER_METERS,
+  mockDiskDiameter: DISK_DIAMETER_METERS,
+  mockDiskThickness: 0.055,
+  mockLensDiameter: DEFAULT_LENS_DIAMETER,
+  mockDiskInnerColor: '#fff4c7',
+  mockDiskOuterColor: '#ff5b19',
+  mockLensColor: '#8fb9ff',
+};
+
+const BASE_LEGACY_BLACK_HOLE = {
+  legacyBlackHoleDiameter: BLACK_HOLE_DIAMETER_METERS,
+  legacyDiskDiameter: DISK_DIAMETER_METERS,
+  legacyLensDiameter: DEFAULT_LENS_DIAMETER,
+  legacyLensColor: '#8fb9ff',
   legacyGravityStrength: 1,
   legacyStepCount: 100,
   legacyDiskBrightness: 0.9,
@@ -207,6 +240,13 @@ const BASE_BLACK_HOLE = {
   legacyStarBrightness: 1,
   legacyGalaxyBrightness: 0.4,
   legacyUseBackground: true,
+};
+
+const BASE_WEBGPU_BLACK_HOLE = {
+  webgpuBlackHoleDiameter: BLACK_HOLE_DIAMETER_METERS,
+  webgpuDiskDiameter: DISK_DIAMETER_METERS,
+  webgpuLensDiameter: DEFAULT_LENS_DIAMETER,
+  webgpuLensColor: '#8fb9ff',
   webgpuMass: 0.4,
   webgpuDiskInnerRadius: 4.1,
   webgpuDiskOuterRadius: 14.5,
@@ -240,6 +280,10 @@ const BASE_BLACK_HOLE = {
   webgpuNebula2Brightness: 0.21,
   webgpuNebula2Color: '#010615',
   webgpuUseBackground: true,
+};
+
+const BASE_SINGULARITY_BLACK_HOLE = {
+  singularityLensDiameter: DEFAULT_LENS_DIAMETER,
   singularityIterations: 128,
   singularityStepSize: 0.0071,
   singularityNoiseFactor: 0.01,
@@ -264,7 +308,7 @@ const BASE_BODIES = {
 };
 
 const BASE_POST = {
-  bloomEnabled: true,
+  bloomEnabled: false,
   surveillanceOverlayEnabled: false,
 };
 
@@ -273,6 +317,63 @@ const BASE_STORE = {
   storeRotation: { x: 0, y: 0, z: 0 },
   storeScale: 320,
 };
+
+function createVariantGeometryOverrides({
+  blackHoleDiameter,
+  diskDiameter,
+  diskThickness,
+  lensDiameter,
+  diskInnerColor,
+  diskOuterColor,
+  lensColor,
+}) {
+  return {
+    ...(blackHoleDiameter === undefined
+      ? {}
+      : {
+          mockBlackHoleDiameter: blackHoleDiameter,
+          legacyBlackHoleDiameter: blackHoleDiameter,
+          webgpuBlackHoleDiameter: blackHoleDiameter,
+        }),
+    ...(diskDiameter === undefined
+      ? {}
+      : {
+          mockDiskDiameter: diskDiameter,
+          legacyDiskDiameter: diskDiameter,
+          webgpuDiskDiameter: diskDiameter,
+        }),
+    ...(diskThickness === undefined
+      ? {}
+      : {
+          mockDiskThickness: diskThickness,
+        }),
+    ...(lensDiameter === undefined
+      ? {}
+      : {
+          mockLensDiameter: lensDiameter,
+          legacyLensDiameter: lensDiameter,
+          webgpuLensDiameter: lensDiameter,
+          singularityLensDiameter: lensDiameter,
+        }),
+    ...(diskInnerColor === undefined
+      ? {}
+      : {
+          mockDiskInnerColor: diskInnerColor,
+        }),
+    ...(diskOuterColor === undefined
+      ? {}
+      : {
+          mockDiskOuterColor: diskOuterColor,
+        }),
+    ...(lensColor === undefined
+      ? {}
+      : {
+          mockLensColor: lensColor,
+          legacyLensColor: lensColor,
+          webgpuLensColor: lensColor,
+        }),
+  };
+}
 
 function createPreset(overrides) {
   return {
@@ -311,7 +412,11 @@ function createPreset(overrides) {
       z: STORE_CENTER[2],
     },
     starBackgroundColor: '#03040a',
-    ...BASE_BLACK_HOLE,
+    blackHoleVariant: BLACK_HOLE_VARIANT_SINGULARITY,
+    ...BASE_MOCK_BLACK_HOLE,
+    ...BASE_LEGACY_BLACK_HOLE,
+    ...BASE_WEBGPU_BLACK_HOLE,
+    ...BASE_SINGULARITY_BLACK_HOLE,
     ...BASE_BODIES,
     ...BASE_POST,
     ...BASE_STORE,
@@ -367,8 +472,10 @@ export const PRESETS = {
     bodyOrbitRadius: 1.45,
     bodyOrbitHeight: 0.08,
     bodyOrbitSpeed: 0.18,
-    diskDiameter: 1.22,
-    lensDiameter: 1.9,
+    ...createVariantGeometryOverrides({
+      diskDiameter: 1.22,
+      lensDiameter: 1.9,
+    }),
     starBackgroundColor: '#01020a',
     storeScale: BASE_STORE.storeScale,
   }),
@@ -393,10 +500,12 @@ export const PRESETS = {
     bodyOrbitRadius: 1.7,
     bodyOrbitHeight: 0.18,
     bodyOrbitSpeed: 0.24,
-    diskDiameter: 1.16,
-    diskInnerColor: '#dff7ff',
-    diskOuterColor: '#ff3c7a',
-    lensDiameter: 2.05,
+    ...createVariantGeometryOverrides({
+      diskDiameter: 1.16,
+      diskInnerColor: '#dff7ff',
+      diskOuterColor: '#ff3c7a',
+      lensDiameter: 2.05,
+    }),
     starBackgroundColor: '#05020d',
   }),
 };

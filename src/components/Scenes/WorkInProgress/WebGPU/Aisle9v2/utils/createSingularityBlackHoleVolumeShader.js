@@ -3,146 +3,80 @@ import {
   Fn,
   If,
   Loop,
-  abs,
   cameraPosition,
+  cameraProjectionMatrix,
   clamp,
-  equirectUV,
-  faceDirection,
   float,
-  fract,
   int,
-  mat3,
+  length,
   max,
   mix,
+  modelViewMatrix,
   modelWorldMatrixInverse,
   normalize,
   positionGeometry,
-  positionWorld,
-  step,
-  texture as textureSample,
-  vec2,
+  pow,
+  smoothstep,
+  sqrt,
+  struct,
   vec3,
   vec4,
 } from 'three/tsl';
 
-const whiteNoise2D = Fn(([coord]) => {
-  return fract(coord.dot(vec2(12.9898, 78.233)).sin().mul(43758.5453));
-});
-
-const lengthSqrt = Fn(([value]) => {
-  return value.x
-    .mul(value.x)
-    .add(value.y.mul(value.y))
-    .add(value.z.mul(value.z))
-    .sqrt();
-});
-
-const smoothRange = Fn(([value, inMin, inMax, outMin, outMax]) => {
-  const t = clamp(
-    value.sub(inMin).div(max(inMax.sub(inMin), float(0.0001))),
-    float(0),
-    float(1)
-  );
-  const smoothT = t.mul(t).mul(float(3).sub(t.mul(2)));
-  return mix(outMin, outMax, smoothT);
-});
-
-const rotateAxis = Fn(([axisValue, angleValue]) => {
-  const axis = vec3(axisValue).toVar();
-  const angle = float(angleValue).toVar();
-  const s = angle.sin().toVar();
-  const c = angle.cos().toVar();
-  const oc = float(1).sub(c).toVar();
-
-  return mat3(
-    oc.mul(axis.x).mul(axis.x).add(c),
-    oc.mul(axis.x).mul(axis.y).sub(axis.z.mul(s)),
-    oc.mul(axis.z).mul(axis.x).add(axis.y.mul(s)),
-    oc.mul(axis.x).mul(axis.y).add(axis.z.mul(s)),
-    oc.mul(axis.y).mul(axis.y).add(c),
-    oc.mul(axis.y).mul(axis.z).sub(axis.x.mul(s)),
-    oc.mul(axis.z).mul(axis.x).sub(axis.y.mul(s)),
-    oc.mul(axis.y).mul(axis.z).add(axis.x.mul(s)),
-    oc.mul(axis.z).mul(axis.z).add(c)
-  );
-});
-
-const catmullRom = Fn(([tValue, dValue, cValue, bValue, aValue]) => {
-  const t = float(tValue).toVar();
-  const d = vec3(dValue).toVar();
-  const c = vec3(cValue).toVar();
-  const b = vec3(bValue).toVar();
-  const a = vec3(aValue).toVar();
-
-  return float(0.5).mul(
-    b
-      .mul(2)
-      .add(a.negate().add(c).mul(t))
-      .add(a.mul(2).sub(b.mul(5)).add(c.mul(4)).sub(d).mul(t).mul(t))
-      .add(a.negate().add(b.mul(3)).sub(c.mul(3)).add(d).mul(t).mul(t).mul(t))
-  );
-});
-
-const colorRamp3BSpline = Fn(([tValue, aValue, bValue, cValue]) => {
-  const t = float(tValue).toVar();
-  const a = vec4(aValue).toVar();
-  const b = vec4(bValue).toVar();
-  const c = vec4(cValue).toVar();
-  const ab = b.w.sub(a.w);
-  const bc = c.w.sub(b.w);
-  const iab = clamp(t.sub(a.w).div(max(ab, float(0.0001))), float(0), float(1));
-  const ibc = clamp(t.sub(b.w).div(max(bc, float(0.0001))), float(0), float(1));
-  const weights = vec3(float(1).sub(iab), iab.sub(ibc), ibc);
-  const cA = catmullRom(weights.x, a.xyz, a.xyz, b.xyz, c.xyz);
-  const cB = catmullRom(weights.y, a.xyz, b.xyz, c.xyz, c.xyz);
-  const result = c.xyz.toVar('result');
-
-  If(t.lessThan(b.w), () => {
-    result.assign(cA);
-  });
-
-  If(t.greaterThanEqual(b.w).and(t.lessThan(c.w)), () => {
-    result.assign(cB);
-  });
-
-  return result;
-});
+import {
+  createNebulaField,
+  createStarField,
+  fbm,
+} from './blackHoleShaderHelpers';
 
 const MAX_SINGULARITY_STEPS = 256;
 
+const SingularityBlackHoleResult = struct(
+  { color: 'vec4', depth: 'float' },
+  'Aisle9v2SingularityBlackHoleResult'
+);
+
 function createRampColor(uniforms) {
   return Fn(([rampValue]) => {
-    const rampA = vec4(uniforms.rampColor1, uniforms.rampPos1);
-    const rampB = vec4(uniforms.rampColor2, uniforms.rampPos2);
-    const rampC = vec4(uniforms.rampColor3, uniforms.rampPos3);
-
-    return colorRamp3BSpline(rampValue, rampA, rampB, rampC);
+    const firstBlend = smoothstep(
+      uniforms.rampPos1,
+      uniforms.rampPos2,
+      rampValue
+    );
+    const secondBlend = smoothstep(
+      uniforms.rampPos2,
+      uniforms.rampPos3,
+      rampValue
+    );
+    const firstColor = mix(
+      uniforms.rampColor1,
+      uniforms.rampColor2,
+      firstBlend
+    );
+    return mix(firstColor, uniforms.rampColor3, secondBlend);
   });
 }
 
-export default function createSingularityBlackHoleVolumeShader(
-  uniforms,
-  { environmentTextureNode, noiseTextureNode }
-) {
+export default function createSingularityBlackHoleVolumeShader(uniforms) {
+  const starField = createStarField(uniforms);
+  const nebulaField = createNebulaField(uniforms);
   const rampColor = createRampColor(uniforms);
 
   return Fn(() => {
-    const objectCoords = positionGeometry.mul(vec3(1, 1, -1)).xzy;
-    const isBackface = step(float(0), faceDirection.negate());
     const cameraLocal = modelWorldMatrixInverse.mul(
       vec4(cameraPosition, 1)
     ).xyz;
-    const cameraPointObject = cameraLocal.mul(vec3(1, 1, -1)).xzy;
-    const rayStart = mix(objectCoords, cameraPointObject.xyz, isBackface);
-    const viewDirectionWorld = normalize(
-      cameraPosition.sub(positionWorld).mul(vec3(1, 1, -1))
-    ).xzy;
-    const rayDirection = viewDirectionWorld.negate().toVar('rayDirection');
-    const noiseWhite = whiteNoise2D(objectCoords.xy).mul(uniforms.noiseFactor);
-    const jitter = rayDirection.mul(noiseWhite);
-    const rayPosition = rayStart.sub(jitter).toVar('rayPosition');
-    const colorAcc = vec3(0, 0, 0).toVar('colorAcc');
-    const alphaAcc = float(0).toVar('alphaAcc');
+    const fragmentLocal = positionGeometry;
+    const rayStart = mix(fragmentLocal, cameraLocal, uniforms.cameraInside);
+    const rayDirection = normalize(fragmentLocal.sub(cameraLocal)).toVar(
+      'rayDirection'
+    );
+    const rayPosition = rayStart.toVar('rayPosition');
+    const color = vec3(0, 0, 0).toVar('color');
+    const alpha = float(0).toVar('alpha');
+    const escaped = float(0).toVar('escaped');
+    const hitRecorded = float(0).toVar('hitRecorded');
+    const hitLocal = vec3(0, 0, 0).toVar('hitLocal');
 
     Loop(
       {
@@ -156,92 +90,111 @@ export default function createSingularityBlackHoleVolumeShader(
           Break();
         });
 
-        const radius = lengthSqrt(rayPosition);
-        const radiusSq = radius.mul(radius);
-        const steeringRange = clamp(
-          float(1).sub(radius).div(float(0.5)),
-          float(0),
-          float(1)
+        If(escaped.greaterThan(0.5).or(alpha.greaterThan(0.995)), () => {
+          Break();
+        });
+
+        const radius = length(rayPosition);
+        If(radius.greaterThan(1.02), () => {
+          escaped.assign(1);
+          Break();
+        });
+
+        const flatRadius = sqrt(
+          rayPosition.x.mul(rayPosition.x).add(rayPosition.z.mul(rayPosition.z))
         );
+        const rangeFade = smoothstep(float(1), uniforms.originRadius, radius);
         const steering = normalize(rayPosition)
           .mul(uniforms.stepSize)
           .mul(uniforms.power)
-          .div(max(radiusSq, float(0.0001)))
-          .mul(steeringRange);
-        const steeredDir = rayDirection.sub(steering).normalize();
-        const advance = rayDirection.mul(uniforms.stepSize);
+          .div(max(radius.mul(radius), float(0.0001)))
+          .mul(rangeFade);
+        rayDirection.assign(normalize(rayDirection.sub(steering)));
+        rayPosition.addAssign(rayDirection.mul(uniforms.stepSize));
 
-        rayPosition.addAssign(advance);
-
-        const flatRadius = lengthSqrt(rayPosition.mul(vec3(1, 1, 0)));
         const rotPhase = flatRadius.mul(4.27).sub(uniforms.time.mul(0.1));
-        const rotated = rayPosition.mul(rotateAxis(vec3(0, 0, 1), rotPhase));
-        const noiseUv = vec2(rotated.x, rotated.y).mul(2);
-        const noiseDeep = textureSample(noiseTextureNode, noiseUv).rgb;
-        const bandMin = uniforms.bandWidth.negate();
-        const bandEnds = vec3(bandMin, 0, uniforms.bandWidth);
-        const bandDelta = bandEnds.sub(vec3(rayPosition.z));
-        const bandQuad = bandDelta.mul(bandDelta).div(uniforms.bandWidth);
-        const bandShape = max(
-          uniforms.bandWidth.sub(bandQuad).div(uniforms.bandWidth),
-          vec3(0, 0, 0)
+        const rotatedX = rayPosition.x
+          .mul(rotPhase.cos())
+          .sub(rayPosition.z.mul(rotPhase.sin()));
+        const rotatedZ = rayPosition.x
+          .mul(rotPhase.sin())
+          .add(rayPosition.z.mul(rotPhase.cos()));
+        const noisePoint = vec3(
+          rotatedX.mul(uniforms.fieldScale),
+          rayPosition.y.mul(uniforms.fieldScale).add(uniforms.time.mul(0.05)),
+          rotatedZ.mul(uniforms.fieldScale)
         );
-        const noiseAmp = noiseDeep.mul(bandShape);
-        const noiseAmpLen = lengthSqrt(noiseAmp);
-        const noiseNormal = textureSample(
-          noiseTextureNode,
-          noiseUv.mul(1.002)
-        ).rgb.mul(bandShape);
-        const noiseNormalLen = lengthSqrt(noiseNormal);
-        const insideCore = lengthSqrt(rayPosition).lessThan(
-          uniforms.originRadius
-        );
-
-        const rampValue = flatRadius
-          .add(noiseAmpLen.sub(0.78).mul(1.5))
-          .add(noiseAmpLen.sub(noiseNormalLen).mul(19.75));
-        const baseColor = rampColor(rampValue)
-          .mul(uniforms.emissionStrength)
-          .add(uniforms.emissionColor);
-        const shadedColor = mix(baseColor, vec3(0), insideCore);
-        const alphaPre = abs(rayPosition.z).add(
-          noiseAmpLen.sub(0.75).mul(-0.6)
-        );
-        const radialAlpha = smoothRange(
-          flatRadius,
-          float(1),
-          float(0),
+        const noiseValue = fbm(noisePoint, float(2), float(0.55));
+        const bandDistance = rayPosition.y
+          .abs()
+          .div(max(uniforms.bandWidth, float(0.0001)));
+        const bandMask = clamp(
+          float(1).sub(bandDistance.mul(bandDistance)),
           float(0),
           float(1)
         );
-        const bandAlpha = smoothRange(
-          alphaPre,
-          uniforms.bandWidth,
-          float(0),
-          float(0),
-          radialAlpha
+        const radialMask = smoothstep(
+          uniforms.originRadius,
+          uniforms.fieldRadius,
+          flatRadius
         );
-        const alphaLocal = mix(bandAlpha, float(1), insideCore);
-        const remainingAlpha = float(1).sub(alphaAcc);
-        const weight = remainingAlpha.mul(alphaLocal);
-        colorAcc.assign(mix(colorAcc, shadedColor, weight));
-        alphaAcc.assign(mix(alphaAcc, float(1), alphaLocal));
+        const outerFade = smoothstep(
+          uniforms.fieldRadius.mul(1.1),
+          uniforms.fieldRadius.mul(0.6),
+          flatRadius
+        );
+        const insideCore = radius.lessThan(uniforms.originRadius);
 
-        rayPosition.addAssign(advance);
-        rayDirection.assign(steeredDir);
+        const rampValue = clamp(
+          flatRadius
+            .div(max(uniforms.fieldRadius, float(0.001)))
+            .add(noiseValue.sub(0.5).mul(0.85)),
+          float(0),
+          float(1)
+        );
+        const baseColor = rampColor(rampValue).mul(uniforms.emissionStrength);
+        const shadedColor = mix(baseColor, vec3(0), insideCore);
+        const alphaNoise = noiseValue.sub(0.45).mul(1.2);
+        const bandAlpha = clamp(bandMask.add(alphaNoise), float(0), float(1));
+        const alphaLocal = mix(
+          bandAlpha.mul(radialMask).mul(outerFade),
+          float(1),
+          insideCore
+        );
+        const remainingAlpha = float(1).sub(alpha);
+        color.addAssign(shadedColor.mul(alphaLocal).mul(remainingAlpha));
+        alpha.addAssign(alphaLocal.mul(remainingAlpha));
+
+        If(hitRecorded.lessThan(0.5).and(alphaLocal.greaterThan(0.04)), () => {
+          hitLocal.assign(rayPosition);
+          hitRecorded.assign(1);
+        });
       }
     );
 
-    const envDirection = rayDirection.mul(vec3(1, -1, 1)).xzy;
-    const backgroundColor = textureSample(
-      environmentTextureNode,
-      equirectUV(envDirection)
-    ).rgb.mul(uniforms.backgroundIntensity);
-
-    return mix(
-      colorAcc,
-      backgroundColor,
-      float(1).sub(alphaAcc).mul(uniforms.useBackground)
+    If(
+      uniforms.useBackground.greaterThan(0.5).and(alpha.lessThan(0.99)),
+      () => {
+        const backgroundColor =
+          uniforms.starBackgroundColor.toVar('backgroundColor');
+        backgroundColor.addAssign(starField(rayDirection));
+        backgroundColor.addAssign(nebulaField(rayDirection));
+        color.addAssign(backgroundColor.mul(float(1).sub(alpha)));
+      }
     );
+
+    const finalAlpha = mix(alpha, float(1), uniforms.useBackground);
+    const straightColor = color.div(max(finalAlpha, float(0.0001)));
+    const finalColor = pow(straightColor, vec3(1 / 2.2));
+    const depthValue = float(1).toVar('depthValue');
+
+    If(hitRecorded.greaterThan(0.5), () => {
+      const clipPosition = cameraProjectionMatrix.mul(
+        modelViewMatrix.mul(vec4(hitLocal, 1))
+      );
+      depthValue.assign(clipPosition.z.div(clipPosition.w));
+    });
+
+    return SingularityBlackHoleResult(vec4(finalColor, finalAlpha), depthValue);
   })();
 }

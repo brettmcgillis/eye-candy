@@ -20,25 +20,27 @@ function cloneCenterStoreRef() {
 // Up to three bodies orbiting the hole (sim-space units, same scale as the
 // disk radii). They are intersected inside the bent ray loop, so they get
 // gravitationally lensed as they pass behind the singularity.
+// All orbit radii kept under BLACK_HOLE_VOLUME_BOUND (20) so the ray-marcher
+// can reach and gravitationally lens each body.
 const BLACK_HOLE_BODIES_OFF = {
   body1Enabled: false,
   body1Color: '#9ec5ff',
   body1Size: 2.3,
-  body1OrbitRadius: 19,
+  body1OrbitRadius: 15,
   body1OrbitSpeed: 0.6,
   body1OrbitPhase: 0,
   body1Height: 0,
   body2Enabled: false,
   body2Color: '#ffd27f',
   body2Size: 1.8,
-  body2OrbitRadius: 23.5,
+  body2OrbitRadius: 17,
   body2OrbitSpeed: -0.42,
   body2OrbitPhase: 120,
   body2Height: 1.5,
   body3Enabled: false,
   body3Color: '#ff8fa3',
   body3Size: 4,
-  body3OrbitRadius: 21,
+  body3OrbitRadius: 19,
   body3OrbitSpeed: 0.28,
   body3OrbitPhase: 240,
   body3Height: -2,
@@ -210,11 +212,11 @@ const STORE_SCENE_PRESET = {
   ...BLACK_HOLE_BODIES_OFF,
   ...SECURITY_CAM_DEFAULTS,
   body1Enabled: true,
-  body1OrbitRadius: 18,
+  body1OrbitRadius: 15,
   body2Enabled: true,
-  body2OrbitRadius: 21,
+  body2OrbitRadius: 17,
   body3Enabled: true,
-  body3OrbitRadius: 24,
+  body3OrbitRadius: 19,
   cameraFov: 60,
   cameraMobileFov: 85,
   cameraNear: 0.1,
@@ -355,21 +357,21 @@ const SPACE_2_SCENE_PRESET = {
   body1Enabled: true,
   body1Color: '#d7dcff',
   body1Size: 2.6,
-  body1OrbitRadius: 17.5,
+  body1OrbitRadius: 15,
   body1OrbitSpeed: 0.52,
   body1OrbitPhase: 0,
   body1Height: -0.75,
   body2Enabled: true,
   body2Color: '#ffd9b5',
   body2Size: 1.7,
-  body2OrbitRadius: 22.5,
+  body2OrbitRadius: 17,
   body2OrbitSpeed: -0.34,
   body2OrbitPhase: 115,
   body2Height: 1.6,
   body3Enabled: true,
   body3Color: '#d7b8ff',
   body3Size: 3.4,
-  body3OrbitRadius: 26,
+  body3OrbitRadius: 19,
   body3OrbitSpeed: 0.22,
   body3OrbitPhase: 245,
   body3Height: 2.8,
@@ -382,6 +384,12 @@ const GUIDED_TOUR_SCENE_PRESET = {
   cameraSplineDuration: 42,
   cameraSplineTension: 0.45,
   cameraSplineLookAt: cloneCenterStoreRef(),
+  // The spline cameras are in store-local space and end up ~1000–1500 world
+  // units from the hole after the storeLocalToWorldMatrix transform (store
+  // is scaled ×320). Scale 8 makes the bounding sphere (160 wu) and disk
+  // (116 wu outer) large enough to be visually meaningful at that distance,
+  // while keeping the camera outside the sphere on most of the path.
+  blackHoleScale: { x: 8, y: 8, z: 8 },
 };
 
 const SURVEILLANCE_SCENE_PRESET = {
@@ -389,9 +397,10 @@ const SURVEILLANCE_SCENE_PRESET = {
   ...SECURITY_CAM_SURVEILLANCE,
   cameraMode: 'fixed',
   cameraFov: 80,
-  // Uniform scale only: the raymarch views the disk in local units, so the
-  // camera's distance in disk-radii = worldDistance / scale. ~8 sits the camera
-  // a couple disk-radii out (full ring visible); larger engulfs the camera.
+  // Fixed cameras are in store-local space and land ~1800 world units from the
+  // hole after the ×320 store transform. Scale 8 gives the BlackHoleVolume
+  // bounding sphere a 160-wu radius so the disk subtends a meaningful angle
+  // from that distance. Camera stays outside the sphere (1800 >> 160).
   blackHoleScale: { x: 8, y: 8, z: 8 },
   fixedCameraPosition: { x: 3, y: 2.5, z: -4 },
   fixedCameraTarget: cloneCenterStoreRef(),

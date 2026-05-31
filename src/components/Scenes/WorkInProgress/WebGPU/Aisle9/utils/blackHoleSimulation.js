@@ -105,7 +105,9 @@ export class BlackHoleSimulation {
   createVolumeMaterial() {
     const material = new THREE.MeshBasicNodeMaterial({
       transparent: true,
-      depthWrite: false,
+      // Write the per-pixel hit depth (disk/core) so PostEffects can distinguish
+      // "volume rendered here" from "escaped/background" via the depth buffer.
+      depthWrite: true,
       depthTest: true,
       side: THREE.FrontSide,
     });

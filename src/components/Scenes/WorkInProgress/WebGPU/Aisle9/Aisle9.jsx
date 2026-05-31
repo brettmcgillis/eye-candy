@@ -14,8 +14,10 @@ import useCameraFitToViewport from '../../../../../hooks/useCameraFitToViewport'
 import useCameraSpline from '../../../../../hooks/useCameraSpline';
 import AISLE9_CAMERA_SPLINES from '../../../../../presets/spline/aisle9CameraSplines';
 import CENTER_STORE_REF_POSITION from '../../../../elements/sevenEleven/sevenElevenAnchors';
+import BlackHoleVolume from './components/BlackHoleVolume';
 import OrbitingProps from './components/OrbitingProps';
 import PostEffects from './components/PostEffects';
+import StarSkybox from './components/StarSkybox';
 import SevenElevenStage from './components/SevenElevenStage';
 import useSceneControls from './hooks/useSceneControls';
 
@@ -417,9 +419,13 @@ export default function Aisle9() {
           storeRotation={config.storeRotation}
         />
       ) : null}
+      {!isStoreWarp ? (
+        <StarSkybox config={effectiveConfig} />
+      ) : null}
       {shouldRenderOrbitingBodies ? (
         <OrbitingProps config={effectiveConfig} />
       ) : null}
+      <BlackHoleVolume config={effectiveConfig} />
       <PostEffects config={effectiveConfig} />
     </>
   );

@@ -130,13 +130,15 @@ const LegacyBlackHole = memo(function LegacyBlackHole({ config }) {
 
   const position = config.blackHolePosition ?? { x: 0, y: 0, z: 0 };
   const metricWorldScale = config.metricWorldScale ?? 1;
-  const lensRadius = config.lensDiameter * metricWorldScale * 0.5;
+  const lensRadius = config.legacyLensDiameter * metricWorldScale * 0.5;
 
   useEffect(() => {
     const coreRadius =
-      config.blackHoleDiameter / Math.max(config.lensDiameter, 0.0001);
+      config.legacyBlackHoleDiameter /
+      Math.max(config.legacyLensDiameter, 0.0001);
     const derivedOuterRadius =
-      config.diskDiameter / Math.max(config.blackHoleDiameter, 0.0001);
+      config.legacyDiskDiameter /
+      Math.max(config.legacyBlackHoleDiameter, 0.0001);
     const accretionMinRadius =
       config.legacyAccretionMinRadius ?? LEGACY_DEFAULTS.accretionMinRadius;
     const accretionWidth =
@@ -213,7 +215,7 @@ const LegacyBlackHole = memo(function LegacyBlackHole({ config }) {
       <mesh renderOrder={2}>
         <sphereGeometry args={[1, 36, 24]} />
         <meshBasicMaterial
-          color={config.lensColor}
+          color={config.legacyLensColor}
           depthTest
           depthWrite={false}
           opacity={0.1}

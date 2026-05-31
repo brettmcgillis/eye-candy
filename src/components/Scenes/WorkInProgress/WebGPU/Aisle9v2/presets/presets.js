@@ -133,7 +133,7 @@ const BASE_BLACK_HOLE = {
 };
 
 const BASE_BODIES = {
-  bodyOrbitRadius: 1.2,
+  bodyOrbitRadius: 0.75,
   bodyOrbitHeight: 0.1,
   bodyOrbitSpeed: 0.22,
 };

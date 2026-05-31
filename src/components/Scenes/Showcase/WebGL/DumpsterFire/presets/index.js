@@ -113,8 +113,22 @@ const DARK_MODE_PARTICLE_COLORS = Object.freeze({
 
 export const PRESETS = {
   [DEFAULT_PRESET]: DEFAULT_PRESET_SNAPSHOT,
+  'Default Repeller': {
+    ...DEFAULT_PRESET_SNAPSHOT,
+    cursorAttractorMode: 'repeller',
+  },
   'Dark Mode': {
     ...DEFAULT_PRESET_SNAPSHOT,
+    sceneBackgroundColor: '#0c1014',
+    sceneFloorColor: '#1a2027',
+    sceneGridColor: '#323a43',
+    sceneFogColor: '#10161d',
+    particleSmokeColorOverrides: [DARK_MODE_PARTICLE_COLORS.particleColor],
+    particleSmokeVolumeColorOverrides: [DARK_MODE_PARTICLE_COLORS.volColor],
+  },
+  'Dark Mode Repeller': {
+    ...DEFAULT_PRESET_SNAPSHOT,
+    cursorAttractorMode: 'repeller',
     sceneBackgroundColor: '#0c1014',
     sceneFloorColor: '#1a2027',
     sceneGridColor: '#323a43',

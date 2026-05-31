@@ -464,13 +464,6 @@ function buildSingularityControls(initialSnapshot) {
       max: 0.05,
       step: 0.001,
     },
-    singularityNoiseFactor: {
-      label: 'Noise Factor',
-      value: initialSnapshot.singularityNoiseFactor,
-      min: 0,
-      max: 0.08,
-      step: 0.0005,
-    },
     singularityPower: {
       label: 'Power',
       value: initialSnapshot.singularityPower,
@@ -488,9 +481,16 @@ function buildSingularityControls(initialSnapshot) {
     singularityBandWidth: {
       label: 'Band Width',
       value: initialSnapshot.singularityBandWidth,
-      min: 0.01,
-      max: 0.4,
+      min: 0.005,
+      max: 0.3,
       step: 0.001,
+    },
+    singularityFieldScale: {
+      label: 'Field Scale',
+      value: initialSnapshot.singularityFieldScale ?? 3.8,
+      min: 0.5,
+      max: 12,
+      step: 0.1,
     },
     singularityRampPos1: {
       label: 'Ramp Pos 1',
@@ -532,13 +532,80 @@ function buildSingularityControls(initialSnapshot) {
       max: 6,
       step: 0.01,
     },
-    singularityEmissionColor: {
-      label: 'Emission Color',
-      value: initialSnapshot.singularityEmissionColor ?? '#242117',
-    },
     singularityUseBackground: {
       label: 'Use Background',
       value: initialSnapshot.singularityUseBackground,
+    },
+    singularityStarDensity: {
+      label: 'Star Density',
+      value: initialSnapshot.singularityStarDensity ?? 0.0065,
+      min: 0.001,
+      max: 0.05,
+      step: 0.0005,
+    },
+    singularityStarSize: {
+      label: 'Star Size',
+      value: initialSnapshot.singularityStarSize ?? 1.35,
+      min: 0.5,
+      max: 5,
+      step: 0.01,
+    },
+    singularityStarBrightness: {
+      label: 'Star Brightness',
+      value: initialSnapshot.singularityStarBrightness ?? 0.8,
+      min: 0,
+      max: 3,
+      step: 0.01,
+    },
+    singularityNebula1Scale: {
+      label: 'Nebula 1 Scale',
+      value: initialSnapshot.singularityNebula1Scale ?? 2,
+      min: 0.5,
+      max: 10,
+      step: 0.1,
+    },
+    singularityNebula1Density: {
+      label: 'Nebula 1 Density',
+      value: initialSnapshot.singularityNebula1Density ?? 0.35,
+      min: -1,
+      max: 1,
+      step: 0.01,
+    },
+    singularityNebula1Brightness: {
+      label: 'Nebula 1 Brightness',
+      value: initialSnapshot.singularityNebula1Brightness ?? 0.08,
+      min: 0,
+      max: 1,
+      step: 0.01,
+    },
+    singularityNebula1Color: {
+      label: 'Nebula 1 Color',
+      value: initialSnapshot.singularityNebula1Color ?? '#10163b',
+    },
+    singularityNebula2Scale: {
+      label: 'Nebula 2 Scale',
+      value: initialSnapshot.singularityNebula2Scale ?? 5.5,
+      min: 0.5,
+      max: 20,
+      step: 0.1,
+    },
+    singularityNebula2Density: {
+      label: 'Nebula 2 Density',
+      value: initialSnapshot.singularityNebula2Density ?? 0.15,
+      min: -1,
+      max: 1,
+      step: 0.01,
+    },
+    singularityNebula2Brightness: {
+      label: 'Nebula 2 Brightness',
+      value: initialSnapshot.singularityNebula2Brightness ?? 0.12,
+      min: 0,
+      max: 1,
+      step: 0.01,
+    },
+    singularityNebula2Color: {
+      label: 'Nebula 2 Color',
+      value: initialSnapshot.singularityNebula2Color ?? '#20070f',
     },
   };
 }

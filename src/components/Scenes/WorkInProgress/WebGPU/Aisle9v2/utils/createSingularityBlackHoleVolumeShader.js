@@ -155,7 +155,7 @@ export default function createSingularityBlackHoleVolumeShader(uniforms) {
         const baseColor = rampColor(rampValue).mul(uniforms.emissionStrength);
         const shadedColor = mix(baseColor, vec3(0), insideCore);
         const alphaNoise = noiseValue.sub(0.45).mul(1.2);
-        const bandAlpha = clamp(bandMask.add(alphaNoise), float(0), float(1));
+        const bandAlpha = clamp(bandMask.mul(float(1).add(alphaNoise)), float(0), float(1));
         const alphaLocal = mix(
           bandAlpha.mul(radialMask).mul(outerFade),
           float(1),

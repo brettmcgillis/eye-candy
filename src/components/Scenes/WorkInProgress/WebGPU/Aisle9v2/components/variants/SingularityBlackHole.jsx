@@ -105,11 +105,37 @@ const SingularityBlackHole = memo(function SingularityBlackHole({ config }) {
     );
     uniforms.emissionStrength.value =
       config.singularityEmissionStrength ?? uniforms.emissionStrength.value;
+    uniforms.fieldScale.value =
+      config.singularityFieldScale ?? uniforms.fieldScale.value;
     uniforms.rampColor1.value.set(config.singularityRampColor1 ?? '#f2b670');
     uniforms.rampColor2.value.set(config.singularityRampColor2 ?? '#3d180a');
     uniforms.rampColor3.value.set(config.singularityRampColor3 ?? '#050505');
     uniforms.starBackgroundColor.value.set(
       config.starBackgroundColor ?? '#03040a'
+    );
+    uniforms.starDensity.value =
+      config.singularityStarDensity ?? uniforms.starDensity.value;
+    uniforms.starSize.value =
+      config.singularityStarSize ?? uniforms.starSize.value;
+    uniforms.starBrightness.value =
+      config.singularityStarBrightness ?? uniforms.starBrightness.value;
+    uniforms.nebula1Scale.value =
+      config.singularityNebula1Scale ?? uniforms.nebula1Scale.value;
+    uniforms.nebula1Density.value =
+      config.singularityNebula1Density ?? uniforms.nebula1Density.value;
+    uniforms.nebula1Brightness.value =
+      config.singularityNebula1Brightness ?? uniforms.nebula1Brightness.value;
+    uniforms.nebula1Color.value.set(
+      config.singularityNebula1Color ?? '#10163b'
+    );
+    uniforms.nebula2Scale.value =
+      config.singularityNebula2Scale ?? uniforms.nebula2Scale.value;
+    uniforms.nebula2Density.value =
+      config.singularityNebula2Density ?? uniforms.nebula2Density.value;
+    uniforms.nebula2Brightness.value =
+      config.singularityNebula2Brightness ?? uniforms.nebula2Brightness.value;
+    uniforms.nebula2Color.value.set(
+      config.singularityNebula2Color ?? '#20070f'
     );
     uniforms.useBackground.value =
       config.environment === ENVIRONMENT_SPACE &&

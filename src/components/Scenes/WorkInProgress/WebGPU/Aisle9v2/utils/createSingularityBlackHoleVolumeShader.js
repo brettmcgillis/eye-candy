@@ -3,6 +3,7 @@ import {
   Fn,
   If,
   Loop,
+  abs,
   cameraPosition,
   cameraProjectionMatrix,
   clamp,
@@ -19,6 +20,8 @@ import {
   smoothstep,
   sqrt,
   struct,
+  texture as textureSample,
+  vec2,
   vec3,
   vec4,
 } from 'three/tsl';
@@ -26,7 +29,6 @@ import {
 import {
   createNebulaField,
   createStarField,
-  fbm,
 } from './blackHoleShaderHelpers';
 
 const MAX_SINGULARITY_STEPS = 256;
@@ -57,7 +59,7 @@ function createRampColor(uniforms) {
   });
 }
 
-export default function createSingularityBlackHoleVolumeShader(uniforms) {
+export default function createSingularityBlackHoleVolumeShader(uniforms, { noiseTextureNode }) {
   const starField = createStarField(uniforms);
   const nebulaField = createNebulaField(uniforms);
   const rampColor = createRampColor(uniforms);
@@ -112,55 +114,53 @@ export default function createSingularityBlackHoleVolumeShader(uniforms) {
         rayDirection.assign(normalize(rayDirection.sub(steering)));
         rayPosition.addAssign(rayDirection.mul(uniforms.stepSize));
 
+        // Rotate around Y axis (disk lies in XZ plane, Y is perpendicular)
         const rotPhase = flatRadius.mul(4.27).sub(uniforms.time.mul(0.1));
-        const rotatedX = rayPosition.x
-          .mul(rotPhase.cos())
-          .sub(rayPosition.z.mul(rotPhase.sin()));
-        const rotatedZ = rayPosition.x
-          .mul(rotPhase.sin())
-          .add(rayPosition.z.mul(rotPhase.cos()));
-        const noisePoint = vec3(
-          rotatedX.mul(uniforms.fieldScale),
-          rayPosition.y.mul(uniforms.fieldScale).add(uniforms.time.mul(0.05)),
-          rotatedZ.mul(uniforms.fieldScale)
-        );
-        const noiseValue = fbm(noisePoint, float(2), float(0.55));
-        const bandDistance = rayPosition.y
-          .abs()
-          .div(max(uniforms.bandWidth, float(0.0001)));
-        const bandMask = clamp(
-          float(1).sub(bandDistance.mul(bandDistance)),
-          float(0),
-          float(1)
-        );
-        const radialMask = smoothstep(
-          uniforms.originRadius,
-          uniforms.fieldRadius,
-          flatRadius
-        );
-        const outerFade = smoothstep(
-          uniforms.fieldRadius.mul(1.1),
-          uniforms.fieldRadius.mul(0.6),
-          flatRadius
-        );
+        const rotatedX = rayPosition.x.mul(rotPhase.cos()).sub(rayPosition.z.mul(rotPhase.sin()));
+        const rotatedZ = rayPosition.x.mul(rotPhase.sin()).add(rayPosition.z.mul(rotPhase.cos()));
+
+        // UV scale controlled by fieldScale (default 3.8 → scale 2.0, matching singularity)
+        const noiseUV = vec2(rotatedX, rotatedZ).mul(uniforms.fieldScale.div(1.9));
+
+        // Sample deep noise texture (RGB channels for richer patterns)
+        const noiseDeep = textureSample(noiseTextureNode, noiseUV).rgb;
+
+        // Band shape in Y dimension — smooth quadratic falloff from disk plane
+        const bandMin = uniforms.bandWidth.negate();
+        const bandEnds = vec3(bandMin, float(0), uniforms.bandWidth);
+        const dy = bandEnds.sub(vec3(rayPosition.y));
+        const yQuad = dy.mul(dy).div(uniforms.bandWidth);
+        const yBand = max(uniforms.bandWidth.sub(yQuad).div(uniforms.bandWidth), vec3(0, 0, 0));
+
+        // Noise gated by band (zero outside the disk)
+        const noiseAmp = noiseDeep.mul(yBand);
+        const noiseAmpLen = sqrt(noiseAmp.x.mul(noiseAmp.x).add(noiseAmp.y.mul(noiseAmp.y)).add(noiseAmp.z.mul(noiseAmp.z)));
+
+        // Pseudo-normal: offset sample × large multiplier = sharp ring filaments
+        const noiseNormal = textureSample(noiseTextureNode, noiseUV.mul(1.002)).rgb.mul(yBand);
+        const noiseNormalLen = sqrt(noiseNormal.x.mul(noiseNormal.x).add(noiseNormal.y.mul(noiseNormal.y)).add(noiseNormal.z.mul(noiseNormal.z)));
+
         const insideCore = radius.lessThan(uniforms.originRadius);
 
-        const rampValue = clamp(
-          flatRadius
-            .div(max(uniforms.fieldRadius, float(0.001)))
-            .add(noiseValue.sub(0.5).mul(0.85)),
-          float(0),
-          float(1)
-        );
+        // Ramp input: singularity formula — the ×19.75 term creates the sharp ring detail
+        const rampValue = flatRadius
+          .add(noiseAmpLen.sub(0.78).mul(1.5))
+          .add(noiseAmpLen.sub(noiseNormalLen).mul(19.75));
+
         const baseColor = rampColor(rampValue).mul(uniforms.emissionStrength);
         const shadedColor = mix(baseColor, vec3(0), insideCore);
-        const alphaNoise = noiseValue.sub(0.45).mul(1.2);
-        const bandAlpha = clamp(bandMask.mul(float(1).add(alphaNoise)), float(0), float(1));
-        const alphaLocal = mix(
-          bandAlpha.mul(radialMask).mul(outerFade),
-          float(1),
-          insideCore
+
+        // Alpha: noise modulates Y-threshold (singularity formula)
+        const radialAlpha = smoothstep(uniforms.fieldRadius, float(0), flatRadius);
+        const alphaPre = abs(rayPosition.y).add(noiseAmpLen.sub(0.75).mul(-0.6));
+        const tAlpha = clamp(
+          uniforms.bandWidth.sub(alphaPre).div(max(uniforms.bandWidth, float(0.0001))),
+          float(0), float(1)
         );
+        const smoothTAlpha = tAlpha.mul(tAlpha).mul(float(3).sub(tAlpha.mul(2)));
+        const bandAlpha = mix(float(0), radialAlpha, smoothTAlpha);
+
+        const alphaLocal = mix(bandAlpha, float(1), insideCore);
         const remainingAlpha = float(1).sub(alpha);
         color.addAssign(shadedColor.mul(alphaLocal).mul(remainingAlpha));
         alpha.addAssign(alphaLocal.mul(remainingAlpha));

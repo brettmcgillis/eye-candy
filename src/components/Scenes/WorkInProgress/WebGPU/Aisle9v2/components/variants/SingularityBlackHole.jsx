@@ -3,6 +3,7 @@ import * as THREE from 'three/webgpu';
 
 import React, { memo, useEffect, useMemo } from 'react';
 
+import { useTexture } from '@react-three/drei';
 import { useFrame } from '@react-three/fiber';
 
 import { ENVIRONMENT_SPACE } from '../../presets/presets';
@@ -54,10 +55,23 @@ function createUniforms(config) {
 }
 
 const SingularityBlackHole = memo(function SingularityBlackHole({ config }) {
+  const noiseTexture = useTexture('/textures/blackhole/singularity-noise-deep.png');
   const uniforms = useMemo(() => createUniforms(config), []);
   const geometry = useMemo(() => new THREE.SphereGeometry(1, 72, 48), []);
+
+  const noiseTextureNode = useMemo(
+    () => new THREE.TextureNode(noiseTexture),
+    [noiseTexture]
+  );
+
+  useEffect(() => {
+    noiseTexture.wrapS = THREE.RepeatWrapping;
+    noiseTexture.wrapT = THREE.RepeatWrapping;
+    noiseTexture.needsUpdate = true;
+  }, [noiseTexture]);
+
   const material = useMemo(() => {
-    const shaderNode = createSingularityBlackHoleVolumeShader(uniforms);
+    const shaderNode = createSingularityBlackHoleVolumeShader(uniforms, { noiseTextureNode });
     const nodeMaterial = new THREE.MeshBasicNodeMaterial({
       depthTest: true,
       depthWrite: false,
@@ -70,7 +84,7 @@ const SingularityBlackHole = memo(function SingularityBlackHole({ config }) {
     nodeMaterial.opacityNode = color.a;
     nodeMaterial.depthNode = shaderNode.get('depth');
     return nodeMaterial;
-  }, [uniforms]);
+  }, [noiseTextureNode, uniforms]);
 
   const position = config.blackHolePosition ?? { x: 0, y: 0, z: 0 };
   const metricWorldScale = config.metricWorldScale ?? 1;

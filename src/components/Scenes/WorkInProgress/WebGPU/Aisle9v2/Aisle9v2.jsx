@@ -4,7 +4,7 @@ import React, { useCallback, useMemo, useState } from 'react';
 
 import CENTER_STORE_REF_POSITION from '../../../../elements/sevenEleven/sevenElevenAnchors';
 import CameraRig from '../../../../rigging/CameraRig';
-import BlackHoleV2 from './components/BlackHoleV2';
+import BlackHoleHero from './components/BlackHoleHero';
 import OrbitingBodies from './components/OrbitingBodies';
 import SpaceEnvironment from './components/SpaceEnvironment';
 import StoreStage from './components/StoreStage';
@@ -207,7 +207,7 @@ export default function Aisle9v2() {
       />
       <directionalLight color="#d9ecff" intensity={2.2} position={[4, 7, 5]} />
 
-      <BlackHoleV2 config={effectiveConfig} />
+      <BlackHoleHero config={effectiveConfig} />
       <OrbitingBodies config={effectiveConfig} />
       <SurveillanceOverlay config={effectiveConfig} />
     </>

@@ -11,12 +11,18 @@ export const CAMERA_MODE_ORBIT = 'orbit';
 export const CAMERA_MODE_FIXED = 'fixed';
 export const CAMERA_MODE_SPLINE = 'spline';
 
+export const BLACK_HOLE_VARIANT_MOCK = 'mock';
+export const BLACK_HOLE_VARIANT_LEGACY_PORT = 'legacyPort';
+export const BLACK_HOLE_VARIANT_WEBGPU = 'webgpu';
+export const BLACK_HOLE_VARIANT_SINGULARITY = 'singularity';
+
 export const DEFAULT_PRESET = 'Store';
 
 const CONTROL_KEYS = [
   'environment',
   'cameraMode',
   'fixedCameraShot',
+  'blackHoleVariant',
   'storeScale',
   'storePosition',
   'storeRotation',
@@ -27,6 +33,31 @@ const CONTROL_KEYS = [
   'diskInnerColor',
   'diskOuterColor',
   'lensColor',
+  'legacyGravityStrength',
+  'legacyStepCount',
+  'legacyDiskBrightness',
+  'legacyDiskTemperature',
+  'legacyDopplerStrength',
+  'legacyUseBackground',
+  'webgpuMass',
+  'webgpuInnerRatio',
+  'webgpuDiskBrightness',
+  'webgpuTemperature',
+  'webgpuLensingStrength',
+  'webgpuStepCount',
+  'webgpuStepSize',
+  'webgpuUseBackground',
+  'singularityIterations',
+  'singularityStepSize',
+  'singularityNoiseFactor',
+  'singularityPower',
+  'singularityOriginRadius',
+  'singularityBandWidth',
+  'singularityRampColor1',
+  'singularityRampColor2',
+  'singularityRampColor3',
+  'singularityEmissionStrength',
+  'singularityUseBackground',
   'bodyOrbitRadius',
   'bodyOrbitHeight',
   'bodyOrbitSpeed',
@@ -123,6 +154,7 @@ const STORE_GUIDED_PATH = V1_GUIDED_TOUR_SPLINE.points.map((point) => ({
 }));
 
 const BASE_BLACK_HOLE = {
+  blackHoleVariant: BLACK_HOLE_VARIANT_WEBGPU,
   blackHoleDiameter: BLACK_HOLE_DIAMETER_METERS,
   diskDiameter: DISK_DIAMETER_METERS,
   diskThickness: 0.055,
@@ -130,6 +162,31 @@ const BASE_BLACK_HOLE = {
   diskInnerColor: '#fff4c7',
   diskOuterColor: '#ff5b19',
   lensColor: '#8fb9ff',
+  legacyGravityStrength: 1.15,
+  legacyStepCount: 144,
+  legacyDiskBrightness: 1.2,
+  legacyDiskTemperature: 3900,
+  legacyDopplerStrength: 0.85,
+  legacyUseBackground: true,
+  webgpuMass: 0.48,
+  webgpuInnerRatio: 0.34,
+  webgpuDiskBrightness: 1.4,
+  webgpuTemperature: 11,
+  webgpuLensingStrength: 1.45,
+  webgpuStepCount: 96,
+  webgpuStepSize: 0.036,
+  webgpuUseBackground: true,
+  singularityIterations: 112,
+  singularityStepSize: 0.011,
+  singularityNoiseFactor: 0.012,
+  singularityPower: 0.26,
+  singularityOriginRadius: 0.11,
+  singularityBandWidth: 0.058,
+  singularityRampColor1: '#f2b670',
+  singularityRampColor2: '#3d180a',
+  singularityRampColor3: '#050505',
+  singularityEmissionStrength: 1.9,
+  singularityUseBackground: true,
 };
 
 const BASE_BODIES = {

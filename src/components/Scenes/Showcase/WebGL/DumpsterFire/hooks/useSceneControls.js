@@ -383,6 +383,38 @@ export default function useSceneControls() {
         },
         { collapsed: true }
       ),
+      'Brick Wall': folder(
+        {
+          brickWallEnabled: {
+            label: 'Enabled',
+            value: initialPresetSnapshot.brickWallEnabled,
+          },
+          brickWallLength: {
+            label: 'Length',
+            value: initialPresetSnapshot.brickWallLength,
+            min: 4,
+            max: 25,
+            step: 0.25,
+          },
+          brickWallHeight: {
+            label: 'Height',
+            value: initialPresetSnapshot.brickWallHeight,
+            min: 0.8,
+            max: 4.5,
+            step: 0.1,
+          },
+          brickWallTintColor: {
+            label: 'Tint',
+            value: initialPresetSnapshot.brickWallTintColor,
+          },
+          brickWallPosition: {
+            label: 'Position',
+            step: 0.05,
+            value: initialPresetSnapshot.brickWallPosition,
+          },
+        },
+        { collapsed: true }
+      ),
       Camera: folder(cameraControls, { collapsed: true }),
       Physics: folder(
         {
@@ -761,6 +793,11 @@ ${allEntries}
     sceneFogColor,
     sceneFogNear,
     sceneFogFar,
+    brickWallEnabled,
+    brickWallLength,
+    brickWallHeight,
+    brickWallTintColor,
+    brickWallPosition,
     fireLightEnabled,
     fireLightColor,
     fireLightIntensity,
@@ -839,6 +876,17 @@ ${allEntries}
       fogColor: sceneFogColor,
       fogNear: sceneFogNear,
       fogFar: sceneFogFar,
+    },
+    brickWallConfig: {
+      enabled: brickWallEnabled,
+      length: brickWallLength,
+      height: brickWallHeight,
+      tintColor: brickWallTintColor,
+      position: [
+        brickWallPosition?.x ?? 0,
+        brickWallPosition?.y ?? 0,
+        brickWallPosition?.z ?? 0,
+      ],
     },
     fireLightRig: {
       enabled: fireLightEnabled,

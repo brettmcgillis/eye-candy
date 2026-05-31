@@ -261,8 +261,8 @@ export const SHOT_TUNING_PRESETS = Object.freeze({
   Fun: Object.freeze({
     spawnOffset: 1.5,
     speed: 80,
-    baseVerticalBoost: 8,
-    pointerVerticalBoost: 10,
+    baseVerticalBoost: 0,
+    pointerVerticalBoost: 0,
     spinX: 10,
     spinY: 18,
     spinZ: 10,

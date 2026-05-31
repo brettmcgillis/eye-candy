@@ -12,12 +12,15 @@ import {
   SCENE_ROOT_POSITION,
 } from '../utils/sceneData';
 import { getSceneItemKey } from '../utils/sceneUtils';
+import DumpsterBrickWall from './DumpsterBrickWall';
 import { DynamicSceneAsset, FixedSceneAsset } from './SceneAssetRigidBody';
 import TrashBlaster from './TrashBlaster';
 
-function SceneComposition({ onTrashCollision }) {
+function SceneComposition({ brickWallConfig, onTrashCollision }) {
   return (
     <group position={SCENE_ROOT_POSITION}>
+      <DumpsterBrickWall config={brickWallConfig} />
+
       {FIXED_SCENE_ITEMS.map((item) => {
         const { PhysicsComponent } = item;
 
@@ -48,6 +51,7 @@ function SceneComposition({ onTrashCollision }) {
 }
 
 const PhysicsScene = React.memo(function PhysicsScene({
+  brickWallConfig,
   debug = true,
   onTrashCollision,
   shotConfig,
@@ -77,7 +81,10 @@ const PhysicsScene = React.memo(function PhysicsScene({
         />
       </RigidBody>
 
-      <SceneComposition onTrashCollision={onTrashCollision} />
+      <SceneComposition
+        brickWallConfig={brickWallConfig}
+        onTrashCollision={onTrashCollision}
+      />
       <TrashBlaster shotConfig={shotConfig} />
     </Physics>
   );

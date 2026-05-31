@@ -31,6 +31,7 @@ export default function DumpsterFire() {
     cursorAttractorStrength,
     cursorAttractorRadius,
     sceneEnvironment,
+    brickWallConfig,
     fireLightRig,
     trashShotConfig,
     setFireAndSmokePoints,
@@ -53,6 +54,7 @@ export default function DumpsterFire() {
         visible={showCursorAttractor}
       />
       <PhysicsScene
+        brickWallConfig={brickWallConfig}
         debug={physicsDebug}
         onTrashCollision={playCollision}
         shotConfig={trashShotConfig}

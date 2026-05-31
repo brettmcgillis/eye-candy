@@ -58,9 +58,18 @@ const DEFAULT_PHYSICS_CONTROLS = Object.freeze({
   physicsDebug: false,
 });
 
+const DEFAULT_BRICK_WALL_CONTROLS = Object.freeze({
+  brickWallEnabled: false,
+  brickWallLength: 24,
+  brickWallHeight: 3.6,
+  brickWallTintColor: '#a65a4d',
+  brickWallPosition: { x: -2, y: 0, z: 3 },
+});
+
 const defaultShotTuning =
   SHOT_TUNING_PRESETS[DEFAULT_SHOT_TUNING_MODE] ||
   SHOT_TUNING_PRESETS.Realistic;
+const brickWallShotTuning = SHOT_TUNING_PRESETS.Fun || defaultShotTuning;
 
 const DEFAULT_TRASH_BLASTER_CONTROLS = Object.freeze({
   shotMode: DEFAULT_SHOT_TUNING_MODE,
@@ -77,6 +86,7 @@ const DEFAULT_CONTROL_VALUES = Object.freeze({
   ...DEFAULT_SCENE_ENVIRONMENT,
   ...DEFAULT_CAMERA_CONTROLS,
   ...DEFAULT_PHYSICS_CONTROLS,
+  ...DEFAULT_BRICK_WALL_CONTROLS,
   ...DEFAULT_TRASH_BLASTER_CONTROLS,
   ...DEFAULT_COMBUSTION_CONTROLS,
   fireLightEnabled: DEFAULT_FIRE_LIGHT_RIG.enabled,
@@ -113,6 +123,25 @@ const DARK_MODE_PARTICLE_COLORS = Object.freeze({
 
 export const PRESETS = {
   [DEFAULT_PRESET]: DEFAULT_PRESET_SNAPSHOT,
+  'Brick Wall': {
+    ...DEFAULT_PRESET_SNAPSHOT,
+    brickWallEnabled: true,
+    brickWallLength: 25,
+    brickWallHeight: 4.5,
+    brickWallTintColor: '#a35245',
+    brickWallPosition: { x: -2, y: 0, z: 3 },
+    shotMode: 'Fun',
+    shotSpawnOffset: brickWallShotTuning.spawnOffset,
+    shotSpeed: brickWallShotTuning.speed,
+    shotBaseVerticalBoost: brickWallShotTuning.baseVerticalBoost,
+    shotPointerVerticalBoost: brickWallShotTuning.pointerVerticalBoost,
+    shotSpinX: brickWallShotTuning.spinX,
+    shotSpinY: brickWallShotTuning.spinY,
+    shotSpinZ: brickWallShotTuning.spinZ,
+    sceneFloorColor: '#dfd8d0',
+    sceneGridColor: '#c8bcb1',
+    sceneFogColor: '#ddd2c8',
+  },
   'Default Repeller': {
     ...DEFAULT_PRESET_SNAPSHOT,
     cursorAttractorMode: 'repeller',

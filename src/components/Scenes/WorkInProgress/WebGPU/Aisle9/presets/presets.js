@@ -62,9 +62,36 @@ const DEFAULT_CAMERA_SPLINE_SETTINGS = {
   cameraSplineLookAt: cloneCenterStoreRef(),
 };
 
+const SECURITY_CAM_DEFAULTS = {
+  surveillanceFxEnabled: false,
+  surveillanceOverlayEnabled: false,
+  surveillanceCameraLabel: 'CAM 01',
+  surveillanceDesaturation: 0.42,
+  surveillanceNoiseAmount: 0.028,
+  surveillanceScanlineStrength: 0.22,
+  surveillanceScanlineDensity: 940,
+  surveillanceVignette: 0.36,
+  surveillanceRollingBandStrength: 0.18,
+  surveillanceHudOpacity: 0.42,
+};
+
+const SECURITY_CAM_SURVEILLANCE = {
+  ...SECURITY_CAM_DEFAULTS,
+  surveillanceFxEnabled: true,
+  surveillanceOverlayEnabled: true,
+  surveillanceDesaturation: 0.5,
+  surveillanceNoiseAmount: 0.042,
+  surveillanceScanlineStrength: 0.34,
+  surveillanceScanlineDensity: 980,
+  surveillanceVignette: 0.44,
+  surveillanceRollingBandStrength: 0.26,
+  surveillanceHudOpacity: 0.56,
+};
+
 const SPACE_SCENE_PRESET = {
   ...DEFAULT_CAMERA_SPLINE_SETTINGS,
   ...BLACK_HOLE_BODIES_OFF,
+  ...SECURITY_CAM_DEFAULTS,
   presentationMode: 'backgroundField',
   blackHoleMass: 0.4,
   diskInnerRadius: 4.1,
@@ -181,6 +208,7 @@ const SPACE_SCENE_PRESET = {
 const STORE_SCENE_PRESET = {
   ...DEFAULT_CAMERA_SPLINE_SETTINGS,
   ...BLACK_HOLE_BODIES_OFF,
+  ...SECURITY_CAM_DEFAULTS,
   body1Enabled: true,
   body1OrbitRadius: 18,
   body2Enabled: true,
@@ -358,6 +386,7 @@ const GUIDED_TOUR_SCENE_PRESET = {
 
 const SURVEILLANCE_SCENE_PRESET = {
   ...STORE_SCENE_PRESET,
+  ...SECURITY_CAM_SURVEILLANCE,
   cameraMode: 'fixed',
   cameraFov: 80,
   // Uniform scale only: the raymarch views the disk in local units, so the
@@ -370,6 +399,7 @@ const SURVEILLANCE_SCENE_PRESET = {
 
 const SURVEILLANCE_2_SCENE_PRESET = {
   ...SURVEILLANCE_SCENE_PRESET,
+  surveillanceCameraLabel: 'CAM 02',
   fixedCameraPosition: { x: 5, y: 2.5, z: 1.5 },
   fixedCameraMobilePosition: { x: 5, y: 2.5, z: 1.5 },
   fixedCameraTarget: cloneCenterStoreRef(),
@@ -378,6 +408,7 @@ const SURVEILLANCE_2_SCENE_PRESET = {
 
 const SURVEILLANCE_3_SCENE_PRESET = {
   ...SURVEILLANCE_SCENE_PRESET,
+  surveillanceCameraLabel: 'CAM 03',
   fixedCameraPosition: { x: -5.5, y: 2.5, z: -2 },
   fixedCameraMobilePosition: { x: -5.5, y: 2.5, z: -2 },
   fixedCameraTarget: cloneCenterStoreRef(),

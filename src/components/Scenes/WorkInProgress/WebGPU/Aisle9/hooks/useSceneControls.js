@@ -131,6 +131,19 @@ const BLOOM_KEYS = [
   'bloomDownSampleRatio',
 ];
 
+const SURVEILLANCE_KEYS = [
+  'surveillanceFxEnabled',
+  'surveillanceOverlayEnabled',
+  'surveillanceCameraLabel',
+  'surveillanceDesaturation',
+  'surveillanceNoiseAmount',
+  'surveillanceScanlineStrength',
+  'surveillanceScanlineDensity',
+  'surveillanceVignette',
+  'surveillanceRollingBandStrength',
+  'surveillanceHudOpacity',
+];
+
 const STORE_KEYS = ['storeScale'];
 
 const STORE_TRANSFORM_KEYS = ['storePosition', 'storeRotation'];
@@ -178,6 +191,7 @@ const EXPLICIT_KEYS = new Set([
   ...NEBULA_LAYER_1_KEYS,
   ...NEBULA_LAYER_2_KEYS,
   ...BLOOM_KEYS,
+  ...SURVEILLANCE_KEYS,
   ...STORE_KEYS,
   ...STORE_TRANSFORM_KEYS,
   ...BODY_KEYS,
@@ -427,6 +441,51 @@ const CONTROL_SCHEMA = {
     label: 'Downsample',
     options: { '1x': 1, '2x': 2, '4x': 4 },
   },
+  surveillanceFxEnabled: { label: 'Enable FX' },
+  surveillanceOverlayEnabled: { label: 'Show HUD' },
+  surveillanceCameraLabel: { label: 'Camera Label' },
+  surveillanceDesaturation: {
+    label: 'Desaturation',
+    min: 0,
+    max: 1,
+    step: 0.01,
+  },
+  surveillanceNoiseAmount: {
+    label: 'Noise',
+    min: 0,
+    max: 0.2,
+    step: 0.001,
+  },
+  surveillanceScanlineStrength: {
+    label: 'Scanlines',
+    min: 0,
+    max: 1,
+    step: 0.01,
+  },
+  surveillanceScanlineDensity: {
+    label: 'Line Density',
+    min: 120,
+    max: 1800,
+    step: 10,
+  },
+  surveillanceVignette: {
+    label: 'Vignette',
+    min: 0,
+    max: 1,
+    step: 0.01,
+  },
+  surveillanceRollingBandStrength: {
+    label: 'Rolling Band',
+    min: 0,
+    max: 1,
+    step: 0.01,
+  },
+  surveillanceHudOpacity: {
+    label: 'HUD Opacity',
+    min: 0,
+    max: 1,
+    step: 0.01,
+  },
   storeScale: {
     label: 'Store Scale',
     min: 50,
@@ -617,6 +676,10 @@ export default function useSceneControls() {
         C
       ),
       Bloom: folder(createFolderControls(BLOOM_KEYS, presetControls), C),
+      Surveillance: folder(
+        createFolderControls(SURVEILLANCE_KEYS, presetControls),
+        C
+      ),
       Legacy: folder(createLegacyControls(presetControls), C),
     }),
     { collapsed: true }

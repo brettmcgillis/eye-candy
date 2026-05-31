@@ -4,6 +4,7 @@ import {
   If,
   Loop,
   abs,
+  asin,
   atan,
   cameraPosition,
   cameraProjectionMatrix,
@@ -23,19 +24,15 @@ import {
   pow,
   sign,
   sin,
-  smoothstep,
   sqrt,
   struct,
+  texture as textureSample,
+  vec2,
   vec3,
   vec4,
 } from 'three/tsl';
 
-import {
-  applyRadiusTint,
-  blackbodyColor,
-  createNebulaField,
-  createStarField,
-} from './blackHoleShaderHelpers';
+import { blackbodyColor } from './blackHoleShaderHelpers';
 
 const MAX_LEGACY_STEPS = 256;
 const TWO_PI = Math.PI * 2;
@@ -46,56 +43,84 @@ const LegacyBlackHoleResult = struct(
 );
 
 function createLegacyDiskColor(uniforms) {
-  return Fn(([hitPosition, hitRadius, hitAngle, rayDirection]) => {
-    const normalizedRadius = clamp(
-      hitRadius
-        .sub(uniforms.innerRadius)
-        .div(uniforms.outerRadius.sub(uniforms.innerRadius)),
-      float(0),
-      float(1)
+  return Fn(
+    ([hitPosition, hitRadius, hitAngle, rayDirection, diskTextureNode]) => {
+      const normalizedRadius = clamp(
+        hitRadius
+          .sub(uniforms.innerRadius)
+          .div(uniforms.outerRadius.sub(uniforms.innerRadius)),
+        float(0),
+        float(1)
+      );
+      const diskVelocity = vec3(hitPosition.z.negate(), float(0), hitPosition.x)
+        .div(sqrt(max(hitRadius.sub(1), float(0.001))))
+        .div(max(hitRadius.mul(hitRadius), float(0.001)));
+      const gamma = float(1).div(
+        sqrt(max(float(1).sub(dot(diskVelocity, diskVelocity)), float(0.001)))
+      );
+      const doppler = gamma.mul(
+        float(1).add(dot(normalize(rayDirection), diskVelocity))
+      );
+      const temperature = float(uniforms.diskTemperature).div(
+        max(float(0.2), doppler.pow(uniforms.dopplerStrength))
+      );
+      const diskSample = textureSample(
+        diskTextureNode,
+        vec2(normalizedRadius, hitAngle.div(float(TWO_PI)).add(0.5))
+      );
+      const beaming = float(1).div(
+        max(doppler.pow(uniforms.dopplerStrength.mul(3)), float(0.001))
+      );
+      const diskColor = diskSample.rgb
+        .mul(blackbodyColor(temperature))
+        .mul(uniforms.diskBrightness)
+        .mul(beaming);
+      const opacity = clamp(
+        diskSample.a.mul(uniforms.diskBrightness).mul(beaming),
+        float(0),
+        float(1)
+      );
+
+      return vec4(diskColor, opacity);
+    }
+  );
+}
+
+function createLegacyBackground(uniforms) {
+  return Fn(([rayDirection, galaxyTextureNode, starTextureNode]) => {
+    const rotation = float(Math.PI / 4);
+    const rotatedDirection = vec3(
+      rayDirection.x
+        .mul(rotation.cos())
+        .sub(rayDirection.z.mul(rotation.sin())),
+      rayDirection.y,
+      rayDirection.x.mul(rotation.sin()).add(rayDirection.z.mul(rotation.cos()))
     );
-    const diskVelocity = vec3(hitPosition.z.negate(), float(0), hitPosition.x)
-      .div(sqrt(max(hitRadius.sub(1), float(0.001))))
-      .div(max(hitRadius.mul(hitRadius), float(0.001)));
-    const gamma = float(1).div(
-      sqrt(max(float(1).sub(dot(diskVelocity, diskVelocity)), float(0.001)))
+    const uv = vec2(
+      atan(rotatedDirection.x, rotatedDirection.z).div(float(TWO_PI)).add(0.5),
+      asin(clamp(rotatedDirection.y, float(-1), float(1)))
+        .div(float(Math.PI))
+        .add(0.5)
     );
-    const doppler = gamma.mul(
-      float(1).add(dot(normalize(rayDirection), diskVelocity))
-    );
-    const temperature = float(uniforms.diskTemperature).div(
-      max(float(0.2), doppler.pow(uniforms.dopplerStrength))
-    );
-    const baseColor = blackbodyColor(temperature).toVar('baseColor');
-    const tintedColor = applyRadiusTint(
-      baseColor,
-      uniforms.innerColor,
-      uniforms.outerColor,
-      normalizedRadius,
-      float(0.45)
+    const starSample = textureSample(starTextureNode, uv);
+    const starTemperature = float(4000).add(starSample.g.mul(11000));
+    const starColor = blackbodyColor(starTemperature)
+      .mul(starSample.r)
+      .mul(uniforms.starBrightness);
+    const galaxyColor = textureSample(galaxyTextureNode, uv).rgb.mul(
+      uniforms.galaxyBrightness
     );
 
-    const stripePattern = sin(hitAngle.mul(14).add(uniforms.time.mul(0.9)))
-      .mul(0.5)
-      .add(0.5);
-    const stripeSharp = pow(stripePattern, float(0.55));
-    const edgeFade = smoothstep(float(0), float(0.08), normalizedRadius).mul(
-      smoothstep(float(1), float(0.72), normalizedRadius)
-    );
-    const opacity = clamp(
-      stripeSharp.mul(edgeFade).mul(uniforms.diskBrightness),
-      float(0),
-      float(1)
-    );
-
-    return vec4(tintedColor.mul(uniforms.diskBrightness), opacity);
+    return galaxyColor.add(starColor);
   });
 }
 
-export default function createLegacyBlackHoleVolumeShader(uniforms) {
-  const starField = createStarField(uniforms);
-  const nebulaField = createNebulaField(uniforms);
+export default function createLegacyBlackHoleVolumeShader(
+  uniforms,
+  { diskTextureNode, galaxyTextureNode, starTextureNode }
+) {
   const diskColor = createLegacyDiskColor(uniforms);
+  const backgroundColor = createLegacyBackground(uniforms);
 
   return Fn(() => {
     const simScale = float(1).div(max(uniforms.coreRadius, float(0.0001)));
@@ -226,7 +251,8 @@ export default function createLegacyBlackHoleVolumeShader(uniforms) {
                 hitPosition,
                 hitRadius,
                 hitAngle,
-                lastDirection
+                lastDirection,
+                diskTextureNode
               );
               const remainingAlpha = float(1).sub(alpha);
               color.addAssign(
@@ -254,11 +280,13 @@ export default function createLegacyBlackHoleVolumeShader(uniforms) {
     If(
       uniforms.useBackground.greaterThan(0.5).and(alpha.lessThan(0.99)),
       () => {
-        const backgroundColor =
-          uniforms.starBackgroundColor.toVar('backgroundColor');
-        backgroundColor.addAssign(starField(lastDirection));
-        backgroundColor.addAssign(nebulaField(lastDirection));
-        color.addAssign(backgroundColor.mul(float(1).sub(alpha)));
+        color.addAssign(
+          backgroundColor(
+            lastDirection,
+            galaxyTextureNode,
+            starTextureNode
+          ).mul(float(1).sub(alpha))
+        );
       }
     );
 

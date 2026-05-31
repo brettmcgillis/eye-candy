@@ -3,10 +3,29 @@ import * as THREE from 'three/webgpu';
 
 import React, { memo, useEffect, useMemo } from 'react';
 
+import { useTexture } from '@react-three/drei';
 import { useFrame } from '@react-three/fiber';
 
 import { ENVIRONMENT_SPACE } from '../../presets/presets';
 import createLegacyBlackHoleVolumeShader from '../../utils/createLegacyBlackHoleVolumeShader';
+
+const LEGACY_DEFAULTS = {
+  gravityStrength: 1,
+  stepCount: 100,
+  diskBrightness: 0.9,
+  diskTemperature: 3900,
+  dopplerStrength: 1,
+  accretionMinRadius: 1.5,
+  accretionWidth: 5,
+  maxRevolutions: 2,
+  starBrightness: 1,
+  galaxyBrightness: 0.4,
+};
+
+const LEGACY_DISK_TEXTURE_PATH =
+  '/textures/blackhole/legacy-accretion-disk.png';
+const LEGACY_GALAXY_TEXTURE_PATH = '/textures/blackhole/legacy-milkyway.jpg';
+const LEGACY_STAR_TEXTURE_PATH = '/textures/blackhole/legacy-stars.png';
 
 function createUniforms(config) {
   return {
@@ -16,40 +35,85 @@ function createUniforms(config) {
     simBoundary: uniform(5),
     innerRadius: uniform(1.6),
     outerRadius: uniform(3.4),
-    gravityStrength: uniform(config.legacyGravityStrength ?? 1.15),
+    gravityStrength: uniform(
+      config.legacyGravityStrength ?? LEGACY_DEFAULTS.gravityStrength
+    ),
     stepCount: uniform(
-      Math.max(48, Math.round(config.legacyStepCount ?? 144)),
+      Math.max(
+        48,
+        Math.round(config.legacyStepCount ?? LEGACY_DEFAULTS.stepCount)
+      ),
       'int'
     ),
-    diskBrightness: uniform(config.legacyDiskBrightness ?? 1.2),
-    diskTemperature: uniform(config.legacyDiskTemperature ?? 3900),
-    dopplerStrength: uniform(config.legacyDopplerStrength ?? 0.85),
-    maxRevolutions: uniform(2),
-    innerColor: uniform(new THREE.Color(config.diskInnerColor ?? '#ffffff')),
-    outerColor: uniform(new THREE.Color(config.diskOuterColor ?? '#ffffff')),
+    diskBrightness: uniform(
+      config.legacyDiskBrightness ?? LEGACY_DEFAULTS.diskBrightness
+    ),
+    diskTemperature: uniform(
+      config.legacyDiskTemperature ?? LEGACY_DEFAULTS.diskTemperature
+    ),
+    dopplerStrength: uniform(
+      config.legacyDopplerStrength ?? LEGACY_DEFAULTS.dopplerStrength
+    ),
+    accretionMinRadius: uniform(
+      config.legacyAccretionMinRadius ?? LEGACY_DEFAULTS.accretionMinRadius
+    ),
+    accretionWidth: uniform(
+      config.legacyAccretionWidth ?? LEGACY_DEFAULTS.accretionWidth
+    ),
+    maxRevolutions: uniform(
+      config.legacyMaxRevolutions ?? LEGACY_DEFAULTS.maxRevolutions
+    ),
     useBackground: uniform(0),
     starBackgroundColor: uniform(
       new THREE.Color(config.starBackgroundColor ?? '#03040a')
     ),
-    starDensity: uniform(0.006),
-    starSize: uniform(1.35),
-    starBrightness: uniform(0.82),
-    nebula1Scale: uniform(2),
-    nebula1Density: uniform(0.35),
-    nebula1Brightness: uniform(0.08),
-    nebula1Color: uniform(new THREE.Color('#08122a')),
-    nebula2Scale: uniform(5.8),
-    nebula2Density: uniform(0.14),
-    nebula2Brightness: uniform(0.12),
-    nebula2Color: uniform(new THREE.Color('#19080d')),
+    starBrightness: uniform(
+      config.legacyStarBrightness ?? LEGACY_DEFAULTS.starBrightness
+    ),
+    galaxyBrightness: uniform(
+      config.legacyGalaxyBrightness ?? LEGACY_DEFAULTS.galaxyBrightness
+    ),
   };
 }
 
 const LegacyBlackHole = memo(function LegacyBlackHole({ config }) {
+  const [diskTexture, galaxyTexture, starTexture] = useTexture([
+    LEGACY_DISK_TEXTURE_PATH,
+    LEGACY_GALAXY_TEXTURE_PATH,
+    LEGACY_STAR_TEXTURE_PATH,
+  ]);
   const uniforms = useMemo(() => createUniforms(config), []);
   const geometry = useMemo(() => new THREE.SphereGeometry(1, 72, 48), []);
+  const diskTextureNode = useMemo(
+    () => new THREE.TextureNode(diskTexture),
+    [diskTexture]
+  );
+  const galaxyTextureNode = useMemo(
+    () => new THREE.TextureNode(galaxyTexture),
+    [galaxyTexture]
+  );
+  const starTextureNode = useMemo(
+    () => new THREE.TextureNode(starTexture),
+    [starTexture]
+  );
+
+  useEffect(() => {
+    diskTexture.wrapT = THREE.RepeatWrapping;
+    diskTexture.needsUpdate = true;
+    galaxyTexture.colorSpace = THREE.SRGBColorSpace;
+    galaxyTexture.magFilter = THREE.NearestFilter;
+    galaxyTexture.minFilter = THREE.NearestFilter;
+    galaxyTexture.needsUpdate = true;
+    starTexture.colorSpace = THREE.SRGBColorSpace;
+    starTexture.needsUpdate = true;
+  }, [diskTexture, galaxyTexture, starTexture]);
+
   const material = useMemo(() => {
-    const shaderNode = createLegacyBlackHoleVolumeShader(uniforms);
+    const shaderNode = createLegacyBlackHoleVolumeShader(uniforms, {
+      diskTextureNode,
+      galaxyTextureNode,
+      starTextureNode,
+    });
     const nodeMaterial = new THREE.MeshBasicNodeMaterial({
       depthTest: true,
       depthWrite: false,
@@ -62,7 +126,7 @@ const LegacyBlackHole = memo(function LegacyBlackHole({ config }) {
     nodeMaterial.opacityNode = color.a;
     nodeMaterial.depthNode = shaderNode.get('depth');
     return nodeMaterial;
-  }, [uniforms]);
+  }, [diskTextureNode, galaxyTextureNode, starTextureNode, uniforms]);
 
   const position = config.blackHolePosition ?? { x: 0, y: 0, z: 0 };
   const metricWorldScale = config.metricWorldScale ?? 1;
@@ -71,30 +135,44 @@ const LegacyBlackHole = memo(function LegacyBlackHole({ config }) {
   useEffect(() => {
     const coreRadius =
       config.blackHoleDiameter / Math.max(config.lensDiameter, 0.0001);
-    const outerRadius =
+    const derivedOuterRadius =
       config.diskDiameter / Math.max(config.blackHoleDiameter, 0.0001);
+    const accretionMinRadius =
+      config.legacyAccretionMinRadius ?? LEGACY_DEFAULTS.accretionMinRadius;
+    const accretionWidth =
+      config.legacyAccretionWidth ?? LEGACY_DEFAULTS.accretionWidth;
+    const sourceOuterRadius = accretionMinRadius + accretionWidth;
+    const radiusScale =
+      derivedOuterRadius / Math.max(sourceOuterRadius, 0.0001);
+
     uniforms.coreRadius.value = Math.min(0.8, Math.max(0.02, coreRadius));
     uniforms.simBoundary.value =
       1 / Math.max(uniforms.coreRadius.value, 0.0001);
-    uniforms.outerRadius.value = Math.max(2.4, outerRadius);
+    uniforms.accretionMinRadius.value = accretionMinRadius;
+    uniforms.accretionWidth.value = accretionWidth;
+    uniforms.outerRadius.value = Math.max(2.4, derivedOuterRadius);
     uniforms.innerRadius.value = Math.max(
-      1.55,
-      uniforms.outerRadius.value * 0.46
+      1.05,
+      accretionMinRadius * radiusScale
     );
     uniforms.gravityStrength.value =
-      config.legacyGravityStrength ?? uniforms.gravityStrength.value;
+      config.legacyGravityStrength ?? LEGACY_DEFAULTS.gravityStrength;
     uniforms.stepCount.value = Math.max(
       48,
-      Math.round(config.legacyStepCount ?? uniforms.stepCount.value)
+      Math.round(config.legacyStepCount ?? LEGACY_DEFAULTS.stepCount)
     );
     uniforms.diskBrightness.value =
-      config.legacyDiskBrightness ?? uniforms.diskBrightness.value;
+      config.legacyDiskBrightness ?? LEGACY_DEFAULTS.diskBrightness;
     uniforms.diskTemperature.value =
-      config.legacyDiskTemperature ?? uniforms.diskTemperature.value;
+      config.legacyDiskTemperature ?? LEGACY_DEFAULTS.diskTemperature;
     uniforms.dopplerStrength.value =
-      config.legacyDopplerStrength ?? uniforms.dopplerStrength.value;
-    uniforms.innerColor.value.set(config.diskInnerColor ?? '#ffffff');
-    uniforms.outerColor.value.set(config.diskOuterColor ?? '#ffffff');
+      config.legacyDopplerStrength ?? LEGACY_DEFAULTS.dopplerStrength;
+    uniforms.maxRevolutions.value =
+      config.legacyMaxRevolutions ?? LEGACY_DEFAULTS.maxRevolutions;
+    uniforms.starBrightness.value =
+      config.legacyStarBrightness ?? LEGACY_DEFAULTS.starBrightness;
+    uniforms.galaxyBrightness.value =
+      config.legacyGalaxyBrightness ?? LEGACY_DEFAULTS.galaxyBrightness;
     uniforms.starBackgroundColor.value.set(
       config.starBackgroundColor ?? '#03040a'
     );

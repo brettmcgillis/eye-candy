@@ -26,7 +26,6 @@ import {
 } from 'three/tsl';
 
 import {
-  applyRadiusTint,
   blackbodyColor,
   createNebulaField,
   createStarField,
@@ -131,17 +130,9 @@ function createDiskColor(uniforms) {
       clamp(turbulence, float(0), float(1)),
       uniforms.turbulenceSharpness
     );
-    const tintStrength = float(0.38);
-    const tintedColor = applyRadiusTint(
-      diskColor,
-      uniforms.innerColor,
-      uniforms.outerColor,
-      normRadius,
-      tintStrength
-    );
     const finalOpacity = ringOpacity.mul(edgeFalloff);
 
-    return vec4(tintedColor.mul(uniforms.diskBrightness), finalOpacity);
+    return vec4(diskColor.mul(uniforms.diskBrightness), finalOpacity);
   });
 }
 
@@ -274,8 +265,15 @@ export default function createWebGPUBlackHoleVolumeShader(uniforms) {
       () => {
         const backgroundColor =
           uniforms.starBackgroundColor.toVar('backgroundColor');
-        backgroundColor.addAssign(starField(rayDirection));
-        backgroundColor.addAssign(nebulaField(rayDirection));
+
+        If(uniforms.starsEnabled.greaterThan(0.5), () => {
+          backgroundColor.addAssign(starField(rayDirection));
+        });
+
+        If(uniforms.nebulaEnabled.greaterThan(0.5), () => {
+          backgroundColor.addAssign(nebulaField(rayDirection));
+        });
+
         color.addAssign(backgroundColor.mul(float(1).sub(alpha)));
       }
     );

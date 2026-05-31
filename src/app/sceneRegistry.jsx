@@ -191,6 +191,9 @@ const RaisedByTV = lazy(
 const Aisle9 = lazy(
   () => import('../components/scenes/WorkInProgress/WebGPU/Aisle9/Aisle9')
 );
+const Aisle9v2 = lazy(
+  () => import('../components/scenes/WorkInProgress/WebGPU/Aisle9v2/Aisle9v2')
+);
 const RowItAloneWebGPU = lazy(
   () =>
     import('../components/scenes/WorkInProgress/WebGPU/RowItAlone/RowItAlone')
@@ -1197,6 +1200,15 @@ export const EYE_CANDIES = [
     route: 'aisle9',
     icon: Aisle9Icon,
     Component: Aisle9,
+  },
+  {
+    id: 'aisle9v2',
+    label: 'Aisle 9 v2',
+    channel: 'webgpu',
+    area: 'wip',
+    route: 'aisle9v2',
+    icon: Aisle9Icon,
+    Component: Aisle9v2,
   },
   {
     id: 'rowItAloneWebgpu',

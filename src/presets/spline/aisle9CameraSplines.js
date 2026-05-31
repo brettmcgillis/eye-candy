@@ -83,7 +83,7 @@ const pathPoints = PATH_COORDINATES.map(([x, y, z]) => ({
   position: V(x, y, z),
 }));
 
-const AISLE9_CAMERA_SPLINES = {
+export const AISLE9_CAMERA_SPLINES = {
   [DEFAULT_AISLE9_CAMERA_SPLINE]: {
     tension: 0.45,
     closed: true,

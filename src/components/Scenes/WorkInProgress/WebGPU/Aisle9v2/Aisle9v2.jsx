@@ -6,10 +6,9 @@ import CENTER_STORE_REF_POSITION from '../../../../elements/sevenEleven/sevenEle
 import CameraRig from '../../../../rigging/CameraRig';
 import BlackHoleHero from './components/BlackHoleHero';
 import OrbitingBodies from './components/OrbitingBodies';
-import SingularityParityEffects from './components/SingularityParityEffects';
+import PostEffects from './components/PostEffects';
 import SpaceEnvironment from './components/SpaceEnvironment';
 import StoreStage from './components/StoreStage';
-import SurveillanceOverlay from './components/SurveillanceOverlay';
 import useSceneControls from './hooks/useSceneControls';
 import {
   BLACK_HOLE_VARIANT_LEGACY_PORT,
@@ -136,6 +135,7 @@ export default function Aisle9v2() {
   const isSpace = config.environment === ENVIRONMENT_SPACE;
   const isSingularity =
     config.blackHoleVariant === BLACK_HOLE_VARIANT_SINGULARITY;
+  const bloomEnabled = isSingularity && config.bloomEnabled;
   const transformMatrix =
     !isSpace && storeSpace?.storeLocalToWorldMatrix
       ? storeSpace.storeLocalToWorldMatrix
@@ -168,6 +168,8 @@ export default function Aisle9v2() {
     () => ({ ...config, blackHolePosition, metricWorldScale }),
     [blackHolePosition, config, metricWorldScale]
   );
+  const shouldRenderPostEffects =
+    bloomEnabled || effectiveConfig.surveillanceOverlayEnabled;
   const cameraConfig = useMemo(
     () => ({
       autoFit: config.cameraAutoFit,
@@ -230,13 +232,16 @@ export default function Aisle9v2() {
       />
       <directionalLight color="#d9ecff" intensity={2.2} position={[4, 7, 5]} />
 
-      {isSingularity ? (
-        <SingularityParityEffects bloomEnabled={config.bloomEnabled} />
+      {shouldRenderPostEffects ? (
+        <PostEffects
+          bloomEnabled={bloomEnabled}
+          cameraLabel={effectiveConfig.surveillanceCameraLabel}
+          overlayEnabled={effectiveConfig.surveillanceOverlayEnabled}
+        />
       ) : null}
 
       <BlackHoleHero config={effectiveConfig} />
       <OrbitingBodies config={effectiveConfig} />
-      <SurveillanceOverlay config={effectiveConfig} />
     </>
   );
 }

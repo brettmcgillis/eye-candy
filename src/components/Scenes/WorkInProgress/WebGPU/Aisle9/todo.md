@@ -2,9 +2,11 @@
 
 # // Intent / Use Cases
 
-- The scene ports the WebGPU black hole study from the external example repo into Eye Candy's scene scaffold.
-- The scene should keep the original gravitational lensing, procedural star field, nebula layers, and bloom pass intact.
-- The scene should expose the imported black hole parameters through Leva so the look can be tuned and copied back into presets.
+- This scene includes a raymarched blackhole in the center of a convenience store, with several store items orbiting it.
+- The scene contains several camera positions that could be used to tell the story of a convenience store clerk who notices an anomaly in the middle of a shift.
+- The scene contains several fixed security cam views of the scene, with post processing overlay to resemble cctv
+- The scene contains a close up orbit view of the black hole so users can focus in on it,
+- The scene contains a camera spline path that allows the user to feel like they are walking through the store.
 
 # // TODO:
 
@@ -16,16 +18,34 @@
 
 - [x] Store
 - [x] Guided Tour
-- [x] Surveillance
-- [x] Space
+- [x] Surveillance 1
+- [x] Surveillance 2
+- [x] Surveillance 3
 
 # // Features
 
-- [x] WebGPU black hole raymarch shader
-
 # // Bugs
 
-- [ ] Audit the legacy control values that are currently exposed but not consumed by the ported shader/runtime
-- [ ] Fix disc visibility on Surveillance.
-- [ ] Fix disc visibility on Guided tour
-- [ ] Fix bodies visibility on Space2
+# // Controls
+
+- Aisle 9
+  - Presets
+  - Blackhole
+    - enabled
+    - variation dropdown
+    - legacy folder
+    - webgpu folder
+    - singularity folder
+  - Orbiting bodies
+    - enabled
+    - Orbit folder
+    - Body {n} folder
+      - scale (number)
+      - instances
+  - Sky
+    - enabled
+    - rotation vec3 control
+  - Post
+    - CCTV folder
+      - enabled
+      - label

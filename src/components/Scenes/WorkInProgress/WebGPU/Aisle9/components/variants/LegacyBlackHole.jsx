@@ -1,25 +1,25 @@
 import { uniform } from 'three/tsl';
 import * as THREE from 'three/webgpu';
 
-import React, { memo, useEffect, useMemo } from 'react';
+import React, { memo, useEffect, useMemo, useRef } from 'react';
 
 import { useTexture } from '@react-three/drei';
 import { useFrame } from '@react-three/fiber';
 
-import { ENVIRONMENT_SPACE } from '../../presets/presets';
 import createLegacyBlackHoleVolumeShader from '../../utils/createLegacyBlackHoleVolumeShader';
 
 const LEGACY_DEFAULTS = {
   gravityStrength: 1,
   stepCount: 100,
   diskBrightness: 0.9,
-  diskTemperature: 3900,
+  diskTemperature: 8000,
   dopplerStrength: 1,
   accretionMinRadius: 1.5,
   accretionWidth: 5,
   maxRevolutions: 2,
   starBrightness: 1,
   galaxyBrightness: 0.4,
+  useProceduralDisk: true,
 };
 
 const LEGACY_DISK_TEXTURE_PATH =
@@ -72,6 +72,9 @@ function createUniforms(config) {
     ),
     galaxyBrightness: uniform(
       config.legacyGalaxyBrightness ?? LEGACY_DEFAULTS.galaxyBrightness
+    ),
+    useProceduralDisk: uniform(
+      (config.legacyUseProceduralDisk ?? LEGACY_DEFAULTS.useProceduralDisk) ? 1 : 0
     ),
   };
 }
@@ -131,6 +134,7 @@ const LegacyBlackHole = memo(function LegacyBlackHole({ config }) {
   const position = config.blackHolePosition ?? { x: 0, y: 0, z: 0 };
   const metricWorldScale = config.metricWorldScale ?? 1;
   const lensRadius = config.legacyLensDiameter * metricWorldScale * 0.5;
+  const wasInsideRef = useRef(null);
 
   useEffect(() => {
     const coreRadius =
@@ -175,13 +179,9 @@ const LegacyBlackHole = memo(function LegacyBlackHole({ config }) {
       config.legacyStarBrightness ?? LEGACY_DEFAULTS.starBrightness;
     uniforms.galaxyBrightness.value =
       config.legacyGalaxyBrightness ?? LEGACY_DEFAULTS.galaxyBrightness;
-    uniforms.starBackgroundColor.value.set(
-      config.starBackgroundColor ?? '#03040a'
-    );
-    uniforms.useBackground.value =
-      config.environment === ENVIRONMENT_SPACE && config.legacyUseBackground
-        ? 1
-        : 0;
+    uniforms.useProceduralDisk.value =
+      (config.legacyUseProceduralDisk ?? LEGACY_DEFAULTS.useProceduralDisk) ? 1 : 0;
+    uniforms.useBackground.value = 0;
   }, [config, uniforms]);
 
   useEffect(() => {
@@ -198,7 +198,10 @@ const LegacyBlackHole = memo(function LegacyBlackHole({ config }) {
     const dz = state.camera.position.z - (position.z ?? 0);
     const isInside = dx * dx + dy * dy + dz * dz < lensRadius * lensRadius;
     uniforms.cameraInside.value = isInside ? 1 : 0;
-    material.side = isInside ? THREE.BackSide : THREE.FrontSide;
+    if (isInside !== wasInsideRef.current) {
+      material.side = isInside ? THREE.BackSide : THREE.FrontSide;
+      wasInsideRef.current = isInside;
+    }
   });
 
   return (
@@ -212,18 +215,14 @@ const LegacyBlackHole = memo(function LegacyBlackHole({ config }) {
         material={material}
         renderOrder={3}
       />
-      <mesh renderOrder={2}>
-        <sphereGeometry args={[1, 36, 24]} />
-        <meshBasicMaterial
-          color={config.legacyLensColor}
-          depthTest
-          depthWrite={false}
-          opacity={0.1}
-          transparent
-        />
-      </mesh>
     </group>
   );
 });
 
 export default LegacyBlackHole;
+
+useTexture.preload([
+  LEGACY_DISK_TEXTURE_PATH,
+  LEGACY_GALAXY_TEXTURE_PATH,
+  LEGACY_STAR_TEXTURE_PATH,
+]);

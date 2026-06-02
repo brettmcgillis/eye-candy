@@ -1,11 +1,10 @@
 import { uniform } from 'three/tsl';
 import * as THREE from 'three/webgpu';
 
-import React, { memo, useEffect, useMemo } from 'react';
+import React, { memo, useEffect, useMemo, useRef } from 'react';
 
 import { useFrame } from '@react-three/fiber';
 
-import { ENVIRONMENT_SPACE } from '../../presets/presets';
 import createWebGPUBlackHoleVolumeShader from '../../utils/createWebGPUBlackHoleVolumeShader';
 
 const WEBGPU_SOURCE_DEFAULTS = {
@@ -193,6 +192,7 @@ const WebGPUBlackHole = memo(function WebGPUBlackHole({ config }) {
   const position = config.blackHolePosition ?? { x: 0, y: 0, z: 0 };
   const metricWorldScale = config.metricWorldScale ?? 1;
   const lensRadius = config.webgpuLensDiameter * metricWorldScale * 0.5;
+  const wasInsideRef = useRef(null);
 
   useEffect(() => {
     const coreRadius =
@@ -271,47 +271,7 @@ const WebGPUBlackHole = memo(function WebGPUBlackHole({ config }) {
     uniforms.diskEdgeSoftnessOuter.value =
       config.webgpuDiskEdgeSoftnessOuter ??
       WEBGPU_SOURCE_DEFAULTS.diskEdgeSoftnessOuter;
-    uniforms.starsEnabled.value =
-      (config.webgpuStarsEnabled ?? WEBGPU_SOURCE_DEFAULTS.starsEnabled)
-        ? 1
-        : 0;
-    uniforms.nebulaEnabled.value =
-      (config.webgpuNebulaEnabled ?? WEBGPU_SOURCE_DEFAULTS.nebulaEnabled)
-        ? 1
-        : 0;
-    uniforms.starBackgroundColor.value.set(
-      config.starBackgroundColor ?? '#03040a'
-    );
-    uniforms.starDensity.value =
-      config.webgpuStarDensity ?? WEBGPU_SOURCE_DEFAULTS.starDensity;
-    uniforms.starSize.value =
-      config.webgpuStarSize ?? WEBGPU_SOURCE_DEFAULTS.starSize;
-    uniforms.starBrightness.value =
-      config.webgpuStarBrightness ?? WEBGPU_SOURCE_DEFAULTS.starBrightness;
-    uniforms.nebula1Scale.value =
-      config.webgpuNebula1Scale ?? WEBGPU_SOURCE_DEFAULTS.nebula1Scale;
-    uniforms.nebula1Density.value =
-      config.webgpuNebula1Density ?? WEBGPU_SOURCE_DEFAULTS.nebula1Density;
-    uniforms.nebula1Brightness.value =
-      config.webgpuNebula1Brightness ??
-      WEBGPU_SOURCE_DEFAULTS.nebula1Brightness;
-    uniforms.nebula1Color.value.set(
-      config.webgpuNebula1Color ?? WEBGPU_SOURCE_DEFAULTS.nebula1Color
-    );
-    uniforms.nebula2Scale.value =
-      config.webgpuNebula2Scale ?? WEBGPU_SOURCE_DEFAULTS.nebula2Scale;
-    uniforms.nebula2Density.value =
-      config.webgpuNebula2Density ?? WEBGPU_SOURCE_DEFAULTS.nebula2Density;
-    uniforms.nebula2Brightness.value =
-      config.webgpuNebula2Brightness ??
-      WEBGPU_SOURCE_DEFAULTS.nebula2Brightness;
-    uniforms.nebula2Color.value.set(
-      config.webgpuNebula2Color ?? WEBGPU_SOURCE_DEFAULTS.nebula2Color
-    );
-    uniforms.useBackground.value =
-      config.environment === ENVIRONMENT_SPACE && config.webgpuUseBackground
-        ? 1
-        : 0;
+    uniforms.useBackground.value = 0;
   }, [config, uniforms]);
 
   useEffect(() => {
@@ -328,7 +288,10 @@ const WebGPUBlackHole = memo(function WebGPUBlackHole({ config }) {
     const dz = state.camera.position.z - (position.z ?? 0);
     const isInside = dx * dx + dy * dy + dz * dz < lensRadius * lensRadius;
     uniforms.cameraInside.value = isInside ? 1 : 0;
-    material.side = isInside ? THREE.BackSide : THREE.FrontSide;
+    if (isInside !== wasInsideRef.current) {
+      material.side = isInside ? THREE.BackSide : THREE.FrontSide;
+      wasInsideRef.current = isInside;
+    }
   });
 
   return (
@@ -342,16 +305,6 @@ const WebGPUBlackHole = memo(function WebGPUBlackHole({ config }) {
         material={material}
         renderOrder={3}
       />
-      <mesh renderOrder={2}>
-        <sphereGeometry args={[1, 36, 24]} />
-        <meshBasicMaterial
-          color={config.webgpuLensColor}
-          depthTest
-          depthWrite={false}
-          opacity={0.1}
-          transparent
-        />
-      </mesh>
     </group>
   );
 });

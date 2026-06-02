@@ -28,9 +28,7 @@ const SPECIMEN_MODES = Object.freeze({
   strand: 'strand',
 });
 
-Object.values(ALPHA_TEXTURE_OPTIONS).forEach((path) => {
-  useTexture.preload(path);
-});
+useTexture.preload(Object.values(ALPHA_TEXTURE_OPTIONS));
 
 export default function Scene() {
   const controls = useSceneControls();

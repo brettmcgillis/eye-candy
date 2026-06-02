@@ -3,551 +3,399 @@ import { folder, useControls } from 'leva';
 import { useEffect, useMemo } from 'react';
 
 import usePresetsFolder from '../../../../../../hooks/usePresetsFolder';
-import AISLE9_CAMERA_SPLINES from '../../../../../../presets/spline/aisle9CameraSplines';
-import { DEFAULT_PRESET, PRESETS } from '../presets/presets';
+import {
+  BLACK_HOLE_VARIANT_LEGACY_PORT,
+  BLACK_HOLE_VARIANT_SINGULARITY,
+  BLACK_HOLE_VARIANT_WEBGPU,
+  CAMERA_MODE_FIXED,
+  CAMERA_MODE_ORBIT,
+  CAMERA_MODE_SPLINE,
+  DEFAULT_PRESET,
+  PRESETS,
+  STORE_VARIANT_FULL,
+  STORE_VARIANT_LOW_POLY,
+  getPresetControls,
+} from '../presets/presets';
 
-const C = { collapsed: true };
-const CAMERA_MODE_PATH = 'Aisle 9.Camera.cameraMode';
-
-const QUALITY_PRESET_OPTIONS = {
-  Low: 'low',
-  Medium: 'medium',
-  High: 'high',
-};
+const COLLAPSED = { collapsed: true };
 
 const CAMERA_MODE_OPTIONS = {
-  Fixed: 'fixed',
-  Orbit: 'orbit',
-  'Spline Motion': 'spline',
+  Orbit: CAMERA_MODE_ORBIT,
+  Fixed: CAMERA_MODE_FIXED,
+  'Guided Path': CAMERA_MODE_SPLINE,
 };
 
-const PRESENTATION_MODE_OPTIONS = {
-  'Store Warp': 'storeWarp',
-  'Source Background': 'backgroundField',
+const FIXED_CAMERA_OPTIONS = {
+  'CAM 01': 'surveillance1',
+  'CAM 02': 'surveillance2',
+  'CAM 03': 'surveillance3',
 };
 
-const CAMERA_MODE_KEYS = ['cameraMode'];
-
-const CAMERA_SCALAR_KEYS = [
-  'cameraFov',
-  'cameraMobileFov',
-  'cameraNear',
-  'cameraFar',
-  'cameraAutoRotate',
-  'cameraMinDistance',
-  'cameraMaxDistance',
-  'cameraRotateSpeed',
-  'cameraDampingFactor',
-];
-
-const CAMERA_KEYS = [...CAMERA_SCALAR_KEYS, 'cameraPosition', 'cameraTarget'];
-
-const CAMERA_MOBILE_KEYS = ['cameraMobilePosition', 'cameraMobileTarget'];
-
-const CAMERA_FIXED_KEYS = ['fixedCameraPosition', 'fixedCameraTarget'];
-
-const CAMERA_FIXED_MOBILE_KEYS = [
-  'fixedCameraMobilePosition',
-  'fixedCameraMobileTarget',
-];
-
-const CAMERA_SPLINE_KEYS = [
-  'cameraSplinePreset',
-  'cameraSplinePosition',
-  'cameraSplineScale',
-  'cameraSplineDuration',
-  'cameraSplineTension',
-  'cameraSplineLookAt',
-];
-
-const BLACK_HOLE_KEYS = [
-  'presentationMode',
-  'blackHoleMass',
-  'gravitationalLensing',
-  'dopplerStrength',
-  'stepSize',
-];
-
-const BLACK_HOLE_TRANSFORM_KEYS = [
-  'blackHolePosition',
-  'blackHoleRotation',
-  'blackHoleScale',
-];
-
-const DISK_GEOMETRY_KEYS = ['diskInnerRadius', 'diskOuterRadius'];
-
-const DISK_APPEARANCE_KEYS = [
-  'diskBrightness',
-  'diskOpacity',
-  'diskOpacityFloor',
-  'diskTemperature',
-  'temperatureFalloff',
-  'diskEdgeSoftnessInner',
-  'diskEdgeSoftnessOuter',
-  'diskInnerColor',
-  'diskMidColor',
-  'diskOuterColor',
-  'diskTintStrength',
-];
-
-const TURBULENCE_KEYS = [
-  'diskRotationSpeed',
-  'turbulenceScale',
-  'turbulenceStretch',
-  'turbulenceSharpness',
-  'turbulenceCycleTime',
-  'turbulenceLacunarity',
-  'turbulencePersistence',
-];
-
-const STARS_KEYS = [
-  'starsEnabled',
-  'starBackgroundColor',
-  'starDensity',
-  'starSize',
-  'starBrightness',
-];
-
-const NEBULA_LAYER_1_KEYS = [
-  'nebulaEnabled',
-  'nebula1Scale',
-  'nebula1Density',
-  'nebula1Brightness',
-  'nebula1Color',
-];
-
-const NEBULA_LAYER_2_KEYS = [
-  'nebula2Scale',
-  'nebula2Density',
-  'nebula2Brightness',
-  'nebula2Color',
-];
-
-const BLOOM_KEYS = [
-  'bloomEnabled',
-  'bloomStrength',
-  'bloomRadius',
-  'bloomThreshold',
-  'bloomDownSampleRatio',
-];
-
-const SURVEILLANCE_KEYS = [
-  'surveillanceFxEnabled',
-  'surveillanceOverlayEnabled',
-  'surveillanceCameraLabel',
-  'surveillanceDesaturation',
-  'surveillanceNoiseAmount',
-  'surveillanceScanlineStrength',
-  'surveillanceScanlineDensity',
-  'surveillanceVignette',
-  'surveillanceRollingBandStrength',
-  'surveillanceHudOpacity',
-];
-
-const STORE_KEYS = ['storeScale'];
-
-const STORE_TRANSFORM_KEYS = ['storePosition', 'storeRotation'];
-
-const BODY_FIELDS = [
-  'Enabled',
-  'Color',
-  'Size',
-  'OrbitRadius',
-  'OrbitSpeed',
-  'OrbitPhase',
-  'Height',
-];
-
-const bodyKeys = (index) => BODY_FIELDS.map((field) => `body${index}${field}`);
-
-const BODY_1_KEYS = bodyKeys(1);
-const BODY_2_KEYS = bodyKeys(2);
-const BODY_3_KEYS = bodyKeys(3);
-const BODY_KEYS = [...BODY_1_KEYS, ...BODY_2_KEYS, ...BODY_3_KEYS];
-
-const BODY_FIELD_SCHEMA = {
-  Enabled: { label: 'Enabled' },
-  Color: { label: 'Color' },
-  Size: { label: 'Size', min: 0.2, max: 4, step: 0.1 },
-  OrbitRadius: { label: 'Orbit Radius', min: 2, max: 30, step: 0.1 },
-  OrbitSpeed: { label: 'Orbit Speed', min: -3, max: 3, step: 0.01 },
-  OrbitPhase: { label: 'Orbit Phase', min: 0, max: 360, step: 1 },
-  Height: { label: 'Height', min: -8, max: 8, step: 0.1 },
+const STORE_VARIANT_OPTIONS = {
+  Full: STORE_VARIANT_FULL,
+  'Low Poly': STORE_VARIANT_LOW_POLY,
 };
 
-const EXPLICIT_KEYS = new Set([
-  ...CAMERA_MODE_KEYS,
-  ...CAMERA_KEYS,
-  ...CAMERA_MOBILE_KEYS,
-  ...CAMERA_FIXED_KEYS,
-  ...CAMERA_FIXED_MOBILE_KEYS,
-  ...CAMERA_SPLINE_KEYS,
-  ...BLACK_HOLE_KEYS,
-  ...BLACK_HOLE_TRANSFORM_KEYS,
-  ...DISK_GEOMETRY_KEYS,
-  ...DISK_APPEARANCE_KEYS,
-  ...TURBULENCE_KEYS,
-  ...STARS_KEYS,
-  ...NEBULA_LAYER_1_KEYS,
-  ...NEBULA_LAYER_2_KEYS,
-  ...BLOOM_KEYS,
-  ...SURVEILLANCE_KEYS,
-  ...STORE_KEYS,
-  ...STORE_TRANSFORM_KEYS,
-  ...BODY_KEYS,
-]);
-
-const CONTROL_SCHEMA = {
-  cameraMode: {
-    label: 'Mode',
-    options: CAMERA_MODE_OPTIONS,
-  },
-  cameraFov: { label: 'FOV', min: 20, max: 100, step: 1 },
-  cameraMobileFov: { label: 'Mobile FOV', min: 20, max: 100, step: 1 },
-  cameraNear: { label: 'Near', min: 0.01, max: 10, step: 0.01 },
-  cameraFar: { label: 'Far', min: 50, max: 5000, step: 10 },
-  cameraAutoRotate: { label: 'Auto Rotate' },
-  cameraPosition: { label: 'Position', min: -50, max: 200, step: 0.1 },
-  cameraTarget: { label: 'Target', min: -20, max: 20, step: 0.1 },
-  cameraMobilePosition: {
-    label: 'Mobile Position',
-    min: -50,
-    max: 200,
-    step: 0.1,
-  },
-  cameraMobileTarget: {
-    label: 'Mobile Target',
-    min: -20,
-    max: 20,
-    step: 0.1,
-  },
-  cameraMinDistance: {
-    label: 'Min Distance',
-    min: 1,
-    max: 50,
-    step: 0.1,
-  },
-  cameraMaxDistance: {
-    label: 'Max Distance',
-    min: 5,
-    max: 400,
-    step: 0.5,
-  },
-  cameraRotateSpeed: {
-    label: 'Rotate Speed',
-    min: -5,
-    max: 5,
-    step: 0.05,
-  },
-  cameraDampingFactor: {
-    label: 'Damping',
-    min: 0,
-    max: 0.2,
-    step: 0.005,
-  },
-  fixedCameraPosition: {
-    label: 'Position',
-    min: -100,
-    max: 100,
-    step: 0.1,
-  },
-  fixedCameraTarget: {
-    label: 'Target',
-    min: -100,
-    max: 100,
-    step: 0.1,
-  },
-  fixedCameraMobilePosition: {
-    label: 'Mobile Position',
-    min: -100,
-    max: 100,
-    step: 0.1,
-  },
-  fixedCameraMobileTarget: {
-    label: 'Mobile Target',
-    min: -100,
-    max: 100,
-    step: 0.1,
-  },
-  cameraSplinePreset: {
-    label: 'Path',
-    options: Object.keys(AISLE9_CAMERA_SPLINES),
-  },
-  cameraSplinePosition: {
-    label: 'Position',
-    min: -100,
-    max: 100,
-    step: 0.1,
-  },
-  cameraSplineScale: {
-    label: 'Scale',
-    min: 0.1,
-    max: 5,
-    step: 0.1,
-  },
-  cameraSplineDuration: {
-    label: 'Loop Duration (s)',
-    min: 5,
-    max: 120,
-    step: 1,
-  },
-  cameraSplineTension: {
-    label: 'Curve Tension',
-    min: 0,
-    max: 1,
-    step: 0.1,
-  },
-  cameraSplineLookAt: {
-    label: 'Look At',
-    min: -100,
-    max: 100,
-    step: 0.1,
-  },
-  presentationMode: {
-    label: 'Presentation',
-    options: PRESENTATION_MODE_OPTIONS,
-  },
-  blackHoleMass: { label: 'Mass', min: 0.1, max: 3, step: 0.1 },
-  gravitationalLensing: {
-    label: 'Grav. Lensing',
-    min: 0.5,
-    max: 3,
-    step: 0.1,
-  },
-  dopplerStrength: {
-    label: 'Doppler',
-    min: 0,
-    max: 2,
-    step: 0.1,
-  },
-  stepSize: { label: 'Step Size', min: 0.05, max: 2, step: 0.05 },
-  blackHolePosition: {
-    label: 'Position',
-    min: -100,
-    max: 100,
-    step: 0.1,
-  },
-  blackHoleRotation: {
-    label: 'Rotation (deg)',
-    min: -180,
-    max: 180,
-    step: 1,
-  },
-  blackHoleScale: {
-    label: 'Scale',
-    min: 0.1,
-    max: 20,
-    step: 0.1,
-  },
-  diskInnerRadius: { label: 'Inner Radius', min: 2, max: 5, step: 0.1 },
-  diskOuterRadius: { label: 'Outer Radius', min: 6, max: 20, step: 0.5 },
-  diskBrightness: { label: 'Brightness', min: 0.5, max: 8, step: 0.1 },
-  diskOpacity: { label: 'Opacity', min: 0, max: 2, step: 0.01 },
-  diskOpacityFloor: { label: 'Opacity Floor', min: 0, max: 1, step: 0.01 },
-  diskTemperature: { label: 'Peak Temp', min: 1, max: 50, step: 1 },
-  temperatureFalloff: {
-    label: 'Temp Falloff',
-    min: 0.25,
-    max: 15,
-    step: 0.01,
-  },
-  diskEdgeSoftnessInner: {
-    label: 'Inner Softness',
-    min: 0,
-    max: 0.5,
-    step: 0.01,
-  },
-  diskEdgeSoftnessOuter: {
-    label: 'Outer Softness',
-    min: 0,
-    max: 0.5,
-    step: 0.01,
-  },
-  diskInnerColor: { label: 'Inner Color' },
-  diskMidColor: { label: 'Mid Color' },
-  diskOuterColor: { label: 'Outer Color' },
-  diskTintStrength: {
-    label: 'Tint Strength',
-    min: 0,
-    max: 1,
-    step: 0.01,
-  },
-  diskRotationSpeed: {
-    label: 'Rotation Speed',
-    min: -20,
-    max: 20,
-    step: 0.1,
-  },
-  turbulenceScale: { label: 'Scale', min: 0.1, max: 2, step: 0.01 },
-  turbulenceStretch: {
-    label: 'Stretch',
-    min: 0.1,
-    max: 10,
-    step: 0.01,
-  },
-  turbulenceSharpness: {
-    label: 'Sharpness',
-    min: 0.1,
-    max: 10,
-    step: 0.1,
-  },
-  turbulenceCycleTime: {
-    label: 'Cycle Time',
-    min: 5,
-    max: 30,
-    step: 1,
-  },
-  turbulenceLacunarity: {
-    label: 'Lacunarity',
-    min: 1,
-    max: 4,
-    step: 0.1,
-  },
-  turbulencePersistence: {
-    label: 'Persistence',
-    min: 0.1,
-    max: 1,
-    step: 0.05,
-  },
-  starsEnabled: { label: 'Enable Stars' },
-  starBackgroundColor: { label: 'Backdrop' },
-  starDensity: { label: 'Density', min: 0.001, max: 0.1, step: 0.001 },
-  starSize: { label: 'Size', min: 0.5, max: 5, step: 0.1 },
-  starBrightness: { label: 'Brightness', min: 0.1, max: 3, step: 0.1 },
-  nebulaEnabled: { label: 'Enable Nebula' },
-  nebula1Scale: { label: 'Scale', min: 0.5, max: 10, step: 0.5 },
-  nebula1Density: { label: 'Density', min: -1, max: 1, step: 0.05 },
-  nebula1Brightness: {
-    label: 'Brightness',
-    min: 0,
-    max: 1,
-    step: 0.01,
-  },
-  nebula1Color: { label: 'Color' },
-  nebula2Scale: { label: 'Scale', min: 0.5, max: 20, step: 0.5 },
-  nebula2Density: { label: 'Density', min: -1, max: 1, step: 0.05 },
-  nebula2Brightness: {
-    label: 'Brightness',
-    min: 0,
-    max: 1,
-    step: 0.01,
-  },
-  nebula2Color: { label: 'Color' },
-  bloomEnabled: { label: 'Enabled' },
-  bloomStrength: { label: 'Strength', min: 0, max: 3, step: 0.01 },
-  bloomRadius: { label: 'Radius', min: 0, max: 1, step: 0.01 },
-  bloomThreshold: { label: 'Threshold', min: 0, max: 1, step: 0.01 },
-  bloomDownSampleRatio: {
-    label: 'Downsample',
-    options: { '1x': 1, '2x': 2, '4x': 4 },
-  },
-  surveillanceFxEnabled: { label: 'Enable FX' },
-  surveillanceOverlayEnabled: { label: 'Show HUD' },
-  surveillanceCameraLabel: { label: 'Camera Label' },
-  surveillanceDesaturation: {
-    label: 'Desaturation',
-    min: 0,
-    max: 1,
-    step: 0.01,
-  },
-  surveillanceNoiseAmount: {
-    label: 'Noise',
-    min: 0,
-    max: 0.2,
-    step: 0.001,
-  },
-  surveillanceScanlineStrength: {
-    label: 'Scanlines',
-    min: 0,
-    max: 1,
-    step: 0.01,
-  },
-  surveillanceScanlineDensity: {
-    label: 'Line Density',
-    min: 120,
-    max: 1800,
-    step: 10,
-  },
-  surveillanceVignette: {
-    label: 'Vignette',
-    min: 0,
-    max: 1,
-    step: 0.01,
-  },
-  surveillanceRollingBandStrength: {
-    label: 'Rolling Band',
-    min: 0,
-    max: 1,
-    step: 0.01,
-  },
-  surveillanceHudOpacity: {
-    label: 'HUD Opacity',
-    min: 0,
-    max: 1,
-    step: 0.01,
-  },
-  storeScale: {
-    label: 'Store Scale',
-    min: 50,
-    max: 1000,
-    step: 1,
-  },
-  storePosition: {
-    label: 'Position',
-    min: -100,
-    max: 100,
-    step: 0.1,
-  },
-  storeRotation: {
-    label: 'Rotation (deg)',
-    min: -180,
-    max: 180,
-    step: 1,
-  },
+const BLACK_HOLE_VARIANT_OPTIONS = {
+  'Legacy Port': BLACK_HOLE_VARIANT_LEGACY_PORT,
+  'WebGPU Black Hole': BLACK_HOLE_VARIANT_WEBGPU,
+  Singularity: BLACK_HOLE_VARIANT_SINGULARITY,
 };
 
-function humanizeKey(key) {
-  return key
-    .replace(/([a-z0-9])([A-Z])/g, '$1 $2')
-    .replace(/^./, (char) => char.toUpperCase());
-}
-
-function getPresetControls({ presetSnapshot }) {
-  return { ...presetSnapshot };
-}
-
-function createControl(key, value) {
-  if (key === 'qualityPreset') {
-    return {
-      label: 'Quality Preset',
-      value,
-      options: QUALITY_PRESET_OPTIONS,
-    };
-  }
-
-  const bodyMatch = key.match(/^body\d(.+)$/);
-  const schema = bodyMatch
-    ? BODY_FIELD_SCHEMA[bodyMatch[1]] || {}
-    : CONTROL_SCHEMA[key] || {};
+function buildLegacyControls(initialSnapshot) {
   return {
-    label: schema.label || humanizeKey(key),
-    value,
-    ...schema,
+    legacyUseProceduralDisk: {
+      label: 'Procedural Disk',
+      value: initialSnapshot.legacyUseProceduralDisk ?? true,
+    },
+    legacyBlackHoleDiameter: {
+      label: 'Core Diameter (m)',
+      value: initialSnapshot.legacyBlackHoleDiameter,
+      min: 0.08,
+      max: 0.8,
+      step: 0.001,
+    },
+    legacyDiskDiameter: {
+      label: 'Disk Diameter (m)',
+      value: initialSnapshot.legacyDiskDiameter,
+      min: 0.35,
+      max: 2.4,
+      step: 0.01,
+    },
+    legacyLensDiameter: {
+      label: 'Lens Diameter',
+      value: initialSnapshot.legacyLensDiameter,
+      min: 0.5,
+      max: 3.5,
+      step: 0.01,
+    },
+
+    legacyGravityStrength: {
+      label: 'Gravity',
+      value: initialSnapshot.legacyGravityStrength,
+      min: 0.2,
+      max: 2.4,
+      step: 0.01,
+    },
+    legacyStepCount: {
+      label: 'Step Count',
+      value: initialSnapshot.legacyStepCount,
+      min: 48,
+      max: 256,
+      step: 1,
+    },
+    legacyDiskBrightness: {
+      label: 'Disk Brightness',
+      value: initialSnapshot.legacyDiskBrightness,
+      min: 0,
+      max: 4,
+      step: 0.01,
+    },
+    legacyDiskTemperature: {
+      label: 'Disk Temp (K)',
+      value: initialSnapshot.legacyDiskTemperature,
+      min: 1800,
+      max: 16000,
+      step: 10,
+    },
+    legacyDopplerStrength: {
+      label: 'Doppler',
+      value: initialSnapshot.legacyDopplerStrength,
+      min: 0,
+      max: 2,
+      step: 0.01,
+    },
+    legacyAccretionMinRadius: {
+      label: 'Disk Inner Radius',
+      value: initialSnapshot.legacyAccretionMinRadius ?? 1.5,
+      min: 0.5,
+      max: 4,
+      step: 0.01,
+    },
+    legacyAccretionWidth: {
+      label: 'Disk Width',
+      value: initialSnapshot.legacyAccretionWidth ?? 5,
+      min: 0.5,
+      max: 8,
+      step: 0.01,
+    },
+    legacyMaxRevolutions: {
+      label: 'Max Revolutions',
+      value: initialSnapshot.legacyMaxRevolutions ?? 2,
+      min: 0.5,
+      max: 4,
+      step: 0.01,
+    },
+    legacyStarBrightness: {
+      label: 'Star Brightness',
+      value: initialSnapshot.legacyStarBrightness ?? 1,
+      min: 0,
+      max: 3,
+      step: 0.01,
+    },
+    legacyGalaxyBrightness: {
+      label: 'Galaxy Brightness',
+      value: initialSnapshot.legacyGalaxyBrightness ?? 0.4,
+      min: 0,
+      max: 2,
+      step: 0.01,
+    },
   };
 }
 
-function createFolderControls(keys, preset) {
-  return Object.fromEntries(
-    keys.map((key) => [key, createControl(key, preset[key])])
-  );
+function buildWebGPUControls(initialSnapshot) {
+  return {
+    webgpuBlackHoleDiameter: {
+      label: 'Core Diameter (m)',
+      value: initialSnapshot.webgpuBlackHoleDiameter,
+      min: 0.08,
+      max: 0.8,
+      step: 0.001,
+    },
+    webgpuDiskDiameter: {
+      label: 'Disk Diameter (m)',
+      value: initialSnapshot.webgpuDiskDiameter,
+      min: 0.35,
+      max: 2.4,
+      step: 0.01,
+    },
+    webgpuLensDiameter: {
+      label: 'Lens Diameter',
+      value: initialSnapshot.webgpuLensDiameter,
+      min: 0.5,
+      max: 3.5,
+      step: 0.01,
+    },
+    webgpuMass: {
+      label: 'Mass',
+      value: initialSnapshot.webgpuMass,
+      min: 0.05,
+      max: 2,
+      step: 0.01,
+    },
+    webgpuDiskInnerRadius: {
+      label: 'Inner Radius',
+      value:
+        initialSnapshot.webgpuDiskInnerRadius ??
+        (initialSnapshot.webgpuDiskOuterRadius ?? 14.5) * (4.1 / 14.5),
+      min: 2,
+      max: 8,
+      step: 0.01,
+    },
+    webgpuDiskOuterRadius: {
+      label: 'Outer Radius',
+      value: initialSnapshot.webgpuDiskOuterRadius ?? 14.5,
+      min: 6,
+      max: 20,
+      step: 0.1,
+    },
+    webgpuDiskBrightness: {
+      label: 'Disk Brightness',
+      value: initialSnapshot.webgpuDiskBrightness,
+      min: 0,
+      max: 8,
+      step: 0.01,
+    },
+    webgpuTemperature: {
+      label: 'Peak Temp (kK)',
+      value: initialSnapshot.webgpuTemperature,
+      min: 1,
+      max: 60,
+      step: 0.01,
+    },
+    webgpuTemperatureFalloff: {
+      label: 'Temp Falloff',
+      value: initialSnapshot.webgpuTemperatureFalloff ?? 5.22,
+      min: 0.25,
+      max: 15,
+      step: 0.01,
+    },
+    webgpuLensingStrength: {
+      label: 'Lensing',
+      value: initialSnapshot.webgpuLensingStrength,
+      min: 0.2,
+      max: 4,
+      step: 0.01,
+    },
+    webgpuDopplerStrength: {
+      label: 'Doppler',
+      value: initialSnapshot.webgpuDopplerStrength ?? 1,
+      min: 0,
+      max: 2,
+      step: 0.01,
+    },
+    webgpuRotationSpeed: {
+      label: 'Rotation Speed',
+      value: initialSnapshot.webgpuRotationSpeed ?? -8.7,
+      min: -20,
+      max: 20,
+      step: 0.01,
+    },
+    webgpuStepCount: {
+      label: 'Step Count',
+      value: initialSnapshot.webgpuStepCount,
+      min: 24,
+      max: 192,
+      step: 1,
+    },
+    webgpuStepSize: {
+      label: 'Step Size',
+      value: initialSnapshot.webgpuStepSize,
+      min: 0.05,
+      max: 2,
+      step: 0.001,
+    },
+    webgpuTurbulenceScale: {
+      label: 'Turbulence Scale',
+      value: initialSnapshot.webgpuTurbulenceScale ?? 1.81,
+      min: 0.1,
+      max: 4,
+      step: 0.01,
+    },
+    webgpuTurbulenceStretch: {
+      label: 'Arc Stretch',
+      value: initialSnapshot.webgpuTurbulenceStretch ?? 0.75,
+      min: 0.1,
+      max: 10,
+      step: 0.01,
+    },
+    webgpuTurbulenceSharpness: {
+      label: 'Sharpness',
+      value: initialSnapshot.webgpuTurbulenceSharpness ?? 7.4,
+      min: 0.1,
+      max: 10,
+      step: 0.01,
+    },
+    webgpuTurbulenceCycleTime: {
+      label: 'Cycle Time',
+      value: initialSnapshot.webgpuTurbulenceCycleTime ?? 5,
+      min: 1,
+      max: 30,
+      step: 0.1,
+    },
+    webgpuTurbulenceLacunarity: {
+      label: 'Lacunarity',
+      value: initialSnapshot.webgpuTurbulenceLacunarity ?? 3,
+      min: 1,
+      max: 4,
+      step: 0.01,
+    },
+    webgpuTurbulencePersistence: {
+      label: 'Persistence',
+      value: initialSnapshot.webgpuTurbulencePersistence ?? 0.8,
+      min: 0.1,
+      max: 1,
+      step: 0.01,
+    },
+    webgpuDiskEdgeSoftnessInner: {
+      label: 'Inner Softness',
+      value: initialSnapshot.webgpuDiskEdgeSoftnessInner ?? 0.18,
+      min: 0,
+      max: 0.5,
+      step: 0.01,
+    },
+    webgpuDiskEdgeSoftnessOuter: {
+      label: 'Outer Softness',
+      value: initialSnapshot.webgpuDiskEdgeSoftnessOuter ?? 0.5,
+      min: 0,
+      max: 0.5,
+      step: 0.01,
+    },
+  };
 }
 
-function createLegacyControls(preset) {
-  return Object.fromEntries(
-    Object.entries(preset)
-      .filter(([key]) => !EXPLICIT_KEYS.has(key))
-      .map(([key, value]) => [key, createControl(key, value)])
-  );
+function buildSingularityControls(initialSnapshot) {
+  return {
+    singularityLensDiameter: {
+      label: 'Lens Diameter',
+      value: initialSnapshot.singularityLensDiameter,
+      min: 0.5,
+      max: 3.5,
+      step: 0.01,
+    },
+    singularityIterations: {
+      label: 'Iterations',
+      value: initialSnapshot.singularityIterations,
+      min: 32,
+      max: 256,
+      step: 1,
+    },
+    singularityStepSize: {
+      label: 'Step Size',
+      value: initialSnapshot.singularityStepSize,
+      min: 0.001,
+      max: 0.05,
+      step: 0.001,
+    },
+    singularityPower: {
+      label: 'Power',
+      value: initialSnapshot.singularityPower,
+      min: 0,
+      max: 1,
+      step: 0.01,
+    },
+    singularityOriginRadius: {
+      label: 'Origin Radius',
+      value: initialSnapshot.singularityOriginRadius,
+      min: 0.01,
+      max: 0.5,
+      step: 0.001,
+    },
+    singularityBandWidth: {
+      label: 'Band Width',
+      value: initialSnapshot.singularityBandWidth,
+      min: 0.005,
+      max: 0.3,
+      step: 0.001,
+    },
+    singularityFieldScale: {
+      label: 'Field Scale',
+      value: initialSnapshot.singularityFieldScale ?? 3.8,
+      min: 0.5,
+      max: 12,
+      step: 0.1,
+    },
+    singularityRampPos1: {
+      label: 'Ramp Pos 1',
+      value: initialSnapshot.singularityRampPos1 ?? 0.05,
+      min: 0,
+      max: 1,
+      step: 0.001,
+    },
+    singularityRampPos2: {
+      label: 'Ramp Pos 2',
+      value: initialSnapshot.singularityRampPos2 ?? 0.425,
+      min: 0,
+      max: 1,
+      step: 0.001,
+    },
+    singularityRampPos3: {
+      label: 'Ramp Pos 3',
+      value: initialSnapshot.singularityRampPos3 ?? 1,
+      min: 0,
+      max: 1,
+      step: 0.001,
+    },
+    singularityRampColor1: {
+      label: 'Ramp 1',
+      value: initialSnapshot.singularityRampColor1,
+    },
+    singularityRampColor2: {
+      label: 'Ramp 2',
+      value: initialSnapshot.singularityRampColor2,
+    },
+    singularityRampColor3: {
+      label: 'Ramp 3',
+      value: initialSnapshot.singularityRampColor3,
+    },
+    singularityEmissionStrength: {
+      label: 'Emission',
+      value: initialSnapshot.singularityEmissionStrength,
+      min: 0,
+      max: 6,
+      step: 0.01,
+    },
+  };
 }
 
 export default function useSceneControls() {
@@ -561,129 +409,126 @@ export default function useSceneControls() {
     getPresetControls,
     presets: PRESETS,
   });
+  const initialSnapshot = PRESETS[initialPreset] || PRESETS[DEFAULT_PRESET];
 
-  const presetSnapshot = useMemo(
-    () => PRESETS[initialPreset] || PRESETS[DEFAULT_PRESET],
-    [initialPreset]
-  );
-
-  const presetControls = useMemo(
-    () => getPresetControls({ presetSnapshot }),
-    [presetSnapshot]
-  );
-
-  const [controls, setControls] = useControls(
-    'Aisle 9',
-    () => ({
-      Presets: presetsFolder,
-      Camera: folder(
-        {
-          ...createFolderControls(CAMERA_MODE_KEYS, presetControls),
-          ...createFolderControls(CAMERA_KEYS, presetControls),
-          'Viewport Fit': folder(
-            createFolderControls(CAMERA_MOBILE_KEYS, presetControls),
-            C
-          ),
-          'Fixed Camera': folder(
-            {
-              ...createFolderControls(CAMERA_FIXED_KEYS, presetControls),
-              'Viewport Fit': folder(
-                createFolderControls(CAMERA_FIXED_MOBILE_KEYS, presetControls),
-                C
-              ),
-            },
-            {
-              collapsed: true,
-              render: (get) => get(CAMERA_MODE_PATH) === 'fixed',
-            }
-          ),
-          'Spline Motion': folder(
-            createFolderControls(CAMERA_SPLINE_KEYS, presetControls),
-            {
-              collapsed: true,
-              render: (get) => get(CAMERA_MODE_PATH) === 'spline',
-            }
-          ),
+  const [controls, setControls] = useControls('Aisle 9 v2', () => ({
+    Presets: presetsFolder,
+    Scene: folder(
+      {
+        cameraMode: {
+          label: 'Camera Mode',
+          value: initialSnapshot.cameraMode,
+          options: CAMERA_MODE_OPTIONS,
         },
-        C
-      ),
-      BlackHole: folder(
-        {
-          ...createFolderControls(BLACK_HOLE_KEYS, presetControls),
-          Transform: folder(
-            createFolderControls(BLACK_HOLE_TRANSFORM_KEYS, presetControls),
-            C
-          ),
+        fixedCameraShot: {
+          label: 'Fixed Camera',
+          value: initialSnapshot.fixedCameraShot,
+          options: FIXED_CAMERA_OPTIONS,
         },
-        C
-      ),
-      Bodies: folder(
-        {
-          'Body 1': folder(
-            createFolderControls(BODY_1_KEYS, presetControls),
-            C
-          ),
-          'Body 2': folder(
-            createFolderControls(BODY_2_KEYS, presetControls),
-            C
-          ),
-          'Body 3': folder(
-            createFolderControls(BODY_3_KEYS, presetControls),
-            C
-          ),
+        blackHoleVariant: {
+          label: 'Hero Variant',
+          value: initialSnapshot.blackHoleVariant,
+          options: BLACK_HOLE_VARIANT_OPTIONS,
         },
-        C
-      ),
-      Disk: folder(
-        {
-          Geometry: folder(
-            createFolderControls(DISK_GEOMETRY_KEYS, presetControls),
-            C
-          ),
-          Appearance: folder(
-            createFolderControls(DISK_APPEARANCE_KEYS, presetControls),
-            C
-          ),
-          Turbulence: folder(
-            createFolderControls(TURBULENCE_KEYS, presetControls),
-            C
-          ),
+        storeVariant: {
+          label: 'Store Model',
+          value: initialSnapshot.storeVariant,
+          options: STORE_VARIANT_OPTIONS,
         },
-        C
-      ),
-      Stars: folder(createFolderControls(STARS_KEYS, presetControls), C),
-      Nebula: folder(
-        {
-          Layer1: folder(
-            createFolderControls(NEBULA_LAYER_1_KEYS, presetControls),
-            C
-          ),
-          Layer2: folder(
-            createFolderControls(NEBULA_LAYER_2_KEYS, presetControls),
-            C
-          ),
+        skyboxRotationX: {
+          label: 'Sky Rot X',
+          value: initialSnapshot.skyboxRotationX,
+          min: -180,
+          max: 180,
+          step: 1,
         },
-        C
-      ),
-      Store: folder(
-        {
-          ...createFolderControls(STORE_KEYS, presetControls),
-          Transform: folder(
-            createFolderControls(STORE_TRANSFORM_KEYS, presetControls),
-            C
-          ),
+        skyboxRotationY: {
+          label: 'Sky Rot Y',
+          value: initialSnapshot.skyboxRotationY,
+          min: -180,
+          max: 180,
+          step: 1,
         },
-        C
-      ),
-      Bloom: folder(createFolderControls(BLOOM_KEYS, presetControls), C),
-      Surveillance: folder(
-        createFolderControls(SURVEILLANCE_KEYS, presetControls),
-        C
-      ),
-      Legacy: folder(createLegacyControls(presetControls), C),
-    }),
-    { collapsed: true }
-  );
+        skyboxRotationZ: {
+          label: 'Sky Rot Z',
+          value: initialSnapshot.skyboxRotationZ,
+          min: -180,
+          max: 180,
+          step: 1,
+        },
+      },
+      COLLAPSED
+    ),
+    Store: folder(
+      {
+        storeScale: {
+          label: 'Store Scale',
+          value: initialSnapshot.storeScale,
+          min: 260,
+          max: 560,
+          step: 1,
+        },
+        storePosition: {
+          label: 'Store Position',
+          value: initialSnapshot.storePosition,
+        },
+        storeRotation: {
+          label: 'Store Rotation',
+          value: initialSnapshot.storeRotation,
+        },
+      },
+      COLLAPSED
+    ),
+    'Legacy Port': folder(buildLegacyControls(initialSnapshot), COLLAPSED),
+    'WebGPU Black Hole': folder(
+      buildWebGPUControls(initialSnapshot),
+      COLLAPSED
+    ),
+    Singularity: folder(buildSingularityControls(initialSnapshot), COLLAPSED),
+    Bodies: folder(
+      {
+        bodyOrbitRadius: {
+          label: 'Orbit Radius',
+          value: initialSnapshot.bodyOrbitRadius,
+          min: 0.35,
+          max: 3.2,
+          step: 0.01,
+        },
+        bodyOrbitHeight: {
+          label: 'Orbit Height',
+          value: initialSnapshot.bodyOrbitHeight,
+          min: -1,
+          max: 1,
+          step: 0.01,
+        },
+        bodyOrbitSpeed: {
+          label: 'Orbit Speed',
+          value: initialSnapshot.bodyOrbitSpeed,
+          min: -1.5,
+          max: 1.5,
+          step: 0.01,
+        },
+      },
+      COLLAPSED
+    ),
+    Post: folder(
+      {
+        bloomEnabled: {
+          label: 'Bloom',
+          value: initialSnapshot.bloomEnabled,
+        },
+        surveillanceOverlayEnabled: {
+          label: 'CCTV Overlay',
+          value: initialSnapshot.surveillanceOverlayEnabled,
+        },
+        surveillanceCameraLabel: {
+          label: 'CCTV Label',
+          value: initialSnapshot.surveillanceCameraLabel || 'CAM 01',
+        },
+      },
+      COLLAPSED
+    ),
+  }));
 
   useEffect(() => {
     attachSetControls(setControls);
@@ -693,5 +538,27 @@ export default function useSceneControls() {
     controlsSnapshotRef.current = controls;
   }, [controls, controlsSnapshotRef]);
 
-  return controls;
+  const activePreset = PRESETS[controls.preset] || PRESETS[DEFAULT_PRESET];
+
+  // Stabilise cameraFixed so it only gets a new reference when fixedCameraShot
+  // actually changes — not on every Leva update. Without this, any control
+  // change (e.g. skyboxVariant) would produce a new cameraFixed object, which
+  // flows into cameraConfig → useSceneCamera → activeOrbitFrame → the layout
+  // effect that hard-resets the camera position.
+  const cameraFixed = useMemo(
+    () => ({
+      ...activePreset.cameraFixed,
+      activeShot: controls.fixedCameraShot,
+    }),
+    [activePreset.cameraFixed, controls.fixedCameraShot]
+  );
+
+  return useMemo(
+    () => ({
+      ...activePreset,
+      ...controls,
+      cameraFixed,
+    }),
+    [activePreset, cameraFixed, controls]
+  );
 }

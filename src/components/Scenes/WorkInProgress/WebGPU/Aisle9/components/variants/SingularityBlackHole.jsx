@@ -1,12 +1,11 @@
 import { uniform } from 'three/tsl';
 import * as THREE from 'three/webgpu';
 
-import React, { memo, useEffect, useMemo } from 'react';
+import React, { memo, useEffect, useMemo, useRef } from 'react';
 
 import { useTexture } from '@react-three/drei';
 import { useFrame } from '@react-three/fiber';
 
-import { ENVIRONMENT_SPACE } from '../../presets/presets';
 import createSingularityBlackHoleVolumeShader from '../../utils/createSingularityBlackHoleVolumeShader';
 
 function createUniforms(config) {
@@ -92,15 +91,14 @@ const SingularityBlackHole = memo(function SingularityBlackHole({ config }) {
 
   const position = config.blackHolePosition ?? { x: 0, y: 0, z: 0 };
   const metricWorldScale = config.metricWorldScale ?? 1;
-  const lensDiameter =
-    config.singularityLensDiameter ?? config.mockLensDiameter ?? 1.55;
+  const lensDiameter = config.singularityLensDiameter ?? 1.55;
   const lensRadius = lensDiameter * metricWorldScale * 0.5;
+  const wasInsideRef = useRef(null);
 
   useEffect(() => {
-    const lensDiam =
-      config.singularityLensDiameter ?? config.mockLensDiameter ?? 1.55;
-    const blackHoleDiam = config.mockBlackHoleDiameter ?? 0.3048;
-    const diskDiam = config.mockDiskDiameter ?? 1.08;
+    const lensDiam = config.singularityLensDiameter ?? 1.55;
+    const blackHoleDiam = 0.3048;
+    const diskDiam = 1.08;
     const sharedCoreRadius = blackHoleDiam / Math.max(lensDiam, 0.0001);
     const sharedFieldRadius = diskDiam / Math.max(lensDiam, 0.0001);
     uniforms.iterations.value = Math.max(
@@ -130,38 +128,7 @@ const SingularityBlackHole = memo(function SingularityBlackHole({ config }) {
     uniforms.rampColor1.value.set(config.singularityRampColor1 ?? '#f2b670');
     uniforms.rampColor2.value.set(config.singularityRampColor2 ?? '#3d180a');
     uniforms.rampColor3.value.set(config.singularityRampColor3 ?? '#050505');
-    uniforms.starBackgroundColor.value.set(
-      config.starBackgroundColor ?? '#03040a'
-    );
-    uniforms.starDensity.value =
-      config.singularityStarDensity ?? uniforms.starDensity.value;
-    uniforms.starSize.value =
-      config.singularityStarSize ?? uniforms.starSize.value;
-    uniforms.starBrightness.value =
-      config.singularityStarBrightness ?? uniforms.starBrightness.value;
-    uniforms.nebula1Scale.value =
-      config.singularityNebula1Scale ?? uniforms.nebula1Scale.value;
-    uniforms.nebula1Density.value =
-      config.singularityNebula1Density ?? uniforms.nebula1Density.value;
-    uniforms.nebula1Brightness.value =
-      config.singularityNebula1Brightness ?? uniforms.nebula1Brightness.value;
-    uniforms.nebula1Color.value.set(
-      config.singularityNebula1Color ?? '#10163b'
-    );
-    uniforms.nebula2Scale.value =
-      config.singularityNebula2Scale ?? uniforms.nebula2Scale.value;
-    uniforms.nebula2Density.value =
-      config.singularityNebula2Density ?? uniforms.nebula2Density.value;
-    uniforms.nebula2Brightness.value =
-      config.singularityNebula2Brightness ?? uniforms.nebula2Brightness.value;
-    uniforms.nebula2Color.value.set(
-      config.singularityNebula2Color ?? '#20070f'
-    );
-    uniforms.useBackground.value =
-      config.environment === ENVIRONMENT_SPACE &&
-      config.singularityUseBackground
-        ? 1
-        : 0;
+    uniforms.useBackground.value = 0;
   }, [config, uniforms]);
 
   useEffect(() => {
@@ -178,7 +145,10 @@ const SingularityBlackHole = memo(function SingularityBlackHole({ config }) {
     const dz = state.camera.position.z - (position.z ?? 0);
     const isInside = dx * dx + dy * dy + dz * dz < lensRadius * lensRadius;
     uniforms.cameraInside.value = isInside ? 1 : 0;
-    material.side = isInside ? THREE.BackSide : THREE.FrontSide;
+    if (isInside !== wasInsideRef.current) {
+      material.side = isInside ? THREE.BackSide : THREE.FrontSide;
+      wasInsideRef.current = isInside;
+    }
   });
 
   return (

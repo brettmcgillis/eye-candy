@@ -1,435 +1,355 @@
-import { DEFAULT_AISLE9_CAMERA_SPLINE } from '../../../../../../presets/spline/aisle9CameraSplines';
+import {
+  AISLE9_CAMERA_SPLINES,
+  DEFAULT_AISLE9_CAMERA_SPLINE,
+} from '../../../../../../presets/spline/aisle9CameraSplines';
 import CENTER_STORE_REF_POSITION from '../../../../../elements/sevenEleven/sevenElevenAnchors';
 
-export const DEFAULT_PRESET = 'Store';
-export const GUIDED_TOUR_PRESET = 'Guided Tour';
-export const SURVEILLANCE_PRESET = 'Surveillance';
-export const SURVEILLANCE_2_PRESET = 'Surveillance 2';
-export const SURVEILLANCE_3_PRESET = 'Surveillance 3';
-export const SPACE_PRESET = 'Space';
-export const SPACE_2_PRESET = 'Space 2';
+export const ENVIRONMENT_STORE = 'store';
 
-function cloneCenterStoreRef() {
+export const STORE_VARIANT_FULL = 'full';
+export const STORE_VARIANT_LOW_POLY = 'lowPoly';
+
+export const CAMERA_MODE_ORBIT = 'orbit';
+export const CAMERA_MODE_FIXED = 'fixed';
+export const CAMERA_MODE_SPLINE = 'spline';
+
+export const BLACK_HOLE_VARIANT_LEGACY_PORT = 'legacyPort';
+export const BLACK_HOLE_VARIANT_WEBGPU = 'webgpu';
+export const BLACK_HOLE_VARIANT_SINGULARITY = 'singularity';
+
+export const DEFAULT_PRESET = 'Store';
+
+const LEGACY_CONTROL_KEYS = [
+  'legacyBlackHoleDiameter',
+  'legacyDiskDiameter',
+  'legacyLensDiameter',
+  'legacyGravityStrength',
+  'legacyStepCount',
+  'legacyDiskBrightness',
+  'legacyDiskTemperature',
+  'legacyDopplerStrength',
+  'legacyAccretionMinRadius',
+  'legacyAccretionWidth',
+  'legacyMaxRevolutions',
+  'legacyStarBrightness',
+  'legacyGalaxyBrightness',
+  'legacyUseProceduralDisk',
+];
+
+const WEBGPU_CONTROL_KEYS = [
+  'webgpuBlackHoleDiameter',
+  'webgpuDiskDiameter',
+  'webgpuLensDiameter',
+  'webgpuMass',
+  'webgpuDiskInnerRadius',
+  'webgpuDiskOuterRadius',
+  'webgpuDiskBrightness',
+  'webgpuTemperature',
+  'webgpuTemperatureFalloff',
+  'webgpuLensingStrength',
+  'webgpuDopplerStrength',
+  'webgpuRotationSpeed',
+  'webgpuStepCount',
+  'webgpuStepSize',
+  'webgpuTurbulenceScale',
+  'webgpuTurbulenceStretch',
+  'webgpuTurbulenceSharpness',
+  'webgpuTurbulenceCycleTime',
+  'webgpuTurbulenceLacunarity',
+  'webgpuTurbulencePersistence',
+  'webgpuDiskEdgeSoftnessInner',
+  'webgpuDiskEdgeSoftnessOuter',
+];
+
+const SINGULARITY_CONTROL_KEYS = [
+  'singularityLensDiameter',
+  'singularityIterations',
+  'singularityStepSize',
+  'singularityPower',
+  'singularityOriginRadius',
+  'singularityBandWidth',
+  'singularityFieldScale',
+  'singularityRampPos1',
+  'singularityRampPos2',
+  'singularityRampPos3',
+  'singularityRampColor1',
+  'singularityRampColor2',
+  'singularityRampColor3',
+  'singularityEmissionStrength',
+];
+
+const CONTROL_KEYS = [
+  'cameraMode',
+  'fixedCameraShot',
+  'blackHoleVariant',
+  'storeVariant',
+  'skyboxRotationX',
+  'skyboxRotationY',
+  'skyboxRotationZ',
+  'storeScale',
+  'storePosition',
+  'storeRotation',
+  ...LEGACY_CONTROL_KEYS,
+  ...WEBGPU_CONTROL_KEYS,
+  ...SINGULARITY_CONTROL_KEYS,
+  'bodyOrbitRadius',
+  'bodyOrbitHeight',
+  'bodyOrbitSpeed',
+  'bloomEnabled',
+  'surveillanceOverlayEnabled',
+  'surveillanceCameraLabel',
+];
+
+const STORE_CENTER = [
+  CENTER_STORE_REF_POSITION.x,
+  CENTER_STORE_REF_POSITION.y,
+  CENTER_STORE_REF_POSITION.z,
+];
+const BLACK_HOLE_DIAMETER_METERS = 0.3048;
+const DISK_DIAMETER_METERS = 1.08;
+const V1_GUIDED_TOUR_SPLINE =
+  AISLE9_CAMERA_SPLINES[DEFAULT_AISLE9_CAMERA_SPLINE];
+
+const DEFAULT_LENS_DIAMETER = 1.55;
+
+function vectorToTuple(vector) {
+  return [vector.x, vector.y, vector.z];
+}
+
+const STORE_ORBIT_CAMERA = {
+  desktop: {
+    fov: 52,
+    pivot: STORE_CENTER,
+    position: [0, 240, 480],
+    target: STORE_CENTER,
+  },
+  mobile: {
+    fov: 62,
+    pivot: STORE_CENTER,
+    position: [0, 240, 480],
+    target: STORE_CENTER,
+  },
+};
+
+const STORE_FIXED_SHOTS = {
+  surveillance1: {
+    desktop: {
+      fov: 80,
+      position: [3, 2.5, -4],
+      target: STORE_CENTER,
+    },
+    mobile: {
+      fov: 85,
+      position: [3, 2.5, -4],
+      target: STORE_CENTER,
+    },
+  },
+  surveillance2: {
+    desktop: {
+      fov: 80,
+      position: [5, 2.5, 1.5],
+      target: STORE_CENTER,
+    },
+    mobile: {
+      fov: 85,
+      position: [5, 2.5, 1.5],
+      target: STORE_CENTER,
+    },
+  },
+  surveillance3: {
+    desktop: {
+      fov: 80,
+      position: [-5.5, 2.5, -2],
+      target: STORE_CENTER,
+    },
+    mobile: {
+      fov: 85,
+      position: [-5.5, 2.5, -2],
+      target: STORE_CENTER,
+    },
+  },
+};
+
+const STORE_GUIDED_PATH = V1_GUIDED_TOUR_SPLINE.points.map((point) => ({
+  position: vectorToTuple(point.position),
+}));
+
+const BASE_LEGACY_BLACK_HOLE = {
+  legacyBlackHoleDiameter: BLACK_HOLE_DIAMETER_METERS,
+  legacyDiskDiameter: DISK_DIAMETER_METERS,
+  legacyLensDiameter: DEFAULT_LENS_DIAMETER,
+  legacyGravityStrength: 1,
+  legacyStepCount: 100,
+  legacyDiskBrightness: 0.9,
+  legacyDiskTemperature: 8000,
+  legacyDopplerStrength: 1,
+  legacyAccretionMinRadius: 1.5,
+  legacyAccretionWidth: 5,
+  legacyMaxRevolutions: 2,
+  legacyStarBrightness: 1,
+  legacyGalaxyBrightness: 0.4,
+  legacyUseProceduralDisk: true,
+};
+
+const BASE_WEBGPU_BLACK_HOLE = {
+  webgpuBlackHoleDiameter: BLACK_HOLE_DIAMETER_METERS,
+  webgpuDiskDiameter: DISK_DIAMETER_METERS,
+  webgpuLensDiameter: DEFAULT_LENS_DIAMETER,
+  webgpuMass: 0.4,
+  webgpuDiskInnerRadius: 4.1,
+  webgpuDiskOuterRadius: 14.5,
+  webgpuDiskBrightness: 5,
+  webgpuTemperature: 49.78,
+  webgpuTemperatureFalloff: 5.22,
+  webgpuLensingStrength: 2.4,
+  webgpuDopplerStrength: 1,
+  webgpuRotationSpeed: -8.7,
+  webgpuStepCount: 64,
+  webgpuStepSize: 1,
+  webgpuTurbulenceScale: 1.81,
+  webgpuTurbulenceStretch: 0.75,
+  webgpuTurbulenceSharpness: 7.4,
+  webgpuTurbulenceCycleTime: 5,
+  webgpuTurbulenceLacunarity: 3,
+  webgpuTurbulencePersistence: 0.8,
+  webgpuDiskEdgeSoftnessInner: 0.18,
+  webgpuDiskEdgeSoftnessOuter: 0.5,
+};
+
+const BASE_SINGULARITY_BLACK_HOLE = {
+  singularityLensDiameter: DEFAULT_LENS_DIAMETER,
+  singularityIterations: 112,
+  singularityStepSize: 0.011,
+  singularityPower: 0.26,
+  singularityOriginRadius: 0.11,
+  singularityBandWidth: 0.058,
+  singularityFieldScale: 3.8,
+  singularityRampPos1: 0.05,
+  singularityRampPos2: 0.425,
+  singularityRampPos3: 1,
+  singularityRampColor1: '#f2b670',
+  singularityRampColor2: '#3d180a',
+  singularityRampColor3: '#050505',
+  singularityEmissionStrength: 1.9,
+};
+
+const BASE_BODIES = {
+  bodyOrbitRadius: 0.75,
+  bodyOrbitHeight: 0.1,
+  bodyOrbitSpeed: 0.22,
+};
+
+const BASE_POST = {
+  bloomEnabled: false,
+  surveillanceOverlayEnabled: false,
+};
+
+const BASE_STORE = {
+  storeVariant: STORE_VARIANT_LOW_POLY,
+  skyboxRotationX: 159,
+  skyboxRotationY: -93,
+  skyboxRotationZ: -11,
+  storePosition: { x: 0, y: 0, z: 0 },
+  storeRotation: { x: 0, y: 0, z: 0 },
+  storeScale: 320,
+};
+
+function createPreset(overrides) {
   return {
-    x: CENTER_STORE_REF_POSITION.x,
-    y: CENTER_STORE_REF_POSITION.y,
-    z: CENTER_STORE_REF_POSITION.z,
+    cameraMode: CAMERA_MODE_ORBIT,
+    fixedCameraShot: 'surveillance1',
+    cameraNear: 0.1,
+    cameraFar: 10000,
+    cameraAutoFit: false,
+    cameraOrbit: STORE_ORBIT_CAMERA,
+    cameraFixed: {
+      activeShot: 'surveillance1',
+      behavior: 'single',
+      shots: STORE_FIXED_SHOTS,
+    },
+    cameraSpline: {
+      closed: V1_GUIDED_TOUR_SPLINE.closed,
+      desktop: {
+        fov: 60,
+        target: STORE_CENTER,
+      },
+      duration: 38,
+      fov: 60,
+      mobile: {
+        fov: 85,
+        target: STORE_CENTER,
+      },
+      orientationMode: 'target',
+      points: STORE_GUIDED_PATH,
+      target: STORE_CENTER,
+      tension: V1_GUIDED_TOUR_SPLINE.tension,
+    },
+    blackHolePosition: {
+      x: STORE_CENTER[0],
+      y: STORE_CENTER[1],
+      z: STORE_CENTER[2],
+    },
+    blackHoleVariant: BLACK_HOLE_VARIANT_SINGULARITY,
+    ...BASE_LEGACY_BLACK_HOLE,
+    ...BASE_WEBGPU_BLACK_HOLE,
+    ...BASE_SINGULARITY_BLACK_HOLE,
+    ...BASE_BODIES,
+    ...BASE_POST,
+    ...BASE_STORE,
+    ...overrides,
   };
 }
 
-// Up to three bodies orbiting the hole (sim-space units, same scale as the
-// disk radii). They are intersected inside the bent ray loop, so they get
-// gravitationally lensed as they pass behind the singularity.
-// All orbit radii kept under BLACK_HOLE_VOLUME_BOUND (20) so the ray-marcher
-// can reach and gravitationally lens each body.
-const BLACK_HOLE_BODIES_OFF = {
-  body1Enabled: false,
-  body1Color: '#9ec5ff',
-  body1Size: 2.3,
-  body1OrbitRadius: 15,
-  body1OrbitSpeed: 0.6,
-  body1OrbitPhase: 0,
-  body1Height: 0,
-  body2Enabled: false,
-  body2Color: '#ffd27f',
-  body2Size: 1.8,
-  body2OrbitRadius: 17,
-  body2OrbitSpeed: -0.42,
-  body2OrbitPhase: 120,
-  body2Height: 1.5,
-  body3Enabled: false,
-  body3Color: '#ff8fa3',
-  body3Size: 4,
-  body3OrbitRadius: 19,
-  body3OrbitSpeed: 0.28,
-  body3OrbitPhase: 240,
-  body3Height: -2,
-};
-
-const DEFAULT_CAMERA_SPLINE_SETTINGS = {
-  cameraMode: 'orbit',
-  cameraAutoRotate: false,
-  cameraMobileFov: 85,
-  cameraMobilePosition: { x: 0, y: -5, z: 20 },
-  cameraMobileTarget: { x: 0, y: 0, z: 0 },
-  fixedCameraPosition: { x: 3, y: 2.5, z: -4 },
-  fixedCameraMobilePosition: { x: 3, y: 2.5, z: -4 },
-  fixedCameraTarget: cloneCenterStoreRef(),
-  fixedCameraMobileTarget: cloneCenterStoreRef(),
-  cameraSplinePreset: DEFAULT_AISLE9_CAMERA_SPLINE,
-  cameraSplinePosition: { x: 0, y: 0, z: 0 },
-  cameraSplineScale: { x: 1, y: 1, z: 1 },
-  cameraSplineDuration: 38,
-  cameraSplineTension: 0.45,
-  cameraSplineLookAt: cloneCenterStoreRef(),
-};
-
-const SECURITY_CAM_DEFAULTS = {
-  surveillanceFxEnabled: false,
-  surveillanceOverlayEnabled: false,
-  surveillanceCameraLabel: 'CAM 01',
-  surveillanceDesaturation: 0.42,
-  surveillanceNoiseAmount: 0.028,
-  surveillanceScanlineStrength: 0.22,
-  surveillanceScanlineDensity: 940,
-  surveillanceVignette: 0.36,
-  surveillanceRollingBandStrength: 0.18,
-  surveillanceHudOpacity: 0.42,
-};
-
-const SECURITY_CAM_SURVEILLANCE = {
-  ...SECURITY_CAM_DEFAULTS,
-  surveillanceFxEnabled: true,
-  surveillanceOverlayEnabled: true,
-  surveillanceDesaturation: 0.5,
-  surveillanceNoiseAmount: 0.042,
-  surveillanceScanlineStrength: 0.34,
-  surveillanceScanlineDensity: 980,
-  surveillanceVignette: 0.44,
-  surveillanceRollingBandStrength: 0.26,
-  surveillanceHudOpacity: 0.56,
-};
-
-const SPACE_SCENE_PRESET = {
-  ...DEFAULT_CAMERA_SPLINE_SETTINGS,
-  ...BLACK_HOLE_BODIES_OFF,
-  ...SECURITY_CAM_DEFAULTS,
-  presentationMode: 'backgroundField',
-  blackHoleMass: 0.4,
-  diskInnerRadius: 4.1,
-  diskOuterRadius: 14.5,
-  diskTemperature: 49.78,
-  temperatureFalloff: 5.22,
-  diskBrightness: 5,
-  diskOpacity: 1,
-  diskOpacityFloor: 0,
-  diskRotationSpeed: -8.7,
-  turbulenceScale: 1.81,
-  turbulenceStretch: 0.75,
-  turbulenceSharpness: 7.4,
-  turbulenceCycleTime: 5,
-  turbulenceLacunarity: 3,
-  turbulencePersistence: 0.8,
-  diskEdgeSoftnessInner: 0.18,
-  diskEdgeSoftnessOuter: 0.5,
-  gravitationalLensing: 2.4,
-  dopplerStrength: 1,
-  stepSize: 1,
-  blackHolePosition: { x: 0, y: 0, z: 0 },
-  blackHoleRotation: { x: 0, y: 0, z: 0 },
-  blackHoleScale: { x: 1, y: 1, z: 1 },
-  starsEnabled: true,
-  starBackgroundColor: '#000000',
-  starDensity: 0.1,
-  starSize: 1.2,
-  starBrightness: 0.1,
-  nebulaEnabled: true,
-  nebula1Scale: 2,
-  nebula1Density: 0.5,
-  nebula1Brightness: 0.01,
-  nebula1Color: '#071f44',
-  nebula2Scale: 5.5,
-  nebula2Density: 0.05,
-  nebula2Brightness: 0.21,
-  nebula2Color: '#010615',
-  bloomEnabled: true,
-  bloomStrength: 0.68,
-  bloomRadius: 0.2,
-  bloomThreshold: 0.4,
-  bloomDownSampleRatio: 2,
-  turbulenceBrightness: -0.05,
-  diskDensity: 1,
-  qualityPreset: 'medium',
-  diskInnerThickness: 0.7,
-  diskOuterThickness: 0.5,
-  ringEnabled: true,
-  ringScale: 0.83,
-  ringContrast: 0.95,
-  ringBrightness: 0.4,
-  ringSharpness: 10,
-  ringTwist: 10.3,
-  noiseAnimFrequency: 4.2,
-  noiseAnimAmplitude: 2,
-  diskRadialFalloff: 2,
-  diskOpacityFalloff: 0.5,
-  adaptiveMinStep: 0.15,
-  stepJitter: 0,
-  diskInnerColor: '#ffffff',
-  diskMidColor: '#ffffff',
-  diskOuterColor: '#ffffff',
-  diskTintStrength: 0,
-  nebulaBrightness: 0.07,
-  nebulaColor1: '#113844',
-  nebulaColor2: '#1b214a',
-  nebulaScale1: 3,
-  nebulaScale2: 3.5,
-  nebulaBlend: 0.55,
-  nebulaSpeed: 0.065,
-  nebulaDensity: 0.35,
-  diskDifferentialRotation: 1,
-  noiseEvolutionSpeed: 5,
-  raySteps: 68,
-  nebulaScale: 3,
-  nebulaDetailScale: 2.4,
-  nebulaOffsetX: 0,
-  nebulaOffsetY: 0,
-  nebulaOffsetZ: 0,
-  diskTurbulence: 0.9,
-  turbulencePrimaryScale: 0.65,
-  turbulenceSecondaryScale: 1.3,
-  turbulenceSecondaryStrength: 0.15,
-  turbulenceOffset: 0.1,
-  ringNoiseEnabled: true,
-  ringNoiseScale: 4.5,
-  ringNoiseAmplitude: 1.45,
-  ringNoiseSharpness: 4,
-  ringNoiseOffset: -0.2,
-  ringNoiseOctaves: 2,
-  ringNoiseLacunarity: 1.9,
-  ringNoisePersistence: 0.45,
-  maxRayDistance: 500,
-  diskThickness: 1.3,
-  heightDensityFalloff: 5,
-  rayJitter: 1,
-  temporalAA: false,
-  temporalFrames: 16,
-  cameraFov: 60,
-  cameraNear: 0.1,
-  cameraFar: 1000,
-  cameraPosition: { x: 0, y: -5, z: 20 },
-  cameraTarget: { x: 0, y: 0, z: 0 },
-  cameraMinDistance: 5,
-  cameraMaxDistance: 50,
-  cameraRotateSpeed: -0.5,
-  cameraDampingFactor: 0.05,
-  storeScale: 320,
-  storePosition: { x: 0, y: 0, z: 0 },
-  storeRotation: { x: 0, y: 0, z: 0 },
-};
-
-const STORE_SCENE_PRESET = {
-  ...DEFAULT_CAMERA_SPLINE_SETTINGS,
-  ...BLACK_HOLE_BODIES_OFF,
-  ...SECURITY_CAM_DEFAULTS,
-  body1Enabled: true,
-  body1OrbitRadius: 15,
-  body2Enabled: true,
-  body2OrbitRadius: 17,
-  body3Enabled: true,
-  body3OrbitRadius: 19,
-  cameraFov: 60,
-  cameraMobileFov: 85,
-  cameraNear: 0.1,
-  cameraFar: 5000,
-  cameraAutoRotate: true,
-  cameraPosition: { x: 0, y: -5, z: 20 },
-  cameraMobilePosition: { x: 0, y: -5, z: 28 },
-  cameraTarget: cloneCenterStoreRef(),
-  cameraMobileTarget: cloneCenterStoreRef(),
-  cameraMinDistance: 5,
-  cameraMaxDistance: 160,
-  cameraRotateSpeed: -0.5,
-  cameraDampingFactor: 0.05,
-  presentationMode: 'storeWarp',
-  blackHoleMass: 0.4,
-  gravitationalLensing: 2.4,
-  dopplerStrength: 1,
-  stepSize: 1,
-  blackHolePosition: {
-    ...cloneCenterStoreRef(),
-  },
-  blackHoleRotation: {
-    x: 0,
-    y: 0,
-    z: 0,
-  },
-  blackHoleScale: {
-    x: 1,
-    y: 1,
-    z: 1,
-  },
-  diskInnerRadius: 4.1,
-  diskOuterRadius: 14.5,
-  diskBrightness: 5,
-  diskOpacity: 1.75,
-  diskOpacityFloor: 0,
-  diskTemperature: 49.78,
-  temperatureFalloff: 5.22,
-  diskEdgeSoftnessInner: 0.18,
-  diskEdgeSoftnessOuter: 0.5,
-  diskInnerColor: '#ffffff',
-  diskMidColor: '#ffffff',
-  diskOuterColor: '#ffffff',
-  diskTintStrength: 0,
-  diskRotationSpeed: -8.7,
-  turbulenceScale: 1.81,
-  turbulenceStretch: 0.75,
-  turbulenceSharpness: 10,
-  turbulenceCycleTime: 15,
-  turbulenceLacunarity: 3.2,
-  turbulencePersistence: 0.75,
-  starsEnabled: false,
-  starBackgroundColor: '#05070b',
-  starDensity: 0.1,
-  starSize: 1.2,
-  starBrightness: 0.1,
-  nebulaEnabled: false,
-  nebula1Scale: 2,
-  nebula1Density: 0.5,
-  nebula1Brightness: 0.01,
-  nebula1Color: '#071f44',
-  nebula2Scale: 5.5,
-  nebula2Density: 0.05,
-  nebula2Brightness: 0.21,
-  nebula2Color: '#010615',
-  storeScale: 320,
-  storePosition: {
-    x: 0,
-    y: 0,
-    z: 0,
-  },
-  storeRotation: {
-    x: 0,
-    y: 0,
-    z: 0,
-  },
-  bloomEnabled: true,
-  bloomStrength: 0.42,
-  bloomRadius: 0.14,
-  bloomThreshold: 0.5,
-  bloomDownSampleRatio: 2,
-  turbulenceBrightness: -0.05,
-  diskDensity: 1,
-  qualityPreset: 'medium',
-  diskInnerThickness: 0.7,
-  diskOuterThickness: 0.5,
-  ringEnabled: true,
-  ringScale: 0.83,
-  ringContrast: 0.95,
-  ringBrightness: 0.4,
-  ringSharpness: 10,
-  ringTwist: 10.3,
-  noiseAnimFrequency: 4.2,
-  noiseAnimAmplitude: 2,
-  diskRadialFalloff: 2,
-  diskOpacityFalloff: 0.5,
-  adaptiveMinStep: 0.15,
-  stepJitter: 0,
-  nebulaBrightness: 0.07,
-  nebulaColor1: '#113844',
-  nebulaColor2: '#1b214a',
-  nebulaScale1: 3,
-  nebulaScale2: 3.5,
-  nebulaBlend: 0.55,
-  nebulaSpeed: 0.065,
-  nebulaDensity: 0.35,
-  diskDifferentialRotation: 1,
-  noiseEvolutionSpeed: 5,
-  raySteps: 68,
-  nebulaScale: 3,
-  nebulaDetailScale: 2.4,
-  nebulaOffsetX: 0,
-  nebulaOffsetY: 0,
-  nebulaOffsetZ: 0,
-  diskTurbulence: 0.9,
-  turbulencePrimaryScale: 0.65,
-  turbulenceSecondaryScale: 1.3,
-  turbulenceSecondaryStrength: 0.15,
-  turbulenceOffset: 0.1,
-  ringNoiseEnabled: true,
-  ringNoiseScale: 4.5,
-  ringNoiseAmplitude: 1.45,
-  ringNoiseSharpness: 4,
-  ringNoiseOffset: -0.2,
-  ringNoiseOctaves: 2,
-  ringNoiseLacunarity: 1.9,
-  ringNoisePersistence: 0.45,
-  maxRayDistance: 500,
-  diskThickness: 1.3,
-  heightDensityFalloff: 5,
-  rayJitter: 1,
-  temporalAA: false,
-  temporalFrames: 16,
-};
-
-const SPACE_2_SCENE_PRESET = {
-  ...SPACE_SCENE_PRESET,
-  body1Enabled: true,
-  body1Color: '#d7dcff',
-  body1Size: 2.6,
-  body1OrbitRadius: 15,
-  body1OrbitSpeed: 0.52,
-  body1OrbitPhase: 0,
-  body1Height: -0.75,
-  body2Enabled: true,
-  body2Color: '#ffd9b5',
-  body2Size: 1.7,
-  body2OrbitRadius: 17,
-  body2OrbitSpeed: -0.34,
-  body2OrbitPhase: 115,
-  body2Height: 1.6,
-  body3Enabled: true,
-  body3Color: '#d7b8ff',
-  body3Size: 3.4,
-  body3OrbitRadius: 19,
-  body3OrbitSpeed: 0.22,
-  body3OrbitPhase: 245,
-  body3Height: 2.8,
-};
-
-const GUIDED_TOUR_SCENE_PRESET = {
-  ...STORE_SCENE_PRESET,
-  cameraMode: 'spline',
-  cameraSplinePreset: DEFAULT_AISLE9_CAMERA_SPLINE,
-  cameraSplineDuration: 42,
-  cameraSplineTension: 0.45,
-  cameraSplineLookAt: cloneCenterStoreRef(),
-  // The spline cameras are in store-local space and end up ~1000–1500 world
-  // units from the hole after the storeLocalToWorldMatrix transform (store
-  // is scaled ×320). Scale 8 makes the bounding sphere (160 wu) and disk
-  // (116 wu outer) large enough to be visually meaningful at that distance,
-  // while keeping the camera outside the sphere on most of the path.
-  blackHoleScale: { x: 8, y: 8, z: 8 },
-};
-
-const SURVEILLANCE_SCENE_PRESET = {
-  ...STORE_SCENE_PRESET,
-  ...SECURITY_CAM_SURVEILLANCE,
-  cameraMode: 'fixed',
-  cameraFov: 80,
-  // Fixed cameras are in store-local space and land ~1800 world units from the
-  // hole after the ×320 store transform. Scale 8 gives the BlackHoleVolume
-  // bounding sphere a 160-wu radius so the disk subtends a meaningful angle
-  // from that distance. Camera stays outside the sphere (1800 >> 160).
-  blackHoleScale: { x: 8, y: 8, z: 8 },
-  fixedCameraPosition: { x: 3, y: 2.5, z: -4 },
-  fixedCameraTarget: cloneCenterStoreRef(),
-};
-
-const SURVEILLANCE_2_SCENE_PRESET = {
-  ...SURVEILLANCE_SCENE_PRESET,
-  surveillanceCameraLabel: 'CAM 02',
-  fixedCameraPosition: { x: 5, y: 2.5, z: 1.5 },
-  fixedCameraMobilePosition: { x: 5, y: 2.5, z: 1.5 },
-  fixedCameraTarget: cloneCenterStoreRef(),
-  fixedCameraMobileTarget: cloneCenterStoreRef(),
-};
-
-const SURVEILLANCE_3_SCENE_PRESET = {
-  ...SURVEILLANCE_SCENE_PRESET,
-  surveillanceCameraLabel: 'CAM 03',
-  fixedCameraPosition: { x: -5.5, y: 2.5, z: -2 },
-  fixedCameraMobilePosition: { x: -5.5, y: 2.5, z: -2 },
-  fixedCameraTarget: cloneCenterStoreRef(),
-  fixedCameraMobileTarget: cloneCenterStoreRef(),
-};
-
 export const PRESETS = {
-  [DEFAULT_PRESET]: STORE_SCENE_PRESET,
-  [GUIDED_TOUR_PRESET]: GUIDED_TOUR_SCENE_PRESET,
-  [SURVEILLANCE_PRESET]: SURVEILLANCE_SCENE_PRESET,
-  [SURVEILLANCE_2_PRESET]: SURVEILLANCE_2_SCENE_PRESET,
-  [SURVEILLANCE_3_PRESET]: SURVEILLANCE_3_SCENE_PRESET,
-  [SPACE_PRESET]: SPACE_SCENE_PRESET,
-  [SPACE_2_PRESET]: SPACE_2_SCENE_PRESET,
+  Store: createPreset({}),
+  'Guided Tour': createPreset({
+    cameraMode: CAMERA_MODE_SPLINE,
+    cameraSpline: {
+      closed: V1_GUIDED_TOUR_SPLINE.closed,
+      desktop: {
+        fov: 60,
+        target: STORE_CENTER,
+      },
+      duration: 42,
+      fov: 60,
+      mobile: {
+        fov: 85,
+        target: STORE_CENTER,
+      },
+      orientationMode: 'target',
+      points: STORE_GUIDED_PATH,
+      target: STORE_CENTER,
+      tension: V1_GUIDED_TOUR_SPLINE.tension,
+    },
+  }),
+  Surveillance: createPreset({
+    cameraMode: CAMERA_MODE_FIXED,
+    fixedCameraShot: 'surveillance1',
+    surveillanceCameraLabel: 'CAM 01',
+    surveillanceOverlayEnabled: true,
+  }),
+  'Surveillance 2': createPreset({
+    cameraMode: CAMERA_MODE_FIXED,
+    fixedCameraShot: 'surveillance2',
+    surveillanceCameraLabel: 'CAM 02',
+    surveillanceOverlayEnabled: true,
+  }),
+  'Surveillance 3': createPreset({
+    cameraMode: CAMERA_MODE_FIXED,
+    fixedCameraShot: 'surveillance3',
+    surveillanceCameraLabel: 'CAM 03',
+    surveillanceOverlayEnabled: true,
+  }),
 };
+
+export function getPresetControls({ presetName, presetSnapshot }) {
+  return {
+    ...Object.fromEntries(
+      CONTROL_KEYS.filter((key) => key in presetSnapshot).map((key) => [
+        key,
+        presetSnapshot[key],
+      ])
+    ),
+    preset: presetName,
+  };
+}

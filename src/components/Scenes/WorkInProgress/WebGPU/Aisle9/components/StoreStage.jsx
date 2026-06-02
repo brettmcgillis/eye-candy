@@ -3,7 +3,10 @@ import * as THREE from 'three';
 import React, { useLayoutEffect, useMemo, useRef, useState } from 'react';
 
 import SevenEleven from '../../../../../elements/sevenEleven/SevenEleven';
+import SevenElevenLow from '../../../../../elements/SevenElevenLow/SevenElevenLow';
+import { STORE_VARIANT_LOW_POLY } from '../presets/presets';
 
+const DEFAULT_STORE_VARIANT = STORE_VARIANT_LOW_POLY;
 const DEFAULT_STORE_SCALE = 320;
 const DEFAULT_STORE_POSITION = Object.freeze({ x: 0, y: 0, z: 0 });
 const DEFAULT_STORE_ROTATION = Object.freeze({ x: 0, y: 0, z: 0 });
@@ -23,6 +26,7 @@ export default function StoreStage({
   storePosition = DEFAULT_STORE_POSITION,
   storeRotation = DEFAULT_STORE_ROTATION,
   storeScale = DEFAULT_STORE_SCALE,
+  storeVariant = DEFAULT_STORE_VARIANT,
 }) {
   const offsetGroupRef = useRef(null);
   const storeRootRef = useRef(null);
@@ -59,7 +63,7 @@ export default function StoreStage({
       box.getCenter(new THREE.Vector3())
     );
     setOffset([-localAnchor.x, -localAnchor.y, -localAnchor.z]);
-  }, [storeScale]);
+  }, [storeScale, storeVariant]);
 
   useLayoutEffect(() => {
     if (!onStoreSpaceChange || !storeRootRef.current) return;
@@ -84,13 +88,17 @@ export default function StoreStage({
       centerStoreRefWorldPosition,
       storeLocalToWorldMatrix: storeRootRef.current.matrixWorld.clone(),
     });
-  }, [offset, onStoreSpaceChange, position, rotation, storeScale]);
+  }, [offset, onStoreSpaceChange, position, rotation, storeScale, storeVariant]);
 
   return (
     <group position={position} rotation={rotation}>
       <group ref={offsetGroupRef} position={offset}>
         <group ref={storeRootRef} scale={storeScale}>
-          <SevenEleven />
+          {storeVariant === STORE_VARIANT_LOW_POLY ? (
+            <SevenElevenLow />
+          ) : (
+            <SevenEleven />
+          )}
         </group>
       </group>
     </group>

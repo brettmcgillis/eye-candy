@@ -1,27 +1,6 @@
-import {
-  Fn,
-  float,
-  length,
-  mix,
-  screenUV,
-  smoothstep,
-  step,
-  texture,
-  vec2,
-  vec3,
-  vec4,
-} from 'three/tsl';
+import { mix, screenUV, step, texture, vec2, vec3, vec4 } from 'three/tsl';
 
-const CCTV_TINT = vec3(0.88, 0.97, 0.91);
 const HUD_COLOR = vec3(0.95, 1.0, 0.97);
-
-const hash21 = Fn(([point]) =>
-  point.dot(vec2(127.1, 311.7)).sin().mul(43758.5453123).fract()
-).setLayout({
-  name: 'hash21',
-  type: 'float',
-  inputs: [{ name: 'point', type: 'vec2' }],
-});
 
 function rectMask(uv, minX, minY, maxX, maxY) {
   return step(minX, uv.x)
@@ -127,21 +106,7 @@ export default function applySecurityCamOverlay(
   timestampTexture
 ) {
   const uv = screenUV;
-  const fxMix = uniforms.surveillanceStoreEnabled.mul(
-    uniforms.surveillanceFxEnabled
-  );
-  const overlayMix = uniforms.surveillanceStoreEnabled.mul(
-    uniforms.surveillanceOverlayEnabled
-  );
-  const baseColor = sceneNode.rgb;
-  const luminance = baseColor.dot(vec3(0.299, 0.587, 0.114));
-  const grayscale = vec3(luminance, luminance, luminance);
-  const desaturated = mix(
-    baseColor,
-    grayscale,
-    uniforms.surveillanceDesaturation.mul(fxMix)
-  );
-  const tinted = mix(desaturated, desaturated.mul(CCTV_TINT), fxMix.mul(0.35));
+  const overlayMix = uniforms.surveillanceOverlayEnabled;
   const frameMin = uniforms.surveillanceFrameMin;
   const frameMax = uniforms.surveillanceFrameMax;
   const frameSize = vec2(
@@ -157,57 +122,12 @@ export default function applySecurityCamOverlay(
     .mul(step(uv.x, frameMax.x))
     .mul(step(uv.y, frameMax.y));
   const effectBoost = uniforms.surveillanceEffectBoost;
-  const scanline = uv.y
-    .mul(uniforms.surveillanceScanlineDensity)
-    .add(uniforms.surveillanceTime.mul(0.4))
-    .sin()
-    .abs();
-  const scanlineShade = float(1.0).sub(
-    scanline
-      .mul(uniforms.surveillanceScanlineStrength)
-      .mul(effectBoost)
-      .mul(0.12)
-      .mul(fxMix)
-  );
-  const noiseUv = uv
-    .mul(vec2(1820.0, 1040.0))
-    .add(
-      vec2(
-        uniforms.surveillanceTime.mul(23.71),
-        uniforms.surveillanceTime.mul(17.13)
-      )
-    );
-  const noise = hash21(noiseUv)
-    .sub(0.5)
-    .mul(uniforms.surveillanceNoiseAmount)
-    .mul(effectBoost)
-    .mul(fxMix);
-  const centeredUv = vec2(uv.x.sub(0.5).mul(uniforms.aspect), uv.y.sub(0.5));
-  const vignette = smoothstep(0.32, 0.94, length(centeredUv))
-    .mul(uniforms.surveillanceVignette)
-    .mul(effectBoost)
-    .mul(fxMix);
-  const rollingBandCenter = uniforms.surveillanceTime.mul(0.075).fract();
-  const rollingBand = float(1.0)
-    .sub(smoothstep(0.0, 0.18, uv.y.sub(rollingBandCenter).abs()))
-    .mul(uniforms.surveillanceRollingBandStrength)
-    .mul(effectBoost)
-    .mul(fxMix);
-  const flicker = uniforms.surveillanceTime.mul(8.0).sin().mul(0.01).mul(fxMix);
-  const gradedColor = tinted
-    .add(vec3(noise, noise, noise))
-    .mul(scanlineShade)
-    .mul(float(1.0).sub(vignette.mul(0.55)))
-    .mul(float(1.0).add(rollingBand.mul(0.08)).add(flicker));
   const hudMask = buildFrameMask(frameUv);
   const hudColor = HUD_COLOR.mul(
     uniforms.surveillanceHudOpacity.mul(effectBoost).mul(overlayMix)
   );
-  const withLines = gradedColor.add(hudColor.mul(hudMask).mul(frameMask));
+  const withLines = sceneNode.rgb.add(hudColor.mul(hudMask).mul(frameMask));
   const textSample = texture(timestampTexture, frameUv);
-  // Alpha-composite the labels OVER the scene instead of adding them, so they
-  // stay legible (and the red stays saturated) on any background. Boost the
-  // coverage so the HUD opacity control still tilts toward fully opaque text.
   const textAlpha = textSample.a
     .mul(uniforms.surveillanceHudOpacity.mul(1.7).clamp(0.0, 1.0))
     .mul(effectBoost)

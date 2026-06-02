@@ -29,6 +29,7 @@ const HUD_MIN_ASPECT = 0.7;
 const HUD_MAX_ASPECT = 3.2;
 const DEFAULT_CAMERA_LABEL = 'CAM 01';
 const DEFAULT_AISLE_LABEL = 'AISLE 9';
+const REC_DOT_BLINK_INTERVAL_MS = 500;
 
 function clamp01(value) {
   return Math.min(Math.max(value, 0), 1);
@@ -185,8 +186,11 @@ function drawSecurityCamTimestamp(
     nextTextureState.contentKey = null;
   }
 
-  const timestampKey = Math.floor(date.getTime() / 1000);
-  const contentKey = `${cameraLabel}:${aisleLabel}:${timestampKey}:${targetHeight}`;
+  const nowMs = date.getTime();
+  const timestampKey = Math.floor(nowMs / 1000);
+  const recDotBlinkKey = Math.floor(nowMs / REC_DOT_BLINK_INTERVAL_MS);
+  const recDotVisible = recDotBlinkKey % 2 === 0;
+  const contentKey = `${cameraLabel}:${aisleLabel}:${timestampKey}:${recDotBlinkKey}:${targetHeight}`;
 
   if (nextTextureState.contentKey === contentKey) return;
 
@@ -231,16 +235,18 @@ function drawSecurityCamTimestamp(
   const topBaselineY = insetY + margin;
 
   context.textBaseline = 'middle';
-  context.beginPath();
-  context.fillStyle = 'rgba(214, 12, 24, 1)';
-  context.arc(
-    contentLeft + dotRadius,
-    topBaselineY + recFontSize * 0.5,
-    dotRadius,
-    0,
-    Math.PI * 2
-  );
-  context.fill();
+  if (recDotVisible) {
+    context.beginPath();
+    context.fillStyle = 'rgba(214, 12, 24, 1)';
+    context.arc(
+      contentLeft + dotRadius,
+      topBaselineY + recFontSize * 0.5,
+      dotRadius,
+      0,
+      Math.PI * 2
+    );
+    context.fill();
+  }
 
   context.font = `700 ${recFontSize}px 'Courier New', monospace`;
   context.fillStyle = 'rgba(214, 12, 24, 1)';

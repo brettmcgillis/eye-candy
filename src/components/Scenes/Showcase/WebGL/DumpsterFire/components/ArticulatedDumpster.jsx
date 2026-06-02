@@ -14,9 +14,9 @@ import {
 import useTrashBlasterStore from '../hooks/useTrashBlasterStore';
 
 const DEG = Math.PI / 180;
-const DUMPSTER_LID_MIN_ANGLE = -159 * DEG;
-const DUMPSTER_LID_MAX_ANGLE = 105 * DEG;
-const DUMPSTER_LID_INITIAL_ANGLE = -159 * DEG;
+export const DUMPSTER_LID_MIN_ANGLE = -159 * DEG;
+export const DUMPSTER_LID_MAX_ANGLE = 105 * DEG;
+export const DUMPSTER_LID_INITIAL_ANGLE = -159 * DEG;
 const DUMPSTER_LID_ANGLE_RANGE = [
   DUMPSTER_LID_MIN_ANGLE,
   DUMPSTER_LID_MAX_ANGLE,
@@ -84,9 +84,17 @@ export default function ArticulatedDumpster({ item, onCollisionEnter }) {
     frontRightWheelRotation = 0,
     rearLeftWheelRotation = Math.PI,
     rearRightWheelRotation = 0,
+    leftLidRotation = DUMPSTER_LID_INITIAL_ANGLE,
+    rightLidRotation = DUMPSTER_LID_INITIAL_ANGLE,
   } = componentProps;
-  const leftLidInitialRotation = DUMPSTER_LID_INITIAL_ANGLE;
-  const rightLidInitialRotation = DUMPSTER_LID_INITIAL_ANGLE;
+  const leftLidInitialRotation = clampLidAngle(
+    leftLidRotation,
+    DUMPSTER_LID_ANGLE_RANGE
+  );
+  const rightLidInitialRotation = clampLidAngle(
+    rightLidRotation,
+    DUMPSTER_LID_ANGLE_RANGE
+  );
   const leftLidAngleRef = useRef(leftLidInitialRotation);
   const rightLidAngleRef = useRef(rightLidInitialRotation);
   const instanceId = useId();

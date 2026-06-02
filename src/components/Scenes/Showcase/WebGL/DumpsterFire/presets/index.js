@@ -58,12 +58,17 @@ const DEFAULT_PHYSICS_CONTROLS = Object.freeze({
   physicsDebug: false,
 });
 
+const DEFAULT_DUMPSTER_CONTROLS = Object.freeze({
+  dumpsterLeftLidRotation: -1.0,
+  dumpsterRightLidRotation: -1.5,
+});
+
 const DEFAULT_BRICK_WALL_CONTROLS = Object.freeze({
   brickWallEnabled: false,
   brickWallLength: 24,
   brickWallHeight: 3.6,
   brickWallTintColor: '#a65a4d',
-  brickWallPosition: { x: -2, y: 0, z: 3 },
+  brickWallPosition: { x: -2, y: 1, z: 3 },
 });
 
 const defaultShotTuning =
@@ -86,6 +91,7 @@ const DEFAULT_CONTROL_VALUES = Object.freeze({
   ...DEFAULT_SCENE_ENVIRONMENT,
   ...DEFAULT_CAMERA_CONTROLS,
   ...DEFAULT_PHYSICS_CONTROLS,
+  ...DEFAULT_DUMPSTER_CONTROLS,
   ...DEFAULT_BRICK_WALL_CONTROLS,
   ...DEFAULT_TRASH_BLASTER_CONTROLS,
   ...DEFAULT_COMBUSTION_CONTROLS,
@@ -129,7 +135,7 @@ export const PRESETS = {
     brickWallLength: 25,
     brickWallHeight: 4.5,
     brickWallTintColor: '#a35245',
-    brickWallPosition: { x: -2, y: 0, z: 3 },
+    brickWallPosition: { x: -2, y: 1, z: 3 },
     shotMode: 'Fun',
     shotSpawnOffset: brickWallShotTuning.spawnOffset,
     shotSpeed: brickWallShotTuning.speed,

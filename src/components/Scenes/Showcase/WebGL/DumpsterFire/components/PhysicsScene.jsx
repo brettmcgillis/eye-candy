@@ -16,19 +16,38 @@ import DumpsterBrickWall from './DumpsterBrickWall';
 import { DynamicSceneAsset, FixedSceneAsset } from './SceneAssetRigidBody';
 import TrashBlaster from './TrashBlaster';
 
-function SceneComposition({ brickWallConfig, onTrashCollision }) {
+function SceneComposition({
+  brickWallConfig,
+  dumpsterConfig,
+  onTrashCollision,
+}) {
   return (
     <group position={SCENE_ROOT_POSITION}>
       <DumpsterBrickWall config={brickWallConfig} />
 
       {FIXED_SCENE_ITEMS.map((item) => {
-        const { PhysicsComponent } = item;
+        const sceneItem =
+          item.key === 'dumpster'
+            ? {
+                ...item,
+                componentProps: {
+                  ...item.componentProps,
+                  leftLidRotation:
+                    dumpsterConfig?.leftLidRotation ??
+                    item.componentProps?.leftLidRotation,
+                  rightLidRotation:
+                    dumpsterConfig?.rightLidRotation ??
+                    item.componentProps?.rightLidRotation,
+                },
+              }
+            : item;
+        const { PhysicsComponent } = sceneItem;
 
         if (PhysicsComponent) {
           return (
             <PhysicsComponent
-              key={getSceneItemKey(item)}
-              item={item}
+              key={getSceneItemKey(sceneItem)}
+              item={sceneItem}
               onCollisionEnter={onTrashCollision}
             />
           );
@@ -36,8 +55,8 @@ function SceneComposition({ brickWallConfig, onTrashCollision }) {
 
         return (
           <FixedSceneAsset
-            key={getSceneItemKey(item)}
-            item={item}
+            key={getSceneItemKey(sceneItem)}
+            item={sceneItem}
             onCollisionEnter={onTrashCollision}
           />
         );
@@ -52,6 +71,7 @@ function SceneComposition({ brickWallConfig, onTrashCollision }) {
 
 const PhysicsScene = React.memo(function PhysicsScene({
   brickWallConfig,
+  dumpsterConfig,
   debug = true,
   onTrashCollision,
   shotConfig,
@@ -83,6 +103,7 @@ const PhysicsScene = React.memo(function PhysicsScene({
 
       <SceneComposition
         brickWallConfig={brickWallConfig}
+        dumpsterConfig={dumpsterConfig}
         onTrashCollision={onTrashCollision}
       />
       <TrashBlaster shotConfig={shotConfig} />

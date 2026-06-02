@@ -9,6 +9,11 @@ import { localEnv } from '../../../../../../utils/appUtils';
 import buildFireAndSmokeControls from '../../../../ToolBox/shared/hooks/buildFireAndSmokeControls';
 import buildSplineGroupControls from '../../../../ToolBox/shared/hooks/useSplineGroupControls';
 import {
+  DUMPSTER_LID_INITIAL_ANGLE,
+  DUMPSTER_LID_MAX_ANGLE,
+  DUMPSTER_LID_MIN_ANGLE,
+} from '../components/ArticulatedDumpster';
+import {
   DEFAULT_FIRE_LIGHT_RIG,
   DEFAULT_PRESET,
   PRESETS,
@@ -32,6 +37,7 @@ import {
   DEFAULT_SHOT_TUNING_MODE,
   SHOT_TUNING_PRESETS,
 } from '../utils/sceneData';
+import useTrashBlasterStore from './useTrashBlasterStore';
 
 const SCENE_LABEL = 'Dumpster Fire';
 const CAMERA_FOLDER_PATH = `${SCENE_LABEL}.Camera`;
@@ -185,6 +191,15 @@ function getInitialShotTuningControls(presetSnapshot = {}) {
   };
 }
 
+function getPresetDumpsterLidControls(presetSnapshot = {}) {
+  return {
+    dumpsterLeftLidRotation:
+      presetSnapshot.dumpsterLeftLidRotation ?? DUMPSTER_LID_INITIAL_ANGLE,
+    dumpsterRightLidRotation:
+      presetSnapshot.dumpsterRightLidRotation ?? DUMPSTER_LID_INITIAL_ANGLE,
+  };
+}
+
 function getFireAndSmokeInstancesFromPreset() {
   return hydrateFireAndSmokeInstances(cloneDumpsterFireAndSmokeSeeds());
 }
@@ -250,6 +265,7 @@ export default function useSceneControls() {
   const [particleSmokeConfigs, setParticleSmokeConfigs] = useState(
     () => getParticleSmokeStateFromPreset(initialPresetSnapshot).configs
   );
+  const cleanupNonce = useTrashBlasterStore((s) => s.cleanupNonce);
   const cameraApiRef = useRef(null);
   const setControlsRef = useRef(null);
   const shotModeRef = useRef(DEFAULT_SHOT_TUNING_MODE);
@@ -383,38 +399,6 @@ export default function useSceneControls() {
         },
         { collapsed: true }
       ),
-      'Brick Wall': folder(
-        {
-          brickWallEnabled: {
-            label: 'Enabled',
-            value: initialPresetSnapshot.brickWallEnabled,
-          },
-          brickWallLength: {
-            label: 'Length',
-            value: initialPresetSnapshot.brickWallLength,
-            min: 4,
-            max: 25,
-            step: 0.25,
-          },
-          brickWallHeight: {
-            label: 'Height',
-            value: initialPresetSnapshot.brickWallHeight,
-            min: 0.8,
-            max: 4.5,
-            step: 0.1,
-          },
-          brickWallTintColor: {
-            label: 'Tint',
-            value: initialPresetSnapshot.brickWallTintColor,
-          },
-          brickWallPosition: {
-            label: 'Position',
-            step: 0.05,
-            value: initialPresetSnapshot.brickWallPosition,
-          },
-        },
-        { collapsed: true }
-      ),
       Camera: folder(cameraControls, { collapsed: true }),
       Physics: folder(
         {
@@ -490,6 +474,29 @@ export default function useSceneControls() {
             min: 0,
             max: 30,
             step: 0.1,
+          },
+        },
+        { collapsed: true }
+      ),
+      Dumpster: folder(
+        {
+          dumpsterLeftLidRotation: {
+            label: 'Left Lid',
+            value:
+              initialPresetSnapshot.dumpsterLeftLidRotation ??
+              DUMPSTER_LID_INITIAL_ANGLE,
+            min: DUMPSTER_LID_MIN_ANGLE,
+            max: DUMPSTER_LID_MAX_ANGLE,
+            step: 0.01,
+          },
+          dumpsterRightLidRotation: {
+            label: 'Right Lid',
+            value:
+              initialPresetSnapshot.dumpsterRightLidRotation ??
+              DUMPSTER_LID_INITIAL_ANGLE,
+            min: DUMPSTER_LID_MIN_ANGLE,
+            max: DUMPSTER_LID_MAX_ANGLE,
+            step: 0.01,
           },
         },
         { collapsed: true }
@@ -768,6 +775,38 @@ ${allEntries}
         },
         { collapsed: true }
       ),
+      'Brick Wall': folder(
+        {
+          brickWallEnabled: {
+            label: 'Enabled',
+            value: initialPresetSnapshot.brickWallEnabled,
+          },
+          brickWallLength: {
+            label: 'Length',
+            value: initialPresetSnapshot.brickWallLength,
+            min: 4,
+            max: 25,
+            step: 0.25,
+          },
+          brickWallHeight: {
+            label: 'Height',
+            value: initialPresetSnapshot.brickWallHeight,
+            min: 0.8,
+            max: 4.5,
+            step: 0.1,
+          },
+          brickWallTintColor: {
+            label: 'Tint',
+            value: initialPresetSnapshot.brickWallTintColor,
+          },
+          brickWallPosition: {
+            label: 'Position',
+            step: 0.05,
+            value: initialPresetSnapshot.brickWallPosition,
+          },
+        },
+        { collapsed: true }
+      ),
     }),
     [
       cameraControls,
@@ -787,6 +826,8 @@ ${allEntries}
     cursorAttractorMode,
     cursorAttractorStrength,
     cursorAttractorRadius,
+    dumpsterLeftLidRotation,
+    dumpsterRightLidRotation,
     sceneBackgroundColor,
     sceneFloorColor,
     sceneGridColor,
@@ -851,6 +892,16 @@ ${allEntries}
     shotModeRef.current = shotMode;
   }, [shotMode]);
 
+  useEffect(() => {
+    if (cleanupNonce === 0) {
+      return;
+    }
+
+    const presetSnapshot = PRESETS[selectedPreset] || PRESETS[DEFAULT_PRESET];
+
+    setControls(getPresetDumpsterLidControls(presetSnapshot));
+  }, [cleanupNonce, selectedPreset, setControls]);
+
   const camera = useMemo(() => {
     return buildCamera(controls);
   }, [buildCamera, controls]);
@@ -887,6 +938,10 @@ ${allEntries}
         brickWallPosition?.y ?? 0,
         brickWallPosition?.z ?? 0,
       ],
+    },
+    dumpsterConfig: {
+      leftLidRotation: dumpsterLeftLidRotation,
+      rightLidRotation: dumpsterRightLidRotation,
     },
     fireLightRig: {
       enabled: fireLightEnabled,

@@ -78,7 +78,7 @@ function collectUniqueGridAssets(...assetGroups) {
   const seenKeys = new Set();
 
   return assetGroups.flat().filter((asset) => {
-    if (asset.key === 'dumpster' || seenKeys.has(asset.key)) {
+    if (asset.key === 'dumpster' || asset.key === 'persian-rug' || seenKeys.has(asset.key)) {
       return false;
     }
 

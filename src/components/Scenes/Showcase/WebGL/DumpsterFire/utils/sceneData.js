@@ -1,4 +1,5 @@
 import { radians } from '../../../../../../utils/math';
+import PersianRug from '../../../../../elements/PersianRug/PersianRug';
 import {
   Snickers,
   SnickersInstance,
@@ -219,17 +220,10 @@ export const DECOR_RUG = Object.freeze({
   rotation: [0, Math.PI / 2, 0],
   scale: 1.2,
   colliderHalfExtents: [2.35, 0.02, 5.15],
-  fixedItemLift: 0.04,
-  fixedItemLiftByKey: Object.freeze({
-    litter: 0.085,
-    'litter-2': 0.085,
-    'cardboard-flat': 0.06,
-    'cardboard-flat-2': 0.06,
-  }),
 });
 export const DECOR_RUG_COLLIDER_POSITION = [
   SCENE_ROOT_POSITION[0] + DECOR_RUG.position[0],
-  GROUND_Y + DECOR_RUG.fixedItemLift / 2,
+  GROUND_Y + 0.02,
   SCENE_ROOT_POSITION[2] + DECOR_RUG.position[2],
 ];
 export const LIGHTING = {
@@ -580,42 +574,12 @@ export function getRandomShotAsset(random = Math.random) {
   return SHOT_ASSET_OPTIONS[Math.floor(random() * SHOT_ASSET_OPTIONS.length)];
 }
 
-function isWithinDecorRugFootprint(position = [0, 0, 0]) {
-  const [halfX, , halfZ] = DECOR_RUG.colliderHalfExtents;
-  const deltaX = position[0] - DECOR_RUG.position[0];
-  const deltaZ = position[2] - DECOR_RUG.position[2];
-  const inverseRotationY = -(DECOR_RUG.rotation?.[1] ?? 0);
-  const cosine = Math.cos(inverseRotationY);
-  const sine = Math.sin(inverseRotationY);
-  const localX = deltaX * cosine - deltaZ * sine;
-  const localZ = deltaX * sine + deltaZ * cosine;
-
-  return Math.abs(localX) <= halfX && Math.abs(localZ) <= halfZ;
-}
-
-function liftFixedSceneItemForDecorRug(item) {
-  const position = item.position ?? [0, 0, 0];
-
-  if (!isWithinDecorRugFootprint(position)) {
-    return item;
-  }
-
-  const keyedLift = DECOR_RUG.fixedItemLiftByKey?.[item.key];
-  const liftAmount =
-    typeof keyedLift === 'number' ? keyedLift : DECOR_RUG.fixedItemLift;
-
-  return {
-    ...item,
-    position: [position[0], position[1] + liftAmount, position[2]],
-  };
-}
-
 const BASE_FIXED_SCENE_ITEMS = [
   {
     key: 'dumpster',
     Component: Dumpster,
     PhysicsComponent: ArticulatedDumpster,
-    position: [0, 0, 0],
+    position: [0, 0.04, 0],
     rotation: [0, 0, 0],
     scale: 2,
     colliders: 'trimesh',
@@ -625,9 +589,17 @@ const BASE_FIXED_SCENE_ITEMS = [
     },
   },
   {
+    key: 'persian-rug',
+    Component: PersianRug,
+    position: DECOR_RUG.position,
+    rotation: DECOR_RUG.rotation,
+    scale: DECOR_RUG.scale,
+    colliders: false,
+  },
+  {
     key: 'garbage-bags-pile',
     Component: GarbageBagsPile,
-    position: [0, 1, 0.1],
+    position: [0, 1.04, 0.1],
     rotation: [0, 0, 0],
     scale: 0.65,
     colliders: 'hull',
@@ -635,7 +607,7 @@ const BASE_FIXED_SCENE_ITEMS = [
   {
     key: 'garbage-bags-2',
     Component: GarbageBags2,
-    position: [-1, 2, 0.1],
+    position: [-1, 2.04, 0.1],
     rotation: [0, 0, 0],
     scale: 0.8,
     colliders: 'hull',
@@ -643,35 +615,35 @@ const BASE_FIXED_SCENE_ITEMS = [
   {
     key: 'litter',
     Component: Litter,
-    position: [1, 0, 1],
+    position: [1, 0.085, 1],
     rotation: [0, 0, 0],
     scale: 1,
   },
   {
     key: 'litter-2',
     Component: Litter2,
-    position: [0, 0, 0],
+    position: [0, 0.085, 0],
     rotation: [0, 0, 0],
     scale: 1,
   },
   {
     key: 'litter',
     Component: Litter,
-    position: [-2, 0, 0.8],
+    position: [-2, 0.085, 0.8],
     rotation: [0, 0, 0],
     scale: 1,
   },
   {
     key: 'cardboard-flat',
     Component: CardboardFlat,
-    position: [-2, 0, 1],
+    position: [-2, 0.08, 1],
     rotation: [0, 90, 0],
     scale: 1,
   },
   {
     key: 'newspaper-1',
     Component: NewsPaper1,
-    position: [-1, 0, 1.4],
+    position: [-1, 0.04, 1.4],
     rotation: [0, 90, 0],
     scale: 1,
     showcaseYOffset: 0.02,
@@ -679,7 +651,7 @@ const BASE_FIXED_SCENE_ITEMS = [
   {
     key: 'vhs-tape',
     Component: LowPolyVHSTape,
-    position: [0.8, 0.03, 1.45],
+    position: [0.8, 0.07, 1.45],
     rotation: [Math.PI / 2, Math.PI, -Math.PI / 9],
     scale: 1,
     colliders: 'hull',
@@ -687,7 +659,7 @@ const BASE_FIXED_SCENE_ITEMS = [
   {
     key: 'cassette-tape-1',
     Component: LowPolyCassetteTape1,
-    position: [-0.2, 0.03, 1.6],
+    position: [-0.2, 0.07, 1.6],
     rotation: [Math.PI / 2, Math.PI, 0],
     scale: 1,
     colliders: 'hull',
@@ -695,7 +667,7 @@ const BASE_FIXED_SCENE_ITEMS = [
   {
     key: 'cassette-tape-2',
     Component: LowPolyCassetteTape2,
-    position: [1.85, 0.03, 1.9],
+    position: [1.85, 0.07, 1.9],
     rotation: [Math.PI / 2, -Math.PI, 0],
     scale: 1,
     colliders: 'hull',
@@ -703,7 +675,7 @@ const BASE_FIXED_SCENE_ITEMS = [
   {
     key: 'cassette-tape-3',
     Component: LowPolyCassetteTape3,
-    position: [4.1, 0.03, 1.45],
+    position: [4.1, 0.07, 1.45],
     rotation: [Math.PI / 2.2, Math.PI, 0],
     scale: 1,
     colliders: 'hull',
@@ -711,7 +683,7 @@ const BASE_FIXED_SCENE_ITEMS = [
   {
     key: 'floppy-disk',
     Component: LowPolyFloppyDisk,
-    position: [-1.35, 0.03, 2.05],
+    position: [-1.35, 0.07, 2.05],
     rotation: [Math.PI / 2, -Math.PI, Math.PI / 7],
     scale: 1,
     colliders: 'hull',
@@ -719,14 +691,14 @@ const BASE_FIXED_SCENE_ITEMS = [
   {
     key: 'litter-2',
     Component: Litter2,
-    position: [-3.5, 0, 1],
+    position: [-3.5, 0.085, 1],
     rotation: [0, -Math.PI / 3, 0],
     scale: 1,
   },
   {
     key: 'garbage-bags-1',
     Component: GarbageBags1,
-    position: [-2.7, 0, 0],
+    position: [-2.7, 0.04, 0],
     rotation: [0, 90, 0],
     scale: 1,
     colliders: 'hull',
@@ -734,7 +706,7 @@ const BASE_FIXED_SCENE_ITEMS = [
   {
     key: 'cardboard-box',
     Component: CardboardBox,
-    position: [-2.2, 0.35, 1.2],
+    position: [-2.2, 0.42, 1.2],
     rotation: [0, 90, 0],
     scale: 1,
     colliders: 'hull',
@@ -742,7 +714,7 @@ const BASE_FIXED_SCENE_ITEMS = [
   {
     key: 'cardboard-box-1',
     Component: CardboardBox1,
-    position: [-3.2, 0.15, 1.2],
+    position: [-3.2, 0.19, 1.2],
     rotation: [0, Math.PI / 3, 0],
     scale: 1,
     colliders: 'hull',
@@ -750,7 +722,7 @@ const BASE_FIXED_SCENE_ITEMS = [
   {
     key: 'cardboard-box-1',
     Component: CardboardBox1,
-    position: [-3.75, 0.15, 1.2],
+    position: [-3.75, 0.19, 1.2],
     rotation: [0, Math.PI / 1.7, 0],
     scale: 1,
     colliders: 'hull',
@@ -758,7 +730,7 @@ const BASE_FIXED_SCENE_ITEMS = [
   {
     key: 'cardboard-box-1',
     Component: CardboardBox1,
-    position: [-3.45, 0.45, 1.2],
+    position: [-3.45, 0.49, 1.2],
     rotation: [0, Math.PI / 2, 0],
     scale: 1,
     colliders: 'hull',
@@ -766,7 +738,7 @@ const BASE_FIXED_SCENE_ITEMS = [
   {
     key: 'newspaper-2',
     Component: NewsPaper2,
-    position: [-5, 0, 2],
+    position: [-5, 0.04, 2],
     rotation: [0, 90, 0],
     scale: 1,
     showcaseYOffset: 0.02,
@@ -774,7 +746,7 @@ const BASE_FIXED_SCENE_ITEMS = [
   {
     key: 'cigarette-butts',
     Component: CigaretteButts,
-    position: [0, 0, 1.7],
+    position: [0, 0.04, 1.7],
     rotation: [0, -Math.PI / 1.5, 0],
     scale: 0.75,
     showcaseYOffset: 0.02,
@@ -782,14 +754,14 @@ const BASE_FIXED_SCENE_ITEMS = [
   {
     key: 'cigarette-butts',
     Component: CigaretteButts,
-    position: [0.7, 0, 1.2],
+    position: [0.7, 0.04, 1.2],
     rotation: [0, Math.PI / 2.5, 0],
     scale: 0.75,
   },
   {
     key: 'newspaper-stack',
     Component: NewspaperStack,
-    position: [-1.5, 0.1, 1.25],
+    position: [-1.5, 0.17, 1.25],
     rotation: [0, -Math.PI / 1.5, 0],
     scale: 1.25,
     colliders: 'hull',
@@ -797,14 +769,14 @@ const BASE_FIXED_SCENE_ITEMS = [
   {
     key: 'cardboard-flat-2',
     Component: CardboardFlat2,
-    position: [2.4, 0, 0.75],
+    position: [2.4, 0.1, 0.75],
     rotation: [0, 0, 0],
     scale: 1,
   },
   {
     key: 'cardboard-box-3',
     Component: CardboardBox3,
-    position: [2, 0.25, 1.55],
+    position: [2, 0.29, 1.55],
     rotation: [0, -Math.PI / 2, 0],
     scale: 1,
     colliders: 'hull',
@@ -812,7 +784,7 @@ const BASE_FIXED_SCENE_ITEMS = [
   {
     key: 'cardboard-box-1',
     Component: CardboardBox1,
-    position: [1.4, 0.16, 1.3],
+    position: [1.4, 0.2, 1.3],
     rotation: [0, Math.PI / 3, 0],
     scale: 1,
     colliders: 'hull',
@@ -820,7 +792,7 @@ const BASE_FIXED_SCENE_ITEMS = [
   {
     key: 'cardboard-leaning-2',
     Component: CardboardLeaning2,
-    position: [2.17, 0.25, 0],
+    position: [2.17, 0.29, 0],
     rotation: [0, Math.PI / 2, 0],
     scale: 1,
     colliders: 'hull',
@@ -828,21 +800,21 @@ const BASE_FIXED_SCENE_ITEMS = [
   {
     key: 'litter',
     Component: Litter,
-    position: [3, 0, 0.8],
+    position: [3, 0.085, 0.8],
     rotation: [0, -Math.PI / 4, 0],
     scale: 1,
   },
   {
     key: 'cigarette-butts',
     Component: CigaretteButts,
-    position: [3, 0, 1.6],
+    position: [3, 0.04, 1.6],
     rotation: [0, Math.PI, 0],
     scale: 0.75,
   },
   {
     key: 'garbage-bags-2',
     Component: GarbageBags2,
-    position: [2.5, 0, 0],
+    position: [2.5, 0.04, 0],
     rotation: [0, -Math.PI / 1.3, 0],
     scale: 1,
     colliders: 'hull',
@@ -850,7 +822,7 @@ const BASE_FIXED_SCENE_ITEMS = [
   {
     key: 'cardboard-box-2',
     Component: CardboardBox2,
-    position: [3.1, 0.2, 0.35],
+    position: [3.1, 0.24, 0.35],
     rotation: [0, Math.PI / 2, 0],
     scale: 1,
     colliders: 'hull',
@@ -858,7 +830,7 @@ const BASE_FIXED_SCENE_ITEMS = [
   {
     key: 'cardboard-box',
     Component: CardboardBox,
-    position: [3.1, 0.4, -0.75],
+    position: [3.1, 0.44, -0.75],
     rotation: [0, Math.PI / 7, 0],
     scale: 1,
     colliders: 'hull',
@@ -866,7 +838,7 @@ const BASE_FIXED_SCENE_ITEMS = [
   {
     key: 'newspaper-stack',
     Component: NewspaperStack,
-    position: [2.6, 0.1, 1.25],
+    position: [2.6, 0.17, 1.25],
     rotation: [0, -Math.PI / 1.5, 0],
     scale: 1.25,
     colliders: 'hull',
@@ -874,16 +846,14 @@ const BASE_FIXED_SCENE_ITEMS = [
   {
     key: 'newspaper-3',
     Component: NewsPaper3,
-    position: [4.5, 0, 1.2],
+    position: [4.5, 0.04, 1.2],
     rotation: [0, 90, 0],
     scale: 1,
     showcaseYOffset: 0.02,
   },
 ];
 
-export const FIXED_SCENE_ITEMS = BASE_FIXED_SCENE_ITEMS.map(
-  liftFixedSceneItemForDecorRug
-);
+export const FIXED_SCENE_ITEMS = BASE_FIXED_SCENE_ITEMS;
 
 export const DYNAMIC_SCENE_ITEMS = [
   createTrashAsset('garbage-bag', {

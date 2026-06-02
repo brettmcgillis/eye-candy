@@ -484,6 +484,7 @@ export default function useSceneCamera({
     DEFAULT_SPLINE_TENSION
   );
   const splineClosed = camera?.spline?.closed ?? DEFAULT_SPLINE_CLOSED;
+  const splineShowPath = !!(camera?.spline?.showPath);
   const splineStartPosition = useMemo(() => {
     return splinePoints[0]?.position?.toArray?.() ?? fixedFrame.position;
   }, [fixedFrame.position, splinePoints]);
@@ -831,7 +832,11 @@ export default function useSceneCamera({
     isOrbitMode,
     isPortrait,
     isSplineMode,
+    splineClosed,
     splineOrientationMode,
+    splinePoints,
+    splineShowPath,
+    splineTension,
     perspectiveCameraProps: {
       far,
       fov: initialFrame.fov,

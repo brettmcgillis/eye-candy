@@ -1,11 +1,21 @@
 import * as THREE from 'three';
 
-import React, { useCallback, useMemo, useState } from 'react';
+import React, {
+  useCallback,
+  useEffect,
+  useLayoutEffect,
+  useMemo,
+  useRef,
+  useState,
+} from 'react';
+
+import { useThree } from '@react-three/fiber';
 
 import CENTER_STORE_REF_POSITION from '../../../../elements/sevenEleven/sevenElevenAnchors';
 import CameraRig from '../../../../rigging/CameraRig';
 import BlackHoleHero from './components/BlackHoleHero';
 import OrbitingBodies from './components/OrbitingBodies';
+import OutdoorStage from './components/OutdoorStage';
 import PostEffects from './components/PostEffects';
 import SpaceSkybox from './components/SpaceSkybox';
 import StoreStage from './components/StoreStage';
@@ -13,7 +23,36 @@ import useSceneControls from './hooks/useSceneControls';
 import {
   BLACK_HOLE_VARIANT_LEGACY_PORT,
   BLACK_HOLE_VARIANT_SINGULARITY,
+  SURVEILLANCE_SHOT_LABELS,
 } from './presets/presets';
+
+function DownwardSpotLight({ angle, color, decay, distance, intensity, penumbra, position }) {
+  const ref = useRef();
+  const { scene } = useThree();
+
+  useLayoutEffect(() => {
+    if (!ref.current || !position) return;
+    const target = ref.current.target;
+    scene.add(target);
+    target.position.set(position[0], position[1] - 100000, position[2]);
+    target.updateMatrixWorld();
+    return () => scene.remove(target);
+  }, [position, scene]);
+
+  if (!position) return null;
+  return (
+    <spotLight
+      ref={ref}
+      angle={angle}
+      color={color}
+      decay={decay}
+      distance={distance}
+      intensity={intensity}
+      penumbra={penumbra}
+      position={position}
+    />
+  );
+}
 
 function toVector3(value) {
   if (value instanceof THREE.Vector3) return value.clone();
@@ -125,9 +164,24 @@ function getActiveLensDiameter(config) {
   }
 }
 
-export default function Aisle9v2() {
+export default function Aisle9() {
   const config = useSceneControls();
   const [storeSpace, setStoreSpace] = useState(null);
+  const [outdoorLightPositions, setOutdoorLightPositions] = useState([]);
+  const [activeShotLabel, setActiveShotLabel] = useState(
+    () => config.surveillanceCameraLabel
+  );
+
+  useEffect(() => {
+    setActiveShotLabel(config.surveillanceCameraLabel);
+  }, [config.surveillanceCameraLabel]);
+
+  const handleShotChange = useCallback((shotId) => {
+    const label = SURVEILLANCE_SHOT_LABELS[shotId];
+    if (label) {
+      setActiveShotLabel(label);
+    }
+  }, []);
   const isSingularity =
     config.blackHoleVariant === BLACK_HOLE_VARIANT_SINGULARITY;
   const bloomEnabled = isSingularity && config.bloomEnabled;
@@ -149,14 +203,12 @@ export default function Aisle9v2() {
 
   const metricWorldScale = config.storeScale;
   const activeLensDiameter = getActiveLensDiameter(config);
-  const orbitMinDistance = Math.max(
-    140,
-    activeLensDiameter * metricWorldScale * 0.55
-  );
-  const orbitMaxDistance = Math.max(
-    1400,
-    activeLensDiameter * metricWorldScale * 2.5
-  );
+  const orbitMinDistance =
+    config.orbitMinDistance ??
+    Math.max(140, activeLensDiameter * metricWorldScale * 0.55);
+  const orbitMaxDistance =
+    config.orbitMaxDistance ??
+    Math.max(1400, activeLensDiameter * metricWorldScale * 2.5);
 
   const effectiveConfig = useMemo(
     () => ({ ...config, blackHolePosition, metricWorldScale }),
@@ -194,10 +246,30 @@ export default function Aisle9v2() {
     [blackHolePosition]
   );
 
+  const handleOutdoorLightPositionsChange = useCallback((positions) => {
+    setOutdoorLightPositions(positions);
+  }, []);
+
+  const storeInteriorPosition = useMemo(() => {
+    if (!transformMatrix) return null;
+    return toTuple(
+      new THREE.Vector3(-7.5, 3.7, -14).applyMatrix4(transformMatrix)
+    );
+  }, [transformMatrix]);
+
+  const storeFrontFillPosition = useMemo(() => {
+    if (!transformMatrix) return null;
+    return toTuple(
+      new THREE.Vector3(-5.8, 2.5, -7).applyMatrix4(transformMatrix)
+    );
+  }, [transformMatrix]);
+
   return (
     <>
       <CameraRig
+        apiRef={config.cameraApiRef}
         camera={cameraConfig}
+        onShotChange={handleShotChange}
         orbitControlsProps={{
           dampingFactor: 0.08,
           enableDamping: true,
@@ -214,28 +286,86 @@ export default function Aisle9v2() {
           rotationZ={config.skyboxRotationZ}
         />
       ) : null}
-      <StoreStage
-        onStoreSpaceChange={handleStoreSpaceChange}
-        storePosition={config.storePosition}
-        storeRotation={config.storeRotation}
-        storeScale={config.storeScale}
-        storeVariant={config.storeVariant}
-      />
+      {config.storeVariant === 'aisle9Store' ? (
+        <OutdoorStage
+          indoorEmissiveColor={config.indoorEmissiveColor}
+          indoorEmissiveIntensity={config.indoorEmissiveIntensity ?? 0}
+          onOutdoorLightPositionsChange={handleOutdoorLightPositionsChange}
+          onStoreSpaceChange={handleStoreSpaceChange}
+          outdoorEmissiveColor={config.outdoorEmissiveColor}
+          outdoorEmissiveIntensity={config.outdoorEmissiveIntensity ?? 0}
+          signEmissiveColor={config.signEmissiveColor}
+          signGlowIntensity={config.signGlowIntensity ?? 0}
+          storePosition={config.storePosition}
+          storeRotation={config.storeRotation}
+          storeScale={config.storeScale}
+        />
+      ) : (
+        <StoreStage
+          onStoreSpaceChange={handleStoreSpaceChange}
+          storePosition={config.storePosition}
+          storeRotation={config.storeRotation}
+          storeScale={config.storeScale}
+        />
+      )}
 
-      <ambientLight color="#f4efe6" intensity={1.6} />
-      <pointLight
-        color="#ffb05a"
-        decay={1.5}
-        distance={18}
-        intensity={120}
-        position={keyLightPosition}
-      />
-      <directionalLight color="#d9ecff" intensity={2.2} position={[4, 7, 5]} />
+      {config.nightMode ? (
+        <>
+          <ambientLight color={config.ambientColor} intensity={config.ambientIntensity} />
+          <directionalLight
+            color={config.moonColor}
+            intensity={config.moonIntensity}
+            position={[-3, 8, 4]}
+          />
+          {outdoorLightPositions.map((position, i) => (
+            <DownwardSpotLight
+              key={i}
+              angle={Math.PI / 5}
+              color={config.outdoorLightColor}
+              decay={0}
+              distance={10000}
+              intensity={config.outdoorLightIntensity ?? 0}
+              penumbra={0.4}
+              position={position}
+            />
+          ))}
+          <DownwardSpotLight
+            angle={Math.PI / 2}
+            color={config.indoorLightColor}
+            decay={0}
+            distance={8000}
+            intensity={config.indoorLightIntensity ?? 0}
+            penumbra={0.6}
+            position={storeInteriorPosition}
+          />
+          {storeFrontFillPosition && (
+            <pointLight
+              color={config.storeFillColor}
+              decay={0}
+              distance={5000}
+              intensity={config.storeFillIntensity ?? 0}
+              position={storeFrontFillPosition}
+            />
+          )}
+        </>
+      ) : (
+        <>
+          <ambientLight color="#f4efe6" intensity={1.6} />
+          <pointLight
+            color="#ffb05a"
+            decay={1.5}
+            distance={18}
+            intensity={120}
+            position={keyLightPosition}
+          />
+          <directionalLight color="#d9ecff" intensity={2.2} position={[4, 7, 5]} />
+        </>
+      )}
 
       {shouldRenderPostEffects ? (
         <PostEffects
           bloomEnabled={bloomEnabled}
-          cameraLabel={effectiveConfig.surveillanceCameraLabel}
+          cameraLabel={activeShotLabel}
           overlayEnabled={effectiveConfig.surveillanceOverlayEnabled}
         />
       ) : null}

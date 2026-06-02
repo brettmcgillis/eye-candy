@@ -1,33 +1,22 @@
 import { folder, useControls } from 'leva';
 
-import { useEffect, useMemo } from 'react';
+import { useEffect, useMemo, useRef } from 'react';
 
 import usePresetsFolder from '../../../../../../hooks/usePresetsFolder';
+import useSceneCameraControls from '../../../../../../hooks/useSceneCameraControls';
 import {
   BLACK_HOLE_VARIANT_LEGACY_PORT,
   BLACK_HOLE_VARIANT_SINGULARITY,
   BLACK_HOLE_VARIANT_WEBGPU,
-  CAMERA_MODE_FIXED,
-  CAMERA_MODE_ORBIT,
-  CAMERA_MODE_SPLINE,
   DEFAULT_PRESET,
   PRESETS,
+  buildAisle9CameraDeclaration,
   getPresetControls,
 } from '../presets/presets';
 
+const SCENE_LABEL = 'Aisle 9';
+const CAMERA_FOLDER_PATH = `${SCENE_LABEL}.Camera`;
 const COLLAPSED = { collapsed: true };
-
-const CAMERA_MODE_OPTIONS = {
-  Orbit: CAMERA_MODE_ORBIT,
-  Fixed: CAMERA_MODE_FIXED,
-  'Guided Path': CAMERA_MODE_SPLINE,
-};
-
-const FIXED_CAMERA_OPTIONS = {
-  'CAM 01': 'surveillance1',
-  'CAM 02': 'surveillance2',
-  'CAM 03': 'surveillance3',
-};
 
 const BLACK_HOLE_VARIANT_OPTIONS = {
   'Legacy Port': BLACK_HOLE_VARIANT_LEGACY_PORT,
@@ -403,21 +392,150 @@ export default function useSceneControls() {
     presets: PRESETS,
   });
   const initialSnapshot = PRESETS[initialPreset] || PRESETS[DEFAULT_PRESET];
+  const cameraApiRef = useRef(null);
+  const cameraControlOverrides = useMemo(() => {
+    return {
+      cameraAutoFit: {
+        render: (get) => get(`${CAMERA_FOLDER_PATH}.cameraMode`) === 'orbit',
+      },
+    };
+  }, []);
+  const initialCamera = useMemo(() => {
+    return buildAisle9CameraDeclaration(initialSnapshot);
+  }, [initialSnapshot]);
+  const { buildCamera, cameraControls } = useSceneCameraControls({
+    apiRef: cameraApiRef,
+    camera: initialCamera,
+    cameraFolderPath: CAMERA_FOLDER_PATH,
+    controlsSnapshotRef,
+    controlOverrides: cameraControlOverrides,
+  });
 
-  const [controls, setControls] = useControls('Aisle 9', () => ({
+  const [controls, setControls] = useControls(SCENE_LABEL, () => ({
     Presets: presetsFolder,
-    Camera: folder(
+    Camera: folder(cameraControls, COLLAPSED),
+    Scene: folder(
       {
-        cameraMode: {
-          label: 'Camera Mode',
-          value: initialSnapshot.cameraMode,
-          options: CAMERA_MODE_OPTIONS,
-        },
-        fixedCameraShot: {
-          label: 'Fixed Camera',
-          value: initialSnapshot.fixedCameraShot,
-          options: FIXED_CAMERA_OPTIONS,
-        },
+        Lighting: folder(
+          {
+            Ambient: folder(
+              {
+                ambientColor: {
+                  label: 'Color',
+                  value: initialSnapshot.ambientColor,
+                },
+                ambientIntensity: {
+                  label: 'Intensity',
+                  value: initialSnapshot.ambientIntensity,
+                  min: 0,
+                  max: 5,
+                  step: 0.01,
+                },
+              },
+              COLLAPSED
+            ),
+            Moon: folder(
+              {
+                moonColor: { label: 'Color', value: initialSnapshot.moonColor },
+                moonIntensity: {
+                  label: 'Intensity',
+                  value: initialSnapshot.moonIntensity,
+                  min: 0,
+                  max: 2,
+                  step: 0.01,
+                },
+              },
+              COLLAPSED
+            ),
+            'Outdoor Lights': folder(
+              {
+                outdoorEmissiveColor: {
+                  label: 'Emissive Color',
+                  value: initialSnapshot.outdoorEmissiveColor,
+                },
+                outdoorEmissiveIntensity: {
+                  label: 'Emissive',
+                  value: initialSnapshot.outdoorEmissiveIntensity ?? 0,
+                  min: 0,
+                  max: 10,
+                  step: 0.05,
+                },
+                outdoorLightColor: {
+                  label: 'Light Color',
+                  value: initialSnapshot.outdoorLightColor,
+                },
+                outdoorLightIntensity: {
+                  label: 'Intensity',
+                  value: initialSnapshot.outdoorLightIntensity ?? 0,
+                  min: 0,
+                  max: 10000,
+                  step: 50,
+                },
+              },
+              COLLAPSED
+            ),
+            'Indoor Lights': folder(
+              {
+                indoorEmissiveColor: {
+                  label: 'Emissive Color',
+                  value: initialSnapshot.indoorEmissiveColor,
+                },
+                indoorEmissiveIntensity: {
+                  label: 'Emissive',
+                  value: initialSnapshot.indoorEmissiveIntensity ?? 0,
+                  min: 0,
+                  max: 10,
+                  step: 0.05,
+                },
+                indoorLightColor: {
+                  label: 'Light Color',
+                  value: initialSnapshot.indoorLightColor,
+                },
+                indoorLightIntensity: {
+                  label: 'Intensity',
+                  value: initialSnapshot.indoorLightIntensity ?? 0,
+                  min: 0,
+                  max: 10000,
+                  step: 50,
+                },
+              },
+              COLLAPSED
+            ),
+            'Store Fill': folder(
+              {
+                storeFillColor: {
+                  label: 'Color',
+                  value: initialSnapshot.storeFillColor,
+                },
+                storeFillIntensity: {
+                  label: 'Intensity',
+                  value: initialSnapshot.storeFillIntensity ?? 0,
+                  min: 0,
+                  max: 5000,
+                  step: 10,
+                },
+              },
+              COLLAPSED
+            ),
+            Sign: folder(
+              {
+                signEmissiveColor: {
+                  label: 'Color',
+                  value: initialSnapshot.signEmissiveColor,
+                },
+                signGlowIntensity: {
+                  label: 'Intensity',
+                  value: initialSnapshot.signGlowIntensity ?? 0,
+                  min: 0,
+                  max: 5,
+                  step: 0.01,
+                },
+              },
+              COLLAPSED
+            ),
+          },
+          COLLAPSED
+        ),
       },
       COLLAPSED
     ),
@@ -569,6 +687,14 @@ export default function useSceneControls() {
       },
       COLLAPSED
     ),
+    storeVariant: {
+      value: initialSnapshot.storeVariant ?? 'sevenEleven',
+      render: () => false,
+    },
+    nightMode: {
+      value: initialSnapshot.nightMode ?? false,
+      render: () => false,
+    },
   }));
 
   useEffect(() => {
@@ -581,17 +707,27 @@ export default function useSceneControls() {
 
   const activePreset = PRESETS[controls.preset] || PRESETS[DEFAULT_PRESET];
 
-  // Stabilise cameraFixed so it only gets a new reference when fixedCameraShot
-  // actually changes — not on every Leva update. Without this, any control
-  // change (e.g. skyboxVariant) would produce a new cameraFixed object, which
-  // flows into cameraConfig → useSceneCamera → activeOrbitFrame → the layout
-  // effect that hard-resets the camera position.
-  const cameraFixed = useMemo(
-    () => ({
-      ...activePreset.cameraFixed,
-      activeShot: controls.fixedCameraShot,
-    }),
-    [activePreset.cameraFixed, controls.fixedCameraShot]
+  // Stable key from only camera-relevant control keys — prevents non-camera leva
+  // changes (lighting, etc.) from triggering a camera rebuild and snapping position.
+  const cameraControlsKey = useMemo(() => {
+    return JSON.stringify(
+      Object.fromEntries(
+        Object.entries(controls).filter(
+          ([key]) =>
+            key === 'preset' ||
+            key.startsWith('camera') ||
+            (key.startsWith('orbit') && !key.startsWith('orbitingBodies')) ||
+            key.startsWith('spline') ||
+            key.startsWith('fixed') ||
+            key.startsWith('operator')
+        )
+      )
+    );
+  }, [controls]);
+
+  const camera = useMemo(
+    () => buildCamera(controls),
+    [buildCamera, cameraControlsKey]
   );
 
   return useMemo(() => {
@@ -605,10 +741,18 @@ export default function useSceneControls() {
     return {
       ...activePreset,
       ...controls,
-      cameraFixed,
+      cameraApiRef,
+      cameraAutoFit: camera.cameraAutoFit,
+      cameraFar: camera.far,
+      cameraFixed: camera.fixed,
+      cameraMode: camera.mode,
+      cameraNear: camera.near,
+      cameraOrbit: camera.orbit,
+      cameraSpline: camera.spline,
+      fixedCameraShot: camera.fixed.activeShot,
       skyboxRotationX: skyboxRotation.x ?? 0,
       skyboxRotationY: skyboxRotation.y ?? 0,
       skyboxRotationZ: skyboxRotation.z ?? 0,
     };
-  }, [activePreset, cameraFixed, controls]);
+  }, [activePreset, camera, controls]);
 }

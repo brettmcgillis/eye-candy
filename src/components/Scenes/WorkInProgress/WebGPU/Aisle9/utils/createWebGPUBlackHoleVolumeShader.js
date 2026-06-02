@@ -37,7 +37,7 @@ const MAX_WEBGPU_STEPS = 192;
 
 const WebGPUBlackHoleResult = struct(
   { color: 'vec4', depth: 'float' },
-  'Aisle9v2WebGPUBlackHoleResult'
+  'Aisle9WebGPUBlackHoleResult'
 );
 
 function createDiskColor(uniforms) {

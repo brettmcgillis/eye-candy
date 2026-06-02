@@ -40,7 +40,7 @@ function buildSequenceRender(cameraFolderPath) {
     return undefined;
   }
 
-  return (get) => get(`${cameraFolderPath}.fixedBehavior`) === 'sequence';
+  return (get) => get(`${cameraFolderPath}.Fixed.fixedBehavior`) === 'sequence';
 }
 
 function buildForwardRender(cameraFolderPath) {

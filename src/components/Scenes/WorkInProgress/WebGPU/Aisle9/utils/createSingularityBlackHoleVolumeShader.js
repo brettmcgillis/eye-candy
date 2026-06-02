@@ -26,16 +26,13 @@ import {
   vec4,
 } from 'three/tsl';
 
-import {
-  createNebulaField,
-  createStarField,
-} from './blackHoleShaderHelpers';
+import { createNebulaField, createStarField } from './blackHoleShaderHelpers';
 
 const MAX_SINGULARITY_STEPS = 256;
 
 const SingularityBlackHoleResult = struct(
   { color: 'vec4', depth: 'float' },
-  'Aisle9v2SingularityBlackHoleResult'
+  'Aisle9SingularityBlackHoleResult'
 );
 
 function createRampColor(uniforms) {
@@ -59,7 +56,10 @@ function createRampColor(uniforms) {
   });
 }
 
-export default function createSingularityBlackHoleVolumeShader(uniforms, { noiseTextureNode }) {
+export default function createSingularityBlackHoleVolumeShader(
+  uniforms,
+  { noiseTextureNode }
+) {
   const starField = createStarField(uniforms);
   const nebulaField = createNebulaField(uniforms);
   const rampColor = createRampColor(uniforms);
@@ -116,11 +116,17 @@ export default function createSingularityBlackHoleVolumeShader(uniforms, { noise
 
         // Rotate around Y axis (disk lies in XZ plane, Y is perpendicular)
         const rotPhase = flatRadius.mul(4.27).sub(uniforms.time.mul(0.1));
-        const rotatedX = rayPosition.x.mul(rotPhase.cos()).sub(rayPosition.z.mul(rotPhase.sin()));
-        const rotatedZ = rayPosition.x.mul(rotPhase.sin()).add(rayPosition.z.mul(rotPhase.cos()));
+        const rotatedX = rayPosition.x
+          .mul(rotPhase.cos())
+          .sub(rayPosition.z.mul(rotPhase.sin()));
+        const rotatedZ = rayPosition.x
+          .mul(rotPhase.sin())
+          .add(rayPosition.z.mul(rotPhase.cos()));
 
         // UV scale controlled by fieldScale (default 3.8 → scale 2.0, matching singularity)
-        const noiseUV = vec2(rotatedX, rotatedZ).mul(uniforms.fieldScale.div(1.9));
+        const noiseUV = vec2(rotatedX, rotatedZ).mul(
+          uniforms.fieldScale.div(1.9)
+        );
 
         // Sample deep noise texture (RGB channels for richer patterns)
         const noiseDeep = textureSample(noiseTextureNode, noiseUV).rgb;
@@ -130,15 +136,31 @@ export default function createSingularityBlackHoleVolumeShader(uniforms, { noise
         const bandEnds = vec3(bandMin, float(0), uniforms.bandWidth);
         const dy = bandEnds.sub(vec3(rayPosition.y));
         const yQuad = dy.mul(dy).div(uniforms.bandWidth);
-        const yBand = max(uniforms.bandWidth.sub(yQuad).div(uniforms.bandWidth), vec3(0, 0, 0));
+        const yBand = max(
+          uniforms.bandWidth.sub(yQuad).div(uniforms.bandWidth),
+          vec3(0, 0, 0)
+        );
 
         // Noise gated by band (zero outside the disk)
         const noiseAmp = noiseDeep.mul(yBand);
-        const noiseAmpLen = sqrt(noiseAmp.x.mul(noiseAmp.x).add(noiseAmp.y.mul(noiseAmp.y)).add(noiseAmp.z.mul(noiseAmp.z)));
+        const noiseAmpLen = sqrt(
+          noiseAmp.x
+            .mul(noiseAmp.x)
+            .add(noiseAmp.y.mul(noiseAmp.y))
+            .add(noiseAmp.z.mul(noiseAmp.z))
+        );
 
         // Pseudo-normal: offset sample × large multiplier = sharp ring filaments
-        const noiseNormal = textureSample(noiseTextureNode, noiseUV.mul(1.002)).rgb.mul(yBand);
-        const noiseNormalLen = sqrt(noiseNormal.x.mul(noiseNormal.x).add(noiseNormal.y.mul(noiseNormal.y)).add(noiseNormal.z.mul(noiseNormal.z)));
+        const noiseNormal = textureSample(
+          noiseTextureNode,
+          noiseUV.mul(1.002)
+        ).rgb.mul(yBand);
+        const noiseNormalLen = sqrt(
+          noiseNormal.x
+            .mul(noiseNormal.x)
+            .add(noiseNormal.y.mul(noiseNormal.y))
+            .add(noiseNormal.z.mul(noiseNormal.z))
+        );
 
         const insideCore = radius.lessThan(uniforms.originRadius);
 
@@ -151,13 +173,24 @@ export default function createSingularityBlackHoleVolumeShader(uniforms, { noise
         const shadedColor = mix(baseColor, vec3(0), insideCore);
 
         // Alpha: noise modulates Y-threshold (singularity formula)
-        const radialAlpha = smoothstep(uniforms.fieldRadius, float(0), flatRadius);
-        const alphaPre = abs(rayPosition.y).add(noiseAmpLen.sub(0.75).mul(-0.6));
-        const tAlpha = clamp(
-          uniforms.bandWidth.sub(alphaPre).div(max(uniforms.bandWidth, float(0.0001))),
-          float(0), float(1)
+        const radialAlpha = smoothstep(
+          uniforms.fieldRadius,
+          float(0),
+          flatRadius
         );
-        const smoothTAlpha = tAlpha.mul(tAlpha).mul(float(3).sub(tAlpha.mul(2)));
+        const alphaPre = abs(rayPosition.y).add(
+          noiseAmpLen.sub(0.75).mul(-0.6)
+        );
+        const tAlpha = clamp(
+          uniforms.bandWidth
+            .sub(alphaPre)
+            .div(max(uniforms.bandWidth, float(0.0001))),
+          float(0),
+          float(1)
+        );
+        const smoothTAlpha = tAlpha
+          .mul(tAlpha)
+          .mul(float(3).sub(tAlpha.mul(2)));
         const bandAlpha = mix(float(0), radialAlpha, smoothTAlpha);
 
         const alphaLocal = mix(bandAlpha, float(1), insideCore);

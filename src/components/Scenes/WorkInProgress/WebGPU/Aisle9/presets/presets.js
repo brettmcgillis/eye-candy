@@ -1,3 +1,4 @@
+import { buildSceneCameraControlValues } from '../../../../../../hooks/sceneCameraUtils';
 import {
   AISLE9_CAMERA_SPLINES,
   DEFAULT_AISLE9_CAMERA_SPLINE,
@@ -11,6 +12,9 @@ export const CAMERA_MODE_SPLINE = 'spline';
 export const BLACK_HOLE_VARIANT_LEGACY_PORT = 'legacyPort';
 export const BLACK_HOLE_VARIANT_WEBGPU = 'webgpu';
 export const BLACK_HOLE_VARIANT_SINGULARITY = 'singularity';
+
+export const STORE_VARIANT_SEVEN_ELEVEN = 'sevenEleven';
+export const STORE_VARIANT_AISLE9 = 'aisle9Store';
 
 export const DEFAULT_PRESET = 'Store';
 
@@ -74,20 +78,11 @@ const SINGULARITY_CONTROL_KEYS = [
 ];
 
 const CONTROL_KEYS = [
-  'cameraMode',
-  'fixedCameraShot',
   'blackHoleEnabled',
   'blackHoleVariant',
   'orbitingBodiesEnabled',
   'skyboxEnabled',
   'skyboxRotation',
-  'storeVariant',
-  'skyboxRotationX',
-  'skyboxRotationY',
-  'skyboxRotationZ',
-  'storeScale',
-  'storePosition',
-  'storeRotation',
   ...LEGACY_CONTROL_KEYS,
   ...WEBGPU_CONTROL_KEYS,
   ...SINGULARITY_CONTROL_KEYS,
@@ -100,9 +95,26 @@ const CONTROL_KEYS = [
   'body2Instances',
   'body3Scale',
   'body3Instances',
-  'bloomEnabled',
   'surveillanceOverlayEnabled',
   'surveillanceCameraLabel',
+  'storeVariant',
+  'nightMode',
+  'ambientColor',
+  'ambientIntensity',
+  'moonColor',
+  'moonIntensity',
+  'outdoorEmissiveColor',
+  'outdoorEmissiveIntensity',
+  'outdoorLightColor',
+  'outdoorLightIntensity',
+  'indoorEmissiveColor',
+  'indoorEmissiveIntensity',
+  'indoorLightColor',
+  'indoorLightIntensity',
+  'storeFillColor',
+  'storeFillIntensity',
+  'signEmissiveColor',
+  'signGlowIntensity',
 ];
 
 const STORE_CENTER = [
@@ -134,6 +146,30 @@ const STORE_ORBIT_CAMERA = {
     position: [0, 240, 480],
     target: STORE_CENTER,
   },
+};
+
+// Model-space anchor for Aisle9Store — front entrance area
+const AISLE9_STORE_CENTER = [-5.8, 2, -8];
+
+const PARKING_LOT_ORBIT_CAMERA = {
+  desktop: {
+    fov: 50,
+    pivot: AISLE9_STORE_CENTER,
+    position: [0, 500, 5000],
+    target: AISLE9_STORE_CENTER,
+  },
+  mobile: {
+    fov: 60,
+    pivot: AISLE9_STORE_CENTER,
+    position: [0, 500, 5000],
+    target: AISLE9_STORE_CENTER,
+  },
+};
+
+export const SURVEILLANCE_SHOT_LABELS = {
+  surveillance1: 'CAM 01',
+  surveillance2: 'CAM 02',
+  surveillance3: 'CAM 03',
 };
 
 const STORE_FIXED_SHOTS = {
@@ -256,6 +292,25 @@ const BASE_POST = {
   surveillanceOverlayEnabled: false,
 };
 
+const BASE_NIGHT_LIGHTS = {
+  ambientColor: '#1a2440',
+  ambientIntensity: 0.35,
+  moonColor: '#7090cc',
+  moonIntensity: 2,
+  outdoorEmissiveColor: '#ffcc44',
+  outdoorEmissiveIntensity: 10,
+  outdoorLightColor: '#ffcc44',
+  outdoorLightIntensity: 6,
+  indoorEmissiveColor: '#fffbe0',
+  indoorEmissiveIntensity: 10,
+  indoorLightColor: '#fffbe0',
+  indoorLightIntensity: 5,
+  storeFillColor: '#ffe8c0',
+  storeFillIntensity: 1,
+  signEmissiveColor: '#ede9ac',
+  signGlowIntensity: 0,
+};
+
 const BASE_STORE = {
   blackHoleEnabled: true,
   skyboxEnabled: true,
@@ -309,13 +364,56 @@ function createPreset(overrides) {
     ...BASE_SINGULARITY_BLACK_HOLE,
     ...BASE_BODIES,
     ...BASE_POST,
+    ...BASE_NIGHT_LIGHTS,
     ...BASE_STORE,
     ...overrides,
   };
 }
 
+export function buildAisle9CameraDeclaration(snapshot = {}) {
+  return {
+    cameraAutoFit: snapshot.cameraAutoFit,
+    cameraMode: snapshot.cameraMode,
+    far: snapshot.cameraFar,
+    fixed: {
+      ...snapshot.cameraFixed,
+      activeShot: snapshot.fixedCameraShot ?? snapshot.cameraFixed?.activeShot,
+    },
+    near: snapshot.cameraNear,
+    orbit: snapshot.cameraOrbit,
+    spline: snapshot.cameraSpline,
+  };
+}
+
 export const PRESETS = {
   Store: createPreset({}),
+  'Parking Lot': createPreset({
+    storeVariant: STORE_VARIANT_AISLE9,
+    blackHoleEnabled: false,
+    orbitingBodiesEnabled: false,
+    nightMode: true,
+    ambientColor: '#1a2440',
+    ambientIntensity: 0.35,
+    moonColor: '#7090cc',
+    moonIntensity: 2,
+    outdoorEmissiveColor: '#ffcc44',
+    outdoorEmissiveIntensity: 10,
+    outdoorLightColor: '#ffcc44',
+    outdoorLightIntensity: 6,
+    indoorEmissiveColor: '#fffbe0',
+    indoorEmissiveIntensity: 10,
+    indoorLightColor: '#fffbe0',
+    indoorLightIntensity: 5,
+    storeFillColor: '#ffe8c0',
+    storeFillIntensity: 1,
+    signEmissiveColor: '#ede9ac',
+    signGlowIntensity: 1.5,
+    cameraMode: CAMERA_MODE_ORBIT,
+    cameraOrbit: PARKING_LOT_ORBIT_CAMERA,
+    cameraFar: 30000,
+    orbitMinDistance: 1000,
+    orbitMaxDistance: 20000,
+  }),
   'Guided Tour': createPreset({
     cameraMode: CAMERA_MODE_SPLINE,
     cameraSpline: {
@@ -358,6 +456,9 @@ export const PRESETS = {
 
 export function getPresetControls({ presetName, presetSnapshot }) {
   return {
+    ...buildSceneCameraControlValues(
+      buildAisle9CameraDeclaration(presetSnapshot)
+    ),
     ...Object.fromEntries(
       CONTROL_KEYS.filter((key) => key in presetSnapshot).map((key) => [
         key,

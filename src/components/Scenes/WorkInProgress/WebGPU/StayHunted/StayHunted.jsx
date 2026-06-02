@@ -115,7 +115,7 @@ export default function StayHunted() {
       <color attach="background" args={['#f5f0e0']} />
 
       {/* Rabbit — centered, sitting, slightly left */}
-      <Rabbit ref={rabbitRef} position={[-0.1, -0.18, 0]} scale={0.3} />
+      <Rabbit ref={rabbitRef} position={[-0.1, -0.18, 0]} scale={0.01} />
 
       {/* Arrows stay pinned to the animated hind pose instead of scene space. */}
       {ARROWS.map((arrow) => (

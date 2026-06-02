@@ -5,7 +5,7 @@ import React, { memo, useMemo } from 'react';
 import { useTexture } from '@react-three/drei';
 
 const MILKYWAY_PATH = '/textures/blackhole/legacy-milkyway.jpg';
-const SKYBOX_RADIUS = 8000;
+const SKYBOX_RADIUS = 10000;
 const DEG2RAD = Math.PI / 180;
 
 useTexture.preload(MILKYWAY_PATH);

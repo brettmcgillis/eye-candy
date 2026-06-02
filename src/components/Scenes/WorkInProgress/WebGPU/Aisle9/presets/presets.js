@@ -4,11 +4,6 @@ import {
 } from '../../../../../../presets/spline/aisle9CameraSplines';
 import CENTER_STORE_REF_POSITION from '../../../../../elements/sevenEleven/sevenElevenAnchors';
 
-export const ENVIRONMENT_STORE = 'store';
-
-export const STORE_VARIANT_FULL = 'full';
-export const STORE_VARIANT_LOW_POLY = 'lowPoly';
-
 export const CAMERA_MODE_ORBIT = 'orbit';
 export const CAMERA_MODE_FIXED = 'fixed';
 export const CAMERA_MODE_SPLINE = 'spline';
@@ -245,7 +240,6 @@ const BASE_POST = {
 };
 
 const BASE_STORE = {
-  storeVariant: STORE_VARIANT_LOW_POLY,
   skyboxRotationX: 159,
   skyboxRotationY: -93,
   skyboxRotationZ: -11,

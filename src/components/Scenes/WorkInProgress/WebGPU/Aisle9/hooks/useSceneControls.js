@@ -12,8 +12,6 @@ import {
   CAMERA_MODE_SPLINE,
   DEFAULT_PRESET,
   PRESETS,
-  STORE_VARIANT_FULL,
-  STORE_VARIANT_LOW_POLY,
   getPresetControls,
 } from '../presets/presets';
 
@@ -29,11 +27,6 @@ const FIXED_CAMERA_OPTIONS = {
   'CAM 01': 'surveillance1',
   'CAM 02': 'surveillance2',
   'CAM 03': 'surveillance3',
-};
-
-const STORE_VARIANT_OPTIONS = {
-  Full: STORE_VARIANT_FULL,
-  'Low Poly': STORE_VARIANT_LOW_POLY,
 };
 
 const BLACK_HOLE_VARIANT_OPTIONS = {
@@ -429,11 +422,6 @@ export default function useSceneControls() {
           label: 'Hero Variant',
           value: initialSnapshot.blackHoleVariant,
           options: BLACK_HOLE_VARIANT_OPTIONS,
-        },
-        storeVariant: {
-          label: 'Store Model',
-          value: initialSnapshot.storeVariant,
-          options: STORE_VARIANT_OPTIONS,
         },
         skyboxRotationX: {
           label: 'Sky Rot X',

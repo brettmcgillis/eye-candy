@@ -76,7 +76,11 @@ const SINGULARITY_CONTROL_KEYS = [
 const CONTROL_KEYS = [
   'cameraMode',
   'fixedCameraShot',
+  'blackHoleEnabled',
   'blackHoleVariant',
+  'orbitingBodiesEnabled',
+  'skyboxEnabled',
+  'skyboxRotation',
   'storeVariant',
   'skyboxRotationX',
   'skyboxRotationY',
@@ -90,6 +94,12 @@ const CONTROL_KEYS = [
   'bodyOrbitRadius',
   'bodyOrbitHeight',
   'bodyOrbitSpeed',
+  'body1Scale',
+  'body1Instances',
+  'body2Scale',
+  'body2Instances',
+  'body3Scale',
+  'body3Instances',
   'bloomEnabled',
   'surveillanceOverlayEnabled',
   'surveillanceCameraLabel',
@@ -229,9 +239,16 @@ const BASE_SINGULARITY_BLACK_HOLE = {
 };
 
 const BASE_BODIES = {
+  orbitingBodiesEnabled: true,
   bodyOrbitRadius: 0.75,
   bodyOrbitHeight: 0.1,
   bodyOrbitSpeed: 0.22,
+  body1Scale: 1,
+  body1Instances: 1,
+  body2Scale: 1,
+  body2Instances: 1,
+  body3Scale: 1,
+  body3Instances: 1,
 };
 
 const BASE_POST = {
@@ -240,6 +257,9 @@ const BASE_POST = {
 };
 
 const BASE_STORE = {
+  blackHoleEnabled: true,
+  skyboxEnabled: true,
+  skyboxRotation: { x: 159, y: -93, z: -11 },
   skyboxRotationX: 159,
   skyboxRotationY: -93,
   skyboxRotationZ: -11,

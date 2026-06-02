@@ -25,27 +25,3 @@
 # // Features
 
 # // Bugs
-
-# // Controls
-
-- Aisle 9
-  - Presets
-  - Blackhole
-    - enabled
-    - variation dropdown
-    - legacy folder
-    - webgpu folder
-    - singularity folder
-  - Orbiting bodies
-    - enabled
-    - Orbit folder
-    - Body {n} folder
-      - scale (number)
-      - instances
-  - Sky
-    - enabled
-    - rotation vec3 control
-  - Post
-    - CCTV folder
-      - enabled
-      - label

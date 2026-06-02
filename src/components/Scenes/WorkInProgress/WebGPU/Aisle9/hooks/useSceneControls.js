@@ -404,9 +404,9 @@ export default function useSceneControls() {
   });
   const initialSnapshot = PRESETS[initialPreset] || PRESETS[DEFAULT_PRESET];
 
-  const [controls, setControls] = useControls('Aisle 9 v2', () => ({
+  const [controls, setControls] = useControls('Aisle 9', () => ({
     Presets: presetsFolder,
-    Scene: folder(
+    Camera: folder(
       {
         cameraMode: {
           label: 'Camera Mode',
@@ -418,101 +418,154 @@ export default function useSceneControls() {
           value: initialSnapshot.fixedCameraShot,
           options: FIXED_CAMERA_OPTIONS,
         },
+      },
+      COLLAPSED
+    ),
+    Blackhole: folder(
+      {
+        blackHoleEnabled: {
+          label: 'Enabled',
+          value: initialSnapshot.blackHoleEnabled ?? true,
+        },
         blackHoleVariant: {
-          label: 'Hero Variant',
+          label: 'Variation',
           value: initialSnapshot.blackHoleVariant,
           options: BLACK_HOLE_VARIANT_OPTIONS,
         },
-        skyboxRotationX: {
-          label: 'Sky Rot X',
-          value: initialSnapshot.skyboxRotationX,
-          min: -180,
-          max: 180,
-          step: 1,
-        },
-        skyboxRotationY: {
-          label: 'Sky Rot Y',
-          value: initialSnapshot.skyboxRotationY,
-          min: -180,
-          max: 180,
-          step: 1,
-        },
-        skyboxRotationZ: {
-          label: 'Sky Rot Z',
-          value: initialSnapshot.skyboxRotationZ,
-          min: -180,
-          max: 180,
-          step: 1,
-        },
+        Legacy: folder(buildLegacyControls(initialSnapshot), COLLAPSED),
+        WebGPU: folder(buildWebGPUControls(initialSnapshot), COLLAPSED),
+        Singularity: folder(
+          buildSingularityControls(initialSnapshot),
+          COLLAPSED
+        ),
       },
       COLLAPSED
     ),
-    Store: folder(
+    'Orbiting bodies': folder(
       {
-        storeScale: {
-          label: 'Store Scale',
-          value: initialSnapshot.storeScale,
-          min: 260,
-          max: 560,
-          step: 1,
+        orbitingBodiesEnabled: {
+          label: 'Enabled',
+          value: initialSnapshot.orbitingBodiesEnabled ?? true,
         },
-        storePosition: {
-          label: 'Store Position',
-          value: initialSnapshot.storePosition,
-        },
-        storeRotation: {
-          label: 'Store Rotation',
-          value: initialSnapshot.storeRotation,
-        },
+        Orbit: folder(
+          {
+            bodyOrbitRadius: {
+              label: 'Radius',
+              value: initialSnapshot.bodyOrbitRadius,
+              min: 0.35,
+              max: 3.2,
+              step: 0.01,
+            },
+            bodyOrbitHeight: {
+              label: 'Height',
+              value: initialSnapshot.bodyOrbitHeight,
+              min: -1,
+              max: 1,
+              step: 0.01,
+            },
+            bodyOrbitSpeed: {
+              label: 'Speed',
+              value: initialSnapshot.bodyOrbitSpeed,
+              min: -1.5,
+              max: 1.5,
+              step: 0.01,
+            },
+          },
+          COLLAPSED
+        ),
+        'Body 1': folder(
+          {
+            body1Scale: {
+              label: 'Scale',
+              value: initialSnapshot.body1Scale ?? 1,
+              min: 0,
+              max: 4,
+              step: 0.01,
+            },
+            body1Instances: {
+              label: 'Instances',
+              value: initialSnapshot.body1Instances ?? 1,
+              min: 0,
+              max: 12,
+              step: 1,
+            },
+          },
+          COLLAPSED
+        ),
+        'Body 2': folder(
+          {
+            body2Scale: {
+              label: 'Scale',
+              value: initialSnapshot.body2Scale ?? 1,
+              min: 0,
+              max: 4,
+              step: 0.01,
+            },
+            body2Instances: {
+              label: 'Instances',
+              value: initialSnapshot.body2Instances ?? 1,
+              min: 0,
+              max: 12,
+              step: 1,
+            },
+          },
+          COLLAPSED
+        ),
+        'Body 3': folder(
+          {
+            body3Scale: {
+              label: 'Scale',
+              value: initialSnapshot.body3Scale ?? 1,
+              min: 0,
+              max: 4,
+              step: 0.01,
+            },
+            body3Instances: {
+              label: 'Instances',
+              value: initialSnapshot.body3Instances ?? 1,
+              min: 0,
+              max: 12,
+              step: 1,
+            },
+          },
+          COLLAPSED
+        ),
       },
       COLLAPSED
     ),
-    'Legacy Port': folder(buildLegacyControls(initialSnapshot), COLLAPSED),
-    'WebGPU Black Hole': folder(
-      buildWebGPUControls(initialSnapshot),
-      COLLAPSED
-    ),
-    Singularity: folder(buildSingularityControls(initialSnapshot), COLLAPSED),
-    Bodies: folder(
+    Sky: folder(
       {
-        bodyOrbitRadius: {
-          label: 'Orbit Radius',
-          value: initialSnapshot.bodyOrbitRadius,
-          min: 0.35,
-          max: 3.2,
-          step: 0.01,
+        skyboxEnabled: {
+          label: 'Enabled',
+          value: initialSnapshot.skyboxEnabled ?? true,
         },
-        bodyOrbitHeight: {
-          label: 'Orbit Height',
-          value: initialSnapshot.bodyOrbitHeight,
-          min: -1,
-          max: 1,
-          step: 0.01,
-        },
-        bodyOrbitSpeed: {
-          label: 'Orbit Speed',
-          value: initialSnapshot.bodyOrbitSpeed,
-          min: -1.5,
-          max: 1.5,
-          step: 0.01,
+        skyboxRotation: {
+          label: 'Rotation',
+          value: initialSnapshot.skyboxRotation ?? {
+            x: initialSnapshot.skyboxRotationX,
+            y: initialSnapshot.skyboxRotationY,
+            z: initialSnapshot.skyboxRotationZ,
+          },
+          step: 1,
         },
       },
       COLLAPSED
     ),
     Post: folder(
       {
-        bloomEnabled: {
-          label: 'Bloom',
-          value: initialSnapshot.bloomEnabled,
-        },
-        surveillanceOverlayEnabled: {
-          label: 'CCTV Overlay',
-          value: initialSnapshot.surveillanceOverlayEnabled,
-        },
-        surveillanceCameraLabel: {
-          label: 'CCTV Label',
-          value: initialSnapshot.surveillanceCameraLabel || 'CAM 01',
-        },
+        CCTV: folder(
+          {
+            surveillanceOverlayEnabled: {
+              label: 'Enabled',
+              value: initialSnapshot.surveillanceOverlayEnabled,
+            },
+            surveillanceCameraLabel: {
+              label: 'Label',
+              value: initialSnapshot.surveillanceCameraLabel || 'CAM 01',
+            },
+          },
+          COLLAPSED
+        ),
       },
       COLLAPSED
     ),
@@ -541,12 +594,21 @@ export default function useSceneControls() {
     [activePreset.cameraFixed, controls.fixedCameraShot]
   );
 
-  return useMemo(
-    () => ({
+  return useMemo(() => {
+    const skyboxRotation = controls.skyboxRotation ||
+      activePreset.skyboxRotation || {
+        x: activePreset.skyboxRotationX,
+        y: activePreset.skyboxRotationY,
+        z: activePreset.skyboxRotationZ,
+      };
+
+    return {
       ...activePreset,
       ...controls,
       cameraFixed,
-    }),
-    [activePreset, cameraFixed, controls]
-  );
+      skyboxRotationX: skyboxRotation.x ?? 0,
+      skyboxRotationY: skyboxRotation.y ?? 0,
+      skyboxRotationZ: skyboxRotation.z ?? 0,
+    };
+  }, [activePreset, cameraFixed, controls]);
 }

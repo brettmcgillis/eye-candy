@@ -207,11 +207,13 @@ export default function Aisle9v2() {
       />
 
       <color attach="background" args={['#111312']} />
-      <SpaceSkybox
-        rotationX={config.skyboxRotationX}
-        rotationY={config.skyboxRotationY}
-        rotationZ={config.skyboxRotationZ}
-      />
+      {config.skyboxEnabled ? (
+        <SpaceSkybox
+          rotationX={config.skyboxRotationX}
+          rotationY={config.skyboxRotationY}
+          rotationZ={config.skyboxRotationZ}
+        />
+      ) : null}
       <StoreStage
         onStoreSpaceChange={handleStoreSpaceChange}
         storePosition={config.storePosition}
@@ -238,8 +240,12 @@ export default function Aisle9v2() {
         />
       ) : null}
 
-      <BlackHoleHero config={effectiveConfig} />
-      <OrbitingBodies config={effectiveConfig} />
+      {config.blackHoleEnabled ? (
+        <BlackHoleHero config={effectiveConfig} />
+      ) : null}
+      {config.orbitingBodiesEnabled ? (
+        <OrbitingBodies config={effectiveConfig} />
+      ) : null}
     </>
   );
 }

@@ -664,6 +664,17 @@ export default function useSceneControls() {
           label: 'Enabled',
           value: initialSnapshot.skyboxEnabled ?? true,
         },
+        skyboxRotationEnabled: {
+          label: 'Rotate',
+          value: initialSnapshot.skyboxRotationEnabled ?? false,
+        },
+        skyboxRotationSpeed: {
+          label: 'Rotation Speed',
+          value: initialSnapshot.skyboxRotationSpeed ?? 2,
+          min: -30,
+          max: 30,
+          step: 0.1,
+        },
         skyboxRotation: {
           label: 'Rotation',
           value: initialSnapshot.skyboxRotation ?? {
@@ -678,6 +689,43 @@ export default function useSceneControls() {
     ),
     Post: folder(
       {
+        Bloom: folder(
+          {
+            bloomEnabled: {
+              label: 'Enabled',
+              value: initialSnapshot.bloomEnabled ?? false,
+            },
+            bloomStrength: {
+              label: 'Strength',
+              value: initialSnapshot.bloomStrength ?? 0.217,
+              min: 0,
+              max: 4,
+              step: 0.001,
+            },
+            bloomRadius: {
+              label: 'Radius',
+              value: initialSnapshot.bloomRadius ?? 0,
+              min: 0,
+              max: 2,
+              step: 0.001,
+            },
+            bloomThreshold: {
+              label: 'Threshold',
+              value: initialSnapshot.bloomThreshold ?? 0,
+              min: 0,
+              max: 2,
+              step: 0.001,
+            },
+            bloomToneMappingExposure: {
+              label: 'Exposure',
+              value: initialSnapshot.bloomToneMappingExposure ?? 1.2,
+              min: 0,
+              max: 3,
+              step: 0.001,
+            },
+          },
+          COLLAPSED
+        ),
         Retro: folder(
           {
             retroEnabled: {
@@ -739,6 +787,43 @@ export default function useSceneControls() {
               min: 0,
               max: 1,
               step: 0.01,
+            },
+          },
+          COLLAPSED
+        ),
+        'Chromatic Aberration': folder(
+          {
+            chromaticAberrationEnabled: {
+              label: 'Enabled',
+              value: initialSnapshot.chromaticAberrationEnabled ?? false,
+            },
+            chromaticAberrationStrength: {
+              label: 'Strength',
+              value: initialSnapshot.chromaticAberrationStrength ?? 1.2,
+              min: 0,
+              max: 8,
+              step: 0.01,
+            },
+            chromaticAberrationScale: {
+              label: 'Scale',
+              value: initialSnapshot.chromaticAberrationScale ?? 1.25,
+              min: 1,
+              max: 3,
+              step: 0.01,
+            },
+            chromaticAberrationCenterX: {
+              label: 'Center X',
+              value: initialSnapshot.chromaticAberrationCenterX ?? 0.5,
+              min: 0,
+              max: 1,
+              step: 0.001,
+            },
+            chromaticAberrationCenterY: {
+              label: 'Center Y',
+              value: initialSnapshot.chromaticAberrationCenterY ?? 0.5,
+              min: 0,
+              max: 1,
+              step: 0.001,
             },
           },
           COLLAPSED
@@ -814,6 +899,12 @@ export default function useSceneControls() {
       cameraOrbit: camera.orbit,
       cameraSpline: camera.spline,
       fixedCameraShot: camera.fixed.activeShot,
+      skyboxRotationEnabled:
+        controls.skyboxRotationEnabled ??
+        activePreset.skyboxRotationEnabled ??
+        false,
+      skyboxRotationSpeed:
+        controls.skyboxRotationSpeed ?? activePreset.skyboxRotationSpeed ?? 2,
       skyboxRotationX: skyboxRotation.x ?? 0,
       skyboxRotationY: skyboxRotation.y ?? 0,
       skyboxRotationZ: skyboxRotation.z ?? 0,

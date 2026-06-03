@@ -29,7 +29,6 @@ const SOURCE_BLOOM_STRENGTH = 0.217;
 const SOURCE_BLOOM_RADIUS = 0;
 const SOURCE_BLOOM_THRESHOLD = 0;
 const SOURCE_HUD_OPACITY = 0.56;
-const SOURCE_TONE_MAPPING_EXPOSURE = 1.2;
 const SOURCE_RETRO_CURVATURE = 0.02;
 const SOURCE_RETRO_COLOR_DEPTH_STEPS = 32;
 const SOURCE_RETRO_SCANLINE_INTENSITY = 0.3;
@@ -38,6 +37,10 @@ const SOURCE_RETRO_SCANLINE_SPEED = 0;
 const SOURCE_RETRO_VIGNETTE_INTENSITY = 0.3;
 const SOURCE_RETRO_COLOR_BLEEDING = 0.001;
 const SOURCE_RETRO_AFFINE_DISTORTION = 0;
+const SOURCE_CHROMATIC_ABERRATION_STRENGTH = 1.2;
+const SOURCE_CHROMATIC_ABERRATION_SCALE = 1.25;
+const SOURCE_CHROMATIC_ABERRATION_CENTER_X = 0.5;
+const SOURCE_CHROMATIC_ABERRATION_CENTER_Y = 0.5;
 
 const RETRO_SCANLINE_TIME_SCALE = 60;
 const RETRO_SCANLINE_MIN_MODULATION = 0.88;
@@ -352,7 +355,16 @@ function drawSecurityCamTimestamp(
 
 const PostEffects = memo(function PostEffects({
   bloomEnabled,
+  bloomRadius,
+  bloomStrength,
+  bloomThreshold,
+  bloomToneMappingExposure,
   cameraLabel,
+  chromaticAberrationCenterX,
+  chromaticAberrationCenterY,
+  chromaticAberrationEnabled,
+  chromaticAberrationScale,
+  chromaticAberrationStrength,
   overlayEnabled,
   retroAffineDistortion,
   retroColorBleeding,
@@ -390,6 +402,16 @@ const PostEffects = memo(function PostEffects({
       retroVignetteIntensity: uniform(SOURCE_RETRO_VIGNETTE_INTENSITY),
       retroColorBleeding: uniform(SOURCE_RETRO_COLOR_BLEEDING),
       retroAffineDistortion: uniform(SOURCE_RETRO_AFFINE_DISTORTION),
+      chromaticAberrationStrength: uniform(
+        SOURCE_CHROMATIC_ABERRATION_STRENGTH
+      ),
+      chromaticAberrationScale: uniform(SOURCE_CHROMATIC_ABERRATION_SCALE),
+      chromaticAberrationCenter: uniform(
+        new THREE.Vector2(
+          SOURCE_CHROMATIC_ABERRATION_CENTER_X,
+          SOURCE_CHROMATIC_ABERRATION_CENTER_Y
+        )
+      ),
     }),
     []
   );
@@ -416,7 +438,7 @@ const PostEffects = memo(function PostEffects({
 
     if (bloomEnabled) {
       renderer.toneMapping = THREE.ACESFilmicToneMapping;
-      renderer.toneMappingExposure = SOURCE_TONE_MAPPING_EXPOSURE;
+      renderer.toneMappingExposure = bloomToneMappingExposure;
       renderer.outputColorSpace = THREE.SRGBColorSpace;
     }
 
@@ -478,6 +500,23 @@ const PostEffects = memo(function PostEffects({
       outputNode = retroNode;
     }
 
+    const useStandaloneChromaticAberration = chromaticAberrationEnabled;
+
+    if (useStandaloneChromaticAberration) {
+      const standaloneChromaticStrength =
+        uniforms.chromaticAberrationStrength.mul(2.4);
+      const standaloneChromaticScale = uniforms.chromaticAberrationScale.add(
+        uniforms.chromaticAberrationStrength.mul(0.08)
+      );
+
+      outputNode = chromaticAberration(
+        outputNode,
+        standaloneChromaticStrength,
+        uniforms.chromaticAberrationCenter,
+        standaloneChromaticScale
+      );
+    }
+
     postProcessing.outputNode = overlayEnabled
       ? applySecurityCamOverlay(
           outputNode,
@@ -496,7 +535,9 @@ const PostEffects = memo(function PostEffects({
   }, [
     bloomEnabled,
     bloomUniforms,
+    bloomToneMappingExposure,
     camera,
+    chromaticAberrationEnabled,
     overlayEnabled,
     retroEnabled,
     renderer,
@@ -546,6 +587,15 @@ const PostEffects = memo(function PostEffects({
     uniforms.retroScanlineIntensity.value = retroScanlineIntensity;
     uniforms.retroScanlineSpeed.value = retroScanlineSpeed;
     uniforms.retroVignetteIntensity.value = retroVignetteIntensity;
+    uniforms.chromaticAberrationStrength.value = chromaticAberrationStrength;
+    uniforms.chromaticAberrationScale.value = chromaticAberrationScale;
+    uniforms.chromaticAberrationCenter.value.set(
+      chromaticAberrationCenterX,
+      chromaticAberrationCenterY
+    );
+    bloomUniforms.bloomStrength.value = bloomStrength;
+    bloomUniforms.bloomRadius.value = bloomRadius;
+    bloomUniforms.bloomThreshold.value = bloomThreshold;
 
     if (!postRef.current) {
       return;

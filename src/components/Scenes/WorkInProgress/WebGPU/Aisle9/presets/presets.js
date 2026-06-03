@@ -85,6 +85,8 @@ const CONTROL_KEYS = [
   'blackHoleVariant',
   'orbitingBodiesEnabled',
   'skyboxEnabled',
+  'skyboxRotationEnabled',
+  'skyboxRotationSpeed',
   'skyboxRotation',
   ...LEGACY_CONTROL_KEYS,
   ...WEBGPU_CONTROL_KEYS,
@@ -98,6 +100,11 @@ const CONTROL_KEYS = [
   'body2Instances',
   'body3Scale',
   'body3Instances',
+  'bloomEnabled',
+  'bloomStrength',
+  'bloomRadius',
+  'bloomThreshold',
+  'bloomToneMappingExposure',
   'retroEnabled',
   'retroCurvature',
   'retroColorDepthSteps',
@@ -107,6 +114,11 @@ const CONTROL_KEYS = [
   'retroVignetteIntensity',
   'retroColorBleeding',
   'retroAffineDistortion',
+  'chromaticAberrationEnabled',
+  'chromaticAberrationStrength',
+  'chromaticAberrationScale',
+  'chromaticAberrationCenterX',
+  'chromaticAberrationCenterY',
   'surveillanceOverlayEnabled',
   'surveillanceCameraLabel',
   'setting',
@@ -144,20 +156,18 @@ function vectorToTuple(vector) {
   return [vector.x, vector.y, vector.z];
 }
 
-const STORE_CENTER_WORLD = [52, -328, -346];
-
 const STORE_ORBIT_CAMERA = {
   desktop: {
     fov: 52,
-    pivot: STORE_CENTER_WORLD,
+    pivot: [0, 0, 0],
     position: [0, 240, 480],
-    target: STORE_CENTER_WORLD,
+    target: [0, 0, 0],
   },
   mobile: {
     fov: 62,
-    pivot: STORE_CENTER_WORLD,
+    pivot: [0, 0, 0],
     position: [0, 240, 480],
-    target: STORE_CENTER_WORLD,
+    target: [0, 0, 0],
   },
 };
 
@@ -338,6 +348,10 @@ const BASE_BODIES = {
 
 const BASE_POST = {
   bloomEnabled: false,
+  bloomStrength: 0.217,
+  bloomRadius: 0,
+  bloomThreshold: 0,
+  bloomToneMappingExposure: 1.2,
   retroEnabled: false,
   retroCurvature: 0.02,
   retroColorDepthSteps: 32,
@@ -347,6 +361,11 @@ const BASE_POST = {
   retroVignetteIntensity: 0.3,
   retroColorBleeding: 0.01,
   retroAffineDistortion: 1,
+  chromaticAberrationEnabled: false,
+  chromaticAberrationStrength: 1.2,
+  chromaticAberrationScale: 1.25,
+  chromaticAberrationCenterX: 0.5,
+  chromaticAberrationCenterY: 0.5,
   surveillanceOverlayEnabled: false,
 };
 
@@ -373,10 +392,9 @@ const BASE_STORE = {
   setting: SETTING_INDOOR,
   blackHoleEnabled: true,
   skyboxEnabled: true,
+  skyboxRotationEnabled: true,
+  skyboxRotationSpeed: 2,
   skyboxRotation: { x: 159, y: -93, z: -11 },
-  skyboxRotationX: 159,
-  skyboxRotationY: -93,
-  skyboxRotationZ: -11,
   storePosition: { x: 0, y: 0, z: 0 },
   storeRotation: { x: 0, y: 0, z: 0 },
   storeScale: 320,
@@ -471,6 +489,7 @@ export const PRESETS = {
     cameraFar: 30000,
     orbitMinDistance: 1000,
     orbitMaxDistance: 20000,
+    skyboxRotation: { x: 90, y: 0, z: -90 },
   }),
   'Guided Tour': createPreset({
     cameraMode: CAMERA_MODE_SPLINE,
@@ -538,6 +557,7 @@ export const PRESETS = {
     surveillanceCameraLabel: 'PARKING LOT',
     surveillanceOverlayEnabled: true,
     retroEnabled: true,
+    skyboxRotation: { x: 90, y: 0, z: -90 },
   }),
   'Back Alley': createPreset({
     setting: SETTING_OUTDOOR,
@@ -564,6 +584,7 @@ export const PRESETS = {
     surveillanceCameraLabel: 'ALLEY',
     surveillanceOverlayEnabled: true,
     retroEnabled: true,
+    skyboxRotation: { x: 90, y: 0, z: -90 },
   }),
   'Stock Room': createPreset({
     setting: SETTING_OUTDOOR,

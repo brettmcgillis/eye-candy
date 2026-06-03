@@ -160,9 +160,7 @@ export default function Aisle9() {
       setActiveShotLabel(label);
     }
   }, []);
-  const isSingularity =
-    config.blackHoleVariant === BLACK_HOLE_VARIANT_SINGULARITY;
-  const bloomEnabled = isSingularity && config.bloomEnabled;
+  const { bloomEnabled } = config;
   const transformMatrix = storeSpace?.storeLocalToWorldMatrix ?? null;
 
   const handleStoreSpaceChange = useCallback((nextStoreSpace) => {
@@ -195,6 +193,7 @@ export default function Aisle9() {
 
   const shouldRenderPostEffects =
     bloomEnabled ||
+    effectiveConfig.chromaticAberrationEnabled ||
     effectiveConfig.retroEnabled ||
     effectiveConfig.surveillanceOverlayEnabled;
 
@@ -266,6 +265,8 @@ export default function Aisle9() {
       <color attach="background" args={['#111312']} />
       {config.skyboxEnabled ? (
         <SpaceSkybox
+          rotationEnabled={config.skyboxRotationEnabled}
+          rotationSpeed={config.skyboxRotationSpeed}
           rotationX={config.skyboxRotationX}
           rotationY={config.skyboxRotationY}
           rotationZ={config.skyboxRotationZ}
@@ -357,7 +358,24 @@ export default function Aisle9() {
       {shouldRenderPostEffects ? (
         <PostEffects
           bloomEnabled={bloomEnabled}
+          bloomRadius={effectiveConfig.bloomRadius}
+          bloomStrength={effectiveConfig.bloomStrength}
+          bloomThreshold={effectiveConfig.bloomThreshold}
+          bloomToneMappingExposure={effectiveConfig.bloomToneMappingExposure}
           cameraLabel={activeShotLabel}
+          chromaticAberrationCenterX={
+            effectiveConfig.chromaticAberrationCenterX
+          }
+          chromaticAberrationCenterY={
+            effectiveConfig.chromaticAberrationCenterY
+          }
+          chromaticAberrationEnabled={
+            effectiveConfig.chromaticAberrationEnabled
+          }
+          chromaticAberrationScale={effectiveConfig.chromaticAberrationScale}
+          chromaticAberrationStrength={
+            effectiveConfig.chromaticAberrationStrength
+          }
           overlayEnabled={effectiveConfig.surveillanceOverlayEnabled}
           retroAffineDistortion={effectiveConfig.retroAffineDistortion}
           retroColorBleeding={effectiveConfig.retroColorBleeding}

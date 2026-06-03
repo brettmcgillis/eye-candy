@@ -28,6 +28,43 @@
 
 # // Bugs
 
+# // Presets for shots
+
+- [ ] Exterior Day - Operator Cam
+- [ ] Exterior Night - Operator Cam
+
+- [ ] Cam 1 - Day
+- [ ] Cam 1 - Night - No BH
+- [ ] Cam 1 - Night - BH
+- [ ] Cam 1 - Night - Med BH
+- [ ] Cam 1 - Night - LG BH
+
+- [ ] Cam 2 - Day
+- [ ] Cam 2 - Night - No BH
+- [ ] Cam 2 - Night - BH
+- [ ] Cam 2 - Night - Med BH
+- [ ] Cam 2 - Night - LG BH
+
+- [ ] Cam 3 - Day
+- [ ] Cam 3 - Night - No BH
+- [ ] Cam 3 - Night - BH
+- [ ] Cam 3 - Night - Med BH
+- [ ] Cam 3 - Night - LG BH
+
+- [ ] Guided Tour - Day
+- [ ] Guided Tour - Night - No BH
+- [ ] Guided Tour - Night - BH
+
+- [ ] Parking lot cam - Day
+- [ ] Parking lot cam - Night
+
+- [ ] Back Alley - Day
+- [ ] Back Alley - Night
+
+- [ ] Interior Day - Operator Cam
+- [ ] Interior Night - Operator Cam
+- [ ] Interior Night - Orbit Cam
+
 # // Shots
 
 - [ ] Exterior store front

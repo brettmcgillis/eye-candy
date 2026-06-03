@@ -51,6 +51,8 @@ const SpaceSkybox = memo(function SpaceSkybox({
   const sky = useMemo(() => {
     const s = new SkyMesh();
     s.scale.setScalar(SKYBOX_RADIUS);
+    s.frustumCulled = false;
+    s.material.depthWrite = false;
     return s;
   }, []);
 
@@ -91,7 +93,10 @@ const SpaceSkybox = memo(function SpaceSkybox({
     return () => sky.geometry.dispose();
   }, [sky]);
 
-  useFrame(({ clock }) => {
+  useFrame(({ camera, clock }) => {
+    if (skyMode === SKY_MODE_DAY) {
+      sky.position.copy(camera.position);
+    }
     if (!rotationEnabled || !meshRef.current) return;
     meshRef.current.rotation.y =
       (rotationY + clock.getElapsedTime() * rotationSpeed) * DEG2RAD;

@@ -363,7 +363,7 @@ const BASE_POST = {
   bloomRadius: 0,
   bloomThreshold: 0,
   bloomToneMappingExposure: 1.2,
-  retroEnabled: false,
+  retroEnabled: true,
   retroCurvature: 0.02,
   retroColorDepthSteps: 32,
   retroScanlineIntensity: 1,
@@ -538,21 +538,18 @@ export const PRESETS = {
     fixedCameraShot: 'surveillance1',
     surveillanceCameraLabel: 'CAM 01',
     surveillanceOverlayEnabled: true,
-    retroEnabled: true,
   }),
   'Surveillance 2': createPreset({
     cameraMode: CAMERA_MODE_FIXED,
     fixedCameraShot: 'surveillance2',
     surveillanceCameraLabel: 'CAM 02',
     surveillanceOverlayEnabled: true,
-    retroEnabled: true,
   }),
   'Surveillance 3': createPreset({
     cameraMode: CAMERA_MODE_FIXED,
     fixedCameraShot: 'surveillance3',
     surveillanceCameraLabel: 'CAM 03',
     surveillanceOverlayEnabled: true,
-    retroEnabled: true,
   }),
   'Parking Lot Cam': createPreset({
     setting: SETTING_OUTDOOR,
@@ -578,7 +575,6 @@ export const PRESETS = {
     fixedCameraShot: 'parkingLot',
     surveillanceCameraLabel: 'PARKING LOT',
     surveillanceOverlayEnabled: true,
-    retroEnabled: true,
     skyboxRotation: { x: 90, y: 0, z: -90 },
   }),
   'Back Alley': createPreset({
@@ -605,7 +601,6 @@ export const PRESETS = {
     fixedCameraShot: 'backAlley',
     surveillanceCameraLabel: 'ALLEY',
     surveillanceOverlayEnabled: true,
-    retroEnabled: true,
     skyboxRotation: { x: 90, y: 0, z: -90 },
   }),
   'Stock Room': createPreset({
@@ -632,7 +627,6 @@ export const PRESETS = {
     fixedCameraShot: 'stockRoom',
     surveillanceCameraLabel: 'STOCK ROOM',
     surveillanceOverlayEnabled: true,
-    retroEnabled: true,
   }),
 };
 

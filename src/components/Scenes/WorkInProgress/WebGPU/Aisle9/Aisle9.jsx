@@ -1,3 +1,6 @@
+/* eslint-disable react/no-array-index-key */
+
+/* eslint-disable consistent-return */
 import * as THREE from 'three';
 
 import React, {
@@ -23,16 +26,25 @@ import useSceneControls from './hooks/useSceneControls';
 import {
   BLACK_HOLE_VARIANT_LEGACY_PORT,
   BLACK_HOLE_VARIANT_SINGULARITY,
+  SETTING_OUTDOOR,
   SURVEILLANCE_SHOT_LABELS,
 } from './presets/presets';
 
-function DownwardSpotLight({ angle, color, decay, distance, intensity, penumbra, position }) {
+function DownwardSpotLight({
+  angle,
+  color,
+  decay,
+  distance,
+  intensity,
+  penumbra,
+  position,
+}) {
   const ref = useRef();
   const { scene } = useThree();
 
   useLayoutEffect(() => {
     if (!ref.current || !position) return;
-    const target = ref.current.target;
+    const { target } = ref.current;
     scene.add(target);
     target.position.set(position[0], position[1] - 100000, position[2]);
     target.updateMatrixWorld();
@@ -78,26 +90,6 @@ function transformFrame(frame, matrix, keys = ['position', 'target', 'pivot']) {
   return nextFrame;
 }
 
-function transformResponsiveFrame(frame, matrix) {
-  if (!matrix || !frame) return frame;
-
-  return {
-    ...frame,
-    desktop: transformFrame(frame.desktop, matrix),
-    mobile: transformFrame(frame.mobile, matrix),
-  };
-}
-
-function transformOrbitFrame(frame, matrix) {
-  if (!matrix || !frame) return frame;
-
-  return {
-    ...frame,
-    desktop: transformFrame(frame.desktop, matrix, ['target', 'pivot']),
-    mobile: transformFrame(frame.mobile, matrix, ['target', 'pivot']),
-  };
-}
-
 function transformSpline(spline, matrix) {
   if (!matrix || !spline?.points?.length) return spline;
 
@@ -128,20 +120,6 @@ function transformSpline(spline, matrix) {
 
       return nextPoint;
     }),
-  };
-}
-
-function transformFixed(fixed, matrix) {
-  if (!matrix || !fixed?.shots) return fixed;
-
-  return {
-    ...fixed,
-    shots: Object.fromEntries(
-      Object.entries(fixed.shots).map(([id, shot]) => [
-        id,
-        transformResponsiveFrame(shot, matrix),
-      ])
-    ),
   };
 }
 
@@ -216,16 +194,22 @@ export default function Aisle9() {
   );
 
   const shouldRenderPostEffects =
-    bloomEnabled || effectiveConfig.surveillanceOverlayEnabled;
+    bloomEnabled ||
+    effectiveConfig.retroEnabled ||
+    effectiveConfig.surveillanceOverlayEnabled;
 
   const cameraConfig = useMemo(
     () => ({
       autoFit: config.cameraAutoFit,
       far: config.cameraFar,
-      fixed: transformFixed(config.cameraFixed, transformMatrix),
+      fixed: config.cameraFixed,
       mode: config.cameraMode,
       near: config.cameraNear,
-      orbit: transformOrbitFrame(config.cameraOrbit, transformMatrix),
+      operator: {
+        moveSpeed: metricWorldScale * 2,
+        liftSpeed: metricWorldScale * 2,
+      },
+      orbit: config.cameraOrbit,
       spline: transformSpline(config.cameraSpline, transformMatrix),
     }),
     [
@@ -236,6 +220,7 @@ export default function Aisle9() {
       config.cameraNear,
       config.cameraOrbit,
       config.cameraSpline,
+      metricWorldScale,
       transformMatrix,
     ]
   );
@@ -286,7 +271,7 @@ export default function Aisle9() {
           rotationZ={config.skyboxRotationZ}
         />
       ) : null}
-      {config.storeVariant === 'aisle9Store' ? (
+      {config.setting === SETTING_OUTDOOR ? (
         <OutdoorStage
           indoorEmissiveColor={config.indoorEmissiveColor}
           indoorEmissiveIntensity={config.indoorEmissiveIntensity ?? 0}
@@ -309,9 +294,12 @@ export default function Aisle9() {
         />
       )}
 
-      {config.nightMode ? (
+      {config.setting === SETTING_OUTDOOR ? (
         <>
-          <ambientLight color={config.ambientColor} intensity={config.ambientIntensity} />
+          <ambientLight
+            color={config.ambientColor}
+            intensity={config.ambientIntensity}
+          />
           <directionalLight
             color={config.moonColor}
             intensity={config.moonIntensity}
@@ -358,7 +346,11 @@ export default function Aisle9() {
             intensity={120}
             position={keyLightPosition}
           />
-          <directionalLight color="#d9ecff" intensity={2.2} position={[4, 7, 5]} />
+          <directionalLight
+            color="#d9ecff"
+            intensity={2.2}
+            position={[4, 7, 5]}
+          />
         </>
       )}
 
@@ -367,6 +359,15 @@ export default function Aisle9() {
           bloomEnabled={bloomEnabled}
           cameraLabel={activeShotLabel}
           overlayEnabled={effectiveConfig.surveillanceOverlayEnabled}
+          retroAffineDistortion={effectiveConfig.retroAffineDistortion}
+          retroColorBleeding={effectiveConfig.retroColorBleeding}
+          retroColorDepthSteps={effectiveConfig.retroColorDepthSteps}
+          retroCurvature={effectiveConfig.retroCurvature}
+          retroEnabled={effectiveConfig.retroEnabled}
+          retroScanlineDensity={effectiveConfig.retroScanlineDensity}
+          retroScanlineIntensity={effectiveConfig.retroScanlineIntensity}
+          retroScanlineSpeed={effectiveConfig.retroScanlineSpeed}
+          retroVignetteIntensity={effectiveConfig.retroVignetteIntensity}
         />
       ) : null}
 

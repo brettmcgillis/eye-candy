@@ -10,6 +10,8 @@ import {
   BLACK_HOLE_VARIANT_WEBGPU,
   DEFAULT_PRESET,
   PRESETS,
+  SETTING_INDOOR,
+  SETTING_OUTDOOR,
   buildAisle9CameraDeclaration,
   getPresetControls,
 } from '../presets/presets';
@@ -416,6 +418,11 @@ export default function useSceneControls() {
     Camera: folder(cameraControls, COLLAPSED),
     Scene: folder(
       {
+        setting: {
+          label: 'Setting',
+          value: initialSnapshot.setting ?? SETTING_INDOOR,
+          options: { Indoor: SETTING_INDOOR, Outdoor: SETTING_OUTDOOR },
+        },
         Lighting: folder(
           {
             Ambient: folder(
@@ -671,6 +678,71 @@ export default function useSceneControls() {
     ),
     Post: folder(
       {
+        Retro: folder(
+          {
+            retroEnabled: {
+              label: 'Enabled',
+              value: initialSnapshot.retroEnabled ?? false,
+            },
+            retroCurvature: {
+              label: 'Curvature',
+              value: initialSnapshot.retroCurvature ?? 0.02,
+              min: 0,
+              max: 0.2,
+              step: 0.01,
+            },
+            retroColorDepthSteps: {
+              label: 'Color Depth',
+              value: initialSnapshot.retroColorDepthSteps ?? 32,
+              min: 4,
+              max: 32,
+              step: 1,
+            },
+            retroScanlineIntensity: {
+              label: 'Scanlines',
+              value: initialSnapshot.retroScanlineIntensity ?? 0.3,
+              min: 0,
+              max: 1,
+              step: 0.01,
+            },
+            retroScanlineDensity: {
+              label: 'Scanline Density',
+              value: initialSnapshot.retroScanlineDensity ?? 1,
+              min: 0.02,
+              max: 1,
+              step: 0.01,
+            },
+            retroScanlineSpeed: {
+              label: 'Scanline Speed',
+              value: initialSnapshot.retroScanlineSpeed ?? 0,
+              min: 0,
+              max: 0.1,
+              step: 0.01,
+            },
+            retroVignetteIntensity: {
+              label: 'Vignette',
+              value: initialSnapshot.retroVignetteIntensity ?? 0.3,
+              min: 0,
+              max: 1,
+              step: 0.01,
+            },
+            retroColorBleeding: {
+              label: 'Color Bleeding',
+              value: initialSnapshot.retroColorBleeding ?? 0.001,
+              min: 0,
+              max: 0.005,
+              step: 0.0001,
+            },
+            retroAffineDistortion: {
+              label: 'Affine Distortion',
+              value: initialSnapshot.retroAffineDistortion ?? 0,
+              min: 0,
+              max: 1,
+              step: 0.01,
+            },
+          },
+          COLLAPSED
+        ),
         CCTV: folder(
           {
             surveillanceOverlayEnabled: {
@@ -687,14 +759,6 @@ export default function useSceneControls() {
       },
       COLLAPSED
     ),
-    storeVariant: {
-      value: initialSnapshot.storeVariant ?? 'sevenEleven',
-      render: () => false,
-    },
-    nightMode: {
-      value: initialSnapshot.nightMode ?? false,
-      render: () => false,
-    },
   }));
 
   useEffect(() => {

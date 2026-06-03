@@ -1,5 +1,20 @@
 import { bloom } from 'three/addons/tsl/display/BloomNode.js';
-import { pass, uniform } from 'three/tsl';
+import { chromaticAberration } from 'three/addons/tsl/display/ChromaticAberrationNode.js';
+import {
+  Fn,
+  length,
+  mix,
+  oneMinus,
+  pass,
+  posterize,
+  sin,
+  smoothstep,
+  time,
+  uniform,
+  uv,
+  vec2,
+  vec4,
+} from 'three/tsl';
 import * as THREE from 'three/webgpu';
 
 import { memo, useEffect, useMemo, useRef } from 'react';
@@ -15,6 +30,57 @@ const SOURCE_BLOOM_RADIUS = 0;
 const SOURCE_BLOOM_THRESHOLD = 0;
 const SOURCE_HUD_OPACITY = 0.56;
 const SOURCE_TONE_MAPPING_EXPOSURE = 1.2;
+const SOURCE_RETRO_CURVATURE = 0.02;
+const SOURCE_RETRO_COLOR_DEPTH_STEPS = 32;
+const SOURCE_RETRO_SCANLINE_INTENSITY = 0.3;
+const SOURCE_RETRO_SCANLINE_DENSITY = 1;
+const SOURCE_RETRO_SCANLINE_SPEED = 0;
+const SOURCE_RETRO_VIGNETTE_INTENSITY = 0.3;
+const SOURCE_RETRO_COLOR_BLEEDING = 0.001;
+const SOURCE_RETRO_AFFINE_DISTORTION = 0;
+
+const RETRO_SCANLINE_TIME_SCALE = 60;
+const RETRO_SCANLINE_MIN_MODULATION = 0.88;
+const RETRO_SCANLINE_MAX_MODULATION = 1;
+
+const applyRetroScanlines = Fn(
+  ([inputNode, intensityNode, densityNode, speedNode]) => {
+    const scanlineFrequency = densityNode.mul(360).add(8);
+    const phase = uv()
+      .y.mul(scanlineFrequency)
+      .add(time.mul(speedNode).mul(RETRO_SCANLINE_TIME_SCALE));
+    const scanlineBand = sin(phase).mul(0.5).add(0.5);
+    const scanlineModulation = scanlineBand
+      .mul(RETRO_SCANLINE_MAX_MODULATION - RETRO_SCANLINE_MIN_MODULATION)
+      .add(RETRO_SCANLINE_MIN_MODULATION);
+    const scanlinedColor = inputNode.rgb.mul(scanlineModulation);
+
+    return vec4(mix(inputNode.rgb, scanlinedColor, intensityNode), inputNode.a);
+  }
+);
+
+const applyRetroVignette = Fn(([inputNode, intensityNode]) => {
+  const centeredUv = uv().sub(vec2(0.5));
+  const vignetteMask = smoothstep(0.3, 1, length(centeredUv).mul(1.8)).mul(
+    intensityNode
+  );
+  const vignettedColor = inputNode.rgb.mul(oneMinus(vignetteMask));
+
+  return vec4(vignettedColor, inputNode.a);
+});
+
+const applyRetroAffineDistortion = Fn(([inputNode, amountNode]) => {
+  const centeredUv = uv().sub(vec2(0.5));
+  const skew = centeredUv.x.mul(centeredUv.y).mul(amountNode).mul(2.4);
+  const shiftedColor = vec4(
+    inputNode.r.add(skew.mul(0.18)),
+    inputNode.g,
+    inputNode.b.sub(skew.mul(0.18)),
+    inputNode.a
+  );
+
+  return vec4(mix(inputNode.rgb, shiftedColor.rgb, amountNode), inputNode.a);
+});
 
 const MOBILE_OVERLAY_BREAKPOINT = 900;
 const DEFAULT_DESKTOP_OVERLAY_INSET_PX = 80;
@@ -288,6 +354,15 @@ const PostEffects = memo(function PostEffects({
   bloomEnabled,
   cameraLabel,
   overlayEnabled,
+  retroAffineDistortion,
+  retroColorBleeding,
+  retroColorDepthSteps,
+  retroCurvature,
+  retroEnabled,
+  retroScanlineDensity,
+  retroScanlineIntensity,
+  retroScanlineSpeed,
+  retroVignetteIntensity,
 }) {
   const { gl: renderer, scene, camera, size } = useThree();
   const postRef = useRef(null);
@@ -307,6 +382,14 @@ const PostEffects = memo(function PostEffects({
       surveillanceEffectBoost: uniform(1),
       surveillanceFrameMin: uniform(new THREE.Vector2(0, 0)),
       surveillanceFrameMax: uniform(new THREE.Vector2(1, 1)),
+      retroCurvature: uniform(SOURCE_RETRO_CURVATURE),
+      retroColorDepthSteps: uniform(SOURCE_RETRO_COLOR_DEPTH_STEPS),
+      retroScanlineIntensity: uniform(SOURCE_RETRO_SCANLINE_INTENSITY),
+      retroScanlineDensity: uniform(SOURCE_RETRO_SCANLINE_DENSITY),
+      retroScanlineSpeed: uniform(SOURCE_RETRO_SCANLINE_SPEED),
+      retroVignetteIntensity: uniform(SOURCE_RETRO_VIGNETTE_INTENSITY),
+      retroColorBleeding: uniform(SOURCE_RETRO_COLOR_BLEEDING),
+      retroAffineDistortion: uniform(SOURCE_RETRO_AFFINE_DISTORTION),
     }),
     []
   );
@@ -359,6 +442,42 @@ const PostEffects = memo(function PostEffects({
       );
     }
 
+    if (retroEnabled) {
+      let retroNode = outputNode;
+      const distortionStrength = uniforms.retroColorBleeding
+        .add(uniforms.retroCurvature.mul(0.08))
+        .add(uniforms.retroAffineDistortion.mul(0.05));
+      const distortionScale = uniforms.retroCurvature
+        .mul(0.5)
+        .add(uniforms.retroAffineDistortion.mul(0.35))
+        .add(1);
+      const scanlineDensity = uniforms.retroScanlineDensity.mul(0.95).add(0.05);
+
+      retroNode = chromaticAberration(
+        retroNode,
+        distortionStrength,
+        vec2(0.5, 0.5),
+        distortionScale
+      );
+      retroNode = applyRetroAffineDistortion(
+        retroNode,
+        uniforms.retroAffineDistortion
+      );
+      retroNode = posterize(retroNode, uniforms.retroColorDepthSteps);
+      retroNode = applyRetroVignette(
+        retroNode,
+        uniforms.retroVignetteIntensity
+      );
+      retroNode = applyRetroScanlines(
+        retroNode,
+        uniforms.retroScanlineIntensity,
+        scanlineDensity,
+        uniforms.retroScanlineSpeed
+      );
+
+      outputNode = retroNode;
+    }
+
     postProcessing.outputNode = overlayEnabled
       ? applySecurityCamOverlay(
           outputNode,
@@ -379,6 +498,7 @@ const PostEffects = memo(function PostEffects({
     bloomUniforms,
     camera,
     overlayEnabled,
+    retroEnabled,
     renderer,
     scene,
     timestampTextureState,
@@ -417,6 +537,15 @@ const PostEffects = memo(function PostEffects({
         surveillanceFrameBounds.frameAspect
       );
     }
+
+    uniforms.retroAffineDistortion.value = retroAffineDistortion;
+    uniforms.retroColorBleeding.value = retroColorBleeding;
+    uniforms.retroColorDepthSteps.value = retroColorDepthSteps;
+    uniforms.retroCurvature.value = retroCurvature;
+    uniforms.retroScanlineDensity.value = retroScanlineDensity;
+    uniforms.retroScanlineIntensity.value = retroScanlineIntensity;
+    uniforms.retroScanlineSpeed.value = retroScanlineSpeed;
+    uniforms.retroVignetteIntensity.value = retroVignetteIntensity;
 
     if (!postRef.current) {
       return;

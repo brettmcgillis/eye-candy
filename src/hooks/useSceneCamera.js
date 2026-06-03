@@ -1,3 +1,4 @@
+/* eslint-disable no-nested-ternary */
 import * as THREE from 'three';
 
 import {
@@ -28,6 +29,9 @@ const DEFAULT_SPLINE_CLOSED = true;
 const DEFAULT_SPLINE_FORWARD_DISTANCE = 1;
 const DEFAULT_CAPTURE_TARGET_DISTANCE = 5;
 const DEFAULT_CAPTURE_DECIMALS = 4;
+const DEFAULT_OPERATOR_SPEED_SCALE_REFERENCE = 100;
+const DEFAULT_OPERATOR_SPEED_SCALE_MIN_MULTIPLIER = 0.75;
+const DEFAULT_OPERATOR_SPEED_SCALE_MAX_MULTIPLIER = 6;
 const DEFAULT_OPERATOR_CAMERA = Object.freeze({
   moveSpeed: 6,
   liftSpeed: 6,
@@ -170,35 +174,74 @@ function normalizeSplinePoints(points = []) {
   });
 }
 
-function normalizeOperatorCamera(config = {}) {
-  const minFov = toFiniteNumber(config.minFov, DEFAULT_OPERATOR_CAMERA.minFov);
-  const maxFov = toFiniteNumber(config.maxFov, DEFAULT_OPERATOR_CAMERA.maxFov);
+function normalizeOperatorSpeedScale(config = {}) {
+  const source =
+    Number.isFinite(config) || typeof config === 'number'
+      ? { worldScale: config }
+      : config && typeof config === 'object'
+        ? config
+        : {};
+
+  const worldScale = toPositiveNumber(source.worldScale, 1);
+  const referenceScale = toPositiveNumber(
+    source.referenceScale,
+    DEFAULT_OPERATOR_SPEED_SCALE_REFERENCE
+  );
+  const minMultiplier = toPositiveNumber(
+    source.minMultiplier,
+    DEFAULT_OPERATOR_SPEED_SCALE_MIN_MULTIPLIER
+  );
+  const maxMultiplier = toPositiveNumber(
+    source.maxMultiplier,
+    DEFAULT_OPERATOR_SPEED_SCALE_MAX_MULTIPLIER
+  );
 
   return {
-    moveSpeed: toFiniteNumber(
-      config.moveSpeed,
-      DEFAULT_OPERATOR_CAMERA.moveSpeed
-    ),
-    liftSpeed: toFiniteNumber(
-      config.liftSpeed,
-      DEFAULT_OPERATOR_CAMERA.liftSpeed
-    ),
+    minMultiplier: Math.min(minMultiplier, maxMultiplier),
+    maxMultiplier: Math.max(minMultiplier, maxMultiplier),
+    referenceScale,
+    worldScale,
+  };
+}
+
+function getScaledOperatorDefaults(scaleConfig) {
+  const rawMultiplier = scaleConfig.worldScale / scaleConfig.referenceScale;
+  const speedMultiplier = THREE.MathUtils.clamp(
+    rawMultiplier,
+    scaleConfig.minMultiplier,
+    scaleConfig.maxMultiplier
+  );
+
+  return {
+    ...DEFAULT_OPERATOR_CAMERA,
+    moveSpeed: DEFAULT_OPERATOR_CAMERA.moveSpeed * speedMultiplier,
+    liftSpeed: DEFAULT_OPERATOR_CAMERA.liftSpeed * speedMultiplier,
+  };
+}
+
+function normalizeOperatorCamera(
+  config = {},
+  defaults = DEFAULT_OPERATOR_CAMERA
+) {
+  const minFov = toFiniteNumber(config.minFov, defaults.minFov);
+  const maxFov = toFiniteNumber(config.maxFov, defaults.maxFov);
+
+  return {
+    moveSpeed: toFiniteNumber(config.moveSpeed, defaults.moveSpeed),
+    liftSpeed: toFiniteNumber(config.liftSpeed, defaults.liftSpeed),
     boostMultiplier: toFiniteNumber(
       config.boostMultiplier,
-      DEFAULT_OPERATOR_CAMERA.boostMultiplier
+      defaults.boostMultiplier
     ),
     pointerLookSensitivity: toFiniteNumber(
       config.pointerLookSensitivity,
-      DEFAULT_OPERATOR_CAMERA.pointerLookSensitivity
+      defaults.pointerLookSensitivity
     ),
     stickLookSpeed: toFiniteNumber(
       config.stickLookSpeed,
-      DEFAULT_OPERATOR_CAMERA.stickLookSpeed
+      defaults.stickLookSpeed
     ),
-    zoomSpeed: toFiniteNumber(
-      config.zoomSpeed,
-      DEFAULT_OPERATOR_CAMERA.zoomSpeed
-    ),
+    zoomSpeed: toFiniteNumber(config.zoomSpeed, defaults.zoomSpeed),
     minFov: Math.min(minFov, maxFov),
     maxFov: Math.max(minFov, maxFov),
   };
@@ -358,7 +401,15 @@ export default function useSceneCamera({
   const isOperatorMode = mode === 'operator';
   const isSplineMode = mode === 'spline';
   const cameraAutoFit = camera?.autoFit ?? camera?.cameraAutoFit ?? true;
-  const operatorCamera = normalizeOperatorCamera(camera?.operator);
+  const operatorSpeedScale = normalizeOperatorSpeedScale(
+    camera?.operatorSpeedScale
+  );
+  const operatorDefaults = useMemo(() => {
+    return getScaledOperatorDefaults(operatorSpeedScale);
+  }, [operatorSpeedScale]);
+  const operatorCamera = useMemo(() => {
+    return normalizeOperatorCamera(camera?.operator, operatorDefaults);
+  }, [camera?.operator, operatorDefaults]);
   const near = toFiniteNumber(camera?.near, DEFAULT_NEAR);
   const far = toFiniteNumber(camera?.far, DEFAULT_FAR);
   const fixedCamera = useMemo(() => {
@@ -484,7 +535,7 @@ export default function useSceneCamera({
     DEFAULT_SPLINE_TENSION
   );
   const splineClosed = camera?.spline?.closed ?? DEFAULT_SPLINE_CLOSED;
-  const splineShowPath = !!(camera?.spline?.showPath);
+  const splineShowPath = !!camera?.spline?.showPath;
   const splineStartPosition = useMemo(() => {
     return splinePoints[0]?.position?.toArray?.() ?? fixedFrame.position;
   }, [fixedFrame.position, splinePoints]);

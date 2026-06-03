@@ -99,26 +99,31 @@ async function copyCurrentCameraSnapshot({
   const options = resolveCopyCurrentCameraOptions(copyCurrentCameraOptions);
   const cameraApi = apiRef?.current;
   const captureCurrentCameraFrame = cameraApi?.captureCurrentCameraFrame;
-  const controls = controlsSnapshotRef?.current ?? {};
 
-  if (controlsSnapshotRef && typeof captureCurrentCameraFrame === 'function') {
+  if (typeof captureCurrentCameraFrame === 'function') {
     const capturedFrame = captureCurrentCameraFrame(options);
-    const snapshot = buildSceneCameraConfigSnapshot({
-      camera,
-      capturedFrame,
-      controls,
-      options,
-    });
-    const serializedSnapshot = (
-      options.transform ?? serializeSceneCameraSnapshot
-    )(snapshot);
-    const clipboard = globalThis?.navigator?.clipboard;
 
-    if (clipboard?.writeText) {
-      await clipboard.writeText(serializedSnapshot);
+    if (capturedFrame) {
+      const frame = {
+        fov: capturedFrame.fov,
+        position: capturedFrame.position,
+        target: capturedFrame.target,
+      };
+      const snapshot = {
+        desktop: frame,
+        mobile: { ...frame },
+      };
+      const serializedSnapshot = (
+        options.transform ?? serializeSceneCameraSnapshot
+      )(snapshot);
+      const clipboard = globalThis?.navigator?.clipboard;
+
+      if (clipboard?.writeText) {
+        await clipboard.writeText(serializedSnapshot);
+      }
+
+      return serializedSnapshot;
     }
-
-    return serializedSnapshot;
   }
 
   return copyCurrentCamera(apiRef, options);

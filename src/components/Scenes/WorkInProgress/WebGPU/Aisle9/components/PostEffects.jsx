@@ -91,6 +91,7 @@ const DEFAULT_MOBILE_OVERLAY_INSET_PX = 16;
 const SURVEILLANCE_FRAME_ASPECT = 16 / 9;
 const MOBILE_SURVEILLANCE_FRAME_ASPECT = 1;
 const MOBILE_SURVEILLANCE_EFFECT_BOOST = 1.28;
+const MOBILE_HUD_TEXT_SCALE = 1.65;
 const HUD_CANVAS_WIDTH = 2048;
 const HUD_FRAME_INSET = 0.044;
 const HUD_LINE_MARGIN = 0.022;
@@ -198,6 +199,7 @@ function resolveSurveillanceFrameBounds(size) {
     maxY: clamp01(1 - frameTopPx / viewportHeight),
     frameAspect: frameWidthPx / Math.max(frameHeightPx, 1),
     effectBoost: isMobileLayout ? MOBILE_SURVEILLANCE_EFFECT_BOOST : 1,
+    isMobile: isMobileLayout,
   };
 }
 
@@ -238,7 +240,8 @@ function drawSecurityCamTimestamp(
   cameraLabel = DEFAULT_CAMERA_LABEL,
   frameAspect = SURVEILLANCE_FRAME_ASPECT,
   aisleLabel = DEFAULT_AISLE_LABEL,
-  date = new Date()
+  date = new Date(),
+  isMobile = false
 ) {
   if (!textureState?.context) return;
 
@@ -277,10 +280,11 @@ function drawSecurityCamTimestamp(
   const topGap = width * 0.022;
   const bottomGap = width * 0.04;
 
-  let recFontSize = width * 0.026;
-  let timestampFontSize = width * 0.023;
-  let dotRadius = width * 0.011;
-  let dotGap = width * 0.009;
+  const hudTextScale = isMobile ? MOBILE_HUD_TEXT_SCALE : 1;
+  let recFontSize = width * 0.026 * hudTextScale;
+  let timestampFontSize = width * 0.023 * hudTextScale;
+  let dotRadius = width * 0.011 * hudTextScale;
+  let dotGap = width * 0.009 * hudTextScale;
 
   context.clearRect(0, 0, width, height);
   context.shadowColor = 'rgba(0, 0, 0, 0.85)';
@@ -332,7 +336,7 @@ function drawSecurityCamTimestamp(
   context.textAlign = 'right';
   context.fillText(timestampLabel, contentRight, topBaselineY);
 
-  let bottomFontSize = width * 0.026;
+  let bottomFontSize = width * 0.026 * hudTextScale;
   context.font = `600 ${bottomFontSize}px 'Courier New', monospace`;
   const cameraWidth = context.measureText(cameraLabel).width;
   const aisleWidth = context.measureText(aisleLabel).width;
@@ -600,7 +604,8 @@ const PostEffects = memo(function PostEffects({
         cameraLabel,
         surveillanceFrameBounds.frameAspect,
         DEFAULT_AISLE_LABEL,
-        displayDate
+        displayDate,
+        surveillanceFrameBounds.isMobile
       );
     }
 

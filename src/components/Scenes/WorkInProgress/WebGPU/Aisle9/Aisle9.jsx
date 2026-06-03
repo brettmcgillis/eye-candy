@@ -270,6 +270,17 @@ export default function Aisle9() {
           rotationX={config.skyboxRotationX}
           rotationY={config.skyboxRotationY}
           rotationZ={config.skyboxRotationZ}
+          skyAzimuth={config.skyAzimuth}
+          skyCloudCoverage={config.skyCloudCoverage}
+          skyCloudDensity={config.skyCloudDensity}
+          skyCloudElevation={config.skyCloudElevation}
+          skyElevation={config.skyElevation}
+          skyMieCoefficient={config.skyMieCoefficient}
+          skyMieDirectionalG={config.skyMieDirectionalG}
+          skyRayleigh={config.skyRayleigh}
+          skyShowSunDisc={config.skyShowSunDisc}
+          skyTurbidity={config.skyTurbidity}
+          skyMode={config.skyboxMode}
         />
       ) : null}
       {config.setting === SETTING_OUTDOOR ? (

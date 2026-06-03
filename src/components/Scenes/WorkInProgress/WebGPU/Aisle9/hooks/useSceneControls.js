@@ -664,6 +664,11 @@ export default function useSceneControls() {
           label: 'Enabled',
           value: initialSnapshot.skyboxEnabled ?? true,
         },
+        skyboxMode: {
+          label: 'Mode',
+          value: initialSnapshot.skyboxMode ?? 'night',
+          options: ['night', 'day'],
+        },
         skyboxRotationEnabled: {
           label: 'Rotate',
           value: initialSnapshot.skyboxRotationEnabled ?? false,
@@ -675,6 +680,83 @@ export default function useSceneControls() {
           max: 30,
           step: 0.1,
         },
+        'Day Sky': folder(
+          {
+            skyTurbidity: {
+              label: 'Turbidity',
+              value: initialSnapshot.skyTurbidity ?? 8,
+              min: 0,
+              max: 20,
+              step: 0.1,
+            },
+            skyRayleigh: {
+              label: 'Rayleigh',
+              value: initialSnapshot.skyRayleigh ?? 3,
+              min: 0,
+              max: 4,
+              step: 0.001,
+            },
+            skyMieCoefficient: {
+              label: 'Mie Coefficient',
+              value: initialSnapshot.skyMieCoefficient ?? 0.005,
+              min: 0,
+              max: 0.1,
+              step: 0.001,
+            },
+            skyMieDirectionalG: {
+              label: 'Mie Directional G',
+              value: initialSnapshot.skyMieDirectionalG ?? 0.8,
+              min: 0,
+              max: 1,
+              step: 0.001,
+            },
+            skyElevation: {
+              label: 'Elevation',
+              value: initialSnapshot.skyElevation ?? 8,
+              min: 0,
+              max: 90,
+              step: 0.1,
+            },
+            skyAzimuth: {
+              label: 'Azimuth',
+              value: initialSnapshot.skyAzimuth ?? 180,
+              min: -180,
+              max: 180,
+              step: 0.1,
+            },
+            skyShowSunDisc: {
+              label: 'Sun Disc',
+              value: initialSnapshot.skyShowSunDisc ?? true,
+            },
+            Clouds: folder(
+              {
+                skyCloudCoverage: {
+                  label: 'Coverage',
+                  value: initialSnapshot.skyCloudCoverage ?? 0.4,
+                  min: 0,
+                  max: 1,
+                  step: 0.01,
+                },
+                skyCloudDensity: {
+                  label: 'Density',
+                  value: initialSnapshot.skyCloudDensity ?? 0.4,
+                  min: 0,
+                  max: 1,
+                  step: 0.01,
+                },
+                skyCloudElevation: {
+                  label: 'Elevation',
+                  value: initialSnapshot.skyCloudElevation ?? 0.5,
+                  min: 0,
+                  max: 1,
+                  step: 0.01,
+                },
+              },
+              COLLAPSED
+            ),
+          },
+          COLLAPSED
+        ),
         skyboxRotation: {
           label: 'Rotation',
           value: initialSnapshot.skyboxRotation ?? {
@@ -899,6 +981,23 @@ export default function useSceneControls() {
       cameraOrbit: camera.orbit,
       cameraSpline: camera.spline,
       fixedCameraShot: camera.fixed.activeShot,
+      skyTurbidity: controls.skyTurbidity ?? activePreset.skyTurbidity ?? 8,
+      skyRayleigh: controls.skyRayleigh ?? activePreset.skyRayleigh ?? 3,
+      skyMieCoefficient:
+        controls.skyMieCoefficient ?? activePreset.skyMieCoefficient ?? 0.005,
+      skyMieDirectionalG:
+        controls.skyMieDirectionalG ?? activePreset.skyMieDirectionalG ?? 0.8,
+      skyElevation: controls.skyElevation ?? activePreset.skyElevation ?? 8,
+      skyAzimuth: controls.skyAzimuth ?? activePreset.skyAzimuth ?? 180,
+      skyShowSunDisc:
+        controls.skyShowSunDisc ?? activePreset.skyShowSunDisc ?? true,
+      skyCloudCoverage:
+        controls.skyCloudCoverage ?? activePreset.skyCloudCoverage ?? 0.4,
+      skyCloudDensity:
+        controls.skyCloudDensity ?? activePreset.skyCloudDensity ?? 0.4,
+      skyCloudElevation:
+        controls.skyCloudElevation ?? activePreset.skyCloudElevation ?? 0.5,
+      skyboxMode: controls.skyboxMode ?? activePreset.skyboxMode ?? 'night',
       skyboxRotationEnabled:
         controls.skyboxRotationEnabled ??
         activePreset.skyboxRotationEnabled ??

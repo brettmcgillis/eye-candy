@@ -12,8 +12,6 @@
 
 [Back to main TODO](../../../../../../TODO.md)
 
-- [ ] set up a mode where geometry periodically gets spawned into scene and sucked into the blackhole before being culled from scene.
-
 # // Presets
 
 - [x] Store
@@ -21,7 +19,51 @@
 - [x] Surveillance 1
 - [x] Surveillance 2
 - [x] Surveillance 3
+- [x] Parking lot
+- [x] Parking lot cam
+- [x] Back Alley
+- [x] Stock room
 
 # // Features
 
 # // Bugs
+
+# // Shots
+
+- [ ] Exterior store front
+- [ ] Exterior building side
+- [ ] Exterior street lights
+- [ ] Exterior lead into store
+
+- [ ] Cam1 - no bh
+- [ ] Cam2 - no bh
+- [ ] Cam3 - no bh
+- [ ] Parking Lot Cam
+- [ ] Stock room
+- [ ] Back Alley
+- [ ] Guided tour - no bh - camera forward
+
+- [ ] Cam1 - bh - standard size
+- [ ] Cam2 - bh - standard size
+- [ ] Cam3 - bh - standard size
+- [ ] Guided tour - bh - standard size - camera lookAt bh
+- [ ] Store - bh - standard size - examine lensing
+- [ ] Store - bh - standard size - CA enabled
+
+- [ ] Cam1 - bh - med size - more bodies
+- [ ] Cam2 - bh - med size - more bodies
+- [ ] Cam3 - bh - med size - more bodies
+- [ ] Store - operator - bh - med size - more bodies - CA enabled
+
+- [ ] Cam1 - bh - large size - nost bodies
+- [ ] Cam2 - bh - large size - nost bodies
+- [ ] Cam3 - bh - large size - nost bodies
+- [ ] Store - operator - bh - large size - nost bodies - CA enabled
+
+- [ ] Exterior store front - day time
+- [ ] Cam1 - no bh - day time
+- [ ] Cam2 - no bh - day time
+- [ ] Cam3 - no bh - day time
+- [ ] Parking Lot Cam - day time
+- [ ] Stock room - day time
+- [ ] Back Alley - day time

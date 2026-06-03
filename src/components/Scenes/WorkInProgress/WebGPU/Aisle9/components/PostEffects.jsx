@@ -375,9 +375,11 @@ const PostEffects = memo(function PostEffects({
   retroScanlineIntensity,
   retroScanlineSpeed,
   retroVignetteIntensity,
+  recordingStartMs,
 }) {
   const { gl: renderer, scene, camera, size } = useThree();
   const postRef = useRef(null);
+  const seededTimelineRef = useRef({ seedMs: null, anchorMs: 0 });
   const timestampTextureState = useMemo(createSecurityCamTimestampTexture, []);
   const bloomUniforms = useMemo(
     () => ({
@@ -419,6 +421,18 @@ const PostEffects = memo(function PostEffects({
   useEffect(() => {
     uniforms.surveillanceOverlayEnabled.value = overlayEnabled ? 1 : 0;
   }, [overlayEnabled, uniforms]);
+
+  useEffect(() => {
+    if (Number.isFinite(recordingStartMs)) {
+      seededTimelineRef.current = {
+        seedMs: recordingStartMs,
+        anchorMs: Date.now(),
+      };
+      return;
+    }
+
+    seededTimelineRef.current = { seedMs: null, anchorMs: 0 };
+  }, [recordingStartMs]);
 
   useEffect(
     () => () => {
@@ -572,10 +586,21 @@ const PostEffects = memo(function PostEffects({
         surveillanceFrameBounds.maxY
       );
 
+      const seededTimeline = seededTimelineRef.current;
+      const hasSeededTimeline = Number.isFinite(seededTimeline.seedMs);
+      const displayDate = hasSeededTimeline
+        ? new Date(
+            seededTimeline.seedMs +
+              Math.max(Date.now() - seededTimeline.anchorMs, 0)
+          )
+        : new Date();
+
       drawSecurityCamTimestamp(
         timestampTextureState,
         cameraLabel,
-        surveillanceFrameBounds.frameAspect
+        surveillanceFrameBounds.frameAspect,
+        DEFAULT_AISLE_LABEL,
+        displayDate
       );
     }
 

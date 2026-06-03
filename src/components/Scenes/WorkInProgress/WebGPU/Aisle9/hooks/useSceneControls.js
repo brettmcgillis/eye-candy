@@ -20,6 +20,14 @@ const SCENE_LABEL = 'Aisle 9';
 const CAMERA_FOLDER_PATH = `${SCENE_LABEL}.Camera`;
 const COLLAPSED = { collapsed: true };
 
+function getDefaultRecordingStartDate() {
+  const now = new Date();
+  const year = String(now.getFullYear());
+  const month = String(now.getMonth() + 1).padStart(2, '0');
+  const day = String(now.getDate()).padStart(2, '0');
+  return `${year}-${month}-${day}`;
+}
+
 const BLACK_HOLE_VARIANT_OPTIONS = {
   'Legacy Port': BLACK_HOLE_VARIANT_LEGACY_PORT,
   'WebGPU Black Hole': BLACK_HOLE_VARIANT_WEBGPU,
@@ -919,6 +927,20 @@ export default function useSceneControls() {
             surveillanceCameraLabel: {
               label: 'Label',
               value: initialSnapshot.surveillanceCameraLabel || 'CAM 01',
+            },
+            recordingOverrideEnabled: {
+              label: 'Override Time',
+              value: initialSnapshot.recordingOverrideEnabled ?? false,
+            },
+            recordingStartDate: {
+              label: 'Start Date',
+              value:
+                initialSnapshot.recordingStartDate ||
+                getDefaultRecordingStartDate(),
+            },
+            recordingStartTime: {
+              label: 'Start Time',
+              value: initialSnapshot.recordingStartTime || '00:00:00',
             },
           },
           COLLAPSED

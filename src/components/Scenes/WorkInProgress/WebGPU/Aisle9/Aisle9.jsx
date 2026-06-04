@@ -294,6 +294,10 @@ export default function Aisle9() {
           body2Instances={config.body2Instances}
           body3Scale={config.body3Scale}
           body3Instances={config.body3Instances}
+          body4Scale={config.body4Scale}
+          body4Instances={config.body4Instances}
+          body5Scale={config.body5Scale}
+          body5Instances={config.body5Instances}
         />
       ) : null}
     </>

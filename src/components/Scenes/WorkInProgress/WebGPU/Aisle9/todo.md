@@ -70,7 +70,7 @@
 - [ ] Exterior store front
 - [ ] Exterior building side
 - [ ] Exterior street lights
-- [ ] Exterior lead into store
+- [ ] Exterior operator lead into store
 
 - [ ] Cam1 - no bh
 - [ ] Cam2 - no bh
@@ -92,10 +92,10 @@
 - [ ] Cam3 - bh - med size - more bodies
 - [ ] Store - operator - bh - med size - more bodies - CA enabled
 
-- [ ] Cam1 - bh - large size - nost bodies
-- [ ] Cam2 - bh - large size - nost bodies
-- [ ] Cam3 - bh - large size - nost bodies
-- [ ] Store - operator - bh - large size - nost bodies - CA enabled
+- [ ] Cam1 - bh - large size - most bodies
+- [ ] Cam2 - bh - large size - most bodies
+- [ ] Cam3 - bh - large size - most bodies
+- [ ] Store - operator - bh - large size - most bodies - CA enabled
 
 - [ ] Exterior store front - day time
 - [ ] Cam1 - no bh - day time

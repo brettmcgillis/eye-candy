@@ -34,7 +34,7 @@ export default function buildOrbitControls(snapshot) {
       },
       COLLAPSED
     ),
-    'Body 1': folder(
+    'Soda Can': folder(
       {
         body1Scale: {
           label: 'Scale',
@@ -53,7 +53,7 @@ export default function buildOrbitControls(snapshot) {
       },
       COLLAPSED
     ),
-    'Body 2': folder(
+    'Big Gulp': folder(
       {
         body2Scale: {
           label: 'Scale',
@@ -72,7 +72,7 @@ export default function buildOrbitControls(snapshot) {
       },
       COLLAPSED
     ),
-    'Body 3': folder(
+    'Snickers': folder(
       {
         body3Scale: {
           label: 'Scale',
@@ -84,6 +84,44 @@ export default function buildOrbitControls(snapshot) {
         body3Instances: {
           label: 'Instances',
           value: snapshot.body3Instances ?? 1,
+          min: 0,
+          max: 12,
+          step: 1,
+        },
+      },
+      COLLAPSED
+    ),
+    'Double Gulp': folder(
+      {
+        body4Scale: {
+          label: 'Scale',
+          value: snapshot.body4Scale ?? 1,
+          min: 0,
+          max: 4,
+          step: 0.01,
+        },
+        body4Instances: {
+          label: 'Instances',
+          value: snapshot.body4Instances ?? 1,
+          min: 0,
+          max: 12,
+          step: 1,
+        },
+      },
+      COLLAPSED
+    ),
+    'Lays Chips': folder(
+      {
+        body5Scale: {
+          label: 'Scale',
+          value: snapshot.body5Scale ?? 1,
+          min: 0,
+          max: 4,
+          step: 0.01,
+        },
+        body5Instances: {
+          label: 'Instances',
+          value: snapshot.body5Instances ?? 1,
           min: 0,
           max: 12,
           step: 1,

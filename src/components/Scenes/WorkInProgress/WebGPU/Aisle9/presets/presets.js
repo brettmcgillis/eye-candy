@@ -1,9 +1,12 @@
 import { buildSceneCameraControlValues } from '../../../../../../hooks/sceneCameraUtils';
 import {
-  AISLE9_CAMERA_SPLINES,
-  DEFAULT_AISLE9_CAMERA_SPLINE,
-} from '../../../../../../presets/spline/aisle9CameraSplines';
-import CENTER_STORE_REF_POSITION from '../../../../../elements/sevenEleven/sevenElevenAnchors';
+  PARKING_LOT_ORBIT_CAMERA,
+  STORE_CENTER,
+  STORE_FIXED_SHOTS,
+  STORE_GUIDED_PATH,
+  STORE_ORBIT_CAMERA,
+  V1_SPLINE_PROPS,
+} from './cameraData';
 
 export const CAMERA_MODE_ORBIT = 'orbit';
 export const CAMERA_MODE_FIXED = 'fixed';
@@ -154,139 +157,9 @@ const CONTROL_KEYS = [
   'signGlowIntensity',
 ];
 
-const STORE_CENTER = [
-  CENTER_STORE_REF_POSITION.x,
-  CENTER_STORE_REF_POSITION.y,
-  CENTER_STORE_REF_POSITION.z,
-];
 const BLACK_HOLE_DIAMETER_METERS = 0.3048;
 const DISK_DIAMETER_METERS = 1.08;
-const V1_GUIDED_TOUR_SPLINE =
-  AISLE9_CAMERA_SPLINES[DEFAULT_AISLE9_CAMERA_SPLINE];
-
 const DEFAULT_LENS_DIAMETER = 1.55;
-
-function vectorToTuple(vector) {
-  return [vector.x, vector.y, vector.z];
-}
-
-const STORE_ORBIT_CAMERA = {
-  desktop: {
-    fov: 52,
-    pivot: [0, 0, 0],
-    position: [0, 240, 480],
-    target: [0, 0, 0],
-  },
-  mobile: {
-    fov: 120,
-    pivot: [0, 0, 0],
-    position: [0, 240, 480],
-    target: [0, 0, 0],
-  },
-};
-
-const PARKING_LOT_ORBIT_CAMERA = {
-  desktop: {
-    fov: 50,
-    pivot: [1428.3735, 28.5588, 3714.1915],
-    position: [1895.8851, -94.9794, 5028.0299],
-    target: [1428.3735, 28.5588, 3714.1915],
-  },
-  mobile: {
-    fov: 71,
-    pivot: [1428.3735, 28.5588, 3714.1915],
-    position: [1895.8851, -94.9794, 5028.0299],
-    target: [1428.3735, 28.5588, 3714.1915],
-  },
-};
-
-export const SURVEILLANCE_SHOT_LABELS = {
-  surveillance1: 'CAM 01',
-  surveillance2: 'CAM 02',
-  surveillance3: 'CAM 03',
-  parkingLot: 'PARKING LOT',
-  backAlley: 'ALLEY',
-  stockRoom: 'STOCK ROOM',
-};
-
-const STORE_FIXED_SHOTS = {
-  surveillance1: {
-    desktop: {
-      fov: 80,
-      position: [1391.178, 488.9425, -1378.6474],
-      target: [14.6585, -368.5795, -176.0343],
-    },
-    mobile: {
-      fov: 113,
-      position: [1391.178, 488.9425, -1378.6474],
-      target: [14.6585, -368.5795, -176.0343],
-    },
-  },
-  surveillance2: {
-    desktop: {
-      fov: 80,
-      position: [1942.5989, 541.7598, 508.8782],
-      target: [421.1822, -259.0559, -662.6165],
-    },
-    mobile: {
-      fov: 110,
-      position: [1942.5989, 541.7598, 508.8782],
-      target: [85, -259.0559, -662.6165],
-    },
-  },
-  surveillance3: {
-    desktop: {
-      fov: 80,
-      position: [-1560.9531, 530.6089, 616.6168],
-      target: [-280.2008, -356.8199, -199.3305],
-    },
-    mobile: {
-      fov: 106,
-      position: [-1560.9531, 530.6089, 616.6168],
-      target: [-280.2008, -356.8199, -199.3305],
-    },
-  },
-  parkingLot: {
-    desktop: {
-      fov: 80,
-      position: [2731.4239, 369.7285, 57.6482],
-      target: [654.058, -598.7095, 1706.3125],
-    },
-    mobile: {
-      fov: 120,
-      position: [2731.4239, 369.7285, 57.6482],
-      target: [-571, -598.7095, 1706.3125],
-    },
-  },
-  backAlley: {
-    desktop: {
-      fov: 80,
-      position: [-683.703, 1038.5103, -5838.9676],
-      target: [7031.5736, -2702.3475, -7679.2539],
-    },
-    mobile: {
-      fov: 80,
-      position: [-683.703, 1038.5103, -5838.9676],
-      target: [7031.5736, -2702.3475, -7679.2539],
-    },
-  },
-  stockRoom: {
-    desktop: {
-      fov: 80,
-      position: [-3332.5039, 468.7574, -5452.2801],
-      target: [2997.8608, -3831.5421, 0.0777],
-    },
-    mobile: {
-      fov: 120,
-      position: [-3332.5039, 468.7574, -5452.2801],
-      target: [2997.8608, -3831.5421, 0.0777],
-    },
-  },
-};
-
-const STORE_GUIDED_PATH = V1_GUIDED_TOUR_SPLINE.points.map((point) => ({
-  position: vectorToTuple(point.position),
-}));
 
 const BASE_LEGACY_BLACK_HOLE = {
   legacyBlackHoleDiameter: BLACK_HOLE_DIAMETER_METERS,
@@ -383,10 +256,14 @@ const BASE_POST = {
   surveillanceOverlayEnabled: false,
 };
 
-const BASE_NIGHT_LIGHTS = {
+// Shared night lighting for all outdoor presets.
+// storePosition/storeRotation/storeScale and orbitMinDistance/orbitMaxDistance
+// are preset-only values — not exposed as leva controls since they are stable
+// per-preset and don't need per-frame tuning.
+const BASE_OUTDOOR_NIGHT = {
   ambientColor: '#1a2440',
   ambientIntensity: 0.35,
-  moonColor: '#010101',
+  moonColor: '#7090cc',
   moonIntensity: 2,
   outdoorEmissiveColor: '#ffcc44',
   outdoorEmissiveIntensity: 10,
@@ -399,6 +276,12 @@ const BASE_NIGHT_LIGHTS = {
   storeFillColor: '#ffe8c0',
   storeFillIntensity: 1,
   signEmissiveColor: '#ede9ac',
+  signGlowIntensity: 1.5,
+};
+
+const BASE_NIGHT_LIGHTS = {
+  ...BASE_OUTDOOR_NIGHT,
+  moonColor: '#010101',
   signGlowIntensity: 0,
 };
 
@@ -439,26 +322,14 @@ function createPreset(overrides) {
       shots: STORE_FIXED_SHOTS,
     },
     cameraSpline: {
-      closed: V1_GUIDED_TOUR_SPLINE.closed,
-      desktop: {
-        fov: 60,
-        target: STORE_CENTER,
-      },
+      ...V1_SPLINE_PROPS,
+      desktop: { fov: 60, target: STORE_CENTER },
       duration: 38,
       fov: 60,
-      mobile: {
-        fov: 120,
-        target: STORE_CENTER,
-      },
+      mobile: { fov: 120, target: STORE_CENTER },
       orientationMode: 'target',
       points: STORE_GUIDED_PATH,
       target: STORE_CENTER,
-      tension: V1_GUIDED_TOUR_SPLINE.tension,
-    },
-    blackHolePosition: {
-      x: STORE_CENTER[0],
-      y: STORE_CENTER[1],
-      z: STORE_CENTER[2],
     },
     blackHoleVariant: BLACK_HOLE_VARIANT_SINGULARITY,
     ...BASE_LEGACY_BLACK_HOLE,
@@ -487,28 +358,27 @@ export function buildAisle9CameraDeclaration(snapshot = {}) {
   };
 }
 
+export const SURVEILLANCE_SHOT_LABELS = {
+  surveillance1: 'CAM 01',
+  surveillance2: 'CAM 02',
+  surveillance3: 'CAM 03',
+  parkingLot: 'PARKING LOT',
+  backAlley: 'ALLEY',
+  stockRoom: 'STOCK ROOM',
+};
+
+const OUTDOOR_BASE = {
+  setting: SETTING_OUTDOOR,
+  blackHoleEnabled: false,
+  orbitingBodiesEnabled: false,
+  ...BASE_OUTDOOR_NIGHT,
+};
+
 export const PRESETS = {
   Store: createPreset({}),
+
   'Parking Lot': createPreset({
-    setting: SETTING_OUTDOOR,
-    blackHoleEnabled: false,
-    orbitingBodiesEnabled: false,
-    ambientColor: '#1a2440',
-    ambientIntensity: 0.35,
-    moonColor: '#7090cc',
-    moonIntensity: 2,
-    outdoorEmissiveColor: '#ffcc44',
-    outdoorEmissiveIntensity: 10,
-    outdoorLightColor: '#ffcc44',
-    outdoorLightIntensity: 6,
-    indoorEmissiveColor: '#fffbe0',
-    indoorEmissiveIntensity: 10,
-    indoorLightColor: '#fffbe0',
-    indoorLightIntensity: 5,
-    storeFillColor: '#ffe8c0',
-    storeFillIntensity: 1,
-    signEmissiveColor: '#ede9ac',
-    signGlowIntensity: 1.5,
+    ...OUTDOOR_BASE,
     cameraMode: CAMERA_MODE_ORBIT,
     cameraOrbit: PARKING_LOT_ORBIT_CAMERA,
     cameraFar: 30000,
@@ -516,116 +386,62 @@ export const PRESETS = {
     orbitMaxDistance: 20000,
     skyboxRotation: { x: 90, y: 0, z: -90 },
   }),
+
   'Guided Tour': createPreset({
     cameraMode: CAMERA_MODE_SPLINE,
     cameraSpline: {
-      closed: V1_GUIDED_TOUR_SPLINE.closed,
-      desktop: {
-        fov: 60,
-        target: STORE_CENTER,
-      },
+      ...V1_SPLINE_PROPS,
+      desktop: { fov: 60, target: STORE_CENTER },
       duration: 42,
       fov: 60,
-      mobile: {
-        fov: 85,
-        target: STORE_CENTER,
-      },
+      mobile: { fov: 85, target: STORE_CENTER },
       orientationMode: 'target',
       points: STORE_GUIDED_PATH,
       target: STORE_CENTER,
-      tension: V1_GUIDED_TOUR_SPLINE.tension,
     },
   }),
+
   Surveillance: createPreset({
     cameraMode: CAMERA_MODE_FIXED,
     fixedCameraShot: 'surveillance1',
     surveillanceCameraLabel: 'CAM 01',
     surveillanceOverlayEnabled: true,
   }),
+
   'Surveillance 2': createPreset({
     cameraMode: CAMERA_MODE_FIXED,
     fixedCameraShot: 'surveillance2',
     surveillanceCameraLabel: 'CAM 02',
     surveillanceOverlayEnabled: true,
   }),
+
   'Surveillance 3': createPreset({
     cameraMode: CAMERA_MODE_FIXED,
     fixedCameraShot: 'surveillance3',
     surveillanceCameraLabel: 'CAM 03',
     surveillanceOverlayEnabled: true,
   }),
+
   'Parking Lot Cam': createPreset({
-    setting: SETTING_OUTDOOR,
-    blackHoleEnabled: false,
-    orbitingBodiesEnabled: false,
-    ambientColor: '#1a2440',
-    ambientIntensity: 0.35,
-    moonColor: '#7090cc',
-    moonIntensity: 2,
-    outdoorEmissiveColor: '#ffcc44',
-    outdoorEmissiveIntensity: 10,
-    outdoorLightColor: '#ffcc44',
-    outdoorLightIntensity: 6,
-    indoorEmissiveColor: '#fffbe0',
-    indoorEmissiveIntensity: 10,
-    indoorLightColor: '#fffbe0',
-    indoorLightIntensity: 5,
-    storeFillColor: '#ffe8c0',
-    storeFillIntensity: 1,
-    signEmissiveColor: '#ede9ac',
-    signGlowIntensity: 1.5,
+    ...OUTDOOR_BASE,
     cameraMode: CAMERA_MODE_FIXED,
     fixedCameraShot: 'parkingLot',
     surveillanceCameraLabel: 'PARKING LOT',
     surveillanceOverlayEnabled: true,
     skyboxRotation: { x: 90, y: 0, z: -90 },
   }),
+
   'Back Alley': createPreset({
-    setting: SETTING_OUTDOOR,
-    blackHoleEnabled: false,
-    orbitingBodiesEnabled: false,
-    ambientColor: '#1a2440',
-    ambientIntensity: 0.35,
-    moonColor: '#7090cc',
-    moonIntensity: 2,
-    outdoorEmissiveColor: '#ffcc44',
-    outdoorEmissiveIntensity: 10,
-    outdoorLightColor: '#ffcc44',
-    outdoorLightIntensity: 6,
-    indoorEmissiveColor: '#fffbe0',
-    indoorEmissiveIntensity: 10,
-    indoorLightColor: '#fffbe0',
-    indoorLightIntensity: 5,
-    storeFillColor: '#ffe8c0',
-    storeFillIntensity: 1,
-    signEmissiveColor: '#ede9ac',
-    signGlowIntensity: 1.5,
+    ...OUTDOOR_BASE,
     cameraMode: CAMERA_MODE_FIXED,
     fixedCameraShot: 'backAlley',
     surveillanceCameraLabel: 'ALLEY',
     surveillanceOverlayEnabled: true,
     skyboxRotation: { x: 90, y: 0, z: -90 },
   }),
+
   'Stock Room': createPreset({
-    setting: SETTING_OUTDOOR,
-    blackHoleEnabled: false,
-    orbitingBodiesEnabled: false,
-    ambientColor: '#1a2440',
-    ambientIntensity: 0.35,
-    moonColor: '#7090cc',
-    moonIntensity: 2,
-    outdoorEmissiveColor: '#ffcc44',
-    outdoorEmissiveIntensity: 10,
-    outdoorLightColor: '#ffcc44',
-    outdoorLightIntensity: 6,
-    indoorEmissiveColor: '#fffbe0',
-    indoorEmissiveIntensity: 10,
-    indoorLightColor: '#fffbe0',
-    indoorLightIntensity: 5,
-    storeFillColor: '#ffe8c0',
-    storeFillIntensity: 1,
-    signEmissiveColor: '#ede9ac',
-    signGlowIntensity: 1.5,
+    ...OUTDOOR_BASE,
     cameraMode: CAMERA_MODE_FIXED,
     fixedCameraShot: 'stockRoom',
     surveillanceCameraLabel: 'STOCK ROOM',

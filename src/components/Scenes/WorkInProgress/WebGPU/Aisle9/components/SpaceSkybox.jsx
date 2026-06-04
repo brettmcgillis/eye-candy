@@ -22,13 +22,10 @@ function setSkyUniformValue(sky, key, value) {
 }
 
 const SpaceSkybox = memo(function SpaceSkybox({
-  rotationX = 0,
-  rotationY = 0,
-  rotationZ = 0,
+  rotation = { x: 0, y: 0, z: 0 },
   rotationEnabled = false,
   rotationSpeed = 0,
   skyMode = SKY_MODE_NIGHT,
-  // Day sky uniforms
   skyTurbidity = 8,
   skyRayleigh = 3,
   skyMieCoefficient = 0.005,
@@ -40,6 +37,7 @@ const SpaceSkybox = memo(function SpaceSkybox({
   skyCloudDensity = 0.4,
   skyCloudElevation = 0.5,
 }) {
+  const { x: rotationX = 0, y: rotationY = 0, z: rotationZ = 0 } = rotation;
   const texture = useTexture(MILKYWAY_PATH);
   const meshRef = useRef();
 
@@ -56,7 +54,6 @@ const SpaceSkybox = memo(function SpaceSkybox({
     return s;
   }, []);
 
-  // Keep SkyMesh uniforms in sync with props
   useEffect(() => {
     setSkyUniformValue(sky, 'turbidity', skyTurbidity);
     setSkyUniformValue(sky, 'rayleigh', skyRayleigh);
@@ -84,7 +81,7 @@ const SpaceSkybox = memo(function SpaceSkybox({
     skyCloudElevation,
   ]);
 
-  useMemo(() => {
+  useEffect(() => {
     texture.colorSpace = THREE.SRGBColorSpace;
     texture.needsUpdate = true;
   }, [texture]);

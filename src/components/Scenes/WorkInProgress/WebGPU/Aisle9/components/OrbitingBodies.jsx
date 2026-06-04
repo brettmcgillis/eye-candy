@@ -1,5 +1,3 @@
-import * as THREE from 'three';
-
 import React, { memo, useMemo, useRef } from 'react';
 
 import { useFrame } from '@react-three/fiber';
@@ -7,6 +5,7 @@ import { useFrame } from '@react-three/fiber';
 import BigGulp from '../../../../../elements/BigGulp/BigGulp';
 import { Snickers } from '../../../../../elements/Snickers/Snickers';
 import { SodaCan } from '../../../../../elements/SodaCan/SodaCan';
+import { vectorFromObject } from '../utils/vectors';
 
 const STORE_BODIES = [
   {
@@ -35,22 +34,19 @@ const STORE_BODIES = [
   },
 ];
 
-function vectorFromObject(value) {
-  return new THREE.Vector3(value.x ?? 0, value.y ?? 0, value.z ?? 0);
-}
-
-const OrbitingBody = memo(function OrbitingBody({ body, center, config }) {
+const OrbitingBody = memo(function OrbitingBody({ body, center, orbitProps }) {
   const groupRef = useRef(null);
-  const metricWorldScale = config.metricWorldScale ?? 1;
-  const bodyScale = config[body.scaleKey] ?? 1;
-  const orbitRadius = config.bodyOrbitRadius * metricWorldScale;
-  const orbitHeight = config.bodyOrbitHeight * metricWorldScale;
+  const { metricWorldScale, bodyOrbitRadius, bodyOrbitHeight, bodyOrbitSpeed } =
+    orbitProps;
+  const bodyScale = orbitProps[body.scaleKey] ?? 1;
+  const orbitRadius = bodyOrbitRadius * metricWorldScale;
+  const orbitHeight = bodyOrbitHeight * metricWorldScale;
   const verticalDrift = 0.05 * metricWorldScale;
 
   useFrame((state, delta) => {
     if (!groupRef.current) return;
 
-    const angle = state.clock.elapsedTime * config.bodyOrbitSpeed + body.phase;
+    const angle = state.clock.elapsedTime * bodyOrbitSpeed + body.phase;
 
     groupRef.current.position.set(
       center.x + Math.cos(angle) * orbitRadius,
@@ -71,28 +67,63 @@ const OrbitingBody = memo(function OrbitingBody({ body, center, config }) {
   );
 });
 
-const OrbitingBodies = memo(function OrbitingBodies({ config }) {
+const OrbitingBodies = memo(function OrbitingBodies({
+  blackHolePosition,
+  metricWorldScale,
+  bodyOrbitRadius,
+  bodyOrbitHeight,
+  bodyOrbitSpeed,
+  body1Scale,
+  body1Instances,
+  body2Scale,
+  body2Instances,
+  body3Scale,
+  body3Instances,
+}) {
   const center = useMemo(
-    () => vectorFromObject(config.blackHolePosition),
-    [config.blackHolePosition]
+    () => vectorFromObject(blackHolePosition),
+    [blackHolePosition]
   );
 
+  const orbitProps = useMemo(
+    () => ({
+      metricWorldScale,
+      bodyOrbitRadius,
+      bodyOrbitHeight,
+      bodyOrbitSpeed,
+      body1Scale,
+      body2Scale,
+      body3Scale,
+    }),
+    [
+      metricWorldScale,
+      bodyOrbitRadius,
+      bodyOrbitHeight,
+      bodyOrbitSpeed,
+      body1Scale,
+      body2Scale,
+      body3Scale,
+    ]
+  );
+
+  const instanceCounts = { body1Instances, body2Instances, body3Instances };
+
   return STORE_BODIES.flatMap((body) => {
-    const instances = Math.max(0, Math.floor(config[body.instancesKey] ?? 1));
+    const instances = Math.max(
+      0,
+      Math.floor(instanceCounts[body.instancesKey] ?? 1)
+    );
 
     return Array.from({ length: instances }, (_, index) => {
       const phaseOffset = (Math.PI * 2 * index) / Math.max(instances, 1);
-      const instanceBody = {
-        ...body,
-        phase: body.phase + phaseOffset,
-      };
+      const instanceBody = { ...body, phase: body.phase + phaseOffset };
 
       return (
         <OrbitingBody
           key={`${body.instancesKey}-${index}`}
           body={instanceBody}
           center={center}
-          config={config}
+          orbitProps={orbitProps}
         />
       );
     });

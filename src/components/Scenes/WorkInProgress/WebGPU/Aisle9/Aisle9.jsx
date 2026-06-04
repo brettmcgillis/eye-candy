@@ -1,199 +1,27 @@
-/* eslint-disable react/no-array-index-key */
-
-/* eslint-disable consistent-return */
 import * as THREE from 'three';
 
-import React, {
-  useCallback,
-  useEffect,
-  useLayoutEffect,
-  useMemo,
-  useRef,
-  useState,
-} from 'react';
+import React, { useCallback, useEffect, useMemo, useState } from 'react';
 
-import { useThree } from '@react-three/fiber';
-
-import CENTER_STORE_REF_POSITION from '../../../../elements/sevenEleven/sevenElevenAnchors';
 import CameraRig from '../../../../rigging/CameraRig';
 import BlackHoleHero from './components/BlackHoleHero';
 import OrbitingBodies from './components/OrbitingBodies';
+import OutdoorLights from './components/OutdoorLights';
 import OutdoorStage from './components/OutdoorStage';
 import PostEffects from './components/PostEffects';
 import SpaceSkybox from './components/SpaceSkybox';
 import StoreStage from './components/StoreStage';
 import useSceneControls from './hooks/useSceneControls';
-import {
-  BLACK_HOLE_VARIANT_LEGACY_PORT,
-  BLACK_HOLE_VARIANT_SINGULARITY,
-  SETTING_OUTDOOR,
-  SURVEILLANCE_SHOT_LABELS,
-} from './presets/presets';
+import { STORE_CENTER } from './presets/cameraData';
+import { SETTING_OUTDOOR, SURVEILLANCE_SHOT_LABELS } from './presets/presets';
+import getActiveLensDiameter from './utils/blackHoleUtils';
+import transformSpline from './utils/splineTransform';
+import parseRecordingStartMs from './utils/time';
+import { toTuple, toVector3 } from './utils/vectors';
 
-function DownwardSpotLight({
-  angle,
-  color,
-  decay,
-  distance,
-  intensity,
-  penumbra,
-  position,
-}) {
-  const ref = useRef();
-  const { scene } = useThree();
-
-  useLayoutEffect(() => {
-    if (!ref.current || !position) return;
-    const { target } = ref.current;
-    scene.add(target);
-    target.position.set(position[0], position[1] - 100000, position[2]);
-    target.updateMatrixWorld();
-    return () => scene.remove(target);
-  }, [position, scene]);
-
-  if (!position) return null;
-  return (
-    <spotLight
-      ref={ref}
-      angle={angle}
-      color={color}
-      decay={decay}
-      distance={distance}
-      intensity={intensity}
-      penumbra={penumbra}
-      position={position}
-    />
-  );
-}
-
-function toVector3(value) {
-  if (value instanceof THREE.Vector3) return value.clone();
-  if (Array.isArray(value)) {
-    return new THREE.Vector3(value[0], value[1], value[2]);
-  }
-  return new THREE.Vector3(value.x ?? 0, value.y ?? 0, value.z ?? 0);
-}
-
-function toTuple(vector) {
-  return [vector.x, vector.y, vector.z];
-}
-
-function transformFrame(frame, matrix, keys = ['position', 'target', 'pivot']) {
-  if (!matrix || !frame) return frame;
-
-  const nextFrame = { ...frame };
-  keys.forEach((key) => {
-    if (!frame[key]) return;
-    nextFrame[key] = toTuple(toVector3(frame[key]).applyMatrix4(matrix));
-  });
-
-  return nextFrame;
-}
-
-function transformSpline(spline, matrix) {
-  if (!matrix || !spline?.points?.length) return spline;
-
-  const transformedTarget = spline.target
-    ? toTuple(toVector3(spline.target).applyMatrix4(matrix))
-    : undefined;
-
-  return {
-    ...spline,
-    target: transformedTarget ?? spline.target,
-    desktop: spline.desktop
-      ? transformFrame(spline.desktop, matrix)
-      : { fov: spline.fov, target: transformedTarget ?? spline.target },
-    mobile: spline.mobile
-      ? transformFrame(spline.mobile, matrix)
-      : { fov: spline.fov, target: transformedTarget ?? spline.target },
-    points: spline.points.map((point) => {
-      const nextPoint = {
-        ...point,
-        position: toTuple(toVector3(point.position).applyMatrix4(matrix)),
-      };
-
-      if (point.lookAt) {
-        nextPoint.lookAt = toTuple(
-          toVector3(point.lookAt).applyMatrix4(matrix)
-        );
-      }
-
-      return nextPoint;
-    }),
-  };
-}
-
-function getStoreFallbackPosition() {
-  return {
-    x: CENTER_STORE_REF_POSITION.x,
-    y: CENTER_STORE_REF_POSITION.y,
-    z: CENTER_STORE_REF_POSITION.z,
-  };
-}
-
-function getActiveLensDiameter(config) {
-  switch (config.blackHoleVariant) {
-    case BLACK_HOLE_VARIANT_LEGACY_PORT:
-      return config.legacyLensDiameter;
-    case BLACK_HOLE_VARIANT_SINGULARITY:
-      return config.singularityLensDiameter;
-    default:
-      return config.webgpuLensDiameter;
-  }
-}
-
-function parseRecordingStartMs(recordingStartDate, recordingStartTime) {
-  if (
-    typeof recordingStartDate !== 'string' ||
-    typeof recordingStartTime !== 'string'
-  ) {
-    return null;
-  }
-
-  const dateValue = recordingStartDate.trim();
-  const timeValue = recordingStartTime.trim();
-
-  if (!dateValue || !timeValue) {
-    return null;
-  }
-
-  const dateMatch = dateValue.match(/^(\d{4})-(\d{2})-(\d{2})$/);
-  if (!dateMatch) {
-    return null;
-  }
-
-  const normalizedTime = /^\d{2}:\d{2}$/.test(timeValue)
-    ? `${timeValue}:00`
-    : timeValue;
-  const timeMatch = normalizedTime.match(/^(\d{2}):(\d{2}):(\d{2})$/);
-
-  if (!timeMatch) {
-    return null;
-  }
-
-  const month = Number(dateMatch[2]);
-  const day = Number(dateMatch[3]);
-  const hours = Number(timeMatch[1]);
-  const minutes = Number(timeMatch[2]);
-  const seconds = Number(timeMatch[3]);
-
-  if (
-    month < 1 ||
-    month > 12 ||
-    day < 1 ||
-    day > 31 ||
-    hours > 23 ||
-    minutes > 59 ||
-    seconds > 59
-  ) {
-    return null;
-  }
-
-  const parsedDate = new Date(`${dateValue}T${normalizedTime}`);
-  const parsedMs = parsedDate.getTime();
-
-  return Number.isNaN(parsedMs) ? null : parsedMs;
-}
+// Local-space offsets within the store model (in store-local units).
+const INTERIOR_LIGHT_OFFSET = [-7.5, 3.7, -14];
+const STORE_FRONT_FILL_OFFSET = [-5.8, 2.5, -7];
+const KEY_LIGHT_OFFSET = new THREE.Vector3(0, 1.2, 0.6);
 
 export default function Aisle9() {
   const config = useSceneControls();
@@ -209,24 +37,22 @@ export default function Aisle9() {
 
   const handleShotChange = useCallback((shotId) => {
     const label = SURVEILLANCE_SHOT_LABELS[shotId];
-    if (label) {
-      setActiveShotLabel(label);
-    }
+    if (label) setActiveShotLabel(label);
   }, []);
-  const { bloomEnabled } = config;
+
   const transformMatrix = storeSpace?.storeLocalToWorldMatrix ?? null;
 
-  const handleStoreSpaceChange = useCallback((nextStoreSpace) => {
+  const handleStoreSpaceChange = useCallback((next) => {
     setStoreSpace({
-      centerStoreRefWorldPosition:
-        nextStoreSpace.centerStoreRefWorldPosition.clone(),
-      storeLocalToWorldMatrix: nextStoreSpace.storeLocalToWorldMatrix.clone(),
+      centerStoreRefWorldPosition: next.centerStoreRefWorldPosition.clone(),
+      storeLocalToWorldMatrix: next.storeLocalToWorldMatrix.clone(),
     });
   }, []);
 
   const blackHolePosition = useMemo(() => {
     const center = storeSpace?.centerStoreRefWorldPosition;
-    if (!center) return getStoreFallbackPosition();
+    if (!center)
+      return { x: STORE_CENTER[0], y: STORE_CENTER[1], z: STORE_CENTER[2] };
     return { x: center.x, y: center.y, z: center.z };
   }, [storeSpace]);
 
@@ -245,7 +71,7 @@ export default function Aisle9() {
   );
 
   const shouldRenderPostEffects =
-    bloomEnabled ||
+    config.bloomEnabled ||
     effectiveConfig.chromaticAberrationEnabled ||
     effectiveConfig.retroEnabled ||
     effectiveConfig.surveillanceOverlayEnabled;
@@ -293,8 +119,7 @@ export default function Aisle9() {
   );
 
   const keyLightPosition = useMemo(
-    () =>
-      toTuple(toVector3(blackHolePosition).add(new THREE.Vector3(0, 1.2, 0.6))),
+    () => toTuple(toVector3(blackHolePosition).add(KEY_LIGHT_OFFSET)),
     [blackHolePosition]
   );
 
@@ -302,19 +127,29 @@ export default function Aisle9() {
     setOutdoorLightPositions(positions);
   }, []);
 
-  const storeInteriorPosition = useMemo(() => {
-    if (!transformMatrix) return null;
-    return toTuple(
-      new THREE.Vector3(-7.5, 3.7, -14).applyMatrix4(transformMatrix)
-    );
-  }, [transformMatrix]);
+  const storeInteriorPosition = useMemo(
+    () =>
+      transformMatrix
+        ? toTuple(
+            new THREE.Vector3(...INTERIOR_LIGHT_OFFSET).applyMatrix4(
+              transformMatrix
+            )
+          )
+        : null,
+    [transformMatrix]
+  );
 
-  const storeFrontFillPosition = useMemo(() => {
-    if (!transformMatrix) return null;
-    return toTuple(
-      new THREE.Vector3(-5.8, 2.5, -7).applyMatrix4(transformMatrix)
-    );
-  }, [transformMatrix]);
+  const storeFrontFillPosition = useMemo(
+    () =>
+      transformMatrix
+        ? toTuple(
+            new THREE.Vector3(...STORE_FRONT_FILL_OFFSET).applyMatrix4(
+              transformMatrix
+            )
+          )
+        : null,
+    [transformMatrix]
+  );
 
   return (
     <>
@@ -331,13 +166,12 @@ export default function Aisle9() {
       />
 
       <color attach="background" args={['#111312']} />
+
       {config.skyboxEnabled ? (
         <SpaceSkybox
+          rotation={config.skyboxRotation}
           rotationEnabled={config.skyboxRotationEnabled}
           rotationSpeed={config.skyboxRotationSpeed}
-          rotationX={config.skyboxRotationX}
-          rotationY={config.skyboxRotationY}
-          rotationZ={config.skyboxRotationZ}
           skyAzimuth={config.skyAzimuth}
           skyCloudCoverage={config.skyCloudCoverage}
           skyCloudDensity={config.skyCloudDensity}
@@ -345,12 +179,13 @@ export default function Aisle9() {
           skyElevation={config.skyElevation}
           skyMieCoefficient={config.skyMieCoefficient}
           skyMieDirectionalG={config.skyMieDirectionalG}
+          skyMode={config.skyboxMode}
           skyRayleigh={config.skyRayleigh}
           skyShowSunDisc={config.skyShowSunDisc}
           skyTurbidity={config.skyTurbidity}
-          skyMode={config.skyboxMode}
         />
       ) : null}
+
       {config.setting === SETTING_OUTDOOR ? (
         <OutdoorStage
           indoorEmissiveColor={config.indoorEmissiveColor}
@@ -375,47 +210,21 @@ export default function Aisle9() {
       )}
 
       {config.setting === SETTING_OUTDOOR ? (
-        <>
-          <ambientLight
-            color={config.ambientColor}
-            intensity={config.ambientIntensity}
-          />
-          <directionalLight
-            color={config.moonColor}
-            intensity={config.moonIntensity}
-            position={[-3, 8, 4]}
-          />
-          {outdoorLightPositions.map((position, i) => (
-            <DownwardSpotLight
-              key={i}
-              angle={Math.PI / 5}
-              color={config.outdoorLightColor}
-              decay={0}
-              distance={10000}
-              intensity={config.outdoorLightIntensity ?? 0}
-              penumbra={0.4}
-              position={position}
-            />
-          ))}
-          <DownwardSpotLight
-            angle={Math.PI / 2}
-            color={config.indoorLightColor}
-            decay={0}
-            distance={8000}
-            intensity={config.indoorLightIntensity ?? 0}
-            penumbra={0.6}
-            position={storeInteriorPosition}
-          />
-          {storeFrontFillPosition && (
-            <pointLight
-              color={config.storeFillColor}
-              decay={0}
-              distance={5000}
-              intensity={config.storeFillIntensity ?? 0}
-              position={storeFrontFillPosition}
-            />
-          )}
-        </>
+        <OutdoorLights
+          ambientColor={config.ambientColor}
+          ambientIntensity={config.ambientIntensity}
+          indoorLightColor={config.indoorLightColor}
+          indoorLightIntensity={config.indoorLightIntensity ?? 0}
+          moonColor={config.moonColor}
+          moonIntensity={config.moonIntensity}
+          outdoorLightColor={config.outdoorLightColor}
+          outdoorLightIntensity={config.outdoorLightIntensity ?? 0}
+          outdoorLightPositions={outdoorLightPositions}
+          storeFillColor={config.storeFillColor}
+          storeFillIntensity={config.storeFillIntensity ?? 0}
+          storeFrontFillPosition={storeFrontFillPosition}
+          storeInteriorPosition={storeInteriorPosition}
+        />
       ) : (
         <>
           <ambientLight color="#f4efe6" intensity={1.6} />
@@ -436,7 +245,7 @@ export default function Aisle9() {
 
       {shouldRenderPostEffects ? (
         <PostEffects
-          bloomEnabled={bloomEnabled}
+          bloomEnabled={config.bloomEnabled}
           bloomRadius={effectiveConfig.bloomRadius}
           bloomStrength={effectiveConfig.bloomStrength}
           bloomThreshold={effectiveConfig.bloomThreshold}
@@ -473,7 +282,19 @@ export default function Aisle9() {
         <BlackHoleHero config={effectiveConfig} />
       ) : null}
       {config.orbitingBodiesEnabled ? (
-        <OrbitingBodies config={effectiveConfig} />
+        <OrbitingBodies
+          blackHolePosition={blackHolePosition}
+          metricWorldScale={metricWorldScale}
+          bodyOrbitRadius={config.bodyOrbitRadius}
+          bodyOrbitHeight={config.bodyOrbitHeight}
+          bodyOrbitSpeed={config.bodyOrbitSpeed}
+          body1Scale={config.body1Scale}
+          body1Instances={config.body1Instances}
+          body2Scale={config.body2Scale}
+          body2Instances={config.body2Instances}
+          body3Scale={config.body3Scale}
+          body3Instances={config.body3Instances}
+        />
       ) : null}
     </>
   );

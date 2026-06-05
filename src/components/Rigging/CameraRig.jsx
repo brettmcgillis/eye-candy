@@ -144,9 +144,7 @@ export default function CameraRig({
           {...controlsProps}
         />
       ) : null}
-      {splinePathPoints ? (
-        <SplinePathLine points={splinePathPoints} />
-      ) : null}
+      {splinePathPoints ? <SplinePathLine points={splinePathPoints} /> : null}
     </>
   );
 }

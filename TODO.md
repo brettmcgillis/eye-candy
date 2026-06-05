@@ -23,6 +23,8 @@
 
 To Build:
 
+- [ ] Horses for courses (find a good horse model, apply tsl-texture > rust to make it oxidized bronze, slice into bands horizontally using three-pinata. anchor the bottom to scene space, use audio reactivity to offset the remaining like audio visualizer bars.)
+- [ ] Dripping skull.
 - [ ] Skeleton with bird in ribcage (all assets grabbed, need to pose skeleton)
 - [ ] Video casette tape with video playing on tape ribbon
 - [ ] CSG Skull. Knock a reversal out of its forehead.

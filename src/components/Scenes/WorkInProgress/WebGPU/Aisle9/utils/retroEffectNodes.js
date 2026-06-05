@@ -1,5 +1,6 @@
 import {
   Fn,
+  floor,
   length,
   mix,
   oneMinus,
@@ -37,6 +38,11 @@ export const applyRetroVignette = Fn(([inputNode, intensityNode]) => {
   );
   const vignettedColor = inputNode.rgb.mul(oneMinus(vignetteMask));
   return vec4(vignettedColor, inputNode.a);
+});
+
+export const applyRetroColorDepth = Fn(([inputNode, stepsNode]) => {
+  const posterized = floor(inputNode.rgb.mul(stepsNode)).div(stepsNode);
+  return vec4(posterized, inputNode.a);
 });
 
 export const applyRetroAffineDistortion = Fn(([inputNode, amountNode]) => {

@@ -30,47 +30,53 @@
 
 # // Presets for shots
 
-- [ ] Exterior Day - Operator Cam
-- [ ] Exterior Night - Operator Cam
+This list may not be correct or complete.
 
-- [ ] Cam 1 - Day
-- [ ] Cam 1 - Night - No BH
-- [ ] Cam 1 - Night - BH
-- [ ] Cam 1 - Night - Med BH
-- [ ] Cam 1 - Night - LG BH
+- [x] Exterior Day - Operator Cam → Exterior - Day
+- [x] Exterior Night - Operator Cam → Exterior - Night
 
-- [ ] Cam 2 - Day
-- [ ] Cam 2 - Night - No BH
-- [ ] Cam 2 - Night - BH
-- [ ] Cam 2 - Night - Med BH
-- [ ] Cam 2 - Night - LG BH
+- [x] Cam 1 - Day → Cam 1 - Day
+- [x] Cam 1 - Night - No BH → Cam 1 - Night
+- [x] Cam 1 - Night - BH → Cam 1 - BH
+- [x] Cam 1 - Night - Med BH → Cam 1 - Med BH
+- [x] Cam 1 - Night - LG BH → Cam 1 - LG BH
 
-- [ ] Cam 3 - Day
-- [ ] Cam 3 - Night - No BH
-- [ ] Cam 3 - Night - BH
-- [ ] Cam 3 - Night - Med BH
-- [ ] Cam 3 - Night - LG BH
+- [x] Cam 2 - Day → Cam 2 - Day
+- [x] Cam 2 - Night - No BH → Cam 2 - Night
+- [x] Cam 2 - Night - BH → Cam 2 - BH
+- [x] Cam 2 - Night - Med BH → Cam 2 - Med BH
+- [x] Cam 2 - Night - LG BH → Cam 2 - LG BH
 
-- [ ] Guided Tour - Day
-- [ ] Guided Tour - Night - No BH
-- [ ] Guided Tour - Night - BH
+- [x] Cam 3 - Day → Cam 3 - Day
+- [x] Cam 3 - Night - No BH → Cam 3 - Night
+- [x] Cam 3 - Night - BH → Cam 3 - BH
+- [x] Cam 3 - Night - Med BH → Cam 3 - Med BH
+- [x] Cam 3 - Night - LG BH → Cam 3 - LG BH
 
-- [ ] Parking lot cam - Day
-- [ ] Parking lot cam - Night
+- [x] Guided Tour - Day                   → Guided Tour - Day (orientationMode: forward, dawn sky)
+- [x] Guided Tour - Night - No BH → Guided Tour - Night - No BH (orientationMode: forward)
+- [x] Guided Tour - Night - BH → Guided Tour - BH (orientationMode: target)
 
-- [ ] Back Alley - Day
-- [ ] Back Alley - Night
+- [x] Parking lot cam - Day → Parking Lot Cam - Day
+- [x] Parking lot cam - Night → Parking Lot Cam (existing)
 
-- [ ] Interior Day - Operator Cam
-- [ ] Interior Night - Operator Cam
-- [ ] Interior Night - Orbit Cam
+- [x] Back Alley - Day → Back Alley - Day
+- [x] Back Alley - Night → Back Alley (existing)
+
+- [x] Interior Day - Operator Cam → Interior - Day
+- [x] Interior Night - Operator Cam → Interior - Night
+- [x] Interior Night - Orbit Cam → Store - BH - Lensing / Store - BH - CA
 
 # // Shots
+
+// Get to work
 
 - [ ] Exterior store front
 - [ ] Exterior building side
 - [ ] Exterior street lights
 - [ ] Exterior operator lead into store
+
+// Things seem fine
 
 - [ ] Cam1 - no bh
 - [ ] Cam2 - no bh
@@ -80,6 +86,9 @@
 - [ ] Back Alley
 - [ ] Guided tour - no bh - camera forward
 
+// BH always shows up around 2-3am
+// Consider using different variations of bh within each of these sections
+
 - [ ] Cam1 - bh - standard size
 - [ ] Cam2 - bh - standard size
 - [ ] Cam3 - bh - standard size
@@ -87,20 +96,49 @@
 - [ ] Store - bh - standard size - examine lensing
 - [ ] Store - bh - standard size - CA enabled
 
+// things get intense
+
 - [ ] Cam1 - bh - med size - more bodies
 - [ ] Cam2 - bh - med size - more bodies
 - [ ] Cam3 - bh - med size - more bodies
 - [ ] Store - operator - bh - med size - more bodies - CA enabled
+
+// I worry the store will be consumed
 
 - [ ] Cam1 - bh - large size - most bodies
 - [ ] Cam2 - bh - large size - most bodies
 - [ ] Cam3 - bh - large size - most bodies
 - [ ] Store - operator - bh - large size - most bodies - CA enabled
 
+// but things are always fine by dawn
+
 - [ ] Exterior store front - day time
 - [ ] Cam1 - no bh - day time
 - [ ] Cam2 - no bh - day time
 - [ ] Cam3 - no bh - day time
+- [ ] Guided tour - day time
 - [ ] Parking Lot Cam - day time
 - [ ] Stock room - day time
 - [ ] Back Alley - day time
+
+# // Video Narrative
+
+Aisle 9
+
+“Looking for a black hole to casually collapse though? Try aisle 9 by the cat food” - Aesop Rock, Cat Food
+
+Hey guys sorry I haven’t been posting much lately, been pretty busy. I had to pick up a second job down at the Aisle 9 working overnighters make ends meet.
+
+It’s not great but at least it’s quiet.
+
+It was going pretty smoothly until a few weeks ago. I got there a bit after midnight, made my usual rounds and that’s when I noticed it on the security cameras.
+
+It always shows up between 3 and 4.
+
+It looks different every time.
+
+I took a closer look once but it almost pulled me in. Now I keep a safe distance.
+
+Sometimes I wonder if it will swallow the whole store…
+
+But then it’s always gone by morning.

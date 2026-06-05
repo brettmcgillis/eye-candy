@@ -166,7 +166,8 @@ const OrbitingBodies = memo(function OrbitingBodies({
 
         // Even spacing + small jitter so they don't form a perfect ring
         const basePhase = (Math.PI * 2 * index) / Math.max(instances, 1);
-        const phaseJitter = (r(0) - 0.5) * (Math.PI / Math.max(instances * 2, 1));
+        const phaseJitter =
+          (r(0) - 0.5) * (Math.PI / Math.max(instances * 2, 1));
 
         return {
           ...body,
@@ -189,10 +190,21 @@ const OrbitingBodies = memo(function OrbitingBodies({
         };
       });
     });
-  }, [body1Instances, body2Instances, body3Instances, body4Instances, body5Instances]);
+  }, [
+    body1Instances,
+    body2Instances,
+    body3Instances,
+    body4Instances,
+    body5Instances,
+  ]);
 
   return instanceConfigs.map((body) => (
-    <OrbitingBody key={body.key} body={body} center={center} orbitProps={orbitProps} />
+    <OrbitingBody
+      key={body.key}
+      body={body}
+      center={center}
+      orbitProps={orbitProps}
+    />
   ));
 });
 

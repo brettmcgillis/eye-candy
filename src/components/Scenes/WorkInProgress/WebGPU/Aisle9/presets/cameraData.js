@@ -38,6 +38,23 @@ export const STORE_ORBIT_CAMERA = {
   },
 };
 
+// Operator cam: pivots around the black hole so the user can orbit freely
+// from a standing-in-the-aisle starting position. Adjust after first use.
+export const INTERIOR_OPERATOR_CAMERA = {
+  desktop: {
+    fov: 60,
+    pivot: [STORE_CENTER[0], STORE_CENTER[1], STORE_CENTER[2]],
+    position: [STORE_CENTER[0], STORE_CENTER[1], STORE_CENTER[2] + 150],
+    target: [STORE_CENTER[0], STORE_CENTER[1], STORE_CENTER[2]],
+  },
+  mobile: {
+    fov: 75,
+    pivot: [STORE_CENTER[0], STORE_CENTER[1], STORE_CENTER[2]],
+    position: [STORE_CENTER[0], STORE_CENTER[1], STORE_CENTER[2] + 150],
+    target: [STORE_CENTER[0], STORE_CENTER[1], STORE_CENTER[2]],
+  },
+};
+
 export const PARKING_LOT_ORBIT_CAMERA = {
   desktop: {
     fov: 50,

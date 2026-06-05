@@ -66,7 +66,7 @@ export default function buildPostControls(snapshot) {
           label: 'Color Depth',
           value: snapshot.retroColorDepthSteps ?? 32,
           min: 4,
-          max: 32,
+          max: 64,
           step: 1,
         },
         retroScanlineIntensity: {

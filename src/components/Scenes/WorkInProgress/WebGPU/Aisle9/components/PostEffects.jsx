@@ -9,6 +9,7 @@ import { useFrame, useThree } from '@react-three/fiber';
 
 import {
   applyRetroAffineDistortion,
+  applyRetroColorDepth,
   applyRetroScanlines,
   applyRetroVignette,
 } from '../utils/retroEffectNodes';
@@ -27,7 +28,7 @@ const SOURCE_BLOOM_RADIUS = 0;
 const SOURCE_BLOOM_THRESHOLD = 0;
 const SOURCE_HUD_OPACITY = 0.56;
 const SOURCE_RETRO_CURVATURE = 0.02;
-const SOURCE_RETRO_COLOR_DEPTH_STEPS = 32;
+const SOURCE_RETRO_COLOR_DEPTH_STEPS = 64;
 const SOURCE_RETRO_SCANLINE_INTENSITY = 0.3;
 const SOURCE_RETRO_SCANLINE_DENSITY = 1;
 const SOURCE_RETRO_SCANLINE_SPEED = 0;
@@ -191,6 +192,10 @@ const PostEffects = memo(function PostEffects({
       retroNode = applyRetroVignette(
         retroNode,
         uniforms.retroVignetteIntensity
+      );
+      retroNode = applyRetroColorDepth(
+        retroNode,
+        uniforms.retroColorDepthSteps
       );
 
       outputNode = retroNode;

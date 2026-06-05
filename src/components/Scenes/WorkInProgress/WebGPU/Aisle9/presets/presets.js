@@ -1,5 +1,6 @@
 import { buildSceneCameraControlValues } from '../../../../../../hooks/sceneCameraUtils';
 import {
+  INTERIOR_OPERATOR_CAMERA,
   PARKING_LOT_ORBIT_CAMERA,
   STORE_CENTER,
   STORE_FIXED_SHOTS,
@@ -316,6 +317,127 @@ const BASE_STORE = {
   storeScale: 320,
 };
 
+const CCTV_RECORDING_DATE = '2026-05-15';
+
+const CCTV_NIGHT_TIMESTAMP = {
+  recordingOverrideEnabled: true,
+  recordingStartDate: CCTV_RECORDING_DATE,
+  recordingStartTime: '02:47:00',
+};
+
+const CCTV_DAY_TIMESTAMP = {
+  recordingOverrideEnabled: true,
+  recordingStartDate: CCTV_RECORDING_DATE,
+  recordingStartTime: '05:55:00',
+};
+
+// Dawn sky — sun just cresting the horizon (~5:55am). High turbidity and
+// low elevation produce the warm orange/pink gradient; azimuth 90 puts the
+// sun in the east where it belongs.
+const BASE_DAY_SKY = {
+  skyboxMode: 'day',
+  skyboxRotationEnabled: false,
+  skyTurbidity: 12,
+  skyRayleigh: 0.83,
+  skyMieCoefficient: 0.01,
+  skyMieDirectionalG: 0.95,
+  skyElevation: 5,
+  skyAzimuth: -66,
+  skyShowSunDisc: true,
+};
+
+// Dawn lighting — store fixtures still burning, moon almost gone,
+// ambient warm and dim rather than the full-brightness midday read.
+const BASE_DAY_LIGHTS = {
+  ambientColor: '#e8956a',
+  ambientIntensity: 0.7,
+  moonColor: '#4060aa',
+  moonIntensity: 0.3,
+  outdoorEmissiveColor: '#ffcc44',
+  outdoorEmissiveIntensity: 6,
+  outdoorLightColor: '#ffcc44',
+  outdoorLightIntensity: 3,
+  indoorEmissiveColor: '#fffbe0',
+  indoorEmissiveIntensity: 8,
+  indoorLightColor: '#fffbe0',
+  indoorLightIntensity: 4,
+  storeFillColor: '#ffb87a',
+  storeFillIntensity: 0.6,
+  signEmissiveColor: '#ede9ac',
+  signGlowIntensity: 1.5,
+};
+
+const OUTDOOR_BASE_DAY = {
+  ...BASE_DAY_SKY,
+  ...BASE_DAY_LIGHTS,
+  setting: SETTING_OUTDOOR,
+  blackHoleEnabled: false,
+  orbitingBodiesEnabled: false,
+};
+
+// Sky settings tuned for interior surveillance cams looking through the
+// sevenElevenLow store windows — different from the exterior orbit view.
+const BASE_INDOOR_DAY_SKY = {
+  skyboxMode: 'day',
+  skyboxRotationEnabled: false,
+  skyTurbidity: 3.4,
+  skyRayleigh: 0.14,
+  skyMieCoefficient: 0.01,
+  skyMieDirectionalG: 1,
+  skyElevation: 8.5,
+  skyAzimuth: 35.8,
+  skyShowSunDisc: true,
+  skyCloudCoverage: 0.62,
+  skyCloudDensity: 0.16,
+  skyCloudElevation: 0.81,
+};
+
+const BASE_INDOOR_DAY = {
+  ...BASE_INDOOR_DAY_SKY,
+  ...BASE_DAY_LIGHTS,
+};
+
+// BH size tiers — singularity variant only. Values will likely need
+// per-shot tuning once rendered; these are proportional starting points.
+const BH_SINGULARITY_MED = {
+  singularityLensDiameter: 2.5,
+  singularityFieldScale: 5.5,
+  singularityOriginRadius: 0.18,
+  singularityBandWidth: 0.09,
+  singularityEmissionStrength: 2.4,
+};
+
+const BH_SINGULARITY_LG = {
+  singularityLensDiameter: 4.5,
+  singularityFieldScale: 9.0,
+  singularityOriginRadius: 0.3,
+  singularityBandWidth: 0.14,
+  singularityEmissionStrength: 3.0,
+};
+
+// Orbiting body counts for escalating intensity
+const BODIES_MORE = {
+  orbitingBodiesEnabled: true,
+  body1Instances: 3,
+  body2Instances: 2,
+  body3Instances: 3,
+  body4Instances: 2,
+  body5Instances: 2,
+  bodyOrbitSpeed: 0.32,
+  bodyOrbitRadius: 0.9,
+};
+
+const BODIES_MOST = {
+  orbitingBodiesEnabled: true,
+  body1Instances: 5,
+  body2Instances: 4,
+  body3Instances: 5,
+  body4Instances: 4,
+  body5Instances: 4,
+  bodyOrbitSpeed: 0.42,
+  bodyOrbitRadius: 1.1,
+};
+
 function createPreset(overrides) {
   return {
     cameraMode: CAMERA_MODE_ORBIT,
@@ -349,6 +471,16 @@ function createPreset(overrides) {
     ...BASE_STORE,
     ...overrides,
   };
+}
+
+function createCamPreset(shotKey, label, overrides = {}) {
+  return createPreset({
+    cameraMode: CAMERA_MODE_FIXED,
+    fixedCameraShot: shotKey,
+    surveillanceCameraLabel: label,
+    surveillanceOverlayEnabled: true,
+    ...overrides,
+  });
 }
 
 export function buildAisle9CameraDeclaration(snapshot = {}) {
@@ -437,6 +569,7 @@ export const PRESETS = {
     surveillanceCameraLabel: 'PARKING LOT',
     surveillanceOverlayEnabled: true,
     skyboxRotation: { x: 90, y: 0, z: -90 },
+    ...CCTV_NIGHT_TIMESTAMP,
   }),
 
   'Back Alley': createPreset({
@@ -446,6 +579,7 @@ export const PRESETS = {
     surveillanceCameraLabel: 'ALLEY',
     surveillanceOverlayEnabled: true,
     skyboxRotation: { x: 90, y: 0, z: -90 },
+    ...CCTV_NIGHT_TIMESTAMP,
   }),
 
   'Stock Room': createPreset({
@@ -454,6 +588,261 @@ export const PRESETS = {
     fixedCameraShot: 'stockRoom',
     surveillanceCameraLabel: 'STOCK ROOM',
     surveillanceOverlayEnabled: true,
+    ...CCTV_NIGHT_TIMESTAMP,
+  }),
+
+  // ── Exterior operator cams ────────────────────────────────────────────────
+
+  'Exterior - Night': createPreset({
+    ...OUTDOOR_BASE,
+    cameraMode: CAMERA_MODE_ORBIT,
+    cameraOrbit: PARKING_LOT_ORBIT_CAMERA,
+    cameraFar: 30000,
+    skyboxRotation: { x: 90, y: 0, z: -90 },
+  }),
+
+  'Exterior - Day': createPreset({
+    ...OUTDOOR_BASE_DAY,
+    cameraMode: CAMERA_MODE_ORBIT,
+    cameraOrbit: PARKING_LOT_ORBIT_CAMERA,
+    cameraFar: 30000,
+  }),
+
+  // ── Cam 1 ─────────────────────────────────────────────────────────────────
+
+  'Cam 1 - Night': createCamPreset('surveillance1', 'CAM 01', {
+    blackHoleEnabled: false,
+    orbitingBodiesEnabled: false,
+    ...CCTV_NIGHT_TIMESTAMP,
+  }),
+
+  'Cam 1 - Day': createCamPreset('surveillance1', 'CAM 01', {
+    ...BASE_INDOOR_DAY,
+    blackHoleEnabled: false,
+    orbitingBodiesEnabled: false,
+    ...CCTV_DAY_TIMESTAMP,
+  }),
+
+  'Cam 1 - BH': createCamPreset('surveillance1', 'CAM 01', {
+    blackHoleEnabled: true,
+    orbitingBodiesEnabled: true,
+    ...CCTV_NIGHT_TIMESTAMP,
+  }),
+
+  'Cam 1 - Med BH': createCamPreset('surveillance1', 'CAM 01', {
+    blackHoleEnabled: true,
+    ...BH_SINGULARITY_MED,
+    ...BODIES_MORE,
+    ...CCTV_NIGHT_TIMESTAMP,
+  }),
+
+  'Cam 1 - LG BH': createCamPreset('surveillance1', 'CAM 01', {
+    blackHoleEnabled: true,
+    ...BH_SINGULARITY_LG,
+    ...BODIES_MOST,
+    ...CCTV_NIGHT_TIMESTAMP,
+  }),
+
+  // ── Cam 2 ─────────────────────────────────────────────────────────────────
+
+  'Cam 2 - Night': createCamPreset('surveillance2', 'CAM 02', {
+    blackHoleEnabled: false,
+    orbitingBodiesEnabled: false,
+    ...CCTV_NIGHT_TIMESTAMP,
+  }),
+
+  'Cam 2 - Day': createCamPreset('surveillance2', 'CAM 02', {
+    ...BASE_INDOOR_DAY,
+    blackHoleEnabled: false,
+    orbitingBodiesEnabled: false,
+    ...CCTV_DAY_TIMESTAMP,
+  }),
+
+  'Cam 2 - BH': createCamPreset('surveillance2', 'CAM 02', {
+    blackHoleEnabled: true,
+    orbitingBodiesEnabled: true,
+    ...CCTV_NIGHT_TIMESTAMP,
+  }),
+
+  'Cam 2 - Med BH': createCamPreset('surveillance2', 'CAM 02', {
+    blackHoleEnabled: true,
+    ...BH_SINGULARITY_MED,
+    ...BODIES_MORE,
+    ...CCTV_NIGHT_TIMESTAMP,
+  }),
+
+  'Cam 2 - LG BH': createCamPreset('surveillance2', 'CAM 02', {
+    blackHoleEnabled: true,
+    ...BH_SINGULARITY_LG,
+    ...BODIES_MOST,
+    ...CCTV_NIGHT_TIMESTAMP,
+  }),
+
+  // ── Cam 3 ─────────────────────────────────────────────────────────────────
+
+  'Cam 3 - Night': createCamPreset('surveillance3', 'CAM 03', {
+    blackHoleEnabled: false,
+    orbitingBodiesEnabled: false,
+    ...CCTV_NIGHT_TIMESTAMP,
+  }),
+
+  'Cam 3 - Day': createCamPreset('surveillance3', 'CAM 03', {
+    ...BASE_INDOOR_DAY,
+    blackHoleEnabled: false,
+    orbitingBodiesEnabled: false,
+    ...CCTV_DAY_TIMESTAMP,
+  }),
+
+  'Cam 3 - BH': createCamPreset('surveillance3', 'CAM 03', {
+    blackHoleEnabled: true,
+    orbitingBodiesEnabled: true,
+    ...CCTV_NIGHT_TIMESTAMP,
+  }),
+
+  'Cam 3 - Med BH': createCamPreset('surveillance3', 'CAM 03', {
+    blackHoleEnabled: true,
+    ...BH_SINGULARITY_MED,
+    ...BODIES_MORE,
+    ...CCTV_NIGHT_TIMESTAMP,
+  }),
+
+  'Cam 3 - LG BH': createCamPreset('surveillance3', 'CAM 03', {
+    blackHoleEnabled: true,
+    ...BH_SINGULARITY_LG,
+    ...BODIES_MOST,
+    ...CCTV_NIGHT_TIMESTAMP,
+  }),
+
+  // ── Outdoor fixed cams — day variants ────────────────────────────────────
+
+  'Parking Lot Cam - Day': createPreset({
+    ...OUTDOOR_BASE_DAY,
+    cameraMode: CAMERA_MODE_FIXED,
+    fixedCameraShot: 'parkingLot',
+    surveillanceCameraLabel: 'PARKING LOT',
+    surveillanceOverlayEnabled: true,
+    ...CCTV_DAY_TIMESTAMP,
+  }),
+
+  'Back Alley - Day': createPreset({
+    ...OUTDOOR_BASE_DAY,
+    cameraMode: CAMERA_MODE_FIXED,
+    fixedCameraShot: 'backAlley',
+    surveillanceCameraLabel: 'ALLEY',
+    surveillanceOverlayEnabled: true,
+    ...CCTV_DAY_TIMESTAMP,
+  }),
+
+  'Stock Room - Day': createPreset({
+    ...OUTDOOR_BASE_DAY,
+    cameraMode: CAMERA_MODE_FIXED,
+    fixedCameraShot: 'stockRoom',
+    surveillanceCameraLabel: 'STOCK ROOM',
+    surveillanceOverlayEnabled: true,
+    ...CCTV_DAY_TIMESTAMP,
+  }),
+
+  // ── Guided Tour ───────────────────────────────────────────────────────────
+
+  'Guided Tour - Day': createPreset({
+    ...BASE_INDOOR_DAY,
+    cameraMode: CAMERA_MODE_SPLINE,
+    blackHoleEnabled: false,
+    orbitingBodiesEnabled: false,
+    cameraSpline: {
+      ...V1_SPLINE_PROPS,
+      desktop: { fov: 60, target: STORE_CENTER },
+      duration: 42,
+      fov: 60,
+      mobile: { fov: 85, target: STORE_CENTER },
+      orientationMode: 'forward',
+      points: STORE_GUIDED_PATH,
+      target: STORE_CENTER,
+    },
+  }),
+
+  'Guided Tour - Night - No BH': createPreset({
+    cameraMode: CAMERA_MODE_SPLINE,
+    blackHoleEnabled: false,
+    orbitingBodiesEnabled: false,
+
+    cameraSpline: {
+      ...V1_SPLINE_PROPS,
+      desktop: { fov: 60, target: STORE_CENTER },
+      duration: 42,
+      fov: 60,
+      mobile: { fov: 85, target: STORE_CENTER },
+      orientationMode: 'forward',
+      points: STORE_GUIDED_PATH,
+      target: STORE_CENTER,
+    },
+  }),
+
+  'Guided Tour - BH': createPreset({
+    cameraMode: CAMERA_MODE_SPLINE,
+    blackHoleEnabled: true,
+    orbitingBodiesEnabled: true,
+
+    cameraSpline: {
+      ...V1_SPLINE_PROPS,
+      desktop: { fov: 60, target: STORE_CENTER },
+      duration: 42,
+      fov: 60,
+      mobile: { fov: 85, target: STORE_CENTER },
+      orientationMode: 'target',
+      points: STORE_GUIDED_PATH,
+      target: STORE_CENTER,
+    },
+  }),
+
+  // ── Interior operator / orbit ─────────────────────────────────────────────
+
+  'Interior - Night': createPreset({
+    cameraOrbit: INTERIOR_OPERATOR_CAMERA,
+    blackHoleEnabled: false,
+    orbitingBodiesEnabled: false,
+  }),
+
+  'Interior - Day': createPreset({
+    ...BASE_INDOOR_DAY,
+    cameraOrbit: INTERIOR_OPERATOR_CAMERA,
+    blackHoleEnabled: false,
+    orbitingBodiesEnabled: false,
+  }),
+
+  'Store - BH - Lensing': createPreset({
+    cameraOrbit: INTERIOR_OPERATOR_CAMERA,
+    blackHoleEnabled: true,
+    orbitingBodiesEnabled: true,
+    bloomEnabled: true,
+    bloomStrength: 0.3,
+    bloomThreshold: 0,
+  }),
+
+  'Store - BH - CA': createPreset({
+    cameraOrbit: INTERIOR_OPERATOR_CAMERA,
+    blackHoleEnabled: true,
+    orbitingBodiesEnabled: true,
+    chromaticAberrationEnabled: true,
+    chromaticAberrationStrength: 2.0,
+  }),
+
+  'Store - Med BH - CA': createPreset({
+    cameraOrbit: INTERIOR_OPERATOR_CAMERA,
+    blackHoleEnabled: true,
+    ...BH_SINGULARITY_MED,
+    ...BODIES_MORE,
+    chromaticAberrationEnabled: true,
+    chromaticAberrationStrength: 3.0,
+  }),
+
+  'Store - LG BH - CA': createPreset({
+    cameraOrbit: INTERIOR_OPERATOR_CAMERA,
+    blackHoleEnabled: true,
+    ...BH_SINGULARITY_LG,
+    ...BODIES_MOST,
+    chromaticAberrationEnabled: true,
+    chromaticAberrationStrength: 5.0,
   }),
 };
 

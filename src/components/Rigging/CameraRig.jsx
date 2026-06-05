@@ -3,8 +3,35 @@ import * as THREE from 'three';
 import React, { useEffect, useMemo, useRef } from 'react';
 
 import { Line, OrbitControls, PerspectiveCamera } from '@react-three/drei';
+import { useThree } from '@react-three/fiber';
 
 import useSceneCamera from '../../hooks/useSceneCamera';
+
+function SplinePathLineGL({ points }) {
+  return <Line points={points} color="#00eeff" lineWidth={1.5} />;
+}
+
+function SplinePathLineWebGPU({ points }) {
+  const geometry = useMemo(
+    () => new THREE.BufferGeometry().setFromPoints(points),
+    [points]
+  );
+  useEffect(() => () => geometry.dispose(), [geometry]);
+  return (
+    <line geometry={geometry}>
+      <lineBasicMaterial color="#00eeff" />
+    </line>
+  );
+}
+
+function SplinePathLine({ points }) {
+  const { gl } = useThree();
+  return gl.isWebGPURenderer ? (
+    <SplinePathLineWebGPU points={points} />
+  ) : (
+    <SplinePathLineGL points={points} />
+  );
+}
 
 export default function CameraRig({
   actions,
@@ -118,7 +145,7 @@ export default function CameraRig({
         />
       ) : null}
       {splinePathPoints ? (
-        <Line points={splinePathPoints} color="#00eeff" lineWidth={1.5} />
+        <SplinePathLine points={splinePathPoints} />
       ) : null}
     </>
   );

@@ -87,6 +87,7 @@ To Build:
 - [GhostStories](src/components/scenes/WorkInProgress/WebGPU/GhostStories/todo.md)
 - [QuinnsPlayground](src/components/scenes/WorkInProgress/WebGL/QuinnsPlayground/todo.md)
 - [OneInTheHand](src/components/scenes/WorkInProgress/WebGL/OneInTheHand/todo.md)
+- [HorsesForCourses](src/components/scenes/WorkInProgress/WebGPU/HorsesForCourses/todo.md)
 
 **Template**
 
@@ -181,6 +182,7 @@ To Build:
 - [ ] Crt Test
 - [ ] Flying High - Day
 - [ ] Flying High - NightMode
+- [x] HorsesForCourses
 - [ ] My Heart Is A Broken Fish Tank
 - [ ] One In The Hand
 - [ ] One In The Hand - Two in the cage

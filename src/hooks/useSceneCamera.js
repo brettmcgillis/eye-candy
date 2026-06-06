@@ -90,6 +90,19 @@ function toRoundedTuple(value, fallback = DEFAULT_CAMERA_TARGET) {
   return tuple.map((entry) => toRoundedNumber(entry));
 }
 
+function framesEqual(a, b) {
+  if (!a || !b) return false;
+  return (
+    a.fov === b.fov &&
+    a.position[0] === b.position[0] &&
+    a.position[1] === b.position[1] &&
+    a.position[2] === b.position[2] &&
+    a.pivot[0] === b.pivot[0] &&
+    a.pivot[1] === b.pivot[1] &&
+    a.pivot[2] === b.pivot[2]
+  );
+}
+
 function toObjectLiteral(snapshot) {
   return JSON.stringify(snapshot, null, 2).replace(
     /"([A-Za-z_$][A-Za-z0-9_$]*)":/g,
@@ -392,6 +405,7 @@ export default function useSceneCamera({
   const [controlsNode, setControlsNode] = useState(null);
   const cameraRef = useRef(null);
   const controlsRef = useRef(null);
+  const appliedFrameRef = useRef(null);
 
   const mode = normalizeMode(
     camera?.mode ?? camera?.cameraMode ?? camera?.defaultMode
@@ -570,9 +584,14 @@ export default function useSceneCamera({
     const enablePan = orbitControlsProps.enablePan ?? true;
     const enableRotate = orbitControlsProps.enableRotate ?? true;
     const enableZoom = orbitControlsProps.enableZoom ?? true;
-    const autoRotate = orbitControlsProps.autoRotate ?? false;
+    const autoRotate =
+      orbitControlsProps.autoRotate ??
+      orbitControlsProps.enableAutoRotate ??
+      camera?.orbit?.autoRotate ??
+      camera?.orbit?.enableAutoRotate ??
+      false;
     const autoRotateSpeed = toFiniteNumber(
-      orbitControlsProps.autoRotateSpeed,
+      orbitControlsProps.autoRotateSpeed ?? camera?.orbit?.autoRotateSpeed,
       2
     );
 
@@ -589,6 +608,7 @@ export default function useSceneCamera({
   }, [
     activeOrbitFrame.pivot,
     fixedFrame.target,
+    camera?.orbit,
     isOrbitMode,
     orbitControlsProps,
     orbitInteractionActive,
@@ -635,6 +655,14 @@ export default function useSceneCamera({
     }
 
     const nextFrame = isOrbitMode ? activeOrbitFrame : fixedFrame;
+
+    // Skip if the frame values haven't actually changed — prevents unrelated
+    // leva control changes from resetting orbit/fixed camera position mid-use.
+    if (framesEqual(appliedFrameRef.current, nextFrame)) {
+      return;
+    }
+
+    appliedFrameRef.current = nextFrame;
 
     cameraNode.position.set(...nextFrame.position);
     cameraNode.fov = nextFrame.fov;

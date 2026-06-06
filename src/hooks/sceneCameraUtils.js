@@ -7,6 +7,8 @@ const DEFAULT_NEAR = 0.1;
 const DEFAULT_FAR = 1000;
 const DEFAULT_FIXED_SHOT_ID = 'default';
 const DEFAULT_FIXED_SEQUENCE_INTERVAL_SECONDS = 5;
+const DEFAULT_ORBIT_AUTO_ROTATE = false;
+const DEFAULT_ORBIT_AUTO_ROTATE_SPEED = 2;
 const DEFAULT_SPLINE_DURATION = 30;
 const DEFAULT_SPLINE_TENSION = 0.5;
 const DEFAULT_SPLINE_CLOSED = true;
@@ -394,8 +396,7 @@ function normalizeOrbitDeclaration(camera, fixedDeclaration) {
     fixedDeclaration.shots[fixedDeclaration.activeShot] ??
     fixedDeclaration.shots[fixedDeclaration.shotIds[0]] ??
     normalizeResponsiveFrames({}, {}, normalizeFixedFrame);
-
-  return normalizeResponsiveFrames(
+  const normalizedOrbitFrames = normalizeResponsiveFrames(
     resolvedCamera.orbit,
     {
       fov: fixedFallback.desktop.fov,
@@ -405,6 +406,18 @@ function normalizeOrbitDeclaration(camera, fixedDeclaration) {
     },
     normalizeOrbitFrame
   );
+
+  return {
+    ...normalizedOrbitFrames,
+    autoRotate:
+      resolvedCamera?.orbit?.autoRotate ??
+      resolvedCamera?.orbit?.enableAutoRotate ??
+      DEFAULT_ORBIT_AUTO_ROTATE,
+    autoRotateSpeed: toFiniteNumber(
+      resolvedCamera?.orbit?.autoRotateSpeed,
+      DEFAULT_ORBIT_AUTO_ROTATE_SPEED
+    ),
+  };
 }
 
 function normalizeSplineDeclaration(camera, fixedDeclaration) {
@@ -604,6 +617,8 @@ export function buildSceneCameraControlValues(camera = {}, options = {}) {
       };
     }, {}),
     orbitDesktopFov: normalizedCamera.orbit.desktop.fov,
+    orbitAutoRotate: normalizedCamera.orbit.autoRotate,
+    orbitAutoRotateSpeed: normalizedCamera.orbit.autoRotateSpeed,
     orbitDesktopPivot: toVectorObject(
       normalizedCamera.orbit.desktop.pivot,
       normalizedCamera.orbit.desktop.pivot
@@ -860,6 +875,11 @@ export function buildSceneCameraRuntimeConfig({ camera, controls = {} } = {}) {
       ),
     },
     orbit: {
+      autoRotate: controls.orbitAutoRotate ?? normalizedCamera.orbit.autoRotate,
+      autoRotateSpeed: toFiniteNumber(
+        controls.orbitAutoRotateSpeed,
+        normalizedCamera.orbit.autoRotateSpeed
+      ),
       desktop: {
         fov: toFiniteNumber(
           controls.orbitDesktopFov,
@@ -1144,7 +1164,11 @@ function buildOrbitSnapshotFragment(snapshot, viewportKeys, options) {
     ...(options.includeAutoFitToggle === false
       ? {}
       : { cameraAutoFit: snapshot.cameraAutoFit }),
-    orbit: pickViewportFrames(snapshot.orbit, viewportKeys),
+    orbit: {
+      ...pickViewportFrames(snapshot.orbit, viewportKeys),
+      autoRotate: snapshot.orbit.autoRotate,
+      autoRotateSpeed: snapshot.orbit.autoRotateSpeed,
+    },
   };
 }
 

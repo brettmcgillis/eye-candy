@@ -8,13 +8,15 @@ export default function HorseStatue(props) {
   const { nodes, materials } = useGLTF(modelFile('horse_statue.glb'));
   return (
     <group {...props} dispose={null}>
-      <mesh
-        castShadow
-        receiveShadow
-        geometry={nodes['0'].geometry}
-        material={materials.horse_statue}
-        rotation={[-Math.PI / 2, 0, 0]}
-      />
+      <group scale={10}>
+        <mesh
+          castShadow
+          receiveShadow
+          geometry={nodes['0'].geometry}
+          material={materials.horse_statue}
+          rotation={[-Math.PI / 2, 0, 0]}
+        />
+      </group>
     </group>
   );
 }

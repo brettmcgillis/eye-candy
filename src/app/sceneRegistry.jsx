@@ -27,6 +27,7 @@ import {
   GiCandleLight,
   GiDiceEightFacesEight,
   GiDiceTwentyFacesTwenty,
+  GiHorseHead,
   GiPaperBoat,
   GiPapers,
   GiPistolGun,
@@ -239,6 +240,11 @@ const MyHeartIsABrokenFishTank = lazy(
 const StillPullingForYouWebGPU = lazy(
   () =>
     import('../components/scenes/WorkInProgress/WebGPU/StillPullingForYou/StillPullingForYou')
+);
+
+const HorsesForCourses = lazy(
+  () =>
+    import('../components/scenes/WorkInProgress/WebGPU/HorsesForCourses/HorsesForCourses')
 );
 
 const BeautysInTheEyeOfTheBeheaded = lazy(
@@ -545,6 +551,10 @@ function TugboatIcon() {
 
 function BeautysInTheEyeOfTheBeheadedIcon() {
   return <FaSkullCrossbones color="#111827" />;
+}
+
+function HorsesForCoursesIcon() {
+  return <GiHorseHead color="#b87333" />;
 }
 
 export const AREA_ROUTE_SEGMENTS = {
@@ -1262,6 +1272,15 @@ export const EYE_CANDIES = [
     route: 'thatsAllFolks',
     icon: ThatsAllFolksIcon,
     Component: ThatsAllFolksWebGPU,
+  },
+  {
+    id: 'horsesForCourses',
+    label: 'Horses For Courses',
+    channel: 'webgpu',
+    area: 'wip',
+    route: 'horsesForCourses',
+    icon: HorsesForCoursesIcon,
+    Component: HorsesForCourses,
   },
   {
     id: 'beautysInTheEyeOfTheBeheaded',

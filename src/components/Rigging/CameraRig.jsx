@@ -36,6 +36,8 @@ function SplinePathLine({ points }) {
 export default function CameraRig({
   actions,
   apiRef = null,
+  autoRotate,
+  autoRotateSpeed,
   camera,
   onShotChange = null,
   orbitAutoFitFrame,
@@ -45,6 +47,14 @@ export default function CameraRig({
   perspectiveCameraProps,
   shouldBlockPointerLook,
 }) {
+  const resolvedOrbitControlsProps = useMemo(() => {
+    return {
+      ...(orbitControlsProps ?? {}),
+      ...(autoRotate !== undefined ? { autoRotate } : {}),
+      ...(autoRotateSpeed !== undefined ? { autoRotateSpeed } : {}),
+    };
+  }, [autoRotate, autoRotateSpeed, orbitControlsProps]);
+
   const {
     activeFixedShotId,
     captureCurrentCameraFrame,
@@ -65,7 +75,7 @@ export default function CameraRig({
     camera,
     orbitAutoFitFrame,
     operatorInputOptions,
-    orbitControlsProps,
+    orbitControlsProps: resolvedOrbitControlsProps,
     orbitInteractionEnabled,
     shouldBlockPointerLook,
   });

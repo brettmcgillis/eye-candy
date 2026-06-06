@@ -41,6 +41,7 @@ export default function useCameraSpline({
   const positionCurveRef = useRef(null);
   const lookAtCurveRef = useRef(null);
   const globalLookAtRef = useRef(new THREE.Vector3());
+  const prevEnabledRef = useRef(false);
   const resolvedOrientationMode = useMemo(() => {
     return resolveOrientationMode(orientationMode, points);
   }, [orientationMode, points]);
@@ -50,6 +51,9 @@ export default function useCameraSpline({
   }, [lookAt[0], lookAt[1], lookAt[2]]);
 
   useEffect(() => {
+    const wasEnabled = prevEnabledRef.current;
+    prevEnabledRef.current = enabled;
+
     if (!enabled || !points || points.length < 2) return;
 
     const positions = points.map((point) => point.position.clone());
@@ -81,7 +85,12 @@ export default function useCameraSpline({
       lookAtCurveRef.current = null;
     }
 
-    startTimeRef.current = Date.now();
+    // Only reset the clock when enabling for the first time; preserve progress
+    // across curve rebuilds (e.g. when unrelated leva controls change and cause
+    // new point object references to flow through).
+    if (!wasEnabled || startTimeRef.current === null) {
+      startTimeRef.current = Date.now();
+    }
   }, [closed, enabled, points, resolvedOrientationMode, tension]);
 
   useFrame((state) => {

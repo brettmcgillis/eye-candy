@@ -5,7 +5,6 @@ import {
   SCENE_CAMERA_FIXED_BEHAVIOR_OPTIONS,
   SCENE_CAMERA_MODE_OPTIONS,
   SCENE_CAMERA_SPLINE_ORIENTATION_OPTIONS,
-  buildSceneCameraConfigSnapshot,
   getFixedShotControlKeys,
   getFixedShotDescriptors,
   normalizeSceneCameraDeclaration,
@@ -290,6 +289,25 @@ export default function buildSceneCameraControls({
   };
 
   const orbitControls = {
+    orbitAutoRotate: applyControlOverride(
+      'orbitAutoRotate',
+      {
+        label: 'Auto Rotate',
+        value: normalizedCamera.orbit.autoRotate,
+      },
+      controlOverrides
+    ),
+    orbitAutoRotateSpeed: applyControlOverride(
+      'orbitAutoRotateSpeed',
+      {
+        label: 'Rotate Speed',
+        max: 5,
+        min: -5,
+        step: 0.1,
+        value: normalizedCamera.orbit.autoRotateSpeed,
+      },
+      controlOverrides
+    ),
     orbitDesktopPosition: applyControlOverride(
       'orbitDesktopPosition',
       {

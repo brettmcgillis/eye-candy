@@ -3,7 +3,10 @@ import { PiSkullDuotone } from 'react-icons/pi';
 import { useLocation } from 'react-router-dom';
 
 import { iconFile } from '../../../../utils/appUtils';
-import sceneRegistry, { AREA_ICONS, resolveScenePath } from '../../../sceneRegistry';
+import sceneRegistry, {
+  AREA_ICONS,
+  resolveScenePath,
+} from '../../../sceneRegistry';
 
 function FallbackIcon() {
   return <PiSkullDuotone color="#888" />;
@@ -11,7 +14,8 @@ function FallbackIcon() {
 
 export default function Scenemoji({ onDebugToggle }) {
   const location = useLocation();
-  const match = resolveScenePath(location.pathname) ?? sceneRegistry.defaultScene;
+  const match =
+    resolveScenePath(location.pathname) ?? sceneRegistry.defaultScene;
 
   const { channel, area } = match;
   const scenes = sceneRegistry.byArea[channel]?.[area] ?? [];

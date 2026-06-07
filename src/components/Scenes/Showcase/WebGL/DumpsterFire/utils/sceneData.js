@@ -157,7 +157,7 @@ export const CAMERA = {
         mobile: {
           position: [-6, 4.2, 16],
           target: DUMPSTER_CAMERA_MOBILE_TARGET,
-          fov: 70,
+          fov: 79,
         },
       },
     },

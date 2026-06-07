@@ -247,6 +247,11 @@ const HorsesForCourses = lazy(
     import('../components/scenes/WorkInProgress/WebGPU/HorsesForCourses/HorsesForCourses')
 );
 
+const DrippingSkull = lazy(
+  () =>
+    import('../components/scenes/WorkInProgress/WebGPU/DrippingSkull/DrippingSkull')
+);
+
 const BeautysInTheEyeOfTheBeheaded = lazy(
   () =>
     import('../components/scenes/Showcase/WebGPU/BeautysInTheEyeOfTheBeheaded/BeautysInTheEyeOfTheBeheaded')
@@ -555,6 +560,10 @@ function BeautysInTheEyeOfTheBeheadedIcon() {
 
 function HorsesForCoursesIcon() {
   return <GiHorseHead color="#b87333" />;
+}
+
+function DrippingSkullIcon() {
+  return <FaSkullCrossbones color="#e5e7eb" />;
 }
 
 export const AREA_ROUTE_SEGMENTS = {
@@ -1281,6 +1290,15 @@ export const EYE_CANDIES = [
     route: 'horsesForCourses',
     icon: HorsesForCoursesIcon,
     Component: HorsesForCourses,
+  },
+  {
+    id: 'drippingSkull',
+    label: 'Dripping Skull',
+    channel: 'webgpu',
+    area: 'wip',
+    route: 'drippingSkull',
+    icon: DrippingSkullIcon,
+    Component: DrippingSkull,
   },
   {
     id: 'beautysInTheEyeOfTheBeheaded',

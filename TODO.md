@@ -154,6 +154,7 @@ To Build:
 - [ ] Cardinals - Bluejays
 - [ ] Cardinals - Magpies
 - [ ] Dumpster Fire
+- [x] Horses For Courses
 - [x] LoaderPattern(s)
 - [x] Mycelium
 - [x] PaperCuts - Default
@@ -177,12 +178,10 @@ To Build:
 ### Scenes finish before post
 
 - [ ] Aisle 9
-- [ ] Aisle 9 - By The Cat Food
 - [ ] All My Friends Are Ghosts
 - [ ] Crt Test
 - [ ] Flying High - Day
 - [ ] Flying High - NightMode
-- [x] HorsesForCourses
 - [ ] My Heart Is A Broken Fish Tank
 - [ ] One In The Hand
 - [ ] One In The Hand - Two in the cage

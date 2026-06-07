@@ -28,6 +28,14 @@ const BlackHoleHero = memo(function BlackHoleHero({ config }) {
       legacyStarBrightness: config.legacyStarBrightness,
       legacyStepCount: config.legacyStepCount,
       legacyUseProceduralDisk: config.legacyUseProceduralDisk,
+      legacyDiskVariant: config.legacyDiskVariant,
+      legacyChromaticRingFreq: config.legacyChromaticRingFreq,
+      legacyChromaticAnimSpeed: config.legacyChromaticAnimSpeed,
+      legacyChromaticColorSpeed: config.legacyChromaticColorSpeed,
+      legacyChromaticSaturation: config.legacyChromaticSaturation,
+      legacyRibbonRotationSpeed: config.legacyRibbonRotationSpeed,
+      legacyRibbonBandScale: config.legacyRibbonBandScale,
+      legacyRibbonBiasStrength: config.legacyRibbonBiasStrength,
     }),
     [
       config.blackHolePosition,
@@ -46,6 +54,14 @@ const BlackHoleHero = memo(function BlackHoleHero({ config }) {
       config.legacyStarBrightness,
       config.legacyStepCount,
       config.legacyUseProceduralDisk,
+      config.legacyDiskVariant,
+      config.legacyChromaticRingFreq,
+      config.legacyChromaticAnimSpeed,
+      config.legacyChromaticColorSpeed,
+      config.legacyChromaticSaturation,
+      config.legacyRibbonRotationSpeed,
+      config.legacyRibbonBandScale,
+      config.legacyRibbonBiasStrength,
     ]
   );
 

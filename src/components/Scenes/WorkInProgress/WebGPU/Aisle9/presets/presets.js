@@ -26,6 +26,7 @@ export const SETTING_OUTDOOR = 'outdoor';
 export const DEFAULT_PRESET = 'Store';
 
 const LEGACY_CONTROL_KEYS = [
+  'legacyDiskVariant',
   'legacyBlackHoleDiameter',
   'legacyDiskDiameter',
   'legacyLensDiameter',
@@ -40,6 +41,13 @@ const LEGACY_CONTROL_KEYS = [
   'legacyStarBrightness',
   'legacyGalaxyBrightness',
   'legacyUseProceduralDisk',
+  'legacyChromaticRingFreq',
+  'legacyChromaticAnimSpeed',
+  'legacyChromaticColorSpeed',
+  'legacyChromaticSaturation',
+  'legacyRibbonRotationSpeed',
+  'legacyRibbonBandScale',
+  'legacyRibbonBiasStrength',
 ];
 
 const WEBGPU_CONTROL_KEYS = [
@@ -167,6 +175,7 @@ const DISK_DIAMETER_METERS = 1.08;
 const DEFAULT_LENS_DIAMETER = 1.55;
 
 const BASE_LEGACY_BLACK_HOLE = {
+  legacyDiskVariant: 'procedural',
   legacyBlackHoleDiameter: BLACK_HOLE_DIAMETER_METERS,
   legacyDiskDiameter: DISK_DIAMETER_METERS,
   legacyLensDiameter: DEFAULT_LENS_DIAMETER,
@@ -181,6 +190,13 @@ const BASE_LEGACY_BLACK_HOLE = {
   legacyStarBrightness: 1,
   legacyGalaxyBrightness: 0.4,
   legacyUseProceduralDisk: true,
+  legacyChromaticRingFreq: 1.0,
+  legacyChromaticAnimSpeed: 1.0,
+  legacyChromaticColorSpeed: 0.5,
+  legacyChromaticSaturation: 0.45,
+  legacyRibbonRotationSpeed: 0.0,
+  legacyRibbonBandScale: 6.0,
+  legacyRibbonBiasStrength: 0.05,
 };
 
 const BASE_WEBGPU_BLACK_HOLE = {

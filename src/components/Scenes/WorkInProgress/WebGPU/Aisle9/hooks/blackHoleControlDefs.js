@@ -1,8 +1,22 @@
-export function buildLegacyControls(snapshot) {
+export function buildLegacyControls(snapshot, folderPath = '') {
+  const diskVariantKey = folderPath
+    ? `${folderPath}.legacyDiskVariant`
+    : 'legacyDiskVariant';
   return {
+    legacyDiskVariant: {
+      label: 'Disk Style',
+      value: snapshot.legacyDiskVariant ?? 'procedural',
+      options: {
+        Procedural: 'procedural',
+        Texture: 'texture',
+        'Chromatic Rings': 'chromatic',
+        Ribbon: 'ribbon',
+      },
+    },
     legacyUseProceduralDisk: {
       label: 'Procedural Disk',
       value: snapshot.legacyUseProceduralDisk ?? true,
+      render: () => false,
     },
     legacyBlackHoleDiameter: {
       label: 'Core Diameter (m)',
@@ -52,6 +66,10 @@ export function buildLegacyControls(snapshot) {
       min: 1800,
       max: 16000,
       step: 10,
+      render: (get) => {
+        const v = get(diskVariantKey);
+        return v !== 'chromatic' && v !== 'ribbon';
+      },
     },
     legacyDopplerStrength: {
       label: 'Doppler',
@@ -59,6 +77,68 @@ export function buildLegacyControls(snapshot) {
       min: 0,
       max: 2,
       step: 0.01,
+      render: (get) => {
+        const v = get(diskVariantKey);
+        return v !== 'chromatic' && v !== 'ribbon';
+      },
+    },
+    // ── Chromatic Rings variant controls ────────────────────────────────────
+    legacyChromaticRingFreq: {
+      label: 'Ring Density',
+      value: snapshot.legacyChromaticRingFreq ?? 1.0,
+      min: 0.1,
+      max: 4.0,
+      step: 0.05,
+      render: (get) => get(diskVariantKey) === 'chromatic',
+    },
+    legacyChromaticAnimSpeed: {
+      label: 'Anim Speed',
+      value: snapshot.legacyChromaticAnimSpeed ?? 1.0,
+      min: 0,
+      max: 5.0,
+      step: 0.05,
+      render: (get) => get(diskVariantKey) === 'chromatic',
+    },
+    legacyChromaticColorSpeed: {
+      label: 'Color Cycle Speed',
+      value: snapshot.legacyChromaticColorSpeed ?? 0.5,
+      min: 0,
+      max: 3.0,
+      step: 0.01,
+      render: (get) => get(diskVariantKey) === 'chromatic',
+    },
+    legacyChromaticSaturation: {
+      label: 'Whitening',
+      value: snapshot.legacyChromaticSaturation ?? 0.45,
+      min: 0,
+      max: 1.0,
+      step: 0.01,
+      render: (get) => get(diskVariantKey) === 'chromatic',
+    },
+    // ── Ribbon variant controls ──────────────────────────────────────────────
+    legacyRibbonRotationSpeed: {
+      label: 'Pulse Speed',
+      value: snapshot.legacyRibbonRotationSpeed ?? 0.0,
+      min: -0.2,
+      max: 0.2,
+      step: 0.005,
+      render: (get) => get(diskVariantKey) === 'ribbon',
+    },
+    legacyRibbonBandScale: {
+      label: 'Ring Count',
+      value: snapshot.legacyRibbonBandScale ?? 6.0,
+      min: 1,
+      max: 16,
+      step: 1,
+      render: (get) => get(diskVariantKey) === 'ribbon',
+    },
+    legacyRibbonBiasStrength: {
+      label: 'Hue Shift',
+      value: snapshot.legacyRibbonBiasStrength ?? 0.05,
+      min: 0,
+      max: 0.5,
+      step: 0.005,
+      render: (get) => get(diskVariantKey) === 'ribbon',
     },
     legacyAccretionMinRadius: {
       label: 'Disk Inner Radius',

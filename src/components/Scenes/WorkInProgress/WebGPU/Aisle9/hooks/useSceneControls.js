@@ -27,6 +27,7 @@ import buildSkyControls from './skyControlDefs';
 
 const SCENE_LABEL = 'Aisle 9';
 const CAMERA_FOLDER_PATH = `${SCENE_LABEL}.Camera`;
+const LEGACY_BH_FOLDER_PATH = `${SCENE_LABEL}.Blackhole.Legacy`;
 const COLLAPSED = { collapsed: true };
 
 const BLACK_HOLE_VARIANT_OPTIONS = {
@@ -97,7 +98,7 @@ export default function useSceneControls() {
           value: initialSnapshot.blackHoleVariant,
           options: BLACK_HOLE_VARIANT_OPTIONS,
         },
-        Legacy: folder(buildLegacyControls(initialSnapshot), COLLAPSED),
+        Legacy: folder(buildLegacyControls(initialSnapshot, LEGACY_BH_FOLDER_PATH), COLLAPSED),
         WebGPU: folder(buildWebGPUControls(initialSnapshot), COLLAPSED),
         Singularity: folder(
           buildSingularityControls(initialSnapshot),

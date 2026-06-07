@@ -14,6 +14,7 @@ const STORE_BODIES = [
     Component: SodaCan,
     instancesKey: 'body1Instances',
     phase: 0,
+    radiusTier: 0.70,
     scale: 0.02,
     scaleKey: 'body1Scale',
     spin: [0.5, 1.4, 0.3],
@@ -22,6 +23,7 @@ const STORE_BODIES = [
     Component: BigGulp,
     instancesKey: 'body2Instances',
     phase: 2.1,
+    radiusTier: 0.85,
     scale: 0.007,
     scaleKey: 'body2Scale',
     spin: [0.4, 0.8, 1.3],
@@ -30,6 +32,7 @@ const STORE_BODIES = [
     Component: Snickers,
     instancesKey: 'body3Instances',
     phase: 4.2,
+    radiusTier: 1.00,
     scale: 0.035,
     scaleKey: 'body3Scale',
     spin: [1.2, 0.5, 0.8],
@@ -38,6 +41,7 @@ const STORE_BODIES = [
     Component: DoubleGulp,
     instancesKey: 'body4Instances',
     phase: 1.05,
+    radiusTier: 1.15,
     scale: 0.04,
     scaleKey: 'body4Scale',
     spin: [0.3, 1.1, 0.6],
@@ -46,6 +50,7 @@ const STORE_BODIES = [
     Component: LaysChips,
     instancesKey: 'body5Instances',
     phase: 3.15,
+    radiusTier: 1.30,
     scale: 0.3,
     scaleKey: 'body5Scale',
     spin: [0.8, 0.4, 1.0],
@@ -66,7 +71,7 @@ const OrbitingBody = memo(function OrbitingBody({ body, center, orbitProps }) {
   const { metricWorldScale, bodyOrbitRadius, bodyOrbitHeight, bodyOrbitSpeed } =
     orbitProps;
   const bodyScale = orbitProps[body.scaleKey] ?? 1;
-  const orbitRadius = bodyOrbitRadius * body.radiusJitter * metricWorldScale;
+  const orbitRadius = bodyOrbitRadius * body.radiusTier * body.radiusJitter * metricWorldScale;
   const orbitHeight = bodyOrbitHeight * metricWorldScale;
   const verticalDrift = 0.05 * metricWorldScale;
 
@@ -172,8 +177,8 @@ const OrbitingBodies = memo(function OrbitingBodies({
         return {
           ...body,
           phase: body.phase + basePhase + phaseJitter,
-          // Orbit radius ±15% so instances aren't stacked on the same ring
-          radiusJitter: 0.85 + r(9) * 0.3,
+          // Small per-instance jitter (±5%) within the type's radius lane
+          radiusJitter: 0.95 + r(9) * 0.1,
           // Per-instance spin: randomize magnitude and direction per axis
           spin: [
             body.spin[0] * (0.5 + r(1)) * (r(4) < 0.5 ? 1 : -1),

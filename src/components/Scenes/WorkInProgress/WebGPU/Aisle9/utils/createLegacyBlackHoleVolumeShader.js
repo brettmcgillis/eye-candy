@@ -67,7 +67,7 @@ function createLegacyDiskColor(uniforms) {
         float(1)
       );
 
-      // Shared Doppler physics used by both paths
+      // Shared Doppler physics used by procedural and texture paths
       const diskVelocity = vec3(hitPosition.z.negate(), float(0), hitPosition.x)
         .div(sqrt(max(hitRadius.sub(1), float(0.001))))
         .div(max(hitRadius.mul(hitRadius), float(0.001)));
@@ -81,122 +81,253 @@ function createLegacyDiskColor(uniforms) {
       const outColor = vec3(0, 0, 0).toVar('diskOutColor');
       const outOpacity = float(0).toVar('diskOutOpacity');
 
-      If(uniforms.useProceduralDisk.greaterThan(float(0.5)), () => {
-        // ── PROCEDURAL PATH ────────────────────────────────────────────────────
+      If(uniforms.diskVariant.greaterThan(float(2.5)), () => {
+        // ── RIBBON VARIANT ─────────────────────────────────────────────────────
+        // Direct port of getColor() from legacyDiskShaderExample2.glsl.
+        //
+        // Reference: p = abs(p)*1.25; p = 0.5*p/dot(p,p); t = 0.13*length(p)
+        // Simplifies to: t = 0.065 / length(abs(hitPosition/scale)*1.25)
+        //              = 0.052 * ribbonBandScale / hitRadius
+        //
+        // ribbonBandScale divides hitPosition before the transform, controlling
+        // ring density. Increase it to see more rings; default 6 is a good start.
 
-        // Radial temperature gradient: T(r) ∝ (r_inner/r)^0.75
-        // Inner edge: hot (blue-white), outer edge: cool (deep orange-red)
-        const radialGradient = pow(
-          uniforms.innerRadius.div(
-            max(hitRadius, uniforms.innerRadius.mul(float(0.9)))
-          ),
-          float(0.75)
-        );
-        // Doppler shifts temperature: approaching gas is blueshifted, receding is redshifted
-        const dopplerTempShift = pow(
-          max(doppler, float(0.1)),
-          uniforms.dopplerStrength.negate()
-        );
-        const temperature = uniforms.diskTemperature
-          .mul(radialGradient)
-          .mul(dopplerTempShift);
+        const scaledPos = hitPosition.div(max(uniforms.ribbonBandScale, float(0.001)));
+        const pAbs = abs(scaledPos).mul(float(1.25));
+        const RT = float(0.065)
+          .div(max(length(pAbs), float(0.0001)))
+          .add(uniforms.time.mul(uniforms.ribbonRotationSpeed));
 
-        // Differential Keplerian rotation: inner gas orbits faster (ω ∝ r^-3/2)
-        const angularFlow = uniforms.time
-          .mul(float(0.25))
-          .div(pow(max(hitRadius, float(0.5)), float(1.5)));
-        const flowAngle = hitAngle.add(angularFlow);
+        const TWO_PI_C = float(Math.PI * 2);
+        const ribbonCol = vec3(0.3, 0.4, 0.5).toVar('ribbonCol');
+        ribbonCol.addAssign(cos(TWO_PI_C.mul(RT).mul(float(1.0)).add(vec3(0.0, 0.8, 1.1))).mul(float(0.12)));
+        ribbonCol.addAssign(cos(TWO_PI_C.mul(RT).mul(float(3.1)).add(vec3(0.3, 0.4, 0.1))).mul(float(0.11)));
+        ribbonCol.addAssign(cos(TWO_PI_C.mul(RT).mul(float(5.1)).add(vec3(0.1, 0.7, 1.1))).mul(float(0.10)));
+        ribbonCol.addAssign(cos(TWO_PI_C.mul(RT).mul(float(17.1)).add(vec3(0.2, 0.6, 0.7))).mul(float(0.10)));
+        ribbonCol.addAssign(cos(TWO_PI_C.mul(RT).mul(float(31.1)).add(vec3(0.1, 0.6, 0.7))).mul(float(0.10)));
+        ribbonCol.addAssign(cos(TWO_PI_C.mul(RT).mul(float(65.1)).add(vec3(0.0, 0.5, 0.8))).mul(float(0.10)));
+        ribbonCol.addAssign(cos(TWO_PI_C.mul(RT).mul(float(115.1)).add(vec3(0.1, 0.4, 0.7))).mul(float(0.10)));
+        ribbonCol.addAssign(cos(TWO_PI_C.mul(RT).mul(float(265.1)).add(vec3(1.1, 1.4, 2.7))).mul(float(0.10)));
+        ribbonCol.assign(clamp(ribbonCol, float(0), float(1)));
 
-        // FBM in co-rotating disk coordinates for swirling gas lane structure
-        const noiseCoord = vec3(
-          cos(flowAngle).mul(normalizedRadius).mul(float(5.0)),
-          sin(flowAngle).mul(normalizedRadius).mul(float(5.0)),
-          uniforms.time.mul(float(0.04))
-        );
-        const rawNoise = fbm(noiseCoord, float(2.2), float(0.55));
-        // Remap into high-contrast filaments with dark gaps
-        const filaments = clamp(
-          rawNoise.mul(float(2.5)).sub(float(0.35)),
-          float(0),
-          float(1)
-        );
+        const ribbonOuterFade = smoothstep(float(1.0), float(0.8), normalizedRadius);
+        const ribbonInnerFade = smoothstep(float(0.0), float(0.08), normalizedRadius);
+        const diskDensity = ribbonInnerFade.mul(ribbonOuterFade);
 
-        // Edge masks: sharp inner transition, gradual outer fade
-        const innerFade = smoothstep(float(0), float(0.07), normalizedRadius);
-        const outerFade = smoothstep(float(1), float(0.55), normalizedRadius);
-        const diskMask = innerFade.mul(outerFade);
+        outColor.assign(ribbonCol.mul(uniforms.diskBrightness).mul(float(2.2)).mul(diskDensity));
+        outOpacity.assign(clamp(diskDensity.mul(uniforms.diskBrightness).mul(float(0.95)), float(0), float(1)));
+      }).Else(() => {
+        If(uniforms.diskVariant.greaterThan(float(1.5)), () => {
+          // ── CHROMATIC RINGS VARIANT ──────────────────────────────────────────
+          // Based on diskTexture from legacyDiskShaderExample.glsl.
+          // Animated sinusoidal spiral rings with a time-cycling HSL color palette.
 
-        // Blend filaments with a base floor so disk has persistent presence
-        const structuredDensity = mix(filaments, float(1), float(0.2)).mul(
-          diskMask
-        );
+          // Map normalizedRadius to original D space [0.153, 0.968]
+          const Dorig = normalizedRadius.mul(float(0.815)).add(float(0.153));
 
-        // ISCO emission ring: intense narrow gaussian at the innermost stable orbit
-        const iscoNorm = normalizedRadius.div(float(0.1));
-        const iscoRing = exp(iscoNorm.negate().mul(iscoNorm)).mul(float(5.0));
-        const iscoTemp = clamp(
-          uniforms.diskTemperature.mul(float(2.0)),
-          float(1000),
-          float(40000)
-        );
-
-        // Relativistic beaming: approaching side is dramatically brighter
-        const beaming = float(1).div(
-          max(
-            pow(doppler, uniforms.dopplerStrength.mul(float(4))),
-            float(0.001)
-          )
-        );
-
-        const mainColor = blackbodyColor(
-          clamp(temperature, float(1000), float(40000))
-        )
-          .mul(structuredDensity)
-          .mul(uniforms.diskBrightness)
-          .mul(beaming);
-
-        // ISCO ring also gets beaming so approaching side glows harder
-        const iscoColor = blackbodyColor(iscoTemp)
-          .mul(iscoRing)
-          .mul(uniforms.diskBrightness)
-          .mul(beaming);
-
-        outColor.assign(mainColor.add(iscoColor));
-        outOpacity.assign(
-          clamp(
-            structuredDensity
-              .add(iscoRing.mul(float(0.4)))
-              .mul(uniforms.diskBrightness)
-              .mul(beaming),
+          // Inner edge ramp: rises steeply from 0 at inner edge
+          const Fraw = clamp(
+            Dorig.sub(float(0.153)).mul(float(30.0)),
             float(0),
             float(1)
-          )
-        );
-      }).Else(() => {
-        // ── ORIGINAL TEXTURE PATH ──────────────────────────────────────────────
+          );
+          const F = Fraw.mul(Fraw);
 
-        const temperature = uniforms.diskTemperature.div(
-          max(float(0.2), doppler.pow(uniforms.dopplerStrength))
-        );
-        const diskSample = textureSample(
-          diskTextureNode,
-          vec2(normalizedRadius, hitAngle.div(float(TWO_PI)).add(0.5))
-        );
-        const beaming = float(1).div(
-          max(doppler.pow(uniforms.dopplerStrength.mul(3)), float(0.001))
-        );
-        const diskColor = diskSample.rgb
-          .mul(blackbodyColor(temperature))
-          .mul(uniforms.diskBrightness)
-          .mul(beaming);
-        const opacity = clamp(
-          diskSample.a.mul(uniforms.diskBrightness).mul(beaming),
-          float(0),
-          float(1)
-        );
-        outColor.assign(diskColor);
-        outOpacity.assign(opacity);
-      });
+          // Outer fade (original: D = 1-D; D *= min(1, 10*D); D0 = D; D = pow(D, 1.5))
+          const Dinv = float(1.0).sub(Dorig);
+          const D0 = Dinv.mul(clamp(Dinv.mul(float(10.0)), float(0), float(1)));
+          const D = pow(D0, float(1.5));
+
+          // Three-harmonic spiral ring pattern (from original sinPatterns)
+          const sinPat = sin(
+            D.mul(float(-80.0).mul(uniforms.chromaticRingFreq))
+              .add(
+                uniforms.time.mul(float(5.0).mul(uniforms.chromaticAnimSpeed))
+              )
+              .add(hitAngle.mul(float(-1.0)))
+          )
+            .add(
+              sin(
+                D.mul(float(-152.0).mul(uniforms.chromaticRingFreq))
+                  .add(
+                    uniforms.time.mul(
+                      float(3.0).mul(uniforms.chromaticAnimSpeed)
+                    )
+                  )
+                  .add(hitAngle.mul(float(-1.0)))
+              ).mul(float(0.3))
+            )
+            .add(
+              sin(
+                D.mul(float(-134.0).mul(uniforms.chromaticRingFreq))
+                  .add(
+                    uniforms.time.mul(
+                      float(10.0).mul(uniforms.chromaticAnimSpeed)
+                    )
+                  )
+                  .add(hitAngle.mul(float(-1.0)))
+              ).mul(float(0.2))
+            );
+
+          // Cycling HSL-style color: hue shifts with time + radial position
+          const TWO_THIRDS_PI = float((Math.PI * 2) / 3);
+          const colorShift = uniforms.time
+            .negate()
+            .mul(uniforms.chromaticColorSpeed)
+            .add(float(3.0))
+            .add(D0.mul(float(4.0)));
+          const chromaticCol = vec3(
+            sin(colorShift).add(float(1.0)).mul(float(0.5)),
+            sin(colorShift.add(TWO_THIRDS_PI)).add(float(1.0)).mul(float(0.5)),
+            sin(colorShift.add(TWO_THIRDS_PI.mul(float(2.0))))
+              .add(float(1.0))
+              .mul(float(0.5))
+          );
+          // Lighten toward white, then gamma-encode for perceptual evenness
+          const chromaticLightened = mix(
+            chromaticCol,
+            vec3(1, 1, 1),
+            uniforms.chromaticSaturation
+          );
+          const chromaticGamma = pow(chromaticLightened, vec3(2.2));
+
+          const pattern = abs(sinPat).mul(float(0.5)).add(float(0.5));
+          const chromaticIntensity = F.mul(D)
+            .mul(pattern)
+            .mul(float(8.0))
+            .mul(uniforms.diskBrightness);
+
+          outColor.assign(chromaticGamma.mul(chromaticIntensity));
+          outOpacity.assign(clamp(chromaticIntensity, float(0), float(1)));
+        }).Else(() => {
+          If(uniforms.diskVariant.greaterThan(float(0.5)), () => {
+            // ── PROCEDURAL PATH ────────────────────────────────────────────────────
+
+            // Radial temperature gradient: T(r) ∝ (r_inner/r)^0.75
+            // Inner edge: hot (blue-white), outer edge: cool (deep orange-red)
+            const radialGradient = pow(
+              uniforms.innerRadius.div(
+                max(hitRadius, uniforms.innerRadius.mul(float(0.9)))
+              ),
+              float(0.75)
+            );
+            // Doppler shifts temperature: approaching gas is blueshifted, receding is redshifted
+            const dopplerTempShift = pow(
+              max(doppler, float(0.1)),
+              uniforms.dopplerStrength.negate()
+            );
+            const temperature = uniforms.diskTemperature
+              .mul(radialGradient)
+              .mul(dopplerTempShift);
+
+            // Differential Keplerian rotation: inner gas orbits faster (ω ∝ r^-3/2)
+            const angularFlow = uniforms.time
+              .mul(float(0.25))
+              .div(pow(max(hitRadius, float(0.5)), float(1.5)));
+            const flowAngle = hitAngle.add(angularFlow);
+
+            // FBM in co-rotating disk coordinates for swirling gas lane structure
+            const noiseCoord = vec3(
+              cos(flowAngle).mul(normalizedRadius).mul(float(5.0)),
+              sin(flowAngle).mul(normalizedRadius).mul(float(5.0)),
+              uniforms.time.mul(float(0.04))
+            );
+            const rawNoise = fbm(noiseCoord, float(2.2), float(0.55));
+            // Remap into high-contrast filaments with dark gaps
+            const filaments = clamp(
+              rawNoise.mul(float(2.5)).sub(float(0.35)),
+              float(0),
+              float(1)
+            );
+
+            // Edge masks: sharp inner transition, gradual outer fade
+            const innerFade = smoothstep(
+              float(0),
+              float(0.07),
+              normalizedRadius
+            );
+            const outerFade = smoothstep(
+              float(1),
+              float(0.55),
+              normalizedRadius
+            );
+            const diskMask = innerFade.mul(outerFade);
+
+            // Blend filaments with a base floor so disk has persistent presence
+            const structuredDensity = mix(filaments, float(1), float(0.2)).mul(
+              diskMask
+            );
+
+            // ISCO emission ring: intense narrow gaussian at the innermost stable orbit
+            const iscoNorm = normalizedRadius.div(float(0.1));
+            const iscoRing = exp(iscoNorm.negate().mul(iscoNorm)).mul(
+              float(5.0)
+            );
+            const iscoTemp = clamp(
+              uniforms.diskTemperature.mul(float(2.0)),
+              float(1000),
+              float(40000)
+            );
+
+            // Relativistic beaming: approaching side is dramatically brighter
+            const beaming = float(1).div(
+              max(
+                pow(doppler, uniforms.dopplerStrength.mul(float(4))),
+                float(0.001)
+              )
+            );
+
+            const mainColor = blackbodyColor(
+              clamp(temperature, float(1000), float(40000))
+            )
+              .mul(structuredDensity)
+              .mul(uniforms.diskBrightness)
+              .mul(beaming);
+
+            // ISCO ring also gets beaming so approaching side glows harder
+            const iscoColor = blackbodyColor(iscoTemp)
+              .mul(iscoRing)
+              .mul(uniforms.diskBrightness)
+              .mul(beaming);
+
+            outColor.assign(mainColor.add(iscoColor));
+            outOpacity.assign(
+              clamp(
+                structuredDensity
+                  .add(iscoRing.mul(float(0.4)))
+                  .mul(uniforms.diskBrightness)
+                  .mul(beaming),
+                float(0),
+                float(1)
+              )
+            );
+          }).Else(() => {
+            // ── ORIGINAL TEXTURE PATH ──────────────────────────────────────────────
+
+            const temperature = uniforms.diskTemperature.div(
+              max(float(0.2), doppler.pow(uniforms.dopplerStrength))
+            );
+            const diskSample = textureSample(
+              diskTextureNode,
+              vec2(normalizedRadius, hitAngle.div(float(TWO_PI)).add(0.5))
+            );
+            const beaming = float(1).div(
+              max(doppler.pow(uniforms.dopplerStrength.mul(3)), float(0.001))
+            );
+            const diskColor = diskSample.rgb
+              .mul(blackbodyColor(temperature))
+              .mul(uniforms.diskBrightness)
+              .mul(beaming);
+            const opacity = clamp(
+              diskSample.a.mul(uniforms.diskBrightness).mul(beaming),
+              float(0),
+              float(1)
+            );
+            outColor.assign(diskColor);
+            outOpacity.assign(opacity);
+          });
+        }); // close chromatic Else
+      }); // close ribbon Else
 
       return vec4(outColor, outOpacity);
     }
@@ -417,7 +548,12 @@ export default function createLegacyBlackHoleVolumeShader(
     // Procedural path uses ACES filmic; original texture path uses gamma to match original look
     const acesResult = acesTonemap(straightColor);
     const gammaResult = pow(straightColor, vec3(1 / 2.2));
-    const finalColor = mix(gammaResult, acesResult, uniforms.useProceduralDisk);
+    // ACES for all variants except texture (diskVariant=0 uses gamma to match original look)
+    const finalColor = mix(
+      gammaResult,
+      acesResult,
+      clamp(uniforms.diskVariant, float(0), float(1))
+    );
 
     const depthValue = float(1).toVar('depthValue');
 

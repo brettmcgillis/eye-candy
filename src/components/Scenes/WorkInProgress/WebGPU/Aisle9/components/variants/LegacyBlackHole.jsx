@@ -20,6 +20,23 @@ const LEGACY_DEFAULTS = {
   starBrightness: 1,
   galaxyBrightness: 0.4,
   useProceduralDisk: true,
+  diskVariant: 'procedural',
+  // Chromatic Rings variant defaults
+  chromaticRingFreq: 1.0,
+  chromaticAnimSpeed: 1.0,
+  chromaticColorSpeed: 0.5,
+  chromaticSaturation: 0.45,
+  // Ribbon variant defaults
+  ribbonRotationSpeed: 0.0,
+  ribbonBandScale: 6.0,
+  ribbonBiasStrength: 0.05,
+};
+
+const DISK_VARIANT_MAP = {
+  texture: 0,
+  procedural: 1,
+  chromatic: 2,
+  ribbon: 3,
 };
 
 const LEGACY_DISK_TEXTURE_PATH =
@@ -62,6 +79,32 @@ function createUniforms(config) {
     ),
     maxRevolutions: uniform(
       config.legacyMaxRevolutions ?? LEGACY_DEFAULTS.maxRevolutions
+    ),
+    diskVariant: uniform(
+      DISK_VARIANT_MAP[
+        config.legacyDiskVariant ?? LEGACY_DEFAULTS.diskVariant
+      ] ?? 1
+    ),
+    chromaticRingFreq: uniform(
+      config.legacyChromaticRingFreq ?? LEGACY_DEFAULTS.chromaticRingFreq
+    ),
+    chromaticAnimSpeed: uniform(
+      config.legacyChromaticAnimSpeed ?? LEGACY_DEFAULTS.chromaticAnimSpeed
+    ),
+    chromaticColorSpeed: uniform(
+      config.legacyChromaticColorSpeed ?? LEGACY_DEFAULTS.chromaticColorSpeed
+    ),
+    chromaticSaturation: uniform(
+      config.legacyChromaticSaturation ?? LEGACY_DEFAULTS.chromaticSaturation
+    ),
+    ribbonRotationSpeed: uniform(
+      config.legacyRibbonRotationSpeed ?? LEGACY_DEFAULTS.ribbonRotationSpeed
+    ),
+    ribbonBandScale: uniform(
+      config.legacyRibbonBandScale ?? LEGACY_DEFAULTS.ribbonBandScale
+    ),
+    ribbonBiasStrength: uniform(
+      config.legacyRibbonBiasStrength ?? LEGACY_DEFAULTS.ribbonBiasStrength
     ),
     useBackground: uniform(0),
     starBackgroundColor: uniform(
@@ -181,6 +224,26 @@ const LegacyBlackHole = memo(function LegacyBlackHole({ config }) {
       config.legacyStarBrightness ?? LEGACY_DEFAULTS.starBrightness;
     uniforms.galaxyBrightness.value =
       config.legacyGalaxyBrightness ?? LEGACY_DEFAULTS.galaxyBrightness;
+    const variantNum =
+      DISK_VARIANT_MAP[
+        config.legacyDiskVariant ?? LEGACY_DEFAULTS.diskVariant
+      ] ?? 1;
+    uniforms.diskVariant.value = variantNum;
+    uniforms.chromaticRingFreq.value =
+      config.legacyChromaticRingFreq ?? LEGACY_DEFAULTS.chromaticRingFreq;
+    uniforms.chromaticAnimSpeed.value =
+      config.legacyChromaticAnimSpeed ?? LEGACY_DEFAULTS.chromaticAnimSpeed;
+    uniforms.chromaticColorSpeed.value =
+      config.legacyChromaticColorSpeed ?? LEGACY_DEFAULTS.chromaticColorSpeed;
+    uniforms.chromaticSaturation.value =
+      config.legacyChromaticSaturation ?? LEGACY_DEFAULTS.chromaticSaturation;
+    uniforms.ribbonRotationSpeed.value =
+      config.legacyRibbonRotationSpeed ?? LEGACY_DEFAULTS.ribbonRotationSpeed;
+    uniforms.ribbonBandScale.value =
+      config.legacyRibbonBandScale ?? LEGACY_DEFAULTS.ribbonBandScale;
+    uniforms.ribbonBiasStrength.value =
+      config.legacyRibbonBiasStrength ?? LEGACY_DEFAULTS.ribbonBiasStrength;
+    // useProceduralDisk drives the fallback tone-mapping path when diskVariant is absent from presets
     uniforms.useProceduralDisk.value =
       (config.legacyUseProceduralDisk ?? LEGACY_DEFAULTS.useProceduralDisk)
         ? 1

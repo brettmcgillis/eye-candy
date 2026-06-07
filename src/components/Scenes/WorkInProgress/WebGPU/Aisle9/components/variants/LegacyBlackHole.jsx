@@ -74,7 +74,9 @@ function createUniforms(config) {
       config.legacyGalaxyBrightness ?? LEGACY_DEFAULTS.galaxyBrightness
     ),
     useProceduralDisk: uniform(
-      (config.legacyUseProceduralDisk ?? LEGACY_DEFAULTS.useProceduralDisk) ? 1 : 0
+      (config.legacyUseProceduralDisk ?? LEGACY_DEFAULTS.useProceduralDisk)
+        ? 1
+        : 0
     ),
   };
 }
@@ -180,7 +182,9 @@ const LegacyBlackHole = memo(function LegacyBlackHole({ config }) {
     uniforms.galaxyBrightness.value =
       config.legacyGalaxyBrightness ?? LEGACY_DEFAULTS.galaxyBrightness;
     uniforms.useProceduralDisk.value =
-      (config.legacyUseProceduralDisk ?? LEGACY_DEFAULTS.useProceduralDisk) ? 1 : 0;
+      (config.legacyUseProceduralDisk ?? LEGACY_DEFAULTS.useProceduralDisk)
+        ? 1
+        : 0;
     uniforms.useBackground.value = 0;
   }, [config, uniforms]);
 

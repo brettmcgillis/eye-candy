@@ -14,6 +14,7 @@ import {
   dot,
   exp,
   float,
+  fwidth,
   int,
   length,
   max,
@@ -83,39 +84,95 @@ function createLegacyDiskColor(uniforms) {
 
       If(uniforms.diskVariant.greaterThan(float(2.5)), () => {
         // ── RIBBON VARIANT ─────────────────────────────────────────────────────
-        // Direct port of getColor() from legacyDiskShaderExample2.glsl.
+        // Full port of legacyDiskShaderExample2.glsl (flat ribbon + shading).
         //
-        // Reference: p = abs(p)*1.25; p = 0.5*p/dot(p,p); t = 0.13*length(p)
-        // Simplifies to: t = 0.065 / length(abs(hitPosition/scale)*1.25)
-        //              = 0.052 * ribbonBandScale / hitRadius
+        // Step 1 — getColor(): multi-harmonic fcos palette
+        //   p = abs(p)*1.25; p = 0.5*p/dot(p,p); t = 0.13*length(p)
+        //   simplifies to t = 0.065 / length(abs(scaledPos)*1.25)
         //
-        // ribbonBandScale divides hitPosition before the transform, controlling
-        // ring density. Increase it to see more rings; default 6 is a good start.
+        // Step 2 — shading: position-based normal tilt restores the red→blue
+        //   gradient that flat (untwisted) ribbons otherwise lose. The normal
+        //   is tilted radially outward from the disk centre, so the near side
+        //   faces the light (blue/lit) and the far side faces away (red/unlit).
+        //   This exactly mirrors the fix applied in legacyDiskShaderExample2.glsl.
+        //
+        // Step 3 — two squaring passes (brightness curve) from the original.
 
+        // ── getColor ──────────────────────────────────────────────────────────
         const scaledPos = hitPosition.div(max(uniforms.ribbonBandScale, float(0.001)));
         const pAbs = abs(scaledPos).mul(float(1.25));
         const RT = float(0.065)
           .div(max(length(pAbs), float(0.0001)))
           .add(uniforms.time.mul(uniforms.ribbonRotationSpeed));
 
+        // fcos1 port: anti-aliased cosine — fades high-frequency terms via fwidth
+        const fcos = (arg) => {
+          const w = fwidth(arg);
+          return cos(arg).mul(smoothstep(float(Math.PI * 2), float(0), w));
+        };
+
         const TWO_PI_C = float(Math.PI * 2);
         const ribbonCol = vec3(0.3, 0.4, 0.5).toVar('ribbonCol');
-        ribbonCol.addAssign(cos(TWO_PI_C.mul(RT).mul(float(1.0)).add(vec3(0.0, 0.8, 1.1))).mul(float(0.12)));
-        ribbonCol.addAssign(cos(TWO_PI_C.mul(RT).mul(float(3.1)).add(vec3(0.3, 0.4, 0.1))).mul(float(0.11)));
-        ribbonCol.addAssign(cos(TWO_PI_C.mul(RT).mul(float(5.1)).add(vec3(0.1, 0.7, 1.1))).mul(float(0.10)));
-        ribbonCol.addAssign(cos(TWO_PI_C.mul(RT).mul(float(17.1)).add(vec3(0.2, 0.6, 0.7))).mul(float(0.10)));
-        ribbonCol.addAssign(cos(TWO_PI_C.mul(RT).mul(float(31.1)).add(vec3(0.1, 0.6, 0.7))).mul(float(0.10)));
-        ribbonCol.addAssign(cos(TWO_PI_C.mul(RT).mul(float(65.1)).add(vec3(0.0, 0.5, 0.8))).mul(float(0.10)));
-        ribbonCol.addAssign(cos(TWO_PI_C.mul(RT).mul(float(115.1)).add(vec3(0.1, 0.4, 0.7))).mul(float(0.10)));
-        ribbonCol.addAssign(cos(TWO_PI_C.mul(RT).mul(float(265.1)).add(vec3(1.1, 1.4, 2.7))).mul(float(0.10)));
+        ribbonCol.addAssign(fcos(TWO_PI_C.mul(RT).mul(float(1.0 )).add(vec3(0.0, 0.8, 1.1))).mul(float(0.12)));
+        ribbonCol.addAssign(fcos(TWO_PI_C.mul(RT).mul(float(3.1 )).add(vec3(0.3, 0.4, 0.1))).mul(float(0.11)));
+        ribbonCol.addAssign(fcos(TWO_PI_C.mul(RT).mul(float(5.1 )).add(vec3(0.1, 0.7, 1.1))).mul(float(0.10)));
+        ribbonCol.addAssign(fcos(TWO_PI_C.mul(RT).mul(float(17.1)).add(vec3(0.2, 0.6, 0.7))).mul(float(0.10)));
+        ribbonCol.addAssign(fcos(TWO_PI_C.mul(RT).mul(float(31.1)).add(vec3(0.1, 0.6, 0.7))).mul(float(0.10)));
+        ribbonCol.addAssign(fcos(TWO_PI_C.mul(RT).mul(float(65.1)).add(vec3(0.0, 0.5, 0.8))).mul(float(0.10)));
+        ribbonCol.addAssign(fcos(TWO_PI_C.mul(RT).mul(float(115.1)).add(vec3(0.1, 0.4, 0.7))).mul(float(0.10)));
+        ribbonCol.addAssign(fcos(TWO_PI_C.mul(RT).mul(float(265.1)).add(vec3(1.1, 1.4, 2.7))).mul(float(0.10)));
         ribbonCol.assign(clamp(ribbonCol, float(0), float(1)));
 
+        // ── shading ───────────────────────────────────────────────────────────
+        // Tilt the shading normal radially outward from the disk centre.
+        // diskDir is the unit in-plane direction (x,z) of the hit point.
+        // The fake normal is normalize( (diskDir.x*1.2, diskDir.z*1.2, 1) ),
+        // matching the GLSL fix: normalize(normnew + vec3(pos.x, pos.z, 0)*1.2).
+        const diskDirX = hitPosition.x.div(max(hitRadius, float(0.001)));
+        const diskDirZ = hitPosition.z.div(max(hitRadius, float(0.001)));
+        const shadNorm = normalize(vec3(
+          diskDirX.mul(float(1.2)),
+          diskDirZ.mul(float(1.2)),
+          float(1)
+        ));
+
+        // l_dir after both rotations in the GLSL (rotz(0.5) then rotz(-π/2)):
+        // normalize(0,1,0)*rotz(0.5) → (-sin0.5, cos0.5, 0)
+        // then *rotz(-π/2)           → (cos0.5,  sin0.5, 0) ≈ (0.878, 0.479, 0)
+        const lDir = vec3(float(0.878), float(0.479), float(0.0));
+
+        const shadDot  = dot(shadNorm, lDir);
+        const difVal   = clamp(shadDot, float(0), float(1));
+        const ambVal   = clamp(float(0.5).add(float(0.5).mul(shadDot)), float(0), float(1));
+        const shad     = vec3(0.32, 0.43, 0.54).mul(ambVal)
+                           .add(vec3(1.0, 0.9, 0.7).mul(difVal));
+        const tcr      = vec3(1.0, 0.21, 0.11);            // unlit red tint
+        const unlitMask = clamp(
+          float(1).sub(ambVal.add(difVal)), float(0), float(1)
+        );
+
+        // First squaring pass: tcol = clamp(ribbonCol*ribbonCol*2, 0, 1)
+        const tcol = clamp(ribbonCol.mul(ribbonCol).mul(float(2)), float(0), float(1));
+        const ta   = clamp(length(tcol), float(0), float(1));   // perceived brightness
+
+        // Apply lighting: lit (shad) + unlit (red tcr)
+        const litPart   = tcol.mul(shad).mul(float(1.4));
+        const unlitPart = tcr.mul(tcol).mul(float(3.0)).mul(unlitMask);
+
+        // Second squaring pass: clamp(2*combined*combined, 0, 1)
+        const combined        = litPart.add(unlitPart);
+        const finalRibbonCol  = clamp(combined.mul(combined).mul(float(2)), float(0), float(1));
+
+        // ── edge fades ────────────────────────────────────────────────────────
         const ribbonOuterFade = smoothstep(float(1.0), float(0.8), normalizedRadius);
         const ribbonInnerFade = smoothstep(float(0.0), float(0.08), normalizedRadius);
         const diskDensity = ribbonInnerFade.mul(ribbonOuterFade);
 
-        outColor.assign(ribbonCol.mul(uniforms.diskBrightness).mul(float(2.2)).mul(diskDensity));
-        outOpacity.assign(clamp(diskDensity.mul(uniforms.diskBrightness).mul(float(0.95)), float(0), float(1)));
+        outColor.assign(finalRibbonCol.mul(uniforms.diskBrightness).mul(float(2.2)).mul(diskDensity));
+        outOpacity.assign(clamp(
+          ta.mul(diskDensity).mul(uniforms.diskBrightness).mul(float(0.95)),
+          float(0), float(1)
+        ));
       }).Else(() => {
         If(uniforms.diskVariant.greaterThan(float(1.5)), () => {
           // ── CHROMATIC RINGS VARIANT ──────────────────────────────────────────

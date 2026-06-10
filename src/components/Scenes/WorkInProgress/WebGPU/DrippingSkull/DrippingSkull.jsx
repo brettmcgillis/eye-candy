@@ -1,9 +1,13 @@
 import React from 'react';
 
+import { Environment } from '@react-three/drei';
+
 import CameraRig from '../../../../rigging/CameraRig';
 import Lighting from './components/Lighting';
-import Surface from './components/Surface';
+import LiquidSkull from './components/LiquidSkull';
 import useSceneControls from './hooks/useSceneControls';
+
+const FLOOR_Y = -2;
 
 export default function DrippingSkull() {
   const config = useSceneControls();
@@ -15,6 +19,9 @@ export default function DrippingSkull() {
       <color attach="background" args={[config.bgColor]} />
       <fog attach="fog" args={[config.bgColor, 5, 16]} />
 
+      {/* Glossy liquid lives and dies by what it reflects */}
+      <Environment preset="city" environmentIntensity={config.envIntensity} />
+
       <Lighting
         ambientIntensity={config.ambientIntensity}
         keyColor={config.keyColor}
@@ -23,9 +30,9 @@ export default function DrippingSkull() {
         rimIntensity={config.rimIntensity}
       />
 
-      <Surface config={config} />
+      <LiquidSkull config={config} floorY={FLOOR_Y} />
 
-      <mesh receiveShadow rotation-x={-Math.PI / 2} position={[0, -3.5, 0]}>
+      <mesh receiveShadow rotation-x={-Math.PI / 2} position={[0, FLOOR_Y, 0]}>
         <circleGeometry args={[8, 96]} />
         <meshStandardMaterial
           color="#0f1015"

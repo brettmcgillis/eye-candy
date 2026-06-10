@@ -1,0 +1,11 @@
+{
+  "version": "0.0.1",
+  "configurations": [
+    {
+      "name": "eye-candy",
+      "runtimeExecutable": "npm",
+      "runtimeArgs": ["run", "start-https"],
+      "port": 3000
+    }
+  ]
+}

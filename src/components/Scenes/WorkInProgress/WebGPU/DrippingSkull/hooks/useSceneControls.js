@@ -4,7 +4,9 @@ import { useMemo } from 'react';
 
 import usePresetsFolder from '../../../../../../hooks/usePresetsFolder';
 import useSceneCameraControls from '../../../../../../hooks/useSceneCameraControls';
-import PRESETS, { DEFAULT_PRESET } from '../presets/presets';
+import PRESETS, {
+  DEFAULT_PRESET as DEFAULT_PRESET_KEY,
+} from '../presets/presets';
 import CAMERA from '../utils/camera';
 
 const SCENE_LABEL = 'Dripping Skull';
@@ -21,12 +23,12 @@ export default function useSceneControls() {
     initialPreset,
     presetsFolder,
   } = usePresetsFolder({
-    defaultPreset: DEFAULT_PRESET,
+    defaultPreset: DEFAULT_PRESET_KEY,
     getPresetControls,
     presets: PRESETS,
   });
 
-  const preset = PRESETS[initialPreset] || PRESETS[DEFAULT_PRESET];
+  const preset = PRESETS[initialPreset] || PRESETS[DEFAULT_PRESET_KEY];
 
   const { buildCamera, cameraControls } = useSceneCameraControls({
     camera: CAMERA,
@@ -37,41 +39,152 @@ export default function useSceneControls() {
   const [controls, setControls] = useControls(SCENE_LABEL, () => ({
     Presets: presetsFolder,
     Camera: folder(cameraControls, { collapsed: true }),
-    Mode: folder(
+    Liquid: folder(
       {
-        shapeMode: {
-          value: preset.shapeMode,
-          options: { Sphere: 'sphere', Skull: 'skull' },
-          label: 'Shape',
+        liquidColor: { value: preset.liquidColor, label: 'Color' },
+        roughness: {
+          value: preset.roughness,
+          min: 0,
+          max: 1,
+          step: 0.01,
+          label: 'Roughness',
         },
-        interactionMode: {
-          value: preset.interactionMode,
-          options: { Press: 'press', Hover: 'hover' },
-          label: 'Mouse',
+        metalness: {
+          value: preset.metalness,
+          min: 0,
+          max: 1,
+          step: 0.01,
+          label: 'Metalness',
+        },
+        transmission: {
+          value: preset.transmission,
+          min: 0,
+          max: 1,
+          step: 0.01,
+          label: 'Transmission',
+        },
+        ior: {
+          value: preset.ior,
+          min: 1,
+          max: 2.33,
+          step: 0.01,
+          label: 'IOR',
+        },
+        thickness: {
+          value: preset.thickness,
+          min: 0,
+          max: 2,
+          step: 0.01,
+          label: 'Thickness',
+        },
+        clearcoat: {
+          value: preset.clearcoat,
+          min: 0,
+          max: 1,
+          step: 0.01,
+          label: 'Clearcoat',
+        },
+        clearcoatRoughness: {
+          value: preset.clearcoatRoughness,
+          min: 0,
+          max: 1,
+          step: 0.01,
+          label: 'CC Roughness',
+        },
+        iridescence: {
+          value: preset.iridescence,
+          min: 0,
+          max: 1,
+          step: 0.01,
+          label: 'Iridescence',
+        },
+        emissiveColor: { value: preset.emissiveColor, label: 'Glow Color' },
+        emissiveIntensity: {
+          value: preset.emissiveIntensity,
+          min: 0,
+          max: 4,
+          step: 0.01,
+          label: 'Glow',
         },
       },
       { collapsed: true }
     ),
-    Surface: folder(
+    Coat: folder(
       {
-        dripSpeed: {
-          value: preset.dripSpeed,
+        coverage: {
+          value: preset.coverage,
           min: 0,
-          max: 3,
+          max: 1.5,
           step: 0.01,
-          label: 'Drip Speed',
+          label: 'Coverage',
         },
+        coatSoftness: {
+          value: preset.coatSoftness,
+          min: 0.01,
+          max: 0.5,
+          step: 0.01,
+          label: 'Edge Softness',
+        },
+        coatThickness: {
+          value: preset.coatThickness,
+          min: 0.001,
+          max: 0.05,
+          step: 0.001,
+          label: 'Film Thickness',
+        },
+        streakScale: {
+          value: preset.streakScale,
+          min: 0.5,
+          max: 12,
+          step: 0.1,
+          label: 'Streak Scale',
+        },
+        streakStretch: {
+          value: preset.streakStretch,
+          min: 1,
+          max: 12,
+          step: 0.1,
+          label: 'Streak Stretch',
+        },
+        topBias: {
+          value: preset.topBias,
+          min: 0,
+          max: 1,
+          step: 0.01,
+          label: 'Top Bias',
+        },
+        flowSpeed: {
+          value: preset.flowSpeed,
+          min: 0,
+          max: 0.5,
+          step: 0.005,
+          label: 'Flow Speed',
+        },
+        rippleStrength: {
+          value: preset.rippleStrength,
+          min: 0,
+          max: 1,
+          step: 0.01,
+          label: 'Ripple',
+        },
+      },
+      { collapsed: true }
+    ),
+    Drips: folder(
+      {
         dripCount: {
           value: preset.dripCount,
-          options: { 4: 4, 6: 6, 8: 8, 10: 10, 12: 12, 16: 16 },
+          min: 0,
+          max: 12,
+          step: 1,
           label: 'Drip Count',
         },
-        dripDropletFall: {
-          value: preset.dripDropletFall,
-          min: 0.5,
-          max: 6,
+        dripRate: {
+          value: preset.dripRate,
+          min: 0.05,
+          max: 3,
           step: 0.05,
-          label: 'Drip Length',
+          label: 'Drip Rate',
         },
         viscosity: {
           value: preset.viscosity,
@@ -80,33 +193,44 @@ export default function useSceneControls() {
           step: 0.01,
           label: 'Viscosity',
         },
-        noiseScale: {
-          value: preset.noiseScale,
-          min: 0.5,
-          max: 12,
-          step: 0.1,
-          label: 'Noise Scale',
+        dropSize: {
+          value: preset.dropSize,
+          min: 0.01,
+          max: 0.2,
+          step: 0.005,
+          label: 'Drop Size',
         },
-        noiseStrength: {
-          value: preset.noiseStrength,
-          min: 0,
-          max: 1,
-          step: 0.01,
-          label: 'Noise Strength',
-        },
-        pointerRadius: {
-          value: preset.pointerRadius,
+        fallSpeed: {
+          value: preset.fallSpeed,
           min: 0.1,
           max: 2,
-          step: 0.01,
-          label: 'Pointer Radius',
+          step: 0.05,
+          label: 'Fall Speed',
         },
-        pointerStrength: {
-          value: preset.pointerStrength,
+        trailLength: {
+          value: preset.trailLength,
+          min: 0,
+          max: 14,
+          step: 1,
+          label: 'Trail Length',
+        },
+        mcResolution: {
+          value: preset.mcResolution,
+          options: { Low: 24, Medium: 32, High: 40, Ultra: 56 },
+          label: 'Liquid Quality',
+        },
+      },
+      { collapsed: true }
+    ),
+    Bone: folder(
+      {
+        showBone: { value: preset.showBone, label: 'Show Bone' },
+        boneWetness: {
+          value: preset.boneWetness,
           min: 0,
           max: 1,
           step: 0.01,
-          label: 'Pointer Strength',
+          label: 'Wetness',
         },
       },
       { collapsed: true }
@@ -114,22 +238,6 @@ export default function useSceneControls() {
     Color: folder(
       {
         bgColor: { value: preset.bgColor, label: 'Background' },
-        tintA: { value: preset.tintA, label: 'Tint A' },
-        tintB: { value: preset.tintB, label: 'Tint B' },
-        paletteBrightness: {
-          value: preset.paletteBrightness,
-          min: 0.5,
-          max: 4,
-          step: 0.05,
-          label: 'Brightness',
-        },
-        paletteSpeed: {
-          value: preset.paletteSpeed,
-          min: 0,
-          max: 2,
-          step: 0.01,
-          label: 'Palette Speed',
-        },
       },
       { collapsed: true }
     ),
@@ -156,20 +264,15 @@ export default function useSceneControls() {
           step: 0.1,
           label: 'Rim',
         },
+        envIntensity: {
+          value: preset.envIntensity,
+          min: 0,
+          max: 2,
+          step: 0.01,
+          label: 'Environment',
+        },
         keyColor: { value: preset.keyColor, label: 'Key Color' },
         rimColor: { value: preset.rimColor, label: 'Rim Color' },
-      },
-      { collapsed: true }
-    ),
-    Skull: folder(
-      {
-        skullScale: {
-          value: preset.skullScale,
-          min: 0.05,
-          max: 0.2,
-          step: 0.001,
-          label: 'Scale',
-        },
       },
       { collapsed: true }
     ),

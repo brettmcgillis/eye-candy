@@ -72,6 +72,7 @@ To Build:
 
 - [Aisle9](src/components/scenes/WorkInProgress/WebGPU/Aisle9/todo.md)
 - [RaisedByTV](src/components/scenes/WorkInProgress/WebGPU/RaisedByTV/todo.md)
+- [OneInTheHand](src/components/scenes/WorkInProgress/WebGPU/OneInTheHand/todo.md)
 - [ThatsAllFolks](src/components/scenes/WorkInProgress/WebGPU/ThatsAllFolks/todo.md)
 - [StillPullingForYou](src/components/scenes/WorkInProgress/WebGPU/StillPullingForYou/todo.md)
 - [My Heart Is A Broken Fish Tank](src/components/scenes/WorkInProgress/WebGPU/MyHeartIsABrokenFishTank/todo.md)
@@ -84,7 +85,6 @@ To Build:
 - [StayHunted](src/components/scenes/WorkInProgress/WebGPU/StayHunted/todo.md)
 - [GhostStories](src/components/scenes/WorkInProgress/WebGPU/GhostStories/todo.md)
 - [QuinnsPlayground](src/components/scenes/WorkInProgress/WebGL/QuinnsPlayground/todo.md)
-- [OneInTheHand](src/components/scenes/WorkInProgress/WebGL/OneInTheHand/todo.md)
 - [HorsesForCourses](src/components/scenes/WorkInProgress/WebGPU/HorsesForCourses/todo.md)
 - [DrippingSkull](src/components/scenes/WorkInProgress/WebGPU/DrippingSkull/todo.md)
 - [BurningCash](src/components/scenes/WorkInProgress/WebGPU/BurningCash/todo.md)

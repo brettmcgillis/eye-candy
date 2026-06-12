@@ -691,6 +691,8 @@ export async function getGltfJsxCapabilities(rootDir) {
     routes: {
       capabilities: '/dev-api/gltfjsx/capabilities',
       convert: '/dev-api/gltfjsx/convert',
+      models: '/dev-api/gltfjsx/models',
+      writeAsset: '/dev-api/gltfjsx/write-asset',
     },
     writes: {
       models: 'public/models/ or public/models/<folder>/',
@@ -709,6 +711,81 @@ export async function getGltfJsxCapabilities(rootDir) {
     limits: {
       maxRequestBytes: MAX_REQUEST_BYTES,
     },
+  };
+}
+
+export async function listModelAssets(rootDir) {
+  const modelsRoot = path.join(path.resolve(rootDir), MODEL_ROOT_RELATIVE);
+
+  if (!(await pathExists(modelsRoot))) {
+    return { ok: true, models: [] };
+  }
+
+  const files = await collectFilesRecursive(modelsRoot);
+  const models = files
+    .filter((file) => {
+      const extension = path.posix.extname(file.relativePath).toLowerCase();
+      return (
+        ENTRY_EXTENSIONS.has(extension) &&
+        isMeaningfulWorkspaceFile(file.relativePath)
+      );
+    })
+    .map((file) => ({
+      assetPath: file.relativePath,
+      bytes: file.bytes,
+    }))
+    .sort((a, b) => a.assetPath.localeCompare(b.assetPath));
+
+  return { ok: true, models };
+}
+
+export async function writeModelAssetRequest({ payload, rootDir }) {
+  const assetPath = normalizeUploadPath(payload?.assetPath);
+  const extension = path.posix.extname(assetPath).toLowerCase();
+
+  if (!ENTRY_EXTENSIONS.has(extension)) {
+    throw new RequestError(
+      400,
+      'INVALID_ASSET_PATH',
+      'Asset path must point at a `.glb` or `.gltf` file.',
+      { assetPath }
+    );
+  }
+
+  if (typeof payload?.base64 !== 'string' || !payload.base64) {
+    throw new RequestError(
+      400,
+      'INVALID_FILE_DATA',
+      'The request is missing base64 file data.'
+    );
+  }
+
+  const buffer = decodeFileBuffer(payload.base64, assetPath);
+  const modelsRoot = path.join(path.resolve(rootDir), MODEL_ROOT_RELATIVE);
+  const absolutePath = path.resolve(modelsRoot, assetPath);
+  ensureInside(modelsRoot, absolutePath, 'Asset path');
+
+  const existed = await pathExists(absolutePath);
+
+  if (existed && !payload?.overwrite) {
+    throw new RequestError(
+      409,
+      'FILE_EXISTS',
+      'A file already exists at the requested public/models path. Enable overwrite to replace it.',
+      { assetPath }
+    );
+  }
+
+  await fs.mkdir(path.dirname(absolutePath), { recursive: true });
+  await fs.writeFile(absolutePath, buffer);
+  const stats = await fs.stat(absolutePath);
+
+  return {
+    ok: true,
+    assetPath,
+    bytes: stats.size,
+    outputPath: toPosix(path.relative(path.resolve(rootDir), absolutePath)),
+    overwritten: existed,
   };
 }
 

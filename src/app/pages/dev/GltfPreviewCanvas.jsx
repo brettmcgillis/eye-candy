@@ -2,6 +2,7 @@ import React, {
   Suspense,
   useEffect,
   useLayoutEffect,
+  useMemo,
   useRef,
   useState,
 } from 'react';
@@ -9,6 +10,7 @@ import React, {
 import { OrbitControls, Stage } from '@react-three/drei';
 import { Canvas } from '@react-three/fiber';
 
+import AnimationDriver from './AnimationDriver';
 import useGltfPreview from './useGltfPreview';
 
 const styles = {
@@ -59,6 +61,36 @@ const styles = {
     color: '#fca5a5',
     padding: '1.5rem',
     textAlign: 'center',
+  },
+  animationBar: {
+    position: 'absolute',
+    bottom: '1rem',
+    left: '1rem',
+    right: '1rem',
+    zIndex: 1,
+    display: 'flex',
+    gap: '0.5rem',
+    alignItems: 'center',
+  },
+  animationSelect: {
+    flex: '1 1 auto',
+    minWidth: 0,
+    borderRadius: '999px',
+    border: '1px solid rgba(148, 163, 184, 0.35)',
+    background: 'rgba(15, 23, 42, 0.82)',
+    color: '#e2e8f0',
+    padding: '0.5rem 0.85rem',
+    fontSize: '0.82rem',
+  },
+  animationButton: {
+    flexShrink: 0,
+    borderRadius: '999px',
+    border: '1px solid rgba(148, 163, 184, 0.35)',
+    background: 'rgba(15, 23, 42, 0.82)',
+    color: '#e2e8f0',
+    padding: '0.5rem 0.95rem',
+    fontSize: '0.82rem',
+    cursor: 'pointer',
   },
 };
 
@@ -168,7 +200,7 @@ function GeneratedComponentPreviewContent({ Component, shadows }) {
   );
 }
 
-function PreviewScene({ gltf, PreviewComponent, previewOptions }) {
+function PreviewScene({ animation, gltf, PreviewComponent, previewOptions }) {
   const controlsRef = useRef(null);
 
   if (!gltf?.scene && !PreviewComponent) return null;
@@ -177,6 +209,14 @@ function PreviewScene({ gltf, PreviewComponent, previewOptions }) {
     <>
       <color attach="background" args={['#020617']} />
       <ambientLight intensity={0.25} />
+      {gltf?.scene && animation?.clipName ? (
+        <AnimationDriver
+          clipName={animation.clipName}
+          clips={gltf.animations || []}
+          playing={animation.playing}
+          root={gltf.scene}
+        />
+      ) : null}
       <Suspense fallback={null}>
         <Stage
           adjustCamera
@@ -225,6 +265,17 @@ export default function GltfPreviewCanvas({
   const previewLabel = previewComponent
     ? 'Generated component ready'
     : 'Preview ready';
+  const animationClips = useMemo(() => {
+    return previewComponent ? [] : assetPreviewState.gltf?.animations || [];
+  }, [assetPreviewState.gltf, previewComponent]);
+  const [animation, setAnimation] = useState({ clipName: '', playing: true });
+
+  useEffect(() => {
+    setAnimation({
+      clipName: animationClips.length === 1 ? animationClips[0].name : '',
+      playing: true,
+    });
+  }, [animationClips]);
 
   if (!previewAsset && !previewComponent) {
     return (
@@ -250,11 +301,48 @@ export default function GltfPreviewCanvas({
         style={styles.canvas}
       >
         <PreviewScene
+          animation={animation}
           gltf={assetPreviewState.gltf}
           PreviewComponent={PreviewComponent}
           previewOptions={previewOptions}
         />
       </Canvas>
+      {animationClips.length ? (
+        <div style={styles.animationBar}>
+          <select
+            aria-label="Animation clip"
+            style={styles.animationSelect}
+            value={animation.clipName}
+            onChange={(event) =>
+              setAnimation((current) => ({
+                ...current,
+                clipName: event.target.value,
+              }))
+            }
+          >
+            <option value="">No animation</option>
+            {animationClips.map((clip) => (
+              <option key={clip.name} value={clip.name}>
+                {clip.name}
+              </option>
+            ))}
+          </select>
+          {animation.clipName ? (
+            <button
+              type="button"
+              style={styles.animationButton}
+              onClick={() =>
+                setAnimation((current) => ({
+                  ...current,
+                  playing: !current.playing,
+                }))
+              }
+            >
+              {animation.playing ? 'Pause' : 'Play'}
+            </button>
+          ) : null}
+        </div>
+      ) : null}
     </div>
   );
 }

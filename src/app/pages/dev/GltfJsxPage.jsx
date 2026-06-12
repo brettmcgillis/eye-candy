@@ -11,6 +11,7 @@ import { Link } from 'react-router-dom';
 import { iconFile, localEnv, modelFile } from '../../../utils/appUtils';
 import { DEFAULT_SCENE_PATH } from '../../sceneRegistry';
 import GltfPreviewCanvas from './GltfPreviewCanvas';
+import PoseWorkbench from './PoseWorkbench';
 
 const CAPABILITIES_ENDPOINT = '/dev-api/gltfjsx/capabilities';
 const CONVERT_ENDPOINT = '/dev-api/gltfjsx/convert';
@@ -102,6 +103,26 @@ const styles = {
   },
   nav: {
     marginBottom: '1rem',
+  },
+  tabBar: {
+    display: 'flex',
+    gap: '0.5rem',
+    marginBottom: '1.25rem',
+  },
+  tab: {
+    border: '1px solid rgba(148, 163, 184, 0.42)',
+    borderRadius: '999px',
+    padding: '0.65rem 1.2rem',
+    background: 'rgba(255,255,255,0.85)',
+    color: '#0f172a',
+    cursor: 'pointer',
+    fontWeight: 700,
+    fontSize: '0.88rem',
+  },
+  tabActive: {
+    border: '1px solid #0f172a',
+    background: '#0f172a',
+    color: '#f8fafc',
   },
   back: {
     color: '#475569',
@@ -863,6 +884,8 @@ export default function GltfJsxPage() {
   const [conversionState, setConversionState] = useState('idle');
   const [conversionError, setConversionError] = useState(null);
   const [conversionResult, setConversionResult] = useState(null);
+  const [activeTab, setActiveTab] = useState('convert');
+  const [poseTabMounted, setPoseTabMounted] = useState(false);
 
   const entryFiles = useMemo(() => {
     return uploadedFiles.filter((file) => {
@@ -1219,7 +1242,44 @@ export default function GltfJsxPage() {
         </p>
       </header>
 
-      <div style={styles.layout}>
+      <div style={styles.tabBar}>
+        <button
+          type="button"
+          style={{
+            ...styles.tab,
+            ...(activeTab === 'convert' ? styles.tabActive : null),
+          }}
+          onClick={() => setActiveTab('convert')}
+        >
+          Import &amp; Optimize
+        </button>
+        <button
+          type="button"
+          style={{
+            ...styles.tab,
+            ...(activeTab === 'pose' ? styles.tabActive : null),
+          }}
+          onClick={() => {
+            setActiveTab('pose');
+            setPoseTabMounted(true);
+          }}
+        >
+          Pose
+        </button>
+      </div>
+
+      {poseTabMounted ? (
+        <div style={{ display: activeTab === 'pose' ? 'block' : 'none' }}>
+          <PoseWorkbench uploadedAsset={uploadedPreviewAsset} />
+        </div>
+      ) : null}
+
+      <div
+        style={{
+          ...styles.layout,
+          display: activeTab === 'convert' ? styles.layout.display : 'none',
+        }}
+      >
         <div style={styles.leftStack}>
           <section style={styles.panel}>
             <h2 style={styles.panelTitle}>Upload</h2>

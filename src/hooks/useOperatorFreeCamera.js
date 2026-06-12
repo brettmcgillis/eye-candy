@@ -1,6 +1,6 @@
 import * as THREE from 'three';
 
-import { useEffect, useMemo, useRef } from 'react';
+import { useEffect, useRef } from 'react';
 
 import { useFrame, useThree } from '@react-three/fiber';
 
@@ -20,7 +20,6 @@ export default function useOperatorFreeCamera({
   enabled = false,
   inputRef,
   config,
-  actions,
   shouldBlockPointerLook,
 } = {}) {
   const { camera, gl } = useThree();
@@ -32,14 +31,6 @@ export default function useOperatorFreeCamera({
     lastY: 0,
   });
   const pointerLookDeltaRef = useRef({ x: 0, y: 0 });
-
-  const actionHandlers = useMemo(
-    () => ({
-      action1: actions?.action1 ?? null,
-      action2: actions?.action2 ?? null,
-    }),
-    [actions?.action1, actions?.action2]
-  );
 
   useEffect(() => {
     if (!enabled) {
@@ -170,14 +161,6 @@ export default function useOperatorFreeCamera({
         config.maxFov
       );
       camera.updateProjectionMatrix();
-    }
-
-    if (input.action1 && actionHandlers.action1) {
-      actionHandlers.action1();
-    }
-
-    if (input.action2 && actionHandlers.action2) {
-      actionHandlers.action2();
     }
   });
 }

@@ -10,10 +10,13 @@ import {
   useState,
 } from 'react';
 
+import { useFrame } from '@react-three/fiber';
+
 import useCameraFitToViewport from './useCameraFitToViewport';
 import useCameraSpline from './useCameraSpline';
 import useOperatorFreeCamera from './useOperatorFreeCamera';
 import useOperatorInput from './useOperatorInput';
+import useOrbitGamepadControls from './useOrbitGamepadControls';
 
 const DEFAULT_MODE = 'fixed';
 const DEFAULT_CAMERA_POSITION = Object.freeze([0, 0, 5]);
@@ -88,19 +91,6 @@ function toRoundedTuple(value, fallback = DEFAULT_CAMERA_TARGET) {
   const tuple = toVectorTuple(value, fallback);
 
   return tuple.map((entry) => toRoundedNumber(entry));
-}
-
-function framesEqual(a, b) {
-  if (!a || !b) return false;
-  return (
-    a.fov === b.fov &&
-    a.position[0] === b.position[0] &&
-    a.position[1] === b.position[1] &&
-    a.position[2] === b.position[2] &&
-    a.pivot[0] === b.pivot[0] &&
-    a.pivot[1] === b.pivot[1] &&
-    a.pivot[2] === b.pivot[2]
-  );
 }
 
 function toObjectLiteral(snapshot) {
@@ -405,7 +395,6 @@ export default function useSceneCamera({
   const [controlsNode, setControlsNode] = useState(null);
   const cameraRef = useRef(null);
   const controlsRef = useRef(null);
-  const appliedFrameRef = useRef(null);
 
   const mode = normalizeMode(
     camera?.mode ?? camera?.cameraMode ?? camera?.defaultMode
@@ -580,6 +569,7 @@ export default function useSceneCamera({
   ]);
 
   const orbitInteractionActive = isOrbitMode && orbitInteractionEnabled;
+  const hasActions = !!(actions?.action1 || actions?.action2);
   const resolvedOrbitControlsProps = useMemo(() => {
     const enablePan = orbitControlsProps.enablePan ?? true;
     const enableRotate = orbitControlsProps.enableRotate ?? true;
@@ -614,17 +604,51 @@ export default function useSceneCamera({
     orbitInteractionActive,
   ]);
 
-  const operatorInputRef = useOperatorInput({
+  const actionHandlers = useMemo(
+    () => ({
+      action1: actions?.action1 ?? null,
+      action2: actions?.action2 ?? null,
+    }),
+    [actions?.action1, actions?.action2]
+  );
+  const sharedInputEnabled =
+    isOperatorMode || orbitInteractionActive || hasActions;
+  const sharedInputRef = useOperatorInput({
     ...operatorInputOptions,
-    enabled: isOperatorMode,
+    enabled: sharedInputEnabled,
+  });
+
+  useFrame(() => {
+    if (!hasActions) {
+      return;
+    }
+
+    const input = sharedInputRef.current;
+
+    if (!input) {
+      return;
+    }
+
+    if (input.action1 && actionHandlers.action1) {
+      actionHandlers.action1();
+    }
+
+    if (input.action2 && actionHandlers.action2) {
+      actionHandlers.action2();
+    }
   });
 
   useOperatorFreeCamera({
-    actions,
     config: operatorCamera,
     enabled: isOperatorMode,
-    inputRef: operatorInputRef,
+    inputRef: sharedInputRef,
     shouldBlockPointerLook,
+  });
+
+  useOrbitGamepadControls({
+    controlsRef,
+    enabled: orbitInteractionActive,
+    inputRef: sharedInputRef,
   });
 
   useCameraSpline({
@@ -655,14 +679,6 @@ export default function useSceneCamera({
     }
 
     const nextFrame = isOrbitMode ? activeOrbitFrame : fixedFrame;
-
-    // Skip if the frame values haven't actually changed — prevents unrelated
-    // leva control changes from resetting orbit/fixed camera position mid-use.
-    if (framesEqual(appliedFrameRef.current, nextFrame)) {
-      return;
-    }
-
-    appliedFrameRef.current = nextFrame;
 
     cameraNode.position.set(...nextFrame.position);
     cameraNode.fov = nextFrame.fov;

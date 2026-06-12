@@ -23,8 +23,6 @@
 
 To Build:
 
-- [ ] Dripping skull.
-- [ ] Skeleton with bird in ribcage (all assets grabbed, need to pose skeleton)
 - [ ] Video casette tape with video playing on tape ribbon
 - [ ] CSG Skull. Knock a reversal out of its forehead.
 - [ ] Metaball (marching cubes) lava lamp
@@ -88,6 +86,8 @@ To Build:
 - [QuinnsPlayground](src/components/scenes/WorkInProgress/WebGL/QuinnsPlayground/todo.md)
 - [OneInTheHand](src/components/scenes/WorkInProgress/WebGL/OneInTheHand/todo.md)
 - [HorsesForCourses](src/components/scenes/WorkInProgress/WebGPU/HorsesForCourses/todo.md)
+- [DrippingSkull](src/components/scenes/WorkInProgress/WebGPU/DrippingSkull/todo.md)
+- [BurningCash](src/components/scenes/WorkInProgress/WebGPU/BurningCash/todo.md)
 
 **Template**
 
@@ -179,7 +179,9 @@ To Build:
 
 - [ ] Aisle 9
 - [ ] All My Friends Are Ghosts
+- [ ] Burning Cash
 - [ ] Crt Test
+- [ ] Dripping Skull
 - [ ] Flying High - Day
 - [ ] Flying High - NightMode
 - [ ] My Heart Is A Broken Fish Tank

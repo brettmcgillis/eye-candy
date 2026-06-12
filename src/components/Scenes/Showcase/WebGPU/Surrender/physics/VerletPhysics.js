@@ -19,6 +19,10 @@ import { StructuredArray } from './StructuredArray';
 
 const MAX_SPHERE_COLLIDERS = 4;
 const SPHERE_COLLISION_MARGIN = 0.02;
+const MAX_BOX_COLLIDERS = 4;
+const BOX_COLLISION_MARGIN = 0.002;
+const MAX_PLANE_COLLIDERS = 4;
+const PLANE_COLLISION_MARGIN = 0.001;
 
 export class VerletPhysics {
   vertices = [];
@@ -30,6 +34,10 @@ export class VerletPhysics {
   bvhColliders = [];
 
   sphereColliders = [];
+
+  boxColliders = [];
+
+  planeColliders = [];
 
   forces = [];
 
@@ -103,12 +111,22 @@ export class VerletPhysics {
 
     this.bvhColliders = [];
     this.sphereColliders = [];
+    this.boxColliders = [];
+    this.planeColliders = [];
     this.colliders.forEach((collider) => {
       if (collider?.findClosestPoint) {
         this.bvhColliders.push(collider);
       } else if (collider?.position && typeof collider.radius === 'number') {
         if (this.sphereColliders.length < MAX_SPHERE_COLLIDERS) {
           this.sphereColliders.push(collider);
+        }
+      } else if (collider?.center && collider?.size) {
+        if (this.boxColliders.length < MAX_BOX_COLLIDERS) {
+          this.boxColliders.push(collider);
+        }
+      } else if (collider?.normal && collider?.point) {
+        if (this.planeColliders.length < MAX_PLANE_COLLIDERS) {
+          this.planeColliders.push(collider);
         }
       }
     });
@@ -121,6 +139,12 @@ export class VerletPhysics {
     this.uniforms.sphereColliderPos = [];
     this.uniforms.sphereColliderRadius = [];
     this.uniforms.sphereColliderEnabled = [];
+    this.uniforms.boxColliderMin = [];
+    this.uniforms.boxColliderMax = [];
+    this.uniforms.boxColliderEnabled = [];
+    this.uniforms.planeColliderNormal = [];
+    this.uniforms.planeColliderPoint = [];
+    this.uniforms.planeColliderEnabled = [];
 
     for (let i = 0; i < MAX_SPHERE_COLLIDERS; i += 1) {
       this.uniforms.sphereColliderPos.push(
@@ -129,6 +153,39 @@ export class VerletPhysics {
       this.uniforms.sphereColliderRadius.push(uniform(0.12));
       this.uniforms.sphereColliderEnabled.push(uniform(0.0));
     }
+
+    for (let i = 0; i < MAX_BOX_COLLIDERS; i += 1) {
+      this.uniforms.boxColliderMin.push(uniform(new THREE.Vector3(10, 10, 10)));
+      this.uniforms.boxColliderMax.push(uniform(new THREE.Vector3(10, 10, 10)));
+      this.uniforms.boxColliderEnabled.push(uniform(0.0));
+    }
+
+    for (let i = 0; i < MAX_PLANE_COLLIDERS; i += 1) {
+      this.uniforms.planeColliderNormal.push(
+        uniform(new THREE.Vector3(0, 1, 0))
+      );
+      this.uniforms.planeColliderPoint.push(
+        uniform(new THREE.Vector3(0, 0, 0))
+      );
+      this.uniforms.planeColliderEnabled.push(uniform(0.0));
+    }
+
+    this.boxColliders.forEach((collider, i) => {
+      const { center } = collider;
+      const { size } = collider;
+      const half = size.clone().multiplyScalar(0.5);
+      this.uniforms.boxColliderMin[i].value.copy(center).sub(half);
+      this.uniforms.boxColliderMax[i].value.copy(center).add(half);
+      this.uniforms.boxColliderEnabled[i].value = 1.0;
+    });
+
+    this.planeColliders.forEach((collider, i) => {
+      this.uniforms.planeColliderNormal[i].value
+        .copy(collider.normal)
+        .normalize();
+      this.uniforms.planeColliderPoint[i].value.copy(collider.point);
+      this.uniforms.planeColliderEnabled[i].value = 1.0;
+    });
 
     const vertexStruct = {
       position: 'vec3',
@@ -258,6 +315,9 @@ export class VerletPhysics {
         If(projectedPoint.y.lessThan(yFloorVal), () => {
           force.y.subAssign(projectedPoint.y.sub(yFloorVal));
           projectedPoint.y.assign(yFloorVal);
+          // Contact friction (breeze semantics): scale retained velocity by
+          // (1 - friction). Default friction is 0 — a no-op.
+          forceSet.mulAssign(this.uniforms.friction.oneMinus());
         });
       }
 
@@ -281,6 +341,8 @@ export class VerletPhysics {
           If(vDotN.lessThan(0), () => {
             forceSet.subAssign(closestNormal.mul(vDotN));
           });
+          // Contact friction (breeze semantics) — no-op at the default 0.
+          forceSet.mulAssign(this.uniforms.friction.oneMinus());
         });
       });
 
@@ -308,6 +370,147 @@ export class VerletPhysics {
             If(vDotN.lessThan(0), () => {
               forceSet.subAssign(normal.mul(vDotN));
             });
+          }
+        );
+      }
+
+      for (let i = 0; i < MAX_BOX_COLLIDERS; i += 1) {
+        const boxMin = this.uniforms.boxColliderMin[i];
+        const boxMax = this.uniforms.boxColliderMax[i];
+        const boxEnabled = this.uniforms.boxColliderEnabled[i];
+
+        const insideX = projectedPoint.x
+          .greaterThan(boxMin.x)
+          .and(projectedPoint.x.lessThan(boxMax.x));
+        const insideY = projectedPoint.y
+          .greaterThan(boxMin.y)
+          .and(projectedPoint.y.lessThan(boxMax.y));
+        const insideZ = projectedPoint.z
+          .greaterThan(boxMin.z)
+          .and(projectedPoint.z.lessThan(boxMax.z));
+
+        If(
+          boxEnabled.greaterThan(0.5).and(insideX.and(insideY).and(insideZ)),
+          () => {
+            const distToMinX = projectedPoint.x
+              .sub(boxMin.x)
+              .toVar(`boxMinX${i}`);
+            const distToMaxX = boxMax.x
+              .sub(projectedPoint.x)
+              .toVar(`boxMaxX${i}`);
+            const distToMinY = projectedPoint.y
+              .sub(boxMin.y)
+              .toVar(`boxMinY${i}`);
+            const distToMaxY = boxMax.y
+              .sub(projectedPoint.y)
+              .toVar(`boxMaxY${i}`);
+            const distToMinZ = projectedPoint.z
+              .sub(boxMin.z)
+              .toVar(`boxMinZ${i}`);
+            const distToMaxZ = boxMax.z
+              .sub(projectedPoint.z)
+              .toVar(`boxMaxZ${i}`);
+
+            const nearest = distToMinX.toVar(`boxNearest${i}`);
+            const faceId = uint(0).toVar(`boxFace${i}`);
+
+            If(distToMaxX.lessThan(nearest), () => {
+              nearest.assign(distToMaxX);
+              faceId.assign(uint(1));
+            });
+            If(distToMinY.lessThan(nearest), () => {
+              nearest.assign(distToMinY);
+              faceId.assign(uint(2));
+            });
+            If(distToMaxY.lessThan(nearest), () => {
+              nearest.assign(distToMaxY);
+              faceId.assign(uint(3));
+            });
+            If(distToMinZ.lessThan(nearest), () => {
+              nearest.assign(distToMinZ);
+              faceId.assign(uint(4));
+            });
+            If(distToMaxZ.lessThan(nearest), () => {
+              faceId.assign(uint(5));
+            });
+
+            If(faceId.equal(uint(0)), () => {
+              projectedPoint.x.assign(
+                boxMin.x.sub(float(BOX_COLLISION_MARGIN))
+              );
+              If(forceSet.x.greaterThan(0), () => {
+                forceSet.x.assign(0);
+              });
+            });
+            If(faceId.equal(uint(1)), () => {
+              projectedPoint.x.assign(
+                boxMax.x.add(float(BOX_COLLISION_MARGIN))
+              );
+              If(forceSet.x.lessThan(0), () => {
+                forceSet.x.assign(0);
+              });
+            });
+            If(faceId.equal(uint(2)), () => {
+              projectedPoint.y.assign(
+                boxMin.y.sub(float(BOX_COLLISION_MARGIN))
+              );
+              If(forceSet.y.greaterThan(0), () => {
+                forceSet.y.assign(0);
+              });
+            });
+            If(faceId.equal(uint(3)), () => {
+              projectedPoint.y.assign(
+                boxMax.y.add(float(BOX_COLLISION_MARGIN))
+              );
+              If(forceSet.y.lessThan(0), () => {
+                forceSet.y.assign(0);
+              });
+            });
+            If(faceId.equal(uint(4)), () => {
+              projectedPoint.z.assign(
+                boxMin.z.sub(float(BOX_COLLISION_MARGIN))
+              );
+              If(forceSet.z.greaterThan(0), () => {
+                forceSet.z.assign(0);
+              });
+            });
+            If(faceId.equal(uint(5)), () => {
+              projectedPoint.z.assign(
+                boxMax.z.add(float(BOX_COLLISION_MARGIN))
+              );
+              If(forceSet.z.lessThan(0), () => {
+                forceSet.z.assign(0);
+              });
+            });
+
+            forceSet.mulAssign(this.uniforms.friction.oneMinus());
+          }
+        );
+      }
+
+      for (let i = 0; i < MAX_PLANE_COLLIDERS; i += 1) {
+        const planeNormal = this.uniforms.planeColliderNormal[i];
+        const planePoint = this.uniforms.planeColliderPoint[i];
+        const planeEnabled = this.uniforms.planeColliderEnabled[i];
+        const signedDist = projectedPoint
+          .sub(planePoint)
+          .dot(planeNormal)
+          .toVar(`planeSignedDist${i}`);
+
+        If(
+          planeEnabled
+            .greaterThan(0.5)
+            .and(signedDist.lessThan(float(PLANE_COLLISION_MARGIN))),
+          () => {
+            const pushDist = float(PLANE_COLLISION_MARGIN)
+              .sub(signedDist)
+              .toVar(`planePushDist${i}`);
+            projectedPoint.addAssign(planeNormal.mul(pushDist));
+            const vDotN = forceSet.dot(planeNormal).toVar(`planeVDotN${i}`);
+            If(vDotN.lessThan(0), () => {
+              forceSet.subAssign(planeNormal.mul(vDotN));
+            });
+            forceSet.mulAssign(this.uniforms.friction.oneMinus());
           }
         );
       }

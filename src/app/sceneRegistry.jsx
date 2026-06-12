@@ -28,6 +28,7 @@ import {
   GiDiceEightFacesEight,
   GiDiceTwentyFacesTwenty,
   GiHorseHead,
+  GiMoneyStack,
   GiPaperBoat,
   GiPapers,
   GiPistolGun,
@@ -250,6 +251,10 @@ const HorsesForCourses = lazy(
 const DrippingSkull = lazy(
   () =>
     import('../components/scenes/WorkInProgress/WebGPU/DrippingSkull/DrippingSkull')
+);
+const BurningCash = lazy(
+  () =>
+    import('../components/scenes/WorkInProgress/WebGPU/BurningCash/BurningCash')
 );
 
 const BeautysInTheEyeOfTheBeheaded = lazy(
@@ -564,6 +569,10 @@ function HorsesForCoursesIcon() {
 
 function DrippingSkullIcon() {
   return <FaSkullCrossbones color="#e5e7eb" />;
+}
+
+function BurningCashIcon() {
+  return <GiMoneyStack color="#328304" size={26} />;
 }
 
 export const AREA_ROUTE_SEGMENTS = {
@@ -1299,6 +1308,15 @@ export const EYE_CANDIES = [
     route: 'drippingSkull',
     icon: DrippingSkullIcon,
     Component: DrippingSkull,
+  },
+  {
+    id: 'burningCash',
+    label: 'Burning Cash',
+    channel: 'webgpu',
+    area: 'wip',
+    route: 'burningCash',
+    icon: BurningCashIcon,
+    Component: BurningCash,
   },
   {
     id: 'beautysInTheEyeOfTheBeheaded',

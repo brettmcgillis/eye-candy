@@ -16,15 +16,15 @@ export default function RobinBird(props) {
   const { actions } = useAnimations(animations, group);
   return (
     <group ref={group} {...props} dispose={null}>
-      <group name="Scene">
-        <group name="Armature">
-          <primitive object={nodes._rootJoint} />
-        </group>
+      <group name="Sketchfab_Scene">
+        <primitive object={nodes._rootJoint} />
         <skinnedMesh
           name="Object_7"
           geometry={nodes.Object_7.geometry}
           material={materials.Robin_Bird_Merge}
           skeleton={nodes.Object_7.skeleton}
+          rotation={[-1.517, 0, 0]}
+          scale={0.01}
         />
       </group>
     </group>

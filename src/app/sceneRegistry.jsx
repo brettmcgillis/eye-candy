@@ -28,12 +28,14 @@ import {
   GiDiceEightFacesEight,
   GiDiceTwentyFacesTwenty,
   GiHorseHead,
+  GiHummingbird,
   GiMoneyStack,
   GiPaperBoat,
   GiPapers,
   GiPistolGun,
   GiPoliceBadge,
   GiRabbit,
+  GiRibcage,
   GiSewingString,
   GiSinkingShip,
   GiSmokeBomb,
@@ -260,6 +262,11 @@ const BurningCash = lazy(
 const BeautysInTheEyeOfTheBeheaded = lazy(
   () =>
     import('../components/scenes/Showcase/WebGPU/BeautysInTheEyeOfTheBeheaded/BeautysInTheEyeOfTheBeheaded')
+);
+
+const OneInTheHand = lazy(
+  () =>
+    import('../components/scenes/WorkInProgress/WebGPU/OneInTheHand/OneInTheHand')
 );
 
 function WipAreaIcon() {
@@ -573,6 +580,15 @@ function DrippingSkullIcon() {
 
 function BurningCashIcon() {
   return <GiMoneyStack color="#328304" size={26} />;
+}
+
+function OneInTheHandIcon() {
+  return (
+    <>
+      <GiHummingbird color="#24a8fb" />
+      <GiRibcage color="#808a99" size={26} />
+    </>
+  );
 }
 
 export const AREA_ROUTE_SEGMENTS = {
@@ -1326,6 +1342,15 @@ export const EYE_CANDIES = [
     route: 'beautysInTheEyeOfTheBeheaded',
     icon: BeautysInTheEyeOfTheBeheadedIcon,
     Component: BeautysInTheEyeOfTheBeheaded,
+  },
+  {
+    id: 'oneInTheHand',
+    label: 'One In The Hand',
+    channel: 'webgpu',
+    area: 'wip',
+    route: 'oneInTheHand',
+    icon: OneInTheHandIcon,
+    Component: OneInTheHand,
   },
 ];
 

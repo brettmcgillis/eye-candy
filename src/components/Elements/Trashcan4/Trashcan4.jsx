@@ -11,7 +11,13 @@ export default function Trashcan4(props) {
       <mesh
         castShadow
         receiveShadow
-        geometry={nodes.Object_10.geometry}
+        geometry={nodes.Can.geometry}
+        material={materials.Standard_Urban_Trashcan_Metallic}
+      />
+      <mesh
+        castShadow
+        receiveShadow
+        geometry={nodes.Lid.geometry}
         material={materials.Standard_Urban_Trashcan_Metallic}
       />
     </group>

@@ -10,6 +10,7 @@ import React, {
   useRef,
   useState,
 } from 'react';
+import { useSearchParams } from 'react-router-dom';
 
 import {
   Environment,
@@ -174,6 +175,17 @@ const styles = {
   boneItemSelected: {
     background: '#0f172a',
     color: '#f8fafc',
+  },
+  timelineHeader: {
+    display: 'flex',
+    justifyContent: 'space-between',
+    alignItems: 'baseline',
+    gap: '0.5rem',
+  },
+  timecode: {
+    fontSize: '0.78rem',
+    fontVariantNumeric: 'tabular-nums',
+    color: '#64748b',
   },
   sliderRow: {
     display: 'grid',
@@ -510,6 +522,7 @@ function PoseScene({
   animationClips,
   bones,
   gizmoMode,
+  onAnimationTimeChange,
   onBoneTransformChange,
   onSelectBone,
   scene,
@@ -551,6 +564,8 @@ function PoseScene({
           clips={animationClips}
           playing={animation.playing}
           root={scene}
+          time={animation.time}
+          onTimeChange={onAnimationTimeChange}
         />
       ) : null}
       <primitive object={scene} />
@@ -603,9 +618,18 @@ function AxisSlider({ axis, onChange, value }) {
 }
 
 export default function PoseWorkbench({ uploadedAsset }) {
+  const [searchParams, setSearchParams] = useSearchParams();
+  // Only saved models survive a refresh — an "uploaded" selection has no file
+  // to reload, so we never restore it from the URL.
+  const initialModelParam = searchParams.get('model') || '';
   const [modelList, setModelList] = useState([]);
   const [modelListError, setModelListError] = useState(null);
-  const [selectedModelValue, setSelectedModelValue] = useState('');
+  const [selectedModelValue, setSelectedModelValue] = useState(
+    initialModelParam.startsWith('saved:') ? initialModelParam : ''
+  );
+  // Captured once at mount so a refreshed clip selection can be reapplied after
+  // the model (and its clips) finish loading.
+  const pendingClipRef = useRef(searchParams.get('clip') || null);
   const [gizmoMode, setGizmoMode] = useState('rotate');
   const [selectedBone, setSelectedBone] = useState(null);
   const [boneEuler, setBoneEuler] = useState({ x: 0, y: 0, z: 0 });
@@ -614,7 +638,11 @@ export default function PoseWorkbench({ uploadedAsset }) {
   const [outputPath, setOutputPath] = useState('model-posed.glb');
   const [overwrite, setOverwrite] = useState(false);
   const [saveState, setSaveState] = useState({ status: 'idle', message: null });
-  const [animation, setAnimation] = useState({ clipName: '', playing: false });
+  const [animation, setAnimation] = useState({
+    clipName: '',
+    playing: false,
+    time: 0,
+  });
   const [boneFilter, setBoneFilter] = useState('');
   const selectedBoneItemRef = useRef(null);
 
@@ -660,6 +688,10 @@ export default function PoseWorkbench({ uploadedAsset }) {
   const previewState = useGltfPreview(modelSource);
   const scene = previewState.gltf?.scene ?? null;
   const animationClips = previewState.gltf?.animations || [];
+  const selectedClip = animationClips.find(
+    (clip) => clip.name === animation.clipName
+  );
+  const clipDuration = selectedClip?.duration ?? 0;
 
   const bones = useMemo(() => (scene ? collectBones(scene) : []), [scene]);
   const restPose = useMemo(() => captureRestPose(bones), [bones]);
@@ -678,13 +710,56 @@ export default function PoseWorkbench({ uploadedAsset }) {
   gltfRef.current = previewState.gltf;
 
   useEffect(() => {
+    const clips = gltfRef.current?.animations || [];
+
+    // Reapply a clip restored from the URL once, after its model has loaded.
+    const pendingClip = pendingClipRef.current;
+    pendingClipRef.current = null;
+    const restoredClip =
+      pendingClip && clips.some((clip) => clip.name === pendingClip)
+        ? pendingClip
+        : '';
+
     setSelectedBone(null);
-    setAnimation({ clipName: '', playing: false });
+    setAnimation({ clipName: restoredClip, playing: false, time: 0 });
     setBoneFilter('');
-    setPoses(hydratePosesFromClips(gltfRef.current?.animations));
+    setPoses(hydratePosesFromClips(clips));
     setSaveState({ status: 'idle', message: null });
     setOutputPath(buildDefaultOutputPath(modelSourceRef.current));
   }, [scene]);
+
+  // Persist the selected model + clip in the query string so the Pose tab
+  // restores them after a refresh. Functional updates keep the tab param (set
+  // by GltfJsxPage) intact.
+  useEffect(() => {
+    setSearchParams(
+      (prev) => {
+        const next = new URLSearchParams(prev);
+        if (selectedModelValue.startsWith('saved:')) {
+          next.set('model', selectedModelValue);
+        } else {
+          next.delete('model');
+        }
+        return next;
+      },
+      { replace: true }
+    );
+  }, [selectedModelValue, setSearchParams]);
+
+  useEffect(() => {
+    setSearchParams(
+      (prev) => {
+        const next = new URLSearchParams(prev);
+        if (animation.clipName) {
+          next.set('clip', animation.clipName);
+        } else {
+          next.delete('clip');
+        }
+        return next;
+      },
+      { replace: true }
+    );
+  }, [animation.clipName, setSearchParams]);
 
   // Keep the selected bone visible in the list when it's picked from the
   // viewport — long rigs otherwise leave the highlight scrolled out of view.
@@ -704,6 +779,16 @@ export default function PoseWorkbench({ uploadedAsset }) {
       setBoneEuler(readBoneEuler(selectedBone));
     }
   }, [selectedBone]);
+
+  // AnimationDriver reports the live playhead (throttled) so the timeline
+  // slider tracks playback; scrubbing the slider feeds time back as a seek.
+  const handleAnimationTimeChange = useCallback((time) => {
+    setAnimation((current) => ({ ...current, time }));
+  }, []);
+
+  const seekAnimation = useCallback((time) => {
+    setAnimation((current) => ({ ...current, playing: false, time }));
+  }, []);
 
   function setBoneRotationAxis(axis, degrees) {
     if (!selectedBone || !Number.isFinite(degrees)) return;
@@ -755,7 +840,7 @@ export default function PoseWorkbench({ uploadedAsset }) {
     if (animation.clipName) {
       // Deselect the clip first: AnimationDriver's unmount restores the
       // pre-clip transforms, which would wipe the pose we just applied.
-      setAnimation({ clipName: '', playing: false });
+      setAnimation({ clipName: '', playing: false, time: 0 });
       setTimeout(finishApply, 0);
       return;
     }
@@ -775,7 +860,7 @@ export default function PoseWorkbench({ uploadedAsset }) {
     if (animation.clipName) {
       // Stop clip playback so the mixer cannot mutate bones mid-export and
       // let AnimationDriver's unmount restore the pre-clip transforms first.
-      setAnimation({ clipName: '', playing: false });
+      setAnimation({ clipName: '', playing: false, time: 0 });
       await new Promise((resolve) => {
         setTimeout(resolve, 50);
       });
@@ -891,6 +976,7 @@ export default function PoseWorkbench({ uploadedAsset }) {
             animationClips={animationClips}
             bones={bones}
             gizmoMode={gizmoMode}
+            onAnimationTimeChange={handleAnimationTimeChange}
             onBoneTransformChange={handleBoneTransformChange}
             onSelectBone={selectBone}
             scene={scene}
@@ -964,6 +1050,7 @@ export default function PoseWorkbench({ uploadedAsset }) {
                     setAnimation({
                       clipName: event.target.value,
                       playing: Boolean(event.target.value),
+                      time: 0,
                     })
                   }
                 >
@@ -976,20 +1063,53 @@ export default function PoseWorkbench({ uploadedAsset }) {
                 </select>
               </div>
               {animation.clipName ? (
-                <div style={styles.buttonRow}>
-                  <button
-                    type="button"
-                    style={styles.secondaryButton}
-                    onClick={() =>
-                      setAnimation((current) => ({
-                        ...current,
-                        playing: !current.playing,
-                      }))
-                    }
-                  >
-                    {animation.playing ? 'Pause' : 'Play'}
-                  </button>
-                </div>
+                <>
+                  <div style={styles.buttonRow}>
+                    <button
+                      type="button"
+                      style={styles.secondaryButton}
+                      onClick={() =>
+                        setAnimation((current) => ({
+                          ...current,
+                          playing: !current.playing,
+                        }))
+                      }
+                    >
+                      {animation.playing ? 'Pause' : 'Play'}
+                    </button>
+                    <button
+                      type="button"
+                      style={styles.secondaryButton}
+                      onClick={() => seekAnimation(0)}
+                    >
+                      Rewind
+                    </button>
+                  </div>
+                  <div style={styles.field}>
+                    <div style={styles.timelineHeader}>
+                      <span style={styles.label}>Timeline</span>
+                      <span style={styles.timecode}>
+                        {(animation.time ?? 0).toFixed(2)}s /{' '}
+                        {clipDuration.toFixed(2)}s
+                      </span>
+                    </div>
+                    <input
+                      aria-label="Animation timeline"
+                      max={clipDuration}
+                      min={0}
+                      step={Math.max(clipDuration / 600, 0.001)}
+                      type="range"
+                      value={Math.min(animation.time ?? 0, clipDuration)}
+                      onChange={(event) =>
+                        seekAnimation(Number(event.target.value))
+                      }
+                    />
+                    <p style={styles.hint}>
+                      Scrub to a frame to pose from it — scrubbing pauses
+                      playback and snaps the rig to that moment.
+                    </p>
+                  </div>
+                </>
               ) : null}
             </div>
           </section>

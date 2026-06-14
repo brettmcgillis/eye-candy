@@ -6,7 +6,7 @@ import React, {
   useRef,
   useState,
 } from 'react';
-import { Link } from 'react-router-dom';
+import { Link, useSearchParams } from 'react-router-dom';
 
 import { iconFile, localEnv, modelFile } from '../../../utils/appUtils';
 import { DEFAULT_SCENE_PATH } from '../../sceneRegistry';
@@ -884,8 +884,32 @@ export default function GltfJsxPage() {
   const [conversionState, setConversionState] = useState('idle');
   const [conversionError, setConversionError] = useState(null);
   const [conversionResult, setConversionResult] = useState(null);
-  const [activeTab, setActiveTab] = useState('convert');
-  const [poseTabMounted, setPoseTabMounted] = useState(false);
+  const [searchParams, setSearchParams] = useSearchParams();
+  const initialTab = searchParams.get('tab') === 'pose' ? 'pose' : 'convert';
+  const [activeTab, setActiveTab] = useState(initialTab);
+  const [poseTabMounted, setPoseTabMounted] = useState(initialTab === 'pose');
+
+  // Mirror the active tab in the query string so a refresh lands on the same
+  // workbench. `convert` is the default, so it's left out of the URL.
+  function selectTab(nextTab) {
+    setActiveTab(nextTab);
+    if (nextTab === 'pose') {
+      setPoseTabMounted(true);
+    }
+
+    setSearchParams(
+      (prev) => {
+        const next = new URLSearchParams(prev);
+        if (nextTab === 'convert') {
+          next.delete('tab');
+        } else {
+          next.set('tab', nextTab);
+        }
+        return next;
+      },
+      { replace: true }
+    );
+  }
 
   const entryFiles = useMemo(() => {
     return uploadedFiles.filter((file) => {
@@ -1249,7 +1273,7 @@ export default function GltfJsxPage() {
             ...styles.tab,
             ...(activeTab === 'convert' ? styles.tabActive : null),
           }}
-          onClick={() => setActiveTab('convert')}
+          onClick={() => selectTab('convert')}
         >
           Import &amp; Optimize
         </button>
@@ -1259,10 +1283,7 @@ export default function GltfJsxPage() {
             ...styles.tab,
             ...(activeTab === 'pose' ? styles.tabActive : null),
           }}
-          onClick={() => {
-            setActiveTab('pose');
-            setPoseTabMounted(true);
-          }}
+          onClick={() => selectTab('pose')}
         >
           Pose
         </button>

@@ -1,4 +1,4 @@
-import React, { useMemo } from 'react';
+import React from 'react';
 
 import { Environment } from '@react-three/drei';
 
@@ -14,31 +14,8 @@ import useSceneControls from './hooks/useSceneControls';
 
 const v3 = (o) => [o.x, o.y, o.z];
 
-// Even-ish scatter via the golden angle so the flock spreads out instead of
-// clumping, with a stable per-index jitter/heading/phase.
-const GOLDEN = Math.PI * (3 - Math.sqrt(5));
-
-function useFlock(count, spread) {
-  return useMemo(() => {
-    const birds = [];
-    for (let i = 0; i < count; i += 1) {
-      const r = spread * Math.sqrt((i + 0.5) / count);
-      const a = i * GOLDEN;
-      const jitter = (Math.sin(i * 12.9898) * 43758.5453) % 1;
-      birds.push({
-        key: i,
-        position: [Math.cos(a) * r, 0, Math.sin(a) * r],
-        rotationY: a + jitter * 1.5,
-        phase: (i * 1.7) % (Math.PI * 2),
-      });
-    }
-    return birds;
-  }, [count, spread]);
-}
-
 export default function BirdsArentReal() {
   const config = useSceneControls();
-  const flock = useFlock(config.birdCount, config.spread);
 
   return (
     <>
@@ -120,7 +97,7 @@ export default function BirdsArentReal() {
         </>
       )}
 
-      {flock.map((b) => (
+      {config.birds.map((b) => (
         <FakeBird
           key={b.key}
           species={config.birdType}
@@ -128,7 +105,6 @@ export default function BirdsArentReal() {
           animate={config.animate}
           position={b.position}
           rotation={[0, b.rotationY, 0]}
-          roamRadius={config.spread}
           phase={b.phase}
           sweepRange={config.sweepRange}
           sweepSpeed={config.sweepSpeed}

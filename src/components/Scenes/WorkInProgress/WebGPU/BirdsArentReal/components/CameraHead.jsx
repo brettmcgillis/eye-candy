@@ -78,7 +78,7 @@ export default function CameraHead({
     }
     if (ledRef.current) {
       const on = ledBlink ? (Math.sin(t * 6 + phase) > 0.3 ? 1 : 0.04) : 1;
-      ledRef.current.material.emissiveIntensity = on * 4;
+      ledRef.current.material.emissiveIntensity = on * 10;
     }
   });
 

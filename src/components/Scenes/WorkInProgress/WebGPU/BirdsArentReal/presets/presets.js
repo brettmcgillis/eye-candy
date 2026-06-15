@@ -2,12 +2,10 @@ export const DEFAULT_PRESET = 'Surveillance State';
 
 const PRESETS = {
   'Surveillance State': {
-    // Flock
+    // Flock — birds are hand-placed (see `birds` below), not scattered.
     birdType: 'pigeon',
-    birdCount: 9,
     behavior: 'idle', // 'idle' | 'wander' (wander needs a walk-cycle species)
     animate: true,
-    spread: 5.5,
     sweepRange: 0.7,
     sweepSpeed: 0.5,
     ledBlink: true,
@@ -30,7 +28,7 @@ const PRESETS = {
     fogFar: 52,
     // Wet ground
     asphaltColor: '#9a9a9e',
-    puddleColor: '#7e8a96',
+    puddleColor: '#000000',
     puddleScale: 0.5,
     puddleAmount: 0.5,
     texScale: 0.18,
@@ -50,6 +48,32 @@ const PRESETS = {
     manholePos: { x: -1.8, y: -0.02, z: 7 }, // on the asphalt in front of the curb
     manholeRotY: 0,
     manholeScale: 2.3, // multiplier on top of the auto-fit (~0.8m)
+    // Hand-placed birds (flat keys match the Leva "Birds" schema 1:1; keys are
+    // defined in utils/placements.js). rotY is the heading the bird + its camera
+    // head face. Ballpark perch positions — fine-tune live, then copy.
+    // On the rim of the trash can, looking out toward the scene.
+    birdTrashRimPos: { x: -5.3, y: 2.65, z: -2.5 },
+    birdTrashRimRotY: 0.5,
+    // On the asphalt beside the manhole cover.
+    birdManholePos: { x: -1.0, y: 0, z: 6.6 },
+    birdManholeRotY: -2.3,
+    // Inside the bus stop, perched on the bench.
+    birdBenchPos: { x: 1.2, y: 1.1, z: -2.7 },
+    birdBenchRotY: 0.2,
+    // Inside the bus stop, on the floor in front of the bench.
+    birdGroundPos: { x: -0.1, y: 0.18, z: -1.35 },
+    birdGroundRotY: -0.6,
+    // Two on the front-left corner of the roof.
+    birdRoofFrontAPos: { x: -2.4, y: 5.5, z: -0.7 },
+    birdRoofFrontARotY: 1.4,
+    birdRoofFrontBPos: { x: -3.2, y: 5.5, z: -0.9 },
+    birdRoofFrontBRotY: 0.4,
+    // One on the back-right corner of the roof.
+    birdRoofBackPos: { x: 8.4, y: 5.5, z: -1.8 },
+    birdRoofBackRotY: 0.7,
+    // Perched on the bus stop's inside crossbar.
+    birdCrossbarPos: { x: 6.9, y: 5.3, z: 0 },
+    birdCrossbarRotY: 0.9,
     // Bloom (gentle — just lifts the REC LEDs and sky glint)
     bloomEnabled: true,
     bloomThreshold: 0.9,

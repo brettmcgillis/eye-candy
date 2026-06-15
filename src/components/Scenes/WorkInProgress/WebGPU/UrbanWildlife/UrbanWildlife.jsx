@@ -68,6 +68,47 @@ export default function UrbanWildlife() {
     ]
   );
 
+  const knifeTransform = useMemo(
+    () => ({
+      scale: config.knifeScale,
+      posX: config.knifePosX,
+      posY: config.knifePosY,
+      posZ: config.knifePosZ,
+      rotX: config.knifeRotX,
+      rotY: config.knifeRotY,
+      rotZ: config.knifeRotZ,
+    }),
+    [
+      config.knifeScale,
+      config.knifePosX,
+      config.knifePosY,
+      config.knifePosZ,
+      config.knifeRotX,
+      config.knifeRotY,
+      config.knifeRotZ,
+    ]
+  );
+
+  const trashCans = useMemo(
+    () =>
+      [1, 2, 3, 4].reduce((acc, i) => {
+        acc[`t${i}`] = {
+          position: [
+            config[`t${i}PosX`],
+            config[`t${i}PosY`],
+            config[`t${i}PosZ`],
+          ],
+          rotation: [
+            config[`t${i}RotX`],
+            config[`t${i}RotY`],
+            config[`t${i}RotZ`],
+          ],
+        };
+        return acc;
+      }, {}),
+    [config]
+  );
+
   const raccoons = useMemo(
     () =>
       [1, 2, 3].map((i) => ({
@@ -76,8 +117,8 @@ export default function UrbanWildlife() {
         position: [config[`r${i}X`], 0, config[`r${i}Z`]],
         rotationY: config[`r${i}RotY`],
         scale: config[`r${i}Scale`],
-        holdsGun: config[`r${i}HoldsGun`],
-        gunHand: config[`r${i}GunHand`],
+        weapon: config[`r${i}Weapon`],
+        weaponHand: config[`r${i}WeaponHand`],
       })),
     [config]
   );
@@ -105,7 +146,7 @@ export default function UrbanWildlife() {
       <LampLight
         position={[config.streetlightX, config.lampHeight, config.streetlightZ]}
         color={config.lampColor}
-        intensity={config.lampIntensity}
+        intensity={config.lampIntensity + 100}
         distance={config.lampDistance}
         decay={config.lampDecay}
         flicker={config.lampFlicker}
@@ -134,7 +175,7 @@ export default function UrbanWildlife() {
         showBase={config.showBase}
       />
 
-      {config.showTrash && <TrashScene />}
+      {config.showTrash && <TrashScene cans={trashCans} />}
 
       {raccoons.map((r) => (
         <group
@@ -146,9 +187,10 @@ export default function UrbanWildlife() {
           <PosedRaccoon
             pose={r.pose}
             animate={config.animatePoses}
-            holdsGun={r.holdsGun}
-            gunHand={r.gunHand}
+            weapon={r.weapon}
+            weaponHand={r.weaponHand}
             gunTransform={gunTransform}
+            knifeTransform={knifeTransform}
           />
         </group>
       ))}

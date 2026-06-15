@@ -39,6 +39,11 @@ const RACOON_CLIPS = [
   'racoon|turn lft 180',
   'racoon|turn lft 90',
   'racoon|blueprints',
+  // Single-frame hero poses authored for the stationary preset.
+  'angry-singleFrame',
+  'holding-singleFrame',
+  'holding2-singleFrame',
+  'standing-singleFrame',
 ];
 
 export default RACOON_CLIPS;

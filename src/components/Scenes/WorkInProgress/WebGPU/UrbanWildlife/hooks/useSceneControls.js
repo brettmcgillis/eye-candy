@@ -1,6 +1,6 @@
 import { folder, useControls } from 'leva';
 
-import { useMemo } from 'react';
+import { useEffect, useRef } from 'react';
 
 import usePresetsFolder from '../../../../../../hooks/usePresetsFolder';
 import useSceneCameraControls from '../../../../../../hooks/useSceneCameraControls';
@@ -15,6 +15,7 @@ const CAMERA_FOLDER_PATH = `${SCENE_LABEL}.Camera`;
 
 const C = { collapsed: true };
 const HAND_OPTIONS = { Right: 'right', Left: 'left' };
+const WEAPON_OPTIONS = { None: 'none', Gun: 'gun', Knife: 'knife' };
 
 function getPresetControls({ presetSnapshot }) {
   return { ...presetSnapshot };
@@ -47,11 +48,68 @@ function raccoonFolder(p, idx) {
         step: 0.05,
         label: 'Scale',
       },
-      [k('HoldsGun')]: { value: p[k('HoldsGun')], label: 'Holds Gun' },
-      [k('GunHand')]: {
-        value: p[k('GunHand')],
+      [k('Weapon')]: {
+        value: p[k('Weapon')],
+        options: WEAPON_OPTIONS,
+        label: 'Weapon',
+      },
+      [k('WeaponHand')]: {
+        value: p[k('WeaponHand')],
         options: HAND_OPTIONS,
-        label: 'Gun Hand',
+        label: 'Weapon Hand',
+      },
+    },
+    C
+  );
+}
+
+// One folder per trash can piece. `idx` namespaces every key (t1*..t4*) so each can
+// gets its own position + rotation while sharing the same control layout.
+function trashCanFolder(p, idx) {
+  const k = (suffix) => `t${idx}${suffix}`;
+  return folder(
+    {
+      [k('PosX')]: {
+        value: p[k('PosX')],
+        min: -5,
+        max: 5,
+        step: 0.05,
+        label: 'Pos X',
+      },
+      [k('PosY')]: {
+        value: p[k('PosY')],
+        min: -1,
+        max: 3,
+        step: 0.01,
+        label: 'Pos Y',
+      },
+      [k('PosZ')]: {
+        value: p[k('PosZ')],
+        min: -5,
+        max: 5,
+        step: 0.05,
+        label: 'Pos Z',
+      },
+      [k('RotX')]: {
+        value: p[k('RotX')],
+        min: -Math.PI,
+        max: Math.PI,
+        step: 0.05,
+        label: 'Rot X',
+      },
+      [k('RotY')]: {
+        value: p[k('RotY')],
+        min: -Math.PI,
+        max: Math.PI,
+        step: 0.05,
+        label: 'Rot Y',
+      },
+      [k('RotZ')]: {
+        value: p[k('RotZ')],
+        min: -Math.PI,
+        max: Math.PI,
+        step: 0.05,
+        label: 'Rot Z',
       },
     },
     C
@@ -220,6 +278,60 @@ export default function useSceneControls() {
       },
       C
     ),
+    Knife: folder(
+      {
+        knifeScale: {
+          value: p.knifeScale,
+          min: 0.01,
+          max: 10,
+          step: 0.01,
+          label: 'Scale',
+        },
+        knifePosX: {
+          value: p.knifePosX,
+          min: -0.5,
+          max: 0.5,
+          step: 0.005,
+          label: 'Pos X',
+        },
+        knifePosY: {
+          value: p.knifePosY,
+          min: -0.5,
+          max: 0.5,
+          step: 0.005,
+          label: 'Pos Y',
+        },
+        knifePosZ: {
+          value: p.knifePosZ,
+          min: -0.5,
+          max: 0.5,
+          step: 0.005,
+          label: 'Pos Z',
+        },
+        knifeRotX: {
+          value: p.knifeRotX,
+          min: -Math.PI,
+          max: Math.PI,
+          step: 0.05,
+          label: 'Rot X',
+        },
+        knifeRotY: {
+          value: p.knifeRotY,
+          min: -Math.PI,
+          max: Math.PI,
+          step: 0.05,
+          label: 'Rot Y',
+        },
+        knifeRotZ: {
+          value: p.knifeRotZ,
+          min: -Math.PI,
+          max: Math.PI,
+          step: 0.05,
+          label: 'Rot Z',
+        },
+      },
+      C
+    ),
     Ground: folder(
       {
         asphaltColor: { value: p.asphaltColor, label: 'Asphalt Tint' },
@@ -294,6 +406,10 @@ export default function useSceneControls() {
     Trash: folder(
       {
         showTrash: { value: p.showTrash, label: 'Show Trash' },
+        'Can 1': trashCanFolder(p, 1),
+        'Can 2': trashCanFolder(p, 2),
+        'Tipped Can': trashCanFolder(p, 3),
+        Lid: trashCanFolder(p, 4),
       },
       C
     ),
@@ -365,7 +481,26 @@ export default function useSceneControls() {
 
   attachSetControls(setControls);
 
-  const camera = useMemo(() => buildCamera(controls), [buildCamera, controls]);
+  // Keep the snapshot the "copy" button emits in sync with live edits. Without this
+  // controlsSnapshotRef stays frozen at the preset's original values, so copying
+  // after tuning (e.g. the knife position) pastes back stale numbers. Flat keys,
+  // matches the preset 1:1 — no reshaping.
+  useEffect(() => {
+    controlsSnapshotRef.current = { ...controls };
+  }, [controls, controlsSnapshotRef]);
 
-  return { ...controls, camera };
+  // buildCamera(controls) returns a NEW object on every control edit, and useSceneCamera
+  // re-applies the orbit frame whenever that object's identity changes — which snaps the
+  // user's orbited view back to default on ANY tweak (lighting, weapon, raccoon, etc.).
+  // Stabilize by value: only hand out a new camera object when its config actually changes.
+  const builtCamera = buildCamera(controls);
+  const cameraKey = JSON.stringify(builtCamera);
+  const cameraRef = useRef(builtCamera);
+  const cameraKeyRef = useRef(cameraKey);
+  if (cameraKey !== cameraKeyRef.current) {
+    cameraKeyRef.current = cameraKey;
+    cameraRef.current = builtCamera;
+  }
+
+  return { ...controls, camera: cameraRef.current };
 }

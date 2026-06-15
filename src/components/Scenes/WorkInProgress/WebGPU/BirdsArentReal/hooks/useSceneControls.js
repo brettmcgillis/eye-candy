@@ -1,6 +1,6 @@
 import { folder, useControls } from 'leva';
 
-import { useRef } from 'react';
+import { useEffect, useRef } from 'react';
 
 import usePresetsFolder from '../../../../../../hooks/usePresetsFolder';
 import useSceneCameraControls from '../../../../../../hooks/useSceneCameraControls';
@@ -9,6 +9,7 @@ import PRESETS, {
 } from '../presets/presets';
 import { BIRD_OPTIONS } from '../utils/birds';
 import CAMERA from '../utils/camera';
+import BIRD_SLOTS, { posKey, rotKey } from '../utils/placements';
 
 const SCENE_LABEL = 'Birds Arent Real';
 const CAMERA_FOLDER_PATH = `${SCENE_LABEL}.Camera`;
@@ -43,9 +44,34 @@ export default function useSceneControls() {
     controlsSnapshotRef,
   });
 
+  // One collapsible subfolder per hand-placed bird, each with a position vec3 and a
+  // heading. Keys are flat (`<slot>Pos` / `<slot>RotY`) so they map 1:1 onto the
+  // flattened preset; the array is rebuilt on return.
+  const birdControls = BIRD_SLOTS.reduce((acc, slot) => {
+    acc[slot.label] = folder(
+      {
+        [posKey(slot)]: {
+          value: p[posKey(slot)],
+          step: 0.05,
+          label: 'Position',
+        },
+        [rotKey(slot)]: {
+          value: p[rotKey(slot)],
+          min: -Math.PI,
+          max: Math.PI,
+          step: 0.05,
+          label: 'Rotate Y',
+        },
+      },
+      C
+    );
+    return acc;
+  }, {});
+
   const [controls, setControls] = useControls(SCENE_LABEL, () => ({
     Presets: presetsFolder,
     Camera: folder(cameraControls, C),
+    Birds: folder(birdControls, C),
     Flock: folder(
       {
         birdType: {
@@ -53,26 +79,12 @@ export default function useSceneControls() {
           options: BIRD_OPTIONS,
           label: 'Species',
         },
-        birdCount: {
-          value: p.birdCount,
-          min: 1,
-          max: 24,
-          step: 1,
-          label: 'Count',
-        },
         behavior: {
           value: p.behavior,
           options: BEHAVIOR_OPTIONS,
           label: 'Behavior',
         },
         animate: { value: p.animate, label: 'Animate' },
-        spread: {
-          value: p.spread,
-          min: 1,
-          max: 12,
-          step: 0.25,
-          label: 'Spread',
-        },
         sweepRange: {
           value: p.sweepRange,
           min: 0,
@@ -319,6 +331,25 @@ export default function useSceneControls() {
 
   attachSetControls(setControls);
 
+  // Rebuild the flat per-bird controls back into the placement array the scene
+  // renders. Each bird gets a stable key + a deterministic animation phase so the
+  // idle/sweep cycles don't all march in lockstep.
+  const birds = BIRD_SLOTS.map((slot, i) => {
+    const pos = controls[posKey(slot)];
+    return {
+      key: slot.key,
+      position: [pos.x, pos.y, pos.z],
+      rotationY: controls[rotKey(slot)],
+      phase: (i * 1.7) % (Math.PI * 2),
+    };
+  });
+
+  // Snapshot (what the "copy" button emits) matches the preset 1:1 — flat keys,
+  // no reshaping.
+  useEffect(() => {
+    controlsSnapshotRef.current = { ...controls };
+  }, [controls, controlsSnapshotRef]);
+
   // buildCamera(controls) returns a NEW object on every control edit, and useSceneCamera
   // re-applies the orbit frame whenever that object's identity changes — which snaps the
   // user's orbited view back to default on ANY tweak (LED, lighting, etc.). Stabilize it
@@ -332,5 +363,5 @@ export default function useSceneControls() {
     cameraRef.current = builtCamera;
   }
 
-  return { ...controls, camera: cameraRef.current };
+  return { ...controls, birds, camera: cameraRef.current };
 }

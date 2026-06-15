@@ -11,6 +11,8 @@
 - the scene contains the raccoon model in pose (animation) X (TBD)
 - the scene contains the gun model in a racoon's hands.
 - the scene contains the bowie knife model in a racoon's hands.
+- the scene contains two modes. one animated with the current set of animations. one stationary. where theres an angry raccoon, one holding a knife and one holding a gun.
+  animations: angry-singleFrame, holding-singleFrame, holding2-singleFrame
 
 # // TODO:
 
@@ -18,15 +20,14 @@
 
 # // Presets
 
-- `Night Danger` (default) — warm sodium-vapor streetlight against a deep blue-black night.
+- [x] **Night Danger** — animated mode; raccoons loop idle clips, R1 toys with the revolver. `animatePoses: true`.
+- [x] **Hero Standoff** — stationary hero mode; angry raccoon (centre) flanked by gun + knife holders using single-frame poses.
 
 # // Features
+
+- [x] Per-raccoon **Weapon** dropdown (None / Gun / Knife) + Weapon Hand, replacing the old Holds-Gun boolean.
+- [x] `PosedRaccoon` parents either Magnum or BowieKnife to a hand bone; separate Gun / Knife transform tuning folders in Leva.
 
 # // Interactivity
 
 # // Bugs
-
-- Live browser verification was skipped: the dev server holds port 3000 with
-  `strictPort`, so the preview tool couldn't launch a second instance. Validated via
-  lint + production build instead. Check it live in the already-running server at the
-  `urbanWildlife` route (HMR picks it up).

@@ -68,6 +68,10 @@ export default function FakeBird({
   camRot = { x: 0, y: 0, z: 0 }, // fine-tune aim (pitch/yaw/roll) on the head frame
   camOffset = { x: 0, y: 0, z: 0 }, // slide along head right/up/forward
   ledOffset = { x: 0, y: 0, z: 0 }, // REC LED position (normalized head units)
+  hidden = false, // hide the body (Bird POV: don't sit inside our own lens)
+  aimAtCursor = false, // Cursor-Follow: aim the lens at cursorTargetRef instead of sweeping
+  cursorTargetRef = null, // ref<THREE.Vector3> world point every head stares at
+  lensRef = null, // (node) => register the swept lens group for the POV camera
   ...props
 }) {
   const meta = BIRDS[species] || BIRDS.pigeon;
@@ -197,14 +201,27 @@ export default function FakeBird({
 
       _F.subVectors(_B, _A).normalize(); // forward: neck -> head
 
+      // Cursor-Follow: override the natural head direction so the lens stares at the
+      // shared cursor world point (from the head's base-joint midpoint).
+      const staring = aimAtCursor && cursorTargetRef?.current;
+      if (staring) {
+        _mid.addVectors(_A, _B).multiplyScalar(0.5);
+        _F.subVectors(cursorTargetRef.current, _mid);
+        if (_F.lengthSq() < 1e-8) _F.set(0, 0, 1);
+        _F.normalize();
+      }
+
       // Up from the triangle normal — but guard the degenerate case (neck nearly
       // straight => apex on the base line => normal ~0 => sign flips). When the
       // triangle collapses, reuse the last good up; otherwise keep its sign
-      // continuous so the head never snaps 180 deg.
+      // continuous so the head never snaps 180 deg. When staring at the cursor the
+      // triangle is meaningless, so anchor up to world-up instead.
       _CA.subVectors(_C, _A);
       _N.crossVectors(_F, _CA); // triangle normal (lateral), unnormalized
       const s = smooth.current;
-      if (_N.lengthSq() > 1e-8) {
+      if (staring) {
+        _U.copy(_WORLD_UP);
+      } else if (_N.lengthSq() > 1e-8) {
         _U.crossVectors(_N, _F).normalize();
         if (_U.dot(s.up) < 0) _U.negate();
       } else {
@@ -257,7 +274,7 @@ export default function FakeBird({
   });
 
   return (
-    <group ref={group} {...props}>
+    <group ref={group} visible={!hidden} {...props}>
       <group ref={roamer} scale={meta.modelScale}>
         {rootBone && <primitive object={rootBone} />}
         {skinnedMeshes.map((m) => (
@@ -266,10 +283,11 @@ export default function FakeBird({
         {createPortal(
           <CameraHead
             phase={phase}
-            sweepRange={sweepRange}
+            sweepRange={aimAtCursor ? 0 : sweepRange}
             sweepSpeed={sweepSpeed}
             ledBlink={ledBlink}
             ledOffset={ledOffset}
+            lensRef={lensRef}
           />,
           headMount
         )}

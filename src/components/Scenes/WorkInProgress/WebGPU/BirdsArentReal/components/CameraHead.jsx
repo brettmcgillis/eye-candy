@@ -1,7 +1,7 @@
 /* eslint-disable no-nested-ternary */
 import * as THREE from 'three';
 
-import React, { useMemo, useRef } from 'react';
+import React, { useEffect, useMemo, useRef } from 'react';
 
 import { useGLTF } from '@react-three/drei';
 import { useFrame } from '@react-three/fiber';
@@ -30,10 +30,24 @@ export default function CameraHead({
   ledColor = '#ff2b2b',
   ledBlink = true,
   ledOffset = { x: 0, y: 0, z: 0 }, // nudge the LED in normalized head units
+  lensRef = null, // external ref to the swept group (the live lens frame) — used to
+  // drive the Bird POV camera from where the lens actually points.
 }) {
   const { scene } = useGLTF(MODEL);
   const sweepRef = useRef();
   const ledRef = useRef();
+
+  // Publish the swept group so the parent can read the lens's live world transform
+  // (model faces +Z; the lens looks +Z). Done in an effect — not a render-time ref
+  // callback — so it fires once on mount/unmount instead of churning every render.
+  useEffect(() => {
+    if (typeof lensRef === 'function') lensRef(sweepRef.current);
+    else if (lensRef) lensRef.current = sweepRef.current;
+    return () => {
+      if (typeof lensRef === 'function') lensRef(null);
+      else if (lensRef) lensRef.current = null;
+    };
+  }, [lensRef]);
 
   // Pull the camera head straight off the loaded model: collect every mesh, keep
   // the two sitting highest (the body + lens), and normalize their combined bounds.

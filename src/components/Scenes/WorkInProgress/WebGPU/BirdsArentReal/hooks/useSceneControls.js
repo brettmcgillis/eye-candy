@@ -19,6 +19,11 @@ const BEHAVIOR_OPTIONS = {
   'Idle (look around)': 'idle',
   'Wander/roam': 'wander',
 };
+const VIEW_MODE_OPTIONS = {
+  'Orbit (free)': 'orbit',
+  'Bird POV (CCTV feed)': 'pov',
+  'Cursor Follow': 'cursor',
+};
 
 function getPresetControls({ presetSnapshot }) {
   return { ...presetSnapshot };
@@ -70,6 +75,70 @@ export default function useSceneControls() {
 
   const [controls, setControls] = useControls(SCENE_LABEL, () => ({
     Presets: presetsFolder,
+    View: folder(
+      {
+        viewMode: {
+          value: p.viewMode,
+          options: VIEW_MODE_OPTIONS,
+          label: 'Mode',
+        },
+        povShotDuration: {
+          value: p.povShotDuration,
+          min: 1,
+          max: 15,
+          step: 0.5,
+          label: 'POV Shot (s)',
+        },
+        povFov: {
+          value: p.povFov,
+          min: 30,
+          max: 100,
+          step: 1,
+          label: 'POV FOV',
+        },
+        povDolly: {
+          value: p.povDolly,
+          min: -0.2,
+          max: 0.4,
+          step: 0.005,
+          label: 'POV Dolly',
+        },
+        Surveillance: folder(
+          {
+            hudOpacity: {
+              value: p.hudOpacity,
+              min: 0,
+              max: 1,
+              step: 0.01,
+              label: 'HUD Opacity',
+            },
+            scanlineIntensity: {
+              value: p.scanlineIntensity,
+              min: 0,
+              max: 1,
+              step: 0.01,
+              label: 'Scanlines',
+            },
+            vignetteIntensity: {
+              value: p.vignetteIntensity,
+              min: 0,
+              max: 1,
+              step: 0.01,
+              label: 'Vignette',
+            },
+            chromaticStrength: {
+              value: p.chromaticStrength,
+              min: 0,
+              max: 0.01,
+              step: 0.0005,
+              label: 'Chromatic',
+            },
+          },
+          C
+        ),
+      },
+      C
+    ),
     Camera: folder(cameraControls, C),
     Birds: folder(birdControls, C),
     Flock: folder(
@@ -383,6 +452,99 @@ export default function useSceneControls() {
       },
       C
     ),
+    Ads: folder(
+      {
+        Art: folder(
+          {
+            adArtScaleX: {
+              value: p.adArtScaleX,
+              min: 0.1,
+              max: 1.5,
+              step: 0.01,
+              label: 'Width',
+            },
+            adArtScaleY: {
+              value: p.adArtScaleY,
+              min: 0.1,
+              max: 1.5,
+              step: 0.01,
+              label: 'Height',
+            },
+            adArtOffsetX: {
+              value: p.adArtOffsetX,
+              min: -0.5,
+              max: 0.5,
+              step: 0.005,
+              label: 'Offset X',
+            },
+            adArtOffsetY: {
+              value: p.adArtOffsetY,
+              min: -0.5,
+              max: 0.5,
+              step: 0.005,
+              label: 'Offset Y',
+            },
+            adArtBg: { value: p.adArtBg, label: 'Frame Color' },
+          },
+          C
+        ),
+        Glitch: folder(
+          {
+            adGlitchTile: {
+              value: p.adGlitchTile,
+              min: 1,
+              max: 8,
+              step: 1,
+              label: 'Tile Rows',
+            },
+            adGlitchWidth: {
+              value: p.adGlitchWidth,
+              min: 0.1,
+              max: 1,
+              step: 0.01,
+              label: 'Text Width',
+            },
+            adGlitchHeight: {
+              value: p.adGlitchHeight,
+              min: 0.1,
+              max: 1,
+              step: 0.01,
+              label: 'Text Height',
+            },
+            adGlitchMinGap: {
+              value: p.adGlitchMinGap,
+              min: 0.5,
+              max: 20,
+              step: 0.5,
+              label: 'Art Min (s)',
+            },
+            adGlitchMaxGap: {
+              value: p.adGlitchMaxGap,
+              min: 0.5,
+              max: 30,
+              step: 0.5,
+              label: 'Art Max (s)',
+            },
+            adGlitchDuration: {
+              value: p.adGlitchDuration,
+              min: 0.05,
+              max: 3,
+              step: 0.05,
+              label: 'Duration (s)',
+            },
+            adGlitchStutter: {
+              value: p.adGlitchStutter,
+              min: 0,
+              max: 1,
+              step: 0.01,
+              label: 'Stutter',
+            },
+          },
+          C
+        ),
+      },
+      C
+    ),
     Lighting: folder(
       {
         envBackground: { value: p.envBackground, label: 'City Backdrop' },
@@ -459,6 +621,17 @@ export default function useSceneControls() {
 
   attachSetControls(setControls);
 
+  // One stable "BIRD {ip}" id per bird, minted once at scene load — a random IPv4 so
+  // each POV shot reads like a distinct networked surveillance feed.
+  const camIdsRef = useRef(null);
+  if (!camIdsRef.current) {
+    const octet = () => Math.floor(Math.random() * 254) + 1;
+    camIdsRef.current = BIRD_SLOTS.reduce((acc, slot) => {
+      acc[slot.key] = `BIRD ${octet()}.${octet()}.${octet()}.${octet()}`;
+      return acc;
+    }, {});
+  }
+
   // Rebuild the flat per-bird controls back into the placement array the scene
   // renders. Each bird gets a stable key + a deterministic animation phase so the
   // idle/sweep cycles don't all march in lockstep. Per-slot statics (roll, frozen
@@ -467,6 +640,7 @@ export default function useSceneControls() {
     const pos = controls[posKey(slot)];
     return {
       key: slot.key,
+      camId: camIdsRef.current[slot.key],
       position: [pos.x, pos.y, pos.z],
       rotation: [0, controls[rotKey(slot)], slot.roll || 0],
       phase: (i * 1.7) % (Math.PI * 2),

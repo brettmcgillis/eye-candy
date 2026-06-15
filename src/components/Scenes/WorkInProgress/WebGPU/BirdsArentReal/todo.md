@@ -14,6 +14,7 @@
 - the scene has two birds inside the bus stop, one on the bench and one on the ground in front of the bench
 - the scene has three birds on the roof of the bus stop, two on the front left corner and one on the back right.
 - the scene contains a mode where all of the cameraHeads aim at and follow the user's cursor
+- The advertisments in the bus station are overridden with custom shaders that display some of my art but occassionally glitch out and reveal 'They Live'-style Obey, Consume, etc, messaging.
 
 # // TODO:
 
@@ -22,6 +23,20 @@
 # // Presets
 
 # // Features
+
+- [x] **View Mode** Leva enum (Orbit / Bird POV / Cursor Follow) under the `View`
+      folder, persisted in presets (`viewMode`).
+- [x] **Bird POV (CCTV feed)** — `BirdPovRig` rides the active bird's swept lens
+      (registered via `CameraHead` `lensRef`). The director auto-cuts between birds on a
+      timer (`povShotDuration`); the ridden bird is hidden so the camera never sits inside
+      its own mesh. `povFov` / `povDolly` tune the shot.
+- [x] **CCTV post** — `SurveillancePost` folds bloom + the Aisle9 surveillance HUD
+      (REC dot, timestamp, `CAM ####`, corner frame) + retro scanlines/vignette/chroma into
+      ONE post chain (replaces `Bloom`). Each bird mints a stable `CAM ####` id at load,
+      shown as the active feed's label.
+- [x] **Cursor Follow** — `CursorTracker` projects the pointer onto a focus plane;
+      every `FakeBird` overrides its head-aim to stare at that world point (sweep off) while
+      the camera keeps orbiting.
 
 # // Interactivity
 

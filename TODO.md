@@ -88,6 +88,8 @@ To Build:
 - [HorsesForCourses](src/components/scenes/WorkInProgress/WebGPU/HorsesForCourses/todo.md)
 - [DrippingSkull](src/components/scenes/WorkInProgress/WebGPU/DrippingSkull/todo.md)
 - [BurningCash](src/components/scenes/WorkInProgress/WebGPU/BurningCash/todo.md)
+- [UrbanWildlife](src/components/scenes/WorkInProgress/WebGPU/UrbanWildlife/todo.md)
+- [BirdsArentReal](src/components/scenes/WorkInProgress/WebGPU/BirdsArentReal/todo.md)
 
 **Template**
 
@@ -179,6 +181,7 @@ To Build:
 
 - [ ] Aisle 9
 - [ ] All My Friends Are Ghosts
+- [ ] Birds Arent Real
 - [ ] Burning Cash
 - [ ] Crt Test
 - [ ] Dripping Skull
@@ -196,6 +199,7 @@ To Build:
 - [ ] Still Pulling For You - Sunk
 - [ ] Thats All Folks - Smoke
 - [ ] Thats All Folks - Bang
+- [ ] Urban Wildlife / Night Danger
 
 ### Scenes to build
 

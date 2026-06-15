@@ -25,6 +25,7 @@ import {
   GiAtomCore,
   GiBlackFlag,
   GiCandleLight,
+  GiCctvCamera,
   GiDiceEightFacesEight,
   GiDiceTwentyFacesTwenty,
   GiHorseHead,
@@ -35,6 +36,7 @@ import {
   GiPistolGun,
   GiPoliceBadge,
   GiRabbit,
+  GiRaccoonHead,
   GiRibcage,
   GiSewingString,
   GiSinkingShip,
@@ -257,6 +259,14 @@ const DrippingSkull = lazy(
 const BurningCash = lazy(
   () =>
     import('../components/scenes/WorkInProgress/WebGPU/BurningCash/BurningCash')
+);
+const UrbanWildlife = lazy(
+  () =>
+    import('../components/scenes/WorkInProgress/WebGPU/UrbanWildlife/UrbanWildlife')
+);
+const BirdsArentReal = lazy(
+  () =>
+    import('../components/scenes/WorkInProgress/WebGPU/BirdsArentReal/BirdsArentReal')
 );
 
 const BeautysInTheEyeOfTheBeheaded = lazy(
@@ -580,6 +590,14 @@ function DrippingSkullIcon() {
 
 function BurningCashIcon() {
   return <GiMoneyStack color="#328304" size={26} />;
+}
+
+function UrbanWildlifeIcon() {
+  return <GiRaccoonHead color="#000000" size={26} />;
+}
+
+function BirdsArentRealIcon() {
+  return <GiCctvCamera color="#3a4654" size={26} />;
 }
 
 function OneInTheHandIcon() {
@@ -1335,6 +1353,24 @@ export const EYE_CANDIES = [
     Component: BurningCash,
   },
   {
+    id: 'urbanWildlife',
+    label: 'Urban Wildlife',
+    channel: 'webgpu',
+    area: 'wip',
+    route: 'urbanWildlife',
+    icon: UrbanWildlifeIcon,
+    Component: UrbanWildlife,
+  },
+  {
+    id: 'birdsArentReal',
+    label: "Birds Aren't Real",
+    channel: 'webgpu',
+    area: 'wip',
+    route: 'birdsArentReal',
+    icon: BirdsArentRealIcon,
+    Component: BirdsArentReal,
+  },
+  {
     id: 'beautysInTheEyeOfTheBeheaded',
     label: "Beauty's In The Eye Of The Beheaded",
     channel: 'webgpu',
@@ -1351,6 +1387,15 @@ export const EYE_CANDIES = [
     route: 'oneInTheHand',
     icon: OneInTheHandIcon,
     Component: OneInTheHand,
+  },
+  {
+    id: 'birdsArentReal',
+    label: "Birds Aren't Real",
+    channel: 'webgpu',
+    area: 'wip',
+    route: 'birdsArentReal',
+    icon: BirdsArentRealIcon,
+    Component: BirdsArentReal,
   },
 ];
 

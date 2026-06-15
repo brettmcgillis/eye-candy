@@ -215,6 +215,17 @@ export const GROUND = {
 export const GRID = {
   args: [30, 15, '#cdcdcd', '#d9d9d9'],
 };
+export const SIDEWALK_GROUND = Object.freeze({
+  enabled: true,
+  showGrid: false,
+  length: 30,
+  rows: 2,
+  rotationDeg: 0,
+  position: { x: -7, y: GROUND_Y, z: 0.5 },
+});
+// Nominal footprint of a single curb slab (measured from the GLBs), used to
+// size the sidewalk's physics collider to match the visual tiling.
+export const SIDEWALK_TILE_SIZE = Object.freeze({ width: 6.99, depth: 5.9 });
 export const DECOR_RUG = Object.freeze({
   position: [0, -0.012, 0.55],
   rotation: [0, Math.PI / 2, 0],

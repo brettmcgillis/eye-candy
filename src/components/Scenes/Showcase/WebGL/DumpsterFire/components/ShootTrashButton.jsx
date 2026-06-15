@@ -5,7 +5,7 @@ import useTrashBlasterStore from '../hooks/useTrashBlasterStore';
 
 export default function ShootTrashButton() {
   const fireTrash = useTrashBlasterStore((s) => s.fireTrash);
-  const tooltipLabel = 'fire one off';
+  const tooltipLabel = 'Fire one off';
 
   return (
     <button

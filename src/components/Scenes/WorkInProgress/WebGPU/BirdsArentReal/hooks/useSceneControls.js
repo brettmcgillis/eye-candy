@@ -252,6 +252,134 @@ export default function useSceneControls() {
           },
           C
         ),
+        Nest: folder(
+          {
+            nestPos: { value: p.nestPos, step: 0.05, label: 'Nest Pos' },
+            nestRotY: {
+              value: p.nestRotY,
+              min: -Math.PI,
+              max: Math.PI,
+              step: 0.05,
+              label: 'Nest Rotate Y',
+            },
+            nestScale: {
+              value: p.nestScale,
+              min: 0.1,
+              max: 5,
+              step: 0.05,
+              label: 'Nest Scale',
+            },
+            nestEggScale: {
+              value: p.nestEggScale,
+              min: 0.05,
+              max: 2,
+              step: 0.01,
+              label: 'Egg Scale',
+            },
+            nestEgg1Pos: {
+              value: p.nestEgg1Pos,
+              step: 0.01,
+              label: 'Egg 1 Pos',
+            },
+            nestEgg1Rot: {
+              value: p.nestEgg1Rot,
+              step: 0.05,
+              label: 'Egg 1 Rot',
+            },
+            nestEgg2Pos: {
+              value: p.nestEgg2Pos,
+              step: 0.01,
+              label: 'Egg 2 Pos',
+            },
+            nestEgg2Rot: {
+              value: p.nestEgg2Rot,
+              step: 0.05,
+              label: 'Egg 2 Rot',
+            },
+          },
+          C
+        ),
+        Litter: folder(
+          {
+            newspaper2Pos: {
+              value: p.newspaper2Pos,
+              step: 0.05,
+              label: 'Newspaper Pos',
+            },
+            newspaper2RotY: {
+              value: p.newspaper2RotY,
+              min: -Math.PI,
+              max: Math.PI,
+              step: 0.05,
+              label: 'Newspaper Rot Y',
+            },
+            newspaper2Scale: {
+              value: p.newspaper2Scale,
+              min: 0.1,
+              max: 5,
+              step: 0.05,
+              label: 'Newspaper Scale',
+            },
+            cigButtsPos: {
+              value: p.cigButtsPos,
+              step: 0.05,
+              label: 'Cig Butts Pos',
+            },
+            cigButtsRotY: {
+              value: p.cigButtsRotY,
+              min: -Math.PI,
+              max: Math.PI,
+              step: 0.05,
+              label: 'Cig Butts Rot Y',
+            },
+            cigButtsScale: {
+              value: p.cigButtsScale,
+              min: 0.1,
+              max: 5,
+              step: 0.05,
+              label: 'Cig Butts Scale',
+            },
+            litter1Pos: {
+              value: p.litter1Pos,
+              step: 0.05,
+              label: 'Litter 1 Pos',
+            },
+            litter1RotY: {
+              value: p.litter1RotY,
+              min: -Math.PI,
+              max: Math.PI,
+              step: 0.05,
+              label: 'Litter 1 Rot Y',
+            },
+            litter1Scale: {
+              value: p.litter1Scale,
+              min: 0.1,
+              max: 5,
+              step: 0.05,
+              label: 'Litter 1 Scale',
+            },
+            litter2Pos: {
+              value: p.litter2Pos,
+              step: 0.05,
+              label: 'Litter 2 Pos',
+            },
+            litter2RotY: {
+              value: p.litter2RotY,
+              min: -Math.PI,
+              max: Math.PI,
+              step: 0.05,
+              label: 'Litter 2 Rot Y',
+            },
+            litter2Scale: {
+              value: p.litter2Scale,
+              min: 0.1,
+              max: 5,
+              step: 0.05,
+              label: 'Litter 2 Scale',
+            },
+          },
+          C
+        ),
       },
       C
     ),
@@ -333,14 +461,17 @@ export default function useSceneControls() {
 
   // Rebuild the flat per-bird controls back into the placement array the scene
   // renders. Each bird gets a stable key + a deterministic animation phase so the
-  // idle/sweep cycles don't all march in lockstep.
+  // idle/sweep cycles don't all march in lockstep. Per-slot statics (roll, frozen
+  // animation, dead lens) ride along so the scene can apply them.
   const birds = BIRD_SLOTS.map((slot, i) => {
     const pos = controls[posKey(slot)];
     return {
       key: slot.key,
       position: [pos.x, pos.y, pos.z],
-      rotationY: controls[rotKey(slot)],
+      rotation: [0, controls[rotKey(slot)], slot.roll || 0],
       phase: (i * 1.7) % (Math.PI * 2),
+      animate: slot.animate, // undefined => use the global Animate toggle
+      still: slot.still || false, // true => no camera-head sweep
     };
   });
 

@@ -13,6 +13,7 @@ import {
   GROUND_Y,
   LIGHTING,
 } from '../utils/sceneData';
+import SidewalkGround from './SidewalkGround';
 
 const DEFAULT_SCENE_ENVIRONMENT = Object.freeze({
   backgroundColor: BACKGROUND,
@@ -37,6 +38,7 @@ export default function SceneEnvironment({
   camera,
   cameraApiRef = null,
   sceneEnvironment,
+  sidewalkGroundConfig,
 }) {
   const [groundX, , groundZ] = FLOOR_COLLIDER_POSITION;
   const isPointerInteractionActive = useTrashBlasterStore(
@@ -89,10 +91,19 @@ export default function SceneEnvironment({
         <meshStandardMaterial color={config.floorColor} />
       </mesh>
 
-      <gridHelper
-        args={[GRID.args[0], GRID.args[1], config.gridColor, config.gridColor]}
-        position={[groundX, GROUND_Y + 0.001, groundZ]}
-      />
+      {config.showGrid && (
+        <gridHelper
+          args={[
+            GRID.args[0],
+            GRID.args[1],
+            config.gridColor,
+            config.gridColor,
+          ]}
+          position={[groundX, GROUND_Y + 0.001, groundZ]}
+        />
+      )}
+
+      <SidewalkGround config={sidewalkGroundConfig} />
 
       <Environment preset="city" />
     </>

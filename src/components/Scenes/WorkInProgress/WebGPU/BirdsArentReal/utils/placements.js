@@ -10,6 +10,11 @@
 //
 // To add/remove a perch: add a slot here AND matching `<key>Pos`/`<key>RotY`
 // entries in the preset.
+//
+// Optional per-slot statics (not Leva-tunable):
+//   roll   - z-rotation in radians (e.g. PI/2 to lay a bird on its side)
+//   animate: false - freeze this bird's body animation
+//   still: true    - kill the camera-head sweep (no lens movement)
 
 const BIRD_SLOTS = [
   { key: 'birdTrashRim', label: 'Trash Can Rim' },
@@ -20,6 +25,15 @@ const BIRD_SLOTS = [
   { key: 'birdRoofFrontB', label: 'Roof Front-Left B' },
   { key: 'birdRoofBack', label: 'Roof Back-Right' },
   { key: 'birdCrossbar', label: 'Bus Stop — Crossbar' },
+  { key: 'birdNest', label: 'By the Nest' },
+  // Sells the fake-ness: a busted bird on its side, frozen, lens dead, LED still on.
+  {
+    key: 'birdFallen',
+    label: 'Fallen (on side)',
+    roll: Math.PI / 2,
+    animate: false,
+    still: true,
+  },
 ];
 
 export const posKey = (slot) => `${slot.key}Pos`;

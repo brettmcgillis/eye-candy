@@ -399,6 +399,43 @@ export default function useSceneControls() {
         },
         { collapsed: true }
       ),
+      Ground: folder(
+        {
+          sidewalkGroundEnabled: {
+            label: 'Sidewalk',
+            value: initialPresetSnapshot.sidewalkGroundEnabled,
+          },
+          showGrid: {
+            label: 'Grid',
+            value: initialPresetSnapshot.showGrid,
+          },
+          sidewalkLength: {
+            label: 'Length',
+            value: initialPresetSnapshot.sidewalkLength,
+            min: 2,
+            max: 30,
+            step: 0.5,
+          },
+          sidewalkRows: {
+            label: 'Rows',
+            value: initialPresetSnapshot.sidewalkRows,
+            min: 1,
+            max: 6,
+            step: 1,
+          },
+          sidewalkRotationDeg: {
+            label: 'Rotation',
+            value: initialPresetSnapshot.sidewalkRotationDeg,
+            options: [0, 90, 180, 270],
+          },
+          sidewalkPosition: {
+            label: 'Position',
+            step: 0.05,
+            value: initialPresetSnapshot.sidewalkPosition,
+          },
+        },
+        { collapsed: true }
+      ),
       Camera: folder(cameraControls, { collapsed: true }),
       Physics: folder(
         {
@@ -834,6 +871,12 @@ ${allEntries}
     sceneFogColor,
     sceneFogNear,
     sceneFogFar,
+    sidewalkGroundEnabled,
+    showGrid,
+    sidewalkLength,
+    sidewalkRows,
+    sidewalkRotationDeg,
+    sidewalkPosition,
     brickWallEnabled,
     brickWallLength,
     brickWallHeight,
@@ -927,6 +970,14 @@ ${allEntries}
       fogColor: sceneFogColor,
       fogNear: sceneFogNear,
       fogFar: sceneFogFar,
+      showGrid,
+    },
+    sidewalkGroundConfig: {
+      enabled: sidewalkGroundEnabled,
+      length: sidewalkLength,
+      rows: sidewalkRows,
+      rotationDeg: sidewalkRotationDeg,
+      position: sidewalkPosition,
     },
     brickWallConfig: {
       enabled: brickWallEnabled,

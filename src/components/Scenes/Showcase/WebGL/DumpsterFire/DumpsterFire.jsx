@@ -31,6 +31,7 @@ export default function DumpsterFire() {
     cursorAttractorStrength,
     cursorAttractorRadius,
     sceneEnvironment,
+    sidewalkGroundConfig,
     brickWallConfig,
     dumpsterConfig,
     fireLightRig,
@@ -45,6 +46,7 @@ export default function DumpsterFire() {
         camera={camera}
         cameraApiRef={cameraApiRef}
         sceneEnvironment={sceneEnvironment}
+        sidewalkGroundConfig={sidewalkGroundConfig}
       />
       <CursorAttractor
         attractorsRef={attractorsRef}
@@ -57,6 +59,7 @@ export default function DumpsterFire() {
       <PhysicsScene
         brickWallConfig={brickWallConfig}
         dumpsterConfig={dumpsterConfig}
+        sidewalkGroundConfig={sidewalkGroundConfig}
         debug={physicsDebug}
         onTrashCollision={playCollision}
         shotConfig={trashShotConfig}

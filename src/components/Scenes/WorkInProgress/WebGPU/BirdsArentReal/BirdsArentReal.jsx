@@ -3,9 +3,13 @@ import React from 'react';
 import { Environment } from '@react-three/drei';
 
 import BusStop from '../../../../elements/Busstop/Busstop';
-import Curb from '../../../../elements/Curb/Curb';
 import ManholeCover from '../../../../elements/ManholeCover/ManholeCover';
+import Nest from '../../../../elements/Nest/Nest';
 import ParkTrashCan from '../../../../elements/ParkTrashCan/ParkTrashCan';
+import Sidewalks from '../../../../elements/Sidewalks/Sidewalks';
+import CigaretteButts from '../../../../elements/cigaretteButts/CigaretteButts';
+import { Litter, Litter2 } from '../../../../elements/litter/Litter';
+import { NewsPaper2 } from '../../../../elements/newsPapers/NewsPapers';
 import Bloom from '../../../../postprocessing/webGPU/bloom/Bloom';
 import CameraRig from '../../../../rigging/CameraRig';
 import FakeBird from './components/FakeBird';
@@ -74,8 +78,8 @@ export default function BirdsArentReal() {
 
       {config.showStreet && (
         <>
-          {/* Curb / sidewalk slab at the origin. */}
-          <Curb position={[0, 0, 0]} scale={config.curbScale} />
+          {/* Assembled sidewalk block (4 curb slabs + edges + corners/ramps). */}
+          <Sidewalks position={[0, 0, 0]} scale={config.curbScale} />
           {/* Bus stop shelter on top of the curb slab. */}
           <BusStop
             position={v3(config.busStopPos)}
@@ -94,6 +98,38 @@ export default function BirdsArentReal() {
             rotation={[0, config.manholeRotY, 0]}
             scale={config.manholeScale}
           />
+          {/* Pigeon nest (sticks + 2 eggs) inside the bus shelter. */}
+          <Nest
+            position={v3(config.nestPos)}
+            rotation={[0, config.nestRotY, 0]}
+            scale={config.nestScale}
+            eggScale={config.nestEggScale}
+            egg1Pos={config.nestEgg1Pos}
+            egg1Rot={config.nestEgg1Rot}
+            egg2Pos={config.nestEgg2Pos}
+            egg2Rot={config.nestEgg2Rot}
+          />
+          {/* Street litter scattered on the asphalt. */}
+          <NewsPaper2
+            position={v3(config.newspaper2Pos)}
+            rotation={[0, config.newspaper2RotY, 0]}
+            scale={config.newspaper2Scale}
+          />
+          <CigaretteButts
+            position={v3(config.cigButtsPos)}
+            rotation={[0, config.cigButtsRotY, 0]}
+            scale={config.cigButtsScale}
+          />
+          <Litter
+            position={v3(config.litter1Pos)}
+            rotation={[0, config.litter1RotY, 0]}
+            scale={config.litter1Scale}
+          />
+          <Litter2
+            position={v3(config.litter2Pos)}
+            rotation={[0, config.litter2RotY, 0]}
+            scale={config.litter2Scale}
+          />
         </>
       )}
 
@@ -102,12 +138,12 @@ export default function BirdsArentReal() {
           key={b.key}
           species={config.birdType}
           behavior={config.behavior}
-          animate={config.animate}
+          animate={b.animate ?? config.animate}
           position={b.position}
-          rotation={[0, b.rotationY, 0]}
+          rotation={b.rotation}
           phase={b.phase}
-          sweepRange={config.sweepRange}
-          sweepSpeed={config.sweepSpeed}
+          sweepRange={b.still ? 0 : config.sweepRange}
+          sweepSpeed={b.still ? 0 : config.sweepSpeed}
           ledBlink={config.ledBlink}
           camScale={config.camScale}
           camRot={config.camRot}

@@ -7,6 +7,7 @@ import {
   GRID,
   GROUND,
   SHOT_TUNING_PRESETS,
+  SIDEWALK_GROUND,
 } from '../utils/sceneData';
 
 export const DEFAULT_PRESET = 'Default';
@@ -58,6 +59,15 @@ const DEFAULT_PHYSICS_CONTROLS = Object.freeze({
   physicsDebug: false,
 });
 
+const DEFAULT_GROUND_CONTROLS = Object.freeze({
+  sidewalkGroundEnabled: SIDEWALK_GROUND.enabled,
+  showGrid: SIDEWALK_GROUND.showGrid,
+  sidewalkLength: SIDEWALK_GROUND.length,
+  sidewalkRows: SIDEWALK_GROUND.rows,
+  sidewalkRotationDeg: SIDEWALK_GROUND.rotationDeg,
+  sidewalkPosition: { ...SIDEWALK_GROUND.position },
+});
+
 const DEFAULT_DUMPSTER_CONTROLS = Object.freeze({
   dumpsterLeftLidRotation: -1.0,
   dumpsterRightLidRotation: -1.5,
@@ -91,6 +101,7 @@ const DEFAULT_CONTROL_VALUES = Object.freeze({
   ...DEFAULT_SCENE_ENVIRONMENT,
   ...DEFAULT_CAMERA_CONTROLS,
   ...DEFAULT_PHYSICS_CONTROLS,
+  ...DEFAULT_GROUND_CONTROLS,
   ...DEFAULT_DUMPSTER_CONTROLS,
   ...DEFAULT_BRICK_WALL_CONTROLS,
   ...DEFAULT_TRASH_BLASTER_CONTROLS,
@@ -136,6 +147,10 @@ export const PRESETS = {
     brickWallHeight: 4.5,
     brickWallTintColor: '#a35245',
     brickWallPosition: { x: -2, y: 1, z: 3 },
+    // Center the curb floor under the wall: wall world-center X =
+    // SCENE_ROOT_POSITION.x (-9) + brickWallPosition.x (-2) +
+    // localFloorCenterX (6.75) = -4.25.
+    sidewalkPosition: { ...SIDEWALK_GROUND.position, x: -4.25 },
     shotMode: 'Fun',
     shotSpawnOffset: brickWallShotTuning.spawnOffset,
     shotSpeed: brickWallShotTuning.speed,

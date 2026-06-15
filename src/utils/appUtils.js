@@ -43,6 +43,10 @@ export function textureFile(fileName) {
   return assetPath(`/textures/${fileName}`);
 }
 
+export function fontFile(fileName) {
+  return assetPath(`/fonts/${fileName}`);
+}
+
 export function iconFile(fileName) {
   return assetPath(`/icons/${fileName}`);
 }

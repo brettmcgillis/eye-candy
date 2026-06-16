@@ -1365,7 +1365,7 @@ export const EYE_CANDIES = [
     id: 'birdsArentReal',
     label: "Birds Aren't Real",
     channel: 'webgpu',
-    area: 'wip',
+    area: 'showcase',
     route: 'birdsArentReal',
     icon: BirdsArentRealIcon,
     Component: BirdsArentReal,

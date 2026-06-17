@@ -33,7 +33,7 @@ import {
 } from 'three/tsl';
 import * as THREE from 'three/webgpu';
 
-import React, { useEffect, useMemo } from 'react';
+import React, { memo, useEffect, useMemo } from 'react';
 
 import { useTexture } from '@react-three/drei';
 import { useLoader } from '@react-three/fiber';
@@ -128,7 +128,7 @@ const getRipples = Fn(([uvCoord, t]) => {
  *
  * No rain: rippleStrength defaults to 0 so the puddles sit glassy-still.
  */
-export default function WetGround({
+function WetGround({
   size = 60,
   segments = 96,
   visible = true,
@@ -278,3 +278,5 @@ export default function WetGround({
     </mesh>
   );
 }
+
+export default memo(WetGround);

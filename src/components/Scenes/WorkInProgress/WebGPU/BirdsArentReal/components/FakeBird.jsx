@@ -4,7 +4,7 @@
 import * as THREE from 'three';
 import { SkeletonUtils } from 'three-stdlib';
 
-import React, { useEffect, useMemo, useRef } from 'react';
+import React, { memo, useEffect, useMemo, useRef } from 'react';
 
 import { useAnimations, useGLTF } from '@react-three/drei';
 import { createPortal, useFrame, useGraph } from '@react-three/fiber';
@@ -58,7 +58,7 @@ const _WORLD_UP = new THREE.Vector3(0, 1, 0);
  *   - 'wander' : play the walk clip and roam within `roamRadius`. Only meaningful for
  *                species with locomotion + a `walk` clip; else falls back to idle.
  */
-export default function FakeBird({
+function FakeBird({
   species = 'pigeon',
   behavior = 'idle',
   animate = true,
@@ -298,3 +298,5 @@ export default function FakeBird({
     </group>
   );
 }
+
+export default memo(FakeBird);

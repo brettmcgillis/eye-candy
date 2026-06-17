@@ -22,20 +22,21 @@ import { modelFile } from '../../../utils/appUtils';
 // and the geometry is centered near the origin (~±0.19 in X/Y, long axis along Z in
 // [-0.23, 0.28]).
 //
-// Pass `qrMap` to stamp a texture once onto the shell. Because there are no UVs to map
-// against, we build a MeshStandardNodeMaterial that PROJECTS the texture planar-style
-// from object space (the YZ plane → the egg's +X side) and masks it to a single patch
-// — no tiling, no extra geometry, no Decal projection. All placement is tunable:
-//   qrScale  patch size in egg-local units
-//   qrU/qrV  slide along the egg's Z / Y axes
-//   qrSpin   rotate the sticker in-plane (radians)
-// Omit `qrMap` and the egg renders with its plain GLTF material, so it stays generic.
+// Pass `decalMap` to stamp a texture once onto the shell. Because there are no UVs to
+// map against, we build a MeshStandardNodeMaterial that PROJECTS the texture planar-
+// style from object space (the YZ plane → the egg's +X side) and masks it to a single
+// patch — no tiling, no extra geometry, no Decal projection. All placement is tunable:
+//   decalScale  patch size in egg-local units
+//   decalU/V    slide along the egg's Z / Y axes
+//   decalSpin   rotate the sticker in-plane (radians)
+// Omit `decalMap` and the egg renders with its plain GLTF material, so it stays generic
+// (any scene can stamp its own sticker — a QR code, a logo, a price tag…).
 export default function Egg({
-  qrMap,
-  qrScale = 0.22,
-  qrU = 0.02,
-  qrV = 0,
-  qrSpin = 0,
+  decalMap,
+  decalScale = 0.22,
+  decalU = 0.02,
+  decalV = 0,
+  decalSpin = 0,
   baseColor = '#ece4d2',
   ...props
 }) {
@@ -52,8 +53,8 @@ export default function Egg({
     []
   );
 
-  const qrMaterial = useMemo(() => {
-    if (!qrMap) return null;
+  const decalMaterial = useMemo(() => {
+    if (!decalMap) return null;
     const m = new THREE.MeshStandardNodeMaterial({
       roughness: 0.6,
       metalness: 0,
@@ -80,20 +81,20 @@ export default function Egg({
     const front = step(0.05, normalLocal.x);
     const mask = inBox.mul(front);
 
-    const qr = texture(qrMap, uv);
-    m.colorNode = mix(u.base, qr.rgb, mask);
+    const decal = texture(decalMap, uv);
+    m.colorNode = mix(u.base, decal.rgb, mask);
     return m;
-  }, [qrMap, u]);
+  }, [decalMap, u]);
 
   useEffect(() => {
-    u.scale.value = qrScale;
-    u.u.value = qrU;
-    u.v.value = qrV;
-    u.spin.value = qrSpin;
+    u.scale.value = decalScale;
+    u.u.value = decalU;
+    u.v.value = decalV;
+    u.spin.value = decalSpin;
     u.base.value.set(baseColor);
-  }, [u, qrScale, qrU, qrV, qrSpin, baseColor]);
+  }, [u, decalScale, decalU, decalV, decalSpin, baseColor]);
 
-  useEffect(() => () => qrMaterial?.dispose(), [qrMaterial]);
+  useEffect(() => () => decalMaterial?.dispose(), [decalMaterial]);
 
   return (
     <group {...props} dispose={null}>
@@ -101,7 +102,7 @@ export default function Egg({
         castShadow
         receiveShadow
         geometry={nodes.Object_2.geometry}
-        material={qrMaterial ?? materials.mat_66990170}
+        material={decalMaterial ?? materials.mat_66990170}
         rotation={[-Math.PI / 2, 0, 0]}
       />
     </group>

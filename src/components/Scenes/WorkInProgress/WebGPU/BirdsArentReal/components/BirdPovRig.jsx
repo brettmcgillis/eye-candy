@@ -1,6 +1,6 @@
 import * as THREE from 'three';
 
-import React, { useMemo, useRef } from 'react';
+import React, { memo, useMemo, useRef } from 'react';
 
 import { PerspectiveCamera } from '@react-three/drei';
 import { useFrame } from '@react-three/fiber';
@@ -13,7 +13,7 @@ import { useFrame } from '@react-three/fiber';
  * lens. The director (scene) swaps `activeKey` on a timer and hides whichever bird we're
  * riding, so we never sit inside our own mesh.
  */
-export default function BirdPovRig({
+function BirdPovRig({
   nodesRef,
   activeKey,
   fov = 55,
@@ -58,3 +58,5 @@ export default function BirdPovRig({
     />
   );
 }
+
+export default memo(BirdPovRig);

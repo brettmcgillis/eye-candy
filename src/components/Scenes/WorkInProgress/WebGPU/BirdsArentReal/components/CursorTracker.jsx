@@ -1,6 +1,6 @@
 import * as THREE from 'three';
 
-import { useMemo } from 'react';
+import { memo, useMemo } from 'react';
 
 import { useFrame, useThree } from '@react-three/fiber';
 
@@ -10,11 +10,7 @@ import { useFrame, useThree } from '@react-three/fiber';
  * into `targetRef`. Every FakeBird reads that ref to swivel its lens at the cursor, so
  * the whole flock tracks you while you still orbit normally. Renders nothing.
  */
-export default function CursorTracker({
-  enabled = false,
-  targetRef,
-  focus = [0, 0.6, 0],
-}) {
+function CursorTracker({ enabled = false, targetRef, focus = [0, 0.6, 0] }) {
   const { camera, pointer, raycaster } = useThree();
   const plane = useMemo(() => new THREE.Plane(), []);
   const dir = useMemo(() => new THREE.Vector3(), []);
@@ -33,3 +29,5 @@ export default function CursorTracker({
 
   return null;
 }
+
+export default memo(CursorTracker);

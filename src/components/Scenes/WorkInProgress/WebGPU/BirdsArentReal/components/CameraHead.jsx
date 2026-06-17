@@ -1,7 +1,7 @@
 /* eslint-disable no-nested-ternary */
 import * as THREE from 'three';
 
-import React, { useEffect, useMemo, useRef } from 'react';
+import React, { memo, useEffect, useMemo, useRef } from 'react';
 
 import { useGLTF } from '@react-three/drei';
 import { useFrame } from '@react-three/fiber';
@@ -23,7 +23,7 @@ useGLTF.preload(MODEL);
  * the bird's heading is left to the parent's yaw. It slowly pans (the surveillance
  * sweep) and blinks a red REC LED.
  */
-export default function CameraHead({
+function CameraHead({
   sweepRange = 0.7, // radians, half-angle of the pan
   sweepSpeed = 0.5, // radians/sec phase advance
   phase = 0, // per-instance offset so a flock doesn't sweep in sync
@@ -136,3 +136,5 @@ export default function CameraHead({
     </group>
   );
 }
+
+export default memo(CameraHead);

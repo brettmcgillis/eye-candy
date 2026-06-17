@@ -1,6 +1,6 @@
 import { folder, useControls } from 'leva';
 
-import { useEffect, useRef } from 'react';
+import { useEffect, useMemo, useRef } from 'react';
 
 import usePresetsFolder from '../../../../../../hooks/usePresetsFolder';
 import useSceneCameraControls from '../../../../../../hooks/useSceneCameraControls';
@@ -708,20 +708,26 @@ export default function useSceneControls() {
   // Rebuild the flat per-bird controls back into the placement array the scene
   // renders. Each bird gets a stable key + a deterministic animation phase so the
   // idle/sweep cycles don't all march in lockstep. Per-slot statics (roll, frozen
-  // animation, dead lens) ride along so the scene can apply them.
-  const birds = BIRD_SLOTS.map((slot, i) => {
-    const pos = controls[posKey(slot)];
-    return {
-      key: slot.key,
-      camId: camIdsRef.current[slot.key],
-      position: [pos.x, pos.y, pos.z],
-      rotation: [0, controls[rotKey(slot)], slot.roll || 0],
-      phase: (i * 1.7) % (Math.PI * 2),
-      animate: slot.animate, // undefined => use the global Animate toggle
-      still: slot.still || false, // true => no camera-head sweep
-      show: controls[showKey(slot)] !== false, // per-bird visibility toggle
-    };
-  });
+  // animation, dead lens) ride along so the scene can apply them. Memoized on
+  // `controls` so the array + its position/rotation sub-arrays keep identity between
+  // unrelated re-renders — that's what lets the memo'd FakeBird instances skip work.
+  const birds = useMemo(
+    () =>
+      BIRD_SLOTS.map((slot, i) => {
+        const pos = controls[posKey(slot)];
+        return {
+          key: slot.key,
+          camId: camIdsRef.current[slot.key],
+          position: [pos.x, pos.y, pos.z],
+          rotation: [0, controls[rotKey(slot)], slot.roll || 0],
+          phase: (i * 1.7) % (Math.PI * 2),
+          animate: slot.animate, // undefined => use the global Animate toggle
+          still: slot.still || false, // true => no camera-head sweep
+          show: controls[showKey(slot)] !== false, // per-bird visibility toggle
+        };
+      }),
+    [controls]
+  );
 
   // Snapshot (what the "copy" button emits) matches the preset 1:1 — flat keys,
   // no reshaping.

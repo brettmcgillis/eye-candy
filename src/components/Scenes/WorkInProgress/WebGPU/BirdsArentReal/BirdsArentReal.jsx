@@ -1,153 +1,53 @@
-import * as THREE from 'three';
+import React from 'react';
 
-import React, { useEffect, useMemo, useRef, useState } from 'react';
+import { Environment } from '@react-three/drei';
 
-import { Environment, useEnvironment, useTexture } from '@react-three/drei';
-import { useThree } from '@react-three/fiber';
-
-import { imageFile, videoFile } from '../../../../../utils/appUtils';
-import BusStop from '../../../../elements/Busstop/Busstop';
 import ManholeCover from '../../../../elements/ManholeCover/ManholeCover';
-import Nest from '../../../../elements/Nest/Nest';
 import ParkTrashCan from '../../../../elements/ParkTrashCan/ParkTrashCan';
 import Sidewalks from '../../../../elements/Sidewalks/Sidewalks';
 import CigaretteButts from '../../../../elements/cigaretteButts/CigaretteButts';
 import { Litter, Litter2 } from '../../../../elements/litter/Litter';
 import { NewsPaper2 } from '../../../../elements/newsPapers/NewsPapers';
-import CRTAdGlitchMaterial from '../../../../materials/webGPU/crt/crtAdGlitchMaterial';
 import CameraRig from '../../../../rigging/CameraRig';
 import BirdPovRig from './components/BirdPovRig';
+import BusStop from './components/BusStop';
 import CursorTracker from './components/CursorTracker';
 import FakeBird from './components/FakeBird';
+import Nest from './components/Nest';
 import SurveillancePost from './components/SurveillancePost';
 import WetGround from './components/WetGround';
+import useLensRegistry from './hooks/useLensRegistry';
+import usePovDirector from './hooks/usePovDirector';
+import useSceneBackground from './hooks/useSceneBackground';
 import useSceneControls from './hooks/useSceneControls';
-
-const v3 = (o) => [o.x, o.y, o.z];
-
-// Shared art playlist — every ad face cycles through all of it (videos + the
-// Aisle9 logo stills), so given enough time each panel shows every piece.
-const AD_ART = [
-  { type: 'video', src: videoFile('watercolor.mp4') },
-  { type: 'video', src: videoFile('bluejays.mp4') },
-  { type: 'video', src: videoFile('electronMicroscopy.mp4') },
-  { type: 'video', src: videoFile('enlightened.mp4') },
-  { type: 'video', src: videoFile('extinguished.mp4') },
-  { type: 'image', src: imageFile('aisle9/Aisle9Logo-NowHiring.png') },
-  { type: 'image', src: imageFile('aisle9/Aisle9Logo-ApplyNow.png') },
-  { type: 'image', src: imageFile('TagFaded.png') },
-  { type: 'image', src: imageFile('DrippingSquares.png') },
-];
-
-// Per overridable ad face (the InsideBack map is left alone): where it starts in
-// the cycle so the three panels stay out of sync. flipX/flipY correct mirrored
-// atlas UVs (toggle if a face reads backwards or upside-down).
-const AD_FACES = {
-  BusStop_Sign_InsideRight: { startOffset: 0 },
-  BusStop_Sign_OutsideBack: { startOffset: 2 },
-  BusStop_Sign_OutsideRight: { startOffset: 4 },
-};
-
-// QR sticker stamped on the nest eggs — sells the "mass-produced fake" gag. Unlit
-// decal map; sRGB so the black/white code stays crisp.
-const QR_TEXTURE = imageFile(
-  'brettmcgillis-github-io-eyecandy-dumpsterFire-brickWall-qr.png'
-);
+import v3 from './utils/vec';
 
 export default function BirdsArentReal() {
   const config = useSceneControls();
 
-  const qrMap = useTexture(QR_TEXTURE);
-  qrMap.colorSpace = THREE.SRGBColorSpace;
-  qrMap.wrapS = THREE.ClampToEdgeWrapping;
-  qrMap.wrapT = THREE.ClampToEdgeWrapping;
-
-  // Own scene.background in ONE place. Letting drei <Environment background> manage it
-  // AND a conditional <color attach="background"> fight over scene.background races on
-  // toggle (black flash) and leaves the city skybox stuck visible after a few preset
-  // switches. Here Environment only does IBL; this effect sets the background outright.
-  const scene = useThree((s) => s.scene);
-  const cityEnv = useEnvironment({ preset: 'city' });
-  const bgColorRef = useRef(new THREE.Color());
-  useEffect(() => {
-    scene.background = config.envBackground
-      ? cityEnv
-      : bgColorRef.current.set(config.skyColor);
-  }, [scene, cityEnv, config.envBackground, config.skyColor]);
+  // Background is owned in one place (env map vs. flat sky) to avoid a toggle race;
+  // <Environment> below does IBL only.
+  useSceneBackground(config.envBackground, config.skyColor);
 
   const isPov = config.viewMode === 'pov';
   const isCursor = config.viewMode === 'cursor';
 
-  // Live registry of each bird's swept lens group (filled by FakeBird/CameraHead via
-  // lensRef) + the world point the flock stares at in Cursor-Follow mode.
-  const lensNodesRef = useRef(new Map());
-  const cursorTargetRef = useRef(new THREE.Vector3());
-
-  // Stable per-bird lens-register callbacks (keyed by bird key) so attaching a node
-  // doesn't churn every render.
+  // Per-bird lens-node registry (for Bird POV) + the shared cursor-stare point.
   const birdKeys = config.birds.map((b) => b.key).join(',');
-  const lensCallbacks = useMemo(() => {
-    const map = {};
-    birdKeys
-      .split(',')
-      .filter(Boolean)
-      .forEach((key) => {
-        map[key] = (node) => {
-          if (node) lensNodesRef.current.set(key, node);
-          else lensNodesRef.current.delete(key);
-        };
-      });
-    return map;
-  }, [birdKeys]);
+  const { nodesRef, cursorTargetRef, callbacks } = useLensRegistry(birdKeys);
 
-  // CCTV director: auto-cut between birds' feeds on a timer while in Bird POV mode.
-  const [povIndex, setPovIndex] = useState(0);
-  const birdCount = config.birds.length;
-  useEffect(() => {
-    if (!isPov || birdCount === 0) return undefined;
-    const id = window.setInterval(
-      () => setPovIndex((i) => (i + 1) % birdCount),
-      Math.max(config.povShotDuration, 1) * 1000
-    );
-    return () => window.clearInterval(id);
-  }, [isPov, birdCount, config.povShotDuration]);
-
-  const activeBird = birdCount ? config.birds[povIndex % birdCount] : null;
-  const activeKey = activeBird?.key ?? null;
-  const activeCamId = activeBird?.camId ?? 'BIRD 0.0.0.0';
-
-  // Build the ad material for an overridable face, fed by the live "Ads"
-  // controls. `uvRect` (from Busstop) normalizes each face's atlas sub-rect.
-  const renderAd = (name, uvRect) => {
-    const face = AD_FACES[name];
-    if (!face) return null;
-    return (
-      <CRTAdGlitchMaterial
-        artSources={AD_ART}
-        startOffset={face.startOffset}
-        uvOrigin={uvRect.origin}
-        uvSpan={uvRect.span}
-        flipX={face.flipX}
-        flipY={face.flipY}
-        artScale={{ x: config.adArtScaleX, y: config.adArtScaleY }}
-        artOffset={{ x: config.adArtOffsetX, y: config.adArtOffsetY }}
-        artBg={config.adArtBg}
-        textTile={config.adGlitchTile}
-        textWidth={config.adGlitchWidth}
-        textHeight={config.adGlitchHeight}
-        artMinDur={config.adGlitchMinGap}
-        artMaxDur={config.adGlitchMaxGap}
-        glitchDuration={config.adGlitchDuration}
-        glitchStutter={config.adGlitchStutter}
-      />
-    );
-  };
+  // CCTV director: auto-cut between birds' feeds while in Bird POV mode.
+  const { activeKey, activeCamId } = usePovDirector({
+    enabled: isPov,
+    birds: config.birds,
+    shotDuration: config.povShotDuration,
+  });
 
   return (
     <>
       {isPov ? (
         <BirdPovRig
-          nodesRef={lensNodesRef}
+          nodesRef={nodesRef}
           activeKey={activeKey}
           fov={config.povFov}
           dolly={config.povDolly}
@@ -170,8 +70,8 @@ export default function BirdsArentReal() {
         args={[config.fogColor, config.fogNear, config.fogFar]}
       />
 
-      {/* City lighting + reflections (IBL only). The visible backdrop is set by the
-          scene.background effect above, not by Environment, to avoid a toggle race. */}
+      {/* City lighting + reflections (IBL only). The visible backdrop is set by
+          useSceneBackground, not by Environment, to avoid a toggle race. */}
       <Environment preset="city" environmentIntensity={config.envIntensity} />
 
       <ambientLight
@@ -216,12 +116,23 @@ export default function BirdsArentReal() {
         <>
           {/* Assembled sidewalk block (4 curb slabs + edges + corners/ramps). */}
           <Sidewalks position={[0, 0, 0]} scale={config.curbScale} />
-          {/* Bus stop shelter on top of the curb slab. */}
+          {/* Bus stop shelter (with glitching ad faces) on top of the curb slab. */}
           <BusStop
             position={v3(config.busStopPos)}
             rotation={[0, config.busStopRotY, 0]}
             scale={config.busStopScale}
-            renderAd={renderAd}
+            artScaleX={config.adArtScaleX}
+            artScaleY={config.adArtScaleY}
+            artOffsetX={config.adArtOffsetX}
+            artOffsetY={config.adArtOffsetY}
+            artBg={config.adArtBg}
+            glitchTile={config.adGlitchTile}
+            glitchWidth={config.adGlitchWidth}
+            glitchHeight={config.adGlitchHeight}
+            glitchMinGap={config.adGlitchMinGap}
+            glitchMaxGap={config.adGlitchMaxGap}
+            glitchDuration={config.adGlitchDuration}
+            glitchStutter={config.adGlitchStutter}
           />
           {/* Park trash can beside the bus stop. */}
           <ParkTrashCan
@@ -235,7 +146,7 @@ export default function BirdsArentReal() {
             rotation={[0, config.manholeRotY, 0]}
             scale={config.manholeScale}
           />
-          {/* Pigeon nest (sticks + 2 eggs) inside the bus shelter. */}
+          {/* Pigeon nest (sticks + 2 QR-stamped fake eggs) inside the bus shelter. */}
           <Nest
             position={v3(config.nestPos)}
             rotation={[0, config.nestRotY, 0]}
@@ -245,11 +156,11 @@ export default function BirdsArentReal() {
             egg1Rot={config.nestEgg1Rot}
             egg2Pos={config.nestEgg2Pos}
             egg2Rot={config.nestEgg2Rot}
-            eggQrMap={config.eggQrShow ? qrMap : undefined}
-            eggQrScale={config.eggQrScale}
-            eggQrU={config.eggQrU}
-            eggQrV={config.eggQrV}
-            eggQrSpin={config.eggQrSpin}
+            qrShow={config.eggQrShow}
+            qrScale={config.eggQrScale}
+            qrU={config.eggQrU}
+            qrV={config.eggQrV}
+            qrSpin={config.eggQrSpin}
           />
           {/* Street litter scattered on the asphalt. */}
           <NewsPaper2
@@ -296,7 +207,7 @@ export default function BirdsArentReal() {
             hidden={isPov && b.key === activeKey}
             aimAtCursor={isCursor && !b.still}
             cursorTargetRef={cursorTargetRef}
-            lensRef={lensCallbacks[b.key]}
+            lensRef={callbacks[b.key]}
           />
         ))}
 

@@ -19,7 +19,7 @@ import {
   resolveSurveillanceFrameBounds,
 } from '../../Aisle9/utils/surveillanceHUD';
 
-const AISLE_LABEL = 'US DEPT. OF BIRDS';
+const AISLE_LABEL = 'DEPT. OF BIRDS';
 
 // Retro CRT character of the surveillance feed. Held as constants (the scene only
 // exposes the high-level knobs below); tweak here to re-flavor the whole feed.

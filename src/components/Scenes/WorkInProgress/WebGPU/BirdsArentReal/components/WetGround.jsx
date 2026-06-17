@@ -130,6 +130,8 @@ const getRipples = Fn(([uvCoord, t]) => {
  */
 export default function WetGround({
   size = 60,
+  segments = 96,
+  visible = true,
   asphaltColor,
   puddleColor,
   puddleScale,
@@ -255,10 +257,23 @@ export default function WetGround({
   ]);
 
   useEffect(() => () => material.dispose(), [material]);
+  // Dispose the planar reflector's render targets when this ground is torn down —
+  // the reflector lazily allocates a RenderTarget per camera and only frees them on
+  // dispose(), so without this they leak (and pile up across camera/view changes).
+  useEffect(() => () => reflection.dispose?.(), [reflection]);
 
+  // `visible` toggles via prop rather than mount/unmount so the reflector is built
+  // once and never churns — recreating it on a preset switch stalls the WebGPU
+  // backend (full extra scene pass + WGSL pipeline rebuild). An invisible mesh isn't
+  // rendered, so the reflector pass goes idle for free.
   return (
-    <mesh rotation-x={-Math.PI / 2} receiveShadow material={material}>
-      <circleGeometry args={[size, size]} />
+    <mesh
+      rotation-x={-Math.PI / 2}
+      receiveShadow
+      material={material}
+      visible={visible}
+    >
+      <circleGeometry args={[size, segments]} />
       <primitive object={reflection.target} />
     </mesh>
   );

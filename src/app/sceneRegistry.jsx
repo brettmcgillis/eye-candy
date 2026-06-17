@@ -597,7 +597,7 @@ function UrbanWildlifeIcon() {
 }
 
 function BirdsArentRealIcon() {
-  return <GiCctvCamera color="#3a4654" size={26} />;
+  return <GiCctvCamera color="#000000" size={26} />;
 }
 
 function OneInTheHandIcon() {
@@ -1362,15 +1362,6 @@ export const EYE_CANDIES = [
     Component: UrbanWildlife,
   },
   {
-    id: 'birdsArentReal',
-    label: "Birds Aren't Real",
-    channel: 'webgpu',
-    area: 'showcase',
-    route: 'birdsArentReal',
-    icon: BirdsArentRealIcon,
-    Component: BirdsArentReal,
-  },
-  {
     id: 'beautysInTheEyeOfTheBeheaded',
     label: "Beauty's In The Eye Of The Beheaded",
     channel: 'webgpu',
@@ -1392,7 +1383,7 @@ export const EYE_CANDIES = [
     id: 'birdsArentReal',
     label: "Birds Aren't Real",
     channel: 'webgpu',
-    area: 'wip',
+    area: 'showcase',
     route: 'birdsArentReal',
     icon: BirdsArentRealIcon,
     Component: BirdsArentReal,

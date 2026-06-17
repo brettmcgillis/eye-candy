@@ -38,5 +38,6 @@ const BIRD_SLOTS = [
 
 export const posKey = (slot) => `${slot.key}Pos`;
 export const rotKey = (slot) => `${slot.key}RotY`;
+export const showKey = (slot) => `${slot.key}Show`;
 
 export default BIRD_SLOTS;

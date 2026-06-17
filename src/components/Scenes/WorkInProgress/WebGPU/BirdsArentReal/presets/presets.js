@@ -4,10 +4,10 @@ const presetData = {
   // View mode + Bird POV / CCTV feed tuning.
   viewMode: 'cursor', // 'orbit' | 'pov' (auto-cycling CCTV) | 'cursor'
   povShotDuration: 4, // seconds each bird's feed holds before cutting to the next
-  povFov: 58,
+  povFov: 100,
   povDolly: 0.05, // push the POV camera out past the lens glass
-  hudOpacity: 0.56,
-  scanlineIntensity: 0.3,
+  hudOpacity: 1,
+  scanlineIntensity: 1,
   vignetteIntensity: 0.3,
   chromaticStrength: 0.0015,
   // Flock — birds are hand-placed (see `birds` below), not scattered.
@@ -33,13 +33,15 @@ const presetData = {
   envBackground: true,
   fogColor: '#bcccdd',
   fogNear: 18,
-  fogFar: 52,
+  fogFar: 107,
   // Wet ground
+  showGround: true,
+  groundSize: 20, // asphalt disc radius — big enough to fade into fog at the horizon
   asphaltColor: '#9a9a9e',
   puddleColor: '#000000',
-  puddleScale: 0.5,
-  puddleAmount: 0.5,
-  texScale: 0.18,
+  puddleScale: 0.3,
+  puddleAmount: 0.48,
+  texScale: 0.1,
   reflectStrength: 0.9,
   reflectTint: '#dbe7f5',
   roughDry: 0.92,
@@ -83,11 +85,23 @@ const presetData = {
   birdCrossbarPos: { x: 6.9, y: 5.48, z: 0 },
   birdCrossbarRotY: 0.9,
   // Fake bird standing by the nest.
-  birdNestPos: { x: 5.4, y: 0.35, z: -1.0 },
+  birdNestPos: { x: 5.9, y: 0.35, z: -1.0 },
   birdNestRotY: 1.2,
   // Busted fake bird on its side (frozen, dead lens, LED still blinks).
   birdFallenPos: { x: 2.0, y: 0.49, z: 3.0 },
   birdFallenRotY: 0,
+  // Per-bird visibility (Flock > Placements > Visible). All on by default; presets
+  // like "Hero Shot" switch most off to isolate a couple of birds.
+  birdTrashRimShow: true,
+  birdManholeShow: true,
+  birdBenchShow: true,
+  birdGroundShow: true,
+  birdRoofFrontAShow: true,
+  birdRoofFrontBShow: true,
+  birdRoofBackShow: true,
+  birdCrossbarShow: true,
+  birdNestShow: true,
+  birdFallenShow: true,
   // Pigeon nest (sticks + 2 eggs) inside the bus shelter.
   nestPos: { x: 6.5, y: 0.35, z: -0.2 },
   nestRotY: 0,
@@ -98,6 +112,14 @@ const presetData = {
   nestEgg1Rot: { x: 0, y: 0.4, z: 2 },
   nestEgg2Pos: { x: 0.09, y: 0.06, z: -0.05 },
   nestEgg2Rot: { x: 1, y: -0.3, z: -5 },
+  // QR sticker projected once onto each egg's +X side via a node material (no UVs on
+  // the model). Shared by both eggs. scale = patch size; U/V slide it along the egg's
+  // Z/Y axes; spin rotates it in-plane.
+  eggQrShow: true,
+  eggQrScale: 0.22,
+  eggQrU: 0.02,
+  eggQrV: 0,
+  eggQrSpin: 0,
   // Street litter scattered on the asphalt.
   newspaper2Pos: { x: 2.5, y: 0.36, z: 2.5 },
   newspaper2RotY: 0.6,
@@ -144,6 +166,62 @@ const PRESETS = {
   'Surveillance State': {
     ...presetData,
     viewMode: 'cursor',
+  },
+  // Instagram hero shot: just the two fake birds that sell the gag — the busted
+  // one on its side and the one by the (now-hidden) sewer cover. Street props and
+  // every other bird are switched off so the camera can be framed cleanly.
+  'Hero Shot': {
+    ...presetData,
+
+    orbitDesktopPosition: {
+      x: 3.6,
+      y: 1.4,
+      z: 6,
+    },
+    orbitDesktopTarget: {
+      x: 0,
+      y: 0.35,
+      z: 0,
+    },
+    orbitDesktopPivot: {
+      x: -0.3,
+      y: 0,
+      z: 0,
+    },
+    orbitDesktopFov: 18,
+    orbitMobilePosition: {
+      x: 3.6,
+      y: 1.4,
+      z: 6,
+    },
+    orbitMobileTarget: {
+      x: 0,
+      y: 0.35,
+      z: 0,
+    },
+    orbitMobilePivot: {
+      x: -0.3,
+      y: 0,
+      z: 0,
+    },
+    orbitMobileFov: 28,
+    viewMode: 'orbit',
+    showStreet: false,
+    showGround: false, // clean isolated birds, no asphalt
+    envBackground: false, // drop the city skybox; flat skyColor backdrop
+    birdTrashRimShow: false,
+    birdBenchShow: false,
+    birdGroundShow: false,
+    birdRoofFrontAShow: false,
+    birdRoofFrontBShow: false,
+    birdRoofBackShow: false,
+    birdCrossbarShow: false,
+    birdNestShow: false,
+    skyColor: '#ffffff',
+    sunColor: '#ffffff',
+    fogColor: '#ffffff',
+    birdManholePos: { x: 1.0, y: 0.35, z: 1.6 },
+    birdManholeRotY: -0.1,
   },
 };
 

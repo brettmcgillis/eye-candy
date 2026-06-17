@@ -9,7 +9,7 @@ import PRESETS, {
 } from '../presets/presets';
 import { BIRD_OPTIONS } from '../utils/birds';
 import CAMERA from '../utils/camera';
-import BIRD_SLOTS, { posKey, rotKey } from '../utils/placements';
+import BIRD_SLOTS, { posKey, rotKey, showKey } from '../utils/placements';
 
 const SCENE_LABEL = 'Birds Arent Real';
 const CAMERA_FOLDER_PATH = `${SCENE_LABEL}.Camera`;
@@ -43,7 +43,12 @@ export default function useSceneControls() {
 
   const p = PRESETS[initialPreset] || PRESETS[DEFAULT_PRESET_KEY];
 
+  // Populated by CameraRig (apiRef) with copyCurrentCameraConfig — this is what makes
+  // the Camera folder's "Copy Current Camera" button appear and work.
+  const cameraApiRef = useRef(null);
+
   const { buildCamera, cameraControls } = useSceneCameraControls({
+    apiRef: cameraApiRef,
     camera: CAMERA,
     cameraFolderPath: CAMERA_FOLDER_PATH,
     controlsSnapshotRef,
@@ -55,6 +60,7 @@ export default function useSceneControls() {
   const birdControls = BIRD_SLOTS.reduce((acc, slot) => {
     acc[slot.label] = folder(
       {
+        [showKey(slot)]: { value: p[showKey(slot)], label: 'Visible' },
         [posKey(slot)]: {
           value: p[posKey(slot)],
           step: 0.05,
@@ -103,44 +109,133 @@ export default function useSceneControls() {
           step: 0.005,
           label: 'POV Dolly',
         },
-        Surveillance: folder(
+      },
+      C
+    ),
+    Camera: folder(cameraControls, C),
+    World: folder(
+      {
+        Lighting: folder(
           {
-            hudOpacity: {
-              value: p.hudOpacity,
+            envIntensity: {
+              value: p.envIntensity,
+              min: 0,
+              max: 3,
+              step: 0.05,
+              label: 'Env Light',
+            },
+            sunColor: { value: p.sunColor, label: 'Sun Color' },
+            sunIntensity: {
+              value: p.sunIntensity,
+              min: 0,
+              max: 6,
+              step: 0.1,
+              label: 'Sun',
+            },
+            ambientColor: { value: p.ambientColor, label: 'Ambient Color' },
+            ambientIntensity: {
+              value: p.ambientIntensity,
+              min: 0,
+              max: 2,
+              step: 0.01,
+              label: 'Ambient',
+            },
+          },
+          C
+        ),
+        'Sky / Backdrop': folder(
+          {
+            envBackground: { value: p.envBackground, label: 'City Backdrop' },
+            skyColor: { value: p.skyColor, label: 'Sky / BG' },
+          },
+          C
+        ),
+        Fog: folder(
+          {
+            fogColor: { value: p.fogColor, label: 'Fog Color' },
+            fogNear: {
+              value: p.fogNear,
+              min: 1,
+              max: 40,
+              step: 0.5,
+              label: 'Fog Near',
+            },
+            fogFar: {
+              value: p.fogFar,
+              min: 10,
+              max: 120,
+              step: 1,
+              label: 'Fog Far',
+            },
+          },
+          C
+        ),
+        Ground: folder(
+          {
+            showGround: { value: p.showGround, label: 'Show Ground' },
+            groundSize: {
+              value: p.groundSize,
+              min: 20,
+              max: 160,
+              step: 5,
+              label: 'Floor Size',
+            },
+            asphaltColor: { value: p.asphaltColor, label: 'Asphalt Tint' },
+            texScale: {
+              value: p.texScale,
+              min: 0.05,
+              max: 1,
+              step: 0.01,
+              label: 'Asphalt Tile',
+            },
+            roughDry: {
+              value: p.roughDry,
               min: 0,
               max: 1,
               step: 0.01,
-              label: 'HUD Opacity',
+              label: 'Roughness Dry',
             },
-            scanlineIntensity: {
-              value: p.scanlineIntensity,
-              min: 0,
-              max: 1,
-              step: 0.01,
-              label: 'Scanlines',
-            },
-            vignetteIntensity: {
-              value: p.vignetteIntensity,
-              min: 0,
-              max: 1,
-              step: 0.01,
-              label: 'Vignette',
-            },
-            chromaticStrength: {
-              value: p.chromaticStrength,
-              min: 0,
-              max: 0.01,
-              step: 0.0005,
-              label: 'Chromatic',
-            },
+            Puddles: folder(
+              {
+                puddleColor: { value: p.puddleColor, label: 'Puddle' },
+                puddleScale: {
+                  value: p.puddleScale,
+                  min: 0.1,
+                  max: 2,
+                  step: 0.05,
+                  label: 'Puddle Scale',
+                },
+                puddleAmount: {
+                  value: p.puddleAmount,
+                  min: 0,
+                  max: 1,
+                  step: 0.01,
+                  label: 'Puddle Amount',
+                },
+                reflectStrength: {
+                  value: p.reflectStrength,
+                  min: 0,
+                  max: 2,
+                  step: 0.05,
+                  label: 'Reflection',
+                },
+                reflectTint: { value: p.reflectTint, label: 'Reflect Tint' },
+                roughWet: {
+                  value: p.roughWet,
+                  min: 0,
+                  max: 1,
+                  step: 0.01,
+                  label: 'Roughness Wet',
+                },
+              },
+              C
+            ),
           },
           C
         ),
       },
       C
     ),
-    Camera: folder(cameraControls, C),
-    Birds: folder(birdControls, C),
     Flock: folder(
       {
         birdType: {
@@ -169,85 +264,36 @@ export default function useSceneControls() {
           label: 'Sweep Speed',
         },
         ledBlink: { value: p.ledBlink, label: 'REC LED' },
-      },
-      C
-    ),
-    'Camera Head': folder(
-      {
-        camScale: {
-          value: p.camScale,
-          min: 0.02,
-          max: 0.6,
-          step: 0.01,
-          label: 'Size',
-        },
-        camOffset: {
-          value: p.camOffset,
-          step: 0.005,
-          label: 'Offset (R/U/F)',
-        },
-        camRot: {
-          value: p.camRot,
-          min: -Math.PI,
-          max: Math.PI,
-          step: 0.05,
-          label: 'Rotation',
-        },
-        ledOffset: {
-          value: p.ledOffset,
-          step: 0.01,
-          label: 'REC LED',
-        },
-      },
-      C
-    ),
-    Ground: folder(
-      {
-        asphaltColor: { value: p.asphaltColor, label: 'Asphalt Tint' },
-        puddleColor: { value: p.puddleColor, label: 'Puddle' },
-        texScale: {
-          value: p.texScale,
-          min: 0.05,
-          max: 1,
-          step: 0.01,
-          label: 'Asphalt Tile',
-        },
-        puddleScale: {
-          value: p.puddleScale,
-          min: 0.1,
-          max: 2,
-          step: 0.05,
-          label: 'Puddle Scale',
-        },
-        puddleAmount: {
-          value: p.puddleAmount,
-          min: 0,
-          max: 1,
-          step: 0.01,
-          label: 'Puddle Amount',
-        },
-        reflectStrength: {
-          value: p.reflectStrength,
-          min: 0,
-          max: 2,
-          step: 0.05,
-          label: 'Reflection',
-        },
-        reflectTint: { value: p.reflectTint, label: 'Reflect Tint' },
-        roughDry: {
-          value: p.roughDry,
-          min: 0,
-          max: 1,
-          step: 0.01,
-          label: 'Roughness Dry',
-        },
-        roughWet: {
-          value: p.roughWet,
-          min: 0,
-          max: 1,
-          step: 0.01,
-          label: 'Roughness Wet',
-        },
+        Placements: folder(birdControls, C),
+        'Camera Head': folder(
+          {
+            camScale: {
+              value: p.camScale,
+              min: 0.02,
+              max: 0.6,
+              step: 0.01,
+              label: 'Size',
+            },
+            camOffset: {
+              value: p.camOffset,
+              step: 0.005,
+              label: 'Offset (R/U/F)',
+            },
+            camRot: {
+              value: p.camRot,
+              min: -Math.PI,
+              max: Math.PI,
+              step: 0.05,
+              label: 'Rotation',
+            },
+            ledOffset: {
+              value: p.ledOffset,
+              step: 0.01,
+              label: 'REC LED',
+            },
+          },
+          C
+        ),
       },
       C
     ),
@@ -365,6 +411,40 @@ export default function useSceneControls() {
               step: 0.05,
               label: 'Egg 2 Rot',
             },
+            'QR Sticker': folder(
+              {
+                eggQrShow: { value: p.eggQrShow, label: 'Show' },
+                eggQrScale: {
+                  value: p.eggQrScale,
+                  min: 0.05,
+                  max: 0.6,
+                  step: 0.005,
+                  label: 'Size',
+                },
+                eggQrU: {
+                  value: p.eggQrU,
+                  min: -0.3,
+                  max: 0.3,
+                  step: 0.005,
+                  label: 'Slide Z',
+                },
+                eggQrV: {
+                  value: p.eggQrV,
+                  min: -0.3,
+                  max: 0.3,
+                  step: 0.005,
+                  label: 'Slide Y',
+                },
+                eggQrSpin: {
+                  value: p.eggQrSpin,
+                  min: -Math.PI,
+                  max: Math.PI,
+                  step: 0.05,
+                  label: 'Spin',
+                },
+              },
+              C
+            ),
           },
           C
         ),
@@ -545,75 +625,68 @@ export default function useSceneControls() {
       },
       C
     ),
-    Lighting: folder(
+    'Post FX': folder(
       {
-        envBackground: { value: p.envBackground, label: 'City Backdrop' },
-        envIntensity: {
-          value: p.envIntensity,
-          min: 0,
-          max: 3,
-          step: 0.05,
-          label: 'Env Light',
-        },
-        skyColor: { value: p.skyColor, label: 'Sky / BG' },
-        sunColor: { value: p.sunColor, label: 'Sun Color' },
-        sunIntensity: {
-          value: p.sunIntensity,
-          min: 0,
-          max: 6,
-          step: 0.1,
-          label: 'Sun',
-        },
-        ambientColor: { value: p.ambientColor, label: 'Ambient Color' },
-        ambientIntensity: {
-          value: p.ambientIntensity,
-          min: 0,
-          max: 2,
-          step: 0.01,
-          label: 'Ambient',
-        },
-        fogColor: { value: p.fogColor, label: 'Fog Color' },
-        fogNear: {
-          value: p.fogNear,
-          min: 1,
-          max: 40,
-          step: 0.5,
-          label: 'Fog Near',
-        },
-        fogFar: {
-          value: p.fogFar,
-          min: 10,
-          max: 90,
-          step: 1,
-          label: 'Fog Far',
-        },
-      },
-      C
-    ),
-    Bloom: folder(
-      {
-        bloomEnabled: { value: p.bloomEnabled, label: 'Enabled' },
-        bloomThreshold: {
-          value: p.bloomThreshold,
-          min: 0,
-          max: 3,
-          step: 0.05,
-          label: 'Threshold',
-        },
-        bloomStrength: {
-          value: p.bloomStrength,
-          min: 0,
-          max: 3,
-          step: 0.05,
-          label: 'Strength',
-        },
-        bloomRadius: {
-          value: p.bloomRadius,
-          min: 0,
-          max: 1.5,
-          step: 0.05,
-          label: 'Radius',
-        },
+        Bloom: folder(
+          {
+            bloomEnabled: { value: p.bloomEnabled, label: 'Enabled' },
+            bloomThreshold: {
+              value: p.bloomThreshold,
+              min: 0,
+              max: 3,
+              step: 0.05,
+              label: 'Threshold',
+            },
+            bloomStrength: {
+              value: p.bloomStrength,
+              min: 0,
+              max: 3,
+              step: 0.05,
+              label: 'Strength',
+            },
+            bloomRadius: {
+              value: p.bloomRadius,
+              min: 0,
+              max: 1.5,
+              step: 0.05,
+              label: 'Radius',
+            },
+          },
+          C
+        ),
+        Surveillance: folder(
+          {
+            hudOpacity: {
+              value: p.hudOpacity,
+              min: 0,
+              max: 1,
+              step: 0.01,
+              label: 'HUD Opacity',
+            },
+            scanlineIntensity: {
+              value: p.scanlineIntensity,
+              min: 0,
+              max: 1,
+              step: 0.01,
+              label: 'Scanlines',
+            },
+            vignetteIntensity: {
+              value: p.vignetteIntensity,
+              min: 0,
+              max: 1,
+              step: 0.01,
+              label: 'Vignette',
+            },
+            chromaticStrength: {
+              value: p.chromaticStrength,
+              min: 0,
+              max: 0.01,
+              step: 0.0005,
+              label: 'Chromatic',
+            },
+          },
+          C
+        ),
       },
       C
     ),
@@ -646,6 +719,7 @@ export default function useSceneControls() {
       phase: (i * 1.7) % (Math.PI * 2),
       animate: slot.animate, // undefined => use the global Animate toggle
       still: slot.still || false, // true => no camera-head sweep
+      show: controls[showKey(slot)] !== false, // per-bird visibility toggle
     };
   });
 
@@ -668,5 +742,5 @@ export default function useSceneControls() {
     cameraRef.current = builtCamera;
   }
 
-  return { ...controls, birds, camera: cameraRef.current };
+  return { ...controls, birds, camera: cameraRef.current, cameraApiRef };
 }

@@ -2,7 +2,8 @@ import * as THREE from 'three';
 
 import React, { useEffect, useMemo, useRef, useState } from 'react';
 
-import { Environment } from '@react-three/drei';
+import { Environment, useEnvironment, useTexture } from '@react-three/drei';
+import { useThree } from '@react-three/fiber';
 
 import { imageFile, videoFile } from '../../../../../utils/appUtils';
 import BusStop from '../../../../elements/Busstop/Busstop';
@@ -34,6 +35,8 @@ const AD_ART = [
   { type: 'video', src: videoFile('extinguished.mp4') },
   { type: 'image', src: imageFile('aisle9/Aisle9Logo-NowHiring.png') },
   { type: 'image', src: imageFile('aisle9/Aisle9Logo-ApplyNow.png') },
+  { type: 'image', src: imageFile('TagFaded.png') },
+  { type: 'image', src: imageFile('DrippingSquares.png') },
 ];
 
 // Per overridable ad face (the InsideBack map is left alone): where it starts in
@@ -45,8 +48,32 @@ const AD_FACES = {
   BusStop_Sign_OutsideRight: { startOffset: 4 },
 };
 
+// QR sticker stamped on the nest eggs — sells the "mass-produced fake" gag. Unlit
+// decal map; sRGB so the black/white code stays crisp.
+const QR_TEXTURE = imageFile(
+  'brettmcgillis-github-io-eyecandy-dumpsterFire-brickWall-qr.png'
+);
+
 export default function BirdsArentReal() {
   const config = useSceneControls();
+
+  const qrMap = useTexture(QR_TEXTURE);
+  qrMap.colorSpace = THREE.SRGBColorSpace;
+  qrMap.wrapS = THREE.ClampToEdgeWrapping;
+  qrMap.wrapT = THREE.ClampToEdgeWrapping;
+
+  // Own scene.background in ONE place. Letting drei <Environment background> manage it
+  // AND a conditional <color attach="background"> fight over scene.background races on
+  // toggle (black flash) and leaves the city skybox stuck visible after a few preset
+  // switches. Here Environment only does IBL; this effect sets the background outright.
+  const scene = useThree((s) => s.scene);
+  const cityEnv = useEnvironment({ preset: 'city' });
+  const bgColorRef = useRef(new THREE.Color());
+  useEffect(() => {
+    scene.background = config.envBackground
+      ? cityEnv
+      : bgColorRef.current.set(config.skyColor);
+  }, [scene, cityEnv, config.envBackground, config.skyColor]);
 
   const isPov = config.viewMode === 'pov';
   const isCursor = config.viewMode === 'cursor';
@@ -126,26 +153,26 @@ export default function BirdsArentReal() {
           dolly={config.povDolly}
         />
       ) : (
-        <CameraRig camera={config.camera} />
+        // Key on the active preset so the rig remounts and OrbitControls re-syncs to
+        // the preset's orbit frame. Without this, OrbitControls (makeDefault) already
+        // owns the camera on first apply and the new frame doesn't take until "reset".
+        // Stable during mouse-orbit/slider tuning (preset unchanged) so no churn.
+        <CameraRig
+          key={config.preset}
+          camera={config.camera}
+          apiRef={config.cameraApiRef}
+        />
       )}
       <CursorTracker enabled={isCursor} targetRef={cursorTargetRef} />
 
-      {/* When the city backdrop is on, Environment owns scene.background; otherwise
-          fall back to a flat sky color. (A <color> here would clobber the skybox.) */}
-      {!config.envBackground && (
-        <color attach="background" args={[config.skyColor]} />
-      )}
       <fog
         attach="fog"
         args={[config.fogColor, config.fogNear, config.fogFar]}
       />
 
-      {/* City lighting + reflections (and, optionally, the city skybox). */}
-      <Environment
-        preset="city"
-        environmentIntensity={config.envIntensity}
-        background={config.envBackground}
-      />
+      {/* City lighting + reflections (IBL only). The visible backdrop is set by the
+          scene.background effect above, not by Environment, to avoid a toggle race. */}
+      <Environment preset="city" environmentIntensity={config.envIntensity} />
 
       <ambientLight
         intensity={config.ambientIntensity}
@@ -166,7 +193,11 @@ export default function BirdsArentReal() {
         shadow-camera-bottom={-18}
       />
 
+      {/* Always mounted; visibility toggled by prop. Mounting/unmounting the planar
+          reflector on a preset switch stalls the WebGPU backend, so don't. */}
       <WetGround
+        visible={config.showGround}
+        size={config.groundSize}
         asphaltColor={config.asphaltColor}
         puddleColor={config.puddleColor}
         puddleScale={config.puddleScale}
@@ -214,6 +245,11 @@ export default function BirdsArentReal() {
             egg1Rot={config.nestEgg1Rot}
             egg2Pos={config.nestEgg2Pos}
             egg2Rot={config.nestEgg2Rot}
+            eggQrMap={config.eggQrShow ? qrMap : undefined}
+            eggQrScale={config.eggQrScale}
+            eggQrU={config.eggQrU}
+            eggQrV={config.eggQrV}
+            eggQrSpin={config.eggQrSpin}
           />
           {/* Street litter scattered on the asphalt. */}
           <NewsPaper2
@@ -239,28 +275,30 @@ export default function BirdsArentReal() {
         </>
       )}
 
-      {config.birds.map((b) => (
-        <FakeBird
-          key={b.key}
-          species={config.birdType}
-          behavior={config.behavior}
-          animate={b.animate ?? config.animate}
-          position={b.position}
-          rotation={b.rotation}
-          phase={b.phase}
-          sweepRange={b.still ? 0 : config.sweepRange}
-          sweepSpeed={b.still ? 0 : config.sweepSpeed}
-          ledBlink={config.ledBlink}
-          camScale={config.camScale}
-          camRot={config.camRot}
-          camOffset={config.camOffset}
-          ledOffset={config.ledOffset}
-          hidden={isPov && b.key === activeKey}
-          aimAtCursor={isCursor}
-          cursorTargetRef={cursorTargetRef}
-          lensRef={lensCallbacks[b.key]}
-        />
-      ))}
+      {config.birds
+        .filter((b) => b.show)
+        .map((b) => (
+          <FakeBird
+            key={b.key}
+            species={config.birdType}
+            behavior={config.behavior}
+            animate={b.animate ?? config.animate}
+            position={b.position}
+            rotation={b.rotation}
+            phase={b.phase}
+            sweepRange={b.still ? 0 : config.sweepRange}
+            sweepSpeed={b.still ? 0 : config.sweepSpeed}
+            ledBlink={config.ledBlink}
+            camScale={config.camScale}
+            camRot={config.camRot}
+            camOffset={config.camOffset}
+            ledOffset={config.ledOffset}
+            hidden={isPov && b.key === activeKey}
+            aimAtCursor={isCursor && !b.still}
+            cursorTargetRef={cursorTargetRef}
+            lensRef={lensCallbacks[b.key]}
+          />
+        ))}
 
       <SurveillancePost
         bloomEnabled={config.bloomEnabled}

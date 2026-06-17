@@ -9,6 +9,7 @@ export default function WebGPUCanvas({ children }) {
     <Canvas
       dpr={[1, 1.5]}
       shadows="soft"
+      style={{ touchAction: 'none' }}
       gl={async (props) => {
         const renderer = new THREE.WebGPURenderer({
           ...props,

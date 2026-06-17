@@ -9,6 +9,7 @@ export default function WebGLCanvas({ children }) {
     <Canvas
       dpr={[1, 1.5]}
       shadows
+      style={{ touchAction: 'none' }}
       gl={{
         antialias: false,
         preserveDrawingBuffer: true,

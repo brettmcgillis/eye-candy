@@ -1,3 +1,6 @@
+/* eslint-disable no-param-reassign */
+
+/* eslint-disable no-underscore-dangle */
 import * as THREE from 'three';
 import { SkeletonUtils } from 'three-stdlib';
 
@@ -116,7 +119,7 @@ export default function FakeBird({
 
   const canWander = behavior === 'wander' && meta.locomotion && meta.clips.walk;
   const headScale = camScale ?? meta.cam.scale;
-  const orientJoints = meta.cam.orientJoints;
+  const { orientJoints } = meta.cam;
 
   // A group we own, parented under the head bone; CameraHead is portaled into it.
   const headMount = useMemo(() => new THREE.Group(), []);
@@ -264,7 +267,7 @@ export default function FakeBird({
       // Write the smoothed world transform onto OUR headMount group (a child of the
       // head bone) — NEVER the bone itself, or we'd deform the rig. Convert world ->
       // headMount-local via its parent (the head bone).
-      const parent = headMount.parent;
+      const { parent } = headMount;
       if (parent) {
         headMount.position.copy(parent.worldToLocal(_P.copy(s.wp)));
         parent.getWorldQuaternion(_qBone);

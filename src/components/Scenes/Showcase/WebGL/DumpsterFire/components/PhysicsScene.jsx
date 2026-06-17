@@ -7,8 +7,6 @@ import {
   DECOR_RUG_COLLIDER_POSITION,
   DYNAMIC_SCENE_ITEMS,
   FIXED_SCENE_ITEMS,
-  FLOOR_COLLIDER_HALF_EXTENTS,
-  FLOOR_COLLIDER_POSITION,
   GROUND_Y,
   SCENE_ROOT_POSITION,
   SIDEWALK_TILE_SIZE,
@@ -116,15 +114,8 @@ const PhysicsScene = React.memo(function PhysicsScene({
 
   return (
     <Physics timeStep={1 / 60} interpolate debug={debug}>
-      <RigidBody type="fixed" colliders={false}>
-        <CuboidCollider
-          args={FLOOR_COLLIDER_HALF_EXTENTS}
-          position={FLOOR_COLLIDER_POSITION}
-          friction={1.4}
-          restitution={0.05}
-          onCollisionEnter={onTrashCollision}
-        />
-        {sidewalkCollider && (
+      {sidewalkCollider && (
+        <RigidBody type="fixed" colliders={false}>
           <CuboidCollider
             args={sidewalkCollider.halfExtents}
             position={sidewalkCollider.position}
@@ -132,8 +123,8 @@ const PhysicsScene = React.memo(function PhysicsScene({
             restitution={0.05}
             onCollisionEnter={onTrashCollision}
           />
-        )}
-      </RigidBody>
+        </RigidBody>
+      )}
 
       <RigidBody
         type="fixed"

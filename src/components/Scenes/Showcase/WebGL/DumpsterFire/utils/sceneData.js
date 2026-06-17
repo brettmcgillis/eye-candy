@@ -208,16 +208,8 @@ export const CAMERA = {
 
 export const BACKGROUND = '#e8e8e8';
 export const FOG_RANGE = [18, 34];
-export const GROUND = {
-  color: '#efefef',
-  size: [30, 18],
-};
-export const GRID = {
-  args: [30, 15, '#cdcdcd', '#d9d9d9'],
-};
 export const SIDEWALK_GROUND = Object.freeze({
   enabled: true,
-  showGrid: false,
   length: 30,
   rows: 2,
   rotationDeg: 0,

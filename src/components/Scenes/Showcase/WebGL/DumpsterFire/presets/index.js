@@ -4,8 +4,6 @@ import {
   CAMERA,
   DEFAULT_SHOT_TUNING_MODE,
   FOG_RANGE,
-  GRID,
-  GROUND,
   SHOT_TUNING_PRESETS,
   SIDEWALK_GROUND,
 } from '../utils/sceneData';
@@ -34,8 +32,6 @@ export const DEFAULT_FIRE_LIGHT_RIG = Object.freeze({
 
 const DEFAULT_SCENE_ENVIRONMENT = Object.freeze({
   sceneBackgroundColor: BACKGROUND,
-  sceneFloorColor: GROUND.color,
-  sceneGridColor: GRID.args[3],
   sceneFogColor: BACKGROUND,
   sceneFogNear: FOG_RANGE[0],
   sceneFogFar: FOG_RANGE[1],
@@ -61,7 +57,6 @@ const DEFAULT_PHYSICS_CONTROLS = Object.freeze({
 
 const DEFAULT_GROUND_CONTROLS = Object.freeze({
   sidewalkGroundEnabled: SIDEWALK_GROUND.enabled,
-  showGrid: SIDEWALK_GROUND.showGrid,
   sidewalkLength: SIDEWALK_GROUND.length,
   sidewalkRows: SIDEWALK_GROUND.rows,
   sidewalkRotationDeg: SIDEWALK_GROUND.rotationDeg,
@@ -159,8 +154,6 @@ export const PRESETS = {
     shotSpinX: brickWallShotTuning.spinX,
     shotSpinY: brickWallShotTuning.spinY,
     shotSpinZ: brickWallShotTuning.spinZ,
-    sceneFloorColor: '#dfd8d0',
-    sceneGridColor: '#c8bcb1',
     sceneFogColor: '#ddd2c8',
   },
   'Default Repeller': {
@@ -170,8 +163,6 @@ export const PRESETS = {
   'Dark Mode': {
     ...DEFAULT_PRESET_SNAPSHOT,
     sceneBackgroundColor: '#0c1014',
-    sceneFloorColor: '#1a2027',
-    sceneGridColor: '#323a43',
     sceneFogColor: '#10161d',
     particleSmokeColorOverrides: [DARK_MODE_PARTICLE_COLORS.particleColor],
     particleSmokeVolumeColorOverrides: [DARK_MODE_PARTICLE_COLORS.volColor],
@@ -180,8 +171,6 @@ export const PRESETS = {
     ...DEFAULT_PRESET_SNAPSHOT,
     cursorAttractorMode: 'repeller',
     sceneBackgroundColor: '#0c1014',
-    sceneFloorColor: '#1a2027',
-    sceneGridColor: '#323a43',
     sceneFogColor: '#10161d',
     particleSmokeColorOverrides: [DARK_MODE_PARTICLE_COLORS.particleColor],
     particleSmokeVolumeColorOverrides: [DARK_MODE_PARTICLE_COLORS.volColor],

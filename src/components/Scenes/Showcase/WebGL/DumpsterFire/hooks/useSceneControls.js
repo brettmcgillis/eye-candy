@@ -370,14 +370,6 @@ export default function useSceneControls() {
             label: 'Background',
             value: initialPresetSnapshot.sceneBackgroundColor,
           },
-          sceneFloorColor: {
-            label: 'Floor',
-            value: initialPresetSnapshot.sceneFloorColor,
-          },
-          sceneGridColor: {
-            label: 'Grid Lines',
-            value: initialPresetSnapshot.sceneGridColor,
-          },
           sceneFogColor: {
             label: 'Fog',
             value: initialPresetSnapshot.sceneFogColor,
@@ -404,10 +396,6 @@ export default function useSceneControls() {
           sidewalkGroundEnabled: {
             label: 'Sidewalk',
             value: initialPresetSnapshot.sidewalkGroundEnabled,
-          },
-          showGrid: {
-            label: 'Grid',
-            value: initialPresetSnapshot.showGrid,
           },
           sidewalkLength: {
             label: 'Length',
@@ -866,13 +854,10 @@ ${allEntries}
     dumpsterLeftLidRotation,
     dumpsterRightLidRotation,
     sceneBackgroundColor,
-    sceneFloorColor,
-    sceneGridColor,
     sceneFogColor,
     sceneFogNear,
     sceneFogFar,
     sidewalkGroundEnabled,
-    showGrid,
     sidewalkLength,
     sidewalkRows,
     sidewalkRotationDeg,
@@ -965,12 +950,9 @@ ${allEntries}
     cursorAttractorRadius,
     sceneEnvironment: {
       backgroundColor: sceneBackgroundColor,
-      floorColor: sceneFloorColor,
-      gridColor: sceneGridColor,
       fogColor: sceneFogColor,
       fogNear: sceneFogNear,
       fogFar: sceneFogFar,
-      showGrid,
     },
     sidewalkGroundConfig: {
       enabled: sidewalkGroundEnabled,

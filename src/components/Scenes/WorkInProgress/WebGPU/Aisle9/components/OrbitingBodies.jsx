@@ -3,6 +3,7 @@ import React, { memo, useMemo, useRef } from 'react';
 import { useFrame } from '@react-three/fiber';
 
 import BigGulp from '../../../../../elements/BigGulp/BigGulp';
+import { Catfood } from '../../../../../elements/Catfood/Catfood';
 import DoubleGulp from '../../../../../elements/DoubleGulp/DoubleGulp';
 import LaysChips from '../../../../../elements/LaysChips/LaysChips';
 import { Snickers } from '../../../../../elements/Snickers/Snickers';
@@ -14,7 +15,7 @@ const STORE_BODIES = [
     Component: SodaCan,
     instancesKey: 'body1Instances',
     phase: 0,
-    radiusTier: 0.70,
+    radiusTier: 0.7,
     scale: 0.02,
     scaleKey: 'body1Scale',
     spin: [0.5, 1.4, 0.3],
@@ -32,7 +33,7 @@ const STORE_BODIES = [
     Component: Snickers,
     instancesKey: 'body3Instances',
     phase: 4.2,
-    radiusTier: 1.00,
+    radiusTier: 1.0,
     scale: 0.035,
     scaleKey: 'body3Scale',
     spin: [1.2, 0.5, 0.8],
@@ -50,10 +51,19 @@ const STORE_BODIES = [
     Component: LaysChips,
     instancesKey: 'body5Instances',
     phase: 3.15,
-    radiusTier: 1.30,
+    radiusTier: 1.3,
     scale: 0.3,
     scaleKey: 'body5Scale',
     spin: [0.8, 0.4, 1.0],
+  },
+  {
+    Component: Catfood,
+    instancesKey: 'body6Instances',
+    phase: 5.25,
+    radiusTier: 1.45,
+    scale: 0.04,
+    scaleKey: 'body6Scale',
+    spin: [0.9, 0.6, 1.1],
   },
 ];
 
@@ -71,7 +81,8 @@ const OrbitingBody = memo(function OrbitingBody({ body, center, orbitProps }) {
   const { metricWorldScale, bodyOrbitRadius, bodyOrbitHeight, bodyOrbitSpeed } =
     orbitProps;
   const bodyScale = orbitProps[body.scaleKey] ?? 1;
-  const orbitRadius = bodyOrbitRadius * body.radiusTier * body.radiusJitter * metricWorldScale;
+  const orbitRadius =
+    bodyOrbitRadius * body.radiusTier * body.radiusJitter * metricWorldScale;
   const orbitHeight = bodyOrbitHeight * metricWorldScale;
   const verticalDrift = 0.05 * metricWorldScale;
 
@@ -121,6 +132,8 @@ const OrbitingBodies = memo(function OrbitingBodies({
   body4Instances,
   body5Scale,
   body5Instances,
+  body6Scale,
+  body6Instances,
 }) {
   const center = useMemo(
     () => vectorFromObject(blackHolePosition),
@@ -138,6 +151,7 @@ const OrbitingBodies = memo(function OrbitingBodies({
       body3Scale,
       body4Scale,
       body5Scale,
+      body6Scale,
     }),
     [
       metricWorldScale,
@@ -149,6 +163,7 @@ const OrbitingBodies = memo(function OrbitingBodies({
       body3Scale,
       body4Scale,
       body5Scale,
+      body6Scale,
     ]
   );
 
@@ -160,6 +175,7 @@ const OrbitingBodies = memo(function OrbitingBodies({
       body3Instances,
       body4Instances,
       body5Instances,
+      body6Instances,
     };
 
     return STORE_BODIES.flatMap((body, bodyIndex) => {
@@ -201,6 +217,7 @@ const OrbitingBodies = memo(function OrbitingBodies({
     body3Instances,
     body4Instances,
     body5Instances,
+    body6Instances,
   ]);
 
   return instanceConfigs.map((body) => (

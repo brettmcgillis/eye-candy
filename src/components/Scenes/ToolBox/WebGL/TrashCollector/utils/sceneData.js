@@ -64,6 +64,7 @@ const EXPECTED_GRID_ASSET_SIZE_METERS = {
   'starbucks-cup': 0.17,
   'happy-meal': 0.16,
   'mc-cup': 0.14,
+  catfood: 0.2,
   'soda-can': 0.13,
   'cigarette-butts': 0.12,
   snickers: 0.11,
@@ -78,7 +79,11 @@ function collectUniqueGridAssets(...assetGroups) {
   const seenKeys = new Set();
 
   return assetGroups.flat().filter((asset) => {
-    if (asset.key === 'dumpster' || asset.key === 'persian-rug' || seenKeys.has(asset.key)) {
+    if (
+      asset.key === 'dumpster' ||
+      asset.key === 'persian-rug' ||
+      seenKeys.has(asset.key)
+    ) {
       return false;
     }
 

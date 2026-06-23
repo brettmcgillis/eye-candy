@@ -127,6 +127,8 @@ const CONTROL_KEYS = [
   'body4Instances',
   'body5Scale',
   'body5Instances',
+  'body6Scale',
+  'body6Instances',
   'bloomEnabled',
   'bloomStrength',
   'bloomRadius',
@@ -256,6 +258,8 @@ const BASE_BODIES = {
   body4Instances: 1,
   body5Scale: 1,
   body5Instances: 1,
+  body6Scale: 1,
+  body6Instances: 1,
 };
 
 const BASE_POST = {
@@ -439,6 +443,7 @@ const BODIES_MORE = {
   body3Instances: 3,
   body4Instances: 2,
   body5Instances: 2,
+  body6Instances: 2,
   bodyOrbitSpeed: 0.32,
   bodyOrbitRadius: 0.9,
 };
@@ -450,6 +455,7 @@ const BODIES_MOST = {
   body3Instances: 5,
   body4Instances: 4,
   body5Instances: 4,
+  body6Instances: 4,
   bodyOrbitSpeed: 0.42,
   bodyOrbitRadius: 1.1,
 };

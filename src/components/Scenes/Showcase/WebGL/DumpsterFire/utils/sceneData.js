@@ -1,4 +1,9 @@
 import { radians } from '../../../../../../utils/math';
+import {
+  Catfood,
+  CatfoodInstance,
+  CatfoodInstances,
+} from '../../../../../elements/Catfood/Catfood';
 import PersianRug from '../../../../../elements/PersianRug/PersianRug';
 import {
   Snickers,
@@ -329,6 +334,7 @@ const EXPECTED_GRID_ASSET_SIZE_METERS = {
   'starbucks-cup': 0.17,
   'happy-meal': 0.16,
   'mc-cup': 0.14,
+  catfood: 0.2,
   'soda-can': 0.13,
   'cigarette-butts': 0.12,
   snickers: 0.11,
@@ -530,6 +536,14 @@ const TRASH_ASSET_CONFIGS = {
     mass: 0.18,
     colliders: 'hull',
   },
+  catfood: {
+    Component: Catfood,
+    InstanceComponent: CatfoodInstance,
+    InstancesComponent: CatfoodInstances,
+    scale: 0.06,
+    mass: 0.3,
+    colliders: 'hull',
+  },
 };
 
 function createTrashAsset(key, overrides = {}) {
@@ -571,6 +585,7 @@ export const SHOT_ASSET_OPTIONS = [
   createTrashAsset('mc-cup'),
   createTrashAsset('soda-can'),
   createTrashAsset('snickers'),
+  createTrashAsset('catfood'),
 ];
 
 export function getRandomShotAsset(random = Math.random) {
@@ -948,6 +963,16 @@ export const DYNAMIC_SCENE_ITEMS = [
     id: 'front-bucket',
     position: [0.95, 0.4, 2.35],
     rotation: [0, -Math.PI / 8, 0],
+  }),
+  createTrashAsset('catfood', {
+    id: 'front-left-catfood',
+    position: [-1.7, 0.04, 2.45],
+    rotation: [0, Math.PI / 5, 0],
+  }),
+  createTrashAsset('catfood', {
+    id: 'right-side-catfood',
+    position: [-4.75, 0.04, 1.2],
+    rotation: [0, -Math.PI / 6, 0],
   }),
 ];
 

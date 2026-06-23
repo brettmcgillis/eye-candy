@@ -200,6 +200,7 @@ export const DUMPSTER_FIRE_COLLISION_AUDIO_BY_ASSET = {
   'happy-meal': 'lightTrash',
   'mc-cup': 'lightTrash',
   'soda-can': 'emptyCan',
+  catfood: 'emptyCan',
   snickers: 'plasticWrapper',
 };
 
@@ -242,7 +243,7 @@ export function getTrashCollisionAudioGroupKey(assetKey) {
     return 'plasticDrop';
   }
 
-  if (assetKey === 'soda-can') {
+  if (assetKey === 'soda-can' || assetKey === 'catfood') {
     return 'emptyCan';
   }
 

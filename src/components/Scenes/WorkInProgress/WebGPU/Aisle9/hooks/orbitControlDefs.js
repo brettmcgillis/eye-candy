@@ -72,7 +72,7 @@ export default function buildOrbitControls(snapshot) {
       },
       COLLAPSED
     ),
-    'Snickers': folder(
+    Snickers: folder(
       {
         body3Scale: {
           label: 'Scale',
@@ -122,6 +122,25 @@ export default function buildOrbitControls(snapshot) {
         body5Instances: {
           label: 'Instances',
           value: snapshot.body5Instances ?? 1,
+          min: 0,
+          max: 12,
+          step: 1,
+        },
+      },
+      COLLAPSED
+    ),
+    'Cat Food': folder(
+      {
+        body6Scale: {
+          label: 'Scale',
+          value: snapshot.body6Scale ?? 1,
+          min: 0,
+          max: 4,
+          step: 0.01,
+        },
+        body6Instances: {
+          label: 'Instances',
+          value: snapshot.body6Instances ?? 1,
           min: 0,
           max: 12,
           step: 1,

@@ -21,6 +21,12 @@ export const DEFAULT_PRESET_VALUES = {
   basePosition: [0, 0, 0],
   middlePosition: [0.1, -0.05, 0],
   outerPosition: [0.2, -0.1, 0],
+  baseVisible: true,
+  middleVisible: true,
+  outerVisible: true,
+  baseMaterial: 'clean',
+  middleMaterial: 'oil',
+  outerMaterial: 'blood',
   middleSpread: 30,
   outerSpread: 60,
   middleYaw: 0,
@@ -59,6 +65,21 @@ export const DEFAULT_PRESET_VALUES = {
   bloodMetalness: 0.58,
   bloodRoughness: 0.16,
 
+  bloodFadeBaseColor: '#000000',
+  bloodFadeAccentColor: '#ff0000',
+  bloodFadeAmount: -0.16,
+  bloodFadeScale: 5.4,
+  bloodFadeIterations: 7,
+  bloodFadeNoise: 0.5,
+  bloodFadeNoiseScale: 0.84,
+  bloodFadeSeed: 13,
+  bloodFadeMetalness: 0.44,
+  bloodFadeRoughness: 0.2,
+  bloodFadeTipColor: '#000000',
+  bloodFadeWristColor: '#a70000',
+  bloodFadeGradientStart: 0.04,
+  bloodFadeGradientEnd: 0.78,
+
   godraysEnabled: true,
   godraysBlendColor: '#b89d94',
   godraysDensity: 1.5,
@@ -74,8 +95,26 @@ export const DEFAULT_PRESET_VALUES = {
   bloomRadius: 0.45,
 };
 
+const ONE_PRAYER_PRESET_VALUES = {
+  ...DEFAULT_PRESET_VALUES,
+  middleVisible: false,
+  outerVisible: false,
+};
+
+const TWO_PRAYERS_PRESET_VALUES = {
+  ...DEFAULT_PRESET_VALUES,
+  outerVisible: false,
+};
+
+const THREE_PRAYERS_PRESET_VALUES = {
+  ...DEFAULT_PRESET_VALUES,
+};
+
 const PRESETS = {
   [DEFAULT_PRESET]: DEFAULT_PRESET_VALUES,
+  'One prayer': ONE_PRAYER_PRESET_VALUES,
+  'Two prayers': TWO_PRAYERS_PRESET_VALUES,
+  'Three prayers': THREE_PRAYERS_PRESET_VALUES,
 };
 
 export default PRESETS;

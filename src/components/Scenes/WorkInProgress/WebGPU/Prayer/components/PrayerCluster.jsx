@@ -3,6 +3,10 @@ import React, { memo, useEffect, useMemo } from 'react';
 import createHandsMaterial from '../utils/createHandsMaterial';
 import HandsPair from './HandsPair';
 
+function resolveMaterial(selection, materials) {
+  return materials[selection] || materials.clean;
+}
+
 function PrayerCluster({ config }) {
   const cleanMaterial = useMemo(() => {
     return createHandsMaterial({
@@ -82,40 +86,90 @@ function PrayerCluster({ config }) {
     config.bloodRoughness,
   ]);
 
+  const bloodFadeMaterial = useMemo(() => {
+    return createHandsMaterial({
+      baseColor: config.bloodFadeBaseColor,
+      accentColor: config.bloodFadeAccentColor,
+      amount: config.bloodFadeAmount,
+      scale: config.bloodFadeScale,
+      iterations: config.bloodFadeIterations,
+      noise: config.bloodFadeNoise,
+      noiseScale: config.bloodFadeNoiseScale,
+      seed: config.bloodFadeSeed,
+      metalness: config.bloodFadeMetalness,
+      roughness: config.bloodFadeRoughness,
+      gradientTipColor: config.bloodFadeTipColor,
+      gradientWristColor: config.bloodFadeWristColor,
+      gradientStart: config.bloodFadeGradientStart,
+      gradientEnd: config.bloodFadeGradientEnd,
+    });
+  }, [
+    config.bloodFadeAccentColor,
+    config.bloodFadeAmount,
+    config.bloodFadeBaseColor,
+    config.bloodFadeGradientEnd,
+    config.bloodFadeGradientStart,
+    config.bloodFadeIterations,
+    config.bloodFadeMetalness,
+    config.bloodFadeNoise,
+    config.bloodFadeNoiseScale,
+    config.bloodFadeRoughness,
+    config.bloodFadeScale,
+    config.bloodFadeSeed,
+    config.bloodFadeTipColor,
+    config.bloodFadeWristColor,
+  ]);
+
   useEffect(() => {
     return () => {
       cleanMaterial.dispose();
       oilMaterial.dispose();
       bloodMaterial.dispose();
+      bloodFadeMaterial.dispose();
     };
-  }, [cleanMaterial, oilMaterial, bloodMaterial]);
+  }, [bloodFadeMaterial, bloodMaterial, cleanMaterial, oilMaterial]);
+
+  const materials = useMemo(() => {
+    return {
+      clean: cleanMaterial,
+      oil: oilMaterial,
+      blood: bloodMaterial,
+      bloodFade: bloodFadeMaterial,
+    };
+  }, [bloodFadeMaterial, bloodMaterial, cleanMaterial, oilMaterial]);
 
   return (
     <group>
-      <HandsPair
-        material={cleanMaterial}
-        scale={config.baseScale}
-        spread={0}
-        position={config.basePosition}
-      />
+      {config.baseVisible && (
+        <HandsPair
+          material={resolveMaterial(config.baseMaterial, materials)}
+          scale={config.baseScale}
+          spread={0}
+          position={config.basePosition}
+        />
+      )}
 
-      <HandsPair
-        material={oilMaterial}
-        scale={config.middleScale}
-        spread={config.middleSpread}
-        spreadAxis="z"
-        position={config.middlePosition}
-        rotation={[0, config.middleYaw, 0]}
-      />
+      {config.middleVisible && (
+        <HandsPair
+          material={resolveMaterial(config.middleMaterial, materials)}
+          scale={config.middleScale}
+          spread={config.middleSpread}
+          spreadAxis="z"
+          position={config.middlePosition}
+          rotation={[0, config.middleYaw, 0]}
+        />
+      )}
 
-      <HandsPair
-        material={bloodMaterial}
-        scale={config.outerScale}
-        spread={config.outerSpread}
-        spreadAxis="z"
-        position={config.outerPosition}
-        rotation={[0, config.outerYaw, 0]}
-      />
+      {config.outerVisible && (
+        <HandsPair
+          material={resolveMaterial(config.outerMaterial, materials)}
+          scale={config.outerScale}
+          spread={config.outerSpread}
+          spreadAxis="z"
+          position={config.outerPosition}
+          rotation={[0, config.outerYaw, 0]}
+        />
+      )}
     </group>
   );
 }

@@ -11,6 +11,12 @@ import PRESETS, {
 
 const SCENE_LABEL = 'Prayer';
 const CAMERA_FOLDER_PATH = `${SCENE_LABEL}.Camera`;
+const HANDS_MATERIAL_OPTIONS = {
+  Clean: 'clean',
+  Oil: 'oil',
+  Blood: 'blood',
+  'Black Blood': 'bloodFade',
+};
 
 const CAMERA = {
   defaultMode: 'orbit',
@@ -48,6 +54,10 @@ function getPresetControls({ presetSnapshot }) {
 }
 
 function materialFolder(prefix, label, p) {
+  const hasGradientControls =
+    Object.prototype.hasOwnProperty.call(p, `${prefix}TipColor`) &&
+    Object.prototype.hasOwnProperty.call(p, `${prefix}WristColor`);
+
   return folder(
     {
       [`${prefix}BaseColor`]: { label: 'Base', value: p[`${prefix}BaseColor`] },
@@ -111,6 +121,32 @@ function materialFolder(prefix, label, p) {
         max: 1,
         step: 0.01,
       },
+      ...(hasGradientControls
+        ? {
+            [`${prefix}TipColor`]: {
+              label: 'Tip Color',
+              value: p[`${prefix}TipColor`],
+            },
+            [`${prefix}WristColor`]: {
+              label: 'Wrist Color',
+              value: p[`${prefix}WristColor`],
+            },
+            [`${prefix}GradientStart`]: {
+              label: 'Fade Start',
+              value: p[`${prefix}GradientStart`],
+              min: 0,
+              max: 1,
+              step: 0.01,
+            },
+            [`${prefix}GradientEnd`]: {
+              label: 'Fade End',
+              value: p[`${prefix}GradientEnd`],
+              min: 0,
+              max: 1,
+              step: 0.01,
+            },
+          }
+        : {}),
     },
     { collapsed: true, label }
   );
@@ -147,72 +183,105 @@ export default function useSceneControls() {
       { collapsed: true }
     ),
 
-    Form: folder(
+    Hands: folder(
       {
-        baseScale: {
-          value: p.baseScale,
-          min: 0.2,
-          max: 4,
-          step: 0.01,
-          label: 'Inner Scale',
-        },
-        middleScale: {
-          value: p.middleScale,
-          min: 0.2,
-          max: 5,
-          step: 0.01,
-          label: 'Middle Scale',
-        },
-        outerScale: {
-          value: p.outerScale,
-          min: 0.2,
-          max: 6,
-          step: 0.01,
-          label: 'Outer Scale',
-        },
-        basePosition: {
-          value: p.basePosition,
-          step: 0.01,
-          label: 'Inner Position',
-        },
-        middlePosition: {
-          value: p.middlePosition,
-          step: 0.01,
-          label: 'Middle Position',
-        },
-        outerPosition: {
-          value: p.outerPosition,
-          step: 0.01,
-          label: 'Outer Position',
-        },
-        middleSpread: {
-          value: p.middleSpread,
-          min: 0,
-          max: 50,
-          step: 0.01,
-          label: 'Middle Spread',
-        },
-        outerSpread: {
-          value: p.outerSpread,
-          min: 0,
-          max: 60,
-          step: 0.01,
-          label: 'Outer Spread',
-        },
-        middleYaw: {
-          value: p.middleYaw,
-          min: -Math.PI,
-          max: Math.PI,
-          step: 0.01,
-          label: 'Middle Yaw',
-        },
-        outerYaw: {
-          value: p.outerYaw,
-          min: -Math.PI,
-          max: Math.PI,
-          step: 0.01,
-          label: 'Outer Yaw',
-        },
+        Inner: folder(
+          {
+            baseVisible: { value: p.baseVisible, label: 'Visible' },
+            baseMaterial: {
+              value: p.baseMaterial,
+              label: 'Material',
+              options: HANDS_MATERIAL_OPTIONS,
+            },
+            baseScale: {
+              value: p.baseScale,
+              min: 0.2,
+              max: 4,
+              step: 0.01,
+              label: 'Scale',
+            },
+            basePosition: {
+              value: p.basePosition,
+              step: 0.01,
+              label: 'Position',
+            },
+          },
+          { collapsed: true }
+        ),
+        Middle: folder(
+          {
+            middleVisible: { value: p.middleVisible, label: 'Visible' },
+            middleMaterial: {
+              value: p.middleMaterial,
+              label: 'Material',
+              options: HANDS_MATERIAL_OPTIONS,
+            },
+            middleScale: {
+              value: p.middleScale,
+              min: 0.2,
+              max: 5,
+              step: 0.01,
+              label: 'Scale',
+            },
+            middlePosition: {
+              value: p.middlePosition,
+              step: 0.01,
+              label: 'Position',
+            },
+            middleSpread: {
+              value: p.middleSpread,
+              min: 0,
+              max: 50,
+              step: 0.01,
+              label: 'Spread',
+            },
+            middleYaw: {
+              value: p.middleYaw,
+              min: -Math.PI,
+              max: Math.PI,
+              step: 0.01,
+              label: 'Yaw',
+            },
+          },
+          { collapsed: true }
+        ),
+        Outer: folder(
+          {
+            outerVisible: { value: p.outerVisible, label: 'Visible' },
+            outerMaterial: {
+              value: p.outerMaterial,
+              label: 'Material',
+              options: HANDS_MATERIAL_OPTIONS,
+            },
+            outerScale: {
+              value: p.outerScale,
+              min: 0.2,
+              max: 6,
+              step: 0.01,
+              label: 'Scale',
+            },
+            outerPosition: {
+              value: p.outerPosition,
+              step: 0.01,
+              label: 'Position',
+            },
+            outerSpread: {
+              value: p.outerSpread,
+              min: 0,
+              max: 60,
+              step: 0.01,
+              label: 'Spread',
+            },
+            outerYaw: {
+              value: p.outerYaw,
+              min: -Math.PI,
+              max: Math.PI,
+              step: 0.01,
+              label: 'Yaw',
+            },
+          },
+          { collapsed: true }
+        ),
       },
       { collapsed: true }
     ),
@@ -275,6 +344,7 @@ export default function useSceneControls() {
         Clean: materialFolder('clean', 'Clean', p),
         Oil: materialFolder('oil', 'Oil', p),
         Blood: materialFolder('blood', 'Blood', p),
+        BlackBlood: materialFolder('bloodFade', 'Black Blood', p),
       },
       { collapsed: true }
     ),

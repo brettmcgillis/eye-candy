@@ -14,10 +14,10 @@
 
 # // Presets
 
-- Default
-- One prayer
-- Two prayers
-- Three prayers
+- [ ] Default
+- [ ] One prayer - Only one set of hands visible
+- [ ] Two prayers - Two sets of hands visible
+- [ ] Three prayers - Three sets of hands visible
 
 # // Features
 

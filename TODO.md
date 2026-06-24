@@ -86,6 +86,7 @@ To Build:
 - [GhostStories](src/components/scenes/WorkInProgress/WebGPU/GhostStories/todo.md)
 - [QuinnsPlayground](src/components/scenes/WorkInProgress/WebGL/QuinnsPlayground/todo.md)
 - [HorsesForCourses](src/components/scenes/WorkInProgress/WebGPU/HorsesForCourses/todo.md)
+- [Prayer](src/components/scenes/WorkInProgress/WebGPU/Prayer/todo.md)
 - [DrippingSkull](src/components/scenes/WorkInProgress/WebGPU/DrippingSkull/todo.md)
 - [BurningCash](src/components/scenes/WorkInProgress/WebGPU/BurningCash/todo.md)
 - [UrbanWildlife](src/components/scenes/WorkInProgress/WebGPU/UrbanWildlife/todo.md)
@@ -192,6 +193,9 @@ To Build:
 - [ ] One In The Hand - Two in the cage
 - [ ] Police Presence
 - [ ] Police Presence - Left the city sitting on cinder blocks
+- [ ] Prayer - One Prayer
+- [ ] Prayer - Two Prayers
+- [ ] Prayer - Three Prayer
 - [ ] Row It Alone
 - [ ] Stay Hunted
 - [ ] Still Pulling For You - Rough Waters

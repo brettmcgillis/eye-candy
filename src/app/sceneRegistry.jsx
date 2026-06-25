@@ -278,6 +278,9 @@ const OneInTheHand = lazy(
   () =>
     import('../components/scenes/WorkInProgress/WebGPU/OneInTheHand/OneInTheHand')
 );
+const Prayer = lazy(
+  () => import('../components/scenes/WorkInProgress/WebGPU/Prayer/Prayer')
+);
 
 function WipAreaIcon() {
   return <FaTools color="#94a3b8" />;
@@ -607,6 +610,10 @@ function OneInTheHandIcon() {
       <GiRibcage color="#808a99" size={26} />
     </>
   );
+}
+
+function PrayerIcon() {
+  return <FaHandPaper color="#f3f4f6" />;
 }
 
 export const AREA_ROUTE_SEGMENTS = {
@@ -1378,6 +1385,15 @@ export const EYE_CANDIES = [
     route: 'oneInTheHand',
     icon: OneInTheHandIcon,
     Component: OneInTheHand,
+  },
+  {
+    id: 'prayer',
+    label: 'Prayer',
+    channel: 'webgpu',
+    area: 'wip',
+    route: 'prayer',
+    icon: PrayerIcon,
+    Component: Prayer,
   },
   {
     id: 'birdsArentReal',

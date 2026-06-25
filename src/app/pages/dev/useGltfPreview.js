@@ -120,6 +120,18 @@ async function loadSavedGltf(url) {
   }
 }
 
+// Shared loader so the Combine tab can pull in saved/uploaded models on demand
+// without re-implementing the Draco + Meshopt loader wiring.
+export async function loadGltfFromSource(source) {
+  if (!source) {
+    throw new Error('No model source provided.');
+  }
+
+  return source.type === 'saved'
+    ? loadSavedGltf(source.url)
+    : loadUploadedGltf(source.files, source.primaryFilePath);
+}
+
 function stripPreviewCacheKey(url) {
   return String(url || '').replace(/\?.*$/, '');
 }
@@ -155,13 +167,7 @@ export default function useGltfPreview(previewAsset) {
       setState({ error: null, gltf: null, status: 'loading' });
 
       try {
-        const gltf =
-          previewAsset.type === 'saved'
-            ? await loadSavedGltf(previewAsset.url)
-            : await loadUploadedGltf(
-                previewAsset.files,
-                previewAsset.primaryFilePath
-              );
+        const gltf = await loadGltfFromSource(previewAsset);
 
         if (!cancelled) {
           setState({ error: null, gltf, status: 'ready' });

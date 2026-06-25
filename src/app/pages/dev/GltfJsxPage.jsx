@@ -10,8 +10,10 @@ import { Link, useSearchParams } from 'react-router-dom';
 
 import { iconFile, localEnv, modelFile } from '../../../utils/appUtils';
 import { DEFAULT_SCENE_PATH } from '../../sceneRegistry';
+import CombineWorkbench from './CombineWorkbench';
 import GltfPreviewCanvas from './GltfPreviewCanvas';
 import PoseWorkbench from './PoseWorkbench';
+import RigWorkbench from './RigWorkbench';
 
 const CAPABILITIES_ENDPOINT = '/dev-api/gltfjsx/capabilities';
 const CONVERT_ENDPOINT = '/dev-api/gltfjsx/convert';
@@ -885,9 +887,17 @@ export default function GltfJsxPage() {
   const [conversionError, setConversionError] = useState(null);
   const [conversionResult, setConversionResult] = useState(null);
   const [searchParams, setSearchParams] = useSearchParams();
-  const initialTab = searchParams.get('tab') === 'pose' ? 'pose' : 'convert';
+  const tabParam = searchParams.get('tab');
+  const initialTab =
+    tabParam === 'pose' || tabParam === 'rig' || tabParam === 'combine'
+      ? tabParam
+      : 'convert';
   const [activeTab, setActiveTab] = useState(initialTab);
   const [poseTabMounted, setPoseTabMounted] = useState(initialTab === 'pose');
+  const [rigTabMounted, setRigTabMounted] = useState(initialTab === 'rig');
+  const [combineTabMounted, setCombineTabMounted] = useState(
+    initialTab === 'combine'
+  );
 
   // Mirror the active tab in the query string so a refresh lands on the same
   // workbench. `convert` is the default, so it's left out of the URL.
@@ -895,6 +905,12 @@ export default function GltfJsxPage() {
     setActiveTab(nextTab);
     if (nextTab === 'pose') {
       setPoseTabMounted(true);
+    }
+    if (nextTab === 'rig') {
+      setRigTabMounted(true);
+    }
+    if (nextTab === 'combine') {
+      setCombineTabMounted(true);
     }
 
     setSearchParams(
@@ -1287,11 +1303,43 @@ export default function GltfJsxPage() {
         >
           Pose
         </button>
+        <button
+          type="button"
+          style={{
+            ...styles.tab,
+            ...(activeTab === 'rig' ? styles.tabActive : null),
+          }}
+          onClick={() => selectTab('rig')}
+        >
+          Rig
+        </button>
+        <button
+          type="button"
+          style={{
+            ...styles.tab,
+            ...(activeTab === 'combine' ? styles.tabActive : null),
+          }}
+          onClick={() => selectTab('combine')}
+        >
+          Combine
+        </button>
       </div>
 
       {poseTabMounted ? (
         <div style={{ display: activeTab === 'pose' ? 'block' : 'none' }}>
           <PoseWorkbench uploadedAsset={uploadedPreviewAsset} />
+        </div>
+      ) : null}
+
+      {rigTabMounted ? (
+        <div style={{ display: activeTab === 'rig' ? 'block' : 'none' }}>
+          <RigWorkbench uploadedAsset={uploadedPreviewAsset} />
+        </div>
+      ) : null}
+
+      {combineTabMounted ? (
+        <div style={{ display: activeTab === 'combine' ? 'block' : 'none' }}>
+          <CombineWorkbench uploadedAsset={uploadedPreviewAsset} />
         </div>
       ) : null}
 

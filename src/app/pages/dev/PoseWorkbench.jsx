@@ -687,6 +687,7 @@ export default function PoseWorkbench({ uploadedAsset }) {
 
   const previewState = useGltfPreview(modelSource);
   const scene = previewState.gltf?.scene ?? null;
+
   const animationClips = previewState.gltf?.animations || [];
   const selectedClip = animationClips.find(
     (clip) => clip.name === animation.clipName
@@ -878,9 +879,7 @@ export default function PoseWorkbench({ uploadedAsset }) {
       const animations = [
         // Poses hydrated from the file are re-exported from the editable
         // list, so drop the original clips they came from to avoid duplicates.
-        ...(previewState.gltf?.animations || []).filter(
-          (clip) => !poseNames.has(clip.name)
-        ),
+        ...animationClips.filter((clip) => !poseNames.has(clip.name)),
         ...poses.map((pose) => buildPoseClip(pose)),
       ];
       const buffer = await exporter.parseAsync(scene, {

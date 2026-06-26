@@ -1372,11 +1372,6 @@ export default function GltfJsxPage() {
             >
               <div>
                 <strong>Drop files here</strong>
-                <p style={styles.hint}>
-                  The primary entry file can be renamed through the model slug
-                  field below, or preserved and written directly into
-                  `public/models`.
-                </p>
               </div>
               <div style={styles.buttonRow}>
                 <button
@@ -1695,17 +1690,11 @@ export default function GltfJsxPage() {
             <div style={{ ...styles.labelRow, marginBottom: '0.9rem' }}>
               <div>
                 <h2 style={styles.panelTitle}>Preview</h2>
-                <p style={styles.panelLead}>
-                  Upload preview is immediate. After conversion, you can switch
-                  between the raw upload, the written asset in `public/models`,
-                  and the generated component itself.
-                </p>
               </div>
             </div>
             <div style={styles.grid}>
               <SelectField
                 label="Preview source"
-                hint="Compare the original upload, the written transformed asset, and the generated component after conversion."
                 value={previewSource}
                 onChange={setPreviewSource}
                 options={previewSourceOptions}
@@ -1735,7 +1724,6 @@ export default function GltfJsxPage() {
                 />
                 <TextField
                   label="Light intensity"
-                  hint="Overall preview lighting multiplier."
                   type="number"
                   value={String(previewOptions.intensity)}
                   onChange={(value) =>

@@ -277,6 +277,28 @@ const styles = {
   },
 };
 
+// Display materials make pure-white authoring models easier to read while
+// posing: clay gives soft shaded form, normals make finger overlap/depth
+// unambiguous. These never touch the file — export always restores originals.
+const DISPLAY_MODE_OPTIONS = [
+  { label: 'Original', value: 'original' },
+  { label: 'Clay', value: 'clay' },
+  { label: 'Normals', value: 'normal' },
+];
+
+function makeDisplayMaterial(mode, wireframe) {
+  if (mode === 'normal') {
+    return new THREE.MeshNormalMaterial({ wireframe });
+  }
+
+  return new THREE.MeshStandardMaterial({
+    color: '#c9b5a3',
+    roughness: 0.82,
+    metalness: 0.0,
+    wireframe,
+  });
+}
+
 function collectBones(scene) {
   const bones = [];
 
@@ -287,6 +309,18 @@ function collectBones(scene) {
   });
 
   return bones;
+}
+
+function collectMeshes(scene) {
+  const meshes = [];
+
+  scene.traverse((node) => {
+    if (node.isMesh) {
+      meshes.push(node);
+    }
+  });
+
+  return meshes;
 }
 
 function getBoneDepth(bone) {
@@ -643,7 +677,26 @@ function PoseScene({
   scene,
   selectedBone,
   showMarkers,
+  showMesh,
+  hiddenMeshIds,
 }) {
+  // Skinned meshes carry a bind-pose bounding volume, so posing bones far from
+  // rest makes three think they've left the frustum and culls them. Disable
+  // frustum culling on the model's meshes and drive their visibility from the
+  // Show mesh toggle (master) plus the per-mesh hidden set.
+  useLayoutEffect(() => {
+    if (!scene) return;
+
+    scene.traverse((node) => {
+      if (node.isMesh) {
+        /* eslint-disable no-param-reassign */
+        node.frustumCulled = false;
+        node.visible = showMesh && !hiddenMeshIds.has(node.uuid);
+        /* eslint-enable no-param-reassign */
+      }
+    });
+  }, [scene, showMesh, hiddenMeshIds]);
+
   // One SkeletonHelper per armature so each skeleton's lines can be toggled
   // independently (a single scene-wide helper can't be split).
   const armatureHelpers = useMemo(() => {
@@ -802,9 +855,17 @@ export default function PoseWorkbench({ uploadedAsset }) {
   const [boneFilter, setBoneFilter] = useState('');
   // Collapsed bones (by uuid) hide their descendants in the list tree.
   const [collapsedBones, setCollapsedBones] = useState(() => new Set());
+  // Display-material override for the viewport only (never exported).
+  const [displayMode, setDisplayMode] = useState('original');
+  const [wireframe, setWireframe] = useState(false);
+  const originalMaterialsRef = useRef(new Map());
   // Viewport marker controls — markers default on, sized off the model bbox.
+  const [showMesh, setShowMesh] = useState(true);
+  // Meshes hidden from the viewport (by uuid) — individual toggles under the
+  // Show mesh master, mirroring the per-armature toggles.
+  const [hiddenMeshIds, setHiddenMeshIds] = useState(() => new Set());
   const [showMarkers, setShowMarkers] = useState(true);
-  const [markerScale, setMarkerScale] = useState(1);
+  const [markerScale, setMarkerScale] = useState(0.25);
   const [markerColor, setMarkerColor] = useState('#38bdf8');
   // Armatures hidden from the viewport (by root-bone uuid) — lets you isolate
   // one skeleton on combined rigs where bones from each crowd together.
@@ -873,6 +934,7 @@ export default function PoseWorkbench({ uploadedAsset }) {
 
   const bones = useMemo(() => (scene ? collectBones(scene) : []), [scene]);
   const armatures = useMemo(() => collectArmatures(bones), [bones]);
+  const meshes = useMemo(() => (scene ? collectMeshes(scene) : []), [scene]);
   const restPose = useMemo(() => captureRestPose(bones), [bones]);
   // Sizes the translate sliders' range to the model so the gizmo and sliders
   // cover a comparable distance regardless of the model's units.
@@ -923,6 +985,7 @@ export default function PoseWorkbench({ uploadedAsset }) {
     setBoneFilter('');
     setCollapsedBones(new Set());
     setHiddenArmatureIds(new Set());
+    setHiddenMeshIds(new Set());
     setPoses(hydratePosesFromClips(clips));
     setSaveState({ status: 'idle', message: null });
     setOutputPath(buildDefaultOutputPath(modelSourceRef.current));
@@ -966,6 +1029,65 @@ export default function PoseWorkbench({ uploadedAsset }) {
   useEffect(() => {
     selectedBoneItemRef.current?.scrollIntoView({ block: 'nearest' });
   }, [selectedBone]);
+
+  // Capture each mesh's authored material when a new model loads, so the
+  // display override can always restore exactly what the file shipped with.
+  useEffect(() => {
+    const map = new Map();
+    if (scene) {
+      scene.traverse((node) => {
+        if (node.isMesh) map.set(node, node.material);
+      });
+    }
+    originalMaterialsRef.current = map;
+  }, [scene]);
+
+  const restoreOriginalMaterials = useCallback(() => {
+    originalMaterialsRef.current.forEach((material, node) => {
+      // eslint-disable-next-line no-param-reassign
+      node.material = material;
+      if ('wireframe' in material) {
+        // eslint-disable-next-line no-param-reassign
+        material.wireframe = false;
+      }
+    });
+  }, []);
+
+  const applyDisplayMaterials = useCallback(() => {
+    const created = [];
+    if (!scene) return created;
+
+    scene.traverse((node) => {
+      if (!node.isMesh) return;
+
+      if (displayMode === 'original') {
+        const original = originalMaterialsRef.current.get(node);
+        if (original) {
+          // eslint-disable-next-line no-param-reassign
+          node.material = original;
+          if ('wireframe' in original) original.wireframe = wireframe;
+        }
+        return;
+      }
+
+      const material = makeDisplayMaterial(displayMode, wireframe);
+      created.push(material);
+      // eslint-disable-next-line no-param-reassign
+      node.material = material;
+    });
+
+    return created;
+  }, [scene, displayMode, wireframe]);
+
+  // Swap viewport materials whenever the mode (or model) changes, disposing any
+  // materials we created and restoring originals on cleanup.
+  useEffect(() => {
+    const created = applyDisplayMaterials();
+    return () => {
+      created.forEach((material) => material.dispose());
+      restoreOriginalMaterials();
+    };
+  }, [applyDisplayMaterials, restoreOriginalMaterials]);
 
   const selectBone = useCallback((bone) => {
     setSelectedBone(bone);
@@ -1048,6 +1170,14 @@ export default function PoseWorkbench({ uploadedAsset }) {
 
     setBoneEuler(readBoneEuler(selectedBone));
     setBonePosition(readBonePosition(selectedBone));
+
+    // Clear the clipboard so each copy is pasted once.
+    try {
+      window.localStorage.removeItem(BONE_CLIPBOARD_KEY);
+    } catch {
+      // Ignore unavailable localStorage; the in-memory clear below still runs.
+    }
+    setBoneClipboard(null);
   }
 
   function resetSelectedBone() {
@@ -1128,6 +1258,9 @@ export default function PoseWorkbench({ uploadedAsset }) {
       // captured poses travel as one-frame animation clips instead.
       applyRestPose(restPose);
 
+      // Never bake the viewport's display override into the file.
+      restoreOriginalMaterials();
+
       const exporter = new GLTFExporter();
       const animations = [
         // Drop every one-frame pose clip (the format Save writes) and re-emit
@@ -1162,6 +1295,15 @@ export default function PoseWorkbench({ uploadedAsset }) {
         message: `Wrote ${payload.outputPath} (${payload.bytes} bytes) with ${poses.length} pose clip${poses.length === 1 ? '' : 's'}.`,
       });
       refreshModelList();
+
+      // Follow the write: re-point the loaded model (and the persisted ?model
+      // URL) at the file we just saved, so a reload shows these poses instead
+      // of the originally-selected source — which is usually a different
+      // filename, since Output path defaults to `<source>-posed.glb`.
+      const savedModelValue = `saved:${payload.assetPath}`;
+      if (savedModelValue !== selectedModelValue) {
+        setSelectedModelValue(savedModelValue);
+      }
     } catch (error) {
       setSaveState({
         status: 'error',
@@ -1172,6 +1314,8 @@ export default function PoseWorkbench({ uploadedAsset }) {
       });
     } finally {
       applyPoseSnapshot(workingPose, bones);
+      // Put the viewport's display override back after exporting originals.
+      applyDisplayMaterials();
     }
   }
 
@@ -1240,6 +1384,8 @@ export default function PoseWorkbench({ uploadedAsset }) {
             scene={scene}
             selectedBone={selectedBone}
             showMarkers={showMarkers}
+            showMesh={showMesh}
+            hiddenMeshIds={hiddenMeshIds}
           />
         </Canvas>
       </div>
@@ -1253,6 +1399,18 @@ export default function PoseWorkbench({ uploadedAsset }) {
         next.delete(id);
       } else {
         next.add(id);
+      }
+      return next;
+    });
+  }
+
+  function toggleMesh(uuid) {
+    setHiddenMeshIds((current) => {
+      const next = new Set(current);
+      if (next.has(uuid)) {
+        next.delete(uuid);
+      } else {
+        next.add(uuid);
       }
       return next;
     });
@@ -1289,10 +1447,7 @@ export default function PoseWorkbench({ uploadedAsset }) {
       <div style={styles.leftStack}>
         <section style={styles.panel}>
           <h2 style={styles.panelTitle}>Model</h2>
-          <p style={styles.panelLead}>
-            Pose the current upload or any model already written to
-            `public/models`. Posing needs a rigged (skinned) model.
-          </p>
+
           <div style={{ ...styles.grid, marginTop: '0.9rem' }}>
             <div style={styles.field}>
               <span style={styles.label}>Model source</span>
@@ -1411,10 +1566,7 @@ export default function PoseWorkbench({ uploadedAsset }) {
 
         <section style={styles.panel}>
           <h2 style={styles.panelTitle}>Bones</h2>
-          <p style={styles.panelLead}>
-            Click a joint in the viewport or pick a bone here, then rotate it
-            with the gizmo or the sliders below.
-          </p>
+
           {bones.length ? (
             <div style={{ ...styles.grid, marginTop: '0.9rem' }}>
               <div style={styles.field}>
@@ -1583,11 +1735,7 @@ export default function PoseWorkbench({ uploadedAsset }) {
 
         <section style={styles.panel}>
           <h2 style={styles.panelTitle}>Poses</h2>
-          <p style={styles.panelLead}>
-            Capture the current skeleton state as a named pose. Each pose is
-            written as a one-frame animation clip so the exported model keeps
-            its rig and bind pose.
-          </p>
+
           <div style={{ ...styles.grid, marginTop: '0.9rem' }}>
             <div style={styles.field}>
               <span style={styles.label}>Pose name</span>
@@ -1637,11 +1785,7 @@ export default function PoseWorkbench({ uploadedAsset }) {
 
         <section style={styles.panel}>
           <h2 style={styles.panelTitle}>Export</h2>
-          <p style={styles.panelLead}>
-            Writes a binary GLB into `public/models` with the captured poses
-            embedded as animation clips (existing clips are preserved). Run it
-            back through Import &amp; Optimize if it needs compression.
-          </p>
+
           <div style={{ ...styles.grid, marginTop: '0.9rem' }}>
             <div style={styles.field}>
               <span style={styles.label}>Output path</span>
@@ -1697,6 +1841,85 @@ export default function PoseWorkbench({ uploadedAsset }) {
 
       <div style={styles.rightStack}>
         {renderViewport()}
+
+        <section style={styles.panel}>
+          <h2 style={styles.panelTitle}>Display</h2>
+
+          <div style={{ ...styles.grid, marginTop: '0.9rem' }}>
+            <div style={styles.field}>
+              <span style={styles.label}>Material</span>
+              <select
+                style={styles.input}
+                value={displayMode}
+                onChange={(event) => setDisplayMode(event.target.value)}
+              >
+                {DISPLAY_MODE_OPTIONS.map((option) => (
+                  <option key={option.value} value={option.value}>
+                    {option.label}
+                  </option>
+                ))}
+              </select>
+            </div>
+            <div style={styles.checkboxRow}>
+              <input
+                aria-label="Wireframe overlay"
+                type="checkbox"
+                checked={wireframe}
+                onChange={(event) => setWireframe(event.target.checked)}
+              />
+              <span style={styles.label}>Wireframe</span>
+            </div>
+          </div>
+        </section>
+
+        <section style={styles.panel}>
+          <h2 style={styles.panelTitle}>Meshes</h2>
+          <p style={styles.panelLead}>
+            Show or hide the model geometry — the whole model, or one mesh at a
+            time to focus on a single part.
+          </p>
+          <div style={{ ...styles.grid, marginTop: '0.9rem' }}>
+            <div style={styles.checkboxRow}>
+              <input
+                aria-label="Show all meshes"
+                type="checkbox"
+                checked={showMesh}
+                onChange={(event) => setShowMesh(event.target.checked)}
+              />
+              <span style={styles.label}>Show all meshes</span>
+            </div>
+            {meshes.length > 1 ? (
+              <div style={styles.field}>
+                <div style={styles.timelineHeader}>
+                  <span style={styles.label}>Individual meshes</span>
+                  {hiddenMeshIds.size ? (
+                    <button
+                      type="button"
+                      style={styles.secondaryButton}
+                      onClick={() => setHiddenMeshIds(new Set())}
+                    >
+                      Show all
+                    </button>
+                  ) : null}
+                </div>
+                {meshes.map((mesh, index) => (
+                  <div key={mesh.uuid} style={styles.checkboxRow}>
+                    <input
+                      aria-label={`Show mesh ${mesh.name || index + 1}`}
+                      disabled={!showMesh}
+                      type="checkbox"
+                      checked={!hiddenMeshIds.has(mesh.uuid)}
+                      onChange={() => toggleMesh(mesh.uuid)}
+                    />
+                    <span style={styles.label}>
+                      {index + 1}. {mesh.name || 'mesh'}
+                    </span>
+                  </div>
+                ))}
+              </div>
+            ) : null}
+          </div>
+        </section>
 
         <section style={styles.panel}>
           <h2 style={styles.panelTitle}>Markers</h2>

@@ -129,11 +129,17 @@ export function DynamicSceneAsset({ item }) {
     );
   }, [cleanupNonce]);
 
+  const spawnPosition = [
+    position[0],
+    position[1] + RESET_DROP_HEIGHT,
+    position[2],
+  ];
+
   return (
     <RigidBody
       ref={bodyRef}
       colliders={colliders}
-      position={position}
+      position={spawnPosition}
       rotation={rotation}
       scale={scale}
       mass={mass}

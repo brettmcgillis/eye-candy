@@ -12,6 +12,9 @@ const DEFAULT_SCENE_ENVIRONMENT = Object.freeze({
   fogColor: BACKGROUND,
   fogNear: FOG_RANGE[0],
   fogFar: FOG_RANGE[1],
+  ambientIntensity: LIGHTING.ambientIntensity,
+  directionalIntensity: LIGHTING.directionalIntensity,
+  envMapIntensity: 1.0,
 });
 
 const DUMPSTER_FIRE_OPERATOR_INPUT_OPTIONS = Object.freeze({
@@ -65,15 +68,18 @@ export default function SceneEnvironment({
       <color attach="background" args={[config.backgroundColor]} />
       <fog attach="fog" args={[config.fogColor, fogNear, fogFar]} />
 
-      <ambientLight intensity={LIGHTING.ambientIntensity} />
+      <ambientLight intensity={config.ambientIntensity} />
       <directionalLight
         position={LIGHTING.directionalPosition}
-        intensity={LIGHTING.directionalIntensity}
+        intensity={config.directionalIntensity}
       />
 
       <SidewalkGround config={sidewalkGroundConfig} />
 
-      <Environment preset="city" />
+      <Environment
+        preset="city"
+        environmentIntensity={config.envMapIntensity}
+      />
     </>
   );
 }

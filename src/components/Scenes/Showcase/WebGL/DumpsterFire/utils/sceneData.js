@@ -1,3 +1,4 @@
+import CAMERA_SPLINE_PRESETS from '../../../../../../presets/spline/cameraSplinePresets';
 import { radians } from '../../../../../../utils/math';
 import {
   Catfood,
@@ -195,8 +196,12 @@ export const CAMERA = {
     orientationMode: 'target',
     showPath: false,
     tension: 0.45,
-    path: {
-      points: DUMPSTER_CAMERA_SPLINE_POINTS,
+    preset: 'Dumpster Fire',
+    paths: {
+      'Dumpster Fire': {
+        points: DUMPSTER_CAMERA_SPLINE_POINTS,
+      },
+      ...CAMERA_SPLINE_PRESETS,
     },
   },
   operator: {

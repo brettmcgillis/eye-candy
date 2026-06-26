@@ -7,6 +7,7 @@ import SplineLine from '../../../../../elements/spline/SplineLine';
 import SplinePoints from '../../../../../elements/spline/SplinePoints';
 import useTrashBlasterStore from '../hooks/useTrashBlasterStore';
 import { SCENE_ROOT_POSITION } from '../utils/sceneData';
+import FireAudioEmitter from './FireAudioEmitter';
 
 const DEFAULT_FIRE_LIGHT_RIG = Object.freeze({
   enabled: true,
@@ -111,6 +112,7 @@ export default function FireAndSmokeLayer({
   attractorStrength,
   attractorRadius,
   fireLightRig,
+  fireAudioConfig,
 }) {
   const setPointerInteractionActive = useTrashBlasterStore(
     (s) => s.setPointerInteractionActive
@@ -156,6 +158,10 @@ export default function FireAndSmokeLayer({
             emitsFireLight &&
             fireLightRig.enabled ? (
               <DumpsterFireLights rig={fireLightRig} />
+            ) : null}
+
+            {isVisible && emitsFireLight && fireAudioConfig?.enabled ? (
+              <FireAudioEmitter config={fireAudioConfig} />
             ) : null}
 
             <SplineLine

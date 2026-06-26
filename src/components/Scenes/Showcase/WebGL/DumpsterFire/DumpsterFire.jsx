@@ -1,6 +1,5 @@
 import React, { useRef } from 'react';
 
-import useLoopedSceneAudio from '../../../../../hooks/useLoopedSceneAudio';
 import CursorAttractor from './components/CursorAttractor';
 import FireAndSmokeLayer from './components/FireAndSmokeLayer';
 import ParticleSmokeLayer from './components/ParticleSmokeLayer';
@@ -9,12 +8,10 @@ import SceneEnvironment from './components/SceneEnvironment';
 import TrashBlasterOverlay from './components/TrashBlasterOverlay';
 import useDumpsterFireCollisionAudio from './hooks/useDumpsterFireCollisionAudio';
 import useSceneControls from './hooks/useSceneControls';
-import { FIRE_LOOP_TRACK, FIRE_LOOP_VOLUME } from './utils/sceneData';
 
 export default function DumpsterFire() {
   const attractorsRef = useRef([]);
 
-  useLoopedSceneAudio(FIRE_LOOP_TRACK, { volume: FIRE_LOOP_VOLUME });
   const { playCollision } = useDumpsterFireCollisionAudio();
   const {
     fireAndSmokeInstances,
@@ -35,6 +32,7 @@ export default function DumpsterFire() {
     brickWallConfig,
     dumpsterConfig,
     fireLightRig,
+    fireAudioConfig,
     trashShotConfig,
     setFireAndSmokePoints,
     setParticleSmokePoints,
@@ -81,6 +79,7 @@ export default function DumpsterFire() {
         attractorStrength={cursorAttractorStrength}
         attractorRadius={cursorAttractorRadius}
         fireLightRig={fireLightRig}
+        fireAudioConfig={fireAudioConfig}
       />
       <TrashBlasterOverlay />
     </>

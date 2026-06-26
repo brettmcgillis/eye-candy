@@ -2,6 +2,7 @@ import { buildSceneCameraControlValues } from '../../../../../../hooks/sceneCame
 import {
   BACKGROUND,
   CAMERA,
+  DEFAULT_FIRE_AUDIO,
   DEFAULT_SHOT_TUNING_MODE,
   FOG_RANGE,
   SHOT_TUNING_PRESETS,
@@ -121,6 +122,14 @@ const DEFAULT_CONTROL_VALUES = Object.freeze({
   fireLightRightX: DEFAULT_FIRE_LIGHT_RIG.rightX,
   fireLightRightY: DEFAULT_FIRE_LIGHT_RIG.rightY,
   fireLightRightZ: DEFAULT_FIRE_LIGHT_RIG.rightZ,
+  fireAudioEnabled: DEFAULT_FIRE_AUDIO.enabled,
+  fireAudioVolume: DEFAULT_FIRE_AUDIO.volume,
+  fireAudioRefDistance: DEFAULT_FIRE_AUDIO.refDistance,
+  fireAudioRolloff: DEFAULT_FIRE_AUDIO.rolloffFactor,
+  fireAudioMaxDistance: DEFAULT_FIRE_AUDIO.maxDistance,
+  fireAudioOffsetX: DEFAULT_FIRE_AUDIO.offsetX,
+  fireAudioOffsetY: DEFAULT_FIRE_AUDIO.offsetY,
+  fireAudioOffsetZ: DEFAULT_FIRE_AUDIO.offsetZ,
 });
 
 export const PRESET_CONTROL_KEYS = Object.freeze(

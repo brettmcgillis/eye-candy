@@ -287,6 +287,18 @@ export const SHOT_AIM_PLANE_POINT = [
 
 export const FIRE_LOOP_TRACK = 'looped-fire.mp3';
 export const FIRE_LOOP_VOLUME = 0.35;
+// Positional-audio defaults for the spatialized fire loop. offset is relative
+// to the flame's instance group; ref/rolloff/max feed Howler's panner.
+export const DEFAULT_FIRE_AUDIO = Object.freeze({
+  enabled: true,
+  volume: FIRE_LOOP_VOLUME,
+  refDistance: 4,
+  rolloffFactor: 1,
+  maxDistance: 60,
+  offsetX: 0.65,
+  offsetY: 0.5,
+  offsetZ: 0,
+});
 // The dumpster asset is centered on local z=0 in scene space, so the scene
 // root z coordinate is the midpoint through the dumpster depth in world space.
 export const CURSOR_ATTRACTOR_PLANE_Z = SCENE_ROOT_POSITION[2];

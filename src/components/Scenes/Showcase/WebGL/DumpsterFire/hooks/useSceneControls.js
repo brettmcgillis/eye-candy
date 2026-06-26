@@ -34,6 +34,7 @@ import {
 } from '../utils/particleSmokeAuthoring';
 import {
   CAMERA,
+  DEFAULT_FIRE_AUDIO,
   DEFAULT_SHOT_TUNING_MODE,
   SHOT_TUNING_PRESETS,
 } from '../utils/sceneData';
@@ -818,6 +819,80 @@ ${allEntries}
             },
             { collapsed: true }
           ),
+          'Fire Audio': folder(
+            {
+              fireAudioEnabled: {
+                label: 'Enabled',
+                value:
+                  initialPresetSnapshot.fireAudioEnabled ??
+                  DEFAULT_FIRE_AUDIO.enabled,
+              },
+              fireAudioVolume: {
+                label: 'Volume',
+                value:
+                  initialPresetSnapshot.fireAudioVolume ??
+                  DEFAULT_FIRE_AUDIO.volume,
+                min: 0,
+                max: 1,
+                step: 0.01,
+              },
+              fireAudioRefDistance: {
+                label: 'Ref Distance',
+                value:
+                  initialPresetSnapshot.fireAudioRefDistance ??
+                  DEFAULT_FIRE_AUDIO.refDistance,
+                min: 0.5,
+                max: 20,
+                step: 0.1,
+              },
+              fireAudioRolloff: {
+                label: 'Rolloff',
+                value:
+                  initialPresetSnapshot.fireAudioRolloff ??
+                  DEFAULT_FIRE_AUDIO.rolloffFactor,
+                min: 0,
+                max: 5,
+                step: 0.05,
+              },
+              fireAudioMaxDistance: {
+                label: 'Max Distance',
+                value:
+                  initialPresetSnapshot.fireAudioMaxDistance ??
+                  DEFAULT_FIRE_AUDIO.maxDistance,
+                min: 1,
+                max: 120,
+                step: 1,
+              },
+              fireAudioOffsetX: {
+                label: 'Offset X',
+                value:
+                  initialPresetSnapshot.fireAudioOffsetX ??
+                  DEFAULT_FIRE_AUDIO.offsetX,
+                min: -3,
+                max: 3,
+                step: 0.01,
+              },
+              fireAudioOffsetY: {
+                label: 'Offset Y',
+                value:
+                  initialPresetSnapshot.fireAudioOffsetY ??
+                  DEFAULT_FIRE_AUDIO.offsetY,
+                min: -1,
+                max: 4,
+                step: 0.01,
+              },
+              fireAudioOffsetZ: {
+                label: 'Offset Z',
+                value:
+                  initialPresetSnapshot.fireAudioOffsetZ ??
+                  DEFAULT_FIRE_AUDIO.offsetZ,
+                min: -3,
+                max: 3,
+                step: 0.01,
+              },
+            },
+            { collapsed: true }
+          ),
         },
         { collapsed: true }
       ),
@@ -908,6 +983,14 @@ ${allEntries}
     fireLightRightX,
     fireLightRightY,
     fireLightRightZ,
+    fireAudioEnabled,
+    fireAudioVolume,
+    fireAudioRefDistance,
+    fireAudioRolloff,
+    fireAudioMaxDistance,
+    fireAudioOffsetX,
+    fireAudioOffsetY,
+    fireAudioOffsetZ,
     shotMode,
     shotSpawnOffset,
     shotSpeed,
@@ -1021,6 +1104,14 @@ ${allEntries}
       rightX: fireLightRightX,
       rightY: fireLightRightY,
       rightZ: fireLightRightZ,
+    },
+    fireAudioConfig: {
+      enabled: fireAudioEnabled,
+      volume: fireAudioVolume,
+      refDistance: fireAudioRefDistance,
+      rolloffFactor: fireAudioRolloff,
+      maxDistance: fireAudioMaxDistance,
+      offset: [fireAudioOffsetX, fireAudioOffsetY, fireAudioOffsetZ],
     },
     trashShotConfig: {
       mode: shotMode,

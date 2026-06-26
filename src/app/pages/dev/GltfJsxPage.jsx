@@ -1269,17 +1269,8 @@ export default function GltfJsxPage() {
               />
             </span>
           </h1>
-          <p style={styles.lead}>
-            This page recreates the GLTF-to-R3F workflow, but writes repo-native
-            output. Drop a model bundle in, preview it, drive the full gltfjsx
-            flag surface, and generate a component that already uses
-            `modelFile()` and your repo paths.
-          </p>
         </div>
         <div style={styles.statusPill}>{serverDescription.label}</div>
-        <p style={{ ...styles.lead, maxWidth: '48rem' }}>
-          {serverDescription.message}
-        </p>
       </header>
 
       <div style={styles.tabBar}>

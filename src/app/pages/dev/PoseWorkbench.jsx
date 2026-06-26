@@ -27,6 +27,10 @@ const MODELS_ENDPOINT = '/dev-api/gltfjsx/models';
 const WRITE_ASSET_ENDPOINT = '/dev-api/gltfjsx/write-asset';
 const POSE_CLIP_DURATION = 1 / 30;
 const POSITION_EPSILON = 1e-6;
+// App-level clipboard for a single bone's local transform. Backed by
+// localStorage so it carries across tabs (e.g. the same skeleton open in two
+// tabs) and survives reloads.
+const BONE_CLIPBOARD_KEY = 'poseWorkbench.boneClipboard';
 
 const styles = {
   layout: {
@@ -146,8 +150,31 @@ const styles = {
     borderRadius: '14px',
     padding: '0.45rem',
     background: 'rgba(248, 250, 252, 0.95)',
+    maxHeight: '22rem',
+    overflowY: 'auto',
+    overscrollBehavior: 'contain',
+  },
+  boneRow: {
+    display: 'flex',
+    alignItems: 'center',
+    gap: '0.1rem',
+    borderRadius: '8px',
+  },
+  boneToggle: {
+    flexShrink: 0,
+    width: '1.2rem',
+    border: 'none',
+    background: 'transparent',
+    color: 'inherit',
+    cursor: 'pointer',
+    fontSize: '0.7rem',
+    lineHeight: 1,
+    padding: '0.3rem 0',
+    textAlign: 'center',
   },
   boneItem: {
+    flex: 1,
+    minWidth: 0,
     display: 'flex',
     alignItems: 'baseline',
     border: 'none',
@@ -156,7 +183,7 @@ const styles = {
     borderRadius: '8px',
     padding: '0.3rem 0.5rem',
     fontSize: '0.8rem',
-    color: '#0f172a',
+    color: 'inherit',
     cursor: 'pointer',
     whiteSpace: 'nowrap',
     overflow: 'hidden',
@@ -164,13 +191,6 @@ const styles = {
   boneItemName: {
     overflow: 'hidden',
     textOverflow: 'ellipsis',
-  },
-  boneItemDepth: {
-    flexShrink: 0,
-    fontSize: '0.68rem',
-    opacity: 0.55,
-    letterSpacing: '-0.08em',
-    marginRight: '0.35rem',
   },
   boneItemSelected: {
     background: '#0f172a',
@@ -279,6 +299,56 @@ function getBoneDepth(bone) {
   }
 
   return depth;
+}
+
+function boneHasChildren(bone) {
+  return Boolean(bone.children?.some((child) => child.isBone));
+}
+
+function hasCollapsedAncestor(bone, collapsedIds) {
+  let { parent } = bone;
+
+  while (parent && parent.isBone) {
+    if (collapsedIds.has(parent.uuid)) return true;
+    parent = parent.parent;
+  }
+
+  return false;
+}
+
+function getRootBone(bone) {
+  let current = bone;
+
+  while (current.parent && current.parent.isBone) {
+    current = current.parent;
+  }
+
+  return current;
+}
+
+// Group bones into armatures by their top-most bone. A combined model (e.g. two
+// arm rigs) has one root bone per skeleton, so each becomes its own toggleable
+// armature in the viewport.
+function collectArmatures(bones) {
+  const groups = new Map();
+
+  bones.forEach((bone) => {
+    const root = getRootBone(bone);
+
+    if (!groups.has(root.uuid)) {
+      const container = root.parent && !root.parent.isBone ? root.parent : root;
+      groups.set(root.uuid, {
+        bones: [],
+        id: root.uuid,
+        name: container.name || root.name || 'Armature',
+        rootBone: root,
+      });
+    }
+
+    groups.get(root.uuid).bones.push(bone);
+  });
+
+  return Array.from(groups.values());
 }
 
 function captureRestPose(bones) {
@@ -453,6 +523,41 @@ function readBoneEuler(bone) {
   };
 }
 
+function readBonePosition(bone) {
+  return { x: bone.position.x, y: bone.position.y, z: bone.position.z };
+}
+
+function describeGizmoMode(mode) {
+  return mode === 'translate' ? 'translation' : 'rotation';
+}
+
+// The clipboard holds exactly one kind of value — rotation OR translation —
+// matching the gizmo mode it was copied in. Paste only applies that kind.
+function readBoneClipboard() {
+  try {
+    const raw = window.localStorage.getItem(BONE_CLIPBOARD_KEY);
+    if (!raw) return null;
+
+    const parsed = JSON.parse(raw);
+
+    if (parsed?.mode === 'translate') {
+      return Array.isArray(parsed.position) && parsed.position.length === 3
+        ? parsed
+        : null;
+    }
+
+    if (parsed?.mode === 'rotate') {
+      return Array.isArray(parsed.quaternion) && parsed.quaternion.length === 4
+        ? parsed
+        : null;
+    }
+
+    return null;
+  } catch {
+    return null;
+  }
+}
+
 function FitCameraOnLoad({ scene }) {
   const camera = useThree((state) => state.camera);
   const controls = useThree((state) => state.controls);
@@ -482,7 +587,13 @@ function FitCameraOnLoad({ scene }) {
   return null;
 }
 
-function BoneJoints({ bones, jointRadius, onSelect, selectedBone }) {
+function BoneJoints({
+  bones,
+  jointRadius,
+  markerColor,
+  onSelect,
+  selectedBone,
+}) {
   const meshRefs = useRef([]);
 
   useFrame(() => {
@@ -508,7 +619,7 @@ function BoneJoints({ bones, jointRadius, onSelect, selectedBone }) {
     >
       <sphereGeometry args={[jointRadius, 12, 12]} />
       <meshBasicMaterial
-        color={bone === selectedBone ? '#f59e0b' : '#38bdf8'}
+        color={bone === selectedBone ? '#f59e0b' : markerColor}
         depthTest={false}
         transparent
         opacity={bone === selectedBone ? 0.95 : 0.55}
@@ -520,22 +631,46 @@ function BoneJoints({ bones, jointRadius, onSelect, selectedBone }) {
 function PoseScene({
   animation,
   animationClips,
+  armatures,
   bones,
   gizmoMode,
+  hiddenArmatureIds,
+  markerColor,
+  markerScale,
   onAnimationTimeChange,
   onBoneTransformChange,
   onSelectBone,
   scene,
   selectedBone,
+  showMarkers,
 }) {
-  const skeletonHelper = useMemo(() => {
-    if (!scene || !bones.length) return null;
+  // One SkeletonHelper per armature so each skeleton's lines can be toggled
+  // independently (a single scene-wide helper can't be split).
+  const armatureHelpers = useMemo(() => {
+    if (!scene) return [];
 
-    const helper = new THREE.SkeletonHelper(scene);
-    helper.material.depthTest = false;
-    helper.renderOrder = 998;
-    return helper;
-  }, [scene, bones.length]);
+    return armatures.map((armature) => {
+      const helper = new THREE.SkeletonHelper(armature.rootBone);
+      helper.material.depthTest = false;
+      helper.renderOrder = 998;
+      return { helper, id: armature.id };
+    });
+  }, [armatures, scene]);
+
+  // Markers are filtered to visible armatures; the full `bones` list still
+  // drives posing and export regardless of what's shown.
+  const markerBones = useMemo(() => {
+    if (!hiddenArmatureIds.size) return bones;
+
+    const hiddenBoneIds = new Set();
+    armatures.forEach((armature) => {
+      if (hiddenArmatureIds.has(armature.id)) {
+        armature.bones.forEach((bone) => hiddenBoneIds.add(bone.uuid));
+      }
+    });
+
+    return bones.filter((bone) => !hiddenBoneIds.has(bone.uuid));
+  }, [armatures, bones, hiddenArmatureIds]);
 
   const jointRadius = useMemo(() => {
     if (!scene) return 0.02;
@@ -569,13 +704,20 @@ function PoseScene({
         />
       ) : null}
       <primitive object={scene} />
-      {skeletonHelper ? <primitive object={skeletonHelper} /> : null}
-      <BoneJoints
-        bones={bones}
-        jointRadius={jointRadius}
-        onSelect={onSelectBone}
-        selectedBone={selectedBone}
-      />
+      {showMarkers
+        ? armatureHelpers
+            .filter(({ id }) => !hiddenArmatureIds.has(id))
+            .map(({ helper, id }) => <primitive key={id} object={helper} />)
+        : null}
+      {showMarkers ? (
+        <BoneJoints
+          bones={markerBones}
+          jointRadius={jointRadius * markerScale}
+          markerColor={markerColor}
+          onSelect={onSelectBone}
+          selectedBone={selectedBone}
+        />
+      ) : null}
       {selectedBone && !(animation?.clipName && animation.playing) ? (
         <TransformControls
           mode={gizmoMode}
@@ -589,28 +731,40 @@ function PoseScene({
   );
 }
 
-function AxisSlider({ axis, onChange, value }) {
+function AxisSlider({
+  axis,
+  label = 'Axis',
+  max = 180,
+  min = -180,
+  onChange,
+  precision = 1,
+  step = 1,
+  value,
+}) {
+  const factor = 10 ** precision;
+
   return (
     <div style={styles.sliderRow}>
       <span style={styles.label}>{axis.toUpperCase()}</span>
       <input
-        aria-label={`Rotation ${axis}`}
-        max={180}
-        min={-180}
-        step={1}
+        aria-label={`${label} ${axis}`}
+        max={max}
+        min={min}
+        step={step}
         type="range"
         value={value}
         onChange={(event) => onChange(Number(event.target.value))}
       />
       <input
-        aria-label={`Rotation ${axis} degrees`}
+        aria-label={`${label} ${axis} value`}
         style={{
           ...styles.input,
           padding: '0.3rem 0.4rem',
           fontSize: '0.78rem',
         }}
+        step={step}
         type="number"
-        value={Math.round(value * 10) / 10}
+        value={Math.round(value * factor) / factor}
         onChange={(event) => onChange(Number(event.target.value))}
       />
     </div>
@@ -633,6 +787,8 @@ export default function PoseWorkbench({ uploadedAsset }) {
   const [gizmoMode, setGizmoMode] = useState('rotate');
   const [selectedBone, setSelectedBone] = useState(null);
   const [boneEuler, setBoneEuler] = useState({ x: 0, y: 0, z: 0 });
+  const [bonePosition, setBonePosition] = useState({ x: 0, y: 0, z: 0 });
+  const [boneClipboard, setBoneClipboard] = useState(() => readBoneClipboard());
   const [poseName, setPoseName] = useState('pose-1');
   const [poses, setPoses] = useState([]);
   const [outputPath, setOutputPath] = useState('model-posed.glb');
@@ -644,6 +800,15 @@ export default function PoseWorkbench({ uploadedAsset }) {
     time: 0,
   });
   const [boneFilter, setBoneFilter] = useState('');
+  // Collapsed bones (by uuid) hide their descendants in the list tree.
+  const [collapsedBones, setCollapsedBones] = useState(() => new Set());
+  // Viewport marker controls — markers default on, sized off the model bbox.
+  const [showMarkers, setShowMarkers] = useState(true);
+  const [markerScale, setMarkerScale] = useState(1);
+  const [markerColor, setMarkerColor] = useState('#38bdf8');
+  // Armatures hidden from the viewport (by root-bone uuid) — lets you isolate
+  // one skeleton on combined rigs where bones from each crowd together.
+  const [hiddenArmatureIds, setHiddenArmatureIds] = useState(() => new Set());
   const selectedBoneItemRef = useRef(null);
 
   const refreshModelList = useCallback(async () => {
@@ -667,6 +832,18 @@ export default function PoseWorkbench({ uploadedAsset }) {
   useEffect(() => {
     refreshModelList();
   }, [refreshModelList]);
+
+  // Keep the Paste button live when another tab copies a bone transform.
+  useEffect(() => {
+    function handleStorage(event) {
+      if (event.key === BONE_CLIPBOARD_KEY) {
+        setBoneClipboard(readBoneClipboard());
+      }
+    }
+
+    window.addEventListener('storage', handleStorage);
+    return () => window.removeEventListener('storage', handleStorage);
+  }, []);
 
   const modelSource = useMemo(() => {
     if (selectedModelValue === 'uploaded' && uploadedAsset) {
@@ -695,7 +872,18 @@ export default function PoseWorkbench({ uploadedAsset }) {
   const clipDuration = selectedClip?.duration ?? 0;
 
   const bones = useMemo(() => (scene ? collectBones(scene) : []), [scene]);
+  const armatures = useMemo(() => collectArmatures(bones), [bones]);
   const restPose = useMemo(() => captureRestPose(bones), [bones]);
+  // Sizes the translate sliders' range to the model so the gizmo and sliders
+  // cover a comparable distance regardless of the model's units.
+  const sceneSize = useMemo(() => {
+    if (!scene) return 1;
+
+    const box = new THREE.Box3().setFromObject(scene);
+    if (box.isEmpty()) return 1;
+
+    return box.getSize(new THREE.Vector3()).length() || 1;
+  }, [scene]);
   const filteredBones = useMemo(() => {
     const query = boneFilter.trim().toLowerCase();
     if (!query) return bones;
@@ -704,6 +892,15 @@ export default function PoseWorkbench({ uploadedAsset }) {
       (bone.name || bone.uuid).toLowerCase().includes(query)
     );
   }, [bones, boneFilter]);
+  // While filtering, show every match flat; otherwise hide descendants of any
+  // collapsed bone so the tree can be folded down.
+  const displayedBones = useMemo(() => {
+    if (boneFilter.trim() || !collapsedBones.size) return filteredBones;
+
+    return filteredBones.filter(
+      (bone) => !hasCollapsedAncestor(bone, collapsedBones)
+    );
+  }, [filteredBones, boneFilter, collapsedBones]);
 
   const modelSourceRef = useRef(modelSource);
   modelSourceRef.current = modelSource;
@@ -724,6 +921,8 @@ export default function PoseWorkbench({ uploadedAsset }) {
     setSelectedBone(null);
     setAnimation({ clipName: restoredClip, playing: false, time: 0 });
     setBoneFilter('');
+    setCollapsedBones(new Set());
+    setHiddenArmatureIds(new Set());
     setPoses(hydratePosesFromClips(clips));
     setSaveState({ status: 'idle', message: null });
     setOutputPath(buildDefaultOutputPath(modelSourceRef.current));
@@ -772,12 +971,14 @@ export default function PoseWorkbench({ uploadedAsset }) {
     setSelectedBone(bone);
     if (bone) {
       setBoneEuler(readBoneEuler(bone));
+      setBonePosition(readBonePosition(bone));
     }
   }, []);
 
   const handleBoneTransformChange = useCallback(() => {
     if (selectedBone) {
       setBoneEuler(readBoneEuler(selectedBone));
+      setBonePosition(readBonePosition(selectedBone));
     }
   }, [selectedBone]);
 
@@ -798,6 +999,57 @@ export default function PoseWorkbench({ uploadedAsset }) {
     setBoneEuler((current) => ({ ...current, [axis]: degrees }));
   }
 
+  function setBonePositionAxis(axis, value) {
+    if (!selectedBone || !Number.isFinite(value)) return;
+
+    selectedBone.position[axis] = value;
+    setBonePosition((current) => ({ ...current, [axis]: value }));
+  }
+
+  function copyBoneTransform() {
+    if (!selectedBone) return;
+
+    // Copy only what the current gizmo mode edits: rotation or translation.
+    const payload =
+      gizmoMode === 'translate'
+        ? {
+            boneName: selectedBone.name || '',
+            mode: 'translate',
+            position: selectedBone.position.toArray(),
+          }
+        : {
+            boneName: selectedBone.name || '',
+            mode: 'rotate',
+            quaternion: selectedBone.quaternion.toArray(),
+          };
+
+    try {
+      window.localStorage.setItem(BONE_CLIPBOARD_KEY, JSON.stringify(payload));
+    } catch {
+      // localStorage can be unavailable (private mode); keep the in-memory copy.
+    }
+
+    setBoneClipboard(payload);
+  }
+
+  function pasteBoneTransform() {
+    if (!selectedBone) return;
+
+    // Read fresh so a copy made in another tab is picked up immediately.
+    const payload = readBoneClipboard() || boneClipboard;
+    if (!payload) return;
+
+    // Apply only the copied channel, leaving the bone's other transform intact.
+    if (payload.mode === 'translate') {
+      selectedBone.position.fromArray(payload.position);
+    } else {
+      selectedBone.quaternion.fromArray(payload.quaternion);
+    }
+
+    setBoneEuler(readBoneEuler(selectedBone));
+    setBonePosition(readBonePosition(selectedBone));
+  }
+
   function resetSelectedBone() {
     if (!selectedBone) return;
 
@@ -808,12 +1060,14 @@ export default function PoseWorkbench({ uploadedAsset }) {
     selectedBone.quaternion.copy(rest.quaternion);
     selectedBone.scale.copy(rest.scale);
     setBoneEuler(readBoneEuler(selectedBone));
+    setBonePosition(readBonePosition(selectedBone));
   }
 
   function resetWholePose() {
     applyRestPose(restPose);
     if (selectedBone) {
       setBoneEuler(readBoneEuler(selectedBone));
+      setBonePosition(readBonePosition(selectedBone));
     }
   }
 
@@ -875,11 +1129,12 @@ export default function PoseWorkbench({ uploadedAsset }) {
       applyRestPose(restPose);
 
       const exporter = new GLTFExporter();
-      const poseNames = new Set(poses.map((pose) => pose.name));
       const animations = [
-        // Poses hydrated from the file are re-exported from the editable
-        // list, so drop the original clips they came from to avoid duplicates.
-        ...animationClips.filter((clip) => !poseNames.has(clip.name)),
+        // Drop every one-frame pose clip (the format Save writes) and re-emit
+        // only the current editable poses. Otherwise a pose deleted from the
+        // list survives via its original clip and reappears after reload. Real
+        // multi-frame animation clips aren't pose clips, so they're preserved.
+        ...animationClips.filter((clip) => poseSnapshotFromClip(clip) === null),
         ...poses.map((pose) => buildPoseClip(pose)),
       ];
       const buffer = await exporter.parseAsync(scene, {
@@ -973,21 +1228,61 @@ export default function PoseWorkbench({ uploadedAsset }) {
           <PoseScene
             animation={animation}
             animationClips={animationClips}
+            armatures={armatures}
             bones={bones}
             gizmoMode={gizmoMode}
+            hiddenArmatureIds={hiddenArmatureIds}
+            markerColor={markerColor}
+            markerScale={markerScale}
             onAnimationTimeChange={handleAnimationTimeChange}
             onBoneTransformChange={handleBoneTransformChange}
             onSelectBone={selectBone}
             scene={scene}
             selectedBone={selectedBone}
+            showMarkers={showMarkers}
           />
         </Canvas>
       </div>
     );
   }
 
+  function toggleArmature(id) {
+    setHiddenArmatureIds((current) => {
+      const next = new Set(current);
+      if (next.has(id)) {
+        next.delete(id);
+      } else {
+        next.add(id);
+      }
+      return next;
+    });
+  }
+
+  function toggleBoneCollapsed(uuid) {
+    setCollapsedBones((current) => {
+      const next = new Set(current);
+      if (next.has(uuid)) {
+        next.delete(uuid);
+      } else {
+        next.add(uuid);
+      }
+      return next;
+    });
+  }
+
   const canSave =
     Boolean(scene) && poses.length > 0 && saveState.status !== 'working';
+
+  // The X/Y/Z panel mirrors the gizmo: rotate edits degrees, translate edits
+  // local position. Translate sliders center on the bone's bind position and
+  // span a model-scaled range so the slider travel feels comparable to dragging
+  // the gizmo.
+  const isTranslate = gizmoMode === 'translate';
+  const translateRange = sceneSize * 0.5;
+  const translateStep = Math.max(sceneSize / 1000, 0.0001);
+  const selectedRestPosition = selectedBone
+    ? restPose.get(selectedBone)?.position
+    : null;
 
   return (
     <div style={styles.layout}>
@@ -1144,36 +1439,48 @@ export default function PoseWorkbench({ uploadedAsset }) {
                 />
               </div>
               <div style={styles.boneList}>
-                {filteredBones.map((bone) => {
+                {displayedBones.map((bone) => {
                   const depth = getBoneDepth(bone);
                   const boneName = bone.name || bone.uuid.slice(0, 8);
+                  const isSelected = bone === selectedBone;
+                  const collapsible =
+                    !boneFilter.trim() && boneHasChildren(bone);
+                  const collapsed = collapsedBones.has(bone.uuid);
                   return (
-                    <button
+                    <div
                       key={bone.uuid}
-                      ref={
-                        bone === selectedBone ? selectedBoneItemRef : undefined
-                      }
-                      type="button"
-                      title={`${boneName} (depth ${depth})`}
                       style={{
-                        ...styles.boneItem,
-                        paddingLeft: `${0.5 + Math.min(depth, 7) * 0.45}rem`,
-                        ...(bone === selectedBone
-                          ? styles.boneItemSelected
-                          : null),
+                        ...styles.boneRow,
+                        paddingLeft: `${Math.min(depth, 8) * 0.6}rem`,
+                        ...(isSelected ? styles.boneItemSelected : null),
                       }}
-                      onClick={() => selectBone(bone)}
                     >
-                      {depth > 0 ? (
-                        <span style={styles.boneItemDepth}>
-                          {'›'.repeat(Math.min(depth, 12))}
-                        </span>
-                      ) : null}
-                      <span style={styles.boneItemName}>{boneName}</span>
-                    </button>
+                      {collapsible ? (
+                        <button
+                          type="button"
+                          aria-label={`${collapsed ? 'Expand' : 'Collapse'} ${boneName}`}
+                          title={collapsed ? 'Expand' : 'Collapse'}
+                          style={styles.boneToggle}
+                          onClick={() => toggleBoneCollapsed(bone.uuid)}
+                        >
+                          {collapsed ? '▸' : '▾'}
+                        </button>
+                      ) : (
+                        <span style={styles.boneToggle} />
+                      )}
+                      <button
+                        ref={isSelected ? selectedBoneItemRef : undefined}
+                        type="button"
+                        title={`${boneName} (depth ${depth})`}
+                        style={styles.boneItem}
+                        onClick={() => selectBone(bone)}
+                      >
+                        <span style={styles.boneItemName}>{boneName}</span>
+                      </button>
+                    </div>
                   );
                 })}
-                {!filteredBones.length ? (
+                {!displayedBones.length ? (
                   <p style={{ ...styles.hint, padding: '0.3rem 0.5rem' }}>
                     No bones match “{boneFilter}”.
                   </p>
@@ -1191,25 +1498,69 @@ export default function PoseWorkbench({ uploadedAsset }) {
 
         {selectedBone ? (
           <section style={styles.panel}>
-            <h2 style={styles.panelTitle}>
-              Bone: {selectedBone.name || 'unnamed'}
-            </h2>
+            <div style={styles.timelineHeader}>
+              <h2 style={styles.panelTitle}>
+                Bone: {selectedBone.name || 'unnamed'}
+              </h2>
+              <span style={styles.timecode}>
+                {isTranslate ? 'Translate · position' : 'Rotate · degrees'}
+              </span>
+            </div>
             <div style={{ ...styles.grid, marginTop: '0.9rem' }}>
-              <AxisSlider
-                axis="x"
-                value={boneEuler.x}
-                onChange={(value) => setBoneRotationAxis('x', value)}
-              />
-              <AxisSlider
-                axis="y"
-                value={boneEuler.y}
-                onChange={(value) => setBoneRotationAxis('y', value)}
-              />
-              <AxisSlider
-                axis="z"
-                value={boneEuler.z}
-                onChange={(value) => setBoneRotationAxis('z', value)}
-              />
+              {isTranslate
+                ? ['x', 'y', 'z'].map((axis) => {
+                    const center = selectedRestPosition?.[axis] ?? 0;
+                    return (
+                      <AxisSlider
+                        key={axis}
+                        axis={axis}
+                        label="Position"
+                        min={center - translateRange}
+                        max={center + translateRange}
+                        step={translateStep}
+                        precision={4}
+                        value={bonePosition[axis]}
+                        onChange={(value) => setBonePositionAxis(axis, value)}
+                      />
+                    );
+                  })
+                : ['x', 'y', 'z'].map((axis) => (
+                    <AxisSlider
+                      key={axis}
+                      axis={axis}
+                      label="Rotation"
+                      value={boneEuler[axis]}
+                      onChange={(value) => setBoneRotationAxis(axis, value)}
+                    />
+                  ))}
+              <div style={styles.buttonRow}>
+                <button
+                  type="button"
+                  style={styles.secondaryButton}
+                  onClick={copyBoneTransform}
+                >
+                  Copy {describeGizmoMode(gizmoMode)}
+                </button>
+                <button
+                  type="button"
+                  style={{
+                    ...styles.secondaryButton,
+                    ...(boneClipboard ? null : styles.disabledButton),
+                  }}
+                  disabled={!boneClipboard}
+                  onClick={pasteBoneTransform}
+                >
+                  Paste{' '}
+                  {boneClipboard ? describeGizmoMode(boneClipboard.mode) : ''}
+                </button>
+              </div>
+              <p style={styles.hint}>
+                {boneClipboard
+                  ? `Clipboard: ${describeGizmoMode(boneClipboard.mode)} from ${
+                      boneClipboard.boneName || 'a bone'
+                    } — Paste applies only that to the selected bone (works across tabs on the same skeleton).`
+                  : 'Copy only what the gizmo mode edits (rotation or translation), then paste onto another bone — or the same bone in another tab.'}
+              </p>
               <div style={styles.buttonRow}>
                 <button
                   type="button"
@@ -1344,7 +1695,95 @@ export default function PoseWorkbench({ uploadedAsset }) {
         </section>
       </div>
 
-      <div style={styles.rightStack}>{renderViewport()}</div>
+      <div style={styles.rightStack}>
+        {renderViewport()}
+
+        <section style={styles.panel}>
+          <h2 style={styles.panelTitle}>Markers</h2>
+          <p style={styles.panelLead}>
+            Tune the joint markers and skeleton overlay so they stay readable on
+            small or dense rigs.
+          </p>
+          <div style={{ ...styles.grid, marginTop: '0.9rem' }}>
+            <div style={styles.checkboxRow}>
+              <input
+                aria-label="Show bones and markers"
+                type="checkbox"
+                checked={showMarkers}
+                onChange={(event) => setShowMarkers(event.target.checked)}
+              />
+              <span style={styles.label}>Show bones &amp; markers</span>
+            </div>
+            <div style={styles.field}>
+              <div style={styles.timelineHeader}>
+                <span style={styles.label}>Marker size</span>
+                <span style={styles.timecode}>{markerScale.toFixed(2)}×</span>
+              </div>
+              <input
+                aria-label="Marker size"
+                disabled={!showMarkers}
+                max={5}
+                min={0.1}
+                step={0.05}
+                type="range"
+                value={markerScale}
+                onChange={(event) => setMarkerScale(Number(event.target.value))}
+              />
+            </div>
+            <div style={styles.field}>
+              <span style={styles.label}>Marker color</span>
+              <input
+                aria-label="Marker color"
+                disabled={!showMarkers}
+                style={{ ...styles.input, height: '2.6rem', padding: '0.2rem' }}
+                type="color"
+                value={markerColor}
+                onChange={(event) => setMarkerColor(event.target.value)}
+              />
+              <p style={styles.hint}>
+                The selected joint stays amber so it&apos;s easy to spot.
+              </p>
+            </div>
+            {armatures.length > 1 ? (
+              <div style={styles.field}>
+                <div style={styles.timelineHeader}>
+                  <span style={styles.label}>Armatures</span>
+                  {hiddenArmatureIds.size ? (
+                    <button
+                      type="button"
+                      style={styles.secondaryButton}
+                      onClick={() => setHiddenArmatureIds(new Set())}
+                    >
+                      Show all
+                    </button>
+                  ) : null}
+                </div>
+                <p style={styles.hint}>
+                  Hide a skeleton to isolate the other when bones from each
+                  crowd together.
+                </p>
+                {armatures.map((armature, index) => (
+                  <div key={armature.id} style={styles.checkboxRow}>
+                    <input
+                      aria-label={`Show armature ${armature.name}`}
+                      disabled={!showMarkers}
+                      type="checkbox"
+                      checked={!hiddenArmatureIds.has(armature.id)}
+                      onChange={() => toggleArmature(armature.id)}
+                    />
+                    <span style={styles.label}>
+                      {index + 1}. {armature.name}
+                      <span style={{ ...styles.hint, marginLeft: '0.4rem' }}>
+                        {armature.bones.length} bones
+                      </span>
+                    </span>
+                  </div>
+                ))}
+              </div>
+            ) : null}
+          </div>
+        </section>
+      </div>
     </div>
   );
 }

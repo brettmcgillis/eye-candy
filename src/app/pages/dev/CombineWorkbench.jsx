@@ -311,6 +311,25 @@ function boundsWidth(object) {
   return box.max.x - box.min.x || 1;
 }
 
+// Clone a scene for export with independent geometry per mesh. Sharing geometry
+// across instances makes GLTFExporter emit one mesh referenced by several nodes;
+// gltfjsx's GLTFLoader then crashes cloning that reused SkinnedMesh
+// (`morphTargetInfluences.slice is not a function`). Unique geometry keeps each
+// instance a standalone mesh — gltfjsx's transform pass re-dedupes identical
+// geometry when instancing is enabled, so we keep the instancing payoff.
+function cloneInstanceForExport(baseScene) {
+  const clone = SkeletonUtils.clone(baseScene);
+
+  clone.traverse((node) => {
+    if (node.isMesh && node.geometry) {
+      // eslint-disable-next-line no-param-reassign
+      node.geometry = node.geometry.clone();
+    }
+  });
+
+  return clone;
+}
+
 function arrayBufferToBase64(buffer) {
   const bytes = new Uint8Array(buffer);
   const chunkSize = 0x8000;
@@ -655,7 +674,7 @@ export default function CombineWorkbench({ uploadedAsset }) {
       const baseScene = sceneCacheRef.current.get(instance.modelValue);
       if (!baseScene) return;
 
-      const clone = SkeletonUtils.clone(baseScene);
+      const clone = cloneInstanceForExport(baseScene);
       applyInstanceTransform(clone, instance);
       clone.name = `${toPascalCase(instance.label)}_${index + 1}`;
       root.add(clone);

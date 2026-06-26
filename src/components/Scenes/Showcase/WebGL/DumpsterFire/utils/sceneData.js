@@ -286,7 +286,7 @@ export const SHOT_AIM_PLANE_POINT = [
 ];
 
 export const FIRE_LOOP_TRACK = 'looped-fire.mp3';
-export const FIRE_LOOP_VOLUME = 0.35;
+export const FIRE_LOOP_VOLUME = 0.75;
 // Positional-audio defaults for the spatialized fire loop. offset is relative
 // to the flame's instance group; ref/rolloff/max feed Howler's panner.
 export const DEFAULT_FIRE_AUDIO = Object.freeze({

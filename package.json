@@ -77,6 +77,7 @@
     "three-plotter-renderer": "^1.1.1",
     "three-stdlib": "^2.36.1",
     "three-subdivide": "^1.1.5",
+    "tone": "^15.1.22",
     "tsl-textures": "^3.0.1",
     "zustand": "^5.0.12"
   },

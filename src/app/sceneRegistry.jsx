@@ -15,6 +15,7 @@ import {
   FaPaw,
   FaPen,
   FaPlane,
+  FaPrayingHands,
   FaSkullCrossbones,
   FaToolbox,
   FaTools,
@@ -56,7 +57,12 @@ import {
   PiSkullDuotone,
   PiVirusDuotone,
 } from 'react-icons/pi';
-import { TbDeviceTvOldFilled, TbSquare, TbVectorSpline } from 'react-icons/tb';
+import {
+  TbAtom2Filled,
+  TbDeviceTvOldFilled,
+  TbSquare,
+  TbVectorSpline,
+} from 'react-icons/tb';
 import { WiSmoke } from 'react-icons/wi';
 
 import { iconFile } from '../utils/appUtils';
@@ -280,6 +286,10 @@ const OneInTheHand = lazy(
 );
 const Prayer = lazy(
   () => import('../components/scenes/WorkInProgress/WebGPU/Prayer/Prayer')
+);
+const Apparitions = lazy(
+  () =>
+    import('../components/scenes/WorkInProgress/WebGPU/Apparitions/Apparitions')
 );
 
 function WipAreaIcon() {
@@ -613,7 +623,11 @@ function OneInTheHandIcon() {
 }
 
 function PrayerIcon() {
-  return <FaHandPaper color="#f3f4f6" />;
+  return <FaPrayingHands color="#710000" />;
+}
+
+function ApparitionsIcon() {
+  return <TbAtom2Filled color="#6a00a2" size={26} />;
 }
 
 export const AREA_ROUTE_SEGMENTS = {
@@ -1394,6 +1408,15 @@ export const EYE_CANDIES = [
     route: 'prayer',
     icon: PrayerIcon,
     Component: Prayer,
+  },
+  {
+    id: 'apparitions',
+    label: 'Apparitions',
+    channel: 'webgpu',
+    area: 'wip',
+    route: 'apparitions',
+    icon: ApparitionsIcon,
+    Component: Apparitions,
   },
   {
     id: 'birdsArentReal',

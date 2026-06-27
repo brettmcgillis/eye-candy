@@ -25,7 +25,7 @@ To Build:
 
 - [ ] Video casette tape with video playing on tape ribbon
 - [ ] CSG Skull. Knock a reversal out of its forehead.
-- [ ] Metaball (marching cubes) lava lamp
+- [ ] Metaball (marching cubes) interactive lava lamp
 - [ ] Can we use ecctrl & click to move to make Quinn's board game playable?
 - [ ] We should do a scene with Quinns seal, 3rd person camera, player controls w/keyboard and controller.
       Scene should include quinns dice in the environment. Get low-LOD versions.
@@ -71,6 +71,7 @@ To Build:
 **WorkInProgress**
 
 - [Aisle9](src/components/scenes/WorkInProgress/WebGPU/Aisle9/todo.md)
+- [Apparitions](src/components/scenes/WorkInProgress/WebGPU/Apparitions/todo.md)
 - [RaisedByTV](src/components/scenes/WorkInProgress/WebGPU/RaisedByTV/todo.md)
 - [OneInTheHand](src/components/scenes/WorkInProgress/WebGPU/OneInTheHand/todo.md)
 - [ThatsAllFolks](src/components/scenes/WorkInProgress/WebGPU/ThatsAllFolks/todo.md)
@@ -180,6 +181,7 @@ To Build:
 
 ### Scenes finish before post
 
+- [ ] Apparitions
 - [ ] Aisle 9
 - [ ] All My Friends Are Ghosts
 - [ ] Birds Arent Real

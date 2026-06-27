@@ -78,7 +78,7 @@ function buildLandmarkerOptions(mode, options) {
     minPoseDetectionConfidence: options.minPoseDetectionConfidence,
     minPosePresenceConfidence: options.minPosePresenceConfidence,
     minTrackingConfidence: options.minTrackingConfidence,
-    numPoses: 1,
+    numPoses: options.maxPoses,
     outputSegmentationMasks: false,
     runningMode: 'VIDEO',
   };
@@ -181,7 +181,9 @@ function drawHolisticOverlay(ctx, results, connectorStyle, landmarkStyle) {
 }
 
 export default function useMediaPipeBodyTracking({
+  enabled = true,
   mode = BODY_TRACKING_MODE.pose,
+  maxPoses = 1,
   minPoseDetectionConfidence = 0.6,
   minPosePresenceConfidence = 0.6,
   minTrackingConfidence = 0.6,
@@ -237,10 +239,12 @@ export default function useMediaPipeBodyTracking({
   }, [videoSize]);
 
   useEffect(() => {
+    if (!enabled) return;
     if (!landmarkerRef.current) return;
 
     landmarkerRef.current.setOptions(
       buildLandmarkerOptions(mode, {
+        maxPoses,
         minFaceDetectionConfidence,
         minFacePresenceConfidence,
         minHandLandmarksConfidence,
@@ -250,6 +254,8 @@ export default function useMediaPipeBodyTracking({
       })
     );
   }, [
+    enabled,
+    maxPoses,
     minFaceDetectionConfidence,
     minFacePresenceConfidence,
     minHandLandmarksConfidence,
@@ -260,6 +266,11 @@ export default function useMediaPipeBodyTracking({
   ]);
 
   useEffect(() => {
+    if (!enabled) {
+      setResults(null);
+      return undefined;
+    }
+
     let active = true;
     let lastVideoTime = -1;
 
@@ -317,6 +328,7 @@ export default function useMediaPipeBodyTracking({
         );
 
         const landmarker = await createLandmarker(mode, vision, {
+          maxPoses,
           minFaceDetectionConfidence,
           minFacePresenceConfidence,
           minHandLandmarksConfidence,
@@ -446,6 +458,8 @@ export default function useMediaPipeBodyTracking({
   }, [
     cameraHeight,
     cameraWidth,
+    enabled,
+    maxPoses,
     minFaceDetectionConfidence,
     minFacePresenceConfidence,
     minHandLandmarksConfidence,

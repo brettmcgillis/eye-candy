@@ -5,10 +5,7 @@ import React, { useEffect, useRef } from 'react';
 import { useFrame, useThree } from '@react-three/fiber';
 
 import useMediaPipeBodyTracking from '../../../../../../hooks/pose/useMediaPipeBodyTracking';
-import {
-  APPARITIONS_ENVIRONMENTS,
-  FLOW_VOLUME_BOUNDS,
-} from '../presets/apparitionsPresets';
+import { ENVIRONMENTS, FLOW_VOLUME_BOUNDS } from '../presets/presets';
 import MlsMpmSimulator from '../utils/MlsMpmSimulator';
 import ParticleRenderer from '../utils/ParticleRenderer';
 import {
@@ -41,7 +38,7 @@ export default function ParticleSystem({ controls, setControls }) {
   });
 
   const bounds =
-    controls.environmentMode === APPARITIONS_ENVIRONMENTS.outsideSpaceTime
+    controls.environmentMode === ENVIRONMENTS.outsideSpaceTime
       ? controls
       : FLOW_VOLUME_BOUNDS;
 

@@ -1,6 +1,6 @@
 import { BODY_TRACKING_MODE } from '../../../../../../hooks/pose/useMediaPipeBodyTracking';
 
-export const APPARITIONS_ENVIRONMENTS = {
+export const ENVIRONMENTS = {
   flow: 'flow',
   outsideSpaceTime: 'outsideSpaceTime',
 };
@@ -50,7 +50,7 @@ const FLOW_BASE = {
   yOffset: 28,
   zOffset: 26,
 
-  environmentMode: APPARITIONS_ENVIRONMENTS.flow,
+  environmentMode: ENVIRONMENTS.flow,
   flowEnvironmentIntensity: 0.5,
   outsideBackgroundColor: '#000000',
   boundsLineColor: '#e5e7eb',
@@ -62,11 +62,11 @@ const FLOW_BASE = {
   autoOrbitSpeed: 0.22,
 };
 
-export const APPARITIONS_PRESETS = {
+export const PRESETS = {
   Flow: FLOW_BASE,
   'Outside Space and Time': {
     ...FLOW_BASE,
-    environmentMode: APPARITIONS_ENVIRONMENTS.outsideSpaceTime,
+    environmentMode: ENVIRONMENTS.outsideSpaceTime,
     boundsSize: 1,
     // Particle Y always spans 0..1 (center 0.5) — the renderer never recenters Y.
     boundsCenterY: 0.5,
@@ -79,11 +79,11 @@ export const APPARITIONS_PRESETS = {
   },
   Interactive: {
     ...FLOW_BASE,
-    environmentMode: APPARITIONS_ENVIRONMENTS.outsideSpaceTime,
+    environmentMode: ENVIRONMENTS.outsideSpaceTime,
     interactivityEnabled: true,
     enableGestureToggle: true,
     autoOrbit: true,
   },
 };
 
-export const DEFAULT_APPARITIONS_PRESET = 'Flow';
+export const DEFAULT_PRESET = 'Flow';

@@ -4,11 +4,7 @@ import { useCallback, useEffect, useRef } from 'react';
 
 import { BODY_TRACKING_MODE } from '../../../../../../hooks/pose/useMediaPipeBodyTracking';
 import usePresetsFolder from '../../../../../../hooks/usePresetsFolder';
-import {
-  APPARITIONS_ENVIRONMENTS,
-  APPARITIONS_PRESETS,
-  DEFAULT_APPARITIONS_PRESET,
-} from '../presets/apparitionsPresets';
+import { DEFAULT_PRESET, ENVIRONMENTS, PRESETS } from '../presets/presets';
 
 function getPresetControls({ presetName, presetSnapshot }) {
   return { ...presetSnapshot, preset: presetName };
@@ -22,14 +18,12 @@ export default function useSceneControls() {
     initialPreset,
     presetsFolder,
   } = usePresetsFolder({
-    defaultPreset: DEFAULT_APPARITIONS_PRESET,
+    defaultPreset: DEFAULT_PRESET,
     getPresetControls,
-    presets: APPARITIONS_PRESETS,
+    presets: PRESETS,
   });
 
-  const initialSnapshot =
-    APPARITIONS_PRESETS[initialPreset] ||
-    APPARITIONS_PRESETS[DEFAULT_APPARITIONS_PRESET];
+  const initialSnapshot = PRESETS[initialPreset] || PRESETS[DEFAULT_PRESET];
 
   const toggleInteractionMode = useCallback(() => {
     const currentMode = controlsSnapshotRef.current.interactionMode;
@@ -273,9 +267,8 @@ export default function useSceneControls() {
           environmentMode: {
             label: 'Environment',
             options: {
-              Flow: APPARITIONS_ENVIRONMENTS.flow,
-              'Outside Space and Time':
-                APPARITIONS_ENVIRONMENTS.outsideSpaceTime,
+              Flow: ENVIRONMENTS.flow,
+              'Outside Space and Time': ENVIRONMENTS.outsideSpaceTime,
             },
             value: initialSnapshot.environmentMode,
           },

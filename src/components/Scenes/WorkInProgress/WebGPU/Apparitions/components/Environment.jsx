@@ -4,14 +4,13 @@ import React, { useEffect, useRef } from 'react';
 
 import { useThree } from '@react-three/fiber';
 
-import { APPARITIONS_ENVIRONMENTS } from '../presets/apparitionsPresets';
+import { ENVIRONMENTS } from '../presets/presets';
 import FlowEnvironment from './FlowEnvironment';
 
 export default function Environment({ controls }) {
   const { gl, scene } = useThree();
   const rendererSnapshotRef = useRef(null);
-  const useFlowEnvironment =
-    controls.environmentMode === APPARITIONS_ENVIRONMENTS.flow;
+  const useFlowEnvironment = controls.environmentMode === ENVIRONMENTS.flow;
 
   useEffect(() => {
     if (!rendererSnapshotRef.current) {

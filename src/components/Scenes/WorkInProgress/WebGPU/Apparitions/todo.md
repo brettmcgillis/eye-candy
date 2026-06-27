@@ -247,17 +247,35 @@ them; if they stop, an apparition forms; when they walk on, it dissolves behind 
 - Gate behind a control so it's optional for the silent walk-past use case.
 
 **Out (sim → tone):** the original, instrument-y direction. Read aggregate sim state each frame
-(cheap CPU-side proxies, or sample a few particles) and drive Tone.js:
+(cheap CPU-side proxies, or sample a few particles) and drive Tone.js.
 
-- Total kinetic energy (≈ `bodyEnergy` or mean particle speed) → filter cutoff / master gain.
-- Mean density (or rest-density target) → chord voicing.
-- People count → number of active voices.
-- Center-of-mass height → pitch / drone root.
+**Musical model — tempo + composable key (so output is always musical, never atonal mush):**
+
+- **Tempo:** a Tone.js `Transport` set by a `bpm` control. Generated notes quantize to a grid
+  (`subdivision`: 1/4, 1/8, 1/16, triplets) so events land on the beat. Support both a
+  continuous pad/drone layer *and* a rhythmic layer gated to the transport.
+- **Key = root + scale, where a scale is just an interval set** (semitone offsets from the
+  root). This one representation composes across everything:
+  - `major` → `[0,2,4,5,7,9,11]`, `minor` (natural) → `[0,2,3,5,7,8,10]`
+  - `pentatonicMajor` → `[0,2,4,7,9]`, `pentatonicMinor` → `[0,3,5,7,10]`
+  - `chromatic` → `[0,1,2,3,4,5,6,7,8,9,10,11]`
+  - `custom` → any user-supplied offset array (also covers modes, blues, etc.)
+  Store as `{ root: 'A', scale: number[], octaveRange: [lo, hi] }`. A `quantizeToScale(pitch)`
+  helper snaps any continuous value to the nearest allowed pitch class — so sim signals map to
+  in-key notes regardless of which scale is selected.
+- **Sim → musical params (all snapped through the key/grid):**
+  - Center-of-mass height → scale-degree index (low body = low degree) → quantized pitch.
+  - Mean density → chord voicing / how many scale tones stack.
+  - Total kinetic energy (≈ `bodyEnergy` / mean particle speed) → note density (how often the
+    rhythmic layer fires) + velocity, and filter cutoff / master gain.
+  - People count → number of active voices.
 
 **Loop:** you move → particles react → sound changes → you respond. That closes the
 "musical/visual instrument" intent. Tone.js is the lib; build a small `useApparitionAudio` hook.
 
-**New controls:** `audioInEnabled`, band gains, `audioOutEnabled`, scale/key, voice cap.
+**New controls:** `audioInEnabled`, band gains; `audioOutEnabled`, `bpm`, `subdivision`,
+`root`, `scale` (preset list incl. chromatic/pentatonic + `custom`), `customScale` (offsets),
+`octaveRange`, voice cap. All snapshot in presets and sync over WS5.
 
 ---
 

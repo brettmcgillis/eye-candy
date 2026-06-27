@@ -38,6 +38,10 @@ These instructions give an AI coding agent the immediately useful knowledge to w
 - If a running server seems required, ask for confirmation and expected port/process ownership before starting anything.
 - If you accidentally started a background server, report it immediately and provide the exact process/terminal details so the user can decide what to do.
 
+**Scene conventions (required — read first)**
+
+- `docs/scene-conventions.md` is the source of truth for scene/component/model/shared-code structure (folder layout, naming, file size, memoization, no cross-scene imports, models→`elements`, presets, CameraRig, asset preloading, post-processing-last). Follow it exactly. The summary below is context only; the doc governs.
+
 **Project-specific conventions & patterns**
 
 - Scenes are React components that usually default-export a component (see `src/components/scenes/FluidTest/FluidTest.jsx`). Expect cameras (drei), mesh + custom materials, and hooks for interaction.

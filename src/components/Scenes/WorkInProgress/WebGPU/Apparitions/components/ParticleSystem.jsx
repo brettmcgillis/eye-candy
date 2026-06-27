@@ -107,7 +107,11 @@ export default function ParticleSystem({ controls, setControls }) {
     sim.updateConfig({
       delta,
       dynamicViscosity: controls.dynamicViscosity,
-      gravity: new THREE.Vector3(0, controls.gravityY, controls.gravityZ),
+      gravity: new THREE.Vector3(
+        controls.gravityX,
+        controls.gravityY,
+        controls.gravityZ
+      ),
       noise: controls.noise,
       particles: controls.particles,
       restDensity: controls.restDensity,

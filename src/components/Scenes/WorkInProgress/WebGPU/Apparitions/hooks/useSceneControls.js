@@ -169,6 +169,13 @@ export default function useSceneControls() {
             max: 0.4,
             step: 0.01,
           },
+          gravityX: {
+            label: 'Gravity X',
+            value: initialSnapshot.gravityX,
+            min: -0.6,
+            max: 0.6,
+            step: 0.01,
+          },
           gravityY: {
             label: 'Gravity Y',
             value: initialSnapshot.gravityY,

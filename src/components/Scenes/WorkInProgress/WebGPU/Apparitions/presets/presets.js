@@ -34,6 +34,7 @@ const FLOW_BASE = {
   stiffness: 3,
   restDensity: 1,
   dynamicViscosity: 0.1,
+  gravityX: 0,
   gravityY: 0,
   gravityZ: 0.2,
   bloom: true,

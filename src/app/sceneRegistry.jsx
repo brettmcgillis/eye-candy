@@ -18,7 +18,6 @@ import {
   FaPrayingHands,
   FaSkullCrossbones,
   FaToolbox,
-  FaTools,
 } from 'react-icons/fa';
 import { FcFullTrash } from 'react-icons/fc';
 import {
@@ -44,6 +43,7 @@ import {
   GiSmokeBomb,
   GiSpiderWeb,
 } from 'react-icons/gi';
+import { HiOutlineWrenchScrewdriver } from 'react-icons/hi2';
 import { ImLifebuoy } from 'react-icons/im';
 import { IoDice } from 'react-icons/io5';
 import { LiaDumpsterFireSolid } from 'react-icons/lia';
@@ -293,7 +293,7 @@ const Apparitions = lazy(
 );
 
 function WipAreaIcon() {
-  return <FaTools color="#94a3b8" />;
+  return <HiOutlineWrenchScrewdriver color="#000000" size={24} />;
 }
 
 function TestlabAreaIcon() {

@@ -5,6 +5,7 @@ import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 
 import usePresetsFolder from '../../../../../../hooks/usePresetsFolder';
 import useSceneCameraControls from '../../../../../../hooks/useSceneCameraControls';
+import { useMediaRecorder } from '../../../../../../modules/mediaRecorder';
 import { localEnv } from '../../../../../../utils/appUtils';
 import buildFireAndSmokeControls from '../../../../ToolBox/shared/hooks/buildFireAndSmokeControls';
 import buildSplineGroupControls from '../../../../ToolBox/shared/hooks/useSplineGroupControls';
@@ -447,6 +448,15 @@ export default function useSceneControls() {
         { collapsed: true }
       ),
       Camera: folder(cameraControls, { collapsed: true }),
+      Overlay: folder(
+        {
+          showOverlay: {
+            label: 'Show Overlay',
+            value: initialPresetSnapshot.showOverlay ?? true,
+          },
+        },
+        { collapsed: true }
+      ),
       Physics: folder(
         {
           physicsDebug: {
@@ -941,6 +951,7 @@ ${allEntries}
   const {
     showEffects,
     editSplines,
+    showOverlay,
     physicsDebug,
     cursorAttractorEnabled,
     showCursorAttractor,
@@ -1041,12 +1052,18 @@ ${allEntries}
     return buildCamera(controls);
   }, [buildCamera, controls]);
 
+  const mediaRecorderFileName = selectedPreset
+    ? `Dumpster Fire - ${selectedPreset}`
+    : 'Dumpster Fire';
+  useMediaRecorder({ fileName: mediaRecorderFileName });
+
   return {
     fireAndSmokeInstances,
     particleSmokeSplines,
     particleSmokeConfigs,
     showEffects,
     editSplines,
+    showOverlay,
     physicsDebug,
     camera,
     cameraApiRef,

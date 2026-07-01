@@ -1,7 +1,3 @@
-import { button, useControls } from 'leva';
-
-import { useEffect, useRef } from 'react';
-
 // CRC-32 table for PNG chunk validation
 /* eslint-disable no-bitwise */
 const CRC_TABLE = (() => {
@@ -58,7 +54,7 @@ function makeTextChunk(keyword, value) {
 }
 
 // Splice tEXt chunks immediately before the first IDAT chunk
-function injectPngMetadata(pngBytes, metadata) {
+export default function injectPngMetadata(pngBytes, metadata) {
   const dv = new DataView(pngBytes.buffer, pngBytes.byteOffset);
   let pos = 8; // skip 8-byte PNG signature
   let idatOffset = -1;
@@ -79,7 +75,7 @@ function injectPngMetadata(pngBytes, metadata) {
   }
 
   if (idatOffset === -1) {
-    throw new Error('[screenshot] PNG IDAT chunk not found');
+    throw new Error('[mediaRecorder] PNG IDAT chunk not found');
   }
 
   const textChunks = Object.entries(metadata).map(([k, v]) =>
@@ -96,85 +92,4 @@ function injectPngMetadata(pngBytes, metadata) {
   });
   out.set(pngBytes.slice(idatOffset), off);
   return out;
-}
-
-async function captureScreenshot(name, sceneName) {
-  const { default: html2canvas } = await import('html2canvas');
-  const canvas = await html2canvas(document.body, {
-    useCORS: true,
-    allowTaint: false,
-    scale: window.devicePixelRatio,
-  });
-
-  canvas.toBlob(async (blob) => {
-    let outBlob = blob;
-
-    try {
-      const arrayBuffer = await blob.arrayBuffer();
-      const enriched = injectPngMetadata(new Uint8Array(arrayBuffer), {
-        Artist: 'Brett McGillis',
-        Copyright: `\u00a9 ${new Date().getFullYear()} Brett McGillis`,
-        Scene: sceneName,
-        Software: 'eye-candy',
-        Instagram: '@ruinedpaintings',
-        'Creation Time': new Date().toISOString(),
-      });
-      outBlob = new Blob([enriched], { type: 'image/png' });
-    } catch (err) {
-      // eslint-disable-next-line no-console
-      console.error(
-        '[screenshot] metadata injection failed, saving without metadata:',
-        err
-      );
-    }
-
-    const url = URL.createObjectURL(outBlob);
-    const link = document.createElement('a');
-    link.download = `${name}.png`;
-    link.href = url;
-    link.click();
-    URL.revokeObjectURL(url);
-  }, 'image/png');
-}
-
-function isMobileDevice() {
-  return /iP(hone|ad|od)|Android/.test(navigator.userAgent);
-}
-
-export default function useScreenshotControls({ sceneName, presetName }) {
-  const defaultName = presetName ? `${sceneName} - ${presetName}` : sceneName;
-  const nameRef = useRef(defaultName);
-
-  useControls(
-    'App.Screenshot',
-    {
-      name: {
-        label: 'filename',
-        value: defaultName,
-        onChange: (v) => {
-          nameRef.current = v;
-        },
-      },
-      png: button(() => captureScreenshot(nameRef.current, sceneName)),
-    },
-    { collapsed: true, render: () => !isMobileDevice() }
-  );
-
-  // Update screenshot name when preset changes
-  useEffect(() => {
-    const newName = presetName ? `${sceneName} - ${presetName}` : sceneName;
-    nameRef.current = newName;
-  }, [presetName, sceneName]);
-
-  // Hotkey: Shift+S — works even when Leva panel is hidden
-  useEffect(() => {
-    const handleKeyDown = (e) => {
-      if (e.shiftKey && e.key === 'S') {
-        e.preventDefault();
-        captureScreenshot(nameRef.current, sceneName);
-      }
-    };
-    window.addEventListener('keydown', handleKeyDown);
-    return () => window.removeEventListener('keydown', handleKeyDown);
-  }, []);
 }

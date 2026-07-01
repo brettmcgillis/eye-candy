@@ -9,13 +9,7 @@
 
 ### EXPLORE/EXPLODE
 
-- [ ] Check out Tone.js for audio. Could be a good solution to bridging Strudel, Mp3, etc.
-
 ### APP
-
-- [ ] if were doing screen cap then move it out of scenes and into something at app layer
-  - Overhaul. Should support screenshot and screenrec.
-  - Make sure output includes a watermark & some cool hiddnen fileinfo
 
 - [Scaffold](src/app/scaffold/todo.md)
 
@@ -155,6 +149,7 @@ To Build:
 - [ ] All my Thoughts Are So Cumulus - Record
 - [x] All my Thoughts Are So Cumulus - Static
 - [ ] All my Thoughts Are So Cumulus - Universal
+- [x] Birds Arent Real
 - [x] Burning At Both Ends - Enlightened
 - [x] Burning At Both Ends - Extinguished
 - [x] Burning At Both Ends - Lenticular Print
@@ -188,7 +183,6 @@ To Build:
 - [ ] Apparitions
 - [ ] Aisle 9
 - [ ] All My Friends Are Ghosts
-- [ ] Birds Arent Real
 - [ ] Burning Cash
 - [ ] Crt Test
 - [ ] Dripping Skull

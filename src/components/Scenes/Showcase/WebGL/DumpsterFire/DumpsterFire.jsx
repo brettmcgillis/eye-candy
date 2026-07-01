@@ -19,6 +19,7 @@ export default function DumpsterFire() {
     particleSmokeConfigs,
     showEffects,
     editSplines,
+    showOverlay,
     physicsDebug,
     camera,
     cameraApiRef,
@@ -81,7 +82,7 @@ export default function DumpsterFire() {
         fireLightRig={fireLightRig}
         fireAudioConfig={fireAudioConfig}
       />
-      <TrashBlasterOverlay />
+      {showOverlay && <TrashBlasterOverlay />}
     </>
   );
 }

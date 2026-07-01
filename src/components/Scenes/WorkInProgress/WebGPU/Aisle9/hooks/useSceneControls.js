@@ -4,6 +4,7 @@ import { useEffect, useMemo, useRef } from 'react';
 
 import usePresetsFolder from '../../../../../../hooks/usePresetsFolder';
 import useSceneCameraControls from '../../../../../../hooks/useSceneCameraControls';
+import { useMediaRecorder } from '../../../../../../modules/mediaRecorder';
 import {
   BLACK_HOLE_VARIANT_LEGACY_PORT,
   BLACK_HOLE_VARIANT_SINGULARITY,
@@ -42,6 +43,7 @@ export default function useSceneControls() {
     controlsSnapshotRef,
     initialPreset,
     presetsFolder,
+    selectedPreset,
   } = usePresetsFolder({
     defaultPreset: DEFAULT_PRESET,
     getPresetControls,
@@ -98,7 +100,10 @@ export default function useSceneControls() {
           value: initialSnapshot.blackHoleVariant,
           options: BLACK_HOLE_VARIANT_OPTIONS,
         },
-        Legacy: folder(buildLegacyControls(initialSnapshot, LEGACY_BH_FOLDER_PATH), COLLAPSED),
+        Legacy: folder(
+          buildLegacyControls(initialSnapshot, LEGACY_BH_FOLDER_PATH),
+          COLLAPSED
+        ),
         WebGPU: folder(buildWebGPUControls(initialSnapshot), COLLAPSED),
         Singularity: folder(
           buildSingularityControls(initialSnapshot),
@@ -144,6 +149,11 @@ export default function useSceneControls() {
     () => buildCamera(controls),
     [buildCamera, cameraControlsKey]
   );
+
+  const mediaRecorderFileName = selectedPreset
+    ? `Aisle 9 - ${selectedPreset}`
+    : 'Aisle 9';
+  useMediaRecorder({ fileName: mediaRecorderFileName });
 
   return useMemo(() => {
     const skyboxRotation = controls.skyboxRotation ||

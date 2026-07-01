@@ -13,6 +13,7 @@
 - when in paint mode the user can spray paint on the brick wall creating whatever design they want. paint can be applied to the curb and asphalt as well.
 - we should allow the user to set the diameter of the spray 'brush' as well.
 - the scene leverages the overlay buttons to offer the user the ability to switch modes, screenshot,
+- take a look at dev/examples/monkeypaint for how a basic example of to texture paint.
 
 [Back to main TODO](../../../../../../TODO.md)
 

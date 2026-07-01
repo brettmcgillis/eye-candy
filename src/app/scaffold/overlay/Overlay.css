@@ -1,6 +1,26 @@
 .debug {
+  position: relative;
   cursor: crosshair;
   pointer-events: auto;
+}
+
+/* html2canvas approximates default ("normal") line-height from its own font
+   metrics, which drifts from the browser's — an explicit line-height keeps
+   screenshot text vertically aligned with what's on screen. */
+.date-display {
+  line-height: 1;
+}
+
+/* Placeholder recording indicator — a minimal dot, meant to be tuned live. */
+.debug.is-recording::after {
+  content: '';
+  position: absolute;
+  top: 0;
+  right: 0;
+  width: 0.5em;
+  height: 0.5em;
+  border-radius: 50%;
+  background: #e0303a;
 }
 
 .top-right.overlay-panel {

@@ -2,6 +2,7 @@ import React from 'react';
 import { PiSkullDuotone } from 'react-icons/pi';
 import { useLocation } from 'react-router-dom';
 
+import { useMediaRecorderStore } from '../../../../modules/mediaRecorder';
 import { iconFile } from '../../../../utils/appUtils';
 import sceneRegistry, {
   AREA_ICONS,
@@ -16,6 +17,7 @@ export default function Scenemoji({ onDebugToggle }) {
   const location = useLocation();
   const match =
     resolveScenePath(location.pathname) ?? sceneRegistry.defaultScene;
+  const isRecording = useMediaRecorderStore((state) => state.isRecording);
 
   const { channel, area } = match;
   const scenes = sceneRegistry.byArea[channel]?.[area] ?? [];
@@ -25,7 +27,10 @@ export default function Scenemoji({ onDebugToggle }) {
 
   return (
     <>
-      <span className="debug" onClick={onDebugToggle}>
+      <span
+        className={`debug${isRecording ? ' is-recording' : ''}`}
+        onClick={onDebugToggle}
+      >
         <img
           src={iconFile('reversal-inner.png')}
           alt="Reversal"

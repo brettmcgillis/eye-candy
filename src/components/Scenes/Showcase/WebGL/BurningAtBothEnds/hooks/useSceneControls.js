@@ -1,7 +1,7 @@
 import { folder, useControls } from 'leva';
 
-import useScreenshotControls from '../../../../../../app/scaffold/leva/useScreenshotControls';
 import usePresetsFolder from '../../../../../../hooks/usePresetsFolder';
+import { useMediaRecorder } from '../../../../../../modules/mediaRecorder';
 import getCandleFolder from '../components/useCandleControls';
 import { SCENE_PRESETS } from '../presets/scenePresets';
 
@@ -113,10 +113,10 @@ export default function useSceneControls() {
   attachSetControls(setControls);
   controlsSnapshotRef.current = { ...controls };
 
-  useScreenshotControls({
-    sceneName: 'Burning At Both Ends',
-    presetName: selectedPreset,
-  });
+  const mediaRecorderFileName = selectedPreset
+    ? `Burning At Both Ends - ${selectedPreset}`
+    : 'Burning At Both Ends';
+  useMediaRecorder({ fileName: mediaRecorderFileName });
 
   return controls;
 }

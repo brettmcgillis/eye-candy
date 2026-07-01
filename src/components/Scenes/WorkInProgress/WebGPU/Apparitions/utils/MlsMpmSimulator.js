@@ -106,16 +106,27 @@ export default class MlsMpmSimulator {
     this.uniforms.speed = uniform(1);
     this.uniforms.gravity = uniform(new THREE.Vector3(0, 0, 0));
     this.uniforms.gridSize = uniform(this.gridSize, 'ivec3');
+    // attractorMode survives only as an optional GLOBAL polarity multiplier
+    // (drives the attract/repel gesture toggle). Per-attractor polarity now
+    // lives in the SIGN of each attractor strength.
     this.uniforms.attractorMode = uniform(1);
     this.uniforms.attractorRadius = uniform(8);
+    // Per-person colour ownership: how strongly nearby attractor hues bleed into
+    // a particle's colour (0 = ignore, classic density hue only).
+    this.uniforms.hueBlend = uniform(1);
 
     this.uniforms.attractorPositions = [];
     this.uniforms.attractorStrengths = [];
+    this.uniforms.attractorRadii = [];
+    this.uniforms.attractorHues = [];
     for (let i = 0; i < this.maxAttractors; i += 1) {
       this.uniforms.attractorPositions.push(
         uniform(new THREE.Vector3(9999, 9999, 9999))
       );
       this.uniforms.attractorStrengths.push(uniform(0));
+      this.uniforms.attractorRadii.push(uniform(8));
+      // hue < 0 ⇒ this attractor contributes force but no colour.
+      this.uniforms.attractorHues.push(uniform(-1));
     }
 
     const encodeFixedPoint = (f32) => int(f32.mul(this.fixedPointMultiplier));
@@ -485,15 +496,29 @@ export default class MlsMpmSimulator {
       );
 
       const attractorForce = vec3(0).toVar();
+      const hueAccum = float(0).toVar();
+      const hueWeight = float(0).toVar();
       for (let i = 0; i < this.maxAttractors; i += 1) {
         const attractorPos = this.uniforms.attractorPositions[i];
         const attractorStrength = this.uniforms.attractorStrengths[i];
+        const attractorRadius = this.uniforms.attractorRadii[i];
+        const attractorHue = this.uniforms.attractorHues[i];
         const delta = attractorPos.sub(particlePosition).toVar();
         const dist = delta.length().max(0.0001).toVar();
+        // Signed strength → polarity per attractor (attract +, repel -).
         const falloff = attractorStrength
-          .mul(this.uniforms.attractorRadius)
+          .mul(attractorRadius)
           .div(dist.mul(dist).add(1));
         attractorForce.addAssign(delta.normalize().mul(falloff));
+
+        // Colour ownership: nearest/strongest attractor with a valid hue wins,
+        // blended by proximity. hue < 0 contributes force but no colour.
+        const influence = falloff.abs();
+        const hueMask = attractorHue
+          .greaterThanEqual(0)
+          .select(float(1), float(0));
+        hueAccum.addAssign(attractorHue.mul(influence).mul(hueMask));
+        hueWeight.addAssign(influence.mul(hueMask));
       }
 
       particleVelocity.addAssign(
@@ -551,12 +576,24 @@ export default class MlsMpmSimulator {
         .get('direction');
       direction.assign(mix(direction, particleVelocity, 0.1));
 
+      const baseHue = particleDensity
+        .div(this.uniforms.restDensity.max(0.0001))
+        .mul(0.25)
+        .add(time.mul(0.03))
+        .fract()
+        .toVar();
+      const dominantHue = hueAccum.div(hueWeight.max(0.0001));
+      const hueInfluence = hueWeight
+        .greaterThan(0)
+        .select(
+          attractorForce.length().mul(this.uniforms.hueBlend).clamp(0, 1),
+          float(0)
+        );
+      const finalHue = mix(baseHue, dominantHue, hueInfluence);
+
       const color = hsvtorgb(
         vec3(
-          particleDensity
-            .div(this.uniforms.restDensity.max(0.0001))
-            .mul(0.25)
-            .add(time.mul(0.03)),
+          finalHue,
           particleVelocity.length().mul(0.4).clamp(0, 1).mul(0.3).add(0.7),
           attractorForce.length().mul(0.06).clamp(0.55, 1)
         )
@@ -573,16 +610,23 @@ export default class MlsMpmSimulator {
     ];
   }
 
-  setAttractors(attractors, mode, radius = 8) {
+  // attractors: [{ position, strength (signed), radius?, hue? }]
+  // options: { mode: 'attract' | 'repel', radius: number (default radius) }
+  setAttractors(attractors, options = {}) {
+    const { mode = 'attract', radius = 8 } = options;
     const count = Math.min(this.maxAttractors, attractors.length);
     for (let i = 0; i < this.maxAttractors; i += 1) {
       const a = i < count ? attractors[i] : null;
       if (!a) {
         this.uniforms.attractorPositions[i].value.set(9999, 9999, 9999);
         this.uniforms.attractorStrengths[i].value = 0;
+        this.uniforms.attractorRadii[i].value = radius;
+        this.uniforms.attractorHues[i].value = -1;
       } else {
         this.uniforms.attractorPositions[i].value.copy(a.position);
         this.uniforms.attractorStrengths[i].value = a.strength;
+        this.uniforms.attractorRadii[i].value = a.radius ?? radius;
+        this.uniforms.attractorHues[i].value = a.hue ?? -1;
       }
     }
     this.uniforms.attractorMode.value = mode === 'repel' ? -1 : 1;
@@ -596,6 +640,10 @@ export default class MlsMpmSimulator {
     this.uniforms.dynamicViscosity.value = config.dynamicViscosity;
     this.uniforms.speed.value = config.speed;
     this.uniforms.gravity.value.copy(config.gravity);
+
+    if (config.hueBlend !== undefined) {
+      this.uniforms.hueBlend.value = config.hueBlend;
+    }
 
     if (config.particles !== this.numParticles) {
       this.numParticles = config.particles;

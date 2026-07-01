@@ -7,7 +7,7 @@ import ParticleSystem from './components/ParticleSystem';
 import useSceneControls from './hooks/useSceneControls';
 
 export default function Apparitions() {
-  const { controls, setControls } = useSceneControls();
+  const { controls, setControls, statsRef } = useSceneControls();
 
   return (
     <>
@@ -29,7 +29,11 @@ export default function Apparitions() {
         maxDistance={2}
         target={[0, 0.5, 0]}
       />
-      <ParticleSystem controls={controls} setControls={setControls} />
+      <ParticleSystem
+        controls={controls}
+        setControls={setControls}
+        statsRef={statsRef}
+      />
     </>
   );
 }

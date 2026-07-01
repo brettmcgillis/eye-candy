@@ -340,27 +340,72 @@ sized apparition forms from the phone's tracking, with zero render load on the p
 
 ## // Suggested milestones
 
-0. Harden as-is: camera-optional fallback + autonomous LFO envelope + Showcase preset. (WS0)
-1. Per-attractor signed polarity in sim + core-repel point → silhouette forms. (WS1)
-2. Stillness/agitation envelope on noise/speed/cohesion. (WS2 #2)
-3. Presence state machine with dissolve-on-exit + hysteresis. (WS3)
-4. Hand-velocity impulse + arms-to-gravity. (WS2 #1, #3)
-5. Per-person hue + field bridging. (WS3 multi-person)
-6. Audio in, then audio out. (WS4)
-7. Input-bus abstraction (Local/Remote providers), then remote transport + control sync +
+- [x] 0. Harden as-is: camera-optional fallback + autonomous LFO envelope + Showcase preset. (WS0)
+- [x] 1. Per-attractor signed polarity in sim + core-repel point → silhouette forms. (WS1)
+- [x] 2. Stillness/agitation envelope on noise/speed/cohesion. (WS2 #2)
+- [x] 3. Presence state machine with dissolve-on-exit + hysteresis. (WS3)
+- [x] 4. Hand-velocity impulse + arms-to-gravity. (WS2 #1, #3)
+- [x] 5. Per-person hue + field bridging. (WS3 multi-person)
+- [x] 6. Audio in, then audio out. (WS4)
+- [ ] 7. Input-bus abstraction (Local/Remote providers), then remote transport + control sync +
    fuel-frame streaming. Validate on phone → desktop. (WS5)
+
+> **Implementation notes (leg 1 — milestones 0–6 complete; needs human visual/perf pass on dev server).**
+>
+> Architecture landed as composable capability layers feeding the shared sim contract:
+> - Sim contract (`utils/MlsMpmSimulator.js`): per-attractor **signed strength**, **per-attractor
+>   radius** and **per-attractor hue** uniform arrays; `attractorMode` retained only as an optional
+>   GLOBAL polarity multiplier for the gesture toggle. g2p accumulates a proximity-weighted dominant
+>   attractor hue and blends it into particle colour (`hueBlend` uniform) → per-person ownership +
+>   natural bridging between people. `setAttractors(list, { mode, radius })` writes signed strengths.
+> - Attractor sources (`layers/`): `ghostSource` (WS0 Lissajous phantoms, coloured, fade in/out),
+>   `viewerSource` (WS1 signed body field: outline attract + COM core-repel, `fieldMode`
+>   positive/negative/auto via `fieldBlend`, per-person hue), plus hand-impulse comets from
+>   `motionEnergy`.
+> - Config modulators: `autonomousLfo` (WS0 slow breathing), `motionEnergy` (WS2 agitate/calm with
+>   asymmetric smoothing, arms→gravity, wrist comets; also exposes music inputs), audio-in bands.
+> - Orchestration: `hooks/usePresenceState` (WS3 Dormant/Sensed/Forming/Dissolving, hysteresis +
+>   dwell timers, ramps layer GAINS, sensed ripple, dissolve-on-exit). Disable → all layers full.
+> - Consumer: `hooks/useApparitionAudio` (WS4) — mic AnalyserNode bands → config deltas; Tone.js
+>   (lazy `import('tone')`, degrades to silence if absent) transport-quantized + scale-locked synth
+>   out via `utils/musicTheory`. `tone` already in package.json.
+> - Conductor: `components/ParticleSystem.jsx` composes every layer ref-based, pooled, no per-frame
+>   allocation; `layers/attractorBus` does priority eviction to the 24-slot budget.
+> - Debug (`components/AttractorDebug.jsx` + `hooks/controls/getDebugControls.js`): translucent
+>   sphere per live attractor in particle space (green attract / red repel, or colour-by-source),
+>   sized to each attractor's radius; toggles for impulses + bounds; live Readout monitors (people,
+>   attractor count, presence state 0–3, body energy, agitate) fed by a `statsRef` the conductor
+>   writes each frame.
+> - Controls split into `hooks/controls/get*Controls.js`. Presets are named layer-on snapshots that
+>   map 1:1 to the modality table: **Showcase** (as-is), **Viewer**, **Viewer + Audio-reactive**,
+>   **Viewer + Audio-gen**, **Audio-reactive only**, **Audio-gen only**, **Negative Space**, plus the
+>   aesthetic **Flow** / **Outside Space and Time**. Default = Showcase.
+>
+> **Decisions:** kept `MAX_ATTRACTORS = 24` (drop to 12 if GPU-bound) with priority eviction
+> (coreRepel > outlineCore > handImpulse > outlineLimb > face > hand > ghost). Negative space =
+> `fieldMode` enum + dedicated preset. Dormant = neutral drift + ghosts.
+>
+> **Verified:** eslint clean, prettier clean, full esbuild bundle of the scene graph resolves with no
+> errors. NOT yet verified: live WebGPU run / 60fps perf / on-camera feel — needs the human dev-server
+> pass (camera optional, multi-person hue, audio gesture-unlock, negative-space density).
 
 # // Open questions
 
-- Raise `MAX_ATTRACTORS` past 24 for multi-person + core points? Check GPU budget.
-- Negative-space mode: separate preset, gesture toggle, or auto phase within Forming?
-- Projection calibration: how is webcam framing → grid mapping tuned on-site
-  (xScale/yScale/zScale/offsets currently manual)? Worth an auto-fit pass.
-- Does the resting "pool" in Dormant fit the black-void aesthetic, or keep neutral drift?
+- RESOLVED: keep `MAX_ATTRACTORS = 24` (per-attractor radius added cheaply; revisit/drop to 12 if
+  the live GPU pass shows the g2p attractor loop is the bottleneck). Per-attractor signed strength +
+  radius + hue all land in the existing 24-slot loop.
+- RESOLVED: negative-space mode = a `fieldMode` enum (positive | negative | auto) plus a dedicated
+  **Negative Space** preset (dense field, outline → mild repel, core off). `auto` phases the
+  `fieldBlend` between +1/−1 on its own clock.
+- Projection calibration: still manual (xScale/yScale/zScale/offsets in the Interactivity →
+  Calibration folder). Auto-fit pass not yet done — candidate for a future leg.
+- RESOLVED: Dormant keeps **neutral drift + ghosts** (no resting pool) to preserve the black-void
+  aesthetic; presence only dims particle count/bloom and mutes the viewer/motion layers.
 - RESOLVED: WS0 ghosts and WS3 Dormant share one `GhostSource` + gain-envelope; independent
   enable flags let as-is run with Presence off. (See Architecture section.)
-- Attractor budget priority when multiple sources are active (ghosts vs N viewers vs core
-  points) — define the ordering/eviction rule when the combined list exceeds MAX_ATTRACTORS.
+- RESOLVED: attractor budget eviction order is `coreRepel > outlineCore > handImpulse > outlineLimb
+  > face > hand > ghost` (see `layers/attractorBus.js` PRIORITY). Sources concatenate, then the bus
+  sorts by priority and truncates to MAX_ATTRACTORS, so viewers/core always survive crowding.
 - WS5 fuel-frame budget: target Hz, float quantization, max people/landmarks per frame to keep
   phone uplink + host latency acceptable.
 - WS5: does control-sync live in the shared module generically (serialize any Leva object), or

@@ -272,7 +272,7 @@ const UrbanWildlife = lazy(
 );
 const BirdsArentReal = lazy(
   () =>
-    import('../components/scenes/WorkInProgress/WebGPU/BirdsArentReal/BirdsArentReal')
+    import('../components/scenes/Showcase/WebGPU/BirdsArentReal/BirdsArentReal')
 );
 
 const BeautysInTheEyeOfTheBeheaded = lazy(

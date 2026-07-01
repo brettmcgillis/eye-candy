@@ -17,10 +17,15 @@ File: ~/SceneName/useSceneControls.js
 - Scenes with a preset dropdown also get a reset button to restore control values to the currently selected preset.
 - Scenes with a preset dropdown also get a copy settings button, to allow me to copy the control settings as json, and bring them back to the IDE as new or updated presets.
 
-File: ~/SceneName/scenePresets.js
+File: ~/SceneName/presets/presets.js
 
 - Contains control presets, in json format.
 - More mature scenes with multiple configs will get a presets file, to be leveraged in the controls hook to provide an options dropdown
+
+File: ~/SceneName/components/ButtonOverlay.jsx
+
+- Every WorkInProgress/Showcase scene wires the same four things through useSceneControls: a presets folder, CameraRig (+ camera controls), MediaRecorder (screen rec without relying on the device), and — when the scene wants obvious, user-facing UX buttons instead of (or in addition to) the hidden Leva panel — an overlay button bar via SceneButtonBar/OverlayIconButton. ToolBox/TestLab scenes don't need these.
+- Copy this SceneTemplate folder to bootstrap a new WorkInProgress scene; all four are already wired in.
 
 File: ~/SceneName/TestScene.jsx
 

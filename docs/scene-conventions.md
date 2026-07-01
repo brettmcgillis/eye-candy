@@ -8,15 +8,15 @@ Pairs with:
 - `docs/r3f-performance-playbook.md` — performance guidance.
 - `docs/scene-performance-checklist.md` — required perf checklist.
 
-Two reference points, used differently:
+`src/components/scenes/Template/SceneTemplate/` is a working bootstrap: copy the
+folder to start a new **WorkInProgress** scene. It already wires in the four
+things every WIP/Showcase scene needs (§13) — a presets folder, CameraRig,
+MediaRecorder, and the overlay-button pattern — plus memoization. Its
+`Component`/`getComponentControls` are intentionally empty stubs for you to
+flesh out; everything else is real, running code.
 
-- **Folder layout + intent** — `src/components/scenes/Template/SceneTemplate/` is
-  an annotated skeleton. Its files document _what each piece is for_ via comments
-  and stub to `null`/empty on purpose. Use it to learn the structure, not to copy
-  working code.
-- **Working patterns** — for real implementations of memoization, the
-  controls/presets/reset/copy-button flow, CameraRig usage, and asset preloading,
-  read a mature scene such as `src/components/scenes/Showcase/WebGL/PaperStack/`.
+For a fully fleshed-out example of the same patterns in a finished scene, read
+`src/components/scenes/Showcase/WebGL/PaperStack/`.
 
 ---
 
@@ -35,7 +35,7 @@ SceneName/
   SceneName.jsx            ← root, default export, orchestrator only
   components/              ← child components (+ colocated getXControls.js)
   hooks/useSceneControls.js
-  presets/scenePresets.js
+  presets/presets.js
   utils/sceneUtils.js
   todo.md
 ```
@@ -143,6 +143,33 @@ SceneName/
 - Exceptions: scenes built _around_ an effect (e.g. GodRays), or cases where
   enabling post early drove a discovery (e.g. Aisle9 posterization). If post is
   introduced early, it should generally ship **disabled** by default.
+
+## 13. Required WIP/Showcase scene shape
+
+Every **WorkInProgress** and **Showcase** scene wires these four things
+through `useSceneControls` (not required for ToolBox/TestLab — drop what
+doesn't apply):
+
+1. **Presets folder** — variations of the scene, applied via
+   `usePresetsFolder` (`src/hooks/usePresetsFolder.js`). See §9.
+2. **CameraRig + camera controls** — `<CameraRig camera={config.camera} />` in
+   the scene root, fed by `useSceneCameraControls`
+   (`src/hooks/useSceneCameraControls.js`) for fine-grained camera behavior
+   (useful for screen recording). See §10.
+3. **MediaRecorder** — `useMediaRecorder({ fileName })` from
+   `src/modules/mediaRecorder`, called once inside `useSceneControls`. It
+   self-registers its own Leva controls and hotkeys (screenshot + start/stop
+   recording) — internalizes screen rec instead of relying on the device's
+   own capture. Nothing else needs to run it.
+4. **Overlay buttons (when the scene needs easter-egg UX)** — compose
+   `SceneButtonBar` + `OverlayIconButton`
+   (`src/app/scaffold/overlay/components/`) in a scene-local
+   `components/ButtonOverlay.jsx`, for buttons that live outside Leva (e.g.
+   mic/screenshare toggles). Give `datasetKey` a scene-unique value. Example:
+   `WorkInProgress/WebGPU/HorsesForCourses`.
+
+`Template/SceneTemplate/` has all four wired in — copy it to bootstrap a new
+WIP scene.
 
 ---
 

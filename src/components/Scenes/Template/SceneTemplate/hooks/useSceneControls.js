@@ -1,23 +1,49 @@
-import { useControls } from 'leva';
+import { folder, useControls } from 'leva';
 
+import { useMemo, useRef } from 'react';
+
+import usePresetsFolder from '../../../../../hooks/usePresetsFolder';
+import useSceneCameraControls from '../../../../../hooks/useSceneCameraControls';
+import { useMediaRecorder } from '../../../../../modules/mediaRecorder';
 import getComponentControls from '../components/getComponentControls';
+import { DEFAULT_PRESET, PRESETS, getPresetControls } from '../presets/presets';
 
-// useSceneControls is a companion hook to SceneTemplate provides
-// all of the scene configuration that will be used in SceneTemplate.
-// This hook should leverage the presets in scenePresets.js and provide
-// an example of how to switch between different scene presets. This hook
-// should also provide an example of how we reset controls from the current
-// preset.This hook should also provide an example of how we offer a
-// copy preset button in dev for bringing presets back to the IDE.
-// The hook should only render the presets folder if the presets include more than the Default
+const SCENE_LABEL = 'Scene Template';
+const CAMERA_FOLDER_PATH = `${SCENE_LABEL}.Camera`;
+
+// Every WorkInProgress/Showcase scene wires these four things through
+// useSceneControls: a presets folder, CameraRig controls, MediaRecorder, and
+// (if the scene needs obvious, user-facing UX buttons) an overlay button
+// bar — see components/ButtonOverlay.jsx and docs/scene-conventions.md.
 export default function useSceneControls() {
-  const [sceneControls, setSceneControls] = useControls(
-    'Scene Template',
-    {
-      Component: getComponentControls('My Component'),
-    },
-    { collapsed: true }
-  );
+  const { attachSetControls, controlsSnapshotRef, presetsFolder } =
+    usePresetsFolder({
+      defaultPreset: DEFAULT_PRESET,
+      getPresetControls,
+      presets: PRESETS,
+    });
 
-  return sceneControls;
+  const cameraApiRef = useRef(null);
+  const { buildCamera, cameraControls } = useSceneCameraControls({
+    apiRef: cameraApiRef,
+    cameraFolderPath: CAMERA_FOLDER_PATH,
+    controlsSnapshotRef,
+  });
+
+  const [controls, setControls] = useControls(SCENE_LABEL, () => ({
+    Presets: presetsFolder,
+    Camera: folder(cameraControls, { collapsed: true }),
+    Component: getComponentControls('My Component'),
+  }));
+
+  attachSetControls(setControls);
+
+  useMediaRecorder({ fileName: SCENE_LABEL });
+
+  const camera = useMemo(() => buildCamera(controls), [buildCamera, controls]);
+
+  return useMemo(
+    () => ({ ...controls, cameraApiRef, camera }),
+    [camera, controls]
+  );
 }

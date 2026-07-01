@@ -161,11 +161,13 @@ doesn't apply):
    self-registers its own Leva controls and hotkeys (screenshot + start/stop
    recording) — internalizes screen rec instead of relying on the device's
    own capture. Nothing else needs to run it.
-4. **Overlay buttons (when the scene needs easter-egg UX)** — compose
-   `SceneButtonBar` + `OverlayIconButton`
+4. **Overlay buttons (when the scene needs obvious, user-facing controls)** —
+   compose `SceneButtonBar` + `OverlayIconButton`
    (`src/app/scaffold/overlay/components/`) in a scene-local
-   `components/ButtonOverlay.jsx`, for buttons that live outside Leva (e.g.
-   mic/screenshare toggles). Give `datasetKey` a scene-unique value. Example:
+   `components/ButtonOverlay.jsx`. These are the buttons a visitor is meant to
+   see and use (e.g. mic/screenshare toggles) — the reverse of the Leva panel,
+   which is the hidden dev-controls panel only reachable if you know to click
+   the reversal. Give `datasetKey` a scene-unique value. Example:
    `WorkInProgress/WebGPU/HorsesForCourses`.
 
 `Template/SceneTemplate/` has all four wired in — copy it to bootstrap a new

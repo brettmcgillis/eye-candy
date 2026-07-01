@@ -55,5 +55,6 @@ export default function createHandsMaterial({
     colorNode,
     metalness,
     roughness,
+    side: THREE.DoubleSide,
   });
 }

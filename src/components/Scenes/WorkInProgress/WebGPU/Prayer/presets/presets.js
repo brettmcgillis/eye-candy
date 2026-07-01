@@ -1,7 +1,7 @@
 export const DEFAULT_PRESET = 'Default';
 
 export const DEFAULT_PRESET_VALUES = {
-  bgColor: '#030304',
+  bgColor: '#9c9ca8',
 
   ambientColor: '#ffffff',
   ambientIntensity: 0.18,
@@ -15,21 +15,40 @@ export const DEFAULT_PRESET_VALUES = {
   godraysIntensity: 15,
   godraysPosition: [0, 4.2, 2.2],
 
-  baseScale: 1,
-  middleScale: 1.125,
-  outerScale: 1.25,
-  basePosition: [0, 0, 0],
-  middlePosition: [0.1, -0.05, 0],
-  outerPosition: [0.2, -0.1, 0],
+  // Global orientation applied to every shell (radians). Adjust if the posed
+  // hands don't stand upright by default — e.g. set X to ±Math.PI / 2.
+  handsRotation: [0, 0, 0],
+  // Axis a pair's two hands open along when spread (to cup an inner shell).
+  spreadAxis: 'x',
+
+  // Inner / Middle / Outer shells. Each shell loads a demographic's posed pair
+  // and freezes a pose clip; nesting comes from scale + spread (and, once you
+  // author them, distinct cupping poses).
   baseVisible: true,
-  middleVisible: true,
-  outerVisible: true,
+  baseDemographic: 'child',
+  basePose: 'Pray1',
   baseMaterial: 'clean',
+  baseScale: 1,
+  baseSpread: 0,
+  basePosition: [0, 0, 0],
+  baseYaw: 0,
+
+  middleVisible: true,
+  middleDemographic: 'female',
+  middlePose: 'Pray2',
   middleMaterial: 'oil',
-  outerMaterial: 'blood',
-  middleSpread: 30,
-  outerSpread: 60,
+  middleScale: 1,
+  middleSpread: 0,
+  middlePosition: [0, 0, 0],
   middleYaw: 0,
+
+  outerVisible: true,
+  outerDemographic: 'male',
+  outerPose: 'Pray3',
+  outerMaterial: 'blood',
+  outerScale: 1,
+  outerSpread: 0,
+  outerPosition: [0, 0, 0],
   outerYaw: 0,
 
   cleanBaseColor: '#fafafa',
@@ -80,41 +99,58 @@ export const DEFAULT_PRESET_VALUES = {
   bloodFadeGradientStart: 0.04,
   bloodFadeGradientEnd: 0.78,
 
-  godraysEnabled: true,
+  godraysEnabled: false,
   godraysBlendColor: '#b89d94',
   godraysDensity: 1.5,
   godraysMaxDensity: 0.78,
   godraysDistanceAttenuation: 0.95,
-  godraysBlur: true,
+  godraysBlur: false,
   godraysEdgeRadius: 2,
   godraysEdgeStrength: 2,
 
-  bloomEnabled: true,
+  bloomEnabled: false, // restore when scene done
   bloomStrength: 0.22,
   bloomThreshold: 0.72,
   bloomRadius: 0.45,
 };
 
-const ONE_PRAYER_PRESET_VALUES = {
-  ...DEFAULT_PRESET_VALUES,
-  middleVisible: false,
-  outerVisible: false,
-};
+// Build a preset by listing the demographics for the visible shells, innermost
+// first. Pose and material stay tied to shell position (inner=Pray1/clean,
+// middle=Pray2/oil, outer=Pray3/blood) so each shell reads distinctly.
+function makePreset([base, middle, outer]) {
+  return {
+    ...DEFAULT_PRESET_VALUES,
 
-const TWO_PRAYERS_PRESET_VALUES = {
-  ...DEFAULT_PRESET_VALUES,
-  outerVisible: false,
-};
+    baseVisible: Boolean(base),
+    baseDemographic: base || DEFAULT_PRESET_VALUES.baseDemographic,
 
-const THREE_PRAYERS_PRESET_VALUES = {
-  ...DEFAULT_PRESET_VALUES,
-};
+    middleVisible: Boolean(middle),
+    middleDemographic: middle || DEFAULT_PRESET_VALUES.middleDemographic,
+
+    outerVisible: Boolean(outer),
+    outerDemographic: outer || DEFAULT_PRESET_VALUES.outerDemographic,
+  };
+}
 
 const PRESETS = {
   [DEFAULT_PRESET]: DEFAULT_PRESET_VALUES,
-  'One prayer': ONE_PRAYER_PRESET_VALUES,
-  'Two prayers': TWO_PRAYERS_PRESET_VALUES,
-  'Three prayers': THREE_PRAYERS_PRESET_VALUES,
+
+  '1 child': makePreset(['child']),
+  '2 child': makePreset(['child', 'child']),
+  '3 child': makePreset(['child', 'child', 'child']),
+
+  '1 female': makePreset(['female']),
+  '2 female': makePreset(['female', 'female']),
+  '3 female': makePreset(['female', 'female', 'female']),
+
+  '1 male': makePreset(['male']),
+  '2 male': makePreset(['male', 'male']),
+  '3 male': makePreset(['male', 'male', 'male']),
+
+  'Child + Female': makePreset(['child', 'female']),
+  'Child + Male': makePreset(['child', 'male']),
+  'Female + Male': makePreset(['female', 'male']),
+  'Child + Female + Male': makePreset(['child', 'female', 'male']),
 };
 
 export default PRESETS;

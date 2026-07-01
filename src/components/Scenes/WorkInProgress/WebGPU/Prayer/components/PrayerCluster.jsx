@@ -1,10 +1,16 @@
 import React, { memo, useEffect, useMemo } from 'react';
 
 import createHandsMaterial from '../utils/createHandsMaterial';
-import HandsPair from './HandsPair';
+import PrayerHands from './PrayerHands';
 
 function resolveMaterial(selection, materials) {
   return materials[selection] || materials.clean;
+}
+
+// Compose the global hands orientation with a shell's own yaw.
+function shellRotation(handsRotation, yaw) {
+  const base = handsRotation || [0, 0, 0];
+  return [base[0], base[1] + (yaw || 0), base[2]];
 }
 
 function PrayerCluster({ config }) {
@@ -141,33 +147,44 @@ function PrayerCluster({ config }) {
   return (
     <group>
       {config.baseVisible && (
-        <HandsPair
+        <PrayerHands
+          demographic={config.baseDemographic}
+          pose={config.basePose}
           material={resolveMaterial(config.baseMaterial, materials)}
+          withGradient={config.baseMaterial === 'bloodFade'}
           scale={config.baseScale}
-          spread={0}
+          spread={config.baseSpread}
+          spreadAxis={config.spreadAxis}
           position={config.basePosition}
+          rotation={shellRotation(config.handsRotation, config.baseYaw)}
         />
       )}
 
       {config.middleVisible && (
-        <HandsPair
+        <PrayerHands
+          demographic={config.middleDemographic}
+          pose={config.middlePose}
           material={resolveMaterial(config.middleMaterial, materials)}
+          withGradient={config.middleMaterial === 'bloodFade'}
           scale={config.middleScale}
           spread={config.middleSpread}
-          spreadAxis="z"
+          spreadAxis={config.spreadAxis}
           position={config.middlePosition}
-          rotation={[0, config.middleYaw, 0]}
+          rotation={shellRotation(config.handsRotation, config.middleYaw)}
         />
       )}
 
       {config.outerVisible && (
-        <HandsPair
+        <PrayerHands
+          demographic={config.outerDemographic}
+          pose={config.outerPose}
           material={resolveMaterial(config.outerMaterial, materials)}
+          withGradient={config.outerMaterial === 'bloodFade'}
           scale={config.outerScale}
           spread={config.outerSpread}
-          spreadAxis="z"
+          spreadAxis={config.spreadAxis}
           position={config.outerPosition}
-          rotation={[0, config.outerYaw, 0]}
+          rotation={shellRotation(config.handsRotation, config.outerYaw)}
         />
       )}
     </group>

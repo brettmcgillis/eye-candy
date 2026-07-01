@@ -33,18 +33,20 @@ function SceneLighting({
         decay={2}
       />
 
+      {/*
+        This light only drives the godrays effect, which samples the scene
+        DEPTH pass (not this light's shadow map). A shadow-casting point light
+        renders the whole scene 6× per frame (one per cube face) — at 4096² that
+        was the scene's main per-frame cost and nothing consumed it. Shadows now
+        come solely from the directional key light above.
+      */}
       <pointLight
         ref={godraysLightRef}
-        castShadow
         color={godraysColor}
         intensity={godraysIntensity}
         position={godraysPosition}
         distance={40}
         decay={1.8}
-        shadow-mapSize={[4096, 4096]}
-        shadow-bias={-0.001}
-        // shadow-camera-near={0.5}
-        // shadow-camera-far={40}
       />
     </>
   );

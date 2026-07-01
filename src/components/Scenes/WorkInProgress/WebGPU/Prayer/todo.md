@@ -14,10 +14,29 @@
 
 # // Presets
 
-- [ ] Default
-- [ ] One prayer - Only one set of hands visible
-- [ ] Two prayers - Two sets of hands visible
-- [ ] Three prayers - Three sets of hands visible
+- [ ] 1 child hands praying
+- [ ] 2 child hands praying
+- [ ] 3 child hands praying
+
+- [ ] 1 female hands praying
+- [ ] 2 female hands praying
+- [ ] 3 female hands praying
+
+- [ ] 1 male hands praying
+- [ ] 2 male hands praying
+- [ ] 3 male hands praying
+
+- [ ] child + female hands praying
+- [ ] female + child hands praying
+
+- [ ] child + male hands praying
+- [ ] male + child hands praying
+
+- [ ] female + male hands praying
+- [ ] male + female hands praying
+
+- [ ] child + female + male hands praying
+- [ ] male + female + child hands praying
 
 # // Features
 

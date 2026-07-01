@@ -17,6 +17,12 @@ const HANDS_MATERIAL_OPTIONS = {
   Blood: 'blood',
   'Black Blood': 'bloodFade',
 };
+const DEMOGRAPHIC_OPTIONS = { Child: 'child', Female: 'female', Male: 'male' };
+const POSE_OPTIONS = {
+  'Pose 1': 'Pray1',
+  'Pose 2': 'Pray2',
+  'Pose 3': 'Pray3',
+};
 
 const CAMERA = {
   defaultMode: 'orbit',
@@ -185,9 +191,31 @@ export default function useSceneControls() {
 
     Hands: folder(
       {
+        handsRotation: {
+          value: p.handsRotation,
+          min: -Math.PI,
+          max: Math.PI,
+          step: 0.01,
+          label: 'Base Rotation',
+        },
+        spreadAxis: {
+          value: p.spreadAxis,
+          label: 'Spread Axis',
+          options: { X: 'x', Y: 'y', Z: 'z' },
+        },
         Inner: folder(
           {
             baseVisible: { value: p.baseVisible, label: 'Visible' },
+            baseDemographic: {
+              value: p.baseDemographic,
+              label: 'Hands',
+              options: DEMOGRAPHIC_OPTIONS,
+            },
+            basePose: {
+              value: p.basePose,
+              label: 'Pose',
+              options: POSE_OPTIONS,
+            },
             baseMaterial: {
               value: p.baseMaterial,
               label: 'Material',
@@ -200,10 +228,24 @@ export default function useSceneControls() {
               step: 0.01,
               label: 'Scale',
             },
+            baseSpread: {
+              value: p.baseSpread,
+              min: 0,
+              max: 2,
+              step: 0.005,
+              label: 'Spread',
+            },
             basePosition: {
               value: p.basePosition,
               step: 0.01,
               label: 'Position',
+            },
+            baseYaw: {
+              value: p.baseYaw,
+              min: -Math.PI,
+              max: Math.PI,
+              step: 0.01,
+              label: 'Yaw',
             },
           },
           { collapsed: true }
@@ -211,6 +253,16 @@ export default function useSceneControls() {
         Middle: folder(
           {
             middleVisible: { value: p.middleVisible, label: 'Visible' },
+            middleDemographic: {
+              value: p.middleDemographic,
+              label: 'Hands',
+              options: DEMOGRAPHIC_OPTIONS,
+            },
+            middlePose: {
+              value: p.middlePose,
+              label: 'Pose',
+              options: POSE_OPTIONS,
+            },
             middleMaterial: {
               value: p.middleMaterial,
               label: 'Material',
@@ -223,17 +275,17 @@ export default function useSceneControls() {
               step: 0.01,
               label: 'Scale',
             },
+            middleSpread: {
+              value: p.middleSpread,
+              min: 0,
+              max: 2,
+              step: 0.005,
+              label: 'Spread',
+            },
             middlePosition: {
               value: p.middlePosition,
               step: 0.01,
               label: 'Position',
-            },
-            middleSpread: {
-              value: p.middleSpread,
-              min: 0,
-              max: 50,
-              step: 0.01,
-              label: 'Spread',
             },
             middleYaw: {
               value: p.middleYaw,
@@ -248,6 +300,16 @@ export default function useSceneControls() {
         Outer: folder(
           {
             outerVisible: { value: p.outerVisible, label: 'Visible' },
+            outerDemographic: {
+              value: p.outerDemographic,
+              label: 'Hands',
+              options: DEMOGRAPHIC_OPTIONS,
+            },
+            outerPose: {
+              value: p.outerPose,
+              label: 'Pose',
+              options: POSE_OPTIONS,
+            },
             outerMaterial: {
               value: p.outerMaterial,
               label: 'Material',
@@ -260,17 +322,17 @@ export default function useSceneControls() {
               step: 0.01,
               label: 'Scale',
             },
+            outerSpread: {
+              value: p.outerSpread,
+              min: 0,
+              max: 2,
+              step: 0.005,
+              label: 'Spread',
+            },
             outerPosition: {
               value: p.outerPosition,
               step: 0.01,
               label: 'Position',
-            },
-            outerSpread: {
-              value: p.outerSpread,
-              min: 0,
-              max: 60,
-              step: 0.01,
-              label: 'Spread',
             },
             outerYaw: {
               value: p.outerYaw,

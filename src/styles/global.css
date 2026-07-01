@@ -146,6 +146,27 @@
   white-space: nowrap; /* prevent name from wrapping */
 }
 
+.external-links-name {
+  cursor: crosshair;
+}
+
+.external-links-icons {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  opacity: 0;
+  max-width: 0;
+  overflow: hidden;
+  transition:
+    opacity 0.2s ease,
+    max-width 0.2s ease;
+}
+
+.external-links-icons.is-visible {
+  opacity: 1;
+  max-width: 5rem;
+}
+
 .scene-controls {
   position: absolute;
   left: 50%;

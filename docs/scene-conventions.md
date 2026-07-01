@@ -129,6 +129,18 @@ SceneName/
 - Scenes should generally use **`CameraRig`** (`src/components/rigging/CameraRig.jsx`)
   and its controls builder (`src/hooks/buildSceneCameraControls.js`) for maximum
   camera flexibility, rather than hand-rolling camera setup.
+- **Control changes must never reset the camera.** `CameraRig` re-applies the
+  camera frame whenever the `camera` object passed to it changes _identity_.
+  `useControls`' `controls` object gets a new identity on **every** Leva edit,
+  so `useMemo(() => buildCamera(controls), [buildCamera, controls])` rebuilds
+  — and snaps — the camera on any unrelated tweak (lighting, materials,
+  whatever). Instead, memoize `buildCamera(controls)` on a key derived only
+  from camera-relevant control values: use
+  `getCameraControlsKey(controls)` from `src/hooks/sceneCameraUtils.js` (it
+  already knows the `camera*`/`fixed*`/`orbit*`/`spline*`/`operator*`/`preset`
+  key prefixes `buildSceneCameraControls` generates) as the `useMemo`
+  dependency instead of `controls` itself. See
+  `Template/SceneTemplate/hooks/useSceneControls.js` for the pattern.
 
 ## 11. Asset preloading
 

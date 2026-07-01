@@ -13,6 +13,13 @@ const NUDGE_SELECTOR = '.date-display, .version-tag';
 // recorder happening to snapshot the overlay before the indicator turns on.
 const RECORDING_INDICATOR_SELECTOR = '.debug.is-recording';
 
+// Real browsers never paint <noscript> content once JS is running — it's a
+// UA-level rule html2canvas's DOM-cloning doesn't replicate, so it renders the
+// raw text as if it were normal content (index.html's fallback message,
+// sitting in normal flow near the top of <body>, ends up as unstyled text
+// overlapping whatever's positioned near the top-left).
+const NOSCRIPT_SELECTOR = 'noscript';
+
 export default function applyOverlayCaptureFixups(clonedDoc) {
   clonedDoc.querySelectorAll(NUDGE_SELECTOR).forEach((el) => {
     el.style.setProperty('position', 'relative');
@@ -22,4 +29,6 @@ export default function applyOverlayCaptureFixups(clonedDoc) {
   clonedDoc.querySelectorAll(RECORDING_INDICATOR_SELECTOR).forEach((el) => {
     el.classList.remove('is-recording');
   });
+
+  clonedDoc.querySelectorAll(NOSCRIPT_SELECTOR).forEach((el) => el.remove());
 }

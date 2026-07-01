@@ -42,6 +42,34 @@ export const SCENE_CAMERA_SPLINE_ORIENTATION_OPTIONS = Object.freeze({
   Forward: 'forward',
 });
 
+// Every control key buildSceneCameraControls generates starts with one of
+// these prefixes (cameraMode/cameraAutoFit/..., fixed*, orbit*, spline*,
+// operator*), plus the scene-level 'preset' key.
+const CAMERA_CONTROL_PREFIXES = Object.freeze([
+  'camera',
+  'fixed',
+  'orbit',
+  'spline',
+  'operator',
+]);
+
+// Scene controls objects change identity on every Leva edit, so
+// buildCamera(controls) can't be memoized on `controls` directly — any
+// unrelated edit (lighting, materials, etc.) would rebuild the camera and
+// snap an orbited/fixed view back to its default. Memoize buildCamera on
+// this key instead: it only changes when a camera-relevant control changes.
+export function getCameraControlsKey(controls = {}) {
+  return JSON.stringify(
+    Object.fromEntries(
+      Object.entries(controls).filter(
+        ([key]) =>
+          key === 'preset' ||
+          CAMERA_CONTROL_PREFIXES.some((prefix) => key.startsWith(prefix))
+      )
+    )
+  );
+}
+
 function cloneSnapshot(snapshot) {
   return JSON.parse(JSON.stringify(snapshot));
 }

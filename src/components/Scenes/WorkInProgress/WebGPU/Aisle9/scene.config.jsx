@@ -2,7 +2,7 @@ import React, { lazy } from 'react';
 import { PiPlanetFill } from 'react-icons/pi';
 
 function SceneIcon() {
-  return <PiPlanetFill color="#202020" />;
+  return <PiPlanetFill color="#202020" size={26} />;
 }
 
 export default {

@@ -2,10 +2,12 @@ import React from 'react';
 
 import OverlayPortal from './OverlayPortal';
 
-// Generic slot for a scene's easter-egg UX buttons (as opposed to Leva
-// controls). Compose it with one or more OverlayIconButton children; it
-// handles portaling into the overlay and staying clear of the signature/date
-// panels regardless of how many buttons are passed in.
+// Generic slot for a scene's user-facing UX buttons — the obvious, intended
+// controls (as opposed to the Leva panel, which is the hidden/dev one, only
+// reachable if you know to click the reversal). Compose it with one or more
+// OverlayIconButton children; it handles portaling into the overlay and
+// staying clear of the signature/date panels regardless of how many buttons
+// are passed in.
 export default function SceneButtonBar({ datasetKey, children }) {
   return (
     <OverlayPortal datasetKey={datasetKey ?? 'sceneButtonBarPortal'}>

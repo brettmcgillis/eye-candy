@@ -27,6 +27,8 @@ To Build:
 - [ ] CSG Skull. Knock a reversal out of its forehead.
 - [ ] Metaball (marching cubes) interactive lava lamp
 - [ ] Audio reactive tree
+- [ ] Eyeball
+- leverage threejs addons/generators for skyscraper, city, forest, tree. take a look at the generator docs too. Example; Forest generator can generate on a terrain OR anything that exposes sampleHeight, etc, Could we cover a car model in trees? an animal model in buildings/city?
 - [ ] Can we use ecctrl & click to move to make Quinn's board game playable?
 - [ ] We should do a scene with Quinns seal, 3rd person camera, player controls w/keyboard and controller.
       Scene should include quinns dice in the environment. Get low-LOD versions.
@@ -40,6 +42,7 @@ To Build:
 
 - [AllMyThoughtsAreSoCumulus](src/components/scenes/Showcase/WebGL/AllMyThoughtsAreSoCumulus/todo.md)
 - [Beautys in the eye of the beheaded](src/components/scenes/Showcase/WebGPU/BeautysInTheEyeOfTheBeheaded/todo.md)
+- [BirdsArentReal](src/components/scenes/Showcase/WebGPU/BirdsArentReal/todo.md)
 - [BurningAtBothEnds](src/components/scenes/Showcase/WebGL/BurningAtBothEnds/todo.md)
 - [Cardinals](src/components/scenes/Showcase/WebGL/Cardinals/todo.md)
 - [DumpsterFire](src/components/scenes/Showcase/WebGL/DumpsterFire/todo.md)
@@ -51,23 +54,6 @@ To Build:
 - [Rosie](src/components/scenes/Showcase/WebGL/Rosie/todo.md)
 - [Surrender](src/components/scenes/Showcase/WebGPU/Surrender/todo.md)
 - [WatercolorSquares](src/components/scenes/Showcase/WebGL/WatercolorSquares/todo.md)
-
-**TestLab**
-
-- [ExplosionTest](src/components/scenes/TestLab/WebGL/ExplosionTest/todo.md)
-- [FluidTest](src/components/scenes/TestLab/WebGL/FluidTest/todo.md)
-- [FurLab (webGL)](src/components/scenes/TestLab/WebGL/FurLab/todo.md)
-- [HandStuff](src/components/scenes/TestLab/WebGL/HandStuff/todo.md)
-- [ParticleLab](src/components/scenes/TestLab/WebGL/ParticleLab/todo.md)
-- [PixelHater](src/components/scenes/TestLab/WebGL/PixelHater/todo.md)
-- [StrudelDoodle](src/components/scenes/TestLab/WebGL/StrudelDoodle/todo.md)
-- [TheBoneZone](src/components/scenes/TestLab/WebGL/TheBoneZone/todo.md)
-- [MobilePhysicsTest](src/components/scenes/TestLab/WebGPU/MobilePhysicsTest/todo.md)
-- [NetworkTest](src/components/scenes/TestLab/WebGPU/NetworkTest/todo.md)
-- [FurLab (webGPU)](src/components/scenes/TestLab/WebGPU/FurLab/todo.md)
-- [TheLoom](src/components/scenes/TestLab/WebGPU/TheLoom/todo.md)
-- [LightningLab (webGL)](src/components/scenes/TestLab/WebGL/LightningLab/todo.md)
-- [LightningLab (webGPU)](src/components/scenes/TestLab/WebGPU/LightningLab/todo.md)
 
 **WorkInProgress**
 
@@ -92,11 +78,28 @@ To Build:
 - [DrippingSkull](src/components/scenes/WorkInProgress/WebGPU/DrippingSkull/todo.md)
 - [BurningCash](src/components/scenes/WorkInProgress/WebGPU/BurningCash/todo.md)
 - [UrbanWildlife](src/components/scenes/WorkInProgress/WebGPU/UrbanWildlife/todo.md)
-- [BirdsArentReal](src/components/scenes/WorkInProgress/WebGPU/BirdsArentReal/todo.md)
+- [Wet Paint](src/components/scenes/WorkInProgress/WebGPU/WetPaint/todo.md)
 
 **Template**
 
 - [SceneTemplate](src/components/scenes/Template/SceneTemplate/todo.md)
+
+**TestLab**
+
+- [ExplosionTest](src/components/scenes/TestLab/WebGL/ExplosionTest/todo.md)
+- [FluidTest](src/components/scenes/TestLab/WebGL/FluidTest/todo.md)
+- [FurLab (webGL)](src/components/scenes/TestLab/WebGL/FurLab/todo.md)
+- [HandStuff](src/components/scenes/TestLab/WebGL/HandStuff/todo.md)
+- [ParticleLab](src/components/scenes/TestLab/WebGL/ParticleLab/todo.md)
+- [PixelHater](src/components/scenes/TestLab/WebGL/PixelHater/todo.md)
+- [StrudelDoodle](src/components/scenes/TestLab/WebGL/StrudelDoodle/todo.md)
+- [TheBoneZone](src/components/scenes/TestLab/WebGL/TheBoneZone/todo.md)
+- [MobilePhysicsTest](src/components/scenes/TestLab/WebGPU/MobilePhysicsTest/todo.md)
+- [NetworkTest](src/components/scenes/TestLab/WebGPU/NetworkTest/todo.md)
+- [FurLab (webGPU)](src/components/scenes/TestLab/WebGPU/FurLab/todo.md)
+- [TheLoom](src/components/scenes/TestLab/WebGPU/TheLoom/todo.md)
+- [LightningLab (webGL)](src/components/scenes/TestLab/WebGL/LightningLab/todo.md)
+- [LightningLab (webGPU)](src/components/scenes/TestLab/WebGPU/LightningLab/todo.md)
 
 **ToolBox**
 
@@ -207,6 +210,7 @@ To Build:
 - [ ] Thats All Folks - Smoke
 - [ ] Thats All Folks - Bang
 - [ ] Urban Wildlife / Night Danger
+- [ ] Wet Paint
 
 ### Scenes to build
 

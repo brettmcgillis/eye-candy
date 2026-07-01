@@ -39,6 +39,7 @@
     "start-https": "npm run dev:https"
   },
   "dependencies": {
+    "@dgreenheck/ez-tree": "^1.1.0",
     "@dgreenheck/three-pinata": "^2.0.1",
     "@dimforge/rapier3d-compat": "0.19.2",
     "@mediapipe/camera_utils": "^0.3.1675466862",
@@ -68,6 +69,7 @@
     "postprocessing": "^6.38.2",
     "react": "^19.0.0",
     "react-bootstrap": "^2.9.1",
+    "react-device-detect": "^2.2.3",
     "react-dom": "^19.0.0",
     "react-icons": "^5.6.0",
     "react-router-dom": "^7.15.0",

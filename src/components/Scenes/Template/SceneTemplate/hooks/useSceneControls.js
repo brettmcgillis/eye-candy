@@ -2,6 +2,7 @@ import { folder, useControls } from 'leva';
 
 import { useMemo, useRef } from 'react';
 
+import { getCameraControlsKey } from '../../../../../hooks/sceneCameraUtils';
 import usePresetsFolder from '../../../../../hooks/usePresetsFolder';
 import useSceneCameraControls from '../../../../../hooks/useSceneCameraControls';
 import { useMediaRecorder } from '../../../../../modules/mediaRecorder';
@@ -40,7 +41,18 @@ export default function useSceneControls() {
 
   useMediaRecorder({ fileName: SCENE_LABEL });
 
-  const camera = useMemo(() => buildCamera(controls), [buildCamera, controls]);
+  // Rule: control changes must never reset the camera. `controls` gets a new
+  // identity on every Leva edit, so memoizing on `controls` directly would
+  // rebuild (and snap) the camera on any unrelated tweak. Memoize on a key
+  // derived only from camera-relevant control values instead.
+  const cameraControlsKey = useMemo(
+    () => getCameraControlsKey(controls),
+    [controls]
+  );
+  const camera = useMemo(
+    () => buildCamera(controls),
+    [buildCamera, cameraControlsKey]
+  );
 
   return useMemo(
     () => ({ ...controls, cameraApiRef, camera }),

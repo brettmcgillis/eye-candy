@@ -15,9 +15,9 @@ import buildFireAndSmokeControls from '../../shared/hooks/buildFireAndSmokeContr
 import buildSplineInstanceActions from '../../shared/hooks/buildSplineInstanceActions';
 import buildSplineGroupControls from '../../shared/hooks/useSplineGroupControls';
 import {
-  cloneSplineInstance,
   DEFAULT_SPLINE_CONFIG,
   DEFAULT_SPLINE_INSTANCE_TRANSFORM,
+  cloneSplineInstance,
   parsePreset,
   serializeSplines,
 } from '../../shared/splineDefaults';
@@ -602,12 +602,8 @@ export default function useHotBoxControls(splines, setSplines, attractorsRef) {
 
   const applyPresetState = useCallback(
     (presetKey) => {
-      const {
-        splineInstances: nextSplines,
-        splineConfigs: nextConfigs,
-      } = parsePreset(
-        getHotBoxPreset(presetKey)
-      );
+      const { splineInstances: nextSplines, splineConfigs: nextConfigs } =
+        parsePreset(getHotBoxPreset(presetKey));
       setSplines(nextSplines);
       setSplineConfigs(nextConfigs);
 

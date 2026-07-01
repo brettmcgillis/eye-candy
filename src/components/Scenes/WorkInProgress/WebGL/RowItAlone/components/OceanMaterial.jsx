@@ -312,7 +312,14 @@ export default function OceanMaterial({ ocean, runtime, sun }) {
     sunDirectionUniform.value.copy(sunDirection);
     sunColorUniform.value.set(sun.color);
     sunIntensityUniform.value = sun.intensity;
-  }, [sun.color, sun.intensity, sunColorUniform, sunDirection, sunDirectionUniform, sunIntensityUniform]);
+  }, [
+    sun.color,
+    sun.intensity,
+    sunColorUniform,
+    sunDirection,
+    sunDirectionUniform,
+    sunIntensityUniform,
+  ]);
 
   return <primitive object={material} attach="material" />;
 }

@@ -1,8 +1,10 @@
-import { Canvas } from '@react-three/fiber'
-import { OrbitControls, Environment, ContactShadows } from '@react-three/drei'
-import { Suspense } from 'react'
-import Box from './components/Box'
-import Sphere from './components/Sphere'
+import { Suspense } from 'react';
+
+import { ContactShadows, Environment, OrbitControls } from '@react-three/drei';
+import { Canvas } from '@react-three/fiber';
+
+import Box from './components/Box';
+import Sphere from './components/Sphere';
 
 function Scene() {
   return (
@@ -39,7 +41,7 @@ function Scene() {
       {/* Camera Controls */}
       <OrbitControls makeDefault />
     </>
-  )
+  );
 }
 
 export default function Experience() {
@@ -53,5 +55,5 @@ export default function Experience() {
         <Scene />
       </Suspense>
     </Canvas>
-  )
+  );
 }

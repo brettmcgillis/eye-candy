@@ -125,9 +125,9 @@ export default function Smoke2DGPU({
     const localPosition = positionLocal;
     const displacementUv = vec2(
       smokeUv.x.mul(4.0),
-      smokeUv.y.mul(4.0).sub(
-        uniforms.time.mul(uniforms.riseSpeed).mul(uniforms.scrollDir)
-      )
+      smokeUv.y
+        .mul(4.0)
+        .sub(uniforms.time.mul(uniforms.riseSpeed).mul(uniforms.scrollDir))
     );
     const displacementStrength = pow(smokeUv.y.mul(2.8), 2.0);
     const waver = fbm2(displacementUv);
@@ -151,7 +151,11 @@ export default function Smoke2DGPU({
     const tipFade = pow(float(1.0).sub(smokeUv.y), 0.65);
     const wickFade = smoothstep(0.0, 0.1, smokeUv.y);
     const density = clamp(
-      fbm2(scrolledUv).mul(edgeFade).mul(tipFade).mul(wickFade).mul(uniforms.opacity),
+      fbm2(scrolledUv)
+        .mul(edgeFade)
+        .mul(tipFade)
+        .mul(wickFade)
+        .mul(uniforms.opacity),
       0.0,
       1.0
     );

@@ -133,7 +133,10 @@ const SoccerBall = forwardRef(function SoccerBall(
   );
 });
 
-const SoccerField = forwardRef(function SoccerField({ position = [0, 0, 40] }, ref) {
+const SoccerField = forwardRef(function SoccerField(
+  { position = [0, 0, 40] },
+  ref
+) {
   const { gl } = useThree();
   const isWebGPU = gl?.isWebGPURenderer === true;
   const [score, setScore] = useState({ home: 0, away: 0 });

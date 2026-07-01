@@ -50,20 +50,33 @@ function Godrays({
       blur ? blurColor : godraysColor,
       sceneDepth,
       camera,
-      { blendColor: uBlendColor, edgeRadius: uEdgeRadius, edgeStrength: uEdgeStrength }
+      {
+        blendColor: uBlendColor,
+        edgeRadius: uEdgeRadius,
+        edgeStrength: uEdgeStrength,
+      }
     );
 
     const uBloomThreshold = uniform(bloomThreshold);
     const uBloomStrength = uniform(bloomStrength);
     const bright = max(sceneColor.sub(uBloomThreshold), 0.0);
-    const bloomBlur = gaussianBlur(bright, bloomRadius, 6, { resolutionScale: 0.5 });
+    const bloomBlur = gaussianBlur(bright, bloomRadius, 6, {
+      resolutionScale: 0.5,
+    });
     const output = composite.add(bloomBlur.mul(uBloomStrength));
 
     const post = new THREE.PostProcessing(renderer);
     post.outputNode = output;
 
     postRef.current = post;
-    nodesRef.current = { godraysNode, uBlendColor, uEdgeRadius, uEdgeStrength, uBloomThreshold, uBloomStrength };
+    nodesRef.current = {
+      godraysNode,
+      uBlendColor,
+      uEdgeRadius,
+      uEdgeStrength,
+      uBloomThreshold,
+      uBloomStrength,
+    };
 
     return () => {
       postRef.current = null;

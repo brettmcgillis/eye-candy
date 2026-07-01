@@ -1,7 +1,8 @@
-import React, { useEffect, useMemo, useRef } from 'react';
-
 import * as THREE from 'three';
 import { clone as cloneSkeleton } from 'three/examples/jsm/utils/SkeletonUtils.js';
+
+import React, { useEffect, useMemo, useRef } from 'react';
+
 import { useAnimations, useGLTF } from '@react-three/drei';
 import { useGraph } from '@react-three/fiber';
 
@@ -18,12 +19,19 @@ const sealAnimationMap = {
   sealFall: { clip: 'Swim', timeScale: 0.85 },
 };
 
-export default function LowPolySeal({ color, curAnimation: curAnimationProp, ...props }) {
+export default function LowPolySeal({
+  color,
+  curAnimation: curAnimationProp,
+  ...props
+}) {
   const group = useRef();
   const { scene, materials, animations } = useGLTF(modelFile('/seal.glb'));
   const clonedScene = useMemo(() => cloneSkeleton(scene), [scene]);
   const { nodes } = useGraph(clonedScene);
-  const clonedAnimations = useMemo(() => animations.map((clip) => clip.clone()), [animations]);
+  const clonedAnimations = useMemo(
+    () => animations.map((clip) => clip.clone()),
+    [animations]
+  );
   const { actions } = useAnimations(clonedAnimations, group);
   const storeAnimation = useGame((state) => state.curAnimation);
   const curAnimation = curAnimationProp ?? storeAnimation;

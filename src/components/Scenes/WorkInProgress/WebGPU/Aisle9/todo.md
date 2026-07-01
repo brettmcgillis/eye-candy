@@ -53,7 +53,7 @@ This list may not be correct or complete.
 - [x] Cam 3 - Night - Med BH → Cam 3 - Med BH
 - [x] Cam 3 - Night - LG BH → Cam 3 - LG BH
 
-- [x] Guided Tour - Day                   → Guided Tour - Day (orientationMode: forward, dawn sky)
+- [x] Guided Tour - Day → Guided Tour - Day (orientationMode: forward, dawn sky)
 - [x] Guided Tour - Night - No BH → Guided Tour - Night - No BH (orientationMode: forward)
 - [x] Guided Tour - Night - BH → Guided Tour - BH (orientationMode: target)
 

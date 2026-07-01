@@ -3,7 +3,11 @@ import * as THREE from 'three';
 import React, { useEffect, useMemo, useRef, useState } from 'react';
 
 import { useFrame, useThree } from '@react-three/fiber';
-import { CapsuleCollider, CuboidCollider, RigidBody } from '@react-three/rapier';
+import {
+  CapsuleCollider,
+  CuboidCollider,
+  RigidBody,
+} from '@react-three/rapier';
 
 import RcCar from '../../../../elements/models/rcCar/RcCar';
 import CapsuleCharacter from './CapsuleCharacter';
@@ -48,10 +52,19 @@ function RemotePlayerBody({ player, CharacterComponent }) {
       const rp = rideablePosRef.current;
       const rr = rideableRotRef.current;
       if (rp) {
-        carGroupRef.current.setNextKinematicTranslation({ x: rp.x, y: rp.y, z: rp.z });
+        carGroupRef.current.setNextKinematicTranslation({
+          x: rp.x,
+          y: rp.y,
+          z: rp.z,
+        });
       }
       if (rr) {
-        carGroupRef.current.setNextKinematicRotation({ x: rr.x, y: rr.y, z: rr.z, w: rr.w });
+        carGroupRef.current.setNextKinematicRotation({
+          x: rr.x,
+          y: rr.y,
+          z: rr.z,
+          w: rr.w,
+        });
       }
     }
   });
@@ -68,7 +81,10 @@ function RemotePlayerBody({ player, CharacterComponent }) {
       >
         {colliderReady && <CapsuleCollider args={[0.35, 0.3]} />}
         <group rotation={[0, player.rotation || 0, 0]}>
-          <CharacterComponent color={player.color} curAnimation={player.curAnimation} />
+          <CharacterComponent
+            color={player.color}
+            curAnimation={player.curAnimation}
+          />
         </group>
       </RigidBody>
       {carInitPos && (
@@ -80,7 +96,10 @@ function RemotePlayerBody({ player, CharacterComponent }) {
           userData={{ excludeEcctrlRay: true }}
         >
           <CuboidCollider args={[0.65, 0.28, 1.2]} position={[0, 0.28, 0.22]} />
-          <CuboidCollider args={[0.5, 0.16, 0.85]} position={[0, -0.02, 0.22]} />
+          <CuboidCollider
+            args={[0.5, 0.16, 0.85]}
+            position={[0, -0.02, 0.22]}
+          />
           <RcCar />
         </RigidBody>
       )}

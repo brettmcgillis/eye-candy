@@ -1408,8 +1408,13 @@ const Ecctrl: ForwardRefRenderFunction<CustomEcctrlRigidBody, EcctrlProps> = (
     /**
      * Getting all joystick control values
      */
-    const { joystickDis, joystickAng, runState, button1Pressed, button2Pressed } =
-      getJoystickValues();
+    const {
+      joystickDis,
+      joystickAng,
+      runState,
+      button1Pressed,
+      button2Pressed,
+    } = getJoystickValues();
     const effectiveRunState = runState || button2Pressed;
 
     // Move character to the moving direction (joystick controls)

@@ -9,11 +9,11 @@ import { useFrame } from '@react-three/fiber';
 
 import Flame from '../../../../../elements/flame/Flame';
 import Smoke2D from '../../../../../elements/smoke/Smoke2D';
+import VolumetricSmokeParticles from '../../../../../elements/smoke/VolumetricSmokeParticles';
 import {
   getSplineWorldOrigin,
   getSplineWorldPoints,
 } from '../../../../../elements/splineGroup/splineDefaults';
-import VolumetricSmokeParticles from '../../../../../elements/smoke/VolumetricSmokeParticles';
 import VolumetricFire from '../../../../../elements/volumetricFire/VolumetricFire';
 import Candlewick from './Candlewick';
 

@@ -249,13 +249,20 @@ export function useMultiplayer({
         rideableState.mountedGroupRef.current.getWorldPosition(carPos);
         rideableState.mountedGroupRef.current.getWorldQuaternion(carQuat);
         rideablePosition = { x: carPos.x, y: carPos.y, z: carPos.z };
-        rideableRotation = { x: carQuat.x, y: carQuat.y, z: carQuat.z, w: carQuat.w };
+        rideableRotation = {
+          x: carQuat.x,
+          y: carQuat.y,
+          z: carQuat.z,
+          w: carQuat.w,
+        };
       }
 
       // Ball authority: only the player with the lowest sorted ID broadcasts ball state.
       const allIds = [playerId, ...knownRemoteIdsRef.current].sort();
       const isAuthority = allIds[0] === playerId;
-      const ballState = isAuthority ? (getBallStateRef.current?.() ?? null) : null;
+      const ballState = isAuthority
+        ? (getBallStateRef.current?.() ?? null)
+        : null;
 
       socketRef.current!.send(
         JSON.stringify({

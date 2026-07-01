@@ -22,43 +22,48 @@ The `<Canvas>` component is the root of every R3F scene. It sets up the renderer
 
 ```typescript
 interface CanvasProps {
-  children: React.ReactNode
+  children: React.ReactNode;
 
   // Rendering
-  gl?: Partial<WebGLRendererParameters> | ((canvas: HTMLCanvasElement) => WebGLRenderer)
-  dpr?: number | [min: number, max: number]
-  frameloop?: 'always' | 'demand' | 'never'
-  flat?: boolean
-  linear?: boolean
-  legacy?: boolean
+  gl?:
+    | Partial<WebGLRendererParameters>
+    | ((canvas: HTMLCanvasElement) => WebGLRenderer);
+  dpr?: number | [min: number, max: number];
+  frameloop?: 'always' | 'demand' | 'never';
+  flat?: boolean;
+  linear?: boolean;
+  legacy?: boolean;
 
   // Camera
-  camera?: Partial<PerspectiveCamera> | Partial<OrthographicCamera>
-  orthographic?: boolean
+  camera?: Partial<PerspectiveCamera> | Partial<OrthographicCamera>;
+  orthographic?: boolean;
 
   // Scene
-  shadows?: boolean | Partial<WebGLShadowMap>
-  raycaster?: Partial<Raycaster>
+  shadows?: boolean | Partial<WebGLShadowMap>;
+  raycaster?: Partial<Raycaster>;
 
   // Events
-  events?: EventManager
-  eventSource?: HTMLElement | React.RefObject<HTMLElement>
-  eventPrefix?: 'offset' | 'client' | 'page' | 'layer' | 'screen'
+  events?: EventManager;
+  eventSource?: HTMLElement | React.RefObject<HTMLElement>;
+  eventPrefix?: 'offset' | 'client' | 'page' | 'layer' | 'screen';
 
   // Size
-  resize?: { scroll?: boolean; debounce?: number | { scroll: number; resize: number } }
+  resize?: {
+    scroll?: boolean;
+    debounce?: number | { scroll: number; resize: number };
+  };
 
   // Performance
   performance?: {
-    current?: number
-    min?: number
-    max?: number
-    debounce?: number
-  }
+    current?: number;
+    min?: number;
+    max?: number;
+    debounce?: number;
+  };
 
   // Callbacks
-  onCreated?: (state: RootState) => void
-  onPointerMissed?: (event: MouseEvent) => void
+  onCreated?: (state: RootState) => void;
+  onPointerMissed?: (event: MouseEvent) => void;
 }
 ```
 
@@ -127,39 +132,41 @@ useFrame(
 ```
 
 **Parameters**:
+
 - `callback` - Function called every frame
 - `renderPriority` - Execution order (default: 0, higher = later)
 
 **State Object**:
+
 ```typescript
 interface RootState {
-  gl: WebGLRenderer
-  scene: Scene
-  camera: Camera
-  raycaster: Raycaster
-  pointer: Vector2
-  mouse: Vector2 // Deprecated, use pointer
-  clock: Clock
-  size: { width: number; height: number; top: number; left: number }
+  gl: WebGLRenderer;
+  scene: Scene;
+  camera: Camera;
+  raycaster: Raycaster;
+  pointer: Vector2;
+  mouse: Vector2; // Deprecated, use pointer
+  clock: Clock;
+  size: { width: number; height: number; top: number; left: number };
   viewport: {
-    width: number
-    height: number
-    initialDpr: number
-    dpr: number
-    factor: number
-    distance: number
-    aspect: number
-  }
-  performance: { current: number; min: number; max: number; debounce: number }
-  frameloop: 'always' | 'demand' | 'never'
-  controls: any
-  invalidate: (frames?: number) => void
-  advance: (timestamp: number, runGlobalEffects?: boolean) => void
-  setSize: (width: number, height: number) => void
-  setDpr: (dpr: number) => void
-  setFrameloop: (frameloop: 'always' | 'demand' | 'never') => void
-  get: () => RootState
-  set: (partial: Partial<RootState>) => void
+    width: number;
+    height: number;
+    initialDpr: number;
+    dpr: number;
+    factor: number;
+    distance: number;
+    aspect: number;
+  };
+  performance: { current: number; min: number; max: number; debounce: number };
+  frameloop: 'always' | 'demand' | 'never';
+  controls: any;
+  invalidate: (frames?: number) => void;
+  advance: (timestamp: number, runGlobalEffects?: boolean) => void;
+  setSize: (width: number, height: number) => void;
+  setDpr: (dpr: number) => void;
+  setFrameloop: (frameloop: 'always' | 'demand' | 'never') => void;
+  get: () => RootState;
+  set: (partial: Partial<RootState>) => void;
 }
 ```
 
@@ -168,46 +175,46 @@ interface RootState {
 ```jsx
 // Basic animation
 function RotatingBox() {
-  const meshRef = useRef()
+  const meshRef = useRef();
 
   useFrame((state, delta) => {
-    meshRef.current.rotation.x += delta
-    meshRef.current.rotation.y += delta * 0.5
-  })
+    meshRef.current.rotation.x += delta;
+    meshRef.current.rotation.y += delta * 0.5;
+  });
 
-  return <mesh ref={meshRef}>...</mesh>
+  return <mesh ref={meshRef}>...</mesh>;
 }
 
 // Access clock for time-based animations
 function FloatingBox() {
-  const meshRef = useRef()
+  const meshRef = useRef();
 
   useFrame((state) => {
-    const time = state.clock.elapsedTime
-    meshRef.current.position.y = Math.sin(time) * 2
-  })
+    const time = state.clock.elapsedTime;
+    meshRef.current.position.y = Math.sin(time) * 2;
+  });
 
-  return <mesh ref={meshRef}>...</mesh>
+  return <mesh ref={meshRef}>...</mesh>;
 }
 
 // Control render loop
 function CustomRender() {
   useFrame(({ gl, scene, camera }) => {
-    gl.render(scene, camera)
-  }, 1) // renderPriority = 1 (takes over rendering)
+    gl.render(scene, camera);
+  }, 1); // renderPriority = 1 (takes over rendering)
 }
 
 // Ordered execution
 function First() {
-  useFrame(() => console.log('First'), -1)
+  useFrame(() => console.log('First'), -1);
 }
 
 function Second() {
-  useFrame(() => console.log('Second'), 0)
+  useFrame(() => console.log('Second'), 0);
 }
 
 function Third() {
-  useFrame(() => console.log('Third'), 1)
+  useFrame(() => console.log('Third'), 1);
 }
 ```
 
@@ -225,6 +232,7 @@ useThree<T = RootState>(
 ```
 
 **Parameters**:
+
 - `selector` - Function to select specific state (optional)
 - `equalityFn` - Custom equality function for optimization
 
@@ -319,25 +327,28 @@ useLoader.clear<T>(
 **Examples**:
 
 ```jsx
-import { useLoader } from '@react-three/fiber'
-import { TextureLoader, GLTFLoader } from 'three'
+import { GLTFLoader, TextureLoader } from 'three';
+// Loader extensions (e.g., DRACO compression)
+import { DRACOLoader } from 'three/examples/jsm/loaders/DRACOLoader';
+
+import { useLoader } from '@react-three/fiber';
 
 // Load texture
 function TexturedBox() {
-  const texture = useLoader(TextureLoader, '/texture.jpg')
+  const texture = useLoader(TextureLoader, '/texture.jpg');
 
   return (
     <mesh>
       <boxGeometry />
       <meshStandardMaterial map={texture} />
     </mesh>
-  )
+  );
 }
 
 // Load GLTF model
 function Model() {
-  const gltf = useLoader(GLTFLoader, '/model.glb')
-  return <primitive object={gltf.scene} />
+  const gltf = useLoader(GLTFLoader, '/model.glb');
+  return <primitive object={gltf.scene} />;
 }
 
 // Load multiple assets
@@ -345,68 +356,62 @@ function Scene() {
   const [texture1, texture2, texture3] = useLoader(TextureLoader, [
     '/tex1.jpg',
     '/tex2.jpg',
-    '/tex3.jpg'
-  ])
+    '/tex3.jpg',
+  ]);
 
   return (
     <>
-      <mesh><meshStandardMaterial map={texture1} /></mesh>
-      <mesh><meshStandardMaterial map={texture2} /></mesh>
-      <mesh><meshStandardMaterial map={texture3} /></mesh>
+      <mesh>
+        <meshStandardMaterial map={texture1} />
+      </mesh>
+      <mesh>
+        <meshStandardMaterial map={texture2} />
+      </mesh>
+      <mesh>
+        <meshStandardMaterial map={texture3} />
+      </mesh>
     </>
-  )
+  );
 }
 
-// Loader extensions (e.g., DRACO compression)
-import { DRACOLoader } from 'three/examples/jsm/loaders/DRACOLoader'
-
 function CompressedModel() {
-  const gltf = useLoader(
-    GLTFLoader,
-    '/compressed.glb',
-    (loader) => {
-      const dracoLoader = new DRACOLoader()
-      dracoLoader.setDecoderPath('/draco/')
-      loader.setDRACOLoader(dracoLoader)
-    }
-  )
+  const gltf = useLoader(GLTFLoader, '/compressed.glb', (loader) => {
+    const dracoLoader = new DRACOLoader();
+    dracoLoader.setDecoderPath('/draco/');
+    loader.setDRACOLoader(dracoLoader);
+  });
 
-  return <primitive object={gltf.scene} />
+  return <primitive object={gltf.scene} />;
 }
 
 // Progress tracking
 function ModelWithProgress() {
-  const [progress, setProgress] = useState(0)
+  const [progress, setProgress] = useState(0);
 
-  const gltf = useLoader(
-    GLTFLoader,
-    '/large-model.glb',
-    undefined,
-    (event) => {
-      setProgress((event.loaded / event.total) * 100)
-    }
-  )
+  const gltf = useLoader(GLTFLoader, '/large-model.glb', undefined, (event) => {
+    setProgress((event.loaded / event.total) * 100);
+  });
 
-  return <primitive object={gltf.scene} />
+  return <primitive object={gltf.scene} />;
 }
 
 // Pre-loading
 function Preloader() {
   useEffect(() => {
-    useLoader.preload(GLTFLoader, '/model.glb')
-    useLoader.preload(TextureLoader, '/texture.jpg')
-  }, [])
+    useLoader.preload(GLTFLoader, '/model.glb');
+    useLoader.preload(TextureLoader, '/texture.jpg');
+  }, []);
 
-  return null
+  return null;
 }
 
 // Clear cache
 function Component() {
   useEffect(() => {
     return () => {
-      useLoader.clear(GLTFLoader, '/model.glb')
-    }
-  }, [])
+      useLoader.clear(GLTFLoader, '/model.glb');
+    };
+  }, []);
 }
 ```
 
@@ -426,13 +431,14 @@ useGraph(object: Object3D): {
 **Example**:
 
 ```jsx
-import { useLoader } from '@react-three/fiber'
-import { useGraph } from '@react-three/fiber'
-import { GLTFLoader } from 'three'
+import { GLTFLoader } from 'three';
+
+import { useLoader } from '@react-three/fiber';
+import { useGraph } from '@react-three/fiber';
 
 function Model() {
-  const gltf = useLoader(GLTFLoader, '/model.glb')
-  const { nodes, materials } = useGraph(gltf.scene)
+  const gltf = useLoader(GLTFLoader, '/model.glb');
+  const { nodes, materials } = useGraph(gltf.scene);
 
   return (
     <group>
@@ -441,7 +447,7 @@ function Model() {
         <meshStandardMaterial color="red" />
       </mesh>
     </group>
-  )
+  );
 }
 ```
 
@@ -479,25 +485,25 @@ onWheel?: (event: ThreeEvent<WheelEvent>) => void
 ```typescript
 interface ThreeEvent<T> extends Omit<T, 'target'> {
   // Three.js specific
-  intersections: Intersection[]
-  object: Object3D
-  eventObject: Object3D
-  unprojectedPoint: Vector3
-  ray: Ray
-  camera: Camera
-  sourceEvent: T
-  delta: number
+  intersections: Intersection[];
+  object: Object3D;
+  eventObject: Object3D;
+  unprojectedPoint: Vector3;
+  ray: Ray;
+  camera: Camera;
+  sourceEvent: T;
+  delta: number;
 
   // Helpers
-  stopPropagation: () => void
-  nativeEvent: T
-  pointer: Vector2
-  pointerId: number
-  distance: number
-  point: Vector3
-  uv: Vector2
-  face: Face | null
-  faceIndex: number | null
+  stopPropagation: () => void;
+  nativeEvent: T;
+  pointer: Vector2;
+  pointerId: number;
+  distance: number;
+  point: Vector3;
+  uv: Vector2;
+  face: Face | null;
+  faceIndex: number | null;
 }
 ```
 
@@ -637,27 +643,27 @@ Essential Drei components and hooks.
 
 ```typescript
 interface OrbitControlsProps {
-  makeDefault?: boolean
-  camera?: Camera
-  domElement?: HTMLElement
-  target?: Vector3
-  enableDamping?: boolean
-  dampingFactor?: number
-  enableZoom?: boolean
-  enableRotate?: boolean
-  enablePan?: boolean
-  minDistance?: number
-  maxDistance?: number
-  minPolarAngle?: number
-  maxPolarAngle?: number
-  onChange?: (e?: Event) => void
-  onStart?: (e?: Event) => void
-  onEnd?: (e?: Event) => void
+  makeDefault?: boolean;
+  camera?: Camera;
+  domElement?: HTMLElement;
+  target?: Vector3;
+  enableDamping?: boolean;
+  dampingFactor?: number;
+  enableZoom?: boolean;
+  enableRotate?: boolean;
+  enablePan?: boolean;
+  minDistance?: number;
+  maxDistance?: number;
+  minPolarAngle?: number;
+  maxPolarAngle?: number;
+  onChange?: (e?: Event) => void;
+  onStart?: (e?: Event) => void;
+  onEnd?: (e?: Event) => void;
 }
 ```
 
 ```jsx
-import { OrbitControls } from '@react-three/drei'
+import { OrbitControls } from '@react-three/drei';
 
 <OrbitControls
   makeDefault
@@ -667,7 +673,7 @@ import { OrbitControls } from '@react-three/drei'
   maxDistance={20}
   maxPolarAngle={Math.PI / 2}
   target={[0, 1, 0]}
-/>
+/>;
 ```
 
 ### Environment
@@ -688,15 +694,15 @@ import { Environment } from '@react-three/drei'
 ### useGLTF
 
 ```jsx
-import { useGLTF } from '@react-three/drei'
+import { useGLTF } from '@react-three/drei';
 
 function Model() {
-  const { scene, nodes, materials } = useGLTF('/model.glb')
-  return <primitive object={scene} />
+  const { scene, nodes, materials } = useGLTF('/model.glb');
+  return <primitive object={scene} />;
 }
 
 // Pre-load
-useGLTF.preload('/model.glb')
+useGLTF.preload('/model.glb');
 ```
 
 ### Text & Text3D
@@ -773,7 +779,7 @@ function SelectToZoom() {
 ### Html
 
 ```jsx
-import { Html } from '@react-three/drei'
+import { Html } from '@react-three/drei';
 
 <mesh>
   <boxGeometry />
@@ -789,24 +795,24 @@ import { Html } from '@react-three/drei'
   >
     <div className="annotation">Label</div>
   </Html>
-</mesh>
+</mesh>;
 ```
 
 ### ScrollControls
 
 ```jsx
-import { ScrollControls, Scroll, useScroll } from '@react-three/drei'
+import { Scroll, ScrollControls, useScroll } from '@react-three/drei';
 
 function Scene() {
-  const scroll = useScroll()
-  const meshRef = useRef()
+  const scroll = useScroll();
+  const meshRef = useRef();
 
   useFrame(() => {
-    const offset = scroll.offset // 0-1
-    meshRef.current.position.y = offset * 10
-  })
+    const offset = scroll.offset; // 0-1
+    meshRef.current.position.y = offset * 10;
+  });
 
-  return <mesh ref={meshRef}>...</mesh>
+  return <mesh ref={meshRef}>...</mesh>;
 }
 
 <Canvas>
@@ -818,13 +824,13 @@ function Scene() {
       <h1>HTML Content</h1>
     </Scroll>
   </ScrollControls>
-</Canvas>
+</Canvas>;
 ```
 
 ### ContactShadows
 
 ```jsx
-import { ContactShadows } from '@react-three/drei'
+import { ContactShadows } from '@react-three/drei';
 
 <ContactShadows
   position={[0, -0.8, 0]}
@@ -834,13 +840,13 @@ import { ContactShadows } from '@react-three/drei'
   far={10}
   resolution={256}
   color="#000000"
-/>
+/>;
 ```
 
 ### Sky
 
 ```jsx
-import { Sky } from '@react-three/drei'
+import { Sky } from '@react-three/drei';
 
 <Sky
   distance={450000}
@@ -851,13 +857,13 @@ import { Sky } from '@react-three/drei'
   turbidity={10}
   mieCoefficient={0.005}
   mieDirectionalG={0.8}
-/>
+/>;
 ```
 
 ### Stars
 
 ```jsx
-import { Stars } from '@react-three/drei'
+import { Stars } from '@react-three/drei';
 
 <Stars
   radius={100}
@@ -867,7 +873,7 @@ import { Stars } from '@react-three/drei'
   saturation={0}
   fade
   speed={1}
-/>
+/>;
 ```
 
 ---
@@ -877,23 +883,23 @@ import { Stars } from '@react-three/drei'
 ### AdaptiveDpr
 
 ```jsx
-import { AdaptiveDpr } from '@react-three/drei'
+import { AdaptiveDpr } from '@react-three/drei';
 
-<AdaptiveDpr pixelated />
+<AdaptiveDpr pixelated />;
 ```
 
 ### AdaptiveEvents
 
 ```jsx
-import { AdaptiveEvents } from '@react-three/drei'
+import { AdaptiveEvents } from '@react-three/drei';
 
-<AdaptiveEvents />
+<AdaptiveEvents />;
 ```
 
 ### PerformanceMonitor
 
 ```jsx
-import { PerformanceMonitor } from '@react-three/drei'
+import { PerformanceMonitor } from '@react-three/drei';
 
 <PerformanceMonitor
   onIncline={() => console.log('Performance improved')}
@@ -904,18 +910,18 @@ import { PerformanceMonitor } from '@react-three/drei'
   bounds={(refreshRate) => [50, 90]}
 >
   <Scene />
-</PerformanceMonitor>
+</PerformanceMonitor>;
 ```
 
 ### Preload
 
 ```jsx
-import { Preload } from '@react-three/drei'
+import { Preload } from '@react-three/drei';
 
 <Canvas>
   <Scene />
-  <Preload all />  {/* Preload all assets */}
-</Canvas>
+  <Preload all /> {/* Preload all assets */}
+</Canvas>;
 ```
 
 ---

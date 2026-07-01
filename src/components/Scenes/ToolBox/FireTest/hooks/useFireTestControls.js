@@ -13,9 +13,9 @@ import {
 import buildFireAndSmokeControls from '../../shared/hooks/buildFireAndSmokeControls';
 import buildSplineGroupControls from '../../shared/hooks/useSplineGroupControls';
 import {
-  cloneSplineInstance,
   DEFAULT_SPLINE_CONFIG,
   DEFAULT_SPLINE_INSTANCE_TRANSFORM,
+  cloneSplineInstance,
   filterParsedPresetByType,
   parsePreset,
   serializeSplines,

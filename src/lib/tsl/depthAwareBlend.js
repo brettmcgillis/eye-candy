@@ -1,64 +1,95 @@
-import { abs, color, float, Fn, Loop, mix, nodeObject, perspectiveDepthToViewZ, reference, textureSize, uv, vec2, vec4, viewZToOrthographicDepth, int, If, array, ivec2 } from 'three/tsl';
+import {
+  Fn,
+  If,
+  Loop,
+  abs,
+  array,
+  color,
+  float,
+  int,
+  ivec2,
+  mix,
+  nodeObject,
+  perspectiveDepthToViewZ,
+  reference,
+  textureSize,
+  uv,
+  vec2,
+  vec4,
+  viewZToOrthographicDepth,
+} from 'three/tsl';
 
-export const depthAwareBlend = /*#__PURE__*/ Fn( ( [ baseNode, blendNode, depthNode, camera, options = {} ] ) => {
+export const depthAwareBlend = /*#__PURE__*/ Fn(
+  ([baseNode, blendNode, depthNode, camera, options = {}]) => {
+    const uvNode = baseNode.uvNode || uv();
 
-	const uvNode = baseNode.uvNode || uv();
+    const cameraNear = reference('near', 'float', camera);
+    const cameraFar = reference('far', 'float', camera);
 
-	const cameraNear = reference( 'near', 'float', camera );
-	const cameraFar = reference( 'far', 'float', camera );
+    const blendColor = nodeObject(options.blendColor) || color(0xffffff);
+    const edgeRadius = nodeObject(options.edgeRadius) || int(2);
+    const edgeStrength = nodeObject(options.edgeStrength) || float(2);
 
-	const blendColor = nodeObject( options.blendColor ) || color( 0xffffff );
-	const edgeRadius = nodeObject( options.edgeRadius ) || int( 2 );
-	const edgeStrength = nodeObject( options.edgeStrength ) || float( 2 );
+    const viewZ = perspectiveDepthToViewZ(depthNode, cameraNear, cameraFar);
+    const correctDepth = viewZToOrthographicDepth(viewZ, cameraNear, cameraFar);
 
-	const viewZ = perspectiveDepthToViewZ( depthNode, cameraNear, cameraFar );
-	const correctDepth = viewZToOrthographicDepth( viewZ, cameraNear, cameraFar );
+    const pushDir = vec2(0.0).toVar();
+    const count = float(0).toVar();
 
-	const pushDir = vec2( 0.0 ).toVar();
-	const count = float( 0 ).toVar();
+    const resolution = ivec2(textureSize(baseNode)).toConst();
+    const pixelStep = vec2(1).div(resolution);
 
-	const resolution = ivec2( textureSize( baseNode ) ).toConst();
-	const pixelStep = vec2( 1 ).div( resolution );
+    const poissonDisk = array([
+      vec2(0.493393, 0.394269),
+      vec2(0.798547, 0.885922),
+      vec2(0.259143, 0.650754),
+      vec2(0.605322, 0.023588),
+      vec2(-0.574681, 0.137452),
+      vec2(-0.430397, -0.638423),
+      vec2(-0.849487, -0.366258),
+      vec2(0.170621, -0.569941),
+    ]);
 
-	const poissonDisk = array( [
-		vec2( 0.493393, 0.394269 ),
-		vec2( 0.798547, 0.885922 ),
-		vec2( 0.259143, 0.650754 ),
-		vec2( 0.605322, 0.023588 ),
-		vec2( - 0.574681, 0.137452 ),
-		vec2( - 0.430397, - 0.638423 ),
-		vec2( - 0.849487, - 0.366258 ),
-		vec2( 0.170621, - 0.569941 )
-	] );
+    Loop(8, ({ i }) => {
+      const offset = poissonDisk.element(i).mul(edgeRadius);
 
-	Loop( 8, ( { i } ) => {
+      const sampleUv = uvNode.add(offset.mul(pixelStep));
+      const sampleDepth = depthNode.sample(sampleUv);
 
-		const offset = poissonDisk.element( i ).mul( edgeRadius );
+      const sampleViewZ = perspectiveDepthToViewZ(
+        sampleDepth,
+        cameraNear,
+        cameraFar
+      );
+      const sampleLinearDepth = viewZToOrthographicDepth(
+        sampleViewZ,
+        cameraNear,
+        cameraFar
+      );
 
-		const sampleUv = uvNode.add( offset.mul( pixelStep ) );
-		const sampleDepth = depthNode.sample( sampleUv );
+      If(
+        abs(sampleLinearDepth.sub(correctDepth)).lessThan(
+          float(0.05).mul(correctDepth)
+        ),
+        () => {
+          pushDir.addAssign(offset);
+          count.addAssign(1);
+        }
+      );
+    });
 
-		const sampleViewZ = perspectiveDepthToViewZ( sampleDepth, cameraNear, cameraFar );
-		const sampleLinearDepth = viewZToOrthographicDepth( sampleViewZ, cameraNear, cameraFar );
+    count.assign(count.equal(0).select(1, count));
 
-		If( abs( sampleLinearDepth.sub( correctDepth ) ).lessThan( float( 0.05 ).mul( correctDepth ) ), () => {
+    pushDir.divAssign(count).normalize();
 
-			pushDir.addAssign( offset );
-			count.addAssign( 1 );
+    const sampleUv = pushDir
+      .length()
+      .greaterThan(0)
+      .select(uvNode.add(edgeStrength.mul(pushDir.div(resolution))), uvNode);
 
-		} );
+    const bestChoice = blendNode.sample(sampleUv).r;
+    const baseColor = baseNode.sample(uvNode);
 
-	} );
-
-	count.assign( count.equal( 0 ).select( 1, count ) );
-
-	pushDir.divAssign( count ).normalize();
-
-	const sampleUv = pushDir.length().greaterThan( 0 ).select( uvNode.add( edgeStrength.mul( pushDir.div( resolution ) ) ), uvNode );
-
-	const bestChoice = blendNode.sample( sampleUv ).r;
-	const baseColor = baseNode.sample( uvNode );
-
-	return vec4( mix( baseColor, vec4( blendColor, 1 ), bestChoice ) );
-
-} );
+    return vec4(mix(baseColor, vec4(blendColor, 1), bestChoice));
+  }
+);

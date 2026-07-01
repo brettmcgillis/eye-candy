@@ -11,14 +11,14 @@ technique source, not a rendering target.
 
 ## Architecture Decisions
 
-| Decision | Choice | Reason |
-|---|---|---|
-| Sphere mode renderer | Fullscreen PostProcessing (fixed) | Faithful to demo look; self-contained |
-| Skull mode renderer | Marching Cubes + real mesh | True 3D, orbitable, proper lighting/shadows |
-| Skull SDF | Analytic approximation (3–4 sphere primitives) | Mesh→SDF is expensive; coated liquid hides imprecision |
-| Material | TSL NodeMaterial, IQ palette-based | Shared look across sphere and skull modes |
-| Drip logic | CPU SDF evaluated per MC field update | MC grid is CPU-side; drip SDF ports cleanly to JS |
-| Post stack | Godrays pattern (pass + bloom) | Consistent with codebase patterns |
+| Decision             | Choice                                         | Reason                                                 |
+| -------------------- | ---------------------------------------------- | ------------------------------------------------------ |
+| Sphere mode renderer | Fullscreen PostProcessing (fixed)              | Faithful to demo look; self-contained                  |
+| Skull mode renderer  | Marching Cubes + real mesh                     | True 3D, orbitable, proper lighting/shadows            |
+| Skull SDF            | Analytic approximation (3–4 sphere primitives) | Mesh→SDF is expensive; coated liquid hides imprecision |
+| Material             | TSL NodeMaterial, IQ palette-based             | Shared look across sphere and skull modes              |
+| Drip logic           | CPU SDF evaluated per MC field update          | MC grid is CPU-side; drip SDF ports cleanly to JS      |
+| Post stack           | Godrays pattern (pass + bloom)                 | Consistent with codebase patterns                      |
 
 ---
 
@@ -27,9 +27,11 @@ technique source, not a rendering target.
 ### Bug 1 — Drip blobs fly outside march bounds (critical)
 
 In the reference GLSL, the detaching blob uses:
+
 ```glsl
 shape = length(p - vec3(0, pow(anim, 10.) * 200. + h, 0)) - .05;
 ```
+
 `pow(anim, 10) * 200` sends the blob to y ≈ 200 units. But `maxDist = 4.0` stops the
 march at 4 units. Blob is always outside the visible region. The drip segment renders
 but its head is invisible, creating disconnected-looking geometry.
@@ -89,16 +91,16 @@ because skull mode doesn't mount `RaymarchPass`. The render flow is currently fi
 
 ### Controls added in Phase 1
 
-| Control | Range | Label |
-|---|---|---|
-| tintA | color | Tint A |
-| tintB | color | Tint B |
-| paletteBrightness | 0.5 – 4 | Brightness |
-| paletteContrast | 0 – 2 | Contrast |
-| paletteSpeed | 0 – 2 | Palette Speed |
-| dripCount | 4/6/8/10/12/16 | Drip Count |
-| dripDropletFall | 1 – 6 | Drip Length |
-| bgColor | color | Background |
+| Control           | Range          | Label         |
+| ----------------- | -------------- | ------------- |
+| tintA             | color          | Tint A        |
+| tintB             | color          | Tint B        |
+| paletteBrightness | 0.5 – 4        | Brightness    |
+| paletteContrast   | 0 – 2          | Contrast      |
+| paletteSpeed      | 0 – 2          | Palette Speed |
+| dripCount         | 4/6/8/10/12/16 | Drip Count    |
+| dripDropletFall   | 1 – 6          | Drip Length   |
+| bgColor           | color          | Background    |
 
 ---
 
@@ -124,18 +126,19 @@ A coarse analytic skull is sufficient — thick liquid coating hides imprecision
 ```js
 // ~skull shape in unit space
 function skullSDF(x, y, z) {
-  const cranium = sdSphere(x, y - 0.15, z,  1.00)
-  const jaw     = sdSphere(x, y - 0.80, z * 0.9,  0.72)
-  const brow    = sdBox(x, y + 0.90, z - 0.30,  0.8, 0.12, 0.6)
-  return smin(smin(cranium, jaw, 0.35), brow, 0.25)
+  const cranium = sdSphere(x, y - 0.15, z, 1.0);
+  const jaw = sdSphere(x, y - 0.8, z * 0.9, 0.72);
+  const brow = sdBox(x, y + 0.9, z - 0.3, 0.8, 0.12, 0.6);
+  return smin(smin(cranium, jaw, 0.35), brow, 0.25);
 }
 ```
 
 ### MC field evaluation
 
 Each frame, for every grid cell, evaluate:
+
 ```js
-field[i] = 1.0 - mapSDF(worldX, worldY, worldZ, time, config)
+field[i] = 1.0 - mapSDF(worldX, worldY, worldZ, time, config);
 // MC finds field > isolevel (default 0.8) — tweakable as "Coating Thickness"
 ```
 
@@ -145,19 +148,20 @@ instead of `sdSphere`.
 ### Material
 
 Single `MeshStandardNodeMaterial` (or `MeshPhysicalNodeMaterial`) with:
+
 - IQ palette as emissive/color (same params as sphere mode)
 - Metalness + roughness drives the "liquid type" look
 - Fresnel rim glow node
 
 ### Controls added in Phase 2
 
-| Control | Range | Label |
-|---|---|---|
-| mcResolution | 32/48/64/80 | MC Quality |
-| isolevel | 0.5 – 1.2 | Coating Thickness |
-| metalness | 0 – 1 | Metalness |
-| roughness | 0 – 1 | Roughness |
-| fresnelStrength | 0 – 1 | Rim Glow |
+| Control         | Range       | Label             |
+| --------------- | ----------- | ----------------- |
+| mcResolution    | 32/48/64/80 | MC Quality        |
+| isolevel        | 0.5 – 1.2   | Coating Thickness |
+| metalness       | 0 – 1       | Metalness         |
+| roughness       | 0 – 1       | Roughness         |
+| fresnelStrength | 0 – 1       | Rim Glow          |
 
 ---
 
@@ -174,10 +178,12 @@ Single `MeshStandardNodeMaterial` (or `MeshPhysicalNodeMaterial`) with:
 ## Full Controls Reference (target state)
 
 ### Mode
+
 - Shape: Sphere / Skull
 - Mouse: Press / Hover
 
 ### Drip Dynamics
+
 - Drip Speed (0 – 3)
 - Viscosity / smin blend (0 – 1)
 - Drip Count (4 / 6 / 8 / 10 / 12 / 16)
@@ -185,11 +191,13 @@ Single `MeshStandardNodeMaterial` (or `MeshPhysicalNodeMaterial`) with:
 - Drip Thickness (via pointer radius)
 
 ### Surface
+
 - Noise Scale (0.5 – 12)
 - Noise Strength (0 – 1)
 - Coating Thickness / isolevel (Phase 2+)
 
 ### Color
+
 - Background color
 - Tint A + Tint B (IQ palette)
 - Palette Brightness (0.5 – 4)
@@ -197,16 +205,19 @@ Single `MeshStandardNodeMaterial` (or `MeshPhysicalNodeMaterial`) with:
 - Palette Speed (0 – 2)
 
 ### Lighting
+
 - Ambient intensity
 - Key intensity + color
 - Rim intensity + color
 - Fresnel Rim Glow (Phase 2+)
 
 ### Post
+
 - Bloom strength + threshold (Phase 3)
 - Godrays (Phase 3)
 
 ### Skull (skull mode only)
+
 - Scale
 - MC Quality (Phase 2+)
 

@@ -10,11 +10,19 @@
       // and the restore script can concatenate directly without adding an extra /.
       var l = window.location;
       l.replace(
-        l.protocol + '//' + l.host +
-        l.pathname.split('/').slice(0, 2).join('/') + '/?/' +
-        l.pathname.slice(1).split('/').slice(1).join('/').replace(/&/g, '~and~') +
-        (l.search ? '&' + l.search.slice(1).replace(/&/g, '~and~') : '') +
-        l.hash
+        l.protocol +
+          '//' +
+          l.host +
+          l.pathname.split('/').slice(0, 2).join('/') +
+          '/?/' +
+          l.pathname
+            .slice(1)
+            .split('/')
+            .slice(1)
+            .join('/')
+            .replace(/&/g, '~and~') +
+          (l.search ? '&' + l.search.slice(1).replace(/&/g, '~and~') : '') +
+          l.hash
       );
     </script>
   </head>

@@ -590,7 +590,8 @@ export default function VolumetricSmokeParticlesGPU({
           vz += (dz / dist) * radialStrength * dt;
           const dir = attractors[a].direction;
           if (dir) {
-            const dirStrength = sign * ((aStr * 0.4 * falloff) / (dist2 + falloff));
+            const dirStrength =
+              sign * ((aStr * 0.4 * falloff) / (dist2 + falloff));
             vx += dir[0] * dirStrength * dt;
             vy += dir[1] * dirStrength * dt;
             vz += dir[2] * dirStrength * dt;
@@ -692,5 +693,7 @@ export default function VolumetricSmokeParticlesGPU({
     }
   });
 
-  return particleMesh ? <primitive object={particleMesh} renderOrder={1} /> : null;
+  return particleMesh ? (
+    <primitive object={particleMesh} renderOrder={1} />
+  ) : null;
 }

@@ -173,6 +173,42 @@ doesn't apply):
 `Template/SceneTemplate/` has all four wired in — copy it to bootstrap a new
 WIP scene.
 
+## 14. Scene registration
+
+- Every scene folder owns a colocated `scene.config.jsx` (sibling to
+  `SceneName.jsx`) that registers the scene: `id`, `label`, `channel`, `area`,
+  `icon`, and `Component: lazy(() => import('./SceneName'))`.
+  `src/app/sceneRegistry.jsx` discovers every one of these via
+  `import.meta.glob('../components/scenes/**/scene.config.jsx')` and builds
+  routing, the scene dropdown, and the Leva scene list from them.
+- **Never hand-edit `sceneRegistry.jsx` to add, remove, or move a scene.**
+  Moving a scene between areas (e.g. WIP → Showcase) or channels is a
+  one-line edit to that scene's own `area`/`channel` field — the registry
+  adapts automatically. The file only holds glob/build infrastructure and
+  should stay roughly fixed-size regardless of scene count.
+- `export default` is a single object for a normal scene, or an **array of
+  objects** when one renderer-agnostic component (§8) registers under both
+  channels from a single folder (e.g. `ToolBox/FireTest/scene.config.jsx`
+  exports two entries, one per channel) — copy that file's shape for similar
+  cases.
+- `route` is optional and defaults to `id`. Set it explicitly only when a
+  scene needs a URL slug distinct from its sibling in the other channel — the
+  repo convention is an explicit `-webgpu` suffix (e.g. `crtTest-webgpu`).
+  Don't rely on the registry's collision auto-suffixing (`-2`, `-3`, ...) to
+  disambiguate, since scan order across scene folders isn't guaranteed.
+- Colocate the icon as a small `SceneIcon` component inside `scene.config.jsx`
+  (react-icons, or an `<img>` via `iconFile` from `utils/appUtils`). Even if
+  two scenes want a visually identical icon, duplicate the few lines rather
+  than importing one scene's icon into another's config — per §6, a scene
+  (its `scene.config.jsx` included) never reaches into another scene's
+  folder.
+- Prefix the filename with `_` (`_scene.config.jsx`) to keep a scene out of
+  the registry entirely — used by `Template/SceneTemplate/` so the bootstrap
+  template itself never appears as a real scene. Remove the underscore to
+  register it for real.
+- The `noScene` ("None") entry for each channel/area pair is generated
+  programmatically inside `sceneRegistry.jsx`, not authored per-scene.
+
 ---
 
 ## Scaffold & process (do not violate)

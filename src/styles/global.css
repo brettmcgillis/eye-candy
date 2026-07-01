@@ -145,6 +145,32 @@
   gap: 0.5rem; /* even spacing between all items */
   white-space: nowrap; /* prevent name from wrapping */
 }
+
+.scene-controls {
+  position: absolute;
+  left: 50%;
+  bottom: calc(var(--overlay-inset) + var(--overlay-scene-controls-offset));
+  translate: -50% 0;
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: center;
+  gap: 0.75rem;
+  max-width: min(90vw, 22em);
+  cursor: crosshair;
+}
+
+.overlay-icon-button {
+  cursor: crosshair;
+  background: transparent;
+  border: 0;
+  padding: 0;
+  color: inherit;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
 /* -------------------------------- */
 /* Responsive spacing               */
 /* -------------------------------- */
@@ -165,6 +191,14 @@
   .bottom-right,
   .bottom-center {
     bottom: calc(var(--overlay-inset-mobile) + var(--overlay-ig-bottom-offset));
+  }
+
+  .scene-controls {
+    bottom: calc(
+      var(--overlay-inset-mobile) + var(--overlay-ig-bottom-offset) +
+        var(--overlay-scene-controls-offset-mobile)
+    );
+    max-width: calc(100vw - 2 * var(--overlay-inset-mobile));
   }
 
   .top-left {

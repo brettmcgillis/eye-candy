@@ -1,6 +1,8 @@
 :root {
   --overlay-inset: 5em;
   --overlay-inset-mobile: 1rem;
+  --overlay-scene-controls-offset: 0px;
+  --overlay-scene-controls-offset-mobile: 3em;
 
   --overlay-ig-story-top-offset: 3.25rem;
   --overlay-ig-story-bottom-offset: 4rem;

@@ -1,6 +1,7 @@
 import React from 'react';
 import { CgTrash, CgTrashEmpty } from 'react-icons/cg';
 
+import OverlayIconButton from '../../../../../../app/scaffold/overlay/components/OverlayIconButton';
 import useTrashBlasterStore from '../hooks/useTrashBlasterStore';
 
 export default function ClearTrashButton() {
@@ -12,24 +13,10 @@ export default function ClearTrashButton() {
     : 'Reset dumpster scene';
 
   return (
-    <button
-      type="button"
+    <OverlayIconButton
       onClick={clearTrash}
-      title={tooltipLabel}
-      aria-label={tooltipLabel}
-      style={{
-        cursor: 'crosshair',
-        background: 'transparent',
-        border: 0,
-        padding: 0,
-        color: 'inherit',
-        opacity: 1,
-        display: 'flex',
-        alignItems: 'center',
-        justifyContent: 'center',
-      }}
-    >
-      <TrashIcon />
-    </button>
+      icon={TrashIcon}
+      label={tooltipLabel}
+    />
   );
 }

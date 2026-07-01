@@ -9,7 +9,7 @@ function isLocalHost() {
 function testMode() {
   if (typeof window === 'undefined') return false;
   const params = new URLSearchParams(window.location.search);
-  return params.get('testmode') === 'true';
+  return params.get('testmode') === 'true' || params.get('testMode') === 'true';
 }
 
 export function localEnv() {

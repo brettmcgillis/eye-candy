@@ -7,7 +7,7 @@ import { useThree } from '@react-three/fiber';
 import Godrays from '../../../../postprocessing/webGPU/godrays/Godrays';
 import CameraRig from '../../../../rigging/CameraRig';
 import BandedHorse from './components/BandedHorse';
-import HorsesForCoursesOverlay from './components/HorsesForCoursesOverlay';
+import ButtonOverlay from './components/ButtonOverlay';
 import SpotLighting from './components/SpotLighting';
 import useAudioAnalyzer from './hooks/useAudioAnalyzer';
 import useSceneControls from './hooks/useSceneControls';
@@ -160,7 +160,7 @@ export default function HorsesForCourses() {
         />
       )}
 
-      <HorsesForCoursesOverlay
+      <ButtonOverlay
         sourceMode={sourceMode}
         onMicClick={handleMicClick}
         onScreenShareClick={handleScreenShareClick}

@@ -19,13 +19,13 @@ leverage. They stack — build in order, each is usable alone.
 
 **Guiding principle — interaction is additive, never required.** The piece must always look
 fascinating with zero people, no webcam, or denied camera permission. Every interaction
-workstream layers *on top* of the as-is performance and degrades back to it cleanly. If
+workstream layers _on top_ of the as-is performance and degrades back to it cleanly. If
 unplugging the camera ever makes the piece look broken or static, that's a bug in WS0.
 
 ## // Architecture — composable capability layers
 
 The modalities are **not mutually exclusive modes**; they are independent layers that compose.
-"As-is" is simply *all layers off*. Prefer shared code: build each capability once as a layer
+"As-is" is simply _all layers off_. Prefer shared code: build each capability once as a layer
 with its own enable flag + gains, feeding a small set of shared sim inputs. Presets are just
 named snapshots of which layers are on and at what gain.
 
@@ -49,9 +49,9 @@ named snapshots of which layers are on and at what gain.
    - `MotionEnergy` — viewer movement → noise/speed/cohesion/gravity (WS2).
    - `AudioIn` — FFT bands → gravity/noise pulses (WS4 in).
 3. **Orchestration** — `PresenceState` (WS3) is the conductor, not a separate modality: it
-   ramps the *gains* of the sources/modulators over time (enter/dissolve envelopes). It can be
+   ramps the _gains_ of the sources/modulators over time (enter/dissolve envelopes). It can be
    disabled entirely so as-is runs without any presence machinery.
-4. **Consumers** — `AudioOut` (WS4 out) only *observes* sim + tracking state to drive Tone.js;
+4. **Consumers** — `AudioOut` (WS4 out) only _observes_ sim + tracking state to drive Tone.js;
    it never feeds the sim, so it composes freely with anything.
 
 **Input bus (design for this from the start — it's what makes WS5 Remote Control possible):**
@@ -64,16 +64,16 @@ source. Build WS1/WS2/WS4-in against the bus even before WS5 exists.
 **Modality = a combination of enable flags** (each a control, snapshotted by presets):
 
 | Preset (example)        | Ghost | LFO | Viewer{type} | Motion | AudioIn | AudioOut | Presence |
-|-------------------------|:-----:|:---:|:------------:|:------:|:-------:|:--------:|:--------:|
+| ----------------------- | :---: | :-: | :----------: | :----: | :-----: | :------: | :------: |
 | Showcase (as-is)        |  on   | on  |      –       |   –    |    –    |    –     |    –     |
-| Viewer                  |  opt  | on  |  silhouette  |  on    |    –    |    –     |   on     |
-| Viewer + Audio-reactive |  opt  | on  |  silhouette  |  on    |   on    |    –     |   on     |
-| Viewer + Audio-gen      |  opt  | on  |  silhouette  |  on    |    –    |   on     |   on     |
+| Viewer                  |  opt  | on  |  silhouette  |   on   |    –    |    –     |    on    |
+| Viewer + Audio-reactive |  opt  | on  |  silhouette  |   on   |   on    |    –     |    on    |
+| Viewer + Audio-gen      |  opt  | on  |  silhouette  |   on   |    –    |    on    |    on    |
 | Audio-reactive only     |  on   | on  |      –       |   –    |   on    |    –     |    –     |
-| Audio-gen only          |  on   | on  |      –       |   –    |    –    |   on     |    –     |
+| Audio-gen only          |  on   | on  |      –       |   –    |    –    |    on    |    –     |
 
 This is why ghost (WS0) and Dormant (WS3) share the `GhostSource` + gain-envelope code, but
-their *enable flags are independent*: as-is shows ghosts with Presence off; Dormant just routes
+their _enable flags are independent_: as-is shows ghosts with Presence off; Dormant just routes
 the same source through the presence conductor.
 
 ## Current state (baseline to change)
@@ -96,7 +96,7 @@ the same source through the presence conductor.
 
 **Concept:** the piece is already mesmerizing with nobody in front of it — colorful fluid
 drifting through the wireframe bounds. Treat that as a first-class, demoable mode and make it
-*self-sustaining* so it never goes static or boring on its own. Everything else is sugar; this
+_self-sustaining_ so it never goes static or boring on its own. Everything else is sugar; this
 is the cake. If you showed someone the piece today with no interaction, they'd be fascinated —
 preserve and harden that.
 
@@ -112,7 +112,7 @@ preserve and harden that.
 **Make it bulletproof + alive:**
 
 1. **Camera-optional by construction.** With `interactivityEnabled: false` the sim must run
-   full-quality. Also handle the *enabled-but-unavailable* path: no webcam / denied permission /
+   full-quality. Also handle the _enabled-but-unavailable_ path: no webcam / denied permission /
    MediaPipe load failure should silently fall back to as-is, never freeze or error. Verify
    `useMediaPipeBodyTracking` failure modes don't stall the `useFrame` loop.
 2. **Autonomous "performance" envelope.** Add a slow self-driving LFO layer (sum of sines /
@@ -133,21 +133,21 @@ preserve and harden that.
 
 **Feel target:** open the scene with no camera, walk away, come back in two minutes — it has
 visibly evolved (palette, flow direction, faint forms drifting through) and never looked static
-or repetitive. Plugging a camera in only *adds*; unplugging it returns cleanly to this.
+or repetitive. Plugging a camera in only _adds_; unplugging it returns cleanly to this.
 
 ---
 
 ## Workstream 1 — Signed body field (form the apparition) ★ highest leverage
 
-**Concept:** the body does two opposite things at once — *attract along the outline/skeleton,
-repel from the core* — so particles gather to trace your silhouette while the center hollows
+**Concept:** the body does two opposite things at once — _attract along the outline/skeleton,
+repel from the core_ — so particles gather to trace your silhouette while the center hollows
 out. You read as a glowing outline (apparition), not a blob. Also unlocks a "negative space"
 mode where you carve a person-shaped void in a dense field (the absence is the portrait).
 
 **Core change — per-attractor polarity:**
 
 - In `MlsMpmSimulator.g2p`, remove the global `this.uniforms.attractorMode` multiply on
-  `attractorForce` (line ~501). Polarity now lives in the *sign* of each attractor strength.
+  `attractorForce` (line ~501). Polarity now lives in the _sign_ of each attractor strength.
 - In `setAttractors`, write signed strengths straight through; keep `attractorMode` only as an
   optional global multiplier for the gesture toggle, or retire it.
 - In `buildAttractorsFromTracking`, assign polarity per landmark group:
@@ -187,7 +187,7 @@ EMA ~0.2). Also compute an aggregate `bodyEnergy` = mean landmark speed across a
 
 1. **Impulse (per-hand):** add hand-landmark velocity as a direct velocity kick so a fast
    sweep flings a comet, a slow hand gathers. Cheapest path: add a small extra attractor
-   *ahead* of a fast-moving wrist (lead the motion), strength ∝ speed. Cleaner path: add an
+   _ahead_ of a fast-moving wrist (lead the motion), strength ∝ speed. Cleaner path: add an
    optional per-attractor `velocity` field consumed in `g2p` as an impulse near the attractor.
 2. **Global agitation (in ParticleSystem useFrame → updateConfig):** map `bodyEnergy` →
    `noise` and `speed` UP, and → `restDensity`/`stiffness` DOWN, when moving; invert when
@@ -253,16 +253,16 @@ them; if they stop, an apparition forms; when they walk on, it dissolves behind 
 
 - **Tempo:** a Tone.js `Transport` set by a `bpm` control. Generated notes quantize to a grid
   (`subdivision`: 1/4, 1/8, 1/16, triplets) so events land on the beat. Support both a
-  continuous pad/drone layer *and* a rhythmic layer gated to the transport.
+  continuous pad/drone layer _and_ a rhythmic layer gated to the transport.
 - **Key = root + scale, where a scale is just an interval set** (semitone offsets from the
   root). This one representation composes across everything:
   - `major` → `[0,2,4,5,7,9,11]`, `minor` (natural) → `[0,2,3,5,7,8,10]`
   - `pentatonicMajor` → `[0,2,4,7,9]`, `pentatonicMinor` → `[0,3,5,7,10]`
   - `chromatic` → `[0,1,2,3,4,5,6,7,8,9,10,11]`
   - `custom` → any user-supplied offset array (also covers modes, blues, etc.)
-  Store as `{ root: 'A', scale: number[], octaveRange: [lo, hi] }`. A `quantizeToScale(pitch)`
-  helper snaps any continuous value to the nearest allowed pitch class — so sim signals map to
-  in-key notes regardless of which scale is selected.
+    Store as `{ root: 'A', scale: number[], octaveRange: [lo, hi] }`. A `quantizeToScale(pitch)`
+    helper snaps any continuous value to the nearest allowed pitch class — so sim signals map to
+    in-key notes regardless of which scale is selected.
 - **Sim → musical params (all snapped through the key/grid):**
   - Center-of-mass height → scale-degree index (low body = low degree) → quantized pitch.
   - Mean density → chord voicing / how many scale tones stack.
@@ -283,12 +283,12 @@ them; if they stop, an apparition forms; when they walk on, it dissolves behind 
 
 **Concept — guitar into an amp.** Run the scene on a powerful machine (the **amp/host**) at
 max particle count, lights, bloom. Run it again on a low-power device — old phone, Raspberry Pi
-(the **guitar/remote**) — which does *not* render the heavy scene. Set device roles, join the
-same room, and the remote becomes the control surface + the *fuel source*: when you enable an
+(the **guitar/remote**) — which does _not_ render the heavy scene. Set device roles, join the
+same room, and the remote becomes the control surface + the _fuel source_: when you enable an
 interactive mode, it's the **phone's** camera/mic providing the reactivity data, streamed to the
 host. The remote decides what's happening; the amp makes it big, loud, and beautiful.
 
-**Why it's clean here:** this changes *nothing* in the sim contract. It only swaps the input
+**Why it's clean here:** this changes _nothing_ in the sim contract. It only swaps the input
 bus's provider from `LocalProvider` to `RemoteProvider` (see Architecture). Control state and
 fuel data arrive over the network instead of from local APIs; `setAttractors`/`updateConfig`
 are unchanged. That's also why it generalizes to other scenes.
@@ -335,7 +335,7 @@ are unchanged. That's also why it generalizes to other scenes.
   last-known control-state or to as-is — the guitar unplugs, the amp keeps humming.
 
 **Feel target:** open the scene on the big machine, scan a QR with an old phone, the phone
-becomes a control panel; toggle silhouette mode and wave at the *phone's* camera — the wall-
+becomes a control panel; toggle silhouette mode and wave at the _phone's_ camera — the wall-
 sized apparition forms from the phone's tracking, with zero render load on the phone.
 
 ## // Suggested milestones
@@ -348,11 +348,12 @@ sized apparition forms from the phone's tracking, with zero render load on the p
 - [x] 5. Per-person hue + field bridging. (WS3 multi-person)
 - [x] 6. Audio in, then audio out. (WS4)
 - [ ] 7. Input-bus abstraction (Local/Remote providers), then remote transport + control sync +
-   fuel-frame streaming. Validate on phone → desktop. (WS5)
+     fuel-frame streaming. Validate on phone → desktop. (WS5)
 
 > **Implementation notes (leg 1 — milestones 0–6 complete; needs human visual/perf pass on dev server).**
 >
 > Architecture landed as composable capability layers feeding the shared sim contract:
+>
 > - Sim contract (`utils/MlsMpmSimulator.js`): per-attractor **signed strength**, **per-attractor
 >   radius** and **per-attractor hue** uniform arrays; `attractorMode` retained only as an optional
 >   GLOBAL polarity multiplier for the gesture toggle. g2p accumulates a proximity-weighted dominant
@@ -404,8 +405,8 @@ sized apparition forms from the phone's tracking, with zero render load on the p
 - RESOLVED: WS0 ghosts and WS3 Dormant share one `GhostSource` + gain-envelope; independent
   enable flags let as-is run with Presence off. (See Architecture section.)
 - RESOLVED: attractor budget eviction order is `coreRepel > outlineCore > handImpulse > outlineLimb
-  > face > hand > ghost` (see `layers/attractorBus.js` PRIORITY). Sources concatenate, then the bus
-  sorts by priority and truncates to MAX_ATTRACTORS, so viewers/core always survive crowding.
+  > face > hand > ghost`(see`layers/attractorBus.js` PRIORITY). Sources concatenate, then the bus
+  > sorts by priority and truncates to MAX_ATTRACTORS, so viewers/core always survive crowding.
 - WS5 fuel-frame budget: target Hz, float quantization, max people/landmarks per frame to keep
   phone uplink + host latency acceptable.
 - WS5: does control-sync live in the shared module generically (serialize any Leva object), or

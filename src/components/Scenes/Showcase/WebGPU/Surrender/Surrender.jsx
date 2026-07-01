@@ -13,8 +13,8 @@ import FlagPole from './components/FlagPole';
 import MoonlightProjector from './components/MoonlightProjector';
 import ThunderLightning from './components/ThunderLightning';
 import useCamera from './hooks/useCamera';
-import useSceneControls from './hooks/useSceneControls';
 import usePhysicsState from './hooks/usePhysicsState';
+import useSceneControls from './hooks/useSceneControls';
 
 export default function Surrender() {
   const outlineGroupRef = useRef();

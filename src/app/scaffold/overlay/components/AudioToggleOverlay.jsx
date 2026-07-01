@@ -1,33 +1,16 @@
-import React, { useEffect, useRef } from 'react';
-import { createRoot } from 'react-dom/client';
+import React from 'react';
 
-import AudioToggle from './AudioToggle';
+import { AudioToggleButton, useAudioToggleState } from './AudioToggle';
+import SceneButtonBar from './SceneButtonBar';
 
 export default function AudioToggleOverlay() {
-  const rootRef = useRef(null);
-  const containerRef = useRef(null);
+  const { hasAudio } = useAudioToggleState();
 
-  useEffect(() => {
-    const container = document.createElement('div');
-    container.dataset.audioTogglePortal = 'true';
-    const mountTarget = document.querySelector('.overlay') ?? document.body;
-    mountTarget.appendChild(container);
+  if (!hasAudio) return null;
 
-    containerRef.current = container;
-    rootRef.current = createRoot(container);
-    rootRef.current.render(<AudioToggle />);
-
-    return () => {
-      rootRef.current?.unmount();
-      rootRef.current = null;
-
-      if (container.parentNode) {
-        container.parentNode.removeChild(container);
-      }
-
-      containerRef.current = null;
-    };
-  }, []);
-
-  return null;
+  return (
+    <SceneButtonBar datasetKey="audioTogglePortal">
+      <AudioToggleButton />
+    </SceneButtonBar>
+  );
 }

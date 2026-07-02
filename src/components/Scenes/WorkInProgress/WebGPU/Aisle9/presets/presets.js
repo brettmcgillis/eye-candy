@@ -177,13 +177,13 @@ const DISK_DIAMETER_METERS = 1.08;
 const DEFAULT_LENS_DIAMETER = 1.55;
 
 const BASE_LEGACY_BLACK_HOLE = {
-  legacyDiskVariant: 'procedural',
+  legacyDiskVariant: 'ribbon',
   legacyBlackHoleDiameter: BLACK_HOLE_DIAMETER_METERS,
   legacyDiskDiameter: DISK_DIAMETER_METERS,
   legacyLensDiameter: DEFAULT_LENS_DIAMETER,
   legacyGravityStrength: 1,
   legacyStepCount: 100,
-  legacyDiskBrightness: 0.9,
+  legacyDiskBrightness: 1.67,
   legacyDiskTemperature: 8000,
   legacyDopplerStrength: 1,
   legacyAccretionMinRadius: 1.5,
@@ -196,8 +196,8 @@ const BASE_LEGACY_BLACK_HOLE = {
   legacyChromaticAnimSpeed: 1.0,
   legacyChromaticColorSpeed: 0.5,
   legacyChromaticSaturation: 0.45,
-  legacyRibbonRotationSpeed: 0.0,
-  legacyRibbonBandScale: 6.0,
+  legacyRibbonRotationSpeed: 0.02,
+  legacyRibbonBandScale: 16,
   legacyRibbonBiasStrength: 0.05,
 };
 
@@ -483,7 +483,7 @@ function createPreset(overrides) {
       points: STORE_GUIDED_PATH,
       target: STORE_CENTER,
     },
-    blackHoleVariant: BLACK_HOLE_VARIANT_SINGULARITY,
+    blackHoleVariant: BLACK_HOLE_VARIANT_LEGACY_PORT,
     ...BASE_LEGACY_BLACK_HOLE,
     ...BASE_WEBGPU_BLACK_HOLE,
     ...BASE_SINGULARITY_BLACK_HOLE,

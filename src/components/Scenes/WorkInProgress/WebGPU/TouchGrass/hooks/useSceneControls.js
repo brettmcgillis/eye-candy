@@ -14,7 +14,7 @@ import getTextControls from '../components/getTextControls';
 import getWaterControls from '../components/getWaterControls';
 import { DEFAULT_PRESET, PRESETS, getPresetControls } from '../presets/presets';
 
-const SCENE_LABEL = 'Touch Grass';
+const SCENE_LABEL = 'From The Dirt';
 const CAMERA_FOLDER_PATH = `${SCENE_LABEL}.Camera`;
 
 // Near-orthographic look: a long, narrow-FOV perspective shot pulled far
@@ -63,7 +63,7 @@ export default function useSceneControls() {
         },
         terrainPulseAmplitude: {
           label: 'Terrain Pulse Amp',
-          max: 0.45,
+          max: 1,
           min: 0,
           step: 0.005,
           value: p.terrainPulseAmplitude ?? 0,

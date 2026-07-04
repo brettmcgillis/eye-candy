@@ -70,7 +70,7 @@ export default function getTerrainControls(p) {
       Roots: folder(
         {
           rootTint: {
-            label: 'Root System Tint',
+            label: 'Root System Color',
             value: p.rootTint ?? '#efe4c6',
           },
           rootCount: {

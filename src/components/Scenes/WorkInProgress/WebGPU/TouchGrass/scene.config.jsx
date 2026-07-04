@@ -9,7 +9,7 @@ export default {
   id: 'touchGrass',
   label: 'Touch Grass',
   channel: 'webgpu',
-  area: 'wip',
+  area: 'showcase',
   icon: SceneIcon,
   Component: lazy(() => import('./TouchGrass')),
 };

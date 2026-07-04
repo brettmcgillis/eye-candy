@@ -3,7 +3,7 @@
 // canvas blur radius controls how soft the carved walls are.
 
 // Higher mask resolution improves curved glyph edge quality in terrain cuts.
-const MASK_SIZE = 4096;
+const MASK_SIZE = 4096 * 2;
 
 function smoothstepCpu(edge0, edge1, x) {
   const t = Math.min(Math.max((x - edge0) / (edge1 - edge0), 0), 1);

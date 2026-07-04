@@ -11,6 +11,7 @@ import { hash01, mulberry32 } from './noise2d';
 
 export const MAX_BLADES = 150000;
 export const BLADE_SEGMENTS = 4;
+const GRASS_EDGE_OVERDRAW = 0.5;
 
 function createBladeGeometry(segments = BLADE_SEGMENTS) {
   const rowCount = segments;
@@ -117,7 +118,9 @@ export function scatterBlades(
   const data = dataAttribute.array;
   const clump = clumpAttribute.array;
   const rng = mulberry32(seed * 7919 + count);
-  const half = heightField.worldSize * 0.49;
+  // Slightly overdraw beyond chunk bounds so adjacent chunks overlap grass
+  // coverage at seams instead of leaving a bare strip.
+  const half = heightField.worldSize * GRASS_EDGE_OVERDRAW;
   const target = Math.min(count, MAX_BLADES);
   const maxAttempts = target * 30;
 
@@ -173,4 +176,6 @@ export function scatterBlades(
   dataAttribute.needsUpdate = true;
   clumpAttribute.needsUpdate = true;
   geometry.instanceCount = placed;
+
+  return placed;
 }

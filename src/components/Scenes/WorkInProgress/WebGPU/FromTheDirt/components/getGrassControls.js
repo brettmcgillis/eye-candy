@@ -54,6 +54,25 @@ export default function getGrassControls(p) {
       },
       rootColor: { label: 'Root Color', value: p.rootColor },
       tipColor: { label: 'Tip Color', value: p.tipColor },
+      Endless: folder(
+        {
+          endlessTileDensityRatio: {
+            label: 'Tile Density vs Hero',
+            max: 4,
+            min: 0.25,
+            step: 0.05,
+            value: p.endlessTileDensityRatio ?? p.endlessGrassDensity ?? 1,
+          },
+          endlessGrassPerTileCap: {
+            label: 'Per-Tile Cap',
+            max: 150000,
+            min: 1000,
+            step: 1000,
+            value: p.endlessGrassPerTileCap ?? p.grassCount,
+          },
+        },
+        { collapsed: true }
+      ),
       Wind: folder(
         {
           windStrength: {

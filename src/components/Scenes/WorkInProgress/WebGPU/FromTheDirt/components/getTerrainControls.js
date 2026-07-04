@@ -25,6 +25,11 @@ export default function getTerrainControls(p) {
         step: 1,
         value: p.terrainRotation ?? 0,
       },
+      terrainEdgeMode: {
+        label: 'Edge Mode',
+        options: { Chunk: 'chunk', Endless: 'endless' },
+        value: p.terrainEdgeMode ?? 'chunk',
+      },
       topsoilDepth: {
         label: 'Topsoil Depth',
         max: 1,

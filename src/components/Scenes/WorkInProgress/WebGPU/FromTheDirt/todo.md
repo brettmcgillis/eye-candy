@@ -56,7 +56,7 @@ afternoon with light clouds rolling through (Surrender-style cloud shade).
 - [x] make sure wind speed over clouds, grass and water are uniform.
 - [ ] could we use eztree to add some nice trees and shrubs on the terrain
 - [ ] improve water apperance. might consider using the realistic ocean from RowItAlone Webgpu
-- [ ] add toggle to switch between 'chunk' of terrain with sidewalls, and an 'endless' terrain where we never see eges.
+- [x] add toggle to switch between 'chunk' of terrain with sidewalls, and an 'endless' terrain where we never see eges.
 - [ ] would like a preset where the terrain height is animated and water table depth fluctuates slightly
 - [x] the curves of fonts are looking pixelated. try and fix/smooth that out
 - [x] add a preset for, and enable water to have the characteristics of dirty black oil.

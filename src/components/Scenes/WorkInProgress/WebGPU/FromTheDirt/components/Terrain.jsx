@@ -1,5 +1,6 @@
 /* eslint-disable camelcase */
 import {
+  attribute,
   float,
   mix,
   mx_noise_float,
@@ -17,8 +18,18 @@ import * as THREE from 'three/webgpu';
 
 import React, { memo, useEffect, useMemo } from 'react';
 
+import { fbm2 } from '../utils/noise2d';
+import renderTextMask from '../utils/textMask';
+
 const SEGMENTS = 320;
 const WALL_SEGMENTS = 192;
+const ENDLESS_TILE_RADIUS = 2;
+const OUTER_SEGMENTS = 120;
+
+function smoothstepCpu(edge0, edge1, x) {
+  const t = Math.min(Math.max((x - edge0) / (edge1 - edge0), 0), 1);
+  return t * t * (3 - 2 * t);
+}
 
 function buildFrontBackWallGeometry({
   half,
@@ -182,11 +193,107 @@ function getStrataColor({ bandHash, bandIndex, seam, worldPos, uniforms }) {
     .mul(seam);
 }
 
+function buildOuterTerrainGeometry({
+  carveSampler,
+  chunkSize,
+  hillAmplitude,
+  hillFrequency,
+  offsetX,
+  offsetZ,
+  pitFloor,
+  seed,
+  segments,
+}) {
+  const geometry = new THREE.PlaneGeometry(
+    chunkSize,
+    chunkSize,
+    segments,
+    segments
+  );
+  const positions = geometry.attributes.position;
+  const carveAttr = new Float32Array(positions.count);
+  const hillAttr = new Float32Array(positions.count);
+
+  for (let i = 0; i < positions.count; i += 1) {
+    const localX = positions.getX(i);
+    const localY = positions.getY(i);
+    const worldX = localX + offsetX;
+    const worldZ = -localY + offsetZ;
+    const hill =
+      fbm2(worldX * hillFrequency, worldZ * hillFrequency, {
+        seed,
+        octaves: 4,
+      }) * hillAmplitude;
+    const carve = carveSampler ? carveSampler(worldX, worldZ) : 0;
+    const height = hill + (pitFloor - hill) * carve;
+    positions.setZ(i, height);
+    carveAttr[i] = carve;
+    hillAttr[i] = hill;
+  }
+
+  positions.needsUpdate = true;
+  geometry.setAttribute(
+    'outerCarve',
+    new THREE.Float32BufferAttribute(carveAttr, 1)
+  );
+  geometry.setAttribute(
+    'outerHill',
+    new THREE.Float32BufferAttribute(hillAttr, 1)
+  );
+  geometry.computeVertexNormals();
+  return geometry;
+}
+
 // Heightfield-displaced ground plane. The letters are "subtracted" by the
 // carve baked into the heightfield; walls and pit floors are shaded as
 // topsoil over horizontal sediment strata (absolute world-Y bands, like real
 // geology), while the untouched top surface stays meadow green.
 function Terrain({ cloudShade, config, heightField }) {
+  const showChunkWalls = (config.terrainEdgeMode ?? 'chunk') === 'chunk';
+
+  const endlessCarveSampler = useMemo(() => {
+    if (showChunkWalls) {
+      return null;
+    }
+
+    // Match carve projection to the full loaded endless footprint so text can
+    // continue naturally into surrounding chunks.
+    const spanChunks = ENDLESS_TILE_RADIUS * 2 + 1;
+    const worldSpan = heightField.worldSize * spanChunks;
+    const endlessTextScale = (config.textScale ?? 1) / spanChunks;
+
+    const textMask = renderTextMask({
+      edgeSoftness: config.edgeSoftness,
+      fontFamily: config.fontFamily,
+      fontWeight: config.fontWeight,
+      letterSpacing: config.letterSpacing,
+      text: config.text,
+      textRotation: config.textRotation,
+      textScale: endlessTextScale,
+    });
+
+    return (worldX, worldZ) => {
+      const u = worldX / worldSpan + 0.5;
+      const v = 0.5 - worldZ / worldSpan;
+      if (u < 0 || u > 1 || v < 0 || v > 1) {
+        return 0;
+      }
+      const mask = textMask.sample(u, 1 - v);
+      return smoothstepCpu(0.3, 0.7, mask);
+    };
+  }, [
+    config.edgeSoftness,
+    config.fontFamily,
+    config.fontWeight,
+    config.letterSpacing,
+    config.terrainEdgeMode,
+    config.text,
+    config.textRotation,
+    config.textScale,
+    heightField.worldSize,
+    showChunkWalls,
+  ]);
+
   const uniforms = useMemo(
     () => ({
       grassColorA: uniform(new THREE.Color(config.grassColorA)),
@@ -325,6 +432,75 @@ function Terrain({ cloudShade, config, heightField }) {
     uniforms,
   ]);
 
+  const endlessOuterMaterial = useMemo(() => {
+    const mat = new THREE.MeshStandardNodeMaterial({
+      metalness: 0,
+      roughness: 0.95,
+    });
+
+    const hill = attribute('outerHill');
+    const carve = attribute('outerCarve');
+    const worldY = positionWorld.y;
+    const depthBelow = hill.sub(worldY).max(0);
+
+    const meadowNoise = mx_noise_float(
+      vec3(positionWorld.x.mul(0.4), 0, positionWorld.z.mul(0.4))
+    )
+      .mul(0.5)
+      .add(0.5);
+    const meadow = mix(uniforms.grassColorA, uniforms.grassColorB, meadowNoise);
+
+    const contourBand = positionWorld.y
+      .mul(uniforms.strataScale.mul(0.82))
+      .add(mx_noise_float(positionWorld.mul(vec3(0.22, 0, 0.22))).mul(0.18));
+    const contourPos = contourBand.fract();
+    const contourLine = smoothstep(0.0, 0.07, contourPos)
+      .mul(smoothstep(1.0, 0.93, contourPos))
+      .mul(0.11);
+    const contourTint = uniforms.topsoilColor.mul(contourLine.mul(0.35));
+    const meadowContours = meadow
+      .mul(float(1).sub(contourLine))
+      .add(contourTint);
+    const topBand = getStrataBandPhase({
+      depthReference: depthBelow,
+      hillReference: hill,
+      worldPos: positionWorld,
+      uniforms,
+    });
+    const strata = getStrataColor({
+      bandHash: topBand.bandHash,
+      bandIndex: topBand.bandIndex,
+      seam: topBand.seam,
+      worldPos: positionWorld,
+      uniforms,
+    });
+
+    const topsoilBlend = smoothstep(
+      uniforms.topsoilDepth,
+      uniforms.topsoilDepth.mul(0.4),
+      depthBelow
+    );
+    const soil = mix(strata, uniforms.topsoilColor, topsoilBlend);
+    const wallBlend = smoothstep(0.03, 0.25, depthBelow).max(
+      smoothstep(0.85, 1.0, carve)
+    );
+
+    const grain = mx_noise_float(positionWorld.mul(18)).mul(0.08).add(0.96);
+    const damp = smoothstep(
+      uniforms.waterLine.add(0.35),
+      uniforms.waterLine.sub(0.1),
+      worldY
+    );
+
+    const base = mix(meadowContours, soil, wallBlend)
+      .mul(float(1).sub(damp.mul(0.45)))
+      .mul(grain);
+
+    mat.colorNode = base.mul(cloudShade(positionWorld.xz));
+
+    return mat;
+  }, [cloudShade, uniforms]);
+
   const geometry = useMemo(
     () =>
       new THREE.PlaneGeometry(
@@ -335,6 +511,61 @@ function Terrain({ cloudShade, config, heightField }) {
       ),
     [heightField.worldSize]
   );
+
+  const terrainTileOffsets = useMemo(() => {
+    if (showChunkWalls) {
+      return [[0, 0]];
+    }
+
+    const offsets = [];
+    for (let z = -ENDLESS_TILE_RADIUS; z <= ENDLESS_TILE_RADIUS; z += 1) {
+      for (let x = -ENDLESS_TILE_RADIUS; x <= ENDLESS_TILE_RADIUS; x += 1) {
+        offsets.push([x * heightField.worldSize, z * heightField.worldSize]);
+      }
+    }
+    return offsets;
+  }, [heightField.worldSize, showChunkWalls]);
+
+  const endlessOuterChunks = useMemo(() => {
+    if (showChunkWalls) {
+      return [];
+    }
+
+    const chunks = [];
+    terrainTileOffsets.forEach(([x, z]) => {
+      if (x === 0 && z === 0) {
+        return;
+      }
+
+      chunks.push({
+        geometry: buildOuterTerrainGeometry({
+          carveSampler: endlessCarveSampler,
+          chunkSize: heightField.worldSize,
+          hillAmplitude: config.hillAmplitude,
+          hillFrequency: config.hillFrequency,
+          offsetX: x,
+          offsetZ: z,
+          pitFloor: config.waterLevel - config.pitDepth,
+          seed: config.seed,
+          segments: OUTER_SEGMENTS,
+        }),
+        key: `${x}:${z}`,
+        position: [x, 0, z],
+      });
+    });
+
+    return chunks;
+  }, [
+    config.hillAmplitude,
+    config.hillFrequency,
+    config.pitDepth,
+    config.seed,
+    config.waterLevel,
+    endlessCarveSampler,
+    heightField.worldSize,
+    showChunkWalls,
+    terrainTileOffsets,
+  ]);
 
   const wallMaterial = useMemo(() => {
     const mat = new THREE.MeshStandardNodeMaterial({
@@ -389,6 +620,10 @@ function Terrain({ cloudShade, config, heightField }) {
   }, [cloudShade, heightField.texture, heightField.worldSize, uniforms]);
 
   const wallGeometries = useMemo(() => {
+    if (!showChunkWalls) {
+      return null;
+    }
+
     const half = heightField.worldSize * 0.5;
     const wallBottom =
       config.waterLevel -
@@ -428,16 +663,28 @@ function Terrain({ cloudShade, config, heightField }) {
   }, [
     config.hillAmplitude,
     config.pitDepth,
+    config.terrainEdgeMode,
     config.waterLevel,
     heightField.sampleHeight,
     heightField.worldSize,
+    showChunkWalls,
   ]);
 
   useEffect(() => () => geometry.dispose(), [geometry]);
   useEffect(() => () => material.dispose(), [material]);
+  useEffect(() => () => endlessOuterMaterial.dispose(), [endlessOuterMaterial]);
+  useEffect(
+    () => () => {
+      endlessOuterChunks.forEach((chunk) => chunk.geometry.dispose());
+    },
+    [endlessOuterChunks]
+  );
   useEffect(() => () => wallMaterial.dispose(), [wallMaterial]);
   useEffect(
     () => () => {
+      if (!wallGeometries) {
+        return;
+      }
       wallGeometries.front.dispose();
       wallGeometries.back.dispose();
       wallGeometries.left.dispose();
@@ -448,37 +695,64 @@ function Terrain({ cloudShade, config, heightField }) {
 
   return (
     <group>
-      <mesh
-        castShadow={config.terrainCastShadow}
-        geometry={geometry}
-        material={material}
-        receiveShadow
-        rotation-x={-Math.PI / 2}
-      />
-      <mesh
-        castShadow
-        geometry={wallGeometries.front}
-        material={wallMaterial}
-        receiveShadow
-      />
-      <mesh
-        castShadow
-        geometry={wallGeometries.back}
-        material={wallMaterial}
-        receiveShadow
-      />
-      <mesh
-        castShadow
-        geometry={wallGeometries.left}
-        material={wallMaterial}
-        receiveShadow
-      />
-      <mesh
-        castShadow
-        geometry={wallGeometries.right}
-        material={wallMaterial}
-        receiveShadow
-      />
+      {terrainTileOffsets.map(([x, z]) => {
+        const isCenterTile = x === 0 && z === 0;
+        if (!isCenterTile) {
+          return null;
+        }
+
+        return (
+          <mesh
+            key={`${x}:${z}`}
+            castShadow={config.terrainCastShadow}
+            geometry={geometry}
+            material={material}
+            position={[x, 0, z]}
+            receiveShadow
+            rotation-x={-Math.PI / 2}
+          />
+        );
+      })}
+      {!showChunkWalls &&
+        endlessOuterChunks.map((chunk) => (
+          <mesh
+            key={chunk.key}
+            castShadow={config.terrainCastShadow}
+            geometry={chunk.geometry}
+            material={endlessOuterMaterial}
+            position={chunk.position}
+            receiveShadow
+            rotation-x={-Math.PI / 2}
+          />
+        ))}
+      {showChunkWalls && wallGeometries && (
+        <>
+          <mesh
+            castShadow
+            geometry={wallGeometries.front}
+            material={wallMaterial}
+            receiveShadow
+          />
+          <mesh
+            castShadow
+            geometry={wallGeometries.back}
+            material={wallMaterial}
+            receiveShadow
+          />
+          <mesh
+            castShadow
+            geometry={wallGeometries.left}
+            material={wallMaterial}
+            receiveShadow
+          />
+          <mesh
+            castShadow
+            geometry={wallGeometries.right}
+            material={wallMaterial}
+            receiveShadow
+          />
+        </>
+      )}
     </group>
   );
 }

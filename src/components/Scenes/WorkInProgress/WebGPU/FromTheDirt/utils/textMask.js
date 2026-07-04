@@ -15,6 +15,7 @@ export default function renderTextMask({
   textScale,
   letterSpacing,
   edgeSoftness,
+  textRotation,
 }) {
   const lines = `${text ?? ''}`
     .split('\n')
@@ -58,13 +59,17 @@ export default function renderTextMask({
   ctx.textBaseline = 'middle';
   ctx.filter = edgeSoftness > 0 ? `blur(${edgeSoftness}px)` : 'none';
   ctx.fillStyle = '#fff';
+  const rotation = ((textRotation ?? 0) * Math.PI) / 180;
 
   const blockHeight = lines.length * lineHeight * fontSize;
+  ctx.save();
+  ctx.translate(MASK_SIZE / 2, MASK_SIZE / 2);
+  ctx.rotate(rotation);
   lines.forEach((line, index) => {
-    const y =
-      MASK_SIZE / 2 - blockHeight / 2 + (index + 0.5) * lineHeight * fontSize;
-    ctx.fillText(line, MASK_SIZE / 2, y);
+    const y = -blockHeight / 2 + (index + 0.5) * lineHeight * fontSize;
+    ctx.fillText(line, 0, y);
   });
+  ctx.restore();
 
   const { data } = ctx.getImageData(0, 0, MASK_SIZE, MASK_SIZE);
   const last = MASK_SIZE - 1;

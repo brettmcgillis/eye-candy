@@ -29,6 +29,7 @@ export default function FromTheDirt() {
   const config = useSceneControls();
   const heightField = useHeightField(config);
   const cloudShade = useCloudShade(config);
+  const terrainYaw = ((config.terrainRotation ?? 0) * Math.PI) / 180;
 
   return (
     <>
@@ -37,26 +38,28 @@ export default function FromTheDirt() {
         orbitControlsProps={ORBIT_CONTROLS_PROPS}
       />
       <SkyRig config={config} />
-      <Terrain
-        cloudShade={cloudShade}
-        config={config}
-        heightField={heightField}
-      />
-      <Grass
-        cloudShade={cloudShade}
-        config={config}
-        heightField={heightField}
-      />
-      <Water
-        cloudShade={cloudShade}
-        config={config}
-        heightField={heightField}
-      />
-      <FloatingSeeds
-        cloudShade={cloudShade}
-        config={config}
-        heightField={heightField}
-      />
+      <group rotation-y={terrainYaw}>
+        <Terrain
+          cloudShade={cloudShade}
+          config={config}
+          heightField={heightField}
+        />
+        <Grass
+          cloudShade={cloudShade}
+          config={config}
+          heightField={heightField}
+        />
+        <Water
+          cloudShade={cloudShade}
+          config={config}
+          heightField={heightField}
+        />
+        <FloatingSeeds
+          cloudShade={cloudShade}
+          config={config}
+          heightField={heightField}
+        />
+      </group>
     </>
   );
 }

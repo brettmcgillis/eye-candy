@@ -12,11 +12,13 @@ export const PRESETS = {
     fontWeight: '900',
     textScale: 0.72,
     letterSpacing: 0.02,
+    textRotation: 0,
     edgeSoftness: 0,
     // Terrain
     seed: 7,
     hillAmplitude: 1.6,
     hillFrequency: 0.1,
+    terrainRotation: 0,
     topsoilDepth: 0.35,
     strataScale: 3.2,
     grassColorA: '#4a7a2e',

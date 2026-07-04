@@ -22,6 +22,7 @@ export default function useHeightField({
   pitDepth,
   seed,
   text,
+  textRotation,
   textScale,
   waterLevel,
 }) {
@@ -35,6 +36,7 @@ export default function useHeightField({
       fontWeight,
       letterSpacing,
       text,
+      textRotation,
       textScale,
     });
     fillHeightField(store, {
@@ -65,6 +67,7 @@ export default function useHeightField({
     seed,
     store,
     text,
+    textRotation,
     textScale,
     waterLevel,
   ]);

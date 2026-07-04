@@ -54,8 +54,9 @@ afternoon with light clouds rolling through (Surrender-style cloud shade).
 - [ ] Align this todo file with repo convention!!!
 - [ ] Prevent overlay hide when typing text in text box.
 - [ ] Add more noise to dirt strata, lines are too clean currently. lines should follow curves of terrain too, like compacted layers over time.
-- [ ] Allow rotating text up to 90\* to allow max terrain usage.
-- [ ] Allow rotating terrain up to 90\* to allow max view-port usage.
+- [x] Allow rotating text up to 90\* to allow max terrain usage.
+- [x] Allow rotating terrain up to 90\* to allow max view-port usage.
+- [ ] could we allow rotating text on x axis so the hole goes into the earth on a slant?
 - [x] make sure wind speed over clouds, grass and water are uniform.
 
 - [ ] could we use eztree to add some nice trees and shrubs on the terrain

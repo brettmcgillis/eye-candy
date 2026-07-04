@@ -50,6 +50,13 @@ export default function getTextControls(p) {
         step: 0.01,
         value: p.letterSpacing,
       },
+      textRotation: {
+        label: 'Rotation',
+        max: 90,
+        min: -90,
+        step: 1,
+        value: p.textRotation ?? 0,
+      },
       edgeSoftness: {
         label: 'Wall Softness',
         max: 20,

@@ -18,6 +18,13 @@ export default function getTerrainControls(p) {
         step: 0.005,
         value: p.hillFrequency,
       },
+      terrainRotation: {
+        label: 'Rotation',
+        max: 90,
+        min: -90,
+        step: 1,
+        value: p.terrainRotation ?? 0,
+      },
       topsoilDepth: {
         label: 'Topsoil Depth',
         max: 1,

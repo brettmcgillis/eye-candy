@@ -116,6 +116,72 @@ function buildLeftRightWallGeometry({
   return geometry;
 }
 
+function getStrataBandPhase({
+  depthReference,
+  hillReference,
+  worldPos,
+  uniforms,
+}) {
+  const wobble = mx_noise_float(
+    vec3(worldPos.x.mul(0.5), 0, worldPos.z.mul(0.5))
+  ).mul(uniforms.strataWarpStrength.mul(0.3));
+  const curveWarp = hillReference
+    .mul(uniforms.strataWarpStrength.mul(0.45))
+    .add(
+      mx_noise_float(worldPos.mul(vec3(0.18, 0, 0.18))).mul(
+        uniforms.strataWarpStrength.mul(0.22)
+      )
+    );
+
+  const band = depthReference
+    .mul(uniforms.strataScale)
+    .add(wobble)
+    .add(curveWarp);
+  const bandIndex = band.floor();
+  const bandHash = bandIndex.mul(12.9898).sin().mul(43758.547).fract();
+  const bandPos = band.fract();
+  const seam = smoothstep(0.0, 0.12, bandPos)
+    .mul(smoothstep(1.0, 0.88, bandPos))
+    .mul(0.25)
+    .add(0.75);
+
+  return { bandHash, bandIndex, seam };
+}
+
+function getStrataColor({ bandHash, bandIndex, seam, worldPos, uniforms }) {
+  const strataMidWarm = mix(uniforms.strataDark, uniforms.strataLight, 0.35);
+  const strataMidCool = mix(uniforms.strataDark, uniforms.strataLight, 0.7).mul(
+    vec3(0.95, 0.98, 1.02)
+  );
+
+  const tone0 = mix(
+    uniforms.strataDark,
+    strataMidWarm,
+    smoothstep(0, 0.33, bandHash)
+  );
+  const tone1 = mix(tone0, strataMidCool, smoothstep(0.33, 0.66, bandHash));
+  const tone2 = mix(tone1, uniforms.strataLight, smoothstep(0.66, 1, bandHash));
+
+  const pebbleField = mx_noise_float(
+    worldPos.mul(vec3(22, 26, 22)).add(vec3(0, bandIndex.mul(0.23), 0))
+  );
+  const pebbleDark = smoothstep(0.78, 0.96, pebbleField).mul(
+    uniforms.strataPebbleStrength.mul(0.2)
+  );
+  const pebbleBright = smoothstep(0.985, 1.0, pebbleField).mul(
+    uniforms.strataPebbleStrength.mul(0.08)
+  );
+  const microGrain = mx_noise_float(worldPos.mul(vec3(48, 64, 48)))
+    .sub(0.5)
+    .mul(uniforms.strataPebbleStrength.mul(0.09));
+
+  return tone2
+    .mul(float(1).sub(pebbleDark))
+    .add(vec3(pebbleBright, pebbleBright, pebbleBright))
+    .add(vec3(microGrain, microGrain, microGrain))
+    .mul(seam);
+}
+
 // Heightfield-displaced ground plane. The letters are "subtracted" by the
 // carve baked into the heightfield; walls and pit floors are shaded as
 // topsoil over horizontal sediment strata (absolute world-Y bands, like real
@@ -211,64 +277,19 @@ function Terrain({ cloudShade, config, heightField }) {
       .mul(float(1).sub(contourLine))
       .add(contourTint);
 
-    // Sediment strata: warped bands with a richer 4-tone palette and pebble
-    // breakup so cut walls feel geologic instead of flat/clean.
-    const wobble = mx_noise_float(
-      vec3(positionWorld.x.mul(0.5), 0, positionWorld.z.mul(0.5))
-    ).mul(uniforms.strataWarpStrength.mul(0.3));
-    const curveWarp = hill
-      .mul(uniforms.strataWarpStrength.mul(0.45))
-      .add(
-        mx_noise_float(positionWorld.mul(vec3(0.18, 0, 0.18))).mul(
-          uniforms.strataWarpStrength.mul(0.22)
-        )
-      );
-    const band = worldY.mul(uniforms.strataScale).add(wobble).add(curveWarp);
-    const bandIndex = band.floor();
-    const bandHash = bandIndex.mul(12.9898).sin().mul(43758.547).fract();
-    const bandPos = band.fract();
-    const seam = smoothstep(0.0, 0.12, bandPos)
-      .mul(smoothstep(1.0, 0.88, bandPos))
-      .mul(0.25)
-      .add(0.75);
-
-    const strataMidWarm = mix(uniforms.strataDark, uniforms.strataLight, 0.35);
-    const strataMidCool = mix(
-      uniforms.strataDark,
-      uniforms.strataLight,
-      0.7
-    ).mul(vec3(0.95, 0.98, 1.02));
-
-    const tone0 = mix(
-      uniforms.strataDark,
-      strataMidWarm,
-      smoothstep(0, 0.33, bandHash)
-    );
-    const tone1 = mix(tone0, strataMidCool, smoothstep(0.33, 0.66, bandHash));
-    const tone2 = mix(
-      tone1,
-      uniforms.strataLight,
-      smoothstep(0.66, 1, bandHash)
-    );
-
-    const pebbleField = mx_noise_float(
-      positionWorld.mul(vec3(22, 26, 22)).add(vec3(0, bandIndex.mul(0.23), 0))
-    );
-    const pebbleDark = smoothstep(0.78, 0.96, pebbleField).mul(
-      uniforms.strataPebbleStrength.mul(0.2)
-    );
-    const pebbleBright = smoothstep(0.985, 1.0, pebbleField).mul(
-      uniforms.strataPebbleStrength.mul(0.08)
-    );
-    const microGrain = mx_noise_float(positionWorld.mul(vec3(48, 64, 48)))
-      .sub(0.5)
-      .mul(uniforms.strataPebbleStrength.mul(0.09));
-
-    const strata = tone2
-      .mul(float(1).sub(pebbleDark))
-      .add(vec3(pebbleBright, pebbleBright, pebbleBright))
-      .add(vec3(microGrain, microGrain, microGrain))
-      .mul(seam);
+    const topBand = getStrataBandPhase({
+      depthReference: depthBelow,
+      hillReference: hill,
+      worldPos: positionWorld,
+      uniforms,
+    });
+    const strata = getStrataColor({
+      bandHash: topBand.bandHash,
+      bandIndex: topBand.bandIndex,
+      seam: topBand.seam,
+      worldPos: positionWorld,
+      uniforms,
+    });
 
     // Topsoil hugs the surface; strata take over with depth.
     const topsoilBlend = smoothstep(
@@ -332,66 +353,19 @@ function Terrain({ cloudShade, config, heightField }) {
     const wallY = positionWorld.y;
     const wallDepthBelow = wallHill.sub(wallY).max(0);
 
-    const wobble = mx_noise_float(positionWorld.mul(vec3(0.5, 1.5, 0.5))).mul(
-      uniforms.strataWarpStrength.mul(0.3)
-    );
-    const curveWarp = wallHill
-      .mul(uniforms.strataWarpStrength.mul(0.45))
-      .add(
-        mx_noise_float(positionWorld.mul(vec3(0.18, 0, 0.18))).mul(
-          uniforms.strataWarpStrength.mul(0.22)
-        )
-      );
-    // Use depth below the local surface so side-wall bands track the terrain
-    // contour profile instead of staying globally horizontal.
-    const band = wallDepthBelow
-      .mul(uniforms.strataScale)
-      .add(wobble)
-      .add(curveWarp);
-    const bandIndex = band.floor();
-    const bandHash = bandIndex.mul(12.9898).sin().mul(43758.547).fract();
-    const bandPos = band.fract();
-    const seam = smoothstep(0.0, 0.12, bandPos)
-      .mul(smoothstep(1.0, 0.88, bandPos))
-      .mul(0.25)
-      .add(0.75);
-
-    const strataMidWarm = mix(uniforms.strataDark, uniforms.strataLight, 0.35);
-    const strataMidCool = mix(
-      uniforms.strataDark,
-      uniforms.strataLight,
-      0.7
-    ).mul(vec3(0.95, 0.98, 1.02));
-    const tone0 = mix(
-      uniforms.strataDark,
-      strataMidWarm,
-      smoothstep(0, 0.33, bandHash)
-    );
-    const tone1 = mix(tone0, strataMidCool, smoothstep(0.33, 0.66, bandHash));
-    const tone2 = mix(
-      tone1,
-      uniforms.strataLight,
-      smoothstep(0.66, 1, bandHash)
-    );
-
-    const pebbleField = mx_noise_float(
-      positionWorld.mul(vec3(22, 26, 22)).add(vec3(0, bandIndex.mul(0.23), 0))
-    );
-    const pebbleDark = smoothstep(0.78, 0.96, pebbleField).mul(
-      uniforms.strataPebbleStrength.mul(0.2)
-    );
-    const pebbleBright = smoothstep(0.985, 1.0, pebbleField).mul(
-      uniforms.strataPebbleStrength.mul(0.08)
-    );
-    const microGrain = mx_noise_float(positionWorld.mul(vec3(48, 64, 48)))
-      .sub(0.5)
-      .mul(uniforms.strataPebbleStrength.mul(0.09));
-
-    const strata = tone2
-      .mul(float(1).sub(pebbleDark))
-      .add(vec3(pebbleBright, pebbleBright, pebbleBright))
-      .add(vec3(microGrain, microGrain, microGrain))
-      .mul(seam);
+    const wallBand = getStrataBandPhase({
+      depthReference: wallDepthBelow,
+      hillReference: wallHill,
+      worldPos: positionWorld,
+      uniforms,
+    });
+    const strata = getStrataColor({
+      bandHash: wallBand.bandHash,
+      bandIndex: wallBand.bandIndex,
+      seam: wallBand.seam,
+      worldPos: positionWorld,
+      uniforms,
+    });
 
     const topsoilBlend = smoothstep(
       uniforms.topsoilDepth,

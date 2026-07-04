@@ -46,7 +46,7 @@ afternoon with light clouds rolling through (Surrender-style cloud shade).
 - [ ] Post later per conventions (maybe subtle vignette/DoF once settled)
 - [x] Add more font options.
 - [x] Add terrain lines around exterior of plane, not just inside text
-- [ ] Make text input a text area, alow for line breaks in text cut outs of grass.
+- [x] Make text input a text area, alow for line breaks in text cut outs of grass.
 - [ ] Align this todo file with repo convention!!!
 - [x] Prevent overlay hide when typing text in text box.
 - [x] Add more noise to dirt strata, lines are too clean currently. lines should follow curves of terrain too, like compacted layers over time.

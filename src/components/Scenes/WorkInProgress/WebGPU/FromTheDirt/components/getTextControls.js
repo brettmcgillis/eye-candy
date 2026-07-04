@@ -25,7 +25,7 @@ export const FONT_OPTIONS = {
 export default function getTextControls(p) {
   return folder(
     {
-      text: { label: 'Text', value: p.text },
+      text: { label: 'Text', rows: 4, value: p.text },
       fontFamily: {
         label: 'Font',
         options: FONT_OPTIONS,

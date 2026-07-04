@@ -67,8 +67,11 @@ function buildCarveSampler({ config, heightField }) {
       return null;
     }
 
-    const mask = textMask.sampleWithXTilt(u, 1 - v, config.textTiltX ?? 0);
-    const carve = smoothstepCpu(0.3, 0.7, mask);
+    const carve = textMask.sampleCarveWithXTilt(
+      u,
+      1 - v,
+      config.textTiltX ?? 0
+    );
     const hill =
       fbm2(worldX * config.hillFrequency, worldZ * config.hillFrequency, {
         seed: config.seed,

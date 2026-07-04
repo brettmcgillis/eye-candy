@@ -11,7 +11,7 @@ function smoothstepCpu(edge0, edge1, x) {
 }
 
 function makeEmptySampler() {
-  return { sample: () => 0 };
+  return { sample: () => 0, sampleCarveWithXTilt: () => 0 };
 }
 
 export default function renderTextMask({
@@ -99,21 +99,34 @@ export default function renderTextMask({
     return (top + (bottom - top) * fy) / 255;
   }
 
-  // Approximates carving text along a slanted depth axis by shifting the
-  // mask sample with estimated carve depth from the previous sample.
-  function sampleWithXTilt(u, v, textTiltX = 0) {
+  // Simulates a cookie-cutter rotated around the X axis by probing the mask
+  // along the cutter depth direction and taking the deepest surviving cut.
+  function sampleCarveWithXTilt(u, v, textTiltX = 0) {
     const clampedTilt = Math.max(Math.min(textTiltX ?? 0, 80), -80);
+    const topCover = smoothstepCpu(0.3, 0.7, sample(u, v));
+    if (topCover <= 1e-3) {
+      return 0;
+    }
     if (Math.abs(clampedTilt) < 1e-3) {
-      return sample(u, v);
+      return topCover;
     }
 
-    const tiltShift = Math.tan((clampedTilt * Math.PI) / 180) * 0.16;
-    const mask0 = sample(u, v);
-    const carve0 = smoothstepCpu(0.3, 0.7, mask0);
-    const mask1 = sample(u, v + carve0 * tiltShift);
-    const carve1 = smoothstepCpu(0.3, 0.7, mask1);
-    return sample(u, v + carve1 * tiltShift);
+    const tiltShift = Math.tan((clampedTilt * Math.PI) / 180) * 0.42;
+    const steps = 24;
+    let depth = 0;
+
+    for (let i = 1; i <= steps; i += 1) {
+      const t = i / steps;
+      const m = sample(u, v + t * tiltShift);
+      const cover = smoothstepCpu(0.3, 0.7, m);
+      if (cover <= 0.01) {
+        break;
+      }
+      depth = t * cover;
+    }
+
+    return Math.min(topCover, depth);
   }
 
-  return { sample, sampleWithXTilt };
+  return { sample, sampleCarveWithXTilt };
 }

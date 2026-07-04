@@ -72,6 +72,6 @@ export default function getTextControls(p) {
         value: p.edgeSoftness,
       },
     },
-    { collapsed: false }
+    { collapsed: true }
   );
 }

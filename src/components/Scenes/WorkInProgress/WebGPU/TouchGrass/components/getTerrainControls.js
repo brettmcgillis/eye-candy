@@ -40,7 +40,7 @@ export default function getTerrainControls(p) {
       strataScale: {
         label: 'Strata Density',
         max: 10,
-        min: 0.5,
+        min: 0.1,
         step: 0.1,
         value: p.strataScale,
       },

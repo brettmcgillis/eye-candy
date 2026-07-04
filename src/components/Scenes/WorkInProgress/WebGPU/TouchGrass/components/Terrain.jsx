@@ -27,11 +27,6 @@ const WALL_SEGMENTS = 192;
 const ENDLESS_TILE_RADIUS = 2;
 const OUTER_SEGMENTS = 120;
 
-function smoothstepCpu(edge0, edge1, x) {
-  const t = Math.min(Math.max((x - edge0) / (edge1 - edge0), 0), 1);
-  return t * t * (3 - 2 * t);
-}
-
 function buildFrontBackWallGeometry({
   half,
   sampleHeight,
@@ -265,10 +260,6 @@ function buildOuterTerrainGeometry({
   return geometry;
 }
 
-// Heightfield-displaced ground plane. The letters are "subtracted" by the
-// carve baked into the heightfield; walls and pit floors are shaded as
-// topsoil over horizontal sediment strata (absolute world-Y bands, like real
-// geology), while the untouched top surface stays meadow green.
 function Terrain({ cloudShade, config, heightField }) {
   const showChunkWalls = (config.terrainEdgeMode ?? 'chunk') === 'chunk';
 
@@ -299,8 +290,7 @@ function Terrain({ cloudShade, config, heightField }) {
       if (u < 0 || u > 1 || v < 0 || v > 1) {
         return 0;
       }
-      const mask = textMask.sampleWithXTilt(u, 1 - v, config.textTiltX ?? 0);
-      return smoothstepCpu(0.3, 0.7, mask);
+      return textMask.sampleCarveWithXTilt(u, 1 - v, config.textTiltX ?? 0);
     };
   }, [
     config.edgeSoftness,

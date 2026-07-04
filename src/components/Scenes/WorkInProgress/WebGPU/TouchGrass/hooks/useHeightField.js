@@ -44,7 +44,7 @@ export default function useHeightField({
       hillAmplitude,
       hillFrequency,
       pitDepth,
-      sampleMask: (u, v) => mask.sampleWithXTilt(u, v, textTiltX),
+      sampleCarve: (u, v) => mask.sampleCarveWithXTilt(u, v, textTiltX),
       seed,
       waterLevel,
     });

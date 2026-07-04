@@ -102,12 +102,7 @@ function Water({ cloudShade, config, heightField }) {
       if (u < 0 || u > 1 || v < 0 || v > 1) {
         return 0;
       }
-      const mask = textMask.sampleWithXTilt(
-        u,
-        1 - v,
-        config.textTiltX ?? 0
-      );
-      return smoothstepCpu(0.3, 0.7, mask);
+      return textMask.sampleCarveWithXTilt(u, 1 - v, config.textTiltX ?? 0);
     };
   }, [
     config.edgeSoftness,

@@ -43,9 +43,9 @@ const applyFilmGrade = Fn(
     color = color.mul(oneMinus(vignette.mul(vignetteIntensityNode)));
 
     const grainUv = uv().add(vec2(time.mul(0.031), time.mul(0.049)));
-    const grain = fract(sin(dot(grainUv, vec2(12.9898, 78.233))).mul(43758.5453)).sub(
-      0.5
-    );
+    const grain = fract(
+      sin(dot(grainUv, vec2(12.9898, 78.233))).mul(43758.5453)
+    ).sub(0.5);
     color = color.add(vec3(grain.mul(grainAmountNode)));
 
     return vec4(color, inputNode.a);

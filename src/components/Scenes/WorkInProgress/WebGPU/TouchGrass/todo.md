@@ -42,7 +42,7 @@ afternoon with light clouds rolling through (Surrender-style cloud shade).
 - [x] the curves of fonts are looking pixelated. try and fix/smooth that out
 - [x] add a preset for, and enable water to have the characteristics of dirty black oil.
 
-- [ ] allow rotating text on x-axis so the hole goes into the earth on a slant
+- [x] allow rotating text on x-axis so the hole goes into the earth on a slant
 - [x] Dragonflies & Butterflies & Bees (good example in `~/dev/examples/demo-2022-grass` )
 - [x] seeds look good but where do they come from? -> need some flowers (good example in `~/dev/examples/demo-2022-grass`)
 - [x] make flowers sway in wind

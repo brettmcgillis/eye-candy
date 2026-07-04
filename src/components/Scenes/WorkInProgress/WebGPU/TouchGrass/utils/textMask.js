@@ -5,6 +5,11 @@
 // Higher mask resolution improves curved glyph edge quality in terrain cuts.
 const MASK_SIZE = 4096;
 
+function smoothstepCpu(edge0, edge1, x) {
+  const t = Math.min(Math.max((x - edge0) / (edge1 - edge0), 0), 1);
+  return t * t * (3 - 2 * t);
+}
+
 function makeEmptySampler() {
   return { sample: () => 0 };
 }
@@ -94,5 +99,21 @@ export default function renderTextMask({
     return (top + (bottom - top) * fy) / 255;
   }
 
-  return { sample };
+  // Approximates carving text along a slanted depth axis by shifting the
+  // mask sample with estimated carve depth from the previous sample.
+  function sampleWithXTilt(u, v, textTiltX = 0) {
+    const clampedTilt = Math.max(Math.min(textTiltX ?? 0, 80), -80);
+    if (Math.abs(clampedTilt) < 1e-3) {
+      return sample(u, v);
+    }
+
+    const tiltShift = Math.tan((clampedTilt * Math.PI) / 180) * 0.16;
+    const mask0 = sample(u, v);
+    const carve0 = smoothstepCpu(0.3, 0.7, mask0);
+    const mask1 = sample(u, v + carve0 * tiltShift);
+    const carve1 = smoothstepCpu(0.3, 0.7, mask1);
+    return sample(u, v + carve1 * tiltShift);
+  }
+
+  return { sample, sampleWithXTilt };
 }

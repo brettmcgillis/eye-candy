@@ -10,6 +10,27 @@ import renderTextMask from '../utils/textMask';
 const ENDLESS_TILE_RADIUS = 2;
 const DEFAULT_ROOT_SEGMENTS = 4;
 
+function sampleTerrainPulse(worldX, worldZ, elapsed, config) {
+  const pulseAmplitude = config.terrainPulseAmplitude ?? 0;
+  if (pulseAmplitude === 0) {
+    return 0;
+  }
+
+  const pulseScale = config.terrainPulseScale ?? 0.25;
+  const pulseSpeed = config.terrainPulseSpeed ?? 0.35;
+  const pulseTime = elapsed * pulseSpeed;
+  const primaryWave = Math.sin(
+    worldX * (pulseScale * 2.6) + worldZ * (pulseScale * 1.6) + pulseTime
+  );
+  const secondaryWave = Math.sin(
+    worldX * (pulseScale * 1.15) -
+      worldZ * (pulseScale * 2.2) -
+      pulseTime * 1.35
+  );
+
+  return (primaryWave * 0.7 + secondaryWave * 0.45) * pulseAmplitude;
+}
+
 function smoothstepCpu(edge0, edge1, x) {
   const t = Math.min(Math.max((x - edge0) / (edge1 - edge0), 0), 1);
   return t * t * (3 - 2 * t);
@@ -46,7 +67,7 @@ function buildCarveSampler({ config, heightField }) {
       return null;
     }
 
-    const mask = textMask.sample(u, 1 - v);
+    const mask = textMask.sampleWithXTilt(u, 1 - v, config.textTiltX ?? 0);
     const carve = smoothstepCpu(0.3, 0.7, mask);
     const hill =
       fbm2(worldX * config.hillFrequency, worldZ * config.hillFrequency, {
@@ -181,9 +202,15 @@ function Roots({ config, heightField }) {
     let instanceIndex = 0;
 
     placements.forEach((placement) => {
+      const terrainPulse = sampleTerrainPulse(
+        placement.worldX,
+        placement.worldZ,
+        elapsed,
+        config
+      );
       const base = new THREE.Vector3(
         placement.worldX,
-        placement.height - 0.06,
+        placement.height + terrainPulse - 0.06,
         placement.worldZ
       );
       const rootDown = new THREE.Vector3(0, -1, 0);

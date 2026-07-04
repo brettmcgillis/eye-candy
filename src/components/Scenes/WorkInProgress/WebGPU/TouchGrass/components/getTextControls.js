@@ -57,6 +57,13 @@ export default function getTextControls(p) {
         step: 1,
         value: p.textRotation ?? 0,
       },
+      textTiltX: {
+        label: 'X Tilt',
+        max: 60,
+        min: -60,
+        step: 1,
+        value: p.textTiltX ?? 0,
+      },
       edgeSoftness: {
         label: 'Wall Softness',
         max: 20,

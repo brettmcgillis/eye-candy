@@ -7,19 +7,20 @@ export const DEFAULT_PRESET = 'Sunny Afternoon';
 export const PRESETS = {
   'Sunny Afternoon': {
     // Text
-    text: 'FUCK',
+    text: 'TOUCH\r\nGRASS',
     fontFamily: FONT_OPTIONS['Arial Black'],
     fontWeight: '900',
     textScale: 0.72,
     letterSpacing: 0.02,
     textRotation: 45,
+    textTiltX: 0,
     edgeSoftness: 0,
     // Terrain
     seed: 7,
     hillAmplitude: 1.6,
     hillFrequency: 0.1,
     terrainRotation: 45,
-    terrainEdgeMode: 'chunk',
+    terrainEdgeMode: 'endless',
     topsoilDepth: 0.35,
     strataScale: 3.2,
     strataWarpStrength: 1,
@@ -116,6 +117,7 @@ export const PRESETS = {
     textScale: 0.72,
     letterSpacing: 0.02,
     textRotation: 0,
+    textTiltX: 0,
     edgeSoftness: 0,
     // Terrain
     seed: 7,
@@ -215,16 +217,19 @@ export const PRESETS = {
 
 PRESETS['Breathing Basin'] = {
   ...PRESETS['Sunny Afternoon'],
+  text: 'OH SHIT!',
   cloudCoverage: 0.5,
   flowerCount: 56,
   terrainEdgeMode: 'chunk',
   terrainPulseAmplitude: 0.45,
   terrainPulseScale: 0.22,
   terrainPulseSpeed: 0.29,
-  textRotation: 35,
-  waterLevel: -0.95,
-  waterLevelPulseAmplitude: 0.2,
+  textRotation: 45,
+  textTiltX: 0,
+  waterLevel: -0.2,
+  waterLevelPulseAmplitude: 0,
   waterLevelPulseSpeed: 1,
+  pitDepth: 2,
   rootColor: '#f0e6c8',
   rootCount: 20000,
   rootLength: 0.2,

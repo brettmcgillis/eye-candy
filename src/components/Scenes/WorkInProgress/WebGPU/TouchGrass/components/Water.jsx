@@ -102,7 +102,11 @@ function Water({ cloudShade, config, heightField }) {
       if (u < 0 || u > 1 || v < 0 || v > 1) {
         return 0;
       }
-      const mask = textMask.sample(u, 1 - v);
+      const mask = textMask.sampleWithXTilt(
+        u,
+        1 - v,
+        config.textTiltX ?? 0
+      );
       return smoothstepCpu(0.3, 0.7, mask);
     };
   }, [
@@ -113,6 +117,7 @@ function Water({ cloudShade, config, heightField }) {
     config.terrainEdgeMode,
     config.text,
     config.textRotation,
+    config.textTiltX,
     config.textScale,
     heightField.worldSize,
     showChunkMode,

@@ -23,6 +23,7 @@ export default function useHeightField({
   seed,
   text,
   textRotation,
+  textTiltX,
   textScale,
   waterLevel,
 }) {
@@ -43,7 +44,7 @@ export default function useHeightField({
       hillAmplitude,
       hillFrequency,
       pitDepth,
-      sampleMask: mask.sample,
+      sampleMask: (u, v) => mask.sampleWithXTilt(u, v, textTiltX),
       seed,
       waterLevel,
     });
@@ -68,6 +69,7 @@ export default function useHeightField({
     store,
     text,
     textRotation,
+    textTiltX,
     textScale,
     waterLevel,
   ]);

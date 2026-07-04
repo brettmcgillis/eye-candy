@@ -29,7 +29,12 @@ export const PRESETS = {
     topsoilColor: '#4a3320',
     strataLight: '#c2a878',
     strataDark: '#8a6f4d',
+    rootTint: '#efe4c6',
     terrainCastShadow: true,
+    rootCount: 20000,
+    rootLength: 0.2,
+    rootThickness: 0.02,
+    rootCurl: 2,
     // Water
     waterLevel: -0.9,
     pitDepth: 0.7,
@@ -127,7 +132,12 @@ export const PRESETS = {
     topsoilColor: '#33261c',
     strataLight: '#9d8663',
     strataDark: '#6a543d',
+    rootTint: '#efe4c6',
     terrainCastShadow: true,
+    rootCount: 20000,
+    rootLength: 0.2,
+    rootThickness: 0.02,
+    rootCurl: 2,
     // Water
     waterLevel: -0.95,
     pitDepth: 0.85,
@@ -215,6 +225,11 @@ PRESETS['Breathing Basin'] = {
   waterLevel: -0.95,
   waterLevelPulseAmplitude: 0.2,
   waterLevelPulseSpeed: 1,
+  rootColor: '#f0e6c8',
+  rootCount: 20000,
+  rootLength: 0.2,
+  rootThickness: 0.02,
+  rootCurl: 2,
 };
 
 export function getPresetControls({ presetSnapshot }) {

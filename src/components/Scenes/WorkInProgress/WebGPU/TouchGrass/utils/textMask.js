@@ -3,7 +3,7 @@
 // canvas blur radius controls how soft the carved walls are.
 
 // Higher mask resolution improves curved glyph edge quality in terrain cuts.
-const MASK_SIZE = 2048;
+const MASK_SIZE = 4096;
 
 function makeEmptySampler() {
   return { sample: () => 0 };

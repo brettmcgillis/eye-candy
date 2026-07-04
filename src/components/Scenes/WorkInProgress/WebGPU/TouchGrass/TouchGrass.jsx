@@ -6,6 +6,7 @@ import Flowers from './components/Flowers';
 import Grass from './components/Grass';
 import Insects from './components/Insects';
 import PostEffects from './components/PostEffects';
+import Roots from './components/Roots';
 import SkyRig from './components/SkyRig';
 import Terrain from './components/Terrain';
 import Water from './components/Water';
@@ -52,6 +53,7 @@ export default function TouchGrass() {
           config={config}
           heightField={heightField}
         />
+        <Roots config={config} heightField={heightField} />
         <Flowers
           cloudShade={cloudShade}
           config={config}

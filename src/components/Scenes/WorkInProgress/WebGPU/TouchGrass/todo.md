@@ -48,7 +48,7 @@ afternoon with light clouds rolling through (Surrender-style cloud shade).
 - [x] make flowers sway in wind
 - [x] Post later per conventions (SnowSystem-style parity pass implemented: DoF-style blur, bloom, and film grade with vignette/grain/chroma/contrast/saturation)
 - [ ] use `ez-tree` dependency to add some nice trees and shrubs on the terrain
-- [ ] Roots/overhang detail at the grass lip of each cut
+- [x] Roots/overhang detail at the grass lip of each cut (root-lip instanced strands + stronger layered strata/ledge shading)
 - [ ] Ambient audio & audio toggle overlay button
 - [ ] Revisit the following since the camera gets close to the grass: LOD vertex folding, distance stochastic culling/density compensation, compute-pass frustum culling, view-dependent thickness tilt, distance denoising blends. Studied `~/dev/examples/r3f-procedural-grass` (Ghost-of-Tsushima style) & revo realms (TSL) `~/dev/examples/revo-realms`
 - [ ] might want to take a look at `~/dev/examples/demo-2022-grass`,`~/dev/examples/demo-2022-realistic-meadow` for a good grass solutions. looks much better than ours. includes lil flowers.

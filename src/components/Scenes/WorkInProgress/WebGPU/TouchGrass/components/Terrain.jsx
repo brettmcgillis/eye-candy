@@ -144,11 +144,15 @@ function getStrataBandPhase({
         uniforms.strataWarpStrength.mul(0.22)
       )
     );
+  const ridgeWarp = mx_noise_float(
+    vec3(worldPos.x.mul(0.08), 0, worldPos.z.mul(0.08))
+  ).mul(uniforms.strataWarpStrength.mul(0.24));
 
   const band = depthReference
     .mul(uniforms.strataScale)
     .add(wobble)
-    .add(curveWarp);
+    .add(curveWarp)
+    .add(ridgeWarp);
   const bandIndex = band.floor();
   const bandHash = bandIndex.mul(12.9898).sin().mul(43758.547).fract();
   const bandPos = band.fract();
@@ -160,19 +164,29 @@ function getStrataBandPhase({
   return { bandHash, bandIndex, seam };
 }
 
-function getStrataColor({ bandHash, bandIndex, seam, worldPos, uniforms }) {
-  const strataMidWarm = mix(uniforms.strataDark, uniforms.strataLight, 0.35);
-  const strataMidCool = mix(uniforms.strataDark, uniforms.strataLight, 0.7).mul(
-    vec3(0.95, 0.98, 1.02)
-  );
+function getStrataColor({
+  bandHash,
+  bandIndex,
+  depthReference,
+  seam,
+  worldPos,
+  uniforms,
+}) {
+  const strataClay = mix(uniforms.strataDark, vec3(0.49, 0.33, 0.23), 0.5);
+  const strataSilt = mix(uniforms.strataDark, vec3(0.63, 0.53, 0.38), 0.62);
+  const strataRust = mix(vec3(0.57, 0.35, 0.22), uniforms.strataDark, 0.22);
+  const strataChalk = mix(uniforms.strataLight, vec3(0.95, 0.91, 0.8), 0.65);
 
   const tone0 = mix(
     uniforms.strataDark,
-    strataMidWarm,
+    strataClay,
     smoothstep(0, 0.33, bandHash)
   );
-  const tone1 = mix(tone0, strataMidCool, smoothstep(0.33, 0.66, bandHash));
-  const tone2 = mix(tone1, uniforms.strataLight, smoothstep(0.66, 1, bandHash));
+  const tone1 = mix(tone0, strataSilt, smoothstep(0.2, 0.58, bandHash));
+  const tone2 = mix(tone1, strataRust, smoothstep(0.45, 0.82, bandHash));
+  const tone3 = mix(tone2, strataChalk, smoothstep(0.72, 1, bandHash));
+  const bandCycle = bandIndex.mul(0.61803398875).fract();
+  const bandPalette = mix(tone2, tone3, smoothstep(0.25, 0.75, bandCycle));
 
   const pebbleField = mx_noise_float(
     worldPos.mul(vec3(22, 26, 22)).add(vec3(0, bandIndex.mul(0.23), 0))
@@ -186,11 +200,17 @@ function getStrataColor({ bandHash, bandIndex, seam, worldPos, uniforms }) {
   const microGrain = mx_noise_float(worldPos.mul(vec3(48, 64, 48)))
     .sub(0.5)
     .mul(uniforms.strataPebbleStrength.mul(0.09));
+  const depthTint = mix(
+    vec3(1, 0.98, 0.96),
+    vec3(0.84, 0.89, 0.93),
+    smoothstep(0.15, 1.8, depthReference)
+  );
 
-  return tone2
+  return bandPalette
     .mul(float(1).sub(pebbleDark))
     .add(vec3(pebbleBright, pebbleBright, pebbleBright))
     .add(vec3(microGrain, microGrain, microGrain))
+    .mul(depthTint)
     .mul(seam);
 }
 
@@ -422,6 +442,7 @@ function Terrain({ cloudShade, config, heightField }) {
     const strata = getStrataColor({
       bandHash: topBand.bandHash,
       bandIndex: topBand.bandIndex,
+      depthReference: depthBelow,
       seam: topBand.seam,
       worldPos: positionWorld,
       uniforms,
@@ -445,9 +466,13 @@ function Terrain({ cloudShade, config, heightField }) {
       uniforms.waterLine.sub(0.1),
       worldY
     );
+    const lipShadow = smoothstep(0.08, 0.85, carve).mul(
+      smoothstep(0.02, 0.32, depthBelow)
+    );
 
     const base = mix(meadowContours, soil, wallBlend)
       .mul(float(1).sub(damp.mul(0.45)))
+      .mul(float(1).sub(lipShadow.mul(0.18)))
       .mul(grain);
 
     mat.colorNode = base.mul(cloudShade(positionWorld.xz));
@@ -517,6 +542,7 @@ function Terrain({ cloudShade, config, heightField }) {
     const strata = getStrataColor({
       bandHash: topBand.bandHash,
       bandIndex: topBand.bandIndex,
+      depthReference: depthBelow,
       seam: topBand.seam,
       worldPos: positionWorld,
       uniforms,
@@ -538,9 +564,13 @@ function Terrain({ cloudShade, config, heightField }) {
       uniforms.waterLine.sub(0.1),
       worldY
     );
+    const lipShadow = smoothstep(0.08, 0.85, carve).mul(
+      smoothstep(0.02, 0.32, depthBelow)
+    );
 
     const base = mix(meadowContours, soil, wallBlend)
       .mul(float(1).sub(damp.mul(0.45)))
+      .mul(float(1).sub(lipShadow.mul(0.18)))
       .mul(grain);
 
     mat.colorNode = base.mul(cloudShade(positionWorld.xz));
@@ -658,6 +688,7 @@ function Terrain({ cloudShade, config, heightField }) {
     const strata = getStrataColor({
       bandHash: wallBand.bandHash,
       bandIndex: wallBand.bandIndex,
+      depthReference: wallDepthBelow,
       seam: wallBand.seam,
       worldPos: positionWorld,
       uniforms,
@@ -674,10 +705,12 @@ function Terrain({ cloudShade, config, heightField }) {
       uniforms.waterLine.sub(0.1),
       wallY
     );
+    const wallLipShadow = smoothstep(0.02, 0.28, wallDepthBelow).mul(0.16);
     const grain = mx_noise_float(positionWorld.mul(18)).mul(0.08).add(0.96);
 
     mat.colorNode = soil
       .mul(float(1).sub(damp.mul(0.45)))
+      .mul(float(1).sub(wallLipShadow))
       .mul(grain)
       .mul(cloudShade(positionWorld.xz));
 

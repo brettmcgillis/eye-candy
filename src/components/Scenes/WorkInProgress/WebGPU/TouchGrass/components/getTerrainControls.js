@@ -67,6 +67,43 @@ export default function getTerrainControls(p) {
         label: 'Cast Shadows',
         value: p.terrainCastShadow,
       },
+      Roots: folder(
+        {
+          rootTint: {
+            label: 'Root System Tint',
+            value: p.rootTint ?? '#efe4c6',
+          },
+          rootCount: {
+            label: 'Count',
+            max: 20000,
+            min: 0,
+            step: 4,
+            value: p.rootCount ?? 120,
+          },
+          rootLength: {
+            label: 'Length',
+            max: 1.8,
+            min: 0.1,
+            step: 0.01,
+            value: p.rootLength ?? 0.95,
+          },
+          rootThickness: {
+            label: 'Thickness',
+            max: 0.02,
+            min: 0.002,
+            step: 0.0005,
+            value: p.rootThickness ?? 0.006,
+          },
+          rootCurl: {
+            label: 'Curl',
+            max: 5,
+            min: 0,
+            step: 0.01,
+            value: p.rootCurl ?? 0.38,
+          },
+        },
+        { collapsed: true }
+      ),
     },
     { collapsed: true }
   );

@@ -218,7 +218,7 @@ export const PRESETS = {
     text: 'OH SHIT!',
     fontFamily: FONT_OPTIONS.Futura,
     fontWeight: '900',
-    textScale: 0.72,
+    textScale: 0.95,
     letterSpacing: 0.02,
     textRotation: 45,
     textTiltX: 0,
@@ -248,11 +248,11 @@ export const PRESETS = {
     // Water
     waterLevel: -0.2,
     pitDepth: 2,
-    waterColor: '#2c6d66',
-    waterOpacity: 0.85,
+    waterColor: '#61a293',
+    waterOpacity: 0.25,
     rippleScale: 1.6,
     rippleSpeed: 0.5,
-    rippleStrength: 0.5,
+    rippleStrength: 1.8,
     // Grass
     grassCount: 150000,
     bladeHeight: 0.34,

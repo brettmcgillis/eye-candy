@@ -229,6 +229,8 @@ function buildOuterTerrainGeometry({
   const positions = geometry.attributes.position;
   const carveAttr = new Float32Array(positions.count);
   const hillAttr = new Float32Array(positions.count);
+  const worldXAttr = new Float32Array(positions.count);
+  const worldZAttr = new Float32Array(positions.count);
 
   for (let i = 0; i < positions.count; i += 1) {
     const localX = positions.getX(i);
@@ -245,6 +247,8 @@ function buildOuterTerrainGeometry({
     positions.setZ(i, height);
     carveAttr[i] = carve;
     hillAttr[i] = hill;
+    worldXAttr[i] = worldX;
+    worldZAttr[i] = worldZ;
   }
 
   positions.needsUpdate = true;
@@ -255,6 +259,17 @@ function buildOuterTerrainGeometry({
   geometry.setAttribute(
     'outerHill',
     new THREE.Float32BufferAttribute(hillAttr, 1)
+  );
+  // Baked world-space XZ (not the live positionWorld node — that transitively
+  // depends on this material's own positionNode, which would create a cyclic
+  // node graph) so the pulse wave's phase stays continuous across chunks.
+  geometry.setAttribute(
+    'outerWorldX',
+    new THREE.Float32BufferAttribute(worldXAttr, 1)
+  );
+  geometry.setAttribute(
+    'outerWorldZ',
+    new THREE.Float32BufferAttribute(worldZAttr, 1)
   );
   geometry.computeVertexNormals();
   return geometry;
@@ -484,15 +499,19 @@ function Terrain({ cloudShade, config, heightField }) {
     });
 
     const pulseTime = time.mul(uniforms.terrainPulseSpeed);
-    const terrainGridZ = positionGeometry.y.negate();
-    const primaryWave = positionGeometry.x
+    // Baked world XZ, not positionGeometry (resets per chunk) or positionWorld
+    // (would cyclically depend on this material's own positionNode below), so
+    // the wave phase stays continuous across chunk boundaries.
+    const worldX = attribute('outerWorldX');
+    const worldZ = attribute('outerWorldZ');
+    const primaryWave = worldX
       .mul(uniforms.terrainPulseScale.mul(2.6))
-      .add(terrainGridZ.mul(uniforms.terrainPulseScale.mul(1.6)))
+      .add(worldZ.mul(uniforms.terrainPulseScale.mul(1.6)))
       .add(pulseTime)
       .sin();
-    const secondaryWave = positionGeometry.x
+    const secondaryWave = worldX
       .mul(uniforms.terrainPulseScale.mul(1.15))
-      .sub(terrainGridZ.mul(uniforms.terrainPulseScale.mul(2.2)))
+      .sub(worldZ.mul(uniforms.terrainPulseScale.mul(2.2)))
       .sub(pulseTime.mul(1.35))
       .sin();
     const pulse = primaryWave

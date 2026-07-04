@@ -329,6 +329,8 @@ function Grass({ cloudShade, config, heightField }) {
       });
 
       const tileMaterial = createBladeMaterial({
+        chunkOffsetX: x,
+        chunkOffsetZ: z,
         cloudShade,
         store: tileStore,
         uniforms,

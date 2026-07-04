@@ -29,7 +29,13 @@ import * as THREE from 'three/webgpu';
 
 const TWO_PI = 6.28318;
 
-export default function createBladeMaterial({ cloudShade, store, uniforms }) {
+export default function createBladeMaterial({
+  chunkOffsetX = 0,
+  chunkOffsetZ = 0,
+  cloudShade,
+  store,
+  uniforms,
+}) {
   const mat = new THREE.MeshStandardNodeMaterial({
     metalness: 0,
     roughness: 0.85,
@@ -106,17 +112,21 @@ export default function createBladeMaterial({ cloudShade, store, uniforms }) {
     .add(swayDir.mul(high.mul(sway).mul(0.3)));
 
   // Keep blades glued to the animated terrain pulse so ground waves do not
-  // rise through static grass roots.
+  // rise through static grass roots. `offset` is chunk-local (matches the
+  // terrain's own local-space phase on the hero tile), so shift by the
+  // tile's world offset for outer endless tiles to stay in phase with the
+  // terrain's baked world-space pulse there too.
   const pulseTime = time.mul(uniforms.terrainPulseSpeed);
-  const terrainGridZ = offset.z;
-  const primaryWave = offset.x
+  const worldX = offset.x.add(float(chunkOffsetX));
+  const worldZ = offset.z.add(float(chunkOffsetZ));
+  const primaryWave = worldX
     .mul(uniforms.terrainPulseScale.mul(2.6))
-    .add(terrainGridZ.mul(uniforms.terrainPulseScale.mul(1.6)))
+    .add(worldZ.mul(uniforms.terrainPulseScale.mul(1.6)))
     .add(pulseTime)
     .sin();
-  const secondaryWave = offset.x
+  const secondaryWave = worldX
     .mul(uniforms.terrainPulseScale.mul(1.15))
-    .sub(terrainGridZ.mul(uniforms.terrainPulseScale.mul(2.2)))
+    .sub(worldZ.mul(uniforms.terrainPulseScale.mul(2.2)))
     .sub(pulseTime.mul(1.35))
     .sin();
   const terrainPulse = primaryWave

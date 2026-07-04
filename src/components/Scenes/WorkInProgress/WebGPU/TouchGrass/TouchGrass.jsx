@@ -25,7 +25,7 @@ const ORBIT_CONTROLS_PROPS = {
   minPolarAngle: 0.25,
 };
 
-export default function FromTheDirt() {
+export default function TouchGrass() {
   const config = useSceneControls();
   const heightField = useHeightField(config);
   const cloudShade = useCloudShade(config);

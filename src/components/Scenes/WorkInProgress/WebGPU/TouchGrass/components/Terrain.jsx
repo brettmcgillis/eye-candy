@@ -7,6 +7,7 @@ import {
   positionGeometry,
   positionWorld,
   smoothstep,
+  time,
   texture,
   transformNormalToView,
   uniform,
@@ -303,6 +304,9 @@ function Terrain({ cloudShade, config, heightField }) {
       strataPebbleStrength: uniform(config.strataPebbleStrength ?? 1),
       strataScale: uniform(config.strataScale),
       strataWarpStrength: uniform(config.strataWarpStrength ?? 1),
+      terrainPulseAmplitude: uniform(config.terrainPulseAmplitude ?? 0),
+      terrainPulseScale: uniform(config.terrainPulseScale ?? 0.25),
+      terrainPulseSpeed: uniform(config.terrainPulseSpeed ?? 0.35),
       topsoilColor: uniform(new THREE.Color(config.topsoilColor)),
       topsoilDepth: uniform(config.topsoilDepth),
       waterLine: uniform(config.waterLevel),
@@ -319,6 +323,9 @@ function Terrain({ cloudShade, config, heightField }) {
     uniforms.topsoilColor.value.set(config.topsoilColor);
     uniforms.strataScale.value = config.strataScale;
     uniforms.strataWarpStrength.value = config.strataWarpStrength ?? 1;
+    uniforms.terrainPulseAmplitude.value = config.terrainPulseAmplitude ?? 0;
+    uniforms.terrainPulseScale.value = config.terrainPulseScale ?? 0.25;
+    uniforms.terrainPulseSpeed.value = config.terrainPulseSpeed ?? 0.35;
     uniforms.topsoilDepth.value = config.topsoilDepth;
     uniforms.waterLine.value = config.waterLevel;
   }, [
@@ -329,6 +336,9 @@ function Terrain({ cloudShade, config, heightField }) {
     config.strataPebbleStrength,
     config.strataScale,
     config.strataWarpStrength,
+    config.terrainPulseAmplitude,
+    config.terrainPulseScale,
+    config.terrainPulseSpeed,
     config.topsoilColor,
     config.topsoilDepth,
     config.waterLevel,
@@ -342,9 +352,18 @@ function Terrain({ cloudShade, config, heightField }) {
     });
 
     const field = texture(heightField.texture, uv());
+    const pulse = mx_noise_float(
+      vec3(
+        positionGeometry.x.mul(uniforms.terrainPulseScale),
+        positionGeometry.y.mul(uniforms.terrainPulseScale),
+        time.mul(uniforms.terrainPulseSpeed.mul(config.globalMotionSpeed ?? 1))
+      )
+    )
+      .sub(0.5)
+      .mul(uniforms.terrainPulseAmplitude);
 
     // Plane local z becomes world y after the -90° x rotation.
-    mat.positionNode = positionGeometry.add(vec3(0, 0, field.r));
+    mat.positionNode = positionGeometry.add(vec3(0, 0, field.r.add(pulse)));
 
     // Per-pixel normal from heightfield finite differences (local space).
     const texel = 1 / heightField.resolution;
@@ -438,6 +457,17 @@ function Terrain({ cloudShade, config, heightField }) {
       roughness: 0.95,
     });
 
+    const pulse = mx_noise_float(
+      vec3(
+        positionGeometry.x.mul(uniforms.terrainPulseScale),
+        positionGeometry.y.mul(uniforms.terrainPulseScale),
+        time.mul(uniforms.terrainPulseSpeed.mul(config.globalMotionSpeed ?? 1))
+      )
+    )
+      .sub(0.5)
+      .mul(uniforms.terrainPulseAmplitude);
+    mat.positionNode = positionGeometry.add(vec3(0, 0, pulse));
+
     const hill = attribute('outerHill');
     const carve = attribute('outerCarve');
     const worldY = positionWorld.y;
@@ -499,7 +529,7 @@ function Terrain({ cloudShade, config, heightField }) {
     mat.colorNode = base.mul(cloudShade(positionWorld.xz));
 
     return mat;
-  }, [cloudShade, uniforms]);
+  }, [cloudShade, config.globalMotionSpeed, uniforms]);
 
   const geometry = useMemo(
     () =>

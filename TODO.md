@@ -73,7 +73,8 @@ To Build:
 - [BurningCash](src/components/scenes/WorkInProgress/WebGPU/BurningCash/todo.md)
 - [UrbanWildlife](src/components/scenes/WorkInProgress/WebGPU/UrbanWildlife/todo.md)
 - [Wet Paint](src/components/scenes/WorkInProgress/WebGPU/WetPaint/todo.md)
-- [FromTheDirt](src/components/scenes/WorkInProgress/WebGPU/FromTheDirt/todo.md)
+- [Touch Grass](src/components/scenes/WorkInProgress/WebGPU/TouchGrass/todo.md)
+- [WhiteLies](src/components/scenes/WorkInProgress/WebGPU/WhiteLies/todo.md)
 
 **Template**
 
@@ -189,7 +190,6 @@ To Build:
 - [ ] Dripping Skull
 - [ ] Flying High - Day
 - [ ] Flying High - NightMode
-- [ ] From The Dirt
 - [ ] My Heart Is A Broken Fish Tank
 - [ ] One In The Hand
 - [ ] One In The Hand - Two in the cage
@@ -205,8 +205,10 @@ To Build:
 - [ ] Still Pulling For You - Sunk
 - [ ] Thats All Folks - Smoke
 - [ ] Thats All Folks - Bang
+- [ ] Touch Grass
 - [ ] Urban Wildlife / Night Danger
 - [ ] Wet Paint
+- [ ] White Lies
 
 ### Scenes to build
 

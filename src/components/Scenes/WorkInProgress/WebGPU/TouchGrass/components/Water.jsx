@@ -14,7 +14,8 @@ import {
 } from 'three/tsl';
 import * as THREE from 'three/webgpu';
 
-import React, { memo, useEffect, useMemo } from 'react';
+import { useFrame } from '@react-three/fiber';
+import React, { memo, useEffect, useMemo, useRef } from 'react';
 
 import { fbm2 } from '../utils/noise2d';
 import renderTextMask from '../utils/textMask';
@@ -73,6 +74,7 @@ function buildOuterWaterGeometry({
 // The water samples the shared heightfield for true depth: shallow edges get
 // an animated foam ring, deep letter floors shade darker.
 function Water({ cloudShade, config, heightField }) {
+  const waterGroupRef = useRef(null);
   const showChunkMode = (config.terrainEdgeMode ?? 'chunk') === 'chunk';
 
   const endlessCarveSampler = useMemo(() => {
@@ -146,6 +148,18 @@ function Water({ cloudShade, config, heightField }) {
     config.waterOpacity,
     uniforms,
   ]);
+
+  useFrame(({ clock }) => {
+    const amp = config.waterLevelPulseAmplitude ?? 0;
+    const speed =
+      (config.waterLevelPulseSpeed ?? 0.25) * (config.globalMotionSpeed ?? 1);
+    const y = config.waterLevel + Math.sin(clock.getElapsedTime() * speed) * amp;
+
+    if (waterGroupRef.current) {
+      waterGroupRef.current.position.y = y;
+    }
+    uniforms.waterLine.value = y;
+  });
 
   const material = useMemo(() => {
     const mat = new THREE.MeshStandardNodeMaterial({
@@ -302,7 +316,7 @@ function Water({ cloudShade, config, heightField }) {
             segments: OUTER_WATER_SEGMENTS,
           }),
           key: `${offsetX}:${offsetZ}`,
-          position: [offsetX, config.waterLevel, offsetZ],
+          position: [offsetX, 0, offsetZ],
         });
       }
     }
@@ -330,10 +344,9 @@ function Water({ cloudShade, config, heightField }) {
   );
 
   return (
-    <group>
+    <group position-y={config.waterLevel} ref={waterGroupRef}>
       <mesh
         material={material}
-        position-y={config.waterLevel}
         receiveShadow
         rotation-x={-Math.PI / 2}
       >

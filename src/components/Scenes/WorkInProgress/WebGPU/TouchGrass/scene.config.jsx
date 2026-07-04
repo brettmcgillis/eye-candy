@@ -6,10 +6,10 @@ function SceneIcon() {
 }
 
 export default {
-  id: 'fromTheDirt',
-  label: 'From The Dirt',
+  id: 'touchGrass',
+  label: 'Touch Grass',
   channel: 'webgpu',
   area: 'wip',
   icon: SceneIcon,
-  Component: lazy(() => import('./FromTheDirt')),
+  Component: lazy(() => import('./TouchGrass')),
 };

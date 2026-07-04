@@ -71,6 +71,11 @@ export const PRESETS = {
     cloudScale: 0.06,
     cloudSpeed: 1,
     globalMotionSpeed: 1,
+    terrainPulseAmplitude: 0,
+    terrainPulseSpeed: 0.35,
+    terrainPulseScale: 0.25,
+    waterLevelPulseAmplitude: 0,
+    waterLevelPulseSpeed: 0.25,
     cloudFloor: 0.62,
   },
   'Black Oil Basin': {
@@ -139,8 +144,26 @@ export const PRESETS = {
     cloudScale: 0.06,
     cloudSpeed: 1,
     globalMotionSpeed: 1,
+    terrainPulseAmplitude: 0,
+    terrainPulseSpeed: 0.35,
+    terrainPulseScale: 0.25,
+    waterLevelPulseAmplitude: 0,
+    waterLevelPulseSpeed: 0.25,
     cloudFloor: 0.54,
   },
+};
+
+PRESETS['Breathing Basin'] = {
+  ...PRESETS['Sunny Afternoon'],
+  cloudCoverage: 0.5,
+  terrainEdgeMode: 'endless',
+  terrainPulseAmplitude: 0.08,
+  terrainPulseScale: 0.22,
+  terrainPulseSpeed: 0.34,
+  textRotation: 35,
+  waterLevel: -0.95,
+  waterLevelPulseAmplitude: 0.08,
+  waterLevelPulseSpeed: 0.28,
 };
 
 export function getPresetControls({ presetSnapshot }) {

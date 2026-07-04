@@ -10,6 +10,7 @@ export default function useCloudShade({
   cloudFloor,
   cloudScale,
   cloudSpeed,
+  globalMotionSpeed,
 }) {
   const uniforms = useMemo(() => createCloudUniforms(), []);
 
@@ -23,8 +24,8 @@ export default function useCloudShade({
     uniforms.scale.value = cloudScale;
   }, [cloudScale, uniforms]);
   useEffect(() => {
-    uniforms.speed.value = cloudSpeed;
-  }, [cloudSpeed, uniforms]);
+    uniforms.speed.value = cloudSpeed * (globalMotionSpeed ?? 1);
+  }, [cloudSpeed, globalMotionSpeed, uniforms]);
 
   return useMemo(() => createCloudShade(uniforms), [uniforms]);
 }

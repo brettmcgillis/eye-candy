@@ -12,7 +12,7 @@ export const PRESETS = {
     fontWeight: '900',
     textScale: 0.72,
     letterSpacing: 0.02,
-    edgeSoftness: 5,
+    edgeSoftness: 0,
     // Terrain
     seed: 7,
     hillAmplitude: 1.6,
@@ -63,6 +63,7 @@ export const PRESETS = {
     cloudCoverage: 0.45,
     cloudScale: 0.06,
     cloudSpeed: 1,
+    globalMotionSpeed: 1,
     cloudFloor: 0.62,
   },
 };

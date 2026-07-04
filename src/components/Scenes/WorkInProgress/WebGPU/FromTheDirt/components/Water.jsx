@@ -39,10 +39,12 @@ function Water({ cloudShade, config, heightField }) {
     uniforms.color.value.set(config.waterColor);
     uniforms.opacity.value = config.waterOpacity;
     uniforms.rippleScale.value = config.rippleScale;
-    uniforms.rippleSpeed.value = config.rippleSpeed;
+    uniforms.rippleSpeed.value =
+      config.rippleSpeed * (config.globalMotionSpeed ?? 1);
     uniforms.rippleStrength.value = config.rippleStrength;
     uniforms.waterLine.value = config.waterLevel;
   }, [
+    config.globalMotionSpeed,
     config.rippleScale,
     config.rippleSpeed,
     config.rippleStrength,

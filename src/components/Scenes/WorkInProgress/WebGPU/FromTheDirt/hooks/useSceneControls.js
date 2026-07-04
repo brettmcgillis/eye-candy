@@ -52,6 +52,18 @@ export default function useSceneControls() {
   const [controls, setControls] = useControls(SCENE_LABEL, () => ({
     Presets: presetsFolder,
     Camera: folder(cameraControls, { collapsed: true }),
+    Environment: folder(
+      {
+        globalMotionSpeed: {
+          label: 'Global Motion',
+          max: 3,
+          min: 0,
+          step: 0.05,
+          value: p.globalMotionSpeed ?? 1,
+        },
+      },
+      { collapsed: true }
+    ),
     Text: getTextControls(p),
     Terrain: getTerrainControls(p),
     Grass: getGrassControls(p),

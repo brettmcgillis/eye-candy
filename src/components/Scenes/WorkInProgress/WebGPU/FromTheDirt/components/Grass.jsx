@@ -40,7 +40,7 @@ function Grass({ cloudShade, config, heightField }) {
     uniforms.tipColor.value.set(config.tipColor);
     uniforms.windDir.value.set(config.windDirX, config.windDirZ).normalize();
     uniforms.windScale.value = config.windScale;
-    uniforms.windSpeed.value = config.windSpeed;
+    uniforms.windSpeed.value = config.windSpeed * (config.globalMotionSpeed ?? 1);
     uniforms.windStrength.value = config.windStrength;
 
     // Direction sunlight travels (sun position -> scene origin), matching
@@ -66,6 +66,7 @@ function Grass({ cloudShade, config, heightField }) {
     config.tipColor,
     config.windDirX,
     config.windDirZ,
+    config.globalMotionSpeed,
     config.windScale,
     config.windSpeed,
     config.windStrength,

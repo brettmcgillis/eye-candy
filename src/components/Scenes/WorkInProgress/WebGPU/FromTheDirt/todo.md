@@ -32,6 +32,8 @@ afternoon with light clouds rolling through (Surrender-style cloud shade).
 
 - [ ] Revisit the following since the camera gets close to the grass: LOD vertex folding, distance stochastic culling/density compensation, compute-pass
       frustum culling, view-dependent thickness tilt, distance denoising blends.
+      Studied `~/dev/examples/r3f-procedural-grass` (Ghost-of-Tsushima style)
+- [ ] might want to take a look at dev/examples/demo-2022-grass, dev/examples/demo-2022-realistic-meadow for a good grass solutions. looks much better than ours. includes lil flowers.
 
 - [ ] Strata band look — want more than 2 band colors, pebble grain
 
@@ -53,17 +55,23 @@ afternoon with light clouds rolling through (Surrender-style cloud shade).
 - [ ] Add more noise to dirt strata, lines are too clean currently. lines should follow curves of terrain too, like compacted layers over time.
 - [ ] Allow rotating text up to 90\* to allow max terrain usage.
 - [ ] Allow rotating terrain up to 90\* to allow max view-port usage.
-- [ ] make sure wind speed over clouds, grass and water are uniform.
-- [ ] might want to take a look at dev/examples/demo-2022-grass, dev/examples/demo-2022-realistic-meadow for a good grass solutions. looks much better than ours. includes lil flowers.
+- [x] make sure wind speed over clouds, grass and water are uniform.
+
 - [ ] could we use eztree to add some nice trees and shrubs on the terrain
 - [ ] improve water apperance. might consider using the realistic ocean from RowItAlone Webgpu
-- [ ] cursor + water interaction
-- [ ] cursor + grass interaction
 - [ ] add toggle to switch between 'chunk' of terrain with sidewalls, and an 'endless' terrain where we never see eges.
 - [ ] would like a preset where the terrain height is animated and water table depth fluctuates slightly
+- [ ] the curves of fonts are looking pixelated. try and fix/smooth that out
+- [ ] add a preset for, and enable water to have the characteristics of dirty black oil.
 
 # // Presets
 
 # // Features
+
+# // Interactivity
+
+- [ ] cursor + water interaction
+- [ ] cursor + grass interaction
+- [ ] could we cut the grass? if so then we add an overlay button to allow enabling mower. add control for mower width. as user moves cursor grass gets 'cut' down to a specific length, or removed all together. grass grows back after a few seconds
 
 # // Bugs

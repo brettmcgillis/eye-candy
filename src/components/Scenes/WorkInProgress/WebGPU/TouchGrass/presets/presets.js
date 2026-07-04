@@ -216,7 +216,7 @@ export const PRESETS = {
   'The Hills Are Alive': {
     // Text
     text: 'OH SHIT!',
-    fontFamily: FONT_OPTIONS['Arial Black'],
+    fontFamily: FONT_OPTIONS.Futura,
     fontWeight: '900',
     textScale: 0.72,
     letterSpacing: 0.02,

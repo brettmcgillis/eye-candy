@@ -132,9 +132,9 @@ function ButterflySwarm({ config, heightField }) {
         config,
         count: BUTTERFLY_COUNT,
         heightField,
-        minHeight: 0.55,
+        minHeight: 1.4,
         seedOffset: 1301,
-        span: 0.8,
+        span: 0.35,
       }),
     [config, heightField]
   );
@@ -199,9 +199,9 @@ function DragonflySwarm({ config, heightField }) {
       config,
       count: DRAGONFLY_COUNT,
       heightField,
-      minHeight: 0.35,
+      minHeight: 1.0,
       seedOffset: 2503,
-      span: 0.5,
+      span: 0.3,
     });
 
     return base.map((placement, index) => ({
@@ -315,9 +315,9 @@ function BeeSwarm({ config, heightField }) {
       config,
       count: BEE_COUNT,
       heightField,
-      minHeight: 0.75,
+      minHeight: 0.65,
       seedOffset: 1901,
-      span: 0.65,
+      span: 0.25,
     });
 
     return base.map((placement) => ({

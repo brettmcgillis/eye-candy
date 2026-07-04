@@ -63,7 +63,7 @@ afternoon with light clouds rolling through (Surrender-style cloud shade).
 - [ ] improve water apperance. might consider using the realistic ocean from RowItAlone Webgpu
 - [ ] add toggle to switch between 'chunk' of terrain with sidewalls, and an 'endless' terrain where we never see eges.
 - [ ] would like a preset where the terrain height is animated and water table depth fluctuates slightly
-- [ ] the curves of fonts are looking pixelated. try and fix/smooth that out
+- [x] the curves of fonts are looking pixelated. try and fix/smooth that out
 - [x] add a preset for, and enable water to have the characteristics of dirty black oil.
 
 # // Presets

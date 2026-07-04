@@ -2,7 +2,8 @@
 // sampler over its coverage (0 = open ground, 1 = inside a letter). The
 // canvas blur radius controls how soft the carved walls are.
 
-const MASK_SIZE = 1024;
+// Higher mask resolution improves curved glyph edge quality in terrain cuts.
+const MASK_SIZE = 2048;
 
 function makeEmptySampler() {
   return { sample: () => 0 };

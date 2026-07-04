@@ -5,8 +5,16 @@ import { folder } from 'leva';
 
 export const FONT_OPTIONS = {
   'Arial Black': '"Arial Black", Arial, sans-serif',
+  Arial: 'Arial, sans-serif',
   Impact: 'Impact, "Arial Black", sans-serif',
+  Verdana: 'Verdana, Geneva, sans-serif',
+  Tahoma: 'Tahoma, Geneva, sans-serif',
+  'Trebuchet MS': '"Trebuchet MS", Helvetica, sans-serif',
+  'Segoe UI': '"Segoe UI", Tahoma, sans-serif',
+  'Gill Sans': '"Gill Sans", "Gill Sans MT", Calibri, sans-serif',
   Georgia: 'Georgia, serif',
+  'Palatino Linotype': '"Palatino Linotype", Palatino, serif',
+  Garamond: 'Garamond, "Times New Roman", serif',
   'Times New Roman': '"Times New Roman", serif',
   Futura: 'Futura, "Trebuchet MS", sans-serif',
   'Helvetica Neue': '"Helvetica Neue", Helvetica, sans-serif',

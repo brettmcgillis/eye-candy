@@ -43,11 +43,12 @@ afternoon with light clouds rolling through (Surrender-style cloud shade).
 - [ ] Roots/overhang detail at the grass lip of each cut
 - [x] Floating seeds in the light
 - [ ] seeds look good but where do they come from? need some flowers
+- [ ] fix seeds - currently following terrain down into text cutouts, should just go across the top where the terrain would have been.
 - [ ] Dragonflies
 - [ ] butterflies
 - [ ] Adaptive quality (blade count + segments by device)
 - [ ] Post later per conventions (maybe subtle vignette/DoF once settled)
-- [ ] Add more font options.
+- [x] Add more font options.
 - [ ] Add terrain lines around exterior of plane, not just inside text
 - [ ] Make text input a text area, alow for line breaks in text cut outs of grass.
 - [ ] Align this todo file with repo convention!!!

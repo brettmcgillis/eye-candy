@@ -38,20 +38,19 @@ const CAMERA = {
         desktop: { ...WIDE_SHOT, fov: 50 },
         mobile: { position: [0, 1.7, 9], target: WIDE_SHOT.target, fov: 62 },
       },
-      // Approaches from +Z — the can is rotated (see WetPaint.jsx
-      // COLOR_SELECT_ROTATION) so its curved settings labels face this way.
-      // Framing: labels span ~0.01-0.19m above the can base; 0.5m at fov 34
-      // sees ±0.153m around the target, covering the full stack with margin.
+      // Approaches from +Z. The center can shows its physical sliders; the
+      // side cans are flipped 180deg from it and carry camera-facing labels.
+      // Framing covers the touching three-can lineup plus label overhang.
       colorSelect: {
         desktop: {
-          position: [CAN_TARGET[0], CAN_TARGET[1], CAN_TARGET[2] + 0.5],
+          position: [CAN_TARGET[0], CAN_TARGET[1], CAN_TARGET[2] + 0.62],
           target: CAN_TARGET,
-          fov: 34,
+          fov: 40,
         },
         mobile: {
-          position: [CAN_TARGET[0], CAN_TARGET[1], CAN_TARGET[2] + 0.65],
+          position: [CAN_TARGET[0], CAN_TARGET[1], CAN_TARGET[2] + 1.3],
           target: CAN_TARGET,
-          fov: 42,
+          fov: 50,
         },
       },
     },
@@ -125,8 +124,8 @@ export default function useSceneControls() {
         },
         brushSize: {
           value: 0.05,
-          min: 0.002,
-          max: 0.2,
+          min: 0.001,
+          max: 0.04,
           step: 0.001,
           label: 'Size',
         },
@@ -137,10 +136,36 @@ export default function useSceneControls() {
           step: 0.01,
           label: 'Hardness',
         },
+        brushOpacity: {
+          value: 1,
+          min: 0,
+          max: 1,
+          step: 0.01,
+          label: 'Opacity',
+        },
+        // Values map 1:1 to utils/brushes.js BRUSHES keys (chameleon port,
+        // todo item 71).
         brushTexture: {
-          value: 'clean',
-          label: 'Texture',
-          options: { Clean: 'clean', Splatter: 'splatter' },
+          value: 'spray',
+          label: 'Brush',
+          options: {
+            Spray: 'spray',
+            Soft: 'clean',
+            Splatter: 'splatter',
+            Marker: 'marker',
+            Blurry: 'blurry',
+            Thick: 'thick',
+            'Ink Drop': 'inkdrop',
+            Pencil: 'pencil',
+            Calligraphy: 'calligraphy',
+          },
+        },
+        // Metallic drives a synced metalnessMap canvas + baked sparkle
+        // flecks (see usePaintableSurface/brushes.js).
+        brushFinish: {
+          value: 'matte',
+          label: 'Finish',
+          options: { Matte: 'matte', Metallic: 'metallic' },
         },
         dripChance: {
           value: 0.12,
@@ -265,8 +290,8 @@ export default function useSceneControls() {
     [setControls]
   );
 
-  // Generic setter for the can's settings decals (size/hardness/texture/
-  // drip). Keys are the flat Leva keys, so no mapping layer needed.
+  // Generic setter for the can's settings decals. Keys are the flat Leva
+  // keys, so no mapping layer needed.
   const setBrushSetting = useCallback(
     (key, value) => {
       setControls({ [key]: value });

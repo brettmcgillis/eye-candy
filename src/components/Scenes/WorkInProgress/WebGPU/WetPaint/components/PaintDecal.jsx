@@ -17,26 +17,33 @@ function PaintDecal({
   rotation,
   width,
 }) {
-  const { texture, stamp, clear } = usePaintableSurface({
+  const { texture, metalTexture, stamp, clear } = usePaintableSurface({
     dripEnabled,
     width,
     height,
   });
   const meshRef = useRef(null);
 
-  usePaintTarget({ meshRef, stamp, clear, kind: 'paint' });
+  // worldWidth lets PaintRig convert brush size (a fraction of this decal's
+  // width) into meters for the cross-surface spray footprint (todo item 66).
+  usePaintTarget({ meshRef, stamp, clear, kind: 'paint', worldWidth: width });
 
+  // Standard (lit) material rather than the old unlit basic one: paint now
+  // reacts to the sun/streetlight, and the synced metalnessMap makes the
+  // metallic finish actually glint instead of just sparkle-texturing.
   return (
     <mesh ref={meshRef} position={position} rotation={rotation}>
       <planeGeometry args={[width, height]} />
-      <meshBasicMaterial
+      <meshStandardMaterial
         map={texture}
+        metalnessMap={metalTexture}
+        metalness={1}
+        roughness={0.45}
         alphaMap={alphaMap}
         transparent
         depthWrite={false}
         polygonOffset
         polygonOffsetFactor={-4}
-        toneMapped={false}
       />
     </mesh>
   );

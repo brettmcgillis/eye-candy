@@ -1,6 +1,6 @@
 import * as THREE from 'three';
 
-import React, { memo, useEffect, useMemo } from 'react';
+import React, { memo, useEffect, useMemo, useRef } from 'react';
 
 import { useGLTF } from '@react-three/drei';
 
@@ -18,6 +18,8 @@ import SettingsPanels from './canui/SettingsPanels';
 // component, so they need the same rotation to line back up.
 const PART_ROTATION = [-Math.PI / 2, 0, 0];
 const PART_ROTATION_EULER = new THREE.Euler(...PART_ROTATION);
+const SETTINGS_PANEL_POSITION = [0, -CAN_BASE_RECENTER_Y, 0];
+const SETTINGS_PANEL_ROTATION = [0, Math.PI, 0];
 const SLIDER_PART_KEYS = ['redSlider', 'greenSlider', 'blueSlider'];
 const CHANNEL_HEX = { r: '#ff2d2d', g: '#2dff5b', b: '#2d6bff' };
 const CHANNEL_TO_PARTS = [
@@ -26,18 +28,24 @@ const CHANNEL_TO_PARTS = [
   { channel: 'b', panel: 'bluePanel', slider: 'blueSlider' },
 ];
 
+const tmpW0 = new THREE.Vector3();
+const tmpWorldScale = new THREE.Vector3();
+
 // The can used for both scene modes. The body + color ring always tint to
-// the current color, the model's slider knobs are always POSED to the
-// current R/G/B values (display only — input happens on the flat decal
-// panels, which fixes the old slider-drag vs label-pick event conflict,
-// todo item 42), and in `interactive` (color-select) mode the label-style
-// settings decals (wheel + sliders + toggle) mount in front of the can.
+// the current color, and the model's slider knobs are posed to the current
+// R/G/B values. In color-select mode the knobs are REAL drag controls
+// (`interactive` — grab a knob and slide it along its groove, todo items
+// 42/69); the wheel/brush settings live on separate label-decal cans
+// (`decals`: 'wheel' | 'brush') flanking this one so nothing floats above
+// the geometry. `showSliders` off hides the knobs on those decal cans.
 function InteractiveCan({
-  interactive,
+  decals = null,
+  interactive = false,
   onRgbChange,
   onSettingChange,
   rgb,
   settings,
+  showSliders = true,
   ...groupProps
 }) {
   const { nodes, materials } = useGLTF(modelFile('sprayCanSeparated.glb'));
@@ -47,6 +55,13 @@ function InteractiveCan({
     () => defaultMaterial.clone(),
     [defaultMaterial]
   );
+
+  // White cap (todo item 74) — matches the instanced litter cans' caps.
+  const capMaterial = useMemo(() => {
+    const mat = defaultMaterial.clone();
+    mat.color.set('#e8e8e8');
+    return mat;
+  }, [defaultMaterial]);
 
   const gradientMaterials = useMemo(
     () =>
@@ -68,23 +83,25 @@ function InteractiveCan({
   useEffect(
     () => () => {
       tintMaterial.dispose();
+      capMaterial.dispose();
       Object.values(gradientMaterials).forEach((mat) => {
         mat.map.dispose();
         mat.dispose();
       });
     },
-    [gradientMaterials, tintMaterial]
+    [capMaterial, gradientMaterials, tintMaterial]
   );
 
   const partMaterials = useMemo(
     () => ({
       sprayCan: tintMaterial,
       colorRing: tintMaterial,
+      sprayCap: capMaterial,
       redPanel: gradientMaterials.r,
       greenPanel: gradientMaterials.g,
       bluePanel: gradientMaterials.b,
     }),
-    [gradientMaterials, tintMaterial]
+    [capMaterial, gradientMaterials, tintMaterial]
   );
 
   // Same derivation the discarded/scattered cans use, so the handheld can's
@@ -102,6 +119,61 @@ function InteractiveCan({
     [nodes]
   );
 
+  const innerRef = useRef(null);
+  const dragRef = useRef(null);
+
+  // Knob dragging: on grab, freeze the knob's groove as a world-space line
+  // (origin = grab point, direction = slider axis); each move finds the
+  // closest point on that line to the pointer ray and maps the offset from
+  // the grab point back to a 0..1 value. Absolute mapping from the grabbed
+  // value means no drift, and pointer capture keeps the drag alive when the
+  // cursor slips off the small knob mesh.
+  const beginDrag = (e, channel, axis) => {
+    if (!interactive) return;
+    e.stopPropagation();
+    e.target.setPointerCapture(e.pointerId);
+    const inner = innerRef.current;
+    inner.updateWorldMatrix(true, false);
+    const worldDir = axis.axisVector
+      .clone()
+      .applyEuler(PART_ROTATION_EULER)
+      .transformDirection(inner.matrixWorld);
+    dragRef.current = {
+      channel,
+      grabPoint: e.point.clone(),
+      worldDir,
+      worldLen: axis.localLength * inner.getWorldScale(tmpWorldScale).x,
+      startValue: rgb[channel],
+    };
+  };
+
+  const moveDrag = (e) => {
+    const drag = dragRef.current;
+    if (!drag) return;
+    e.stopPropagation();
+    // Closest-approach parameter of the groove line to the pointer ray
+    // (both directions unit length, so a = c = 1).
+    tmpW0.subVectors(e.ray.origin, drag.grabPoint);
+    const b = e.ray.direction.dot(drag.worldDir);
+    const d = e.ray.direction.dot(tmpW0);
+    const eDot = drag.worldDir.dot(tmpW0);
+    const denom = 1 - b * b;
+    if (Math.abs(denom) < 1e-5) return;
+    const tc = (eDot - b * d) / denom;
+    const next = THREE.MathUtils.clamp(
+      drag.startValue + tc / drag.worldLen,
+      0,
+      1
+    );
+    onRgbChange({ ...rgb, [drag.channel]: next });
+  };
+
+  const endDrag = (e) => {
+    if (!dragRef.current) return;
+    e.target.releasePointerCapture?.(e.pointerId);
+    dragRef.current = null;
+  };
+
   return (
     <group {...groupProps}>
       <SprayCanSeparated
@@ -111,25 +183,33 @@ function InteractiveCan({
       {/* SprayCanSeparated recenters itself internally (CAN_BASE_RECENTER_Y)
           so `position` means "where the base sits" — parts rendered directly
           here need the same offset to stay lined up with it. */}
-      <group position={[0, CAN_BASE_RECENTER_Y, 0]}>
-        {sliderAxes.map(({ channel, slider, axis }) => (
-          <mesh
-            key={slider}
-            geometry={nodes[SPRAY_CAN_SEPARATED_NODE_KEYS[slider]].geometry}
-            material={defaultMaterial}
-            rotation={PART_ROTATION}
-            position={axis.axisVector
-              .clone()
-              .applyEuler(PART_ROTATION_EULER)
-              .multiplyScalar(
-                axis.restOffset + rgb[channel] * axis.localLength
-              )}
-            castShadow
-            receiveShadow
-          />
-        ))}
-        {interactive && (
+      <group ref={innerRef} position={[0, CAN_BASE_RECENTER_Y, 0]}>
+        {showSliders &&
+          sliderAxes.map(({ channel, slider, axis }) => (
+            <mesh
+              key={slider}
+              geometry={nodes[SPRAY_CAN_SEPARATED_NODE_KEYS[slider]].geometry}
+              material={defaultMaterial}
+              rotation={PART_ROTATION}
+              position={axis.axisVector
+                .clone()
+                .applyEuler(PART_ROTATION_EULER)
+                .multiplyScalar(
+                  axis.restOffset + rgb[channel] * axis.localLength
+                )}
+              onPointerDown={(e) => beginDrag(e, channel, axis)}
+              onPointerMove={moveDrag}
+              onPointerUp={endDrag}
+              onPointerCancel={endDrag}
+              castShadow
+              receiveShadow
+            />
+          ))}
+        {decals && (
           <SettingsPanels
+            position={SETTINGS_PANEL_POSITION}
+            rotation={SETTINGS_PANEL_ROTATION}
+            sections={decals}
             rgb={rgb}
             settings={settings}
             onRgbChange={onRgbChange}

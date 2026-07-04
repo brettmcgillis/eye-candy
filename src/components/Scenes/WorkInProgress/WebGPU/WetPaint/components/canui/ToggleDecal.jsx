@@ -3,12 +3,15 @@ import * as THREE from 'three';
 import React, { memo, useCallback, useEffect, useMemo, useRef } from 'react';
 
 import { usePaintTarget } from '../../hooks/usePaintTargets';
-import { createToggleDecalTexture } from '../../utils/decalTextures';
+import {
+  createToggleDecalTexture,
+  toggleIndexFromUv,
+} from '../../utils/decalTextures';
 import { createSectorGeometry } from './sectorGeometry';
 
-// Two-chip toggle label wrapped onto the can (e.g. spray texture
-// CLEAN | SPLAT, todo item 51). Click left/right half to pick; the texture
-// regenerates to move the highlight.
+// Chip-row toggle label wrapped onto the can (e.g. the brush picker rows,
+// todo items 51/71). Click a chip to pick; the texture regenerates to move
+// the highlight.
 function ToggleDecal({
   arc,
   height,
@@ -27,7 +30,9 @@ function ToggleDecal({
     () => createSectorGeometry({ arc, height, radius }),
     [arc, height, radius]
   );
-  const activeIndex = Math.max(0, values.indexOf(value));
+  // -1 (value lives on another row, e.g. the split brush picker) simply
+  // highlights nothing.
+  const activeIndex = values.indexOf(value);
   const texture = useMemo(
     () => createToggleDecalTexture({ options: labels, activeIndex }),
     [labels, activeIndex]
@@ -44,7 +49,7 @@ function ToggleDecal({
     (e) => {
       e.stopPropagation();
       if (!e.uv) return;
-      onChange(values[e.uv.x < 0.5 ? 0 : 1]);
+      onChange(values[toggleIndexFromUv(e.uv, values.length)]);
     },
     [onChange, values]
   );

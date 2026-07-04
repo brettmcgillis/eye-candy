@@ -28,27 +28,27 @@
 
 # // Bugs
 
-# // Show off
+# // Shots
 
-- smoke cursor attractor interaction
-- fire cursor attractor interaction
-- smoke cursor repeller interaction
-- fire cursor repeller interaction
-- click and drag lid interaction
-- click and drag floor garbage interaction
-- click and drag brick wall interaction
-- click to clean up
-- click to enable fire audio
-- trash audio
-- trash shoot
-- shoot trash in dumpster
-- shoot trash at wall
-- physics debug
-- knock trash off the edge
-- shoot during auto orbit
-- shoot during camera path follow
-- set dumpster lid and then ricochet
-- far orbit with fog enveloping
-- fill the dumpster
-- put a brick in the dumpster
-- spam the clean up button
+- [ ] smoke cursor attractor interaction
+- [ ] fire cursor attractor interaction
+- [ ] smoke cursor repeller interaction
+- [ ] fire cursor repeller interaction
+- [ ] click and drag lid interaction
+- [ ] click and drag floor garbage interaction
+- [ ] click and drag brick wall interaction
+- [ ] click to clean up
+- [ ] click to enable fire audio
+- [ ] trash audio
+- [ ] trash shoot
+- [ ] shoot trash in dumpster
+- [ ] shoot trash at wall
+- [ ] physics debug
+- [ ] knock trash off the edge
+- [ ] shoot during auto orbit
+- [ ] shoot during camera path follow
+- [ ] set dumpster lid and then ricochet
+- [ ] far orbit with fog enveloping
+- [ ] fill the dumpster
+- [ ] put a brick in the dumpster
+- [ ] spam the clean up button

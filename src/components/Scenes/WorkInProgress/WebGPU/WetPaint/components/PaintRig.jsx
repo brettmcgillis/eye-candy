@@ -1,6 +1,12 @@
 import * as THREE from 'three';
 
-import React, { memo, useEffect, useMemo, useRef } from 'react';
+import React, {
+  memo,
+  useEffect,
+  useLayoutEffect,
+  useMemo,
+  useRef,
+} from 'react';
 
 import { useFrame, useThree } from '@react-three/fiber';
 
@@ -21,6 +27,33 @@ const AIM_DISTANCE_NO_HIT = 6;
 // todo item 62): farther hits get a wider, softer stamp, like real
 // rattle-can falloff. Reference distance = stamp at authored brush size.
 const SPREAD_REFERENCE_DISTANCE = 2.5;
+// Cross-surface stamping (todo item 66): besides the center ray, four rays
+// offset within the spray footprint catch neighboring surfaces (wall + curb
+// at their seam) so a fat brush paints both sides of a boundary at once.
+const FOOTPRINT_OFFSETS = [
+  [1, 0],
+  [-1, 0],
+  [0, 1],
+  [0, -1],
+];
+const FOOTPRINT_REACH = 0.65;
+// Fallback meters-per-UV-width for paint targets that don't report one
+// (PaintableShell over arbitrary GLTF UVs).
+const DEFAULT_WORLD_WIDTH = 4;
+// Handheld-can dodge (todo item 64): as the cursor nears the can's corner of
+// the screen, slide the can further right so the reticle stays visible.
+const DODGE_START_X = -0.2;
+const DODGE_FULL_X = -0.85;
+const DODGE_OFFSET_X = 0.12;
+
+// Nozzle tip in the handheld group's local (raw model) units: the can spans
+// y 0..~6.72 after the element's base recentering, nozzle on top.
+const NOZZLE_LOCAL = new THREE.Vector3(0, 6.55, 0);
+// Visible paint mist (todo item 73): short-lived instanced droplets fired
+// from the nozzle toward the hit point. Pool-sized for 60fps, not physics.
+const MIST_COUNT = 64;
+const MIST_EMIT_PER_SECOND = 240;
+const MIST_CONE_JITTER = 0.09;
 
 const tmpNormal = new THREE.Vector3();
 const tmpReticlePos = new THREE.Vector3();
@@ -29,6 +62,16 @@ const tmpHandheldPos = new THREE.Vector3();
 const tmpAimDir = new THREE.Vector3();
 const tmpAimTarget = new THREE.Vector3();
 const tmpForward = new THREE.Vector3();
+const tmpNozzle = new THREE.Vector3();
+const tmpEmitDir = new THREE.Vector3();
+const tmpCamRight = new THREE.Vector3();
+const tmpCamUp = new THREE.Vector3();
+const tmpOffsetPoint = new THREE.Vector3();
+const tmpRayDir = new THREE.Vector3();
+const tmpMistDir = new THREE.Vector3();
+const tmpMistMatrix = new THREE.Matrix4();
+const tmpMistQuat = new THREE.Quaternion();
+const tmpMistScale = new THREE.Vector3();
 
 // Single continuous raycast that drives everything aim-related each frame:
 // the mouse-look camera, the handheld can's pose, the reticle, and — while
@@ -49,6 +92,25 @@ function PaintRig({
   const isPointerDownRef = useRef(false);
   const isSprayingRef = useRef(false);
   const zoomRef = useRef(0);
+  // Previous frame's hit per surface (mesh -> {u, v}) while spraying — lets
+  // stamps draw connected segments on every surface the footprint touches
+  // (fluid strokes, todo item 71; cross-surface stamping, todo item 66).
+  // Entries for surfaces the footprint left are pruned each frame so a
+  // re-entering stroke doesn't chain a segment across the gap.
+  const lastStrokeMapRef = useRef(new Map());
+  const dodgeRef = useRef(0);
+  const mistRef = useRef(null);
+  const mistPool = useMemo(
+    () =>
+      Array.from({ length: MIST_COUNT }, () => ({
+        position: new THREE.Vector3(),
+        velocity: new THREE.Vector3(),
+        life: 0,
+        ttl: 0,
+        size: 1,
+      })),
+    []
+  );
 
   const wideShotBase = useMemo(() => {
     const position = new THREE.Vector3(...wideShot.position);
@@ -73,6 +135,19 @@ function PaintRig({
     isSprayingRef.current = next;
     onSprayingChange?.(next);
   };
+
+  // Instances mount with identity matrices (64 unit spheres at the origin)
+  // — collapse them all before the first painted frame.
+  useLayoutEffect(() => {
+    const mesh = mistRef.current;
+    if (!mesh) return;
+    tmpMistScale.setScalar(0);
+    tmpMistMatrix.compose(tmpNozzle.set(0, 0, 0), tmpMistQuat, tmpMistScale);
+    for (let i = 0; i < MIST_COUNT; i += 1) {
+      mesh.setMatrixAt(i, tmpMistMatrix);
+    }
+    mesh.instanceMatrix.needsUpdate = true;
+  }, []);
 
   useEffect(() => {
     const dom = gl.domElement;
@@ -102,13 +177,56 @@ function PaintRig({
     };
   }, [gl, mode]);
 
-  useFrame((state) => {
+  // Advances the droplet pool every frame; `emit` (nullable) respawns dead
+  // droplets at the nozzle, aimed at the current hit. Dead droplets hide by
+  // composing a zero scale — no per-frame allocation, no count changes.
+  const updateMist = (delta, emit) => {
+    const mesh = mistRef.current;
+    if (!mesh) return;
+    let emitBudget = emit ? Math.ceil(MIST_EMIT_PER_SECOND * delta) : 0;
+
+    for (let i = 0; i < MIST_COUNT; i += 1) {
+      const droplet = mistPool[i];
+      if (droplet.life < droplet.ttl) {
+        droplet.life += delta;
+        droplet.position.addScaledVector(droplet.velocity, delta);
+      } else if (emitBudget > 0) {
+        emitBudget -= 1;
+        droplet.position.copy(emit.origin);
+        tmpMistDir.set(
+          emit.direction.x + (Math.random() - 0.5) * MIST_CONE_JITTER * 2,
+          emit.direction.y + (Math.random() - 0.5) * MIST_CONE_JITTER * 2,
+          emit.direction.z + (Math.random() - 0.5) * MIST_CONE_JITTER * 2
+        );
+        tmpMistDir.normalize();
+        // Fast enough to visibly connect can and wall; droplets die right
+        // around impact so paint never appears to fly past the surface.
+        const speed = THREE.MathUtils.clamp(emit.distance / 0.12, 4, 14);
+        droplet.velocity
+          .copy(tmpMistDir)
+          .multiplyScalar(speed * (0.85 + Math.random() * 0.3));
+        droplet.life = 0;
+        droplet.ttl = (emit.distance / speed) * (0.8 + Math.random() * 0.35);
+        droplet.size = 0.003 + Math.random() * 0.005;
+      }
+
+      const alive = droplet.life < droplet.ttl;
+      tmpMistScale.setScalar(alive ? droplet.size : 0);
+      tmpMistMatrix.compose(droplet.position, tmpMistQuat, tmpMistScale);
+      mesh.setMatrixAt(i, tmpMistMatrix);
+    }
+    mesh.instanceMatrix.needsUpdate = true;
+  };
+
+  useFrame((state, delta) => {
     const { camera, pointer, raycaster } = state;
     const isPaintMode = mode === 'paint';
 
     if (mode === 'photo') {
       if (reticleRef.current) reticleRef.current.visible = false;
       setSpraying(false);
+      lastStrokeMapRef.current.clear();
+      updateMist(delta, null);
       return;
     }
 
@@ -130,6 +248,8 @@ function PaintRig({
     if (!targets.length) {
       if (reticleRef.current) reticleRef.current.visible = false;
       setSpraying(false);
+      lastStrokeMapRef.current.clear();
+      updateMist(delta, null);
       return;
     }
 
@@ -160,10 +280,22 @@ function PaintRig({
 
     if (isPaintMode && handheldGroupRef?.current) {
       const group = handheldGroupRef.current;
-      tmpHandheldPos
-        .copy(HANDHELD_CAMERA_OFFSET)
-        .applyQuaternion(camera.quaternion)
-        .add(camera.position);
+      // Slide the can right (damped) as the cursor heads far left, before
+      // the can's silhouette can cover the work (todo item 64).
+      const dodgeTarget = THREE.MathUtils.clamp(
+        (DODGE_START_X - pointer.x) / (DODGE_START_X - DODGE_FULL_X),
+        0,
+        1
+      );
+      dodgeRef.current = THREE.MathUtils.damp(
+        dodgeRef.current,
+        dodgeTarget,
+        8,
+        delta
+      );
+      tmpHandheldPos.copy(HANDHELD_CAMERA_OFFSET);
+      tmpHandheldPos.x += dodgeRef.current * DODGE_OFFSET_X;
+      tmpHandheldPos.applyQuaternion(camera.quaternion).add(camera.position);
       const aimAt = hit
         ? hit.point
         : raycaster.ray.at(AIM_DISTANCE_NO_HIT, tmpAimTarget);
@@ -184,7 +316,31 @@ function PaintRig({
     const spraying = isPaintMode && isPointerDownRef.current && !!hit;
     setSpraying(spraying);
 
-    if (!spraying) return;
+    if (!spraying) {
+      lastStrokeMapRef.current.clear();
+      updateMist(delta, null);
+      return;
+    }
+
+    // Emit paint mist from the nozzle toward the hit. The handheld group's
+    // transform was set above this frame, so refresh its world matrix before
+    // converting the nozzle-tip offset.
+    const handheldGroup = handheldGroupRef?.current;
+    if (handheldGroup) {
+      handheldGroup.updateMatrixWorld();
+      tmpNozzle.copy(NOZZLE_LOCAL);
+      handheldGroup.localToWorld(tmpNozzle);
+      tmpEmitDir.subVectors(hit.point, tmpNozzle);
+      const mistDistance = tmpEmitDir.length();
+      updateMist(delta, {
+        origin: tmpNozzle,
+        direction: tmpEmitDir.normalize(),
+        distance: mistDistance,
+      });
+      if (mistRef.current) mistRef.current.material.color.copy(brush.color);
+    } else {
+      updateMist(delta, null);
+    }
 
     const entry = registry.getEntry(hit.object);
     if (!entry?.stamp || !hit.uv) return;
@@ -195,30 +351,98 @@ function PaintRig({
       2
     );
 
-    entry.stamp({
-      u: hit.uv.x,
-      v: hit.uv.y,
-      color: brush.color,
-      size: brush.size * spread,
-      hardness: brush.hardness / spread,
-      brushTexture: brush.texture,
-      dripChance: brush.dripChance,
-      dripLengthScale: brush.dripLengthScale,
+    // Segments chain per surface via the stroke map; a surface the footprint
+    // just (re)entered starts fresh.
+    const strokeMap = lastStrokeMapRef.current;
+    const stampedThisFrame = new Set();
+    const stampOn = (targetEntry, object, uv, sizeFraction) => {
+      const last = strokeMap.get(object);
+      targetEntry.stamp({
+        u: uv.x,
+        v: uv.y,
+        fromU: last ? last.u : null,
+        fromV: last ? last.v : null,
+        color: brush.color,
+        size: sizeFraction,
+        hardness: brush.hardness / spread,
+        opacity: brush.opacity,
+        brushTexture: brush.texture,
+        finish: brush.finish,
+        dripChance: brush.dripChance,
+        dripLengthScale: brush.dripLengthScale,
+      });
+      strokeMap.set(object, { u: uv.x, v: uv.y });
+      stampedThisFrame.add(object);
+    };
+
+    const primarySize = brush.size * spread;
+    stampOn(entry, hit.object, hit.uv, primarySize);
+
+    // Cross-surface footprint (todo item 66): brush size is a fraction of
+    // its surface's UV width, so convert through meters to size the same
+    // physical spray on whichever neighboring surface the offset rays hit.
+    const worldRadius = primarySize * (entry.worldWidth ?? DEFAULT_WORLD_WIDTH);
+    tmpCamRight.setFromMatrixColumn(camera.matrixWorld, 0);
+    tmpCamUp.setFromMatrixColumn(camera.matrixWorld, 1);
+    for (let i = 0; i < FOOTPRINT_OFFSETS.length; i += 1) {
+      const [ox, oy] = FOOTPRINT_OFFSETS[i];
+      tmpOffsetPoint
+        .copy(hit.point)
+        .addScaledVector(tmpCamRight, ox * worldRadius * FOOTPRINT_REACH)
+        .addScaledVector(tmpCamUp, oy * worldRadius * FOOTPRINT_REACH);
+      tmpRayDir.subVectors(tmpOffsetPoint, camera.position).normalize();
+      raycaster.set(camera.position, tmpRayDir);
+      const sideHit = raycaster.intersectObjects(targets, false)[0];
+      const isNewSurface =
+        sideHit?.uv &&
+        sideHit.object !== hit.object &&
+        !stampedThisFrame.has(sideHit.object);
+      if (isNewSurface) {
+        const sideEntry = registry.getEntry(sideHit.object);
+        if (sideEntry?.stamp) {
+          const sideSize =
+            worldRadius / (sideEntry.worldWidth ?? DEFAULT_WORLD_WIDTH);
+          stampOn(sideEntry, sideHit.object, sideHit.uv, sideSize);
+        }
+      }
+    }
+
+    // Prune surfaces the footprint left so a later re-entry doesn't chain a
+    // segment across the gap.
+    strokeMap.forEach((_value, object) => {
+      if (!stampedThisFrame.has(object)) strokeMap.delete(object);
     });
   });
 
   return (
-    <mesh ref={reticleRef} visible={false}>
-      <ringGeometry args={[0.03, 0.045, 24]} />
-      <meshBasicMaterial
-        color="#ffffff"
-        transparent
-        opacity={0.85}
-        depthTest={false}
-        side={THREE.DoubleSide}
-        toneMapped={false}
-      />
-    </mesh>
+    <>
+      <mesh ref={reticleRef} visible={false}>
+        <ringGeometry args={[0.03, 0.045, 24]} />
+        <meshBasicMaterial
+          color="#ffffff"
+          transparent
+          opacity={brush.opacity ?? 0.85}
+          depthTest={false}
+          side={THREE.DoubleSide}
+          toneMapped={false}
+        />
+      </mesh>
+      {/* Paint mist droplets (todo item 73). Low-poly spheres instead of
+          points so they render identically on the WebGPU path; dead droplets
+          sit at scale 0. */}
+      <instancedMesh
+        ref={mistRef}
+        args={[undefined, undefined, MIST_COUNT]}
+        frustumCulled={false}
+      >
+        <sphereGeometry args={[1, 6, 5]} />
+        <meshBasicMaterial
+          transparent
+          opacity={Math.min(0.9, brush.opacity ?? 0.9)}
+          toneMapped={false}
+        />
+      </instancedMesh>
+    </>
   );
 }
 

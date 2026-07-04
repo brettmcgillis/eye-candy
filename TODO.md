@@ -22,6 +22,7 @@ To Build:
 - [ ] Metaball (marching cubes) interactive lava lamp
 - [ ] Audio reactive tree
 - [ ] Eyeball
+- [ ] rolling, grassy terrain. wind in the grass. csg subtractions of letters from the terrain. terrain layers visible in subtractions. water in subtractions.
 - leverage threejs addons/generators for skyscraper, city, forest, tree. take a look at the generator docs too. Example; Forest generator can generate on a terrain OR anything that exposes sampleHeight, etc, Could we cover a car model in trees? an animal model in buildings/city?
 - [ ] Can we use ecctrl & click to move to make Quinn's board game playable?
 - [ ] We should do a scene with Quinns seal, 3rd person camera, player controls w/keyboard and controller.

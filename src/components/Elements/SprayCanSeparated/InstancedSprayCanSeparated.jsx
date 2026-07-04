@@ -24,6 +24,12 @@ export function Instances({ children, ...props }) {
     return material;
   }, [materials]);
 
+  const capMaterial = React.useMemo(() => {
+    const material = materials['default.001'].clone();
+    material.color.set('#e8e8e8');
+    return material;
+  }, [materials]);
+
   const instances = React.useMemo(
     () => ({
       Bluepanel: nodes.blue_panel,
@@ -43,8 +49,13 @@ export function Instances({ children, ...props }) {
         geometry: nodes.spray_can.geometry,
         material: tintableMaterial,
       },
+      Spraycap: {
+        isMesh: true,
+        geometry: nodes.spray_cap.geometry,
+        material: capMaterial,
+      },
     }),
-    [nodes, tintableMaterial]
+    [nodes, tintableMaterial, capMaterial]
   );
   return (
     <Merged meshes={instances} {...props}>
@@ -124,9 +135,8 @@ export default function InstancedSprayCanSeparated({
           }
         />
         <instances.Spraycan rotation={PART_ROTATION} color={color} />
+        <instances.Spraycap rotation={PART_ROTATION} />
       </group>
     </group>
   );
 }
-
-useGLTF.preload(modelFile('sprayCanSeparated.glb'));

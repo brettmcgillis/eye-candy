@@ -18,6 +18,7 @@ export const SPRAY_CAN_SEPARATED_NODE_KEYS = {
   redPanel: 'red_panel',
   redSlider: 'red_slider',
   sprayCan: 'spray_can',
+  sprayCap: 'spray_cap',
 };
 
 // Measured from the raw glTF (min Z across all parts is -4.638887...,

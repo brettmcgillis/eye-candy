@@ -5,7 +5,7 @@ import { useCallback, useEffect, useMemo, useRef } from 'react';
 import useSceneAudioStore from '../../../../../../store/useSceneAudioStore';
 import { audioFile } from '../../../../../../utils/appUtils';
 
-// Loops sprayCan.mp3 while the user is actually spraying (todo item 60).
+// Loops sprayCanSpray.mp3 while the user is actually spraying (todo item 60).
 // Registers with the global scene-audio store, which makes the scaffold's
 // own overlay AudioToggle appear — audio stays off until the user enables
 // it there (todo item 61), same pattern as Surrender's useStormSounds.
@@ -17,7 +17,7 @@ export default function useSpraySound({ volume = 0.6 } = {}) {
   const sound = useMemo(
     () =>
       new Howl({
-        src: [audioFile('sprayCan.mp3')],
+        src: [audioFile('sprayCanSpray.mp3')],
         loop: true,
         volume,
         onloaderror: () => {},

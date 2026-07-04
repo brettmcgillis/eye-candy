@@ -32,12 +32,18 @@ import {
   SIDEWALK_HEIGHT,
 } from './utils/sceneUtils';
 
-// The settings decals face the can's local +X (see canui/SettingsPanels) —
-// rotating -90deg about Y turns that toward the color-select camera, which
-// approaches from +Z. In Paint mode PaintRig drives the same group's
-// transform every frame instead (handheld can following the mouse).
+// The center can faces the color-select camera with its physical RGB sliders.
+// In Paint mode PaintRig drives the same group's transform every frame
+// instead (handheld can following the mouse).
 const COLOR_SELECT_ROTATION = [0, -Math.PI / 2, 0];
+// Side cans turn 180deg from the center can so their physical sliders face
+// away. Their decal groups are wrapped onto that opposite side.
+const COLOR_SELECT_SIDE_ROTATION = [0, Math.PI / 2, 0];
 const GROUND_DEPTH = 10;
+// Measured from sprayCanSeparated.glb bbox Z (-1.20238..1.21928): one can
+// diameter after REALISTIC_CAN_SCALE. Side cans use this as their center
+// offset so the three cans sit side by side with no gap.
+const CAN_DIAMETER = 2.42166 * REALISTIC_CAN_SCALE;
 
 export default function WetPaint() {
   const config = useSceneControls();
@@ -65,7 +71,9 @@ export default function WetPaint() {
       ),
       size: config.brushSize,
       hardness: config.brushHardness,
+      opacity: config.brushOpacity,
       texture: config.brushTexture,
+      finish: config.brushFinish,
       dripChance: config.dripChance,
       dripLengthScale: config.dripLength,
     }),
@@ -73,7 +81,9 @@ export default function WetPaint() {
       config.brushColorB,
       config.brushColorG,
       config.brushColorR,
+      config.brushFinish,
       config.brushHardness,
+      config.brushOpacity,
       config.brushSize,
       config.brushTexture,
       config.dripChance,
@@ -94,11 +104,15 @@ export default function WetPaint() {
     () => ({
       brushSize: config.brushSize,
       brushHardness: config.brushHardness,
+      brushOpacity: config.brushOpacity,
       brushTexture: config.brushTexture,
+      brushFinish: config.brushFinish,
       dripChance: config.dripChance,
     }),
     [
+      config.brushFinish,
       config.brushHardness,
+      config.brushOpacity,
       config.brushSize,
       config.brushTexture,
       config.dripChance,
@@ -187,6 +201,47 @@ export default function WetPaint() {
           onSettingChange={config.setBrushSetting}
         />
       </group>
+
+      {isColorSelectMode && (
+        <>
+          <group
+            position={[
+              CAN_BASE_POSITION[0] - CAN_DIAMETER,
+              CAN_BASE_POSITION[1],
+              CAN_BASE_POSITION[2],
+            ]}
+            rotation={COLOR_SELECT_SIDE_ROTATION}
+            scale={REALISTIC_CAN_SCALE}
+          >
+            <InteractiveCan
+              decals="wheel"
+              showSliders={false}
+              rgb={rgb}
+              settings={brushSettings}
+              onRgbChange={config.setBrushColor}
+              onSettingChange={config.setBrushSetting}
+            />
+          </group>
+          <group
+            position={[
+              CAN_BASE_POSITION[0] + CAN_DIAMETER,
+              CAN_BASE_POSITION[1],
+              CAN_BASE_POSITION[2],
+            ]}
+            rotation={COLOR_SELECT_SIDE_ROTATION}
+            scale={REALISTIC_CAN_SCALE}
+          >
+            <InteractiveCan
+              decals="brush"
+              showSliders={false}
+              rgb={rgb}
+              settings={brushSettings}
+              onRgbChange={config.setBrushColor}
+              onSettingChange={config.setBrushSetting}
+            />
+          </group>
+        </>
+      )}
 
       <PaintRig
         mode={config.mode}

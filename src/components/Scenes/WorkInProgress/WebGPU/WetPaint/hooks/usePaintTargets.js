@@ -44,8 +44,16 @@ export function usePaintTargetsRegistry() {
 }
 
 // Registers meshRef.current for the mesh's lifetime. `stamp`/`clear` may be
-// null for kind 'ui' (reticle hover only).
-export function usePaintTarget({ clear, kind = 'paint', meshRef, stamp }) {
+// null for kind 'ui' (reticle hover only). `worldWidth` (meters spanned by
+// the surface's full UV width, when known) lets PaintRig size the
+// cross-surface spray footprint; surfaces without it fall back to a default.
+export function usePaintTarget({
+  clear,
+  kind = 'paint',
+  meshRef,
+  stamp,
+  worldWidth = null,
+}) {
   const registry = usePaintTargetsRegistry();
   const handlersRef = useRef({ clear, stamp });
   handlersRef.current = { clear, stamp };
@@ -53,10 +61,11 @@ export function usePaintTarget({ clear, kind = 'paint', meshRef, stamp }) {
   const stableEntry = useMemo(
     () => ({
       kind,
+      worldWidth,
       stamp: (args) => handlersRef.current.stamp?.(args),
       clear: () => handlersRef.current.clear?.(),
     }),
-    [kind]
+    [kind, worldWidth]
   );
 
   useEffect(() => {

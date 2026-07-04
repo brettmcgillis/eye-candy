@@ -121,6 +121,15 @@ function Ground({ depth = 10, width = 14 }) {
         rotation={GROUND_ROTATION}
         position={[0, SIDEWALK_HEIGHT + 0.006, SIDEWALK_DEPTH / 2]}
       />
+      {/* The curb's vertical front face (todo item 68) — the slabs are
+          instanced so they can't take a PaintableShell; a thin decal strip
+          along the curb line covers the face the player actually sees. */}
+      <PaintDecal
+        width={width}
+        height={SIDEWALK_HEIGHT}
+        dripEnabled={false}
+        position={[0, SIDEWALK_HEIGHT / 2, SIDEWALK_DEPTH + 0.006]}
+      />
       <PaintDecal
         width={width}
         height={asphaltDepth}

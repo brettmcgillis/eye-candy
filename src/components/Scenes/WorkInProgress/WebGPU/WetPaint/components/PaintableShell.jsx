@@ -20,7 +20,7 @@ function PaintableShell({
   rotation,
   scale,
 }) {
-  const { texture, stamp, clear } = usePaintableSurface({
+  const { texture, metalTexture, stamp, clear } = usePaintableSurface({
     width: 1,
     height: 1,
     resolution,
@@ -37,13 +37,15 @@ function PaintableShell({
       rotation={rotation}
       scale={scale}
     >
-      <meshBasicMaterial
+      <meshStandardMaterial
         map={texture}
+        metalnessMap={metalTexture}
+        metalness={1}
+        roughness={0.45}
         transparent
         depthWrite={false}
         polygonOffset
         polygonOffsetFactor={-4}
-        toneMapped={false}
       />
     </mesh>
   );

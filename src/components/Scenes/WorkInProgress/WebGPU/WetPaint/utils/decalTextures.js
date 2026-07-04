@@ -128,7 +128,9 @@ export function createSliderDecalTexture({ label, trackStops }) {
   return makeTexture(canvas);
 }
 
-// Two-option chip row (e.g. CLEAN | SPLAT). Highlighted chip = activeIndex.
+// N-option chip row (e.g. CLEAN | SPLAT, or a brush-picker row). Highlighted
+// chip = activeIndex. Click mapping lives in ToggleDecal
+// (toggleIndexFromUv), kept here beside the drawing so they can't drift.
 export function createToggleDecalTexture({ options, activeIndex }) {
   const width = 512;
   const height = 96;
@@ -140,7 +142,11 @@ export function createToggleDecalTexture({ options, activeIndex }) {
   roundedBackground(ctx, width, height);
 
   const pad = 10;
-  const chipWidth = (width - pad * 3) / 2;
+  const count = options.length;
+  const chipWidth = (width - pad * (count + 1)) / count;
+  // The default label font overflows chips once the row splits 3+ ways.
+  const font =
+    count > 2 ? `bold ${chipWidth > 140 ? 36 : 30}px sans-serif` : LABEL_FONT;
   options.forEach((option, i) => {
     const x = pad + i * (chipWidth + pad);
     ctx.fillStyle = i === activeIndex ? '#e8e8e8' : '#2e2e2e';
@@ -149,7 +155,7 @@ export function createToggleDecalTexture({ options, activeIndex }) {
     ctx.fill();
 
     ctx.fillStyle = i === activeIndex ? '#111111' : '#9a9a9a';
-    ctx.font = LABEL_FONT;
+    ctx.font = font;
     ctx.textBaseline = 'middle';
     ctx.textAlign = 'center';
     ctx.fillText(option, x + chipWidth / 2, height / 2 + 2);
@@ -157,4 +163,9 @@ export function createToggleDecalTexture({ options, activeIndex }) {
   });
 
   return makeTexture(canvas);
+}
+
+// uv.x -> chip index for the row drawn above.
+export function toggleIndexFromUv(uv, optionCount) {
+  return Math.min(optionCount - 1, Math.floor(uv.x * optionCount));
 }

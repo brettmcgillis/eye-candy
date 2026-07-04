@@ -14,7 +14,7 @@ import getTextControls from '../components/getTextControls';
 import getWaterControls from '../components/getWaterControls';
 import { DEFAULT_PRESET, PRESETS, getPresetControls } from '../presets/presets';
 
-const SCENE_LABEL = 'From The Dirt';
+const SCENE_LABEL = 'Touch Grass';
 const CAMERA_FOLDER_PATH = `${SCENE_LABEL}.Camera`;
 
 // Near-orthographic look: a long, narrow-FOV perspective shot pulled far

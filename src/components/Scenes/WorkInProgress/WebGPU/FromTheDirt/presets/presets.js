@@ -7,7 +7,7 @@ export const DEFAULT_PRESET = 'Sunny Afternoon';
 export const PRESETS = {
   'Sunny Afternoon': {
     // Text
-    text: 'OH, FUCK!',
+    text: 'FUCK',
     fontFamily: FONT_OPTIONS['Arial Black'],
     fontWeight: '900',
     textScale: 0.72,

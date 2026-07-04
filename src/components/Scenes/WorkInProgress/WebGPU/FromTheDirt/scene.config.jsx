@@ -2,7 +2,7 @@ import React, { lazy } from 'react';
 import { GiHighGrass } from 'react-icons/gi';
 
 function SceneIcon() {
-  return <GiHighGrass color="#000000" size={24} />;
+  return <GiHighGrass color="#034907" size={24} />;
 }
 
 export default {

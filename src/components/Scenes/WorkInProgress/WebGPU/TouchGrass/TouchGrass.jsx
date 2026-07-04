@@ -2,7 +2,10 @@ import React from 'react';
 
 import CameraRig from '../../../../rigging/CameraRig';
 import FloatingSeeds from './components/FloatingSeeds';
+import Flowers from './components/Flowers';
 import Grass from './components/Grass';
+import Insects from './components/Insects';
+import PostEffects from './components/PostEffects';
 import SkyRig from './components/SkyRig';
 import Terrain from './components/Terrain';
 import Water from './components/Water';
@@ -49,6 +52,12 @@ export default function TouchGrass() {
           config={config}
           heightField={heightField}
         />
+        <Flowers
+          cloudShade={cloudShade}
+          config={config}
+          heightField={heightField}
+        />
+        <Insects config={config} heightField={heightField} />
         <Water
           cloudShade={cloudShade}
           config={config}
@@ -60,6 +69,27 @@ export default function TouchGrass() {
           heightField={heightField}
         />
       </group>
+      <PostEffects
+        bloomDownSampleRatio={config.bloomDownSampleRatio}
+        bloomEnabled={config.bloomEnabled}
+        bloomRadius={config.bloomRadius}
+        bloomStrength={config.bloomStrength}
+        bloomThreshold={config.bloomThreshold}
+        chromaScale={config.postChromaScale}
+        chromaStrength={config.postChromaStrength}
+        contrast={config.postContrast}
+        dofAmount={config.postDofAmount}
+        dofBlurRadius={config.postDofBlurRadius}
+        dofDownSampleRatio={config.postDofDownSampleRatio}
+        dofEnabled={config.postDofEnabled}
+        filmEnabled={config.postFilmEnabled}
+        grainAmount={config.postGrainAmount}
+        postEnabled={config.postEnabled}
+        saturation={config.postSaturation}
+        toneMappingExposure={config.postToneMappingExposure}
+        vignetteIntensity={config.postVignetteIntensity}
+        vignetteSize={config.postVignetteSize}
+      />
     </>
   );
 }

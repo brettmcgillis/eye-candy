@@ -105,6 +105,132 @@ export default function useSceneControls() {
     Water: getWaterControls(p),
     Seeds: getSeedsControls(p),
     Sky: getSkyControls(p),
+    Post: folder(
+      {
+        postEnabled: {
+          label: 'Enabled',
+          value: p.postEnabled ?? true,
+        },
+        postToneMappingExposure: {
+          label: 'Exposure',
+          max: 2.5,
+          min: 0.1,
+          step: 0.01,
+          value: p.postToneMappingExposure ?? 1,
+        },
+        postDofEnabled: {
+          label: 'DoF',
+          value: p.postDofEnabled ?? true,
+        },
+        postDofAmount: {
+          label: 'DoF Amount',
+          max: 1,
+          min: 0,
+          step: 0.005,
+          value: p.postDofAmount ?? 0.08,
+        },
+        postDofBlurRadius: {
+          label: 'DoF Radius',
+          max: 1.2,
+          min: 0,
+          step: 0.01,
+          value: p.postDofBlurRadius ?? 0.18,
+        },
+        postDofDownSampleRatio: {
+          label: 'DoF Downsample',
+          max: 4,
+          min: 1,
+          step: 1,
+          value: p.postDofDownSampleRatio ?? 2,
+        },
+        bloomEnabled: {
+          label: 'Bloom',
+          value: p.bloomEnabled ?? true,
+        },
+        bloomThreshold: {
+          label: 'Bloom Threshold',
+          max: 2,
+          min: 0,
+          step: 0.01,
+          value: p.bloomThreshold ?? 0.78,
+        },
+        bloomStrength: {
+          label: 'Bloom Strength',
+          max: 2,
+          min: 0,
+          step: 0.01,
+          value: p.bloomStrength ?? 0.12,
+        },
+        bloomRadius: {
+          label: 'Bloom Radius',
+          max: 1.5,
+          min: 0,
+          step: 0.01,
+          value: p.bloomRadius ?? 0.42,
+        },
+        bloomDownSampleRatio: {
+          label: 'Bloom Downsample',
+          max: 4,
+          min: 1,
+          step: 1,
+          value: p.bloomDownSampleRatio ?? 2,
+        },
+        postFilmEnabled: {
+          label: 'Film Grade',
+          value: p.postFilmEnabled ?? true,
+        },
+        postVignetteIntensity: {
+          label: 'Vignette',
+          max: 1,
+          min: 0,
+          step: 0.005,
+          value: p.postVignetteIntensity ?? 0.14,
+        },
+        postVignetteSize: {
+          label: 'Vignette Size',
+          max: 1,
+          min: 0.1,
+          step: 0.005,
+          value: p.postVignetteSize ?? 0.42,
+        },
+        postGrainAmount: {
+          label: 'Grain',
+          max: 0.25,
+          min: 0,
+          step: 0.001,
+          value: p.postGrainAmount ?? 0.04,
+        },
+        postChromaStrength: {
+          label: 'Chroma',
+          max: 0.01,
+          min: 0,
+          step: 0.0001,
+          value: p.postChromaStrength ?? 0.0016,
+        },
+        postChromaScale: {
+          label: 'Chroma Scale',
+          max: 2,
+          min: 0.5,
+          step: 0.01,
+          value: p.postChromaScale ?? 1.15,
+        },
+        postContrast: {
+          label: 'Contrast',
+          max: 1.8,
+          min: 0.4,
+          step: 0.01,
+          value: p.postContrast ?? 1,
+        },
+        postSaturation: {
+          label: 'Saturation',
+          max: 1.8,
+          min: 0,
+          step: 0.01,
+          value: p.postSaturation ?? 1,
+        },
+      },
+      { collapsed: true }
+    ),
   }));
 
   attachSetControls(setControls);

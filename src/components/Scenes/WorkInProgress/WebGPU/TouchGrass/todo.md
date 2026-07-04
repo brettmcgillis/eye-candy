@@ -10,11 +10,8 @@ Rolling grassy terrain; letters CSG-carved from the terrain down to a common
 water table; sediment strata on the cut walls; wind in the grass; sunny
 afternoon with light clouds rolling through (Surrender-style cloud shade).
 
-- [x] Shared CPU-baked heightfield (hills FBM + canvas-text carve) sampled by
-      terrain (GPU displacement + per-pixel normals), grass scatter (CPU),
-      and strata shading
-- [x] Instanced grass (up to 150k blades, buffers allocated once), FBM gust
-      field + per-blade flutter, carve-aware scatter with edge thinning
+- [x] Shared CPU-baked heightfield (hills FBM + canvas-text carve) sampled by terrain (GPU displacement + per-pixel normals), grass scatter (CPU), and strata shading
+- [x] Instanced grass (up to 150k blades, buffers allocated once), FBM gust field + per-blade flutter, carve-aware scatter with edge thinning
 - [x] Common water table plane with noise ripple normals
 - [x] Absolute-Y strata bands + surface-hugging topsoil + damp line at water
 - [x] Cloud-shadow TSL Fn shared by terrain/grass/water
@@ -28,38 +25,34 @@ afternoon with light clouds rolling through (Surrender-style cloud shade).
       clump-dome normal blending in the fragment stage
 - [x] Height AO power curve + fake backlight translucency (sun through
       blades at grazing angles)
-- [ ] Revisit the following since the camera gets close to the grass: LOD vertex folding, distance stochastic culling/density compensation, compute-pass
-      frustum culling, view-dependent thickness tilt, distance denoising blends.
-      Studied `~/dev/examples/r3f-procedural-grass` (Ghost-of-Tsushima style)
-- [ ] might want to take a look at dev/examples/demo-2022-grass, dev/examples/demo-2022-realistic-meadow for a good grass solutions. looks much better than ours. includes lil flowers.
 - [x] Strata band look — want more than 2 band colors, pebble grain
-- [x] Waterline foam ring + depth-tinted water (water samples the shared
-      heightfield: noisy lapping foam edge + second pulsing band at shallow
-      shores, darker body over deep letter floors, foam boosts opacity)
-- [ ] Roots/overhang detail at the grass lip of each cut
+- [x] Waterline foam ring + depth-tinted water (water samples the shared heightfield: noisy lapping foam edge + second pulsing band at shallow shores, darker body over deep letter floors, foam boosts opacity)
 - [x] Floating seeds in the light
-- [ ] seeds look good but where do they come from? need some flowers
 - [x] fix seeds - currently following terrain down into text cutouts, should just go across the top where the terrain would have been.
-- [ ] Dragonflies
-- [ ] butterflies
-- [ ] Adaptive quality (blade count + segments by device)
-- [ ] Post later per conventions (maybe subtle vignette/DoF once settled)
 - [x] Add more font options.
 - [x] Add terrain lines around exterior of plane, not just inside text
 - [x] Make text input a text area, alow for line breaks in text cut outs of grass.
-- [ ] Align this todo file with repo convention!!!
 - [x] Prevent overlay hide when typing text in text box.
 - [x] Add more noise to dirt strata, lines are too clean currently. lines should follow curves of terrain too, like compacted layers over time.
 - [x] Allow rotating text up to 90\* to allow max terrain usage.
 - [x] Allow rotating terrain up to 90\* to allow max view-port usage.
-- [ ] could we allow rotating text on x axis so the hole goes into the earth on a slant?
 - [x] make sure wind speed over clouds, grass and water are uniform.
-- [ ] could we use eztree to add some nice trees and shrubs on the terrain
-- [ ] improve water apperance. might consider using the realistic ocean from RowItAlone Webgpu
 - [x] add toggle to switch between 'chunk' of terrain with sidewalls, and an 'endless' terrain where we never see eges.
 - [x] would like a preset where the terrain height is animated and water table depth fluctuates slightly
 - [x] the curves of fonts are looking pixelated. try and fix/smooth that out
 - [x] add a preset for, and enable water to have the characteristics of dirty black oil.
+
+- [ ] allow rotating text on x-axis so the hole goes into the earth on a slant
+- [x] Dragonflies & Butterflies & Bees (good example in `~/dev/examples/demo-2022-grass` )
+- [x] seeds look good but where do they come from? -> need some flowers (good example in `~/dev/examples/demo-2022-grass`)
+- [x] make flowers sway in wind
+- [x] Post later per conventions (SnowSystem-style parity pass implemented: DoF-style blur, bloom, and film grade with vignette/grain/chroma/contrast/saturation)
+- [ ] use `ez-tree` dependency to add some nice trees and shrubs on the terrain
+- [ ] Roots/overhang detail at the grass lip of each cut
+- [ ] Ambient audio & audio toggle overlay button
+- [ ] Revisit the following since the camera gets close to the grass: LOD vertex folding, distance stochastic culling/density compensation, compute-pass frustum culling, view-dependent thickness tilt, distance denoising blends. Studied `~/dev/examples/r3f-procedural-grass` (Ghost-of-Tsushima style) & revo realms (TSL) `~/dev/examples/revo-realms`
+- [ ] might want to take a look at `~/dev/examples/demo-2022-grass`,`~/dev/examples/demo-2022-realistic-meadow` for a good grass solutions. looks much better than ours. includes lil flowers.
+- [ ] improve water apperance. might consider using the realistic ocean from RowItAlone Webgpu
 
 # // Presets
 

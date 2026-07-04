@@ -18,6 +18,103 @@ import * as THREE from 'three/webgpu';
 import React, { memo, useEffect, useMemo } from 'react';
 
 const SEGMENTS = 320;
+const WALL_SEGMENTS = 192;
+
+function buildFrontBackWallGeometry({
+  half,
+  sampleHeight,
+  segments,
+  wallBottom,
+  z,
+}) {
+  const positions = [];
+
+  for (let i = 0; i < segments; i += 1) {
+    const t0 = i / segments;
+    const t1 = (i + 1) / segments;
+    const x0 = -half + t0 * half * 2;
+    const x1 = -half + t1 * half * 2;
+    const y0 = sampleHeight(x0, z);
+    const y1 = sampleHeight(x1, z);
+
+    positions.push(
+      x0,
+      y0,
+      z,
+      x1,
+      y1,
+      z,
+      x1,
+      wallBottom,
+      z,
+      x0,
+      y0,
+      z,
+      x1,
+      wallBottom,
+      z,
+      x0,
+      wallBottom,
+      z
+    );
+  }
+
+  const geometry = new THREE.BufferGeometry();
+  geometry.setAttribute(
+    'position',
+    new THREE.Float32BufferAttribute(positions, 3)
+  );
+  geometry.computeVertexNormals();
+  return geometry;
+}
+
+function buildLeftRightWallGeometry({
+  half,
+  sampleHeight,
+  segments,
+  wallBottom,
+  x,
+}) {
+  const positions = [];
+
+  for (let i = 0; i < segments; i += 1) {
+    const t0 = i / segments;
+    const t1 = (i + 1) / segments;
+    const z0 = -half + t0 * half * 2;
+    const z1 = -half + t1 * half * 2;
+    const y0 = sampleHeight(x, z0);
+    const y1 = sampleHeight(x, z1);
+
+    positions.push(
+      x,
+      y0,
+      z0,
+      x,
+      y1,
+      z1,
+      x,
+      wallBottom,
+      z1,
+      x,
+      y0,
+      z0,
+      x,
+      wallBottom,
+      z1,
+      x,
+      wallBottom,
+      z0
+    );
+  }
+
+  const geometry = new THREE.BufferGeometry();
+  geometry.setAttribute(
+    'position',
+    new THREE.Float32BufferAttribute(positions, 3)
+  );
+  geometry.computeVertexNormals();
+  return geometry;
+}
 
 // Heightfield-displaced ground plane. The letters are "subtracted" by the
 // carve baked into the heightfield; walls and pit floors are shaded as
@@ -30,7 +127,9 @@ function Terrain({ cloudShade, config, heightField }) {
       grassColorB: uniform(new THREE.Color(config.grassColorB)),
       strataDark: uniform(new THREE.Color(config.strataDark)),
       strataLight: uniform(new THREE.Color(config.strataLight)),
+      strataPebbleStrength: uniform(config.strataPebbleStrength ?? 1),
       strataScale: uniform(config.strataScale),
+      strataWarpStrength: uniform(config.strataWarpStrength ?? 1),
       topsoilColor: uniform(new THREE.Color(config.topsoilColor)),
       topsoilDepth: uniform(config.topsoilDepth),
       waterLine: uniform(config.waterLevel),
@@ -43,8 +142,10 @@ function Terrain({ cloudShade, config, heightField }) {
     uniforms.grassColorB.value.set(config.grassColorB);
     uniforms.strataDark.value.set(config.strataDark);
     uniforms.strataLight.value.set(config.strataLight);
+    uniforms.strataPebbleStrength.value = config.strataPebbleStrength ?? 1;
     uniforms.topsoilColor.value.set(config.topsoilColor);
     uniforms.strataScale.value = config.strataScale;
+    uniforms.strataWarpStrength.value = config.strataWarpStrength ?? 1;
     uniforms.topsoilDepth.value = config.topsoilDepth;
     uniforms.waterLine.value = config.waterLevel;
   }, [
@@ -52,7 +153,9 @@ function Terrain({ cloudShade, config, heightField }) {
     config.grassColorB,
     config.strataDark,
     config.strataLight,
+    config.strataPebbleStrength,
     config.strataScale,
+    config.strataWarpStrength,
     config.topsoilColor,
     config.topsoilDepth,
     config.waterLevel,
@@ -94,12 +197,33 @@ function Terrain({ cloudShade, config, heightField }) {
       .add(0.5);
     const meadow = mix(uniforms.grassColorA, uniforms.grassColorB, meadowNoise);
 
-    // Sediment strata: horizontal bands in absolute world Y with a noisy
-    // wobble, darker seams between bands, per-band tint variation.
-    const wobble = mx_noise_float(positionWorld.mul(vec3(0.5, 1.5, 0.5))).mul(
-      0.3
-    );
-    const band = worldY.mul(uniforms.strataScale).add(wobble);
+    // Exterior contour lines: subtle terrain-following rings so strata-like
+    // linework is visible beyond the carved letters too.
+    const contourBand = field.r
+      .mul(uniforms.strataScale.mul(0.82))
+      .add(mx_noise_float(positionWorld.mul(vec3(0.22, 0, 0.22))).mul(0.18));
+    const contourPos = contourBand.fract();
+    const contourLine = smoothstep(0.0, 0.07, contourPos)
+      .mul(smoothstep(1.0, 0.93, contourPos))
+      .mul(0.11);
+    const contourTint = uniforms.topsoilColor.mul(contourLine.mul(0.35));
+    const meadowContours = meadow
+      .mul(float(1).sub(contourLine))
+      .add(contourTint);
+
+    // Sediment strata: warped bands with a richer 4-tone palette and pebble
+    // breakup so cut walls feel geologic instead of flat/clean.
+    const wobble = mx_noise_float(
+      vec3(positionWorld.x.mul(0.5), 0, positionWorld.z.mul(0.5))
+    ).mul(uniforms.strataWarpStrength.mul(0.3));
+    const curveWarp = hill
+      .mul(uniforms.strataWarpStrength.mul(0.45))
+      .add(
+        mx_noise_float(positionWorld.mul(vec3(0.18, 0, 0.18))).mul(
+          uniforms.strataWarpStrength.mul(0.22)
+        )
+      );
+    const band = worldY.mul(uniforms.strataScale).add(wobble).add(curveWarp);
     const bandIndex = band.floor();
     const bandHash = bandIndex.mul(12.9898).sin().mul(43758.547).fract();
     const bandPos = band.fract();
@@ -107,9 +231,44 @@ function Terrain({ cloudShade, config, heightField }) {
       .mul(smoothstep(1.0, 0.88, bandPos))
       .mul(0.25)
       .add(0.75);
-    const strata = mix(uniforms.strataLight, uniforms.strataDark, bandHash).mul(
-      seam
+
+    const strataMidWarm = mix(uniforms.strataDark, uniforms.strataLight, 0.35);
+    const strataMidCool = mix(
+      uniforms.strataDark,
+      uniforms.strataLight,
+      0.7
+    ).mul(vec3(0.95, 0.98, 1.02));
+
+    const tone0 = mix(
+      uniforms.strataDark,
+      strataMidWarm,
+      smoothstep(0, 0.33, bandHash)
     );
+    const tone1 = mix(tone0, strataMidCool, smoothstep(0.33, 0.66, bandHash));
+    const tone2 = mix(
+      tone1,
+      uniforms.strataLight,
+      smoothstep(0.66, 1, bandHash)
+    );
+
+    const pebbleField = mx_noise_float(
+      positionWorld.mul(vec3(22, 26, 22)).add(vec3(0, bandIndex.mul(0.23), 0))
+    );
+    const pebbleDark = smoothstep(0.78, 0.96, pebbleField).mul(
+      uniforms.strataPebbleStrength.mul(0.2)
+    );
+    const pebbleBright = smoothstep(0.985, 1.0, pebbleField).mul(
+      uniforms.strataPebbleStrength.mul(0.08)
+    );
+    const microGrain = mx_noise_float(positionWorld.mul(vec3(48, 64, 48)))
+      .sub(0.5)
+      .mul(uniforms.strataPebbleStrength.mul(0.09));
+
+    const strata = tone2
+      .mul(float(1).sub(pebbleDark))
+      .add(vec3(pebbleBright, pebbleBright, pebbleBright))
+      .add(vec3(microGrain, microGrain, microGrain))
+      .mul(seam);
 
     // Topsoil hugs the surface; strata take over with depth.
     const topsoilBlend = smoothstep(
@@ -130,7 +289,7 @@ function Terrain({ cloudShade, config, heightField }) {
       worldY
     );
 
-    const base = mix(meadow, soil, wallBlend)
+    const base = mix(meadowContours, soil, wallBlend)
       .mul(float(1).sub(damp.mul(0.45)))
       .mul(grain);
 
@@ -156,17 +315,197 @@ function Terrain({ cloudShade, config, heightField }) {
     [heightField.worldSize]
   );
 
+  const wallMaterial = useMemo(() => {
+    const mat = new THREE.MeshStandardNodeMaterial({
+      metalness: 0,
+      roughness: 0.92,
+      side: THREE.DoubleSide,
+    });
+
+    const worldSize = float(heightField.worldSize);
+    const fieldUv = vec2(
+      positionWorld.x.div(worldSize).add(0.5),
+      float(0.5).sub(positionWorld.z.div(worldSize))
+    );
+    const wallField = texture(heightField.texture, fieldUv);
+    const wallHill = wallField.b;
+    const wallY = positionWorld.y;
+    const wallDepthBelow = wallHill.sub(wallY).max(0);
+
+    const wobble = mx_noise_float(positionWorld.mul(vec3(0.5, 1.5, 0.5))).mul(
+      uniforms.strataWarpStrength.mul(0.3)
+    );
+    const curveWarp = wallHill
+      .mul(uniforms.strataWarpStrength.mul(0.45))
+      .add(
+        mx_noise_float(positionWorld.mul(vec3(0.18, 0, 0.18))).mul(
+          uniforms.strataWarpStrength.mul(0.22)
+        )
+      );
+    // Use depth below the local surface so side-wall bands track the terrain
+    // contour profile instead of staying globally horizontal.
+    const band = wallDepthBelow
+      .mul(uniforms.strataScale)
+      .add(wobble)
+      .add(curveWarp);
+    const bandIndex = band.floor();
+    const bandHash = bandIndex.mul(12.9898).sin().mul(43758.547).fract();
+    const bandPos = band.fract();
+    const seam = smoothstep(0.0, 0.12, bandPos)
+      .mul(smoothstep(1.0, 0.88, bandPos))
+      .mul(0.25)
+      .add(0.75);
+
+    const strataMidWarm = mix(uniforms.strataDark, uniforms.strataLight, 0.35);
+    const strataMidCool = mix(
+      uniforms.strataDark,
+      uniforms.strataLight,
+      0.7
+    ).mul(vec3(0.95, 0.98, 1.02));
+    const tone0 = mix(
+      uniforms.strataDark,
+      strataMidWarm,
+      smoothstep(0, 0.33, bandHash)
+    );
+    const tone1 = mix(tone0, strataMidCool, smoothstep(0.33, 0.66, bandHash));
+    const tone2 = mix(
+      tone1,
+      uniforms.strataLight,
+      smoothstep(0.66, 1, bandHash)
+    );
+
+    const pebbleField = mx_noise_float(
+      positionWorld.mul(vec3(22, 26, 22)).add(vec3(0, bandIndex.mul(0.23), 0))
+    );
+    const pebbleDark = smoothstep(0.78, 0.96, pebbleField).mul(
+      uniforms.strataPebbleStrength.mul(0.2)
+    );
+    const pebbleBright = smoothstep(0.985, 1.0, pebbleField).mul(
+      uniforms.strataPebbleStrength.mul(0.08)
+    );
+    const microGrain = mx_noise_float(positionWorld.mul(vec3(48, 64, 48)))
+      .sub(0.5)
+      .mul(uniforms.strataPebbleStrength.mul(0.09));
+
+    const strata = tone2
+      .mul(float(1).sub(pebbleDark))
+      .add(vec3(pebbleBright, pebbleBright, pebbleBright))
+      .add(vec3(microGrain, microGrain, microGrain))
+      .mul(seam);
+
+    const topsoilBlend = smoothstep(
+      uniforms.topsoilDepth,
+      uniforms.topsoilDepth.mul(0.4),
+      wallDepthBelow
+    );
+    const soil = mix(strata, uniforms.topsoilColor, topsoilBlend);
+    const damp = smoothstep(
+      uniforms.waterLine.add(0.35),
+      uniforms.waterLine.sub(0.1),
+      wallY
+    );
+    const grain = mx_noise_float(positionWorld.mul(18)).mul(0.08).add(0.96);
+
+    mat.colorNode = soil
+      .mul(float(1).sub(damp.mul(0.45)))
+      .mul(grain)
+      .mul(cloudShade(positionWorld.xz));
+
+    return mat;
+  }, [cloudShade, heightField.texture, heightField.worldSize, uniforms]);
+
+  const wallGeometries = useMemo(() => {
+    const half = heightField.worldSize * 0.5;
+    const wallBottom =
+      config.waterLevel -
+      config.pitDepth -
+      Math.max(1.2, config.hillAmplitude * 0.85);
+
+    return {
+      back: buildFrontBackWallGeometry({
+        half,
+        sampleHeight: heightField.sampleHeight,
+        segments: WALL_SEGMENTS,
+        wallBottom,
+        z: -half,
+      }),
+      front: buildFrontBackWallGeometry({
+        half,
+        sampleHeight: heightField.sampleHeight,
+        segments: WALL_SEGMENTS,
+        wallBottom,
+        z: half,
+      }),
+      left: buildLeftRightWallGeometry({
+        half,
+        sampleHeight: heightField.sampleHeight,
+        segments: WALL_SEGMENTS,
+        wallBottom,
+        x: -half,
+      }),
+      right: buildLeftRightWallGeometry({
+        half,
+        sampleHeight: heightField.sampleHeight,
+        segments: WALL_SEGMENTS,
+        wallBottom,
+        x: half,
+      }),
+    };
+  }, [
+    config.hillAmplitude,
+    config.pitDepth,
+    config.waterLevel,
+    heightField.sampleHeight,
+    heightField.worldSize,
+  ]);
+
   useEffect(() => () => geometry.dispose(), [geometry]);
   useEffect(() => () => material.dispose(), [material]);
+  useEffect(() => () => wallMaterial.dispose(), [wallMaterial]);
+  useEffect(
+    () => () => {
+      wallGeometries.front.dispose();
+      wallGeometries.back.dispose();
+      wallGeometries.left.dispose();
+      wallGeometries.right.dispose();
+    },
+    [wallGeometries]
+  );
 
   return (
-    <mesh
-      castShadow={config.terrainCastShadow}
-      geometry={geometry}
-      material={material}
-      receiveShadow
-      rotation-x={-Math.PI / 2}
-    />
+    <group>
+      <mesh
+        castShadow={config.terrainCastShadow}
+        geometry={geometry}
+        material={material}
+        receiveShadow
+        rotation-x={-Math.PI / 2}
+      />
+      <mesh
+        castShadow
+        geometry={wallGeometries.front}
+        material={wallMaterial}
+        receiveShadow
+      />
+      <mesh
+        castShadow
+        geometry={wallGeometries.back}
+        material={wallMaterial}
+        receiveShadow
+      />
+      <mesh
+        castShadow
+        geometry={wallGeometries.left}
+        material={wallMaterial}
+        receiveShadow
+      />
+      <mesh
+        castShadow
+        geometry={wallGeometries.right}
+        material={wallMaterial}
+        receiveShadow
+      />
+    </group>
   );
 }
 

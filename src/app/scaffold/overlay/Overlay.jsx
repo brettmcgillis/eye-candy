@@ -44,6 +44,18 @@ function getHideUIFromQueryParam() {
   return params.has(OVERLAY_HIDE_UI_QUERY_PARAM);
 }
 
+function isTypingTarget(target) {
+  if (!target) return false;
+
+  const tagName = target.tagName?.toLowerCase();
+  return (
+    target.isContentEditable ||
+    tagName === 'input' ||
+    tagName === 'textarea' ||
+    tagName === 'select'
+  );
+}
+
 function Overlay() {
   const local = localEnv();
   const readLevaValue = (state, keys) => {
@@ -82,7 +94,12 @@ function Overlay() {
   // Hotkey to toggle UI visibility (Shift+H)
   useEffect(() => {
     const handleKeyDown = (e) => {
-      if (e.shiftKey && e.key === 'H') {
+      const active = document.activeElement;
+      if (isTypingTarget(e.target) || isTypingTarget(active)) {
+        return;
+      }
+
+      if (e.shiftKey && e.key?.toLowerCase() === 'h') {
         e.preventDefault();
         setHideUI((prev) => !prev);
       }

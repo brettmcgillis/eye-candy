@@ -7,17 +7,17 @@ import { memo, useEffect, useMemo, useRef } from 'react';
 
 import { useFrame, useThree } from '@react-three/fiber';
 
-import applySecurityCamOverlay from '../../Aisle9/components/SecurityCamOverlayNode';
 import {
   applyRetroColorDepth,
   applyRetroScanlines,
   applyRetroVignette,
-} from '../../Aisle9/utils/retroEffectNodes';
+} from '../../../../../materials/webGPU/crt/retroEffectNodes';
+import applySecurityCamOverlay from '../../../../../materials/webGPU/crt/securityCamOverlayNode';
 import {
   createSecurityCamTimestampTexture,
   drawSecurityCamTimestamp,
   resolveSurveillanceFrameBounds,
-} from '../../Aisle9/utils/surveillanceHUD';
+} from '../../../../../materials/webGPU/crt/surveillanceHUD';
 
 const AISLE_LABEL = 'DEPT. OF BIRDS';
 

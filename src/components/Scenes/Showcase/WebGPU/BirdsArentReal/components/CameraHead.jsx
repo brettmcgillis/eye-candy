@@ -1,3 +1,5 @@
+/* eslint-disable no-param-reassign */
+
 /* eslint-disable no-nested-ternary */
 import * as THREE from 'three';
 

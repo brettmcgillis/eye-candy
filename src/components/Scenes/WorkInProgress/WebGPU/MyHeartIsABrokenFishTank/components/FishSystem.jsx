@@ -2,7 +2,7 @@ import React, { useMemo, useRef } from 'react';
 
 import { useFrame } from '@react-three/fiber';
 
-import { GoldFish } from '../../../../../elements/goldFish/GoldFish';
+import GoldFish from '../../../../../elements/GoldFish/GoldFish';
 import getTankLayout, { MODEL_SAND_HEIGHT } from '../utils/tankLayout';
 
 const BROKEN_PANE_DIRECTIONS = {

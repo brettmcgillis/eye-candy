@@ -156,14 +156,14 @@ export const PRESETS = {
 PRESETS['Breathing Basin'] = {
   ...PRESETS['Sunny Afternoon'],
   cloudCoverage: 0.5,
-  terrainEdgeMode: 'endless',
-  terrainPulseAmplitude: 0.08,
-  terrainPulseScale: 0.22,
-  terrainPulseSpeed: 0.34,
+  terrainEdgeMode: 'chunk',
+  terrainPulseAmplitude: 0.38,
+  terrainPulseScale: 0.5,
+  terrainPulseSpeed: 1.1,
   textRotation: 35,
   waterLevel: -0.95,
-  waterLevelPulseAmplitude: 0.08,
-  waterLevelPulseSpeed: 0.28,
+  waterLevelPulseAmplitude: 0.2,
+  waterLevelPulseSpeed: 1,
 };
 
 export function getPresetControls({ presetSnapshot }) {

@@ -105,6 +105,25 @@ export default function createBladeMaterial({ cloudShade, store, uniforms }) {
     .add(swayDir.mul(low.mul(sway)))
     .add(swayDir.mul(high.mul(sway).mul(0.3)));
 
+  // Keep blades glued to the animated terrain pulse so ground waves do not
+  // rise through static grass roots.
+  const pulseTime = time.mul(uniforms.terrainPulseSpeed);
+  const terrainGridZ = offset.z;
+  const primaryWave = offset.x
+    .mul(uniforms.terrainPulseScale.mul(2.6))
+    .add(terrainGridZ.mul(uniforms.terrainPulseScale.mul(1.6)))
+    .add(pulseTime)
+    .sin();
+  const secondaryWave = offset.x
+    .mul(uniforms.terrainPulseScale.mul(1.15))
+    .sub(terrainGridZ.mul(uniforms.terrainPulseScale.mul(2.2)))
+    .sub(pulseTime.mul(1.35))
+    .sin();
+  const terrainPulse = primaryWave
+    .mul(0.7)
+    .add(secondaryWave.mul(0.45))
+    .mul(uniforms.terrainPulseAmplitude);
+
   // Cubic Bézier (p0 = origin) and its tangent.
   const u = float(1).sub(t);
   const spine = q1
@@ -129,7 +148,9 @@ export default function createBladeMaterial({ cloudShade, store, uniforms }) {
 
   const sideLocal = vec3(1, 0, 0);
   const localPos = spine.add(sideLocal.mul(s.mul(width).mul(widthFactor)));
-  mat.positionNode = rotateY(localPos).add(offset);
+  mat.positionNode = rotateY(localPos)
+    .add(offset)
+    .add(vec3(0, terrainPulse, 0));
 
   const side = varying(rotateY(sideLocal));
   const geoNormal = varying(rotateY(cross(sideLocal, tangent).normalize()));

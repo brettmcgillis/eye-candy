@@ -148,6 +148,9 @@ function Grass({ cloudShade, config, heightField }) {
       sunColor: uniform(new THREE.Color(config.sunColor)),
       sunDir: uniform(new THREE.Vector3(0, -1, 0)),
       tipColor: uniform(new THREE.Color(config.tipColor)),
+      terrainPulseAmplitude: uniform(config.terrainPulseAmplitude ?? 0),
+      terrainPulseScale: uniform(config.terrainPulseScale ?? 0.25),
+      terrainPulseSpeed: uniform(config.terrainPulseSpeed ?? 0.35),
       windDir: uniform(new THREE.Vector2(config.windDirX, config.windDirZ)),
       windScale: uniform(config.windScale),
       windSpeed: uniform(config.windSpeed),
@@ -164,6 +167,10 @@ function Grass({ cloudShade, config, heightField }) {
     uniforms.rootColor.value.set(config.rootColor);
     uniforms.sunColor.value.set(config.sunColor);
     uniforms.tipColor.value.set(config.tipColor);
+    uniforms.terrainPulseAmplitude.value = config.terrainPulseAmplitude ?? 0;
+    uniforms.terrainPulseScale.value = config.terrainPulseScale ?? 0.25;
+    uniforms.terrainPulseSpeed.value =
+      (config.terrainPulseSpeed ?? 0.35) * (config.globalMotionSpeed ?? 1);
     uniforms.windDir.value.set(config.windDirX, config.windDirZ).normalize();
     uniforms.windScale.value = config.windScale;
     uniforms.windSpeed.value =
@@ -190,6 +197,9 @@ function Grass({ cloudShade, config, heightField }) {
     config.sunAzimuth,
     config.sunColor,
     config.sunElevation,
+    config.terrainPulseAmplitude,
+    config.terrainPulseScale,
+    config.terrainPulseSpeed,
     config.tipColor,
     config.windDirX,
     config.windDirZ,

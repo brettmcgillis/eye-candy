@@ -325,7 +325,8 @@ function Terrain({ cloudShade, config, heightField }) {
     uniforms.strataWarpStrength.value = config.strataWarpStrength ?? 1;
     uniforms.terrainPulseAmplitude.value = config.terrainPulseAmplitude ?? 0;
     uniforms.terrainPulseScale.value = config.terrainPulseScale ?? 0.25;
-    uniforms.terrainPulseSpeed.value = config.terrainPulseSpeed ?? 0.35;
+    uniforms.terrainPulseSpeed.value =
+      (config.terrainPulseSpeed ?? 0.35) * (config.globalMotionSpeed ?? 1);
     uniforms.topsoilDepth.value = config.topsoilDepth;
     uniforms.waterLine.value = config.waterLevel;
   }, [
@@ -336,6 +337,7 @@ function Terrain({ cloudShade, config, heightField }) {
     config.strataPebbleStrength,
     config.strataScale,
     config.strataWarpStrength,
+    config.globalMotionSpeed,
     config.terrainPulseAmplitude,
     config.terrainPulseScale,
     config.terrainPulseSpeed,
@@ -352,14 +354,21 @@ function Terrain({ cloudShade, config, heightField }) {
     });
 
     const field = texture(heightField.texture, uv());
-    const pulse = mx_noise_float(
-      vec3(
-        positionGeometry.x.mul(uniforms.terrainPulseScale),
-        positionGeometry.y.mul(uniforms.terrainPulseScale),
-        time.mul(uniforms.terrainPulseSpeed.mul(config.globalMotionSpeed ?? 1))
-      )
-    )
-      .sub(0.5)
+    const pulseTime = time.mul(uniforms.terrainPulseSpeed);
+    const terrainGridZ = positionGeometry.y.negate();
+    const primaryWave = positionGeometry.x
+      .mul(uniforms.terrainPulseScale.mul(2.6))
+      .add(terrainGridZ.mul(uniforms.terrainPulseScale.mul(1.6)))
+      .add(pulseTime)
+      .sin();
+    const secondaryWave = positionGeometry.x
+      .mul(uniforms.terrainPulseScale.mul(1.15))
+      .sub(terrainGridZ.mul(uniforms.terrainPulseScale.mul(2.2)))
+      .sub(pulseTime.mul(1.35))
+      .sin();
+    const pulse = primaryWave
+      .mul(0.7)
+      .add(secondaryWave.mul(0.45))
       .mul(uniforms.terrainPulseAmplitude);
 
     // Plane local z becomes world y after the -90° x rotation.
@@ -377,7 +386,7 @@ function Terrain({ cloudShade, config, heightField }) {
     );
 
     const carve = field.g;
-    const hill = field.b;
+    const hill = field.b.add(pulse);
     const worldY = positionWorld.y;
     const depthBelow = hill.sub(worldY).max(0);
 
@@ -392,6 +401,7 @@ function Terrain({ cloudShade, config, heightField }) {
     // Exterior contour lines: subtle terrain-following rings so strata-like
     // linework is visible beyond the carved letters too.
     const contourBand = field.r
+      .add(pulse)
       .mul(uniforms.strataScale.mul(0.82))
       .add(mx_noise_float(positionWorld.mul(vec3(0.22, 0, 0.22))).mul(0.18));
     const contourPos = contourBand.fract();
@@ -457,18 +467,25 @@ function Terrain({ cloudShade, config, heightField }) {
       roughness: 0.95,
     });
 
-    const pulse = mx_noise_float(
-      vec3(
-        positionGeometry.x.mul(uniforms.terrainPulseScale),
-        positionGeometry.y.mul(uniforms.terrainPulseScale),
-        time.mul(uniforms.terrainPulseSpeed.mul(config.globalMotionSpeed ?? 1))
-      )
-    )
-      .sub(0.5)
+    const pulseTime = time.mul(uniforms.terrainPulseSpeed);
+    const terrainGridZ = positionGeometry.y.negate();
+    const primaryWave = positionGeometry.x
+      .mul(uniforms.terrainPulseScale.mul(2.6))
+      .add(terrainGridZ.mul(uniforms.terrainPulseScale.mul(1.6)))
+      .add(pulseTime)
+      .sin();
+    const secondaryWave = positionGeometry.x
+      .mul(uniforms.terrainPulseScale.mul(1.15))
+      .sub(terrainGridZ.mul(uniforms.terrainPulseScale.mul(2.2)))
+      .sub(pulseTime.mul(1.35))
+      .sin();
+    const pulse = primaryWave
+      .mul(0.7)
+      .add(secondaryWave.mul(0.45))
       .mul(uniforms.terrainPulseAmplitude);
     mat.positionNode = positionGeometry.add(vec3(0, 0, pulse));
 
-    const hill = attribute('outerHill');
+    const hill = attribute('outerHill').add(pulse);
     const carve = attribute('outerCarve');
     const worldY = positionWorld.y;
     const depthBelow = hill.sub(worldY).max(0);
@@ -529,7 +546,7 @@ function Terrain({ cloudShade, config, heightField }) {
     mat.colorNode = base.mul(cloudShade(positionWorld.xz));
 
     return mat;
-  }, [cloudShade, config.globalMotionSpeed, uniforms]);
+  }, [cloudShade, uniforms]);
 
   const geometry = useMemo(
     () =>
@@ -610,7 +627,25 @@ function Terrain({ cloudShade, config, heightField }) {
       float(0.5).sub(positionWorld.z.div(worldSize))
     );
     const wallField = texture(heightField.texture, fieldUv);
-    const wallHill = wallField.b;
+    const pulseTime = time.mul(uniforms.terrainPulseSpeed);
+    const terrainGridZ = positionGeometry.z;
+    const primaryWave = positionGeometry.x
+      .mul(uniforms.terrainPulseScale.mul(2.6))
+      .add(terrainGridZ.mul(uniforms.terrainPulseScale.mul(1.6)))
+      .add(pulseTime)
+      .sin();
+    const secondaryWave = positionGeometry.x
+      .mul(uniforms.terrainPulseScale.mul(1.15))
+      .sub(terrainGridZ.mul(uniforms.terrainPulseScale.mul(2.2)))
+      .sub(pulseTime.mul(1.35))
+      .sin();
+    const pulse = primaryWave
+      .mul(0.7)
+      .add(secondaryWave.mul(0.45))
+      .mul(uniforms.terrainPulseAmplitude);
+    mat.positionNode = positionGeometry.add(vec3(0, pulse, 0));
+
+    const wallHill = wallField.b.add(pulse);
     const wallY = positionWorld.y;
     const wallDepthBelow = wallHill.sub(wallY).max(0);
 

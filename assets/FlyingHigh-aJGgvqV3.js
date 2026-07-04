@@ -1,0 +1,78 @@
+import{aA as R,j as n,bA as y,r as d,J as B,K as X,bO as Z,aT as E,q as A,c8 as G,w as T,m as W,a$ as O,ai as L,am as U,a0 as H,a2 as g}from"./index-DhsiwbUR.js";import{d as M,w as _}from"./index-B4SU2g_w.js";import{F as N}from"./flyingHighFire-Bi0tSx0d.js";import{u as Y}from"./Gltf-BEafmqVT.js";import{u as P}from"./Texture-CdKk1A0A.js";import{e as V}from"./three.tsl-BlNb6YWs.js";import{d as S,g as w}from"./splineDefaults-D0ksPayl.js";import{S as $}from"./SmokeParticles-DVoepqw5.js";import{V as b}from"./VolumetricFire-Dijii3ik.js";import{C as q,a as J}from"./Cloud-CIlcEobz.js";import{u as K}from"./usePresetsFolder-CAf2fyDh.js";import{P as z}from"./PerspectiveCamera-D2n1HQ-R.js";import{O as Q}from"./OrbitControls-COAGKYI4.js";import"./constants-BPi9mYbg.js";import"./extends-CF3RwP-h.js";import"./deprecated-CtTvmxFP.js";import"./Fbo-DMAxGW3t.js";function F(e){const{nodes:o,materials:a}=Y(R("/boeing_737-300.glb"));return n.jsxs("group",{...e,dispose:null,children:[n.jsx("mesh",{castShadow:!0,receiveShadow:!0,geometry:o.Object_9.geometry,material:a.material00}),n.jsx("mesh",{castShadow:!0,receiveShadow:!0,geometry:o.Object_12.geometry,material:a.material00}),n.jsx("mesh",{castShadow:!0,receiveShadow:!0,geometry:o.Object_15.geometry,material:a.material02}),n.jsx("mesh",{castShadow:!0,receiveShadow:!0,geometry:o.Object_18.geometry,material:a.material00})]})}Y.preload(R("/boeing_737-300.glb"));P.preload(y("moonTexture.jpg"));function ee({position:e=[0,0,0],scale:o=1,rotation:a=[0,0,0],radius:i=1,segments:s=64,color:t="#ffffff",emissive:m="#000000",emissiveIntensity:p=0,metalness:v=.1,roughness:h=.8,toneMapped:f=!0,...u}){const c=P(y("moonTexture.jpg"));d.useMemo(()=>{c.colorSpace=B,c.magFilter=X,c.minFilter=Z},[c]);const l=d.useMemo(()=>new E({map:c,color:t,emissive:m,emissiveIntensity:p,metalness:v,roughness:h,toneMapped:f}),[c,t,m,p,v,h,f]);return n.jsx("mesh",{position:e,scale:o,rotation:a,material:l,...u,children:n.jsx("sphereGeometry",{args:[i,s,s]})})}P.preload(y("moonTexture.jpg"));function oe({position:e=[0,0,0],scale:o=1,rotation:a=[0,0,0],radius:i=1,segments:s=64,color:t="#ffffff",emissive:m="#000000",emissiveIntensity:p=0,metalness:v=.1,roughness:h=.8,...f}){const u=P(y("moonTexture.jpg"));d.useMemo(()=>{u.colorSpace=B,u.magFilter=X,u.minFilter=Z},[u]);const c=d.useMemo(()=>{const l=new A(t),r=new A(m);return new G({colorNode:V(new T(u)),color:l,emissive:r,emissiveIntensity:p,metalness:v,roughness:h})},[u,t,m,p,v,h]);return n.jsx("mesh",{position:e,scale:o,rotation:a,material:c,...f,children:n.jsx("sphereGeometry",{args:[i,s,s]})})}function te(e){return W(i=>i.gl).isWebGLRenderer===!1?n.jsx(oe,{...e}):n.jsx(ee,{...e})}function se({leftEngineMainFire:e,rightEngineMainFire:o,leftWingSecondaryFire:a,rightWingSecondaryFire:i,leftEngineSmokeTrail:s,rightEngineSmokeTrail:t,leftSmokePoints:m,rightSmokePoints:p}){return n.jsxs(n.Fragment,{children:[n.jsx("pointLight",{position:e?S(e).toArray():[-1.8,-.1,.4],color:"#ff6600",intensity:4,distance:8,decay:2}),n.jsx("pointLight",{position:o?S(o).toArray():[1.8,-.1,.4],color:"#ff6600",intensity:4,distance:8,decay:2}),n.jsx(b,{position:e?S(e).toArray():[-1.8,0,.3],width:e?.fireWidth??.5,height:e?.fireHeight??1.8,depth:e?.fireDepth??.5,sliceSpacing:e?.fireSliceSpacing??.08,magnitude:e?.fireMagnitude??1.6,brightness:e?.fireBrightness??2.2,saturation:e?.fireSaturation??.9,animated:e?.fireAnimated??!0,bendX:.4,bendZ:-1.2,animSpeed:e?.fireAnimSpeed??.85,tintColor:e?.fireTintColor??"#ffcc44"}),n.jsx(b,{position:o?S(o).toArray():[1.8,0,.3],width:o?.fireWidth??.5,height:o?.fireHeight??1.8,depth:o?.fireDepth??.5,sliceSpacing:o?.fireSliceSpacing??.08,magnitude:o?.fireMagnitude??1.6,brightness:o?.fireBrightness??2.2,saturation:o?.fireSaturation??.9,animated:o?.fireAnimated??!0,bendX:-.4,bendZ:-1.2,animSpeed:o?.fireAnimSpeed??.75,tintColor:o?.fireTintColor??"#ffcc44"}),n.jsx(b,{position:a?S(a).toArray():[-1.4,.3,-.2],width:a?.fireWidth??.35,height:a?.fireHeight??1.2,depth:a?.fireDepth??.35,sliceSpacing:a?.fireSliceSpacing??.1,segments:16,magnitude:a?.fireMagnitude??1.4,brightness:a?.fireBrightness??1.8,animated:a?.fireAnimated??!0,animSpeed:a?.fireAnimSpeed??1.1,bendX:.2,bendZ:-.9,tintColor:a?.fireTintColor??"#ff8833"}),n.jsx(b,{position:i?S(i).toArray():[1.4,.3,-.2],width:i?.fireWidth??.35,height:i?.fireHeight??1.2,depth:i?.fireDepth??.35,sliceSpacing:i?.fireSliceSpacing??.1,segments:16,magnitude:i?.fireMagnitude??1.4,brightness:i?.fireBrightness??1.8,animated:i?.fireAnimated??!0,animSpeed:i?.fireAnimSpeed??1,bendX:-.2,bendZ:-.9,tintColor:i?.fireTintColor??"#ff8833"}),n.jsx($,{points:m,config:s}),n.jsx($,{points:p,config:t})]})}const ne=d.memo(se);function ae({clouds:e}){return n.jsx(q,{material:O,children:e.map((o,a)=>n.jsx(J,{position:o.position,scale:o.scale,speed:o.speed,opacity:o.opacity,width:o.width,depth:o.depth,segments:o.segments,color:o.color},a))})}const ie=`
+  varying vec2 vUv;
+  void main() {
+    vUv = uv;
+    gl_Position = projectionMatrix * modelViewMatrix * vec4(position, 1.0);
+  }
+`,le=`
+  uniform vec3 uColor;
+  uniform float uEdgeSoftness;
+  uniform float uWarpStrength;
+  uniform float uBrushStrength;
+  uniform float uBleedAmount;
+  uniform float uPoolingStrength;
+  uniform float uGrainAmount;
+  varying vec2 vUv;
+
+  float hash(vec2 p) {
+    return fract(sin(dot(p, vec2(127.1, 311.7))) * 43758.5453);
+  }
+
+  float noise(vec2 p) {
+    vec2 i = floor(p);
+    vec2 f = fract(p);
+    f = f * f * (3.0 - 2.0 * f);
+    float a = hash(i);
+    float b = hash(i + vec2(1.0, 0.0));
+    float c = hash(i + vec2(0.0, 1.0));
+    float d = hash(i + vec2(1.0, 1.0));
+    return mix(mix(a, b, f.x), mix(c, d, f.x), f.y);
+  }
+
+  float fbm(vec2 p) {
+    float v = 0.0;
+    float a = 0.5;
+    vec2 shift = vec2(100.0);
+    mat2 rot = mat2(cos(0.5), sin(0.5), -sin(0.5), cos(0.5));
+    for (int i = 0; i < 5; i++) {
+      v += a * noise(p);
+      p = rot * p * 2.0 + shift;
+      a *= 0.5;
+    }
+    return v;
+  }
+
+  void main() {
+    vec2 centered = vUv - 0.5;
+    float dist = length(centered * vec2(1.0, 1.5));
+
+    vec2 q = vec2(
+      fbm(vUv * 5.0),
+      fbm(vUv * 5.0 + vec2(5.2, 1.3))
+    );
+    float warp = fbm(vUv * 5.0 + 3.0 * q);
+
+    float brush = (noise(vec2(vUv.x * 3.0 + warp, vUv.y * 18.0)) * 0.07
+                + noise(vec2(vUv.x * 6.0, vUv.y * 30.0)) * 0.03) * uBrushStrength;
+
+    float edgeNoise = warp * uWarpStrength + brush;
+
+    float edge = smoothstep(0.50, 0.50 - uEdgeSoftness + edgeNoise, dist);
+    float bleed = smoothstep(0.56, 0.56 - uEdgeSoftness * 0.9 + edgeNoise * 0.6, dist)
+                * uBleedAmount;
+
+    float alpha = max(edge, bleed);
+
+    float pooling = smoothstep(0.15, 0.42, dist);
+    vec3 lightWash = uColor * 1.05;
+    vec3 pooledEdge = uColor * 0.78;
+    vec3 col = mix(lightWash, pooledEdge, pooling * pooling * uPoolingStrength);
+
+    col += vec3(0.02, -0.01, -0.02) * warp;
+
+    float grain = noise(vUv * 180.0) * uGrainAmount - uGrainAmount * 0.5;
+    col += grain;
+
+    gl_FragColor = vec4(col, alpha);
+  }
+`;function re({sky:e}){const o=d.useMemo(()=>new L({transparent:!0,side:U,depthWrite:!1,uniforms:{uColor:{value:new A("#87CEEB")},uEdgeSoftness:{value:.22},uWarpStrength:{value:.1},uBrushStrength:{value:1},uBleedAmount:{value:.12},uPoolingStrength:{value:1},uGrainAmount:{value:.035}},vertexShader:ie,fragmentShader:le}),[]);return d.useEffect(()=>{const{uniforms:a}=o;a.uColor.value.set(e.color),a.uEdgeSoftness.value=e.shader.edgeSoftness,a.uWarpStrength.value=e.shader.warpStrength,a.uBrushStrength.value=e.shader.brushStrength,a.uBleedAmount.value=e.shader.bleedAmount,a.uPoolingStrength.value=e.shader.poolingStrength,a.uGrainAmount.value=e.shader.grainAmount},[o,e]),n.jsx("mesh",{position:e.position,material:o,renderOrder:-10,children:n.jsx("planeGeometry",{args:[e.width,e.height]})})}const D="Day",I={background:"#ffffff",ambientIntensity:.5,directionalIntensity:1,hemisphereIntensity:.25,skyColor:"#87CEEB",skyPosX:0,skyPosY:1,skyPosZ:-12,skyWidth:40,skyHeight:24,skyEdgeSoftness:.22,skyWarpStrength:.1,skyBrushStrength:1,skyBleedAmount:.12,skyPoolingStrength:1,skyGrainAmount:.035,planeScale:.6,planePosX:0,planePosY:0,planePosZ:0,planeRotXDeg:2.9,planeRotYDeg:-36,planeRotZDeg:-1.7,c1Scale:1,c1PosX:-10,c1PosY:5,c1PosZ:-8,c1Speed:.2,c1Opacity:.6,c1Width:8,c1Depth:2,c1Segments:35,c1Color:"#f0f0f0",c2Scale:1,c2PosX:8,c2PosY:7,c2PosZ:-9,c2Speed:.15,c2Opacity:.5,c2Width:10,c2Depth:3,c2Segments:35,c2Color:"#f0f0f0",c3Scale:1,c3PosX:-4,c3PosY:-2,c3PosZ:-6,c3Speed:.1,c3Opacity:.45,c3Width:6,c3Depth:2,c3Segments:30,c3Color:"#f0f0f0",moonVisible:!1,moonPosX:9,moonPosY:7,moonPosZ:-10.5,moonScale:2.4,moonColor:"#f6f2eb",moonEmissive:"#000000",moonEmissiveIntensity:0,moonMetalness:.08,moonRoughness:.92},x={Day:I,Night:{...I,background:"#07101d",ambientIntensity:.08,directionalIntensity:.22,hemisphereIntensity:.12,skyColor:"#193556",skyEdgeSoftness:.28,skyWarpStrength:.14,skyBrushStrength:.85,skyBleedAmount:.05,skyPoolingStrength:1.4,skyGrainAmount:.02,c1Opacity:.42,c1Color:"#d1daea",c2Opacity:.34,c2Color:"#c0cce0",c3Opacity:.28,c3Color:"#b6c3d7",moonVisible:!0,moonColor:"#eef1f7",moonEmissive:"#8090b8",moonEmissiveIntensity:.35,moonMetalness:.1,moonRoughness:.88}},k=Math.PI/180;function me({presetSnapshot:e}){return e}function C(e,o){return{[`${e}Scale`]:{label:"Scale",value:o[`${e}Scale`],min:.1,max:5,step:.1},[`${e}PosX`]:{label:"X",value:o[`${e}PosX`],min:-30,max:30,step:.5},[`${e}PosY`]:{label:"Y",value:o[`${e}PosY`],min:-10,max:20,step:.5},[`${e}PosZ`]:{label:"Z",value:o[`${e}PosZ`],min:-20,max:5,step:.5},[`${e}Speed`]:{label:"Speed",value:o[`${e}Speed`],min:0,max:1,step:.05},[`${e}Opacity`]:{label:"Opacity",value:o[`${e}Opacity`],min:0,max:1,step:.05},[`${e}Width`]:{label:"Width",value:o[`${e}Width`],min:1,max:30,step:1},[`${e}Depth`]:{label:"Depth",value:o[`${e}Depth`],min:.5,max:10,step:.5},[`${e}Segments`]:{label:"Segments",value:o[`${e}Segments`],min:5,max:60,step:1},[`${e}Color`]:{label:"Color",value:o[`${e}Color`]}}}function j(e,o){return{scale:e[`${o}Scale`],position:[e[`${o}PosX`],e[`${o}PosY`],e[`${o}PosZ`]],speed:e[`${o}Speed`],opacity:e[`${o}Opacity`],width:e[`${o}Width`],depth:e[`${o}Depth`],segments:e[`${o}Segments`],color:e[`${o}Color`]}}function ue(){const{attachSetControls:e,controlsSnapshotRef:o,initialPreset:a,presetsFolder:i}=K({defaultPreset:D,getPresetControls:me,presets:x}),s=x[a]||x[D],[t,m]=H("Flying High",()=>({Presets:i,Scene:g({background:{label:"Background",value:s.background},ambientIntensity:{label:"Ambient",value:s.ambientIntensity,min:0,max:2,step:.05},directionalIntensity:{label:"Directional",value:s.directionalIntensity,min:0,max:3,step:.05},hemisphereIntensity:{label:"Hemisphere",value:s.hemisphereIntensity,min:0,max:2,step:.05}},{collapsed:!0}),Sky:g({skyColor:{label:"Color",value:s.skyColor},skyPosX:{label:"X",value:s.skyPosX,min:-20,max:20,step:.5},skyPosY:{label:"Y",value:s.skyPosY,min:-20,max:20,step:.5},skyPosZ:{label:"Z",value:s.skyPosZ,min:-30,max:0,step:.5},skyWidth:{label:"Width",value:s.skyWidth,min:10,max:80,step:1},skyHeight:{label:"Height",value:s.skyHeight,min:6,max:50,step:1},Shader:g({skyEdgeSoftness:{label:"Edge Softness",value:s.skyEdgeSoftness,min:.05,max:.4,step:.01},skyWarpStrength:{label:"Warp",value:s.skyWarpStrength,min:0,max:.3,step:.01},skyBrushStrength:{label:"Brush",value:s.skyBrushStrength,min:0,max:3,step:.1},skyBleedAmount:{label:"Bleed",value:s.skyBleedAmount,min:0,max:.5,step:.01},skyPoolingStrength:{label:"Pooling",value:s.skyPoolingStrength,min:0,max:2,step:.1},skyGrainAmount:{label:"Grain",value:s.skyGrainAmount,min:0,max:.1,step:.005}},{collapsed:!0})},{collapsed:!0}),Plane:g({planeScale:{label:"Scale",value:s.planeScale,min:.1,max:2,step:.05},planePosX:{label:"X",value:s.planePosX,min:-20,max:20,step:.1},planePosY:{label:"Y",value:s.planePosY,min:-20,max:20,step:.1},planePosZ:{label:"Z",value:s.planePosZ,min:-20,max:20,step:.1},planeRotXDeg:{label:"Rot X (°)",value:s.planeRotXDeg,min:-180,max:180,step:.5},planeRotYDeg:{label:"Rot Y (°)",value:s.planeRotYDeg,min:-180,max:180,step:.5},planeRotZDeg:{label:"Rot Z (°)",value:s.planeRotZDeg,min:-180,max:180,step:.5}},{collapsed:!0}),Moon:g({moonVisible:{label:"Visible",value:s.moonVisible},moonPosX:{label:"X",value:s.moonPosX,min:-20,max:20,step:.1},moonPosY:{label:"Y",value:s.moonPosY,min:-20,max:20,step:.1},moonPosZ:{label:"Z",value:s.moonPosZ,min:-20,max:0,step:.1},moonScale:{label:"Scale",value:s.moonScale,min:.1,max:10,step:.1},moonColor:{label:"Color",value:s.moonColor},moonEmissive:{label:"Emissive",value:s.moonEmissive},moonEmissiveIntensity:{label:"Emissive Intensity",value:s.moonEmissiveIntensity,min:0,max:4,step:.05},moonMetalness:{label:"Metalness",value:s.moonMetalness,min:0,max:1,step:.01},moonRoughness:{label:"Roughness",value:s.moonRoughness,min:0,max:1,step:.01}},{collapsed:!0}),Clouds:g({"Cloud 1":g(C("c1",s),{collapsed:!0}),"Cloud 2":g(C("c2",s),{collapsed:!0}),"Cloud 3":g(C("c3",s),{collapsed:!0})},{collapsed:!0})}));return e(m),o.current=t,{scene:{background:t.background,ambientIntensity:t.ambientIntensity,directionalIntensity:t.directionalIntensity,hemisphereIntensity:t.hemisphereIntensity},sky:{color:t.skyColor,position:[t.skyPosX,t.skyPosY,t.skyPosZ],width:t.skyWidth,height:t.skyHeight,shader:{edgeSoftness:t.skyEdgeSoftness,warpStrength:t.skyWarpStrength,brushStrength:t.skyBrushStrength,bleedAmount:t.skyBleedAmount,poolingStrength:t.skyPoolingStrength,grainAmount:t.skyGrainAmount}},plane:{scale:t.planeScale,position:[t.planePosX,t.planePosY,t.planePosZ],rotation:[t.planeRotXDeg*k,t.planeRotYDeg*k,t.planeRotZDeg*k]},moon:{visible:t.moonVisible,position:[t.moonPosX,t.moonPosY,t.moonPosZ],scale:t.moonScale,color:t.moonColor,emissive:t.moonEmissive,emissiveIntensity:t.moonEmissiveIntensity,metalness:t.moonMetalness,roughness:t.moonRoughness},clouds:[j(t,"c1"),j(t,"c2"),j(t,"c3")]}}function De(){const{scene:e,sky:o,plane:a,moon:i,clouds:s}=ue(),{leftEngineMainFire:t,rightEngineMainFire:m,leftWingSecondaryFire:p,rightWingSecondaryFire:v,leftEngineSmokeTrail:h,rightEngineSmokeTrail:f}=d.useMemo(()=>{const l=N.splines??[];return{leftEngineMainFire:l.find(r=>r.name==="Left Engine Main Fire"),rightEngineMainFire:l.find(r=>r.name==="Right Engine Main Fire"),leftWingSecondaryFire:l.find(r=>r.name==="Left Wing Secondary Fire"),rightWingSecondaryFire:l.find(r=>r.name==="Right Wing Secondary Fire"),leftEngineSmokeTrail:l.find(r=>r.name==="Left Engine Smoke Trail"),rightEngineSmokeTrail:l.find(r=>r.name==="Right Engine Smoke Trail")}},[]),u=d.useMemo(()=>w(h).map(l=>l.position.clone()),[h]),c=d.useMemo(()=>w(f).map(l=>l.position.clone()),[f]);return n.jsxs(n.Fragment,{children:[n.jsx("color",{attach:"background",args:[e.background]}),n.jsx(z,{makeDefault:!0,position:[10,3,14],fov:42}),n.jsx(Q,{target:[0,.5,-1]}),n.jsx("ambientLight",{intensity:e.ambientIntensity}),n.jsx("directionalLight",{position:[5,8,10],intensity:e.directionalIntensity,color:"#fff5e0"}),n.jsx("hemisphereLight",{skyColor:o.color,groundColor:"#443322",intensity:e.hemisphereIntensity}),n.jsx(re,{sky:o}),i.visible?n.jsx(te,{position:i.position,scale:i.scale,color:i.color,emissive:i.emissive,emissiveIntensity:i.emissiveIntensity,metalness:i.metalness,roughness:i.roughness}):null,n.jsx(ae,{clouds:s}),n.jsx(F,{scale:a.scale,rotation:a.rotation,position:a.position}),n.jsx(ne,{leftEngineMainFire:t,rightEngineMainFire:m,leftWingSecondaryFire:p,rightWingSecondaryFire:v,leftEngineSmokeTrail:h,rightEngineSmokeTrail:f,leftSmokePoints:u,rightSmokePoints:c}),n.jsx(M,{disableNormalPass:!0,children:n.jsx(_,{intensity:.8,luminanceThreshold:.55,luminanceSmoothing:.3,mipmapBlur:!0,radius:.45})})]})}export{De as default};

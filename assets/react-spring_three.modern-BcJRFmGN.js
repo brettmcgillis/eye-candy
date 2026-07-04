@@ -1,0 +1,1 @@
+import{aD as e,aE as t,aF as r,aG as s,aH as o,aI as i,as as p,aJ as c}from"./index-DhsiwbUR.js";var l=["primitive"].concat(Object.keys(t).filter(a=>/^[A-Z]/.test(a)).map(a=>a[0].toLowerCase()+a.slice(1)));r.assign({createStringInterpolator:o,colors:s,frameLoop:"demand"});i(()=>{c.advance()});var n=e(l,{applyAnimatedValues:p}),d=n.animated;export{d as a};

@@ -74,10 +74,10 @@ function FloatingSeeds({ cloudShade, config, heightField }) {
       .mod(size)
       .sub(half);
 
-    // Hover above the actual ground (carved height from the heightfield),
-    // with a gentle bob.
+    // Hover above the uncarved meadow surface (raw hill height in B), so
+    // seeds don't dip into text cutouts, with a gentle bob.
     const fieldUv = vec2(x.div(size).add(0.5), float(0.5).sub(z.div(size)));
-    const ground = texture(heightField.texture, fieldUv).r;
+    const ground = texture(heightField.texture, fieldUv).b;
     const bob = time.mul(0.9).add(phase).sin().mul(0.18);
     const y = ground.add(hover).add(bob);
 

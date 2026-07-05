@@ -7,6 +7,7 @@ import usePresetsFolder from '../../../../../../hooks/usePresetsFolder';
 import useSceneCameraControls from '../../../../../../hooks/useSceneCameraControls';
 import { useMediaRecorder } from '../../../../../../modules/mediaRecorder';
 import getGrassControls from '../components/getGrassControls';
+import getInsectsControls from '../components/getInsectsControls';
 import getSeedsControls from '../components/getSeedsControls';
 import getSkyControls from '../components/getSkyControls';
 import getTerrainControls from '../components/getTerrainControls';
@@ -104,6 +105,7 @@ export default function useSceneControls() {
     Grass: getGrassControls(p),
     Water: getWaterControls(p),
     Seeds: getSeedsControls(p),
+    Insects: getInsectsControls(p),
     Sky: getSkyControls(p),
     Post: folder(
       {

@@ -50,6 +50,16 @@
   padding: 0 1em 1em;
 }
 
+/* Leva hardcodes `*::selection { background: $accent2 }`, and our theme's
+   accent2 is white to match the panel/button look — so selected text was
+   invisible (white highlight on white input bg). Override with !important
+   since Leva's stitches stylesheet is injected at runtime and would
+   otherwise win any same-specificity tie against our static CSS. */
+.leva-panel-wrap *::selection {
+  background-color: var(--overlay-fg) !important;
+  color: var(--overlay-bg) !important;
+}
+
 @media (max-width: 900px) {
   .top-right.overlay-panel .version-tag {
     padding: 0.65em 0.85em;

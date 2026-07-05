@@ -404,9 +404,15 @@ function BeeSwarm({ config, heightField }) {
 function Insects({ config, heightField }) {
   return (
     <group>
-      <ButterflySwarm config={config} heightField={heightField} />
-      <BeeSwarm config={config} heightField={heightField} />
-      <DragonflySwarm config={config} heightField={heightField} />
+      {(config.butterfliesEnabled ?? true) && (
+        <ButterflySwarm config={config} heightField={heightField} />
+      )}
+      {(config.beesEnabled ?? true) && (
+        <BeeSwarm config={config} heightField={heightField} />
+      )}
+      {(config.dragonfliesEnabled ?? true) && (
+        <DragonflySwarm config={config} heightField={heightField} />
+      )}
     </group>
   );
 }

@@ -1,1 +1,0 @@
-import{aC as e,aD as r,aE as t,aF as s,aG as o,aH as i,ar as p,aI as c}from"./index-DUAUQe-S.js";var l=["primitive"].concat(Object.keys(r).filter(a=>/^[A-Z]/.test(a)).map(a=>a[0].toLowerCase()+a.slice(1)));t.assign({createStringInterpolator:o,colors:s,frameLoop:"demand"});i(()=>{c.advance()});var n=e(l,{applyAnimatedValues:p}),d=n.animated;export{d as a};

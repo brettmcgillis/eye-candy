@@ -22,7 +22,6 @@ To Build:
 - [ ] Metaball (marching cubes) interactive lava lamp
 - [ ] Audio reactive tree
 - [ ] Eyeball
-- [ ] Browser tab communication `~/dev/examples/browsertabs-talking` & `~/dev/examples/multipleWindow3dScene`. Lets start with clouds. each broswer tab gets a cloud. Once that works lets move on to particles & attractors. Each tab gets an attractor and can control it's own strength. particles are actually leaves (ie texture on plane with curvature like Surrender).
 - [ ] leverage threejs addons/generators for skyscraper, city, forest, tree. take a look at the generator docs too. Example; Forest generator can generate on a terrain OR anything that exposes sampleHeight, etc, Could we cover a car model in trees? an animal model in buildings/city?
 - [ ] Can we use ecctrl & click to move to make Quinn's board game playable?
 - [ ] We should do a scene with Quinns seal, 3rd person camera, player controls w/keyboard and controller.
@@ -55,6 +54,7 @@ To Build:
 
 - [Aisle9](src/components/scenes/WorkInProgress/WebGPU/Aisle9/todo.md)
 - [Apparitions](src/components/scenes/WorkInProgress/WebGPU/Apparitions/todo.md)
+- [CrossTalk](src/components/scenes/WorkInProgress/WebGPU/CrossTalk/todo.md)
 - [RaisedByTV](src/components/scenes/WorkInProgress/WebGPU/RaisedByTV/todo.md)
 - [OneInTheHand](src/components/scenes/WorkInProgress/WebGPU/OneInTheHand/todo.md)
 - [ThatsAllFolks](src/components/scenes/WorkInProgress/WebGPU/ThatsAllFolks/todo.md)
@@ -189,6 +189,7 @@ To Build:
 - [ ] Aisle 9
 - [ ] All My Friends Are Ghosts
 - [ ] Burning Cash
+- [ ] Cross Talk - Clouds
 - [ ] Crt Test
 - [ ] Dripping Skull
 - [ ] Flying High - Day

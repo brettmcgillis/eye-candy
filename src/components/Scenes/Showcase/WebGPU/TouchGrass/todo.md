@@ -61,7 +61,7 @@ afternoon with light clouds rolling through (Surrender-style cloud shade).
 # // Interactivity
 
 - [ ] cursor + water interaction
-- [ ] cursor + grass interaction
+- [x] cursor + grass interaction
 - [ ] could we cut the grass? if so then we add an overlay button to allow enabling mower. add control for mower width. as user moves cursor grass gets 'cut' down to a specific length, or removed all together. grass grows back after a few seconds
 
 # // Bugs

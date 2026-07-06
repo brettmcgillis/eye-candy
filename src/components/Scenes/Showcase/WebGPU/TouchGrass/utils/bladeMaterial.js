@@ -46,6 +46,11 @@ export default function createBladeMaterial({
   const data = instancedBufferAttribute(store.dataAttribute);
   const clumpData = instancedBufferAttribute(store.clumpAttribute);
 
+  // Tile-absolute placement (chunk-local offset + this tile's world shift),
+  // shared by the terrain pulse and the cursor-touch bend below.
+  const worldX = offset.x.add(float(chunkOffsetX));
+  const worldZ = offset.z.add(float(chunkOffsetZ));
+
   const t = uv().y; // 0 root -> 1 tip
   const s = positionGeometry.x.mul(2); // -1..1 across the blade, 0 at tip
   const bladeSeed = data.z;
@@ -100,16 +105,41 @@ export default function createBladeMaterial({
   const push = strength.mul(height);
   const swayDir = windDir.add(crossDir.mul(high.mul(0.35))).normalize();
   const sway = strength.mul(height).mul(0.5);
+
+  // Cursor touch: blades within touchRadius of the pointer's ground hit
+  // lean away from it, falloff-weighted (no hard collider edge) and
+  // tip-heavy like the wind bend. Ported from the vanilla-three example in
+  // `reference/interactiveGrass.js` (player-proximity push).
+  const touchDelta = vec3(
+    worldX.sub(uniforms.touchPosition.x),
+    0,
+    worldZ.sub(uniforms.touchPosition.z)
+  );
+  const touchDist = touchDelta.length().max(1e-4);
+  const touchFalloff = clamp(
+    float(1).sub(touchDist.div(uniforms.touchRadius)),
+    0,
+    1
+  ).pow(2);
+  const touchLean = touchDelta
+    .div(touchDist)
+    .mul(touchFalloff)
+    .mul(height)
+    .mul(uniforms.touchStrength);
+
   const q1 = p1
     .add(windDir.mul(push.mul(0.08)))
-    .add(swayDir.mul(low.mul(sway).mul(0.25)));
+    .add(swayDir.mul(low.mul(sway).mul(0.25)))
+    .add(touchLean.mul(0.2));
   const q2 = p2
     .add(windDir.mul(push.mul(0.15)))
-    .add(swayDir.mul(low.mul(sway).mul(0.55)));
+    .add(swayDir.mul(low.mul(sway).mul(0.55)))
+    .add(touchLean.mul(0.55));
   const q3 = p3
     .add(windDir.mul(push.mul(0.25)))
     .add(swayDir.mul(low.mul(sway)))
-    .add(swayDir.mul(high.mul(sway).mul(0.3)));
+    .add(swayDir.mul(high.mul(sway).mul(0.3)))
+    .add(touchLean);
 
   // Keep blades glued to the animated terrain pulse so ground waves do not
   // rise through static grass roots. `offset` is chunk-local (matches the
@@ -117,8 +147,6 @@ export default function createBladeMaterial({
   // tile's world offset for outer endless tiles to stay in phase with the
   // terrain's baked world-space pulse there too.
   const pulseTime = time.mul(uniforms.terrainPulseSpeed);
-  const worldX = offset.x.add(float(chunkOffsetX));
-  const worldZ = offset.z.add(float(chunkOffsetZ));
   const primaryWave = worldX
     .mul(uniforms.terrainPulseScale.mul(2.6))
     .add(worldZ.mul(uniforms.terrainPulseScale.mul(1.6)))

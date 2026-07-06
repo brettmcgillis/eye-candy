@@ -818,6 +818,7 @@ function Terrain({ cloudShade, config, heightField }) {
             position={[x, 0, z]}
             receiveShadow
             rotation-x={-Math.PI / 2}
+            userData-touchGrassSurface="terrain"
           />
         );
       })}
@@ -831,6 +832,7 @@ function Terrain({ cloudShade, config, heightField }) {
             position={chunk.position}
             receiveShadow
             rotation-x={-Math.PI / 2}
+            userData-touchGrassSurface="terrain"
           />
         ))}
       {showChunkWalls && wallGeometries && (
@@ -840,24 +842,28 @@ function Terrain({ cloudShade, config, heightField }) {
             geometry={wallGeometries.front}
             material={wallMaterial}
             receiveShadow
+            userData-touchGrassSurface="wall"
           />
           <mesh
             castShadow
             geometry={wallGeometries.back}
             material={wallMaterial}
             receiveShadow
+            userData-touchGrassSurface="wall"
           />
           <mesh
             castShadow
             geometry={wallGeometries.left}
             material={wallMaterial}
             receiveShadow
+            userData-touchGrassSurface="wall"
           />
           <mesh
             castShadow
             geometry={wallGeometries.right}
             material={wallMaterial}
             receiveShadow
+            userData-touchGrassSurface="wall"
           />
         </>
       )}

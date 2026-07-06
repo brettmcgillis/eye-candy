@@ -22,7 +22,8 @@ To Build:
 - [ ] Metaball (marching cubes) interactive lava lamp
 - [ ] Audio reactive tree
 - [ ] Eyeball
-- leverage threejs addons/generators for skyscraper, city, forest, tree. take a look at the generator docs too. Example; Forest generator can generate on a terrain OR anything that exposes sampleHeight, etc, Could we cover a car model in trees? an animal model in buildings/city?
+- [ ] Browser tab communication `~/dev/examples/browsertabs-talking` & `~/dev/examples/multipleWindow3dScene`. Lets start with clouds. each broswer tab gets a cloud. Once that works lets move on to particles & attractors. Each tab gets an attractor and can control it's own strength. particles are actually leaves (ie texture on plane with curvature like Surrender).
+- [ ] leverage threejs addons/generators for skyscraper, city, forest, tree. take a look at the generator docs too. Example; Forest generator can generate on a terrain OR anything that exposes sampleHeight, etc, Could we cover a car model in trees? an animal model in buildings/city?
 - [ ] Can we use ecctrl & click to move to make Quinn's board game playable?
 - [ ] We should do a scene with Quinns seal, 3rd person camera, player controls w/keyboard and controller.
       Scene should include quinns dice in the environment. Get low-LOD versions.
@@ -47,6 +48,7 @@ To Build:
 - [QuinnsDice](src/components/scenes/Showcase/WebGL/QuinnsDice/todo.md)
 - [Rosie](src/components/scenes/Showcase/WebGL/Rosie/todo.md)
 - [Surrender](src/components/scenes/Showcase/WebGPU/Surrender/todo.md)
+- [Touch Grass](src/components/scenes/Showcase/WebGPU/TouchGrass/todo.md)
 - [WatercolorSquares](src/components/scenes/Showcase/WebGL/WatercolorSquares/todo.md)
 
 **WorkInProgress**
@@ -73,7 +75,7 @@ To Build:
 - [BurningCash](src/components/scenes/WorkInProgress/WebGPU/BurningCash/todo.md)
 - [UrbanWildlife](src/components/scenes/WorkInProgress/WebGPU/UrbanWildlife/todo.md)
 - [Wet Paint](src/components/scenes/WorkInProgress/WebGPU/WetPaint/todo.md)
-- [Touch Grass](src/components/scenes/WorkInProgress/WebGPU/TouchGrass/todo.md)
+
 - [WhiteLies](src/components/scenes/WorkInProgress/WebGPU/WhiteLies/todo.md)
 
 **Template**
@@ -174,6 +176,7 @@ To Build:
 - [x] Surrender - Spring
 - [ ] Surrender - Winter
 - [ ] Surrender - Weather Any Storm
+- [x] Touch Grass
 
 ### Toolbox/TestLab to finish before demo
 
@@ -205,7 +208,7 @@ To Build:
 - [ ] Still Pulling For You - Sunk
 - [ ] Thats All Folks - Smoke
 - [ ] Thats All Folks - Bang
-- [ ] Touch Grass
+- [ ] Touch Grass - Cut Grass
 - [ ] Urban Wildlife / Night Danger
 - [ ] Wet Paint
 - [ ] White Lies

@@ -73,6 +73,29 @@ export default function getGrassControls(p) {
         },
         { collapsed: true }
       ),
+      Touch: folder(
+        {
+          touchEnabled: {
+            label: 'Enabled',
+            value: p.touchEnabled ?? true,
+          },
+          touchRadius: {
+            label: 'Radius',
+            max: 8,
+            min: 0.2,
+            step: 0.05,
+            value: p.touchRadius ?? 3,
+          },
+          touchStrength: {
+            label: 'Strength',
+            max: 2,
+            min: 0,
+            step: 0.01,
+            value: p.touchStrength ?? 0.8,
+          },
+        },
+        { collapsed: true }
+      ),
       Wind: folder(
         {
           windStrength: {

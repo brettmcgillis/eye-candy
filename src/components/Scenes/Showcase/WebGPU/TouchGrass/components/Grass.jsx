@@ -133,7 +133,7 @@ function scatterOuterBlades(
 // Full-field instanced grass. Placement is CPU-scattered onto the shared
 // heightfield (blades hug the terrain, avoid the carved letters, and cluster
 // into clumps); all motion and shading live in the TSL blade material.
-function Grass({ cloudShade, config, heightField }) {
+function Grass({ cloudShade, config, heightField, touchPosition }) {
   const store = useMemo(() => createGrassStore(), []);
   const showChunkMode = (config.terrainEdgeMode ?? 'chunk') === 'chunk';
   const [heroPlacedCount, setHeroPlacedCount] = useState(config.grassCount);
@@ -151,6 +151,9 @@ function Grass({ cloudShade, config, heightField }) {
       terrainPulseAmplitude: uniform(config.terrainPulseAmplitude ?? 0),
       terrainPulseScale: uniform(config.terrainPulseScale ?? 0.25),
       terrainPulseSpeed: uniform(config.terrainPulseSpeed ?? 0.35),
+      touchPosition,
+      touchRadius: uniform(config.touchRadius ?? 1.4),
+      touchStrength: uniform(config.touchStrength ?? 0.8),
       windDir: uniform(new THREE.Vector2(config.windDirX, config.windDirZ)),
       windScale: uniform(config.windScale),
       windSpeed: uniform(config.windSpeed),
@@ -171,6 +174,8 @@ function Grass({ cloudShade, config, heightField }) {
     uniforms.terrainPulseScale.value = config.terrainPulseScale ?? 0.25;
     uniforms.terrainPulseSpeed.value =
       (config.terrainPulseSpeed ?? 0.35) * (config.globalMotionSpeed ?? 1);
+    uniforms.touchRadius.value = config.touchRadius ?? 1.4;
+    uniforms.touchStrength.value = config.touchStrength ?? 0.8;
     uniforms.windDir.value.set(config.windDirX, config.windDirZ).normalize();
     uniforms.windScale.value = config.windScale;
     uniforms.windSpeed.value =
@@ -201,6 +206,8 @@ function Grass({ cloudShade, config, heightField }) {
     config.terrainPulseScale,
     config.terrainPulseSpeed,
     config.tipColor,
+    config.touchRadius,
+    config.touchStrength,
     config.windDirX,
     config.windDirZ,
     config.globalMotionSpeed,

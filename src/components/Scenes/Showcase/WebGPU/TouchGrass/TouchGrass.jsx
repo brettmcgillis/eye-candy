@@ -11,6 +11,7 @@ import SkyRig from './components/SkyRig';
 import Terrain from './components/Terrain';
 import Water from './components/Water';
 import useCloudShade from './hooks/useCloudShade';
+import useCursorTouch from './hooks/useCursorTouch';
 import useHeightField from './hooks/useHeightField';
 import useSceneControls from './hooks/useSceneControls';
 
@@ -34,6 +35,11 @@ export default function TouchGrass() {
   const heightField = useHeightField(config);
   const cloudShade = useCloudShade(config);
   const terrainYaw = ((config.terrainRotation ?? 0) * Math.PI) / 180;
+  const touchPosition = useCursorTouch({
+    enabled: config.touchEnabled ?? true,
+    heightField,
+    terrainYaw,
+  });
 
   return (
     <>
@@ -52,6 +58,7 @@ export default function TouchGrass() {
           cloudShade={cloudShade}
           config={config}
           heightField={heightField}
+          touchPosition={touchPosition}
         />
         <Roots config={config} heightField={heightField} />
         <Flowers

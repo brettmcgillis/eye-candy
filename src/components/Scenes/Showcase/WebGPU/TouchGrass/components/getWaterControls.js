@@ -5,8 +5,8 @@ export default function getWaterControls(p) {
     {
       waterLevel: {
         label: 'Water Table',
-        max: -0.2,
-        min: -2.5,
+        max: -0.01,
+        min: -6,
         step: 0.05,
         value: p.waterLevel,
       },

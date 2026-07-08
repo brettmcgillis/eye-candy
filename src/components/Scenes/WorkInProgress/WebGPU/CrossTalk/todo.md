@@ -13,8 +13,7 @@
   Mechanism: each window heartbeats its `screenX/Y` + `innerWidth/Height` rect
   into `localStorage`, every window observes every other via the `storage`
   event, and the lowest-id survivor is host (host election exists in the
-  registry now; no preset needs host-only authority yet — Fluid Sim and
-  Gravity Rooms will).
+  registry now; Fluid Sim is the first preset to actually use it — see below).
 - **No real desktop transparency.** Chrome on macOS can't punch a
   window-transparent hole through to the wallpaper (that flag is Linux/X11
   only). Preset 1 uses a plain sky-blue background instead. See the Electron
@@ -23,7 +22,8 @@
   (native close/minimize/maximize + resize only, no tabs/toolbar) tiled
   across the screen, each as its own process so `--window-size`/
   `--window-position` actually take effect. Usage:
-  `./launch-windows.sh 4 https://localhost:5173/crossTalk`.
+  `./launch-windows.sh 4 FluidSim` (count, preset, optional URL — the preset
+  deep-links every window via `?preset=`).
 
 # // TODO:
 
@@ -59,9 +59,27 @@
       strength control; the mouse is also an attractor and can roam between
       windows. Particles are leaves (textured, curved plane, à la Surrender's
       `ClothLeaves`), not plain points.
-- [ ] **Fluid Sim** — water flows downhill toward whichever open window is
-      lowest on screen. Needs host-authoritative simulation (see host
-      election above) since the fluid state must be singular, not per-window.
+- [x] **Fluid Sim** — a PIC/FLIP solver (`utils/flipFluid.js`, ported from
+      `references/flip.html`, Matthias Müller / Ten Minute Physics, MIT) runs
+      host-authoritative (see host election above): only the elected host
+      window steps the sim, over a fixed grid sized to `worldWidth` ×
+      `worldHeight` (px). Every alive window's rect is re-marked as
+      fluid-capable each frame (`utils/fluidWorld.js` `applyWindowMask`) so
+      water only exists where a browser window currently covers that patch
+      of screen — the "confined to its tab" feel comes from `confineToMask`,
+      which reverts any particle that free-falls into an uncovered cell in
+      one integration step (the pressure solve alone isn't enough for
+      arbitrary window layouts, unlike the original demo's fixed rectangular
+      tank). The host publishes particle positions over a dedicated
+      `BroadcastChannel` (not `windowSync`'s `localStorage` heartbeat — too
+      high-frequency for that transport); every window, host included,
+      renders from that shared buffer as one Points cloud (`FluidField`).
+      A "Respawn" Leva button forces a rebuild/reseed on demand. Known
+      limitation: the grid's screen-space origin is fixed at whichever
+      alive-window bounding box existed when the sim was last (re)built
+      (host handoff, or a `worldWidth`/`worldHeight`/particle-count/Respawn
+      edit) — windows dragged far outside that footprint won't get fluid
+      until the sim rebuilds.
 - [ ] **Gravity Rooms** — each window has its own gravity direction (rotatable
       by the user). A ball crossing from one window's rect into another's
       immediately takes on that window's gravity.
@@ -89,9 +107,10 @@
       group that eases toward `-selfRect`, standing in for CameraRig (see
       code comment in `components/DesktopStage.jsx` for why CameraRig doesn't
       fit this scene's camera model).
-- [ ] Debug overlay showing this window's registry id / host status — useful
-      once Fluid Sim / Gravity Rooms need to reason about which window is
-      host, currently not needed since Clouds doesn't have host-only logic.
+- [ ] Debug overlay showing this window's registry id / host status — now
+      that Fluid Sim actually has host-only logic, there's no visible way to
+      tell which open window is currently simulating vs. just rendering the
+      broadcast; useful for Gravity Rooms too.
 
 # // Interactivity
 

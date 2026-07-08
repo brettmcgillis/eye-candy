@@ -1,14 +1,23 @@
 import { useControls } from 'leva';
 
-import { useMemo } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 
 import usePresetsFolder from '../../../../../../hooks/usePresetsFolder';
 import { useMediaRecorder } from '../../../../../../modules/mediaRecorder';
 import getCloudControls from '../components/getCloudControls';
+import getFluidControls from '../components/getFluidControls';
 import { DEFAULT_PRESET, PRESETS, getPresetControls } from '../presets/presets';
+import { requestMotionPermission, subscribeShake } from '../utils/deviceMotion';
 
 const SCENE_LABEL = 'Cross Talk';
 export const WINDOW_SYNC_CHANNEL = 'crossTalk';
+
+// Merged so every preset's keys have a sane fallback regardless of which
+// preset happens to be initial (query-param deep link, or DEFAULT_PRESET) —
+// each preset only lists the keys it actually cares about (§9), so e.g.
+// FluidSim's snapshot has no `spread`/`hueShift` and Clouds' has no
+// `gravity`/`maxParticles`.
+const PRESET_DEFAULTS = Object.assign({}, ...Object.values(PRESETS));
 
 // This scene has no Camera folder / CameraRig (docs/scene-conventions.md §10)
 // — see components/DesktopStage.jsx for why: the camera is a fixed,
@@ -19,17 +28,35 @@ export default function useSceneControls() {
     controlsSnapshotRef,
     initialPreset,
     presetsFolder,
+    selectedPreset,
   } = usePresetsFolder({
     defaultPreset: DEFAULT_PRESET,
     getPresetControls,
     presets: PRESETS,
   });
 
-  const p = PRESETS[initialPreset] || PRESETS[DEFAULT_PRESET];
+  const [reseedTick, setReseedTick] = useState(0);
+  const p = {
+    ...PRESET_DEFAULTS,
+    ...(PRESETS[initialPreset] || PRESETS[DEFAULT_PRESET]),
+  };
+
+  // iOS motion permission must be requested from inside the click handler's
+  // call stack — Leva buttons invoke synchronously on click, so this is one.
+  // On grant, flip the Tilt Gravity toggle on so one tap does the whole job
+  // (Leva `set` works with the same flat keys presets use). setControls
+  // doesn't exist until the useControls call below returns, so the click
+  // handler reaches it through a ref instead of the binding directly.
+  const setControlsRef = useRef(null);
+  const onEnableTilt = () => {
+    requestMotionPermission().then((granted) => {
+      if (granted) setControlsRef.current?.({ tiltGravity: true });
+    });
+  };
 
   const [controls, setControls] = useControls(SCENE_LABEL, () => ({
     Presets: presetsFolder,
-    backgroundColor: { label: 'Sky Color', value: p.backgroundColor },
+    backgroundColor: { label: 'Background Color', value: p.backgroundColor },
     syncEasing: {
       label: 'Window Sync Easing',
       max: 0.5,
@@ -38,12 +65,59 @@ export default function useSceneControls() {
       value: p.syncEasing,
     },
     Cloud: getCloudControls(p),
+    Fluid: getFluidControls(
+      p,
+      () => setReseedTick((tick) => tick + 1),
+      onEnableTilt
+    ),
   }));
 
+  setControlsRef.current = setControls;
   attachSetControls(setControls);
   controlsSnapshotRef.current = { ...controls };
 
+  // Spacebar = the Fluid folder's Respawn button. Reseeding is keyed on
+  // reseedTick, and only the host window's solver rebuilds from it (see
+  // useFluidSim) — pressing space in a non-host window is a no-op, so press
+  // it in the window doing the simulating.
+  useEffect(() => {
+    if (selectedPreset !== 'FluidSim') return undefined;
+
+    const onKeyDown = (event) => {
+      if (event.code !== 'Space' || event.repeat) return;
+      const el = event.target;
+      if (
+        el.tagName === 'INPUT' ||
+        el.tagName === 'TEXTAREA' ||
+        el.isContentEditable
+      ) {
+        return;
+      }
+      event.preventDefault();
+      setReseedTick((tick) => tick + 1);
+    };
+
+    window.addEventListener('keydown', onKeyDown);
+    return () => window.removeEventListener('keydown', onKeyDown);
+  }, [selectedPreset]);
+
+  // Shake-to-respawn, the mobile sibling of the spacebar handler above.
+  // Shake events only ever fire while tilt gravity has the motion listeners
+  // attached (see useFluidSim / utils/deviceMotion.js).
+  useEffect(() => {
+    if (selectedPreset !== 'FluidSim') return undefined;
+    return subscribeShake(() => setReseedTick((tick) => tick + 1));
+  }, [selectedPreset]);
+
   useMediaRecorder({ fileName: SCENE_LABEL });
 
-  return useMemo(() => ({ ...controls }), [controls]);
+  // `preset` is taken from `selectedPreset` (usePresetsFolder's own React
+  // state, set synchronously in the dropdown's onChange), not from
+  // `controls.preset` — the latter round-trips through Leva's store/paths
+  // machinery, which is more moving parts than a component branching on
+  // "which preset is active" should have to trust.
+  return useMemo(
+    () => ({ ...controls, preset: selectedPreset, reseedTick }),
+    [controls, reseedTick, selectedPreset]
+  );
 }

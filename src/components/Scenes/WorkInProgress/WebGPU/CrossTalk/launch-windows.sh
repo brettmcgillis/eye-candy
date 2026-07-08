@@ -17,13 +17,54 @@
 # needs a real served origin, not file://.
 #
 # Usage:
-#   ./launch-windows.sh [count] [url]
-#   ./launch-windows.sh 3 https://localhost:3000/crossTalk
+#   ./launch-windows.sh [count] [preset] [url]
+#   ./launch-windows.sh 3
+#   ./launch-windows.sh 3 FluidSim
+#   ./launch-windows.sh 3 FluidSim https://localhost:3000/crossTalk
+#
+# The preset is appended as ?preset=<name> so every window deep-links
+# straight into it (matched case-insensitively by usePresetsFolder) instead
+# of opening on the scene default. A URL in the second slot still works for
+# back-compat with the old [count] [url] [preset] order.
 
 set -euo pipefail
 
 COUNT="${1:-3}"
-URL="${2:-https://localhost:3000/crossTalk}"
+PRESET="${2:-}"
+URL="${3:-https://localhost:3000/wip/crossTalk}"
+
+if [[ "$PRESET" == http* ]]; then
+  URL="$PRESET"
+  PRESET="${3:-}"
+fi
+
+rawurlencode() {
+  local input="$1"
+  local i char encoded=""
+
+  for ((i = 0; i < ${#input}; i++)); do
+    char="${input:i:1}"
+    case "$char" in
+      [a-zA-Z0-9.~_-])
+        encoded+="$char"
+        ;;
+      *)
+        printf -v encoded '%s%%%02X' "$encoded" "'$char"
+        ;;
+    esac
+  done
+
+  printf '%s' "$encoded"
+}
+
+if [[ -n "$PRESET" ]]; then
+  ENCODED_PRESET="$(rawurlencode "$PRESET")"
+  if [[ "$URL" == *"?"* ]]; then
+    URL+="&preset=$ENCODED_PRESET"
+  else
+    URL+="?preset=$ENCODED_PRESET"
+  fi
+fi
 
 SCREEN_W=$(system_profiler SPDisplaysDataType 2>/dev/null | awk '/Resolution/{print $2; exit}')
 SCREEN_H=$(system_profiler SPDisplaysDataType 2>/dev/null | awk '/Resolution/{print $4; exit}')
@@ -39,6 +80,7 @@ for ((i = 0; i < COUNT; i++)); do
   open -na "Google Chrome" --args \
     --app="$URL" \
     --window-size="$WIN_W,$WIN_H" \
-    --window-position="$WIN_X,$WIN_Y" \
-    --user-data-dir="/tmp/eye-candy-crosstalk-$i"
+    --window-position="$WIN_X,$WIN_Y" # \
 done
+
+#    --user-data-dir="/tmp/eye-candy-crosstalk-1"

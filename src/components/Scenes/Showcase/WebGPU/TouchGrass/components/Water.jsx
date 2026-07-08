@@ -14,8 +14,9 @@ import {
 } from 'three/tsl';
 import * as THREE from 'three/webgpu';
 
-import { useFrame } from '@react-three/fiber';
 import React, { memo, useEffect, useMemo, useRef } from 'react';
+
+import { useFrame } from '@react-three/fiber';
 
 import { fbm2 } from '../utils/noise2d';
 import renderTextMask from '../utils/textMask';
@@ -64,7 +65,10 @@ function buildOuterWaterGeometry({
     bedAttr[i] = bed;
   }
 
-  geometry.setAttribute('outerBedHeight', new THREE.Float32BufferAttribute(bedAttr, 1));
+  geometry.setAttribute(
+    'outerBedHeight',
+    new THREE.Float32BufferAttribute(bedAttr, 1)
+  );
   return geometry;
 }
 
@@ -153,7 +157,8 @@ function Water({ cloudShade, config, heightField }) {
     const amp = config.waterLevelPulseAmplitude ?? 0;
     const speed =
       (config.waterLevelPulseSpeed ?? 0.25) * (config.globalMotionSpeed ?? 1);
-    const y = config.waterLevel + Math.sin(clock.getElapsedTime() * speed) * amp;
+    const y =
+      config.waterLevel + Math.sin(clock.getElapsedTime() * speed) * amp;
 
     if (waterGroupRef.current) {
       waterGroupRef.current.position.y = y;
@@ -345,11 +350,7 @@ function Water({ cloudShade, config, heightField }) {
 
   return (
     <group position-y={config.waterLevel} ref={waterGroupRef}>
-      <mesh
-        material={material}
-        receiveShadow
-        rotation-x={-Math.PI / 2}
-      >
+      <mesh material={material} receiveShadow rotation-x={-Math.PI / 2}>
         <planeGeometry
           args={[heightField.worldSize * 0.999, heightField.worldSize * 0.999]}
         />

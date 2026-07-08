@@ -68,7 +68,9 @@ export function fillHeightField(
       // Canvas y runs downward. The camera sits at +z, so glyph tops must
       // land at -z (v = 1) — hence the flipped v when sampling the mask.
       const mask = sampleMask ? sampleMask(u, 1 - v) : 0;
-      const carve = sampleCarve ? sampleCarve(u, 1 - v) : smoothstep(0.3, 0.7, mask);
+      const carve = sampleCarve
+        ? sampleCarve(u, 1 - v)
+        : smoothstep(0.3, 0.7, mask);
       const height = hill + (pitFloor - hill) * carve;
 
       const base = (j * resolution + i) * 4;

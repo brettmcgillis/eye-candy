@@ -9,7 +9,7 @@ import { DEFAULT_PRESET } from './presets';
 // churn on a preset switch). Adding preset N+1 means adding a view component
 // + one entry here — CrossTalk.jsx itself doesn't change.
 export const PRESET_VIEWS = {
-  Clouds: {
+  'Cloud Connected': {
     Component: CloudsView,
     getMeta: (c) => ({
       spread: c.spread,
@@ -17,7 +17,7 @@ export const PRESET_VIEWS = {
       bobSpeed: c.bobSpeed,
     }),
   },
-  FluidSim: {
+  Waterworks: {
     Component: FluidSimView,
     // The water body is broadcast whole, separately, by useFluidSim's own
     // BroadcastChannel — there's nothing per-window to put in meta.

@@ -1,10 +1,10 @@
 // Preset snapshots for the scene. Keys here must match the Leva schema built
 // in useSceneControls 1:1 — no reshaping between a preset and the controls it
 // applies (see docs/scene-conventions.md, "Controls & presets").
-export const DEFAULT_PRESET = 'Clouds';
+export const DEFAULT_PRESET = 'Cloud Connected';
 
 export const PRESETS = {
-  Clouds: {
+  'Cloud Connected': {
     backgroundColor: '#87ceeb',
     syncEasing: 0.06,
     spread: 220,
@@ -12,7 +12,7 @@ export const PRESETS = {
     bobAmount: 14,
     bobSpeed: 0.4,
   },
-  FluidSim: {
+  Waterworks: {
     backgroundColor: '#9b9b9b',
     syncEasing: 0.06,
     tiltGravity: false,

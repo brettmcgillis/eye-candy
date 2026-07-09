@@ -143,6 +143,7 @@ To Build:
 - [ ] LightningLab
 - [ ] FurLab
 - [ ] GLTF Workbench
+- [ ] CRT Test
 
 ### Scenes to post
 
@@ -160,6 +161,8 @@ To Build:
 - [x] Cardinals - Cardinals
 - [ ] Cardinals - Bluejays
 - [ ] Cardinals - Magpies
+- [x] Cross Talk - Cloud Connected
+- [x] Cross Talk - Water Works
 - [ ] Dumpster Fire
 - [x] Horses For Courses
 - [x] LoaderPattern(s)
@@ -189,8 +192,7 @@ To Build:
 - [ ] Aisle 9
 - [ ] All My Friends Are Ghosts
 - [ ] Burning Cash
-- [ ] Cross Talk - Clouds
-- [ ] Crt Test
+- [ ] Cross Talk - Fish Bowl
 - [ ] Dripping Skull
 - [ ] Flying High - Day
 - [ ] Flying High - NightMode
@@ -201,7 +203,8 @@ To Build:
 - [ ] Police Presence - Left the city sitting on cinder blocks
 - [ ] Prayer - One Prayer
 - [ ] Prayer - Two Prayers
-- [ ] Prayer - Three Prayer
+- [ ] Prayer - Three Prayers
+- [ ] Raised By TV
 - [ ] Row It Alone
 - [ ] Stay Hunted
 - [ ] Still Pulling For You - Rough Waters

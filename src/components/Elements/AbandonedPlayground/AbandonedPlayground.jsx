@@ -4,12 +4,26 @@ import { useAnimations, useGLTF } from '@react-three/drei';
 
 import { modelFile } from '../../../utils/appUtils';
 
-export default function AbandonedPlayground(props) {
+export default function AbandonedPlayground({ animated = false, ...props }) {
   const group = React.useRef();
   const { nodes, materials, animations } = useGLTF(
     modelFile('abandoned_playground.glb')
   );
   const { actions } = useAnimations(animations, group);
+
+  // Ghost town, but the swings still creak: play every baked clip when the
+  // consumer opts in.
+  React.useEffect(() => {
+    if (!animated) return undefined;
+    const active = Object.values(actions).filter(Boolean);
+    active.forEach((action) => {
+      action.reset().play();
+    });
+    return () => {
+      active.forEach((action) => action.stop());
+    };
+  }, [actions, animated]);
+
   return (
     <group ref={group} {...props} dispose={null}>
       <group name="Sketchfab_Scene">

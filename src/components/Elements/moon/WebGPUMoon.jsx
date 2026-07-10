@@ -1,4 +1,4 @@
-import { texture as textureSample } from 'three/tsl';
+import { texture as textureSample, vec3 } from 'three/tsl';
 import * as THREE from 'three/webgpu';
 
 import React, { useMemo } from 'react';
@@ -18,6 +18,12 @@ export default function WebGPUMoon({
   color: colorProp = '#ffffff',
   emissive: emissiveProp = '#000000',
   emissiveIntensity = 0,
+  // When true the emissive glow carries the moon texture (self-lit moon
+  // that still shows its craters) instead of a flat color wash.
+  emissiveUsesTexture = false,
+  // Pass false to opt the moon out of scene fog (custom fogNode included) —
+  // a distant moon otherwise gets flattened into the haze color.
+  fog: fogProp = true,
   metalness = 0.1,
   roughness = 0.8,
   ...props
@@ -46,12 +52,22 @@ export default function WebGPUMoon({
       roughness,
     });
 
+    if (emissiveUsesTexture && emissiveIntensity > 0) {
+      mat.emissiveNode = textureSample(new THREE.TextureNode(texture))
+        .rgb.mul(vec3(emissiveColor.r, emissiveColor.g, emissiveColor.b))
+        .mul(emissiveIntensity);
+    }
+
+    mat.fog = fogProp;
+
     return mat;
   }, [
     texture,
     colorProp,
     emissiveProp,
     emissiveIntensity,
+    emissiveUsesTexture,
+    fogProp,
     metalness,
     roughness,
   ]);

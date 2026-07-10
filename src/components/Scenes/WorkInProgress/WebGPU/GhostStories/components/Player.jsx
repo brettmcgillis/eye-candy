@@ -97,6 +97,11 @@ function Player({ config, tracker, world }) {
       <Ecctrl
         ref={ecctrlRef}
         animated
+        // WebGPU frame pacing is spikier than WebGL; the auto-balance
+        // spring overshoots on irregular deltas and shakes the capsule
+        // (which throws the cloth off its colliders). The ghost is a
+        // floating blob — it doesn't need balancing at all.
+        autoBalance={false}
         camInitDis={config.camInitDis}
         camLerpMult={25}
         camMaxDis={config.camMaxDis}

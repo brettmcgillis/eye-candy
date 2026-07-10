@@ -2,25 +2,52 @@ import React, { memo, useMemo } from 'react';
 
 import { RigidBody } from '@react-three/rapier';
 
+import AbandonedCar from '../../../../../elements/AbandonedCar/AbandonedCar';
 import AbandonedChildrensSlide from '../../../../../elements/AbandonedChildrensSlide/AbandonedChildrensSlide';
 import AbandonedHouse from '../../../../../elements/AbandonedHouse/AbandonedHouse';
 import AbandonedPlayground from '../../../../../elements/AbandonedPlayground/AbandonedPlayground';
-import BrokenConcreteDebris from '../../../../../elements/BrokenConcreteDebris/BrokenConcreteDebris';
+import BrokenConcreteDebris, {
+  DebrisPiece,
+} from '../../../../../elements/BrokenConcreteDebris/BrokenConcreteDebris';
 import CrashedAbandonedCar from '../../../../../elements/CrashedAbandonedCar/CrashedAbandonedCar';
-import DamagedChainlinkFenceSegments from '../../../../../elements/DamagedChainlinkFenceSegments/DamagedChainlinkFenceSegments';
+import DamagedChainlinkFenceSegments, {
+  FenceSegment,
+} from '../../../../../elements/DamagedChainlinkFenceSegments/DamagedChainlinkFenceSegments';
 import RuinArch from '../../../../../elements/RuinArch/RuinArch';
 import RuinArchBroken from '../../../../../elements/RuinArchBroken/RuinArchBroken';
 import ShippingContainer from '../../../../../elements/ShippingContainer/ShippingContainer';
 import Bret from '../../../../../elements/bret/Bret';
+import FireAndSmoke from '../../../../../elements/fireAndSmoke/FireAndSmoke';
 import { getSetting, pickAnchor, rollChunkSetting } from '../utils/settings';
+
+// A crackling campfire piece: the renderer-agnostic fire/smoke element plus
+// a warm flickerless point light (post pass may add flicker later).
+function Campfire(props) {
+  return (
+    <group {...props}>
+      <FireAndSmoke scale={0.5} />
+      <pointLight
+        color="#ff9a3c"
+        decay={2}
+        distance={18}
+        intensity={14}
+        position={[0, 1.2, 0]}
+      />
+    </group>
+  );
+}
 
 const ELEMENTS = {
   arch: RuinArch,
   archBroken: RuinArchBroken,
   bret: Bret,
+  campfire: Campfire,
+  carPack: AbandonedCar,
   container: ShippingContainer,
   crashedCar: CrashedAbandonedCar,
   debris: BrokenConcreteDebris,
+  debrisPiece: DebrisPiece,
+  fenceSegment: FenceSegment,
   fenceSegments: DamagedChainlinkFenceSegments,
   house: AbandonedHouse,
   playground: AbandonedPlayground,
@@ -30,8 +57,9 @@ const ELEMENTS = {
 // Renders whatever abandoned setting this chunk rolled (or nothing).
 // Pieces are placed at the chunk's anchor — nudged toward the path network
 // — then each piece snaps its own base to the terrain so a sloped site
-// doesn't leave props floating. Cuboid auto-colliders keep the ghost from
-// walking through walls without paying for trimesh hulls.
+// doesn't leave props floating. Scale/rotation are applied at the wrapper
+// (never inside the element); pieces with `collider: false` render without
+// a rigid body so the ghost can drift through them.
 function SettingChunk({ config, cx, cz, world }) {
   const placed = useMemo(() => {
     const key = rollChunkSetting({
@@ -58,11 +86,13 @@ function SettingChunk({ config, cx, cz, world }) {
       const y = world.sampleHeight(x, z) + piece.position[1];
 
       return {
+        collider: piece.collider !== false,
         element: piece.element,
         key: `${piece.element}:${index}`,
         position: [x, y, z],
-        rotationY: anchor.yaw + piece.rotationY,
-        scale: piece.scale,
+        props: piece.props,
+        rotationY: anchor.yaw + (piece.rotationY ?? 0),
+        scale: piece.scale ?? 1,
       };
     });
 
@@ -76,6 +106,20 @@ function SettingChunk({ config, cx, cz, world }) {
       {placed.pieces.map((piece) => {
         const Element = ELEMENTS[piece.element];
         if (!Element) return null;
+
+        if (!piece.collider) {
+          return (
+            <group
+              key={piece.key}
+              position={piece.position}
+              rotation={[0, piece.rotationY, 0]}
+              scale={piece.scale}
+            >
+              <Element {...piece.props} />
+            </group>
+          );
+        }
+
         return (
           <RigidBody
             key={piece.key}
@@ -85,7 +129,7 @@ function SettingChunk({ config, cx, cz, world }) {
             scale={piece.scale}
             type="fixed"
           >
-            <Element />
+            <Element {...piece.props} />
           </RigidBody>
         );
       })}

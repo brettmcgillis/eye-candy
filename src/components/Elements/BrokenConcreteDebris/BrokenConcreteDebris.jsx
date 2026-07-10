@@ -4,6 +4,43 @@ import { useGLTF } from '@react-three/drei';
 
 import { modelFile } from '../../../utils/appUtils';
 
+// The pack's individual chunks, re-exposed so scenes can scatter pieces
+// resting on their own terrain instead of plopping the whole diorama down
+// (several pieces float when the collection is used as-is on uneven
+// ground). Node baked positions are stripped — every piece renders with
+// its pivot at the origin, ground plane at y≈0.
+const PIECE_NODES = {
+  pillar1: 'broken_concrete_pillar_001002_conclete_debri_skin_0',
+  pillar2: 'broken_concrete_pillar_002002_conclete_debri_skin_0',
+  pillar3: 'broken_concrete_pillar_003001_conclete_debri_skin_0',
+  pillar4: 'broken_concrete_pillar_002003_conclete_debri_skin_0',
+  wall1: 'broken_concrete_wall_001001_conclete_debri_skin_0',
+  wall2: 'broken_concrete_wall_002001_conclete_debri_skin_0',
+  wall3: 'broken_concrete_wall_003001_conclete_debri_skin_0',
+  corner1: 'broken_concrete_wall_cornor_001001_conclete_debri_skin_0',
+  corner2: 'broken_concrete_wall_cornor_002001_conclete_debri_skin_0',
+  corner3: 'broken_concrete_wall_cornor_003001_conclete_debri_skin_0',
+};
+
+export const DEBRIS_PIECES = Object.keys(PIECE_NODES);
+
+export function DebrisPiece({ piece = 'pillar1', ...props }) {
+  const { nodes, materials } = useGLTF(modelFile('broken_concrete_debris.glb'));
+  const node = nodes[PIECE_NODES[piece]] ?? nodes[PIECE_NODES.pillar1];
+  return (
+    <group {...props} dispose={null}>
+      <mesh
+        castShadow
+        receiveShadow
+        geometry={node.geometry}
+        material={materials.conclete_debri_skin}
+        rotation={[-Math.PI / 2, 0, 0]}
+      />
+    </group>
+  );
+}
+
+// Original full diorama, unchanged.
 export default function BrokenConcreteDebris(props) {
   const { nodes, materials } = useGLTF(modelFile('broken_concrete_debris.glb'));
   return (

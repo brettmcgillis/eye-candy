@@ -1,30 +1,65 @@
 import { uniform } from 'three/tsl';
 import * as THREE from 'three/webgpu';
 
-import React, { memo, useEffect, useMemo, useState } from 'react';
+import React, { memo, useEffect, useMemo, useRef, useState } from 'react';
 
 import { useFrame } from '@react-three/fiber';
 
 import createTerrainMaterial from '../utils/terrainMaterial';
-import { chunkCoord, ringChunks } from '../utils/worldgen';
+import {
+  CHUNK_SIZE,
+  chunkCoord,
+  chunkKey,
+  ringChunks,
+} from '../utils/worldgen';
 import Fireflies from './Fireflies';
 import FlowerChunk from './FlowerChunk';
 import GrassChunk from './GrassChunk';
 import SettingChunk from './SettingChunk';
 import TerrainChunk from './TerrainChunk';
+import TreeChunk from './TreeChunk';
 
 // Streams the endless world as a square ring of chunks around the ghost.
 // Chunks are keyed by their grid coordinate, so crossing a border only
-// mounts the new leading row and unmounts the trailing one — everything
-// in between survives untouched.
+// mounts the new leading row and unmounts the trailing one — everything in
+// between survives untouched. New chunks are *revealed one per frame*
+// (center-out) instead of all at once: geometry building + grass scatter
+// for a whole row in a single frame is what caused the visible stutter on
+// chunk crossings. The grass distance fade in bladeMaterial hides the
+// staggered arrivals — blades grow in from zero past the fade line.
 function World({ config, tracker, world }) {
   const [center, setCenter] = useState({ cx: 0, cz: 0 });
+  const [revealed, setRevealed] = useState(() => new Set());
+  const revealedRef = useRef(revealed);
+  revealedRef.current = revealed;
+
+  const chunks = useMemo(
+    () => ringChunks(center.cx, center.cz, config.chunkRadius),
+    [center.cx, center.cz, config.chunkRadius]
+  );
 
   useFrame(() => {
     const cx = chunkCoord(tracker.position.x);
     const cz = chunkCoord(tracker.position.z);
     if (cx !== center.cx || cz !== center.cz) {
       setCenter({ cx, cz });
+      return;
+    }
+
+    // Reveal the nearest not-yet-mounted chunk, one per frame.
+    const current = revealedRef.current;
+    const next = chunks.find(
+      (chunk) => !current.has(chunkKey(chunk.cx, chunk.cz))
+    );
+    if (next) {
+      const grown = new Set(current);
+      grown.add(chunkKey(next.cx, next.cz));
+      // Drop keys that left the ring so the set doesn't grow unbounded.
+      const live = new Set(chunks.map((c) => chunkKey(c.cx, c.cz)));
+      grown.forEach((key) => {
+        if (!live.has(key)) grown.delete(key);
+      });
+      setRevealed(grown);
     }
   });
 
@@ -63,6 +98,8 @@ function World({ config, tracker, world }) {
       bladeBend: uniform(config.bladeBend),
       bladeHeight: uniform(config.bladeHeight),
       bladeWidth: uniform(config.bladeWidth),
+      fadeEnd: uniform(60),
+      fadeStart: uniform(40),
       ghostPosition: tracker.ghostPosition,
       moonColor: uniform(new THREE.Color(config.moonLightColor)),
       moonDir: uniform(new THREE.Vector3(0, -1, 0)),
@@ -70,6 +107,7 @@ function World({ config, tracker, world }) {
       tipColor: uniform(new THREE.Color(config.grassTipColor)),
       touchRadius: uniform(config.touchRadius),
       touchStrength: uniform(config.touchStrength),
+      windAngle: uniform(0),
       windDir: uniform(new THREE.Vector2(config.windDirX, config.windDirZ)),
       windScale: uniform(config.windScale),
       windSpeed: uniform(config.windSpeed),
@@ -91,9 +129,21 @@ function World({ config, tracker, world }) {
     grassUniforms.windDir.value
       .set(config.windDirX, config.windDirZ)
       .normalize();
+    grassUniforms.windAngle.value = Math.atan2(
+      grassUniforms.windDir.value.y,
+      grassUniforms.windDir.value.x
+    );
     grassUniforms.windScale.value = config.windScale;
     grassUniforms.windSpeed.value = config.windSpeed;
     grassUniforms.windStrength.value = config.windStrength;
+
+    // Blades vanish just inside the loaded grass ring so chunk streaming
+    // stays hidden behind the fade.
+    const grassExtent =
+      (Math.min(config.grassChunkRadius, config.chunkRadius) + 0.5) *
+      CHUNK_SIZE;
+    grassUniforms.fadeStart.value = grassExtent * 0.6;
+    grassUniforms.fadeEnd.value = grassExtent * 0.95;
 
     // Direction moonlight travels (moon position -> scene), matching
     // SkyRig's moon placement, for the translucency term.
@@ -111,6 +161,8 @@ function World({ config, tracker, world }) {
     config.bladeBend,
     config.bladeHeight,
     config.bladeWidth,
+    config.chunkRadius,
+    config.grassChunkRadius,
     config.moonAzimuth,
     config.moonElevation,
     config.moonLightColor,
@@ -126,11 +178,6 @@ function World({ config, tracker, world }) {
     grassUniforms,
   ]);
 
-  const chunks = useMemo(
-    () => ringChunks(center.cx, center.cz, config.chunkRadius),
-    [center.cx, center.cz, config.chunkRadius]
-  );
-
   // Grass only populates the inner ring — beyond that the fog and darkness
   // swallow the detail anyway, and blade count is the perf budget's biggest
   // line item.
@@ -138,42 +185,47 @@ function World({ config, tracker, world }) {
 
   return (
     <group>
-      {chunks.map(({ cx, cz, dist }) => (
-        <React.Fragment key={`${cx}:${cz}`}>
-          <TerrainChunk
-            cx={cx}
-            cz={cz}
-            material={terrainMaterial}
-            segments={config.terrainSegments}
-            world={world}
-          />
-          {dist <= grassRadius && (
-            <GrassChunk
-              bladeCount={Math.floor(
-                config.bladesPerChunk *
-                  (dist === 0 ? 1 : config.grassRingDensity)
-              )}
-              clumpSize={config.clumpSize}
+      {chunks
+        .filter(({ cx, cz }) => revealed.has(chunkKey(cx, cz)))
+        .map(({ cx, cz, dist }) => (
+          <React.Fragment key={`${cx}:${cz}`}>
+            <TerrainChunk
               cx={cx}
               cz={cz}
-              uniforms={grassUniforms}
+              material={terrainMaterial}
+              segments={config.terrainSegments}
               world={world}
             />
-          )}
-          {dist <= grassRadius && config.flowersPerChunk > 0 && (
-            <FlowerChunk
-              config={config}
-              cx={cx}
-              cz={cz}
-              tracker={tracker}
-              world={world}
-            />
-          )}
-          {config.settingsEnabled && (
-            <SettingChunk config={config} cx={cx} cz={cz} world={world} />
-          )}
-        </React.Fragment>
-      ))}
+            {dist <= grassRadius && (
+              <GrassChunk
+                bladeCount={Math.floor(
+                  config.bladesPerChunk *
+                    (dist === 0 ? 1 : config.grassRingDensity)
+                )}
+                clumpSize={config.clumpSize}
+                cx={cx}
+                cz={cz}
+                uniforms={grassUniforms}
+                world={world}
+              />
+            )}
+            {dist <= grassRadius && config.flowersPerChunk > 0 && (
+              <FlowerChunk
+                config={config}
+                cx={cx}
+                cz={cz}
+                tracker={tracker}
+                world={world}
+              />
+            )}
+            {config.treesEnabled && (
+              <TreeChunk config={config} cx={cx} cz={cz} world={world} />
+            )}
+            {config.settingsEnabled && (
+              <SettingChunk config={config} cx={cx} cz={cz} world={world} />
+            )}
+          </React.Fragment>
+        ))}
       {config.firefliesEnabled && (
         <Fireflies
           center={center}

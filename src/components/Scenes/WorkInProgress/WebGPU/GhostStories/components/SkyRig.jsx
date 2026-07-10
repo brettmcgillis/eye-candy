@@ -71,6 +71,7 @@ function SkyRig({ config, tracker }) {
           emissive={config.moonColor}
           emissiveIntensity={config.moonEmissiveIntensity}
           emissiveUsesTexture
+          fog={false}
           position={moonPosition}
           radius={config.moonSize}
           segments={32}

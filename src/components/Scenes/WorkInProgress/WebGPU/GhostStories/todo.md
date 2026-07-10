@@ -54,13 +54,17 @@
 - [x] Ghost-reactive compute water (ported from `webgpu_compute_water`; patch anchored to the ghost's chunk, ripples from ghost speed near the surface)
 - [x] Chunk-seeded abandoned settings (house at spawn; container / playground / ruin-arch gathering / car wreck / fence / debris / rare Bret)
 - [x] Audio: wind + night ambience loops, frog loop swelling near water, AudioToggleOverlay
-- [ ] Drop frog audio at `public/audio/frogs-croaking.mp3` (convert the WAV; later: croak-sprite slicing via the sprite script)
+- [x] Drop frog audio at `public/audio/frogs-croaking.mp3` (convert the WAV; later: croak-sprite slicing via the sprite script)
 - [ ] Utility pole line (meshes unlabeled — needs manual mesh mapping + baked wire anchors before it can join the settings)
 - [ ] Per-setting scale/lift tuning pass (element pack pivots vary; tune in `utils/settings.js`)
 - [ ] AbandonedHouse is 644 draw calls — decimate/merge before it can appear outside the spawn chunk
 - [ ] Post pass (deliberately absent until layout + perf settle)
-- [ ] Add a camp fire
-- [ ] lets add some `ez-tree`s to the landscape and distance based fog? to help hide the seems a bit.
+- [x] Add a camp fire (FireAndSmoke + warm point light; standalone `campfire` setting + embers in the `gathering` ring)
+- [x] `ez-tree`s scattered per chunk (5 cached templates cloned — 2 draw calls/tree; trunk cylinder colliders; bushes collider-free). Leaf wind is a WebGL-only shader injection so leaves hold still on WebGPU.
+
+- [ ] add a glowing ghost inside the abandonned house.
+- [ ] campfire looks weak
+- [ ] concrete debris needs dealing with, still seeing floating chunks. either break the model into usable pieces, or remove entirely.
 
 # // Interactivity
 
@@ -68,15 +72,16 @@
 
 # // Bugs
 
-- [ ] Ecctrl is choking on webgpu. the character capsule is doing all kinds of extra movement that it should not be. causes cloth to fall off ghost's collider spheres. I believe we see this in CharacterController when comparing gpu to gl as well. fuck
-- [ ] moon looks like a flat circle, cant clearly see the moonTexture
-- [ ] wheres the water?
-- [ ] scale up shipping container, slide, cars
-- [ ] scale up playground, space elements out, run animation.
-- [ ] scale down the arches still fucking huge & their colliders dont seem to align, keep getting stuck on them.
-- [ ] scale up concrete debris and make sure were not just plopping the collection down in place, theres a bunch of floating geometry in the collection that we actually want resting in the grass.
-- scale up fence segments and make sure were not just plopping the collection down in place, they are 4 unconnected elements.
-- [ ] add the other abandonned car back into the collection of things to show.
-- [ ] seeing an issue where things/grass/terrain seem to pop into place. assuming this is when crossing chunks?
-- [ ] is grass popping in and out as i cross chunks? sort of looks like it. lots of visual stuttering in the scene despite generally running smoothly
-- [ ] Dont see any fog. expecting areas where the character can go into the fog due to terrain dips
+- [~] Ecctrl WebGPU capsule jitter: disabled `autoBalance` (its spring overshoots on WebGPU's spikier frame deltas and shakes the capsule/cloth). If wobble persists, next suspects: fixed `timeStep` vs interpolation, and clamping delta inside the ecctrl fork. Needs an eyeball.
+- [x] Moon flat circle: it was being flattened by the fog haze (fully saturated at 765u) — `WebGPUMoon` now takes `fog={false}` + `emissiveUsesTexture` so craters glow through
+- [x] Wheres the water: two causes — waterLevel -1.4 was ~2σ below mean terrain (≈2% coverage; now -0.4), and water only existed on the 3-chunk sim patch (a static ring of quads now fills the rest of the loaded world at table height)
+- [x] Scales: house/container/slide/cars ×2, playground ×2.2 + slide spaced out + swing animation playing (`animated` prop on the element)
+- [x] Arches ×0.18 and ghost-permeable (`collider: false` per piece in settings.js)
+- [x] Debris: pack split into per-piece exports (`DebrisPiece` — pillars/walls/corners, pivot at origin); `debris` setting scatters 5 pieces resting on the terrain, ×2
+- [x] Fence: pack split into 5 per-segment exports (`FenceSegment`, incl. the torn end with wire scraps); `fence` setting staggers them with gaps/lean, ×2
+- [x] Other abandoned car back in: abandoned_car.glb is ONE wrecked car with parts flung around the site — placed whole as the `crashSite` setting (lift -5 to ground it, needs eyeball); CrashedAbandonedCar back to ×1
+- [x] Chunk-crossing pop/stutter: chunks now reveal one per frame center-out (the row of synchronous geometry+scatter builds was the hitch), and grass fades to zero blade height before the ring edge so streaming happens behind the fade
+- [x] Fog invisible: pool fog's distance ramp kept it off everything within 25m (exactly where you'd wade into it) — ramp now 1..8m, denser defaults (poolDensity 0.8, top 1.2, bottom -0.8)
+- [x] Element scaling: settings pieces now scale/rotate at the scene wrapper only; element internals untouched (pack pieces re-exported pivot-at-origin instead)
+- [x] Sweeping wind: blade material now uses QuickGrass's scheme — wind _direction_ is a slow spatial noise swirl, lean amount is a traveling noise field (remapped so every blade always leans, eased so gust fronts sweep), plus gust-glow on the tips. windScale/Speed/Strength defaults retuned
+- [ ] Blind-tuned values that need an eyeball: per-piece scales/lifts in `utils/settings.js`, car variant ground offsets, campfire scale, tree density/scale, fog density

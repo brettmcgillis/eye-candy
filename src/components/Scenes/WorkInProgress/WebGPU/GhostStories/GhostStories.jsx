@@ -117,11 +117,12 @@ export default function GhostStories() {
       <SkyRig config={config} tracker={tracker} />
       <FogRig config={config} />
       <Mountains config={config} tracker={tracker} world={world} />
-      <Water config={config} tracker={tracker} world={world} />
 
       <Physics paused={pausedPhysics} timeStep={1 / 60} interpolate>
         <Player config={config} tracker={tracker} world={world} />
         <World config={config} tracker={tracker} world={world} />
+        {/* Inside Physics: carries the water-surface collider. */}
+        <Water config={config} tracker={tracker} world={world} />
       </Physics>
     </>
   );

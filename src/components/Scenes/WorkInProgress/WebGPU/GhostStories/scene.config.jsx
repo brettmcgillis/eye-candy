@@ -1,12 +1,16 @@
 import React, { lazy } from 'react';
-import { FaBook } from 'react-icons/fa';
+import { GiBookCover } from 'react-icons/gi';
 import { LiaGhostSolid } from 'react-icons/lia';
 
 function SceneIcon() {
   return (
     <>
-      <LiaGhostSolid color="#000000" size={26} />
-      <FaBook color="#602600" />
+      <LiaGhostSolid
+        color="#000000"
+        size={26}
+        style={{ transform: 'scaleX(-1)' }}
+      />
+      <GiBookCover color="#602600" size={26} />
     </>
   );
 }

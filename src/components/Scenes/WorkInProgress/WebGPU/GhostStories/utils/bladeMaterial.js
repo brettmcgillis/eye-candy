@@ -14,16 +14,23 @@ import {
   transformNormalToView,
   uv,
   varying,
+  vec2,
   vec3,
   vec4,
 } from 'three/tsl';
 import * as THREE from 'three/webgpu';
 
-// Night-meadow blade shading, adapted from TouchGrass's Tsushima-style
-// material: cubic Bézier spine, gusty directional wind, clump-domed
-// normals, moonlight translucency. The cursor-touch bend becomes a
-// ghost-touch bend — `uniforms.ghostPosition` tracks the player every
-// frame, so grass parts around the ghost as it drifts through.
+// Night-meadow blades with QuickGrass-style wind (dev/examples/Quick_Grass,
+// grass-lighting-model-vsh.glsl):
+// - the wind *direction* is itself a slow spatial noise swirl around the
+//   base heading, so neighboring patches lean differently
+// - the lean amount is a traveling noise field remapped so every blade
+//   always leans a little and gust fronts sweep across the meadow
+// - gusts also brighten the tips (bent blades catch the moonlight)
+// Plus: cubic Bézier spine, clump-domed normals, moonlight translucency,
+// a ghost-touch bend (blades part around the player), and a distance fade
+// that shrinks blades to zero before the grass ring ends — chunk streaming
+// happens beyond the fade, so grass never visibly pops.
 
 const TWO_PI = 6.28318;
 
@@ -52,8 +59,20 @@ export default function createBladeMaterial({
   const bladeSeed = data.z;
   const phase = data.w.mul(TWO_PI);
 
+  // Distance fade: blades shrink smoothly to nothing approaching the edge
+  // of the loaded grass ring (fadeStart/fadeEnd track the ghost).
+  const ghostDelta = vec2(
+    worldX.sub(uniforms.ghostPosition.x),
+    worldZ.sub(uniforms.ghostPosition.z)
+  );
+  const fade = smoothstep(
+    uniforms.fadeEnd,
+    uniforms.fadeStart,
+    ghostDelta.length()
+  );
+
   const scale = data.y;
-  const height = uniforms.bladeHeight.mul(scale);
+  const height = uniforms.bladeHeight.mul(scale).mul(fade);
   const width = uniforms.bladeWidth.mul(scale);
 
   // Leaf-shaped taper: fuller in the middle, needle at the tip.
@@ -66,49 +85,46 @@ export default function createBladeMaterial({
   const p2 = vec3(0, height.mul(0.75), bendZ.mul(0.55));
   const p3 = vec3(0, height, bendZ);
 
-  // Wind: spatial gust field (rolling waves) × slow breathing envelope.
-  const windDir = vec3(uniforms.windDir.x, 0, uniforms.windDir.y);
-  const crossDir = vec3(uniforms.windDir.y.negate(), 0, uniforms.windDir.x);
-  const drift = time.mul(uniforms.windSpeed);
-  const gustField = mx_noise_float(
+  // ── QuickGrass wind ──
+  const windTime = time.mul(uniforms.windSpeed);
+
+  // Direction: slow spatial swirl (±~40°) around the base wind heading.
+  const swirl = mx_noise_float(
+    vec3(worldX.mul(0.05), worldZ.mul(0.05), windTime.mul(0.12))
+  );
+  const windAngle = uniforms.windAngle.add(swirl.mul(0.7));
+  const windDir = vec3(windAngle.cos(), 0, windAngle.sin());
+  const crossDir = vec3(windAngle.sin().negate(), 0, windAngle.cos());
+
+  // Lean amount: noise field traveling along the wind. Remap to 0.25..1
+  // (every blade always leans some) then ease-in — gust fronts read as
+  // sweeping waves of strongly-bent grass.
+  const leanSample = mx_noise_float(
     vec3(
-      worldX.mul(uniforms.windScale).add(drift),
-      worldZ.mul(uniforms.windScale),
-      drift.mul(0.6)
+      worldX.mul(uniforms.windScale).add(windTime.mul(uniforms.windDir.x)),
+      worldZ.mul(uniforms.windScale).add(windTime.mul(uniforms.windDir.y)),
+      bladeSeed.mul(3.1)
     )
-  )
-    .mul(0.5)
-    .add(0.5);
-  const breathe = time
-    .mul(0.35)
-    .add(bladeSeed.mul(TWO_PI))
+  );
+  const gust = leanSample.mul(0.5).add(0.5); // 0..1 traveling gust mask
+  const leanRemap = gust.mul(0.75).add(0.25);
+  const lean = leanRemap.mul(leanRemap).mul(1.25).mul(uniforms.windStrength);
+
+  // High-frequency per-blade flutter layered on the sweep.
+  const freq = mix(float(1.6), float(3.2), bladeSeed);
+  const flutter = time
+    .mul(freq.mul(3))
+    .add(phase)
+    .add(worldX.mul(windDir.x).add(worldZ.mul(windDir.z)).mul(0.8))
     .sin()
-    .mul(0.35)
-    .add(0.65);
-  const strength = uniforms.windStrength.mul(gustField).mul(breathe);
+    .mul(0.12);
 
-  // Traveling wave along the wind direction + per-blade frequency.
-  const wave = worldX.mul(windDir.x).add(worldZ.mul(windDir.z)).mul(0.6);
-  const freq = mix(float(1.2), float(2.6), bladeSeed);
-  const low = time.mul(freq).add(phase).add(wave).sin();
-  const high = time
-    .mul(freq.mul(4))
-    .add(phase.mul(1.7))
-    .add(wave.mul(1.3))
-    .sin();
-
-  // Push (steady lean) + sway (oscillation, mostly wind, some cross-wind).
-  const push = strength.mul(height);
-  const swayDir = windDir.add(crossDir.mul(high.mul(0.35))).normalize();
-  const sway = strength.mul(height).mul(0.5);
+  const push = lean.add(flutter.mul(uniforms.windStrength)).mul(height);
+  const swayDir = windDir.add(crossDir.mul(flutter.mul(2.5))).normalize();
 
   // Ghost touch: blades within touchRadius of the ghost lean away from it,
   // falloff-weighted and tip-heavy like the wind bend.
-  const touchDelta = vec3(
-    worldX.sub(uniforms.ghostPosition.x),
-    0,
-    worldZ.sub(uniforms.ghostPosition.z)
-  );
+  const touchDelta = vec3(ghostDelta.x, 0, ghostDelta.y);
   const touchDist = touchDelta.length().max(1e-4);
   const touchFalloff = clamp(
     float(1).sub(touchDist.div(uniforms.touchRadius)),
@@ -121,19 +137,9 @@ export default function createBladeMaterial({
     .mul(height)
     .mul(uniforms.touchStrength);
 
-  const q1 = p1
-    .add(windDir.mul(push.mul(0.08)))
-    .add(swayDir.mul(low.mul(sway).mul(0.25)))
-    .add(touchLean.mul(0.2));
-  const q2 = p2
-    .add(windDir.mul(push.mul(0.15)))
-    .add(swayDir.mul(low.mul(sway).mul(0.55)))
-    .add(touchLean.mul(0.55));
-  const q3 = p3
-    .add(windDir.mul(push.mul(0.25)))
-    .add(swayDir.mul(low.mul(sway)))
-    .add(swayDir.mul(high.mul(sway).mul(0.3)))
-    .add(touchLean);
+  const q1 = p1.add(swayDir.mul(push.mul(0.1))).add(touchLean.mul(0.2));
+  const q2 = p2.add(swayDir.mul(push.mul(0.28))).add(touchLean.mul(0.55));
+  const q3 = p3.add(swayDir.mul(push.mul(0.55))).add(touchLean);
 
   // Cubic Bézier (p0 = origin) and its tangent.
   const u = float(1).sub(t);
@@ -166,6 +172,7 @@ export default function createBladeMaterial({
   const clumpVary = varying(
     vec4(clumpData.x, clumpData.y, clumpData.z, bladeSeed)
   );
+  const gustVary = varying(gust);
 
   // Fragment normal: midrib/rim shaping across the width, then blended
   // toward the clump dome normal near the roots so clumps read as tufts.
@@ -176,12 +183,10 @@ export default function createBladeMaterial({
   const lightingNormal = mix(shaped, clumpNormal, domeBlend).normalize();
   mat.normalNode = transformNormalToView(lightingNormal);
 
-  // Color: root->tip gradient, clump tint layers, cool night jitter.
-  const gradient = mix(
-    uniforms.rootColor,
-    uniforms.tipColor,
-    smoothstep(0, 1, t)
-  );
+  // Color: root->tip gradient (ease-in like QuickGrass so tips pop), clump
+  // tint layers, cool night jitter, and a gust glow — bent blades catch
+  // the moonlight as the wave rolls over them.
+  const gradient = mix(uniforms.rootColor, uniforms.tipColor, t.pow(2));
   const layered = gradient
     .mul(mix(float(0.95), float(1.05), clumpVary.z))
     .mul(mix(float(0.95), float(1.05), clumpVary.w));
@@ -190,6 +195,7 @@ export default function createBladeMaterial({
     layered.mul(vec3(0.85, 0.95, 1.1)),
     clumpVary.w.mul(0.35)
   );
+  const gustGlow = float(1).add(gustVary.mul(t).mul(0.35));
 
   // Height AO (power curve keeps roots in shadow).
   const ao = mix(float(0.35), float(1.0), clamp(t.pow(2.2), 0, 1));
@@ -204,7 +210,7 @@ export default function createBladeMaterial({
     .mul(backlight)
     .mul(uniforms.backlightStrength);
 
-  mat.colorNode = cooled.mul(ao).add(translucency);
+  mat.colorNode = cooled.mul(ao).mul(gustGlow).add(translucency);
 
   return mat;
 }

@@ -98,10 +98,10 @@ function FogRig({ config }) {
       positionWorld.y
     );
 
-    // Pool fog needs a little distance before it reads (keeps the ghost
-    // itself out of the soup), then saturates.
+    // Pool fog only needs a short run-up — the ghost should be able to
+    // wade into a fog bank pooled in a dip and visibly sink into it.
     const viewDist = positionView.length();
-    const poolRamp = smoothstep(2.0, 25.0, viewDist);
+    const poolRamp = smoothstep(1.0, 8.0, viewDist);
     const pool = heightFactor
       .mul(patchy)
       .mul(uniforms.poolDensity)

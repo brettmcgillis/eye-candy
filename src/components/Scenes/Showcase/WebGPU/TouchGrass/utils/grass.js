@@ -1,6 +1,6 @@
 import * as THREE from 'three/webgpu';
 
-import { hash01, mulberry32 } from './noise2d';
+import { hash01, mulberry32 } from '../../../../../../utils/noise2d';
 
 // Instanced grass buffers are allocated once at MAX_COUNT and refilled in
 // place on rescatter, so both the geometry and the material (which binds the

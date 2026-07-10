@@ -4,9 +4,9 @@ import * as THREE from 'three/webgpu';
 
 import React, { memo, useEffect, useMemo, useState } from 'react';
 
+import { fbm2, hash01 } from '../../../../../../utils/noise2d';
 import createBladeMaterial from '../utils/bladeMaterial';
 import { MAX_BLADES, createGrassStore, scatterBlades } from '../utils/grass';
-import { fbm2, hash01 } from '../utils/noise2d';
 import renderTextMask from '../utils/textMask';
 
 const ENDLESS_TILE_RADIUS = 2;

@@ -1,7 +1,7 @@
 import React, { useEffect, useRef, useState } from 'react';
 import { createRoot } from 'react-dom/client';
 
-import { EcctrlJoystick } from '../../../../../modules/ecctrl/EcctrlJoystick.tsx';
+import { EcctrlJoystick } from './EcctrlJoystick.tsx';
 
 function supportsTouchUi() {
   if (typeof window === 'undefined') return false;
@@ -18,7 +18,14 @@ function supportsTouchUi() {
   return hasTouchEvents || hasTouchPoints || hasCoarsePointer || hasNoHover;
 }
 
-export default function TouchJoystickOverlay() {
+// Portals an EcctrlJoystick to document.body on touch-capable devices.
+// Extra props (e.g. joystickBaseProps / joystickStickProps /
+// joystickHandleProps with custom materials) pass through to EcctrlJoystick
+// — memoize them in the caller so the portal render effect stays quiet.
+export default function TouchJoystickOverlay({
+  buttonNumber = 5,
+  ...joystickProps
+}) {
   const rootRef = useRef(null);
   const containerRef = useRef(null);
   const [showJoystick, setShowJoystick] = useState(() => supportsTouchUi());
@@ -89,9 +96,11 @@ export default function TouchJoystickOverlay() {
 
   useEffect(() => {
     rootRef.current?.render(
-      showJoystick ? <EcctrlJoystick buttonNumber={5} /> : null
+      showJoystick ? (
+        <EcctrlJoystick buttonNumber={buttonNumber} {...joystickProps} />
+      ) : null
     );
-  }, [showJoystick]);
+  }, [showJoystick, buttonNumber, joystickProps]);
 
   return null;
 }

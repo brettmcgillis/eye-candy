@@ -4,7 +4,7 @@ import React, { memo, useEffect, useMemo, useRef } from 'react';
 
 import { useFrame } from '@react-three/fiber';
 
-import { fbm2, hash01 } from '../utils/noise2d';
+import { fbm2, hash01 } from '../../../../../../utils/noise2d';
 import renderTextMask from '../utils/textMask';
 
 const ENDLESS_TILE_RADIUS = 2;

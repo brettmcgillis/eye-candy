@@ -1,6 +1,6 @@
 import * as THREE from 'three/webgpu';
 
-import { fbm2 } from './noise2d';
+import { fbm2 } from '../../../../../../utils/noise2d';
 
 // One shared heightfield drives everything: the terrain samples it on the
 // GPU for displacement/strata, grass scatter samples it on the CPU so blades

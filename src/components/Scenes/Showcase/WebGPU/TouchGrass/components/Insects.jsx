@@ -4,10 +4,10 @@ import React, { memo, useMemo, useRef } from 'react';
 
 import { useFrame } from '@react-three/fiber';
 
+import { hash01 } from '../../../../../../utils/noise2d';
 import Bee2 from '../../../../../elements/Bee2/Bee2';
 import Butterfly from '../../../../../elements/Butterfly/Butterfly';
 import Dragonfly from '../../../../../elements/Dragonfly/Dragonfly';
-import { hash01 } from '../utils/noise2d';
 
 const BUTTERFLY_COUNT = 10;
 const BEE_COUNT = 6;

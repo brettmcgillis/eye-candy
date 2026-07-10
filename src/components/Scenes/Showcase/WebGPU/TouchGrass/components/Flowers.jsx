@@ -4,8 +4,8 @@ import React, { memo, useEffect, useMemo, useRef } from 'react';
 
 import { useFrame } from '@react-three/fiber';
 
+import { hash01 } from '../../../../../../utils/noise2d';
 import Flower from '../../../../../elements/Flower/Flower';
-import { hash01 } from '../utils/noise2d';
 
 const FLOWER_MODEL_SCALE = 0.42;
 

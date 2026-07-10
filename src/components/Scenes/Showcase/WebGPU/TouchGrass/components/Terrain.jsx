@@ -19,7 +19,7 @@ import * as THREE from 'three/webgpu';
 
 import React, { memo, useEffect, useMemo } from 'react';
 
-import { fbm2 } from '../utils/noise2d';
+import { fbm2 } from '../../../../../../utils/noise2d';
 import renderTextMask from '../utils/textMask';
 
 const SEGMENTS = 320;

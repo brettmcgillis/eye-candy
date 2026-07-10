@@ -1,11 +1,12 @@
 import React, { lazy } from 'react';
-import { FaBook, FaGhost } from 'react-icons/fa';
+import { FaBook } from 'react-icons/fa';
+import { LiaGhostSolid } from 'react-icons/lia';
 
 function SceneIcon() {
   return (
     <>
-      <FaBook color="#4f46e5" />
-      <FaGhost color="#e2e8f0" />
+      <LiaGhostSolid color="#000000" size={26} />
+      <FaBook color="#602600" />
     </>
   );
 }

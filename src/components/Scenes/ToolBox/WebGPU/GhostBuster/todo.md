@@ -21,9 +21,7 @@
 
 - [ ] Doc existing ones here.
 
-- [ ] Fluid material sheet gh0st
-- [ ] Sad ghost. Add small Drei cloud above ghost scale 0.05, y=0.25 above ghost. Rain too. Cloud and rain should not tilt, just always stay immediately above ghost and rain on him. All props for cloud and rain get threaded back up to Leva. Update all other presets cloud & rain visible false. Use rain from dev/examples/demo-2023-rain-puddle. start with 1:1 replica, and then I will tune for my desired apprearance and changes.
-- [x] Chowder/Unmoving Plaid effect using purple nebula space texture(s) & textureFile helper.
+- [ ] Sad ghost. Add small Drei cloud above ghost scale 0.05, y=0.25 above ghost. Rain too. Cloud and rain should not tilt, just always stay immediately above ghost and rain on him. All props for cloud and rain get threaded back up to Leva. Update all other presets cloud & rain visible false. Can we use three-mesh-bvh here to be able to cast a ray from the cloud to the ghost for a rain drop to follow? Should we use one of the cloud gltfs instead of drei (no webgpu)? could we enable lightning (ie a small arc) from cloud to ghost occassionally?
 
 # // Features
 

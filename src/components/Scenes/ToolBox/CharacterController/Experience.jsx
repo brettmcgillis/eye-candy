@@ -7,6 +7,7 @@ import { useThree } from '@react-three/fiber';
 import { Physics } from '@react-three/rapier';
 
 import Ecctrl, { useGame } from '../../../../modules/ecctrl/Ecctrl.tsx';
+import TouchJoystickOverlay from '../../../../modules/ecctrl/TouchJoystickOverlay';
 import { useRideableState } from '../../../../modules/ecctrl/rideables/useRideableState.ts';
 import RideableRcCar from '../../../elements/models/rcCar/RideableRcCar';
 import CapsuleCharacter from './components/CapsuleCharacter';
@@ -18,7 +19,6 @@ import Lights from './components/Lights';
 import RemotePlayers from './components/RemotePlayers';
 import SealCharacter from './components/SealCharacter';
 import ShotCube from './components/ShotCube';
-import TouchJoystickOverlay from './components/TouchJoystickOverlay';
 
 const keyboardMap = [
   { name: 'forward', keys: ['ArrowUp', 'KeyW'] },

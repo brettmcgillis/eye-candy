@@ -18,7 +18,7 @@ import React, { memo, useEffect, useMemo, useRef } from 'react';
 
 import { useFrame } from '@react-three/fiber';
 
-import { fbm2 } from '../utils/noise2d';
+import { fbm2 } from '../../../../../../utils/noise2d';
 import renderTextMask from '../utils/textMask';
 
 const FOAM_COLOR = new THREE.Color('#e3efe9');

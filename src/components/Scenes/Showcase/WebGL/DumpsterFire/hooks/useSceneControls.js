@@ -532,6 +532,41 @@ export default function useSceneControls() {
             max: 30,
             step: 0.1,
           },
+          'Shot Feedback': folder(
+            {
+              throwWhooshEnabled: {
+                label: 'Whoosh Audio',
+                value: initialPresetSnapshot.throwWhooshEnabled ?? true,
+              },
+              throwWindUpEnabled: {
+                label: 'Wind Up',
+                value: initialPresetSnapshot.throwWindUpEnabled ?? true,
+              },
+              throwWindUpDuration: {
+                label: 'Wind Up Time',
+                value: initialPresetSnapshot.throwWindUpDuration ?? 0.14,
+                min: 0,
+                max: 0.4,
+                step: 0.01,
+              },
+              throwTrailEnabled: {
+                label: 'Motion Trail',
+                value: initialPresetSnapshot.throwTrailEnabled ?? true,
+              },
+              throwLaunchKickEnabled: {
+                label: 'Launch Kick',
+                value: initialPresetSnapshot.throwLaunchKickEnabled ?? true,
+              },
+              throwLaunchKickStrength: {
+                label: 'Kick Strength',
+                value: initialPresetSnapshot.throwLaunchKickStrength ?? 1,
+                min: 0,
+                max: 3,
+                step: 0.05,
+              },
+            },
+            { collapsed: true }
+          ),
         },
         { collapsed: true }
       ),
@@ -1010,6 +1045,12 @@ ${allEntries}
     shotSpinX,
     shotSpinY,
     shotSpinZ,
+    throwWhooshEnabled,
+    throwWindUpEnabled,
+    throwWindUpDuration,
+    throwTrailEnabled,
+    throwLaunchKickEnabled,
+    throwLaunchKickStrength,
   } = controls;
 
   useEffect(() => {
@@ -1139,6 +1180,13 @@ ${allEntries}
       spinX: shotSpinX,
       spinY: shotSpinY,
       spinZ: shotSpinZ,
+      whooshEnabled: throwWhooshEnabled,
+      windUpEnabled: throwWindUpEnabled,
+      windUpDuration: throwWindUpDuration,
+      trailEnabled: throwTrailEnabled,
+      launchKickEnabled: throwLaunchKickEnabled,
+      launchKickStrength: throwLaunchKickStrength,
+      launchKickDuration: 0.18,
     },
     setFireAndSmokePoints,
     setParticleSmokePoints,

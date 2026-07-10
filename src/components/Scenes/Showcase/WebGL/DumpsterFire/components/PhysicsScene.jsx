@@ -56,7 +56,10 @@ function SceneComposition({
 }) {
   return (
     <group position={SCENE_ROOT_POSITION}>
-      <DumpsterBrickWall config={brickWallConfig} />
+      <DumpsterBrickWall
+        config={brickWallConfig}
+        onTrashCollision={onTrashCollision}
+      />
 
       {FIXED_SCENE_ITEMS.map((item) => {
         const sceneItem =

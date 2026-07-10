@@ -200,7 +200,7 @@ function useCinderblockVariants(tintColor) {
   }, [cinderBlock1, cinderBlock2, cinderBlock3, cinderBlock4, tintColor]);
 }
 
-function BrickWallBatch({ batch }) {
+function BrickWallBatch({ batch, onCollisionEnter }) {
   const bodiesRef = useRef([]);
   const interactiveRootRef = useRef(null);
   const registerInteractiveTarget = useTrashBlasterStore(
@@ -255,6 +255,7 @@ function BrickWallBatch({ batch }) {
         canSleep
         ccd
         instances={batch.instances}
+        onCollisionEnter={onCollisionEnter}
         ref={bodiesRef}
       >
         <instancedMesh
@@ -268,7 +269,7 @@ function BrickWallBatch({ batch }) {
   );
 }
 
-export default function DumpsterBrickWall({ config }) {
+export default function DumpsterBrickWall({ config, onTrashCollision }) {
   const cleanupNonce = useTrashBlasterStore((s) => s.cleanupNonce);
   const enabled = config?.enabled ?? false;
   const length = config?.length ?? 24;
@@ -292,7 +293,11 @@ export default function DumpsterBrickWall({ config }) {
   return (
     <group position={wallPosition}>
       {wallBatches.map((batch) => (
-        <BrickWallBatch key={`${cleanupNonce}-${batch.key}`} batch={batch} />
+        <BrickWallBatch
+          key={`${cleanupNonce}-${batch.key}`}
+          batch={batch}
+          onCollisionEnter={onTrashCollision}
+        />
       ))}
     </group>
   );

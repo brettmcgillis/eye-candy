@@ -11,6 +11,7 @@ import {
   TRASH_CLEANUP_POSITION,
 } from '../utils/sceneData';
 import { getParkedShotPosition } from '../utils/sceneUtils';
+import TrashStreaks from './TrashStreaks';
 
 function createShotInstances(asset) {
   return Array.from({ length: SHOT_POOL_SLOTS_PER_ASSET }, (_, slotIndex) => ({
@@ -153,6 +154,11 @@ export default function TrashBlaster({ shotConfig }) {
           bodyRefsMap={shotBodiesRef}
         />
       ))}
+
+      <TrashStreaks
+        shotBodiesRef={shotBodiesRef}
+        enabled={shotConfig?.trailEnabled !== false}
+      />
     </>
   );
 }

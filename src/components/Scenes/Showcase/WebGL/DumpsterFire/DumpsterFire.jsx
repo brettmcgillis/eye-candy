@@ -1,5 +1,6 @@
 import React, { useRef } from 'react';
 
+import CameraLaunchKick from './components/CameraLaunchKick';
 import CursorAttractor from './components/CursorAttractor';
 import FireAndSmokeLayer from './components/FireAndSmokeLayer';
 import ParticleSmokeLayer from './components/ParticleSmokeLayer';
@@ -46,6 +47,11 @@ export default function DumpsterFire() {
         cameraApiRef={cameraApiRef}
         sceneEnvironment={sceneEnvironment}
         sidewalkGroundConfig={sidewalkGroundConfig}
+      />
+      <CameraLaunchKick
+        enabled={trashShotConfig.launchKickEnabled !== false}
+        strength={trashShotConfig.launchKickStrength}
+        duration={trashShotConfig.launchKickDuration}
       />
       <CursorAttractor
         attractorsRef={attractorsRef}

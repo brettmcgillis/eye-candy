@@ -147,6 +147,42 @@ const DUMPSTER_CAMERA_SPLINE_POINTS = [
   { position: [-3.5, 4.5, 6] },
 ];
 
+// Generic cinematic loops framed around the dumpster (target ~[-6, 1, 0]).
+// All authored as closed loops since the scene spline runs closed by default;
+// toggle "Closed" off in the Camera controls for one-way versions.
+const DUMPSTER_CAMERA_LOW_ORBIT_POINTS = [
+  { position: [-6, 2.2, 11] },
+  { position: [1.8, 2.6, 7.8] },
+  { position: [5, 2.2, 0] },
+  { position: [1.8, 2.8, -7.8] },
+  { position: [-6, 2.4, -11] },
+  { position: [-13.8, 2.8, -7.8] },
+  { position: [-17, 2.2, 0] },
+  { position: [-13.8, 2.6, 7.8] },
+];
+
+const DUMPSTER_CAMERA_HIGH_SWEEP_POINTS = [
+  { position: [-6, 6.5, 13] },
+  { position: [3.2, 7.2, 9.2] },
+  { position: [7, 6.5, 0] },
+  { position: [3.2, 7.6, -9.2] },
+  { position: [-6, 6.8, -13] },
+  { position: [-15.2, 7.4, -9.2] },
+  { position: [-19, 6.5, 0] },
+  { position: [-15.2, 7, 9.2] },
+];
+
+const DUMPSTER_CAMERA_RISE_AND_FALL_POINTS = [
+  { position: [-6, 2.2, 11] },
+  { position: [1.8, 5, 7.8] },
+  { position: [5, 7, 0] },
+  { position: [1.8, 5, -7.8] },
+  { position: [-6, 2.4, -11] },
+  { position: [-13.8, 5, -7.8] },
+  { position: [-17, 7, 0] },
+  { position: [-13.8, 5, 7.8] },
+];
+
 export const CAMERA = {
   defaultMode: 'fixed',
   cameraAutoFit: true,
@@ -200,6 +236,15 @@ export const CAMERA = {
     paths: {
       'Dumpster Fire': {
         points: DUMPSTER_CAMERA_SPLINE_POINTS,
+      },
+      'Low Orbit': {
+        points: DUMPSTER_CAMERA_LOW_ORBIT_POINTS,
+      },
+      'High Sweep': {
+        points: DUMPSTER_CAMERA_HIGH_SWEEP_POINTS,
+      },
+      'Rise & Fall': {
+        points: DUMPSTER_CAMERA_RISE_AND_FALL_POINTS,
       },
       ...CAMERA_SPLINE_PRESETS,
     },

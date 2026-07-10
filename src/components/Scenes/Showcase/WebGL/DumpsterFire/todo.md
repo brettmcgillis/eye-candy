@@ -11,6 +11,13 @@
 
 # // TODO:
 
+- [x] normalize audio on new whoosh samples, and then wire them up to Howl when user throws, with control to disable
+- [x] add trash-shot camera launch-kick, with control to disable
+- [x] add trash-shot motion trail or stream, with control to disable
+- [x] add trash-shot hold-in-frame wind up, with control to disable
+- [x] create a couple new generic camera splines to test out, which we can use for video.
+      (Low Orbit / High Sweep / Rise & Fall, in the Camera > Spline Motion preset dropdown)
+
 [Back to main TODO](../../../../../../TODO.md)
 
 # // Presets

@@ -1,3 +1,17 @@
+export const DUMPSTER_FIRE_THROW_WHOOSH = {
+  sources: [
+    'dumpsterfire/whoosh1.mp3',
+    'dumpsterfire/whoosh2.mp3',
+    'dumpsterfire/whoosh3.mp3',
+    'dumpsterfire/whoosh4.mp3',
+    'dumpsterfire/whoosh5.mp3',
+  ],
+  volumeRange: [0.12, 0.2],
+  rateRange: [0.9, 1.12],
+  cooldownMs: 55,
+  pool: 6,
+};
+
 export const DUMPSTER_FIRE_COLLISION_AUDIO_DEFAULTS = {
   minImpactSpeed: 2.1,
   cooldownMs: 180,

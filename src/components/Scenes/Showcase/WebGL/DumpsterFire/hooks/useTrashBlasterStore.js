@@ -6,10 +6,15 @@ const useTrashBlasterStore = create((set, get) => ({
   hasThrowables: false,
   isPointerInteractionActive: false,
   cleanupNonce: 0,
+  lastThrow: null,
   clearTrashHandler: NOOP,
   fireTrashHandler: NOOP,
   interactiveTargets: {},
   markThrowableSpawned: () => set({ hasThrowables: true }),
+  emitThrow: (payload) =>
+    set((state) => ({
+      lastThrow: { ...payload, id: (state.lastThrow?.id ?? 0) + 1 },
+    })),
   setHasThrowables: (hasThrowables) => set({ hasThrowables }),
   setPointerInteractionActive: (isPointerInteractionActive) =>
     set({ isPointerInteractionActive }),

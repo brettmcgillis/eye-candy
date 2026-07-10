@@ -73,11 +73,11 @@ const DEFAULT_DUMPSTER_CONTROLS = Object.freeze({
 });
 
 const DEFAULT_BRICK_WALL_CONTROLS = Object.freeze({
-  brickWallEnabled: false,
-  brickWallLength: 24,
-  brickWallHeight: 3.6,
-  brickWallTintColor: '#a65a4d',
-  brickWallPosition: { x: -2, y: 1, z: 3 },
+  brickWallEnabled: true,
+  brickWallLength: 25,
+  brickWallHeight: 4.5,
+  brickWallTintColor: '#a35245',
+  brickWallPosition: { x: -4.5, y: 1, z: 3 },
 });
 
 const defaultShotTuning =
@@ -96,6 +96,15 @@ const DEFAULT_TRASH_BLASTER_CONTROLS = Object.freeze({
   shotSpinZ: defaultShotTuning.spinZ,
 });
 
+const DEFAULT_THROW_FX_CONTROLS = Object.freeze({
+  throwWhooshEnabled: true,
+  throwWindUpEnabled: true,
+  throwWindUpDuration: 0.14,
+  throwTrailEnabled: true,
+  throwLaunchKickEnabled: true,
+  throwLaunchKickStrength: 1,
+});
+
 const DEFAULT_CONTROL_VALUES = Object.freeze({
   ...DEFAULT_SCENE_ENVIRONMENT,
   ...DEFAULT_CAMERA_CONTROLS,
@@ -104,6 +113,7 @@ const DEFAULT_CONTROL_VALUES = Object.freeze({
   ...DEFAULT_DUMPSTER_CONTROLS,
   ...DEFAULT_BRICK_WALL_CONTROLS,
   ...DEFAULT_TRASH_BLASTER_CONTROLS,
+  ...DEFAULT_THROW_FX_CONTROLS,
   ...DEFAULT_COMBUSTION_CONTROLS,
   fireLightEnabled: DEFAULT_FIRE_LIGHT_RIG.enabled,
   fireLightColor: DEFAULT_FIRE_LIGHT_RIG.color,
@@ -147,14 +157,8 @@ const DARK_MODE_PARTICLE_COLORS = Object.freeze({
 
 export const PRESETS = {
   [DEFAULT_PRESET]: DEFAULT_PRESET_SNAPSHOT,
-  'Brick Wall': {
+  'Brick Blaster': {
     ...DEFAULT_PRESET_SNAPSHOT,
-    brickWallEnabled: true,
-    brickWallLength: 25,
-    brickWallHeight: 4.5,
-    brickWallTintColor: '#a35245',
-    brickWallPosition: { x: -2, y: 1, z: 3 },
-    sidewalkPosition: { ...SIDEWALK_GROUND.position, x: -4.25 },
     shotMode: 'Fun',
     shotSpawnOffset: brickWallShotTuning.spawnOffset,
     shotSpeed: brickWallShotTuning.speed,
@@ -192,14 +196,8 @@ export const PRESETS = {
     particleSmokeColorOverrides: [DARK_MODE_PARTICLE_COLORS.particleColor],
     particleSmokeVolumeColorOverrides: [DARK_MODE_PARTICLE_COLORS.volColor],
   },
-  'Dark Mode Brick Wall': {
+  'Dark Mode Brick Blaster': {
     ...DEFAULT_PRESET_SNAPSHOT,
-    brickWallEnabled: true,
-    brickWallLength: 25,
-    brickWallHeight: 4.5,
-    brickWallTintColor: '#a35245',
-    brickWallPosition: { x: -2, y: 1, z: 3 },
-    sidewalkPosition: { ...SIDEWALK_GROUND.position, x: -4.25 },
     shotMode: 'Fun',
     shotSpawnOffset: brickWallShotTuning.spawnOffset,
     shotSpeed: brickWallShotTuning.speed,

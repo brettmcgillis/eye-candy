@@ -18,10 +18,13 @@ import {
   getNormalizedPointerPosition,
   getParkedShotPosition,
 } from '../utils/sceneUtils';
+import useThrowWhooshAudio from './useThrowWhooshAudio';
 import useTrashBlasterStore from './useTrashBlasterStore';
 
 const DRAG_RELEASE_SPEED_LIMIT = 12;
 const LID_DRAG_RADIANS_PER_PIXEL = 0.014;
+// How far (world units) the trash winds back mid-hold before release.
+const WINDUP_PULL = 0.35;
 
 const sharedRaycaster = new THREE.Raycaster();
 const sharedCameraDirection = new THREE.Vector3();
@@ -29,6 +32,7 @@ const sharedDragPlane = new THREE.Plane();
 const sharedDragIntersection = new THREE.Vector3();
 const sharedDragTarget = new THREE.Vector3();
 const sharedBodyPosition = new THREE.Vector3();
+const sharedWindUpPosition = new THREE.Vector3();
 
 function clampVectorLength(vector, maxLength) {
   if (vector.lengthSq() <= maxLength * maxLength) {
@@ -210,6 +214,9 @@ export default function useTrashBlaster(shotConfig = DEFAULT_SHOT_TUNING) {
   const pointerDownRef = useRef(null);
   const shotConfigRef = useRef(shotConfig);
   const shotBodiesRef = useRef({});
+  const pendingWindUpsRef = useRef([]);
+  const playWhoosh = useThrowWhooshAudio();
+  const emitThrow = useTrashBlasterStore((s) => s.emitThrow);
   const markThrowableSpawned = useTrashBlasterStore(
     (s) => s.markThrowableSpawned
   );
@@ -241,13 +248,76 @@ export default function useTrashBlaster(shotConfig = DEFAULT_SHOT_TUNING) {
     shotConfigRef.current = shotConfig;
   }, [shotConfig]);
 
+  const launchShot = useCallback(
+    (body, shot, quaternion) => {
+      const [x, y, z] = shot.position;
+      const [vx, vy, vz] = shot.velocity;
+      const [sx, sy, sz] = shot.spin;
+
+      body.setBodyType(rapier.RigidBodyType.Dynamic, true);
+      body.setTranslation({ x, y, z }, true);
+      body.setRotation(
+        {
+          x: quaternion.x,
+          y: quaternion.y,
+          z: quaternion.z,
+          w: quaternion.w,
+        },
+        true
+      );
+      body.setLinvel({ x: vx, y: vy, z: vz }, true);
+      body.setAngvel({ x: sx, y: sy, z: sz }, true);
+      setThrowableActiveState(body, true);
+      body.wakeUp?.();
+      markThrowableSpawned();
+
+      const speed = Math.hypot(vx, vy, vz) || 1;
+
+      playWhoosh(shotConfigRef.current.whooshEnabled !== false);
+      emitThrow({
+        position: shot.position,
+        direction: [vx / speed, vy / speed, vz / speed],
+        speed,
+      });
+    },
+    [emitThrow, markThrowableSpawned, playWhoosh, rapier]
+  );
+
+  const beginWindUp = useCallback(
+    (body, shot, quaternion, duration) => {
+      const [x, y, z] = shot.position;
+
+      body.setBodyType(rapier.RigidBodyType.KinematicPositionBased, true);
+      body.setLinvel({ x: 0, y: 0, z: 0 }, true);
+      body.setAngvel({ x: 0, y: 0, z: 0 }, true);
+      body.setNextKinematicTranslation({ x, y, z });
+      body.setNextKinematicRotation(quaternion);
+      setThrowableActiveState(body, true);
+      body.wakeUp?.();
+
+      const backDir = new THREE.Vector3();
+      cameraRef.current.getWorldDirection(backDir);
+      backDir.negate();
+
+      const startedAt = performance.now();
+
+      pendingWindUpsRef.current.push({
+        body,
+        shot,
+        quaternion,
+        base: new THREE.Vector3(x, y, z),
+        backDir,
+        startedAt,
+        releaseAt: startedAt + duration * 1000,
+      });
+    },
+    [rapier]
+  );
+
   const fireShot = useCallback(
     (pointerPosition = new THREE.Vector2(0, 0)) => {
-      const shot = createTrashBlast(
-        cameraRef.current,
-        pointerPosition,
-        shotConfigRef.current
-      );
+      const config = shotConfigRef.current;
+      const shot = createTrashBlast(cameraRef.current, pointerPosition, config);
       const poolMeta = INSTANCED_TRASH_POOL_META[shot.asset.key];
       const bodies = shotBodiesRef.current[shot.asset.key];
 
@@ -266,30 +336,21 @@ export default function useTrashBlaster(shotConfig = DEFAULT_SHOT_TUNING) {
         return;
       }
 
-      const [x, y, z] = shot.position;
-      const [vx, vy, vz] = shot.velocity;
-      const [sx, sy, sz] = shot.spin;
       const quaternion = new THREE.Quaternion().setFromEuler(
         new THREE.Euler(...shot.rotation)
       );
 
-      body.setTranslation({ x, y, z }, true);
-      body.setRotation(
-        {
-          x: quaternion.x,
-          y: quaternion.y,
-          z: quaternion.z,
-          w: quaternion.w,
-        },
-        true
-      );
-      body.setLinvel({ x: vx, y: vy, z: vz }, true);
-      body.setAngvel({ x: sx, y: sy, z: sz }, true);
-      setThrowableActiveState(body, true);
-      body.wakeUp?.();
-      markThrowableSpawned();
+      const windUpDuration = config.windUpEnabled
+        ? Math.max(0, config.windUpDuration ?? 0)
+        : 0;
+
+      if (windUpDuration > 0) {
+        beginWindUp(body, shot, quaternion, windUpDuration);
+      } else {
+        launchShot(body, shot, quaternion);
+      }
     },
-    [markThrowableSpawned]
+    [beginWindUp, launchShot]
   );
 
   useEffect(() => {
@@ -301,6 +362,37 @@ export default function useTrashBlaster(shotConfig = DEFAULT_SHOT_TUNING) {
   }, [fireShot, registerFireTrashHandler, unregisterFireTrashHandler]);
 
   useFrame(() => {
+    const pendingWindUps = pendingWindUpsRef.current;
+
+    if (pendingWindUps.length) {
+      const now = performance.now();
+      const stillWinding = [];
+
+      pendingWindUps.forEach((windUp) => {
+        if (now >= windUp.releaseAt) {
+          launchShot(windUp.body, windUp.shot, windUp.quaternion);
+          return;
+        }
+
+        const progress =
+          (now - windUp.startedAt) / (windUp.releaseAt - windUp.startedAt);
+        const bob = Math.sin(progress * Math.PI) * WINDUP_PULL;
+
+        sharedWindUpPosition
+          .copy(windUp.base)
+          .addScaledVector(windUp.backDir, bob);
+        windUp.body.setNextKinematicTranslation({
+          x: sharedWindUpPosition.x,
+          y: sharedWindUpPosition.y,
+          z: sharedWindUpPosition.z,
+        });
+        windUp.body.setNextKinematicRotation(windUp.quaternion);
+        stillWinding.push(windUp);
+      });
+
+      pendingWindUpsRef.current = stillWinding;
+    }
+
     let recycledShot = false;
 
     SHOT_ASSET_OPTIONS.forEach((asset) => {
@@ -327,6 +419,11 @@ export default function useTrashBlaster(shotConfig = DEFAULT_SHOT_TUNING) {
 
   useEffect(() => {
     const clearTrash = () => {
+      pendingWindUpsRef.current.forEach((windUp) => {
+        windUp.body.setBodyType(rapier.RigidBodyType.Dynamic, true);
+      });
+      pendingWindUpsRef.current = [];
+
       SHOT_ASSET_OPTIONS.forEach((asset) => {
         const bodies = shotBodiesRef.current[asset.key];
 
@@ -345,7 +442,7 @@ export default function useTrashBlaster(shotConfig = DEFAULT_SHOT_TUNING) {
     return () => {
       unregisterClearTrashHandler();
     };
-  }, [registerClearTrashHandler, unregisterClearTrashHandler]);
+  }, [rapier, registerClearTrashHandler, unregisterClearTrashHandler]);
 
   useEffect(() => {
     const { domElement } = gl;

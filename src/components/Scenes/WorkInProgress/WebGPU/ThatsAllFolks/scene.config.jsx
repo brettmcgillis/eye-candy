@@ -5,8 +5,16 @@ import { WiSmoke } from 'react-icons/wi';
 function SceneIcon() {
   return (
     <>
-      <GiPistolGun color="#374151" />
-      <WiSmoke color="#9ca3af" />
+      <GiPistolGun
+        color="#000000"
+        size={24}
+        style={{ transform: 'translate(0, 0.25em)' }}
+      />
+      <WiSmoke
+        color="#000000"
+        size={24}
+        style={{ transform: 'translate(-0.25em, -0.25em)' }}
+      />
     </>
   );
 }

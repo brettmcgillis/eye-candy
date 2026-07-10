@@ -1,6 +1,6 @@
 import * as THREE from 'three';
 
-import React, { useEffect, useMemo, useRef } from 'react';
+import React, { useEffect, useLayoutEffect, useMemo, useRef } from 'react';
 
 import { useGLTF } from '@react-three/drei';
 import { InstancedRigidBodies } from '@react-three/rapier';
@@ -77,17 +77,7 @@ function centerGeometry(geometry) {
   ]);
 }
 
-function tintMaterial(material, tintColor) {
-  const tintedMaterial = material.clone();
-
-  if (tintedMaterial.color) {
-    tintedMaterial.color.set(tintColor);
-  }
-
-  return tintedMaterial;
-}
-
-function buildNormalizedVariants(variantDefinitions, tintColor) {
+function buildNormalizedVariants(variantDefinitions) {
   const bakedVariants = variantDefinitions.map((variant) => ({
     key: variant.key,
     geometry: bakeInstancedGeometry(variant.geometry, [
@@ -116,7 +106,9 @@ function buildNormalizedVariants(variantDefinitions, tintColor) {
     return {
       key: variant.key,
       geometry: centerGeometry(normalizedGeometry),
-      material: tintMaterial(variant.material, tintColor),
+      // Own a mutable clone so the tint can be updated in place without
+      // rebuilding the geometry or remounting the physics bodies.
+      material: variant.material.clone(),
     };
   });
 }
@@ -188,7 +180,7 @@ function useCinderblockVariants(tintColor) {
   const cinderBlock3 = useGLTF(CINDERBLOCK_ASSETS[2].filePath);
   const cinderBlock4 = useGLTF(CINDERBLOCK_ASSETS[3].filePath);
 
-  return useMemo(() => {
+  const variants = useMemo(() => {
     const gltfs = [cinderBlock1, cinderBlock2, cinderBlock3, cinderBlock4];
     const variantDefinitions = CINDERBLOCK_ASSETS.map((asset, index) => ({
       key: asset.key,
@@ -196,8 +188,17 @@ function useCinderblockVariants(tintColor) {
       material: gltfs[index].materials.cinder_block_mat,
     }));
 
-    return buildNormalizedVariants(variantDefinitions, tintColor);
-  }, [cinderBlock1, cinderBlock2, cinderBlock3, cinderBlock4, tintColor]);
+    return buildNormalizedVariants(variantDefinitions);
+  }, [cinderBlock1, cinderBlock2, cinderBlock3, cinderBlock4]);
+
+  // Update the tint in place so a color change never rebuilds the wall.
+  useLayoutEffect(() => {
+    variants.forEach((variant) => {
+      variant.material.color?.set(tintColor);
+    });
+  }, [variants, tintColor]);
+
+  return variants;
 }
 
 function BrickWallBatch({ batch, onCollisionEnter }) {

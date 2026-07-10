@@ -175,6 +175,7 @@ export const PRESETS = {
   },
   'Dark Mode': {
     ...DEFAULT_PRESET_SNAPSHOT,
+    brickWallTintColor: '#d66d5d',
     sceneBackgroundColor: '#0c1014',
     sceneFogColor: '#10161d',
     sceneAmbientIntensity: 0,
@@ -186,6 +187,7 @@ export const PRESETS = {
   },
   'Dark Mode Repeller': {
     ...DEFAULT_PRESET_SNAPSHOT,
+    brickWallTintColor: '#d66d5d',
     cursorAttractorMode: 'repeller',
     sceneBackgroundColor: '#0c1014',
     sceneFogColor: '#10161d',
@@ -198,6 +200,7 @@ export const PRESETS = {
   },
   'Dark Mode Brick Blaster': {
     ...DEFAULT_PRESET_SNAPSHOT,
+    brickWallTintColor: '#d66d5d',
     shotMode: 'Fun',
     shotSpawnOffset: brickWallShotTuning.spawnOffset,
     shotSpeed: brickWallShotTuning.speed,

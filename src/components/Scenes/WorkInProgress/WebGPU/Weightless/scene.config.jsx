@@ -1,0 +1,15 @@
+import React, { lazy } from 'react';
+import { GiHummingbird } from 'react-icons/gi';
+
+function SceneIcon() {
+  return <GiHummingbird color="#7fe7ff" />;
+}
+
+export default {
+  id: 'weightless',
+  label: 'Weightless',
+  channel: 'webgpu',
+  area: 'wip',
+  icon: SceneIcon,
+  Component: lazy(() => import('./Weightless')),
+};

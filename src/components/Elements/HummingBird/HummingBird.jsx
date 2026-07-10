@@ -1,19 +1,32 @@
 /* eslint-disable no-underscore-dangle */
 import { SkeletonUtils } from 'three-stdlib';
 
-import React from 'react';
+import React, { useEffect } from 'react';
 
 import { useAnimations, useGLTF } from '@react-three/drei';
 import { useGraph } from '@react-three/fiber';
 
 import { modelFile } from '../../../utils/appUtils';
 
-export default function HummingBird(props) {
+export default function HummingBird({ clip, timeScale = 1, ...props }) {
   const group = React.useRef();
   const { scene, animations } = useGLTF(modelFile('hummingbird.glb'));
   const clone = React.useMemo(() => SkeletonUtils.clone(scene), [scene]);
   const { nodes, materials } = useGraph(clone);
-  const { actions } = useAnimations(animations, group);
+  const { actions, mixer } = useAnimations(animations, group);
+
+  useEffect(() => {
+    if (!clip) return undefined;
+    const action = actions[clip] ?? Object.values(actions)[0];
+    if (!action) return undefined;
+    action.reset().play();
+    return () => action.stop();
+  }, [actions, clip]);
+
+  useEffect(() => {
+    mixer.timeScale = timeScale;
+  }, [mixer, timeScale]);
+
   return (
     <group ref={group} {...props} dispose={null}>
       <group name="Sketchfab_Scene">

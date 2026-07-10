@@ -8,6 +8,9 @@
 
 [Back to main TODO](../../../../../../TODO.md)
 
+- could we use the new webgpu fire sim for inspiration here?
+- could we combine the lusion surface floater example with a mls-mpm fluid sim?
+
 # // Presets
 
 - [ ] Sphere

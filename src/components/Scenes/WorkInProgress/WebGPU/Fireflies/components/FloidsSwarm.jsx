@@ -5,159 +5,137 @@ import React, { memo, useEffect, useMemo, useRef } from 'react';
 
 import { useFrame, useThree } from '@react-three/fiber';
 
-import createFloidsSimulation from '../utils/createFloidsSimulation';
-import { VOLUME_LAYER } from './VolumetricAtmosphere';
+import { MAX_HUNTERS } from '../utils/createFloidsSimulation';
+import flashIntensity from '../utils/flashIntensity';
 
 const LIGHT_POWER = 45;
-const HUNTER_CENTER = new THREE.Vector3(0, 3.5, 0);
-const hunterOffset = new THREE.Vector3();
+const FIREFLY_LIGHT_DISTANCE_UNIT = 2.2;
+const FIREFLY_BASE_COLOR = new THREE.Color('#6f6f6f');
+const FIREFLY_GLOW_COLOR = new THREE.Color('#f9bb50');
+// Stable ids for keys — MAX_HUNTERS is a fixed constant (never
+// reordered/resized at runtime), so this pairing never drifts.
+const HUNTER_IDS = ['hunter-a', 'hunter-b', 'hunter-c'];
 
-function flashIntensity(clock, cycle) {
-  const phase = Math.abs(clock / cycle - 0.5);
-  return THREE.MathUtils.smoothstep(0.18, 0.015, phase);
-}
+// Real point lights are a FIXED pool, deliberately decoupled from
+// fireflyCount (which can go up to 1000 — Floids' own reference runs 700
+// agents, but those are cheap unlit sprites, not lights). One real
+// WebGPU point light per firefly was the actual cause of the hard
+// multi-second freeze at high counts: `renderer.lighting =
+// new ClusteredLighting(fireflyCount + 2, ...)` recreated the lighting
+// system's shader graph (and forced every lit material's pipeline to
+// recompile) every time the count changed, scaling up to 700+ lights —
+// WebGPU pipeline compilation at that scale is exactly the kind of
+// synchronous main-thread stall that locks a whole browser tab. Every
+// firefly still gets the correct matte-grey-to-glow body color (that's
+// the instanced material, not a light); only a small, constant-size pool
+// of the currently-brightest fireflies gets a real light, first-come
+// first-served up to BRIGHT_THRESHOLD each frame — plenty for the
+// hunter-reflection effect without the pipeline ever needing to change
+// shape as fireflyCount moves.
+const MAX_REAL_LIGHTS = 64;
+const BRIGHT_THRESHOLD = 0.1;
 
-const FloidsSwarm = memo(function FloidsSwarm({ config }) {
-  const { camera, gl: renderer, pointer, raycaster } = useThree();
+// Pure renderer: all flock/hunter physics lives in hooks/useSharedSwarm.js
+// (host-authoritative across every open tab/window) — this component only
+// reads the shared position/clock/hunter buffers each frame and draws
+// them. No simulation, no multi-tab logic of its own.
+const FloidsSwarm = memo(function FloidsSwarm({
+  clocksRef,
+  config,
+  hunterCountRef,
+  hunterPositionsRef,
+  positionsRef,
+}) {
+  const { gl: renderer } = useThree();
   const bodiesRef = useRef(null);
-  const hunterRef = useRef(null);
+  const hunterRefs = useRef([]);
   const lightsRef = useRef([]);
-  const volumeLightsRef = useRef([]);
-  const simulationRef = useRef(null);
-  const hunterVelocity = useRef(new THREE.Vector3(0.12, 0, 0.08));
   const dummy = useMemo(() => new THREE.Object3D(), []);
   const color = useMemo(() => new THREE.Color(), []);
-  const pointerPlane = useMemo(
-    () => new THREE.Plane(new THREE.Vector3(0, 1, 0), -3.5),
+  // Shared warm firefly hue with a small spawn-time jitter, precomputed
+  // once for the fixed-size light pool (not per firefly — the pool never
+  // changes size, so this never needs to be recomputed).
+  const lightPool = useMemo(
+    () =>
+      Array.from({ length: MAX_REAL_LIGHTS }, (_, index) => {
+        const glow = FIREFLY_GLOW_COLOR.clone();
+        glow.offsetHSL(
+          (Math.random() - 0.5) * 0.05,
+          0,
+          (Math.random() - 0.5) * 0.08
+        );
+        return { color: glow, id: `light-${index}` };
+      }),
     []
   );
-  const pointerPosition = useMemo(() => new THREE.Vector3(), []);
-  const indices = useMemo(
-    () => Array.from({ length: config.fireflyCount }, (_, index) => index),
-    [config.fireflyCount]
-  );
 
+  // Created once, sized for the fixed light pool — never recreated when
+  // fireflyCount changes, so adjusting that slider never triggers a
+  // shader/pipeline recompile.
   useEffect(() => {
     const previousLighting = renderer.lighting;
-    renderer.lighting = new ClusteredLighting(
-      config.fireflyCount + 2,
-      48,
-      16,
-      32
-    );
-    const simulation = createFloidsSimulation(config.fireflyCount, config);
-    simulationRef.current = simulation;
-
+    renderer.lighting = new ClusteredLighting(MAX_REAL_LIGHTS + 2, 48, 16, 32);
     return () => {
       renderer.lighting = previousLighting;
-      simulationRef.current = null;
     };
-  }, [config.fireflyCount, renderer]);
+  }, [renderer]);
 
-  useFrame((_, rawDelta) => {
-    const simulation = simulationRef.current;
+  useFrame(() => {
     const bodies = bodiesRef.current;
-    const hunter = hunterRef.current;
-    if (!simulation || !bodies || !hunter) return;
+    const positions = positionsRef.current;
+    const clocks = clocksRef.current;
+    if (!bodies || !positions.length || !clocks.length) return;
 
-    const delta = Math.min(rawDelta, 1 / 30);
-    raycaster.setFromCamera(pointer, camera);
-    raycaster.ray.intersectPlane(pointerPlane, pointerPosition);
-
-    let preyX = 0;
-    let preyY = 0;
-    let preyZ = 0;
-    let preyCount = 0;
-    for (let index = 0; index < config.fireflyCount; index += 1) {
+    const count = Math.min(config.fireflyCount, clocks.length);
+    let litCount = 0;
+    for (let index = 0; index < count; index += 1) {
       const offset = index * 3;
-      const dx = simulation.positions[offset] - hunter.position.x;
-      const dy = simulation.positions[offset + 1] - hunter.position.y;
-      const dz = simulation.positions[offset + 2] - hunter.position.z;
-      const distanceSq = dx * dx + dy * dy + dz * dz;
-      if (distanceSq < 25) {
-        const weight = 1 / Math.max(distanceSq, 0.025);
-        preyX += dx * weight;
-        preyY += dy * weight;
-        preyZ += dz * weight;
-        preyCount += 1;
-      }
-    }
-    if (preyCount) {
-      hunterVelocity.current.x += (preyX / preyCount) * delta * 0.8;
-      hunterVelocity.current.y += (preyY / preyCount) * delta * 0.8;
-      hunterVelocity.current.z += (preyZ / preyCount) * delta * 0.8;
-    }
-    hunterOffset.copy(hunter.position).sub(HUNTER_CENTER);
-    if (hunterOffset.lengthSq() > 6.5 ** 2) {
-      hunterVelocity.current.addScaledVector(hunterOffset, -0.5 * delta);
-    }
-    hunterVelocity.current.setLength(config.hunterSpeed * 0.0016);
-    hunter.position.addScaledVector(hunterVelocity.current, delta);
-
-    simulation.step(delta, config, hunter.position, {
-      mode: config.cursorMode,
-      position: pointerPosition,
-      radius: config.cursorRadius * 0.02,
-    });
-
-    let brightestIndex = -1;
-    let secondBrightestIndex = -1;
-    let brightestFlash = -1;
-    let secondBrightestFlash = -1;
-
-    for (let index = 0; index < config.fireflyCount; index += 1) {
-      const offset = index * 3;
-      const flash = flashIntensity(simulation.clocks[index], config.fireCycle);
-      dummy.position.fromArray(simulation.positions, offset);
+      const flash = flashIntensity(clocks[index], config.fireCycle);
+      dummy.position.set(
+        positions[offset],
+        positions[offset + 1],
+        positions[offset + 2]
+      );
       dummy.scale.setScalar(config.fireflySize * 0.025 * (0.7 + flash * 0.5));
       dummy.updateMatrix();
       bodies.setMatrixAt(index, dummy.matrix);
-      color.setHSL(index / config.fireflyCount, 1, 0.5);
+      color.lerpColors(FIREFLY_BASE_COLOR, FIREFLY_GLOW_COLOR, flash);
       bodies.setColorAt(index, color);
 
-      const light = lightsRef.current[index];
-      if (light) {
-        light.position.copy(dummy.position);
-        light.power = LIGHT_POWER * config.lightIntensity * flash;
+      if (flash > BRIGHT_THRESHOLD && litCount < MAX_REAL_LIGHTS) {
+        const light = lightsRef.current[litCount];
+        if (light) {
+          light.position.copy(dummy.position);
+          light.power = LIGHT_POWER * config.lightIntensity * flash;
+        }
+        litCount += 1;
       }
-
-      if (flash > brightestFlash) {
-        secondBrightestIndex = brightestIndex;
-        secondBrightestFlash = brightestFlash;
-        brightestIndex = index;
-        brightestFlash = flash;
-      } else if (flash > secondBrightestFlash) {
-        secondBrightestIndex = index;
-        secondBrightestFlash = flash;
-      }
+    }
+    // Any pool lights not claimed by a bright-enough firefly this frame
+    // stay dark rather than lingering at last frame's position/power.
+    for (let i = litCount; i < MAX_REAL_LIGHTS; i += 1) {
+      const light = lightsRef.current[i];
+      if (light) light.power = 0;
     }
     bodies.instanceMatrix.needsUpdate = true;
-    bodies.instanceColor.needsUpdate = true;
+    if (bodies.instanceColor) bodies.instanceColor.needsUpdate = true;
 
-    const primaryVolumeLight = volumeLightsRef.current[0];
-    if (primaryVolumeLight && brightestIndex >= 0) {
-      const offset = brightestIndex * 3;
-      primaryVolumeLight.position.fromArray(simulation.positions, offset);
-      primaryVolumeLight.color.setHSL(
-        brightestIndex / config.fireflyCount,
-        1,
-        0.5
-      );
-      primaryVolumeLight.power =
-        LIGHT_POWER * config.lightIntensity * brightestFlash;
-    }
-
-    const secondaryVolumeLight = volumeLightsRef.current[1];
-    if (secondaryVolumeLight && secondBrightestIndex >= 0) {
-      const offset = secondBrightestIndex * 3;
-      secondaryVolumeLight.position.fromArray(simulation.positions, offset);
-      secondaryVolumeLight.color.setHSL(
-        secondBrightestIndex / config.fireflyCount,
-        1,
-        0.5
-      );
-      secondaryVolumeLight.power =
-        LIGHT_POWER * config.lightIntensity * secondBrightestFlash;
+    const hunterCount = hunterCountRef.current;
+    const hunterPositions = hunterPositionsRef.current;
+    for (let h = 0; h < MAX_HUNTERS; h += 1) {
+      const hunter = hunterRefs.current[h];
+      if (hunter) {
+        const active = h < hunterCount;
+        hunter.visible = active;
+        if (active) {
+          const hOffset = h * 3;
+          hunter.position.set(
+            hunterPositions[hOffset],
+            hunterPositions[hOffset + 1],
+            hunterPositions[hOffset + 2]
+          );
+        }
+      }
     }
   });
 
@@ -166,41 +144,39 @@ const FloidsSwarm = memo(function FloidsSwarm({ config }) {
       <instancedMesh
         ref={bodiesRef}
         args={[undefined, undefined, config.fireflyCount]}
-        castShadow
         frustumCulled={false}
       >
         <sphereGeometry args={[1, 16, 12]} />
         <meshStandardMaterial metalness={0} roughness={0.85} vertexColors />
       </instancedMesh>
-      {indices.map((index) => (
+      {lightPool.map(({ color: lightColor, id }, index) => (
         <pointLight
-          key={index}
+          key={id}
           ref={(light) => {
             lightsRef.current[index] = light;
           }}
-          color={new THREE.Color().setHSL(index / config.fireflyCount, 1, 0.5)}
+          color={lightColor}
           decay={2}
-          distance={5.5}
+          distance={FIREFLY_LIGHT_DISTANCE_UNIT * config.fireflyGlow}
         />
       ))}
-      {[0, 1].map((index) => (
-        <pointLight
-          key={`volume-${index}`}
-          ref={(light) => {
-            volumeLightsRef.current[index] = light;
-            if (light) {
-              light.layers.disableAll();
-              light.layers.enable(VOLUME_LAYER);
-            }
+      {HUNTER_IDS.map((id, index) => (
+        <mesh
+          key={id}
+          ref={(mesh) => {
+            hunterRefs.current[index] = mesh;
           }}
-          decay={2}
-          distance={5.5}
-        />
+        >
+          <sphereGeometry args={[config.hunterRadius * 0.055, 64, 32]} />
+          <meshPhysicalMaterial
+            color="#050505"
+            roughness={0.2}
+            metalness={0.15}
+            clearcoat={1}
+            clearcoatRoughness={0.1}
+          />
+        </mesh>
       ))}
-      <mesh ref={hunterRef} castShadow position={[0, 3.5, 0]}>
-        <sphereGeometry args={[config.hunterRadius * 0.055, 64, 32]} />
-        <meshPhongMaterial color="#dddddd" shininess={80} />
-      </mesh>
     </>
   );
 });

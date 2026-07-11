@@ -22,7 +22,9 @@ const TARGET_DIAMETER = 2.2;
 const invUser = new THREE.Matrix4();
 
 function classify(mesh) {
-  const name = mesh.material?.name ?? '';
+  // userData.materialName is tagged by BirdRig before ghost mode swaps the
+  // real materials out — never read the live material's name here.
+  const name = mesh.userData.materialName ?? mesh.material?.name ?? '';
   return {
     mesh,
     emitter: /feather/i.test(name),

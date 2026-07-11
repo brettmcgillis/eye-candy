@@ -16,22 +16,32 @@ import { CurlGenerator } from '../utils/vendor/CurlGenerator';
 import { SurfacePoint } from '../utils/vendor/SurfaceWalker';
 
 // Curl-noise trail systems, ported from three-sketches:
-// - Interior: free-space walkers inside the bird volume (curl/trails.js) —
-//   move along the normalized curl field, random respawn, ribbon trails.
-// - Exterior: geodesic surface walkers (surface-flow/interactiveCurl +
+// - Field Lines: unbounded curl-noise walkers (curl/trails.js) — advect
+//   freely along the field with random respawn. Despite spawning inside the
+//   bird's volume, nothing constrains them afterward, so they wander
+//   through and around it — a field-line look, not a volume fill.
+// - Surface: geodesic surface walkers (surface-flow/interactiveCurl +
 //   galacticSurface) — curl direction projected along the surface via
 //   SurfaceWalker, life-limited with ambient respawn, plus pointer
 //   stroke/burst spawning.
-// Both advect in bind-pose space; config.trailSpace decides whether pushed
-// vertices are frozen in world space (CPU-skinned at push — smear) or
-// re-skinned live on the GPU (ride the surface).
+// - Volume Fill: genuinely bounded walkers. Each has a fixed home point
+//   inside the bird (from the same interior-spawn sampling) and is
+//   spring-pulled + shell-clamped around it every frame — the same
+//   home/spring/shell math the GPU particle sim uses for its bound
+//   particles (createParticleSimulation.js), so it actually stays inside
+//   the bird instead of escaping.
+// All three advect in bind-pose space; config.trailSpace decides whether
+// pushed vertices are frozen in world space (CPU-skinned at push — smear)
+// or re-skinned live on the GPU (ride the surface).
 
-const INTERIOR_SEGMENTS = 256;
+const FIELD_LINE_SEGMENTS = 256;
 const EXTERIOR_SEGMENTS = 512;
+const VOLUME_FILL_SEGMENTS = 128;
 
 const tempV = new THREE.Vector3();
 const normalV = new THREE.Vector3();
 const worldV = new THREE.Vector3();
+const offsetDelta = new THREE.Vector3();
 
 function makeSkin() {
   return { si: [0, 0, 0, 0], sw: [0, 0, 0, 0] };
@@ -44,25 +54,32 @@ function CurlTrails({ config, meshes, birdStateRef }) {
 
   // Debounced counts — rebuilding allocates ring buffers.
   const [counts, setCounts] = useState({
-    interior: config.interiorTrailCount,
+    fieldLine: config.fieldLineCount,
     exterior: config.exteriorTrailCount,
+    volumeFill: config.volumeFillCount,
   });
   useEffect(() => {
     const id = setTimeout(
       () =>
         setCounts((prev) =>
-          prev.interior === config.interiorTrailCount &&
-          prev.exterior === config.exteriorTrailCount
+          prev.fieldLine === config.fieldLineCount &&
+          prev.exterior === config.exteriorTrailCount &&
+          prev.volumeFill === config.volumeFillCount
             ? prev
             : {
-                interior: config.interiorTrailCount,
+                fieldLine: config.fieldLineCount,
                 exterior: config.exteriorTrailCount,
+                volumeFill: config.volumeFillCount,
               }
         ),
       300
     );
     return () => clearTimeout(id);
-  }, [config.interiorTrailCount, config.exteriorTrailCount]);
+  }, [
+    config.fieldLineCount,
+    config.exteriorTrailCount,
+    config.volumeFillCount,
+  ]);
 
   useEffect(() => {
     if (!meshes) return undefined;
@@ -73,11 +90,11 @@ function CurlTrails({ config, meshes, birdStateRef }) {
     const boneBuf = instancedArray(skeleton.bones.length * 4, 'vec4');
     const shared = createSharedTrailUniforms();
 
-    const interiorMat = createTrailMaterial({
+    const fieldLineMat = createTrailMaterial({
       boneBuf,
       shared,
-      color: config.interiorTrailColor,
-      opacity: config.interiorTrailOpacity,
+      color: config.fieldLineColor,
+      opacity: config.fieldLineOpacity,
     });
     const exteriorMat = createTrailMaterial({
       boneBuf,
@@ -85,23 +102,34 @@ function CurlTrails({ config, meshes, birdStateRef }) {
       color: config.exteriorTrailColor,
       opacity: config.exteriorTrailOpacity,
     });
+    const volumeFillMat = createTrailMaterial({
+      boneBuf,
+      shared,
+      color: config.volumeFillColor,
+      opacity: config.volumeFillOpacity,
+    });
 
-    const interiorTrails = new InstancedTrails(
-      Math.max(counts.interior, 1),
-      INTERIOR_SEGMENTS,
-      interiorMat.material
+    const fieldLineTrails = new InstancedTrails(
+      Math.max(counts.fieldLine, 1),
+      FIELD_LINE_SEGMENTS,
+      fieldLineMat.material
     );
     const exteriorTrails = new InstancedTrails(
       Math.max(counts.exterior, 1),
       EXTERIOR_SEGMENTS,
       exteriorMat.material
     );
+    const volumeFillTrails = new InstancedTrails(
+      Math.max(counts.volumeFill, 1),
+      VOLUME_FILL_SEGMENTS,
+      volumeFillMat.material
+    );
 
-    const interiorPoints = [];
-    for (let i = 0; i < counts.interior; i += 1) {
+    const fieldLinePoints = [];
+    for (let i = 0; i < counts.fieldLine; i += 1) {
       const skin = makeSkin();
       const p = walk.spawnInterior(new THREE.Vector3(), skin, Math.random);
-      interiorPoints.push({
+      fieldLinePoints.push({
         p,
         skin,
         dir: i % 2 === 0 ? 1 : -1,
@@ -126,20 +154,39 @@ function CurlTrails({ config, meshes, birdStateRef }) {
       });
     }
 
-    group.add(interiorTrails);
+    // Volume fill: home is a fixed interior anchor (bind space); offset is
+    // the current wander distance from that anchor, spring-pulled and
+    // shell-clamped each frame — never respawned, since the point of this
+    // system is a stable population that fills the volume persistently.
+    const volumeFillPoints = [];
+    for (let i = 0; i < counts.volumeFill; i += 1) {
+      const skin = makeSkin();
+      const home = walk.spawnInterior(new THREE.Vector3(), skin, Math.random);
+      volumeFillPoints.push({
+        home,
+        offset: new THREE.Vector3(),
+        pos: home.clone(),
+        skin,
+        needsBreak: true,
+      });
+    }
+
+    group.add(fieldLineTrails);
     group.add(exteriorTrails);
+    group.add(volumeFillTrails);
 
     systemRef.current = {
       walk,
       skeleton,
       boneBuf,
       shared,
-      curlInterior: new CurlGenerator(),
+      curlFieldLine: new CurlGenerator(),
       curlExterior: new CurlGenerator(),
-      interior: {
-        trails: interiorTrails,
-        mat: interiorMat,
-        points: interiorPoints,
+      curlVolumeFill: new CurlGenerator(),
+      fieldLine: {
+        trails: fieldLineTrails,
+        mat: fieldLineMat,
+        points: fieldLinePoints,
       },
       exterior: {
         trails: exteriorTrails,
@@ -147,15 +194,23 @@ function CurlTrails({ config, meshes, birdStateRef }) {
         points: exteriorPoints,
         cursor: 0,
       },
+      volumeFill: {
+        trails: volumeFillTrails,
+        mat: volumeFillMat,
+        points: volumeFillPoints,
+      },
     };
 
     return () => {
-      group.remove(interiorTrails);
+      group.remove(fieldLineTrails);
       group.remove(exteriorTrails);
-      interiorTrails.dispose();
+      group.remove(volumeFillTrails);
+      fieldLineTrails.dispose();
       exteriorTrails.dispose();
-      interiorMat.material.dispose();
+      volumeFillTrails.dispose();
+      fieldLineMat.material.dispose();
       exteriorMat.material.dispose();
+      volumeFillMat.material.dispose();
       walk.dispose();
       systemRef.current = null;
     };
@@ -168,12 +223,16 @@ function CurlTrails({ config, meshes, birdStateRef }) {
   useEffect(() => {
     const sys = systemRef.current;
     if (!sys) return;
-    sys.interior.trails.reset();
+    sys.fieldLine.trails.reset();
     sys.exterior.trails.reset();
-    sys.interior.points.forEach((info) => {
+    sys.volumeFill.trails.reset();
+    sys.fieldLine.points.forEach((info) => {
       info.needsBreak = true; // eslint-disable-line no-param-reassign
     });
     sys.exterior.points.forEach((info) => {
+      info.needsBreak = true; // eslint-disable-line no-param-reassign
+    });
+    sys.volumeFill.points.forEach((info) => {
       info.needsBreak = true; // eslint-disable-line no-param-reassign
     });
   }, [config.trailSpace]);
@@ -222,13 +281,12 @@ function CurlTrails({ config, meshes, birdStateRef }) {
     sys.boneBuf.value.array.set(boneMatrices);
     sys.boneBuf.value.needsUpdate = true;
 
-    sys.interior.mat.uniforms.color.value.set(config.interiorTrailColor);
-    sys.interior.mat.uniforms.opacity.value = config.interiorTrailOpacity;
+    sys.fieldLine.mat.uniforms.color.value.set(config.fieldLineColor);
+    sys.fieldLine.mat.uniforms.opacity.value = config.fieldLineOpacity;
     sys.exterior.mat.uniforms.color.value.set(config.exteriorTrailColor);
     sys.exterior.mat.uniforms.opacity.value = config.exteriorTrailOpacity;
-
-    // Controls are expressed in world units; the walkers run in bind space.
-    const bindCurlScale = config.trailCurlScale / s;
+    sys.volumeFill.mat.uniforms.color.value.set(config.volumeFillColor);
+    sys.volumeFill.mat.uniforms.opacity.value = config.volumeFillOpacity;
 
     const push = (trails, i, bindPoint, skin, brk) => {
       if (ride) {
@@ -239,25 +297,25 @@ function CurlTrails({ config, meshes, birdStateRef }) {
       }
     };
 
-    // ── Interior: curl/trails.js ──
+    // ── Field Lines: curl/trails.js ──
     const { walk } = sys;
-    sys.curlInterior.scale = bindCurlScale;
-    const interiorStep = (config.interiorTrailSpeed * dt) / s;
-    sys.interior.points.forEach((info, i) => {
-      sys.curlInterior.sample3d(info.p.x, info.p.y, info.p.z, tempV);
-      info.p.addScaledVector(tempV.normalize(), interiorStep * info.dir);
+    sys.curlFieldLine.scale = config.fieldLineCurlScale / s;
+    const fieldLineStep = (config.fieldLineSpeed * dt) / s;
+    sys.fieldLine.points.forEach((info, i) => {
+      sys.curlFieldLine.sample3d(info.p.x, info.p.y, info.p.z, tempV);
+      info.p.addScaledVector(tempV.normalize(), fieldLineStep * info.dir);
 
-      if (Math.random() < config.interiorRespawnRate * dt) {
+      if (Math.random() < config.fieldLineRespawnRate * dt) {
         walk.spawnInterior(info.p, info.skin, Math.random);
         info.needsBreak = true; // eslint-disable-line no-param-reassign
       }
 
-      push(sys.interior.trails, i, info.p, info.skin, info.needsBreak);
+      push(sys.fieldLine.trails, i, info.p, info.skin, info.needsBreak);
       info.needsBreak = false; // eslint-disable-line no-param-reassign
     });
 
-    // ── Exterior: interactiveCurl / galacticSurface ──
-    sys.curlExterior.scale = bindCurlScale;
+    // ── Surface: interactiveCurl / galacticSurface ──
+    sys.curlExterior.scale = config.exteriorCurlScale / s;
     const exteriorStep = (config.exteriorTrailSpeed * dt) / s;
     sys.exterior.points.forEach((info, i) => {
       if (info.life <= 0) {
@@ -308,8 +366,40 @@ function CurlTrails({ config, meshes, birdStateRef }) {
       }
     });
 
-    sys.interior.trails.flush();
+    // ── Volume Fill: home + spring + shell clamp (mirrors the GPU bound
+    // particle math in createParticleSimulation.js) — bounded by
+    // construction, never escapes the shell radius around its home. ──
+    sys.curlVolumeFill.scale = config.volumeFillCurlScale / s;
+    const volumeFlowStep = (config.volumeFillFlow * dt) / s;
+    const volumeSpringFactor = Math.min(config.volumeFillSpring * dt, 1);
+    const volumeShellRadius = config.volumeFillRadius / s;
+    sys.volumeFill.points.forEach((info, i) => {
+      const samplePos = tempV
+        .copy(info.home)
+        .add(info.offset)
+        .addScalar(now * config.volumeFillEvolve);
+      sys.curlVolumeFill.sample3d(
+        samplePos.x,
+        samplePos.y,
+        samplePos.z,
+        offsetDelta
+      );
+      info.offset.addScaledVector(offsetDelta, volumeFlowStep);
+      info.offset.multiplyScalar(1 - volumeSpringFactor);
+
+      const len = info.offset.length();
+      if (len > volumeShellRadius) {
+        info.offset.multiplyScalar(volumeShellRadius / len);
+      }
+
+      info.pos.copy(info.home).add(info.offset);
+      push(sys.volumeFill.trails, i, info.pos, info.skin, info.needsBreak);
+      info.needsBreak = false; // eslint-disable-line no-param-reassign
+    });
+
+    sys.fieldLine.trails.flush();
     sys.exterior.trails.flush();
+    sys.volumeFill.trails.flush();
   });
 
   return <primitive object={groupRef.current} />;

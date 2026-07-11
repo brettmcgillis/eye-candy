@@ -1,21 +1,40 @@
 import { folder } from 'leva';
 
 // Pointer interaction schema (PointerInput) + afterimage post (PostEffects).
-export function getInteractionControls() {
+// `p` is the resolved initial-preset snapshot — see getParticleBirdControls.
+export function getInteractionControls(p = {}) {
   return {
     Interaction: folder(
       {
-        interactionEnabled: { value: true, label: 'Enabled' },
+        interactionEnabled: {
+          value: p.interactionEnabled ?? true,
+          label: 'Enabled',
+        },
         attractorMode: {
-          value: 'attract',
+          value: p.attractorMode ?? 'attract',
           options: ['attract', 'repel'],
           label: 'Pointer Mode',
         },
-        attractorStrength: { value: 6, min: 0, max: 40, label: 'Strength' },
-        attractorRadius: { value: 1.5, min: 0.05, max: 10, label: 'Radius' },
-        touchBoost: { value: 3, min: 1, max: 12, label: 'Touch Flow Boost' },
+        attractorStrength: {
+          value: p.attractorStrength ?? 6,
+          min: 0,
+          max: 40,
+          label: 'Strength',
+        },
+        attractorRadius: {
+          value: p.attractorRadius ?? 1.5,
+          min: 0.05,
+          max: 10,
+          label: 'Radius',
+        },
+        touchBoost: {
+          value: p.touchBoost ?? 3,
+          min: 1,
+          max: 12,
+          label: 'Touch Flow Boost',
+        },
         touchRadiusScale: {
-          value: 1,
+          value: p.touchRadiusScale ?? 1,
           min: 0.2,
           max: 3,
           label: 'Touch Radius',
@@ -26,12 +45,20 @@ export function getInteractionControls() {
   };
 }
 
-export function getPostControls() {
+export function getPostControls(p = {}) {
   return {
     Post: folder(
       {
-        afterimageEnabled: { value: false, label: 'Afterimage' },
-        afterimageDamp: { value: 0.85, min: 0, max: 0.99, label: 'Damp' },
+        afterimageEnabled: {
+          value: p.afterimageEnabled ?? false,
+          label: 'Afterimage',
+        },
+        afterimageDamp: {
+          value: p.afterimageDamp ?? 0.85,
+          min: 0,
+          max: 0.99,
+          label: 'Damp',
+        },
       },
       { collapsed: true }
     ),

@@ -26,13 +26,13 @@
 
 # // Features
 
-- [x] Floids-inspired two-pass flock simulation with synchronized flash phases
+- [ ] Floids-inspired two-pass flock simulation with synchronized flash phases
       and a hunter that pursues the nearby flock.
-- [x] Each visible firefly drives its own real point light; WebGPU clustered
+- [ ] Each visible firefly drives its own real point light; WebGPU clustered
       lighting keeps the large reflective hunter responsive to the same state.
-- [x] True ray-marched `VolumeNodeMaterial` atmosphere composited at reduced
+- [ ] True ray-marched `VolumeNodeMaterial` atmosphere composited at reduced
       resolution with depth occlusion, dithering, and denoising.
-- [x] A glossy hunter sphere that reflects the firefly lights and casts into
+- [ ] A glossy hunter sphere that reflects the firefly lights and casts into
       the volume layer.
 - [ ] Restore multi-tab synchronization by publishing window-local hunter and
       pointer inputs.
@@ -45,3 +45,5 @@
       are confined to window bounds and may traverse overlaps.
 
 # // Bugs
+
+- scene is fucked. might need to pull out volumetric lighting etc. we really want to focus on the stylized floids and hunters & the multitab experience.

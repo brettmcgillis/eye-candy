@@ -1,8 +1,6 @@
 # // Weightless
 
-[Back to main TODO](../../../../../../TODO.md)
-
-# // Intent
+# // Intent / Use Cases
 
 Particle hummingbird. The animated hummingbird rig drives a WebGPU compute
 sim: bind-pose surface samples (+ BVH interior fill) carry skin weights, and
@@ -12,75 +10,60 @@ curl noise (gpu-party style); fast-moving home points (wing tips / feathers)
 shed particles that inherit wing velocity, fly free under curl noise +
 pointer attractor, fade, and rebind. Afterimage post is toggleable.
 
-# // Architecture notes
+# // TODO:
 
-- `utils/sampleBird.js` — CPU sampling. Area-weighted surface sampling
-  across all skinned meshes; interior points via three-mesh-bvh inward
-  raycast on the body mesh. Skin indices from the nearest triangle corner.
-  emitterMask encoding: 0 interior, 1 surface, 2 feather.
-- `utils/createParticleSimulation.js` — TSL storage buffers + one compute
-  kernel (exactly 8 storage buffers — the WebGPU per-stage limit). 714-joint
-  rig → bone matrices uploaded per frame as a vec4 storage buffer (4 columns
-  per bone). In three's 'attached' bind mode the bone matrices alone produce
-  world space (bindMatrix baked into basePos) — no model matrix needed, and
-  group transforms above the bird flow in through the bones.
-- Auto-fit: first frame CPU-skins ~512 samples (measureSkinnedBounds) and
-  normalizes a wrapper group so the bird is origin-centered at ~2.2 units;
-  re-measured from identity on rebuilds so it never compounds.
-- Emission is purely speed-driven (home-point velocity), so wing tips emit
-  most without any bone-name tagging. `feathersOnly` restricts to feather
-  meshes.
-- Color modes: solid / gradient (bind-pose height) / velocity — art
-  direction TBD, all three supported.
-- Touching the bird (pointer ray vs bounding sphere) boosts internal flow;
-  pointer is an attractor/repeller for free particles.
+[Back to main TODO](../../../../../../TODO.md)
 
-## Curl trails (three-sketches port)
-
-- Per-system enable toggles (`particlesEnabled`, `trailsEnabled`) with
-  presets as the differentiation mechanism: 'Curl Trails' (default —
-  schema defaults mirror it), 'Particle Bird', 'Everything'. ParticleBird
-  always owns the rig + auto-fit and publishes rig state (bone matrices,
-  norm matrix, scale) through `birdStateRef` for CurlTrails.
-- `utils/vendor/` — verbatim MIT ports from gkjohnson/three-sketches:
-  perlin noise, CurlGenerator (CPU simplex curl), HalfEdgeMap,
-  SurfaceWalker (geodesic walk).
-- `utils/trails/InstancedTrails.js` — ring-buffer LineSegments port; r182
-  addUpdateRange, creationSec float, per-vertex skin attrs.
-- `utils/trails/createTrailMaterial.js` — TSL port of FadeLineMaterial
-  (age-fade) + `trailSpace` switch: 'world' = vertices CPU-skinned at push
-  (smear ribbons through the air as wings flap), 'surface' = vertices
-  re-skinned live on GPU (ribbons ride the flapping surface). Switching
-  resets the ribbons (different coordinate spaces).
-- `utils/trails/buildWalkGeometry.js` — all skinned meshes merged in bind
-  space (bindMatrix baked, skin attrs kept), MeshBVH built FIRST (it sorts
-  the index) so face indices agree across BVH / walker / samplers.
-- Interior = curl/trails.js: normalized-curl advection, ±dir by parity,
-  random respawn (BVH inward-cast spawn). Exterior = interactiveCurl +
-  galacticSurface: SurfaceWalker steps with edge-crossing pushes, life +
-  perpendicular-field kill, ambient respawn, pointer stroke/burst spawning
-  (rays cast in bind space via inverse norm matrix).
-- Skipped from refs: drawTrails' two-pass GreaterDepth occlusion trick
-  (conflicts with the PostProcessing pipeline) — ghost body depth gives
-  partial occlusion instead. Pointer raycasts use the bind-pose BVH, so
-  hits on a mid-flap wing are approximate.
-
-# // TODO
-
-- [ ] Tune trail defaults live (speeds/curl scale/fade are best guesses in
-      world units; A/B trailSpace world vs surface)
-- [ ] Consider porting drawTrails' occluded-pass look if the ghost-body
-      depth occlusion isn't enough
-- [ ] Art direction: pick color mode + palette, tune emission/curl defaults
-- [ ] Frame a default camera preset once the scene is eyeballed live
-- [ ] Perf pass on mobile (particle count budget, count vs. size tradeoff)
-- [ ] Consider spatial touch response (local flow boost near touch point
-      instead of global)
-- [ ] Presets beyond Default once tuned
-- [ ] crete a version of the hummingbird that allows for glowing eyes (emissive materail)
-- [x] get rid of the dumbass overlay button.
 - [ ] bird hover animation has a few ms of stationary hover before moving up and down. can we skip this when looping?
+- [ ] add discrete controls for bound vs emitted particles.
+- [ ] explore emitted particles growing slightly.
+- [ ] add control for ghost bird color
+- [ ] add control for background color
+
+# // Presets
+
+# // Features
+
+- [x] Volume Fill: a genuinely bounded curl-trail system (Trails > Volume
+      Fill). Each point has a fixed home anchor inside the bird and is
+      spring-pulled + shell-clamped around it every frame (same
+      home/spring/shell math as the GPU particle sim's bound particles),
+      so it actually stays inside the bird instead of escaping — meant to
+      eventually fill the body enough that Ghost Body isn't needed. Off by
+      default (`volumeFillCount: 0`) in all existing presets so their
+      looks didn't change; dial it in and save new presets.
+
+# // Interactivity
+
+- [ ] Pointer-curl trail interaction (stroke/click spawning Surface
+      trails) doesn't reliably register hits during flapping. The pointer
+      ray is only corrected for the bird's auto-fit transform
+      (`birdStateRef.normMatrix`), not the current animated bone pose —
+      raycasts test against the walk BVH's REST-POSE geometry
+      (`buildWalkGeometry`, built once from bind-pose positions and never
+      refit). While the wings are flapping, their visible position has
+      moved but the BVH hasn't, so clicks miss or land on the wrong spot.
+      Real fix needs either a live-skinned copy of the walk geometry
+      (re-skin + `bvh.refit()` per interaction/frame) or accepting
+      rest-pose-only accuracy — bigger lift, not attempted yet.
 
 # // Bugs
 
-- [ ] cant copy preset values after changing controls, empty obj returned.
+- [x] "Interior" curl trails weren't actually bounded to the bird's
+      volume — they spawn inside once, then advect freely along the curl
+      field forever with only a probabilistic respawn pulling them back,
+      so they balloon into a wandering field around the bird (this is
+      what your two saved presets, Sketchbook and Magnetic north, are
+      actually showing — high vs. low respawn rate). Renamed
+      `interiorTrail*` → `fieldLine*` to match what the system actually
+      does; all existing presets migrated to the new keys with identical
+      values (Sketchbook/Magnetic north render unchanged). Genuine bounded
+      interior fill is the new separate Volume Fill system above.
+      `trailCurlScale` (previously shared by field lines + surface) split
+      into independent `fieldLineCurlScale`/`exteriorCurlScale` — existing
+      presets got both set to their old shared value, so nothing changed
+      on migration, but they can now be tuned independently.
+- [~] Control folder structure seems haphazard and disorganized. Trails
+  folder reorganized into subfolders (Trails / Field Lines / Surface /
+  Volume Fill) as part of the above; Bird/Particles/Emission/Color/
+  Interaction/Post untouched — still a candidate for a fuller pass.

@@ -37,7 +37,14 @@ function BirdRig({ visible, ghost, ghostOpacity, timeScale, onReady }) {
   useEffect(() => {
     const meshes = [];
     groupRef.current?.traverse((object) => {
-      if (object.isSkinnedMesh) meshes.push(object);
+      if (object.isSkinnedMesh) {
+        // Tag the source material name before ghost mode swaps materials —
+        // consumers classify feather/body meshes by it.
+        if (!object.userData.materialName) {
+          object.userData.materialName = object.material?.name ?? '';
+        }
+        meshes.push(object);
+      }
     });
     if (meshes.length) onReady(meshes);
   }, [onReady]);

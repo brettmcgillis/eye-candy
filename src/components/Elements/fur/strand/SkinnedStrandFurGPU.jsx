@@ -1,5 +1,6 @@
 import {
   Fn,
+  add,
   attribute,
   buffer,
   cameraProjectionMatrix,
@@ -31,6 +32,46 @@ import { useFrame } from '@react-three/fiber';
 import FurPointerSurface from '../FurPointerSurface';
 import FurRootPortal from '../FurRootPortal';
 import { createSolidColorTexture, normalizeWaveDirection } from '../furUtils';
+
+function getSkinnedPosition(
+  boneMatrices,
+  position,
+  bindMatrix,
+  bindMatrixInverse,
+  skinIndex,
+  skinWeight
+) {
+  const skinVertex = bindMatrix.mul(position);
+  const skinned = add(
+    boneMatrices.element(skinIndex.x).mul(skinWeight.x).mul(skinVertex),
+    boneMatrices.element(skinIndex.y).mul(skinWeight.y).mul(skinVertex),
+    boneMatrices.element(skinIndex.z).mul(skinWeight.z).mul(skinVertex),
+    boneMatrices.element(skinIndex.w).mul(skinWeight.w).mul(skinVertex)
+  );
+
+  return bindMatrixInverse.mul(skinned).xyz;
+}
+
+function getSkinnedNormal(
+  boneMatrices,
+  normal,
+  bindMatrix,
+  bindMatrixInverse,
+  skinIndex,
+  skinWeight
+) {
+  const skinMatrix = add(
+    skinWeight.x.mul(boneMatrices.element(skinIndex.x)),
+    skinWeight.y.mul(boneMatrices.element(skinIndex.y)),
+    skinWeight.z.mul(boneMatrices.element(skinIndex.z)),
+    skinWeight.w.mul(boneMatrices.element(skinIndex.w))
+  );
+
+  return bindMatrixInverse
+    .mul(skinMatrix)
+    .mul(bindMatrix)
+    .transformDirection(normal).xyz;
+}
 
 const DEFAULT_ALPHA_TEXTURE_PATH = '/textures/fur/uneven-alpha.png';
 
@@ -120,16 +161,11 @@ export default function SkinnedStrandFurGPU({
     const phaseAttribute = attribute('aPhase', 'float');
     const quaternionAttribute = attribute('aQuat', 'vec4');
     const rootUvAttribute = attribute('aRootUv', 'vec2');
-    const skinningNode = new THREE.SkinningNode(source.mesh);
-
-    skinningNode.skinIndexNode = attribute('skinIndex', 'uvec4');
-    skinningNode.skinWeightNode = attribute('skinWeight', 'vec4');
-    skinningNode.bindMatrixNode = uniform(source.mesh.bindMatrix, 'mat4');
-    skinningNode.bindMatrixInverseNode = uniform(
-      source.mesh.bindMatrixInverse,
-      'mat4'
-    );
-    skinningNode.boneMatricesNode = buffer(
+    const skinIndex = attribute('skinIndex', 'uvec4');
+    const skinWeight = attribute('skinWeight', 'vec4');
+    const bindMatrix = uniform(source.mesh.bindMatrix, 'mat4');
+    const bindMatrixInverse = uniform(source.mesh.bindMatrixInverse, 'mat4');
+    const boneMatrices = buffer(
       source.mesh.skeleton.boneMatrices,
       'mat4',
       source.mesh.skeleton.bones.length
@@ -215,16 +251,32 @@ export default function SkinnedStrandFurGPU({
           )
         )
         .toVar();
-      const skinnedRootPosition = skinningNode
-        .getSkinnedPosition(undefined, rootPositionAttribute)
-        .toVar();
-      const skinnedSurfaceNormal = skinningNode
-        .getSkinnedNormal(undefined, rootNormalAttribute)
+      const skinnedRootPosition = getSkinnedPosition(
+        boneMatrices,
+        rootPositionAttribute,
+        bindMatrix,
+        bindMatrixInverse,
+        skinIndex,
+        skinWeight
+      ).toVar();
+      const skinnedSurfaceNormal = getSkinnedNormal(
+        boneMatrices,
+        rootNormalAttribute,
+        bindMatrix,
+        bindMatrixInverse,
+        skinIndex,
+        skinWeight
+      )
         .normalize()
         .toVar();
-      const skinnedStrandPosition = skinningNode
-        .getSkinnedPosition(undefined, bindStrandPosition)
-        .toVar();
+      const skinnedStrandPosition = getSkinnedPosition(
+        boneMatrices,
+        bindStrandPosition,
+        bindMatrix,
+        bindMatrixInverse,
+        skinIndex,
+        skinWeight
+      ).toVar();
       const tangentDelta = skinnedRootPosition
         .sub(uniforms.interactorPos)
         .sub(

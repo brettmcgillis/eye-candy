@@ -40,7 +40,7 @@ const FloidsSwarm = memo(function FloidsSwarm({ config }) {
   useEffect(() => {
     const previousLighting = renderer.lighting;
     renderer.lighting = new ClusteredLighting(
-      Math.max(2, config.fireflyCount),
+      config.fireflyCount + 2,
       48,
       16,
       32

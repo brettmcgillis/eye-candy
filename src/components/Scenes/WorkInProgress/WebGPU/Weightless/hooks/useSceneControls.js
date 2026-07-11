@@ -11,6 +11,7 @@ import {
   getPostControls,
 } from '../components/getInteractionControls';
 import getParticleBirdControls from '../components/getParticleBirdControls';
+import getTrailControls from '../components/getTrailControls';
 import { DEFAULT_PRESET, PRESETS, getPresetControls } from '../presets/presets';
 import CAMERA from '../utils/camera';
 
@@ -36,6 +37,7 @@ export default function useSceneControls() {
   const [controls, setControls] = useControls(SCENE_LABEL, () => ({
     Presets: presetsFolder,
     Camera: folder(cameraControls, { collapsed: true }),
+    ...getTrailControls(),
     ...getParticleBirdControls(),
     ...getInteractionControls(),
     ...getPostControls(),

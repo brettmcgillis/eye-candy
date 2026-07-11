@@ -7,6 +7,8 @@ export default function getParticleBirdControls() {
     Bird: folder(
       {
         birdVisible: { value: false, label: 'Show Source Bird' },
+        ghostBody: { value: true, label: 'Ghost Body' },
+        ghostOpacity: { value: 0.35, min: 0, max: 1, label: 'Ghost Opacity' },
         birdScale: { value: 1, min: 0.05, max: 10, label: 'Scale' },
         birdYaw: { value: 0, min: -Math.PI, max: Math.PI, label: 'Yaw' },
         animationSpeed: { value: 1, min: 0, max: 3, label: 'Flap Speed' },
@@ -15,6 +17,7 @@ export default function getParticleBirdControls() {
     ),
     Particles: folder(
       {
+        particlesEnabled: { value: false, label: 'Enabled' },
         particleCount: {
           value: 65536,
           min: 1024,

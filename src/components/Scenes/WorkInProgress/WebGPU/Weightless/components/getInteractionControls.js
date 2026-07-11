@@ -30,7 +30,7 @@ export function getPostControls() {
   return {
     Post: folder(
       {
-        afterimageEnabled: { value: true, label: 'Afterimage' },
+        afterimageEnabled: { value: false, label: 'Afterimage' },
         afterimageDamp: { value: 0.85, min: 0, max: 0.99, label: 'Damp' },
       },
       { collapsed: true }

@@ -30,7 +30,7 @@ function classify(mesh) {
   };
 }
 
-function ParticleBird({ config }) {
+function ParticleBird({ config, birdStateRef, onMeshes }) {
   const { gl } = useThree();
   const [meshes, setMeshes] = useState(null);
   const simRef = useRef(null);
@@ -46,7 +46,13 @@ function ParticleBird({ config }) {
     radius: 0,
   });
 
-  const handleReady = useCallback((list) => setMeshes(list), []);
+  const handleReady = useCallback(
+    (list) => {
+      setMeshes(list);
+      onMeshes?.(list);
+    },
+    [onMeshes]
+  );
 
   // Debounce sim rebuilds — count is a draggable number control and each
   // rebuild re-samples the mesh and recreates the compute pipeline.
@@ -150,13 +156,29 @@ function ParticleBird({ config }) {
       }
     }
 
-    sim.setBoneMatrices();
+    // Publish shared rig state for sibling systems (CurlTrails) — they run
+    // in later useFrame subscriptions this same frame.
+    if (birdStateRef) {
+      const pub = birdStateRef.current;
+      pub.fitted = entry.fitted;
+      pub.skeleton = reference.skeleton;
+      pub.boneMatrices = reference.skeleton.boneMatrices;
+      pub.normMatrix.copy(norm.matrixWorld);
+      pub.normScale = norm.matrixWorld.getMaxScaleOnAxis();
+    }
 
     // Pointer hit-test sphere: pre-norm center carried through the live
     // norm transform (norm.matrixWorld includes the user group).
     const sphere = birdSphereRef.current;
     sphere.center.copy(entry.preNormCenter).applyMatrix4(norm.matrixWorld);
     sphere.radius = entry.preNormRadius * norm.matrixWorld.getMaxScaleOnAxis();
+
+    // When particles are disabled the rig/fit/publish above still run (the
+    // trail systems depend on them), but the particle sim itself idles.
+    sim.mesh.visible = config.particlesEnabled;
+    if (!config.particlesEnabled) return;
+
+    sim.setBoneMatrices();
 
     const u = sim.uniforms;
     u.dt.value = dt;
@@ -207,6 +229,8 @@ function ParticleBird({ config }) {
         <group ref={normGroupRef}>
           <BirdRig
             visible={config.birdVisible}
+            ghost={config.ghostBody}
+            ghostOpacity={config.ghostOpacity}
             timeScale={config.animationSpeed}
             onReady={handleReady}
           />

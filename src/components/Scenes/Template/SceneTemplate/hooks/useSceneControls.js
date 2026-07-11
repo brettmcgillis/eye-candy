@@ -38,6 +38,9 @@ export default function useSceneControls() {
   }));
 
   attachSetControls(setControls);
+  // Feed the presets copy button — without this the snapshot stays at the
+  // initial preset and copy returns a near-empty object.
+  controlsSnapshotRef.current = { ...controls };
 
   useMediaRecorder({ fileName: SCENE_LABEL });
 

@@ -1,3 +1,4 @@
+/* eslint-disable no-plusplus */
 // Particle cloud algorithms used by ParticleLab.
 
 const normalizeVec3 = (v) => {
@@ -24,6 +25,52 @@ const rotateYawPitch = (dir, yaw, pitch) => {
 
   return normalizeVec3([x1, y2, z2]);
 };
+
+function noise3(x, y, z) {
+  return (
+    (Math.sin(x * 0.83 + Math.cos(z * 0.57)) +
+      Math.sin(y * 1.17 + Math.sin(x * 0.41)) +
+      Math.sin(z * 0.91 + Math.cos(y * 0.73))) /
+    3
+  );
+}
+
+function fbm3(x, y, z) {
+  let sum = 0;
+  let amp = 0.5;
+  let freq = 1;
+
+  for (let i = 0; i < 5; i++) {
+    sum += amp * noise3(x * freq, y * freq, z * freq);
+    freq *= 2.01;
+    amp *= 0.5;
+  }
+
+  return sum;
+}
+
+function curlNoise(x, y, z) {
+  const e = 0.0005;
+
+  const F1 = (ax, ay, az) => fbm3(ax + 17.3, ay - 9.2, az + 4.1);
+  const F2 = (bx, by, bz) => fbm3(bx - 31.8, by + 8.5, bz - 14.7);
+  const F3 = (cx, cy, cz) => fbm3(cx + 11.1, cy + 27.6, cz + 19.4);
+
+  const dF1dy = (F1(x, y + e, z) - F1(x, y - e, z)) / (2 * e);
+  const dF1dz = (F1(x, y, z + e) - F1(x, y, z - e)) / (2 * e);
+
+  const dF2dx = (F2(x + e, y, z) - F2(x - e, y, z)) / (2 * e);
+  const dF2dz = (F2(x, y, z + e) - F2(x, y, z - e)) / (2 * e);
+
+  const dF3dx = (F3(x + e, y, z) - F3(x - e, y, z)) / (2 * e);
+  const dF3dy = (F3(x, y + e, z) - F3(x, y - e, z)) / (2 * e);
+
+  return {
+    x: dF3dy - dF2dz,
+    y: dF1dz - dF3dx,
+    z: dF2dx - dF1dy,
+  };
+}
 
 const makeSeededRandom = (seedValue) => {
   let seed = Math.floor(seedValue);
@@ -1881,6 +1928,264 @@ const algorithms = {
           positions[pi + 1] *= scale;
           positions[pi + 2] *= scale;
         }
+      }
+    },
+  },
+  'Celestial Reef': {
+    type: 'ode',
+
+    defaults: {
+      flow: 1.8,
+      curl: 2.2,
+      warp: 0.55,
+      orbit: 0.8,
+      fold: 3.5,
+      gain: 0.45,
+      dt: 0.012,
+    },
+
+    ranges: {
+      flow: [0.0, 4.0, 0.01],
+      curl: [0.0, 5.0, 0.01],
+      warp: [0.0, 2.0, 0.01],
+      orbit: [0.0, 2.0, 0.01],
+      fold: [1.0, 8.0, 0.01],
+      gain: [0.0, 1.0, 0.01],
+      dt: [0.001, 0.05, 0.001],
+    },
+
+    generate: (p, positions, pointsCount) => {
+      // assumes your engine exposes:
+      // noise3(x,y,z)
+      // curlNoise(x,y,z)
+
+      let x = 0.2;
+      let y = 0.1;
+      let z = -0.3;
+
+      let vx = 0;
+      let vy = 0;
+      let vz = 0;
+
+      const fbm = (ax, ay, az) => {
+        let f = 0;
+        let a = 0.5;
+        let s = 1;
+
+        for (let i = 0; i < 5; i++) {
+          f += a * noise3(ax * s, ay * s, az * s);
+          s *= 2.03;
+          a *= 0.5;
+        }
+
+        return f;
+      };
+
+      for (let i = 0; i < pointsCount; i++) {
+        const t = i * p.dt;
+
+        //---------------------------------------
+        // animated sampling coordinates
+        //---------------------------------------
+
+        const qx = x + Math.sin(t * 0.17) * 2.5;
+        const qy = y + Math.cos(t * 0.13) * 2.5;
+        const qz = z + Math.sin(t * 0.11) * 2.5;
+
+        //---------------------------------------
+        // fractal displacement
+        //---------------------------------------
+
+        const nx = fbm(qx, qy, qz);
+        const ny = fbm(qy + 37, qz + 11, qx - 5);
+        const nz = fbm(qz - 19, qx + 7, qy + 41);
+
+        //---------------------------------------
+        // incompressible turbulence
+        //---------------------------------------
+
+        const c = curlNoise(qx * p.curl, qy * p.curl, qz * p.curl);
+
+        //---------------------------------------
+        // orbital spiral
+        //---------------------------------------
+
+        const r = Math.sqrt(x * x + y * y + z * z) + 0.0001;
+
+        const ox = -y / r;
+        const oy = x / r;
+        const oz = Math.sin(r * p.fold);
+
+        //---------------------------------------
+        // folded trig field
+        //---------------------------------------
+
+        const fx = Math.sin(y * p.fold) + Math.cos(z * 1.7);
+
+        const fy = Math.sin(z * p.fold) + Math.cos(x * 1.4);
+
+        const fz = Math.sin(x * p.fold) + Math.cos(y * 1.9);
+
+        //---------------------------------------
+        // combine everything
+        //---------------------------------------
+
+        const ax = c.x + nx * p.flow + ox * p.orbit + fx * p.warp;
+
+        const ay = c.y + ny * p.flow + oy * p.orbit + fy * p.warp;
+
+        const az = c.z + nz * p.flow + oz * p.orbit + fz * p.warp;
+
+        //---------------------------------------
+        // smooth inertial motion
+        //---------------------------------------
+
+        vx = vx * (1 - p.gain) + ax * p.gain;
+        vy = vy * (1 - p.gain) + ay * p.gain;
+        vz = vz * (1 - p.gain) + az * p.gain;
+
+        x += vx * p.dt;
+        y += vy * p.dt;
+        z += vz * p.dt;
+
+        //---------------------------------------
+        // soft confinement
+        //---------------------------------------
+
+        const d = Math.sqrt(x * x + y * y + z * z);
+
+        if (d > 18) {
+          const s = 18 / d;
+          x *= s;
+          y *= s;
+          z *= s;
+        }
+
+        positions.push(x, y, z);
+      }
+    },
+  },
+  'Living Nebula': {
+    type: 'ode',
+
+    defaults: {
+      curl: 2.2,
+      galaxy: 1.4,
+      torus: 1.1,
+      fold: 4.0,
+      breathe: 0.7,
+      inertia: 0.15,
+      dt: 0.01,
+    },
+
+    ranges: {
+      curl: [0, 5, 0.01],
+      galaxy: [0, 3, 0.01],
+      torus: [0, 3, 0.01],
+      fold: [1, 8, 0.01],
+      breathe: [0, 2, 0.01],
+      inertia: [0, 0.5, 0.01],
+      dt: [0.001, 0.05, 0.001],
+    },
+
+    generate: (p, positions, count) => {
+      let x = 0.2;
+      let y = 0.1;
+      let z = 0;
+
+      let vx = 0;
+      let vy = 0;
+      let vz = 0;
+
+      for (let i = 0; i < count; i++) {
+        const t = i * p.dt;
+
+        //--------------------------------
+        // world blending
+        //--------------------------------
+
+        const blend1 = 0.5 + 0.5 * Math.sin(t * 0.17);
+        const blend2 = 0.5 + 0.5 * Math.sin(t * 0.11 + 2);
+        const blend3 = 0.5 + 0.5 * Math.sin(t * 0.07 + 4);
+
+        //--------------------------------
+        // curl field
+        //--------------------------------
+
+        const c = curlNoise(x * p.curl + t * 0.1, y * p.curl, z * p.curl);
+
+        //--------------------------------
+        // rotating galaxy
+        //--------------------------------
+
+        const r = Math.sqrt(x * x + y * y) + 0.0001;
+
+        const gx = -y / r;
+        const gy = x / r;
+        const gz = Math.sin(r * 3 + t);
+
+        //--------------------------------
+        // torus attraction
+        //--------------------------------
+
+        const R = 4;
+
+        const q = Math.sqrt(x * x + y * y);
+
+        const tx = x * (1 - R / q);
+        const ty = y * (1 - R / q);
+        const tz = z;
+
+        //--------------------------------
+        // folded waves
+        //--------------------------------
+
+        const fx = Math.sin(y * p.fold) + Math.cos(z * 1.3);
+        const fy = Math.sin(z * p.fold) + Math.cos(x * 1.7);
+        const fz = Math.sin(x * p.fold) + Math.cos(y * 1.5);
+
+        //--------------------------------
+        // breathing
+        //--------------------------------
+
+        const rr = Math.sqrt(x * x + y * y + z * z) + 0.0001;
+
+        const breathe = Math.sin(t * 0.3) * p.breathe;
+
+        //--------------------------------
+        // acceleration
+        //--------------------------------
+
+        const ax =
+          blend1 * c.x +
+          blend2 * gx * p.galaxy -
+          blend3 * tx * p.torus +
+          fx * 0.4 -
+          (breathe * x) / rr;
+
+        const ay =
+          blend1 * c.y +
+          blend2 * gy * p.galaxy -
+          blend3 * ty * p.torus +
+          fy * 0.4 -
+          (breathe * y) / rr;
+
+        const az =
+          blend1 * c.z +
+          blend2 * gz * p.galaxy -
+          blend3 * tz * p.torus +
+          fz * 0.4 -
+          (breathe * z) / rr;
+
+        vx += (ax - vx) * p.inertia;
+        vy += (ay - vy) * p.inertia;
+        vz += (az - vz) * p.inertia;
+
+        x += vx * p.dt;
+        y += vy * p.dt;
+        z += vz * p.dt;
+
+        positions.push(x, y, z);
       }
     },
   },

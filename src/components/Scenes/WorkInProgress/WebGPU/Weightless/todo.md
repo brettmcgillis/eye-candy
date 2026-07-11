@@ -14,11 +14,11 @@ pointer attractor, fade, and rebind. Afterimage post is toggleable.
 
 [Back to main TODO](../../../../../../TODO.md)
 
-- [ ] bird hover animation has a few ms of stationary hover before moving up and down. can we skip this when looping?
-- [ ] add discrete controls for bound vs emitted particles.
-- [ ] explore emitted particles growing slightly.
-- [ ] add control for ghost bird color
-- [ ] add control for background color
+- [ ] bird hover animation has a few ms of stationary hover before moving up and down. can we skip this when looping? (not attempted — needs visual inspection of the clip's loop point to trim safely, can't verify blind)
+- [x] add discrete controls for bound vs emitted particles. (Emission > Emitted Size, independent of Particles > Bound Size — previously one `particleSize` drove both)
+- [x] explore emitted particles growing slightly. (emitted scale now eases in over the first ~12% of life before shrinking, same curve shape as BurningCash's Embers.jsx, instead of starting at full size and only ever shrinking)
+- [x] add control for ghost bird color (Bird > Ghost Color)
+- [x] add control for background color (Environment > Background)
 
 # // Presets
 
@@ -32,6 +32,12 @@ pointer attractor, fade, and rebind. Afterimage post is toggleable.
       eventually fill the body enough that Ghost Body isn't needed. Off by
       default (`volumeFillCount: 0`) in all existing presets so their
       looks didn't change; dial it in and save new presets.
+      Ranges/steps are tightened vs. the field-line/surface systems
+      (radius 0.005–0.4 step 0.005, flow 0–2 step 0.005, curl scale
+      0.05–8 step 0.05) since the shell sits well inside the body — a
+      wide range with no explicit `step` rounds to Leva's coarse ~0.01
+      default, too blunt at this scale. Still likely needs live retuning;
+      couldn't preview the WebGPU output to dial exact defaults.
 
 # // Interactivity
 

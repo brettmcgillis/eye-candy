@@ -209,6 +209,7 @@ function ParticleBird({ config, birdStateRef, onMeshes }) {
     u.gravity.value = config.gravity;
 
     u.size.value = config.particleSize;
+    u.emittedSize.value = config.emittedParticleSize;
     u.intensity.value = config.intensity;
     u.boundAlpha.value = config.boundAlpha;
     u.freeAlpha.value = config.freeAlpha;
@@ -232,6 +233,7 @@ function ParticleBird({ config, birdStateRef, onMeshes }) {
           <BirdRig
             visible={config.birdVisible}
             ghost={config.ghostBody}
+            ghostColor={config.ghostColor}
             ghostOpacity={config.ghostOpacity}
             timeScale={config.animationSpeed}
             onReady={handleReady}

@@ -2,7 +2,7 @@ import React, { lazy } from 'react';
 import { GiHummingbird } from 'react-icons/gi';
 
 function SceneIcon() {
-  return <GiHummingbird color="#7fe7ff" />;
+  return <GiHummingbird color="#029dc0" size={26} />;
 }
 
 export default {

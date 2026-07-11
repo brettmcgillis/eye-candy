@@ -7,6 +7,7 @@ import usePresetsFolder from '../../../../../../hooks/usePresetsFolder';
 import useSceneCameraControls from '../../../../../../hooks/useSceneCameraControls';
 import { useMediaRecorder } from '../../../../../../modules/mediaRecorder';
 import {
+  getEnvironmentControls,
   getInteractionControls,
   getPostControls,
 } from '../components/getInteractionControls';
@@ -67,6 +68,7 @@ export default function useSceneControls() {
     ...getParticleBirdControls(p),
     ...getInteractionControls(p),
     ...getPostControls(p),
+    ...getEnvironmentControls(p),
   }));
 
   attachSetControls(setControls);

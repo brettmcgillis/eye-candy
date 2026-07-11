@@ -64,3 +64,12 @@ export function getPostControls(p = {}) {
     ),
   };
 }
+
+export function getEnvironmentControls(p = {}) {
+  return {
+    Environment: folder(
+      { bgColor: { value: p.bgColor ?? '#0a0a0d', label: 'Background' } },
+      { collapsed: true }
+    ),
+  };
+}

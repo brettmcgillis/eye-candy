@@ -12,7 +12,14 @@ const CLIP_NAME = 'Take 001';
 // pixels. `ghost` swaps materials for the dim dark body the three-sketches
 // references render beneath their trails (polygon offset so trails on the
 // surface don't z-fight).
-function BirdRig({ visible, ghost, ghostOpacity, timeScale, onReady }) {
+function BirdRig({
+  visible,
+  ghost,
+  ghostColor,
+  ghostOpacity,
+  timeScale,
+  onReady,
+}) {
   const groupRef = useRef(null);
 
   const ghostMaterial = useMemo(
@@ -31,6 +38,10 @@ function BirdRig({ visible, ghost, ghostOpacity, timeScale, onReady }) {
   useEffect(() => {
     ghostMaterial.opacity = ghostOpacity;
   }, [ghostMaterial, ghostOpacity]);
+
+  useEffect(() => {
+    ghostMaterial.color.set(ghostColor);
+  }, [ghostMaterial, ghostColor]);
 
   useEffect(() => () => ghostMaterial.dispose(), [ghostMaterial]);
 

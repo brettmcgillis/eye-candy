@@ -30,6 +30,7 @@ export default function Weightless() {
   return (
     <>
       <CameraRig camera={config.camera} />
+      <color attach="background" args={[config.bgColor]} />
       <ambientLight intensity={0.7} />
       <directionalLight position={[3, 5, 2]} intensity={1.2} />
       <ParticleBird

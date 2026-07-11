@@ -14,6 +14,7 @@ export default function getParticleBirdControls(p = {}) {
           label: 'Show Source Bird',
         },
         ghostBody: { value: p.ghostBody ?? true, label: 'Ghost Body' },
+        ghostColor: { value: p.ghostColor ?? '#141418', label: 'Ghost Color' },
         ghostOpacity: {
           value: p.ghostOpacity ?? 0.35,
           min: 0,
@@ -64,7 +65,7 @@ export default function getParticleBirdControls(p = {}) {
           value: p.particleSize ?? 0.008,
           min: 0.0005,
           max: 0.1,
-          label: 'Size',
+          label: 'Bound Size',
         },
         boundFlow: {
           value: p.boundFlow ?? 0.6,
@@ -158,6 +159,12 @@ export default function getParticleBirdControls(p = {}) {
           min: -5,
           max: 5,
           label: 'Gravity',
+        },
+        emittedParticleSize: {
+          value: p.emittedParticleSize ?? p.particleSize ?? 0.008,
+          min: 0.0005,
+          max: 0.1,
+          label: 'Emitted Size',
         },
       },
       { collapsed: true }

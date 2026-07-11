@@ -106,6 +106,7 @@ export default function createParticleSimulation(samples, skeleton) {
     attractorRadius: uniform(1.5),
 
     size: uniform(0.008),
+    emittedSize: uniform(0.008),
     intensity: uniform(1.2),
     boundAlpha: uniform(0.35),
     freeAlpha: uniform(0.8),
@@ -290,9 +291,19 @@ export default function createParticleSimulation(samples, skeleton) {
   const isFree = lifeNode.greaterThan(0);
 
   material.positionNode = posLifeAttr.xyz;
-  material.scaleNode = uniforms.size
-    .mul(mix(float(0.6), float(1.4), seedNode))
-    .mul(select(isFree, lifeNode.sqrt(), float(1)));
+
+  // Bound particles hold steady at `size`. Emitted particles use their own
+  // `emittedSize` and ease in over the first ~12% of life before shrinking
+  // out (matches the Embers.jsx growth-then-shrink convention) rather than
+  // starting at full size and only ever shrinking.
+  const ageNorm = float(1).sub(lifeNode).clamp(0, 1);
+  const emittedScaleCurve = smoothstep(0, 0.12, ageNorm).mul(
+    float(1).sub(ageNorm).pow(0.7)
+  );
+  const sizeJitter = mix(float(0.6), float(1.4), seedNode);
+  material.scaleNode = sizeJitter.mul(
+    select(isFree, uniforms.emittedSize.mul(emittedScaleCurve), uniforms.size)
+  );
 
   material.colorNode = Fn(() => {
     const d = uv().sub(0.5).length();

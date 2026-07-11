@@ -131,34 +131,43 @@ export default function getTrailControls(p = {}) {
           step: 50,
           label: 'Count',
         },
+        // Small-scale system — the shell radius sits well inside the
+        // bird's body, so ranges/steps are tightened from the field-line
+        // scale for usable drag precision (Leva's auto step on a wide
+        // range rounds to ~0.01, too coarse here).
         volumeFillCurlScale: {
-          value: p.volumeFillCurlScale ?? 4,
-          min: 0.1,
-          max: 15,
+          value: p.volumeFillCurlScale ?? 1.5,
+          min: 0.05,
+          max: 8,
+          step: 0.05,
           label: 'Curl Scale',
         },
         volumeFillEvolve: {
           value: p.volumeFillEvolve ?? 0.4,
           min: 0,
           max: 3,
+          step: 0.01,
           label: 'Noise Evolve',
         },
         volumeFillFlow: {
-          value: p.volumeFillFlow ?? 0.6,
+          value: p.volumeFillFlow ?? 0.15,
           min: 0,
-          max: 5,
+          max: 2,
+          step: 0.005,
           label: 'Flow Speed',
         },
         volumeFillSpring: {
-          value: p.volumeFillSpring ?? 6,
+          value: p.volumeFillSpring ?? 8,
           min: 0,
           max: 20,
+          step: 0.1,
           label: 'Home Pull',
         },
         volumeFillRadius: {
-          value: p.volumeFillRadius ?? 0.35,
-          min: 0.01,
-          max: 1.2,
+          value: p.volumeFillRadius ?? 0.05,
+          min: 0.005,
+          max: 0.4,
+          step: 0.005,
           label: 'Shell Radius',
         },
         volumeFillColor: {

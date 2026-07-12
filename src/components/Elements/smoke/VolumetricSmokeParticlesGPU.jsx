@@ -20,40 +20,21 @@ import React, { useEffect, useMemo, useRef, useState } from 'react';
 
 import { useFrame } from '@react-three/fiber';
 
+import curlNoise from './curlNoise';
+
 const CURVE_SAMPLES = 512;
 
-// ── Noise helpers (identical to VolumetricSmokeParticles.jsx) ────────────────
-
-function noiseX(x, y, z, t, speed) {
-  const s = t * speed;
-  return (
-    Math.sin(0.017 * x + 1.3 * s) * Math.cos(0.011 * z - 0.7 * s) +
-    0.5 * Math.sin(0.031 * y - 0.9 * s) * Math.cos(0.019 * x + 1.1 * s) +
-    0.25 * Math.cos(0.023 * z + 0.6 * s)
-  );
-}
-function noiseY(x, y, z, t, speed) {
-  const s = t * speed;
-  return (
-    Math.cos(0.013 * y + 0.8 * s) * Math.sin(0.023 * x - 1.2 * s) +
-    0.5 * Math.cos(0.027 * z - 0.5 * s) * Math.sin(0.017 * y + 0.9 * s) +
-    0.25 * Math.sin(0.021 * x + 1.4 * s)
-  );
-}
-function noiseZ(x, y, z, t, speed) {
-  const s = t * speed;
-  return (
-    Math.sin(0.019 * z - 1.1 * s) * Math.sin(0.015 * y + 0.6 * s) +
-    0.5 * Math.sin(0.025 * x + 0.8 * s) * Math.cos(0.021 * z - 1.0 * s) +
-    0.25 * Math.cos(0.029 * y - 0.7 * s)
-  );
-}
+// Sample frequency for the curl noise field, tuned to this scene's spline
+// scale (points span roughly a few units) so eddies are visible across the
+// volume rather than the field reading as near-flat.
+const CURL_FREQUENCY = 1.6;
 
 // ── Shared helpers (identical to VolumetricSmokeParticles.jsx) ───────────────
 
 const curveTmp = new THREE.Vector3();
 const rotQuatTmp = new THREE.Quaternion();
 const spreadOffTmp = new THREE.Vector3();
+const curlTmp = { x: 0, y: 0, z: 0 };
 
 function buildRotationLookup(eulers, nSamples, closed, out, scratchQuats) {
   const nPts = eulers.length;
@@ -233,6 +214,9 @@ export default function VolumetricSmokeParticlesGPU({
       splineT = new Float32Array(N);
       alphas = new Float32Array(N).fill(1);
       ages = new Float32Array(N);
+      // Per-particle curl-noise seed — without it, particles clustered near
+      // the spline would all sample nearly the same field value and move as
+      // a rigid group instead of dispersing.
       phases = new Float32Array(N);
       for (let i = 0; i < N; i += 1) phases[i] = Math.random() * Math.PI * 2;
 
@@ -598,36 +582,21 @@ export default function VolumetricSmokeParticlesGPU({
           }
         }
 
-        const nx3d = noiseX(
-          px * noiseScale,
-          py * noiseScale,
-          pz * noiseScale,
-          time,
-          turbSpeed
+        // Volumetric advection via a divergence-free curl-noise flow field.
+        // Particles cluster tightly around the spline, so the per-particle
+        // phase seed warps each one into its own patch of the field —
+        // otherwise they'd all sample nearly the same value and move as a
+        // rigid group.
+        const evolve = time * turbSpeed + phases[i];
+        curlNoise(
+          px * noiseScale * CURL_FREQUENCY + evolve,
+          py * noiseScale * CURL_FREQUENCY + evolve,
+          pz * noiseScale * CURL_FREQUENCY + evolve,
+          curlTmp
         );
-        const ny3d = noiseY(
-          px * noiseScale,
-          py * noiseScale,
-          pz * noiseScale,
-          time,
-          turbSpeed
-        );
-        const nz3d = noiseZ(
-          px * noiseScale,
-          py * noiseScale,
-          pz * noiseScale,
-          time,
-          turbSpeed
-        );
-        vx += nx3d * turbStrength * dt;
-        vy += ny3d * turbStrength * dt;
-        vz += nz3d * turbStrength * dt;
-
-        const ph = phases[i];
-        const ts = time * turbSpeed * 0.5;
-        vx += Math.sin(ts + ph) * turbStrength * 0.15 * dt;
-        vy += Math.cos(ts * 0.73 + ph * 1.4) * turbStrength * 0.15 * dt;
-        vz += Math.sin(ts * 1.27 + ph * 2.3) * turbStrength * 0.15 * dt;
+        vx += curlTmp.x * turbStrength * dt;
+        vy += curlTmp.y * turbStrength * dt;
+        vz += curlTmp.z * turbStrength * dt;
         vy += volBuoyancy * dt;
 
         vx *= dampPerFrame;

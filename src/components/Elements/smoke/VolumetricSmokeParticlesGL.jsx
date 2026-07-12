@@ -4,13 +4,15 @@ import React, { useEffect, useMemo, useRef } from 'react';
 
 import { useFrame } from '@react-three/fiber';
 
+import curlNoise from './curlNoise';
+
 // ---------------------------------------------------------------------------
 // VolumetricSmokeParticles
 // A spline-following particle smoke that mimics the volumetric, advection-based
 // look of the example.glsl Shadertoy fluid. Instead of GPU compute, it uses
-// layered 3-D sinusoidal noise (similar to the velocity-field advection in
-// Buffer A/C) to move particles through a spatial flow field, giving the same
-// wispy, divergence-free feel without render targets.
+// a divergence-free curl-noise flow field (CPU-side) to move particles
+// through a spatial flow field, giving the same wispy, divergence-free feel
+// without render targets.
 //
 // No attractor physics — particles follow the spline + noise only.
 // ---------------------------------------------------------------------------
@@ -67,36 +69,10 @@ void main() {
 }
 `;
 
-// ---------------------------------------------------------------------------
-// Layered 3-D noise helpers (CPU-side, mirrors the GLSL sinusoidal velocity
-// field from Buffer A so particles advect through a similar flow topology).
-// Three octaves of mutually-orthogonal sinusoids approximate a divergence-free
-// velocity field without requiring a texture lookup table.
-// ---------------------------------------------------------------------------
-function noiseX(x, y, z, t, speed) {
-  const s = t * speed;
-  return (
-    Math.sin(0.017 * x + 1.3 * s) * Math.cos(0.011 * z - 0.7 * s) +
-    0.5 * Math.sin(0.031 * y - 0.9 * s) * Math.cos(0.019 * x + 1.1 * s) +
-    0.25 * Math.cos(0.023 * z + 0.6 * s)
-  );
-}
-function noiseY(x, y, z, t, speed) {
-  const s = t * speed;
-  return (
-    Math.cos(0.013 * y + 0.8 * s) * Math.sin(0.023 * x - 1.2 * s) +
-    0.5 * Math.cos(0.027 * z - 0.5 * s) * Math.sin(0.017 * y + 0.9 * s) +
-    0.25 * Math.sin(0.021 * x + 1.4 * s)
-  );
-}
-function noiseZ(x, y, z, t, speed) {
-  const s = t * speed;
-  return (
-    Math.sin(0.019 * z - 1.1 * s) * Math.sin(0.015 * y + 0.6 * s) +
-    0.5 * Math.sin(0.025 * x + 0.8 * s) * Math.cos(0.021 * z - 1.0 * s) +
-    0.25 * Math.cos(0.029 * y - 0.7 * s)
-  );
-}
+// Sample frequency for the curl noise field, tuned to this scene's spline
+// scale (points span roughly a few units) so eddies are visible across the
+// volume rather than the field reading as near-flat.
+const CURL_FREQUENCY = 1.6;
 
 // Pre-allocate to avoid per-frame heap pressure.
 const curveTmp = new THREE.Vector3();
@@ -104,6 +80,7 @@ const curveTmp = new THREE.Vector3();
 // ── Rotation interpolation for directional spawn spread ─────────────────────
 const rotQuatTmp = new THREE.Quaternion();
 const spreadOffTmp = new THREE.Vector3();
+const curlTmp = { x: 0, y: 0, z: 0 };
 
 function buildRotationLookup(eulers, nSamples, closed, out, scratchQuats) {
   const nPts = eulers.length;
@@ -235,6 +212,9 @@ export default function VolumetricSmokeParticlesGL({
       const splineT = new Float32Array(N);
       const alphas = new Float32Array(N).fill(1);
       const ages = new Float32Array(N);
+      // Per-particle curl-noise seed — without it, particles clustered near
+      // the spline would all sample nearly the same field value and move as
+      // a rigid group instead of dispersing.
       const phases = new Float32Array(N);
       for (let i = 0; i < N; i += 1) phases[i] = Math.random() * Math.PI * 2;
 
@@ -626,41 +606,22 @@ export default function VolumetricSmokeParticlesGL({
           }
         }
 
-        // Volumetric advection via a layered sinusoidal velocity field.
-        // Mirrors the divergence-free character of the Shadertoy Buffer A/C
-        // pressure-velocity update without needing a GPU texture.
-        const nx3d = noiseX(
-          px * noiseScale,
-          py * noiseScale,
-          pz * noiseScale,
-          time,
-          turbSpeed
+        // Volumetric advection via a divergence-free curl-noise flow field —
+        // mirrors the same pressure-velocity feel as the Shadertoy Buffer A/C
+        // pass without needing a GPU texture. Particles cluster tightly
+        // around the spline, so the per-particle phase seed warps each one
+        // into its own patch of the field — otherwise they'd all sample
+        // nearly the same value and move as a rigid group.
+        const evolve = time * turbSpeed + phases[i];
+        curlNoise(
+          px * noiseScale * CURL_FREQUENCY + evolve,
+          py * noiseScale * CURL_FREQUENCY + evolve,
+          pz * noiseScale * CURL_FREQUENCY + evolve,
+          curlTmp
         );
-        const ny3d = noiseY(
-          px * noiseScale,
-          py * noiseScale,
-          pz * noiseScale,
-          time,
-          turbSpeed
-        );
-        const nz3d = noiseZ(
-          px * noiseScale,
-          py * noiseScale,
-          pz * noiseScale,
-          time,
-          turbSpeed
-        );
-        vx += nx3d * turbStrength * dt;
-        vy += ny3d * turbStrength * dt;
-        vz += nz3d * turbStrength * dt;
-
-        // Per-particle phase offset — adds micro-variation matching the
-        // particle-by-particle staggering in the colour Buffer B/D pass.
-        const ph = phases[i];
-        const ts = time * turbSpeed * 0.5;
-        vx += Math.sin(ts + ph) * turbStrength * 0.15 * dt;
-        vy += Math.cos(ts * 0.73 + ph * 1.4) * turbStrength * 0.15 * dt;
-        vz += Math.sin(ts * 1.27 + ph * 2.3) * turbStrength * 0.15 * dt;
+        vx += curlTmp.x * turbStrength * dt;
+        vy += curlTmp.y * turbStrength * dt;
+        vz += curlTmp.z * turbStrength * dt;
         // Buoyancy — smoke always rises
         vy += volBuoyancy * dt;
 

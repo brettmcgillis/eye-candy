@@ -1,8 +1,8 @@
 import React, { lazy } from 'react';
-import { FcFullTrash } from 'react-icons/fc';
+import { BsTrash3Fill } from 'react-icons/bs';
 
 function SceneIcon() {
-  return <FcFullTrash />;
+  return <BsTrash3Fill size={26} />;
 }
 
 export default {

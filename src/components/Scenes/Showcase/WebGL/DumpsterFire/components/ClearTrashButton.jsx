@@ -8,9 +8,7 @@ export default function ClearTrashButton() {
   const hasThrowables = useTrashBlasterStore((s) => s.hasThrowables);
   const clearTrash = useTrashBlasterStore((s) => s.clearTrash);
   const TrashIcon = hasThrowables ? CgTrash : CgTrashEmpty;
-  const tooltipLabel = hasThrowables
-    ? 'Clean up your mess'
-    : 'Reset dumpster scene';
+  const tooltipLabel = hasThrowables ? 'Clean up your mess' : 'Reset';
 
   return (
     <OverlayIconButton

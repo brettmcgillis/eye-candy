@@ -20,7 +20,13 @@ import React, { useEffect, useMemo, useRef, useState } from 'react';
 
 import { useFrame } from '@react-three/fiber';
 
+import curlNoise from './curlNoise';
+
 const CURVE_SAMPLES = 512;
+// Sample frequency for the curl noise field, tuned to this scene's spline
+// scale (points span roughly a few units) so eddies are visible across the
+// plume rather than the field reading as near-flat.
+const CURL_FREQUENCY = 1.6;
 
 // ── Texture ──────────────────────────────────────────────────────────────────
 // Asymmetric wispy smoke puff (identical to SmokeParticles.jsx)
@@ -80,6 +86,7 @@ const rootWorldQuaternionTmp = new THREE.Quaternion();
 const inverseRootWorldQuaternionTmp = new THREE.Quaternion();
 const rotQuatTmp = new THREE.Quaternion();
 const spreadOffTmp = new THREE.Vector3();
+const curlTmp = { x: 0, y: 0, z: 0 };
 
 function isFiniteVec3Tuple(value) {
   return (
@@ -745,11 +752,22 @@ export default function SmokeParticlesGPU({
           }
         }
 
-        const ph = phases[i];
-        const ts = time * turbulenceSpeed;
-        vx += Math.sin(ts + ph) * turbulence * dt;
-        vy += Math.cos(ts * 0.73 + ph * 1.4) * turbulence * dt;
-        vz += Math.sin(ts * 1.27 + ph * 2.3) * turbulence * dt;
+        // Divergence-free curl-noise advection — replaces the old per-axis
+        // sin/cos "wind" with an actual flow field particles swirl through.
+        // Particles cluster tightly around the spline, so without a
+        // per-particle seed they'd all sample nearly the same field value
+        // and move as a rigid group instead of dispersing — the seed warps
+        // each particle into its own patch of the field.
+        const evolve = time * turbulenceSpeed + phases[i];
+        curlNoise(
+          px * CURL_FREQUENCY + evolve,
+          py * CURL_FREQUENCY + evolve,
+          pz * CURL_FREQUENCY + evolve,
+          curlTmp
+        );
+        vx += curlTmp.x * turbulence * dt;
+        vy += curlTmp.y * turbulence * dt;
+        vz += curlTmp.z * turbulence * dt;
         vy += buoyancy * dt;
 
         vx *= dampPerFrame;

@@ -1,54 +1,19 @@
 import { folder } from 'leva';
 
+// Flash timing (Floids Agents.js fire()/nudge()) and the matte-grey→glow
+// visual response. No real point lights in this pass — the flash is an
+// instanceColor lerp plus a slight scale bump, see FireflySwarm.jsx.
 export default function getFireflyControls(p) {
   return folder(
     {
-      fireflyCount: {
-        label: 'Count',
-        max: 1000,
-        min: 40,
-        step: 1,
-        value: p.fireflyCount,
-      },
-      fireflySize: {
-        label: 'Body Size',
-        max: 12,
-        min: 2,
-        step: 0.1,
-        value: p.fireflySize,
-      },
-      fireflyGlow: {
-        label: 'Glow Scale',
-        max: 6,
-        min: 0.5,
-        step: 0.1,
-        value: p.fireflyGlow,
-      },
-      // Range/step mirror Floids' own dat.gui slider for DESIRED_SPEED
-      // (~/dev/examples/Floids/src/world/World.js) — this control IS that
-      // value, scaled by WORLD_SCALE in createFloidsSimulation.js, not run
-      // through a separate invented conversion factor.
-      fireflySpeed: {
-        label: 'Speed',
-        max: 0.4,
-        min: 0,
-        step: 0.05,
-        value: p.fireflySpeed,
-      },
-      fireCycle: {
-        label: 'Flash Cycle',
-        max: 6,
-        min: 0.5,
-        step: 0.1,
-        value: p.fireCycle,
-      },
-      lightIntensity: {
-        label: 'Light Intensity',
-        max: 20,
-        min: 0,
-        step: 0.1,
-        value: p.lightIntensity,
-      },
+      flashCycle: { value: p.flashCycle, min: 0.5, max: 8, step: 0.1 },
+      nudgeFactor: { value: p.nudgeFactor, min: 0, max: 0.3, step: 0.01 },
+      nudgeLimit: { value: p.nudgeLimit, min: 0, max: 10, step: 1 },
+      flashDecayRate: { value: p.flashDecayRate, min: 0.5, max: 10, step: 0.1 },
+      bodySize: { value: p.bodySize, min: 0.05, max: 1.5, step: 0.05 },
+      glowSizeBoost: { value: p.glowSizeBoost, min: 0, max: 2, step: 0.05 },
+      bodyColor: { value: p.bodyColor, label: 'Body Color' },
+      glowColor: { value: p.glowColor, label: 'Glow Color' },
     },
     { collapsed: true }
   );

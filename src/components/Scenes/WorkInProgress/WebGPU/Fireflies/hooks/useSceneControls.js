@@ -1,6 +1,6 @@
 import { folder, useControls } from 'leva';
 
-import { useMemo, useRef } from 'react';
+import { useMemo, useRef, useState } from 'react';
 
 import { getCameraControlsKey } from '../../../../../../hooks/sceneCameraUtils';
 import usePresetsFolder from '../../../../../../hooks/usePresetsFolder';
@@ -9,13 +9,12 @@ import { useMediaRecorder } from '../../../../../../modules/mediaRecorder';
 import getFireflyControls from '../components/getFireflyControls';
 import getFlockingControls from '../components/getFlockingControls';
 import getHunterControls from '../components/getHunterControls';
-import getSceneControls from '../components/getSceneControls';
+import getObstacleControls from '../components/getObstacleControls';
 import { DEFAULT_PRESET, PRESETS, getPresetControls } from '../presets/presets';
 import CAMERA from '../utils/camera';
 
 const SCENE_LABEL = 'Fireflies';
 const CAMERA_FOLDER_PATH = `${SCENE_LABEL}.Camera`;
-export const WINDOW_SYNC_CHANNEL = 'fireflies';
 
 export default function useSceneControls() {
   const {
@@ -28,7 +27,12 @@ export default function useSceneControls() {
     getPresetControls,
     presets: PRESETS,
   });
+
   const p = PRESETS[initialPreset] || PRESETS[DEFAULT_PRESET];
+
+  // Respawn (Flocking folder's button) reseeds flock/hunter/obstacle
+  // positions from scratch — see useFlockSimulation's rebuild deps.
+  const [respawnTick, setRespawnTick] = useState(0);
 
   const cameraApiRef = useRef(null);
   const { buildCamera, cameraControls } = useSceneCameraControls({
@@ -41,21 +45,19 @@ export default function useSceneControls() {
   const [controls, setControls] = useControls(SCENE_LABEL, () => ({
     Presets: presetsFolder,
     Camera: folder(cameraControls, { collapsed: true }),
-    Scene: getSceneControls(p),
-    Fireflies: getFireflyControls(p),
-    Flocking: getFlockingControls(p),
+    Flocking: getFlockingControls(p, () => setRespawnTick((tick) => tick + 1)),
+    Firefly: getFireflyControls(p),
     Hunters: getHunterControls(p),
+    Obstacles: getObstacleControls(p),
   }));
 
   attachSetControls(setControls);
-  // Feed the presets copy button — without this the snapshot stays at the
-  // initial preset and copy returns a near-empty object.
   controlsSnapshotRef.current = { ...controls };
+
   useMediaRecorder({ fileName: SCENE_LABEL });
 
-  // Rule: control changes must never reset the camera (docs/scene-
-  // conventions.md §10) — memoize buildCamera on a key derived only from
-  // camera-relevant control values, not `controls` itself.
+  // Rule: control changes must never reset the camera — memoize on a key
+  // derived only from camera-relevant control values (docs/scene-conventions.md §10).
   const cameraControlsKey = useMemo(
     () => getCameraControlsKey(controls),
     [controls]
@@ -66,7 +68,7 @@ export default function useSceneControls() {
   );
 
   return useMemo(
-    () => ({ ...controls, camera, cameraApiRef }),
-    [camera, controls]
+    () => ({ ...controls, camera, cameraApiRef, respawnTick }),
+    [camera, controls, respawnTick]
   );
 }

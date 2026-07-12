@@ -1,30 +1,57 @@
+// Preset snapshots for the scene. Keys here must match the Leva schema built
+// in useSceneControls 1:1 — no reshaping between a preset and the controls it
+// applies (see docs/scene-conventions.md, "Controls & presets").
 export const DEFAULT_PRESET = 'Default';
 
 export const PRESETS = {
   Default: {
-    backgroundColor: '#02050d',
-    toneMappingExposure: 3,
-    fireflyCount: 700,
-    fireflySize: 5,
-    fireflyGlow: 2.5,
-    // fireflySpeed/separationRadius/neighborRadius/hunterSpeed are Floids'
-    // own literal defaults (Agents.js DESIRED_SPEED/PROTECTED_RADIUS/
-    // VISIBLE_RADIUS, Hunter.js DESIRED_SPEED) — see the comments in
-    // components/getFireflyControls.js, getFlockingControls.js, and
-    // getHunterControls.js for exactly which constant each one is.
-    fireflySpeed: 0.2,
-    fireCycle: 3,
-    separationRadius: 0.5,
-    neighborRadius: 1.5,
-    cursorMode: 'flee',
-    cursorRadius: 230,
-    hunterSpeed: 0.25,
-    hunterRadius: 22,
+    // Flocking
+    fireflyCount: 150,
+    worldSize: 40,
+    subDivisionCount: 8,
+    maxSpeed: 9,
+    alignWeight: 1.2,
+    cohesionWeight: 1,
+    separationWeight: 1.6,
+    obstacleWeight: 2.5,
+    boundaryWeight: 3,
+    neighborRadius: 6,
+    separationRadius: 2,
+    obstacleMargin: 3,
+    boundaryMargin: 6,
+    // Fireflies
+    flashCycle: 3,
+    nudgeFactor: 0.05,
+    nudgeLimit: 3,
+    flashDecayRate: 3,
+    bodySize: 0.35,
+    glowSizeBoost: 0.6,
+    bodyColor: '#6b7280',
+    glowColor: '#ffe066',
+    // Hunters
     hunterCount: 1,
-    lightIntensity: 3,
+    chaseFactor: 0.5,
+    chaseEpsilon: 0.5,
+    sightRadius: 14,
+    fleeRadius: 8,
+    fleeWeight: 3,
+    confusionFactor: 0.25,
+    hunterSpeed: 7,
+    hunterMaxSpeed: 14,
+    restoreTau: 0.4,
+    hunterSize: 0.7,
+    hunterColor: '#0a0a0a',
+    // Obstacles
+    obstacleCount: 6,
+    obstacleMinRadius: 1.5,
+    obstacleMaxRadius: 3,
+    obstacleColor: '#4b5563',
   },
 };
 
+// Companion fn to usePresetsFolder. Given the snapshot for the preset being
+// applied, return the control values to set. Override this when a preset
+// needs to derive values rather than apply the snapshot verbatim.
 export function getPresetControls({ presetSnapshot }) {
   return { ...presetSnapshot };
 }

@@ -1,19 +1,21 @@
-// Fixed orbit frame around the habitat sphere, equivalent to the previous
-// hand-rolled <PerspectiveCamera> (fov 42, position [11, 6.5, 12]) — see
-// docs/scene-conventions.md §10 for why CameraRig replaces a hand-rolled
-// camera. orbitInteractionEnabled (wired in Fireflies.jsx from windowSync)
-// is what actually satisfies todo.md's "orbit controls disabled in
-// multi-tab mode" — the camera stays framed here either way.
-const TARGET = [0, 2.5, 0];
+// Framed to sit just outside the default worldSize=40 box (see presets.js)
+// with enough headroom to see the flock roam near its edges.
+const TARGET = [0, 0, 0];
 
 const CAMERA = {
   defaultMode: 'orbit',
   orbit: {
     desktop: {
-      fov: 42,
-      pivot: TARGET,
-      position: [11, 6.5, 12],
+      position: [0, 22, 62],
       target: TARGET,
+      pivot: TARGET,
+      fov: 45,
+    },
+    mobile: {
+      position: [0, 26, 76],
+      target: TARGET,
+      pivot: TARGET,
+      fov: 55,
     },
   },
 };

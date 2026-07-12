@@ -1,40 +1,42 @@
-import { folder } from 'leva';
+import { button, folder } from 'leva';
 
-export default function getFlockingControls(p) {
+// Boid movement: alignment/cohesion/separation/obstacle-avoidance weights
+// and radii (boids-js BoidsController), plus the world box the flock roams
+// in and its spatial-grid resolution. Keys match presets/presets.js 1:1
+// (docs/scene-conventions.md §9). Respawn reseeds flock/hunter/obstacle
+// positions from scratch with the current counts.
+export default function getFlockingControls(p, onRespawn) {
   return folder(
     {
-      // Floids' Agents.js doesn't expose PROTECTED_RADIUS/VISIBLE_RADIUS as
-      // GUI sliders (they're fixed at 0.05/0.15) — these two controls are
-      // this scene's own addition beyond Floids, but the values ARE those
-      // constants (x WORLD_SCALE) directly, not run through a separate
-      // invented conversion factor: default 0.5 = 0.05 x 10, default 1.5 =
-      // 0.15 x 10 (see createFloidsSimulation.js).
-      separationRadius: {
-        label: 'Separation Radius',
-        max: 3,
-        min: 0.1,
-        step: 0.05,
-        value: p.separationRadius,
-      },
-      neighborRadius: {
-        label: 'Neighbor Radius',
-        max: 8,
-        min: 0.5,
+      fireflyCount: { value: p.fireflyCount, min: 10, max: 500, step: 10 },
+      worldSize: { value: p.worldSize, min: 10, max: 120, step: 1 },
+      subDivisionCount: { value: p.subDivisionCount, min: 2, max: 20, step: 1 },
+      maxSpeed: { value: p.maxSpeed, min: 1, max: 30, step: 0.5 },
+      alignWeight: { value: p.alignWeight, min: 0, max: 5, step: 0.1 },
+      cohesionWeight: { value: p.cohesionWeight, min: 0, max: 5, step: 0.1 },
+      separationWeight: {
+        value: p.separationWeight,
+        min: 0,
+        max: 5,
         step: 0.1,
-        value: p.neighborRadius,
       },
-      cursorMode: {
-        label: 'Cursor Mode',
-        options: { Attract: 'attract', Flee: 'flee', Off: 'off' },
-        value: p.cursorMode,
+      obstacleWeight: { value: p.obstacleWeight, min: 0, max: 10, step: 0.1 },
+      boundaryWeight: { value: p.boundaryWeight, min: 0, max: 10, step: 0.1 },
+      neighborRadius: { value: p.neighborRadius, min: 1, max: 20, step: 0.5 },
+      separationRadius: {
+        value: p.separationRadius,
+        min: 0.5,
+        max: 10,
+        step: 0.25,
       },
-      cursorRadius: {
-        label: 'Cursor Radius',
-        max: 500,
-        min: 50,
-        step: 5,
-        value: p.cursorRadius,
+      obstacleMargin: {
+        value: p.obstacleMargin,
+        min: 0.5,
+        max: 10,
+        step: 0.25,
       },
+      boundaryMargin: { value: p.boundaryMargin, min: 1, max: 20, step: 0.5 },
+      respawn: button(() => onRespawn()),
     },
     { collapsed: true }
   );

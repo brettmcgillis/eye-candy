@@ -36,6 +36,7 @@ import {
 } from 'three/tsl';
 import {
   Frustum,
+  HalfFloatType,
   Matrix4,
   NodeMaterial,
   NodeUpdateType,
@@ -258,7 +259,15 @@ class GodraysNode extends TempNode {
      * @private
      * @type {RenderTarget}
      */
-    this._godraysRenderTarget = new RenderTarget(1, 1, { depthBuffer: false });
+    // depthBuffer omitted (this pass has none) — type defaults to
+    // UnsignedByteType (8-bit) otherwise, which quantizes the raymarch's
+    // smooth density accumulation into 256 levels and reads as posterization
+    // once composited. HalfFloatType keeps it continuous through the rest of
+    // the chain (bilateralBlur, depthAwareBlend).
+    this._godraysRenderTarget = new RenderTarget(1, 1, {
+      depthBuffer: false,
+      type: HalfFloatType,
+    });
     this._godraysRenderTarget.texture.name = 'Godrays';
 
     /**

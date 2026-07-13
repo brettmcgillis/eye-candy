@@ -80,7 +80,13 @@ export function createPhysicalStep(slots) {
       );
     });
 
-    velocity.addAssign(force.mul(uniforms.frameDelta).mul(uniforms.speed));
+    // `speed` only scales the position step, not this velocity
+    // accumulation — velocity is persisted frame-to-frame here (unlike flow
+    // mode, which recomputes it fresh from position every frame), so
+    // scaling both steps by `speed` would compound into speed² of visible
+    // motion instead of speed. That's what made a "Speed" tuned low for
+    // flow mode look frozen after switching to physical mode.
+    velocity.addAssign(force.mul(uniforms.frameDelta));
 
     If(velocity.length().greaterThan(uniforms.maxSpeed), () => {
       velocity.assign(velocity.normalize().mul(uniforms.maxSpeed));

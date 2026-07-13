@@ -13,6 +13,7 @@ import {
   vec4,
 } from 'three/tsl';
 import {
+  HalfFloatType,
   NodeMaterial,
   NodeUpdateType,
   QuadMesh,
@@ -108,7 +109,13 @@ class BilateralBlurNode extends TempNode {
      * @private
      * @type {RenderTarget}
      */
-    this._horizontalRT = new RenderTarget(1, 1, { depthBuffer: false });
+    // type defaults to UnsignedByteType (8-bit) otherwise — see the same
+    // note on GodraysNode's render target; two more 8-bit round-trips here
+    // would re-quantize an already-quantized source, compounding banding.
+    this._horizontalRT = new RenderTarget(1, 1, {
+      depthBuffer: false,
+      type: HalfFloatType,
+    });
     this._horizontalRT.texture.name = 'BilateralBlurNode.horizontal';
 
     /**
@@ -117,7 +124,10 @@ class BilateralBlurNode extends TempNode {
      * @private
      * @type {RenderTarget}
      */
-    this._verticalRT = new RenderTarget(1, 1, { depthBuffer: false });
+    this._verticalRT = new RenderTarget(1, 1, {
+      depthBuffer: false,
+      type: HalfFloatType,
+    });
     this._verticalRT.texture.name = 'BilateralBlurNode.vertical';
 
     /**

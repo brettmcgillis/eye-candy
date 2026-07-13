@@ -1,21 +1,39 @@
 import { folder } from 'leva';
 
-import attractorFields from '../utils/attractorFields';
+import attractorFields, { paramKey } from '../utils/attractorFields';
 import { MODES, STRANGE_ATTRACTORS_MODE } from '../utils/modes';
 
 const ATTRACTOR_TYPES = Object.keys(attractorFields);
 
+// Every attractor's params get a flat, namespaced control (paramKey, e.g.
+// 'thomasB'/'butterflyA') up front, regardless of which attractor is
+// currently selected — so the schema never needs to be rebuilt on
+// attractorType change (docs/scene-conventions.md §9: flat keys, no
+// reshaping) and switching attractors just changes which of these are
+// actually read by the physics (see LeafSwarm's buildModeAssets).
+function getAttractorParamControls(p) {
+  const controls = {};
+  ATTRACTOR_TYPES.forEach((type) => {
+    const entry = attractorFields[type];
+    entry.paramNames.forEach((name) => {
+      const key = paramKey(entry.key, name);
+      const [min, max, step] = entry.ranges[name];
+      controls[key] = {
+        label: `${type} ${name.toUpperCase()}`,
+        value: p[key] ?? entry.defaults[name],
+        min,
+        max,
+        step,
+      };
+    });
+  });
+  return controls;
+}
+
 // Attractor swarm controls. Keys match presets/presets.js 1:1
-// (docs/scene-conventions.md §9). `attractorB`'s range is taken from
-// whichever attractor is selected when this schema is built — with a
-// single registered attractor that's a non-issue; once a second attractor
-// lands, rebuild this schema on attractorType change (see
-// Template/SceneTemplate for the camera-controls-key rebuild pattern) so
-// the range tracks the active attractor.
+// (docs/scene-conventions.md §9).
 export default function getSwarmControls(p = {}) {
   const attractorType = p.attractorType ?? ATTRACTOR_TYPES[0];
-  const { defaults, ranges } = attractorFields[attractorType];
-  const [bMin, bMax, bStep] = ranges.b;
 
   return folder({
     mode: {
@@ -28,13 +46,7 @@ export default function getSwarmControls(p = {}) {
       value: attractorType,
       options: ATTRACTOR_TYPES,
     },
-    attractorB: {
-      label: 'Attractor B',
-      value: p.attractorB ?? defaults.b,
-      min: bMin,
-      max: bMax,
-      step: bStep,
-    },
+    ...getAttractorParamControls(p),
     particleCount: {
       label: 'Particle Count',
       value: p.particleCount ?? 2500,
@@ -56,7 +68,13 @@ export default function getSwarmControls(p = {}) {
       max: 0.3,
       step: 0.001,
     },
-    speed: { label: 'Speed', value: p.speed ?? 1, min: 0, max: 4, step: 0.01 },
+    speed: {
+      label: 'Swarm Speed',
+      value: p.speed ?? 1,
+      min: 0,
+      max: 4,
+      step: 0.01,
+    },
     worldScale: {
       label: 'World Scale',
       value: p.worldScale ?? 1.4,
@@ -75,8 +93,15 @@ export default function getSwarmControls(p = {}) {
       label: 'Sakura Scale',
       value: p.sakuraScale ?? 4,
       min: 0.1,
-      max: 4,
+      max: 10,
       step: 0.05,
+    },
+    orientationJitter: {
+      label: 'Orientation Jitter',
+      value: p.orientationJitter ?? 1,
+      min: 0,
+      max: 1,
+      step: 0.01,
     },
   });
 }

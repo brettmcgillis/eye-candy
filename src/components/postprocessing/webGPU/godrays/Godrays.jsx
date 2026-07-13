@@ -16,6 +16,7 @@ function Godrays({
   density = 1.2,
   maxDensity = 0.9,
   distanceAttenuation = 1,
+  raymarchSteps = 60,
   edgeRadius = 2,
   edgeStrength = 2,
   blur = true,
@@ -91,6 +92,7 @@ function Godrays({
     n.godraysNode.density.value = density;
     n.godraysNode.maxDensity.value = maxDensity;
     n.godraysNode.distanceAttenuation.value = distanceAttenuation;
+    n.godraysNode.raymarchSteps.value = raymarchSteps;
     n.uEdgeRadius.value = edgeRadius;
     n.uEdgeStrength.value = edgeStrength;
     n.uBlendColor.value.set(blendColor);

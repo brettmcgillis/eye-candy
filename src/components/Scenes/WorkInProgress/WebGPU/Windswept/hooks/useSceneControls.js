@@ -7,6 +7,7 @@ import usePresetsFolder from '../../../../../../hooks/usePresetsFolder';
 import useSceneCameraControls from '../../../../../../hooks/useSceneCameraControls';
 import { useMediaRecorder } from '../../../../../../modules/mediaRecorder';
 import getFieldLineControls from '../components/getFieldLineControls';
+import getGodraysControls from '../components/getGodraysControls';
 import getPhysicalAttractorControls from '../components/getPhysicalAttractorControls';
 import getSwarmControls from '../components/getSwarmControls';
 import { DEFAULT_PRESET, PRESETS, getPresetControls } from '../presets/presets';
@@ -43,6 +44,7 @@ export default function useSceneControls() {
     Swarm: getSwarmControls(p),
     FieldLines: getFieldLineControls(p),
     PhysicalAttractors: getPhysicalAttractorControls(p),
+    Godrays: getGodraysControls(p),
   }));
 
   attachSetControls(setControls);

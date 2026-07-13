@@ -5,7 +5,7 @@ import React, { memo, useEffect, useMemo, useRef } from 'react';
 import { useFrame } from '@react-three/fiber';
 
 import FieldLineTrails from '../utils/FieldLineTrails';
-import attractorFields from '../utils/attractorFields';
+import attractorFields, { paramKey } from '../utils/attractorFields';
 import createFieldLineMaterial from '../utils/createFieldLineMaterial';
 import { STRANGE_ATTRACTORS_MODE } from '../utils/modes';
 
@@ -80,10 +80,15 @@ function FieldLines({ config }) {
       config.showFieldLines && config.mode === STRANGE_ATTRACTORS_MODE;
     if (!state || !active) return;
 
-    const { deriveJS } = attractorFields[config.attractorType];
+    const entry = attractorFields[config.attractorType];
+    const params = {};
+    entry.paramNames.forEach((name) => {
+      const key = paramKey(entry.key, name);
+      params[name] = config[key] ?? entry.defaults[name];
+    });
     const delta = Math.min(Math.max(rawDelta, 1e-4), MAX_DELTA);
     clockRef.current += delta;
-    const step = config.stepSize * config.speed * delta * 60;
+    const step = config.stepSize * config.fieldLineSpeed * delta * 60;
 
     uniforms.color.value.set(config.fieldLineColor);
     uniforms.opacity.value = config.fieldLineOpacity;
@@ -91,7 +96,7 @@ function FieldLines({ config }) {
     uniforms.currentSec.value = clockRef.current;
 
     state.walkers.forEach((walker, i) => {
-      const [dx, dy, dz] = deriveJS(walker.position, config.attractorB);
+      const [dx, dy, dz] = entry.deriveJS(walker.position, params);
       walker.position.x += dx * step;
       walker.position.y += dy * step;
       walker.position.z += dz * step;

@@ -1,17 +1,8 @@
 import React, { lazy } from 'react';
-import { GiFallingLeaf } from 'react-icons/gi';
+import { FaLeaf } from 'react-icons/fa6';
 
 function SceneIcon() {
-  return (
-    <GiFallingLeaf
-      color="#e8c15a"
-      size={26}
-      style={{
-        backgroundColor: '#05070c',
-        borderRadius: '50%',
-      }}
-    />
-  );
+  return <FaLeaf color="#009842" size={26} />;
 }
 
 export default {

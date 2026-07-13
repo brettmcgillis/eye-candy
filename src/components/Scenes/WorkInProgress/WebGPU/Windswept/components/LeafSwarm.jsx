@@ -7,7 +7,7 @@ import { useFrame, useThree } from '@react-three/fiber';
 
 import { useCartoonLeafGeometry } from '../../../../../elements/CartoonLeaf/CartoonLeaf';
 import { useCartoonSakuraGeometry } from '../../../../../elements/CartoonSakura/CartoonSakura';
-import attractorFields from '../utils/attractorFields';
+import attractorFields, { paramKey } from '../utils/attractorFields';
 import createAttractorSwarm from '../utils/createAttractorSwarm';
 import createFlowStep from '../utils/flowStep';
 import { PHYSICAL_ATTRACTORS_MODE } from '../utils/modes';
@@ -39,14 +39,18 @@ function buildModeAssets(config) {
     };
   }
 
-  const { derivative } = attractorFields[config.attractorType];
+  const entry = attractorFields[config.attractorType];
   return {
-    makeExtraUniforms: () => ({
-      b: uniform(config.attractorB),
-      stepSize: uniform(config.stepSize),
-    }),
+    makeExtraUniforms: () => {
+      const extra = { stepSize: uniform(config.stepSize) };
+      entry.paramNames.forEach((name) => {
+        const key = paramKey(entry.key, name);
+        extra[name] = uniform(config[key] ?? entry.defaults[name]);
+      });
+      return extra;
+    },
     physicalState: null,
-    step: createFlowStep(derivative),
+    step: createFlowStep(entry.derivative, entry.paramNames),
   };
 }
 
@@ -147,6 +151,7 @@ function LeafSwarm({ attractorsRef, config }) {
     ].forEach(({ scale, swarm }) => {
       const u = swarm.uniforms;
       u.frameDelta.value = delta;
+      u.orientationJitter.value = config.orientationJitter;
       u.scale.value = scale;
       u.speed.value = config.speed;
       u.worldScale.value = config.worldScale;
@@ -157,7 +162,11 @@ function LeafSwarm({ attractorsRef, config }) {
         u.maxSpeed.value = config.maxSpeed;
         u.spinStrength.value = config.spinStrength;
       } else {
-        u.b.value = config.attractorB;
+        const entry = attractorFields[config.attractorType];
+        entry.paramNames.forEach((name) => {
+          const key = paramKey(entry.key, name);
+          u[name].value = config[key] ?? entry.defaults[name];
+        });
         u.stepSize.value = config.stepSize;
       }
 

@@ -52,6 +52,7 @@ export default function createAttractorSwarm({
 
   const uniforms = {
     frameDelta: uniform(1 / 60),
+    orientationJitter: uniform(1),
     scale: uniform(1),
     speed: uniform(1),
     worldScale: uniform(1),
@@ -96,8 +97,22 @@ export default function createAttractorSwarm({
   const altUp = vec3(1, 0, 0);
   const useAlt = forward.dot(worldUp).abs().greaterThan(0.999);
   const refUp = select(useAlt, altUp, worldUp);
-  const right = cross(refUp, forward).normalize().toVar();
-  const up = cross(forward, right).normalize().toVar();
+  const baseRight = cross(refUp, forward).normalize().toVar();
+  const baseUp = cross(forward, baseRight).normalize().toVar();
+
+  // Without this, every instance's basis is pure velocity direction — when
+  // many particles converge onto similar trajectories (common in both
+  // modes) they end up identically oriented and stack like flat, identical
+  // cards ("pringle" look). A per-instance roll around the forward axis
+  // (stable via hash(instanceIndex), scaled by orientationJitter so it can
+  // be dialed back to 0) breaks that up without disturbing the
+  // velocity-facing alignment itself.
+  const rollSeed = hash(instanceIndex.add(uint(seedOffset)).add(uint(1301)));
+  const rollAngle = rollSeed.mul(6.28318).mul(uniforms.orientationJitter);
+  const cosRoll = rollAngle.cos();
+  const sinRoll = rollAngle.sin();
+  const right = baseRight.mul(cosRoll).add(baseUp.mul(sinRoll)).toVar();
+  const up = baseUp.mul(cosRoll).sub(baseRight.mul(sinRoll)).toVar();
 
   const orientedPosition = right
     .mul(positionGeometry.x)

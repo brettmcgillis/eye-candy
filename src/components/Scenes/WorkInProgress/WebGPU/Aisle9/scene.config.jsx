@@ -1,8 +1,20 @@
 import React, { lazy } from 'react';
-import { PiPlanetFill } from 'react-icons/pi';
+
+import { iconFile } from '../../../../../utils/appUtils';
 
 function SceneIcon() {
-  return <PiPlanetFill color="#202020" size={26} />;
+  return (
+    <img
+      src={iconFile('aisle9-icon.png')}
+      alt="Aisle 9"
+      style={{
+        width: 'auto',
+        height: 'calc(var(--overlay-icon-size) * 1.4)',
+        verticalAlign: 'middle',
+        objectFit: 'contain',
+      }}
+    />
+  );
 }
 
 export default {

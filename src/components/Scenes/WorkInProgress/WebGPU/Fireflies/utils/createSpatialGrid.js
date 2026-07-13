@@ -61,5 +61,35 @@ export default function createSpatialGrid({ worldSize, cellSize }) {
     }
   }
 
-  return { clear, insertAll, forEachNear, rowCount };
+  // World-space center of a cell, given the flat index forEachNear/insertAll
+  // use internally — lets a debug view draw a box per occupied cell without
+  // duplicating the index<->coordinate math above.
+  function cellCenter(index) {
+    const cx = index % rowCount;
+    const cy = Math.floor(index / rowCount) % rowCount;
+    const cz = Math.floor(index / (rowCount * rowCount));
+    return [
+      (cx + 0.5) * cellSize - half,
+      (cy + 0.5) * cellSize - half,
+      (cz + 0.5) * cellSize - half,
+    ];
+  }
+
+  // Visits every cell index that currently has at least one agent in it —
+  // the boids-js spatial partition, made visible.
+  function forEachOccupiedCell(callback) {
+    for (let i = 0; i < cellCount; i += 1) {
+      if (cells[i].length > 0) callback(i, cells[i].length);
+    }
+  }
+
+  return {
+    cellCenter,
+    cellSize,
+    clear,
+    forEachNear,
+    forEachOccupiedCell,
+    insertAll,
+    rowCount,
+  };
 }

@@ -2,31 +2,25 @@
 
 # // Intent / Use Cases
 
-- A standalone scene built around fireflies, boids, and stylized spheres.
-  Instead of building it as a new CrossTalk preset, it lives here as its own
-  scene — see "Multi-tab" below for why cross-talk is deliberately deferred.
-- The scene contains a flock of firefly boids (`~/dev/examples/boids-js`
-  grid/obstacle model) with one or more hunters and realistic flash-sync
-  behavior (`~/dev/examples/Floids`).
-- The scene contains static obstacles the flock steers around, boids-js
-  style — Floids has no equivalent (it's just a spherical habitat).
-- v1 renders everything as plain spheres: matte grey fireflies that lerp
-  toward a warm glow color and expand slightly when they flash, glossy black
-  hunter(s), neutral grey obstacles. No real point lights yet (see
-  "Deferred" below) and no volumetric/fog treatment.
-- World is a box (not Floids' unit sphere) so obstacles and a boids-js-style
-  boundary make sense together — see "the scene initially should look like
-  the boids-js example" in the original brief.
+- A standalone scene built around fireflies & boids. Instead of building it as a new CrossTalk preset, it lives here as its own scene
+- The scene contains a flock of firefly boids with one or more hunters and realistic flash-sync behavio .
+- The scene contains static obstacles the flock steers around
+- The scene contains a fixed-camera multi-browser tab experience similar to the CrossTalk scene preset Waterworks (FluidSimView) where fluid is confined to an initial tab and any overlapping tabs. The fireflies and hunters are confined to the limits of the tab they are in but can roam further when there are mulitple tabs overlapping
 
-# // Multi-tab (deferred)
+# // TODO:
 
-The old version of this scene (since deleted, see git history at commit
-`33aeb6c` and earlier) built windowSync cross-talk and standalone rendering
-together from the start, and still ended up scrapped. This rebuild
-deliberately does standalone-only first — smaller surface to debug at each
-step. Cross-talk (host-authoritative shared sim over
-`src/modules/windowSync`, mirroring CrossTalk's `useFluidSim.js`) is a
-planned second pass once the flock/hunter/flash feel right standalone.
+[Back to main TODO](../../../../../../TODO.md)
+
+- add controls for background color, grid color, grid cell illumination color, enable/disable grid cell illumination on occupancy,
+- make fireflies emissive instead of just color changes
+- can we allow for the fireflies bounding box to be a voxelized sphere?
+- might need to include some level of wall avoidance so the floids dont slam into the sides of the sim.
+- is there a version of the scene where we run the sim and illuminate the cells but dont show the floids?
+  - might need interesting material for cells.
+  - make obstacles & hunters cubes too?
+    - might need to make hunters move in a less fluid more step like motion.
+
+- could we use the kingfisher as the hunters? animations are a bit strange, they seem to be somehow stacked, ie if i play the second the model is frozen for the lenght of the first before starting
 
 # // References
 
@@ -34,46 +28,16 @@ planned second pass once the flock/hunter/flash feel right standalone.
   avoidance (`BoidsController`).
 - `~/dev/examples/Floids` — hunter chase behavior (`Hunter.js`), realistic
   per-agent flash-sync timing (`Agents.js` `fire()`/`nudge()`).
+- `src/components/scenes/WorkInProgress/WebGPU/CrossTalk/components/FluidSimView.jsx`
 
 # // Presets
 
-- [x] Default — see `presets/presets.js`.
-
 # // Features
-
-- [x] CPU boid flock (`utils/stepFlock.js`) with alignment/cohesion/
-      separation/obstacle-avoidance/box-boundary forces, spatial-grid
-      neighbor queries (`utils/createSpatialGrid.js`) so it stays O(n) not
-      O(n²).
-- [x] Floids-style flash-sync clock per firefly (`utils/stepFlash.js`):
-      free-running clock, fires + briefly flashes on wrap, nudges nearby
-      agents' clocks toward its own phase so an initially-desynced flock
-      gradually starts flashing together.
-- [x] Hunter(s) chase nearby flock members and relax back to a cruise speed
-      (`utils/stepHunters.js`, ported from Floids' `Hunter.js`), using the
-      same box-boundary force as the flock instead of Floids' spherical
-      habitat constraint.
-- [x] Static obstacle spheres (`utils/createHabitat.js` spawn +
-      `components/Obstacles.jsx` render) the flock avoids.
-- [x] Respawn button (Flocking folder) reseeds flock/hunter/obstacle layout
-      from scratch with the current counts.
-
-# // Deferred
-
-- Real point lights on bright fireflies (so the glossy hunter shows
-  reflected glints) — the old version's worst perf bug came from exactly
-  this (a real WebGPU light per bright firefly, lighting pipeline
-  recompiling on every count change). v1 uses instanceColor + a scale bump
-  instead; revisit once the sim itself is solid.
-- Multi-tab cross-talk — see "Multi-tab" above.
-- Cursor interactivity (flock-to-cursor / flee-from-cursor).
 
 # // Interactivity
 
-None yet — see Deferred.
+- [ ] Multi-tab cross-talk
+- [ ] Flock-to-cursor
+- [ ] Flee-from-cursor.
 
 # // Bugs
-
-None currently tracked. First live pass still needed to tune
-`utils/camera.js` framing and the Default preset's weights/radii against
-the actual running scene (see docs/scene-performance-checklist.md).

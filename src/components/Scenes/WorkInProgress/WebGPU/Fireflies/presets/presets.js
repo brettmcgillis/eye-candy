@@ -6,7 +6,7 @@ export const DEFAULT_PRESET = 'Default';
 export const PRESETS = {
   Default: {
     // Flocking
-    fireflyCount: 150,
+    fireflyCount: 700,
     worldSize: 40,
     subDivisionCount: 8,
     maxSpeed: 9,
@@ -19,9 +19,12 @@ export const PRESETS = {
     separationRadius: 2,
     obstacleMargin: 3,
     boundaryMargin: 6,
-    // Fireflies
+    showGrid: false,
+    // Fireflies — nudgeFactor/confusionFactor match Floids' Agents.js
+    // NUDGE_FACTOR/CONFUSION_FACTOR constants exactly (flashCycle already
+    // matches its FIRE_CYCLE).
     flashCycle: 3,
-    nudgeFactor: 0.05,
+    nudgeFactor: 0.01,
     nudgeLimit: 3,
     flashDecayRate: 3,
     bodySize: 0.35,
@@ -35,7 +38,7 @@ export const PRESETS = {
     sightRadius: 14,
     fleeRadius: 8,
     fleeWeight: 3,
-    confusionFactor: 0.25,
+    confusionFactor: 0.2,
     hunterSpeed: 7,
     hunterMaxSpeed: 14,
     restoreTau: 0.4,

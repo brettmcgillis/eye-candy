@@ -51,6 +51,7 @@ export default function stepFlock(sim, params, delta) {
   // otherwise a big obstacle's avoidance radius can exceed the window and
   // get missed entirely.
   const obstacleQueryRadius = obstacleMaxRadius + obstacleMargin;
+  const worldHalf = worldSize / 2;
 
   for (let i = 0; i < flockCount; i += 1) {
     const base = i * 3;
@@ -98,9 +99,33 @@ export default function stepFlock(sim, params, delta) {
       alignX /= neighborCount;
       alignY /= neighborCount;
       alignZ /= neighborCount;
+      // boids-js's computeAlignment normalizes to a unit vector here —
+      // without it, alignment pulls harder the more its neighbors disagree
+      // in speed/heading, instead of being a constant-strength nudge.
+      const alignMag = Math.sqrt(
+        alignX * alignX + alignY * alignY + alignZ * alignZ
+      );
+      if (alignMag > 0) {
+        alignX /= alignMag;
+        alignY /= alignMag;
+        alignZ /= alignMag;
+      }
+
       cohX = cohX / neighborCount - x;
       cohY = cohY / neighborCount - y;
       cohZ = cohZ / neighborCount - z;
+      // Same normalization for computeCohesion — this one matters a lot
+      // more: unnormalized, cohesion's pull grows with distance from the
+      // local flock centroid (up to neighborRadius), which is a runaway
+      // convergence force at scale and collapses the whole flock into a
+      // single tight ball instead of a constant-strength "stay with the
+      // group" nudge.
+      const cohMag = Math.sqrt(cohX * cohX + cohY * cohY + cohZ * cohZ);
+      if (cohMag > 0) {
+        cohX /= cohMag;
+        cohY /= cohMag;
+        cohZ /= cohMag;
+      }
     }
 
     let obsX = 0;
@@ -186,8 +211,24 @@ export default function stepFlock(sim, params, delta) {
     flockVel[base] = vx;
     flockVel[base + 1] = vy;
     flockVel[base + 2] = vz;
-    flockPos[base] = x + vx * delta;
-    flockPos[base + 1] = y + vy * delta;
-    flockPos[base + 2] = z + vz * delta;
+    // Hard clamp, matching boids-js's Entity.move() (Math.max(0,
+    // nx)/Math.min(bx, nx), translated to this box's centered coordinates).
+    // The soft boundaryForce above is meant to steer agents away well
+    // before they'd ever reach the wall, exactly like boids-js's own
+    // 1/distance obstacle-style boundary term — but it doesn't guarantee
+    // containment on its own (it's capped at a constant max magnitude, not
+    // unbounded as you approach the wall), so a strong enough combination
+    // of other forces can still punch an agent through it. This clamp is
+    // the actual backstop that makes "stays inside the box" a guarantee
+    // rather than just usually true.
+    flockPos[base] = Math.min(worldHalf, Math.max(-worldHalf, x + vx * delta));
+    flockPos[base + 1] = Math.min(
+      worldHalf,
+      Math.max(-worldHalf, y + vy * delta)
+    );
+    flockPos[base + 2] = Math.min(
+      worldHalf,
+      Math.max(-worldHalf, z + vz * delta)
+    );
   }
 }

@@ -4,11 +4,12 @@ import { button, folder } from 'leva';
 // and radii (boids-js BoidsController), plus the world box the flock roams
 // in and its spatial-grid resolution. Keys match presets/presets.js 1:1
 // (docs/scene-conventions.md §9). Respawn reseeds flock/hunter/obstacle
-// positions from scratch with the current counts.
+// positions from scratch with the current counts. fireflyCount's max/default
+// match Floids' Agents.js, which hardcodes 700 with no control over it at all.
 export default function getFlockingControls(p, onRespawn) {
   return folder(
     {
-      fireflyCount: { value: p.fireflyCount, min: 10, max: 500, step: 10 },
+      fireflyCount: { value: p.fireflyCount, min: 10, max: 1000, step: 10 },
       worldSize: { value: p.worldSize, min: 10, max: 120, step: 1 },
       subDivisionCount: { value: p.subDivisionCount, min: 2, max: 20, step: 1 },
       maxSpeed: { value: p.maxSpeed, min: 1, max: 30, step: 0.5 },
@@ -36,6 +37,7 @@ export default function getFlockingControls(p, onRespawn) {
         step: 0.25,
       },
       boundaryMargin: { value: p.boundaryMargin, min: 1, max: 20, step: 0.5 },
+      showGrid: { value: p.showGrid, label: 'Show Grid (debug)' },
       respawn: button(() => onRespawn()),
     },
     { collapsed: true }

@@ -26,16 +26,15 @@ export default function stepFlash(sim, params, delta) {
     neighborRadius,
   } = params;
 
+  // Pass 1 — Floids' fire(): advance each clock, jitter it if fleeing, and
+  // fire (flash + nudge nearby clocks) on wrap. Two separate passes (this
+  // one, then the nudge-apply pass below) rather than folding both into one
+  // per-agent loop is load-bearing, not just tidiness: it's what makes a
+  // fire from agent 500 reach agent 3's clock the SAME frame regardless of
+  // iteration order, matching Agents.js's own fire()-then-nudge()
+  // structure. A single combined pass would apply each agent's nudge before
+  // its own fire check, delaying every nudge by a frame.
   for (let i = 0; i < flockCount; i += 1) {
-    // Apply whatever nudge neighbors' fires accumulated for this agent last
-    // frame, then clear it for this frame's fires to refill.
-    const amplitude = Math.min(flockNudge[i], nudgeLimit) * nudgeFactor;
-    if (amplitude > 0) {
-      const phase = (2 * Math.PI * (flashCycle - flockClock[i])) / flashCycle;
-      flockClock[i] += Math.sin(phase) * amplitude;
-    }
-    flockNudge[i] = 0;
-
     if (fleeing[i]) {
       flockClock[i] = Math.max(
         0,
@@ -57,7 +56,17 @@ export default function stepFlash(sim, params, delta) {
         if (j !== i) flockNudge[j] += 1;
       });
     }
+  }
 
+  // Pass 2 — Floids' nudge(): apply this frame's accumulated nudges (every
+  // fire from pass 1 above has already happened) and decay the visual flash.
+  for (let i = 0; i < flockCount; i += 1) {
+    const amplitude = Math.min(flockNudge[i], nudgeLimit) * nudgeFactor;
+    if (amplitude > 0) {
+      const phase = (2 * Math.PI * (flashCycle - flockClock[i])) / flashCycle;
+      flockClock[i] += Math.sin(phase) * amplitude;
+    }
+    flockNudge[i] = 0;
     flockFlash[i] *= Math.exp(-flashDecayRate * delta);
   }
 }

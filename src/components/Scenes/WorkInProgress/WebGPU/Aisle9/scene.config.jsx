@@ -12,6 +12,7 @@ function SceneIcon() {
         height: 'calc(var(--overlay-icon-size) * 1.4)',
         verticalAlign: 'middle',
         objectFit: 'contain',
+        marginLeft: '0.25rem',
       }}
     />
   );

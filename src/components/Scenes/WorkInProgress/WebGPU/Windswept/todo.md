@@ -19,6 +19,8 @@
 
 [Back to main TODO](../../../../../../TODO.md)
 
+- create a preset where the tree has no leaves at all, and instead there are a handful of strange attractors at authored points at the ends of branches.
+
 # // Presets
 
 # // Features

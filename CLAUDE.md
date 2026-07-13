@@ -27,3 +27,7 @@ Canonical scene layout to copy: `src/components/scenes/Template/SceneTemplate/`.
 - The human developer owns the dev server — do not start, kill, or restart it.
 - No unit tests; rely on the live dev server and human-in-the-loop visual checks.
 - Lint/format are enforced: `npm run lint:fix`, `npm run format:fix`.
+- A scene's `todo.md` is **read-only unless the user explicitly asks you to
+  update it** — don't add sections logging what you built, and don't touch its
+  back-link or existing content as a side effect of implementing something.
+  See `docs/scene-conventions.md` §15.

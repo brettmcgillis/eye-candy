@@ -221,6 +221,23 @@ WIP scene.
 - The `noScene` ("None") entry for each channel/area pair is generated
   programmatically inside `sceneRegistry.jsx`, not authored per-scene.
 
+## 15. Scene `todo.md` files — read-only unless explicitly asked
+
+- Every scene's `todo.md` follows a fixed shape: a `# // SceneName` title, a
+  `[Back to main TODO](...)` link to the root `TODO.md` (relative depth
+  matches the scene's folder nesting), and a set of `# // Section` headings
+  drawn from a consistent style (`Intent/Use Cases`, `TODO:`, `Presets`,
+  `Features`, `Interactivity`, `Bugs`, etc. — not every scene has every
+  section, but the heading style and back-link are constant).
+- **Do not edit a scene's `todo.md` as a side effect of implementing
+  something.** Don't add new sections to log what you just built, don't turn
+  it into a changelog, and don't remove or alter the back-link or existing
+  headings/content — even if they look stale or redundant with what you did.
+- Only touch a `todo.md` when the user **explicitly** asks you to update it
+  (e.g. "check off X," "add Y to the todo," "update Prayer's todo.md"). If you
+  want to record what changed, that belongs in the commit message, PR
+  description, or your response to the user — not the scene's `todo.md`.
+
 ---
 
 ## Scaffold & process (do not violate)

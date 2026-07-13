@@ -41,6 +41,7 @@ These instructions give an AI coding agent the immediately useful knowledge to w
 **Scene conventions (required — read first)**
 
 - `docs/scene-conventions.md` is the source of truth for scene/component/model/shared-code structure (folder layout, naming, file size, memoization, no cross-scene imports, models→`elements`, presets, CameraRig, asset preloading, post-processing-last). Follow it exactly. The summary below is context only; the doc governs.
+- **Do not edit a scene's `todo.md` unless the user explicitly asks you to.** It has a fixed structure (title, back-link to the root `TODO.md`, standard `# // Section` headings) — don't add a section logging what you implemented, and don't touch the back-link or existing content as a side effect of a code change. See `docs/scene-conventions.md` §15.
 
 **Project-specific conventions & patterns**
 

@@ -53,6 +53,13 @@ const CAMERA_CONTROL_PREFIXES = Object.freeze([
   'operator',
 ]);
 
+export function isCameraControlKey(key) {
+  return (
+    key === 'preset' ||
+    CAMERA_CONTROL_PREFIXES.some((prefix) => key.startsWith(prefix))
+  );
+}
+
 // Scene controls objects change identity on every Leva edit, so
 // buildCamera(controls) can't be memoized on `controls` directly — any
 // unrelated edit (lighting, materials, etc.) would rebuild the camera and
@@ -61,13 +68,32 @@ const CAMERA_CONTROL_PREFIXES = Object.freeze([
 export function getCameraControlsKey(controls = {}) {
   return JSON.stringify(
     Object.fromEntries(
-      Object.entries(controls).filter(
-        ([key]) =>
-          key === 'preset' ||
-          CAMERA_CONTROL_PREFIXES.some((prefix) => key.startsWith(prefix))
-      )
+      Object.entries(controls).filter(([key]) => isCameraControlKey(key))
     )
   );
+}
+
+// Builds a `controlOverrides`-shaped object (see buildSceneCameraControls)
+// from a preset/controls snapshot's camera-prefixed keys, so the camera
+// folder's Leva schema is seeded with the ACTIVE preset's camera values on
+// first mount — not just the scene's static camera.js declaration. Without
+// this, a preset's cameraMode/orbitAutoRotate/orbitDesktopPosition/etc. only
+// take effect after pressing the presets folder's "reset" button (the only
+// thing that explicitly re-applies them via Leva's setControls); on first
+// load the camera folder silently falls back to camera.js's defaults while
+// every other folder correctly starts from the preset. Keys absent from the
+// snapshot are left alone, so scenes with no camera keys in their preset are
+// unaffected.
+export function buildCameraControlOverridesFromSnapshot(snapshot = {}) {
+  const overrides = {};
+
+  Object.keys(snapshot ?? {}).forEach((key) => {
+    if (key !== 'preset' && isCameraControlKey(key)) {
+      overrides[key] = { value: snapshot[key] };
+    }
+  });
+
+  return overrides;
 }
 
 function cloneSnapshot(snapshot) {

@@ -4,7 +4,15 @@
 export const DEFAULT_PRESET = 'Default';
 
 export const PRESETS = {
-  Default: {},
+  // cameraMode/orbitAutoRotate here are a deliberate, live regression check
+  // (docs/scene-conventions.md §10): this scene's camera.js-less default is
+  // 'fixed' mode with no auto-rotate, so if the Camera folder shows Orbit +
+  // Auto Rotate ON immediately on load (no "reset" click needed), the
+  // preset's camera values are correctly seeding the schema on first mount.
+  Default: {
+    cameraMode: 'orbit',
+    orbitAutoRotate: true,
+  },
 };
 
 // Companion fn to usePresetsFolder. Given the snapshot for the preset being

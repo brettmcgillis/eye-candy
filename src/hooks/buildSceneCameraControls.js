@@ -5,6 +5,7 @@ import {
   SCENE_CAMERA_FIXED_BEHAVIOR_OPTIONS,
   SCENE_CAMERA_MODE_OPTIONS,
   SCENE_CAMERA_SPLINE_ORIENTATION_OPTIONS,
+  buildCameraControlOverridesFromSnapshot,
   getFixedShotControlKeys,
   getFixedShotDescriptors,
   normalizeSceneCameraDeclaration,
@@ -133,7 +134,7 @@ export default function buildSceneCameraControls({
   apiRef = null,
   camera = null,
   cameraFolderPath = null,
-  controlOverrides = null,
+  controlOverrides: explicitControlOverrides = null,
   controlsSnapshotRef = null,
   copyCurrentCameraOptions = null,
   copyCurrentCameraKey = 'Copy Current Camera',
@@ -149,6 +150,16 @@ export default function buildSceneCameraControls({
   splineFolderOptions = null,
 } = {}) {
   const normalizedCamera = normalizeSceneCameraDeclaration(camera);
+  // Seed the schema's `value:`s from the active preset's camera keys (via
+  // controlsSnapshotRef, already populated with the preset snapshot at this
+  // point — see usePresetsFolder) before falling back to camera.js's static
+  // declaration, so the camera folder starts correct on first mount instead
+  // of only after the presets "reset" button explicitly re-applies it.
+  // Explicit controlOverrides (if a caller passes any) win per-key.
+  const controlOverrides = {
+    ...buildCameraControlOverridesFromSnapshot(controlsSnapshotRef?.current),
+    ...(explicitControlOverrides ?? {}),
+  };
   const fixedShotDescriptors = getFixedShotDescriptors(normalizedCamera.fixed);
   const canCopyCurrentCamera =
     includeCopyCurrentCamera && localEnv() && !!apiRef;
@@ -301,8 +312,8 @@ export default function buildSceneCameraControls({
       'orbitAutoRotateSpeed',
       {
         label: 'Rotate Speed',
-        max: 5,
-        min: -5,
+        max: 16,
+        min: -16,
         step: 0.1,
         value: normalizedCamera.orbit.autoRotateSpeed,
       },

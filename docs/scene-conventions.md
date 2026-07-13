@@ -141,6 +141,18 @@ SceneName/
   key prefixes `buildSceneCameraControls` generates) as the `useMemo`
   dependency instead of `controls` itself. See
   `Template/SceneTemplate/hooks/useSceneControls.js` for the pattern.
+- **A preset's camera values apply on first mount, not just after "reset."**
+  `buildSceneCameraControls` seeds the camera folder's Leva schema from
+  `controlsSnapshotRef.current` (the active preset's snapshot, already
+  populated by `usePresetsFolder` before `useSceneCameraControls` runs) —
+  falling back to the scene's static `camera.js` declaration only for keys
+  the preset doesn't set. This is automatic as long as you follow the
+  standard call order (`usePresetsFolder` before `useSceneCameraControls`,
+  its `controlsSnapshotRef` passed straight through — see
+  `Template/SceneTemplate/hooks/useSceneControls.js`); don't build
+  `cameraControls` from `camera.js` alone or a preset's `cameraMode`/
+  `orbitAutoRotate`/`orbitDesktopPosition`/etc. will silently only take
+  effect after the presets folder's "reset" button is pressed.
 
 ## 11. Asset preloading
 

@@ -24,8 +24,9 @@ File: ~/SceneName/presets/presets.js
 
 File: ~/SceneName/components/ButtonOverlay.jsx
 
-- Every WorkInProgress/Showcase scene wires the same four things through useSceneControls: a presets folder, CameraRig (+ camera controls), MediaRecorder (screen rec without relying on the device), and — when the scene wants obvious, user-facing UX buttons instead of (or in addition to) the hidden Leva panel — an overlay button bar via SceneButtonBar/OverlayIconButton. ToolBox/TestLab scenes don't need these.
-- Copy this SceneTemplate folder to bootstrap a new WorkInProgress scene; all four are already wired in.
+- Every WorkInProgress/Showcase scene wires the same three things through useSceneControls: a presets folder, CameraRig (+ camera controls), and MediaRecorder (screen rec without relying on the device). ToolBox/TestLab scenes don't need these.
+- Overlay buttons (SceneButtonBar/OverlayIconButton, obvious user-facing UX instead of the hidden Leva panel) are the exception, not a fourth required item — only add them when the scene's spec calls for it. This file is a reference for the pattern; it is not wired into SceneTemplate.jsx by default.
+- Copy this SceneTemplate folder to bootstrap a new WorkInProgress scene; the three required things are already wired in.
 
 File: ~/SceneName/TestScene.jsx
 

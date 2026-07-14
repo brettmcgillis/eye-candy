@@ -112,6 +112,15 @@ SceneName/
   `folder` from Leva. Colocate per-component control schemas as
   `components/getXControls.js`.
 - Use **human-friendly Leva labels**; keep stable internal values.
+- **Every `folder(...)` is collapsed by default** — pass `{ collapsed: true }`
+  (every existing folder call in the repo does this; there's no exception).
+  This applies to sub-folders (`Camera`, per-component folders, nested
+  subsections); it does not apply to the implicit top-level grouping created
+  by `useControls(SCENE_LABEL, () => ({...}))` itself, which stays expanded
+  so the panel isn't empty on open.
+- **`Presets` is always the first folder and `Camera` is always the second**
+  in the object passed to `useControls`, in that order. Any scene-specific
+  folders come after. See §13 for the full required order.
 - Scenes should generally use the **presets hook** so multiple presets and
   control resets work. Preset keys match the Leva schema **1:1** — flat,
   globally-unique keys, no reshaping between preset and schema. This 1:1 mapping
@@ -170,9 +179,9 @@ SceneName/
 
 ## 13. Required WIP/Showcase scene shape
 
-Every **WorkInProgress** and **Showcase** scene wires these four things
-through `useSceneControls` (not required for ToolBox/TestLab — drop what
-doesn't apply):
+Every **WorkInProgress** and **Showcase** scene wires the first three of
+these through `useSceneControls`, **in this order** (not required for
+ToolBox/TestLab — drop what doesn't apply):
 
 1. **Presets folder** — variations of the scene, applied via
    `usePresetsFolder` (`src/hooks/usePresetsFolder.js`). See §9.
@@ -185,17 +194,23 @@ doesn't apply):
    self-registers its own Leva controls and hotkeys (screenshot + start/stop
    recording) — internalizes screen rec instead of relying on the device's
    own capture. Nothing else needs to run it.
-4. **Overlay buttons (when the scene needs obvious, user-facing controls)** —
-   compose `SceneButtonBar` + `OverlayIconButton`
-   (`src/app/scaffold/overlay/components/`) in a scene-local
-   `components/ButtonOverlay.jsx`. These are the buttons a visitor is meant to
-   see and use (e.g. mic/screenshare toggles) — the reverse of the Leva panel,
-   which is the hidden dev-controls panel only reachable if you know to click
-   the reversal. Give `datasetKey` a scene-unique value. Example:
-   `WorkInProgress/WebGPU/HorsesForCourses`.
 
-`Template/SceneTemplate/` has all four wired in — copy it to bootstrap a new
-WIP scene.
+**Overlay buttons are the exception, not a fourth required item.** Only add
+them when the scene's spec explicitly calls for user-facing controls outside
+Leva (e.g. mic/screenshare toggles) — **don't go looking for a reason to add
+one.** Most scenes don't need this. When a scene genuinely does, compose
+`SceneButtonBar` + `OverlayIconButton` (`src/app/scaffold/overlay/components/`)
+in a scene-local `components/ButtonOverlay.jsx`. These are the buttons a
+visitor is meant to see and use — the reverse of the Leva panel, which is the
+hidden dev-controls panel only reachable if you know to click the reversal.
+Give `datasetKey` a scene-unique value. Example:
+`WorkInProgress/WebGPU/HorsesForCourses`.
+
+`Template/SceneTemplate/` has the three required items wired in — copy it to
+bootstrap a new WIP scene. It also ships `components/ButtonOverlay.jsx` as a
+reference for the overlay-button pattern, but it is **not** wired into
+`SceneTemplate.jsx` by default — wire it in only if your scene's spec calls
+for it, and delete the file otherwise.
 
 ## 14. Scene registration
 

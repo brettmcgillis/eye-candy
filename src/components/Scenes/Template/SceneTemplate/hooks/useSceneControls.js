@@ -12,10 +12,12 @@ import { DEFAULT_PRESET, PRESETS, getPresetControls } from '../presets/presets';
 const SCENE_LABEL = 'Scene Template';
 const CAMERA_FOLDER_PATH = `${SCENE_LABEL}.Camera`;
 
-// Every WorkInProgress/Showcase scene wires these four things through
-// useSceneControls: a presets folder, CameraRig controls, MediaRecorder, and
-// (if the scene needs obvious, user-facing UX buttons) an overlay button
-// bar — see components/ButtonOverlay.jsx and docs/scene-conventions.md.
+// Every WorkInProgress/Showcase scene wires these three things through
+// useSceneControls, in this order — Presets first, Camera second, then any
+// scene-specific folders: a presets folder, CameraRig controls, and
+// MediaRecorder. Every folder(...) call is collapsed by default. Overlay
+// buttons (components/ButtonOverlay.jsx) are opt-in, only when the scene's
+// spec calls for them — see docs/scene-conventions.md.
 export default function useSceneControls() {
   const { attachSetControls, controlsSnapshotRef, presetsFolder } =
     usePresetsFolder({

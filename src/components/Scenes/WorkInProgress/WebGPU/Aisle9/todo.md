@@ -17,9 +17,8 @@
   - what should it be? I think we want the flow to be: start outside night, then enter store, loop store, check cams, black hole starts, loop the store, check out the anomaly, back to cams, black hole disappears, exit store, outside day time.
   - should we somehow force or guide this flow?
   - should the user just get to switch between the camera options, outside, inside orbit, inside loop, security cams, and then the black hole randomly spawns in/out?
-  - how do we handle the transition from inside to outside? should we put the inside of the store below the ground of the outside to enable quick switching? do we need some transition animation?
-
-- set default blackhole to a lighter less intensive variation: legacy port, ribbon variation, 16 rings, pulse speed 0.02, disk brightnes 1.67
+  - how do we handle the transition from inside to outside? should we put the inside of the store below the ground of the outside to enable quick switching? do we need some transition animation? ideally transitions are instant, no loading.
+  - should this be presented like an old video game with a small modal and typed-text animation + click to next scene milestone? This would make recording the video easy as we could just spacebar/screentap/gamepad to next like a real old-school videogame
 
 # // Presets
 
@@ -37,7 +36,7 @@
 
 # // Bugs
 
-# // Presets for shots
+# // Presets for shots for posted video
 
 This list may not be correct or complete.
 

@@ -94,6 +94,7 @@
 - [ ] **Fireflies** — tiny lights that gather where the cursor rests and
       migrate between windows; blink timing modeled on real firefly behavior
       (species-specific flash patterns), not a uniform sine pulse.
+- [ ] **Radiance Cascades** - 2d radiance cascades like the `~dev/examples/Shaders_RadianceCascades` example. also see `https://www.shadertoy.com/view/4dfXDn`
 
 # // Features
 

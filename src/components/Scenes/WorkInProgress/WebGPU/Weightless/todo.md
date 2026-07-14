@@ -15,6 +15,8 @@ pointer attractor, fade, and rebind. Afterimage post is toggleable.
 [Back to main TODO](../../../../../../TODO.md)
 
 - [ ] bird hover animation has a few ms of stationary hover before moving up and down. can we skip this when looping? (not attempted — needs visual inspection of the clip's loop point to trim safely, can't verify blind)
+- [ ] what about the bee!?
+- [ ] butterfly might be a great candidate for surface curl
 
 # // Presets
 

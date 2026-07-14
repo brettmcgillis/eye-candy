@@ -29,8 +29,14 @@ const COLOR_MODE_TO_INT = COLOR_MODES.reduce((acc, mode, index) => {
 // Builds the InstancedMesh material's colorNode plus the live uniforms
 // VoxelField updates each frame from Leva config (palette colors/midpoint/
 // mode). `k` is the grid's per-axis cell count (structural, fixed for this
-// compute instance).
-export default function createPaletteNode({ stateRevealBuf, k }) {
+// compute instance). `compactedIndexBuf` maps a drawn instance's
+// `instanceIndex` (0..occupiedCount-1) back to its original cellIndex into
+// `stateRevealBuf` — see growthCompute.js's compaction notes.
+export default function createPaletteNode({
+  stateRevealBuf,
+  compactedIndexBuf,
+  k,
+}) {
   const uniforms = {
     paletteStart: uniform(color('#3fd0ff')),
     paletteMid: uniform(color('#a742ff')),
@@ -41,9 +47,10 @@ export default function createPaletteNode({ stateRevealBuf, k }) {
 
   const kUint = uint(k);
   const kMax = uint(Math.max(1, k - 1));
-  const cell = stateRevealBuf.element(instanceIndex);
+  const originalIndex = compactedIndexBuf.element(instanceIndex);
+  const cell = stateRevealBuf.element(originalIndex);
   const revealTime = cell.y;
-  const { x, y, z } = decomposeIndexNode(instanceIndex, kUint);
+  const { x, y, z } = decomposeIndexNode(originalIndex, kUint);
 
   const heightT = y.toFloat().div(kMax.toFloat());
 

@@ -1,10 +1,12 @@
 import React, { memo, useCallback, useRef } from 'react';
 
 import AngularFlowField from '../../../../elements/AngularFlowField/AngularFlowField';
+import { mapAngularFlowFieldProps } from '../../../../elements/AngularFlowField/getAngularFlowFieldControls';
 import Godrays from '../../../../postprocessing/webGPU/godrays/Godrays';
 import CameraRig from '../../../../rigging/CameraRig';
 import ButtonOverlay from './components/ButtonOverlay';
 import CenterLight from './components/CenterLight';
+import LightRig from './components/LightRig';
 import VoxelField from './components/VoxelField';
 import useSceneControls from './hooks/useSceneControls';
 
@@ -28,7 +30,7 @@ function FractalAutomata() {
     <>
       <CameraRig camera={config.camera} />
       <color attach="background" args={['#03040a']} />
-      <ambientLight intensity={0.08} />
+      <LightRig config={config} />
       <CenterLight
         color={config.godraysColor}
         intensity={config.godraysIntensity}
@@ -42,7 +44,12 @@ function FractalAutomata() {
       {/* Dev-verification mount for AngularFlowField (Phase 1 built it as a
           standalone element; Phase 2 wires it into the Cloud + Flow Field
           preset for real). Remove once verified. */}
-      <AngularFlowField position={[0, 6, -10]} />
+      {config.flowFieldVisible && (
+        <AngularFlowField
+          {...mapAngularFlowFieldProps(config, 'flowField')}
+          position={[0, 6, -10]}
+        />
+      )}
       <ButtonOverlay
         onRegenerate={config.regenerate}
         onReplayGrowth={handleReplayGrowth}

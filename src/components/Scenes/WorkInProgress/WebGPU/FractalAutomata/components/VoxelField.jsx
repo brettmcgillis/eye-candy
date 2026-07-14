@@ -38,9 +38,11 @@ function pickStructuralSettings(config) {
 }
 
 // Owns the CA compute pipeline (regenerates on structural control changes),
-// the growth-over-time reveal, and the InstancedMesh that renders it — a
-// fixed-count mesh masking unrevealed/empty cells to zero scale rather than
-// GPU-compacting a variable instance count (see utils/growthCompute.js).
+// the growth-over-time reveal, and the InstancedMesh that renders it. The
+// mesh is sized to the compacted (occupied-only) cell count — not the full
+// k³ grid — via a one-time async readback after generation; see
+// utils/growthCompute.js's compaction notes for why this is safe to do only
+// once per regenerate rather than every frame.
 function VoxelField({ config, replayGrowthToken }) {
   const { gl } = useThree();
   const fieldRef = useRef(null);
@@ -73,60 +75,85 @@ function VoxelField({ config, replayGrowthToken }) {
   ]);
 
   useEffect(() => {
-    const ruleTables = createRuleTables(structural);
-    const field = createVoxelFieldCompute({
-      level: structural.level,
-      ruleTables,
-    });
-    const palette = createPaletteNode({
-      stateRevealBuf: field.stateRevealBuf,
-      k: field.k,
-    });
-    const growthProgress = uniform(0);
-    const cellSpacing = uniform(config.cellSpacing);
-    const cellScale = uniform(config.cellScale);
+    let cancelled = false;
+    let builtMaterial = null;
 
-    const kMax = Math.max(1, field.k - 1);
-    const half = kMax * 0.5;
-    const { x, y, z } = decomposeIndexNode(instanceIndex, uint(field.k));
-    const cellPosition = vec3(
-      x.toFloat().sub(half),
-      y.toFloat().sub(half),
-      z.toFloat().sub(half)
-    ).mul(cellSpacing);
+    async function build() {
+      const ruleTables = createRuleTables(structural);
+      const field = createVoxelFieldCompute({
+        level: structural.level,
+        ruleTables,
+      });
 
-    const cell = field.stateRevealBuf.element(instanceIndex);
-    const revealed = cell.x
-      .greaterThan(0.5)
-      .and(growthProgress.greaterThanEqual(cell.y));
-    const scale = select(revealed, cellScale, float(0));
+      // Runs full CA generation + one-time compaction; resolves once the
+      // occupied-cell count is read back from the GPU (see
+      // utils/growthCompute.js's compaction notes).
+      const occupiedCount = await field.dispatch(gl, structural);
+      if (cancelled) return;
 
-    // roughness matches ~/dev/examples/260708_AutomataChunks's own
-    // materialRoughness default (0.92) — a matte, mostly-diffuse surface.
-    const material = new THREE.MeshStandardNodeMaterial({
-      roughness: 0.92,
-      metalness: 0.05,
-    });
-    material.positionNode = positionGeometry.mul(scale).add(cellPosition);
-    material.colorNode = palette.colorNode;
+      const palette = createPaletteNode({
+        stateRevealBuf: field.stateRevealBuf,
+        compactedIndexBuf: field.compactedIndexBuf,
+        k: field.k,
+      });
+      const growthProgress = uniform(0);
+      const cellSpacing = uniform(config.cellSpacing);
+      const cellScale = uniform(config.cellScale);
 
-    const mesh = new THREE.InstancedMesh(
-      CUBE_GEOMETRY,
-      material,
-      field.totalVoxels
-    );
-    mesh.frustumCulled = false;
-    mesh.castShadow = true;
-    mesh.receiveShadow = true;
+      const kMax = Math.max(1, field.k - 1);
+      const half = kMax * 0.5;
+      const originalIndex = field.compactedIndexBuf.element(instanceIndex);
+      const { x, y, z } = decomposeIndexNode(originalIndex, uint(field.k));
+      const cellPosition = vec3(
+        x.toFloat().sub(half),
+        y.toFloat().sub(half),
+        z.toFloat().sub(half)
+      ).mul(cellSpacing);
 
-    field.dispatch(gl, structural);
+      const cell = field.stateRevealBuf.element(originalIndex);
+      const revealed = cell.x
+        .greaterThan(0.5)
+        .and(growthProgress.greaterThanEqual(cell.y));
+      const scale = select(revealed, cellScale, float(0));
 
-    fieldRef.current = { field, palette, cellSpacing, cellScale };
-    growthProgressRef.current = growthProgress;
-    setRenderObject(mesh);
+      // roughness matches ~/dev/examples/260708_AutomataChunks's own
+      // materialRoughness default (0.92) — a matte, mostly-diffuse surface.
+      const material = new THREE.MeshStandardNodeMaterial({
+        roughness: 0.92,
+        metalness: 0.05,
+      });
+      material.positionNode = positionGeometry.mul(scale).add(cellPosition);
+      material.colorNode = palette.colorNode;
+
+      if (cancelled) {
+        material.dispose();
+        return;
+      }
+      builtMaterial = material;
+
+      // Compacted count, not field.totalVoxels — the whole point of the
+      // compaction pass is to only draw/shade cells that are ever occupied.
+      const mesh = new THREE.InstancedMesh(
+        CUBE_GEOMETRY,
+        material,
+        Math.max(1, occupiedCount)
+      );
+      mesh.frustumCulled = false;
+      mesh.castShadow = true;
+      mesh.receiveShadow = true;
+
+      fieldRef.current = { field, palette, cellSpacing, cellScale };
+      growthProgressRef.current = growthProgress;
+      setRenderObject(mesh);
+    }
+
+    build();
 
     return () => {
-      material.dispose();
+      cancelled = true;
+      if (builtMaterial) {
+        builtMaterial.dispose();
+      }
       fieldRef.current = null;
       growthProgressRef.current = null;
     };

@@ -39,3 +39,6 @@
 # // Features
 
 # // Bugs
+
+- preset colors not getting used on scene load or regen.
+- fix last: need to prevent a voxel occupying the same position as the pointlight when doing godrays.

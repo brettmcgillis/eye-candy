@@ -3,6 +3,7 @@ import {
   Fn,
   If,
   Return,
+  atomicAdd,
   float,
   hash,
   instanceIndex,
@@ -24,15 +25,25 @@ import {
 
 // TSL port of the hierarchical cube/face/edge subdivision CA compute kernels
 // (~/dev/examples/260708_AutomataChunks/src/automata/gpuAutomata.ts's WGSL).
-// Storage-buffer budget is 4 of WebGPU's 8-per-stage limit: stateRevealBuf
-// (state + baked reveal-time, packed into one vec2) + cube/face/edge rule
-// tables — see FractalAutomata's plan notes. Deviates from the reference in
-// two ways: (1) no GPU atomic-counter compaction + indirect draw — VoxelField
-// draws a fixed-count InstancedMesh and masks unrevealed/empty cells in the
-// material instead (the idiom already used by Windswept/Weightless in this
-// repo); (2) each cube/face/edge pass additionally bakes a per-cell
-// `revealTime` so growth can be revealed gradually over real time instead of
-// resolving instantly.
+// Each cube/face/edge pass additionally bakes a per-cell `revealTime` so
+// growth can be revealed gradually over real time instead of resolving
+// instantly (the reference resolves instantly).
+//
+// Compaction deviates from the reference's approach: the reference filters
+// occupied/non-stray/visible cells AND writes an indirect-draw argument
+// buffer every display refresh, reaching into three.js's WebGPU backend
+// internals (`backend.createIndirectStorageAttribute`) to do it — a
+// low-level API this TSL/R3F app doesn't otherwise touch. Since occupancy
+// is static once generation finishes (only *when* a cell reveals changes
+// over time, never *whether* it's ever occupied), this port instead runs
+// compaction ONCE per regenerate: `compactVisibleKernel` atomically appends
+// every occupied, non-stray cell's original index into `compactedIndexBuf`,
+// then `dispatch()` does a single async readback of the resulting count and
+// VoxelField sizes its InstancedMesh to exactly that — no per-frame
+// readback, no indirect draw, no backend internals. Growth-reveal masking
+// (comparing `growthProgress` to a cell's baked `revealTime`) still happens
+// per-frame in the material, just over the compacted (small) instance count
+// instead of the full k³ grid.
 
 const BASE_FILL_TO_INT = {
   random: 0,
@@ -229,6 +240,12 @@ export default function createVoxelFieldCompute({ level, ruleTables }) {
   const cubeRulesBuf = instancedArray(ruleTables.cube, 'uint');
   const faceRulesBuf = instancedArray(ruleTables.face, 'uint');
   const edgeRulesBuf = instancedArray(ruleTables.edge, 'uint');
+  // Compaction output: for compacted slot i, compactedIndexBuf[i] is the
+  // ORIGINAL cellIndex into stateRevealBuf — sized to the worst case (every
+  // cell occupied) since the real occupied count isn't known until after
+  // compactVisibleKernel runs.
+  const compactedIndexBuf = instancedArray(totalVoxels, 'uint');
+  const countersBuf = instancedArray(1, 'uint').toAtomic();
 
   const uniforms = {
     k: uniform(k, 'uint'),
@@ -504,7 +521,23 @@ export default function createVoxelFieldCompute({ level, ruleTables }) {
     });
   })().compute(totalVoxels);
 
-  function dispatch(gl, settings) {
+  const clearCountersKernel = Fn(() => {
+    countersBuf.element(0).assign(uint(0));
+  })().compute(1);
+
+  // Runs once, after finalizeStraysKernel — occupancy is fully resolved by
+  // then. Every cell with a non-zero state atomically claims the next
+  // compacted slot and records its own original index there.
+  const compactVisibleKernel = Fn(() => {
+    const index = instanceIndex;
+    If(index.greaterThanEqual(uint(totalVoxels)), () => Return());
+    const state = stateRevealBuf.element(index).x.toUint();
+    If(state.equal(uint(0)), () => Return());
+    const slot = atomicAdd(countersBuf.element(0), uint(1));
+    compactedIndexBuf.element(slot).assign(index);
+  })().compute(totalVoxels);
+
+  async function dispatch(gl, settings) {
     uniforms.seed.value = settings.seed >>> 0;
     uniforms.baseFill.value = BASE_FILL_TO_INT[settings.baseFill] ?? 0;
     uniforms.flipChance.value = settings.flipChance;
@@ -532,7 +565,19 @@ export default function createVoxelFieldCompute({ level, ruleTables }) {
     }
 
     gl.compute(finalizeStraysKernel);
+
+    gl.compute(clearCountersKernel);
+    gl.compute(compactVisibleKernel);
+    const counterBytes = await gl.getArrayBufferAsync(countersBuf.value);
+    return new Uint32Array(counterBytes)[0];
   }
 
-  return { stateRevealBuf, dispatch, totalVoxels, k, levelCount };
+  return {
+    stateRevealBuf,
+    compactedIndexBuf,
+    dispatch,
+    totalVoxels,
+    k,
+    levelCount,
+  };
 }

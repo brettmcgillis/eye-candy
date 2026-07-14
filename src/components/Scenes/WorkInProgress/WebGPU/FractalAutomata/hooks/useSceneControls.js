@@ -6,7 +6,9 @@ import { getCameraControlsKey } from '../../../../../../hooks/sceneCameraUtils';
 import usePresetsFolder from '../../../../../../hooks/usePresetsFolder';
 import useSceneCameraControls from '../../../../../../hooks/useSceneCameraControls';
 import { useMediaRecorder } from '../../../../../../modules/mediaRecorder';
+import getAngularFlowFieldControls from '../../../../../elements/AngularFlowField/getAngularFlowFieldControls';
 import getGodraysControls from '../components/getGodraysControls';
+import getLightingControls from '../components/getLightingControls';
 import getPaletteControls from '../components/getPaletteControls';
 import getVoxelFieldControls from '../components/getVoxelFieldControls';
 import { DEFAULT_PRESET, PRESETS, getPresetControls } from '../presets/presets';
@@ -42,7 +44,13 @@ export default function useSceneControls() {
     Camera: folder(cameraControls, { collapsed: true }),
     VoxelField: getVoxelFieldControls(p),
     Palette: getPaletteControls(p),
+    Lighting: getLightingControls(p),
     Godrays: getGodraysControls(p),
+    // keyPrefix avoids colliding with VoxelField's `seed` and Palette's
+    // `colorMode` — Leva keys are flat/global regardless of folder nesting.
+    AngularFlowField: getAngularFlowFieldControls(p, {
+      keyPrefix: 'flowField',
+    }),
   }));
 
   attachSetControls(setControls);

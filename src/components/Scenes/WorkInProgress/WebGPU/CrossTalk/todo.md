@@ -95,6 +95,7 @@
       migrate between windows; blink timing modeled on real firefly behavior
       (species-specific flash patterns), not a uniform sine pulse.
 - [ ] **Radiance Cascades** - 2d radiance cascades like the `~dev/examples/Shaders_RadianceCascades` example. also see `https://www.shadertoy.com/view/4dfXDn`
+- [ ] **Portals** - each window gets 2 portals that the user can move around. the first window gets a ball that can fall through the portals. when multiple tabs are open portals are chained so the ball can travel through windows. similar to fluid sim there is y- graviy, and the ball is constrained to the current/overlapping tabs.
 
 # // Features
 

@@ -40,7 +40,6 @@ function VoxelCloud({ config }) {
       );
     }, REBUILD_DEBOUNCE_MS);
     return () => clearTimeout(id);
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [
     config.voxelCloudResolution,
     config.voxelCloudSeed,
@@ -95,7 +94,6 @@ function VoxelCloud({ config }) {
       uniformsRef.current = null;
       meshRef.current = null;
     };
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [structural]);
 
   useEffect(() => {

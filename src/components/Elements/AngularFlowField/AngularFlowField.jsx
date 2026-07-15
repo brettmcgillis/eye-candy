@@ -220,6 +220,13 @@ function AngularFlowField({
         ? new THREE.Mesh(scratch.geometry, material)
         : new THREE.Points(scratch.geometry, material);
     object.frustumCulled = false;
+    // Points has no normals/lit surface to meaningfully receive shadows and
+    // isn't a great shadow-caster shape either — only the tube mesh (a real
+    // lit MeshStandardMaterial surface) casts/receives.
+    if (structural.renderMode === 'tube') {
+      object.castShadow = true;
+      object.receiveShadow = true;
+    }
 
     engineRef.current = engine;
     scratchRef.current = scratch;

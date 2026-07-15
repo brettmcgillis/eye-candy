@@ -45,53 +45,15 @@ export const PRESETS = {
     operatorMinFov: 20,
     operatorMaxFov: 80,
 
-    // Cloud (raymarched, see components/CloudVolume.jsx + utils/density.js —
-    // a port of ~/dev/examples/three-volumetric-clouds's getCloudDensity +
-    // rayMarch.ts, evaluated live rather than pre-baked into textures).
-    // Off by default — being reconsidered in favor of a voxel-cloud
-    // approach (~/dev/examples/clouds); kept wired in to compare later.
-    cloudVisible: false,
-    cloudPosition: { x: 0, y: 8, z: 0 },
-    cloudWidth: 16,
-    cloudHeight: 9,
-    cloudDepth: 16,
-    cloudTileScale: 2,
-    cloudNoiseFreq: 4,
-    cloudPerlinOctaves: 7,
-    cloudScrollSpeed: 0.1,
-    cloudSeed: 1,
-    cloudSteps: 48,
-    cloudLightSteps: 3,
-    cloudLightStepSize: 1.2,
-    cloudDensityScale: 1,
-    cloudLightAbsorption: 1,
-    cloudAnisotropy: 0.4,
-    cloudPhaseMix: 0.4,
-    cloudLightPosition: { x: -10, y: 14, z: 14 },
-    cloudLightColor: '#ffffff',
-    cloudAmbientColor: '#ffffff',
-
-    // VoxelCutout — one section of the same cloud field, excised into cubes.
-    // Off by default — see cloudVisible above.
-    voxelVisible: false,
-    voxelGridX: 10,
-    voxelGridY: 10,
-    voxelGridZ: 10,
-    voxelCutoutCenter: { x: 5, y: 8, z: 0 },
-    voxelCellSpacing: 0.9,
-    voxelCellScale: 0.85,
-    voxelThreshold: 0.35,
-    voxelDenseColor: '#dfe8ff',
-    voxelSparseColor: '#4a5480',
-
-    // VoxelCloud — the active cloud, a port of ~/dev/examples/clouds's
-    // voxel-cloud approach (see components/VoxelCloud.jsx).
+    // VoxelCloud — the cloud, a port of ~/dev/examples/clouds's
+    // voxel-cloud approach (see components/VoxelCloud.jsx). The earlier
+    // raymarched CloudVolume + its VoxelCutout excerpt have been removed.
     voxelCloudVisible: true,
-    voxelCloudPosition: { x: 0, y: 8, z: 0 },
+    voxelCloudPosition: { x: 0, y: 10, z: 0 },
     voxelCloudWidth: 16,
     voxelCloudHeight: 10,
     voxelCloudDepth: 16,
-    voxelCloudResolution: 28,
+    voxelCloudResolution: 56,
     voxelCloudSeed: 1,
     voxelCloudInflationPasses: 3,
     voxelCloudIsolation: 0.03,
@@ -116,16 +78,15 @@ export const PRESETS = {
     lightKeyIntensity: 1.6,
     lightKeyPosition: { x: 10, y: 20, z: 8 },
 
-    // Backdrop — a white cyclorama sweep (wide/tall enough that its
-    // left/right/top edges sit outside the camera's view; only the
-    // floor-to-wall curve stays visible, per todo.md).
-    backdropPosition: { x: 0, y: -0.01, z: -10 },
-    backdropScale: { x: 70, y: 36, z: 28 },
-    backdropFloor: 0.35,
-    backdropSegments: 32,
-    backdropColor: '#ffffff',
-    backdropRoughness: 0.85,
     backgroundColor: '#020203',
+
+    // PhotoStudio — the reusable studio-set model (elements/PhotoStudio) as
+    // an alternative to the procedural Backdrop above. Off by default so it
+    // doesn't collide with the backdrop until its transform is dialed in.
+    photoStudioVisible: true,
+    photoStudioPosition: { x: 0, y: 0, z: 0 },
+    photoStudioScale: 12,
+    photoStudioRotationY: 0,
   },
 };
 

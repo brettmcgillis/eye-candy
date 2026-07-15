@@ -7,11 +7,10 @@ import usePresetsFolder from '../../../../../../hooks/usePresetsFolder';
 import useSceneCameraControls from '../../../../../../hooks/useSceneCameraControls';
 import { useMediaRecorder } from '../../../../../../modules/mediaRecorder';
 import getAngularFlowFieldControls from '../../../../../elements/AngularFlowField/getAngularFlowFieldControls';
-import getBackdropControls from '../components/getBackdropControls';
-import getCloudControls from '../components/getCloudControls';
+import getEnvironmentControls from '../components/getEnvironmentControls';
 import getLightingControls from '../components/getLightingControls';
+import getPhotoStudioControls from '../components/getPhotoStudioControls';
 import getVoxelCloudControls from '../components/getVoxelCloudControls';
-import getVoxelCutoutControls from '../components/getVoxelCutoutControls';
 import { DEFAULT_PRESET, PRESETS, getPresetControls } from '../presets/presets';
 import CAMERA from '../utils/camera';
 
@@ -43,14 +42,13 @@ export default function useSceneControls() {
   const [controls, setControls] = useControls(SCENE_LABEL, () => ({
     Presets: presetsFolder,
     Camera: folder(cameraControls, { collapsed: true }),
-    Cloud: getCloudControls(p),
-    VoxelCutout: getVoxelCutoutControls(p),
     VoxelCloud: getVoxelCloudControls(p),
-    // keyPrefix avoids colliding with Cloud's implicit noise-field naming and
-    // keeps every Leva key flat/globally-unique (docs/scene-conventions.md §9).
+    // keyPrefix keeps every Rain* Leva key flat/globally-unique
+    // (docs/scene-conventions.md §9).
     Rain: getAngularFlowFieldControls(p, { keyPrefix: 'rain' }),
     Lighting: getLightingControls(p),
-    Backdrop: getBackdropControls(p),
+    PhotoStudio: getPhotoStudioControls(p),
+    Environment: getEnvironmentControls(p),
   }));
 
   attachSetControls(setControls);

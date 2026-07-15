@@ -83,7 +83,7 @@ function Godrays({
       postRef.current = null;
       nodesRef.current = null;
     };
-  }, [renderer, scene, camera, blur, bloomRadius]); // eslint-disable-line react-hooks/exhaustive-deps
+  }, [renderer, scene, camera, blur, bloomRadius]);
 
   useFrame(() => {
     if (!postRef.current || !nodesRef.current) return;

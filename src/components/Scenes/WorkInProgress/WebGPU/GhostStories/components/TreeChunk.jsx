@@ -70,7 +70,6 @@ function buildPlacements({ config, cx, cz, world }) {
 function TreeChunk({ config, cx, cz, world }) {
   const placements = useMemo(
     () => buildPlacements({ config, cx, cz, world }),
-    // eslint-disable-next-line react-hooks/exhaustive-deps
     [
       config.settingDensity,
       config.settingsEnabled,

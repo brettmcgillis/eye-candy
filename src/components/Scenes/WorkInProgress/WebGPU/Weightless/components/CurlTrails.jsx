@@ -86,7 +86,7 @@ function CurlTrails({ config, meshes, birdStateRef }) {
 
     const group = groupRef.current;
     const walk = buildWalkGeometry(meshes);
-    const skeleton = meshes[0].skeleton;
+    const { skeleton } = meshes[0];
     const boneBuf = instancedArray(skeleton.bones.length * 4, 'vec4');
     const shared = createSharedTrailUniforms();
 
@@ -214,8 +214,6 @@ function CurlTrails({ config, meshes, birdStateRef }) {
       walk.dispose();
       systemRef.current = null;
     };
-    // Colors/opacity are updated per-frame; only structure params rebuild.
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [meshes, counts]);
 
   // Switching trail space invalidates every stored vertex (different

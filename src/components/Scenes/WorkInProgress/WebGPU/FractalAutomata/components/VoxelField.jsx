@@ -60,7 +60,6 @@ function VoxelField({ config, replayGrowthToken }) {
       );
     }, REBUILD_DEBOUNCE_MS);
     return () => clearTimeout(id);
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [
     config.level,
     config.seed,
@@ -157,7 +156,6 @@ function VoxelField({ config, replayGrowthToken }) {
       fieldRef.current = null;
       growthProgressRef.current = null;
     };
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [structural, gl]);
 
   // Non-structural knobs update live without a full regenerate.

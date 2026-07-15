@@ -63,8 +63,6 @@ function Water({ config, tracker, world }) {
 
   const sim = useMemo(
     () => (isWebGPU ? createWaterSim(config) : null),
-    // Sim never rebuilds; uniforms sync below.
-    // eslint-disable-next-line react-hooks/exhaustive-deps
     [isWebGPU]
   );
 

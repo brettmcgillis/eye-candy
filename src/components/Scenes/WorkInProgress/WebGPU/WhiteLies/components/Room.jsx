@@ -26,7 +26,6 @@ function useWallMaterial({ color, roughness }) {
         roughness,
         metalness: 0,
       }),
-    // eslint-disable-next-line react-hooks/exhaustive-deps
     []
   );
 

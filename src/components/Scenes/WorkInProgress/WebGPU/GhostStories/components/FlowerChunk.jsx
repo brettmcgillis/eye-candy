@@ -53,7 +53,6 @@ function FlowerChunk({ config, cx, cz, tracker, world }) {
   const meshRef = useRef(null);
   const placements = useMemo(
     () => buildPlacements({ config, cx, cz, world }),
-    // eslint-disable-next-line react-hooks/exhaustive-deps
     [config.flowersPerChunk, config.flowerScale, cx, cz, world]
   );
   const temp = useMemo(() => new THREE.Object3D(), []);

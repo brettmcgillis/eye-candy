@@ -40,13 +40,7 @@ function Player({ config, tracker, world }) {
     jumpTriggered: false,
   });
 
-  const spawn = useMemo(
-    () => [0, world.sampleHeight(0, 0) + 3, 0],
-    // Spawn only ever computed once — regenerating the world teleports
-    // nobody; the terrain regenerates under the ghost instead.
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-    []
-  );
+  const spawn = useMemo(() => [0, world.sampleHeight(0, 0) + 3, 0], []);
 
   useFrame((_, delta) => {
     const group = ecctrlRef.current?.group;

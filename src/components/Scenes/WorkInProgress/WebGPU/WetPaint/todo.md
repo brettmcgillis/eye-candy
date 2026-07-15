@@ -103,6 +103,7 @@ photograph the result. Realism first.
 - [ ] fix camera position in color picker. cans should fill more of frame's vertical realestate
 - [ ] fix value slider label in color picker. reverse drag for more intuitive black-white selection
 - [ ] add reset canvas button to button overlay. add confirm modal
+- [ ] Allow for a more expressive painting mode. see references/paintMotion.js for an `SSGI+SSR Painter`
 
 [Back to main TODO](../../../../../../TODO.md)
 

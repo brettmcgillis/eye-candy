@@ -18,6 +18,9 @@
 
 [Back to main TODO](../../../../../../TODO.md)
 
+- add Vanier shank logo to cassette tape (decal)
+- add cassette tape + tape reel to trash
+
 # // Presets
 
 - [x] **Night Danger** — animated mode; raccoons loop idle clips, R1 toys with the revolver. `animatePoses: true`.

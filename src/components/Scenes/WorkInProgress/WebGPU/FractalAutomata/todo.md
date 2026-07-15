@@ -39,6 +39,7 @@
 - add controls for the godray pointlight position
 - do presets where the godray pointlight's position is animated to orbit around the structure, move up and down, left to right.
 - add control for pause animation
+- remove angualar flow field.
 
 # // Presets
 

@@ -14,7 +14,6 @@
 - wireup different materails for the voxel cloud.
 - can we create a duplicate of the voxel cloud as instanced cubes?
 - can we create a duplicate of the voxel cloud using a pixel backdrop effect and position that over the voxel cloud?
-- replace backdrop with the photo studio model/component
 
 # // Presets
 

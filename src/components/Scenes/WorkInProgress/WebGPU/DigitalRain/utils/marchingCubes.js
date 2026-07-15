@@ -1,4 +1,5 @@
 /* eslint-disable no-bitwise, no-param-reassign */
+import blurVoxelField from './blurField';
 import cubesTables from './cubesTables';
 
 // Port of ~/dev/examples/clouds's src/cubes.worker.ts (itself adapted from
@@ -10,50 +11,6 @@ import cubesTables from './cubesTables';
 // its own renderer either.
 function lerp(a, b, t) {
   return a + (b - a) * t;
-}
-
-// One box-blur pass (6-neighbor averaging) — softens the sphere-splat
-// inflation's hard edges into the puffy, rounded look before meshing.
-function blurField(field, size, intensity) {
-  const size2 = size * size;
-  const snapshot = field.slice();
-
-  for (let x = 0; x < size; x += 1) {
-    for (let y = 0; y < size; y += 1) {
-      for (let z = 0; z < size; z += 1) {
-        const index = size2 * z + size * y + x;
-        let value = snapshot[index];
-        let contributors = 1;
-
-        for (let dx = -1; dx <= 1; dx += 2) {
-          const nx = dx + x;
-          if (nx < 0 || nx >= size) {
-            // eslint-disable-next-line no-continue
-            continue;
-          }
-          for (let dy = -1; dy <= 1; dy += 2) {
-            const ny = dy + y;
-            if (ny < 0 || ny >= size) {
-              // eslint-disable-next-line no-continue
-              continue;
-            }
-            for (let dz = -1; dz <= 1; dz += 2) {
-              const nz = dz + z;
-              if (nz < 0 || nz >= size) {
-                // eslint-disable-next-line no-continue
-                continue;
-              }
-              const neighborValue = snapshot[size2 * nz + size * ny + nx];
-              contributors += 1;
-              value += (intensity * (neighborValue - value)) / contributors;
-            }
-          }
-        }
-
-        field[index] = value;
-      }
-    }
-  }
 }
 
 export default function extractCloudMesh({
@@ -68,7 +25,7 @@ export default function extractCloudMesh({
   const yDelta = size;
   const zDelta = size2;
 
-  blurField(field, size, blurIntensity);
+  blurVoxelField(field, size, blurIntensity);
 
   const normalCache = new Float32Array(size * size * size * 3);
   const vertexList = new Float32Array(12 * 3);

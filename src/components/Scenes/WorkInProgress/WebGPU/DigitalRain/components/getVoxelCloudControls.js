@@ -12,6 +12,40 @@ export default function getVoxelCloudControls(p = {}) {
         label: 'Visible',
         value: p.voxelCloudVisible ?? true,
       },
+      // Smooth = VoxelCloud only, Blocks = VoxelCloudBlocks only, Transition
+      // = both rendered together: VoxelCloud always stays fully intact (it
+      // never discards) while VoxelCloudBlocks progressively reveals cubes
+      // — sized to jut past the smooth surface — in matching grid cells as
+      // voxelCloudTransitionAmount rises, so patches visibly poke through
+      // and break up the silhouette instead of cutting holes (see
+      // DigitalRain.jsx).
+      voxelCloudDisplayMode: {
+        label: 'Display Mode',
+        value: p.voxelCloudDisplayMode ?? 'smooth',
+        options: {
+          Smooth: 'smooth',
+          Blocks: 'blocks',
+          Transition: 'transition',
+        },
+      },
+      voxelCloudTransitionAmount: {
+        label: 'Transition Amount',
+        value: p.voxelCloudTransitionAmount ?? 0.5,
+        min: 0,
+        max: 1,
+        step: 0.01,
+      },
+      // Buckets grid cells into noiseScale³ groups before hashing (see
+      // utils/cellReveal.js) so neighboring cells glitch together in
+      // contiguous patches rather than a per-cell speckle. 1 = one bucket
+      // per cell (speckled); higher = larger, chunkier patches.
+      voxelCloudTransitionNoiseScale: {
+        label: 'Transition Noise Scale',
+        value: p.voxelCloudTransitionNoiseScale ?? 3,
+        min: 1,
+        max: 10,
+        step: 0.5,
+      },
       voxelCloudPosition: {
         label: 'Position',
         value: p.voxelCloudPosition ?? { x: 0, y: 8, z: 0 },

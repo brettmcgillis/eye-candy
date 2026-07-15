@@ -15,6 +15,12 @@ import * as THREE from 'three/webgpu';
 // shade1<->shade2 transition instead of a smooth gradient — the reference's
 // distinctive "hatched" cloud look. Shadow-map occlusion darkening is
 // dropped (no shadow-casting light rig here); everything else is faithful.
+//
+// Deliberately never discards/cuts holes for the transition effect — the
+// smooth mesh always stays fully intact. VoxelCloudBlocks' cubes (sized to
+// jut past this surface — see components/VoxelCloudBlocks.jsx) simply
+// z-test in front wherever they're revealed, so patches read as the cloud
+// growing blocky rather than punching windows into it.
 export default function createToonCloudMaterial({
   baseColor,
   shadeColor1,

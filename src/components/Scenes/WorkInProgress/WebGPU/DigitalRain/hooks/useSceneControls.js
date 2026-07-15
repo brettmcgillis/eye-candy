@@ -10,6 +10,7 @@ import getAngularFlowFieldControls from '../../../../../elements/AngularFlowFiel
 import getEnvironmentControls from '../components/getEnvironmentControls';
 import getLightingControls from '../components/getLightingControls';
 import getPhotoStudioControls from '../components/getPhotoStudioControls';
+import getVoxelCloudBlocksControls from '../components/getVoxelCloudBlocksControls';
 import getVoxelCloudControls from '../components/getVoxelCloudControls';
 import { DEFAULT_PRESET, PRESETS, getPresetControls } from '../presets/presets';
 import CAMERA from '../utils/camera';
@@ -43,6 +44,7 @@ export default function useSceneControls() {
     Presets: presetsFolder,
     Camera: folder(cameraControls, { collapsed: true }),
     VoxelCloud: getVoxelCloudControls(p),
+    VoxelCloudBlocks: getVoxelCloudBlocksControls(p),
     // keyPrefix keeps every Rain* Leva key flat/globally-unique
     // (docs/scene-conventions.md §9).
     Rain: getAngularFlowFieldControls(p, { keyPrefix: 'rain' }),

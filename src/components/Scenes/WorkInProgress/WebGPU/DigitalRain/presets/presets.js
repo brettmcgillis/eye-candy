@@ -48,7 +48,13 @@ export const PRESETS = {
     // VoxelCloud — the cloud, a port of ~/dev/examples/clouds's
     // voxel-cloud approach (see components/VoxelCloud.jsx). The earlier
     // raymarched CloudVolume + its VoxelCutout excerpt have been removed.
+    // displayMode picks smooth (VoxelCloud)/blocks (VoxelCloudBlocks)/
+    // transition (both, glitched cell-by-cell by voxelCloudTransitionAmount
+    // + voxelCloudTransitionNoiseScale).
     voxelCloudVisible: true,
+    voxelCloudDisplayMode: 'smooth',
+    voxelCloudTransitionAmount: 0.5,
+    voxelCloudTransitionNoiseScale: 3,
     voxelCloudPosition: { x: 0, y: 10, z: 0 },
     voxelCloudWidth: 16,
     voxelCloudHeight: 10,
@@ -62,6 +68,14 @@ export const PRESETS = {
     voxelCloudShadeColor1: '#a0a0a0',
     voxelCloudShadeColor2: '#0000a0',
     voxelCloudLightDirection: { x: 0.4, y: 0.85, z: 0.3 },
+
+    // VoxelCloudBlocks — the same field above (same voxelCloudIsolation
+    // threshold, so it shares the smooth mesh's silhouette), rendered as
+    // one cube per occupied cell (see components/VoxelCloudBlocks.jsx).
+    // Scale >1 lets cube corners jut past the smooth surface.
+    voxelBlocksScale: 1.15,
+    voxelBlocksDenseColor: '#dfe8ff',
+    voxelBlocksSparseColor: '#4a5480',
 
     // Rain — AngularFlowField (elements/AngularFlowField), keyPrefix 'rain'
     // to dodge Leva key collisions (docs/scene-conventions.md §9). Every

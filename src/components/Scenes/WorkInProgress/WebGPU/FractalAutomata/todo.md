@@ -23,12 +23,12 @@
 
 [Back to main TODO](../../../../../../TODO.md)
 
+- check out `~/dev/examples/g3dl` for a good CA example. that one is very performant compared to ours. what can we learn and use to improve ours?
+
 - Phase 2: Fixed Megalith preset (structure fully resolved, no growth
   animation).
 - Phase 2: Fixed With Growth Pockets preset (mostly fixed, isolated regions
   still actively growing).
-
-- add a cellular automata preset where the simulation just keeps going, cells living and dying following the existing patterns for generation etc.
 
 - explore and experiment with different materails and textures and on the voxels. rough concrete, slick and oily.
 - would occlusion culling help speed up the scene?

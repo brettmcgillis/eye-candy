@@ -31,10 +31,13 @@ const COLOR_MODE_TO_INT = COLOR_MODES.reduce((acc, mode, index) => {
 // mode). `k` is the grid's per-axis cell count (structural, fixed for this
 // compute instance). `compactedIndexBuf` maps a drawn instance's
 // `instanceIndex` (0..occupiedCount-1) back to its original cellIndex into
-// `stateRevealBuf` — see growthCompute.js's compaction notes.
+// `stateRevealBuf` — see growthCompute.js's compaction notes. Omit it (e.g.
+// continuous CA mode, which renders the full k^3 grid — see
+// utils/continuousCompute.js) and `instanceIndex` is used directly as the
+// cell index.
 export default function createPaletteNode({
   stateRevealBuf,
-  compactedIndexBuf,
+  compactedIndexBuf = null,
   k,
 }) {
   const uniforms = {
@@ -47,7 +50,9 @@ export default function createPaletteNode({
 
   const kUint = uint(k);
   const kMax = uint(Math.max(1, k - 1));
-  const originalIndex = compactedIndexBuf.element(instanceIndex);
+  const originalIndex = compactedIndexBuf
+    ? compactedIndexBuf.element(instanceIndex)
+    : instanceIndex;
   const cell = stateRevealBuf.element(originalIndex);
   const revealTime = cell.y;
   const { x, y, z } = decomposeIndexNode(originalIndex, kUint);

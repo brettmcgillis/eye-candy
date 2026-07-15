@@ -13,6 +13,7 @@ import React, { memo, useEffect, useRef, useState } from 'react';
 
 import { useFrame, useThree } from '@react-three/fiber';
 
+import createContinuousFieldCompute from '../utils/continuousCompute';
 import { decomposeIndexNode } from '../utils/gridIndex';
 import createVoxelFieldCompute from '../utils/growthCompute';
 import createPaletteNode from '../utils/paletteNode';
@@ -54,19 +55,27 @@ function pickStructuralSettings(config) {
     flipChance: config.flipChance,
     removeStrays: config.removeStrays,
     growthJitter: config.growthJitter,
+    // Structural: switching modes changes the whole rendering strategy (see
+    // build() below — continuous mode can't use compaction, so it renders a
+    // differently-sized InstancedMesh), so it needs a full rebuild too.
+    continuousEnabled: config.continuousEnabled,
   };
 }
 
 // Owns the CA compute pipeline (regenerates on structural control changes),
-// the growth-over-time reveal, and the InstancedMesh that renders it. The
-// mesh is sized to the compacted (occupied-only) cell count — not the full
-// k³ grid — via a one-time async readback after generation; see
-// utils/growthCompute.js's compaction notes for why this is safe to do only
-// once per regenerate rather than every frame.
+// the growth-over-time reveal, and the InstancedMesh that renders it. In the
+// default hierarchical mode, the mesh is sized to the compacted (occupied-
+// only) cell count — not the full k³ grid — via a one-time async readback
+// after generation; see utils/growthCompute.js's compaction notes for why
+// that's safe to do only once per regenerate rather than every frame. In
+// continuous CA mode (config.continuousEnabled — utils/continuousCompute.js)
+// the mesh instead renders the full k³ grid every frame, since occupancy
+// keeps changing as the simulation steps forever.
 function VoxelField({ config, replayGrowthToken }) {
   const { gl } = useThree();
   const fieldRef = useRef(null);
   const growthProgressRef = useRef(null);
+  const continuousAccumulatorRef = useRef(0);
   const [renderObject, setRenderObject] = useState(null);
 
   const [structural, setStructural] = useState(() =>
@@ -111,9 +120,27 @@ function VoxelField({ config, replayGrowthToken }) {
       const occupiedCount = await dispatchWithFloor(field, gl, structural);
       if (cancelled) return;
 
+      // Continuous CA (utils/continuousCompute.js) seeds itself from this
+      // hierarchical resolve, then keeps stepping on its own forever — it
+      // can't use the compaction trick above (occupancy keeps changing), so
+      // it renders the full k^3 grid directly by instanceIndex instead.
+      const continuous = structural.continuousEnabled
+        ? createContinuousFieldCompute({
+            level: structural.level,
+            sourceStateBuf: field.stateRevealBuf,
+          })
+        : null;
+      if (continuous) {
+        continuous.seed(gl);
+      }
+
+      const activeStateBuf = continuous
+        ? continuous.stateBuf
+        : field.stateRevealBuf;
+
       const palette = createPaletteNode({
-        stateRevealBuf: field.stateRevealBuf,
-        compactedIndexBuf: field.compactedIndexBuf,
+        stateRevealBuf: activeStateBuf,
+        compactedIndexBuf: continuous ? null : field.compactedIndexBuf,
         k: field.k,
       });
       const growthProgress = uniform(0);
@@ -122,7 +149,9 @@ function VoxelField({ config, replayGrowthToken }) {
 
       const kMax = Math.max(1, field.k - 1);
       const half = kMax * 0.5;
-      const originalIndex = field.compactedIndexBuf.element(instanceIndex);
+      const originalIndex = continuous
+        ? instanceIndex
+        : field.compactedIndexBuf.element(instanceIndex);
       const { x, y, z } = decomposeIndexNode(originalIndex, uint(field.k));
       const cellPosition = vec3(
         x.toFloat().sub(half),
@@ -130,7 +159,11 @@ function VoxelField({ config, replayGrowthToken }) {
         z.toFloat().sub(half)
       ).mul(cellSpacing);
 
-      const cell = field.stateRevealBuf.element(originalIndex);
+      // Continuous cells always bake revealTime 0 (see continuousCompute.js),
+      // so this same growthProgress-gated check reveals them the instant
+      // they're alive, regardless of growthProgress's value — no branching
+      // needed here for continuous vs. hierarchical mode.
+      const cell = activeStateBuf.element(originalIndex);
       const revealed = cell.x
         .greaterThan(0.5)
         .and(growthProgress.greaterThanEqual(cell.y));
@@ -151,18 +184,24 @@ function VoxelField({ config, replayGrowthToken }) {
       }
       builtMaterial = material;
 
-      // Compacted count, not field.totalVoxels — the whole point of the
-      // compaction pass is to only draw/shade cells that are ever occupied.
+      // Compacted count in hierarchical mode (the whole point of the
+      // compaction pass is to only draw/shade cells that are ever
+      // occupied); the full k^3 grid in continuous mode, since occupancy
+      // keeps changing every step.
+      const instanceCount = continuous
+        ? field.totalVoxels
+        : Math.max(1, occupiedCount);
       const mesh = new THREE.InstancedMesh(
         CUBE_GEOMETRY,
         material,
-        Math.max(1, occupiedCount)
+        instanceCount
       );
       mesh.frustumCulled = false;
       mesh.castShadow = true;
       mesh.receiveShadow = true;
 
-      fieldRef.current = { field, palette, cellSpacing, cellScale };
+      continuousAccumulatorRef.current = 0;
+      fieldRef.current = { field, continuous, palette, cellSpacing, cellScale };
       growthProgressRef.current = growthProgress;
       setRenderObject(mesh);
     }
@@ -207,17 +246,43 @@ function VoxelField({ config, replayGrowthToken }) {
   ]);
 
   // "Replay Growth" (ButtonOverlay) resets the reveal animation without
-  // regenerating topology — same baked revealTimes, restarts from 0.
+  // regenerating topology — same baked revealTimes, restarts from 0. In
+  // continuous mode there's no revealTime to replay, so it instead re-seeds
+  // the simulation back to its just-generated starting structure.
   useEffect(() => {
+    if (!fieldRef.current) return;
+    if (fieldRef.current.continuous) {
+      fieldRef.current.continuous.seed(gl);
+      continuousAccumulatorRef.current = 0;
+      return;
+    }
     if (growthProgressRef.current) {
       growthProgressRef.current.value = 0;
     }
-  }, [replayGrowthToken]);
+  }, [replayGrowthToken, gl]);
 
   useFrame((_state, rawDelta) => {
-    if (!growthProgressRef.current) return;
+    if (!fieldRef.current) return;
     if (!config.growthEnabled) return;
     const delta = Math.min(Math.max(rawDelta, 1e-4), MAX_DELTA);
+
+    const { continuous } = fieldRef.current;
+    if (continuous) {
+      const interval = 1 / Math.max(0.1, config.continuousStepsPerSecond);
+      continuousAccumulatorRef.current += delta;
+      if (continuousAccumulatorRef.current >= interval) {
+        continuousAccumulatorRef.current -= interval;
+        continuous.step(gl, {
+          surviveMin: config.continuousSurviveMin,
+          surviveMax: config.continuousSurviveMax,
+          birthMin: config.continuousBirthMin,
+          birthMax: config.continuousBirthMax,
+        });
+      }
+      return;
+    }
+
+    if (!growthProgressRef.current) return;
     const next =
       growthProgressRef.current.value +
       delta / Math.max(0.1, config.growthDurationSeconds);

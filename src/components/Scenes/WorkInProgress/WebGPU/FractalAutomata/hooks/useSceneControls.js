@@ -6,6 +6,7 @@ import { getCameraControlsKey } from '../../../../../../hooks/sceneCameraUtils';
 import usePresetsFolder from '../../../../../../hooks/usePresetsFolder';
 import useSceneCameraControls from '../../../../../../hooks/useSceneCameraControls';
 import { useMediaRecorder } from '../../../../../../modules/mediaRecorder';
+import getContinuousControls from '../components/getContinuousControls';
 import getGodraysControls from '../components/getGodraysControls';
 import getLightingControls from '../components/getLightingControls';
 import getPaletteControls from '../components/getPaletteControls';
@@ -45,6 +46,7 @@ export default function useSceneControls() {
     Palette: getPaletteControls(p),
     Lighting: getLightingControls(p),
     Godrays: getGodraysControls(p),
+    ContinuousCA: getContinuousControls(p),
   }));
 
   attachSetControls(setControls);

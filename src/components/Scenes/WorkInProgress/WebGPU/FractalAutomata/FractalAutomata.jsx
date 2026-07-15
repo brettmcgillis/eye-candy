@@ -1,7 +1,5 @@
 import React, { memo, useCallback, useRef } from 'react';
 
-import AngularFlowField from '../../../../elements/AngularFlowField/AngularFlowField';
-import { mapAngularFlowFieldProps } from '../../../../elements/AngularFlowField/getAngularFlowFieldControls';
 import Godrays from '../../../../postprocessing/webGPU/godrays/Godrays';
 import CameraRig from '../../../../rigging/CameraRig';
 import ButtonOverlay from './components/ButtonOverlay';
@@ -16,8 +14,7 @@ import useSceneControls from './hooks/useSceneControls';
 // cellular organism" and "futuristic megalithic structure." Phase 1 ships one
 // preset: growth around a Windswept-style shadow-casting centerpiece light,
 // godrays occluded by the structure as it reveals around it. See todo.md for
-// the three presets and the AngularFlowField cloud-preset wiring deferred to
-// Phase 2.
+// the three presets deferred to Phase 2.
 function FractalAutomata() {
   const config = useSceneControls();
   const godraysLightRef = useRef(null);
@@ -29,30 +26,28 @@ function FractalAutomata() {
   return (
     <>
       <CameraRig camera={config.camera} />
-      <color attach="background" args={['#03040a']} />
+      <color attach="background" args={[config.backgroundColor]} />
       <LightRig config={config} />
       <CenterLight
         color={config.godraysColor}
         intensity={config.godraysIntensity}
         lightRef={godraysLightRef}
+        position={[
+          config.godraysPosition.x,
+          config.godraysPosition.y,
+          config.godraysPosition.z,
+        ]}
         volumeSize={config.godraysVolumeSize}
       />
       <VoxelField
         config={config}
         replayGrowthToken={config.replayGrowthToken}
       />
-      {/* Dev-verification mount for AngularFlowField (Phase 1 built it as a
-          standalone element; Phase 2 wires it into the Cloud + Flow Field
-          preset for real). Remove once verified. */}
-      {config.flowFieldVisible && (
-        <AngularFlowField
-          {...mapAngularFlowFieldProps(config, 'flowField')}
-          position={[0, 6, -10]}
-        />
-      )}
       <ButtonOverlay
         onRegenerate={config.regenerate}
         onReplayGrowth={handleReplayGrowth}
+        onTogglePause={config.togglePauseAnimation}
+        paused={!config.growthEnabled}
       />
       {config.godraysEnabled && (
         <Godrays

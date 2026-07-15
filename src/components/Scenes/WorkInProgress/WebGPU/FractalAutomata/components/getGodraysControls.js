@@ -10,6 +10,10 @@ export default function getGodraysControls(p = {}) {
   return folder({
     godraysEnabled: { label: 'Enabled', value: p.godraysEnabled ?? true },
     godraysColor: { label: 'Light Color', value: p.godraysColor ?? '#ffd27a' },
+    godraysPosition: {
+      label: 'Light Position',
+      value: p.godraysPosition ?? { x: 0, y: 0, z: 0 },
+    },
     godraysIntensity: {
       label: 'Light Intensity',
       value: p.godraysIntensity ?? 20,

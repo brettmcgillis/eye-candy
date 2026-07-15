@@ -69,5 +69,9 @@ export default function getLightingControls(p = {}) {
       max: 3,
       step: 0.01,
     },
+    backgroundColor: {
+      label: 'Background Color',
+      value: p.backgroundColor ?? '#03040a',
+    },
   });
 }

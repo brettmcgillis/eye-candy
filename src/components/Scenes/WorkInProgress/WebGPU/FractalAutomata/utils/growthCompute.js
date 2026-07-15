@@ -4,6 +4,7 @@ import {
   If,
   Return,
   atomicAdd,
+  atomicStore,
   float,
   hash,
   instanceIndex,
@@ -522,7 +523,7 @@ export default function createVoxelFieldCompute({ level, ruleTables }) {
   })().compute(totalVoxels);
 
   const clearCountersKernel = Fn(() => {
-    countersBuf.element(0).assign(uint(0));
+    atomicStore(countersBuf.element(0), uint(0));
   })().compute(1);
 
   // Runs once, after finalizeStraysKernel — occupancy is fully resolved by

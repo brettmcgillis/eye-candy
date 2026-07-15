@@ -21,6 +21,26 @@ import { createRuleTables } from '../utils/ruleTables';
 const REBUILD_DEBOUNCE_MS = 300;
 const MAX_DELTA = 0.05;
 const CUBE_GEOMETRY = new THREE.BoxGeometry(1, 1, 1);
+// Some rule/density combinations can die off to (near) nothing. Rather than
+// render an empty/near-empty grid, re-roll the seed locally (Leva's `seed`
+// control is left untouched) a bounded number of times until the occupied
+// count clears this floor, or give up and show whatever the last attempt
+// produced.
+const MIN_OCCUPIED_VOXELS = 64;
+const MAX_REGEN_ATTEMPTS = 5;
+
+async function dispatchWithFloor(field, gl, settings) {
+  const attemptSettings = { ...settings };
+  let occupiedCount = await field.dispatch(gl, attemptSettings);
+  let attempts = 0;
+  while (occupiedCount < MIN_OCCUPIED_VOXELS && attempts < MAX_REGEN_ATTEMPTS) {
+    attemptSettings.seed = Math.floor(Math.random() * 1_000_000);
+    // eslint-disable-next-line no-await-in-loop
+    occupiedCount = await field.dispatch(gl, attemptSettings);
+    attempts += 1;
+  }
+  return occupiedCount;
+}
 
 function pickStructuralSettings(config) {
   return {
@@ -86,8 +106,9 @@ function VoxelField({ config, replayGrowthToken }) {
 
       // Runs full CA generation + one-time compaction; resolves once the
       // occupied-cell count is read back from the GPU (see
-      // utils/growthCompute.js's compaction notes).
-      const occupiedCount = await field.dispatch(gl, structural);
+      // utils/growthCompute.js's compaction notes). Retries with a locally
+      // re-rolled seed if generation comes back empty/near-empty.
+      const occupiedCount = await dispatchWithFloor(field, gl, structural);
       if (cancelled) return;
 
       const palette = createPaletteNode({
@@ -158,7 +179,11 @@ function VoxelField({ config, replayGrowthToken }) {
     };
   }, [structural, gl]);
 
-  // Non-structural knobs update live without a full regenerate.
+  // Non-structural knobs update live without a full regenerate. Also re-runs
+  // on every `renderObject` change (i.e. after each rebuild/regenerate) —
+  // otherwise a fresh palette starts from createPaletteNode's hardcoded
+  // defaults instead of the current preset's colors until some palette
+  // control is nudged.
   useEffect(() => {
     if (!fieldRef.current) return;
     fieldRef.current.cellSpacing.value = config.cellSpacing;
@@ -171,6 +196,7 @@ function VoxelField({ config, replayGrowthToken }) {
     palette.uniforms.colorMode.value =
       palette.colorModeToInt[config.colorMode] ?? 0;
   }, [
+    renderObject,
     config.cellSpacing,
     config.cellScale,
     config.paletteStart,

@@ -28,7 +28,6 @@
 - Phase 2: Fixed With Growth Pockets preset (mostly fixed, isolated regions
   still actively growing).
 
-- add control for background color
 - add a cellular automata preset where the simulation just keeps going, cells living and dying following the existing patterns for generation etc.
 
 - explore and experiment with different materails and textures and on the voxels. rough concrete, slick and oily.
@@ -37,8 +36,8 @@
 - do a preset that auto regens after each generation completes animating
 - add controls for the godray pointlight position
 - do presets where the godray pointlight's position is animated to orbit around the structure, move up and down, left to right.
-- add control for pause animation
-- remove angualar flow field.
+
+- add a preset with a structure on the photo studio table to get photographed.
 
 - Do last: Revisit logarithmic depth buffer / infinite-zoom framing if camera-distance
   z-fighting actually shows up once structures get large.

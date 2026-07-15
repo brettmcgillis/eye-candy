@@ -191,7 +191,6 @@ function AngularFlowField({
       );
     }, REBUILD_DEBOUNCE_MS);
     return () => clearTimeout(id);
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [
     emitterCountX,
     emitterCountY,
@@ -248,7 +247,6 @@ function AngularFlowField({
         originMarkers.material.dispose();
       }
     };
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [structural]);
 
   // Mutable material properties update in place — no material recreation on

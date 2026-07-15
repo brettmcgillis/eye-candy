@@ -42,9 +42,6 @@ function FieldLines({ config }) {
         color: config.fieldLineColor,
         opacity: config.fieldLineOpacity,
       }),
-    // Built once — color/opacity/fade are pushed onto the uniforms live
-    // every frame below, so this never needs to rebuild.
-    // eslint-disable-next-line react-hooks/exhaustive-deps
     []
   );
 

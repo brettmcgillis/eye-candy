@@ -1,6 +1,5 @@
 import React, { memo } from 'react';
 
-const LIGHT_POSITION = [0, 1, 0];
 const SHADOW_NEAR = 0.05;
 
 // The godrays centerpiece: a shadow-casting point light "in the center"
@@ -26,7 +25,7 @@ const SHADOW_NEAR = 0.05;
 // deriving from worldScale — the swarm's spatial spread and the shadow/
 // raymarch box's calibration are different concerns: shrinking one to fix
 // the other forces the whole scene to shrink just to get sharper shadows.
-function CenterLight({ color, intensity, lightRef, volumeSize }) {
+function CenterLight({ color, intensity, lightRef, position, volumeSize }) {
   return (
     <>
       <pointLight
@@ -34,13 +33,13 @@ function CenterLight({ color, intensity, lightRef, volumeSize }) {
         castShadow
         color={color}
         intensity={intensity}
-        position={LIGHT_POSITION}
+        position={position}
         shadow-bias={-0.0005}
         shadow-camera-far={volumeSize}
         shadow-camera-near={SHADOW_NEAR}
         shadow-mapSize={[1024, 1024]}
       />
-      <mesh position={LIGHT_POSITION}>
+      <mesh position={position}>
         <sphereGeometry args={[0.12, 16, 16]} />
         <meshStandardMaterial
           color={color}

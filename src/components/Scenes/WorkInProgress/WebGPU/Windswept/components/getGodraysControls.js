@@ -19,6 +19,11 @@ export default function getGodraysControls(p = {}) {
       label: 'Light Color',
       value: p.godraysColor ?? '#ffd27a',
     },
+    godraysPosition: {
+      label: 'Light Position',
+      step: 0.1,
+      value: p.godraysPosition ?? { x: 0, y: 1, z: 0 },
+    },
     godraysIntensity: {
       label: 'Light Intensity',
       value: p.godraysIntensity ?? 15,

@@ -1,5 +1,9 @@
+import * as THREE from 'three/webgpu';
+
 import React, { memo, useRef } from 'react';
 
+import Bonsai from '../../../../elements/Bonsai/Bonsai';
+import SubtleForestSkybox from '../../../../elements/SubtleForestSkybox/SubtleForestSkybox';
 import Godrays from '../../../../postprocessing/webGPU/godrays/Godrays';
 import CameraRig from '../../../../rigging/CameraRig';
 import CenterLight from './components/CenterLight';
@@ -13,8 +17,10 @@ import useSceneControls from './hooks/useSceneControls';
 // streamlines tracing the same field. Physical attractors mode: draggable
 // gravity+spin attractor markers pulling the same swarm. A centerpiece
 // point light drives screen-space godrays, occluded by the swarm's own
-// shadow-casting geometry as it flows through the beam (see todo.md). The
-// procedural tree and the mossy/vined ground are deliberate later passes.
+// shadow-casting geometry as it flows through the beam (see todo.md). A
+// bonsai centerpiece anchors the swarm (pot/stalk/bud/flower hidden by
+// default so it reads as a bare craggly tree); the flowing-vine ground is a
+// deliberate later pass.
 function Windswept() {
   const config = useSceneControls();
   // Shared with LeafSwarm (reads it for physics) and PhysicalAttractorMarkers
@@ -29,10 +35,34 @@ function Windswept() {
       <color attach="background" args={['#05070c']} />
       <ambientLight intensity={0.1} />
       {/* <directionalLight position={[6, 10, 4]} intensity={1.1} /> */}
+      <SubtleForestSkybox
+        visible={config.skyboxVisible}
+        rotation={[0, THREE.MathUtils.degToRad(config.skyboxRotationY), 0]}
+        scale={config.skyboxScale}
+      />
+      <Bonsai
+        visible={config.bonsaiVisible}
+        position={[
+          config.bonsaiPosition.x,
+          config.bonsaiPosition.y,
+          config.bonsaiPosition.z,
+        ]}
+        rotation={[0, THREE.MathUtils.degToRad(config.bonsaiRotationY), 0]}
+        scale={config.bonsaiScale}
+        showBud={config.bonsaiShowBud}
+        showFlower={config.bonsaiShowFlower}
+        showPot={config.bonsaiShowPot}
+        showStalk={config.bonsaiShowStalk}
+      />
       <CenterLight
         color={config.godraysColor}
         intensity={config.godraysIntensity}
         lightRef={godraysLightRef}
+        position={[
+          config.godraysPosition.x,
+          config.godraysPosition.y,
+          config.godraysPosition.z,
+        ]}
         volumeSize={config.godraysVolumeSize}
       />
       <FieldLines config={config} />

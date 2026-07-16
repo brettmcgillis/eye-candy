@@ -6,9 +6,11 @@ import { getCameraControlsKey } from '../../../../../../hooks/sceneCameraUtils';
 import usePresetsFolder from '../../../../../../hooks/usePresetsFolder';
 import useSceneCameraControls from '../../../../../../hooks/useSceneCameraControls';
 import { useMediaRecorder } from '../../../../../../modules/mediaRecorder';
+import getBonsaiControls from '../components/getBonsaiControls';
 import getFieldLineControls from '../components/getFieldLineControls';
 import getGodraysControls from '../components/getGodraysControls';
 import getPhysicalAttractorControls from '../components/getPhysicalAttractorControls';
+import getSkyboxControls from '../components/getSkyboxControls';
 import getSwarmControls from '../components/getSwarmControls';
 import { DEFAULT_PRESET, PRESETS, getPresetControls } from '../presets/presets';
 import CAMERA from '../utils/camera';
@@ -45,6 +47,8 @@ export default function useSceneControls() {
     FieldLines: getFieldLineControls(p),
     PhysicalAttractors: getPhysicalAttractorControls(p),
     Godrays: getGodraysControls(p),
+    Bonsai: getBonsaiControls(p),
+    Skybox: getSkyboxControls(p),
   }));
 
   attachSetControls(setControls);

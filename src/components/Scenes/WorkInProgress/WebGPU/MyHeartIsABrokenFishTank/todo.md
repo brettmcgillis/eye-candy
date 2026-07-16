@@ -21,8 +21,8 @@
 - [ ] update scene to create unique breaks each time scene loads or scene is reset. Make this easy to disable in code incase I want to make a video thats consistent.
 - [ ] use the updated, animated GoldFish component and model.
 - [ ] fix debug water bounds. cant see water when enabled.
-- [ ] Can we prevent particles from spilling before glass breaks?
-- [ ] wtf is going on wth the coral in the tank. looks black from most angles, until suddenly it becomes colored at some angle.
+- [ ] Can we prevent particles from spilling before glass breaks? Can we set the water bounds === tank bounds until 1st break?
+- [ ] wtf is going on wth the coral in the tank. looks black from most angles, until suddenly it becomes colored at some angle. might need to manually handle transmission, transparecy, depth etc.
 
 # // Intent/Use Cases
 

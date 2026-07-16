@@ -32,7 +32,7 @@ export default function Skull({
   showMandibleTeeth,
   ...props
 }) {
-  const { nodes, materials } = useGLTF(modelFile(`Skull.gltf`));
+  const { nodes, materials } = useGLTF(modelFile(`Skull.glb`));
 
   return (
     <group {...props} dispose={null}>
@@ -48,14 +48,14 @@ export default function Skull({
           <mesh
             castShadow
             receiveShadow
-            geometry={nodes.Lower_teeth_1.geometry}
+            geometry={nodes.Lower_teeth.geometry}
             material={materials.phong3}
             visible={showMandibleTeeth}
           />
           <mesh
             castShadow
             receiveShadow
-            geometry={nodes.Mandible_2.geometry}
+            geometry={nodes.Mandible.geometry}
             material={materials.lambert5}
             visible={showMandibleBone}
           />
@@ -64,86 +64,93 @@ export default function Skull({
           <mesh
             castShadow
             receiveShadow
-            geometry={nodes.Left_zygomatic_1.geometry}
+            geometry={nodes.Left_zygomatic.geometry}
             material={materials.lambert5}
             visible={showLeftZygomatic}
           />
           <mesh
             castShadow
             receiveShadow
-            geometry={nodes.Occipital_1.geometry}
+            geometry={nodes.Occipital.geometry}
             material={materials.lambert5}
             visible={showOccipital}
           />
           <mesh
             castShadow
             receiveShadow
-            geometry={nodes.Right_lacrimal_1.geometry}
+            geometry={nodes.Right_lacrimal.geometry}
             material={materials.lambert5}
             visible={showRightLacrimal}
           />
           <mesh
             castShadow
             receiveShadow
-            geometry={nodes.Right_max_1.geometry}
+            geometry={nodes.Right_max.geometry}
             material={materials.lambert5}
             visible={showRightMaxilla}
           />
           <mesh
             castShadow
             receiveShadow
-            geometry={nodes.Right_nasal_1.geometry}
+            geometry={nodes.Right_nasal.geometry}
             material={materials.lambert5}
             visible={showRightNasal}
           />
           <mesh
             castShadow
             receiveShadow
-            geometry={nodes.Right_palatine_1.geometry}
+            geometry={nodes.Right_palatine.geometry}
             material={materials.lambert5}
             visible={showRightPalatine}
           />
           <mesh
             castShadow
             receiveShadow
-            geometry={nodes.Right_Parietal_1.geometry}
+            geometry={nodes.Right_Parietal.geometry}
             material={materials.lambert5}
             visible={showRightParietal}
           />
           <mesh
             castShadow
             receiveShadow
-            geometry={nodes.Right_temporal_1.geometry}
+            geometry={nodes.Right_temporal.geometry}
             material={materials.lambert5}
             visible={showRightTemporal}
           />
           <mesh
             castShadow
             receiveShadow
-            geometry={nodes.Right_zygomatic_1.geometry}
+            geometry={nodes.Right_zygomatic.geometry}
             material={materials.lambert5}
             visible={showRightZygomatic}
           />
           <mesh
             castShadow
             receiveShadow
-            geometry={nodes.Sphenoid_1.geometry}
+            geometry={nodes.Sphenoid.geometry}
             material={materials.lambert5}
             visible={showSphenoid}
           />
           <mesh
             castShadow
             receiveShadow
-            geometry={nodes.Teeth_1.geometry}
+            geometry={nodes.Teeth.geometry}
             material={materials.phong3}
             visible={showTeeth}
           />
           <mesh
             castShadow
             receiveShadow
-            geometry={nodes.Vomer_1.geometry}
+            geometry={nodes.Vomer.geometry}
             material={materials.lambert5}
             visible={showVomer}
+          />
+          <mesh
+            castShadow
+            receiveShadow
+            geometry={nodes.Ethmoid.geometry}
+            material={materials.lambert5}
+            visible={showEthmoid}
           />
           <mesh
             castShadow
@@ -155,30 +162,30 @@ export default function Skull({
           <mesh
             castShadow
             receiveShadow
-            geometry={nodes.Ethmoid_2.geometry}
-            material={materials.lambert5}
-            visible={showEthmoid}
-          />
-          <mesh
-            castShadow
-            receiveShadow
-            geometry={nodes.Frontal_1.geometry}
+            geometry={nodes.Frontal.geometry}
             material={materials.lambert5}
             visible={showFrontal}
           />
           <mesh
             castShadow
             receiveShadow
-            geometry={nodes.Inferior_conchae_1.geometry}
+            geometry={nodes.Inferior_conchae.geometry}
             material={materials.lambert5}
             visible={showInferiorConchae}
           />
           <mesh
             castShadow
             receiveShadow
-            geometry={nodes.Left_lacrimal_1.geometry}
+            geometry={nodes.Left_lacrimal.geometry}
             material={materials.lambert5}
             visible={showLeftLacrimal}
+          />
+          <mesh
+            castShadow
+            receiveShadow
+            geometry={nodes.Left_maxilla.geometry}
+            material={materials.lambert5}
+            visible={showLeftMaxilla}
           />
           <mesh
             castShadow
@@ -190,35 +197,28 @@ export default function Skull({
           <mesh
             castShadow
             receiveShadow
-            geometry={nodes.Left_maxilla_2.geometry}
-            material={materials.lambert5}
-            visible={showLeftMaxilla}
-          />
-          <mesh
-            castShadow
-            receiveShadow
-            geometry={nodes.Left_nasal_1.geometry}
+            geometry={nodes.Left_nasal.geometry}
             material={materials.lambert5}
             visible={showLeftNasal}
           />
           <mesh
             castShadow
             receiveShadow
-            geometry={nodes.Left_palatine_1.geometry}
+            geometry={nodes.Left_palatine.geometry}
             material={materials.lambert5}
             visible={showLeftPalatine}
           />
           <mesh
             castShadow
             receiveShadow
-            geometry={nodes.Left_parietal_1.geometry}
+            geometry={nodes.Left_parietal.geometry}
             material={materials.lambert5}
             visible={showLeftParietal}
           />
           <mesh
             castShadow
             receiveShadow
-            geometry={nodes.Left_temporal_1.geometry}
+            geometry={nodes.Left_temporal.geometry}
             material={materials.lambert5}
             visible={showLeftTemporal}
           />
@@ -228,4 +228,4 @@ export default function Skull({
   );
 }
 
-useGLTF.preload(modelFile(`Skull.gltf`));
+useGLTF.preload(modelFile(`Skull.glb `));

@@ -4,7 +4,13 @@ import { useGLTF } from '@react-three/drei';
 
 import { modelFile } from '../../../utils/appUtils';
 
-export default function Bonsai(props) {
+export default function Bonsai({
+  showPot = true,
+  showStalk = true,
+  showBud = true,
+  showFlower = true,
+  ...props
+}) {
   const { nodes, materials } = useGLTF(modelFile('bonsai.glb'));
   return (
     <group {...props} dispose={null}>
@@ -15,13 +21,17 @@ export default function Bonsai(props) {
         material={materials.v176BonsaiSoil01}
         scale={0.01}
       />
-      <mesh
-        castShadow
-        receiveShadow
-        geometry={nodes.v176CherryTree03BonsaiShape_v176BonsaiPot01_0.geometry}
-        material={materials.v176BonsaiPot01}
-        scale={0.01}
-      />
+      {showPot && (
+        <mesh
+          castShadow
+          receiveShadow
+          geometry={
+            nodes.v176CherryTree03BonsaiShape_v176BonsaiPot01_0.geometry
+          }
+          material={materials.v176BonsaiPot01}
+          scale={0.01}
+        />
+      )}
       <mesh
         castShadow
         receiveShadow
@@ -38,22 +48,26 @@ export default function Bonsai(props) {
         material={materials.v176CherryBranch01}
         scale={0.01}
       />
-      <mesh
-        castShadow
-        receiveShadow
-        geometry={
-          nodes.v176CherryTree03BonsaiShape_v176CherryFlowerStalk_0.geometry
-        }
-        material={materials.v176CherryFlowerStalk}
-        scale={0.01}
-      />
-      <mesh
-        castShadow
-        receiveShadow
-        geometry={nodes.v176CherryTree03BonsaiShape_v176CherryBud_0.geometry}
-        material={materials.v176CherryBud}
-        scale={0.01}
-      />
+      {showStalk && (
+        <mesh
+          castShadow
+          receiveShadow
+          geometry={
+            nodes.v176CherryTree03BonsaiShape_v176CherryFlowerStalk_0.geometry
+          }
+          material={materials.v176CherryFlowerStalk}
+          scale={0.01}
+        />
+      )}
+      {showBud && (
+        <mesh
+          castShadow
+          receiveShadow
+          geometry={nodes.v176CherryTree03BonsaiShape_v176CherryBud_0.geometry}
+          material={materials.v176CherryBud}
+          scale={0.01}
+        />
+      )}
       <mesh
         castShadow
         receiveShadow
@@ -61,13 +75,17 @@ export default function Bonsai(props) {
         material={materials.v176Tree_Knot}
         scale={0.01}
       />
-      <mesh
-        castShadow
-        receiveShadow
-        geometry={nodes.v176CherryTree03BonsaiShape_v176CherryFlower_0.geometry}
-        material={materials.v176CherryFlower}
-        scale={0.01}
-      />
+      {showFlower && (
+        <mesh
+          castShadow
+          receiveShadow
+          geometry={
+            nodes.v176CherryTree03BonsaiShape_v176CherryFlower_0.geometry
+          }
+          material={materials.v176CherryFlower}
+          scale={0.01}
+        />
+      )}
     </group>
   );
 }

@@ -42,7 +42,7 @@ function CleanupPlane() {
   );
 }
 
-function InstancedTrashBodies({ asset, bodyRefsMap }) {
+function InstancedTrashBodies({ asset, bodyRefsMap, onCollisionEnter }) {
   const bodyRefsStore = bodyRefsMap.current;
   const bodiesRef = useRef([]);
   const interactiveRootRef = useRef(null);
@@ -116,6 +116,7 @@ function InstancedTrashBodies({ asset, bodyRefsMap }) {
         angularDamping={1.6}
         canSleep
         ccd
+        onCollisionEnter={onCollisionEnter}
         ref={bodiesRef}
       >
         <InstancesComponent
@@ -140,7 +141,7 @@ function InstancedTrashBodies({ asset, bodyRefsMap }) {
   );
 }
 
-export default function TrashBlaster({ shotConfig }) {
+export default function TrashBlaster({ shotConfig, onTrashCollision }) {
   const { shotBodiesRef } = useTrashBlaster(shotConfig);
 
   return (
@@ -152,6 +153,7 @@ export default function TrashBlaster({ shotConfig }) {
           key={asset.key}
           asset={asset}
           bodyRefsMap={shotBodiesRef}
+          onCollisionEnter={onTrashCollision}
         />
       ))}
 

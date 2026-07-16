@@ -99,7 +99,11 @@ function SceneComposition({
       })}
 
       {DYNAMIC_SCENE_ITEMS.map((item) => (
-        <DynamicSceneAsset key={getSceneItemKey(item)} item={item} />
+        <DynamicSceneAsset
+          key={getSceneItemKey(item)}
+          item={item}
+          onCollisionEnter={onTrashCollision}
+        />
       ))}
     </group>
   );
@@ -147,7 +151,10 @@ const PhysicsScene = React.memo(function PhysicsScene({
         dumpsterConfig={dumpsterConfig}
         onTrashCollision={onTrashCollision}
       />
-      <TrashBlaster shotConfig={shotConfig} />
+      <TrashBlaster
+        shotConfig={shotConfig}
+        onTrashCollision={onTrashCollision}
+      />
     </Physics>
   );
 });

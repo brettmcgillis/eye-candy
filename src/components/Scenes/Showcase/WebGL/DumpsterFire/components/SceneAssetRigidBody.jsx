@@ -68,7 +68,7 @@ export function FixedSceneAsset({ item, onCollisionEnter }) {
   );
 }
 
-export function DynamicSceneAsset({ item }) {
+export function DynamicSceneAsset({ item, onCollisionEnter }) {
   const bodyRef = useRef(null);
   const interactiveRootRef = useRef(null);
   const registerInteractiveTarget = useTrashBlasterStore(
@@ -149,6 +149,7 @@ export function DynamicSceneAsset({ item }) {
       angularDamping={1.6}
       canSleep
       ccd
+      onCollisionEnter={onCollisionEnter}
       {...rigidBodyProps}
     >
       <group ref={interactiveRootRef}>

@@ -38,7 +38,7 @@ const TEXTURE_FORMAT_OPTIONS = [
   { label: 'PNG', value: 'png' },
 ];
 
-const TEXTURE_RESOLUTION_OPTIONS = [128, 256, 512, 1024, 2048, 4096].map(
+const TEXTURE_RESOLUTION_OPTIONS = [128, 256, 512, 1024, 2048, 4096, 8192].map(
   (value) => ({
     label: `${value}px`,
     value: String(value),

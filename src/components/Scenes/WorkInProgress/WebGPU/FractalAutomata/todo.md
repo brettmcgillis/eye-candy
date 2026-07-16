@@ -39,6 +39,10 @@
 
 - add a preset with a structure on the photo studio table to get photographed.
 
+- add controls for enable/disable every lighting option
+
+- ensure we have sim modes for game of life, Cyclic CA, Langston's Ant, Turing Patterns, Lenia, Rampe
+
 - Do last: Revisit logarithmic depth buffer / infinite-zoom framing if camera-distance
   z-fighting actually shows up once structures get large.
 

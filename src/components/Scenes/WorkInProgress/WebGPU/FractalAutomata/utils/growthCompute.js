@@ -220,6 +220,18 @@ for (let dz = -1; dz <= 1; dz += 1) {
   }
 }
 
+// Face (6-neighborhood), not the 26-neighborhood above — this drives
+// compactVisibleKernel's interior-cell culling, which cares about whether a
+// face of the cube is ever exposed, not whether any neighbor exists at all.
+const FACE_NEIGHBOR_OFFSETS = [
+  [1, 0, 0],
+  [-1, 0, 0],
+  [0, 1, 0],
+  [0, -1, 0],
+  [0, 0, 1],
+  [0, 0, -1],
+];
+
 function computeLevelCount(k) {
   let count = 0;
   for (let w = k - 1; w >= 2; w = Math.floor(w / 2)) {
@@ -527,13 +539,67 @@ export default function createVoxelFieldCompute({ level, ruleTables }) {
   })().compute(1);
 
   // Runs once, after finalizeStraysKernel — occupancy is fully resolved by
-  // then. Every cell with a non-zero state atomically claims the next
-  // compacted slot and records its own original index there.
+  // then. Every cell with a non-zero state AND at least one exposed face
+  // atomically claims the next compacted slot and records its own original
+  // index there. Cells whose 6 face-neighbors are all occupied are never
+  // visible in the *final* structure — but during the growth-reveal
+  // animation, a cell can be transiently exposed if it reveals BEFORE a
+  // neighbor that would otherwise hide it. Since revealTime is baked and
+  // static, this is decidable in one pass without any per-frame check: a
+  // neighbor that resolves at or before this cell's own revealTime is
+  // already solid from the very first frame this cell exists, so hiding the
+  // cell entirely can never produce a visible gap. A neighbor that resolves
+  // LATER means this cell is genuinely exposed for a window of the
+  // animation, so it's kept.
   const compactVisibleKernel = Fn(() => {
     const index = instanceIndex;
     If(index.greaterThanEqual(uint(totalVoxels)), () => Return());
-    const state = stateRevealBuf.element(index).x.toUint();
+    const cell = stateRevealBuf.element(index);
+    const state = cell.x.toUint();
     If(state.equal(uint(0)), () => Return());
+
+    const { x, y, z } = decomposeIndexNode(index, uniforms.k);
+    const ix = int(x);
+    const iy = int(y);
+    const iz = int(z);
+    const kInt = int(uniforms.k);
+    const ownRevealTime = cell.y;
+    const exposed = uint(0).toVar();
+
+    FACE_NEIGHBOR_OFFSETS.forEach(([dx, dy, dz]) => {
+      const nx = ix.add(int(dx));
+      const ny = iy.add(int(dy));
+      const nz = iz.add(int(dz));
+      const outOfBounds = nx
+        .lessThan(int(0))
+        .or(ny.lessThan(int(0)))
+        .or(nz.lessThan(int(0)))
+        .or(nx.greaterThanEqual(kInt))
+        .or(ny.greaterThanEqual(kInt))
+        .or(nz.greaterThanEqual(kInt));
+
+      If(outOfBounds, () => {
+        exposed.assign(uint(1));
+      });
+
+      If(outOfBounds.not(), () => {
+        const neighborIndex = cellIndexNode(
+          nx.toUint(),
+          ny.toUint(),
+          nz.toUint(),
+          uniforms.k
+        );
+        const neighborCell = stateRevealBuf.element(neighborIndex);
+        const neighborEmpty = neighborCell.x.toUint().equal(uint(0));
+        const neighborRevealsLater = neighborCell.y.greaterThan(ownRevealTime);
+        If(neighborEmpty.or(neighborRevealsLater), () => {
+          exposed.assign(uint(1));
+        });
+      });
+    });
+
+    If(exposed.equal(uint(0)), () => Return());
+
     const slot = atomicAdd(countersBuf.element(0), uint(1));
     compactedIndexBuf.element(slot).assign(index);
   })().compute(totalVoxels);

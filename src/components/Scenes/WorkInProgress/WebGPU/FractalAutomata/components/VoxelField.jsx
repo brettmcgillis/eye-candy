@@ -14,6 +14,7 @@ import React, { memo, useEffect, useRef, useState } from 'react';
 import { useFrame, useThree } from '@react-three/fiber';
 
 import createContinuousFieldCompute from '../utils/continuousCompute';
+import buildGreedyMeshGeometry from '../utils/greedyMesh';
 import { decomposeIndexNode } from '../utils/gridIndex';
 import createVoxelFieldCompute from '../utils/growthCompute';
 import createPaletteNode from '../utils/paletteNode';
@@ -41,6 +42,57 @@ async function dispatchWithFloor(field, gl, settings) {
     attempts += 1;
   }
   return occupiedCount;
+}
+
+// Full-buffer readback, hierarchical mode only, once per regenerate — feeds
+// utils/greedyMesh.js. Only the state byte matters for meshing (final
+// occupancy), not the baked revealTime the InstancedMesh path reads for its
+// growth-reveal animation.
+async function readStatesForMeshing(gl, stateRevealBuf, totalVoxels) {
+  const bytes = await gl.getArrayBufferAsync(stateRevealBuf.value);
+  const floats = new Float32Array(bytes);
+  const states = new Uint8Array(totalVoxels);
+  for (let i = 0; i < totalVoxels; i += 1) {
+    states[i] = Math.round(floats[i * 2]);
+  }
+  return states;
+}
+
+// Builds the settled-structure representation: a single merged mesh via
+// binary greedy meshing (utils/greedyMesh.js), swapped in once the growth
+// animation completes (see the visibility toggle in useFrame below). Real
+// geometry/normals/vertex colors — shadows and the scene's LightRig/
+// CenterLight/Godrays lighting work exactly as they do for the InstancedMesh
+// path, no special-casing needed, because this is still just a THREE.Mesh.
+//
+// Snapshots paletteStart/Mid/End and cellSpacing at build time — unlike the
+// InstancedMesh path, this doesn't stay live-reactive to those controls
+// (the geometry/vertex colors are baked once), so palette or spacing tweaks
+// made after growth settles won't show until the next regenerate.
+function buildStaticMesh({ states, k, cellSpacing, config }) {
+  const paletteColors = {
+    1: new THREE.Color(config.paletteStart),
+    2: new THREE.Color(config.paletteMid),
+    3: new THREE.Color(config.paletteEnd),
+  };
+  const geometry = buildGreedyMeshGeometry({
+    states,
+    k,
+    cellSpacing,
+    paletteColors,
+  });
+  const material = new THREE.MeshStandardMaterial({
+    vertexColors: true,
+    roughness: 0.92,
+    metalness: 0.05,
+    side: THREE.DoubleSide,
+  });
+  const mesh = new THREE.Mesh(geometry, material);
+  mesh.castShadow = true;
+  mesh.receiveShadow = true;
+  mesh.frustumCulled = false;
+  mesh.visible = false;
+  return mesh;
 }
 
 function pickStructuralSettings(config) {
@@ -76,6 +128,11 @@ function VoxelField({ config, replayGrowthToken }) {
   const fieldRef = useRef(null);
   const growthProgressRef = useRef(null);
   const continuousAccumulatorRef = useRef(0);
+  // Both meshes are mounted at once (inside the group set as renderObject);
+  // useFrame below toggles which is `.visible` every frame based on growth
+  // progress, rather than swapping React state, to avoid a re-render per
+  // frame. staticMesh stays null in continuous mode.
+  const meshesRef = useRef({ instancedMesh: null, staticMesh: null });
   const [renderObject, setRenderObject] = useState(null);
 
   const [structural, setStructural] = useState(() =>
@@ -104,7 +161,8 @@ function VoxelField({ config, replayGrowthToken }) {
 
   useEffect(() => {
     let cancelled = false;
-    let builtMaterial = null;
+    let builtInstancedMaterial = null;
+    let builtStaticMesh = null;
 
     async function build() {
       const ruleTables = createRuleTables(structural);
@@ -134,6 +192,27 @@ function VoxelField({ config, replayGrowthToken }) {
         continuous.seed(gl);
       }
 
+      // Greedy-meshed static representation of the settled structure — only
+      // for the one-shot hierarchical mode (continuous CA never settles, so
+      // there's nothing to bake). A second async point, so a cancellation
+      // check follows it too.
+      let staticMesh = null;
+      if (!continuous) {
+        const states = await readStatesForMeshing(
+          gl,
+          field.stateRevealBuf,
+          field.totalVoxels
+        );
+        if (cancelled) return;
+        staticMesh = buildStaticMesh({
+          states,
+          k: field.k,
+          cellSpacing: config.cellSpacing,
+          config,
+        });
+        builtStaticMesh = staticMesh;
+      }
+
       const activeStateBuf = continuous
         ? continuous.stateBuf
         : field.stateRevealBuf;
@@ -143,7 +222,13 @@ function VoxelField({ config, replayGrowthToken }) {
         compactedIndexBuf: continuous ? null : field.compactedIndexBuf,
         k: field.k,
       });
-      const growthProgress = uniform(0);
+      // Fixed/Megalith-style presets ship with growthEnabled false from the
+      // start — rather than freeze at 0 (an empty scene, since useFrame's
+      // advance is also gated behind growthEnabled and would never run),
+      // start already fully revealed. Toggling growthEnabled later via
+      // ButtonOverlay's pause button is unaffected — that's a live pause of
+      // wherever progress currently is, not this initial-value decision.
+      const growthProgress = uniform(config.growthEnabled ? 0 : 1);
       const cellSpacing = uniform(config.cellSpacing);
       const cellScale = uniform(config.cellScale);
 
@@ -182,39 +267,50 @@ function VoxelField({ config, replayGrowthToken }) {
         material.dispose();
         return;
       }
-      builtMaterial = material;
+      builtInstancedMaterial = material;
 
       // Compacted count in hierarchical mode (the whole point of the
-      // compaction pass is to only draw/shade cells that are ever
-      // occupied); the full k^3 grid in continuous mode, since occupancy
-      // keeps changing every step.
+      // compaction pass is to only draw/shade cells that are ever occupied
+      // AND ever surface-exposed during growth — see growthCompute.js's
+      // compactVisibleKernel — not the full k^3 grid; the full k^3 grid in
+      // continuous mode, since occupancy keeps changing every step.
       const instanceCount = continuous
         ? field.totalVoxels
         : Math.max(1, occupiedCount);
-      const mesh = new THREE.InstancedMesh(
+      const instancedMesh = new THREE.InstancedMesh(
         CUBE_GEOMETRY,
         material,
         instanceCount
       );
-      mesh.frustumCulled = false;
-      mesh.castShadow = true;
-      mesh.receiveShadow = true;
+      instancedMesh.frustumCulled = false;
+      instancedMesh.castShadow = true;
+      instancedMesh.receiveShadow = true;
+
+      const group = new THREE.Group();
+      group.add(instancedMesh);
+      if (staticMesh) group.add(staticMesh);
 
       continuousAccumulatorRef.current = 0;
       fieldRef.current = { field, continuous, palette, cellSpacing, cellScale };
       growthProgressRef.current = growthProgress;
-      setRenderObject(mesh);
+      meshesRef.current = { instancedMesh, staticMesh };
+      setRenderObject(group);
     }
 
     build();
 
     return () => {
       cancelled = true;
-      if (builtMaterial) {
-        builtMaterial.dispose();
+      if (builtInstancedMaterial) {
+        builtInstancedMaterial.dispose();
+      }
+      if (builtStaticMesh) {
+        builtStaticMesh.geometry.dispose();
+        builtStaticMesh.material.dispose();
       }
       fieldRef.current = null;
       growthProgressRef.current = null;
+      meshesRef.current = { instancedMesh: null, staticMesh: null };
     };
   }, [structural, gl]);
 
@@ -263,30 +359,41 @@ function VoxelField({ config, replayGrowthToken }) {
 
   useFrame((_state, rawDelta) => {
     if (!fieldRef.current) return;
-    if (!config.growthEnabled) return;
-    const delta = Math.min(Math.max(rawDelta, 1e-4), MAX_DELTA);
-
     const { continuous } = fieldRef.current;
-    if (continuous) {
-      const interval = 1 / Math.max(0.1, config.continuousStepsPerSecond);
-      continuousAccumulatorRef.current += delta;
-      if (continuousAccumulatorRef.current >= interval) {
-        continuousAccumulatorRef.current -= interval;
-        continuous.step(gl, {
-          surviveMin: config.continuousSurviveMin,
-          surviveMax: config.continuousSurviveMax,
-          birthMin: config.continuousBirthMin,
-          birthMax: config.continuousBirthMax,
-        });
+
+    if (config.growthEnabled) {
+      const delta = Math.min(Math.max(rawDelta, 1e-4), MAX_DELTA);
+      if (continuous) {
+        const interval = 1 / Math.max(0.1, config.continuousStepsPerSecond);
+        continuousAccumulatorRef.current += delta;
+        if (continuousAccumulatorRef.current >= interval) {
+          continuousAccumulatorRef.current -= interval;
+          continuous.step(gl, {
+            surviveMin: config.continuousSurviveMin,
+            surviveMax: config.continuousSurviveMax,
+            birthMin: config.continuousBirthMin,
+            birthMax: config.continuousBirthMax,
+          });
+        }
+      } else if (growthProgressRef.current) {
+        const next =
+          growthProgressRef.current.value +
+          delta / Math.max(0.1, config.growthDurationSeconds);
+        growthProgressRef.current.value = Math.min(1, next);
       }
-      return;
     }
 
-    if (!growthProgressRef.current) return;
-    const next =
-      growthProgressRef.current.value +
-      delta / Math.max(0.1, config.growthDurationSeconds);
-    growthProgressRef.current.value = Math.min(1, next);
+    // Swap to the greedy-meshed static mesh once growth settles. Runs
+    // unconditionally (not gated behind growthEnabled above) so pausing
+    // mid-growth, or "Replay Growth" resetting progress back to 0, both
+    // resolve to the right mesh without any extra bookkeeping — this just
+    // reads whatever growthProgress currently is.
+    const { instancedMesh, staticMesh } = meshesRef.current;
+    if (staticMesh && growthProgressRef.current) {
+      const isComplete = growthProgressRef.current.value >= 1;
+      if (instancedMesh) instancedMesh.visible = !isComplete;
+      staticMesh.visible = isComplete;
+    }
   });
 
   if (!renderObject) {

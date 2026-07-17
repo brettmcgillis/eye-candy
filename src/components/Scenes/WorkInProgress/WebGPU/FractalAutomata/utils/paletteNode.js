@@ -39,6 +39,10 @@ export default function createPaletteNode({
   stateRevealBuf,
   compactedIndexBuf = null,
   k,
+  // How many non-zero states the 'state' color mode should spread across:
+  // 3 for the hierarchical/Life-style engines (states 1/2/3), or Cyclic CA's
+  // own cyclicStates (states 1..N) — see utils/continuousCompute.js.
+  maxState = 3,
 }) {
   const uniforms = {
     paletteStart: uniform(color('#3fd0ff')),
@@ -68,7 +72,10 @@ export default function createPaletteNode({
     .div(maxRadius)
     .clamp(0, 1);
 
-  const stateT = cell.x.sub(1).div(2).clamp(0, 1);
+  const stateT = cell.x
+    .sub(1)
+    .div(Math.max(1, maxState - 1))
+    .clamp(0, 1);
 
   const t = select(
     uniforms.colorMode.equal(uint(COLOR_MODE_TO_INT.growthOrder)),

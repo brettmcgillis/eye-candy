@@ -108,21 +108,32 @@ function pickStructuralSettings(config) {
     removeStrays: config.removeStrays,
     growthJitter: config.growthJitter,
     // Structural: switching modes changes the whole rendering strategy (see
-    // build() below — continuous mode can't use compaction, so it renders a
-    // differently-sized InstancedMesh), so it needs a full rebuild too.
+    // build() below — continuous mode compacts every step instead of once,
+    // is allocated at worst-case capacity, and has no static/greedy-meshed
+    // representation), so it needs a full rebuild too.
     continuousEnabled: config.continuousEnabled,
+    // Also structural: 'life' vs 'cyclic' need entirely different seeding
+    // (copy the hierarchical resolve vs. random noise — see
+    // utils/continuousCompute.js), and cyclicStates changing would otherwise
+    // desync from the palette's maxState (captured once at build time below)
+    // if it were live-tunable instead.
+    continuousRuleMode: config.continuousRuleMode,
+    continuousCyclicStates: config.continuousCyclicStates,
   };
 }
 
 // Owns the CA compute pipeline (regenerates on structural control changes),
 // the growth-over-time reveal, and the InstancedMesh that renders it. In the
-// default hierarchical mode, the mesh is sized to the compacted (occupied-
-// only) cell count — not the full k³ grid — via a one-time async readback
-// after generation; see utils/growthCompute.js's compaction notes for why
-// that's safe to do only once per regenerate rather than every frame. In
-// continuous CA mode (config.continuousEnabled — utils/continuousCompute.js)
-// the mesh instead renders the full k³ grid every frame, since occupancy
-// keeps changing as the simulation steps forever.
+// default hierarchical mode, the mesh is sized to the compacted (occupied +
+// surface-exposed) cell count — not the full k³ grid — via a one-time async
+// readback after generation; see utils/growthCompute.js's compaction notes
+// for why that's safe to do only once per regenerate rather than every
+// frame. In continuous CA mode (config.continuousEnabled —
+// utils/continuousCompute.js) the mesh is allocated at worst-case (full k³)
+// capacity but recompacts to just the live cells after every step, with
+// InstancedMesh.count trimmed each frame from an async live-count readback
+// (see useFrame below) — occupancy keeps changing forever, so this recompacts
+// continuously rather than once.
 function VoxelField({ config, replayGrowthToken }) {
   const { gl } = useThree();
   const fieldRef = useRef(null);
@@ -157,6 +168,15 @@ function VoxelField({ config, replayGrowthToken }) {
     config.flipChance,
     config.removeStrays,
     config.growthJitter,
+    // continuousEnabled was missing here too (pre-existing gap: toggling it
+    // alone wouldn't retrigger this debounce, so the rebuild only happened
+    // to pick up the new value incidentally, if some other structural
+    // control was also touched) — fixed alongside the two new continuous
+    // settings, since it's the same class of "structural continuous-mode
+    // setting must retrigger a rebuild" issue.
+    config.continuousEnabled,
+    config.continuousRuleMode,
+    config.continuousCyclicStates,
   ]);
 
   useEffect(() => {
@@ -179,13 +199,15 @@ function VoxelField({ config, replayGrowthToken }) {
       if (cancelled) return;
 
       // Continuous CA (utils/continuousCompute.js) seeds itself from this
-      // hierarchical resolve, then keeps stepping on its own forever — it
-      // can't use the compaction trick above (occupancy keeps changing), so
-      // it renders the full k^3 grid directly by instanceIndex instead.
+      // hierarchical resolve, then keeps stepping and recompacting on its
+      // own forever, independent of this field's own (one-time) compaction.
       const continuous = structural.continuousEnabled
         ? createContinuousFieldCompute({
             level: structural.level,
             sourceStateBuf: field.stateRevealBuf,
+            ruleMode: structural.continuousRuleMode,
+            cyclicStates: structural.continuousCyclicStates,
+            seed: structural.seed,
           })
         : null;
       if (continuous) {
@@ -217,10 +239,30 @@ function VoxelField({ config, replayGrowthToken }) {
         ? continuous.stateBuf
         : field.stateRevealBuf;
 
+      // Must mirror originalIndex's branching above exactly — createPaletteNode
+      // derives its own internal index from whatever compactedIndexBuf is
+      // passed here, independent of the position/scale computation below.
+      // Cyclic mode never populates continuous.compactedIndexBuf (compaction
+      // is skipped entirely — see continuousCompute.js), so passing it
+      // unconditionally would leave every instance reading the same
+      // (always-zero) cell for color, regardless of its actual position.
+      let paletteCompactedIndexBuf;
+      if (continuous && continuous.isCyclic) {
+        paletteCompactedIndexBuf = null;
+      } else if (continuous) {
+        paletteCompactedIndexBuf = continuous.compactedIndexBuf;
+      } else {
+        paletteCompactedIndexBuf = field.compactedIndexBuf;
+      }
+
       const palette = createPaletteNode({
         stateRevealBuf: activeStateBuf,
-        compactedIndexBuf: continuous ? null : field.compactedIndexBuf,
+        compactedIndexBuf: paletteCompactedIndexBuf,
         k: field.k,
+        // 3 for hierarchical/Life-style states (1/2/3); Cyclic CA's own
+        // cycle length otherwise, so the 'state' color mode's gradient
+        // spreads across however many states are actually in play.
+        maxState: continuous ? continuous.maxState : 3,
       });
       // Fixed/Megalith-style presets ship with growthEnabled false from the
       // start — rather than freeze at 0 (an empty scene, since useFrame's
@@ -234,9 +276,19 @@ function VoxelField({ config, replayGrowthToken }) {
 
       const kMax = Math.max(1, field.k - 1);
       const half = kMax * 0.5;
-      const originalIndex = continuous
-        ? instanceIndex
-        : field.compactedIndexBuf.element(instanceIndex);
+      // Hierarchical mode compacts once per regenerate; continuous 'life'
+      // mode recompacts every step (both utils/*Compute.js). Cyclic CA skips
+      // compaction entirely (see continuousCompute.js — every cell is
+      // always occupied, so compaction has nothing to cull) and reads
+      // instanceIndex directly, 1:1 with the grid.
+      let originalIndex;
+      if (continuous && continuous.isCyclic) {
+        originalIndex = instanceIndex;
+      } else if (continuous) {
+        originalIndex = continuous.compactedIndexBuf.element(instanceIndex);
+      } else {
+        originalIndex = field.compactedIndexBuf.element(instanceIndex);
+      }
       const { x, y, z } = decomposeIndexNode(originalIndex, uint(field.k));
       const cellPosition = vec3(
         x.toFloat().sub(half),
@@ -249,9 +301,30 @@ function VoxelField({ config, replayGrowthToken }) {
       // they're alive, regardless of growthProgress's value — no branching
       // needed here for continuous vs. hierarchical mode.
       const cell = activeStateBuf.element(originalIndex);
-      const revealed = cell.x
+      let revealed = cell.x
         .greaterThan(0.5)
         .and(growthProgress.greaterThanEqual(cell.y));
+
+      // Cyclic-only, purely cosmetic (see getContinuousControls.js): when
+      // enabled, hides whichever cell currently sits at the cycle's last
+      // phase, so the mode reads as sparse instead of a solid block. Doesn't
+      // touch compaction/storage — cyclicQuiescentPhaseEnabled is a live,
+      // non-structural uniform (see the live-update effect below).
+      const cyclicQuiescentPhaseEnabled = uniform(
+        continuous &&
+          continuous.isCyclic &&
+          config.continuousCyclicQuiescentPhase
+          ? 1
+          : 0,
+        'uint'
+      );
+      if (continuous && continuous.isCyclic) {
+        const isLastPhase = cell.x.toUint().equal(uint(continuous.maxState));
+        revealed = revealed.and(
+          cyclicQuiescentPhaseEnabled.equal(uint(0)).or(isLastPhase.not())
+        );
+      }
+
       const scale = select(revealed, cellScale, float(0));
 
       // roughness matches ~/dev/examples/260708_AutomataChunks's own
@@ -269,13 +342,14 @@ function VoxelField({ config, replayGrowthToken }) {
       }
       builtInstancedMaterial = material;
 
-      // Compacted count in hierarchical mode (the whole point of the
-      // compaction pass is to only draw/shade cells that are ever occupied
-      // AND ever surface-exposed during growth — see growthCompute.js's
-      // compactVisibleKernel — not the full k^3 grid; the full k^3 grid in
-      // continuous mode, since occupancy keeps changing every step.
+      // Worst-case allocation (the true live count isn't known until each
+      // mode's compaction pass runs) — continuous mode's InstancedMesh.count
+      // is then updated every frame from continuous.liveCountState (see
+      // useFrame below); hierarchical mode's count is fixed at this
+      // regenerate's compacted occupied+exposed count and never changes
+      // again until the next regenerate.
       const instanceCount = continuous
-        ? field.totalVoxels
+        ? continuous.totalVoxels
         : Math.max(1, occupiedCount);
       const instancedMesh = new THREE.InstancedMesh(
         CUBE_GEOMETRY,
@@ -291,7 +365,14 @@ function VoxelField({ config, replayGrowthToken }) {
       if (staticMesh) group.add(staticMesh);
 
       continuousAccumulatorRef.current = 0;
-      fieldRef.current = { field, continuous, palette, cellSpacing, cellScale };
+      fieldRef.current = {
+        field,
+        continuous,
+        palette,
+        cellSpacing,
+        cellScale,
+        cyclicQuiescentPhaseEnabled,
+      };
       growthProgressRef.current = growthProgress;
       meshesRef.current = { instancedMesh, staticMesh };
       setRenderObject(group);
@@ -323,6 +404,12 @@ function VoxelField({ config, replayGrowthToken }) {
     if (!fieldRef.current) return;
     fieldRef.current.cellSpacing.value = config.cellSpacing;
     fieldRef.current.cellScale.value = config.cellScale;
+    fieldRef.current.cyclicQuiescentPhaseEnabled.value =
+      fieldRef.current.continuous &&
+      fieldRef.current.continuous.isCyclic &&
+      config.continuousCyclicQuiescentPhase
+        ? 1
+        : 0;
     const { palette } = fieldRef.current;
     palette.uniforms.paletteStart.value = new THREE.Color(config.paletteStart);
     palette.uniforms.paletteMid.value = new THREE.Color(config.paletteMid);
@@ -334,6 +421,7 @@ function VoxelField({ config, replayGrowthToken }) {
     renderObject,
     config.cellSpacing,
     config.cellScale,
+    config.continuousCyclicQuiescentPhase,
     config.paletteStart,
     config.paletteMid,
     config.paletteEnd,
@@ -373,6 +461,7 @@ function VoxelField({ config, replayGrowthToken }) {
             surviveMax: config.continuousSurviveMax,
             birthMin: config.continuousBirthMin,
             birthMax: config.continuousBirthMax,
+            cyclicThreshold: config.continuousCyclicThreshold,
           });
         }
       } else if (growthProgressRef.current) {
@@ -383,12 +472,33 @@ function VoxelField({ config, replayGrowthToken }) {
       }
     }
 
+    // Continuous mode's InstancedMesh is allocated at worst-case (full k^3)
+    // capacity. Cyclic CA always draws the full count (every cell is always
+    // occupied — no compaction to shrink from, see continuousCompute.js).
+    // 'life' mode's .count only shrinks to the compacted live count once
+    // continuous.isLiveCountFresh() confirms that count corresponds to the
+    // MOST RECENT recompaction — otherwise a just-grown region (already in
+    // compactedIndexBuf, since recompaction is synchronous every step) would
+    // get excluded by a stale, too-small count until its readback catches
+    // up. Falling back to the worst case in that window never hides real
+    // data — it just briefly draws some already-scale-gated-invisible
+    // instances.
+    const { instancedMesh, staticMesh } = meshesRef.current;
+    if (continuous && instancedMesh) {
+      if (continuous.isCyclic) {
+        instancedMesh.count = continuous.totalVoxels;
+      } else {
+        instancedMesh.count = continuous.isLiveCountFresh()
+          ? Math.max(1, continuous.liveCountState.current)
+          : continuous.totalVoxels;
+      }
+    }
+
     // Swap to the greedy-meshed static mesh once growth settles. Runs
     // unconditionally (not gated behind growthEnabled above) so pausing
     // mid-growth, or "Replay Growth" resetting progress back to 0, both
     // resolve to the right mesh without any extra bookkeeping — this just
     // reads whatever growthProgress currently is.
-    const { instancedMesh, staticMesh } = meshesRef.current;
     if (staticMesh && growthProgressRef.current) {
       const isComplete = growthProgressRef.current.value >= 1;
       if (instancedMesh) instancedMesh.visible = !isComplete;

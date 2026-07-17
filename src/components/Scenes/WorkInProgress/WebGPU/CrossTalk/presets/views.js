@@ -1,4 +1,5 @@
 import CloudsView from '../components/CloudsView';
+import FeathersView from '../components/FeathersView';
 import FluidSimView from '../components/FluidSimView';
 import GravityRoomsView from '../components/GravityRoomsView';
 import { DEFAULT_PRESET } from './presets';
@@ -27,6 +28,10 @@ export const PRESET_VIEWS = {
   'Gravity Rooms': {
     Component: GravityRoomsView,
     getMeta: (c) => ({ gravityAngle: c.gravityAngle }),
+  },
+  'Particles & Attractors': {
+    Component: FeathersView,
+    getMeta: (c) => ({ attractorStrength: c.attractorStrength }),
   },
 };
 

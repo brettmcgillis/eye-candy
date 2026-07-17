@@ -57,8 +57,7 @@
       swapped for the real asset.
 - [ ] **Particles & Attractors** — each window gets an attractor with its own
       strength control; the mouse is also an attractor and can roam between
-      windows. Particles are leaves (textured, curved plane, à la Surrender's
-      `ClothLeaves`), not plain points.
+      windows. Particles are feathers (use OwlFeathers component, consider pooling & tinting instances so you can tell theyre from different tabs). Started but kinda fucked
 - [x] **Fluid Sim** — a PIC/FLIP solver (`utils/flipFluid.js`, ported from
       `references/flip.html`, Matthias Müller / Ten Minute Physics, MIT) runs
       host-authoritative (see host election above): only the elected host
@@ -95,6 +94,7 @@
       (species-specific flash patterns), not a uniform sine pulse.
 - [ ] **Radiance Cascades** - 2d radiance cascades like the `~dev/examples/Shaders_RadianceCascades` example. also see `https://www.shadertoy.com/view/4dfXDn`
 - [ ] **Portals** - each window gets 2 portals that the user can move around. the first window gets a ball that can fall through the portals. when multiple tabs are open portals are chained so the ball can travel through windows. similar to fluid sim there is y- graviy, and the ball is constrained to the current/overlapping tabs.
+- [ ] **n-Tangled** - tribute to Bjorn Stall's Entangled but with more than 2 tabs
 
 # // Features
 

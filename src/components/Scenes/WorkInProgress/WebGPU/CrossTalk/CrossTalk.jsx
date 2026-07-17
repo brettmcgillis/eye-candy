@@ -37,6 +37,7 @@ export default function CrossTalk() {
           isHost={isHost}
           meta={meta}
           selfId={selfId}
+          selfRect={selfRect}
           windows={windows}
         />
       </DesktopStage>

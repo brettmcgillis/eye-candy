@@ -51,6 +51,17 @@ export const PRESETS = {
     ballColor: '#ff0000',
     restitution: 0.65,
   },
+  'Particles & Attractors': {
+    backgroundColor: '#2b2320',
+    syncEasing: 0.06,
+    attractorStrength: 500,
+    mouseStrength: 200,
+    spinStrength: 1,
+    particleCount: 600,
+    featherScale: 60,
+    damping: 0.995,
+    maxSpeed: 700,
+  },
 };
 
 // Companion fn to usePresetsFolder. Given the snapshot for the preset being

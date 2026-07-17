@@ -5,6 +5,7 @@ import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import usePresetsFolder from '../../../../../../hooks/usePresetsFolder';
 import { useMediaRecorder } from '../../../../../../modules/mediaRecorder';
 import getCloudControls from '../components/getCloudControls';
+import getFeatherControls from '../components/getFeatherControls';
 import getFluidControls from '../components/getFluidControls';
 import getGravityControls from '../components/getGravityControls';
 import { DEFAULT_PRESET, PRESETS, getPresetControls } from '../presets/presets';
@@ -82,16 +83,22 @@ export default function useSceneControls() {
 
   const [controls, setControls] = useControls(SCENE_LABEL, () => ({
     Presets: presetsFolder,
-    Settings: folder({
-      backgroundColor: { label: 'Background Color', value: p.backgroundColor },
-      syncEasing: {
-        label: 'Window Sync Easing',
-        max: 0.5,
-        min: 0.01,
-        step: 0.01,
-        value: p.syncEasing,
+    Settings: folder(
+      {
+        backgroundColor: {
+          label: 'Background Color',
+          value: p.backgroundColor,
+        },
+        syncEasing: {
+          label: 'Window Sync Easing',
+          max: 0.5,
+          min: 0.01,
+          step: 0.01,
+          value: p.syncEasing,
+        },
       },
-    }),
+      { collapsed: true }
+    ),
     Cloud: getCloudControls(p, (get) => get(PRESET_PATH) === 'Cloud Connected'),
     Fluid: getFluidControls(
       p,
@@ -103,6 +110,11 @@ export default function useSceneControls() {
       p,
       () => setReseedTick((tick) => tick + 1),
       (get) => get(PRESET_PATH) === 'Gravity Rooms'
+    ),
+    Feathers: getFeatherControls(
+      p,
+      () => setReseedTick((tick) => tick + 1),
+      (get) => get(PRESET_PATH) === 'Particles & Attractors'
     ),
   }));
 

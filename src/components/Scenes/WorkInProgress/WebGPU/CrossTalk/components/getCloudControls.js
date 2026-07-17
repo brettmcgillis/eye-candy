@@ -1,6 +1,6 @@
 import { folder } from 'leva';
 
-export default function getCloudControls(p) {
+export default function getCloudControls(p, render) {
   return folder(
     {
       spread: {
@@ -32,6 +32,6 @@ export default function getCloudControls(p) {
         value: p.bobSpeed,
       },
     },
-    { collapsed: true }
+    { collapsed: true, render }
   );
 }

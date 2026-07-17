@@ -1,6 +1,6 @@
 import { button, folder } from 'leva';
 
-export default function getGravityControls(p, onReset) {
+export default function getGravityControls(p, onReset, render) {
   return folder(
     {
       gravityAngle: {
@@ -34,6 +34,6 @@ export default function getGravityControls(p, onReset) {
       },
       resetBall: button(() => onReset()),
     },
-    { collapsed: true }
+    { collapsed: true, render }
   );
 }

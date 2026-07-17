@@ -1,6 +1,6 @@
 import { button, folder } from 'leva';
 
-export default function getFluidControls(p, onRespawn, onEnableTilt) {
+export default function getFluidControls(p, onRespawn, onEnableTilt, render) {
   return folder(
     {
       // Tilt gravity for the single-tab mobile scenario: the toggle gates
@@ -131,6 +131,6 @@ export default function getFluidControls(p, onRespawn, onEnableTilt) {
       ),
       respawn: button(() => onRespawn()),
     },
-    { collapsed: true }
+    { collapsed: true, render }
   );
 }

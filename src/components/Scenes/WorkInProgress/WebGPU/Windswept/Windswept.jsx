@@ -65,7 +65,7 @@ function Windswept() {
         ]}
         volumeSize={config.godraysVolumeSize}
       />
-      <FieldLines config={config} />
+      <FieldLines attractorsRef={attractorsRef} config={config} />
       <PhysicalAttractorMarkers attractorsRef={attractorsRef} config={config} />
       <LeafSwarm attractorsRef={attractorsRef} config={config} />
       {config.godraysEnabled && (

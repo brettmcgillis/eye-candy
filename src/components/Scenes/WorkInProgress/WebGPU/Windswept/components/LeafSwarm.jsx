@@ -30,6 +30,7 @@ function buildModeAssets(config) {
     return {
       makeExtraUniforms: () => ({
         attractorStrength: uniform(config.attractorStrength),
+        containmentRadius: uniform(config.containmentRadius),
         damping: uniform(config.damping),
         maxSpeed: uniform(config.maxSpeed),
         spinStrength: uniform(config.spinStrength),
@@ -158,6 +159,7 @@ function LeafSwarm({ attractorsRef, config }) {
 
       if (config.mode === PHYSICAL_ATTRACTORS_MODE) {
         u.attractorStrength.value = config.attractorStrength;
+        u.containmentRadius.value = config.containmentRadius;
         u.damping.value = config.damping;
         u.maxSpeed.value = config.maxSpeed;
         u.spinStrength.value = config.spinStrength;

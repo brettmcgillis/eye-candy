@@ -6,21 +6,24 @@ import { folder } from 'leva';
 // outer-group multiplier/offset on top of that baked transform, not a
 // replacement for it.
 export default function getSkyboxControls(p = {}) {
-  return folder({
-    skyboxVisible: { label: 'Visible', value: p.skyboxVisible ?? true },
-    skyboxScale: {
-      label: 'Scale',
-      value: p.skyboxScale ?? 1,
-      min: 0.5,
-      max: 4,
-      step: 0.05,
+  return folder(
+    {
+      skyboxVisible: { label: 'Visible', value: p.skyboxVisible ?? true },
+      skyboxScale: {
+        label: 'Scale',
+        value: p.skyboxScale ?? 1,
+        min: 0.5,
+        max: 4,
+        step: 0.05,
+      },
+      skyboxRotationY: {
+        label: 'Rotation Y',
+        value: p.skyboxRotationY ?? 0,
+        min: 0,
+        max: 360,
+        step: 1,
+      },
     },
-    skyboxRotationY: {
-      label: 'Rotation Y',
-      value: p.skyboxRotationY ?? 0,
-      min: 0,
-      max: 360,
-      step: 1,
-    },
-  });
+    { collapsed: true }
+  );
 }

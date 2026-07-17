@@ -7,7 +7,14 @@ import { useFrame } from '@react-three/fiber';
 import FieldLineTrails from '../utils/FieldLineTrails';
 import attractorFields, { paramKey } from '../utils/attractorFields';
 import createFieldLineMaterial from '../utils/createFieldLineMaterial';
-import { STRANGE_ATTRACTORS_MODE } from '../utils/modes';
+import {
+  PHYSICAL_ATTRACTORS_MODE,
+  STRANGE_ATTRACTORS_MODE,
+} from '../utils/modes';
+import {
+  computeLiveAttractors,
+  derivePhysicalForceJS,
+} from '../utils/physicalAttractors';
 
 const MAX_DELTA = 0.05;
 const SEGMENTS_PER_TRAIL = 400;
@@ -22,16 +29,27 @@ function seedWalker() {
   );
 }
 
-// CPU-stepped streamlines tracing the same attractor field the GPU swarm
-// follows (utils/attractorFields' deriveJS twin of the TSL derivative) — a
+// Reused across walkers within a single frame's loop (synchronous, fully
+// consumed each iteration before the next) — lets the position update go
+// through Vector3 methods instead of `walker.position.x += ...` assignment
+// expressions, which no-param-reassign's props:true flags.
+const stepVector = new THREE.Vector3();
+
+// CPU-stepped streamlines tracing the same field the GPU swarm follows — a
 // handful of walkers integrate forward every frame and leave a fading
-// ribbon via FieldLineTrails, tracing the flow's shape independent of the
+// ribbon via FieldLineTrails, tracing the field's shape independent of the
 // particle swarm riding it. The wrapping group is scaled by worldScale so
 // the lines line up with the swarm's world-scaled positions without baking
-// that scale into every vertex write. Strange-attractors mode only — a
-// closed-form field only exists there (physical mode's force comes from
-// discrete attractor objects, not attractorFields).
-function FieldLines({ config }) {
+// that scale into every vertex write.
+//
+// Strange-attractors mode walks utils/attractorFields' deriveJS, the plain-JS
+// twin of the TSL derivative. Physical-attractors mode has no closed-form
+// field — force comes from live, draggable, precessing attractor objects —
+// so it instead walks utils/physicalAttractors' derivePhysicalForceJS, a
+// plain-JS mirror of the same gravity+spin force the GPU step applies,
+// fed computeLiveAttractors' output so the lines track the exact positions/
+// axes (including "animate attractors" precession) the swarm is feeling.
+function FieldLines({ attractorsRef, config }) {
   const groupRef = useRef(new THREE.Group());
   const stateRef = useRef(null);
   const clockRef = useRef(0);
@@ -73,16 +91,12 @@ function FieldLines({ config }) {
 
   useFrame((_state, rawDelta) => {
     const state = stateRef.current;
+    const isPhysical = config.mode === PHYSICAL_ATTRACTORS_MODE;
     const active =
-      config.showFieldLines && config.mode === STRANGE_ATTRACTORS_MODE;
+      config.showFieldLines &&
+      (config.mode === STRANGE_ATTRACTORS_MODE || isPhysical);
     if (!state || !active) return;
 
-    const entry = attractorFields[config.attractorType];
-    const params = {};
-    entry.paramNames.forEach((name) => {
-      const key = paramKey(entry.key, name);
-      params[name] = config[key] ?? entry.defaults[name];
-    });
     const delta = Math.min(Math.max(rawDelta, 1e-4), MAX_DELTA);
     clockRef.current += delta;
     const step = config.stepSize * config.fieldLineSpeed * delta * 60;
@@ -92,11 +106,34 @@ function FieldLines({ config }) {
     uniforms.fadeSec.value = config.fieldLineFade;
     uniforms.currentSec.value = clockRef.current;
 
+    let deriveAt;
+    if (isPhysical) {
+      const liveAttractors = computeLiveAttractors(
+        attractorsRef,
+        config,
+        clockRef.current
+      );
+      deriveAt = (position) =>
+        derivePhysicalForceJS(
+          position,
+          liveAttractors,
+          config.attractorStrength,
+          config.spinStrength
+        );
+    } else {
+      const entry = attractorFields[config.attractorType];
+      const params = {};
+      entry.paramNames.forEach((name) => {
+        const key = paramKey(entry.key, name);
+        params[name] = config[key] ?? entry.defaults[name];
+      });
+      deriveAt = (position) => entry.deriveJS(position, params);
+    }
+
     state.walkers.forEach((walker, i) => {
-      const [dx, dy, dz] = entry.deriveJS(walker.position, params);
-      walker.position.x += dx * step;
-      walker.position.y += dy * step;
-      walker.position.z += dz * step;
+      const [dx, dy, dz] = deriveAt(walker.position);
+      stepVector.set(dx, dy, dz);
+      walker.position.addScaledVector(stepVector, step);
 
       if (walker.position.length() > ESCAPE_MAGNITUDE) {
         walker.position.copy(seedWalker());
@@ -110,11 +147,16 @@ function FieldLines({ config }) {
     state.trails.flush();
   });
 
+  const visible =
+    config.showFieldLines &&
+    (config.mode === STRANGE_ATTRACTORS_MODE ||
+      config.mode === PHYSICAL_ATTRACTORS_MODE);
+
   return (
     <primitive
       object={groupRef.current}
       scale={config.worldScale}
-      visible={config.showFieldLines && config.mode === STRANGE_ATTRACTORS_MODE}
+      visible={visible}
     />
   );
 }

@@ -53,6 +53,8 @@ afternoon with light clouds rolling through (Surrender-style cloud shade).
 - [ ] Revisit the following since the camera gets close to the grass: LOD vertex folding, distance stochastic culling/density compensation, compute-pass frustum culling, view-dependent thickness tilt, distance denoising blends. Studied `~/dev/examples/r3f-procedural-grass` (Ghost-of-Tsushima style) & revo realms (TSL) `~/dev/examples/revo-realms`
 - [ ] might want to take a look at `~/dev/examples/demo-2022-grass`,`~/dev/examples/demo-2022-realistic-meadow` for a good grass solutions. looks much better than ours. includes lil flowers.
 - [ ] improve water apperance. might consider using the realistic ocean from RowItAlone Webgpu
+- [ ] replace bee & dragonfly with simplistic approximations like butterfly.
+- [ ] add a preset for Cut Grass. see `cutGrass.js`
 
 # // Presets
 

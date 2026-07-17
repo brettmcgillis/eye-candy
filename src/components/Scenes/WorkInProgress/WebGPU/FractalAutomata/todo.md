@@ -25,8 +25,6 @@
 
 - check out `~/dev/examples/g3dl` for a good CA example. that one is very performant compared to ours. what can we learn and use to improve ours?
 
-- Phase 2: Fixed Megalith preset (structure fully resolved, no growth
-  animation).
 - Phase 2: Fixed With Growth Pockets preset (mostly fixed, isolated regions
   still actively growing).
 
@@ -34,17 +32,11 @@
 - would occlusion culling help speed up the scene?
 - right now it appears the bounds are a cube, coulld we do a sphere?
 - do a preset that auto regens after each generation completes animating
-- add controls for the godray pointlight position
 - do presets where the godray pointlight's position is animated to orbit around the structure, move up and down, left to right.
-
+- add controls for material settings for each state/color. include emissive.
 - add a preset with a structure on the photo studio table to get photographed.
-
 - add controls for enable/disable every lighting option
-
 - ensure we have sim modes for game of life, Cyclic CA, Langston's Ant, Turing Patterns, Lenia, Rampe
-
-- Do last: Revisit logarithmic depth buffer / infinite-zoom framing if camera-distance
-  z-fighting actually shows up once structures get large.
 
 # // Presets
 

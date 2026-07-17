@@ -80,7 +80,7 @@
       (host handoff, or a `worldWidth`/`worldHeight`/particle-count/Respawn
       edit) — windows dragged far outside that footprint won't get fluid
       until the sim rebuilds.
-- [ ] **Gravity Rooms** — each window has its own gravity direction (rotatable
+- [x] **Gravity Rooms** — each window has its own gravity direction (rotatable
       by the user). A ball crossing from one window's rect into another's
       immediately takes on that window's gravity.
 - [ ] **Goldfish** — animated model ready to go; swims within its own window,

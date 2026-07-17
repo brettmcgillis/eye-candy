@@ -16,12 +16,13 @@
 
 [Back to main TODO](../../../../../../TODO.md)
 
-- add contrtols for godray light position
-
 - create a preset with three attractor systems/leafswams at various points on the tree. leva controls to govern position, swarm size per attractor, field lines per attractor, attractor type, attractor simulation props, attractor group rotation. can each attractor have a god ray light too, or are we
   limited to 1? perf impact on n?
 
 - tidy up leva controls. make sure to only show controls for selected attractor(s), limit label length.
+
+- we could align with the attractors particle lab more, Drop the speed multiplier from createPhysicalStep's position integration entirely
+  Add a boundHalfExtent-style wraparound to the physical step, with a new Leva control, so particles cycle through the domain instead of settling.
 
 # // Presets
 

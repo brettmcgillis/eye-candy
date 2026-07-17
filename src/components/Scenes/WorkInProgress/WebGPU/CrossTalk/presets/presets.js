@@ -39,6 +39,15 @@ export const PRESETS = {
     sprayColor: '#dff3ff',
     bubbleColor: '#9ec9ff',
   },
+  'Gravity Rooms': {
+    backgroundColor: '#12141c',
+    syncEasing: 0.06,
+    gravityAngle: 90,
+    gravityStrength: 900,
+    ballRadius: 16,
+    ballColor: '#ff0000',
+    restitution: 0.65,
+  },
 };
 
 // Companion fn to usePresetsFolder. Given the snapshot for the preset being

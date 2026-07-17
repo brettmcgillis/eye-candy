@@ -1,11 +1,12 @@
 import { useControls } from 'leva';
 
-import { useEffect, useMemo, useRef, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 
 import usePresetsFolder from '../../../../../../hooks/usePresetsFolder';
 import { useMediaRecorder } from '../../../../../../modules/mediaRecorder';
 import getCloudControls from '../components/getCloudControls';
 import getFluidControls from '../components/getFluidControls';
+import getGravityControls from '../components/getGravityControls';
 import { DEFAULT_PRESET, PRESETS, getPresetControls } from '../presets/presets';
 import { requestMotionPermission, subscribeShake } from '../utils/deviceMotion';
 
@@ -35,6 +36,11 @@ export default function useSceneControls() {
     presets: PRESETS,
   });
 
+  // Generic "start over" counter — Fluid's Respawn button and Gravity's
+  // Reset Ball button both just bump it; each preset's own host-side hook
+  // watches it and only acts while that preset is actually mounted, so one
+  // counter can serve every preset that wants a manual reset without them
+  // stepping on each other.
   const [reseedTick, setReseedTick] = useState(0);
   const p = {
     ...PRESET_DEFAULTS,
@@ -54,6 +60,15 @@ export default function useSceneControls() {
     });
   };
 
+  // Lets GravityArrow's drag handle write straight to the same Leva control
+  // the angle slider owns, so dragging the arrow and dragging the slider
+  // are just two inputs to one value — same ref-indirection reason as
+  // onEnableTilt above. Stable across renders (empty deps) so including it
+  // in the memoized return below doesn't defeat that memo.
+  const setGravityAngle = useCallback((angleDeg) => {
+    setControlsRef.current?.({ gravityAngle: angleDeg });
+  }, []);
+
   const [controls, setControls] = useControls(SCENE_LABEL, () => ({
     Presets: presetsFolder,
     backgroundColor: { label: 'Background Color', value: p.backgroundColor },
@@ -70,6 +85,7 @@ export default function useSceneControls() {
       () => setReseedTick((tick) => tick + 1),
       onEnableTilt
     ),
+    Gravity: getGravityControls(p, () => setReseedTick((tick) => tick + 1)),
   }));
 
   setControlsRef.current = setControls;
@@ -81,7 +97,7 @@ export default function useSceneControls() {
   // useFluidSim) — pressing space in a non-host window is a no-op, so press
   // it in the window doing the simulating.
   useEffect(() => {
-    if (selectedPreset !== 'FluidSim') return undefined;
+    if (selectedPreset !== 'Waterworks') return undefined;
 
     const onKeyDown = (event) => {
       if (event.code !== 'Space' || event.repeat) return;
@@ -105,7 +121,7 @@ export default function useSceneControls() {
   // Shake events only ever fire while tilt gravity has the motion listeners
   // attached (see useFluidSim / utils/deviceMotion.js).
   useEffect(() => {
-    if (selectedPreset !== 'FluidSim') return undefined;
+    if (selectedPreset !== 'Waterworks') return undefined;
     return subscribeShake(() => setReseedTick((tick) => tick + 1));
   }, [selectedPreset]);
 
@@ -117,7 +133,12 @@ export default function useSceneControls() {
   // machinery, which is more moving parts than a component branching on
   // "which preset is active" should have to trust.
   return useMemo(
-    () => ({ ...controls, preset: selectedPreset, reseedTick }),
-    [controls, reseedTick, selectedPreset]
+    () => ({
+      ...controls,
+      preset: selectedPreset,
+      reseedTick,
+      setGravityAngle,
+    }),
+    [controls, reseedTick, selectedPreset, setGravityAngle]
   );
 }

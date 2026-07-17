@@ -47,7 +47,7 @@
 
 # // Presets
 
-- [x] **Clouds** (this pass) — each window gets one `cartoon_clouds.glb`
+- [x] **Clouds** — each window gets one `cartoon_clouds.glb`
       instance (`src/components/elements/CartoonClouds`, merged/instanced via
       drei's `Merged` so every window's cloud is one shared draw call),
       centered on that window's rect, easing smoothly when the window
@@ -87,11 +87,10 @@
       idle/roam behavior only for this pass.
 - [ ] **Betta Fish** — animated models exist but only have a stationary swim
       cycle, no fight/turn animations yet. Fish fight when two betta windows'
-      rects overlap (share a "tank"). Needs new animation work before this
-      preset can start.
+      rects overlap (share a "tank"). need to use curve modifier to allow fish to circle/turn.
 - [ ] **Birds on the Desktop** — boids that land on browser window edges and
       fly between windows when several are open.
-- [ ] **Fireflies** — tiny lights that gather where the cursor rests and
+- [x] **Fireflies** — (being built as standalone scene) tiny lights that gather where the cursor rests and
       migrate between windows; blink timing modeled on real firefly behavior
       (species-specific flash patterns), not a uniform sine pulse.
 - [ ] **Radiance Cascades** - 2d radiance cascades like the `~dev/examples/Shaders_RadianceCascades` example. also see `https://www.shadertoy.com/view/4dfXDn`

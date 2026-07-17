@@ -6,7 +6,7 @@ import FluidField from './FluidField';
 
 // Everything the Fluid Sim preset needs, self-contained: the host-
 // authoritative solver (useFluidSim) + the water render. This component only
-// exists in the tree while `preset === 'FluidSim'` (see presets/views.js),
+// exists in the tree while `preset === 'Waterworks'` (see presets/views.js),
 // so unlike a shared always-mounted hook, useFluidSim doesn't need its own
 // enabled/disabled gating — mounting/unmounting *is* the on/off switch, and
 // its BroadcastChannel/effects clean up via the normal unmount path.

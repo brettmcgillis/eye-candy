@@ -1,5 +1,6 @@
 import CloudsView from '../components/CloudsView';
 import FluidSimView from '../components/FluidSimView';
+import GravityRoomsView from '../components/GravityRoomsView';
 import { DEFAULT_PRESET } from './presets';
 
 // One entry per preset: the component that renders it, plus what this
@@ -22,6 +23,10 @@ export const PRESET_VIEWS = {
     // The water body is broadcast whole, separately, by useFluidSim's own
     // BroadcastChannel — there's nothing per-window to put in meta.
     getMeta: () => undefined,
+  },
+  'Gravity Rooms': {
+    Component: GravityRoomsView,
+    getMeta: (c) => ({ gravityAngle: c.gravityAngle }),
   },
 };
 

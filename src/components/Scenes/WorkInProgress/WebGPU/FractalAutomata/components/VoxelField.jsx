@@ -3,6 +3,7 @@ import {
   instanceIndex,
   positionGeometry,
   select,
+  sqrt,
   uint,
   uniform,
   vec3,
@@ -58,6 +59,49 @@ async function readStatesForMeshing(gl, stateRevealBuf, totalVoxels) {
   return states;
 }
 
+// The InstancedMesh path hides cells via a live per-instance scale-gate
+// (state visibility, sphere bounds — see the `revealed` computation below),
+// but the greedy-meshed static mesh has no per-cell shader logic at all —
+// it's real, static, baked geometry. To respect the same two controls, this
+// returns a copy with whichever cells they'd hide zeroed out before meshing,
+// so buildGreedyMeshGeometry never sees them.
+function applyVisibilityAndBoundsFilter(states, k, config) {
+  const showByState = {
+    1: config.showState1 ?? true,
+    2: config.showState2 ?? true,
+    3: config.showState3 ?? true,
+  };
+  const boundsIsSphere = config.boundsShape === 'sphere';
+  const half = (k - 1) * 0.5;
+  const radius = (config.boundsSphereRadius ?? 1) * half;
+  const filtered = new Uint8Array(states);
+
+  for (let z = 0; z < k; z += 1) {
+    for (let y = 0; y < k; y += 1) {
+      for (let x = 0; x < k; x += 1) {
+        const i = x + k * (y + k * z);
+        const state = filtered[i];
+
+        if (state === 0) {
+          // Already empty — nothing to hide.
+        } else if (showByState[state] === false) {
+          filtered[i] = 0;
+        } else if (boundsIsSphere) {
+          const dx = x - half;
+          const dy = y - half;
+          const dz = z - half;
+          const distance = Math.sqrt(dx * dx + dy * dy + dz * dz);
+          if (distance > radius) {
+            filtered[i] = 0;
+          }
+        }
+      }
+    }
+  }
+
+  return filtered;
+}
+
 // Builds the settled-structure representation: a single merged mesh via
 // binary greedy meshing (utils/greedyMesh.js), swapped in once the growth
 // animation completes (see the visibility toggle in useFrame below). Real
@@ -68,7 +112,10 @@ async function readStatesForMeshing(gl, stateRevealBuf, totalVoxels) {
 // Snapshots paletteStart/Mid/End and cellSpacing at build time — unlike the
 // InstancedMesh path, this doesn't stay live-reactive to those controls
 // (the geometry/vertex colors are baked once), so palette or spacing tweaks
-// made after growth settles won't show until the next regenerate.
+// made after growth settles won't show until the next regenerate. showState*/
+// bounds* are the exception — a dedicated effect below re-bakes and swaps in
+// a fresh static mesh whenever those change, since they only filter which
+// cells are meshed at all (applyVisibilityAndBoundsFilter), not color/scale.
 function buildStaticMesh({ states, k, cellSpacing, config }) {
   const paletteColors = {
     1: new THREE.Color(config.paletteStart),
@@ -226,8 +273,13 @@ function VoxelField({ config, replayGrowthToken }) {
           field.totalVoxels
         );
         if (cancelled) return;
-        staticMesh = buildStaticMesh({
+        const filteredStates = applyVisibilityAndBoundsFilter(
           states,
+          field.k,
+          config
+        );
+        staticMesh = buildStaticMesh({
+          states: filteredStates,
           k: field.k,
           cellSpacing: config.cellSpacing,
           config,
@@ -325,6 +377,52 @@ function VoxelField({ config, replayGrowthToken }) {
         );
       }
 
+      // Per-state visibility (getPaletteControls.js) — only gates the core
+      // 3-state system; Cyclic CA's states beyond 3 fall through the final
+      // `select` branch and stay unaffected, live-tunable (see the
+      // live-update effect below).
+      const showState1 = uniform(config.showState1 ? 1 : 0, 'uint');
+      const showState2 = uniform(config.showState2 ? 1 : 0, 'uint');
+      const showState3 = uniform(config.showState3 ? 1 : 0, 'uint');
+      const cellStateUint = cell.x.toUint();
+      const stateVisible = select(
+        cellStateUint.equal(uint(1)),
+        showState1,
+        select(
+          cellStateUint.equal(uint(2)),
+          showState2,
+          select(cellStateUint.equal(uint(3)), showState3, uint(1))
+        )
+      );
+      revealed = revealed.and(stateVisible.notEqual(uint(0)));
+
+      // Sphere bounds (getVoxelFieldControls.js) — render-time cutoff only;
+      // the structure still generates/grows across the full cube, this just
+      // hides cells beyond boundsSphereRadius (in half-cube-widths, so 1.0
+      // is the sphere inscribed in the cube) at draw time. Live-tunable, no
+      // regenerate needed — same distance-from-center math as
+      // paletteNode.js's distanceFromCore color mode, computed separately
+      // here since that one normalizes to the cube's circumscribed sphere
+      // for color purposes, not a cutoff radius.
+      const boundsIsSphere = uniform(
+        config.boundsShape === 'sphere' ? 1 : 0,
+        'uint'
+      );
+      const boundsSphereRadius = uniform(config.boundsSphereRadius ?? 1);
+      const centerDx = x.toFloat().sub(half);
+      const centerDy = y.toFloat().sub(half);
+      const centerDz = z.toFloat().sub(half);
+      const distanceFromCenter = sqrt(
+        centerDx
+          .mul(centerDx)
+          .add(centerDy.mul(centerDy))
+          .add(centerDz.mul(centerDz))
+      );
+      const withinSphere = distanceFromCenter.lessThanEqual(
+        boundsSphereRadius.mul(half)
+      );
+      revealed = revealed.and(boundsIsSphere.equal(uint(0)).or(withinSphere));
+
       const scale = select(revealed, cellScale, float(0));
 
       // roughness matches ~/dev/examples/260708_AutomataChunks's own
@@ -372,6 +470,11 @@ function VoxelField({ config, replayGrowthToken }) {
         cellSpacing,
         cellScale,
         cyclicQuiescentPhaseEnabled,
+        showState1,
+        showState2,
+        showState3,
+        boundsIsSphere,
+        boundsSphereRadius,
       };
       growthProgressRef.current = growthProgress;
       meshesRef.current = { instancedMesh, staticMesh };
@@ -410,6 +513,12 @@ function VoxelField({ config, replayGrowthToken }) {
       config.continuousCyclicQuiescentPhase
         ? 1
         : 0;
+    fieldRef.current.showState1.value = config.showState1 ? 1 : 0;
+    fieldRef.current.showState2.value = config.showState2 ? 1 : 0;
+    fieldRef.current.showState3.value = config.showState3 ? 1 : 0;
+    fieldRef.current.boundsIsSphere.value =
+      config.boundsShape === 'sphere' ? 1 : 0;
+    fieldRef.current.boundsSphereRadius.value = config.boundsSphereRadius ?? 1;
     const { palette } = fieldRef.current;
     palette.uniforms.paletteStart.value = new THREE.Color(config.paletteStart);
     palette.uniforms.paletteMid.value = new THREE.Color(config.paletteMid);
@@ -422,11 +531,82 @@ function VoxelField({ config, replayGrowthToken }) {
     config.cellSpacing,
     config.cellScale,
     config.continuousCyclicQuiescentPhase,
+    config.showState1,
+    config.showState2,
+    config.showState3,
+    config.boundsShape,
+    config.boundsSphereRadius,
     config.paletteStart,
     config.paletteMid,
     config.paletteEnd,
     config.paletteMidpoint,
     config.colorMode,
+  ]);
+
+  // The greedy-meshed static mesh (hierarchical mode only) is real, baked
+  // geometry with no per-cell shader logic — unlike the InstancedMesh path's
+  // live scale-gate above, it can't react to showState*/bounds* on its own.
+  // Whenever those change, re-read the already-generated CA state (no full
+  // regenerate — the structure itself hasn't changed, just which cells of it
+  // should show) and re-bake a fresh static mesh, swapping it into the group
+  // in place.
+  useEffect(() => {
+    let cancelled = false;
+
+    async function rebuildStaticMesh() {
+      if (!fieldRef.current || fieldRef.current.continuous) return;
+      const { field } = fieldRef.current;
+
+      const states = await readStatesForMeshing(
+        gl,
+        field.stateRevealBuf,
+        field.totalVoxels
+      );
+      if (cancelled) return;
+      const filteredStates = applyVisibilityAndBoundsFilter(
+        states,
+        field.k,
+        config
+      );
+      const nextStaticMesh = buildStaticMesh({
+        states: filteredStates,
+        k: field.k,
+        cellSpacing: config.cellSpacing,
+        config,
+      });
+      if (cancelled) {
+        nextStaticMesh.geometry.dispose();
+        nextStaticMesh.material.dispose();
+        return;
+      }
+
+      const previous = meshesRef.current.staticMesh;
+      nextStaticMesh.visible = previous ? previous.visible : false;
+
+      if (renderObject) {
+        if (previous) renderObject.remove(previous);
+        renderObject.add(nextStaticMesh);
+      }
+      if (previous) {
+        previous.geometry.dispose();
+        previous.material.dispose();
+      }
+      meshesRef.current = { ...meshesRef.current, staticMesh: nextStaticMesh };
+    }
+
+    rebuildStaticMesh();
+
+    return () => {
+      cancelled = true;
+    };
+  }, [
+    gl,
+    renderObject,
+    config.showState1,
+    config.showState2,
+    config.showState3,
+    config.boundsShape,
+    config.boundsSphereRadius,
   ]);
 
   // "Replay Growth" (ButtonOverlay) resets the reveal animation without

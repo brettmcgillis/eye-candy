@@ -26,6 +26,13 @@ export default function getPaletteControls(p = {}) {
         max: 0.95,
         step: 0.01,
       },
+      // Per-state visibility — hides cells of that state regardless of
+      // colorMode, live-tunable (no regenerate needed). Only covers the core
+      // 3-state system (hierarchical/Life); Cyclic CA's extra states beyond
+      // 3 are always shown, unaffected by these.
+      showState1: { label: 'Show State 1', value: p.showState1 ?? true },
+      showState2: { label: 'Show State 2', value: p.showState2 ?? true },
+      showState3: { label: 'Show State 3', value: p.showState3 ?? true },
     },
     { collapsed: true }
   );

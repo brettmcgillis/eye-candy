@@ -94,6 +94,24 @@ export default function getVoxelFieldControls(p = {}) {
         max: 1,
         step: 0.01,
       },
+      // Render-time distance-from-center cutoff (live-tunable, no
+      // regenerate) — the structure itself still generates/grows across the
+      // full cube; 'sphere' just hides cells beyond boundsSphereRadius (in
+      // half-cube-widths) at draw time. 1.0 is the sphere inscribed in the
+      // cube (touches each face's center, cuts the corners); >1 grows toward
+      // the cube's corners (circumscribed at sqrt(3) ≈ 1.73).
+      boundsShape: {
+        label: 'Bounds Shape',
+        value: p.boundsShape ?? 'cube',
+        options: ['cube', 'sphere'],
+      },
+      boundsSphereRadius: {
+        label: 'Sphere Radius',
+        value: p.boundsSphereRadius ?? 1.0,
+        min: 0.1,
+        max: 1.75,
+        step: 0.01,
+      },
     },
     { collapsed: true }
   );

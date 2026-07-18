@@ -30,13 +30,16 @@
 
 - explore and experiment with different materails and textures and on the voxels. rough concrete, slick and oily.
 - would occlusion culling help speed up the scene?
-- right now it appears the bounds are a cube, coulld we do a sphere?
+
 - do a preset that auto regens after each generation completes animating
 - do presets where the godray pointlight's position is animated to orbit around the structure, move up and down, left to right.
 - add controls for material settings for each state/color. include emissive.
 - add a preset with a structure on the photo studio table to get photographed.
 - add controls for enable/disable every lighting option
 - ensure we have sim modes for game of life, Cyclic CA, Langston's Ant, Turing Patterns, Lenia, Rampe
+- check out automata chunks again for perf improvement hints.
+- would `~/dev/examples/260716_DLACoral` be a good example for us to leverage? It sort of looks like what I expected the fixed+growth to look like.
+- could we use the three.js building generator (or it's techniques) to turn the fractal into buildings?
 
 # // Presets
 
@@ -44,5 +47,4 @@
 
 # // Bugs
 
-- fix last: need to prevent a voxel occupying the same position as the pointlight when doing godrays, add a toggle to enable/disable this
 - add a floor # of voxels, if less than floor regen to prevent empty / near empty scenes

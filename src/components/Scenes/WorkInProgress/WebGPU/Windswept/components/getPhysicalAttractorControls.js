@@ -64,6 +64,27 @@ export default function getPhysicalAttractorControls(p = {}) {
         max: 20,
         step: 0.5,
       },
+      boundaryTwist: {
+        label: 'Boundary Twist',
+        value: p.boundaryTwist ?? 1.25,
+        min: 0,
+        max: 5,
+        step: 0.05,
+      },
+      turbulenceStrength: {
+        label: 'Curl Turbulence',
+        value: p.turbulenceStrength ?? 0.25,
+        min: 0,
+        max: 2,
+        step: 0.01,
+      },
+      energyFloor: {
+        label: 'Energy Floor',
+        value: p.energyFloor ?? 0.35,
+        min: 0,
+        max: 3,
+        step: 0.01,
+      },
       animateAttractors: {
         label: 'Animate Attractors',
         value: p.animateAttractors ?? true,

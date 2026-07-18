@@ -63,11 +63,23 @@ function Windswept() {
           config.godraysPosition.y,
           config.godraysPosition.z,
         ]}
+        sphereSize={config.godraysLightSphereSize}
         volumeSize={config.godraysVolumeSize}
       />
-      <FieldLines attractorsRef={attractorsRef} config={config} />
-      <PhysicalAttractorMarkers attractorsRef={attractorsRef} config={config} />
-      <LeafSwarm attractorsRef={attractorsRef} config={config} />
+      <group
+        rotation={[
+          THREE.MathUtils.degToRad(config.swarmRotation.x),
+          THREE.MathUtils.degToRad(config.swarmRotation.y),
+          THREE.MathUtils.degToRad(config.swarmRotation.z),
+        ]}
+      >
+        <FieldLines attractorsRef={attractorsRef} config={config} />
+        <PhysicalAttractorMarkers
+          attractorsRef={attractorsRef}
+          config={config}
+        />
+        <LeafSwarm attractorsRef={attractorsRef} config={config} />
+      </group>
       {config.godraysEnabled && (
         <Godrays
           lightRef={godraysLightRef}

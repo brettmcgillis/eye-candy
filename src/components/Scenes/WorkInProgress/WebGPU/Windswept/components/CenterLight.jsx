@@ -25,7 +25,14 @@ const SHADOW_NEAR = 0.05;
 // deriving from worldScale — the swarm's spatial spread and the shadow/
 // raymarch box's calibration are different concerns: shrinking one to fix
 // the other forces the whole scene to shrink just to get sharper shadows.
-function CenterLight({ color, intensity, lightRef, position, volumeSize }) {
+function CenterLight({
+  color,
+  intensity,
+  lightRef,
+  position,
+  sphereSize,
+  volumeSize,
+}) {
   return (
     <>
       <pointLight
@@ -40,7 +47,7 @@ function CenterLight({ color, intensity, lightRef, position, volumeSize }) {
         shadow-mapSize={[1024, 1024]}
       />
       <mesh position={position}>
-        <sphereGeometry args={[0.12, 16, 16]} />
+        <sphereGeometry args={[sphereSize, 16, 16]} />
         <meshStandardMaterial
           color={color}
           emissive={color}

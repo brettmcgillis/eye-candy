@@ -37,73 +37,104 @@ export default function getSwarmControls(p = {}) {
 
   return folder(
     {
-      mode: {
-        label: 'Mode',
-        value: p.mode ?? STRANGE_ATTRACTORS_MODE,
-        options: MODES,
-      },
-      attractorType: {
-        label: 'Attractor',
-        value: attractorType,
-        options: ATTRACTOR_TYPES,
-      },
-      ...getAttractorParamControls(p),
-      particleCount: {
-        label: 'Particle Count',
-        value: p.particleCount ?? 2500,
-        min: 200,
-        max: 40000,
-        step: 100,
-      },
-      sakuraRatio: {
-        label: 'Sakura Mix',
-        value: p.sakuraRatio ?? 0.35,
-        min: 0,
-        max: 1,
-        step: 0.01,
-      },
-      stepSize: {
-        label: 'Step Size',
-        value: p.stepSize ?? 0.1,
-        min: 0.01,
-        max: 0.3,
-        step: 0.001,
-      },
-      speed: {
-        label: 'Swarm Speed',
-        value: p.speed ?? 1,
-        min: 0,
-        max: 4,
-        step: 0.01,
-      },
-      worldScale: {
-        label: 'World Scale',
-        value: p.worldScale ?? 1.4,
-        min: 0.2,
-        max: 6,
-        step: 0.05,
-      },
-      leafScale: {
-        label: 'Leaf Scale',
-        value: p.leafScale ?? 0.1,
-        min: 0.1,
-        max: 4,
-        step: 0.05,
-      },
-      sakuraScale: {
-        label: 'Sakura Scale',
-        value: p.sakuraScale ?? 4,
-        min: 0.1,
-        max: 10,
-        step: 0.05,
-      },
-      orientationJitter: {
-        label: 'Orientation Jitter',
-        value: p.orientationJitter ?? 1,
-        min: 0,
-        max: 1,
-        step: 0.01,
-      },
+      Attractor: folder(
+        {
+          mode: {
+            label: 'Mode',
+            value: p.mode ?? STRANGE_ATTRACTORS_MODE,
+            options: MODES,
+          },
+          attractorType: {
+            label: 'Type',
+            value: attractorType,
+            options: ATTRACTOR_TYPES,
+          },
+          ...getAttractorParamControls(p),
+        },
+        { collapsed: true }
+      ),
+      Particles: folder(
+        {
+          particleCount: {
+            label: 'Count',
+            value: p.particleCount ?? 2500,
+            min: 200,
+            max: 40000,
+            step: 100,
+          },
+          sakuraRatio: {
+            label: 'Sakura Mix',
+            value: p.sakuraRatio ?? 0.35,
+            min: 0,
+            max: 1,
+            step: 0.01,
+          },
+          stepSize: {
+            label: 'Step Size',
+            value: p.stepSize ?? 0.1,
+            min: 0.01,
+            max: 0.3,
+            step: 0.001,
+          },
+          speed: {
+            label: 'Speed',
+            value: p.speed ?? 1,
+            min: 0,
+            max: 4,
+            step: 0.01,
+          },
+          worldScale: {
+            label: 'World Scale',
+            value: p.worldScale ?? 1.4,
+            min: 0.2,
+            max: 6,
+            step: 0.05,
+          },
+          leafScale: {
+            label: 'Leaf Scale',
+            value: p.leafScale ?? 0.1,
+            min: 0.1,
+            max: 4,
+            step: 0.05,
+          },
+          sakuraScale: {
+            label: 'Sakura Scale',
+            value: p.sakuraScale ?? 4,
+            min: 0.1,
+            max: 10,
+            step: 0.05,
+          },
+          swarmRotation: {
+            label: 'Rotation',
+            value: p.swarmRotation ?? { x: 0, y: 0, z: 0 },
+            min: -180,
+            max: 180,
+            step: 1,
+          },
+          orientationJitter: {
+            label: 'Orientation Jitter',
+            value: p.orientationJitter ?? 1,
+            min: 0,
+            max: 1,
+            step: 0.01,
+          },
+          flutterStrength: {
+            label: 'Flutter',
+            value: p.flutterStrength ?? 0.2,
+            min: 0,
+            max: 1,
+            step: 0.01,
+          },
+          flutterSpeed: {
+            label: 'Flutter Speed',
+            value: p.flutterSpeed ?? 2,
+            min: 0,
+            max: 8,
+            step: 0.05,
+          },
+        },
+        { collapsed: true }
+      ),
     },
     { collapsed: true }
   );

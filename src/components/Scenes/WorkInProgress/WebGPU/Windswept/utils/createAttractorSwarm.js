@@ -52,6 +52,9 @@ export default function createAttractorSwarm({
 
   const uniforms = {
     frameDelta: uniform(1 / 60),
+    frameTime: uniform(0),
+    flutterSpeed: uniform(2),
+    flutterStrength: uniform(0.2),
     orientationJitter: uniform(1),
     scale: uniform(1),
     speed: uniform(1),
@@ -108,11 +111,35 @@ export default function createAttractorSwarm({
   // be dialed back to 0) breaks that up without disturbing the
   // velocity-facing alignment itself.
   const rollSeed = hash(instanceIndex.add(uint(seedOffset)).add(uint(1301)));
-  const rollAngle = rollSeed.mul(6.28318).mul(uniforms.orientationJitter);
+  const flutterPhase = hash(
+    instanceIndex.add(uint(seedOffset)).add(uint(1709))
+  ).mul(6.28318);
+  const flutterWave = uniforms.frameTime
+    .mul(uniforms.flutterSpeed)
+    .add(flutterPhase)
+    .sin();
+  const rollAngle = rollSeed
+    .mul(6.28318)
+    .mul(uniforms.orientationJitter)
+    .add(flutterWave.mul(uniforms.flutterStrength));
   const cosRoll = rollAngle.cos();
   const sinRoll = rollAngle.sin();
   const right = baseRight.mul(cosRoll).add(baseUp.mul(sinRoll)).toVar();
   const up = baseUp.mul(cosRoll).sub(baseRight.mul(sinRoll)).toVar();
+
+  const flutterOffset = right
+    .mul(flutterWave.mul(uniforms.flutterStrength).mul(0.08))
+    .add(
+      up.mul(
+        uniforms.frameTime
+          .mul(uniforms.flutterSpeed)
+          .mul(1.37)
+          .add(flutterPhase)
+          .cos()
+          .mul(uniforms.flutterStrength)
+          .mul(0.04)
+      )
+    );
 
   const orientedPosition = right
     .mul(positionGeometry.x)
@@ -120,6 +147,7 @@ export default function createAttractorSwarm({
     .add(forward.mul(positionGeometry.z));
   material.positionNode = orientedPosition
     .mul(uniforms.scale)
+    .add(flutterOffset)
     .add(posBuf.toAttribute().mul(uniforms.worldScale));
 
   const orientedNormal = right

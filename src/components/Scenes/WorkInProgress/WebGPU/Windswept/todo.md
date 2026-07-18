@@ -8,7 +8,6 @@
 - when in physical attractors mode there are attractors in the scene effecting the particle system. if possible field lines as well.
 - when in physical attractors mode we allow for showing and hiding the attractors. when attractors are shown we allow rotating and translating them.
 - when in physical attractors mode the user can enable a leva control to animate the attractors.
-  - I was playing with three.js example `webgpu_tsl_compute_attractors_particles.html` and simply slowly rotating the attractor on a single axis induced beautiful changes into the system. this example is essentially the Gravity Attractors preset of ParticleLab but written in TSL. We should take this approach for the sake of perf for sure.
 - the scene will contain flowing vines all over the ground. Vines will spawn, travel, bloom, then fade. see `~dev/examples/VegetationGeneratorThreeJS` for vines.
   - When building this feature in we will build in an leva control that allows the user to be able to toggle between cursor-branch interaction and a draw mode where they can draw vines on the ground and the trunk and branches of the tree.
 
@@ -21,8 +20,7 @@
 
 - tidy up leva controls. make sure to only show controls for selected attractor(s), limit label length.
 
-- we could align with the attractors particle lab more, Drop the speed multiplier from createPhysicalStep's position integration entirely
-  Add a boundHalfExtent-style wraparound to the physical step, with a new Leva control, so particles cycle through the domain instead of settling.
+- test out multiple godray lights
 
 # // Presets
 

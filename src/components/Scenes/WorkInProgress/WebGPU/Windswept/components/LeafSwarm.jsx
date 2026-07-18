@@ -30,10 +30,13 @@ function buildModeAssets(config) {
     return {
       makeExtraUniforms: () => ({
         attractorStrength: uniform(config.attractorStrength),
+        boundaryTwist: uniform(config.boundaryTwist),
         containmentRadius: uniform(config.containmentRadius),
         damping: uniform(config.damping),
+        energyFloor: uniform(config.energyFloor),
         maxSpeed: uniform(config.maxSpeed),
         spinStrength: uniform(config.spinStrength),
+        turbulenceStrength: uniform(config.turbulenceStrength),
       }),
       physicalState,
       step: createPhysicalStep(physicalState),
@@ -152,6 +155,9 @@ function LeafSwarm({ attractorsRef, config }) {
     ].forEach(({ scale, swarm }) => {
       const u = swarm.uniforms;
       u.frameDelta.value = delta;
+      u.frameTime.value = elapsedRef.current;
+      u.flutterSpeed.value = config.flutterSpeed;
+      u.flutterStrength.value = config.flutterStrength;
       u.orientationJitter.value = config.orientationJitter;
       u.scale.value = scale;
       u.speed.value = config.speed;
@@ -159,10 +165,13 @@ function LeafSwarm({ attractorsRef, config }) {
 
       if (config.mode === PHYSICAL_ATTRACTORS_MODE) {
         u.attractorStrength.value = config.attractorStrength;
+        u.boundaryTwist.value = config.boundaryTwist;
         u.containmentRadius.value = config.containmentRadius;
         u.damping.value = config.damping;
+        u.energyFloor.value = config.energyFloor;
         u.maxSpeed.value = config.maxSpeed;
         u.spinStrength.value = config.spinStrength;
+        u.turbulenceStrength.value = config.turbulenceStrength;
       } else {
         const entry = attractorFields[config.attractorType];
         entry.paramNames.forEach((name) => {

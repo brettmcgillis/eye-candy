@@ -43,6 +43,13 @@ export default function getGodraysControls(p = {}) {
         max: 60,
         step: 0.5,
       },
+      godraysLightSphereSize: {
+        label: 'Orb Size',
+        value: p.godraysLightSphereSize ?? 0.12,
+        min: 0.02,
+        max: 2,
+        step: 0.01,
+      },
       godraysDensity: {
         label: 'Density',
         value: p.godraysDensity ?? 0.7,

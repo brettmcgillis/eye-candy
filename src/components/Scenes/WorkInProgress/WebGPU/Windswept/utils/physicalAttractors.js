@@ -1,5 +1,5 @@
 /* eslint-disable no-param-reassign */
-import { If, uniform, vec3 } from 'three/tsl';
+import { If, hash, instanceIndex, uint, uniform, vec3 } from 'three/tsl';
 import * as THREE from 'three/webgpu';
 
 // Soft-containment spring constant (force per unit of radial overshoot
@@ -169,10 +169,36 @@ export function createPhysicalStep(slots) {
       );
     });
 
+    const noisePhase = hash(instanceIndex.add(uint(811))).mul(6.28318);
+    const noiseTime = uniforms.frameTime.mul(0.7).add(noisePhase);
+    const curl = vec3(
+      position.y.mul(1.7).add(position.z.mul(0.6)).add(noiseTime).sin(),
+      position.z
+        .mul(1.3)
+        .add(position.x.mul(0.8))
+        .add(noiseTime.mul(1.17))
+        .cos(),
+      position.x
+        .mul(1.5)
+        .add(position.y.mul(0.9))
+        .sub(noiseTime.mul(0.73))
+        .sin()
+    ).toVar();
+    force.addAssign(curl.mul(uniforms.turbulenceStrength));
+
     const distanceFromCenter = position.length().max(0.0001);
     const overshoot = distanceFromCenter.sub(uniforms.containmentRadius).max(0);
     const pullDirection = position.div(distanceFromCenter).negate();
+    const boundaryAxis = vec3(0.31, 1, 0.57).normalize();
+    const boundaryTurn = boundaryAxis.cross(position).toVar();
+    const boundaryTurnLength = boundaryTurn.length().max(0.0001);
     force.addAssign(pullDirection.mul(overshoot).mul(CONTAINMENT_STRENGTH));
+    force.addAssign(
+      boundaryTurn
+        .div(boundaryTurnLength)
+        .mul(overshoot)
+        .mul(uniforms.boundaryTwist)
+    );
 
     velocity.addAssign(force.mul(uniforms.frameDelta));
 
@@ -180,6 +206,13 @@ export function createPhysicalStep(slots) {
       velocity.assign(velocity.normalize().mul(uniforms.maxSpeed));
     });
     velocity.mulAssign(uniforms.damping.oneMinus());
+    const curlLength = curl.length().max(0.0001);
+    const kickDirection = curl.div(curlLength);
+    const speedDeficit = uniforms.energyFloor.sub(velocity.length()).max(0);
+    velocity.addAssign(kickDirection.mul(speedDeficit).mul(0.25));
+    If(velocity.length().greaterThan(uniforms.maxSpeed), () => {
+      velocity.assign(velocity.normalize().mul(uniforms.maxSpeed));
+    });
 
     position.addAssign(velocity.mul(uniforms.frameDelta));
     velocityBuf.assign(velocity);

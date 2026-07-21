@@ -31,3 +31,13 @@ Canonical scene layout to copy: `src/components/scenes/Template/SceneTemplate/`.
   update it** — don't add sections logging what you built, and don't touch its
   back-link or existing content as a side effect of implementing something.
   See `docs/scene-conventions.md` §15.
+- **When the user gives you a reference (a repo, file, or example) to port
+  in, port the actual mechanism it demonstrates.** Don't decompose it into
+  parts and substitute a smaller or different subset while calling it a port
+  of the reference. If something can't or shouldn't be ported 1:1, say so and
+  ask before implementing — don't decide unilaterally and hand back a
+  substitute for the user to discover isn't what they asked for.
+- **Comments: default to none.** Code should read clearly enough to not need
+  narration. Only comment a genuinely non-obvious WHY (a hidden constraint, a
+  workaround for a specific bug, a subtle invariant) — never WHAT the code
+  does, and never multi-line/paragraph comment blocks.

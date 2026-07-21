@@ -63,15 +63,15 @@ export const PRESETS = {
     maxSpeed: 700,
   },
   'Radiance Cascades': {
+    // lightColor + occluderShape are intentionally omitted — useSceneControls
+    // randomizes them per tab so each window is a distinct source.
     backgroundColor: '#050608',
     syncEasing: 0.06,
-    lightColor: '#ffd1a3',
     lightIntensity: 2.4,
     lightRadius: 14,
-    occluderShape: 1,
     occluderSize: 60,
     occluderRotation: 0,
-    sceneDetail: true,
+    sceneDetail: false,
     shadowSoftness: 0.02,
     ambient: 0.06,
     exposure: 1.6,

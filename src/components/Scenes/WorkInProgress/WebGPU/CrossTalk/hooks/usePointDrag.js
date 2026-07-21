@@ -14,8 +14,15 @@ export default function usePointDrag({ draggable, onDrag, rect }) {
   const offsetFromEvent = useCallback(
     (event) => {
       if (!rect) return null;
-      const x = (event.unprojectedPoint.x - (rect.x + rect.w / 2)) / rect.w;
-      const y = (event.unprojectedPoint.y - (rect.y + rect.h / 2)) / rect.h;
+      // `unprojectedPoint` is in the ortho camera's own frame (0..canvasW,
+      // 0..canvasH), NOT absolute desktop coords — DesktopStage's eased world
+      // group is what maps this window's slice of world space onto the canvas.
+      // Only draggable window is the self window, which fills the canvas, so
+      // its centre in this frame is (rect.w/2, rect.h/2). Subtracting the
+      // *absolute* centre (rect.x/y) instead is why non-origin windows (tab 2+)
+      // pinned the handle to an edge.
+      const x = (event.unprojectedPoint.x - rect.w / 2) / rect.w;
+      const y = (event.unprojectedPoint.y - rect.h / 2) / rect.h;
 
       return {
         x: THREE.MathUtils.clamp(x, -0.5, 0.5),

@@ -1,5 +1,11 @@
 import { folder } from 'leva';
 
+import { OCCLUDER_SHAPES } from '../utils/radianceConstants';
+
+const OCCLUDER_SHAPE_OPTIONS = Object.fromEntries(
+  OCCLUDER_SHAPES.map((name, id) => [name, id])
+);
+
 export default function getRadianceControls(p, render) {
   return folder(
     {
@@ -20,7 +26,7 @@ export default function getRadianceControls(p, render) {
       },
       occluderShape: {
         label: 'Occluder Shape',
-        options: { Box: 1, Circle: 0, Triangle: 2 },
+        options: OCCLUDER_SHAPE_OPTIONS,
         value: p.occluderShape,
       },
       occluderSize: {

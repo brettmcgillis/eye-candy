@@ -94,7 +94,7 @@
 - [x] **Fireflies** — (being built as standalone scene) tiny lights that gather where the cursor rests and
       migrate between windows; blink timing modeled on real firefly behavior
       (species-specific flash patterns), not a uniform sine pulse.
-- [ ] **Radiance Cascades** - 2d radiance cascades like the `~dev/examples/Shaders_RadianceCascades` example. each tab has a colored light, and a shape to obstruct light. light is contstrained to the tab/overlapping tabs. the corners of overlapping taps should also provide regions of shade/light. also see `https://www.shadertoy.com/view/4dfXDn` & `https://www.shadertoy.com/view/XsK3RR`. Started but incomplete.
+- [x] **Radiance Cascades** - 2d radiance cascades. each tab has a colored light, and a shape to obstruct light. light is contstrained to the tab/overlapping tabs. the corners of overlapping taps should also provide regions of occlusion.
 - [ ] **Portals** - each window gets 2 portals that the user can move around. the first window gets a ball that can fall through the portals. when multiple tabs are open portals are chained so the ball can travel through windows. similar to fluid sim there is y- graviy, and the ball is constrained to the current/overlapping tabs.
 - [ ] **n-Tangled** - tribute to Bjorn Stall's Entangled but with support for n tabs. particle systems only become entangled when tabs overlap, unline Entangled.
 

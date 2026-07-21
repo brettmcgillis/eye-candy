@@ -11,6 +11,7 @@ import getGravityControls from '../components/getGravityControls';
 import getRadianceControls from '../components/getRadianceControls';
 import { DEFAULT_PRESET, PRESETS, getPresetControls } from '../presets/presets';
 import { requestMotionPermission, subscribeShake } from '../utils/deviceMotion';
+import { OCCLUDER_SHAPES } from '../utils/radianceConstants';
 
 const SCENE_LABEL = 'Cross Talk';
 export const WINDOW_SYNC_CHANNEL = 'crossTalk';
@@ -34,6 +35,29 @@ const PRESET_PATH = `${SCENE_LABEL}.Presets.preset`;
 const PRESET_DEFAULTS = Object.assign({}, ...Object.values(PRESETS));
 const DEFAULT_RADIANCE_LIGHT_OFFSET = { x: -0.28, y: -0.08 };
 const DEFAULT_RADIANCE_OCCLUDER_OFFSET = { x: 0.22, y: 0.1 };
+
+// Each tab (window) gets a distinct light colour + occluder shape so open
+// windows read as different sources when their radiance bleeds together. The
+// Radiance preset omits these keys (see presets.js) so switching presets never
+// clobbers this window's pick; the user can still override in Leva.
+function hslToHex(h, s, l) {
+  const a = s * Math.min(l, 1 - l);
+  const channel = (n) => {
+    const k = (n + h * 12) % 12;
+    const c = l - a * Math.max(-1, Math.min(k - 3, 9 - k, 1));
+    return Math.round(255 * c)
+      .toString(16)
+      .padStart(2, '0');
+  };
+  return `#${channel(0)}${channel(8)}${channel(4)}`;
+}
+
+function pickTabRandoms() {
+  return {
+    lightColor: hslToHex(Math.random(), 0.78, 0.62),
+    occluderShape: Math.floor(Math.random() * OCCLUDER_SHAPES.length),
+  };
+}
 
 // This scene has no Camera folder / CameraRig (docs/scene-conventions.md §10)
 // — see components/DesktopStage.jsx for why: the camera is a fixed,
@@ -68,9 +92,15 @@ export default function useSceneControls() {
     DEFAULT_RADIANCE_OCCLUDER_OFFSET
   );
 
+  // Stable per-tab pick — initialized once, survives re-renders.
+  const tabRandomsRef = useRef(null);
+  if (!tabRandomsRef.current) tabRandomsRef.current = pickTabRandoms();
+
   const p = {
     ...PRESET_DEFAULTS,
     ...(PRESETS[initialPreset] || PRESETS[DEFAULT_PRESET]),
+    lightColor: tabRandomsRef.current.lightColor,
+    occluderShape: tabRandomsRef.current.occluderShape,
   };
 
   // iOS motion permission must be requested from inside the click handler's

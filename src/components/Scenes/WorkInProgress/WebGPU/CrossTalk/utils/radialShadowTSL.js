@@ -76,13 +76,200 @@ const rotate2D = (p, a) => {
 const rep2 = (p, r) => mod(p, vec2(r, r)).sub(r / 2);
 const rep1 = (p, r) => vec2(mod(p.x, r).sub(r / 2), p.y);
 
-// Occluder ids — must match sceneTSL's OCCLUDER_* and the Leva dropdown.
-const occluderSDF = (shapeId, p, osize) =>
-  select(
-    shapeId.lessThan(0.5),
-    sdCircle(osize.x, p),
-    select(shapeId.lessThan(1.5), sdBox(osize, p), sdTriangle(p, osize.x))
-  );
+// --- extra occluder shapes, ported from references/markers.glsl (Nicolas
+// Rougier's marker SDFs). `r` is a radius-like size (osize.x) so every shape
+// reads at a comparable scale to the circle.
+const sdDiamond = (p, r) => p.x.abs().add(p.y.abs()).sub(r);
+
+const sdCross = (p, r) =>
+  sdBox(vec2(r, r.mul(0.34)), p).min(sdBox(vec2(r.mul(0.34), r), p));
+
+const sdAnnulus = (p, r) =>
+  p
+    .length()
+    .sub(r)
+    .max(p.length().sub(r.mul(0.5)).negate());
+
+const sdHeart = (p, r) => {
+  const k = Math.SQRT1_2;
+  const q = r.mul(2 / 3.5);
+  const x = p.x.sub(p.y).mul(k);
+  const y = p.x.add(p.y).mul(k);
+  const r1 = x.abs().max(y.abs()).sub(q);
+  const r2 = p.sub(vec2(k, -k).mul(q)).length().sub(q);
+  const r3 = p.sub(vec2(-k, -k).mul(q)).length().sub(q);
+  return r1.min(r2).min(r3);
+};
+
+const sdClover = (p, r) => {
+  const q = r.mul(2 / 3.5);
+  const off = r.mul(0.5);
+  const disc = (ang) =>
+    p
+      .sub(vec2(Math.cos(ang), Math.sin(ang)).mul(off))
+      .length()
+      .sub(q);
+  const t1 = -Math.PI / 2;
+  const t2 = t1 + (2 * Math.PI) / 3;
+  const t3 = t2 + (2 * Math.PI) / 3;
+  return disc(t1).min(disc(t2)).min(disc(t3));
+};
+
+// markers.glsl uses `size` as the full marker box; our `r` is radius-like, so
+// these pass `size = 2r` to keep every shape ~the same on-screen scale.
+const K = Math.SQRT1_2; // SQRT_2 / 2
+
+const sdSpade = (p, r) => {
+  const size = r.mul(2);
+  const s = size.mul(0.85 / 3.5);
+  const x = p.x.add(p.y).mul(K).add(s.mul(0.4));
+  const y = p.x.sub(p.y).mul(K).sub(s.mul(0.4));
+  const r1 = x.abs().max(y.abs()).sub(s);
+  const r2 = p
+    .sub(vec2(K, K * 0.2).mul(s))
+    .length()
+    .sub(s);
+  const r3 = p
+    .sub(vec2(-K, K * 0.2).mul(s))
+    .length()
+    .sub(s);
+  const r4 = r1.min(r2).min(r3);
+  const r5 = p.sub(vec2(0.65, 0.125).mul(size)).length().sub(size.div(1.6));
+  const r6 = p.sub(vec2(-0.65, 0.125).mul(size)).length().sub(size.div(1.6));
+  // The root's slab is unbounded in x; the reference relies on the point
+  // sprite to clip it. Bound it to the central stem so its far ends don't
+  // render as bars across our larger occluder quad.
+  const r9 = r5
+    .min(r6)
+    .negate()
+    .max(p.y.sub(size.mul(0.5)).max(size.mul(0.1).sub(p.y)))
+    .max(p.x.abs().sub(size.mul(0.4)));
+  return r4.min(r9);
+};
+
+const sdClub = (p, r) => {
+  const size = r.mul(2);
+  const disc = (ang) =>
+    p
+      .sub(vec2(Math.cos(ang), Math.sin(ang)).mul(size.mul(0.225)))
+      .length()
+      .sub(size.div(4.25));
+  const t1 = -Math.PI / 2;
+  const t2 = t1 + (2 * Math.PI) / 3;
+  const t3 = t2 + (2 * Math.PI) / 3;
+  const r4 = disc(t1).min(disc(t2)).min(disc(t3));
+  const r5 = p.sub(vec2(0.65, 0.125).mul(size)).length().sub(size.div(1.6));
+  const r6 = p.sub(vec2(-0.65, 0.125).mul(size)).length().sub(size.div(1.6));
+  const r9 = r5
+    .min(r6)
+    .negate()
+    .max(p.y.sub(size.mul(0.5)).max(size.mul(0.2).sub(p.y)))
+    .max(p.x.abs().sub(size.mul(0.4)));
+  return r4.min(r9);
+};
+
+const sdChevron = (p, r) => {
+  const size = r.mul(2);
+  const x = p.x.sub(p.y).mul(K);
+  const y = p.x.add(p.y).mul(K);
+  const third = size.div(3);
+  const r1 = x.abs().max(y.abs()).sub(third);
+  const r2 = x.sub(third).abs().max(y.sub(third).abs()).sub(third);
+  return r1.max(r2.negate());
+};
+
+const sdTag = (p, r) => {
+  const size = r.mul(2);
+  const r1 = p.x
+    .abs()
+    .sub(size.div(2))
+    .max(p.y.abs().sub(size.div(6)));
+  const r2 = p.x.sub(size.div(1.5)).abs().add(p.y.abs()).sub(size);
+  return r1.max(r2.mul(0.75));
+};
+
+const sdAsterisk = (p, r) => {
+  const size = r.mul(2);
+  const x = p.x.sub(p.y).mul(K);
+  const y = p.x.add(p.y).mul(K);
+  const h = size.div(2);
+  const t = size.div(10);
+  const r1 = x.abs().sub(h).max(y.abs().sub(t));
+  const r2 = y.abs().sub(h).max(x.abs().sub(t));
+  const r3 = p.x.abs().sub(h).max(p.y.abs().sub(t));
+  const r4 = p.y.abs().sub(h).max(p.x.abs().sub(t));
+  return r1.min(r2).min(r3).min(r4);
+};
+
+const sdInfinity = (p, r) => {
+  const size = r.mul(2);
+  const p1 = p.sub(vec2(0.2125, 0).mul(size));
+  const p2 = p.sub(vec2(-0.2125, 0).mul(size));
+  const r1 = p1.length().sub(size.div(3.5));
+  const r2 = p1.length().sub(size.div(7.5));
+  const r3 = p2.length().sub(size.div(3.5));
+  const r4 = p2.length().sub(size.div(7.5));
+  return r1.max(r2.negate()).min(r3.max(r4.negate()));
+};
+
+const sdPin = (p, r) => {
+  const size = r.mul(2);
+  const c1 = vec2(0, -0.15).mul(size);
+  const r1 = p.sub(c1).length().sub(size.div(2.675));
+  const r2 = p.sub(vec2(1.49, -0.8).mul(size)).length().sub(size.mul(2));
+  const r3 = p.sub(vec2(-1.49, -0.8).mul(size)).length().sub(size.mul(2));
+  const r4 = p.sub(c1).length().sub(size.div(5));
+  return r1.min(r2.max(r3).max(p.y.negate())).max(r4.negate());
+};
+
+const sdArrow = (p, r) => {
+  const size = r.mul(2);
+  const r1 = p.x.abs().add(p.y.abs()).sub(size.div(2));
+  const r2 = p.x.add(size.div(2)).abs().max(p.y.abs()).sub(size.div(2));
+  const r3 = p.x
+    .sub(size.div(6))
+    .abs()
+    .sub(size.div(4))
+    .max(p.y.abs().sub(size.div(4)));
+  return r3.min(r1.mul(0.75).max(r2));
+};
+
+// Approximate ellipse (sign-correct, conservative for marching) — not the
+// reference's exact IQ root-solve, but visually an ellipse.
+const sdEllipse = (p, r) => {
+  const size = r.mul(2);
+  const ax = size.div(3);
+  const ay = size.div(2);
+  const kk = vec2(p.x.div(ax), p.y.div(ay)).length();
+  return kk.sub(1).mul(ax.min(ay));
+};
+
+// Occluder shape ids — must match radianceConstants' OCCLUDER_SHAPES order and
+// the Leva dropdown. Exported so OccluderHandle can preview any shape with the
+// exact SDF the scene shades against. An If/ElseIf chain (not nested select) so
+// only the active shape's SDF is evaluated per sample.
+export const occluderSDF = (shapeId, p, osize) => {
+  const r = osize.x;
+  const d = float(NO_HIT).toVar();
+  If(shapeId.lessThan(0.5), () => d.assign(sdCircle(r, p)))
+    .ElseIf(shapeId.lessThan(1.5), () => d.assign(sdBox(osize, p)))
+    .ElseIf(shapeId.lessThan(2.5), () => d.assign(sdTriangle(p, r)))
+    .ElseIf(shapeId.lessThan(3.5), () => d.assign(sdDiamond(p, r)))
+    .ElseIf(shapeId.lessThan(4.5), () => d.assign(sdCross(p, r)))
+    .ElseIf(shapeId.lessThan(5.5), () => d.assign(sdAnnulus(p, r)))
+    .ElseIf(shapeId.lessThan(6.5), () => d.assign(sdHeart(p, r)))
+    .ElseIf(shapeId.lessThan(7.5), () => d.assign(sdClover(p, r)))
+    .ElseIf(shapeId.lessThan(8.5), () => d.assign(sdSpade(p, r)))
+    .ElseIf(shapeId.lessThan(9.5), () => d.assign(sdClub(p, r)))
+    .ElseIf(shapeId.lessThan(10.5), () => d.assign(sdChevron(p, r)))
+    .ElseIf(shapeId.lessThan(11.5), () => d.assign(sdTag(p, r)))
+    .ElseIf(shapeId.lessThan(12.5), () => d.assign(sdAsterisk(p, r)))
+    .ElseIf(shapeId.lessThan(13.5), () => d.assign(sdInfinity(p, r)))
+    .ElseIf(shapeId.lessThan(14.5), () => d.assign(sdPin(p, r)))
+    .ElseIf(shapeId.lessThan(15.5), () => d.assign(sdArrow(p, r)))
+    .Else(() => d.assign(sdEllipse(p, r)));
+  return d;
+};
 
 // The reference's Scene(), in per-window normalized units (worldPos relative
 // to the window centre, divided by the window height — same normalization the

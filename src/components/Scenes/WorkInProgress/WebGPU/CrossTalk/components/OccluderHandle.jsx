@@ -1,30 +1,22 @@
+import { Fn, positionLocal, smoothstep, uniform, vec4 } from 'three/tsl';
 import * as THREE from 'three/webgpu';
 
-import React, { memo, useMemo } from 'react';
+import React, { memo, useEffect, useMemo } from 'react';
 
 import usePointDrag from '../hooks/usePointDrag';
-import {
-  OCCLUDER_BOX,
-  OCCLUDER_CIRCLE,
-  OCCLUDER_TRIANGLE,
-} from '../utils/sceneTSL';
+import { occluderSDF } from '../utils/radialShadowTSL';
 
 const OCCLUDER_COLOR = '#d97722';
+// The preview quad is a bit larger than the shape's radius so shapes that
+// extend past `size` (heart, clover, cross) aren't clipped.
+const QUAD_SCALE = 2.6;
 
-// Equilateral triangle, circumradius 1 (matches sdEquilateralTriangle's `r`
-// closely enough for a drag-handle preview — not required to be pixel-exact
-// with the SDF boundary the shader actually lights against).
-const TRIANGLE_SHAPE = new THREE.Shape();
-TRIANGLE_SHAPE.moveTo(0, 1);
-TRIANGLE_SHAPE.lineTo(-0.866, -0.5);
-TRIANGLE_SHAPE.lineTo(0.866, -0.5);
-TRIANGLE_SHAPE.closePath();
-const TRIANGLE_GEOMETRY = new THREE.ShapeGeometry(TRIANGLE_SHAPE);
-
-// The flat, draggable occluder shape at this window's occluder position —
-// same "whole shape is the hit target" reasoning as GravityArrow.jsx, and
-// the same DoubleSide requirement (DesktopStage's ortho camera is
-// Y-flipped, which reverses triangle winding — see that file's comment).
+// The draggable occluder marker. Rather than a per-shape Three.js geometry, it
+// fills a single quad with the *same* occluderSDF the scene shades against, so
+// every shape (including the marker SDFs) previews exactly and adding a shape
+// needs no change here. DoubleSide because DesktopStage's ortho camera is
+// Y-flipped (reverses winding); rotation is applied to the mesh so the SDF
+// stays in local space, matching the scene's rotate-by-(-rotation) sampling.
 function OccluderHandle({
   center,
   draggable,
@@ -35,46 +27,45 @@ function OccluderHandle({
   size,
 }) {
   const dragHandlers = usePointDrag({ draggable, onDrag, rect });
-  const rotationZ = useMemo(() => rotation, [rotation]);
+
+  const { material, uniforms } = useMemo(() => {
+    const shapeU = uniform(0);
+    const sizeU = uniform(new THREE.Vector2(1, 1));
+    const colorU = uniform(new THREE.Color(OCCLUDER_COLOR));
+    const mat = new THREE.MeshBasicNodeMaterial({
+      depthWrite: false,
+      side: THREE.DoubleSide,
+      toneMapped: false,
+      transparent: true,
+    });
+    mat.colorNode = Fn(() => {
+      const p = positionLocal.xy.mul(sizeU.x.mul(QUAD_SCALE));
+      const dist = occluderSDF(shapeU, p, sizeU);
+      const aa = sizeU.x.mul(0.03).add(0.75);
+      const fill = smoothstep(aa, aa.negate(), dist);
+      return vec4(colorU, fill.mul(0.85));
+    })();
+    return { material: mat, uniforms: { colorU, shapeU, sizeU } };
+  }, []);
+
+  useEffect(() => {
+    uniforms.shapeU.value = shape;
+    uniforms.sizeU.value.set(size, size);
+  }, [uniforms, shape, size]);
+
+  useEffect(() => () => material.dispose(), [material]);
 
   return (
-    <group position={[center.x, center.y, 1]} rotation={[0, 0, rotationZ]}>
-      {shape === OCCLUDER_CIRCLE && (
-        <mesh {...dragHandlers} scale={size}>
-          <circleGeometry args={[1, 24]} />
-          <meshBasicMaterial
-            color={OCCLUDER_COLOR}
-            depthWrite={false}
-            opacity={0.85}
-            side={THREE.DoubleSide}
-            transparent
-          />
-        </mesh>
-      )}
-      {shape === OCCLUDER_BOX && (
-        <mesh {...dragHandlers} scale={[size * 2, size * 2, 1]}>
-          <planeGeometry args={[1, 1]} />
-          <meshBasicMaterial
-            color={OCCLUDER_COLOR}
-            depthWrite={false}
-            opacity={0.85}
-            side={THREE.DoubleSide}
-            transparent
-          />
-        </mesh>
-      )}
-      {shape === OCCLUDER_TRIANGLE && (
-        <mesh {...dragHandlers} geometry={TRIANGLE_GEOMETRY} scale={size}>
-          <meshBasicMaterial
-            color={OCCLUDER_COLOR}
-            depthWrite={false}
-            opacity={0.85}
-            side={THREE.DoubleSide}
-            transparent
-          />
-        </mesh>
-      )}
-    </group>
+    <mesh
+      {...dragHandlers}
+      frustumCulled={false}
+      material={material}
+      position={[center.x, center.y, 1]}
+      rotation={[0, 0, rotation]}
+      scale={size * QUAD_SCALE}
+    >
+      <planeGeometry args={[1, 1]} />
+    </mesh>
   );
 }
 

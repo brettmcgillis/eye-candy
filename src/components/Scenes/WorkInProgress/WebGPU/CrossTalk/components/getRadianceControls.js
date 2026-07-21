@@ -29,6 +29,7 @@ export default function getRadianceControls(p, render) {
         options: OCCLUDER_SHAPE_OPTIONS,
         value: p.occluderShape,
       },
+      occluderColor: { label: 'Occluder Color', value: p.occluderColor },
       occluderSize: {
         label: 'Occluder Size (px)',
         max: 160,

@@ -12,7 +12,7 @@ import { DEFAULT_PRESET } from './presets';
 // churn on a preset switch). Adding preset N+1 means adding a view component
 // + one entry here — CrossTalk.jsx itself doesn't change.
 export const PRESET_VIEWS = {
-  'Cloud Connected': {
+  CloudConnected: {
     Component: CloudsView,
     getMeta: (c) => ({
       spread: c.spread,
@@ -26,15 +26,15 @@ export const PRESET_VIEWS = {
     // BroadcastChannel — there's nothing per-window to put in meta.
     getMeta: () => undefined,
   },
-  'Gravity Rooms': {
+  GravityRooms: {
     Component: GravityRoomsView,
     getMeta: (c) => ({ gravityAngle: c.gravityAngle }),
   },
-  'Particles & Attractors': {
+  ParticlesAndAttractors: {
     Component: FeathersView,
     getMeta: (c) => ({ attractorStrength: c.attractorStrength }),
   },
-  'Radiance Cascades': {
+  RadianceCascades: {
     Component: RadianceCascadesView,
     getMeta: (c) => ({
       light: {
@@ -45,6 +45,7 @@ export const PRESET_VIEWS = {
         radius: c.lightRadius,
       },
       occluder: {
+        color: c.occluderColor,
         offsetX: c.occluderOffset.x,
         offsetY: c.occluderOffset.y,
         rotation: (c.occluderRotation * Math.PI) / 180,

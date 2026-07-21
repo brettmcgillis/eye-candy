@@ -143,7 +143,7 @@ export default function useSceneControls() {
       },
       { collapsed: true }
     ),
-    Cloud: getCloudControls(p, (get) => get(PRESET_PATH) === 'Cloud Connected'),
+    Cloud: getCloudControls(p, (get) => get(PRESET_PATH) === 'CloudConnected'),
     Fluid: getFluidControls(
       p,
       () => setReseedTick((tick) => tick + 1),
@@ -153,16 +153,16 @@ export default function useSceneControls() {
     Gravity: getGravityControls(
       p,
       () => setReseedTick((tick) => tick + 1),
-      (get) => get(PRESET_PATH) === 'Gravity Rooms'
+      (get) => get(PRESET_PATH) === 'GravityRooms'
     ),
     Feathers: getFeatherControls(
       p,
       () => setReseedTick((tick) => tick + 1),
-      (get) => get(PRESET_PATH) === 'Particles & Attractors'
+      (get) => get(PRESET_PATH) === 'ParticlesAndAttractors'
     ),
     Radiance: getRadianceControls(
       p,
-      (get) => get(PRESET_PATH) === 'Radiance Cascades'
+      (get) => get(PRESET_PATH) === 'RadianceCascades'
     ),
   }));
 

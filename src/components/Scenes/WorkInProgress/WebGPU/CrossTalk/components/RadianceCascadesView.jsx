@@ -28,13 +28,20 @@ function RadianceCascadesView({ c, selfId, selfRect, windows }) {
 
   const selfOccluder = useMemo(
     () => ({
+      color: c.occluderColor,
       offsetX: c.occluderOffset.x,
       offsetY: c.occluderOffset.y,
       rotation: (c.occluderRotation * Math.PI) / 180,
       shape: c.occluderShape,
       size: c.occluderSize,
     }),
-    [c.occluderOffset, c.occluderRotation, c.occluderShape, c.occluderSize]
+    [
+      c.occluderColor,
+      c.occluderOffset,
+      c.occluderRotation,
+      c.occluderShape,
+      c.occluderSize,
+    ]
   );
 
   const windowsForRender =
@@ -93,6 +100,7 @@ function RadianceCascadesView({ c, selfId, selfRect, windows }) {
                   x: win.x + win.w / 2 + occluder.offsetX * win.w,
                   y: win.y + win.h / 2 + occluder.offsetY * win.h,
                 }}
+                color={occluder.color}
                 draggable={isSelf}
                 onDrag={isSelf ? c.setOccluderOffset : undefined}
                 rect={rect}

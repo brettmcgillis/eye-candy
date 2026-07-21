@@ -19,6 +19,7 @@ const QUAD_SCALE = 2.6;
 // stays in local space, matching the scene's rotate-by-(-rotation) sampling.
 function OccluderHandle({
   center,
+  color,
   draggable,
   onDrag,
   rect,
@@ -51,7 +52,8 @@ function OccluderHandle({
   useEffect(() => {
     uniforms.shapeU.value = shape;
     uniforms.sizeU.value.set(size, size);
-  }, [uniforms, shape, size]);
+    uniforms.colorU.value.set(color || OCCLUDER_COLOR);
+  }, [uniforms, shape, size, color]);
 
   useEffect(() => () => material.dispose(), [material]);
 

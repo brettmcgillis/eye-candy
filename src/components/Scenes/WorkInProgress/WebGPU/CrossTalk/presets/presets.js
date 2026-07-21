@@ -1,10 +1,10 @@
 // Preset snapshots for the scene. Keys here must match the Leva schema built
 // in useSceneControls 1:1 — no reshaping between a preset and the controls it
 // applies (see docs/scene-conventions.md, "Controls & presets").
-export const DEFAULT_PRESET = 'Cloud Connected';
+export const DEFAULT_PRESET = 'CloudConnected';
 
 export const PRESETS = {
-  'Cloud Connected': {
+  CloudConnected: {
     backgroundColor: '#87ceeb',
     syncEasing: 0.06,
     spread: 220,
@@ -39,7 +39,7 @@ export const PRESETS = {
     sprayColor: '#dff3ff',
     bubbleColor: '#9ec9ff',
   },
-  'Gravity Rooms': {
+  GravityRooms: {
     backgroundColor: '#8d8d8d',
     syncEasing: 0.06,
     signArrows: true,
@@ -51,7 +51,7 @@ export const PRESETS = {
     ballColor: '#ff0000',
     restitution: 0.65,
   },
-  'Particles & Attractors': {
+  ParticlesAndAttractors: {
     backgroundColor: '#2b2320',
     syncEasing: 0.06,
     attractorStrength: 500,
@@ -62,13 +62,14 @@ export const PRESETS = {
     damping: 0.995,
     maxSpeed: 700,
   },
-  'Radiance Cascades': {
+  RadianceCascades: {
     // lightColor + occluderShape are intentionally omitted — useSceneControls
     // randomizes them per tab so each window is a distinct source.
     backgroundColor: '#050608',
     syncEasing: 0.06,
     lightIntensity: 2.4,
     lightRadius: 14,
+    occluderColor: '#565656',
     occluderSize: 60,
     occluderRotation: 0,
     sceneDetail: false,

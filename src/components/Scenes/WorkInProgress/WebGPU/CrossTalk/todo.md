@@ -29,6 +29,8 @@
 
 [Back to main TODO](../../../../../../TODO.md)
 
+- [ ] instead of typical folder structure lets group components by scene. ie, CrossTalk/CloudConnected, CrossTalk/Waterworks,...
+
 - [ ] **Electron exploration** — capture as a real goal, not just a note.
       Chrome can't do true transparent/click-through windows; Electron's
       `BrowserWindow({ transparent: true })` can, and would let later presets
@@ -57,7 +59,7 @@
       swapped for the real asset.
 - [ ] **Particles & Attractors** — each window gets an attractor with its own
       strength control; the mouse is also an attractor and can roam between
-      windows. Particles are feathers (use OwlFeathers component, consider pooling & tinting instances so you can tell theyre from different tabs). Started but kinda fucked
+      windows. Particles are feathers (use OwlFeathers component, consider pooling & tinting instances so you can tell theyre from different tabs). Started but incomplete
 - [x] **Fluid Sim** — a PIC/FLIP solver (`utils/flipFluid.js`, ported from
       `references/flip.html`, Matthias Müller / Ten Minute Physics, MIT) runs
       host-authoritative (see host election above): only the elected host
@@ -92,9 +94,9 @@
 - [x] **Fireflies** — (being built as standalone scene) tiny lights that gather where the cursor rests and
       migrate between windows; blink timing modeled on real firefly behavior
       (species-specific flash patterns), not a uniform sine pulse.
-- [ ] **Radiance Cascades** - 2d radiance cascades like the `~dev/examples/Shaders_RadianceCascades` example. also see `https://www.shadertoy.com/view/4dfXDn`
+- [ ] **Radiance Cascades** - 2d radiance cascades like the `~dev/examples/Shaders_RadianceCascades` example. each tab has a colored light, and a shape to obstruct light. light is contstrained to the tab/overlapping tabs. the corners of overlapping taps should also provide regions of shade/light. also see `https://www.shadertoy.com/view/4dfXDn` & `https://www.shadertoy.com/view/XsK3RR`. Started but incomplete.
 - [ ] **Portals** - each window gets 2 portals that the user can move around. the first window gets a ball that can fall through the portals. when multiple tabs are open portals are chained so the ball can travel through windows. similar to fluid sim there is y- graviy, and the ball is constrained to the current/overlapping tabs.
-- [ ] **n-Tangled** - tribute to Bjorn Stall's Entangled but with more than 2 tabs
+- [ ] **n-Tangled** - tribute to Bjorn Stall's Entangled but with support for n tabs. particle systems only become entangled when tabs overlap, unline Entangled.
 
 # // Features
 

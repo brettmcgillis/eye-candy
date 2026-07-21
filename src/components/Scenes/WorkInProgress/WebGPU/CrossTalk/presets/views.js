@@ -2,6 +2,7 @@ import CloudsView from '../components/CloudsView';
 import FeathersView from '../components/FeathersView';
 import FluidSimView from '../components/FluidSimView';
 import GravityRoomsView from '../components/GravityRoomsView';
+import RadianceCascadesView from '../components/RadianceCascadesView';
 import { DEFAULT_PRESET } from './presets';
 
 // One entry per preset: the component that renders it, plus what this
@@ -32,6 +33,25 @@ export const PRESET_VIEWS = {
   'Particles & Attractors': {
     Component: FeathersView,
     getMeta: (c) => ({ attractorStrength: c.attractorStrength }),
+  },
+  'Radiance Cascades': {
+    Component: RadianceCascadesView,
+    getMeta: (c) => ({
+      light: {
+        color: c.lightColor,
+        intensity: c.lightIntensity,
+        offsetX: c.lightOffset.x,
+        offsetY: c.lightOffset.y,
+        radius: c.lightRadius,
+      },
+      occluder: {
+        offsetX: c.occluderOffset.x,
+        offsetY: c.occluderOffset.y,
+        rotation: (c.occluderRotation * Math.PI) / 180,
+        shape: c.occluderShape,
+        size: c.occluderSize,
+      },
+    }),
   },
 };
 

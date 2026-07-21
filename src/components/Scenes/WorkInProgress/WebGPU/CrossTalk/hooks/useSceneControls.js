@@ -8,6 +8,7 @@ import getCloudControls from '../components/getCloudControls';
 import getFeatherControls from '../components/getFeatherControls';
 import getFluidControls from '../components/getFluidControls';
 import getGravityControls from '../components/getGravityControls';
+import getRadianceControls from '../components/getRadianceControls';
 import { DEFAULT_PRESET, PRESETS, getPresetControls } from '../presets/presets';
 import { requestMotionPermission, subscribeShake } from '../utils/deviceMotion';
 
@@ -31,6 +32,8 @@ const PRESET_PATH = `${SCENE_LABEL}.Presets.preset`;
 // FluidSim's snapshot has no `spread`/`hueShift` and Clouds' has no
 // `gravity`/`maxParticles`.
 const PRESET_DEFAULTS = Object.assign({}, ...Object.values(PRESETS));
+const DEFAULT_RADIANCE_LIGHT_OFFSET = { x: -0.28, y: -0.08 };
+const DEFAULT_RADIANCE_OCCLUDER_OFFSET = { x: 0.22, y: 0.1 };
 
 // This scene has no Camera folder / CameraRig (docs/scene-conventions.md §10)
 // — see components/DesktopStage.jsx for why: the camera is a fixed,
@@ -54,6 +57,17 @@ export default function useSceneControls() {
   // counter can serve every preset that wants a manual reset without them
   // stepping on each other.
   const [reseedTick, setReseedTick] = useState(0);
+
+  // Radiance Cascades' light/occluder positions — free 2D drag targets, not
+  // a Leva-owned value (no sane single slider for a free drag). They still
+  // live here rather than as state local to RadianceCascadesView because
+  // presets/views.js's getMeta (the windowSync broadcast) only ever sees
+  // `c`, never a mounted view's own state.
+  const [lightOffset, setLightOffset] = useState(DEFAULT_RADIANCE_LIGHT_OFFSET);
+  const [occluderOffset, setOccluderOffset] = useState(
+    DEFAULT_RADIANCE_OCCLUDER_OFFSET
+  );
+
   const p = {
     ...PRESET_DEFAULTS,
     ...(PRESETS[initialPreset] || PRESETS[DEFAULT_PRESET]),
@@ -116,6 +130,10 @@ export default function useSceneControls() {
       () => setReseedTick((tick) => tick + 1),
       (get) => get(PRESET_PATH) === 'Particles & Attractors'
     ),
+    Radiance: getRadianceControls(
+      p,
+      (get) => get(PRESET_PATH) === 'Radiance Cascades'
+    ),
   }));
 
   setControlsRef.current = setControls;
@@ -165,10 +183,21 @@ export default function useSceneControls() {
   return useMemo(
     () => ({
       ...controls,
+      lightOffset,
+      occluderOffset,
       preset: selectedPreset,
       reseedTick,
       setGravityAngle,
+      setLightOffset,
+      setOccluderOffset,
     }),
-    [controls, reseedTick, selectedPreset, setGravityAngle]
+    [
+      controls,
+      lightOffset,
+      occluderOffset,
+      reseedTick,
+      selectedPreset,
+      setGravityAngle,
+    ]
   );
 }

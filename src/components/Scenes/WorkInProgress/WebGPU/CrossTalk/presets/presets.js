@@ -62,6 +62,20 @@ export const PRESETS = {
     damping: 0.995,
     maxSpeed: 700,
   },
+  'Radiance Cascades': {
+    backgroundColor: '#050608',
+    syncEasing: 0.06,
+    lightColor: '#ffd1a3',
+    lightIntensity: 2.4,
+    lightRadius: 14,
+    occluderShape: 1,
+    occluderSize: 60,
+    occluderRotation: 0,
+    sceneDetail: true,
+    shadowSoftness: 0.02,
+    ambient: 0.06,
+    exposure: 1.6,
+  },
 };
 
 // Companion fn to usePresetsFolder. Given the snapshot for the preset being

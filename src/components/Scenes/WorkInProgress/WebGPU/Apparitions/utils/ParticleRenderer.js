@@ -5,12 +5,15 @@ import {
   cross,
   instanceIndex,
   mat3,
+  mix,
   normalize,
   uniform,
   varying,
   vec3,
 } from 'three/tsl';
 import * as THREE from 'three/webgpu';
+
+import COLOR_MODES from './colorModes';
 
 const calcLookAtMatrix = Fn(([targetImmutable]) => {
   const target = vec3(targetImmutable).toVar();
@@ -136,9 +139,8 @@ export default class ParticleRenderer {
       boxGeometry,
     ]);
 
-    this.geometry = new THREE.InstancedBufferGeometry().copy(mergedGeometry);
+    this.geometry = mergedGeometry;
     this.geometry.setDrawRange(0, this.defaultIndexCount);
-    this.geometry.instanceCount = 0;
 
     this.material = new THREE.MeshStandardNodeMaterial({
       metalness: 0.9,
@@ -148,16 +150,68 @@ export default class ParticleRenderer {
     this.uniforms = {
       depthScale: uniform(0.4),
       size: uniform(1),
+      colorMode: uniform(0),
+      colorScale: uniform(3),
+      colorA: uniform(new THREE.Color('#101040')),
+      colorB: uniform(new THREE.Color('#ff66cc')),
     };
 
     const vAo = varying(0, 'vAo');
-    const particle = this.simulator.particleBuffer.element(instanceIndex);
+    const vColor = varying(vec3(0), 'vColor');
+    const gridHeight = this.simulator.gridSize.y;
 
     this.material.positionNode = Fn(() => {
+      const particle = this.simulator.particleBuffer.element(instanceIndex);
       const particlePosition = particle.get('position');
       const particleDensity = particle.get('density');
       const particleDirection = particle.get('direction');
+      const particleVelocity = particle.get('velocity');
       const mat = calcLookAtMatrix(particleDirection.xyz);
+
+      const { colorA, colorB, colorScale, colorMode } = this.uniforms;
+      const speedRamp = mix(
+        colorA,
+        colorB,
+        particleVelocity.length().mul(colorScale).clamp(0, 1)
+      );
+      const heightRamp = mix(
+        colorA,
+        colorB,
+        particlePosition.y.div(gridHeight).clamp(0, 1)
+      );
+      const densityRamp = mix(
+        colorA,
+        colorB,
+        particleDensity.mul(colorScale).mul(0.3).clamp(0, 1)
+      );
+      const directionRgb = normalize(particleDirection.xyz).mul(0.5).add(0.5);
+      // 0 Presence (sim colour) is the fallthrough; the rest override it.
+      vColor.assign(
+        colorMode
+          .equal(1)
+          .select(
+            speedRamp,
+            colorMode
+              .equal(2)
+              .select(
+                directionRgb,
+                colorMode
+                  .equal(3)
+                  .select(
+                    heightRamp,
+                    colorMode
+                      .equal(4)
+                      .select(
+                        densityRamp,
+                        colorMode
+                          .equal(5)
+                          .select(vec3(colorA), particle.get('color'))
+                      )
+                  )
+              )
+          )
+      );
+
       vAo.assign(particlePosition.z.div(64));
       vAo.assign(vAo.mul(vAo).oneMinus());
       return mat
@@ -166,10 +220,11 @@ export default class ParticleRenderer {
         .add(particlePosition.mul(vec3(1, 1, this.uniforms.depthScale)));
     })();
 
-    this.material.colorNode = particle.get('color');
+    this.material.colorNode = vColor;
     this.material.aoNode = vAo;
 
     this.object = new THREE.Mesh(this.geometry, this.material);
+    this.object.count = 0;
     this.object.frustumCulled = false;
 
     this.object.onBeforeShadow = () => {
@@ -189,7 +244,12 @@ export default class ParticleRenderer {
   update(config) {
     this.uniforms.depthScale.value = config.depthScale;
     this.uniforms.size.value = config.size;
-    this.geometry.instanceCount = config.particles;
+    const modeIndex = COLOR_MODES.indexOf(config.colorMode);
+    this.uniforms.colorMode.value = modeIndex < 0 ? 0 : modeIndex;
+    this.uniforms.colorScale.value = config.colorScale;
+    this.uniforms.colorA.value.set(config.colorA);
+    this.uniforms.colorB.value.set(config.colorB);
+    this.object.count = config.particles;
     this.object.position.z = config.zOffset;
   }
 }

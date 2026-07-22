@@ -275,6 +275,10 @@ function ParticleSystem({ controls, setControls, statsRef }) {
     rendererCfg.particles = particles;
     rendererCfg.size = controls.particleSize;
     rendererCfg.zOffset = controls.particleZOffset;
+    rendererCfg.colorMode = controls.colorMode;
+    rendererCfg.colorScale = controls.colorScale;
+    rendererCfg.colorA = controls.colorA;
+    rendererCfg.colorB = controls.colorB;
     particleRenderer.update(rendererCfg);
 
     if (

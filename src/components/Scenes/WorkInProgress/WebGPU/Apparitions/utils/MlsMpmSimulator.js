@@ -103,7 +103,6 @@ export default class MlsMpmSimulator {
     this.uniforms.stiffness = uniform(3);
     this.uniforms.restDensity = uniform(1);
     this.uniforms.dynamicViscosity = uniform(0.1);
-    this.uniforms.speed = uniform(1);
     this.uniforms.gravity = uniform(new THREE.Vector3(0, 0, 0));
     this.uniforms.gridSize = uniform(this.gridSize, 'ivec3');
     // attractorMode survives only as an optional GLOBAL polarity multiplier
@@ -530,9 +529,7 @@ export default class MlsMpmSimulator {
       particleVelocity.mulAssign(particleMass);
 
       this.particleBuffer.element(instanceIndex).get('C').assign(B.mul(4));
-      particlePosition.addAssign(
-        particleVelocity.mul(this.uniforms.dt).mul(this.uniforms.speed)
-      );
+      particlePosition.addAssign(particleVelocity.mul(this.uniforms.dt));
       particlePosition.assign(
         clamp(particlePosition, vec3(2), this.uniforms.gridSize.sub(2))
       );
@@ -638,7 +635,6 @@ export default class MlsMpmSimulator {
     this.uniforms.stiffness.value = config.stiffness;
     this.uniforms.restDensity.value = config.restDensity;
     this.uniforms.dynamicViscosity.value = config.dynamicViscosity;
-    this.uniforms.speed.value = config.speed;
     this.uniforms.gravity.value.copy(config.gravity);
 
     if (config.hueBlend !== undefined) {
@@ -648,17 +644,23 @@ export default class MlsMpmSimulator {
     if (config.particles !== this.numParticles) {
       this.numParticles = config.particles;
       this.uniforms.numParticles.value = config.particles;
+      // r185: renderer.compute(kernel, count) no longer overrides dispatch — the
+      // per-particle kernels (created with .compute(1)) run a single invocation
+      // unless their own .count is set, leaving every particle but #0 unsimulated.
+      this.kernels.p2g1.count = config.particles;
+      this.kernels.p2g2.count = config.particles;
+      this.kernels.g2p.count = config.particles;
     }
 
-    this.uniforms.dt.value = Math.min(config.delta, 1 / 60) * 6;
+    // Flow bakes speed into the timestep so it scales the whole solve
+    // (forces + advection), not just position advection.
+    this.uniforms.dt.value = Math.min(config.delta, 1 / 60) * 6 * config.speed;
   }
 
   step() {
     if (!this.renderer) return;
-    this.renderer.compute(this.kernels.clearGrid);
-    this.renderer.compute(this.kernels.p2g1, this.numParticles);
-    this.renderer.compute(this.kernels.p2g2, this.numParticles);
-    this.renderer.compute(this.kernels.updateGrid);
-    this.renderer.compute(this.kernels.g2p, this.numParticles);
+    // One batched compute() = one pass + one queue submit for the whole
+    // dependency chain; five separate calls would submit five times per frame.
+    this.renderer.compute(this.kernelsPipeline);
   }
 }

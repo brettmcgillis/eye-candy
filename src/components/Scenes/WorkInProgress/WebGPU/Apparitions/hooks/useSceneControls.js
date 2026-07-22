@@ -6,6 +6,7 @@ import usePresetsFolder from '../../../../../../hooks/usePresetsFolder';
 import { DEFAULT_PRESET, PRESETS } from '../presets/presets';
 import getAmbientControls from './controls/getAmbientControls';
 import getAudioControls from './controls/getAudioControls';
+import getColorControls from './controls/getColorControls';
 import getDebugControls from './controls/getDebugControls';
 import getInteractivityControls from './controls/getInteractivityControls';
 import getPresenceControls from './controls/getPresenceControls';
@@ -54,6 +55,7 @@ export default function useSceneControls() {
       Presets: presetsFolder,
       Tracking: getTrackingControls(snapshot),
       Simulation: getSimulationControls(snapshot),
+      Color: getColorControls(snapshot),
       Interactivity: getInteractivityControls(snapshot, {
         toggleInteractionMode,
       }),

@@ -41,6 +41,12 @@ const FLOW_BASE = {
   gravityZ: 0.2,
   bloom: true,
 
+  // ---- Color ----
+  colorMode: 'Presence',
+  colorScale: 3,
+  colorA: '#101040',
+  colorB: '#ff66cc',
+
   // ---- Interactivity ----
   interactivityEnabled: false,
   interactionMode: 'attract',
@@ -224,12 +230,20 @@ export const PRESETS = {
     perPersonHue: false,
   },
 
-  // Original aesthetic look presets (HDR-lit flow + plain void).
-  Flow: FLOW_BASE,
+  // Original aesthetic look presets (HDR-lit flow + plain void). These mirror
+  // the reference flow sim: pure gravity + noise, no ambient ghost attractors
+  // or autonomous gravity/noise LFO.
+  Flow: {
+    ...FLOW_BASE,
+    autonomousMotion: false,
+    ghostApparitions: false,
+  },
   'Outside Space and Time': {
     ...FLOW_BASE,
     ...VOID_STAGE,
     bloom: false,
+    autonomousMotion: false,
+    ghostApparitions: false,
   },
 };
 

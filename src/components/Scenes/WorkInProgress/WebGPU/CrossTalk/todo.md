@@ -18,11 +18,11 @@
   window-transparent hole through to the wallpaper (that flag is Linux/X11
   only). Preset 1 uses a plain sky-blue background instead. See the Electron
   item below for the actual way to get see-through/click-through windows.
-- `launch-windows.sh` (this folder) opens N minimal `--app=` Chrome windows
+- `launch-crossTalk.sh` (this folder) opens N minimal `--app=` Chrome windows
   (native close/minimize/maximize + resize only, no tabs/toolbar) tiled
   across the screen, each as its own process so `--window-size`/
   `--window-position` actually take effect. Usage:
-  `./launch-windows.sh 4 FluidSim` (count, preset, optional URL — the preset
+  `./launch-crossTalk.sh 4 FluidSim` (count, preset, optional URL — the preset
   deep-links every window via `?preset=`).
 
 # // TODO:

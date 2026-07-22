@@ -17,10 +17,10 @@
 # needs a real served origin, not file://.
 #
 # Usage:
-#   ./launch-windows.sh [count] [preset] [url]
-#   ./launch-windows.sh 3
-#   ./launch-windows.sh 3 FluidSim
-#   ./launch-windows.sh 3 FluidSim https://localhost:3000/crossTalk
+#   ./launch-crossTalk.sh [count] [preset] [url]
+#   ./launch-crossTalk.sh 3
+#   ./launch-crossTalk.sh 3 FluidSim
+#   ./launch-crossTalk.sh 3 FluidSim https://localhost:3000/crossTalk
 #
 # The preset is appended as ?preset=<name> so every window deep-links
 # straight into it (matched case-insensitively by usePresetsFolder) instead

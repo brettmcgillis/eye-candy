@@ -20,6 +20,3 @@
 # // Bugs
 
 - [ ] not enough cranes
-- [ ] cranes falling out of scene
-- [ ] camera is not fixed like in example
-- [ ] cursor interaction is not the same as the example. i can barely touch the cranes

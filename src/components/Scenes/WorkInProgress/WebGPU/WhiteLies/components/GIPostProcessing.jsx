@@ -23,10 +23,8 @@ import { useFrame, useThree } from '@react-three/fiber';
  * WebGPU-native screen-space global illumination, ported from three.js's
  * SSGI Ball Pool example (dev/examples/three.js/examples/
  * webgpu_postprocessing_ssgi_ballpool.html) onto this project's installed
- * three version — that example's `packNormalToRGB`/`unpackRGBToNormal` and
- * split `getAONode()`/`getGINode()` accessors don't exist here yet, so
- * normals are packed with `directionToColor`/`colorToDirection` and AO/GI
- * are read as the alpha/rgb channels of the single SSGI output texture.
+ * three version — that example's `packNormalToRGB`/`unpackRGBToNormal` don't
+ * exist here, so normals are packed with `directionToColor`/`colorToDirection`.
  *
  * Pipeline: MRT scene pass (output/diffuse/normal/velocity) → SSGI → TRAA
  * (the "denoise" pass — SSGI is a noisy, temporally-accumulated effect and
@@ -82,12 +80,11 @@ function GIPostProcessing({
     const giPass = ssgi(scenePassColor, scenePassDepth, sceneNormal, camera);
     giPassRef.current = giPass;
 
-    const giResult = giPass.getTextureNode();
-    const ao = giResult.a;
-    const gi = giResult.rgb;
+    const ao = giPass.getAONode();
+    const gi = giPass.getGINode();
 
     const composite = vec4(
-      add(scenePassColor.rgb.mul(ao), scenePassDiffuse.rgb.mul(gi)),
+      add(scenePassColor.rgb.mul(ao.r), scenePassDiffuse.rgb.mul(gi.rgb)),
       scenePassColor.a
     );
 

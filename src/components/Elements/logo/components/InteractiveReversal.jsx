@@ -6,7 +6,7 @@ import { animated, useSpring } from '@react-spring/three';
 import { useGLTF } from '@react-three/drei';
 import { useFrame } from '@react-three/fiber';
 
-import { modelFile } from '../../../../../../utils/appUtils';
+import { modelFile } from '../../../../utils/appUtils';
 import {
   createGrowthMaterial,
   updateGrowthMaterial,

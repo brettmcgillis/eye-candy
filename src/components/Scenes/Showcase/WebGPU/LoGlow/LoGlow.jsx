@@ -23,6 +23,7 @@ export default function LoGlow() {
     keyColor,
     keyIntensity,
     keyPosition,
+    bloomEnabled,
     bloomThreshold,
     bloomStrength,
     bloomRadius,
@@ -193,6 +194,7 @@ export default function LoGlow() {
         />
       )}
       <PostEffects
+        bloomEnabled={bloomEnabled}
         bloomThreshold={bloomThreshold}
         bloomStrength={bloomStrength}
         bloomRadius={bloomRadius}

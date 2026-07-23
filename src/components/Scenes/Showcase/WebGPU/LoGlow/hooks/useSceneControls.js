@@ -101,6 +101,10 @@ export default function useSceneControls() {
     ),
     Bloom: folder(
       {
+        bloomEnabled: {
+          label: 'Enabled',
+          value: p.bloomEnabled,
+        },
         bloomThreshold: {
           label: 'Threshold',
           value: p.bloomThreshold,

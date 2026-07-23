@@ -8,7 +8,7 @@ import { useFrame } from '@react-three/fiber';
 import {
   fractalPixelate,
   updateFractalPixelateUniforms,
-} from '../../../../../../lib/tsl/fractalPixelate';
+} from '../../../../lib/tsl/fractalPixelate';
 
 // Wires the fractal-pixelate backdrop technique (webgpu_backdrop_area.html's
 // `backdropNode`/`viewportSharedTexture` pattern) onto a NodeMaterial: when

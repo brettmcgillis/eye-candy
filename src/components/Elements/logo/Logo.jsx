@@ -3,8 +3,8 @@ import React, { useMemo, useRef } from 'react';
 import { useFrame } from '@react-three/fiber';
 
 import { radians, sineWave } from '../../../utils/math';
-import InteractiveBret from '../../scenes/Showcase/WebGPU/LoGlow/components/InteractiveBret';
-import InteractiveReversal from '../../scenes/Showcase/WebGPU/LoGlow/components/InteractiveReversal';
+import InteractiveBret from './components/InteractiveBret';
+import InteractiveReversal from './components/InteractiveReversal';
 
 function waitAndFlip(time, waitPeriod, rotationPeriod) {
   const cycleTime = time % (waitPeriod + rotationPeriod);

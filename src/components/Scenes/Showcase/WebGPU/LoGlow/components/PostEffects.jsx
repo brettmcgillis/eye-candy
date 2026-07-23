@@ -21,6 +21,7 @@ import {
 // so this ordering costs nothing extra and reads as "glow bleeding off the
 // blocky pixels" rather than blurring the bloom into mush.
 function PostEffects({
+  bloomEnabled = true,
   bloomThreshold = 0.1,
   bloomStrength = 0.2,
   bloomRadius = 0.2,
@@ -73,14 +74,16 @@ function PostEffects({
       baseNode = colorNode;
     }
 
-    const outputNode = baseNode.add(
-      bloom(
-        baseNode,
-        bloomUniforms.strength,
-        bloomUniforms.radius,
-        bloomUniforms.threshold
-      )
-    );
+    const outputNode = bloomEnabled
+      ? baseNode.add(
+          bloom(
+            baseNode,
+            bloomUniforms.strength,
+            bloomUniforms.radius,
+            bloomUniforms.threshold
+          )
+        )
+      : baseNode;
 
     const postProcessing = new THREE.PostProcessing(renderer);
     postProcessing.outputNode = outputNode;
@@ -90,7 +93,14 @@ function PostEffects({
       pixelateUniformsRef.current = null;
       postRef.current = null;
     };
-  }, [renderer, scene, camera, fractalPixelateEnabled, bloomUniforms]);
+  }, [
+    renderer,
+    scene,
+    camera,
+    fractalPixelateEnabled,
+    bloomEnabled,
+    bloomUniforms,
+  ]);
 
   useFrame(() => {
     bloomUniforms.threshold.value = bloomThreshold;

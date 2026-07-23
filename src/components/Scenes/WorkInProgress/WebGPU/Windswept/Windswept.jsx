@@ -33,7 +33,7 @@ function Windswept() {
     <>
       <CameraRig camera={config.camera} />
       <color attach="background" args={['#05070c']} />
-      <ambientLight intensity={0.1} />
+      <ambientLight intensity={config.ambientIntensity} />
       {/* <directionalLight position={[6, 10, 4]} intensity={1.1} /> */}
       <SubtleForestSkybox
         visible={config.skyboxVisible}

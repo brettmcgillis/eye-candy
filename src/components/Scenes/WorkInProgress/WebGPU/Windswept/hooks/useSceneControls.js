@@ -9,6 +9,7 @@ import { useMediaRecorder } from '../../../../../../modules/mediaRecorder';
 import getBonsaiControls from '../components/getBonsaiControls';
 import getFieldLineControls from '../components/getFieldLineControls';
 import getGodraysControls from '../components/getGodraysControls';
+import getLightingControls from '../components/getLightingControls';
 import getPhysicalAttractorControls from '../components/getPhysicalAttractorControls';
 import getSkyboxControls from '../components/getSkyboxControls';
 import getSwarmControls from '../components/getSwarmControls';
@@ -43,6 +44,7 @@ export default function useSceneControls() {
   const [controls, setControls] = useControls(SCENE_LABEL, () => ({
     Presets: presetsFolder,
     Camera: folder(cameraControls, { collapsed: true }),
+    Lighting: getLightingControls(p),
     Swarm: getSwarmControls(p),
     FieldLines: getFieldLineControls(p),
     PhysicalAttractors: getPhysicalAttractorControls(p),

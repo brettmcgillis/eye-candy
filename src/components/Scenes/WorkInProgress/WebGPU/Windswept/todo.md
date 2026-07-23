@@ -21,6 +21,7 @@
 - tidy up leva controls. make sure to only show controls for selected attractor(s), limit label length.
 
 - test out multiple godray lights
+- see if we can incorporate techniques from webgpu_volume_lighting_traa & webgpu_volume_perlin to create multicolored godrays
 
 # // Presets
 

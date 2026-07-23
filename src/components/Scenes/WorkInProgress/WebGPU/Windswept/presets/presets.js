@@ -34,7 +34,7 @@ export const PRESETS = {
     orbitAutoRotateSpeed: 8,
     orbitDesktopPosition: {
       x: 0,
-      y: 4,
+      y: -7,
       z: 14,
     },
     orbitDesktopTarget: {
@@ -50,7 +50,7 @@ export const PRESETS = {
     orbitDesktopFov: 45,
     orbitMobilePosition: {
       x: 0,
-      y: 5,
+      y: -7,
       z: 18,
     },
     orbitMobileTarget: {
@@ -100,6 +100,7 @@ export const PRESETS = {
     operatorZoomSpeed: 24,
     operatorMinFov: 20,
     operatorMaxFov: 80,
+    ambientIntensity: 0.3,
     mode: 'Strange Attractors',
     attractorType: 'Thomas Labyrinth',
     thomasB: 0.1,
@@ -108,8 +109,8 @@ export const PRESETS = {
     stepSize: 0.1,
     speed: 0.39,
     worldScale: 1.25,
-    leafScale: 0.25,
-    sakuraScale: 8,
+    leafScale: 0.1,
+    sakuraScale: 4,
     orientationJitter: 1,
     swarmRotation: { x: 0, y: 0, z: 0 },
     flutterStrength: 0.2,
@@ -188,7 +189,7 @@ export const PRESETS = {
     orbitAutoRotateSpeed: 5,
     orbitDesktopPosition: {
       x: 0,
-      y: 4,
+      y: -7,
       z: 14,
     },
     orbitDesktopTarget: {
@@ -204,7 +205,7 @@ export const PRESETS = {
     orbitDesktopFov: 45,
     orbitMobilePosition: {
       x: 0,
-      y: 5,
+      y: -7,
       z: 18,
     },
     orbitMobileTarget: {
@@ -254,6 +255,7 @@ export const PRESETS = {
     operatorZoomSpeed: 24,
     operatorMinFov: 20,
     operatorMaxFov: 80,
+    ambientIntensity: 0.3,
     mode: 'Strange Attractors',
     attractorType: 'Four-Wing Butterfly',
     thomasB: 0.1,
@@ -265,8 +267,8 @@ export const PRESETS = {
     stepSize: 0.1,
     speed: 0.39,
     worldScale: 2.5,
-    leafScale: 0.25,
-    sakuraScale: 8,
+    leafScale: 0.1,
+    sakuraScale: 4,
     orientationJitter: 1,
     swarmRotation: { x: 0, y: 0, z: 0 },
     flutterStrength: 0.2,
@@ -345,7 +347,7 @@ export const PRESETS = {
     orbitAutoRotateSpeed: 5,
     orbitDesktopPosition: {
       x: 0,
-      y: 4,
+      y: -7,
       z: 14,
     },
     orbitDesktopTarget: {
@@ -361,7 +363,7 @@ export const PRESETS = {
     orbitDesktopFov: 45,
     orbitMobilePosition: {
       x: 0,
-      y: 5,
+      y: -7,
       z: 18,
     },
     orbitMobileTarget: {
@@ -411,6 +413,7 @@ export const PRESETS = {
     operatorZoomSpeed: 24,
     operatorMinFov: 20,
     operatorMaxFov: 80,
+    ambientIntensity: 0.3,
     mode: 'Strange Attractors',
     attractorType: 'Thomas Labyrinth',
     thomasB: 0.19,
@@ -422,8 +425,8 @@ export const PRESETS = {
     stepSize: 0.05,
     speed: 0.5,
     worldScale: 2.25,
-    leafScale: 0.25,
-    sakuraScale: 8,
+    leafScale: 0.1,
+    sakuraScale: 4,
     orientationJitter: 1,
     swarmRotation: { x: 0, y: 0, z: 0 },
     flutterStrength: 0.2,
@@ -502,7 +505,7 @@ export const PRESETS = {
     orbitAutoRotateSpeed: 8,
     orbitDesktopPosition: {
       x: 0,
-      y: 4,
+      y: -7,
       z: 14,
     },
     orbitDesktopTarget: {
@@ -518,7 +521,7 @@ export const PRESETS = {
     orbitDesktopFov: 45,
     orbitMobilePosition: {
       x: 0,
-      y: 5,
+      y: -7,
       z: 18,
     },
     orbitMobileTarget: {
@@ -568,6 +571,7 @@ export const PRESETS = {
     operatorZoomSpeed: 24,
     operatorMinFov: 20,
     operatorMaxFov: 80,
+    ambientIntensity: 0.3,
     mode: 'Physical Attractors',
     attractorType: 'Thomas Labyrinth',
     thomasB: 0.1,
@@ -579,14 +583,14 @@ export const PRESETS = {
     stepSize: 0.1,
     speed: 2.2600000000000002,
     worldScale: 1.25,
-    leafScale: 0.25,
-    sakuraScale: 8,
+    leafScale: 0.1,
+    sakuraScale: 4,
     orientationJitter: 1,
     swarmRotation: { x: 0, y: 0, z: 0 },
     flutterStrength: 0.2,
     flutterSpeed: 2,
     showFieldLines: true,
-    fieldLineSpeed: 1,
+    fieldLineSpeed: 0.25,
     fieldLineCount: 100,
     fieldLineColor: '#8fffaf',
     fieldLineOpacity: 0.8,
@@ -667,7 +671,7 @@ export const PRESETS = {
     orbitAutoRotateSpeed: 5,
     orbitDesktopPosition: {
       x: 0,
-      y: 4,
+      y: -7,
       z: 14,
     },
     orbitDesktopTarget: {
@@ -683,7 +687,7 @@ export const PRESETS = {
     orbitDesktopFov: 45,
     orbitMobilePosition: {
       x: 0,
-      y: 5,
+      y: -7,
       z: 18,
     },
     orbitMobileTarget: {
@@ -733,6 +737,7 @@ export const PRESETS = {
     operatorZoomSpeed: 24,
     operatorMinFov: 20,
     operatorMaxFov: 80,
+    ambientIntensity: 0.3,
     mode: 'Strange Attractors',
     attractorType: 'Thomas Labyrinth',
     thomasB: 0.22,
@@ -744,8 +749,8 @@ export const PRESETS = {
     stepSize: 0.02,
     speed: 1.5,
     worldScale: 1.9,
-    leafScale: 0.25,
-    sakuraScale: 8,
+    leafScale: 0.1,
+    sakuraScale: 4,
     orientationJitter: 1,
     swarmRotation: { x: 0, y: 0, z: 0 },
     flutterStrength: 0.2,

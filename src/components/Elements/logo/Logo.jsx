@@ -42,6 +42,38 @@ export default function Logo({
   neonFlickerFrequency = 10,
   bretPressDepth = 0.012,
   reversalPressDepth = 0.015,
+  growth = false,
+  growthStep = 0.22,
+  growthTargetEdge = 0.1,
+  growthSplit = 1.35,
+  growthRepulsion = 0.62,
+  growthSmoothing = 1,
+  growthRetention = 0.12,
+  growthMaxVertices = 50000,
+  growthSeed = 351107,
+  growthSeedInfluence = 0.35,
+  growthSpeed = 1,
+  growthGradientBlur = 0.35,
+  growthMode = 'breathe',
+  growthReach = 40,
+  growthTempo = 8,
+  growthScrub = 0,
+  growthPhase = 0,
+  growthShadingMode = 'neon',
+  growthGradientStart = '#9fd8ff',
+  growthGradientEnd = '#ff0000',
+  growthContrast = 1.4,
+  growthBias = -0.4,
+  growthFresnel = 0.05,
+  growthSpecular = 0.6,
+  pixelateBackdrop = false,
+  pixelateCellSize = 12,
+  pixelateLevels = 3,
+  pixelateThreshold = 0.55,
+  pixelateNoiseScale = 1.5,
+  pixelateJitterAmount = 0.12,
+  pixelateOutlineWidth = 0.08,
+  pixelateOutlineStrength = 0.5,
   ...props
 }) {
   const logoRef = useRef();
@@ -60,6 +92,69 @@ export default function Logo({
       reversalPosition.x,
       reversalPosition.y,
       reversalPosition.z,
+    ]
+  );
+
+  const growthSim = useMemo(
+    () => ({
+      growthStep,
+      targetEdgeLength: growthTargetEdge,
+      splitThreshold: growthSplit,
+      repulsion: growthRepulsion,
+      smoothing: growthSmoothing,
+      shapeRetention: growthRetention,
+      maxVertices: growthMaxVertices,
+      seed: growthSeed,
+      seedInfluence: growthSeedInfluence,
+      growthSpeed,
+      gradientBlur: growthGradientBlur,
+    }),
+    [
+      growthStep,
+      growthTargetEdge,
+      growthSplit,
+      growthRepulsion,
+      growthSmoothing,
+      growthRetention,
+      growthMaxVertices,
+      growthSeed,
+      growthSeedInfluence,
+      growthSpeed,
+      growthGradientBlur,
+    ]
+  );
+
+  const growthDriver = useMemo(
+    () => ({
+      mode: growthMode,
+      reach: growthReach,
+      tempo: growthTempo,
+      scrub: growthScrub,
+      phase: growthPhase,
+    }),
+    [growthMode, growthReach, growthTempo, growthScrub, growthPhase]
+  );
+
+  const growthShading = useMemo(
+    () => ({
+      mode: growthShadingMode,
+      gradientType:
+        growthShadingMode === 'displacement' ? 'displacement' : 'curvature',
+      gradientStart: growthGradientStart,
+      gradientEnd: growthGradientEnd,
+      curvatureContrast: growthContrast,
+      curvatureBias: growthBias,
+      fresnel: growthFresnel,
+      specular: growthSpecular,
+    }),
+    [
+      growthShadingMode,
+      growthGradientStart,
+      growthGradientEnd,
+      growthContrast,
+      growthBias,
+      growthFresnel,
+      growthSpecular,
     ]
   );
 
@@ -125,6 +220,19 @@ export default function Logo({
             neonFlickerFrequency={neonFlickerFrequency}
             innerColor={bretInnerColor}
             outerColor={bretOuterColor}
+            growthEnabled={growth}
+            growthSim={growthSim}
+            growthDriver={growthDriver}
+            growthShading={growthShading}
+            phaseOffset={0}
+            pixelateBackdrop={pixelateBackdrop}
+            pixelateCellSize={pixelateCellSize}
+            pixelateLevels={pixelateLevels}
+            pixelateThreshold={pixelateThreshold}
+            pixelateNoiseScale={pixelateNoiseScale}
+            pixelateJitterAmount={pixelateJitterAmount}
+            pixelateOutlineWidth={pixelateOutlineWidth}
+            pixelateOutlineStrength={pixelateOutlineStrength}
           />
         </group>
         <group
@@ -148,6 +256,19 @@ export default function Logo({
               neonFlickerFrequency={neonFlickerFrequency}
               innerColor={reversalInnerColor}
               outerColor={reversalOuterColor}
+              growthEnabled={growth}
+              growthSim={growthSim}
+              growthDriver={growthDriver}
+              growthShading={growthShading}
+              phaseOffset={0.5}
+              pixelateBackdrop={pixelateBackdrop}
+              pixelateCellSize={pixelateCellSize}
+              pixelateLevels={pixelateLevels}
+              pixelateThreshold={pixelateThreshold}
+              pixelateNoiseScale={pixelateNoiseScale}
+              pixelateJitterAmount={pixelateJitterAmount}
+              pixelateOutlineWidth={pixelateOutlineWidth}
+              pixelateOutlineStrength={pixelateOutlineStrength}
             />
           </group>
         </group>

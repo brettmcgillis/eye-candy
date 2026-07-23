@@ -1,23 +1,16 @@
-import { UnrealBloomPass } from 'three-stdlib';
-
 import React from 'react';
 
-import {
-  BakeShadows,
-  Effects,
-  PerspectiveCamera,
-  Sparkles,
-} from '@react-three/drei';
-import { extend, useThree } from '@react-three/fiber';
+import { BakeShadows } from '@react-three/drei';
+import { useThree } from '@react-three/fiber';
 
+import BugSparkles from '../../../../elements/BugSparkles';
 import Logo from '../../../../elements/logo/Logo';
+import CameraRig from '../../../../rigging/CameraRig';
+import PostEffects from './components/PostEffects';
 import useSceneControls from './hooks/useSceneControls';
-
-extend({ UnrealBloomPass });
 
 export default function LoGlow() {
   const { size } = useThree();
-  const cameraZ = size.width <= 768 ? 6.5 : 5;
   const logoY = size.width <= 768 ? 0 : -0.2;
 
   const {
@@ -60,16 +53,50 @@ export default function LoGlow() {
     spin,
     spinRotation,
     spinSpeed,
+    sparklesEnabled,
     sparkleColor,
     sparkleCount,
-    sparkleNoise,
     sparkleOpactity,
     sparkleScale,
     sparkleSize,
     sparkleSpeed,
+    fractalPixelateEnabled,
+    fractalPixelateApplyToLogo,
+    fractalPixelateCellSize,
+    fractalPixelateLevels,
+    fractalPixelateThreshold,
+    fractalPixelateNoiseScale,
+    fractalPixelateJitterAmount,
+    fractalPixelateOutlineWidth,
+    fractalPixelateOutlineStrength,
     enableNeonFlicker,
     neonFlickerIntensity,
     neonFlickerFrequency,
+    growth,
+    growthStep,
+    growthTargetEdge,
+    growthSplit,
+    growthRepulsion,
+    growthSmoothing,
+    growthRetention,
+    growthMaxVertices,
+    growthSeed,
+    growthSeedInfluence,
+    growthSpeed,
+    growthGradientBlur,
+    growthMode,
+    growthReach,
+    growthTempo,
+    growthScrub,
+    growthPhase,
+    growthShadingMode,
+    growthGradientStart,
+    growthGradientEnd,
+    growthContrast,
+    growthBias,
+    growthFresnel,
+    growthSpecular,
+    camera,
   } = useSceneControls();
 
   return (
@@ -80,7 +107,7 @@ export default function LoGlow() {
         intensity={keyIntensity}
         position={[keyPosition.x, keyPosition.y, keyPosition.z]}
       />
-      <PerspectiveCamera makeDefault position={[0, 0, cameraZ]} />
+      <CameraRig camera={camera} />
       <BakeShadows />
 
       <color attach="background" args={[backgroundColor]} />
@@ -120,25 +147,64 @@ export default function LoGlow() {
           spin,
           spinRotation,
           spinSpeed,
+          growth,
+          growthStep,
+          growthTargetEdge,
+          growthSplit,
+          growthRepulsion,
+          growthSmoothing,
+          growthRetention,
+          growthMaxVertices,
+          growthSeed,
+          growthSeedInfluence,
+          growthSpeed,
+          growthGradientBlur,
+          growthMode,
+          growthReach,
+          growthTempo,
+          growthScrub,
+          growthPhase,
+          growthShadingMode,
+          growthGradientStart,
+          growthGradientEnd,
+          growthContrast,
+          growthBias,
+          growthFresnel,
+          growthSpecular,
+          pixelateBackdrop: fractalPixelateApplyToLogo,
+          pixelateCellSize: fractalPixelateCellSize,
+          pixelateLevels: fractalPixelateLevels,
+          pixelateThreshold: fractalPixelateThreshold,
+          pixelateNoiseScale: fractalPixelateNoiseScale,
+          pixelateJitterAmount: fractalPixelateJitterAmount,
+          pixelateOutlineWidth: fractalPixelateOutlineWidth,
+          pixelateOutlineStrength: fractalPixelateOutlineStrength,
         }}
       />
 
-      <Sparkles
-        count={sparkleCount}
-        speed={sparkleSpeed}
-        opacity={sparkleOpactity}
-        color={sparkleColor}
-        size={sparkleSize}
-        scale={sparkleScale}
-        noise={sparkleNoise}
-      />
-      <Effects disableGamma>
-        <unrealBloomPass
-          threshold={bloomThreshold}
-          strength={bloomStrength}
-          radius={bloomRadius}
+      {sparklesEnabled && (
+        <BugSparkles
+          count={sparkleCount}
+          speed={sparkleSpeed}
+          opacity={sparkleOpactity}
+          color={sparkleColor}
+          size={sparkleSize}
+          scale={sparkleScale}
         />
-      </Effects>
+      )}
+      <PostEffects
+        bloomThreshold={bloomThreshold}
+        bloomStrength={bloomStrength}
+        bloomRadius={bloomRadius}
+        fractalPixelateEnabled={fractalPixelateEnabled}
+        fractalPixelateCellSize={fractalPixelateCellSize}
+        fractalPixelateLevels={fractalPixelateLevels}
+        fractalPixelateThreshold={fractalPixelateThreshold}
+        fractalPixelateNoiseScale={fractalPixelateNoiseScale}
+        fractalPixelateJitterAmount={fractalPixelateJitterAmount}
+        fractalPixelateOutlineWidth={fractalPixelateOutlineWidth}
+        fractalPixelateOutlineStrength={fractalPixelateOutlineStrength}
+      />
     </>
   );
 }

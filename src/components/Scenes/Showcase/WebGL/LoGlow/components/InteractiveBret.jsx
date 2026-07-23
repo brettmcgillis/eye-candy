@@ -1,50 +1,26 @@
-import * as THREE from 'three';
+import * as THREE from 'three/webgpu';
 
-import React, { useMemo, useState } from 'react';
+import React, { useEffect, useMemo, useRef, useState } from 'react';
 
 import { animated, useSpring } from '@react-spring/three';
 import { useGLTF } from '@react-three/drei';
 import { useFrame } from '@react-three/fiber';
 
 import { modelFile } from '../../../../../../utils/appUtils';
+import {
+  createGrowthMaterial,
+  updateGrowthMaterial,
+} from '../growth/growthMaterial';
+import useBackdropPixelate from '../hooks/useBackdropPixelate';
+import useDifferentialGrowth from '../hooks/useDifferentialGrowth';
 import neonFlicker from '../utils/neonFlicker';
 
 /* -------------------------------------------------------
-   LoGlow-specific interactive Bret with neon flicker
+   LoGlow-specific interactive Bret with neon flicker and
+   differential-growth inner mesh (see hooks/useDifferentialGrowth).
 ------------------------------------------------------- */
 
-function BretBase({
-  innerMaterial,
-  outerMaterial,
-  innerProps,
-  outerProps,
-  ...props
-}) {
-  const { nodes } = useGLTF(modelFile('Bret.glb'));
-
-  return (
-    <group {...props} dispose={null}>
-      <group rotation={[Math.PI / 2, 0, 0]}>
-        <animated.mesh
-          castShadow
-          receiveShadow
-          geometry={nodes['bret-in'].geometry}
-          material={innerMaterial}
-          scale={[10, 0.524, 10]}
-          {...innerProps}
-        />
-        <mesh
-          castShadow
-          receiveShadow
-          geometry={nodes['bret-out'].geometry}
-          material={outerMaterial}
-          scale={[10, 0.524, 10]}
-          {...outerProps}
-        />
-      </group>
-    </group>
-  );
-}
+const INNER_SCALE = [10, 0.524, 10];
 
 export default function InteractiveBret({
   pressDepth = 0.012,
@@ -54,11 +30,28 @@ export default function InteractiveBret({
   neonFlickerFrequency = 10,
   innerColor = '#ff0000',
   outerColor = '#000000',
+  growthEnabled = false,
+  growthSim,
+  growthDriver,
+  growthShading,
+  phaseOffset = 0,
   onClick,
+  pixelateBackdrop = false,
+  pixelateCellSize = 12,
+  pixelateLevels = 3,
+  pixelateThreshold = 0.55,
+  pixelateNoiseScale = 1.5,
+  pixelateJitterAmount = 0.12,
+  pixelateOutlineWidth = 0.08,
+  pixelateOutlineStrength = 0.5,
   ...props
 }) {
+  const { nodes } = useGLTF(modelFile('Bret.glb'));
   const [isOn, setIsOn] = useState(true);
   const [isPressed, setIsPressed] = useState(false);
+
+  const originalRef = useRef(null);
+  const growthGroupRef = useRef(null);
 
   const innerMaterial = useMemo(
     () =>
@@ -73,12 +66,40 @@ export default function InteractiveBret({
 
   const outerMaterial = useMemo(
     () =>
-      new THREE.MeshStandardMaterial({
+      new THREE.MeshStandardNodeMaterial({
         color: outerColor,
         side: THREE.DoubleSide,
       }),
     [outerColor]
   );
+
+  useBackdropPixelate(outerMaterial, {
+    enabled: pixelateBackdrop,
+    cellSize: pixelateCellSize,
+    levels: pixelateLevels,
+    threshold: pixelateThreshold,
+    noiseScale: pixelateNoiseScale,
+    jitterAmount: pixelateJitterAmount,
+    outlineWidth: pixelateOutlineWidth,
+    outlineStrength: pixelateOutlineStrength,
+  });
+
+  const gradientMaterial = useMemo(
+    () => createGrowthMaterial(growthShading),
+    []
+  );
+  useEffect(() => () => gradientMaterial.dispose(), [gradientMaterial]);
+
+  const activeInnerMaterial =
+    growthShading.mode === 'neon' ? innerMaterial : gradientMaterial;
+
+  const { mesh, restoreRef, engagedRef } = useDifferentialGrowth({
+    sourceGeometry: nodes['bret-in'].geometry,
+    material: activeInnerMaterial,
+    enabled: growthEnabled,
+    sim: growthSim,
+    driver: { ...growthDriver, phase: growthDriver.phase + phaseOffset },
+  });
 
   const { pressY } = useSpring({
     pressY: isPressed ? -pressDepth : 0,
@@ -86,11 +107,11 @@ export default function InteractiveBret({
   });
 
   useFrame(({ clock }) => {
-    if (!innerMaterial) return;
+    const elapsed = clock.getElapsedTime();
     let intensity = 0;
     if (isOn && enableNeonFlicker) {
       intensity = neonFlicker(
-        clock.getElapsedTime(),
+        elapsed,
         emissiveIntensity,
         neonFlickerIntensity,
         neonFlickerFrequency
@@ -99,6 +120,24 @@ export default function InteractiveBret({
       intensity = emissiveIntensity;
     }
     innerMaterial.emissiveIntensity = intensity;
+
+    if (growthShading.mode !== 'neon') {
+      updateGrowthMaterial(gradientMaterial, growthShading);
+    }
+
+    const engaged = growthEnabled && engagedRef.current;
+    if (originalRef.current) {
+      originalRef.current.visible = !engaged;
+    }
+    const growthGroup = growthGroupRef.current;
+    if (growthGroup) {
+      growthGroup.visible = engaged;
+      const restore = restoreRef.current;
+      if (restore) {
+        mesh.position.copy(restore.position);
+        mesh.scale.setScalar(restore.scale);
+      }
+    }
   });
 
   const pointerHandlers = {
@@ -116,12 +155,30 @@ export default function InteractiveBret({
   };
 
   return (
-    <BretBase
-      {...props}
-      innerMaterial={innerMaterial}
-      outerMaterial={outerMaterial}
-      innerProps={{ 'position-y': pressY, ...pointerHandlers }}
-      outerProps={pointerHandlers}
-    />
+    <group {...props} dispose={null}>
+      <group rotation={[Math.PI / 2, 0, 0]}>
+        <animated.group position-y={pressY} {...pointerHandlers}>
+          <mesh
+            ref={originalRef}
+            castShadow
+            receiveShadow
+            geometry={nodes['bret-in'].geometry}
+            material={innerMaterial}
+            scale={INNER_SCALE}
+          />
+          <group ref={growthGroupRef} scale={INNER_SCALE} visible={false}>
+            <primitive object={mesh} castShadow receiveShadow />
+          </group>
+        </animated.group>
+        <mesh
+          castShadow
+          receiveShadow
+          geometry={nodes['bret-out'].geometry}
+          material={outerMaterial}
+          scale={INNER_SCALE}
+          {...pointerHandlers}
+        />
+      </group>
+    </group>
   );
 }

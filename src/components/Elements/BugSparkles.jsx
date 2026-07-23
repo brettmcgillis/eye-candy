@@ -15,6 +15,7 @@ function BugSparkles({
   size = 2,
   speed = 1.5,
   scale = 3,
+  opacity = 1,
 }) {
   const pointsRef = useRef();
 
@@ -77,6 +78,7 @@ function BugSparkles({
         size={size * 0.02}
         sizeAttenuation
         transparent
+        opacity={opacity}
         depthWrite={false}
         toneMapped={false}
       />

@@ -20,7 +20,7 @@ function SceneIcon() {
 export default {
   id: 'loGlow',
   label: 'LoGlow',
-  channel: 'webgl',
+  channel: 'webgpu',
   area: 'showcase',
   icon: SceneIcon,
   Component: lazy(() => import('./LoGlow')),

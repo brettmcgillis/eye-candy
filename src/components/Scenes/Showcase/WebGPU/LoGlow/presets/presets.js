@@ -192,7 +192,7 @@ export const PRESETS = {
     growthFresnel: 0.05,
     growthSpecular: 0.6,
   },
-  Pixelate: {
+  Mondrian: {
     cameraMode: 'orbit',
     cameraAutoFit: true,
     fixedBehavior: 'single',
@@ -317,7 +317,7 @@ export const PRESETS = {
     fractalPixelateCellSize: 64,
     fractalPixelateLevels: 4,
     fractalPixelateThreshold: 0.3400000000000001,
-    fractalPixelateNoiseScale: 10,
+    fractalPixelateNoiseScale: 0.5,
     fractalPixelateJitterAmount: 0,
     fractalPixelateOutlineWidth: 0.03,
     fractalPixelateOutlineStrength: 1,

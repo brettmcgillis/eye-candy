@@ -53,6 +53,8 @@ function SceneComposition({
   brickWallConfig,
   dumpsterConfig,
   onTrashCollision,
+  igniteOnHit,
+  onIgnite,
 }) {
   return (
     <group position={SCENE_ROOT_POSITION}>
@@ -85,6 +87,8 @@ function SceneComposition({
               key={getSceneItemKey(sceneItem)}
               item={sceneItem}
               onCollisionEnter={onTrashCollision}
+              igniteOnHit={igniteOnHit}
+              onIgnite={onIgnite}
             />
           );
         }
@@ -116,6 +120,8 @@ const PhysicsScene = React.memo(function PhysicsScene({
   debug = true,
   onTrashCollision,
   shotConfig,
+  igniteOnHit,
+  onIgnite,
 }) {
   const sidewalkCollider = getSidewalkColliderShape(sidewalkGroundConfig);
 
@@ -150,6 +156,8 @@ const PhysicsScene = React.memo(function PhysicsScene({
         brickWallConfig={brickWallConfig}
         dumpsterConfig={dumpsterConfig}
         onTrashCollision={onTrashCollision}
+        igniteOnHit={igniteOnHit}
+        onIgnite={onIgnite}
       />
       <TrashBlaster
         shotConfig={shotConfig}

@@ -30,6 +30,7 @@
 
 # // Shots
 
+- [ ] smoke + fire disabled -> fire trash in -> smoke starts.
 - [ ] smoke cursor attractor interaction
 - [ ] fire cursor attractor interaction
 - [ ] smoke cursor repeller interaction

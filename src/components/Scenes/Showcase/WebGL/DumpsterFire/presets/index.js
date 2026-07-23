@@ -48,6 +48,7 @@ const DEFAULT_CAMERA_CONTROLS = Object.freeze(
 const DEFAULT_COMBUSTION_CONTROLS = Object.freeze({
   showEffects: true,
   editSplines: false,
+  igniteOnHit: false,
   cursorAttractorEnabled: true,
   showCursorAttractor: false,
   cursorAttractorMode: 'attractor',
@@ -157,6 +158,11 @@ const DARK_MODE_PARTICLE_COLORS = Object.freeze({
 
 export const PRESETS = {
   [DEFAULT_PRESET]: DEFAULT_PRESET_SNAPSHOT,
+  Ignition: {
+    ...DEFAULT_PRESET_SNAPSHOT,
+    showEffects: false,
+    igniteOnHit: true,
+  },
   'Brick Blaster': {
     ...DEFAULT_PRESET_SNAPSHOT,
     shotMode: 'Fun',

@@ -1,8 +1,8 @@
 import * as THREE from 'three';
 
-import React, { useEffect, useId, useMemo, useRef } from 'react';
+import React, { useCallback, useEffect, useId, useMemo, useRef } from 'react';
 
-import { RigidBody } from '@react-three/rapier';
+import { CuboidCollider, RigidBody } from '@react-three/rapier';
 
 import {
   DUMPSTER_LEFT_LID_PIVOT_POSITION,
@@ -21,6 +21,14 @@ const DUMPSTER_LID_ANGLE_RANGE = [
   DUMPSTER_LID_MIN_ANGLE,
   DUMPSTER_LID_MAX_ANGLE,
 ];
+
+// Approximate open-mouth cavity between the lid hinges (derived from the lid
+// pivot positions below). Rough by nature — nudge live with Physics > Debug
+// enabled while framing the "Ignition" shot.
+const DUMPSTER_MOUTH_SENSOR = Object.freeze({
+  halfExtents: [1.85, 0.1, 0.85],
+  position: [0, 1.5, -0.05],
+});
 
 function toScaleVector(scale) {
   if (Array.isArray(scale)) {
@@ -64,7 +72,12 @@ function setLidBodyAngle(body, lidAngle, itemRotation) {
   body.wakeUp?.();
 }
 
-export default function ArticulatedDumpster({ item, onCollisionEnter }) {
+export default function ArticulatedDumpster({
+  item,
+  onCollisionEnter,
+  igniteOnHit,
+  onIgnite,
+}) {
   const registerInteractiveTarget = useTrashBlasterStore(
     (s) => s.registerInteractiveTarget
   );
@@ -115,6 +128,22 @@ export default function ArticulatedDumpster({ item, onCollisionEnter }) {
         scaleVector
       ),
     [scaleVector]
+  );
+
+  const handleMouthIntersection = useCallback(
+    (payload) => {
+      if (!igniteOnHit) {
+        return;
+      }
+
+      const { isTrashProjectile, isActiveThrowable } =
+        payload?.other?.rigidBody?.userData ?? {};
+
+      if (isTrashProjectile && isActiveThrowable) {
+        onIgnite?.();
+      }
+    },
+    [igniteOnHit, onIgnite]
   );
 
   const dumpsterBodyRef = useRef(null);
@@ -300,6 +329,12 @@ export default function ArticulatedDumpster({ item, onCollisionEnter }) {
           rearLeftWheelRotation={rearLeftWheelRotation}
           rearRightWheelRotation={rearRightWheelRotation}
           scale={scale}
+        />
+        <CuboidCollider
+          args={DUMPSTER_MOUTH_SENSOR.halfExtents}
+          position={DUMPSTER_MOUTH_SENSOR.position}
+          sensor
+          onIntersectionEnter={handleMouthIntersection}
         />
       </RigidBody>
 

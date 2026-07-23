@@ -20,6 +20,8 @@ export default function DumpsterFire() {
     particleSmokeConfigs,
     showEffects,
     editSplines,
+    igniteOnHit,
+    igniteFire,
     showOverlay,
     physicsDebug,
     camera,
@@ -68,6 +70,8 @@ export default function DumpsterFire() {
         debug={physicsDebug}
         onTrashCollision={playCollision}
         shotConfig={trashShotConfig}
+        igniteOnHit={igniteOnHit}
+        onIgnite={igniteFire}
       />
       <ParticleSmokeLayer
         splines={particleSmokeSplines}
@@ -87,6 +91,7 @@ export default function DumpsterFire() {
         attractorRadius={cursorAttractorRadius}
         fireLightRig={fireLightRig}
         fireAudioConfig={fireAudioConfig}
+        igniteOnHit={igniteOnHit}
       />
       {showOverlay && <TrashBlasterOverlay />}
     </>

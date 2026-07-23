@@ -113,6 +113,7 @@ export default function FireAndSmokeLayer({
   attractorRadius,
   fireLightRig,
   fireAudioConfig,
+  igniteOnHit,
 }) {
   const setPointerInteractionActive = useTrashBlasterStore(
     (s) => s.setPointerInteractionActive
@@ -160,7 +161,10 @@ export default function FireAndSmokeLayer({
               <DumpsterFireLights rig={fireLightRig} />
             ) : null}
 
-            {isVisible && emitsFireLight && fireAudioConfig?.enabled ? (
+            {isVisible &&
+            emitsFireLight &&
+            fireAudioConfig?.enabled &&
+            (!igniteOnHit || showEffects) ? (
               <FireAudioEmitter config={fireAudioConfig} />
             ) : null}
 

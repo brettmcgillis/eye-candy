@@ -3,6 +3,7 @@ import { button, folder, useControls } from 'leva';
 
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 
+import { getCameraControlsKey } from '../../../../../../hooks/sceneCameraUtils';
 import usePresetsFolder from '../../../../../../hooks/usePresetsFolder';
 import useSceneCameraControls from '../../../../../../hooks/useSceneCameraControls';
 import { useMediaRecorder } from '../../../../../../modules/mediaRecorder';
@@ -288,6 +289,16 @@ export default function useSceneControls() {
     applyingShotModeRef.current = true;
     setControls(getShotTuningControls(mode));
     applyingShotModeRef.current = false;
+  }, []);
+
+  const igniteFire = useCallback(() => {
+    const setControls = setControlsRef.current;
+
+    if (!setControls) {
+      return;
+    }
+
+    setControls({ showEffects: true });
   }, []);
 
   const setFireAndSmokePoints = useCallback((id, updater) => {
@@ -604,6 +615,10 @@ export default function useSceneControls() {
               editSplines: {
                 label: 'Edit Mode',
                 value: initialPresetSnapshot.editSplines,
+              },
+              igniteOnHit: {
+                label: 'Ignite On Hit',
+                value: initialPresetSnapshot.igniteOnHit ?? false,
               },
               ...(localEnv()
                 ? {
@@ -986,6 +1001,7 @@ ${allEntries}
   const {
     showEffects,
     editSplines,
+    igniteOnHit,
     showOverlay,
     physicsDebug,
     cursorAttractorEnabled,
@@ -1086,12 +1102,19 @@ ${allEntries}
 
     const presetSnapshot = PRESETS[selectedPreset] || PRESETS[DEFAULT_PRESET];
 
-    setControls(getPresetDumpsterLidControls(presetSnapshot));
-  }, [cleanupNonce, selectedPreset, setControls]);
+    setControls({
+      ...getPresetDumpsterLidControls(presetSnapshot),
+      ...(igniteOnHit ? { showEffects: false } : {}),
+    });
+  }, [cleanupNonce, igniteOnHit, selectedPreset, setControls]);
 
+  const cameraControlsKey = useMemo(
+    () => getCameraControlsKey(controls),
+    [controls]
+  );
   const camera = useMemo(() => {
     return buildCamera(controls);
-  }, [buildCamera, controls]);
+  }, [buildCamera, cameraControlsKey]);
 
   const mediaRecorderFileName = selectedPreset
     ? `Dumpster Fire - ${selectedPreset}`
@@ -1104,6 +1127,8 @@ ${allEntries}
     particleSmokeConfigs,
     showEffects,
     editSplines,
+    igniteOnHit,
+    igniteFire,
     showOverlay,
     physicsDebug,
     camera,

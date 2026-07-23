@@ -137,8 +137,8 @@ export const FLOOR_COLLIDER_POSITION = [
   1,
 ];
 
-const DUMPSTER_CAMERA_DESKTOP_TARGET = [-6, 1, 0];
-const DUMPSTER_CAMERA_MOBILE_TARGET = [-6, 0, 0];
+const DUMPSTER_CAMERA_DESKTOP_TARGET = [-8, 1, 1];
+const DUMPSTER_CAMERA_MOBILE_TARGET = [-8, 1, 1];
 const DUMPSTER_CAMERA_SPLINE_POINTS = [
   { position: [-7.5, 5.2, 16.5] },
   { position: [-13.5, 6.25, 11.5] },

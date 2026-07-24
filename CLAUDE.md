@@ -18,7 +18,8 @@ Canonical scene layout to copy: `src/components/scenes/Template/SceneTemplate/`.
 
 - Scenes: `src/components/scenes/<Maturity>/<Renderer>/<SceneName>/`.
 - Reusable model wrappers: `src/components/elements/<ModelName>/`.
-- Shared hooks: `src/hooks/`. Promoted modules: `src/modules/` (e.g. `ecctrl`).
+- Shared hooks: `src/hooks/`. Promoted modules: `src/modules/` (e.g. `ecctrl`,
+  `cameraRig`, `lightingRig`).
 - Scaffold (canvas, Leva, loading): `src/app/scaffold/*`, wired via `useAppScenes`.
 - Entry: `src/main.jsx` → `src/app/App.jsx`.
 

@@ -80,9 +80,12 @@ SceneName/
   - components → `src/components/...` (e.g. `rigging`, `elements`)
   - utils → appropriate shared util location
 - Tightly-coupled, highly-reused code becomes a **module** under `src/modules/`.
-  Precedent: `src/modules/ecctrl` (a complete character-controller: components +
-  hooks). A tightly-coupled control-builder + component pair (e.g. CameraRig and
-  its controls builder) is a candidate to promote into a module.
+  Precedents: `src/modules/ecctrl` (a complete character-controller: components +
+  hooks), and the rigs `src/modules/cameraRig` and `src/modules/lightingRig` —
+  each a control-builder + runtime utils + drop-in component that only make
+  sense together, exposed through an `index.js` barrel. When a
+  control-builder + component pair grows this tightly coupled, promote it the
+  same way rather than scattering it across `hooks/` and `components/`.
 
 ## 7. GLTF models → elements
 
@@ -136,9 +139,10 @@ SceneName/
 
 ## 10. Camera
 
-- Scenes should generally use **`CameraRig`** (`src/components/rigging/CameraRig.jsx`)
-  and its controls builder (`src/hooks/buildSceneCameraControls.js`) for maximum
-  camera flexibility, rather than hand-rolling camera setup.
+- Scenes should generally use **`CameraRig`** for maximum camera flexibility,
+  rather than hand-rolling camera setup. It lives in the **`src/modules/cameraRig`**
+  module (component + controls builder + runtime utils); import from the barrel:
+  `import { CameraRig, useSceneCameraControls } from '.../modules/cameraRig'`.
 - **Control changes must never reset the camera.** `CameraRig` re-applies the
   camera frame whenever the `camera` object passed to it changes _identity_.
   `useControls`' `controls` object gets a new identity on **every** Leva edit,
@@ -146,7 +150,7 @@ SceneName/
   — and snaps — the camera on any unrelated tweak (lighting, materials,
   whatever). Instead, memoize `buildCamera(controls)` on a key derived only
   from camera-relevant control values: use
-  `getCameraControlsKey(controls)` from `src/hooks/sceneCameraUtils.js` (it
+  `getCameraControlsKey(controls)` from `src/modules/cameraRig` (it
   already knows the `camera*`/`fixed*`/`orbit*`/`spline*`/`operator*`/`preset`
   key prefixes `buildSceneCameraControls` generates) as the `useMemo`
   dependency instead of `controls` itself. See
@@ -167,8 +171,9 @@ SceneName/
 ## 10a. Lighting
 
 - Scenes that light anything should generally use **`LightingRig`**
-  (`src/components/rigging/LightingRig.jsx`) and `useSceneLightingControls`
-  (`src/hooks/useSceneLightingControls.js`) rather than hand-rolling light JSX.
+  and `useSceneLightingControls` from the **`src/modules/lightingRig`** module
+  (`import { LightingRig, useSceneLightingControls } from '.../modules/lightingRig'`)
+  rather than hand-rolling light JSX.
   It is **optional** — not a fourth required item in §13. Scenes that light
   nothing simply don't wire it, and carry no `Lighting` folder.
 - A scene declares **named light slots** in `utils/lighting.js` (sibling to
@@ -190,7 +195,7 @@ SceneName/
   handle for aiming a sun or key light.
 - **Control changes must never churn the rig.** Same rule and same reason as
   the camera (§10): memoize `buildLighting(controls)` on
-  `getLightingControlsKey(controls)` from `src/hooks/sceneLightingUtils.js`,
+  `getLightingControlsKey(controls)` from `src/modules/lightingRig`,
   never on `controls` itself, or every unrelated Leva edit remounts the lights
   and throws away their shadow maps.
 - **A preset's lighting values apply on first mount**, via the same
@@ -232,7 +237,7 @@ ToolBox/TestLab — drop what doesn't apply):
    `usePresetsFolder` (`src/hooks/usePresetsFolder.js`). See §9.
 2. **CameraRig + camera controls** — `<CameraRig camera={config.camera} />` in
    the scene root, fed by `useSceneCameraControls`
-   (`src/hooks/useSceneCameraControls.js`) for fine-grained camera behavior
+   (`src/modules/cameraRig`) for fine-grained camera behavior
    (useful for screen recording). See §10.
 3. **MediaRecorder** — `useMediaRecorder({ fileName })` from
    `src/modules/mediaRecorder`, called once inside `useSceneControls`. It

@@ -85,7 +85,7 @@ function PostEffects({
         )
       : baseNode;
 
-    const postProcessing = new THREE.PostProcessing(renderer);
+    const postProcessing = new THREE.RenderPipeline(renderer);
     postProcessing.outputNode = outputNode;
     postRef.current = postProcessing;
 

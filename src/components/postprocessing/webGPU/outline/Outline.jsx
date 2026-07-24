@@ -458,7 +458,7 @@ function Outline({
       effectAlpha = effectAlpha.mul(modeVisibilityGateNode).clamp(0.0, 1.0);
     }
 
-    const postProcessing = new THREE.PostProcessing(renderer);
+    const postProcessing = new THREE.RenderPipeline(renderer);
     postProcessing.outputNode = mix(scenePass, effectColor, effectAlpha);
     postRef.current = postProcessing;
 

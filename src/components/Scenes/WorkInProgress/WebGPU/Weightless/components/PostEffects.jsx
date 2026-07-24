@@ -18,7 +18,7 @@ function PostEffects({ enabled, damp }) {
     if (!renderer || !scene || !camera) return undefined;
 
     const scenePass = pass(scene, camera);
-    const postProcessing = new THREE.PostProcessing(renderer);
+    const postProcessing = new THREE.RenderPipeline(renderer);
     postProcessing.outputNode = enabled
       ? afterImage(scenePass, dampUniform)
       : scenePass;

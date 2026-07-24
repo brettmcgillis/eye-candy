@@ -141,7 +141,7 @@ const PostEffects = memo(function PostEffects({
     }
 
     const scenePass = pass(scene, camera);
-    const postProcessing = new THREE.PostProcessing(renderer);
+    const postProcessing = new THREE.RenderPipeline(renderer);
     let outputNode = scenePass;
 
     if (bloomEnabled) {

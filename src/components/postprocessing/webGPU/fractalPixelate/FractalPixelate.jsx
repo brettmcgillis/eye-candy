@@ -50,7 +50,7 @@ function FractalPixelate({
     );
     uniformsRef.current = uniforms;
 
-    const postProcessing = new THREE.PostProcessing(renderer);
+    const postProcessing = new THREE.RenderPipeline(renderer);
     postProcessing.outputNode = colorNode;
     postRef.current = postProcessing;
 

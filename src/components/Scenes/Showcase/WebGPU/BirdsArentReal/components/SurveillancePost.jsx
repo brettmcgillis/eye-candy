@@ -33,7 +33,7 @@ const BLOOM_DOWNSAMPLE = 2;
  * Single post chain for Birds Arent Real: scene-pass bloom (same recipe as Bloom.jsx)
  * plus, when `overlayEnabled`, the Aisle9 CCTV stack — retro scanlines/vignette/chroma
  * and the security-cam HUD overlay (REC dot, timestamp, CAM #### corner frame). Only
- * ONE THREE.PostProcessing may call render() per frame, so this REPLACES <Bloom> when
+ * ONE THREE.RenderPipeline may call render() per frame, so this REPLACES <Bloom> when
  * the scene wants the surveillance look. `cameraLabel` is the active bird's id.
  */
 function SurveillancePost({
@@ -118,7 +118,7 @@ function SurveillancePost({
       );
     }
 
-    const postProcessing = new THREE.PostProcessing(renderer);
+    const postProcessing = new THREE.RenderPipeline(renderer);
     postProcessing.outputNode = outputNode;
     postRef.current = postProcessing;
 

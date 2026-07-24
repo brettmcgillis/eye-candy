@@ -66,7 +66,7 @@ function Godrays({
     });
     const output = composite.add(bloomBlur.mul(uBloomStrength));
 
-    const post = new THREE.PostProcessing(renderer);
+    const post = new THREE.RenderPipeline(renderer);
     post.outputNode = output;
 
     postRef.current = post;

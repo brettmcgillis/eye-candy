@@ -90,7 +90,7 @@ function GIPostProcessing({
 
     const traaPass = traa(composite, scenePassDepth, scenePassVelocity, camera);
 
-    const post = new THREE.PostProcessing(renderer);
+    const post = new THREE.RenderPipeline(renderer);
     post.outputNode = traaEnabled ? traaPass : composite;
     postRef.current = post;
 

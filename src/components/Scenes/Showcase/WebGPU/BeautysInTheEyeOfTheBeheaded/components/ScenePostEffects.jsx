@@ -72,7 +72,7 @@ const ScenePostEffects = memo(function ScenePostEffects({
           })()
         : vec4(0, 0, 0, 0);
 
-    const postProcessing = new THREE.PostProcessing(renderer);
+    const postProcessing = new THREE.RenderPipeline(renderer);
     postProcessing.outputNode = scenePass
       .add(bloomContribution)
       .add(volumetricContribution);

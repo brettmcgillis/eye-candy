@@ -10,7 +10,7 @@ import { useFrame, useThree } from '@react-three/fiber';
  * WebGPU-native bloom post-processing using TSL nodes.
  *
  * Pipeline: scene pass → luminance threshold → gaussian blur → additive blend.
- * Uses THREE.PostProcessing with a TSL outputNode graph.
+ * Uses THREE.RenderPipeline with a TSL outputNode graph.
  */
 function Bloom({
   threshold = 0.8,
@@ -39,7 +39,7 @@ function Bloom({
       resolutionScale: 1 / downSampleRatio,
     });
 
-    const postProcessing = new THREE.PostProcessing(renderer);
+    const postProcessing = new THREE.RenderPipeline(renderer);
     postProcessing.outputNode = scenePass.add(blurred.mul(u.strength));
     postRef.current = postProcessing;
 

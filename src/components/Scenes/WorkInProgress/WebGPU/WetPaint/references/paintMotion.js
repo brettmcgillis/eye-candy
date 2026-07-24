@@ -86,7 +86,7 @@ async function init() {
   controls.enabled = false;
   controls.update();
 
-  postProcessing = new THREE.PostProcessing(renderer);
+  postProcessing = new THREE.RenderPipeline(renderer);
 
   const scenePass = pass(scene, camera);
   scenePass.setMRT(

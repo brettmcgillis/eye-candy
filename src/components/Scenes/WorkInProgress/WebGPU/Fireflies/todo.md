@@ -13,7 +13,7 @@
 
 - add controls for background color, grid color, grid cell illumination color, enable/disable grid cell illumination on occupancy,
 - make fireflies emissive instead of just color changes
-- can we allow for the fireflies bounding box to be a voxelized sphere?
+- can we allow for the fireflies bounding box to be a voxelized sphere? a sphere?
 - might need to include some level of wall avoidance so the floids dont slam into the sides of the sim.
 - is there a version of the scene where we run the sim and illuminate the cells but dont show the floids?
   - might need interesting material for cells.
@@ -21,6 +21,7 @@
     - might need to make hunters move in a less fluid more step like motion.
 
 - could we use the kingfisher as the hunters? animations are a bit strange, they seem to be somehow stacked, ie if i play the second the model is frozen for the lenght of the first before starting
+- could we make the hunters spheres that cast darkness using some shader or postprocessing? backdrop effect with gradient? Negative light intensity!
 
 # // References
 

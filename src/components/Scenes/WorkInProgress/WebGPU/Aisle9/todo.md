@@ -19,6 +19,7 @@
   - should the user just get to switch between the camera options, outside, inside orbit, inside loop, security cams, and then the black hole randomly spawns in/out?
   - how do we handle the transition from inside to outside? should we put the inside of the store below the ground of the outside to enable quick switching? do we need some transition animation? ideally transitions are instant, no loading.
   - should this be presented like an old video game with a small modal and typed-text animation + click to next scene milestone? This would make recording the video easy as we could just spacebar/screentap/gamepad to next like a real old-school videogame
+  - should we leverage theatrejs to make it happen on our own timeline and still allow for mini interactive moments like checking the camseras?
 
 # // Presets
 

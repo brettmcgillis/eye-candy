@@ -2,7 +2,7 @@ import React, { useCallback } from 'react';
 
 import { Environment } from '@react-three/drei';
 
-import CameraRig from '../../../../../rigging/CameraRig';
+import { CameraRig } from '../../../../../../modules/cameraRig';
 import useTrashBlasterStore from '../hooks/useTrashBlasterStore';
 import { BACKGROUND, FOG_RANGE, LIGHTING } from '../utils/sceneData';
 import SidewalkGround from './SidewalkGround';

@@ -3,7 +3,7 @@ import { folder, useControls } from 'leva';
 import { useEffect, useRef } from 'react';
 
 import usePresetsFolder from '../../../../../../hooks/usePresetsFolder';
-import useSceneCameraControls from '../../../../../../hooks/useSceneCameraControls';
+import { useSceneCameraControls } from '../../../../../../modules/cameraRig';
 import PRESETS, {
   DEFAULT_PRESET as DEFAULT_PRESET_KEY,
 } from '../presets/presets';

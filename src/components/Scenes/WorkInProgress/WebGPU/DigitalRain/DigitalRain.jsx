@@ -1,8 +1,8 @@
 import React, { memo, useMemo } from 'react';
 
+import { CameraRig } from '../../../../../modules/cameraRig';
 import AngularFlowField from '../../../../elements/AngularFlowField/AngularFlowField';
 import { mapAngularFlowFieldProps } from '../../../../elements/AngularFlowField/getAngularFlowFieldControls';
-import CameraRig from '../../../../rigging/CameraRig';
 import LightRig from './components/LightRig';
 import PhotoStudioSet from './components/PhotoStudioSet';
 import VoxelCloud from './components/VoxelCloud';

@@ -2,7 +2,7 @@ import * as THREE from 'three';
 
 import React, { useCallback, useEffect, useMemo, useState } from 'react';
 
-import CameraRig from '../../../../rigging/CameraRig';
+import { CameraRig } from '../../../../../modules/cameraRig';
 import BlackHoleHero from './components/BlackHoleHero';
 import OrbitingBodies from './components/OrbitingBodies';
 import OutdoorLights from './components/OutdoorLights';

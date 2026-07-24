@@ -8,7 +8,7 @@ import React, {
   useRef,
 } from 'react';
 
-import CameraRig from '../../../../rigging/CameraRig';
+import { CameraRig } from '../../../../../modules/cameraRig';
 import BrickWall from './components/BrickWall';
 import ButtonOverlay from './components/ButtonOverlay';
 import EmptyCanScatter from './components/EmptyCanScatter';

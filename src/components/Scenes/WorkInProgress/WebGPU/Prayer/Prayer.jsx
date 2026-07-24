@@ -4,8 +4,8 @@ import React, { useEffect, useRef } from 'react';
 
 import { useThree } from '@react-three/fiber';
 
+import { CameraRig } from '../../../../../modules/cameraRig';
 import Godrays from '../../../../postprocessing/webGPU/godrays/Godrays';
-import CameraRig from '../../../../rigging/CameraRig';
 import PrayerCluster from './components/PrayerCluster';
 import SceneLighting from './components/SceneLighting';
 import useSceneControls from './hooks/useSceneControls';

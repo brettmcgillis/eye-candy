@@ -2,7 +2,7 @@ import React from 'react';
 
 import { Physics } from '@react-three/rapier';
 
-import CameraRig from '../../../../rigging/CameraRig';
+import { CameraRig } from '../../../../../modules/cameraRig';
 import CranePool from './components/CranePool';
 import GIPostProcessing from './components/GIPostProcessing';
 import PointerPusher from './components/PointerPusher';

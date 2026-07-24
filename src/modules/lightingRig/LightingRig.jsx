@@ -1,6 +1,6 @@
 import React, { memo } from 'react';
 
-import SLOT_COMPONENTS from './lighting/LightSlots';
+import SLOT_COMPONENTS from './components/LightSlots';
 
 // Drop-in companion to CameraRig: scenes declare named light slots, pass the
 // built runtime config in, and get back real lights with shadows, targets,

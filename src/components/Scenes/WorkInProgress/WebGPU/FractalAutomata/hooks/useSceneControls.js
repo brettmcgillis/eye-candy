@@ -2,9 +2,11 @@ import { folder, useControls } from 'leva';
 
 import { useCallback, useMemo, useRef, useState } from 'react';
 
-import { getCameraControlsKey } from '../../../../../../hooks/sceneCameraUtils';
 import usePresetsFolder from '../../../../../../hooks/usePresetsFolder';
-import useSceneCameraControls from '../../../../../../hooks/useSceneCameraControls';
+import {
+  getCameraControlsKey,
+  useSceneCameraControls,
+} from '../../../../../../modules/cameraRig';
 import { useMediaRecorder } from '../../../../../../modules/mediaRecorder';
 import getContinuousControls from '../components/getContinuousControls';
 import getGodraysControls from '../components/getGodraysControls';

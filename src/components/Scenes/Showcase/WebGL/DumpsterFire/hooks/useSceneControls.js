@@ -3,9 +3,11 @@ import { button, folder, useControls } from 'leva';
 
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 
-import { getCameraControlsKey } from '../../../../../../hooks/sceneCameraUtils';
 import usePresetsFolder from '../../../../../../hooks/usePresetsFolder';
-import useSceneCameraControls from '../../../../../../hooks/useSceneCameraControls';
+import {
+  getCameraControlsKey,
+  useSceneCameraControls,
+} from '../../../../../../modules/cameraRig';
 import { useMediaRecorder } from '../../../../../../modules/mediaRecorder';
 import { localEnv } from '../../../../../../utils/appUtils';
 import buildFireAndSmokeControls from '../../../../ToolBox/shared/hooks/buildFireAndSmokeControls';

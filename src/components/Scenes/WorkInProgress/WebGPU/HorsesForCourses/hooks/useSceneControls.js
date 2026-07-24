@@ -3,7 +3,7 @@ import { button, folder, useControls } from 'leva';
 import { useMemo } from 'react';
 
 import usePresetsFolder from '../../../../../../hooks/usePresetsFolder';
-import useSceneCameraControls from '../../../../../../hooks/useSceneCameraControls';
+import { useSceneCameraControls } from '../../../../../../modules/cameraRig';
 import PRESETS from '../presets/presets';
 
 function isMobileDevice() {

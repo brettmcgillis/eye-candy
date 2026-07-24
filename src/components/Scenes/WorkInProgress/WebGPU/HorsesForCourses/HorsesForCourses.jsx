@@ -4,8 +4,8 @@ import React, { useCallback, useEffect, useRef } from 'react';
 
 import { useThree } from '@react-three/fiber';
 
+import { CameraRig } from '../../../../../modules/cameraRig';
 import Godrays from '../../../../postprocessing/webGPU/godrays/Godrays';
-import CameraRig from '../../../../rigging/CameraRig';
 import BandedHorse from './components/BandedHorse';
 import ButtonOverlay from './components/ButtonOverlay';
 import SpotLighting from './components/SpotLighting';

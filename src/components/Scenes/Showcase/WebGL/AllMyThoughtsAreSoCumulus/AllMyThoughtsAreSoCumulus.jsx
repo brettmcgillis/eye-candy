@@ -19,10 +19,12 @@ import {
 import { useThree } from '@react-three/fiber';
 import { Bloom, EffectComposer } from '@react-three/postprocessing';
 
-import useCameraFitToViewport from '../../../../../hooks/useCameraFitToViewport';
-import useCameraSpline from '../../../../../hooks/useCameraSpline';
-import useOperatorFreeCamera from '../../../../../hooks/useOperatorFreeCamera';
-import useOperatorInput from '../../../../../hooks/useOperatorInput';
+import {
+  useCameraFitToViewport,
+  useCameraSpline,
+  useOperatorFreeCamera,
+  useOperatorInput,
+} from '../../../../../modules/cameraRig';
 import CAMERA_SPLINE_PRESETS from '../../../../../presets/spline/cameraSplinePresets';
 import { GridHelper, PolarGridHelper } from '../../../../rigging/GridHelper';
 import CensorPanel from './components/CensorPanel';

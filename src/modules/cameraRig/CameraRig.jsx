@@ -5,7 +5,7 @@ import React, { useEffect, useMemo, useRef } from 'react';
 import { Line, OrbitControls, PerspectiveCamera } from '@react-three/drei';
 import { useThree } from '@react-three/fiber';
 
-import useSceneCamera from '../../hooks/useSceneCamera';
+import useSceneCamera from './useSceneCamera';
 
 function SplinePathLineGL({ points }) {
   return <Line points={points} color="#00eeff" lineWidth={1.5} />;

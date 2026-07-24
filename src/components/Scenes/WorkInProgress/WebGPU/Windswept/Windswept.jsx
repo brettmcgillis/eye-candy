@@ -2,11 +2,11 @@ import * as THREE from 'three/webgpu';
 
 import React, { memo, useCallback, useRef, useState } from 'react';
 
+import { CameraRig } from '../../../../../modules/cameraRig';
+import { LightingRig } from '../../../../../modules/lightingRig';
 import Bonsai from '../../../../elements/Bonsai/Bonsai';
 import SubtleForestSkybox from '../../../../elements/SubtleForestSkybox/SubtleForestSkybox';
 import Godrays from '../../../../postprocessing/webGPU/godrays/Godrays';
-import CameraRig from '../../../../rigging/CameraRig';
-import LightingRig from '../../../../rigging/LightingRig';
 import FieldLines from './components/FieldLines';
 import LeafSwarm from './components/LeafSwarm';
 import LightMarker from './components/LightMarker';

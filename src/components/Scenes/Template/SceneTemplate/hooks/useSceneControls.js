@@ -2,11 +2,15 @@ import { folder, useControls } from 'leva';
 
 import { useMemo, useRef } from 'react';
 
-import { getCameraControlsKey } from '../../../../../hooks/sceneCameraUtils';
-import { getLightingControlsKey } from '../../../../../hooks/sceneLightingUtils';
 import usePresetsFolder from '../../../../../hooks/usePresetsFolder';
-import useSceneCameraControls from '../../../../../hooks/useSceneCameraControls';
-import useSceneLightingControls from '../../../../../hooks/useSceneLightingControls';
+import {
+  getCameraControlsKey,
+  useSceneCameraControls,
+} from '../../../../../modules/cameraRig';
+import {
+  getLightingControlsKey,
+  useSceneLightingControls,
+} from '../../../../../modules/lightingRig';
 import { useMediaRecorder } from '../../../../../modules/mediaRecorder';
 import getComponentControls from '../components/getComponentControls';
 import { DEFAULT_PRESET, PRESETS, getPresetControls } from '../presets/presets';

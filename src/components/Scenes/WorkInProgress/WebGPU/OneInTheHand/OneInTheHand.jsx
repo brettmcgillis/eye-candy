@@ -1,6 +1,6 @@
 import React from 'react';
 
-import CameraRig from '../../../../rigging/CameraRig';
+import { CameraRig } from '../../../../../modules/cameraRig';
 import Bird from './components/Bird';
 import Branch from './components/Branch';
 import SceneEnvironment from './components/SceneEnvironment';

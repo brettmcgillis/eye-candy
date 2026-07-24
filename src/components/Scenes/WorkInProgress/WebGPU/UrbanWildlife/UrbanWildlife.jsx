@@ -2,8 +2,8 @@ import React, { useMemo, useRef } from 'react';
 
 import { useFrame } from '@react-three/fiber';
 
+import { CameraRig } from '../../../../../modules/cameraRig';
 import Bloom from '../../../../postprocessing/webGPU/bloom/Bloom';
-import CameraRig from '../../../../rigging/CameraRig';
 import PosedRaccoon from './components/PosedRaccoon';
 import Streetlight from './components/Streetlight';
 import TrashScene from './components/TrashScene';

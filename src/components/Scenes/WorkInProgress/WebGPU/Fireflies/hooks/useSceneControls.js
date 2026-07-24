@@ -2,9 +2,11 @@ import { folder, useControls } from 'leva';
 
 import { useMemo, useRef, useState } from 'react';
 
-import { getCameraControlsKey } from '../../../../../../hooks/sceneCameraUtils';
 import usePresetsFolder from '../../../../../../hooks/usePresetsFolder';
-import useSceneCameraControls from '../../../../../../hooks/useSceneCameraControls';
+import {
+  getCameraControlsKey,
+  useSceneCameraControls,
+} from '../../../../../../modules/cameraRig';
 import { useMediaRecorder } from '../../../../../../modules/mediaRecorder';
 import getFireflyControls from '../components/getFireflyControls';
 import getFlockingControls from '../components/getFlockingControls';

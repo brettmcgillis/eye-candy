@@ -2,7 +2,7 @@ import * as THREE from 'three/webgpu';
 
 import React, { useRef, useState } from 'react';
 
-import CameraRig from '../../../../rigging/CameraRig';
+import { CameraRig } from '../../../../../modules/cameraRig';
 import CurlTrails from './components/CurlTrails';
 import ParticleBird from './components/ParticleBird';
 import PostEffects from './components/PostEffects';

@@ -3,9 +3,9 @@ import React from 'react';
 import { BakeShadows } from '@react-three/drei';
 import { useThree } from '@react-three/fiber';
 
+import { CameraRig } from '../../../../../modules/cameraRig';
 import BugSparkles from '../../../../elements/BugSparkles';
 import Logo from '../../../../elements/logo/Logo';
-import CameraRig from '../../../../rigging/CameraRig';
 import PostEffects from './components/PostEffects';
 import useSceneControls from './hooks/useSceneControls';
 

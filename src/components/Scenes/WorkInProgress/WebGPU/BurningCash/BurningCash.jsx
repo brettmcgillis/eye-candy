@@ -2,9 +2,9 @@ import React, { useCallback, useMemo, useRef } from 'react';
 
 import { useFrame } from '@react-three/fiber';
 
+import { CameraRig } from '../../../../../modules/cameraRig';
 import ScatteredCash from '../../../../elements/ScatteredCash/ScatteredCash';
 import Bloom from '../../../../postprocessing/webGPU/bloom/Bloom';
-import CameraRig from '../../../../rigging/CameraRig';
 import BillPallet, {
   computePalletBox,
   useStackDims,

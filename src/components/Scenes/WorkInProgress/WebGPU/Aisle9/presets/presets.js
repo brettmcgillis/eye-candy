@@ -1,4 +1,4 @@
-import { buildSceneCameraControlValues } from '../../../../../../hooks/sceneCameraUtils';
+import { buildSceneCameraControlValues } from '../../../../../../modules/cameraRig';
 import {
   INTERIOR_OPERATOR_CAMERA,
   PARKING_LOT_ORBIT_CAMERA,

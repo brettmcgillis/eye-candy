@@ -3,7 +3,7 @@ import { folder, useControls } from 'leva';
 import { useEffect, useMemo, useRef } from 'react';
 
 import usePresetsFolder from '../../../../../../hooks/usePresetsFolder';
-import useSceneCameraControls from '../../../../../../hooks/useSceneCameraControls';
+import { useSceneCameraControls } from '../../../../../../modules/cameraRig';
 import { useMediaRecorder } from '../../../../../../modules/mediaRecorder';
 import {
   BLACK_HOLE_VARIANT_LEGACY_PORT,

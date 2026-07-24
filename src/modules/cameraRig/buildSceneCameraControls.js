@@ -1,6 +1,6 @@
 import { button, folder } from 'leva';
 
-import { localEnv } from '../utils/appUtils';
+import { localEnv } from '../../utils/appUtils';
 import {
   SCENE_CAMERA_FIXED_BEHAVIOR_OPTIONS,
   SCENE_CAMERA_MODE_OPTIONS,

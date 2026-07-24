@@ -2,13 +2,13 @@ import React from 'react';
 
 import { Environment } from '@react-three/drei';
 
+import { CameraRig } from '../../../../../modules/cameraRig';
 import ManholeCover from '../../../../elements/ManholeCover/ManholeCover';
 import ParkTrashCan from '../../../../elements/ParkTrashCan/ParkTrashCan';
 import Sidewalks from '../../../../elements/Sidewalks/Sidewalks';
 import CigaretteButts from '../../../../elements/cigaretteButts/CigaretteButts';
 import { Litter, Litter2 } from '../../../../elements/litter/Litter';
 import { NewsPaper2 } from '../../../../elements/newsPapers/NewsPapers';
-import CameraRig from '../../../../rigging/CameraRig';
 import BirdPovRig from './components/BirdPovRig';
 import BusStop from './components/BusStop';
 import CursorTracker from './components/CursorTracker';

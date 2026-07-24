@@ -1,6 +1,6 @@
 import React from 'react';
 
-import CameraRig from '../../../../rigging/CameraRig';
+import { CameraRig } from '../../../../../modules/cameraRig';
 import FloatingSeeds from './components/FloatingSeeds';
 import Flowers from './components/Flowers';
 import Grass from './components/Grass';

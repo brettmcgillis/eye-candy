@@ -1,6 +1,6 @@
 import React, { memo } from 'react';
 
-import CameraRig from '../../../../rigging/CameraRig';
+import { CameraRig } from '../../../../../modules/cameraRig';
 import Swarm from './components/Swarm';
 import useSceneControls from './hooks/useSceneControls';
 

@@ -2,7 +2,7 @@ import React from 'react';
 
 import { Environment } from '@react-three/drei';
 
-import CameraRig from '../../../../rigging/CameraRig';
+import { CameraRig } from '../../../../../modules/cameraRig';
 import Lighting from './components/Lighting';
 import LiquidSkull from './components/LiquidSkull';
 import useSceneControls from './hooks/useSceneControls';

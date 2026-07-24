@@ -2,9 +2,11 @@ import React, { useLayoutEffect, useState } from 'react';
 
 import { OrbitControls, PerspectiveCamera } from '@react-three/drei';
 
-import useCameraFitToViewport from '../../../../../../hooks/useCameraFitToViewport';
-import useOperatorFreeCamera from '../../../../../../hooks/useOperatorFreeCamera';
-import useOperatorInput from '../../../../../../hooks/useOperatorInput';
+import {
+  useCameraFitToViewport,
+  useOperatorFreeCamera,
+  useOperatorInput,
+} from '../../../../../../modules/cameraRig';
 import { SCENE_GROUND_Y } from '../utils/sceneLayout';
 
 const FLOOR_SIZE = 24;

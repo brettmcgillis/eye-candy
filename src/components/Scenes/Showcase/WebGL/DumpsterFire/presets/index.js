@@ -1,4 +1,4 @@
-import { buildSceneCameraControlValues } from '../../../../../../hooks/sceneCameraUtils';
+import { buildSceneCameraControlValues } from '../../../../../../modules/cameraRig';
 import {
   BACKGROUND,
   CAMERA,

@@ -3,7 +3,7 @@ import { folder, useControls } from 'leva';
 import { useEffect, useMemo } from 'react';
 
 import usePresetsFolder from '../../../../../../hooks/usePresetsFolder';
-import useSceneCameraControls from '../../../../../../hooks/useSceneCameraControls';
+import { useSceneCameraControls } from '../../../../../../modules/cameraRig';
 import PRESETS, { DEFAULT_PRESET } from '../presets/presets';
 
 const SCENE_LABEL = 'One In The Hand';

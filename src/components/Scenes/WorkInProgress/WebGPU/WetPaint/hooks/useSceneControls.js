@@ -3,7 +3,7 @@ import { button, folder, useControls } from 'leva';
 import { useCallback, useMemo, useRef } from 'react';
 
 import usePresetsFolder from '../../../../../../hooks/usePresetsFolder';
-import useSceneCameraControls from '../../../../../../hooks/useSceneCameraControls';
+import { useSceneCameraControls } from '../../../../../../modules/cameraRig';
 import { useMediaRecorder } from '../../../../../../modules/mediaRecorder';
 import { DEFAULT_PRESET, PRESETS, getPresetControls } from '../presets/presets';
 import { SIDEWALK_HEIGHT } from '../utils/sceneUtils';

@@ -1,7 +1,7 @@
 import React, { memo, useCallback, useRef } from 'react';
 
+import { CameraRig } from '../../../../../modules/cameraRig';
 import Godrays from '../../../../postprocessing/webGPU/godrays/Godrays';
-import CameraRig from '../../../../rigging/CameraRig';
 import ButtonOverlay from './components/ButtonOverlay';
 import CenterLight from './components/CenterLight';
 import LightRig from './components/LightRig';

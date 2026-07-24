@@ -12,6 +12,7 @@ import { depthAwareBlend } from '../../../../lib/tsl/depthAwareBlend';
 
 function Godrays({
   lightRef,
+  light: lightProp = null,
   blendColor = '#ffffff',
   density = 1.2,
   maxDensity = 0.9,
@@ -28,9 +29,13 @@ function Godrays({
   const postRef = useRef(null);
   const nodesRef = useRef(null);
 
+  // `lightRef` only works when the light is mounted for the scene's lifetime;
+  // a ref never re-triggers this effect. Callers whose light can unmount (a
+  // LightingRig slot being toggled) pass `light` instead so a new instance
+  // rebuilds the pipeline.
   useEffect(() => {
-    const light = lightRef?.current;
-    if (!renderer || !scene || !camera || !light) return;
+    const light = lightProp ?? lightRef?.current;
+    if (!renderer || !scene || !camera || !light) return undefined;
 
     const scenePass = pass(scene, camera);
     const sceneColor = scenePass.getTextureNode('output');
@@ -83,7 +88,7 @@ function Godrays({
       postRef.current = null;
       nodesRef.current = null;
     };
-  }, [renderer, scene, camera, blur, bloomRadius]);
+  }, [renderer, scene, camera, blur, bloomRadius, lightProp]);
 
   useFrame(() => {
     if (!postRef.current || !nodesRef.current) return;

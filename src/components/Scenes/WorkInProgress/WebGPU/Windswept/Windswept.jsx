@@ -1,14 +1,15 @@
 import * as THREE from 'three/webgpu';
 
-import React, { memo, useRef } from 'react';
+import React, { memo, useCallback, useRef, useState } from 'react';
 
 import Bonsai from '../../../../elements/Bonsai/Bonsai';
 import SubtleForestSkybox from '../../../../elements/SubtleForestSkybox/SubtleForestSkybox';
 import Godrays from '../../../../postprocessing/webGPU/godrays/Godrays';
 import CameraRig from '../../../../rigging/CameraRig';
-import CenterLight from './components/CenterLight';
+import LightingRig from '../../../../rigging/LightingRig';
 import FieldLines from './components/FieldLines';
 import LeafSwarm from './components/LeafSwarm';
+import LightMarker from './components/LightMarker';
 import PhysicalAttractorMarkers from './components/PhysicalAttractorMarkers';
 import useSceneControls from './hooks/useSceneControls';
 
@@ -26,15 +27,26 @@ function Windswept() {
   // Shared with LeafSwarm (reads it for physics) and PhysicalAttractorMarkers
   // (owns/drags it) — lifted here since both are siblings.
   const attractorsRef = useRef([]);
-  // Godrays needs the actual THREE.PointLight instance, not just its props.
-  const godraysLightRef = useRef(null);
+  // Godrays raymarches this light's shadow map, so it needs the live
+  // THREE.PointLight. Held in state, not a ref: toggling the slot unmounts and
+  // remounts the light, and Godrays has to rebuild its pipeline when that
+  // instance changes.
+  const [godrayLight, setGodrayLight] = useState(null);
+
+  const handleLightChange = useCallback((slotId, light) => {
+    if (slotId === 'godray') {
+      setGodrayLight(light);
+    }
+  }, []);
 
   return (
     <>
       <CameraRig camera={config.camera} />
       <color attach="background" args={['#05070c']} />
-      <ambientLight intensity={config.ambientIntensity} />
-      {/* <directionalLight position={[6, 10, 4]} intensity={1.1} /> */}
+      <LightingRig
+        lighting={config.lighting}
+        onLightChange={handleLightChange}
+      />
       <SubtleForestSkybox
         visible={config.skyboxVisible}
         rotation={[0, THREE.MathUtils.degToRad(config.skyboxRotationY), 0]}
@@ -54,18 +66,17 @@ function Windswept() {
         showPot={config.bonsaiShowPot}
         showStalk={config.bonsaiShowStalk}
       />
-      <CenterLight
-        color={config.godraysColor}
-        intensity={config.godraysIntensity}
-        lightRef={godraysLightRef}
-        position={[
-          config.godraysPosition.x,
-          config.godraysPosition.y,
-          config.godraysPosition.z,
-        ]}
-        sphereSize={config.godraysLightSphereSize}
-        volumeSize={config.godraysVolumeSize}
-      />
+      {config.lightGodrayEnabled && (
+        <LightMarker
+          color={config.lightGodrayColor}
+          position={[
+            config.lightGodrayPosition.x,
+            config.lightGodrayPosition.y,
+            config.lightGodrayPosition.z,
+          ]}
+          size={config.godraysLightSphereSize}
+        />
+      )}
       <group
         rotation={[
           THREE.MathUtils.degToRad(config.swarmRotation.x),
@@ -82,7 +93,7 @@ function Windswept() {
       </group>
       {config.godraysEnabled && (
         <Godrays
-          lightRef={godraysLightRef}
+          light={godrayLight}
           blendColor={config.godraysBlendColor}
           density={config.godraysDensity}
           maxDensity={config.godraysMaxDensity}

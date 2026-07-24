@@ -9,9 +9,14 @@ export const PRESETS = {
   // 'fixed' mode with no auto-rotate, so if the Camera folder shows Orbit +
   // Auto Rotate ON immediately on load (no "reset" click needed), the
   // preset's camera values are correctly seeding the schema on first mount.
+  //
+  // lightKeyIntensity is the same check for lighting (§10a): utils/lighting.js
+  // declares 1.5, so seeing 2.5 in the Lighting folder on load means the
+  // preset is seeding the generated lighting schema too.
   Default: {
     cameraMode: 'orbit',
     orbitAutoRotate: true,
+    lightKeyIntensity: 2.5,
   },
 };
 

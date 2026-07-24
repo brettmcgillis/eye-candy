@@ -119,7 +119,8 @@ SceneName/
   by `useControls(SCENE_LABEL, () => ({...}))` itself, which stays expanded
   so the panel isn't empty on open.
 - **`Presets` is always the first folder and `Camera` is always the second**
-  in the object passed to `useControls`, in that order. Any scene-specific
+  in the object passed to `useControls`, in that order. When a scene uses
+  `LightingRig`, its **`Lighting` folder is always third**. Any scene-specific
   folders come after. See §13 for the full required order.
 - Scenes should generally use the **presets hook** so multiple presets and
   control resets work. Preset keys match the Leva schema **1:1** — flat,
@@ -163,6 +164,50 @@ SceneName/
   `orbitAutoRotate`/`orbitDesktopPosition`/etc. will silently only take
   effect after the presets folder's "reset" button is pressed.
 
+## 10a. Lighting
+
+- Scenes that light anything should generally use **`LightingRig`**
+  (`src/components/rigging/LightingRig.jsx`) and `useSceneLightingControls`
+  (`src/hooks/useSceneLightingControls.js`) rather than hand-rolling light JSX.
+  It is **optional** — not a fourth required item in §13. Scenes that light
+  nothing simply don't wire it, and carry no `Lighting` folder.
+- A scene declares **named light slots** in `utils/lighting.js` (sibling to
+  `utils/camera.js`). Slot ids drive the flat preset keys — a slot named `key`
+  produces `lightKeyColor`, `lightKeyIntensity`, `lightKeyPosition`, … so
+  **renaming a slot is a preset migration**. Types: `ambient`, `hemisphere`,
+  `directional`, `point`, `spot`, `rectArea`.
+- **When a scene uses LightingRig, `Lighting` is the third folder**, after
+  `Presets` and `Camera` and before any scene-specific folders (§9).
+- **Shadows are declared, not flagged.** A slot casts shadows only if it
+  declares `shadow`, and the declaration is the map size: `shadow: 2048`, or
+  `shadow: { mapSize, bias, normalBias, near, far, extent }` to tune. Absence
+  means no shadow. There is no separate `castShadow` boolean to forget, and no
+  named quality tier to look up. Every caster is an extra render pass and a
+  shadow-casting **point** light is a cube map — six. Roughly two thirds of the
+  lights in this repo don't cast, so opting in is the exception.
+- **Position accepts XYZ or spherical.** `position: [5, 8, 5]` or
+  `position: { azimuth, elevation, radius }`. Spherical is usually the better
+  handle for aiming a sun or key light.
+- **Control changes must never churn the rig.** Same rule and same reason as
+  the camera (§10): memoize `buildLighting(controls)` on
+  `getLightingControlsKey(controls)` from `src/hooks/sceneLightingUtils.js`,
+  never on `controls` itself, or every unrelated Leva edit remounts the lights
+  and throws away their shadow maps.
+- **A preset's lighting values apply on first mount**, via the same
+  `controlsSnapshotRef` seeding the camera folder uses — automatic as long as
+  `usePresetsFolder` runs before `useSceneLightingControls` and its
+  `controlsSnapshotRef` is passed straight through.
+- **Disabled slots unmount** rather than linger at intensity 0, so anything
+  holding a light instance (a postprocess raymarching its shadow map, say) must
+  not rely on a plain ref — a ref never re-triggers the consumer's effects.
+  Pass `onLightChange(slotId, light)` (a stable `useCallback`) and hold the
+  light in state. `Windswept` + `Godrays` is the worked example.
+- **Per-slot `layer` restricts what a light touches.** `layer: 1` (or
+  `{ mode: 'set', channel: 1 }`) moves the light to that layer _exclusively_;
+  `{ mode: 'enable', channel: 1 }` adds a layer while keeping the existing
+  ones. Use it when a key light should hit a hero object without washing out
+  everything else in the scene.
+
 ## 11. Asset preloading
 
 - **Always preload assets** (models, textures, HDRs, audio). Scenes must be ready
@@ -194,6 +239,10 @@ ToolBox/TestLab — drop what doesn't apply):
    self-registers its own Leva controls and hotkeys (screenshot + start/stop
    recording) — internalizes screen rec instead of relying on the device's
    own capture. Nothing else needs to run it.
+
+**`LightingRig` is optional, not a fourth required item** — but when a scene
+does use it, its `Lighting` folder goes third in the `useControls` object,
+between `Camera` and the scene-specific folders (§9, §10a).
 
 **Overlay buttons are the exception, not a fourth required item.** Only add
 them when the scene's spec explicitly calls for user-facing controls outside

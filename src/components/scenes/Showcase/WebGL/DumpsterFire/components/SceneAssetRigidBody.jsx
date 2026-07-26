@@ -149,6 +149,7 @@ export function DynamicSceneAsset({ item, onCollisionEnter }) {
       angularDamping={1.6}
       canSleep
       ccd
+      userData={{ isFlammableTrash: true }}
       onCollisionEnter={onCollisionEnter}
       {...rigidBodyProps}
     >

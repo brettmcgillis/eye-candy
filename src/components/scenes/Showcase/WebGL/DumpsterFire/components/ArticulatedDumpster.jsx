@@ -136,10 +136,10 @@ export default function ArticulatedDumpster({
         return;
       }
 
-      const { isTrashProjectile, isActiveThrowable } =
+      const { isTrashProjectile, isActiveThrowable, isFlammableTrash } =
         payload?.other?.rigidBody?.userData ?? {};
 
-      if (isTrashProjectile && isActiveThrowable) {
+      if (isFlammableTrash || (isTrashProjectile && isActiveThrowable)) {
         onIgnite?.();
       }
     },

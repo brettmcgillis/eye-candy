@@ -162,6 +162,7 @@ function buildWallBatches({ enabled, length, height, variants }) {
         key: `${variant.key}-${rowIndex}-${columnIndex}`,
         position: [rowStartX + columnIndex * columnSpan, rowY, localBackEdgeZ],
         rotation: [0, 0, 0],
+        userData: { isFlammableTrash: true },
       });
     }
   }

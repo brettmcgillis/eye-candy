@@ -15,16 +15,12 @@ import useCollisionAudio from './hooks/useCollisionAudio';
 import useSceneControls from './hooks/useSceneControls';
 import useWindowRuntime from './hooks/useWindowRuntime';
 
-// Orbit is pinned low and to one face of the building: no going over the top,
-// no dropping below the horizon into the ground, no swinging around the back.
+// Orbit limits (min/max distance, polar/azimuth angle) live in the Camera
+// > Orbit Leva folder, seeded from presets/presets.js — they pin the view low
+// and to one face of the building: no going over the top, no dropping below
+// the horizon into the ground, no swinging around the back.
 const ORBIT_CONTROLS_PROPS = {
   enablePan: false,
-  minDistance: 12,
-  maxDistance: 60,
-  minPolarAngle: 1.02,
-  maxPolarAngle: 1.54,
-  minAzimuthAngle: -0.75,
-  maxAzimuthAngle: 0.75,
 };
 
 export default function WindowBreaker() {

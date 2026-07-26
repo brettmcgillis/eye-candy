@@ -223,8 +223,8 @@ export const CAMERA = {
     },
     mobile: {
       position: [-5.5, 4, 13.8],
-      target: [-6, 0.8, 0],
-      pivot: [-6, 0.8, 0],
+      target: DUMPSTER_CAMERA_MOBILE_TARGET,
+      pivot: DUMPSTER_CAMERA_MOBILE_TARGET,
       fov: 60,
     },
   },

@@ -192,12 +192,12 @@ export const CAMERA = {
     shots: {
       establishing: {
         desktop: {
-          position: [-8, 6.2, 16],
+          position: [-7.1, 5.1, 13.25],
           target: DUMPSTER_CAMERA_DESKTOP_TARGET,
           fov: 50,
         },
         mobile: {
-          position: [-6, 4.2, 16],
+          position: [-5.5, 4, 13.8],
           target: DUMPSTER_CAMERA_MOBILE_TARGET,
           fov: 79,
         },

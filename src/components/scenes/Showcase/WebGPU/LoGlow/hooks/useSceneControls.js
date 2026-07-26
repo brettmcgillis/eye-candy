@@ -182,7 +182,7 @@ export default function useSceneControls() {
           label: 'Cell Size',
           value: p.fractalPixelateCellSize,
           min: 2,
-          max: 64,
+          max: 128,
         },
         fractalPixelateLevels: {
           label: 'Levels',

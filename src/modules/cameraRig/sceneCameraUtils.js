@@ -9,6 +9,18 @@ const DEFAULT_FIXED_SHOT_ID = 'default';
 const DEFAULT_FIXED_SEQUENCE_INTERVAL_SECONDS = 5;
 const DEFAULT_ORBIT_AUTO_ROTATE = false;
 const DEFAULT_ORBIT_AUTO_ROTATE_SPEED = 2;
+const DEFAULT_ORBIT_ENABLE_PAN = true;
+// Angle limits are authored/displayed in degrees (a Leva-friendly, human
+// unit) and converted to radians only where OrbitControls actually consumes
+// them, in buildSceneCameraRuntimeConfig. 0/180 and -180/180 are the full,
+// unrestricted range, matching OrbitControls' own default behavior.
+const DEFAULT_ORBIT_MIN_DISTANCE = 0;
+const DEFAULT_ORBIT_MAX_DISTANCE = 100;
+const DEFAULT_ORBIT_MAX_DISTANCE_UNLIMITED = true;
+const DEFAULT_ORBIT_MIN_POLAR_ANGLE_DEG = 0;
+const DEFAULT_ORBIT_MAX_POLAR_ANGLE_DEG = 180;
+const DEFAULT_ORBIT_MIN_AZIMUTH_ANGLE_DEG = -180;
+const DEFAULT_ORBIT_MAX_AZIMUTH_ANGLE_DEG = 180;
 const DEFAULT_SPLINE_DURATION = 30;
 const DEFAULT_SPLINE_TENSION = 0.5;
 const DEFAULT_SPLINE_CLOSED = true;
@@ -102,6 +114,10 @@ function cloneSnapshot(snapshot) {
 
 function toFiniteNumber(value, fallback) {
   return Number.isFinite(value) ? value : fallback;
+}
+
+function degToRad(degrees) {
+  return (degrees * Math.PI) / 180;
 }
 
 function toPositiveNumber(value, fallback) {
@@ -471,6 +487,34 @@ function normalizeOrbitDeclaration(camera, fixedDeclaration) {
       resolvedCamera?.orbit?.autoRotateSpeed,
       DEFAULT_ORBIT_AUTO_ROTATE_SPEED
     ),
+    enablePan: resolvedCamera?.orbit?.enablePan ?? DEFAULT_ORBIT_ENABLE_PAN,
+    minDistance: toFiniteNumber(
+      resolvedCamera?.orbit?.minDistance,
+      DEFAULT_ORBIT_MIN_DISTANCE
+    ),
+    maxDistance: toFiniteNumber(
+      resolvedCamera?.orbit?.maxDistance,
+      DEFAULT_ORBIT_MAX_DISTANCE
+    ),
+    maxDistanceUnlimited:
+      resolvedCamera?.orbit?.maxDistanceUnlimited ??
+      DEFAULT_ORBIT_MAX_DISTANCE_UNLIMITED,
+    minPolarAngle: toFiniteNumber(
+      resolvedCamera?.orbit?.minPolarAngle,
+      DEFAULT_ORBIT_MIN_POLAR_ANGLE_DEG
+    ),
+    maxPolarAngle: toFiniteNumber(
+      resolvedCamera?.orbit?.maxPolarAngle,
+      DEFAULT_ORBIT_MAX_POLAR_ANGLE_DEG
+    ),
+    minAzimuthAngle: toFiniteNumber(
+      resolvedCamera?.orbit?.minAzimuthAngle,
+      DEFAULT_ORBIT_MIN_AZIMUTH_ANGLE_DEG
+    ),
+    maxAzimuthAngle: toFiniteNumber(
+      resolvedCamera?.orbit?.maxAzimuthAngle,
+      DEFAULT_ORBIT_MAX_AZIMUTH_ANGLE_DEG
+    ),
   };
 }
 
@@ -673,6 +717,14 @@ export function buildSceneCameraControlValues(camera = {}, options = {}) {
     orbitDesktopFov: normalizedCamera.orbit.desktop.fov,
     orbitAutoRotate: normalizedCamera.orbit.autoRotate,
     orbitAutoRotateSpeed: normalizedCamera.orbit.autoRotateSpeed,
+    orbitEnablePan: normalizedCamera.orbit.enablePan,
+    orbitMinDistance: normalizedCamera.orbit.minDistance,
+    orbitMaxDistance: normalizedCamera.orbit.maxDistance,
+    orbitMaxDistanceUnlimited: normalizedCamera.orbit.maxDistanceUnlimited,
+    orbitMinPolarAngle: normalizedCamera.orbit.minPolarAngle,
+    orbitMaxPolarAngle: normalizedCamera.orbit.maxPolarAngle,
+    orbitMinAzimuthAngle: normalizedCamera.orbit.minAzimuthAngle,
+    orbitMaxAzimuthAngle: normalizedCamera.orbit.maxAzimuthAngle,
     orbitDesktopPivot: toVectorObject(
       normalizedCamera.orbit.desktop.pivot,
       normalizedCamera.orbit.desktop.pivot
@@ -933,6 +985,43 @@ export function buildSceneCameraRuntimeConfig({ camera, controls = {} } = {}) {
       autoRotateSpeed: toFiniteNumber(
         controls.orbitAutoRotateSpeed,
         normalizedCamera.orbit.autoRotateSpeed
+      ),
+      enablePan: controls.orbitEnablePan ?? normalizedCamera.orbit.enablePan,
+      minDistance: toFiniteNumber(
+        controls.orbitMinDistance,
+        normalizedCamera.orbit.minDistance
+      ),
+      maxDistance:
+        (controls.orbitMaxDistanceUnlimited ??
+        normalizedCamera.orbit.maxDistanceUnlimited)
+          ? Infinity
+          : toFiniteNumber(
+              controls.orbitMaxDistance,
+              normalizedCamera.orbit.maxDistance
+            ),
+      minPolarAngle: degToRad(
+        toFiniteNumber(
+          controls.orbitMinPolarAngle,
+          normalizedCamera.orbit.minPolarAngle
+        )
+      ),
+      maxPolarAngle: degToRad(
+        toFiniteNumber(
+          controls.orbitMaxPolarAngle,
+          normalizedCamera.orbit.maxPolarAngle
+        )
+      ),
+      minAzimuthAngle: degToRad(
+        toFiniteNumber(
+          controls.orbitMinAzimuthAngle,
+          normalizedCamera.orbit.minAzimuthAngle
+        )
+      ),
+      maxAzimuthAngle: degToRad(
+        toFiniteNumber(
+          controls.orbitMaxAzimuthAngle,
+          normalizedCamera.orbit.maxAzimuthAngle
+        )
       ),
       desktop: {
         fov: toFiniteNumber(

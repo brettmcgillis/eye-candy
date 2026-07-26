@@ -43,6 +43,14 @@ function buildSequenceRender(cameraFolderPath) {
   return (get) => get(`${cameraFolderPath}.Fixed.fixedBehavior`) === 'sequence';
 }
 
+function buildOrbitMaxDistanceRender(cameraFolderPath) {
+  if (!cameraFolderPath) {
+    return undefined;
+  }
+
+  return (get) => !get(`${cameraFolderPath}.Orbit.orbitMaxDistanceUnlimited`);
+}
+
 function buildForwardRender(cameraFolderPath) {
   if (!cameraFolderPath) {
     return undefined;
@@ -169,6 +177,7 @@ export default function buildSceneCameraControls({
   const operatorFolderRender = buildRender(cameraFolderPath, 'operator');
   const fixedSequenceRender = buildSequenceRender(cameraFolderPath);
   const splineForwardRender = buildForwardRender(cameraFolderPath);
+  const orbitMaxDistanceRender = buildOrbitMaxDistanceRender(cameraFolderPath);
 
   const fixedControls = {
     fixedBehavior: applyControlOverride(
@@ -316,6 +325,87 @@ export default function buildSceneCameraControls({
         min: -16,
         step: 0.1,
         value: normalizedCamera.orbit.autoRotateSpeed,
+      },
+      controlOverrides
+    ),
+    orbitEnablePan: applyControlOverride(
+      'orbitEnablePan',
+      {
+        label: 'Enable Pan',
+        value: normalizedCamera.orbit.enablePan,
+      },
+      controlOverrides
+    ),
+    orbitMinPolarAngle: applyControlOverride(
+      'orbitMinPolarAngle',
+      {
+        label: 'Min Polar Angle',
+        max: 180,
+        min: 0,
+        step: 1,
+        value: normalizedCamera.orbit.minPolarAngle,
+      },
+      controlOverrides
+    ),
+    orbitMaxPolarAngle: applyControlOverride(
+      'orbitMaxPolarAngle',
+      {
+        label: 'Max Polar Angle',
+        max: 180,
+        min: 0,
+        step: 1,
+        value: normalizedCamera.orbit.maxPolarAngle,
+      },
+      controlOverrides
+    ),
+    orbitMinAzimuthAngle: applyControlOverride(
+      'orbitMinAzimuthAngle',
+      {
+        label: 'Min Azimuth Angle',
+        max: 180,
+        min: -180,
+        step: 1,
+        value: normalizedCamera.orbit.minAzimuthAngle,
+      },
+      controlOverrides
+    ),
+    orbitMaxAzimuthAngle: applyControlOverride(
+      'orbitMaxAzimuthAngle',
+      {
+        label: 'Max Azimuth Angle',
+        max: 180,
+        min: -180,
+        step: 1,
+        value: normalizedCamera.orbit.maxAzimuthAngle,
+      },
+      controlOverrides
+    ),
+    orbitMinDistance: applyControlOverride(
+      'orbitMinDistance',
+      {
+        label: 'Min Distance',
+        min: 0,
+        step: 0.5,
+        value: normalizedCamera.orbit.minDistance,
+      },
+      controlOverrides
+    ),
+    orbitMaxDistanceUnlimited: applyControlOverride(
+      'orbitMaxDistanceUnlimited',
+      {
+        label: 'Max Distance Unlimited',
+        value: normalizedCamera.orbit.maxDistanceUnlimited,
+      },
+      controlOverrides
+    ),
+    orbitMaxDistance: applyControlOverride(
+      'orbitMaxDistance',
+      {
+        label: 'Max Distance',
+        min: 0,
+        render: orbitMaxDistanceRender,
+        step: 0.5,
+        value: normalizedCamera.orbit.maxDistance,
       },
       controlOverrides
     ),

@@ -571,7 +571,8 @@ export default function useSceneCamera({
   const orbitInteractionActive = isOrbitMode && orbitInteractionEnabled;
   const hasActions = !!(actions?.action1 || actions?.action2);
   const resolvedOrbitControlsProps = useMemo(() => {
-    const enablePan = orbitControlsProps.enablePan ?? true;
+    const enablePan =
+      orbitControlsProps.enablePan ?? camera?.orbit?.enablePan ?? true;
     const enableRotate = orbitControlsProps.enableRotate ?? true;
     const enableZoom = orbitControlsProps.enableZoom ?? true;
     const autoRotate =
@@ -594,6 +595,16 @@ export default function useSceneCamera({
       enableZoom: orbitInteractionActive && enableZoom,
       autoRotate: orbitInteractionActive && autoRotate,
       autoRotateSpeed,
+      minDistance: orbitControlsProps.minDistance ?? camera?.orbit?.minDistance,
+      maxDistance: orbitControlsProps.maxDistance ?? camera?.orbit?.maxDistance,
+      minPolarAngle:
+        orbitControlsProps.minPolarAngle ?? camera?.orbit?.minPolarAngle,
+      maxPolarAngle:
+        orbitControlsProps.maxPolarAngle ?? camera?.orbit?.maxPolarAngle,
+      minAzimuthAngle:
+        orbitControlsProps.minAzimuthAngle ?? camera?.orbit?.minAzimuthAngle,
+      maxAzimuthAngle:
+        orbitControlsProps.maxAzimuthAngle ?? camera?.orbit?.maxAzimuthAngle,
     };
   }, [
     activeOrbitFrame.pivot,

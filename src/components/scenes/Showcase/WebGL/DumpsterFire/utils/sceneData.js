@@ -184,7 +184,7 @@ const DUMPSTER_CAMERA_RISE_AND_FALL_POINTS = [
 ];
 
 export const CAMERA = {
-  defaultMode: 'fixed',
+  defaultMode: 'orbit',
   cameraAutoFit: true,
   fixed: {
     behavior: 'single',
@@ -205,6 +205,16 @@ export const CAMERA = {
     },
   },
   orbit: {
+    autoRotate: false,
+    autoRotateSpeed: 2,
+    enablePan: false,
+    minDistance: 5,
+    maxDistance: 16,
+    maxDistanceUnlimited: false,
+    minPolarAngle: 40,
+    maxPolarAngle: 80,
+    minAzimuthAngle: -90,
+    maxAzimuthAngle: 90,
     desktop: {
       position: [-7.1, 5.1, 13.25],
       target: DUMPSTER_CAMERA_DESKTOP_TARGET,
@@ -291,14 +301,14 @@ export const LIGHTING = {
 };
 
 export const POINTER_TAP_THRESHOLD = 8;
-export const SHOT_SPAWN_OFFSET = 1.25;
+export const SHOT_SPAWN_OFFSET = 0.1;
 export const SHOT_SPEED = 20;
-export const SHOT_BASE_VERTICAL_BOOST = 2.5;
-export const SHOT_POINTER_VERTICAL_BOOST = 4.5;
+export const SHOT_BASE_VERTICAL_BOOST = 0;
+export const SHOT_POINTER_VERTICAL_BOOST = 0;
 export const SHOT_SPIN_SPREAD = Object.freeze({
-  x: 6,
-  y: 12,
-  z: 6,
+  x: 26,
+  y: 26,
+  z: 26,
 });
 export const SHOT_TUNING_PRESETS = Object.freeze({
   Realistic: Object.freeze({
@@ -311,13 +321,13 @@ export const SHOT_TUNING_PRESETS = Object.freeze({
     spinZ: SHOT_SPIN_SPREAD.z,
   }),
   Fun: Object.freeze({
-    spawnOffset: 1.5,
+    spawnOffset: SHOT_SPAWN_OFFSET,
     speed: 80,
-    baseVerticalBoost: 0,
-    pointerVerticalBoost: 0,
-    spinX: 10,
-    spinY: 18,
-    spinZ: 10,
+    baseVerticalBoost: SHOT_BASE_VERTICAL_BOOST,
+    pointerVerticalBoost: SHOT_POINTER_VERTICAL_BOOST,
+    spinX: SHOT_SPIN_SPREAD.x,
+    spinY: SHOT_SPIN_SPREAD.y,
+    spinZ: SHOT_SPIN_SPREAD.z,
   }),
 });
 export const DEFAULT_SHOT_TUNING_MODE = 'Realistic';

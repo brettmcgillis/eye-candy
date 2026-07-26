@@ -378,7 +378,16 @@ export default function useSceneControls() {
     SCENE_LABEL,
     () => ({
       Presets: presetsFolder,
-
+      Camera: folder(cameraControls, { collapsed: true }),
+      Overlay: folder(
+        {
+          showOverlay: {
+            label: 'Show Overlay',
+            value: initialPresetSnapshot.showOverlay ?? true,
+          },
+        },
+        { collapsed: true }
+      ),
       Scene: folder(
         {
           sceneBackgroundColor: {
@@ -456,16 +465,6 @@ export default function useSceneControls() {
             label: 'Position',
             step: 0.05,
             value: initialPresetSnapshot.sidewalkPosition,
-          },
-        },
-        { collapsed: true }
-      ),
-      Camera: folder(cameraControls, { collapsed: true }),
-      Overlay: folder(
-        {
-          showOverlay: {
-            label: 'Show Overlay',
-            value: initialPresetSnapshot.showOverlay ?? true,
           },
         },
         { collapsed: true }

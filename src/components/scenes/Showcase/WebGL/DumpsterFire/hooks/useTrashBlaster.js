@@ -447,6 +447,23 @@ export default function useTrashBlaster(shotConfig = DEFAULT_SHOT_TUNING) {
   useEffect(() => {
     const { domElement } = gl;
 
+    const isPointerOverCanvas = (clientX, clientY) => {
+      const rect = domElement.getBoundingClientRect();
+
+      return (
+        clientX >= rect.left &&
+        clientX <= rect.right &&
+        clientY >= rect.top &&
+        clientY <= rect.bottom
+      );
+    };
+
+    const applyCursor = (cursor) => {
+      if (document.body.style.cursor !== cursor) {
+        document.body.style.cursor = cursor;
+      }
+    };
+
     const resolveInteractiveSession = (clientX, clientY) => {
       const pointerPosition = getNormalizedPointerPosition(
         clientX,
@@ -517,6 +534,10 @@ export default function useTrashBlaster(shotConfig = DEFAULT_SHOT_TUNING) {
       };
 
       setPointerInteractionActive(Boolean(interaction));
+
+      if (interaction) {
+        applyCursor('grabbing');
+      }
     };
 
     const handlePointerMove = (event) => {
@@ -524,6 +545,14 @@ export default function useTrashBlaster(shotConfig = DEFAULT_SHOT_TUNING) {
       const interaction = pointerDown?.interaction;
 
       if (!interaction) {
+        if (!pointerDown) {
+          const isHovering =
+            isPointerOverCanvas(event.clientX, event.clientY) &&
+            Boolean(resolveInteractiveSession(event.clientX, event.clientY));
+
+          applyCursor(isHovering ? 'grab' : 'auto');
+        }
+
         return;
       }
 
@@ -565,6 +594,12 @@ export default function useTrashBlaster(shotConfig = DEFAULT_SHOT_TUNING) {
       pointerDownRef.current = null;
 
       setPointerInteractionActive(false);
+
+      const isHovering =
+        isPointerOverCanvas(event.clientX, event.clientY) &&
+        Boolean(resolveInteractiveSession(event.clientX, event.clientY));
+
+      applyCursor(isHovering ? 'grab' : 'auto');
 
       if (!pointerDown || event.button !== 0) {
         return;
@@ -631,6 +666,7 @@ export default function useTrashBlaster(shotConfig = DEFAULT_SHOT_TUNING) {
       const activePointerDown = pointerDownRef.current;
       pointerDownRef.current = null;
       setPointerInteractionActive(false);
+      applyCursor('auto');
 
       if (activePointerDown?.interaction?.kind === 'body') {
         endBodyDragSession(activePointerDown.interaction, rapier);
@@ -646,6 +682,7 @@ export default function useTrashBlaster(shotConfig = DEFAULT_SHOT_TUNING) {
 
     return () => {
       setPointerInteractionActive(false);
+      applyCursor('auto');
       domElement.removeEventListener('pointerdown', handlePointerDown);
       window.removeEventListener('pointermove', handlePointerMove);
       window.removeEventListener('pointerup', handlePointerUp);

@@ -19,21 +19,57 @@ function pick(items) {
 
 function createSoundBank() {
   return Object.fromEntries(
-    Object.entries(IMPACT_AUDIO_GROUPS).map(([groupKey, groupConfig]) => [
-      groupKey,
-      {
-        config: { ...IMPACT_AUDIO_DEFAULTS, ...groupConfig },
-        howls: groupConfig.sources.map(
-          (source) =>
-            new Howl({
-              src: [audioFile(source)],
+    Object.entries(IMPACT_AUDIO_GROUPS).map(([groupKey, groupConfig]) => {
+      const config = { ...IMPACT_AUDIO_DEFAULTS, ...groupConfig };
+
+      if (groupConfig.sprites) {
+        return [
+          groupKey,
+          {
+            type: 'sprite',
+            config,
+            howl: new Howl({
+              src: [audioFile(groupConfig.source)],
+              sprite: groupConfig.sprites,
               pool: 4,
               onloaderror: () => {},
-            })
-        ),
-      },
-    ])
+            }),
+          },
+        ];
+      }
+
+      return [
+        groupKey,
+        {
+          type: 'variant',
+          config,
+          howls: groupConfig.sources.map(
+            (source) =>
+              new Howl({
+                src: [audioFile(source)],
+                pool: 4,
+                onloaderror: () => {},
+              })
+          ),
+        },
+      ];
+    })
   );
+}
+
+function unloadSoundBank(soundBank) {
+  Object.values(soundBank).forEach((entry) => {
+    if (entry.type === 'sprite') {
+      entry.howl.stop();
+      entry.howl.unload();
+      return;
+    }
+
+    entry.howls.forEach((howl) => {
+      howl.stop();
+      howl.unload();
+    });
+  });
 }
 
 export default function useCollisionAudio() {
@@ -53,12 +89,7 @@ export default function useCollisionAudio() {
     registerAudio();
     return () => {
       unregisterAudio();
-      Object.values(soundBank).forEach((entry) =>
-        entry.howls.forEach((howl) => {
-          howl.stop();
-          howl.unload();
-        })
-      );
+      unloadSoundBank(soundBank);
       lastPlaybackRef.current.clear();
     };
   }, [registerAudio, soundBank, unregisterAudio]);
@@ -80,10 +111,21 @@ export default function useCollisionAudio() {
       }
       lastPlaybackRef.current.set(groupKey, now);
 
+      const volume = randomInRange(entry.config.volumeRange);
+      const rate = randomInRange(entry.config.rateRange);
+
+      if (entry.type === 'sprite') {
+        const clipKey = pick(entry.config.clipKeys);
+        const id = entry.howl.play(clipKey);
+        entry.howl.volume(volume, id);
+        entry.howl.rate(rate, id);
+        return;
+      }
+
       const howl = pick(entry.howls);
       const id = howl.play();
-      howl.volume(randomInRange(entry.config.volumeRange), id);
-      howl.rate(randomInRange(entry.config.rateRange), id);
+      howl.volume(volume, id);
+      howl.rate(rate, id);
     },
     [soundBank]
   );

@@ -220,11 +220,18 @@ async function normalizeFile(file, opts, manifest, folder) {
   }
 
   const tmpPath = path.join(dir, `.${base}.normalizing.mp3`);
-  const loudnormFilter =
-    `loudnorm=I=${opts.target}:TP=${opts.tp}:LRA=${opts.lra}:` +
-    `measured_I=${measured.input_i}:measured_TP=${measured.input_tp}:` +
-    `measured_LRA=${measured.input_lra}:measured_thresh=${measured.input_thresh}:` +
-    `offset=${measured.target_offset}:linear=true:print_format=summary`;
+  // Very short/quiet clips can fail EBU R128 gating (measured_I comes back
+  // -inf) — passing that into the second pass makes ffmpeg's option parser
+  // reject it outright. Fall back to single-pass loudnorm, which normalizes
+  // dynamically instead of relying on the (missing) gated measurement.
+  const measurementIsUsable =
+    Number.isFinite(measuredI) && Number.isFinite(Number(measured.input_tp));
+  const loudnormFilter = measurementIsUsable
+    ? `loudnorm=I=${opts.target}:TP=${opts.tp}:LRA=${opts.lra}:` +
+      `measured_I=${measured.input_i}:measured_TP=${measured.input_tp}:` +
+      `measured_LRA=${measured.input_lra}:measured_thresh=${measured.input_thresh}:` +
+      `offset=${measured.target_offset}:linear=true:print_format=summary`
+    : `loudnorm=I=${opts.target}:TP=${opts.tp}:LRA=${opts.lra}:print_format=summary`;
 
   await execFileAsync('ffmpeg', [
     '-hide_banner',

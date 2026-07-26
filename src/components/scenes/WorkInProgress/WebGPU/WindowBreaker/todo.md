@@ -20,7 +20,7 @@
 
 [Back to main TODO](../../../../../../TODO.md)
 
-- add some black geometry inside the factory so we cant see through.
+- add some geometry inside the factory so we cant see through, tsl woodedn boards to prevent glass falling inward.
 - add a sensor plane inside the building to cull shards that fall inside and wont be seen
 
 # // Presets
@@ -33,6 +33,7 @@
 
 - cleanup button not restoring windows
 - rocks not colliding with glass shards to break further
+- rocks not landing on ground?
 - grass is causing major lag. need to frustom cull, occlusion cull.
 - on rock-glass collision we see the window disappear and then respawn broken.
 

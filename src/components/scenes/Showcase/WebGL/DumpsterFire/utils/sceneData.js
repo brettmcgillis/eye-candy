@@ -215,6 +215,7 @@ export const CAMERA = {
     maxPolarAngle: 80,
     minAzimuthAngle: -90,
     maxAzimuthAngle: 90,
+    azimuthUnlimited: false,
     desktop: {
       position: [-7.1, 5.1, 13.25],
       target: DUMPSTER_CAMERA_DESKTOP_TARGET,

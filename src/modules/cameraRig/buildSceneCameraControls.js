@@ -51,6 +51,14 @@ function buildOrbitMaxDistanceRender(cameraFolderPath) {
   return (get) => !get(`${cameraFolderPath}.Orbit.orbitMaxDistanceUnlimited`);
 }
 
+function buildOrbitAzimuthRender(cameraFolderPath) {
+  if (!cameraFolderPath) {
+    return undefined;
+  }
+
+  return (get) => !get(`${cameraFolderPath}.Orbit.orbitAzimuthUnlimited`);
+}
+
 function buildForwardRender(cameraFolderPath) {
   if (!cameraFolderPath) {
     return undefined;
@@ -178,6 +186,7 @@ export default function buildSceneCameraControls({
   const fixedSequenceRender = buildSequenceRender(cameraFolderPath);
   const splineForwardRender = buildForwardRender(cameraFolderPath);
   const orbitMaxDistanceRender = buildOrbitMaxDistanceRender(cameraFolderPath);
+  const orbitAzimuthRender = buildOrbitAzimuthRender(cameraFolderPath);
 
   const fixedControls = {
     fixedBehavior: applyControlOverride(
@@ -358,12 +367,21 @@ export default function buildSceneCameraControls({
       },
       controlOverrides
     ),
+    orbitAzimuthUnlimited: applyControlOverride(
+      'orbitAzimuthUnlimited',
+      {
+        label: 'Azimuth Unlimited',
+        value: normalizedCamera.orbit.azimuthUnlimited,
+      },
+      controlOverrides
+    ),
     orbitMinAzimuthAngle: applyControlOverride(
       'orbitMinAzimuthAngle',
       {
         label: 'Min Azimuth Angle',
         max: 180,
         min: -180,
+        render: orbitAzimuthRender,
         step: 1,
         value: normalizedCamera.orbit.minAzimuthAngle,
       },
@@ -375,6 +393,7 @@ export default function buildSceneCameraControls({
         label: 'Max Azimuth Angle',
         max: 180,
         min: -180,
+        render: orbitAzimuthRender,
         step: 1,
         value: normalizedCamera.orbit.maxAzimuthAngle,
       },

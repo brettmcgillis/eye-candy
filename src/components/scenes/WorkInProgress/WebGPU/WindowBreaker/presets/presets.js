@@ -11,6 +11,7 @@ export const PRESETS = {
     orbitMaxPolarAngle: 88.24,
     orbitMinAzimuthAngle: -42.97,
     orbitMaxAzimuthAngle: 42.97,
+    orbitAzimuthUnlimited: false,
     orbitDesktopPosition: { x: 6, y: 5, z: 40 },
     orbitDesktopTarget: { x: 0, y: 9, z: 0 },
     orbitDesktopFov: 42,

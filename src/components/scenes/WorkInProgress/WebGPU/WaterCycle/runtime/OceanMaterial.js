@@ -1,0 +1,84 @@
+import { attribute, texture, uniform, vec3 } from 'three/tsl';
+import * as THREE from 'three/webgpu';
+
+import {
+  QT_OCEAN_MIN_CELL_RESOLUTION,
+  QT_OCEAN_MIN_LOD_RADIUS,
+} from './oceanConstants';
+import {
+  oceanFragmentStageWGSL,
+  oceanVertexStageWGSL,
+  vCascadeScales,
+  vDisplacedPosition,
+  vMorphedPosition,
+} from './shaders/oceanShaders';
+
+const DEFAULT_IMPACT_FOAM_TEXTURE = new THREE.DataTexture(
+  new Uint8Array([0, 0, 0, 255]),
+  1,
+  1
+);
+DEFAULT_IMPACT_FOAM_TEXTURE.needsUpdate = true;
+
+export default class OceanMaterial {
+  constructor(params) {
+    const shaderParams = {
+      time: uniform(0),
+      cameraPosition: uniform(new THREE.Vector3()),
+      minLodRadius: QT_OCEAN_MIN_LOD_RADIUS,
+      gridResolution: uniform(
+        params.gridResolution ?? QT_OCEAN_MIN_CELL_RESOLUTION
+      ),
+      position: attribute('position'),
+      vindex: attribute('vindex'),
+      width: attribute('width'),
+      lod: attribute('lod'),
+      ifftResolution: uniform(params.ifftResolution),
+      displacement0: texture(params.cascades[0].displacement),
+      displacement1: texture(params.cascades[1].displacement),
+      displacement2: texture(params.cascades[2].displacement),
+      derivatives0: texture(params.cascades[0].derivative),
+      derivatives1: texture(params.cascades[1].derivative),
+      derivatives2: texture(params.cascades[2].derivative),
+      jacobian0: texture(params.cascades[0].jacobian),
+      jacobian1: texture(params.cascades[1].jacobian),
+      jacobian2: texture(params.cascades[2].jacobian),
+      ifft_sampler0: texture(params.cascades[0].derivative),
+      ifft_sampler1: texture(params.cascades[1].derivative),
+      ifft_sampler2: texture(params.cascades[2].derivative),
+      foamStrength: params.foamStrength,
+      foamThreshold: params.foamThreshold,
+      reveal: uniform(params.reveal ?? 0),
+      impactFoamTexture: texture(
+        params.impactFoamTexture ?? DEFAULT_IMPACT_FOAM_TEXTURE
+      ),
+      impactFoamStrength: uniform(params.impactFoamStrength ?? 0.8),
+      impactFoamPatchSize: uniform(params.impactFoamPatchSize ?? 100),
+      seaColor: uniform(new THREE.Color(params.seaColor ?? '#01040c')),
+      horizonColor: uniform(new THREE.Color(params.horizonColor ?? '#6b9ed1')),
+      skyColor: uniform(new THREE.Color(params.skyColor ?? '#143663')),
+      sunColor: uniform(new THREE.Color(params.sunColor ?? '#ffe6b8')),
+      lodScale: params.lodScale,
+      morphBlend: uniform(params.morphBlend ?? 1),
+      waveLengths: vec3(
+        params.cascades[0].params.lengthScale,
+        params.cascades[1].params.lengthScale,
+        params.cascades[2].params.lengthScale
+      ),
+      sunPosition: uniform(params.sunPosition),
+      vMorphedPosition,
+      vDisplacedPosition,
+      vCascadeScales,
+    };
+
+    const material = new THREE.MeshBasicNodeMaterial();
+    material.positionNode = oceanVertexStageWGSL(shaderParams);
+    material.colorNode = oceanFragmentStageWGSL(shaderParams);
+    material.side = THREE.FrontSide;
+    material.colorSpace = THREE.SRGBColorSpace;
+    material.transparent = false;
+
+    this.material = material;
+    this.parameters = shaderParams;
+  }
+}

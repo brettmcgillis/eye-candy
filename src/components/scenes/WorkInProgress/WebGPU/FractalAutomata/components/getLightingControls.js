@@ -74,6 +74,20 @@ export default function getLightingControls(p = {}) {
         label: 'Background Color',
         value: p.backgroundColor ?? '#03040a',
       },
+      // Without an environment map, metalness/clearcoat have nothing to
+      // reflect except the three directional lights above — reads as flat,
+      // dark surfaces punctuated by blown-out hotspots. A neutral studio IBL
+      // (background hidden — the scene keeps its own backgroundColor) gives
+      // metal/clearcoat a plausible soft reflection instead. Kept low by
+      // default — this scene wants weathered/matte, not showroom-glossy;
+      // roughness is what should be doing most of the work.
+      envIntensity: {
+        label: 'Environment Intensity',
+        value: p.envIntensity ?? 0.3,
+        min: 0,
+        max: 3,
+        step: 0.01,
+      },
     },
     { collapsed: true }
   );

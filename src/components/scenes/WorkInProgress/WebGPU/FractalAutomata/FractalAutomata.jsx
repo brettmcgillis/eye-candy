@@ -1,5 +1,7 @@
 import React, { memo, useCallback, useRef } from 'react';
 
+import { Environment } from '@react-three/drei';
+
 import { CameraRig } from '../../../../../modules/cameraRig';
 import Godrays from '../../../../postprocessing/webGPU/godrays/Godrays';
 import ButtonOverlay from './components/ButtonOverlay';
@@ -27,6 +29,11 @@ function FractalAutomata() {
     <>
       <CameraRig camera={config.camera} />
       <color attach="background" args={[config.backgroundColor]} />
+      <Environment
+        preset="studio"
+        background={false}
+        environmentIntensity={config.envIntensity}
+      />
       <LightRig config={config} />
       <CenterLight
         color={config.godraysColor}

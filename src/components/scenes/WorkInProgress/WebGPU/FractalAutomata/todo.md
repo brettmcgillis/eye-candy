@@ -41,6 +41,8 @@
 - would `~/dev/examples/260716_DLACoral` be a good example for us to leverage? It sort of looks like what I expected the fixed+growth to look like.
 - could we use the three.js building generator (or it's techniques) to turn the fractal into buildings?
 
+- checkout `webgpu_compute_rasterizer`, `webgpu_compute_rasterizer_ibl` could this help improve perf?
+
 # // Presets
 
 # // Features

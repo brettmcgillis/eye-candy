@@ -64,6 +64,10 @@ These instructions give an AI coding agent the immediately useful knowledge to w
   - File: `src/components/scenes/PaperStack/PaperStack.jsx` — consumes the config hook and shows how materials and scene logic read from `config`.
 - For the clipboard format: JSON-stringify the snapshot, pretty-print, then (optionally) replace quoted object keys with unquoted identifiers to create a paste-friendly object literal for quick copy/paste back into the IDE (see the regex used in PaperStack).
 
+**WebGPU / TSL function reference**
+
+- Don't guess or search for what TSL functions exist — read `~/dev/examples/three.js/src/nodes/TSL.js` directly (the TSL fluent function API: math/utils/lighting/PBR helpers, what you actually call in shader code). For the underlying Node classes instead, check `~/dev/examples/three.js/src/nodes/Nodes.js`.
+
 **Integration points & external deps**
 
 - `three`, `@react-three/fiber`, `@react-three/drei` — 3D rendering.

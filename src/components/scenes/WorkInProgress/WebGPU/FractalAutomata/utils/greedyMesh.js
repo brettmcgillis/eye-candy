@@ -120,6 +120,7 @@ export default function buildGreedyMeshGeometry({
   const positions = [];
   const normals = [];
   const colors = [];
+  const stateAttr = [];
   const indices = [];
 
   const half = (k - 1) * 0.5;
@@ -162,6 +163,7 @@ export default function buildGreedyMeshGeometry({
       positions.push(p[0], p[1], p[2]);
       normals.push(normal[0], normal[1], normal[2]);
       colors.push(color.r, color.g, color.b);
+      stateAttr.push(state);
     });
 
     indices.push(
@@ -186,6 +188,14 @@ export default function buildGreedyMeshGeometry({
   );
   geometry.setAttribute('normal', new THREE.Float32BufferAttribute(normals, 3));
   geometry.setAttribute('color', new THREE.Float32BufferAttribute(colors, 3));
+  // Per-vertex CA state (1/2/3) — lets the static mesh's material branch
+  // per-state PBR properties (utils/materialStateNode.js) the same way the
+  // InstancedMesh path does from `cell.x`, instead of only baking a flat
+  // color.
+  geometry.setAttribute(
+    'state',
+    new THREE.Float32BufferAttribute(stateAttr, 1)
+  );
   geometry.setIndex(indices);
 
   return geometry;

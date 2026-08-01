@@ -1,4 +1,5 @@
 import {
+  attribute,
   float,
   instanceIndex,
   positionGeometry,
@@ -18,6 +19,11 @@ import createContinuousFieldCompute from '../utils/continuousCompute';
 import buildGreedyMeshGeometry from '../utils/greedyMesh';
 import { decomposeIndexNode } from '../utils/gridIndex';
 import createVoxelFieldCompute from '../utils/growthCompute';
+import createMaterialStateNodes, {
+  hasClearcoat,
+  hasTransmission,
+  updateMaterialStateUniforms,
+} from '../utils/materialStateNode';
 import createPaletteNode from '../utils/paletteNode';
 import { createRuleTables } from '../utils/ruleTables';
 
@@ -116,6 +122,12 @@ function applyVisibilityAndBoundsFilter(states, k, config) {
 // bounds* are the exception — a dedicated effect below re-bakes and swaps in
 // a fresh static mesh whenever those change, since they only filter which
 // cells are meshed at all (applyVisibilityAndBoundsFilter), not color/scale.
+//
+// Material props (utils/materialStateNode.js) branch per-vertex off the
+// baked `state` attribute (greedyMesh.js) the same way the InstancedMesh
+// path branches off `cell.x` — so unlike color/spacing, roughness/metalness/
+// emissive/clearcoat/transmission DO stay live here; the caller re-syncs
+// `materialUniforms` every render (see the live-update effect below).
 function buildStaticMesh({ states, k, cellSpacing, config }) {
   const paletteColors = {
     1: new THREE.Color(config.paletteStart),
@@ -128,18 +140,36 @@ function buildStaticMesh({ states, k, cellSpacing, config }) {
     cellSpacing,
     paletteColors,
   });
-  const material = new THREE.MeshStandardMaterial({
-    vertexColors: true,
-    roughness: 0.92,
-    metalness: 0.05,
+
+  const stateNode = attribute('state', 'float').round().toUint();
+  const materialState = createMaterialStateNodes({ config, stateNode });
+
+  const material = new THREE.MeshPhysicalNodeMaterial({
     side: THREE.DoubleSide,
   });
+  material.colorNode = attribute('color', 'vec3');
+  material.roughnessNode = materialState.roughnessNode;
+  material.metalnessNode = materialState.metalnessNode;
+  material.emissiveNode = materialState.emissiveNode;
+  if (materialState.clearcoatNode) {
+    material.clearcoatNode = materialState.clearcoatNode;
+    material.clearcoatRoughnessNode = materialState.clearcoatRoughnessNode;
+  }
+  if (materialState.transmissionNode) {
+    material.transmissionNode = materialState.transmissionNode;
+    material.iorNode = materialState.iorNode;
+    material.thicknessNode = materialState.thicknessNode;
+  }
+
   const mesh = new THREE.Mesh(geometry, material);
   mesh.castShadow = true;
   mesh.receiveShadow = true;
   mesh.frustumCulled = false;
   mesh.visible = false;
-  return mesh;
+  return {
+    mesh,
+    materialUniforms: materialState.uniforms,
+  };
 }
 
 function pickStructuralSettings(config) {
@@ -166,6 +196,13 @@ function pickStructuralSettings(config) {
     // if it were live-tunable instead.
     continuousRuleMode: config.continuousRuleMode,
     continuousCyclicStates: config.continuousCyclicStates,
+    // Also structural: clearcoat/transmission each add a lighting-model term
+    // in MeshPhysicalNodeMaterial only when their *Node is non-null (see
+    // utils/materialStateNode.js) — crossing the on/off boundary needs a
+    // material rebuild, but the numeric amount while already-enabled doesn't
+    // (that's a live uniform, see the live-update effect below).
+    hasClearcoat: hasClearcoat(config),
+    hasTransmission: hasTransmission(config),
   };
 }
 
@@ -224,6 +261,15 @@ function VoxelField({ config, replayGrowthToken }) {
     config.continuousEnabled,
     config.continuousRuleMode,
     config.continuousCyclicStates,
+    // Only trigger the structural rebuild when clearcoat/transmission cross
+    // the zero boundary (pickStructuralSettings derives the actual booleans
+    // from these) — the material rebuild is what picks up the new nodes.
+    config.state1Clearcoat,
+    config.state2Clearcoat,
+    config.state3Clearcoat,
+    config.state1Transmission,
+    config.state2Transmission,
+    config.state3Transmission,
   ]);
 
   useEffect(() => {
@@ -266,6 +312,7 @@ function VoxelField({ config, replayGrowthToken }) {
       // there's nothing to bake). A second async point, so a cancellation
       // check follows it too.
       let staticMesh = null;
+      let staticMaterialUniforms = null;
       if (!continuous) {
         const states = await readStatesForMeshing(
           gl,
@@ -278,12 +325,14 @@ function VoxelField({ config, replayGrowthToken }) {
           field.k,
           config
         );
-        staticMesh = buildStaticMesh({
+        const builtStatic = buildStaticMesh({
           states: filteredStates,
           k: field.k,
           cellSpacing: config.cellSpacing,
           config,
         });
+        staticMesh = builtStatic.mesh;
+        staticMaterialUniforms = builtStatic.materialUniforms;
         builtStaticMesh = staticMesh;
       }
 
@@ -425,14 +474,29 @@ function VoxelField({ config, replayGrowthToken }) {
 
       const scale = select(revealed, cellScale, float(0));
 
-      // roughness matches ~/dev/examples/260708_AutomataChunks's own
-      // materialRoughness default (0.92) — a matte, mostly-diffuse surface.
-      const material = new THREE.MeshStandardNodeMaterial({
-        roughness: 0.92,
-        metalness: 0.05,
+      // Per-state PBR properties (utils/materialStateNode.js) — same
+      // approach as the static mesh below, branching off `cellStateUint`
+      // instead of a baked vertex attribute.
+      const instancedMaterialState = createMaterialStateNodes({
+        config,
+        stateNode: cellStateUint,
       });
+      const material = new THREE.MeshPhysicalNodeMaterial();
       material.positionNode = positionGeometry.mul(scale).add(cellPosition);
       material.colorNode = palette.colorNode;
+      material.roughnessNode = instancedMaterialState.roughnessNode;
+      material.metalnessNode = instancedMaterialState.metalnessNode;
+      material.emissiveNode = instancedMaterialState.emissiveNode;
+      if (instancedMaterialState.clearcoatNode) {
+        material.clearcoatNode = instancedMaterialState.clearcoatNode;
+        material.clearcoatRoughnessNode =
+          instancedMaterialState.clearcoatRoughnessNode;
+      }
+      if (instancedMaterialState.transmissionNode) {
+        material.transmissionNode = instancedMaterialState.transmissionNode;
+        material.iorNode = instancedMaterialState.iorNode;
+        material.thicknessNode = instancedMaterialState.thicknessNode;
+      }
 
       if (cancelled) {
         material.dispose();
@@ -475,6 +539,8 @@ function VoxelField({ config, replayGrowthToken }) {
         showState3,
         boundsIsSphere,
         boundsSphereRadius,
+        instancedMaterialUniforms: instancedMaterialState.uniforms,
+        staticMaterialUniforms,
       };
       growthProgressRef.current = growthProgress;
       meshesRef.current = { instancedMesh, staticMesh };
@@ -526,6 +592,14 @@ function VoxelField({ config, replayGrowthToken }) {
     palette.uniforms.paletteMidpoint.value = config.paletteMidpoint;
     palette.uniforms.colorMode.value =
       palette.colorModeToInt[config.colorMode] ?? 0;
+    updateMaterialStateUniforms(
+      fieldRef.current.instancedMaterialUniforms,
+      config
+    );
+    updateMaterialStateUniforms(
+      fieldRef.current.staticMaterialUniforms,
+      config
+    );
   }, [
     renderObject,
     config.cellSpacing,
@@ -541,6 +615,33 @@ function VoxelField({ config, replayGrowthToken }) {
     config.paletteEnd,
     config.paletteMidpoint,
     config.colorMode,
+    config.state1Roughness,
+    config.state1Metalness,
+    config.state1EmissiveColor,
+    config.state1EmissiveIntensity,
+    config.state1Clearcoat,
+    config.state1ClearcoatRoughness,
+    config.state1Transmission,
+    config.state1Ior,
+    config.state1Thickness,
+    config.state2Roughness,
+    config.state2Metalness,
+    config.state2EmissiveColor,
+    config.state2EmissiveIntensity,
+    config.state2Clearcoat,
+    config.state2ClearcoatRoughness,
+    config.state2Transmission,
+    config.state2Ior,
+    config.state2Thickness,
+    config.state3Roughness,
+    config.state3Metalness,
+    config.state3EmissiveColor,
+    config.state3EmissiveIntensity,
+    config.state3Clearcoat,
+    config.state3ClearcoatRoughness,
+    config.state3Transmission,
+    config.state3Ior,
+    config.state3Thickness,
   ]);
 
   // The greedy-meshed static mesh (hierarchical mode only) is real, baked
@@ -568,12 +669,13 @@ function VoxelField({ config, replayGrowthToken }) {
         field.k,
         config
       );
-      const nextStaticMesh = buildStaticMesh({
+      const builtStatic = buildStaticMesh({
         states: filteredStates,
         k: field.k,
         cellSpacing: config.cellSpacing,
         config,
       });
+      const nextStaticMesh = builtStatic.mesh;
       if (cancelled) {
         nextStaticMesh.geometry.dispose();
         nextStaticMesh.material.dispose();
@@ -592,6 +694,11 @@ function VoxelField({ config, replayGrowthToken }) {
         previous.material.dispose();
       }
       meshesRef.current = { ...meshesRef.current, staticMesh: nextStaticMesh };
+      // Re-point live material updates (the effect above) at the freshly
+      // rebaked mesh's uniforms — the old ones belong to a disposed material.
+      if (fieldRef.current) {
+        fieldRef.current.staticMaterialUniforms = builtStatic.materialUniforms;
+      }
     }
 
     rebuildStaticMesh();
@@ -612,7 +719,11 @@ function VoxelField({ config, replayGrowthToken }) {
   // "Replay Growth" (ButtonOverlay) resets the reveal animation without
   // regenerating topology — same baked revealTimes, restarts from 0. In
   // continuous mode there's no revealTime to replay, so it instead re-seeds
-  // the simulation back to its just-generated starting structure.
+  // the simulation back to its just-generated starting structure. With
+  // growthEnabled off (the default), there's nothing to replay — resetting
+  // progress to 0 here would hide the whole structure with no way to
+  // advance it back to 1 (that only happens in the growthEnabled branch of
+  // useFrame below), so this is a no-op in that case.
   useEffect(() => {
     if (!fieldRef.current) return;
     if (fieldRef.current.continuous) {
@@ -620,10 +731,10 @@ function VoxelField({ config, replayGrowthToken }) {
       continuousAccumulatorRef.current = 0;
       return;
     }
-    if (growthProgressRef.current) {
+    if (config.growthEnabled && growthProgressRef.current) {
       growthProgressRef.current.value = 0;
     }
-  }, [replayGrowthToken, gl]);
+  }, [replayGrowthToken, gl, config.growthEnabled]);
 
   useFrame((_state, rawDelta) => {
     if (!fieldRef.current) return;

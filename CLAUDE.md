@@ -23,6 +23,17 @@ Canonical scene layout to copy: `src/components/scenes/Template/SceneTemplate/`.
 - Scaffold (canvas, Leva, loading): `src/app/scaffold/*`, wired via `useAppScenes`.
 - Entry: `src/main.jsx` → `src/app/App.jsx`.
 
+## WebGPU / TSL function reference
+
+Don't guess or search for what TSL functions exist — read the export lists
+directly from the local three.js checkout:
+
+- `~/dev/examples/three.js/src/nodes/TSL.js` — the TSL fluent function API
+  (what you actually call in shader code: math/utils/lighting/PBR helpers,
+  etc.). This is the one to check when writing or porting a shader.
+- `~/dev/examples/three.js/src/nodes/Nodes.js` — the underlying Node classes
+  (lower-level; check this when you need a class, not a TSL helper function).
+
 ## Process
 
 - The human developer owns the dev server — do not start, kill, or restart it.

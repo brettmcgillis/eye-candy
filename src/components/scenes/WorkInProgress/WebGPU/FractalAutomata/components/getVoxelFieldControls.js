@@ -76,9 +76,12 @@ export default function getVoxelFieldControls(p = {}) {
         max: 1,
         step: 0.01,
       },
+      // Default off — instant resolve is the point (fast seed/setting
+      // iteration). The timed reveal algorithm itself needs rework (uneven,
+      // not read as organic) before it's worth re-enabling by default.
       growthEnabled: {
         label: 'Growth Enabled',
-        value: p.growthEnabled ?? true,
+        value: p.growthEnabled ?? false,
       },
       growthDurationSeconds: {
         label: 'Growth Duration (s)',

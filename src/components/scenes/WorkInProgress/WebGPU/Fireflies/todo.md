@@ -11,10 +11,6 @@
 
 [Back to main TODO](../../../../../../TODO.md)
 
-- add controls for background color, grid color, grid cell illumination color, enable/disable grid cell illumination on occupancy,
-- make fireflies emissive instead of just color changes
-- can we allow for the fireflies bounding box to be a voxelized sphere? a sphere?
-- might need to include some level of wall avoidance so the floids dont slam into the sides of the sim.
 - is there a version of the scene where we run the sim and illuminate the cells but dont show the floids?
   - might need interesting material for cells.
   - make obstacles & hunters cubes too?
@@ -42,3 +38,5 @@
 - [ ] Flee-from-cursor.
 
 # // Bugs
+
+- system defaults tend to decay to orbiting the bounds.

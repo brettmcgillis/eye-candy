@@ -5,10 +5,13 @@ export const DEFAULT_PRESET = 'Default';
 
 export const PRESETS = {
   Default: {
+    // Environment
+    backgroundColor: '#02050d',
     // Flocking
     fireflyCount: 700,
     worldSize: 40,
     subDivisionCount: 8,
+    habitatShape: 'box',
     maxSpeed: 9,
     alignWeight: 1.2,
     cohesionWeight: 1,
@@ -20,6 +23,9 @@ export const PRESETS = {
     obstacleMargin: 3,
     boundaryMargin: 6,
     showGrid: false,
+    gridColor: '#334155',
+    cellIlluminationEnabled: true,
+    cellIlluminationColor: '#22d3ee',
     // Fireflies — nudgeFactor/confusionFactor match Floids' Agents.js
     // NUDGE_FACTOR/CONFUSION_FACTOR constants exactly (flashCycle already
     // matches its FIRE_CYCLE).
@@ -29,6 +35,7 @@ export const PRESETS = {
     flashDecayRate: 3,
     bodySize: 0.35,
     glowSizeBoost: 0.6,
+    glowIntensity: 2,
     bodyColor: '#6b7280',
     glowColor: '#ffe066',
     // Hunters
@@ -44,10 +51,14 @@ export const PRESETS = {
     restoreTau: 0.4,
     hunterSize: 0.7,
     hunterColor: '#0a0a0a',
+    hunterEmissiveColor: '#7f1d1d',
+    hunterEmissiveIntensity: 1.5,
     // Obstacles
     obstacleCount: 6,
     obstacleMinRadius: 1.5,
     obstacleMaxRadius: 3,
+    obstacleSpeed: 0,
+    obstacleWander: 2,
     obstacleColor: '#4b5563',
   },
 };

@@ -9,6 +9,7 @@ import createSpatialGrid from '../utils/createSpatialGrid';
 import stepFlash from '../utils/stepFlash';
 import stepFlock from '../utils/stepFlock';
 import stepHunters from '../utils/stepHunters';
+import stepObstacles from '../utils/stepObstacles';
 
 // Delta is clamped the same way Floids' World.tick() does, to keep a tab
 // coming back from the background (or a stutter) from feeding the sim one
@@ -20,6 +21,7 @@ function buildSim(c) {
     count: c.fireflyCount,
     maxSpeed: c.maxSpeed,
     worldSize: c.worldSize,
+    habitatShape: c.habitatShape,
   });
   const hunters = createHunterSpawn({
     count: c.hunterCount,
@@ -31,11 +33,14 @@ function buildSim(c) {
     maxRadius: c.obstacleMaxRadius,
     minRadius: c.obstacleMinRadius,
     worldSize: c.worldSize,
+    habitatShape: c.habitatShape,
   });
 
   const cellSize = c.worldSize / c.subDivisionCount;
   const flockGrid = createSpatialGrid({ cellSize, worldSize: c.worldSize });
-  // Obstacles are static — this grid is built once here and never rebuilt.
+  // Rebuilt every frame by stepObstacles when obstacleSpeed > 0; otherwise
+  // (the default) obstacles never move and this initial build is the only
+  // one that ever happens.
   const obstacleGrid = createSpatialGrid({ cellSize, worldSize: c.worldSize });
   obstacleGrid.insertAll(obstacles.positions, c.obstacleCount);
 
@@ -62,6 +67,7 @@ function buildSim(c) {
     obstacleMaxRadius: c.obstacleMaxRadius,
     obstaclePos: obstacles.positions,
     obstacleRadius: obstacles.radii,
+    obstacleVel: new Float32Array(c.obstacleCount * 3),
   };
 }
 
@@ -108,12 +114,15 @@ export default function useFlockSimulation(config) {
       fleeWeight: c.fleeWeight,
       flashCycle: c.flashCycle,
       flashDecayRate: c.flashDecayRate,
+      habitatShape: c.habitatShape,
       maxHunterSpeed: c.hunterMaxSpeed,
       maxSpeed: c.maxSpeed,
       neighborRadius: c.neighborRadius,
       nudgeFactor: c.nudgeFactor,
       nudgeLimit: c.nudgeLimit,
       obstacleMargin: c.obstacleMargin,
+      obstacleSpeed: c.obstacleSpeed,
+      obstacleWander: c.obstacleWander,
       obstacleWeight: c.obstacleWeight,
       restoreTau: c.restoreTau,
       separationRadius: c.separationRadius,
@@ -122,6 +131,9 @@ export default function useFlockSimulation(config) {
       worldSize: c.worldSize,
     };
 
+    // Obstacles move first so stepFlock's avoidance query sees this frame's
+    // positions, not last frame's.
+    stepObstacles(simRef.current, params, delta);
     stepFlock(simRef.current, params, delta);
     stepFlash(simRef.current, params, delta);
     stepHunters(simRef.current, params, delta);

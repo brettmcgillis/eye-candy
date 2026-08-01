@@ -18,6 +18,17 @@ export default function getHunterControls(p) {
       restoreTau: { value: p.restoreTau, min: 0.05, max: 2, step: 0.05 },
       hunterSize: { value: p.hunterSize, min: 0.1, max: 2, step: 0.05 },
       hunterColor: { value: p.hunterColor, label: 'Hunter Color' },
+      hunterEmissiveColor: {
+        value: p.hunterEmissiveColor,
+        label: 'Emissive Color',
+      },
+      hunterEmissiveIntensity: {
+        value: p.hunterEmissiveIntensity,
+        min: 0,
+        max: 8,
+        step: 0.1,
+        label: 'Emissive Intensity',
+      },
     },
     { collapsed: true }
   );

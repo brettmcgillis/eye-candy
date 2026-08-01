@@ -1,4 +1,4 @@
-import boundaryForce from './boundaryForce';
+import boundaryForce, { clampToHabitat } from './boundaryForce';
 
 // Per-frame boid step: alignment/cohesion/separation (boids-js
 // BoidsController.compute*, combined into one grid pass per agent instead of
@@ -32,6 +32,7 @@ export default function stepFlock(sim, params, delta) {
     fleeRadius,
     maxSpeed,
     worldSize,
+    habitatShape,
   } = params;
 
   flockGrid.clear();
@@ -51,7 +52,6 @@ export default function stepFlock(sim, params, delta) {
   // otherwise a big obstacle's avoidance radius can exceed the window and
   // get missed entirely.
   const obstacleQueryRadius = obstacleMaxRadius + obstacleMargin;
-  const worldHalf = worldSize / 2;
 
   for (let i = 0; i < flockCount; i += 1) {
     const base = i * 3;
@@ -147,6 +147,7 @@ export default function stepFlock(sim, params, delta) {
     });
 
     const [boundX, boundY, boundZ] = boundaryForce(
+      habitatShape,
       x,
       y,
       z,
@@ -211,24 +212,13 @@ export default function stepFlock(sim, params, delta) {
     flockVel[base] = vx;
     flockVel[base + 1] = vy;
     flockVel[base + 2] = vz;
-    // Hard clamp, matching boids-js's Entity.move() (Math.max(0,
-    // nx)/Math.min(bx, nx), translated to this box's centered coordinates).
-    // The soft boundaryForce above is meant to steer agents away well
-    // before they'd ever reach the wall, exactly like boids-js's own
-    // 1/distance obstacle-style boundary term — but it doesn't guarantee
-    // containment on its own (it's capped at a constant max magnitude, not
-    // unbounded as you approach the wall), so a strong enough combination
-    // of other forces can still punch an agent through it. This clamp is
-    // the actual backstop that makes "stays inside the box" a guarantee
-    // rather than just usually true.
-    flockPos[base] = Math.min(worldHalf, Math.max(-worldHalf, x + vx * delta));
-    flockPos[base + 1] = Math.min(
-      worldHalf,
-      Math.max(-worldHalf, y + vy * delta)
-    );
-    flockPos[base + 2] = Math.min(
-      worldHalf,
-      Math.max(-worldHalf, z + vz * delta)
-    );
+
+    flockPos[base] = x + vx * delta;
+    flockPos[base + 1] = y + vy * delta;
+    flockPos[base + 2] = z + vz * delta;
+    // Hard backstop clamp — see boundaryForce.js's clampToHabitat for why
+    // the soft push above doesn't guarantee containment on its own, and why
+    // it also kills outward velocity on contact.
+    clampToHabitat(habitatShape, flockPos, flockVel, base, worldSize);
   }
 }

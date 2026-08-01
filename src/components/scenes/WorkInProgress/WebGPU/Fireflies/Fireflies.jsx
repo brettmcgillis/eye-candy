@@ -14,7 +14,7 @@ function Fireflies() {
   return (
     <>
       <CameraRig camera={config.camera} />
-      <color attach="background" args={['#02050d']} />
+      <color attach="background" args={[config.backgroundColor]} />
       <ambientLight intensity={0.35} />
       <directionalLight position={[20, 40, 20]} intensity={0.8} />
       <Swarm config={config} />

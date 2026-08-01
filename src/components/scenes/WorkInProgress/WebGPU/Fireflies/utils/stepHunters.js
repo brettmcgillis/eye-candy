@@ -1,4 +1,4 @@
-import boundaryForce from './boundaryForce';
+import boundaryForce, { clampToHabitat } from './boundaryForce';
 
 // Hunter chase, ported from Floids' Hunter.js tick()/chase()/
 // restoreVelocity(), swapping its spherical habitat constraint for the same
@@ -18,10 +18,10 @@ export default function stepHunters(sim, params, delta) {
     boundaryMargin,
     worldSize,
     maxHunterSpeed,
+    habitatShape,
   } = params;
 
   const sightRadiusSq = sightRadius * sightRadius;
-  const worldHalf = worldSize / 2;
 
   for (let h = 0; h < hunterCount; h += 1) {
     const base = h * 3;
@@ -58,6 +58,7 @@ export default function stepHunters(sim, params, delta) {
     }
 
     const [boundX, boundY, boundZ] = boundaryForce(
+      habitatShape,
       x,
       y,
       z,
@@ -93,19 +94,11 @@ export default function stepHunters(sim, params, delta) {
     hunterVel[base] = nvx;
     hunterVel[base + 1] = nvy;
     hunterVel[base + 2] = nvz;
-    // Hard clamp — see stepFlock.js's identical clamp for why the soft
-    // boundaryForce alone isn't a containment guarantee.
-    hunterPos[base] = Math.min(
-      worldHalf,
-      Math.max(-worldHalf, x + nvx * delta)
-    );
-    hunterPos[base + 1] = Math.min(
-      worldHalf,
-      Math.max(-worldHalf, y + nvy * delta)
-    );
-    hunterPos[base + 2] = Math.min(
-      worldHalf,
-      Math.max(-worldHalf, z + nvz * delta)
-    );
+
+    hunterPos[base] = x + nvx * delta;
+    hunterPos[base + 1] = y + nvy * delta;
+    hunterPos[base + 2] = z + nvz * delta;
+    // Hard backstop clamp — see boundaryForce.js's clampToHabitat.
+    clampToHabitat(habitatShape, hunterPos, hunterVel, base, worldSize);
   }
 }

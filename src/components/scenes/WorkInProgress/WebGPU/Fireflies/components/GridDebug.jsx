@@ -34,13 +34,17 @@ function buildGridLines(worldSize, rowCount) {
   return new Float32Array(points);
 }
 
-// Debug-only (Flocking folder's "Show Grid" toggle): the full uniform
-// lattice as a dim static reference, plus a brighter wireframe box per
-// flockGrid cell that currently has at least one agent in it — so you can
-// see both the boids-js spatial partition's shape and which cells it's
-// actually using. An instance count of flockCount is a safe upper bound on
-// occupied cells — each agent occupies exactly one, so there can never be
-// more occupied cells than agents.
+// Two independently-toggled debug layers, both driven by the boids-js
+// spatial partition: the full uniform lattice as a dim static reference
+// (Flocking folder's "Show Grid" toggle) and a brighter wireframe box per
+// flockGrid cell that currently has at least one agent in it ("Illuminate
+// Cells On Occupancy" — unbundled from "Show Grid" so cell illumination can
+// run as its own visual feature, not just a debug aid). A sphere habitat
+// naturally clusters the illuminated cells into a voxelized-sphere shape —
+// no separate rendering path needed, see getFlockingControls.js. An
+// instance count of flockCount is a safe upper bound on occupied cells —
+// each agent occupies exactly one, so there can never be more occupied
+// cells than agents.
 function GridDebug({ config, simRef }) {
   const meshRef = useRef(null);
   const linesRef = useRef(null);
@@ -49,13 +53,13 @@ function GridDebug({ config, simRef }) {
   const material = useMemo(
     () =>
       new THREE.MeshBasicMaterial({
-        color: '#22d3ee',
         opacity: 0.5,
         transparent: true,
         wireframe: true,
       }),
     []
   );
+  material.color.set(config.cellIlluminationColor);
 
   const lineGeometry = useMemo(() => {
     const geo = new THREE.BufferGeometry();
@@ -71,12 +75,12 @@ function GridDebug({ config, simRef }) {
   const lineMaterial = useMemo(
     () =>
       new THREE.LineBasicMaterial({
-        color: '#334155',
         opacity: 0.4,
         transparent: true,
       }),
     []
   );
+  lineMaterial.color.set(config.gridColor);
 
   useFrame(() => {
     const mesh = meshRef.current;
@@ -84,13 +88,13 @@ function GridDebug({ config, simRef }) {
     const sim = simRef.current;
     if (!mesh) return;
 
-    if (!config.showGrid || !sim) {
+    if (lines) lines.visible = config.showGrid;
+
+    if (!config.cellIlluminationEnabled || !sim) {
       mesh.visible = false;
-      if (lines) lines.visible = false;
       return;
     }
     mesh.visible = true;
-    if (lines) lines.visible = true;
 
     const { flockGrid, flockCount } = sim;
     const boxSize = flockGrid.cellSize * 0.94;

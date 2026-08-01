@@ -8,6 +8,7 @@ import {
   useSceneCameraControls,
 } from '../../../../../../modules/cameraRig';
 import { useMediaRecorder } from '../../../../../../modules/mediaRecorder';
+import getEnvironmentControls from '../components/getEnvironmentControls';
 import getFireflyControls from '../components/getFireflyControls';
 import getFlockingControls from '../components/getFlockingControls';
 import getHunterControls from '../components/getHunterControls';
@@ -47,6 +48,7 @@ export default function useSceneControls() {
   const [controls, setControls] = useControls(SCENE_LABEL, () => ({
     Presets: presetsFolder,
     Camera: folder(cameraControls, { collapsed: true }),
+    Environment: getEnvironmentControls(p),
     Flocking: getFlockingControls(p, () => setRespawnTick((tick) => tick + 1)),
     Firefly: getFireflyControls(p),
     Hunters: getHunterControls(p),

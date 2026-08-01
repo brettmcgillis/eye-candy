@@ -7,8 +7,13 @@ import { useFrame } from '@react-three/fiber';
 const dummy = new THREE.Object3D();
 
 // Glossy black hunter sphere(s) — clearcoat so they read as predators next
-// to the matte fireflies. See FireflySwarm's header comment for why reading
-// simRef here (rather than owning the step) is fine.
+// to the matte fireflies, plus a separate emissive color/intensity (e.g. a
+// dim red glow) independent of the clearcoat body color. No per-instance
+// variation needed (hunterCount tops out at 3), so plain classic-material
+// emissive/emissiveIntensity properties suffice — unlike FireflySwarm's
+// per-instance case, no NodeMaterial/custom buffer needed here. See
+// FireflySwarm's header comment for why reading simRef here (rather than
+// owning the step) is fine.
 function Hunters({ config, simRef }) {
   const meshRef = useRef(null);
 
@@ -25,6 +30,8 @@ function Hunters({ config, simRef }) {
     []
   );
   material.color.set(config.hunterColor);
+  material.emissive.set(config.hunterEmissiveColor);
+  material.emissiveIntensity = config.hunterEmissiveIntensity;
 
   useFrame(() => {
     const mesh = meshRef.current;

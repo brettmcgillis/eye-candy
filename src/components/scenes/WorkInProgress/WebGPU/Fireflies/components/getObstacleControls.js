@@ -1,8 +1,12 @@
 import { folder } from 'leva';
 
-// Static obstacles the flock steers around (boids-js's obstacle entities —
-// Floids has no equivalent). obstacleCount can go to 0 to disable them
-// entirely; Obstacles.jsx skips rendering when it does.
+// Obstacles the flock steers around (boids-js's obstacle entities — Floids
+// has no equivalent). obstacleCount can go to 0 to disable them entirely;
+// Obstacles.jsx skips rendering when it does. obstacleSpeed defaults to 0
+// (fully static, the original behavior) — above 0, stepObstacles.js gives
+// them a gentle wander plus the same habitat boundary containment the flock
+// and hunters use, and rebuilds obstacleGrid every frame so the flock's
+// avoidance query stays current. obstacleWander only matters once moving.
 export default function getObstacleControls(p) {
   return folder(
     {
@@ -18,6 +22,20 @@ export default function getObstacleControls(p) {
         min: 0.2,
         max: 8,
         step: 0.1,
+      },
+      obstacleSpeed: {
+        value: p.obstacleSpeed,
+        min: 0,
+        max: 10,
+        step: 0.25,
+        label: 'Move Speed',
+      },
+      obstacleWander: {
+        value: p.obstacleWander,
+        min: 0,
+        max: 10,
+        step: 0.25,
+        label: 'Wander Strength',
       },
       obstacleColor: { value: p.obstacleColor, label: 'Obstacle Color' },
     },

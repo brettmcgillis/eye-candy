@@ -6,12 +6,12 @@ import { useFrame } from '@react-three/fiber';
 
 const dummy = new THREE.Object3D();
 
-// Static obstacle spheres the flock steers around (boids-js
+// Obstacle spheres the flock steers around (boids-js
 // BoidsController.computeObstacles — Floids has no equivalent, it's just a
-// spherical habitat). Positions never change after spawn, but syncing them
-// in useFrame (instead of a useEffect keyed on the sim rebuild) sidesteps
-// any dependency-tracking subtlety for a cost too small to matter at these
-// counts.
+// spherical habitat). Positions are static unless obstacleSpeed > 0 (see
+// stepObstacles.js), but syncing them in useFrame regardless (instead of a
+// useEffect keyed on the sim rebuild) sidesteps any dependency-tracking
+// subtlety for a cost too small to matter at these counts.
 function Obstacles({ config, simRef }) {
   const meshRef = useRef(null);
 

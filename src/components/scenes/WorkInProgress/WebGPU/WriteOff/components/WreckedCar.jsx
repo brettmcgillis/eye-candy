@@ -115,7 +115,6 @@ function WreckedCar({ config }) {
       },
     });
     applyGlitchAttributes(geometry, attributes);
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [geometry, attributeKey]);
 
   // Each technique's "Enabled" toggle gates its uniform to 0 outright;

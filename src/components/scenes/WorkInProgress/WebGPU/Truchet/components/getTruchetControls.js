@@ -1,0 +1,149 @@
+import { folder } from 'leva';
+
+// Full Leva path to this folder — used by the render() gates below to show
+// grid-mode-specific controls only. Must stay in sync with SCENE_LABEL and
+// this folder's own key ('Truchet') in hooks/useSceneControls.js.
+const TRUCHET_FOLDER_PATH = 'Truchet.Truchet';
+const isSquareMode = (get) =>
+  get(`${TRUCHET_FOLDER_PATH}.gridMode`) === 'square';
+const isTriangularMode = (get) =>
+  get(`${TRUCHET_FOLDER_PATH}.gridMode`) === 'triangular';
+const isSolidFill = (get) => get(`${TRUCHET_FOLDER_PATH}.fillMode`) === 'solid';
+
+// getTruchetControls is a companion fn to TileGrid — the flat Leva schema
+// for the scene's single `Truchet` folder. Keys must match presets/presets.js
+// 1:1 (see docs/scene-conventions.md, "Controls & presets").
+export default function getTruchetControls(snapshot = {}) {
+  return folder(
+    {
+      gridMode: {
+        label: 'Grid Mode',
+        options: ['square', 'triangular'],
+        value: snapshot.gridMode ?? 'square',
+      },
+      gridCols: {
+        label: 'Grid Cols',
+        max: 40,
+        min: 2,
+        render: isSquareMode,
+        step: 1,
+        value: snapshot.gridCols ?? 12,
+      },
+      gridRows: {
+        label: 'Grid Rows',
+        max: 40,
+        min: 2,
+        render: isSquareMode,
+        step: 1,
+        value: snapshot.gridRows ?? 12,
+      },
+      hexRadius: {
+        label: 'Hex Radius',
+        max: 20,
+        min: 1,
+        render: isTriangularMode,
+        step: 1,
+        value: snapshot.hexRadius ?? 6,
+      },
+      cellSize: {
+        label: 'Cell Size',
+        max: 2,
+        min: 0.1,
+        step: 0.01,
+        value: snapshot.cellSize ?? 0.5,
+      },
+      straightTileChance: {
+        label: 'Straight Chance',
+        max: 1,
+        min: 0,
+        step: 0.01,
+        value: snapshot.straightTileChance ?? 0.15,
+      },
+      strokePitch: {
+        label: 'Stroke Pitch',
+        max: 0.2,
+        min: 0.005,
+        step: 0.001,
+        value: snapshot.strokePitch ?? 0.035,
+      },
+      strokeWidth: {
+        label: 'Stroke Width',
+        max: 0.1,
+        min: 0.001,
+        step: 0.001,
+        value: snapshot.strokeWidth ?? 0.012,
+      },
+      fillMode: {
+        label: 'Fill Mode',
+        options: ['line', 'solid'],
+        value: snapshot.fillMode ?? 'line',
+      },
+      fillWidth: {
+        label: 'Fill Width',
+        max: 0.45,
+        min: 0.02,
+        render: isSolidFill,
+        step: 0.01,
+        value: snapshot.fillWidth ?? 0.16,
+      },
+      bgColor: {
+        label: 'Tile Background',
+        value: snapshot.bgColor ?? '#f5f2ea',
+      },
+      strokeColor: {
+        label: 'Stroke Color',
+        value: snapshot.strokeColor ?? '#141414',
+      },
+      sceneBgColor: {
+        label: 'Scene Background',
+        value: snapshot.sceneBgColor ?? '#f5f2ea',
+      },
+      clipShape: {
+        label: 'Clip Shape',
+        options: ['none', 'circle', 'square'],
+        value: snapshot.clipShape ?? 'none',
+      },
+      borderInset: {
+        label: 'Border Inset',
+        max: 0.9,
+        min: 0,
+        step: 0.01,
+        value: snapshot.borderInset ?? 0,
+      },
+      seed: {
+        label: 'Seed',
+        max: 9999,
+        min: 0,
+        step: 1,
+        value: snapshot.seed ?? 1,
+      },
+      animMode: {
+        label: 'Retile Mode',
+        options: ['ySpin', 'zSpin', 'scale'],
+        value: snapshot.animMode ?? 'ySpin',
+      },
+      animSpeed: {
+        label: 'Flip Duration (s)',
+        max: 4,
+        min: 0.2,
+        step: 0.05,
+        value: snapshot.animSpeed ?? 0.9,
+      },
+      retileRate: {
+        label: 'Retile Rate (tiles/s)',
+        max: 30,
+        min: 0.1,
+        step: 0.1,
+        value: snapshot.retileRate ?? 4,
+      },
+      animStagger: {
+        label: 'Stagger',
+        max: 1,
+        min: 0,
+        step: 0.01,
+        value: snapshot.animStagger ?? 0.6,
+      },
+    },
+    { collapsed: true }
+  );
+}

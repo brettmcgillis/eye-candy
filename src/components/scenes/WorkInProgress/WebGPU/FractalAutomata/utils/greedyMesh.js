@@ -2,12 +2,12 @@ import * as THREE from 'three/webgpu';
 
 // Binary greedy meshing over a dense k^3 occupancy grid, grouped by state (1/2/3)
 // so a merged quad is always a single flat color — no cross-state blending to
-// reason about. CPU-side, run ONCE per regenerate on a full readback of the
-// resolved (post-growth) stateRevealBuf — see VoxelField.jsx for why this only
-// ever runs on the settled structure, never during the growth-reveal animation
-// or in continuous CA mode.
+// reason about. CPU-side, run once per regenerate (and again whenever
+// showState*/bounds*/palette colors change — see VoxelField.jsx's rebake
+// effect) on a full readback of the resolved stateRevealBuf.
 //
-// Known, deliberate simplifications vs. the InstancedMesh/growth-reveal path:
+// Known, deliberate simplification vs. the fine detail-enhance tier
+// (InstancedMesh, utils/detailEnhanceCompute.js):
 // - Always renders flush at `cellSpacing` (merged quads assume touching faces);
 //   `cellScale` gaps between individual cubes aren't representable once faces
 //   are merged.

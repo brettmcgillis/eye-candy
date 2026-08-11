@@ -26,25 +26,23 @@ import {
 
 // TSL port of the hierarchical cube/face/edge subdivision CA compute kernels
 // (~/dev/examples/260708_AutomataChunks/src/automata/gpuAutomata.ts's WGSL).
-// Each cube/face/edge pass additionally bakes a per-cell `revealTime` so
-// growth can be revealed gradually over real time instead of resolving
-// instantly (the reference resolves instantly).
+// The structure always resolves instantly (the timed growth-reveal-over-
+// real-time animation this used to drive was removed — read as uneven, not
+// organic, and was slow). Each cube/face/edge pass still bakes
+// a per-cell `revealTime` — now purely a static ordering value the
+// 'growthOrder' palette color mode (utils/paletteNode.js) samples for its
+// gradient, not something read back per frame.
 //
 // Compaction deviates from the reference's approach: the reference filters
 // occupied/non-stray/visible cells AND writes an indirect-draw argument
 // buffer every display refresh, reaching into three.js's WebGPU backend
 // internals (`backend.createIndirectStorageAttribute`) to do it — a
-// low-level API this TSL/R3F app doesn't otherwise touch. Since occupancy
-// is static once generation finishes (only *when* a cell reveals changes
-// over time, never *whether* it's ever occupied), this port instead runs
-// compaction ONCE per regenerate: `compactVisibleKernel` atomically appends
-// every occupied, non-stray cell's original index into `compactedIndexBuf`,
-// then `dispatch()` does a single async readback of the resulting count and
-// VoxelField sizes its InstancedMesh to exactly that — no per-frame
-// readback, no indirect draw, no backend internals. Growth-reveal masking
-// (comparing `growthProgress` to a cell's baked `revealTime`) still happens
-// per-frame in the material, just over the compacted (small) instance count
-// instead of the full k³ grid.
+// low-level API this TSL/R3F app doesn't otherwise touch. This port instead
+// runs compaction ONCE per regenerate: `compactVisibleKernel` atomically
+// appends every occupied, non-stray, face-exposed cell's original index into
+// `compactedIndexBuf`, then `dispatch()` does a single async readback of the
+// resulting count and VoxelField sizes its mesh to exactly that — no
+// per-frame readback, no indirect draw, no backend internals.
 
 const BASE_FILL_TO_INT = {
   random: 0,
@@ -540,17 +538,12 @@ export default function createVoxelFieldCompute({ level, ruleTables }) {
 
   // Runs once, after finalizeStraysKernel — occupancy is fully resolved by
   // then. Every cell with a non-zero state AND at least one exposed face
+  // (a face-neighbor that's out of bounds or empty in the final structure)
   // atomically claims the next compacted slot and records its own original
   // index there. Cells whose 6 face-neighbors are all occupied are never
-  // visible in the *final* structure — but during the growth-reveal
-  // animation, a cell can be transiently exposed if it reveals BEFORE a
-  // neighbor that would otherwise hide it. Since revealTime is baked and
-  // static, this is decidable in one pass without any per-frame check: a
-  // neighbor that resolves at or before this cell's own revealTime is
-  // already solid from the very first frame this cell exists, so hiding the
-  // cell entirely can never produce a visible gap. A neighbor that resolves
-  // LATER means this cell is genuinely exposed for a window of the
-  // animation, so it's kept.
+  // visible and get excluded — there's no more animated reveal to account
+  // for (removed), so this only needs to reason about the FINAL state, not
+  // a transient reveal-order window.
   const compactVisibleKernel = Fn(() => {
     const index = instanceIndex;
     If(index.greaterThanEqual(uint(totalVoxels)), () => Return());
@@ -563,7 +556,6 @@ export default function createVoxelFieldCompute({ level, ruleTables }) {
     const iy = int(y);
     const iz = int(z);
     const kInt = int(uniforms.k);
-    const ownRevealTime = cell.y;
     const exposed = uint(0).toVar();
 
     FACE_NEIGHBOR_OFFSETS.forEach(([dx, dy, dz]) => {
@@ -589,10 +581,8 @@ export default function createVoxelFieldCompute({ level, ruleTables }) {
           nz.toUint(),
           uniforms.k
         );
-        const neighborCell = stateRevealBuf.element(neighborIndex);
-        const neighborEmpty = neighborCell.x.toUint().equal(uint(0));
-        const neighborRevealsLater = neighborCell.y.greaterThan(ownRevealTime);
-        If(neighborEmpty.or(neighborRevealsLater), () => {
+        const neighborState = stateRevealBuf.element(neighborIndex).x.toUint();
+        If(neighborState.equal(uint(0)), () => {
           exposed.assign(uint(1));
         });
       });

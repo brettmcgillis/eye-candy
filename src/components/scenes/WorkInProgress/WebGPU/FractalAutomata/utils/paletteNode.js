@@ -31,18 +31,22 @@ const COLOR_MODE_TO_INT = COLOR_MODES.reduce((acc, mode, index) => {
 // mode). `k` is the grid's per-axis cell count (structural, fixed for this
 // compute instance). `compactedIndexBuf` maps a drawn instance's
 // `instanceIndex` (0..occupiedCount-1) back to its original cellIndex into
-// `stateRevealBuf` — see growthCompute.js's compaction notes. Omit it (e.g.
-// continuous CA mode, which renders the full k^3 grid — see
-// utils/continuousCompute.js) and `instanceIndex` is used directly as the
-// cell index.
+// `stateRevealBuf` — see growthCompute.js's compaction notes. Omit it and
+// `instanceIndex` is used directly as the cell index.
 export default function createPaletteNode({
   stateRevealBuf,
   compactedIndexBuf = null,
   k,
-  // How many non-zero states the 'state' color mode should spread across:
-  // 3 for the hierarchical/Life-style engines (states 1/2/3), or Cyclic CA's
-  // own cyclicStates (states 1..N) — see utils/continuousCompute.js.
+  // How many non-zero states the 'state' color mode should spread across —
+  // 3 for this scene's hierarchical states (1/2/3).
   maxState = 3,
+  // Optional {x,y,z} override, bypassing decomposeIndexNode(originalIndex,
+  // k) below — needed by detail-enhance's sparse fine tier (see
+  // utils/detailEnhanceCompute.js), where compactedIndexBuf's values are
+  // fragment slots, not indices into a dense k³ grid, so they can't be
+  // decomposed that way. `originalIndex` (used for the state/revealTime
+  // lookup into stateRevealBuf) stays valid either way.
+  coords = null,
 }) {
   const uniforms = {
     paletteStart: uniform(color('#3fd0ff')),
@@ -59,7 +63,7 @@ export default function createPaletteNode({
     : instanceIndex;
   const cell = stateRevealBuf.element(originalIndex);
   const revealTime = cell.y;
-  const { x, y, z } = decomposeIndexNode(originalIndex, kUint);
+  const { x, y, z } = coords ?? decomposeIndexNode(originalIndex, kUint);
 
   const heightT = y.toFloat().div(kMax.toFloat());
 

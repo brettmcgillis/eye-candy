@@ -88,6 +88,15 @@ export default function getLightingControls(p = {}) {
         max: 3,
         step: 0.01,
       },
+      // drei's <Environment preset="studio"> fetches an HDRI from a remote
+      // CDN (raw.githack.com) rather than a bundled asset — a one-time cost
+      // on this scene's first mount, not a per-regenerate/per-frame one, but
+      // worth being able to turn off entirely while isolating other perf
+      // work (e.g. voxel detail enhancement).
+      envEnabled: {
+        label: 'Environment Enabled',
+        value: p.envEnabled ?? true,
+      },
     },
     { collapsed: true }
   );

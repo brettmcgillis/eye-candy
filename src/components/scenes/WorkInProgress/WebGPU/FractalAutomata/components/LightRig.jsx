@@ -16,6 +16,19 @@ const BOUNCE_COLOR = '#8dd06e';
 const SHADOW_MAP_SIZE = 2048;
 const SHADOW_BIAS = -0.00035;
 const SHADOW_NORMAL_BIAS = 0.045;
+// SHADOW_BIAS/SHADOW_NORMAL_BIAS above were tuned against this scene's
+// typical default cellSpacing (0.6) — normalBias in particular is a fixed
+// world-space offset meant to be a small fraction of the smallest rendered
+// cube's own size, to dodge shadow-map texel imprecision without pushing the
+// sample point clean through thin geometry. Voxel detail enhancement
+// (VoxelField.jsx) renders a second, half-size tier of cubes alongside the
+// normal ones; left at the coarse-tuned absolute bias, that fine tier's
+// cubes are thin enough (relative to the same fixed offset) to self-shadow
+// incorrectly — visible as dark speckling/acne dithered across the surface,
+// worse on the finer cubes than the coarser ones. Scaling bias by the
+// smallest active cell size relative to this reference keeps existing
+// (non-detail-enhance) presets' shadows completely unchanged.
+const SHADOW_BIAS_REFERENCE_CELL_SPACING = 0.6;
 
 // Ports ~/dev/examples/260708_AutomataChunks's own light rig
 // (voxelRenderer.ts's updateLightRig/applyRenderSettings) near-verbatim: a
@@ -66,9 +79,16 @@ function LightRig({ config }) {
     const light = keyLightRef.current;
     if (!light) return;
     const shadowHalfSize = extent * 1.08;
+    // Detail enhance's fine tier renders at half `cellSpacing` — the
+    // smallest cube actually on screen, so bias scales off that, not the
+    // coarse spacing, whenever it's active (see the constant's comment).
+    const finestCellSpacing = config.detailEnhanceEnabled
+      ? config.cellSpacing / 2
+      : config.cellSpacing;
+    const biasScale = finestCellSpacing / SHADOW_BIAS_REFERENCE_CELL_SPACING;
     light.shadow.mapSize.set(SHADOW_MAP_SIZE, SHADOW_MAP_SIZE);
-    light.shadow.bias = SHADOW_BIAS;
-    light.shadow.normalBias = SHADOW_NORMAL_BIAS;
+    light.shadow.bias = SHADOW_BIAS * biasScale;
+    light.shadow.normalBias = SHADOW_NORMAL_BIAS * biasScale;
     light.shadow.radius = config.shadowSoftness;
     light.shadow.intensity = config.shadowIntensity;
     light.shadow.camera.left = -shadowHalfSize;
@@ -79,7 +99,13 @@ function LightRig({ config }) {
     light.shadow.camera.far = extent * 4.4;
     light.shadow.camera.updateProjectionMatrix();
     light.shadow.needsUpdate = true;
-  }, [extent, config.shadowSoftness, config.shadowIntensity]);
+  }, [
+    extent,
+    config.shadowSoftness,
+    config.shadowIntensity,
+    config.detailEnhanceEnabled,
+    config.cellSpacing,
+  ]);
 
   useEffect(() => {
     if (exposureSnapshotRef.current === null) {

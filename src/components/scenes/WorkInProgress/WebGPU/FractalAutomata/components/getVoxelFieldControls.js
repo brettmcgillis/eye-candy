@@ -76,20 +76,11 @@ export default function getVoxelFieldControls(p = {}) {
         max: 1,
         step: 0.01,
       },
-      // Default off — instant resolve is the point (fast seed/setting
-      // iteration). The timed reveal algorithm itself needs rework (uneven,
-      // not read as organic) before it's worth re-enabling by default.
-      growthEnabled: {
-        label: 'Growth Enabled',
-        value: p.growthEnabled ?? false,
-      },
-      growthDurationSeconds: {
-        label: 'Growth Duration (s)',
-        value: p.growthDurationSeconds ?? 14,
-        min: 1,
-        max: 60,
-        step: 0.5,
-      },
+      // Structure always resolves instantly (no timed growth-reveal
+      // animation — removed, it read as uneven/not organic and was slow).
+      // growthJitter still matters: it staggers the revealTime baked per
+      // cell (utils/growthCompute.js), which the 'growthOrder' palette
+      // color mode samples for its gradient.
       growthJitter: {
         label: 'Growth Jitter',
         value: p.growthJitter ?? 0.8,

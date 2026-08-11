@@ -1,6 +1,6 @@
 import { folder, useControls } from 'leva';
 
-import { useCallback, useMemo, useRef, useState } from 'react';
+import { useCallback, useMemo, useRef } from 'react';
 
 import usePresetsFolder from '../../../../../../hooks/usePresetsFolder';
 import {
@@ -8,7 +8,7 @@ import {
   useSceneCameraControls,
 } from '../../../../../../modules/cameraRig';
 import { useMediaRecorder } from '../../../../../../modules/mediaRecorder';
-import getContinuousControls from '../components/getContinuousControls';
+import getDetailEnhanceControls from '../components/getDetailEnhanceControls';
 import getGodraysControls from '../components/getGodraysControls';
 import getLightingControls from '../components/getLightingControls';
 import getMaterialControls from '../components/getMaterialControls';
@@ -46,11 +46,11 @@ export default function useSceneControls() {
     Presets: presetsFolder,
     Camera: folder(cameraControls, { collapsed: true }),
     VoxelField: getVoxelFieldControls(p),
+    VoxelDetail: getDetailEnhanceControls(p),
     Palette: getPaletteControls(p),
     Materials: getMaterialControls(p),
     Lighting: getLightingControls(p),
     Godrays: getGodraysControls(p),
-    ContinuousCA: getContinuousControls(p),
   }));
 
   attachSetControls(setControls);
@@ -69,40 +69,18 @@ export default function useSceneControls() {
   );
 
   // ButtonOverlay's "Regenerate" re-seeds via setControls (a structural
-  // VoxelField control, triggers the existing regenerate path). "Replay
-  // Growth" only needs to reset an in-flight Three.js uniform, not a Leva
-  // control, so it's a plain incrementing token VoxelField watches instead.
-  const [replayGrowthToken, setReplayGrowthToken] = useState(0);
-  const bumpReplayGrowth = useCallback(() => {
-    setReplayGrowthToken((token) => token + 1);
-  }, []);
+  // VoxelField control, triggers the existing regenerate path).
   const regenerate = useCallback(() => {
     setControls({ seed: Math.floor(Math.random() * 1_000_000) });
   }, [setControls]);
-  // Surfaces the existing (Leva-only) `growthEnabled` toggle as an obvious,
-  // user-facing overlay button (docs/scene-conventions.md §13.4) instead of
-  // requiring it be found in the hidden control panel.
-  const togglePauseAnimation = useCallback(() => {
-    setControls({ growthEnabled: !controls.growthEnabled });
-  }, [controls.growthEnabled, setControls]);
 
   return useMemo(
     () => ({
       ...controls,
       camera,
       cameraApiRef,
-      replayGrowthToken,
-      bumpReplayGrowth,
       regenerate,
-      togglePauseAnimation,
     }),
-    [
-      bumpReplayGrowth,
-      camera,
-      controls,
-      regenerate,
-      replayGrowthToken,
-      togglePauseAnimation,
-    ]
+    [camera, controls, regenerate]
   );
 }

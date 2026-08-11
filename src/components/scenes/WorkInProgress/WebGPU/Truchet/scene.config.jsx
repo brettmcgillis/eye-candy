@@ -1,13 +1,13 @@
 import React, { lazy } from 'react';
-import { BsGrid3X3GapFill } from 'react-icons/bs';
+import { LuBlend } from 'react-icons/lu';
 
 function SceneIcon() {
-  return <BsGrid3X3GapFill color="#141414" size={22} />;
+  return <LuBlend color="#141414" size={22} />;
 }
 
 export default {
   id: 'truchet',
-  label: 'Truchet',
+  label: 'Trucheterie',
   channel: 'webgpu',
   area: 'wip',
   icon: SceneIcon,

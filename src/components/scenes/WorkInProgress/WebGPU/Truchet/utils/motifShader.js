@@ -1,6 +1,16 @@
-import { Fn, attribute, frontFacing, mix, uv, vec2, vec4 } from 'three/tsl';
+import {
+  Fn,
+  attribute,
+  frontFacing,
+  max,
+  mix,
+  select,
+  uv,
+  vec2,
+  vec4,
+} from 'three/tsl';
 
-import clipAlpha from './clipMask';
+import { clipAlpha, clipBorderMask } from './clipMask';
 import {
   arcSpineDistance,
   selectByIndex,
@@ -25,16 +35,41 @@ function nearestArcDistance(p, corners) {
   return arcSpineDistance(p, corners[0]).min(arcSpineDistance(p, corners[1]));
 }
 
+// Weave crossing: both straight strands at once. The "gapped" one gets
+// pushed to a distance far outside the stripe/band range right where it
+// crosses the other strand (near the other strand's own line, i.e. where
+// |the gapped axis| is small) — so it visually breaks there while the other
+// strand draws through continuously, reading as passing under it.
+function gappedStraightDistance(dStraight, gapAxis, gapWidthU) {
+  return select(gapAxis.abs().lessThan(gapWidthU), 999, dStraight);
+}
+
+// Distance from p to the tile's own edge (the unit square boundary at
+// |x|,|y| = 0.5) — same Chebyshev-distance idiom as clipMask.js's squareSDF,
+// just centered on the tile instead of the whole pattern.
+function tileEdgeDistance(p) {
+  return max(p.x.abs(), p.y.abs()).sub(0.5).abs();
+}
+
 export default function buildTruchetColorNode({
   bgColorU,
+  borderColorU,
   borderInsetU,
+  borderThicknessU,
+  borderVisibleU,
+  clipCornerRadiusU,
+  clipRotationU,
   clipShapeU,
   fillModeU,
   fillWidthU,
+  gridLineColorU,
+  gridLineWidthU,
   patternExtentU,
   pitchU,
+  showGridLinesU,
   strokeColorU,
   strokeWidthU,
+  weaveGapWidthU,
 }) {
   return Fn(() => {
     // ySpin rotates a tile a full 180°, so for the second half of the flip
@@ -49,7 +84,22 @@ export default function buildTruchetColorNode({
     const dArcB = nearestArcDistance(p, ARC_B_CORNERS);
     const dStraightH = p.y.abs();
     const dStraightV = p.x.abs();
-    const dSpine = selectByIndex(motif, [dArcA, dArcB, dStraightH, dStraightV]);
+    const dCrossHUnder = gappedStraightDistance(
+      dStraightH,
+      p.x,
+      weaveGapWidthU
+    ).min(dStraightV);
+    const dCrossVUnder = dStraightH.min(
+      gappedStraightDistance(dStraightV, p.y, weaveGapWidthU)
+    );
+    const dSpine = selectByIndex(motif, [
+      dArcA,
+      dArcB,
+      dStraightH,
+      dStraightV,
+      dCrossHUnder,
+      dCrossVUnder,
+    ]);
 
     // Both fields trace the same spine — line mode as repeated thin strokes,
     // solid mode as one continuous band — so they connect across tile edges
@@ -59,10 +109,27 @@ export default function buildTruchetColorNode({
     const solidMask = solidBandMask(dSpine, fillWidthU);
     const finalMask = mix(lineMask, solidMask, fillModeU);
 
-    clipAlpha({ borderInsetU, clipShapeU, patternExtentU })
-      .lessThan(0.5)
-      .discard();
+    let color = mix(bgColorU, strokeColorU, finalMask);
 
-    return vec4(mix(bgColorU, strokeColorU, finalMask), 1);
+    const gridLineMask = solidBandMask(tileEdgeDistance(p), gridLineWidthU).mul(
+      showGridLinesU
+    );
+    color = mix(color, gridLineColorU, gridLineMask);
+
+    const clipParams = {
+      borderInsetU,
+      clipCornerRadiusU,
+      clipRotationU,
+      clipShapeU,
+      patternExtentU,
+    };
+    const borderMask = clipBorderMask(clipParams, borderThicknessU).mul(
+      borderVisibleU
+    );
+    color = mix(color, borderColorU, borderMask);
+
+    clipAlpha(clipParams).lessThan(0.5).discard();
+
+    return vec4(color, 1);
   })();
 }

@@ -16,18 +16,27 @@ function TriangularTileMesh({ config }) {
     animSpeed,
     animStagger,
     bgColor,
+    borderColor,
     borderInset,
+    borderThickness,
+    borderVisible,
     cellSize,
+    clipCornerRadius,
+    clipRotation,
     clipShape,
     fillMode,
     fillWidth,
+    gridLineColor,
+    gridLineWidth,
     hexRadius,
     retileRate,
     seed,
+    showGridLines,
     straightTileChance,
     strokeColor,
     strokePitch,
     strokeWidth,
+    weaveGapWidth,
   } = config;
 
   // Approximate circumradius of the hex pattern, so a circle/square clip
@@ -88,45 +97,43 @@ function TriangularTileMesh({ config }) {
     []
   );
 
-  const meshA = useTileMesh({
+  const sharedParams = {
     animMode,
     animSpeed,
     animStagger,
     bgColor,
+    borderColor,
     borderInset,
-    buildColorNode: buildColorNodeA,
+    borderThickness,
+    borderVisible,
     cellSize,
+    clipCornerRadius,
+    clipRotationDeg: clipRotation,
     clipShape,
     fillMode,
     fillWidth,
-    gridData: gridA,
+    gridLineColor,
+    gridLineWidth,
     patternExtent,
     pickMotif: pickRandomTriMotif,
     retileRate,
+    showGridLines,
     straightTileChance,
     strokeColor,
     strokePitch,
     strokeWidth,
+    weaveGapWidth,
+  };
+
+  const meshA = useTileMesh({
+    ...sharedParams,
+    buildColorNode: buildColorNodeA,
+    gridData: gridA,
   });
   const meshB = useTileMesh({
-    animMode,
-    animSpeed,
-    animStagger,
-    bgColor,
-    borderInset,
+    ...sharedParams,
     buildColorNode: buildColorNodeB,
-    cellSize,
-    clipShape,
-    fillMode,
-    fillWidth,
     gridData: gridB,
-    patternExtent,
-    pickMotif: pickRandomTriMotif,
-    retileRate,
-    straightTileChance,
-    strokeColor,
-    strokePitch,
-    strokeWidth,
   });
 
   return (

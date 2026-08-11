@@ -11,11 +11,15 @@ import useSceneControls from './hooks/useSceneControls';
 export default function Truchet() {
   const config = useSceneControls();
 
+  const planeRotationRad = (config.planeRotation * Math.PI) / 180;
+
   return (
     <>
       <CameraRig camera={config.camera} />
       <Backdrop bgColor={config.sceneBgColor} />
-      <TileGrid config={config} />
+      <group rotation={[0, 0, planeRotationRad]}>
+        <TileGrid config={config} />
+      </group>
     </>
   );
 }

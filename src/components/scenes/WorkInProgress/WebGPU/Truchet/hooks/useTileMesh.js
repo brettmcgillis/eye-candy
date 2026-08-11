@@ -8,6 +8,10 @@ import useRetileScheduler from './useRetileScheduler';
 
 const FILL_MODE_CODE = { line: 0, solid: 1 };
 
+function clipShapeCode(clipShape) {
+  return CLIP_SHAPE[clipShape.toUpperCase()] ?? CLIP_SHAPE.NONE;
+}
+
 // Shared per-mesh setup for one InstancedMesh of tiles: uniforms, the
 // DoubleSide unlit material (colorNode supplied by the caller), the initial
 // baseline instance matrices/motif attribute, and the retile scheduler.
@@ -19,20 +23,30 @@ export default function useTileMesh({
   animSpeed,
   animStagger,
   bgColor,
+  borderColor,
   borderInset,
+  borderThickness,
+  borderVisible,
   buildColorNode,
   cellSize,
+  clipCornerRadius,
+  clipRotationDeg,
   clipShape,
   fillMode,
   fillWidth,
   gridData,
+  gridLineColor,
+  gridLineWidth,
   patternExtent,
   pickMotif,
   retileRate,
+  showGridLines,
   straightTileChance,
   strokeColor,
   strokePitch,
   strokeWidth,
+  weaveEnabled,
+  weaveGapWidth,
 }) {
   const meshRef = useRef(null);
 
@@ -40,40 +54,65 @@ export default function useTileMesh({
   if (!uniformsRef.current) {
     uniformsRef.current = {
       bgColorU: uniform(new THREE.Color(bgColor)),
+      borderColorU: uniform(new THREE.Color(borderColor)),
       borderInsetU: uniform(borderInset),
-      clipShapeU: uniform(
-        CLIP_SHAPE[clipShape.toUpperCase()] ?? CLIP_SHAPE.NONE
-      ),
+      borderThicknessU: uniform(borderThickness),
+      borderVisibleU: uniform(borderVisible ? 1 : 0),
+      clipCornerRadiusU: uniform(clipCornerRadius),
+      clipRotationU: uniform(THREE.MathUtils.degToRad(clipRotationDeg)),
+      clipShapeU: uniform(clipShapeCode(clipShape)),
       fillModeU: uniform(FILL_MODE_CODE[fillMode] ?? 0),
       fillWidthU: uniform(fillWidth),
+      gridLineColorU: uniform(new THREE.Color(gridLineColor)),
+      gridLineWidthU: uniform(gridLineWidth),
       patternExtentU: uniform(patternExtent),
       pitchU: uniform(strokePitch),
+      showGridLinesU: uniform(showGridLines ? 1 : 0),
       strokeColorU: uniform(new THREE.Color(strokeColor)),
       strokeWidthU: uniform(strokeWidth),
+      weaveGapWidthU: uniform(weaveGapWidth),
     };
   }
 
   useEffect(() => {
     const u = uniformsRef.current;
     u.bgColorU.value.set(bgColor);
+    u.borderColorU.value.set(borderColor);
     u.borderInsetU.value = borderInset;
-    u.clipShapeU.value = CLIP_SHAPE[clipShape.toUpperCase()] ?? CLIP_SHAPE.NONE;
+    u.borderThicknessU.value = borderThickness;
+    u.borderVisibleU.value = borderVisible ? 1 : 0;
+    u.clipCornerRadiusU.value = clipCornerRadius;
+    u.clipRotationU.value = THREE.MathUtils.degToRad(clipRotationDeg);
+    u.clipShapeU.value = clipShapeCode(clipShape);
     u.fillModeU.value = FILL_MODE_CODE[fillMode] ?? 0;
     u.fillWidthU.value = fillWidth;
+    u.gridLineColorU.value.set(gridLineColor);
+    u.gridLineWidthU.value = gridLineWidth;
     u.patternExtentU.value = patternExtent;
     u.pitchU.value = strokePitch;
+    u.showGridLinesU.value = showGridLines ? 1 : 0;
     u.strokeColorU.value.set(strokeColor);
     u.strokeWidthU.value = strokeWidth;
+    u.weaveGapWidthU.value = weaveGapWidth;
   }, [
     bgColor,
+    borderColor,
     borderInset,
+    borderThickness,
+    borderVisible,
+    clipCornerRadius,
+    clipRotationDeg,
     clipShape,
     fillMode,
     fillWidth,
+    gridLineColor,
+    gridLineWidth,
     patternExtent,
+    showGridLines,
     strokeColor,
     strokePitch,
     strokeWidth,
+    weaveGapWidth,
   ]);
 
   const material = useMemo(() => {
@@ -121,6 +160,7 @@ export default function useTileMesh({
     pickMotif,
     retileRate,
     straightTileChance,
+    weaveEnabled,
   });
 
   return { material, meshRef };

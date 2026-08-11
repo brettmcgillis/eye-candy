@@ -1,10 +1,18 @@
 /* eslint-disable no-bitwise */
+// CROSS_H_UNDER/CROSS_V_UNDER show both straight strands at once, crossing
+// at the tile center — the "_UNDER" strand gets a dashed gap right at the
+// crossing (weaveGapWidth) so it reads as passing under the other, like
+// knotwork. Only shown when weaveEnabled.
 export const MOTIF = {
   ARC_A: 0,
   ARC_B: 1,
   STRAIGHT_H: 2,
   STRAIGHT_V: 3,
+  CROSS_H_UNDER: 4,
+  CROSS_V_UNDER: 5,
 };
+
+const WEAVE_CHANCE = 0.15;
 
 // Every equilateral-triangle corner is a valid arc center — 0-2 arc at
 // v0/v1/v2, 3-5 the matching straight chord (see utils/triangleGeometry.js).
@@ -29,7 +37,10 @@ function mulberry32(seed) {
   };
 }
 
-function pickMotif(rng, straightTileChance) {
+function pickMotif(rng, straightTileChance, weaveEnabled) {
+  if (weaveEnabled && rng() < WEAVE_CHANCE) {
+    return rng() < 0.5 ? MOTIF.CROSS_H_UNDER : MOTIF.CROSS_V_UNDER;
+  }
   if (rng() < straightTileChance) {
     return rng() < 0.5 ? MOTIF.STRAIGHT_H : MOTIF.STRAIGHT_V;
   }
@@ -54,6 +65,7 @@ export function buildSquareGrid({
   cellSize,
   seed,
   straightTileChance,
+  weaveEnabled,
 }) {
   const count = cols * rows;
   const positions = new Float32Array(count * 3);
@@ -69,7 +81,7 @@ export function buildSquareGrid({
       positions[i * 3 + 0] = originX + col * cellSize;
       positions[i * 3 + 1] = originY + row * cellSize;
       positions[i * 3 + 2] = 0;
-      motifIds[i] = pickMotif(rng, straightTileChance);
+      motifIds[i] = pickMotif(rng, straightTileChance, weaveEnabled);
       i += 1;
     }
   }

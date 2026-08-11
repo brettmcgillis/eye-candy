@@ -1,4 +1,4 @@
-# // Truchet
+# // Trucheterie
 
 [Back to main TODO](../../../../../../TODO.md)
 
@@ -12,6 +12,8 @@
   (border, clip shape, fill mode, color) all reachable from one scene.
 
 # // TODO:
+
+- can we do multi-scale truchet tiling?
 
 # // Presets
 

@@ -21,6 +21,7 @@ export default function useRetileScheduler({
   pickMotif,
   retileRate,
   straightTileChance,
+  weaveEnabled,
 }) {
   const stateRef = useRef(null);
   const dummyRef = useRef(null);
@@ -36,6 +37,7 @@ export default function useRetileScheduler({
     pickMotif,
     retileRate,
     straightTileChance,
+    weaveEnabled,
   };
 
   useEffect(() => {
@@ -100,7 +102,10 @@ export default function useRetileScheduler({
           animating[i] = 1;
           swapped[i] = 0;
           phase[i] = 0;
-          nextMotif[i] = params.pickMotif(params.straightTileChance);
+          nextMotif[i] = params.pickMotif(
+            params.straightTileChance,
+            params.weaveEnabled
+          );
           duration[i] = params.animSpeed * THREE.MathUtils.randFloat(0.8, 1.2);
         }
 

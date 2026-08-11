@@ -1,6 +1,6 @@
 import { Fn, attribute, frontFacing, mix, uv, vec2, vec4 } from 'three/tsl';
 
-import clipAlpha from './clipMask';
+import { clipAlpha, clipBorderMask } from './clipMask';
 import {
   arcSpineDistance,
   segmentDistance,
@@ -17,13 +17,21 @@ import {
 // midpoints.
 export default function buildTriangleColorNode({
   bgColorU,
+  borderColorU,
   borderInsetU,
+  borderThicknessU,
+  borderVisibleU,
+  clipCornerRadiusU,
+  clipRotationU,
   clipShapeU,
   fillModeU,
   fillWidthU,
+  gridLineColorU,
+  gridLineWidthU,
   patternExtentU,
   pitchU,
   points,
+  showGridLinesU,
   strokeColorU,
   strokeWidthU,
 }) {
@@ -57,10 +65,30 @@ export default function buildTriangleColorNode({
     const solidMask = solidBandMask(dSpine, fillWidthU);
     const finalMask = mix(lineMask, solidMask, fillModeU);
 
-    clipAlpha({ borderInsetU, clipShapeU, patternExtentU })
-      .lessThan(0.5)
-      .discard();
+    let color = mix(bgColorU, strokeColorU, finalMask);
 
-    return vec4(mix(bgColorU, strokeColorU, finalMask), 1);
+    const dTileEdge = segmentDistance(p, v0, v1)
+      .min(segmentDistance(p, v1, v2))
+      .min(segmentDistance(p, v2, v0));
+    const gridLineMask = solidBandMask(dTileEdge, gridLineWidthU).mul(
+      showGridLinesU
+    );
+    color = mix(color, gridLineColorU, gridLineMask);
+
+    const clipParams = {
+      borderInsetU,
+      clipCornerRadiusU,
+      clipRotationU,
+      clipShapeU,
+      patternExtentU,
+    };
+    const borderMask = clipBorderMask(clipParams, borderThicknessU).mul(
+      borderVisibleU
+    );
+    color = mix(color, borderColorU, borderMask);
+
+    clipAlpha(clipParams).lessThan(0.5).discard();
+
+    return vec4(color, 1);
   })();
 }

@@ -1,6 +1,11 @@
 import { MOTIF } from './grid';
 
-export function pickRandomMotif(straightTileChance) {
+const WEAVE_CHANCE = 0.15;
+
+export function pickRandomMotif(straightTileChance, weaveEnabled) {
+  if (weaveEnabled && Math.random() < WEAVE_CHANCE) {
+    return Math.random() < 0.5 ? MOTIF.CROSS_H_UNDER : MOTIF.CROSS_V_UNDER;
+  }
   if (Math.random() < straightTileChance) {
     return Math.random() < 0.5 ? MOTIF.STRAIGHT_H : MOTIF.STRAIGHT_V;
   }

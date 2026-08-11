@@ -13,19 +13,29 @@ function SquareTileMesh({ config }) {
     animSpeed,
     animStagger,
     bgColor,
+    borderColor,
     borderInset,
+    borderThickness,
+    borderVisible,
     cellSize,
+    clipCornerRadius,
+    clipRotation,
     clipShape,
     fillMode,
     fillWidth,
     gridCols,
+    gridLineColor,
+    gridLineWidth,
     gridRows,
     retileRate,
     seed,
+    showGridLines,
     straightTileChance,
     strokeColor,
     strokePitch,
     strokeWidth,
+    weaveEnabled,
+    weaveGapWidth,
   } = config;
 
   const geometry = useMemo(() => new THREE.PlaneGeometry(1, 1), []);
@@ -39,8 +49,9 @@ function SquareTileMesh({ config }) {
         rows: gridRows,
         seed,
         straightTileChance,
+        weaveEnabled,
       }),
-    [cellSize, gridCols, gridRows, seed, straightTileChance]
+    [cellSize, gridCols, gridRows, seed, straightTileChance, weaveEnabled]
   );
 
   // Half-width of the shorter grid axis, so a circle/square clip shape
@@ -52,20 +63,30 @@ function SquareTileMesh({ config }) {
     animSpeed,
     animStagger,
     bgColor,
+    borderColor,
     borderInset,
+    borderThickness,
+    borderVisible,
     buildColorNode: buildTruchetColorNode,
     cellSize,
+    clipCornerRadius,
+    clipRotationDeg: clipRotation,
     clipShape,
     fillMode,
     fillWidth,
     gridData: grid,
+    gridLineColor,
+    gridLineWidth,
     patternExtent,
     pickMotif: pickRandomMotif,
     retileRate,
+    showGridLines,
     straightTileChance,
     strokeColor,
     strokePitch,
     strokeWidth,
+    weaveEnabled,
+    weaveGapWidth,
   });
 
   return (

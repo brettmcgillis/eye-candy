@@ -1,5 +1,7 @@
 import { folder } from 'leva';
 
+import getCompositionControls from './getCompositionControls';
+
 // Full Leva path to this folder — used by the render() gates below to show
 // grid-mode-specific controls only. Must stay in sync with SCENE_LABEL and
 // this folder's own key ('Truchet') in hooks/useSceneControls.js.
@@ -9,6 +11,8 @@ const isSquareMode = (get) =>
 const isTriangularMode = (get) =>
   get(`${TRUCHET_FOLDER_PATH}.gridMode`) === 'triangular';
 const isSolidFill = (get) => get(`${TRUCHET_FOLDER_PATH}.fillMode`) === 'solid';
+const isWeaveOn = (get) =>
+  isSquareMode(get) && get(`${TRUCHET_FOLDER_PATH}.weaveEnabled`) === true;
 
 // getTruchetControls is a companion fn to TileGrid — the flat Leva schema
 // for the scene's single `Truchet` folder. Keys must match presets/presets.js
@@ -59,6 +63,19 @@ export default function getTruchetControls(snapshot = {}) {
         step: 0.01,
         value: snapshot.straightTileChance ?? 0.15,
       },
+      weaveEnabled: {
+        label: 'Weave Crossings',
+        render: isSquareMode,
+        value: snapshot.weaveEnabled ?? false,
+      },
+      weaveGapWidth: {
+        label: 'Weave Gap Width',
+        max: 0.15,
+        min: 0.01,
+        render: isWeaveOn,
+        step: 0.005,
+        value: snapshot.weaveGapWidth ?? 0.06,
+      },
       strokePitch: {
         label: 'Stroke Pitch',
         max: 0.2,
@@ -98,18 +115,7 @@ export default function getTruchetControls(snapshot = {}) {
         label: 'Scene Background',
         value: snapshot.sceneBgColor ?? '#f5f2ea',
       },
-      clipShape: {
-        label: 'Clip Shape',
-        options: ['none', 'circle', 'square'],
-        value: snapshot.clipShape ?? 'none',
-      },
-      borderInset: {
-        label: 'Border Inset',
-        max: 0.9,
-        min: 0,
-        step: 0.01,
-        value: snapshot.borderInset ?? 0,
-      },
+      ...getCompositionControls(snapshot),
       seed: {
         label: 'Seed',
         max: 9999,

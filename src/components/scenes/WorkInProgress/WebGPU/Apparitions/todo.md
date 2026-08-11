@@ -414,6 +414,8 @@ sized apparition forms from the phone's tracking, with zero render load on the p
 
 [Back to main TODO](../../../../../../TODO.md)
 
+- check out `~/dev/examples/sketches` for a good example of the effect im looking for when tracking a person. see `blocks4_hands`
+
 # // Presets
 
 # // Features

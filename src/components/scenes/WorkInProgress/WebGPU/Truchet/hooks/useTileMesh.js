@@ -1,7 +1,7 @@
 import { uniform } from 'three/tsl';
 import * as THREE from 'three/webgpu';
 
-import { useEffect, useMemo, useRef } from 'react';
+import { useEffect, useLayoutEffect, useMemo, useRef } from 'react';
 
 import { CLIP_SHAPE } from '../utils/clipMask';
 import useRetileScheduler from './useRetileScheduler';
@@ -126,14 +126,33 @@ export default function useTileMesh({
   }, [buildColorNode]);
   useEffect(() => () => material.dispose(), [material]);
 
-  useEffect(() => {
+  // useLayoutEffect, not useEffect: this must run before R3F's next render
+  // paints the mesh, or the very first frame after a fresh mount (every
+  // grid-mode switch mounts a brand-new InstancedMesh) can render with the
+  // instanceMatrix/instanceMotif buffers still at their just-allocated,
+  // all-zero default rather than this setup's data.
+  useLayoutEffect(() => {
     const mesh = meshRef.current;
     if (!mesh) return;
 
-    mesh.geometry.setAttribute(
-      'instanceMotif',
-      new THREE.InstancedBufferAttribute(gridData.motifIds, 1, false)
-    );
+    // Reuse the existing attribute object when the instance count hasn't
+    // changed (e.g. only `seed`/`straightTileChance` changed) instead of
+    // always swapping in a brand-new InstancedBufferAttribute — mutating
+    // the same object's array + needsUpdate is the pattern that reliably
+    // reaches the GPU here (it's what useRetileScheduler's own per-frame
+    // motif swaps already do); replacing the attribute object outright only
+    // reliably takes effect when the mesh itself is also rebuilt (e.g. a
+    // grid-size change recreates the InstancedMesh via its `args`).
+    const existing = mesh.geometry.getAttribute('instanceMotif');
+    if (existing && existing.array.length === gridData.motifIds.length) {
+      existing.array.set(gridData.motifIds);
+      existing.needsUpdate = true;
+    } else {
+      mesh.geometry.setAttribute(
+        'instanceMotif',
+        new THREE.InstancedBufferAttribute(gridData.motifIds, 1, false)
+      );
+    }
 
     const dummy = new THREE.Object3D();
     for (let i = 0; i < gridData.count; i += 1) {

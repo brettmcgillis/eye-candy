@@ -12,8 +12,14 @@ export function pickRandomMotif(straightTileChance, weaveEnabled) {
   return Math.random() < 0.5 ? MOTIF.ARC_A : MOTIF.ARC_B;
 }
 
-// 0-2 = arc at vertex 0/1/2, 3-5 = the matching straight chord.
-export function pickRandomTriMotif(straightTileChance) {
+// 0-2 = arc at vertex 0/1/2, 3-5 = the matching straight chord, 6-11 = weave
+// crossings (see grid.js's TRI_MOTIF for the (pair, under) encoding).
+export function pickRandomTriMotif(straightTileChance, weaveEnabled) {
+  if (weaveEnabled && Math.random() < WEAVE_CHANCE) {
+    const pairIndex = Math.floor(Math.random() * 3);
+    const underIsSecond = Math.random() < 0.5 ? 1 : 0;
+    return 6 + pairIndex * 2 + underIsSecond;
+  }
   const vertex = Math.floor(Math.random() * 3);
   return Math.random() < straightTileChance ? vertex + 3 : vertex;
 }

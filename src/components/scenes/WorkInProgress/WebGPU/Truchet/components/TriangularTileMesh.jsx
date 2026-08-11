@@ -36,6 +36,7 @@ function TriangularTileMesh({ config }) {
     strokeColor,
     strokePitch,
     strokeWidth,
+    weaveEnabled,
     weaveGapWidth,
   } = config;
 
@@ -65,8 +66,9 @@ function TriangularTileMesh({ config }) {
         hexRadius,
         seed,
         straightTileChance,
+        weaveEnabled,
       }),
-    [cellSize, hexRadius, seed, straightTileChance]
+    [cellSize, hexRadius, seed, straightTileChance, weaveEnabled]
   );
 
   const gridA = useMemo(
@@ -122,6 +124,7 @@ function TriangularTileMesh({ config }) {
     strokeColor,
     strokePitch,
     strokeWidth,
+    weaveEnabled,
     weaveGapWidth,
   };
 

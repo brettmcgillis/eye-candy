@@ -14,9 +14,14 @@
 # // TODO:
 
 - can we do multi-scale truchet tiling?
+- add hexagon clip mode so we can border the hexagon mode
+- add toggle for retile effect
 
 # // Presets
 
 # // Features
 
 # // Bugs
+
+- zrotation in triangle mode broken.
+- roundedsquare clip mode broken.

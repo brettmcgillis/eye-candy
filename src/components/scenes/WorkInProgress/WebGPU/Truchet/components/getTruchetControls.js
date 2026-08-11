@@ -11,8 +11,7 @@ const isSquareMode = (get) =>
 const isTriangularMode = (get) =>
   get(`${TRUCHET_FOLDER_PATH}.gridMode`) === 'triangular';
 const isSolidFill = (get) => get(`${TRUCHET_FOLDER_PATH}.fillMode`) === 'solid';
-const isWeaveOn = (get) =>
-  isSquareMode(get) && get(`${TRUCHET_FOLDER_PATH}.weaveEnabled`) === true;
+const isWeaveOn = (get) => get(`${TRUCHET_FOLDER_PATH}.weaveEnabled`) === true;
 
 // getTruchetControls is a companion fn to TileGrid — the flat Leva schema
 // for the scene's single `Truchet` folder. Keys must match presets/presets.js
@@ -65,7 +64,6 @@ export default function getTruchetControls(snapshot = {}) {
       },
       weaveEnabled: {
         label: 'Weave Crossings',
-        render: isSquareMode,
         value: snapshot.weaveEnabled ?? false,
       },
       weaveGapWidth: {

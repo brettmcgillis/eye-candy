@@ -16,6 +16,9 @@ const WEAVE_CHANCE = 0.15;
 
 // Every equilateral-triangle corner is a valid arc center — 0-2 arc at
 // v0/v1/v2, 3-5 the matching straight chord (see utils/triangleGeometry.js).
+// 6-11 are weave crossings: any two of the triangle's three medians
+// (vertex → opposite edge's midpoint) cross at the centroid — one motif per
+// (pair, which-median-is-under) combination.
 export const TRI_MOTIF = {
   ARC_V0: 0,
   ARC_V1: 1,
@@ -23,6 +26,12 @@ export const TRI_MOTIF = {
   STRAIGHT_V0: 3,
   STRAIGHT_V1: 4,
   STRAIGHT_V2: 5,
+  CROSS_01_UNDER0: 6,
+  CROSS_01_UNDER1: 7,
+  CROSS_12_UNDER1: 8,
+  CROSS_12_UNDER2: 9,
+  CROSS_20_UNDER2: 10,
+  CROSS_20_UNDER0: 11,
 };
 
 // Deterministic PRNG so a given `seed` always reproduces the same layout.
@@ -47,7 +56,12 @@ function pickMotif(rng, straightTileChance, weaveEnabled) {
   return rng() < 0.5 ? MOTIF.ARC_A : MOTIF.ARC_B;
 }
 
-function pickTriMotif(rng, straightTileChance) {
+function pickTriMotif(rng, straightTileChance, weaveEnabled) {
+  if (weaveEnabled && rng() < WEAVE_CHANCE) {
+    const pairIndex = Math.floor(rng() * 3);
+    const underIsSecond = rng() < 0.5 ? 1 : 0;
+    return 6 + pairIndex * 2 + underIsSecond;
+  }
   const vertex = Math.floor(rng() * 3);
   return rng() < straightTileChance ? vertex + 3 : vertex;
 }
@@ -108,6 +122,7 @@ export function buildTriangularGrid({
   hexRadius,
   seed,
   straightTileChance,
+  weaveEnabled,
 }) {
   const s = cellSize;
   const h = (s * Math.sqrt(3)) / 2;
@@ -129,11 +144,11 @@ export function buildTriangularGrid({
 
       if (hexDistance(i + 1 / 3, j + 1 / 3) <= hexRadius) {
         positionsA.push(baseX + 0.5 * s, baseY + h / 3, 0);
-        motifIdsA.push(pickTriMotif(rng, straightTileChance));
+        motifIdsA.push(pickTriMotif(rng, straightTileChance, weaveEnabled));
       }
       if (hexDistance(i + 2 / 3, j + 2 / 3) <= hexRadius) {
         positionsB.push(baseX + s, baseY + (2 * h) / 3, 0);
-        motifIdsB.push(pickTriMotif(rng, straightTileChance));
+        motifIdsB.push(pickTriMotif(rng, straightTileChance, weaveEnabled));
       }
     }
   }

@@ -206,6 +206,19 @@ function WreckedCar({ config }) {
     uniforms.voxelSnapAxis.value = resolveAxisIndex(config.glitchVoxelSnapAxis);
     uniforms.voxelSnapChaos.value = config.glitchVoxelSnapChaos;
     uniforms.voxelSnapSize.value = config.glitchVoxelSnapSize;
+
+    uniforms.innerStretchDensity.value = config.glitchInnerStretchEnabled
+      ? config.glitchInnerStretchDensity
+      : 0;
+    uniforms.innerStretchStretch.value = config.glitchInnerStretchStretch;
+    uniforms.innerStretchCellFrequency.value =
+      config.glitchInnerStretchCellFrequency;
+
+    uniforms.warpFieldAmount.value = config.glitchWarpFieldEnabled
+      ? config.glitchWarpFieldAmount
+      : 0;
+    uniforms.warpFieldFrequency.value = config.glitchWarpFieldFrequency;
+    uniforms.warpFieldSpeed.value = config.glitchWarpFieldSpeed;
   });
 
   return (

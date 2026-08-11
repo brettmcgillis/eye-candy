@@ -1,3 +1,4 @@
+/* eslint-disable camelcase */
 // TSL node material for the wrecked car: samples the CPU-baked glitch
 // attributes (see glitchGeometry.js) to misdirect vertex positions and UVs,
 // plus several live passes that need no CPU recompute at all — "find &
@@ -21,6 +22,7 @@ import {
   hash,
   materialNormal,
   mix,
+  mx_noise_float,
   normalFlat,
   positionLocal,
   replaceDefaultUV,
@@ -28,6 +30,7 @@ import {
   round,
   select,
   smoothstep,
+  time,
   uint,
   uniform,
   uv,
@@ -88,6 +91,14 @@ export function createGlitchUniforms() {
     voxelSnapAxis: uniform(1),
     voxelSnapChaos: uniform(0),
     voxelSnapSize: uniform(0.3),
+
+    innerStretchDensity: uniform(0),
+    innerStretchStretch: uniform(1.2),
+    innerStretchCellFrequency: uniform(8),
+
+    warpFieldAmount: uniform(0),
+    warpFieldFrequency: uniform(1.5),
+    warpFieldSpeed: uniform(0.3),
   };
 }
 
@@ -308,6 +319,45 @@ function buildVoxelSnapPositionNode(basePosition, u) {
   return mix(basePosition, target, blend);
 }
 
+// "Inner Stretch" — a hashed subset of local-space cells (same procedural,
+// no-bake shape as Torn Open/Voxel Snap) gets pushed out along a per-cell
+// random direction (same hashed-direction shape as Block Deconstruct's own
+// `direction`, not the true vertex normal — this only needs to look like
+// interior geometry spiking through the shell, not track the surface),
+// reading as panels stretching/spiking through the shell rather than the
+// whole surface shifting together. Negative Stretch caves the same cells in
+// instead of spiking them out.
+function buildInnerStretchPositionNode(basePosition, u) {
+  const cellFreq = u.innerStretchCellFrequency.max(0.001);
+  const cell = floor(basePosition.mul(cellFreq).add(1000));
+  const seed = cell.x.add(cell.y.mul(9973)).add(cell.z.mul(131));
+  const mask = hash(seed.add(283)).lessThan(u.innerStretchDensity);
+
+  const direction = vec3(
+    hash(seed.add(311)),
+    hash(seed.add(337)),
+    hash(seed.add(359))
+  ).sub(0.5);
+  const target = basePosition.add(direction.mul(u.innerStretchStretch));
+  return select(mask, target, basePosition);
+}
+
+// "Warp Field" — a smooth Perlin warp (mx_noise_float, continuous rather
+// than the hashed-cell masks every other technique uses) displaces every
+// vertex along a noise field, each axis sampled with its own offset so the
+// warp doesn't read as axis-aligned. Optionally animated via the TSL clock
+// for a soft, liquid counterpoint to every other technique's hard edges.
+function buildWarpFieldPositionNode(basePosition, u) {
+  const t = time.mul(u.warpFieldSpeed);
+  const p = basePosition.mul(u.warpFieldFrequency);
+  const warp = vec3(
+    mx_noise_float(p.add(vec3(0, 0, t))),
+    mx_noise_float(p.add(vec3(37.2, 11.4, t))),
+    mx_noise_float(p.add(vec3(-19.1, 4.7, t)))
+  ).mul(u.warpFieldAmount);
+  return basePosition.add(warp);
+}
+
 // Cut & Paste and Hopscotch each pick, per vertex, between the original
 // position and their own permuted target — driven by that vertex's own mask
 // hash against a density threshold, so density is a real "how many vertices"
@@ -373,13 +423,16 @@ function buildScrollTearPositionNode(basePosition, u) {
 // Chains every position-space technique into one node, coarse-to-fine:
 // Klink's permutation techniques, then Scroll Tear's smear, then Block
 // Deconstruct's whole-cell separation, then Slice Suite's cross-sections,
-// then Voxel Snap's fine grid quantization.
+// then Voxel Snap's fine grid quantization, then Inner Stretch's per-cell
+// spikes, then Warp Field's smooth overall wobble as a finishing touch.
 function buildFinalPositionNode(u) {
   const glitched = buildGlitchedPositionNode(u);
   const smeared = buildScrollTearPositionNode(glitched, u);
   const deconstructed = buildBlockDeconstructPositionNode(smeared, u);
   const sliced = buildSliceSuitePositionNode(deconstructed, u);
-  return buildVoxelSnapPositionNode(sliced, u);
+  const voxeled = buildVoxelSnapPositionNode(sliced, u);
+  const stretched = buildInnerStretchPositionNode(voxeled, u);
+  return buildWarpFieldPositionNode(stretched, u);
 }
 
 // Same smear, applied to the car's own UV.y instead of local height, so the

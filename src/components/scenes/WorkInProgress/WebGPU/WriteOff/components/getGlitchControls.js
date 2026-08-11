@@ -443,6 +443,66 @@ export default function getGlitchControls(preset, onReglitch) {
         },
         { collapsed: true }
       ),
+      'Inner Stretch': folder(
+        {
+          glitchInnerStretchEnabled: {
+            label: 'Enabled',
+            value: preset.glitchInnerStretchEnabled,
+          },
+          glitchInnerStretchDensity: {
+            label: 'Density',
+            min: 0,
+            max: 1,
+            step: 0.01,
+            value: preset.glitchInnerStretchDensity,
+          },
+          glitchInnerStretchStretch: {
+            label: 'Stretch',
+            min: -3,
+            max: 3,
+            step: 0.05,
+            value: preset.glitchInnerStretchStretch,
+          },
+          glitchInnerStretchCellFrequency: {
+            label: 'Cell Frequency',
+            min: 0.5,
+            max: 30,
+            step: 0.5,
+            value: preset.glitchInnerStretchCellFrequency,
+          },
+        },
+        { collapsed: true }
+      ),
+      'Warp Field': folder(
+        {
+          glitchWarpFieldEnabled: {
+            label: 'Enabled',
+            value: preset.glitchWarpFieldEnabled,
+          },
+          glitchWarpFieldAmount: {
+            label: 'Amount',
+            min: 0,
+            max: 1.5,
+            step: 0.01,
+            value: preset.glitchWarpFieldAmount,
+          },
+          glitchWarpFieldFrequency: {
+            label: 'Frequency',
+            min: 0.1,
+            max: 8,
+            step: 0.1,
+            value: preset.glitchWarpFieldFrequency,
+          },
+          glitchWarpFieldSpeed: {
+            label: 'Speed',
+            min: 0,
+            max: 2,
+            step: 0.01,
+            value: preset.glitchWarpFieldSpeed,
+          },
+        },
+        { collapsed: true }
+      ),
       Mix: folder(
         {
           glitchWireframe: {

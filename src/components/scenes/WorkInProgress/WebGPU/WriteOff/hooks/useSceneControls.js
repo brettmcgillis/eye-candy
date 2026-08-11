@@ -13,6 +13,7 @@ import {
 } from '../../../../../../modules/lightingRig';
 import { useMediaRecorder } from '../../../../../../modules/mediaRecorder';
 import getBackgroundControls from '../components/getBackgroundControls';
+import getFloorControls from '../components/getFloorControls';
 import getGlitchControls from '../components/getGlitchControls';
 import getPostEffectsControls from '../components/getPostEffectsControls';
 import { DEFAULT_PRESET, PRESETS, getPresetControls } from '../presets/presets';
@@ -58,6 +59,7 @@ export default function useSceneControls() {
     Lighting: folder(lightingControls, { collapsed: true }),
     Glitch: getGlitchControls(controlsSnapshotRef.current, onReglitch),
     Background: getBackgroundControls(controlsSnapshotRef.current),
+    Floor: getFloorControls(controlsSnapshotRef.current),
     'Post FX': getPostEffectsControls(controlsSnapshotRef.current),
   }));
 

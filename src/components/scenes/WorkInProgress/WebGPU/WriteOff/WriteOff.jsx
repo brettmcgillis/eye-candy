@@ -2,6 +2,7 @@ import React from 'react';
 
 import { CameraRig } from '../../../../../modules/cameraRig';
 import { LightingRig } from '../../../../../modules/lightingRig';
+import Floor from './components/Floor';
 import PostEffects from './components/PostEffects';
 import SceneBackground from './components/SceneBackground';
 import WreckedCar from './components/WreckedCar';
@@ -21,6 +22,13 @@ export default function WriteOff() {
       <LightingRig lighting={config.lighting} />
       <SceneBackground backgroundColor={config.backgroundColor} />
       <WreckedCar config={config} />
+      {config.floorEnabled && (
+        <Floor
+          color={config.floorColor}
+          opacity={config.floorOpacity}
+          size={config.floorSize}
+        />
+      )}
       <PostEffects
         chromaticAberrationEnabled={config.postChromaticAberrationEnabled}
         chromaticAberrationScale={config.postChromaticAberrationScale}

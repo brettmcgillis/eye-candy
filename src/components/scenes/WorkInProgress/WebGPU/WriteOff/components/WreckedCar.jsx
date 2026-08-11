@@ -24,10 +24,20 @@ const TARGET_LENGTH = 3.4; // world units, normalized car length along local X
 function WreckedCar({ config }) {
   const { nodes, materials } = useGLTF(modelFile('destroyed_car.glb'));
 
-  // Clone so the glitch attributes we bake never touch the shared, cached
-  // GLTF geometry other consumers of this model might reuse.
+  // Clone (so the glitch attributes we bake never touch the shared, cached
+  // GLTF geometry other consumers of this model might reuse) and expand to
+  // non-indexed: Slice Suite/Block Deconstruct/Voxel Snap move vertices in
+  // per-cell groups, and a shared vertex can only move to one place, so an
+  // indexed mesh always keeps neighboring cells stitched together no matter
+  // how far apart their groups move. Non-indexed gives every triangle its
+  // own unique corners, so triangles in different groups can actually pull
+  // apart. It also gives Torn Open's wireframe-edge reveal a reliable
+  // per-corner id via vertexIndex % 3 (see buildBarycentricNode in
+  // glitchMaterial.js) with no extra vertex buffer needed.
   const { geometry, scale } = useMemo(() => {
-    const cloned = nodes.Box001_caprice_low_Material_u1_v1_0.geometry.clone();
+    const cloned = nodes.Box001_caprice_low_Material_u1_v1_0.geometry
+      .clone()
+      .toNonIndexed();
     cloned.computeBoundingBox();
     const size = new THREE.Vector3().subVectors(
       cloned.boundingBox.max,
@@ -38,10 +48,6 @@ function WreckedCar({ config }) {
 
   const { uniforms, material } = useMemo(() => {
     const u = createGlitchUniforms();
-    // Scroll Tear normalizes against the car's actual local-space height so
-    // Leva's 0-1 Tear Position always means "bottom of car" to "top of car".
-    u.tearHeightMin.value = geometry.boundingBox.min.y;
-    u.tearHeightMax.value = geometry.boundingBox.max.y;
     // Block Deconstruct / Slice Suite / Voxel Snap's axis-wipe sweep
     // normalizes against the car's full local-space bounds (see
     // buildAxisSweep in glitchMaterial.js).
@@ -130,34 +136,17 @@ function WreckedCar({ config }) {
       : 0;
     material.wireframe = config.glitchWireframe;
 
-    const materialCorrupted = config.glitchMaterialEnabled;
-    material.roughness = materialCorrupted
-      ? material.userData.baseRoughness * config.glitchRoughnessMultiplier
-      : material.userData.baseRoughness;
-    material.metalness = materialCorrupted
-      ? material.userData.baseMetalness * config.glitchMetalnessMultiplier
-      : material.userData.baseMetalness;
-    material.emissive.set(
-      materialCorrupted ? config.glitchEmissiveColor : '#000000'
-    );
-    material.emissiveIntensity = materialCorrupted
-      ? config.glitchEmissiveIntensity
-      : 0;
-    uniforms.normalInvert.value = materialCorrupted
-      ? config.glitchNormalInvert
-      : 0;
-
-    const scrollTearActive = config.glitchScrollTearEnabled;
-    uniforms.tearStrength.value = scrollTearActive
+    uniforms.tearStrength.value = config.glitchScrollTearEnabled
       ? config.glitchScrollTearStrength
       : 0;
     uniforms.tearRange.value = config.glitchScrollTearRange;
-    uniforms.tearRowJitterStrength.value = scrollTearActive
-      ? config.glitchScrollTearRowJitter
+    uniforms.tearPosition.value = config.glitchScrollTearPosition;
+
+    uniforms.rowJitterStrength.value = config.glitchRowJitterEnabled
+      ? config.glitchRowJitterStrength
       : 0;
-    uniforms.tearPosition.value = config.glitchScrollTearAutoScroll
-      ? ((performance.now() / 1000) * config.glitchScrollTearSpeed) % 1
-      : config.glitchScrollTearPosition;
+    uniforms.rowJitterBands.value = config.glitchRowJitterBands;
+    uniforms.rowJitterAxis.value = resolveAxisIndex(config.glitchRowJitterAxis);
 
     uniforms.degradeDensity.value = config.glitchDegradeEnabled
       ? config.glitchDegradeDensity
@@ -167,6 +156,7 @@ function WreckedCar({ config }) {
       ? config.glitchTornDensity
       : 0;
     uniforms.tornCellFrequency.value = config.glitchTornCellFrequency;
+    uniforms.tornWireframeWidth.value = config.glitchTornWireframeWidth;
 
     uniforms.blockDeconstructAmount.value = config.glitchBlockDeconstructEnabled
       ? config.glitchBlockDeconstructAmount

@@ -126,56 +126,11 @@ export default function getGlitchControls(preset, onReglitch) {
         },
         { collapsed: true }
       ),
-      'Wrong Direction': folder(
-        {
-          glitchMaterialEnabled: {
-            label: 'Enabled',
-            value: preset.glitchMaterialEnabled,
-          },
-          glitchRoughnessMultiplier: {
-            label: 'Roughness ×',
-            min: -2,
-            max: 3,
-            step: 0.05,
-            value: preset.glitchRoughnessMultiplier,
-          },
-          glitchMetalnessMultiplier: {
-            label: 'Metalness ×',
-            min: -2,
-            max: 3,
-            step: 0.05,
-            value: preset.glitchMetalnessMultiplier,
-          },
-          glitchEmissiveColor: {
-            label: 'Emissive',
-            value: preset.glitchEmissiveColor,
-          },
-          glitchEmissiveIntensity: {
-            label: 'Emissive Intensity',
-            min: -3,
-            max: 5,
-            step: 0.05,
-            value: preset.glitchEmissiveIntensity,
-          },
-          glitchNormalInvert: {
-            label: 'Invert Normals',
-            min: 0,
-            max: 1,
-            step: 0.01,
-            value: preset.glitchNormalInvert,
-          },
-        },
-        { collapsed: true }
-      ),
       'Scroll Tear': folder(
         {
           glitchScrollTearEnabled: {
             label: 'Enabled',
             value: preset.glitchScrollTearEnabled,
-          },
-          glitchScrollTearAutoScroll: {
-            label: 'Auto Scroll',
-            value: preset.glitchScrollTearAutoScroll,
           },
           glitchScrollTearPosition: {
             label: 'Tear Position',
@@ -183,13 +138,6 @@ export default function getGlitchControls(preset, onReglitch) {
             max: 1,
             step: 0.01,
             value: preset.glitchScrollTearPosition,
-          },
-          glitchScrollTearSpeed: {
-            label: 'Scroll Speed',
-            min: 0.02,
-            max: 2,
-            step: 0.01,
-            value: preset.glitchScrollTearSpeed,
           },
           glitchScrollTearRange: {
             label: 'Smear Range',
@@ -205,12 +153,33 @@ export default function getGlitchControls(preset, onReglitch) {
             step: 0.01,
             value: preset.glitchScrollTearStrength,
           },
-          glitchScrollTearRowJitter: {
-            label: 'Row Jitter',
+        },
+        { collapsed: true }
+      ),
+      'Row Jitter': folder(
+        {
+          glitchRowJitterEnabled: {
+            label: 'Enabled',
+            value: preset.glitchRowJitterEnabled,
+          },
+          glitchRowJitterAxis: {
+            label: 'Row Axis',
+            options: ['x', 'y', 'z'],
+            value: preset.glitchRowJitterAxis,
+          },
+          glitchRowJitterBands: {
+            label: 'Bands',
+            min: 2,
+            max: 200,
+            step: 1,
+            value: preset.glitchRowJitterBands,
+          },
+          glitchRowJitterStrength: {
+            label: 'Strength',
             min: 0,
             max: 0.1,
             step: 0.001,
-            value: preset.glitchScrollTearRowJitter,
+            value: preset.glitchRowJitterStrength,
           },
         },
         { collapsed: true }
@@ -257,6 +226,13 @@ export default function getGlitchControls(preset, onReglitch) {
             max: 30,
             step: 0.5,
             value: preset.glitchTornCellFrequency,
+          },
+          glitchTornWireframeWidth: {
+            label: 'Wire Width',
+            min: 0.01,
+            max: 0.3,
+            step: 0.005,
+            value: preset.glitchTornWireframeWidth,
           },
         },
         { collapsed: true }
@@ -436,7 +412,7 @@ export default function getGlitchControls(preset, onReglitch) {
           glitchVoxelSnapSize: {
             label: 'Size',
             min: 0.02,
-            max: 1.5,
+            max: 10.5,
             step: 0.01,
             value: preset.glitchVoxelSnapSize,
           },

@@ -15,27 +15,33 @@
 // buffer cost (see glitchGeometry.js's packing note on the 8-buffer cap).
 import {
   PI,
+  abs,
   attribute,
   dot,
   float,
   floor,
+  fract,
   hash,
   materialNormal,
   mix,
   mx_noise_float,
   normalFlat,
+  oneMinus,
   positionLocal,
   replaceDefaultUV,
   rotate,
   round,
   select,
+  sign,
   smoothstep,
   time,
   uint,
   uniform,
   uv,
+  varying,
   vec2,
   vec3,
+  vertexIndex,
 } from 'three/tsl';
 import * as THREE from 'three/webgpu';
 
@@ -47,18 +53,17 @@ export function createGlitchUniforms() {
     magnitude: uniform(2),
     signFlipChance: uniform(0.3),
     density: uniform(0),
-    normalInvert: uniform(0),
-    tearHeightMin: uniform(0),
-    tearHeightMax: uniform(1),
     tearPosition: uniform(0.5),
     tearRange: uniform(0.2),
     tearStrength: uniform(0),
-    tearRowJitterBands: uniform(80),
-    tearRowJitterStrength: uniform(0),
+    rowJitterStrength: uniform(0),
+    rowJitterBands: uniform(24),
+    rowJitterAxis: uniform(1),
     degradeDensity: uniform(0),
     degradeBlockCount: uniform(24),
     tornDensity: uniform(0),
     tornCellFrequency: uniform(6),
+    tornWireframeWidth: uniform(0.05),
 
     // Shared by Block Deconstruct / Slice Suite / Voxel Snap's axis-wipe
     // sweep (see buildAxisSweep) — the car's own local-space bounds, set
@@ -287,6 +292,39 @@ function buildSliceSuiteAlphaNode(u) {
   return select(sliceHash.lessThan(blend), u.sliceSuiteSliceAlpha, float(1));
 }
 
+// Push Apart only reads as disconnected slabs if every corner of a triangle
+// agrees on which slice it's in — the slice grid is independent of the
+// mesh's actual topology, so plenty of triangles straddle a slice boundary
+// (two corners compute one sliceIndex, the third computes the next), and a
+// straddling triangle can't separate: it just stretches to bridge the gap,
+// which is what kept the whole car reading as one connected piece even
+// after WreckedCar's non-indexed conversion gave every triangle its own
+// unique corners. There's no spare vertex buffer for a real per-triangle
+// group id to fix this at the source (WebGPU's 8-buffer cap is already
+// spent), so this detects a straddling triangle from its own
+// interpolation instead: each corner's sliceIndex is an exact integer on
+// its own, but interpolating three *different* integers across a
+// straddling triangle's face produces non-integer values in its interior —
+// a clean triangle, where all three corners agree, interpolates to that
+// same constant integer everywhere. Fragments where the interpolated value
+// drifts off a whole number belong to a bridging triangle and get
+// discarded, so the slices actually come apart.
+function buildSliceSuiteStraddleAlphaNode(u) {
+  const sliceIndexVarying = varying(computeSliceSuiteIndex(positionLocal, u));
+  const drift = abs(fract(sliceIndexVarying.add(0.5)).sub(0.5));
+  const straddling = drift.greaterThan(0.02);
+
+  const sweep = buildAxisSweep(
+    positionLocal,
+    u,
+    u.sliceSuiteAxis,
+    u.sliceSuiteTransition,
+    u.sliceSuiteBandwidth
+  );
+  const blend = u.sliceSuiteAmount.mul(sweep);
+  return select(straddling, oneMinus(blend), float(1));
+}
+
 // "Voxel Snap" — quantizes local position onto a `size` grid (procedural,
 // no bake), with `chaos` jittering the snapped point back off-grid so it
 // doesn't read as a perfectly clean lattice.
@@ -399,46 +437,26 @@ function buildGlitchedPositionNode(u) {
   return select(withinDensity, chosen, afterHopscotch);
 }
 
-// Old-computer "scroll too fast" smear, translated to the car's own local
-// geometry (normalized against its actual height, so Leva's 0-1 Tear
-// Position always means "bottom of car" to "top of car" regardless of the
-// model's real-world scale) rather than the screen — past the tear, a
-// vertex's height blends toward the tear's own height, so that band of the
-// body stretches/compresses toward it instead of the frame doing so.
-function buildScrollTearPositionNode(basePosition, u) {
-  const carHeight = u.tearHeightMax.sub(u.tearHeightMin).max(0.0001);
-  const normalizedY = basePosition.y.sub(u.tearHeightMin).div(carHeight);
-  const tearWorldY = u.tearHeightMin.add(u.tearPosition.mul(carHeight));
-
-  const smearAmount = smoothstep(
-    u.tearPosition,
-    u.tearPosition.add(u.tearRange.max(0.0001)),
-    normalizedY
-  ).mul(u.tearStrength);
-
-  const smearedY = mix(basePosition.y, tearWorldY, smearAmount);
-  return vec3(basePosition.x, smearedY, basePosition.z);
-}
-
 // Chains every position-space technique into one node, coarse-to-fine:
-// Klink's permutation techniques, then Scroll Tear's smear, then Block
-// Deconstruct's whole-cell separation, then Slice Suite's cross-sections,
-// then Voxel Snap's fine grid quantization, then Inner Stretch's per-cell
-// spikes, then Warp Field's smooth overall wobble as a finishing touch.
+// Klink's permutation techniques, then Block Deconstruct's whole-cell
+// separation, then Slice Suite's cross-sections, then Voxel Snap's fine
+// grid quantization, then Inner Stretch's per-cell spikes, then Warp
+// Field's smooth overall wobble as a finishing touch.
 function buildFinalPositionNode(u) {
   const glitched = buildGlitchedPositionNode(u);
-  const smeared = buildScrollTearPositionNode(glitched, u);
-  const deconstructed = buildBlockDeconstructPositionNode(smeared, u);
+  const deconstructed = buildBlockDeconstructPositionNode(glitched, u);
   const sliced = buildSliceSuitePositionNode(deconstructed, u);
   const voxeled = buildVoxelSnapPositionNode(sliced, u);
   const stretched = buildInnerStretchPositionNode(voxeled, u);
   return buildWarpFieldPositionNode(stretched, u);
 }
 
-// Same smear, applied to the car's own UV.y instead of local height, so the
-// paint/decals appear dragged across the surface — the texture-space half
-// of "scroll tear". A per-row hashed jitter (quantized UV.y band) layers a
-// torn, glitchy texture on top of the smooth stretch.
+// "Scroll Tear" — the old-browser "image still downloading while you
+// scroll" smear: past Tear Position, the row AT that position gets frozen
+// and repeated downward (every row's UV.y clamped toward tearPosition) as
+// if no new data ever arrived, instead of a literal geometry deformation.
+// Purely UV-space and purely manual (no auto-scroll) — Tear Position is a
+// live-scrubbed dial, not a clock.
 function buildScrollTearUvNode(baseUv, u) {
   const { y } = baseUv;
   const smearAmount = smoothstep(
@@ -448,12 +466,33 @@ function buildScrollTearUvNode(baseUv, u) {
   ).mul(u.tearStrength);
   const smearedY = mix(y, u.tearPosition, smearAmount);
 
-  const bandIndex = floor(y.mul(u.tearRowJitterBands)).toUint();
-  const jitter = hash(bandIndex.add(uint(29)))
-    .sub(0.5)
-    .mul(u.tearRowJitterStrength);
+  return vec2(baseUv.x, smearedY);
+}
 
-  return vec2(baseUv.x.add(jitter), smearedY);
+// "Row Jitter" — the deck-boards effect: bands the car's own local-space
+// position along a runtime-selectable axis (same axis convention as Block
+// Deconstruct/Slice Suite/Voxel Snap) into `bands` slabs, then shifts each
+// band's TEXTURE, not its geometry, sideways by its own hashed random
+// offset — like a run of boards, all originally flush at the ends, that
+// have since slid randomly out of alignment. Split out from Scroll Tear,
+// which used to bake this same shift into its own UV smear (banded by
+// UV.y only); it's its own technique now, banded by 3D position so the
+// axis choice actually means something on a non-flat model.
+function buildRowJitterUvNode(baseUv, u) {
+  const axisPos = pickAxisComponent(positionLocal, u.rowJitterAxis);
+  const axisMin = pickAxisComponent(u.boundsMin, u.rowJitterAxis);
+  const axisMax = pickAxisComponent(u.boundsMax, u.rowJitterAxis);
+  const extent = axisMax.sub(axisMin).max(0.0001);
+  const bandCount = u.rowJitterBands.max(1);
+  const bandThickness = extent.div(bandCount);
+  const bandIndex = floor(axisPos.sub(axisMin).div(bandThickness))
+    .max(0)
+    .min(bandCount.sub(1));
+
+  const seed = bandIndex.add(1000).mul(53);
+  const jitter = hash(seed.add(13)).sub(0.5).mul(u.rowJitterStrength);
+
+  return vec2(baseUv.x.add(jitter), baseUv.y);
 }
 
 // "Resolution Loss" — quantizes UV into blocks and, in a random subset of
@@ -465,10 +504,10 @@ function buildTextureDegradeUvNode(baseUv, u) {
   const blockCoord = floor(baseUv.mul(u.degradeBlockCount));
   const pixelatedUv = blockCoord.add(0.5).div(u.degradeBlockCount);
 
-  // +1000 before hashing only (not on pixelatedUv) — baseUv can dip
-  // slightly negative once Scroll Tear's row jitter lands near a UV edge,
-  // and a negative-to-uint cast is implementation-defined in WGSL (see
-  // buildTornMask below for the full explanation of this failure mode).
+  // +1000 before hashing only (not on pixelatedUv), matching every other
+  // technique's cell hash in this file — cheap insurance against a
+  // negative-to-uint cast, which is implementation-defined in WGSL (see
+  // buildTornAlphaNode below for the full explanation of this failure mode).
   const hashCoord = blockCoord.add(1000);
   const blockSeed = hashCoord.x.add(hashCoord.y.mul(9973));
   const degraded = hash(blockSeed).lessThan(u.degradeDensity);
@@ -476,35 +515,69 @@ function buildTextureDegradeUvNode(baseUv, u) {
   return select(degraded, pixelatedUv, baseUv);
 }
 
-// "Torn Open" mask — a spatial hash over local-space cells (not UV, so the
-// torn pattern doesn't shift when Texture Scramble/Resolution Loss are also
-// active), true where that cell should be cut away. Density is another
-// independent, procedural, zero-extra-attribute dial.
-//
-// positionLocal spans negative values (the car is centered near its local
-// origin), and converting a negative float to uint is implementation-
-// defined in WGSL — it doesn't reliably clamp or wrap, so hashing a
-// negative cell coordinate could read as "torn" even at density 0. +1000
-// keeps every cell coordinate comfortably positive before the cast.
-function buildTornMask(u) {
-  const cell = floor(positionLocal.mul(u.tornCellFrequency).add(1000));
-  const cellSeed = cell.x.add(cell.y.mul(131)).add(cell.z.mul(7919));
-  return hash(cellSeed).lessThan(u.tornDensity);
+// A per-corner one-hot vector (1 at this triangle corner's own weight, 0 at
+// the other two) — the classic "wireframe without a dedicated barycentric
+// attribute" trick: read `vertexIndex % 3` instead of baking a new buffer
+// (WebGPU's 8-vertex-buffer cap is already spent, see glitchGeometry.js),
+// then explicitly `varying()` it so the *vector itself* — not the raw
+// index — gets interpolated across each triangle in the fragment shader.
+// vertexIndex % 3 only cycles 0, 1, 2 per triangle on a non-indexed draw
+// (see WreckedCar's toNonIndexed() call) — an indexed draw would repeat a
+// shared vertex's index across every triangle that references it instead.
+function buildBarycentricNode() {
+  const corner = vertexIndex.mod(uint(3));
+  const raw = vec3(
+    select(corner.equal(uint(0)), float(1), float(0)),
+    select(corner.equal(uint(1)), float(1), float(0)),
+    select(corner.equal(uint(2)), float(1), float(0))
+  );
+  return varying(raw);
 }
 
-// "Push the node the wrong way" — blends the material's own computed normal
-// (materialNormal, already sampling the normal map through whatever UV the
-// contextNode above lands on) toward its negation, so lighting reads as
-// inverted rather than swapping in a hand-built alternative.
-//
-// Voxel Snap then blends further toward normalFlat (screen-space derivative
-// of the *already-transformed* position, so it reflects whatever the vertex
-// shader actually did) — smooth per-vertex normals interpolated across a
-// quantized surface hide the snap entirely; flat per-triangle normals are
-// what actually sells the blocky read.
-function buildNormalNode(u) {
-  const inverted = mix(materialNormal, materialNormal.negate(), u.normalInvert);
+// "Torn Open" — continuous Perlin-noise patches (not the old hashed-cell
+// blockiness, for organic torn-paper edges) punch through the panel, but
+// only between the wireframe's own edges: the mesh's structural lines stay
+// opaque, so a torn patch reads as "the panel is gone except for its
+// wireframe skeleton" rather than a clean hole. Density maps the same way
+// WetGround's puddle mask does — threshold walks 1 (nothing torn) down to 0
+// (everything torn) as density goes 0 to 1.
+function buildTornAlphaNode(u) {
+  const noise = mx_noise_float(positionLocal.mul(u.tornCellFrequency))
+    .mul(0.5)
+    .add(0.5);
+  const threshold = oneMinus(u.tornDensity);
+  const patch = smoothstep(threshold, threshold.add(0.12), noise);
 
+  const barycentric = buildBarycentricNode();
+  const edgeDistance = barycentric.x.min(barycentric.y).min(barycentric.z);
+  const nearEdge = oneMinus(
+    smoothstep(0, u.tornWireframeWidth.max(0.001), edgeDistance)
+  );
+
+  const holeAmount = patch.mul(oneMinus(nearEdge));
+  return oneMinus(holeAmount);
+}
+
+// Moving vertices onto a grid can't put real 90° edges into the silhouette —
+// the surface between two differently-snapped points is still whatever
+// (curved, connected) triangle used to join them, just relocated. What
+// *does* sell "voxel" convincingly on the cheap is the shading: snap the
+// per-triangle flat normal (normalFlat — screen-space derivative of the
+// *already-transformed* position) to its nearest cardinal axis, so each
+// triangle lights as if it were an axis-aligned cube face. That's a real
+// faceted, blocky-lit read even though the geometry underneath it is still
+// smooth-topology — the standard cheap "voxel shading" trick.
+function snapToNearestCardinalAxis(n) {
+  const magnitude = abs(n);
+  const dominant = magnitude.x.max(magnitude.y).max(magnitude.z);
+  return vec3(
+    select(magnitude.x.greaterThanEqual(dominant), sign(n.x), float(0)),
+    select(magnitude.y.greaterThanEqual(dominant), sign(n.y), float(0)),
+    select(magnitude.z.greaterThanEqual(dominant), sign(n.z), float(0))
+  );
+}
+
+function buildNormalNode(u) {
   const voxelSweep = buildAxisSweep(
     positionLocal,
     u,
@@ -513,7 +586,8 @@ function buildNormalNode(u) {
     u.voxelSnapBandwidth
   );
   const voxelBlend = u.voxelSnapAmount.mul(voxelSweep);
-  return mix(inverted, normalFlat, voxelBlend);
+  const cubicNormal = snapToNearestCardinalAxis(normalFlat);
+  return mix(materialNormal, cubicNormal, voxelBlend);
 }
 
 // Builds the UV pipeline shared by both the color/normal/roughness/AO
@@ -526,7 +600,8 @@ function buildFinalUvNode(u) {
     u.uvBlend
   );
   const torn = buildScrollTearUvNode(textureScrambled, u);
-  return buildTextureDegradeUvNode(torn, u);
+  const rowJittered = buildRowJitterUvNode(torn, u);
+  return buildTextureDegradeUvNode(rowJittered, u);
 }
 
 export function createWreckedCarMaterial(sourceMaterial, uniforms) {
@@ -540,11 +615,6 @@ export function createWreckedCarMaterial(sourceMaterial, uniforms) {
   material.roughness = sourceMaterial.roughness;
   material.metalness = sourceMaterial.metalness;
   material.side = sourceMaterial.side;
-  // Roughness/metalness/emissive corruption multiplies against these base
-  // values live in WreckedCar's useFrame sync — stashed here so that sync
-  // doesn't need its own copy of "what the car looked like before glitching".
-  material.userData.baseRoughness = sourceMaterial.roughness;
-  material.userData.baseMetalness = sourceMaterial.metalness;
 
   material.positionNode = buildFinalPositionNode(uniforms);
   material.normalNode = buildNormalNode(uniforms);
@@ -560,9 +630,10 @@ export function createWreckedCarMaterial(sourceMaterial, uniforms) {
   // Deconstruct and Slice Suite's per-cell/per-slice alpha multiply into the
   // same discard rather than blending, so they read as more punched-out
   // fragments instead of translucency.
-  material.opacityNode = select(buildTornMask(uniforms), float(0), float(1))
+  material.opacityNode = buildTornAlphaNode(uniforms)
     .mul(buildBlockDeconstructAlphaNode(uniforms))
-    .mul(buildSliceSuiteAlphaNode(uniforms));
+    .mul(buildSliceSuiteAlphaNode(uniforms))
+    .mul(buildSliceSuiteStraddleAlphaNode(uniforms));
   material.alphaTestNode = float(0.5);
 
   return material;

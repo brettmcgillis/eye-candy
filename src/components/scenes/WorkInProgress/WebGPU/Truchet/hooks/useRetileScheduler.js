@@ -19,6 +19,7 @@ export default function useRetileScheduler({
   grid,
   meshRef,
   pickMotif,
+  retileEnabled,
   retileRate,
   straightTileChance,
   weaveEnabled,
@@ -35,6 +36,7 @@ export default function useRetileScheduler({
     animStagger,
     cellSize,
     pickMotif,
+    retileEnabled,
     retileRate,
     straightTileChance,
     weaveEnabled,
@@ -96,7 +98,10 @@ export default function useRetileScheduler({
     let motifDirty = false;
 
     for (let i = 0; i < count; i += 1) {
-      const shouldRun = animating[i] === 1 || elapsed >= triggerAt[i];
+      // Disabling retile only stops NEW triggers — a tile already mid-flip
+      // finishes its animation instead of freezing at an odd rotation.
+      const shouldRun =
+        animating[i] === 1 || (params.retileEnabled && elapsed >= triggerAt[i]);
       if (shouldRun) {
         if (!animating[i]) {
           animating[i] = 1;

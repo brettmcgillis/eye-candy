@@ -1,6 +1,6 @@
 // Full Leva path to this folder — must stay in sync with SCENE_LABEL and
-// this folder's own key ('Truchet') in hooks/useSceneControls.js.
-const TRUCHET_FOLDER_PATH = 'Truchet.Truchet';
+// this folder's own key ('Trucheterie') in hooks/useSceneControls.js.
+const TRUCHET_FOLDER_PATH = 'Trucheterie.Trucheterie';
 const hasClipShape = (get) =>
   get(`${TRUCHET_FOLDER_PATH}.clipShape`) !== 'none';
 const isRoundedSquare = (get) =>
@@ -19,7 +19,7 @@ export default function getCompositionControls(snapshot = {}) {
   return {
     clipShape: {
       label: 'Clip Shape',
-      options: ['none', 'circle', 'square', 'roundedSquare'],
+      options: ['none', 'circle', 'square', 'roundedSquare', 'hexagon'],
       value: snapshot.clipShape ?? 'none',
     },
     clipCornerRadius: {

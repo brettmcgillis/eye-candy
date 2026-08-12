@@ -4,14 +4,16 @@ import getCompositionControls from './getCompositionControls';
 
 // Full Leva path to this folder — used by the render() gates below to show
 // grid-mode-specific controls only. Must stay in sync with SCENE_LABEL and
-// this folder's own key ('Truchet') in hooks/useSceneControls.js.
-const TRUCHET_FOLDER_PATH = 'Truchet.Truchet';
+// this folder's own key ('Trucheterie') in hooks/useSceneControls.js.
+const TRUCHET_FOLDER_PATH = 'Trucheterie.Trucheterie';
 const isSquareMode = (get) =>
   get(`${TRUCHET_FOLDER_PATH}.gridMode`) === 'square';
 const isTriangularMode = (get) =>
   get(`${TRUCHET_FOLDER_PATH}.gridMode`) === 'triangular';
 const isSolidFill = (get) => get(`${TRUCHET_FOLDER_PATH}.fillMode`) === 'solid';
 const isWeaveOn = (get) => get(`${TRUCHET_FOLDER_PATH}.weaveEnabled`) === true;
+const isRetileOn = (get) =>
+  get(`${TRUCHET_FOLDER_PATH}.retileEnabled`) === true;
 
 // getTruchetControls is a companion fn to TileGrid — the flat Leva schema
 // for the scene's single `Truchet` folder. Keys must match presets/presets.js
@@ -77,7 +79,7 @@ export default function getTruchetControls(snapshot = {}) {
       weaveGapWidth: {
         label: 'Weave Gap Width',
         max: 0.15,
-        min: 0.01,
+        min: 0.0,
         render: isWeaveOn,
         step: 0.005,
         value: snapshot.weaveGapWidth ?? 0.06,
@@ -129,15 +131,21 @@ export default function getTruchetControls(snapshot = {}) {
         step: 1,
         value: snapshot.seed ?? 1,
       },
+      retileEnabled: {
+        label: 'Retile Enabled',
+        value: snapshot.retileEnabled ?? true,
+      },
       animMode: {
         label: 'Retile Mode',
         options: ['ySpin', 'zSpin', 'scale'],
+        render: isRetileOn,
         value: snapshot.animMode ?? 'ySpin',
       },
       animSpeed: {
         label: 'Flip Duration (s)',
         max: 4,
         min: 0.2,
+        render: isRetileOn,
         step: 0.05,
         value: snapshot.animSpeed ?? 0.9,
       },
@@ -145,6 +153,7 @@ export default function getTruchetControls(snapshot = {}) {
         label: 'Retile Rate (tiles/s)',
         max: 30,
         min: 0.1,
+        render: isRetileOn,
         step: 0.1,
         value: snapshot.retileRate ?? 4,
       },
@@ -152,6 +161,7 @@ export default function getTruchetControls(snapshot = {}) {
         label: 'Stagger',
         max: 1,
         min: 0,
+        render: isRetileOn,
         step: 0.01,
         value: snapshot.animStagger ?? 0.6,
       },

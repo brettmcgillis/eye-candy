@@ -1,10 +1,13 @@
 import {
   abs,
+  clamp,
   cos,
+  dot,
   max,
   min,
   positionWorld,
   select,
+  sign,
   sin,
   smoothstep,
   vec2,
@@ -12,11 +15,16 @@ import {
 
 import { selectByIndex } from './sdf';
 
+// Keys must equal their Leva option string uppercased with no separators
+// (see useTileMesh.js's clipShapeCode: clipShape.toUpperCase()) — e.g.
+// 'roundedSquare' -> 'ROUNDEDSQUARE', not 'ROUNDED_SQUARE'. A mismatched key
+// here silently falls back to NONE (this is what broke roundedSquare).
 export const CLIP_SHAPE = {
   NONE: 0,
   CIRCLE: 1,
   SQUARE: 2,
-  ROUNDED_SQUARE: 3,
+  ROUNDEDSQUARE: 3,
+  HEXAGON: 4,
 };
 
 function rotate2D(p, angle) {
@@ -45,6 +53,25 @@ function roundedSquareSDF(p, radius, cornerRadiusFraction) {
   return outside.add(inside).sub(cornerRadius);
 }
 
+// Regular flat-top hexagon SDF (Inigo Quilez's formula). `radius` is the
+// apothem (distance to the flat edges), same convention as squareSDF's
+// radius — matches the hex tile grid closely enough to border it; nudge
+// clipRotation if the flats don't land where you want.
+const HEX_FOLD = vec2(-0.866025404, 0.5);
+const HEX_TANGENT = 0.577350269; // tan(30deg), == 1 / sqrt(3)
+function hexagonSDF(p, radius) {
+  const ap = vec2(abs(p.x), abs(p.y));
+  const fold = min(dot(HEX_FOLD, ap), 0).mul(2);
+  const folded = ap.sub(HEX_FOLD.mul(fold));
+  const clampedX = clamp(
+    folded.x,
+    radius.mul(-HEX_TANGENT),
+    radius.mul(HEX_TANGENT)
+  );
+  const q = vec2(folded.x.sub(clampedX), folded.y.sub(radius));
+  return q.length().mul(sign(q.y));
+}
+
 // Signed distance (world units) from the current pixel to the clip
 // boundary — negative inside, positive outside, 0 exactly on the boundary.
 // Shared by clipAlpha (hide outside) and clipBorderMask (ring straddling
@@ -63,6 +90,7 @@ function clipSignedDistance({
     circleSDF(p, radius),
     squareSDF(p, radius),
     roundedSquareSDF(p, radius, clipCornerRadiusU),
+    hexagonSDF(p, radius),
   ]);
 }
 

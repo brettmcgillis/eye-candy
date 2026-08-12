@@ -12,7 +12,7 @@ import getTruchetControls from '../components/getTruchetControls';
 import { DEFAULT_PRESET, PRESETS, getPresetControls } from '../presets/presets';
 import CAMERA from '../utils/camera';
 
-const SCENE_LABEL = 'Truchet';
+const SCENE_LABEL = 'Trucheterie';
 const CAMERA_FOLDER_PATH = `${SCENE_LABEL}.Camera`;
 
 export default function useSceneControls() {
@@ -34,7 +34,7 @@ export default function useSceneControls() {
   const [controls, setControls] = useControls(SCENE_LABEL, () => ({
     Presets: presetsFolder,
     Camera: folder(cameraControls, { collapsed: true }),
-    Truchet: getTruchetControls(controlsSnapshotRef.current),
+    Trucheterie: getTruchetControls(controlsSnapshotRef.current),
   }));
 
   attachSetControls(setControls);

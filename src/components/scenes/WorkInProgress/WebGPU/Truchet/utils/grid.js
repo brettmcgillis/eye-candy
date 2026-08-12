@@ -84,6 +84,10 @@ export function buildSquareGrid({
   const count = cols * rows;
   const positions = new Float32Array(count * 3);
   const motifIds = new Float32Array(count);
+  // Per-tile signed bias in [-1, 1], scaled by the Layer Bias uniform at
+  // render time — shifts which of an arc motif's two corners dominates the
+  // tile instead of an even split (see motifShader.js's occludedMask use).
+  const zBias = new Float32Array(count);
   const rng = mulberry32(seed);
 
   const originX = (-(cols - 1) * cellSize) / 2;
@@ -96,11 +100,12 @@ export function buildSquareGrid({
       positions[i * 3 + 1] = originY + row * cellSize;
       positions[i * 3 + 2] = 0;
       motifIds[i] = pickMotif(rng, straightTileChance, weaveEnabled);
+      zBias[i] = rng() * 2 - 1;
       i += 1;
     }
   }
 
-  return { count, motifIds, positions };
+  return { count, motifIds, positions, zBias };
 }
 
 // A true triangular lattice: each axial cell (i, j) is a 60°/120° rhombus

@@ -13,9 +13,10 @@
 
 # // TODO:
 
-- can we do multi-scale truchet tiling?
 - add hexagon clip mode so we can border the hexagon mode
 - add toggle for retile effect
+- rename scene to Trucheterie
+- can we do multi-scale truchet tiling?
 
 # // Presets
 

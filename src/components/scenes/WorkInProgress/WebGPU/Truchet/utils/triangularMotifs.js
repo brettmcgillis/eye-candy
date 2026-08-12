@@ -12,10 +12,11 @@ import {
 import { clipAlpha, clipBorderMask } from './clipMask';
 import {
   arcSpineDistance,
+  motifMask,
+  occludedMask,
   segmentDistance,
   selectByIndex,
   solidBandMask,
-  stripeMask,
 } from './sdf';
 
 // Every corner of an equilateral triangle is a valid arc center (all angles
@@ -66,6 +67,10 @@ export default function buildTriangleColorNode({
     const p = vec2(correctedU, uv().y).sub(0.5);
     const motif = attribute('instanceMotif');
 
+    const mm = (d) => motifMask(d, pitchU, strokeWidthU, fillWidthU, fillModeU);
+    const om = (d0, d1, bias) =>
+      occludedMask(d0, d1, bias, pitchU, strokeWidthU, fillWidthU, fillModeU);
+
     const dArc0 = arcSpineDistance(p, v0);
     const dArc1 = arcSpineDistance(p, v1);
     const dArc2 = arcSpineDistance(p, v2);
@@ -80,28 +85,33 @@ export default function buildTriangleColorNode({
     const gapped1 = gappedAtCentroid(p, dMed1, weaveGapWidthU);
     const gapped2 = gappedAtCentroid(p, dMed2, weaveGapWidthU);
 
-    const dSpine = selectByIndex(motif, [
-      dArc0,
-      dArc1,
-      dArc2,
-      dStraight0,
-      dStraight1,
-      dStraight2,
-      gapped0.min(dMed1), // pair(0,1), 0 under
-      dMed0.min(gapped1), // pair(0,1), 1 under
-      gapped1.min(dMed2), // pair(1,2), 1 under
-      dMed1.min(gapped2), // pair(1,2), 2 under
-      gapped2.min(dMed0), // pair(2,0), 2 under
-      dMed2.min(gapped0), // pair(2,0), 0 under
-    ]);
+    // Single-arc/chord fields use the plain mask; medians are each a full
+    // periodic line family spanning the whole tile, so a crossing pair is
+    // occluded (winner-take-all on the nearer median), never mask-unioned —
+    // union would double-expose both full families into a plaid instead of
+    // the nested woven look (see sdf.js's occludedMask, and motifShader.js's
+    // arc-pair/weave fix for the same issue).
+    const maskArc0 = mm(dArc0);
+    const maskArc1 = mm(dArc1);
+    const maskArc2 = mm(dArc2);
+    const maskStraight0 = mm(dStraight0);
+    const maskStraight1 = mm(dStraight1);
+    const maskStraight2 = mm(dStraight2);
 
-    // Both fields trace the same spine — line mode as repeated thin strokes,
-    // solid mode as one continuous band — so they connect across tile edges
-    // identically and switching fillMode never changes where the pattern
-    // "is," only how thick it's drawn.
-    const lineMask = stripeMask(dSpine, pitchU, strokeWidthU);
-    const solidMask = solidBandMask(dSpine, fillWidthU);
-    const finalMask = mix(lineMask, solidMask, fillModeU);
+    const finalMask = selectByIndex(motif, [
+      maskArc0,
+      maskArc1,
+      maskArc2,
+      maskStraight0,
+      maskStraight1,
+      maskStraight2,
+      om(gapped0, dMed1, 0), // pair(0,1), 0 under
+      om(dMed0, gapped1, 0), // pair(0,1), 1 under
+      om(gapped1, dMed2, 0), // pair(1,2), 1 under
+      om(dMed1, gapped2, 0), // pair(1,2), 2 under
+      om(gapped2, dMed0, 0), // pair(2,0), 2 under
+      om(dMed2, gapped0, 0), // pair(2,0), 0 under
+    ]);
 
     let color = mix(bgColorU, strokeColorU, finalMask);
 

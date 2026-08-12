@@ -62,6 +62,14 @@ export default function getTruchetControls(snapshot = {}) {
         step: 0.01,
         value: snapshot.straightTileChance ?? 0.15,
       },
+      layerBiasAmount: {
+        label: 'Layer Bias',
+        max: 0.4,
+        min: 0,
+        render: isSquareMode,
+        step: 0.01,
+        value: snapshot.layerBiasAmount ?? 0.15,
+      },
       weaveEnabled: {
         label: 'Weave Crossings',
         value: snapshot.weaveEnabled ?? false,

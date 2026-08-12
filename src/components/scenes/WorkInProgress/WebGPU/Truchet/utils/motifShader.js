@@ -13,15 +13,13 @@ import {
 import { clipAlpha, clipBorderMask } from './clipMask';
 import {
   arcSpineDistance,
+  motifMask,
+  occludedMask,
   selectByIndex,
   solidBandMask,
-  stripeMask,
 } from './sdf';
 
 // Each arc motif is a pair of quarter-circle spines, one per corner.
-// Opposite-corner circles never overlap inside the tile (corner distance
-// sqrt(2) > 2 * ARC_RADIUS), so `min`-combining their distance fields is a
-// clean split with no seam artifacts.
 const ARC_A_CORNERS = [
   [-0.5, -0.5],
   [0.5, 0.5],
@@ -30,10 +28,6 @@ const ARC_B_CORNERS = [
   [-0.5, 0.5],
   [0.5, -0.5],
 ];
-
-function nearestArcDistance(p, corners) {
-  return arcSpineDistance(p, corners[0]).min(arcSpineDistance(p, corners[1]));
-}
 
 // Weave crossing: both straight strands at once. The "gapped" one gets
 // pushed to a distance far outside the stripe/band range right where it
@@ -64,6 +58,7 @@ export default function buildTruchetColorNode({
   fillWidthU,
   gridLineColorU,
   gridLineWidthU,
+  layerBiasAmountU,
   patternExtentU,
   pitchU,
   showGridLinesU,
@@ -79,35 +74,56 @@ export default function buildTruchetColorNode({
     const correctedU = mix(uv().x.oneMinus(), uv().x, frontFacing);
     const p = vec2(correctedU, uv().y).sub(0.5);
     const motif = attribute('instanceMotif');
+    const zBias = attribute('instanceZBias').mul(layerBiasAmountU);
 
-    const dArcA = nearestArcDistance(p, ARC_A_CORNERS);
-    const dArcB = nearestArcDistance(p, ARC_B_CORNERS);
+    const mm = (d) => motifMask(d, pitchU, strokeWidthU, fillWidthU, fillModeU);
+    const om = (d0, d1, bias) =>
+      occludedMask(d0, d1, bias, pitchU, strokeWidthU, fillWidthU, fillModeU);
+
+    const dArcA0 = arcSpineDistance(p, ARC_A_CORNERS[0]);
+    const dArcA1 = arcSpineDistance(p, ARC_A_CORNERS[1]);
+    const dArcB0 = arcSpineDistance(p, ARC_B_CORNERS[0]);
+    const dArcB1 = arcSpineDistance(p, ARC_B_CORNERS[1]);
     const dStraightH = p.y.abs();
     const dStraightV = p.x.abs();
-    const dCrossHUnder = gappedStraightDistance(
+    const dStraightHGapped = gappedStraightDistance(
       dStraightH,
       p.x,
       weaveGapWidthU
-    ).min(dStraightV);
-    const dCrossVUnder = dStraightH.min(
-      gappedStraightDistance(dStraightV, p.y, weaveGapWidthU)
     );
-    const dSpine = selectByIndex(motif, [
-      dArcA,
-      dArcB,
-      dStraightH,
+    const dStraightVGapped = gappedStraightDistance(
       dStraightV,
-      dCrossHUnder,
-      dCrossVUnder,
-    ]);
+      p.y,
+      weaveGapWidthU
+    );
 
-    // Both fields trace the same spine — line mode as repeated thin strokes,
-    // solid mode as one continuous band — so they connect across tile edges
-    // identically and switching fillMode never changes where the pattern
-    // "is," only how thick it's drawn.
-    const lineMask = stripeMask(dSpine, pitchU, strokeWidthU);
-    const solidMask = solidBandMask(dSpine, fillWidthU);
-    const finalMask = mix(lineMask, solidMask, fillModeU);
+    // Opposite corners' ring families are occluded, not unioned — whichever
+    // corner is nearer (offset by the per-tile zBias for layering variety)
+    // fully hides the other's ink, so each tile shows one corner's family
+    // cleanly truncated instead of both crossing into a hatch (see sdf.js's
+    // occludedMask).
+    const maskArcA = om(dArcA0, dArcA1, zBias);
+    const maskArcB = om(dArcB0, dArcB1, zBias);
+    const maskStraightH = mm(dStraightH);
+    const maskStraightV = mm(dStraightV);
+    // Same occlusion logic as the arc pairs above: H and V are each a full
+    // periodic line family spanning the whole tile, so max-ing their
+    // independent masks shows both complete grids superimposed (a plaid),
+    // not the nested diamond/chevron weave. occludedMask picks the nearer
+    // axis's own clean stripe family, hard-cut at the tile diagonal — the
+    // gap term still forces the "under" strand to lose right at the center
+    // crossing regardless of which axis is geometrically nearer there.
+    const maskCrossHUnder = om(dStraightHGapped, dStraightV, 0);
+    const maskCrossVUnder = om(dStraightH, dStraightVGapped, 0);
+
+    const finalMask = selectByIndex(motif, [
+      maskArcA,
+      maskArcB,
+      maskStraightH,
+      maskStraightV,
+      maskCrossHUnder,
+      maskCrossVUnder,
+    ]);
 
     let color = mix(bgColorU, strokeColorU, finalMask);
 

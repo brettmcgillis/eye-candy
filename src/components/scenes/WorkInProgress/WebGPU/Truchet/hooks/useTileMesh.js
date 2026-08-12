@@ -37,6 +37,7 @@ export default function useTileMesh({
   gridData,
   gridLineColor,
   gridLineWidth,
+  layerBiasAmount = 0,
   patternExtent,
   pickMotif,
   retileRate,
@@ -65,6 +66,7 @@ export default function useTileMesh({
       fillWidthU: uniform(fillWidth),
       gridLineColorU: uniform(new THREE.Color(gridLineColor)),
       gridLineWidthU: uniform(gridLineWidth),
+      layerBiasAmountU: uniform(layerBiasAmount),
       patternExtentU: uniform(patternExtent),
       pitchU: uniform(strokePitch),
       showGridLinesU: uniform(showGridLines ? 1 : 0),
@@ -88,6 +90,7 @@ export default function useTileMesh({
     u.fillWidthU.value = fillWidth;
     u.gridLineColorU.value.set(gridLineColor);
     u.gridLineWidthU.value = gridLineWidth;
+    u.layerBiasAmountU.value = layerBiasAmount;
     u.patternExtentU.value = patternExtent;
     u.pitchU.value = strokePitch;
     u.showGridLinesU.value = showGridLines ? 1 : 0;
@@ -107,6 +110,7 @@ export default function useTileMesh({
     fillWidth,
     gridLineColor,
     gridLineWidth,
+    layerBiasAmount,
     patternExtent,
     showGridLines,
     strokeColor,
@@ -152,6 +156,21 @@ export default function useTileMesh({
         'instanceMotif',
         new THREE.InstancedBufferAttribute(gridData.motifIds, 1, false)
       );
+    }
+
+    // Only the square grid's shader reads instanceZBias (arc-pair occlusion
+    // bias) — triangular grid data has no zBias array.
+    if (gridData.zBias) {
+      const existingBias = mesh.geometry.getAttribute('instanceZBias');
+      if (existingBias && existingBias.array.length === gridData.zBias.length) {
+        existingBias.array.set(gridData.zBias);
+        existingBias.needsUpdate = true;
+      } else {
+        mesh.geometry.setAttribute(
+          'instanceZBias',
+          new THREE.InstancedBufferAttribute(gridData.zBias, 1, false)
+        );
+      }
     }
 
     const dummy = new THREE.Object3D();

@@ -174,6 +174,24 @@ export default function useTileMesh({
       }
     }
 
+    // Retile phase (0-1, written per-frame by useRetileScheduler while a
+    // tile is flipping) — read by the shader to discard the edge-on/
+    // zero-scale instant at phase 0.5 outright, rather than trust thin/
+    // degenerate-triangle rasterization to resolve it to nothing. On some
+    // mobile GPUs it instead smears the tile's own bgColor into a visible
+    // line right at that instant, exactly where tiles meet.
+    const existingPhase = mesh.geometry.getAttribute('instanceAnimPhase');
+    if (!existingPhase || existingPhase.array.length !== gridData.count) {
+      mesh.geometry.setAttribute(
+        'instanceAnimPhase',
+        new THREE.InstancedBufferAttribute(
+          new Float32Array(gridData.count).fill(1),
+          1,
+          false
+        )
+      );
+    }
+
     const dummy = new THREE.Object3D();
     for (let i = 0; i < gridData.count; i += 1) {
       dummy.position.set(

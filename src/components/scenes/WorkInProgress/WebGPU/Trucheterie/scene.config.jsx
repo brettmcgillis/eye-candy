@@ -6,10 +6,10 @@ function SceneIcon() {
 }
 
 export default {
-  id: 'truchet',
+  id: 'trucheterie',
   label: 'Trucheterie',
   channel: 'webgpu',
   area: 'wip',
   icon: SceneIcon,
-  Component: lazy(() => import('./Truchet')),
+  Component: lazy(() => import('./Trucheterie')),
 };

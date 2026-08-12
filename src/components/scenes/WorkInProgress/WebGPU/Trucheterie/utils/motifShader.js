@@ -76,6 +76,14 @@ export default function buildTruchetColorNode({
     const motif = attribute('instanceMotif');
     const zBias = attribute('instanceZBias').mul(layerBiasAmountU);
 
+    // Retile phase 0.5 is the intended-invisible edge-on instant (see
+    // retileState.js's computeTileTransform) — on some mobile GPUs a
+    // near-zero-width triangle there doesn't rasterize to nothing, it
+    // smears the tile's own bgColor into a visible line right where tiles
+    // meet. Discard outright instead of trusting the rasterizer.
+    const animPhase = attribute('instanceAnimPhase');
+    animPhase.sub(0.5).abs().lessThan(0.03).discard();
+
     const mm = (d) => motifMask(d, pitchU, strokeWidthU, fillWidthU, fillModeU);
     const om = (d0, d1, bias) =>
       occludedMask(d0, d1, bias, pitchU, strokeWidthU, fillWidthU, fillModeU);

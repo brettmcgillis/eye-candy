@@ -77,6 +77,7 @@ export default function useRetileScheduler({
 
     const motifAttr = mesh.geometry.getAttribute('instanceMotif');
     if (!motifAttr) return;
+    const phaseAttr = mesh.geometry.getAttribute('instanceAnimPhase');
 
     const params = paramsRef.current;
     const dummy = dummyRef.current;
@@ -96,6 +97,7 @@ export default function useRetileScheduler({
 
     let matrixDirty = false;
     let motifDirty = false;
+    let phaseDirty = false;
 
     for (let i = 0; i < count; i += 1) {
       // Disabling retile only stops NEW triggers — a tile already mid-flip
@@ -140,6 +142,11 @@ export default function useRetileScheduler({
         mesh.setMatrixAt(i, dummy.matrix);
         matrixDirty = true;
 
+        if (phaseAttr) {
+          phaseAttr.array[i] = clampedPhase;
+          phaseDirty = true;
+        }
+
         if (phase[i] >= 1) {
           animating[i] = 0;
           phase[i] = 0;
@@ -152,5 +159,6 @@ export default function useRetileScheduler({
 
     if (matrixDirty) mesh.instanceMatrix.needsUpdate = true;
     if (motifDirty) motifAttr.needsUpdate = true;
+    if (phaseDirty) phaseAttr.needsUpdate = true;
   });
 }

@@ -17,7 +17,7 @@ function Rorschach() {
   return (
     <>
       <CameraRig camera={config.camera} />
-      <color attach="background" args={['#f4efe4']} />
+      <color attach="background" args={[config.backgroundColor]} />
       <Test
         seed={config.seed}
         bundleCount={config.bundleCount}
@@ -26,9 +26,14 @@ function Rorschach() {
         startSpread={config.startSpread}
         coeffRange={config.coeffRange}
         freq={config.freq}
+        palette={config.palette}
+        flatten={config.flatten}
         growthDuration={config.growthDuration}
+        evolutionEnabled={config.evolutionEnabled}
         evolutionSpeed={config.evolutionSpeed}
         monochrome={config.monochrome}
+        inkColor={config.inkColor}
+        overrides={config.overrides}
       />
       <ButtonOverlay onRegenerate={config.regenerate} />
     </>

@@ -19,24 +19,29 @@ export const BOUND_THRESHOLD = 40;
 export const MIN_SPREAD = 1.5;
 
 // Flat inline sum rather than looping over an array of per-term closures —
-// this runs on the order of hundreds of thousands of times per test
-// generation (formula-builder rejection sampling + per-strand validation),
-// and closure-call dispatch overhead was the dominant cost there. `freq`
-// scales every trig argument (shared "curl tightness" knob, the Leva "Curl
-// Frequency" control) — separate from each term's own coefficient (amplitude).
+// this runs on the order of tens of millions of times per test generation at
+// large Curl Length / Strands Per Bundle / Bundle Count settings, and
+// closure-call dispatch overhead was the dominant cost there for the earlier
+// (cheap) polynomial basis. Trig is not cheap the same way: Math.sin/cos are
+// genuinely expensive transcendental calls, ~9 of them per evalAxis call, so
+// each nonzero coefficient's term is only computed when its coefficient is
+// actually nonzero (~55% of terms are, per formulaBuilder's TERM_INCLUDE_CHANCE)
+// rather than always evaluating all 9 and multiplying half of them by zero.
+// `freq` scales every trig argument (shared "curl tightness" knob, the Leva
+// "Curl Frequency" control) — separate from each term's own coefficient
+// (amplitude).
 function evalAxis(c, x, y, z, freq) {
-  return (
-    c[0] +
-    c[1] * Math.sin(freq * x) +
-    c[2] * Math.cos(freq * x) +
-    c[3] * Math.sin(freq * y) +
-    c[4] * Math.cos(freq * y) +
-    c[5] * Math.sin(freq * z) +
-    c[6] * Math.cos(freq * z) +
-    c[7] * Math.sin(freq * (x + y)) +
-    c[8] * Math.sin(freq * (y + z)) +
-    c[9] * Math.sin(freq * (x + z))
-  );
+  let sum = c[0];
+  if (c[1] !== 0) sum += c[1] * Math.sin(freq * x);
+  if (c[2] !== 0) sum += c[2] * Math.cos(freq * x);
+  if (c[3] !== 0) sum += c[3] * Math.sin(freq * y);
+  if (c[4] !== 0) sum += c[4] * Math.cos(freq * y);
+  if (c[5] !== 0) sum += c[5] * Math.sin(freq * z);
+  if (c[6] !== 0) sum += c[6] * Math.cos(freq * z);
+  if (c[7] !== 0) sum += c[7] * Math.sin(freq * (x + y));
+  if (c[8] !== 0) sum += c[8] * Math.sin(freq * (y + z));
+  if (c[9] !== 0) sum += c[9] * Math.sin(freq * (x + z));
+  return sum;
 }
 
 const k1 = [0, 0, 0];
@@ -51,25 +56,72 @@ function derivative(coeffs, x, y, z, freq, out) {
   return out;
 }
 
-// RK4 integrator. Writes `steps` points (including the start point) into
-// `out`, a flat Float32Array of length steps*3. `out` is caller-owned and
-// reused across calls (evolution re-integrates the same bundle every tick)
-// so this never allocates.
-//
-// The rejection-sampled coefficients (formulaBuilder.js) only guarantee a
-// full-length probe from the bundle's origin stays bounded — a strand a few
-// tenths of a unit away, or mid-evolution-drift, can still escape. Freeze at
-// the last safe point the moment a step leaves the same BOUND_THRESHOLD cube
-// isBounded() rejects candidates against, rather than trust that never
-// happens: `out` is a Float32Array, so the guard can't be plain
-// Number.isFinite() — quadratic ODEs blow up in finite time, and a value can
-// be a perfectly finite float64 (e.g. 1e40) that still overflows to Infinity
-// the instant it's written into a float32 slot, silently NaN-ing the GPU
-// buffer even though the finiteness check upstream passed. Freezing at
-// BOUND_THRESHOLD itself (rather than some far looser safety limit) also
-// keeps an escaped strand from dragging the whole test's display scale
-// toward zero (testGenerator.js sizes the tests off the single farthest
-// point across every strand).
+// One RK4 step from (x,y,z). Writes the new position into `out` (a 3-element
+// array/Float32Array, caller-owned). Freezes at the input position — rather
+// than trust that never happens — the moment the step would leave the same
+// BOUND_THRESHOLD cube isBounded() rejects candidates against: `out` may be
+// a Float32Array, so the guard can't be plain Number.isFinite() — quadratic
+// ODEs (and this trig basis, mid-evolution-drift) can still blow up in
+// finite time, and a value can be a perfectly finite float64 (e.g. 1e40)
+// that still overflows to Infinity the instant it's written into a float32
+// slot, silently NaN-ing the GPU buffer even though the finiteness check
+// upstream passed. Freezing at BOUND_THRESHOLD itself (rather than some far
+// looser safety limit) also keeps an escaped strand from dragging the whole
+// test's display scale toward zero (testGenerator.js sizes the test off the
+// single farthest point across every strand).
+export function stepRK4(coeffs, x, y, z, dt, freq, out) {
+  derivative(coeffs, x, y, z, freq, k1);
+  derivative(
+    coeffs,
+    x + (k1[0] * dt) / 2,
+    y + (k1[1] * dt) / 2,
+    z + (k1[2] * dt) / 2,
+    freq,
+    k2
+  );
+  derivative(
+    coeffs,
+    x + (k2[0] * dt) / 2,
+    y + (k2[1] * dt) / 2,
+    z + (k2[2] * dt) / 2,
+    freq,
+    k3
+  );
+  derivative(coeffs, x + k3[0] * dt, y + k3[1] * dt, z + k3[2] * dt, freq, k4);
+
+  const nx = x + ((k1[0] + 2 * k2[0] + 2 * k3[0] + k4[0]) * dt) / 6;
+  const ny = y + ((k1[1] + 2 * k2[1] + 2 * k3[1] + k4[1]) * dt) / 6;
+  const nz = z + ((k1[2] + 2 * k2[2] + 2 * k3[2] + k4[2]) * dt) / 6;
+
+  if (
+    Number.isFinite(nx) &&
+    Number.isFinite(ny) &&
+    Number.isFinite(nz) &&
+    Math.abs(nx) < BOUND_THRESHOLD &&
+    Math.abs(ny) < BOUND_THRESHOLD &&
+    Math.abs(nz) < BOUND_THRESHOLD
+  ) {
+    out[0] = nx;
+    out[1] = ny;
+    out[2] = nz;
+  } else {
+    out[0] = x;
+    out[1] = y;
+    out[2] = z;
+  }
+
+  return out;
+}
+
+const stepScratch = [0, 0, 0];
+
+// One-shot integrator built from stepRK4: writes `steps` points (including
+// the start point) into `out`, a flat Float32Array of length steps*3.
+// `out`/the module-level scratch are reused across calls (evolution
+// re-integrates the same bundle every tick) so this never allocates.
+// testGenerator.js's incremental grower calls stepRK4 directly instead —
+// this one-shot form stays in use for evolution, which still wants a full
+// from-scratch recompute each tick after coefficients drift.
 export function integrate(coeffs, start, steps, dt, freq, out) {
   let x = start[0];
   let y = start[1];
@@ -79,48 +131,8 @@ export function integrate(coeffs, start, steps, dt, freq, out) {
   out[2] = z;
 
   for (let i = 1; i < steps; i += 1) {
-    derivative(coeffs, x, y, z, freq, k1);
-    derivative(
-      coeffs,
-      x + (k1[0] * dt) / 2,
-      y + (k1[1] * dt) / 2,
-      z + (k1[2] * dt) / 2,
-      freq,
-      k2
-    );
-    derivative(
-      coeffs,
-      x + (k2[0] * dt) / 2,
-      y + (k2[1] * dt) / 2,
-      z + (k2[2] * dt) / 2,
-      freq,
-      k3
-    );
-    derivative(
-      coeffs,
-      x + k3[0] * dt,
-      y + k3[1] * dt,
-      z + k3[2] * dt,
-      freq,
-      k4
-    );
-
-    const nx = x + ((k1[0] + 2 * k2[0] + 2 * k3[0] + k4[0]) * dt) / 6;
-    const ny = y + ((k1[1] + 2 * k2[1] + 2 * k3[1] + k4[1]) * dt) / 6;
-    const nz = z + ((k1[2] + 2 * k2[2] + 2 * k3[2] + k4[2]) * dt) / 6;
-
-    if (
-      Number.isFinite(nx) &&
-      Number.isFinite(ny) &&
-      Number.isFinite(nz) &&
-      Math.abs(nx) < BOUND_THRESHOLD &&
-      Math.abs(ny) < BOUND_THRESHOLD &&
-      Math.abs(nz) < BOUND_THRESHOLD
-    ) {
-      x = nx;
-      y = ny;
-      z = nz;
-    }
+    stepRK4(coeffs, x, y, z, dt, freq, stepScratch);
+    [x, y, z] = stepScratch;
 
     const o = i * 3;
     out[o] = x;

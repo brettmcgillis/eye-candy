@@ -12,6 +12,10 @@
 - [ ] evolution mode needs some work. expecting the bundles to move like tentacles, expecting the curves to change over time.
 - [ ] can we update controls to allow for modifying the rorschach without having to regen? include as many controls as possible.
 - [ ] Regen button should roll the dice on like, all the controls, not just seed.
+- [ ] have a Continuous mode where when the growth animation completes we re-roll the dice and grow a new one, OR lines just keep advecting from the tip, while the tail disappears.
+- [ ] right now the tests seem to generate in a cubic volume->2d square, could we do sphere->2d circle? other shapes? Im thinking if we were to do prints we can just do squares.
+- [ ] could we use lospec pallettes, or something alike, to make sure that background + pallette are cohesive when randomly chosen?
+- [ ] could some bundles be emissive?
 
 # // Intent/Use Cases
 
@@ -37,3 +41,11 @@
 # // Bugs
 
 - line depth sorting seems to be all messed up
+- preset settings not respected on page load.
+- scene locks the browser on control changes.
+- regeneration takes like 5 seconds before we see a new test, and even then its already some part way through the animation.
+- some control changes cause the Test to disappear, instead of regen, or continue. (ex, pallette)
+- preset reset causes all black.
+- animation starts before reveal?
+- seeing transparency/fading when evolution is off, during Test draw.
+- changing ink color in monochrome causes test to disappear.

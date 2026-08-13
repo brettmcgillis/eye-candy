@@ -7,7 +7,7 @@ function SceneIcon() {
 
 export default {
   id: 'waterCycle',
-  label: 'Water Cycle',
+  label: 'WaterCycle',
   channel: 'webgpu',
   area: 'wip',
   icon: SceneIcon,

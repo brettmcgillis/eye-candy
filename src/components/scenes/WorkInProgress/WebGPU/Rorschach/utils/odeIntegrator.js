@@ -16,7 +16,17 @@
 // context in this scene's todo.md).
 export const TERM_COUNT = 10;
 export const BOUND_THRESHOLD = 40;
-export const MIN_SPREAD = 1.5;
+// Expressed as a fraction of BOUND_THRESHOLD rather than an absolute
+// constant, since "big enough" only means anything relative to how much
+// bounded space is actually available. The original 1.5 only rejected
+// near-fixed-points — it let through candidates whose validation-pass probe
+// (a ~300-step transient) still measured a few units of spread even though
+// their long-run/settled orbit was much smaller, which read as a bundle
+// visibly "collapsing to nothing" once the rest of the beast's bundles grew
+// to fill much more of the frame. 0.2 rejects those small-orbit candidates
+// during generation (cheap, rejection-sampled) instead of accepting them and
+// having them look broken later.
+export const MIN_SPREAD = BOUND_THRESHOLD * 0.2;
 
 // Flat inline sum rather than looping over an array of per-term closures —
 // this runs on the order of tens of millions of times per test generation at

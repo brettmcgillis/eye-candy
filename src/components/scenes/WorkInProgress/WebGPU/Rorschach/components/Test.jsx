@@ -63,6 +63,7 @@ function Test({
   growthDuration,
   evolutionEnabled,
   evolutionSpeed,
+  smoothRespawns,
   monochrome,
   inkColor,
   overrides,
@@ -223,7 +224,7 @@ function Test({
       if (stepsThisFrame <= 0) return;
 
       const prevGrown = bundle.grownSteps;
-      const rebased = advanceEvolution(bundle, stepsThisFrame);
+      const rebased = advanceEvolution(bundle, stepsThisFrame, smoothRespawns);
       remainingBudget -= stepsThisFrame * strandCount;
 
       // A rebase shifts every existing point's buffer position, so the
@@ -234,14 +235,24 @@ function Test({
           mesh.geometry,
           bundle.strands,
           0,
-          bundle.grownSteps - 1
+          bundle.grownSteps - 1,
+          bundle.respawnHiddenStep
         );
       } else {
+        // A respawn's hidden-segment marker can point at a segment that
+        // doesn't exist yet — the marker is set the moment the strand's tip
+        // resets, but the segment connecting it to the next real point only
+        // gets written once that next point is grown, which can land on a
+        // later, non-rebased/non-respawned frame that takes this incremental
+        // path instead of the full-rewrite one above. Passing the marker
+        // here too costs nothing for the (overwhelmingly common) case where
+        // it's -1 for every strand.
         writeStrokeSegmentRange(
           mesh.geometry,
           bundle.strands,
           prevGrown - 1,
-          bundle.grownSteps - 1
+          bundle.grownSteps - 1,
+          bundle.respawnHiddenStep
         );
       }
       mesh.geometry.setDrawRange(0, (bundle.grownSteps - 1) * strandCount * 2);

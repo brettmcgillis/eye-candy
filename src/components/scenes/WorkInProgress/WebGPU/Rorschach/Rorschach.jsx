@@ -31,6 +31,7 @@ function Rorschach() {
         growthDuration={config.growthDuration}
         evolutionEnabled={config.evolutionEnabled}
         evolutionSpeed={config.evolutionSpeed}
+        smoothRespawns={config.smoothRespawns}
         monochrome={config.monochrome}
         inkColor={config.inkColor}
         overrides={config.overrides}

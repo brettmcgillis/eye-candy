@@ -51,10 +51,6 @@ const REBASE_FRACTION = 0.03;
 // is exactly what still produced long snap segments after only smoothing a
 // small, fixed number of trailing points.
 const STUCK_RESET_STEPS = 90;
-// Hard ceiling on how many trailing points a single respawn will smooth,
-// regardless of how large the accumulated stuck run got — keeps one
-// respawn's cost bounded even in a pathological case.
-const MAX_RESPAWN_SMOOTH_STEPS = 2000;
 
 function driftAxisInPlace(coeffs, original, rng, noiseAmount, reversionAmount) {
   for (let i = 0; i < coeffs.length; i += 1) {
@@ -109,54 +105,62 @@ export function driftCoeffs(bundle, rng, evolutionSpeed, deltaSeconds) {
   );
 }
 
+// Shifts every tracked respawn-boundary marker (see respawnStuckStrands)
+// along with the window — a marker points at a buffer index, and rebasing
+// moves every buffer index back by dropCount the same way it moves the
+// actual position data (via copyWithin). A marker that falls off the front
+// has aged out of the visible window on its own; -1 means "no boundary to
+// hide" and is left alone.
 function rebaseWindow(bundle) {
   const dropCount = Math.max(1, Math.floor(bundle.steps * REBASE_FRACTION));
   bundle.strands.forEach((strand) => strand.copyWithin(0, dropCount * 3));
   bundle.grownSteps -= dropCount;
+  for (let s = 0; s < bundle.respawnHiddenStep.length; s += 1) {
+    if (bundle.respawnHiddenStep[s] >= 0) {
+      bundle.respawnHiddenStep[s] -= dropCount;
+      if (bundle.respawnHiddenStep[s] < 0) bundle.respawnHiddenStep[s] = -1;
+    }
+  }
 }
 
 // Lazily attaches per-strand stuck-tracking state to a bundle the first time
 // it evolves. `previousCurrent` is a persistent scratch mirror of
 // bundle.current (not reallocated every call — see docs/scene-performance-
 // checklist.md) used only to detect whether a strand actually moved this
-// call.
+// call. `respawnHiddenStep[s]` is -1 normally, or the buffer step index
+// whose segment to the *next* step should be hidden — see
+// respawnStuckStrands.
 function ensureStuckTracking(bundle) {
   if (!bundle.stuckCounts) {
     bundle.stuckCounts = bundle.startPoints.map(() => 0);
     bundle.previousCurrent = bundle.current.map((c) => [c[0], c[1], c[2]]);
-  }
-}
-
-// Collapses the trailing `smoothCount` buffer points for strand `s` onto
-// `start`, so the visible trail shows a stationary (zero-length, invisible)
-// run there instead of a long segment connecting the old stuck position to
-// the new one. `smoothCount` must cover the *entire* accumulated stuck run
-// (see STUCK_RESET_STEPS) — smoothing fewer than that just moves the snap
-// earlier in the buffer instead of eliminating it.
-function smoothRespawnTail(bundle, s, start, smoothCount) {
-  const strand = bundle.strands[s * 2];
-  const mirror = bundle.strands[s * 2 + 1];
-  const overwriteCount = Math.min(smoothCount, bundle.grownSteps);
-  for (let k = 0; k < overwriteCount; k += 1) {
-    const idx = (bundle.grownSteps - 1 - k) * 3;
-    [strand[idx], strand[idx + 1], strand[idx + 2]] = start;
-    [mirror[idx], mirror[idx + 1], mirror[idx + 2]] = [
-      -start[0],
-      start[1],
-      start[2],
-    ];
+    bundle.respawnHiddenStep = bundle.startPoints.map(() => -1);
   }
 }
 
 // Returns whether any strand respawned — callers need to know, same reason
-// as `rebased`: it means points in the existing buffer changed retroactively
-// (smoothRespawnTail rewrites trailing history), so the geometry needs a
-// full rewrite of the valid range, not just an append of what's new.
-// `stepsThisCall` is how many buffer positions this specific advanceEvolution
-// call just wrote (frozen or not — growBundle writes the full requested
-// chunk either way), which is exactly how much a non-moving strand's stuck
-// run just grew by.
-function respawnStuckStrands(bundle, stepsThisCall) {
+// as `rebased`: a fresh respawn-boundary marker only takes effect once
+// TestStrokes.jsx's geometry gets a full rewrite of the valid range (see
+// buildStrokeGeometry.js's segHidden attribute), not from just appending
+// what's new. `stepsThisCall` is how many buffer positions this specific
+// advanceEvolution call just wrote (frozen or not — growBundle writes the
+// full requested chunk either way), which is exactly how much a non-moving
+// strand's stuck run just grew by.
+//
+// A respawned strand's tip resets to its own start point, which is
+// necessarily far from wherever it had drifted to and frozen — no amount of
+// repositioning the existing trail data can make that transition look
+// continuous, since the two ends are just genuinely far apart in space.
+// Rather than fake continuity in the data, the one segment that would
+// connect them is marked to be skipped at render time instead (see
+// buildStrokeGeometry.js/TestStrokes.jsx) — the actual fix here, matching
+// how Weightless's trail material hides vertices outside their visible
+// window rather than repositioning them. `smoothRespawns` is the
+// Leva-exposed toggle: the respawn itself (resetting the strand's tip so it
+// keeps evolving instead of withering) always happens — only marking that
+// connecting segment hidden is optional, for anyone who wants to see/compare
+// the raw snap.
+function respawnStuckStrands(bundle, stepsThisCall, smoothRespawns) {
   let anyRespawned = false;
 
   bundle.startPoints.forEach((start, s) => {
@@ -172,12 +176,8 @@ function respawnStuckStrands(bundle, stepsThisCall) {
     } else {
       bundle.stuckCounts[s] += stepsThisCall;
       if (bundle.stuckCounts[s] >= STUCK_RESET_STEPS) {
-        const smoothCount = Math.min(
-          bundle.stuckCounts[s],
-          MAX_RESPAWN_SMOOTH_STEPS
-        );
         [after[0], after[1], after[2]] = start;
-        smoothRespawnTail(bundle, s, start, smoothCount);
+        if (smoothRespawns) bundle.respawnHiddenStep[s] = bundle.grownSteps - 1;
         bundle.stuckCounts[s] = 0;
         anyRespawned = true;
       }
@@ -202,7 +202,9 @@ function respawnStuckStrands(bundle, stepsThisCall) {
 // Returns whether the geometry needs a full rewrite of the valid range
 // (true if a rebase or a respawn happened — both retroactively change
 // existing buffer positions) rather than just an append of the new steps.
-export function advanceEvolution(bundle, maxNewSteps) {
+// `smoothRespawns` (default true) is the Leva "Smooth Respawn Snaps" toggle —
+// see respawnStuckStrands.
+export function advanceEvolution(bundle, maxNewSteps, smoothRespawns = true) {
   ensureStuckTracking(bundle);
 
   let remaining = maxNewSteps;
@@ -215,6 +217,6 @@ export function advanceEvolution(bundle, maxNewSteps) {
     rebased = true;
   }
 
-  const respawned = respawnStuckStrands(bundle, maxNewSteps);
+  const respawned = respawnStuckStrands(bundle, maxNewSteps, smoothRespawns);
   return rebased || respawned;
 }

@@ -1,4 +1,4 @@
-import { attribute, uniform } from 'three/tsl';
+import { attribute, float, uniform } from 'three/tsl';
 import * as THREE from 'three/webgpu';
 
 import React, { forwardRef, memo, useMemo } from 'react';
@@ -45,7 +45,10 @@ const TestStrokes = forwardRef(function TestStrokes(
     const fadeLinear = attribute('stepIndex', 'float')
       .div(fadeWindow)
       .clamp(0, 1);
-    material.opacityNode = fadeLinear.mul(fadeLinear);
+    // segHidden force-zeroes a respawned strand's one connecting segment —
+    // see utils/evolution.js's respawnHiddenStep and buildStrokeGeometry.js.
+    const segVisible = float(1).sub(attribute('segHidden', 'float'));
+    material.opacityNode = fadeLinear.mul(fadeLinear).mul(segVisible);
 
     const mesh = new THREE.LineSegments(geometry, material);
     mesh.frustumCulled = false;

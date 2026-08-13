@@ -11,6 +11,14 @@ import * as THREE from 'three/webgpu';
 // TestStrokes.jsx's material reads to fade opacity toward the tail — without
 // it, evolution's window-rebase (utils/evolution.js) would drop a whole
 // chunk of points at once with no visual warning, popping instead of fading.
+//
+// `segHidden` is a per-vertex flag (0 = normal, 1 = force-invisible) TestStrokes.jsx
+// multiplies into opacity. It exists for exactly one case: the single segment
+// connecting a respawned strand's old (frozen) position to its new start
+// point — see utils/evolution.js's respawnHiddenStep. Defaults to 0 (a fresh
+// Float32Array is already zero-filled), and writeStrokeSegmentRange sets it
+// explicitly on every write it does, so a stale hidden flag from an earlier
+// respawn never lingers once that segment's marker has moved on.
 export function buildStrokeGeometry(strandCount, steps) {
   const totalSegments = strandCount * (steps - 1);
   const geometry = new THREE.BufferGeometry();
@@ -22,10 +30,16 @@ export function buildStrokeGeometry(strandCount, steps) {
     new Float32Array(totalSegments * 2),
     1
   );
+  const segHidden = new THREE.BufferAttribute(
+    new Float32Array(totalSegments * 2),
+    1
+  );
   position.setUsage(THREE.DynamicDrawUsage);
   stepIndex.setUsage(THREE.DynamicDrawUsage);
+  segHidden.setUsage(THREE.DynamicDrawUsage);
   geometry.setAttribute('position', position);
   geometry.setAttribute('stepIndex', stepIndex);
+  geometry.setAttribute('segHidden', segHidden);
   geometry.setDrawRange(0, 0);
   return geometry;
 }
@@ -39,8 +53,20 @@ export function buildStrokeGeometry(strandCount, steps) {
 // beginning of time" — after evolution rebases the window, the caller
 // re-writes the full valid range from step 0, which naturally gives every
 // point a fresh buffer-relative index matching its new position.
-export function writeStrokeSegmentRange(geometry, strands, fromStep, toStep) {
-  const { position, stepIndex } = geometry.attributes;
+//
+// `hiddenSteps`, when given, is a per-strand-pair array (index = strand pair,
+// i.e. `s >> 1`) of the buffer step whose segment to the next step should be
+// force-invisible — see utils/evolution.js's respawnHiddenStep. Only the
+// full-range rewrite path needs it: incrementally-appended segments are
+// always freshly grown and never a respawn boundary.
+export function writeStrokeSegmentRange(
+  geometry,
+  strands,
+  fromStep,
+  toStep,
+  hiddenSteps
+) {
+  const { position, stepIndex, segHidden } = geometry.attributes;
   const strandCount = strands.length;
   let segment = fromStep * strandCount;
 
@@ -53,12 +79,17 @@ export function writeStrokeSegmentRange(geometry, strands, fromStep, toStep) {
       position.setXYZ(segment * 2 + 1, points[b], points[b + 1], points[b + 2]);
       stepIndex.setX(segment * 2, step);
       stepIndex.setX(segment * 2 + 1, step + 1);
+      const hidden =
+        hiddenSteps && hiddenSteps[Math.floor(s / 2)] === step ? 1 : 0;
+      segHidden.setX(segment * 2, hidden);
+      segHidden.setX(segment * 2 + 1, hidden);
       segment += 1;
     }
   }
 
   position.needsUpdate = true;
   stepIndex.needsUpdate = true;
+  segHidden.needsUpdate = true;
 }
 
 export function writeStrokePositions(geometry, strands, steps) {

@@ -171,6 +171,10 @@ export default function useSceneControls() {
           max: 3,
           step: 0.05,
         },
+        smoothRespawns: {
+          label: 'Smooth Respawn Snaps',
+          value: p.smoothRespawns ?? true,
+        },
         monochrome: {
           label: 'Monochrome Ink',
           value: p.monochrome ?? true,

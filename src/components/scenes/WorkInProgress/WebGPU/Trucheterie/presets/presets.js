@@ -1,10 +1,10 @@
 // Preset snapshots for the scene. Keys here must match the Leva schema built
 // in useSceneControls 1:1 — no reshaping between a preset and the controls it
 // applies (see docs/scene-conventions.md, "Controls & presets").
-export const DEFAULT_PRESET = 'Default';
+export const DEFAULT_PRESET = '001';
 
 export const PRESETS = {
-  Default: {
+  '001': {
     cameraMode: 'orbit',
     cameraAutoFit: true,
     fixedBehavior: 'single',

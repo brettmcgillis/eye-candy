@@ -1,55 +1,17 @@
 /* eslint-disable no-param-reassign */
-// Mutates bundle.coeffs and strand buffers in place — see
-// utils/testGenerator.js and utils/odeIntegrator.js for the same pattern.
 import { growBundle } from './testGenerator';
 
-// Fraction of a coefficient's magnitude nudged per second at
-// evolutionSpeed = 1.
 const DRIFT_STEP = 0.012;
-// Fraction of the distance back toward the bundle's original (validated,
-// known-bounded) coefficients pulled in per second at evolutionSpeed = 1.
-// Without this, pure random-walk drift is a drunkard's walk: given enough
-// time it wanders into coefficient combinations where more and more
-// individual strands' stepRK4 calls go unstable and freeze (each one safe
-// on its own, but the cumulative effect reads as the whole beast slowly
-// withering down to a few surviving strands). Mean-reverting drift keeps
-// the field oscillating around a configuration that's actually been
-// verified to work, instead of decaying away from one.
+// Pulls coefficients back toward their validated original each tick —
+// unbounded random-walk drift eventually wanders into unstable territory.
 const REVERSION_RATE = 0.15;
-// Extra hard safety net on top of mean reversion — shouldn't normally bind,
-// since reversion already keeps coefficients orbiting close to their
-// original (generation-time) values.
 const COEFF_DRIFT_CLAMP = 3;
-// How much of the window gets dropped at once when the tip advects past the
-// end of the buffer and it needs to make room. Small and frequent rather
-// than a big chunk: TestStrokes.jsx fades opacity toward the tail based on
-// FADE_FRACTION (see there), and for that fade to actually finish before a
-// point is dropped, the drop chunk needs to stay well inside the fade
-// window — dropCount/fadeWindow is roughly the residual opacity a point
-// still has right as it's removed. At 0.03 that's a few percent, not the
-// ~75% it was at the old 0.15/0.2 pairing (which is why it looked like it
-// popped instead of fading — the fade genuinely hadn't finished).
+// Small/frequent rather than a big chunk, so TestStrokes.jsx's tail fade
+// (FADE_FRACTION) finishes before a dropped point is actually removed.
 const REBASE_FRACTION = 0.03;
-// How many trailing buffer *positions* (not advanceEvolution calls — see
-// below) a single strand can accumulate at the same frozen value before
-// it's respawned from its own (validated) start point. Mean reversion alone
-// isn't enough: bundle-level validation only checks a probe point over a
-// bounded horizon, not that every individual strand stays bounded forever —
-// over a long enough evolution run, some strand eventually drifts to the
-// BOUND_THRESHOLD boundary and stepRK4's freeze holds it there indefinitely,
-// even while coefficients keep reverting toward "known good." Left unfixed
-// this is exactly what reads as the whole beast slowly withering down to a
-// handful of surviving strands. Respawning just that one strand — not the
-// whole bundle — is what keeps the beast visually "whole" while still
-// genuinely evolving.
-//
-// This must be counted in STEPS, not calls: growBundle writes the entire
-// requested chunk every call regardless of whether the strand is frozen (a
-// frozen strand just writes the same duplicate value `maxNewSteps` times),
-// so a fixed call-count threshold at a large per-frame step budget can let
-// thousands of stuck positions pile up before respawn even triggers — which
-// is exactly what still produced long snap segments after only smoothing a
-// small, fixed number of trailing points.
+// Counted in steps, not advanceEvolution calls — growBundle writes the full
+// requested chunk every call even when frozen, so a call-count threshold
+// under-triggers at a large per-frame budget.
 const STUCK_RESET_STEPS = 90;
 
 function driftAxisInPlace(coeffs, original, rng, noiseAmount, reversionAmount) {
@@ -66,18 +28,6 @@ function driftAxisInPlace(coeffs, original, rng, noiseAmount, reversionAmount) {
   }
 }
 
-// Nudges a bundle's ODE coefficients — mean-reverting, not a pure random
-// walk: each coefficient is pulled a little toward its original
-// (generation-time, validated) value every tick, plus a small random
-// perturbation. The beast's curves keep subtly changing over real time
-// (nullHashPixel's beasts.ink does the same), but orbit around a known-good
-// configuration rather than wandering arbitrarily far from one. No
-// reintegration here: the coefficients just drift, and whatever growBundle
-// computes next naturally reflects the new values — there's nothing to
-// revert. Safety against a still-unstable moment comes from stepRK4's own
-// per-step freeze (odeIntegrator.js): a strand whose current coefficients
-// push a step out of bounds simply stops advancing until drift carries it
-// back into a stable region.
 export function driftCoeffs(bundle, rng, evolutionSpeed, deltaSeconds) {
   const noiseAmount = DRIFT_STEP * evolutionSpeed * deltaSeconds;
   const reversionAmount = REVERSION_RATE * evolutionSpeed * deltaSeconds;
@@ -105,12 +55,9 @@ export function driftCoeffs(bundle, rng, evolutionSpeed, deltaSeconds) {
   );
 }
 
-// Shifts every tracked respawn-boundary marker (see respawnStuckStrands)
-// along with the window — a marker points at a buffer index, and rebasing
-// moves every buffer index back by dropCount the same way it moves the
-// actual position data (via copyWithin). A marker that falls off the front
-// has aged out of the visible window on its own; -1 means "no boundary to
-// hide" and is left alone.
+// respawnHiddenStep markers shift with the window (same copyWithin the
+// position data gets) so a hidden segment stays hidden as it ages toward
+// the front, instead of pointing at the wrong step after a rebase.
 function rebaseWindow(bundle) {
   const dropCount = Math.max(1, Math.floor(bundle.steps * REBASE_FRACTION));
   bundle.strands.forEach((strand) => strand.copyWithin(0, dropCount * 3));
@@ -123,13 +70,6 @@ function rebaseWindow(bundle) {
   }
 }
 
-// Lazily attaches per-strand stuck-tracking state to a bundle the first time
-// it evolves. `previousCurrent` is a persistent scratch mirror of
-// bundle.current (not reallocated every call — see docs/scene-performance-
-// checklist.md) used only to detect whether a strand actually moved this
-// call. `respawnHiddenStep[s]` is -1 normally, or the buffer step index
-// whose segment to the *next* step should be hidden — see
-// respawnStuckStrands.
 function ensureStuckTracking(bundle) {
   if (!bundle.stuckCounts) {
     bundle.stuckCounts = bundle.startPoints.map(() => 0);
@@ -138,28 +78,13 @@ function ensureStuckTracking(bundle) {
   }
 }
 
-// Returns whether any strand respawned — callers need to know, same reason
-// as `rebased`: a fresh respawn-boundary marker only takes effect once
-// TestStrokes.jsx's geometry gets a full rewrite of the valid range (see
-// buildStrokeGeometry.js's segHidden attribute), not from just appending
-// what's new. `stepsThisCall` is how many buffer positions this specific
-// advanceEvolution call just wrote (frozen or not — growBundle writes the
-// full requested chunk either way), which is exactly how much a non-moving
-// strand's stuck run just grew by.
-//
-// A respawned strand's tip resets to its own start point, which is
-// necessarily far from wherever it had drifted to and frozen — no amount of
-// repositioning the existing trail data can make that transition look
-// continuous, since the two ends are just genuinely far apart in space.
-// Rather than fake continuity in the data, the one segment that would
-// connect them is marked to be skipped at render time instead (see
-// buildStrokeGeometry.js/TestStrokes.jsx) — the actual fix here, matching
-// how Weightless's trail material hides vertices outside their visible
-// window rather than repositioning them. `smoothRespawns` is the
-// Leva-exposed toggle: the respawn itself (resetting the strand's tip so it
-// keeps evolving instead of withering) always happens — only marking that
-// connecting segment hidden is optional, for anyone who wants to see/compare
-// the raw snap.
+// A respawned strand's tip jumps to its own start point — genuinely far from
+// wherever it froze, so no repositioning of the existing trail can make that
+// transition look continuous. Instead of faking it in the data, the one
+// connecting segment is marked hidden and skipped at render time (see
+// buildStrokeGeometry.js/TestStrokes.jsx), same approach as Weightless's
+// trail material. `smoothRespawns` only gates that hiding; the respawn
+// itself always happens.
 function respawnStuckStrands(bundle, stepsThisCall, smoothRespawns) {
   let anyRespawned = false;
 
@@ -189,21 +114,11 @@ function respawnStuckStrands(bundle, stepsThisCall, smoothRespawns) {
   return anyRespawned;
 }
 
-// Advances a bundle's tip forward by up to `maxNewSteps`, the same way
-// growth does (reuses growBundle directly — same math, same float64
-// `bundle.current` state, so this is a genuine continuation of growth, not a
-// different mechanism) — except once the window fills, it rebases (drops
-// the oldest chunk, shifts the rest forward) instead of stopping. This is
-// the "keep advecting from the tip while the tail disappears" behavior —
-// never a full recompute from t=0, just the next increment. Also detects
-// and respawns any individual strand that's been stuck (see
-// STUCK_RESET_STEPS above) so the beast keeps evolving instead of
-// withering.
-// Returns whether the geometry needs a full rewrite of the valid range
-// (true if a rebase or a respawn happened — both retroactively change
-// existing buffer positions) rather than just an append of the new steps.
-// `smoothRespawns` (default true) is the Leva "Smooth Respawn Snaps" toggle —
-// see respawnStuckStrands.
+// Advances a bundle's tip like growth does, but rebases (drops the oldest
+// chunk) instead of stopping once the window fills — the "advect from the
+// tip, tail disappears" behavior. Returns whether the geometry needs a full
+// rewrite (rebase or respawn both retroactively change existing positions)
+// rather than just an append.
 export function advanceEvolution(bundle, maxNewSteps, smoothRespawns = true) {
   ensureStuckTracking(bundle);
 

@@ -1,24 +1,10 @@
 import * as THREE from 'three/webgpu';
 
-// Interleaves a bundle's strand samples step-by-step (segment order: step 0
-// of every strand, then step 1 of every strand, ...) so a single
-// setDrawRange sweep grows every strand of the bundle in lockstep — the
-// whole blot self-draws at once rather than one strand fully appearing
-// before the next starts. `steps` is per-test (Leva-tunable trajectory
-// length), so it's a parameter rather than an imported constant.
-//
-// `stepIndex` is a per-vertex attribute (buffer-relative step position) that
-// TestStrokes.jsx's material reads to fade opacity toward the tail — without
-// it, evolution's window-rebase (utils/evolution.js) would drop a whole
-// chunk of points at once with no visual warning, popping instead of fading.
-//
-// `segHidden` is a per-vertex flag (0 = normal, 1 = force-invisible) TestStrokes.jsx
-// multiplies into opacity. It exists for exactly one case: the single segment
-// connecting a respawned strand's old (frozen) position to its new start
-// point — see utils/evolution.js's respawnHiddenStep. Defaults to 0 (a fresh
-// Float32Array is already zero-filled), and writeStrokeSegmentRange sets it
-// explicitly on every write it does, so a stale hidden flag from an earlier
-// respawn never lingers once that segment's marker has moved on.
+// Interleaves step-by-step across strands (step 0 of every strand, then
+// step 1, ...) so one setDrawRange sweep grows the whole bundle in lockstep.
+// `stepIndex` drives TestStrokes.jsx's tail fade; `segHidden` force-zeroes
+// opacity for a respawned strand's one connecting segment (see
+// utils/evolution.js's respawnHiddenStep).
 export function buildStrokeGeometry(strandCount, steps) {
   const totalSegments = strandCount * (steps - 1);
   const geometry = new THREE.BufferGeometry();
@@ -44,21 +30,10 @@ export function buildStrokeGeometry(strandCount, steps) {
   return geometry;
 }
 
-// Writes segments for step indices [fromStep, toStep) — i.e. the segments
-// connecting point[fromStep]->point[fromStep+1] through
-// point[toStep-1]->point[toStep]. Used both by writeStrokePositions (full
-// range) and the incremental grower (just the newly-computed range each
-// frame, so streamed-in growth doesn't repeatedly rewrite segments that were
-// already correct). `stepIndex` is buffer-relative, not "steps since the
-// beginning of time" — after evolution rebases the window, the caller
-// re-writes the full valid range from step 0, which naturally gives every
-// point a fresh buffer-relative index matching its new position.
-//
-// `hiddenSteps`, when given, is a per-strand-pair array (index = strand pair,
-// i.e. `s >> 1`) of the buffer step whose segment to the next step should be
-// force-invisible — see utils/evolution.js's respawnHiddenStep. Only the
-// full-range rewrite path needs it: incrementally-appended segments are
-// always freshly grown and never a respawn boundary.
+// Writes segments for step indices [fromStep, toStep). `hiddenSteps`
+// (per-strand-pair, index = s/2) marks a segment force-invisible — only the
+// full-range rewrite path needs it, since incrementally-appended segments
+// are always freshly grown, never a respawn boundary.
 export function writeStrokeSegmentRange(
   geometry,
   strands,

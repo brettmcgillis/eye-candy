@@ -7,7 +7,6 @@ import {
   getCameraControlsKey,
   useSceneCameraControls,
 } from '../../../../../../modules/cameraRig';
-import { useMediaRecorder } from '../../../../../../modules/mediaRecorder';
 import { DEFAULT_PRESET, PRESETS, getPresetControls } from '../presets/presets';
 import CAMERA from '../utils/camera';
 import { PALETTE_NAMES } from '../utils/palette';
@@ -175,6 +174,10 @@ export default function useSceneControls() {
           label: 'Smooth Respawn Snaps',
           value: p.smoothRespawns ?? true,
         },
+        trailFade: {
+          label: 'Trail Fade',
+          value: p.trailFade ?? true,
+        },
         monochrome: {
           label: 'Monochrome Ink',
           value: p.monochrome ?? true,
@@ -297,8 +300,6 @@ export default function useSceneControls() {
   controlsSnapshotRef.current = { ...controls, overrides };
   controlsRef.current = controls;
   setControlsRef.current = setControls;
-
-  useMediaRecorder({ fileName: SCENE_LABEL });
 
   // Rule: control changes must never reset the camera (docs/scene-conventions.md §10).
   const cameraControlsKey = useMemo(

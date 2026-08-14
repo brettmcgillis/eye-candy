@@ -252,14 +252,6 @@ export const PRESETS = {
     palette: 'Ameena',
     flatten: 0,
     backgroundColor: '#000000',
-    overrides: {
-      0: {
-        visible: true,
-        colorOverride: false,
-        color: '#ff0000',
-        growthDelay: 0,
-      },
-    },
   },
 };
 

@@ -1,4 +1,8 @@
-import React, { memo } from 'react';
+import * as THREE from 'three/webgpu';
+
+import React, { memo, useEffect } from 'react';
+
+import { useThree } from '@react-three/fiber';
 
 import { CameraRig } from '../../../../../modules/cameraRig';
 import ButtonOverlay from './components/ButtonOverlay';
@@ -13,11 +17,17 @@ import useSceneControls from './hooks/useSceneControls';
 // Curtis-97 watercolor sim) modes are later phases — see todo.md.
 function Rorschach() {
   const config = useSceneControls();
+  const { scene } = useThree();
+
+  // Set imperatively, not via <color attach="background" args={[...]}> —
+  // that form left the background one edit behind (see todo.md).
+  useEffect(() => {
+    scene.background = new THREE.Color(config.backgroundColor);
+  }, [scene, config.backgroundColor]);
 
   return (
     <>
       <CameraRig camera={config.camera} />
-      <color attach="background" args={[config.backgroundColor]} />
       <Test
         seed={config.seed}
         bundleCount={config.bundleCount}
@@ -32,6 +42,7 @@ function Rorschach() {
         evolutionEnabled={config.evolutionEnabled}
         evolutionSpeed={config.evolutionSpeed}
         smoothRespawns={config.smoothRespawns}
+        trailFade={config.trailFade}
         monochrome={config.monochrome}
         inkColor={config.inkColor}
         overrides={config.overrides}

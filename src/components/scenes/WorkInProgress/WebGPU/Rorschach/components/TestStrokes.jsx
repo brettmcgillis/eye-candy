@@ -16,10 +16,12 @@ import { buildStrokeGeometry } from '../utils/buildStrokeGeometry';
 const FADE_FRACTION = 0.5;
 
 const TestStrokes = forwardRef(function TestStrokes(
-  { hsl, strandCount, steps },
+  { hsl, strandCount, steps, emissive, emissiveIntensity },
   ref
 ) {
   const colorUniformRef = useRef(null);
+  const intensityUniformRef = useRef(null);
+  const materialRef = useRef(null);
 
   const lineSegments = useMemo(() => {
     const geometry = buildStrokeGeometry(strandCount, steps);
@@ -28,9 +30,18 @@ const TestStrokes = forwardRef(function TestStrokes(
       depthWrite: true,
       depthTest: true,
     });
+    materialRef.current = material;
     const colorUniform = uniform(new THREE.Color().setHSL(hsl.h, hsl.s, hsl.l));
     colorUniformRef.current = colorUniform;
-    material.colorNode = colorUniform;
+    // emissiveIntensity multiplies the base color rather than adding a
+    // separate emissive channel — this material is unlit (no lighting to
+    // add on top of), so pushing RGB past 1.0 is the equivalent effect.
+    // Needs `material.toneMapped = false` (set in the effect below) to
+    // actually read as brighter instead of being clamped back down by the
+    // renderer's tonemapping curve.
+    const intensityUniform = uniform(1);
+    intensityUniformRef.current = intensityUniform;
+    material.colorNode = colorUniform.mul(intensityUniform);
 
     const grownStepsUniform = uniform(1);
     const fadeWindow = grownStepsUniform.mul(FADE_FRACTION).max(1);
@@ -59,6 +70,17 @@ const TestStrokes = forwardRef(function TestStrokes(
   useEffect(() => {
     colorUniformRef.current?.value.setHSL(hsl.h, hsl.s, hsl.l);
   }, [hsl.h, hsl.s, hsl.l]);
+
+  useEffect(() => {
+    if (intensityUniformRef.current) {
+      intensityUniformRef.current.value = emissive ? emissiveIntensity : 1;
+    }
+    const material = materialRef.current;
+    if (material && material.toneMapped !== !emissive) {
+      material.toneMapped = !emissive;
+      material.needsUpdate = true;
+    }
+  }, [emissive, emissiveIntensity]);
 
   return <primitive object={lineSegments} ref={ref} />;
 });

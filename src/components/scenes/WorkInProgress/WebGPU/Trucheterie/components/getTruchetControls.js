@@ -1,6 +1,7 @@
 import { folder } from 'leva';
 
 import getCompositionControls from './getCompositionControls';
+import getMultiscaleControls from './getMultiscaleControls';
 
 // Full Leva path to this folder — used by the render() gates below to show
 // grid-mode-specific controls only. Must stay in sync with SCENE_LABEL and
@@ -76,6 +77,11 @@ export default function getTruchetControls(snapshot = {}) {
         label: 'Weave Crossings',
         value: snapshot.weaveEnabled ?? false,
       },
+      lanesEnabled: {
+        label: 'Lanes Motif',
+        value: snapshot.lanesEnabled ?? false,
+      },
+      ...getMultiscaleControls(snapshot),
       weaveGapWidth: {
         label: 'Weave Gap Width',
         max: 0.15,

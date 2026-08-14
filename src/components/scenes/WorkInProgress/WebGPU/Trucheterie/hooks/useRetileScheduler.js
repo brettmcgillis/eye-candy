@@ -17,6 +17,7 @@ export default function useRetileScheduler({
   animStagger,
   cellSize,
   grid,
+  lanesEnabled,
   meshRef,
   pickMotif,
   retileEnabled,
@@ -35,6 +36,7 @@ export default function useRetileScheduler({
     animSpeed,
     animStagger,
     cellSize,
+    lanesEnabled,
     pickMotif,
     retileEnabled,
     retileRate,
@@ -111,7 +113,8 @@ export default function useRetileScheduler({
           phase[i] = 0;
           nextMotif[i] = params.pickMotif(
             params.straightTileChance,
-            params.weaveEnabled
+            params.weaveEnabled,
+            params.lanesEnabled
           );
           duration[i] = params.animSpeed * THREE.MathUtils.randFloat(0.8, 1.2);
         }
@@ -137,7 +140,8 @@ export default function useRetileScheduler({
           grid.positions[i * 3 + 2]
         );
         dummy.rotation.set(0, rotY, rotZ);
-        dummy.scale.setScalar(params.cellSize * scale);
+        const leafScale = grid.sizes ? grid.sizes[i] : 1;
+        dummy.scale.setScalar(params.cellSize * leafScale * scale);
         dummy.updateMatrix();
         mesh.setMatrixAt(i, dummy.matrix);
         matrixDirty = true;

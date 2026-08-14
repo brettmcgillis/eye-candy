@@ -43,6 +43,31 @@ export function hexToHsl(hex) {
   return { h, s, l };
 }
 
+// Inverse of hexToHsl — used to pre-fill the Bundle Editor's Color field
+// with a bundle's actual current color (whatever computeStyles produced)
+// when its Override folder is first opened, instead of a fixed placeholder.
+export function hslToHex(h, s, l) {
+  if (s === 0) {
+    const v = Math.round(l * 255);
+    return `#${[v, v, v].map((c) => c.toString(16).padStart(2, '0')).join('')}`;
+  }
+  const q = l < 0.5 ? l * (1 + s) : l + s - l * s;
+  const p = 2 * l - q;
+  const hueToRgb = (t0) => {
+    let t = t0;
+    if (t < 0) t += 1;
+    if (t > 1) t -= 1;
+    if (t < 1 / 6) return p + (q - p) * 6 * t;
+    if (t < 1 / 2) return q;
+    if (t < 2 / 3) return p + (q - p) * (2 / 3 - t) * 6;
+    return p;
+  };
+  const r = Math.round(hueToRgb(h + 1 / 3) * 255);
+  const g = Math.round(hueToRgb(h) * 255);
+  const b = Math.round(hueToRgb(h - 1 / 3) * 255);
+  return `#${[r, g, b].map((c) => c.toString(16).padStart(2, '0')).join('')}`;
+}
+
 // Samples a gradient's hex stops at t (0-1), linearly interpolating RGB
 // between the two nearest stops, and converts to {h,s,l} — the shape
 // testGenerator.js's bundle.color already uses (THREE.Color.setHSL takes

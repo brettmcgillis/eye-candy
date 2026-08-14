@@ -18,27 +18,34 @@ export const TERM_COUNT = 10;
 export const DEFAULT_BOUND_RADIUS = 40;
 export const DEFAULT_BOUND_WIDTH = 40;
 export const DEFAULT_BOUND_HEIGHT = 40;
-// Relative to the bounds' own scale, not absolute — a flat minSpread let
-// through candidates whose validation-pass probe still measured some spread
-// even though their settled orbit was much smaller, reading as a bundle
-// "collapsing to nothing" next to bigger siblings.
-const MIN_SPREAD_FRACTION = 0.2;
+// Absolute (world-space units), a Leva-tunable "Min Bundle Spread" control,
+// not derived from bounds — a bounds-relative fraction auto-scales sensibly
+// with custom bounds, but makes it impossible to say "give me exactly what
+// this used to look like" without doing unit conversion in your head, since
+// the same fraction means a different absolute threshold at every bound
+// size. Below this, a candidate's validation-pass probe reads as a
+// near-fixed-point and gets rejected — too low (e.g. the original 1.5) lets
+// through candidates whose settled orbit is much smaller than its probe
+// suggested, reading as a bundle "collapsing to nothing" next to bigger
+// siblings; too high starts rejecting legitimately small-but-varied orbits.
+export const DEFAULT_MIN_SPREAD = 8;
 
-// `shape: 'cube' | 'sphere'`. Cube uses width for X and Z, height for Y —
-// no separate depth control (Leva exposes radius/height/width, not a third
-// axis). Sphere uses radius for all three, centered on the origin, same as
-// cube's per-axis bounds are centered on the origin.
+// `shape: 'cube' | 'sphere' | 'none'`. Cube uses width for X and Z, height
+// for Y — no separate depth control (Leva exposes radius/height/width, not a
+// third axis). Sphere uses radius for all three, centered on the origin,
+// same as cube's per-axis bounds are centered on the origin. 'none' skips
+// the freeze/reject check entirely — safe because the trig term basis
+// bounds derivative magnitude regardless of position, so a finite step
+// count can't diverge to Infinity the way the old polynomial basis could;
+// it can only wander further than a chosen shape would have allowed.
 export function boundsScale(bounds) {
-  return bounds.shape === 'sphere'
-    ? bounds.radius
-    : Math.min(bounds.width, bounds.height);
-}
-
-export function minSpreadFor(bounds) {
-  return boundsScale(bounds) * MIN_SPREAD_FRACTION;
+  if (bounds.shape === 'sphere') return bounds.radius;
+  if (bounds.shape === 'none') return DEFAULT_BOUND_RADIUS;
+  return Math.min(bounds.width, bounds.height);
 }
 
 function withinBounds(x, y, z, bounds) {
+  if (bounds.shape === 'none') return true;
   if (bounds.shape === 'sphere') {
     const r = bounds.radius;
     return x * x + y * y + z * z < r * r;

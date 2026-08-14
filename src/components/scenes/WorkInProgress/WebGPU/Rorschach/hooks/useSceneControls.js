@@ -1,4 +1,4 @@
-import { button, folder, useControls } from 'leva';
+import { folder, useControls } from 'leva';
 
 import { useCallback, useMemo, useRef, useState } from 'react';
 
@@ -13,8 +13,9 @@ import {
   DEFAULT_BOUND_HEIGHT,
   DEFAULT_BOUND_RADIUS,
   DEFAULT_BOUND_WIDTH,
+  DEFAULT_MIN_SPREAD,
 } from '../utils/odeIntegrator';
-import { PALETTE_NAMES } from '../utils/palette';
+import { PALETTE_NAMES, hslToHex } from '../utils/palette';
 import {
   DEFAULT_BUNDLE_COUNT,
   DEFAULT_COEFF_RANGE,
@@ -23,7 +24,12 @@ import {
   DEFAULT_START_SPREAD,
   DEFAULT_STEPS,
   DEFAULT_STRANDS_PER_BUNDLE,
+  MAX_BUNDLE_COUNT,
+  computeStyles,
 } from '../utils/testGenerator';
+import buildBundleOverrideSchema, {
+  overridesToLevaFields,
+} from './buildBundleOverrideSchema';
 
 const SCENE_LABEL = 'Rorschach';
 const CAMERA_FOLDER_PATH = `${SCENE_LABEL}.Camera`;
@@ -33,36 +39,45 @@ const FRAMING_SHAPE_PATH = `${SCENE_LABEL}.Test.framingShape`;
 // `mode` toggle control yet, no Lighting folder (unlit line material, so
 // nothing to light).
 export default function useSceneControls() {
-  // Bundle Editor: a single-row editor for a dynamic-length list of bundles
-  // (bundleCount can grow well past what a fixed per-bundle folder-per-index
-  // UI would tolerate). `overrides` is real React state — not a ref — so
-  // Test.jsx's useMemo correctly detects changes and regenerates. `editIndex`
-  // selects which bundle's stored override (if any) the scratch fields below
-  // show; switching it *loads* that bundle's values (via the ref-bootstrapped
-  // onChange pattern usePresetsFolder's own preset dropdown already uses in
-  // this file). Every field writes straight through on change — no Apply
-  // step. Style changes (computeStyles in testGenerator.js) are cheap and
-  // independent of structural generation, so there's no expensive regen to
-  // protect against here the way there was before that split; live editing
-  // is simply how the rest of this panel already works.
-  //
-  // Each field (colorOverride, visible, growthDelay) applies independently
-  // when set — there is deliberately no separate "master enabled" gate on
-  // top of them. An earlier version required both that master gate AND a
-  // field's own toggle before anything took effect, which meant flipping
-  // Color Override + picking a color visibly did nothing unless you also
-  // remembered a second, easy-to-miss switch. Don't reintroduce it.
+  // Bundle Editor: one static schema of MAX_BUNDLE_COUNT `BundleN` folders
+  // (see buildBundleOverrideSchema.js) — each has its own Override toggle
+  // and fields, so multiple bundles can be seen and edited side by side
+  // instead of selecting one at a time. `overrides` is real React state —
+  // not a ref — so Test.jsx's memos correctly detect changes.
   //
   // `overrides` lives outside Leva's own controlled state, so it does NOT
   // automatically flow through Presets' copy/apply pipeline the way every
   // other control does. setOverridesRef + getPresetControlsWithOverrides
-  // below wire it back in on preset *switch*, and the `useState(() => ...)`
-  // lazy initializer wires it in on cold mount (page load with a non-default
-  // preset active) — both are needed, same as the `p.xxx ?? default` seeding
-  // every other Test-folder control already does for the same reason.
+  // below wire it back in on preset *switch* (also re-syncing every
+  // BundleN field via overridesToLevaFields, so the panel never shows a
+  // stale toggle for an override that isn't actually active), and the
+  // `useState(() => ...)` lazy initializer wires it in on cold mount —
+  // both needed, same as the `p.xxx ?? default` seeding every other
+  // Test-folder control already does for the same reason.
   const setOverridesRef = useRef(null);
+  const overridesRef = useRef({});
   const controlsRef = useRef(null);
   const setControlsRef = useRef(null);
+
+  // Reads current seed/bundleCount/monochrome/inkColor/palette/overrides
+  // off refs (not React state) so it's never stale by the time a Bundle
+  // Override toggle's onChange fires — same reasoning as the ref-bootstrap
+  // pattern the Presets dropdown already uses in this file. Reuses
+  // computeStyles (the same function that decides what's actually
+  // rendered) rather than reimplementing the color logic, so the pre-fill
+  // can never diverge from what's really showing.
+  const getCurrentColorHex = useCallback((i) => {
+    const c = controlsRef.current;
+    if (!c) return '#ff0000';
+    const styles = computeStyles(c.seed, c.bundleCount, {
+      monochrome: c.monochrome,
+      inkColor: c.inkColor,
+      palette: c.palette,
+      overrides: overridesRef.current,
+    });
+    const { h, s, l } = styles[i]?.color ?? { h: 0, s: 0, l: 0.5 };
+    return hslToHex(h, s, l);
+  }, []);
 
   const getPresetControlsWithOverrides = useCallback(
     ({ presetSnapshot, ...rest }) => {
@@ -70,7 +85,15 @@ export default function useSceneControls() {
         presetSnapshot;
       if (setOverridesRef.current)
         setOverridesRef.current(presetOverrides || {});
-      return getPresetControls({ presetSnapshot: controlsSnapshot, ...rest });
+      const nextControls = getPresetControls({
+        presetSnapshot: controlsSnapshot,
+        ...rest,
+      });
+      if (!nextControls) return nextControls;
+      return {
+        ...nextControls,
+        ...overridesToLevaFields(presetOverrides || {}),
+      };
     },
     []
   );
@@ -93,9 +116,8 @@ export default function useSceneControls() {
   const p = PRESETS[initialPreset] || PRESETS[DEFAULT_PRESET];
 
   const [overrides, setOverrides] = useState(() => p.overrides || {});
-  const overridesRef = useRef(overrides);
-  overridesRef.current = overrides;
   setOverridesRef.current = setOverrides;
+  overridesRef.current = overrides;
 
   const cameraApiRef = useRef(null);
   const { buildCamera, cameraControls } = useSceneCameraControls({
@@ -121,7 +143,7 @@ export default function useSceneControls() {
           label: 'Bundle Count',
           value: p.bundleCount ?? DEFAULT_BUNDLE_COUNT,
           min: 1,
-          max: 50,
+          max: MAX_BUNDLE_COUNT,
           step: 1,
         },
         strandsPerBundle: {
@@ -162,7 +184,7 @@ export default function useSceneControls() {
         framingShape: {
           label: 'Framing Shape',
           value: p.framingShape ?? DEFAULT_FRAMING_SHAPE,
-          options: { Cube: 'cube', Sphere: 'sphere' },
+          options: { Cube: 'cube', Sphere: 'sphere', None: 'none' },
         },
         boundRadius: {
           label: 'Bound Radius',
@@ -187,6 +209,13 @@ export default function useSceneControls() {
           max: 100,
           step: 1,
           render: (get) => get(FRAMING_SHAPE_PATH) === 'cube',
+        },
+        minSpread: {
+          label: 'Min Bundle Spread',
+          value: p.minSpread ?? DEFAULT_MIN_SPREAD,
+          min: 0.5,
+          max: 15,
+          step: 0.1,
         },
         growthDuration: {
           label: 'Growth Duration (s)',
@@ -246,92 +275,13 @@ export default function useSceneControls() {
       { collapsed: true }
     ),
     BundleEditor: folder(
-      {
-        editIndex: {
-          label: 'Bundle #',
-          value: 0,
-          min: 0,
-          max: 199,
-          step: 1,
-          onChange: (index) => {
-            const stored = overridesRef.current[index] || {};
-            if (!setControlsRef.current) return;
-            setControlsRef.current({
-              bundleVisible: stored.visible ?? true,
-              bundleColorOverride: stored.colorOverride ?? false,
-              bundleColor: stored.color ?? '#ff0000',
-              bundleGrowthDelay: stored.growthDelay ?? 0,
-            });
-          },
-        },
-        // Every field below writes straight into overrides[editIndex] on
-        // change — reads editIndex fresh off controlsRef (not a stale
-        // closure) each time, same ref-bootstrap pattern as the presets
-        // dropdown above.
-        bundleVisible: {
-          label: 'Visible',
-          value: true,
-          onChange: (visible) => {
-            const index = controlsRef.current?.editIndex ?? 0;
-            setOverridesRef.current((prev) => ({
-              ...prev,
-              [index]: { ...(prev[index] || {}), visible },
-            }));
-          },
-        },
-        bundleColorOverride: {
-          label: 'Color Override',
-          value: false,
-          onChange: (colorOverride) => {
-            const index = controlsRef.current?.editIndex ?? 0;
-            setOverridesRef.current((prev) => ({
-              ...prev,
-              [index]: { ...(prev[index] || {}), colorOverride },
-            }));
-          },
-        },
-        bundleColor: {
-          label: 'Bundle Color',
-          value: '#ff0000',
-          onChange: (color) => {
-            const index = controlsRef.current?.editIndex ?? 0;
-            setOverridesRef.current((prev) => ({
-              ...prev,
-              [index]: { ...(prev[index] || {}), color },
-            }));
-          },
-        },
-        bundleGrowthDelay: {
-          label: 'Growth Delay (s)',
-          value: 0,
-          min: 0,
-          max: 10,
-          step: 0.1,
-          onChange: (growthDelay) => {
-            const index = controlsRef.current?.editIndex ?? 0;
-            setOverridesRef.current((prev) => ({
-              ...prev,
-              [index]: { ...(prev[index] || {}), growthDelay },
-            }));
-          },
-        },
-        resetOverride: button(() => {
-          const c = controlsRef.current;
-          if (!c) return;
-          setOverridesRef.current((prev) => {
-            const next = { ...prev };
-            delete next[c.editIndex];
-            return next;
-          });
-          if (setControlsRef.current) {
-            setControlsRef.current({
-              bundleVisible: true,
-              bundleColorOverride: false,
-              bundleGrowthDelay: 0,
-            });
-          }
-        }),
-      },
+      buildBundleOverrideSchema({
+        presetOverrides: p.overrides,
+        sceneLabel: SCENE_LABEL,
+        setOverridesRef,
+        setControlsRef,
+        getCurrentColorHex,
+      }),
       { collapsed: true }
     ),
   }));

@@ -40,6 +40,7 @@ function Rorschach() {
         boundRadius={config.boundRadius}
         boundWidth={config.boundWidth}
         boundHeight={config.boundHeight}
+        minSpread={config.minSpread}
         palette={config.palette}
         flatten={config.flatten}
         growthDuration={config.growthDuration}

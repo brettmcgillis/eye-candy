@@ -2,7 +2,10 @@
 // CROSS_H_UNDER/CROSS_V_UNDER show both straight strands at once, crossing
 // at the tile center — the "_UNDER" strand gets a dashed gap right at the
 // crossing (weaveGapWidth) so it reads as passing under the other, like
-// knotwork. Only shown when weaveEnabled.
+// knotwork. Only shown when weaveEnabled. LANES_A/LANES_B show all four
+// corners' ring families at once (both diagonals, not one-or-the-other like
+// ARC_A/ARC_B) — the letter says which diagonal renders at full density,
+// the other at 75%. Only shown when lanesEnabled.
 export const MOTIF = {
   ARC_A: 0,
   ARC_B: 1,
@@ -10,15 +13,21 @@ export const MOTIF = {
   STRAIGHT_V: 3,
   CROSS_H_UNDER: 4,
   CROSS_V_UNDER: 5,
+  LANES_A: 6,
+  LANES_B: 7,
 };
 
 const WEAVE_CHANCE = 0.15;
+const LANES_CHANCE = 0.25;
 
 // Every equilateral-triangle corner is a valid arc center — 0-2 arc at
 // v0/v1/v2, 3-5 the matching straight chord (see utils/triangleGeometry.js).
 // 6-11 are weave crossings: any two of the triangle's three medians
 // (vertex → opposite edge's midpoint) cross at the centroid — one motif per
-// (pair, which-median-is-under) combination.
+// (pair, which-median-is-under) combination. 12-14 are LANES_V0/V1/V2: all
+// three corners' ring families at once (unlike ARC_V0/1/2's one-corner-only
+// pick), the index naming which corner renders at full density, the other
+// two at 75%. Only shown when lanesEnabled.
 export const TRI_MOTIF = {
   ARC_V0: 0,
   ARC_V1: 1,
@@ -32,10 +41,15 @@ export const TRI_MOTIF = {
   CROSS_12_UNDER2: 9,
   CROSS_20_UNDER2: 10,
   CROSS_20_UNDER0: 11,
+  LANES_V0: 12,
+  LANES_V1: 13,
+  LANES_V2: 14,
 };
 
 // Deterministic PRNG so a given `seed` always reproduces the same layout.
-function mulberry32(seed) {
+// Exported for utils/subdivision.js, which draws from the same stream to
+// pick each leaf's motif after recursively deciding tile boundaries.
+export function mulberry32(seed) {
   let a = seed >>> 0;
   return function rng() {
     a += 0x6d2b79f5;
@@ -46,7 +60,14 @@ function mulberry32(seed) {
   };
 }
 
-function pickMotif(rng, straightTileChance, weaveEnabled) {
+// `lanesEnabled` is an extra optional arg so the existing buildSquareGrid/
+// buildTriangularGrid call sites (which never pass it) are unaffected —
+// LANES is only reachable through utils/subdivision.js's multiscale
+// builders, which do pass it.
+export function pickMotif(rng, straightTileChance, weaveEnabled, lanesEnabled) {
+  if (lanesEnabled && rng() < LANES_CHANCE) {
+    return rng() < 0.5 ? MOTIF.LANES_A : MOTIF.LANES_B;
+  }
   if (weaveEnabled && rng() < WEAVE_CHANCE) {
     return rng() < 0.5 ? MOTIF.CROSS_H_UNDER : MOTIF.CROSS_V_UNDER;
   }
@@ -56,7 +77,15 @@ function pickMotif(rng, straightTileChance, weaveEnabled) {
   return rng() < 0.5 ? MOTIF.ARC_A : MOTIF.ARC_B;
 }
 
-function pickTriMotif(rng, straightTileChance, weaveEnabled) {
+export function pickTriMotif(
+  rng,
+  straightTileChance,
+  weaveEnabled,
+  lanesEnabled
+) {
+  if (lanesEnabled && rng() < LANES_CHANCE) {
+    return TRI_MOTIF.LANES_V0 + Math.floor(rng() * 3);
+  }
   if (weaveEnabled && rng() < WEAVE_CHANCE) {
     const pairIndex = Math.floor(rng() * 3);
     const underIsSecond = rng() < 0.5 ? 1 : 0;
@@ -69,7 +98,8 @@ function pickTriMotif(rng, straightTileChance, weaveEnabled) {
 // Axial hex distance — cells with distance <= hexRadius form a regular
 // hexagon in world space (the same lattice basis used for `positionsA`/
 // `positionsB` below is the standard axial-to-pixel transform for it).
-function hexDistance(i, j) {
+// Exported for utils/subdivision.js's macro-triangle placement.
+export function hexDistance(i, j) {
   return (Math.abs(i) + Math.abs(i + j) + Math.abs(j)) / 2;
 }
 
@@ -80,6 +110,7 @@ export function buildSquareGrid({
   seed,
   straightTileChance,
   weaveEnabled,
+  lanesEnabled,
 }) {
   const count = cols * rows;
   const positions = new Float32Array(count * 3);
@@ -99,7 +130,12 @@ export function buildSquareGrid({
       positions[i * 3 + 0] = originX + col * cellSize;
       positions[i * 3 + 1] = originY + row * cellSize;
       positions[i * 3 + 2] = 0;
-      motifIds[i] = pickMotif(rng, straightTileChance, weaveEnabled);
+      motifIds[i] = pickMotif(
+        rng,
+        straightTileChance,
+        weaveEnabled,
+        lanesEnabled
+      );
       zBias[i] = rng() * 2 - 1;
       i += 1;
     }
@@ -128,6 +164,7 @@ export function buildTriangularGrid({
   seed,
   straightTileChance,
   weaveEnabled,
+  lanesEnabled,
 }) {
   const s = cellSize;
   const h = (s * Math.sqrt(3)) / 2;
@@ -149,11 +186,15 @@ export function buildTriangularGrid({
 
       if (hexDistance(i + 1 / 3, j + 1 / 3) <= hexRadius) {
         positionsA.push(baseX + 0.5 * s, baseY + h / 3, 0);
-        motifIdsA.push(pickTriMotif(rng, straightTileChance, weaveEnabled));
+        motifIdsA.push(
+          pickTriMotif(rng, straightTileChance, weaveEnabled, lanesEnabled)
+        );
       }
       if (hexDistance(i + 2 / 3, j + 2 / 3) <= hexRadius) {
         positionsB.push(baseX + s, baseY + (2 * h) / 3, 0);
-        motifIdsB.push(pickTriMotif(rng, straightTileChance, weaveEnabled));
+        motifIdsB.push(
+          pickTriMotif(rng, straightTileChance, weaveEnabled, lanesEnabled)
+        );
       }
     }
   }

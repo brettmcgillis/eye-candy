@@ -12,6 +12,7 @@ import {
 import { clipAlpha, clipBorderMask } from './clipMask';
 import {
   arcSpineDistance,
+  lanesMask,
   motifMask,
   occludedMask,
   segmentDistance,
@@ -75,9 +76,45 @@ export default function buildTriangleColorNode({
     const animPhase = attribute('instanceAnimPhase');
     animPhase.sub(0.5).abs().lessThan(0.03).discard();
 
-    const mm = (d) => motifMask(d, pitchU, strokeWidthU, fillWidthU, fillModeU);
+    // Multiscale leaves vary in world size (instanceScale, 1 for a
+    // non-multiscale grid) but strokePitch/strokeWidth/etc. are UV
+    // fractions — dividing by instanceScale keeps stroke density constant
+    // in WORLD units instead of UV units, so a bigger leaf naturally shows
+    // more rings and a smaller one fewer (the actual "multiscale" look).
+    const instanceScale = attribute('instanceScale');
+    const scaledPitchU = pitchU.div(instanceScale);
+    const scaledStrokeWidthU = strokeWidthU.div(instanceScale);
+    const scaledFillWidthU = fillWidthU.div(instanceScale);
+    const scaledWeaveGapWidthU = weaveGapWidthU.div(instanceScale);
+    const scaledGridLineWidthU = gridLineWidthU.div(instanceScale);
+
+    const mm = (d) =>
+      motifMask(
+        d,
+        scaledPitchU,
+        scaledStrokeWidthU,
+        scaledFillWidthU,
+        fillModeU
+      );
     const om = (d0, d1, bias) =>
-      occludedMask(d0, d1, bias, pitchU, strokeWidthU, fillWidthU, fillModeU);
+      occludedMask(
+        d0,
+        d1,
+        bias,
+        scaledPitchU,
+        scaledStrokeWidthU,
+        scaledFillWidthU,
+        fillModeU
+      );
+    const lm = (distances, primaryFlags) =>
+      lanesMask(
+        distances,
+        primaryFlags,
+        scaledPitchU,
+        scaledStrokeWidthU,
+        scaledFillWidthU,
+        fillModeU
+      );
 
     const dArc0 = arcSpineDistance(p, v0);
     const dArc1 = arcSpineDistance(p, v1);
@@ -89,9 +126,9 @@ export default function buildTriangleColorNode({
     const dMed0 = medianDistance(p, v0, m12);
     const dMed1 = medianDistance(p, v1, m20);
     const dMed2 = medianDistance(p, v2, m01);
-    const gapped0 = gappedAtCentroid(p, dMed0, weaveGapWidthU);
-    const gapped1 = gappedAtCentroid(p, dMed1, weaveGapWidthU);
-    const gapped2 = gappedAtCentroid(p, dMed2, weaveGapWidthU);
+    const gapped0 = gappedAtCentroid(p, dMed0, scaledWeaveGapWidthU);
+    const gapped1 = gappedAtCentroid(p, dMed1, scaledWeaveGapWidthU);
+    const gapped2 = gappedAtCentroid(p, dMed2, scaledWeaveGapWidthU);
 
     // Single-arc/chord fields use the plain mask; medians are each a full
     // periodic line family spanning the whole tile, so a crossing pair is
@@ -106,6 +143,14 @@ export default function buildTriangleColorNode({
     const maskStraight1 = mm(dStraight1);
     const maskStraight2 = mm(dStraight2);
 
+    // LANES_V0/V1/V2: all three corners' ring families visible at once
+    // (unlike maskArc0/1/2's one-corner-only pick above) — the named corner
+    // at full pitch density, the other two 25% sparser.
+    const cornerDistances = [dArc0, dArc1, dArc2];
+    const maskLanesV0 = lm(cornerDistances, [true, false, false]);
+    const maskLanesV1 = lm(cornerDistances, [false, true, false]);
+    const maskLanesV2 = lm(cornerDistances, [false, false, true]);
+
     const finalMask = selectByIndex(motif, [
       maskArc0,
       maskArc1,
@@ -119,6 +164,9 @@ export default function buildTriangleColorNode({
       om(dMed1, gapped2, 0), // pair(1,2), 2 under
       om(gapped2, dMed0, 0), // pair(2,0), 2 under
       om(dMed2, gapped0, 0), // pair(2,0), 0 under
+      maskLanesV0,
+      maskLanesV1,
+      maskLanesV2,
     ]);
 
     let color = mix(bgColorU, strokeColorU, finalMask);
@@ -126,7 +174,7 @@ export default function buildTriangleColorNode({
     const dTileEdge = segmentDistance(p, v0, v1)
       .min(segmentDistance(p, v1, v2))
       .min(segmentDistance(p, v2, v0));
-    const gridLineMask = solidBandMask(dTileEdge, gridLineWidthU).mul(
+    const gridLineMask = solidBandMask(dTileEdge, scaledGridLineWidthU).mul(
       showGridLinesU
     );
     color = mix(color, gridLineColorU, gridLineMask);

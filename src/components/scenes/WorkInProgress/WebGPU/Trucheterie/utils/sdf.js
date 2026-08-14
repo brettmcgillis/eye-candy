@@ -79,6 +79,41 @@ export function occludedMask(
   return select(d0.sub(biasU).lessThan(d1), mask0, mask1);
 }
 
+// N-way generalization of occludedMask for the "lanes" motif: each entry in
+// `distances` gets its own mask at either the base `pitchU` (its
+// `primaryFlags` entry is true) or a 25%-sparser pitch (false) — reproducing
+// the multiscale reference's one-denser-corner ratio (its
+// `primaryCircles = ceil(lanes * .75)` vs `lanes`) — then the nearest
+// distance wins outright, same winner-take-all reasoning as occludedMask
+// (never union multiple full ring families into a hatch).
+export function lanesMask(
+  distances,
+  primaryFlags,
+  pitchU,
+  strokeWidthU,
+  fillWidthU,
+  fillModeU
+) {
+  const secondaryPitchU = pitchU.div(0.75);
+  const entries = distances.map((d, i) => ({
+    d,
+    mask: motifMask(
+      d,
+      primaryFlags[i] ? pitchU : secondaryPitchU,
+      strokeWidthU,
+      fillWidthU,
+      fillModeU
+    ),
+  }));
+  return entries.reduce((winner, entry) => {
+    const nearer = entry.d.lessThan(winner.d);
+    return {
+      d: select(nearer, entry.d, winner.d),
+      mask: select(nearer, entry.mask, winner.mask),
+    };
+  }).mask;
+}
+
 // Folds a list of TSL nodes into a select() chain keyed by `indexNode`
 // (0, 1, 2, ...) — avoids hand-nesting select() once per motif branch,
 // needed twice per shader (line field + solid field) and up to 6-wide for

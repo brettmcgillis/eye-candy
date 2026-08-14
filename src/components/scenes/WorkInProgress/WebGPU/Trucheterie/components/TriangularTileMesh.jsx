@@ -1,8 +1,10 @@
 import React, { memo, useEffect, useMemo } from 'react';
 
+import useResubdivisionNonce from '../hooks/useResubdivisionNonce';
 import useTileMesh from '../hooks/useTileMesh';
 import { buildTriangularGrid } from '../utils/grid';
 import { pickRandomTriMotif } from '../utils/retileState';
+import { subdivideTriangularGrid } from '../utils/subdivision';
 import {
   TRIANGLE_A,
   TRIANGLE_B,
@@ -29,10 +31,17 @@ function TriangularTileMesh({ config }) {
     gridLineColor,
     gridLineWidth,
     hexRadius,
+    lanesEnabled,
+    maxGeneration,
+    minGeneration,
+    multiscaleEnabled,
+    resubdivideEnabled,
+    resubdivideInterval,
     retileEnabled,
     retileRate,
     seed,
     showGridLines,
+    splitProbability,
     straightTileChance,
     strokeColor,
     strokePitch,
@@ -60,16 +69,47 @@ function TriangularTileMesh({ config }) {
     };
   }, [geometryA, geometryB]);
 
+  const resubdivisionNonce = useResubdivisionNonce({
+    enabled: multiscaleEnabled && resubdivideEnabled,
+    interval: resubdivideInterval,
+  });
+  const effectiveSeed = seed + resubdivisionNonce * 100000;
+
   const grid = useMemo(
     () =>
-      buildTriangularGrid({
-        cellSize,
-        hexRadius,
-        seed,
-        straightTileChance,
-        weaveEnabled,
-      }),
-    [cellSize, hexRadius, seed, straightTileChance, weaveEnabled]
+      multiscaleEnabled
+        ? subdivideTriangularGrid({
+            cellSize,
+            hexRadius,
+            lanesEnabled,
+            maxGeneration,
+            minGeneration,
+            seed: effectiveSeed,
+            splitProbability,
+            straightTileChance,
+            weaveEnabled,
+          })
+        : buildTriangularGrid({
+            cellSize,
+            hexRadius,
+            lanesEnabled,
+            seed,
+            straightTileChance,
+            weaveEnabled,
+          }),
+    [
+      cellSize,
+      effectiveSeed,
+      hexRadius,
+      lanesEnabled,
+      maxGeneration,
+      minGeneration,
+      multiscaleEnabled,
+      seed,
+      splitProbability,
+      straightTileChance,
+      weaveEnabled,
+    ]
   );
 
   const gridA = useMemo(
@@ -77,6 +117,7 @@ function TriangularTileMesh({ config }) {
       count: grid.countA,
       motifIds: grid.motifIdsA,
       positions: grid.positionsA,
+      sizes: grid.sizesA,
     }),
     [grid]
   );
@@ -85,6 +126,7 @@ function TriangularTileMesh({ config }) {
       count: grid.countB,
       motifIds: grid.motifIdsB,
       positions: grid.positionsB,
+      sizes: grid.sizesB,
     }),
     [grid]
   );
@@ -117,6 +159,7 @@ function TriangularTileMesh({ config }) {
     fillWidth,
     gridLineColor,
     gridLineWidth,
+    lanesEnabled,
     patternExtent,
     pickMotif: pickRandomTriMotif,
     retileEnabled,

@@ -7,16 +7,20 @@ import {
   DEFAULT_BOUND_HEIGHT,
   DEFAULT_BOUND_RADIUS,
   DEFAULT_BOUND_WIDTH,
+  DEFAULT_MIN_SPREAD,
   boundsScale,
   integrate,
   isBounded,
-  minSpreadFor,
   stepRK4,
 } from './odeIntegrator';
 import { hexToHsl, resolvePaletteColors, sampleGradientHsl } from './palette';
 import createRng, { combineSeed } from './rng';
 
 export const DEFAULT_FRAMING_SHAPE = 'cube';
+// Shared with the Bundle Editor's per-bundle slot generator (see
+// hooks/buildBundleOverrideSchema.js) — that schema is static (not rebuilt
+// when Bundle Count changes), so both need the same fixed ceiling.
+export const MAX_BUNDLE_COUNT = 20;
 
 // Leva-tunable defaults (see hooks/useSceneControls.js's Test folder).
 export const DEFAULT_BUNDLE_COUNT = 4;
@@ -85,9 +89,16 @@ const stepScratch = [0, 0, 0];
 // the bundle's `grownSteps` cursor from it directly, and also reuses its
 // per-point distances to size the display scale — see generateStructure —
 // rather than requiring a separate full-length pass just to measure it.
-function validateAndMeasure(coeffs, startPoints, strands, steps, freq, bounds) {
+function validateAndMeasure(
+  coeffs,
+  startPoints,
+  strands,
+  steps,
+  freq,
+  bounds,
+  minSpread
+) {
   const validationSteps = Math.min(steps, VALIDATION_STEPS_CAP);
-  const minSpread = minSpreadFor(bounds);
   let maxDist = 0;
   const endpoints = [];
   for (let s = 0; s < startPoints.length; s += 1) {
@@ -132,8 +143,15 @@ function validateAndMeasure(coeffs, startPoints, strands, steps, freq, bounds) {
 // is what turns a multi-second blocking freeze on every control change into
 // a real, incremental, never-blocking growth animation.
 function buildBundle(seed, id, options) {
-  const { strandsPerBundle, steps, startSpread, coeffRange, freq, bounds } =
-    options;
+  const {
+    strandsPerBundle,
+    steps,
+    startSpread,
+    coeffRange,
+    freq,
+    bounds,
+    minSpread,
+  } = options;
   const rng = createRng(combineSeed(seed, id));
   const originSpread = boundsScale(bounds) * ORIGIN_SPREAD_FRACTION;
 
@@ -154,25 +172,43 @@ function buildBundle(seed, id, options) {
     strands.push(new Float32Array(steps * 3), new Float32Array(steps * 3));
   }
 
-  let coeffs = findBoundedCoeffs(rng, origin, coeffRange, steps, freq, bounds);
+  let coeffs = findBoundedCoeffs(
+    rng,
+    origin,
+    coeffRange,
+    steps,
+    freq,
+    bounds,
+    minSpread
+  );
   let result = validateAndMeasure(
     coeffs,
     startPoints,
     strands,
     steps,
     freq,
-    bounds
+    bounds,
+    minSpread
   );
   let attempts = 0;
   while (!result.ok && attempts < MAX_BUNDLE_ATTEMPTS) {
-    coeffs = findBoundedCoeffs(rng, origin, coeffRange, steps, freq, bounds);
+    coeffs = findBoundedCoeffs(
+      rng,
+      origin,
+      coeffRange,
+      steps,
+      freq,
+      bounds,
+      minSpread
+    );
     result = validateAndMeasure(
       coeffs,
       startPoints,
       strands,
       steps,
       freq,
-      bounds
+      bounds,
+      minSpread
     );
     attempts += 1;
   }
@@ -274,6 +310,42 @@ export function growBundle(bundle, maxNewSteps) {
   return newStepsCount;
 }
 
+// A bundle's structural override (Bundle Editor's "Structural Override"
+// toggle) pins it to its own startSpread/coeffRange/freq/bounds, immune to
+// sweeps of the global values — same as Color Override already is to
+// monochrome/palette. Falls back to the global bundleOptions per field.
+function resolveBundleOptions(globalOptions, override) {
+  if (!override || !override.structuralOverride) return globalOptions;
+  return {
+    ...globalOptions,
+    startSpread: override.startSpread ?? globalOptions.startSpread,
+    coeffRange: override.coeffRange ?? globalOptions.coeffRange,
+    freq: override.freq ?? globalOptions.freq,
+    bounds: {
+      shape: override.framingShape ?? globalOptions.bounds.shape,
+      radius: override.boundRadius ?? globalOptions.bounds.radius,
+      width: override.boundWidth ?? globalOptions.bounds.width,
+      height: override.boundHeight ?? globalOptions.bounds.height,
+    },
+  };
+}
+
+// Identifies a bundle's structural inputs (not id/seed — those are checked
+// separately in generateStructure) well enough to tell "needs rebuilding"
+// from "identical to last time." JSON.stringify is fine here: this runs
+// once per bundle per structural-relevant control change, not per frame.
+function fingerprintBundleOptions(resolvedOptions) {
+  return JSON.stringify({
+    strandsPerBundle: resolvedOptions.strandsPerBundle,
+    steps: resolvedOptions.steps,
+    startSpread: resolvedOptions.startSpread,
+    coeffRange: resolvedOptions.coeffRange,
+    freq: resolvedOptions.freq,
+    bounds: resolvedOptions.bounds,
+    minSpread: resolvedOptions.minSpread,
+  });
+}
+
 // Generates the structural half of a beast: `bundleCount` bundles, each
 // `strandsPerBundle` mirrored stroke pairs (bilateral symmetry across X=0,
 // the classic Rorschach fold). Returns a display `scale` rather than baking
@@ -281,12 +353,18 @@ export function growBundle(bundle, maxNewSteps) {
 // ODE's own unscaled space — sized from each bundle's validation-pass
 // maxDist (an estimate from the first VALIDATION_STEPS_CAP steps, not the
 // full trajectory, since the full trajectory doesn't exist synchronously
-// anymore) rather than a full measurement pass. Depends only on
-// seed/bundleCount/strandsPerBundle/steps/startSpread/coeffRange/freq — pair
-// with computeStyles for color/visibility/growth-delay, which is cheap
-// enough to recompute on every style-only control change without ever
-// touching this.
-export function generateStructure(seed, options = {}) {
+// anymore) rather than a full measurement pass.
+//
+// `previousBundles`, when given, lets bundles survive across calls: any
+// bundle whose seed and effective structural inputs are unchanged from last
+// time is reused by reference (same coeffs, grownSteps, evolution state)
+// instead of rebuilt — otherwise every Bundle Editor structural-override
+// edit would regenerate and re-grow the *entire* beast, snapping every
+// other bundle's evolution progress back to its pristine start. Only
+// `overrides[i].structuralOverride` bundles, or ones whose global inputs
+// actually changed, get rebuilt; everything else keeps its object identity
+// (and Test.jsx relies on that identity check to know what to reset).
+export function generateStructure(seed, options = {}, previousBundles = null) {
   const {
     bundleCount = DEFAULT_BUNDLE_COUNT,
     strandsPerBundle = DEFAULT_STRANDS_PER_BUNDLE,
@@ -298,28 +376,42 @@ export function generateStructure(seed, options = {}) {
     boundRadius = DEFAULT_BOUND_RADIUS,
     boundWidth = DEFAULT_BOUND_WIDTH,
     boundHeight = DEFAULT_BOUND_HEIGHT,
+    minSpread = DEFAULT_MIN_SPREAD,
+    overrides = {},
   } = options;
 
-  const bounds = {
-    shape: framingShape,
-    radius: boundRadius,
-    width: boundWidth,
-    height: boundHeight,
-  };
-
-  const bundleOptions = {
+  const globalBundleOptions = {
     strandsPerBundle,
     steps,
     startSpread,
     coeffRange,
     freq,
-    bounds,
+    bounds: {
+      shape: framingShape,
+      radius: boundRadius,
+      width: boundWidth,
+      height: boundHeight,
+    },
+    minSpread,
   };
 
   const bundles = [];
   let maxDist = 0;
   for (let i = 0; i < bundleCount; i += 1) {
-    const bundle = buildBundle(seed, i, bundleOptions);
+    const resolvedOptions = resolveBundleOptions(
+      globalBundleOptions,
+      overrides[i]
+    );
+    const fingerprint = fingerprintBundleOptions(resolvedOptions);
+    const prev = previousBundles && previousBundles[i];
+
+    const bundle =
+      prev && prev.seed === seed && prev.structuralFingerprint === fingerprint
+        ? prev
+        : buildBundle(seed, i, resolvedOptions);
+    bundle.seed = seed;
+    bundle.structuralFingerprint = fingerprint;
+
     if (bundle.maxDist > maxDist) maxDist = bundle.maxDist;
     bundles.push(bundle);
   }
@@ -382,6 +474,8 @@ export function computeStyles(seed, bundleCount, options = {}) {
       ),
       visible: override.visible !== false,
       growthDelay: override.growthDelay || 0,
+      emissive: override.emissive || false,
+      emissiveIntensity: override.emissiveIntensity || 2,
     });
   }
   return styles;

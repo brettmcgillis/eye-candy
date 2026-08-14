@@ -37,6 +37,7 @@ export default function useTileMesh({
   gridData,
   gridLineColor,
   gridLineWidth,
+  lanesEnabled = false,
   layerBiasAmount = 0,
   patternExtent,
   pickMotif,
@@ -174,6 +175,23 @@ export default function useTileMesh({
       }
     }
 
+    // World-size multiplier relative to `cellSize`, read by motifShader.js/
+    // triangularMotifs.js to keep stroke pitch constant in world units. A
+    // non-multiscale grid has no `sizes` array — every instance is 1 (its
+    // full cellSize), matching today's uniform-grid behavior exactly.
+    const sizesSource =
+      gridData.sizes ?? new Float32Array(gridData.count).fill(1);
+    const existingScale = mesh.geometry.getAttribute('instanceScale');
+    if (existingScale && existingScale.array.length === sizesSource.length) {
+      existingScale.array.set(sizesSource);
+      existingScale.needsUpdate = true;
+    } else {
+      mesh.geometry.setAttribute(
+        'instanceScale',
+        new THREE.InstancedBufferAttribute(sizesSource, 1, false)
+      );
+    }
+
     // Retile phase (0-1, written per-frame by useRetileScheduler while a
     // tile is flipping) — read by the shader to discard the edge-on/
     // zero-scale instant at phase 0.5 outright, rather than trust thin/
@@ -199,7 +217,9 @@ export default function useTileMesh({
         gridData.positions[i * 3 + 1],
         gridData.positions[i * 3 + 2]
       );
-      dummy.scale.setScalar(cellSize);
+      dummy.scale.setScalar(
+        cellSize * (gridData.sizes ? gridData.sizes[i] : 1)
+      );
       dummy.updateMatrix();
       mesh.setMatrixAt(i, dummy.matrix);
     }
@@ -213,6 +233,7 @@ export default function useTileMesh({
     animStagger,
     cellSize,
     grid: gridData,
+    lanesEnabled,
     meshRef,
     pickMotif,
     retileEnabled,

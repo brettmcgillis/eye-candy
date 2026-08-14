@@ -13,6 +13,7 @@ import {
 import { clipAlpha, clipBorderMask } from './clipMask';
 import {
   arcSpineDistance,
+  lanesMask,
   motifMask,
   occludedMask,
   selectByIndex,
@@ -84,9 +85,45 @@ export default function buildTruchetColorNode({
     const animPhase = attribute('instanceAnimPhase');
     animPhase.sub(0.5).abs().lessThan(0.03).discard();
 
-    const mm = (d) => motifMask(d, pitchU, strokeWidthU, fillWidthU, fillModeU);
+    // Multiscale leaves vary in world size (instanceScale, 1 for a
+    // non-multiscale grid) but strokePitch/strokeWidth/etc. are UV
+    // fractions — dividing by instanceScale keeps stroke density constant
+    // in WORLD units instead of UV units, so a bigger leaf naturally shows
+    // more rings and a smaller one fewer (the actual "multiscale" look).
+    const instanceScale = attribute('instanceScale');
+    const scaledPitchU = pitchU.div(instanceScale);
+    const scaledStrokeWidthU = strokeWidthU.div(instanceScale);
+    const scaledFillWidthU = fillWidthU.div(instanceScale);
+    const scaledWeaveGapWidthU = weaveGapWidthU.div(instanceScale);
+    const scaledGridLineWidthU = gridLineWidthU.div(instanceScale);
+
+    const mm = (d) =>
+      motifMask(
+        d,
+        scaledPitchU,
+        scaledStrokeWidthU,
+        scaledFillWidthU,
+        fillModeU
+      );
     const om = (d0, d1, bias) =>
-      occludedMask(d0, d1, bias, pitchU, strokeWidthU, fillWidthU, fillModeU);
+      occludedMask(
+        d0,
+        d1,
+        bias,
+        scaledPitchU,
+        scaledStrokeWidthU,
+        scaledFillWidthU,
+        fillModeU
+      );
+    const lm = (distances, primaryFlags) =>
+      lanesMask(
+        distances,
+        primaryFlags,
+        scaledPitchU,
+        scaledStrokeWidthU,
+        scaledFillWidthU,
+        fillModeU
+      );
 
     const dArcA0 = arcSpineDistance(p, ARC_A_CORNERS[0]);
     const dArcA1 = arcSpineDistance(p, ARC_A_CORNERS[1]);
@@ -97,12 +134,12 @@ export default function buildTruchetColorNode({
     const dStraightHGapped = gappedStraightDistance(
       dStraightH,
       p.x,
-      weaveGapWidthU
+      scaledWeaveGapWidthU
     );
     const dStraightVGapped = gappedStraightDistance(
       dStraightV,
       p.y,
-      weaveGapWidthU
+      scaledWeaveGapWidthU
     );
 
     // Opposite corners' ring families are occluded, not unioned — whichever
@@ -124,6 +161,13 @@ export default function buildTruchetColorNode({
     const maskCrossHUnder = om(dStraightHGapped, dStraightV, 0);
     const maskCrossVUnder = om(dStraightH, dStraightVGapped, 0);
 
+    // LANES_A/LANES_B: all four corners' ring families visible at once
+    // (both diagonals, not the either/or ARC_A/ARC_B pick above) — one
+    // diagonal at full pitch density, the other 25% sparser.
+    const cornerDistances = [dArcA0, dArcA1, dArcB0, dArcB1];
+    const maskLanesA = lm(cornerDistances, [true, true, false, false]);
+    const maskLanesB = lm(cornerDistances, [false, false, true, true]);
+
     const finalMask = selectByIndex(motif, [
       maskArcA,
       maskArcB,
@@ -131,13 +175,16 @@ export default function buildTruchetColorNode({
       maskStraightV,
       maskCrossHUnder,
       maskCrossVUnder,
+      maskLanesA,
+      maskLanesB,
     ]);
 
     let color = mix(bgColorU, strokeColorU, finalMask);
 
-    const gridLineMask = solidBandMask(tileEdgeDistance(p), gridLineWidthU).mul(
-      showGridLinesU
-    );
+    const gridLineMask = solidBandMask(
+      tileEdgeDistance(p),
+      scaledGridLineWidthU
+    ).mul(showGridLinesU);
     color = mix(color, gridLineColorU, gridLineMask);
 
     const clipParams = {

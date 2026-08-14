@@ -9,10 +9,16 @@ import {
 } from '../../../../../../modules/cameraRig';
 import { DEFAULT_PRESET, PRESETS, getPresetControls } from '../presets/presets';
 import CAMERA from '../utils/camera';
+import {
+  DEFAULT_BOUND_HEIGHT,
+  DEFAULT_BOUND_RADIUS,
+  DEFAULT_BOUND_WIDTH,
+} from '../utils/odeIntegrator';
 import { PALETTE_NAMES } from '../utils/palette';
 import {
   DEFAULT_BUNDLE_COUNT,
   DEFAULT_COEFF_RANGE,
+  DEFAULT_FRAMING_SHAPE,
   DEFAULT_FREQ,
   DEFAULT_START_SPREAD,
   DEFAULT_STEPS,
@@ -21,6 +27,7 @@ import {
 
 const SCENE_LABEL = 'Rorschach';
 const CAMERA_FOLDER_PATH = `${SCENE_LABEL}.Camera`;
+const FRAMING_SHAPE_PATH = `${SCENE_LABEL}.Test.framingShape`;
 
 // Only Lines mode exists so far (Points/Ink land in later phases) — no
 // `mode` toggle control yet, no Lighting folder (unlit line material, so
@@ -152,6 +159,35 @@ export default function useSceneControls() {
           max: 2,
           step: 0.05,
         },
+        framingShape: {
+          label: 'Framing Shape',
+          value: p.framingShape ?? DEFAULT_FRAMING_SHAPE,
+          options: { Cube: 'cube', Sphere: 'sphere' },
+        },
+        boundRadius: {
+          label: 'Bound Radius',
+          value: p.boundRadius ?? DEFAULT_BOUND_RADIUS,
+          min: 5,
+          max: 100,
+          step: 1,
+          render: (get) => get(FRAMING_SHAPE_PATH) === 'sphere',
+        },
+        boundWidth: {
+          label: 'Bound Width',
+          value: p.boundWidth ?? DEFAULT_BOUND_WIDTH,
+          min: 5,
+          max: 100,
+          step: 1,
+          render: (get) => get(FRAMING_SHAPE_PATH) === 'cube',
+        },
+        boundHeight: {
+          label: 'Bound Height',
+          value: p.boundHeight ?? DEFAULT_BOUND_HEIGHT,
+          min: 5,
+          max: 100,
+          step: 1,
+          render: (get) => get(FRAMING_SHAPE_PATH) === 'cube',
+        },
         growthDuration: {
           label: 'Growth Duration (s)',
           value: p.growthDuration ?? 4,
@@ -201,6 +237,10 @@ export default function useSceneControls() {
         backgroundColor: {
           label: 'Background Color',
           value: p.backgroundColor ?? '#f4efe4',
+        },
+        showOverlay: {
+          label: 'Show Overlay',
+          value: p.showOverlay ?? true,
         },
       },
       { collapsed: true }

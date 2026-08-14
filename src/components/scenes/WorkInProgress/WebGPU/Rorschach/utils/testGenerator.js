@@ -1,17 +1,22 @@
 /* eslint-disable no-param-reassign */
-// Writes into caller-owned buffers throughout (mirrorInto, reintegrateBundle)
-// so evolution ticks never reallocate trajectory data — same pattern as
+// Writes into caller-owned buffers throughout (mirrorInto) so evolution
+// ticks never reallocate trajectory data — same pattern as
 // utils/odeIntegrator.js.
 import findBoundedCoeffs from './formulaBuilder';
 import {
-  BOUND_THRESHOLD,
-  MIN_SPREAD,
+  DEFAULT_BOUND_HEIGHT,
+  DEFAULT_BOUND_RADIUS,
+  DEFAULT_BOUND_WIDTH,
+  boundsScale,
   integrate,
   isBounded,
+  minSpreadFor,
   stepRK4,
 } from './odeIntegrator';
 import { hexToHsl, resolvePaletteColors, sampleGradientHsl } from './palette';
 import createRng, { combineSeed } from './rng';
+
+export const DEFAULT_FRAMING_SHAPE = 'cube';
 
 // Leva-tunable defaults (see hooks/useSceneControls.js's Test folder).
 export const DEFAULT_BUNDLE_COUNT = 4;
@@ -30,7 +35,11 @@ export const DEFAULT_COEFF_RANGE = 1.6;
 export const DEFAULT_FREQ = 0.6;
 
 const DT = 0.02;
-const ORIGIN_SPREAD = [3, 2, 2];
+// Fraction of the bounds' own scale (see odeIntegrator.js's boundsScale) that
+// bundle origins scatter within — proportional rather than a fixed [3,2,2]
+// box so origins stay well inside whatever radius/width/height the user
+// picks instead of risking starting outside a small custom bound.
+const ORIGIN_SPREAD_FRACTION = 0.06;
 const TARGET_RADIUS = 7;
 // The trig basis is bounded by construction, so in practice a candidate
 // either passes on the first attempt or is a rare edge case — measured
@@ -64,26 +73,6 @@ function mirrorInto(points, out) {
 // Reused across every growBundle call — no per-step allocation.
 const stepScratch = [0, 0, 0];
 
-// Re-integrates a bundle's strands from its (fixed) start points using its
-// current coefficients, writing into the bundle's existing Float32Arrays —
-// used both for the initial build and every evolution tick, so evolution
-// never reallocates trajectory buffers. `bundle.steps`/`bundle.freq` travel
-// with the bundle rather than module constants, since both are per-generation
-// (Leva-tunable) settings.
-export function reintegrateBundle(bundle) {
-  bundle.startPoints.forEach((start, s) => {
-    integrate(
-      bundle.coeffs,
-      start,
-      bundle.steps,
-      DT,
-      bundle.freq,
-      bundle.strands[s * 2]
-    );
-    mirrorInto(bundle.strands[s * 2], bundle.strands[s * 2 + 1]);
-  });
-}
-
 // formulaBuilder's findBoundedCoeffs only checks a single probe point (the
 // bundle's origin) — cheap, but a real strand seeded startSpread away can
 // still escape even when the origin trajectory doesn't (these are chaotic
@@ -96,15 +85,24 @@ export function reintegrateBundle(bundle) {
 // the bundle's `grownSteps` cursor from it directly, and also reuses its
 // per-point distances to size the display scale — see generateStructure —
 // rather than requiring a separate full-length pass just to measure it.
-function validateAndMeasure(coeffs, startPoints, strands, steps, freq) {
+function validateAndMeasure(coeffs, startPoints, strands, steps, freq, bounds) {
   const validationSteps = Math.min(steps, VALIDATION_STEPS_CAP);
+  const minSpread = minSpreadFor(bounds);
   let maxDist = 0;
   const endpoints = [];
   for (let s = 0; s < startPoints.length; s += 1) {
     const strand = strands[s * 2];
-    integrate(coeffs, startPoints[s], validationSteps, DT, freq, strand);
+    integrate(
+      coeffs,
+      startPoints[s],
+      validationSteps,
+      DT,
+      freq,
+      bounds,
+      strand
+    );
     const view = strand.subarray(0, validationSteps * 3);
-    if (!isBounded(view, BOUND_THRESHOLD, MIN_SPREAD)) {
+    if (!isBounded(view, bounds, minSpread)) {
       return { ok: false, maxDist: 0, validationSteps, endpoints: [] };
     }
     for (let i = 0; i < view.length; i += 3) {
@@ -134,13 +132,15 @@ function validateAndMeasure(coeffs, startPoints, strands, steps, freq) {
 // is what turns a multi-second blocking freeze on every control change into
 // a real, incremental, never-blocking growth animation.
 function buildBundle(seed, id, options) {
-  const { strandsPerBundle, steps, startSpread, coeffRange, freq } = options;
+  const { strandsPerBundle, steps, startSpread, coeffRange, freq, bounds } =
+    options;
   const rng = createRng(combineSeed(seed, id));
+  const originSpread = boundsScale(bounds) * ORIGIN_SPREAD_FRACTION;
 
   const origin = [
-    (rng() * 2 - 1) * ORIGIN_SPREAD[0],
-    (rng() * 2 - 1) * ORIGIN_SPREAD[1],
-    (rng() * 2 - 1) * ORIGIN_SPREAD[2],
+    (rng() * 2 - 1) * originSpread,
+    (rng() * 2 - 1) * originSpread,
+    (rng() * 2 - 1) * originSpread,
   ];
 
   const startPoints = [];
@@ -154,12 +154,26 @@ function buildBundle(seed, id, options) {
     strands.push(new Float32Array(steps * 3), new Float32Array(steps * 3));
   }
 
-  let coeffs = findBoundedCoeffs(rng, origin, coeffRange, steps, freq);
-  let result = validateAndMeasure(coeffs, startPoints, strands, steps, freq);
+  let coeffs = findBoundedCoeffs(rng, origin, coeffRange, steps, freq, bounds);
+  let result = validateAndMeasure(
+    coeffs,
+    startPoints,
+    strands,
+    steps,
+    freq,
+    bounds
+  );
   let attempts = 0;
   while (!result.ok && attempts < MAX_BUNDLE_ATTEMPTS) {
-    coeffs = findBoundedCoeffs(rng, origin, coeffRange, steps, freq);
-    result = validateAndMeasure(coeffs, startPoints, strands, steps, freq);
+    coeffs = findBoundedCoeffs(rng, origin, coeffRange, steps, freq, bounds);
+    result = validateAndMeasure(
+      coeffs,
+      startPoints,
+      strands,
+      steps,
+      freq,
+      bounds
+    );
     attempts += 1;
   }
 
@@ -190,6 +204,7 @@ function buildBundle(seed, id, options) {
     strands,
     steps,
     freq,
+    bounds,
     grownSteps: result.validationSteps,
     // Full float64 stepping state per strand, carried forward by growBundle
     // independently of the (float32) render buffer — see growBundle's own
@@ -229,7 +244,16 @@ export function growBundle(bundle, maxNewSteps) {
     let z = current[2];
 
     for (let i = bundle.grownSteps; i < targetStep; i += 1) {
-      stepRK4(bundle.coeffs, x, y, z, DT, bundle.freq, stepScratch);
+      stepRK4(
+        bundle.coeffs,
+        x,
+        y,
+        z,
+        DT,
+        bundle.freq,
+        bundle.bounds,
+        stepScratch
+      );
       [x, y, z] = stepScratch;
 
       const o = i * 3;
@@ -270,7 +294,18 @@ export function generateStructure(seed, options = {}) {
     startSpread = DEFAULT_START_SPREAD,
     coeffRange = DEFAULT_COEFF_RANGE,
     freq = DEFAULT_FREQ,
+    framingShape = DEFAULT_FRAMING_SHAPE,
+    boundRadius = DEFAULT_BOUND_RADIUS,
+    boundWidth = DEFAULT_BOUND_WIDTH,
+    boundHeight = DEFAULT_BOUND_HEIGHT,
   } = options;
+
+  const bounds = {
+    shape: framingShape,
+    radius: boundRadius,
+    width: boundWidth,
+    height: boundHeight,
+  };
 
   const bundleOptions = {
     strandsPerBundle,
@@ -278,6 +313,7 @@ export function generateStructure(seed, options = {}) {
     startSpread,
     coeffRange,
     freq,
+    bounds,
   };
 
   const bundles = [];

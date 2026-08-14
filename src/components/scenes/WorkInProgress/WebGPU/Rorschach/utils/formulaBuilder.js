@@ -1,9 +1,8 @@
 import {
-  BOUND_THRESHOLD,
-  MIN_SPREAD,
   TERM_COUNT,
   integrate,
   isBounded,
+  minSpreadFor,
 } from './odeIntegrator';
 
 // A cheap single-point pre-filter, not the authoritative check — that's
@@ -57,7 +56,8 @@ export default function findBoundedCoeffs(
   probeStart,
   coeffRange,
   steps,
-  freq
+  freq,
+  bounds
 ) {
   const probeSteps = Math.min(steps, PROBE_STEPS_CAP);
   // probeOut is a fixed-capacity buffer reused across every call; when
@@ -65,10 +65,19 @@ export default function findBoundedCoeffs(
   // isBounded must be scoped to that prefix or it'll also see stale trailing
   // data left over from a previous bundle's (possibly larger) probe.
   const probeView = probeOut.subarray(0, probeSteps * 3);
+  const minSpread = minSpreadFor(bounds);
   let candidate = randomCoeffs(rng, coeffRange);
   for (let attempt = 0; attempt < MAX_ATTEMPTS; attempt += 1) {
-    integrate(candidate, probeStart, probeSteps, PROBE_DT, freq, probeOut);
-    if (isBounded(probeView, BOUND_THRESHOLD, MIN_SPREAD)) {
+    integrate(
+      candidate,
+      probeStart,
+      probeSteps,
+      PROBE_DT,
+      freq,
+      bounds,
+      probeOut
+    );
+    if (isBounded(probeView, bounds, minSpread)) {
       return candidate;
     }
     candidate = randomCoeffs(rng, coeffRange);

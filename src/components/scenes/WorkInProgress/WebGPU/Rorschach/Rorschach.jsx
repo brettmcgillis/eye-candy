@@ -36,6 +36,10 @@ function Rorschach() {
         startSpread={config.startSpread}
         coeffRange={config.coeffRange}
         freq={config.freq}
+        framingShape={config.framingShape}
+        boundRadius={config.boundRadius}
+        boundWidth={config.boundWidth}
+        boundHeight={config.boundHeight}
         palette={config.palette}
         flatten={config.flatten}
         growthDuration={config.growthDuration}
@@ -47,7 +51,7 @@ function Rorschach() {
         inkColor={config.inkColor}
         overrides={config.overrides}
       />
-      <ButtonOverlay onRegenerate={config.regenerate} />
+      {config.showOverlay && <ButtonOverlay onRegenerate={config.regenerate} />}
     </>
   );
 }

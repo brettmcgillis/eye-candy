@@ -33,6 +33,10 @@ function Test({
   startSpread,
   coeffRange,
   freq,
+  framingShape,
+  boundRadius,
+  boundWidth,
+  boundHeight,
   palette,
   flatten,
   growthDuration,
@@ -53,8 +57,24 @@ function Test({
         startSpread,
         coeffRange,
         freq,
+        framingShape,
+        boundRadius,
+        boundWidth,
+        boundHeight,
       }),
-    [seed, bundleCount, strandsPerBundle, steps, startSpread, coeffRange, freq]
+    [
+      seed,
+      bundleCount,
+      strandsPerBundle,
+      steps,
+      startSpread,
+      coeffRange,
+      freq,
+      framingShape,
+      boundRadius,
+      boundWidth,
+      boundHeight,
+    ]
   );
 
   const styles = useMemo(

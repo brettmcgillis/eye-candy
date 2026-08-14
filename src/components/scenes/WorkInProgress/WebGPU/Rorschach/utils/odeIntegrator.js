@@ -15,12 +15,40 @@
 // nullHashPixel's 2D dx/dt,dy/dt formula builder (see docs/scene-conventions.md
 // context in this scene's todo.md).
 export const TERM_COUNT = 10;
-export const BOUND_THRESHOLD = 40;
-// Relative to BOUND_THRESHOLD, not absolute — the old flat 1.5 let through
-// candidates whose validation-pass probe still measured some spread even
-// though their settled orbit was much smaller, reading as a bundle
+export const DEFAULT_BOUND_RADIUS = 40;
+export const DEFAULT_BOUND_WIDTH = 40;
+export const DEFAULT_BOUND_HEIGHT = 40;
+// Relative to the bounds' own scale, not absolute — a flat minSpread let
+// through candidates whose validation-pass probe still measured some spread
+// even though their settled orbit was much smaller, reading as a bundle
 // "collapsing to nothing" next to bigger siblings.
-export const MIN_SPREAD = BOUND_THRESHOLD * 0.2;
+const MIN_SPREAD_FRACTION = 0.2;
+
+// `shape: 'cube' | 'sphere'`. Cube uses width for X and Z, height for Y —
+// no separate depth control (Leva exposes radius/height/width, not a third
+// axis). Sphere uses radius for all three, centered on the origin, same as
+// cube's per-axis bounds are centered on the origin.
+export function boundsScale(bounds) {
+  return bounds.shape === 'sphere'
+    ? bounds.radius
+    : Math.min(bounds.width, bounds.height);
+}
+
+export function minSpreadFor(bounds) {
+  return boundsScale(bounds) * MIN_SPREAD_FRACTION;
+}
+
+function withinBounds(x, y, z, bounds) {
+  if (bounds.shape === 'sphere') {
+    const r = bounds.radius;
+    return x * x + y * y + z * z < r * r;
+  }
+  return (
+    Math.abs(x) < bounds.width &&
+    Math.abs(y) < bounds.height &&
+    Math.abs(z) < bounds.width
+  );
+}
 
 // Flat inline sum rather than looping over an array of per-term closures —
 // this runs on the order of tens of millions of times per test generation at
@@ -61,19 +89,15 @@ function derivative(coeffs, x, y, z, freq, out) {
 }
 
 // One RK4 step from (x,y,z). Writes the new position into `out` (a 3-element
-// array/Float32Array, caller-owned). Freezes at the input position — rather
-// than trust that never happens — the moment the step would leave the same
-// BOUND_THRESHOLD cube isBounded() rejects candidates against: `out` may be
-// a Float32Array, so the guard can't be plain Number.isFinite() — quadratic
-// ODEs (and this trig basis, mid-evolution-drift) can still blow up in
-// finite time, and a value can be a perfectly finite float64 (e.g. 1e40)
-// that still overflows to Infinity the instant it's written into a float32
-// slot, silently NaN-ing the GPU buffer even though the finiteness check
-// upstream passed. Freezing at BOUND_THRESHOLD itself (rather than some far
-// looser safety limit) also keeps an escaped strand from dragging the whole
-// test's display scale toward zero (testGenerator.js sizes the test off the
-// single farthest point across every strand).
-export function stepRK4(coeffs, x, y, z, dt, freq, out) {
+// array/Float32Array, caller-owned). Freezes at the input position the
+// moment the step would leave `bounds` or produce a non-finite value: `out`
+// may be a Float32Array, so the guard can't be plain Number.isFinite() — a
+// value can be a perfectly finite float64 that still overflows to Infinity
+// the instant it's written into a float32 slot. Freezing at the bound itself
+// (rather than a looser safety limit) also keeps an escaped strand from
+// dragging the whole test's display scale toward zero (testGenerator.js
+// sizes the test off the single farthest point across every strand).
+export function stepRK4(coeffs, x, y, z, dt, freq, bounds, out) {
   derivative(coeffs, x, y, z, freq, k1);
   derivative(
     coeffs,
@@ -101,9 +125,7 @@ export function stepRK4(coeffs, x, y, z, dt, freq, out) {
     Number.isFinite(nx) &&
     Number.isFinite(ny) &&
     Number.isFinite(nz) &&
-    Math.abs(nx) < BOUND_THRESHOLD &&
-    Math.abs(ny) < BOUND_THRESHOLD &&
-    Math.abs(nz) < BOUND_THRESHOLD
+    withinBounds(nx, ny, nz, bounds)
   ) {
     out[0] = nx;
     out[1] = ny;
@@ -126,7 +148,7 @@ const stepScratch = [0, 0, 0];
 // testGenerator.js's incremental grower calls stepRK4 directly instead —
 // this one-shot form stays in use for evolution, which still wants a full
 // from-scratch recompute each tick after coefficients drift.
-export function integrate(coeffs, start, steps, dt, freq, out) {
+export function integrate(coeffs, start, steps, dt, freq, bounds, out) {
   let x = start[0];
   let y = start[1];
   let z = start[2];
@@ -135,7 +157,7 @@ export function integrate(coeffs, start, steps, dt, freq, out) {
   out[2] = z;
 
   for (let i = 1; i < steps; i += 1) {
-    stepRK4(coeffs, x, y, z, dt, freq, stepScratch);
+    stepRK4(coeffs, x, y, z, dt, freq, bounds, stepScratch);
     [x, y, z] = stepScratch;
 
     const o = i * 3;
@@ -147,11 +169,11 @@ export function integrate(coeffs, start, steps, dt, freq, out) {
   return out;
 }
 
-// Rejects a candidate field if it diverges (NaN/Infinity or leaves a cube of
-// side 2*boundThreshold) or collapses to a near-fixed point (bounding-box
-// diagonal below minSpread) — both are the overwhelmingly common outcome of
-// purely random coefficients.
-export function isBounded(points, boundThreshold, minSpread) {
+// Rejects a candidate field if it diverges (NaN/Infinity or leaves `bounds`)
+// or collapses to a near-fixed point (bounding-box diagonal below
+// minSpread) — both are the overwhelmingly common outcome of purely random
+// coefficients.
+export function isBounded(points, bounds, minSpread) {
   let minX = Infinity;
   let minY = Infinity;
   let minZ = Infinity;
@@ -166,11 +188,7 @@ export function isBounded(points, boundThreshold, minSpread) {
     if (!Number.isFinite(x) || !Number.isFinite(y) || !Number.isFinite(z)) {
       return false;
     }
-    if (
-      Math.abs(x) > boundThreshold ||
-      Math.abs(y) > boundThreshold ||
-      Math.abs(z) > boundThreshold
-    ) {
+    if (!withinBounds(x, y, z, bounds)) {
       return false;
     }
     if (x < minX) minX = x;

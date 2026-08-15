@@ -49,6 +49,7 @@ function Rorschach() {
         flattenAxis={config.flattenAxis}
         growthDuration={config.growthDuration}
         continuousMode={config.continuousMode}
+        continuousModeDelay={config.continuousModeDelay}
         onGrowthComplete={config.regenerate}
         evolutionEnabled={config.evolutionEnabled}
         evolutionSpeed={config.evolutionSpeed}

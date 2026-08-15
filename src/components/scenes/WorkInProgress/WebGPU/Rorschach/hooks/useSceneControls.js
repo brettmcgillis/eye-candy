@@ -33,7 +33,8 @@ import buildBundleOverrideSchema, {
 
 const SCENE_LABEL = 'Rorschach';
 const CAMERA_FOLDER_PATH = `${SCENE_LABEL}.Camera`;
-const FRAMING_SHAPE_PATH = `${SCENE_LABEL}.Test.framingShape`;
+const FRAMING_SHAPE_PATH = `${SCENE_LABEL}.Structure.framingShape`;
+const CONTINUOUS_MODE_PATH = `${SCENE_LABEL}.Growth.continuousMode`;
 
 // Only Lines mode exists so far (Points/Ink land in later phases) — no
 // `mode` toggle control yet, no Lighting folder (unlit line material, so
@@ -53,7 +54,7 @@ export default function useSceneControls() {
   // stale toggle for an override that isn't actually active), and the
   // `useState(() => ...)` lazy initializer wires it in on cold mount —
   // both needed, same as the `p.xxx ?? default` seeding every other
-  // Test-folder control already does for the same reason.
+  // control already does for the same reason.
   const setOverridesRef = useRef(null);
   const overridesRef = useRef({});
   const controlsRef = useRef(null);
@@ -109,7 +110,7 @@ export default function useSceneControls() {
     presets: PRESETS,
   });
 
-  // Seeds the Test folder's Leva schema `value:`s from the active preset on
+  // Seeds every folder's Leva schema `value:`s from the active preset on
   // first mount — same reasoning as CameraRig (docs/scene-conventions.md
   // §10): without this, the schema always shows DEFAULT_* / hardcoded values
   // until "reset" is clicked, even when a non-default preset is selected.
@@ -130,7 +131,7 @@ export default function useSceneControls() {
   const [controls, setControls] = useControls(SCENE_LABEL, () => ({
     Presets: presetsFolder,
     Camera: folder(cameraControls, { collapsed: true }),
-    Test: folder(
+    Structure: folder(
       {
         seed: {
           label: 'Seed',
@@ -217,6 +218,11 @@ export default function useSceneControls() {
           max: 15,
           step: 0.1,
         },
+      },
+      { collapsed: true }
+    ),
+    Growth: folder(
+      {
         growthDuration: {
           label: 'Growth Duration (s)',
           value: p.growthDuration ?? 4,
@@ -228,6 +234,19 @@ export default function useSceneControls() {
           label: 'Continuous Mode',
           value: p.continuousMode ?? false,
         },
+        continuousModeDelay: {
+          label: 'Continuous Mode Delay (s)',
+          value: p.continuousModeDelay ?? 2,
+          min: 0,
+          max: 30,
+          step: 0.5,
+          render: (get) => get(CONTINUOUS_MODE_PATH),
+        },
+      },
+      { collapsed: true }
+    ),
+    Evolution: folder(
+      {
         evolutionEnabled: {
           label: 'Evolution Enabled',
           value: p.evolutionEnabled ?? false,
@@ -247,6 +266,11 @@ export default function useSceneControls() {
           label: 'Trail Fade',
           value: p.trailFade ?? true,
         },
+      },
+      { collapsed: true }
+    ),
+    Style: folder(
+      {
         monochrome: {
           label: 'Monochrome Ink',
           value: p.monochrome ?? true,
@@ -272,6 +296,11 @@ export default function useSceneControls() {
           value: p.flattenAxis ?? 'z',
           options: { Z: 'z', Y: 'y' },
         },
+      },
+      { collapsed: true }
+    ),
+    Scene: folder(
+      {
         backgroundColor: {
           label: 'Background Color',
           value: p.backgroundColor ?? '#f4efe4',

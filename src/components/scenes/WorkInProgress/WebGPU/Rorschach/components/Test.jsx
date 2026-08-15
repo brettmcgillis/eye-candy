@@ -22,6 +22,15 @@ import TestStrokes from './TestStrokes';
 const GLOBAL_STRAND_STEP_BUDGET_PER_FRAME = 1800;
 // Steps/second the tip advects at evolutionSpeed = 1. Tunable to taste.
 const EVOLUTION_ADVECT_RATE = 25;
+// generateStructure's ODE search runs synchronously in a render-phase memo
+// (see below) and can stall the main thread for a frame or more, especially
+// right after a Continuous Mode reroll. Without this clamp, the first frame
+// back gets an inflated `delta`, and every rate*delta pacing calc below
+// (growth reveal, evolution advect) reads it as "a lot of time passed" and
+// jumps forward in one big step — a visible speed-up right at the moment a
+// Test starts, followed by normal pacing once delta recovers. Clamping caps
+// that jump at what a single frame would cover at ~20fps.
+const MAX_FRAME_DELTA = 1 / 20;
 
 function extendPreservingExisting(ref, length, defaultValue) {
   while (ref.current.length < length) ref.current.push(defaultValue);
@@ -59,6 +68,7 @@ function Test({
   flattenAxis,
   growthDuration,
   continuousMode,
+  continuousModeDelay,
   onGrowthComplete,
   evolutionEnabled,
   evolutionSpeed,
@@ -151,9 +161,12 @@ function Test({
   // animates in too instead of popping in fully-formed. A bundle is done
   // growing once this reaches bundle.steps.
   const revealedStepsRef = useRef([]);
-  // Edge-triggers onGrowthComplete once per completed Test rather than every
-  // frame all bundles happen to already be fully grown.
-  const allGrownRef = useRef(false);
+  // Continuous Mode's hold-before-reroll timer: accumulates once all
+  // bundles finish growing, fires onGrowthComplete once continuousModeDelay
+  // is reached, then latches via continuousTriggeredRef so it doesn't fire
+  // again every frame the Test then sits fully-grown waiting to be replaced.
+  const continuousHoldRef = useRef(0);
+  const continuousTriggeredRef = useRef(false);
 
   // Resets only the bundles that actually regenerated this render (object
   // identity changed from last time) — reused bundles keep growing/evolving
@@ -203,7 +216,9 @@ function Test({
     });
   }, [structure, styles]);
 
-  useFrame((_, delta) => {
+  useFrame((_, rawDelta) => {
+    const delta = Math.min(rawDelta, MAX_FRAME_DELTA);
+
     // Split the shared budget across every bundle with work this frame,
     // whichever phase each is in — fixed iteration order otherwise lets
     // early bundles hog it while later ones stall.
@@ -227,10 +242,19 @@ function Test({
     });
 
     if (continuousMode) {
-      if (allBundlesGrown && !allGrownRef.current) {
-        onGrowthComplete?.();
+      if (allBundlesGrown) {
+        continuousHoldRef.current += delta;
+        if (
+          !continuousTriggeredRef.current &&
+          continuousHoldRef.current >= continuousModeDelay
+        ) {
+          continuousTriggeredRef.current = true;
+          onGrowthComplete?.();
+        }
+      } else {
+        continuousHoldRef.current = 0;
+        continuousTriggeredRef.current = false;
       }
-      allGrownRef.current = allBundlesGrown;
     }
 
     const activeCount = growingIndices.length + evolvingIndices.length;

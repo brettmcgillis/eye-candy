@@ -71,7 +71,7 @@ export default function buildBundleOverrideSchema({
   setControlsRef,
   getCurrentColorHex,
 }) {
-  const bundleCountPath = `${sceneLabel}.Test.bundleCount`;
+  const bundleCountPath = `${sceneLabel}.Structure.bundleCount`;
 
   function patchOverride(i, patch) {
     setOverridesRef.current((prev) => ({

@@ -6,7 +6,9 @@ import { useThree } from '@react-three/fiber';
 
 import { CameraRig } from '../../../../../modules/cameraRig';
 import ButtonOverlay from './components/ButtonOverlay';
+import PostEffects from './components/PostEffects';
 import Test from './components/Test';
+import ViewHotkey from './components/ViewHotkey';
 import useSceneControls from './hooks/useSceneControls';
 
 // Phase 1 (Lines mode): a seeded formula-builder assembles a 3D system of
@@ -28,6 +30,7 @@ function Rorschach() {
   return (
     <>
       <CameraRig camera={config.camera} />
+      <ViewHotkey />
       <Test
         seed={config.seed}
         bundleCount={config.bundleCount}
@@ -43,7 +46,10 @@ function Rorschach() {
         minSpread={config.minSpread}
         palette={config.palette}
         flatten={config.flatten}
+        flattenAxis={config.flattenAxis}
         growthDuration={config.growthDuration}
+        continuousMode={config.continuousMode}
+        onGrowthComplete={config.regenerate}
         evolutionEnabled={config.evolutionEnabled}
         evolutionSpeed={config.evolutionSpeed}
         smoothRespawns={config.smoothRespawns}
@@ -51,6 +57,12 @@ function Rorschach() {
         monochrome={config.monochrome}
         inkColor={config.inkColor}
         overrides={config.overrides}
+      />
+      <PostEffects
+        bloomEnabled={config.bloomEnabled}
+        bloomThreshold={config.bloomThreshold}
+        bloomStrength={config.bloomStrength}
+        bloomRadius={config.bloomRadius}
       />
       {config.showOverlay && <ButtonOverlay onRegenerate={config.regenerate} />}
     </>

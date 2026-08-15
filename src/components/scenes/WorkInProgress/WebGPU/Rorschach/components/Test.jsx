@@ -56,7 +56,10 @@ function Test({
   minSpread,
   palette,
   flatten,
+  flattenAxis,
   growthDuration,
+  continuousMode,
+  onGrowthComplete,
   evolutionEnabled,
   evolutionSpeed,
   smoothRespawns,
@@ -148,6 +151,9 @@ function Test({
   // animates in too instead of popping in fully-formed. A bundle is done
   // growing once this reaches bundle.steps.
   const revealedStepsRef = useRef([]);
+  // Edge-triggers onGrowthComplete once per completed Test rather than every
+  // frame all bundles happen to already be fully grown.
+  const allGrownRef = useRef(false);
 
   // Resets only the bundles that actually regenerated this render (object
   // identity changed from last time) — reused bundles keep growing/evolving
@@ -203,12 +209,14 @@ function Test({
     // early bundles hog it while later ones stall.
     const growingIndices = [];
     const evolvingIndices = [];
+    let allBundlesGrown = true;
 
     structure.bundles.forEach((bundle, i) => {
       const mesh = strokeRefs.current[i];
       if (!mesh) return;
 
       if (revealedStepsRef.current[i] < bundle.steps) {
+        allBundlesGrown = false;
         growthElapsedRef.current[i] += delta;
         const growthDelay = styles[i]?.growthDelay ?? 0;
         if (growthElapsedRef.current[i] < growthDelay) return;
@@ -217,6 +225,13 @@ function Test({
         evolvingIndices.push(i);
       }
     });
+
+    if (continuousMode) {
+      if (allBundlesGrown && !allGrownRef.current) {
+        onGrowthComplete?.();
+      }
+      allGrownRef.current = allBundlesGrown;
+    }
 
     const activeCount = growingIndices.length + evolvingIndices.length;
     if (activeCount === 0) return;
@@ -326,11 +341,11 @@ function Test({
 
   return (
     <group
-      scale={[
-        structure.scale,
-        structure.scale,
-        structure.scale * (1 - flatten),
-      ]}
+      scale={
+        flattenAxis === 'y'
+          ? [structure.scale, structure.scale * (1 - flatten), structure.scale]
+          : [structure.scale, structure.scale, structure.scale * (1 - flatten)]
+      }
     >
       {structure.bundles.map((bundle, i) => (
         <TestStrokes

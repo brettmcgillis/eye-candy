@@ -224,6 +224,10 @@ export default function useSceneControls() {
           max: 15,
           step: 0.5,
         },
+        continuousMode: {
+          label: 'Continuous Mode',
+          value: p.continuousMode ?? false,
+        },
         evolutionEnabled: {
           label: 'Evolution Enabled',
           value: p.evolutionEnabled ?? false,
@@ -232,7 +236,7 @@ export default function useSceneControls() {
           label: 'Evolution Speed',
           value: p.evolutionSpeed ?? 0.4,
           min: 0,
-          max: 3,
+          max: 10,
           step: 0.05,
         },
         smoothRespawns: {
@@ -263,6 +267,11 @@ export default function useSceneControls() {
           max: 1,
           step: 0.01,
         },
+        flattenAxis: {
+          label: 'Flatten Axis',
+          value: p.flattenAxis ?? 'z',
+          options: { Z: 'z', Y: 'y' },
+        },
         backgroundColor: {
           label: 'Background Color',
           value: p.backgroundColor ?? '#f4efe4',
@@ -282,6 +291,36 @@ export default function useSceneControls() {
         setControlsRef,
         getCurrentColorHex,
       }),
+      { collapsed: true }
+    ),
+    PostProcessing: folder(
+      {
+        bloomEnabled: {
+          label: 'Bloom Enabled',
+          value: p.bloomEnabled ?? true,
+        },
+        bloomThreshold: {
+          label: 'Bloom Threshold',
+          value: p.bloomThreshold ?? 1,
+          min: 0,
+          max: 3,
+          step: 0.01,
+        },
+        bloomStrength: {
+          label: 'Bloom Strength',
+          value: p.bloomStrength ?? 0.5,
+          min: 0,
+          max: 3,
+          step: 0.01,
+        },
+        bloomRadius: {
+          label: 'Bloom Radius',
+          value: p.bloomRadius ?? 0.3,
+          min: 0,
+          max: 1,
+          step: 0.01,
+        },
+      },
       { collapsed: true }
     ),
   }));

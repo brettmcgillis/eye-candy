@@ -1528,5 +1528,144 @@
   {
     "name": "Visual Blue",
     "colors": ["#003d4d", "#00c996"]
+  },
+  {
+    "name": "Rare Vintage (lospec)",
+    "colors": [
+      "#0d1415",
+      "#0d3b45",
+      "#56616c",
+      "#5e8d77",
+      "#ffe566",
+      "#e59f64",
+      "#9b5528",
+      "#603b44"
+    ]
+  },
+  {
+    "name": "Devil Dance (lospec)",
+    "colors": [
+      "#000000",
+      "#202243",
+      "#485872",
+      "#ca8245",
+      "#f0c537",
+      "#a64427",
+      "#ce5743",
+      "#ffffff"
+    ]
+  },
+  {
+    "name": "Blessing (lospec)",
+    "colors": ["#74569b", "#96fbc7", "#f7ffae", "#ffb3cb", "#d8bfd8"]
+  },
+  {
+    "name": "Hyper_Drive (lospec)",
+    "colors": [
+      "#250013",
+      "#47155d",
+      "#51448a",
+      "#5374ce",
+      "#4fb0bd",
+      "#78f14c",
+      "#e2f37e",
+      "#ffeee7"
+    ]
+  },
+  {
+    "name": "Curiosities (lospec)",
+    "colors": ["#46425e", "#15788c", "#00b9be", "#ffeecc", "#ffb0a3", "#ff6973"]
+  },
+  {
+    "name": "Cyclope6 (lospec)",
+    "colors": ["#411d31", "#631b34", "#32535f", "#0b8a8f", "#0eaf9b", "#30e1b9"]
+  },
+  {
+    "name": "Retrotronic (lospec)",
+    "colors": ["#392b35", "#7a9c96", "#486b7f", "#d1bfb0", "#bb474f"]
+  },
+  {
+    "name": "Red Blood Pain (lospec)",
+    "colors": ["#7e1f23", "#c4181f", "#120a19", "#5e4069"]
+  },
+  {
+    "name": "Deep Maze (lospec)",
+    "colors": [
+      "#f2ff66",
+      "#9af089",
+      "#38d88e",
+      "#00be91",
+      "#009a98",
+      "#085562",
+      "#001d2a"
+    ]
+  },
+  {
+    "name": "Punolit (lospec)",
+    "colors": [
+      "#caebe0",
+      "#729aa1",
+      "#446077",
+      "#2e3850",
+      "#1e182e",
+      "#14081a",
+      "#070109",
+      "#091820",
+      "#123735",
+      "#2f6b4e",
+      "#4b974f",
+      "#91b95b",
+      "#e6e29e",
+      "#dccd93",
+      "#b7836b",
+      "#995154",
+      "#6b2c40",
+      "#310e25",
+      "#3a2140",
+      "#6e3f5f",
+      "#97576c"
+    ]
+  },
+  {
+    "name": "Gray Weather (lospec)",
+    "colors": [
+      "#bcafb6",
+      "#a8a0aa",
+      "#928d9a",
+      "#7d7688",
+      "#695a75",
+      "#503f58",
+      "#3e3042",
+      "#2d222e",
+      "#989ea1",
+      "#768c9c",
+      "#636e94",
+      "#515670",
+      "#40414e",
+      "#b1a599",
+      "#a09b72",
+      "#758672",
+      "#57646e",
+      "#a67c6a",
+      "#98585b",
+      "#6f3c50"
+    ]
+  },
+  {
+    "name": "VividMemory8 (lospec)",
+    "colors": [
+      "#381631",
+      "#e21c61",
+      "#e26159",
+      "#fea85f",
+      "#d8dcb4",
+      "#5eb6ad",
+      "#1b958d",
+      "#105390"
+    ]
+  },
+  {
+    "name": "black",
+    "colors": ["#000000"]
   }
 ]

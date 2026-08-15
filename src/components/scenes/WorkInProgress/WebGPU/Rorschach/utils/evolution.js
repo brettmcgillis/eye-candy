@@ -6,9 +6,17 @@ const DRIFT_STEP = 0.012;
 // unbounded random-walk drift eventually wanders into unstable territory.
 const REVERSION_RATE = 0.15;
 const COEFF_DRIFT_CLAMP = 3;
-// Small/frequent rather than a big chunk, so TestStrokes.jsx's tail fade
-// (FADE_FRACTION) finishes before a dropped point is actually removed.
-const REBASE_FRACTION = 0.03;
+// Dropping exactly the tail matching each call's growth (1-2 steps at
+// typical pacing) would be perfectly smooth, but copyWithin's cost is
+// proportional to the *whole remaining buffer*, not the drop amount — an
+// array.length-1 element shift either way. Rebasing every single call
+// instead of every ~30 (the old REBASE_FRACTION cadence) multiplies total
+// rebase work by ~30x, measured well past the frame budget at heavy
+// settings. Over-dropping by this floor whenever a rebase is needed banks
+// the surplus as slack the next several calls can grow into for free,
+// cutting rebase frequency back down — chunks this small read as
+// continuous erosion rather than the old ~3%-of-buffer pop.
+const REBASE_BATCH_FLOOR = 12;
 // Counted in steps, not advanceEvolution calls — growBundle writes the full
 // requested chunk every call even when frozen, so a call-count threshold
 // under-triggers at a large per-frame budget.
@@ -58,8 +66,7 @@ export function driftCoeffs(bundle, rng, evolutionSpeed, deltaSeconds) {
 // respawnHiddenStep markers shift with the window (same copyWithin the
 // position data gets) so a hidden segment stays hidden as it ages toward
 // the front, instead of pointing at the wrong step after a rebase.
-function rebaseWindow(bundle) {
-  const dropCount = Math.max(1, Math.floor(bundle.steps * REBASE_FRACTION));
+function rebaseWindow(bundle, dropCount) {
   bundle.strands.forEach((strand) => strand.copyWithin(0, dropCount * 3));
   bundle.grownSteps -= dropCount;
   for (let s = 0; s < bundle.respawnHiddenStep.length; s += 1) {
@@ -114,9 +121,12 @@ function respawnStuckStrands(bundle, stepsThisCall, smoothRespawns) {
   return anyRespawned;
 }
 
-// Advances a bundle's tip like growth does, but rebases (drops the oldest
-// chunk) instead of stopping once the window fills — the "advect from the
-// tip, tail disappears" behavior. Returns whether the geometry needs a full
+// Advances a bundle's tip like growth does, but rebases (drops from the
+// tail) instead of stopping once the window fills — the "advect from the
+// tip, tail disappears" behavior. Drops REBASE_BATCH_FLOOR steps at a time
+// (not a fraction of the whole window, and not a single call's worth) —
+// small enough to read as continuous erosion, large enough to keep
+// copyWithin calls infrequent. Returns whether the geometry needs a full
 // rewrite (rebase or respawn both retroactively change existing positions)
 // rather than just an append.
 export function advanceEvolution(bundle, maxNewSteps, smoothRespawns = true) {
@@ -128,7 +138,11 @@ export function advanceEvolution(bundle, maxNewSteps, smoothRespawns = true) {
     const done = growBundle(bundle, remaining);
     remaining -= done;
     if (remaining <= 0) break;
-    rebaseWindow(bundle);
+    const dropCount = Math.min(
+      Math.max(remaining, REBASE_BATCH_FLOOR),
+      bundle.steps - 1
+    );
+    rebaseWindow(bundle, dropCount);
     rebased = true;
   }
 

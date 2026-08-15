@@ -9,14 +9,8 @@
 - [ ] 3d lines (tubes) mode to extend lines mode
 - [ ] might want to explore dramatic lighting when we get to particles and lines mode assuming they are spheres/tubes
 - [ ] Regen button should roll the dice on like, all the controls, not just seed. Do close to last to better decide what to include/exclude and how this should work. After some consideration, we would want to min/max some of the fields, example: no one wants a Test thats just 1 bundle. no one wants a white test on white background.
-- [ ] have a Continuous mode where when the growth animation completes we re-roll the dice and grow a new one
 
 - [ ] could we use lospec pallettes, or something alike, to make sure that background + pallette are cohesive when randomly chosen?
-- [ ] need to wire up bloom to react to the emissive bundles.
-
-- [ ] each test actually offers 4 symmetrical views y+,y-,z+,z-. need to:
-  - hotkey (spacebar) to snap to next view
-  - need a toggle to make flatten 2d be either z-flatten or y-flatten
 
 - [ ] Im envisioning a cinematic mode. scene starts, camera at x-, orbit enabled. Test starts generating as camera sweeps around. as the camera nears x+, the Test is flattened. as the camera hits x+ a new seed is selected so that as the camera continues around the back a new system emerges. each half rotation shows a new system grow. I suspect this is nearly possible today with the controls we have, but would need to align rotation speed & growth speed, as well as implement the continuous mode mentioned above, as well as the background <-> pallette matching to ensure that lines are visible and not masked by background.
 

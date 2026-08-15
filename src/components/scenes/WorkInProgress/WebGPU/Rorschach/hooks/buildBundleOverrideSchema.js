@@ -14,8 +14,8 @@ import {
 } from '../utils/testGenerator';
 
 // Shared between the schema builder (initial `value:`) and
-// overridesToLevaFields (re-syncing the panel on preset switch) so the two
-// can't drift apart on what a field is called or defaults to.
+// buildOverridesFromControls (deriving the nested shape Test.jsx consumes)
+// so the two can't drift apart on what a field is called or defaults to.
 const FIELD_DEFAULTS = {
   Visible: true,
   ColorOverride: false,
@@ -57,38 +57,31 @@ const OVERRIDE_KEY_BY_FIELD = {
 // complexity of reactive schema rebuilding (resetting live values, re-seeding
 // from stored overrides) entirely.
 //
-// Each slot is an Override toggle immediately followed by its `BundleN`
-// folder — the toggle only gates folder *visibility*, mapped directly onto
-// "does overrides[i] exist" (on creates an empty entry, off deletes it,
-// same as the old Reset button). It is not a second gate on top of the
-// fields inside: those apply independently exactly as they did in the
-// single-editor design, and only Structural Override affects generation —
-// everything else is cheap style/behavior, per computeStyles.
+// Every field here is a real, flat, top-level-unique Leva control
+// (`bundle0Emissive`, `bundle1Emissive`, ...) seeded straight from the
+// preset snapshot like every other control in this scene — there used to
+// also be a hand-rolled `overrides` React state kept in sync with these
+// fields via onChange, but that gave the same data two independent sources
+// of truth that could (and did) drift apart on preset switch/mount. Now
+// `controls` from useControls() *is* the source of truth; see
+// buildOverridesFromControls below for how Test.jsx's nested per-bundle
+// shape gets derived from it.
 export default function buildBundleOverrideSchema({
-  presetOverrides,
-  sceneLabel,
-  setOverridesRef,
-  setControlsRef,
+  controlsRef,
   getCurrentColorHex,
+  presetSnapshot,
+  sceneLabel,
+  setControlsRef,
 }) {
   const bundleCountPath = `${sceneLabel}.Structure.bundleCount`;
 
-  function patchOverride(i, patch) {
-    setOverridesRef.current((prev) => ({
-      ...prev,
-      [i]: { ...(prev[i] || {}), ...patch },
-    }));
-  }
-
   function field(i, name, extra) {
-    const stored = presetOverrides?.[i] || {};
-    const overrideKey = OVERRIDE_KEY_BY_FIELD[name];
+    const key = `bundle${i}${name}`;
     return {
-      [`bundle${i}${name}`]: {
+      [key]: {
         label: extra.label,
-        value: stored[overrideKey] ?? FIELD_DEFAULTS[name],
+        value: presetSnapshot?.[key] ?? FIELD_DEFAULTS[name],
         ...extra.options,
-        onChange: (value) => patchOverride(i, { [overrideKey]: value }),
       },
     };
   }
@@ -107,31 +100,28 @@ export default function buildBundleOverrideSchema({
     return {
       [toggleKey]: {
         label: `Bundle ${i}`,
-        value: Boolean(presetOverrides?.[i]),
+        value: presetSnapshot?.[toggleKey] ?? false,
         render: (get) => get(bundleCountPath) > i,
         // Pre-fills Color with the bundle's actual current color (whatever
         // computeStyles produces right now) rather than a fixed placeholder
         // — Color Override itself stays off until set explicitly, so this
         // is purely a sensible starting point to nudge from, not an
-        // activation. Only applies when the entry didn't already exist —
-        // re-enabling a previously-configured bundle must not clobber
-        // whatever color was already saved for it.
+        // activation. Skipped once Color Override is already on, so
+        // re-enabling a previously art-directed bundle never clobbers a
+        // saved color (Color's own Leva value persists across the toggle
+        // regardless — this only decides whether to overwrite it).
+        // transient: false — Leva makes any control with an onChange
+        // transient (excluded from useControls()'s returned values) by
+        // default, which would silently drop this toggle out of `controls`
+        // entirely and break buildOverridesFromControls for every bundle,
+        // not just this one.
+        transient: false,
         onChange: (enabled) => {
-          if (enabled) {
-            const colorHex = getCurrentColorHex(i);
-            setOverridesRef.current((prev) =>
-              prev[i] ? prev : { ...prev, [i]: { color: colorHex } }
-            );
-            if (setControlsRef.current) {
-              setControlsRef.current({ [`bundle${i}Color`]: colorHex });
-            }
+          if (!enabled || controlsRef.current?.[`bundle${i}ColorOverride`]) {
             return;
           }
-          setOverridesRef.current((prev) => {
-            const next = { ...prev };
-            delete next[i];
-            return next;
-          });
+          const colorHex = getCurrentColorHex(i);
+          setControlsRef.current?.({ [`bundle${i}Color`]: colorHex });
         },
       },
       [folderKey]: folder(
@@ -202,21 +192,22 @@ export default function buildBundleOverrideSchema({
   return schema;
 }
 
-// Maps overrides (React state) -> the Bundle Editor's flat Leva field
-// values, for every slot up to MAX_BUNDLE_COUNT — used to re-sync the panel
-// on preset switch, since `overrides` itself bypasses Leva's own controlled
-// state (see useSceneControls.js). Always covers every slot, including ones
-// with no override, so a stale "on" toggle from a previously-loaded preset
-// gets explicitly turned off rather than left dangling.
-export function overridesToLevaFields(overrides) {
-  const fields = {};
+// Derives the nested `{ index: { visible, color, ... } }` shape
+// testGenerator.js's computeStyles expects, straight from the flat
+// Leva-managed bundle fields on `controls` — the single source of truth, so
+// this can never drift from what the BundleEditor panel shows, on mount,
+// preset switch, or a live edit alike.
+export function buildOverridesFromControls(controls) {
+  const overrides = {};
   for (let i = 0; i < MAX_BUNDLE_COUNT; i += 1) {
-    const stored = overrides?.[i];
-    fields[`bundle${i}Override`] = Boolean(stored);
-    Object.entries(OVERRIDE_KEY_BY_FIELD).forEach(([name, overrideKey]) => {
-      fields[`bundle${i}${name}`] =
-        stored?.[overrideKey] ?? FIELD_DEFAULTS[name];
-    });
+    if (controls[`bundle${i}Override`]) {
+      const entry = {};
+      Object.entries(OVERRIDE_KEY_BY_FIELD).forEach(([name, overrideKey]) => {
+        entry[overrideKey] =
+          controls[`bundle${i}${name}`] ?? FIELD_DEFAULTS[name];
+      });
+      overrides[i] = entry;
+    }
   }
-  return fields;
+  return overrides;
 }

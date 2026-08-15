@@ -1,6 +1,6 @@
 import { folder, useControls } from 'leva';
 
-import { useCallback, useMemo, useRef, useState } from 'react';
+import { useCallback, useMemo, useRef } from 'react';
 
 import usePresetsFolder from '../../../../../../hooks/usePresetsFolder';
 import {
@@ -28,7 +28,7 @@ import {
   computeStyles,
 } from '../utils/testGenerator';
 import buildBundleOverrideSchema, {
-  overridesToLevaFields,
+  buildOverridesFromControls,
 } from './buildBundleOverrideSchema';
 
 const SCENE_LABEL = 'Rorschach';
@@ -42,21 +42,13 @@ const CONTINUOUS_MODE_PATH = `${SCENE_LABEL}.Growth.continuousMode`;
 export default function useSceneControls() {
   // Bundle Editor: one static schema of MAX_BUNDLE_COUNT `BundleN` folders
   // (see buildBundleOverrideSchema.js) — each has its own Override toggle
-  // and fields, so multiple bundles can be seen and edited side by side
-  // instead of selecting one at a time. `overrides` is real React state —
-  // not a ref — so Test.jsx's memos correctly detect changes.
-  //
-  // `overrides` lives outside Leva's own controlled state, so it does NOT
-  // automatically flow through Presets' copy/apply pipeline the way every
-  // other control does. setOverridesRef + getPresetControlsWithOverrides
-  // below wire it back in on preset *switch* (also re-syncing every
-  // BundleN field via overridesToLevaFields, so the panel never shows a
-  // stale toggle for an override that isn't actually active), and the
-  // `useState(() => ...)` lazy initializer wires it in on cold mount —
-  // both needed, same as the `p.xxx ?? default` seeding every other
-  // control already does for the same reason.
-  const setOverridesRef = useRef(null);
-  const overridesRef = useRef({});
+  // and fields, all real flat Leva controls (`bundle0Emissive`, ...) like
+  // everything else in this scene. `overrides`, the nested per-bundle shape
+  // Test.jsx/computeStyles actually consume, is derived from `controls`
+  // below via buildOverridesFromControls — not tracked as separate state,
+  // so there's only one source of truth and it can't drift from the panel
+  // on mount, preset switch, or a live edit (a hand-rolled side-channel
+  // used to sit here instead and repeatedly went stale against the panel).
   const controlsRef = useRef(null);
   const setControlsRef = useRef(null);
 
@@ -74,30 +66,11 @@ export default function useSceneControls() {
       monochrome: c.monochrome,
       inkColor: c.inkColor,
       palette: c.palette,
-      overrides: overridesRef.current,
+      overrides: buildOverridesFromControls(c),
     });
     const { h, s, l } = styles[i]?.color ?? { h: 0, s: 0, l: 0.5 };
     return hslToHex(h, s, l);
   }, []);
-
-  const getPresetControlsWithOverrides = useCallback(
-    ({ presetSnapshot, ...rest }) => {
-      const { overrides: presetOverrides, ...controlsSnapshot } =
-        presetSnapshot;
-      if (setOverridesRef.current)
-        setOverridesRef.current(presetOverrides || {});
-      const nextControls = getPresetControls({
-        presetSnapshot: controlsSnapshot,
-        ...rest,
-      });
-      if (!nextControls) return nextControls;
-      return {
-        ...nextControls,
-        ...overridesToLevaFields(presetOverrides || {}),
-      };
-    },
-    []
-  );
 
   const {
     attachSetControls,
@@ -106,7 +79,7 @@ export default function useSceneControls() {
     presetsFolder,
   } = usePresetsFolder({
     defaultPreset: DEFAULT_PRESET,
-    getPresetControls: getPresetControlsWithOverrides,
+    getPresetControls,
     presets: PRESETS,
   });
 
@@ -115,10 +88,6 @@ export default function useSceneControls() {
   // §10): without this, the schema always shows DEFAULT_* / hardcoded values
   // until "reset" is clicked, even when a non-default preset is selected.
   const p = PRESETS[initialPreset] || PRESETS[DEFAULT_PRESET];
-
-  const [overrides, setOverrides] = useState(() => p.overrides || {});
-  setOverridesRef.current = setOverrides;
-  overridesRef.current = overrides;
 
   const cameraApiRef = useRef(null);
   const { buildCamera, cameraControls } = useSceneCameraControls({
@@ -314,11 +283,11 @@ export default function useSceneControls() {
     ),
     BundleEditor: folder(
       buildBundleOverrideSchema({
-        presetOverrides: p.overrides,
-        sceneLabel: SCENE_LABEL,
-        setOverridesRef,
-        setControlsRef,
+        controlsRef,
         getCurrentColorHex,
+        presetSnapshot: p,
+        sceneLabel: SCENE_LABEL,
+        setControlsRef,
       }),
       { collapsed: true }
     ),
@@ -355,9 +324,18 @@ export default function useSceneControls() {
   }));
 
   attachSetControls(setControls);
-  controlsSnapshotRef.current = { ...controls, overrides };
+  controlsSnapshotRef.current = controls;
   controlsRef.current = controls;
   setControlsRef.current = setControls;
+
+  // Derived every render straight from `controls` (see the comment at the
+  // top of this function) — mount, preset switch, and a live BundleN edit
+  // all flow through the exact same computation, so there's nothing to fall
+  // out of sync.
+  const overrides = useMemo(
+    () => buildOverridesFromControls(controls),
+    [controls]
+  );
 
   // Rule: control changes must never reset the camera (docs/scene-conventions.md §10).
   const cameraControlsKey = useMemo(

@@ -13,7 +13,12 @@ import {
   isBounded,
   stepRK4,
 } from './odeIntegrator';
-import { hexToHsl, resolvePaletteColors, sampleGradientHsl } from './palette';
+import {
+  hexToHsl,
+  pickGradientColorHsl,
+  resolvePaletteColors,
+  sampleGradientHsl,
+} from './palette';
 import createRng, { combineSeed } from './rng';
 
 export const DEFAULT_FRAMING_SHAPE = 'cube';
@@ -65,6 +70,8 @@ const VALIDATION_STEPS_CAP = 300;
 // decoupled from shape generation now that they're computed by separate
 // functions with separate (and very different cost) call sites.
 const COLOR_SALT = 7;
+// Separate salt for the palette-shuffle RNG stream — see paletteShuffledT.
+const PALETTE_SHUFFLE_SALT = 11;
 
 function mirrorInto(points, out) {
   for (let i = 0; i < points.length; i += 3) {
@@ -423,7 +430,9 @@ export function generateStructure(seed, options = {}, previousBundles = null) {
 
 // `paletteColors`/`t` (bundle position 0-1 across the beast) sample a named
 // gradient from gradients.json instead of a random hue when a palette is
-// selected — see utils/palette.js. Falls back to the original random-hue
+// selected — see utils/palette.js. `paletteExact` switches that sampling
+// from a blended gradient (sampleGradientHsl) to the palette's literal hex
+// stops (pickGradientColorHsl). Falls back to the original random-hue
 // behavior when no palette is chosen ('Random' in the Leva dropdown), using
 // its own independent RNG stream (COLOR_SALT) rather than sharing the
 // structural one. `inkColor` is the monochrome-mode override, `override` the
@@ -434,14 +443,31 @@ function computeBundleColor(
   monochrome,
   inkColor,
   paletteColors,
+  paletteExact,
   t,
   override
 ) {
   if (override.colorOverride) return hexToHsl(override.color);
   if (monochrome) return hexToHsl(inkColor);
-  if (paletteColors) return sampleGradientHsl(paletteColors, t);
+  if (paletteColors) {
+    return paletteExact
+      ? pickGradientColorHsl(paletteColors, t)
+      : sampleGradientHsl(paletteColors, t);
+  }
   const rng = createRng(combineSeed(seed, id, COLOR_SALT));
   return { h: rng(), s: 0.55 + rng() * 0.3, l: 0.35 + rng() * 0.15 };
+}
+
+// Evenly-spaced t always samples the same bundleCount positions along a
+// palette, so a gradient with more stops than there are bundles (a real
+// case — some lospec palettes run past MAX_BUNDLE_COUNT) never shows most
+// of its colors, and bundle 0 always gets the coolest one. `paletteShuffleSeed`
+// (0 = unshuffled, the Style folder's "Shuffle Palette Colors" button rerolls
+// it) swaps that for an independent random t per bundle — reproducible for a
+// given seed/bundleCount, so it round-trips through presets like everything
+// else, but samples a different slice of the palette every reroll.
+function paletteShuffledT(shuffleSeed, i) {
+  return createRng(combineSeed(shuffleSeed, i, PALETTE_SHUFFLE_SALT))();
 }
 
 // Style generation: color/visibility/growth-delay for `bundleCount` bundles.
@@ -454,13 +480,19 @@ export function computeStyles(seed, bundleCount, options = {}) {
     monochrome = false,
     inkColor = '#1f1f1f',
     palette = 'Random',
+    paletteExact = false,
+    paletteShuffleSeed = 0,
     overrides = {},
   } = options;
   const paletteColors = resolvePaletteColors(palette);
 
+  const evenT = bundleCount > 1 ? 1 / (bundleCount - 1) : 0;
+
   const styles = [];
   for (let i = 0; i < bundleCount; i += 1) {
-    const t = bundleCount > 1 ? i / (bundleCount - 1) : 0;
+    const t = paletteShuffleSeed
+      ? paletteShuffledT(paletteShuffleSeed, i)
+      : i * evenT;
     const override = overrides[i] || {};
     styles.push({
       color: computeBundleColor(
@@ -469,6 +501,7 @@ export function computeStyles(seed, bundleCount, options = {}) {
         monochrome,
         inkColor,
         paletteColors,
+        paletteExact,
         t,
         override
       ),

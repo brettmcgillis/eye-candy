@@ -26,6 +26,7 @@ const TestStrokes = forwardRef(function TestStrokes(
   const lineSegments = useMemo(() => {
     const geometry = buildStrokeGeometry(strandCount, steps);
     const material = new THREE.LineBasicNodeMaterial({
+      alphaTest: 0.005,
       transparent: true,
       depthWrite: true,
       depthTest: true,
@@ -67,9 +68,15 @@ const TestStrokes = forwardRef(function TestStrokes(
     // hsl intentionally omitted, see comment above.
   }, [strandCount, steps]);
 
+  // `lineSegments` is in both dep arrays alongside the actual props it
+  // applies: strandCount/steps changing rebuilds a brand new material with
+  // fresh (default) uniforms, and that rebuild must re-sync color/emissive
+  // from current props even when hsl/emissive/emissiveIntensity's own
+  // *values* happen to be unchanged from before — otherwise a freshly built
+  // material silently keeps its just-constructed defaults forever.
   useEffect(() => {
     colorUniformRef.current?.value.setHSL(hsl.h, hsl.s, hsl.l);
-  }, [hsl.h, hsl.s, hsl.l]);
+  }, [lineSegments, hsl.h, hsl.s, hsl.l]);
 
   useEffect(() => {
     if (intensityUniformRef.current) {
@@ -80,7 +87,7 @@ const TestStrokes = forwardRef(function TestStrokes(
       material.toneMapped = !emissive;
       material.needsUpdate = true;
     }
-  }, [emissive, emissiveIntensity]);
+  }, [lineSegments, emissive, emissiveIntensity]);
 
   return <primitive object={lineSegments} ref={ref} />;
 });

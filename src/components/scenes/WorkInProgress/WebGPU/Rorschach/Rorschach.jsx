@@ -45,6 +45,8 @@ function Rorschach() {
         boundHeight={config.boundHeight}
         minSpread={config.minSpread}
         palette={config.palette}
+        paletteExact={config.paletteExact}
+        paletteShuffleSeed={config.paletteShuffleSeed}
         flatten={config.flatten}
         flattenAxis={config.flattenAxis}
         growthDuration={config.growthDuration}
@@ -53,6 +55,7 @@ function Rorschach() {
         onGrowthComplete={config.regenerate}
         evolutionEnabled={config.evolutionEnabled}
         evolutionSpeed={config.evolutionSpeed}
+        curlLimit={config.curlLimit}
         smoothRespawns={config.smoothRespawns}
         trailFade={config.trailFade}
         monochrome={config.monochrome}

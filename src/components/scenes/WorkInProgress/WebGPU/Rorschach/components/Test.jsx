@@ -64,6 +64,8 @@ function Test({
   boundHeight,
   minSpread,
   palette,
+  paletteExact,
+  paletteShuffleSeed,
   flatten,
   flattenAxis,
   growthDuration,
@@ -72,6 +74,7 @@ function Test({
   onGrowthComplete,
   evolutionEnabled,
   evolutionSpeed,
+  curlLimit,
   smoothRespawns,
   trailFade,
   monochrome,
@@ -146,9 +149,20 @@ function Test({
         monochrome,
         inkColor,
         palette,
+        paletteExact,
+        paletteShuffleSeed,
         overrides,
       }),
-    [seed, bundleCount, monochrome, inkColor, palette, overrides]
+    [
+      seed,
+      bundleCount,
+      monochrome,
+      inkColor,
+      palette,
+      paletteExact,
+      paletteShuffleSeed,
+      overrides,
+    ]
   );
 
   const evolutionRng = useMemo(() => createRng(seed + 0x9e3779b9), [seed]);
@@ -317,7 +331,7 @@ function Test({
         mesh.userData.fadeEnabledUniform.value = trailFade ? 1 : 0;
       }
 
-      driftCoeffs(bundle, evolutionRng, evolutionSpeed, delta);
+      driftCoeffs(bundle, evolutionRng, evolutionSpeed, delta, curlLimit);
 
       const strandCount = bundle.strands.length;
       const targetSteps = Math.max(
@@ -332,7 +346,12 @@ function Test({
       if (stepsThisFrame <= 0) return;
 
       const prevGrown = bundle.grownSteps;
-      const rebased = advanceEvolution(bundle, stepsThisFrame, smoothRespawns);
+      const rebased = advanceEvolution(
+        bundle,
+        stepsThisFrame,
+        smoothRespawns,
+        minSpread
+      );
 
       // A rebase shifts every point's buffer position, so the whole valid
       // range needs rewriting — otherwise just append what's new.

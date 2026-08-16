@@ -1,4 +1,4 @@
-import { folder, useControls } from 'leva';
+import { button, folder, useControls } from 'leva';
 
 import { useCallback, useMemo, useRef } from 'react';
 
@@ -9,13 +9,14 @@ import {
 } from '../../../../../../modules/cameraRig';
 import { DEFAULT_PRESET, PRESETS, getPresetControls } from '../presets/presets';
 import CAMERA from '../utils/camera';
+import { COEFF_DRIFT_CLAMP } from '../utils/evolution';
 import {
   DEFAULT_BOUND_HEIGHT,
   DEFAULT_BOUND_RADIUS,
   DEFAULT_BOUND_WIDTH,
   DEFAULT_MIN_SPREAD,
 } from '../utils/odeIntegrator';
-import { PALETTE_NAMES, hslToHex } from '../utils/palette';
+import { PALETTE_NAMES } from '../utils/palette';
 import {
   DEFAULT_BUNDLE_COUNT,
   DEFAULT_COEFF_RANGE,
@@ -25,7 +26,6 @@ import {
   DEFAULT_STEPS,
   DEFAULT_STRANDS_PER_BUNDLE,
   MAX_BUNDLE_COUNT,
-  computeStyles,
 } from '../utils/testGenerator';
 import buildBundleOverrideSchema, {
   buildOverridesFromControls,
@@ -35,6 +35,8 @@ const SCENE_LABEL = 'Rorschach';
 const CAMERA_FOLDER_PATH = `${SCENE_LABEL}.Camera`;
 const FRAMING_SHAPE_PATH = `${SCENE_LABEL}.Structure.framingShape`;
 const CONTINUOUS_MODE_PATH = `${SCENE_LABEL}.Growth.continuousMode`;
+const PALETTE_PATH = `${SCENE_LABEL}.Style.palette`;
+const MONOCHROME_PATH = `${SCENE_LABEL}.Style.monochrome`;
 
 // Only Lines mode exists so far (Points/Ink land in later phases) — no
 // `mode` toggle control yet, no Lighting folder (unlit line material, so
@@ -49,28 +51,12 @@ export default function useSceneControls() {
   // so there's only one source of truth and it can't drift from the panel
   // on mount, preset switch, or a live edit (a hand-rolled side-channel
   // used to sit here instead and repeatedly went stale against the panel).
-  const controlsRef = useRef(null);
+  // Only for the Style folder's "Shuffle Palette Colors" button below — a
+  // Leva button's onClick only receives `get`, not a setter, and it's
+  // defined inside the schema factory passed to useControls (before that
+  // call's own `setControls` return value exists yet), so it needs a ref
+  // populated after the fact instead of closing over `setControls` directly.
   const setControlsRef = useRef(null);
-
-  // Reads current seed/bundleCount/monochrome/inkColor/palette/overrides
-  // off refs (not React state) so it's never stale by the time a Bundle
-  // Override toggle's onChange fires — same reasoning as the ref-bootstrap
-  // pattern the Presets dropdown already uses in this file. Reuses
-  // computeStyles (the same function that decides what's actually
-  // rendered) rather than reimplementing the color logic, so the pre-fill
-  // can never diverge from what's really showing.
-  const getCurrentColorHex = useCallback((i) => {
-    const c = controlsRef.current;
-    if (!c) return '#ff0000';
-    const styles = computeStyles(c.seed, c.bundleCount, {
-      monochrome: c.monochrome,
-      inkColor: c.inkColor,
-      palette: c.palette,
-      overrides: buildOverridesFromControls(c),
-    });
-    const { h, s, l } = styles[i]?.color ?? { h: 0, s: 0, l: 0.5 };
-    return hslToHex(h, s, l);
-  }, []);
 
   const {
     attachSetControls,
@@ -227,6 +213,13 @@ export default function useSceneControls() {
           max: 10,
           step: 0.05,
         },
+        curlLimit: {
+          label: 'Curl Limit',
+          value: p.curlLimit ?? 1,
+          min: 0,
+          max: COEFF_DRIFT_CLAMP,
+          step: 0.05,
+        },
         smoothRespawns: {
           label: 'Smooth Respawn Snaps',
           value: p.smoothRespawns ?? true,
@@ -247,12 +240,41 @@ export default function useSceneControls() {
         inkColor: {
           label: 'Ink Color',
           value: p.inkColor ?? '#1f1f1f',
+          render: (get) => get(MONOCHROME_PATH),
         },
         palette: {
           label: 'Palette',
           value: p.palette ?? 'Random',
           options: PALETTE_NAMES,
+          render: (get) => !get(MONOCHROME_PATH),
         },
+        paletteExact: {
+          label: 'Palette Exact Colors',
+          value: p.paletteExact ?? false,
+          render: (get) =>
+            !get(MONOCHROME_PATH) && get(PALETTE_PATH) !== 'Random',
+        },
+        paletteShuffleSeed: {
+          label: 'Palette Shuffle Seed',
+          value: p.paletteShuffleSeed ?? 0,
+          min: 0,
+          max: 999999,
+          step: 1,
+          render: (get) =>
+            !get(MONOCHROME_PATH) && get(PALETTE_PATH) !== 'Random',
+        },
+        shufflePalette: button(
+          () => {
+            setControlsRef.current?.({
+              paletteShuffleSeed: Math.floor(Math.random() * 999999) + 1,
+            });
+          },
+          {
+            label: 'Shuffle Palette Colors',
+            render: (get) =>
+              !get(MONOCHROME_PATH) && get(PALETTE_PATH) !== 'Random',
+          }
+        ),
         flatten: {
           label: 'Flatten (2D)',
           value: p.flatten ?? 0,
@@ -282,13 +304,7 @@ export default function useSceneControls() {
       { collapsed: true }
     ),
     BundleEditor: folder(
-      buildBundleOverrideSchema({
-        controlsRef,
-        getCurrentColorHex,
-        presetSnapshot: p,
-        sceneLabel: SCENE_LABEL,
-        setControlsRef,
-      }),
+      buildBundleOverrideSchema({ presetSnapshot: p, sceneLabel: SCENE_LABEL }),
       { collapsed: true }
     ),
     PostProcessing: folder(
@@ -325,7 +341,6 @@ export default function useSceneControls() {
 
   attachSetControls(setControls);
   controlsSnapshotRef.current = controls;
-  controlsRef.current = controls;
   setControlsRef.current = setControls;
 
   // Derived every render straight from `controls` (see the comment at the

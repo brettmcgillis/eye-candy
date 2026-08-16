@@ -66,12 +66,16 @@ const OVERRIDE_KEY_BY_FIELD = {
 // `controls` from useControls() *is* the source of truth; see
 // buildOverridesFromControls below for how Test.jsx's nested per-bundle
 // shape gets derived from it.
+//
+// No field here has an onChange handler (the toggle used to, for a
+// "pre-fill Color on enable" nicety) — deliberately: an onChange fires as
+// part of the *same* setControls() batch a preset switch uses, so it can
+// read stale ref state and write a value that fights with whatever the
+// incoming preset itself was setting for that key. Set the color by hand
+// after enabling Color Override instead.
 export default function buildBundleOverrideSchema({
-  controlsRef,
-  getCurrentColorHex,
   presetSnapshot,
   sceneLabel,
-  setControlsRef,
 }) {
   const bundleCountPath = `${sceneLabel}.Structure.bundleCount`;
 
@@ -102,27 +106,6 @@ export default function buildBundleOverrideSchema({
         label: `Bundle ${i}`,
         value: presetSnapshot?.[toggleKey] ?? false,
         render: (get) => get(bundleCountPath) > i,
-        // Pre-fills Color with the bundle's actual current color (whatever
-        // computeStyles produces right now) rather than a fixed placeholder
-        // — Color Override itself stays off until set explicitly, so this
-        // is purely a sensible starting point to nudge from, not an
-        // activation. Skipped once Color Override is already on, so
-        // re-enabling a previously art-directed bundle never clobbers a
-        // saved color (Color's own Leva value persists across the toggle
-        // regardless — this only decides whether to overwrite it).
-        // transient: false — Leva makes any control with an onChange
-        // transient (excluded from useControls()'s returned values) by
-        // default, which would silently drop this toggle out of `controls`
-        // entirely and break buildOverridesFromControls for every bundle,
-        // not just this one.
-        transient: false,
-        onChange: (enabled) => {
-          if (!enabled || controlsRef.current?.[`bundle${i}ColorOverride`]) {
-            return;
-          }
-          const colorHex = getCurrentColorHex(i);
-          setControlsRef.current?.({ [`bundle${i}Color`]: colorHex });
-        },
       },
       [folderKey]: folder(
         {
@@ -180,7 +163,15 @@ export default function buildBundleOverrideSchema({
             options: { min: 5, max: 100, step: 1, render: structuralAndCube },
           }),
         },
-        { render: (get) => get(`${sceneLabel}.BundleEditor.${toggleKey}`) }
+        // Collapsed, not render-gated on the toggle: a folder hidden via
+        // `render` is unmounted from Leva's tree, and a preset switch that
+        // sets this toggle *and* fields inside the same folder in one
+        // setControls() call evaluates `render` against the pre-update
+        // toggle value — the folder stays "hidden" for that pass and the
+        // field updates inside it get silently dropped (only a full remount
+        // recovers). Collapsed still hides the fields by default without
+        // unmounting them, so updates always land.
+        { collapsed: true }
       ),
     };
   }

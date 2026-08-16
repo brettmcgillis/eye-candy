@@ -89,3 +89,13 @@ export function sampleGradientHsl(colors, t) {
   const [h, s, l] = rgbToHsl(r, g, b);
   return { h, s, l };
 }
+
+// The "Exact Colors" counterpart to sampleGradientHsl: same t (0-1)
+// positioning across the stops, but snaps to the nearest stop instead of
+// blending between them — every bundle ends up one of the palette's actual
+// hex colors, never an in-between blend.
+export function pickGradientColorHsl(colors, t) {
+  const clampedT = Math.max(0, Math.min(1, t));
+  const idx = Math.round(clampedT * (colors.length - 1));
+  return hexToHsl(colors[idx]);
+}

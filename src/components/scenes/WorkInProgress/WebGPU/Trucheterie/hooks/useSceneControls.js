@@ -8,11 +8,18 @@ import {
   useSceneCameraControls,
 } from '../../../../../../modules/cameraRig';
 import { useMediaRecorder } from '../../../../../../modules/mediaRecorder';
-import getTruchetControls from '../components/getTruchetControls';
+import { SCENE_LABEL, isFieldMode } from '../components/controlPaths';
+import getBlobFieldControls from '../components/getBlobFieldControls';
+import getColorControls from '../components/getColorControls';
+import getCompositionControls from '../components/getCompositionControls';
+import getGridControls from '../components/getGridControls';
+import getMotifControls from '../components/getMotifControls';
+import getMultiscaleControls from '../components/getMultiscaleControls';
+import getRetileControls from '../components/getRetileControls';
+import getStrokeControls from '../components/getStrokeControls';
 import { DEFAULT_PRESET, PRESETS, getPresetControls } from '../presets/presets';
 import CAMERA from '../utils/camera';
 
-const SCENE_LABEL = 'Trucheterie';
 const CAMERA_FOLDER_PATH = `${SCENE_LABEL}.Camera`;
 
 export default function useSceneControls() {
@@ -34,7 +41,35 @@ export default function useSceneControls() {
   const [controls, setControls] = useControls(SCENE_LABEL, () => ({
     Presets: presetsFolder,
     Camera: folder(cameraControls, { collapsed: true }),
-    Trucheterie: getTruchetControls(controlsSnapshotRef.current),
+    Grid: folder(getGridControls(controlsSnapshotRef.current), {
+      collapsed: true,
+    }),
+    'Blob Field': folder(getBlobFieldControls(controlsSnapshotRef.current), {
+      collapsed: true,
+      render: isFieldMode,
+    }),
+    Motif: folder(getMotifControls(controlsSnapshotRef.current), {
+      collapsed: true,
+      render: (get) => !isFieldMode(get),
+    }),
+    Multiscale: folder(getMultiscaleControls(controlsSnapshotRef.current), {
+      collapsed: true,
+      render: (get) => !isFieldMode(get),
+    }),
+    Stroke: folder(getStrokeControls(controlsSnapshotRef.current), {
+      collapsed: true,
+      render: (get) => !isFieldMode(get),
+    }),
+    Colors: folder(getColorControls(controlsSnapshotRef.current), {
+      collapsed: true,
+    }),
+    Composition: folder(getCompositionControls(controlsSnapshotRef.current), {
+      collapsed: true,
+    }),
+    Retile: folder(getRetileControls(controlsSnapshotRef.current), {
+      collapsed: true,
+      render: (get) => !isFieldMode(get),
+    }),
   }));
 
   attachSetControls(setControls);

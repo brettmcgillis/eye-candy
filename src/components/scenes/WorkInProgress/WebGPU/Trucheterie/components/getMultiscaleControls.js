@@ -1,19 +1,18 @@
-// Full Leva path to this folder — must stay in sync with SCENE_LABEL and
-// this folder's own key ('Trucheterie') in hooks/useSceneControls.js.
-const TRUCHET_FOLDER_PATH = 'Trucheterie.Trucheterie';
+import { MULTISCALE_PATH } from './controlPaths';
+
 const isMultiscaleMode = (get) =>
-  get(`${TRUCHET_FOLDER_PATH}.multiscaleEnabled`) === true;
+  get(`${MULTISCALE_PATH}.multiscaleEnabled`) === true;
 const isResubdivideOn = (get) =>
   isMultiscaleMode(get) &&
-  get(`${TRUCHET_FOLDER_PATH}.resubdivideEnabled`) === true;
+  get(`${MULTISCALE_PATH}.resubdivideEnabled`) === true;
 
-// Recursive multiscale tiling controls — split out of getTruchetControls.js
-// per docs/scene-conventions.md §4. Works on both grid modes: square cells
+// Recursive multiscale tiling controls — its own top-level folder (see
+// hooks/useSceneControls.js), hidden entirely in field mode since it
+// doesn't apply there. Works on square/triangular: square cells
 // quadtree-split into 4 sub-squares, triangular cells quadrisect (3
 // same-orientation corner children + 1 flipped center child), each leaf
-// keeping its own generation depth (see utils/subdivision.js). The returned
-// object is spread directly into the same flat `Truchet` folder, not a
-// sub-folder — keys must still match presets/presets.js 1:1.
+// keeping its own generation depth (see utils/subdivision.js). Keys must
+// still match presets/presets.js 1:1.
 export default function getMultiscaleControls(snapshot = {}) {
   return {
     multiscaleEnabled: {

@@ -1,25 +1,24 @@
-// Full Leva path to this folder — must stay in sync with SCENE_LABEL and
-// this folder's own key ('Trucheterie') in hooks/useSceneControls.js.
-const TRUCHET_FOLDER_PATH = 'Trucheterie.Trucheterie';
-const hasClipShape = (get) =>
-  get(`${TRUCHET_FOLDER_PATH}.clipShape`) !== 'none';
-const isRoundedSquare = (get) =>
-  get(`${TRUCHET_FOLDER_PATH}.clipShape`) === 'roundedSquare';
-const isBorderVisible = (get) =>
-  hasClipShape(get) && get(`${TRUCHET_FOLDER_PATH}.borderVisible`) === true;
-const isGridLinesOn = (get) =>
-  get(`${TRUCHET_FOLDER_PATH}.showGridLines`) === true;
+import { COMPOSITION_PATH, isFieldMode } from './controlPaths';
 
-// Clip shape, border, grid-line, and whole-pattern rotation controls — split
-// out of getTruchetControls.js to keep both files under the ~200-line
-// one-shot-read guideline (docs/scene-conventions.md §4). The returned
-// object is spread directly into the same flat `Truchet` folder, not a
-// sub-folder — keys must still match presets/presets.js 1:1.
+const hasClipShape = (get) =>
+  !isFieldMode(get) && get(`${COMPOSITION_PATH}.clipShape`) !== 'none';
+const isRoundedSquare = (get) =>
+  get(`${COMPOSITION_PATH}.clipShape`) === 'roundedSquare';
+const isBorderVisible = (get) =>
+  hasClipShape(get) && get(`${COMPOSITION_PATH}.borderVisible`) === true;
+const isGridLinesOn = (get) =>
+  !isFieldMode(get) && get(`${COMPOSITION_PATH}.showGridLines`) === true;
+
+// Clip shape, border, grid-line, and whole-pattern rotation controls — its
+// own top-level folder (see hooks/useSceneControls.js). Only planeRotation
+// applies in blob field mode; the rest belong to the tile shaders the
+// square/triangular grids share. Keys must still match presets/presets.js 1:1.
 export default function getCompositionControls(snapshot = {}) {
   return {
     clipShape: {
       label: 'Clip Shape',
       options: ['none', 'circle', 'square', 'roundedSquare', 'hexagon'],
+      render: (get) => !isFieldMode(get),
       value: snapshot.clipShape ?? 'none',
     },
     clipCornerRadius: {
@@ -42,6 +41,7 @@ export default function getCompositionControls(snapshot = {}) {
       label: 'Border Inset',
       max: 0.9,
       min: 0,
+      render: (get) => !isFieldMode(get),
       step: 0.01,
       value: snapshot.borderInset ?? 0,
     },
@@ -72,6 +72,7 @@ export default function getCompositionControls(snapshot = {}) {
     },
     showGridLines: {
       label: 'Show Grid Lines',
+      render: (get) => !isFieldMode(get),
       value: snapshot.showGridLines ?? false,
     },
     gridLineColor: {

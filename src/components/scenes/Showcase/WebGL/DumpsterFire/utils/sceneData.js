@@ -1,4 +1,3 @@
-import CAMERA_SPLINE_PRESETS from '../../../../../../presets/spline/cameraSplinePresets';
 import { radians } from '../../../../../../utils/math';
 import {
   Catfood,
@@ -257,7 +256,6 @@ export const CAMERA = {
       'Rise & Fall': {
         points: DUMPSTER_CAMERA_RISE_AND_FALL_POINTS,
       },
-      ...CAMERA_SPLINE_PRESETS,
     },
   },
   operator: {

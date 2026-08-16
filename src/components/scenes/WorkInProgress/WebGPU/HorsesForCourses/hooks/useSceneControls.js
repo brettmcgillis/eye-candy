@@ -45,8 +45,11 @@ const CAMERA = {
     orientationMode: 'target',
     showPath: false,
     tension: 0.45,
-    path: {
-      points: HORSE_SPLINE_POINTS,
+    preset: 'Paddock Loop',
+    paths: {
+      'Paddock Loop': {
+        points: HORSE_SPLINE_POINTS,
+      },
     },
   },
   orbit: {

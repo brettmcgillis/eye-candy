@@ -526,21 +526,15 @@ export default function buildSceneCameraControls({
   };
 
   const splineControls = {
-    ...(normalizedCamera.spline.presetOptions.length
-      ? {
-          splinePreset: applyControlOverride(
-            'splinePreset',
-            {
-              label: 'Path',
-              options: normalizedCamera.spline.presetOptions,
-              value:
-                normalizedCamera.spline.preset ??
-                normalizedCamera.spline.presetOptions[0],
-            },
-            controlOverrides
-          ),
-        }
-      : {}),
+    splinePreset: applyControlOverride(
+      'splinePreset',
+      {
+        label: 'Path',
+        options: normalizedCamera.spline.presetOptions,
+        value: normalizedCamera.spline.preset,
+      },
+      controlOverrides
+    ),
     splineDesktopTarget: applyControlOverride(
       'splineDesktopTarget',
       {

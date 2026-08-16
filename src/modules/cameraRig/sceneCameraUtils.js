@@ -1,3 +1,5 @@
+import CAMERA_SPLINE_PRESETS from '../../presets/spline/cameraSplinePresets';
+
 const DEFAULT_MODE = 'fixed';
 const DEFAULT_CAMERA_POSITION = Object.freeze([0, 0, 5]);
 const DEFAULT_CAMERA_TARGET = Object.freeze([0, 0, 0]);
@@ -532,7 +534,10 @@ function normalizeSplineDeclaration(camera, fixedDeclaration) {
     fixedDeclaration.shots[fixedDeclaration.activeShot] ??
     fixedDeclaration.shots[fixedDeclaration.shotIds[0]] ??
     normalizeResponsiveFrames({}, {}, normalizeFixedFrame);
-  const paths = normalizeSplinePaths(splineConfig.paths);
+  const paths = normalizeSplinePaths({
+    ...CAMERA_SPLINE_PRESETS,
+    ...splineConfig.paths,
+  });
   const presetOptions = Object.keys(paths);
   const requestedPreset =
     typeof splineConfig.preset === 'string' ? splineConfig.preset : null;
@@ -540,9 +545,6 @@ function normalizeSplineDeclaration(camera, fixedDeclaration) {
     ? requestedPreset
     : (presetOptions[0] ?? null);
   const selectedPath = preset ? paths[preset] : null;
-  const path = normalizeSplinePathDefinition(
-    splineConfig.path ?? splineConfig.points
-  );
 
   return {
     closed:
@@ -569,7 +571,6 @@ function normalizeSplineDeclaration(camera, fixedDeclaration) {
     orientationMode: normalizeSplineOrientationMode(
       splineConfig.orientationMode
     ),
-    path,
     paths,
     position: toVectorTuple(splineConfig.position, DEFAULT_CAMERA_TARGET),
     preset,
@@ -578,7 +579,7 @@ function normalizeSplineDeclaration(camera, fixedDeclaration) {
     showPath: !!splineConfig.showPath,
     tension: toFiniteNumber(
       splineConfig.tension,
-      selectedPath?.tension ?? path?.tension ?? DEFAULT_SPLINE_TENSION
+      selectedPath?.tension ?? DEFAULT_SPLINE_TENSION
     ),
   };
 }
@@ -759,13 +760,7 @@ export function buildSceneCameraControlValues(camera = {}, options = {}) {
       normalizedCamera.orbit.mobile.target,
       normalizedCamera.orbit.mobile.target
     ),
-    ...(normalizedCamera.spline.presetOptions.length
-      ? {
-          splinePreset:
-            normalizedCamera.spline.preset ??
-            normalizedCamera.spline.presetOptions[0],
-        }
-      : {}),
+    splinePreset: normalizedCamera.spline.preset,
     splineClosed: normalizedCamera.spline.closed,
     splineDesktopFov: normalizedCamera.spline.desktop.fov,
     splineDesktopTarget: toVectorObject(
@@ -814,14 +809,6 @@ function parseSequenceOrder(value, validShotIds) {
   );
 
   return filteredValues.length ? filteredValues : validShotIds;
-}
-
-function resolveSplinePathDefinition(splineConfig, preset) {
-  if (preset && splineConfig.paths[preset]) {
-    return splineConfig.paths[preset];
-  }
-
-  return splineConfig.path;
 }
 
 function applySplineTransform(value, position, scale) {
@@ -924,10 +911,7 @@ export function buildSceneCameraRuntimeConfig({ camera, controls = {} } = {}) {
     controls.splineScale,
     normalizedCamera.spline.scale
   );
-  const splinePath = resolveSplinePathDefinition(
-    normalizedCamera.spline,
-    splinePreset
-  );
+  const splinePath = normalizedCamera.spline.paths[splinePreset] ?? null;
   const splinePoints = transformSplinePoints(
     splinePath,
     splinePosition,
@@ -1109,7 +1093,6 @@ export function buildSceneCameraRuntimeConfig({ camera, controls = {} } = {}) {
         controls.splineOrientationMode ??
           normalizedCamera.spline.orientationMode
       ),
-      path: splinePath,
       paths: normalizedCamera.spline.paths,
       points: splinePoints,
       position: splinePosition,
@@ -1301,10 +1284,7 @@ function buildSplineSnapshotFragment(snapshot, viewportKeys) {
   return {
     spline: {
       ...pickViewportFrames(snapshot.spline, viewportKeys),
-      ...(snapshot.spline.preset ? { preset: snapshot.spline.preset } : {}),
-      ...(!snapshot.spline.preset && snapshot.spline.path
-        ? { path: cloneSnapshot(snapshot.spline.path) }
-        : {}),
+      preset: snapshot.spline.preset,
       closed: snapshot.spline.closed,
       duration: snapshot.spline.duration,
       forwardDistance: snapshot.spline.forwardDistance,

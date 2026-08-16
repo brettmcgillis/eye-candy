@@ -27,7 +27,6 @@
     "name": "From Ice To Fire",
     "colors": ["#72C6EF", "#004E8F"]
   },
-
   {
     "name": "Blue & Orange",
     "colors": ["#FD8112", "#0085CA"]
@@ -780,7 +779,6 @@
     "name": "Transfile",
     "colors": ["#16BFFD", "#CB3066"]
   },
-
   {
     "name": "Sylvia",
     "colors": ["#ff4b1f", "#ff9068"]
@@ -1920,7 +1918,58 @@
     ]
   },
   {
-    "name": "black",
-    "colors": ["#000000"]
+    "name": "Darkberry (lospec)",
+    "colors": [
+      "#221228",
+      "#652654",
+      "#9E3455",
+      "#E56349",
+      "#35377C",
+      "#3D65A1",
+      "#60A4B5",
+      "#86DEC3"
+    ]
+  },
+  {
+    "name": "Crimson Blood",
+    "colors": ["#290707", "#766161", "#BB9D9D", "#BA0000"]
+  },
+  {
+    "name": "Beach Day",
+    "colors": [
+      "#3B132B",
+      "#4C2242",
+      "#702D51",
+      "#8B3A49",
+      "#B2555D",
+      "#367C50",
+      "#549A8D",
+      "#5AB9A2",
+      "#6ED6A4",
+      "#D2EC99",
+      "#D1505B",
+      "#F7738E",
+      "#F6A8B3",
+      "#FBC697",
+      "#FFEDD7"
+    ]
+  },
+  {
+    "name": "Exophobia",
+    "colors": [
+      "#F7D69B",
+      "#ADD79C",
+      "#3C9691",
+      "#324B6E",
+      "#D24646",
+      "#8A1F52",
+      "#3E2B4F",
+      "#3C113A",
+      "#221B28"
+    ]
+  },
+  {
+    "name": "Vintage Voltage (lospec)",
+    "colors": ["#191930", "#263D6E", "#2F729E", "#EBA254", "#F5D689", "#FFF5D9"]
   }
 ]

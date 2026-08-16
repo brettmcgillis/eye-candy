@@ -234,14 +234,14 @@ export default function IconsPage() {
     >
       <nav style={{ marginBottom: '1.5rem' }}>
         <Link
-          to={DEFAULT_SCENE_PATH}
+          to="/dev"
           style={{
             color: '#6b7280',
             fontSize: '0.85rem',
             textDecoration: 'none',
           }}
         >
-          ← back to app
+          ← back to dev
         </Link>
       </nav>
       <h1 style={{ fontSize: '1.2rem', margin: '0 0 0.25rem' }}>

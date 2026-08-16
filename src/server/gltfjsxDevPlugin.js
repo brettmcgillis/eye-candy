@@ -2,8 +2,10 @@ import {
   RequestError,
   convertGltfJsxRequest,
   getGltfJsxCapabilities,
+  listGradients,
   listModelAssets,
   readJsonBody,
+  writeGradientFileRequest,
   writeModelAssetRequest,
 } from './gltfjsxService';
 
@@ -11,6 +13,8 @@ const CAPABILITIES_PATH = '/dev-api/gltfjsx/capabilities';
 const CONVERT_PATH = '/dev-api/gltfjsx/convert';
 const MODELS_PATH = '/dev-api/gltfjsx/models';
 const WRITE_ASSET_PATH = '/dev-api/gltfjsx/write-asset';
+const GRADIENTS_PATH = '/dev-api/gradients';
+const WRITE_GRADIENTS_PATH = '/dev-api/gradients/write';
 
 function sendJson(res, statusCode, payload) {
   res.statusCode = statusCode;
@@ -60,6 +64,11 @@ export default function gltfjsxDevPlugin() {
           return;
         }
 
+        if (req.method === 'GET' && pathname === GRADIENTS_PATH) {
+          await handleRequest(res, () => listGradients(rootDir));
+          return;
+        }
+
         if (req.method === 'POST' && pathname === CONVERT_PATH) {
           await handleRequest(res, async () => {
             const body = await readJsonBody(req);
@@ -72,6 +81,14 @@ export default function gltfjsxDevPlugin() {
           await handleRequest(res, async () => {
             const body = await readJsonBody(req);
             return writeModelAssetRequest({ payload: body, rootDir });
+          });
+          return;
+        }
+
+        if (req.method === 'POST' && pathname === WRITE_GRADIENTS_PATH) {
+          await handleRequest(res, async () => {
+            const body = await readJsonBody(req);
+            return writeGradientFileRequest({ payload: body, rootDir });
           });
           return;
         }

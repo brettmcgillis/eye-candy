@@ -8,6 +8,7 @@ const MAX_REQUEST_BYTES = 250 * 1024 * 1024;
 const MAX_DIAGNOSTIC_OUTPUT_CHARS = 12000;
 const MODEL_ROOT_RELATIVE = path.join('public', 'models');
 const COMPONENT_ROOT_RELATIVE = path.join('src', 'components', 'elements');
+const GRADIENTS_PATH_RELATIVE = path.join('src', 'utils', 'gradients.json');
 const ENTRY_EXTENSIONS = new Set(['.glb', '.gltf']);
 
 export class RequestError extends Error {
@@ -786,6 +787,106 @@ export async function writeModelAssetRequest({ payload, rootDir }) {
     bytes: stats.size,
     outputPath: toPosix(path.relative(path.resolve(rootDir), absolutePath)),
     overwritten: existed,
+  };
+}
+
+export async function listGradients(rootDir) {
+  const gradientsPath = path.resolve(rootDir, GRADIENTS_PATH_RELATIVE);
+
+  try {
+    const raw = await fs.readFile(gradientsPath, 'utf8');
+    const parsed = JSON.parse(raw);
+    const gradients = Array.isArray(parsed) ? parsed : [];
+
+    return {
+      ok: true,
+      gradients,
+      sourcePath: toPosix(path.relative(path.resolve(rootDir), gradientsPath)),
+    };
+  } catch (error) {
+    if (error instanceof SyntaxError) {
+      throw new RequestError(
+        500,
+        'INVALID_GRADIENTS_FILE',
+        'The gradients JSON file is not valid JSON.'
+      );
+    }
+
+    throw new RequestError(
+      500,
+      'GRADIENTS_READ_FAILED',
+      'Failed to read the gradients JSON file.',
+      {
+        message: error instanceof Error ? error.message : null,
+      }
+    );
+  }
+}
+
+export async function writeGradientFileRequest({ payload, rootDir }) {
+  const gradientsPath = path.resolve(rootDir, GRADIENTS_PATH_RELATIVE);
+  const nextName = String(payload?.name || '').trim();
+  const rawColors = Array.isArray(payload?.colors) ? payload.colors : [];
+  const colors = [
+    ...new Set(rawColors.map((item) => String(item).trim()).filter(Boolean)),
+  ];
+
+  if (!nextName) {
+    throw new RequestError(
+      400,
+      'INVALID_GRADIENT_NAME',
+      'A gradient name is required.'
+    );
+  }
+
+  if (!colors.length) {
+    throw new RequestError(
+      400,
+      'INVALID_GRADIENT_COLORS',
+      'At least one valid color is required.'
+    );
+  }
+
+  const validHex = /^(#(?:[0-9a-fA-F]{3}|[0-9a-fA-F]{6}|[0-9a-fA-F]{8}))$/u;
+  const cleanedColors = colors.filter((color) => validHex.test(color));
+
+  if (cleanedColors.length !== colors.length) {
+    throw new RequestError(
+      400,
+      'INVALID_GRADIENT_COLOR',
+      'Each color must be a valid hex value like #0F172A or #f8fafc.'
+    );
+  }
+
+  const current = await listGradients(rootDir);
+  const gradients = Array.isArray(current.gradients) ? current.gradients : [];
+  const existingIndex = gradients.findIndex(
+    (gradient) => gradient.name === nextName
+  );
+
+  const nextItem = {
+    name: nextName,
+    colors: cleanedColors,
+  };
+
+  const updated =
+    existingIndex >= 0
+      ? gradients.map((gradient, index) =>
+          index === existingIndex ? nextItem : gradient
+        )
+      : [...gradients, nextItem];
+
+  await fs.writeFile(
+    gradientsPath,
+    `${JSON.stringify(updated, null, 2)}\n`,
+    'utf8'
+  );
+
+  return {
+    ok: true,
+    gradients: updated,
+    sourcePath: toPosix(path.relative(path.resolve(rootDir), gradientsPath)),
+    written: true,
   };
 }
 

@@ -20,7 +20,16 @@ import {
 import { Canvas, useThree } from '@react-three/fiber';
 
 import { modelFile } from '../../../utils/appUtils';
+import {
+  applyPoseSnapshot,
+  captureBonesSnapshot,
+  collectBones,
+  hydratePosesFromClips,
+} from './poseUtils';
 import { loadGltfFromSource } from './useGltfPreview';
+
+// Sentinel pose value for the rest/bind pose (no clip applied).
+const REST_POSE_VALUE = '__rest__';
 
 const MODELS_ENDPOINT = '/dev-api/gltfjsx/models';
 const WRITE_ASSET_ENDPOINT = '/dev-api/gltfjsx/write-asset';
@@ -501,6 +510,12 @@ export default function CombineWorkbench({ uploadedAsset }) {
   // the viewport (kept in refs so React state only carries plain transforms).
   const sceneCacheRef = useRef(new Map());
   const objectsRef = useRef(new Map());
+  // Per-model pose snapshots (hydrated from the GLB's one-frame pose clips) and
+  // the model's rest snapshot, used to apply/reset poses on instances. Bumping
+  // poseVersion forces option lists to re-read these refs after a model loads.
+  const posesCacheRef = useRef(new Map());
+  const restCacheRef = useRef(new Map());
+  const [poseVersion, setPoseVersion] = useState(0);
 
   const refreshModelList = useCallback(async () => {
     try {
@@ -554,10 +569,36 @@ export default function CombineWorkbench({ uploadedAsset }) {
 
       const gltf = await loadGltfFromSource(source);
       sceneCacheRef.current.set(value, gltf.scene);
+
+      // Hydrate the model's pose clips and capture its rest snapshot so each
+      // instance of this model can be posed independently.
+      posesCacheRef.current.set(value, hydratePosesFromClips(gltf.animations));
+      restCacheRef.current.set(
+        value,
+        captureBonesSnapshot(collectBones(gltf.scene))
+      );
+      setPoseVersion((version) => version + 1);
+
       return gltf.scene;
     },
     [uploadedAsset]
   );
+
+  // Apply a pose (by name) to a live instance object, resetting to the model's
+  // rest snapshot first so switching poses never leaves stale bone rotations.
+  const applyPoseToObject = useCallback((object, modelValue, poseName) => {
+    if (!object) return;
+
+    const bones = collectBones(object);
+    const restSnapshot = restCacheRef.current.get(modelValue);
+    applyPoseSnapshot(restSnapshot, bones);
+
+    if (poseName && poseName !== REST_POSE_VALUE) {
+      const poses = posesCacheRef.current.get(modelValue) || [];
+      const pose = poses.find((entry) => entry.name === poseName);
+      applyPoseSnapshot(pose, bones);
+    }
+  }, []);
 
   const updateInstance = useCallback((id, patch) => {
     setInstances((current) =>
@@ -589,6 +630,7 @@ export default function CombineWorkbench({ uploadedAsset }) {
           id,
           label: labelForModelValue(pickerValue, uploadedAsset),
           modelValue: pickerValue,
+          poseName: REST_POSE_VALUE,
           position: [offset, 0, 0],
           rotation: [0, 0, 0],
           scale: [1, 1, 1],
@@ -612,6 +654,8 @@ export default function CombineWorkbench({ uploadedAsset }) {
     const clone = SkeletonUtils.clone(baseScene);
     const id = nextInstanceId();
     objectsRef.current.set(id, clone);
+    // The clone starts at rest; replay the source instance's pose onto it.
+    applyPoseToObject(clone, instance.modelValue, instance.poseName);
 
     const width = boundsWidth(baseScene);
     setInstances((current) => [
@@ -666,6 +710,27 @@ export default function CombineWorkbench({ uploadedAsset }) {
     );
   }
 
+  function setInstancePose(id, poseName) {
+    setInstances((current) =>
+      current.map((instance) => {
+        if (instance.id !== id) return instance;
+
+        // Apply to the live viewport object immediately.
+        const object = objectsRef.current.get(id);
+        applyPoseToObject(object, instance.modelValue, poseName);
+
+        return { ...instance, poseName };
+      })
+    );
+  }
+
+  // Geometry instancing dedupes by node/skeleton; differently-posed copies of
+  // the same model must stay distinct, so disable it when any pose is applied.
+  const hasPosedInstances = instances.some(
+    (instance) => instance.poseName && instance.poseName !== REST_POSE_VALUE
+  );
+  const instancingActive = instanceRepeated && !hasPosedInstances;
+
   async function buildCombinedGlbBase64() {
     const root = new THREE.Group();
     root.name = toPascalCase(componentName);
@@ -675,6 +740,10 @@ export default function CombineWorkbench({ uploadedAsset }) {
       if (!baseScene) return;
 
       const clone = cloneInstanceForExport(baseScene);
+      // Bake the selected pose into the clone's bones. Each instance owns an
+      // independent skeleton, so two different poses of the same model don't
+      // collide — the pose travels as static bone transforms, not a clip.
+      applyPoseToObject(clone, instance.modelValue, instance.poseName);
       applyInstanceTransform(clone, instance);
       clone.name = `${toPascalCase(instance.label)}_${index + 1}`;
       root.add(clone);
@@ -737,7 +806,7 @@ export default function CombineWorkbench({ uploadedAsset }) {
           componentName: toPascalCase(componentName),
           files: [{ base64, name: fileName, relativePath: fileName }],
           modelSlug: slug,
-          options: { ...CONVERT_OPTIONS, instance: instanceRepeated },
+          options: { ...CONVERT_OPTIONS, instance: instancingActive },
           overwrite,
           primaryFilePath: fileName,
           primaryOutputName: slug,
@@ -921,10 +990,51 @@ export default function CombineWorkbench({ uploadedAsset }) {
                     </div>
                     {isSelected ? (
                       <>
+                        {(() => {
+                          // poseVersion gates the ref read so the list refreshes
+                          // once a model's pose clips finish hydrating.
+                          const instancePoses =
+                            poseVersion >= 0
+                              ? posesCacheRef.current.get(
+                                  instance.modelValue
+                                ) || []
+                              : [];
+
+                          return (
+                            <div style={styles.field}>
+                              <span style={styles.label}>Pose</span>
+                              <select
+                                style={styles.input}
+                                value={instance.poseName || REST_POSE_VALUE}
+                                onChange={(event) =>
+                                  setInstancePose(
+                                    instance.id,
+                                    event.target.value
+                                  )
+                                }
+                              >
+                                <option value={REST_POSE_VALUE}>
+                                  Rest pose (none)
+                                </option>
+                                {instancePoses.map((pose) => (
+                                  <option key={pose.id} value={pose.name}>
+                                    {pose.name}
+                                  </option>
+                                ))}
+                              </select>
+                              <p style={styles.hint}>
+                                {instancePoses.length
+                                  ? 'Baked into this copy on export.'
+                                  : 'No poses found in this model. Author them in the Pose workbench first.'}
+                              </p>
+                            </div>
+                          );
+                        })()}
                         <VectorRow
                           axisLabel="Position"
                           label="Pos"
                           step={0.1}
+                          decimals={3}
                           values={instance.position}
                           onChange={(axisIndex, value) =>
                             setVectorAxis(
@@ -937,7 +1047,7 @@ export default function CombineWorkbench({ uploadedAsset }) {
                         />
                         <VectorRow
                           axisLabel="Rotation"
-                          decimals={1}
+                          decimals={3}
                           label="Rot"
                           step={1}
                           values={instance.rotation}
@@ -1063,10 +1173,17 @@ export default function CombineWorkbench({ uploadedAsset }) {
                 aria-label="Instance repeated geometry"
                 type="checkbox"
                 checked={instanceRepeated}
+                disabled={hasPosedInstances}
                 onChange={(event) => setInstanceRepeated(event.target.checked)}
               />
               <span style={styles.label}>Instance repeated geometry</span>
             </div>
+            {hasPosedInstances ? (
+              <p style={styles.hint}>
+                Instancing is off while any copy has a pose applied — posed
+                copies need distinct skeletons.
+              </p>
+            ) : null}
             <div style={styles.buttonRow}>
               <button
                 type="button"

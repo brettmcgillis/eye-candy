@@ -21,6 +21,12 @@ import { Canvas, useFrame, useThree } from '@react-three/fiber';
 
 import { modelFile } from '../../../utils/appUtils';
 import AnimationDriver from './AnimationDriver';
+import {
+  applyPoseSnapshot,
+  collectBones,
+  hydratePosesFromClips,
+  poseSnapshotFromClip,
+} from './poseUtils';
 import useGltfPreview from './useGltfPreview';
 
 const MODELS_ENDPOINT = '/dev-api/gltfjsx/models';
@@ -299,18 +305,6 @@ function makeDisplayMaterial(mode, wireframe) {
   });
 }
 
-function collectBones(scene) {
-  const bones = [];
-
-  scene.traverse((node) => {
-    if (node.isBone) {
-      bones.push(node);
-    }
-  });
-
-  return bones;
-}
-
 function collectMeshes(scene) {
   const meshes = [];
 
@@ -435,23 +429,6 @@ function capturePoseSnapshot(name, bones, restPose) {
   };
 }
 
-function applyPoseSnapshot(snapshot, bones) {
-  const boneByName = new Map(bones.map((bone) => [bone.name, bone]));
-
-  Object.entries(snapshot.bones).forEach(([boneName, track]) => {
-    const bone = boneByName.get(boneName);
-    if (!bone) return;
-
-    if (track.quaternion) {
-      bone.quaternion.fromArray(track.quaternion);
-    }
-
-    if (track.position) {
-      bone.position.fromArray(track.position);
-    }
-  });
-}
-
 function buildPoseClip(snapshot) {
   const tracks = [];
 
@@ -476,49 +453,6 @@ function buildPoseClip(snapshot) {
   });
 
   return new THREE.AnimationClip(snapshot.name, POSE_CLIP_DURATION, tracks);
-}
-
-// Inverse of buildPoseClip: recognize one-frame quaternion/position clips
-// (the format Save writes) and turn them back into editable pose snapshots.
-function poseSnapshotFromClip(clip) {
-  const boneTracks = {};
-  let hasQuaternion = false;
-
-  const isPoseClip = clip.tracks.every((track) => {
-    const match = track.name.match(/^(.+)\.(quaternion|position)$/);
-
-    if (!match || track.times.length !== 1) {
-      return false;
-    }
-
-    const [, boneName, property] = match;
-    boneTracks[boneName] = boneTracks[boneName] || {};
-
-    if (property === 'quaternion') {
-      boneTracks[boneName].quaternion = Array.from(track.values.slice(0, 4));
-      hasQuaternion = true;
-    } else {
-      boneTracks[boneName].position = Array.from(track.values.slice(0, 3));
-    }
-
-    return true;
-  });
-
-  if (!isPoseClip || !hasQuaternion || !clip.tracks.length) {
-    return null;
-  }
-
-  return {
-    id: `${Date.now()}-${Math.random().toString(36).slice(2, 8)}`,
-    name: clip.name,
-    bones: boneTracks,
-  };
-}
-
-function hydratePosesFromClips(clips) {
-  return (clips || [])
-    .map((clip) => poseSnapshotFromClip(clip))
-    .filter(Boolean);
 }
 
 function arrayBufferToBase64(buffer) {

@@ -168,8 +168,8 @@ export default function LoadersPage() {
   return (
     <div style={styles.page}>
       <nav style={styles.nav}>
-        <Link to={DEFAULT_SCENE_PATH} style={styles.back}>
-          ← back to app
+        <Link to="/dev" style={styles.back}>
+          ← back to dev
         </Link>
       </nav>
 

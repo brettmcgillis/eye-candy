@@ -49,7 +49,8 @@ function Rorschach() {
         paletteShuffleSeed={config.paletteShuffleSeed}
         flatten={config.flatten}
         flattenAxis={config.flattenAxis}
-        growthDuration={config.growthDuration}
+        growthSpeed={config.growthSpeed}
+        growthStyle={config.growthStyle}
         continuousMode={config.continuousMode}
         continuousModeDelay={config.continuousModeDelay}
         onGrowthComplete={config.regenerate}

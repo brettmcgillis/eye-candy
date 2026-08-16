@@ -13,15 +13,37 @@ import {
 } from '../utils/testGenerator';
 import TestStrokes from './TestStrokes';
 
-// Measured ~1.8µs/step; 1800 keeps growth/evolution work to ~3-4ms/frame
-// regardless of Bundle Count/Strands Per Bundle/Curl Length — at extreme
-// settings they just proceed slower in wall-clock time, never block. Growth
-// and evolution share this one pool (see useFrame below) since a bundle can
-// be in either phase on any given frame — giving each phase its own full
-// budget would let per-frame work double whenever they overlap.
-const GLOBAL_STRAND_STEP_BUDGET_PER_FRAME = 1800;
+// Measured ~1.8µs/step. Growth (a short, front-loaded burst while a Test is
+// blooming in) and evolution (runs continuously for as long as the scene is
+// open) used to share one 1800-step pool, so more bundles growing at once
+// meant *every* bundle grew slower — Growth Speed stopped meaning what it
+// said the moment Bundle Count changed. Split into two pools instead: growth
+// gets a bigger dedicated budget since it's transient, evolution keeps the
+// original size since it's ongoing. Worst case both fire in the same frame
+// (some bundles still growing while others already evolve), so it's the
+// *sum* that has to stay safely under a 16.67ms (60fps) frame budget:
+// (3600+1800) steps * 1.8µs ≈ 9.7ms, leaving ~7ms for actual rendering. At
+// settings extreme enough to exceed even that, bundles just proceed slower
+// in wall-clock time — same "never blocks" guarantee as the single pool had.
+const GROWTH_STEP_BUDGET_PER_FRAME = 3600;
+const EVOLUTION_STEP_BUDGET_PER_FRAME = 1800;
 // Steps/second the tip advects at evolutionSpeed = 1. Tunable to taste.
 const EVOLUTION_ADVECT_RATE = 25;
+// Steps/second a bundle reveals at Growth Speed = 1 — DEFAULT_STEPS (600)
+// over the old default growthDuration (4s), so the new default (Growth
+// Speed 1) reads the same as the old one did. A per-bundle Structural
+// Override's own Growth Duration (seconds) still means literally "this
+// bundle takes exactly N seconds" — only the *global* control switched from
+// duration to rate, so cranking Curl Length up doesn't silently demand more
+// throughput to keep the same apparent pace.
+const GROWTH_BASE_RATE = 150;
+
+function resolveGrowthRate(steps, overrideDuration, growthSpeed) {
+  if (overrideDuration !== undefined) {
+    return overrideDuration > 0 ? steps / overrideDuration : Infinity;
+  }
+  return growthSpeed > 0 ? GROWTH_BASE_RATE * growthSpeed : Infinity;
+}
 // generateStructure's ODE search runs synchronously in a render-phase memo
 // (see below) and can stall the main thread for a frame or more, especially
 // right after a Continuous Mode reroll. Without this clamp, the first frame
@@ -68,7 +90,8 @@ function Test({
   paletteShuffleSeed,
   flatten,
   flattenAxis,
-  growthDuration,
+  growthSpeed,
+  growthStyle,
   continuousMode,
   continuousModeDelay,
   onGrowthComplete,
@@ -170,6 +193,12 @@ function Test({
   const strokeRefs = useRef([]);
   const growthElapsedRef = useRef([]);
   const growthRatesRef = useRef([]);
+  // Growth Style 'sequential' stagger: bundle i's growth doesn't start
+  // until every earlier bundle's *estimated* duration (steps / its own
+  // rate) has elapsed, so bundles bloom one at a time instead of together.
+  // Zero for every bundle in 'unison' mode. Added on top of styles[i]'s own
+  // growthDelay (Bundle Editor's per-bundle art-direction), not instead of.
+  const sequentialStartDelayRef = useRef([]);
   // Separate from bundle.grownSteps (data computed) — starts at 1 regardless
   // of how much of the validated prefix already exists, so that prefix
   // animates in too instead of popping in fully-formed. A bundle is done
@@ -184,21 +213,36 @@ function Test({
 
   // Resets only the bundles that actually regenerated this render (object
   // identity changed from last time) — reused bundles keep growing/evolving
-  // exactly as they were. `growthRatesRef` is recomputed for everyone
-  // whenever growthDuration changes, so an in-progress reveal re-paces
-  // instead of restarting.
+  // exactly as they were. `growthRatesRef`/`sequentialStartDelayRef` are
+  // recomputed for everyone whenever growthSpeed/growthStyle changes, so an
+  // in-progress reveal re-paces instead of restarting.
   useEffect(() => {
     const prevBundles = previousBundlesRef.current;
     previousBundlesRef.current = structure.bundles;
 
     extendPreservingExisting(growthElapsedRef, structure.bundles.length, 0);
     extendPreservingExisting(growthRatesRef, structure.bundles.length, 0);
+    extendPreservingExisting(
+      sequentialStartDelayRef,
+      structure.bundles.length,
+      0
+    );
     extendPreservingExisting(revealedStepsRef, structure.bundles.length, 1);
 
+    let cumulativeStartDelay = 0;
     structure.bundles.forEach((bundle, i) => {
-      const effectiveDuration = overrides[i]?.growthDuration ?? growthDuration;
-      growthRatesRef.current[i] =
-        effectiveDuration > 0 ? bundle.steps / effectiveDuration : Infinity;
+      const rate = resolveGrowthRate(
+        bundle.steps,
+        overrides[i]?.growthDuration,
+        growthSpeed
+      );
+      growthRatesRef.current[i] = rate;
+
+      sequentialStartDelayRef.current[i] =
+        growthStyle === 'sequential' ? cumulativeStartDelay : 0;
+      if (growthStyle === 'sequential') {
+        cumulativeStartDelay += rate === Infinity ? 0 : bundle.steps / rate;
+      }
 
       const mesh = strokeRefs.current[i];
       if (!mesh) return;
@@ -221,7 +265,7 @@ function Test({
         mesh.userData.fadeEnabledUniform.value = 0;
       }
     });
-  }, [structure, growthDuration, overrides]);
+  }, [structure, growthSpeed, growthStyle, overrides]);
 
   useEffect(() => {
     structure.bundles.forEach((bundle, i) => {
@@ -233,9 +277,9 @@ function Test({
   useFrame((_, rawDelta) => {
     const delta = Math.min(rawDelta, MAX_FRAME_DELTA);
 
-    // Split the shared budget across every bundle with work this frame,
-    // whichever phase each is in — fixed iteration order otherwise lets
-    // early bundles hog it while later ones stall.
+    // Split each phase's own budget across every bundle in that phase this
+    // frame — fixed iteration order otherwise lets early bundles hog it
+    // while later ones stall.
     const growingIndices = [];
     const evolvingIndices = [];
     let allBundlesGrown = true;
@@ -247,7 +291,9 @@ function Test({
       if (revealedStepsRef.current[i] < bundle.steps) {
         allBundlesGrown = false;
         growthElapsedRef.current[i] += delta;
-        const growthDelay = styles[i]?.growthDelay ?? 0;
+        const growthDelay =
+          (styles[i]?.growthDelay ?? 0) +
+          (sequentialStartDelayRef.current[i] ?? 0);
         if (growthElapsedRef.current[i] < growthDelay) return;
         growingIndices.push(i);
       } else if (evolutionEnabled && evolutionSpeed > 0) {
@@ -271,9 +317,15 @@ function Test({
       }
     }
 
-    const activeCount = growingIndices.length + evolvingIndices.length;
-    if (activeCount === 0) return;
-    const perBundleBudget = GLOBAL_STRAND_STEP_BUDGET_PER_FRAME / activeCount;
+    if (growingIndices.length + evolvingIndices.length === 0) return;
+    const perGrowingBudget =
+      growingIndices.length > 0
+        ? GROWTH_STEP_BUDGET_PER_FRAME / growingIndices.length
+        : 0;
+    const perEvolvingBudget =
+      evolvingIndices.length > 0
+        ? EVOLUTION_STEP_BUDGET_PER_FRAME / evolvingIndices.length
+        : 0;
 
     growingIndices.forEach((i) => {
       const bundle = structure.bundles[i];
@@ -292,7 +344,7 @@ function Test({
         );
         const affordableSteps = Math.max(
           0,
-          Math.floor(perBundleBudget / strandCount)
+          Math.floor(perGrowingBudget / strandCount)
         );
         const stepsThisFrame = Math.min(computeTarget, affordableSteps);
         if (stepsThisFrame > 0) {
@@ -340,7 +392,7 @@ function Test({
       );
       const affordableSteps = Math.max(
         0,
-        Math.floor(perBundleBudget / strandCount)
+        Math.floor(perEvolvingBudget / strandCount)
       );
       const stepsThisFrame = Math.min(targetSteps, affordableSteps);
       if (stepsThisFrame <= 0) return;

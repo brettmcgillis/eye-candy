@@ -178,12 +178,17 @@ export default function useSceneControls() {
     ),
     Growth: folder(
       {
-        growthDuration: {
-          label: 'Growth Duration (s)',
-          value: p.growthDuration ?? 4,
+        growthSpeed: {
+          label: 'Growth Speed',
+          value: p.growthSpeed ?? 1,
           min: 0,
-          max: 15,
-          step: 0.5,
+          max: 12,
+          step: 0.05,
+        },
+        growthStyle: {
+          label: 'Growth Style',
+          value: p.growthStyle ?? 'unison',
+          options: { Unison: 'unison', Sequential: 'sequential' },
         },
         continuousMode: {
           label: 'Continuous Mode',

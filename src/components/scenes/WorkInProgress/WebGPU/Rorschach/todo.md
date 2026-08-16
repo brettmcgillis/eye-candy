@@ -4,7 +4,7 @@
 
 [Back to main TODO](../../../../../../TODO.md)
 
-- [ ] Is there a way that we can script the generation of n Tests, and grab a screenshots of each when its complete? Im thinking all 4 perspectives, plus 1 orbit. Might be an interesting experiment to create a new instagram page and post one every day. Pretty sure theres an IG CLI we could use as well.
+- [ ] Is there a way that we can script the generation of n Tests, and grab a screenshots of each when its complete? Im thinking all 4 perspectives, plus 1 orbit. Might be an interesting experiment to create a new instagram page and post one every day. Pretty sure theres an IG CLI we could use as well. if were scripting we should essentially leverage the same set of props as the regen button. we should also capture the rolled props so the image could be replicated if i want. if we did nfts or prints this would be essential. grab a json object of the props used and put it as the comment on the nft or post, or write it on the back of a print/plot.
 
 - [ ] 3d lines (tubes) mode to extend lines mode
 - [ ] might want to explore dramatic lighting when we get to particles and lines mode assuming they are spheres/tubes

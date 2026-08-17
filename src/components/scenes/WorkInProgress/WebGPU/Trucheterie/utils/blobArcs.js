@@ -26,9 +26,12 @@ export function toCanonicalSide(q, edge) {
 // steps by i/pathDiv from i=1 and reaches a FULL cell width, which is why a
 // corner turn sweeps the whole cell while a stub only fills half of it.
 //
-// No angular test is needed: each family's centre sits on the cell boundary
-// (or its centre), so its wedge is exactly the half- or quarter-plane the
-// cell already occupies.
+// The reference strokes a polyline, so its ink is every point within a pen
+// half-width of the arcs — which caps each arc ROUND at its endpoint. That
+// distinction only bites because the quads are inflated past the cell
+// footprint (utils/blobShader.js): measuring plain distance-to-circle out
+// there continues the arc along its circle instead of stopping, laying a
+// second stroke over the neighbouring cell's that curves away from it.
 export function arcFamily(q, type, edge, size, pathDivU) {
   const isCorner = type.equal(2);
   const halfSize = size.mul(-0.5);
@@ -50,10 +53,45 @@ export function arcFamily(q, type, edge, size, pathDivU) {
   const kMax = select(isCorner, bands, bands.mul(0.5).floor());
   const rMax = select(isCorner, size, size.mul(0.5));
 
-  const d = toCanonicalSide(q, edge).sub(center).length();
-  const k = clamp(round(d.mul(pathDivU).sub(odd)), kMin, kMax);
+  const rel = toCanonicalSide(q, edge).sub(center);
+  // Clamp the sample back into the family's angular wedge (all / half /
+  // quarter plane about its centre). Whatever gets clamped away is the
+  // perpendicular distance past the arc's endpoint, and combining the two in
+  // quadrature is exactly the pen's round cap.
+  const clamped = select(
+    type.equal(0),
+    rel,
+    select(
+      isCorner,
+      vec2(rel.x.max(0), rel.y.max(0)),
+      vec2(rel.x, rel.y.max(0))
+    )
+  );
+  const capOffset = rel.sub(clamped).length();
 
-  return { d, dBand: d.sub(k.add(odd).div(pathDivU)).abs(), rMax };
+  const d = clamped.length();
+  const k = clamp(round(d.mul(pathDivU).sub(odd)), kMin, kMax);
+  const band = d.sub(k.add(odd).div(pathDivU)).abs();
+
+  // The lane is the annulus BETWEEN two arcs, so it floors where the band
+  // rounds. `laneBase` re-zeroes the odd half-step's inner disc, matching the
+  // indexing utils/laneChannels.js assigns on the CPU.
+  const laneBase = select(odd.greaterThan(0.25), 1, 0);
+  const lanes = select(isCorner, bands, kMax.add(laneBase));
+  const lane = clamp(
+    d.mul(pathDivU).sub(odd).floor().add(laneBase),
+    0,
+    lanes.sub(1)
+  );
+
+  return {
+    // Both terms are smooth, unlike dBand — see strokeMask.
+    aaField: d.add(capOffset),
+    d,
+    dBand: vec2(band, capOffset).length(),
+    lane,
+    rMax,
+  };
 }
 
 // Constant-width pen. `smoothField` must be the un-folded field `distance`

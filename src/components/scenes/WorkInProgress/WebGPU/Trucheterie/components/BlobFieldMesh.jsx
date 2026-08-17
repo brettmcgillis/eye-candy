@@ -11,6 +11,7 @@ import React, {
 
 import buildBlobField from '../utils/blobField';
 import buildBlobColorNode from '../utils/blobShader';
+import fillLaneTexture, { createLaneTexture } from '../utils/laneTexture';
 
 // TurtleToy's pen is a fixed 0.25 units on its 200-unit canvas. Expressed in
 // micro-cell units that reduces to a function of gridSize alone, so the line
@@ -18,8 +19,9 @@ import buildBlobColorNode from '../utils/blobShader';
 const REFERENCE_CANVAS = 190;
 const REFERENCE_PEN = 0.25;
 // How far each quad is inflated past its cell, in pen half-widths, so a
-// stroke on a cell edge can overhang instead of being sliced by the quad.
-const MARGIN_PENS = 3;
+// stroke tangent to a cell edge can overhang instead of being sliced by the
+// quad. One half-width covers the pen itself; the rest is AA headroom.
+const MARGIN_PENS = 1.5;
 
 const ATTRIBUTES = [
   ['instanceSize', 'sizes', 1],
@@ -45,6 +47,11 @@ function BlobFieldMesh({ config }) {
     blobOneFill,
     blobPathsPerUnit,
     blobSeed,
+    blobLaneMode,
+    blobPalette,
+    blobPaletteExact,
+    blobPaletteShuffle,
+    blobShowStrokes,
     blobSizeFunction,
     strokeColor,
   } = config;
@@ -79,17 +86,45 @@ function BlobFieldMesh({ config }) {
     ]
   );
 
+  const laneTexture = useMemo(() => createLaneTexture(), []);
+  useEffect(() => () => laneTexture.dispose(), [laneTexture]);
+
+  const laneInfo = useMemo(
+    () =>
+      fillLaneTexture(laneTexture, field.cells, {
+        exact: blobPaletteExact,
+        fallback: bgColor,
+        mode: blobLaneMode,
+        palette: blobPalette,
+        pathDiv: blobPathsPerUnit,
+        seed: blobSeed,
+        shuffleSeed: blobPaletteShuffle,
+      }),
+    [
+      bgColor,
+      blobLaneMode,
+      blobPalette,
+      blobPaletteExact,
+      blobPaletteShuffle,
+      blobPathsPerUnit,
+      blobSeed,
+      field,
+      laneTexture,
+    ]
+  );
+
   const uniformsRef = useRef(null);
   if (!uniformsRef.current) {
     uniformsRef.current = {
-      bgColorU: uniform(new THREE.Color(bgColor)),
       cellSizeU: uniform(field.cellSize),
+      maxLanesU: uniform(1),
       debugCellsU: uniform(0),
       debugConnectorsU: uniform(0),
       pathDivU: uniform(blobPathsPerUnit),
       penHalfWidthU: uniform(0),
       quadMarginU: uniform(0),
       referenceScaleU: uniform(1),
+      showStrokesU: uniform(1),
       strokeColorU: uniform(new THREE.Color(strokeColor)),
     };
   }
@@ -99,8 +134,8 @@ function BlobFieldMesh({ config }) {
 
   useEffect(() => {
     const u = uniformsRef.current;
-    u.bgColorU.value.set(bgColor);
     u.strokeColorU.value.set(strokeColor);
+    u.maxLanesU.value = laneInfo.maxLanes;
     u.cellSizeU.value = field.cellSize;
     u.debugCellsU.value = blobDebug % 2;
     u.debugConnectorsU.value = Math.floor(blobDebug / 2) % 2;
@@ -108,12 +143,14 @@ function BlobFieldMesh({ config }) {
     u.penHalfWidthU.value = penHalfWidth;
     u.quadMarginU.value = quadMargin;
     u.referenceScaleU.value = REFERENCE_CANVAS / blobCanvasSize;
+    u.showStrokesU.value = blobShowStrokes ? 1 : 0;
   }, [
-    bgColor,
     blobCanvasSize,
     blobDebug,
     blobPathsPerUnit,
+    blobShowStrokes,
     field,
+    laneInfo,
     penHalfWidth,
     quadMargin,
     strokeColor,
@@ -123,9 +160,9 @@ function BlobFieldMesh({ config }) {
     const mat = new THREE.MeshBasicNodeMaterial();
     mat.transparent = true;
     mat.depthWrite = false;
-    mat.colorNode = buildBlobColorNode(uniformsRef.current);
+    mat.colorNode = buildBlobColorNode({ ...uniformsRef.current, laneTexture });
     return mat;
-  }, []);
+  }, [laneTexture]);
   useEffect(() => () => material.dispose(), [material]);
 
   useLayoutEffect(() => {

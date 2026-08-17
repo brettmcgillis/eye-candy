@@ -2,9 +2,13 @@ import {
   Fn,
   attribute,
   float,
+  instanceIndex,
+  int,
+  ivec2,
   max,
   mix,
   select,
+  textureLoad,
   uv,
   vec2,
   vec4,
@@ -14,14 +18,16 @@ import { arcFamily, sectorMask, strokeMask } from './blobArcs';
 import { debugCellsMask, debugConnectorsMask } from './blobDebug';
 
 export default function buildBlobColorNode({
-  bgColorU,
   cellSizeU,
   debugCellsU,
   debugConnectorsU,
+  laneTexture,
+  maxLanesU,
   pathDivU,
   penHalfWidthU,
   quadMarginU,
   referenceScaleU,
+  showStrokesU,
   strokeColorU,
 }) {
   return Fn(() => {
@@ -45,12 +51,13 @@ export default function buildBlobColorNode({
     // draws, so the family drawn first hides the second wherever they
     // overlap — the hard terminations where two blobs meet. Within a family
     // the sectors nest, so nothing self-occludes.
+    const outsideFirst = select(first.d.greaterThan(first.rMax), 1, 0);
     const ink = max(
-      strokeMask(first.d, first.dBand, penHalfWidthU),
-      strokeMask(second.d, second.dBand, penHalfWidthU)
-        .mul(select(first.d.greaterThan(first.rMax), 1, 0))
+      strokeMask(first.aaField, first.dBand, penHalfWidthU),
+      strokeMask(second.aaField, second.dBand, penHalfWidthU)
+        .mul(outsideFirst)
         .mul(hasSecond)
-    );
+    ).mul(showStrokesU);
 
     // The union of both families' sectors is the blob silhouette — the area
     // "inside the curves" that bgColor fills. Hard-clamped to the true
@@ -65,6 +72,20 @@ export default function buildBlobColorNode({
       sectorMask(first.d, first.rMax),
       sectorMask(second.d, second.rMax).mul(hasSecond)
     ).mul(inCell);
+
+    // Lane fill. The winning family is the one whose sector owns this pixel —
+    // the same rule the stroke occlusion uses — and its lane indexes a lookup
+    // row built per cell by utils/laneTexture.js. With no palette selected
+    // that table is a single texel of the flat "tile background" colour, so
+    // there is no branch here either way.
+    const usesSecond = outsideFirst.mul(hasSecond);
+    const laneSlot = usesSecond
+      .mul(maxLanesU)
+      .add(mix(first.lane, second.lane, usesSecond));
+    const fill = textureLoad(
+      laneTexture,
+      ivec2(int(laneSlot), int(instanceIndex))
+    ).rgb;
 
     // The debug hatch is specified in absolute units on the reference's own
     // canvas, so rescale this pixel's turtle-space position onto it.
@@ -90,6 +111,6 @@ export default function buildBlobColorNode({
       max(cells.mul(debugCellsU), dots.mul(debugConnectorsU))
     );
 
-    return vec4(mix(bgColorU, strokeColorU, marks), max(inBlob, marks));
+    return vec4(mix(fill, strokeColorU, marks), max(inBlob, marks));
   })();
 }

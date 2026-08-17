@@ -25,6 +25,7 @@ const ATTEMPTS = 100;
 
 const EMPTY = {
   cellSize: 1,
+  cells: [],
   centers: new Float32Array(0),
   conn0: new Float32Array(0),
   conn1: new Float32Array(0),
@@ -168,6 +169,10 @@ export default function buildBlobField({
 
   return {
     cellSize,
+    // The surviving cells with their resolved connections, so the lane
+    // channel solve (utils/laneChannels.js) can re-derive lane geometry
+    // without re-running the seeded generation.
+    cells: drawn,
     centers,
     conn0,
     conn1,

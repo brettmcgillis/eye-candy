@@ -1931,11 +1931,11 @@
     ]
   },
   {
-    "name": "Crimson Blood",
+    "name": "Crimson Blood (lospec)",
     "colors": ["#290707", "#766161", "#BB9D9D", "#BA0000"]
   },
   {
-    "name": "Beach Day",
+    "name": "Beach Day (lospec)",
     "colors": [
       "#3B132B",
       "#4C2242",
@@ -1955,7 +1955,7 @@
     ]
   },
   {
-    "name": "Exophobia",
+    "name": "Exophobia (lospec)",
     "colors": [
       "#F7D69B",
       "#ADD79C",

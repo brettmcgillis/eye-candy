@@ -30,6 +30,9 @@ export default function useSceneControls() {
       presets: PRESETS,
     });
 
+  // Fed to the Blob Field folder's shuffle button, which needs the setter
+  // Leva has not returned yet when the schema is built.
+  const setControlsRef = useRef(null);
   const cameraApiRef = useRef(null);
   const { buildCamera, cameraControls } = useSceneCameraControls({
     apiRef: cameraApiRef,
@@ -44,10 +47,10 @@ export default function useSceneControls() {
     Grid: folder(getGridControls(controlsSnapshotRef.current), {
       collapsed: true,
     }),
-    'Blob Field': folder(getBlobFieldControls(controlsSnapshotRef.current), {
-      collapsed: true,
-      render: isFieldMode,
-    }),
+    'Blob Field': folder(
+      getBlobFieldControls(controlsSnapshotRef.current, setControlsRef),
+      { collapsed: true, render: isFieldMode }
+    ),
     Motif: folder(getMotifControls(controlsSnapshotRef.current), {
       collapsed: true,
       render: (get) => !isFieldMode(get),
@@ -73,6 +76,7 @@ export default function useSceneControls() {
   }));
 
   attachSetControls(setControls);
+  setControlsRef.current = setControls;
   // Feed the presets copy button — without this the snapshot stays at the
   // initial preset and copy returns a near-empty object.
   controlsSnapshotRef.current = { ...controls };

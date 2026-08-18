@@ -9,7 +9,7 @@ export default {
   id: 'horsesForCourses',
   label: 'Horses For Courses',
   channel: 'webgpu',
-  area: 'wip',
+  area: 'showcase',
   icon: SceneIcon,
   Component: lazy(() => import('./HorsesForCourses')),
 };

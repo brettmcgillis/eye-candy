@@ -258,7 +258,7 @@ in a scene-local `components/ButtonOverlay.jsx`. These are the buttons a
 visitor is meant to see and use — the reverse of the Leva panel, which is the
 hidden dev-controls panel only reachable if you know to click the reversal.
 Give `datasetKey` a scene-unique value. Example:
-`WorkInProgress/WebGPU/HorsesForCourses`.
+`Showcase/WebGPU/HorsesForCourses`.
 
 `Template/SceneTemplate/` has the three required items wired in — copy it to
 bootstrap a new WIP scene. It also ships `components/ButtonOverlay.jsx` as a

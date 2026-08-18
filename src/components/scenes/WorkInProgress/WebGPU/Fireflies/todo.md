@@ -25,7 +25,7 @@
   avoidance (`BoidsController`).
 - `~/dev/examples/Floids` — hunter chase behavior (`Hunter.js`), realistic
   per-agent flash-sync timing (`Agents.js` `fire()`/`nudge()`).
-- `src/components/scenes/WorkInProgress/WebGPU/CrossTalk/components/FluidSimView.jsx`
+- `src/components/scenes/Showcase/WebGPU/CrossTalk/components/FluidSimView.jsx`
 
 # // Presets
 

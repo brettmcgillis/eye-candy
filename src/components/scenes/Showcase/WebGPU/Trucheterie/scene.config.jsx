@@ -9,7 +9,7 @@ export default {
   id: 'trucheterie',
   label: 'Trucheterie',
   channel: 'webgpu',
-  area: 'wip',
+  area: 'showcase',
   icon: SceneIcon,
   Component: lazy(() => import('./Trucheterie')),
 };

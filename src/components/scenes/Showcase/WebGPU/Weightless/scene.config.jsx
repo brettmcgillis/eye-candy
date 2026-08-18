@@ -9,7 +9,7 @@ export default {
   id: 'weightless',
   label: 'Weightless',
   channel: 'webgpu',
-  area: 'wip',
+  area: 'showcase',
   icon: SceneIcon,
   Component: lazy(() => import('./Weightless')),
 };

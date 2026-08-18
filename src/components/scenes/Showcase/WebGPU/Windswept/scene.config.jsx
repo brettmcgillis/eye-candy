@@ -9,7 +9,7 @@ export default {
   id: 'windswept',
   label: 'Windswept',
   channel: 'webgpu',
-  area: 'wip',
+  area: 'showcase',
   icon: SceneIcon,
   Component: lazy(() => import('./Windswept')),
 };

@@ -12,7 +12,7 @@ import SceneButtonBar from '../../../../../app/scaffold/overlay/components/Scene
 //
 // The pattern: compose SceneButtonBar with one or more OverlayIconButton
 // children. Give datasetKey a scene-unique value.
-// See src/components/scenes/WorkInProgress/WebGPU/HorsesForCourses for a
+// See src/components/scenes/Showcase/WebGPU/HorsesForCourses for a
 // real usage.
 function ButtonOverlay({ toggled, onToggleClick }) {
   return (

@@ -61,7 +61,6 @@ To Build:
 - [ ] Consider creative letterboxing for scenes. could be a 3d element to give it depth in the scene, catch shadows.
 - [ ] Radar scene. like a radar scanner, rotating clockwise, the radar 'reveals' geometry in the scene as it passes over it similar to that Lidar game. Over time the dots fade so they are gone before the sweep returns. if we use a slowly animated model we could get snapshots in time.
 - [ ] Checkout MarkovJunior/MarkovJuniorWeb. id love to generate liminal spaces using similar logic.
-- [ ] 3D/Volumetric/Particle Rorschach with dramatic lighting.
 
 ### Scene TODO Files
 
@@ -72,16 +71,21 @@ To Build:
 - [BirdsArentReal](src/components/scenes/Showcase/WebGPU/BirdsArentReal/todo.md)
 - [BurningAtBothEnds](src/components/scenes/Showcase/WebGL/BurningAtBothEnds/todo.md)
 - [Cardinals](src/components/scenes/Showcase/WebGL/Cardinals/todo.md)
+- [CrossTalk](src/components/scenes/Showcase/WebGPU/CrossTalk/todo.md)
 - [DumpsterFire](src/components/scenes/Showcase/WebGL/DumpsterFire/todo.md)
+- [HorsesForCourses](src/components/scenes/Showcase/WebGPU/HorsesForCourses/todo.md)
 - [LoGlow](src/components/scenes/Showcase/WebGPU/LoGlow/todo.md)
-- [Mycelium](src/components/scenes/Showcase/WebGL/Mycelum/todo.md)
+- [Mycelium](src/components/scenes/Showcase/WebGL/Mycelium/todo.md)
 - [PaperCuts](src/components/scenes/Showcase/WebGL/PaperCuts/todo.md)
 - [PaperStack](src/components/scenes/Showcase/WebGL/PaperStack/todo.md)
 - [QuinnsDice](src/components/scenes/Showcase/WebGL/QuinnsDice/todo.md)
 - [Rosie](src/components/scenes/Showcase/WebGL/Rosie/todo.md)
 - [Surrender](src/components/scenes/Showcase/WebGPU/Surrender/todo.md)
 - [Touch Grass](src/components/scenes/Showcase/WebGPU/TouchGrass/todo.md)
+- [Trucheterie](src/components/scenes/Showcase/WebGPU/Trucheterie/todo.md)
 - [WatercolorSquares](src/components/scenes/Showcase/WebGL/WatercolorSquares/todo.md)
+- [Weightless](src/components/scenes/Showcase/WebGPU/Weightless/todo.md)
+- [Windswept](src/components/scenes/Showcase/WebGPU/Windswept/todo.md)
 
 **WorkInProgress**
 
@@ -91,7 +95,6 @@ To Build:
 - [AllMyFriendsAreGhosts](src/components/scenes/WorkInProgress/WebGPU/AllMyFriendsAreGhosts/todo.md)
 - [Apparitions](src/components/scenes/WorkInProgress/WebGPU/Apparitions/todo.md)
 - [BurningCash](src/components/scenes/WorkInProgress/WebGPU/BurningCash/todo.md)
-- [CrossTalk](src/components/scenes/WorkInProgress/WebGPU/CrossTalk/todo.md)
 - [Digital Rain](src/components/scenes/WorkInProgress/WebGPU/DigitalRain/todo.md)
 - [DrippingSkull](src/components/scenes/WorkInProgress/WebGPU/DrippingSkull/todo.md)
 - [FightingFish](src/components/scenes/WorkInProgress/WebGPU/FightingFish/todo.md)
@@ -100,7 +103,6 @@ To Build:
 - [Fractal Automata](src/components/scenes/WorkInProgress/WebGPU/FractalAutomata/todo.md)
 - [GhostStories](src/components/scenes/WorkInProgress/WebGPU/GhostStories/todo.md)
 - [HexTrees](src/components/scenes/WorkInProgress/WebGPU/HexTrees/todo.md)
-- [HorsesForCourses](src/components/scenes/WorkInProgress/WebGPU/HorsesForCourses/todo.md)
 - [My Heart Is A Broken Fish Tank](src/components/scenes/WorkInProgress/WebGPU/MyHeartIsABrokenFishTank/todo.md)
 - [OneInTheHand](src/components/scenes/WorkInProgress/WebGPU/OneInTheHand/todo.md)
 - [PolicePresence](src/components/scenes/WorkInProgress/WebGL/PolicePresence/todo.md)
@@ -114,14 +116,12 @@ To Build:
 - [StayingAfloat](src/components/scenes/WorkInProgress/WebGL/StayingAfloat/todo.md)
 - [StillPullingForYou](src/components/scenes/WorkInProgress/WebGPU/StillPullingForYou/todo.md)
 - [ThatsAllFolks](src/components/scenes/WorkInProgress/WebGPU/ThatsAllFolks/todo.md)
-- [Trucheterie](src/components/scenes/WorkInProgress/WebGPU/Trucheterie/todo.md)
 - [UrbanWildlife](src/components/scenes/WorkInProgress/WebGPU/UrbanWildlife/todo.md)
 - [WaterCycle](src/components/scenes/WorkInProgress/WebGPU/WaterCycle/todo.md)
-- [Weightless](src/components/scenes/WorkInProgress/WebGPU/Weightless/todo.md)
 - [Wet Paint](src/components/scenes/WorkInProgress/WebGPU/WetPaint/todo.md)
 - [WhiteLies](src/components/scenes/WorkInProgress/WebGPU/WhiteLies/todo.md)
 - [WindowBreaker](src/components/scenes/WorkInProgress/WebGPU/WindowBreaker/todo.md)
-- [Windswept](src/components/scenes/WorkInProgress/WebGPU/Windswept/todo.md)
+- [WriteOff](src/components/scenes/WorkInProgress/WebGPU/WriteOff/todo.md)
 
 **Template**
 

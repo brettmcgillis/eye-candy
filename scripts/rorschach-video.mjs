@@ -51,6 +51,7 @@ const DEFAULTS = {
   overlay: true,
   renderer: 'gpu',
   simplify: 0.4,
+  viewport: null,
   stroke: 0,
   systems: 3,
   turns: 1,
@@ -69,6 +70,8 @@ function usage() {
   --seed S            First seed; omit for random
   --no-overlay        Skip the scene overlay burn-in (on by default)
   --ig PRESET         story|reel|post safe-area insets, or none (default ${DEFAULTS.ig})
+  --viewport N        CSS pixel width the overlay emulates (default 390 with
+                      --ig, else 1440)
   --renderer R        gpu (real WebGPU + post) or svg (approximation)
                       (default ${DEFAULTS.renderer})
 

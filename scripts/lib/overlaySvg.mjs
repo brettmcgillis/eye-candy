@@ -19,9 +19,17 @@ const PANEL_FG = '#000000';
 const ICON_SIZE = 17.5;
 const LOGO_ASPECT = 294 / 215;
 
-// The app only defines the IG safe-area offsets inside its `max-width: 900px`
-// branch, so they simply don't exist on the desktop layout. Passing an IG
-// preset therefore selects the mobile layout — that's where those offsets live.
+// Which branch of the app's CSS applies is decided by the emulated viewport
+// width, exactly like the `max-width: 900px` media query it mirrors — not by
+// whether an IG preset was passed. The IG safe-area offsets only exist inside
+// that mobile branch, so they're applied only when it's the one in play.
+const MOBILE_BREAKPOINT = 900;
+// CSS viewport of a vertical iPhone (12/13/14/15/16): 1170x2532 device pixels
+// at DPR 3. Emulating this is the whole point of rendering at those dimensions,
+// and it's what makes the overlay come out the size it is on the phone.
+const PHONE_VIEWPORT = 390;
+const DESKTOP_VIEWPORT = 1440;
+
 const LAYOUTS = {
   desktop: { font: 14, inset: 70, padX: 14, padY: 14, radius: 28 },
   mobile: { font: 13, inset: 16, padX: 11.05, padY: 8.45, radius: 20.8 },
@@ -162,22 +170,28 @@ function formatDate(date) {
   return `${day}.${month}.${date.getFullYear()}`;
 }
 
-// Returns an SVG the caller composites over a rendered frame. `scale` exists
-// because the app's overlay is a fixed pixel size at any canvas size, so a
-// 2160px export would otherwise carry an overlay half the relative size it has
-// on screen; the default keeps it looking like a 1080px viewport.
+// Returns an SVG the caller composites over a rendered frame. `viewport` is the
+// CSS pixel width being emulated; the output width divided by it is the device
+// pixel ratio the overlay is drawn at.
 export default async function overlaySvg({
   date = new Date(),
   height,
   ig = null,
   repoRoot,
-  scale = null,
   version = '0.0.0',
+  viewport = null,
   width,
 }) {
-  const preset = IG_OFFSETS[ig] ? ig : null;
-  const layout = preset ? LAYOUTS.mobile : LAYOUTS.desktop;
-  const zoom = scale ?? Math.min(width, height) / 1080;
+  // The overlay is laid out in CSS pixels and the whole group is then scaled by
+  // the device-pixel ratio the output implies — width / viewport. Scaling off
+  // the raw output size instead (the previous `min(w,h)/1080`) drew a phone
+  // export at roughly 1x, so every chip came out about a third of the size it
+  // is on the device and the insets shrank to match.
+  const cssWidth = viewport ?? (ig ? PHONE_VIEWPORT : DESKTOP_VIEWPORT);
+  const zoom = width / cssWidth;
+  const isMobile = cssWidth <= MOBILE_BREAKPOINT;
+  const layout = isMobile ? LAYOUTS.mobile : LAYOUTS.desktop;
+  const preset = isMobile && IG_OFFSETS[ig] ? ig : null;
   const { font } = layout;
 
   const logo = await readFile(

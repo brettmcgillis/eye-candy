@@ -137,9 +137,15 @@ Notes:
 
 - `--overlay` burns the scene overlay (Scenemoji, version, name, date) into the
   PNG; off by default here. `--ig story|reel|post|none` picks the safe-area
-  insets (default `post`) and only applies alongside `--overlay`. Note the app
-  only defines those IG offsets in its `max-width: 900px` CSS branch, so `--ig`
-  also selects the mobile overlay layout — that's the only place they exist.
+  insets (default `post`) and only applies alongside `--overlay`.
+- **The overlay is scaled by an emulated device pixel ratio**, not by the raw
+  output size: it lays out in CSS pixels and scales by `width / --viewport`.
+  `--viewport` defaults to 390 with `--ig` (a vertical iPhone's CSS viewport —
+  1170x2532 at DPR 3) and 1440 otherwise. Which CSS branch applies is decided by
+  that viewport against the app's own `max-width: 900px` media query, so the IG
+  offsets only exist when the mobile branch is in play, exactly as in the app.
+  Scaling off the output size instead drew a phone export at roughly 1x, with
+  chips about a third of their real size and insets shrunk to match.
 - The burned-in Scenemoji is the **Showcase** form: mark — scene icon, with no
   area icon. The live app puts a wrench there for WIP scenes and a posted image
   should never carry it.

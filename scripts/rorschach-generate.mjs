@@ -42,6 +42,7 @@ const DEFAULTS = {
   overlay: false,
   renderer: 'gpu',
   simplify: 0.4,
+  viewport: null,
   stroke: 0,
   views: 'front,back,top,bottom',
   width: 1080,
@@ -67,6 +68,9 @@ function usage() {
   --bloomStrength N   Additive glow gain (default ${DEFAULTS.bloomStrength})
   --bloomRadius N     Glow spread, 0-1 (default ${DEFAULTS.bloomRadius})
   --bloomThreshold N  Brightness a color must exceed to bloom (default ${DEFAULTS.bloomThreshold})
+  --viewport N        CSS pixel width the overlay emulates; output width over
+                      this is the device pixel ratio it draws at. Defaults to
+                      390 (a vertical iPhone) with --ig, else 1440.
   --renderer R        gpu (real WebGPU + post) or svg (approximation)
                       (default ${DEFAULTS.renderer}). The .svg output always
                       uses the svg path; this only affects the .png.

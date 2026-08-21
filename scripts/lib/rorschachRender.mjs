@@ -18,14 +18,19 @@ const SCENE = '/src/components/scenes/WorkInProgress/WebGPU/Rorschach';
 // once per geometry instead.
 const overlayCache = new Map();
 
-async function overlayLayer({ height, ig, version, width }) {
-  const key = `${width}x${height}:${ig ?? 'none'}:${version}`;
+async function overlayLayer({ height, ig, version, viewport, width }) {
+  const key = `${width}x${height}:${ig ?? 'none'}:${viewport ?? 'auto'}:${version}`;
   if (!overlayCache.has(key)) {
     overlayCache.set(
       key,
-      overlaySvg({ height, ig, repoRoot: REPO_ROOT, version, width }).then(
-        (svg) => sharp(Buffer.from(svg)).png().toBuffer()
-      )
+      overlaySvg({
+        height,
+        ig,
+        repoRoot: REPO_ROOT,
+        version,
+        viewport,
+        width,
+      }).then((svg) => sharp(Buffer.from(svg)).png().toBuffer())
     );
   }
   return overlayCache.get(key);
@@ -204,6 +209,7 @@ async function withOverlay(png, options) {
     height: options.height,
     ig: options.ig,
     version: options.version,
+    viewport: options.viewport,
     width: options.width,
   });
   return sharp(png)

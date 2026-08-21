@@ -1,11 +1,12 @@
 import * as THREE from 'three/webgpu';
 
-import React, { memo, useEffect } from 'react';
+import React, { memo, useEffect, useRef } from 'react';
 
 import { useThree } from '@react-three/fiber';
 
 import { CameraRig } from '../../../../../modules/cameraRig';
 import ButtonOverlay from './components/ButtonOverlay';
+import CinematicMode from './components/CinematicMode';
 import PostEffects from './components/PostEffects';
 import Test from './components/Test';
 import ViewHotkey from './components/ViewHotkey';
@@ -20,6 +21,9 @@ import useSceneControls from './hooks/useSceneControls';
 function Rorschach() {
   const config = useSceneControls();
   const { scene } = useThree();
+  // Written every frame by CinematicMode, read every frame by Test — never
+  // through React, so the sweep doesn't re-render the scene 60 times a second.
+  const flattenRef = useRef(null);
 
   // Set imperatively, not via <color attach="background" args={[...]}> —
   // that form left the background one edit behind (see todo.md).
@@ -31,6 +35,12 @@ function Rorschach() {
     <>
       <CameraRig camera={config.camera} />
       <ViewHotkey />
+      <CinematicMode
+        enabled={config.cinematicEnabled}
+        flattenRef={flattenRef}
+        onSystemChange={config.regenerate}
+        secondsPerSystem={config.cinematicSecondsPerSystem}
+      />
       <Test
         seed={config.seed}
         bundleCount={config.bundleCount}
@@ -53,7 +63,7 @@ function Rorschach() {
         growthStyle={config.growthStyle}
         continuousMode={config.continuousMode}
         continuousModeDelay={config.continuousModeDelay}
-        onGrowthComplete={config.regenerate}
+        onGrowthComplete={config.reseed}
         evolutionEnabled={config.evolutionEnabled}
         evolutionSpeed={config.evolutionSpeed}
         curlLimit={config.curlLimit}
@@ -62,6 +72,7 @@ function Rorschach() {
         monochrome={config.monochrome}
         inkColor={config.inkColor}
         overrides={config.overrides}
+        flattenRef={flattenRef}
       />
       <PostEffects
         bloomEnabled={config.bloomEnabled}
@@ -69,7 +80,12 @@ function Rorschach() {
         bloomStrength={config.bloomStrength}
         bloomRadius={config.bloomRadius}
       />
-      {config.showOverlay && <ButtonOverlay onRegenerate={config.regenerate} />}
+      {config.showOverlay && (
+        <ButtonOverlay
+          onRegenerate={config.regenerate}
+          onReseed={config.reseed}
+        />
+      )}
     </>
   );
 }

@@ -7,6 +7,7 @@ import { writeStrokeSegmentRange } from '../utils/buildStrokeGeometry';
 import { advanceEvolution, driftCoeffs } from '../utils/evolution';
 import createRng from '../utils/rng';
 import {
+  GROWTH_BASE_RATE,
   computeStyles,
   generateStructure,
   growBundle,
@@ -29,14 +30,10 @@ const GROWTH_STEP_BUDGET_PER_FRAME = 3600;
 const EVOLUTION_STEP_BUDGET_PER_FRAME = 1800;
 // Steps/second the tip advects at evolutionSpeed = 1. Tunable to taste.
 const EVOLUTION_ADVECT_RATE = 25;
-// Steps/second a bundle reveals at Growth Speed = 1 — DEFAULT_STEPS (600)
-// over the old default growthDuration (4s), so the new default (Growth
-// Speed 1) reads the same as the old one did. A per-bundle Structural
-// Override's own Growth Duration (seconds) still means literally "this
-// bundle takes exactly N seconds" — only the *global* control switched from
-// duration to rate, so cranking Curl Length up doesn't silently demand more
-// throughput to keep the same apparent pace.
-const GROWTH_BASE_RATE = 150;
+// A per-bundle Structural Override's own Growth Duration (seconds) means
+// literally "this bundle takes exactly N seconds" — only the *global*
+// control is a rate, so cranking Curl Length up doesn't silently demand
+// more throughput to keep the same apparent pace.
 
 function resolveGrowthRate(steps, overrideDuration, growthSpeed) {
   if (overrideDuration !== undefined) {
@@ -103,6 +100,7 @@ function Test({
   monochrome,
   inkColor,
   overrides,
+  flattenRef,
 }) {
   // Only the *structural* fields of `overrides` (Structural Override on +
   // its four values) should gate the structure memo below — style-only
@@ -190,6 +188,7 @@ function Test({
 
   const evolutionRng = useMemo(() => createRng(seed + 0x9e3779b9), [seed]);
 
+  const groupRef = useRef(null);
   const strokeRefs = useRef([]);
   const growthElapsedRef = useRef([]);
   const growthRatesRef = useRef([]);
@@ -432,10 +431,33 @@ function Test({
         mesh.userData.grownStepsUniform.value = bundle.grownSteps;
       }
     });
+
+    // Cinematic Mode animates flatten every frame (see CinematicMode.jsx) —
+    // applied here off a ref rather than through the `flatten` prop so it
+    // never re-renders the scene. Untouched when the ref is null, leaving the
+    // Leva-driven scale on the group below in charge.
+    const overrideFlatten = flattenRef?.current;
+    if (groupRef.current && overrideFlatten != null) {
+      const squash = 1 - overrideFlatten;
+      if (flattenAxis === 'y') {
+        groupRef.current.scale.set(
+          structure.scale,
+          structure.scale * squash,
+          structure.scale
+        );
+      } else {
+        groupRef.current.scale.set(
+          structure.scale,
+          structure.scale,
+          structure.scale * squash
+        );
+      }
+    }
   });
 
   return (
     <group
+      ref={groupRef}
       scale={
         flattenAxis === 'y'
           ? [structure.scale, structure.scale * (1 - flatten), structure.scale]

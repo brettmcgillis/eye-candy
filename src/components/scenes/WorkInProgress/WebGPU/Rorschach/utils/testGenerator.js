@@ -43,6 +43,14 @@ export const DEFAULT_COEFF_RANGE = 1.6;
 // excursion range without looking like noise.
 export const DEFAULT_FREQ = 0.6;
 
+// Steps/second a bundle reveals at Growth Speed = 1 — DEFAULT_STEPS (600)
+// over the old default growthDuration (4s), so the new default (Growth
+// Speed 1) reads the same as the old one did. Lives here rather than in
+// Test.jsx because utils/rollConfig.js needs it too: a rolled per-bundle
+// override has to pin its own Growth Duration back to whatever this rate
+// implies, or enabling the override silently re-paces that bundle.
+export const GROWTH_BASE_RATE = 150;
+
 const DT = 0.02;
 // Fraction of the bounds' own scale (see odeIntegrator.js's boundsScale) that
 // bundle origins scatter within — proportional rather than a fixed [3,2,2]
@@ -107,7 +115,14 @@ function validateAndMeasure(
 ) {
   const validationSteps = Math.min(steps, VALIDATION_STEPS_CAP);
   let maxDist = 0;
+  let ok = true;
   const endpoints = [];
+  // Every strand is integrated and measured even once one has failed, rather
+  // than bailing on the first. buildBundle has to hand *something* usable back
+  // when all MAX_BUNDLE_ATTEMPTS candidates fail — growBundle steps from
+  // `bundle.current[s]` per strand, so a short endpoints array is a crash, not
+  // a degraded bundle. Failing candidates are still rejected while retries
+  // remain; this only decides what the last one leaves behind.
   for (let s = 0; s < startPoints.length; s += 1) {
     const strand = strands[s * 2];
     integrate(
@@ -120,9 +135,8 @@ function validateAndMeasure(
       strand
     );
     const view = strand.subarray(0, validationSteps * 3);
-    if (!isBounded(view, bounds, minSpread)) {
-      return { ok: false, maxDist: 0, validationSteps, endpoints: [] };
-    }
+    if (!isBounded(view, bounds, minSpread)) ok = false;
+
     for (let i = 0; i < view.length; i += 3) {
       const dist = Math.hypot(view[i], view[i + 1], view[i + 2]);
       if (dist > maxDist) maxDist = dist;
@@ -130,7 +144,7 @@ function validateAndMeasure(
     const last = (validationSteps - 1) * 3;
     endpoints.push([view[last], view[last + 1], view[last + 2]]);
   }
-  return { ok: true, maxDist, validationSteps, endpoints };
+  return { ok, maxDist, validationSteps, endpoints };
 }
 
 // Structural generation: coefficients + trajectories only, no color/

@@ -1,2 +1,5 @@
 **/*.gltf
 jsconfig.json
+src/components/scenes/WorkInProgress/WebGPU/Trucheterie/utils/seedrandom.js
+src/components/scenes/WorkInProgress/WebGPU/Trucheterie/utils/formula.js
+/output

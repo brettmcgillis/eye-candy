@@ -9,6 +9,7 @@ import {
 } from '../../../../../../modules/cameraRig';
 import { DEFAULT_PRESET, PRESETS, getPresetControls } from '../presets/presets';
 import CAMERA from '../utils/camera';
+import { SECONDS_PER_SYSTEM, growthSpeedFor } from '../utils/cinematic';
 import { COEFF_DRIFT_CLAMP } from '../utils/evolution';
 import {
   DEFAULT_BOUND_HEIGHT,
@@ -17,6 +18,7 @@ import {
   DEFAULT_MIN_SPREAD,
 } from '../utils/odeIntegrator';
 import { PALETTE_NAMES } from '../utils/palette';
+import rollTestConfig, { randomSeed } from '../utils/rollConfig';
 import {
   DEFAULT_BUNDLE_COUNT,
   DEFAULT_COEFF_RANGE,
@@ -25,6 +27,7 @@ import {
   DEFAULT_START_SPREAD,
   DEFAULT_STEPS,
   DEFAULT_STRANDS_PER_BUNDLE,
+  GROWTH_BASE_RATE,
   MAX_BUNDLE_COUNT,
 } from '../utils/testGenerator';
 import buildBundleOverrideSchema, {
@@ -37,6 +40,7 @@ const FRAMING_SHAPE_PATH = `${SCENE_LABEL}.Structure.framingShape`;
 const CONTINUOUS_MODE_PATH = `${SCENE_LABEL}.Growth.continuousMode`;
 const PALETTE_PATH = `${SCENE_LABEL}.Style.palette`;
 const MONOCHROME_PATH = `${SCENE_LABEL}.Style.monochrome`;
+const CINEMATIC_PATH = `${SCENE_LABEL}.Cinematic.cinematicEnabled`;
 
 // Only Lines mode exists so far (Points/Ink land in later phases) — no
 // `mode` toggle control yet, no Lighting folder (unlit line material, so
@@ -114,7 +118,7 @@ export default function useSceneControls() {
           value: p.steps ?? DEFAULT_STEPS,
           min: 80,
           max: 2000,
-          step: 20,
+          step: 1,
         },
         startSpread: {
           label: 'Strand Spread',
@@ -201,6 +205,23 @@ export default function useSceneControls() {
           max: 30,
           step: 0.5,
           render: (get) => get(CONTINUOUS_MODE_PATH),
+        },
+      },
+      { collapsed: true }
+    ),
+    Cinematic: folder(
+      {
+        cinematicEnabled: {
+          label: 'Cinematic Mode',
+          value: p.cinematicEnabled ?? false,
+        },
+        cinematicSecondsPerSystem: {
+          label: 'Seconds Per System',
+          value: p.cinematicSecondsPerSystem ?? SECONDS_PER_SYSTEM,
+          min: 2,
+          max: 30,
+          step: 0.5,
+          render: (get) => get(CINEMATIC_PATH),
         },
       },
       { collapsed: true }
@@ -367,14 +388,45 @@ export default function useSceneControls() {
     [buildCamera, cameraControlsKey]
   );
 
-  // ButtonOverlay's "Regenerate" re-seeds via setControls, triggering a new
-  // test through Test.jsx's `seed` dependency.
-  const regenerate = useCallback(() => {
-    setControls({ seed: Math.floor(Math.random() * 1_000_000) });
+  // ButtonOverlay's "Reseed" — a new shape from the same art direction.
+  const reseed = useCallback(() => {
+    setControls({ seed: randomSeed() });
   }, [setControls]);
 
+  // ButtonOverlay's "Regenerate" rolls a whole new test (structure + style +
+  // a cohesive background) rather than just a seed. Reads the *live* Growth
+  // Speed rather than rolling one, so a rolled per-bundle override can pin
+  // its Growth Duration to match — see utils/rollConfig.js.
+  const growthSpeedRef = useRef(controls.growthSpeed);
+  growthSpeedRef.current = controls.growthSpeed;
+  const regenerate = useCallback(() => {
+    setControls(
+      rollTestConfig(randomSeed(), { growthSpeed: growthSpeedRef.current })
+    );
+  }, [setControls]);
+
+  // Cinematic Mode paces growth itself so a system finishes drawing in step
+  // with the camera — see utils/cinematic.js. Derived here rather than written
+  // back into the Growth Speed control, so switching the mode off restores
+  // whatever the user had set.
+  const growthSpeed = controls.cinematicEnabled
+    ? growthSpeedFor(
+        controls.steps,
+        controls.cinematicSecondsPerSystem,
+        GROWTH_BASE_RATE
+      )
+    : controls.growthSpeed;
+
   return useMemo(
-    () => ({ ...controls, camera, cameraApiRef, regenerate, overrides }),
-    [camera, controls, regenerate, overrides]
+    () => ({
+      ...controls,
+      growthSpeed,
+      camera,
+      cameraApiRef,
+      regenerate,
+      reseed,
+      overrides,
+    }),
+    [camera, controls, growthSpeed, regenerate, reseed, overrides]
   );
 }

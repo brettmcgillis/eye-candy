@@ -27,6 +27,8 @@
     "lint:check": "eslint .",
     "lint:fix": "eslint . --fix",
     "preview": "vite preview",
+    "rorschach:generate": "node scripts/rorschach-generate.mjs",
+    "rorschach:video": "node scripts/rorschach-video.mjs",
     "publish": "npm run build && npm run deploy",
     "publish:major": "npm run bump:major && npm run publish",
     "publish:minor": "npm run bump:minor && npm run publish",
@@ -107,7 +109,8 @@
     "prettier": "^3.2.4",
     "prettier-package-json": "^2.8.0",
     "sharp": "^0.34.5",
-    "vite": "^7.3.1"
+    "vite": "^7.3.1",
+    "webgpu": "^0.4.0"
   },
   "browserslist": {
     "production": [

@@ -3,7 +3,8 @@ import GRADIENTS from '../../../../../../utils/gradients.json';
 
 // Leva "Palette" dropdown options — 'Random' (existing per-bundle random hue
 // behavior) plus every named gradient in the shared gradients.json.
-export const PALETTE_NAMES = ['Random', ...GRADIENTS.map((g) => g.name)];
+export const GRADIENT_NAMES = GRADIENTS.map((g) => g.name);
+export const PALETTE_NAMES = ['Random', ...GRADIENT_NAMES];
 
 export function resolvePaletteColors(paletteName) {
   if (!paletteName || paletteName === 'Random') return null;
@@ -14,6 +15,14 @@ export function resolvePaletteColors(paletteName) {
 function hexToRgb(hex) {
   const n = parseInt(hex.replace('#', ''), 16);
   return [(n >> 16) & 255, (n >> 8) & 255, n & 255];
+}
+
+// Gamma-space luma, not linearized relative luminance — utils/rollConfig.js
+// compares this against a background it also picks in gamma space, so both
+// sides of that contrast test have to be measured the same way.
+export function hexLuminance(hex) {
+  const [r, g, b] = hexToRgb(hex);
+  return (0.2126 * r + 0.7152 * g + 0.0722 * b) / 255;
 }
 
 function rgbToHsl(r, g, b) {

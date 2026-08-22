@@ -19,7 +19,7 @@
 # Usage:
 #   ./launch-crossTalk.sh [count] [preset] [url]
 #   ./launch-crossTalk.sh 3
-#   ./launch-crossTalk.sh 3 FluidSim
+#   ./launch-crossTalk.sh 3 RadianceCascades
 #   ./launch-crossTalk.sh 3 FluidSim https://localhost:3000/crossTalk
 #
 # The preset is appended as ?preset=<name> so every window deep-links
@@ -31,7 +31,7 @@ set -euo pipefail
 
 COUNT="${1:-3}"
 PRESET="${2:-}"
-URL="${3:-https://localhost:3000/wip/crossTalk}"
+URL="${3:-https://localhost:3000/crossTalk}"
 
 if [[ "$PRESET" == http* ]]; then
   URL="$PRESET"

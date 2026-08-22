@@ -14,7 +14,7 @@ import RadianceField from './RadianceField';
 // windowSync has to be reachable from `c` rather than a state hook inside
 // this view. Mounting/unmounting is the on/off switch, same as every other
 // preset view here.
-function RadianceCascadesView({ c, selfId, selfRect, windows }) {
+function RadianceCascadesView({ c, hostId, selfId, selfRect, windows }) {
   const selfLight = useMemo(
     () => ({
       color: c.lightColor,
@@ -44,6 +44,41 @@ function RadianceCascadesView({ c, selfId, selfRect, windows }) {
     ]
   );
 
+  // The decorative field is one contiguous desktop-wide space, so exactly one
+  // tab gets to define it: the host. Every tab shades against the host's
+  // enabled/scale/spin, anchored on the host window's centre, and this tab's
+  // own Radiance > Decorative controls only bite while it *is* the host —
+  // otherwise two tabs could disagree and the field would tear at the overlap.
+  const hostWin = windows.find((win) => win.id === hostId) ?? null;
+  const isHost = !hostWin || hostWin.id === selfId;
+  const hostDecor = isHost ? null : hostWin.meta?.decor;
+  const anchor = hostWin ?? selfRect;
+
+  const decor = useMemo(
+    () => ({
+      color: hostDecor ? hostDecor.color : c.decorColor,
+      enabled: hostDecor ? hostDecor.enabled : c.sceneDetail,
+      originX: anchor ? anchor.x + anchor.w / 2 : 0,
+      originY: anchor ? anchor.y + anchor.h / 2 : 0,
+      scale: hostDecor ? hostDecor.scale : c.decorScale,
+      spin: hostDecor ? hostDecor.spin : c.decorSpin,
+    }),
+    [
+      anchor?.h,
+      anchor?.w,
+      anchor?.x,
+      anchor?.y,
+      c.decorColor,
+      c.decorScale,
+      c.decorSpin,
+      c.sceneDetail,
+      hostDecor?.color,
+      hostDecor?.enabled,
+      hostDecor?.scale,
+      hostDecor?.spin,
+    ]
+  );
+
   const windowsForRender =
     windows.length > 0
       ? windows
@@ -64,8 +99,8 @@ function RadianceCascadesView({ c, selfId, selfRect, windows }) {
     <>
       <RadianceField
         ambient={c.ambient}
+        decor={decor}
         exposure={c.exposure}
-        sceneDetail={c.sceneDetail}
         selfId={selfId}
         selfLight={selfLight}
         selfOccluder={selfOccluder}

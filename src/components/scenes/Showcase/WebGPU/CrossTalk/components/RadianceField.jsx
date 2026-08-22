@@ -10,8 +10,8 @@ import useRadialShadowPipeline from '../hooks/useRadialShadowPipeline';
 // than that eased transform.
 function RadianceField({
   ambient,
+  decor,
   exposure,
-  sceneDetail,
   selfId,
   selfLight,
   selfOccluder,
@@ -21,8 +21,8 @@ function RadianceField({
 }) {
   const { material, meshRef } = useRadialShadowPipeline({
     ambient,
+    decor,
     exposure,
-    sceneDetail,
     selfId,
     selfLight,
     selfOccluder,

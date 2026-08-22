@@ -37,6 +37,14 @@ export const PRESET_VIEWS = {
   RadianceCascades: {
     Component: RadianceCascadesView,
     getMeta: (c) => ({
+      // Broadcast by every tab, but only the host's copy is ever read — see
+      // RadianceCascadesView: one shared decorative field needs one owner.
+      decor: {
+        color: c.decorColor,
+        enabled: c.sceneDetail,
+        scale: c.decorScale,
+        spin: c.decorSpin,
+      },
       light: {
         color: c.lightColor,
         intensity: c.lightIntensity,

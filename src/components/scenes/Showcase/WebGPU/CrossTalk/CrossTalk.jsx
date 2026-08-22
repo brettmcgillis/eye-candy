@@ -20,7 +20,7 @@ export default function CrossTalk() {
   const view = getPresetView(c.preset);
   const meta = view.getMeta(c);
 
-  const { isHost, selfId, selfRect, windows } = useWindowSync(
+  const { hostId, isHost, selfId, selfRect, windows } = useWindowSync(
     WINDOW_SYNC_CHANNEL,
     meta
   );
@@ -34,6 +34,7 @@ export default function CrossTalk() {
       <DesktopStage easing={c.syncEasing} selfRect={selfRect}>
         <View
           c={c}
+          hostId={hostId}
           isHost={isHost}
           meta={meta}
           selfId={selfId}

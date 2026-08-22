@@ -7,7 +7,11 @@ import { useFrame, useThree } from '@react-three/fiber';
 
 import buildRadianceComposeMaterial from '../utils/buildRadianceComposeMaterial';
 import buildShadowMapMaterial from '../utils/buildShadowMapMaterial';
-import { buildSceneSDF, marchShadow } from '../utils/radialShadowTSL';
+import {
+  buildDecorSDF,
+  buildSceneSDF,
+  marchShadow,
+} from '../utils/radialShadowTSL';
 import { MAX_WINDOWS } from '../utils/radianceConstants';
 import { createSceneUniforms, updateSceneUniforms } from '../utils/sceneTSL';
 
@@ -41,8 +45,8 @@ function makeShadowRT() {
 // render last).
 export default function useRadialShadowPipeline({
   ambient,
+  decor,
   exposure,
-  sceneDetail,
   selfId,
   selfLight,
   selfOccluder,
@@ -55,8 +59,8 @@ export default function useRadialShadowPipeline({
   const liveRef = useRef(null);
   liveRef.current = {
     ambient,
+    decor,
     exposure,
-    sceneDetail,
     selfId,
     selfLight,
     selfOccluder,
@@ -68,7 +72,13 @@ export default function useRadialShadowPipeline({
   const stable = useMemo(() => {
     const sceneUniforms = createSceneUniforms();
     const timeU = uniform(0);
-    const sceneDetailU = uniform(0);
+    const decorU = {
+      color: uniform(new THREE.Color(1, 1, 1)),
+      enabled: uniform(0),
+      origin: uniform(new THREE.Vector2()),
+      scale: uniform(1000),
+      spin: uniform(1),
+    };
     const ambientU = uniform(0);
     const exposureU = uniform(1);
     const softU = uniform(0.02);
@@ -76,7 +86,8 @@ export default function useRadialShadowPipeline({
     const size = uniform(new THREE.Vector2(1, 1));
 
     const shadowRT = makeShadowRT();
-    const sceneFn = buildSceneSDF(sceneUniforms, timeU, sceneDetailU);
+    const decorFn = buildDecorSDF(timeU, decorU);
+    const sceneFn = buildSceneSDF(sceneUniforms, decorFn);
     const marchFn = (rayOrigin, rayDir) =>
       marchShadow(sceneFn, rayOrigin, rayDir);
 
@@ -88,6 +99,8 @@ export default function useRadialShadowPipeline({
 
     const composeMaterial = buildRadianceComposeMaterial({
       ambient: ambientU,
+      decorColor: decorU.color,
+      decorFn,
       exposure: exposureU,
       lightColor: sceneUniforms.lightColor,
       lightData: sceneUniforms.lightData,
@@ -109,12 +122,12 @@ export default function useRadialShadowPipeline({
     return {
       ambientU,
       composeMaterial,
+      decorU,
       exposureU,
       origin,
       passCamera,
       passMesh,
       passScene,
-      sceneDetailU,
       sceneUniforms,
       shadowMaterial,
       shadowRT,
@@ -157,7 +170,11 @@ export default function useRadialShadowPipeline({
     stable.ambientU.value = live.ambient;
     stable.exposureU.value = live.exposure;
     stable.softU.value = live.shadowSoftness;
-    stable.sceneDetailU.value = live.sceneDetail ? 1 : 0;
+    stable.decorU.color.value.set(live.decor.color);
+    stable.decorU.enabled.value = live.decor.enabled ? 1 : 0;
+    stable.decorU.origin.value.set(live.decor.originX, live.decor.originY);
+    stable.decorU.scale.value = live.decor.scale;
+    stable.decorU.spin.value = live.decor.spin;
     stable.timeU.value += delta;
 
     const savedTarget = gl.getRenderTarget?.() ?? null;

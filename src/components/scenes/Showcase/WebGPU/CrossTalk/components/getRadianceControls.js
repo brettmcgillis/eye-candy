@@ -32,7 +32,7 @@ export default function getRadianceControls(p, render) {
       occluderColor: { label: 'Occluder Color', value: p.occluderColor },
       occluderSize: {
         label: 'Occluder Size (px)',
-        max: 160,
+        max: 300,
         min: 10,
         step: 2,
         value: p.occluderSize,
@@ -45,8 +45,26 @@ export default function getRadianceControls(p, render) {
         value: p.occluderRotation,
       },
       sceneDetail: {
-        label: 'Decorative Scene',
+        label: 'Decorative Scene (host tab)',
         value: p.sceneDetail,
+      },
+      decorColor: {
+        label: 'Decor Color (host tab)',
+        value: p.decorColor,
+      },
+      decorScale: {
+        label: 'Decor Scale (px)',
+        max: 3000,
+        min: 200,
+        step: 20,
+        value: p.decorScale,
+      },
+      decorSpin: {
+        label: 'Decor Spin',
+        max: 3,
+        min: 0,
+        step: 0.05,
+        value: p.decorSpin,
       },
       shadowSoftness: {
         label: 'Shadow Softness',

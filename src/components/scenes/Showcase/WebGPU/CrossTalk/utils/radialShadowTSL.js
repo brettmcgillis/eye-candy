@@ -11,7 +11,8 @@ import {
   vec2,
 } from 'three/tsl';
 
-import { MAX_WINDOWS } from './radianceConstants';
+import { atlasSDF } from './occluderAtlas';
+import { ATLAS_BASE, MAX_WINDOWS } from './radianceConstants';
 
 // TSL port of references/radianceCascades2.glsl (Shadertoy XsK3RR). Despite
 // the preset's "Radiance Cascades" name, that shader is NOT cascades — it's a
@@ -247,7 +248,8 @@ const sdEllipse = (p, r) => {
 // Occluder shape ids — must match radianceConstants' OCCLUDER_SHAPES order and
 // the Leva dropdown. Exported so OccluderHandle can preview any shape with the
 // exact SDF the scene shades against. An If/ElseIf chain (not nested select) so
-// only the active shape's SDF is evaluated per sample.
+// only the active shape's SDF is evaluated per sample. Ids from ATLAS_BASE up
+// are artwork sampled out of the baked SDF atlas rather than an analytic form.
 export const occluderSDF = (shapeId, p, osize) => {
   const r = osize.x;
   const d = float(NO_HIT).toVar();
@@ -267,29 +269,48 @@ export const occluderSDF = (shapeId, p, osize) => {
     .ElseIf(shapeId.lessThan(13.5), () => d.assign(sdInfinity(p, r)))
     .ElseIf(shapeId.lessThan(14.5), () => d.assign(sdPin(p, r)))
     .ElseIf(shapeId.lessThan(15.5), () => d.assign(sdArrow(p, r)))
-    .Else(() => d.assign(sdEllipse(p, r)));
+    .ElseIf(shapeId.lessThan(16.5), () => d.assign(sdEllipse(p, r)))
+    .Else(() => {
+      const half = r.mul(1.25);
+      d.assign(
+        atlasSDF(shapeId.sub(ATLAS_BASE), p, r, sdBox(vec2(half, half), p))
+      );
+    });
   return d;
 };
 
-// The reference's Scene(), in per-window normalized units (worldPos relative
-// to the window centre, divided by the window height — same normalization the
-// shadertoy does with iResolution.y). The room-wall term is dropped here; our
-// walls come from the shared window-rect union instead (see buildSceneSDF), so
-// that light can bleed across overlapping tabs.
-const decorativeScene = (nlocal, time) => {
-  let d = sdCircle(0.02, rep2(nlocal, 0.2));
-  d = d.min(sdRect(vec2(0.005, 0.1), rep1(nlocal, 0.2)));
-  d = d.max(sdBoxSquare(0.2, nlocal).negate()); // opS: carve central square
-  d = d.min(sdRing(0.08, 0.09, nlocal));
-  d = d.max(sdRect(vec2(0.11, 0.03), rotate2D(nlocal, time)).negate()); // opS slot
+// The reference's Scene(), in units of one decor cell — evaluated once in a
+// single desktop-wide space (see buildSceneSDF) rather than per window, so
+// overlapping tabs read as windows onto one continuous field instead of each
+// stamping its own copy. The room-wall term is dropped here; our walls come
+// from the shared window-rect union instead.
+const decorativeScene = (n, time) => {
+  let d = sdCircle(0.02, rep2(n, 0.2));
+  d = d.min(sdRect(vec2(0.005, 0.1), rep1(n, 0.2)));
+  d = d.max(sdBoxSquare(0.2, n).negate()); // opS: carve central square
+  d = d.min(sdRing(0.08, 0.09, n));
+  d = d.max(sdRect(vec2(0.11, 0.03), rotate2D(n, time)).negate()); // opS slot
   return d;
 };
+
+// The decorative field, as its own SDF: one contiguous desktop-wide space
+// anchored on `decor.origin` (the host tab's window centre) rather than
+// per-window, so overlapping tabs read as windows onto one field. Kept
+// separate from buildSceneSDF because the compose pass needs to tell decor
+// apart from the rest of the scene to shade it its own colour.
+export function buildDecorSDF(timeU, decor) {
+  return Fn(([worldPos]) => {
+    const scale = decor.scale.max(1);
+    const n = worldPos.sub(decor.origin).div(scale);
+    const d = decorativeScene(n, timeU.mul(decor.spin)).mul(scale);
+    return select(decor.enabled.greaterThan(0.5), d, float(NO_HIT));
+  });
+}
 
 // The shared analytic scene, in absolute desktop pixels. Returns a signed
 // distance: positive in empty (marchable) space, negative inside any occluder
-// or outside the union of all window rects. `sceneDetailU` (0/1) toggles the
-// decorative field so a plain "just my light + occluder" look is available.
-export function buildSceneSDF(u, timeU, sceneDetailU) {
+// or outside the union of all window rects.
+export function buildSceneSDF(u, decorFn) {
   return Fn(([worldPos]) => {
     const best = float(NO_HIT).toVar();
     const unionDist = float(NO_HIT).toVar();
@@ -308,12 +329,6 @@ export function buildSceneSDF(u, timeU, sceneDetailU) {
         select(alive, unionDist.min(sdBox(half, local)), unionDist)
       );
 
-      const nlocal = local.div(rect.w.max(1));
-      const deco = decorativeScene(nlocal, timeU).mul(rect.w);
-      best.assign(
-        select(and(alive, sceneDetailU.greaterThan(0.5)), best.min(deco), best)
-      );
-
       const od = u.occluderData.element(i);
       const osize = u.occluderSize.element(i);
       const oLocal = rotate2D(worldPos.sub(od.xy), od.z.negate());
@@ -322,6 +337,8 @@ export function buildSceneSDF(u, timeU, sceneDetailU) {
         select(and(alive, od.w.greaterThan(-0.5)), best.min(occ), best)
       );
     });
+
+    best.assign(best.min(decorFn(worldPos)));
 
     // Walls: empty inside the union of window rects, an immediate hit outside.
     best.assign(best.min(unionDist.negate()));

@@ -9,6 +9,7 @@ import {
   fract,
   mix,
   positionLocal,
+  select,
   smoothstep,
   texture,
   vec2,
@@ -33,6 +34,8 @@ const fillMask = (d) => clamp(d.negate(), 0, 1);
 // independent of DesktopStage's eased world transform.
 export default function buildRadianceComposeMaterial({
   ambient,
+  decorColor,
+  decorFn,
   exposure,
   lightColor,
   lightData,
@@ -51,11 +54,12 @@ export default function buildRadianceComposeMaterial({
   material.colorNode = Fn(() => {
     const worldPos = origin.add(positionLocal.xy.mul(size));
     const dist = sceneFn(worldPos);
-    const albedo = mix(
-      FLOOR_COLOR,
-      WALL_COLOR,
-      smoothstep(EDGE_AA_PX, 0, dist)
-    );
+    // Decor gets its own albedo, so it has to be told apart from the walls and
+    // occluders sceneFn already min'd it together with — hence the second
+    // evaluation rather than a flag smuggled out of the first.
+    const isDecor = decorFn(worldPos).sub(dist).lessThan(0.5);
+    const solid = select(isDecor, decorColor, WALL_COLOR);
+    const albedo = mix(FLOOR_COLOR, solid, smoothstep(EDGE_AA_PX, 0, dist));
 
     const invH = float(1).div(size.y);
     const softPx = softness.mul(size.y);

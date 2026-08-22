@@ -65,14 +65,17 @@ export const PRESETS = {
   RadianceCascades: {
     // lightColor + occluderShape are intentionally omitted — useSceneControls
     // randomizes them per tab so each window is a distinct source.
-    backgroundColor: '#050608',
-    syncEasing: 0.06,
+    backgroundColor: '#464646',
+    syncEasing: 0.5,
     lightIntensity: 2.4,
     lightRadius: 14,
-    occluderColor: '#565656',
+    occluderColor: '#000000',
     occluderSize: 60,
     occluderRotation: 0,
     sceneDetail: false,
+    decorColor: '#ff801a',
+    decorScale: 1000,
+    decorSpin: 1,
     shadowSoftness: 0.02,
     ambient: 0.06,
     exposure: 1.6,

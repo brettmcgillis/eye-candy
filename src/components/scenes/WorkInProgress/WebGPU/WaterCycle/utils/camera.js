@@ -1,16 +1,16 @@
-const TARGET = [0, 0, 0];
+const TARGET = [0, 1, -8];
 
 const CAMERA = {
   defaultMode: 'orbit',
   orbit: {
     desktop: {
-      position: [0, 24, 48],
+      position: [0, 8, 30],
       target: TARGET,
       pivot: TARGET,
-      fov: 45,
+      fov: 40,
     },
     mobile: {
-      position: [0, 28, 58],
+      position: [0, 9, 36],
       target: TARGET,
       pivot: TARGET,
       fov: 52,
@@ -22,9 +22,9 @@ const CAMERA = {
     shots: {
       overview: {
         desktop: {
-          position: [0, 26, 50],
+          position: [0, 8, 30],
           target: TARGET,
-          fov: 45,
+          fov: 40,
         },
       },
     },

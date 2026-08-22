@@ -175,6 +175,7 @@ export const oceanFragmentStageWGSL = wgslFn(`
         foamStrength: f32,
         foamThreshold: f32,
         reveal: f32,
+        foamOnly: f32,
         impactFoamTexture: texture_2d<f32>,
         impactFoamStrength: f32,
         impactFoamPatchSize: f32,
@@ -235,6 +236,11 @@ export const oceanFragmentStageWGSL = wgslFn(`
         oceanColor = mix(seaColor, oceanColor, vCascadeScales.x);
 
         let fade = smoothstep(500.0, 4000.0, vViewDist);
+
+        if (foamOnly > 0.5) {
+            return vec4<f32>(vec3<f32>(foamMixFactor * (1.0 - fade)), 1.0);
+        }
+
         var finalColor = mix(oceanColor, vec3<f32>(0.0), fade);
         if (reveal > 0.5) {
             let slopeMask = pow(saturate(1.0 - normalOcean.y), 1.2);

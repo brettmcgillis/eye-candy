@@ -52,6 +52,7 @@ export default class OceanChunkManager {
       gridResolution: DEFAULT_PATCH_RESOLUTION,
       lodScale: this.params.waveGenerator.lodScale,
       reveal: this.currentConfig?.ocean?.reveal ? 1 : 0,
+      foamOnly: this.currentConfig?.ocean?.foamOnly ? 1 : 0,
       impactFoamTexture: this.params.impactFoamTexture,
       impactFoamStrength: this.currentConfig?.ocean?.impactFoamStrength ?? 0.8,
       impactFoamPatchSize: this.currentConfig?.ocean?.impactAreaSize,
@@ -129,6 +130,7 @@ export default class OceanChunkManager {
     this.patchVisible = config.ocean.visible ?? true;
     this.material.wireframe = config.ocean.wireframe;
     this.materialParameters.reveal.value = config.ocean.reveal ? 1 : 0;
+    this.materialParameters.foamOnly.value = config.ocean.foamOnly ? 1 : 0;
     this.materialParameters.impactFoamStrength.value =
       config.ocean.impactFoamStrength ?? 0.8;
     this.materialParameters.impactFoamPatchSize.value =

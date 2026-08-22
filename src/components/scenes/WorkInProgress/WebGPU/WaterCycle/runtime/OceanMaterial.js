@@ -49,6 +49,7 @@ export default class OceanMaterial {
       foamStrength: params.foamStrength,
       foamThreshold: params.foamThreshold,
       reveal: uniform(params.reveal ?? 0),
+      foamOnly: uniform(params.foamOnly ?? 0),
       impactFoamTexture: texture(
         params.impactFoamTexture ?? DEFAULT_IMPACT_FOAM_TEXTURE
       ),

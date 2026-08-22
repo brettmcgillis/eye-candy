@@ -6,6 +6,7 @@ import { useFrame, useThree } from '@react-three/fiber';
 
 import OceanChunkManager from '../runtime/OceanChunkManager';
 import WaveGenerator from '../runtime/waves/WaveGenerator';
+import createWaveProbe from '../utils/waveProbe';
 
 function getWaveStepMs(config) {
   const waveUpdateHz = Math.max(1, config?.performance?.waveUpdateHz ?? 30);
@@ -49,16 +50,17 @@ export default function WaterSurface({ config, onReady }) {
     oceanManager.init();
     oceanManager.applyConfig(config);
 
-    runtimeRef.current = {
-      oceanManager,
-      waveGenerator,
-    };
-    onReady?.({
+    const probe = createWaveProbe({
       cascades: waveGenerator.cascades,
-      impactFoamRT,
-      ifftResolution: waveGenerator.size,
       waveLengths: waveGenerator.waveLengths,
     });
+
+    runtimeRef.current = {
+      oceanManager,
+      probe,
+      waveGenerator,
+    };
+    onReady?.({ impactFoamRT, probe });
 
     return () => {
       accumulatorRef.current = 0;
@@ -78,6 +80,7 @@ export default function WaterSurface({ config, onReady }) {
 
     runtime.waveGenerator.applyWaveSettings(config.waveSettings);
     runtime.oceanManager.applyConfig(config);
+    runtime.probe.setWaveLengths(runtime.waveGenerator.waveLengths);
 
     if (pauseWater) {
       accumulatorRef.current = 0;

@@ -1,0 +1,96 @@
+export default function getRainControls(snapshot = {}) {
+  return {
+    rainEnabled: {
+      label: 'Rain Enabled',
+      value: snapshot.rainEnabled ?? true,
+    },
+    rainDropCount: {
+      label: 'Drop Count',
+      max: 1000000,
+      min: 1000,
+      step: 1000,
+      value: snapshot.rainDropCount ?? 400000,
+    },
+    rainBounds: {
+      label: 'Volume Width',
+      max: 400,
+      min: 20,
+      step: 1,
+      value: snapshot.rainBounds ?? 140,
+    },
+    rainCeiling: {
+      label: 'Ceiling Y',
+      max: 160,
+      min: 10,
+      step: 0.5,
+      value: snapshot.rainCeiling ?? 60,
+    },
+    rainSpawnRange: {
+      label: 'Spawn Range',
+      max: 120,
+      min: 1,
+      step: 0.5,
+      value: snapshot.rainSpawnRange ?? 40,
+    },
+    rainFallSpeed: {
+      label: 'Fall Speed',
+      max: 80,
+      min: 1,
+      step: 0.5,
+      value: snapshot.rainFallSpeed ?? 26,
+    },
+    rainSpeedJitter: {
+      label: 'Speed Jitter',
+      max: 0.9,
+      min: 0,
+      step: 0.01,
+      value: snapshot.rainSpeedJitter ?? 0.4,
+    },
+    rainWindX: {
+      label: 'Wind X',
+      max: 12,
+      min: -12,
+      step: 0.1,
+      value: snapshot.rainWindX ?? 0.8,
+    },
+    rainWindZ: {
+      label: 'Wind Z',
+      max: 12,
+      min: -12,
+      step: 0.1,
+      value: snapshot.rainWindZ ?? 0,
+    },
+    rainStreakLength: {
+      label: 'Streak Length',
+      max: 4,
+      min: 0.05,
+      step: 0.01,
+      value: snapshot.rainStreakLength ?? 0.9,
+    },
+    rainStreakWidth: {
+      label: 'Streak Width',
+      max: 0.3,
+      min: 0.005,
+      step: 0.005,
+      value: snapshot.rainStreakWidth ?? 0.045,
+    },
+    rainOpacity: {
+      label: 'Opacity',
+      max: 2,
+      min: 0.01,
+      step: 0.01,
+      value: snapshot.rainOpacity ?? 0.5,
+    },
+    rainTint: {
+      label: 'Tint',
+      value: snapshot.rainTint ?? '#d5e7f0',
+    },
+    rainEdgeFade: {
+      label: 'Edge Fade',
+      max: 1,
+      min: 0,
+      step: 0.01,
+      value: snapshot.rainEdgeFade ?? 0.55,
+    },
+  };
+}

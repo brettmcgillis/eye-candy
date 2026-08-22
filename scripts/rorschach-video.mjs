@@ -12,6 +12,7 @@ import {
   readPackageVersion,
   resolveIgPreset,
 } from './lib/cliArgs.mjs';
+import createProgress from './lib/progress.mjs';
 import {
   REPO_ROOT,
   buildTest,
@@ -93,13 +94,32 @@ function usage() {
   );
 }
 
-function run(command, args) {
+function run(command, args, onProgress) {
   return new Promise((resolve, reject) => {
-    const child = spawn(command, args, { stdio: ['ignore', 'ignore', 'pipe'] });
+    const child = spawn(command, args, {
+      stdio: ['ignore', onProgress ? 'pipe' : 'ignore', 'pipe'],
+    });
+
     let stderr = '';
     child.stderr.on('data', (chunk) => {
       stderr += chunk;
     });
+
+    // `-progress pipe:1` emits repeating key=value blocks; `frame=` is the only
+    // one we need to drive a bar.
+    if (onProgress) {
+      let pending = '';
+      child.stdout.on('data', (chunk) => {
+        pending += chunk;
+        const lines = pending.split('\n');
+        pending = lines.pop() ?? '';
+        lines.forEach((line) => {
+          const [key, value] = line.split('=');
+          if (key === 'frame') onProgress(Number(value));
+        });
+      });
+    }
+
     child.on('error', reject);
     child.on('close', (code) =>
       code === 0
@@ -109,28 +129,42 @@ function run(command, args) {
   });
 }
 
+// Encodes are the one step with no natural per-item output — a minute of
+// silence on a long clip — so every ffmpeg call reports frames against the
+// total the caller already knows it asked for.
+async function encode(args, { label, totalFrames }) {
+  const progress = createProgress(label, totalFrames);
+  await run('ffmpeg', ['-progress', 'pipe:1', '-nostats', ...args], (frame) =>
+    progress.update(frame)
+  );
+  progress.done(`${label} complete`);
+}
+
 // yuv420p needs even dimensions, and the scale filter guards against an odd
 // --width slipping through.
 const SIZE_FILTER = 'scale=trunc(iw/2)*2:trunc(ih/2)*2';
 const ENCODE_FILTER = `${SIZE_FILTER},format=yuv420p`;
 
-async function encodeFrames(dir, { fps, out }) {
-  await run('ffmpeg', [
-    '-y',
-    '-framerate',
-    String(fps),
-    '-i',
-    path.join(dir, 'frame-%05d.png'),
-    '-vf',
-    ENCODE_FILTER,
-    '-c:v',
-    'libx264',
-    '-crf',
-    '17',
-    '-preset',
-    'slow',
-    out,
-  ]);
+async function encodeFrames(dir, { fps, out, totalFrames }) {
+  await encode(
+    [
+      '-y',
+      '-framerate',
+      String(fps),
+      '-i',
+      path.join(dir, 'frame-%05d.png'),
+      '-vf',
+      ENCODE_FILTER,
+      '-c:v',
+      'libx264',
+      '-crf',
+      '17',
+      '-preset',
+      'slow',
+      out,
+    ],
+    { label: 'encoding', totalFrames }
+  );
 }
 
 // Cuts: the concat demuxer with a duration per entry.
@@ -148,24 +182,27 @@ async function encodeCuts(files, { fps, hold, out, tmp }) {
   const listPath = path.join(tmp, 'list.txt');
   await writeFile(listPath, `${list}\n`);
 
-  await run('ffmpeg', [
-    '-y',
-    '-f',
-    'concat',
-    '-safe',
-    '0',
-    '-i',
-    listPath,
-    '-vf',
-    `${SIZE_FILTER},fps=${fps},format=yuv420p`,
-    '-c:v',
-    'libx264',
-    '-crf',
-    '17',
-    '-preset',
-    'slow',
-    out,
-  ]);
+  await encode(
+    [
+      '-y',
+      '-f',
+      'concat',
+      '-safe',
+      '0',
+      '-i',
+      listPath,
+      '-vf',
+      `${SIZE_FILTER},fps=${fps},format=yuv420p`,
+      '-c:v',
+      'libx264',
+      '-crf',
+      '17',
+      '-preset',
+      'slow',
+      out,
+    ],
+    { label: 'encoding', totalFrames: Math.round(files.length * hold * fps) }
+  );
 }
 
 // Crossfades: chain one xfade per gap. Each still is decoded for hold+cross
@@ -194,23 +231,29 @@ async function encodeCrossfade(files, { crossfade, fps, hold, out }) {
   });
   steps.push(`${last}${ENCODE_FILTER}[v]`);
 
-  await run('ffmpeg', [
-    '-y',
-    ...inputs,
-    '-filter_complex',
-    steps.join(';'),
-    '-map',
-    '[v]',
-    '-r',
-    String(fps),
-    '-c:v',
-    'libx264',
-    '-crf',
-    '17',
-    '-preset',
-    'slow',
-    out,
-  ]);
+  await encode(
+    [
+      '-y',
+      ...inputs,
+      '-filter_complex',
+      steps.join(';'),
+      '-map',
+      '[v]',
+      '-r',
+      String(fps),
+      '-c:v',
+      'libx264',
+      '-crf',
+      '17',
+      '-preset',
+      'slow',
+      out,
+    ],
+    {
+      label: 'encoding',
+      totalFrames: Math.round((files.length * hold + crossfade) * fps),
+    }
+  );
 }
 
 async function collectExisting(dir, view) {
@@ -260,8 +303,10 @@ async function renderTurntable(modules, { options, tmp }) {
   const test = buildTest(modules, config);
   const total = Math.round(options.hold * options.fps * options.turns);
   process.stdout.write(`orbiting test ${seed} over ${total} frames\n`);
+  const progress = createProgress('rendering', total);
 
   for (let frame = 0; frame < total; frame += 1) {
+    progress.update(frame);
     const azimuth = (frame / (options.hold * options.fps)) * Math.PI * 2;
     const png = await renderFrame(modules, {
       config,
@@ -274,6 +319,8 @@ async function renderTurntable(modules, { options, tmp }) {
       png
     );
   }
+  progress.done('rendered frames');
+  return total;
 }
 
 async function renderCinematic(modules, { cinematic, options, tmp }) {
@@ -284,11 +331,13 @@ async function renderCinematic(modules, { cinematic, options, tmp }) {
     `cinematic: ${options.systems} systems over ${total} frames\n`
   );
 
+  const progress = createProgress('rendering', total);
   let currentIndex = -1;
   let config = null;
   let test = null;
 
   for (let frame = 0; frame < total; frame += 1) {
+    progress.update(frame);
     const state = cinematic.cinematicState(frame / options.fps, {
       secondsPerSystem: options.hold,
     });
@@ -316,6 +365,8 @@ async function renderCinematic(modules, { cinematic, options, tmp }) {
       png
     );
   }
+  progress.done('rendered frames');
+  return total;
 }
 
 async function main() {
@@ -345,7 +396,9 @@ async function main() {
       const files = await renderStills(modules, { options, tmp });
       if (files.length === 0) throw new Error('no stills to stitch');
 
-      process.stdout.write(`encoding ${files.length} stills\n`);
+      process.stdout.write(
+        `encoding ${files.length} stills at ${args.fps}fps\n`
+      );
       if (args.crossfade > 0 && files.length > 1) {
         await encodeCrossfade(files, {
           crossfade: args.crossfade,
@@ -357,16 +410,20 @@ async function main() {
         await encodeCuts(files, { fps: args.fps, hold: args.hold, out, tmp });
       }
     } else {
+      let totalFrames;
       if (args.mode === 'turntable') {
-        await renderTurntable(modules, { options, tmp });
+        totalFrames = await renderTurntable(modules, { options, tmp });
       } else {
         const cinematic = await import(
           `${REPO_ROOT}/src/components/scenes/WorkInProgress/WebGPU/Rorschach/utils/cinematic.js`
         );
-        await renderCinematic(modules, { cinematic, options, tmp });
+        totalFrames = await renderCinematic(modules, {
+          cinematic,
+          options,
+          tmp,
+        });
       }
-      process.stdout.write('encoding\n');
-      await encodeFrames(tmp, { fps: args.fps, out });
+      await encodeFrames(tmp, { fps: args.fps, out, totalFrames });
     }
 
     process.stdout.write(`saved ${out}\n`);

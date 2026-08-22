@@ -27,11 +27,14 @@ function measure(geometries) {
     bounds.union(geometry.boundingBox);
   });
 
-  const size = bounds.getSize(new THREE.Vector3());
+  // Fitted by bounding sphere, not by footprint: tilt swings the vertical
+  // extent into XZ, so a footprint-based fit lets an upright target grow past
+  // the probe area the moment it is rotated.
+  const sphere = bounds.getBoundingSphere(new THREE.Sphere());
 
   return {
     centre: bounds.getCenter(new THREE.Vector3()),
-    fit: FIT_EXTENT / Math.max(size.x, size.z, 1e-4),
+    fit: FIT_EXTENT / Math.max(sphere.radius * 2, 1e-4),
   };
 }
 

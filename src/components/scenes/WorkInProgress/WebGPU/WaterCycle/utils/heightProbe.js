@@ -1,4 +1,12 @@
-import { normalWorld, positionWorld, texture, uniform, vec4 } from 'three/tsl';
+import {
+  float,
+  normalWorld,
+  positionWorld,
+  select,
+  texture,
+  uniform,
+  vec4,
+} from 'three/tsl';
 import * as THREE from 'three/webgpu';
 
 const CAMERA_HEIGHT = 400;
@@ -43,8 +51,17 @@ export default function createHeightProbe({ resolution = 1024 }) {
   bakeMaterial.fog = false;
   scene.overrideMaterial = bakeMaterial;
 
-  const probeAt = (worldXZ) =>
-    texture(renderTarget.texture, worldXZ.div(area).add(0.5));
+  // Coverage is forced to zero outside the baked area. Without this the
+  // clamp-to-edge wrap smears the border texels across every drop that falls
+  // beyond the probe, which reads as an endless invisible plane.
+  const probeAt = (worldXZ) => {
+    const local = worldXZ.div(area).toVar();
+    const extent = local.abs().toVar();
+    const probed = texture(renderTarget.texture, local.add(0.5)).toVar();
+    const inside = extent.x.max(extent.y).lessThan(0.5);
+
+    return vec4(probed.xyz, select(inside, probed.w, float(0)));
+  };
 
   const setArea = (size) => {
     const half = size * 0.5;
@@ -63,11 +80,11 @@ export default function createHeightProbe({ resolution = 1024 }) {
     scene,
     setArea,
     sample: (worldXZ) => {
-      const probed = probeAt(worldXZ);
+      const probed = probeAt(worldXZ).toVar();
       return vec4(worldXZ.x, probed.x, worldXZ.y, probed.w);
     },
     slope: (worldXZ) => {
-      const tilt = probeAt(worldXZ).yz;
+      const tilt = probeAt(worldXZ).yz.toVar();
       const up = tilt.dot(tilt).oneMinus().max(0.02).sqrt();
       return tilt.div(up).negate();
     },

@@ -72,6 +72,7 @@ const BASE = {
 // cone and the fall-off depth shrink to match the probe area.
 const GEOMETRY = {
   ...BASE,
+  targetProbeArea: 26,
   rainDropCount: 600000,
   rainBounds: 62,
   rainCeiling: 34,
@@ -107,7 +108,7 @@ const GEOMETRY = {
 // somewhere to run and turns the plate toward the camera.
 const LOGO = {
   ...GEOMETRY,
-  targetProbeArea: 28,
+  targetProbeArea: 26,
   targetTilt: -0.5,
   targetSpinSpeed: 0,
   rainBounds: 54,
@@ -165,13 +166,11 @@ export const PRESETS = {
   'Rain Torus Knot': {
     ...GEOMETRY,
     targetMode: 'Torus Knot',
-    targetProbeArea: 52,
     targetSpinSpeed: 0.24,
   },
   'Rain Sphere': {
     ...GEOMETRY,
     targetMode: 'Sphere',
-    targetProbeArea: 48,
     targetTilt: 0,
   },
   'Rain Bret': {

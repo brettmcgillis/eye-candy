@@ -194,6 +194,11 @@ Notes:
   Cinematic Mode so the rendered sweep and the live one can't drift.
 - Roughly 0.4-0.9s per frame at 480-1080px, so a long clip is minutes, not
   seconds. The overlay is built and rasterised once per run, not per frame.
+- Every long step reports progress (`scripts/lib/progress.mjs`): a rewritten
+  bar with an ETA on a terminal, plain 10% lines when piped to a log. Encodes
+  get theirs from ffmpeg's own `-progress pipe:1` frame counter, which matters
+  most for `--in`, where encoding is the _only_ step and would otherwise sit
+  silent for a minute.
 
 ## Cinematic Mode (in-app)
 

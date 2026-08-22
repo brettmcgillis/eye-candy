@@ -180,6 +180,19 @@ export function InteractiveReversal({
 }
 
 /* ========================================================================
+   Nodes (for consumers that need the raw meshes)
+======================================================================== */
+
+export function useReversalNodes() {
+  const { nodes } = useGLTF(modelFile('Reversal.glb'));
+
+  return useMemo(
+    () => ({ inner: nodes['reversal-in'], outer: nodes['reversal-out'] }),
+    [nodes]
+  );
+}
+
+/* ========================================================================
    Preload
 ======================================================================== */
 

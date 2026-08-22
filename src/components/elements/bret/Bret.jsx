@@ -176,6 +176,19 @@ export function InteractiveBret({
   );
 }
 
+/* -------------------------------------------------------
+   Nodes (for consumers that need the raw meshes)
+------------------------------------------------------- */
+
+export function useBretNodes() {
+  const { nodes } = useGLTF(modelFile('Bret.glb'));
+
+  return useMemo(
+    () => ({ inner: nodes['bret-in'], outer: nodes['bret-out'] }),
+    [nodes]
+  );
+}
+
 /* ------------------------------------------------------- */
 
 useGLTF.preload(modelFile('Bret.glb'));

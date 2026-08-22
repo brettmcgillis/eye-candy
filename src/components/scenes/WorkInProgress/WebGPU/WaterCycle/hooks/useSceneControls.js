@@ -174,6 +174,7 @@ export default function useSceneControls() {
         stretchSpeed: controls.stretchSpeed,
         surfaceLifeMax: controls.surfaceLifeMax,
         surfaceLifeMin: controls.surfaceLifeMin,
+        timeScale: controls.timeScale,
         tint: controls.rainTint,
         windX: controls.rainWindX,
         windZ: controls.rainWindZ,

@@ -4,6 +4,13 @@ export default function getRainControls(snapshot = {}) {
       label: 'Rain Enabled',
       value: snapshot.rainEnabled ?? true,
     },
+    timeScale: {
+      label: 'Time Scale',
+      max: 3,
+      min: -3,
+      step: 0.05,
+      value: snapshot.timeScale ?? 1,
+    },
     rainDropCount: {
       label: 'Drop Count',
       max: 1000000,

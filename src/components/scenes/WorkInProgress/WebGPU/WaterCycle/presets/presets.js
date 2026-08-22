@@ -10,6 +10,7 @@ const BASE = {
   targetHeight: 0,
   targetTilt: -1.2,
   targetSpinSpeed: 0.16,
+  timeScale: 1,
   rainEnabled: true,
   rainDropCount: 400000,
   rainBounds: 140,
@@ -131,6 +132,17 @@ const LOGO = {
 
 export const PRESETS = {
   'Rain Ocean': { ...BASE },
+  'Rain Ocean Reverse': {
+    ...BASE,
+    timeScale: -1.6,
+    rainDropCount: 500000,
+    rainStreakLength: 1.2,
+    rainOpacity: 0.55,
+    surfaceLifeMin: 0.4,
+    surfaceLifeMax: 1.6,
+    lightDriftSpeed: 0.08,
+    lightPulse: 0.1,
+  },
   Downpour: {
     ...BASE,
     rainDropCount: 700000,

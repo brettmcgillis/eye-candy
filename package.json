@@ -24,6 +24,7 @@
     "gltf:optimize": "gltf-transform optimize --compress draco",
     "gltf:resize": "gltf-transform resize --width 2048 --height 2048",
     "gltf:validate": "gltf-transform validate",
+    "occluder:sdf": "node scripts/bake-occluder-sdf.mjs",
     "lint:check": "eslint .",
     "lint:fix": "eslint . --fix",
     "preview": "vite preview",

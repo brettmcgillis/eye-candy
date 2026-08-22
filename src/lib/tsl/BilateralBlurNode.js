@@ -23,7 +23,7 @@ import {
   Vector2,
 } from 'three/webgpu';
 
-const _quadMesh = /*@__PURE__*/ new QuadMesh();
+const _quadMesh = /* @__PURE__ */ new QuadMesh();
 
 let _rendererState;
 
@@ -192,7 +192,7 @@ class BilateralBlurNode extends TempNode {
 
     //
 
-    const textureNode = this.textureNode;
+    const { textureNode } = this;
     const map = textureNode.value;
 
     const currentTexture = textureNode.value;
@@ -248,7 +248,7 @@ class BilateralBlurNode extends TempNode {
    * @return {PassTextureNode}
    */
   setup(builder) {
-    const textureNode = this.textureNode;
+    const { textureNode } = this;
 
     //
 

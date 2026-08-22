@@ -15,7 +15,7 @@ import { Canvas, type ThreeElements } from '@react-three/fiber';
 
 import { useJoystickControls } from './stores/useJoystickControls';
 
-const JoystickComponents = (props: EcctrlJoystickProps) => {
+function JoystickComponents(props: EcctrlJoystickProps) {
   /**
    * Preset values/components
    */
@@ -96,7 +96,7 @@ const JoystickComponents = (props: EcctrlJoystickProps) => {
       touch1MovementVec2.set(touch1MovementX, touch1MovementY);
 
       joystickDis = Math.min(
-        Math.sqrt(Math.pow(touch1MovementX, 2) + Math.pow(touch1MovementY, 2)),
+        Math.sqrt(touch1MovementX ** 2 + touch1MovementY ** 2),
         joystickMaxDis
       );
       joystickAng = touch1MovementVec2.angle();
@@ -201,12 +201,9 @@ const JoystickComponents = (props: EcctrlJoystickProps) => {
       </animated.group>
     </Suspense>
   );
-};
+}
 
-const ButtonComponents = ({
-  buttonNumber = 1,
-  ...props
-}: EcctrlJoystickProps) => {
+function ButtonComponents({ buttonNumber = 1, ...props }: EcctrlJoystickProps) {
   /**
    * Button component geometries
    */
@@ -492,7 +489,7 @@ const ButtonComponents = ({
       )}
     </Suspense>
   );
-};
+}
 
 export const EcctrlJoystick = forwardRef<HTMLDivElement, EcctrlJoystickProps>(
   (props, ref) => {

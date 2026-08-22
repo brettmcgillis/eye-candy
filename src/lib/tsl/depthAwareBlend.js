@@ -19,7 +19,7 @@ import {
   viewZToOrthographicDepth,
 } from 'three/tsl';
 
-export const depthAwareBlend = /*#__PURE__*/ Fn(
+export const depthAwareBlend = /* #__PURE__ */ Fn(
   ([baseNode, blendNode, depthNode, camera, options = {}]) => {
     const uvNode = baseNode.uvNode || uv();
 

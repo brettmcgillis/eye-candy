@@ -36,7 +36,8 @@ export const useGame = /* @__PURE__ */ create(
         set((state) => {
           if (state.curAnimation === state.animationSet.jumpIdle) {
             return { curAnimation: state.animationSet.jumpLand };
-          } else if (
+          }
+          if (
             state.curAnimation !== state.animationSet.action1 &&
             state.curAnimation !== state.animationSet.action2 &&
             state.curAnimation !== state.animationSet.action3 &&

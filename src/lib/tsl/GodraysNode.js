@@ -49,8 +49,8 @@ import {
   Vector3,
 } from 'three/webgpu';
 
-const _quadMesh = /*@__PURE__*/ new QuadMesh();
-const _size = /*@__PURE__*/ new Vector2();
+const _quadMesh = /* @__PURE__ */ new QuadMesh();
+const _size = /* @__PURE__ */ new Vector2();
 
 const _DIRECTIONS = [
   new Vector3(1, 0, 0),
@@ -458,7 +458,8 @@ class GodraysNode extends TempNode {
         ).compare(depth).r;
 
         return vec2(result.oneMinus().add(0.005), viewZ.negate());
-      } else if (this._light.isDirectionalLight) {
+      }
+      if (this._light.isDirectionalLight) {
         const shadowCoord = computeShadowCoord(worldPos).toConst();
 
         const frustumTest = shadowCoord.x
@@ -487,9 +488,8 @@ class GodraysNode extends TempNode {
         });
 
         return output;
-      } else {
-        throw new Error('GodraysNode: Unsupported light type.');
       }
+      throw new Error('GodraysNode: Unsupported light type.');
     };
 
     const godrays = Fn(() => {

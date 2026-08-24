@@ -3,15 +3,17 @@ import React, { memo, useEffect, useMemo, useRef } from 'react';
 
 import { useFrame } from '@react-three/fiber';
 
-import { writeStrokeSegmentRange } from '../utils/buildStrokeGeometry';
-import { advanceEvolution, driftCoeffs } from '../utils/evolution';
-import createRng from '../utils/rng';
 import {
   GROWTH_BASE_RATE,
+  advanceEvolution,
   computeStyles,
+  createRng,
+  driftCoeffs,
   generateStructure,
   growBundle,
-} from '../utils/testGenerator';
+  writeStrokeSegmentRange,
+} from '@modules/rorschach';
+
 import TestStrokes from './TestStrokes';
 
 // Measured ~1.8µs/step. Growth (a short, front-loaded burst while a Test is

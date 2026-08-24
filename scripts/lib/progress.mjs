@@ -18,17 +18,41 @@ function formatEta(seconds) {
   return `${String(mins).padStart(2, '0')}:${String(secs).padStart(2, '0')}`;
 }
 
+function formatElapsed(started) {
+  return ((Date.now() - started) / 1000).toFixed(1);
+}
+
+async function timeStage(label, operation, writeLine) {
+  const started = Date.now();
+  writeLine(`${label}...`);
+  try {
+    const result = await operation();
+    writeLine(`${label} complete — ${formatElapsed(started)}s`);
+    return result;
+  } catch (error) {
+    writeLine(`${label} failed — ${formatElapsed(started)}s`);
+    throw error;
+  }
+}
+
+export function runStage(label, operation) {
+  return timeStage(label, operation, (message) => {
+    process.stdout.write(`  ${message}\n`);
+  });
+}
+
 // Reports progress on one rewritten line when attached to a terminal, and as
 // occasional plain lines when the output is piped or redirected — where a
 // carriage return would just concatenate everything into one unreadable row.
 export default function createProgress(label, total) {
   const interactive = Boolean(process.stdout.isTTY);
   const started = Date.now();
+  let current = 0;
   let lastDraw = 0;
   let lastPercent = -1;
   let finished = false;
 
-  function draw(current, force) {
+  function draw(force) {
     if (finished) return;
     const now = Date.now();
     if (!force && now - lastDraw < MIN_INTERVAL_MS) return;
@@ -56,14 +80,28 @@ export default function createProgress(label, total) {
     }
   }
 
+  function writeLine(message) {
+    if (interactive) process.stdout.write(CLEAR_LINE);
+    process.stdout.write(`  ${message}\n`);
+    if (interactive) draw(true);
+  }
+
   return {
     done(message) {
       if (finished) return;
+      current = total;
       finished = true;
-      const elapsed = ((Date.now() - started) / 1000).toFixed(1);
       if (interactive) process.stdout.write(CLEAR_LINE);
-      process.stdout.write(`  ${message ?? label} — ${elapsed}s\n`);
+      process.stdout.write(
+        `  ${message ?? label} 100% (${total}/${total}) — ${formatElapsed(started)}s\n`
+      );
     },
-    update: (current) => draw(current, false),
+    log: writeLine,
+    stage: (stageLabel, operation) =>
+      timeStage(stageLabel, operation, writeLine),
+    update(nextCurrent) {
+      current = Math.max(0, Math.min(total, nextCurrent));
+      draw(false);
+    },
   };
 }

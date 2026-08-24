@@ -4,12 +4,6 @@
 
 [Back to main TODO](../../../../../TODO.md)
 
-- [ ] - Is there a way that we can script the generation of n Tests, and grab a screenshots of each when its complete? Im thinking all 4 perspectives, plus 1 orbit. Might be an interesting experiment to create a new instagram page and post one every day. Pretty sure theres an IG CLI we could use as well. if were scripting we should essentially leverage the same set of props as the regen button. we should also capture the rolled props so the image could be replicated if i want. if we did nfts or prints this would be essential. grab a json object of the props used and put it as the comment on the nft or post, or write it on the back of a print/plot. This could make for a compelling IG post as well if we could generate n different configurations and then stitch them together using ffmpeg, we would just need to make sure the overlay is included or can be added in post somehow, but this might require a dedicated dev page where i can point at a video on disk and play it with the scene's overlay. If we do this we need the following scripts,
-  - generate tests
-  - generate n tests
-  - test images to video
-  - what else?
-
 - [ ] 3d lines (tubes) mode to extend lines mode
 - [ ] might want to explore dramatic lighting when we get to particles and lines mode assuming they are spheres/tubes
 - [ ] - Regen button should roll the dice on like, all the controls, not just seed. Do close to last to better decide what to include/exclude and how this should work. After some consideration, we would want to min/max some of the fields, example: no one wants a Test thats just 1 bundle. no one wants a white test on white background.
@@ -19,6 +13,8 @@
 - [ ] - Im envisioning a cinematic mode. scene starts, camera at x-, orbit enabled. Test starts generating as camera sweeps around. as the camera nears x+, the Test is flattened. as the camera hits x+ a new seed is selected so that as the camera continues around the back a new system emerges. each half-rotation shows a new system grow. I suspect this is nearly possible today with the controls we have, but would need to align rotation speed & growth speed, as well as implement the continuous mode mentioned above, as well as the background <-> pallette matching to ensure that lines are visible and not masked by background.
 
 # // Intent/Use Cases
+
+- This scene is a part of a larger set of code, includeing the RorschachCLI scripts and UI. Any feature that is added to this scene should generally be supported by the CLI and dev tool page UX as well.
 
 - Generative ink-blot tests combining two references: nullHashPixel's
   Rorschach Algorithm tests (seeded formula-builder assembling a system of
@@ -34,11 +30,10 @@
 # // Features
 
 - Phase 2: Ink mode — full Curtis-97 fluid/pigment/capillary ping-pong sim
-  and Kubelka-Munk pigment compositing, paper-grain material.
+  and Kubelka-Munk pigment compositing, paper-grain material. Curtis et al.'s watercolor model (SIGGRAPH 1997) with a fluid layer, drifting pigment and wet paper fibers.
+  this mode should generate symmetric inkblots that appear to be genuine watercolor ink on paper. we will want to be able to support multiple colors and monochrome just like the lines mode. we will want some continuous mode where systems keep chaning, we will want evolution as well. there may be some parallel between bundles & colors here.
 
-- Phase 3: Points mode — same trajectory data as an alt render mode
-  (GPU point cloud, likely a TSL compute migration for density), plus the
-  `mode` toggle control.
+- Phase 3: Points mode — same trajectory data as an alt render mode (GPU point cloud, likely a TSL compute migration for density), plus the `mode` toggle control. we will want to do something interesting with the points here but im uncertain where to go. are the particles circle, square, noisy transparency? do they move along the line created by the system or are they stationary? if theyre stationary is there a wave of noise that travels down the line slightly pushing them out of the way as it moves past their location on the line?
 
 # // Bugs
 

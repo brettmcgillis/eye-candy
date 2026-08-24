@@ -2,13 +2,13 @@ import { useEffect, useRef } from 'react';
 
 import { useFrame, useThree } from '@react-three/fiber';
 
-import { cinematicState } from '../utils/cinematic';
+import { cinematicState } from '@modules/rorschach';
 
 // Drives the sweep described in todo.md: the camera orbits continuously, each
 // system draws itself in over its own half-revolution, flattens as the camera
 // reaches the far side, and is replaced as the camera passes behind.
 //
-// Timing comes from utils/cinematic.js, the same module
+// Timing comes from @modules/rorschach/cinematic.js, the same module
 // scripts/rorschach-video.mjs uses for `--mode cinematic`, so the in-app sweep
 // and the rendered one can't drift.
 //

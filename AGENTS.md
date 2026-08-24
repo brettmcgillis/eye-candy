@@ -3,11 +3,11 @@
 **This file is the agent-agnostic source of truth.** Every agent entry point
 points here rather than restating anything:
 
-| Agent | Entry file |
-| --- | --- |
-| Claude Code | `CLAUDE.md` |
-| GitHub Copilot | `.github/copilot-instructions.md` |
-| Codex / Cursor / Aider / Zed | `AGENTS.md` (this file) |
+| Agent                        | Entry file                        |
+| ---------------------------- | --------------------------------- |
+| Claude Code                  | `CLAUDE.md`                       |
+| GitHub Copilot               | `.github/copilot-instructions.md` |
+| Codex / Cursor / Aider / Zed | `AGENTS.md` (this file)           |
 
 Rules live here and in `docs/`. Do not duplicate them into an agent-specific
 file — update this one, and every agent gets the change.
@@ -34,20 +34,41 @@ scene especially never imports from a Test Lab or Toolbox scene. Imports outside
 the current scene folder go through path aliases (`@elements`, `@modules`,
 `@utils`, …), never `../../../..` chains (§1b).
 
+## Required reading before touching src/dev
+
+- **`docs/dev-tooling.md`** — the local-only dev-tooling boundary, tool
+  organization, dev-page registration, cross-tool import enforcement, and dev
+  server code under `src/dev/`. This is the source of truth; follow it
+  exactly. None of this ships to GitHub Pages.
+
+## Required reading before touching Rorschach
+
+- **`docs/rorschach-pipeline.md`** — Rorschach is one kernel
+  (`src/modules/rorschach/`) with two renderers over it: the WebGPU scene and
+  the headless stills/video CLIs, with the dev tool as a UI over the latter.
+  Changes start in the kernel and land in every consumer in the same commit;
+  render options are declared once in `renderOptions.mjs`. This is the source
+  of truth; follow it exactly.
+
 ## Orientation
 
 - Scenes: `src/components/scenes/<Renderer>/<SceneName>/` (`WebGL | WebGPU |
-  Shared`). Maturity is the `area` field in `scene.config.jsx`, not a folder —
+Shared`). Maturity is the `area` field in `scene.config.jsx`, not a folder —
   promoting a scene is a one-line edit, nothing moves.
 - Reusable model wrappers: `src/components/elements/<ModelName>/`.
 - Shared hooks: `src/hooks/`. Promoted modules: `src/modules/` (e.g. `ecctrl`,
   `cameraRig`, `lightingRig`, `handTracking`, `poseTracking`, `tsl`,
   `trashCatalog`) — each
   behind an `index.js` barrel.
+- Rorschach kernel: `src/modules/rorschach/` — see the required reading above
+  before changing anything the scene and the CLIs share.
 - Shared authored data: `src/presets/` (fire/smoke/spline libraries authored by
   the Toolbox scenes and consumed by ordinary scenes).
 - Scaffold (canvas, Leva, loading): `src/app/scaffold/*`, wired via `useAppScenes`.
 - Entry: `src/main.jsx` → `src/app/App.jsx`.
+- Local dev tooling (not deployed): `src/dev/tools/<tool>/`, mounted only in
+  dev via `src/app/App.jsx`. See "Required reading before touching src/dev"
+  above.
 
 ## WebGPU / TSL function reference
 

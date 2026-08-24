@@ -12,6 +12,10 @@
 /build
 /dist
 
+# generated Rorschach media
+/output/batch/
+/output/rorschach-workbench/
+
 # misc
 .DS_Store
 .env.local

@@ -7,7 +7,7 @@ import path from 'path';
 import { defineConfig } from 'vite';
 
 import pkg from './package.json';
-import gltfjsxDevPlugin from './src/server/gltfjsxDevPlugin';
+import devServerPlugins from './src/dev/server/devServerPlugins';
 
 function getLanIP() {
   const interfaces = Object.values(os.networkInterfaces()).flatMap(
@@ -35,7 +35,7 @@ export default defineConfig(({ command, mode }) => {
   return {
     plugins: [
       react(),
-      !isBuild && gltfjsxDevPlugin(),
+      ...(!isBuild ? devServerPlugins() : []),
       useHttps && basicSsl(),
     ].filter(Boolean),
 
@@ -43,6 +43,7 @@ export default defineConfig(({ command, mode }) => {
       alias: {
         '@app': path.resolve(__dirname, 'src/app'),
         '@components': path.resolve(__dirname, 'src/components'),
+        '@dev': path.resolve(__dirname, 'src/dev'),
         '@elements': path.resolve(__dirname, 'src/components/elements'),
         '@hooks': path.resolve(__dirname, 'src/hooks'),
         '@materials': path.resolve(__dirname, 'src/components/materials'),
@@ -53,7 +54,6 @@ export default defineConfig(({ command, mode }) => {
         ),
         '@presets': path.resolve(__dirname, 'src/presets'),
         '@scenes': path.resolve(__dirname, 'src/components/scenes'),
-        '@server': path.resolve(__dirname, 'src/server'),
         '@store': path.resolve(__dirname, 'src/store'),
         '@styles': path.resolve(__dirname, 'src/styles'),
         '@utils': path.resolve(__dirname, 'src/utils'),

@@ -11,14 +11,7 @@ import {
   resolveSceneRoute,
 } from './sceneRegistry';
 
-const DevLandingPage = lazy(() => import('./pages/dev/DevLandingPage'));
-const LoadersPage = lazy(() => import('./pages/dev/LoadersPage'));
-const IconsPage = lazy(() => import('./pages/dev/IconsPage'));
-const GradientsPage = lazy(() => import('./pages/dev/GradientsPage'));
-const GltfJsxPage = lazy(() => import('./pages/dev/GltfJsxPage'));
-const RorschachWorkbenchPage = lazy(
-  () => import('./pages/dev/RorschachWorkbenchPage')
-);
+const DevApp = import.meta.env.DEV ? lazy(() => import('@dev/DevApp')) : null;
 
 // Renders as the Suspense fallback inside the Canvas. Signals to the parent
 // that the scene is suspended so the Loader overlay stays visible.
@@ -120,63 +113,7 @@ export default function AppRoot() {
     <Routes>
       <Route path="/" element={<Navigate to={DEFAULT_SCENE_PATH} replace />} />
 
-      {/* Dev utility pages — lazy-loaded, no app shell */}
-      <Route
-        path="/dev"
-        element={
-          <Suspense fallback={null}>
-            <DevLandingPage />
-          </Suspense>
-        }
-      />
-      <Route
-        path="/dev/loaderpattern"
-        element={
-          <Suspense fallback={null}>
-            <LoadersPage />
-          </Suspense>
-        }
-      />
-      <Route
-        path="/dev/iconography"
-        element={
-          <Suspense fallback={null}>
-            <IconsPage />
-          </Suspense>
-        }
-      />
-      <Route
-        path="/dev/color"
-        element={
-          <Suspense fallback={null}>
-            <GradientsPage />
-          </Suspense>
-        }
-      />
-      <Route
-        path="/dev/colors"
-        element={
-          <Suspense fallback={null}>
-            <GradientsPage />
-          </Suspense>
-        }
-      />
-      <Route
-        path="/dev/gltfjsx"
-        element={
-          <Suspense fallback={null}>
-            <GltfJsxPage />
-          </Suspense>
-        }
-      />
-      <Route
-        path="/dev/rorschach"
-        element={
-          <Suspense fallback={null}>
-            <RorschachWorkbenchPage />
-          </Suspense>
-        }
-      />
+      {DevApp ? <Route path="/dev/*" element={<DevApp />} /> : null}
 
       <Route path="/testlab" element={<AreaSceneRedirect area="testlab" />} />
       <Route path="/toolbox" element={<AreaSceneRedirect area="toolbox" />} />

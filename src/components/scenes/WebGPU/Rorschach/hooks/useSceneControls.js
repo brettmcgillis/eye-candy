@@ -7,33 +7,32 @@ import {
   getCameraControlsKey,
   useSceneCameraControls,
 } from '@modules/cameraRig';
-
-import { DEFAULT_PRESET, PRESETS, getPresetControls } from '../presets/presets';
-import CAMERA from '../utils/camera';
-import { SECONDS_PER_SYSTEM, growthSpeedFor } from '../utils/cinematic';
-import { COEFF_DRIFT_CLAMP } from '../utils/evolution';
 import {
+  CAMERA,
+  COEFF_DRIFT_CLAMP,
   DEFAULT_BOUND_HEIGHT,
   DEFAULT_BOUND_RADIUS,
   DEFAULT_BOUND_WIDTH,
-  DEFAULT_MIN_SPREAD,
-} from '../utils/odeIntegrator';
-import { PALETTE_NAMES } from '../utils/palette';
-import rollTestConfig, { randomSeed } from '../utils/rollConfig';
-import {
   DEFAULT_BUNDLE_COUNT,
   DEFAULT_COEFF_RANGE,
   DEFAULT_FRAMING_SHAPE,
   DEFAULT_FREQ,
+  DEFAULT_MIN_SPREAD,
   DEFAULT_START_SPREAD,
   DEFAULT_STEPS,
   DEFAULT_STRANDS_PER_BUNDLE,
   GROWTH_BASE_RATE,
   MAX_BUNDLE_COUNT,
-} from '../utils/testGenerator';
-import buildBundleOverrideSchema, {
+  PALETTE_NAMES,
+  SECONDS_PER_SYSTEM,
   buildOverridesFromControls,
-} from './buildBundleOverrideSchema';
+  growthSpeedFor,
+  randomSeed,
+  rollTestConfig,
+} from '@modules/rorschach';
+
+import { DEFAULT_PRESET, PRESETS, getPresetControls } from '../presets/presets';
+import buildBundleOverrideSchema from './buildBundleOverrideSchema';
 
 const SCENE_LABEL = 'Rorschach';
 const CAMERA_FOLDER_PATH = `${SCENE_LABEL}.Camera`;
@@ -397,7 +396,7 @@ export default function useSceneControls() {
   // ButtonOverlay's "Regenerate" rolls a whole new test (structure + style +
   // a cohesive background) rather than just a seed. Reads the *live* Growth
   // Speed rather than rolling one, so a rolled per-bundle override can pin
-  // its Growth Duration to match — see utils/rollConfig.js.
+  // its Growth Duration to match — see @modules/rorschach/rollConfig.js.
   const growthSpeedRef = useRef(controls.growthSpeed);
   growthSpeedRef.current = controls.growthSpeed;
   const regenerate = useCallback(() => {
@@ -407,7 +406,7 @@ export default function useSceneControls() {
   }, [setControls]);
 
   // Cinematic Mode paces growth itself so a system finishes drawing in step
-  // with the camera — see utils/cinematic.js. Derived here rather than written
+  // with the camera — see @modules/rorschach/cinematic.js. Derived here rather than written
   // back into the Growth Speed control, so switching the mode off restores
   // whatever the user had set.
   const growthSpeed = controls.cinematicEnabled

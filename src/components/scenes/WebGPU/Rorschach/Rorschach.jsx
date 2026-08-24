@@ -15,9 +15,9 @@ import useSceneControls from './hooks/useSceneControls';
 
 // Phase 1 (Lines mode): a seeded formula-builder assembles a 3D system of
 // trig-based ODEs per bundle, Clifford/de Jong-attractor style
-// (utils/formulaBuilder.js, utils/odeIntegrator.js mirrored across X=0 for the
+// (@modules/rorschach/formulaBuilder.js, @modules/rorschach/odeIntegrator.js mirrored across X=0 for the
 // classic bilateral ink-blot symmetry, self-drawing in on generate and
-// drifting slowly afterward (utils/evolution.js). Points and Ink (full
+// drifting slowly afterward (@modules/rorschach/evolution.js). Points and Ink (full
 // Curtis-97 watercolor sim) modes are later phases — see todo.md.
 function Rorschach() {
   const config = useSceneControls();

@@ -49,6 +49,191 @@
   },
   "overrides": [
     {
+      "files": ["src/**/*.{js,jsx,ts,tsx}"],
+      "excludedFiles": ["src/dev/**/*", "src/app/App.jsx"],
+      "rules": {
+        "no-restricted-imports": [
+          "error",
+          {
+            "patterns": [
+              {
+                "group": ["@dev", "@dev/*", "**/dev/**"],
+                "message": "Dev tooling is local-only and may only be mounted by src/app/App.jsx."
+              }
+            ]
+          }
+        ]
+      }
+    },
+    {
+      "files": ["src/dev/tools/colors/**/*.{js,jsx}"],
+      "rules": {
+        "no-restricted-imports": [
+          "error",
+          {
+            "patterns": [
+              {
+                "group": [
+                  "**/gltfjsx/**",
+                  "**/iconography/**",
+                  "**/loaderPatterns/**",
+                  "**/rorschach/**"
+                ],
+                "message": "A dev tool may not import another tool's internals. Promote shared code to src/dev/shell (UI) or a shared src/dev folder (behavior)."
+              }
+            ]
+          }
+        ]
+      }
+    },
+    {
+      "files": ["src/dev/tools/gltfjsx/**/*.{js,jsx}"],
+      "rules": {
+        "no-restricted-imports": [
+          "error",
+          {
+            "patterns": [
+              {
+                "group": [
+                  "**/colors/**",
+                  "**/iconography/**",
+                  "**/loaderPatterns/**",
+                  "**/rorschach/**"
+                ],
+                "message": "A dev tool may not import another tool's internals. Promote shared code to src/dev/shell (UI) or a shared src/dev folder (behavior)."
+              }
+            ]
+          }
+        ]
+      }
+    },
+    {
+      "files": ["src/dev/tools/iconography/**/*.{js,jsx}"],
+      "rules": {
+        "no-restricted-imports": [
+          "error",
+          {
+            "patterns": [
+              {
+                "group": [
+                  "**/colors/**",
+                  "**/gltfjsx/**",
+                  "**/loaderPatterns/**",
+                  "**/rorschach/**"
+                ],
+                "message": "A dev tool may not import another tool's internals. Promote shared code to src/dev/shell (UI) or a shared src/dev folder (behavior)."
+              }
+            ]
+          }
+        ]
+      }
+    },
+    {
+      "files": ["src/dev/tools/loaderPatterns/**/*.{js,jsx}"],
+      "rules": {
+        "no-restricted-imports": [
+          "error",
+          {
+            "patterns": [
+              {
+                "group": [
+                  "**/colors/**",
+                  "**/gltfjsx/**",
+                  "**/iconography/**",
+                  "**/rorschach/**"
+                ],
+                "message": "A dev tool may not import another tool's internals. Promote shared code to src/dev/shell (UI) or a shared src/dev folder (behavior)."
+              }
+            ]
+          }
+        ]
+      }
+    },
+    {
+      "files": ["src/dev/tools/rorschach/**/*.{js,jsx}"],
+      "rules": {
+        "no-restricted-imports": [
+          "error",
+          {
+            "patterns": [
+              {
+                "group": [
+                  "**/colors/**",
+                  "**/gltfjsx/**",
+                  "**/iconography/**",
+                  "**/loaderPatterns/**"
+                ],
+                "message": "A dev tool may not import another tool's internals. Promote shared code to src/dev/shell (UI) or a shared src/dev folder (behavior)."
+              },
+              {
+                "group": ["@modules/rorschach/*", "**/modules/rorschach/*"],
+                "message": "Import the Rorschach kernel through its @modules/rorschach barrel, never a file inside it. See docs/rorschach-pipeline.md."
+              }
+            ]
+          }
+        ]
+      }
+    },
+    {
+      "files": ["src/modules/rorschach/**/*.{js,mjs}"],
+      "rules": {
+        "import/extensions": [
+          "error",
+          "ignorePackages",
+          {
+            "js": "never",
+            "jsx": "never",
+            "mjs": "always"
+          }
+        ],
+        "no-restricted-imports": [
+          "error",
+          {
+            "patterns": [
+              {
+                "group": [
+                  "@app",
+                  "@app/*",
+                  "@components",
+                  "@components/*",
+                  "@dev",
+                  "@dev/*",
+                  "**/dev/**",
+                  "**/scenes/**",
+                  "react",
+                  "react-dom",
+                  "react-*",
+                  "leva",
+                  "@react-three/*"
+                ],
+                "message": "The Rorschach kernel is renderer-agnostic: no React, R3F, Leva, DOM, scene or dev-tooling imports. See docs/rorschach-pipeline.md."
+              }
+            ]
+          }
+        ]
+      }
+    },
+    {
+      "files": ["src/components/scenes/WebGPU/Rorschach/**/*.{js,jsx}"],
+      "rules": {
+        "no-restricted-imports": [
+          "error",
+          {
+            "patterns": [
+              {
+                "group": ["@dev", "@dev/*", "**/dev/**"],
+                "message": "Dev tooling is local-only and may only be mounted by src/app/App.jsx."
+              },
+              {
+                "group": ["@modules/rorschach/*", "**/modules/rorschach/*"],
+                "message": "Import the Rorschach kernel through its @modules/rorschach barrel, never a file inside it. See docs/rorschach-pipeline.md."
+              }
+            ]
+          }
+        ]
+      }
+    },
+    {
       "files": ["**/*.ts", "**/*.tsx"],
       "parser": "@typescript-eslint/parser",
       "parserOptions": {
@@ -77,7 +262,7 @@
       }
     },
     {
-      "files": ["vite.config.*", "vitest.config.*", "src/server/**/*.js"],
+      "files": ["vite.config.*", "vitest.config.*", "src/dev/server/**/*.js"],
       "env": {
         "node": true
       },
@@ -88,7 +273,16 @@
             "devDependencies": true
           }
         ],
-        "import/no-unresolved": "off"
+        "import/no-unresolved": "off",
+        "import/extensions": [
+          "error",
+          "ignorePackages",
+          {
+            "js": "never",
+            "jsx": "never",
+            "mjs": "always"
+          }
+        ]
       }
     }
   ],
@@ -103,6 +297,7 @@
         "map": [
           ["@app", "./src/app"],
           ["@components", "./src/components"],
+          ["@dev", "./src/dev"],
           ["@elements", "./src/components/elements"],
           ["@hooks", "./src/hooks"],
           ["@materials", "./src/components/materials"],
@@ -110,7 +305,6 @@
           ["@postprocessing", "./src/components/postprocessing"],
           ["@presets", "./src/presets"],
           ["@scenes", "./src/components/scenes"],
-          ["@server", "./src/server"],
           ["@store", "./src/store"],
           ["@styles", "./src/styles"],
           ["@utils", "./src/utils"]

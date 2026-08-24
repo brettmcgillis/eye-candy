@@ -14,6 +14,12 @@
       "@components": [
         "src/components"
       ],
+      "@dev/*": [
+        "src/dev/*"
+      ],
+      "@dev": [
+        "src/dev"
+      ],
       "@elements/*": [
         "src/components/elements/*"
       ],
@@ -55,12 +61,6 @@
       ],
       "@scenes": [
         "src/components/scenes"
-      ],
-      "@server/*": [
-        "src/server/*"
-      ],
-      "@server": [
-        "src/server"
       ],
       "@store/*": [
         "src/store/*"

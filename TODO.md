@@ -189,6 +189,8 @@ To Build:
 - [ ] FurLab
 - [ ] GLTF Workbench
 - [ ] CRT Test
+- [ ] RorschachCLI UI
+- [ ] Colors and Gradients
 
 ### Scenes to post
 

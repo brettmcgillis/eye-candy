@@ -13,6 +13,11 @@ In particular, read before writing any code:
 - `docs/scene-performance-checklist.md` — required for any change touching
   scenes, materials, shaders, controls, loading, or postprocessing.
 - `docs/r3f-performance-playbook.md` — performance guidance (60fps, mobile-first).
+- `docs/dev-tooling.md` — required before touching `src/dev/` (local-only dev
+  workbenches, not deployed to GitHub Pages).
+- `docs/rorschach-pipeline.md` — required before touching Rorschach: one kernel
+  (`src/modules/rorschach/`), two renderers over it, changes start in the
+  kernel.
 
 Nothing Copilot-specific is maintained here — if a rule needs to change, change
 `AGENTS.md` (or the `docs/` file it points at) so every agent picks it up.

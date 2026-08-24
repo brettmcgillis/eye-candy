@@ -6,11 +6,15 @@ import { createServer } from 'vite';
 
 import createCapturer from './gpuCapture.mjs';
 import overlaySvg from './overlaySvg.mjs';
+import { runStage } from './progress.mjs';
 
 export const REPO_ROOT = path.resolve(
   fileURLToPath(new URL('../..', import.meta.url))
 );
-const SCENE = '/src/components/scenes/WebGPU/Rorschach';
+// The kernel's barrel — the single entry point the headless renderers are
+// allowed to reach for. Deeper paths are forbidden on purpose: see
+// docs/rorschach-pipeline.md.
+const KERNEL = '/src/modules/rorschach/index.js';
 
 // The overlay is identical on every frame of a run, but building it costs a
 // handful of sharp calls (text measurement) and rasterising it costs more —
@@ -23,14 +27,17 @@ async function overlayLayer({ height, ig, version, viewport, width }) {
   if (!overlayCache.has(key)) {
     overlayCache.set(
       key,
-      overlaySvg({
-        height,
-        ig,
-        repoRoot: REPO_ROOT,
-        version,
-        viewport,
-        width,
-      }).then((svg) => sharp(Buffer.from(svg)).png().toBuffer())
+      runStage(`preparing overlay (${width}x${height})`, async () => {
+        const svg = await overlaySvg({
+          height,
+          ig,
+          repoRoot: REPO_ROOT,
+          version,
+          viewport,
+          width,
+        });
+        return sharp(Buffer.from(svg)).png().toBuffer();
+      })
     );
   }
   return overlayCache.get(key);
@@ -39,11 +46,17 @@ async function overlayLayer({ height, ig, version, viewport, width }) {
 // One WebGPU renderer per output size, reused across every frame of a run —
 // device + pipeline setup is by far the most expensive part of a capture.
 const capturerCache = new Map();
+const warmedCapturers = new WeakSet();
 
 function capturerFor(width, height) {
   const key = `${width}x${height}`;
   if (!capturerCache.has(key)) {
-    capturerCache.set(key, createCapturer({ height, width }));
+    capturerCache.set(
+      key,
+      runStage(`initializing WebGPU renderer (${width}x${height})`, () =>
+        createCapturer({ height, width })
+      )
+    );
   }
   return capturerCache.get(key);
 }
@@ -51,11 +64,15 @@ function capturerFor(width, height) {
 export async function disposeCapturers() {
   const pending = [...capturerCache.values()];
   capturerCache.clear();
-  await Promise.all(
-    pending.map(async (promise) => {
-      const capturer = await promise;
-      capturer.dispose();
-    })
+  if (pending.length === 0) return;
+
+  await runStage('disposing WebGPU renderers', () =>
+    Promise.all(
+      pending.map(async (promise) => {
+        const capturer = await promise;
+        capturer.dispose();
+      })
+    )
   );
 }
 
@@ -71,7 +88,9 @@ const BLOOM_LEVELS = [
   { sigmaScale: 4, weight: 0.35 },
 ];
 
-export async function loadSceneModules() {
+// Loads the kernel through Vite so it resolves the same aliases and module
+// graph the scene does — the two renderers execute literally the same files.
+export async function loadKernel() {
   const server = await createServer({
     appType: 'custom',
     configFile: false,
@@ -79,50 +98,34 @@ export async function loadSceneModules() {
     // Nothing here is served to a browser, and with no index.html to crawl
     // the dependency scanner just errors noisily on the SSR entry points.
     optimizeDeps: { noDiscovery: true },
+    resolve: {
+      alias: {
+        '@utils': path.join(REPO_ROOT, 'src', 'utils'),
+      },
+    },
     root: REPO_ROOT,
     server: { middlewareMode: true },
   });
 
   try {
-    const [roll, generator, renderer] = await Promise.all([
-      server.ssrLoadModule(`${SCENE}/utils/rollConfig.js`),
-      server.ssrLoadModule(`${SCENE}/utils/testGenerator.js`),
-      server.ssrLoadModule(`${SCENE}/utils/renderTestSvg.js`),
-    ]);
-    const [overrides, geometry] = await Promise.all([
-      server.ssrLoadModule(`${SCENE}/hooks/buildBundleOverrideSchema.js`),
-      server.ssrLoadModule(`${SCENE}/utils/buildStrokeGeometry.js`),
-    ]);
-    return {
-      computeStyles: generator.computeStyles,
-      generateStructure: generator.generateStructure,
-      growBundle: generator.growBundle,
-      buildOverridesFromControls: overrides.buildOverridesFromControls,
-      geometryHelpers: geometry,
-      hasBloomContent: renderer.hasBloomContent,
-      viewEye: renderer.viewEye,
-      orbitEye: renderer.orbitEye,
-      randomSeed: roll.randomSeed,
-      renderTestSvg: renderer.default,
-      rollTestConfig: roll.default,
-    };
+    return await server.ssrLoadModule(KERNEL);
   } finally {
     await server.close();
   }
 }
 
-// The Bundle Editor's nested override shape is derived by the scene's own
+// The Bundle Editor's nested override shape is derived by the kernel's own
 // buildOverridesFromControls rather than re-implemented here. An earlier local
 // copy only mapped the fields `rollConfig` happens to set, so a real preset's
 // Color Override and Structural Override were silently dropped — preset 005's
 // red emissive bundle rendered in its palette color instead.
-export function overridesFromConfig(modules, config) {
-  return modules.buildOverridesFromControls(config);
+export function overridesFromConfig(kernel, config) {
+  return kernel.buildOverridesFromControls(config);
 }
 
-export function buildTest(modules, config) {
-  const overrides = overridesFromConfig(modules, config);
-  const structure = modules.generateStructure(config.seed, {
+export function buildTest(kernel, config) {
+  const overrides = overridesFromConfig(kernel, config);
+  const structure = kernel.generateStructure(config.seed, {
     ...config,
     overrides,
   });
@@ -130,12 +133,12 @@ export function buildTest(modules, config) {
   // rest a slice per frame. Nothing here animates the integration itself, so
   // finish it in one call and let setGrowth reveal it.
   structure.bundles.forEach((bundle) =>
-    modules.growBundle(bundle, bundle.steps)
+    kernel.growBundle(bundle, bundle.steps)
   );
 
   return {
     ...structure,
-    styles: modules.computeStyles(config.seed, config.bundleCount, {
+    styles: kernel.computeStyles(config.seed, config.bundleCount, {
       ...config,
       overrides,
     }),
@@ -184,8 +187,8 @@ async function rasterBloom(
     .toBuffer();
 }
 
-export function frameSvg(modules, { config, options, test, ...view }) {
-  return modules.renderTestSvg({
+export function frameSvg(kernel, { config, options, test, ...view }) {
+  return kernel.renderTestSvg({
     backgroundColor: config.backgroundColor,
     bundles: test.bundles,
     distance: options.distance,
@@ -221,13 +224,13 @@ async function withOverlay(png, options) {
 // The SVG path: flat polylines rasterised by sharp, with bloom approximated as
 // a blurred bright pass. Kept as a fallback and as the basis of the .svg
 // output, but `gpu` is the default because it runs the scene's real post chain.
-async function renderFrameSvg(modules, { config, options, test, ...view }) {
+async function renderFrameSvg(kernel, { config, options, test, ...view }) {
   const svg = (extra) =>
-    frameSvg(modules, { config, options, test, ...view, ...extra });
+    frameSvg(kernel, { config, options, test, ...view, ...extra });
 
   const blooms =
     options.bloom &&
-    modules.hasBloomContent({
+    kernel.hasBloomContent({
       backgroundColor: config.backgroundColor,
       bloomThreshold: options.bloomThreshold,
       styles: test.styles,
@@ -258,9 +261,9 @@ async function renderFrameSvg(modules, { config, options, test, ...view }) {
 // Renders one frame to a PNG buffer, then composites the overlay burn-in.
 // `options.renderer` picks between the real WebGPU capture and the SVG
 // approximation.
-export async function renderFrame(modules, { config, options, test, ...view }) {
+export async function renderFrame(kernel, { config, options, test, ...view }) {
   if (options.renderer === 'svg') {
-    const png = await renderFrameSvg(modules, {
+    const png = await renderFrameSvg(kernel, {
       config,
       options,
       test,
@@ -270,13 +273,21 @@ export async function renderFrame(modules, { config, options, test, ...view }) {
   }
 
   const capturer = await capturerFor(options.width, options.height);
-  const png = await capturer.capture({
-    config,
-    eye: view.eye ?? modules.viewEye(view.view ?? 'front', options.distance),
-    geometryHelpers: modules.geometryHelpers,
-    options,
-    target: view.target ?? [0, 0, 0],
-    test,
-  });
+  const capture = () =>
+    capturer.capture({
+      config,
+      eye: view.eye ?? kernel.viewEye(view.view ?? 'front', options.distance),
+      geometryHelpers: kernel,
+      options,
+      target: view.target ?? [0, 0, 0],
+      test,
+    });
+  const png = warmedCapturers.has(capturer)
+    ? await capture()
+    : await runStage('rendering first WebGPU frame', async () => {
+        const firstFrame = await capture();
+        warmedCapturers.add(capturer);
+        return firstFrame;
+      });
   return withOverlay(png, options);
 }

@@ -1,16 +1,11 @@
 /* eslint-disable import/no-extraneous-dependencies */
-import React from 'react';
-import { renderToStaticMarkup } from 'react-dom/server';
-import { GiInkSwirl } from 'react-icons/gi';
-
 import { readFile } from 'node:fs/promises';
 import path from 'node:path';
 import sharp from 'sharp';
 
 // A burn-in of src/app/scaffold/overlay/Overlay.jsx for headless video and
 // stills. Values below are lifted from src/styles/tokens.css and global.css;
-// the icons are the same react-icons components the app mounts, rendered to
-// SVG markup here instead of to the DOM.
+// image assets are embedded into the SVG so sharp can rasterize them.
 
 const FONT_STACK =
   "-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Helvetica, Arial, sans-serif";
@@ -72,20 +67,6 @@ async function measureText(text, fontSize) {
   return info.width;
 }
 
-// react-icons already emits width/height from `size`, so nothing here needs
-// rewriting — an earlier version tried to and clobbered `stroke-width` on
-// outline icons, since "stroke-width" ends in "width".
-function iconMarkup(Component, size, color) {
-  return renderToStaticMarkup(React.createElement(Component, { color, size }));
-}
-
-function placeIcon(markup, x, y, size) {
-  return markup.replace(
-    /^<svg /,
-    `<svg x="${x.toFixed(2)}" y="${(y - size / 2).toFixed(2)}" `
-  );
-}
-
 function panel(x, y, width, height, radius, content, anchor) {
   const left = anchor === 'right' ? x - width : x;
   return (
@@ -116,7 +97,14 @@ function textPanel({ anchor, font, layout, text, textWidth, x, y }) {
 // slot carries a wrench for WIP scenes, and a burned-in wrench would mark a
 // posted image as unfinished work. Scenemoji.jsx renders exactly this shape
 // when AREA_ICONS has no icon for the area, which is the Showcase case.
-async function scenemojiPanel({ font, layout, logoDataUri, x, y }) {
+async function scenemojiPanel({
+  font,
+  layout,
+  logoDataUri,
+  sceneIconDataUri,
+  x,
+  y,
+}) {
   const logoHeight = ICON_SIZE * 1.4;
   const logoWidth = logoHeight * LOGO_ASPECT;
   const sceneSize = 26;
@@ -146,12 +134,8 @@ async function scenemojiPanel({ font, layout, logoDataUri, x, y }) {
     cursor += dashWidth + gap;
 
     parts.push(
-      placeIcon(
-        iconMarkup(GiInkSwirl, sceneSize, PANEL_FG),
-        cursor,
-        midY,
-        sceneSize
-      )
+      `<image x="${cursor.toFixed(2)}" y="${(midY - sceneSize / 2).toFixed(2)}" ` +
+        `width="${sceneSize}" height="${sceneSize}" href="${sceneIconDataUri}"/>`
     );
 
     return parts.join('');
@@ -194,10 +178,13 @@ export default async function overlaySvg({
   const preset = isMobile && IG_OFFSETS[ig] ? ig : null;
   const { font } = layout;
 
-  const logo = await readFile(
-    path.join(repoRoot, 'public/icons/reversal-inner.png')
-  );
+  const [logo, sceneIcon] = await Promise.all([
+    readFile(path.join(repoRoot, 'public/icons/reversal-inner.png')),
+    readFile(path.join(repoRoot, 'public/icons/rorschach.webp')),
+  ]);
   const logoDataUri = `data:image/png;base64,${logo.toString('base64')}`;
+  const sceneIconPng = await sharp(sceneIcon).png().toBuffer();
+  const sceneIconDataUri = `data:image/png;base64,${sceneIconPng.toString('base64')}`;
 
   const offsets = preset ? IG_OFFSETS[preset] : { bottom: 0, top: 0 };
   const topInset = layout.inset + offsets.top;
@@ -222,6 +209,7 @@ export default async function overlaySvg({
     font,
     layout,
     logoDataUri,
+    sceneIconDataUri,
     x: layout.inset,
     y: topInset,
   });

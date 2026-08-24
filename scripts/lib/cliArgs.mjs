@@ -1,5 +1,6 @@
-const ALL_VIEWS = ['front', 'back', 'top', 'bottom'];
-
+// Argument plumbing shared by the Rorschach CLIs. What a flag *is* — its
+// type, range, default and help text — lives in the kernel's
+// src/modules/rorschach/renderOptions.mjs, not here.
 // Minimal `--flag value` parser. A `--no-x` token clears `x`, a flag with no
 // value is boolean true, and a value that parses as a number becomes one — so
 // callers get `args.width` as an int without per-flag declarations.
@@ -30,32 +31,10 @@ export function parseArgs(argv, defaults) {
   return args;
 }
 
-export function resolveViews(list) {
-  const views = String(list)
-    .split(',')
-    .map((view) => view.trim())
-    .filter((view) => ALL_VIEWS.includes(view));
-
-  if (views.length === 0) {
-    throw new Error(`--views must name at least one of ${ALL_VIEWS.join(',')}`);
-  }
-  return views;
-}
-
 // Read rather than `import ... with { type: 'json' }`: the repo's parser
 // doesn't accept import attributes yet.
 export async function readPackageVersion() {
   const { readFile } = await import('node:fs/promises');
   const url = new URL('../../package.json', import.meta.url);
   return JSON.parse(await readFile(url, 'utf8')).version;
-}
-
-const IG_PRESETS = ['story', 'reel', 'post'];
-
-// `--ig none` (or `--no-ig`) turns the safe-area insets off; anything else has
-// to name a real preset rather than silently rendering the wrong layout.
-export function resolveIgPreset(value) {
-  if (value === false || value === null || value === 'none') return null;
-  if (IG_PRESETS.includes(value)) return value;
-  throw new Error(`--ig must be one of ${IG_PRESETS.join(', ')}, or none`);
 }

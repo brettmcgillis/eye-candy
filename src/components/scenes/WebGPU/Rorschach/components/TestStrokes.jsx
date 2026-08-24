@@ -3,7 +3,7 @@ import React, { forwardRef, memo, useEffect, useMemo, useRef } from 'react';
 import { attribute, float, mix, uniform } from 'three/tsl';
 import * as THREE from 'three/webgpu';
 
-import { buildStrokeGeometry } from '../utils/buildStrokeGeometry';
+import { buildStrokeGeometry } from '@modules/rorschach';
 
 // Geometry/material built once per bundle identity; Test.jsx writes
 // positions/drawRange onto this mesh directly every frame. `hsl` doesn't

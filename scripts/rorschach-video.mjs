@@ -6,91 +6,30 @@ import { mkdir, mkdtemp, readdir, rm, writeFile } from 'node:fs/promises';
 import os from 'node:os';
 import path from 'node:path';
 import process from 'node:process';
+import sharp from 'sharp';
 
 import {
-  parseArgs,
-  readPackageVersion,
+  defaultsFor,
+  normalizeOptions,
   resolveIgPreset,
-} from './lib/cliArgs.mjs';
-import createProgress from './lib/progress.mjs';
+  usageFor,
+} from '../src/modules/rorschach/renderOptions.mjs';
+import { parseArgs, readPackageVersion } from './lib/cliArgs.mjs';
+import createProgress, { runStage } from './lib/progress.mjs';
 import {
   REPO_ROOT,
   buildTest,
   disposeCapturers,
-  loadSceneModules,
+  loadKernel,
   renderFrame,
   setGrowth,
 } from './lib/rorschachRender.mjs';
 
-const MODES = ['stills', 'turntable', 'cinematic'];
-
-// A vertical iPhone screen (12/13/14/15/16 at 19.5:9). Both dimensions are
-// even, which yuv420p requires. Note this is taller than Instagram's 9:16, so
-// a reel will letterbox or crop — pass --width 1080 --height 1920 for an
-// IG-native frame.
-const IPHONE_WIDTH = 1170;
-const IPHONE_HEIGHT = 2532;
-
-const DEFAULTS = {
-  bloom: true,
-  bloomRadius: 0.3,
-  bloomStrength: 0.5,
-  bloomThreshold: 1,
-  count: 6,
-  crossfade: 0.5,
-  distance: 22,
-  flatten: 0,
-  flattenAxis: 'z',
-  fov: 42,
-  fps: 30,
-  height: IPHONE_HEIGHT,
-  hold: 2,
-  ig: 'post',
-  in: null,
-  mode: 'stills',
-  out: 'output/rorschach.mp4',
-  overlay: true,
-  renderer: 'gpu',
-  simplify: 0.4,
-  viewport: null,
-  stroke: 0,
-  systems: 3,
-  turns: 1,
-  view: 'front',
-  width: IPHONE_WIDTH,
-};
+const DEFAULTS = defaultsFor('video');
 
 function usage() {
   process.stdout.write(
-    `Usage: npm run rorschach:video -- [options]
-
-  --mode M            ${MODES.join(' | ')} (default ${DEFAULTS.mode})
-  --out FILE          Output video (default ${DEFAULTS.out})
-  --fps N             Frame rate (default ${DEFAULTS.fps})
-  --width / --height  Output pixels (default ${DEFAULTS.width}x${DEFAULTS.height}, a vertical iPhone)
-  --seed S            First seed; omit for random
-  --no-overlay        Skip the scene overlay burn-in (on by default)
-  --ig PRESET         story|reel|post safe-area insets, or none (default ${DEFAULTS.ig})
-  --viewport N        CSS pixel width the overlay emulates (default 390 with
-                      --ig, else 1440)
-  --renderer R        gpu (real WebGPU + post) or svg (approximation)
-                      (default ${DEFAULTS.renderer})
-
- stills — one rolled test per shot, held then crossfaded
-  --count N           How many tests (default ${DEFAULTS.count})
-  --in DIR            Use PNGs from a rorschach:generate run instead
-  --hold S            Seconds per still (default ${DEFAULTS.hold})
-  --crossfade S       Seconds of fade between stills, 0 to cut (default ${DEFAULTS.crossfade})
-  --view V            Which view to use (default ${DEFAULTS.view})
-
- turntable — one finished test, orbited
-  --turns N           Full revolutions (default ${DEFAULTS.turns})
-  --hold S            Seconds per revolution (default ${DEFAULTS.hold})
-
- cinematic — a new system grows each half-revolution, flattening at the far side
-  --systems N         Half-revolutions, i.e. tests shown (default ${DEFAULTS.systems})
-  --hold S            Seconds per half-revolution (default ${DEFAULTS.hold})
-`
+    `Usage: npm run rorschach:video -- [options]\n${usageFor('video')}`
   );
 }
 
@@ -182,27 +121,31 @@ async function encodeCuts(files, { fps, hold, out, tmp }) {
   const listPath = path.join(tmp, 'list.txt');
   await writeFile(listPath, `${list}\n`);
 
-  await encode(
-    [
-      '-y',
-      '-f',
-      'concat',
-      '-safe',
-      '0',
-      '-i',
-      listPath,
-      '-vf',
-      `${SIZE_FILTER},fps=${fps},format=yuv420p`,
-      '-c:v',
-      'libx264',
-      '-crf',
-      '17',
-      '-preset',
-      'slow',
-      out,
-    ],
-    { label: 'encoding', totalFrames: Math.round(files.length * hold * fps) }
-  );
+  try {
+    await encode(
+      [
+        '-y',
+        '-f',
+        'concat',
+        '-safe',
+        '0',
+        '-i',
+        listPath,
+        '-vf',
+        `${SIZE_FILTER},fps=${fps},format=yuv420p`,
+        '-c:v',
+        'libx264',
+        '-crf',
+        '17',
+        '-preset',
+        'slow',
+        out,
+      ],
+      { label: 'encoding', totalFrames: Math.round(files.length * hold * fps) }
+    );
+  } finally {
+    await rm(listPath, { force: true });
+  }
 }
 
 // Crossfades: chain one xfade per gap. Each still is decoded for hold+cross
@@ -265,52 +208,64 @@ async function collectExisting(dir, view) {
     .map((name) => path.join(dir, name, `${view}.png`));
 }
 
-async function renderStills(modules, { options, tmp }) {
+async function renderStills(kernel, { options, tmp }) {
   if (options.in) {
     const dir = path.resolve(REPO_ROOT, String(options.in));
-    process.stdout.write(`using stills from ${dir}\n`);
-    return collectExisting(dir, options.view);
+    const files = await runStage('collecting existing stills', () =>
+      collectExisting(dir, options.view)
+    );
+    process.stdout.write(`  collected ${files.length} stills from ${dir}\n`);
+    return files;
   }
 
   const files = [];
+  const progress = createProgress('rendering stills', options.count);
   for (let i = 0; i < options.count; i += 1) {
     const seed =
-      typeof options.seed === 'number'
-        ? options.seed + i
-        : modules.randomSeed();
-    process.stdout.write(`[${i + 1}/${options.count}] drawing test ${seed}\n`);
+      typeof options.seed === 'number' ? options.seed + i : kernel.randomSeed();
+    progress.log(`test ${i + 1}/${options.count}: generating seed ${seed}`);
 
-    const config = modules.rollTestConfig(seed);
-    const test = buildTest(modules, config);
-    const png = await renderFrame(modules, {
+    const config = kernel.rollTestConfig(seed);
+    const test = buildTest(kernel, config);
+    const raster = await renderFrame(kernel, {
       config,
       options,
       test,
       view: options.view,
     });
+    const image =
+      options.imageFormat === 'webp'
+        ? await sharp(raster).webp({ lossless: true }).toBuffer()
+        : raster;
 
-    const file = path.join(tmp, `still-${String(i).padStart(5, '0')}.png`);
-    await writeFile(file, png);
+    const file = path.join(
+      tmp,
+      `still-${String(i).padStart(5, '0')}.${options.imageFormat}`
+    );
+    await writeFile(file, image);
     files.push(file);
+    progress.update(i + 1);
   }
+  progress.done('rendered stills');
   return files;
 }
 
-async function renderTurntable(modules, { options, tmp }) {
+async function renderTurntable(kernel, { options, tmp }) {
   const seed =
-    typeof options.seed === 'number' ? options.seed : modules.randomSeed();
-  const config = modules.rollTestConfig(seed);
-  const test = buildTest(modules, config);
+    typeof options.seed === 'number' ? options.seed : kernel.randomSeed();
+  const config = kernel.rollTestConfig(seed);
+  const test = buildTest(kernel, config);
   const total = Math.round(options.hold * options.fps * options.turns);
-  process.stdout.write(`orbiting test ${seed} over ${total} frames\n`);
-  const progress = createProgress('rendering', total);
+  process.stdout.write(
+    `rendering turntable: test ${seed}, ${options.turns} turns, ${total} frames\n`
+  );
+  const progress = createProgress('rendering frames', total);
 
   for (let frame = 0; frame < total; frame += 1) {
-    progress.update(frame);
     const azimuth = (frame / (options.hold * options.fps)) * Math.PI * 2;
-    const png = await renderFrame(modules, {
+    const png = await renderFrame(kernel, {
       config,
-      eye: modules.orbitEye(azimuth, 0, options.distance),
+      eye: kernel.orbitEye(azimuth, 0, options.distance),
       options,
       test,
     });
@@ -318,27 +273,27 @@ async function renderTurntable(modules, { options, tmp }) {
       path.join(tmp, `frame-${String(frame).padStart(5, '0')}.png`),
       png
     );
+    progress.update(frame + 1);
   }
   progress.done('rendered frames');
   return total;
 }
 
-async function renderCinematic(modules, { cinematic, options, tmp }) {
+async function renderCinematic(kernel, { options, tmp }) {
   const first =
-    typeof options.seed === 'number' ? options.seed : modules.randomSeed();
+    typeof options.seed === 'number' ? options.seed : kernel.randomSeed();
   const total = Math.round(options.hold * options.fps * options.systems);
   process.stdout.write(
-    `cinematic: ${options.systems} systems over ${total} frames\n`
+    `rendering cinematic: ${options.systems} systems, ${total} frames\n`
   );
 
-  const progress = createProgress('rendering', total);
+  const progress = createProgress('rendering frames', total);
   let currentIndex = -1;
   let config = null;
   let test = null;
 
   for (let frame = 0; frame < total; frame += 1) {
-    progress.update(frame);
-    const state = cinematic.cinematicState(frame / options.fps, {
+    const state = kernel.cinematicState(frame / options.fps, {
       secondsPerSystem: options.hold,
     });
 
@@ -346,17 +301,15 @@ async function renderCinematic(modules, { cinematic, options, tmp }) {
     // every later frame only moves the reveal cursor and the camera.
     if (state.systemIndex !== currentIndex) {
       currentIndex = state.systemIndex;
-      config = modules.rollTestConfig(first + currentIndex);
-      test = buildTest(modules, config);
-      process.stdout.write(
-        `  system ${currentIndex + 1} — seed ${config.seed}\n`
-      );
+      config = kernel.rollTestConfig(first + currentIndex);
+      test = buildTest(kernel, config);
+      progress.log(`system ${currentIndex + 1}: generated seed ${config.seed}`);
     }
 
     setGrowth(test, state.growth);
-    const png = await renderFrame(modules, {
+    const png = await renderFrame(kernel, {
       config,
-      eye: modules.orbitEye(state.azimuth, 0, options.distance),
+      eye: kernel.orbitEye(state.azimuth, 0, options.distance),
       options: { ...options, flatten: state.flatten },
       test,
     });
@@ -364,6 +317,7 @@ async function renderCinematic(modules, { cinematic, options, tmp }) {
       path.join(tmp, `frame-${String(frame).padStart(5, '0')}.png`),
       png
     );
+    progress.update(frame + 1);
   }
   progress.done('rendered frames');
   return total;
@@ -375,61 +329,76 @@ async function main() {
     usage();
     return;
   }
-  if (!MODES.includes(args.mode)) {
-    throw new Error(`--mode must be one of ${MODES.join(', ')}`);
-  }
-
-  const ig = resolveIgPreset(args.ig);
+  const validated = normalizeOptions('video', args);
   const options = {
-    ...args,
-    ig,
+    ...validated,
+    ig: resolveIgPreset(validated.ig),
     version: await readPackageVersion(),
   };
-  const out = path.resolve(REPO_ROOT, String(args.out));
+  const out = path.resolve(REPO_ROOT, String(options.out));
   await mkdir(path.dirname(out), { recursive: true });
+  process.stdout.write(
+    `rorschach video: mode ${options.mode}, ${options.width}x${options.height}, ` +
+      `${options.fps}fps, renderer ${options.renderer}, ` +
+      `overlay ${options.overlay ? 'on' : 'off'}\n` +
+      `output: ${out}\n`
+  );
 
-  const modules = await loadSceneModules();
-  const tmp = await mkdtemp(path.join(os.tmpdir(), 'rorschach-'));
+  const kernel = await runStage('loading the Rorschach kernel', loadKernel);
+  const persistentStills =
+    options.mode === 'stills' &&
+    !options.in &&
+    typeof options.stillsOut === 'string';
+  const tmp = persistentStills
+    ? path.resolve(REPO_ROOT, options.stillsOut)
+    : await mkdtemp(path.join(os.tmpdir(), 'rorschach-'));
+  if (persistentStills) {
+    await rm(tmp, { force: true, recursive: true });
+    await mkdir(tmp, { recursive: true });
+  }
 
   try {
-    if (args.mode === 'stills') {
-      const files = await renderStills(modules, { options, tmp });
+    if (options.mode === 'stills') {
+      const files = await renderStills(kernel, { options, tmp });
       if (files.length === 0) throw new Error('no stills to stitch');
 
       process.stdout.write(
-        `encoding ${files.length} stills at ${args.fps}fps\n`
+        `encoding video: ${files.length} stills at ${options.fps}fps, ` +
+          `${options.hold}s hold, ${options.crossfade}s crossfade\n`
       );
-      if (args.crossfade > 0 && files.length > 1) {
+      if (options.crossfade > 0 && files.length > 1) {
         await encodeCrossfade(files, {
-          crossfade: args.crossfade,
-          fps: args.fps,
-          hold: args.hold,
+          crossfade: options.crossfade,
+          fps: options.fps,
+          hold: options.hold,
           out,
         });
       } else {
-        await encodeCuts(files, { fps: args.fps, hold: args.hold, out, tmp });
-      }
-    } else {
-      let totalFrames;
-      if (args.mode === 'turntable') {
-        totalFrames = await renderTurntable(modules, { options, tmp });
-      } else {
-        const cinematic = await import(
-          `${REPO_ROOT}/src/components/scenes/WebGPU/Rorschach/utils/cinematic.js`
-        );
-        totalFrames = await renderCinematic(modules, {
-          cinematic,
-          options,
+        await encodeCuts(files, {
+          fps: options.fps,
+          hold: options.hold,
+          out,
           tmp,
         });
       }
-      await encodeFrames(tmp, { fps: args.fps, out, totalFrames });
+    } else {
+      let totalFrames;
+      if (options.mode === 'turntable') {
+        totalFrames = await renderTurntable(kernel, { options, tmp });
+      } else {
+        totalFrames = await renderCinematic(kernel, { options, tmp });
+      }
+      await encodeFrames(tmp, { fps: options.fps, out, totalFrames });
     }
 
-    process.stdout.write(`saved ${out}\n`);
+    process.stdout.write(`saved video: ${out}\n`);
   } finally {
     await disposeCapturers();
-    await rm(tmp, { force: true, recursive: true });
+    if (!persistentStills) {
+      await runStage('removing temporary frames', () =>
+        rm(tmp, { force: true, recursive: true })
+      );
+    }
   }
 }
 

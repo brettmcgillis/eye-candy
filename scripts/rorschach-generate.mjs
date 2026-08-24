@@ -4,81 +4,31 @@
 import { mkdir, writeFile } from 'node:fs/promises';
 import path from 'node:path';
 import process from 'node:process';
+import sharp from 'sharp';
 
 import {
-  parseArgs,
-  readPackageVersion,
+  defaultsFor,
+  normalizeOptions,
   resolveIgPreset,
   resolveViews,
-} from './lib/cliArgs.mjs';
+  usageFor,
+} from '../src/modules/rorschach/renderOptions.mjs';
+import { parseArgs, readPackageVersion } from './lib/cliArgs.mjs';
+import createProgress, { runStage } from './lib/progress.mjs';
 import {
   REPO_ROOT,
   buildTest,
   disposeCapturers,
   frameSvg,
-  loadSceneModules,
+  loadKernel,
   renderFrame,
 } from './lib/rorschachRender.mjs';
 
-// Renders Rorschach tests entirely in Node — no browser, no GPU. The scene's
-// generator (utils/testGenerator.js and everything under it) is pure math with
-// no three.js imports, and its strokes are unlit flat-color lines, so
-// utils/renderTestSvg.js can reproduce a frame exactly as SVG.
-
-const DEFAULTS = {
-  bloom: true,
-  // Match DEFAULT_PRESET ('001') in the scene's presets.js.
-  bloomRadius: 0.3,
-  bloomStrength: 0.5,
-  bloomThreshold: 1,
-  count: 1,
-  distance: 22,
-  flatten: 0,
-  flattenAxis: 'z',
-  fov: 42,
-  height: 1080,
-  ig: 'post',
-  out: 'output/rorschach',
-  overlay: false,
-  renderer: 'gpu',
-  simplify: 0.4,
-  viewport: null,
-  stroke: 0,
-  views: 'front,back,top,bottom',
-  width: 1080,
-};
+const DEFAULTS = defaultsFor('still');
 
 function usage() {
   process.stdout.write(
-    `Usage: npm run rorschach:generate -- [options]
-
-  --count N           Number of tests (default ${DEFAULTS.count})
-  --seed S            Seed for the first test; later tests increment from it.
-                      Omit for a random seed per test.
-  --out DIR           Output directory (default ${DEFAULTS.out})
-  --width PX          Output width (default ${DEFAULTS.width})
-  --height PX         Output height (default ${DEFAULTS.height})
-  --views LIST        front,back,top,bottom (default all)
-  --stroke PX         Stroke width; 0 scales it from --width (default auto)
-  --simplify PX       Screen-space decimation floor (default ${DEFAULTS.simplify})
-  --fov DEG           Vertical field of view (default ${DEFAULTS.fov})
-  --distance N        Camera distance; lower crops in (default ${DEFAULTS.distance})
-  --flatten N         0-1 squash toward 2D (default ${DEFAULTS.flatten})
-  --flattenAxis A     z or y (default ${DEFAULTS.flattenAxis})
-  --bloomStrength N   Additive glow gain (default ${DEFAULTS.bloomStrength})
-  --bloomRadius N     Glow spread, 0-1 (default ${DEFAULTS.bloomRadius})
-  --bloomThreshold N  Brightness a color must exceed to bloom (default ${DEFAULTS.bloomThreshold})
-  --viewport N        CSS pixel width the overlay emulates; output width over
-                      this is the device pixel ratio it draws at. Defaults to
-                      390 (a vertical iPhone) with --ig, else 1440.
-  --renderer R        gpu (real WebGPU + post) or svg (approximation)
-                      (default ${DEFAULTS.renderer}). The .svg output always
-                      uses the svg path; this only affects the .png.
-  --no-bloom          Skip bloom entirely
-  --overlay           Burn the scene overlay into the PNG (off by default)
-  --ig PRESET         story|reel|post safe-area insets, or none (default ${DEFAULTS.ig});
-                      only applies with --overlay
-`
+    `Usage: npm run rorschach:generate -- [options]\n${usageFor('still')}`
   );
 }
 
@@ -89,57 +39,96 @@ async function main() {
     return;
   }
 
-  const views = resolveViews(args.views);
+  const validated = normalizeOptions('still', args);
+  const views = resolveViews(validated.views);
   const options = {
-    ...args,
-    ig: resolveIgPreset(args.ig),
+    ...validated,
+    ig: resolveIgPreset(validated.ig),
     version: await readPackageVersion(),
   };
+  const outRoot = path.resolve(REPO_ROOT, String(options.out));
+  const formats = ['png', 'svg', 'webp'].filter((format) => options[format]);
 
-  const modules = await loadSceneModules();
-  const outRoot = path.resolve(REPO_ROOT, String(args.out));
   await mkdir(outRoot, { recursive: true });
+  process.stdout.write(
+    `rorschach stills: ${options.count} tests, ${views.length} views each, ` +
+      `${options.width}x${options.height}, renderer ${options.renderer}, ` +
+      `formats ${formats.join('+')}, overlay ${options.overlay ? 'on' : 'off'}\n` +
+      `output: ${outRoot}\n`
+  );
 
-  for (let i = 0; i < args.count; i += 1) {
-    const seed =
-      typeof args.seed === 'number' ? args.seed + i : modules.randomSeed();
+  const kernel = await runStage('loading the Rorschach kernel', loadKernel);
+  const progress = createProgress(
+    'rendering views',
+    options.count * views.length
+  );
 
-    process.stdout.write(`[${i + 1}/${args.count}] generating test ${seed}\n`);
-    const config = modules.rollTestConfig(seed);
-    const test = buildTest(modules, config);
+  try {
+    for (let index = 0; index < options.count; index += 1) {
+      const seed =
+        typeof options.seed === 'number'
+          ? options.seed + index
+          : kernel.randomSeed();
+      progress.log(
+        `test ${index + 1}/${options.count}: generating seed ${seed}`
+      );
+      const config = kernel.rollTestConfig(seed);
+      const test = buildTest(kernel, config);
+      const dir = path.join(outRoot, String(seed));
 
-    const dir = path.join(outRoot, String(seed));
-    await mkdir(dir, { recursive: true });
-    await writeFile(
-      path.join(dir, 'props.json'),
-      `${JSON.stringify({ preset: config, render: options }, null, 2)}\n`
-    );
-
-    await views.reduce(async (previous, view) => {
-      await previous;
-      process.stdout.write(`  drawing ${view}\n`);
-
-      // The .svg keeps the in-file filter approximation so it still glows when
-      // opened on its own; SVG has no way to express the raster bloom pass.
+      await mkdir(dir, { recursive: true });
       await writeFile(
-        path.join(dir, `${view}.svg`),
-        frameSvg(modules, {
-          bloomEnabled: options.bloom,
-          config,
-          options,
-          test,
-          view,
-        })
+        path.join(dir, 'props.json'),
+        `${JSON.stringify({ preset: config, render: options }, null, 2)}\n`
       );
 
-      const png = await renderFrame(modules, { config, options, test, view });
-      return writeFile(path.join(dir, `${view}.png`), png);
-    }, Promise.resolve());
+      await views.reduce(async (previous, view, viewIndex) => {
+        await previous;
+        await progress.stage(
+          `rendering test ${seed}, ${view} view`,
+          async () => {
+            if (options.svg) {
+              await writeFile(
+                path.join(dir, `${view}.svg`),
+                frameSvg(kernel, {
+                  bloomEnabled: options.bloom,
+                  config,
+                  options,
+                  test,
+                  view,
+                })
+              );
+            }
 
-    process.stdout.write(`  saved ${dir}\n`);
+            if (options.png || options.webp) {
+              const raster = await renderFrame(kernel, {
+                config,
+                options,
+                test,
+                view,
+              });
+              if (options.png) {
+                await writeFile(path.join(dir, `${view}.png`), raster);
+              }
+              if (options.webp) {
+                await writeFile(
+                  path.join(dir, `${view}.webp`),
+                  await sharp(raster).webp({ lossless: true }).toBuffer()
+                );
+              }
+            }
+          }
+        );
+        progress.update(index * views.length + viewIndex + 1);
+      }, Promise.resolve());
+
+      progress.log(`saved test ${seed}: ${dir}`);
+    }
+
+    progress.done('rendered views');
+  } finally {
+    await disposeCapturers();
   }
-
-  await disposeCapturers();
 }
 
 main().catch((error) => {

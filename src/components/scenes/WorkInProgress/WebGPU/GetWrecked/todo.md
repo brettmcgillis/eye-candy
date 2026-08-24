@@ -15,6 +15,8 @@ geometry-agnostic and could be pointed at other models later.
 [Back to main TODO](../../../../../../TODO.md)
 
 - Datamosh post fx?
+- pixel bleed
+- slit scan
 
 # // Presets
 
@@ -39,6 +41,8 @@ type: uvPermutation. UVs are block-shuffled and blended against original UVs in 
 ~~SCROLL_TEAR
 type: uvDistortion. UV rows past a tear line are clamped toward a frozen row over a configurable range/strength. You get scanline-like smear where lower regions repeat from a stuck band.
 
+- I was expecting more of a slit scan type effect on both the geometry and texture, as if i've scrolled the screen on a very very old computer and the slit scan effect is casuing a line of pixels/geometry to get stretched out, making the thhing larger than it should be.
+
 ~~ROW_JITTER
 type: uvBandOffset. Local-space axis bands get independent hashed horizontal UV offsets. Visually this creates strip misalignment, like sliding scan rows or shifted deck boards.
 
@@ -48,17 +52,23 @@ type: uvQuantization. UVs are quantized to block centers for a random density su
 ~~TORN_OPEN
 type: fragmentDiscard + wireframePreserve. Perlin patches remove fragments while barycentric edge logic keeps structural edge lines opaque, then alpha-test punches real holes. Visually, panels look ripped out with wire skeleton traces left behind.
 
+- This is not what was described. I am expecting perlin noise to remove texture revealing wireframe
+
 ~~BLOCK_DECONSTRUCT
 type: cellBasedVertexTransform + alphaMask. Local-space cells are moved/rotated as rigid chunks with axis-sweep reveal, chaos, and per-cell alpha reduction. The car breaks into drifting, twisting blocks that separate directionally.
 
 ~~SLICE_SUITE
 type: sectioningVertexTransform + fragmentCulling. Axis slices are pushed apart, twisted, jittered, and partially faded, with straddling bridge triangles culled for clean separation. It reads as true cross-sectional slab disassembly.
 
+- needs some work. hard to understand the controls and how to slice up the geometry and then push the slices apart.
+
 ~~VOXEL_SNAP
 type: gridSnapVertexTransform + normalQuantization. Vertices snap to a 3D grid with optional jitter, and normals snap to cardinal axes for cubic lighting. The result is a blockified silhouette with faceted voxel-like shading.
 
 ~~INNER_STRETCH
 type: cellMaskedVertexExtrusion. A hashed subset of local cells is displaced along per-cell random directions with positive or negative stretch. It appears as clustered spikes or cave-ins punching through the shell.
+
+- needs work. should it get pushed harder? its hard to understand whats going on as the controls increase/decrease
 
 ~~WARP_FIELD
 type: noiseFieldVertexWarp. Continuous 3-axis noise displaces all vertices with frequency/speed controls. Visually this is a liquid, heat-haze-like wobble across the whole car.

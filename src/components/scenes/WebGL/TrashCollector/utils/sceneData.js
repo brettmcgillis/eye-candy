@@ -1,8 +1,4 @@
-import {
-  DYNAMIC_SCENE_ITEMS,
-  FIXED_SCENE_ITEMS,
-  SHOT_ASSET_OPTIONS,
-} from '@scenes/WebGL/DumpsterFire/utils/sceneData';
+import { SCENE_PROP_CONFIGS, SHOT_ASSET_OPTIONS } from '@modules/trashCatalog';
 
 export const GROUND_Y = -1;
 
@@ -105,8 +101,10 @@ function sortGridAssetsByExpectedSize(assets) {
 
 export const ASSET_GRID_OPTIONS = sortGridAssetsByExpectedSize(
   collectUniqueGridAssets(
-    FIXED_SCENE_ITEMS,
-    DYNAMIC_SCENE_ITEMS,
+    Object.entries(SCENE_PROP_CONFIGS).map(([key, config]) => ({
+      key,
+      ...config,
+    })),
     SHOT_ASSET_OPTIONS
   ).map((asset) => ({
     ...asset,

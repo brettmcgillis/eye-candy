@@ -6,7 +6,6 @@ import React, { Suspense, useRef } from 'react';
 import { PerspectiveCamera } from '@react-three/drei';
 import { useFrame } from '@react-three/fiber';
 
-import Loader from '@app/scaffold/loader/Loader';
 import Bret from '@elements/Bret/Bret';
 import { InteractiveReversal } from '@elements/Reversal/Reversal';
 
@@ -39,9 +38,9 @@ function OrbitingReversals({ count = 4, radius = 2, speed = 0.25 }) {
   );
 }
 
-export default function TestScene() {
+export default function TestScene({ fallback = null }) {
   return (
-    <Suspense fallback={<Loader />}>
+    <Suspense fallback={fallback}>
       <PerspectiveCamera makeDefault position={[0, 0, 3]} />
 
       <color attach="background" args={['#646464']} />

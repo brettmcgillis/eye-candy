@@ -120,6 +120,11 @@ import {
   LowPolyVHSTapeInstance,
   LowPolyVHSTapeInstances,
 } from '@elements/VhsTape/LowPolyVHSTape';
+import {
+  SHOT_ASSET_OPTIONS,
+  createPropAsset,
+  createTrashAsset,
+} from '@modules/trashCatalog';
 import { radians } from '@utils/math';
 
 import ArticulatedDumpster from '../components/ArticulatedDumpster';
@@ -413,531 +418,158 @@ const EXPECTED_GRID_ASSET_SIZE_METERS = {
   'apple-core': 0.08,
 };
 
-const TRASH_ASSET_CONFIGS = {
-  'garbage-bag': {
-    Component: GarbageBag,
-    InstanceComponent: GarbageBagInstance,
-    InstancesComponent: GarbageBagInstances,
-    scale: 0.75,
-    mass: 0.45,
-    colliders: 'hull',
-  },
-  'garbage-bag-1': {
-    Component: GarbageBag1,
-    InstanceComponent: GarbageBag1Instance,
-    InstancesComponent: GarbageBag1Instances,
-    scale: 0.8,
-    mass: 0.5,
-    colliders: 'hull',
-  },
-  'cardboard-box-1': {
-    Component: CardboardBox1,
-    InstanceComponent: CardboardBox1Instance,
-    InstancesComponent: CardboardBox1Instances,
-    scale: 1,
-    mass: 0.7,
-    colliders: 'hull',
-  },
-  'cardboard-box-2': {
-    Component: CardboardBox2,
-    InstanceComponent: CardboardBox2Instance,
-    InstancesComponent: CardboardBox2Instances,
-    scale: 1,
-    mass: 0.75,
-    colliders: 'hull',
-  },
-  'cardboard-box-3': {
-    Component: CardboardBox3,
-    InstanceComponent: CardboardBox3Instance,
-    InstancesComponent: CardboardBox3Instances,
-    scale: 1,
-    mass: 0.8,
-    colliders: 'hull',
-  },
-  'starbucks-cup': {
-    Component: StarbucksCup,
-    InstanceComponent: StarbucksCupInstance,
-    InstancesComponent: StarbucksCupInstances,
-    scale: 1,
-    mass: 0.28,
-    colliders: 'hull',
-  },
-  'vhs-tape': {
-    Component: LowPolyVHSTape,
-    InstanceComponent: LowPolyVHSTapeInstance,
-    InstancesComponent: LowPolyVHSTapeInstances,
-    scale: 1,
-    mass: 0.34,
-    colliders: 'hull',
-  },
-  'cassette-tape-1': {
-    Component: LowPolyCassetteTape1,
-    InstanceComponent: LowPolyCassetteTape1Instance,
-    InstancesComponent: LowPolyCassetteTape1Instances,
-    scale: 1,
-    mass: 0.22,
-    colliders: 'hull',
-  },
-  'cassette-tape-2': {
-    Component: LowPolyCassetteTape2,
-    InstanceComponent: LowPolyCassetteTape2Instance,
-    InstancesComponent: LowPolyCassetteTape2Instances,
-    scale: 1,
-    mass: 0.22,
-    colliders: 'hull',
-  },
-  'cassette-tape-3': {
-    Component: LowPolyCassetteTape3,
-    InstanceComponent: LowPolyCassetteTape3Instance,
-    InstancesComponent: LowPolyCassetteTape3Instances,
-    scale: 1,
-    mass: 0.22,
-    colliders: 'hull',
-  },
-  'floppy-disk': {
-    Component: LowPolyFloppyDisk,
-    InstanceComponent: LowPolyFloppyDiskInstance,
-    InstancesComponent: LowPolyFloppyDiskInstances,
-    scale: 1,
-    mass: 0.2,
-    colliders: 'hull',
-  },
-  'apple-core': {
-    Component: AppleCore,
-    InstanceComponent: AppleCoreInstance,
-    InstancesComponent: AppleCoreInstances,
-    scale: 1,
-    mass: 0.18,
-    colliders: 'hull',
-  },
-  'cardboard-box-4': {
-    Component: CardboardBox4,
-    InstanceComponent: CardboardBox4Instance,
-    InstancesComponent: CardboardBox4Instances,
-    scale: 1,
-    mass: 0.85,
-    colliders: 'hull',
-  },
-  'cardboard-box-5': {
-    Component: CardboardBox5,
-    InstanceComponent: CardboardBox5Instance,
-    InstancesComponent: CardboardBox5Instances,
-    scale: 1,
-    mass: 0.9,
-    colliders: 'hull',
-  },
-  'beer-case-1': {
-    Component: BeerCase1,
-    InstanceComponent: BeerCase1Instance,
-    InstancesComponent: BeerCase1Instances,
-    scale: 1,
-    mass: 1.1,
-  },
-  'beer-case-2': {
-    Component: BeerCase2,
-    InstanceComponent: BeerCase2Instance,
-    InstancesComponent: BeerCase2Instances,
-    scale: 1,
-    mass: 1.15,
-  },
-  'whiskey-bottle': {
-    Component: WhiskeyBottle,
-    InstanceComponent: WhiskeyBottleInstance,
-    InstancesComponent: WhiskeyBottleInstances,
-    scale: 1,
-    mass: 0.38,
-    colliders: 'hull',
-  },
-  'beer-bottle-1': {
-    Component: BeerBottle1,
-    InstanceComponent: BeerBottle1Instance,
-    InstancesComponent: BeerBottle1Instances,
-    scale: 1,
-    mass: 0.32,
-    colliders: 'hull',
-  },
-  'beer-bottle-2': {
-    Component: BeerBottle2,
-    InstanceComponent: BeerBottle2Instance,
-    InstancesComponent: BeerBottle2Instances,
-    scale: 1,
-    mass: 0.34,
-    colliders: 'hull',
-  },
-  bucket: {
-    Component: Bucket,
-    InstanceComponent: BucketInstance,
-    InstancesComponent: BucketInstances,
-    scale: 1.4,
-    mass: 0.6,
-    colliders: 'hull',
-  },
-  'happy-meal': {
-    Component: HappyMeal,
-    InstanceComponent: HappyMealInstance,
-    InstancesComponent: HappyMealInstances,
-    scale: 1,
-    mass: 0.24,
-    colliders: 'hull',
-  },
-  'mc-cup': {
-    Component: McCup,
-    InstanceComponent: McCupInstance,
-    InstancesComponent: McCupInstances,
-    scale: 0.1,
-    mass: 0.26,
-    colliders: 'hull',
-  },
-  'soda-can': {
-    Component: SodaCan,
-    InstanceComponent: SodaCanInstance,
-    InstancesComponent: SodaCanInstances,
-    scale: 0.048,
-    mass: 0.24,
-    colliders: 'hull',
-  },
-  snickers: {
-    Component: Snickers,
-    InstanceComponent: SnickersInstance,
-    InstancesComponent: SnickersInstances,
-    scale: 0.088,
-    mass: 0.18,
-    colliders: 'hull',
-  },
-  catfood: {
-    Component: Catfood,
-    InstanceComponent: CatfoodInstance,
-    InstancesComponent: CatfoodInstances,
-    scale: 0.06,
-    mass: 0.3,
-    colliders: 'hull',
-  },
-};
-
-function createTrashAsset(key, overrides = {}) {
-  const assetConfig = TRASH_ASSET_CONFIGS[key];
-
-  if (!assetConfig) {
-    throw new Error(`Unknown trash asset: ${key}`);
-  }
-
-  return {
-    key,
-    ...assetConfig,
-    ...overrides,
-  };
-}
-
-export const SHOT_ASSET_OPTIONS = [
-  createTrashAsset('garbage-bag'),
-  createTrashAsset('garbage-bag-1'),
-  createTrashAsset('cardboard-box-1'),
-  createTrashAsset('cardboard-box-2'),
-  createTrashAsset('cardboard-box-3'),
-  createTrashAsset('starbucks-cup'),
-  createTrashAsset('vhs-tape'),
-  createTrashAsset('cassette-tape-1'),
-  createTrashAsset('cassette-tape-2'),
-  createTrashAsset('cassette-tape-3'),
-  createTrashAsset('floppy-disk'),
-  createTrashAsset('apple-core'),
-  createTrashAsset('cardboard-box-4'),
-  createTrashAsset('cardboard-box-5'),
-  createTrashAsset('beer-case-1'),
-  createTrashAsset('beer-case-2'),
-  createTrashAsset('whiskey-bottle'),
-  createTrashAsset('beer-bottle-1'),
-  createTrashAsset('beer-bottle-2'),
-  createTrashAsset('bucket'),
-  createTrashAsset('happy-meal'),
-  createTrashAsset('mc-cup'),
-  createTrashAsset('soda-can'),
-  createTrashAsset('snickers'),
-  createTrashAsset('catfood'),
-];
-
-export function getRandomShotAsset(random = Math.random) {
-  return SHOT_ASSET_OPTIONS[Math.floor(random() * SHOT_ASSET_OPTIONS.length)];
-}
-
 const BASE_FIXED_SCENE_ITEMS = [
-  {
-    key: 'dumpster',
-    Component: Dumpster,
-    PhysicsComponent: ArticulatedDumpster,
+  createPropAsset('dumpster', {
     position: [0, 0.04, 0],
     rotation: [0, 0, 0],
-    scale: 2,
-    colliders: 'trimesh',
+    PhysicsComponent: ArticulatedDumpster,
     componentProps: {
       rightLidRotation: -radians(521),
       leftLidRotation: -radians(521),
     },
-  },
-  {
-    key: 'persian-rug',
-    Component: PersianRug,
+  }),
+  createPropAsset('persian-rug', {
     position: DECOR_RUG.position,
     rotation: DECOR_RUG.rotation,
     scale: DECOR_RUG.scale,
-    colliders: false,
-  },
-  {
-    key: 'garbage-bags-pile',
-    Component: GarbageBagsPile,
+  }),
+  createPropAsset('garbage-bags-pile', {
     position: [0, 1.04, 0.1],
     rotation: [0, 0, 0],
-    scale: 0.65,
-    colliders: 'hull',
-  },
-  {
-    key: 'garbage-bags-2',
-    Component: GarbageBags2,
+  }),
+  createPropAsset('garbage-bags-2', {
     position: [-1, 2.04, 0.1],
     rotation: [0, 0, 0],
-    scale: 0.8,
-    colliders: 'hull',
-  },
-  {
-    key: 'litter',
-    Component: Litter,
+  }),
+  createPropAsset('litter', {
     position: [1, 0.085, 1],
     rotation: [0, 0, 0],
-    scale: 1,
-  },
-  {
-    key: 'litter-2',
-    Component: Litter2,
+  }),
+  createPropAsset('litter-2', {
     position: [0, 0.085, 0],
     rotation: [0, 0, 0],
-    scale: 1,
-  },
-  {
-    key: 'litter',
-    Component: Litter,
+  }),
+  createPropAsset('litter', {
     position: [-2, 0.085, 0.8],
     rotation: [0, 0, 0],
-    scale: 1,
-  },
-  {
-    key: 'cardboard-flat',
-    Component: CardboardFlat,
+  }),
+  createPropAsset('cardboard-flat', {
     position: [-2, 0.08, 1],
     rotation: [0, 90, 0],
-    scale: 1,
-  },
-  {
-    key: 'newspaper-1',
-    Component: NewsPaper1,
+  }),
+  createPropAsset('newspaper-1', {
     position: [-1, 0.04, 1.4],
     rotation: [0, 90, 0],
-    scale: 1,
-    showcaseYOffset: 0.02,
-  },
-  {
-    key: 'vhs-tape',
-    Component: LowPolyVHSTape,
+  }),
+  createPropAsset('vhs-tape', {
     position: [0.8, 0.07, 1.45],
     rotation: [Math.PI / 2, Math.PI, -Math.PI / 9],
-    scale: 1,
-    colliders: 'hull',
-  },
-  {
-    key: 'cassette-tape-1',
-    Component: LowPolyCassetteTape1,
+  }),
+  createPropAsset('cassette-tape-1', {
     position: [-0.2, 0.07, 1.6],
     rotation: [Math.PI / 2, Math.PI, 0],
-    scale: 1,
-    colliders: 'hull',
-  },
-  {
-    key: 'cassette-tape-2',
-    Component: LowPolyCassetteTape2,
+  }),
+  createPropAsset('cassette-tape-2', {
     position: [1.85, 0.07, 1.9],
     rotation: [Math.PI / 2, -Math.PI, 0],
-    scale: 1,
-    colliders: 'hull',
-  },
-  {
-    key: 'cassette-tape-3',
-    Component: LowPolyCassetteTape3,
+  }),
+  createPropAsset('cassette-tape-3', {
     position: [4.1, 0.07, 1.45],
     rotation: [Math.PI / 2.2, Math.PI, 0],
-    scale: 1,
-    colliders: 'hull',
-  },
-  {
-    key: 'floppy-disk',
-    Component: LowPolyFloppyDisk,
+  }),
+  createPropAsset('floppy-disk', {
     position: [-1.35, 0.07, 2.05],
     rotation: [Math.PI / 2, -Math.PI, Math.PI / 7],
-    scale: 1,
-    colliders: 'hull',
-  },
-  {
-    key: 'litter-2',
-    Component: Litter2,
+  }),
+  createPropAsset('litter-2', {
     position: [-3.5, 0.085, 1],
     rotation: [0, -Math.PI / 3, 0],
-    scale: 1,
-  },
-  {
-    key: 'garbage-bags-1',
-    Component: GarbageBags1,
+  }),
+  createPropAsset('garbage-bags-1', {
     position: [-2.7, 0.04, 0],
     rotation: [0, 90, 0],
-    scale: 1,
-    colliders: 'hull',
-  },
-  {
-    key: 'cardboard-box',
-    Component: CardboardBox,
+  }),
+  createPropAsset('cardboard-box', {
     position: [-2.2, 0.42, 1.2],
     rotation: [0, 90, 0],
-    scale: 1,
-    colliders: 'hull',
-  },
-  {
-    key: 'cardboard-box-1',
-    Component: CardboardBox1,
+  }),
+  createPropAsset('cardboard-box-1', {
     position: [-3.2, 0.19, 1.2],
     rotation: [0, Math.PI / 3, 0],
-    scale: 1,
-    colliders: 'hull',
-  },
-  {
-    key: 'cardboard-box-1',
-    Component: CardboardBox1,
+  }),
+  createPropAsset('cardboard-box-1', {
     position: [-3.75, 0.19, 1.2],
     rotation: [0, Math.PI / 1.7, 0],
-    scale: 1,
-    colliders: 'hull',
-  },
-  {
-    key: 'cardboard-box-1',
-    Component: CardboardBox1,
+  }),
+  createPropAsset('cardboard-box-1', {
     position: [-3.45, 0.49, 1.2],
     rotation: [0, Math.PI / 2, 0],
-    scale: 1,
-    colliders: 'hull',
-  },
-  {
-    key: 'newspaper-2',
-    Component: NewsPaper2,
+  }),
+  createPropAsset('newspaper-2', {
     position: [-5, 0.04, 2],
     rotation: [0, 90, 0],
-    scale: 1,
-    showcaseYOffset: 0.02,
-  },
-  {
-    key: 'cigarette-butts',
-    Component: CigaretteButts,
+  }),
+  createPropAsset('cigarette-butts', {
     position: [0, 0.04, 1.7],
     rotation: [0, -Math.PI / 1.5, 0],
-    scale: 0.75,
     showcaseYOffset: 0.02,
-  },
-  {
-    key: 'cigarette-butts',
-    Component: CigaretteButts,
+  }),
+  createPropAsset('cigarette-butts', {
     position: [0.7, 0.04, 1.2],
     rotation: [0, Math.PI / 2.5, 0],
-    scale: 0.75,
-  },
-  {
-    key: 'newspaper-stack',
-    Component: NewspaperStack,
+  }),
+  createPropAsset('newspaper-stack', {
     position: [-1.5, 0.17, 1.25],
     rotation: [0, -Math.PI / 1.5, 0],
-    scale: 1.25,
-    colliders: 'hull',
-  },
-  {
-    key: 'cardboard-flat-2',
-    Component: CardboardFlat2,
+  }),
+  createPropAsset('cardboard-flat-2', {
     position: [2.4, 0.1, 0.75],
     rotation: [0, 0, 0],
-    scale: 1,
-  },
-  {
-    key: 'cardboard-box-3',
-    Component: CardboardBox3,
+  }),
+  createPropAsset('cardboard-box-3', {
     position: [2, 0.29, 1.55],
     rotation: [0, -Math.PI / 2, 0],
-    scale: 1,
-    colliders: 'hull',
-  },
-  {
-    key: 'cardboard-box-1',
-    Component: CardboardBox1,
+  }),
+  createPropAsset('cardboard-box-1', {
     position: [1.4, 0.2, 1.3],
     rotation: [0, Math.PI / 3, 0],
-    scale: 1,
-    colliders: 'hull',
-  },
-  {
-    key: 'cardboard-leaning-2',
-    Component: CardboardLeaning2,
+  }),
+  createPropAsset('cardboard-leaning-2', {
     position: [2.17, 0.29, 0],
     rotation: [0, Math.PI / 2, 0],
-    scale: 1,
-    colliders: 'hull',
-  },
-  {
-    key: 'litter',
-    Component: Litter,
+  }),
+  createPropAsset('litter', {
     position: [3, 0.085, 0.8],
     rotation: [0, -Math.PI / 4, 0],
-    scale: 1,
-  },
-  {
-    key: 'cigarette-butts',
-    Component: CigaretteButts,
+  }),
+  createPropAsset('cigarette-butts', {
     position: [3, 0.04, 1.6],
     rotation: [0, Math.PI, 0],
-    scale: 0.75,
-  },
-  {
-    key: 'garbage-bags-2',
-    Component: GarbageBags2,
+  }),
+  createPropAsset('garbage-bags-2', {
     position: [2.5, 0.04, 0],
     rotation: [0, -Math.PI / 1.3, 0],
     scale: 1,
-    colliders: 'hull',
-  },
-  {
-    key: 'cardboard-box-2',
-    Component: CardboardBox2,
+  }),
+  createPropAsset('cardboard-box-2', {
     position: [3.1, 0.24, 0.35],
     rotation: [0, Math.PI / 2, 0],
-    scale: 1,
-    colliders: 'hull',
-  },
-  {
-    key: 'cardboard-box',
-    Component: CardboardBox,
+  }),
+  createPropAsset('cardboard-box', {
     position: [3.1, 0.44, -0.75],
     rotation: [0, Math.PI / 7, 0],
-    scale: 1,
-    colliders: 'hull',
-  },
-  {
-    key: 'newspaper-stack',
-    Component: NewspaperStack,
+  }),
+  createPropAsset('newspaper-stack', {
     position: [2.6, 0.17, 1.25],
     rotation: [0, -Math.PI / 1.5, 0],
-    scale: 1.25,
-    colliders: 'hull',
-  },
-  {
-    key: 'newspaper-3',
-    Component: NewsPaper3,
+  }),
+  createPropAsset('newspaper-3', {
     position: [4.5, 0.04, 1.2],
     rotation: [0, 90, 0],
-    scale: 1,
-    showcaseYOffset: 0.02,
-  },
+  }),
 ];
+
+export { SHOT_ASSET_OPTIONS, getRandomShotAsset } from '@modules/trashCatalog';
 
 export const FIXED_SCENE_ITEMS = BASE_FIXED_SCENE_ITEMS;
 

@@ -41,7 +41,8 @@ the current scene folder go through path aliases (`@elements`, `@modules`,
   promoting a scene is a one-line edit, nothing moves.
 - Reusable model wrappers: `src/components/elements/<ModelName>/`.
 - Shared hooks: `src/hooks/`. Promoted modules: `src/modules/` (e.g. `ecctrl`,
-  `cameraRig`, `lightingRig`, `handTracking`, `poseTracking`, `tsl`) — each
+  `cameraRig`, `lightingRig`, `handTracking`, `poseTracking`, `tsl`,
+  `trashCatalog`) — each
   behind an `index.js` barrel.
 - Shared authored data: `src/presets/` (fire/smoke/spline libraries authored by
   the Toolbox scenes and consumed by ordinary scenes).

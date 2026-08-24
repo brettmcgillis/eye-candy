@@ -168,8 +168,8 @@ Inside a scene folder, keep imports relative (`./components/Foo`,
   each a control-builder + runtime utils + drop-in component that only make
   sense together, exposed through an `index.js` barrel. Current modules:
   `cameraRig`, `lightingRig`, `ecctrl`, `handTracking`, `poseTracking`,
-  `mediaRecorder`, `splineAuthoring`, `trashAudio`, `tsl`, `verletPhysics`,
-  `windowSync`. When a
+  `mediaRecorder`, `splineAuthoring`, `trashAudio`, `trashCatalog`, `tsl`,
+  `verletPhysics`, `windowSync`. When a
   control-builder + component pair grows this tightly coupled, promote it the
   same way rather than scattering it across `hooks/` and `components/`.
 

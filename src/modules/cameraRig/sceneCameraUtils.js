@@ -1310,6 +1310,164 @@ function buildOrbitSnapshotFragment(snapshot, viewportKeys, options) {
   };
 }
 
+function toViewportSegment(viewportKey) {
+  return viewportKey === 'mobile' ? 'Mobile' : 'Desktop';
+}
+
+function pickCameraControlValues(controls) {
+  return Object.fromEntries(
+    Object.entries(controls ?? {}).filter(([key]) => {
+      return key !== 'preset' && isCameraControlKey(key);
+    })
+  );
+}
+
+function buildCapturedFrameControlValues({
+  capturedFrame,
+  captureMode,
+  controlValues,
+  normalizedCamera,
+  options,
+  viewportKeys,
+}) {
+  // Spline mode is authored entirely through its own controls (path, position,
+  // scale, targets, fovs) — the live camera pose is just a point on that path,
+  // so capturing it would overwrite the authored values with a sample of them.
+  if (!capturedFrame || captureMode === 'spline') {
+    return {};
+  }
+
+  if (captureMode === 'orbit') {
+    return {
+      ...(options.includeAutoFitToggle === false
+        ? {}
+        : { cameraAutoFit: false }),
+      ...Object.fromEntries(
+        viewportKeys.flatMap((viewportKey) => {
+          const segment = toViewportSegment(viewportKey);
+
+          return [
+            [`orbit${segment}Fov`, capturedFrame.fov],
+            [
+              `orbit${segment}Pivot`,
+              toVectorObject(capturedFrame.pivot, capturedFrame.pivot),
+            ],
+            [
+              `orbit${segment}Position`,
+              toVectorObject(capturedFrame.position, capturedFrame.position),
+            ],
+            [
+              `orbit${segment}Target`,
+              toVectorObject(capturedFrame.target, capturedFrame.target),
+            ],
+          ];
+        })
+      ),
+    };
+  }
+
+  const shotDescriptors = getFixedShotDescriptors(normalizedCamera.fixed);
+  const shotId =
+    options.fixedShotId ??
+    capturedFrame.activeFixedShotId ??
+    controlValues.fixedActiveShot ??
+    normalizedCamera.fixed.activeShot;
+  const descriptor =
+    shotDescriptors.find((candidate) => candidate.id === shotId) ??
+    shotDescriptors[0];
+
+  if (!descriptor) {
+    return {};
+  }
+
+  return {
+    ...(controlValues.fixedActiveShot === undefined
+      ? {}
+      : { fixedActiveShot: descriptor.id }),
+    ...Object.fromEntries(
+      viewportKeys.flatMap((viewportKey) => {
+        const segment = toViewportSegment(viewportKey);
+
+        return [
+          [`${descriptor.controlPrefix}${segment}Fov`, capturedFrame.fov],
+          [
+            `${descriptor.controlPrefix}${segment}Position`,
+            toVectorObject(capturedFrame.position, capturedFrame.position),
+          ],
+          [
+            `${descriptor.controlPrefix}${segment}Target`,
+            toVectorObject(capturedFrame.target, capturedFrame.target),
+          ],
+        ];
+      })
+    ),
+  };
+}
+
+function filterControlValuesBySections(values, sections) {
+  return Object.fromEntries(
+    Object.entries(values).filter(([key]) => {
+      return sections.some((section) => key.startsWith(section));
+    })
+  );
+}
+
+// Flat, Leva-schema-shaped counterpart to buildSceneCameraConfigSnapshot: emits
+// every control key of the ACTIVE camera mode (not just a position/target
+// frame), so a tuned spline/orbit/fixed/operator camera can be pasted straight
+// into a scene's presets file.
+export function buildSceneCameraControlSnapshot({
+  camera,
+  capturedFrame = null,
+  controls = {},
+  options = {},
+} = {}) {
+  const normalizedCamera = normalizeSceneCameraDeclaration(camera);
+  const controlValues = {
+    ...buildSceneCameraControlValues(normalizedCamera, options),
+    ...pickCameraControlValues(controls),
+  };
+  const mode = normalizeSceneCameraMode(
+    controlValues.cameraMode,
+    normalizedCamera.defaultMode
+  );
+  const captureMode = resolveCaptureMode(mode, options.mode);
+  const values = {
+    ...controlValues,
+    ...buildCapturedFrameControlValues({
+      capturedFrame,
+      captureMode,
+      controlValues,
+      normalizedCamera,
+      options,
+      viewportKeys: getCaptureViewportKeys(
+        options.viewport,
+        capturedFrame?.viewport
+      ),
+    }),
+  };
+
+  if (options.includeAllModes) {
+    return values;
+  }
+
+  return filterControlValuesBySections(
+    values,
+    Array.from(new Set(['camera', mode, captureMode]))
+  );
+}
+
+export function serializeSceneCameraControlSnapshot(snapshot) {
+  return formatObjectLiteral(snapshot)
+    .replace(
+      /\{\s*x: (-?[\d.e+-]+),\s*y: (-?[\d.e+-]+),\s*z: (-?[\d.e+-]+)\s*\}/g,
+      '{ x: $1, y: $2, z: $3 }'
+    )
+    .replace(/: "(.*)"(,?)$/gm, (match, value, comma) => {
+      return `: '${value.replace(/'/g, "\\'")}'${comma}`;
+    });
+}
+
 export function buildSceneCameraConfigSnapshot({
   camera,
   capturedFrame = null,

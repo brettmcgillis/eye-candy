@@ -1,6 +1,6 @@
 import { OCEAN_TARGET } from '../utils/targetGeometry';
 
-export const DEFAULT_PRESET = 'Rain Ocean';
+export const DEFAULT_PRESET = 'Ocean Implied';
 
 const BASE = {
   targetMode: OCEAN_TARGET,
@@ -12,26 +12,26 @@ const BASE = {
   targetSpinSpeed: 0.16,
   timeScale: 1,
   rainEnabled: true,
-  rainDropCount: 400000,
-  rainBounds: 140,
-  rainCeiling: 60,
+  rainDropCount: 800000,
+  rainBounds: 70,
+  rainCeiling: 10,
   rainSpawnRange: 40,
   rainFallSpeed: 26,
   rainSpeedJitter: 0.4,
   rainWindX: 0.8,
   rainWindZ: 0,
-  rainStreakLength: 0.9,
-  rainStreakWidth: 0.045,
-  rainOpacity: 0.5,
+  rainStreakLength: 0.21,
+  rainStreakWidth: 0.07,
+  rainOpacity: 1.11,
   rainTint: '#d5e7f0',
   rainEdgeFade: 0.55,
   catchDepth: 3,
   slideGravity: 18,
   slideDrag: 2,
   slopeRelease: 1.1,
-  surfaceLifeMin: 0.6,
-  surfaceLifeMax: 2.5,
-  stretchSpeed: 6,
+  surfaceLifeMin: 6,
+  surfaceLifeMax: 12,
+  stretchSpeed: 5.8,
   gravity: 20,
   airDrag: 1.1,
   sinkDepth: 26,
@@ -80,9 +80,9 @@ const GEOMETRY = {
   rainSpawnRange: 22,
   rainFallSpeed: 22,
   rainWindX: 0,
-  rainStreakLength: 0.5,
-  rainStreakWidth: 0.03,
-  rainOpacity: 0.45,
+  rainStreakLength: 0.14,
+  rainStreakWidth: 0.045,
+  rainOpacity: 1.07,
   rainEdgeFade: 0.72,
   catchDepth: 1.6,
   slideGravity: 12,
@@ -90,7 +90,7 @@ const GEOMETRY = {
   slopeRelease: 3,
   surfaceLifeMin: 1.5,
   surfaceLifeMax: 5.5,
-  stretchSpeed: 5,
+  stretchSpeed: 3.7,
   sinkDepth: 34,
   lightHeight: 40,
   lightRadius: 16,
@@ -118,8 +118,13 @@ const LOGO = {
   slideGravity: 30,
   slideDrag: 4,
   catchDepth: 1,
+  rainOpacity: 0.73,
+  stretchSpeed: 7,
   lightRadius: 20,
   lightHeight: 44,
+  // A flat plate only reads from above, so these keep the raised orbit
+  // framing rather than inheriting the scene's spline default.
+  cameraMode: 'orbit',
   orbitDesktopPosition: { x: 0, y: 26, z: 26 },
   orbitDesktopTarget: { x: 0, y: 0, z: 0 },
   orbitDesktopPivot: { x: 0, y: 0, z: 0 },
@@ -131,13 +136,12 @@ const LOGO = {
 };
 
 export const PRESETS = {
-  'Rain Ocean': { ...BASE },
-  'Rain Ocean Reverse': {
+  'Ocean Implied': { ...BASE },
+  'Rain on Ocean Reverse': {
     ...BASE,
     timeScale: -1.6,
     rainDropCount: 500000,
-    rainStreakLength: 1.2,
-    rainOpacity: 0.55,
+    rainOpacity: 1.23,
     surfaceLifeMin: 0.4,
     surfaceLifeMax: 1.6,
     lightDriftSpeed: 0.08,
@@ -147,11 +151,13 @@ export const PRESETS = {
     ...BASE,
     rainDropCount: 700000,
     rainFallSpeed: 34,
-    rainStreakLength: 1.3,
-    rainOpacity: 0.6,
+    rainStreakLength: 0.24,
+    rainStreakWidth: 0.08,
+    rainOpacity: 0.8,
     surfaceLifeMax: 1.5,
     slideGravity: 30,
     slopeRelease: 0.85,
+    stretchSpeed: 9.7,
     lightRadius: 14,
     lightIntensity: 1.85,
     lightDriftSpeed: 0.2,
@@ -160,44 +166,45 @@ export const PRESETS = {
     ...BASE,
     rainDropCount: 180000,
     rainFallSpeed: 17,
-    rainStreakLength: 0.55,
-    rainStreakWidth: 0.035,
-    rainOpacity: 0.42,
+    rainStreakLength: 0.17,
+    rainStreakWidth: 0.055,
+    rainOpacity: 0.86,
     surfaceLifeMin: 1.2,
     surfaceLifeMax: 4,
     slideGravity: 12,
     slideDrag: 3,
     slopeRelease: 1.4,
+    stretchSpeed: 2.6,
     lightIntensity: 1.35,
     lightDriftSpeed: 0.06,
   },
-  'Rain Torus': {
+  'Rain on Torus': {
     ...GEOMETRY,
     targetMode: 'Torus',
   },
-  'Rain Torus Knot': {
+  'Rain on Torus Knot': {
     ...GEOMETRY,
     targetMode: 'Torus Knot',
     targetSpinSpeed: 0.24,
   },
-  'Rain Sphere': {
+  'Rain on Sphere': {
     ...GEOMETRY,
     targetMode: 'Sphere',
     targetTilt: 0,
   },
-  'Rain Bret': {
+  'Rain on Bret': {
     ...LOGO,
     targetMode: 'Bret',
   },
-  'Rain Bret Inner': {
+  'Rain on Bret Inner': {
     ...LOGO,
     targetMode: 'Bret Inner',
   },
-  'Rain Reversal': {
+  'Rain on Reversal': {
     ...LOGO,
     targetMode: 'Reversal',
   },
-  'Rain Reversal Inner': {
+  'Rain on Reversal Inner': {
     ...LOGO,
     targetMode: 'Reversal Inner',
   },
@@ -215,7 +222,7 @@ export const PRESETS = {
   'Visible Ocean': {
     ...BASE,
     rainDropCount: 260000,
-    rainOpacity: 0.35,
+    rainOpacity: 0.78,
     lightAmbient: 0.22,
     lightIntensity: 1.2,
     oceanDisplayMode: 'Full',

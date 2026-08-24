@@ -1,7 +1,20 @@
 const TARGET = [0, 1, -8];
 
 const CAMERA = {
-  defaultMode: 'orbit',
+  defaultMode: 'spline',
+  spline: {
+    desktop: {
+      target: TARGET,
+      fov: 40,
+    },
+    mobile: {
+      target: TARGET,
+      fov: 52,
+    },
+    preset: 'Loop de Loop',
+    duration: 180,
+    scale: [10, 10, 10],
+  },
   orbit: {
     desktop: {
       position: [0, 8, 30],

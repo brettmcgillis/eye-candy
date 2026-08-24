@@ -6,10 +6,11 @@ import {
   SCENE_CAMERA_MODE_OPTIONS,
   SCENE_CAMERA_SPLINE_ORIENTATION_OPTIONS,
   buildCameraControlOverridesFromSnapshot,
+  buildSceneCameraControlSnapshot,
   getFixedShotControlKeys,
   getFixedShotDescriptors,
   normalizeSceneCameraDeclaration,
-  serializeSceneCameraSnapshot,
+  serializeSceneCameraControlSnapshot,
   toVectorObject,
 } from './sceneCameraUtils';
 
@@ -94,55 +95,35 @@ function resolveCopyCurrentCameraOptions(copyCurrentCameraOptions) {
   return copyCurrentCameraOptions ?? {};
 }
 
-function copyCurrentCamera(apiRef, copyCurrentCameraOptions) {
-  const copyCurrentCameraConfig = apiRef?.current?.copyCurrentCameraConfig;
-
-  if (typeof copyCurrentCameraConfig !== 'function') {
-    return null;
-  }
-
-  return copyCurrentCameraConfig(
-    resolveCopyCurrentCameraOptions(copyCurrentCameraOptions)
-  );
-}
-
 async function copyCurrentCameraSnapshot({
   apiRef,
   camera,
   controlsSnapshotRef,
   copyCurrentCameraOptions,
+  includeClipPlaneControls,
 }) {
   const options = resolveCopyCurrentCameraOptions(copyCurrentCameraOptions);
-  const cameraApi = apiRef?.current;
-  const captureCurrentCameraFrame = cameraApi?.captureCurrentCameraFrame;
+  const captureCurrentCameraFrame = apiRef?.current?.captureCurrentCameraFrame;
+  const capturedFrame =
+    typeof captureCurrentCameraFrame === 'function'
+      ? captureCurrentCameraFrame(options)
+      : null;
+  const snapshot = buildSceneCameraControlSnapshot({
+    camera,
+    capturedFrame,
+    controls: controlsSnapshotRef?.current ?? {},
+    options: { includeClipPlaneControls, ...options },
+  });
+  const serializedSnapshot = (
+    options.transform ?? serializeSceneCameraControlSnapshot
+  )(snapshot);
+  const clipboard = globalThis?.navigator?.clipboard;
 
-  if (typeof captureCurrentCameraFrame === 'function') {
-    const capturedFrame = captureCurrentCameraFrame(options);
-
-    if (capturedFrame) {
-      const frame = {
-        fov: capturedFrame.fov,
-        position: capturedFrame.position,
-        target: capturedFrame.target,
-      };
-      const snapshot = {
-        desktop: frame,
-        mobile: { ...frame },
-      };
-      const serializedSnapshot = (
-        options.transform ?? serializeSceneCameraSnapshot
-      )(snapshot);
-      const clipboard = globalThis?.navigator?.clipboard;
-
-      if (clipboard?.writeText) {
-        await clipboard.writeText(serializedSnapshot);
-      }
-
-      return serializedSnapshot;
-    }
+  if (clipboard?.writeText) {
+    await clipboard.writeText(serializedSnapshot);
   }
 
-  return copyCurrentCamera(apiRef, options);
+  return serializedSnapshot;
 }
 
 export default function buildSceneCameraControls({
@@ -813,6 +794,7 @@ export default function buildSceneCameraControls({
               camera: normalizedCamera,
               controlsSnapshotRef,
               copyCurrentCameraOptions,
+              includeClipPlaneControls,
             });
           }),
         }

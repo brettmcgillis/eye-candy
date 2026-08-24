@@ -25,6 +25,11 @@ const DEV_LINKS = [
     label: 'GLTF -> JSX',
     description: 'Import, optimize, and export models.',
   },
+  {
+    path: '/dev/rorschach',
+    label: 'RorschachCLI',
+    description: 'Generate images and video using the RorschachCLI.',
+  },
 ];
 
 export default function DevLandingPage() {

@@ -60,6 +60,14 @@ directly from the local three.js checkout:
 - `~/dev/examples/three.js/src/nodes/Nodes.js` — the underlying Node classes
   (lower-level; check this when you need a class, not a TSL helper function).
 
+## Writing things down
+
+- **`plans/<topic>.md`** — ephemeral. Design/approach docs for work in flight;
+  **delete the plan when the work lands** (`plans/README.md` explains why).
+  If a plan produced a durable rule, promote it into `docs/` first.
+- **`<Scene>/todo.md`** — durable, colocated, read-only unless asked (§15).
+- **`docs/`, `AGENTS.md`** — durable conventions and references.
+
 ## Process
 
 - The human developer owns the dev server — do not start, kill, or restart it.

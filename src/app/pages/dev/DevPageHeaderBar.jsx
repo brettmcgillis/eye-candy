@@ -15,6 +15,7 @@ export default function DevPageHeaderBar({
   className = '',
   compact = true,
   eyebrow,
+  icon,
   level = 'h4',
   title,
 }) {
@@ -23,6 +24,7 @@ export default function DevPageHeaderBar({
       <DevPageTitle
         compact={compact}
         eyebrow={eyebrow}
+        icon={icon}
         level={level}
         title={title}
       />

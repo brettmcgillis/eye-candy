@@ -1,8 +1,20 @@
 import React, { lazy } from 'react';
-import { GiInkSwirl } from 'react-icons/gi';
+
+import { iconFile } from '@utils/appUtils';
 
 function SceneIcon() {
-  return <GiInkSwirl color="#000000" size={26} />;
+  return (
+    <img
+      alt="Rorschach"
+      src={iconFile('rorschach.webp')}
+      style={{
+        width: 'auto',
+        height: 'calc(var(--overlay-icon-size) * 1.6)',
+        objectFit: 'contain',
+        verticalAlign: 'middle',
+      }}
+    />
+  );
 }
 
 export default {

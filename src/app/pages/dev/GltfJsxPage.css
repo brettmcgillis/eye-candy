@@ -166,6 +166,48 @@
   left: auto;
 }
 
+.view-workbench__model-heading {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  width: 100%;
+  align-items: baseline;
+  gap: 0.5rem;
+}
+
+.view-workbench__model-name {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.view-workbench__model-size {
+  justify-self: end;
+  white-space: nowrap;
+}
+
+.view-workbench__filter-header {
+  display: flex;
+  align-items: center;
+  gap: 0.3rem;
+}
+
+.gltf-workbench-page section .view-workbench__filter-toggle {
+  display: inline-flex;
+  min-height: 1.5rem !important;
+  padding: 0 !important;
+  align-items: center;
+  gap: 0.3rem;
+  border: 0;
+  background: transparent;
+  color: var(--dev-text);
+  cursor: pointer;
+}
+
+.view-workbench__filter-options {
+  display: grid;
+  gap: 0.3rem !important;
+}
+
 .gltf-workbench-page section button,
 .gltf-workbench-page section span,
 .gltf-workbench-page section p {

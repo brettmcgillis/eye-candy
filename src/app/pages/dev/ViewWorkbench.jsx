@@ -281,6 +281,7 @@ export default function ViewWorkbench({ uploadedAsset }) {
   });
   const [searchText, setSearchText] = useState('');
   const [sortMode, setSortMode] = useState('name-asc');
+  const [filtersOpen, setFiltersOpen] = useState(false);
   const [traitFilters, setTraitFilters] = useState({
     animated: false,
     hasTextures: false,
@@ -300,6 +301,7 @@ export default function ViewWorkbench({ uploadedAsset }) {
     intensity: 1,
     shadows: true,
   });
+  const activeFilterCount = Object.values(traitFilters).filter(Boolean).length;
 
   useEffect(() => {
     setSearchParams(
@@ -454,71 +456,81 @@ export default function ViewWorkbench({ uploadedAsset }) {
               </select>
             </div>
             <div style={styles.field}>
-              <span
-                className="gltf-workbench-page__toggle-label"
-                style={styles.label}
-              >
-                Filter traits
+              <span className="view-workbench__filter-header">
+                <button
+                  aria-expanded={filtersOpen}
+                  className="view-workbench__filter-toggle"
+                  type="button"
+                  onClick={() => setFiltersOpen((current) => !current)}
+                >
+                  <span aria-hidden="true">{filtersOpen ? '▾' : '▸'}</span>
+                  Filter traits
+                  {activeFilterCount ? ` (${activeFilterCount})` : ''}
+                </button>
                 <DevTooltip label="About trait filters">
                   Traits are detected asynchronously as models are scanned.
                 </DevTooltip>
               </span>
-              <div style={styles.checkboxRow}>
-                <input
-                  aria-label="Filter animated models"
-                  type="checkbox"
-                  checked={traitFilters.animated}
-                  onChange={(event) =>
-                    setTraitFilters((current) => ({
-                      ...current,
-                      animated: event.target.checked,
-                    }))
-                  }
-                />
-                <span style={styles.label}>Animated</span>
-              </div>
-              <div style={styles.checkboxRow}>
-                <input
-                  aria-label="Filter rigged models"
-                  type="checkbox"
-                  checked={traitFilters.rigged}
-                  onChange={(event) =>
-                    setTraitFilters((current) => ({
-                      ...current,
-                      rigged: event.target.checked,
-                    }))
-                  }
-                />
-                <span style={styles.label}>Rigged</span>
-              </div>
-              <div style={styles.checkboxRow}>
-                <input
-                  aria-label="Filter morph-target models"
-                  type="checkbox"
-                  checked={traitFilters.morphTargets}
-                  onChange={(event) =>
-                    setTraitFilters((current) => ({
-                      ...current,
-                      morphTargets: event.target.checked,
-                    }))
-                  }
-                />
-                <span style={styles.label}>Morph Targets</span>
-              </div>
-              <div style={styles.checkboxRow}>
-                <input
-                  aria-label="Filter textured models"
-                  type="checkbox"
-                  checked={traitFilters.hasTextures}
-                  onChange={(event) =>
-                    setTraitFilters((current) => ({
-                      ...current,
-                      hasTextures: event.target.checked,
-                    }))
-                  }
-                />
-                <span style={styles.label}>Textured</span>
-              </div>
+              {filtersOpen ? (
+                <div className="view-workbench__filter-options">
+                  <div style={styles.checkboxRow}>
+                    <input
+                      aria-label="Filter animated models"
+                      type="checkbox"
+                      checked={traitFilters.animated}
+                      onChange={(event) =>
+                        setTraitFilters((current) => ({
+                          ...current,
+                          animated: event.target.checked,
+                        }))
+                      }
+                    />
+                    <span style={styles.label}>Animated</span>
+                  </div>
+                  <div style={styles.checkboxRow}>
+                    <input
+                      aria-label="Filter rigged models"
+                      type="checkbox"
+                      checked={traitFilters.rigged}
+                      onChange={(event) =>
+                        setTraitFilters((current) => ({
+                          ...current,
+                          rigged: event.target.checked,
+                        }))
+                      }
+                    />
+                    <span style={styles.label}>Rigged</span>
+                  </div>
+                  <div style={styles.checkboxRow}>
+                    <input
+                      aria-label="Filter morph-target models"
+                      type="checkbox"
+                      checked={traitFilters.morphTargets}
+                      onChange={(event) =>
+                        setTraitFilters((current) => ({
+                          ...current,
+                          morphTargets: event.target.checked,
+                        }))
+                      }
+                    />
+                    <span style={styles.label}>Morph Targets</span>
+                  </div>
+                  <div style={styles.checkboxRow}>
+                    <input
+                      aria-label="Filter textured models"
+                      type="checkbox"
+                      checked={traitFilters.hasTextures}
+                      onChange={(event) =>
+                        setTraitFilters((current) => ({
+                          ...current,
+                          hasTextures: event.target.checked,
+                        }))
+                      }
+                    />
+                    <span style={styles.label}>Textured</span>
+                  </div>
+                </div>
+              ) : null}
             </div>
             <div style={styles.modelList}>
               {uploadedAsset ? (
@@ -559,16 +571,24 @@ export default function ViewWorkbench({ uploadedAsset }) {
                     }}
                     onClick={() => setSelectedModelValue(value)}
                   >
-                    <span>{model.assetPath}</span>
-                    <span
-                      style={{
-                        ...styles.modelMeta,
-                        ...(isActive
-                          ? { color: 'rgba(226, 232, 240, 0.8)' }
-                          : null),
-                      }}
-                    >
-                      {formatFileSize(model.bytes)}
+                    <span className="view-workbench__model-heading">
+                      <span
+                        className="view-workbench__model-name"
+                        title={model.assetPath}
+                      >
+                        {model.assetPath}
+                      </span>
+                      <span
+                        className="view-workbench__model-size"
+                        style={{
+                          ...styles.modelMeta,
+                          ...(isActive
+                            ? { color: 'rgba(226, 232, 240, 0.8)' }
+                            : null),
+                        }}
+                      >
+                        {formatFileSize(model.bytes)}
+                      </span>
                     </span>
                     <span
                       style={{

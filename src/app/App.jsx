@@ -16,6 +16,9 @@ const LoadersPage = lazy(() => import('./pages/dev/LoadersPage'));
 const IconsPage = lazy(() => import('./pages/dev/IconsPage'));
 const GradientsPage = lazy(() => import('./pages/dev/GradientsPage'));
 const GltfJsxPage = lazy(() => import('./pages/dev/GltfJsxPage'));
+const RorschachWorkbenchPage = lazy(
+  () => import('./pages/dev/RorschachWorkbenchPage')
+);
 
 // Renders as the Suspense fallback inside the Canvas. Signals to the parent
 // that the scene is suspended so the Loader overlay stays visible.
@@ -163,6 +166,14 @@ export default function AppRoot() {
         element={
           <Suspense fallback={null}>
             <GltfJsxPage />
+          </Suspense>
+        }
+      />
+      <Route
+        path="/dev/rorschach"
+        element={
+          <Suspense fallback={null}>
+            <RorschachWorkbenchPage />
           </Suspense>
         }
       />

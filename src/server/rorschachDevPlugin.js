@@ -5,6 +5,9 @@ import {
   RorschachRequestError,
   cancelRorschachJob,
   createRorschachJob,
+  deleteRorschachAssets,
+  deleteRorschachCollection,
+  deleteRorschachCollections,
   getRorschachJob,
   listRorschachJobs,
   resolveRorschachAsset,
@@ -20,26 +23,50 @@ function sendJson(res, statusCode, payload) {
 }
 
 async function readJsonBody(req) {
-  const chunks = [];
-  let size = 0;
-  for await (const chunk of req) {
-    size += chunk.length;
-    if (size > MAX_BODY_BYTES) {
-      throw new RorschachRequestError(413, 'PAYLOAD_TOO_LARGE', 'Request is too large.');
-    }
-    chunks.push(chunk);
-  }
-  try {
-    return JSON.parse(Buffer.concat(chunks).toString('utf8') || '{}');
-  } catch {
-    throw new RorschachRequestError(400, 'INVALID_JSON', 'Request body must be JSON.');
-  }
+  return new Promise((resolve, reject) => {
+    const chunks = [];
+    let size = 0;
+    let failed = false;
+
+    req.on('data', (chunk) => {
+      if (failed) return;
+      size += chunk.length;
+      if (size > MAX_BODY_BYTES) {
+        failed = true;
+        reject(
+          new RorschachRequestError(
+            413,
+            'PAYLOAD_TOO_LARGE',
+            'Request is too large.'
+          )
+        );
+        return;
+      }
+      chunks.push(chunk);
+    });
+    req.on('end', () => {
+      if (failed) return;
+      try {
+        resolve(JSON.parse(Buffer.concat(chunks).toString('utf8') || '{}'));
+      } catch {
+        reject(
+          new RorschachRequestError(
+            400,
+            'INVALID_JSON',
+            'Request body must be JSON.'
+          )
+        );
+      }
+    });
+    req.on('error', reject);
+  });
 }
 
 function contentType(filePath) {
   const extension = path.extname(filePath).toLowerCase();
   if (extension === '.png') return 'image/png';
   if (extension === '.svg') return 'image/svg+xml; charset=utf-8';
+  if (extension === '.webp') return 'image/webp';
   if (extension === '.mp4') return 'video/mp4';
   if (extension === '.json') return 'application/json; charset=utf-8';
   return 'application/octet-stream';
@@ -68,13 +95,45 @@ export default function rorschachDevPlugin() {
         const rootDir = server.config.root;
 
         if (pathname === API_ROOT && req.method === 'GET') {
-          await handleJson(res, () => ({ jobs: listRorschachJobs() }));
+          await handleJson(res, async () => ({
+            jobs: await listRorschachJobs(rootDir),
+          }));
           return;
         }
         if (pathname === API_ROOT && req.method === 'POST') {
           await handleJson(res, async () => ({
-            job: createRorschachJob(rootDir, await readJsonBody(req)),
+            job: await createRorschachJob(rootDir, await readJsonBody(req)),
           }));
+          return;
+        }
+        if (pathname === API_ROOT && req.method === 'DELETE') {
+          await handleJson(res, async () => {
+            const body = await readJsonBody(req);
+            return {
+              deleted: await deleteRorschachCollections(
+                rootDir,
+                body.collections
+              ),
+            };
+          });
+          return;
+        }
+
+        const collectionAssetsMatch = pathname.match(
+          /^\/dev-api\/rorschach\/jobs\/([^/]+)\/assets$/u
+        );
+        if (collectionAssetsMatch && req.method === 'DELETE') {
+          await handleJson(res, async () => {
+            const body = await readJsonBody(req);
+            return {
+              job: await deleteRorschachAssets(
+                rootDir,
+                collectionAssetsMatch[1],
+                body.outputDirectory,
+                body.paths
+              ),
+            };
+          });
           return;
         }
 
@@ -86,10 +145,7 @@ export default function rorschachDevPlugin() {
             const assetPath = resolveRorschachAsset(
               rootDir,
               assetMatch[1],
-              assetMatch[2]
-                .split('/')
-                .map(decodeURIComponent)
-                .join('/')
+              assetMatch[2].split('/').map(decodeURIComponent).join('/')
             );
             res.statusCode = 200;
             res.setHeader('Content-Type', contentType(assetPath));
@@ -100,13 +156,34 @@ export default function rorschachDevPlugin() {
           return;
         }
 
-        const jobMatch = pathname.match(/^\/dev-api\/rorschach\/jobs\/([^/]+)$/u);
+        const jobMatch = pathname.match(
+          /^\/dev-api\/rorschach\/jobs\/([^/]+)$/u
+        );
         if (jobMatch && req.method === 'GET') {
           await handleJson(res, () => ({ job: getRorschachJob(jobMatch[1]) }));
           return;
         }
         if (jobMatch && req.method === 'DELETE') {
-          await handleJson(res, () => ({ job: cancelRorschachJob(jobMatch[1]) }));
+          await handleJson(res, async () => {
+            const body = await readJsonBody(req);
+            return {
+              deleted: await deleteRorschachCollection(
+                rootDir,
+                jobMatch[1],
+                body.outputDirectory
+              ),
+            };
+          });
+          return;
+        }
+
+        const cancelMatch = pathname.match(
+          /^\/dev-api\/rorschach\/jobs\/([^/]+)\/cancel$/u
+        );
+        if (cancelMatch && req.method === 'POST') {
+          await handleJson(res, async () => ({
+            job: await cancelRorschachJob(rootDir, cancelMatch[1]),
+          }));
           return;
         }
 

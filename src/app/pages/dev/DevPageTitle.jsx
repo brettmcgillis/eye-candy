@@ -12,6 +12,7 @@ export default function DevPageTitle({
   className = '',
   compact = false,
   eyebrow,
+  icon = 'turbo_flex.png',
   level = 'h1',
   title,
 }) {
@@ -31,7 +32,7 @@ export default function DevPageTitle({
           <span>{title}</span>
           <img
             className="dev-page-title__icon"
-            src={iconFile('turbo_flex.png')}
+            src={iconFile(icon)}
             alt=""
             aria-hidden="true"
           />

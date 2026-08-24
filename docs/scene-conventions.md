@@ -388,6 +388,19 @@ for it, and delete the file otherwise.
 - The `noScene` ("None") entry for each channel/area pair is generated
   programmatically inside `sceneRegistry.jsx`, not authored per-scene.
 
+## 14b. Plans are ephemeral, docs are durable
+
+Design/approach documents live in **`plans/<topic>.md`** at the repo root and
+are **deleted when the work lands**. A plan describes work in flight; once the
+thing is built, the code and `docs/` are the truth, and a leftover plan reads
+to the next agent as current intent.
+
+- Never leave a plan as the only record of a decision. If it produced a rule
+  worth keeping, promote the rule into this file and delete the plan.
+- Do not scatter plans next to the code they describe — one directory, so it
+  is obvious what is still outstanding.
+- A scene's `todo.md` is *not* a plan: it is durable and colocated (§15).
+
 ## 15. Scene `todo.md` files — read-only unless explicitly asked
 
 - Every scene's `todo.md` follows a fixed shape: a `# // SceneName` title, a

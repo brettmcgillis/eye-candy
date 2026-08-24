@@ -61,17 +61,36 @@ before rendering each frame.
 ### 1. Generator vertical slice
 
 - [x] Review the scene, CLI, renderer, output format, and dev-page conventions.
-- [ ] Add a dev-only asynchronous render job service.
-- [ ] Expose job submit/list/read/cancel endpoints through Vite middleware.
-- [ ] Add a `/dev/rorschach` route and dev landing-page entry.
-- [ ] Build still and video job forms from the existing CLI contract.
-- [ ] Show queue state, progress, bounded logs, errors, and cancellation.
-- [ ] Discover and preview completed PNG/SVG/MP4 outputs.
-- [ ] Add social presets for post, story, reel, square, and custom dimensions.
-- [ ] Validate CLI compatibility after the service is introduced.
+- [x] Add a dev-only asynchronous render job service.
+- [x] Expose job submit/list/read/cancel endpoints through Vite middleware.
+- [x] Add a `/dev/rorschach` route and dev landing-page entry.
+- [x] Build still and video job forms from the existing CLI contract.
+- [x] Show queue state, progress, bounded logs, errors, and cancellation.
+- [x] Discover and preview completed PNG/SVG/MP4 outputs.
+- [x] Add social presets for post, story, reel, square, and custom dimensions.
+- [x] Validate CLI compatibility after the service is introduced.
 
 ### 2. Curation and projects
 
+- [x] Persist a versioned manifest beside each workbench render collection.
+- [x] Rebuild the output library from disk after a dev-server restart.
+- [x] Discover legacy `output/batch/<id>` collections alongside workbench jobs.
+- [x] Show each collection's source, output folder, file count, and storage size.
+- [x] Delete completed workbench and legacy batch collections from the library.
+- [x] Require confirmation before recursively deleting the collection folder.
+- [x] Delete individual grouped items and all of their sibling formats.
+- [x] Select all items in a collection and bulk delete selected item groups.
+- [x] Select and bulk delete multiple collection folders with their contents.
+- [x] Keep active render cancellation separate from completed collection deletion.
+- [x] Keep the UI synchronized with folders added or removed outside the page.
+- [x] Default still renders to PNG with opt-in SVG and lossless WebP output.
+- [x] Group sibling image formats into one stacked output-library card.
+- [x] Open generated images in a large gallery with image and format navigation.
+- [x] Fit gallery media to the viewport with 100% to 300% zoom controls.
+- [x] Preserve the inspected center while zooming and drag to pan enlarged media.
+- [x] Show videos as control-free still frames and play them only in the gallery.
+- [x] Label output cards with distinct still and video icons.
+- [x] Ignore generated output while keeping curated media under `public/images/rorschach/`.
 - [ ] Generate contact-sheet batches at preview resolution.
 - [ ] Add compare, favorite, reject, notes, and render-selected actions.
 - [ ] Define and validate the versioned project recipe schema.
@@ -116,17 +135,28 @@ before rendering each frame.
 
 ## Validation Gates
 
-- [ ] `npm run rorschach:generate -- --help` remains valid.
-- [ ] `npm run rorschach:video -- --help` remains valid.
-- [ ] A still job completes from the UI and produces metadata plus images.
-- [ ] A video job completes from the UI and produces a playable MP4.
-- [ ] Cancellation terminates the child process and marks the job cancelled.
-- [ ] Invalid paths and malformed payloads cannot escape allowed output roots.
-- [ ] Refreshing the page recovers in-process job state while the server lives.
-- [ ] Lint and formatting pass for every touched file.
-- [ ] Desktop and mobile layouts are visually checked without overlap.
+- [x] `npm run rorschach:generate -- --help` remains valid.
+- [x] `npm run rorschach:video -- --help` remains valid.
+- [x] A still job completes from the UI and produces metadata plus images.
+- [x] A video job completes from the job service and produces a playable MP4.
+- [x] Cancellation terminates the child process and marks the job cancelled.
+- [x] Asset reads and collection deletion cannot escape approved output roots.
+- [x] Deleting a disposable library entry removes its folder and only its folder.
+- [x] Item deletion accepts only indexed assets and removes selected sibling formats.
+- [x] Bulk collection deletion prevalidates every exact output folder before removal.
+- [x] External additions and removals appear after the next library refresh.
+- [x] PNG-only and PNG/SVG/WebP still output contracts are CLI-validated.
+- [x] Stacked cards and the preview gallery are checked at desktop and mobile sizes.
+- [x] Gallery media fits at 100% and scrolls internally when zoomed on desktop and mobile.
+- [x] Centered zoom and pointer-captured panning work with mouse and touch input.
+- [x] Refreshing the page recovers in-process job state while the server lives.
+- [x] Lint and formatting pass for every touched file.
+- [x] Desktop and mobile layouts are visually checked without overlap.
 - [ ] Rorschach preview and render performance are spot-checked against the
       scene performance checklist.
+
+Build note: the production build currently stops on an unrelated pre-existing
+syntax error in `src/modules/trashCatalog/sceneProps.js` (`componentProps: {,`).
 
 ## Handoff Notes
 

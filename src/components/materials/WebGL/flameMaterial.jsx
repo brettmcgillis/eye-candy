@@ -5,7 +5,7 @@ import { extend } from '@react-three/fiber';
 
 import * as THREE from 'three';
 
-import { FLAME_SHADER_CONSTANTS } from '@elements/flame/flameShared';
+import { FLAME_SHADER_CONSTANTS } from '@elements/Flame/flameShared';
 
 const glslNumberLiteral = (value) =>
   Number.isInteger(value) ? `${value}.0` : `${value}`;

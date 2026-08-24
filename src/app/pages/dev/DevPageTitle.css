@@ -1,0 +1,44 @@
+.dev-page-title {
+  display: grid;
+  gap: 0.2rem;
+}
+
+.dev-page-title__eyebrow {
+  margin: 0;
+  font-size: 0.68rem;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--dev-accent);
+}
+
+.dev-page-title__heading {
+  margin: 0;
+  color: var(--dev-text);
+  font-size: 1.25rem;
+  font-weight: 700;
+  letter-spacing: 0;
+  line-height: 1.15;
+}
+
+.dev-page-title__row {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.42em;
+}
+
+.dev-page-title__icon {
+  width: 0.9em;
+  height: 0.9em;
+  object-fit: contain;
+  flex-shrink: 0;
+}
+
+.dev-page-title--compact {
+  gap: 0;
+}
+
+.dev-page-title--compact .dev-page-title__heading {
+  font-size: 1.25rem;
+  line-height: 1.15;
+}

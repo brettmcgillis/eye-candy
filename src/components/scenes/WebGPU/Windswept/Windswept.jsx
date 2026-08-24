@@ -6,7 +6,7 @@ import Bonsai from '@elements/Bonsai/Bonsai';
 import SubtleForestSkybox from '@elements/SubtleForestSkybox/SubtleForestSkybox';
 import { CameraRig } from '@modules/cameraRig';
 import { LightingRig } from '@modules/lightingRig';
-import Godrays from '@postprocessing/webGPU/godrays/Godrays';
+import Godrays from '@postprocessing/WebGPU/godrays/Godrays';
 
 import FieldLines from './components/FieldLines';
 import LeafSwarm from './components/LeafSwarm';

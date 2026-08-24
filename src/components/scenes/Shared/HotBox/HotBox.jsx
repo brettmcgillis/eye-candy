@@ -2,21 +2,21 @@ import React, { useCallback, useRef, useState } from 'react';
 
 import { OrbitControls, PerspectiveCamera } from '@react-three/drei';
 
-import Attractors from '@elements/attractors/Attractors';
-import FireAndSmoke from '@elements/fireAndSmoke/FireAndSmoke';
-import Fireball from '@elements/fireball/Fireball';
-import FireballSpline from '@elements/fireball/FireballSpline';
-import Flame from '@elements/flame/Flame';
-import GridBox from '@elements/gridbox/GridBox';
-import Smoke2D from '@elements/smoke/Smoke2D';
-import SmokeBall from '@elements/smokeball/SmokeBall';
-import SmokeBallSpline from '@elements/smokeball/SmokeBallSpline';
-import SplineLine from '@elements/spline/SplineLine';
-import SplinePoints from '@elements/spline/SplinePoints';
-import SplineGroup from '@elements/splineGroup/SplineGroup';
-import { parsePreset } from '@elements/splineGroup/splineDefaults';
-import CS184VolumetricFire from '@elements/volumetricFire/CS184VolumetricFire';
-import VolumetricFire from '@elements/volumetricFire/VolumetricFire';
+import Attractors from '@elements/Attractors/Attractors';
+import FireAndSmoke from '@elements/FireAndSmoke/FireAndSmoke';
+import Fireball from '@elements/Fireball/Fireball';
+import FireballSpline from '@elements/Fireball/FireballSpline';
+import Flame from '@elements/Flame/Flame';
+import GridBox from '@elements/Gridbox/GridBox';
+import Smoke2D from '@elements/Smoke/Smoke2D';
+import SmokeBall from '@elements/Smokeball/SmokeBall';
+import SmokeBallSpline from '@elements/Smokeball/SmokeBallSpline';
+import SplineLine from '@elements/Spline/SplineLine';
+import SplinePoints from '@elements/Spline/SplinePoints';
+import SplineGroup from '@elements/SplineGroup/SplineGroup';
+import { parsePreset } from '@elements/SplineGroup/splineDefaults';
+import CS184VolumetricFire from '@elements/VolumetricFire/CS184VolumetricFire';
+import VolumetricFire from '@elements/VolumetricFire/VolumetricFire';
 
 import useHotBoxControls, {
   HOTBOX_DEFAULT_PRESET_KEY,

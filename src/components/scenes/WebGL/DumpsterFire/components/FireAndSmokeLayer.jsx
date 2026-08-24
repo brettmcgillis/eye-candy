@@ -2,9 +2,9 @@ import React, { useRef } from 'react';
 
 import { useFrame } from '@react-three/fiber';
 
-import FireAndSmoke from '@elements/fireAndSmoke/FireAndSmoke';
-import SplineLine from '@elements/spline/SplineLine';
-import SplinePoints from '@elements/spline/SplinePoints';
+import FireAndSmoke from '@elements/FireAndSmoke/FireAndSmoke';
+import SplineLine from '@elements/Spline/SplineLine';
+import SplinePoints from '@elements/Spline/SplinePoints';
 
 import useTrashBlasterStore from '../hooks/useTrashBlasterStore';
 import { SCENE_ROOT_POSITION } from '../utils/sceneData';

@@ -6,7 +6,7 @@ import * as THREE from 'three';
 import {
   DEFAULT_SPLINE_CONFIG as BASE_DEFAULT_SPLINE_CONFIG,
   updateSplineConfig,
-} from '@elements/splineGroup/splineDefaults';
+} from '@elements/SplineGroup/splineDefaults';
 import usePresetsFolder from '@hooks/usePresetsFolder';
 
 import { SCENE_PRESETS } from '../presets/presets';

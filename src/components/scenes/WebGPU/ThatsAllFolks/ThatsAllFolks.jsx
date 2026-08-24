@@ -8,9 +8,9 @@ import {
 
 import * as THREE from 'three';
 
-import Magnum from '@elements/magnum/Magnum';
-import SplineGroup from '@elements/splineGroup/SplineGroup';
-import { getSplineWorldPoints } from '@elements/splineGroup/splineDefaults';
+import Magnum from '@elements/Magnum/Magnum';
+import SplineGroup from '@elements/SplineGroup/SplineGroup';
+import { getSplineWorldPoints } from '@elements/SplineGroup/splineDefaults';
 import THATS_ALL_FOLKS_SMOKE, {
   LEGACY_WORLD_TO_SCENE,
 } from '@presets/smoke/thatsAllFolksSmoke';

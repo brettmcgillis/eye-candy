@@ -6,14 +6,18 @@ import React, {
   useRef,
   useState,
 } from 'react';
-import { Link, useSearchParams } from 'react-router-dom';
+import { useSearchParams } from 'react-router-dom';
 
-import { iconFile, localEnv, modelFile } from '../../../utils/appUtils';
-import { DEFAULT_SCENE_PATH } from '../../sceneRegistry';
+import { localEnv, modelFile } from '@utils/appUtils';
+
 import CombineWorkbench from './CombineWorkbench';
+import DevPageHeaderBar from './DevPageHeaderBar';
+import DevTooltip from './DevTooltip';
+import './GltfJsxPage.css';
 import GltfPreviewCanvas from './GltfPreviewCanvas';
 import PoseWorkbench from './PoseWorkbench';
 import RigWorkbench from './RigWorkbench';
+import ViewWorkbench from './ViewWorkbench';
 
 const CAPABILITIES_ENDPOINT = '/dev-api/gltfjsx/capabilities';
 const CONVERT_ENDPOINT = '/dev-api/gltfjsx/convert';
@@ -103,9 +107,6 @@ const styles = {
     color: '#0f172a',
     fontFamily: 'system-ui, sans-serif',
   },
-  nav: {
-    marginBottom: '1rem',
-  },
   tabBar: {
     display: 'flex',
     gap: '0.5rem',
@@ -125,16 +126,6 @@ const styles = {
     border: '1px solid #0f172a',
     background: '#0f172a',
     color: '#f8fafc',
-  },
-  back: {
-    color: '#475569',
-    fontSize: '0.85rem',
-    textDecoration: 'none',
-  },
-  header: {
-    display: 'grid',
-    gap: '1rem',
-    marginBottom: '1.5rem',
   },
   layout: {
     display: 'grid',
@@ -171,22 +162,6 @@ const styles = {
     letterSpacing: '0.14em',
     textTransform: 'uppercase',
     color: '#b45309',
-  },
-  title: {
-    margin: '0.4rem 0 0.55rem',
-    fontSize: 'clamp(2rem, 4vw, 3.4rem)',
-    lineHeight: 0.95,
-  },
-  titleRow: {
-    display: 'inline-flex',
-    alignItems: 'center',
-    gap: '0.38em',
-  },
-  titleIcon: {
-    width: '0.92em',
-    height: '0.92em',
-    objectFit: 'contain',
-    flexShrink: 0,
   },
   lead: {
     margin: 0,
@@ -604,44 +579,6 @@ function buildInitialNames(files) {
   };
 }
 
-function describeServerState(isLocal, serverState) {
-  if (!isLocal) {
-    return {
-      label: 'disabled',
-      message:
-        'The local converter is only available on localhost or a local-network dev session.',
-    };
-  }
-
-  if (serverState.status === 'loading' || serverState.status === 'idle') {
-    return {
-      label: 'checking',
-      message: 'Checking whether the local GLTF JSX API is reachable.',
-    };
-  }
-
-  if (serverState.status === 'error') {
-    return {
-      label: 'error',
-      message: serverState.error,
-    };
-  }
-
-  if (!serverState.data?.features?.convert) {
-    return {
-      label: 'missing binary',
-      message:
-        'The dev page is live, but the local gltfjsx executable is not available yet.',
-    };
-  }
-
-  return {
-    label: serverState.data?.implementation || 'ready',
-    message:
-      'Drag files in, pick flags, and write repo-native output into public/models and src/components/elements.',
-  };
-}
-
 async function readJsonResponse(response) {
   const rawText = await response.text();
 
@@ -792,12 +729,14 @@ function formatCliOutput(diagnostics) {
 
 function Field({ children, hint, label }) {
   return (
-    <div style={styles.field}>
-      <div style={styles.labelRow}>
-        <span style={styles.label}>{label}</span>
+    <div className="gltf-workbench-page__field" style={styles.field}>
+      <div className="gltf-workbench-page__label-row" style={styles.labelRow}>
+        <span className="gltf-workbench-page__label" style={styles.label}>
+          {label}
+        </span>
+        <DevTooltip label={`About ${label}`}>{hint}</DevTooltip>
       </div>
       {children}
-      {hint ? <p style={styles.hint}>{hint}</p> : null}
     </div>
   );
 }
@@ -835,7 +774,7 @@ function SelectField({ hint, label, onChange, options, value }) {
 
 function ToggleField({ checked, hint, label, onChange }) {
   return (
-    <div style={styles.checkboxRow}>
+    <div className="gltf-workbench-page__toggle" style={styles.checkboxRow}>
       <input
         aria-label={label}
         style={styles.checkbox}
@@ -844,8 +783,13 @@ function ToggleField({ checked, hint, label, onChange }) {
         onChange={(event) => onChange(event.target.checked)}
       />
       <span style={styles.checkboxBody}>
-        <span style={styles.label}>{label}</span>
-        {hint ? <span style={styles.hint}>{hint}</span> : null}
+        <span
+          className="gltf-workbench-page__toggle-label"
+          style={styles.label}
+        >
+          {label}
+          <DevTooltip label={`About ${label}`}>{hint}</DevTooltip>
+        </span>
       </span>
     </div>
   );
@@ -853,7 +797,7 @@ function ToggleField({ checked, hint, label, onChange }) {
 
 function CodeBlockPanel({ actions, title, value }) {
   return (
-    <div style={styles.panel}>
+    <div className="gltf-workbench-page__code-panel" style={styles.panel}>
       <div style={{ ...styles.labelRow, marginBottom: '0.8rem' }}>
         <h2 style={styles.panelTitle}>{title}</h2>
         {actions}
@@ -889,7 +833,10 @@ export default function GltfJsxPage() {
   const [searchParams, setSearchParams] = useSearchParams();
   const tabParam = searchParams.get('tab');
   const initialTab =
-    tabParam === 'pose' || tabParam === 'rig' || tabParam === 'combine'
+    tabParam === 'pose' ||
+    tabParam === 'rig' ||
+    tabParam === 'combine' ||
+    tabParam === 'view'
       ? tabParam
       : 'convert';
   const [activeTab, setActiveTab] = useState(initialTab);
@@ -898,6 +845,7 @@ export default function GltfJsxPage() {
   const [combineTabMounted, setCombineTabMounted] = useState(
     initialTab === 'combine'
   );
+  const [viewTabMounted, setViewTabMounted] = useState(initialTab === 'view');
 
   // Mirror the active tab in the query string so a refresh lands on the same
   // workbench. `convert` is the default, so it's left out of the URL.
@@ -911,6 +859,9 @@ export default function GltfJsxPage() {
     }
     if (nextTab === 'combine') {
       setCombineTabMounted(true);
+    }
+    if (nextTab === 'view') {
+      setViewTabMounted(true);
     }
 
     setSearchParams(
@@ -938,7 +889,6 @@ export default function GltfJsxPage() {
   }, [uploadedFiles]);
 
   const deferredCode = useDeferredValue(conversionResult?.code || '');
-  const serverDescription = describeServerState(isLocal, serverState);
   const uploadedPreviewAsset = useMemo(() => {
     if (!primaryFilePath || !entryFiles.length) {
       return null;
@@ -1248,99 +1198,111 @@ export default function GltfJsxPage() {
     Boolean(primaryFilePath);
 
   return (
-    <div style={styles.page}>
-      <nav style={styles.nav}>
-        <Link to="/dev" style={styles.back}>
-          ← back to dev
-        </Link>
-      </nav>
+    <div className="dev-page gltf-workbench-page">
+      <DevPageHeaderBar compact level="h4" title="GLTF JSX Workbench" />
 
-      <header style={styles.header}>
-        <div>
-          <p style={styles.eyebrow}>Dev Authoring</p>
-          <h1 style={styles.title}>
-            <span style={styles.titleRow}>
-              <span>GLTF JSX Workbench</span>
-              <img
-                src={iconFile('turbo_flex.png')}
-                alt=""
-                aria-hidden="true"
-                style={styles.titleIcon}
-              />
-            </span>
-          </h1>
-        </div>
-        <div style={styles.statusPill}>{serverDescription.label}</div>
-      </header>
-
-      <div style={styles.tabBar}>
+      <div className="gltf-workbench-page__tabs">
         <button
+          className={`gltf-workbench-page__tab${
+            activeTab === 'convert' ? ' gltf-workbench-page__tab--active' : ''
+          }`}
           type="button"
-          style={{
-            ...styles.tab,
-            ...(activeTab === 'convert' ? styles.tabActive : null),
-          }}
           onClick={() => selectTab('convert')}
         >
           Import &amp; Optimize
         </button>
         <button
+          className={`gltf-workbench-page__tab${
+            activeTab === 'pose' ? ' gltf-workbench-page__tab--active' : ''
+          }`}
           type="button"
-          style={{
-            ...styles.tab,
-            ...(activeTab === 'pose' ? styles.tabActive : null),
-          }}
           onClick={() => selectTab('pose')}
         >
           Pose
         </button>
         <button
+          className={`gltf-workbench-page__tab${
+            activeTab === 'rig' ? ' gltf-workbench-page__tab--active' : ''
+          }`}
           type="button"
-          style={{
-            ...styles.tab,
-            ...(activeTab === 'rig' ? styles.tabActive : null),
-          }}
           onClick={() => selectTab('rig')}
         >
           Rig
         </button>
         <button
+          className={`gltf-workbench-page__tab${
+            activeTab === 'combine' ? ' gltf-workbench-page__tab--active' : ''
+          }`}
           type="button"
-          style={{
-            ...styles.tab,
-            ...(activeTab === 'combine' ? styles.tabActive : null),
-          }}
           onClick={() => selectTab('combine')}
         >
           Combine
         </button>
+        <button
+          className={`gltf-workbench-page__tab${
+            activeTab === 'view' ? ' gltf-workbench-page__tab--active' : ''
+          }`}
+          type="button"
+          onClick={() => selectTab('view')}
+        >
+          View
+        </button>
       </div>
 
       {poseTabMounted ? (
-        <div style={{ display: activeTab === 'pose' ? 'block' : 'none' }}>
+        <div
+          className={`gltf-workbench-page__tab-content${
+            activeTab === 'pose'
+              ? ''
+              : ' gltf-workbench-page__tab-content--hidden'
+          }`}
+        >
           <PoseWorkbench uploadedAsset={uploadedPreviewAsset} />
         </div>
       ) : null}
 
       {rigTabMounted ? (
-        <div style={{ display: activeTab === 'rig' ? 'block' : 'none' }}>
+        <div
+          className={`gltf-workbench-page__tab-content${
+            activeTab === 'rig'
+              ? ''
+              : ' gltf-workbench-page__tab-content--hidden'
+          }`}
+        >
           <RigWorkbench uploadedAsset={uploadedPreviewAsset} />
         </div>
       ) : null}
 
       {combineTabMounted ? (
-        <div style={{ display: activeTab === 'combine' ? 'block' : 'none' }}>
+        <div
+          className={`gltf-workbench-page__tab-content${
+            activeTab === 'combine'
+              ? ''
+              : ' gltf-workbench-page__tab-content--hidden'
+          }`}
+        >
           <CombineWorkbench uploadedAsset={uploadedPreviewAsset} />
         </div>
       ) : null}
 
+      {viewTabMounted ? (
+        <div
+          className={`gltf-workbench-page__tab-content${
+            activeTab === 'view'
+              ? ''
+              : ' gltf-workbench-page__tab-content--hidden'
+          }`}
+        >
+          <ViewWorkbench uploadedAsset={uploadedPreviewAsset} />
+        </div>
+      ) : null}
+
       <div
-        style={{
-          ...styles.layout,
-          display: activeTab === 'convert' ? styles.layout.display : 'none',
-        }}
+        className={`gltf-workbench-page__layout${
+          activeTab === 'convert' ? '' : ' gltf-workbench-page__layout--hidden'
+        }`}
       >
-        <div style={styles.leftStack}>
+        <div className="gltf-workbench-page__sidebar">
           <section style={styles.panel}>
             <h2 style={styles.panelTitle}>Upload</h2>
             <p style={styles.panelLead}>
@@ -1685,7 +1647,7 @@ export default function GltfJsxPage() {
           </section>
         </div>
 
-        <div style={styles.rightStack}>
+        <div className="gltf-workbench-page__main">
           <section style={styles.panel}>
             <div style={{ ...styles.labelRow, marginBottom: '0.9rem' }}>
               <div>

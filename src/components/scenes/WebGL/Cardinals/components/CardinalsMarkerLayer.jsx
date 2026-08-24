@@ -3,8 +3,8 @@ import React, { useMemo, useRef } from 'react';
 
 import { useFrame } from '@react-three/fiber';
 
-import { FilledSquare, OutlinedSquare } from '@elements/marker/MarkerSquare';
-import { squareWorldSize, uvToWorld } from '@elements/marker/markerUtils';
+import { FilledSquare, OutlinedSquare } from '@elements/Marker/MarkerSquare';
+import { squareWorldSize, uvToWorld } from '@elements/Marker/markerUtils';
 
 const DEG_TO_RAD = Math.PI / 180;
 

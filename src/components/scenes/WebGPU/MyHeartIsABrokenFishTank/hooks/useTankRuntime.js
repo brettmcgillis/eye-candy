@@ -2,7 +2,7 @@ import { useCallback, useEffect, useMemo, useRef } from 'react';
 
 import { useFrame } from '@react-three/fiber';
 
-import { FISH_TANK_PANE_KEYS } from '@elements/fishTank/FishTank';
+import { FISH_TANK_PANE_KEYS } from '@elements/FishTank/FishTank';
 
 const MIN_WATER_LEVEL = 0;
 

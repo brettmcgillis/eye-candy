@@ -7,8 +7,8 @@ import { useFrame } from '@react-three/fiber';
 
 import * as THREE from 'three';
 
-import TugBoat from '@elements/tugboat/TugBoat';
-import { sampleWaveHeight, sampleWaveNormal } from '@elements/water/waterUtils';
+import TugBoat from '@elements/Tugboat/TugBoat';
+import { sampleWaveHeight, sampleWaveNormal } from '@elements/Water/waterUtils';
 
 import BoatLights from './BoatLights';
 

@@ -2,7 +2,7 @@ import React, { useMemo } from 'react';
 
 import { CuboidCollider, RigidBody } from '@react-three/rapier';
 
-import WoodMaterial from '@materials/webGPU/WoodMaterial';
+import WoodMaterial from '@materials/WebGPU/WoodMaterial';
 
 import { getTableLayout } from '../utils/sceneLayout';
 

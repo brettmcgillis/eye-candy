@@ -2,7 +2,7 @@ import React, { useEffect, useMemo, useRef } from 'react';
 
 import { useThree } from '@react-three/fiber';
 
-import Fur from '@elements/fur/Fur';
+import Fur from '@elements/Fur/Fur';
 
 import {
   PATCH_HEIGHT,

@@ -8,7 +8,7 @@ import {
 
 import * as THREE from 'three';
 
-import { FUR_TECHNIQUES } from '@elements/fur/furUtils';
+import { FUR_TECHNIQUES } from '@elements/Fur/furUtils';
 
 import Specimen from './components/Specimen';
 import useSceneControls from './hooks/useSceneControls';

@@ -2,8 +2,8 @@ import React, { useLayoutEffect, useRef, useState } from 'react';
 
 import * as THREE from 'three';
 
-import Fur from '@elements/fur/Fur';
-import Rabbit from '@elements/rabbit/Rabbit';
+import Fur from '@elements/Fur/Fur';
+import Rabbit from '@elements/Rabbit/Rabbit';
 
 import { PATCH_HEIGHT } from '../utils/grassPatch';
 import GrassPatch from './GrassPatch';

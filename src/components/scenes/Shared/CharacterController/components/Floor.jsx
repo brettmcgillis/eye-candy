@@ -3,8 +3,8 @@ import React from 'react';
 import { useThree } from '@react-three/fiber';
 import { CuboidCollider, RigidBody } from '@react-three/rapier';
 
-import WebGLGridMaterial from '@materials/webGL/gridMaterial';
-import { GridMaterial as WebGPUGridMaterial } from '@materials/webGPU/gridMaterial';
+import WebGLGridMaterial from '@materials/WebGL/gridMaterial';
+import { GridMaterial as WebGPUGridMaterial } from '@materials/WebGPU/gridMaterial';
 
 export default function Floor({
   gridSectionColor,

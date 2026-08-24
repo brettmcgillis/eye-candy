@@ -4,7 +4,7 @@ import { OrbitControls, PerspectiveCamera } from '@react-three/drei';
 
 import * as THREE from 'three';
 
-import GridBox from '@elements/gridbox/GridBox';
+import GridBox from '@elements/Gridbox/GridBox';
 import SPLINE_PRESETS from '@presets/spline/splinePresets';
 
 import SplineGroup from './components/SplineGroup';

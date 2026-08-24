@@ -2,12 +2,12 @@ import React from 'react';
 
 import { Environment } from '@react-three/drei';
 
+import CigaretteButts from '@elements/CigaretteButts/CigaretteButts';
+import { Litter, Litter2 } from '@elements/Litter/Litter';
 import ManholeCover from '@elements/ManholeCover/ManholeCover';
+import { NewsPaper2 } from '@elements/NewsPapers/NewsPapers';
 import ParkTrashCan from '@elements/ParkTrashCan/ParkTrashCan';
 import Sidewalks from '@elements/Sidewalks/Sidewalks';
-import CigaretteButts from '@elements/cigaretteButts/CigaretteButts';
-import { Litter, Litter2 } from '@elements/litter/Litter';
-import { NewsPaper2 } from '@elements/newsPapers/NewsPapers';
 import { CameraRig } from '@modules/cameraRig';
 
 import BirdPovRig from './components/BirdPovRig';

@@ -9,7 +9,7 @@ import {
 
 import * as THREE from 'three';
 
-import RcCar from '@elements/models/rcCar/RcCar';
+import RcCar from '@elements/RcCar/RcCar';
 
 import CapsuleCharacter from './CapsuleCharacter';
 import ExampleCharacterModel from './ExampleCharacterModel';

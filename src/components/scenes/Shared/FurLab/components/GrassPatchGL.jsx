@@ -2,7 +2,7 @@ import React, { forwardRef, useEffect, useMemo } from 'react';
 
 import * as THREE from 'three';
 
-import noiseGlsl from '@elements/perlinNoiseBall/noiseGlsl';
+import noiseGlsl from '@elements/PerlinNoiseBall/noiseGlsl';
 
 const GrassPatchGL = forwardRef(function GrassPatchGL(
   { colorDark, colorLight, floorY, geometry },

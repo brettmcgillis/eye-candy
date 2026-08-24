@@ -4,7 +4,7 @@ import { useFrame } from '@react-three/fiber';
 
 import * as THREE from 'three';
 
-import FlameMaterial from '@materials/webGL/flameMaterial';
+import FlameMaterial from '@materials/WebGL/flameMaterial';
 
 import {
   FLAME_DEFAULT_MOTION,

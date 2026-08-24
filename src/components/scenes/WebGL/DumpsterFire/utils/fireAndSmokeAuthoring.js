@@ -4,7 +4,7 @@ import {
   DEFAULT_FIRE_AND_SMOKE_CONTROL_POINTS,
   cloneFireAndSmokeControlPoints,
   makeFireAndSmokeConfig,
-} from '@elements/fireAndSmoke/fireAndSmokeDefaults';
+} from '@elements/FireAndSmoke/fireAndSmokeDefaults';
 import DUMPSTER_FIRE from '@presets/fire/dumpsterFire';
 
 const DEFAULT_NAME = 'Dumpster Fire And Smoke';

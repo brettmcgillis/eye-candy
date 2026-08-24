@@ -1,13 +1,7 @@
-import * as THREE from 'three';
-import { SkeletonUtils } from 'three-stdlib';
-import { GLTFExporter } from 'three/examples/jsm/exporters/GLTFExporter.js';
-
 import React, {
   Suspense,
   useCallback,
-  useEffect,
   useLayoutEffect,
-  useMemo,
   useRef,
   useState,
 } from 'react';
@@ -19,7 +13,15 @@ import {
 } from '@react-three/drei';
 import { Canvas, useThree } from '@react-three/fiber';
 
-import { modelFile } from '../../../utils/appUtils';
+import * as THREE from 'three';
+import { SkeletonUtils } from 'three-stdlib';
+import { GLTFExporter } from 'three/examples/jsm/exporters/GLTFExporter.js';
+
+import {
+  labelForModelValue,
+  modelSourceFromValue,
+  useWorkbenchModelOptions,
+} from './gltfWorkbenchModels';
 import {
   applyPoseSnapshot,
   captureBonesSnapshot,
@@ -31,7 +33,6 @@ import { loadGltfFromSource } from './useGltfPreview';
 // Sentinel pose value for the rest/bind pose (no clip applied).
 const REST_POSE_VALUE = '__rest__';
 
-const MODELS_ENDPOINT = '/dev-api/gltfjsx/models';
 const WRITE_ASSET_ENDPOINT = '/dev-api/gltfjsx/write-asset';
 const CONVERT_ENDPOINT = '/dev-api/gltfjsx/convert';
 
@@ -288,32 +289,6 @@ function toPascalCase(value) {
   return /^[A-Za-z_$]/.test(fallback) ? fallback : `Model${fallback}`;
 }
 
-function labelForModelValue(value, uploadedAsset) {
-  if (value === 'uploaded') {
-    const fileName = uploadedAsset?.primaryFilePath?.split('/').pop();
-    return fileName || 'Current upload';
-  }
-
-  if (value.startsWith('saved:')) {
-    return value.slice('saved:'.length).split('/').pop();
-  }
-
-  return 'model';
-}
-
-function modelSourceFromValue(value, uploadedAsset) {
-  if (value === 'uploaded') {
-    return uploadedAsset || null;
-  }
-
-  if (value.startsWith('saved:')) {
-    const assetPath = value.slice('saved:'.length);
-    return { type: 'saved', assetPath, url: modelFile(assetPath) };
-  }
-
-  return null;
-}
-
 function boundsWidth(object) {
   const box = new THREE.Box3().setFromObject(object);
   if (box.isEmpty()) return 1;
@@ -486,8 +461,8 @@ function VectorRow({ axisLabel, decimals = 2, label, onChange, step, values }) {
 }
 
 export default function CombineWorkbench({ uploadedAsset }) {
-  const [modelList, setModelList] = useState([]);
-  const [modelListError, setModelListError] = useState(null);
+  const { modelListError, modelOptions, refreshModelList } =
+    useWorkbenchModelOptions(uploadedAsset, 'Select a model...');
   const [pickerValue, setPickerValue] = useState('');
   const [instances, setInstances] = useState([]);
   const [selectedId, setSelectedId] = useState(null);
@@ -516,45 +491,6 @@ export default function CombineWorkbench({ uploadedAsset }) {
   const posesCacheRef = useRef(new Map());
   const restCacheRef = useRef(new Map());
   const [poseVersion, setPoseVersion] = useState(0);
-
-  const refreshModelList = useCallback(async () => {
-    try {
-      const response = await fetch(MODELS_ENDPOINT);
-      const payload = await response.json();
-
-      if (!response.ok) {
-        throw new Error(payload.message || 'Could not list models.');
-      }
-
-      setModelList(payload.models || []);
-      setModelListError(null);
-    } catch (error) {
-      setModelListError(
-        error instanceof Error ? error.message : 'Could not list models.'
-      );
-    }
-  }, []);
-
-  useEffect(() => {
-    refreshModelList();
-  }, [refreshModelList]);
-
-  const modelOptions = useMemo(() => {
-    const options = [{ label: 'Select a model…', value: '' }];
-
-    if (uploadedAsset) {
-      options.push({ label: 'Current upload', value: 'uploaded' });
-    }
-
-    modelList.forEach((model) => {
-      options.push({
-        label: model.assetPath,
-        value: `saved:${model.assetPath}`,
-      });
-    });
-
-    return options;
-  }, [modelList, uploadedAsset]);
 
   const ensureLoadedScene = useCallback(
     async (value) => {

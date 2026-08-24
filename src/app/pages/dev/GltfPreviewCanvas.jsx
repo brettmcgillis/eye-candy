@@ -10,102 +10,172 @@ import React, {
 import { OrbitControls, Stage } from '@react-three/drei';
 import { Canvas } from '@react-three/fiber';
 
+import * as THREE from 'three';
+
 import AnimationDriver from './AnimationDriver';
+import './GltfPreviewCanvas.css';
 import useGltfPreview from './useGltfPreview';
 
-const styles = {
-  empty: {
-    height: 'clamp(28rem, 65vh, 46rem)',
-    borderRadius: '22px',
-    border: '1px dashed rgba(148, 163, 184, 0.42)',
-    display: 'grid',
-    placeItems: 'center',
-    background:
-      'linear-gradient(180deg, rgba(255,255,255,0.92) 0%, rgba(241,245,249,0.92) 100%)',
-    color: '#475569',
-    padding: '1.5rem',
-    textAlign: 'center',
-  },
-  shell: {
-    position: 'relative',
-    height: 'clamp(28rem, 65vh, 46rem)',
-    borderRadius: '22px',
-    overflow: 'hidden',
-    border: '1px solid rgba(15, 23, 42, 0.08)',
-    boxShadow: '0 24px 64px rgba(15, 23, 42, 0.12)',
-    background: '#020617',
-  },
-  canvas: {
-    width: '100%',
-    height: '100%',
-  },
-  overlay: {
-    position: 'absolute',
-    top: '1rem',
-    left: '1rem',
-    zIndex: 1,
-    padding: '0.5rem 0.75rem',
-    borderRadius: '999px',
-    background: 'rgba(15, 23, 42, 0.82)',
-    color: '#e2e8f0',
-    fontSize: '0.78rem',
-    letterSpacing: '0.04em',
-    textTransform: 'uppercase',
-  },
-  error: {
-    height: 'clamp(28rem, 65vh, 46rem)',
-    borderRadius: '22px',
-    display: 'grid',
-    placeItems: 'center',
-    background: '#0f172a',
-    color: '#fca5a5',
-    padding: '1.5rem',
-    textAlign: 'center',
-  },
-  animationBar: {
-    position: 'absolute',
-    bottom: '1rem',
-    left: '1rem',
-    right: '1rem',
-    zIndex: 1,
-    display: 'flex',
-    gap: '0.5rem',
-    alignItems: 'center',
-  },
-  animationSelect: {
-    flex: '1 1 auto',
-    minWidth: 0,
-    borderRadius: '999px',
-    border: '1px solid rgba(148, 163, 184, 0.35)',
-    background: 'rgba(15, 23, 42, 0.82)',
-    color: '#e2e8f0',
-    padding: '0.5rem 0.85rem',
-    fontSize: '0.82rem',
-  },
-  animationButton: {
-    flexShrink: 0,
-    borderRadius: '999px',
-    border: '1px solid rgba(148, 163, 184, 0.35)',
-    background: 'rgba(15, 23, 42, 0.82)',
-    color: '#e2e8f0',
-    padding: '0.5rem 0.95rem',
-    fontSize: '0.82rem',
-    cursor: 'pointer',
-  },
-};
+function makeChannelMaterial(channel, material, wireframe) {
+  const channelMapKeyByMode = {
+    alpha: 'alphaMap',
+    ao: 'aoMap',
+    baseColor: 'map',
+    clearcoat: 'clearcoatMap',
+    displacement: 'displacementMap',
+    emissive: 'emissiveMap',
+    light: 'lightMap',
+    metalness: 'metalnessMap',
+    normalMap: 'normalMap',
+    roughness: 'roughnessMap',
+  };
+  const mapKey = channelMapKeyByMode[channel];
+  const map = mapKey ? material?.[mapKey] : null;
 
-function applyPreviewMeshProps(root, shadows) {
+  if (channel === 'normalMap') {
+    return new THREE.MeshBasicMaterial({
+      color: map ? '#ffffff' : '#334155',
+      map,
+      transparent: Boolean(material?.transparent || map),
+      wireframe,
+    });
+  }
+
+  if (channel === 'baseColor') {
+    return new THREE.MeshBasicMaterial({
+      color: map ? '#ffffff' : material?.color || '#f8fafc',
+      map,
+      transparent: Boolean(material?.transparent || map),
+      wireframe,
+    });
+  }
+
+  if (channel === 'emissive') {
+    return new THREE.MeshBasicMaterial({
+      color: map ? '#ffffff' : material?.emissive || '#0f172a',
+      map,
+      transparent: Boolean(material?.transparent || map),
+      wireframe,
+    });
+  }
+
+  return new THREE.MeshBasicMaterial({
+    color: map ? '#ffffff' : '#d1d5db',
+    map,
+    transparent: Boolean(material?.transparent || map),
+    wireframe,
+  });
+}
+
+function makeOverrideMaterial(settings, sourceMaterial) {
+  const mode = settings?.displayMode || 'original';
+  const channel = settings?.materialChannel || 'original';
+  const wireframe = Boolean(settings?.wireframe);
+
+  if (mode === 'normal') {
+    return new THREE.MeshNormalMaterial({ wireframe });
+  }
+
+  if (mode === 'clay') {
+    return new THREE.MeshStandardMaterial({
+      color: '#c9b5a3',
+      roughness: 0.82,
+      metalness: 0,
+      wireframe,
+    });
+  }
+
+  if (channel !== 'original') {
+    return makeChannelMaterial(channel, sourceMaterial, wireframe);
+  }
+
+  return null;
+}
+
+function applyDebugPreviewSettings(root, settings, shadows) {
+  const createdMaterials = [];
+  const originalMaterials = new Map();
+  const originalWireframe = new Map();
+
   root.traverse((node) => {
     if (!node.isMesh) return;
 
     const mesh = node;
+    originalMaterials.set(mesh, mesh.material);
+
     mesh.castShadow = shadows;
     mesh.receiveShadow = shadows;
 
-    if (mesh.material && 'envMapIntensity' in mesh.material) {
-      mesh.material.envMapIntensity = 0.8;
+    const sourceMaterial = mesh.material;
+    const overrideMaterial = Array.isArray(sourceMaterial)
+      ? sourceMaterial.map((material) =>
+          makeOverrideMaterial(settings, material)
+        )
+      : makeOverrideMaterial(settings, sourceMaterial);
+
+    if (Array.isArray(sourceMaterial)) {
+      sourceMaterial.forEach((material) => {
+        if (!material) return;
+        const source = material;
+        if ('wireframe' in source && !originalWireframe.has(source)) {
+          originalWireframe.set(source, source.wireframe);
+          source.wireframe = Boolean(settings?.wireframe);
+        }
+        if ('envMapIntensity' in source) {
+          source.envMapIntensity = 0.8;
+        }
+      });
+    } else if (sourceMaterial) {
+      if (
+        'wireframe' in sourceMaterial &&
+        !originalWireframe.has(sourceMaterial)
+      ) {
+        originalWireframe.set(sourceMaterial, sourceMaterial.wireframe);
+        sourceMaterial.wireframe = Boolean(settings?.wireframe);
+      }
+      if ('envMapIntensity' in sourceMaterial) {
+        sourceMaterial.envMapIntensity = 0.8;
+      }
     }
+
+    if (!overrideMaterial) {
+      return;
+    }
+
+    if (Array.isArray(overrideMaterial)) {
+      const hasOverride = overrideMaterial.some(Boolean);
+      if (!hasOverride) {
+        return;
+      }
+
+      const mergedMaterial = overrideMaterial.map((material, index) => {
+        if (material) {
+          createdMaterials.push(material);
+          return material;
+        }
+        return Array.isArray(sourceMaterial)
+          ? sourceMaterial[index]
+          : sourceMaterial;
+      });
+      mesh.material = mergedMaterial;
+      return;
+    }
+
+    createdMaterials.push(overrideMaterial);
+    mesh.material = overrideMaterial;
   });
+
+  return () => {
+    originalMaterials.forEach((material, mesh) => {
+      const targetMesh = mesh;
+      targetMesh.material = material;
+    });
+    originalWireframe.forEach((wireframe, material) => {
+      const targetMaterial = material;
+      targetMaterial.wireframe = wireframe;
+    });
+    createdMaterials.forEach((material) => material.dispose?.());
+  };
 }
 
 function useGeneratedComponentPreview(previewComponent) {
@@ -170,28 +240,36 @@ function useGeneratedComponentPreview(previewComponent) {
   return state;
 }
 
-function AssetPreviewContent({ gltf, shadows }) {
+function AssetPreviewContent({ gltf, previewDebugSettings, shadows }) {
   const scene = gltf?.scene ?? null;
 
   useLayoutEffect(() => {
-    if (!scene) return;
+    if (!scene) return () => {};
 
-    applyPreviewMeshProps(scene, shadows);
-  }, [scene, shadows]);
+    return applyDebugPreviewSettings(scene, previewDebugSettings, shadows);
+  }, [previewDebugSettings, scene, shadows]);
 
   if (!scene) return null;
 
   return <primitive object={scene} />;
 }
 
-function GeneratedComponentPreviewContent({ Component, shadows }) {
+function GeneratedComponentPreviewContent({
+  Component,
+  previewDebugSettings,
+  shadows,
+}) {
   const groupRef = useRef(null);
 
   useLayoutEffect(() => {
-    if (!groupRef.current) return;
+    if (!groupRef.current) return () => {};
 
-    applyPreviewMeshProps(groupRef.current, shadows);
-  }, [Component, shadows]);
+    return applyDebugPreviewSettings(
+      groupRef.current,
+      previewDebugSettings,
+      shadows
+    );
+  }, [Component, previewDebugSettings, shadows]);
 
   return (
     <group ref={groupRef}>
@@ -200,7 +278,13 @@ function GeneratedComponentPreviewContent({ Component, shadows }) {
   );
 }
 
-function PreviewScene({ animation, gltf, PreviewComponent, previewOptions }) {
+function PreviewScene({
+  animation,
+  gltf,
+  PreviewComponent,
+  previewDebugSettings,
+  previewOptions,
+}) {
   const controlsRef = useRef(null);
 
   if (!gltf?.scene && !PreviewComponent) return null;
@@ -231,10 +315,15 @@ function PreviewScene({ animation, gltf, PreviewComponent, previewOptions }) {
           {PreviewComponent ? (
             <GeneratedComponentPreviewContent
               Component={PreviewComponent}
+              previewDebugSettings={previewDebugSettings}
               shadows={previewOptions.shadows}
             />
           ) : (
-            <AssetPreviewContent gltf={gltf} shadows={previewOptions.shadows} />
+            <AssetPreviewContent
+              gltf={gltf}
+              previewDebugSettings={previewDebugSettings}
+              shadows={previewOptions.shadows}
+            />
           )}
         </Stage>
       </Suspense>
@@ -250,6 +339,7 @@ function PreviewScene({ animation, gltf, PreviewComponent, previewOptions }) {
 export default function GltfPreviewCanvas({
   previewAsset,
   previewComponent,
+  previewDebugSettings,
   previewOptions,
 }) {
   const assetPreviewState = useGltfPreview(
@@ -279,39 +369,40 @@ export default function GltfPreviewCanvas({
 
   if (!previewAsset && !previewComponent) {
     return (
-      <div style={styles.empty}>
+      <div className="gltf-preview__empty">
         Drop a `.glb` or `.gltf` bundle to preview it here.
       </div>
     );
   }
 
   if (previewState.status === 'error') {
-    return <div style={styles.error}>{previewState.error}</div>;
+    return <div className="gltf-preview__error">{previewState.error}</div>;
   }
 
   return (
-    <div style={styles.shell}>
-      <div style={styles.overlay}>
+    <div className="gltf-preview__shell">
+      <div className="gltf-preview__status">
         {previewState.status === 'loading' ? 'Loading preview' : previewLabel}
       </div>
       <Canvas
         camera={{ fov: 50, position: [0, 0, 150] }}
         dpr={[1, 2]}
         shadows
-        style={styles.canvas}
+        className="gltf-preview__canvas"
       >
         <PreviewScene
           animation={animation}
           gltf={assetPreviewState.gltf}
           PreviewComponent={PreviewComponent}
+          previewDebugSettings={previewDebugSettings}
           previewOptions={previewOptions}
         />
       </Canvas>
       {animationClips.length ? (
-        <div style={styles.animationBar}>
+        <div className="gltf-preview__animation-bar">
           <select
             aria-label="Animation clip"
-            style={styles.animationSelect}
+            className="gltf-preview__animation-select"
             value={animation.clipName}
             onChange={(event) =>
               setAnimation((current) => ({
@@ -329,8 +420,8 @@ export default function GltfPreviewCanvas({
           </select>
           {animation.clipName ? (
             <button
+              className="gltf-preview__animation-button"
               type="button"
-              style={styles.animationButton}
               onClick={() =>
                 setAnimation((current) => ({
                   ...current,

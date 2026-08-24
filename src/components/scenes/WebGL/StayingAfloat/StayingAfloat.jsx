@@ -2,11 +2,11 @@ import React, { useMemo } from 'react';
 
 import { OrbitControls, PerspectiveCamera } from '@react-three/drei';
 
-import HammerHead from '@elements/hammerHead/HammerHead';
-import TigerShark from '@elements/tigerShark/TigerShark';
-import NurbsWaterColumn from '@elements/water/NurbsWaterColumn';
-import useNurbsWaterInteractionRuntime from '@elements/water/waterInteraction';
-import WaterColorEffect from '@postprocessing/webGL/waterColorEffect/WaterColorEffect';
+import HammerHead from '@elements/HammerHead/HammerHead';
+import TigerShark from '@elements/TigerShark/TigerShark';
+import NurbsWaterColumn from '@elements/Water/NurbsWaterColumn';
+import useNurbsWaterInteractionRuntime from '@elements/Water/waterInteraction';
+import WaterColorEffect from '@postprocessing/WebGL/waterColorEffect/WaterColorEffect';
 import STAYING_AFLOAT_SPLINES from '@presets/spline/stayingAfloatSplines';
 
 import FloatingPreserver from './components/FloatingPreserver';

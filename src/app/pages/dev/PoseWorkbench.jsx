@@ -1,6 +1,3 @@
-import * as THREE from 'three';
-import { GLTFExporter } from 'three/examples/jsm/exporters/GLTFExporter.js';
-
 import React, {
   Suspense,
   useCallback,
@@ -19,8 +16,14 @@ import {
 } from '@react-three/drei';
 import { Canvas, useFrame, useThree } from '@react-three/fiber';
 
-import { modelFile } from '../../../utils/appUtils';
+import * as THREE from 'three';
+import { GLTFExporter } from 'three/examples/jsm/exporters/GLTFExporter.js';
+
 import AnimationDriver from './AnimationDriver';
+import {
+  modelSourceFromValue,
+  useWorkbenchModelOptions,
+} from './gltfWorkbenchModels';
 import {
   applyPoseSnapshot,
   collectBones,
@@ -29,7 +32,6 @@ import {
 } from './poseUtils';
 import useGltfPreview from './useGltfPreview';
 
-const MODELS_ENDPOINT = '/dev-api/gltfjsx/models';
 const WRITE_ASSET_ENDPOINT = '/dev-api/gltfjsx/write-asset';
 const POSE_CLIP_DURATION = 1 / 30;
 const POSITION_EPSILON = 1e-6;
@@ -763,8 +765,6 @@ export default function PoseWorkbench({ uploadedAsset }) {
   // Only saved models survive a refresh — an "uploaded" selection has no file
   // to reload, so we never restore it from the URL.
   const initialModelParam = searchParams.get('model') || '';
-  const [modelList, setModelList] = useState([]);
-  const [modelListError, setModelListError] = useState(null);
   const [selectedModelValue, setSelectedModelValue] = useState(
     initialModelParam.startsWith('saved:') ? initialModelParam : ''
   );
@@ -805,28 +805,8 @@ export default function PoseWorkbench({ uploadedAsset }) {
   // one skeleton on combined rigs where bones from each crowd together.
   const [hiddenArmatureIds, setHiddenArmatureIds] = useState(() => new Set());
   const selectedBoneItemRef = useRef(null);
-
-  const refreshModelList = useCallback(async () => {
-    try {
-      const response = await fetch(MODELS_ENDPOINT);
-      const payload = await response.json();
-
-      if (!response.ok) {
-        throw new Error(payload.message || 'Could not list models.');
-      }
-
-      setModelList(payload.models || []);
-      setModelListError(null);
-    } catch (error) {
-      setModelListError(
-        error instanceof Error ? error.message : 'Could not list models.'
-      );
-    }
-  }, []);
-
-  useEffect(() => {
-    refreshModelList();
-  }, [refreshModelList]);
+  const { modelListError, modelOptions, refreshModelList } =
+    useWorkbenchModelOptions(uploadedAsset, 'Select a model...');
 
   // Keep the Paste button live when another tab copies a bone transform.
   useEffect(() => {
@@ -841,20 +821,7 @@ export default function PoseWorkbench({ uploadedAsset }) {
   }, []);
 
   const modelSource = useMemo(() => {
-    if (selectedModelValue === 'uploaded' && uploadedAsset) {
-      return uploadedAsset;
-    }
-
-    if (selectedModelValue.startsWith('saved:')) {
-      const assetPath = selectedModelValue.slice('saved:'.length);
-      return {
-        type: 'saved',
-        assetPath,
-        url: modelFile(assetPath),
-      };
-    }
-
-    return null;
+    return modelSourceFromValue(selectedModelValue, uploadedAsset);
   }, [selectedModelValue, uploadedAsset]);
 
   const previewState = useGltfPreview(modelSource);
@@ -1252,23 +1219,6 @@ export default function PoseWorkbench({ uploadedAsset }) {
       applyDisplayMaterials();
     }
   }
-
-  const modelOptions = useMemo(() => {
-    const options = [{ label: 'Select a model…', value: '' }];
-
-    if (uploadedAsset) {
-      options.push({ label: 'Current upload', value: 'uploaded' });
-    }
-
-    modelList.forEach((model) => {
-      options.push({
-        label: model.assetPath,
-        value: `saved:${model.assetPath}`,
-      });
-    });
-
-    return options;
-  }, [modelList, uploadedAsset]);
 
   function renderViewport() {
     if (!modelSource) {

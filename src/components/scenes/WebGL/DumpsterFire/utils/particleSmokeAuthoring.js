@@ -4,7 +4,7 @@ import {
   DEFAULT_SPLINE_CONFIG,
   filterParsedPresetByType,
   parsePreset,
-} from '@elements/splineGroup/splineDefaults';
+} from '@elements/SplineGroup/splineDefaults';
 import DUMPSTER_FIRE from '@presets/fire/dumpsterFire';
 
 const DEFAULT_NAME = 'Dumpster Particle Smoke';

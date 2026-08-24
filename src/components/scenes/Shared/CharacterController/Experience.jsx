@@ -6,7 +6,7 @@ import { Physics } from '@react-three/rapier';
 
 import { folder, useControls } from 'leva';
 
-import RideableRcCar from '@elements/models/rcCar/RideableRcCar';
+import RideableRcCar from '@elements/RcCar/RideableRcCar';
 import {
   Ecctrl,
   TouchJoystickOverlay,

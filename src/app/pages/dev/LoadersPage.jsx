@@ -1,5 +1,4 @@
 import React, { useEffect, useState } from 'react';
-import { Link } from 'react-router-dom';
 
 import { ALL_LOADERS } from '../../scaffold/loader/loaders';
 import {
@@ -14,49 +13,8 @@ import {
   useSquares,
 } from '../../scaffold/loader/primitives';
 import Overlay from '../../scaffold/overlay/Overlay';
-import { DEFAULT_SCENE_PATH } from '../../sceneRegistry';
-
-const styles = {
-  page: {
-    fontFamily: 'system-ui, sans-serif',
-    background: '#ffffff',
-    color: '#111827',
-    minHeight: '100vh',
-    padding: '2rem',
-    boxSizing: 'border-box',
-  },
-  nav: { marginBottom: '1.5rem' },
-  back: { color: '#6b7280', fontSize: '0.85rem', textDecoration: 'none' },
-  heading: { fontSize: '1.2rem', margin: '0 0 0.25rem' },
-  sub: { color: '#6b7280', fontSize: '0.8rem', margin: '0 0 2rem' },
-  sectionHeading: {
-    fontSize: '0.75rem',
-    textTransform: 'uppercase',
-    letterSpacing: '0.1em',
-    color: '#6b7280',
-    margin: '2.5rem 0 1rem',
-    borderTop: '1px solid #e5e7eb',
-    paddingTop: '1.5rem',
-  },
-  grid: {
-    display: 'grid',
-    gridTemplateColumns: 'repeat(auto-fill, minmax(200px, 1fr))',
-    gap: '2rem',
-  },
-  cell: {
-    display: 'flex',
-    flexDirection: 'column',
-    alignItems: 'center',
-    gap: '0.5rem',
-    cursor: 'pointer',
-  },
-  label: {
-    fontSize: '0.72rem',
-    color: '#6b7280',
-    fontFamily: 'monospace',
-    textAlign: 'center',
-  },
-};
+import DevPageHeaderBar from './DevPageHeaderBar';
+import './LoadersPage.css';
 
 // Static diagram showing each square's index number — for pattern design reference.
 function PatternIndex() {
@@ -90,18 +48,18 @@ function PatternIndex() {
 function LoaderGrid({ orientation, onSelect }) {
   return (
     <OrientationProvider orientation={orientation}>
-      <div style={styles.grid}>
+      <div className="loaders-page__grid">
         {ALL_LOADERS.map((LoaderComponent) => (
           <div
+            className="loaders-page__cell"
             key={LoaderComponent.name}
-            style={styles.cell}
             onClick={() => onSelect(LoaderComponent, orientation)}
             title={`Preview ${LoaderComponent.name} fullscreen`}
           >
-            <div style={{ width: 160, height: 160, flexShrink: 0 }}>
+            <div className="loaders-page__canvas">
               <LoaderComponent />
             </div>
-            <span style={styles.label}>
+            <span className="loaders-page__label">
               {LoaderComponent.name} · {LoaderComponent.cycleDuration}s
             </span>
           </div>
@@ -126,27 +84,18 @@ function LoaderPreview({ LoaderComponent, orientation, onClose }) {
 
   return (
     <div
+      className="loader-preview"
       // Tap anywhere outside the overlay to close.
       // Clicks on .overlay elements (pills, leva) are excluded so they
       // remain interactive without accidentally dismissing the preview.
       onClick={(e) => {
         if (!e.target.closest('.overlay')) onClose();
       }}
-      style={{
-        position: 'fixed',
-        inset: 0,
-        zIndex: 200,
-        background: INK.paper,
-        display: 'grid',
-        placeItems: 'center',
-        cursor: 'pointer',
-      }}
+      style={{ '--loader-preview-background': INK.paper }}
     >
       {/* Loader — same sizing as the real Loader.jsx, orientation locked */}
       <OrientationProvider orientation={orientation}>
-        <div
-          style={{ width: 'min(60vmin, 320px)', height: 'min(60vmin, 320px)' }}
-        >
+        <div className="loader-preview__loader">
           <LoaderComponent />
         </div>
       </OrientationProvider>
@@ -166,67 +115,34 @@ export default function LoadersPage() {
     setPreview({ comp: () => comp, orientation });
 
   return (
-    <div style={styles.page}>
-      <nav style={styles.nav}>
-        <Link to="/dev" style={styles.back}>
-          ← back to dev
-        </Link>
-      </nav>
-
-      <h1 style={styles.heading}>Loader Gallery</h1>
-      <p style={styles.sub}>
+    <div className="dev-page loaders-page">
+      <DevPageHeaderBar title="loaderPatterns" />
+      <p className="dev-muted loaders-page__summary">
         {ALL_LOADERS.length} animations · canvas-based · click to preview
       </p>
 
-      <h2
-        style={{
-          ...styles.sectionHeading,
-          borderTop: 'none',
-          paddingTop: 0,
-          margin: '0 0 1rem',
-        }}
-      >
-        Horizontal
-      </h2>
+      <h2 className="dev-section-title dev-section-title--first">Horizontal</h2>
       <LoaderGrid orientation="h" onSelect={selectPreview} />
 
-      <h2 style={styles.sectionHeading}>Vertical</h2>
+      <h2 className="dev-section-title">Vertical</h2>
       <LoaderGrid orientation="v" onSelect={selectPreview} />
 
-      <h2 style={styles.sectionHeading}>Square Index Reference</h2>
-      <p style={{ color: '#6b7280', fontSize: '0.8rem', margin: '0 0 1rem' }}>
+      <h2 className="dev-section-title">Square Index Reference</h2>
+      <p className="dev-muted loaders-page__summary">
         Red = layer b · Black = layer t
       </p>
-      <div style={{ display: 'flex', gap: '2rem', flexWrap: 'wrap' }}>
+      <div className="loaders-page__references">
         <div>
-          <p
-            style={{
-              color: '#6b7280',
-              fontSize: '0.72rem',
-              fontFamily: 'monospace',
-              margin: '0 0 0.5rem',
-            }}
-          >
-            horizontal
-          </p>
-          <div style={{ width: 160, height: 160 }}>
+          <p className="loaders-page__reference-label">horizontal</p>
+          <div className="loaders-page__canvas">
             <OrientationProvider orientation="h">
               <PatternIndex />
             </OrientationProvider>
           </div>
         </div>
         <div>
-          <p
-            style={{
-              color: '#6b7280',
-              fontSize: '0.72rem',
-              fontFamily: 'monospace',
-              margin: '0 0 0.5rem',
-            }}
-          >
-            vertical
-          </p>
-          <div style={{ width: 160, height: 160 }}>
+          <p className="loaders-page__reference-label">vertical</p>
+          <div className="loaders-page__canvas">
             <OrientationProvider orientation="v">
               <PatternIndex />
             </OrientationProvider>

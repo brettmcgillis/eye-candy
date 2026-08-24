@@ -1,9 +1,9 @@
+import { useEffect, useState } from 'react';
+
 import * as THREE from 'three';
 import { MeshoptDecoder } from 'three/examples/jsm/libs/meshopt_decoder.module.js';
 import { DRACOLoader } from 'three/examples/jsm/loaders/DRACOLoader.js';
 import { GLTFLoader } from 'three/examples/jsm/loaders/GLTFLoader.js';
-
-import { useEffect, useState } from 'react';
 
 const DRACO_DECODER_PATH = 'https://www.gstatic.com/draco/v1/decoders/';
 

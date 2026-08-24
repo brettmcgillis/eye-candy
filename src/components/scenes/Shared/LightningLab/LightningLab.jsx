@@ -1,7 +1,7 @@
 import React, { useMemo, useRef } from 'react';
 
 import Lightning from '@elements/Lightning/Lightning';
-import useNurbsWaterInteractionRuntime from '@elements/water/waterInteraction';
+import useNurbsWaterInteractionRuntime from '@elements/Water/waterInteraction';
 
 import Environment from './components/Environment';
 import Ground from './components/Ground';

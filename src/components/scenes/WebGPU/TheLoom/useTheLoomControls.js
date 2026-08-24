@@ -2,7 +2,7 @@ import { useMemo } from 'react';
 
 import { folder, useControls } from 'leva';
 
-import { pinEdge, pinPoint } from '@elements/webgpu/cloth/pinHelpers';
+import { pinEdge, pinPoint } from '@elements/WebGPU/cloth/pinHelpers';
 import usePresetsFolder from '@hooks/usePresetsFolder';
 
 import DEFAULT_CLOTH from './presets/cloth/defaultCloth';

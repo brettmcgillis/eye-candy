@@ -4,10 +4,10 @@ import { useFrame } from '@react-three/fiber';
 
 import Lb45Plate from '@elements/45lbPlate/45lbPlate';
 import Atom from '@elements/Atom/Atom';
+import Halo from '@elements/Halo/Halo';
+import NeuralNetwork from '@elements/Network/NeuralNetwork';
 import Record from '@elements/Record/Record';
 import SolarSystem from '@elements/SolarSystem/SolarSystem';
-import Halo from '@elements/halo/Halo';
-import NeuralNetwork from '@elements/network/NeuralNetwork';
 import { radians } from '@utils/math';
 
 import useHaloAnimation from '../hooks/useHaloAnimation';

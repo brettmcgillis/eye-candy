@@ -2,15 +2,15 @@ import React, { useRef } from 'react';
 
 import { OrbitControls, PerspectiveCamera } from '@react-three/drei';
 
-import Attractors from '@elements/attractors/Attractors';
-import FireAndSmoke from '@elements/fireAndSmoke/FireAndSmoke';
-import GridBox from '@elements/gridbox/GridBox';
-import Smoke2D from '@elements/smoke/Smoke2D';
-import SmokeBall from '@elements/smokeball/SmokeBall';
-import SmokeBallSpline from '@elements/smokeball/SmokeBallSpline';
-import SplineLine from '@elements/spline/SplineLine';
-import SplinePoints from '@elements/spline/SplinePoints';
-import SplineGroup from '@elements/splineGroup/SplineGroup';
+import Attractors from '@elements/Attractors/Attractors';
+import FireAndSmoke from '@elements/FireAndSmoke/FireAndSmoke';
+import GridBox from '@elements/Gridbox/GridBox';
+import Smoke2D from '@elements/Smoke/Smoke2D';
+import SmokeBall from '@elements/Smokeball/SmokeBall';
+import SmokeBallSpline from '@elements/Smokeball/SmokeBallSpline';
+import SplineLine from '@elements/Spline/SplineLine';
+import SplinePoints from '@elements/Spline/SplinePoints';
+import SplineGroup from '@elements/SplineGroup/SplineGroup';
 
 import useSmokeTestControls from './hooks/useSmokeTestControls';
 

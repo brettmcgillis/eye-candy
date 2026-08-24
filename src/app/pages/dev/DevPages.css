@@ -1,0 +1,112 @@
+:root {
+  --dev-bg: #f3f4f6;
+  --dev-surface: #ffffff;
+  --dev-surface-subtle: #f8fafc;
+  --dev-text: #172033;
+  --dev-text-secondary: #4b5563;
+  --dev-text-muted: #6b7280;
+  --dev-border: #d8dde5;
+  --dev-border-strong: #b8c0cc;
+  --dev-accent: #b45309;
+  --dev-danger: #9f1239;
+  --dev-radius: 6px;
+  --dev-shadow: 0 1px 2px rgba(15, 23, 42, 0.05);
+  --dev-page-gutter: clamp(0.75rem, 2vw, 1.5rem);
+  --dev-font: 'Avenir Next', Avenir, 'Helvetica Neue', sans-serif;
+  --dev-mono: 'SFMono-Regular', Consolas, 'Liberation Mono', monospace;
+}
+
+.dev-page {
+  min-height: 100vh;
+  box-sizing: border-box;
+  padding: 1rem var(--dev-page-gutter) 2rem;
+  background: var(--dev-bg);
+  color: var(--dev-text);
+  font-family: var(--dev-font);
+  font-size: 14px;
+  line-height: 1.4;
+}
+
+.dev-page *,
+.dev-page *::before,
+.dev-page *::after {
+  box-sizing: border-box;
+}
+
+.dev-page button,
+.dev-page input,
+.dev-page select,
+.dev-page textarea {
+  font: inherit;
+}
+
+.dev-page__description {
+  max-width: 64rem;
+  margin: 0 0 1rem;
+  color: var(--dev-text-secondary);
+  font-size: 0.82rem;
+  line-height: 1.45;
+}
+
+.dev-section-title {
+  margin: 1.5rem 0 0.65rem;
+  padding-top: 0.8rem;
+  border-top: 1px solid var(--dev-border);
+  color: var(--dev-text-secondary);
+  font-size: 0.72rem;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.dev-section-title--first {
+  margin-top: 0;
+  padding-top: 0;
+  border-top: 0;
+}
+
+.dev-muted {
+  color: var(--dev-text-muted);
+  font-size: 0.78rem;
+}
+
+.dev-panel {
+  border: 1px solid var(--dev-border);
+  border-radius: var(--dev-radius);
+  background: var(--dev-surface);
+  box-shadow: var(--dev-shadow);
+}
+
+.dev-button {
+  min-height: 2rem;
+  padding: 0.35rem 0.7rem;
+  border: 1px solid var(--dev-border-strong);
+  border-radius: 4px;
+  background: var(--dev-surface);
+  color: var(--dev-text);
+  cursor: pointer;
+  font-size: 0.78rem;
+  font-weight: 650;
+}
+
+.dev-button:hover {
+  border-color: #7b8797;
+  background: var(--dev-surface-subtle);
+}
+
+.dev-button--primary {
+  border-color: var(--dev-text);
+  background: var(--dev-text);
+  color: #ffffff;
+}
+
+.dev-button:disabled {
+  cursor: not-allowed;
+  opacity: 0.5;
+}
+
+@media (max-width: 640px) {
+  .dev-page {
+    padding-top: 0.75rem;
+  }
+}

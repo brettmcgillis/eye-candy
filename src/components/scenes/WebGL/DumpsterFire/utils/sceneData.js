@@ -1,24 +1,8 @@
 import {
-  Catfood,
-  CatfoodInstance,
-  CatfoodInstances,
-} from '@elements/Catfood/Catfood';
-import PersianRug from '@elements/PersianRug/PersianRug';
-import {
-  Snickers,
-  SnickersInstance,
-  SnickersInstances,
-} from '@elements/Snickers/Snickers';
-import {
-  SodaCan,
-  SodaCanInstance,
-  SodaCanInstances,
-} from '@elements/SodaCan/SodaCan';
-import {
   AppleCore,
   AppleCoreInstance,
   AppleCoreInstances,
-} from '@elements/appleCore/AppleCore';
+} from '@elements/AppleCore/AppleCore';
 import {
   BeerBottle1,
   BeerBottle1Instance,
@@ -29,18 +13,18 @@ import {
   WhiskeyBottle,
   WhiskeyBottleInstance,
   WhiskeyBottleInstances,
-} from '@elements/bottles/Bottles';
+} from '@elements/Bottles/Bottles';
 import {
   Bucket,
   BucketInstance,
   BucketInstances,
-} from '@elements/bucket/Bucket';
+} from '@elements/Bucket/Bucket';
 import {
   CardboardBox,
   CardboardFlat,
   CardboardFlat2,
   CardboardLeaning2,
-} from '@elements/cardboard/Cardboard';
+} from '@elements/Cardboard/Cardboard';
 import {
   BeerCase1,
   BeerCase1Instance,
@@ -63,29 +47,34 @@ import {
   CardboardBox5,
   CardboardBox5Instance,
   CardboardBox5Instances,
-} from '@elements/cardboardBoxes/CardboardBoxes';
+} from '@elements/CardboardBoxes/CardboardBoxes';
 import {
   LowPolyCassetteTape1,
   LowPolyCassetteTape1Instance,
   LowPolyCassetteTape1Instances,
-} from '@elements/cassetteTape/LowPolyCassetteTape1';
+} from '@elements/CassetteTape/LowPolyCassetteTape1';
 import {
   LowPolyCassetteTape2,
   LowPolyCassetteTape2Instance,
   LowPolyCassetteTape2Instances,
-} from '@elements/cassetteTape/LowPolyCassetteTape2';
+} from '@elements/CassetteTape/LowPolyCassetteTape2';
 import {
   LowPolyCassetteTape3,
   LowPolyCassetteTape3Instance,
   LowPolyCassetteTape3Instances,
-} from '@elements/cassetteTape/LowPolyCassetteTape3';
-import CigaretteButts from '@elements/cigaretteButts/CigaretteButts';
-import Dumpster from '@elements/dumpster/Dumpster';
+} from '@elements/CassetteTape/LowPolyCassetteTape3';
+import {
+  Catfood,
+  CatfoodInstance,
+  CatfoodInstances,
+} from '@elements/Catfood/Catfood';
+import CigaretteButts from '@elements/CigaretteButts/CigaretteButts';
+import Dumpster from '@elements/Dumpster/Dumpster';
 import {
   LowPolyFloppyDisk,
   LowPolyFloppyDiskInstance,
   LowPolyFloppyDiskInstances,
-} from '@elements/floppyDisk/LowPolyFloppyDisk';
+} from '@elements/FloppyDisk/LowPolyFloppyDisk';
 import {
   GarbageBag,
   GarbageBag1,
@@ -96,30 +85,41 @@ import {
   GarbageBags1,
   GarbageBags2,
   GarbageBagsPile,
-} from '@elements/garbageBags/GarbageBags';
+} from '@elements/GarbageBags/GarbageBags';
 import {
   HappyMeal,
   HappyMealInstance,
   HappyMealInstances,
-} from '@elements/happyMeal/HappyMeal';
-import { Litter, Litter2 } from '@elements/litter/Litter';
-import { McCup, McCupInstance, McCupInstances } from '@elements/mcCup/McCup';
-import NewspaperStack from '@elements/newsPaperStack/NewsPaperStack';
+} from '@elements/HappyMeal/HappyMeal';
+import { Litter, Litter2 } from '@elements/Litter/Litter';
+import { McCup, McCupInstance, McCupInstances } from '@elements/McCup/McCup';
+import NewspaperStack from '@elements/NewsPaperStack/NewsPaperStack';
 import {
   NewsPaper1,
   NewsPaper2,
   NewsPaper3,
-} from '@elements/newsPapers/NewsPapers';
+} from '@elements/NewsPapers/NewsPapers';
+import PersianRug from '@elements/PersianRug/PersianRug';
+import {
+  Snickers,
+  SnickersInstance,
+  SnickersInstances,
+} from '@elements/Snickers/Snickers';
+import {
+  SodaCan,
+  SodaCanInstance,
+  SodaCanInstances,
+} from '@elements/SodaCan/SodaCan';
 import {
   StarbucksCup,
   StarbucksCupInstance,
   StarbucksCupInstances,
-} from '@elements/starbucksCup/StarbucksCup';
+} from '@elements/StarbucksCup/StarbucksCup';
 import {
   LowPolyVHSTape,
   LowPolyVHSTapeInstance,
   LowPolyVHSTapeInstances,
-} from '@elements/vhsTape/LowPolyVHSTape';
+} from '@elements/VhsTape/LowPolyVHSTape';
 import { radians } from '@utils/math';
 
 import ArticulatedDumpster from '../components/ArticulatedDumpster';

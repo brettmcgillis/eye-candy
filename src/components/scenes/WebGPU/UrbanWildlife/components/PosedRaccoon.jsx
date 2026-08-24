@@ -8,7 +8,7 @@ import * as THREE from 'three';
 import { SkeletonUtils } from 'three-stdlib';
 
 import BowieKnife from '@elements/BowieKnife/BowieKnife';
-import Magnum from '@elements/magnum/Magnum';
+import Magnum from '@elements/Magnum/Magnum';
 import { modelFile } from '@utils/appUtils';
 
 const MODEL = modelFile('racoon.glb');

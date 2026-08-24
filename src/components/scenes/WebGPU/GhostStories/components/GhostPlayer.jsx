@@ -1,6 +1,6 @@
 import React, { memo, useEffect } from 'react';
 
-import BaseGhostCharacter from '@elements/webgpu/ghost/GhostCharacter';
+import BaseGhostCharacter from '@elements/WebGPU/ghost/GhostCharacter';
 import { useGame } from '@modules/ecctrl';
 
 import GHOST_SKINS from '../presets/skins';

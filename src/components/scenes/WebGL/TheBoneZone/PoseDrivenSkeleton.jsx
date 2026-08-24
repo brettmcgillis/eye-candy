@@ -4,7 +4,7 @@ import { useFrame } from '@react-three/fiber';
 
 import * as THREE from 'three';
 
-import Skeleton from '@elements/skeleton/Skeleton';
+import Skeleton from '@elements/Skeleton/Skeleton';
 import {
   mapPoseNormalizedOffsetToWorld,
   mapPoseWorldOffsetToWorld,

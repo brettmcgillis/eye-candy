@@ -3,7 +3,7 @@ import React, { memo, useCallback } from 'react';
 import { useTexture } from '@react-three/drei';
 
 import BusstopModel from '@elements/Busstop/Busstop';
-import CRTAdGlitchMaterial from '@materials/webGPU/crt/crtAdGlitchMaterial';
+import CRTAdGlitchMaterial from '@materials/WebGPU/crt/crtAdGlitchMaterial';
 import { imageFile, videoFile } from '@utils/appUtils';
 
 // Shared art playlist — every ad face cycles through all of it (videos + the Aisle9

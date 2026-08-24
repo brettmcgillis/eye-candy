@@ -4,12 +4,12 @@ import React, { useEffect, useMemo, useRef } from 'react';
 import { Center } from '@react-three/drei';
 import { CuboidCollider, RigidBody } from '@react-three/rapier';
 
-import QuinnsD4 from '@elements/quinnsDice/QuinnsD4';
-import QuinnsD6 from '@elements/quinnsDice/QuinnsD6';
-import QuinnsD8 from '@elements/quinnsDice/QuinnsD8';
-import QuinnsD10 from '@elements/quinnsDice/QuinnsD10';
-import QuinnsD12 from '@elements/quinnsDice/QuinnsD12';
-import QuinnsD20 from '@elements/quinnsDice/QuinnsD20';
+import QuinnsD4 from '@elements/QuinnsDice/QuinnsD4';
+import QuinnsD6 from '@elements/QuinnsDice/QuinnsD6';
+import QuinnsD8 from '@elements/QuinnsDice/QuinnsD8';
+import QuinnsD10 from '@elements/QuinnsDice/QuinnsD10';
+import QuinnsD12 from '@elements/QuinnsDice/QuinnsD12';
+import QuinnsD20 from '@elements/QuinnsDice/QuinnsD20';
 
 import { DICE_CONFIGS } from '../presets/QuinnsDice.sceneSettings';
 

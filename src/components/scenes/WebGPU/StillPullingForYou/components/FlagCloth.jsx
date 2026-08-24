@@ -12,8 +12,8 @@ import { useFrame } from '@react-three/fiber';
 
 import * as THREE from 'three';
 
-import ClothMesh from '@elements/webgpu/cloth/ClothMesh';
-import { pinEdge } from '@elements/webgpu/cloth/pinHelpers';
+import ClothMesh from '@elements/WebGPU/cloth/ClothMesh';
+import { pinEdge } from '@elements/WebGPU/cloth/pinHelpers';
 
 const WORLD_UP = new THREE.Vector3(0, 1, 0);
 const LOCAL_AXIS_VECTORS = {

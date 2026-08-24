@@ -19,9 +19,9 @@ import {
 import { button, useControls } from 'leva';
 import * as THREE from 'three';
 
-import Bret from '@elements/bret/Bret';
-import Reversal from '@elements/reversal/Reversal';
-import { GridMaterial } from '@materials/webGPU/gridMaterial';
+import Bret from '@elements/Bret/Bret';
+import Reversal from '@elements/Reversal/Reversal';
+import { GridMaterial } from '@materials/WebGPU/gridMaterial';
 
 const ROOM_SIZE = 2.2;
 const WALL_THICKNESS = 0.08;

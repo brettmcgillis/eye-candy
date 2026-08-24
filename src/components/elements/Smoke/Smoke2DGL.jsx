@@ -5,7 +5,7 @@ import { useFrame } from '@react-three/fiber';
 
 import * as THREE from 'three';
 
-import SmokeMaterial from '@materials/webGL/smokeMaterial';
+import SmokeMaterial from '@materials/WebGL/smokeMaterial';
 
 const DEFAULT_SMOKE = {
   /** Scroll speed of the noise in the fragment shader */

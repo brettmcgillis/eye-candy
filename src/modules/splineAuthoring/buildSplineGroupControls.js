@@ -4,7 +4,7 @@ import * as THREE from 'three';
 import {
   DEFAULT_SPLINE_CONFIG,
   updateSplineConfig,
-} from '@elements/splineGroup/splineDefaults';
+} from '@elements/SplineGroup/splineDefaults';
 
 /**
  * Builds the Leva schema object for one spline's folder contents.

@@ -15,7 +15,7 @@ import * as THREE from 'three';
 import FishTank, {
   FISH_TANK_PANE_KEYS,
   FISH_TANK_STATIC_MESH_KEYS,
-} from '@elements/fishTank/FishTank';
+} from '@elements/FishTank/FishTank';
 
 import getTankLayout from '../utils/tankLayout';
 import PinataPane from './PinataPane';

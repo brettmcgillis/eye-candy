@@ -4,7 +4,7 @@ import { useFrame, useThree } from '@react-three/fiber';
 
 import * as THREE from 'three';
 
-import NurbsWaterColumn from '@elements/water/NurbsWaterColumn';
+import NurbsWaterColumn from '@elements/Water/NurbsWaterColumn';
 
 import getTankLayout from '../utils/tankLayout';
 import TankWaterSplash from './water/splash/TankWaterSplash';

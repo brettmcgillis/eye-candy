@@ -1,6 +1,3 @@
-import * as THREE from 'three';
-import { GLTFExporter } from 'three/examples/jsm/exporters/GLTFExporter.js';
-
 import React, {
   Suspense,
   useCallback,
@@ -17,7 +14,13 @@ import {
 } from '@react-three/drei';
 import { Canvas, useFrame, useThree } from '@react-three/fiber';
 
-import { modelFile } from '../../../utils/appUtils';
+import * as THREE from 'three';
+import { GLTFExporter } from 'three/examples/jsm/exporters/GLTFExporter.js';
+
+import {
+  modelSourceFromValue,
+  useWorkbenchModelOptions,
+} from './gltfWorkbenchModels';
 import {
   allowedIndicesForGroup,
   bakeGeometryWorld,
@@ -31,7 +34,6 @@ import {
 } from './rigSkinning';
 import useGltfPreview from './useGltfPreview';
 
-const MODELS_ENDPOINT = '/dev-api/gltfjsx/models';
 const WRITE_ASSET_ENDPOINT = '/dev-api/gltfjsx/write-asset';
 
 const styles = {
@@ -496,8 +498,6 @@ function AxisSlider({ axis, onChange, value }) {
 }
 
 export default function RigWorkbench({ uploadedAsset }) {
-  const [modelList, setModelList] = useState([]);
-  const [modelListError, setModelListError] = useState(null);
   const [selectedModelValue, setSelectedModelValue] = useState('');
   const [skeletonMode, setSkeletonMode] = useState('hand');
   const [chainCount, setChainCount] = useState(4);
@@ -512,34 +512,11 @@ export default function RigWorkbench({ uploadedAsset }) {
   const [outputPath, setOutputPath] = useState('rigged.glb');
   const [overwrite, setOverwrite] = useState(false);
   const [saveState, setSaveState] = useState({ status: 'idle', message: null });
-
-  const refreshModelList = useCallback(async () => {
-    try {
-      const response = await fetch(MODELS_ENDPOINT);
-      const payload = await response.json();
-      if (!response.ok)
-        throw new Error(payload.message || 'Could not list models.');
-      setModelList(payload.models || []);
-      setModelListError(null);
-    } catch (error) {
-      setModelListError(
-        error instanceof Error ? error.message : 'Could not list models.'
-      );
-    }
-  }, []);
-
-  useEffect(() => {
-    refreshModelList();
-  }, [refreshModelList]);
+  const { modelListError, modelOptions, refreshModelList } =
+    useWorkbenchModelOptions(uploadedAsset, 'Select a model...');
 
   const modelSource = useMemo(() => {
-    if (selectedModelValue === 'uploaded' && uploadedAsset)
-      return uploadedAsset;
-    if (selectedModelValue.startsWith('saved:')) {
-      const assetPath = selectedModelValue.slice('saved:'.length);
-      return { type: 'saved', assetPath, url: modelFile(assetPath) };
-    }
-    return null;
+    return modelSourceFromValue(selectedModelValue, uploadedAsset);
   }, [selectedModelValue, uploadedAsset]);
 
   const previewState = useGltfPreview(modelSource);
@@ -722,19 +699,6 @@ export default function RigWorkbench({ uploadedAsset }) {
       });
     }
   }
-
-  const modelOptions = useMemo(() => {
-    const options = [{ label: 'Select a model…', value: '' }];
-    if (uploadedAsset)
-      options.push({ label: 'Current upload', value: 'uploaded' });
-    modelList.forEach((model) => {
-      options.push({
-        label: model.assetPath,
-        value: `saved:${model.assetPath}`,
-      });
-    });
-    return options;
-  }, [modelList, uploadedAsset]);
 
   function renderViewport() {
     if (!modelSource) {

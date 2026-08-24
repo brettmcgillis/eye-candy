@@ -1,0 +1,63 @@
+.dev-tooltip {
+  position: relative;
+  display: inline-flex;
+  flex: 0 0 auto;
+  align-items: center;
+}
+
+.dev-tooltip__trigger {
+  display: inline-grid;
+  width: 1rem;
+  min-width: 1rem;
+  height: 1rem;
+  min-height: 1rem;
+  padding: 0;
+  place-items: center;
+  border: 1px solid var(--dev-border-strong);
+  border-radius: 50%;
+  background: transparent;
+  color: var(--dev-text-muted);
+  cursor: help;
+  font-size: 0.65rem;
+  font-weight: 750;
+  line-height: 1;
+}
+
+.dev-tooltip__trigger:hover,
+.dev-tooltip__trigger:focus-visible {
+  border-color: var(--dev-text-secondary);
+  color: var(--dev-text);
+  outline: none;
+}
+
+.dev-tooltip__content {
+  position: absolute;
+  z-index: 100;
+  top: calc(100% + 0.35rem);
+  left: 0;
+  width: max-content;
+  max-width: min(18rem, calc(100vw - 2rem));
+  padding: 0.4rem 0.5rem;
+  border: 1px solid #334155;
+  border-radius: 4px;
+  background: #172033;
+  box-shadow: 0 6px 20px rgba(15, 23, 42, 0.18);
+  color: #f8fafc;
+  font-size: 0.72rem;
+  font-weight: 500;
+  line-height: 1.35;
+  opacity: 0;
+  pointer-events: none;
+  text-align: left;
+  text-transform: none;
+  transform: translateY(-0.2rem);
+  transition:
+    opacity 100ms ease,
+    transform 100ms ease;
+}
+
+.dev-tooltip:hover .dev-tooltip__content,
+.dev-tooltip:focus-within .dev-tooltip__content {
+  opacity: 1;
+  transform: translateY(0);
+}

@@ -12,7 +12,7 @@ import {
   vec3,
 } from 'three/tsl';
 
-import WebGPUProjectorLight from '@elements/webgpu/lights/WebGPUProjectorLight';
+import WebGPUProjectorLight from '@elements/WebGPU/lights/WebGPUProjectorLight';
 
 function MoonlightProjectorInner({
   color = '#b8ccf0',

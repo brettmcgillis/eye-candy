@@ -2,8 +2,8 @@ import React, { useRef } from 'react';
 
 import { useFrame } from '@react-three/fiber';
 
-import LifePreserver from '@elements/lifePreserver/LifePreserver';
-import { sampleWaveHeight, sampleWaveNormal } from '@elements/water/waterUtils';
+import LifePreserver from '@elements/LifePreserver/LifePreserver';
+import { sampleWaveHeight, sampleWaveNormal } from '@elements/Water/waterUtils';
 
 const BASE_X = 0.1;
 const BASE_Z = 0.15;

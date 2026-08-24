@@ -2,7 +2,7 @@ import React from 'react';
 
 import * as THREE from 'three/webgpu';
 
-import { GridMaterial } from '@materials/webGPU/gridMaterial';
+import { GridMaterial } from '@materials/WebGPU/gridMaterial';
 
 const DEFAULT_SIZE = 2000;
 const DEFAULT_GRID_SIZE = 100;

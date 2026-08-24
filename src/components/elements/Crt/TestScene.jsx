@@ -7,8 +7,8 @@ import { PerspectiveCamera } from '@react-three/drei';
 import { useFrame } from '@react-three/fiber';
 
 import Loader from '@app/scaffold/loader/Loader';
-import Bret from '@elements/bret/Bret';
-import { InteractiveReversal } from '@elements/reversal/Reversal';
+import Bret from '@elements/Bret/Bret';
+import { InteractiveReversal } from '@elements/Reversal/Reversal';
 
 function OrbitingReversals({ count = 4, radius = 2, speed = 0.25 }) {
   const group = useRef();

@@ -5,7 +5,7 @@ import { RigidBody, interactionGroups } from '@react-three/rapier';
 
 import * as THREE from 'three';
 
-import { PhysicalSingleRock, ROCK_VARIANT_COUNT } from '@elements/rocks/Rocks';
+import { PhysicalSingleRock, ROCK_VARIANT_COUNT } from '@elements/Rocks/Rocks';
 
 import useRockStore from '../hooks/useRockStore';
 import {

@@ -12,14 +12,14 @@ import {
   applyRetroColorDepth,
   applyRetroScanlines,
   applyRetroVignette,
-} from '@materials/webGPU/crt/retroEffectNodes';
-import applySecurityCamOverlay from '@materials/webGPU/crt/securityCamOverlayNode';
+} from '@materials/WebGPU/crt/retroEffectNodes';
+import applySecurityCamOverlay from '@materials/WebGPU/crt/securityCamOverlayNode';
 import {
   DEFAULT_AISLE_LABEL,
   createSecurityCamTimestampTexture,
   drawSecurityCamTimestamp,
   resolveSurveillanceFrameBounds,
-} from '@materials/webGPU/crt/surveillanceHUD';
+} from '@materials/WebGPU/crt/surveillanceHUD';
 
 export const SINGULARITY_BLOOM_LAYER = 11;
 

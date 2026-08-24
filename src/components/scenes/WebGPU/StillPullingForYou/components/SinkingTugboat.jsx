@@ -1,6 +1,6 @@
 import React, { useRef } from 'react';
 
-import TugBoat from '@elements/tugboat/TugBoat';
+import TugBoat from '@elements/Tugboat/TugBoat';
 
 import BoatLights from './BoatLights';
 

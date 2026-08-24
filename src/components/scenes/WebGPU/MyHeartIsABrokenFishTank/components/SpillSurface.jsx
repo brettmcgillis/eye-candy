@@ -4,7 +4,7 @@ import { useFrame, useThree } from '@react-three/fiber';
 
 import * as THREE from 'three';
 
-import { FISH_TANK_PANE_KEYS } from '@elements/fishTank/FishTank';
+import { FISH_TANK_PANE_KEYS } from '@elements/FishTank/FishTank';
 
 import { getTableLayout } from '../utils/sceneLayout';
 

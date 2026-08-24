@@ -12,7 +12,7 @@ import { useFrame, useLoader } from '@react-three/fiber';
 
 import * as THREE from 'three';
 
-import Outline from '@postprocessing/webGPU/outline/Outline';
+import Outline from '@postprocessing/WebGPU/outline/Outline';
 
 import ClothMesh from '../cloth/ClothMesh';
 import { pinRing } from '../cloth/pinHelpers';

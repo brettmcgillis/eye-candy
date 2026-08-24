@@ -1,4 +1,4 @@
-import CENTER_STORE_REF_POSITION from '@elements/sevenEleven/sevenElevenAnchors';
+import CENTER_STORE_REF_POSITION from '@elements/SevenEleven/sevenElevenAnchors';
 import {
   AISLE9_CAMERA_SPLINES,
   DEFAULT_AISLE9_CAMERA_SPLINE,

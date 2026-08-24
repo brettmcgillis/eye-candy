@@ -169,12 +169,12 @@ function CameraInfo() {
 Load assets with automatic caching and Suspense integration:
 
 ```jsx
-import { TextureLoader } from 'three';
-import { GLTFLoader } from 'three/examples/jsm/loaders/GLTFLoader';
-
 import { Suspense } from 'react';
 
 import { useLoader } from '@react-three/fiber';
+
+import { TextureLoader } from 'three';
+import { GLTFLoader } from 'three/examples/jsm/loaders/GLTFLoader';
 
 function Model() {
   const gltf = useLoader(GLTFLoader, '/model.glb');
@@ -320,11 +320,11 @@ function AnimatedSphere() {
 ### Pattern 4: Loading GLTF Models
 
 ```jsx
-import { GLTFLoader } from 'three/examples/jsm/loaders/GLTFLoader';
-
 import { Suspense } from 'react';
 
 import { useLoader } from '@react-three/fiber';
+
+import { GLTFLoader } from 'three/examples/jsm/loaders/GLTFLoader';
 
 function Model({ url }) {
   const gltf = useLoader(GLTFLoader, url);
@@ -388,11 +388,11 @@ function Lighting() {
 ### Pattern 6: Instancing (Many Objects)
 
 ```jsx
-import * as THREE from 'three';
-
 import { useMemo, useRef } from 'react';
 
 import { useFrame } from '@react-three/fiber';
+
+import * as THREE from 'three';
 
 function Particles({ count = 1000 }) {
   const meshRef = useRef();
@@ -636,11 +636,11 @@ function AnimatedScene() {
 ### With GSAP
 
 ```jsx
-import gsap from 'gsap';
-
 import { useEffect, useRef } from 'react';
 
 import { useFrame } from '@react-three/fiber';
+
+import gsap from 'gsap';
 
 function AnimatedBox() {
   const meshRef = useRef();

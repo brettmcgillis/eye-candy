@@ -1,8 +1,8 @@
 import React, { memo, useMemo } from 'react';
 
-import { GarbageBag1, GarbageBags1 } from '@elements/garbageBags/GarbageBags';
-import { Litter, Litter2 } from '@elements/litter/Litter';
-import { NewsPaper1 } from '@elements/newsPapers/NewsPapers';
+import { GarbageBag1, GarbageBags1 } from '@elements/GarbageBags/GarbageBags';
+import { Litter, Litter2 } from '@elements/Litter/Litter';
+import { NewsPaper1 } from '@elements/NewsPapers/NewsPapers';
 
 import { createSeededRandom } from '../utils/sceneUtils';
 

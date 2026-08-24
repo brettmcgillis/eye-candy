@@ -7,14 +7,14 @@ import { useFrame } from '@react-three/fiber';
 import * as THREE from 'three';
 import { MarchingCubes as ThreeMarchingCubes } from 'three-stdlib';
 
-import Flame from '@elements/flame/Flame';
-import Smoke2D from '@elements/smoke/Smoke2D';
-import VolumetricSmokeParticles from '@elements/smoke/VolumetricSmokeParticles';
+import Flame from '@elements/Flame/Flame';
+import Smoke2D from '@elements/Smoke/Smoke2D';
+import VolumetricSmokeParticles from '@elements/Smoke/VolumetricSmokeParticles';
 import {
   getSplineWorldOrigin,
   getSplineWorldPoints,
-} from '@elements/splineGroup/splineDefaults';
-import VolumetricFire from '@elements/volumetricFire/VolumetricFire';
+} from '@elements/SplineGroup/splineDefaults';
+import VolumetricFire from '@elements/VolumetricFire/VolumetricFire';
 
 import Candlewick from './Candlewick';
 

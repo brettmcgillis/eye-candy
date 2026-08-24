@@ -11,13 +11,13 @@ import {
   applyRetroColorDepth,
   applyRetroScanlines,
   applyRetroVignette,
-} from '@materials/webGPU/crt/retroEffectNodes';
-import applySecurityCamOverlay from '@materials/webGPU/crt/securityCamOverlayNode';
+} from '@materials/WebGPU/crt/retroEffectNodes';
+import applySecurityCamOverlay from '@materials/WebGPU/crt/securityCamOverlayNode';
 import {
   createSecurityCamTimestampTexture,
   drawSecurityCamTimestamp,
   resolveSurveillanceFrameBounds,
-} from '@materials/webGPU/crt/surveillanceHUD';
+} from '@materials/WebGPU/crt/surveillanceHUD';
 
 const AISLE_LABEL = 'DEPT. OF BIRDS';
 

@@ -1,10 +1,10 @@
 import React from 'react';
 
-import SmokeParticles from '@elements/smoke/SmokeParticles';
-import SmokeVolumeMesh from '@elements/smoke/SmokeVolumeMesh';
-import VolumetricSmokeParticles from '@elements/smoke/VolumetricSmokeParticles';
-import SplineLine from '@elements/spline/SplineLine';
-import SplinePoints from '@elements/spline/SplinePoints';
+import SmokeParticles from '@elements/Smoke/SmokeParticles';
+import SmokeVolumeMesh from '@elements/Smoke/SmokeVolumeMesh';
+import VolumetricSmokeParticles from '@elements/Smoke/VolumetricSmokeParticles';
+import SplineLine from '@elements/Spline/SplineLine';
+import SplinePoints from '@elements/Spline/SplinePoints';
 
 import { SCENE_ROOT_POSITION } from '../utils/sceneData';
 

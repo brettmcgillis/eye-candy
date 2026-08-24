@@ -2,7 +2,7 @@ import React, { useCallback, useMemo, useRef } from 'react';
 
 import * as THREE from 'three';
 
-import ExplodingMaterial from '@materials/webGL/explodingMaterial';
+import ExplodingMaterial from '@materials/WebGL/explodingMaterial';
 
 const Cube = React.memo(function Cube({
   position,

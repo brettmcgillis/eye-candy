@@ -9,20 +9,20 @@ import { useFrame, useThree } from '@react-three/fiber';
 
 import * as THREE from 'three';
 
-import { makeRectRingGeometry } from '@elements/marker/MarkerSquare';
-import FluidMaterial from '@materials/webGL/FluidMaterial/FluidMaterial';
-import useFluidAutoPointers from '@materials/webGL/FluidMaterial/hooks/useFluidAutoPointers';
-import { clamp01 } from '@materials/webGL/FluidMaterial/hooks/useFluidControlHelpers';
-import useFluidHandsConfig from '@materials/webGL/FluidMaterial/hooks/useFluidHandsConfig';
-import useFluidPointerInput from '@materials/webGL/FluidMaterial/hooks/useFluidPointerInput';
-import useFluidRandomSplats from '@materials/webGL/FluidMaterial/hooks/useFluidRandomSplats';
-import useFluidStationarySplats from '@materials/webGL/FluidMaterial/hooks/useFluidStationarySplats';
+import { makeRectRingGeometry } from '@elements/Marker/MarkerSquare';
+import FluidMaterial from '@materials/WebGL/FluidMaterial/FluidMaterial';
+import useFluidAutoPointers from '@materials/WebGL/FluidMaterial/hooks/useFluidAutoPointers';
+import { clamp01 } from '@materials/WebGL/FluidMaterial/hooks/useFluidControlHelpers';
+import useFluidHandsConfig from '@materials/WebGL/FluidMaterial/hooks/useFluidHandsConfig';
+import useFluidPointerInput from '@materials/WebGL/FluidMaterial/hooks/useFluidPointerInput';
+import useFluidRandomSplats from '@materials/WebGL/FluidMaterial/hooks/useFluidRandomSplats';
+import useFluidStationarySplats from '@materials/WebGL/FluidMaterial/hooks/useFluidStationarySplats';
 import {
   DEBUG_CONTACT_CAP,
   DEBUG_CONTACT_TTL_DEFAULT,
   DEBUG_POINTER_CAP,
   MAX_RANDOM_SPLATS,
-} from '@materials/webGL/FluidMaterial/utils/constants';
+} from '@materials/WebGL/FluidMaterial/utils/constants';
 import { FluidHandsBridge } from '@modules/handTracking';
 
 import useFluidControls from './hooks/useFluidControls';

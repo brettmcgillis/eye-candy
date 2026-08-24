@@ -4,8 +4,8 @@ import { useTexture } from '@react-three/drei';
 
 import * as THREE from 'three/webgpu';
 
-import ClothMesh from '@elements/webgpu/cloth/ClothMesh';
-import { pinEdge } from '@elements/webgpu/cloth/pinHelpers';
+import ClothMesh from '@elements/WebGPU/cloth/ClothMesh';
+import { pinEdge } from '@elements/WebGPU/cloth/pinHelpers';
 
 function BangFlagCloth({ config, texture = null }) {
   const pins = useMemo(

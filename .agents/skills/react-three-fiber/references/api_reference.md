@@ -327,11 +327,11 @@ useLoader.clear<T>(
 **Examples**:
 
 ```jsx
+import { useLoader } from '@react-three/fiber';
+
 import { GLTFLoader, TextureLoader } from 'three';
 // Loader extensions (e.g., DRACO compression)
 import { DRACOLoader } from 'three/examples/jsm/loaders/DRACOLoader';
-
-import { useLoader } from '@react-three/fiber';
 
 // Load texture
 function TexturedBox() {
@@ -431,10 +431,10 @@ useGraph(object: Object3D): {
 **Example**:
 
 ```jsx
-import { GLTFLoader } from 'three';
-
 import { useLoader } from '@react-three/fiber';
 import { useGraph } from '@react-three/fiber';
+
+import { GLTFLoader } from 'three';
 
 function Model() {
   const gltf = useLoader(GLTFLoader, '/model.glb');

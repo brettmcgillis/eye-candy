@@ -1,6 +1,6 @@
 import React, { useEffect } from 'react';
 
-import BaseGhostCharacter from '@elements/webgpu/ghost/GhostCharacter';
+import BaseGhostCharacter from '@elements/WebGPU/ghost/GhostCharacter';
 import { useGame } from '@modules/ecctrl';
 
 const defaultAnimationSet = {

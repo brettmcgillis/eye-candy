@@ -1,11 +1,11 @@
 /* eslint-disable react/no-array-index-key */
 import React from 'react';
 
-import { FilledSquare, OutlinedSquare } from '@elements/marker/MarkerSquare';
+import { FilledSquare, OutlinedSquare } from '@elements/Marker/MarkerSquare';
 import {
   markerWorldSize,
   uvToConstrainedWorld,
-} from '@elements/marker/markerUtils';
+} from '@elements/Marker/markerUtils';
 
 const DEG_TO_RAD = Math.PI / 180;
 const DIAMOND_TILT = Math.PI / 4;

@@ -10,7 +10,7 @@ import {
   DumpsterLeftLid,
   DumpsterRightLid,
   DumpsterShell,
-} from '@elements/dumpster/Dumpster';
+} from '@elements/Dumpster/Dumpster';
 
 import useTrashBlasterStore from '../hooks/useTrashBlasterStore';
 

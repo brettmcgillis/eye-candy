@@ -4,8 +4,8 @@ import { useFrame } from '@react-three/fiber';
 
 import * as THREE from 'three';
 
-import ClothMesh from '@elements/webgpu/cloth/ClothMesh';
-import { pinRing } from '@elements/webgpu/cloth/pinHelpers';
+import ClothMesh from '@elements/WebGPU/cloth/ClothMesh';
+import { pinRing } from '@elements/WebGPU/cloth/pinHelpers';
 
 // Ghost cloth parameters (derived from ghostCloth preset)
 const SEG_X = 28;

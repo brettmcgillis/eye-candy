@@ -8,13 +8,13 @@ import {
   cloneFireAndSmokeControlPoints,
   makeFireAndSmokeConfig,
   makeFireAndSmokeSmokeConfig,
-} from '@elements/fireAndSmoke/fireAndSmokeDefaults';
+} from '@elements/FireAndSmoke/fireAndSmokeDefaults';
 import {
   DEFAULT_SPLINE_CONFIG,
   cloneSplinePoints,
   parsePreset,
   serializeSplines,
-} from '@elements/splineGroup/splineDefaults';
+} from '@elements/SplineGroup/splineDefaults';
 import {
   buildFireAndSmokeControls,
   buildSplineInstanceActions,

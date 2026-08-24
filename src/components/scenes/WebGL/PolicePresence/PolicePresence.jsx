@@ -5,17 +5,17 @@ import { useFrame } from '@react-three/fiber';
 
 import { MathUtils } from 'three';
 
-import CinderBlock1 from '@elements/cinderblocks/CinderBlock1';
-import CinderBlock2 from '@elements/cinderblocks/CinderBlock2';
-import CinderBlock3 from '@elements/cinderblocks/CinderBlock3';
-import CinderBlock4 from '@elements/cinderblocks/CinderBlock4';
-import PoliceCruiser from '@elements/policeCruiser/PoliceCruiser';
-import SmokeParticles from '@elements/smoke/SmokeParticles';
+import CinderBlock1 from '@elements/Cinderblocks/CinderBlock1';
+import CinderBlock2 from '@elements/Cinderblocks/CinderBlock2';
+import CinderBlock3 from '@elements/Cinderblocks/CinderBlock3';
+import CinderBlock4 from '@elements/Cinderblocks/CinderBlock4';
+import PoliceCruiser from '@elements/PoliceCruiser/PoliceCruiser';
+import SmokeParticles from '@elements/Smoke/SmokeParticles';
 import {
   getSplineWorldOrigin,
   getSplineWorldPoints,
-} from '@elements/splineGroup/splineDefaults';
-import VolumetricFire from '@elements/volumetricFire/VolumetricFire';
+} from '@elements/SplineGroup/splineDefaults';
+import VolumetricFire from '@elements/VolumetricFire/VolumetricFire';
 import POLICE_PRESENCE_FIRE from '@presets/fire/policePresenceFire';
 
 import useSceneControls from './hooks/useSceneControls';

@@ -3,7 +3,7 @@ import React, { memo, useRef } from 'react';
 import { Environment } from '@react-three/drei';
 
 import { CameraRig } from '@modules/cameraRig';
-import Godrays from '@postprocessing/webGPU/godrays/Godrays';
+import Godrays from '@postprocessing/WebGPU/godrays/Godrays';
 
 import ButtonOverlay from './components/ButtonOverlay';
 import CenterLight from './components/CenterLight';

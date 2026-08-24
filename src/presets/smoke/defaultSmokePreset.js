@@ -3,7 +3,7 @@ import * as THREE from 'three';
 import {
   cloneFireAndSmokeControlPoints,
   makeFireAndSmokeSmokeConfig,
-} from '@elements/fireAndSmoke/fireAndSmokeDefaults';
+} from '@elements/FireAndSmoke/fireAndSmokeDefaults';
 
 import { makeSpline } from '../splineAuthoring';
 

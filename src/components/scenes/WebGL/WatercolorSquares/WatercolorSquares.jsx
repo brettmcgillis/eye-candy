@@ -3,14 +3,14 @@ import React, { useCallback, useMemo, useRef } from 'react';
 import { OrthographicCamera } from '@react-three/drei';
 import { useThree } from '@react-three/fiber';
 
-import { designToFluidUV } from '@elements/marker/markerUtils';
-import FluidMaterial from '@materials/webGL/FluidMaterial/FluidMaterial';
-import useFluidAutoPointers from '@materials/webGL/FluidMaterial/hooks/useFluidAutoPointers';
-import useFluidHandsConfig from '@materials/webGL/FluidMaterial/hooks/useFluidHandsConfig';
-import useFluidPointerInput from '@materials/webGL/FluidMaterial/hooks/useFluidPointerInput';
-import useFluidRandomSplats from '@materials/webGL/FluidMaterial/hooks/useFluidRandomSplats';
-import useFluidStationarySplats from '@materials/webGL/FluidMaterial/hooks/useFluidStationarySplats';
-import { MAX_RANDOM_SPLATS } from '@materials/webGL/FluidMaterial/utils/constants';
+import { designToFluidUV } from '@elements/Marker/markerUtils';
+import FluidMaterial from '@materials/WebGL/FluidMaterial/FluidMaterial';
+import useFluidAutoPointers from '@materials/WebGL/FluidMaterial/hooks/useFluidAutoPointers';
+import useFluidHandsConfig from '@materials/WebGL/FluidMaterial/hooks/useFluidHandsConfig';
+import useFluidPointerInput from '@materials/WebGL/FluidMaterial/hooks/useFluidPointerInput';
+import useFluidRandomSplats from '@materials/WebGL/FluidMaterial/hooks/useFluidRandomSplats';
+import useFluidStationarySplats from '@materials/WebGL/FluidMaterial/hooks/useFluidStationarySplats';
+import { MAX_RANDOM_SPLATS } from '@materials/WebGL/FluidMaterial/utils/constants';
 import { FluidHandsBridge } from '@modules/handTracking';
 
 import WatercolorMarkerLayer from './components/WatercolorMarkerLayer';

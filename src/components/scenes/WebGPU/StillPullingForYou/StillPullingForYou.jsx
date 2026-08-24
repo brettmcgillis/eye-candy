@@ -9,11 +9,11 @@ import React, {
 import { OrbitControls, PerspectiveCamera } from '@react-three/drei';
 import { useThree } from '@react-three/fiber';
 
-import SplineGroup from '@elements/splineGroup/SplineGroup';
-import { getSplineWorldPoints } from '@elements/splineGroup/splineDefaults';
-import NurbsWaterColumn from '@elements/water/NurbsWaterColumn';
-import useNurbsWaterInteractionRuntime from '@elements/water/waterInteraction';
-import BloomFX from '@postprocessing/webGPU/bloom/Bloom';
+import SplineGroup from '@elements/SplineGroup/SplineGroup';
+import { getSplineWorldPoints } from '@elements/SplineGroup/splineDefaults';
+import NurbsWaterColumn from '@elements/Water/NurbsWaterColumn';
+import useNurbsWaterInteractionRuntime from '@elements/Water/waterInteraction';
+import BloomFX from '@postprocessing/WebGPU/bloom/Bloom';
 import STILL_PULLING_FOR_YOU_SMOKE from '@presets/smoke/stillPullingForYouSmoke';
 
 import CursorAttractor from './components/CursorAttractor';

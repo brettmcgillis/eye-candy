@@ -2,7 +2,7 @@ import React, { memo, useEffect, useState } from 'react';
 
 import * as THREE from 'three/webgpu';
 
-import Attractors from '@elements/attractors/Attractors';
+import Attractors from '@elements/Attractors/Attractors';
 
 import { PHYSICAL_ATTRACTORS_MODE } from '../utils/modes';
 import { MAX_PHYSICAL_ATTRACTORS } from '../utils/physicalAttractors';

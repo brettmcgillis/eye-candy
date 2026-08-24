@@ -3,7 +3,7 @@ import { folder, useControls } from 'leva';
 import {
   MAX_SKINNED_STRANDS,
   MAX_STATIC_STRANDS,
-} from '@elements/fur/furUtils';
+} from '@elements/Fur/furUtils';
 import usePresetsFolder from '@hooks/usePresetsFolder';
 
 import {

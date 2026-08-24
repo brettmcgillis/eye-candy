@@ -3,7 +3,7 @@ import React, { useCallback, useRef } from 'react';
 
 import { useFrame } from '@react-three/fiber';
 
-import BugSparkles from '@elements/BugSparkles';
+import BugSparkles from '@elements/BugSparkles/BugSparkles';
 
 const BLOOM_LAYER = 1;
 

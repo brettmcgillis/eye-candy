@@ -1,0 +1,244 @@
+.gltf-workbench-page {
+  padding-bottom: 1rem;
+}
+
+.gltf-workbench-page__tabs {
+  display: flex;
+  gap: 0.25rem;
+  margin-bottom: 0.65rem;
+  overflow-x: auto;
+  border-bottom: 1px solid var(--dev-border);
+}
+
+.gltf-workbench-page__tab {
+  min-height: 2rem;
+  padding: 0.35rem 0.65rem;
+  border: 0;
+  border-bottom: 2px solid transparent;
+  background: transparent;
+  color: var(--dev-text-secondary);
+  cursor: pointer;
+  font-size: 0.78rem;
+  font-weight: 650;
+  white-space: nowrap;
+}
+
+.gltf-workbench-page__tab:hover {
+  color: var(--dev-text);
+  background: rgba(255, 255, 255, 0.45);
+}
+
+.gltf-workbench-page__tab--active {
+  border-bottom-color: var(--dev-text);
+  color: var(--dev-text);
+}
+
+.gltf-workbench-page__tab-content--hidden {
+  display: none;
+}
+
+.gltf-workbench-page__layout,
+.gltf-workbench-page__tab-content > div {
+  display: grid !important;
+  grid-template-columns: minmax(18rem, 24rem) minmax(0, 1fr) !important;
+  align-items: start !important;
+  gap: 0.65rem !important;
+}
+
+.gltf-workbench-page__layout--hidden {
+  display: none !important;
+}
+
+.gltf-workbench-page__sidebar,
+.gltf-workbench-page__tab-content > div > div:first-child {
+  position: sticky !important;
+  top: 0.5rem !important;
+  display: grid !important;
+  align-self: start !important;
+  gap: 0.5rem !important;
+  max-height: calc(100vh - 1rem) !important;
+  padding-right: 0.15rem !important;
+  overflow-y: auto !important;
+  overscroll-behavior: contain;
+  min-width: 0 !important;
+  max-width: 100% !important;
+  overflow-x: hidden !important;
+}
+
+.gltf-workbench-page__main,
+.gltf-workbench-page__tab-content > div > div:last-child {
+  display: grid !important;
+  gap: 0.5rem !important;
+  min-width: 0;
+}
+
+.gltf-workbench-page section,
+.gltf-workbench-page__code-panel {
+  min-width: 0 !important;
+  max-width: 100% !important;
+  padding: 0.6rem !important;
+  border: 1px solid var(--dev-border) !important;
+  border-radius: var(--dev-radius) !important;
+  background: var(--dev-surface) !important;
+  box-shadow: var(--dev-shadow) !important;
+}
+
+.gltf-workbench-page section h2,
+.gltf-workbench-page__code-panel h2 {
+  margin: 0 !important;
+  color: var(--dev-text-secondary) !important;
+  font-size: 0.72rem !important;
+  font-weight: 750 !important;
+  letter-spacing: 0.07em !important;
+  line-height: 1.2 !important;
+  text-transform: uppercase !important;
+}
+
+.gltf-workbench-page section h2 + p {
+  margin: 0.3rem 0 0 !important;
+  color: var(--dev-text-muted) !important;
+  font-size: 0.75rem !important;
+  line-height: 1.35 !important;
+}
+
+.gltf-workbench-page section > div,
+.gltf-workbench-page section > p + div {
+  gap: 0.45rem !important;
+}
+
+.gltf-workbench-page__field {
+  min-width: 0 !important;
+  max-width: 100% !important;
+  gap: 0.2rem !important;
+}
+
+.gltf-workbench-page__label-row {
+  min-width: 0;
+  gap: 0.5rem !important;
+}
+
+.gltf-workbench-page__label {
+  color: var(--dev-text) !important;
+  font-size: 0.75rem !important;
+  font-weight: 650 !important;
+}
+
+.gltf-workbench-page__hint {
+  color: var(--dev-text-muted) !important;
+  font-size: 0.68rem !important;
+  line-height: 1.3 !important;
+}
+
+.gltf-workbench-page__toggle {
+  min-width: 0 !important;
+  max-width: 100% !important;
+  gap: 0.45rem !important;
+  padding: 0.4rem 0.5rem !important;
+  border: 1px solid var(--dev-border) !important;
+  border-radius: 4px !important;
+  background: var(--dev-surface-subtle) !important;
+}
+
+.gltf-workbench-page__toggle-label {
+  display: inline-flex !important;
+  min-width: 0;
+  align-items: center;
+  gap: 0.3rem;
+}
+
+.gltf-workbench-page__sidebar > *,
+.gltf-workbench-page__tab-content > div > div:first-child > *,
+.gltf-workbench-page section > *,
+.gltf-workbench-page section select,
+.gltf-workbench-page section textarea,
+.gltf-workbench-page section input:not([type='checkbox']):not([type='range']) {
+  min-width: 0 !important;
+  max-width: 100% !important;
+}
+
+.gltf-workbench-page__sidebar *,
+.gltf-workbench-page__tab-content > div > div:first-child * {
+  min-width: 0;
+}
+
+.gltf-workbench-page__label-row .dev-tooltip__content {
+  right: 0;
+  left: auto;
+}
+
+.gltf-workbench-page section button,
+.gltf-workbench-page section span,
+.gltf-workbench-page section p {
+  overflow-wrap: anywhere;
+}
+
+.gltf-workbench-page section input:not([type='checkbox']):not([type='range']),
+.gltf-workbench-page section select,
+.gltf-workbench-page section textarea {
+  min-height: 2rem !important;
+  padding: 0.35rem 0.5rem !important;
+  border: 1px solid var(--dev-border-strong) !important;
+  border-radius: 4px !important;
+  background: var(--dev-surface-subtle) !important;
+  color: var(--dev-text) !important;
+  font-size: 0.78rem !important;
+}
+
+.gltf-workbench-page section label,
+.gltf-workbench-page section span {
+  line-height: 1.3;
+}
+
+.gltf-workbench-page section button {
+  min-height: 1.9rem !important;
+  padding: 0.3rem 0.6rem !important;
+  border-radius: 4px !important;
+  font-size: 0.75rem !important;
+  font-weight: 650 !important;
+}
+
+.gltf-workbench-page section .dev-tooltip__trigger {
+  width: 1rem !important;
+  min-width: 1rem !important;
+  height: 1rem !important;
+  min-height: 1rem !important;
+  padding: 0 !important;
+  border-radius: 50% !important;
+  font-size: 0.65rem !important;
+}
+
+.gltf-workbench-page section pre {
+  padding: 0.65rem !important;
+  border-radius: 4px !important;
+  font-family: var(--dev-mono) !important;
+  font-size: 0.72rem !important;
+  line-height: 1.45 !important;
+}
+
+.gltf-workbench-page section [type='checkbox'] {
+  margin-top: 0 !important;
+}
+
+.gltf-workbench-page section [style*='border-radius: 16px'],
+.gltf-workbench-page section [style*='border-radius: 14px'],
+.gltf-workbench-page section [style*='border-radius: 10px'] {
+  border-radius: 4px !important;
+}
+
+.gltf-workbench-page section [style*='padding: 0.8rem'],
+.gltf-workbench-page section [style*='padding: 0.65rem'] {
+  padding: 0.4rem 0.5rem !important;
+}
+
+@media (max-width: 900px) {
+  .gltf-workbench-page__layout,
+  .gltf-workbench-page__tab-content > div {
+    grid-template-columns: 1fr !important;
+  }
+
+  .gltf-workbench-page__sidebar,
+  .gltf-workbench-page__tab-content > div > div:first-child {
+    position: static !important;
+    max-height: none !important;
+  }
+}

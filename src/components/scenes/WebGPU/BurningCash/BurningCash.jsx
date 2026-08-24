@@ -4,7 +4,7 @@ import { useFrame } from '@react-three/fiber';
 
 import ScatteredCash from '@elements/ScatteredCash/ScatteredCash';
 import { CameraRig } from '@modules/cameraRig';
-import Bloom from '@postprocessing/webGPU/bloom/Bloom';
+import Bloom from '@postprocessing/WebGPU/bloom/Bloom';
 
 import BillPallet, {
   computePalletBox,

@@ -1,7 +1,7 @@
 import React, { useCallback, useMemo } from 'react';
 
-import SplineLine from '@elements/spline/SplineLine';
-import SplinePoints from '@elements/spline/SplinePoints';
+import SplineLine from '@elements/Spline/SplineLine';
+import SplinePoints from '@elements/Spline/SplinePoints';
 
 function getSplineColors(splineIndex) {
   const hue = (splineIndex * 72) % 360;

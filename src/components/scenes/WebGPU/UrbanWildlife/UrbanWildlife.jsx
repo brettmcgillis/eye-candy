@@ -3,7 +3,7 @@ import React, { useMemo, useRef } from 'react';
 import { useFrame } from '@react-three/fiber';
 
 import { CameraRig } from '@modules/cameraRig';
-import Bloom from '@postprocessing/webGPU/bloom/Bloom';
+import Bloom from '@postprocessing/WebGPU/bloom/Bloom';
 
 import PosedRaccoon from './components/PosedRaccoon';
 import Streetlight from './components/Streetlight';

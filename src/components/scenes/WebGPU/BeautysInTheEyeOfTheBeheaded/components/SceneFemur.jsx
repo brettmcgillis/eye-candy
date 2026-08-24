@@ -1,6 +1,6 @@
 import React, { memo, useMemo } from 'react';
 
-import Femur from '@elements/femur/Femur';
+import Femur from '@elements/Femur/Femur';
 import { radians } from '@utils/math';
 
 const SceneFemur = memo(function SceneFemur({ position, rotation, scale }) {

@@ -78,11 +78,11 @@ useGLTF.preload('/models/animated.glb');
 ### Model with Material Override
 
 ```jsx
-import * as THREE from 'three';
-
 import { useEffect } from 'react';
 
 import { useGLTF } from '@react-three/drei';
+
+import * as THREE from 'three';
 
 function ModelWithCustomMaterial({ url }) {
   const { scene } = useGLTF(url);
@@ -112,8 +112,6 @@ function ModelWithCustomMaterial({ url }) {
 ## 2. Interactive Product Viewer
 
 ```jsx
-import { useControls } from 'leva';
-
 import { useRef, useState } from 'react';
 
 import {
@@ -124,6 +122,8 @@ import {
   useGLTF,
 } from '@react-three/drei';
 import { Canvas, useFrame } from '@react-three/fiber';
+
+import { useControls } from 'leva';
 
 function Product({ url }) {
   const { scene } = useGLTF(url);
@@ -249,12 +249,12 @@ export default function ScrollAnimation() {
 ### Syncing with GSAP ScrollTrigger
 
 ```jsx
-import gsap from 'gsap';
-import { ScrollTrigger } from 'gsap/ScrollTrigger';
-
 import { useEffect, useRef } from 'react';
 
 import { useFrame, useThree } from '@react-three/fiber';
+
+import gsap from 'gsap';
+import { ScrollTrigger } from 'gsap/ScrollTrigger';
 
 gsap.registerPlugin(ScrollTrigger);
 
@@ -304,11 +304,11 @@ function ScrollSyncedBox() {
 ### Instanced Particles
 
 ```jsx
-import * as THREE from 'three';
-
 import { useMemo, useRef } from 'react';
 
 import { useFrame } from '@react-three/fiber';
+
+import * as THREE from 'three';
 
 export default function Particles({ count = 5000 }) {
   const meshRef = useRef();
@@ -397,10 +397,10 @@ export default function Text3D() {
 ### Text with Gradient Material
 
 ```jsx
-import * as THREE from 'three';
-
 import { Text, shaderMaterial } from '@react-three/drei';
 import { extend } from '@react-three/fiber';
+
+import * as THREE from 'three';
 
 const GradientMaterial = shaderMaterial(
   { uTime: 0 },
@@ -548,11 +548,11 @@ export default function PhysicsScene() {
 ### Smooth Camera Movement
 
 ```jsx
-import * as THREE from 'three';
-
 import { useRef } from 'react';
 
 import { useFrame, useThree } from '@react-three/fiber';
+
+import * as THREE from 'three';
 
 export default function CameraRig({ children }) {
   const ref = useRef();
@@ -576,12 +576,12 @@ export default function CameraRig({ children }) {
 ### Camera Path Animation
 
 ```jsx
-import gsap from 'gsap';
-import * as THREE from 'three';
-
 import { useEffect, useRef } from 'react';
 
 import { useThree } from '@react-three/fiber';
+
+import gsap from 'gsap';
+import * as THREE from 'three';
 
 export default function CameraPath() {
   const { camera } = useThree();
@@ -627,11 +627,11 @@ export default function CameraPath() {
 ## 9. LOD (Level of Detail)
 
 ```jsx
-import * as THREE from 'three';
-
 import { useMemo } from 'react';
 
 import { useThree } from '@react-three/fiber';
+
+import * as THREE from 'three';
 
 export default function LODMesh({ position }) {
   const { camera } = useThree();

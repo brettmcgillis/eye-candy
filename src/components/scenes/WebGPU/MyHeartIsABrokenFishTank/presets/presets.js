@@ -2,7 +2,7 @@ import {
   DEFAULT_WOOD_FINISH,
   DEFAULT_WOOD_GENUS,
   getWoodMaterialPresetValues,
-} from '@materials/webGPU/WoodMaterial';
+} from '@materials/WebGPU/WoodMaterial';
 
 const DEFAULT_TABLE_WOOD = getWoodMaterialPresetValues(
   DEFAULT_WOOD_GENUS,

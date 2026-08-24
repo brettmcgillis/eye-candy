@@ -4,7 +4,7 @@ import { useTexture } from '@react-three/drei';
 
 import * as THREE from 'three/webgpu';
 
-import WebGPUProjectorLight from '@elements/webgpu/lights/WebGPUProjectorLight';
+import WebGPUProjectorLight from '@elements/WebGPU/lights/WebGPUProjectorLight';
 import { textureFile } from '@utils/appUtils';
 import { radians } from '@utils/math';
 

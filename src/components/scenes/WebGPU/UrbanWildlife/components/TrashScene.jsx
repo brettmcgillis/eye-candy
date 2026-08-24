@@ -1,11 +1,11 @@
 import React from 'react';
 
+import { GarbageBag1, GarbageBags1 } from '@elements/GarbageBags/GarbageBags';
+import { Litter, Litter2 } from '@elements/Litter/Litter';
+import { NewsPaper1 } from '@elements/NewsPapers/NewsPapers';
 import Trashcan1 from '@elements/Trashcan1/Trashcan1';
 import Trashcan2 from '@elements/Trashcan2/Trashcan2';
 import Trashcan4 from '@elements/Trashcan4/Trashcan4';
-import { GarbageBag1, GarbageBags1 } from '@elements/garbageBags/GarbageBags';
-import { Litter, Litter2 } from '@elements/litter/Litter';
-import { NewsPaper1 } from '@elements/newsPapers/NewsPapers';
 
 // Composes the shared element components into the scene's trash pile. The garbage
 // bags / soda can bake their own scale, so they only need placement here. The four

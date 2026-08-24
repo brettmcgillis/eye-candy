@@ -6,6 +6,7 @@ import AbandonedCar from '@elements/AbandonedCar/AbandonedCar';
 import AbandonedChildrensSlide from '@elements/AbandonedChildrensSlide/AbandonedChildrensSlide';
 import AbandonedHouse from '@elements/AbandonedHouse/AbandonedHouse';
 import AbandonedPlayground from '@elements/AbandonedPlayground/AbandonedPlayground';
+import Bret from '@elements/Bret/Bret';
 import BrokenConcreteDebris, {
   DebrisPiece,
 } from '@elements/BrokenConcreteDebris/BrokenConcreteDebris';
@@ -13,11 +14,10 @@ import CrashedAbandonedCar from '@elements/CrashedAbandonedCar/CrashedAbandonedC
 import DamagedChainlinkFenceSegments, {
   FenceSegment,
 } from '@elements/DamagedChainlinkFenceSegments/DamagedChainlinkFenceSegments';
+import FireAndSmoke from '@elements/FireAndSmoke/FireAndSmoke';
 import RuinArch from '@elements/RuinArch/RuinArch';
 import RuinArchBroken from '@elements/RuinArchBroken/RuinArchBroken';
 import ShippingContainer from '@elements/ShippingContainer/ShippingContainer';
-import Bret from '@elements/bret/Bret';
-import FireAndSmoke from '@elements/fireAndSmoke/FireAndSmoke';
 
 import { getSetting, pickAnchor, rollChunkSetting } from '../utils/settings';
 

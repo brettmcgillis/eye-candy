@@ -18,8 +18,8 @@ import {
   getStationarySplatsFromPreset,
   notifyArrayUpdate,
   rndPos,
-} from '@materials/webGL/FluidMaterial/hooks/useFluidControlHelpers';
-import { MAX_RANDOM_SPLATS } from '@materials/webGL/FluidMaterial/utils/constants';
+} from '@materials/WebGL/FluidMaterial/hooks/useFluidControlHelpers';
+import { MAX_RANDOM_SPLATS } from '@materials/WebGL/FluidMaterial/utils/constants';
 
 import { DEFAULT_PRESET, WATERCOLOR_SQUARES_PRESETS } from '../presets/presets';
 

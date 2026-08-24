@@ -1,8 +1,8 @@
 import React, { memo } from 'react';
 
-import SmokeParticles from '@elements/smoke/SmokeParticles';
-import { getSplineWorldOrigin } from '@elements/splineGroup/splineDefaults';
-import VolumetricFire from '@elements/volumetricFire/VolumetricFire';
+import SmokeParticles from '@elements/Smoke/SmokeParticles';
+import { getSplineWorldOrigin } from '@elements/SplineGroup/splineDefaults';
+import VolumetricFire from '@elements/VolumetricFire/VolumetricFire';
 
 function EngineFire({
   leftEngineMainFire,

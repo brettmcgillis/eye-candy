@@ -3,7 +3,7 @@ import React, { useMemo } from 'react';
 
 import * as THREE from 'three';
 
-import Halo from '@elements/halo/Halo';
+import Halo from '@elements/Halo/Halo';
 import getColorsInRange from '@utils/colors';
 
 const LAYER_COUNT = 5;

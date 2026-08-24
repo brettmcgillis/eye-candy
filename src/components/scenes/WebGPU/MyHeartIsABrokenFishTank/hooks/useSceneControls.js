@@ -7,7 +7,7 @@ import {
   WOOD_FINISH_OPTIONS,
   WOOD_GENUS_OPTIONS,
   getWoodMaterialPresetValues,
-} from '@materials/webGPU/WoodMaterial';
+} from '@materials/WebGPU/WoodMaterial';
 
 import SCENE_PRESETS from '../presets/presets';
 import sceneData from '../utils/sceneData';

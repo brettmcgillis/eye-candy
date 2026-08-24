@@ -11,7 +11,7 @@ import {
 } from 'three/tsl';
 import * as THREE from 'three/webgpu';
 
-import { signedPerlinApprox } from '@elements/perlinNoiseBall/perlinNoiseNodes';
+import { signedPerlinApprox } from '@elements/PerlinNoiseBall/perlinNoiseNodes';
 
 const GrassPatchGPU = forwardRef(function GrassPatchGPU(
   { colorDark, colorLight, floorY, geometry },

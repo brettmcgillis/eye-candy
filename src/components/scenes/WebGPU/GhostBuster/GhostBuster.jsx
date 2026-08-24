@@ -10,8 +10,8 @@ import { useFrame } from '@react-three/fiber';
 
 import * as THREE from 'three';
 
-import GhostCharacter from '@elements/webgpu/ghost/GhostCharacter';
-import { GridMaterial } from '@materials/webGPU/gridMaterial';
+import GhostCharacter from '@elements/WebGPU/ghost/GhostCharacter';
+import { GridMaterial } from '@materials/WebGPU/gridMaterial';
 
 import GhostPlacard from './components/GhostPlacard';
 import useAnimationInput from './hooks/useAnimationInput';

@@ -5,7 +5,7 @@ import { useThree } from '@react-three/fiber';
 import { Color } from 'three';
 
 import { CameraRig } from '@modules/cameraRig';
-import Godrays from '@postprocessing/webGPU/godrays/Godrays';
+import Godrays from '@postprocessing/WebGPU/godrays/Godrays';
 
 import PrayerCluster from './components/PrayerCluster';
 import SceneLighting from './components/SceneLighting';

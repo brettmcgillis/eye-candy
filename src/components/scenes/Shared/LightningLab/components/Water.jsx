@@ -1,6 +1,6 @@
 import React from 'react';
 
-import NurbsWaterColumn from '@elements/water/NurbsWaterColumn';
+import NurbsWaterColumn from '@elements/Water/NurbsWaterColumn';
 
 import {
   WATER_DEPTH,

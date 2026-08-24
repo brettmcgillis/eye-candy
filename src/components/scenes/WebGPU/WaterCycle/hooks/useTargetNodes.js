@@ -1,7 +1,7 @@
 import { useMemo } from 'react';
 
-import { useBretNodes } from '@elements/bret/Bret';
-import { useReversalNodes } from '@elements/reversal/Reversal';
+import { useBretNodes } from '@elements/Bret/Bret';
+import { useReversalNodes } from '@elements/Reversal/Reversal';
 
 import { MODEL_TARGETS } from '../utils/targetGeometry';
 

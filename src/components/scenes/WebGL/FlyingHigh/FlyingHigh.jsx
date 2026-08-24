@@ -3,9 +3,9 @@ import React, { useMemo } from 'react';
 import { OrbitControls, PerspectiveCamera } from '@react-three/drei';
 import { Bloom, EffectComposer } from '@react-three/postprocessing';
 
-import Boeing737 from '@elements/boeing737/Boeing737';
-import Moon from '@elements/moon/Moon';
-import { getSplineWorldPoints } from '@elements/splineGroup/splineDefaults';
+import Boeing737 from '@elements/Boeing737/Boeing737';
+import Moon from '@elements/Moon/Moon';
+import { getSplineWorldPoints } from '@elements/SplineGroup/splineDefaults';
 import FLYING_HIGH_FIRE from '@presets/fire/flyingHighFire';
 
 import EngineFire from './components/EngineFire';

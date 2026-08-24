@@ -2,8 +2,8 @@ import React, { Suspense, forwardRef, memo, useMemo } from 'react';
 
 import { useTexture } from '@react-three/drei';
 
-import ClothMesh from '@elements/webgpu/cloth/ClothMesh';
-import { pinEdge } from '@elements/webgpu/cloth/pinHelpers';
+import ClothMesh from '@elements/WebGPU/cloth/ClothMesh';
+import { pinEdge } from '@elements/WebGPU/cloth/pinHelpers';
 
 const FLAG_TOP_Y = 0.9;
 

@@ -3,18 +3,18 @@ import React, { useMemo } from 'react';
 import CRTBlueScreenMaterial, {
   TerminalSetting,
   VHSSetting,
-} from '@materials/webGL/crt/crtBlueScreenMaterial';
-import CRTSceneInSceneMaterial from '@materials/webGL/crt/crtSceneInSceneMaterial';
-import CRTSceneMaterial from '@materials/webGL/crt/crtSceneMaterial';
-import CRTShowMaterial from '@materials/webGL/crt/crtShowMaterial';
-import CRTSmtpeStaticMaterial from '@materials/webGL/crt/crtSmtpeStaticMaterial';
-import CRTStaticMaterial from '@materials/webGL/crt/crtStaticMaterial';
-import CRTBlueScreenWebGPU from '@materials/webGPU/crt/crtBlueScreenMaterial';
-import CRTSceneInSceneWebGPU from '@materials/webGPU/crt/crtSceneInSceneMaterial';
-import CRTSceneWebGPU from '@materials/webGPU/crt/crtSceneMaterial';
-import CRTShowWebGPU from '@materials/webGPU/crt/crtShowMaterial';
-import CRTSmtpeStaticWebGPU from '@materials/webGPU/crt/crtSmtpeStaticMaterial';
-import CRTStaticWebGPU from '@materials/webGPU/crt/crtStaticMaterial';
+} from '@materials/WebGL/crt/crtBlueScreenMaterial';
+import CRTSceneInSceneMaterial from '@materials/WebGL/crt/crtSceneInSceneMaterial';
+import CRTSceneMaterial from '@materials/WebGL/crt/crtSceneMaterial';
+import CRTShowMaterial from '@materials/WebGL/crt/crtShowMaterial';
+import CRTSmtpeStaticMaterial from '@materials/WebGL/crt/crtSmtpeStaticMaterial';
+import CRTStaticMaterial from '@materials/WebGL/crt/crtStaticMaterial';
+import CRTBlueScreenWebGPU from '@materials/WebGPU/crt/crtBlueScreenMaterial';
+import CRTSceneInSceneWebGPU from '@materials/WebGPU/crt/crtSceneInSceneMaterial';
+import CRTSceneWebGPU from '@materials/WebGPU/crt/crtSceneMaterial';
+import CRTShowWebGPU from '@materials/WebGPU/crt/crtShowMaterial';
+import CRTSmtpeStaticWebGPU from '@materials/WebGPU/crt/crtSmtpeStaticMaterial';
+import CRTStaticWebGPU from '@materials/WebGPU/crt/crtStaticMaterial';
 import { audioFile } from '@utils/appUtils';
 import { STRUDEL_TRACKS } from '@utils/tracks';
 

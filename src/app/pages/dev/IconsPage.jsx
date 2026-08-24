@@ -2,15 +2,16 @@ import React from 'react';
 import { FaBomb } from 'react-icons/fa';
 import { GiBrightExplosion } from 'react-icons/gi';
 import { PiSkullDuotone } from 'react-icons/pi';
-import { Link } from 'react-router-dom';
 
-import { iconFile } from '../../../utils/appUtils';
+import { iconFile } from '@utils/appUtils';
+
 import sceneRegistry, {
   AREAS,
   AREA_ICONS,
   CHANNELS,
-  DEFAULT_SCENE_PATH,
 } from '../../sceneRegistry';
+import DevPageHeaderBar from './DevPageHeaderBar';
+import './IconsPage.css';
 
 const AREA_ICON_ORDER = ['wip', 'testlab', 'toolbox'];
 const AREA_SECTION_ORDER = ['showcase', 'wip', 'toolbox', 'testlab'];
@@ -19,9 +20,9 @@ const CHANNEL_ORDER = ['webgl', 'webgpu'];
 function FireIcon() {
   return (
     <img
+      className="icons-page__icon"
       src={iconFile('fire-icon.svg')}
       alt="Fire"
-      style={{ width: '1em', height: '1em', verticalAlign: 'middle' }}
     />
   );
 }
@@ -36,18 +37,7 @@ function LevaTitleIcon() {
   );
 }
 function ImgIcon({ src, alt }) {
-  return (
-    <img
-      src={iconFile(src)}
-      alt={alt}
-      style={{
-        width: '1em',
-        height: '1em',
-        verticalAlign: 'middle',
-        objectFit: 'contain',
-      }}
-    />
-  );
+  return <img className="icons-page__icon" src={iconFile(src)} alt={alt} />;
 }
 
 const STATIC_SECTIONS = [
@@ -139,23 +129,8 @@ const SECTIONS = [...STATIC_SECTIONS, AREA_SECTION, ...SCENE_SECTIONS];
 function Row({ label, icon: Icon }) {
   return (
     <tr>
-      <td
-        style={{
-          padding: '0.4rem 0.75rem',
-          borderBottom: '1px solid #f3f4f6',
-          fontSize: '0.85rem',
-          color: '#374151',
-        }}
-      >
-        {label}
-      </td>
-      <td
-        style={{
-          padding: '0.4rem 0.75rem',
-          borderBottom: '1px solid #f3f4f6',
-          fontSize: '1.4rem',
-        }}
-      >
+      <td className="icons-page__cell">{label}</td>
+      <td className="icons-page__cell icons-page__cell--icon">
         <Icon />
       </td>
     </tr>
@@ -165,49 +140,12 @@ function Row({ label, icon: Icon }) {
 function Section({ title, rows }) {
   return (
     <>
-      <h2
-        style={{
-          color: '#6b7280',
-          fontSize: '0.85rem',
-          textTransform: 'uppercase',
-          letterSpacing: '0.1em',
-          margin: '2rem 0 0.5rem',
-          borderTop: '1px solid #e5e7eb',
-          paddingTop: '1rem',
-        }}
-      >
-        {title}
-      </h2>
-      <table
-        style={{
-          borderCollapse: 'collapse',
-          width: '100%',
-          maxWidth: 760,
-          marginBottom: '1rem',
-        }}
-      >
+      <h2 className="icons-page__section-title">{title}</h2>
+      <table className="icons-page__table">
         <thead>
           <tr>
-            <th
-              style={{
-                textAlign: 'left',
-                fontSize: '0.75rem',
-                color: '#6b7280',
-                padding: '0.3rem 0.75rem',
-              }}
-            >
-              Scene / Use
-            </th>
-            <th
-              style={{
-                textAlign: 'left',
-                fontSize: '0.75rem',
-                color: '#6b7280',
-                padding: '0.3rem 0.75rem',
-              }}
-            >
-              Icon
-            </th>
+            <th className="icons-page__heading">Scene / Use</th>
+            <th className="icons-page__heading">Icon</th>
           </tr>
         </thead>
         <tbody>
@@ -223,34 +161,8 @@ function Section({ title, rows }) {
 /* ── page ─────────────────────────────────────────────────── */
 export default function IconsPage() {
   return (
-    <div
-      style={{
-        fontFamily: 'system-ui, sans-serif',
-        background: '#ffffff',
-        color: '#111827',
-        padding: '2rem',
-        minHeight: '100vh',
-      }}
-    >
-      <nav style={{ marginBottom: '1.5rem' }}>
-        <Link
-          to="/dev"
-          style={{
-            color: '#6b7280',
-            fontSize: '0.85rem',
-            textDecoration: 'none',
-          }}
-        >
-          ← back to dev
-        </Link>
-      </nav>
-      <h1 style={{ fontSize: '1.2rem', margin: '0 0 0.25rem' }}>
-        Icon Reference
-      </h1>
-      <p style={{ color: '#6b7280', fontSize: '0.8rem', margin: '0 0 0' }}>
-        Scene and area icons come from the registry; UI and custom PNG
-        references stay local to this page.
-      </p>
+    <div className="dev-page icons-page">
+      <DevPageHeaderBar title="Iconography" />
       {SECTIONS.map((s) => (
         <Section key={s.title} {...s} />
       ))}

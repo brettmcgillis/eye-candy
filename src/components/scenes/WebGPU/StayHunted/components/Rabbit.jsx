@@ -1,6 +1,6 @@
 import React, { forwardRef } from 'react';
 
-import RabbitModel from '@elements/rabbit/Rabbit';
+import RabbitModel from '@elements/Rabbit/Rabbit';
 
 const EATING_CLIP_PATTERNS = ['eat', 'graze', 'nibble', 'chew', 'feed', 'idle'];
 

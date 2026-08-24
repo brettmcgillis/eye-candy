@@ -1,6 +1,6 @@
 import React, { useEffect } from 'react';
 
-import LowPolySeal from '@elements/lowPolySeal/LowPolySeal';
+import LowPolySeal from '@elements/LowPolySeal/LowPolySeal';
 import { useGame } from '@modules/ecctrl';
 
 const sealAnimationSet = {

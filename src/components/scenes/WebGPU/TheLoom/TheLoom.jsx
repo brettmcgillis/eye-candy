@@ -4,7 +4,7 @@ import { OrbitControls, PerspectiveCamera } from '@react-three/drei';
 
 import * as THREE from 'three';
 
-import ClothMesh from '@elements/webgpu/cloth/ClothMesh';
+import ClothMesh from '@elements/WebGPU/cloth/ClothMesh';
 
 import useTheLoomControls from './useTheLoomControls';
 

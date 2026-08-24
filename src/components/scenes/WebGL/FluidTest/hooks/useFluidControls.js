@@ -21,13 +21,13 @@ import {
   getStationarySplatsFromPreset,
   notifyArrayUpdate,
   rndPos,
-} from '@materials/webGL/FluidMaterial/hooks/useFluidControlHelpers';
+} from '@materials/WebGL/FluidMaterial/hooks/useFluidControlHelpers';
 import {
   BLEND_MODE_ADDITIVE,
   BLEND_MODE_MULTIPLY,
   BLEND_MODE_SUBTRACTIVE,
   MAX_RANDOM_SPLATS,
-} from '@materials/webGL/FluidMaterial/utils/constants';
+} from '@materials/WebGL/FluidMaterial/utils/constants';
 
 import FLUID_PRESETS from '../fluidPresets';
 

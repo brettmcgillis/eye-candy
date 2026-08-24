@@ -4,7 +4,7 @@ import { useFrame } from '@react-three/fiber';
 
 import * as THREE from 'three/webgpu';
 
-import RcCar from '@elements/models/rcCar/RcCar';
+import RcCar from '@elements/RcCar/RcCar';
 
 // RideableRcCar.jsx establishes the model's own conventions this wrapper
 // has to match: forward is local -Z (`_fwd.set(0, 0, -1)`), up is local +Y,

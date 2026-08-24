@@ -1,7 +1,7 @@
 import { button, folder, useControls } from 'leva';
 
 import usePresetsFolder from '@hooks/usePresetsFolder';
-import { OUTLINE_MODES } from '@postprocessing/webGPU/outline/Outline';
+import { OUTLINE_MODES } from '@postprocessing/WebGPU/outline/Outline';
 
 import { GHOST_TEXTURE_OPTIONS, SCENE_PRESETS } from '../presets/scenePresets';
 

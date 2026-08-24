@@ -5,8 +5,8 @@ import { OrbitControls, PerspectiveCamera } from '@react-three/drei';
 
 import AudioToggleOverlay from '@app/scaffold/overlay/components/AudioToggleOverlay';
 import useLoopedSceneAudio from '@hooks/useLoopedSceneAudio';
-import Bloom from '@postprocessing/webGPU/bloom/Bloom';
-import OutlineFX from '@postprocessing/webGPU/outline/Outline';
+import Bloom from '@postprocessing/WebGPU/bloom/Bloom';
+import OutlineFX from '@postprocessing/WebGPU/outline/Outline';
 
 import FallingLeaves from './components/FallingLeaves';
 import Flag from './components/Flag';

@@ -5,7 +5,7 @@ import { useFrame } from '@react-three/fiber';
 
 import * as THREE from 'three/webgpu';
 
-import Moon from '@elements/moon/Moon';
+import Moon from '@elements/Moon/Moon';
 import { textureFile } from '@utils/appUtils';
 
 const SKY_RADIUS = 900;

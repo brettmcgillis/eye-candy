@@ -1,0 +1,17 @@
+.dev-page-header-bar {
+  display: grid;
+  justify-items: start;
+  gap: 0.3rem;
+  margin-bottom: 0.85rem;
+}
+
+.dev-page-header-bar__back {
+  color: var(--dev-text-muted);
+  font-size: 0.75rem;
+  font-weight: 550;
+  text-decoration: none;
+}
+
+.dev-page-header-bar__back:hover {
+  color: var(--dev-text);
+}

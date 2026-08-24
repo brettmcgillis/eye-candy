@@ -1,7 +1,7 @@
 import React, { useMemo } from 'react';
 
-import ClothMesh from '@elements/webgpu/cloth/ClothMesh';
-import { pinEdge } from '@elements/webgpu/cloth/pinHelpers';
+import ClothMesh from '@elements/WebGPU/cloth/ClothMesh';
+import { pinEdge } from '@elements/WebGPU/cloth/pinHelpers';
 
 const RIBBON_WIDTH = 0.55;
 const RIBBON_HEIGHT = 0.09;

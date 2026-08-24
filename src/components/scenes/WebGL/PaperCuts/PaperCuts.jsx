@@ -10,7 +10,7 @@ import {
 } from '@react-three/drei';
 import { useThree } from '@react-three/fiber';
 
-import PaperFrame from '@elements/paperframe/PaperFrame';
+import PaperFrame from '@elements/Paperframe/PaperFrame';
 import getColorsInRange from '@utils/colors';
 import { fourtyFiveDegrees } from '@utils/math';
 

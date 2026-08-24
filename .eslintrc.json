@@ -41,7 +41,10 @@
     "unused-imports/no-unused-imports": "error",
     "unused-imports/no-unused-vars": [
       "warn",
-      { "varsIgnorePattern": "^_", "argsIgnorePattern": "^_" }
+      {
+        "varsIgnorePattern": "^_",
+        "argsIgnorePattern": "^_"
+      }
     ]
   },
   "overrides": [
@@ -57,7 +60,12 @@
       },
       "extends": ["plugin:@typescript-eslint/recommended"],
       "rules": {
-        "react/jsx-filename-extension": [1, { "extensions": [".tsx"] }],
+        "react/jsx-filename-extension": [
+          1,
+          {
+            "extensions": [".tsx"]
+          }
+        ],
         "import/extensions": [
           "error",
           "ignorePackages",
@@ -76,7 +84,9 @@
       "rules": {
         "import/no-extraneous-dependencies": [
           "error",
-          { "devDependencies": true }
+          {
+            "devDependencies": true
+          }
         ],
         "import/no-unresolved": "off"
       }
@@ -88,6 +98,24 @@
       "node": {
         "extensions": [".js", ".jsx", ".ts", ".tsx"],
         "moduleDirectory": ["node_modules"]
+      },
+      "alias": {
+        "map": [
+          ["@app", "./src/app"],
+          ["@components", "./src/components"],
+          ["@elements", "./src/components/elements"],
+          ["@hooks", "./src/hooks"],
+          ["@materials", "./src/components/materials"],
+          ["@modules", "./src/modules"],
+          ["@postprocessing", "./src/components/postprocessing"],
+          ["@presets", "./src/presets"],
+          ["@scenes", "./src/components/scenes"],
+          ["@server", "./src/server"],
+          ["@store", "./src/store"],
+          ["@styles", "./src/styles"],
+          ["@utils", "./src/utils"]
+        ],
+        "extensions": [".js", ".jsx", ".ts", ".tsx", ".json"]
       }
     }
   },

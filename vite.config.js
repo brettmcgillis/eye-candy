@@ -1,9 +1,10 @@
 // vite.config.js
-import os from 'os';
-import { defineConfig } from 'vite';
-
 import basicSsl from '@vitejs/plugin-basic-ssl';
 import react from '@vitejs/plugin-react';
+
+import os from 'os';
+import path from 'path';
+import { defineConfig } from 'vite';
 
 import pkg from './package.json';
 import gltfjsxDevPlugin from './src/server/gltfjsxDevPlugin';
@@ -37,6 +38,27 @@ export default defineConfig(({ command, mode }) => {
       !isBuild && gltfjsxDevPlugin(),
       useHttps && basicSsl(),
     ].filter(Boolean),
+
+    resolve: {
+      alias: {
+        '@app': path.resolve(__dirname, 'src/app'),
+        '@components': path.resolve(__dirname, 'src/components'),
+        '@elements': path.resolve(__dirname, 'src/components/elements'),
+        '@hooks': path.resolve(__dirname, 'src/hooks'),
+        '@materials': path.resolve(__dirname, 'src/components/materials'),
+        '@modules': path.resolve(__dirname, 'src/modules'),
+        '@postprocessing': path.resolve(
+          __dirname,
+          'src/components/postprocessing'
+        ),
+        '@presets': path.resolve(__dirname, 'src/presets'),
+        '@scenes': path.resolve(__dirname, 'src/components/scenes'),
+        '@server': path.resolve(__dirname, 'src/server'),
+        '@store': path.resolve(__dirname, 'src/store'),
+        '@styles': path.resolve(__dirname, 'src/styles'),
+        '@utils': path.resolve(__dirname, 'src/utils'),
+      },
+    },
 
     // GitHub Pages base path ONLY for build
     base: isBuild ? '/eye-candy/' : '/',

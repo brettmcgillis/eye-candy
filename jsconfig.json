@@ -1,3 +1,89 @@
 {
-  "include": ["src", "vite.config.js"]
+  "compilerOptions": {
+    "baseUrl": ".",
+    "paths": {
+      "@app/*": [
+        "src/app/*"
+      ],
+      "@app": [
+        "src/app"
+      ],
+      "@components/*": [
+        "src/components/*"
+      ],
+      "@components": [
+        "src/components"
+      ],
+      "@elements/*": [
+        "src/components/elements/*"
+      ],
+      "@elements": [
+        "src/components/elements"
+      ],
+      "@hooks/*": [
+        "src/hooks/*"
+      ],
+      "@hooks": [
+        "src/hooks"
+      ],
+      "@materials/*": [
+        "src/components/materials/*"
+      ],
+      "@materials": [
+        "src/components/materials"
+      ],
+      "@modules/*": [
+        "src/modules/*"
+      ],
+      "@modules": [
+        "src/modules"
+      ],
+      "@postprocessing/*": [
+        "src/components/postprocessing/*"
+      ],
+      "@postprocessing": [
+        "src/components/postprocessing"
+      ],
+      "@presets/*": [
+        "src/presets/*"
+      ],
+      "@presets": [
+        "src/presets"
+      ],
+      "@scenes/*": [
+        "src/components/scenes/*"
+      ],
+      "@scenes": [
+        "src/components/scenes"
+      ],
+      "@server/*": [
+        "src/server/*"
+      ],
+      "@server": [
+        "src/server"
+      ],
+      "@store/*": [
+        "src/store/*"
+      ],
+      "@store": [
+        "src/store"
+      ],
+      "@styles/*": [
+        "src/styles/*"
+      ],
+      "@styles": [
+        "src/styles"
+      ],
+      "@utils/*": [
+        "src/utils/*"
+      ],
+      "@utils": [
+        "src/utils"
+      ]
+    }
+  },
+  "include": [
+    "src",
+    "vite.config.js"
+  ]
 }

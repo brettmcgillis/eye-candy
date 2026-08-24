@@ -23,7 +23,14 @@
       }
     }
   ],
-  "importOrder": ["^react", "^@", "^\\.?\\./.+$", "^[./]"],
+  "importOrder": [
+    "^react",
+    "^@(?!app/|components/|elements/|hooks/|materials/|modules/|postprocessing/|presets/|scenes/|server/|store/|styles/|utils/)",
+    "^[a-zA-Z]",
+    "^@",
+    "^\\.?\\./.+$",
+    "^[./]"
+  ],
   "importOrderSortSpecifiers": true,
   "importOrderSeparation": true,
   "importOrderCaseInsensitive": false,

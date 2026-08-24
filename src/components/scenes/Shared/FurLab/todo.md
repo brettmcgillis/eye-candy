@@ -1,4 +1,4 @@
-# // FurLab (WebGL)
+# // FurLab
 
 # // TODO:
 
@@ -6,7 +6,7 @@
 
 ## Intent / Use Cases
 
-- Fur Lab should stay the quickest way to compare shell fur and strand fur in the WebGL renderer.
+- Fur Lab should stay the quickest way to compare shell fur and strand fur in both renderers.
 - Scene should exercise both a static textured mesh and a skinned animated mesh so regressions are obvious.
 - Scene should remain a compact parity harness for the shared Fur API before those techniques are used in larger compositions.
 
@@ -30,3 +30,9 @@
 - [ ] Profile current shell and strand defaults in WebGL and tune them for stable frame rate on lower-end hardware.
 - [ ] Exercise clamp limits from the Fur utilities with scene presets so the scene documents the supported operating range.
 - [ ] Revisit whether the shared FurLab scene should stay unified once renderer-specific debug controls start to diverge.
+- [ ] Verify shell fur parity on the static specimen after any FurGPU changes.
+- [ ] Verify strand fur parity on the static specimen after any FurGPU changes.
+- [ ] Verify shell fur parity on the animated rabbit after any FurGPU or skinned-mesh updates.
+- [ ] Verify strand fur parity on the animated rabbit after any FurGPU or skinned-mesh updates.
+- [ ] Profile current shell and strand defaults in WebGPU and tune them for stable frame rate on target hardware.
+- [ ] Measure the animated rabbit path specifically so skinned strand updates stay within budget.

@@ -8,7 +8,7 @@ import {
   renderFrame,
 } from './scripts/lib/rorschachRender.mjs';
 
-const S = '/src/components/scenes/WorkInProgress/WebGPU/Rorschach';
+const S = '/src/components/scenes/WebGPU/Rorschach';
 const W = 800,
   H = 800;
 await mkdir('output', { recursive: true });

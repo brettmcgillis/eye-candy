@@ -415,7 +415,7 @@ async function main() {
         totalFrames = await renderTurntable(modules, { options, tmp });
       } else {
         const cinematic = await import(
-          `${REPO_ROOT}/src/components/scenes/WorkInProgress/WebGPU/Rorschach/utils/cinematic.js`
+          `${REPO_ROOT}/src/components/scenes/WebGPU/Rorschach/utils/cinematic.js`
         );
         totalFrames = await renderCinematic(modules, {
           cinematic,

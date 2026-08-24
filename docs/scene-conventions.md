@@ -16,17 +16,74 @@ MediaRecorder, and the overlay-button pattern — plus memoization. Its
 flesh out; everything else is real, running code.
 
 For a fully fleshed-out example of the same patterns in a finished scene, read
-`src/components/scenes/Showcase/WebGL/PaperStack/`.
+`src/components/scenes/WebGL/PaperStack/`.
 
 ---
+
+## 0. Where code lives — depth means specificity
+
+Four rules govern placement. They apply to **code and to data (presets) alike**.
+
+1. **Generality decreases with depth.** The closer to `src/`, the more reusable
+   and generic a thing must be. `src/utils/math.js` is used everywhere;
+   `WebGPU/Aisle9/utils/sceneUtils.js` is used by exactly one scene. If
+   something at root serves only one consumer, it belongs deeper. If something
+   deep is being reached for by several consumers, promote it (§6).
+2. **Dependencies point rootward.** A deeper module may import a shallower one;
+   the reverse is a layering inversion. A file in `src/hooks/` must not import
+   `src/hooks/someCluster/detail.js`, and nothing in `src/components/` should
+   reach into `src/app/` — `app/` is the shell, and it consumes components, not
+   the other way round.
+3. **Import a module through its barrel, not its internals.** `@modules/ecctrl`,
+   never `@modules/ecctrl/stores/useGame`. The barrel is the module's public
+   surface; reaching past it couples callers to internal layout and blocks
+   refactors. A module's own files import each other relatively, never through
+   their own barrel (that's a cycle).
+4. **Scenes never import from other scenes** — see §6. In particular, a
+   Showcase or WIP scene must not import from a Test Lab or Toolbox scene.
+   Those two areas exist to *explore* (`testlab`) and to *author* (`toolbox`);
+   what they produce reaches scenes by being **promoted to a shared location**,
+   not by being imported across the scene tree.
+
+`src/presets/` is the worked example of rule 4 done right: the fire/smoke/spline
+preset library is authored by the FireTest, HotBox, and SplineEditor toolbox
+scenes, aggregated at root, and consumed by ordinary scenes — a rootward
+dependency, not a scene-to-scene one. Individual preset files there are
+scene-named but genuinely shared, since each is an entry in a browsable library
+(and the Save Preset middleware requires them to resolve under `src/presets/`).
+
+### Root buckets
+
+| Bucket | Holds |
+| --- | --- |
+| `src/utils/` | pure, dependency-light helpers |
+| `src/hooks/` | generic React hooks |
+| `src/modules/` | tightly-coupled clusters behind an `index.js` barrel |
+| `src/components/elements/` | reusable visuals — GLTF wrappers (§7) and generic non-GLTF visuals |
+| `src/components/materials/`, `postprocessing/` | shared materials / post passes |
+| `src/presets/` | shared authored data (see above) |
+| `src/app/` | the application shell — imports from everything, imported by nothing |
+
+`elements/` is exempt from rule 1 by §7: every `.glb` gets a wrapper there even
+when only one scene uses it today, because models are inherently reusable assets.
+
+**`postprocessing/` is the only home for post-processing.** Generic non-GLTF
+visuals (flow fields, particle generators, lightning) go in `elements/`.
 
 ## 1. Scene folder structure
 
 Each scene is a self-contained folder under
-`src/components/scenes/<Maturity>/<Renderer>/<SceneName>/`, where:
+`src/components/scenes/<Renderer>/<SceneName>/`, where `<Renderer>` ∈
+`WebGL | WebGPU | Shared`.
 
-- `<Maturity>` ∈ `Template | TestLab | ToolBox | WorkInProgress | Showcase`
-- `<Renderer>` ∈ `WebGL | WebGPU | shared`
+**The folder carries no meaning beyond the renderer.** A scene's maturity —
+Showcase, Work in Progress, Test Lab, Toolbox — is the `area` field in its
+`scene.config.jsx` and nothing else. Promoting a scene is a one-line edit to
+that field; nothing moves on disk. See §16.
+
+`Shared/` holds renderer-agnostic scene bodies that a WebGL and a WebGPU
+scene both wrap (e.g. `Shared/FurLab/Scene.jsx`), plus scenes registered under
+both channels from one folder (§8).
 
 Internal layout:
 
@@ -39,6 +96,26 @@ SceneName/
   utils/sceneUtils.js
   todo.md
 ```
+
+## 1b. Import aliases
+
+Anything outside the current scene folder is imported through a **path alias**,
+never a `../../../..` chain. Aliases are declared once in `vite.config.js`
+(`resolve.alias`), `jsconfig.json` (`paths`), and `.eslintrc.json`
+(`settings.import/resolver.alias`) — add to all three or none.
+
+| Alias | Path | Alias | Path |
+| --- | --- | --- | --- |
+| `@app` | `src/app` | `@modules` | `src/modules` |
+| `@components` | `src/components` | `@hooks` | `src/hooks` |
+| `@elements` | `src/components/elements` | `@utils` | `src/utils` |
+| `@materials` | `src/components/materials` | `@presets` | `src/presets` |
+| `@postprocessing` | `src/components/postprocessing` | `@store` | `src/store` |
+| `@scenes` | `src/components/scenes` | `@styles` | `src/styles` |
+| `@server` | `src/server` | | |
+
+Inside a scene folder, keep imports relative (`./components/Foo`,
+`../hooks/useSceneControls`) — that's what makes the folder movable.
 
 ## 2. The scene is an orchestrator
 
@@ -74,16 +151,25 @@ SceneName/
 
 ## 6. No cross-scene imports
 
-- A scene **never reaches into another scene's folder** for code.
+- A scene **never reaches into another scene's folder** for code — in either
+  direction, and regardless of area. Showcase/WIP importing from Test Lab or
+  Toolbox is the most common form (see §0 rule 4), but a Toolbox scene reading a
+  Showcase scene's data is the same violation with the arrow reversed.
 - If code needs to be shared, **promote it** to a generic location:
-  - hooks → `src/hooks`
-  - components → `src/components/...` (e.g. `rigging`, `elements`)
-  - utils → appropriate shared util location
+  - hooks → `src/hooks` (`@hooks`)
+  - components → `src/components/...` (`@elements`, `@materials`, `@postprocessing`)
+  - utils → appropriate shared util location (`@utils`)
+- A scene folder is also never reached into from `src/` at large. Shared code
+  lives outside the scene tree, not behind a re-export shim pointing back into
+  a scene.
 - Tightly-coupled, highly-reused code becomes a **module** under `src/modules/`.
   Precedents: `src/modules/ecctrl` (a complete character-controller: components +
   hooks), and the rigs `src/modules/cameraRig` and `src/modules/lightingRig` —
   each a control-builder + runtime utils + drop-in component that only make
-  sense together, exposed through an `index.js` barrel. When a
+  sense together, exposed through an `index.js` barrel. Current modules:
+  `cameraRig`, `lightingRig`, `ecctrl`, `handTracking`, `poseTracking`,
+  `mediaRecorder`, `splineAuthoring`, `trashAudio`, `tsl`, `verletPhysics`,
+  `windowSync`. When a
   control-builder + component pair grows this tightly coupled, promote it the
   same way rather than scattering it across `hooks/` and `components/`.
 
@@ -258,7 +344,7 @@ in a scene-local `components/ButtonOverlay.jsx`. These are the buttons a
 visitor is meant to see and use — the reverse of the Leva panel, which is the
 hidden dev-controls panel only reachable if you know to click the reversal.
 Give `datasetKey` a scene-unique value. Example:
-`Showcase/WebGPU/HorsesForCourses`.
+`WebGPU/HorsesForCourses`.
 
 `Template/SceneTemplate/` has the three required items wired in — copy it to
 bootstrap a new WIP scene. It also ships `components/ButtonOverlay.jsx` as a
@@ -277,11 +363,11 @@ for it, and delete the file otherwise.
 - **Never hand-edit `sceneRegistry.jsx` to add, remove, or move a scene.**
   Moving a scene between areas (e.g. WIP → Showcase) or channels is a
   one-line edit to that scene's own `area`/`channel` field — the registry
-  adapts automatically. The file only holds glob/build infrastructure and
+  adapts automatically, and **no files move**. The file only holds glob/build infrastructure and
   should stay roughly fixed-size regardless of scene count.
 - `export default` is a single object for a normal scene, or an **array of
   objects** when one renderer-agnostic component (§8) registers under both
-  channels from a single folder (e.g. `ToolBox/FireTest/scene.config.jsx`
+  channels from a single folder (e.g. `Shared/FireTest/scene.config.jsx`
   exports two entries, one per channel) — copy that file's shape for similar
   cases.
 - `route` is optional and defaults to `id`. Set it explicitly only when a

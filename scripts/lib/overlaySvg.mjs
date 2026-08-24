@@ -1,11 +1,11 @@
 /* eslint-disable import/no-extraneous-dependencies */
-import { readFile } from 'node:fs/promises';
-import path from 'node:path';
-import sharp from 'sharp';
-
 import React from 'react';
 import { renderToStaticMarkup } from 'react-dom/server';
 import { GiInkSwirl } from 'react-icons/gi';
+
+import { readFile } from 'node:fs/promises';
+import path from 'node:path';
+import sharp from 'sharp';
 
 // A burn-in of src/app/scaffold/overlay/Overlay.jsx for headless video and
 // stills. Values below are lifted from src/styles/tokens.css and global.css;

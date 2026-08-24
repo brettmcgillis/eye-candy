@@ -3,14 +3,19 @@ description: R3F/Three.js performance and pitfalls guardrails for scene-related 
 globs:
   - src/components/scenes/**/*.{js,jsx,ts,tsx}
   - src/components/materials/**/*.{js,jsx,ts,tsx}
-  - src/components/rigging/**/*.{js,jsx,ts,tsx}
+  - src/components/elements/**/*.{js,jsx,ts,tsx}
+  - src/components/postprocessing/**/*.{js,jsx,ts,tsx}
+  - src/modules/**/*.{js,jsx,ts,tsx}
 alwaysApply: false
 ---
 
 # R3F Performance Rule Wrapper
 
-Use these as canonical references:
+Use these as canonical references (`AGENTS.md` is the agent-agnostic source of
+truth for this repo; it points at the rest):
 
+- `AGENTS.md`
+- `docs/scene-conventions.md`
 - `docs/r3f-performance-playbook.md`
 - `docs/scene-performance-checklist.md`
 

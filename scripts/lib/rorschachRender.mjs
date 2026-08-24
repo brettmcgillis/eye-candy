@@ -10,7 +10,7 @@ import overlaySvg from './overlaySvg.mjs';
 export const REPO_ROOT = path.resolve(
   fileURLToPath(new URL('../..', import.meta.url))
 );
-const SCENE = '/src/components/scenes/WorkInProgress/WebGPU/Rorschach';
+const SCENE = '/src/components/scenes/WebGPU/Rorschach';
 
 // The overlay is identical on every frame of a run, but building it costs a
 // handful of sharp calls (text measurement) and rasterising it costs more —

@@ -1,10 +1,10 @@
-import * as THREE from 'three';
-
 import React, { useMemo } from 'react';
 
 import { useTexture } from '@react-three/drei';
 
-import { textureFile } from '../../../utils/appUtils';
+import * as THREE from 'three';
+
+import { textureFile } from '@utils/appUtils';
 
 useTexture.preload(textureFile('moonTexture.jpg'));
 

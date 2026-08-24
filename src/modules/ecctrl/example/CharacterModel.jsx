@@ -1,6 +1,3 @@
-import { useControls } from 'leva';
-import * as THREE from 'three';
-
 import { Suspense, useEffect, useMemo, useRef, useState } from 'react';
 
 import {
@@ -13,6 +10,9 @@ import {
 } from '@react-three/drei';
 import { useFrame } from '@react-three/fiber';
 import { BallCollider, vec3 } from '@react-three/rapier';
+
+import { useControls } from 'leva';
+import * as THREE from 'three';
 
 import { useGame } from '../src/stores/useGame';
 

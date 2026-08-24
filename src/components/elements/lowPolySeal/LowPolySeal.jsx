@@ -1,13 +1,13 @@
-import * as THREE from 'three';
-import { clone as cloneSkeleton } from 'three/examples/jsm/utils/SkeletonUtils.js';
-
 import React, { useEffect, useMemo, useRef } from 'react';
 
 import { useAnimations, useGLTF } from '@react-three/drei';
 import { useGraph } from '@react-three/fiber';
 
-import { useGame } from '../../../modules/ecctrl/stores/useGame';
-import { modelFile } from '../../../utils/appUtils';
+import * as THREE from 'three';
+import { clone as cloneSkeleton } from 'three/examples/jsm/utils/SkeletonUtils.js';
+
+import { useGame } from '@modules/ecctrl';
+import { modelFile } from '@utils/appUtils';
 
 const sealAnimationMap = {
   sealIdle: { clip: 'Idle', timeScale: 1 },

@@ -1,10 +1,10 @@
-import { gaussianBlur } from 'three/addons/tsl/display/GaussianBlurNode.js';
-import { max, pass, uniform } from 'three/tsl';
-import * as THREE from 'three/webgpu';
-
 import { memo, useEffect, useMemo, useRef } from 'react';
 
 import { useFrame, useThree } from '@react-three/fiber';
+
+import { gaussianBlur } from 'three/addons/tsl/display/GaussianBlurNode.js';
+import { max, pass, uniform } from 'three/tsl';
+import * as THREE from 'three/webgpu';
 
 /**
  * WebGPU-native bloom post-processing using TSL nodes.

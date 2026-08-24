@@ -1,9 +1,9 @@
-import * as THREE from 'three';
-
 import { useEffect } from 'react';
 
 import { Text, useGLTF } from '@react-three/drei';
 import { RigidBody } from '@react-three/rapier';
+
+import * as THREE from 'three';
 
 export default function Slopes() {
   // Load models

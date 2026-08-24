@@ -1,20 +1,17 @@
-import { pass } from 'three/tsl';
-import * as THREE from 'three/webgpu';
-
 import { memo, useEffect, useRef } from 'react';
 
 import { useFrame, useThree } from '@react-three/fiber';
 
-import {
-  fractalPixelate,
-  updateFractalPixelateUniforms,
-} from '../../../../lib/tsl/fractalPixelate';
+import { pass } from 'three/tsl';
+import * as THREE from 'three/webgpu';
+
+import { fractalPixelate, updateFractalPixelateUniforms } from '@modules/tsl';
 
 /**
  * Fullscreen fractal (noise-driven quadtree) pixelation post-processing.
  *
  * Pipeline: scene pass → fractalPixelate (bounded per-level noise subdivision)
- * → PostProcessing output. See `src/lib/tsl/fractalPixelate.js` for the
+ * → PostProcessing output. See `src/modules/tsl/fractalPixelate.js` for the
  * shared logic — the same module also drives a per-object `backdropNode`
  * variant (see this effect's todo.md).
  */

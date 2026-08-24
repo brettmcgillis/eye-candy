@@ -1,6 +1,6 @@
-import * as THREE from 'three';
-
 import { useCallback, useEffect, useMemo } from 'react';
+
+import * as THREE from 'three';
 
 import {
   clearRenderTargets,

@@ -2,8 +2,8 @@ import React, { useEffect, useMemo } from 'react';
 
 import { createInstances, useGLTF } from '@react-three/drei';
 
-import { modelFile } from '../../../utils/appUtils';
-import bakeInstancedGeometry from '../../../utils/instancedGeometry';
+import { modelFile } from '@utils/appUtils';
+import bakeInstancedGeometry from '@utils/instancedGeometry';
 
 const LOW_POLY_CASSETTE_TAPE_1_MODEL_PATH = '/lowPolyCassette1.glb';
 const LOW_POLY_CASSETTE_TAPE_1_NODE_NAME =

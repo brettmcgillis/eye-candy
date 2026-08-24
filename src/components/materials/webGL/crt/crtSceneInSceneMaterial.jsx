@@ -1,10 +1,10 @@
 /* eslint-disable no-unused-vars */
-import * as THREE from 'three';
-
 import React, { useMemo, useRef } from 'react';
 
 import { shaderMaterial } from '@react-three/drei';
 import { extend, useFrame, useThree } from '@react-three/fiber';
+
+import * as THREE from 'three';
 
 /* ---------------- shaders ---------------- */
 

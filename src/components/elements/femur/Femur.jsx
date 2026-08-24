@@ -2,7 +2,7 @@ import React from 'react';
 
 import { useGLTF } from '@react-three/drei';
 
-import { modelFile } from '../../../utils/appUtils';
+import { modelFile } from '@utils/appUtils';
 
 const FEMUR_MODEL_PATH = modelFile('femur.glb');
 

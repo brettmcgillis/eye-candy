@@ -1,4 +1,4 @@
-import { fontFile } from '../../../../utils/appUtils';
+import { fontFile } from '@utils/appUtils';
 
 export const CRT_MSDF_TEXTURE_SIZE = [1024, 1024];
 export const CRT_MSDF_FONT_SIZE = 64;

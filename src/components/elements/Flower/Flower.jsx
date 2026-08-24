@@ -3,7 +3,7 @@ import React, { forwardRef } from 'react';
 
 import { useGLTF } from '@react-three/drei';
 
-import { modelFile } from '../../../utils/appUtils';
+import { modelFile } from '@utils/appUtils';
 
 const Flower = forwardRef(function Flower({ count = 1, ...props }, ref) {
   const { nodes, materials } = useGLTF(modelFile('flower.glb'));

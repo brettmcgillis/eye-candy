@@ -1,8 +1,9 @@
-import { folder, useControls } from 'leva';
-
 import React from 'react';
 
-import { localEnv } from '../../../utils/appUtils';
+import { folder, useControls } from 'leva';
+
+import { localEnv } from '@utils/appUtils';
+
 import LevaStatsGlBridge from './LevaStatsGlBridge';
 import LevaStatsTicker from './LevaStatsTicker';
 import { levaStatsGlPlugin } from './levaStatsGlPlugin';

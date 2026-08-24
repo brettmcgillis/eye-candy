@@ -2,8 +2,9 @@ import React from 'react';
 import { PiSkullDuotone } from 'react-icons/pi';
 import { useLocation } from 'react-router-dom';
 
-import { useMediaRecorderStore } from '../../../../modules/mediaRecorder';
-import { iconFile } from '../../../../utils/appUtils';
+import { useMediaRecorderStore } from '@modules/mediaRecorder';
+import { iconFile } from '@utils/appUtils';
+
 import sceneRegistry, {
   AREA_ICONS,
   resolveScenePath,

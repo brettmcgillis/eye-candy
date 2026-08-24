@@ -1,8 +1,8 @@
-import * as THREE from 'three';
-
 import { useEffect } from 'react';
 
 import { useTexture } from '@react-three/drei';
+
+import * as THREE from 'three';
 
 import {
   COLOR_TEXTURE_KEYS,

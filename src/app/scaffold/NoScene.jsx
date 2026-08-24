@@ -1,11 +1,11 @@
-import { TextureLoader } from 'three';
-
 import React, { useEffect, useMemo, useState } from 'react';
 
 import { Html } from '@react-three/drei';
 import { useLoader } from '@react-three/fiber';
 
-import { imageFile } from '../../utils/appUtils';
+import { TextureLoader } from 'three';
+
+import { imageFile } from '@utils/appUtils';
 
 const NO_SCENE_IMAGE_FILES = [
   'reversal.png',

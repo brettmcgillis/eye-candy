@@ -1,4 +1,4 @@
-import CAMERA_SPLINE_PRESETS from '../../presets/spline/cameraSplinePresets';
+import CAMERA_SPLINE_PRESETS from '@presets/spline/cameraSplinePresets';
 
 const DEFAULT_MODE = 'fixed';
 const DEFAULT_CAMERA_POSITION = Object.freeze([0, 0, 5]);

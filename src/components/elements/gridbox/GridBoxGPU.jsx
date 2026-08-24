@@ -1,8 +1,8 @@
-import * as THREE from 'three/webgpu';
-
 import React from 'react';
 
-import { GridMaterial } from '../../materials/webGPU/gridMaterial';
+import * as THREE from 'three/webgpu';
+
+import { GridMaterial } from '@materials/webGPU/gridMaterial';
 
 const DEFAULT_SIZE = 2000;
 const DEFAULT_GRID_SIZE = 100;

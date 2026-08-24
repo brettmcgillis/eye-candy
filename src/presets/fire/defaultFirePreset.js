@@ -3,7 +3,8 @@ import * as THREE from 'three';
 import {
   cloneFireAndSmokeControlPoints,
   makeFireAndSmokeFireConfig,
-} from '../../components/elements/fireAndSmoke/fireAndSmokeDefaults';
+} from '@elements/fireAndSmoke/fireAndSmokeDefaults';
+
 import { makeSpline } from '../splineAuthoring';
 
 const V = (x, y, z) => new THREE.Vector3(x, y, z);

@@ -1,6 +1,4 @@
 /* eslint-disable react/no-array-index-key */
-import * as THREE from 'three';
-
 import React, {
   forwardRef,
   memo,
@@ -12,7 +10,10 @@ import React, {
 
 import { useFrame, useLoader } from '@react-three/fiber';
 
-import Outline from '../../../postprocessing/webGPU/outline/Outline';
+import * as THREE from 'three';
+
+import Outline from '@postprocessing/webGPU/outline/Outline';
+
 import ClothMesh from '../cloth/ClothMesh';
 import { pinRing } from '../cloth/pinHelpers';
 import { getAnimation } from './ghostAnimations';

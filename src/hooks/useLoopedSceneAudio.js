@@ -1,9 +1,9 @@
-import { Howl } from 'howler';
-
 import { useEffect, useRef } from 'react';
 
-import useSceneAudioStore from '../store/useSceneAudioStore';
-import { audioFile } from '../utils/appUtils';
+import { Howl } from 'howler';
+
+import useSceneAudioStore from '@store/useSceneAudioStore';
+import { audioFile } from '@utils/appUtils';
 
 const FADE_MS = 2000;
 

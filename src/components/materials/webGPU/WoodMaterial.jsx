@@ -1,3 +1,7 @@
+import React, { useEffect, useMemo } from 'react';
+
+import { useThree } from '@react-three/fiber';
+
 import * as THREE from 'three';
 import {
   Finishes,
@@ -5,10 +9,6 @@ import {
   WoodGenuses,
   WoodNodeMaterial,
 } from 'three/addons/materials/WoodNodeMaterial.js';
-
-import React, { useEffect, useMemo } from 'react';
-
-import { useThree } from '@react-three/fiber';
 
 const MIN_DIMENSION = 0.0001;
 

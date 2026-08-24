@@ -1,3 +1,13 @@
+import React, {
+  forwardRef,
+  useEffect,
+  useImperativeHandle,
+  useMemo,
+  useRef,
+} from 'react';
+
+import { useFrame } from '@react-three/fiber';
+
 import {
   Fn,
   attribute,
@@ -15,16 +25,6 @@ import {
   vec2,
 } from 'three/tsl';
 import * as THREE from 'three/webgpu';
-
-import React, {
-  forwardRef,
-  useEffect,
-  useImperativeHandle,
-  useMemo,
-  useRef,
-} from 'react';
-
-import { useFrame } from '@react-three/fiber';
 
 import createClothSimulation from './createClothSimulation';
 

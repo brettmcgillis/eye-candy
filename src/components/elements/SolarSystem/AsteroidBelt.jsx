@@ -1,11 +1,12 @@
-import * as THREE from 'three';
-
 import React, { memo, useLayoutEffect, useMemo, useRef } from 'react';
 
 import { useGLTF } from '@react-three/drei';
 import { useFrame } from '@react-three/fiber';
 
-import { modelFile } from '../../../utils/appUtils';
+import * as THREE from 'three';
+
+import { modelFile } from '@utils/appUtils';
+
 import { MAX_ANIMATION_DELTA, TAU } from './solarSystem.constants';
 
 const ASTEROID_GLTF_PATH = modelFile('asteroidPack.glb');

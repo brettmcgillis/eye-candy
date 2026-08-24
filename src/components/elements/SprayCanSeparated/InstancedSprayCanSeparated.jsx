@@ -1,10 +1,11 @@
-import * as THREE from 'three';
-
 import React from 'react';
 
 import { Merged, useGLTF } from '@react-three/drei';
 
-import { modelFile } from '../../../utils/appUtils';
+import * as THREE from 'three';
+
+import { modelFile } from '@utils/appUtils';
+
 import { CAN_BASE_RECENTER_Y } from './SprayCanSeparated';
 import { computeSliderAxis } from './sliderGeometry';
 

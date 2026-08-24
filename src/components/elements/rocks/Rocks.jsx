@@ -2,7 +2,7 @@ import React, { createContext, useContext, useMemo } from 'react';
 
 import { Merged, useGLTF } from '@react-three/drei';
 
-import { modelFile } from '../../../utils/appUtils';
+import { modelFile } from '@utils/appUtils';
 
 const context = createContext();
 const ROCK_COMPONENT_KEYS = [

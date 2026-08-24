@@ -1,0 +1,94 @@
+import React, { memo, useEffect, useRef } from 'react';
+
+import { useThree } from '@react-three/fiber';
+
+import * as THREE from 'three/webgpu';
+
+import { CameraRig } from '@modules/cameraRig';
+
+import ButtonOverlay from './components/ButtonOverlay';
+import CinematicMode from './components/CinematicMode';
+import PostEffects from './components/PostEffects';
+import Test from './components/Test';
+import ViewHotkey from './components/ViewHotkey';
+import useSceneControls from './hooks/useSceneControls';
+
+// Phase 1 (Lines mode): a seeded formula-builder assembles a 3D system of
+// trig-based ODEs per bundle, Clifford/de Jong-attractor style
+// (utils/formulaBuilder.js, utils/odeIntegrator.js mirrored across X=0 for the
+// classic bilateral ink-blot symmetry, self-drawing in on generate and
+// drifting slowly afterward (utils/evolution.js). Points and Ink (full
+// Curtis-97 watercolor sim) modes are later phases — see todo.md.
+function Rorschach() {
+  const config = useSceneControls();
+  const { scene } = useThree();
+  // Written every frame by CinematicMode, read every frame by Test — never
+  // through React, so the sweep doesn't re-render the scene 60 times a second.
+  const flattenRef = useRef(null);
+
+  // Set imperatively, not via <color attach="background" args={[...]}> —
+  // that form left the background one edit behind (see todo.md).
+  useEffect(() => {
+    scene.background = new THREE.Color(config.backgroundColor);
+  }, [scene, config.backgroundColor]);
+
+  return (
+    <>
+      <CameraRig camera={config.camera} />
+      <ViewHotkey />
+      <CinematicMode
+        enabled={config.cinematicEnabled}
+        flattenRef={flattenRef}
+        onSystemChange={config.regenerate}
+        secondsPerSystem={config.cinematicSecondsPerSystem}
+      />
+      <Test
+        seed={config.seed}
+        bundleCount={config.bundleCount}
+        strandsPerBundle={config.strandsPerBundle}
+        steps={config.steps}
+        startSpread={config.startSpread}
+        coeffRange={config.coeffRange}
+        freq={config.freq}
+        framingShape={config.framingShape}
+        boundRadius={config.boundRadius}
+        boundWidth={config.boundWidth}
+        boundHeight={config.boundHeight}
+        minSpread={config.minSpread}
+        palette={config.palette}
+        paletteExact={config.paletteExact}
+        paletteShuffleSeed={config.paletteShuffleSeed}
+        flatten={config.flatten}
+        flattenAxis={config.flattenAxis}
+        growthSpeed={config.growthSpeed}
+        growthStyle={config.growthStyle}
+        continuousMode={config.continuousMode}
+        continuousModeDelay={config.continuousModeDelay}
+        onGrowthComplete={config.reseed}
+        evolutionEnabled={config.evolutionEnabled}
+        evolutionSpeed={config.evolutionSpeed}
+        curlLimit={config.curlLimit}
+        smoothRespawns={config.smoothRespawns}
+        trailFade={config.trailFade}
+        monochrome={config.monochrome}
+        inkColor={config.inkColor}
+        overrides={config.overrides}
+        flattenRef={flattenRef}
+      />
+      <PostEffects
+        bloomEnabled={config.bloomEnabled}
+        bloomThreshold={config.bloomThreshold}
+        bloomStrength={config.bloomStrength}
+        bloomRadius={config.bloomRadius}
+      />
+      {config.showOverlay && (
+        <ButtonOverlay
+          onRegenerate={config.regenerate}
+          onReseed={config.reseed}
+        />
+      )}
+    </>
+  );
+}
+
+export default memo(Rorschach);

@@ -1,3 +1,8 @@
+import React from 'react';
+
+import { shaderMaterial } from '@react-three/drei';
+import { extend } from '@react-three/fiber';
+
 import {
   AdditiveBlending,
   BackSide,
@@ -5,11 +10,6 @@ import {
   DoubleSide,
   FrontSide,
 } from 'three';
-
-import React from 'react';
-
-import { shaderMaterial } from '@react-three/drei';
-import { extend } from '@react-three/fiber';
 
 /**
  * @property {Number} [falloff=0.1] - Controls the value of the Falloff effect. Ranges from 0.0 to 1.0.

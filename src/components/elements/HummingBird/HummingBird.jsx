@@ -1,12 +1,12 @@
 /* eslint-disable no-underscore-dangle */
-import { SkeletonUtils } from 'three-stdlib';
-
 import React, { useEffect } from 'react';
 
 import { useAnimations, useGLTF } from '@react-three/drei';
 import { useGraph } from '@react-three/fiber';
 
-import { modelFile } from '../../../utils/appUtils';
+import { SkeletonUtils } from 'three-stdlib';
+
+import { modelFile } from '@utils/appUtils';
 
 export default function HummingBird({ clip, timeScale = 1, ...props }) {
   const group = React.useRef();

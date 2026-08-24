@@ -1,11 +1,11 @@
-import * as THREE from 'three';
-
 import React, { useEffect, useMemo } from 'react';
 
 import { createInstances, useGLTF } from '@react-three/drei';
 
-import { modelFile } from '../../../utils/appUtils';
-import bakeInstancedGeometry from '../../../utils/instancedGeometry';
+import * as THREE from 'three';
+
+import { modelFile } from '@utils/appUtils';
+import bakeInstancedGeometry from '@utils/instancedGeometry';
 
 const GARBAGE_BAG_MATERIAL_PROPS = {
   color: '#050505',

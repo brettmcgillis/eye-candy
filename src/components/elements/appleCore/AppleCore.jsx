@@ -2,8 +2,8 @@ import React, { useEffect, useMemo } from 'react';
 
 import { createInstances, useGLTF } from '@react-three/drei';
 
-import { modelFile } from '../../../utils/appUtils';
-import bakeInstancedGeometry from '../../../utils/instancedGeometry';
+import { modelFile } from '@utils/appUtils';
+import bakeInstancedGeometry from '@utils/instancedGeometry';
 
 const APPLE_CORE_MODEL_PATH = '/apple_core.glb';
 const APPLE_CORE_ROTATION = [-Math.PI / 2, 0, 0];

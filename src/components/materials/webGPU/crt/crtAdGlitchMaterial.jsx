@@ -1,3 +1,8 @@
+import React, { useEffect, useMemo, useRef } from 'react';
+
+import { useTexture } from '@react-three/drei';
+import { extend, useFrame } from '@react-three/fiber';
+
 import * as THREE from 'three';
 import {
   Fn,
@@ -10,12 +15,7 @@ import {
 } from 'three/tsl';
 import * as THREE_WEBGPU from 'three/webgpu';
 
-import React, { useEffect, useMemo, useRef } from 'react';
-
-import { useTexture } from '@react-three/drei';
-import { extend, useFrame } from '@react-three/fiber';
-
-import { textureFile, videoFile } from '../../../../utils/appUtils';
+import { textureFile, videoFile } from '@utils/appUtils';
 
 extend(THREE_WEBGPU);
 

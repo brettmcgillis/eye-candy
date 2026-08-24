@@ -1,4 +1,8 @@
 /* eslint-disable no-underscore-dangle */
+import React, { useEffect, useMemo, useRef } from 'react';
+
+import { useFrame, useThree } from '@react-three/fiber';
+
 import {
   Fn,
   If,
@@ -19,10 +23,6 @@ import {
   vec4,
 } from 'three/tsl';
 import * as THREE from 'three/webgpu';
-
-import React, { useEffect, useMemo, useRef } from 'react';
-
-import { useFrame, useThree } from '@react-three/fiber';
 
 import {
   GUIDE_POINTS,

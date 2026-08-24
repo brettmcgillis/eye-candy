@@ -1,17 +1,18 @@
-import { folder, useControls } from 'leva';
-
 import { useMemo, useRef } from 'react';
 
-import usePresetsFolder from '../../../../../hooks/usePresetsFolder';
+import { folder, useControls } from 'leva';
+
+import usePresetsFolder from '@hooks/usePresetsFolder';
 import {
   getCameraControlsKey,
   useSceneCameraControls,
-} from '../../../../../modules/cameraRig';
+} from '@modules/cameraRig';
 import {
   getLightingControlsKey,
   useSceneLightingControls,
-} from '../../../../../modules/lightingRig';
-import { useMediaRecorder } from '../../../../../modules/mediaRecorder';
+} from '@modules/lightingRig';
+import { useMediaRecorder } from '@modules/mediaRecorder';
+
 import getComponentControls from '../components/getComponentControls';
 import { DEFAULT_PRESET, PRESETS, getPresetControls } from '../presets/presets';
 import LIGHTING from '../utils/lighting';

@@ -2,8 +2,8 @@ import React, { useEffect, useMemo } from 'react';
 
 import { createInstances, useGLTF } from '@react-three/drei';
 
-import { modelFile } from '../../../utils/appUtils';
-import bakeInstancedGeometry from '../../../utils/instancedGeometry';
+import { modelFile } from '@utils/appUtils';
+import bakeInstancedGeometry from '@utils/instancedGeometry';
 
 const LOW_POLY_FLOPPY_DISK_MODEL_PATH = '/lowPolyFloppy.glb';
 const LOW_POLY_FLOPPY_DISK_NODE_NAME = 'FloppyDisk_FloppyDisk_0';

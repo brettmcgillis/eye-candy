@@ -1,10 +1,10 @@
-import { useControls } from 'leva';
-import * as THREE from 'three';
-
 import React, { useCallback, useEffect, useRef, useState } from 'react';
 
 import { TransformControls } from '@react-three/drei';
 import { useFrame, useThree } from '@react-three/fiber';
+
+import { useControls } from 'leva';
+import * as THREE from 'three';
 
 const ATTRACTOR_COLORS = [
   '#ff4466',

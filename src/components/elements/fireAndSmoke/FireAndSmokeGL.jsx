@@ -5,11 +5,11 @@
 /* eslint-disable no-param-reassign */
 
 /* eslint-disable no-underscore-dangle */
-import * as THREE from 'three';
-
 import React, { useEffect, useMemo, useRef, useState } from 'react';
 
 import { useFrame } from '@react-three/fiber';
+
+import * as THREE from 'three';
 
 import {
   DEFAULT_FIRE_AND_SMOKE_CONFIG,

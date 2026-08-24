@@ -1,6 +1,6 @@
-import * as THREE from 'three';
-
 import React, { useCallback, useMemo } from 'react';
+
+import * as THREE from 'three';
 
 import FireAndSmoke from '../fireAndSmoke/FireAndSmoke';
 import SmokeParticles from '../smoke/SmokeParticles';

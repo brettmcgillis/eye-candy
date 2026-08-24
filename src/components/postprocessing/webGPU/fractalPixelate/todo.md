@@ -6,7 +6,7 @@
 
 Noise-driven quadtree pixelation — a screen-space pixelation grid whose cell
 size subdivides per-cell via bounded per-level hash noise, instead of a
-uniform grid. Core logic in `src/lib/tsl/fractalPixelate.js`, usable both as
+uniform grid. Core logic in `src/modules/tsl/fractalPixelate.js`, usable both as
 a fullscreen post effect (`FractalPixelate.jsx`, this folder) and as a
 per-object `backdropNode` (see LoGlow's Logo shells for an example).
 

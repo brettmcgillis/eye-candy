@@ -1,5 +1,3 @@
-import * as THREE from 'three';
-
 import { useMemo, useRef } from 'react';
 
 import { Text } from '@react-three/drei';
@@ -9,6 +7,8 @@ import {
   CylinderCollider,
   RigidBody,
 } from '@react-three/rapier';
+
+import * as THREE from 'three';
 
 export default function DynamicPlatforms() {
   const sideMovePlatformRef = useRef();

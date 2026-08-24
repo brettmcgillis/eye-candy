@@ -1,3 +1,7 @@
+import { memo, useEffect, useMemo, useRef, useState } from 'react';
+
+import { useThree } from '@react-three/fiber';
+
 import { TextureLoader } from 'three';
 import {
   Fn,
@@ -17,10 +21,6 @@ import {
   vec3,
 } from 'three/tsl';
 import * as THREE from 'three/webgpu';
-
-import { memo, useEffect, useMemo, useRef, useState } from 'react';
-
-import { useThree } from '@react-three/fiber';
 
 function getTextureAspect(texture) {
   const image = texture?.image;

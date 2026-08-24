@@ -2,6 +2,10 @@
 // CPU-side physics (spline following, spring forces, attractor, turbulence) is
 // identical to the WebGL version. Only the ShaderMaterial is replaced with a
 // TSL PointsNodeMaterial so this component runs under the WebGPU renderer.
+import React, { useEffect, useMemo, useRef, useState } from 'react';
+
+import { useFrame } from '@react-three/fiber';
+
 import {
   attribute,
   cos,
@@ -15,10 +19,6 @@ import {
   vec2,
 } from 'three/tsl';
 import * as THREE from 'three/webgpu';
-
-import React, { useEffect, useMemo, useRef, useState } from 'react';
-
-import { useFrame } from '@react-three/fiber';
 
 import curlNoise from './curlNoise';
 

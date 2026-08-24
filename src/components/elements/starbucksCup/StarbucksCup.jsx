@@ -2,8 +2,8 @@ import React, { useEffect, useMemo } from 'react';
 
 import { createInstances, useGLTF } from '@react-three/drei';
 
-import { modelFile } from '../../../utils/appUtils';
-import bakeInstancedGeometry from '../../../utils/instancedGeometry';
+import { modelFile } from '@utils/appUtils';
+import bakeInstancedGeometry from '@utils/instancedGeometry';
 
 const STARBUCKS_MODEL_PATH = '/starbucks.glb';
 const STARBUCKS_ROTATION = [-Math.PI / 2, 0, 0];

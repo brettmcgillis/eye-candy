@@ -1,12 +1,12 @@
 // CrtBlueScreenMaterial.js
-import * as THREE from 'three';
-
 import React, { useEffect, useMemo, useRef } from 'react';
 
 import { shaderMaterial } from '@react-three/drei';
 import { extend, useFrame } from '@react-three/fiber';
 
-import { asciiBret } from '../../../../utils/ascii';
+import * as THREE from 'three';
+
+import { asciiBret } from '@utils/ascii';
 
 /* ---------------------------------------------
    Shaders

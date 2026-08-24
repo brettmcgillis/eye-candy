@@ -2,8 +2,8 @@ import React, { useMemo } from 'react';
 
 import { useGLTF } from '@react-three/drei';
 
-import { modelFile } from '../../../utils/appUtils';
-import bakeInstancedGeometry from '../../../utils/instancedGeometry';
+import { modelFile } from '@utils/appUtils';
+import bakeInstancedGeometry from '@utils/instancedGeometry';
 
 export default function CartoonSakura(props) {
   const { nodes, materials } = useGLTF(modelFile('cartoon_sakura.glb'));

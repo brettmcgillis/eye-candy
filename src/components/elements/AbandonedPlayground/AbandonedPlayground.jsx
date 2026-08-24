@@ -2,7 +2,7 @@ import React from 'react';
 
 import { useAnimations, useGLTF } from '@react-three/drei';
 
-import { modelFile } from '../../../utils/appUtils';
+import { modelFile } from '@utils/appUtils';
 
 export default function AbandonedPlayground({ animated = false, ...props }) {
   const group = React.useRef();

@@ -1,10 +1,10 @@
-import { useControls } from 'leva';
-import { Perf } from 'r3f-perf';
-
 import React, { useEffect, useState } from 'react';
 
 import { Grid, KeyboardControls } from '@react-three/drei';
 import { Physics } from '@react-three/rapier';
+
+import { useControls } from 'leva';
+import { Perf } from 'r3f-perf';
 
 import Ecctrl from '../src/Ecctrl';
 import CharacterModel from './CharacterModel';

@@ -1,3 +1,8 @@
+import React, { useEffect, useMemo } from 'react';
+
+import { useTexture } from '@react-three/drei';
+import { useFrame } from '@react-three/fiber';
+
 import {
   dot,
   float,
@@ -11,12 +16,8 @@ import {
 } from 'three/tsl';
 import * as THREE from 'three/webgpu';
 
-import React, { useEffect, useMemo } from 'react';
+import { textureFile } from '@utils/appUtils';
 
-import { useTexture } from '@react-three/drei';
-import { useFrame } from '@react-three/fiber';
-
-import { textureFile } from '../../../utils/appUtils';
 import { approximateTurbulence, signedPerlinApprox } from './perlinNoiseNodes';
 
 useTexture.preload(textureFile('explosion.png'));

@@ -2,7 +2,8 @@ import React from 'react';
 
 import { useGLTF } from '@react-three/drei';
 
-import { modelFile } from '../../../utils/appUtils';
+import { modelFile } from '@utils/appUtils';
+
 import CENTER_STORE_REF_POSITION from '../sevenEleven/sevenElevenAnchors';
 
 export default function SevenElevenLow(props) {

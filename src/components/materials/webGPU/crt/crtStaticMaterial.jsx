@@ -1,10 +1,10 @@
-import { FrontSide } from 'three';
-import { Fn, mix, step, uniform, uv, vec2, vec3 } from 'three/tsl';
-import * as THREE_WEBGPU from 'three/webgpu';
-
 import React, { useEffect, useMemo } from 'react';
 
 import { extend, useFrame } from '@react-three/fiber';
+
+import { FrontSide } from 'three';
+import { Fn, mix, step, uniform, uv, vec2, vec3 } from 'three/tsl';
+import * as THREE_WEBGPU from 'three/webgpu';
 
 import {
   clamp01Node,

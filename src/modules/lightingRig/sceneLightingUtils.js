@@ -1,4 +1,4 @@
-import { radians } from '../../utils/math';
+import { radians } from '@utils/math';
 
 export const SCENE_LIGHT_TYPES = Object.freeze({
   ambient: 'ambient',

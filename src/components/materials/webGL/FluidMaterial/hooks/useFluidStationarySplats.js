@@ -1,6 +1,6 @@
-import * as THREE from 'three';
-
 import { useEffect, useRef } from 'react';
+
+import * as THREE from 'three';
 
 import { MAX_STATIONARY_SPLATS } from '../utils/constants';
 

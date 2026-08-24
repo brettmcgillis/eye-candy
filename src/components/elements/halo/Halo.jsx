@@ -1,7 +1,7 @@
 /* eslint-disable react/no-array-index-key */
-import * as THREE from 'three';
-
 import React from 'react';
+
+import * as THREE from 'three';
 
 function Ring({
   innerRadius = 1,

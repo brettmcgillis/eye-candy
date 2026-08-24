@@ -2,8 +2,8 @@ import React, { useEffect, useMemo } from 'react';
 
 import { createInstances, useGLTF } from '@react-three/drei';
 
-import { modelFile } from '../../../utils/appUtils';
-import bakeInstancedGeometry from '../../../utils/instancedGeometry';
+import { modelFile } from '@utils/appUtils';
+import bakeInstancedGeometry from '@utils/instancedGeometry';
 
 const CATFOOD_MODEL_PATH = '/catfood.glb';
 const CATFOOD_MODEL_FILE = modelFile(CATFOOD_MODEL_PATH);

@@ -2,7 +2,7 @@ import React from 'react';
 
 import { useGLTF } from '@react-three/drei';
 
-import { modelFile } from '../../../utils/appUtils';
+import { modelFile } from '@utils/appUtils';
 
 // Part keys -> glTF node names, shared with consumers that need direct
 // geometry access for custom per-part behavior (e.g. WetPaint's draggable

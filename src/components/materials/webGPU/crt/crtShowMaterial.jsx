@@ -1,12 +1,13 @@
-import * as THREE from 'three';
-import { Fn, texture as tslTexture, uniform, uv, vec3 } from 'three/tsl';
-import * as THREE_WEBGPU from 'three/webgpu';
-
 import React, { useEffect, useMemo, useRef, useState } from 'react';
 
 import { extend, useFrame } from '@react-three/fiber';
 
-import { videoFile } from '../../../../utils/appUtils';
+import * as THREE from 'three';
+import { Fn, texture as tslTexture, uniform, uv, vec3 } from 'three/tsl';
+import * as THREE_WEBGPU from 'three/webgpu';
+
+import { videoFile } from '@utils/appUtils';
+
 import {
   curveUvNode,
   hash21Node,

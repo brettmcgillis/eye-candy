@@ -2,7 +2,7 @@ import React, { useRef } from 'react';
 
 import { useAnimations, useGLTF } from '@react-three/drei';
 
-import { modelFile } from '../../../utils/appUtils';
+import { modelFile } from '@utils/appUtils';
 
 export default function RedWingedBlackBird(props) {
   const group = useRef();

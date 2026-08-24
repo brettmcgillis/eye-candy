@@ -1,8 +1,8 @@
-import * as THREE from 'three';
-
 import { forwardRef, useEffect, useImperativeHandle, useRef } from 'react';
 
 import { useFrame } from '@react-three/fiber';
+
+import * as THREE from 'three';
 
 function buildExplodedGeometryData(sourceGeometry) {
   const geometry = sourceGeometry.toNonIndexed();

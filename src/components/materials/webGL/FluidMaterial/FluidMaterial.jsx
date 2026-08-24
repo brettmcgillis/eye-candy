@@ -1,8 +1,6 @@
 /* eslint-disable no-param-reassign */
 
 /* eslint-disable no-plusplus */
-import * as THREE from 'three';
-
 import React, {
   forwardRef,
   useEffect,
@@ -12,6 +10,8 @@ import React, {
 } from 'react';
 
 import { useFrame, useThree } from '@react-three/fiber';
+
+import * as THREE from 'three';
 
 import useFluidRenderTargets from './hooks/useFluidRenderTargets';
 import {

@@ -1,9 +1,10 @@
-import { button, folder } from 'leva';
-
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 
-import { localEnv } from '../utils/appUtils';
-import { readQueryParam, writeQueryParam } from '../utils/queryParams';
+import { button, folder } from 'leva';
+
+import { localEnv } from '@utils/appUtils';
+import { readQueryParam, writeQueryParam } from '@utils/queryParams';
+
 import { useSyncPresetQueryParam } from './usePresetQueryParam';
 
 function toObjectLiteral(snapshot) {

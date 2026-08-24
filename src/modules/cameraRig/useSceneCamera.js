@@ -1,6 +1,4 @@
 /* eslint-disable no-nested-ternary */
-import * as THREE from 'three';
-
 import {
   useCallback,
   useEffect,
@@ -11,6 +9,8 @@ import {
 } from 'react';
 
 import { useFrame } from '@react-three/fiber';
+
+import * as THREE from 'three';
 
 import useCameraFitToViewport from './useCameraFitToViewport';
 import useCameraSpline from './useCameraSpline';

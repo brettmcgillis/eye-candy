@@ -1,9 +1,9 @@
-import * as THREE from 'three';
-
 import React, { useCallback, useEffect, useMemo, useRef } from 'react';
 
 import { useTexture } from '@react-three/drei';
 import { useFrame } from '@react-three/fiber';
+
+import * as THREE from 'three';
 
 import BoundSkinnedMesh from '../BoundSkinnedMesh';
 import FurPointerSurface from '../FurPointerSurface';

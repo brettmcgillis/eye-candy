@@ -3,7 +3,8 @@ import React, { useRef } from 'react';
 import { useGLTF } from '@react-three/drei';
 import { useFrame } from '@react-three/fiber';
 
-import { modelFile } from '../../../../utils/appUtils';
+import { modelFile } from '@utils/appUtils';
+
 import LowPolyFire from '../lowPolyFire/lowpolyFire';
 
 const WHEEL_RADIUS = 0.9;

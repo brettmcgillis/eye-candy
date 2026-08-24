@@ -1,8 +1,9 @@
-import { levaStore } from 'leva';
-
 import React, { useEffect, useState } from 'react';
 
-import { localEnv } from '../../../utils/appUtils';
+import { levaStore } from 'leva';
+
+import { localEnv } from '@utils/appUtils';
+
 import './Overlay.css';
 import Date from './components/DateDisplay';
 import ExternalLinks from './components/ExternalLinks';

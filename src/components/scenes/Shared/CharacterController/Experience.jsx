@@ -1,0 +1,477 @@
+import React, { useEffect, useRef, useState } from 'react';
+
+import { KeyboardControls } from '@react-three/drei';
+import { useThree } from '@react-three/fiber';
+import { Physics } from '@react-three/rapier';
+
+import { folder, useControls } from 'leva';
+
+import RideableRcCar from '@elements/models/rcCar/RideableRcCar';
+import {
+  Ecctrl,
+  TouchJoystickOverlay,
+  useGame,
+  useRideableState,
+} from '@modules/ecctrl';
+
+import CapsuleCharacter from './components/CapsuleCharacter';
+import CharacterTracker from './components/CharacterTracker';
+import ExampleCharacterModel from './components/ExampleCharacterModel';
+import GhostCharacter from './components/GhostCharacter';
+import Level from './components/Level';
+import Lights from './components/Lights';
+import RemotePlayers from './components/RemotePlayers';
+import SealCharacter from './components/SealCharacter';
+import ShotCube from './components/ShotCube';
+
+const keyboardMap = [
+  { name: 'forward', keys: ['ArrowUp', 'KeyW'] },
+  { name: 'backward', keys: ['ArrowDown', 'KeyS'] },
+  { name: 'leftward', keys: ['ArrowLeft', 'KeyA'] },
+  { name: 'rightward', keys: ['ArrowRight', 'KeyD'] },
+  { name: 'jump', keys: ['Space'] },
+  { name: 'run', keys: ['Shift'] },
+  { name: 'action1', keys: ['1'] },
+  { name: 'action2', keys: ['2', 'KeyB'] },
+  { name: 'action3', keys: ['3'] },
+  { name: 'action4', keys: ['KeyF'] },
+];
+
+const EMPTY_SHOTS = [];
+const DAY_NIGHT_PRESETS = {
+  Day: {
+    bgColor: '#a8c8e8',
+    gridSectionColor: '#d9d9d9',
+    gridCellColor: '#222222',
+  },
+  Night: {
+    bgColor: '#0f1419',
+    gridSectionColor: '#40404c',
+    gridCellColor: '#26262c',
+  },
+};
+const CAM_EXCLUDE_COLLISION_USER_DATA = { camExcludeCollision: true };
+
+const PointToMoveIndicators = React.memo(function PointToMoveIndicators({
+  hoverPoint,
+  moveTargetPoint,
+}) {
+  return (
+    <>
+      {hoverPoint && (
+        <mesh
+          position={[hoverPoint.x, hoverPoint.y + 0.01, hoverPoint.z]}
+          rotation={[-Math.PI / 2, 0, 0]}
+          userData={CAM_EXCLUDE_COLLISION_USER_DATA}
+        >
+          <ringGeometry args={[0.18, 0.28, 48]} />
+          <meshBasicMaterial color="#000000" transparent opacity={0.2} />
+        </mesh>
+      )}
+
+      {moveTargetPoint && (
+        <mesh
+          position={[
+            moveTargetPoint.x,
+            moveTargetPoint.y + 0.012,
+            moveTargetPoint.z,
+          ]}
+          rotation={[-Math.PI / 2, 0, 0]}
+          userData={CAM_EXCLUDE_COLLISION_USER_DATA}
+        >
+          <ringGeometry args={[0.22, 0.34, 48]} />
+          <meshBasicMaterial color="#ff7a00" transparent opacity={0.75} />
+        </mesh>
+      )}
+    </>
+  );
+});
+
+export default function Experience({
+  ecctrlRef: providedEcctrlRef = null,
+  color = null,
+  remotePlayers = null,
+  remoteShots = EMPTY_SHOTS,
+  onShotFired = null,
+  onModelChange = null,
+  soccerFieldRef = null,
+}) {
+  const { gl } = useThree();
+  const isWebGPU = gl?.isWebGPURenderer === true;
+  const setMoveToPoint = useGame((state) => state.setMoveToPoint);
+  const internalEcctrlRef = useRef(null);
+  const ecctrlRef = providedEcctrlRef || internalEcctrlRef;
+  const pointerDownAtRef = useRef(0);
+  const [hoverPoint, setHoverPoint] = useState(null);
+  const [moveTargetPoint, setMoveTargetPoint] = useState(null);
+
+  const [spawnPos] = useState(() => {
+    const angle = Math.random() * Math.PI * 2;
+    const r = 1.5 + Math.random() * 2;
+    return [Math.cos(angle) * r, 5, Math.sin(angle) * r];
+  });
+
+  const [pausedPhysics, setPausedPhysics] = useState(true);
+  useEffect(() => {
+    const t = setTimeout(() => setPausedPhysics(false), 500);
+    return () => clearTimeout(t);
+  }, []);
+
+  const {
+    characterModel,
+    physics,
+    shotsEnabled,
+    disableControl,
+    disableFollowCam,
+    invertGamepadMovX,
+    invertGamepadMovY,
+    invertGamepadCamX,
+    invertGamepadCamY,
+    // Movement
+    maxVelLimit,
+    turnVelMultiplier,
+    turnSpeed,
+    sprintMult,
+    jumpVel,
+    enableDoubleJump,
+    maxAirJumps,
+    airJumpVelMultiplier,
+    airDragMultiplier,
+    fallingGravityScale,
+    // Capsule
+    capsuleHalfHeight,
+    capsuleRadius,
+    floatHeight,
+    // Floating spring
+    springK,
+    dampingC,
+    // Auto balance
+    autoBalance,
+    autoBalanceSpringK,
+    autoBalanceDampingC,
+    autoBalanceSpringOnY,
+    autoBalanceDampingOnY,
+    // Camera
+    camInitDis,
+    camMaxDis,
+    camMinDis,
+    camFollowMult,
+    camLerpMult,
+    ecctrlMode,
+    // Scene
+    sceneMode,
+    fpsMode,
+    bgColor,
+    gridSectionColor,
+    gridCellColor,
+    rideablesEnabled,
+  } = useControls('World Settings', {
+    Character: folder(
+      {
+        characterModel: {
+          value: 'Capsule',
+          options: isWebGPU
+            ? ['Capsule', 'Gh0st', 'Seal', 'Example Character']
+            : ['Capsule', 'Seal', 'Example Character'],
+        },
+      },
+      { collapsed: true }
+    ),
+
+    Scene: folder(
+      {
+        sceneMode: {
+          value: 'Day',
+          options: ['Day', 'Night'],
+        },
+        ecctrlMode: {
+          value: null,
+          options: {
+            Off: null,
+            CameraBasedMovement: 'CameraBasedMovement',
+            FixedCamera: 'FixedCamera',
+            PointToMove: 'PointToMove',
+          },
+        },
+        fpsMode: false,
+        bgColor: { value: '#a8c8e8' },
+        gridSectionColor: { value: '#d9d9d9' },
+        gridCellColor: { value: isWebGPU ? '#26262c' : '#222222' },
+      },
+      { collapsed: false }
+    ),
+
+    physics: false,
+    shotsEnabled: false,
+    rideablesEnabled: { value: true, label: 'Rideables' },
+    disableControl: false,
+    disableFollowCam: false,
+
+    Gamepad: folder(
+      {
+        invertGamepadMovX: false,
+        invertGamepadMovY: true,
+        invertGamepadCamX: false,
+        invertGamepadCamY: false,
+      },
+      { collapsed: true }
+    ),
+
+    Movement: folder(
+      {
+        maxVelLimit: { value: 2.5, min: 0, max: 20, step: 0.1 },
+        turnVelMultiplier: { value: 0.2, min: 0, max: 1, step: 0.01 },
+        turnSpeed: { value: 15, min: 1, max: 30, step: 0.5 },
+        sprintMult: { value: 2, min: 1, max: 5, step: 0.1 },
+        jumpVel: { value: 4, min: 0, max: 20, step: 0.1 },
+        enableDoubleJump: false,
+        maxAirJumps: { value: 1, min: 0, max: 3, step: 1 },
+        airJumpVelMultiplier: { value: 1, min: 0.2, max: 2, step: 0.05 },
+        airDragMultiplier: { value: 0.2, min: 0, max: 1, step: 0.01 },
+        fallingGravityScale: { value: 2.5, min: 0, max: 10, step: 0.1 },
+      },
+      { collapsed: true }
+    ),
+
+    Capsule: folder(
+      {
+        capsuleHalfHeight: { value: 0.35, min: 0.1, max: 2, step: 0.05 },
+        capsuleRadius: { value: 0.3, min: 0.1, max: 1, step: 0.05 },
+        floatHeight: { value: 0.3, min: 0, max: 2, step: 0.05 },
+      },
+      { collapsed: true }
+    ),
+
+    'Floating Spring': folder(
+      {
+        springK: { value: 2, min: 0, max: 5, step: 0.05 },
+        dampingC: { value: 0.2, min: 0, max: 1, step: 0.01 },
+      },
+      { collapsed: true }
+    ),
+
+    'Auto Balance': folder(
+      {
+        autoBalance: true,
+        autoBalanceSpringK: { value: 0.3, min: 0, max: 3, step: 0.01 },
+        autoBalanceDampingC: { value: 0.03, min: 0, max: 0.5, step: 0.005 },
+        autoBalanceSpringOnY: { value: 0.5, min: 0, max: 3, step: 0.01 },
+        autoBalanceDampingOnY: { value: 0.015, min: 0, max: 0.5, step: 0.005 },
+      },
+      { collapsed: true }
+    ),
+
+    Camera: folder(
+      {
+        camInitDis: { value: -5, min: -20, max: -0.5, step: 0.1 },
+        camMaxDis: { value: -7, min: -20, max: -1, step: 0.1 },
+        camMinDis: { value: -0.7, min: -5, max: 0, step: 0.1 },
+        camFollowMult: { value: 11, min: 1, max: 30, step: 0.5 },
+        camLerpMult: { value: 25, min: 1, max: 60, step: 0.5 },
+      },
+      { collapsed: true }
+    ),
+  });
+
+  React.useEffect(() => {
+    onModelChange?.(characterModel);
+  }, [characterModel, onModelChange]);
+
+  const { mountedId, mount, dismount } = useRideableState();
+
+  // Determine effective colors based on mode
+  const preset =
+    sceneMode && DAY_NIGHT_PRESETS[sceneMode]
+      ? DAY_NIGHT_PRESETS[sceneMode]
+      : null;
+  const effectiveBgColor = preset?.bgColor ?? bgColor;
+  const effectiveGridSectionColor =
+    preset?.gridSectionColor ?? gridSectionColor;
+  const effectiveGridCellColor = preset?.gridCellColor ?? gridCellColor;
+  const effectiveEcctrlMode = fpsMode ? 'CameraBasedMovement' : ecctrlMode;
+  const pointToMoveActive = effectiveEcctrlMode === 'PointToMove';
+  const effectiveTurnVelMultiplier = fpsMode ? 1 : turnVelMultiplier;
+  const effectiveTurnSpeed = fpsMode ? 100 : turnSpeed;
+  const effectiveCamCollision = !fpsMode;
+  const effectiveCamInitDis = fpsMode ? -0.01 : camInitDis;
+  const effectiveCamMaxDis = fpsMode ? -0.01 : camMaxDis;
+  const effectiveCamMinDis = fpsMode ? -0.01 : camMinDis;
+  const effectiveCamFollowMult = fpsMode ? 1000 : camFollowMult;
+  const effectiveCamLerpMult = fpsMode ? 1000 : camLerpMult;
+  const ecctrlInstanceKey = fpsMode ? 'fps-on' : 'fps-off';
+  const effectiveDisableMovementControl = !!mountedId;
+  const selectedVariant = characterModel.toLowerCase();
+  const isExampleCharacter = characterModel === 'Example Character';
+
+  const handlePointToMoveHover = React.useCallback(
+    (event) => {
+      if (!pointToMoveActive) return;
+      event.stopPropagation();
+      setHoverPoint(event.point.clone());
+    },
+    [pointToMoveActive]
+  );
+
+  const handlePointToMoveDown = React.useCallback(
+    (event) => {
+      if (!pointToMoveActive) return;
+      event.stopPropagation();
+      pointerDownAtRef.current = Date.now();
+    },
+    [pointToMoveActive]
+  );
+
+  const handlePointToMoveUp = React.useCallback(
+    (event) => {
+      if (!pointToMoveActive) return;
+      event.stopPropagation();
+      if (Date.now() - pointerDownAtRef.current >= 220) return;
+      const point = event.point.clone();
+      setMoveToPoint(point);
+      setMoveTargetPoint(point);
+    },
+    [pointToMoveActive, setMoveToPoint]
+  );
+
+  useEffect(() => {
+    const canvas = gl.domElement;
+
+    if (pointToMoveActive) {
+      if (document.pointerLockElement === canvas) {
+        document.exitPointerLock();
+      }
+      return undefined;
+    }
+
+    const lock = () => {
+      const p = canvas.requestPointerLock();
+      if (p && typeof p.catch === 'function') p.catch(() => {});
+    };
+
+    canvas.addEventListener('click', lock);
+    return () => canvas.removeEventListener('click', lock);
+  }, [gl, pointToMoveActive]);
+
+  useEffect(() => {
+    if (!pointToMoveActive) {
+      setMoveToPoint(null);
+      setHoverPoint(null);
+      setMoveTargetPoint(null);
+    }
+  }, [pointToMoveActive, setMoveToPoint]);
+
+  let characterContent;
+
+  if (selectedVariant === 'seal') {
+    characterContent = <SealCharacter color={color} />;
+  } else if (isWebGPU && selectedVariant === 'gh0st') {
+    characterContent = <GhostCharacter color={color} />;
+  } else if (isExampleCharacter) {
+    characterContent = <ExampleCharacterModel color={color} />;
+  } else {
+    characterContent = <CapsuleCharacter color={color} />;
+  }
+
+  const characterController = (
+    <Ecctrl
+      ref={ecctrlRef}
+      key={ecctrlInstanceKey}
+      position={spawnPos}
+      animated
+      followLight
+      disableControl={disableControl}
+      disableMovementControl={effectiveDisableMovementControl}
+      disableFollowCam={disableFollowCam}
+      invertGamepadMovX={invertGamepadMovX}
+      invertGamepadMovY={invertGamepadMovY}
+      invertGamepadCamX={invertGamepadCamX}
+      invertGamepadCamY={invertGamepadCamY}
+      maxVelLimit={maxVelLimit}
+      turnVelMultiplier={effectiveTurnVelMultiplier}
+      turnSpeed={effectiveTurnSpeed}
+      sprintMult={sprintMult}
+      jumpVel={jumpVel}
+      enableDoubleJump={enableDoubleJump}
+      maxAirJumps={maxAirJumps}
+      airJumpVelMultiplier={airJumpVelMultiplier}
+      airDragMultiplier={airDragMultiplier}
+      fallingGravityScale={fallingGravityScale}
+      capsuleHalfHeight={capsuleHalfHeight}
+      capsuleRadius={capsuleRadius}
+      floatHeight={floatHeight}
+      springK={springK}
+      dampingC={dampingC}
+      autoBalance={autoBalance}
+      autoBalanceSpringK={autoBalanceSpringK}
+      autoBalanceDampingC={autoBalanceDampingC}
+      autoBalanceSpringOnY={autoBalanceSpringOnY}
+      autoBalanceDampingOnY={autoBalanceDampingOnY}
+      camCollision={effectiveCamCollision}
+      camInitDis={effectiveCamInitDis}
+      camMaxDis={effectiveCamMaxDis}
+      camMinDis={effectiveCamMinDis}
+      camFollowMult={effectiveCamFollowMult}
+      camLerpMult={effectiveCamLerpMult}
+      mode={effectiveEcctrlMode}
+    >
+      {characterContent}
+    </Ecctrl>
+  );
+
+  return (
+    <>
+      <TouchJoystickOverlay />
+
+      <Lights mode={sceneMode} />
+
+      <color attach="background" args={[effectiveBgColor]} />
+
+      {pointToMoveActive && (
+        <PointToMoveIndicators
+          hoverPoint={hoverPoint}
+          moveTargetPoint={moveTargetPoint}
+        />
+      )}
+
+      <Physics
+        debug={physics}
+        paused={pausedPhysics}
+        timeStep={1 / 60}
+        interpolate
+      >
+        {pointToMoveActive ? (
+          characterController
+        ) : (
+          <KeyboardControls map={keyboardMap}>
+            {characterController}
+            {rideablesEnabled && (
+              <RideableRcCar
+                id="rccar-1"
+                position={[4, 0.5, 4]}
+                ecctrlRef={ecctrlRef}
+                mounted={mountedId === 'rccar-1'}
+                onMount={mount}
+                onDismount={dismount}
+              />
+            )}
+          </KeyboardControls>
+        )}
+
+        <CharacterTracker ecctrlRef={ecctrlRef} />
+
+        <Level
+          gridSectionColor={effectiveGridSectionColor}
+          gridCellColor={effectiveGridCellColor}
+          onPointerMove={handlePointToMoveHover}
+          onPointerDown={handlePointToMoveDown}
+          onPointerUp={handlePointToMoveUp}
+          soccerFieldRef={soccerFieldRef}
+        />
+        {shotsEnabled && (
+          <ShotCube onFire={onShotFired} remoteShots={remoteShots} />
+        )}
+        <RemotePlayers remotePlayers={remotePlayers} />
+      </Physics>
+    </>
+  );
+}

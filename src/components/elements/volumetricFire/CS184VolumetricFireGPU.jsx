@@ -1,4 +1,8 @@
 /* eslint-disable no-underscore-dangle, no-plusplus, no-continue */
+import React, { useEffect, useMemo, useRef } from 'react';
+
+import { useFrame } from '@react-three/fiber';
+
 import {
   Break,
   Continue,
@@ -23,10 +27,6 @@ import {
   vec4,
 } from 'three/tsl';
 import * as THREE from 'three/webgpu';
-
-import React, { useEffect, useMemo, useRef } from 'react';
-
-import { useFrame } from '@react-three/fiber';
 
 const MAX_CP = 8;
 const MAX_STEPS = 128;

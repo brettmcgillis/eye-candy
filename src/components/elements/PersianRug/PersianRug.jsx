@@ -2,8 +2,8 @@ import React, { useEffect, useMemo } from 'react';
 
 import { useGLTF } from '@react-three/drei';
 
-import { modelFile } from '../../../utils/appUtils';
-import bakeInstancedGeometry from '../../../utils/instancedGeometry';
+import { modelFile } from '@utils/appUtils';
+import bakeInstancedGeometry from '@utils/instancedGeometry';
 
 const PERSIAN_RUG_MODEL_PATH = '/persian_rug.glb';
 const PERSIAN_RUG_MODEL_FILE = modelFile(PERSIAN_RUG_MODEL_PATH);

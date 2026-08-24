@@ -1,14 +1,12 @@
-import { gaussianBlur } from 'three/addons/tsl/display/GaussianBlurNode.js';
-import { float, int, max, pass, color as threeColor, uniform } from 'three/tsl';
-import * as THREE from 'three/webgpu';
-
 import { memo, useEffect, useRef } from 'react';
 
 import { useFrame, useThree } from '@react-three/fiber';
 
-import { bilateralBlur } from '../../../../lib/tsl/BilateralBlurNode';
-import { godrays } from '../../../../lib/tsl/GodraysNode';
-import { depthAwareBlend } from '../../../../lib/tsl/depthAwareBlend';
+import { gaussianBlur } from 'three/addons/tsl/display/GaussianBlurNode.js';
+import { float, int, max, pass, color as threeColor, uniform } from 'three/tsl';
+import * as THREE from 'three/webgpu';
+
+import { bilateralBlur, depthAwareBlend, godrays } from '@modules/tsl';
 
 function Godrays({
   lightRef,

@@ -1,9 +1,9 @@
-import * as THREE from 'three';
-
 import React from 'react';
 
 import { shaderMaterial } from '@react-three/drei';
 import { extend } from '@react-three/fiber';
+
+import * as THREE from 'three';
 
 // ── Perlin 2D (same implementation as the coffee-steam reference) ───────────
 const PERLIN_2D = /* glsl */ `

@@ -1,8 +1,8 @@
-import * as THREE from 'three';
-
 import { useEffect, useRef } from 'react';
 
 import { useFrame, useThree } from '@react-three/fiber';
+
+import * as THREE from 'three';
 
 const CAMERA_EULER_ORDER = 'YXZ';
 const MAX_PITCH = Math.PI / 2 - 0.01;

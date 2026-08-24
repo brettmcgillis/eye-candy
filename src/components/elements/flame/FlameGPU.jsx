@@ -1,3 +1,7 @@
+import React, { useMemo, useRef } from 'react';
+
+import { useFrame } from '@react-three/fiber';
+
 import {
   Fn,
   abs,
@@ -18,10 +22,6 @@ import {
   vec3,
 } from 'three/tsl';
 import * as THREE from 'three/webgpu';
-
-import React, { useMemo, useRef } from 'react';
-
-import { useFrame } from '@react-three/fiber';
 
 import {
   FLAME_DEFAULT_MOTION,

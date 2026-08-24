@@ -1,3 +1,7 @@
+import React, { useEffect, useMemo, useRef, useState } from 'react';
+
+import { extend, useFrame } from '@react-three/fiber';
+
 import * as THREE from 'three';
 import {
   MSDFTextGeometry,
@@ -6,10 +10,6 @@ import {
 } from 'three-msdf-text-utils/webgpu';
 import { Fn, float, step, uniform, uv, vec2, vec3 } from 'three/tsl';
 import * as THREE_WEBGPU from 'three/webgpu';
-
-import React, { useEffect, useMemo, useRef, useState } from 'react';
-
-import { extend, useFrame } from '@react-three/fiber';
 
 import {
   CRT_MSDF_CHARSET,

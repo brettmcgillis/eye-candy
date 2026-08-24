@@ -1,12 +1,13 @@
-import * as THREE from 'three/webgpu';
-
 import React, { useEffect, useMemo, useRef, useState } from 'react';
 
 import { animated, useSpring } from '@react-spring/three';
 import { useGLTF } from '@react-three/drei';
 import { useFrame } from '@react-three/fiber';
 
-import { modelFile } from '../../../../utils/appUtils';
+import * as THREE from 'three/webgpu';
+
+import { modelFile } from '@utils/appUtils';
+
 import {
   createGrowthMaterial,
   updateGrowthMaterial,

@@ -1,6 +1,3 @@
-import { useControls } from 'leva';
-import * as THREE from 'three';
-
 import React, { useEffect, useMemo, useRef } from 'react';
 
 import { useKeyboardControls } from '@react-three/drei';
@@ -13,8 +10,11 @@ import {
   useRapier,
 } from '@react-three/rapier';
 
-import { useFollowCam } from '../../../../modules/ecctrl/Ecctrl';
-import { useJoystickControls } from '../../../../modules/ecctrl/stores/useJoystickControls';
+import { useControls } from 'leva';
+import * as THREE from 'three';
+
+import { useFollowCam, useJoystickControls } from '@modules/ecctrl';
+
 import RcCar from './RcCar';
 
 // ── Helpers ───────────────────────────────────────────────────────────────────
@@ -252,7 +252,7 @@ function RcCarPhysics({
     let rightward = keys.rightward ?? false;
     let sprinting = keys.run ?? false;
     let jumping = keys.jump ?? false;
-    let braking = keys.action2 ?? false;
+    const braking = keys.action2 ?? false;
     let handbraking = keys.action4 ?? false;
 
     if (joystick?.joystickDis > 0) {

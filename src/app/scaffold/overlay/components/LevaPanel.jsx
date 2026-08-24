@@ -1,12 +1,13 @@
-import { Leva } from 'leva';
-
 import React from 'react';
 import { FaBomb } from 'react-icons/fa';
 import { GiBrightExplosion } from 'react-icons/gi';
 
 import { a, to, useSpring } from '@react-spring/web';
 
-import { iconFile, localEnv } from '../../../../utils/appUtils';
+import { Leva } from 'leva';
+
+import { iconFile, localEnv } from '@utils/appUtils';
+
 import LevaTheme from '../levaTheme';
 
 function LevaTitle() {

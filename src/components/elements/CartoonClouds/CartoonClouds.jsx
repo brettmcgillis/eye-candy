@@ -1,10 +1,10 @@
-import * as THREE from 'three';
-
 import React, { useMemo } from 'react';
 
 import { useGLTF } from '@react-three/drei';
 
-import { modelFile } from '../../../utils/appUtils';
+import * as THREE from 'three';
+
+import { modelFile } from '@utils/appUtils';
 
 const PART_ROTATION = [-Math.PI / 2, 0, 0];
 const PART_EULER = new THREE.Euler(...PART_ROTATION);

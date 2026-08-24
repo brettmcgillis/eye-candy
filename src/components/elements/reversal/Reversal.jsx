@@ -1,12 +1,12 @@
-import * as THREE from 'three';
-
 import React, { useMemo, useState } from 'react';
 
 import { animated, useSpring } from '@react-spring/three';
 import { useGLTF } from '@react-three/drei';
 import { useFrame } from '@react-three/fiber';
 
-import { modelFile } from '../../../utils/appUtils';
+import * as THREE from 'three';
+
+import { modelFile } from '@utils/appUtils';
 
 /* ========================================================================
    Generic base (new third variation)

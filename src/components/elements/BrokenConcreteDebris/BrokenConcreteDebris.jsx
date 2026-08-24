@@ -2,7 +2,7 @@ import React from 'react';
 
 import { useGLTF } from '@react-three/drei';
 
-import { modelFile } from '../../../utils/appUtils';
+import { modelFile } from '@utils/appUtils';
 
 // The pack's individual chunks, re-exposed so scenes can scatter pieces
 // resting on their own terrain instead of plopping the whole diorama down

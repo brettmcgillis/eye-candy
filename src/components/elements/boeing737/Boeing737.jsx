@@ -2,7 +2,7 @@ import React from 'react';
 
 import { useGLTF } from '@react-three/drei';
 
-import { modelFile } from '../../../utils/appUtils';
+import { modelFile } from '@utils/appUtils';
 
 export default function Boeing737(props) {
   const { nodes, materials } = useGLTF(modelFile('/boeing_737-300.glb'));

@@ -1,10 +1,10 @@
 // CRT Static Material - Shared across scenes
-import { FrontSide } from 'three';
-
 import React, { useRef } from 'react';
 
 import { shaderMaterial } from '@react-three/drei';
 import { extend, useFrame } from '@react-three/fiber';
+
+import { FrontSide } from 'three';
 
 /* ---------------------------------------------
    Shaders

@@ -1,3 +1,8 @@
+import React, { useCallback, useEffect, useMemo, useRef } from 'react';
+
+import { useTexture } from '@react-three/drei';
+import { useFrame } from '@react-three/fiber';
+
 import {
   abs,
   cameraProjectionMatrix,
@@ -21,11 +26,6 @@ import {
   vec4,
 } from 'three/tsl';
 import * as THREE from 'three/webgpu';
-
-import React, { useCallback, useEffect, useMemo, useRef } from 'react';
-
-import { useTexture } from '@react-three/drei';
-import { useFrame } from '@react-three/fiber';
 
 import BoundSkinnedMesh from '../BoundSkinnedMesh';
 import FurPointerSurface from '../FurPointerSurface';

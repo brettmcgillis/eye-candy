@@ -5,8 +5,8 @@ import React, { useEffect, useMemo } from 'react';
 
 import { createInstances, useGLTF } from '@react-three/drei';
 
-import { modelFile } from '../../../utils/appUtils';
-import bakeInstancedGeometry from '../../../utils/instancedGeometry';
+import { modelFile } from '@utils/appUtils';
+import bakeInstancedGeometry from '@utils/instancedGeometry';
 
 const WHISKEY_BOTTLE_MODEL_PATH = '/whiskeyBottle.glb';
 const WHISKEY_BOTTLE_ROTATION = [Math.PI / 2, 0, 0];

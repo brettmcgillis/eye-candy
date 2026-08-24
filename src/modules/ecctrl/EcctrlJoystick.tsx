@@ -1,5 +1,3 @@
-import * as THREE from 'three';
-
 import React, {
   type ReactNode,
   Suspense,
@@ -12,6 +10,8 @@ import React, {
 
 import { animated, useSpring } from '@react-spring/three';
 import { Canvas, type ThreeElements } from '@react-three/fiber';
+
+import * as THREE from 'three';
 
 import { useJoystickControls } from './stores/useJoystickControls';
 

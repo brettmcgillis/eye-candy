@@ -1,3 +1,8 @@
+import React, { useRef } from 'react';
+
+import { shaderMaterial } from '@react-three/drei';
+import { extend, useFrame } from '@react-three/fiber';
+
 import {
   AdditiveBlending,
   BackSide,
@@ -6,11 +11,6 @@ import {
   FrontSide,
   NormalBlending,
 } from 'three';
-
-import React, { useRef } from 'react';
-
-import { shaderMaterial } from '@react-three/drei';
-import { extend, useFrame } from '@react-three/fiber';
 
 /**
  * @param {Number} fresnelAmount - Controls the value of the Fresnel effect. Ranges from 0.0 to 1.0.

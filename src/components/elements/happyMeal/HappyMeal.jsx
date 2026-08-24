@@ -2,8 +2,8 @@ import React, { useEffect, useMemo } from 'react';
 
 import { createInstances, useGLTF } from '@react-three/drei';
 
-import { modelFile } from '../../../utils/appUtils';
-import bakeInstancedGeometry from '../../../utils/instancedGeometry';
+import { modelFile } from '@utils/appUtils';
+import bakeInstancedGeometry from '@utils/instancedGeometry';
 
 const HAPPY_MEAL_MODEL_PATH = '/happyMeal.glb';
 const HAPPY_MEAL_MODEL_FILE = modelFile(HAPPY_MEAL_MODEL_PATH);

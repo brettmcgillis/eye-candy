@@ -2,8 +2,8 @@ import React, { useEffect, useMemo } from 'react';
 
 import { createInstances, useGLTF } from '@react-three/drei';
 
-import { modelFile } from '../../../utils/appUtils';
-import bakeInstancedGeometry from '../../../utils/instancedGeometry';
+import { modelFile } from '@utils/appUtils';
+import bakeInstancedGeometry from '@utils/instancedGeometry';
 
 const LOW_POLY_VHS_MODEL_PATH = '/lowPolyVhs.glb';
 const LOW_POLY_VHS_NODE_NAME = 'vhs-tape_Material_#25_0';

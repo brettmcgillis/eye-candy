@@ -1,3 +1,8 @@
+import React, { useEffect, useMemo } from 'react';
+
+import { Billboard } from '@react-three/drei';
+import { useFrame } from '@react-three/fiber';
+
 import {
   Fn,
   clamp,
@@ -16,11 +21,6 @@ import {
   vec3,
 } from 'three/tsl';
 import * as THREE from 'three/webgpu';
-
-import React, { useEffect, useMemo } from 'react';
-
-import { Billboard } from '@react-three/drei';
-import { useFrame } from '@react-three/fiber';
 
 const DEFAULT_SMOKE = {
   timeFrequency: 0.45,

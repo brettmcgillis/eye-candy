@@ -1,4 +1,8 @@
 // GridMaterial.jsx - Unreal Engine style grid material
+import React, { useMemo } from 'react';
+
+import { extend } from '@react-three/fiber';
+
 import {
   Fn,
   abs,
@@ -14,10 +18,6 @@ import {
   vec3,
 } from 'three/tsl';
 import * as THREE from 'three/webgpu';
-
-import React, { useMemo } from 'react';
-
-import { extend } from '@react-three/fiber';
 
 extend(THREE);
 

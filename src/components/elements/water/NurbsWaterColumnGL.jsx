@@ -1,9 +1,9 @@
-import * as THREE from 'three';
-import { Line2, LineGeometry, LineMaterial } from 'three-stdlib';
-
 import React, { useCallback, useEffect, useMemo, useRef } from 'react';
 
 import { extend, useFrame } from '@react-three/fiber';
+
+import * as THREE from 'three';
+import { Line2, LineGeometry, LineMaterial } from 'three-stdlib';
 
 import NurbsWaterLightningHitPlane from './NurbsWaterLightningHitPlane';
 import createNurbsWaterLightningTargetAdapter from './createNurbsWaterLightningTargetAdapter';

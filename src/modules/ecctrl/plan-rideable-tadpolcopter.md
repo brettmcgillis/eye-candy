@@ -115,7 +115,7 @@ Mount trigger is identical to RideableRcCar — action1 key when near.
 
 ## Modified files
 
-### `src/components/scenes/ToolBox/CharacterController/Experience.jsx`
+### `src/components/scenes/WebGL/CharacterController/Experience.jsx`
 
 **1. Import:**
 
@@ -154,7 +154,7 @@ the `mount`/`dismount` callbacks from Plan 1 handle everything.
 
 ---
 
-### `src/components/scenes/ToolBox/CharacterController/hooks/useMultiplayer.ts`
+### `src/components/scenes/WebGL/CharacterController/hooks/useMultiplayer.ts`
 
 Plan 1 already extended `CharacterStateData` with `mountedRideableId`. No further
 changes needed unless flight-specific state (e.g. altitude, pitch) is wanted for

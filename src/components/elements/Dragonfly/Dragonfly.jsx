@@ -1,12 +1,12 @@
-import * as THREE from 'three';
-import { SkeletonUtils } from 'three-stdlib';
-
 import React from 'react';
 
 import { useAnimations, useGLTF } from '@react-three/drei';
 import { useGraph } from '@react-three/fiber';
 
-import { modelFile } from '../../../utils/appUtils';
+import * as THREE from 'three';
+import { SkeletonUtils } from 'three-stdlib';
+
+import { modelFile } from '@utils/appUtils';
 
 export default function Dragonfly({
   animationOffset = 0,
@@ -37,7 +37,7 @@ export default function Dragonfly({
     action.timeScale = animationSpeed;
 
     if (Number.isFinite(animationOffset) && action.getClip()?.duration > 0) {
-      const duration = action.getClip().duration;
+      const { duration } = action.getClip();
       action.time = ((animationOffset % duration) + duration) % duration;
     }
 

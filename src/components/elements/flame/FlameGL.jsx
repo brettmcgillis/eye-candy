@@ -1,10 +1,11 @@
-import * as THREE from 'three';
-
 import React, { useMemo, useRef } from 'react';
 
 import { useFrame } from '@react-three/fiber';
 
-import FlameMaterial from '../../materials/webGL/flameMaterial';
+import * as THREE from 'three';
+
+import FlameMaterial from '@materials/webGL/flameMaterial';
+
 import {
   FLAME_DEFAULT_MOTION,
   FLAME_Y_ROTATION,

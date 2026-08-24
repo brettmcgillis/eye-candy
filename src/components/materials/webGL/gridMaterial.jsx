@@ -1,6 +1,6 @@
-import * as THREE from 'three';
-
 import React, { useEffect, useMemo } from 'react';
+
+import * as THREE from 'three';
 
 function normalizeColor(colorInput, fallback = [1, 1, 1]) {
   if (Array.isArray(colorInput)) {

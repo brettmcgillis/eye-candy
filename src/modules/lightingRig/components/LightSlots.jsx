@@ -1,12 +1,13 @@
-import * as THREE from 'three';
-import { RectAreaLightHelper } from 'three/addons/helpers/RectAreaLightHelper.js';
-
 import React, { memo, useEffect, useRef, useState } from 'react';
 
 import { useHelper } from '@react-three/drei';
 import { useThree } from '@react-three/fiber';
 
-import { radians } from '../../../utils/math';
+import * as THREE from 'three';
+import { RectAreaLightHelper } from 'three/addons/helpers/RectAreaLightHelper.js';
+
+import { radians } from '@utils/math';
+
 import ensureRectAreaLightSupport from './rectAreaLtc';
 import useLightSlot from './useLightSlot';
 

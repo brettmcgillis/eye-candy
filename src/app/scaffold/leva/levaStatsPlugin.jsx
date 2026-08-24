@@ -1,7 +1,7 @@
+import React, { useEffect, useRef } from 'react';
+
 import { Components, createPlugin, useInputContext } from 'leva/plugin';
 import StatsImpl from 'three/examples/jsm/libs/stats.module.js';
-
-import React, { useEffect, useRef } from 'react';
 
 const { Label, Row } = Components;
 

@@ -1,10 +1,10 @@
-import * as THREE from 'three';
-
 import React, { useEffect } from 'react';
 
 import { useGLTF } from '@react-three/drei';
 
-import { modelFile } from '../../../utils/appUtils';
+import * as THREE from 'three';
+
+import { modelFile } from '@utils/appUtils';
 
 export default function Aisle9Store({
   indoorEmissiveColor = '#fffbe0',

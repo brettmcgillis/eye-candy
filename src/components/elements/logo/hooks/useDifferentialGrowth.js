@@ -1,8 +1,8 @@
-import { Mesh } from 'three';
-
 import { useEffect, useMemo, useRef } from 'react';
 
 import { useFrame } from '@react-three/fiber';
+
+import { Mesh } from 'three';
 
 import { DifferentialGrowthEngine } from '../growth/differentialGrowthEngine';
 import prepareLogoGeometry from '../growth/prepareLogoGeometry';

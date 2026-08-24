@@ -1,14 +1,11 @@
 /* eslint-disable no-param-reassign */
-import { viewportSafeUV, viewportSharedTexture } from 'three/tsl';
-
 import { useEffect, useRef } from 'react';
 
 import { useFrame } from '@react-three/fiber';
 
-import {
-  fractalPixelate,
-  updateFractalPixelateUniforms,
-} from '../../../../lib/tsl/fractalPixelate';
+import { viewportSafeUV, viewportSharedTexture } from 'three/tsl';
+
+import { fractalPixelate, updateFractalPixelateUniforms } from '@modules/tsl';
 
 // Wires the fractal-pixelate backdrop technique (webgpu_backdrop_area.html's
 // `backdropNode`/`viewportSharedTexture` pattern) onto a NodeMaterial: when

@@ -4,11 +4,11 @@
 // coexist in the same frame.
 // Optional attractorsRef: pass a ref of attractor objects (SmokeTest) or omit
 // (ThatsAllFolks) — physics is skipped when no attractors are present.
-import * as THREE from 'three';
-
 import React, { useEffect, useMemo, useRef } from 'react';
 
 import { useFrame } from '@react-three/fiber';
+
+import * as THREE from 'three';
 
 import curlNoise from './curlNoise';
 

@@ -2,7 +2,7 @@ import React from 'react';
 
 import { useGLTF } from '@react-three/drei';
 
-import { modelFile } from '../../../utils/appUtils';
+import { modelFile } from '@utils/appUtils';
 
 const TILT = [-Math.PI / 2, 0, 0];
 const WIRE_TILT = [-Math.PI / 2, Math.PI / 2, 0];

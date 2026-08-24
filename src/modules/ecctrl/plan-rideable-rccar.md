@@ -12,9 +12,9 @@ Plan 2 (TadpolCopter) depends on this plan being complete first.
 Zustand store. Single source of truth for which rideable (if any) is active.
 
 ```ts
-import { create } from 'zustand';
-
 import type React from 'react';
+
+import { create } from 'zustand';
 
 type RideableState = {
   mountedId: string | null;
@@ -190,7 +190,7 @@ No other changes to Ecctrl.tsx. Both changes are purely additive.
 
 ---
 
-### `src/components/scenes/ToolBox/CharacterController/Experience.jsx`
+### `src/components/scenes/WebGL/CharacterController/Experience.jsx`
 
 **1. Import:**
 
@@ -244,7 +244,7 @@ rideablesEnabled: { value: false, label: 'Rideables' }
 
 ---
 
-### `src/components/scenes/ToolBox/CharacterController/hooks/useMultiplayer.ts`
+### `src/components/scenes/WebGL/CharacterController/hooks/useMultiplayer.ts`
 
 **1. Extend `CharacterStateData`:**
 

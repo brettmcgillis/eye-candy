@@ -2,8 +2,8 @@ import React, { useEffect, useMemo } from 'react';
 
 import { createInstances, useGLTF } from '@react-three/drei';
 
-import { modelFile } from '../../../utils/appUtils';
-import bakeInstancedGeometry from '../../../utils/instancedGeometry';
+import { modelFile } from '@utils/appUtils';
+import bakeInstancedGeometry from '@utils/instancedGeometry';
 
 const CARDBOARD_BOX_1_MODEL_PATH = '/cardboardbox1.glb';
 const CARDBOARD_BOX_1_TRANSFORM_CHAIN = [{ scale: 0.01 }];

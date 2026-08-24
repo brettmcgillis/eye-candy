@@ -1,12 +1,12 @@
-import { Howl, Howler } from 'howler';
-import { Vector3 } from 'three';
-
 import { useEffect, useRef } from 'react';
 
 import { useFrame, useThree } from '@react-three/fiber';
 
-import useSceneAudioStore from '../store/useSceneAudioStore';
-import { audioFile } from '../utils/appUtils';
+import { Howl, Howler } from 'howler';
+import { Vector3 } from 'three';
+
+import useSceneAudioStore from '@store/useSceneAudioStore';
+import { audioFile } from '@utils/appUtils';
 
 const FADE_MS = 2000;
 const UP = new Vector3(0, 1, 0);

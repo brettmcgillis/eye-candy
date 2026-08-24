@@ -1,6 +1,6 @@
-import * as THREE from 'three';
-
 import { useCallback, useEffect, useMemo, useRef } from 'react';
+
+import * as THREE from 'three';
 
 import { sampleWaveHeight, sampleWaveNormal } from './waterUtils';
 

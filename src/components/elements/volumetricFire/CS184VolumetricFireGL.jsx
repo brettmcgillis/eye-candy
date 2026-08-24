@@ -1,9 +1,9 @@
 /* eslint-disable no-underscore-dangle, no-plusplus, no-continue */
-import * as THREE from 'three';
-
 import React, { useEffect, useMemo, useRef } from 'react';
 
 import { useFrame } from '@react-three/fiber';
+
+import * as THREE from 'three';
 
 // ─── Ray-Marched Volumetric Fire Shaders ─────────────────────────────────────
 // Inspired by the CS184 fire-simulation project's rendering pipeline:

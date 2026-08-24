@@ -1,11 +1,11 @@
-import { texture as textureSample, vec3 } from 'three/tsl';
-import * as THREE from 'three/webgpu';
-
 import React, { useMemo } from 'react';
 
 import { useTexture } from '@react-three/drei';
 
-import { textureFile } from '../../../utils/appUtils';
+import { texture as textureSample, vec3 } from 'three/tsl';
+import * as THREE from 'three/webgpu';
+
+import { textureFile } from '@utils/appUtils';
 
 useTexture.preload(textureFile('moonTexture.jpg'));
 

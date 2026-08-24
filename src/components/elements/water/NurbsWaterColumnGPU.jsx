@@ -1,3 +1,7 @@
+import React, { useCallback, useEffect, useMemo, useRef } from 'react';
+
+import { useFrame } from '@react-three/fiber';
+
 import {
   Fn,
   clamp,
@@ -16,10 +20,6 @@ import {
   vec3,
 } from 'three/tsl';
 import * as THREE from 'three/webgpu';
-
-import React, { useCallback, useEffect, useMemo, useRef } from 'react';
-
-import { useFrame } from '@react-three/fiber';
 
 import NurbsWaterLightningHitPlane from './NurbsWaterLightningHitPlane';
 import createNurbsWaterLightningTargetAdapter from './createNurbsWaterLightningTargetAdapter';

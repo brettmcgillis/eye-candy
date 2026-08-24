@@ -1,7 +1,7 @@
+import type React from 'react';
+
 import * as THREE from 'three';
 import { create } from 'zustand';
-
-import type React from 'react';
 
 type RideableState = {
   mountedId: string | null;

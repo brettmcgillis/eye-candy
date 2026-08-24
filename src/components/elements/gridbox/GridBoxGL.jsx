@@ -1,6 +1,6 @@
-import * as THREE from 'three';
-
 import React, { useMemo } from 'react';
+
+import * as THREE from 'three';
 
 // Default box matches the SplineEditor workspace (2000-unit world, floor at Y=-200).
 // Pass smaller values (e.g. size=20, gridSize=1) for scene-scale toolbox scenes.

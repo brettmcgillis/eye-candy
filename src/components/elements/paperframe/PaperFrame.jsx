@@ -1,10 +1,10 @@
-import { RepeatWrapping } from 'three';
-
 import React, { useMemo } from 'react';
 
 import { useGLTF, useTexture } from '@react-three/drei';
 
-import { modelFile, textureFile } from '../../../utils/appUtils';
+import { RepeatWrapping } from 'three';
+
+import { modelFile, textureFile } from '@utils/appUtils';
 
 const WATERCOLOR_URL = textureFile('watercolor.png');
 

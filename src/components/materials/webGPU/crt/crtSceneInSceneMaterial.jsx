@@ -1,3 +1,7 @@
+import React, { useEffect, useMemo, useRef } from 'react';
+
+import { extend, useFrame, useThree } from '@react-three/fiber';
+
 import { FrontSide } from 'three';
 import {
   Fn,
@@ -9,10 +13,6 @@ import {
   vec3,
 } from 'three/tsl';
 import * as THREE_WEBGPU from 'three/webgpu';
-
-import React, { useEffect, useMemo, useRef } from 'react';
-
-import { extend, useFrame, useThree } from '@react-three/fiber';
 
 import { curveUvNode, hash21Node, vignetteFactorNode } from './crtSharedNodes';
 

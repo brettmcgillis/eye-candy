@@ -1,7 +1,8 @@
 import React from 'react';
 import { FaVolumeMute, FaVolumeUp } from 'react-icons/fa';
 
-import useSceneAudioStore from '../../../../store/useSceneAudioStore';
+import useSceneAudioStore from '@store/useSceneAudioStore';
+
 import OverlayIconButton from './OverlayIconButton';
 
 export function useAudioToggleState() {

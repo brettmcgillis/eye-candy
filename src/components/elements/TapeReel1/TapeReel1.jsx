@@ -2,7 +2,7 @@ import React from 'react';
 
 import { useGLTF } from '@react-three/drei';
 
-import { modelFile } from '../../../utils/appUtils';
+import { modelFile } from '@utils/appUtils';
 
 export default function TapeReel1(props) {
   const { nodes, materials } = useGLTF(modelFile('tapeReel1.glb'));

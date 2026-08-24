@@ -5,6 +5,10 @@
 /* eslint-disable no-param-reassign */
 
 /* eslint-disable no-underscore-dangle */
+import React, { useEffect, useMemo, useRef, useState } from 'react';
+
+import { useFrame } from '@react-three/fiber';
+
 import {
   attribute,
   float,
@@ -20,10 +24,6 @@ import {
   vec3,
 } from 'three/tsl';
 import * as THREE from 'three/webgpu';
-
-import React, { useEffect, useMemo, useRef, useState } from 'react';
-
-import { useFrame } from '@react-three/fiber';
 
 import {
   DEFAULT_FIRE_AND_SMOKE_CONFIG,

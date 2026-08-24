@@ -1,9 +1,9 @@
 /* eslint-disable max-classes-per-file, no-underscore-dangle, no-plusplus, no-continue, no-loop-func, no-console */
-import * as THREE from 'three';
-
 import React, { useEffect, useMemo, useRef } from 'react';
 
 import { useFrame, useThree } from '@react-three/fiber';
+
+import * as THREE from 'three';
 
 import {
   CP_COUNT,

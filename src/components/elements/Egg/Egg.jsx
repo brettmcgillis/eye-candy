@@ -1,3 +1,7 @@
+import React, { useEffect, useMemo } from 'react';
+
+import { useGLTF } from '@react-three/drei';
+
 import { Color, DoubleSide } from 'three';
 import {
   cos,
@@ -12,11 +16,7 @@ import {
 } from 'three/tsl';
 import * as THREE from 'three/webgpu';
 
-import React, { useEffect, useMemo } from 'react';
-
-import { useGLTF } from '@react-three/drei';
-
-import { modelFile } from '../../../utils/appUtils';
+import { modelFile } from '@utils/appUtils';
 
 // Single egg from egg.glb. The model has NO UVs or texture (just POSITION + NORMAL),
 // and the geometry is centered near the origin (~±0.19 in X/Y, long axis along Z in

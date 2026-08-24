@@ -1,4 +1,8 @@
 /* eslint-disable no-underscore-dangle */
+import { memo, useEffect, useMemo, useRef } from 'react';
+
+import { useFrame, useThree } from '@react-three/fiber';
+
 import { outline } from 'three/addons/tsl/display/OutlineNode.js';
 import {
   Fn,
@@ -27,10 +31,6 @@ import {
   vec4,
 } from 'three/tsl';
 import * as THREE from 'three/webgpu';
-
-import { memo, useEffect, useMemo, useRef } from 'react';
-
-import { useFrame, useThree } from '@react-three/fiber';
 
 const BLACK = new THREE.Color(0x000000);
 const OUTLINE_LAYER = 1;

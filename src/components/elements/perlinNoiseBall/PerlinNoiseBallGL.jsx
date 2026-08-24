@@ -8,13 +8,14 @@
 // Verbatim displacement logic from:
 //   https://www.clicktorelease.com/code/perlin/explosion.html
 //
-import * as THREE from 'three';
-
 import React, { useMemo, useRef } from 'react';
 
 import { useFrame, useLoader } from '@react-three/fiber';
 
-import { textureFile } from '../../../utils/appUtils';
+import * as THREE from 'three';
+
+import { textureFile } from '@utils/appUtils';
+
 import noiseGlsl from './noiseGlsl';
 
 useLoader.preload(THREE.TextureLoader, textureFile('explosion.png'));

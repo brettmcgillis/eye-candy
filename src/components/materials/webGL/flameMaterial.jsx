@@ -1,11 +1,11 @@
-import * as THREE from 'three';
-
 import React from 'react';
 
 import { shaderMaterial } from '@react-three/drei';
 import { extend } from '@react-three/fiber';
 
-import { FLAME_SHADER_CONSTANTS } from '../../elements/flame/flameShared';
+import * as THREE from 'three';
+
+import { FLAME_SHADER_CONSTANTS } from '@elements/flame/flameShared';
 
 const glslNumberLiteral = (value) =>
   Number.isInteger(value) ? `${value}.0` : `${value}`;

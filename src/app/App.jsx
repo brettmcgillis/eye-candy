@@ -3,7 +3,6 @@ import { Navigate, Route, Routes, useLocation } from 'react-router-dom';
 
 import './App.css';
 import useAppScenes from './scaffold/hooks/useAppScenes';
-import AppStats from './scaffold/leva/AppStats';
 import Loader from './scaffold/loader/Loader';
 import Overlay from './scaffold/overlay/Overlay';
 import {
@@ -12,8 +11,10 @@ import {
   resolveSceneRoute,
 } from './sceneRegistry';
 
+const DevLandingPage = lazy(() => import('./pages/dev/DevLandingPage'));
 const LoadersPage = lazy(() => import('./pages/dev/LoadersPage'));
 const IconsPage = lazy(() => import('./pages/dev/IconsPage'));
+const GradientsPage = lazy(() => import('./pages/dev/GradientsPage'));
 const GltfJsxPage = lazy(() => import('./pages/dev/GltfJsxPage'));
 
 // Renders as the Suspense fallback inside the Canvas. Signals to the parent
@@ -30,6 +31,7 @@ function SuspenseSignal({ onSuspend }) {
    Renders the current scene route and owns the canvas, overlay, and loader.
 ──────────────────────────────────────────────────────────── */
 function SceneShell() {
+  const location = useLocation();
   const { CanvasWrapper, SceneComponent, redirectPath, renderer } =
     useAppScenes();
   const [loaderVisible, setLoaderVisible] = useState(true);
@@ -40,7 +42,12 @@ function SceneShell() {
   }, []);
 
   if (redirectPath) {
-    return <Navigate to={redirectPath} replace />;
+    return (
+      <Navigate
+        to={{ pathname: redirectPath, search: location.search }}
+        replace
+      />
+    );
   }
 
   return (
@@ -48,7 +55,7 @@ function SceneShell() {
       <Overlay />
       <div className="App">
         <CanvasWrapper key={renderer}>
-          <AppStats />
+          {/* <AppStats /> */}
           <Suspense fallback={<SuspenseSignal onSuspend={handleSuspend} />}>
             {SceneComponent && <SceneComponent />}
           </Suspense>
@@ -65,15 +72,40 @@ function SceneShell() {
 }
 
 function AreaSceneRedirect({ area }) {
-  return <Navigate to={getAreaDefaultPath(area)} replace />;
+  const location = useLocation();
+  return (
+    <Navigate
+      to={{ pathname: getAreaDefaultPath(area), search: location.search }}
+      replace
+    />
+  );
 }
 
+function FallbackRedirect() {
+  const location = useLocation();
+  const { redirectPath } = resolveSceneRoute(location.pathname);
+  return (
+    <Navigate
+      to={{ pathname: redirectPath, search: location.search }}
+      replace
+    />
+  );
+}
+
+// Redirects (legacy scene-id paths, wrong-area paths) carry the query string
+// along — deep links like ?preset=<name> must survive the hop to the
+// canonical scene path.
 function SceneRoute() {
   const location = useLocation();
   const { scene, redirectPath } = resolveSceneRoute(location.pathname);
 
   if (!scene) {
-    return <Navigate to={redirectPath} replace />;
+    return (
+      <Navigate
+        to={{ pathname: redirectPath, search: location.search }}
+        replace
+      />
+    );
   }
 
   return <SceneShell />;
@@ -87,6 +119,14 @@ export default function AppRoot() {
 
       {/* Dev utility pages — lazy-loaded, no app shell */}
       <Route
+        path="/dev"
+        element={
+          <Suspense fallback={null}>
+            <DevLandingPage />
+          </Suspense>
+        }
+      />
+      <Route
         path="/dev/loaderpattern"
         element={
           <Suspense fallback={null}>
@@ -99,6 +139,22 @@ export default function AppRoot() {
         element={
           <Suspense fallback={null}>
             <IconsPage />
+          </Suspense>
+        }
+      />
+      <Route
+        path="/dev/color"
+        element={
+          <Suspense fallback={null}>
+            <GradientsPage />
+          </Suspense>
+        }
+      />
+      <Route
+        path="/dev/colors"
+        element={
+          <Suspense fallback={null}>
+            <GradientsPage />
           </Suspense>
         }
       />
@@ -117,6 +173,8 @@ export default function AppRoot() {
 
       <Route path="/:areaSegment/:sceneSlug" element={<SceneRoute />} />
       <Route path="/:sceneSlug" element={<SceneRoute />} />
+
+      <Route path="*" element={<FallbackRedirect />} />
     </Routes>
   );
 }

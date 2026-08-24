@@ -2,7 +2,7 @@ import React, { useMemo } from 'react';
 
 import { useGLTF } from '@react-three/drei';
 
-import { modelFile } from '../../../utils/appUtils';
+import { modelFile } from '@utils/appUtils';
 
 const GLASS_MATERIAL_KEYS = ['glass', 'glass_2', 'glass_5'];
 export const FISH_TANK_PANE_KEYS = ['front', 'back', 'left', 'right'];

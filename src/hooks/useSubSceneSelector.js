@@ -1,8 +1,8 @@
-import { useControls } from 'leva';
-
 import { useEffect, useMemo } from 'react';
 
-import { localEnv } from '../utils/appUtils';
+import { useControls } from 'leva';
+
+import { localEnv } from '@utils/appUtils';
 
 function getSceneFromQuery(queryParam) {
   if (typeof window === 'undefined') return null;

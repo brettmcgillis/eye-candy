@@ -2,7 +2,7 @@ import React from 'react';
 
 import { useGLTF } from '@react-three/drei';
 
-import { modelFile } from '../../../utils/appUtils';
+import { modelFile } from '@utils/appUtils';
 
 const DUMPSTER_BASE_ROTATION = [Math.PI / 2, 0, 0];
 const DUMPSTER_BASE_SCALE = 0.01;

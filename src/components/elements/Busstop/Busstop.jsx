@@ -2,7 +2,7 @@ import React from 'react';
 
 import { useGLTF } from '@react-three/drei';
 
-import { modelFile } from '../../../utils/appUtils';
+import { modelFile } from '@utils/appUtils';
 
 // The four sign panels. `InsideBack` carries the bus route map and is never
 // overridden; the other three are advertisement faces that `renderAd` may

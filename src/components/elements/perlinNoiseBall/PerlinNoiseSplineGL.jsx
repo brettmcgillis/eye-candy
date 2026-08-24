@@ -1,13 +1,14 @@
 /* eslint-disable no-param-reassign */
 
 /* eslint-disable no-plusplus */
-import * as THREE from 'three';
-
 import React, { useMemo, useRef } from 'react';
 
 import { useFrame, useLoader } from '@react-three/fiber';
 
-import { textureFile } from '../../../utils/appUtils';
+import * as THREE from 'three';
+
+import { textureFile } from '@utils/appUtils';
+
 import noiseGlsl from './noiseGlsl';
 import {
   DEFAULT_CONTROL_POINTS,

@@ -1,11 +1,11 @@
-import * as THREE from 'three';
-
 import React, { useMemo } from 'react';
 
 import { useGLTF } from '@react-three/drei';
 
-import { modelFile } from '../../../utils/appUtils';
-import bakeInstancedGeometry from '../../../utils/instancedGeometry';
+import * as THREE from 'three';
+
+import { modelFile } from '@utils/appUtils';
+import bakeInstancedGeometry from '@utils/instancedGeometry';
 
 // Corrective rotation baked into every feather mesh in the source JSX below
 // (Blender Z-up -> three Y-up) — reused when baking standalone instanced

@@ -1,6 +1,3 @@
-import { useControls } from 'leva';
-import * as THREE from 'three';
-
 import {
   type ForwardRefRenderFunction,
   type ReactNode,
@@ -30,6 +27,9 @@ import {
   quat,
   useRapier,
 } from '@react-three/rapier';
+
+import { useControls } from 'leva';
+import * as THREE from 'three';
 
 import { useFollowCam } from './hooks/useFollowCam';
 import { useGame } from './stores/useGame';

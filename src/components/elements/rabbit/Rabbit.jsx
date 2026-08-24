@@ -1,6 +1,3 @@
-import * as THREE from 'three';
-import { clone as cloneSkeleton } from 'three/examples/jsm/utils/SkeletonUtils.js';
-
 import React, {
   forwardRef,
   useEffect,
@@ -12,7 +9,10 @@ import React, {
 import { useAnimations, useGLTF } from '@react-three/drei';
 import { useGraph } from '@react-three/fiber';
 
-import { modelFile } from '../../../utils/appUtils';
+import * as THREE from 'three';
+import { clone as cloneSkeleton } from 'three/examples/jsm/utils/SkeletonUtils.js';
+
+import { modelFile } from '@utils/appUtils';
 
 function resolveAutoPlayClipName(actions, autoPlayClip, autoPlayPatterns) {
   const clipNames = Object.keys(actions || {});

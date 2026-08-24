@@ -1,10 +1,11 @@
-import { buttonGroup, folder, useControls } from 'leva';
-
 import React, { useEffect, useMemo, useRef } from 'react';
 import { IoInvertMode, IoInvertModeOutline } from 'react-icons/io5';
 import { useLocation, useNavigate, useSearchParams } from 'react-router-dom';
 
-import { localEnv } from '../../../utils/appUtils';
+import { buttonGroup, folder, useControls } from 'leva';
+
+import { localEnv } from '@utils/appUtils';
+
 import sceneRegistry, {
   resolveLegacyScenePath,
   resolveScenePath,

@@ -2,7 +2,7 @@ import React from 'react';
 
 import { useGLTF } from '@react-three/drei';
 
-import { modelFile } from '../../../utils/appUtils';
+import { modelFile } from '@utils/appUtils';
 
 export function NewsPaper1(props) {
   const { nodes, materials } = useGLTF(modelFile('/newsPaper1.glb'));

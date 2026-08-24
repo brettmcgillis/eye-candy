@@ -2,7 +2,7 @@ import React, { useEffect, useRef } from 'react';
 
 import { useAnimations, useGLTF } from '@react-three/drei';
 
-import { modelFile } from '../../../../utils/appUtils';
+import { modelFile } from '@utils/appUtils';
 
 export default function LowPolyFire(props) {
   const group = useRef();

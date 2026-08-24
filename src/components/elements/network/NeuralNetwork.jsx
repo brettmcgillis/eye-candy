@@ -1,6 +1,10 @@
 /* eslint-disable no-continue */
 
 /* eslint-disable no-plusplus */
+import React, { useEffect, useRef } from 'react';
+
+import { useFrame, useThree } from '@react-three/fiber';
+
 import {
   AdditiveBlending,
   BufferAttribute,
@@ -11,10 +15,6 @@ import {
   Object3D,
   SubtractiveBlending,
 } from 'three';
-
-import React, { useEffect, useRef } from 'react';
-
-import { useFrame, useThree } from '@react-three/fiber';
 
 /* ---------------------------------------------
    Blending resolver (safe for Leva)

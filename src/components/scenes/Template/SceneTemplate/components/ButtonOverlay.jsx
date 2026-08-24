@@ -1,8 +1,8 @@
 import React, { memo } from 'react';
 import { PiToggleLeftFill, PiToggleRightFill } from 'react-icons/pi';
 
-import OverlayIconButton from '../../../../../app/scaffold/overlay/components/OverlayIconButton';
-import SceneButtonBar from '../../../../../app/scaffold/overlay/components/SceneButtonBar';
+import OverlayIconButton from '@app/scaffold/overlay/components/OverlayIconButton';
+import SceneButtonBar from '@app/scaffold/overlay/components/SceneButtonBar';
 
 // Reference only — NOT wired into SceneTemplate.jsx by default. Only add
 // overlay buttons when the scene's spec explicitly calls for obvious,
@@ -12,7 +12,7 @@ import SceneButtonBar from '../../../../../app/scaffold/overlay/components/Scene
 //
 // The pattern: compose SceneButtonBar with one or more OverlayIconButton
 // children. Give datasetKey a scene-unique value.
-// See src/components/scenes/Showcase/WebGPU/HorsesForCourses for a
+// See src/components/scenes/WebGPU/HorsesForCourses for a
 // real usage.
 function ButtonOverlay({ toggled, onToggleClick }) {
   return (

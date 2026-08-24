@@ -1,12 +1,12 @@
-import * as THREE from 'three';
-import { SkeletonUtils } from 'three-stdlib';
-
 import React from 'react';
 
 import { PerspectiveCamera, useAnimations, useGLTF } from '@react-three/drei';
 import { useGraph } from '@react-three/fiber';
 
-import { modelFile } from '../../../utils/appUtils';
+import * as THREE from 'three';
+import { SkeletonUtils } from 'three-stdlib';
+
+import { modelFile } from '@utils/appUtils';
 
 export default function Butterfly({
   animationOffset = 0,
@@ -37,7 +37,7 @@ export default function Butterfly({
     action.timeScale = animationSpeed;
 
     if (Number.isFinite(animationOffset) && action.getClip()?.duration > 0) {
-      const duration = action.getClip().duration;
+      const { duration } = action.getClip();
       action.time = ((animationOffset % duration) + duration) % duration;
     }
 

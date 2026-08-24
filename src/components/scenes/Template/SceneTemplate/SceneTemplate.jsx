@@ -1,7 +1,8 @@
 import React from 'react';
 
-import { CameraRig } from '../../../../modules/cameraRig';
-import { LightingRig } from '../../../../modules/lightingRig';
+import { CameraRig } from '@modules/cameraRig';
+import { LightingRig } from '@modules/lightingRig';
+
 import Component from './components/Component';
 import useSceneControls from './hooks/useSceneControls';
 

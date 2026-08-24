@@ -1,6 +1,6 @@
-import * as THREE from 'three';
-
 import React, { forwardRef, useEffect, useMemo } from 'react';
+
+import * as THREE from 'three';
 
 /**
  * Builds a rectangular ring ShapeGeometry (outer rect minus inner rect hole).

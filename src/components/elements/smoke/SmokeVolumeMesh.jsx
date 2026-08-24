@@ -1,9 +1,9 @@
 // SmokeVolumeMesh — wireframe tube visualising the smoke volume envelope
 // along the spline, with rectangular cross-sections sized by interpolated
 // per-point scale (matching VolumetricFire's lattice wireframe approach).
-import * as THREE from 'three';
-
 import React, { useEffect, useMemo } from 'react';
+
+import * as THREE from 'three';
 
 const RING_COUNT = 32;
 

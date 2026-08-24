@@ -1,3 +1,7 @@
+import React, { useEffect, useMemo, useState } from 'react';
+
+import { createPortal, useFrame, useThree } from '@react-three/fiber';
+
 import { FrontSide } from 'three';
 import {
   Fn,
@@ -12,10 +16,6 @@ import {
   vec3,
 } from 'three/tsl';
 import * as THREE_WEBGPU from 'three/webgpu';
-
-import React, { useEffect, useMemo, useState } from 'react';
-
-import { createPortal, useFrame, useThree } from '@react-three/fiber';
 
 import {
   curveUvNode,

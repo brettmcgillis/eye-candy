@@ -1,3 +1,8 @@
+import React, { useCallback, useEffect, useMemo, useRef } from 'react';
+
+import { useTexture } from '@react-three/drei';
+import { useFrame } from '@react-three/fiber';
+
 import {
   Fn,
   clamp,
@@ -18,11 +23,6 @@ import {
   vec3,
 } from 'three/tsl';
 import * as THREE from 'three/webgpu';
-
-import React, { useCallback, useEffect, useMemo, useRef } from 'react';
-
-import { useTexture } from '@react-three/drei';
-import { useFrame } from '@react-three/fiber';
 
 import FurPointerSurface from '../FurPointerSurface';
 import FurRootPortal from '../FurRootPortal';

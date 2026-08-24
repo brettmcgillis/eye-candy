@@ -1,8 +1,8 @@
-import * as THREE from 'three';
-
 import React, { Suspense, useEffect, useRef } from 'react';
 
 import { useAnimations, useGLTF } from '@react-three/drei';
+
+import * as THREE from 'three';
 
 import { type AnimationSet, useGame } from './stores/useGame';
 

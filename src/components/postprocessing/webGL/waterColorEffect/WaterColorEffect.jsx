@@ -1,11 +1,12 @@
-import * as THREE from 'three';
-
 import { useEffect, useMemo, useRef } from 'react';
 
 import { useFBO, useTexture } from '@react-three/drei';
 import { useFrame, useThree } from '@react-three/fiber';
 
-import { textureFile } from '../../../../utils/appUtils';
+import * as THREE from 'three';
+
+import { textureFile } from '@utils/appUtils';
+
 import BLOOM_BLUR_FRAGMENT from './shaders/bloomBlurFragment';
 import BLOOM_COMPOSITE_FRAGMENT from './shaders/bloomCompositeFragment';
 import FINAL_FRAGMENT from './shaders/finalFragment';

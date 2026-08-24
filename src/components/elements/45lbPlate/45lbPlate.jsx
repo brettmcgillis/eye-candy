@@ -1,12 +1,12 @@
-import { BufferGeometry, Float32BufferAttribute } from 'three';
-import { EdgeSplitModifier, mergeVertices } from 'three-stdlib';
-import { LoopSubdivision } from 'three-subdivide';
-
 import React, { useMemo } from 'react';
 
 import { useGLTF } from '@react-three/drei';
 
-import { modelFile } from '../../../utils/appUtils';
+import { BufferGeometry, Float32BufferAttribute } from 'three';
+import { EdgeSplitModifier, mergeVertices } from 'three-stdlib';
+import { LoopSubdivision } from 'three-subdivide';
+
+import { modelFile } from '@utils/appUtils';
 
 const RIM_NORMAL_Z_THRESHOLD = 0.55;
 

@@ -5,8 +5,8 @@ import React, { useEffect, useMemo } from 'react';
 
 import { createInstances, useGLTF } from '@react-three/drei';
 
-import { modelFile } from '../../../utils/appUtils';
-import bakeInstancedGeometry from '../../../utils/instancedGeometry';
+import { modelFile } from '@utils/appUtils';
+import bakeInstancedGeometry from '@utils/instancedGeometry';
 
 const MC_CUP_MODEL_PATH = '/mcCup.glb';
 const MC_CUP_MODEL_FILE = modelFile(MC_CUP_MODEL_PATH);

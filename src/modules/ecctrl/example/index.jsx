@@ -1,10 +1,10 @@
-import { Leva } from 'leva';
-
 import { Suspense, useEffect, useState } from 'react';
 import ReactDOM from 'react-dom/client';
 
 import { Bvh } from '@react-three/drei';
 import { Canvas } from '@react-three/fiber';
+
+import { Leva } from 'leva';
 
 import { EcctrlJoystick } from '../src/EcctrlJoystick';
 import Experience from './Experience';
@@ -12,7 +12,7 @@ import './style.css';
 
 const root = ReactDOM.createRoot(document.querySelector('#root'));
 
-const EcctrlJoystickControls = () => {
+function EcctrlJoystickControls() {
   const [isTouchScreen, setIsTouchScreen] = useState(false);
   useEffect(() => {
     // Check if using a touch control device, show/hide joystick
@@ -23,7 +23,7 @@ const EcctrlJoystickControls = () => {
     }
   }, []);
   return <>{isTouchScreen && <EcctrlJoystick buttonNumber={5} />}</>;
-};
+}
 
 root.render(
   <>

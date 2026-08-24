@@ -1,5 +1,3 @@
-import * as THREE from 'three';
-
 import React, {
   useCallback,
   useEffect,
@@ -10,6 +8,8 @@ import React, {
 
 import { TransformControls } from '@react-three/drei';
 import { createPortal, useThree } from '@react-three/fiber';
+
+import * as THREE from 'three';
 
 // Default sized for scene scale (1 unit ≈ 1 metre).
 // Large-world consumers (e.g. SplineEditor) should pass an explicit pointSize.

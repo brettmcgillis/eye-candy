@@ -13,7 +13,7 @@ import useSceneControls from './hooks/useSceneControls';
 // find-and-replace digit substitution, cursor-distance sort "hopscotch"
 // patterns, vt-line texture scrambling) translated to a live TSL vertex/UV
 // shader on a wrecked car, instead of one-off hand text-editing.
-export default function WriteOff() {
+export default function GetWrecked() {
   const config = useSceneControls();
 
   return (

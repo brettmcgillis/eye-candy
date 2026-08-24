@@ -101,6 +101,7 @@ To Build:
 - [Fireflies](src/components/scenes/WorkInProgress/WebGPU/Fireflies/todo.md)
 - [FlyingHigh](src/components/scenes/WorkInProgress/WebGL/FlyingHigh/todo.md)
 - [Fractal Automata](src/components/scenes/WorkInProgress/WebGPU/FractalAutomata/todo.md)
+- [GetWrecked](src/components/scenes/WorkInProgress/WebGPU/GetWrecked/todo.md)
 - [GhostStories](src/components/scenes/WorkInProgress/WebGPU/GhostStories/todo.md)
 - [HexTrees](src/components/scenes/WorkInProgress/WebGPU/HexTrees/todo.md)
 - [My Heart Is A Broken Fish Tank](src/components/scenes/WorkInProgress/WebGPU/MyHeartIsABrokenFishTank/todo.md)
@@ -121,7 +122,6 @@ To Build:
 - [Wet Paint](src/components/scenes/WorkInProgress/WebGPU/WetPaint/todo.md)
 - [WhiteLies](src/components/scenes/WorkInProgress/WebGPU/WhiteLies/todo.md)
 - [WindowBreaker](src/components/scenes/WorkInProgress/WebGPU/WindowBreaker/todo.md)
-- [WriteOff](src/components/scenes/WorkInProgress/WebGPU/WriteOff/todo.md)
 
 **Template**
 
@@ -230,6 +230,7 @@ To Build:
 - [ ] Surrender - Weather Any Storm
 - [x] Touch Grass
 - [x] Trucheterie - 001
+- [x] Water Cycle - Ocean Implied
 - [x] Windswept - Tangled
 - [ ] Weightless - Simulated Flight
 - [x] Weightless - Sketchbook
@@ -284,7 +285,7 @@ To Build:
 - [ ] Trucheterie - multiscale triangular grid
 - [ ] Trucheterie - field grid
 - [ ] Urban Wildlife / Night Danger
-- [ ] Water Cycle
+- [ ] Water Cycle - Other presets
 - [ ] Weightless - Default
 - [ ] Weightless - Touchsensitive
 - [ ] Weightless - Magnetic North

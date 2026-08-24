@@ -19,7 +19,7 @@ import getPostEffectsControls from '../components/getPostEffectsControls';
 import { DEFAULT_PRESET, PRESETS, getPresetControls } from '../presets/presets';
 import LIGHTING from '../utils/lighting';
 
-const SCENE_LABEL = 'Write Off';
+const SCENE_LABEL = 'Get Wrecked';
 
 const CAMERA_FOLDER_PATH = `${SCENE_LABEL}.Camera`;
 const LIGHTING_FOLDER_PATH = `${SCENE_LABEL}.Lighting`;

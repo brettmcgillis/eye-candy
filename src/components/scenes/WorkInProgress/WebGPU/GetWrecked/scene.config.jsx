@@ -11,10 +11,10 @@ function SceneIcon() {
 }
 
 export default {
-  id: 'writeOff',
-  label: 'Write Off',
+  id: 'getWrecked',
+  label: 'Get Wrecked',
   channel: 'webgpu',
   area: 'wip',
   icon: SceneIcon,
-  Component: lazy(() => import('./WriteOff')),
+  Component: lazy(() => import('./GetWrecked')),
 };

@@ -37,9 +37,9 @@
 - [ ] Pretty sure we can simplify the component internals once we get the live refresh up and running too. Refresh on resize and refresh on mount will be unecessary.
 - [ ] Consider adding a control for "guidelines". When enabled show lines at the 1/3 points of the left panel to aid in aligning the scene for rendering on the right panel, similar to the line we display down the center of the screen.
 - [x] Update control defaults. minimum silhouette area to 0. max normal buckets. max edge smoothness filter. very tight, busy cross hatching by default, with high limit. second pass enabled @ 45 degrees.min max hatch spacing should be 1 and 4.
-- [x] Refactor crosshatching into its own first-class optional layer with independent controls and appearance settings, parallel to hatching. See upgrayedd-plan.md
-- [x] Add optional point and line primitive plotting layers with appearance controls and density optimizations for particle clouds and networks. See upgrayedd-plan.md
-- [ ] Add robust frustum and SVG-boundary clipping so off-camera geometry is excluded and visible segments are trimmed to the export bounds. See upgrayedd-plan.md
+- [x] Refactor crosshatching into its own first-class optional layer with independent controls and appearance settings, parallel to hatching. See `plans/pen-plotter-upgrayedd.md`
+- [x] Add optional point and line primitive plotting layers with appearance controls and density optimizations for particle clouds and networks. See `plans/pen-plotter-upgrayedd.md`
+- [ ] Add robust frustum and SVG-boundary clipping so off-camera geometry is excluded and visible segments are trimmed to the export bounds. See `plans/pen-plotter-upgrayedd.md`
 - [x] Rename PlotterTest to penPlotter
 - [x] Promote out of test lab and into full scene. Were out of testing phase.~
 - [x] Rename TestScene to PrimitivesTest and move into PlotScenes folder

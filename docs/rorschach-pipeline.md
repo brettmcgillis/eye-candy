@@ -83,6 +83,109 @@ this table if you introduce another.
 | Headless output never evolves    | The scene runs `advanceEvolution`/`driftCoeffs` every frame, so a long-open scene drifts away from its seed. The CLIs render the test at t=0, so a given seed is reproducible.                                         |
 | Headless growth is instantaneous | The CLIs integrate every bundle fully, then reveal a fraction via `setGrowth`. The scene grows a slice per frame. Same geometry, different arrival.                                                                    |
 | Overlay burn-in is headless-only | The scene draws its overlay as DOM; the CLIs composite an SVG overlay into the pixels (`--overlay`).                                                                                                                   |
+| Ink is GPU-only                  | The watercolour layer is a fluid sim on the GPU and has no vector form. `--renderer svg` silently omits it and draws lines alone; SVG output stays a line-work format, which is what plotting wants anyway.            |
+| Ink settles by step count        | The scene advances the sim a few steps per frame, so a blot keeps developing while you watch. A still runs `--inkSettle` steps from a clean sheet, which is what makes a seed reproducible rather than time-dependent. |
+
+## Growth videos
+
+The `growth` video mode renders a sequence of fully independent tests, each
+revealed from 0% to 100% over the requested number of seconds with a fixed
+view. For example, five tests growing for three seconds each:
+
+```sh
+npm run rorschach:video -- \
+  --mode growth \
+  --count 5 \
+  --hold 3 \
+  --growthView front \
+  --stillsOut output/rorschach-growth-sources \
+  --out output/rorschach-growth.mp4
+```
+
+Use `--growthView all --growthPresentation grid` to show Front, Back, Top, and
+Bottom simultaneously in a four-up frame. Use
+`--growthView all --growthPresentation sequential` to give every view its own
+full growth interval. Grid duration is `count × hold`; sequential duration is
+`count × 4 × hold`.
+
+The workbench exposes the same options under **Video → Growth** as Tests,
+Seconds, View, and, when All is selected, Presentation.
+
+When `--stillsOut` is set, Growth also writes one completed `final.png` or
+`final.webp` plus `props.json` per test seed. The JSON contains the rolled
+preset, resolved first seed, sequence position, and render options needed to
+regenerate the video. The workbench enables this by default through **Keep
+final images**.
+
+## Video metadata
+
+Every successful video render writes a JSON sidecar beside the MP4 using the
+same basename: `rorschach.mp4` produces `rorschach.json`. This applies to
+Stills, Growth, Turntable, and Cinematic modes. The sidecar is attached to the
+video in workbench previews and follows it through Keep and Delete actions.
+
+The versioned JSON separates the recipe from facts measured after encoding:
+
+- `presets` contains every rolled test config used by the render, in display
+  order.
+- `render` contains the normalized CLI options. Modes with a contiguous test
+  sequence record the resolved first seed even when the request omitted one.
+- `encoding` records the encoder recipe: codec, CRF, preset, and pixel format.
+- `video` contains ffprobe and filesystem results: duration, frame count and
+  rate, dimensions, codec and profile, pixel and container formats, bitrate,
+  and file size. Probe fields the encoded container does not expose are `null`.
+- `generatedAt` records when the sidecar was written; `schemaVersion` allows
+  readers to distinguish future schema changes.
+
+For generated Stills videos, `presets` is the exact record when random seeds
+were requested. For `--in` Stills videos, no tests are rolled, so `presets` is
+empty and `render.in` identifies the source directory required to rebuild the
+video.
+
+## The ink layer
+
+`src/modules/rorschach/watercolor/` is Curtis et al., "Computer-Generated
+Watercolor" (SIGGRAPH 1997): a shallow-water fluid layer, a pigment-deposition
+layer, a capillary layer in the paper, and Kubelka-Munk compositing. The ODE
+trajectories are the brush. Toggle it with `--ink` / the **Ink** control folder;
+`--no-lines` leaves the blot alone on the paper.
+
+It is built as fullscreen ping-pong render passes rather than compute kernels
+because depositing pigment is a scatter — thousands of overlapping brush stamps
+landing in one cell — and an additive draw is the only way to accumulate that
+without atomics. That single constraint decides the whole file layout.
+
+Three deposition modes, all producing the same kind of stamp list and differing
+only in stride, width and strength: `brush` deposits each step as it grows (so
+the blot blooms with Lines' own growth), `stamp` lays the finished trajectory
+down at once and lets it bleed, `wash` uses sparse wide weak stamps that read as
+poured colour.
+
+### Deviations from the paper
+
+Each of these is deliberate. Do not "correct" one back toward the paper without
+re-checking the output — every one of them was arrived at from a visible defect.
+
+- **Viscosity sign.** The paper prints `u += ∆t(A − µB − ...)` with `B` the
+  Laplacian. With a minus sign the term is anti-diffusive and the field diverges
+  within a few dozen steps; this uses `+µ∇²u`.
+- **Jacobi, not Gauss-Seidel.** A fragment pass cannot read a neighbour's
+  updated value inside one iteration. More iterations, same fixed point.
+- **The grid is staggered in collocated storage.** A cell's `u` is the flux
+  through its right face and its `v` through its top face. Storing them
+  collocated _and treating them as collocated_ decouples odd and even cells, and
+  the checkerboard mode that follows shows up as a fine diagonal hatch across
+  the whole blot — this was a real bug, not a theoretical one.
+- **A concentration ceiling and velocity clamps.** Curtis's input is a brush
+  stroke; ours is thousands of stamps along retraced trajectories, which without
+  a ceiling hands the sim values four orders of magnitude past what the transfer
+  terms are conditioned for.
+- **Four pigments.** Concentrations ride in vec4 channels, so bundles map onto
+  four slots round-robin and bundles sharing a slot share a paint.
+- **Pigment lightness is remapped.** A Lines palette is chosen to read against a
+  near-black background — a typical test is pale strokes on black, which is
+  invisible on paper. Hue and saturation carry over untouched; only lightness is
+  pulled into the range a real paint occupies.
 
 ## Enforcement
 

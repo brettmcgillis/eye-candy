@@ -1,6 +1,7 @@
 import React, { useCallback, useMemo, useState } from 'react';
 import {
   FiFilm,
+  FiGrid,
   FiImage,
   FiList,
   FiRefreshCw,
@@ -36,6 +37,10 @@ const OUTPUT_OPTIONS = [
   { icon: <FiImage />, label: 'Stills', value: 'still' },
   { icon: <FiFilm />, label: 'Video', value: 'video' },
 ];
+const GROWTH_PRESENTATION_OPTIONS = [
+  { icon: <FiGrid />, label: 'Four-up', value: 'grid' },
+  { icon: <FiList />, label: 'Sequential', value: 'sequential' },
+];
 
 // Both kinds' defaults merged, so toggling Stills/Video keeps whatever the
 // other kind's fields were set to. Every value and every range below comes
@@ -53,6 +58,7 @@ function Segmented({ label, onChange, options, value }) {
       <div className="rw-segmented">
         {options.map((option) => (
           <button
+            aria-label={option.label}
             aria-pressed={value === option.value}
             className="rw-segmented__button"
             key={option.value}
@@ -198,7 +204,7 @@ export default function RorschachWorkbenchPage() {
         icon="rorschach.webp"
         iconButtonLabel="Open Rorschach background settings"
         onIconClick={openPatternSettings}
-        title="Rorschach Workbench"
+        title="RorschachCLI"
       />
 
       {patternSettingsOpen ? (
@@ -317,6 +323,7 @@ export default function RorschachWorkbenchPage() {
                       value={options.mode}
                     >
                       <option value="stills">Stills montage</option>
+                      <option value="growth">Growth</option>
                       <option value="turntable">Turntable</option>
                       <option value="cinematic">Cinematic</option>
                     </select>
@@ -395,6 +402,73 @@ export default function RorschachWorkbenchPage() {
                           type="checkbox"
                         />
                         Keep source images
+                      </label>
+                    </>
+                  ) : null}
+                  {options.mode === 'growth' ? (
+                    <>
+                      <NumberField
+                        id="rw-growth-count"
+                        option="count"
+                        label="Tests"
+                        onChange={(value) => setOption('count', value)}
+                        value={options.count}
+                      />
+                      <label
+                        className="rw-field rw-field--wide"
+                        htmlFor="rw-growth-view"
+                      >
+                        View
+                        <select
+                          id="rw-growth-view"
+                          onChange={(event) =>
+                            setOption('growthView', event.target.value)
+                          }
+                          value={options.growthView}
+                        >
+                          <option value="front">Front</option>
+                          <option value="back">Back</option>
+                          <option value="top">Top</option>
+                          <option value="bottom">Bottom</option>
+                          <option value="all">All</option>
+                        </select>
+                      </label>
+                      {options.growthView === 'all' ? (
+                        <Segmented
+                          label="Presentation"
+                          onChange={(value) =>
+                            setOption('growthPresentation', value)
+                          }
+                          options={GROWTH_PRESENTATION_OPTIONS}
+                          value={options.growthPresentation}
+                        />
+                      ) : null}
+                      <label className="rw-field" htmlFor="rw-growth-format">
+                        Source format
+                        <select
+                          id="rw-growth-format"
+                          onChange={(event) =>
+                            setOption('imageFormat', event.target.value)
+                          }
+                          value={options.imageFormat}
+                        >
+                          <option value="png">PNG</option>
+                          <option value="webp">WebP</option>
+                        </select>
+                      </label>
+                      <label
+                        className="rw-field rw-field--checkbox"
+                        htmlFor="rw-growth-keep-images"
+                      >
+                        <input
+                          checked={options.keepImages}
+                          id="rw-growth-keep-images"
+                          onChange={(event) =>
+                            setOption('keepImages', event.target.checked)
+                          }
+                          type="checkbox"
+                        />
+                        Keep final images
                       </label>
                     </>
                   ) : null}
@@ -487,6 +561,133 @@ export default function RorschachWorkbenchPage() {
               ) : null}
             </div>
           </details>
+
+          <section className="rw-toggles">
+            <label htmlFor="rw-lines">
+              <input
+                checked={options.lines}
+                id="rw-lines"
+                onChange={(event) => setOption('lines', event.target.checked)}
+                type="checkbox"
+              />
+              Lines
+            </label>
+            <label htmlFor="rw-ink">
+              <input
+                checked={options.ink}
+                id="rw-ink"
+                onChange={(event) => setOption('ink', event.target.checked)}
+                type="checkbox"
+              />
+              Ink
+            </label>
+          </section>
+
+          {options.ink ? (
+            <details className="rw-control-section rw-advanced" open>
+              <summary>Watercolour</summary>
+              <div className="rw-field-grid">
+                <label className="rw-field" htmlFor="rw-ink-deposition">
+                  Deposition
+                  <select
+                    id="rw-ink-deposition"
+                    onChange={(event) =>
+                      setOption('inkDeposition', event.target.value)
+                    }
+                    value={options.inkDeposition}
+                  >
+                    <option value="brush">Brush</option>
+                    <option value="stamp">Stamp</option>
+                    <option value="wash">Wash</option>
+                  </select>
+                </label>
+                <label className="rw-field" htmlFor="rw-ink-orientation">
+                  Paper plane
+                  <select
+                    id="rw-ink-orientation"
+                    onChange={(event) =>
+                      setOption('inkOrientation', event.target.value)
+                    }
+                    value={options.inkOrientation}
+                  >
+                    <option value="vertical">Vertical (z)</option>
+                    <option value="horizontal">Horizontal (y)</option>
+                  </select>
+                </label>
+                <NumberField
+                  id="rw-ink-brush"
+                  option="inkBrushSize"
+                  label="Brush size"
+                  onChange={(value) => setOption('inkBrushSize', value)}
+                  value={options.inkBrushSize}
+                />
+                <NumberField
+                  id="rw-ink-strength"
+                  option="inkStrength"
+                  label="Pigment"
+                  onChange={(value) => setOption('inkStrength', value)}
+                  value={options.inkStrength}
+                />
+                <NumberField
+                  id="rw-ink-settle"
+                  option="inkSettle"
+                  label="Settle steps"
+                  onChange={(value) => setOption('inkSettle', value)}
+                  value={options.inkSettle}
+                />
+                <NumberField
+                  id="rw-ink-resolution"
+                  option="inkResolution"
+                  label="Sim resolution"
+                  onChange={(value) => setOption('inkResolution', value)}
+                  value={options.inkResolution}
+                />
+                <NumberField
+                  id="rw-ink-paper-size"
+                  option="inkPaperSize"
+                  label="Paper size"
+                  onChange={(value) => setOption('inkPaperSize', value)}
+                  value={options.inkPaperSize}
+                />
+                <NumberField
+                  id="rw-ink-offset"
+                  option="inkOffset"
+                  label="Paper offset"
+                  onChange={(value) => setOption('inkOffset', value)}
+                  value={options.inkOffset}
+                />
+                <NumberField
+                  id="rw-ink-grain"
+                  option="inkPaperGrain"
+                  label="Paper tooth"
+                  onChange={(value) => setOption('inkPaperGrain', value)}
+                  value={options.inkPaperGrain}
+                />
+                <label className="rw-field" htmlFor="rw-ink-paper-color">
+                  Paper colour
+                  <input
+                    id="rw-ink-paper-color"
+                    onChange={(event) =>
+                      setOption('inkPaperColor', event.target.value)
+                    }
+                    type="color"
+                    value={options.inkPaperColor}
+                  />
+                </label>
+                <label htmlFor="rw-ink-show-paper">
+                  <input
+                    checked={options.inkShowPaper}
+                    id="rw-ink-show-paper"
+                    onChange={(event) =>
+                      setOption('inkShowPaper', event.target.checked)
+                    }
+                    type="checkbox"
+                  />
+                  Show sheet
+                </label>
+              </div>
+            </details>
+          ) : null}
 
           <section className="rw-toggles">
             <label htmlFor="rw-bloom">

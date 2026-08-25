@@ -316,6 +316,98 @@ export default function useSceneControls() {
       },
       { collapsed: true }
     ),
+    Layers: folder(
+      {
+        lines: {
+          label: 'Lines',
+          value: p.lines ?? true,
+        },
+        ink: {
+          label: 'Ink (watercolour)',
+          value: p.ink ?? false,
+        },
+      },
+      { collapsed: false }
+    ),
+    Ink: folder(
+      {
+        inkDeposition: {
+          label: 'Deposition',
+          value: p.inkDeposition ?? 'brush',
+          options: { Brush: 'brush', Stamp: 'stamp', Wash: 'wash' },
+        },
+        inkBrushSize: {
+          label: 'Brush Size',
+          value: p.inkBrushSize ?? 0.22,
+          min: 0.01,
+          max: 3,
+          step: 0.01,
+        },
+        inkStrength: {
+          label: 'Pigment Strength',
+          value: p.inkStrength ?? 0.55,
+          min: 0.01,
+          max: 4,
+          step: 0.01,
+        },
+        inkOrientation: {
+          label: 'Paper Plane',
+          value: p.inkOrientation ?? 'vertical',
+          options: {
+            'Vertical (z)': 'vertical',
+            'Horizontal (y)': 'horizontal',
+          },
+        },
+        inkOffset: {
+          label: 'Paper Offset',
+          value: p.inkOffset ?? 0,
+          min: -50,
+          max: 50,
+          step: 0.1,
+        },
+        inkPaperSize: {
+          label: 'Paper Size',
+          value: p.inkPaperSize ?? 20,
+          min: 1,
+          max: 200,
+          step: 0.5,
+        },
+        inkPaperColor: {
+          label: 'Paper Color',
+          value: p.inkPaperColor ?? '#f4f1e8',
+        },
+        inkPaperGrain: {
+          label: 'Paper Tooth',
+          value: p.inkPaperGrain ?? 0.5,
+          min: 0,
+          max: 1,
+          step: 0.01,
+        },
+        inkShowPaper: {
+          label: 'Show Sheet',
+          value: p.inkShowPaper ?? true,
+        },
+        inkResolution: {
+          label: 'Sim Resolution',
+          value: p.inkResolution ?? 512,
+          options: { 256: 256, 512: 512, 1024: 1024, 2048: 2048 },
+        },
+        inkStepsPerFrame: {
+          label: 'Sim Steps / Frame',
+          value: p.inkStepsPerFrame ?? 2,
+          min: 0,
+          max: 8,
+          step: 1,
+        },
+      },
+      // Collapsed, not render-gated on the Ink toggle: a folder hidden via
+      // `render` is unmounted from Leva's tree, and a preset switch that sets
+      // the toggle *and* the fields inside the folder in one setControls() call
+      // evaluates `render` against the pre-update toggle — the folder stays
+      // hidden for that pass and every field update inside it is dropped. Same
+      // trap as the BundleEditor folder, same fix.
+      { collapsed: true }
+    ),
     Scene: folder(
       {
         backgroundColor: {

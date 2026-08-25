@@ -4123,6 +4123,96 @@ export const PRESETS = {
     bloomStrength: 1.9,
     bloomRadius: 0.3,
   },
+  // Ink only: Lines off, the watercolour layer on its own. Deliberately a
+  // partial snapshot — it sets the structure and camera it needs and leaves the
+  // Bundle Editor alone, so switching to it from any other preset lands
+  // somewhere predictable without carrying 400 lines of defaults.
+  //
+  // The structure is smaller than the Lines presets on purpose: deposition
+  // walks every strand of every bundle, and 12 bundles of 50 strands at 2000
+  // steps exhausts the stamp budget before the later bundles get any paint.
+  '010': {
+    cameraMode: 'orbit',
+    cameraAutoFit: false,
+    orbitDesktopPosition: {
+      x: 0,
+      y: 0,
+      z: 34,
+    },
+    orbitDesktopTarget: {
+      x: 0,
+      y: 0,
+      z: 0,
+    },
+    orbitDesktopFov: 42,
+    orbitMobilePosition: {
+      x: 0,
+      y: 0,
+      z: 42,
+    },
+    orbitMobileTarget: {
+      x: 0,
+      y: 0,
+      z: 0,
+    },
+    orbitMobileFov: 50,
+    orbitAutoRotate: false,
+
+    seed: 12345,
+    bundleCount: 5,
+    strandsPerBundle: 12,
+    steps: 900,
+    startSpread: 0.35,
+    coeffRange: 1.6,
+    freq: 0.6,
+    framingShape: 'cube',
+    boundRadius: 40,
+    boundWidth: 40,
+    boundHeight: 40,
+    minSpread: 8,
+
+    growthSpeed: 0.6,
+    growthStyle: 'unison',
+    continuousMode: false,
+    continuousModeDelay: 2,
+    evolutionEnabled: false,
+    evolutionSpeed: 0,
+    smoothRespawns: true,
+    trailFade: true,
+
+    monochrome: true,
+    inkColor: '#2b2320',
+    palette: 'Random',
+    flatten: 0,
+    flattenAxis: 'y',
+
+    lines: false,
+    ink: true,
+    // Stamp rather than brush: the whole trajectory lands at once and then
+    // bleeds, so the blot is there to look at immediately instead of arriving
+    // over the growth animation.
+    inkDeposition: 'stamp',
+    inkBrushSize: 0.22,
+    inkStrength: 0.5,
+    inkOrientation: 'vertical',
+    inkOffset: 0,
+    // Wider than the test's own fit radius so the long strands that run past
+    // the blot still land on the sheet instead of off its edge.
+    inkPaperSize: 26,
+    inkPaperColor: '#f4f1e8',
+    inkPaperGrain: 0.5,
+    inkShowPaper: true,
+    inkResolution: 512,
+    inkStepsPerFrame: 2,
+
+    backgroundColor: '#1a1a1c',
+    showOverlay: true,
+    // Bloom over a lit sheet of paper washes the whole frame out.
+    bloomEnabled: false,
+    bloomThreshold: 0.87,
+    bloomStrength: 1.9,
+    bloomRadius: 0.3,
+  },
 };
 
 // Companion fn to usePresetsFolder. Given the snapshot for the preset being

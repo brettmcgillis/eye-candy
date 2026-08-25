@@ -24,21 +24,27 @@ export function countMediaItems(collections) {
 }
 
 export function groupMediaAssets(assets, metadataAssets) {
-  const metadataByDirectory = new Map(
-    metadataAssets.map((asset) => [
-      asset.path.split('/').slice(0, -1).join('/'),
-      asset,
-    ])
-  );
+  const metadataByKey = new Map();
+  const metadataByDirectory = new Map();
+  metadataAssets.forEach((asset) => {
+    if (asset.path.endsWith('/props.json') || asset.path === 'props.json') {
+      metadataByDirectory.set(
+        asset.path.split('/').slice(0, -1).join('/'),
+        asset
+      );
+      return;
+    }
+    metadataByKey.set(asset.path.replace(/\.json$/u, '.mp4'), asset);
+  });
   const groups = new Map();
   assets.forEach((asset) => {
     const key = mediaAssetKey(asset);
     const group = groups.get(key) ?? {
       assets: [],
       key,
-      metadataAsset: metadataByDirectory.get(
-        key.split('/').slice(0, -1).join('/')
-      ),
+      metadataAsset:
+        metadataByKey.get(key) ??
+        metadataByDirectory.get(key.split('/').slice(0, -1).join('/')),
       name: key.split('/').slice(-2).join(' / '),
     };
     group.assets.push(asset);

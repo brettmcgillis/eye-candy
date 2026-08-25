@@ -16,7 +16,7 @@ import { buildStrokeGeometry } from '@modules/rorschach';
 const FADE_FRACTION = 0.5;
 
 const TestStrokes = forwardRef(function TestStrokes(
-  { hsl, strandCount, steps, emissive, emissiveIntensity },
+  { hsl, strandCount, steps, emissive, emissiveIntensity, visible = true },
   ref
 ) {
   const colorUniformRef = useRef(null);
@@ -89,7 +89,7 @@ const TestStrokes = forwardRef(function TestStrokes(
     }
   }, [lineSegments, emissive, emissiveIntensity]);
 
-  return <primitive object={lineSegments} ref={ref} />;
+  return <primitive object={lineSegments} ref={ref} visible={visible} />;
 });
 
 export default memo(TestStrokes);

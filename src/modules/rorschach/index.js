@@ -23,6 +23,10 @@ export * from './palette';
 export * from './testGenerator';
 export * from './buildStrokeGeometry';
 export * from './overrides';
+export { default as createInkPaper } from './watercolor/inkPaper';
+export { PAPER_ORIENTATIONS } from './watercolor/inkPaper';
+export { DEPOSITION_MODES, collectStamps } from './watercolor/deposition';
+export { PIGMENT_SLOTS, pigmentsFromStyles } from './watercolor/pigments';
 
 // Re-exported so browser-side consumers obey the barrel rule. Node-side
 // consumers (the CLIs, the dev server) import `./renderOptions.mjs` directly

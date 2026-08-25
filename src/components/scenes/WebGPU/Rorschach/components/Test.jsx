@@ -14,6 +14,7 @@ import {
   writeStrokeSegmentRange,
 } from '@modules/rorschach';
 
+import InkLayer from './InkLayer';
 import TestStrokes from './TestStrokes';
 
 // Measured ~1.8µs/step. Growth (a short, front-loaded burst while a Test is
@@ -103,6 +104,9 @@ function Test({
   inkColor,
   overrides,
   flattenRef,
+  lines,
+  ink,
+  inkSettings,
 }) {
   // Only the *structural* fields of `overrides` (Structural Override on +
   // its four values) should gate the structure memo below — style-only
@@ -271,9 +275,9 @@ function Test({
   useEffect(() => {
     structure.bundles.forEach((bundle, i) => {
       const mesh = strokeRefs.current[i];
-      if (mesh) mesh.visible = styles[i]?.visible ?? true;
+      if (mesh) mesh.visible = lines !== false && (styles[i]?.visible ?? true);
     });
-  }, [structure, styles]);
+  }, [lines, structure, styles]);
 
   useFrame((_, rawDelta) => {
     const delta = Math.min(rawDelta, MAX_FRAME_DELTA);
@@ -285,10 +289,11 @@ function Test({
     const evolvingIndices = [];
     let allBundlesGrown = true;
 
+    // No mesh guard here on purpose: growth and evolution are trajectory data
+    // the ink layer consumes too, so they have to advance whether or not the
+    // Lines layer is drawing them. Only the geometry writes below are
+    // conditional on a mesh existing.
     structure.bundles.forEach((bundle, i) => {
-      const mesh = strokeRefs.current[i];
-      if (!mesh) return;
-
       if (revealedStepsRef.current[i] < bundle.steps) {
         allBundlesGrown = false;
         growthElapsedRef.current[i] += delta;
@@ -351,12 +356,14 @@ function Test({
         if (stepsThisFrame > 0) {
           const prevGrown = bundle.grownSteps;
           growBundle(bundle, stepsThisFrame);
-          writeStrokeSegmentRange(
-            mesh.geometry,
-            bundle.strands,
-            prevGrown - 1,
-            bundle.grownSteps - 1
-          );
+          if (mesh) {
+            writeStrokeSegmentRange(
+              mesh.geometry,
+              bundle.strands,
+              prevGrown - 1,
+              bundle.grownSteps - 1
+            );
+          }
         }
       }
 
@@ -367,6 +374,7 @@ function Test({
         revealedStepsRef.current[i] + stepDelta
       );
 
+      if (!mesh) return;
       mesh.geometry.setDrawRange(
         0,
         (revealedStepsRef.current[i] - 1) * strandCount * 2
@@ -380,7 +388,7 @@ function Test({
       const bundle = structure.bundles[i];
       const mesh = strokeRefs.current[i];
 
-      if (mesh.userData.fadeEnabledUniform) {
+      if (mesh?.userData.fadeEnabledUniform) {
         mesh.userData.fadeEnabledUniform.value = trailFade ? 1 : 0;
       }
 
@@ -405,6 +413,8 @@ function Test({
         smoothRespawns,
         minSpread
       );
+
+      if (!mesh) return;
 
       // A rebase shifts every point's buffer position, so the whole valid
       // range needs rewriting — otherwise just append what's new.
@@ -458,28 +468,57 @@ function Test({
   });
 
   return (
-    <group
-      ref={groupRef}
-      scale={
-        flattenAxis === 'y'
-          ? [structure.scale, structure.scale * (1 - flatten), structure.scale]
-          : [structure.scale, structure.scale, structure.scale * (1 - flatten)]
-      }
-    >
-      {structure.bundles.map((bundle, i) => (
-        <TestStrokes
-          key={bundle.id}
-          hsl={styles[i]?.color ?? { h: 0, s: 0, l: 0.12 }}
-          emissive={styles[i]?.emissive ?? false}
-          emissiveIntensity={styles[i]?.emissiveIntensity ?? 2}
-          strandCount={bundle.strands.length}
-          steps={bundle.steps}
-          ref={(el) => {
-            strokeRefs.current[i] = el;
-          }}
+    <>
+      <group
+        ref={groupRef}
+        scale={
+          flattenAxis === 'y'
+            ? [
+                structure.scale,
+                structure.scale * (1 - flatten),
+                structure.scale,
+              ]
+            : [
+                structure.scale,
+                structure.scale,
+                structure.scale * (1 - flatten),
+              ]
+        }
+      >
+        {structure.bundles.map((bundle, i) => (
+          <TestStrokes
+            key={bundle.id}
+            visible={lines !== false && (styles[i]?.visible ?? true)}
+            hsl={styles[i]?.color ?? { h: 0, s: 0, l: 0.12 }}
+            emissive={styles[i]?.emissive ?? false}
+            emissiveIntensity={styles[i]?.emissiveIntensity ?? 2}
+            strandCount={bundle.strands.length}
+            steps={bundle.steps}
+            ref={(el) => {
+              strokeRefs.current[i] = el;
+            }}
+          />
+        ))}
+      </group>
+      {ink && (
+        <InkLayer
+          brushSize={inkSettings.brushSize}
+          depositionMode={inkSettings.depositionMode}
+          offset={inkSettings.offset}
+          orientation={inkSettings.orientation}
+          paperColor={inkSettings.paperColor}
+          paperGrain={inkSettings.paperGrain}
+          paperSize={inkSettings.paperSize}
+          resolution={inkSettings.resolution}
+          seed={seed}
+          showPaper={inkSettings.showPaper}
+          steps={inkSettings.stepsPerFrame}
+          strength={inkSettings.strength}
+          structure={structure}
+          styles={styles}
         />
-      ))}
-    </group>
+      )}
+    </>
   );
 }
 

@@ -9,7 +9,7 @@ export default {
   id: 'waterCycle',
   label: 'WaterCycle',
   channel: 'webgpu',
-  area: 'wip',
+  area: 'showcase',
   icon: SceneIcon,
   Component: lazy(() => import('./WaterCycle')),
 };

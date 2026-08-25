@@ -1,9 +1,11 @@
-import React, { Suspense, lazy, useCallback, useEffect, useState } from 'react';
+import React, { Suspense, lazy } from 'react';
 import { Navigate, Route, Routes, useLocation } from 'react-router-dom';
 
 import './App.css';
 import useAppScenes from './scaffold/hooks/useAppScenes';
 import Loader from './scaffold/loader/Loader';
+import SuspenseSignal from './scaffold/loader/SuspenseSignal';
+import useLoaderGate from './scaffold/loader/useLoaderGate';
 import Overlay from './scaffold/overlay/Overlay';
 import {
   DEFAULT_SCENE_PATH,
@@ -13,16 +15,6 @@ import {
 
 const DevApp = import.meta.env.DEV ? lazy(() => import('@dev/DevApp')) : null;
 
-// Renders as the Suspense fallback inside the Canvas. Signals to the parent
-// that the scene is suspended so the Loader overlay stays visible.
-function SuspenseSignal({ onSuspend }) {
-  useEffect(() => {
-    onSuspend(true);
-    return () => onSuspend(false);
-  }, [onSuspend]);
-  return null;
-}
-
 /* ── Scene shell ─────────────────────────────────────────────
    Renders the current scene route and owns the canvas, overlay, and loader.
 ──────────────────────────────────────────────────────────── */
@@ -30,12 +22,8 @@ function SceneShell() {
   const location = useLocation();
   const { CanvasWrapper, SceneComponent, redirectPath, renderer } =
     useAppScenes();
-  const [loaderVisible, setLoaderVisible] = useState(true);
-  const [suspended, setSuspended] = useState(false);
-  const handleSuspend = useCallback((val) => {
-    setSuspended(val);
-    if (val) setLoaderVisible(true);
-  }, []);
+  const { loaderVisible, suspended, handleSuspend, onLoaderComplete } =
+    useLoaderGate();
 
   if (redirectPath) {
     return (
@@ -57,10 +45,7 @@ function SceneShell() {
           </Suspense>
         </CanvasWrapper>
         {loaderVisible && (
-          <Loader
-            onComplete={() => setLoaderVisible(false)}
-            suspended={suspended}
-          />
+          <Loader onComplete={onLoaderComplete} suspended={suspended} />
         )}
       </div>
     </>

@@ -75,7 +75,6 @@ export default function ClassicPatternSettings({
       <div className="rw-pattern-settings__panel">
         <header className="rw-pattern-settings__header">
           <div>
-            <span>Classic mode</span>
             <h2 id="rw-pattern-settings-title">Background pattern</h2>
           </div>
           <button

@@ -124,6 +124,36 @@ function unpadRows(pixels, width, height) {
   return out;
 }
 
+// The ink layer is built and settled per capture rather than cached: a still is
+// a specific number of sim steps from a clean sheet, which is what makes the
+// same seed produce the same blot. Reusing a warm sim across captures would
+// make each frame depend on the one before it.
+function buildInkPaper(createInkPaper, renderer, options, test, config) {
+  const paper = createInkPaper({
+    brushSize: options.inkBrushSize,
+    depositionMode: options.inkDeposition,
+    orientation: options.inkOrientation,
+    paperColor: options.inkPaperColor,
+    paperGrain: options.inkPaperGrain,
+    paperOffset: options.inkOffset,
+    paperSize: options.inkPaperSize,
+    renderer,
+    resolution: options.inkResolution,
+    seed: config.seed,
+    showPaper: options.inkShowPaper,
+    strength: options.inkStrength,
+  });
+
+  paper.advance({
+    bundles: test.bundles,
+    force: true,
+    scale: test.scale,
+    steps: options.inkSettle,
+    styles: test.styles,
+  });
+  return paper;
+}
+
 function applyGroupScale(group, scale, flatten, flattenAxis) {
   const squash = 1 - flatten;
   if (flattenAxis === 'y') group.scale.set(scale, scale * squash, scale);
@@ -151,9 +181,12 @@ export default async function createCapturer({ height, samples = 4, width }) {
   });
 
   return {
+    renderer,
+
     async capture({
       config,
       geometryHelpers,
+      kernel,
       options,
       test,
       eye,
@@ -175,9 +208,22 @@ export default async function createCapturer({ height, samples = 4, width }) {
       applyGroupScale(group, test.scale, options.flatten, options.flattenAxis);
 
       const disposables = [];
+      const inkPaper =
+        options.ink && kernel
+          ? buildInkPaper(
+              kernel.createInkPaper,
+              renderer,
+              options,
+              test,
+              config
+            )
+          : null;
+      if (inkPaper) scene.add(inkPaper.mesh);
+
+      const drawLines = options.lines !== false;
       test.bundles.forEach((bundle, index) => {
         const style = test.styles[index];
-        if (!style || style.visible === false) return;
+        if (!drawLines || !style || style.visible === false) return;
 
         const geometry = buildGeometry(
           bundle,
@@ -228,6 +274,7 @@ export default async function createCapturer({ height, samples = 4, width }) {
       renderer.setRenderTarget(null);
 
       disposables.forEach((item) => item.dispose());
+      inkPaper?.dispose();
 
       return sharp(unpadRows(pixels, width, height), {
         raw: { channels: 4, height, width },

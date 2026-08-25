@@ -12,8 +12,11 @@
 // sibling `.js` module instead.
 
 export const VIEWS = ['front', 'back', 'top', 'bottom'];
-export const VIDEO_MODES = ['stills', 'turntable', 'cinematic'];
+export const VIDEO_MODES = ['stills', 'growth', 'turntable', 'cinematic'];
+export const GROWTH_PRESENTATIONS = ['grid', 'sequential'];
 export const IG_PRESETS = ['story', 'reel', 'post'];
+export const DEPOSITION_MODE_NAMES = ['brush', 'stamp', 'wash'];
+export const PAPER_ORIENTATION_NAMES = ['vertical', 'horizontal'];
 
 // A vertical iPhone screen (12/13/14/15/16 at 19.5:9). Both dimensions are
 // even, which yuv420p requires. Note this is taller than Instagram's 9:16, so
@@ -217,6 +220,129 @@ export const RENDER_OPTIONS = {
     help: 'CSS pixel width the overlay emulates; output width over this is the device pixel ratio it draws at. Defaults to 390 with --ig, else 1440',
   },
 
+  lines: {
+    scope: 'shared',
+    section: 'layers',
+    type: 'boolean',
+    default: true,
+    help: 'Render the 3D stroke layer; --no-lines leaves only ink',
+  },
+  ink: {
+    scope: 'shared',
+    section: 'layers',
+    type: 'boolean',
+    default: false,
+    help: 'Render the watercolour layer (gpu renderer only)',
+  },
+  inkResolution: {
+    scope: 'shared',
+    section: 'layers',
+    type: 'number',
+    default: 512,
+    min: 128,
+    max: 2048,
+    step: 128,
+    placeholder: 'PX',
+    help: 'Watercolour sim grid; higher is finer bleed and slower',
+  },
+  inkSettle: {
+    scope: 'shared',
+    section: 'layers',
+    type: 'number',
+    default: 240,
+    min: 0,
+    max: 4000,
+    step: 10,
+    placeholder: 'N',
+    help: 'Sim steps run before capture; how far the blot has dried',
+  },
+  inkDeposition: {
+    scope: 'shared',
+    section: 'layers',
+    type: 'enum',
+    default: 'stamp',
+    choices: DEPOSITION_MODE_NAMES,
+    help: 'How trajectories lay down paint',
+  },
+  inkBrushSize: {
+    scope: 'shared',
+    section: 'layers',
+    type: 'number',
+    default: 0.22,
+    min: 0.01,
+    max: 3,
+    step: 0.01,
+    placeholder: 'N',
+    help: 'Brush radius in world units',
+  },
+  inkStrength: {
+    scope: 'shared',
+    section: 'layers',
+    type: 'number',
+    default: 0.55,
+    min: 0.01,
+    max: 4,
+    step: 0.01,
+    placeholder: 'N',
+    help: 'Pigment laid down per stamp',
+  },
+  inkOrientation: {
+    scope: 'shared',
+    section: 'layers',
+    type: 'enum',
+    default: 'vertical',
+    choices: PAPER_ORIENTATION_NAMES,
+    help: 'Paper plane: vertical at z, horizontal at y',
+  },
+  inkOffset: {
+    scope: 'shared',
+    section: 'layers',
+    type: 'number',
+    default: 0,
+    min: -50,
+    max: 50,
+    step: 0.1,
+    placeholder: 'N',
+    help: 'Paper position along its normal',
+  },
+  inkPaperSize: {
+    scope: 'shared',
+    section: 'layers',
+    type: 'number',
+    default: 20,
+    min: 1,
+    max: 200,
+    step: 0.5,
+    placeholder: 'N',
+    help: 'Paper extent in world units',
+  },
+  inkPaperColor: {
+    scope: 'shared',
+    section: 'layers',
+    type: 'string',
+    default: '#f4f1e8',
+    placeholder: 'HEX',
+    help: 'Paper stock colour',
+  },
+  inkPaperGrain: {
+    scope: 'shared',
+    section: 'layers',
+    type: 'number',
+    default: 0.5,
+    min: 0,
+    max: 1,
+    step: 0.01,
+    placeholder: 'N',
+    help: 'Paper tooth; drives granulation and capillary capacity',
+  },
+  inkShowPaper: {
+    scope: 'shared',
+    section: 'layers',
+    type: 'boolean',
+    default: true,
+    help: 'Draw the sheet itself; off leaves pigment floating',
+  },
+
   views: {
     scope: 'still',
     section: 'output',
@@ -276,7 +402,7 @@ export const RENDER_OPTIONS = {
     max: 120,
     step: 0.1,
     placeholder: 'S',
-    help: 'Seconds per still / revolution / half-revolution',
+    help: 'Seconds per still / growing test / revolution / half-revolution',
   },
   crossfade: {
     scope: 'video',
@@ -296,6 +422,22 @@ export const RENDER_OPTIONS = {
     default: 'front',
     choices: VIEWS,
     help: 'stills: which view to use',
+  },
+  growthView: {
+    scope: 'video',
+    section: 'timing',
+    type: 'enum',
+    default: 'front',
+    choices: [...VIEWS, 'all'],
+    help: 'growth: fixed view or all four views',
+  },
+  growthPresentation: {
+    scope: 'video',
+    section: 'timing',
+    type: 'enum',
+    default: 'grid',
+    choices: GROWTH_PRESENTATIONS,
+    help: 'growth all-view presentation',
   },
   turns: {
     scope: 'video',
@@ -326,7 +468,7 @@ export const RENDER_OPTIONS = {
     default: 'png',
     choices: ['png', 'webp'],
     placeholder: 'F',
-    help: 'stills: format of the intermediate frames',
+    help: 'stills/growth: format of retained source images',
   },
   in: {
     scope: 'video',
@@ -344,7 +486,7 @@ export const RENDER_OPTIONS = {
     default: null,
     nullable: true,
     placeholder: 'DIR',
-    help: 'stills: keep newly generated source stills in this directory',
+    help: 'stills/growth: keep generated source images in this directory',
   },
   keepImages: {
     scope: 'video',
@@ -355,7 +497,7 @@ export const RENDER_OPTIONS = {
     // path under the job directory. Declared here anyway so the job payload it
     // sends is validated like every other option.
     workbenchOnly: true,
-    help: 'Keep the generated source stills alongside the video',
+    help: 'Keep generated source images alongside the video',
   },
 };
 
@@ -412,6 +554,7 @@ const SECTION_LABELS = {
   render: 'render',
   bloom: 'bloom',
   overlay: 'overlay',
+  layers: 'layers',
   timing: 'mode timing',
   source: 'source frames',
 };

@@ -43,10 +43,33 @@ function itemKey(jobId, groupKey) {
   return `${jobId}:${groupKey}`;
 }
 
-function collectionLabel(source) {
-  if (source === 'curated') return 'Saved collection';
-  if (source === 'legacy') return 'Legacy batch';
-  return 'Workbench render';
+function mediaCountLabel(count, singular) {
+  return `${count} ${singular}${count === 1 ? '' : 's'}`;
+}
+
+function collectionLabel(job, groups) {
+  const videoCount = groups.filter((group) =>
+    group.assets.some((asset) => assetFormat(asset) === 'mp4')
+  ).length;
+  const stillCount = groups.length - videoCount;
+  const counts = [
+    videoCount > 0 ? mediaCountLabel(videoCount, 'video') : null,
+    stillCount > 0 ? mediaCountLabel(stillCount, 'still') : null,
+  ].filter(Boolean);
+
+  let title;
+  if (job.source === 'curated') {
+    title = 'Saved Collection';
+  } else if (job.source === 'legacy') {
+    title = 'Legacy Batch';
+  } else if (job.kind === 'video') {
+    const mode = job.options?.mode ?? 'video';
+    title = `${mode[0].toUpperCase()}${mode.slice(1)} Video Render`;
+  } else {
+    title = 'Stills Render';
+  }
+
+  return counts.length > 0 ? `${title} · ${counts.join(' · ')}` : title;
 }
 
 function Stat({ label, value }) {
@@ -127,7 +150,7 @@ function MediaPreview({ asset, controls = false, eager = false }) {
         draggable={false}
         muted={!controls}
         playsInline
-        preload={controls ? 'metadata' : 'auto'}
+        preload="metadata"
         src={source}
         tabIndex={controls ? 0 : -1}
       />
@@ -204,7 +227,7 @@ function PreviewDialog({
 
   const changeZoom = useCallback(
     (nextZoom) => {
-      const resolvedZoom = Math.min(3, Math.max(1, nextZoom));
+      const resolvedZoom = Math.min(5, Math.max(1, nextZoom));
       if (resolvedZoom === zoom) return;
 
       const viewport = mediaRef.current;
@@ -319,7 +342,7 @@ function PreviewDialog({
               </button>
               <button
                 aria-label="Zoom in"
-                disabled={zoom === 3}
+                disabled={zoom === 5}
                 onClick={() => changeZoom(zoom + 0.25)}
                 type="button"
               >
@@ -454,7 +477,6 @@ function AssetCard({
         </span>
         <span className="rw-asset__type">
           {isVideo ? <FiFilm /> : <FiImage />}
-          <span>{isVideo ? 'Video' : 'Still'}</span>
         </span>
         {flat ? (
           <span className="rw-asset__collection" title={job.outputDirectory}>
@@ -532,7 +554,7 @@ export default function AssetGallery({
       jobs.map((job) => {
         const media = job.assets.filter(isMediaAsset);
         const metadata = job.assets.filter((asset) =>
-          asset.path.endsWith('/props.json')
+          asset.path.endsWith('.json')
         );
         const groups = groupMediaAssets(media, metadata).map((group) => ({
           ...group,
@@ -867,7 +889,7 @@ export default function AssetGallery({
                   <div>
                     <strong>
                       <FiFolder />
-                      {collectionLabel(job.source)}
+                      {collectionLabel(job, groups)}
                     </strong>
                     <span title={job.outputDirectory}>
                       {job.outputDirectory}

@@ -76,6 +76,45 @@ function contentType(filePath) {
   return 'application/octet-stream';
 }
 
+function parseByteRange(header, size) {
+  const match = /^bytes=(\d*)-(\d*)$/u.exec(header ?? '');
+  if (!match || (!match[1] && !match[2])) return null;
+
+  const requestedStart = match[1] ? Number(match[1]) : null;
+  const requestedEnd = match[2] ? Number(match[2]) : null;
+  const start = requestedStart ?? Math.max(0, size - requestedEnd);
+  const end = Math.min(requestedEnd ?? size - 1, size - 1);
+  return start <= end && start < size ? { end, start } : null;
+}
+
+async function streamAsset(req, res, next, assetPath) {
+  const { size } = await fs.promises.stat(assetPath);
+  const range = req.headers.range
+    ? parseByteRange(req.headers.range, size)
+    : null;
+
+  res.setHeader('Accept-Ranges', 'bytes');
+  res.setHeader('Content-Type', contentType(assetPath));
+
+  if (req.headers.range && !range) {
+    res.statusCode = 416;
+    res.setHeader('Content-Range', `bytes */${size}`);
+    res.end();
+    return;
+  }
+
+  const start = range?.start ?? 0;
+  const end = range?.end ?? size - 1;
+  res.statusCode = range ? 206 : 200;
+  res.setHeader('Content-Length', end - start + 1);
+  if (range) res.setHeader('Content-Range', `bytes ${start}-${end}/${size}`);
+  if (req.method === 'HEAD') {
+    res.end();
+    return;
+  }
+  fs.createReadStream(assetPath, { end, start }).on('error', next).pipe(res);
+}
+
 async function handleJson(res, handler) {
   try {
     sendJson(res, 200, { ok: true, ...(await handler()) });
@@ -176,16 +215,14 @@ export default function rorschachDevPlugin() {
         const assetMatch = pathname.match(
           /^\/dev-api\/rorschach\/jobs\/([^/]+)\/assets\/(.+)$/u
         );
-        if (assetMatch && req.method === 'GET') {
+        if (assetMatch && ['GET', 'HEAD'].includes(req.method)) {
           try {
             const assetPath = resolveRorschachAsset(
               rootDir,
               assetMatch[1],
               assetMatch[2].split('/').map(decodeURIComponent).join('/')
             );
-            res.statusCode = 200;
-            res.setHeader('Content-Type', contentType(assetPath));
-            fs.createReadStream(assetPath).on('error', next).pipe(res);
+            await streamAsset(req, res, next, assetPath);
           } catch (error) {
             await handleJson(res, () => Promise.reject(error));
           }

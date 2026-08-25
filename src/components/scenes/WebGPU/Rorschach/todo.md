@@ -4,13 +4,12 @@
 
 [Back to main TODO](../../../../../TODO.md)
 
+- [ ] RorschachCLI and Rorschach scene:
+  - [ ] When previewing a Test allow the user to regen a new test starting with / prepoulating the form with the exact same params. this would allow me to identify cool tests and then regen them in new color schemes etc.
+  - [ ] When previewing a test allow the user to click abutton and be taken to the rorschach scene with all the image's json props applied. This would allow me to go from a still to it's 3d representation
+  - [ ] saving a still/video could also add the test as a preset in the scene presets. would love if they all followed the numbered convention we've started
 - [ ] 3d lines (tubes) mode to extend lines mode
 - [ ] might want to explore dramatic lighting when we get to particles and lines mode assuming they are spheres/tubes
-- [ ] - Regen button should roll the dice on like, all the controls, not just seed. Do close to last to better decide what to include/exclude and how this should work. After some consideration, we would want to min/max some of the fields, example: no one wants a Test thats just 1 bundle. no one wants a white test on white background.
-
-- [ ] - could we make sure that background + pallette are cohesive when randomly chosen?
-
-- [ ] - Im envisioning a cinematic mode. scene starts, camera at x-, orbit enabled. Test starts generating as camera sweeps around. as the camera nears x+, the Test is flattened. as the camera hits x+ a new seed is selected so that as the camera continues around the back a new system emerges. each half-rotation shows a new system grow. I suspect this is nearly possible today with the controls we have, but would need to align rotation speed & growth speed, as well as implement the continuous mode mentioned above, as well as the background <-> pallette matching to ensure that lines are visible and not masked by background.
 
 # // Intent/Use Cases
 

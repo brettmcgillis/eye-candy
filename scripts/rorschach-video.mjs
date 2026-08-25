@@ -2,13 +2,14 @@
 
 /* eslint-disable import/no-extraneous-dependencies, no-await-in-loop */
 import { spawn } from 'node:child_process';
-import { mkdir, mkdtemp, readdir, rm, writeFile } from 'node:fs/promises';
+import { mkdir, mkdtemp, readdir, rm, stat, writeFile } from 'node:fs/promises';
 import os from 'node:os';
 import path from 'node:path';
 import process from 'node:process';
 import sharp from 'sharp';
 
 import {
+  VIEWS,
   defaultsFor,
   normalizeOptions,
   resolveIgPreset,
@@ -18,6 +19,7 @@ import { parseArgs, readPackageVersion } from './lib/cliArgs.mjs';
 import createProgress, { runStage } from './lib/progress.mjs';
 import {
   REPO_ROOT,
+  applyOverlay,
   buildTest,
   disposeCapturers,
   loadKernel,
@@ -66,6 +68,87 @@ function run(command, args, onProgress) {
         : reject(new Error(`${command} exited ${code}\n${stderr.slice(-2000)}`))
     );
   });
+}
+
+function capture(command, args) {
+  return new Promise((resolve, reject) => {
+    const child = spawn(command, args, { stdio: ['ignore', 'pipe', 'pipe'] });
+    let stdout = '';
+    let stderr = '';
+    child.stdout.on('data', (chunk) => {
+      stdout += chunk;
+    });
+    child.stderr.on('data', (chunk) => {
+      stderr += chunk;
+    });
+    child.on('error', reject);
+    child.on('close', (code) =>
+      code === 0
+        ? resolve(stdout)
+        : reject(new Error(`${command} exited ${code}\n${stderr.slice(-2000)}`))
+    );
+  });
+}
+
+function parseRate(rate) {
+  const [numerator, denominator] = String(rate).split('/').map(Number);
+  return denominator ? numerator / denominator : numerator;
+}
+
+async function writeVideoMetadata(out, options, presets) {
+  const stdout = await capture('ffprobe', [
+    '-v',
+    'error',
+    '-select_streams',
+    'v:0',
+    '-count_frames',
+    '-count_packets',
+    '-show_entries',
+    'stream=codec_name,profile,width,height,pix_fmt,avg_frame_rate,nb_frames,nb_read_frames,nb_read_packets,bit_rate:format=format_name,duration,size,bit_rate',
+    '-of',
+    'json',
+    out,
+  ]);
+  const probe = JSON.parse(stdout);
+  const stream = probe.streams?.[0] ?? {};
+  const format = probe.format ?? {};
+  const file = await stat(out);
+  const metadataPath = out.replace(/\.[^.]+$/u, '.json');
+  let resolvedSeed = options.seed;
+  if (typeof resolvedSeed !== 'number') {
+    resolvedSeed =
+      options.mode === 'stills' ? null : (presets[0]?.seed ?? null);
+  }
+  const metadata = {
+    schemaVersion: 1,
+    generatedAt: new Date().toISOString(),
+    presets,
+    render: { ...options, seed: resolvedSeed },
+    encoding: {
+      codec: 'libx264',
+      crf: 17,
+      pixelFormat: 'yuv420p',
+      preset: 'slow',
+    },
+    video: {
+      bitRate: Number(format.bit_rate || stream.bit_rate) || null,
+      codec: stream.codec_name ?? null,
+      durationSeconds: Number(format.duration) || null,
+      fileSizeBytes: Number(format.size) || file.size,
+      format: format.format_name ?? null,
+      frameCount:
+        Number(
+          stream.nb_frames || stream.nb_read_frames || stream.nb_read_packets
+        ) || null,
+      frameRate: parseRate(stream.avg_frame_rate) || null,
+      height: stream.height ?? null,
+      pixelFormat: stream.pix_fmt ?? null,
+      profile: stream.profile ?? null,
+      width: stream.width ?? null,
+    },
+  };
+  await writeFile(metadataPath, `${JSON.stringify(metadata, null, 2)}\n`);
+  return metadataPath;
 }
 
 // Encodes are the one step with no natural per-item output — a minute of
@@ -215,10 +298,12 @@ async function renderStills(kernel, { options, tmp }) {
       collectExisting(dir, options.view)
     );
     process.stdout.write(`  collected ${files.length} stills from ${dir}\n`);
-    return files;
+    return { files, presets: [] };
   }
 
   const files = [];
+  const presets = [];
+  const persistent = typeof options.stillsOut === 'string';
   const progress = createProgress('rendering stills', options.count);
   for (let i = 0; i < options.count; i += 1) {
     const seed =
@@ -226,6 +311,7 @@ async function renderStills(kernel, { options, tmp }) {
     progress.log(`test ${i + 1}/${options.count}: generating seed ${seed}`);
 
     const config = kernel.rollTestConfig(seed);
+    presets.push(config);
     const test = buildTest(kernel, config);
     const raster = await renderFrame(kernel, {
       config,
@@ -237,17 +323,26 @@ async function renderStills(kernel, { options, tmp }) {
       options.imageFormat === 'webp'
         ? await sharp(raster).webp({ lossless: true }).toBuffer()
         : raster;
-
+    const outputDir = persistent ? path.join(tmp, String(seed)) : tmp;
     const file = path.join(
-      tmp,
-      `still-${String(i).padStart(5, '0')}.${options.imageFormat}`
+      outputDir,
+      persistent
+        ? `${options.view}.${options.imageFormat}`
+        : `still-${String(i).padStart(5, '0')}.${options.imageFormat}`
     );
+    await mkdir(outputDir, { recursive: true });
+    if (persistent) {
+      await writeFile(
+        path.join(outputDir, 'props.json'),
+        `${JSON.stringify({ preset: config, render: options }, null, 2)}\n`
+      );
+    }
     await writeFile(file, image);
     files.push(file);
     progress.update(i + 1);
   }
   progress.done('rendered stills');
-  return files;
+  return { files, presets };
 }
 
 async function renderTurntable(kernel, { options, tmp }) {
@@ -276,7 +371,135 @@ async function renderTurntable(kernel, { options, tmp }) {
     progress.update(frame + 1);
   }
   progress.done('rendered frames');
-  return total;
+  return { presets: [config], totalFrames: total };
+}
+
+async function renderGrowth(kernel, { options, tmp }) {
+  const first =
+    typeof options.seed === 'number' ? options.seed : kernel.randomSeed();
+  const framesPerTest = Math.max(2, Math.round(options.hold * options.fps));
+  const views = options.growthView === 'all' ? VIEWS : [options.growthView];
+  const grid =
+    options.growthView === 'all' && options.growthPresentation === 'grid';
+  const cellWidth = Math.floor(options.width / 2);
+  const cellHeight = Math.floor(options.height / 2);
+  const cellOptions = {
+    ...options,
+    height: cellHeight,
+    overlay: false,
+    width: cellWidth,
+  };
+  const framesPerViewSet = grid ? framesPerTest : framesPerTest * views.length;
+  const total = framesPerViewSet * options.count;
+  const progress = createProgress('rendering growth', total);
+  const presets = [];
+
+  process.stdout.write(
+    `rendering growth: ${options.count} tests, ${options.hold}s each, ` +
+      `${options.growthView} view${grid ? ' grid' : ''}, ${total} frames\n`
+  );
+
+  let frame = 0;
+  const sourceRoot =
+    typeof options.stillsOut === 'string'
+      ? path.resolve(REPO_ROOT, options.stillsOut)
+      : null;
+
+  for (let testIndex = 0; testIndex < options.count; testIndex += 1) {
+    const config = kernel.rollTestConfig(first + testIndex);
+    presets.push(config);
+    const test = buildTest(kernel, config);
+    progress.log(
+      `test ${testIndex + 1}/${options.count}: generated seed ${config.seed}`
+    );
+    let finalFrame = null;
+
+    if (grid) {
+      for (let localFrame = 0; localFrame < framesPerTest; localFrame += 1) {
+        setGrowth(test, localFrame / (framesPerTest - 1));
+        const cells = [];
+        for (let viewIndex = 0; viewIndex < views.length; viewIndex += 1) {
+          const view = views[viewIndex];
+          cells.push({
+            input: await renderFrame(kernel, {
+              config,
+              options: cellOptions,
+              test,
+              view,
+            }),
+            left: (viewIndex % 2) * cellWidth,
+            top: Math.floor(viewIndex / 2) * cellHeight,
+          });
+        }
+        const composite = await sharp({
+          create: {
+            background: { alpha: 1, b: 0, g: 0, r: 0 },
+            channels: 4,
+            height: options.height,
+            width: options.width,
+          },
+        })
+          .composite(cells)
+          .png()
+          .toBuffer();
+        const png = await applyOverlay(composite, options);
+        finalFrame = png;
+        await writeFile(
+          path.join(tmp, `frame-${String(frame).padStart(5, '0')}.png`),
+          png
+        );
+        frame += 1;
+        progress.update(frame);
+      }
+    } else {
+      for (let viewIndex = 0; viewIndex < views.length; viewIndex += 1) {
+        const view = views[viewIndex];
+        for (let localFrame = 0; localFrame < framesPerTest; localFrame += 1) {
+          setGrowth(test, localFrame / (framesPerTest - 1));
+          const png = await renderFrame(kernel, {
+            config,
+            options,
+            test,
+            view,
+          });
+          finalFrame = png;
+          await writeFile(
+            path.join(tmp, `frame-${String(frame).padStart(5, '0')}.png`),
+            png
+          );
+          frame += 1;
+          progress.update(frame);
+        }
+      }
+    }
+
+    if (sourceRoot && finalFrame) {
+      const outputDir = path.join(sourceRoot, String(config.seed));
+      const image =
+        options.imageFormat === 'webp'
+          ? await sharp(finalFrame).webp({ lossless: true }).toBuffer()
+          : finalFrame;
+      await mkdir(outputDir, { recursive: true });
+      await Promise.all([
+        writeFile(path.join(outputDir, `final.${options.imageFormat}`), image),
+        writeFile(
+          path.join(outputDir, 'props.json'),
+          `${JSON.stringify(
+            {
+              preset: config,
+              render: { ...options, seed: first },
+              sequence: { index: testIndex, total: options.count },
+            },
+            null,
+            2
+          )}\n`
+        ),
+      ]);
+      progress.log(`saved test ${config.seed}: ${outputDir}`);
+    }
+  }
+  progress.done('rendered growth');
+  return { presets, totalFrames: total };
 }
 
 async function renderCinematic(kernel, { options, tmp }) {
@@ -288,6 +511,7 @@ async function renderCinematic(kernel, { options, tmp }) {
   );
 
   const progress = createProgress('rendering frames', total);
+  const presets = [];
   let currentIndex = -1;
   let config = null;
   let test = null;
@@ -302,6 +526,7 @@ async function renderCinematic(kernel, { options, tmp }) {
     if (state.systemIndex !== currentIndex) {
       currentIndex = state.systemIndex;
       config = kernel.rollTestConfig(first + currentIndex);
+      presets.push(config);
       test = buildTest(kernel, config);
       progress.log(`system ${currentIndex + 1}: generated seed ${config.seed}`);
     }
@@ -320,7 +545,7 @@ async function renderCinematic(kernel, { options, tmp }) {
     progress.update(frame + 1);
   }
   progress.done('rendered frames');
-  return total;
+  return { presets, totalFrames: total };
 }
 
 async function main() {
@@ -358,8 +583,11 @@ async function main() {
   }
 
   try {
+    let presets;
     if (options.mode === 'stills') {
-      const files = await renderStills(kernel, { options, tmp });
+      const rendered = await renderStills(kernel, { options, tmp });
+      const { files } = rendered;
+      presets = rendered.presets;
       if (files.length === 0) throw new Error('no stills to stitch');
 
       process.stdout.write(
@@ -382,16 +610,25 @@ async function main() {
         });
       }
     } else {
-      let totalFrames;
-      if (options.mode === 'turntable') {
-        totalFrames = await renderTurntable(kernel, { options, tmp });
+      let rendered;
+      if (options.mode === 'growth') {
+        rendered = await renderGrowth(kernel, { options, tmp });
+      } else if (options.mode === 'turntable') {
+        rendered = await renderTurntable(kernel, { options, tmp });
       } else {
-        totalFrames = await renderCinematic(kernel, { options, tmp });
+        rendered = await renderCinematic(kernel, { options, tmp });
       }
-      await encodeFrames(tmp, { fps: options.fps, out, totalFrames });
+      presets = rendered.presets;
+      await encodeFrames(tmp, {
+        fps: options.fps,
+        out,
+        totalFrames: rendered.totalFrames,
+      });
     }
 
     process.stdout.write(`saved video: ${out}\n`);
+    const metadataPath = await writeVideoMetadata(out, options, presets);
+    process.stdout.write(`saved metadata: ${metadataPath}\n`);
   } finally {
     await disposeCapturers();
     if (!persistentStills) {

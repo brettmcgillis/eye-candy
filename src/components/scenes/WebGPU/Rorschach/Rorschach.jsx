@@ -1,4 +1,4 @@
-import React, { memo, useEffect, useRef } from 'react';
+import React, { memo, useEffect, useMemo, useRef } from 'react';
 
 import { useThree } from '@react-three/fiber';
 
@@ -22,6 +22,37 @@ import useSceneControls from './hooks/useSceneControls';
 function Rorschach() {
   const config = useSceneControls();
   const { scene } = useThree();
+
+  // Grouped so Test's memo doesn't see a dozen separate ink props change; the
+  // object is only rebuilt when one of them actually does.
+  const inkSettings = useMemo(
+    () => ({
+      brushSize: config.inkBrushSize,
+      depositionMode: config.inkDeposition,
+      offset: config.inkOffset,
+      orientation: config.inkOrientation,
+      paperColor: config.inkPaperColor,
+      paperGrain: config.inkPaperGrain,
+      paperSize: config.inkPaperSize,
+      resolution: config.inkResolution,
+      showPaper: config.inkShowPaper,
+      stepsPerFrame: config.inkStepsPerFrame,
+      strength: config.inkStrength,
+    }),
+    [
+      config.inkBrushSize,
+      config.inkDeposition,
+      config.inkOffset,
+      config.inkOrientation,
+      config.inkPaperColor,
+      config.inkPaperGrain,
+      config.inkPaperSize,
+      config.inkResolution,
+      config.inkShowPaper,
+      config.inkStepsPerFrame,
+      config.inkStrength,
+    ]
+  );
   // Written every frame by CinematicMode, read every frame by Test — never
   // through React, so the sweep doesn't re-render the scene 60 times a second.
   const flattenRef = useRef(null);
@@ -74,6 +105,9 @@ function Rorschach() {
         inkColor={config.inkColor}
         overrides={config.overrides}
         flattenRef={flattenRef}
+        lines={config.lines}
+        ink={config.ink}
+        inkSettings={inkSettings}
       />
       <PostEffects
         bloomEnabled={config.bloomEnabled}

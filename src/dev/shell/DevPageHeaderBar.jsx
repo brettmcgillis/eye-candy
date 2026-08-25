@@ -23,6 +23,9 @@ export default function DevPageHeaderBar({
 }) {
   return (
     <header className={classNames('dev-page-header-bar', className)}>
+      <Link className="dev-page-header-bar__back" to={backTo}>
+        <span aria-hidden="true">←</span> {backLabel}
+      </Link>
       <DevPageTitle
         compact={compact}
         eyebrow={eyebrow}
@@ -32,9 +35,6 @@ export default function DevPageHeaderBar({
         onIconClick={onIconClick}
         title={title}
       />
-      <Link className="dev-page-header-bar__back" to={backTo}>
-        <span aria-hidden="true">←</span> {backLabel}
-      </Link>
     </header>
   );
 }

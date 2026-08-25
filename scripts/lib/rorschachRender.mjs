@@ -205,7 +205,7 @@ export function frameSvg(kernel, { config, options, test, ...view }) {
   });
 }
 
-async function withOverlay(png, options) {
+export async function applyOverlay(png, options) {
   if (!options.overlay) return png;
 
   const overlay = await overlayLayer({
@@ -269,7 +269,7 @@ export async function renderFrame(kernel, { config, options, test, ...view }) {
       test,
       ...view,
     });
-    return withOverlay(png, options);
+    return applyOverlay(png, options);
   }
 
   const capturer = await capturerFor(options.width, options.height);
@@ -278,6 +278,7 @@ export async function renderFrame(kernel, { config, options, test, ...view }) {
       config,
       eye: view.eye ?? kernel.viewEye(view.view ?? 'front', options.distance),
       geometryHelpers: kernel,
+      kernel,
       options,
       target: view.target ?? [0, 0, 0],
       test,
@@ -289,5 +290,5 @@ export async function renderFrame(kernel, { config, options, test, ...view }) {
         warmedCapturers.add(capturer);
         return firstFrame;
       });
-  return withOverlay(png, options);
+  return applyOverlay(png, options);
 }

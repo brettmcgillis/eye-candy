@@ -641,6 +641,7 @@
 .rw-collection__empty {
   padding: 0.75rem;
   border: 1px dashed var(--dev-border);
+  background: var(--dev-surface);
   color: var(--dev-text-muted);
   font-size: 0.7rem;
   text-align: center;
@@ -1125,6 +1126,7 @@ body:has(.rw-preview) {
   min-height: 8rem;
   border: 1px dashed var(--dev-border-strong);
   border-radius: var(--dev-radius);
+  background: var(--dev-surface);
   color: var(--dev-text-muted);
   font-size: 0.76rem;
   place-items: center;
@@ -1297,6 +1299,20 @@ body:has(.rw-preview) {
 
   .rw-preview {
     padding: 0;
+  }
+
+  .rw-preview__header {
+    align-items: stretch;
+    flex-direction: column;
+    gap: 0.4rem;
+  }
+
+  .rw-preview__header > div {
+    width: 100%;
+  }
+
+  .rw-preview__header > div:last-child {
+    justify-content: flex-end;
   }
 
   .rw-preview__header a {

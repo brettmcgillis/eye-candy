@@ -188,7 +188,7 @@ export async function listCuratedRorschachCollections(rootDir) {
         const relativePath = path.relative(curatedRoot, target);
         if (
           !/\.(mp4|png|svg|webp)$/u.test(relativePath) &&
-          !relativePath.endsWith(`${path.sep}props.json`)
+          !relativePath.endsWith('.json')
         ) {
           return;
         }
@@ -299,7 +299,14 @@ export async function deleteCuratedRorschachAssets(
     return target;
   });
 
-  await Promise.all(targets.map((target) => fs.rm(target, { force: true })));
+  const videoMetadataTargets = targets
+    .filter((target) => target.endsWith('.mp4'))
+    .map((target) => target.replace(/\.mp4$/u, '.json'));
+  await Promise.all(
+    [...targets, ...videoMetadataTargets].map((target) =>
+      fs.rm(target, { force: true })
+    )
+  );
   const affectedDirectories = new Set(
     targets.map((target) => path.dirname(target))
   );
@@ -407,7 +414,7 @@ export async function createRorschachJob(rootDir, payload = {}) {
     commandOptions.out = outputDirectory;
   } else {
     commandOptions.out = path.join(outputDirectory, 'rorschach.mp4');
-    if (options.mode === 'stills' && options.keepImages) {
+    if (['growth', 'stills'].includes(options.mode) && options.keepImages) {
       commandOptions.stillsOut = path.join(outputDirectory, 'stills');
     }
     delete commandOptions.keepImages;
@@ -643,7 +650,16 @@ export async function deleteRorschachAssets(
     }
     return target;
   });
-  await Promise.all(targets.map((target) => fs.rm(target, { force: true })));
+  const metadataTargets = paths
+    .filter((relativePath) => relativePath.endsWith('.mp4'))
+    .map((relativePath) =>
+      path.resolve(outputDir, relativePath.replace(/\.mp4$/u, '.json'))
+    );
+  await Promise.all(
+    [...targets, ...metadataTargets].map((target) =>
+      fs.rm(target, { force: true })
+    )
+  );
   Object.assign(job, await discoverAssets(rootDir, job));
   await persistJob(rootDir, job);
   return publicJob(job);
@@ -718,19 +734,19 @@ export async function keepRorschachAssets(rootDir, id, relativePaths) {
       }
 
       await fs.mkdir(path.dirname(target), { recursive: true });
-      const metadataRelativePath = path.join(
-        path.dirname(asset.path),
-        'props.json'
-      );
-      const metadataAsset = job.assets.find(
-        (item) => item.path === metadataRelativePath.split(path.sep).join('/')
-      );
+      const sidecarPath = asset.path.replace(/\.[^.]+$/u, '.json');
+      const propsPath = path.join(path.dirname(asset.path), 'props.json');
+      const metadataAsset =
+        job.assets.find((item) => item.path === sidecarPath) ??
+        job.assets.find(
+          (item) => item.path === propsPath.split(path.sep).join('/')
+        );
       const copies = [fs.copyFile(source, target)];
       if (metadataAsset) {
         copies.push(
           fs.copyFile(
             resolveRorschachAsset(rootDir, id, metadataAsset.path),
-            path.join(path.dirname(target), 'props.json')
+            path.join(path.dirname(target), metadataAsset.name)
           )
         );
       }

@@ -960,6 +960,13 @@ body:has(.rw-preview) {
   display: inline-flex;
 }
 
+.rw-preview__header .rw-asset-actions a {
+  flex-basis: 2rem;
+  width: 2rem;
+  height: 2rem;
+  font-size: 1.2rem;
+}
+
 .rw-preview__header a {
   gap: 0.35rem;
   font-size: 0.7rem;
@@ -980,13 +987,13 @@ body:has(.rw-preview) {
 
 .rw-preview__zoom-controls button {
   border-right: 1px solid rgba(255, 255, 255, 0.16);
-  font-size: 0.85rem;
+  font-size: 1.2rem;
 }
 
 .rw-preview__zoom-controls button:nth-child(2) {
   width: 3.25rem;
   font-family: var(--dev-mono);
-  font-size: 0.6rem;
+  font-size: 0.75rem;
 }
 
 .rw-preview__zoom-controls button:last-child {
@@ -1383,12 +1390,12 @@ body:has(.rw-preview) {
   }
 
   .rw-preview__zoom-controls button {
-    width: 1.75rem;
-    height: 1.75rem;
+    width: 2rem;
+    height: 2rem;
   }
 
   .rw-preview__zoom-controls button:nth-child(2) {
-    width: 2.75rem;
+    width: 3.25rem;
   }
 
   .rw-preview__stage {

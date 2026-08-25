@@ -6,8 +6,8 @@ import sharp from 'sharp';
 // approximation of it. The `webgpu` package supplies a Dawn-backed
 // navigator.gpu; three otherwise runs exactly as it does in the browser.
 //
-// The scene is rebuilt imperatively here rather than mounted through R3F, so
-// the material and post setup below must stay in step with
+// The scene is built imperatively here rather than mounted through R3F, so the
+// material and post setup below must stay in step with
 // components/TestStrokes.jsx and components/PostEffects.jsx.
 
 let THREE = null;
@@ -93,7 +93,7 @@ function buildMaterial(style) {
 
 function buildGeometry(bundle, buildStrokeGeometry, writeStrokePositions) {
   const geometry = buildStrokeGeometry(bundle.strands.length, bundle.steps);
-  writeStrokePositions(geometry, bundle.strands, bundle.grownSteps);
+  writeStrokePositions(geometry, bundle.strands, bundle.steps);
   geometry.setDrawRange(0, (bundle.grownSteps - 1) * bundle.strands.length * 2);
   return geometry;
 }
@@ -180,6 +180,97 @@ export default async function createCapturer({ height, samples = 4, width }) {
     depthBuffer: true,
   });
 
+  let session = null;
+
+  function disposeSession() {
+    session?.disposables.forEach((item) => item.dispose());
+    session = null;
+  }
+
+  function createSession({ config, geometryHelpers, options, test }) {
+    disposeSession();
+
+    const scene = new THREE.Scene();
+    scene.background = new THREE.Color(config.backgroundColor);
+    const camera = new THREE.PerspectiveCamera(
+      options.fov,
+      width / height,
+      0.1,
+      1000
+    );
+    const group = new THREE.Group();
+    const disposables = [];
+    const strokes = [];
+
+    if (options.lines !== false) {
+      test.bundles.forEach((bundle, index) => {
+        const style = test.styles[index];
+        if (!style || style.visible === false) return;
+
+        const geometry = buildGeometry(
+          bundle,
+          geometryHelpers.buildStrokeGeometry,
+          geometryHelpers.writeStrokePositions
+        );
+        const material = buildMaterial(style);
+        const mesh = new THREE.LineSegments(geometry, material);
+        mesh.frustumCulled = false;
+        group.add(mesh);
+        strokes.push({ bundle, geometry });
+        disposables.push(geometry, material);
+      });
+    }
+    scene.add(group);
+
+    const { pass, uniform } = TSL;
+    const scenePass = pass(scene, camera, { samples });
+    const bloomUniforms = {
+      radius: uniform(options.bloomRadius),
+      strength: uniform(options.bloomStrength),
+      threshold: uniform(options.bloomThreshold),
+    };
+    const post = new THREE.RenderPipeline(renderer);
+    post.outputNode = options.bloom
+      ? scenePass.add(
+          bloomModule.bloom(
+            scenePass,
+            bloomUniforms.strength,
+            bloomUniforms.radius,
+            bloomUniforms.threshold
+          )
+        )
+      : scenePass;
+
+    session = {
+      bloom: options.bloom,
+      bloomUniforms,
+      camera,
+      config,
+      disposables,
+      drawLines: options.lines !== false,
+      group,
+      post,
+      scene,
+      strokes,
+      test,
+    };
+    return session;
+  }
+
+  function sessionFor(args) {
+    const { config, options, test } = args;
+    if (
+      !session ||
+      session.config !== config ||
+      session.test !== test ||
+      session.bloom !== options.bloom ||
+      session.drawLines !== (options.lines !== false)
+    ) {
+      return createSession(args);
+    }
+    return session;
+  }
+
   return {
     renderer,
 
@@ -192,22 +283,29 @@ export default async function createCapturer({ height, samples = 4, width }) {
       eye,
       target: look,
     }) {
-      const scene = new THREE.Scene();
-      scene.background = new THREE.Color(config.backgroundColor);
+      const active = sessionFor({
+        config,
+        geometryHelpers,
+        options,
+        test,
+      });
+      const { bloomUniforms, camera, group, post, scene, strokes } = active;
 
-      const camera = new THREE.PerspectiveCamera(
-        options.fov,
-        width / height,
-        0.1,
-        1000
-      );
+      camera.fov = options.fov;
       camera.position.set(eye[0], eye[1], eye[2]);
       camera.lookAt(look[0], look[1], look[2]);
-
-      const group = new THREE.Group();
+      camera.updateProjectionMatrix();
       applyGroupScale(group, test.scale, options.flatten, options.flattenAxis);
+      strokes.forEach(({ bundle, geometry }) => {
+        geometry.setDrawRange(
+          0,
+          (bundle.grownSteps - 1) * bundle.strands.length * 2
+        );
+      });
+      bloomUniforms.strength.value = options.bloomStrength;
+      bloomUniforms.radius.value = options.bloomRadius;
+      bloomUniforms.threshold.value = options.bloomThreshold;
 
-      const disposables = [];
       const inkPaper =
         options.ink && kernel
           ? buildInkPaper(
@@ -220,24 +318,6 @@ export default async function createCapturer({ height, samples = 4, width }) {
           : null;
       if (inkPaper) scene.add(inkPaper.mesh);
 
-      const drawLines = options.lines !== false;
-      test.bundles.forEach((bundle, index) => {
-        const style = test.styles[index];
-        if (!drawLines || !style || style.visible === false) return;
-
-        const geometry = buildGeometry(
-          bundle,
-          geometryHelpers.buildStrokeGeometry,
-          geometryHelpers.writeStrokePositions
-        );
-        const material = buildMaterial(style);
-        const mesh = new THREE.LineSegments(geometry, material);
-        mesh.frustumCulled = false;
-        group.add(mesh);
-        disposables.push(geometry, material);
-      });
-      scene.add(group);
-
       // Mirrors components/PostEffects.jsx, which always renders through a
       // RenderPipeline and only varies whether bloom is added to the pass.
       // Going through the pipeline unconditionally keeps the color pipeline
@@ -247,20 +327,6 @@ export default async function createCapturer({ height, samples = 4, width }) {
       // values above 1.0 through to the bloom threshold. `samples` is the only
       // way to antialias the scene pass; the renderer's own `antialias` flag
       // applies to the canvas, which a headless capture never draws to.
-      const { pass, uniform } = TSL;
-      const scenePass = pass(scene, camera, { samples });
-      const post = new THREE.RenderPipeline(renderer);
-      post.outputNode = options.bloom
-        ? scenePass.add(
-            bloomModule.bloom(
-              scenePass,
-              uniform(options.bloomStrength),
-              uniform(options.bloomRadius),
-              uniform(options.bloomThreshold)
-            )
-          )
-        : scenePass;
-
       renderer.setRenderTarget(target);
       post.render();
 
@@ -273,7 +339,7 @@ export default async function createCapturer({ height, samples = 4, width }) {
       );
       renderer.setRenderTarget(null);
 
-      disposables.forEach((item) => item.dispose());
+      if (inkPaper) scene.remove(inkPaper.mesh);
       inkPaper?.dispose();
 
       return sharp(unpadRows(pixels, width, height), {
@@ -284,6 +350,7 @@ export default async function createCapturer({ height, samples = 4, width }) {
     },
 
     dispose() {
+      disposeSession();
       target.dispose();
       renderer.dispose?.();
       gpuInstance = null;

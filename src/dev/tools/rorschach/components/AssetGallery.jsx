@@ -10,6 +10,7 @@ import {
   FiChevronLeft,
   FiChevronRight,
   FiFilm,
+  FiFilter,
   FiFolder,
   FiGrid,
   FiImage,
@@ -70,6 +71,10 @@ function collectionLabel(job, groups) {
   }
 
   return counts.length > 0 ? `${title} · ${counts.join(' · ')}` : title;
+}
+
+function isVideoGroup(group) {
+  return group.assets.some((asset) => assetFormat(asset) === 'mp4');
 }
 
 function Stat({ label, value }) {
@@ -548,6 +553,10 @@ export default function AssetGallery({
   );
   const [selectedItems, setSelectedItems] = useState(() => new Set());
   const [submittingBulkDelete, setSubmittingBulkDelete] = useState(false);
+  const [itemTypeFilters, setItemTypeFilters] = useState({
+    stills: true,
+    videos: true,
+  });
   const [viewMode, setViewMode] = useState('batches');
   const collections = useMemo(
     () =>
@@ -576,7 +585,27 @@ export default function AssetGallery({
   const flatEntries = collections.flatMap(({ groups, job }) =>
     groups.map((group) => ({ group, job }))
   );
-  const flatGroups = flatEntries.map(({ group }) => group);
+  const filteredFlatEntries = flatEntries.filter(({ group }) =>
+    isVideoGroup(group) ? itemTypeFilters.videos : itemTypeFilters.stills
+  );
+  const filteredFlatGroups = filteredFlatEntries.map(({ group }) => group);
+  const allItemTypesSelected = itemTypeFilters.videos && itemTypeFilters.stills;
+  const visibleCollections = collections
+    .map(({ groups, job }) => ({
+      groups: groups.filter((group) =>
+        isVideoGroup(group) ? itemTypeFilters.videos : itemTypeFilters.stills
+      ),
+      job,
+    }))
+    .filter(({ groups }) => allItemTypesSelected || groups.length > 0);
+  const totalFileCount = collections.reduce(
+    (total, { job }) => total + job.assets.length,
+    0
+  );
+  const totalStorageBytes = collections.reduce(
+    (total, { job }) => total + job.storageBytes,
+    0
+  );
 
   const closePreview = useCallback(() => setPreview(null), []);
   const showNextPreview = useCallback(() => {
@@ -645,6 +674,13 @@ export default function AssetGallery({
     setViewMode(nextMode);
     setPendingBulkDelete(null);
     setSelectedCollections(new Set());
+  }
+
+  function toggleItemTypeFilter(type) {
+    setItemTypeFilters((current) => ({
+      ...current,
+      [type]: !current[type],
+    }));
   }
 
   async function deletePaths(job, paths, key, closeDialog = false) {
@@ -755,11 +791,39 @@ export default function AssetGallery({
   if (viewMode === 'items') {
     flatContent =
       flatEntries.length > 0 ? (
-        <div className="rw-gallery rw-gallery--flat">
-          {flatEntries.map(({ group, job }, index) =>
-            renderCard({ flat: true, group, groups: flatGroups, index, job })
+        <section className="rw-collection">
+          <header className="rw-collection__header">
+            <div>
+              <strong>
+                <FiFolder />
+                All items
+              </strong>
+              <span>{saved ? 'Saved collection' : 'Transient renders'}</span>
+            </div>
+            <div className="rw-collection__stats">
+              <span>
+                {totalFileCount} files · {formatBytes(totalStorageBytes)}
+              </span>
+            </div>
+          </header>
+          {filteredFlatEntries.length > 0 ? (
+            <div className="rw-gallery rw-gallery--flat">
+              {filteredFlatEntries.map(({ group, job }, index) =>
+                renderCard({
+                  flat: true,
+                  group,
+                  groups: filteredFlatGroups,
+                  index,
+                  job,
+                })
+              )}
+            </div>
+          ) : (
+            <div className="rw-collection__empty">
+              No items match the current filters
+            </div>
           )}
-        </div>
+        </section>
       ) : (
         <div className="rw-empty">No previewable media yet.</div>
       );
@@ -767,25 +831,52 @@ export default function AssetGallery({
 
   return (
     <div className="rw-library">
-      <div
-        aria-label="Library view"
-        className="rw-library__view-toggle"
-        role="group"
-      >
-        <button
-          aria-pressed={viewMode === 'batches'}
-          onClick={() => changeViewMode('batches')}
-          type="button"
+      <div className="rw-library__toolbar">
+        <div
+          aria-label="Library view"
+          className="rw-library__view-toggle"
+          role="group"
         >
-          <FiGrid /> Batches
-        </button>
-        <button
-          aria-pressed={viewMode === 'items'}
-          onClick={() => changeViewMode('items')}
-          type="button"
-        >
-          <FiList /> All items
-        </button>
+          <button
+            aria-pressed={viewMode === 'batches'}
+            onClick={() => changeViewMode('batches')}
+            type="button"
+          >
+            <FiGrid /> Batches
+          </button>
+          <button
+            aria-pressed={viewMode === 'items'}
+            onClick={() => changeViewMode('items')}
+            type="button"
+          >
+            <FiList /> All items
+          </button>
+        </div>
+        <details className="rw-library__filter">
+          <summary>
+            <FiFilter /> Include
+          </summary>
+          <div>
+            <label htmlFor={`rw-${variant}-filter-videos`}>
+              <input
+                checked={itemTypeFilters.videos}
+                id={`rw-${variant}-filter-videos`}
+                onChange={() => toggleItemTypeFilter('videos')}
+                type="checkbox"
+              />
+              Videos
+            </label>
+            <label htmlFor={`rw-${variant}-filter-stills`}>
+              <input
+                checked={itemTypeFilters.stills}
+                id={`rw-${variant}-filter-stills`}
+                onChange={() => toggleItemTypeFilter('stills')}
+                type="checkbox"
+              />
+              Stills
+            </label>
+          </div>
+        </details>
       </div>
       {!saved && (selectedGroups.length > 0 || selectedJobs.length > 0) ? (
         <div className="rw-bulk-actions">
@@ -842,7 +933,7 @@ export default function AssetGallery({
       ) : null}
       {flatContent}
       {viewMode === 'batches'
-        ? collections.map(({ groups, job }) => {
+        ? visibleCollections.map(({ groups, job }) => {
             const active = ['queued', 'running', 'cancelling'].includes(
               job.status
             );

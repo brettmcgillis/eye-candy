@@ -1,6 +1,6 @@
 import * as THREE from 'three/webgpu';
 
-import { pigmentsFromStyles } from './pigments';
+import { DEFAULT_TONAL_GAP, pigmentsFromStyles } from './pigments';
 import createWatercolorSim from './watercolorSim';
 
 // The whole ink layer as one object: the pattern field, the watercolour sim it
@@ -25,6 +25,7 @@ export default function createInkPaper({
   seed = 0,
   settleOnReset = 90,
   simParams = {},
+  tonalGap = DEFAULT_TONAL_GAP,
 } = {}) {
   // The pattern evolves with time. The scene advances this clock by real
   // elapsed seconds; a still pins it, so `--seed` stays reproducible.
@@ -59,7 +60,7 @@ export default function createInkPaper({
     depthTest: true,
   });
 
-  const state = { orientation, paperOffset, paperSize };
+  const state = { orientation, paperOffset, paperSize, tonalGap };
 
   material.colorNode = sim.reflectanceNode();
   // Alpha is the pigment's own coverage and nothing else. There is no sheet, so
@@ -104,7 +105,7 @@ export default function createInkPaper({
     // settles a blot that the scene would have taken hundreds of frames to
     // reach.
     advance({ delta = 0, steps = 1, styles } = {}) {
-      if (styles) sim.setPigments(pigmentsFromStyles(styles));
+      if (styles) sim.setPigments(pigmentsFromStyles(styles, state.tonalGap));
       patternClock += delta * patternSpeed;
       // Once per frame, not per step: the pattern is five octaves of noise and
       // the sim reads it as a texture.

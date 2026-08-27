@@ -405,6 +405,30 @@ export default function useSceneControls() {
         // strokes sit just under it. Rather than lowering it — which would
         // bloom every stroke too — the ink pushes its own output past it, the
         // same way an emissive bundle does.
+        // Depth cues, not stylistic variation, so they are deliberately not
+        // rollable: a batch wants its layers legible for the same reason every
+        // frame of it does.
+        inkTonalGap: {
+          label: 'Ink Tonal Gap',
+          value: p.inkTonalGap ?? 0.18,
+          min: 0,
+          max: 0.5,
+          step: 0.01,
+        },
+        inkRecede: {
+          label: 'Ink Recede',
+          value: p.inkRecede ?? 0.15,
+          min: 0,
+          max: 1,
+          step: 0.01,
+        },
+        inkDesaturate: {
+          label: 'Ink Desaturate',
+          value: p.inkDesaturate ?? 0.2,
+          min: 0,
+          max: 1,
+          step: 0.01,
+        },
         inkBloom: {
           label: 'Ink Bloom',
           value: p.inkBloom ?? false,

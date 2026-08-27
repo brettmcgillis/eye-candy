@@ -1,5 +1,5 @@
 import {
-  GRADIENT_NAMES,
+  ROLLABLE_GRADIENT_NAMES,
   hexLuminance,
   hexToHsl,
   hslToHex,
@@ -211,7 +211,7 @@ function scorePalette(rng, name) {
 function rollPalette(rng) {
   let best = null;
   for (let i = 0; i < MAX_PALETTE_ATTEMPTS; i += 1) {
-    const candidate = scorePalette(rng, pick(rng, GRADIENT_NAMES));
+    const candidate = scorePalette(rng, pick(rng, ROLLABLE_GRADIENT_NAMES));
     if (candidate && (!best || candidate.maskedRatio < best.maskedRatio)) {
       best = candidate;
     }

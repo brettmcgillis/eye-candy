@@ -141,6 +141,7 @@ function buildInkPaper(kernel, renderer, options, test, config) {
     paperSize: ink('inkPaperSize'),
     renderer,
     resolution: ink('inkResolution'),
+    tonalGap: ink('inkTonalGap'),
     seed: config.seed,
     simParams: {
       ...kernel.mapPatternSettings({
@@ -163,6 +164,8 @@ function buildInkPaper(kernel, renderer, options, test, config) {
       }),
       bloomEmissiveOnly: ink('inkBloomEmissiveOnly') ? 1 : 0,
       bloomEnabled: ink('inkBloom') ? 1 : 0,
+      inkDesaturate: ink('inkDesaturate'),
+      inkRecede: ink('inkRecede'),
       bloomSource: ink('inkBloomSource') === 'wetness' ? 1 : 0,
       bloomStrength: ink('inkBloomStrength'),
       bloomThreshold: options.bloomThreshold,

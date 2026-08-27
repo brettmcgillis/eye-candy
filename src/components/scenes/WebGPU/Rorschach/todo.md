@@ -5,11 +5,13 @@
 [Back to main TODO](../../../../../TODO.md)
 
 - [ ] RorschachCLI and Rorschach scene:
+  - [ ] can we support growth + ink videos?
   - [ ] When previewing a Test allow me to regen a new test starting with / prepoulating the form with the exact same params. this would allow me to identify cool tests and then regen them in new color schemes, go from png to svg, go from iphone to square, change dimensions, etc.
   - [ ] When previewing a test allow me to click abutton and be taken to the rorschach scene with all the image's json props applied. This would allow me to go from a still to it's 3d representation
   - [ ] allow me to create a video from a set of stills. since we have the json we could go from one or more stills to a growth video.
-  - [ ] when generating via cli, scene, or dev page I should be able to pass any/every param OR roll the dice or a select bunch. example: i could generate 100 random ones, or 100 of a given color pallette, or 1 test in 100 pallettes.
+  - [x] when generating via cli, scene, or dev page I should be able to pass any/every param OR roll the dice or a select bunch. example: i could generate 100 random ones, or 100 of a given color pallette, or 1 test in 100 pallettes.
   - [ ] saving a still/video could also add the test as a preset in the scene presets. would love if they all followed the numbered convention we've started. On the fence on this one. might not need it.
+
 - [ ] 3d lines (tubes) mode to extend lines mode
 - [ ] might want to explore dramatic lighting when we get to particles and lines mode assuming they are spheres/tubes
 

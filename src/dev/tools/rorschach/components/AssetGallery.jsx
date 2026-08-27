@@ -541,6 +541,9 @@ export default function AssetGallery({
   variant = 'transient',
 }) {
   const saved = variant === 'saved';
+  const [collapsedCollectionIds, setCollapsedCollectionIds] = useState(
+    () => new Set()
+  );
   const [deletingItemKey, setDeletingItemKey] = useState(null);
   const [keepingAssetKey, setKeepingAssetKey] = useState(null);
   const [keptAssetKeys, setKeptAssetKeys] = useState(() => new Set());
@@ -679,6 +682,15 @@ export default function AssetGallery({
       const next = new Set(current);
       if (next.has(id)) next.delete(id);
       else next.add(id);
+      return next;
+    });
+  }
+
+  function setCollectionCollapsed(id, collapsed) {
+    setCollapsedCollectionIds((current) => {
+      const next = new Set(current);
+      if (collapsed) next.add(id);
+      else next.delete(id);
       return next;
     });
   }
@@ -1005,7 +1017,10 @@ export default function AssetGallery({
                   <button
                     className="dev-button"
                     disabled={deletingId === job.id}
-                    onClick={() => onConfirmDelete(job)}
+                    onClick={(event) => {
+                      event.stopPropagation();
+                      onConfirmDelete(job);
+                    }}
                     type="button"
                   >
                     Delete
@@ -1013,7 +1028,10 @@ export default function AssetGallery({
                   <button
                     aria-label="Cancel deletion"
                     className="dev-button"
-                    onClick={onCancelDelete}
+                    onClick={(event) => {
+                      event.stopPropagation();
+                      onCancelDelete();
+                    }}
                     type="button"
                   >
                     Cancel
@@ -1026,7 +1044,10 @@ export default function AssetGallery({
                   aria-label={`Delete ${job.outputDirectory}`}
                   className="dev-button rw-delete"
                   disabled={active || deletingId === job.id}
-                  onClick={() => onRequestDelete(job.id)}
+                  onClick={(event) => {
+                    event.stopPropagation();
+                    onRequestDelete(job.id);
+                  }}
                   title="Delete collection from disk"
                   type="button"
                 >
@@ -1035,10 +1056,18 @@ export default function AssetGallery({
               );
             }
             return (
-              <section className="rw-collection" key={job.id}>
-                <header className="rw-collection__header">
+              <details
+                className="rw-collection"
+                key={job.id}
+                onToggle={(event) =>
+                  setCollectionCollapsed(job.id, !event.currentTarget.open)
+                }
+                open={!collapsedCollectionIds.has(job.id)}
+              >
+                <summary className="rw-collection__header">
                   <div>
                     <strong>
+                      <FiChevronRight className="rw-collection__chevron" />
                       <FiFolder />
                       {collectionLabel(job, groups)}
                     </strong>
@@ -1046,7 +1075,12 @@ export default function AssetGallery({
                       {job.outputDirectory}
                     </span>
                   </div>
-                  <div className="rw-collection__stats">
+                  <div
+                    className="rw-collection__stats"
+                    onClick={(event) => event.stopPropagation()}
+                    onKeyDown={(event) => event.stopPropagation()}
+                    role="presentation"
+                  >
                     {saved ? null : (
                       <div className="rw-collection__selection">
                         <label htmlFor={`rw-items-${job.id}`}>
@@ -1083,7 +1117,7 @@ export default function AssetGallery({
                     </span>
                     {collectionDeleteAction}
                   </div>
-                </header>
+                </summary>
                 {groups.length > 0 ? (
                   <div className="rw-gallery">
                     {groups.map((group, index) =>
@@ -1095,7 +1129,7 @@ export default function AssetGallery({
                     No previewable media
                   </div>
                 )}
-              </section>
+              </details>
             );
           })
         : null}

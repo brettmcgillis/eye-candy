@@ -25,6 +25,7 @@ function InkLayer({
   cellRevealScale,
   cellScale,
   cellSymmetry,
+  desaturate,
   offset,
   orientation,
   paletteMix,
@@ -42,10 +43,12 @@ function InkLayer({
   patternSpeed,
   patternSymmetry,
   patternWash,
+  recede,
   resolution,
   seed,
   steps,
   styles,
+  tonalGap,
 }) {
   const renderer = useThree((state) => state.gl);
   const paperRef = useRef(null);
@@ -73,8 +76,8 @@ function InkLayer({
   useEffect(() => () => paper.dispose(), [paper]);
 
   useEffect(() => {
-    paper.setState({ paperSize });
-  }, [paper, paperSize]);
+    paper.setState({ paperSize, tonalGap });
+  }, [paper, paperSize, tonalGap]);
 
   useEffect(() => {
     paper.setOrientation(orientation, offset);
@@ -117,6 +120,8 @@ function InkLayer({
         // it rather than by a hue-dependent multiply.
         bloomEmissiveOnly: bloomEmissiveOnly ? 1 : 0,
         bloomEnabled: bloom ? 1 : 0,
+        inkDesaturate: desaturate,
+        inkRecede: recede,
         bloomSource: bloomSource === 'wetness' ? 1 : 0,
         bloomStrength,
         bloomThreshold,
@@ -137,6 +142,7 @@ function InkLayer({
     cellRevealScale,
     cellScale,
     cellSymmetry,
+    desaturate,
     paletteMix,
     paletteScale,
     paletteSymmetry,
@@ -150,6 +156,7 @@ function InkLayer({
     patternSoftness,
     patternSymmetry,
     patternWash,
+    recede,
     seed,
   ]);
 

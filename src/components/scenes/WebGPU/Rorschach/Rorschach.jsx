@@ -29,6 +29,9 @@ function Rorschach() {
     () => ({
       backdropColor: config.backgroundColor,
       bloom: config.inkBloom,
+      desaturate: config.inkDesaturate,
+      recede: config.inkRecede,
+      tonalGap: config.inkTonalGap,
       bloomEmissiveOnly: config.inkBloomEmissiveOnly,
       bloomSource: config.inkBloomSource,
       bloomStrength: config.inkBloomStrength,
@@ -64,6 +67,9 @@ function Rorschach() {
     [
       config.backgroundColor,
       config.inkBloom,
+      config.inkDesaturate,
+      config.inkRecede,
+      config.inkTonalGap,
       config.inkBloomEmissiveOnly,
       config.inkBloomSource,
       config.inkBloomStrength,

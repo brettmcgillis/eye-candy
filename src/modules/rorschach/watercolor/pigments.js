@@ -33,20 +33,32 @@ function absorptionFor(reflectance) {
 
 const scratch = new THREE.Color();
 
-// The ink is pulled darker than the palette the Lines layer draws with. There
-// is no sheet of paper any more, so this is no longer about paint reading
-// against pale stock; it is about the two layers sharing one palette. Lines and
-// ink drawing the same hue at the same lightness makes the strokes vanish into
-// the wash wherever they cross it, which is exactly where the composition wants
-// them most. Only the ceiling moves: a palette that is already paint-dark keeps
-// its own lightness, and a washed-out one is pulled down until the strokes
-// clear it. Deliberately not an inversion — inverting makes a genuinely dark
-// palette come out pale, the same bug facing the other way. Hue and saturation
-// always carry over untouched.
-const MAX_PIGMENT_LIGHTNESS = 0.5;
+export const DEFAULT_TONAL_GAP = 0.18;
 
-function paintLightness(lightness) {
-  return Math.min(lightness, MAX_PIGMENT_LIGHTNESS);
+// The ink is pushed away from the lightness the Lines layer draws with, so the
+// two layers never render the same colour. Both draw from one palette, and a
+// stroke at the same hue *and* lightness as the wash vanishes into it exactly
+// where it crosses — which is where the composition wants it most.
+//
+// This was a one-sided clamp at 0.5, which only bit when a stop was lighter
+// than that. Measured across the palettes actually in use, most stops are not:
+// Midnight 15 — the palette in preset 012 — has 11 of its 15 stops at or below
+// 0.5, Deep Space has 2 of 2. On those the clamp did nothing at all and the ink
+// came out the same colour as the lines, so the layers were tonally identical
+// and the eye had nothing to separate.
+//
+// Darker by preference, since ink under line reads as the denser layer, and
+// lighter only when the palette is already on the floor and there is no room
+// below. Deliberately not an inversion — inverting makes a genuinely dark
+// palette come out pale, which is the same bug facing the other way. Hue and
+// saturation always carry over untouched.
+const MIN_PIGMENT_LIGHTNESS = 0.06;
+const MAX_PIGMENT_LIGHTNESS = 0.94;
+
+function paintLightness(lightness, gap) {
+  const darker = lightness - gap;
+  if (darker >= MIN_PIGMENT_LIGHTNESS) return darker;
+  return Math.min(MAX_PIGMENT_LIGHTNESS, lightness + gap);
 }
 
 // `density` scales how fast pigment falls out of suspension, `staining` how
@@ -55,8 +67,13 @@ function paintLightness(lightness) {
 // properties; here they are derived from the colour so a palette still produces
 // visibly different paint behaviours — dark pigments granulate and stain more,
 // which is roughly true of real earth and iron pigments.
-export function pigmentFromHsl(hsl) {
-  scratch.setHSL(hsl.h, hsl.s, paintLightness(hsl.l), THREE.SRGBColorSpace);
+export function pigmentFromHsl(hsl, gap = DEFAULT_TONAL_GAP) {
+  scratch.setHSL(
+    hsl.h,
+    hsl.s,
+    paintLightness(hsl.l, gap),
+    THREE.SRGBColorSpace
+  );
   const rgb = scratch.getRGB({ b: 0, g: 0, r: 0 }, THREE.SRGBColorSpace);
   const luminance = 0.2126 * rgb.r + 0.7152 * rgb.g + 0.0722 * rgb.b;
 
@@ -87,14 +104,14 @@ export function pigmentFromHsl(hsl) {
 // with the darker end of a palette the Lines layer showed in full. Spanning the
 // array instead puts the gradient's two end stops in slots 0 and 3, which is
 // what makes Palette Spread actually traverse the palette.
-export function pigmentsFromStyles(styles) {
+export function pigmentsFromStyles(styles, gap = DEFAULT_TONAL_GAP) {
   const last = styles.length - 1;
   const pigments = [];
   for (let slot = 0; slot < PIGMENT_SLOTS; slot += 1) {
     const index = Math.round((slot / (PIGMENT_SLOTS - 1)) * Math.max(0, last));
     const style = styles[index];
     pigments.push({
-      ...pigmentFromHsl(style?.color ?? { h: 0, l: 0.12, s: 0 }),
+      ...pigmentFromHsl(style?.color ?? { h: 0, l: 0.12, s: 0 }, gap),
       // Carried through so the ink can glow for exactly the bundles the Lines
       // layer glows for, rather than the whole blot lighting up at once. The
       // gain is normalised against the schema's default intensity of 2, so a

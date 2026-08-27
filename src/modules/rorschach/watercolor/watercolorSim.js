@@ -63,6 +63,8 @@ const DEFAULT_PARAMS = {
   maxConcentration: 1.6,
   // 0 disables the ink's own bloom entirely; see reflectanceNode.
   bloomEnabled: 0,
+  inkDesaturate: 0.2,
+  inkRecede: 0.15,
   // 1 restricts the glow to pigment from emissive bundles, as the Lines layer
   // does; 0 glows the whole blot.
   bloomEmissiveOnly: 1,
@@ -167,6 +169,8 @@ export default function createWatercolorSim({
     granulation: Array.from({ length: PIGMENT_SLOTS }, () => uniform(0.4)),
     bloomEmissiveOnly: uniform(settings.bloomEmissiveOnly),
     bloomEnabled: uniform(settings.bloomEnabled),
+    inkDesaturate: uniform(settings.inkDesaturate),
+    inkRecede: uniform(settings.inkRecede),
     bloomSource: uniform(settings.bloomSource),
     bloomStrength: uniform(settings.bloomStrength),
     bloomThreshold: uniform(settings.bloomThreshold),
@@ -655,12 +659,26 @@ export default function createWatercolorSim({
     return { gain: driven.div(mass), mask: flagged.div(mass).clamp(0, 1) };
   }
 
+  // Atmospheric recession: the far layer loses chroma and settles toward the
+  // colour of the air between. Applied before the bloom lift, so a receded ink
+  // also glows less — pushing something back and then making it burn brighter
+  // reads as neither.
+  //
+  // Honest about what each half does. `recede` mixes toward the backdrop, and
+  // because the ink is alpha-composited over that same backdrop, that half
+  // behaves much like lowering its opacity. `desaturate` is the part that
+  // genuinely reads as distance rather than as transparency, and it is the
+  // stronger cue of the two — a wash that has lost its chroma sits behind
+  // saturated line work even at equal value.
+  const recede = (color) => {
+    const drained = mix(color, vec3(luminance(color)), uniforms.inkDesaturate);
+    return mix(drained, uniforms.backdropColor, uniforms.inkRecede);
+  };
+
   const reflectanceNode = Fn(() => {
     const total = thickness();
-    const base = kubelkaMunkReflectance(
-      total,
-      uniforms,
-      vec3(uniforms.backdropColor)
+    const base = recede(
+      kubelkaMunkReflectance(total, uniforms, vec3(uniforms.backdropColor))
     );
 
     const share = emissiveShare(total);

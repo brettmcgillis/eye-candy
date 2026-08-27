@@ -504,6 +504,9 @@ function Test({
         <InkLayer
           backdropColor={inkSettings.backdropColor}
           bloom={inkSettings.bloom}
+          desaturate={inkSettings.desaturate}
+          recede={inkSettings.recede}
+          tonalGap={inkSettings.tonalGap}
           bloomEmissiveOnly={inkSettings.bloomEmissiveOnly}
           bloomSource={inkSettings.bloomSource}
           bloomStrength={inkSettings.bloomStrength}

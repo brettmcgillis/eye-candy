@@ -90,7 +90,21 @@ this table if you introduce another.
 
 The `growth` video mode renders a sequence of fully independent tests, each
 revealed from 0% to 100% over the requested number of seconds with a fixed
-view. For example, five tests growing for three seconds each:
+view.
+
+**Growth and ink move together.** They drive different things — growth reveals
+stroke geometry, `inkPatternTime` evolves the watercolour field — so passing
+`--ink` gets both in one clip. The clock is advanced off the _output_ frame
+index, not the per-test one, so it runs continuously through the whole video
+rather than restarting at every test or every view: one video, one clock. Same
+form `breathe` uses. Without it `inkPatternTime` sits at its default for every
+frame and the blot is identical throughout while only the lines move.
+
+Note this inherits breathe's cost: `buildInkPaper` sits inside the per-frame
+capture loop, so every frame rebuilds and re-settles the sim from clean at
+`--inkSettle` steps. That is deliberate — it makes each frame a pure function of
+(seed, patternTime) and keeps a clip reproducible — but at a high settle and
+2048 resolution it is the dominant per-frame cost of a growth render. For example, five tests growing for three seconds each:
 
 ```sh
 npm run rorschach:video -- \
@@ -176,6 +190,17 @@ monochrome) is rolled by bespoke logic, because a gradient name is not a number.
 A spec with no facet is never rolled — that is how camera, growth, evolution,
 post and the sim's resolution hold still across a batch, expressed as data
 rather than as a comment.
+
+**The palette roll draws from four-stop gradients and up.** Fewer than four is a
+two-colour ramp rather than a palette: the ink samples four pigment slots across
+the gradient and the Lines layer samples one stop per bundle, so a two-stop
+entry gives both layers almost nothing to traverse — and with `paletteExact` it
+collapses to literally two colours across every slot. The cut is severe, and
+worth knowing before reading a batch: 373 of the 423 gradients have three stops
+or fewer, so the dice draw from 50, and a 400-roll batch lands on about 37
+distinct palettes with the most frequent repeating a dozen times. It applies to
+the roll only — a name the dice will not choose is still worth choosing on
+purpose, so the dropdowns and `--palette` keep the full library.
 
 **The ink's windows are narrower than its controls**, deliberately. Softness
 past ~0.1 ramps across most of the field's range and washes the whole sheet; a
@@ -478,6 +503,36 @@ strokes do, and is the point rather than a fault. `bloomEnabled` folds into the 
 rather than gating the branch, so that at 0 the target is the colour's own
 luminance and the gain is exactly 1 — otherwise "off" would still lift dim ink
 all the way up to the threshold.
+
+### Reading the ink as a layer behind the lines
+
+Both layers draw from one palette, so without help they render the same colour
+and the line work is swallowed by the wash exactly where it crosses it — which
+is where the composition wants it most. Three controls separate them, and the
+first two are the ones that matter.
+
+**`inkTonalGap` guarantees the layers never match.** This was a one-sided clamp
+on pigment lightness at 0.5, which only bit when a palette stop was _lighter_
+than that. Most are not: Midnight 15 — the palette in preset 012 — has 11 of its
+15 stops at or below 0.5, Deep Space has 2 of 2. On those the clamp did nothing
+whatever and the ink came out identical to the lines. The gap pushes the ink
+away from the line's lightness instead: darker by preference, since ink under
+line reads as the denser layer, and lighter only when the palette is already on
+the floor with no room below. Hue and saturation carry over untouched.
+
+**`inkRecede` and `inkDesaturate` are atmospheric perspective.** The far layer
+loses chroma and settles toward the colour of the air between. Be honest about
+which half does what: `recede` mixes toward the backdrop, and since the ink is
+alpha-composited over that same backdrop, that half behaves much like lowering
+its opacity. `desaturate` is the part that genuinely reads as _distance_ rather
+than as transparency, and it is the stronger cue of the two — a wash that has
+lost its chroma sits behind saturated line work even at equal value.
+
+Both are applied before the bloom lift, so a receded ink also glows less;
+pushing something back and then making it burn brighter reads as neither.
+
+None of the three are rollable. They are legibility, not stylistic variation: a
+batch wants its layers readable for the same reason every frame of it does.
 
 ### Depth state on the ink
 

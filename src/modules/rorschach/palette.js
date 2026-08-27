@@ -6,6 +6,22 @@ import GRADIENTS from '@utils/gradients.json';
 export const GRADIENT_NAMES = GRADIENTS.map((g) => g.name);
 export const PALETTE_NAMES = ['Random', ...GRADIENT_NAMES];
 
+// Fewer than four stops is a two-colour ramp, not a palette. The ink samples
+// four pigment slots across the gradient and the Lines layer samples one stop
+// per bundle, so a two-stop entry gives both layers almost nothing to traverse
+// — and with `paletteExact` it collapses to literally two colours across every
+// slot.
+//
+// This is a big cut: 373 of the 423 gradients have three stops or fewer, so the
+// dice draw from 50. Deliberately applied to the roll only. A name the roll
+// will not choose is still a name worth choosing on purpose, so PALETTE_NAMES
+// keeps the full library for the dropdowns and for `--palette`.
+const MIN_ROLL_STOPS = 4;
+
+export const ROLLABLE_GRADIENT_NAMES = GRADIENTS.filter(
+  (g) => g.colors.length >= MIN_ROLL_STOPS
+).map((g) => g.name);
+
 export function resolvePaletteColors(paletteName) {
   if (!paletteName || paletteName === 'Random') return null;
   const gradient = GRADIENTS.find((g) => g.name === paletteName);

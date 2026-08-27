@@ -401,6 +401,21 @@ async function renderGrowth(kernel, { options, roll, tmp }) {
   );
 
   let frame = 0;
+  // The ink's clock, advanced off the output frame index so it runs
+  // continuously through the whole clip rather than restarting per test or per
+  // view. Growth drives the stroke geometry and this drives the watercolour
+  // field; they are independent, so a growth video can have both moving at once
+  // — which without this it cannot, because `inkPatternTime` would sit at its
+  // default for every frame and the blot would be identical throughout.
+  //
+  // Same form as renderBreathe uses, and deliberately keyed on `frame` rather
+  // than the per-test `localFrame`: it is one video, so it gets one clock.
+  const withInkClock = (base) => ({
+    ...base,
+    inkPatternTime:
+      options.inkPatternTime + (frame / options.fps) * options.inkPatternSpeed,
+  });
+
   const sourceRoot =
     typeof options.stillsOut === 'string'
       ? path.resolve(REPO_ROOT, options.stillsOut)
@@ -424,7 +439,7 @@ async function renderGrowth(kernel, { options, roll, tmp }) {
           cells.push({
             input: await renderFrame(kernel, {
               config,
-              options: cellOptions,
+              options: withInkClock(cellOptions),
               test,
               view,
             }),
@@ -459,7 +474,7 @@ async function renderGrowth(kernel, { options, roll, tmp }) {
           setGrowth(test, localFrame / (framesPerTest - 1));
           const png = await renderFrame(kernel, {
             config,
-            options,
+            options: withInkClock(options),
             test,
             view,
           });

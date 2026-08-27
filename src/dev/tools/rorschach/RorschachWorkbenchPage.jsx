@@ -28,6 +28,11 @@ import JobStatus from './components/JobStatus';
 import useRorschachJobs from './hooks/useRorschachJobs';
 import { countMediaItems } from './utils/assetGroups';
 
+// The overlay is laid out in CSS pixels; every profile here is a phone-viewed
+// format, so all of them emulate a phone viewport rather than only the ones
+// that carry an IG safe area.
+const PHONE_VIEWPORT = 390;
+
 const PROFILES = {
   post: { height: 1350, label: 'Post', width: 1080 },
   reel: { height: 1920, label: 'Reel', width: 1080 },
@@ -297,7 +302,16 @@ export default function RorschachWorkbenchPage() {
     setOptions((current) => ({
       ...current,
       height: dimensions.height,
+      // Square carries no story/reel safe area, so it takes no IG preset — but
+      // the overlay's viewport fallback keys off exactly that, and with no
+      // preset it emulated a 1440px desktop window and picked the desktop CSS
+      // branch. The chips came out about a third of the size they are in every
+      // other profile, correct for a desktop but not for something viewed on a
+      // phone. The two concerns are already separate downstream — the IG
+      // offsets are applied only when a preset is set — so a square export can
+      // ask for the phone viewport without asking for anyone's safe area.
       ig: nextProfile === 'square' ? 'none' : nextProfile,
+      viewport: PHONE_VIEWPORT,
       width: dimensions.width,
     }));
   }, []);
@@ -850,6 +864,31 @@ export default function RorschachWorkbenchPage() {
                     label="Paper tooth"
                     onChange={(value) => setOption('inkPaperGrain', value)}
                     value={options.inkPaperGrain}
+                  />
+                </div>
+
+                <h3 className="rw-subheading">Depth</h3>
+                <div className="rw-field-grid">
+                  <NumberField
+                    id="rw-ink-tonal-gap"
+                    option="inkTonalGap"
+                    label="Tonal gap"
+                    onChange={(value) => setOption('inkTonalGap', value)}
+                    value={options.inkTonalGap}
+                  />
+                  <NumberField
+                    id="rw-ink-recede"
+                    option="inkRecede"
+                    label="Recede"
+                    onChange={(value) => setOption('inkRecede', value)}
+                    value={options.inkRecede}
+                  />
+                  <NumberField
+                    id="rw-ink-desaturate"
+                    option="inkDesaturate"
+                    label="Desaturate"
+                    onChange={(value) => setOption('inkDesaturate', value)}
+                    value={options.inkDesaturate}
                   />
                 </div>
 

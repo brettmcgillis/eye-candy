@@ -21,16 +21,19 @@ import {
   float,
   floor,
   fract,
+  fwidth,
   hash,
   materialNormal,
   mix,
   mx_noise_float,
   normalFlat,
+  normalGeometry,
   oneMinus,
   positionLocal,
   replaceDefaultUV,
   rotate,
   round,
+  saturate,
   select,
   sign,
   smoothstep,
@@ -63,7 +66,14 @@ export function createGlitchUniforms() {
     degradeBlockCount: uniform(24),
     tornDensity: uniform(0),
     tornCellFrequency: uniform(6),
-    tornWireframeWidth: uniform(0.05),
+    tornWireframeWidth: uniform(1.5),
+    tornWireColor: uniform(new THREE.Color('#8ef7ff')),
+    tornWireIntensity: uniform(1.5),
+
+    slitScanStretch: uniform(0),
+    slitScanAxis: uniform(0),
+    slitScanPosition: uniform(0.5),
+    slitScanWidth: uniform(0.05),
 
     // Shared by Block Deconstruct / Slice Suite / Voxel Snap's axis-wipe
     // sweep (see buildAxisSweep) — the car's own local-space bounds, set
@@ -83,6 +93,7 @@ export function createGlitchUniforms() {
     sliceSuiteTransition: uniform(0.5),
     sliceSuiteBandwidth: uniform(0.2),
     sliceSuiteAxis: uniform(1),
+    sliceSuiteRevealAxis: uniform(1),
     sliceSuiteCount: uniform(12),
     sliceSuitePushApart: uniform(0.2),
     sliceSuiteTwistMax: uniform(15),
@@ -100,6 +111,8 @@ export function createGlitchUniforms() {
     innerStretchDensity: uniform(0),
     innerStretchStretch: uniform(1.2),
     innerStretchCellFrequency: uniform(8),
+    innerStretchSharpness: uniform(1),
+    innerStretchChaos: uniform(0.35),
 
     warpFieldAmount: uniform(0),
     warpFieldFrequency: uniform(1.5),
@@ -211,17 +224,20 @@ function buildBlockDeconstructAlphaNode(u) {
   );
 }
 
-// Shared slice-index math for both Slice Suite's position offset and its
-// per-slice alpha, so the two never disagree on which slab a vertex is in.
-function computeSliceSuiteIndex(basePosition, u) {
+// Shared slice math for Slice Suite's position offset and its per-slice
+// alpha, so the two never disagree on which slab a vertex is in. Thickness
+// comes back alongside the index because Push Apart is expressed in slice
+// thicknesses, not world units — otherwise the same dial value means a
+// hairline gap at 60 slices and an explosion at 4.
+function computeSliceSuiteSlab(basePosition, u) {
   const axisPos = pickAxisComponent(basePosition, u.sliceSuiteAxis);
   const axisMin = pickAxisComponent(u.boundsMin, u.sliceSuiteAxis);
   const axisMax = pickAxisComponent(u.boundsMax, u.sliceSuiteAxis);
   const extent = axisMax.sub(axisMin).max(0.0001);
   const sliceCount = u.sliceSuiteCount.max(1);
-  const sliceThickness = extent.div(sliceCount);
-  const rawIndex = floor(axisPos.sub(axisMin).div(sliceThickness));
-  return rawIndex.max(0).min(sliceCount.sub(1));
+  const thickness = extent.div(sliceCount);
+  const rawIndex = floor(axisPos.sub(axisMin).div(thickness));
+  return { index: rawIndex.max(0).min(sliceCount.sub(1)), thickness };
 }
 
 // "Slice Suite" — cross-sections the car into `slice count` slabs along
@@ -229,7 +245,10 @@ function computeSliceSuiteIndex(basePosition, u) {
 // snap` quantizes the spin to discrete degree-steps for an explicit
 // "notched" look instead of a smooth stagger; 0 leaves it continuous.
 function buildSliceSuitePositionNode(basePosition, u) {
-  const sliceIndex = computeSliceSuiteIndex(basePosition, u);
+  const { index: sliceIndex, thickness } = computeSliceSuiteSlab(
+    basePosition,
+    u
+  );
   const centerIndex = u.sliceSuiteCount.max(1).sub(1).mul(0.5);
   const offsetIndex = sliceIndex.sub(centerIndex);
 
@@ -253,7 +272,7 @@ function buildSliceSuitePositionNode(basePosition, u) {
   const twisted = pivot.add(rotate(basePosition.sub(pivot), spin));
 
   const pushOffset = axisMask(u.sliceSuiteAxis).mul(
-    offsetIndex.mul(u.sliceSuitePushApart)
+    offsetIndex.mul(u.sliceSuitePushApart).mul(thickness)
   );
   const jitter = vec3(
     hash(hashSeed.add(11)),
@@ -268,7 +287,7 @@ function buildSliceSuitePositionNode(basePosition, u) {
   const sweep = buildAxisSweep(
     basePosition,
     u,
-    u.sliceSuiteAxis,
+    u.sliceSuiteRevealAxis,
     u.sliceSuiteTransition,
     u.sliceSuiteBandwidth
   );
@@ -277,14 +296,14 @@ function buildSliceSuitePositionNode(basePosition, u) {
 }
 
 function buildSliceSuiteAlphaNode(u) {
-  const sliceIndex = computeSliceSuiteIndex(positionLocal, u);
+  const { index: sliceIndex } = computeSliceSuiteSlab(positionLocal, u);
   const hashSeed = sliceIndex.add(1000).mul(53);
   const sliceHash = hash(hashSeed.add(191));
 
   const sweep = buildAxisSweep(
     positionLocal,
     u,
-    u.sliceSuiteAxis,
+    u.sliceSuiteRevealAxis,
     u.sliceSuiteTransition,
     u.sliceSuiteBandwidth
   );
@@ -310,14 +329,16 @@ function buildSliceSuiteAlphaNode(u) {
 // drifts off a whole number belong to a bridging triangle and get
 // discarded, so the slices actually come apart.
 function buildSliceSuiteStraddleAlphaNode(u) {
-  const sliceIndexVarying = varying(computeSliceSuiteIndex(positionLocal, u));
+  const sliceIndexVarying = varying(
+    computeSliceSuiteSlab(positionLocal, u).index
+  );
   const drift = abs(fract(sliceIndexVarying.add(0.5)).sub(0.5));
   const straddling = drift.greaterThan(0.02);
 
   const sweep = buildAxisSweep(
     positionLocal,
     u,
-    u.sliceSuiteAxis,
+    u.sliceSuiteRevealAxis,
     u.sliceSuiteTransition,
     u.sliceSuiteBandwidth
   );
@@ -357,27 +378,66 @@ function buildVoxelSnapPositionNode(basePosition, u) {
   return mix(basePosition, target, blend);
 }
 
-// "Inner Stretch" — a hashed subset of local-space cells (same procedural,
-// no-bake shape as Torn Open/Voxel Snap) gets pushed out along a per-cell
-// random direction (same hashed-direction shape as Block Deconstruct's own
-// `direction`, not the true vertex normal — this only needs to look like
-// interior geometry spiking through the shell, not track the surface),
-// reading as panels stretching/spiking through the shell rather than the
-// whole surface shifting together. Negative Stretch caves the same cells in
-// instead of spiking them out.
+// "Inner Stretch" — a hashed subset of local cells spikes out along the
+// surface normal, tapered from the cell center so each one comes to a point
+// instead of sliding the whole cell rigidly (rigid translation just
+// reproduced Block Deconstruct, which is why the old version was hard to
+// read). Chaos bends the push off the normal toward a per-cell random
+// direction; negative Stretch caves the same cells in.
 function buildInnerStretchPositionNode(basePosition, u) {
-  const cellFreq = u.innerStretchCellFrequency.max(0.001);
-  const cell = floor(basePosition.mul(cellFreq).add(1000));
-  const seed = cell.x.add(cell.y.mul(9973)).add(cell.z.mul(131));
-  const mask = hash(seed.add(283)).lessThan(u.innerStretchDensity);
+  const cellSize = float(1).div(u.innerStretchCellFrequency.max(0.001));
+  const cellCoord = floor(basePosition.div(cellSize));
+  const hashCell = cellCoord.add(1000);
+  const seed = hashCell.x.add(hashCell.y.mul(9973)).add(hashCell.z.mul(131));
+  const selected = hash(seed.add(283)).lessThan(u.innerStretchDensity);
 
-  const direction = vec3(
+  const cellCenter = cellCoord.add(0.5).mul(cellSize);
+  const radial = basePosition.sub(cellCenter).div(cellSize.mul(0.5)).length();
+  const taper = oneMinus(saturate(radial)).pow(
+    u.innerStretchSharpness.max(0.01)
+  );
+
+  const randomDirection = vec3(
     hash(seed.add(311)),
     hash(seed.add(337)),
     hash(seed.add(359))
-  ).sub(0.5);
-  const target = basePosition.add(direction.mul(u.innerStretchStretch));
-  return select(mask, target, basePosition);
+  )
+    .sub(0.5)
+    .mul(2);
+  // normalGeometry, not normalLocal: normalLocal is a module-level shared
+  // .toVar() that the fragment-stage normal pipeline also reads, and pulling
+  // it into the vertex stage here declares that var in the wrong stage and
+  // corrupts the normal lighting reads back out of it. The raw attribute is
+  // the same value with no cross-stage var to hijack.
+  const direction = mix(normalGeometry, randomDirection, u.innerStretchChaos);
+
+  const target = basePosition.add(
+    direction.mul(taper).mul(u.innerStretchStretch)
+  );
+  return select(selected, target, basePosition);
+}
+
+// "Slit Scan" — the old-computer scroll artifact done to the geometry, not
+// just the texture: past the slit line every vertex is translated along the
+// axis by the full stretch, and the thin band sitting *in* the slit gets a
+// linear ramp of that same offset, so that one band physically stretches to
+// span the gap and the model ends up longer than it should be. The texture
+// smear is free — the band's own UVs interpolate across the stretched span,
+// which is exactly the frozen-row repeat Scroll Tear fakes in UV space.
+function buildSlitScanPositionNode(basePosition, u) {
+  const axisPos = pickAxisComponent(basePosition, u.slitScanAxis);
+  const axisMin = pickAxisComponent(u.boundsMin, u.slitScanAxis);
+  const axisMax = pickAxisComponent(u.boundsMax, u.slitScanAxis);
+  const extent = axisMax.sub(axisMin).max(0.0001);
+  const normalized = axisPos.sub(axisMin).div(extent);
+
+  const ramp = saturate(
+    normalized.sub(u.slitScanPosition).div(u.slitScanWidth.max(0.0001))
+  );
+  const offset = axisMask(u.slitScanAxis).mul(
+    ramp.mul(u.slitScanStretch).mul(extent)
+  );
+  return basePosition.add(offset);
 }
 
 // "Warp Field" — a smooth Perlin warp (mx_noise_float, continuous rather
@@ -438,13 +498,15 @@ function buildGlitchedPositionNode(u) {
 }
 
 // Chains every position-space technique into one node, coarse-to-fine:
-// Klink's permutation techniques, then Block Deconstruct's whole-cell
+// Klink's permutation techniques, then Slit Scan's whole-model stretch,
+// then Block Deconstruct's whole-cell
 // separation, then Slice Suite's cross-sections, then Voxel Snap's fine
 // grid quantization, then Inner Stretch's per-cell spikes, then Warp
 // Field's smooth overall wobble as a finishing touch.
 function buildFinalPositionNode(u) {
   const glitched = buildGlitchedPositionNode(u);
-  const deconstructed = buildBlockDeconstructPositionNode(glitched, u);
+  const slitScanned = buildSlitScanPositionNode(glitched, u);
+  const deconstructed = buildBlockDeconstructPositionNode(slitScanned, u);
   const sliced = buildSliceSuitePositionNode(deconstructed, u);
   const voxeled = buildVoxelSnapPositionNode(sliced, u);
   const stretched = buildInnerStretchPositionNode(voxeled, u);
@@ -507,7 +569,7 @@ function buildTextureDegradeUvNode(baseUv, u) {
   // +1000 before hashing only (not on pixelatedUv), matching every other
   // technique's cell hash in this file — cheap insurance against a
   // negative-to-uint cast, which is implementation-defined in WGSL (see
-  // buildTornAlphaNode below for the full explanation of this failure mode).
+  // buildTornMaskNode below for the full explanation of this failure mode).
   const hashCoord = blockCoord.add(1000);
   const blockSeed = hashCoord.x.add(hashCoord.y.mul(9973));
   const degraded = hash(blockSeed).lessThan(u.degradeDensity);
@@ -534,28 +596,45 @@ function buildBarycentricNode() {
   return varying(raw);
 }
 
-// "Torn Open" — continuous Perlin-noise patches (not the old hashed-cell
-// blockiness, for organic torn-paper edges) punch through the panel, but
-// only between the wireframe's own edges: the mesh's structural lines stay
-// opaque, so a torn patch reads as "the panel is gone except for its
-// wireframe skeleton" rather than a clean hole. Density maps the same way
-// WetGround's puddle mask does — threshold walks 1 (nothing torn) down to 0
-// (everything torn) as density goes 0 to 1.
-function buildTornAlphaNode(u) {
+// "Torn Open" — a continuous Perlin field over the model reads as a
+// black/white map: white keeps the texture the panel is supposed to have,
+// black strips it and leaves only the mesh's own wireframe, transparent
+// between the lines. Density walks the threshold from 1 (nothing stripped)
+// down to 0 (everything stripped), same mapping WetGround's puddle mask uses.
+function buildTornMaskNode(u) {
   const noise = mx_noise_float(positionLocal.mul(u.tornCellFrequency))
     .mul(0.5)
     .add(0.5);
   const threshold = oneMinus(u.tornDensity);
-  const patch = smoothstep(threshold, threshold.add(0.12), noise);
+  return smoothstep(threshold, threshold.add(0.12), noise);
+}
 
+// Wire width in *pixels*, not barycentric units: fwidth gives the per-pixel
+// rate of change of the edge distance, so dividing by it converts the
+// barycentric coordinate into a screen-space distance. Without this a fixed
+// barycentric width draws hairlines on near triangles and slabs on far ones,
+// which is why the old version read as debris rather than a wireframe.
+function buildTornWireMaskNode(u) {
   const barycentric = buildBarycentricNode();
   const edgeDistance = barycentric.x.min(barycentric.y).min(barycentric.z);
-  const nearEdge = oneMinus(
-    smoothstep(0, u.tornWireframeWidth.max(0.001), edgeDistance)
+  const screenDistance = edgeDistance.div(fwidth(edgeDistance).max(0.0001));
+  return oneMinus(
+    smoothstep(
+      u.tornWireframeWidth.sub(0.5).max(0),
+      u.tornWireframeWidth.add(0.5),
+      screenDistance
+    )
   );
+}
 
-  const holeAmount = patch.mul(oneMinus(nearEdge));
-  return oneMinus(holeAmount);
+// Stripped areas survive only where a wire line runs; everything else there
+// is punched out for real (alphaTestNode, not blending) so the tear shows
+// through to whatever is behind — including, with Show Interior on, the far
+// side of the car's own wire cage.
+function buildTornNodes(u) {
+  const torn = buildTornMaskNode(u);
+  const wire = buildTornWireMaskNode(u);
+  return { alpha: oneMinus(torn.mul(oneMinus(wire))), wire: torn.mul(wire) };
 }
 
 // Moving vertices onto a grid can't put real 90° edges into the silhouette —
@@ -619,6 +698,14 @@ export function createWreckedCarMaterial(sourceMaterial, uniforms) {
   material.positionNode = buildFinalPositionNode(uniforms);
   material.normalNode = buildNormalNode(uniforms);
 
+  // The surviving wire lines are lit by their own emissive color rather than
+  // the panel texture they happen to sit on, so a stripped region reads as a
+  // drawn wireframe instead of leftover slivers of car paint.
+  const torn = buildTornNodes(uniforms);
+  material.emissiveNode = uniforms.tornWireColor
+    .mul(torn.wire)
+    .mul(uniforms.tornWireIntensity);
+
   // Redirects the default UV used by every map (color/normal/roughness/AO)
   // at once, so scrambling it disrupts the whole textured look together —
   // the shader-space equivalent of Klink's "vt" line glitching.
@@ -630,7 +717,7 @@ export function createWreckedCarMaterial(sourceMaterial, uniforms) {
   // Deconstruct and Slice Suite's per-cell/per-slice alpha multiply into the
   // same discard rather than blending, so they read as more punched-out
   // fragments instead of translucency.
-  material.opacityNode = buildTornAlphaNode(uniforms)
+  material.opacityNode = torn.alpha
     .mul(buildBlockDeconstructAlphaNode(uniforms))
     .mul(buildSliceSuiteAlphaNode(uniforms))
     .mul(buildSliceSuiteStraddleAlphaNode(uniforms));

@@ -15,8 +15,12 @@ import { useMediaRecorder } from '@modules/mediaRecorder';
 
 import getBackgroundControls from '../components/getBackgroundControls';
 import getFloorControls from '../components/getFloorControls';
+import getFogControls from '../components/getFogControls';
 import getGlitchControls from '../components/getGlitchControls';
+import getGroundControls from '../components/getGroundControls';
 import getPostEffectsControls from '../components/getPostEffectsControls';
+import getTheatreControls from '../components/getTheatreControls';
+import getVehicleControls from '../components/getVehicleControls';
 import { DEFAULT_PRESET, PRESETS, getPresetControls } from '../presets/presets';
 import LIGHTING from '../utils/lighting';
 
@@ -59,9 +63,13 @@ export default function useSceneControls() {
     Camera: folder(cameraControls, { collapsed: true }),
     Lighting: folder(lightingControls, { collapsed: true }),
     Glitch: getGlitchControls(controlsSnapshotRef.current, onReglitch),
+    Vehicles: getVehicleControls(controlsSnapshotRef.current),
     Background: getBackgroundControls(controlsSnapshotRef.current),
+    Ground: getGroundControls(controlsSnapshotRef.current),
+    Fog: getFogControls(controlsSnapshotRef.current),
     Floor: getFloorControls(controlsSnapshotRef.current),
     'Post FX': getPostEffectsControls(controlsSnapshotRef.current),
+    Theatre: getTheatreControls(controlsSnapshotRef.current),
   }));
 
   attachSetControls(setControls);

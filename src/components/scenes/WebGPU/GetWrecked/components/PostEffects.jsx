@@ -1,17 +1,15 @@
-// WebGPU-native TSL post pass — follows the same pattern as
-// Aisle9/TouchGrass/LoGlow's PostEffects: a pass(scene, camera) node chain
-// rendered via THREE.RenderPipeline instead of the default renderer.render().
+// One RenderPipeline for the whole scene. The shared Godrays component builds
+// its own pipeline and renders at the same useFrame priority, so it can't be
+// dropped in alongside this — its node chain is inlined here instead, ahead of
+// the glitch passes, so light shafts get corrupted along with everything else.
 //
-// Chromatic Aberration and Pixel Sort both live here — real lens/capture
-// artifacts, legitimately screen-space (contrast Scroll Tear, which turned
-// out to belong on the car's own geometry/UV instead — see
-// utils/glitchMaterial.js — since dragging whole screen rows around
-// regardless of what's under them broke the car's silhouette).
-//
-// The depth-based mask below guards both effects' edges: background pixels
-// (nothing rendered there) sit at the far clip plane, the car sits much
-// closer, so `getLinearDepthNode()` cleanly separates them — no second
-// "car-only" render pass needed.
+// Order is deliberate: godrays composite first (they're part of the picture,
+// not an artifact of it), then the capture artifacts — pixel sort and
+// chromatic aberration — masked off the empty background by depth, and last
+// the two frame-level effects, datamosh and pixel bleed, which both model
+// something chewing on the finished frame and so have to see it finished.
+// Which of those two runs first is a control, since a bled frame fed to the
+// codec and a codec's output printed onto emulsion are different looks.
 import { memo, useEffect, useMemo, useRef } from 'react';
 
 import { useFrame, useThree } from '@react-three/fiber';
@@ -22,15 +20,32 @@ import {
   Fn,
   If,
   Loop,
+  convertToTexture,
   int,
   mix,
+  mrt,
+  output,
   pass,
   screenUV,
   smoothstep,
   uniform,
   vec2,
+  velocity,
 } from 'three/tsl';
 import * as THREE from 'three/webgpu';
+
+import {
+  bilateralBlur,
+  datamosh,
+  depthAwareBlend,
+  godrays,
+} from '@modules/tsl';
+
+import PixelBleedNode, {
+  BLEED_QUALITY,
+  buildPixelBleedNode,
+  createPixelBleedUniforms,
+} from '../utils/pixelBleed';
 
 const MAX_PIXEL_SORT_STEPS = 64;
 
@@ -77,90 +92,195 @@ function buildPixelSortNode(sceneColor, u) {
   })();
 }
 
-function PostEffects({
-  chromaticAberrationEnabled,
-  chromaticAberrationScale,
-  chromaticAberrationStrength,
-  pixelSortDirection,
-  pixelSortEnabled,
-  pixelSortStepSize,
-  pixelSortSteps,
-  pixelSortThreshold,
-}) {
+function PostEffects({ config, godrayLight }) {
   const { gl: renderer, scene, camera } = useThree();
   const postRef = useRef(null);
+  const nodesRef = useRef(null);
 
   const uniforms = useMemo(
     () => ({
-      strength: uniform(chromaticAberrationStrength),
-      scale: uniform(chromaticAberrationScale),
-      pixelSortThreshold: uniform(pixelSortThreshold),
-      pixelSortSteps: uniform(pixelSortSteps),
-      pixelSortStepSize: uniform(pixelSortStepSize),
+      strength: uniform(1),
+      scale: uniform(1.5),
+      pixelSortThreshold: uniform(0.55),
+      pixelSortSteps: uniform(20),
+      pixelSortStepSize: uniform(0.004),
       pixelSortDirection: uniform(new THREE.Vector2(0, 1)),
+      godrayBlendColor: uniform(new THREE.Color('#ffffff')),
+      godrayEdgeRadius: uniform(int(2)),
+      godrayEdgeStrength: uniform(2),
     }),
-    // eslint-disable-next-line react-hooks/exhaustive-deps
     []
   );
+
+  const bleedUniforms = useMemo(() => createPixelBleedUniforms(), []);
+
+  const {
+    postChromaticAberrationEnabled: chromaticEnabled,
+    postPixelSortEnabled: pixelSortEnabled,
+    postGodraysEnabled: godraysEnabled,
+    postGodraysBlur: godraysBlur,
+    postDatamoshEnabled: datamoshEnabled,
+    postPixelBleedEnabled: pixelBleedEnabled,
+    postPixelBleedMotionSmear: bleedMotionSmear,
+    postPixelBleedQuality: bleedQuality,
+    postPixelBleedOrder: bleedOrder,
+  } = config;
+
+  const godraysActive = godraysEnabled && !!godrayLight;
 
   useEffect(() => {
     if (!renderer || !scene || !camera) return undefined;
 
     const scenePass = pass(scene, camera);
-    const sceneColor = scenePass.getTextureNode();
+
+    // The velocity buffer is an extra full-screen attachment on every scene
+    // draw, so it's only attached when datamosh will actually read it.
+    if (datamoshEnabled) {
+      scenePass.setMRT(mrt({ output, velocity }));
+    }
+
+    const sceneColor = scenePass.getTextureNode('output');
+    const sceneDepth = scenePass.getTextureNode('depth');
     const backgroundMask = smoothstep(
       0.98,
       0.999,
       scenePass.getLinearDepthNode()
     );
 
-    let effectNode = sceneColor;
+    let godraysNode = null;
+    let lit = sceneColor;
 
-    if (pixelSortEnabled) {
-      effectNode = buildPixelSortNode(sceneColor, uniforms);
+    if (godraysActive) {
+      godraysNode = godrays(sceneDepth, camera, godrayLight);
+      const raw = godraysNode.getTextureNode();
+      const shafts = godraysBlur ? bilateralBlur(raw).getTextureNode() : raw;
+
+      lit = depthAwareBlend(sceneColor, shafts, sceneDepth, camera, {
+        blendColor: uniforms.godrayBlendColor,
+        edgeRadius: uniforms.godrayEdgeRadius,
+        edgeStrength: uniforms.godrayEdgeStrength,
+      });
     }
 
-    if (chromaticAberrationEnabled) {
-      effectNode = chromaticAberration(
-        effectNode,
+    let glitched = lit;
+
+    if (pixelSortEnabled) {
+      glitched = buildPixelSortNode(convertToTexture(glitched), uniforms);
+    }
+
+    if (chromaticEnabled) {
+      glitched = chromaticAberration(
+        glitched,
         uniforms.strength,
         vec2(0.5, 0.5),
         uniforms.scale
       );
     }
 
+    const masked =
+      pixelSortEnabled || chromaticEnabled
+        ? mix(glitched, lit, backgroundMask)
+        : glitched;
+
+    let datamoshNode = null;
+
+    // Motion Smear is the only reason the bleed needs render targets — without
+    // it the bleed is a pure spatial filter that runs inline, so the toggle is
+    // what picks between the two paths rather than the smear slider.
+    const applyBleed = (node) => {
+      if (!pixelBleedEnabled) return node;
+
+      const quality = BLEED_QUALITY[bleedQuality] ?? BLEED_QUALITY.fast;
+      const source = convertToTexture(node);
+
+      return bleedMotionSmear
+        ? new PixelBleedNode(source, bleedUniforms, quality).getTextureNode()
+        : buildPixelBleedNode(source, bleedUniforms, quality);
+    };
+
+    const applyDatamosh = (node) => {
+      if (!datamoshEnabled) return node;
+
+      datamoshNode = datamosh(node, scenePass.getTextureNode('velocity'));
+      return datamoshNode.getTextureNode();
+    };
+
     const outputNode =
-      pixelSortEnabled || chromaticAberrationEnabled
-        ? mix(effectNode, sceneColor, backgroundMask)
-        : sceneColor;
+      bleedOrder === 'before'
+        ? applyDatamosh(applyBleed(masked))
+        : applyBleed(applyDatamosh(masked));
 
     const postProcessing = new THREE.RenderPipeline(renderer);
     postProcessing.outputNode = outputNode;
     postRef.current = postProcessing;
+    nodesRef.current = { datamoshNode, godraysNode };
 
     return () => {
       postRef.current = null;
+      nodesRef.current = null;
     };
   }, [
     renderer,
     scene,
     camera,
-    chromaticAberrationEnabled,
+    chromaticEnabled,
     pixelSortEnabled,
+    godraysActive,
+    godraysBlur,
+    godrayLight,
+    datamoshEnabled,
+    pixelBleedEnabled,
+    bleedMotionSmear,
+    bleedQuality,
+    bleedOrder,
+    bleedUniforms,
     uniforms,
   ]);
 
   useFrame(() => {
-    uniforms.strength.value = chromaticAberrationStrength;
-    uniforms.scale.value = chromaticAberrationScale;
+    uniforms.strength.value = config.postChromaticAberrationStrength;
+    uniforms.scale.value = config.postChromaticAberrationScale;
 
-    uniforms.pixelSortThreshold.value = pixelSortThreshold;
-    uniforms.pixelSortSteps.value = pixelSortSteps;
-    uniforms.pixelSortStepSize.value = pixelSortStepSize;
+    uniforms.pixelSortThreshold.value = config.postPixelSortThreshold;
+    uniforms.pixelSortSteps.value = config.postPixelSortSteps;
+    uniforms.pixelSortStepSize.value = config.postPixelSortStepSize;
     uniforms.pixelSortDirection.value.set(
-      pixelSortDirection === 'horizontal' ? 1 : 0,
-      pixelSortDirection === 'horizontal' ? 0 : 1
+      config.postPixelSortDirection === 'horizontal' ? 1 : 0,
+      config.postPixelSortDirection === 'horizontal' ? 0 : 1
     );
+
+    uniforms.godrayBlendColor.value.set(config.postGodraysBlendColor);
+    uniforms.godrayEdgeRadius.value = config.postGodraysEdgeRadius;
+    uniforms.godrayEdgeStrength.value = config.postGodraysEdgeStrength;
+
+    const nodes = nodesRef.current;
+
+    if (nodes?.godraysNode) {
+      nodes.godraysNode.density.value = config.postGodraysDensity;
+      nodes.godraysNode.maxDensity.value = config.postGodraysMaxDensity;
+      nodes.godraysNode.distanceAttenuation.value =
+        config.postGodraysDistanceAttenuation;
+      nodes.godraysNode.raymarchSteps.value = config.postGodraysRaymarchSteps;
+    }
+
+    if (nodes?.datamoshNode) {
+      nodes.datamoshNode.corruption.value = config.postDatamoshCorruption;
+      nodes.datamoshNode.displace.value = config.postDatamoshDisplace;
+      nodes.datamoshNode.blockSize.value = config.postDatamoshBlockSize;
+    }
+
+    bleedUniforms.reach.value = config.postPixelBleedReach;
+    bleedUniforms.strength.value = config.postPixelBleedStrength;
+    bleedUniforms.angle.value = config.postPixelBleedAngle;
+    bleedUniforms.offsetR.value = config.postPixelBleedOffsetR;
+    bleedUniforms.offsetG.value = config.postPixelBleedOffsetG;
+    bleedUniforms.offsetB.value = config.postPixelBleedOffsetB;
+    bleedUniforms.highlights.value = config.postPixelBleedHighlights;
+    bleedUniforms.tintColor.value.set(config.postPixelBleedTint);
+    bleedUniforms.tintAmount.value = config.postPixelBleedTintAmount;
+    bleedUniforms.smear.value = bleedMotionSmear
+      ? config.postPixelBleedSmear
+      : 0;
 
     if (!postRef.current) return;
     postRef.current.render();

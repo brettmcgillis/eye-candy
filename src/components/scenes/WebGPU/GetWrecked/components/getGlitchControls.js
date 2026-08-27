@@ -126,6 +126,41 @@ export default function getGlitchControls(preset, onReglitch) {
         },
         { collapsed: true }
       ),
+      'Slit Scan': folder(
+        {
+          glitchSlitScanEnabled: {
+            label: 'Enabled',
+            value: preset.glitchSlitScanEnabled,
+          },
+          glitchSlitScanAxis: {
+            label: 'Axis',
+            options: ['x', 'y', 'z'],
+            value: preset.glitchSlitScanAxis,
+          },
+          glitchSlitScanPosition: {
+            label: 'Slit Position',
+            min: 0,
+            max: 1,
+            step: 0.01,
+            value: preset.glitchSlitScanPosition,
+          },
+          glitchSlitScanWidth: {
+            label: 'Slit Width',
+            min: 0.002,
+            max: 0.5,
+            step: 0.002,
+            value: preset.glitchSlitScanWidth,
+          },
+          glitchSlitScanStretch: {
+            label: 'Stretch',
+            min: -2,
+            max: 4,
+            step: 0.01,
+            value: preset.glitchSlitScanStretch,
+          },
+        },
+        { collapsed: true }
+      ),
       'Scroll Tear': folder(
         {
           glitchScrollTearEnabled: {
@@ -222,17 +257,28 @@ export default function getGlitchControls(preset, onReglitch) {
           },
           glitchTornCellFrequency: {
             label: 'Cell Frequency',
-            min: 1,
-            max: 30,
-            step: 0.5,
+            min: 0.01,
+            max: 1,
+            step: 0.01,
             value: preset.glitchTornCellFrequency,
           },
           glitchTornWireframeWidth: {
-            label: 'Wire Width',
-            min: 0.01,
-            max: 0.3,
-            step: 0.005,
+            label: 'Wire Width (px)',
+            min: 0.3,
+            max: 6,
+            step: 0.1,
             value: preset.glitchTornWireframeWidth,
+          },
+          glitchTornWireColor: {
+            label: 'Wire Color',
+            value: preset.glitchTornWireColor,
+          },
+          glitchTornWireIntensity: {
+            label: 'Wire Glow',
+            min: 0,
+            max: 6,
+            step: 0.05,
+            value: preset.glitchTornWireIntensity,
           },
         },
         { collapsed: true }
@@ -321,9 +367,14 @@ export default function getGlitchControls(preset, onReglitch) {
             value: preset.glitchSliceSuiteBandwidth,
           },
           glitchSliceSuiteAxis: {
-            label: 'Axis',
+            label: 'Slice Axis',
             options: ['x', 'y', 'z'],
             value: preset.glitchSliceSuiteAxis,
+          },
+          glitchSliceSuiteRevealAxis: {
+            label: 'Reveal Axis',
+            options: ['x', 'y', 'z'],
+            value: preset.glitchSliceSuiteRevealAxis,
           },
           glitchSliceSuiteCount: {
             label: 'Slice Count',
@@ -333,10 +384,10 @@ export default function getGlitchControls(preset, onReglitch) {
             value: preset.glitchSliceSuiteCount,
           },
           glitchSliceSuitePushApart: {
-            label: 'Push Apart',
+            label: 'Gap (slices)',
             min: 0,
-            max: 2,
-            step: 0.01,
+            max: 6,
+            step: 0.05,
             value: preset.glitchSliceSuitePushApart,
           },
           glitchSliceSuiteTwistMax: {
@@ -434,17 +485,31 @@ export default function getGlitchControls(preset, onReglitch) {
           },
           glitchInnerStretchStretch: {
             label: 'Stretch',
-            min: -3,
-            max: 3,
+            min: -10,
+            max: 10,
             step: 0.05,
             value: preset.glitchInnerStretchStretch,
           },
           glitchInnerStretchCellFrequency: {
             label: 'Cell Frequency',
-            min: 0.5,
+            min: 0.01,
             max: 30,
-            step: 0.5,
+            step: 0.01,
             value: preset.glitchInnerStretchCellFrequency,
+          },
+          glitchInnerStretchSharpness: {
+            label: 'Spike Sharpness',
+            min: 0.1,
+            max: 6,
+            step: 0.05,
+            value: preset.glitchInnerStretchSharpness,
+          },
+          glitchInnerStretchChaos: {
+            label: 'Chaos',
+            min: 0,
+            max: 1,
+            step: 0.01,
+            value: preset.glitchInnerStretchChaos,
           },
         },
         { collapsed: true }

@@ -141,6 +141,11 @@ function buildInkPaper(kernel, renderer, options, test, config) {
     paperSize: ink('inkPaperSize'),
     renderer,
     resolution: ink('inkResolution'),
+    // The scene needs a catch-up on a freshly cleared field because it is being
+    // watched while it settles; a capture is not, and it passes the exact step
+    // count it wants. Leaving the catch-up on made --inkSettle mean "this many
+    // steps, plus ninety", so the flag never meant what it said.
+    settleOnReset: 0,
     tonalGap: ink('inkTonalGap'),
     seed: config.seed,
     simParams: {

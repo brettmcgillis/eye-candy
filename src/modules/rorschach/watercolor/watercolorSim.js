@@ -5,6 +5,7 @@ import {
   max,
   min,
   mix,
+  mrt,
   smoothstep,
   texture,
   uniform,
@@ -99,6 +100,57 @@ const DEFAULT_PARAMS = {
   wetThreshold: 0.02,
 };
 
+const FIELD_OPTIONS = {
+  depthBuffer: false,
+  magFilter: THREE.NearestFilter,
+  minFilter: THREE.NearestFilter,
+  type: THREE.HalfFloatType,
+  wrapS: THREE.ClampToEdgeWrapping,
+  wrapT: THREE.ClampToEdgeWrapping,
+};
+
+// Two fields sharing one ping-pong pair, written by a single pass through MRT.
+//
+// The suspended and deposited layers compute the same transfer deltas from the
+// same pre-update state and write to different targets, which is exactly the
+// shape MRT exists for. Fused, a step is two passes instead of three — and the
+// step is submission-bound rather than pixel-bound, so a pass removed is close
+// to a third of the cost removed.
+//
+// Attachment order is resolved by name: `mrt({ suspended, deposited })` matches
+// each key against `textures[i].name`, so the names below are load-bearing
+// rather than decorative.
+function createPairField(resolution, names) {
+  const make = () => {
+    const target = new THREE.RenderTarget(resolution, resolution, {
+      ...FIELD_OPTIONS,
+      count: names.length,
+    });
+    names.forEach((name, index) => {
+      target.textures[index].name = name;
+    });
+    return target;
+  };
+
+  const read = make();
+  const write = make();
+  const nodes = names.map((unused, index) => texture(read.textures[index]));
+
+  return {
+    nodes,
+    read,
+    write,
+    swap() {
+      const previous = this.read;
+      this.read = this.write;
+      this.write = previous;
+      nodes.forEach((sampler, index) => {
+        Object.assign(sampler, { value: this.read.textures[index] });
+      });
+    },
+  };
+}
+
 function createField(resolution) {
   const options = {
     depthBuffer: false,
@@ -139,8 +191,9 @@ export default function createWatercolorSim({
   const texel = 1 / resolution;
 
   const water = createField(resolution);
-  const suspended = createField(resolution);
-  const deposited = createField(resolution);
+  const pigment = createPairField(resolution, ['suspended', 'deposited']);
+  const suspended = { node: pigment.nodes[0] };
+  const deposited = { node: pigment.nodes[1] };
   const paperTexture = createPaperTexture({
     grain: paperGrain,
     resolution,
@@ -519,7 +572,7 @@ export default function createWatercolorSim({
   const washKeep = () =>
     float(1).sub(uniforms.patternFade.mul(uniforms.timeStep)).clamp(0, 1);
 
-  // --- pass 2: suspended pigment -----------------------------------------
+  // --- pass 2: pigment, both layers at once -------------------------------
   // Donor-cell advection read as a gather. Velocities are face-centred: a
   // cell's u is the flux through its *right* face, so the exchange with the
   // right neighbour is governed by this cell's own u, and the exchange with the
@@ -527,8 +580,15 @@ export default function createWatercolorSim({
   // the right face — the obvious-looking thing — pairs each face with the wrong
   // velocity and the scheme stops conserving pigment: a blot builds to full
   // strength within three steps and then bleeds away to nothing by step twenty.
-  const suspendedPass = pass(
-    Fn(() => {
+  //
+  // Suspended and deposited are written together through MRT. They already had
+  // to agree about `transferDeltas`, and both computed it from the same
+  // pre-update state precisely so that whichever ran second still saw what the
+  // first had read. Writing them from one pass makes that agreement structural
+  // rather than a convention two passes had to keep.
+  const pigmentPass = pass(vec4(0, 0, 0, 0));
+  pigmentPass.mrtNode = mrt({
+    suspended: Fn(() => {
       const here = sample(water);
       const left = at(water, -1, 0);
       const below = at(water, 0, -1);
@@ -559,20 +619,17 @@ export default function createWatercolorSim({
         .sub(transferDeltas().down);
 
       return moved.clamp(vec4(0, 0, 0, 0), ceiling());
-    })()
-  );
+    })(),
 
-  // --- pass 3: deposited pigment -----------------------------------------
-  const depositedPass = pass(
-    Fn(() => {
+    deposited: Fn(() => {
       const { down, up } = transferDeltas();
       return sample(deposited)
         .mul(washKeep())
         .add(down)
         .sub(up)
         .clamp(vec4(0, 0, 0, 0), ceiling());
-    })()
-  );
+    })(),
+  });
 
   // --- output -------------------------------------------------------------
   // Deposited pigment is paint dried onto the fibres; suspended pigment is
@@ -703,14 +760,21 @@ export default function createWatercolorSim({
     return total.x.add(total.y).add(total.z).add(total.w);
   });
 
-  const fields = [water, suspended, deposited];
+  const fields = [water, pigment];
 
   function reset() {
-    fields.forEach((field) => {
-      run(clearMaterial, field.write);
-      field.swap();
-      run(clearMaterial, field.write);
-      field.swap();
+    run(clearMaterial, water.write);
+    water.swap();
+    run(clearMaterial, water.write);
+    water.swap();
+
+    // Cleared through the renderer rather than by a quad pass, because a
+    // material with a plain colorNode writes attachment 0 and leaves the second
+    // one undefined — which is the "sampling a target that has never been
+    // written" trap, reintroduced through the back door.
+    [pigment.read, pigment.write].forEach((target) => {
+      renderer.setRenderTarget(target);
+      renderer.clear();
     });
     // The pattern target too: updatePattern early-returns while flow and wash
     // are both 0, which is the state the sim is constructed in before the
@@ -721,17 +785,15 @@ export default function createWatercolorSim({
     renderer.setRenderTarget(null);
   }
 
-  // Three passes, and the render target is left bound until the step is
-  // finished — unbinding between passes measured at ~0.2ms each, which is most
-  // of a frame's budget once it is paid twenty-odd times.
+  // Two passes, and the render target is left bound until the step is finished
+  // — unbinding between passes measured at ~0.2ms each, which is most of a
+  // frame's budget once it is paid twenty-odd times.
   function step() {
     run(waterPass, water.write);
     water.swap();
 
-    run(suspendedPass, suspended.write);
-    run(depositedPass, deposited.write);
-    suspended.swap();
-    deposited.swap();
+    run(pigmentPass, pigment.write);
+    pigment.swap();
 
     renderer.setRenderTarget(null);
   }
@@ -783,7 +845,7 @@ export default function createWatercolorSim({
   return {
     coverageNode,
     dispose,
-    fields: { deposited, suspended, water },
+    fields: { pigment, water },
     reflectanceNode,
     reset,
     resolution,

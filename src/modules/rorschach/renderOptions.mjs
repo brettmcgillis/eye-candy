@@ -482,7 +482,13 @@ export const RENDER_OPTIONS = {
     scope: 'shared',
     section: 'layers',
     type: 'number',
-    default: 240,
+    // The blot converges long before this. Measured at both 512 and 2048, a
+    // still settled 120 steps is pixel-identical to one settled 570 — the wash
+    // is a relaxation toward a per-cell target, so it converges on a time
+    // constant rather than by spreading, and resolution barely moves it. The
+    // old 240 (plus a hidden 90) was roughly 5x the work for no visible
+    // difference, and settling is essentially the entire cost of an ink render.
+    default: 120,
     min: 0,
     max: 4000,
     step: 10,

@@ -100,7 +100,7 @@ rather than restarting at every test or every view: one video, one clock. Same
 form `breathe` uses. Without it `inkPatternTime` sits at its default for every
 frame and the blot is identical throughout while only the lines move.
 
-Note this inherits breathe's cost: `buildInkPaper` sits inside the per-frame
+Note this inherits breathe's cost model: `buildInkPaper` sits inside the per-frame
 capture loop, so every frame rebuilds and re-settles the sim from clean at
 `--inkSettle` steps. That is deliberate — it makes each frame a pure function of
 (seed, patternTime) and keeps a clip reproducible — but at a high settle and
@@ -533,6 +533,40 @@ pushing something back and then making it burn brighter reads as neither.
 
 None of the three are rollable. They are legibility, not stylistic variation: a
 batch wants its layers readable for the same reason every frame of it does.
+
+### What an ink render actually costs
+
+Settling is essentially the whole of it. Measured at 2048 with five tests:
+~1.5s of fixed startup, and the rest is sim steps. Three passes per step, and
+the step is submission-bound rather than pixel-bound — 512 and 2048 measure
+within a couple of milliseconds of each other — so resolution costs allocation
+and VRAM, not time.
+
+**`--inkSettle` used to mean "this many steps, plus ninety".** `advance` adds a
+catch-up on a freshly cleared field, which the scene needs because it is being
+watched while it settles. A capture is not, and it passes the exact count it
+wants, so the headless path now sets `settleOnReset: 0` and the flag means what
+it says.
+
+**The blot converges far sooner than the old default assumed.** The wash is a
+relaxation toward a per-cell target, so it converges on a time constant rather
+than by spreading, and resolution barely moves it. Measured at both 512 and
+2048, a still settled 120 steps is pixel-identical to one settled 570. The
+default dropped from 240 (really 330) to 120, which took a five-test 2048 batch
+from 67s to 37s — 13.1s to 7.2s per test — with no visible difference.
+
+The two pigment passes are now fused through MRT — they computed the same
+transfer deltas from the same pre-update state and wrote different targets,
+which is what MRT exists for — taking a step from three passes to two. Measured
+over 1800 steps at 2048: **31.9s to 27.0s, about 15%**. Worth having, and worth
+recording that it was predicted at ~33% on the reasoning that the step was
+submission-bound. Pass overhead is a real share of the cost but not the majority
+of it; the fused pass still does both layers' arithmetic, so only the per-pass
+overhead goes away. Output is unchanged to within half-float rounding (max delta
+2/255).
+
+One lever left: video modes rebuild the sim from clean every frame, which a warm
+sim would avoid at the cost of frame independence.
 
 ### Depth state on the ink
 

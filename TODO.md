@@ -20,7 +20,7 @@
 
 ### EFFECTS
 
-- [FractalPixelate](src/components/postprocessing/webGPU/fractalPixelate/todo.md)
+- [FractalPixelate](src/components/postprocessing/WebGPU/fractalPixelate/todo.md)
 
 ### SCENES
 
@@ -44,7 +44,6 @@ To Build:
 - [ ] can we voxelize things using three-mesh-bvh and webgpu backdrop pixel effect?
 - [ ] interactive spider-plant, in a pot on a table. we could use a small number of very long, stylized grass for the plant. create 'rope' using rapier joints or cloth-sim. could do other leafy-viny plants too.
 - [ ] Softbodies - mathias-research has some good examples. https://github.com/matthias-research/pages/blob/master/tenMinutePhysics/10-softBodies.html
-- [ ] Rain on the ocean. 2 presets. 1 full color, rain hitting the ocean surface as it rages. 2 black and white, everything is black except for the light reflections from the rain ripples and raindrops.
 - [ ] godray point light close to asphalt, ruined cars surrounding it, ruined buildings behind those.
 - [ ] Particles, field lines, & emissive spheres in the abandoned interior model
 - [ ] can we build a scene with a lightbulb that casts darkness? Negative light intensity!
@@ -53,16 +52,16 @@ To Build:
 - [ ] Generative mazes vs pathfinder algos `~/dev/examples/260602_MazeTerrain` & `~/dev/examples/Pathfinding-Visualizer-ThreeJS`
 - [ ] Wan ATI in comfyUI style scene ala WAVE
 - [ ] Multicolor godray volume
-- [ ] (Dev) Build a color pallette generator to help get some variety in scenes
 - [ ] Procedural power poles with interactive verlet powerlines. see `~/dev/examples/PoleGeneratorThreeJS`
 - [ ] Endless Hydrolic Erosion Simulation
 - [ ] House of leaves: could we use the skyscraper generator as a starting point to learn how to build a house generator to generate one/two/three story homes, and then use the Parallax Occlusion Mapping technique we see on the window to reveal surreal/impossible house interiors? peek in the window to find a forest, space, impossible corridors
+- [ ] House of Leaves 2: scrape the book for all the visual descriptions of the inside of the house and the liminal spaces within and use this to generate a scene that shows the setting(s) of the book.
 - [ ] Wild horses. Horses running in an endless field. Use threejs webgpu volume fire example to create smoke coming off the horse's mane + tail.
 - [ ] Consider creative letterboxing for scenes. could be a 3d element to give it depth in the scene, catch shadows.
 - [ ] Radar scene. like a radar scanner, rotating clockwise, the radar 'reveals' geometry in the scene as it passes over it similar to that Lidar game. Over time the dots fade so they are gone before the sweep returns. if we use a slowly animated model we could get snapshots in time.
 - [ ] Checkout MarkovJunior/MarkovJuniorWeb. id love to generate liminal spaces using similar logic.
-
 - [ ] Use RorschachCLI as an example and build a similar tool/devpage for: Trucheterie, HexTrees
+- [ ] a pair of generative scenes/CLIs: Flora & Fauna. Procedural grasses, flowers, weeds, etc. Procedural creatures (maybe voxel space invaders), generative in their forms, with CA type rules applied for living, reproducing, travelling, and dying.
 
 ### Scene TODO Files
 
@@ -123,7 +122,9 @@ To Build:
 - [WaterCycle](src/components/scenes/WebGPU/WaterCycle/todo.md)
 - [Wet Paint](src/components/scenes/WebGPU/WetPaint/todo.md)
 - [WhiteLies](src/components/scenes/WebGPU/WhiteLies/todo.md)
+- [WildHorses](src/components/scenes/WebGPU/WildHorses/todo.md)
 - [WindowBreaker](src/components/scenes/WebGPU/WindowBreaker/todo.md)
+- [WriteOff](src/components/scenes/WebGPU/WriteOff/todo.md)
 
 **Template**
 
@@ -133,7 +134,7 @@ To Build:
 
 - [ExplosionTest](src/components/scenes/WebGL/ExplosionTest/todo.md)
 - [FluidTest](src/components/scenes/WebGL/FluidTest/todo.md)
-- [FurLab (webGL)](src/components/scenes/WebGL/FurLab/todo.md)
+- [FurLab](src/components/scenes/Shared/FurLab/todo.md)
 - [HandStuff](src/components/scenes/WebGL/HandStuff/todo.md)
 - [ParticleLab](src/components/scenes/WebGL/ParticleLab/todo.md)
 - [PixelHater](src/components/scenes/WebGL/PixelHater/todo.md)
@@ -141,10 +142,8 @@ To Build:
 - [TheBoneZone](src/components/scenes/WebGL/TheBoneZone/todo.md)
 - [MobilePhysicsTest](src/components/scenes/WebGPU/MobilePhysicsTest/todo.md)
 - [NetworkTest](src/components/scenes/WebGPU/NetworkTest/todo.md)
-- [FurLab (webGPU)](src/components/scenes/WebGPU/FurLab/todo.md)
 - [TheLoom](src/components/scenes/WebGPU/TheLoom/todo.md)
-- [LightningLab (webGL)](src/components/scenes/WebGL/LightningLab/todo.md)
-- [LightningLab (webGPU)](src/components/scenes/WebGPU/LightningLab/todo.md)
+- [LightningLab](src/components/scenes/Shared/LightningLab/todo.md)
 
 **ToolBox**
 
@@ -157,14 +156,12 @@ To Build:
   - [GenerativeGeometry](src/components/scenes/WebGL/PenPlotter/PlotScenes/GenerativeGeometry/todo.md)
   - [NetworkPlot](src/components/scenes/WebGL/PenPlotter/PlotScenes/NetworkPlot/todo.md)
   - [ParticlePlot](src/components/scenes/WebGL/PenPlotter/PlotScenes/ParticlePlot/todo.md)
+- [PenPlotterV2](src/components/scenes/WebGL/PenPlotterV2/todo.md)
 - [SmokeTest](src/components/scenes/Shared/SmokeTest/todo.md)
 - [SplineEditor](src/components/scenes/WebGL/SplineEditor/todo.md)
 - [TrashCollector](src/components/scenes/WebGL/TrashCollector/todo.md)
 - [GhostBuster](src/components/scenes/WebGPU/GhostBuster/todo.md)
-- [CharacterController (webGPU)](src/components/scenes/WebGPU/CharacterController/todo.md)
-- [CharacterController (webGL)](src/components/scenes/WebGL/CharacterController/todo.md)
-- [MultiplayerMadness (webGPU)](src/components/scenes/WebGPU/MultiplayerMadness/todo.md)
-- [MultiplayerMadness (webGL)](src/components/scenes/WebGL/MultiplayerMadness/todo.md)
+- [CharacterController & MultiplayerMadness](src/components/scenes/Shared/CharacterController/todo.md)
 
 ### ELEMENTS
 
@@ -203,6 +200,7 @@ To Build:
 - [ ] All my Thoughts Are So Cumulus - Record
 - [x] All my Thoughts Are So Cumulus - Static
 - [ ] All my Thoughts Are So Cumulus - Universal
+- [x] Beautys In The Eye Of The Beheaded
 - [x] Birds Arent Real
 - [x] Burning At Both Ends - Enlightened
 - [x] Burning At Both Ends - Extinguished
@@ -226,6 +224,8 @@ To Build:
 - [ ] PaperCuts - Argyle (2)
 - [ ] PaperCuts - 11 (3)
 - [x] PaperStack - Gradient Scan
+- [ ] Quinns Dice
+- [ ] Rosie
 - [ ] Surrender
 - [ ] Surrender Now
 - [ ] Surrender - Autumn
@@ -235,6 +235,9 @@ To Build:
 - [x] Touch Grass
 - [x] Trucheterie - 001
 - [x] Water Cycle - An Ocean Implied
+- [x] WatercolorSquares - Red
+- [x] WatercolorSquares - Blue
+- [x] WatercolorSquares - Green
 - [x] Windswept - Tangled
 - [ ] Weightless - Simulated Flight
 - [x] Weightless - Sketchbook
@@ -279,6 +282,7 @@ To Build:
 - [ ] Rorshach - lines over watercolor
 - [ ] Row It Alone
 - [ ] Stay Hunted
+- [ ] Staying Afloat
 - [ ] Still Pulling For You - Rough Waters
 - [ ] Still Pulling For You - Still Pulling
 - [ ] Still Pulling For You - Sunk
@@ -298,6 +302,7 @@ To Build:
 - [ ] Weightless - Dragonfly
 - [ ] Wet Paint
 - [ ] White Lies
+- [ ] Wild Horses
 - [ ] WindowBreaker
 - [ ] Windswept - Default
 - [ ] Windswept - Clover

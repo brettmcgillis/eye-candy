@@ -246,10 +246,12 @@
 .gradients-page__preview-chip-wrap {
   position: relative;
   display: inline-flex;
+  z-index: 0;
 }
 
 .gradients-page__preview-chip {
   cursor: pointer;
+  touch-action: none;
 }
 
 .gradients-page__remove-chip {
@@ -268,17 +270,26 @@
   color: var(--dev-text);
   cursor: pointer;
   font-size: 0.65rem;
+  opacity: 0;
+  pointer-events: none;
+}
+
+.gradients-page__preview-chip-wrap:hover .gradients-page__remove-chip,
+.gradients-page__preview-chip-wrap:focus-within .gradients-page__remove-chip {
+  opacity: 1;
+  pointer-events: auto;
 }
 
 .gradients-page__color-picker {
   position: fixed;
-  z-index: 40;
-  top: 50%;
-  left: 50%;
-  width: 10rem;
-  height: 10rem;
+  top: 0;
+  left: 0;
+  width: 1px;
+  height: 1px;
   padding: 0;
-  transform: translate(-50%, -50%);
+  border: 0;
+  opacity: 0;
+  pointer-events: none;
 }
 
 .gradients-page__color-picker--hidden {

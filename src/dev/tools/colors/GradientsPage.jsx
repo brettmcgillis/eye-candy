@@ -1,5 +1,22 @@
 import React, { useEffect, useMemo, useRef, useState } from 'react';
 
+import {
+  DndContext,
+  KeyboardSensor,
+  PointerSensor,
+  closestCenter,
+  useSensor,
+  useSensors,
+} from '@dnd-kit/core';
+import {
+  SortableContext,
+  arrayMove,
+  rectSortingStrategy,
+  sortableKeyboardCoordinates,
+  useSortable,
+} from '@dnd-kit/sortable';
+import { CSS } from '@dnd-kit/utilities';
+
 import DevPageHeaderBar from '../../shell/DevPageHeaderBar';
 import './GradientsPage.css';
 
@@ -11,6 +28,21 @@ const DEFAULT_FORM = {
   colorsText: '#0F172A, #1D4ED8, #F8FAFC',
 };
 
+let colorEntryId = 0;
+
+function createColorEntry(color) {
+  colorEntryId += 1;
+  return { id: `gradient-color-${colorEntryId}`, color };
+}
+
+function createColorEntries(colors, currentEntries = []) {
+  return colors.map((color, index) =>
+    currentEntries[index]
+      ? { ...currentEntries[index], color }
+      : createColorEntry(color)
+  );
+}
+
 function normalizeHex(value) {
   const next = String(value || '').trim();
   if (!next) return null;
@@ -21,24 +53,58 @@ function normalizeHex(value) {
 }
 
 function parseColors(text) {
-  return Array.from(
-    new Set(
-      String(text || '')
-        .split(/[\n,]+/u)
-        .map((entry) => entry.trim())
-        .filter(Boolean)
-        .map((entry) => normalizeHex(entry))
-        .filter(Boolean)
-    )
-  );
+  return String(text || '')
+    .split(/[\n,]+/u)
+    .map((entry) => entry.trim())
+    .filter(Boolean)
+    .map((entry) => normalizeHex(entry))
+    .filter(Boolean);
 }
 
 function gradientBackground(colors) {
+  if (!colors.length) return 'transparent';
+  if (colors.length === 1) return colors[0];
   return `linear-gradient(135deg, ${colors.join(', ')})`;
 }
 
 function readJsonResponse(response) {
   return response.json().catch(() => ({}));
+}
+
+function SortableColorChip({ colorEntry, onEdit, onRemove }) {
+  const { attributes, listeners, setNodeRef, transform, transition } =
+    useSortable({ id: colorEntry.id });
+
+  return (
+    <div
+      className="gradients-page__preview-chip-wrap"
+      ref={setNodeRef}
+      style={{
+        transform: CSS.Transform.toString(transform),
+        transition,
+      }}
+    >
+      <button
+        {...attributes}
+        {...listeners}
+        className="gradients-page__preview-chip"
+        type="button"
+        aria-label={`Edit color ${colorEntry.color}`}
+        title={colorEntry.color}
+        onClick={() => onEdit(colorEntry.id)}
+        style={{ '--chip-color': colorEntry.color }}
+      />
+      <button
+        type="button"
+        aria-label={`Remove color ${colorEntry.color}`}
+        title="Remove color"
+        className="gradients-page__remove-chip"
+        onClick={() => onRemove(colorEntry.id)}
+      >
+        ×
+      </button>
+    </div>
+  );
 }
 
 export default function GradientsPage() {
@@ -52,16 +118,22 @@ export default function GradientsPage() {
   const [modalOpen, setModalOpen] = useState(false);
   const [modalMode, setModalMode] = useState('add');
   const [modalForm, setModalForm] = useState(DEFAULT_FORM);
-  const [error, setError] = useState('');
-  const [dragIndex, setDragIndex] = useState(null);
-  const [hoveredColorIndex, setHoveredColorIndex] = useState(null);
-  const [colorPickerIndex, setColorPickerIndex] = useState(null);
-  const colorPickerRef = useRef(null);
-
-  const modalPreviewColors = useMemo(
-    () => parseColors(modalForm.colorsText),
-    [modalForm.colorsText]
+  const [modalColorEntries, setModalColorEntries] = useState(() =>
+    createColorEntries(parseColors(DEFAULT_FORM.colorsText))
   );
+  const [error, setError] = useState('');
+  const [colorPickerId, setColorPickerId] = useState(null);
+  const colorPickerRef = useRef(null);
+  const sensors = useSensors(
+    useSensor(PointerSensor, {
+      activationConstraint: { distance: 6 },
+    }),
+    useSensor(KeyboardSensor, {
+      coordinateGetter: sortableKeyboardCoordinates,
+    })
+  );
+
+  const modalPreviewColors = modalColorEntries.map((entry) => entry.color);
 
   useEffect(() => {
     let cancelled = false;
@@ -134,6 +206,9 @@ export default function GradientsPage() {
   function openAddModal() {
     setModalMode('add');
     setModalForm(DEFAULT_FORM);
+    setModalColorEntries(
+      createColorEntries(parseColors(DEFAULT_FORM.colorsText))
+    );
     setError('');
     setModalOpen(true);
   }
@@ -145,6 +220,7 @@ export default function GradientsPage() {
       name: gradient.name,
       colorsText: gradient.colors.join(', '),
     });
+    setModalColorEntries(createColorEntries(gradient.colors));
     setError('');
     setModalOpen(true);
   }
@@ -155,6 +231,7 @@ export default function GradientsPage() {
       name: `${gradient.name} (copy)`,
       colorsText: gradient.colors.join(', '),
     });
+    setModalColorEntries(createColorEntries(gradient.colors));
     setError('');
     setModalOpen(true);
   }
@@ -162,8 +239,7 @@ export default function GradientsPage() {
   function closeModal() {
     setModalOpen(false);
     setError('');
-    setColorPickerIndex(null);
-    setHoveredColorIndex(null);
+    setColorPickerId(null);
   }
 
   function handleSort(key) {
@@ -176,71 +252,66 @@ export default function GradientsPage() {
     setSortDirection((current) => (current === 'asc' ? 'desc' : 'asc'));
   }
 
-  function setModalColors(nextColors) {
+  function setModalColors(nextEntries) {
+    setModalColorEntries(nextEntries);
     setModalForm((current) => ({
       ...current,
-      colorsText: nextColors.join(', '),
+      colorsText: nextEntries.map((entry) => entry.color).join(', '),
     }));
   }
 
   function handleAddColor() {
-    setModalColors([...modalPreviewColors, '#FFFFFF']);
+    setModalColors([...modalColorEntries, createColorEntry('#FFFFFF')]);
   }
 
-  function handleSelectColor(index) {
-    setColorPickerIndex(index);
-    setHoveredColorIndex(null);
+  function handleColorsTextChange(value) {
+    const nextColors = parseColors(value);
+    setModalForm((current) => ({ ...current, colorsText: value }));
+    setModalColorEntries((current) => createColorEntries(nextColors, current));
+  }
+
+  function handleSelectColor(id) {
+    setColorPickerId(id);
     setTimeout(() => colorPickerRef.current?.click(), 0);
   }
 
   function handleColorChange(event) {
     const nextColor = normalizeHex(event.target.value);
-    const index = colorPickerIndex;
-    if (!nextColor || index === null || index === undefined) {
+    if (!nextColor || !colorPickerId) {
       return;
     }
 
-    const nextColors = [...modalPreviewColors];
-    nextColors[index] = nextColor;
-    setModalColors(nextColors);
-    setColorPickerIndex(null);
-  }
-
-  function handleRemoveColor(index) {
-    const nextColors = modalPreviewColors.filter(
-      (_, colorIndex) => colorIndex !== index
+    setModalColors(
+      modalColorEntries.map((entry) =>
+        entry.id === colorPickerId ? { ...entry, color: nextColor } : entry
+      )
     );
-    setModalColors(nextColors);
-    setHoveredColorIndex(null);
-    if (colorPickerIndex === index) {
-      setColorPickerIndex(null);
+  }
+
+  function handleRemoveColor(id) {
+    setModalColors(modalColorEntries.filter((entry) => entry.id !== id));
+    if (colorPickerId === id) {
+      setColorPickerId(null);
     }
   }
 
-  function handleDragStart(index) {
-    setDragIndex(index);
-  }
-
-  function handleDrop(targetIndex) {
-    if (dragIndex === null || dragIndex === undefined) {
+  function handleDragEnd({ active, over }) {
+    if (!over || active.id === over.id) {
       return;
     }
 
-    if (dragIndex === targetIndex) {
-      setDragIndex(null);
-      return;
-    }
-
-    const nextColors = [...modalPreviewColors];
-    const [movedColor] = nextColors.splice(dragIndex, 1);
-    nextColors.splice(targetIndex, 0, movedColor);
-    setModalColors(nextColors);
-    setDragIndex(null);
+    const oldIndex = modalColorEntries.findIndex(
+      (entry) => entry.id === active.id
+    );
+    const newIndex = modalColorEntries.findIndex(
+      (entry) => entry.id === over.id
+    );
+    setModalColors(arrayMove(modalColorEntries, oldIndex, newIndex));
   }
 
   async function handleSave() {
     const name = modalForm.name.trim();
-    const colors = parseColors(modalForm.colorsText);
+    const colors = modalPreviewColors;
 
     if (!name) {
       setError('A gradient name is required.');
@@ -361,6 +432,7 @@ export default function GradientsPage() {
           {filteredGradients.map((gradient) => {
             const isSelected = selectedName === gradient.name;
             const colors = gradient.colors || [];
+            const colorOccurrences = new Map();
 
             return (
               <div
@@ -405,14 +477,19 @@ export default function GradientsPage() {
                   </div>
 
                   <div className="gradients-page__chips">
-                    {colors.map((color) => (
-                      <span
-                        className="gradients-page__chip"
-                        key={`${gradient.name}-${color}`}
-                        title={color}
-                        style={{ '--chip-color': color }}
-                      />
-                    ))}
+                    {colors.map((color) => {
+                      const occurrence = colorOccurrences.get(color) || 0;
+                      colorOccurrences.set(color, occurrence + 1);
+
+                      return (
+                        <span
+                          className="gradients-page__chip"
+                          key={`${gradient.name}-${color}-${occurrence}`}
+                          title={color}
+                          style={{ '--chip-color': color }}
+                        />
+                      );
+                    })}
                   </div>
                 </div>
               </div>
@@ -468,10 +545,7 @@ export default function GradientsPage() {
                   className="gradients-page__textarea"
                   value={modalForm.colorsText}
                   onChange={(event) =>
-                    setModalForm((current) => ({
-                      ...current,
-                      colorsText: event.target.value,
-                    }))
+                    handleColorsTextChange(event.target.value)
                   }
                   placeholder="#0F172A, #1D4ED8, #F8FAFC
 #0EA5E9, #F59E0B"
@@ -504,69 +578,53 @@ export default function GradientsPage() {
                   }}
                 />
 
-                <div className="gradients-page__preview-chips">
-                  {modalPreviewColors.map((color, index) => {
-                    const isHovered = hoveredColorIndex === index;
-
-                    return (
-                      <div
-                        className="gradients-page__preview-chip-wrap"
-                        key={color}
-                        onMouseEnter={() => setHoveredColorIndex(index)}
-                        onMouseLeave={() => setHoveredColorIndex(null)}
-                      >
-                        <button
-                          className="gradients-page__preview-chip"
-                          type="button"
-                          aria-label={`Edit color ${color}`}
-                          title={color}
-                          draggable
-                          onClick={() => handleSelectColor(index)}
-                          onDragStart={() => handleDragStart(index)}
-                          onDragOver={(event) => event.preventDefault()}
-                          onDrop={() => handleDrop(index)}
-                          onDragEnd={() => setDragIndex(null)}
-                          style={{ '--chip-color': color }}
-                        />
-                        {isHovered && (
-                          <button
-                            type="button"
-                            aria-label={`Remove color ${color}`}
-                            title="Remove color"
-                            className="gradients-page__remove-chip"
-                            onClick={(event) => {
-                              event.stopPropagation();
-                              handleRemoveColor(index);
-                            }}
-                          >
-                            ×
-                          </button>
-                        )}
-                      </div>
-                    );
-                  })}
-
-                  <button
-                    type="button"
-                    aria-label="Add color"
-                    className="gradients-page__preview-add"
-                    onClick={handleAddColor}
+                {/* eslint-disable react/jsx-no-bind -- dnd-kit requires function props. */}
+                <DndContext
+                  sensors={sensors}
+                  collisionDetection={closestCenter}
+                  onDragEnd={handleDragEnd}
+                >
+                  <SortableContext
+                    items={modalColorEntries}
+                    strategy={rectSortingStrategy}
                   >
-                    +
-                  </button>
-                </div>
+                    <div className="gradients-page__preview-chips">
+                      {modalColorEntries.map((colorEntry) => (
+                        <SortableColorChip
+                          colorEntry={colorEntry}
+                          key={colorEntry.id}
+                          onEdit={handleSelectColor}
+                          onRemove={handleRemoveColor}
+                        />
+                      ))}
+
+                      <button
+                        type="button"
+                        aria-label="Add color"
+                        className="gradients-page__preview-add"
+                        onClick={handleAddColor}
+                      >
+                        +
+                      </button>
+                    </div>
+                  </SortableContext>
+                </DndContext>
+                {/* eslint-enable react/jsx-no-bind */}
 
                 <input
                   className={`gradients-page__color-picker${
-                    colorPickerIndex === null
+                    colorPickerId === null
                       ? ' gradients-page__color-picker--hidden'
                       : ''
                   }`}
                   ref={colorPickerRef}
                   type="color"
-                  value={modalPreviewColors[colorPickerIndex ?? 0] || '#000000'}
-                  onChange={handleColorChange}
-                  onBlur={() => setColorPickerIndex(null)}
+                  value={
+                    modalColorEntries.find(
+                      (entry) => entry.id === colorPickerId
+                    )?.color || '#000000'
+                  }
+                  onInput={handleColorChange}
                 />
               </div>
 

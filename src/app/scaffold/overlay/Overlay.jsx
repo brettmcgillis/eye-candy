@@ -1,8 +1,10 @@
 import React, { useEffect, useState } from 'react';
+import { useLocation } from 'react-router-dom';
 
 import { levaStore } from 'leva';
 
 import { localEnv } from '@utils/appUtils';
+import { writeQueryParam } from '@utils/queryParams';
 
 import './Overlay.css';
 import Date from './components/DateDisplay';
@@ -58,6 +60,7 @@ function isTypingTarget(target) {
 }
 
 function Overlay() {
+  const location = useLocation();
   const local = localEnv();
   const readLevaValue = (state, keys) => {
     const values = keys.map((key) => state.data?.[key]?.value);
@@ -91,6 +94,17 @@ function Overlay() {
       setShowLeva(false);
     }
   }, [hideUI, showLeva]);
+
+  // Keep overlay visibility in sync with the current query string.
+  useEffect(() => {
+    const hideUIFromQuery = getHideUIFromQueryParam();
+    setHideUI((prev) => (prev === hideUIFromQuery ? prev : hideUIFromQuery));
+  }, [location.search]);
+
+  // Persist the hide state in the URL while preserving other params.
+  useEffect(() => {
+    writeQueryParam(OVERLAY_HIDE_UI_QUERY_PARAM, hideUI ? '1' : null);
+  }, [hideUI]);
 
   // Hotkey to toggle UI visibility (Shift+H)
   useEffect(() => {

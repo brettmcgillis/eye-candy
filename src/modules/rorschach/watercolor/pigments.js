@@ -13,6 +13,10 @@ import * as THREE from 'three/webgpu';
 // layer. Bundles beyond the fourth share a slot round-robin.
 export const PIGMENT_SLOTS = 4;
 
+// testGenerator's fallback for a bundle with no override, and so the anchor an
+// emissive bundle's ink glow is measured against.
+const DEFAULT_EMISSIVE_INTENSITY = 2;
+
 // K/S from a target colour by the single-constant Kubelka-Munk inversion:
 // for an infinitely thick layer, K/S = (1 - R)^2 / 2R. Fixing S = 1 and
 // solving for K gives a pigment that settles to roughly the requested colour
@@ -29,13 +33,16 @@ function absorptionFor(reflectance) {
 
 const scratch = new THREE.Color();
 
-// Lines colours are chosen to read against the scene background, which is
-// usually near-black — a typical test is pale strokes on black, and pale paint
-// on pale paper is nothing at all. Only the ceiling moves: a palette that is
-// already paint-dark keeps its own lightness, and a washed-out one is pulled
-// down until it reads. Deliberately not an inversion — inverting makes a
-// genuinely dark palette come out pale, which is the same bug facing the other
-// way. Hue and saturation always carry over untouched.
+// The ink is pulled darker than the palette the Lines layer draws with. There
+// is no sheet of paper any more, so this is no longer about paint reading
+// against pale stock; it is about the two layers sharing one palette. Lines and
+// ink drawing the same hue at the same lightness makes the strokes vanish into
+// the wash wherever they cross it, which is exactly where the composition wants
+// them most. Only the ceiling moves: a palette that is already paint-dark keeps
+// its own lightness, and a washed-out one is pulled down until the strokes
+// clear it. Deliberately not an inversion — inverting makes a genuinely dark
+// palette come out pale, the same bug facing the other way. Hue and saturation
+// always carry over untouched.
 const MAX_PIGMENT_LIGHTNESS = 0.5;
 
 function paintLightness(lightness) {
@@ -70,14 +77,36 @@ export function pigmentFromHsl(hsl) {
   };
 }
 
-// Bundles map onto the four slots round-robin. Two bundles sharing a slot share
-// a pigment, so their washes mix as one paint rather than as two — which is
-// what happens on real paper anyway when you reuse a colour.
+// The four pigments the wash paints with, sampled evenly across the whole run
+// of styles.
+//
+// This used to take the first style in each round-robin residue class — slots
+// 0-3 got styles 0, 1, 2, 3. Styles are the palette sampled at each bundle's
+// position, so on a six-bundle test that reached t = 0, 0.2, 0.4 and 0.6 and
+// the last 40% of every gradient was unreachable: the ink could only ever paint
+// with the darker end of a palette the Lines layer showed in full. Spanning the
+// array instead puts the gradient's two end stops in slots 0 and 3, which is
+// what makes Palette Spread actually traverse the palette.
 export function pigmentsFromStyles(styles) {
+  const last = styles.length - 1;
   const pigments = [];
   for (let slot = 0; slot < PIGMENT_SLOTS; slot += 1) {
-    const style = styles.find((_, index) => index % PIGMENT_SLOTS === slot);
-    pigments.push(pigmentFromHsl(style?.color ?? { h: 0, l: 0.12, s: 0 }));
+    const index = Math.round((slot / (PIGMENT_SLOTS - 1)) * Math.max(0, last));
+    const style = styles[index];
+    pigments.push({
+      ...pigmentFromHsl(style?.color ?? { h: 0, l: 0.12, s: 0 }),
+      // Carried through so the ink can glow for exactly the bundles the Lines
+      // layer glows for, rather than the whole blot lighting up at once. The
+      // gain is normalised against the schema's default intensity of 2, so a
+      // bundle left at the default lifts the ink by precisely
+      // `inkBloomStrength` and one pushed to 5 lifts it 2.5x further — the same
+      // ordering the strokes show.
+      emissive: style?.emissive ? 1 : 0,
+      emissiveGain: style?.emissive
+        ? (style.emissiveIntensity ?? DEFAULT_EMISSIVE_INTENSITY) /
+          DEFAULT_EMISSIVE_INTENSITY
+        : 0,
+    });
   }
   return pigments;
 }

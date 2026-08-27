@@ -1,6 +1,6 @@
 import { OCEAN_TARGET } from '../utils/targetGeometry';
 
-export const DEFAULT_PRESET = 'Ocean Implied';
+export const DEFAULT_PRESET = 'An Ocean Implied';
 
 const BASE = {
   targetMode: OCEAN_TARGET,
@@ -136,7 +136,7 @@ const LOGO = {
 };
 
 export const PRESETS = {
-  'Ocean Implied': { ...BASE },
+  'An Ocean Implied': { ...BASE },
   'Rain on Ocean Reverse': {
     ...BASE,
     timeScale: -1.6,

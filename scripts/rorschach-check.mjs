@@ -21,6 +21,10 @@ const WORKBENCH = path.join(
   REPO_ROOT,
   'src/dev/tools/rorschach/RorschachWorkbenchPage.jsx'
 );
+const SCENE_CONTROLS = path.join(
+  REPO_ROOT,
+  'src/components/scenes/WebGPU/Rorschach/hooks/useSceneControls.js'
+);
 const HEADLESS = [
   'lib/rorschachRender.mjs',
   'rorschach-generate.mjs',
@@ -84,6 +88,28 @@ async function checkHeadlessCallsResolve(kernel) {
   );
 }
 
+// The reverse of the check below, and the one that actually caught something:
+// eleven ink and pattern options shipped with no workbench control at all, so
+// they were CLI-flag-only and untestable from the dev page. Verifying only that
+// workbench fields name real options never notices that.
+async function checkEveryOptionHasAControl() {
+  const source = await readFile(WORKBENCH, 'utf8');
+  const bound = new Set([
+    ...[...source.matchAll(/option="(\w+)"/gu)].map(([, name]) => name),
+    ...[...source.matchAll(/setOption\('(\w+)'/gu)].map(([, name]) => name),
+  ]);
+
+  ['still', 'video'].forEach((kind) => {
+    optionsFor(kind, 'workbench').forEach(([key, spec]) => {
+      if (key === 'out' || spec.cliOnly) return;
+      check(
+        bound.has(key),
+        `"${key}" is a ${kind} option with no workbench control — it can only be reached as a CLI flag. Add a field, or mark it cliOnly if the job runner owns it.`
+      );
+    });
+  });
+}
+
 async function checkWorkbenchFieldsExist() {
   const source = await readFile(WORKBENCH, 'utf8');
   const used = [...source.matchAll(/option="(\w+)"/gu)].map(([, name]) => name);
@@ -95,6 +121,33 @@ async function checkWorkbenchFieldsExist() {
     check(
       name in RENDER_OPTIONS,
       `the workbench renders a field for "${name}", which is not in RENDER_OPTIONS.`
+    );
+  });
+}
+
+// The pattern is the ink layer's only pigment source — the trajectories no
+// longer paint. So a zero default for the wash renders a bare background, and
+// `--ink` with no other flags produces twenty blank stills with nothing in the
+// logs to say why. That is exactly what happened when these defaults were
+// carried over from the era when the trajectories were the paint and the
+// pattern was an optional extra on top.
+async function checkInkPaintsByDefault() {
+  const sources = [
+    ['inkPatternWash', 'how much pigment the pattern lays down'],
+    ['inkPatternFlow', 'how wet it keeps the sheet'],
+  ];
+  sources.forEach(([key, what]) => {
+    check(
+      RENDER_OPTIONS[key]?.default > 0,
+      `"${key}" defaults to ${RENDER_OPTIONS[key]?.default} — it is ${what}, and the pattern is the ink's only pigment source, so --ink alone would render a bare background.`
+    );
+  });
+
+  const schema = await readFile(SCENE_CONTROLS, 'utf8');
+  sources.forEach(([key]) => {
+    check(
+      !new RegExp(`p\\.${key} \\?\\? 0[,\\s]`, 'u').test(schema),
+      `the scene schema falls back to 0 for "${key}", so a preset that omits it shows no ink at all.`
     );
   });
 }
@@ -115,6 +168,8 @@ async function main() {
   await checkKernelPurity();
   await checkRenderOptionsIsStandalone();
   await checkWorkbenchFieldsExist();
+  await checkEveryOptionHasAControl();
+  await checkInkPaintsByDefault();
   checkSurfacesShareEveryOption();
 
   const kernel = await loadKernel();

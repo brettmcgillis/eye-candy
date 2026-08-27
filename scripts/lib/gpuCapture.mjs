@@ -125,30 +125,60 @@ function unpadRows(pixels, width, height) {
 }
 
 // The ink layer is built and settled per capture rather than cached: a still is
-// a specific number of sim steps from a clean sheet, which is what makes the
+// a specific number of sim steps from a clean field, which is what makes the
 // same seed produce the same blot. Reusing a warm sim across captures would
 // make each frame depend on the one before it.
-function buildInkPaper(createInkPaper, renderer, options, test, config) {
-  const paper = createInkPaper({
-    brushSize: options.inkBrushSize,
-    depositionMode: options.inkDeposition,
-    orientation: options.inkOrientation,
-    paperColor: options.inkPaperColor,
-    paperGrain: options.inkPaperGrain,
-    paperOffset: options.inkOffset,
-    paperSize: options.inkPaperSize,
+function buildInkPaper(kernel, renderer, options, test, config) {
+  // The rolled config carries every ink parameter the dice can set, and the
+  // caller's pins were folded into it before it got here — so config wins
+  // wherever it has an opinion, and `options` supplies only the knobs the roll
+  // never touches (resolution, settle, orientation, paper size, debug).
+  const ink = (key) => config[key] ?? options[key];
+  const paper = kernel.createInkPaper({
+    orientation: ink('inkOrientation'),
+    paperGrain: ink('inkPaperGrain'),
+    paperOffset: ink('inkOffset'),
+    paperSize: ink('inkPaperSize'),
     renderer,
-    resolution: options.inkResolution,
+    resolution: ink('inkResolution'),
     seed: config.seed,
-    showPaper: options.inkShowPaper,
-    strength: options.inkStrength,
+    simParams: {
+      ...kernel.mapPatternSettings({
+        cellAmount: ink('inkCellAmount'),
+        cellFlatten: ink('inkCellFlatten'),
+        cellReveal: ink('inkCellReveal'),
+        cellRevealScale: ink('inkCellRevealScale'),
+        cellScale: ink('inkCellScale'),
+        cellSymmetry: ink('inkCellSymmetry'),
+        density: ink('inkPatternDensity'),
+        paletteMix: ink('inkPaletteMix'),
+        paletteScale: ink('inkPaletteScale'),
+        paletteSymmetry: ink('inkPaletteSymmetry'),
+        details: ink('inkPatternDetails'),
+        scale: ink('inkPatternScale'),
+        seed: (config.seed % 1000) / 100,
+        sharpness: ink('inkPatternSharpness'),
+        softness: ink('inkPatternSoftness'),
+        symmetry: ink('inkPatternSymmetry'),
+      }),
+      bloomEmissiveOnly: ink('inkBloomEmissiveOnly') ? 1 : 0,
+      bloomEnabled: ink('inkBloom') ? 1 : 0,
+      bloomSource: ink('inkBloomSource') === 'wetness' ? 1 : 0,
+      bloomStrength: ink('inkBloomStrength'),
+      bloomThreshold: options.bloomThreshold,
+      patternDeposit: ink('inkPatternWash'),
+      patternFade: ink('inkPatternFade'),
+      patternFlow: ink('inkPatternFlow'),
+    },
   });
 
+  // A still pins the pattern clock so the same seed and --inkPatternTime always
+  // produce the same frame.
+  paper.setBackdropColor(config.backgroundColor);
+  paper.setPatternTime(ink('inkPatternTime') ?? 0);
+  paper.setPatternSpeed(0);
   paper.advance({
-    bundles: test.bundles,
-    force: true,
-    scale: test.scale,
-    steps: options.inkSettle,
+    steps: ink('inkSettle'),
     styles: test.styles,
   });
   return paper;
@@ -295,7 +325,12 @@ export default async function createCapturer({ height, samples = 4, width }) {
       camera.position.set(eye[0], eye[1], eye[2]);
       camera.lookAt(look[0], look[1], look[2]);
       camera.updateProjectionMatrix();
-      applyGroupScale(group, test.scale, options.flatten, options.flattenAxis);
+      applyGroupScale(
+        group,
+        test.scale,
+        options.flattenEnabled ? options.flatten : 0,
+        options.flattenAxis
+      );
       strokes.forEach(({ bundle, geometry }) => {
         geometry.setDrawRange(
           0,
@@ -308,13 +343,7 @@ export default async function createCapturer({ height, samples = 4, width }) {
 
       const inkPaper =
         options.ink && kernel
-          ? buildInkPaper(
-              kernel.createInkPaper,
-              renderer,
-              options,
-              test,
-              config
-            )
+          ? buildInkPaper(kernel, renderer, options, test, config)
           : null;
       if (inkPaper) scene.add(inkPaper.mesh);
 

@@ -14,7 +14,12 @@ export { default as cinematicState } from './cinematic';
 export { SECONDS_PER_SYSTEM, growthSpeedFor } from './cinematic';
 export { default as createRng, combineSeed } from './rng';
 export { default as findBoundedCoeffs } from './formulaBuilder';
-export { default as rollTestConfig, randomSeed } from './rollConfig';
+export {
+  default as rollTestConfig,
+  ROLL_RANGES,
+  randomSeed,
+  rollableKeys,
+} from './rollConfig';
 export { default as renderTestSvg } from './renderTestSvg';
 export { hasBloomContent, orbitEye, viewEye } from './renderTestSvg';
 export { advanceEvolution, driftCoeffs, COEFF_DRIFT_CLAMP } from './evolution';
@@ -25,8 +30,15 @@ export * from './buildStrokeGeometry';
 export * from './overrides';
 export { default as createInkPaper } from './watercolor/inkPaper';
 export { PAPER_ORIENTATIONS } from './watercolor/inkPaper';
-export { DEPOSITION_MODES, collectStamps } from './watercolor/deposition';
 export { PIGMENT_SLOTS, pigmentsFromStyles } from './watercolor/pigments';
+export {
+  PATTERN_DEFAULTS,
+  applyPatternSettings,
+  computeField,
+  createPatternUniforms,
+  mapPatternSettings,
+  patternColorNode,
+} from './watercolor/patternField';
 
 // Re-exported so browser-side consumers obey the barrel rule. Node-side
 // consumers (the CLIs, the dev server) import `./renderOptions.mjs` directly

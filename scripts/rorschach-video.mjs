@@ -15,7 +15,7 @@ import {
   resolveIgPreset,
   usageFor,
 } from '../src/modules/rorschach/renderOptions.mjs';
-import { parseArgs, readPackageVersion } from './lib/cliArgs.mjs';
+import { parseArgs, providedKeys, readPackageVersion } from './lib/cliArgs.mjs';
 import createProgress, { runStage } from './lib/progress.mjs';
 import {
   REPO_ROOT,
@@ -24,6 +24,7 @@ import {
   disposeCapturers,
   loadKernel,
   renderFrame,
+  rollArgs,
   setGrowth,
 } from './lib/rorschachRender.mjs';
 
@@ -291,7 +292,7 @@ async function collectExisting(dir, view) {
     .map((name) => path.join(dir, name, `${view}.png`));
 }
 
-async function renderStills(kernel, { options, tmp }) {
+async function renderStills(kernel, { options, roll, tmp }) {
   if (options.in) {
     const dir = path.resolve(REPO_ROOT, String(options.in));
     const files = await runStage('collecting existing stills', () =>
@@ -310,7 +311,7 @@ async function renderStills(kernel, { options, tmp }) {
       typeof options.seed === 'number' ? options.seed + i : kernel.randomSeed();
     progress.log(`test ${i + 1}/${options.count}: generating seed ${seed}`);
 
-    const config = kernel.rollTestConfig(seed);
+    const config = kernel.rollTestConfig(seed, roll);
     presets.push(config);
     const test = buildTest(kernel, config);
     const raster = await renderFrame(kernel, {
@@ -345,10 +346,10 @@ async function renderStills(kernel, { options, tmp }) {
   return { files, presets };
 }
 
-async function renderTurntable(kernel, { options, tmp }) {
+async function renderTurntable(kernel, { options, roll, tmp }) {
   const seed =
     typeof options.seed === 'number' ? options.seed : kernel.randomSeed();
-  const config = kernel.rollTestConfig(seed);
+  const config = kernel.rollTestConfig(seed, roll);
   const test = buildTest(kernel, config);
   const total = Math.round(options.hold * options.fps * options.turns);
   process.stdout.write(
@@ -374,7 +375,7 @@ async function renderTurntable(kernel, { options, tmp }) {
   return { presets: [config], totalFrames: total };
 }
 
-async function renderGrowth(kernel, { options, tmp }) {
+async function renderGrowth(kernel, { options, roll, tmp }) {
   const first =
     typeof options.seed === 'number' ? options.seed : kernel.randomSeed();
   const framesPerTest = Math.max(2, Math.round(options.hold * options.fps));
@@ -406,7 +407,7 @@ async function renderGrowth(kernel, { options, tmp }) {
       : null;
 
   for (let testIndex = 0; testIndex < options.count; testIndex += 1) {
-    const config = kernel.rollTestConfig(first + testIndex);
+    const config = kernel.rollTestConfig(first + testIndex, roll);
     presets.push(config);
     const test = buildTest(kernel, config);
     progress.log(
@@ -502,7 +503,54 @@ async function renderGrowth(kernel, { options, tmp }) {
   return { presets, totalFrames: total };
 }
 
-async function renderCinematic(kernel, { options, tmp }) {
+// "breathe" — one test, one view, and the classic pattern evolving underneath
+// it. The camera never moves; the picture changes because the field driving the
+// ink is changing, which is the whole point of the pattern layer.
+//
+// Every frame rebuilds and re-settles the sim from a clean sheet at that
+// frame's pattern time. That is deliberate: it costs a settle per frame, but it
+// makes each frame a pure function of (seed, patternTime), so the clip is
+// reproducible and a dropped frame cannot desynchronise the rest.
+async function renderBreathe(kernel, { options, roll, tmp }) {
+  const seed =
+    typeof options.seed === 'number' ? options.seed : kernel.randomSeed();
+  const config = kernel.rollTestConfig(seed, roll);
+  const test = buildTest(kernel, config);
+  const total = Math.round(options.hold * options.fps);
+
+  if (!options.ink) {
+    process.stdout.write(
+      'breathe renders the watercolour layer evolving; pass --ink or the frames will be identical\n'
+    );
+  }
+  process.stdout.write(
+    `rendering breathe: test ${seed}, ${options.hold}s, ${total} frames\n`
+  );
+  const progress = createProgress('rendering frames', total);
+
+  for (let frame = 0; frame < total; frame += 1) {
+    const png = await renderFrame(kernel, {
+      config,
+      options: {
+        ...options,
+        inkPatternTime:
+          options.inkPatternTime +
+          (frame / options.fps) * options.inkPatternSpeed,
+      },
+      test,
+      view: options.view,
+    });
+    await writeFile(
+      path.join(tmp, `frame-${String(frame).padStart(5, '0')}.png`),
+      png
+    );
+    progress.update(frame + 1);
+  }
+  progress.done('rendered frames');
+  return { presets: [config], totalFrames: total };
+}
+
+async function renderCinematic(kernel, { options, roll, tmp }) {
   const first =
     typeof options.seed === 'number' ? options.seed : kernel.randomSeed();
   const total = Math.round(options.hold * options.fps * options.systems);
@@ -525,7 +573,7 @@ async function renderCinematic(kernel, { options, tmp }) {
     // every later frame only moves the reveal cursor and the camera.
     if (state.systemIndex !== currentIndex) {
       currentIndex = state.systemIndex;
-      config = kernel.rollTestConfig(first + currentIndex);
+      config = kernel.rollTestConfig(first + currentIndex, roll);
       presets.push(config);
       test = buildTest(kernel, config);
       progress.log(`system ${currentIndex + 1}: generated seed ${config.seed}`);
@@ -535,7 +583,13 @@ async function renderCinematic(kernel, { options, tmp }) {
     const png = await renderFrame(kernel, {
       config,
       eye: kernel.orbitEye(state.azimuth, 0, options.distance),
-      options: { ...options, flatten: state.flatten },
+      // Cinematic drives the squash itself, so it enables it too — otherwise
+      // the animated value is gated off by a toggle the mode never asked about.
+      options: {
+        ...options,
+        flatten: state.flatten,
+        flattenEnabled: true,
+      },
       test,
     });
     await writeFile(
@@ -555,6 +609,9 @@ async function main() {
     return;
   }
   const validated = normalizeOptions('video', args);
+  // Read before defaults are merged: a typed flag is a pin, an absent one is
+  // left to the dice. Same rule the stills CLI and the workbench apply.
+  const typed = providedKeys(args);
   const options = {
     ...validated,
     ig: resolveIgPreset(validated.ig),
@@ -570,6 +627,7 @@ async function main() {
   );
 
   const kernel = await runStage('loading the Rorschach kernel', loadKernel);
+  const roll = rollArgs(kernel, { options, typed });
   const persistentStills =
     options.mode === 'stills' &&
     !options.in &&
@@ -585,7 +643,7 @@ async function main() {
   try {
     let presets;
     if (options.mode === 'stills') {
-      const rendered = await renderStills(kernel, { options, tmp });
+      const rendered = await renderStills(kernel, { options, roll, tmp });
       const { files } = rendered;
       presets = rendered.presets;
       if (files.length === 0) throw new Error('no stills to stitch');
@@ -611,12 +669,14 @@ async function main() {
       }
     } else {
       let rendered;
-      if (options.mode === 'growth') {
-        rendered = await renderGrowth(kernel, { options, tmp });
+      if (options.mode === 'breathe') {
+        rendered = await renderBreathe(kernel, { options, roll, tmp });
+      } else if (options.mode === 'growth') {
+        rendered = await renderGrowth(kernel, { options, roll, tmp });
       } else if (options.mode === 'turntable') {
-        rendered = await renderTurntable(kernel, { options, tmp });
+        rendered = await renderTurntable(kernel, { options, roll, tmp });
       } else {
-        rendered = await renderCinematic(kernel, { options, tmp });
+        rendered = await renderCinematic(kernel, { options, roll, tmp });
       }
       presets = rendered.presets;
       await encodeFrames(tmp, {

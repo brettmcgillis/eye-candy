@@ -14,6 +14,7 @@ import WebGLCanvas from '../canvas/WebGLCanvas';
 import WebGPUCanvas from '../canvas/WebGPUCanvas';
 
 const IG_QUERY_PARAM = 'ig';
+const HIDE_UI_QUERY_PARAM = 'hideUI';
 
 const IG_OPTIONS = {
   Off: '',
@@ -59,9 +60,9 @@ export default function useAppScenes() {
 
   // --- Leva controls ---
 
-  const { ig } = useControls(
+  const [{ ig, hideUI }, setOverlayControls] = useControls(
     'App',
-    {
+    () => ({
       Overlay: folder(
         {
           ig: {
@@ -69,10 +70,14 @@ export default function useAppScenes() {
             options: IG_OPTIONS,
             value: searchParams.get(IG_QUERY_PARAM) ?? '',
           },
+          hideUI: {
+            label: 'Hide UI',
+            value: searchParams.has(HIDE_UI_QUERY_PARAM),
+          },
         },
         { collapsed: true }
       ),
-    },
+    }),
     { collapsed: true, render: () => local }
   );
 
@@ -227,18 +232,34 @@ export default function useAppScenes() {
     }
   }, [currentPath, levaSceneId, navigate, redirectPath, sceneMap]);
 
-  // --- ig → search param ---
+  // --- search params ↔ overlay controls ---
+
+  useEffect(() => {
+    const igFromSearch = searchParams.get(IG_QUERY_PARAM) ?? '';
+    const hideUIFromSearch = searchParams.has(HIDE_UI_QUERY_PARAM);
+
+    setOverlayControls({
+      ig: igFromSearch,
+      hideUI: hideUIFromSearch,
+    });
+  }, [location.search, searchParams, setOverlayControls]);
 
   useEffect(() => {
     setSearchParams(
       (prev) => {
-        if (ig) prev.set(IG_QUERY_PARAM, ig);
-        else prev.delete(IG_QUERY_PARAM);
-        return prev;
+        const next = new URLSearchParams(prev);
+
+        if (ig) next.set(IG_QUERY_PARAM, ig);
+        else next.delete(IG_QUERY_PARAM);
+
+        if (hideUI) next.set(HIDE_UI_QUERY_PARAM, '1');
+        else next.delete(HIDE_UI_QUERY_PARAM);
+
+        return next;
       },
       { replace: true }
     );
-  }, [ig]);
+  }, [hideUI, ig, setSearchParams]);
 
   // --- resolve ---
 

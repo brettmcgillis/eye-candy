@@ -307,14 +307,21 @@
 
 .rw-field-grid {
   display: grid;
-  grid-template-columns: repeat(2, minmax(0, 1fr));
-  gap: 0.55rem;
+  /* auto-fit rather than a hard 2 columns: the controls panel is only
+     17-22rem, so a fixed pair squeezes longer labels into two or three
+     characters per line. This keeps two columns where they fit and drops to
+     one where they do not. */
+  grid-template-columns: repeat(auto-fit, minmax(8rem, 1fr));
+  gap: 0.55rem 0.5rem;
 }
 
 .rw-field {
   display: grid;
   min-width: 0;
   gap: 0.25rem;
+  /* A long label wraps rather than forcing the column wider and squeezing its
+     neighbour. */
+  overflow-wrap: anywhere;
   color: var(--dev-text-secondary);
   font-size: 0.7rem;
   font-weight: 650;
@@ -354,7 +361,8 @@
 
 .rw-toggles {
   display: flex;
-  gap: 1rem;
+  flex-wrap: wrap;
+  gap: 0.5rem 1rem;
   color: var(--dev-text-secondary);
   font-size: 0.75rem;
 }
@@ -568,6 +576,29 @@
   padding: 0 0.35rem;
   color: var(--dev-text-secondary);
   cursor: pointer;
+}
+
+.rw-library__select-menu button {
+  min-height: 1.8rem;
+  padding: 0 0.35rem;
+  border: 0;
+  background: transparent;
+  color: var(--dev-text-secondary);
+  cursor: pointer;
+  font: inherit;
+  text-align: left;
+  text-transform: uppercase;
+  white-space: nowrap;
+}
+
+.rw-library__select-menu button:hover:not(:disabled) {
+  background: var(--dev-surface);
+  color: var(--dev-text);
+}
+
+.rw-library__select-menu button:disabled {
+  cursor: default;
+  opacity: 0.45;
 }
 
 .rw-gallery--flat {
@@ -1440,4 +1471,57 @@ body:has(.rw-preview) {
     width: 100%;
     margin-left: 0;
   }
+}
+
+.rw-subheading {
+  margin: 1rem 0 0.35rem;
+  font-size: 0.7rem;
+  font-weight: 600;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  opacity: 0.6;
+}
+
+.rw-hint {
+  margin: 0 0 0.6rem;
+  font-size: 0.78rem;
+  line-height: 1.4;
+  opacity: 0.65;
+}
+
+/* A rollable field is shown at its default but inert until its pin is
+   checked — the whole parameter space stays visible, and taking one over is a
+   single click rather than a hunt through a different panel. */
+.rw-pinnable {
+  display: flex;
+  align-items: flex-end;
+  gap: 0.4rem;
+}
+
+.rw-pinnable > .rw-field {
+  flex: 1;
+  min-width: 0;
+  opacity: 0.45;
+  transition: opacity 120ms ease;
+}
+
+.rw-pinnable--on > .rw-field {
+  opacity: 1;
+}
+
+.rw-pin {
+  display: flex;
+  align-items: center;
+  padding-bottom: 0.35rem;
+}
+
+.rw-pin input {
+  cursor: pointer;
+}
+
+.rw-field--toggle {
+  flex-direction: row;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.5rem;
 }

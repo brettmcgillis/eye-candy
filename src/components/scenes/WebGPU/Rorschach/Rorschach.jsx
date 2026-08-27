@@ -27,30 +27,72 @@ function Rorschach() {
   // object is only rebuilt when one of them actually does.
   const inkSettings = useMemo(
     () => ({
-      brushSize: config.inkBrushSize,
-      depositionMode: config.inkDeposition,
+      backdropColor: config.backgroundColor,
+      bloom: config.inkBloom,
+      bloomEmissiveOnly: config.inkBloomEmissiveOnly,
+      bloomSource: config.inkBloomSource,
+      bloomStrength: config.inkBloomStrength,
+      // The scene's bloom threshold, not an ink one — the ink is lifted past
+      // the same threshold every other layer is measured against.
+      bloomThreshold: config.bloomThreshold,
+      cellAmount: config.inkCellAmount,
+      cellFlatten: config.inkCellFlatten,
+      cellReveal: config.inkCellReveal,
+      cellRevealScale: config.inkCellRevealScale,
+      cellScale: config.inkCellScale,
+      cellSymmetry: config.inkCellSymmetry,
+      paletteMix: config.inkPaletteMix,
+      paletteScale: config.inkPaletteScale,
+      paletteSymmetry: config.inkPaletteSymmetry,
       offset: config.inkOffset,
       orientation: config.inkOrientation,
-      paperColor: config.inkPaperColor,
       paperGrain: config.inkPaperGrain,
       paperSize: config.inkPaperSize,
+      patternDensity: config.inkPatternDensity,
+      patternDetails: config.inkPatternDetails,
+      patternFade: config.inkPatternFade,
+      patternFlow: config.inkPatternFlow,
+      patternScale: config.inkPatternScale,
+      patternSharpness: config.inkPatternSharpness,
+      patternSoftness: config.inkPatternSoftness,
+      patternSpeed: config.inkPatternSpeed,
+      patternSymmetry: config.inkPatternSymmetry,
+      patternWash: config.inkPatternWash,
       resolution: config.inkResolution,
-      showPaper: config.inkShowPaper,
       stepsPerFrame: config.inkStepsPerFrame,
-      strength: config.inkStrength,
     }),
     [
-      config.inkBrushSize,
-      config.inkDeposition,
+      config.backgroundColor,
+      config.inkBloom,
+      config.inkBloomEmissiveOnly,
+      config.inkBloomSource,
+      config.inkBloomStrength,
+      config.bloomThreshold,
+      config.inkCellAmount,
+      config.inkCellFlatten,
+      config.inkCellReveal,
+      config.inkCellRevealScale,
+      config.inkCellScale,
+      config.inkCellSymmetry,
+      config.inkPaletteMix,
+      config.inkPaletteScale,
+      config.inkPaletteSymmetry,
       config.inkOffset,
       config.inkOrientation,
-      config.inkPaperColor,
       config.inkPaperGrain,
       config.inkPaperSize,
+      config.inkPatternDensity,
+      config.inkPatternDetails,
+      config.inkPatternFade,
+      config.inkPatternFlow,
+      config.inkPatternScale,
+      config.inkPatternSharpness,
+      config.inkPatternSoftness,
+      config.inkPatternSpeed,
+      config.inkPatternSymmetry,
+      config.inkPatternWash,
       config.inkResolution,
-      config.inkShowPaper,
       config.inkStepsPerFrame,
-      config.inkStrength,
     ]
   );
   // Written every frame by CinematicMode, read every frame by Test — never
@@ -89,7 +131,7 @@ function Rorschach() {
         palette={config.palette}
         paletteExact={config.paletteExact}
         paletteShuffleSeed={config.paletteShuffleSeed}
-        flatten={config.flatten}
+        flatten={config.flattenEnabled ? config.flatten : 0}
         flattenAxis={config.flattenAxis}
         growthSpeed={config.growthSpeed}
         growthStyle={config.growthStyle}

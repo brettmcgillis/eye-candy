@@ -62,6 +62,8 @@ To Build:
 - [ ] Radar scene. like a radar scanner, rotating clockwise, the radar 'reveals' geometry in the scene as it passes over it similar to that Lidar game. Over time the dots fade so they are gone before the sweep returns. if we use a slowly animated model we could get snapshots in time.
 - [ ] Checkout MarkovJunior/MarkovJuniorWeb. id love to generate liminal spaces using similar logic.
 
+- [ ] Use RorschachCLI as an example and build a similar tool/devpage for: Trucheterie, HexTrees
+
 ### Scene TODO Files
 
 **Showcase**
@@ -232,7 +234,7 @@ To Build:
 - [ ] Surrender - Weather Any Storm
 - [x] Touch Grass
 - [x] Trucheterie - 001
-- [x] Water Cycle - Ocean Implied
+- [x] Water Cycle - An Ocean Implied
 - [x] Windswept - Tangled
 - [ ] Weightless - Simulated Flight
 - [x] Weightless - Sketchbook

@@ -502,19 +502,38 @@ function Test({
       </group>
       {ink && (
         <InkLayer
-          brushSize={inkSettings.brushSize}
-          depositionMode={inkSettings.depositionMode}
+          backdropColor={inkSettings.backdropColor}
+          bloom={inkSettings.bloom}
+          bloomEmissiveOnly={inkSettings.bloomEmissiveOnly}
+          bloomSource={inkSettings.bloomSource}
+          bloomStrength={inkSettings.bloomStrength}
+          bloomThreshold={inkSettings.bloomThreshold}
+          cellAmount={inkSettings.cellAmount}
+          cellFlatten={inkSettings.cellFlatten}
+          cellReveal={inkSettings.cellReveal}
+          cellRevealScale={inkSettings.cellRevealScale}
+          cellScale={inkSettings.cellScale}
+          cellSymmetry={inkSettings.cellSymmetry}
           offset={inkSettings.offset}
+          paletteMix={inkSettings.paletteMix}
+          paletteScale={inkSettings.paletteScale}
+          paletteSymmetry={inkSettings.paletteSymmetry}
           orientation={inkSettings.orientation}
-          paperColor={inkSettings.paperColor}
           paperGrain={inkSettings.paperGrain}
           paperSize={inkSettings.paperSize}
+          patternDensity={inkSettings.patternDensity}
+          patternDetails={inkSettings.patternDetails}
+          patternFade={inkSettings.patternFade}
+          patternFlow={inkSettings.patternFlow}
+          patternScale={inkSettings.patternScale}
+          patternSharpness={inkSettings.patternSharpness}
+          patternSoftness={inkSettings.patternSoftness}
+          patternSpeed={inkSettings.patternSpeed}
+          patternSymmetry={inkSettings.patternSymmetry}
+          patternWash={inkSettings.patternWash}
           resolution={inkSettings.resolution}
           seed={seed}
-          showPaper={inkSettings.showPaper}
           steps={inkSettings.stepsPerFrame}
-          strength={inkSettings.strength}
-          structure={structure}
           styles={styles}
         />
       )}

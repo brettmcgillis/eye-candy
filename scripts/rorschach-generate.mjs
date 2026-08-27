@@ -13,7 +13,7 @@ import {
   resolveViews,
   usageFor,
 } from '../src/modules/rorschach/renderOptions.mjs';
-import { parseArgs, readPackageVersion } from './lib/cliArgs.mjs';
+import { parseArgs, providedKeys, readPackageVersion } from './lib/cliArgs.mjs';
 import createProgress, { runStage } from './lib/progress.mjs';
 import {
   REPO_ROOT,
@@ -22,6 +22,7 @@ import {
   frameSvg,
   loadKernel,
   renderFrame,
+  rollArgs,
 } from './lib/rorschachRender.mjs';
 
 const DEFAULTS = defaultsFor('still');
@@ -40,6 +41,9 @@ async function main() {
   }
 
   const validated = normalizeOptions('still', args);
+  // Read off the raw args, not the validated bag: normalizeOptions merges
+  // defaults in, which destroys exactly the distinction being recovered here.
+  const typed = providedKeys(args);
   const views = resolveViews(validated.views);
   const options = {
     ...validated,
@@ -58,6 +62,16 @@ async function main() {
   );
 
   const kernel = await runStage('loading the Rorschach kernel', loadKernel);
+  // Validated here rather than as schema `choices`: renderOptions.mjs has to
+  // stay import-free, and the gradient names live in gradients.json.
+  if (typed.has('palette') && !kernel.PALETTE_NAMES.includes(options.palette)) {
+    // Named, not enumerated: there are several hundred gradients and printing
+    // the lot buries the error that prompted it.
+    throw new Error(
+      `unknown palette "${options.palette}". ${kernel.PALETTE_NAMES.length} names are available in src/utils/gradients.json, plus "Random".`
+    );
+  }
+  const roll = rollArgs(kernel, { options, typed });
   const progress = createProgress(
     'rendering views',
     options.count * views.length
@@ -72,7 +86,11 @@ async function main() {
       progress.log(
         `test ${index + 1}/${options.count}: generating seed ${seed}`
       );
-      const config = kernel.rollTestConfig(seed);
+      // Anything typed on the command line is a pin; everything else is left
+      // to the dice. One rule, so `--count 100` is a hundred random tests and
+      // `--count 100 --inkPatternWash 1` is a hundred random tests that all
+      // share a wash — no separate syntax for either.
+      const config = kernel.rollTestConfig(seed, roll);
       const test = buildTest(kernel, config);
       const dir = path.join(outRoot, String(seed));
 

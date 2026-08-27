@@ -3,6 +3,19 @@ import { FiRotateCcw, FiX } from 'react-icons/fi';
 
 export const DEFAULT_CLASSIC_PATTERN_SETTINGS = {
   backgroundColor: '#fefbf7',
+  // Cell pixelation: a square-grid quantization of the blot, revealed by a
+  // second Perlin field. Off by default. These are the kernel's own knobs —
+  // this page draws patternField.js directly, so a look tuned here is the same
+  // field the ink layer and the CLI produce.
+  cellAmount: 0,
+  cellReveal: 0.5,
+  cellRevealScale: 3,
+  cellScale: 24,
+  // Unlike the blot's own Symmetry, which only fades an asymmetric support
+  // term and so runs 0.5-1, this crossfades the reveal field with its folded
+  // copy across the full 0-1: at 1 the pixelation lands in mirrored places on
+  // both halves, at 0 each half breaks up on its own.
+  cellSymmetry: 1,
   density: 0.5,
   details: 3.75,
   highDpi: true,
@@ -20,6 +33,17 @@ const RANGE_CONTROLS = [
   { key: 'sharpness', label: 'Sharpness', max: 1, min: 0, step: 0.01 },
   { key: 'density', label: 'Density', max: 1, min: 0, step: 0.01 },
   { key: 'symmetry', label: 'Symmetry', max: 1, min: 0.5, step: 0.01 },
+  { key: 'cellAmount', label: 'Pixelation', max: 1, min: 0, step: 0.01 },
+  { key: 'cellReveal', label: 'Cell Reveal', max: 1, min: 0, step: 0.01 },
+  { key: 'cellScale', label: 'Cell Size', max: 200, min: 2, step: 1 },
+  {
+    key: 'cellRevealScale',
+    label: 'Reveal Scale',
+    max: 12,
+    min: 0.5,
+    step: 0.1,
+  },
+  { key: 'cellSymmetry', label: 'Cell Symmetry', max: 1, min: 0, step: 0.01 },
 ];
 
 function PatternRange({ control, onChange, value }) {

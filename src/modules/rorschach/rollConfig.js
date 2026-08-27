@@ -5,6 +5,7 @@ import {
   hslToHex,
   resolvePaletteColors,
 } from './palette';
+import { RENDER_OPTIONS } from './renderOptions.mjs';
 import createRng, { combineSeed } from './rng';
 import { GROWTH_BASE_RATE, MAX_BUNDLE_COUNT } from './testGenerator';
 
@@ -24,7 +25,85 @@ const MAX_SEED = 999999;
 // whole `--count N` batch. Hashing the seed through combineSeed decorrelates
 // the roll stream; the test's own `seed` stays the raw number so it still
 // round-trips through the Leva control.
-const ROLL_SALT = 0x52;
+// One stream per facet, not one for the whole roll. A single sequential stream
+// makes every draw depend on every draw before it, so holding the structure
+// while varying the palette is impossible — and appending a new roll anywhere
+// re-rolls every seed that came before. Separate salts make each facet
+// independently seedable, which is what "one test in a hundred palettes" is.
+const FACET_SALTS = {
+  ink: 0x9d,
+  palette: 0x7b,
+  structure: 0x52,
+};
+
+// The art-directed window for every rollable parameter — the min/max/step that
+// used to be arguments to inline `snapped()` calls. As data it can be read by
+// the UIs, checked, and extended without touching the roll itself.
+//
+// Distinct from the validation range in renderOptions.mjs: that says what the
+// renderer will accept, this says what is worth looking at. A parameter absent
+// from this table is never rolled, which is how "how it plays" (camera, growth,
+// evolution, post, sim resolution) stays put across a batch.
+// The art-directed windows live on the option specs themselves, next to the
+// validation range each parameter already had — `min`/`max` is what the
+// renderer will accept, `roll` is what is worth looking at. Grouped here by
+// facet so the roll stays a walk over data, without giving the schema a second
+// home to drift from.
+//
+// A spec with a `facet` is rollable, and therefore pinnable. One with a `roll`
+// block is drawn from that window; one without (framingShape, palette,
+// monochrome) is rolled by the bespoke logic below, because a gradient name is
+// not a number. A spec with no facet at all is never rolled — that is how
+// camera, growth, evolution, post and the sim's resolution hold still across a
+// batch, expressed as data rather than as a comment.
+export const ROLL_RANGES = Object.entries(RENDER_OPTIONS).reduce(
+  (facets, [key, spec]) =>
+    spec.facet && spec.roll
+      ? { ...facets, [spec.facet]: { ...facets[spec.facet], [key]: spec.roll } }
+      : facets,
+  {}
+);
+
+// Cell pixelation is a strong stylistic move rather than a dial that wants a
+// value on every test, so it is gated the way emissive bundles already are:
+// mostly absent, and inside its window when present.
+const CELL_CHANCE = 0.35;
+const CELL_KEYS = [
+  'inkCellAmount',
+  'inkCellReveal',
+  'inkCellRevealScale',
+  'inkCellScale',
+  'inkCellSymmetry',
+];
+const CELL_RANGES = Object.fromEntries(
+  CELL_KEYS.map((key) => [key, RENDER_OPTIONS[key].roll])
+);
+// The rest of the ink facet, drawn every time.
+const INK_RANGES = Object.fromEntries(
+  Object.entries(ROLL_RANGES.ink ?? {}).filter(
+    ([key]) => !CELL_KEYS.includes(key)
+  )
+);
+
+// Likewise for the ink's own bloom, which only means anything when a bundle is
+// emissive to drive it.
+const INK_BLOOM_CHANCE = 0.5;
+const INK_BLOOM_RANGE = RENDER_OPTIONS.inkBloomStrength.roll ?? {
+  max: 0.9,
+  min: 0.2,
+  step: 0.05,
+};
+
+// Every parameter the dice can set, and so every parameter a caller may pin.
+// Narrowed to one facet, it is also the set a live editor needs in order to
+// re-roll that facet alone and leave everything else exactly as it was.
+export function rollableKeys(facet) {
+  return new Set(
+    Object.entries(RENDER_OPTIONS)
+      .filter(([, spec]) => spec.facet && (!facet || spec.facet === facet))
+      .map(([key]) => key)
+  );
+}
 
 function pick(rng, list) {
   return list[Math.floor(rng() * list.length)];
@@ -54,21 +133,45 @@ function rollFramingShape(rng) {
   return 'none';
 }
 
+// Draws every parameter in a range table. Key order is the draw order, so a
+// table is also the stream's contract.
+function rollRanges(rng, ranges) {
+  const rolled = {};
+  Object.entries(ranges).forEach(([key, { max, min, step }]) => {
+    rolled[key] = snapped(rng, min, max, step);
+  });
+  return rolled;
+}
+
 function rollStructure(rng) {
   return {
-    // Floor of 3: a one- or two-bundle test reads as a stray squiggle rather
-    // than an ink blot.
-    bundleCount: snapped(rng, 6, 20, 1),
-    strandsPerBundle: snapped(rng, 25, 50, 1),
-    steps: snapped(rng, 400, 2000, 1),
-    startSpread: snapped(rng, 0.08, 0.7, 0.01),
-    coeffRange: snapped(rng, 0.9, 2.2, 0.05),
-    freq: snapped(rng, 0.25, 1.15, 0.05),
+    ...rollRanges(rng, ROLL_RANGES.structure),
     framingShape: rollFramingShape(rng),
-    boundRadius: snapped(rng, 15, 50, 1),
-    boundWidth: snapped(rng, 20, 60, 1),
-    boundHeight: snapped(rng, 20, 60, 1),
-    minSpread: snapped(rng, 2, 9, 0.1),
+  };
+}
+
+// The ink's own facet. `emissive` is not one: it is rolled with the palette,
+// because whether a bundle can glow at all depends on that palette's contrast
+// against the background it was chosen with.
+function rollInk(rng, { hasEmissive }) {
+  const cells = chance(rng, CELL_CHANCE)
+    ? rollRanges(rng, CELL_RANGES)
+    : { inkCellAmount: 0 };
+
+  const bloom = hasEmissive && chance(rng, INK_BLOOM_CHANCE);
+
+  return {
+    ...rollRanges(rng, INK_RANGES),
+    ...cells,
+    inkBloom: bloom,
+    inkBloomStrength: bloom
+      ? snapped(
+          rng,
+          INK_BLOOM_RANGE.min,
+          INK_BLOOM_RANGE.max,
+          INK_BLOOM_RANGE.step
+        )
+      : 0.4,
   };
 }
 
@@ -228,26 +331,49 @@ export function randomSeed() {
 // Deliberately does not roll Flatten, Growth, Evolution, Camera or
 // PostProcessing: those are "how it plays", not "what it is", and a video or
 // cinematic sweep needs them to hold still across rolls.
+// Rolls a whole test — structure, style, ink and a cohesive background — as one
+// flat object keyed 1:1 with the Leva schema, i.e. a valid preset.
+//
+// Three independent facets, each with its own seed. Passing only `seed` seeds
+// all three from it, so one number still reproduces a whole test; passing a
+// facet's seed holds that facet still while the others move, which is what
+// makes "the same blot in a hundred palettes" a single command.
+//
+// `pinned` is whatever the caller set explicitly. Those keys are never rolled
+// and are copied through verbatim — the one rule the CLI, the workbench and
+// Leva all share, so "I chose this" always beats "the dice chose that".
+//
+// Deliberately does not roll Flatten, Growth, Evolution, Camera, PostProcessing
+// or the sim's resolution: those are "how it plays", not "what it is", and a
+// batch needs them to hold still. That is expressed by their absence from
+// ROLL_RANGES rather than by omission here.
 export default function rollTestConfig(seed = randomSeed(), options = {}) {
-  const { growthSpeed = 1 } = options;
-  const rng = createRng(combineSeed(seed, ROLL_SALT));
+  const { growthSpeed = 1, pinned = {}, seeds = {} } = options;
 
-  const structure = rollStructure(rng);
+  const streamFor = (facet) =>
+    createRng(combineSeed(seeds[facet] ?? seed, FACET_SALTS[facet]));
+
+  const structure = rollStructure(streamFor('structure'));
+
+  const paletteRng = streamFor('palette');
   const { backgroundColor, backgroundLuminance, colors, style } = chance(
-    rng,
+    paletteRng,
     0.35
   )
-    ? rollMonochromeStyle(rng)
-    : rollPaletteStyle(rng);
+    ? rollMonochromeStyle(paletteRng)
+    : rollPaletteStyle(paletteRng);
 
-  const overrides =
-    supportsEmissive(colors, backgroundLuminance) && chance(rng, 0.45)
-      ? rollEmissiveOverrides(rng, {
-          bundleCount: structure.bundleCount,
-          growthSpeed,
-          steps: structure.steps,
-        })
-      : clearedOverrides();
+  const hasEmissive =
+    supportsEmissive(colors, backgroundLuminance) && chance(paletteRng, 0.45);
+  const overrides = hasEmissive
+    ? rollEmissiveOverrides(paletteRng, {
+        bundleCount: pinned.bundleCount ?? structure.bundleCount,
+        growthSpeed,
+        steps: pinned.steps ?? structure.steps,
+      })
+    : clearedOverrides();
+
+  const ink = rollInk(streamFor('ink'), { hasEmissive });
 
   return {
     seed,
@@ -255,5 +381,7 @@ export default function rollTestConfig(seed = randomSeed(), options = {}) {
     ...style,
     backgroundColor,
     ...overrides,
+    ...ink,
+    ...pinned,
   };
 }

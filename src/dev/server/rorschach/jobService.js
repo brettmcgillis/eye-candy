@@ -7,7 +7,10 @@ import path from 'node:path';
 // loader, which doesn't resolve the app's path aliases. renderOptions.mjs is
 // dependency-free so it can be reached this way — see
 // docs/rorschach-pipeline.md.
-import { normalizeOptions as normalizeRenderOptions } from '../../../modules/rorschach/renderOptions.mjs';
+import {
+  RENDER_OPTIONS,
+  normalizeOptions as normalizeRenderOptions,
+} from '../../../modules/rorschach/renderOptions.mjs';
 
 const jobs = new Map();
 const MAX_LOG_LINES = 160;
@@ -38,9 +41,17 @@ function normalizeOptions(kind, raw) {
   });
 }
 
-function appendFlags(args, options) {
+// A rollable option is only forwarded when the caller actually chose it.
+//
+// The CLI reads an explicitly typed flag as a pin, so emitting every key —
+// which is what normalizeOptions leaves behind once defaults are merged — pins
+// the entire test and makes rolling impossible from the workbench. Everything
+// with no `facet` is a render setting the dice never touch, and is always
+// passed through.
+function appendFlags(args, options, chosen) {
   Object.entries(options).forEach(([key, value]) => {
     if (value == null) return;
+    if (RENDER_OPTIONS[key]?.facet && !chosen.has(key)) return;
     if (typeof value === 'boolean') {
       args.push(value ? `--${key}` : `--no-${key}`);
       return;
@@ -403,6 +414,9 @@ export async function createRorschachJob(rootDir, payload = {}) {
     );
   }
   const options = normalizeOptions(kind, payload.options ?? {});
+  // Read before defaults were merged in — the keys the workbench actually sent
+  // are the pins.
+  const chosen = new Set(Object.keys(payload.options ?? {}));
   const id = randomUUID();
   const outputDirectory = path.join(OUTPUT_ROOT, id);
   const script =
@@ -419,7 +433,7 @@ export async function createRorschachJob(rootDir, payload = {}) {
     }
     delete commandOptions.keepImages;
   }
-  appendFlags(args, commandOptions);
+  appendFlags(args, commandOptions, new Set([...chosen, 'out', 'stillsOut']));
 
   const job = {
     assets: [],

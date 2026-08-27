@@ -4,8 +4,16 @@
 // Minimal `--flag value` parser. A `--no-x` token clears `x`, a flag with no
 // value is boolean true, and a value that parses as a number becomes one — so
 // callers get `args.width` as an int without per-flag declarations.
+// The returned bag also carries, non-enumerably, the set of keys the caller
+// actually typed. Merging defaults in destroys that distinction, and it is the
+// distinction the roll depends on: an explicitly passed flag is a pin, an
+// absent one is left to the dice. Non-enumerable so it stays out of the
+// `render:` block written into props.json.
+export const PROVIDED = Symbol('provided');
+
 export function parseArgs(argv, defaults) {
   const args = { ...defaults };
+  const provided = new Set();
   for (let i = 0; i < argv.length; i += 1) {
     const token = argv[i];
     if (!token.startsWith('--')) break;
@@ -15,7 +23,9 @@ export function parseArgs(argv, defaults) {
       args.help = true;
     } else if (key.startsWith('no-')) {
       args[key.slice(3)] = false;
+      provided.add(key.slice(3));
     } else {
+      provided.add(key);
       const value = argv[i + 1];
       // A flag with nothing after it, or another flag, is a valueless
       // boolean (--overlay) rather than a flag whose value is the next flag.
@@ -28,7 +38,13 @@ export function parseArgs(argv, defaults) {
       }
     }
   }
+  Object.defineProperty(args, PROVIDED, { enumerable: false, value: provided });
   return args;
+}
+
+// Reads the set back off a parsed bag.
+export function providedKeys(args) {
+  return args?.[PROVIDED] ?? new Set();
 }
 
 // Read rather than `import ... with { type: 'json' }`: the repo's parser

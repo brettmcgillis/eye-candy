@@ -29,6 +29,7 @@ import {
   growthSpeedFor,
   randomSeed,
   rollTestConfig,
+  rollableKeys,
 } from '@modules/rorschach';
 
 import { DEFAULT_PRESET, PRESETS, getPresetControls } from '../presets/presets';
@@ -61,6 +62,7 @@ export default function useSceneControls() {
   // call's own `setControls` return value exists yet), so it needs a ref
   // populated after the fact instead of closing over `setControls` directly.
   const setControlsRef = useRef(null);
+  const rollFacetRef = useRef(null);
 
   const {
     attachSetControls,
@@ -301,9 +303,16 @@ export default function useSceneControls() {
               !get(MONOCHROME_PATH) && get(PALETTE_PATH) !== 'Random',
           }
         ),
-        flatten: {
+        // Split from its own value so the amount survives being switched off.
+        // As a bare number, "off" and "barely on" were the same control, and
+        // returning to a squash you liked meant remembering what it was.
+        flattenEnabled: {
           label: 'Flatten (2D)',
-          value: p.flatten ?? 0,
+          value: p.flattenEnabled ?? false,
+        },
+        flatten: {
+          label: 'Flatten Amount',
+          value: p.flatten ?? 0.97,
           min: 0,
           max: 1,
           step: 0.01,
@@ -329,27 +338,26 @@ export default function useSceneControls() {
       },
       { collapsed: false }
     ),
+    // Re-roll one facet, leaving everything else exactly as it is. This is the
+    // scene's whole answer to "hold that, vary this" — no pins and nothing
+    // disabled, because unlike a batch of a hundred sight-unseen tests, every
+    // value here is already on screen and holding is the default.
+    Roll: folder(
+      {
+        rollStructure: button(() => rollFacetRef.current?.('structure'), {
+          label: 'Roll Structure',
+        }),
+        rollPalette: button(() => rollFacetRef.current?.('palette'), {
+          label: 'Roll Palette + Emissive',
+        }),
+        rollInk: button(() => rollFacetRef.current?.('ink'), {
+          label: 'Roll Ink',
+        }),
+      },
+      { collapsed: true }
+    ),
     Ink: folder(
       {
-        inkDeposition: {
-          label: 'Deposition',
-          value: p.inkDeposition ?? 'brush',
-          options: { Brush: 'brush', Stamp: 'stamp', Wash: 'wash' },
-        },
-        inkBrushSize: {
-          label: 'Brush Size',
-          value: p.inkBrushSize ?? 0.22,
-          min: 0.01,
-          max: 3,
-          step: 0.01,
-        },
-        inkStrength: {
-          label: 'Pigment Strength',
-          value: p.inkStrength ?? 0.55,
-          min: 0.01,
-          max: 4,
-          step: 0.01,
-        },
         inkOrientation: {
           label: 'Paper Plane',
           value: p.inkOrientation ?? 'vertical',
@@ -372,10 +380,6 @@ export default function useSceneControls() {
           max: 200,
           step: 0.5,
         },
-        inkPaperColor: {
-          label: 'Paper Color',
-          value: p.inkPaperColor ?? '#f4f1e8',
-        },
         inkPaperGrain: {
           label: 'Paper Tooth',
           value: p.inkPaperGrain ?? 0.5,
@@ -383,21 +387,204 @@ export default function useSceneControls() {
           max: 1,
           step: 0.01,
         },
-        inkShowPaper: {
-          label: 'Show Sheet',
-          value: p.inkShowPaper ?? true,
-        },
         inkResolution: {
           label: 'Sim Resolution',
-          value: p.inkResolution ?? 512,
+          value: p.inkResolution ?? 2048,
           options: { 256: 256, 512: 512, 1024: 1024, 2048: 2048 },
         },
         inkStepsPerFrame: {
           label: 'Sim Steps / Frame',
-          value: p.inkStepsPerFrame ?? 2,
+          value: p.inkStepsPerFrame ?? 1,
           min: 0,
           max: 8,
           step: 1,
+        },
+        // Not 0. The pattern is the ink's only pigment source, so a preset that
+        // omits these gets a bare background rather than a blot.
+        // The scene's bloom is one pass with one threshold, and non-emissive
+        // strokes sit just under it. Rather than lowering it — which would
+        // bloom every stroke too — the ink pushes its own output past it, the
+        // same way an emissive bundle does.
+        inkBloom: {
+          label: 'Ink Bloom',
+          value: p.inkBloom ?? false,
+        },
+        // An absolute distance past the threshold, not a multiplier, so it
+        // means the same thing for every pigment in a palette.
+        inkBloomStrength: {
+          label: 'Ink Bloom Strength',
+          value: p.inkBloomStrength ?? 0.4,
+          min: 0,
+          max: 3,
+          step: 0.05,
+        },
+        // On, the ink glows for exactly the bundles the Lines layer glows for.
+        // Off, the whole blot glows. Note that with this on and no bundle
+        // marked emissive, Ink Bloom does nothing — which is the same thing the
+        // strokes do, and is the point.
+        inkBloomEmissiveOnly: {
+          label: 'Ink Bloom: Emissive Only',
+          value: p.inkBloomEmissiveOnly ?? true,
+        },
+        inkBloomSource: {
+          label: 'Ink Bloom Source',
+          value: p.inkBloomSource ?? 'thickness',
+          options: { Thickness: 'thickness', Wetness: 'wetness' },
+        },
+        inkPatternFlow: {
+          label: 'Pattern Flow',
+          value: p.inkPatternFlow ?? 0.3,
+          min: 0,
+          max: 1,
+          step: 0.01,
+        },
+        inkPatternWash: {
+          label: 'Pattern Wash',
+          value: p.inkPatternWash ?? 0.9,
+          min: 0,
+          max: 1,
+          step: 0.01,
+        },
+        // How fast paint is reclaimed. The pattern is a moving source, so
+        // without this the sheet fills to a solid mass; high values pin the
+        // blot to the pattern's current shape, low values let it accumulate
+        // and bleed. A still pins the clock and so tolerates far less.
+        inkPatternFade: {
+          label: 'Pattern Fade',
+          value: p.inkPatternFade ?? 0.08,
+          min: 0.005,
+          max: 0.5,
+          step: 0.005,
+        },
+        inkPatternScale: {
+          label: 'Pattern Scale',
+          value: p.inkPatternScale ?? 1,
+          min: 0.5,
+          max: 10,
+          step: 0.5,
+        },
+        inkPatternDensity: {
+          label: 'Pattern Density',
+          value: p.inkPatternDensity ?? 0.5,
+          min: 0,
+          max: 1,
+          step: 0.01,
+        },
+        inkPatternSharpness: {
+          label: 'Pattern Sharpness',
+          value: p.inkPatternSharpness ?? 0.95,
+          min: 0,
+          max: 1,
+          step: 0.01,
+        },
+        // How wide a gradient the sim gets across the blot's edge, and so how
+        // far paint travels. Its own knob rather than Pattern Sharpness, which
+        // only decides how hard the blot is *drawn*: at any usable Sharpness
+        // the field is a step function, which gives the fluid nothing to work
+        // with.
+        inkPatternSoftness: {
+          label: 'Wash Softness',
+          value: p.inkPatternSoftness ?? 0.04,
+          min: 0.01,
+          max: 0.25,
+          step: 0.005,
+        },
+        inkPatternDetails: {
+          label: 'Pattern Details',
+          value: p.inkPatternDetails ?? 3.75,
+          min: 1,
+          max: 5,
+          step: 0.01,
+        },
+        inkPatternSpeed: {
+          label: 'Pattern Speed',
+          value: p.inkPatternSpeed ?? 1,
+          min: 0,
+          max: 10,
+          step: 0.1,
+        },
+        // How far the wash spreads across the palette. 0 paints the whole blot
+        // in the first pigment (the old monochrome behaviour); 1 divides the
+        // sheet into broad regions of each palette colour that mix
+        // subtractively where they meet.
+        inkPaletteMix: {
+          label: 'Palette Spread',
+          value: p.inkPaletteMix ?? 1,
+          min: 0,
+          max: 1,
+          step: 0.01,
+        },
+        inkPaletteScale: {
+          label: 'Palette Scale',
+          value: p.inkPaletteScale ?? 1.5,
+          min: 0.2,
+          max: 8,
+          step: 0.1,
+        },
+        // Full 0-1, like Cell Symmetry. At 1 both halves carry the same
+        // colours; below that each half takes its own path through the palette
+        // while the silhouette stays mirrored.
+        inkPaletteSymmetry: {
+          label: 'Palette Symmetry',
+          value: p.inkPaletteSymmetry ?? 1,
+          min: 0,
+          max: 1,
+          step: 0.01,
+        },
+        inkCellAmount: {
+          label: 'Cell Pixelation',
+          value: p.inkCellAmount ?? 0,
+          min: 0,
+          max: 1,
+          step: 0.01,
+        },
+        inkCellReveal: {
+          label: 'Cell Reveal',
+          value: p.inkCellReveal ?? 0.5,
+          min: 0,
+          max: 1,
+          step: 0.01,
+        },
+        inkCellScale: {
+          label: 'Cell Size',
+          value: p.inkCellScale ?? 24,
+          min: 2,
+          max: 200,
+          step: 1,
+        },
+        // 1 makes each revealed cell a single flat colour; 0 lets the palette
+        // keep varying inside it, which reads as painterly blocks rather than
+        // pixels. Continuous in between.
+        inkCellFlatten: {
+          label: 'Cell Flatten',
+          value: p.inkCellFlatten ?? 1,
+          min: 0,
+          max: 1,
+          step: 0.01,
+        },
+        inkCellRevealScale: {
+          label: 'Reveal Scale',
+          value: p.inkCellRevealScale ?? 3,
+          min: 0.5,
+          max: 12,
+          step: 0.1,
+        },
+        // Full 0-1, unlike Pattern Symmetry below: this crossfades the reveal
+        // field with its folded copy, so 0 lets each half break into blocks on
+        // its own and 1 mirrors the pixelation across the fold.
+        inkCellSymmetry: {
+          label: 'Cell Symmetry',
+          value: p.inkCellSymmetry ?? 1,
+          min: 0,
+          max: 1,
+          step: 0.01,
+        },
+        inkPatternSymmetry: {
+          label: 'Pattern Symmetry',
+          value: p.inkPatternSymmetry ?? 0.5,
+          min: 0.5,
+          max: 1,
+          step: 0.01,
         },
       },
       // Collapsed, not render-gated on the Ink toggle: a folder hidden via
@@ -496,6 +683,39 @@ export default function useSceneControls() {
       rollTestConfig(randomSeed(), { growthSpeed: growthSpeedRef.current })
     );
   }, [setControls]);
+
+  // Re-rolls one facet and applies only that facet's keys, so everything else
+  // stays exactly as it was set.
+  //
+  // The scene needs no pins and nothing disabled, because it is not a batch
+  // generator: there is one config, every value of it is already on screen, and
+  // the only question a live editor has to answer is what Regenerate is allowed
+  // to overwrite. The CLI and the workbench have to declare what to *hold*
+  // because their values are never seen — a hundred tests are rolled sight
+  // unseen. Here holding is the default and rolling is the verb, which is the
+  // same capability inverted.
+  const rollFacet = useCallback(
+    (facet) => {
+      const rolled = rollTestConfig(randomSeed(), {
+        growthSpeed: growthSpeedRef.current,
+      });
+      const keys = rollableKeys(facet);
+      // The per-bundle emissive overrides ride with the palette, since whether
+      // a bundle can glow at all depends on that palette's contrast. Matched on
+      // `bundle<N>` rather than the `bundle` prefix, or bundleCount — a
+      // structure parameter — would be dragged along with them.
+      const isOverride = (key) => /^bundle\d+/u.test(key);
+      setControls(
+        Object.fromEntries(
+          Object.entries(rolled).filter(
+            ([key]) => keys.has(key) || (facet === 'palette' && isOverride(key))
+          )
+        )
+      );
+    },
+    [setControls]
+  );
+  rollFacetRef.current = rollFacet;
 
   // Cinematic Mode paces growth itself so a system finishes drawing in step
   // with the camera — see @modules/rorschach/cinematic.js. Derived here rather than written

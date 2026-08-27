@@ -7,6 +7,7 @@ import React, {
   useState,
 } from 'react';
 import {
+  FiCheckSquare,
   FiChevronLeft,
   FiChevronRight,
   FiFilm,
@@ -495,15 +496,13 @@ function AssetCard({
         </span>
       </button>
       <figcaption>
-        {saved ? null : (
-          <input
-            aria-label={`Select ${group.name}`}
-            checked={selected}
-            disabled={active}
-            onChange={onToggle}
-            type="checkbox"
-          />
-        )}
+        <input
+          aria-label={`Select ${group.name}`}
+          checked={selected}
+          disabled={active}
+          onChange={onToggle}
+          type="checkbox"
+        />
         <span title={`${job.outputDirectory}/${group.key}`}>{group.name}</span>
         <AssetActions
           asset={asset}
@@ -598,6 +597,21 @@ export default function AssetGallery({
       job,
     }))
     .filter(({ groups }) => allItemTypesSelected || groups.length > 0);
+  const selectableItemKeys = collections.flatMap(({ groups, job }) =>
+    ['queued', 'running', 'cancelling'].includes(job.status)
+      ? []
+      : groups.map((group) => itemKey(job.id, group.key))
+  );
+  const selectableCollectionIds = collections
+    .map(({ job }) => job)
+    .filter((job) => !['queued', 'running', 'cancelling'].includes(job.status))
+    .map((job) => job.id);
+  const allItemsSelected =
+    selectableItemKeys.length > 0 &&
+    selectableItemKeys.every((key) => selectedItems.has(key));
+  const allCollectionsSelected =
+    selectableCollectionIds.length > 0 &&
+    selectableCollectionIds.every((id) => selectedCollections.has(id));
   const totalFileCount = collections.reduce(
     (total, { job }) => total + job.assets.length,
     0
@@ -665,6 +679,26 @@ export default function AssetGallery({
       const next = new Set(current);
       if (next.has(id)) next.delete(id);
       else next.add(id);
+      return next;
+    });
+  }
+
+  function toggleAllItems() {
+    setSelectedItems((current) => {
+      const next = new Set(current);
+      selectableItemKeys.forEach((key) =>
+        allItemsSelected ? next.delete(key) : next.add(key)
+      );
+      return next;
+    });
+  }
+
+  function toggleAllCollections() {
+    setSelectedCollections((current) => {
+      const next = new Set(current);
+      selectableCollectionIds.forEach((id) =>
+        allCollectionsSelected ? next.delete(id) : next.add(id)
+      );
       return next;
     });
   }
@@ -832,6 +866,29 @@ export default function AssetGallery({
   return (
     <div className="rw-library">
       <div className="rw-library__toolbar">
+        <details className="rw-library__filter rw-library__select-menu">
+          <summary>
+            <FiCheckSquare /> Select
+          </summary>
+          <div>
+            <button
+              disabled={selectableItemKeys.length === 0}
+              onClick={toggleAllItems}
+              type="button"
+            >
+              {allItemsSelected ? 'Deselect' : 'Select'} all items
+            </button>
+            {!saved ? (
+              <button
+                disabled={selectableCollectionIds.length === 0}
+                onClick={toggleAllCollections}
+                type="button"
+              >
+                {allCollectionsSelected ? 'Deselect' : 'Select'} all folders
+              </button>
+            ) : null}
+          </div>
+        </details>
         <div
           aria-label="Library view"
           className="rw-library__view-toggle"
@@ -878,10 +935,11 @@ export default function AssetGallery({
           </div>
         </details>
       </div>
-      {!saved && (selectedGroups.length > 0 || selectedJobs.length > 0) ? (
+      {selectedGroups.length > 0 || (!saved && selectedJobs.length > 0) ? (
         <div className="rw-bulk-actions">
           <span>
-            {selectedGroups.length} items · {selectedJobs.length} folders
+            {selectedGroups.length} items
+            {!saved ? ` · ${selectedJobs.length} folders` : ''}
           </span>
           {pendingBulkDelete ? (
             <div>
@@ -919,14 +977,16 @@ export default function AssetGallery({
               >
                 <FiTrash2 /> Delete items
               </button>
-              <button
-                className="dev-button"
-                disabled={selectedJobs.length === 0}
-                onClick={() => setPendingBulkDelete('collections')}
-                type="button"
-              >
-                <FiTrash2 /> Delete folders
-              </button>
+              {!saved ? (
+                <button
+                  className="dev-button"
+                  disabled={selectedJobs.length === 0}
+                  onClick={() => setPendingBulkDelete('collections')}
+                  type="button"
+                >
+                  <FiTrash2 /> Delete folders
+                </button>
+              ) : null}
             </div>
           )}
         </div>

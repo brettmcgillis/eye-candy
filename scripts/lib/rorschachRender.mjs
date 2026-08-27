@@ -123,6 +123,26 @@ export function overridesFromConfig(kernel, config) {
   return kernel.buildOverridesFromControls(config);
 }
 
+// The roll arguments both CLIs hand to `rollTestConfig`: whatever the caller
+// typed becomes a pin, and the three facet seeds are passed through so a batch
+// can hold one facet still while the others move. Shared so the stills and
+// video CLIs cannot disagree about what "pinned" means.
+export function rollArgs(kernel, { options, typed }) {
+  const rollable = kernel.rollableKeys();
+  return {
+    pinned: Object.fromEntries(
+      [...typed]
+        .filter((key) => rollable.has(key))
+        .map((key) => [key, options[key]])
+    ),
+    seeds: {
+      ink: options.inkSeed,
+      palette: options.paletteSeed,
+      structure: options.structureSeed,
+    },
+  };
+}
+
 export function buildTest(kernel, config) {
   const overrides = overridesFromConfig(kernel, config);
   const structure = kernel.generateStructure(config.seed, {
@@ -192,7 +212,7 @@ export function frameSvg(kernel, { config, options, test, ...view }) {
     backgroundColor: config.backgroundColor,
     bundles: test.bundles,
     distance: options.distance,
-    flatten: options.flatten,
+    flatten: options.flattenEnabled ? options.flatten : 0,
     flattenAxis: options.flattenAxis,
     fov: options.fov,
     height: options.height,

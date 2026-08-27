@@ -272,8 +272,8 @@ export default class WaveCascade {
   }
 
   update(deltaTimeMs) {
-    this.computeTimeSpectrum.computeNode.parameters.time.value =
-      performance.now() / 1000;
+    this.waveTime = performance.now() / 1000;
+    this.computeTimeSpectrum.computeNode.parameters.time.value = this.waveTime;
 
     this.params.renderer.compute(this.computeTimeSpectrum, this.dispatchSize);
 

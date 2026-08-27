@@ -48,6 +48,7 @@ export default class OceanChunkManager {
 
     this.material = oceanMaterial.material;
     this.materialParameters = oceanMaterial.parameters;
+    this.hullMask = oceanMaterial.hullMask;
 
     this.group = new THREE.Group();
     this.params.scene.add(this.group);

@@ -1,4 +1,14 @@
-import { attribute, texture, uniform, vec3 } from 'three/tsl';
+import {
+  Fn,
+  attribute,
+  float,
+  max,
+  select,
+  texture,
+  uniform,
+  vec3,
+  vec4,
+} from 'three/tsl';
 import * as THREE from 'three/webgpu';
 
 import {
@@ -54,14 +64,36 @@ export default class OceanMaterial {
       vCascadeScales,
     };
 
+    const hullMaskInverse = uniform(new THREE.Matrix4());
+    const hullMaskExtents = uniform(new THREE.Vector2(0, 0));
+    const hullMaskEnabled = uniform(0);
+
     const material = new THREE.MeshBasicNodeMaterial();
     material.positionNode = oceanVertexStageWGSL(shaderParams);
     material.colorNode = oceanFragmentStageWGSL(shaderParams);
+    material.opacityNode = Fn(() => {
+      const local = hullMaskInverse.mul(vec4(vDisplacedPosition, 1)).xyz;
+      const normalizedX = local.x.div(max(hullMaskExtents.x, float(0.0001)));
+      const normalizedZ = local.z.div(max(hullMaskExtents.y, float(0.0001)));
+      const inside = normalizedX
+        .mul(normalizedX)
+        .add(normalizedZ.mul(normalizedZ))
+        .lessThan(float(1))
+        .and(hullMaskEnabled.greaterThan(float(0.5)));
+
+      return select(inside, float(0), float(1));
+    })();
+    material.alphaTest = 0.5;
     material.side = THREE.FrontSide;
     material.colorSpace = THREE.SRGBColorSpace;
     material.transparent = false;
 
     this.material = material;
     this.parameters = shaderParams;
+    this.hullMask = {
+      enabled: hullMaskEnabled,
+      extents: hullMaskExtents,
+      inverse: hullMaskInverse,
+    };
   }
 }

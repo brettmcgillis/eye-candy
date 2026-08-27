@@ -97,6 +97,184 @@ export default function useSceneControls() {
       },
       { collapsed: false }
     ),
+    Lighting: folder(
+      {
+        sunIntensity: { label: 'Sun', value: 2.6, min: 0, max: 10, step: 0.05 },
+        sunColor: { label: 'Sun Color', value: '#fff2dd' },
+        hemisphereIntensity: {
+          label: 'Hemisphere',
+          value: 0.9,
+          min: 0,
+          max: 5,
+          step: 0.05,
+        },
+        hemisphereSkyColor: { label: 'Sky Color', value: '#bcd9ff' },
+        hemisphereGroundColor: { label: 'Ground Color', value: '#2f4a5c' },
+      },
+      { collapsed: true }
+    ),
+    Boat: folder(
+      {
+        boatScale: { label: 'Scale', value: 1, min: 0.1, max: 8, step: 0.05 },
+        boatPositionX: { label: 'X', value: 0, min: -60, max: 60, step: 0.1 },
+        boatPositionY: { label: 'Y', value: 0, min: -5, max: 5, step: 0.01 },
+        boatPositionZ: { label: 'Z', value: 0, min: -60, max: 60, step: 0.1 },
+        boatRotationY: {
+          label: 'Rot Y',
+          value: -20,
+          min: -180,
+          max: 180,
+          step: 1,
+        },
+        boatDraft: { label: 'Draft', value: 0.03, min: -2, max: 2, step: 0.01 },
+        boatMass: { label: 'Mass', value: 1.4, min: 0.05, max: 50, step: 0.01 },
+        boatBuoyancy: {
+          label: 'Buoyancy',
+          value: 5.8,
+          min: 0,
+          max: 80,
+          step: 0.1,
+        },
+        boatBuoyancyDamping: {
+          label: 'Buoy Damp',
+          value: 3,
+          min: 0,
+          max: 20,
+          step: 0.05,
+        },
+        boatLinearDamping: {
+          label: 'Linear Damp',
+          value: 3.4,
+          min: 0,
+          max: 20,
+          step: 0.05,
+        },
+        boatAngularDamping: {
+          label: 'Angular Damp',
+          value: 8.5,
+          min: 0,
+          max: 20,
+          step: 0.05,
+        },
+        boatProbeLift: {
+          label: 'Probe Lift',
+          value: 0.02,
+          min: -1,
+          max: 2,
+          step: 0.01,
+        },
+        boatProbeForward: {
+          label: 'Probe Forward',
+          value: 0.72,
+          min: 0.05,
+          max: 5,
+          step: 0.01,
+        },
+        boatProbeSide: {
+          label: 'Probe Side',
+          value: 0.34,
+          min: 0.05,
+          max: 5,
+          step: 0.01,
+        },
+        hideInteriorWater: { label: 'Hide Interior Water', value: true },
+        interiorInset: {
+          label: 'Interior Inset',
+          value: 0.92,
+          min: 0.3,
+          max: 1.2,
+          step: 0.01,
+        },
+      },
+      { collapsed: true }
+    ),
+    Oars: folder(
+      {
+        jointMinAngle: {
+          label: 'Min Angle',
+          value: -58,
+          min: -180,
+          max: 0,
+          step: 1,
+        },
+        jointMaxAngle: {
+          label: 'Max Angle',
+          value: 36,
+          min: 0,
+          max: 180,
+          step: 1,
+        },
+        oarLinearDamping: {
+          label: 'Linear Damp',
+          value: 1.8,
+          min: 0,
+          max: 8,
+          step: 0.05,
+        },
+        oarAngularDamping: {
+          label: 'Angular Damp',
+          value: 5.5,
+          min: 0,
+          max: 20,
+          step: 0.05,
+        },
+        oarBuoyancy: {
+          label: 'Buoyancy',
+          value: 12,
+          min: 0,
+          max: 40,
+          step: 0.1,
+        },
+        oarBuoyancyDamping: {
+          label: 'Buoy Damp',
+          value: 2.2,
+          min: 0,
+          max: 10,
+          step: 0.05,
+        },
+        oarProbeLift: {
+          label: 'Probe Lift',
+          value: 0.1,
+          min: -1,
+          max: 2,
+          step: 0.01,
+        },
+      },
+      { collapsed: true }
+    ),
+    Physics: folder(
+      {
+        gravityY: {
+          label: 'Gravity Y',
+          value: -9.81,
+          min: -20,
+          max: 0,
+          step: 0.01,
+        },
+        oarMass: {
+          label: 'Oar Mass',
+          value: 0.25,
+          min: 0.05,
+          max: 10,
+          step: 0.01,
+        },
+        timeStep: {
+          label: 'Time Step',
+          value: 1 / 90,
+          min: 1 / 240,
+          max: 1 / 30,
+          step: 0.0005,
+        },
+        buoyancyModeCount: {
+          label: 'Wave Modes',
+          value: 192,
+          min: 32,
+          max: 1024,
+          step: 32,
+        },
+      },
+      { collapsed: true }
+    ),
     Performance: folder(
       {
         quality: {
@@ -111,6 +289,50 @@ export default function useSceneControls() {
   });
 
   return {
+    lighting: {
+      groundColor: controls.hemisphereGroundColor,
+      hemisphere: controls.hemisphereIntensity,
+      skyColor: controls.hemisphereSkyColor,
+      sun: controls.sunIntensity,
+      sunColor: controls.sunColor,
+    },
+    boat: {
+      angularDamping: controls.boatAngularDamping,
+      buoyancy: controls.boatBuoyancy,
+      buoyancyDamping: controls.boatBuoyancyDamping,
+      draft: controls.boatDraft,
+      hideInteriorWater: controls.hideInteriorWater,
+      interiorInset: controls.interiorInset,
+      linearDamping: controls.boatLinearDamping,
+      mass: controls.boatMass,
+      position: [
+        controls.boatPositionX,
+        controls.boatPositionY,
+        controls.boatPositionZ,
+      ],
+      probeForward: controls.boatProbeForward,
+      probeLift: controls.boatProbeLift,
+      probeSide: controls.boatProbeSide,
+      rotationY: controls.boatRotationY,
+      scale: controls.boatScale,
+    },
+    oars: {
+      angularDamping: controls.oarAngularDamping,
+      buoyancy: controls.oarBuoyancy,
+      buoyancyDamping: controls.oarBuoyancyDamping,
+      jointMaxAngle: controls.jointMaxAngle,
+      jointMinAngle: controls.jointMinAngle,
+      linearDamping: controls.oarLinearDamping,
+      probeLift: controls.oarProbeLift,
+    },
+    physics: {
+      gravity: [0, controls.gravityY, 0],
+      oarMass: controls.oarMass,
+      timeStep: controls.timeStep,
+    },
+    buoyancy: {
+      modeCount: controls.buoyancyModeCount,
+    },
     camera: {
       fov: controls.fov,
       maxDistance: controls.maxDistance,

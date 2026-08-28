@@ -12,9 +12,9 @@ import { Canvas } from '@react-three/fiber';
 
 import * as THREE from 'three';
 
+import useGltfPreview from '../hooks/useGltfPreview';
 import AnimationDriver from './AnimationDriver';
 import './GltfPreviewCanvas.css';
-import useGltfPreview from '../hooks/useGltfPreview';
 
 function makeChannelMaterial(channel, material, wireframe) {
   const channelMapKeyByMode = {

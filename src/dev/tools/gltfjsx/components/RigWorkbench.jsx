@@ -21,6 +21,7 @@ import {
   modelSourceFromValue,
   useWorkbenchModelOptions,
 } from '../hooks/gltfWorkbenchModels';
+import useGltfPreview from '../hooks/useGltfPreview';
 import {
   allowedIndicesForGroup,
   bakeGeometryWorld,
@@ -32,7 +33,6 @@ import {
   createBone,
   guessSide,
 } from '../utils/rigSkinning';
-import useGltfPreview from '../hooks/useGltfPreview';
 
 const WRITE_ASSET_ENDPOINT = '/dev-api/gltfjsx/write-asset';
 

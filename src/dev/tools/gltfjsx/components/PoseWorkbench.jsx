@@ -19,18 +19,18 @@ import { Canvas, useFrame, useThree } from '@react-three/fiber';
 import * as THREE from 'three';
 import { GLTFExporter } from 'three/examples/jsm/exporters/GLTFExporter.js';
 
-import AnimationDriver from './AnimationDriver';
 import {
   modelSourceFromValue,
   useWorkbenchModelOptions,
 } from '../hooks/gltfWorkbenchModels';
+import useGltfPreview from '../hooks/useGltfPreview';
 import {
   applyPoseSnapshot,
   collectBones,
   hydratePosesFromClips,
   poseSnapshotFromClip,
 } from '../utils/poseUtils';
-import useGltfPreview from '../hooks/useGltfPreview';
+import AnimationDriver from './AnimationDriver';
 
 const WRITE_ASSET_ENDPOINT = '/dev-api/gltfjsx/write-asset';
 const POSE_CLIP_DURATION = 1 / 30;

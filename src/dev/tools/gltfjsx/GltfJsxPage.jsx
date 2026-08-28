@@ -12,8 +12,8 @@ import { localEnv, modelFile } from '@utils/appUtils';
 
 import DevPageHeaderBar from '../../shell/DevPageHeaderBar';
 import DevTooltip from '../../shell/DevTooltip';
-import CombineWorkbench from './components/CombineWorkbench';
 import './GltfJsxPage.css';
+import CombineWorkbench from './components/CombineWorkbench';
 import GltfPreviewCanvas from './components/GltfPreviewCanvas';
 import PoseWorkbench from './components/PoseWorkbench';
 import RigWorkbench from './components/RigWorkbench';

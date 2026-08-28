@@ -22,13 +22,13 @@ import {
   modelSourceFromValue,
   useWorkbenchModelOptions,
 } from '../hooks/gltfWorkbenchModels';
+import { loadGltfFromSource } from '../hooks/useGltfPreview';
 import {
   applyPoseSnapshot,
   captureBonesSnapshot,
   collectBones,
   hydratePosesFromClips,
 } from '../utils/poseUtils';
-import { loadGltfFromSource } from '../hooks/useGltfPreview';
 
 // Sentinel pose value for the rest/bind pose (no clip applied).
 const REST_POSE_VALUE = '__rest__';

@@ -6,9 +6,11 @@ import { useFrame } from '@react-three/fiber';
 import { button, useControls } from 'leva';
 
 import Reversal from '@elements/Reversal/Reversal';
-import { useHandGestureEvents } from '@modules/handTracking';
-import { useHandControls } from '@modules/handTracking';
-import { useMediaPipeHands } from '@modules/handTracking';
+import {
+  useHandControls,
+  useHandGestureEvents,
+  useMediaPipeHands,
+} from '@modules/handTracking';
 
 import HandLandmarksDebug from './HandLandmarksDebug';
 

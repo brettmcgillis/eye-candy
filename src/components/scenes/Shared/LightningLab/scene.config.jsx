@@ -2,11 +2,7 @@ import React, { lazy } from 'react';
 import { BsLightningFill } from 'react-icons/bs';
 
 function SceneIcon() {
-  return (
-    <>
-      <BsLightningFill color="#fef08a" />
-    </>
-  );
+  return <BsLightningFill color="#fef08a" />;
 }
 
 const Component = lazy(() => import('./LightningLab'));

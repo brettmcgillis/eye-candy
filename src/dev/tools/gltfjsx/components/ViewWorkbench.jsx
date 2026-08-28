@@ -2,12 +2,12 @@ import React, { useEffect, useMemo, useRef, useState } from 'react';
 import { useSearchParams } from 'react-router-dom';
 
 import DevTooltip from '../../../shell/DevTooltip';
-import GltfPreviewCanvas from './GltfPreviewCanvas';
 import {
   modelSourceFromValue,
   useWorkbenchModelOptions,
 } from '../hooks/gltfWorkbenchModels';
 import { loadGltfFromSource } from '../hooks/useGltfPreview';
+import GltfPreviewCanvas from './GltfPreviewCanvas';
 
 const DISPLAY_MODE_OPTIONS = [
   { label: 'Original', value: 'original' },

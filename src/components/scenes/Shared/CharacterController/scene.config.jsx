@@ -2,11 +2,7 @@ import React, { lazy } from 'react';
 import { MdDirectionsRun } from 'react-icons/md';
 
 function SceneIcon() {
-  return (
-    <>
-      <MdDirectionsRun color="#10b981" />
-    </>
-  );
+  return <MdDirectionsRun color="#10b981" />;
 }
 
 const CharacterController = lazy(() => import('./Experience'));

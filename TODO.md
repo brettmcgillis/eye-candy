@@ -104,6 +104,7 @@ To Build:
 - [Fractal Automata](src/components/scenes/WebGPU/FractalAutomata/todo.md)
 - [GetWrecked](src/components/scenes/WebGPU/GetWrecked/todo.md)
 - [GhostStories](src/components/scenes/WebGPU/GhostStories/todo.md)
+- [GrandStaircase](src/components/scenes/WebGPU/GrandStaircase/todo.md)
 - [HexTrees](src/components/scenes/WebGPU/HexTrees/todo.md)
 - [My Heart Is A Broken Fish Tank](src/components/scenes/WebGPU/MyHeartIsABrokenFishTank/todo.md)
 - [OneInTheHand](src/components/scenes/WebGPU/OneInTheHand/todo.md)
@@ -265,6 +266,7 @@ To Build:
 - [ ] Fractal Automata
 - [ ] Get Wrecked
 - [ ] GhostStories
+- [ ] Grand Staircase
 - [ ] HexTrees
 - [ ] LoGlow - Growth
 - [ ] My Heart Is A Broken Fish Tank

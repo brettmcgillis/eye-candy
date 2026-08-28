@@ -9,11 +9,11 @@ plan because an agent will read it as current intent.
 
 Contrast with the two durable kinds of writing in this repo:
 
-| | Lives in | Lifetime |
-| --- | --- | --- |
-| **Plan** | `plans/<topic>.md` | delete on completion |
-| **Scene todo** | `<Scene>/todo.md` | lives as long as the scene |
-| **Convention / reference** | `docs/`, `AGENTS.md` | until it stops being true |
+|                            | Lives in             | Lifetime                   |
+| -------------------------- | -------------------- | -------------------------- |
+| **Plan**                   | `plans/<topic>.md`   | delete on completion       |
+| **Scene todo**             | `<Scene>/todo.md`    | lives as long as the scene |
+| **Convention / reference** | `docs/`, `AGENTS.md` | until it stops being true  |
 
 If a plan produced a rule worth keeping, promote that rule into
 `docs/scene-conventions.md` and delete the plan — don't leave the plan as the

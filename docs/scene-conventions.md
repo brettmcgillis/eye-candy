@@ -41,7 +41,7 @@ Four rules govern placement. They apply to **code and to data (presets) alike**.
    their own barrel (that's a cycle).
 4. **Scenes never import from other scenes** — see §6. In particular, a
    Showcase or WIP scene must not import from a Test Lab or Toolbox scene.
-   Those two areas exist to *explore* (`testlab`) and to *author* (`toolbox`);
+   Those two areas exist to _explore_ (`testlab`) and to _author_ (`toolbox`);
    what they produce reaches scenes by being **promoted to a shared location**,
    not by being imported across the scene tree.
 
@@ -54,15 +54,15 @@ scene-named but genuinely shared, since each is an entry in a browsable library
 
 ### Root buckets
 
-| Bucket | Holds |
-| --- | --- |
-| `src/utils/` | pure, dependency-light helpers |
-| `src/hooks/` | generic React hooks |
-| `src/modules/` | tightly-coupled clusters behind an `index.js` barrel |
-| `src/components/elements/` | reusable visuals — GLTF wrappers (§7) and generic non-GLTF visuals |
-| `src/components/materials/`, `postprocessing/` | shared materials / post passes |
-| `src/presets/` | shared authored data (see above) |
-| `src/app/` | the application shell — imports from everything, imported by nothing |
+| Bucket                                         | Holds                                                                |
+| ---------------------------------------------- | -------------------------------------------------------------------- |
+| `src/utils/`                                   | pure, dependency-light helpers                                       |
+| `src/hooks/`                                   | generic React hooks                                                  |
+| `src/modules/`                                 | tightly-coupled clusters behind an `index.js` barrel                 |
+| `src/components/elements/`                     | reusable visuals — GLTF wrappers (§7) and generic non-GLTF visuals   |
+| `src/components/materials/`, `postprocessing/` | shared materials / post passes                                       |
+| `src/presets/`                                 | shared authored data (see above)                                     |
+| `src/app/`                                     | the application shell — imports from everything, imported by nothing |
 
 `elements/` is exempt from rule 1 by §7: every `.glb` gets a wrapper there even
 when only one scene uses it today, because models are inherently reusable assets.
@@ -104,15 +104,15 @@ never a `../../../..` chain. Aliases are declared once in `vite.config.js`
 (`resolve.alias`), `jsconfig.json` (`paths`), and `.eslintrc.json`
 (`settings.import/resolver.alias`) — add to all three or none.
 
-| Alias | Path | Alias | Path |
-| --- | --- | --- | --- |
-| `@app` | `src/app` | `@modules` | `src/modules` |
-| `@components` | `src/components` | `@hooks` | `src/hooks` |
-| `@elements` | `src/components/elements` | `@utils` | `src/utils` |
-| `@materials` | `src/components/materials` | `@presets` | `src/presets` |
-| `@postprocessing` | `src/components/postprocessing` | `@store` | `src/store` |
-| `@scenes` | `src/components/scenes` | `@styles` | `src/styles` |
-| `@server` | `src/server` | | |
+| Alias             | Path                            | Alias      | Path          |
+| ----------------- | ------------------------------- | ---------- | ------------- |
+| `@app`            | `src/app`                       | `@modules` | `src/modules` |
+| `@components`     | `src/components`                | `@hooks`   | `src/hooks`   |
+| `@elements`       | `src/components/elements`       | `@utils`   | `src/utils`   |
+| `@materials`      | `src/components/materials`      | `@presets` | `src/presets` |
+| `@postprocessing` | `src/components/postprocessing` | `@store`   | `src/store`   |
+| `@scenes`         | `src/components/scenes`         | `@styles`  | `src/styles`  |
+| `@server`         | `src/server`                    |            |               |
 
 Inside a scene folder, keep imports relative (`./components/Foo`,
 `../hooks/useSceneControls`) — that's what makes the folder movable.
@@ -399,7 +399,7 @@ to the next agent as current intent.
   worth keeping, promote the rule into this file and delete the plan.
 - Do not scatter plans next to the code they describe — one directory, so it
   is obvious what is still outstanding.
-- A scene's `todo.md` is *not* a plan: it is durable and colocated (§15).
+- A scene's `todo.md` is _not_ a plan: it is durable and colocated (§15).
 
 ## 15. Scene `todo.md` files — read-only unless explicitly asked
 
@@ -417,6 +417,31 @@ to the next agent as current intent.
   (e.g. "check off X," "add Y to the todo," "update Prayer's todo.md"). If you
   want to record what changed, that belongs in the commit message, PR
   description, or your response to the user — not the scene's `todo.md`.
+
+## 16. New scenes self-register in the root `TODO.md`
+
+This is the one exception to §15 (root `TODO.md` stays otherwise hands-off
+unless asked): **when you create a new scene, update `TODO.md` yourself, in
+exactly these two places, without being asked:**
+
+1. **`### Scene TODO Files`** — add `- [Label](path/to/todo.md)` under the
+   subheading matching the scene's `area` (`**Showcase**`, `**WorkInProgress**`,
+   `**TestLab**`, `**ToolBox**` — see §14), alphabetized within that group.
+   Match the existing label/path style for that group rather than inventing a
+   new one (e.g. the `(webGL)`/`(webGPU)` or `-WebGPU` suffix conventions
+   already used for a scene that exists in both renderers).
+2. **The matching "not ready yet" list** — a `- [ ] Human Readable Name` entry
+   (spaced-out label, not the CamelCase folder name):
+   - `### Scenes finish before post` for a new **WorkInProgress** or
+     **Showcase** scene.
+   - `### Toolbox/TestLab to finish before demo` for a new **ToolBox** or
+     **TestLab** scene.
+
+Do not touch anything else in `TODO.md` as part of this — not `### Scenes to
+post` (that's for named presets/variants, populated as the scene matures, not
+at creation), not `### Tools/TestLab To Demo`, not any other section. This
+rule exists so the user doesn't have to manually keep `TODO.md` in sync with
+scene creation; it is not a license for broader bookkeeping in that file.
 
 ---
 

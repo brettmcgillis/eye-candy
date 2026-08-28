@@ -4,8 +4,8 @@
 // the glitch passes, so light shafts get corrupted along with everything else.
 //
 // Order is deliberate: godrays composite first (they're part of the picture,
-// not an artifact of it), then the capture artifacts — pixel sort and
-// chromatic aberration — masked off the empty background by depth, and last
+// not an artifact of it), then the capture artifacts — slit scan, pixel sort
+// and chromatic aberration — masked off the empty background by depth, and last
 // the two frame-level effects, datamosh and pixel bleed, which both model
 // something chewing on the finished frame and so have to see it finished.
 // Which of those two runs first is a control, since a bled frame fed to the
@@ -16,17 +16,12 @@ import { useFrame, useThree } from '@react-three/fiber';
 
 import { chromaticAberration } from 'three/addons/tsl/display/ChromaticAberrationNode.js';
 import {
-  Break,
-  Fn,
-  If,
-  Loop,
   convertToTexture,
   int,
   mix,
   mrt,
   output,
   pass,
-  screenUV,
   smoothstep,
   uniform,
   vec2,
@@ -46,51 +41,15 @@ import PixelBleedNode, {
   buildPixelBleedNode,
   createPixelBleedUniforms,
 } from '../utils/pixelBleed';
-
-const MAX_PIXEL_SORT_STEPS = 64;
-
-function computeLuminance(c) {
-  return c.r.mul(0.2126).add(c.g.mul(0.7152)).add(c.b.mul(0.0722));
-}
-
-// "Pixel sorting" glitch look, approximated for real-time GPU use — there's
-// no clean single-pass GPU equivalent to a true per-row/column sort, so
-// this instead walks from each bright-enough pixel along a direction until
-// it finds the edge of that bright "run" (or hits the step cap), and paints
-// the whole span with whatever color it lands on. Same streaking, dripping
-// character as a real sort, without actually sorting anything.
-function buildPixelSortNode(sceneColor, u) {
-  return Fn(() => {
-    const baseColor = sceneColor.sample(screenUV).toVar('psBase');
-    const result = baseColor.toVar('psResult');
-
-    If(computeLuminance(baseColor).greaterThan(u.pixelSortThreshold), () => {
-      const stepVec = u.pixelSortDirection.mul(u.pixelSortStepSize);
-      const sampleUv = screenUV.toVar('psUv');
-
-      Loop(
-        { start: int(0), end: int(MAX_PIXEL_SORT_STEPS), type: 'int' },
-        ({ i }) => {
-          If(i.greaterThanEqual(u.pixelSortSteps), () => {
-            Break();
-          });
-
-          sampleUv.assign(sampleUv.add(stepVec));
-          const sampled = sceneColor.sample(sampleUv);
-
-          If(computeLuminance(sampled).lessThan(u.pixelSortThreshold), () => {
-            result.assign(sampled);
-            Break();
-          });
-
-          result.assign(sampled);
-        }
-      );
-    });
-
-    return result;
-  })();
-}
+import {
+  buildPixelSortNode,
+  createPixelSortUniforms,
+} from '../utils/pixelSortPost';
+import { syncChunkUniforms } from '../utils/screenChunks';
+import {
+  buildSlitScanPostNode,
+  createSlitScanUniforms,
+} from '../utils/slitScanPost';
 
 function PostEffects({ config, godrayLight }) {
   const { gl: renderer, scene, camera } = useThree();
@@ -101,10 +60,6 @@ function PostEffects({ config, godrayLight }) {
     () => ({
       strength: uniform(1),
       scale: uniform(1.5),
-      pixelSortThreshold: uniform(0.55),
-      pixelSortSteps: uniform(20),
-      pixelSortStepSize: uniform(0.004),
-      pixelSortDirection: uniform(new THREE.Vector2(0, 1)),
       godrayBlendColor: uniform(new THREE.Color('#ffffff')),
       godrayEdgeRadius: uniform(int(2)),
       godrayEdgeStrength: uniform(2),
@@ -113,10 +68,15 @@ function PostEffects({ config, godrayLight }) {
   );
 
   const bleedUniforms = useMemo(() => createPixelBleedUniforms(), []);
+  const pixelSortUniforms = useMemo(() => createPixelSortUniforms(), []);
+  const slitScanUniforms = useMemo(() => createSlitScanUniforms(), []);
 
   const {
     postChromaticAberrationEnabled: chromaticEnabled,
     postPixelSortEnabled: pixelSortEnabled,
+    postPixelSortChunkMode: pixelSortChunkMode,
+    postSlitScanEnabled: slitScanEnabled,
+    postSlitScanChunkMode: slitScanChunkMode,
     postGodraysEnabled: godraysEnabled,
     postGodraysBlur: godraysBlur,
     postDatamoshEnabled: datamoshEnabled,
@@ -164,8 +124,20 @@ function PostEffects({ config, godrayLight }) {
 
     let glitched = lit;
 
+    if (slitScanEnabled) {
+      glitched = buildSlitScanPostNode(
+        convertToTexture(glitched),
+        slitScanUniforms,
+        slitScanChunkMode
+      );
+    }
+
     if (pixelSortEnabled) {
-      glitched = buildPixelSortNode(convertToTexture(glitched), uniforms);
+      glitched = buildPixelSortNode(
+        convertToTexture(glitched),
+        pixelSortUniforms,
+        pixelSortChunkMode
+      );
     }
 
     if (chromaticEnabled) {
@@ -178,7 +150,7 @@ function PostEffects({ config, godrayLight }) {
     }
 
     const masked =
-      pixelSortEnabled || chromaticEnabled
+      slitScanEnabled || pixelSortEnabled || chromaticEnabled
         ? mix(glitched, lit, backgroundMask)
         : glitched;
 
@@ -225,6 +197,9 @@ function PostEffects({ config, godrayLight }) {
     camera,
     chromaticEnabled,
     pixelSortEnabled,
+    pixelSortChunkMode,
+    slitScanEnabled,
+    slitScanChunkMode,
     godraysActive,
     godraysBlur,
     godrayLight,
@@ -234,6 +209,8 @@ function PostEffects({ config, godrayLight }) {
     bleedQuality,
     bleedOrder,
     bleedUniforms,
+    pixelSortUniforms,
+    slitScanUniforms,
     uniforms,
   ]);
 
@@ -241,12 +218,39 @@ function PostEffects({ config, godrayLight }) {
     uniforms.strength.value = config.postChromaticAberrationStrength;
     uniforms.scale.value = config.postChromaticAberrationScale;
 
-    uniforms.pixelSortThreshold.value = config.postPixelSortThreshold;
-    uniforms.pixelSortSteps.value = config.postPixelSortSteps;
-    uniforms.pixelSortStepSize.value = config.postPixelSortStepSize;
-    uniforms.pixelSortDirection.value.set(
+    pixelSortUniforms.threshold.value = config.postPixelSortThreshold;
+    pixelSortUniforms.steps.value = config.postPixelSortSteps;
+    pixelSortUniforms.stepSize.value = config.postPixelSortStepSize;
+    pixelSortUniforms.lengthJitter.value = config.postPixelSortLengthJitter;
+    pixelSortUniforms.direction.value.set(
       config.postPixelSortDirection === 'horizontal' ? 1 : 0,
       config.postPixelSortDirection === 'horizontal' ? 0 : 1
+    );
+    syncChunkUniforms(
+      pixelSortUniforms.chunks,
+      config.postPixelSortChunkAxis,
+      config.postPixelSortChunkCount,
+      config.postPixelSortChunkCross,
+      config.postPixelSortChunkCoverage,
+      config.postPixelSortChunkSpeed,
+      config.postPixelSortChunkSeed
+    );
+
+    slitScanUniforms.axis.value =
+      config.postSlitScanAxis === 'horizontal' ? 1 : 0;
+    slitScanUniforms.position.value = config.postSlitScanPosition;
+    slitScanUniforms.width.value = config.postSlitScanWidth;
+    slitScanUniforms.stretch.value = config.postSlitScanStretch;
+    slitScanUniforms.speed.value = config.postSlitScanSpeed;
+    slitScanUniforms.jitter.value = config.postSlitScanJitter;
+    syncChunkUniforms(
+      slitScanUniforms.chunks,
+      config.postSlitScanChunkAxis,
+      config.postSlitScanChunkCount,
+      config.postSlitScanChunkCross,
+      config.postSlitScanChunkCoverage,
+      config.postSlitScanChunkSpeed,
+      config.postSlitScanChunkSeed
     );
 
     uniforms.godrayBlendColor.value.set(config.postGodraysBlendColor);

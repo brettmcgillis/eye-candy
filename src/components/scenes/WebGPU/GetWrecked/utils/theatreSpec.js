@@ -160,6 +160,14 @@ export const THEATRE_GROUPS = {
         postPixelSortThreshold: { label: 'Threshold' },
       },
     },
+    slitScan: {
+      label: 'Slit Scan',
+      props: {
+        postSlitScanEnabled: { label: 'Enabled' },
+        postSlitScanPosition: { label: 'Slit Position' },
+        postSlitScanStretch: { label: 'Stretch' },
+      },
+    },
     datamosh: {
       label: 'Datamosh',
       props: {

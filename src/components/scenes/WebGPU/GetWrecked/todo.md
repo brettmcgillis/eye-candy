@@ -14,6 +14,9 @@ geometry-agnostic and could be pointed at other models later.
 
 [Back to main TODO](../../../../../TODO.md)
 
+- pixel sort post processing. chunks of screen get pixel sorted. could be horizontal or verical bands, could be noise/cell noise driven.
+- slit scan post processing. horizontal or verical bands of screen get slit scanned.
+
 # // Presets
 
 # // Features

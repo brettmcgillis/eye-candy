@@ -1,9 +1,9 @@
 import React, { memo, useState } from 'react';
-import { FiChevronRight, FiExternalLink } from 'react-icons/fi';
+import { FiChevronRight, FiExternalLink, FiFileText } from 'react-icons/fi';
 
 import { getSceneTargets, getStatusKey } from './catalogData';
 
-function SceneRow({ disabled, onToggle, scene, statuses }) {
+function SceneRow({ disabled, onManageTodo, onToggle, scene, statuses }) {
   const [expanded, setExpanded] = useState(false);
   const targets = getSceneTargets(scene);
   const postedCount = targets.filter(
@@ -45,16 +45,27 @@ function SceneRow({ disabled, onToggle, scene, statuses }) {
           <span>scene + presets posted</span>
         </div>
 
-        {scene.path ? (
-          <a
-            aria-label={`Open ${scene.label}`}
-            className="cataloggr-scene__open"
-            href={scene.path}
-            title="Open scene"
+        <div className="cataloggr-scene__actions">
+          <button
+            aria-label={`Manage ${scene.label} TODO`}
+            className="cataloggr-scene__todo"
+            onClick={() => onManageTodo(scene.sourcePath)}
+            title="Manage TODO"
+            type="button"
           >
-            <FiExternalLink aria-hidden="true" />
-          </a>
-        ) : null}
+            <FiFileText aria-hidden="true" />
+          </button>
+          {scene.path ? (
+            <a
+              aria-label={`Open ${scene.label}`}
+              className="cataloggr-scene__open"
+              href={scene.path}
+              title="Open scene"
+            >
+              <FiExternalLink aria-hidden="true" />
+            </a>
+          ) : null}
+        </div>
       </div>
 
       {expanded ? (

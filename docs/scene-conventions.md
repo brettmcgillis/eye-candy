@@ -405,10 +405,18 @@ to the next agent as current intent.
 
 - Every scene's `todo.md` follows a fixed shape: a `# // SceneName` title, a
   `[Back to main TODO](...)` link to the root `TODO.md` (relative depth
-  matches the scene's folder nesting), and a set of `# // Section` headings
-  drawn from a consistent style (`Intent/Use Cases`, `TODO:`, `Presets`,
-  `Features`, `Interactivity`, `Bugs`, etc. — not every scene has every
-  section, but the heading style and back-link are constant).
+  matches the scene's folder nesting), then optional H2 sections in this
+  order: `Intent / Use Cases`, `TODO`, `Presets`, `Features`, `Interactivity`,
+  and `Bugs`. Omit sections that do not apply. Nest supporting material under
+  these sections at H3 or deeper rather than creating one-off top-level
+  sections. Adding a reusable top-level section is a schema change here and
+  in Cataloggr, not a per-scene exception.
+- Action items under `TODO`, `Presets`, `Features`, `Interactivity`, and `Bugs`
+  use Markdown task checkboxes. Completed items stay in place as durable
+  context and can be filtered in Cataloggr.
+- Cataloggr's Todos workspace audits this shape and edits the scene-local
+  Markdown files directly. Format migration is explicit and reviewable;
+  opening or editing a file must not silently normalize it.
 - **Do not edit a scene's `todo.md` as a side effect of implementing
   something.** Don't add new sections to log what you just built, don't turn
   it into a changelog, and don't remove or alter the back-link or existing

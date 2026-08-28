@@ -13,6 +13,7 @@ import DevPageHeaderBar from '../../shell/DevPageHeaderBar';
 import './CataloggrPage.css';
 import IdeaBoard from './IdeaBoard';
 import SceneRow from './SceneRow';
+import TodoWorkspace from './TodoWorkspace';
 import {
   AREA_ORDER,
   buildCatalogScenes,
@@ -25,6 +26,7 @@ const VIEW_OPTIONS = [
   ['post', 'Post'],
   ['finish', 'Finish'],
   ['ideas', 'Ideas'],
+  ['todos', 'Todos'],
   ['all', 'All scenes'],
 ];
 
@@ -63,6 +65,7 @@ export default function CataloggrPage() {
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState('');
+  const [todoSourcePath, setTodoSourcePath] = useState('');
   const deferredSearchText = useDeferredValue(searchText);
 
   useEffect(() => {
@@ -221,10 +224,22 @@ export default function CataloggrPage() {
     }
   }, []);
 
+  const handleManageTodo = useCallback((sourcePath) => {
+    setTodoSourcePath(sourcePath);
+    setError('');
+    startTransition(() => setView('todos'));
+  }, []);
+
+  const handleTodoError = useCallback((message) => setError(message), []);
+
   let resultLabel = `${filteredScenes.length} scenes`;
   if (loading) resultLabel = 'Loading catalog...';
   if (!loading && view === 'ideas')
     resultLabel = `${filteredIdeas.length} ideas`;
+  if (!loading && view === 'todos') resultLabel = 'Scene TODO manager';
+  let storageLabel = 'Checked-in catalog';
+  if (saving) storageLabel = 'Saving to catalog.json...';
+  if (view === 'todos') storageLabel = 'Scene-local Markdown';
 
   return (
     <main className="dev-page cataloggr-page">
@@ -256,7 +271,7 @@ export default function CataloggrPage() {
       </section>
 
       <section
-        className={`cataloggr-toolbar ${view === 'ideas' ? 'cataloggr-toolbar--ideas' : ''}`}
+        className={`cataloggr-toolbar ${view === 'ideas' || view === 'todos' ? 'cataloggr-toolbar--compact' : ''}`}
         aria-label="Catalog filters"
       >
         <div className="cataloggr-segments">
@@ -271,16 +286,18 @@ export default function CataloggrPage() {
             </button>
           ))}
         </div>
-        <input
-          aria-label="Search scenes and presets"
-          onChange={(event) => setSearchText(event.target.value)}
-          placeholder={
-            view === 'ideas' ? 'Search ideas' : 'Search scenes or presets'
-          }
-          type="search"
-          value={searchText}
-        />
-        {view !== 'ideas' ? (
+        {view !== 'todos' ? (
+          <input
+            aria-label="Search scenes and presets"
+            onChange={(event) => setSearchText(event.target.value)}
+            placeholder={
+              view === 'ideas' ? 'Search ideas' : 'Search scenes or presets'
+            }
+            type="search"
+            value={searchText}
+          />
+        ) : null}
+        {view !== 'ideas' && view !== 'todos' ? (
           <select
             aria-label="Filter by area"
             onChange={(event) => setArea(event.target.value)}
@@ -294,7 +311,7 @@ export default function CataloggrPage() {
             ))}
           </select>
         ) : null}
-        {view !== 'ideas' ? (
+        {view !== 'ideas' && view !== 'todos' ? (
           <select
             aria-label="Filter by renderer"
             onChange={(event) => setChannel(event.target.value)}
@@ -309,9 +326,7 @@ export default function CataloggrPage() {
 
       <div className="cataloggr-result-bar">
         <span>{resultLabel}</span>
-        <span>
-          {saving ? 'Saving to catalog.json...' : 'Checked-in catalog'}
-        </span>
+        <span>{storageLabel}</span>
       </div>
       {error ? (
         <p className="cataloggr-error" role="alert">
@@ -326,19 +341,27 @@ export default function CataloggrPage() {
           onChange={handleIdeasChange}
           visibleIdeas={filteredIdeas}
         />
-      ) : (
+      ) : null}
+      {view === 'todos' ? (
+        <TodoWorkspace
+          initialSourcePath={todoSourcePath}
+          onError={handleTodoError}
+        />
+      ) : null}
+      {view !== 'ideas' && view !== 'todos' ? (
         <section className="cataloggr-list" aria-label="Scenes">
           {filteredScenes.map((scene) => (
             <SceneRow
               disabled={loading || saving}
               key={scene.key}
+              onManageTodo={handleManageTodo}
               onToggle={handleToggle}
               scene={scene}
               statuses={statuses}
             />
           ))}
         </section>
-      )}
+      ) : null}
     </main>
   );
 }

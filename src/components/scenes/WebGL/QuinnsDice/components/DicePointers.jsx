@@ -6,9 +6,11 @@ import { BallCollider, RigidBody } from '@react-three/rapier';
 
 import * as THREE from 'three';
 
-import { useHandGestureEvents } from '@modules/handTracking';
-import { useHandControls } from '@modules/handTracking';
-import { useMediaPipeHands } from '@modules/handTracking';
+import {
+  useHandControls,
+  useHandGestureEvents,
+  useMediaPipeHands,
+} from '@modules/handTracking';
 
 import { ROLL_DIE_EVENT } from '../presets/QuinnsDice.sceneSettings';
 

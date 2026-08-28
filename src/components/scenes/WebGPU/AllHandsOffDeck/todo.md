@@ -8,7 +8,7 @@
 - The scene centers on a skateboard.
 - The bottom of the skate deck features a texture displaying a scene or scenes from this app.
 
-## // TODO
+## // TODO:
 
 - animate the skate board rotating on the y axis, trucks and wheels flying off before rejoining
 

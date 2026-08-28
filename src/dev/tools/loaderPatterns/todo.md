@@ -6,7 +6,7 @@
 
 Preview loader animations and pattern references.
 
-## // TODO
+## // TODO:
 
 ## // Features
 

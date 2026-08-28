@@ -6,7 +6,7 @@
 
 Browse and edit shared palette entries.
 
-## // TODO
+## // TODO:
 
 - move add button down to same row as the sort row
 

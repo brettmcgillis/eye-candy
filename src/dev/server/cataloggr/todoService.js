@@ -52,6 +52,10 @@ function getCommentHeading(value) {
   return `// ${value.replace(/^\/\/\s*/u, '')}`;
 }
 
+function getSectionHeading(section) {
+  return section === 'TODO' ? 'TODO:' : section;
+}
+
 function getCanonicalSection(value) {
   return SECTION_ALIASES.get(normalizeHeading(value)) ?? null;
 }
@@ -160,6 +164,13 @@ function parseTodo(content) {
   }
   if (headings.some((heading) => !toString(heading).startsWith('//'))) {
     issues.push('Headings must use the comment-style `//` prefix.');
+  }
+  if (
+    sections.some(
+      (section) => section.name === 'TODO' && !section.rawName.endsWith(':')
+    )
+  ) {
+    issues.push('The TODO heading must use `## // TODO:`.');
   }
   if (new Set(canonicalNames).size !== canonicalNames.length) {
     issues.push('Standard sections must not be duplicated.');
@@ -275,7 +286,9 @@ export function normalizeTodoContent(content) {
   const blocks = TODO_SECTIONS.flatMap((section) => {
     const bodies = groupedBodies.get(section);
     return bodies.length || presentSections.has(section)
-      ? [`## // ${section}${bodies.length ? `\n\n${bodies.join('\n\n')}` : ''}`]
+      ? [
+          `## // ${getSectionHeading(section)}${bodies.length ? `\n\n${bodies.join('\n\n')}` : ''}`,
+        ]
       : [];
   });
   const parts = [`# // ${title}`, backlink];

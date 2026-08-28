@@ -36,11 +36,11 @@ import {
 
 const CATALOG_ENDPOINT = '/dev-api/cataloggr';
 const VIEW_OPTIONS = [
+  ['all', 'All scenes'],
   ['post', 'Post'],
   ['finish', 'Finish'],
   ['ideas', 'Ideas'],
   ['todos', 'Todos'],
-  ['all', 'All scenes'],
 ];
 
 function getSearchPlaceholder(view) {
@@ -81,7 +81,7 @@ export default function CataloggrPage() {
   const [searchText, setSearchText] = useState('');
   const [area, setArea] = useState('all');
   const [channel, setChannel] = useState('all');
-  const [view, setView] = useState('post');
+  const [view, setView] = useState('all');
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState('');
@@ -303,28 +303,6 @@ export default function CataloggrPage() {
 
       <section className="cataloggr-stats" aria-label="Catalog summary">
         <div>
-          <FiLayers />
-          <strong>{stats.ideaCount}</strong>
-          <span>ideas to start building</span>
-        </div>
-        <div>
-          <FiCheckCircle />
-          <strong>
-            {stats.postedCount}/{stats.targetCount}
-          </strong>
-          <span>posted</span>
-        </div>
-        <div>
-          <FiSend />
-          <strong>{stats.postNextCount}</strong>
-          <span>to post</span>
-        </div>
-        <div>
-          <FiTool />
-          <strong>{stats.wipCount}</strong>
-          <span>to finish</span>
-        </div>
-        <div>
           <FiGrid />
           <strong>{stats.sceneCount}</strong>
           <span>
@@ -345,6 +323,28 @@ export default function CataloggrPage() {
           <FiCode />
           <strong>{DEV_PAGES.length}</strong>
           <span>dev tools</span>
+        </div>
+        <div>
+          <FiLayers />
+          <strong>{stats.ideaCount}</strong>
+          <span>ideas to start building</span>
+        </div>
+        <div>
+          <FiCheckCircle />
+          <strong>
+            {stats.postedCount}/{stats.targetCount}
+          </strong>
+          <span>posted</span>
+        </div>
+        <div>
+          <FiSend />
+          <strong>{stats.postNextCount}</strong>
+          <span>to post</span>
+        </div>
+        <div>
+          <FiTool />
+          <strong>{stats.wipCount}</strong>
+          <span>to finish</span>
         </div>
       </section>
 

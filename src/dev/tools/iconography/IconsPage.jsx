@@ -163,9 +163,13 @@ export default function IconsPage() {
   return (
     <div className="dev-page icons-page">
       <DevPageHeaderBar title="Iconography" />
-      {SECTIONS.map((s) => (
-        <Section key={s.title} {...s} />
-      ))}
+      <div className="icons-page__sections">
+        {SECTIONS.map((section) => (
+          <section className="icons-page__section" key={section.title}>
+            <Section {...section} />
+          </section>
+        ))}
+      </div>
     </div>
   );
 }

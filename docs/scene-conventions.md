@@ -407,11 +407,13 @@ to the next agent as current intent.
   `# // Name` title, a
   `[Back to main TODO](...)` link to the root `TODO.md` (relative depth
   matches the scene's folder nesting), then optional H2 sections in this
-  order: `Intent / Use Cases`, `TODO`, `Presets`, `Features`, `Interactivity`,
-  and `Bugs`. Omit sections that do not apply. Nest supporting material under
-  these sections at H3 or deeper rather than creating one-off top-level
-  sections. Adding a reusable top-level section is a schema change here and
-  in Cataloggr, not a per-scene exception.
+  order: `// Intent / Use Cases`, `// TODO`, `// Presets`, `// Features`,
+  `// Interactivity`, and `// Bugs`. Every heading uses the comment-style `//`
+  prefix to bridge code and documentation of the artwork. Omit sections that
+  do not apply. Nest supporting material under these sections at H3 or deeper,
+  also prefixed with `//`, rather than creating one-off top-level sections.
+  Adding a reusable top-level section is a schema change here and in Cataloggr,
+  not a per-scene exception.
 - Action items under `TODO`, `Presets`, `Features`, `Interactivity`, and `Bugs`
   use Markdown task checkboxes. Completed items stay in place as durable
   context and can be filtered in Cataloggr.

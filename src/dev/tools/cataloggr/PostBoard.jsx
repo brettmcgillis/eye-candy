@@ -1,6 +1,7 @@
 import React, { memo } from 'react';
 
 import SceneRow from './SceneRow';
+import { toCatalogDevTool } from './catalogData';
 
 function PostSection({ children, count, title }) {
   return (
@@ -12,23 +13,6 @@ function PostSection({ children, count, title }) {
       {count ? children : <p className="cataloggr-post-empty">Nothing here.</p>}
     </section>
   );
-}
-
-function toCatalogEntry(tool) {
-  return {
-    area: 'toolbox',
-    areaLabel: 'Dev Tool',
-    channelLabel: 'Local Only',
-    key: `devtool:${tool.slug}`,
-    label: tool.label,
-    path: tool.path,
-    presetNames: [],
-    progressLabel: 'dev tool posted',
-    slug: tool.slug,
-    sourcePath: tool.sourcePath,
-    statusKey: `devtool:${tool.slug}`,
-    targetLabel: 'Dev tool',
-  };
 }
 
 function PostBoard({
@@ -80,7 +64,7 @@ function PostBoard({
               key={tool.slug}
               onManageTodo={onManageTodo}
               onToggle={onToggle}
-              scene={toCatalogEntry(tool)}
+              scene={toCatalogDevTool(tool)}
               statuses={statuses}
             />
           ))}

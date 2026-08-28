@@ -72,4 +72,21 @@ export function getSceneTargets(scene) {
   return [null, ...scene.presetNames];
 }
 
+export function toCatalogDevTool(tool) {
+  return {
+    area: 'toolbox',
+    areaLabel: 'Dev Tool',
+    channelLabel: 'Local Only',
+    key: `devtool:${tool.slug}`,
+    label: tool.label,
+    path: tool.path,
+    presetNames: [],
+    progressLabel: 'dev tool posted',
+    slug: tool.slug,
+    sourcePath: tool.sourcePath,
+    statusKey: `devtool:${tool.slug}`,
+    targetLabel: 'Dev tool',
+  };
+}
+
 export { AREA_ORDER };

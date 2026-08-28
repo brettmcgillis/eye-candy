@@ -2,12 +2,12 @@
 
 [Back to main TODO](../../../../TODO.md)
 
-## Intent / Use Cases
+## // Intent / Use Cases
 
 Preview loader animations and pattern references.
 
-## TODO
+## // TODO
 
-## Features
+## // Features
 
-## Bugs
+## // Bugs

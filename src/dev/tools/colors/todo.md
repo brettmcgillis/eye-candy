@@ -2,12 +2,14 @@
 
 [Back to main TODO](../../../../TODO.md)
 
-## Intent / Use Cases
+## // Intent / Use Cases
 
 Browse and edit shared palette entries.
 
-## TODO
+## // TODO
 
-## Features
+- move add button down to same row as the sort row
 
-## Bugs
+## // Features
+
+## // Bugs

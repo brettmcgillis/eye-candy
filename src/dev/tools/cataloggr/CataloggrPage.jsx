@@ -32,6 +32,7 @@ import {
   buildCatalogScenes,
   getSceneTargets,
   getStatusKey,
+  toCatalogDevTool,
 } from './catalogData';
 
 const CATALOG_ENDPOINT = '/dev-api/cataloggr';
@@ -47,6 +48,10 @@ function getSearchPlaceholder(view) {
   if (view === 'ideas') return 'Search ideas';
   if (view === 'post') return 'Search the publishing queue';
   return 'Search scenes or presets';
+}
+
+function normalizeSearchText(value) {
+  return value.toLowerCase().replace(/&/gu, 'and').replace(/\s+/gu, ' ').trim();
 }
 
 function getProgress(scene, statuses) {
@@ -165,13 +170,13 @@ export default function CataloggrPage() {
   }, [deferredSearchText, ideas]);
 
   const filteredDevTools = useMemo(() => {
-    const query = deferredSearchText.trim().toLowerCase();
+    const query = normalizeSearchText(deferredSearchText);
     return DEV_PAGES.filter(
       (tool) =>
         !query ||
-        `${tool.label} ${tool.slug} ${tool.description}`
-          .toLowerCase()
-          .includes(query)
+        normalizeSearchText(
+          `${tool.label} ${tool.slug} ${tool.description}`
+        ).includes(query)
     );
   }, [deferredSearchText]);
 
@@ -211,6 +216,20 @@ export default function CataloggrPage() {
         .includes(query);
     });
   }, [area, channel, deferredSearchText, scenes, statuses, view]);
+
+  const allEntries = useMemo(() => {
+    const devTools =
+      area === 'all' && channel === 'all'
+        ? filteredDevTools.map(toCatalogDevTool)
+        : [];
+
+    return [...filteredScenes, ...devTools].sort(
+      (left, right) =>
+        left.label.localeCompare(right.label, undefined, {
+          sensitivity: 'base',
+        }) || left.key.localeCompare(right.key)
+    );
+  }, [area, channel, filteredDevTools, filteredScenes]);
 
   const handleToggle = useCallback(async (statusKey, posted) => {
     const previousStatuses = statusesRef.current;
@@ -287,6 +306,7 @@ export default function CataloggrPage() {
 
   let resultLabel = `${filteredScenes.length} scenes`;
   if (loading) resultLabel = 'Loading catalog...';
+  if (!loading && view === 'all') resultLabel = `${allEntries.length} entries`;
   if (!loading && view === 'ideas')
     resultLabel = `${filteredIdeas.length} ideas`;
   if (!loading && view === 'post') {
@@ -436,8 +456,8 @@ export default function CataloggrPage() {
         />
       ) : null}
       {view !== 'post' && view !== 'ideas' && view !== 'todos' ? (
-        <section className="cataloggr-list" aria-label="Scenes">
-          {filteredScenes.map((scene) => (
+        <section className="cataloggr-list" aria-label="Scenes and dev tools">
+          {(view === 'all' ? allEntries : filteredScenes).map((scene) => (
             <SceneRow
               disabled={loading || saving}
               key={scene.key}

@@ -5,8 +5,19 @@
   vertical-align: middle;
 }
 
+.icons-page__sections {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(min(22rem, 100%), 1fr));
+  align-items: start;
+  gap: 1rem;
+}
+
+.icons-page__section {
+  min-width: 0;
+}
+
 .icons-page__section-title {
-  margin: 1.25rem 0 0.35rem;
+  margin: 0 0 0.35rem;
   padding-top: 0.7rem;
   border-top: 1px solid var(--dev-border);
   color: var(--dev-text-secondary);
@@ -18,8 +29,7 @@
 
 .icons-page__table {
   width: 100%;
-  max-width: 760px;
-  margin-bottom: 0.75rem;
+  margin: 0;
   border-collapse: collapse;
   background: var(--dev-surface);
 }

@@ -73,7 +73,7 @@ export function addTaskContent(document, sectionName, text) {
   const insertOffset = followingSection?.startOffset ?? document.content.length;
   const before = document.content.slice(0, insertOffset).trimEnd();
   const after = document.content.slice(insertOffset).trimStart();
-  const heading = section ? '' : `## ${sectionName}\n\n`;
+  const heading = section ? '' : `## // ${sectionName}\n\n`;
 
   return `${before}\n\n${heading}${item}${after ? `\n${after}` : ''}`;
 }

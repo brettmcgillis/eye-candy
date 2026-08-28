@@ -48,6 +48,10 @@ function normalizeHeading(value) {
     .toLowerCase();
 }
 
+function getCommentHeading(value) {
+  return `// ${value.replace(/^\/\/\s*/u, '')}`;
+}
+
 function getCanonicalSection(value) {
   return SECTION_ALIASES.get(normalizeHeading(value)) ?? null;
 }
@@ -154,6 +158,9 @@ function parseTodo(content) {
   if (sections.some((section) => section.depth !== 2)) {
     issues.push('Standard sections must use H2 headings.');
   }
+  if (headings.some((heading) => !toString(heading).startsWith('//'))) {
+    issues.push('Headings must use the comment-style `//` prefix.');
+  }
   if (new Set(canonicalNames).size !== canonicalNames.length) {
     issues.push('Standard sections must not be duplicated.');
   }
@@ -193,13 +200,12 @@ function normalizeSectionBody(content, startOffset, endOffset, headings) {
   const edits = headings
     .filter(
       (heading) =>
-        heading.depth <= 2 &&
         getNodeOffset(heading, 'start') >= startOffset &&
         getNodeOffset(heading, 'end') <= endOffset
     )
     .map((heading) => ({
       end: getNodeOffset(heading, 'end') - startOffset,
-      replacement: `### ${toString(heading).replace(/^\/\/\s*/u, '')}`,
+      replacement: `${'#'.repeat(Math.max(3, heading.depth))} ${getCommentHeading(toString(heading))}`,
       start: getNodeOffset(heading, 'start') - startOffset,
     }))
     .sort((left, right) => right.start - left.start);
@@ -249,7 +255,7 @@ export function normalizeTodoContent(content) {
     firstSectionOffset,
     headings
   )
-    .replace(`### ${title}`, '')
+    .replace(`### // ${title}`, '')
     .trim();
   const groupedBodies = new Map(TODO_SECTIONS.map((section) => [section, []]));
 
@@ -267,7 +273,7 @@ export function normalizeTodoContent(content) {
 
   const blocks = TODO_SECTIONS.flatMap((section) => {
     const bodies = groupedBodies.get(section);
-    return bodies.length ? [`## ${section}\n\n${bodies.join('\n\n')}`] : [];
+    return bodies.length ? [`## // ${section}\n\n${bodies.join('\n\n')}`] : [];
   });
   const parts = [`# // ${title}`, backlink];
   parts.push(...blocks);

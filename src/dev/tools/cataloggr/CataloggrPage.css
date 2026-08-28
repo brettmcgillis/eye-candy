@@ -777,7 +777,7 @@
 }
 
 .cataloggr-todo-markdown {
-  overflow: auto;
+  overflow: visible;
   min-height: 24rem;
   padding: 0.9rem 1rem 2rem;
   color: var(--dev-text-secondary);

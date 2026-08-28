@@ -326,7 +326,7 @@ export default function CataloggrPage() {
           <FiGrid />
           <strong>{stats.sceneCount}</strong>
           <span>
-            {stats.showcaseCount} pieces, {stats.wipCount} in progress
+            {stats.showcaseCount} ready, {stats.wipCount} in progress
           </span>
         </div>
         <div>

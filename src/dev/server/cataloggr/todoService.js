@@ -258,6 +258,7 @@ export function normalizeTodoContent(content) {
     .replace(`### // ${title}`, '')
     .trim();
   const groupedBodies = new Map(TODO_SECTIONS.map((section) => [section, []]));
+  const presentSections = new Set(sections.map((section) => section.name));
 
   if (preamble) groupedBodies.get('Intent / Use Cases').push(preamble);
 
@@ -273,7 +274,9 @@ export function normalizeTodoContent(content) {
 
   const blocks = TODO_SECTIONS.flatMap((section) => {
     const bodies = groupedBodies.get(section);
-    return bodies.length ? [`## // ${section}\n\n${bodies.join('\n\n')}`] : [];
+    return bodies.length || presentSections.has(section)
+      ? [`## // ${section}${bodies.length ? `\n\n${bodies.join('\n\n')}` : ''}`]
+      : [];
   });
   const parts = [`# // ${title}`, backlink];
   parts.push(...blocks);

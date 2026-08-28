@@ -1,21 +1,21 @@
-# All Hands Off Deck
+# // All Hands Off Deck
 
-# // Intent / Use Cases
+[Back to main TODO](../../../../../TODO.md)
+
+## // Intent / Use Cases
 
 - A digital peice that may or may not participate in the next All Hands On Deck art show.
 - The scene centers on a skateboard.
 - The bottom of the skate deck features a texture displaying a scene or scenes from this app.
 
-# // TODO:
-
-[Back to main TODO](../../../../../TODO.md)
+## // TODO
 
 - animate the skate board rotating on the y axis, trucks and wheels flying off before rejoining
 
-# // Presets
+## // Presets
 
-# // Features
+## // Features
 
-# // Interactivity
+## // Interactivity
 
-# // Bugs
+## // Bugs

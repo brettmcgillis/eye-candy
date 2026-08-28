@@ -4,19 +4,6 @@
 
 [Back to main TODO](../../../../../TODO.md)
 
-- [ ] RorschachCLI and Rorschach scene:
-  - [ ] can we support growth + ink videos?
-  - [ ] When previewing a Test allow me to regen a new test starting with / prepoulating the form with the exact same params. this would allow me to identify cool tests and then regen them in new color schemes, go from png to svg, go from iphone to square, change dimensions, etc.
-  - [ ] When previewing a test allow me to click abutton and be taken to the rorschach scene with all the image's json props applied. This would allow me to go from a still to it's 3d representation
-  - [ ] allow me to create a video from a set of stills. since we have the json we could go from one or more stills to a growth video.
-  - [x] when generating via cli, scene, or dev page I should be able to pass any/every param OR roll the dice or a select bunch. example: i could generate 100 random ones, or 100 of a given color pallette, or 1 test in 100 pallettes.
-  - [ ] saving a still/video could also add the test as a preset in the scene presets. would love if they all followed the numbered convention we've started. On the fence on this one. might not need it.
-
-- [ ] 3d lines (tubes) mode to extend lines mode
-- [ ] might want to explore dramatic lighting when we get to particles and lines mode assuming they are spheres/tubes
-
-- [ ] I've seen a bunch of letter A's get generated... could we get the whole alphabet? would make for a sick stills video
-
 # // Intent/Use Cases
 
 - This scene is a part of a larger set of code, includeing the RorschachCLI scripts and UI. Any feature that is added to this scene should generally be supported by the CLI and dev tool page UX as well.
@@ -33,12 +20,6 @@
 # // Presets
 
 # // Features
-
-- Phase 2: Ink mode — full Curtis-97 fluid/pigment/capillary ping-pong sim
-  and Kubelka-Munk pigment compositing, paper-grain material. Curtis et al.'s watercolor model (SIGGRAPH 1997) with a fluid layer, drifting pigment and wet paper fibers.
-  this mode should generate symmetric inkblots that appear to be genuine watercolor ink on paper. we will want to be able to support multiple colors and monochrome just like the lines mode. we will want some continuous mode where systems keep chaning, we will want evolution as well. there may be some parallel between bundles & colors here.
-
-- Phase 3: Points mode — same trajectory data as an alt render mode (GPU point cloud, likely a TSL compute migration for density), plus the `mode` toggle control. we will want to do something interesting with the points here but im uncertain where to go. are the particles circle, square, noisy transparency? do they move along the line created by the system or are they stationary? if theyre stationary is there a wave of noise that travels down the line slightly pushing them out of the way as it moves past their location on the line?
 
 # // Bugs
 

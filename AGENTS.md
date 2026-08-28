@@ -87,9 +87,9 @@ directly from the local three.js checkout:
   **delete the plan when the work lands** (`plans/README.md` explains why).
   If a plan produced a durable rule, promote it into `docs/` first.
 - **`<Scene>/todo.md`** — durable, colocated, read-only unless asked (§15).
-- **Root `TODO.md`** — otherwise read-only too, except: creating a new scene
-  means self-registering it there yourself, in exactly two places, no
-  exceptions and no broader edits (§16).
+- **Root `TODO.md`** — read-only unless asked, except for adding a new scene's
+  `todo.md` link to its durable scene index. Cataloggr owns unregistered scene
+  ideas and publishing state (§16).
 - **`docs/`, `AGENTS.md`** — durable conventions and references.
 
 ## Process
@@ -101,13 +101,11 @@ directly from the local three.js checkout:
   update it** — don't add sections logging what you built, and don't touch its
   back-link or existing content as a side effect of implementing something.
   See `docs/scene-conventions.md` §15.
-- **When you create a new scene, self-register it in the root `TODO.md`** —
-  a link under `### Scene TODO Files` (matching maturity group, alphabetized)
-  and an entry in the matching not-ready-yet list (`### Scenes finish before
-post` for WorkInProgress/Showcase, `### Toolbox/TestLab to finish before
-demo` for ToolBox/TestLab). This is the only proactive edit to that file —
-  don't extend it to any other bookkeeping there. See
-  `docs/scene-conventions.md` §16.
+- **New scenes and local presets self-register in Cataloggr** through their
+  existing config and preset files. When creating a scene, add its `todo.md`
+  link to the matching group in root `TODO.md`; add loose scene ideas to
+  Cataloggr, and do not add scene status or publishing checklists to the root
+  TODO. See `docs/scene-conventions.md` §16.
 - **When the user gives you a reference (a repo, file, or example) to port
   in, port the actual mechanism it demonstrates.** Don't decompose it into
   parts and substitute a smaller or different subset while calling it a port

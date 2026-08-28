@@ -1,0 +1,162 @@
+{
+  "version": 2,
+  "ideas": [
+    {
+      "id": "idea-001",
+      "text": "Video casette tape with video playing on tape ribbon"
+    },
+    {
+      "id": "idea-002",
+      "text": "CSG Skull. Knock a reversal out of its forehead. grow some crystals on it `~/dev/examples/260222_CrystalGrowth`"
+    },
+    {
+      "id": "idea-003",
+      "text": "Metaball (marching cubes) interactive lava lamp"
+    },
+    {
+      "id": "idea-004",
+      "text": "Audio reactive/interactive tree (use bonsai, grow the stem, bud and flower dynamically)"
+    },
+    {
+      "id": "idea-005",
+      "text": "Eyeball"
+    },
+    {
+      "id": "idea-006",
+      "text": "leverage threejs addons/generators for skyscraper, city, forest, tree. take a look at the generator docs too. Example; Forest generator can generate on a terrain OR anything that exposes sampleHeight, etc, Could we cover a car model in trees? an animal model in buildings/city?"
+    },
+    {
+      "id": "idea-007",
+      "text": "Can we use ecctrl & click to move to make Quinn's board game playable?"
+    },
+    {
+      "id": "idea-008",
+      "text": "We should do a scene with Quinns seal, 3rd person camera, player controls w/keyboard and controller.\nScene should include quinns dice in the environment. Get low-LOD versions.\nScene should include various art images on planes in the environment.\nScene should allow user to walk around and look at Quinns Portfolio.\nsee example @ https://henryegloff.com/"
+    },
+    {
+      "id": "idea-009",
+      "text": "can we build a scene that uses device orientation/gyro etc to allow the user's phone to BE the camera? Add multiplayer mode that allows a desktop user to watch what the phone user is framing with their 'camera'"
+    },
+    {
+      "id": "idea-010",
+      "text": "build a scene using an animated mesh, but keep the mesh stationary and have one instance for each animation frame, leading to a 4d view of the subject. is this called Muybridge effect? onion skin effect?"
+    },
+    {
+      "id": "idea-011",
+      "text": "deep-sea diver on land, with surface air tube leading up and out of frame."
+    },
+    {
+      "id": "idea-012",
+      "text": "can we voxelize things using three-mesh-bvh and webgpu backdrop pixel effect?"
+    },
+    {
+      "id": "idea-013",
+      "text": "interactive spider-plant, in a pot on a table. we could use a small number of very long, stylized grass for the plant. create 'rope' using rapier joints or cloth-sim. could do other leafy-viny plants too."
+    },
+    {
+      "id": "idea-014",
+      "text": "Softbodies - mathias-research has some good examples. https://github.com/matthias-research/pages/blob/master/tenMinutePhysics/10-softBodies.html"
+    },
+    {
+      "id": "idea-015",
+      "text": "godray point light close to asphalt, ruined cars surrounding it, ruined buildings behind those."
+    },
+    {
+      "id": "idea-016",
+      "text": "Particles, field lines, & emissive spheres in the abandoned interior model"
+    },
+    {
+      "id": "idea-017",
+      "text": "can we build a scene with a lightbulb that casts darkness? Negative light intensity!"
+    },
+    {
+      "id": "idea-018",
+      "text": "2D truchet tiling using 3D geometry, animated so a tile, or tiles, rotate 90\\* every n-seconds. This could be easily accomplished using Torus geometry and appropriately setting tube, radius, and arc. Another interesting variation might be CSG tiles like the Chips in PaperStack"
+    },
+    {
+      "id": "idea-019",
+      "text": "Build a cymatic particle system `~/dev/examples/260610_ChladniCymatics`"
+    },
+    {
+      "id": "idea-020",
+      "text": "Generative mazes vs pathfinder algos `~/dev/examples/260602_MazeTerrain` & `~/dev/examples/Pathfinding-Visualizer-ThreeJS`"
+    },
+    {
+      "id": "idea-021",
+      "text": "Wan ATI in comfyUI style scene ala WAVE"
+    },
+    {
+      "id": "idea-022",
+      "text": "Multicolor godray volume"
+    },
+    {
+      "id": "idea-023",
+      "text": "Procedural power poles with interactive verlet powerlines. see `~/dev/examples/PoleGeneratorThreeJS`"
+    },
+    {
+      "id": "idea-024",
+      "text": "Endless Hydrolic Erosion Simulation"
+    },
+    {
+      "id": "idea-025",
+      "text": "House of leaves: could we use the skyscraper generator as a starting point to learn how to build a house generator to generate one/two/three story homes, and then use the Parallax Occlusion Mapping technique we see on the window to reveal surreal/impossible house interiors? peek in the window to find a forest, space, impossible corridors"
+    },
+    {
+      "id": "idea-026",
+      "text": "House of Leaves 2: scrape the book for all the visual descriptions of the inside of the house and the liminal spaces within and use this to generate a scene that shows the setting(s) of the book."
+    },
+    {
+      "id": "idea-027",
+      "text": "Wild horses. Horses running in an endless field. Use threejs webgpu volume fire example to create smoke coming off the horse's mane + tail."
+    },
+    {
+      "id": "idea-028",
+      "text": "Consider creative letterboxing for scenes. could be a 3d element to give it depth in the scene, catch shadows."
+    },
+    {
+      "id": "idea-029",
+      "text": "Radar scene. like a radar scanner, rotating clockwise, the radar 'reveals' geometry in the scene as it passes over it similar to that Lidar game. Over time the dots fade so they are gone before the sweep returns. if we use a slowly animated model we could get snapshots in time."
+    },
+    {
+      "id": "idea-030",
+      "text": "Checkout MarkovJunior/MarkovJuniorWeb. id love to generate liminal spaces using similar logic."
+    },
+    {
+      "id": "idea-031",
+      "text": "Use RorschachCLI as an example and build a similar tool/devpage for: Trucheterie, HexTrees"
+    },
+    {
+      "id": "idea-032",
+      "text": "a pair of generative scenes/CLIs: Flora & Fauna. Procedural grasses, flowers, weeds, etc. Procedural creatures (maybe voxel space invaders), generative in their forms, with CA type rules applied for living, reproducing, travelling, and dying."
+    }
+  ],
+  "statuses": {
+    "webgl:allMyThoughtsAreSoCumulus::Default Rings": true,
+    "webgl:allMyThoughtsAreSoCumulus::Static": true,
+    "webgl:burningAtBothEnds::$scene": true,
+    "webgl:burningAtBothEnds::Enlightened": true,
+    "webgl:burningAtBothEnds::Extinguished": true,
+    "webgl:cardinals::Cardinals": true,
+    "webgl:mycelium::$scene": true,
+    "webgl:paperCuts::Default": true,
+    "webgl:paperCuts::Morse Code": true,
+    "webgl:paperStack::Gradient Scan": true,
+    "webgl:watercolorSquares::$scene": true,
+    "webgl:watercolorSquares::Blue": true,
+    "webgl:watercolorSquares::Red": true,
+    "webgpu:beautyIsInTheEyeOfTheBeheaded::$scene": true,
+    "webgpu:birdsArentReal::$scene": true,
+    "webgpu:crossTalk::CloudConnected": true,
+    "webgpu:crossTalk::Waterworks": true,
+    "webgpu:ghostBuster::$scene": true,
+    "webgpu:horsesForCourses::$scene": true,
+    "webgpu:loGlow::Default": true,
+    "webgpu:loGlow::Mondrian": true,
+    "webgpu:surrender::Spring": true,
+    "webgpu:touchGrass::$scene": true,
+    "webgpu:trucheterie::001": true,
+    "webgpu:waterCycle::An Ocean Implied": true,
+    "webgpu:weightless::Sketchbook": true,
+    "webgpu:windswept::Tangled": true
+  }
+}

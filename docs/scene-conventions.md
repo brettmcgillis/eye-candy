@@ -418,30 +418,20 @@ to the next agent as current intent.
   want to record what changed, that belongs in the commit message, PR
   description, or your response to the user — not the scene's `todo.md`.
 
-## 16. New scenes self-register in the root `TODO.md`
+## 16. New scenes self-register in Cataloggr and the TODO index
 
-This is the one exception to §15 (root `TODO.md` stays otherwise hands-off
-unless asked): **when you create a new scene, update `TODO.md` yourself, in
-exactly these two places, without being asked:**
+Cataloggr (`/dev/cataloggr`) discovers `scene.config.jsx` entries and
+scene-local preset exports automatically. New items appear unposted until
+checked in Cataloggr. Posting state is stored in
+`src/dev/tools/cataloggr/catalog.json`; no manual catalog entry is required.
+Loose, unregistered scene ideas also live in Cataloggr's checked-in Ideas
+backlog, where they are removed when implementation begins.
 
-1. **`### Scene TODO Files`** — add `- [Label](path/to/todo.md)` under the
-   subheading matching the scene's `area` (`**Showcase**`, `**WorkInProgress**`,
-   `**TestLab**`, `**ToolBox**` — see §14), alphabetized within that group.
-   Match the existing label/path style for that group rather than inventing a
-   new one (e.g. the `(webGL)`/`(webGPU)` or `-WebGPU` suffix conventions
-   already used for a scene that exists in both renderers).
-2. **The matching "not ready yet" list** — a `- [ ] Human Readable Name` entry
-   (spaced-out label, not the CamelCase folder name):
-   - `### Scenes finish before post` for a new **WorkInProgress** or
-     **Showcase** scene.
-   - `### Toolbox/TestLab to finish before demo` for a new **ToolBox** or
-     **TestLab** scene.
-
-Do not touch anything else in `TODO.md` as part of this — not `### Scenes to
-post` (that's for named presets/variants, populated as the scene matures, not
-at creation), not `### Tools/TestLab To Demo`, not any other section. This
-rule exists so the user doesn't have to manually keep `TODO.md` in sync with
-scene creation; it is not a license for broader bookkeeping in that file.
+When creating a scene, add its `todo.md` link under the matching area in root
+`TODO.md`'s `### Scene TODO Files` index, alphabetized within the group. This is
+the only proactive root `TODO.md` edit; scene status and publishing oversight
+and unregistered scene ideas belong in Cataloggr rather than checkbox
+inventories in the root TODO.
 
 ---
 

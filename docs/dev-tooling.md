@@ -33,7 +33,8 @@ Codex).
 ## 2. Dev tool organization
 
 - Each independent tool lives under `src/dev/tools/<tool>/` (current tools:
-  `colors`, `gltfjsx`, `iconography`, `loaderPatterns`, `rorschach`).
+  `cataloggr`, `colors`, `gltfjsx`, `iconography`, `loaderPatterns`,
+  `rorschach`).
 - A tool owns its page entry, styles, components, hooks, utilities, and other
   implementation details.
 - **Tools must not import another tool's internals.** This is ESLint-enforced

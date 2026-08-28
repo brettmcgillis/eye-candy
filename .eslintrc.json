@@ -74,6 +74,7 @@
             "patterns": [
               {
                 "group": [
+                  "**/cataloggr/**",
                   "**/gltfjsx/**",
                   "**/iconography/**",
                   "**/loaderPatterns/**",
@@ -95,6 +96,7 @@
             "patterns": [
               {
                 "group": [
+                  "**/cataloggr/**",
                   "**/colors/**",
                   "**/iconography/**",
                   "**/loaderPatterns/**",
@@ -116,6 +118,7 @@
             "patterns": [
               {
                 "group": [
+                  "**/cataloggr/**",
                   "**/colors/**",
                   "**/gltfjsx/**",
                   "**/loaderPatterns/**",
@@ -137,6 +140,7 @@
             "patterns": [
               {
                 "group": [
+                  "**/cataloggr/**",
                   "**/colors/**",
                   "**/gltfjsx/**",
                   "**/iconography/**",
@@ -158,6 +162,7 @@
             "patterns": [
               {
                 "group": [
+                  "**/cataloggr/**",
                   "**/colors/**",
                   "**/gltfjsx/**",
                   "**/iconography/**",
@@ -168,6 +173,28 @@
               {
                 "group": ["@modules/rorschach/*", "**/modules/rorschach/*"],
                 "message": "Import the Rorschach kernel through its @modules/rorschach barrel, never a file inside it. See docs/rorschach-pipeline.md."
+              }
+            ]
+          }
+        ]
+      }
+    },
+    {
+      "files": ["src/dev/tools/cataloggr/**/*.{js,jsx}"],
+      "rules": {
+        "no-restricted-imports": [
+          "error",
+          {
+            "patterns": [
+              {
+                "group": [
+                  "**/colors/**",
+                  "**/gltfjsx/**",
+                  "**/iconography/**",
+                  "**/loaderPatterns/**",
+                  "**/rorschach/**"
+                ],
+                "message": "A dev tool may not import another tool's internals. Promote shared code to src/dev/shell (UI) or a shared src/dev folder (behavior)."
               }
             ]
           }

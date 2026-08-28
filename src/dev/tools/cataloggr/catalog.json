@@ -1,5 +1,21 @@
 {
-  "version": 2,
+  "version": 3,
+  "demoSceneIds": [
+    "characterController",
+    "crtTest",
+    "explosionTest",
+    "fireTest",
+    "furLab",
+    "ghostBuster",
+    "hotBox",
+    "lightningLab",
+    "multiplayerMadness",
+    "particleLab",
+    "penPlotter",
+    "pixelHater",
+    "smokeTest",
+    "splineEditor"
+  ],
   "ideas": [
     {
       "id": "idea-001",
@@ -128,6 +144,14 @@
     {
       "id": "idea-032",
       "text": "a pair of generative scenes/CLIs: Flora & Fauna. Procedural grasses, flowers, weeds, etc. Procedural creatures (maybe voxel space invaders), generative in their forms, with CA type rules applied for living, reproducing, travelling, and dying."
+    },
+    {
+      "id": "idea-1787939182486-vze6zf",
+      "text": "Create lenticular devTool for simulating lenticular sheet behaviour, creating, and previewing new lenticular pints from app scenes"
+    },
+    {
+      "id": "idea-1787939274190-u51hbq",
+      "text": "Get spline editor,  smokeTest, fireTest, hotBox, out of app and into devToolz. I want a new paradigm for authoring a scenes assets, and then saving/writing that data back to the appropriate assets preset."
     }
   ],
   "statuses": {

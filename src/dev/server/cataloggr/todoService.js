@@ -8,7 +8,10 @@ import { unified } from 'unified';
 
 import { CatalogRequestError } from './service';
 
-const SCENES_PATH = path.join('src', 'components', 'scenes');
+const TODO_ROOTS = [
+  path.join('src', 'components', 'scenes'),
+  path.join('src', 'dev', 'tools'),
+];
 const TODO_FILE = 'todo.md';
 const MAX_TODO_BYTES = 1024 * 1024;
 
@@ -143,7 +146,7 @@ function parseTodo(content) {
     titleNode.depth !== 1 ||
     !toString(titleNode).startsWith('//')
   ) {
-    issues.push('Title must use `# // Scene Name`.');
+    issues.push('Title must use `# // Name`.');
   }
   if (!backlinkPattern.test(content)) {
     issues.push('Missing the root TODO backlink.');
@@ -272,11 +275,17 @@ export function normalizeTodoContent(content) {
 }
 
 async function findTodoPaths(rootDir) {
-  const scenesRoot = path.join(rootDir, SCENES_PATH);
   const paths = [];
 
   async function walk(directory) {
-    const entries = await fs.readdir(directory, { withFileTypes: true });
+    let entries;
+
+    try {
+      entries = await fs.readdir(directory, { withFileTypes: true });
+    } catch (error) {
+      if (error.code === 'ENOENT') return;
+      throw error;
+    }
 
     await Promise.all(
       entries.map(async (entry) => {
@@ -287,7 +296,9 @@ async function findTodoPaths(rootDir) {
     );
   }
 
-  await walk(scenesRoot);
+  await Promise.all(
+    TODO_ROOTS.map((todoRoot) => walk(path.join(rootDir, todoRoot)))
+  );
   return paths.sort();
 }
 
@@ -309,7 +320,7 @@ async function getAllowedTodoPath(rootDir, sourcePath) {
     throw new CatalogRequestError(
       404,
       'TODO_NOT_FOUND',
-      'The requested scene TODO file was not found.'
+      'The requested TODO file was not found.'
     );
   }
 

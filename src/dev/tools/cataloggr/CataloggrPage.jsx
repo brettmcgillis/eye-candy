@@ -7,11 +7,24 @@ import React, {
   useRef,
   useState,
 } from 'react';
-import { FiCheckCircle, FiLayers, FiSend, FiTool } from 'react-icons/fi';
+import {
+  FiActivity,
+  FiBox,
+  FiCheckCircle,
+  FiCode,
+  FiGrid,
+  FiLayers,
+  FiSend,
+  FiTool,
+} from 'react-icons/fi';
 
+import { AREAS } from '@app/sceneRegistry';
+
+import DEV_PAGES from '../../devPageRegistry';
 import DevPageHeaderBar from '../../shell/DevPageHeaderBar';
 import './CataloggrPage.css';
 import IdeaBoard from './IdeaBoard';
+import PostBoard from './PostBoard';
 import SceneRow from './SceneRow';
 import TodoWorkspace from './TodoWorkspace';
 import {
@@ -29,6 +42,12 @@ const VIEW_OPTIONS = [
   ['todos', 'Todos'],
   ['all', 'All scenes'],
 ];
+
+function getSearchPlaceholder(view) {
+  if (view === 'ideas') return 'Search ideas';
+  if (view === 'post') return 'Search the publishing queue';
+  return 'Search scenes or presets';
+}
 
 function getProgress(scene, statuses) {
   const targets = getSceneTargets(scene);
@@ -54,6 +73,7 @@ function matchesView(scene, view, statuses) {
 
 export default function CataloggrPage() {
   const [scenes, setScenes] = useState(() => buildCatalogScenes());
+  const [demoSceneIds, setDemoSceneIds] = useState([]);
   const [ideas, setIdeas] = useState([]);
   const ideasRef = useRef([]);
   const [statuses, setStatuses] = useState({});
@@ -80,6 +100,7 @@ export default function CataloggrPage() {
           throw new Error(payload.message || 'Catalog failed to load.');
         if (!cancelled) {
           const nextStatuses = payload.statuses ?? {};
+          setDemoSceneIds(payload.demoSceneIds ?? []);
           const nextIdeas = payload.ideas ?? [];
           ideasRef.current = nextIdeas;
           statusesRef.current = nextStatuses;
@@ -107,6 +128,10 @@ export default function CataloggrPage() {
   }, []);
 
   const stats = useMemo(() => {
+    const showcaseCount = scenes.filter(
+      (scene) => scene.area === 'showcase'
+    ).length;
+    const wipCount = scenes.filter((scene) => scene.area === 'wip').length;
     const targetCount = scenes.reduce(
       (total, scene) => total + getSceneTargets(scene).length,
       0
@@ -123,9 +148,12 @@ export default function CataloggrPage() {
       ideaCount: ideas.length,
       postedCount,
       postNextCount,
-      sceneCount: scenes.length,
+      sceneCount: showcaseCount + wipCount,
+      showcaseCount,
       targetCount,
-      wipCount: scenes.filter((scene) => scene.area === 'wip').length,
+      testLabCount: scenes.filter((scene) => scene.area === 'testlab').length,
+      toolboxCount: scenes.filter((scene) => scene.area === 'toolbox').length,
+      wipCount,
     };
   }, [ideas.length, scenes, statuses]);
 
@@ -135,6 +163,31 @@ export default function CataloggrPage() {
       ? ideas.filter((idea) => idea.text.toLowerCase().includes(query))
       : ideas;
   }, [deferredSearchText, ideas]);
+
+  const filteredDevTools = useMemo(() => {
+    const query = deferredSearchText.trim().toLowerCase();
+    return DEV_PAGES.filter(
+      (tool) =>
+        !query ||
+        `${tool.label} ${tool.slug} ${tool.description}`
+          .toLowerCase()
+          .includes(query)
+    );
+  }, [deferredSearchText]);
+
+  const filteredDemoScenes = useMemo(() => {
+    const query = deferredSearchText.trim().toLowerCase();
+    const ids = new Set(demoSceneIds);
+
+    return scenes.filter(
+      (scene) =>
+        ids.has(scene.id) &&
+        (!query ||
+          `${scene.label} ${scene.slug} ${scene.channelLabel} ${scene.areaLabel}`
+            .toLowerCase()
+            .includes(query))
+    );
+  }, [deferredSearchText, demoSceneIds, scenes]);
 
   const filteredScenes = useMemo(() => {
     const query = deferredSearchText.trim().toLowerCase();
@@ -236,10 +289,13 @@ export default function CataloggrPage() {
   if (loading) resultLabel = 'Loading catalog...';
   if (!loading && view === 'ideas')
     resultLabel = `${filteredIdeas.length} ideas`;
-  if (!loading && view === 'todos') resultLabel = 'Scene TODO manager';
+  if (!loading && view === 'post') {
+    resultLabel = `${filteredScenes.length + filteredDemoScenes.length + filteredDevTools.length} publishing targets`;
+  }
+  if (!loading && view === 'todos') resultLabel = 'TODO manager';
   let storageLabel = 'Checked-in catalog';
   if (saving) storageLabel = 'Saving to catalog.json...';
-  if (view === 'todos') storageLabel = 'Scene-local Markdown';
+  if (view === 'todos') storageLabel = 'Colocated Markdown';
 
   return (
     <main className="dev-page cataloggr-page">
@@ -249,7 +305,7 @@ export default function CataloggrPage() {
         <div>
           <FiLayers />
           <strong>{stats.ideaCount}</strong>
-          <span>ideas</span>
+          <span>ideas to start building</span>
         </div>
         <div>
           <FiCheckCircle />
@@ -261,17 +317,39 @@ export default function CataloggrPage() {
         <div>
           <FiSend />
           <strong>{stats.postNextCount}</strong>
-          <span>post next</span>
+          <span>to post</span>
         </div>
         <div>
           <FiTool />
           <strong>{stats.wipCount}</strong>
-          <span>finish next</span>
+          <span>to finish</span>
+        </div>
+        <div>
+          <FiGrid />
+          <strong>{stats.sceneCount}</strong>
+          <span>
+            {stats.showcaseCount} pieces, {stats.wipCount} in progress
+          </span>
+        </div>
+        <div>
+          <FiBox />
+          <strong>{stats.toolboxCount}</strong>
+          <span>toolbox scenes</span>
+        </div>
+        <div>
+          <FiActivity />
+          <strong>{stats.testLabCount}</strong>
+          <span>test labs</span>
+        </div>
+        <div>
+          <FiCode />
+          <strong>{DEV_PAGES.length}</strong>
+          <span>dev tools</span>
         </div>
       </section>
 
       <section
-        className={`cataloggr-toolbar ${view === 'ideas' || view === 'todos' ? 'cataloggr-toolbar--compact' : ''}`}
+        className={`cataloggr-toolbar ${view === 'post' || view === 'ideas' || view === 'todos' ? 'cataloggr-toolbar--compact' : ''}`}
         aria-label="Catalog filters"
       >
         <div className="cataloggr-segments">
@@ -290,14 +368,12 @@ export default function CataloggrPage() {
           <input
             aria-label="Search scenes and presets"
             onChange={(event) => setSearchText(event.target.value)}
-            placeholder={
-              view === 'ideas' ? 'Search ideas' : 'Search scenes or presets'
-            }
+            placeholder={getSearchPlaceholder(view)}
             type="search"
             value={searchText}
           />
         ) : null}
-        {view !== 'ideas' && view !== 'todos' ? (
+        {view !== 'post' && view !== 'ideas' && view !== 'todos' ? (
           <select
             aria-label="Filter by area"
             onChange={(event) => setArea(event.target.value)}
@@ -306,12 +382,12 @@ export default function CataloggrPage() {
             <option value="all">All areas</option>
             {AREA_ORDER.map((areaKey) => (
               <option key={areaKey} value={areaKey}>
-                {areaKey === 'wip' ? 'Work in Progress' : areaKey}
+                {AREAS[areaKey]}
               </option>
             ))}
           </select>
         ) : null}
-        {view !== 'ideas' && view !== 'todos' ? (
+        {view !== 'post' && view !== 'ideas' && view !== 'todos' ? (
           <select
             aria-label="Filter by renderer"
             onChange={(event) => setChannel(event.target.value)}
@@ -342,13 +418,24 @@ export default function CataloggrPage() {
           visibleIdeas={filteredIdeas}
         />
       ) : null}
+      {view === 'post' ? (
+        <PostBoard
+          demoScenes={filteredDemoScenes}
+          devTools={filteredDevTools}
+          disabled={loading || saving}
+          onManageTodo={handleManageTodo}
+          onToggle={handleToggle}
+          showcaseScenes={filteredScenes}
+          statuses={statuses}
+        />
+      ) : null}
       {view === 'todos' ? (
         <TodoWorkspace
           initialSourcePath={todoSourcePath}
           onError={handleTodoError}
         />
       ) : null}
-      {view !== 'ideas' && view !== 'todos' ? (
+      {view !== 'post' && view !== 'ideas' && view !== 'todos' ? (
         <section className="cataloggr-list" aria-label="Scenes">
           {filteredScenes.map((scene) => (
             <SceneRow

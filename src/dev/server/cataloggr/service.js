@@ -13,6 +13,7 @@ const CATALOG_PATH = path.join(
 const MAX_REQUEST_BYTES = 1024 * 1024;
 const MAX_IDEA_COUNT = 1000;
 const MAX_IDEA_TEXT_LENGTH = 10000;
+const MAX_DEMO_SCENE_COUNT = 1000;
 const MAX_STATUS_COUNT = 10000;
 
 export class CatalogRequestError extends Error {
@@ -118,6 +119,50 @@ function normalizeIdeas(value) {
   });
 }
 
+function normalizeDemoSceneIds(value) {
+  if (!Array.isArray(value)) {
+    throw new CatalogRequestError(
+      400,
+      'INVALID_DEMO_SCENES',
+      'Catalog demo scene ids must be an array.'
+    );
+  }
+
+  if (value.length > MAX_DEMO_SCENE_COUNT) {
+    throw new CatalogRequestError(
+      400,
+      'TOO_MANY_DEMO_SCENES',
+      `Catalog demo scene ids cannot exceed ${MAX_DEMO_SCENE_COUNT} entries.`
+    );
+  }
+
+  const ids = new Set();
+
+  return value
+    .map((sceneId) => String(sceneId).trim())
+    .map((id) => {
+      if (!id) {
+        throw new CatalogRequestError(
+          400,
+          'INVALID_DEMO_SCENE',
+          'Every demo scene requires a non-empty id.'
+        );
+      }
+
+      if (ids.has(id)) {
+        throw new CatalogRequestError(
+          400,
+          'DUPLICATE_DEMO_SCENE',
+          `Catalog demo scene id "${id}" is duplicated.`
+        );
+      }
+
+      ids.add(id);
+      return id;
+    })
+    .sort((left, right) => left.localeCompare(right));
+}
+
 export async function readJsonBody(req) {
   return new Promise((resolve, reject) => {
     const chunks = [];
@@ -166,7 +211,8 @@ export async function readCatalog(rootDir) {
   const catalog = JSON.parse(contents);
 
   return {
-    version: 2,
+    version: 3,
+    demoSceneIds: normalizeDemoSceneIds(catalog.demoSceneIds ?? []),
     ideas: normalizeIdeas(catalog.ideas ?? []),
     statuses: normalizeStatuses(catalog.statuses ?? {}),
     presetsByFolder,
@@ -177,7 +223,10 @@ export async function writeCatalog({ payload, rootDir }) {
   const catalogPath = getCatalogPath(rootDir);
   const currentCatalog = JSON.parse(await fs.readFile(catalogPath, 'utf8'));
   const nextCatalog = {
-    version: 2,
+    version: 3,
+    demoSceneIds: normalizeDemoSceneIds(
+      payload?.demoSceneIds ?? currentCatalog.demoSceneIds ?? []
+    ),
     ideas: normalizeIdeas(payload?.ideas ?? currentCatalog.ideas ?? []),
     statuses: normalizeStatuses(
       payload?.statuses ?? currentCatalog.statuses ?? {}

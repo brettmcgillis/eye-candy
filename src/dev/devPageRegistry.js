@@ -5,8 +5,8 @@ const configModules = import.meta.glob('./tools/*/devPage.config.js', {
 function buildDevPageRegistry(modules) {
   const routes = new Map();
 
-  return Object.values(modules)
-    .map(({ default: config }) => {
+  return Object.entries(modules)
+    .map(([modulePath, { default: config }]) => {
       if (!config?.slug || !config.label || !config.Component) {
         throw new Error(
           'Every dev page config requires slug, label, and Component.'
@@ -28,6 +28,7 @@ function buildDevPageRegistry(modules) {
         ...config,
         aliases: config.aliases ?? [],
         path: `/dev/${config.slug}`,
+        sourcePath: `src/dev/${modulePath.replace(/^\.\//u, '').replace(/\/devPage\.config\.js$/u, '')}`,
       };
     })
     .sort(

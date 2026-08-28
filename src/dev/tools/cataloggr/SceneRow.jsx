@@ -6,8 +6,10 @@ import { getSceneTargets, getStatusKey } from './catalogData';
 function SceneRow({ disabled, onManageTodo, onToggle, scene, statuses }) {
   const [expanded, setExpanded] = useState(false);
   const targets = getSceneTargets(scene);
+  const getTargetStatusKey = (presetName) =>
+    scene.statusKey ?? getStatusKey(scene.key, presetName);
   const postedCount = targets.filter(
-    (presetName) => statuses[getStatusKey(scene.key, presetName)]
+    (presetName) => statuses[getTargetStatusKey(presetName)]
   ).length;
   const allPosted = postedCount === targets.length;
 
@@ -42,7 +44,7 @@ function SceneRow({ disabled, onManageTodo, onToggle, scene, statuses }) {
           <strong>
             {postedCount}/{targets.length}
           </strong>
-          <span>scene + presets posted</span>
+          <span>{scene.progressLabel ?? 'scene + presets posted'}</span>
         </div>
 
         <div className="cataloggr-scene__actions">
@@ -73,7 +75,7 @@ function SceneRow({ disabled, onManageTodo, onToggle, scene, statuses }) {
           <p className="cataloggr-scene__path">{scene.sourcePath}</p>
           <div className="cataloggr-scene__targets">
             {targets.map((presetName) => {
-              const statusKey = getStatusKey(scene.key, presetName);
+              const statusKey = getTargetStatusKey(presetName);
               const inputId = `cataloggr-${encodeURIComponent(statusKey)}`;
 
               return (
@@ -91,7 +93,9 @@ function SceneRow({ disabled, onManageTodo, onToggle, scene, statuses }) {
                     }
                     type="checkbox"
                   />
-                  <span>{presetName ?? 'Scene itself'}</span>
+                  <span>
+                    {presetName ?? scene.targetLabel ?? 'Scene itself'}
+                  </span>
                 </label>
               );
             })}

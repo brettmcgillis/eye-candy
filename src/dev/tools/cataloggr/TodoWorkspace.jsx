@@ -196,12 +196,12 @@ function TodoWorkspace({ initialSourcePath, onError }) {
   if (conflict) saveLabel = 'Conflict: reload required';
 
   return (
-    <section className="cataloggr-todos" aria-label="Scene TODO manager">
+    <section className="cataloggr-todos" aria-label="TODO manager">
       <div className="cataloggr-todos__filters">
         <input
-          aria-label="Search scene TODOs"
+          aria-label="Search TODOs"
           onChange={(event) => setQuery(event.target.value)}
-          placeholder="Search tasks and scenes"
+          placeholder="Search tasks, scenes, and dev tools"
           type="search"
           value={query}
         />

@@ -123,6 +123,41 @@
   gap: 0.35rem;
 }
 
+.cataloggr-post-board {
+  display: grid;
+  gap: 1rem;
+}
+
+.cataloggr-post-section {
+  display: grid;
+  gap: 0.4rem;
+}
+
+.cataloggr-post-section > header {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  padding: 0 0.15rem;
+}
+
+.cataloggr-post-section h2 {
+  margin: 0;
+  font-size: 0.82rem;
+}
+
+.cataloggr-post-section > header span,
+.cataloggr-post-empty {
+  color: var(--dev-text-muted);
+  font-size: 0.7rem;
+}
+
+.cataloggr-post-empty {
+  margin: 0;
+  padding: 0.8rem;
+  border: 1px dashed var(--dev-border-strong);
+  text-align: center;
+}
+
 .cataloggr-ideas {
   display: grid;
   gap: 0.55rem;

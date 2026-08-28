@@ -401,9 +401,10 @@ to the next agent as current intent.
   is obvious what is still outstanding.
 - A scene's `todo.md` is _not_ a plan: it is durable and colocated (§15).
 
-## 15. Scene `todo.md` files — read-only unless explicitly asked
+## 15. Scene and dev-tool `todo.md` files — read-only unless explicitly asked
 
-- Every scene's `todo.md` follows a fixed shape: a `# // SceneName` title, a
+- Every scene and registered dev tool's `todo.md` follows a fixed shape: a
+  `# // Name` title, a
   `[Back to main TODO](...)` link to the root `TODO.md` (relative depth
   matches the scene's folder nesting), then optional H2 sections in this
   order: `Intent / Use Cases`, `TODO`, `Presets`, `Features`, `Interactivity`,
@@ -414,10 +415,10 @@ to the next agent as current intent.
 - Action items under `TODO`, `Presets`, `Features`, `Interactivity`, and `Bugs`
   use Markdown task checkboxes. Completed items stay in place as durable
   context and can be filtered in Cataloggr.
-- Cataloggr's Todos workspace audits this shape and edits the scene-local
+- Cataloggr's Todos workspace audits this shape and edits the colocated
   Markdown files directly. Format migration is explicit and reviewable;
   opening or editing a file must not silently normalize it.
-- **Do not edit a scene's `todo.md` as a side effect of implementing
+- **Do not edit a scene or dev tool's `todo.md` as a side effect of implementing
   something.** Don't add new sections to log what you just built, don't turn
   it into a changelog, and don't remove or alter the back-link or existing
   headings/content — even if they look stale or redundant with what you did.
@@ -434,6 +435,10 @@ checked in Cataloggr. Posting state is stored in
 `src/dev/tools/cataloggr/catalog.json`; no manual catalog entry is required.
 Loose, unregistered scene ideas also live in Cataloggr's checked-in Ideas
 backlog, where they are removed when implementation begins.
+Curated Toolbox and Test Lab demo scenes join Showcase scenes in Cataloggr's
+Post workflow; the catalog stores their scene ids and uses normal scene posting
+status. Registered dev pages appear there automatically with independent
+checked-in posting status.
 
 When creating a scene, add its `todo.md` link under the matching area in root
 `TODO.md`'s `### Scene TODO Files` index, alphabetized within the group. This is

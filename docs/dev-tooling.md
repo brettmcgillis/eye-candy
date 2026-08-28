@@ -35,6 +35,9 @@ Codex).
 - Each independent tool lives under `src/dev/tools/<tool>/` (current tools:
   `cataloggr`, `colors`, `gltfjsx`, `iconography`, `loaderPatterns`,
   `rorschach`).
+- Every registered tool owns a colocated `todo.md` using the same canonical
+  TODO shape as scenes. Cataloggr discovers and edits these files alongside
+  scene TODOs so tool features and bugs remain attached to their owner.
 - A tool owns its page entry, styles, components, hooks, utilities, and other
   implementation details.
 - **Tools must not import another tool's internals.** This is ESLint-enforced

@@ -299,7 +299,7 @@ export default function CataloggrPage() {
 
   return (
     <main className="dev-page cataloggr-page">
-      <DevPageHeaderBar eyebrow="scene operations" title="Cataloggr" />
+      <DevPageHeaderBar title="Cataloggr" />
 
       <section className="cataloggr-stats" aria-label="Catalog summary">
         <div>

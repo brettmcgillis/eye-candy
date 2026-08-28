@@ -43,6 +43,17 @@ export const DEFAULT_COEFF_RANGE = 1.6;
 // excursion range without looking like noise.
 export const DEFAULT_FREQ = 0.6;
 
+export const STRAND_SEEDINGS = ['scatter', 'line'];
+export const DEFAULT_STRAND_SEEDING = 'scatter';
+// Half-length of the seed segment in 'line' seeding, in world units and
+// deliberately not tied to startSpread: at startSpread's 0.35 the sheet is a
+// thin streamer, and a wing wants 1-4. Measured over 18 bundles, strand order
+// survives the whole trajectory at every value in that range (see
+// plans/rorschach-membranes.md) - a wide seed line is governed by the flow's
+// global structure rather than by local chaotic mixing, so it is *more*
+// coherent than a tight scatter, not less.
+export const DEFAULT_MEMBRANE_SPAN = 2;
+
 // Steps/second a bundle reveals at Growth Speed = 1 — DEFAULT_STEPS (600)
 // over the old default growthDuration (4s), so the new default (Growth
 // Speed 1) reads the same as the old one did. Lives here rather than in
@@ -80,6 +91,50 @@ const VALIDATION_STEPS_CAP = 300;
 const COLOR_SALT = 7;
 // Separate salt for the palette-shuffle RNG stream — see paletteShuffledT.
 const PALETTE_SHUFFLE_SALT = 11;
+
+// Random unit vector; the degenerate near-zero draw falls back to +X rather
+// than normalising to NaN.
+function randomAxis(rng) {
+  const x = rng() * 2 - 1;
+  const y = rng() * 2 - 1;
+  const z = rng() * 2 - 1;
+  const length = Math.hypot(x, y, z);
+  if (length < 1e-6) return [1, 0, 0];
+  return [x / length, y / length, z / length];
+}
+
+// 'scatter' is the original RNG cloud. 'line' spaces strands evenly along one
+// randomly-oriented segment through the origin, which is what makes a bundle
+// loftable: adjacency in strand index becomes adjacency in space, so the
+// membrane is a ruled surface instead of a self-crossing tangle. The axis is
+// drawn only on the 'line' branch, so scatter's RNG sequence - and therefore
+// every existing seed - is untouched.
+function seedStartPoints(rng, origin, count, options) {
+  const { strandSeeding, startSpread, membraneSpan } = options;
+  const points = [];
+
+  if (strandSeeding === 'line') {
+    const axis = randomAxis(rng);
+    for (let s = 0; s < count; s += 1) {
+      const t = count > 1 ? (s / (count - 1)) * 2 - 1 : 0;
+      points.push([
+        origin[0] + axis[0] * t * membraneSpan,
+        origin[1] + axis[1] * t * membraneSpan,
+        origin[2] + axis[2] * t * membraneSpan,
+      ]);
+    }
+    return points;
+  }
+
+  for (let s = 0; s < count; s += 1) {
+    points.push([
+      origin[0] + (rng() * 2 - 1) * startSpread,
+      origin[1] + (rng() * 2 - 1) * startSpread,
+      origin[2] + (rng() * 2 - 1) * startSpread,
+    ]);
+  }
+  return points;
+}
 
 function mirrorInto(points, out) {
   for (let i = 0; i < points.length; i += 3) {
@@ -164,15 +219,8 @@ function validateAndMeasure(
 // is what turns a multi-second blocking freeze on every control change into
 // a real, incremental, never-blocking growth animation.
 function buildBundle(seed, id, options) {
-  const {
-    strandsPerBundle,
-    steps,
-    startSpread,
-    coeffRange,
-    freq,
-    bounds,
-    minSpread,
-  } = options;
+  const { strandsPerBundle, steps, coeffRange, freq, bounds, minSpread } =
+    options;
   const rng = createRng(combineSeed(seed, id));
   const originSpread = boundsScale(bounds) * ORIGIN_SPREAD_FRACTION;
 
@@ -182,14 +230,9 @@ function buildBundle(seed, id, options) {
     (rng() * 2 - 1) * originSpread,
   ];
 
-  const startPoints = [];
+  const startPoints = seedStartPoints(rng, origin, strandsPerBundle, options);
   const strands = [];
   for (let s = 0; s < strandsPerBundle; s += 1) {
-    startPoints.push([
-      origin[0] + (rng() * 2 - 1) * startSpread,
-      origin[1] + (rng() * 2 - 1) * startSpread,
-      origin[2] + (rng() * 2 - 1) * startSpread,
-    ]);
     strands.push(new Float32Array(steps * 3), new Float32Array(steps * 3));
   }
 
@@ -340,6 +383,8 @@ function resolveBundleOptions(globalOptions, override) {
   return {
     ...globalOptions,
     startSpread: override.startSpread ?? globalOptions.startSpread,
+    strandSeeding: override.strandSeeding ?? globalOptions.strandSeeding,
+    membraneSpan: override.membraneSpan ?? globalOptions.membraneSpan,
     coeffRange: override.coeffRange ?? globalOptions.coeffRange,
     freq: override.freq ?? globalOptions.freq,
     bounds: {
@@ -360,6 +405,8 @@ function fingerprintBundleOptions(resolvedOptions) {
     strandsPerBundle: resolvedOptions.strandsPerBundle,
     steps: resolvedOptions.steps,
     startSpread: resolvedOptions.startSpread,
+    strandSeeding: resolvedOptions.strandSeeding,
+    membraneSpan: resolvedOptions.membraneSpan,
     coeffRange: resolvedOptions.coeffRange,
     freq: resolvedOptions.freq,
     bounds: resolvedOptions.bounds,
@@ -391,6 +438,8 @@ export function generateStructure(seed, options = {}, previousBundles = null) {
     strandsPerBundle = DEFAULT_STRANDS_PER_BUNDLE,
     steps = DEFAULT_STEPS,
     startSpread = DEFAULT_START_SPREAD,
+    strandSeeding = DEFAULT_STRAND_SEEDING,
+    membraneSpan = DEFAULT_MEMBRANE_SPAN,
     coeffRange = DEFAULT_COEFF_RANGE,
     freq = DEFAULT_FREQ,
     framingShape = DEFAULT_FRAMING_SHAPE,
@@ -405,6 +454,8 @@ export function generateStructure(seed, options = {}, previousBundles = null) {
     strandsPerBundle,
     steps,
     startSpread,
+    strandSeeding,
+    membraneSpan,
     coeffRange,
     freq,
     bounds: {
@@ -496,6 +547,7 @@ export function computeStyles(seed, bundleCount, options = {}) {
     palette = 'Random',
     paletteExact = false,
     paletteShuffleSeed = 0,
+    membrane = false,
     overrides = {},
   } = options;
   const paletteColors = resolvePaletteColors(palette);
@@ -520,6 +572,7 @@ export function computeStyles(seed, bundleCount, options = {}) {
         override
       ),
       visible: override.visible !== false,
+      membrane: override.membrane ?? membrane,
       growthDelay: override.growthDelay || 0,
       emissive: override.emissive || false,
       emissiveIntensity: override.emissiveIntensity || 2,

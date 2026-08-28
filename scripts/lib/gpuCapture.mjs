@@ -91,6 +91,105 @@ function buildMaterial(style) {
   return material;
 }
 
+// Every membrane appearance knob in one key, so a session is rebuilt whenever
+// any of them changes rather than only the two that used to be checked.
+function membraneLookKey(options) {
+  return [
+    options.membraneOpacity,
+    options.membraneTear,
+    options.membraneTearSoftness,
+    options.membraneEdgeFeather,
+    options.membraneTaper,
+    options.membraneRim,
+    options.membraneTint,
+    options.membraneStepStride,
+    options.membraneStrandStride,
+    options.membraneWeave,
+  ].join('|');
+}
+
+// Mirrors components/TestMembrane.jsx. Growth/trail fade are omitted for the
+// same reason buildMaterial omits them; the tear is not, since it is a
+// structural property of the sheet rather than an animation.
+function buildMembraneMaterial(style, options, steps) {
+  const {
+    attribute,
+    cross,
+    dFdx,
+    dFdy,
+    float,
+    mix,
+    normalize,
+    positionView,
+    smoothstep,
+    uniform,
+  } = TSL;
+  const material = new THREE.MeshBasicNodeMaterial({
+    alphaTest: 0.005,
+    depthTest: true,
+    depthWrite: false,
+    side: THREE.DoubleSide,
+    transparent: true,
+  });
+
+  const emissive = style.emissive === true;
+  const intensity = emissive ? (style.emissiveIntensity ?? 2) : 1;
+  const tint = options.membraneTint ?? 0;
+  const color = new THREE.Color().setHSL(
+    style.color.h,
+    style.color.s,
+    Math.min(Math.max(style.color.l + tint, 0), 1)
+  );
+  const tear = options.membraneTear ?? 0;
+  const softness = options.membraneTearSoftness ?? 0.5;
+  const feather = options.membraneEdgeFeather ?? 0;
+  const taper = options.membraneTaper ?? 0;
+  const rim = options.membraneRim ?? 0;
+
+  material.colorNode = uniform(color).mul(uniform(intensity));
+  let opacity = float(options.membraneOpacity ?? 0.35);
+
+  if (tear > 0) {
+    const end = Math.max(tear, 1e-4);
+    const start = Math.min(tear * (1 - softness), end - 1e-4);
+    opacity = opacity.mul(
+      float(1).sub(
+        smoothstep(
+          uniform(start),
+          uniform(end),
+          attribute('edgeLength', 'float')
+        )
+      )
+    );
+  }
+
+  if (feather > 0) {
+    opacity = opacity.mul(
+      smoothstep(float(0), uniform(feather), attribute('edgeU', 'float'))
+    );
+  }
+
+  if (taper !== 0) {
+    const alongStrand = attribute('stepIndex', 'float')
+      .div(Math.max(steps - 1, 1))
+      .clamp(0, 1);
+    const ramp = taper < 0 ? float(1).sub(alongStrand) : alongStrand;
+    opacity = opacity.mul(float(1).sub(ramp.mul(uniform(Math.abs(taper)))));
+  }
+
+  if (rim > 0) {
+    const faceNormal = normalize(cross(dFdx(positionView), dFdy(positionView)));
+    const facing = faceNormal.dot(normalize(positionView).negate()).abs();
+    opacity = opacity.mul(
+      mix(float(1), float(1).sub(facing).clamp(0, 1), uniform(rim))
+    );
+  }
+
+  material.opacityNode = opacity;
+  material.toneMapped = !emissive;
+  return material;
+}
+
 function buildGeometry(bundle, buildStrokeGeometry, writeStrokePositions) {
   const geometry = buildStrokeGeometry(bundle.strands.length, bundle.steps);
   writeStrokePositions(geometry, bundle.strands, bundle.steps);
@@ -239,6 +338,7 @@ export default async function createCapturer({ height, samples = 4, width }) {
     const group = new THREE.Group();
     const disposables = [];
     const strokes = [];
+    const sheets = [];
 
     if (options.lines !== false) {
       test.bundles.forEach((bundle, index) => {
@@ -258,6 +358,40 @@ export default async function createCapturer({ height, samples = 4, width }) {
         disposables.push(geometry, material);
       });
     }
+    test.bundles.forEach((bundle, index) => {
+      const style = test.styles[index];
+      if (!style || style.visible === false || !style.membrane) return;
+
+      const strandCount = bundle.strands.length / 2;
+      const geometry = geometryHelpers.buildMembraneGeometry(
+        strandCount,
+        bundle.steps,
+        {
+          stepStride: options.membraneStepStride,
+          strandStride: options.membraneStrandStride,
+          weave: options.membraneWeave,
+        }
+      );
+      geometryHelpers.writeMembranePositions(
+        geometry,
+        bundle.strands,
+        bundle.steps
+      );
+      geometryHelpers.setMembraneDrawRange(
+        geometry,
+        strandCount,
+        bundle.grownSteps
+      );
+      const material = buildMembraneMaterial(style, options, bundle.steps);
+      const mesh = new THREE.Mesh(geometry, material);
+      // Matches components/TestMembrane.jsx: canopy under scaffold.
+      mesh.renderOrder = -1;
+      mesh.frustumCulled = false;
+      group.add(mesh);
+      sheets.push({ bundle, geometry, strandCount });
+      disposables.push(geometry, material);
+    });
+
     scene.add(group);
 
     const { pass, uniform } = TSL;
@@ -287,8 +421,10 @@ export default async function createCapturer({ height, samples = 4, width }) {
       disposables,
       drawLines: options.lines !== false,
       group,
+      membraneLook: membraneLookKey(options),
       post,
       scene,
+      sheets,
       strokes,
       test,
     };
@@ -302,7 +438,8 @@ export default async function createCapturer({ height, samples = 4, width }) {
       session.config !== config ||
       session.test !== test ||
       session.bloom !== options.bloom ||
-      session.drawLines !== (options.lines !== false)
+      session.drawLines !== (options.lines !== false) ||
+      session.membraneLook !== membraneLookKey(options)
     ) {
       return createSession(args);
     }
@@ -327,7 +464,8 @@ export default async function createCapturer({ height, samples = 4, width }) {
         options,
         test,
       });
-      const { bloomUniforms, camera, group, post, scene, strokes } = active;
+      const { bloomUniforms, camera, group, post, scene, sheets, strokes } =
+        active;
 
       camera.fov = options.fov;
       camera.position.set(eye[0], eye[1], eye[2]);
@@ -343,6 +481,13 @@ export default async function createCapturer({ height, samples = 4, width }) {
         geometry.setDrawRange(
           0,
           (bundle.grownSteps - 1) * bundle.strands.length * 2
+        );
+      });
+      sheets.forEach(({ bundle, geometry, strandCount }) => {
+        geometryHelpers.setMembraneDrawRange(
+          geometry,
+          strandCount,
+          bundle.grownSteps
         );
       });
       bloomUniforms.strength.value = options.bloomStrength;

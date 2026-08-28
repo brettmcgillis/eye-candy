@@ -313,7 +313,7 @@ async function renderStills(kernel, { options, roll, tmp }) {
 
     const config = kernel.rollTestConfig(seed, roll);
     presets.push(config);
-    const test = buildTest(kernel, config);
+    const test = buildTest(kernel, config, options);
     const raster = await renderFrame(kernel, {
       config,
       options,
@@ -350,7 +350,7 @@ async function renderTurntable(kernel, { options, roll, tmp }) {
   const seed =
     typeof options.seed === 'number' ? options.seed : kernel.randomSeed();
   const config = kernel.rollTestConfig(seed, roll);
-  const test = buildTest(kernel, config);
+  const test = buildTest(kernel, config, options);
   const total = Math.round(options.hold * options.fps * options.turns);
   process.stdout.write(
     `rendering turntable: test ${seed}, ${options.turns} turns, ${total} frames\n`
@@ -424,7 +424,7 @@ async function renderGrowth(kernel, { options, roll, tmp }) {
   for (let testIndex = 0; testIndex < options.count; testIndex += 1) {
     const config = kernel.rollTestConfig(first + testIndex, roll);
     presets.push(config);
-    const test = buildTest(kernel, config);
+    const test = buildTest(kernel, config, options);
     progress.log(
       `test ${testIndex + 1}/${options.count}: generated seed ${config.seed}`
     );
@@ -530,7 +530,7 @@ async function renderBreathe(kernel, { options, roll, tmp }) {
   const seed =
     typeof options.seed === 'number' ? options.seed : kernel.randomSeed();
   const config = kernel.rollTestConfig(seed, roll);
-  const test = buildTest(kernel, config);
+  const test = buildTest(kernel, config, options);
   const total = Math.round(options.hold * options.fps);
 
   if (!options.ink) {
@@ -590,7 +590,7 @@ async function renderCinematic(kernel, { options, roll, tmp }) {
       currentIndex = state.systemIndex;
       config = kernel.rollTestConfig(first + currentIndex, roll);
       presets.push(config);
-      test = buildTest(kernel, config);
+      test = buildTest(kernel, config, options);
       progress.log(`system ${currentIndex + 1}: generated seed ${config.seed}`);
     }
 

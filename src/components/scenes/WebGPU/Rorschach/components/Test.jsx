@@ -11,10 +11,13 @@ import {
   driftCoeffs,
   generateStructure,
   growBundle,
+  setMembraneDrawRange,
+  writeMembraneRange,
   writeStrokeSegmentRange,
 } from '@modules/rorschach';
 
 import InkLayer from './InkLayer';
+import TestMembrane from './TestMembrane';
 import TestStrokes from './TestStrokes';
 
 // Measured ~1.8µs/step. Growth (a short, front-loaded burst while a Test is
@@ -78,6 +81,8 @@ function Test({
   strandsPerBundle,
   steps,
   startSpread,
+  strandSeeding,
+  membraneSpan,
   coeffRange,
   freq,
   framingShape,
@@ -106,6 +111,17 @@ function Test({
   flattenRef,
   lines,
   ink,
+  membrane,
+  membraneOpacity,
+  membraneTear,
+  membraneStepStride,
+  membraneStrandStride,
+  membraneWeave,
+  membraneTearSoftness,
+  membraneEdgeFeather,
+  membraneTaper,
+  membraneRim,
+  membraneTint,
   inkSettings,
 }) {
   // Only the *structural* fields of `overrides` (Structural Override on +
@@ -119,6 +135,8 @@ function Test({
       if (o?.structuralOverride) {
         structural[i] = {
           startSpread: o.startSpread,
+          strandSeeding: o.strandSeeding,
+          membraneSpan: o.membraneSpan,
           coeffRange: o.coeffRange,
           freq: o.freq,
           framingShape: o.framingShape,
@@ -142,6 +160,8 @@ function Test({
           strandsPerBundle,
           steps,
           startSpread,
+          strandSeeding,
+          membraneSpan,
           coeffRange,
           freq,
           framingShape,
@@ -159,6 +179,8 @@ function Test({
       strandsPerBundle,
       steps,
       startSpread,
+      strandSeeding,
+      membraneSpan,
       coeffRange,
       freq,
       framingShape,
@@ -178,6 +200,7 @@ function Test({
         palette,
         paletteExact,
         paletteShuffleSeed,
+        membrane,
         overrides,
       }),
     [
@@ -188,6 +211,7 @@ function Test({
       palette,
       paletteExact,
       paletteShuffleSeed,
+      membrane,
       overrides,
     ]
   );
@@ -196,6 +220,7 @@ function Test({
 
   const groupRef = useRef(null);
   const strokeRefs = useRef([]);
+  const membraneRefs = useRef([]);
   const growthElapsedRef = useRef([]);
   const growthRatesRef = useRef([]);
   // Growth Style 'sequential' stagger: bundle i's growth doesn't start
@@ -250,25 +275,39 @@ function Test({
       }
 
       const mesh = strokeRefs.current[i];
-      if (!mesh) return;
+      const sheet = membraneRefs.current[i];
       const isNew = !prevBundles || prevBundles[i] !== bundle;
       if (!isNew) return;
 
       growthElapsedRef.current[i] = 0;
       revealedStepsRef.current[i] = 1;
-      writeStrokeSegmentRange(
-        mesh.geometry,
-        bundle.strands,
-        0,
-        bundle.grownSteps - 1
-      );
-      mesh.geometry.setDrawRange(0, 0);
-      if (mesh.userData.grownStepsUniform) {
-        mesh.userData.grownStepsUniform.value = bundle.grownSteps;
+      if (mesh) {
+        writeStrokeSegmentRange(
+          mesh.geometry,
+          bundle.strands,
+          0,
+          bundle.grownSteps - 1
+        );
+        mesh.geometry.setDrawRange(0, 0);
       }
-      if (mesh.userData.fadeEnabledUniform) {
-        mesh.userData.fadeEnabledUniform.value = 0;
+      if (sheet) {
+        writeMembraneRange(
+          sheet.geometry,
+          bundle.strands,
+          0,
+          bundle.grownSteps - 1
+        );
+        sheet.geometry.setDrawRange(0, 0);
       }
+      [mesh, sheet].forEach((target) => {
+        if (!target) return;
+        if (target.userData.grownStepsUniform) {
+          target.userData.grownStepsUniform.value = bundle.grownSteps;
+        }
+        if (target.userData.fadeEnabledUniform) {
+          target.userData.fadeEnabledUniform.value = 0;
+        }
+      });
     });
   }, [structure, growthSpeed, growthStyle, overrides]);
 
@@ -276,6 +315,27 @@ function Test({
     structure.bundles.forEach((bundle, i) => {
       const mesh = strokeRefs.current[i];
       if (mesh) mesh.visible = lines !== false && (styles[i]?.visible ?? true);
+
+      // A sheet mounts when its bundle's Membrane toggle goes on, which can
+      // be long after that bundle was built — so backfill everything already
+      // grown rather than waiting for a growth tick that may never come.
+      const sheet = membraneRefs.current[i];
+      if (!sheet || sheet.userData.filledSteps === bundle.grownSteps) return;
+      writeMembraneRange(
+        sheet.geometry,
+        bundle.strands,
+        0,
+        bundle.grownSteps - 1
+      );
+      setMembraneDrawRange(
+        sheet.geometry,
+        bundle.strands.length / 2,
+        Math.min(revealedStepsRef.current[i] ?? 1, bundle.grownSteps)
+      );
+      sheet.userData.filledSteps = bundle.grownSteps;
+      if (sheet.userData.grownStepsUniform) {
+        sheet.userData.grownStepsUniform.value = bundle.grownSteps;
+      }
     });
   }, [lines, structure, styles]);
 
@@ -336,6 +396,7 @@ function Test({
     growingIndices.forEach((i) => {
       const bundle = structure.bundles[i];
       const mesh = strokeRefs.current[i];
+      const sheet = membraneRefs.current[i];
       const strandCount = bundle.strands.length;
       const rate = growthRatesRef.current[i] ?? Infinity;
       const stepDelta =
@@ -364,6 +425,14 @@ function Test({
               bundle.grownSteps - 1
             );
           }
+          if (sheet) {
+            writeMembraneRange(
+              sheet.geometry,
+              bundle.strands,
+              prevGrown - 1,
+              bundle.grownSteps - 1
+            );
+          }
         }
       }
 
@@ -374,23 +443,36 @@ function Test({
         revealedStepsRef.current[i] + stepDelta
       );
 
-      if (!mesh) return;
-      mesh.geometry.setDrawRange(
-        0,
-        (revealedStepsRef.current[i] - 1) * strandCount * 2
-      );
-      if (mesh.userData.grownStepsUniform) {
-        mesh.userData.grownStepsUniform.value = bundle.grownSteps;
+      if (mesh) {
+        mesh.geometry.setDrawRange(
+          0,
+          (revealedStepsRef.current[i] - 1) * strandCount * 2
+        );
       }
+      if (sheet) {
+        setMembraneDrawRange(
+          sheet.geometry,
+          strandCount / 2,
+          revealedStepsRef.current[i]
+        );
+      }
+      [mesh, sheet].forEach((target) => {
+        if (target?.userData.grownStepsUniform) {
+          target.userData.grownStepsUniform.value = bundle.grownSteps;
+        }
+      });
     });
 
     evolvingIndices.forEach((i) => {
       const bundle = structure.bundles[i];
       const mesh = strokeRefs.current[i];
+      const sheet = membraneRefs.current[i];
 
-      if (mesh?.userData.fadeEnabledUniform) {
-        mesh.userData.fadeEnabledUniform.value = trailFade ? 1 : 0;
-      }
+      [mesh, sheet].forEach((target) => {
+        if (target?.userData.fadeEnabledUniform) {
+          target.userData.fadeEnabledUniform.value = trailFade ? 1 : 0;
+        }
+      });
 
       driftCoeffs(bundle, evolutionRng, evolutionSpeed, delta, curlLimit);
 
@@ -413,6 +495,23 @@ function Test({
         smoothRespawns,
         minSpread
       );
+
+      if (sheet) {
+        writeMembraneRange(
+          sheet.geometry,
+          bundle.strands,
+          rebased ? 0 : prevGrown - 1,
+          bundle.grownSteps - 1
+        );
+        setMembraneDrawRange(
+          sheet.geometry,
+          bundle.strands.length / 2,
+          bundle.grownSteps
+        );
+        if (sheet.userData.grownStepsUniform) {
+          sheet.userData.grownStepsUniform.value = bundle.grownSteps;
+        }
+      }
 
       if (!mesh) return;
 
@@ -499,6 +598,32 @@ function Test({
             }}
           />
         ))}
+        {structure.bundles.map((bundle, i) =>
+          styles[i]?.membrane ? (
+            <TestMembrane
+              key={bundle.id}
+              visible={styles[i]?.visible ?? true}
+              hsl={styles[i]?.color ?? { h: 0, s: 0, l: 0.12 }}
+              emissive={styles[i]?.emissive ?? false}
+              emissiveIntensity={styles[i]?.emissiveIntensity ?? 2}
+              opacity={membraneOpacity}
+              tearDistance={membraneTear}
+              stepStride={membraneStepStride}
+              strandStride={membraneStrandStride}
+              weave={membraneWeave}
+              tearSoftness={membraneTearSoftness}
+              edgeFeather={membraneEdgeFeather}
+              taper={membraneTaper}
+              rim={membraneRim}
+              tint={membraneTint}
+              strandCount={bundle.strands.length / 2}
+              steps={bundle.steps}
+              ref={(el) => {
+                membraneRefs.current[i] = el;
+              }}
+            />
+          ) : null
+        )}
       </group>
       {ink && (
         <InkLayer

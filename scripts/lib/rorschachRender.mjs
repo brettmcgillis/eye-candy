@@ -143,12 +143,13 @@ export function rollArgs(kernel, { options, typed }) {
   };
 }
 
-export function buildTest(kernel, config) {
+// `options` supplies the knobs the dice never touch (strandSeeding,
+// membraneSpan, membrane), on the same precedence rule buildInkPaper uses:
+// the rolled config wins wherever it has an opinion.
+export function buildTest(kernel, config, options = {}) {
   const overrides = overridesFromConfig(kernel, config);
-  const structure = kernel.generateStructure(config.seed, {
-    ...config,
-    overrides,
-  });
+  const settings = { ...options, ...config, overrides };
+  const structure = kernel.generateStructure(config.seed, settings);
   // generateStructure only integrates a validated prefix; the app grows the
   // rest a slice per frame. Nothing here animates the integration itself, so
   // finish it in one call and let setGrowth reveal it.
@@ -158,10 +159,7 @@ export function buildTest(kernel, config) {
 
   return {
     ...structure,
-    styles: kernel.computeStyles(config.seed, config.bundleCount, {
-      ...config,
-      overrides,
-    }),
+    styles: kernel.computeStyles(config.seed, config.bundleCount, settings),
   };
 }
 

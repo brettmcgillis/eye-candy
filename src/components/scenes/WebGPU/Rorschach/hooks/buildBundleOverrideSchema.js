@@ -46,6 +46,7 @@ export default function buildBundleOverrideSchema({
     const folderKey = `Bundle${i}`;
     const structuralTogglePath = `${sceneLabel}.BundleEditor.${folderKey}.bundle${i}StructuralOverride`;
     const framingShapePath = `${sceneLabel}.BundleEditor.${folderKey}.bundle${i}FramingShape`;
+    const strandSeedingPath = `${sceneLabel}.BundleEditor.${folderKey}.bundle${i}StrandSeeding`;
     const structuralAndSphere = (get) =>
       get(structuralTogglePath) && get(framingShapePath) === 'sphere';
     const structuralAndCube = (get) =>
@@ -61,6 +62,7 @@ export default function buildBundleOverrideSchema({
       [folderKey]: folder(
         {
           ...field(i, 'Visible', { label: 'Visible' }),
+          ...field(i, 'Membrane', { label: 'Membrane (wings)' }),
           ...field(i, 'ColorOverride', { label: 'Color Override' }),
           ...field(i, 'Color', { label: 'Bundle Color' }),
           ...field(i, 'GrowthDelay', {
@@ -80,6 +82,23 @@ export default function buildBundleOverrideSchema({
           ...field(i, 'StartSpread', {
             label: 'Start Spread',
             options: { min: 0.02, max: 1.2, step: 0.01, ...whenStructural },
+          }),
+          ...field(i, 'StrandSeeding', {
+            label: 'Strand Seeding',
+            options: {
+              options: { Scatter: 'scatter', 'Line (loftable)': 'line' },
+              ...whenStructural,
+            },
+          }),
+          ...field(i, 'MembraneSpan', {
+            label: 'Seed Line Span',
+            options: {
+              min: 0.1,
+              max: 12,
+              step: 0.05,
+              render: (get) =>
+                get(structuralTogglePath) && get(strandSeedingPath) === 'line',
+            },
           }),
           ...field(i, 'CoeffRange', {
             label: 'Chaos Amount',

@@ -7,7 +7,9 @@ import {
   DEFAULT_COEFF_RANGE,
   DEFAULT_FRAMING_SHAPE,
   DEFAULT_FREQ,
+  DEFAULT_MEMBRANE_SPAN,
   DEFAULT_START_SPREAD,
+  DEFAULT_STRAND_SEEDING,
   MAX_BUNDLE_COUNT,
 } from './testGenerator';
 
@@ -16,6 +18,7 @@ import {
 // so the two can't drift apart on what a field is called or defaults to.
 export const BUNDLE_FIELD_DEFAULTS = {
   Visible: true,
+  Membrane: false,
   ColorOverride: false,
   Color: '#ff0000',
   GrowthDelay: 0,
@@ -24,6 +27,8 @@ export const BUNDLE_FIELD_DEFAULTS = {
   EmissiveIntensity: 2,
   StructuralOverride: false,
   StartSpread: DEFAULT_START_SPREAD,
+  StrandSeeding: DEFAULT_STRAND_SEEDING,
+  MembraneSpan: DEFAULT_MEMBRANE_SPAN,
   CoeffRange: DEFAULT_COEFF_RANGE,
   Freq: DEFAULT_FREQ,
   FramingShape: DEFAULT_FRAMING_SHAPE,
@@ -34,6 +39,7 @@ export const BUNDLE_FIELD_DEFAULTS = {
 
 const OVERRIDE_KEY_BY_FIELD = {
   Visible: 'visible',
+  Membrane: 'membrane',
   ColorOverride: 'colorOverride',
   Color: 'color',
   GrowthDelay: 'growthDelay',
@@ -42,6 +48,8 @@ const OVERRIDE_KEY_BY_FIELD = {
   EmissiveIntensity: 'emissiveIntensity',
   StructuralOverride: 'structuralOverride',
   StartSpread: 'startSpread',
+  StrandSeeding: 'strandSeeding',
+  MembraneSpan: 'membraneSpan',
   CoeffRange: 'coeffRange',
   Freq: 'freq',
   FramingShape: 'framingShape',

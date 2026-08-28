@@ -27,6 +27,7 @@ export * from './odeIntegrator';
 export * from './palette';
 export * from './testGenerator';
 export * from './buildStrokeGeometry';
+export * from './membraneGeometry';
 export * from './overrides';
 export { default as createInkPaper } from './watercolor/inkPaper';
 export { PAPER_ORIENTATIONS } from './watercolor/inkPaper';

@@ -91,7 +91,7 @@ async function main() {
       // `--count 100 --inkPatternWash 1` is a hundred random tests that all
       // share a wash — no separate syntax for either.
       const config = kernel.rollTestConfig(seed, roll);
-      const test = buildTest(kernel, config);
+      const test = buildTest(kernel, config, options);
       const dir = path.join(outRoot, String(seed));
 
       await mkdir(dir, { recursive: true });

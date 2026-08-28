@@ -811,7 +811,106 @@ export default function RorschachWorkbenchPage() {
                 />
                 Ink
               </label>
+              <label htmlFor="rw-membrane">
+                <input
+                  checked={options.membrane}
+                  id="rw-membrane"
+                  onChange={(event) =>
+                    setOption('membrane', event.target.checked)
+                  }
+                  type="checkbox"
+                />
+                Membrane
+              </label>
             </section>
+
+            {options.membrane ? (
+              <details className="rw-control-section rw-advanced" open>
+                <summary>Membrane</summary>
+                <div className="rw-field-grid">
+                  <NumberField
+                    id="rw-membrane-opacity"
+                    option="membraneOpacity"
+                    label="Opacity"
+                    onChange={(value) => setOption('membraneOpacity', value)}
+                    value={options.membraneOpacity}
+                  />
+                  <NumberField
+                    id="rw-membrane-tear"
+                    option="membraneTear"
+                    label="Tear distance"
+                    onChange={(value) => setOption('membraneTear', value)}
+                    value={options.membraneTear}
+                  />
+                  <NumberField
+                    id="rw-membrane-step-stride"
+                    option="membraneStepStride"
+                    label="Step stride"
+                    onChange={(value) => setOption('membraneStepStride', value)}
+                    value={options.membraneStepStride}
+                  />
+                  <NumberField
+                    id="rw-membrane-strand-stride"
+                    option="membraneStrandStride"
+                    label="Strand stride"
+                    onChange={(value) =>
+                      setOption('membraneStrandStride', value)
+                    }
+                    value={options.membraneStrandStride}
+                  />
+                  <label className="rw-checkbox" htmlFor="rw-membrane-weave">
+                    <input
+                      checked={options.membraneWeave}
+                      id="rw-membrane-weave"
+                      onChange={(event) =>
+                        setOption('membraneWeave', event.target.checked)
+                      }
+                      type="checkbox"
+                    />
+                    Weave
+                  </label>
+                  <NumberField
+                    id="rw-membrane-tear-softness"
+                    option="membraneTearSoftness"
+                    label="Tear softness"
+                    onChange={(value) =>
+                      setOption('membraneTearSoftness', value)
+                    }
+                    value={options.membraneTearSoftness}
+                  />
+                  <NumberField
+                    id="rw-membrane-edge-feather"
+                    option="membraneEdgeFeather"
+                    label="Edge feather"
+                    onChange={(value) =>
+                      setOption('membraneEdgeFeather', value)
+                    }
+                    value={options.membraneEdgeFeather}
+                  />
+                  <NumberField
+                    id="rw-membrane-taper"
+                    option="membraneTaper"
+                    label="Taper"
+                    onChange={(value) => setOption('membraneTaper', value)}
+                    value={options.membraneTaper}
+                  />
+                  <NumberField
+                    id="rw-membrane-rim"
+                    option="membraneRim"
+                    label="Rim"
+                    onChange={(value) => setOption('membraneRim', value)}
+                    value={options.membraneRim}
+                  />
+                  <NumberField
+                    id="rw-membrane-tint"
+                    option="membraneTint"
+                    label="Tint"
+                    onChange={(value) => setOption('membraneTint', value)}
+                    value={options.membraneTint}
+                  />
+                </div>
+              </details>
+            ) : null}
 
             {options.ink ? (
               <details className="rw-control-section rw-advanced" open>
@@ -1131,6 +1230,24 @@ export default function RorschachWorkbenchPage() {
                   label="Strand spread"
                   onChange={(value) => setOption('startSpread', value)}
                   value={options.startSpread}
+                />
+                <ChoiceField
+                  choices={[
+                    ['scatter', 'Scatter'],
+                    ['line', 'Line (loftable)'],
+                  ]}
+                  id="rw-strand-seeding"
+                  option="strandSeeding"
+                  label="Strand seeding"
+                  onChange={(value) => setOption('strandSeeding', value)}
+                  value={options.strandSeeding}
+                />
+                <NumberField
+                  id="rw-membrane-span"
+                  option="membraneSpan"
+                  label="Membrane span"
+                  onChange={(value) => setOption('membraneSpan', value)}
+                  value={options.membraneSpan}
                 />
                 <NumberField
                   id="rw-coeff-range"

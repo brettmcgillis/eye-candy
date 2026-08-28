@@ -17,10 +17,12 @@ import {
   DEFAULT_COEFF_RANGE,
   DEFAULT_FRAMING_SHAPE,
   DEFAULT_FREQ,
+  DEFAULT_MEMBRANE_SPAN,
   DEFAULT_MIN_SPREAD,
   DEFAULT_START_SPREAD,
   DEFAULT_STEPS,
   DEFAULT_STRANDS_PER_BUNDLE,
+  DEFAULT_STRAND_SEEDING,
   GROWTH_BASE_RATE,
   MAX_BUNDLE_COUNT,
   PALETTE_NAMES,
@@ -38,6 +40,10 @@ import buildBundleOverrideSchema from './buildBundleOverrideSchema';
 const SCENE_LABEL = 'Rorschach';
 const CAMERA_FOLDER_PATH = `${SCENE_LABEL}.Camera`;
 const FRAMING_SHAPE_PATH = `${SCENE_LABEL}.Structure.framingShape`;
+const STRAND_SEEDING_PATH = `${SCENE_LABEL}.Structure.strandSeeding`;
+const MEMBRANE_PATH = `${SCENE_LABEL}.Layers.membrane`;
+const MEMBRANE_TEAR_PATH = `${SCENE_LABEL}.Membrane.membraneTear`;
+const MEMBRANE_STRAND_STRIDE_PATH = `${SCENE_LABEL}.Membrane.membraneStrandStride`;
 const CONTINUOUS_MODE_PATH = `${SCENE_LABEL}.Growth.continuousMode`;
 const PALETTE_PATH = `${SCENE_LABEL}.Style.palette`;
 const MONOCHROME_PATH = `${SCENE_LABEL}.Style.monochrome`;
@@ -128,6 +134,19 @@ export default function useSceneControls() {
           min: 0.02,
           max: 1.2,
           step: 0.01,
+        },
+        strandSeeding: {
+          label: 'Strand Seeding',
+          value: p.strandSeeding ?? DEFAULT_STRAND_SEEDING,
+          options: { Scatter: 'scatter', 'Line (loftable)': 'line' },
+        },
+        membraneSpan: {
+          label: 'Seed Line Span',
+          value: p.membraneSpan ?? DEFAULT_MEMBRANE_SPAN,
+          min: 0.1,
+          max: 12,
+          step: 0.05,
+          render: (get) => get(STRAND_SEEDING_PATH) === 'line',
         },
         coeffRange: {
           label: 'Chaos Amount',
@@ -335,8 +354,89 @@ export default function useSceneControls() {
           label: 'Ink (watercolour)',
           value: p.ink ?? false,
         },
+        membrane: {
+          label: 'Membrane (wings)',
+          value: p.membrane ?? false,
+        },
       },
       { collapsed: false }
+    ),
+    // Its own folder, like Ink — Layers holds only the on/off toggles.
+    Membrane: folder(
+      {
+        membraneOpacity: {
+          label: 'Opacity',
+          value: p.membraneOpacity ?? 0.35,
+          min: 0,
+          max: 1,
+          step: 0.01,
+        },
+        // In the ODE's own unscaled space, like Min Bundle Spread — a
+        // line-seeded bundle is typically 2-20 units wide across its strands.
+        membraneTear: {
+          label: 'Tear Distance',
+          value: p.membraneTear ?? 6,
+          min: 0,
+          max: 30,
+          step: 0.1,
+        },
+        membraneStepStride: {
+          label: 'Step Stride',
+          value: p.membraneStepStride ?? 1,
+          min: 1,
+          max: 32,
+          step: 1,
+        },
+        membraneStrandStride: {
+          label: 'Strand Stride',
+          value: p.membraneStrandStride ?? 1,
+          min: 1,
+          max: 8,
+          step: 1,
+        },
+        membraneWeave: {
+          label: 'Weave (interleave)',
+          value: p.membraneWeave ?? false,
+          render: (get) => get(MEMBRANE_STRAND_STRIDE_PATH) > 1,
+        },
+        membraneTearSoftness: {
+          label: 'Tear Softness',
+          value: p.membraneTearSoftness ?? 0.5,
+          min: 0,
+          max: 1,
+          step: 0.01,
+          render: (get) => get(MEMBRANE_TEAR_PATH) > 0,
+        },
+        membraneEdgeFeather: {
+          label: 'Edge Feather',
+          value: p.membraneEdgeFeather ?? 0,
+          min: 0,
+          max: 1,
+          step: 0.01,
+        },
+        membraneTaper: {
+          label: 'Taper (tip <-> root)',
+          value: p.membraneTaper ?? 0,
+          min: -1,
+          max: 1,
+          step: 0.01,
+        },
+        membraneRim: {
+          label: 'Rim (grazing)',
+          value: p.membraneRim ?? 0,
+          min: 0,
+          max: 1,
+          step: 0.01,
+        },
+        membraneTint: {
+          label: 'Tint (lightness)',
+          value: p.membraneTint ?? 0,
+          min: -0.5,
+          max: 0.5,
+          step: 0.01,
+        },
+      },
+      { collapsed: true, render: (get) => get(MEMBRANE_PATH) }
     ),
     // Re-roll one facet, leaving everything else exactly as it is. This is the
     // scene's whole answer to "hold that, vary this" — no pins and nothing

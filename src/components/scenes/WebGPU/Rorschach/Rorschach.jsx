@@ -127,6 +127,8 @@ function Rorschach() {
         strandsPerBundle={config.strandsPerBundle}
         steps={config.steps}
         startSpread={config.startSpread}
+        strandSeeding={config.strandSeeding}
+        membraneSpan={config.membraneSpan}
         coeffRange={config.coeffRange}
         freq={config.freq}
         framingShape={config.framingShape}
@@ -155,6 +157,17 @@ function Rorschach() {
         flattenRef={flattenRef}
         lines={config.lines}
         ink={config.ink}
+        membrane={config.membrane}
+        membraneOpacity={config.membraneOpacity}
+        membraneTear={config.membraneTear}
+        membraneStepStride={config.membraneStepStride}
+        membraneStrandStride={config.membraneStrandStride}
+        membraneWeave={config.membraneWeave}
+        membraneTearSoftness={config.membraneTearSoftness}
+        membraneEdgeFeather={config.membraneEdgeFeather}
+        membraneTaper={config.membraneTaper}
+        membraneRim={config.membraneRim}
+        membraneTint={config.membraneTint}
         inkSettings={inkSettings}
       />
       <PostEffects

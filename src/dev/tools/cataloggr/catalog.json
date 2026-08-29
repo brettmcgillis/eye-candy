@@ -152,6 +152,10 @@
     {
       "id": "idea-1787939274190-u51hbq",
       "text": "Get spline editor,  smokeTest, fireTest, hotBox, out of app and into devToolz. I want a new paradigm for authoring a scenes assets, and then saving/writing that data back to the appropriate assets preset."
+    },
+    {
+      "id": "idea-1787952880355-k0lcj7",
+      "text": "Get off of gh-pages, onto your own domain/hosting/etc"
     }
   ],
   "statuses": {

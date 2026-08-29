@@ -8,6 +8,7 @@ Generate images and video using the RorschachCLI.
 
 ## // TODO:
 
+- [ ] tidy up generated json schema, seeing things in presets and render that should be in the other section. 
 - [ ] tidy up control area and make sure theyre well organized. make sure each section is wrapped in closure to enable minimal clutter
 - [ ] lets make sure control UI's are aligned between scene and dev page
 - [ ] ensure we can support pinning any prop. I want to be able to generate 100 rolls of preset 012, including its overridden bundle
@@ -19,6 +20,8 @@ Generate images and video using the RorschachCLI.
 - [ ] 3d lines (tubes) mode to extend lines mode
 - [ ] explore dramatic lighting
 - [ ] I've seen a bunch of letter A's get generated... could we get the whole alphabet? would make for a sick stills video
+- [ ] add button to collapse/expand all batches
+- [ ] allow click to zoom on image preview
 
 ## // Features
 

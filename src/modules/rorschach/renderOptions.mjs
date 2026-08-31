@@ -168,6 +168,11 @@ export const RENDER_OPTIONS = {
   bloom: {
     scope: 'shared',
     section: 'bloom',
+    // The scene calls this bloomEnabled. `sceneKey` is how a workbench field
+    // finds its value in a scene preset; declared here so the two names that
+    // differ are recorded next to everything else about the option, rather
+    // than in a lookup table on whichever surface reads presets.
+    sceneKey: 'bloomEnabled',
     type: 'boolean',
     default: true,
     help: 'Bloom pass; --no-bloom skips it entirely',
@@ -208,6 +213,7 @@ export const RENDER_OPTIONS = {
   overlay: {
     scope: 'shared',
     section: 'overlay',
+    sceneKey: 'showOverlay',
     type: 'boolean',
     default: false,
     help: 'Burn the scene overlay into the output',
@@ -535,6 +541,24 @@ export const RENDER_OPTIONS = {
     placeholder: 'NAME',
     help: 'Gradient name, or Random for per-bundle hues',
   },
+  paletteShuffleSeed: {
+    scope: 'shared',
+    section: 'palette',
+    // Rolled by the palette stream's own bespoke logic — mostly on, and a
+    // seed rather than a range when it is — so it carries the facet without a
+    // `roll` window, exactly as palette and monochrome do. It was missing from
+    // this file entirely, which meant the dice set it on every test and no
+    // surface could hold it: two batches on one palette still came out with
+    // their bundle colours in a different order.
+    facet: 'palette',
+    type: 'number',
+    default: 0,
+    min: 0,
+    max: 999999,
+    step: 1,
+    placeholder: 'S',
+    help: 'Reorders which palette stop each bundle takes; 0 keeps gradient order',
+  },
   paletteExact: {
     scope: 'shared',
     section: 'palette',
@@ -568,6 +592,32 @@ export const RENDER_OPTIONS = {
     default: '#f4efe4',
     placeholder: 'HEX',
     help: 'Scene background, and what the ink is composited over',
+  },
+
+  bundles: {
+    scope: 'shared',
+    section: 'palette',
+    // The one option that is not a single value, because the thing it carries
+    // is not one: the Bundle Editor's twenty folders of sixteen fields. As
+    // three hundred flags it would drown `--help` and the workbench form
+    // alike; as one object it is exactly the flat `bundleNField` block a scene
+    // preset already holds, so a preset's overrides transfer verbatim.
+    //
+    // The palette facet, because that is the stream that rolls overrides:
+    // whether a bundle may glow depends on the palette it was chosen against.
+    // Pinning this holds the whole block — every bundle not named in it is
+    // explicitly off — while structure and ink keep rolling.
+    facet: 'palette',
+    type: 'json',
+    // Which keys are *meaningful* is buildOverridesFromControls' business; this
+    // file is dependency-free and cannot import the field list. So it checks
+    // the shape and drops the rest, which is also what lets a whole scene
+    // preset be handed over as-is.
+    keyPattern: /^bundle\d+[A-Z]\w*$/u,
+    default: null,
+    nullable: true,
+    placeholder: 'JSON|FILE',
+    help: 'Bundle Editor overrides as flat bundleNField keys, or a file holding them',
   },
 
   structureSeed: {
@@ -626,6 +676,32 @@ export const RENDER_OPTIONS = {
     step: 10,
     placeholder: 'N',
     help: 'Sim steps run before capture; how far the blot has dried',
+  },
+  inkCarry: {
+    scope: 'video',
+    section: 'layers',
+    type: 'number',
+    // The scene's `inkStepsPerFrame`, for a render: carry the wet field from the
+    // last frame and advance it a few steps rather than clearing the sheet and
+    // drying it again from scratch. It is the single largest cost in an ink
+    // video — 840ms a frame at a 2048 sim, against 3ms carried — and it is also
+    // what the live scene has always done, so a carried clip is the closer match
+    // to what you tuned.
+    //
+    // 0 restores the per-frame settle. What that buys is not clip
+    // reproducibility (a video is always rendered from frame 0, so both are
+    // deterministic) but *frame* independence: with a carry, re-rendering frame
+    // 400 on its own will not reproduce frame 400 of the clip.
+    //
+    // Never carried across a test boundary — a new seed is a new blot — so
+    // stills montages are unaffected, and turntable and cinematic never reach
+    // it because their ink does not change between frames at all.
+    default: 0,
+    min: 0,
+    max: 200,
+    step: 1,
+    placeholder: 'N',
+    help: 'Carry the wet sim between frames, running this many steps each; 0 re-settles every frame',
   },
   inkOrientation: {
     scope: 'shared',
@@ -1172,6 +1248,7 @@ export const SURFACE_DEFAULTS = {
   'cli-still': {},
   'cli-video': {
     count: 6,
+    inkCarry: 2,
     height: IPHONE_HEIGHT,
     out: 'output/rorschach.mp4',
     overlay: true,
@@ -1184,6 +1261,7 @@ export const SURFACE_DEFAULTS = {
   workbench: {
     count: 10,
     height: 2622,
+    inkCarry: 2,
     overlay: true,
     views: 'front',
     width: 1206,
@@ -1253,6 +1331,144 @@ export function optionsFor(kind, surface = `cli-${kind}`) {
       (spec.scope === 'shared' || spec.scope === kind) &&
       (!spec.workbenchOnly || surface === 'workbench')
   );
+}
+
+// Which options exist only to drive a render, and so have no control in the
+// scene: output framing, the CLIs' own plumbing, and the video modes. Every
+// other option in this file is a scene control under `sceneKey ?? key`, which
+// is what lets a still's sidecar be written back out as a preset the scene can
+// open. `bundles` belongs here because it is a transport rather than a control
+// — a preset carries the flat `bundleNField` keys it expands into.
+//
+// The exception is listed rather than the rule because it is the smaller half,
+// and `npm run rorschach:check` holds it against the scene's Leva schema. That
+// check is the point: reading a preset can safely guess a key by name, since a
+// wrong guess simply doesn't match, but *writing* one cannot — a wrong name
+// produces a preset the scene silently half-ignores, which nothing else here
+// would catch.
+// The same four axis-aligned eyes `renderTestSvg`'s `viewEye` returns. Repeated
+// rather than imported because this file is dependency-free by rule; kept
+// honest by `npm run rorschach:check`.
+function viewEyeFor(view, distance) {
+  if (view === 'back') return [0, 0, -distance];
+  if (view === 'top') return [0, distance, 0];
+  if (view === 'bottom') return [0, -distance, 0];
+  return [0, 0, distance];
+}
+
+export const HEADLESS_ONLY_OPTIONS = new Set([
+  'bundles',
+  'count',
+  'crossfade',
+  'distance',
+  'fov',
+  'fps',
+  'growthPresentation',
+  'growthView',
+  'height',
+  'hold',
+  'ig',
+  'imageFormat',
+  'in',
+  'inkCarry',
+  'inkPatternTime',
+  'inkSeed',
+  'inkSettle',
+  'keepImages',
+  'mode',
+  'out',
+  'paletteSeed',
+  'png',
+  'renderer',
+  'simplify',
+  'stillsOut',
+  'stroke',
+  'structureSeed',
+  'svg',
+  'systems',
+  'turns',
+  'view',
+  'viewport',
+  'views',
+  'webp',
+  'width',
+]);
+
+// A scene preset is this same flat key space plus the scene's own camera,
+// growth and evolution controls — it is a Leva snapshot, and the renderers
+// understand a subset of it. This picks out that subset, so a look tuned live
+// can be loaded straight into a batch: keys the schema doesn't know are
+// dropped, the two the scene names differently are found through `sceneKey`,
+// and an option declared with a `keyPattern` (there is one, `bundles`)
+// collects every preset key matching it into one object.
+//
+// Only what the preset actually says. A missing key is left at whatever the
+// caller already had rather than reset to a default, because a preset is a
+// partial snapshot — SceneTemplate's own Default preset is written that way.
+export function optionsFromPreset(preset, kind, surface = 'workbench') {
+  const chosen = {};
+  optionsFor(kind, surface).forEach(([key, spec]) => {
+    if (spec.keyPattern) {
+      const matches = Object.entries(preset).filter(([name]) =>
+        spec.keyPattern.test(name)
+      );
+      if (matches.length > 0) chosen[key] = Object.fromEntries(matches);
+      return;
+    }
+    const sourceKey = spec.sceneKey ?? key;
+    // `null` is "not set", the same as the key being absent — a still's sidecar
+    // records every nullable option that way, and copying one into the form
+    // hands a controlled `<select>` a null value.
+    if (preset[sourceKey] != null) chosen[key] = preset[sourceKey];
+  });
+  return chosen;
+}
+
+// The other direction: a still's `props.json` back out as a scene preset, so a
+// piece worth keeping can be opened in the 3D scene rather than only looked at.
+//
+// The rolled config is already a valid preset — that is `rollTestConfig`'s
+// contract — so it is the base, and `render` fills in what the dice never
+// touched: the flatten, the layer toggles, the bloom and the paper. The roll
+// wins every collision, because `render` carries every rollable option at its
+// *default* wherever the batch left it to the dice, and a default is not what
+// was drawn.
+//
+// The camera is derived rather than carried: a still names a view and a
+// distance, and the scene wants an orbit position. Framing the scene the way
+// the still was framed is the whole point of opening it.
+export function presetFromRender(
+  { preset, render = {}, view = 'front' },
+  kind
+) {
+  const fromRender = {};
+  optionsFor(kind, 'workbench').forEach(([key, spec]) => {
+    if (HEADLESS_ONLY_OPTIONS.has(key) || spec.cliOnly) return;
+    if (!(key in render) || render[key] == null) return;
+    fromRender[spec.sceneKey ?? key] = render[key];
+  });
+
+  const eye = viewEyeFor(
+    view,
+    render.distance ?? RENDER_OPTIONS.distance.default
+  );
+  const fov = render.fov ?? RENDER_OPTIONS.fov.default;
+  const origin = { x: 0, y: 0, z: 0 };
+  const position = { x: eye[0], y: eye[1], z: eye[2] };
+
+  return {
+    ...fromRender,
+    ...preset,
+    cameraMode: 'orbit',
+    orbitDesktopFov: fov,
+    orbitDesktopPivot: origin,
+    orbitDesktopPosition: position,
+    orbitDesktopTarget: origin,
+    orbitMobileFov: fov,
+    orbitMobilePivot: origin,
+    orbitMobilePosition: position,
+    orbitMobileTarget: origin,
+  };
 }
 
 export function defaultsFor(kind, surface = `cli-${kind}`) {
@@ -1352,6 +1568,29 @@ function coerce(key, spec, raw, fallback, fail) {
   const empty = raw === '' || raw == null;
   if (empty && (spec.nullable || spec.type === 'seed')) return fallback ?? null;
   if (empty) return fallback;
+
+  if (spec.type === 'json') {
+    let value = raw;
+    if (typeof value === 'string') {
+      try {
+        value = JSON.parse(value);
+      } catch {
+        throw fail(`${key} must be a JSON object.`);
+      }
+    }
+    if (typeof value !== 'object' || Array.isArray(value)) {
+      throw fail(`${key} must be a JSON object.`);
+    }
+    // A whole preset is a legitimate payload — take the keys this option is
+    // about and leave the rest of it alone.
+    const kept = Object.entries(value).filter(
+      ([name]) => !spec.keyPattern || spec.keyPattern.test(name)
+    );
+    if (kept.length === 0) {
+      throw fail(`${key} holds no ${spec.placeholder ?? key} entries.`);
+    }
+    return Object.fromEntries(kept);
+  }
 
   if (spec.type === 'enum') {
     const value = String(raw);

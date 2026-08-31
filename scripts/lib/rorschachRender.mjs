@@ -179,7 +179,8 @@ export function setGrowth(test, fraction) {
 
 // Additively composites blurred copies of the thresholded bright pass over the
 // base render — the same shape as the scene's post pass. Runs at 16 bits so
-// repeated adds don't band.
+// repeated adds don't band. Returns the pipeline rather than a buffer, so the
+// caller decides whether the frame becomes a PNG or raw pixels.
 async function rasterBloom(
   baseSvg,
   brightSvg,
@@ -200,9 +201,7 @@ async function rasterBloom(
   return sharp(Buffer.from(baseSvg))
     .pipelineColourspace('rgb16')
     .composite(glows.map((input) => ({ blend: 'add', input })))
-    .toColourspace('srgb')
-    .png()
-    .toBuffer();
+    .toColourspace('srgb');
 }
 
 export function frameSvg(kernel, { config, options, test, ...view }) {
@@ -223,8 +222,25 @@ export function frameSvg(kernel, { config, options, test, ...view }) {
   });
 }
 
-export async function applyOverlay(png, options) {
-  if (!options.overlay) return png;
+// Composites the overlay onto an image that is still a sharp pipeline, and
+// encodes once at the end.
+//
+// This used to take an encoded PNG, which meant a frame was encoded, decoded
+// again to be composited on, and encoded a second time — at 1206x2622 the
+// round trip cost more than rendering the frame did. Nothing needed the
+// intermediate PNG; it existed only because the capture happened to hand one
+// over.
+// `output` decides only how the finished pipeline is drained. 'png' is what a
+// file wants; 'raw' is what ffmpeg's stdin wants, and asking for it means a
+// video frame is never encoded at all. `ensureAlpha` so a raw frame is always
+// exactly width * height * 4 bytes, whatever the composite left behind.
+async function compositeOverlay(image, options, output = 'png') {
+  const drain = (pipeline) =>
+    output === 'raw'
+      ? pipeline.ensureAlpha().raw().toBuffer()
+      : pipeline.png().toBuffer();
+
+  if (!options.overlay) return drain(image);
 
   const overlay = await overlayLayer({
     height: options.height,
@@ -233,10 +249,19 @@ export async function applyOverlay(png, options) {
     viewport: options.viewport,
     width: options.width,
   });
-  return sharp(png)
-    .composite([{ input: overlay }])
-    .png()
-    .toBuffer();
+  return drain(image.composite([{ input: overlay }]));
+}
+
+// For callers that start from pixels they assembled themselves — the growth
+// grid, which composites four cells before the overlay goes on.
+export async function applyOverlay(image, options, output = 'png') {
+  return compositeOverlay(image, options, output);
+}
+
+// Raw RGBA back into a sharp pipeline, for the callers that pass frames around
+// as pixels rather than as files.
+export function fromRaw(data, { height, width }) {
+  return sharp(data, { raw: { channels: 4, height, width } });
 }
 
 // The SVG path: flat polylines rasterised by sharp, with bloom approximated as
@@ -255,9 +280,7 @@ async function renderFrameSvg(kernel, { config, options, test, ...view }) {
     });
 
   if (!blooms) {
-    return sharp(Buffer.from(svg({ bloomEnabled: false })))
-      .png()
-      .toBuffer();
+    return sharp(Buffer.from(svg({ bloomEnabled: false })));
   }
 
   return rasterBloom(
@@ -276,18 +299,21 @@ async function renderFrameSvg(kernel, { config, options, test, ...view }) {
   );
 }
 
-// Renders one frame to a PNG buffer, then composites the overlay burn-in.
-// `options.renderer` picks between the real WebGPU capture and the SVG
-// approximation.
-export async function renderFrame(kernel, { config, options, test, ...view }) {
+// Renders one frame and composites the overlay burn-in. `options.renderer`
+// picks between the real WebGPU capture and the SVG approximation; `output`
+// picks between an encoded PNG and raw pixels.
+export async function renderFrame(
+  kernel,
+  { config, options, output = 'png', test, ...view }
+) {
   if (options.renderer === 'svg') {
-    const png = await renderFrameSvg(kernel, {
+    const image = await renderFrameSvg(kernel, {
       config,
       options,
       test,
       ...view,
     });
-    return applyOverlay(png, options);
+    return compositeOverlay(image, options, output);
   }
 
   const capturer = await capturerFor(options.width, options.height);
@@ -301,12 +327,14 @@ export async function renderFrame(kernel, { config, options, test, ...view }) {
       target: view.target ?? [0, 0, 0],
       test,
     });
-  const png = warmedCapturers.has(capturer)
+  // Raw pixels, not a PNG: the overlay is composited straight onto them and the
+  // frame is encoded exactly once.
+  const raw = warmedCapturers.has(capturer)
     ? await capture()
     : await runStage('rendering first WebGPU frame', async () => {
         const firstFrame = await capture();
         warmedCapturers.add(capturer);
         return firstFrame;
       });
-  return applyOverlay(png, options);
+  return compositeOverlay(fromRaw(raw.data, raw), options, output);
 }

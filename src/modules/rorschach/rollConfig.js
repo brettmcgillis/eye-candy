@@ -347,8 +347,22 @@ export function randomSeed() {
 // or the sim's resolution: those are "how it plays", not "what it is", and a
 // batch needs them to hold still. That is expressed by their absence from
 // ROLL_RANGES rather than by omission here.
+// `bundles` arrives as one object because three hundred flat keys is not a
+// command line, but a config is flat — it has to be a valid preset, readable
+// straight back into the scene's Leva schema. So the pin is expanded here, and
+// over a cleared block: pinning the overrides means those overrides and no
+// others, the same way pinning a palette means that palette.
+function expandBundlePin(pinned) {
+  const { bundles, ...rest } = pinned;
+  return {
+    overrides: bundles ? { ...clearedOverrides(), ...bundles } : null,
+    pins: rest,
+  };
+}
+
 export default function rollTestConfig(seed = randomSeed(), options = {}) {
   const { growthSpeed = 1, pinned = {}, seeds = {} } = options;
+  const { overrides: pinnedOverrides, pins } = expandBundlePin(pinned);
 
   const streamFor = (facet) =>
     createRng(combineSeed(seeds[facet] ?? seed, FACET_SALTS[facet]));
@@ -367,9 +381,9 @@ export default function rollTestConfig(seed = randomSeed(), options = {}) {
     supportsEmissive(colors, backgroundLuminance) && chance(paletteRng, 0.45);
   const overrides = hasEmissive
     ? rollEmissiveOverrides(paletteRng, {
-        bundleCount: pinned.bundleCount ?? structure.bundleCount,
+        bundleCount: pins.bundleCount ?? structure.bundleCount,
         growthSpeed,
-        steps: pinned.steps ?? structure.steps,
+        steps: pins.steps ?? structure.steps,
       })
     : clearedOverrides();
 
@@ -380,8 +394,8 @@ export default function rollTestConfig(seed = randomSeed(), options = {}) {
     ...structure,
     ...style,
     backgroundColor,
-    ...overrides,
+    ...(pinnedOverrides ?? overrides),
     ...ink,
-    ...pinned,
+    ...pins,
   };
 }

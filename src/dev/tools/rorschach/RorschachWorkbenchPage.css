@@ -1544,3 +1544,136 @@ body:has(.rw-preview) {
   justify-content: space-between;
   gap: 0.5rem;
 }
+
+/* The one line that says what pressing Render will actually do. The pins are
+   the whole model of this page and they were invisible: forty checkboxes down a
+   form answer "is this field held" but never "am I about to roll anything". */
+.rw-status {
+  /* The panel sets a mono, uppercase voice for its labels. This is a sentence,
+     not a label, so it opts back out of both. */
+  margin: 0 0 0.5rem;
+  font-family: inherit;
+  font-size: 0.82rem;
+  line-height: 1.45;
+  text-transform: none;
+}
+
+.rw-base {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  margin: 0 0 0.6rem;
+  font-size: 0.78rem;
+  opacity: 0.75;
+}
+
+.rw-base__clear {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.2rem;
+  padding: 0;
+  border: 0;
+  background: none;
+  color: inherit;
+  font: inherit;
+  font-size: 0.72rem;
+  text-decoration: underline;
+  cursor: pointer;
+  opacity: 0.7;
+}
+
+.rw-base__clear:hover {
+  opacity: 1;
+}
+
+/* Pin a whole facet at once. Pressed means every rollable key in that facet is
+   held; the per-field checkboxes still work underneath, so a group can be
+   pinned and then one field released. */
+.rw-pin-groups {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.35rem;
+  margin-top: 0.6rem;
+}
+
+.rw-pin-group {
+  padding: 0.3rem 0.6rem;
+  border: 1px solid var(--dev-border, rgb(255 255 255 / 18%));
+  border-radius: 999px;
+  background: transparent;
+  color: inherit;
+  font: inherit;
+  font-size: 0.72rem;
+  cursor: pointer;
+  opacity: 0.7;
+  transition:
+    opacity 120ms ease,
+    background 120ms ease;
+}
+
+.rw-pin-group:hover {
+  opacity: 1;
+}
+
+.rw-pin-group[aria-pressed='true'] {
+  background: rgb(255 255 255 / 14%);
+  opacity: 1;
+}
+
+/* The bundle block is an object, not a value, so it reads as a summary of what
+   was loaded rather than as an input. */
+.rw-bundles {
+  flex: 1;
+  min-width: 0;
+  opacity: 0.45;
+  transition: opacity 120ms ease;
+}
+
+.rw-pinnable--on > .rw-bundles,
+.rw-bundles:not(.rw-bundles--off) {
+  opacity: 1;
+}
+
+.rw-bundles__list {
+  margin: 0 0 0.5rem;
+  padding: 0;
+  list-style: none;
+  font-size: 0.78rem;
+  line-height: 1.6;
+}
+
+.rw-bundles__list li {
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+}
+
+.rw-bundles__swatch {
+  width: 0.7rem;
+  height: 0.7rem;
+  border: 1px solid rgb(255 255 255 / 25%);
+  border-radius: 2px;
+}
+
+/* The two things worth doing with a finished piece, at the top of the panel
+   that already knows what drew it. */
+.rw-preview__actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.4rem;
+  margin-bottom: 1rem;
+}
+
+.rw-preview__actions .dev-button {
+  flex: 1;
+  min-width: 10rem;
+  justify-content: center;
+  text-decoration: none;
+}
+
+.rw-preview__actions-error {
+  flex-basis: 100%;
+  margin: 0;
+  font-size: 0.75rem;
+  color: rgb(255 140 140);
+}

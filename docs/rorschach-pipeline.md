@@ -24,13 +24,13 @@ the Rorschach dev tool.
                                       src/dev/tools/rorschach/  ← UI over the CLI
 ```
 
-| Piece                                          | Role                                                                                                                                           |
-| ---------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------- |
-| `src/modules/rorschach/`                       | **The kernel.** Rolling a config, integrating the ODE bundles, deriving styles and overrides, projecting to SVG, and the render-option schema. |
-| `src/components/scenes/WebGPU/Rorschach/`      | **Renderer A** — realtime WebGPU, Leva controls, presets, post chain.                                                                          |
-| `scripts/lib/rorschachRender.mjs` + the 2 CLIs | **Renderer B** — headless stills and video.                                                                                                    |
-| `src/dev/server/rorschach/`                    | Runs the CLIs as jobs and validates their options.                                                                                             |
-| `src/dev/tools/rorschach/`                     | **Not a third renderer** — a browser UI over renderer B. It must never grow its own generation or option logic.                                |
+| Piece                                          | Role                                                                                                                                                                                                   |
+| ---------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| `src/modules/rorschach/`                       | **The kernel.** Rolling a config, integrating the ODE bundles, deriving styles and overrides, projecting to SVG, and the render-option schema.                                                         |
+| `src/components/scenes/WebGPU/Rorschach/`      | **Renderer A** — realtime WebGPU, Leva controls, presets, post chain.                                                                                                                                  |
+| `scripts/lib/rorschachRender.mjs` + the 2 CLIs | **Renderer B** — headless stills and video.                                                                                                                                                            |
+| `src/dev/server/rorschach/`                    | Runs the CLIs as jobs and validates their options.                                                                                                                                                     |
+| `src/dev/tools/rorschach/`                     | **Not a third renderer** — a browser UI over renderer B. It must never grow its own generation or option logic. It never reads the scene; it can only write a finished still into the scene's presets. |
 
 ## Rules
 
@@ -85,7 +85,7 @@ this table if you introduce another.
 | Overlay burn-in is headless-only | The scene draws its overlay as DOM; the CLIs composite an SVG overlay into the pixels (`--overlay`).                                                                                                                                                                                                                                     |
 | Ink is GPU-only                  | The watercolour layer is a fluid sim on the GPU and has no vector form. `--renderer svg` silently omits it and draws lines alone; SVG output stays a line-work format, which is what plotting wants anyway.                                                                                                                              |
 | Membrane is GPU-only             | The canopy stretched over a bundle's strands is a surface; `renderTestSvg` is a line-work format with no vector form for it, so `--renderer svg` draws the strands alone. Same reasoning as ink. An outline mode is possible — a line-seeded sheet does not fold, so its silhouette is its parameter-domain boundary — but is not built. |
-| Ink settles by step count        | The scene advances the sim a few steps per frame, so a blot keeps developing while you watch. A still runs `--inkSettle` steps from a clean field, which is what makes a seed reproducible rather than time-dependent.                                                                                                                   |
+| Ink settles by step count        | A still runs `--inkSettle` steps from a clean field, which is what makes a seed reproducible rather than time-dependent. A **video** carries the wet field between frames instead (`inkCarry`, default 2), which is what the scene does and what makes an ink clip affordable — see "What an ink render actually costs".                 |
 
 ## Growth videos
 
@@ -218,6 +218,92 @@ with one button per facet, each applying only that facet's keys. The CLI and the
 workbench have to declare what to _hold_ precisely because their values are
 never seen; a hundred tests are rolled sight unseen. Same capability, inverted
 to suit the surface.
+
+### Pinning a whole look
+
+Pinning one value at a time answers "one blot through a hundred palettes". It
+does not answer the thing a preset exists for — "a hundred rolls of 012, keeping
+its palette and its overridden bundle" — because most of what makes 012 look
+like 012 had no way to reach a batch at all.
+
+**`bundles` carries the Bundle Editor.** Twenty folders of sixteen fields is
+three hundred keys; as flags they would drown `--help` and the workbench form
+alike, so this is the one option whose value is an object rather than a scalar.
+It holds exactly the flat `bundleNField` block a scene preset already has, so a
+preset's overrides transfer verbatim, and `rollTestConfig` expands the pin back
+into flat keys over a cleared block — pinning the overrides means those
+overrides and no others, and the config it returns stays a valid preset that
+reads straight back into the scene. It sits in the palette facet because that is
+the stream that rolls overrides: whether a bundle may glow depends on the
+palette it was chosen against.
+
+On the CLI it takes JSON or a path — `--bundles preset.json`, or a still's own
+`props.json`, whose `{ preset: ... }` wrapper is unwrapped for you. Keys the
+option is not about are dropped rather than rejected, which is what lets a whole
+preset be handed over as-is.
+
+**`paletteShuffleSeed` was rolled but not declared.** It reorders which palette
+stop each bundle takes, the dice set it on most tests, and it was missing from
+`renderOptions.mjs` entirely — so no surface could hold it, and two batches on
+one palette still came out with their bundle colours in a different order. It
+carries the palette facet with no `roll` window, the way `palette` and
+`monochrome` do.
+
+**The base is a generated still, not a scene preset.** This was built the other
+way round first — a dropdown of the scene's saved presets — and it was wrong in
+both directions. The workbench is a private batch tool, and it was reading from
+the public site's hand-authored looks; meanwhile the thing it produces by the
+hundred, and the thing anyone would point at and ask for more of, is a still in
+its own gallery. That still's `props.json` is the exact config that drew it, and
+the preview panel had already fetched it to show the stats.
+
+So **Roll variations** on a still's preview fills the form with what drew that
+picture — the rolled config and the render settings, so the dimensions, format
+and renderer come across too — and the **Roll** section at the top of the form
+then says, in a sentence, what the next render will do:
+
+> Holding palette & bundles from 87184 / final — 3 tests, rolling structure and ink.
+
+That line is the fix for the real problem, which was never the pinning model but
+its invisibility: forty checkboxes down a form answer "is this field held" and
+never "am I about to roll anything at all". Nothing is held by default, and now
+the page says so before it is asked.
+
+The translation is `optionsFromPreset` in the kernel, not logic on the page.
+`sceneKey` on a spec is how the two names that differ are found — the scene
+calls `bloom` `bloomEnabled` and `overlay` `showOverlay` — declared on the
+option rather than kept as a lookup table on whichever surface reads presets.
+
+### The other direction: a still back into the scene
+
+**Save as scene preset** writes a still's config into the scene's `presets.js`
+as the next free number, and then offers a link to `?preset=NNN`. That is the
+direction the dependency should run: the tool that generates pushes to the site
+that shows, and the dev tool reads nothing of the scene at all.
+
+`presetFromRender` builds it. The rolled config is already a valid preset — that
+is `rollTestConfig`'s contract — so it is the base, and the render options fill
+in what the dice never touch: the flatten, the layer toggles, the bloom, the
+paper. **The roll wins every collision**, because a sidecar's `render` block
+carries every rollable option at its _default_ wherever the batch left it to the
+dice, and a default is not what was drawn. The camera is derived rather than
+carried: a still names a view and a distance, the scene wants an orbit position,
+and framing the scene the way the still was framed is the entire point of
+opening it.
+
+Which options are scene controls is the load-bearing part, and it is a list —
+`HEADLESS_ONLY_OPTIONS`, the smaller half, so the rule reads "everything else
+is". `rorschach:check` holds it against `useSceneControls.js` in both
+directions, because this is the one place a wrong name fails silently: reading a
+preset can guess by name, since a wrong guess simply doesn't match, but writing
+one cannot — it produces a preset the scene half-ignores, with no error
+anywhere. The same check pins `renderOptions.mjs`'s copy of `viewEye` to the
+real one; the copy exists because that file is dependency-free by rule.
+
+The file is spliced and then handed to prettier with the repo's own config, so a
+written entry is indistinguishable from a hand-authored one. Names are never
+reused and gaps are never filled: a name is how a preset is linked to, and
+filling a hole would point an old link at a new picture.
 
 **A trap the workbench walked into.** `appendFlags` forwarded every option it
 held, which after `normalizeOptions` merges defaults is _all_ of them — so every
@@ -566,8 +652,100 @@ of it; the fused pass still does both layers' arithmetic, so only the per-pass
 overhead goes away. Output is unchanged to within half-float rounding (max delta
 2/255).
 
-One lever left: video modes rebuild the sim from clean every frame, which a warm
-sim would avoid at the cost of frame independence.
+**The sim outlives the frame.** A capture used to build one and throw it away,
+which is what a "each frame is a specific number of steps from a clean field"
+rule was taken to require. It never did: _clearing_ the fields is what makes a
+seed reproducible, and clearing is free. The capturer now keeps one sim for its
+whole run and only resets it, which skips the render targets, the pipeline
+compile and the paper grain per frame. Measured at 512 output / 2048 sim, all
+byte-identical to the old output:
+
+| render                   | before | after |
+| ------------------------ | ------ | ----- |
+| turntable, 8 frames      | 54.8s  | 6.4s  |
+| growth four-up, 4 frames | 94.8s  | 18.7s |
+| breathe, 4 frames        | 24.6s  | 16.0s |
+| stills, 3 tests          | 21.5s  | 15.9s |
+
+Those are with the per-frame settle still in place. The carry below removes most
+of what is left.
+
+The spread across those four is the whole story of what an ink render costs.
+**Turntable and four-up gain most because they were re-settling a blot that
+never changed** — the camera moves, the ink does not, and a four-up frame
+settled the same sheet once per view. Those now hit a cache keyed on the exact
+settled state and do no ink work at all. Breathe and sequential growth advance
+the pattern clock every frame, so they genuinely must re-settle; what they save
+is only the rebuild.
+
+**The paper grain was two seconds of CPU per test.** Four octaves of value noise
+sampled per pixel, which at 2048 is 4.2M pixels × 4 lattice reads — and it
+follows the seed, so a batch paid it per test and a video paid it per frame. It
+is now computed for half the sheet (the grain is mirrored, by construction) with
+the per-axis lattice indices and blends hoisted into one table per octave, since
+u and v are the same ramp over the same positions. **2121ms → 169ms**, output
+identical. The scene feels this one too: rolling a new structure used to rebuild
+the whole sim, and now rewrites the texture in place.
+
+**`inkCarry` is what the scene has always done, and it is now the video
+default.** The scene runs `inkStepsPerFrame` steps and keeps the wet field; the
+headless path cleared the sheet and dried it again from scratch every frame. At
+a 2048 sim that is **840ms a frame against 3ms**, and it was the single largest
+cost in an ink video.
+
+The reason it was off was overstated. What a carry gives up is not clip
+reproducibility — a video is always rendered from frame 0, so both are
+deterministic and the same command gives the same file — but _frame_
+independence: re-rendering frame 400 on its own will not reproduce frame 400 of
+the clip. Nothing in the pipeline does that. Set it to 0 to get the old
+behaviour back.
+
+It is also the closer match to what you tuned. Sixty independent settles are
+sixty frames of a blot that has fully arrived; a carried field flows, which is
+what the scene shows. Measured against a per-frame settle over the same clip:
+PSNR 38dB, the difference confined entirely to the ink, the wash slightly softer
+where it is still travelling.
+
+Never carried across a test boundary — a new seed is a new blot, and carrying
+the last one's pigment into it bleeds one test into the next. That also means a
+stills montage never reaches it, and turntable and cinematic never do either,
+since their ink is identical between frames and hits the cache first.
+
+**The overlay used to cost more than the frame did.** `applyOverlay` took an
+encoded PNG, so an overlaid render encoded the frame, decoded it again to
+composite on, and encoded it a second time. The capture now hands back raw RGBA
+and the overlay is composited straight onto it, encoding once. Verified
+byte-identical on an overlaid still.
+
+**Frames go into ffmpeg's stdin, not into a temp directory.** They used to be
+PNG-encoded, written to disk, and then decoded again by ffmpeg in a second pass
+over the whole clip. `scripts/lib/frameSink.mjs` spawns ffmpeg on a rawvideo
+pipe instead, so the encode is gone, the write is gone, ffmpeg's decode is gone,
+and — the part that does not show up in a per-frame number — the encode now runs
+_while_ the next frame renders. The temp directory goes with it; only a stills
+montage still writes files first, because a set of images with a duration and a
+crossfade each is the concat demuxer's job.
+
+`renderFrame` grew an `output` of `'png'` or `'raw'` for this. `'raw'` drains
+the sharp pipeline with `ensureAlpha().raw()`, so a frame is always exactly
+`width * height * 4` bytes, which the sink asserts. Backpressure is real at
+12.6MB a frame and is awaited on `drain`; the sink is closed in a `finally` so a
+thrown render cannot leave ffmpeg holding an open pipe and the process hanging.
+
+Together, a 60-frame growth render at 1206x2622 went **234.2s to 17.9s** — 3.90s
+a frame to 0.30s, with the encode overlapped rather than appended. Verified
+pixel-identical to the PNG-sequence path (PSNR inf; the containers differ only
+in metadata ordering). What is left per frame is ~100ms of
+`readRenderTargetPixelsAsync` (12.6MB off the GPU) and ~20ms of actual
+rendering; the readback is the floor, and it is the price of a file rather than
+a canvas.
+
+One thing the pipe broke and then fixed: the dev server reads progress out of
+the CLI's stdout, and its pattern only matched `rendering %` — but the bar
+labels itself after what it counts ("rendering growth", "rendering views"), so a
+video job had always sat at zero for its entire render and only moved during the
+encode. With the encode no longer a separate pass there was nothing left to
+report at all, which is what made it obvious.
 
 ### Depth state on the ink
 

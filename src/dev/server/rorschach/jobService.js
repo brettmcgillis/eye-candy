@@ -56,7 +56,12 @@ function appendFlags(args, options, chosen) {
       args.push(value ? `--${key}` : `--no-${key}`);
       return;
     }
-    args.push(`--${key}`, String(value));
+    // A json-typed option carries an object, and `String()` on one is
+    // "[object Object]" — a flag the CLI accepts and then silently ignores.
+    args.push(
+      `--${key}`,
+      typeof value === 'object' ? JSON.stringify(value) : String(value)
+    );
   });
 }
 
@@ -118,22 +123,28 @@ function addLog(job, source, message) {
       );
 
       const batch = line.match(/^\[(\d+)\/(\d+)\]/u);
-      const percent = line.match(/(?:rendering|encoding)\s+(\d+)%/u);
+      // The bar labels itself after what it is counting — "rendering growth",
+      // "rendering views", "encoding" — so the words between the verb and the
+      // number vary. Matching only `rendering %` meant a video job sat at zero
+      // for its entire render and only moved during the encode.
+      const percent = line.match(/^(rendering|encoding)\b[^%]*?(\d+)%/u);
       if (batch) {
         currentJob.phase = 'rendering';
         currentJob.progress = Math.round(
           ((Number(batch[1]) - 1) / Number(batch[2])) * 90
         );
       } else if (percent) {
-        const amount = Number(percent[1]);
-        currentJob.phase = line.includes('encoding') ? 'encoding' : 'rendering';
+        const amount = Number(percent[2]);
+        currentJob.phase = percent[1] === 'encoding' ? 'encoding' : 'rendering';
         currentJob.progress =
           currentJob.phase === 'encoding'
-            ? 80 + Math.round(amount * 0.2)
-            : Math.round(amount * 0.8);
-      } else if (line.startsWith('encoding')) {
+            ? 90 + Math.round(amount * 0.1)
+            : Math.round(amount * 0.9);
+      } else if (line.startsWith('finishing encode')) {
+        // Frames are piped into ffmpeg as they render, so there is no separate
+        // encoding pass to count — only the tail once the last frame is in.
         currentJob.phase = 'encoding';
-        currentJob.progress = Math.max(currentJob.progress, 80);
+        currentJob.progress = Math.max(currentJob.progress, 92);
       }
     });
 }

@@ -11,6 +11,7 @@ import path from 'node:path';
 import process from 'node:process';
 
 import {
+  HEADLESS_ONLY_OPTIONS,
   RENDER_OPTIONS,
   optionsFor,
 } from '../src/modules/rorschach/renderOptions.mjs';
@@ -152,6 +153,51 @@ async function checkInkPaintsByDefault() {
   });
 }
 
+// `presetFromRender` writes a scene preset by emitting every option that is not
+// in HEADLESS_ONLY_OPTIONS, under `sceneKey ?? key`. A name that drifts out of
+// step with the scene's Leva schema writes a preset the scene silently
+// half-ignores — no render fails, nothing logs, the picture is just wrong. So
+// the partition is asserted in both directions against the schema itself.
+async function checkSceneControlPartition() {
+  const schema = await readFile(SCENE_CONTROLS, 'utf8');
+  const declared = (name) => new RegExp(`^\\s*${name}:`, 'mu').test(schema);
+
+  Object.entries(RENDER_OPTIONS).forEach(([key, spec]) => {
+    const name = spec.sceneKey ?? key;
+    if (HEADLESS_ONLY_OPTIONS.has(key)) {
+      check(
+        !declared(name),
+        `"${key}" is listed in HEADLESS_ONLY_OPTIONS but the scene declares a "${name}" control — a still saved as a preset would drop it.`
+      );
+      return;
+    }
+    check(
+      declared(name),
+      `"${key}" is treated as a scene control but the scene declares no "${name}" — a still saved as a preset would write a key nothing reads. Add it to HEADLESS_ONLY_OPTIONS, or give the spec a sceneKey.`
+    );
+  });
+}
+
+// renderOptions.mjs is dependency-free, so it carries its own copy of the four
+// axis-aligned view eyes. Two copies is one more than the rule allows anywhere
+// else here, and this is what pays for it.
+function checkViewEyesAgree(kernel) {
+  const { presetFromRender } = kernel;
+  ['front', 'back', 'top', 'bottom'].forEach((view) => {
+    const expected = kernel.viewEye(view, 17);
+    const { orbitDesktopPosition: actual } = presetFromRender(
+      { preset: {}, render: { distance: 17 }, view },
+      'still'
+    );
+    check(
+      actual.x === expected[0] &&
+        actual.y === expected[1] &&
+        actual.z === expected[2],
+      `presetFromRender frames "${view}" at ${JSON.stringify(actual)} but viewEye puts the camera at ${JSON.stringify(expected)} — a still opened in the scene would not match itself.`
+    );
+  });
+}
+
 function checkSurfacesShareEveryOption() {
   ['still', 'video'].forEach((kind) => {
     const cli = new Set(optionsFor(kind).map(([key]) => key));
@@ -172,8 +218,11 @@ async function main() {
   await checkInkPaintsByDefault();
   checkSurfacesShareEveryOption();
 
+  await checkSceneControlPartition();
+
   const kernel = await loadKernel();
   await checkHeadlessCallsResolve(kernel);
+  checkViewEyesAgree(kernel);
 
   if (failures.length > 0) {
     console.error(`rorschach:check failed (${failures.length}):\n`);

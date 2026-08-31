@@ -9,19 +9,27 @@ import process from 'node:process';
 import sharp from 'sharp';
 
 import {
+  RENDER_OPTIONS,
   VIEWS,
   defaultsFor,
   normalizeOptions,
   resolveIgPreset,
   usageFor,
 } from '../src/modules/rorschach/renderOptions.mjs';
-import { parseArgs, providedKeys, readPackageVersion } from './lib/cliArgs.mjs';
+import {
+  parseArgs,
+  providedKeys,
+  readJsonFlags,
+  readPackageVersion,
+} from './lib/cliArgs.mjs';
+import createFrameSink from './lib/frameSink.mjs';
 import createProgress, { runStage } from './lib/progress.mjs';
 import {
   REPO_ROOT,
   applyOverlay,
   buildTest,
   disposeCapturers,
+  fromRaw,
   loadKernel,
   renderFrame,
   rollArgs,
@@ -167,28 +175,6 @@ async function encode(args, { label, totalFrames }) {
 // --width slipping through.
 const SIZE_FILTER = 'scale=trunc(iw/2)*2:trunc(ih/2)*2';
 const ENCODE_FILTER = `${SIZE_FILTER},format=yuv420p`;
-
-async function encodeFrames(dir, { fps, out, totalFrames }) {
-  await encode(
-    [
-      '-y',
-      '-framerate',
-      String(fps),
-      '-i',
-      path.join(dir, 'frame-%05d.png'),
-      '-vf',
-      ENCODE_FILTER,
-      '-c:v',
-      'libx264',
-      '-crf',
-      '17',
-      '-preset',
-      'slow',
-      out,
-    ],
-    { label: 'encoding', totalFrames }
-  );
-}
 
 // Cuts: the concat demuxer with a duration per entry.
 //
@@ -346,7 +332,7 @@ async function renderStills(kernel, { options, roll, tmp }) {
   return { files, presets };
 }
 
-async function renderTurntable(kernel, { options, roll, tmp }) {
+async function renderTurntable(kernel, { options, roll, sink }) {
   const seed =
     typeof options.seed === 'number' ? options.seed : kernel.randomSeed();
   const config = kernel.rollTestConfig(seed, roll);
@@ -359,15 +345,14 @@ async function renderTurntable(kernel, { options, roll, tmp }) {
 
   for (let frame = 0; frame < total; frame += 1) {
     const azimuth = (frame / (options.hold * options.fps)) * Math.PI * 2;
-    const png = await renderFrame(kernel, {
-      config,
-      eye: kernel.orbitEye(azimuth, 0, options.distance),
-      options,
-      test,
-    });
-    await writeFile(
-      path.join(tmp, `frame-${String(frame).padStart(5, '0')}.png`),
-      png
+    await sink.write(
+      await renderFrame(kernel, {
+        config,
+        eye: kernel.orbitEye(azimuth, 0, options.distance),
+        options,
+        output: 'raw',
+        test,
+      })
     );
     progress.update(frame + 1);
   }
@@ -375,7 +360,7 @@ async function renderTurntable(kernel, { options, roll, tmp }) {
   return { presets: [config], totalFrames: total };
 }
 
-async function renderGrowth(kernel, { options, roll, tmp }) {
+async function renderGrowth(kernel, { options, roll, sink }) {
   const first =
     typeof options.seed === 'number' ? options.seed : kernel.randomSeed();
   const framesPerTest = Math.max(2, Math.round(options.hold * options.fps));
@@ -440,30 +425,28 @@ async function renderGrowth(kernel, { options, roll, tmp }) {
             input: await renderFrame(kernel, {
               config,
               options: withInkClock(cellOptions),
+              output: 'raw',
               test,
               view,
             }),
             left: (viewIndex % 2) * cellWidth,
+            // Each cell arrives as pixels rather than a PNG, so sharp is told
+            // their shape instead of reading it out of a header it would first
+            // have had to decode.
+            raw: { channels: 4, height: cellHeight, width: cellWidth },
             top: Math.floor(viewIndex / 2) * cellHeight,
           });
         }
-        const composite = await sharp({
+        const composite = sharp({
           create: {
             background: { alpha: 1, b: 0, g: 0, r: 0 },
             channels: 4,
             height: options.height,
             width: options.width,
           },
-        })
-          .composite(cells)
-          .png()
-          .toBuffer();
-        const png = await applyOverlay(composite, options);
-        finalFrame = png;
-        await writeFile(
-          path.join(tmp, `frame-${String(frame).padStart(5, '0')}.png`),
-          png
-        );
+        }).composite(cells);
+        finalFrame = await applyOverlay(composite, options, 'raw');
+        await sink.write(finalFrame);
         frame += 1;
         progress.update(frame);
       }
@@ -472,17 +455,14 @@ async function renderGrowth(kernel, { options, roll, tmp }) {
         const view = views[viewIndex];
         for (let localFrame = 0; localFrame < framesPerTest; localFrame += 1) {
           setGrowth(test, localFrame / (framesPerTest - 1));
-          const png = await renderFrame(kernel, {
+          finalFrame = await renderFrame(kernel, {
             config,
             options: withInkClock(options),
+            output: 'raw',
             test,
             view,
           });
-          finalFrame = png;
-          await writeFile(
-            path.join(tmp, `frame-${String(frame).padStart(5, '0')}.png`),
-            png
-          );
+          await sink.write(finalFrame);
           frame += 1;
           progress.update(frame);
         }
@@ -491,10 +471,13 @@ async function renderGrowth(kernel, { options, roll, tmp }) {
 
     if (sourceRoot && finalFrame) {
       const outputDir = path.join(sourceRoot, String(config.seed));
+      // The kept still is the only thing in this mode that becomes a file, so
+      // it is the only thing that gets encoded.
+      const page = fromRaw(finalFrame, options);
       const image =
         options.imageFormat === 'webp'
-          ? await sharp(finalFrame).webp({ lossless: true }).toBuffer()
-          : finalFrame;
+          ? await page.webp({ lossless: true }).toBuffer()
+          : await page.png().toBuffer();
       await mkdir(outputDir, { recursive: true });
       await Promise.all([
         writeFile(path.join(outputDir, `final.${options.imageFormat}`), image),
@@ -526,7 +509,7 @@ async function renderGrowth(kernel, { options, roll, tmp }) {
 // frame's pattern time. That is deliberate: it costs a settle per frame, but it
 // makes each frame a pure function of (seed, patternTime), so the clip is
 // reproducible and a dropped frame cannot desynchronise the rest.
-async function renderBreathe(kernel, { options, roll, tmp }) {
+async function renderBreathe(kernel, { options, roll, sink }) {
   const seed =
     typeof options.seed === 'number' ? options.seed : kernel.randomSeed();
   const config = kernel.rollTestConfig(seed, roll);
@@ -544,20 +527,19 @@ async function renderBreathe(kernel, { options, roll, tmp }) {
   const progress = createProgress('rendering frames', total);
 
   for (let frame = 0; frame < total; frame += 1) {
-    const png = await renderFrame(kernel, {
-      config,
-      options: {
-        ...options,
-        inkPatternTime:
-          options.inkPatternTime +
-          (frame / options.fps) * options.inkPatternSpeed,
-      },
-      test,
-      view: options.view,
-    });
-    await writeFile(
-      path.join(tmp, `frame-${String(frame).padStart(5, '0')}.png`),
-      png
+    await sink.write(
+      await renderFrame(kernel, {
+        config,
+        options: {
+          ...options,
+          inkPatternTime:
+            options.inkPatternTime +
+            (frame / options.fps) * options.inkPatternSpeed,
+        },
+        output: 'raw',
+        test,
+        view: options.view,
+      })
     );
     progress.update(frame + 1);
   }
@@ -565,7 +547,7 @@ async function renderBreathe(kernel, { options, roll, tmp }) {
   return { presets: [config], totalFrames: total };
 }
 
-async function renderCinematic(kernel, { options, roll, tmp }) {
+async function renderCinematic(kernel, { options, roll, sink }) {
   const first =
     typeof options.seed === 'number' ? options.seed : kernel.randomSeed();
   const total = Math.round(options.hold * options.fps * options.systems);
@@ -595,21 +577,21 @@ async function renderCinematic(kernel, { options, roll, tmp }) {
     }
 
     setGrowth(test, state.growth);
-    const png = await renderFrame(kernel, {
-      config,
-      eye: kernel.orbitEye(state.azimuth, 0, options.distance),
-      // Cinematic drives the squash itself, so it enables it too — otherwise
-      // the animated value is gated off by a toggle the mode never asked about.
-      options: {
-        ...options,
-        flatten: state.flatten,
-        flattenEnabled: true,
-      },
-      test,
-    });
-    await writeFile(
-      path.join(tmp, `frame-${String(frame).padStart(5, '0')}.png`),
-      png
+    await sink.write(
+      await renderFrame(kernel, {
+        config,
+        eye: kernel.orbitEye(state.azimuth, 0, options.distance),
+        // Cinematic drives the squash itself, so it enables it too — otherwise
+        // the animated value is gated off by a toggle the mode never asked
+        // about.
+        options: {
+          ...options,
+          flatten: state.flatten,
+          flattenEnabled: true,
+        },
+        output: 'raw',
+        test,
+      })
     );
     progress.update(frame + 1);
   }
@@ -623,7 +605,10 @@ async function main() {
     usage();
     return;
   }
-  const validated = normalizeOptions('video', args);
+  const validated = normalizeOptions(
+    'video',
+    await readJsonFlags(args, RENDER_OPTIONS)
+  );
   // Read before defaults are merged: a typed flag is a pin, an absent one is
   // left to the dice. Same rule the stills CLI and the workbench apply.
   const typed = providedKeys(args);
@@ -647,12 +632,17 @@ async function main() {
     options.mode === 'stills' &&
     !options.in &&
     typeof options.stillsOut === 'string';
-  const tmp = persistentStills
-    ? path.resolve(REPO_ROOT, options.stillsOut)
-    : await mkdtemp(path.join(os.tmpdir(), 'rorschach-'));
+  // Only a stills montage still puts anything on disk before encoding: it is a
+  // set of images with a duration each, which is the concat demuxer's job. The
+  // frame-sequence modes pipe straight into ffmpeg and need no scratch space at
+  // all — a 900-frame clip used to leave several gigabytes of PNGs behind it.
+  let tmp = null;
   if (persistentStills) {
+    tmp = path.resolve(REPO_ROOT, options.stillsOut);
     await rm(tmp, { force: true, recursive: true });
     await mkdir(tmp, { recursive: true });
+  } else if (options.mode === 'stills') {
+    tmp = await mkdtemp(path.join(os.tmpdir(), 'rorschach-'));
   }
 
   try {
@@ -683,22 +673,32 @@ async function main() {
         });
       }
     } else {
+      // The frame sequence goes straight into ffmpeg rather than through a temp
+      // directory of PNGs, so encoding happens while the next frame renders and
+      // there is no second pass over the clip at the end.
+      const sink = createFrameSink({
+        fps: options.fps,
+        height: options.height,
+        out,
+        width: options.width,
+      });
       let rendered;
-      if (options.mode === 'breathe') {
-        rendered = await renderBreathe(kernel, { options, roll, tmp });
-      } else if (options.mode === 'growth') {
-        rendered = await renderGrowth(kernel, { options, roll, tmp });
-      } else if (options.mode === 'turntable') {
-        rendered = await renderTurntable(kernel, { options, roll, tmp });
-      } else {
-        rendered = await renderCinematic(kernel, { options, roll, tmp });
+      try {
+        if (options.mode === 'breathe') {
+          rendered = await renderBreathe(kernel, { options, roll, sink });
+        } else if (options.mode === 'growth') {
+          rendered = await renderGrowth(kernel, { options, roll, sink });
+        } else if (options.mode === 'turntable') {
+          rendered = await renderTurntable(kernel, { options, roll, sink });
+        } else {
+          rendered = await renderCinematic(kernel, { options, roll, sink });
+        }
+      } finally {
+        // Closed on the failure path too, or a thrown render leaves ffmpeg
+        // holding an open pipe and the process never exits.
+        await runStage('finishing encode', () => sink.finish());
       }
       presets = rendered.presets;
-      await encodeFrames(tmp, {
-        fps: options.fps,
-        out,
-        totalFrames: rendered.totalFrames,
-      });
     }
 
     process.stdout.write(`saved video: ${out}\n`);
@@ -706,7 +706,7 @@ async function main() {
     process.stdout.write(`saved metadata: ${metadataPath}\n`);
   } finally {
     await disposeCapturers();
-    if (!persistentStills) {
+    if (tmp && !persistentStills) {
       await runStage('removing temporary frames', () =>
         rm(tmp, { force: true, recursive: true })
       );

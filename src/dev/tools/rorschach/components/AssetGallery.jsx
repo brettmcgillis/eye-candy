@@ -7,9 +7,11 @@ import React, {
   useState,
 } from 'react';
 import {
+  FiBox,
   FiCheckSquare,
   FiChevronLeft,
   FiChevronRight,
+  FiExternalLink,
   FiFilm,
   FiFilter,
   FiFolder,
@@ -17,11 +19,15 @@ import {
   FiImage,
   FiList,
   FiMaximize2,
+  FiRefreshCw,
   FiTrash2,
   FiX,
   FiZoomIn,
   FiZoomOut,
 } from 'react-icons/fi';
+
+import { resolveLegacyScenePath } from '@app/sceneRegistry';
+import { presetFromRender } from '@modules/rorschach';
 
 import {
   assetFormat,
@@ -92,7 +98,93 @@ function formatDimensions(width, height) {
   return width == null || height == null ? null : `${width} × ${height}`;
 }
 
-function PreviewStats({ error, loading, metadata }) {
+const VIEW_NAMES = ['front', 'back', 'top', 'bottom'];
+
+// A still names the view it was drawn from in its own filename; a video carries
+// it in the sidecar. The scene is framed from it, so guessing wrong points the
+// camera at the back of the picture.
+function viewOf(group, metadata) {
+  const name = group.key.split('/').pop();
+  if (VIEW_NAMES.includes(name)) return name;
+  return VIEW_NAMES.includes(metadata?.render?.view)
+    ? metadata.render.view
+    : 'front';
+}
+
+// The two things worth doing with a piece you like: make more of it, or see it
+// in three dimensions. Both start from the sidecar this preview already has —
+// the exact config that drew the picture — so neither needs the scene to have
+// been involved beforehand.
+function PreviewActions({ group, metadata, onUseAsBase }) {
+  const [saving, setSaving] = useState(false);
+  const [saved, setSaved] = useState(null);
+  const [error, setError] = useState(null);
+
+  const preset = metadata?.preset;
+  if (!preset) return null;
+
+  const saveScenePreset = async () => {
+    setError(null);
+    setSaving(true);
+    try {
+      const response = await fetch('/dev-api/rorschach/presets', {
+        body: JSON.stringify({
+          preset: presetFromRender(
+            {
+              preset,
+              render: metadata.render,
+              view: viewOf(group, metadata),
+            },
+            'still'
+          ),
+        }),
+        headers: { 'Content-Type': 'application/json' },
+        method: 'POST',
+      });
+      const body = await response.json();
+      if (!response.ok) throw new Error(body.message ?? 'Could not save.');
+      setSaved(body.preset);
+    } catch (saveError) {
+      setError(saveError.message);
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  return (
+    <div className="rw-preview__actions">
+      <button
+        className="dev-button"
+        onClick={() => onUseAsBase(metadata, group.name)}
+        type="button"
+      >
+        <FiRefreshCw /> Roll variations
+      </button>
+      {saved ? (
+        <a
+          className="dev-button"
+          href={`${resolveLegacyScenePath('rorschach') ?? '/wip/rorschach'}?preset=${saved.name}`}
+          rel="noreferrer"
+          target="_blank"
+        >
+          <FiExternalLink /> Open preset {saved.name} in the scene
+        </a>
+      ) : (
+        <button
+          className="dev-button"
+          disabled={saving}
+          onClick={saveScenePreset}
+          type="button"
+        >
+          <FiBox /> {saving ? 'Saving...' : 'Save as scene preset'}
+        </button>
+      )}
+      {error ? <p className="rw-preview__actions-error">{error}</p> : null}
+    </div>
+  );
+}
+
+function PreviewStats({ error, group, loading, metadata, onUseAsBase }) {
   if (loading)
     return <aside className="rw-preview__stats">Loading stats...</aside>;
   if (error)
@@ -106,6 +198,11 @@ function PreviewStats({ error, loading, metadata }) {
   const { preset = {}, render = {} } = metadata;
   return (
     <aside className="rw-preview__stats">
+      <PreviewActions
+        group={group}
+        metadata={metadata}
+        onUseAsBase={onUseAsBase}
+      />
       <h2>Stats</h2>
       <dl>
         <Stat label="Seed" value={preset.seed} />
@@ -188,6 +285,7 @@ function PreviewDialog({
   onNext,
   onPrevious,
   onRequestDelete,
+  onUseAsBase,
   pendingDeleteKey,
 }) {
   const [assetIndex, setAssetIndex] = useState(0);
@@ -407,8 +505,10 @@ function PreviewDialog({
             </div>
             <PreviewStats
               error={metadataError}
+              group={group}
               loading={metadataLoading}
               metadata={metadata}
+              onUseAsBase={onUseAsBase}
             />
           </div>
           {hasNext ? (
@@ -537,6 +637,7 @@ export default function AssetGallery({
   onRemoveAssets,
   onRemoveMany,
   onRequestDelete,
+  onUseAsBase,
   pendingDeleteId,
   variant = 'transient',
 }) {
@@ -1166,6 +1267,10 @@ export default function AssetGallery({
               itemKey(preview.groups[preview.index].collectionId, asset.path)
             )
           }
+          onUseAsBase={(metadata, name) => {
+            onUseAsBase(metadata, name);
+            closePreview();
+          }}
           pendingDeleteKey={pendingItemDelete}
         />
       ) : null}

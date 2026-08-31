@@ -47,6 +47,27 @@ export function providedKeys(args) {
   return args?.[PROVIDED] ?? new Set();
 }
 
+// A json-typed flag may name a file instead of carrying its payload on argv.
+// The bundle-override block of a real preset is three thousand characters, and
+// the point of it is that it came out of the scene rather than off a keyboard.
+// Both shapes a preset is written in are accepted — the flat object itself, and
+// a props.json's `{ preset: ... }` wrapper — so a still's own sidecar can be
+// handed straight back to the CLI that made it.
+export async function readJsonFlags(args, specs) {
+  const { readFile } = await import('node:fs/promises');
+  const resolved = { ...args };
+  await Promise.all(
+    Object.entries(specs).map(async ([key, spec]) => {
+      const value = args[key];
+      if (spec.type !== 'json' || typeof value !== 'string') return;
+      if (value.trimStart().startsWith('{')) return;
+      const parsed = JSON.parse(await readFile(value, 'utf8'));
+      resolved[key] = parsed?.preset ?? parsed;
+    })
+  );
+  return resolved;
+}
+
 // Read rather than `import ... with { type: 'json' }`: the repo's parser
 // doesn't accept import attributes yet.
 export async function readPackageVersion() {

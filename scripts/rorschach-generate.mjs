@@ -7,13 +7,19 @@ import process from 'node:process';
 import sharp from 'sharp';
 
 import {
+  RENDER_OPTIONS,
   defaultsFor,
   normalizeOptions,
   resolveIgPreset,
   resolveViews,
   usageFor,
 } from '../src/modules/rorschach/renderOptions.mjs';
-import { parseArgs, providedKeys, readPackageVersion } from './lib/cliArgs.mjs';
+import {
+  parseArgs,
+  providedKeys,
+  readJsonFlags,
+  readPackageVersion,
+} from './lib/cliArgs.mjs';
 import createProgress, { runStage } from './lib/progress.mjs';
 import {
   REPO_ROOT,
@@ -40,7 +46,10 @@ async function main() {
     return;
   }
 
-  const validated = normalizeOptions('still', args);
+  const validated = normalizeOptions(
+    'still',
+    await readJsonFlags(args, RENDER_OPTIONS)
+  );
   // Read off the raw args, not the validated bag: normalizeOptions merges
   // defaults in, which destroys exactly the distinction being recovered here.
   const typed = providedKeys(args);

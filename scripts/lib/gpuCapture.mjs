@@ -1,5 +1,4 @@
 /* eslint-disable import/no-extraneous-dependencies */
-import sharp from 'sharp';
 
 // Renders the Rorschach scene through the real three.js WebGPU renderer in
 // Node, so the PNG carries the actual post-processing chain rather than an
@@ -223,72 +222,60 @@ function unpadRows(pixels, width, height) {
   return out;
 }
 
-// The ink layer is built and settled per capture rather than cached: a still is
-// a specific number of sim steps from a clean field, which is what makes the
-// same seed produce the same blot. Reusing a warm sim across captures would
-// make each frame depend on the one before it.
-function buildInkPaper(kernel, renderer, options, test, config) {
+// Everything the ink layer reads, in the order buildInkPaper hands it over.
+// Split in two because the two halves have very different costs: a change to
+// `look` is a handful of uniform writes, while `grid` sizes render targets and
+// so needs a whole new sim.
+function inkParams(kernel, options, config) {
   // The rolled config carries every ink parameter the dice can set, and the
   // caller's pins were folded into it before it got here — so config wins
   // wherever it has an opinion, and `options` supplies only the knobs the roll
   // never touches (resolution, settle, orientation, paper size, debug).
   const ink = (key) => config[key] ?? options[key];
-  const paper = kernel.createInkPaper({
-    orientation: ink('inkOrientation'),
-    paperGrain: ink('inkPaperGrain'),
-    paperOffset: ink('inkOffset'),
-    paperSize: ink('inkPaperSize'),
-    renderer,
-    resolution: ink('inkResolution'),
-    // The scene needs a catch-up on a freshly cleared field because it is being
-    // watched while it settles; a capture is not, and it passes the exact step
-    // count it wants. Leaving the catch-up on made --inkSettle mean "this many
-    // steps, plus ninety", so the flag never meant what it said.
-    settleOnReset: 0,
-    tonalGap: ink('inkTonalGap'),
-    seed: config.seed,
-    simParams: {
-      ...kernel.mapPatternSettings({
-        cellAmount: ink('inkCellAmount'),
-        cellFlatten: ink('inkCellFlatten'),
-        cellReveal: ink('inkCellReveal'),
-        cellRevealScale: ink('inkCellRevealScale'),
-        cellScale: ink('inkCellScale'),
-        cellSymmetry: ink('inkCellSymmetry'),
-        density: ink('inkPatternDensity'),
-        paletteMix: ink('inkPaletteMix'),
-        paletteScale: ink('inkPaletteScale'),
-        paletteSymmetry: ink('inkPaletteSymmetry'),
-        details: ink('inkPatternDetails'),
-        scale: ink('inkPatternScale'),
-        seed: (config.seed % 1000) / 100,
-        sharpness: ink('inkPatternSharpness'),
-        softness: ink('inkPatternSoftness'),
-        symmetry: ink('inkPatternSymmetry'),
-      }),
-      bloomEmissiveOnly: ink('inkBloomEmissiveOnly') ? 1 : 0,
-      bloomEnabled: ink('inkBloom') ? 1 : 0,
-      inkDesaturate: ink('inkDesaturate'),
-      inkRecede: ink('inkRecede'),
-      bloomSource: ink('inkBloomSource') === 'wetness' ? 1 : 0,
-      bloomStrength: ink('inkBloomStrength'),
-      bloomThreshold: options.bloomThreshold,
-      patternDeposit: ink('inkPatternWash'),
-      patternFade: ink('inkPatternFade'),
-      patternFlow: ink('inkPatternFlow'),
+  return {
+    grid: ink('inkResolution'),
+    look: {
+      backdrop: config.backgroundColor,
+      orientation: ink('inkOrientation'),
+      paperGrain: ink('inkPaperGrain'),
+      paperOffset: ink('inkOffset'),
+      paperSize: ink('inkPaperSize'),
+      patternTime: ink('inkPatternTime') ?? 0,
+      seed: config.seed,
+      settle: ink('inkSettle'),
+      simParams: {
+        ...kernel.mapPatternSettings({
+          cellAmount: ink('inkCellAmount'),
+          cellFlatten: ink('inkCellFlatten'),
+          cellReveal: ink('inkCellReveal'),
+          cellRevealScale: ink('inkCellRevealScale'),
+          cellScale: ink('inkCellScale'),
+          cellSymmetry: ink('inkCellSymmetry'),
+          density: ink('inkPatternDensity'),
+          paletteMix: ink('inkPaletteMix'),
+          paletteScale: ink('inkPaletteScale'),
+          paletteSymmetry: ink('inkPaletteSymmetry'),
+          details: ink('inkPatternDetails'),
+          scale: ink('inkPatternScale'),
+          seed: (config.seed % 1000) / 100,
+          sharpness: ink('inkPatternSharpness'),
+          softness: ink('inkPatternSoftness'),
+          symmetry: ink('inkPatternSymmetry'),
+        }),
+        bloomEmissiveOnly: ink('inkBloomEmissiveOnly') ? 1 : 0,
+        bloomEnabled: ink('inkBloom') ? 1 : 0,
+        inkDesaturate: ink('inkDesaturate'),
+        inkRecede: ink('inkRecede'),
+        bloomSource: ink('inkBloomSource') === 'wetness' ? 1 : 0,
+        bloomStrength: ink('inkBloomStrength'),
+        bloomThreshold: options.bloomThreshold,
+        patternDeposit: ink('inkPatternWash'),
+        patternFade: ink('inkPatternFade'),
+        patternFlow: ink('inkPatternFlow'),
+      },
+      tonalGap: ink('inkTonalGap'),
     },
-  });
-
-  // A still pins the pattern clock so the same seed and --inkPatternTime always
-  // produce the same frame.
-  paper.setBackdropColor(config.backgroundColor);
-  paper.setPatternTime(ink('inkPatternTime') ?? 0);
-  paper.setPatternSpeed(0);
-  paper.advance({
-    steps: ink('inkSettle'),
-    styles: test.styles,
-  });
-  return paper;
+  };
 }
 
 function applyGroupScale(group, scale, flatten, flattenAxis) {
@@ -318,6 +305,97 @@ export default async function createCapturer({ height, samples = 4, width }) {
   });
 
   let session = null;
+  // One ink sim, kept alive for the life of the capturer.
+  //
+  // A frame's blot is a fixed number of steps from a clean field, which is what
+  // makes a seed reproducible — but *rebuilding* the sim was never what made it
+  // so. Clearing it is. So the sim survives the frame and only its fields are
+  // reset, which costs nothing and skips the render targets, the compiled
+  // pipelines and the CPU-generated paper grain that a rebuild pays for again
+  // every time. Measured at 2048: 2.1s of the 4.8s an ink frame spent.
+  //
+  // `settled` records the exact state the fields are already in. A turntable,
+  // a cinematic sweep and a four-up growth grid all ask for the same blot many
+  // frames running — the camera moves, the ink does not — so when the key
+  // matches there is nothing to do at all.
+  let ink = null;
+
+  function disposeInk() {
+    ink?.paper.dispose();
+    ink = null;
+  }
+
+  function inkFor(kernel, options, test, config) {
+    const { grid, look } = inkParams(kernel, options, config);
+    const settled = JSON.stringify([look, test.styles]);
+    if (ink?.settled === settled) return ink.paper;
+
+    // Only the grid sizes render targets, so it is the only change a live sim
+    // cannot absorb.
+    if (ink && ink.grid !== grid) disposeInk();
+
+    if (!ink) {
+      ink = {
+        grid,
+        paper: kernel.createInkPaper({
+          orientation: look.orientation,
+          paperGrain: look.paperGrain,
+          paperOffset: look.paperOffset,
+          paperSize: look.paperSize,
+          renderer,
+          resolution: grid,
+          seed: look.seed,
+          // The scene needs a catch-up on a freshly cleared field because it is
+          // being watched while it settles; a capture is not, and it passes the
+          // exact step count it wants. Leaving the catch-up on made --inkSettle
+          // mean "this many steps, plus ninety", so the flag never meant what
+          // it said.
+          settleOnReset: 0,
+          simParams: look.simParams,
+          tonalGap: look.tonalGap,
+        }),
+        seed: look.seed,
+        settled: null,
+      };
+    }
+
+    const { paper } = ink;
+    paper.setPaper({ grain: look.paperGrain, seed: look.seed });
+    paper.setOrientation(look.orientation, look.paperOffset);
+    paper.setState({
+      paperSize: look.paperSize,
+      simParams: look.simParams,
+      tonalGap: look.tonalGap,
+    });
+    paper.setBackdropColor(look.backdrop);
+    // A still pins the pattern clock so the same seed and --inkPatternTime
+    // always produce the same frame.
+    paper.setPatternTime(look.patternTime);
+    paper.setPatternSpeed(0);
+
+    // `carry` trades that reproducibility for speed, and only a video may ask
+    // for it: instead of clearing the sheet and drying it again from scratch,
+    // the previous frame's wet field is left in place and advanced a few steps
+    // into this frame's pattern. The wash is a relaxation toward a per-cell
+    // target, so a carried field converges on the same blot rather than
+    // drifting away from it — but a frame is no longer a pure function of
+    // (seed, patternTime), so a clip can only be reproduced from its start.
+    // Never across a test boundary: a new seed is a new blot, and carrying the
+    // last one's wet pigment into it bleeds one test into the next.
+    const carry =
+      ink.settled !== null && look.seed === ink.seed
+        ? Number(options.inkCarry) || 0
+        : 0;
+    if (carry > 0) {
+      paper.advance({ steps: carry, styles: test.styles });
+    } else {
+      paper.reset();
+      paper.advance({ steps: look.settle, styles: test.styles });
+    }
+    ink.seed = look.seed;
+    ink.settled = settled;
+    return paper;
+  }
 
   function disposeSession() {
     session?.disposables.forEach((item) => item.dispose());
@@ -495,9 +573,7 @@ export default async function createCapturer({ height, samples = 4, width }) {
       bloomUniforms.threshold.value = options.bloomThreshold;
 
       const inkPaper =
-        options.ink && kernel
-          ? buildInkPaper(kernel, renderer, options, test, config)
-          : null;
+        options.ink && kernel ? inkFor(kernel, options, test, config) : null;
       if (inkPaper) scene.add(inkPaper.mesh);
 
       // Mirrors components/PostEffects.jsx, which always renders through a
@@ -521,17 +597,17 @@ export default async function createCapturer({ height, samples = 4, width }) {
       );
       renderer.setRenderTarget(null);
 
+      // Removed but not disposed: the sheet outlives the frame now.
       if (inkPaper) scene.remove(inkPaper.mesh);
-      inkPaper?.dispose();
 
-      return sharp(unpadRows(pixels, width, height), {
-        raw: { channels: 4, height, width },
-      })
-        .png()
-        .toBuffer();
+      // Raw RGBA rather than a PNG: the caller composites the overlay onto
+      // these pixels and encodes once. Handing back an encoded frame made every
+      // overlaid render encode, decode and re-encode the same image.
+      return { data: unpadRows(pixels, width, height), height, width };
     },
 
     dispose() {
+      disposeInk();
       disposeSession();
       target.dispose();
       renderer.dispose?.();

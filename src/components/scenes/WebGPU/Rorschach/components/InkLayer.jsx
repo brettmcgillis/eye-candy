@@ -53,9 +53,10 @@ function InkLayer({
   const renderer = useThree((state) => state.gl);
   const paperRef = useRef(null);
 
-  // Resolution and paper tooth are baked into the render targets and the paper
-  // texture, so changing either rebuilds the sim. Everything else is a uniform
-  // or a CPU-side setting and is pushed through without a rebuild.
+  // Only the resolution is baked into the render targets, so only the
+  // resolution rebuilds the sim. Everything else is a uniform, a CPU-side
+  // setting, or — for the paper grain — a texture that can be rewritten where
+  // it stands.
   const paper = useMemo(
     () =>
       createInkPaper({
@@ -69,11 +70,21 @@ function InkLayer({
       }),
     // Deliberately not exhaustive: the remaining props are pushed through the
     // effects below rather than rebuilding the sim and losing the wet blot.
-    [paperGrain, renderer, resolution, seed]
+    [renderer, resolution]
   );
   paperRef.current = paper;
 
   useEffect(() => () => paper.dispose(), [paper]);
+
+  // A new seed is a new blot and a new sheet of fibres, so the fields are
+  // cleared and settled again — but the sim behind them survives it. Rebuilding
+  // instead cost a fresh set of render targets, a fresh pipeline compile, and
+  // two seconds of CPU value noise at 2048, every time a Roll button was
+  // pressed.
+  useEffect(() => {
+    paper.setPaper({ grain: paperGrain, seed });
+    paper.reset();
+  }, [paper, paperGrain, seed]);
 
   useEffect(() => {
     paper.setState({ paperSize, tonalGap });

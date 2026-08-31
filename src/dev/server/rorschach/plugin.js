@@ -15,9 +15,11 @@ import {
   listRorschachJobs,
   resolveRorschachAsset,
 } from './jobService';
+import writeScenePreset from './presetWriter';
 
 const API_ROOT = '/dev-api/rorschach/jobs';
 const CURATED_API = '/dev-api/rorschach/saved';
+const PRESETS_API = '/dev-api/rorschach/presets';
 const MAX_BODY_BYTES = 64 * 1024;
 
 function sendJson(res, statusCode, payload) {
@@ -153,6 +155,16 @@ export default function rorschachDevPlugin() {
                 body.paths
               ),
             };
+          });
+          return;
+        }
+        // The one route that writes toward the scene: a generated still
+        // promoted into a preset the 3D scene can open. Everything else here
+        // only ever reads the scene's side of the repo, or nothing of it.
+        if (pathname === PRESETS_API && req.method === 'POST') {
+          await handleJson(res, async () => {
+            const body = await readJsonBody(req);
+            return { preset: await writeScenePreset(rootDir, body.preset) };
           });
           return;
         }

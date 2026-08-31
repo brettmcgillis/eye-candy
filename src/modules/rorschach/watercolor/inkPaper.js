@@ -145,6 +145,14 @@ export default function createInkPaper({
       needsSettle = true;
     },
 
+    // Everything about a sim except its resolution can be re-pointed at a new
+    // test, which is what lets a batch or a video keep one sim alive across
+    // every frame instead of paying for its render targets, its compiled
+    // pipelines and its paper grain again per capture.
+    setPaper(next) {
+      sim.setPaper(next);
+    },
+
     setOrientation(nextOrientation, nextOffset) {
       state.orientation = nextOrientation;
       state.paperOffset = nextOffset;

@@ -16,7 +16,7 @@ import {
 } from 'three/tsl';
 import * as THREE from 'three/webgpu';
 
-import { createPaperTexture } from './paper';
+import { createPaperTexture, writePaperData } from './paper';
 import { computeField } from './patternField';
 import { PIGMENT_SLOTS, kubelkaMunkReflectance } from './pigments';
 
@@ -194,10 +194,11 @@ export default function createWatercolorSim({
   const pigment = createPairField(resolution, ['suspended', 'deposited']);
   const suspended = { node: pigment.nodes[0] };
   const deposited = { node: pigment.nodes[1] };
+  const paperState = { grain: paperGrain, seed };
   const paperTexture = createPaperTexture({
-    grain: paperGrain,
+    grain: paperState.grain,
     resolution,
-    seed,
+    seed: paperState.seed,
   });
 
   const uniforms = {
@@ -820,6 +821,26 @@ export default function createWatercolorSim({
     });
   }
 
+  // The grain is CPU-generated value noise, and at 2048 that is four million
+  // pixels of it — the single most expensive thing about building a sim. It
+  // follows the seed, so a batch changes it once per test; rewriting the
+  // existing texture's data lets everything else about the sim (its render
+  // targets and its compiled pipelines) survive that change.
+  function setPaper({
+    grain = paperState.grain,
+    seed: nextSeed = paperState.seed,
+  } = {}) {
+    if (grain === paperState.grain && nextSeed === paperState.seed) return;
+    paperState.grain = grain;
+    paperState.seed = nextSeed;
+    writePaperData(paperTexture.image.data, {
+      grain,
+      resolution,
+      seed: nextSeed,
+    });
+    paperTexture.needsUpdate = true;
+  }
+
   function setBackdropColor(color) {
     uniforms.backdropColor.value.set(color.r, color.g, color.b);
   }
@@ -850,6 +871,7 @@ export default function createWatercolorSim({
     reset,
     resolution,
     setBackdropColor,
+    setPaper,
     setParams,
     setPigments,
     step,

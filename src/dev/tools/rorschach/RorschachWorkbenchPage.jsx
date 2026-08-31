@@ -13,9 +13,15 @@ import {
   FiRefreshCw,
   FiSave,
   FiSquare,
+  FiX,
 } from 'react-icons/fi';
 
-import { PALETTE_NAMES, RENDER_OPTIONS, defaultsFor } from '@modules/rorschach';
+import {
+  PALETTE_NAMES,
+  RENDER_OPTIONS,
+  defaultsFor,
+  optionsFromPreset,
+} from '@modules/rorschach';
 
 import DevPageHeaderBar from '../../shell/DevPageHeaderBar';
 import './RorschachWorkbenchPage.css';
@@ -52,6 +58,56 @@ const GROWTH_PRESENTATION_OPTIONS = [
   { icon: <FiGrid />, label: 'Four-up', value: 'grid' },
   { icon: <FiList />, label: 'Sequential', value: 'sequential' },
 ];
+
+// The facets the dice roll, read off the schema so a new one appears here on
+// its own. Pinning is per-key everywhere else; these are the shortcut for the
+// thing anyone actually wants — hold a whole look, roll the rest.
+const FACETS = [
+  ...new Set(
+    Object.values(RENDER_OPTIONS)
+      .map((spec) => spec.facet)
+      .filter(Boolean)
+  ),
+];
+const FACET_LABELS = {
+  ink: 'ink',
+  palette: 'palette & bundles',
+  structure: 'structure',
+};
+
+function keysInFacet(facet) {
+  return Object.entries(RENDER_OPTIONS)
+    .filter(([, spec]) => spec.facet === facet)
+    .map(([key]) => key);
+}
+
+// What the next render will actually do, in a sentence. The pins are the whole
+// model here and they were invisible: forty checkboxes scattered down a form
+// answer "is this field held" but never "am I about to roll anything", which is
+// the only question worth asking before pressing the button.
+function rollSummary({ base, count, held }) {
+  const rolled = FACETS.filter((facet) => !held.includes(facet));
+  const tests = `${count} ${count === 1 ? 'test' : 'tests'}`;
+
+  if (held.length === 0) {
+    return `Rolling everything — ${tests}, each a fresh structure, palette and blot.`;
+  }
+  if (rolled.length === 0) {
+    return `Holding every facet${base ? ` of ${base}` : ''} — ${tests} of the same look at different seeds.`;
+  }
+  return `Holding ${held.map((facet) => FACET_LABELS[facet]).join(' and ')}${
+    base ? ` from ${base}` : ''
+  } — ${tests}, rolling ${rolled.map((facet) => FACET_LABELS[facet]).join(' and ')}.`;
+}
+
+function overriddenBundles(bundles) {
+  if (!bundles) return [];
+  return Object.keys(bundles)
+    .map((key) => key.match(/^bundle(\d+)Override$/u))
+    .filter((match) => match && bundles[match[0]])
+    .map((match) => Number(match[1]))
+    .sort((a, b) => a - b);
+}
 
 // Both kinds' defaults merged, so toggling Stills/Video keeps whatever the
 // other kind's fields were set to. Every value and every range below comes
@@ -237,6 +293,61 @@ function ColorField({ id, label, onChange, option, value }) {
   );
 }
 
+// The one option that is an object rather than a value, so it gets a summary
+// and a discard rather than an input. Twenty folders of sixteen fields is a
+// Leva panel, and the scene already has one — this is where its output lands,
+// not a second copy of it.
+function BundleField({ onChange, value }) {
+  const { enabled } = usePin('bundles');
+  const overridden = overriddenBundles(value);
+
+  return (
+    <Pinnable label="Bundle overrides" option="bundles">
+      <div className={`rw-bundles${enabled ? '' : ' rw-bundles--off'}`}>
+        {value ? (
+          <>
+            <ul className="rw-bundles__list">
+              {overridden.length > 0 ? (
+                overridden.map((index) => (
+                  <li key={index}>
+                    <span
+                      className="rw-bundles__swatch"
+                      style={{
+                        background: value[`bundle${index}ColorOverride`]
+                          ? value[`bundle${index}Color`]
+                          : 'transparent',
+                      }}
+                    />
+                    Bundle {index}
+                    {value[`bundle${index}Emissive`] ? ' · emissive' : ''}
+                    {value[`bundle${index}StructuralOverride`]
+                      ? ' · structural'
+                      : ''}
+                    {value[`bundle${index}Visible`] === false
+                      ? ' · hidden'
+                      : ''}
+                  </li>
+                ))
+              ) : (
+                <li>No bundle in this preset is overridden.</li>
+              )}
+            </ul>
+            <button
+              className="dev-button"
+              onClick={() => onChange(null)}
+              type="button"
+            >
+              Discard
+            </button>
+          </>
+        ) : (
+          <p className="rw-hint">Load a preset to bring its overrides in.</p>
+        )}
+      </div>
+    </Pinnable>
+  );
+}
+
 export default function RorschachWorkbenchPage() {
   const {
     cancel,
@@ -264,6 +375,7 @@ export default function RorschachWorkbenchPage() {
   const [resultsTab, setResultsTab] = useState('transient');
   const [submitting, setSubmitting] = useState(false);
   const [pins, setPins] = useState(() => new Set());
+  const [base, setBase] = useState(null);
   const pinContext = useMemo(
     () => ({
       pins,
@@ -295,6 +407,51 @@ export default function RorschachWorkbenchPage() {
   function setOption(key, value) {
     setOptions((current) => ({ ...current, [key]: value }));
   }
+
+  // Takes a generated still as the base for the next batch. Its `props.json` is
+  // the exact config that drew it — the rolled preset plus the render settings
+  // — so this fills the form with what made that picture, including the Bundle
+  // Editor's overrides as one object, the only shape three hundred flat keys
+  // can travel in. Nothing is pinned by it: what to hold is the next decision,
+  // and the summary line above the toggles is where it gets made.
+  const useAsBase = useCallback((metadata, label) => {
+    const flat = { ...metadata.render, ...metadata.preset };
+    setOptions((current) => ({
+      ...current,
+      ...optionsFromPreset(flat, 'still'),
+      ...optionsFromPreset(flat, 'video'),
+    }));
+    setBase(label);
+  }, []);
+
+  const clearBase = useCallback(() => setBase(null), []);
+
+  // All of a facet, or none of it. The per-field checkboxes still work; this is
+  // the shortcut for the thing a batch is usually after — hold one whole look
+  // still and let the others move.
+  const togglePinGroup = useCallback((facet) => {
+    const keys = keysInFacet(facet);
+    setPins((current) => {
+      const next = new Set(current);
+      const allOn = keys.every((key) => next.has(key));
+      keys.forEach((key) => (allOn ? next.delete(key) : next.add(key)));
+      return next;
+    });
+  }, []);
+
+  const clearPins = useCallback(() => setPins(new Set()), []);
+
+  const heldFacets = useMemo(
+    () =>
+      FACETS.filter((facet) =>
+        keysInFacet(facet).every((key) => pins.has(key))
+      ),
+    [pins]
+  );
+  const summary = useMemo(
+    () => rollSummary({ base, count: options.count, held: heldFacets }),
+    [base, heldFacets, options.count]
+  );
 
   const selectProfile = useCallback((nextProfile) => {
     const dimensions = PROFILES[nextProfile];
@@ -420,6 +577,52 @@ export default function RorschachWorkbenchPage() {
               options={PROFILE_OPTIONS}
               value={profile}
             />
+
+            <section className="rw-control-section">
+              <h2>Roll</h2>
+              <p className="rw-status">{summary}</p>
+              {base ? (
+                <p className="rw-base">
+                  Based on <strong>{base}</strong>
+                  <button
+                    className="rw-base__clear"
+                    onClick={clearBase}
+                    type="button"
+                  >
+                    <FiX /> clear
+                  </button>
+                </p>
+              ) : (
+                <p className="rw-hint">
+                  Nothing is held, so every test is random. To make variations
+                  of a piece you like, open it below and press{' '}
+                  <strong>Roll variations</strong> — that fills this form with
+                  what drew it, and these buttons choose how much of it to keep.
+                </p>
+              )}
+              <div className="rw-pin-groups">
+                {FACETS.map((facet) => (
+                  <button
+                    aria-pressed={heldFacets.includes(facet)}
+                    className="rw-pin-group"
+                    key={facet}
+                    onClick={() => togglePinGroup(facet)}
+                    type="button"
+                  >
+                    Hold {FACET_LABELS[facet] ?? facet}
+                  </button>
+                ))}
+                {pins.size > 0 ? (
+                  <button
+                    className="rw-pin-group"
+                    onClick={clearPins}
+                    type="button"
+                  >
+                    Roll everything
+                  </button>
+                ) : null}
+              </div>
+            </section>
 
             <section className="rw-control-section">
               <h2>Frame</h2>
@@ -964,7 +1167,24 @@ export default function RorschachWorkbenchPage() {
                     onChange={(value) => setOption('inkPaperGrain', value)}
                     value={options.inkPaperGrain}
                   />
+                  {kind === 'video' ? (
+                    <NumberField
+                      id="rw-ink-carry"
+                      option="inkCarry"
+                      label="Carry steps"
+                      onChange={(value) => setOption('inkCarry', value)}
+                      value={options.inkCarry}
+                    />
+                  ) : null}
                 </div>
+                {kind === 'video' && Number(options.inkCarry) > 0 ? (
+                  <p className="rw-hint">
+                    Carrying the wet sim between frames replaces a full settle
+                    with these few steps — several times faster on an ink clip,
+                    at the cost of a frame no longer being reproducible on its
+                    own.
+                  </p>
+                ) : null}
 
                 <h3 className="rw-subheading">Depth</h3>
                 <div className="rw-field-grid">
@@ -1343,7 +1563,25 @@ export default function RorschachWorkbenchPage() {
                   onChange={(value) => setOption('backgroundColor', value)}
                   value={options.backgroundColor}
                 />
+                <NumberField
+                  id="rw-palette-shuffle"
+                  option="paletteShuffleSeed"
+                  label="Stop order"
+                  onChange={(value) => setOption('paletteShuffleSeed', value)}
+                  value={options.paletteShuffleSeed}
+                />
               </div>
+
+              <h3 className="rw-subheading">Bundle overrides</h3>
+              <p className="rw-hint">
+                The Bundle Editor&apos;s folders, as they were saved. They are
+                tuned in the scene and loaded here — pinned, this whole block is
+                held and every bundle not in it is off.
+              </p>
+              <BundleField
+                onChange={(value) => setOption('bundles', value)}
+                value={options.bundles}
+              />
             </details>
 
             <details className="rw-control-section rw-advanced">
@@ -1526,6 +1764,7 @@ export default function RorschachWorkbenchPage() {
                   emptyMessage="Kept images appear here."
                   jobs={savedCollections}
                   onRemoveAssets={removeSavedAssets}
+                  onUseAsBase={useAsBase}
                   variant="saved"
                 />
               </div>
@@ -1541,6 +1780,7 @@ export default function RorschachWorkbenchPage() {
                   onRemoveAssets={removeAssets}
                   onRemoveMany={removeMany}
                   onRequestDelete={setPendingDeleteId}
+                  onUseAsBase={useAsBase}
                   pendingDeleteId={pendingDeleteId}
                 />
               </div>

@@ -1,8 +1,10 @@
 # // All My Thoughts Are So Cumulus
 
-# // TODO:
-
 [Back to main TODO](../../../../../TODO.md)
+
+## // Intent / Use Cases
+
+## // TODO:
 
 - [x] add environment for reflections. studio.
 
@@ -27,9 +29,7 @@
 
 - [x] Build solar system model, akin to atomic model. planets have textured materials. sun is emissive, realistic looking. We have a great looking sun locally. we can use dev/examples/Solar-System-3D for the rest. this contains many great planet textures and a good looking solar system
 
-# // Intent/Use Cases
-
-# // Presets
+## // Presets
 
 - [x] Default Rings
 - [x] Gradient Rings
@@ -40,8 +40,8 @@
 - [x] Static - CRT static ring, bloom, dark bg
 - [x] Universal - Solar System model inside skull @ cloud position, cloud hidden, bloom, dark bg., camera zoomed in on solar system
 
-# // Features
+## // Features
 
-# // Interactivity
+## // Interactivity
 
-# // Bugs
+## // Bugs

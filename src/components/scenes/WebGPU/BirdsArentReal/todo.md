@@ -1,6 +1,8 @@
 # // Birds Arent Real
 
-# // Intent / Use Cases
+[Back to main TODO](../../../../../TODO.md)
+
+## // Intent / Use Cases
 
 - the scene combines the security camera and pigeon models into fake birds. the camera body replaces the birds head
 - the scene contains many instances of the animated fake birds walking around the scene.
@@ -16,13 +18,11 @@
 - the scene contains a mode where all of the cameraHeads aim at and follow the user's cursor
 - The advertisments in the bus station are overridden with custom shaders that display some of my art but occassionally glitch out and reveal 'They Live'-style Obey, Consume, etc, messaging.
 
-# // TODO:
+## // TODO:
 
-[Back to main TODO](../../../../../TODO.md)
+## // Presets
 
-# // Presets
-
-# // Features
+## // Features
 
 - [x] **View Mode** Leva enum (Orbit / Bird POV / Cursor Follow) under the `View`
       folder, persisted in presets (`viewMode`).
@@ -38,6 +38,8 @@
       every `FakeBird` overrides its head-aim to stare at that world point (sweep off) while
       the camera keeps orbiting.
 
-# // Interactivity
+## // Interactivity
 
-# // Bugs
+- [x] Camera-Cursor follow
+
+## // Bugs

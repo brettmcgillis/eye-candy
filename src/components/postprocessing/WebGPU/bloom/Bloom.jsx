@@ -40,7 +40,8 @@ function Bloom({
     });
 
     const postProcessing = new THREE.RenderPipeline(renderer);
-    postProcessing.outputNode = scenePass.add(blurred.mul(u.strength));
+    const softBloom = blurred.mul(u.strength).clamp(0, 1.5);
+    postProcessing.outputNode = scenePass.add(softBloom);
     postRef.current = postProcessing;
 
     return () => {

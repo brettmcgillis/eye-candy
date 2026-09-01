@@ -1,4 +1,4 @@
-import { memo, useEffect, useRef } from 'react';
+import { memo, useEffect, useRef, useState } from 'react';
 
 import { useFrame, useThree } from '@react-three/fiber';
 
@@ -7,6 +7,15 @@ import { float, int, max, pass, color as threeColor, uniform } from 'three/tsl';
 import * as THREE from 'three/webgpu';
 
 import { bilateralBlur, depthAwareBlend, godrays } from '@modules/tsl';
+
+// GodraysNode raymarches a shadow map and throws on any other light type.
+// Bailing out here degrades to "no godrays"; letting it throw takes down the
+// RenderPipeline that owns the final render, and the screen goes black.
+function isSupportedLight(light) {
+  return Boolean(
+    light.isPointLight || light.isDirectionalLight || light.isSpotLight
+  );
+}
 
 function Godrays({
   lightRef,
@@ -26,6 +35,12 @@ function Godrays({
   const { gl: renderer, scene, camera } = useThree();
   const postRef = useRef(null);
   const nodesRef = useRef(null);
+  // A shadow map is only allocated by a render, but this component's
+  // priority-1 useFrame disables R3F's automatic render — so without the
+  // fallback render below, a light whose map isn't ready at mount deadlocks
+  // into a permanently black screen. This flag re-runs setup once it appears.
+  const [shadowReady, setShadowReady] = useState(false);
+  const shadowReadyRef = useRef(false);
 
   // `lightRef` only works when the light is mounted for the scene's lifetime;
   // a ref never re-triggers this effect. Callers whose light can unmount (a
@@ -33,7 +48,20 @@ function Godrays({
   // rebuilds the pipeline.
   useEffect(() => {
     const light = lightProp ?? lightRef?.current;
-    if (!renderer || !scene || !camera || !light) return undefined;
+    if (
+      !renderer ||
+      !scene ||
+      !camera ||
+      !light ||
+      !isSupportedLight(light) ||
+      !light.shadow ||
+      !light.shadow.map ||
+      !light.shadow.map.depthTexture
+    ) {
+      postRef.current = null;
+      nodesRef.current = null;
+      return undefined;
+    }
 
     const scenePass = pass(scene, camera);
     const sceneColor = scenePass.getTextureNode('output');
@@ -86,10 +114,28 @@ function Godrays({
       postRef.current = null;
       nodesRef.current = null;
     };
-  }, [renderer, scene, camera, blur, bloomRadius, lightProp]);
+  }, [renderer, scene, camera, blur, bloomRadius, lightProp, shadowReady]);
 
   useFrame(() => {
-    if (!postRef.current || !nodesRef.current) return;
+    const light = lightProp ?? lightRef?.current;
+    const ready = Boolean(light?.shadow?.map?.depthTexture);
+
+    if (ready !== shadowReadyRef.current) {
+      shadowReadyRef.current = ready;
+      setShadowReady(ready);
+    }
+
+    if (!ready) {
+      postRef.current = null;
+      nodesRef.current = null;
+      renderer.render(scene, camera);
+      return;
+    }
+
+    if (!postRef.current || !nodesRef.current) {
+      renderer.render(scene, camera);
+      return;
+    }
 
     const n = nodesRef.current;
     n.godraysNode.density.value = density;

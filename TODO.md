@@ -55,6 +55,7 @@
 - [Aisle9](src/components/scenes/WebGPU/Aisle9/todo.md)
 - [AllHandsOffDeck](src/components/scenes/WebGPU/AllHandsOffDeck/todo.md)
 - [AllMyFriendsAreGhosts](src/components/scenes/WebGPU/AllMyFriendsAreGhosts/todo.md)
+- [Apollian](src/components/scenes/WebGL/Apollian/todo.md)
 - [Apparitions](src/components/scenes/WebGPU/Apparitions/todo.md)
 - [BurningCash](src/components/scenes/WebGPU/BurningCash/todo.md)
 - [Digital Rain](src/components/scenes/WebGPU/DigitalRain/todo.md)
@@ -88,6 +89,7 @@
 - [WildHorses](src/components/scenes/WebGPU/WildHorses/todo.md)
 - [WindowBreaker](src/components/scenes/WebGPU/WindowBreaker/todo.md)
 - [WriteOff](src/components/scenes/WebGPU/WriteOff/todo.md)
+- [You're Looking Radiant](src/components/scenes/WebGPU/YoureLookingRadiant/todo.md)
 
 **Template**
 

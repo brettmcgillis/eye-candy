@@ -14,6 +14,7 @@ import {
   addTaskContent,
   listTodos,
   readTodo,
+  removeTaskContent,
   toggleTaskContent,
   writeTodo,
 } from './todoApi';
@@ -154,6 +155,19 @@ function TodoWorkspace({ initialSourcePath, onError }) {
     (taskOffset, checked) => {
       try {
         setDraft((current) => toggleTaskContent(current, taskOffset, checked));
+      } catch (error) {
+        onError(error.message);
+      }
+    },
+    [onError]
+  );
+
+  const handleViewerTaskDelete = useCallback(
+    (taskStartOffset, taskEndOffset) => {
+      try {
+        setDraft((current) =>
+          removeTaskContent(current, taskStartOffset, taskEndOffset)
+        );
       } catch (error) {
         onError(error.message);
       }
@@ -401,6 +415,7 @@ function TodoWorkspace({ initialSourcePath, onError }) {
             <TodoMarkdownViewer
               content={draft}
               disabled={!document || loading || saving || conflict}
+              onDeleteTask={handleViewerTaskDelete}
               onToggleTask={handleViewerTaskToggle}
             />
           ) : (

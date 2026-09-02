@@ -14,6 +14,7 @@ import {
   FiCode,
   FiGrid,
   FiLayers,
+  FiRefreshCw,
   FiSend,
   FiTool,
 } from 'react-icons/fi';
@@ -95,44 +96,50 @@ export default function CataloggrPage() {
   const [todoSourcePath, setTodoSourcePath] = useState('');
   const deferredSearchText = useDeferredValue(searchText);
 
+  const loadCatalog = useCallback(async (isCancelled) => {
+    setLoading(true);
+    setError('');
+
+    try {
+      const response = await fetch(CATALOG_ENDPOINT);
+      const payload = await response.json();
+
+      if (!response.ok)
+        throw new Error(payload.message || 'Catalog failed to load.');
+      if (!isCancelled()) {
+        const nextStatuses = payload.statuses ?? {};
+        setDemoSceneIds(payload.demoSceneIds ?? []);
+        const nextIdeas = payload.ideas ?? [];
+        ideasRef.current = nextIdeas;
+        statusesRef.current = nextStatuses;
+        setIdeas(nextIdeas);
+        setStatuses(nextStatuses);
+        setScenes(buildCatalogScenes(payload.presetsByFolder));
+      }
+    } catch (loadError) {
+      if (!isCancelled()) {
+        setError(
+          loadError instanceof Error
+            ? loadError.message
+            : 'Catalog failed to load.'
+        );
+      }
+    } finally {
+      if (!isCancelled()) setLoading(false);
+    }
+  }, []);
+
   useEffect(() => {
     let cancelled = false;
-
-    async function loadCatalog() {
-      try {
-        const response = await fetch(CATALOG_ENDPOINT);
-        const payload = await response.json();
-
-        if (!response.ok)
-          throw new Error(payload.message || 'Catalog failed to load.');
-        if (!cancelled) {
-          const nextStatuses = payload.statuses ?? {};
-          setDemoSceneIds(payload.demoSceneIds ?? []);
-          const nextIdeas = payload.ideas ?? [];
-          ideasRef.current = nextIdeas;
-          statusesRef.current = nextStatuses;
-          setIdeas(nextIdeas);
-          setStatuses(nextStatuses);
-          setScenes(buildCatalogScenes(payload.presetsByFolder));
-        }
-      } catch (loadError) {
-        if (!cancelled) {
-          setError(
-            loadError instanceof Error
-              ? loadError.message
-              : 'Catalog failed to load.'
-          );
-        }
-      } finally {
-        if (!cancelled) setLoading(false);
-      }
-    }
-
-    loadCatalog();
+    loadCatalog(() => cancelled);
     return () => {
       cancelled = true;
     };
-  }, []);
+  }, [loadCatalog]);
+
+  const handleRefresh = useCallback(() => {
+    loadCatalog(() => false);
+  }, [loadCatalog]);
 
   const stats = useMemo(() => {
     const showcaseCount = scenes.filter(
@@ -490,7 +497,22 @@ export default function CataloggrPage() {
 
       <div className="cataloggr-result-bar">
         <span>{resultLabel}</span>
-        <span>{storageLabel}</span>
+        <span className="cataloggr-result-bar__end">
+          {storageLabel}
+          <button
+            aria-label="Refresh catalog data"
+            className="cataloggr-refresh"
+            disabled={loading || saving}
+            onClick={handleRefresh}
+            title="Refresh catalog data"
+            type="button"
+          >
+            <FiRefreshCw
+              aria-hidden="true"
+              className={loading ? 'cataloggr-refresh__icon--spin' : ''}
+            />
+          </button>
+        </span>
       </div>
       {error ? (
         <p className="cataloggr-error" role="alert">

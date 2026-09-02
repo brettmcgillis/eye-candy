@@ -60,6 +60,20 @@ export function toggleTaskContent(content, taskOffset, checked) {
   );
 }
 
+export function removeTaskContent(content, taskStartOffset, taskEndOffset) {
+  const markerMatch = content
+    .slice(taskStartOffset)
+    .match(/^[-*+]\s+\[[ xX]\]/u);
+
+  if (!markerMatch) {
+    throw new Error('This task changed. Reload and retry.');
+  }
+
+  const next = content.slice(0, taskStartOffset) + content.slice(taskEndOffset);
+
+  return next.replace(/\n{3,}/gu, '\n\n');
+}
+
 export function addTaskContent(document, sectionName, text) {
   const item = `- [ ] ${text.trim()}\n`;
   const section = document.sectionDetails.find(

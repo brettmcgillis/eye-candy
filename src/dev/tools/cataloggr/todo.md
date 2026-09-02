@@ -8,11 +8,7 @@ Track scene maturity, local presets, publishing progress, and colocated TODO doc
 
 ## // TODO:
 
-- [x] Allow me to click on the 8 tiles at the top to filter the views down to those specific things
-
 - [ ] allow me to describe intent/use cases on the Viewer tab, similar to how i can add todos
-
-- [ ] Allow me to delete completed todo items / bugs in a similar manner to how i mark them complete from the Viewer tab
 
 - [ ] the link to open the scene should always open in new tab
 
@@ -30,5 +26,4 @@ Track scene maturity, local presets, publishing progress, and colocated TODO doc
 
 ## // Bugs
 
-- [x] Todo files that are missing required sections show as no errors
-- [x] Suggested fixes dont include missing sections
+- [ ] lists are being formatted improperly when adding items

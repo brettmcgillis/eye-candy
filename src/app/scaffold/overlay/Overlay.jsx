@@ -1,10 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { useLocation } from 'react-router-dom';
 
-import { levaStore } from 'leva';
-
 import { localEnv } from '@utils/appUtils';
-import { writeQueryParam } from '@utils/queryParams';
 
 import './Overlay.css';
 import Date from './components/DateDisplay';
@@ -12,70 +9,19 @@ import ExternalLinks from './components/ExternalLinks';
 import LevaPanel from './components/LevaPanel';
 import Scenemoji from './components/Scenemoji';
 import VersionTag from './components/VersionTag';
-
-const OVERLAY_IG_QUERY_PARAM = 'ig';
-const OVERLAY_HIDE_UI_QUERY_PARAM = 'hideUI';
-
-const OVERLAY_IG_PRESETS = {
-  story: 'story',
-  reel: 'reel',
-  post: 'post',
-};
-
-function getOverlayIgPreset() {
-  if (typeof window === 'undefined') return null;
-
-  const params = new URLSearchParams(window.location.search);
-  const rawPreset = params.get(OVERLAY_IG_QUERY_PARAM);
-
-  if (!rawPreset) return null;
-
-  const normalized = rawPreset.trim().toLowerCase();
-  return OVERLAY_IG_PRESETS[normalized] || null;
-}
-
-function normalizeOverlayIgPreset(value) {
-  if (!value) return null;
-  const normalized = String(value).trim().toLowerCase();
-  return OVERLAY_IG_PRESETS[normalized] || null;
-}
-
-function getHideUIFromQueryParam() {
-  if (typeof window === 'undefined') return false;
-
-  const params = new URLSearchParams(window.location.search);
-  return params.has(OVERLAY_HIDE_UI_QUERY_PARAM);
-}
-
-function isTypingTarget(target) {
-  if (!target) return false;
-
-  const tagName = target.tagName?.toLowerCase();
-  return (
-    target.isContentEditable ||
-    tagName === 'input' ||
-    tagName === 'textarea' ||
-    tagName === 'select'
-  );
-}
+import useHideUI from './hooks/useHideUI';
+import useOverlayIgPreset from './hooks/useOverlayIgPreset';
+import { getNoLevaFromQueryParam } from './overlayParams';
 
 function Overlay() {
   const location = useLocation();
   const local = localEnv();
-  const readLevaValue = (state, keys) => {
-    const values = keys.map((key) => state.data?.[key]?.value);
-    return values.find((value) => value !== undefined);
-  };
 
-  const levaIgPreset = levaStore.useStore((state) =>
-    readLevaValue(state, ['App.Overlay.ig', 'App.ig', 'Scene Select.ig'])
+  const overlayIgPreset = useOverlayIgPreset();
+  const [hideUI] = useHideUI();
+  const [showLeva, setShowLeva] = useState(
+    () => !!local && !getNoLevaFromQueryParam()
   );
-  const overlayIgPreset =
-    levaIgPreset === undefined
-      ? getOverlayIgPreset()
-      : normalizeOverlayIgPreset(levaIgPreset);
-  const [showLeva, setShowLeva] = useState(!!local);
-  const [hideUI, setHideUI] = useState(() => getHideUIFromQueryParam());
 
   const overlayClasses = [
     'overlay',
@@ -84,47 +30,15 @@ function Overlay() {
     .filter(Boolean)
     .join(' ');
 
-  const handleDebug = () => {
-    setShowLeva((s) => !s);
-  };
+  const handleDebug = () => setShowLeva((s) => !s);
 
-  // Auto-hide Leva when UI is hidden
   useEffect(() => {
-    if (hideUI && showLeva) {
-      setShowLeva(false);
-    }
-  }, [hideUI, showLeva]);
-
-  // Keep overlay visibility in sync with the current query string.
-  useEffect(() => {
-    const hideUIFromQuery = getHideUIFromQueryParam();
-    setHideUI((prev) => (prev === hideUIFromQuery ? prev : hideUIFromQuery));
+    if (getNoLevaFromQueryParam()) setShowLeva(false);
   }, [location.search]);
 
-  // Persist the hide state in the URL while preserving other params.
   useEffect(() => {
-    writeQueryParam(OVERLAY_HIDE_UI_QUERY_PARAM, hideUI ? '1' : null);
-  }, [hideUI]);
-
-  // Hotkey to toggle UI visibility (Shift+H)
-  useEffect(() => {
-    const handleKeyDown = (e) => {
-      const active = document.activeElement;
-      if (isTypingTarget(e.target) || isTypingTarget(active)) {
-        return;
-      }
-
-      if (e.shiftKey && e.key?.toLowerCase() === 'h') {
-        e.preventDefault();
-        setHideUI((prev) => !prev);
-      }
-    };
-
-    window.addEventListener('keydown', handleKeyDown);
-    return () => window.removeEventListener('keydown', handleKeyDown);
-  }, []);
-
-  /* ---------------- render ---------------- */
+    if (hideUI && showLeva) setShowLeva(false);
+  }, [hideUI, showLeva]);
 
   return (
     <div className={overlayClasses}>

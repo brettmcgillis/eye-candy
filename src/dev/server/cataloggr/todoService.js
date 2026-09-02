@@ -195,6 +195,18 @@ function parseTodo(content) {
     );
   }
 
+  const missingSections = TODO_SECTIONS.filter(
+    (section) => !canonicalNames.includes(section)
+  );
+
+  if (missingSections.length) {
+    issues.push(
+      `Missing required section${missingSections.length > 1 ? 's' : ''}: ${missingSections
+        .map((section) => `// ${getSectionHeading(section)}`)
+        .join(', ')}.`
+    );
+  }
+
   return {
     issues,
     plainText: toString(tree),
@@ -269,7 +281,6 @@ export function normalizeTodoContent(content) {
     .replace(`### // ${title}`, '')
     .trim();
   const groupedBodies = new Map(TODO_SECTIONS.map((section) => [section, []]));
-  const presentSections = new Set(sections.map((section) => section.name));
 
   if (preamble) groupedBodies.get('Intent / Use Cases').push(preamble);
 
@@ -283,13 +294,9 @@ export function normalizeTodoContent(content) {
     if (body) groupedBodies.get(section.name).push(body);
   });
 
-  const blocks = TODO_SECTIONS.flatMap((section) => {
+  const blocks = TODO_SECTIONS.map((section) => {
     const bodies = groupedBodies.get(section);
-    return bodies.length || presentSections.has(section)
-      ? [
-          `## // ${getSectionHeading(section)}${bodies.length ? `\n\n${bodies.join('\n\n')}` : ''}`,
-        ]
-      : [];
+    return `## // ${getSectionHeading(section)}${bodies.length ? `\n\n${bodies.join('\n\n')}` : ''}`;
   });
   const parts = [`# // ${title}`, backlink];
   parts.push(...blocks);

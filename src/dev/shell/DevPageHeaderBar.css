@@ -5,6 +5,14 @@
   margin-bottom: 0.85rem;
 }
 
+.dev-page-header-bar__top-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.5rem;
+  width: 100%;
+}
+
 .dev-page-header-bar__back {
   color: var(--dev-text-muted);
   font-size: 0.75rem;

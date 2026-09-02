@@ -4,6 +4,7 @@ import { Link } from 'react-router-dom';
 import './DevPageHeaderBar.css';
 import DevPageTitle from './DevPageTitle';
 import './DevPages.css';
+import DevThemeSwitcher from './theme/DevThemeSwitcher';
 
 function classNames(...parts) {
   return parts.filter(Boolean).join(' ');
@@ -23,9 +24,12 @@ export default function DevPageHeaderBar({
 }) {
   return (
     <header className={classNames('dev-page-header-bar', className)}>
-      <Link className="dev-page-header-bar__back" to={backTo}>
-        <span aria-hidden="true">←</span> {backLabel}
-      </Link>
+      <div className="dev-page-header-bar__top-row">
+        <Link className="dev-page-header-bar__back" to={backTo}>
+          <span aria-hidden="true">←</span> {backLabel}
+        </Link>
+        <DevThemeSwitcher />
+      </div>
       <DevPageTitle
         compact={compact}
         eyebrow={eyebrow}

@@ -27,6 +27,24 @@
   gap: 0.42em;
 }
 
+.dev-page-title__reload {
+  padding: 0;
+  border: 0;
+  background: transparent;
+  color: inherit;
+  font: inherit;
+  cursor: pointer;
+}
+
+.dev-page-title__reload:hover {
+  text-decoration: underline;
+}
+
+.dev-page-title__reload:focus-visible {
+  outline: 2px solid var(--dev-accent);
+  outline-offset: 2px;
+}
+
 .dev-page-title__icon {
   width: 2em;
   height: 2em;

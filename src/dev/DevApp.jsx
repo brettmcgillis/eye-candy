@@ -7,13 +7,14 @@ import useLoaderGate from '@app/scaffold/loader/useLoaderGate';
 
 import DEV_PAGES from './devPageRegistry';
 import DevLandingPage from './shell/DevLandingPage';
+import { DevThemeProvider } from './shell/theme/DevThemeContext';
 
 export default function DevApp() {
   const { loaderVisible, suspended, handleSuspend, onLoaderComplete } =
     useLoaderGate();
 
   return (
-    <>
+    <DevThemeProvider>
       <Suspense fallback={<SuspenseSignal onSuspend={handleSuspend} />}>
         <Routes>
           <Route index element={<DevLandingPage />} />
@@ -28,6 +29,6 @@ export default function DevApp() {
       {loaderVisible && (
         <Loader onComplete={onLoaderComplete} suspended={suspended} />
       )}
-    </>
+    </DevThemeProvider>
   );
 }

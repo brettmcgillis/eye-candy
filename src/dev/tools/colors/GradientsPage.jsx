@@ -113,6 +113,7 @@ export default function GradientsPage() {
   const [sortKey, setSortKey] = useState('name');
   const [sortDirection, setSortDirection] = useState('asc');
   const [searchText, setSearchText] = useState('');
+  const [toneFilter, setToneFilter] = useState('all');
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [modalOpen, setModalOpen] = useState(false);
@@ -183,13 +184,25 @@ export default function GradientsPage() {
     };
   }, []);
 
+  const toneCounts = useMemo(
+    () =>
+      Array.from(
+        new Set(gradients.map((gradient) => gradient.colors.length))
+      ).sort((a, b) => a - b),
+    [gradients]
+  );
+
   const filteredGradients = useMemo(() => {
     const query = searchText.trim().toLowerCase();
-    const rows = query
-      ? gradients.filter((gradient) =>
-          gradient.name.toLowerCase().includes(query)
-        )
-      : gradients;
+    const rows = gradients
+      .filter((gradient) =>
+        query ? gradient.name.toLowerCase().includes(query) : true
+      )
+      .filter((gradient) =>
+        toneFilter === 'all'
+          ? true
+          : gradient.colors.length === Number(toneFilter)
+      );
 
     rows.sort((a, b) => {
       const primaryCompare =
@@ -201,7 +214,7 @@ export default function GradientsPage() {
     });
 
     return rows;
-  }, [gradients, searchText, sortDirection, sortKey]);
+  }, [gradients, searchText, sortDirection, sortKey, toneFilter]);
 
   function openAddModal() {
     setModalMode('add');
@@ -398,6 +411,20 @@ export default function GradientsPage() {
           placeholder="Search gradients…"
           aria-label="Search gradients"
         />
+
+        <select
+          className="gradients-page__tone-filter"
+          value={toneFilter}
+          onChange={(event) => setToneFilter(event.target.value)}
+          aria-label="Filter by number of tones"
+        >
+          <option value="all">All tones</option>
+          {toneCounts.map((count) => (
+            <option key={count} value={count}>
+              {count} {count === 1 ? 'tone' : 'tones'}
+            </option>
+          ))}
+        </select>
 
         <span className="gradients-page__count">
           {loading ? 'Loading…' : `${filteredGradients.length} gradients`}

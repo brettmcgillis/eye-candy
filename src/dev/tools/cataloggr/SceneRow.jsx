@@ -62,6 +62,8 @@ function SceneRow({ disabled, onManageTodo, onToggle, scene, statuses }) {
               aria-label={`Open ${scene.label}`}
               className="cataloggr-scene__open"
               href={scene.path}
+              rel="noopener noreferrer"
+              target="_blank"
               title="Open scene"
             >
               <FiExternalLink aria-hidden="true" />

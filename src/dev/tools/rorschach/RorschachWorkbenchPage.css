@@ -1677,3 +1677,13 @@ body:has(.rw-preview) {
   font-size: 0.75rem;
   color: rgb(255 140 140);
 }
+
+/* Confirmation that a press of Render actually did something. A batch at full
+   size can be half a minute from its first image, and until one lands the only
+   evidence is a counter at the other end of the page. */
+.rw-submitted {
+  margin: 0.6rem 0 0;
+  font-size: 0.78rem;
+  line-height: 1.45;
+  opacity: 0.75;
+}

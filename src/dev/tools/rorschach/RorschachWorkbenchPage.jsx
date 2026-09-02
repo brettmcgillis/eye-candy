@@ -87,7 +87,11 @@ function keysInFacet(facet) {
 // the only question worth asking before pressing the button.
 function rollSummary({ base, count, held }) {
   const rolled = FACETS.filter((facet) => !held.includes(facet));
-  const tests = `${count} ${count === 1 ? 'test' : 'tests'}`;
+  // A number field hands its value over as the string the input holds, so this
+  // has to coerce before comparing — `'1' === 1` is false, and the line read
+  // "1 tests".
+  const total = Number(count);
+  const tests = `${total} ${total === 1 ? 'test' : 'tests'}`;
 
   if (held.length === 0) {
     return `Rolling everything — ${tests}, each a fresh structure, palette and blot.`;
@@ -374,6 +378,12 @@ export default function RorschachWorkbenchPage() {
   const [profile, setProfile] = useState('post');
   const [resultsTab, setResultsTab] = useState('transient');
   const [submitting, setSubmitting] = useState(false);
+  // What the last press of Render did, kept next to the button. A job's first
+  // image can be half a minute away at full size, so without this the only
+  // evidence that anything happened is a small counter at the far end of the
+  // page.
+  const [submitted, setSubmitted] = useState(null);
+  const [submitError, setSubmitError] = useState(null);
   const [pins, setPins] = useState(() => new Set());
   const [base, setBase] = useState(null);
   const pinContext = useMemo(
@@ -476,6 +486,8 @@ export default function RorschachWorkbenchPage() {
   async function handleSubmit(event) {
     event.preventDefault();
     setSubmitting(true);
+    setSubmitted(null);
+    setSubmitError(null);
     try {
       // Send the render settings in full, but only the rollable parameters the
       // user actually enabled. The server forwards exactly what it is sent, and
@@ -487,7 +499,14 @@ export default function RorschachWorkbenchPage() {
           ([key]) => !RENDER_OPTIONS[key]?.facet || pins.has(key)
         )
       );
-      await submit({ kind, options: chosen });
+      const job = await submit({ kind, options: chosen });
+      setSubmitted(job);
+    } catch (failure) {
+      // Without this the rejection escaped as an unhandled promise, the button
+      // un-greyed itself, and nothing was rendered anywhere — so a refused job
+      // and a job that never started looked exactly the same. The hook's own
+      // `error` is no use here either: the jobs poll clears it a second later.
+      setSubmitError(failure.message);
     } finally {
       setSubmitting(false);
     }
@@ -563,7 +582,31 @@ export default function RorschachWorkbenchPage() {
         </div>
 
         <div className="rw-layout">
-          <form className="dev-panel rw-controls" onSubmit={handleSubmit}>
+          {/*
+            `noValidate` because the browser was stricter than the renderer and
+            silently won.
+
+            A spec's `step` is a spinner increment, not a constraint —
+            `coerce` range-checks min/max and never looks at it. But as an
+            `<input step>` it also gates submission, so any value off the grid
+            made the form refuse: preset 012's own `bloomStrength: 1.72` against
+            a 0.05 step, a distance of 22.4 against 0.5. Rolled values snap to
+            the *roll* step, hand-authored ones are arbitrary floats, and a
+            still's sidecar is full of both — so loading one as a base could
+            wedge Render for good.
+
+            Worse, the offending fields live inside collapsed `<details>`, so
+            the browser could not even show its own bubble ("An invalid form
+            control is not focusable") and the press did nothing at all, with
+            nothing on screen to say why. The dev server validates every option
+            against the same schema the CLI uses and now reports a refusal where
+            it can be read, which is where that check belongs.
+          */}
+          <form
+            className="dev-panel rw-controls"
+            noValidate
+            onSubmit={handleSubmit}
+          >
             <Segmented
               label="Output"
               onChange={setKind}
@@ -1715,6 +1758,16 @@ export default function RorschachWorkbenchPage() {
                 ? 'Submitting...'
                 : `Render ${kind === 'still' ? 'stills' : 'video'}`}
             </button>
+            {submitError ? (
+              <p className="rw-error">Could not start: {submitError}</p>
+            ) : null}
+            {submitted ? (
+              <p className="rw-submitted">
+                Started {kind === 'still' ? 'stills' : 'video'} job — watch it
+                in Jobs, or wait for it to appear in Transient. The first image
+                can take a while at full size.
+              </p>
+            ) : null}
             {error ? <p className="rw-error">{error}</p> : null}
           </form>
 

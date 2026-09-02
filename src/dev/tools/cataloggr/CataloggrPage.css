@@ -12,7 +12,7 @@
   margin-bottom: 0.8rem;
 }
 
-.cataloggr-stats > div {
+.cataloggr-stats > button {
   display: grid;
   grid-template-columns: auto 1fr;
   grid-template-rows: auto auto;
@@ -22,6 +22,20 @@
   border-radius: var(--dev-radius);
   background: var(--dev-surface);
   box-shadow: var(--dev-shadow);
+  font: inherit;
+  color: inherit;
+  text-align: left;
+  cursor: pointer;
+}
+
+.cataloggr-stats > button[aria-pressed='true'] {
+  border-color: var(--dev-text);
+  background: var(--dev-text);
+  color: #ffffff;
+}
+
+.cataloggr-stats > button[aria-pressed='true'] svg {
+  color: #ffffff;
 }
 
 .cataloggr-stats svg {

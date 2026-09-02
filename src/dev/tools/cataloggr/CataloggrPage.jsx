@@ -41,7 +41,7 @@ const VIEW_OPTIONS = [
   ['post', 'Post'],
   ['finish', 'Finish'],
   ['ideas', 'Ideas'],
-  ['todos', 'Todos'],
+  ['todos', 'ToDos'],
 ];
 
 function getSearchPlaceholder(view) {
@@ -73,6 +73,7 @@ function matchesView(scene, view, statuses) {
   }
 
   if (view === 'finish') return scene.area === 'wip';
+  if (view === 'posted') return progress.postedCount > 0;
   return true;
 }
 
@@ -87,6 +88,7 @@ export default function CataloggrPage() {
   const [area, setArea] = useState('all');
   const [channel, setChannel] = useState('all');
   const [view, setView] = useState('all');
+  const [selectedStat, setSelectedStat] = useState(null);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState('');
@@ -198,6 +200,7 @@ export default function CataloggrPage() {
     const query = deferredSearchText.trim().toLowerCase();
 
     return scenes.filter((scene) => {
+      if (area === 'devtools') return false;
       if (area !== 'all' && scene.area !== area) return false;
       if (channel !== 'all' && scene.channel !== channel) return false;
       if (!matchesView(scene, view, statuses)) return false;
@@ -219,7 +222,7 @@ export default function CataloggrPage() {
 
   const allEntries = useMemo(() => {
     const devTools =
-      area === 'all' && channel === 'all'
+      (area === 'all' || area === 'devtools') && channel === 'all'
         ? filteredDevTools.map(toCatalogDevTool)
         : [];
 
@@ -299,10 +302,31 @@ export default function CataloggrPage() {
   const handleManageTodo = useCallback((sourcePath) => {
     setTodoSourcePath(sourcePath);
     setError('');
-    startTransition(() => setView('todos'));
+    startTransition(() => {
+      setSelectedStat(null);
+      setView('todos');
+    });
   }, []);
 
   const handleTodoError = useCallback((message) => setError(message), []);
+
+  const handleStatFilter = useCallback(
+    (statKey, nextView, nextArea) => {
+      startTransition(() => {
+        if (selectedStat === statKey) {
+          setSelectedStat(null);
+          setView('all');
+          setArea('all');
+        } else {
+          setSelectedStat(statKey);
+          setView(nextView);
+          setArea(nextArea ?? 'all');
+        }
+        setChannel('all');
+      });
+    },
+    [selectedStat]
+  );
 
   let resultLabel = `${filteredScenes.length} scenes`;
   if (loading) resultLabel = 'Loading catalog...';
@@ -322,50 +346,82 @@ export default function CataloggrPage() {
       <DevPageHeaderBar title="Cataloggr" />
 
       <section className="cataloggr-stats" aria-label="Catalog summary">
-        <div>
+        <button
+          aria-pressed={selectedStat === 'scenes'}
+          onClick={() => handleStatFilter('scenes', 'all', 'all')}
+          type="button"
+        >
           <FiGrid />
           <strong>{stats.sceneCount}</strong>
           <span>
             {stats.showcaseCount} ready, {stats.wipCount} in progress
           </span>
-        </div>
-        <div>
+        </button>
+        <button
+          aria-pressed={selectedStat === 'toolbox'}
+          onClick={() => handleStatFilter('toolbox', 'all', 'toolbox')}
+          type="button"
+        >
           <FiBox />
           <strong>{stats.toolboxCount}</strong>
           <span>toolbox scenes</span>
-        </div>
-        <div>
+        </button>
+        <button
+          aria-pressed={selectedStat === 'testlab'}
+          onClick={() => handleStatFilter('testlab', 'all', 'testlab')}
+          type="button"
+        >
           <FiActivity />
           <strong>{stats.testLabCount}</strong>
           <span>test labs</span>
-        </div>
-        <div>
+        </button>
+        <button
+          aria-pressed={selectedStat === 'devtools'}
+          onClick={() => handleStatFilter('devtools', 'all', 'devtools')}
+          type="button"
+        >
           <FiCode />
           <strong>{DEV_PAGES.length}</strong>
           <span>dev tools</span>
-        </div>
-        <div>
+        </button>
+        <button
+          aria-pressed={selectedStat === 'ideas'}
+          onClick={() => handleStatFilter('ideas', 'ideas')}
+          type="button"
+        >
           <FiLayers />
           <strong>{stats.ideaCount}</strong>
           <span>ideas to start building</span>
-        </div>
-        <div>
+        </button>
+        <button
+          aria-pressed={selectedStat === 'posted'}
+          onClick={() => handleStatFilter('posted', 'posted')}
+          type="button"
+        >
           <FiCheckCircle />
           <strong>
             {stats.postedCount}/{stats.targetCount}
           </strong>
           <span>posted</span>
-        </div>
-        <div>
+        </button>
+        <button
+          aria-pressed={selectedStat === 'toPost'}
+          onClick={() => handleStatFilter('toPost', 'post')}
+          type="button"
+        >
           <FiSend />
           <strong>{stats.postNextCount}</strong>
           <span>to post</span>
-        </div>
-        <div>
+        </button>
+        <button
+          aria-pressed={selectedStat === 'toFinish'}
+          onClick={() => handleStatFilter('toFinish', 'finish')}
+          type="button"
+        >
           <FiTool />
           <strong>{stats.wipCount}</strong>
           <span>to finish</span>
-        </div>
+        </button>
       </section>
 
       <section
@@ -377,7 +433,12 @@ export default function CataloggrPage() {
             <button
               className={view === value ? 'cataloggr-segment--active' : ''}
               key={value}
-              onClick={() => startTransition(() => setView(value))}
+              onClick={() =>
+                startTransition(() => {
+                  setSelectedStat(null);
+                  setView(value);
+                })
+              }
               type="button"
             >
               {label}
@@ -396,7 +457,10 @@ export default function CataloggrPage() {
         {view !== 'post' && view !== 'ideas' && view !== 'todos' ? (
           <select
             aria-label="Filter by area"
-            onChange={(event) => setArea(event.target.value)}
+            onChange={(event) => {
+              setSelectedStat(null);
+              setArea(event.target.value);
+            }}
             value={area}
           >
             <option value="all">All areas</option>
@@ -405,12 +469,16 @@ export default function CataloggrPage() {
                 {AREAS[areaKey]}
               </option>
             ))}
+            <option value="devtools">Dev tools</option>
           </select>
         ) : null}
         {view !== 'post' && view !== 'ideas' && view !== 'todos' ? (
           <select
             aria-label="Filter by renderer"
-            onChange={(event) => setChannel(event.target.value)}
+            onChange={(event) => {
+              setSelectedStat(null);
+              setChannel(event.target.value);
+            }}
             value={channel}
           >
             <option value="all">All renderers</option>

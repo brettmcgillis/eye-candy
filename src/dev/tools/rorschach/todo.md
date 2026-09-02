@@ -23,6 +23,8 @@ Generate images and video using the RorschachCLI.
 - [ ] add button to collapse/expand all batches
 - [ ] allow click to zoom on image preview
 
+- [ ] prevent in-process videos from being shown/served up in the batch folders until they are completed
+
 ## // Features
 
 - Phase 3: Points mode — same trajectory data as an alt render mode (GPU point cloud, likely a TSL compute migration for density), plus the `mode` toggle control. we will want to do something interesting with the points here but im uncertain where to go. are the particles circle, square, noisy transparency? do they move along the line created by the system or are they stationary? if theyre stationary is there a wave of noise that travels down the line slightly pushing them out of the way as it moves past their location on the line?

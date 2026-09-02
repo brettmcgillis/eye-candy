@@ -1408,6 +1408,11 @@ export const HEADLESS_ONLY_OPTIONS = new Set([
 export function optionsFromPreset(preset, kind, surface = 'workbench') {
   const chosen = {};
   optionsFor(kind, surface).forEach(([key, spec]) => {
+    // Where output goes belongs to whoever is running the job. A still's
+    // sidecar records the directory it was written to, and loading that back
+    // into a form aimed a new batch at the old batch's folder — harmless only
+    // because the dev server overwrites it, which is not a thing to rely on.
+    if (key === 'out' || spec.cliOnly) return;
     if (spec.keyPattern) {
       const matches = Object.entries(preset).filter(([name]) =>
         spec.keyPattern.test(name)

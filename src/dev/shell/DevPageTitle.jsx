@@ -39,7 +39,14 @@ export default function DevPageTitle({
       {eyebrow ? <p className="dev-page-title__eyebrow">{eyebrow}</p> : null}
       <HeadingTag className="dev-page-title__heading">
         <span className="dev-page-title__row">
-          <span>{title}</span>
+          <button
+            className="dev-page-title__reload"
+            onClick={() => window.location.reload()}
+            title="Reload this tool"
+            type="button"
+          >
+            {title}
+          </button>
           {onIconClick ? (
             <button
               aria-label={iconButtonLabel}

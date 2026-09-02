@@ -48,6 +48,7 @@ export function sampleTimeline({
   const {
     contactAt,
     dissolveAt,
+    duration,
     growEnd,
     returnEnd,
     strokeCycle,
@@ -93,9 +94,22 @@ export function sampleTimeline({
   const tipActive =
     time <= growEnd ? 1 : Math.max(0, 1 - (time - growEnd) / TIP_FADE);
 
+  // Where the camera and DOF look. It rides the descending tip while the bolt
+  // grows, then hands over to a straight interpolation back to the origin.
+  // `focusRetrace` is that handover, 0 through growth and flash, eased 0..1
+  // across the rest. It must NOT retrace the trunk polyline — that path is a
+  // deliberately jagged stepped leader, and dragging the look target along it
+  // reads as camera shake.
+  const restSpan = Math.max(duration - dissolveAt, 1e-4);
+  const retrace = Math.min(Math.max((time - dissolveAt) / restSpan, 0), 1);
+  const focusRetrace = retrace * retrace * (3 - 2 * retrace);
+  const focusArc = Math.min(time * frontSpeed, groundArc);
+
   return {
     boltDissolving: time >= dissolveAt ? 1 : 0,
     channelFlash,
+    focusArc,
+    focusRetrace,
     tipActive,
     frontArc: Math.min(time * frontSpeed, totalArc),
     returnArc,

@@ -5,11 +5,17 @@ import { useFrame, useThree } from '@react-three/fiber';
 import createBoltAccretion from '@elements/Lightning/createBoltAccretion';
 
 import { sampleBedSurface } from '../utils/bedSurface';
+import sampleBoltTip from '../utils/boltTip';
 import createGrainSimulation from '../utils/createGrainSimulation';
 import { createTimeline, sampleTimeline } from '../utils/strikeTimeline';
 import createStrikeVariation from '../utils/strikeVariation';
 
-function GrainField({ config }) {
+function GrainField({ config, focusRef = null, trunkRef = null }) {
+  const publishTrunk = (path) => {
+    if (!trunkRef) return;
+    // eslint-disable-next-line no-param-reassign -- ref handoff to the scene root
+    trunkRef.current = path;
+  };
   const gl = useThree((state) => state.gl);
   const scene = useThree((state) => state.scene);
   const runtimeRef = useRef(null);
@@ -118,6 +124,8 @@ function GrainField({ config }) {
 
       simulation.uploadBolt();
       simulation.uniforms.impactCenter.value.set(...bolt.ground);
+      runtime.trunkPath = bolt.trunkPath;
+      publishTrunk(bolt.trunkPath);
       runtime.groundArc = bolt.groundArc;
       runtime.totalArc = bolt.totalArc;
       // The ring starts at the contact point, so it has further to travel to
@@ -189,6 +197,24 @@ function GrainField({ config }) {
     uniforms.bounceThreshold.value = config.bounceThreshold;
     uniforms.channelFlash.value = sampled.channelFlash;
     uniforms.tipActive.value = sampled.tipActive;
+
+    if (focusRef && runtime.trunkPath) {
+      sampleBoltTip(runtime.trunkPath, sampled.focusArc, focusRef.current);
+
+      // Ease straight up to the bolt origin during the rest rather than
+      // walking the trunk back — the origin is where the next leader starts,
+      // so the pan lands exactly on it with nothing to snap.
+      if (sampled.focusRetrace > 0) {
+        const t = sampled.focusRetrace;
+        const path = runtime.trunkPath;
+
+        focusRef.current.set(
+          focusRef.current.x + (path[0] - focusRef.current.x) * t,
+          focusRef.current.y + (path[1] - focusRef.current.y) * t,
+          focusRef.current.z + (path[2] - focusRef.current.z) * t
+        );
+      }
+    }
     uniforms.ejectSwirl.value = config.ejectSwirl;
     uniforms.channelGlow.value = config.channelGlow;
     uniforms.curlEvolve.value = config.curlEvolve;
@@ -206,6 +232,8 @@ function GrainField({ config }) {
     uniforms.returnBranchGlow.value = config.returnBranchGlow;
     uniforms.returnWidth.value = config.returnWidth;
     uniforms.tipFalloff.value = config.tipFalloff;
+    simulation.mesh.material.roughness = config.grainRoughness;
+    simulation.mesh.material.metalness = config.grainMetalness;
     uniforms.grainColor.value.set(config.grainColor);
     uniforms.leaderColor.value.set(config.leaderColor);
     uniforms.returnColor.value.set(config.returnColor);

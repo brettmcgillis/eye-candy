@@ -5,6 +5,7 @@ import { useThree } from '@react-three/fiber';
 
 import * as THREE from 'three';
 
+import useCameraFollow from './useCameraFollow';
 import useSceneCamera from './useSceneCamera';
 
 function SplinePathLineGL({ points }) {
@@ -39,6 +40,9 @@ export default function CameraRig({
   autoRotate,
   autoRotateSpeed,
   camera,
+  followDamping = 0,
+  followEnabled = true,
+  followTarget = null,
   onShotChange = null,
   orbitAutoFitFrame,
   operatorInputOptions,
@@ -57,7 +61,9 @@ export default function CameraRig({
 
   const {
     activeFixedShotId,
+    cameraNode,
     captureCurrentCameraFrame,
+    controlsNode,
     copyCurrentCameraConfig,
     controlsProps,
     getCurrentCameraConfigSnapshot,
@@ -78,6 +84,16 @@ export default function CameraRig({
     orbitControlsProps: resolvedOrbitControlsProps,
     orbitInteractionEnabled,
     shouldBlockPointerLook,
+  });
+
+  useCameraFollow({
+    cameraNode,
+    controlsNode,
+    damping: followDamping,
+    enabled: followEnabled,
+    isOrbitMode,
+    isSplineMode,
+    target: followTarget,
   });
 
   const splinePathPoints = useMemo(() => {

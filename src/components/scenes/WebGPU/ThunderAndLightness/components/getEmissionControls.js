@@ -94,43 +94,6 @@ export default function getEmissionControls(p) {
         max: 1,
         step: 0.01,
       },
-      bloomEnabled: { label: 'Bloom', value: p.bloomEnabled },
-      bloomThreshold: {
-        label: 'Bloom Threshold',
-        value: p.bloomThreshold,
-        min: 0,
-        max: 3,
-        step: 0.05,
-      },
-      bloomStrength: {
-        label: 'Bloom Strength',
-        value: p.bloomStrength,
-        min: 0,
-        max: 2,
-        step: 0.05,
-      },
-      bloomRadius: {
-        label: 'Bloom Radius',
-        value: p.bloomRadius,
-        min: 0.1,
-        max: 1,
-        step: 0.05,
-      },
-      godraysEnabled: { label: 'Godrays', value: p.godraysEnabled },
-      godraysDensity: {
-        label: 'Godray Density',
-        value: p.godraysDensity,
-        min: 0,
-        max: 3,
-        step: 0.05,
-      },
-      godraysMaxDensity: {
-        label: 'Godray Max',
-        value: p.godraysMaxDensity,
-        min: 0,
-        max: 1,
-        step: 0.05,
-      },
     },
     { collapsed: true }
   );

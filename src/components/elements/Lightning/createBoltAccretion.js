@@ -213,9 +213,20 @@ export default function createBoltAccretion({
   }
 
   const contact = trunk.nodes.at(-1);
+  // Trunk polyline as xyz + arc, so a consumer can find the advancing tip's
+  // world position for any propagation distance without re-walking.
+  const trunkPath = new Float32Array(trunk.nodes.length * 4);
+
+  trunk.nodes.forEach((node, index) => {
+    trunkPath[index * 4] = node.position.x;
+    trunkPath[index * 4 + 1] = node.position.y;
+    trunkPath[index * 4 + 2] = node.position.z;
+    trunkPath[index * 4 + 3] = node.arc;
+  });
 
   return {
     count: store.count,
+    trunkPath,
     ground: [contact.position.x, contact.position.y, contact.position.z],
     groundArc: contact.arc,
     totalArc: Math.max(store.maxArc, 1),

@@ -12,6 +12,7 @@ import {
   useSceneLightingControls,
 } from '@modules/lightingRig';
 import { useMediaRecorder } from '@modules/mediaRecorder';
+import { getPostControlsKey, useScenePostControls } from '@modules/postRig';
 
 import getDischargeControls from '../components/getDischargeControls';
 import getEmissionControls from '../components/getEmissionControls';
@@ -21,6 +22,7 @@ import getStudioControls from '../components/getStudioControls';
 import { DEFAULT_PRESET, PRESETS, getPresetControls } from '../presets/presets';
 import CAMERA from '../utils/camera';
 import LIGHTING from '../utils/lighting';
+import POST from '../utils/post';
 
 const SCENE_LABEL = 'Thunder And Lightness';
 const CAMERA_FOLDER_PATH = `${SCENE_LABEL}.Camera`;
@@ -54,6 +56,8 @@ export default function useSceneControls() {
     lightingFolderPath: LIGHTING_FOLDER_PATH,
   });
 
+  const { buildPost, postControls } = useScenePostControls({ post: POST });
+
   const [controls, setControls] = useControls(SCENE_LABEL, () => ({
     Presets: presetsFolder,
     Camera: folder(cameraControls, { collapsed: true }),
@@ -63,6 +67,7 @@ export default function useSceneControls() {
     Impact: getImpactControls(p),
     Emission: getEmissionControls(p),
     Studio: getStudioControls(p),
+    Post: folder(postControls, { collapsed: true }),
   }));
 
   attachSetControls(setControls);
@@ -89,8 +94,16 @@ export default function useSceneControls() {
     [buildLighting, lightingControlsKey]
   );
 
+  const postControlsKey = useMemo(
+    () => getPostControlsKey(controls),
+    [controls]
+  );
+  // Rebuilding on every unrelated edit would tear down and recreate the whole
+  // render pipeline; `values` still carries live controls for per-frame updates.
+  const post = useMemo(() => buildPost(controls), [buildPost, postControlsKey]);
+
   return useMemo(
-    () => ({ ...controls, camera, cameraApiRef, lighting }),
-    [camera, controls, lighting]
+    () => ({ ...controls, camera, cameraApiRef, lighting, post }),
+    [camera, controls, lighting, post]
   );
 }

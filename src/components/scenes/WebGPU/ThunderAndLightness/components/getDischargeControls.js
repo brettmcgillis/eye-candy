@@ -81,6 +81,17 @@ export default function getDischargeControls(p) {
         max: 0.12,
         step: 0.002,
       },
+      followBoltTip: {
+        label: 'Camera Follows Tip',
+        value: p.followBoltTip,
+      },
+      followBoltDamping: {
+        label: 'Camera Follow Damping',
+        value: p.followBoltDamping,
+        min: 0,
+        max: 40,
+        step: 0.5,
+      },
       contactDepth: {
         label: 'Contact Depth (x sand)',
         value: p.contactDepth,

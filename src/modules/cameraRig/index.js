@@ -9,6 +9,7 @@ export { default as useSceneCameraControls } from './useSceneCameraControls';
 export { default as buildSceneCameraControls } from './buildSceneCameraControls';
 export { default as useSceneCamera } from './useSceneCamera';
 export { default as useCameraFitToViewport } from './useCameraFitToViewport';
+export { default as useCameraFollow } from './useCameraFollow';
 export { default as useCameraSpline } from './useCameraSpline';
 export { default as useOperatorFreeCamera } from './useOperatorFreeCamera';
 export { default as useOperatorInput } from './useOperatorInput';

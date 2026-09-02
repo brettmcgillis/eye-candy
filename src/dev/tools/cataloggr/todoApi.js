@@ -89,6 +89,9 @@ export function addTaskContent(document, sectionName, text) {
   const after = document.content.slice(insertOffset).trimStart();
   const headingName = sectionName === 'TODO' ? 'TODO:' : sectionName;
   const heading = section ? '' : `## // ${headingName}\n\n`;
+  const lastLine = before.split('\n').pop() ?? '';
+  const appendingAfterItem = /^[-*+]\s+\[[ xX]\]/u.test(lastLine);
+  const separator = section && appendingAfterItem ? '\n' : '\n\n';
 
-  return `${before}\n\n${heading}${item}${after ? `\n${after}` : ''}`;
+  return `${before}${separator}${heading}${item}${after ? `\n${after}` : ''}`;
 }

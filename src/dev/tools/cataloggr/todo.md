@@ -10,10 +10,6 @@ Track scene maturity, local presets, publishing progress, and colocated TODO doc
 
 - [ ] allow me to describe intent/use cases on the Viewer tab, similar to how i can add todos
 
-- [ ] the link to open the scene should always open in new tab
-
-- [ ] add a refresh data button
-
 - [ ] Move Todo viewer/editor into scene closure row & eliminate the need for the dedicated todos tab
 
 - [ ] allow edit todo item in place
@@ -27,3 +23,4 @@ Track scene maturity, local presets, publishing progress, and colocated TODO doc
 ## // Bugs
 
 - [ ] lists are being formatted improperly when adding items
+

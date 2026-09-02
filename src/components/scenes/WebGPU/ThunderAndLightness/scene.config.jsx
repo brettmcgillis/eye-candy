@@ -1,8 +1,8 @@
 import React, { lazy } from 'react';
-import { BsLightningChargeFill } from 'react-icons/bs';
+import { GiLightningBranches } from 'react-icons/gi';
 
 function SceneIcon() {
-  return <BsLightningChargeFill color="#6cc3f5" size={24} />;
+  return <GiLightningBranches color="#005586" size={24} />;
 }
 
 export default {

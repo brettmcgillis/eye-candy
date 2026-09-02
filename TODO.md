@@ -80,6 +80,7 @@
 - [StayingAfloat](src/components/scenes/WebGL/StayingAfloat/todo.md)
 - [StillPullingForYou](src/components/scenes/WebGPU/StillPullingForYou/todo.md)
 - [ThatsAllFolks](src/components/scenes/WebGPU/ThatsAllFolks/todo.md)
+- [Thunder And Lightness](src/components/scenes/WebGPU/ThunderAndLightness/todo.md)
 - [UrbanWildlife](src/components/scenes/WebGPU/UrbanWildlife/todo.md)
 - [WaterCycle](src/components/scenes/WebGPU/WaterCycle/todo.md)
 - [Wet Paint](src/components/scenes/WebGPU/WetPaint/todo.md)

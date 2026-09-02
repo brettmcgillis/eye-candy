@@ -18,12 +18,14 @@ import {
   max,
   mix,
   mul,
+  normalize,
   passTexture,
   perspectiveDepthToViewZ,
   pow,
   reference,
   round,
   screenCoordinate,
+  smoothstep,
   texture,
   uint,
   uniform,
@@ -63,6 +65,7 @@ const _DIRECTIONS = [
 
 const _PLANES = _DIRECTIONS.map(() => new Plane());
 const _SCRATCH_VECTOR = new Vector3();
+const _SCRATCH_LIGHT_POSITION = new Vector3();
 const _SCRATCH_MAT4 = new Matrix4();
 const _SCRATCH_FRUSTUM = new Frustum();
 
@@ -106,7 +109,7 @@ class GodraysNode extends TempNode {
    *
    * @param {TextureNode} depthNode - A texture node that represents the scene's depth.
    * @param {Camera} camera - The camera the scene is rendered with.
-   * @param {(DirectionalLight|PointLight)} light - The light the godrays are rendered for.
+   * @param {(DirectionalLight|PointLight|SpotLight)} light - The light the godrays are rendered for.
    */
   constructor(depthNode, camera, light) {
     super('vec4');
@@ -237,11 +240,18 @@ class GodraysNode extends TempNode {
     this._fNormals = uniformArray(_DIRECTIONS.map(() => new Vector3()));
     this._fConstants = uniformArray(_DIRECTIONS.map(() => 0));
 
+    // A spot light's shadow camera is a square-aspect perspective frustum, so
+    // bounding the raymarch by its six planes alone yields a pyramid of light.
+    // These describe the actual circular cone, applied as a mask on top.
+    this._spotDirection = uniform(new Vector3(0, -1, 0));
+    this._spotCosOuter = uniform(float(-1));
+    this._spotCosInner = uniform(float(-1));
+
     /**
      * The light the godrays are rendered for.
      *
      * @private
-     * @type {(DirectionalLight|PointLight)}
+     * @type {(DirectionalLight|PointLight|SpotLight)}
      */
     this._light = light;
 
@@ -352,6 +362,26 @@ class GodraysNode extends TempNode {
     const light = this._light;
     const shadowCamera = light.shadow.camera;
 
+    if (light.isSpotLight) {
+      light.updateMatrixWorld();
+      light.target.updateMatrixWorld();
+      _SCRATCH_VECTOR
+        .setFromMatrixPosition(light.target.matrixWorld)
+        .sub(_SCRATCH_LIGHT_POSITION.setFromMatrixPosition(light.matrixWorld))
+        .normalize();
+      this._spotDirection.value.copy(_SCRATCH_VECTOR);
+      const cosOuter = Math.cos(light.angle);
+
+      this._spotCosOuter.value = cosOuter;
+      // smoothstep is undefined in WGSL when its edges are equal, which is
+      // exactly what penumbra 0 produces. The epsilon keeps the edge hard
+      // without the divide-by-zero.
+      this._spotCosInner.value = Math.max(
+        Math.cos(light.angle * (1 - (light.penumbra ?? 0))),
+        cosOuter + 1e-3
+      );
+    }
+
     this._premultipliedLightCameraMatrix.value.multiplyMatrices(
       shadowCamera.projectionMatrix,
       shadowCamera.matrixWorldInverse
@@ -369,7 +399,7 @@ class GodraysNode extends TempNode {
         this._fNormals.array[i].copy(plane.normal);
         this._fConstants.array[i] = plane.constant;
       }
-    } else if (light.isDirectionalLight) {
+    } else if (light.isDirectionalLight || light.isSpotLight) {
       _SCRATCH_MAT4.multiplyMatrices(
         shadowCamera.projectionMatrix,
         shadowCamera.matrixWorldInverse
@@ -437,6 +467,11 @@ class GodraysNode extends TempNode {
     };
 
     const inShadow = (worldPos) => {
+      const shadowMap = this._light.shadow && this._light.shadow.map;
+      if (!shadowMap || !shadowMap.depthTexture) {
+        return vec2(1, 0);
+      }
+
       if (this._light.isPointLight) {
         const lightToPos = worldPos.sub(lightPos).toConst();
 
@@ -459,7 +494,7 @@ class GodraysNode extends TempNode {
 
         return vec2(result.oneMinus().add(0.005), viewZ.negate());
       }
-      if (this._light.isDirectionalLight) {
+      if (this._light.isDirectionalLight || this._light.isSpotLight) {
         const shadowCoord = computeShadowCoord(worldPos).toConst();
 
         const frustumTest = shadowCoord.x
@@ -625,6 +660,20 @@ class GodraysNode extends TempNode {
         });
       });
 
+      // Circular falloff matching the light's own cone and penumbra. Non-spot
+      // lights pass everything through, so their volume is unchanged.
+      const coneMask = (worldPos) => {
+        if (!this._light.isSpotLight) return float(1);
+
+        const toSample = normalize(worldPos.sub(lightPos));
+
+        return smoothstep(
+          this._spotCosOuter,
+          this._spotCosInner,
+          dot(toSample, this._spotDirection)
+        );
+      };
+
       If(isEarlyOut.equal(false), () => {
         const illum = float(0).toVar();
 
@@ -641,7 +690,10 @@ class GodraysNode extends TempNode {
             float(i).div(samplesFloat)
           ).toConst();
           const shadowInfo = inShadow(samplePos);
-          const shadowAmount = shadowInfo.x.oneMinus().toConst();
+          const shadowAmount = shadowInfo.x
+            .oneMinus()
+            .mul(coneMask(samplePos))
+            .toConst();
 
           illum.addAssign(
             shadowAmount
@@ -698,7 +750,7 @@ export default GodraysNode;
  * @function
  * @param {TextureNode} depthNode - A texture node that represents the scene's depth.
  * @param {Camera} camera - The camera the scene is rendered with.
- * @param {(DirectionalLight|PointLight)} light - The light the godrays are rendered for.
+ * @param {(DirectionalLight|PointLight|SpotLight)} light - The light the godrays are rendered for.
  * @returns {GodraysNode}
  */
 export const godrays = (depthNode, camera, light) =>

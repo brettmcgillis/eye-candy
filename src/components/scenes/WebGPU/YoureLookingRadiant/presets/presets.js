@@ -9,6 +9,8 @@ export const DEFAULT_PRESET = 'Dark Neon';
 const SHARED = {
   arcLights: 14,
   arcSpread: 0.62,
+  sweepPulse: 0,
+  sweepRate: 0.5,
   flowScale: 1.8,
   matchBrightness: 1,
   pointerRadius: 0.55,
@@ -43,6 +45,8 @@ export const PRESETS = {
   Arcs: {
     ...SHARED,
     ambient: 0.05,
+    sweepPulse: 1,
+    sweepRate: 0.45,
     arcSpan: 150,
     bodyTint: '#000000',
     colorA: '#ff2fa6',

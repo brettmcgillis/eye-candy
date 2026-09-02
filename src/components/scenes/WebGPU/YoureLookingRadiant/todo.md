@@ -16,6 +16,9 @@
   at a radius assigned once and never changed, with its own rate, direction
   and sweep — 3cKczD's ring loop. **Arc Span** scales every sweep and
   **Arc Spread** how far the outermost ring reaches; zero span is a plain disc.
+  **Sweep Pulse** animates each ring's length on its own phase, which is the
+  reference's `range = (sin(time + hash) * 0.45 + 0.55) * range` — at 1 an arc
+  swings between a tenth of its length and all of it, at 0 it holds still.
   Above zero the scene switches to ring motion: curl drift, the border push and
   separation are all about particles wandering a field and none of them apply
   to a ring.
@@ -147,6 +150,9 @@ frame; every bug in this scene's first build was invisible from the code.
 - [x] Three emit/occlude modalities in `utils/roleModes.js`, a keyed registry
       so a fourth is one entry plus its controls: - **Age & Respawn** — born emitting, fades to opaque, dies, respawns. - **Slow Oscillation** — per-particle phase and period, cycling forever. - **Travelling Wave** — a front sweeps the field flipping particles,
       alternating polarity on each pass so it never needs a reset.
+- [ ] Sweep Pulse is one global rate with per-ring phase, as in the reference.
+      Per-ring _rates_ would keep the field from settling into a visible common
+      beat over a long sit.
 - [ ] More modalities: proximity (particles darken when crowded), audio, and a
       "contagion" mode where occluding spreads to neighbours. A travelling
       wave was tried and removed — it flips every particle to emitting and

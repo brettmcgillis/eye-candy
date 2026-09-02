@@ -36,6 +36,20 @@ const shape = (p) =>
         step: 0.02,
         value: p.arcSpread,
       },
+      sweepPulse: {
+        label: 'Sweep Pulse',
+        max: 1,
+        min: 0,
+        step: 0.02,
+        value: p.sweepPulse,
+      },
+      sweepRate: {
+        label: 'Sweep Rate',
+        max: 2,
+        min: 0.05,
+        step: 0.05,
+        value: p.sweepRate,
+      },
       seed: { label: 'Seed', max: 999, min: 1, step: 1, value: p.seed },
     },
     { collapsed: true }

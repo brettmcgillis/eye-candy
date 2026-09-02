@@ -25,6 +25,7 @@ export default function createSwarm({ aspect, count, seed = 1 }) {
   let fieldAspect = aspect;
   const particles = [];
   const flow = [0, 0];
+  let clock = 0;
 
   function respawn(p, ctx) {
     p.angle = rand() * Math.PI * 2;
@@ -53,6 +54,7 @@ export default function createSwarm({ aspect, count, seed = 1 }) {
       orbitT: (i + 0.5) / count,
       spin: (0.6 + rand() * 0.4) * (i % 2 === 0 ? 1 : -1),
       spanScale: 0.25 + rand() * 0.75,
+      sweepPhase: rand() * Math.PI * 2,
       angle: rand() * Math.PI * 2,
       dead: false,
       emission: 1,
@@ -108,6 +110,7 @@ export default function createSwarm({ aspect, count, seed = 1 }) {
   }
 
   function step(dt, time, params) {
+    clock = time;
     const ctx = { aspect: fieldAspect, dt, params, rand, time };
     const mode = ROLE_MODES[params.roleMode] ?? ROLE_MODES.age;
 
@@ -210,8 +213,18 @@ export default function createSwarm({ aspect, count, seed = 1 }) {
       const orbit = Math.hypot(dx, dy);
       const angle = Math.atan2(dy, dx);
 
+      // Each ring's sweep breathes on its own phase, as in the reference:
+      // range = (sin(time + hash) * 0.45 + 0.55) * range. Pulse at 0 holds
+      // every arc at its full length, at 1 it matches the reference's swing.
+      const pulse =
+        1 -
+        params.sweepPulse * 0.45 +
+        Math.sin(clock * params.sweepRate + p.sweepPhase) *
+          0.45 *
+          params.sweepPulse;
+
       const body = out.bodies[i];
-      body.aperture = aperture * 0.5 * p.spanScale;
+      body.aperture = aperture * 0.5 * p.spanScale * pulse;
       body.centerX = centerX;
       body.centerY = centerY;
       body.orbit = orbit * scale;

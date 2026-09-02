@@ -5,13 +5,10 @@ import { useFrame, useThree } from '@react-three/fiber';
 import { uniform } from 'three/tsl';
 import * as THREE from 'three/webgpu';
 
+import { buildShadowMapMaterial, marchShadow } from '@modules/radialShadow';
+
 import buildRadianceComposeMaterial from '../utils/buildRadianceComposeMaterial';
-import buildShadowMapMaterial from '../utils/buildShadowMapMaterial';
-import {
-  buildDecorSDF,
-  buildSceneSDF,
-  marchShadow,
-} from '../utils/radialShadowTSL';
+import { buildDecorSDF, buildSceneSDF } from '../utils/radialShadowTSL';
 import { MAX_WINDOWS } from '../utils/radianceConstants';
 import { createSceneUniforms, updateSceneUniforms } from '../utils/sceneTSL';
 
@@ -92,9 +89,10 @@ export default function useRadialShadowPipeline({
       marchShadow(sceneFn, rayOrigin, rayDir);
 
     const shadowMaterial = buildShadowMapMaterial({
+      lightCount: sceneUniforms.windowCount,
       lightData: sceneUniforms.lightData,
       marchFn,
-      windowCount: sceneUniforms.windowCount,
+      maxLights: MAX_WINDOWS,
     });
 
     const composeMaterial = buildRadianceComposeMaterial({

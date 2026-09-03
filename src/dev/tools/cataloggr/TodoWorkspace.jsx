@@ -19,6 +19,26 @@ import {
   writeTodo,
 } from './todoApi';
 
+const TODO_SORT_OPTIONS = [
+  ['name', 'Name'],
+  ['updated', 'Updated'],
+  ['created', 'Created'],
+];
+
+const timestampFormatter = new Intl.DateTimeFormat(undefined, {
+  day: 'numeric',
+  month: 'short',
+  year: 'numeric',
+});
+
+function formatTimestamp(isoString) {
+  if (!isoString) return 'unknown';
+  const parsed = new Date(isoString);
+  return Number.isNaN(parsed.getTime())
+    ? 'unknown'
+    : timestampFormatter.format(parsed);
+}
+
 function TodoWorkspace({ initialSourcePath, onError }) {
   const [todos, setTodos] = useState([]);
   const [selectedSourcePath, setSelectedSourcePath] = useState('');
@@ -27,6 +47,7 @@ function TodoWorkspace({ initialSourcePath, onError }) {
   const [savedContent, setSavedContent] = useState('');
   const [query, setQuery] = useState('');
   const [sectionFilter, setSectionFilter] = useState('all');
+  const [todoSortKey, setTodoSortKey] = useState('name');
   const [showCompleted, setShowCompleted] = useState(false);
   const [complianceOnly, setComplianceOnly] = useState(false);
   const [quickAddText, setQuickAddText] = useState('');
@@ -196,13 +217,28 @@ function TodoWorkspace({ initialSourcePath, onError }) {
             task.section === sectionFilter && (showCompleted || !task.checked)
         );
       })
-      .sort(
-        (left, right) =>
+      .sort((left, right) => {
+        if (todoSortKey === 'updated') {
+          return (
+            new Date(right.updatedAt).getTime() -
+            new Date(left.updatedAt).getTime()
+          );
+        }
+
+        if (todoSortKey === 'created') {
+          return (
+            new Date(right.createdAt).getTime() -
+            new Date(left.createdAt).getTime()
+          );
+        }
+
+        return (
           left.title.localeCompare(right.title, undefined, {
             sensitivity: 'base',
           }) || left.sourcePath.localeCompare(right.sourcePath)
-      );
-  }, [complianceOnly, query, sectionFilter, showCompleted, todos]);
+        );
+      });
+  }, [complianceOnly, query, sectionFilter, showCompleted, todoSortKey, todos]);
 
   let saveLabel = 'Autosaved';
   if (dirty) saveLabel = 'Waiting to autosave...';
@@ -228,6 +264,17 @@ function TodoWorkspace({ initialSourcePath, onError }) {
           {TODO_SECTIONS.map((section) => (
             <option key={section} value={section}>
               {section}
+            </option>
+          ))}
+        </select>
+        <select
+          aria-label="Sort TODOs"
+          onChange={(event) => setTodoSortKey(event.target.value)}
+          value={todoSortKey}
+        >
+          {TODO_SORT_OPTIONS.map(([value, label]) => (
+            <option key={value} value={value}>
+              Sort: {label}
             </option>
           ))}
         </select>
@@ -261,11 +308,16 @@ function TodoWorkspace({ initialSourcePath, onError }) {
                 }
                 className="cataloggr-todo-group__heading"
                 onClick={() => handleSelect(todo.sourcePath)}
+                title={todo.sourcePath}
                 type="button"
               >
                 <span>
                   <strong>{todo.title}</strong>
-                  <small>{todo.sourcePath}</small>
+                  <small>
+                    {todoSortKey === 'created'
+                      ? `Created ${formatTimestamp(todo.createdAt)}`
+                      : `Updated ${formatTimestamp(todo.updatedAt)}`}
+                  </small>
                 </span>
                 <span className="cataloggr-todo-group__counts">
                   {todo.issues.length ? (

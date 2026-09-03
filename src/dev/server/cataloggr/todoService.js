@@ -356,11 +356,13 @@ async function getAllowedTodoPath(rootDir, sourcePath) {
   return candidate;
 }
 
-function summarizeTodo(rootDir, todoPath, content) {
+async function summarizeTodo(rootDir, todoPath, content) {
   const parsed = parseTodo(content);
+  const stats = await fs.stat(todoPath);
 
   return {
     checkedCount: parsed.tasks.filter((task) => task.checked).length,
+    createdAt: stats.birthtime.toISOString(),
     hash: getHash(content),
     issues: parsed.issues,
     openCount: parsed.tasks.filter((task) => !task.checked).length,
@@ -369,6 +371,7 @@ function summarizeTodo(rootDir, todoPath, content) {
     sourcePath: toSourcePath(rootDir, todoPath),
     tasks: parsed.tasks,
     title: parsed.title,
+    updatedAt: stats.mtime.toISOString(),
   };
 }
 
@@ -389,7 +392,7 @@ export async function readSceneTodo(rootDir, sourcePath) {
   const parsed = parseTodo(content);
 
   return {
-    ...summarizeTodo(rootDir, todoPath, content),
+    ...(await summarizeTodo(rootDir, todoPath, content)),
     content,
     normalizedContent: normalizeTodoContent(content),
     sectionDetails: parsed.sections,

@@ -523,7 +523,7 @@
 
 .cataloggr-todos__filters {
   display: grid;
-  grid-template-columns: minmax(12rem, 1fr) 11rem auto auto;
+  grid-template-columns: minmax(12rem, 1fr) 11rem 9rem auto auto;
   align-items: center;
   gap: 0.5rem;
   padding: 0.55rem;

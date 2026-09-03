@@ -12,7 +12,7 @@ function SceneIcon() {
 
 export default {
   id: 'getWrecked',
-  label: 'Get Wrecked',
+  label: 'getWrecked()',
   channel: 'webgpu',
   area: 'wip',
   icon: SceneIcon,

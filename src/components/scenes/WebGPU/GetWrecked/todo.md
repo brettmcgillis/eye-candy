@@ -1,6 +1,8 @@
-# // Get Wrecked
+# // getWrecked()
 
-# // Intent/Use Cases
+[Back to main TODO](../../../../../TODO.md)
+
+## // Intent / Use Cases
 
 A tribute to Mark Klink's 2014 "3D Glitch Notes" series
 (srcxor.org/blog/3d-glitching) — his raw Wavefront .obj text corruption
@@ -10,20 +12,20 @@ scrambling) translated into a live TSL vertex/UV shader instead of one-off
 hand text-editing, applied to `destroyed_car.glb`. The mechanism is
 geometry-agnostic and could be pointed at other models later.
 
-# // TODO:
-
-[Back to main TODO](../../../../../TODO.md)
+## // TODO:
 
 - pixel sort post processing. chunks of screen get pixel sorted. could be horizontal or verical bands, could be noise/cell noise driven.
 - slit scan post processing. horizontal or verical bands of screen get slit scanned.
 
-# // Presets
+## // Presets
 
-# // Features
+## // Features
 
-# // Bugs
+## // Interactivity
 
-# // Glitches
+## // Bugs
+
+### // Glitches
 
 ~~CUT&PASTE
 type: geometryPermutation + vertexShaderBlend. The CPU shuffles vertex-index blocks and the shader blends a density-based subset onto the remapped positions. The car looks like body chunks were cut and reassembled in the wrong order.

@@ -1,5 +1,6 @@
 import {
   float,
+  hash,
   mat3,
   mix,
   normalLocal,
@@ -82,9 +83,27 @@ export default function createGrainMaterial({ buffers, uniforms }) {
   material.normalNode = transformNormalToView(
     rotation.mul(normalLocal).normalize()
   );
-  material.colorNode = uniforms.grainColor.mul(
-    mix(float(0.82), float(1.18), seed)
+  // Real sand is a mix of discrete minerals, not one tinted powder, so grains
+  // pick a whole colour rather than blending toward one. The pick is hashed off
+  // `seed` rather than reusing it, or colour would correlate with grain size.
+  // `grainPaletteMix` at 0 collapses the palette back to grainColor, which is
+  // what every preset authored before this existed expects.
+  const pick = hash(seed.mul(65536).add(17));
+  const mineral = select(
+    pick.lessThan(uniforms.grainPaletteSplitB),
+    uniforms.grainColor,
+    select(
+      pick.lessThan(uniforms.grainPaletteSplitC),
+      uniforms.grainColorB,
+      uniforms.grainColorC
+    )
   );
+
+  material.colorNode = mix(
+    uniforms.grainColor,
+    mineral,
+    uniforms.grainPaletteMix
+  ).mul(mix(float(0.82), float(1.18), seed));
 
   // Built as a plain expression chain, not inside an Fn(): nodes captured by an
   // Fn closure build fine headlessly but emit `unresolved value` WGSL.

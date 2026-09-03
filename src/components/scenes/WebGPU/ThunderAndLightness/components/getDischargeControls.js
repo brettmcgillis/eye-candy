@@ -92,6 +92,13 @@ export default function getDischargeControls(p) {
         max: 40,
         step: 0.5,
       },
+      followBoltLateral: {
+        label: 'Camera Lateral Follow',
+        value: p.followBoltLateral,
+        min: 0,
+        max: 1,
+        step: 0.05,
+      },
       contactDepth: {
         label: 'Contact Depth (x sand)',
         value: p.contactDepth,

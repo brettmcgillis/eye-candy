@@ -201,6 +201,29 @@ function GrainField({ config, focusRef = null, trunkRef = null }) {
     if (focusRef && runtime.trunkPath) {
       sampleBoltTip(runtime.trunkPath, sampled.focusArc, focusRef.current);
 
+      // The leader zigzags, so tracking its literal tip swings the camera side
+      // to side. Collapse the lateral component toward the straight chord from
+      // bolt origin to contact: at 0 the target descends almost vertically but
+      // still arrives at the real impact point, rather than at the world axis.
+      if (config.followBoltLateral < 1) {
+        const path = runtime.trunkPath;
+        const end = path.length - 4;
+        const t =
+          runtime.groundArc > 0
+            ? Math.min(sampled.focusArc / runtime.groundArc, 1)
+            : 0;
+        const chordX = path[0] + (path[end] - path[0]) * t;
+        const chordZ = path[2] + (path[end + 2] - path[2]) * t;
+        const keep = config.followBoltLateral;
+        const focus = focusRef.current;
+
+        focus.set(
+          chordX + (focus.x - chordX) * keep,
+          focus.y,
+          chordZ + (focus.z - chordZ) * keep
+        );
+      }
+
       // Ease straight up to the bolt origin during the rest rather than
       // walking the trunk back — the origin is where the next leader starts,
       // so the pan lands exactly on it with nothing to snap.
@@ -235,6 +258,11 @@ function GrainField({ config, focusRef = null, trunkRef = null }) {
     simulation.mesh.material.roughness = config.grainRoughness;
     simulation.mesh.material.metalness = config.grainMetalness;
     uniforms.grainColor.value.set(config.grainColor);
+    uniforms.grainColorB.value.set(config.grainColorB);
+    uniforms.grainColorC.value.set(config.grainColorC);
+    uniforms.grainPaletteMix.value = config.grainPaletteMix;
+    uniforms.grainPaletteSplitB.value = config.grainPaletteSplitB;
+    uniforms.grainPaletteSplitC.value = config.grainPaletteSplitC;
     uniforms.leaderColor.value.set(config.leaderColor);
     uniforms.returnColor.value.set(config.returnColor);
 

@@ -3,16 +3,16 @@ const BASE = {
   orbitAutoRotate: true,
   orbitAutoRotateSpeed: 2,
   lightEnabled: true,
-  lightAmbientEnabled: true,
+  lightAmbientEnabled: false,
   lightAmbientColor: '#8fa8c4',
   lightAmbientIntensity: 0.55,
-  lightHemiEnabled: true,
+  lightHemiEnabled: false,
   lightHemiSkyColor: '#b7cbe4',
   lightHemiGroundColor: '#12161c',
   lightHemiIntensity: 0.8,
   lightSpotEnabled: true,
-  lightSpotColor: '#e9f2ff',
-  lightSpotIntensity: 120,
+  lightSpotColor: '#ffffff',
+  lightSpotIntensity: 60,
   lightSpotPosition: { x: 0, y: 9.5, z: 0 },
   lightSpotTarget: { x: 0, y: 0, z: 0 },
   lightSpotAngle: 34,
@@ -129,14 +129,14 @@ const BASE = {
   splineTension: 0.5,
 };
 
-export const DEFAULT_PRESET = 'Graphite';
+export const DEFAULT_PRESET = 'Dark';
 
 export const PRESETS = {
-  Graphite: { ...BASE },
+  Dark: { ...BASE },
   // Graphite inverted: pale glossy sand in a near-black void. The room is
   // flat like Graphite's, only at the other end of the value range, so the two
   // read as a deliberate pair rather than as different scenes.
-  Bone: {
+  Light: {
     ...BASE,
     grainColor: '#e8e4dc',
     grainRoughness: 0.35,
@@ -148,22 +148,21 @@ export const PRESETS = {
     floorCenterColor: '#0d0d0f',
     wallLowColor: '#0d0d0f',
     wallHighColor: '#0d0d0f',
-    lightAmbientIntensity: 0.18,
-    lightHemiIntensity: 0.3,
-    lightSpotIntensity: 240,
+    lightSpotIntensity: 40,
     emissiveStrength: 4.2,
     channelGlow: 0.08,
   },
   // Same flat void and black sand as BASE, but the soft even fill is swapped
   // for a hard low key. Varies light rather than colour — the axis Graphite
   // leaves untouched — so the bed gains long shadows and hard specular glints.
-  Raking: {
+  'Raking Light': {
     ...BASE,
+    // cameraMode: 'orbit',
     grainRoughness: 0.22,
     grainMetalness: 0.35,
     lightAmbientIntensity: 0.08,
     lightHemiIntensity: 0.12,
-    lightSpotIntensity: 420,
+    lightSpotIntensity: 40,
     lightSpotAngle: 20,
     lightSpotPenumbra: 0.25,
     lightSpotPosition: { x: 6, y: 3.2, z: 4 },
@@ -176,11 +175,11 @@ export const PRESETS = {
   Pewter: {
     ...BASE,
     grainColor: '#6e6e6e',
-    grainRoughness: 0.18,
-    grainMetalness: 0.6,
+    grainRoughness: 0.66,
+    grainMetalness: 0.76,
     leaderColor: '#7d7d7d',
     returnColor: '#b8b8b8',
-    lightSpotIntensity: 200,
+    lightSpotIntensity: 45,
     lightAmbientIntensity: 0.4,
     emissiveStrength: 3.4,
     channelGlow: 0.06,
@@ -197,7 +196,20 @@ export const PRESETS = {
     returnPeak: 3,
     returnHold: 1.8,
     channelGlow: 0.1,
-    ejectaGlow: 0.05,
+    ejectaGlow: 0.09,
+    // The bolt cannot light the bed, so the sand is tied to it two other ways:
+    // a warm key (the cyclorama is unlit, so the void stays neutral) and grains
+    // lifted off pure black into warm minerals that have some albedo to tint.
+    grainColor: '#1c1410',
+    grainColorB: '#2e2015',
+    grainColorC: '#0d0a08',
+    grainPaletteMix: 1,
+    grainPaletteSplitB: 0.52,
+    grainPaletteSplitC: 0.84,
+    lightSpotColor: '#ffd9b0',
+    lightAmbientColor: '#c49a72',
+    lightHemiSkyColor: '#e8c9a8',
+    lightHemiGroundColor: '#1a120c',
     postBloomStrength: 0.5,
     postBloomThreshold: 0.8,
     postGodraysBlendColor: '#ffcf9a',
@@ -206,9 +218,19 @@ export const PRESETS = {
   // the return stroke is the brightest thing in the frame.
   Voltaic: {
     ...BASE,
-    grainColor: '#0a1018',
+    // Same reasoning as Ember: lifted off near-black so the blue actually reads,
+    // with a cool key so the bed shares the discharge's temperature.
+    grainColor: '#141d28',
+    grainColorB: '#0d1520',
+    grainColorC: '#28394d',
+    grainPaletteMix: 1,
+    grainPaletteSplitB: 0.5,
+    grainPaletteSplitC: 0.82,
     grainRoughness: 0.28,
-    grainMetalness: 0.3,
+    grainMetalness: 0.42,
+    lightHemiSkyColor: '#a8ccf0',
+    lightHemiGroundColor: '#0b131c',
+    ejectaGlow: 0.06,
     leaderColor: '#1e4f8a',
     returnColor: '#9fdcff',
     backgroundColor: '#16202b',

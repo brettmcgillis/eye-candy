@@ -23,6 +23,7 @@ import { DEFAULT_PRESET, PRESETS, getPresetControls } from '../presets/presets';
 import CAMERA from '../utils/camera';
 import LIGHTING from '../utils/lighting';
 import POST from '../utils/post';
+import usePresetToggleHotkeys from './usePresetToggleHotkeys';
 
 const SCENE_LABEL = 'Thunder And Lightness';
 const CAMERA_FOLDER_PATH = `${SCENE_LABEL}.Camera`;
@@ -30,10 +31,12 @@ const LIGHTING_FOLDER_PATH = `${SCENE_LABEL}.Lighting`;
 
 export default function useSceneControls() {
   const {
+    applyPresetByName,
     attachSetControls,
     controlsSnapshotRef,
     initialPreset,
     presetsFolder,
+    selectedPreset,
   } = usePresetsFolder({
     defaultPreset: DEFAULT_PRESET,
     getPresetControls,
@@ -74,6 +77,17 @@ export default function useSceneControls() {
   controlsSnapshotRef.current = { ...controls };
 
   useMediaRecorder({ fileName: SCENE_LABEL });
+
+  // Spacebar / gamepad Y toggles between the Light and Dark presets — off
+  // while the camera is in operator mode, where Space already drives free-fly
+  // action1.
+  usePresetToggleHotkeys({
+    applyPresetByName,
+    enabled: controls.cameraMode !== 'operator',
+    presetA: 'Dark',
+    presetB: 'Light',
+    selectedPreset,
+  });
 
   // Rule: control changes must never reset the camera (docs/scene-conventions.md §10).
   const cameraControlsKey = useMemo(

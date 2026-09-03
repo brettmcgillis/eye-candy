@@ -546,6 +546,36 @@
   font-size: 0.76rem;
 }
 
+.cataloggr-todo-sort {
+  display: flex;
+  align-items: center;
+  gap: 0.3rem;
+}
+
+.cataloggr-todo-sort select {
+  flex: 1;
+  min-width: 0;
+}
+
+.cataloggr-todo-sort button {
+  display: grid;
+  place-items: center;
+  flex-shrink: 0;
+  min-width: 1.6rem;
+  min-height: 1.6rem;
+  padding: 0;
+  border: 1px solid var(--dev-border-strong);
+  border-radius: 4px;
+  background: var(--dev-surface);
+  color: var(--dev-text);
+  cursor: pointer;
+  font-size: 0.8rem;
+}
+
+.cataloggr-todo-sort button:hover {
+  background: var(--dev-surface-subtle);
+}
+
 .cataloggr-todos__filters label {
   display: inline-flex;
   align-items: center;

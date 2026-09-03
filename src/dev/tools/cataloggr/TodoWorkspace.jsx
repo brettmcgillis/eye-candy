@@ -25,6 +25,12 @@ const TODO_SORT_OPTIONS = [
   ['created', 'Created'],
 ];
 
+const DEFAULT_TODO_SORT_DIRECTION = {
+  created: 'desc',
+  name: 'asc',
+  updated: 'desc',
+};
+
 const timestampFormatter = new Intl.DateTimeFormat(undefined, {
   day: 'numeric',
   month: 'short',
@@ -48,6 +54,9 @@ function TodoWorkspace({ initialSourcePath, onError }) {
   const [query, setQuery] = useState('');
   const [sectionFilter, setSectionFilter] = useState('all');
   const [todoSortKey, setTodoSortKey] = useState('name');
+  const [todoSortDirection, setTodoSortDirection] = useState(
+    DEFAULT_TODO_SORT_DIRECTION.name
+  );
   const [showCompleted, setShowCompleted] = useState(false);
   const [complianceOnly, setComplianceOnly] = useState(false);
   const [quickAddText, setQuickAddText] = useState('');
@@ -196,8 +205,18 @@ function TodoWorkspace({ initialSourcePath, onError }) {
     [onError]
   );
 
+  const handleTodoSortKeyChange = useCallback((nextSortKey) => {
+    setTodoSortKey(nextSortKey);
+    setTodoSortDirection(DEFAULT_TODO_SORT_DIRECTION[nextSortKey]);
+  }, []);
+
+  const handleTodoSortDirectionToggle = useCallback(() => {
+    setTodoSortDirection((current) => (current === 'asc' ? 'desc' : 'asc'));
+  }, []);
+
   const visibleTodos = useMemo(() => {
     const normalizedQuery = query.trim().toLowerCase();
+    const directionSign = todoSortDirection === 'asc' ? 1 : -1;
 
     return todos
       .filter((todo) => !complianceOnly || todo.issues.length)
@@ -220,25 +239,36 @@ function TodoWorkspace({ initialSourcePath, onError }) {
       .sort((left, right) => {
         if (todoSortKey === 'updated') {
           return (
-            new Date(right.updatedAt).getTime() -
-            new Date(left.updatedAt).getTime()
+            directionSign *
+            (new Date(left.updatedAt).getTime() -
+              new Date(right.updatedAt).getTime())
           );
         }
 
         if (todoSortKey === 'created') {
           return (
-            new Date(right.createdAt).getTime() -
-            new Date(left.createdAt).getTime()
+            directionSign *
+            (new Date(left.createdAt).getTime() -
+              new Date(right.createdAt).getTime())
           );
         }
 
         return (
-          left.title.localeCompare(right.title, undefined, {
+          directionSign *
+          (left.title.localeCompare(right.title, undefined, {
             sensitivity: 'base',
-          }) || left.sourcePath.localeCompare(right.sourcePath)
+          }) || left.sourcePath.localeCompare(right.sourcePath))
         );
       });
-  }, [complianceOnly, query, sectionFilter, showCompleted, todoSortKey, todos]);
+  }, [
+    complianceOnly,
+    query,
+    sectionFilter,
+    showCompleted,
+    todoSortDirection,
+    todoSortKey,
+    todos,
+  ]);
 
   let saveLabel = 'Autosaved';
   if (dirty) saveLabel = 'Waiting to autosave...';
@@ -267,17 +297,31 @@ function TodoWorkspace({ initialSourcePath, onError }) {
             </option>
           ))}
         </select>
-        <select
-          aria-label="Sort TODOs"
-          onChange={(event) => setTodoSortKey(event.target.value)}
-          value={todoSortKey}
-        >
-          {TODO_SORT_OPTIONS.map(([value, label]) => (
-            <option key={value} value={value}>
-              Sort: {label}
-            </option>
-          ))}
-        </select>
+        <div className="cataloggr-todo-sort">
+          <select
+            aria-label="Sort TODOs"
+            onChange={(event) => handleTodoSortKeyChange(event.target.value)}
+            value={todoSortKey}
+          >
+            {TODO_SORT_OPTIONS.map(([value, label]) => (
+              <option key={value} value={value}>
+                Sort: {label}
+              </option>
+            ))}
+          </select>
+          <button
+            aria-label={
+              todoSortDirection === 'asc'
+                ? 'Sort ascending, click for descending'
+                : 'Sort descending, click for ascending'
+            }
+            onClick={handleTodoSortDirectionToggle}
+            title={todoSortDirection === 'asc' ? 'Ascending' : 'Descending'}
+            type="button"
+          >
+            {todoSortDirection === 'asc' ? '↑' : '↓'}
+          </button>
+        </div>
         <label htmlFor="cataloggr-show-completed">
           <input
             checked={showCompleted}

@@ -271,6 +271,15 @@ function PostEffects({ config, godrayLight }) {
       nodes.datamoshNode.corruption.value = config.postDatamoshCorruption;
       nodes.datamoshNode.displace.value = config.postDatamoshDisplace;
       nodes.datamoshNode.blockSize.value = config.postDatamoshBlockSize;
+      nodes.datamoshNode.residual.value = config.postDatamoshResidual;
+      nodes.datamoshNode.residualQuant.value = config.postDatamoshResidualSteps;
+      nodes.datamoshNode.mvPrecision.value = config.postDatamoshVectorSnap;
+      nodes.datamoshNode.skipThreshold.value = config.postDatamoshSkipThreshold;
+      nodes.datamoshNode.wrongVectors.value = config.postDatamoshWrongVectors;
+      nodes.datamoshNode.lostLayers.value = config.postDatamoshLossLayers;
+      nodes.datamoshNode.lostCell.value = config.postDatamoshLossCell;
+      nodes.datamoshNode.lostLife.value = config.postDatamoshLossLife;
+      nodes.datamoshNode.lostChance.value = config.postDatamoshLossChance;
     }
 
     bleedUniforms.reach.value = config.postPixelBleedReach;

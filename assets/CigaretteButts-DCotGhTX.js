@@ -1,1 +1,0 @@
-import{a0 as e,j as t}from"./index-DN0oVO6x.js";import{u as r}from"./Gltf-CM2OFXUe.js";function m(s){const{nodes:o,materials:a}=r(e("/cigaretteButts.glb"));return t.jsx("group",{...s,dispose:null,children:t.jsx("mesh",{castShadow:!0,receiveShadow:!0,geometry:o.Litter_1_Litter_1_0.geometry,material:a.Litter_1})})}r.preload(e("/cigaretteButts.glb"));export{m as C};

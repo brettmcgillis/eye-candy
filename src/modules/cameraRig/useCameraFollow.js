@@ -1,3 +1,5 @@
+import { useRef } from 'react';
+
 import { useFrame } from '@react-three/fiber';
 
 import * as THREE from 'three';
@@ -32,6 +34,12 @@ export default function useCameraFollow({
   isSplineMode = false,
   target = null,
 }) {
+  // Orbit damps by easing OrbitControls' own target, which persists between
+  // frames. Spline has no such state — lookAt() is recomputed from scratch
+  // every frame — so it needs its own smoothed point, or `damping` silently
+  // does nothing there and the camera snaps to each new target.
+  const smoothedRef = useRef(null);
+
   useFrame((_, delta) => {
     if (!enabled || !cameraNode) return;
 
@@ -48,7 +56,9 @@ export default function useCameraFollow({
     }
 
     if (isSplineMode) {
-      cameraNode.lookAt(point);
+      if (!smoothedRef.current) smoothedRef.current = point.clone();
+      smoothedRef.current.lerp(point, blend);
+      cameraNode.lookAt(smoothedRef.current);
     }
   });
 }

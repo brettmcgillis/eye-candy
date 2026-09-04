@@ -2,14 +2,6 @@
 
 ### GENERAL
 
-- [ ] add/update screenshot(s) on readme for each scene
-- [ ] Add info button and stylized byline to showcase scenes. ByLine should be a modal. Should allow for text, images, links, and dismissal.
-- [ ] Webgpu supports occlusion culling. Would any scenes benefit in perf from this?
-- [ ] Reread the Mathias-reaseach article on cloth self-collision and use it to improve cloth flag and ghost. https://github.com/matthias-research/pages/blob/master/tenMinutePhysics/15-selfCollision.html
-- [ ] Webgpu scenes will randomly not render (all black) until a window resize?
-
-- [ ] Move showcase scenes over to WebGPU
-
 ### REPO
 
 ### EXPLORE/EXPLODE
@@ -23,8 +15,6 @@
 - [FractalPixelate](src/components/postprocessing/WebGPU/fractalPixelate/todo.md)
 
 ### SCENES
-
-### Scene TODO Files
 
 **Showcase**
 
@@ -40,6 +30,7 @@
 - [Mycelium](src/components/scenes/WebGL/Mycelium/todo.md)
 - [PaperCuts](src/components/scenes/WebGL/PaperCuts/todo.md)
 - [PaperStack](src/components/scenes/WebGL/PaperStack/todo.md)
+- [Petri Dish](src/components/scenes/WebGPU/PetriDish/todo.md)
 - [QuinnsDice](src/components/scenes/WebGL/QuinnsDice/todo.md)
 - [Rosie](src/components/scenes/WebGL/Rosie/todo.md)
 - [Surrender](src/components/scenes/WebGPU/Surrender/todo.md)

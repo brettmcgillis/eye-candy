@@ -13,6 +13,8 @@ Track scene maturity, local presets, publishing progress, and colocated TODO doc
 - [ ] allow edit todo item in place
 - [ ] Lets update the todo sections to include completed and wip presets
 - [ ] Update the cataloggr ux to support sorting presets by ready vs wip
+- [ ] establish the convention of tagging scenes, to be able to group and form collections. examples could be themes, techniques, etc.
+- [ ] Finish Themeing work. still seeing many out-of-pallette colors
 
 ## // Presets
 

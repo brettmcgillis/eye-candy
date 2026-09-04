@@ -8,6 +8,7 @@ import * as THREE from 'three/webgpu';
 import EFFECTS from './effects';
 
 const scratchViewPoint = new THREE.Vector3();
+const viewCentreNdc = new THREE.Vector2(0, 0);
 
 function PostRig({
   post,
@@ -130,6 +131,16 @@ function PostRig({
     if (!pipelineRef.current) {
       renderer.render(scene, camera);
       return;
+    }
+
+    // Until the first click there is no pointer point, and an effect in
+    // `pointer` mode would silently fall back to its manual distance — so a
+    // scene that loads in pointer mode looks like the mode is not applied at
+    // all. Seed it from the centre of the view instead, resolved here rather
+    // than on mount so the camera rig has already placed the camera.
+    if (resolveFocusPoint && pointerPointRef.current === null) {
+      const centrePoint = resolveFocusPoint(viewCentreNdc, camera);
+      if (centrePoint) pointerPointRef.current = centrePoint.clone();
     }
 
     // Both sources are offered every frame and each effect picks by its own

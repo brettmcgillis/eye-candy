@@ -11,6 +11,7 @@ import { CatalogRequestError } from './service';
 const TODO_ROOTS = [
   path.join('src', 'components', 'scenes'),
   path.join('src', 'dev', 'tools'),
+  path.join('src', 'app'),
 ];
 const TODO_FILE = 'todo.md';
 const MAX_TODO_BYTES = 1024 * 1024;

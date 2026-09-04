@@ -7,8 +7,18 @@ import {
   normalizeScenePostDeclaration,
 } from './scenePostUtils';
 
-export default function useScenePostControls({ post }) {
-  const postControls = useMemo(() => buildScenePostControls({ post }), [post]);
+export default function useScenePostControls({ controlsSnapshotRef, post }) {
+  // Read once, like the camera and lighting rigs: the snapshot is the active
+  // preset when this first runs, and re-seeding the schema on every later edit
+  // would fight the user's own changes.
+  const postControls = useMemo(
+    () =>
+      buildScenePostControls({
+        controlOverrides: controlsSnapshotRef?.current ?? {},
+        post,
+      }),
+    [post]
+  );
 
   const buildPost = useCallback(
     (controls = {}) => {

@@ -1,1 +1,0 @@
-import{r as n,a0 as r,j as i}from"./index-BnrXCO0X.js";import{u as e}from"./Gltf-ykl_dOas.js";const f=n.forwardRef(function({count:o=1,...a},s){const{nodes:t,materials:l}=e(r("flower.glb"));return i.jsx("instancedMesh",{ref:s,args:[t._ndyj_Var10_LOD0.geometry,l.material0,o],castShadow:!0,receiveShadow:!0,...a})});e.preload(r("flower.glb"));export{f as F};

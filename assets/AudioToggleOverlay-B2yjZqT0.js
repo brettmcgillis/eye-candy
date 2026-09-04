@@ -1,0 +1,1 @@
+import{j as o}from"./index-Dv5U39OI.js";import{u as e,A as r}from"./AudioToggle-D-fGL9Xh.js";import{S as u}from"./SceneButtonBar-CK9rQLis.js";function n(){const{hasAudio:t}=e();return t?o.jsx(u,{datasetKey:"audioTogglePortal",children:o.jsx(r,{})}):null}export{n as A};

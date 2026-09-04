@@ -187,5 +187,5 @@ export default function createGrainCompute({ buffers, count, uniforms }) {
     motion.assign(vec4(vel, life));
   })()
     .compute(count)
-    .setName('Thunder And Lightness Grains');
+    .setName('The Speed Of Lightning Grains');
 }

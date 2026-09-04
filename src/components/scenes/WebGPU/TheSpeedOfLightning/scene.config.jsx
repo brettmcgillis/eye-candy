@@ -6,10 +6,10 @@ function SceneIcon() {
 }
 
 export default {
-  id: 'thunderAndLightness',
-  label: 'Thunder And Lightness',
+  id: 'theSpeedOfLightning',
+  label: 'The Speed Of Lightning',
   channel: 'webgpu',
   area: 'showcase',
   icon: SceneIcon,
-  Component: lazy(() => import('./ThunderAndLightness')),
+  Component: lazy(() => import('./TheSpeedOfLightning')),
 };

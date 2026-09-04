@@ -25,7 +25,7 @@ import LIGHTING from '../utils/lighting';
 import POST from '../utils/post';
 import usePresetToggleHotkeys from './usePresetToggleHotkeys';
 
-const SCENE_LABEL = 'Thunder And Lightness';
+const SCENE_LABEL = 'The Speed Of Lightning';
 const CAMERA_FOLDER_PATH = `${SCENE_LABEL}.Camera`;
 const LIGHTING_FOLDER_PATH = `${SCENE_LABEL}.Lighting`;
 

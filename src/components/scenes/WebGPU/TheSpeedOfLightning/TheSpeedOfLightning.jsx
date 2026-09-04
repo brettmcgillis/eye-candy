@@ -19,7 +19,7 @@ import createFocusPicker from './utils/focusPicker';
 // Post-processing goes through PostRig rather than the standalone Bloom/Godrays
 // components: those each own a RenderPipeline at useFrame priority 1, so only
 // one of them can ever render.
-function ThunderAndLightness() {
+function TheSpeedOfLightning() {
   const config = useSceneControls();
   const [spotLight, setSpotLight] = useState(null);
   const boltTipRef = useRef(new THREE.Vector3(0, 0, 0));
@@ -72,4 +72,4 @@ function ThunderAndLightness() {
   );
 }
 
-export default memo(ThunderAndLightness);
+export default memo(TheSpeedOfLightning);

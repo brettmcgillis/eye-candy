@@ -148,7 +148,7 @@ export default function createGrainSimulation({
     buffers.velLife.element(instanceIndex).assign(vec4(0, 0, 0, 0));
   })()
     .compute(total)
-    .setName('Thunder And Lightness Grain Seed');
+    .setName('The Speed Of Lightning Grain Seed');
 
   const geometry = new THREE.InstancedBufferGeometry().copy(
     new THREE.BoxGeometry(1, 1, 1)

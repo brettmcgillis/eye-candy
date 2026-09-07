@@ -90,7 +90,7 @@ async function main() {
     for (let index = 0; index < options.count; index += 1) {
       const seed =
         typeof options.seed === 'number'
-          ? options.seed + index
+          ? kernel.seedAt(options.seed, index)
           : kernel.randomSeed();
       progress.log(
         `test ${index + 1}/${options.count}: generating seed ${seed}`

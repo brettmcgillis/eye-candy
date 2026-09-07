@@ -294,7 +294,9 @@ async function renderStills(kernel, { options, roll, tmp }) {
   const progress = createProgress('rendering stills', options.count);
   for (let i = 0; i < options.count; i += 1) {
     const seed =
-      typeof options.seed === 'number' ? options.seed + i : kernel.randomSeed();
+      typeof options.seed === 'number'
+        ? kernel.seedAt(options.seed, i)
+        : kernel.randomSeed();
     progress.log(`test ${i + 1}/${options.count}: generating seed ${seed}`);
 
     const config = kernel.rollTestConfig(seed, roll);
@@ -407,7 +409,7 @@ async function renderGrowth(kernel, { options, roll, sink }) {
       : null;
 
   for (let testIndex = 0; testIndex < options.count; testIndex += 1) {
-    const config = kernel.rollTestConfig(first + testIndex, roll);
+    const config = kernel.rollTestConfig(kernel.seedAt(first, testIndex), roll);
     presets.push(config);
     const test = buildTest(kernel, config, options);
     progress.log(
@@ -570,7 +572,7 @@ async function renderCinematic(kernel, { options, roll, sink }) {
     // every later frame only moves the reveal cursor and the camera.
     if (state.systemIndex !== currentIndex) {
       currentIndex = state.systemIndex;
-      config = kernel.rollTestConfig(first + currentIndex, roll);
+      config = kernel.rollTestConfig(kernel.seedAt(first, currentIndex), roll);
       presets.push(config);
       test = buildTest(kernel, config, options);
       progress.log(`system ${currentIndex + 1}: generated seed ${config.seed}`);

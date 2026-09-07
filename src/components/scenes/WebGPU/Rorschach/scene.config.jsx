@@ -21,7 +21,7 @@ export default {
   id: 'rorschach',
   label: 'Rorschach',
   channel: 'webgpu',
-  area: 'wip',
+  area: 'showcase',
   icon: SceneIcon,
   Component: lazy(() => import('./Rorschach')),
 };

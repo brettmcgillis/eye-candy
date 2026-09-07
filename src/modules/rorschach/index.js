@@ -19,6 +19,7 @@ export {
   ROLL_RANGES,
   randomSeed,
   rollableKeys,
+  seedAt,
 } from './rollConfig';
 export { default as renderTestSvg } from './renderTestSvg';
 export { hasBloomContent, orbitEye, viewEye } from './renderTestSvg';

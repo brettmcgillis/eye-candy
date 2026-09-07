@@ -1,5 +1,11 @@
 /* eslint-disable no-param-reassign */
-import React, { memo, useEffect, useMemo, useRef } from 'react';
+import React, {
+  memo,
+  useEffect,
+  useLayoutEffect,
+  useMemo,
+  useRef,
+} from 'react';
 
 import { useFrame } from '@react-three/fiber';
 
@@ -246,7 +252,15 @@ function Test({
   // exactly as they were. `growthRatesRef`/`sequentialStartDelayRef` are
   // recomputed for everyone whenever growthSpeed/growthStyle changes, so an
   // in-progress reveal re-paces instead of restarting.
-  useEffect(() => {
+  //
+  // Layout, not passive: the group below wears the *new* structure's fit
+  // scale the moment React commits, while the meshes still hold the previous
+  // test's points until this runs. A passive effect flushes after the commit,
+  // so the render loop could draw frames in between — the outgoing blot
+  // resized by up to ±20% (scale is TARGET_RADIUS/maxDist, and maxDist is
+  // per-seed) right before Continuous Mode blanked it. Running in the commit
+  // makes the scale change and the draw-range reset atomic.
+  useLayoutEffect(() => {
     const prevBundles = previousBundlesRef.current;
     previousBundlesRef.current = structure.bundles;
 

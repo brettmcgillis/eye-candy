@@ -322,6 +322,24 @@ export function randomSeed() {
   return Math.floor(Math.random() * MAX_SEED) + 1;
 }
 
+// The Nth seed of a batch started from `first`. Every surface that renders
+// more than one test walks its seeds through here.
+//
+// `first + index` was the obvious walk and it is the wrong one, because
+// adjacent seeds are only pulled apart where something hashes them. The bundle
+// streams do (combineSeed, see rng.js), so the linework genuinely differs — but
+// the ink's pattern offset is `(seed % 1000) / 100`, so 815735..815739 set the
+// watercolour field 7.35, 7.36, 7.37, 7.38, 7.39. On any preset where the wash
+// carries the picture that is five renders of the same blot.
+//
+// The scene never had this problem: Continuous Mode rerolls with randomSeed(),
+// which lands anywhere in 1..MAX_SEED, so consecutive tests are unrelated. This
+// gives a batch the same spread without giving up determinism — index 0 is
+// still exactly `first`, so one number still reproduces the whole run.
+export function seedAt(first, index) {
+  return index === 0 ? first : (combineSeed(first, index) % MAX_SEED) + 1;
+}
+
 // Rolls a whole test — structure, style and a cohesive background — as one
 // flat object keyed 1:1 with the Leva schema, i.e. a valid preset. `seed`
 // drives the roll *and* becomes the test's own seed, so a single number

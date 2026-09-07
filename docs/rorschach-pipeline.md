@@ -273,6 +273,35 @@ The translation is `optionsFromPreset` in the kernel, not logic on the page.
 `sceneKey` on a spec is how the two names that differ are found — the scene
 calls `bloom` `bloomEnabled` and `overlay` `showOverlay` — declared on the
 option rather than kept as a lookup table on whichever surface reads presets.
+It skips `out` and anything `cliOnly`: where output goes belongs to whoever runs
+the job, and a sidecar records the directory it was written to, so loading one
+back aimed the next batch at the last batch's folder. Harmless only because the
+dev server overwrites it, which is not a thing to rely on.
+
+**The browser was stricter than the renderer, and silently won.** A spec's
+`step` is a spinner increment — `coerce` range-checks `min`/`max` and never
+looks at it — but as an `<input step>` it also gates submission. So any value
+off the grid made the form refuse outright: preset 012's own
+`bloomStrength: 1.72` against a 0.05 step, a camera distance of 22.4 against
+0.5. Rolled values snap to the _roll_ step, hand-authored presets hold arbitrary
+floats, and a still's sidecar carries both — so loading one as a base could wedge
+Render permanently.
+
+The failure was invisible twice over: the offending fields sit inside collapsed
+`<details>`, so the browser could not even show its own bubble ("An invalid form
+control is not focusable") and the press did nothing whatever. The form now
+carries `noValidate`. The dev server validates every option against the same
+schema the CLI uses, which is where that check belongs — and a form that is
+stricter than the pipeline is exactly the divergence rule 3 exists to prevent.
+
+**A failed submit used to be indistinguishable from no submit at all.** The
+page's submit had a `try/finally` and no `catch`, so a rejected job escaped as
+an unhandled promise: the button un-greyed itself and nothing appeared
+anywhere. The hook's own `error` was no help either — the jobs poll clears it
+about a second later — so the page now keeps the outcome of the last press next
+to the button, success as well as failure. Worth stating plainly because a batch
+at full size can be half a minute from its first image, and until one lands the
+only evidence that anything happened was a counter at the far end of the page.
 
 ### The other direction: a still back into the scene
 

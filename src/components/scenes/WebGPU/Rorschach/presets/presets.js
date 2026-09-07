@@ -5191,7 +5191,7 @@ export const PRESETS = {
     minSpread: 7,
     growthSpeed: 0.89,
     growthStyle: 'unison',
-    continuousMode: false,
+    continuousMode: true,
     continuousModeDelay: 2,
     cinematicEnabled: false,
     cinematicSecondsPerSystem: 8,

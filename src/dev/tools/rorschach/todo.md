@@ -8,10 +8,9 @@ Generate images and video using the RorschachCLI.
 
 ## // TODO:
 
-- [ ] tidy up generated json schema, seeing things in presets and render that should be in the other section. 
+- [ ] tidy up generated json schema, seeing things in presets and render that should be in the other section.
 - [ ] tidy up control area and make sure theyre well organized. make sure each section is wrapped in closure to enable minimal clutter
 - [ ] lets make sure control UI's are aligned between scene and dev page
-- [x] ensure we can support pinning any prop. I want to be able to generate 100 rolls of preset 012, including its overridden bundle
 - [ ] how can we maximize performance when rendering? we should probably limit the number of concurrent jobs. what about ink animations? how do we speed those up?
 - [x] When previewing a Test allow me to regen a new test starting with / prepoulating the form with the exact same params. this would allow me to identify cool tests and then regen them in new color schemes, go from png to svg, go from iphone to square, change dimensions, etc.
 - [x] When previewing a test allow me to click abutton and be taken to the rorschach scene with all the image's json props applied. This would allow me to go from a still to it's 3d representation
@@ -20,10 +19,9 @@ Generate images and video using the RorschachCLI.
 - [ ] 3d lines (tubes) mode to extend lines mode
 - [ ] explore dramatic lighting
 - [ ] I've seen a bunch of letter A's get generated... could we get the whole alphabet? would make for a sick stills video
-- [ ] add button to collapse/expand all batches
-- [ ] allow click to zoom on image preview
-
 - [ ] prevent in-process videos from being shown/served up in the batch folders until they are completed
+- [ ] allow me to regenerate a given image in new dimensions
+- [ ] allow me to generate a growth video from an image
 
 ## // Features
 

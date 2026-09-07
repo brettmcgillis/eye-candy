@@ -10,7 +10,6 @@ Then we need to review the eye-candy/referenceMaterials/three-edge-detection. Th
 Acceptable solutions: Install dep via npm. Fork code into our repo.
 Finally, once we undertsand scope of the project we need to build webGL and webGPU versions of the scene so i have the flexibility to "plot" any scene i desire.
 
-
 ## // TODO:
 
 ## // Presets

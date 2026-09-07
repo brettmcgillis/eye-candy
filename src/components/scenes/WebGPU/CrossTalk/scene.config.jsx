@@ -10,6 +10,7 @@ export default {
   label: 'Cross Talk',
   channel: 'webgpu',
   area: 'showcase',
+  title: false,
   icon: SceneIcon,
   Component: lazy(() => import('./CrossTalk')),
 };

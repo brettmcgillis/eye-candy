@@ -37,6 +37,8 @@ import {
   select,
   sign,
   smoothstep,
+  step,
+  texture,
   time,
   uint,
   uniform,
@@ -44,9 +46,12 @@ import {
   varying,
   vec2,
   vec3,
+  vec4,
   vertexIndex,
 } from 'three/tsl';
 import * as THREE from 'three/webgpu';
+
+const MAX_SLITS = 8;
 
 export function createGlitchUniforms() {
   return {
@@ -69,11 +74,15 @@ export function createGlitchUniforms() {
     tornWireframeWidth: uniform(1.5),
     tornWireColor: uniform(new THREE.Color('#8ef7ff')),
     tornWireIntensity: uniform(1.5),
+    modelChromaticAmount: uniform(0),
+    modelChromaticSpread: uniform(1),
 
     slitScanStretch: uniform(0),
     slitScanAxis: uniform(0),
     slitScanPosition: uniform(0.5),
     slitScanWidth: uniform(0.05),
+    slitScanCount: uniform(1),
+    slitScanSpread: uniform(1),
 
     // Shared by Block Deconstruct / Slice Suite / Voxel Snap's axis-wipe
     // sweep (see buildAxisSweep) — the car's own local-space bounds, set
@@ -431,11 +440,28 @@ function buildSlitScanPositionNode(basePosition, u) {
   const extent = axisMax.sub(axisMin).max(0.0001);
   const normalized = axisPos.sub(axisMin).div(extent);
 
-  const ramp = saturate(
-    normalized.sub(u.slitScanPosition).div(u.slitScanWidth.max(0.0001))
-  );
+  // Each slit contributes its own ramp and the ramps add, so a vertex past
+  // several slits carries every one of their stretches — the same reason a
+  // tape with several dropouts ends up longer than the tape it came from.
+  // Count is a uniform, so the loop is unrolled to MAX_SLITS and slits past
+  // the count are zeroed rather than skipped.
+  const width = u.slitScanWidth.max(0.0001);
+  const count = u.slitScanCount.max(1);
+  // Accumulated as a plain expression rather than a .toVar() — this runs at
+  // material-build time, outside any Fn(), where there is no stack to assign
+  // into.
+  let ramps = float(0);
+
+  for (let i = 0; i < MAX_SLITS; i += 1) {
+    const on = step(float(i).add(0.5), count);
+    const slit = u.slitScanPosition.add(
+      float(i).div(count).mul(u.slitScanSpread)
+    );
+    ramps = ramps.add(saturate(normalized.sub(fract(slit)).div(width)).mul(on));
+  }
+
   const offset = axisMask(u.slitScanAxis).mul(
-    ramp.mul(u.slitScanStretch).mul(extent)
+    ramps.mul(u.slitScanStretch).mul(extent)
   );
   return basePosition.add(offset);
 }
@@ -683,6 +709,24 @@ function buildFinalUvNode(u) {
   return buildTextureDegradeUvNode(rowJittered, u);
 }
 
+// "Chromatic Aberration (Model)" — the screen-space post effect's opposite
+// number: rather than splitting the finished frame, this splits the car's own
+// albedo in ITS OWN UV space, so the fringing sticks to the panels and travels
+// with them instead of sitting on the lens. It rides on top of every UV glitch
+// (buildFinalUvNode), which is the point — a scrambled panel's misregistration
+// scrambles with it, and the split survives the geometry moving under a static
+// camera, which the post version cannot do.
+function buildModelChromaticColorNode(map, uvNode, u) {
+  const dir = uvNode.sub(0.5).mul(u.modelChromaticSpread);
+  const shift = dir.mul(u.modelChromaticAmount);
+
+  const red = texture(map, uvNode.add(shift));
+  const green = texture(map, uvNode);
+  const blue = texture(map, uvNode.sub(shift));
+
+  return vec4(red.r, green.g, blue.b, green.a);
+}
+
 export function createWreckedCarMaterial(sourceMaterial, uniforms) {
   const material = new THREE.MeshStandardNodeMaterial();
 
@@ -709,7 +753,19 @@ export function createWreckedCarMaterial(sourceMaterial, uniforms) {
   // Redirects the default UV used by every map (color/normal/roughness/AO)
   // at once, so scrambling it disrupts the whole textured look together —
   // the shader-space equivalent of Klink's "vt" line glitching.
-  material.contextNode = replaceDefaultUV(buildFinalUvNode(uniforms));
+  const finalUv = buildFinalUvNode(uniforms);
+  material.contextNode = replaceDefaultUV(finalUv);
+
+  // Sampled explicitly rather than through contextNode: the split needs three
+  // different UVs, which is exactly the one thing a single redirected default
+  // UV cannot express. Normal/roughness/AO still ride the contextNode.
+  if (material.map) {
+    material.colorNode = buildModelChromaticColorNode(
+      material.map,
+      finalUv,
+      uniforms
+    );
+  }
 
   // True discard (not alpha blending) via alphaTestNode: torn cells punch
   // an actual hole (skipping depth write too), showing through to whatever

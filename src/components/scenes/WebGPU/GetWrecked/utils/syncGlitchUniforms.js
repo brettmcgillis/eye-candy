@@ -62,6 +62,14 @@ export default function syncGlitchUniforms(uniforms, material, config, active) {
   uniforms.slitScanAxis.value = resolveAxisIndex(config.glitchSlitScanAxis);
   uniforms.slitScanPosition.value = config.glitchSlitScanPosition;
   uniforms.slitScanWidth.value = config.glitchSlitScanWidth;
+  uniforms.slitScanCount.value = config.glitchSlitScanCount;
+  uniforms.slitScanSpread.value = config.glitchSlitScanSpread;
+
+  uniforms.modelChromaticAmount.value = gate(
+    config.glitchModelChromaticEnabled,
+    config.glitchModelChromaticAmount
+  );
+  uniforms.modelChromaticSpread.value = config.glitchModelChromaticSpread;
 
   uniforms.blockDeconstructAmount.value = gate(
     config.glitchBlockDeconstructEnabled,

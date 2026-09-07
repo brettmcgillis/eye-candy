@@ -158,6 +158,43 @@ export default function getGlitchControls(preset, onReglitch) {
             step: 0.01,
             value: preset.glitchSlitScanStretch,
           },
+          glitchSlitScanCount: {
+            label: 'Slits',
+            min: 1,
+            max: 8,
+            step: 1,
+            value: preset.glitchSlitScanCount,
+          },
+          glitchSlitScanSpread: {
+            label: 'Slit Spread',
+            min: 0,
+            max: 1,
+            step: 0.01,
+            value: preset.glitchSlitScanSpread,
+          },
+        },
+        { collapsed: true }
+      ),
+      'Chromatic Aberration (Model)': folder(
+        {
+          glitchModelChromaticEnabled: {
+            label: 'Enabled',
+            value: preset.glitchModelChromaticEnabled,
+          },
+          glitchModelChromaticAmount: {
+            label: 'Amount',
+            min: 0,
+            max: 0.5,
+            step: 0.001,
+            value: preset.glitchModelChromaticAmount,
+          },
+          glitchModelChromaticSpread: {
+            label: 'Spread',
+            min: 0,
+            max: 4,
+            step: 0.01,
+            value: preset.glitchModelChromaticSpread,
+          },
         },
         { collapsed: true }
       ),

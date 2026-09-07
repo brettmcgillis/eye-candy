@@ -236,13 +236,16 @@ function PostEffects({ config, godrayLight }) {
       config.postPixelSortChunkSeed
     );
 
-    slitScanUniforms.axis.value =
-      config.postSlitScanAxis === 'horizontal' ? 1 : 0;
+    slitScanUniforms.angle.value = config.postSlitScanAngle;
+    slitScanUniforms.angleJitter.value = config.postSlitScanAngleJitter;
     slitScanUniforms.position.value = config.postSlitScanPosition;
     slitScanUniforms.width.value = config.postSlitScanWidth;
     slitScanUniforms.stretch.value = config.postSlitScanStretch;
+    slitScanUniforms.push.value = config.postSlitScanPush;
     slitScanUniforms.speed.value = config.postSlitScanSpeed;
     slitScanUniforms.jitter.value = config.postSlitScanJitter;
+    slitScanUniforms.count.value = config.postSlitScanCount;
+    slitScanUniforms.spread.value = config.postSlitScanSpread;
     syncChunkUniforms(
       slitScanUniforms.chunks,
       config.postSlitScanChunkAxis,

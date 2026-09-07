@@ -370,96 +370,143 @@ export default function getPostEffectsControls(preset) {
             label: 'Enabled',
             value: preset.postSlitScanEnabled,
           },
-          postSlitScanAxis: {
-            label: 'Axis',
-            options: ['horizontal', 'vertical'],
-            value: preset.postSlitScanAxis,
-          },
-          postSlitScanPosition: {
-            label: 'Slit Position',
-            min: 0,
-            max: 1,
-            step: 0.01,
-            value: preset.postSlitScanPosition,
-          },
-          postSlitScanWidth: {
-            label: 'Slit Width',
-            min: 0.001,
-            max: 0.3,
-            step: 0.001,
-            value: preset.postSlitScanWidth,
-          },
-          postSlitScanStretch: {
-            label: 'Stretch',
-            min: 0,
-            max: 1,
-            step: 0.01,
-            value: preset.postSlitScanStretch,
-          },
-          postSlitScanSpeed: {
-            label: 'Scan Speed',
-            min: -2,
-            max: 2,
-            step: 0.01,
-            value: preset.postSlitScanSpeed,
-          },
-          postSlitScanJitter: {
-            label: 'Chunk Offset',
-            min: 0,
-            max: 1,
-            step: 0.01,
-            value: preset.postSlitScanJitter,
-          },
-          postSlitScanChunkMode: {
-            label: 'Chunks',
-            options: {
-              'Whole Frame': 'full',
-              Bands: 'bands',
-              Noise: 'noise',
-              Cells: 'cells',
+          // The pass is two independent systems and they were interleaved in
+          // one flat list, which made it impossible to tell which dial was
+          // fighting which. Smear is the ribbon itself, fully determined and
+          // identical everywhere. Chunks decides where it is allowed to land
+          // and how much it varies once it gets there — the two jitters live
+          // here, not with the smear, because both are driven by the chunk
+          // hash and do nothing at all without chunks.
+          Smear: folder(
+            {
+              postSlitScanAngle: {
+                label: 'Angle',
+                min: 0,
+                max: 180,
+                step: 1,
+                value: preset.postSlitScanAngle,
+              },
+              postSlitScanPosition: {
+                label: 'Position',
+                min: 0,
+                max: 1,
+                step: 0.01,
+                value: preset.postSlitScanPosition,
+              },
+              postSlitScanWidth: {
+                label: 'Slit Width',
+                min: 0.001,
+                max: 0.3,
+                step: 0.001,
+                value: preset.postSlitScanWidth,
+              },
+              postSlitScanStretch: {
+                label: 'Stretch',
+                min: 0,
+                max: 1,
+                step: 0.01,
+                value: preset.postSlitScanStretch,
+              },
+              postSlitScanPush: {
+                label: 'Push',
+                min: 0,
+                max: 1,
+                step: 0.01,
+                value: preset.postSlitScanPush,
+              },
+              postSlitScanCount: {
+                label: 'Slits',
+                min: 1,
+                max: 8,
+                step: 1,
+                value: preset.postSlitScanCount,
+              },
+              postSlitScanSpread: {
+                label: 'Slit Spread',
+                min: 0,
+                max: 1,
+                step: 0.01,
+                value: preset.postSlitScanSpread,
+              },
+              postSlitScanSpeed: {
+                label: 'Scan Speed',
+                min: -2,
+                max: 2,
+                step: 0.01,
+                value: preset.postSlitScanSpeed,
+              },
             },
-            value: preset.postSlitScanChunkMode,
-          },
-          postSlitScanChunkAxis: {
-            label: 'Chunk Axis',
-            options: ['horizontal', 'vertical'],
-            value: preset.postSlitScanChunkAxis,
-          },
-          postSlitScanChunkCount: {
-            label: 'Chunk Count',
-            min: 1,
-            max: 80,
-            step: 1,
-            value: preset.postSlitScanChunkCount,
-          },
-          postSlitScanChunkCross: {
-            label: 'Chunk Cross',
-            min: 1,
-            max: 80,
-            step: 1,
-            value: preset.postSlitScanChunkCross,
-          },
-          postSlitScanChunkCoverage: {
-            label: 'Chunk Coverage',
-            min: 0,
-            max: 1,
-            step: 0.01,
-            value: preset.postSlitScanChunkCoverage,
-          },
-          postSlitScanChunkSpeed: {
-            label: 'Chunk Drift',
-            min: -20,
-            max: 20,
-            step: 0.1,
-            value: preset.postSlitScanChunkSpeed,
-          },
-          postSlitScanChunkSeed: {
-            label: 'Chunk Seed',
-            min: 0,
-            max: 500,
-            step: 1,
-            value: preset.postSlitScanChunkSeed,
-          },
+            { collapsed: true }
+          ),
+          Chunks: folder(
+            {
+              postSlitScanChunkMode: {
+                label: 'Mode',
+                options: {
+                  'Whole Frame': 'full',
+                  Bands: 'bands',
+                  Noise: 'noise',
+                  Cells: 'cells',
+                },
+                value: preset.postSlitScanChunkMode,
+              },
+              postSlitScanChunkAxis: {
+                label: 'Axis',
+                options: ['horizontal', 'vertical'],
+                value: preset.postSlitScanChunkAxis,
+              },
+              postSlitScanChunkCount: {
+                label: 'Count',
+                min: 1,
+                max: 80,
+                step: 1,
+                value: preset.postSlitScanChunkCount,
+              },
+              postSlitScanChunkCross: {
+                label: 'Cross',
+                min: 1,
+                max: 80,
+                step: 1,
+                value: preset.postSlitScanChunkCross,
+              },
+              postSlitScanChunkCoverage: {
+                label: 'Coverage',
+                min: 0,
+                max: 1,
+                step: 0.01,
+                value: preset.postSlitScanChunkCoverage,
+              },
+              postSlitScanAngleJitter: {
+                label: 'Angle Jitter',
+                min: 0,
+                max: 180,
+                step: 1,
+                value: preset.postSlitScanAngleJitter,
+              },
+              postSlitScanJitter: {
+                label: 'Position Jitter',
+                min: 0,
+                max: 1,
+                step: 0.01,
+                value: preset.postSlitScanJitter,
+              },
+              postSlitScanChunkSpeed: {
+                label: 'Drift',
+                min: -20,
+                max: 20,
+                step: 0.1,
+                value: preset.postSlitScanChunkSpeed,
+              },
+              postSlitScanChunkSeed: {
+                label: 'Seed',
+                min: 0,
+                max: 500,
+                step: 1,
+                value: preset.postSlitScanChunkSeed,
+              },
+            },
+            { collapsed: true }
+          ),
         },
         { collapsed: true }
       ),

@@ -10,9 +10,9 @@ Delete this file when the work lands (`plans/README.md`).
 - **Both scenes are WebGPU/TSL.** `Apollian` is ported off its WebGL fragment
   shader in the same pass, so there is exactly one Apollonian distance estimator
   in the repo. This also closes Apollian's own "port to WebGPU/TSL" todo item.
-- **Shared code becomes a module**, mirroring `@modules/radialShadow`: generic TSL
-  SDF vocabulary in `src/modules/sdf`, scene-specific assembly in each scene's
-  `utils/sceneTSL.js`.
+- **Shared code becomes a module**, mirroring `@modules/radialShadow`: the TSL
+  SDF vocabulary these two scenes march with in `src/modules/apollonian`,
+  scene-specific assembly in each scene's `utils/sceneTSL.js`.
 - **Smoke is lit, self-shadowed, and faintly emissive** (see Lighting below).
 - **Chase camera**, lagging behind the sphere with spring damping.
 
@@ -41,9 +41,16 @@ bounced light. Nothing is actually bounced.
    normal and add the light reaching _that_ point, tinted by the wall colour.
    Half the cost of (2) and it fills the pitch-black side of chambers.
 
-## Module: `src/modules/sdf`
+## Module: `src/modules/apollonian`
 
-Generic TSL vocabulary, no scene knowledge. Barrel exports only.
+Barrel exports only. Named for its consumers rather than for the shape of its
+contents: `shapes.js`, `folds.js`, `march.js` and `shading.js` are generic SDF
+vocabulary and would sit happily under a neutral name, but `fractals.js` is two
+named mrange estimators and `constants.js` is his tuning (130 steps, 0.0003
+epsilon, 12 AO taps at 0.012) wearing generic names. The module is named for
+the half that is specific, so nothing here pretends to be more reusable than it
+is. If a third consumer wants only the folds, split the generic half back out
+then — not before.
 
 | File           | Holds                                                            |
 | -------------- | ---------------------------------------------------------------- |
@@ -59,7 +66,9 @@ Every function takes and returns nodes; the distance estimator is passed in as a
 to another codegens as `unresolved value 'null'` and renders blank with no error.
 
 The 2D sigil scene is a later consumer of `folds.js` + a 2D Apollonian fold; the
-module is shaped for that but does not ship it yet.
+module is shaped for that but does not ship it yet. Being Apollonian itself, it
+does not make the name awkward — a non-Apollonian consumer of `folds.js` would,
+and is the trigger for splitting.
 
 ## Scene: `WebGPU/Explorer`
 
@@ -105,7 +114,7 @@ packing discipline (8 storage buffers per stage is a hard WebGPU limit).
 
 ## Order of work
 
-1. `src/modules/sdf` + Node smoke test of the graph.
+1. `src/modules/apollonian` + Node smoke test of the graph.
 2. Port `Apollian` to WebGPU over the module; drop the tree domain and its
    preset. Hand to the user for a parity eyeball against the WebGL original.
 3. `Explorer` skeleton: caverns + depth, chase camera, a plain unlit sphere.

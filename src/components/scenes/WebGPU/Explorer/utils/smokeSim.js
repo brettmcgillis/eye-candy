@@ -13,7 +13,7 @@ import {
 } from 'three/tsl';
 import * as THREE from 'three/webgpu';
 
-import { softShadow } from '@modules/sdf';
+import { softShadow } from '@modules/apollonian';
 import { curlNoise } from '@modules/tsl';
 
 const GOLDEN = 0x9e3779b9;

@@ -20,7 +20,7 @@ import {
   sdBox,
   sdfAO,
   sdfNormal,
-} from '@modules/sdf';
+} from '@modules/apollonian';
 
 const ESCAPE_DISTANCE = 20;
 const AO_SAMPLES = 12;

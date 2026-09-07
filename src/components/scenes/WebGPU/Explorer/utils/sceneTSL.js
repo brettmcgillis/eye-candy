@@ -23,7 +23,7 @@ import {
   sdfAO,
   sdfNormal,
   softShadow,
-} from '@modules/sdf';
+} from '@modules/apollonian';
 
 const AO_SAMPLES = 5;
 

@@ -11,15 +11,15 @@
   mirrored lattice is an infinite cavern system rather than a sculpture; the
   `Confine to Tree` control puts the original's bounding box and ground plane
   back to see it as the Shadertoy framed it.
-- The distance estimator is shared with Apollian through `@modules/sdf` — one
-  Apollonian fold in the repo, not two.
+- The distance estimator is shared with Apollian through `@modules/apollonian`
+  — one Apollonian fold in the repo, not two.
 
 ## // Notes
 
 - **The field is written twice.** `utils/treeDistance.js` is a CPU mirror of
-  `apollianTree` in `@modules/sdf`, because the agent steers by probing the
-  field and there is no cheap way to read the GPU's copy back per frame. They
-  take the same control values and must stay identical.
+  `apollianTree` in `@modules/apollonian`, because the agent steers by probing
+  the field and there is no cheap way to read the GPU's copy back per frame.
+  They take the same control values and must stay identical.
 - **Measured before it was built.** A survey of the field at the shipped
   defaults: chambers top out around 0.22 across in fractal units; at a
   clearance of 0.02 about 31% of the volume is free and 99% of that free space
@@ -49,8 +49,8 @@
 - **Measuring this scene:** Leva keeps control values across HMR, so editing a
   default and letting it hot-reload does not change the live value. Any A/B
   needs `localStorage.clear()` and a full reload, with the live config read
-  back alongside the timing — and the agent parked, or the flying camera swamps
-  the difference.
+  back alongside the timing — and the agent parked, or the flying camera
+  swamps the difference.
 - **Dead ends, measured, don't retry:** Keinert over-relaxed sphere tracing
   (its overlap test fires on nearly every step, because an estimator carrying
   `0.25 *` never produces overlapping spheres); a looser `Surface Epsilon` (no
@@ -74,10 +74,12 @@
 
 - **Ember** — the default warm sphere in the open lattice.
 - **Cold Signal** — the same flight, blue.
-- **Tight Passage** — smaller caverns, shorter follow, wider lens, short lantern.
+- **Tight Passage** — smaller caverns, shorter follow, wider lens, short
+  lantern.
 - **Wide Dark** — the lantern opened up to 2.2, at a lower render scale to pay
   for it. The one to load to see how much lattice is actually out there.
-- **The Sculpture** — the Shadertoy's own framing: confined, parked, free camera.
+- **The Sculpture** — the Shadertoy's own framing: confined, parked, free
+  camera.
 
 ## // Features
 

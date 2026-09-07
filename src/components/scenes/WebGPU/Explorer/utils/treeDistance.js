@@ -1,10 +1,10 @@
-// CPU mirror of `apollianTree` in `@modules/sdf`. The agent steers by probing
-// the distance field, and there is no way to read the GPU's copy back cheaply
-// enough to do that per frame — so the fold is written twice. Both copies take
-// the same control values and must stay identical: if the sphere starts
-// clipping through branches, this drifted from the TSL version.
+// CPU mirror of `apollianTree` in `@modules/apollonian`. The agent steers by
+// probing the distance field, and there is no way to read the GPU's copy back
+// cheaply enough to do that per frame — so the fold is written twice. Both
+// copies take the same control values and must stay identical: if the sphere
+// starts clipping through branches, this drifted from the TSL version.
 
-// Mirrors MIN_RADIUS_SQ in `@modules/sdf` — see the note there.
+// Mirrors MIN_RADIUS_SQ in `@modules/apollonian` — see the note there.
 const MIN_RADIUS_SQ = 1e-12;
 
 function fold1(p, size) {

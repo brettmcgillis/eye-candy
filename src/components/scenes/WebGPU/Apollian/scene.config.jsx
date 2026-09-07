@@ -8,7 +8,7 @@ function SceneIcon() {
 export default {
   id: 'apollian',
   label: 'Apollian',
-  channel: 'webgl',
+  channel: 'webgpu',
   area: 'wip',
   icon: SceneIcon,
   Component: lazy(() => import('./Apollian')),

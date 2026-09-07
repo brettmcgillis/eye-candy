@@ -20,11 +20,6 @@ const SHARED = {
   renderScale: 1,
   maxSteps: 130,
   epsilon: 0.0003,
-  treeScaleBase: 1.3,
-  treeScaleGain: 0.95,
-  treeTwist: Math.PI / 5.5,
-  treePeriodY: 2,
-  treePeriodXZ: 2,
   foldScale: 1 / 0.75,
   sliceW: 0.125,
   sliceAnimate: true,
@@ -36,15 +31,9 @@ const SHARED = {
 export const PRESETS = {
   '4D Slice': {
     ...SHARED,
-    domain: 'slice',
-  },
-  'Gnarly Tree': {
-    ...SHARED,
-    domain: 'tree',
   },
   Explore: {
     ...SHARED,
-    domain: 'slice',
     viewMode: 'camera',
     sliceAnimate: false,
     sliceRotXW: 0.62,
@@ -53,7 +42,6 @@ export const PRESETS = {
   },
   'Frozen Slice': {
     ...SHARED,
-    domain: 'slice',
     sliceAnimate: false,
     sliceRotXW: 0.62,
     sliceRotYW: -1.1,

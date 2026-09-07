@@ -1,7 +1,6 @@
 import { folder } from 'leva';
 
 const DEFAULTS = {
-  domain: 'slice',
   folds: 7,
   foldScale: 1.0 / 0.75,
   sliceW: 0.125,
@@ -9,11 +8,6 @@ const DEFAULTS = {
   sliceRotXW: 0,
   sliceRotYW: 0,
   sliceRotZW: 0,
-  treeScaleBase: 1.3,
-  treeScaleGain: 0.95,
-  treeTwist: Math.PI / 5.5,
-  treePeriodY: 2,
-  treePeriodXZ: 2,
   boneColor: '#e3dac9',
   aoStrength: 1,
   fogAmount: 0.001,
@@ -34,26 +28,19 @@ const DEFAULTS = {
 };
 
 // Leva resolves a `render` lookup by full path, so a control inside the
-// Fractal folder is `<scene>.Fractal.domain`, not `<scene>.domain`.
+// Fractal folder is `<scene>.Fractal.sliceW`, not `<scene>.sliceW`.
 export default function getFractalControls(folderPath, defaultValues = {}) {
   const v = { ...DEFAULTS, ...defaultValues };
 
   const FRACTAL = `${folderPath}.Fractal`;
   const VIEW = `${folderPath}.View`;
 
-  const isSlice = (get) => get(`${FRACTAL}.domain`) === 'slice';
-  const isTree = (get) => get(`${FRACTAL}.domain`) === 'tree';
   const isShaderView = (get) => get(`${VIEW}.viewMode`) === 'shader';
   const isSceneView = (get) => get(`${VIEW}.viewMode`) === 'camera';
 
   return {
     Fractal: folder(
       {
-        domain: {
-          value: v.domain,
-          label: 'Fractal',
-          options: { '4D Slice': 'slice', 'Gnarly Tree': 'tree' },
-        },
         folds: { value: v.folds, label: 'Folds', min: 1, max: 12, step: 1 },
         foldScale: {
           value: v.foldScale,
@@ -61,7 +48,6 @@ export default function getFractalControls(folderPath, defaultValues = {}) {
           min: 0.5,
           max: 2.5,
           step: 0.001,
-          render: (get) => isSlice(get),
         },
         sliceW: {
           value: v.sliceW,
@@ -69,12 +55,10 @@ export default function getFractalControls(folderPath, defaultValues = {}) {
           min: -2,
           max: 2,
           step: 0.001,
-          render: (get) => isSlice(get),
         },
         sliceAnimate: {
           value: v.sliceAnimate,
           label: 'Animate Slice',
-          render: (get) => isSlice(get),
         },
         sliceRotXW: {
           value: v.sliceRotXW,
@@ -82,7 +66,7 @@ export default function getFractalControls(folderPath, defaultValues = {}) {
           min: -Math.PI,
           max: Math.PI,
           step: 0.001,
-          render: (get) => isSlice(get) && !get(`${FRACTAL}.sliceAnimate`),
+          render: (get) => !get(`${FRACTAL}.sliceAnimate`),
         },
         sliceRotYW: {
           value: v.sliceRotYW,
@@ -90,7 +74,7 @@ export default function getFractalControls(folderPath, defaultValues = {}) {
           min: -Math.PI,
           max: Math.PI,
           step: 0.001,
-          render: (get) => isSlice(get) && !get(`${FRACTAL}.sliceAnimate`),
+          render: (get) => !get(`${FRACTAL}.sliceAnimate`),
         },
         sliceRotZW: {
           value: v.sliceRotZW,
@@ -98,47 +82,7 @@ export default function getFractalControls(folderPath, defaultValues = {}) {
           min: -Math.PI,
           max: Math.PI,
           step: 0.001,
-          render: (get) => isSlice(get) && !get(`${FRACTAL}.sliceAnimate`),
-        },
-        treeScaleBase: {
-          value: v.treeScaleBase,
-          label: 'Branch Scale',
-          min: 0.5,
-          max: 2.5,
-          step: 0.001,
-          render: (get) => isTree(get),
-        },
-        treeScaleGain: {
-          value: v.treeScaleGain,
-          label: 'Scale Gain',
-          min: -1,
-          max: 2,
-          step: 0.001,
-          render: (get) => isTree(get),
-        },
-        treeTwist: {
-          value: v.treeTwist,
-          label: 'Twist',
-          min: -Math.PI,
-          max: Math.PI,
-          step: 0.001,
-          render: (get) => isTree(get),
-        },
-        treePeriodY: {
-          value: v.treePeriodY,
-          label: 'Period Y',
-          min: 0.5,
-          max: 6,
-          step: 0.01,
-          render: (get) => isTree(get),
-        },
-        treePeriodXZ: {
-          value: v.treePeriodXZ,
-          label: 'Period XZ',
-          min: 0.5,
-          max: 6,
-          step: 0.01,
-          render: (get) => isTree(get),
+          render: (get) => !get(`${FRACTAL}.sliceAnimate`),
         },
       },
       { collapsed: true }

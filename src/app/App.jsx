@@ -3,6 +3,7 @@ import { Navigate, Route, Routes, useLocation } from 'react-router-dom';
 
 import './App.css';
 import useAppScenes from './scaffold/hooks/useAppScenes';
+import useDocumentTitle from './scaffold/hooks/useDocumentTitle';
 import Loader from './scaffold/loader/Loader';
 import SuspenseSignal from './scaffold/loader/SuspenseSignal';
 import useLoaderGate from './scaffold/loader/useLoaderGate';
@@ -11,6 +12,7 @@ import {
   DEFAULT_SCENE_PATH,
   getAreaDefaultPath,
   resolveSceneRoute,
+  resolveSceneTitle,
 } from './sceneRegistry';
 
 const DevApp = import.meta.env.DEV ? lazy(() => import('@dev/DevApp')) : null;
@@ -20,10 +22,12 @@ const DevApp = import.meta.env.DEV ? lazy(() => import('@dev/DevApp')) : null;
 ──────────────────────────────────────────────────────────── */
 function SceneShell() {
   const location = useLocation();
-  const { CanvasWrapper, SceneComponent, redirectPath, renderer } =
+  const { CanvasWrapper, SceneComponent, redirectPath, renderer, sceneDef } =
     useAppScenes();
   const { loaderVisible, suspended, handleSuspend, onLoaderComplete } =
     useLoaderGate();
+
+  useDocumentTitle(redirectPath ? null : resolveSceneTitle(sceneDef));
 
   if (redirectPath) {
     return (

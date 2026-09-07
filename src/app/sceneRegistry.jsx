@@ -176,6 +176,7 @@ const noSceneEntries = Object.keys(CHANNELS).flatMap((channel) =>
   Object.keys(AREAS).map((area) => ({
     id: 'noScene',
     label: 'None',
+    title: false,
     channel,
     area,
     route: channel === 'webgl' ? 'noScene' : 'noScene-webgpu',
@@ -211,6 +212,13 @@ export function getAreaDefaultPath(area, channel = 'webgl') {
     sceneRegistry.defaultScene?.path ||
     DEFAULT_SCENE_PATH
   );
+}
+
+// Scene configs opt out of the browser title with `title: false`, or override
+// the Leva label with `title: 'Some Name'`.
+export function resolveSceneTitle(scene) {
+  if (!scene || scene.title === false) return null;
+  return scene.title ?? scene.label ?? null;
 }
 
 export function resolveSceneRoute(pathname) {

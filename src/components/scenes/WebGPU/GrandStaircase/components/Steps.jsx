@@ -42,23 +42,22 @@ function Steps({ config, shaft }) {
       const axisSample = sampleSlice(
         shaft.axisTexture,
         s,
-        uniforms.windowDepth,
+        uniforms.uSpan,
         uniforms.sliceCount
       );
-      const frame = shaftFrame(
-        axisSample,
-        sampleSlice(
-          shaft.angleTexture,
-          s,
-          uniforms.windowDepth,
-          uniforms.sliceCount
-        )
+      const angleSample = sampleSlice(
+        shaft.angleTexture,
+        s,
+        uniforms.uSpan,
+        uniforms.sliceCount
       );
+      const frame = shaftFrame(axisSample, angleSample);
       const midRadius = frame.voidRadius.add(uniforms.stairWidth.mul(0.5));
       return {
         s,
         frame,
         midRadius,
+        height: angleSample.w,
         live: oneMinus(step(0.5, axisSample.w)),
         radial: vec3(frame.cosA, 0, frame.sinA),
         tangent: vec3(frame.sinA.negate(), 0, frame.cosA),
@@ -71,15 +70,16 @@ function Steps({ config, shaft }) {
     };
 
     next.positionNode = Fn(() => {
-      const { s, frame, radial, tangent, midRadius, tread, live } = sample();
-      const height = uniforms.riser.mul(thickness);
+      const { frame, radial, tangent, midRadius, tread, live, height } =
+        sample();
+      const thick = uniforms.riser.mul(thickness);
       const local = positionLocal.mul(live);
-      return vec3(frame.axisX, uniforms.aboveCamera.sub(s), frame.axisZ)
+      return vec3(frame.axisX, uniforms.aboveCamera.sub(height), frame.axisZ)
         .add(
           radial.mul(midRadius.mul(live).add(local.x.mul(uniforms.stairWidth)))
         )
         .add(tangent.mul(local.z.mul(tread)))
-        .add(vec3(0, local.y.mul(height).sub(height.mul(0.5).mul(live)), 0));
+        .add(vec3(0, local.y.mul(thick).sub(thick.mul(0.5).mul(live)), 0));
     })();
 
     next.normalNode = Fn(() => {
@@ -94,6 +94,7 @@ function Steps({ config, shaft }) {
     next.colorNode = buildSurfaceColor({
       baseColor,
       descent: uniforms.descent,
+      spin: uniforms.spin,
       surface: shaft.surface,
     });
 

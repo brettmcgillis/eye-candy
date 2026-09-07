@@ -139,7 +139,7 @@ Imagine standing at the edge:
 | absolute |
 | darkness |
 \ /
-\_****\*\*\*\*****\_\_\_\_****\*\*\*\*****/
+\_\***\*\*\*\*\*\*\***\_\_\_\_\***\*\*\*\*\*\*\***/
 
 But because the staircase is hundreds of feet across, the person standing on it should look microscopic.
 

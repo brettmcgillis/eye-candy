@@ -19,7 +19,7 @@ import {
 import * as THREE from 'three/webgpu';
 
 import { MAX_MOUTHS } from '../utils/landings';
-import { sampleSlice, shaftFrame } from '../utils/profileNodes';
+import { sampleSlice } from '../utils/profileNodes';
 import buildSurfaceColor from '../utils/surfaceNodes';
 
 const TAU = Math.PI * 2;
@@ -50,37 +50,25 @@ function ShaftWall({ config, shaft }) {
       side: THREE.BackSide,
     });
 
-    const wallPoint = (s) => {
-      const frame = shaftFrame(
-        sampleSlice(
-          shaft.axisTexture,
-          s,
-          uniforms.windowDepth,
-          uniforms.sliceCount
-        ),
-        sampleSlice(
-          shaft.angleTexture,
-          s,
-          uniforms.windowDepth,
-          uniforms.sliceCount
-        )
+    const wallPoint = (height) => {
+      const slice = sampleSlice(
+        shaft.wallTexture,
+        height,
+        uniforms.riseSpan,
+        uniforms.sliceCount
       );
-      const radius = frame.voidRadius
-        .add(uniforms.stairWidth)
-        .add(uniforms.wallGap);
+      const radius = slice.z.add(uniforms.stairWidth).add(uniforms.wallGap);
       const phi = uv().x.mul(TAU);
       const radial = vec3(phi.cos(), 0, phi.sin());
       return {
         radial,
-        position: vec3(
-          frame.axisX,
-          uniforms.aboveCamera.sub(s),
-          frame.axisZ
-        ).add(radial.mul(radius)),
+        position: vec3(slice.x, uniforms.aboveCamera.sub(height), slice.y).add(
+          radial.mul(radius)
+        ),
       };
     };
 
-    const sAt = () => float(1).sub(uv().y).mul(uniforms.windowDepth);
+    const sAt = () => float(1).sub(uv().y).mul(uniforms.riseSpan);
 
     next.positionNode = Fn(() => wallPoint(sAt()).position)();
 
@@ -98,7 +86,7 @@ function ShaftWall({ config, shaft }) {
 
     next.alphaTest = 0.5;
     next.opacityNode = Fn(() => {
-      const s = sAt();
+      const worldY = uniforms.aboveCamera.sub(sAt());
       const phi = uv().x.mul(TAU);
       const hidden = float(0).toVar();
       Loop(MAX_MOUTHS, ({ i }) => {
@@ -111,7 +99,9 @@ function ShaftWall({ config, shaft }) {
         hidden.assign(
           max(
             hidden,
-            step(abs(s.sub(mouth.x)), mouth.z).mul(step(abs(dPhi), mouth.w))
+            step(abs(worldY.sub(mouth.x)), mouth.z).mul(
+              step(abs(dPhi), mouth.w)
+            )
           )
         );
       });
@@ -121,6 +111,7 @@ function ShaftWall({ config, shaft }) {
     next.colorNode = buildSurfaceColor({
       baseColor,
       descent: uniforms.descent,
+      spin: uniforms.spin,
       surface: shaft.surface,
     });
 

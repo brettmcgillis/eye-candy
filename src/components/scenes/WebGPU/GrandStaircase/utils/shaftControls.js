@@ -70,6 +70,13 @@ export function getShaftControls() {
         value: 512,
       },
       clockwise: { label: 'Clockwise', value: true },
+      spinLock: {
+        label: 'Spin Lock',
+        min: 0,
+        max: 1,
+        step: 0.01,
+        value: 1,
+      },
       stepThickness: {
         label: 'Step Thickness',
         min: 1,
@@ -192,6 +199,13 @@ export function getShaftLightControls() {
         max: 1,
         step: 0.01,
         value: 0.05,
+      },
+      columnTighten: {
+        label: 'Column Width',
+        min: 0.1,
+        max: 1,
+        step: 0.01,
+        value: 0.45,
       },
       columnRecovery: {
         label: 'Column Recovery',
@@ -346,7 +360,14 @@ export function getVolumetricControls() {
         step: 0.0005,
         value: 0.012,
       },
-      fogSteps: { label: 'March Steps', min: 8, max: 128, step: 1, value: 48 },
+      fogSteps: { label: 'March Steps', min: 8, max: 128, step: 1, value: 24 },
+      fogResolutionScale: {
+        label: 'March Resolution',
+        min: 0.15,
+        max: 1,
+        step: 0.05,
+        value: 0.5,
+      },
       fogMaxDistance: {
         label: 'March Distance',
         min: 40,

@@ -56,7 +56,7 @@ function buildMaterial({
     const height = mouth.z.mul(2).mul(heighten);
     const start = extra.y.add(inset);
     const local = positionLocal.mul(live);
-    return vec3(extra.z, shaft.uniforms.aboveCamera.sub(mouth.x), extra.w)
+    return vec3(extra.z, mouth.x, extra.w)
       .add(radial.mul(start.mul(live).add(local.x.mul(length))))
       .add(tangent.mul(local.z.mul(width)))
       .add(vec3(0, local.y.mul(height), 0));
@@ -74,6 +74,7 @@ function buildMaterial({
   material.colorNode = buildSurfaceColor({
     baseColor,
     descent: shaft.uniforms.descent,
+    spin: shaft.uniforms.spin,
     surface: shaft.surface,
   });
 

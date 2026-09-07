@@ -14,9 +14,12 @@ import {
 } from '../utils/landings';
 import {
   SLICE_COUNT,
+  advanceRise,
   axisOriginFor,
   fbm1,
   fillProfile,
+  riseAt,
+  spinAt,
 } from '../utils/shaftProfile';
 
 function createProfileTexture(data, width = SLICE_COUNT) {
@@ -43,7 +46,9 @@ export default function useShaft(config) {
     const axisData = new Float32Array(SLICE_COUNT * 4);
     const angleData = new Float32Array(SLICE_COUNT * 4);
     const lightData = new Float32Array(SLICE_COUNT * 4);
+    const wallData = new Float32Array(SLICE_COUNT * 4);
     const landingData = new Float32Array(MAX_LANDINGS * 4);
+    const landingAxisData = new Float32Array(MAX_LANDINGS * 4);
     const mouthData = new Float32Array(MAX_MOUTHS * 4);
     const mouthExtraData = new Float32Array(MAX_MOUTHS * 4);
     const flareData = new Float32Array(MAX_FLARES * 4);
@@ -52,7 +57,9 @@ export default function useShaft(config) {
         axisData,
         angleData,
         lightData,
+        wallData,
         landingData,
+        landingAxisData,
         mouthData,
         mouthExtraData,
         flareData,
@@ -60,23 +67,30 @@ export default function useShaft(config) {
       axisTexture: createProfileTexture(axisData),
       angleTexture: createProfileTexture(angleData),
       lightTexture: createProfileTexture(lightData),
+      wallTexture: createProfileTexture(wallData),
       mouthTexture: createProfileTexture(mouthData, MAX_MOUTHS),
       mouthExtraTexture: createProfileTexture(mouthExtraData, MAX_MOUTHS),
       flareTexture: createProfileTexture(flareData, MAX_FLARES),
       flareCountRef: { current: 0 },
       landingAttribute: new THREE.InstancedBufferAttribute(landingData, 4),
+      landingAxisAttribute: new THREE.InstancedBufferAttribute(
+        landingAxisData,
+        4
+      ),
       landingCountRef: { current: 0 },
       uniforms: {
         aboveCamera: uniform(0),
         descent: uniform(0),
         riser: uniform(0.1),
         sBase: uniform(0),
+        spin: uniform(0),
+        riseSpan: uniform(1),
         sliceCount: uniform(SLICE_COUNT),
         landingWidthScale: uniform(2),
         stairWidth: uniform(6),
         stepsPerTurn: uniform(512),
         wallGap: uniform(2),
-        windowDepth: uniform(600),
+        uSpan: uniform(600),
       },
       surface: {
         inkAmount: uniform(0),
@@ -87,7 +101,7 @@ export default function useShaft(config) {
         mottleAmount: uniform(0.12),
         mottleScale: uniform(0.35),
       },
-      windowTopRef: { current: 0 },
+      uTopRef: { current: 0 },
     };
   }, []);
 
@@ -96,6 +110,7 @@ export default function useShaft(config) {
       shaft.axisTexture.dispose();
       shaft.angleTexture.dispose();
       shaft.lightTexture.dispose();
+      shaft.wallTexture.dispose();
       shaft.mouthTexture.dispose();
       shaft.mouthExtraTexture.dispose();
       shaft.flareTexture.dispose();
@@ -119,6 +134,7 @@ export default function useShaft(config) {
       axisDriftWavelength: config.axisDriftWavelength,
       clockwise: config.clockwise,
       columnRecovery: config.columnRecovery,
+      columnTighten: config.columnTighten,
       flareRoomChance: config.flareRoomChance,
       landingArc: config.landingArc,
       landingDriftAmount: config.landingDriftAmount,
@@ -135,6 +151,7 @@ export default function useShaft(config) {
       risePerTurn: config.risePerTurn,
       shaftFalloff: config.shaftFalloff,
       shaftFloor: config.shaftFloor,
+      spinLock: config.spinLock,
       voidRadius: config.voidRadius,
     }),
     [
@@ -152,6 +169,7 @@ export default function useShaft(config) {
       config.axisDriftWavelength,
       config.clockwise,
       config.columnRecovery,
+      config.columnTighten,
       config.flareRoomChance,
       config.landingArc,
       config.landingDriftAmount,
@@ -168,20 +186,22 @@ export default function useShaft(config) {
       config.risePerTurn,
       config.shaftFalloff,
       config.shaftFloor,
+      config.spinLock,
       config.voidRadius,
     ]
   );
 
   const geometry = useMemo(() => {
-    const windowDepth = config.aboveCamera + config.belowCamera;
+    const riseWindow = config.aboveCamera + config.belowCamera;
+    // Headroom: landing plateaus consume `u` without gaining height, so the
+    // path is always longer than the height it covers.
+    const uSpan = riseWindow * 1.3;
     const riser = config.risePerTurn / config.stepsPerTurn;
     return {
-      instanceCount: Math.min(
-        60000,
-        Math.max(1, Math.ceil(windowDepth / riser) + 1)
-      ),
+      instanceCount: Math.min(60000, Math.max(1, Math.ceil(uSpan / riser) + 1)),
       riser,
-      windowDepth,
+      riseWindow,
+      uSpan,
     };
   }, [
     config.aboveCamera,
@@ -191,7 +211,7 @@ export default function useShaft(config) {
   ]);
 
   useFrame((_, delta) => {
-    const { uniforms, arrays, windowTopRef } = shaft;
+    const { uniforms, arrays, uTopRef } = shaft;
     const clamped = Math.min(delta, 1 / 20);
 
     const drift = fbm1(
@@ -199,42 +219,65 @@ export default function useShaft(config) {
       3
     );
     const gate = 1 - config.speedDriftAmount * (0.5 + 0.5 * drift);
-    descentRef.current += config.fallSpeed * Math.max(0, gate) * clamped;
+    const step = config.fallSpeed * Math.max(0, gate) * clamped;
+    descentRef.current += step;
 
-    const windowTop = descentRef.current - config.aboveCamera;
-    windowTopRef.current = windowTop;
-
-    const landings = collectLandings(
-      windowTop,
-      geometry.windowDepth,
+    let landings = collectLandings(
+      uTopRef.current,
+      geometry.uSpan,
       profileParams
     );
+    uTopRef.current = advanceRise(uTopRef.current, step, landings);
+    landings = collectLandings(uTopRef.current, geometry.uSpan, profileParams);
+
+    const uTop = uTopRef.current;
+    const riseTop = riseAt(uTop, landings);
     shaft.landingCountRef.current = landings.length;
-    const origin = axisOriginFor(windowTop, profileParams);
-    const counts = fillLandingBuffers(arrays, landings, profileParams, origin);
-    shaft.flareCountRef.current = counts.flares;
-    fillProfile(
+
+    // `aboveCamera` is metres of height, `uTop` is path — they cannot be
+    // added. Walking the rise finds the path position at camera height, so
+    // spin and lean stay continuous when the window top leaps a plateau.
+    const uAtCamera = advanceRise(uTop, config.aboveCamera, landings);
+    const origin = axisOriginFor(uAtCamera, profileParams);
+    const spin = spinAt(uAtCamera, profileParams);
+    uniforms.spin.value = spin;
+
+    const counts = fillLandingBuffers(
       arrays,
-      windowTop,
-      geometry.windowDepth,
+      landings,
+      profileParams,
+      origin,
+      spin,
+      riseTop
+    );
+    shaft.flareCountRef.current = counts.flares;
+
+    const riseSpan = fillProfile(
+      arrays,
+      uTop,
+      geometry.uSpan,
       profileParams,
       landings,
-      origin
+      origin,
+      spin
     );
 
     shaft.axisTexture.needsUpdate = true;
     shaft.angleTexture.needsUpdate = true;
     shaft.lightTexture.needsUpdate = true;
+    shaft.wallTexture.needsUpdate = true;
     shaft.mouthTexture.needsUpdate = true;
     shaft.mouthExtraTexture.needsUpdate = true;
     shaft.flareTexture.needsUpdate = true;
     shaft.landingAttribute.needsUpdate = true;
+    shaft.landingAxisAttribute.needsUpdate = true;
 
-    const firstStep = Math.ceil(windowTop / geometry.riser);
-    uniforms.sBase.value = firstStep * geometry.riser - windowTop;
+    const firstStep = Math.ceil(uTop / geometry.riser);
+    uniforms.sBase.value = firstStep * geometry.riser - uTop;
     uniforms.descent.value = descentRef.current;
     uniforms.aboveCamera.value = config.aboveCamera;
-    uniforms.windowDepth.value = geometry.windowDepth;
+    uniforms.uSpan.value = geometry.uSpan;
+    uniforms.riseSpan.value = riseSpan;
     uniforms.riser.value = geometry.riser;
     uniforms.stairWidth.value = config.stairWidth;
     uniforms.stepsPerTurn.value = config.stepsPerTurn;

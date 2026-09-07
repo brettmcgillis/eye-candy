@@ -8,11 +8,20 @@ import {
   vec3,
 } from 'three/tsl';
 
-export default function buildSurfaceColor({ baseColor, descent, surface }) {
+export default function buildSurfaceColor({
+  baseColor,
+  descent,
+  spin,
+  surface,
+}) {
+  // Undo the shaft's counter-rotation so grain and ink stay glued to the
+  // stone instead of sliding across it as the world turns.
+  const c = spin.cos();
+  const sn = spin.sin();
   const shaftPoint = vec3(
-    positionWorld.x,
+    positionWorld.x.mul(c).add(positionWorld.z.mul(sn)),
     descent.sub(positionWorld.y),
-    positionWorld.z
+    positionWorld.z.mul(c).sub(positionWorld.x.mul(sn))
   );
 
   const grain = mx_noise_float(shaftPoint.mul(surface.mottleScale));

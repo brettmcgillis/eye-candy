@@ -19,6 +19,7 @@ export default function GrandStaircase() {
   return (
     <>
       <CameraRig camera={config.camera} />
+      <color args={['#020203']} attach="background" />
       <LightingRig lighting={config.lighting} />
       <ShaftWall config={config} shaft={shaft} />
       <Steps config={config} shaft={shaft} />

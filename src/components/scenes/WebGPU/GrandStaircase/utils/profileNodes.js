@@ -1,8 +1,8 @@
 import { clamp, int, ivec2, mix, textureLoad } from 'three/tsl';
 
-export function sampleSlice(map, s, windowDepth, sliceCount) {
+export function sampleSlice(map, coord, span, sliceCount) {
   const last = sliceCount.sub(1);
-  const t = clamp(s.div(windowDepth), 0, 1).mul(last);
+  const t = clamp(coord.div(span), 0, 1).mul(last);
   const i0 = t.floor();
   const i1 = i0.add(1).min(last);
   return mix(

@@ -1,9 +1,12 @@
 import {
   angleAt,
+  angleRateAt,
   axisAt,
   hash01,
-  landingDepth,
   landingIndicesInRange,
+  landingPosition,
+  riseAt,
+  rotateXZ,
   voidRadiusAt,
 } from './shaftProfile';
 
@@ -20,26 +23,18 @@ export function mouthCountFor(index, p) {
   return 2;
 }
 
-export function collectLandings(windowTop, windowDepth, p) {
-  const { first, last } = landingIndicesInRange(
-    windowTop,
-    windowTop + windowDepth,
-    p
-  );
+export function collectLandings(uTop, uSpan, p) {
+  const { first, last } = landingIndicesInRange(uTop, uTop + uSpan, p);
   const landings = [];
   for (let n = first; n <= last && landings.length < MAX_LANDINGS; n += 1) {
-    const depth = landingDepth(n, p);
-    const s = depth - windowTop;
-    if (s >= -p.landingSpacing && s <= windowDepth) {
-      const rate = Math.max(
-        1e-4,
-        Math.abs(angleAt(depth + 0.5, p) - angleAt(depth - 0.5, p))
-      );
+    const u = landingPosition(n, p);
+    if (u >= uTop - p.landingSpacing && u <= uTop + uSpan) {
+      const rate = Math.max(1e-4, Math.abs(angleRateAt(u, p)));
       landings.push({
         index: n,
-        depth,
-        s,
-        span: (p.landingArc * TAU) / rate,
+        u,
+        plateau: (p.landingArc * TAU) / rate,
+        arc: p.landingArc * TAU,
       });
     }
   }
@@ -57,8 +52,9 @@ function pushFlare(arrays, count, x, y, z, intensity) {
   return count + 1;
 }
 
-export function fillLandingBuffers(arrays, landings, p, origin) {
-  const { landingData, mouthData, mouthExtraData, flareData } = arrays;
+export function fillLandingBuffers(arrays, landings, p, origin, spin, riseTop) {
+  const { landingData, landingAxisData, mouthData, mouthExtraData, flareData } =
+    arrays;
   const halfArc = p.landingArc * TAU * 0.5;
   let mouths = 0;
   let flares = 0;
@@ -66,23 +62,34 @@ export function fillLandingBuffers(arrays, landings, p, origin) {
   for (let i = 0; i < landings.length; i += 1) {
     const landing = landings[i];
     const o = i * 4;
-    landingData[o] = landing.s;
-    landingData[o + 1] = landing.span;
-    landingData[o + 2] = halfArc;
-    landingData[o + 3] = landing.index;
+    const height = riseAt(landing.u, landings) - riseTop;
+    const y = p.aboveCamera - height;
+    // Sweep the arc the helix actually climbs across the plateau, not the
+    // nominal one — pitch warp varies the rate, so the nominal arc misses
+    // where the next flight resumes.
+    const baseAngle = angleAt(landing.u, p) + spin;
+    const sweptArc =
+      angleAt(landing.u + landing.plateau, p) - angleAt(landing.u, p);
+    const raw = axisAt(landing.u, p, origin);
+    const axis = rotateXZ(raw.x, raw.z, spin);
+    const voidRadius = voidRadiusAt(landing.u, p);
 
-    const baseAngle = angleAt(landing.depth, p);
-    const axis = axisAt(landing.depth, p, origin);
-    const voidRadius = voidRadiusAt(landing.depth, p);
+    landingData[o] = height;
+    landingData[o + 1] = sweptArc;
+    landingData[o + 2] = Math.cos(baseAngle);
+    landingData[o + 3] = Math.sin(baseAngle);
+    landingAxisData[o] = axis.x;
+    landingAxisData[o + 1] = axis.z;
+    landingAxisData[o + 2] = voidRadius;
+    landingAxisData[o + 3] = 0;
     const wallRadius = voidRadius + p.stairWidth + p.wallGap;
-    const y = p.aboveCamera - landing.s;
     const count = mouthCountFor(landing.index, p);
 
     for (let slot = 0; slot < count && mouths < MAX_MOUTHS; slot += 1) {
       const jitter = hash01(landing.index * 5.7 + slot * 2.3) * 2 - 1;
-      const angle = baseAngle + jitter * halfArc * 0.7;
+      const angle = baseAngle + sweptArc * 0.5 + jitter * halfArc * 0.7;
       const m = mouths * 4;
-      mouthData[m] = landing.s - p.mouthSill;
+      mouthData[m] = y + p.mouthSill;
       mouthData[m + 1] = angle;
       mouthData[m + 2] = p.mouthHeight * 0.5;
       mouthData[m + 3] = p.mouthWidth / Math.max(1, wallRadius) / 2;

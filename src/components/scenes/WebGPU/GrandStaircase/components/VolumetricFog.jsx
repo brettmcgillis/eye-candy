@@ -3,16 +3,17 @@ import { memo, useEffect, useMemo, useRef } from 'react';
 import { useFrame, useThree } from '@react-three/fiber';
 
 import { gaussianBlur } from 'three/addons/tsl/display/GaussianBlurNode.js';
-import { int, max, pass, color as tslColor, uniform } from 'three/tsl';
+import { int, max, pass, rtt, color as tslColor, uniform } from 'three/tsl';
 import * as THREE from 'three/webgpu';
 
-import buildFogComposite from '../utils/fogNodes';
+import buildFogVolume from '../utils/fogNodes';
 
 function VolumetricFog({ config, shaft }) {
   const renderer = useThree((state) => state.gl);
   const scene = useThree((state) => state.scene);
   const camera = useThree((state) => state.camera);
   const pipelineRef = useRef(null);
+  const volumeRef = useRef(null);
 
   const uniforms = useMemo(
     () => ({
@@ -24,7 +25,7 @@ function VolumetricFog({ config, shaft }) {
       fogMaxDistance: uniform(400),
       fogNoiseAmount: uniform(0.5),
       fogNoiseScale: uniform(0.02),
-      fogSteps: uniform(int(48)),
+      fogSteps: uniform(int(24)),
       shaftColor: uniform(tslColor('#c9d4e6')),
       shaftEdge: uniform(0.4),
       shaftIntensity: uniform(1.4),
@@ -36,13 +37,19 @@ function VolumetricFog({ config, shaft }) {
     if (!renderer || !scene || !camera) return undefined;
 
     const scenePass = pass(scene, camera);
-    const composite = buildFogComposite({
-      sceneColor: scenePass.getTextureNode('output'),
-      sceneDepth: scenePass.getTextureNode('depth'),
-      shaft,
-      uniforms,
-    });
+    const sceneColor = scenePass.getTextureNode('output');
 
+    const volume = rtt(
+      buildFogVolume({
+        sceneDepth: scenePass.getTextureNode('depth'),
+        shaft,
+        uniforms,
+      })
+    );
+    volume.setResolutionScale(config.fogResolutionScale);
+    volumeRef.current = volume;
+
+    const composite = sceneColor.rgb.mul(volume.a).add(volume.rgb);
     const bright = max(composite.sub(uniforms.bloomThreshold), 0);
     const bloom = gaussianBlur(bright, 0.6, 6, { resolutionScale: 0.4 });
 
@@ -52,6 +59,7 @@ function VolumetricFog({ config, shaft }) {
 
     return () => {
       pipelineRef.current = null;
+      volumeRef.current = null;
     };
   }, [camera, renderer, scene, shaft, uniforms]);
 
@@ -68,6 +76,7 @@ function VolumetricFog({ config, shaft }) {
     uniforms.shaftColor.value.set(config.shaftColor);
     uniforms.shaftEdge.value = config.shaftEdge;
     uniforms.shaftIntensity.value = config.shaftIntensity;
+    volumeRef.current?.setResolutionScale(config.fogResolutionScale);
   }, [config, uniforms]);
 
   useFrame(() => {

@@ -1,6 +1,8 @@
 /* eslint-disable camelcase */
 import {
+  Break,
   Fn,
+  If,
   Loop,
   atan,
   cameraPosition,
@@ -26,12 +28,10 @@ import {
 import { MAX_FLARES } from './landings';
 import { sampleSlice } from './profileNodes';
 
-export default function buildFogComposite({
-  sceneColor,
-  sceneDepth,
-  shaft,
-  uniforms,
-}) {
+// Returns vec4(inscatter, transmittance) rather than a finished composite, so
+// the march can be rendered at reduced resolution and combined with the
+// full-res scene colour afterwards.
+export default function buildFogVolume({ sceneDepth, shaft, uniforms }) {
   const shaftUniforms = shaft.uniforms;
 
   return Fn(() => {
@@ -56,15 +56,15 @@ export default function buildFogComposite({
 
     Loop(uniforms.fogSteps, () => {
       const point = cameraPosition.add(direction.mul(t)).toVar();
-      const s = clamp(
+      const height = clamp(
         shaftUniforms.aboveCamera.sub(point.y),
         0,
-        shaftUniforms.windowDepth
+        shaftUniforms.riseSpan
       );
       const column = sampleSlice(
         shaft.lightTexture,
-        s,
-        shaftUniforms.windowDepth,
+        height,
+        shaftUniforms.riseSpan,
         shaftUniforms.sliceCount
       );
       const outer = max(column.z, 0.05);
@@ -96,8 +96,12 @@ export default function buildFogComposite({
     });
 
     const flareGlow = vec3(0).toVar();
+    // Flares are packed from index 0, so the first empty slot ends the list.
     Loop(MAX_FLARES, ({ i }) => {
       const flare = textureLoad(shaft.flareTexture, ivec2(int(i), int(0)));
+      If(flare.w.lessThanEqual(0), () => {
+        Break();
+      });
       const toFlare = flare.xyz.sub(cameraPosition);
       const along = clamp(toFlare.dot(direction), 0, tMax);
       const perpendicular = max(
@@ -117,6 +121,6 @@ export default function buildFogComposite({
       );
     });
 
-    return sceneColor.rgb.mul(transmittance).add(inscatter).add(flareGlow);
+    return vec4(inscatter.add(flareGlow), transmittance);
   })();
 }

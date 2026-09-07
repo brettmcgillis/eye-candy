@@ -14,7 +14,6 @@ import {
 import * as THREE from 'three/webgpu';
 
 import { MAX_LANDINGS } from '../utils/landings';
-import { sampleSlice, shaftFrame } from '../utils/profileNodes';
 import buildSurfaceColor from '../utils/surfaceNodes';
 
 function Landings({ config, shaft }) {
@@ -30,8 +29,9 @@ function Landings({ config, shaft }) {
   const geometry = useMemo(() => {
     const next = new THREE.BoxGeometry(1, 1, 1, 1, 1, 32);
     next.setAttribute('aLanding', shaft.landingAttribute);
+    next.setAttribute('aLandingAxis', shaft.landingAxisAttribute);
     return next;
-  }, [shaft.landingAttribute]);
+  }, [shaft.landingAttribute, shaft.landingAxisAttribute]);
 
   useEffect(() => () => geometry.dispose(), [geometry]);
 
@@ -44,40 +44,26 @@ function Landings({ config, shaft }) {
 
     const place = () => {
       const landing = attribute('aLanding', 'vec4');
-      const s = landing.x;
-      const frame = shaftFrame(
-        sampleSlice(
-          shaft.axisTexture,
-          s,
-          uniforms.windowDepth,
-          uniforms.sliceCount
-        ),
-        sampleSlice(
-          shaft.angleTexture,
-          s,
-          uniforms.windowDepth,
-          uniforms.sliceCount
-        )
-      );
-      const dTheta = positionLocal.z.mul(landing.z.mul(2));
+      const axis = attribute('aLandingAxis', 'vec4');
+      const dTheta = positionLocal.z.add(0.5).mul(landing.y);
       const cosD = dTheta.cos();
       const sinD = dTheta.sin();
-      const cosT = frame.cosA.mul(cosD).sub(frame.sinA.mul(sinD));
-      const sinT = frame.sinA.mul(cosD).add(frame.cosA.mul(sinD));
+      const cosT = landing.z.mul(cosD).sub(landing.w.mul(sinD));
+      const sinT = landing.w.mul(cosD).add(landing.z.mul(sinD));
       return {
-        frame,
-        s,
+        axis,
+        height: landing.x,
         radial: vec3(cosT, 0, sinT),
         tangent: vec3(sinT.negate(), 0, cosT),
       };
     };
 
     next.positionNode = Fn(() => {
-      const { frame, s, radial } = place();
+      const { axis, height, radial } = place();
       const width = uniforms.stairWidth.mul(uniforms.landingWidthScale);
-      const radius = frame.voidRadius.add(positionLocal.x.add(0.5).mul(width));
-      const top = uniforms.aboveCamera.sub(s);
-      return vec3(frame.axisX, top, frame.axisZ)
+      const radius = axis.z.add(positionLocal.x.add(0.5).mul(width));
+      const top = uniforms.aboveCamera.sub(height);
+      return vec3(axis.x, top, axis.y)
         .add(radial.mul(radius))
         .add(vec3(0, positionLocal.y.sub(0.5).mul(thickness), 0));
     })();
@@ -94,6 +80,7 @@ function Landings({ config, shaft }) {
     next.colorNode = buildSurfaceColor({
       baseColor,
       descent: uniforms.descent,
+      spin: uniforms.spin,
       surface: shaft.surface,
     });
 

@@ -506,6 +506,38 @@ function createCamPreset(shotKey, label, overrides = {}) {
   });
 }
 
+function getSnapshotLensDiameter(snapshot) {
+  switch (snapshot.blackHoleVariant) {
+    case BLACK_HOLE_VARIANT_WEBGPU:
+      return snapshot.webgpuLensDiameter;
+    case BLACK_HOLE_VARIANT_SINGULARITY:
+      return snapshot.singularityLensDiameter;
+    default:
+      return snapshot.legacyLensDiameter;
+  }
+}
+
+// The orbit clamps have to ride on the camera declaration rather than being
+// applied by the scene: the shared rig publishes orbitMinDistance /
+// orbitMaxDistance as leva controls, and anything the scene reads back off the
+// merged control snapshot gets those values, not the preset's.
+function buildOrbitDeclaration(snapshot) {
+  const lensDiameter =
+    getSnapshotLensDiameter(snapshot) ?? DEFAULT_LENS_DIAMETER;
+  const worldScale = snapshot.storeScale ?? 320;
+
+  return {
+    ...snapshot.cameraOrbit,
+    maxDistance:
+      snapshot.orbitMaxDistance ??
+      Math.max(1400, lensDiameter * worldScale * 2.5),
+    maxDistanceUnlimited: false,
+    minDistance:
+      snapshot.orbitMinDistance ??
+      Math.max(140, lensDiameter * worldScale * 0.55),
+  };
+}
+
 export function buildAisle9CameraDeclaration(snapshot = {}) {
   return {
     cameraAutoFit: snapshot.cameraAutoFit,
@@ -516,7 +548,7 @@ export function buildAisle9CameraDeclaration(snapshot = {}) {
       activeShot: snapshot.fixedCameraShot ?? snapshot.cameraFixed?.activeShot,
     },
     near: snapshot.cameraNear,
-    orbit: snapshot.cameraOrbit,
+    orbit: buildOrbitDeclaration(snapshot),
     spline: snapshot.cameraSpline,
   };
 }

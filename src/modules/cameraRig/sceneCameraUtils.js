@@ -8,6 +8,7 @@ const DEFAULT_FOV = 50;
 const DEFAULT_NEAR = 0.1;
 const DEFAULT_FAR = 1000;
 const DEFAULT_FIXED_SHOT_ID = 'default';
+const SCENE_SPLINE_PATH_KEY = 'Scene Path';
 const DEFAULT_FIXED_SEQUENCE_INTERVAL_SECONDS = 5;
 const DEFAULT_ORBIT_AUTO_ROTATE = false;
 const DEFAULT_ORBIT_AUTO_ROTATE_SPEED = 2;
@@ -534,7 +535,17 @@ function normalizeSplineDeclaration(camera, fixedDeclaration) {
     fixedDeclaration.shots[fixedDeclaration.activeShot] ??
     fixedDeclaration.shots[fixedDeclaration.shotIds[0]] ??
     normalizeResponsiveFrames({}, {}, normalizeFixedFrame);
+  // A scene may author its path inline as `spline.points` instead of a keyed
+  // `spline.paths` map. Register it as a path so it can be selected like any
+  // other, and list it first so it wins the default preset over the shared
+  // library splines.
+  const inlinePath = normalizeSplinePathDefinition({
+    closed: splineConfig.closed,
+    points: splineConfig.points,
+    tension: splineConfig.tension,
+  });
   const paths = normalizeSplinePaths({
+    ...(inlinePath ? { [SCENE_SPLINE_PATH_KEY]: inlinePath } : {}),
     ...CAMERA_SPLINE_PRESETS,
     ...splineConfig.paths,
   });

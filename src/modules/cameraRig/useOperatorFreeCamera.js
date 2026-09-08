@@ -25,6 +25,7 @@ export default function useOperatorFreeCamera({
   const { camera, gl } = useThree();
   const yawRef = useRef(0);
   const pitchRef = useRef(0);
+  const lastQuaternionRef = useRef(null);
   const pointerDragRef = useRef({
     active: false,
     lastX: 0,
@@ -127,8 +128,25 @@ export default function useOperatorFreeCamera({
       pointerLookDelta.y = 0;
     }
 
+    // If anything else has set the camera's orientation since our last frame —
+    // a scene teleporting the camera, say — adopt it instead of overwriting it,
+    // or an external placement can move the camera but never aim it.
+    if (
+      lastQuaternionRef.current === null ||
+      !camera.quaternion.equals(lastQuaternionRef.current)
+    ) {
+      sharedEuler.setFromQuaternion(camera.quaternion, CAMERA_EULER_ORDER);
+      yawRef.current = sharedEuler.y;
+      pitchRef.current = clampPitch(sharedEuler.x);
+    }
+
     sharedEuler.set(pitchRef.current, yawRef.current, 0, CAMERA_EULER_ORDER);
     camera.quaternion.setFromEuler(sharedEuler);
+    if (lastQuaternionRef.current === null) {
+      lastQuaternionRef.current = camera.quaternion.clone();
+    } else {
+      lastQuaternionRef.current.copy(camera.quaternion);
+    }
 
     sharedRight.set(1, 0, 0).applyQuaternion(camera.quaternion);
     sharedForward.set(0, 0, -1).applyQuaternion(camera.quaternion);

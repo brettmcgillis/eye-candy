@@ -14,7 +14,6 @@ import StoreStage from './components/StoreStage';
 import useSceneControls from './hooks/useSceneControls';
 import { STORE_CENTER } from './presets/cameraData';
 import { SETTING_OUTDOOR, SURVEILLANCE_SHOT_LABELS } from './presets/presets';
-import getActiveLensDiameter from './utils/blackHoleUtils';
 import transformSpline from './utils/splineTransform';
 import parseRecordingStartMs from './utils/time';
 import { toTuple, toVector3 } from './utils/vectors';
@@ -58,13 +57,6 @@ export default function Aisle9() {
   }, [storeSpace]);
 
   const metricWorldScale = config.storeScale;
-  const activeLensDiameter = getActiveLensDiameter(config);
-  const orbitMinDistance =
-    config.orbitMinDistance ??
-    Math.max(140, activeLensDiameter * metricWorldScale * 0.55);
-  const orbitMaxDistance =
-    config.orbitMaxDistance ??
-    Math.max(1400, activeLensDiameter * metricWorldScale * 2.5);
 
   const effectiveConfig = useMemo(
     () => ({ ...config, blackHolePosition, metricWorldScale }),
@@ -161,8 +153,6 @@ export default function Aisle9() {
         orbitControlsProps={{
           dampingFactor: 0.08,
           enableDamping: true,
-          maxDistance: orbitMaxDistance,
-          minDistance: orbitMinDistance,
         }}
       />
 

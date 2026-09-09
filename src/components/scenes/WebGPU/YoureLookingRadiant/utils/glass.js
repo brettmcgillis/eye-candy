@@ -1,13 +1,11 @@
 import {
   If,
   Loop,
-  cos,
   float,
   pow,
   reflect,
   refract,
   select,
-  sin,
   smoothstep,
   vec2,
   vec3,
@@ -23,10 +21,10 @@ export function nearestGlass(g, worldPos) {
   const radius = float(1).toVar();
 
   Loop({ end: g.bodyCount, start: 0, type: 'int' }, ({ i }) => {
-    If(g.bodyRefract.element(i).greaterThan(0.5), () => {
+    If(g.bodyInfo.element(i).y.greaterThan(0.5), () => {
       const data = g.bodyData.element(i);
-      const at = data.xy.add(vec2(cos(data.w), sin(data.w)).mul(data.z));
-      const r = g.bodyInfo.element(i).y;
+      const at = data.xy;
+      const r = data.w;
       const d = worldPos.sub(at).length().sub(r);
 
       If(d.lessThan(nearest), () => {

@@ -6,29 +6,16 @@ import ROLE_MODES from './roleModes';
 
 // Field space is x in [0, aspect], y in [0, 1] — resolution independent, so
 // every size control reads as a fraction of field height.
-
-// A body is one analytic arc concentric with the field centre: its radius is
-// how far the particle has drifted from the middle, its angle is where it sits
-// around it, and Arc Span is how far it sweeps. Zero span is a plain disc.
-// This replaced a chain of capsules following the particle's path — enough
-// capsules looked smooth but none of them was, and the piles of short ones
-// read as clutter rather than curves. One arc is exact at any length.
 const SEPARATION_PASSES = 3;
 const EMISSION_EPSILON = 1e-3;
-
-// Speed is authored for drift across the field; as an angular rate it needs
-// scaling up to land near 3cKczD's 0.6-1.0 rad/s.
-const ARC_SPIN_SCALE = 12;
 
 export default function createSwarm({ aspect, count, seed = 1 }) {
   const rand = mulberry32(seed);
   let fieldAspect = aspect;
   const particles = [];
   const flow = [0, 0];
-  let clock = 0;
 
   function respawn(p, ctx) {
-    p.angle = rand() * Math.PI * 2;
     p.x = rand() * fieldAspect;
     p.y = rand();
     p.emission = 1;
@@ -47,15 +34,6 @@ export default function createSwarm({ aspect, count, seed = 1 }) {
   for (let i = 0; i < count; i += 1) {
     particles.push({
       colorIndex: i % 4,
-      // Concentric rings at fixed radii, each with its own rate and direction,
-      // straight from 3cKczD's ring loop. Radius is assigned here and never
-      // drifts — deriving it from the particle's position instead made the
-      // arcs expand and contract, which is not what the reference does.
-      orbitT: (i + 0.5) / count,
-      spin: (0.6 + rand() * 0.4) * (i % 2 === 0 ? 1 : -1),
-      spanScale: 0.25 + rand() * 0.75,
-      sweepPhase: rand() * Math.PI * 2,
-      angle: rand() * Math.PI * 2,
       dead: false,
       emission: 1,
       index: i,
@@ -72,10 +50,11 @@ export default function createSwarm({ aspect, count, seed = 1 }) {
     });
   }
 
-  // Push overlapping bodies apart along the line between their heads, half the
-  // overlap each. A few relaxation passes rather than one, because separating
-  // one pair routinely pushes a particle into a third. O(n^2) over a few dozen
-  // particles is nothing, and it is what stops the field reading as a pile.
+  // Push overlapping bodies apart along the line between their centres, half
+  // the overlap each. A few relaxation passes rather than one, because
+  // separating one pair routinely pushes a particle into a third. O(n^2) over
+  // a few dozen particles is nothing, and it is what stops the field reading
+  // as a pile.
   function separate(params) {
     if (params.separation <= 0) return;
 
@@ -94,7 +73,7 @@ export default function createSwarm({ aspect, count, seed = 1 }) {
 
           if (d >= minGap) continue;
 
-          // Coincident heads have no direction to separate along; nudge them
+          // Coincident centres have no direction to separate along; nudge them
           // onto a deterministic axis rather than dividing by zero.
           if (d < 1e-6) {
             dx = 1e-3;
@@ -113,27 +92,8 @@ export default function createSwarm({ aspect, count, seed = 1 }) {
   }
 
   function step(dt, time, params) {
-    clock = time;
     const ctx = { aspect: fieldAspect, dt, params, rand, time };
     const mode = ROLE_MODES[params.roleMode] ?? ROLE_MODES.age;
-
-    // Arc mode is a different motion entirely: rings turn on fixed radii, as
-    // in the reference. Curl drift, border push and separation are all about
-    // particles wandering a field, and none of them apply to a ring.
-    if (params.arcSpan > 0) {
-      for (let i = 0; i < count; i += 1) {
-        const p = particles[i];
-
-        p.angle += p.spin * params.speed * ARC_SPIN_SCALE * dt;
-        p.x =
-          fieldAspect * 0.5 + Math.cos(p.angle) * p.orbitT * params.arcSpread;
-        p.y = 0.5 + Math.sin(p.angle) * p.orbitT * params.arcSpread;
-
-        mode.step(p, ctx);
-        if (p.dead) respawn(p, ctx);
-      }
-      return;
-    }
 
     for (let i = 0; i < count; i += 1) {
       const p = particles[i];
@@ -155,7 +115,7 @@ export default function createSwarm({ aspect, count, seed = 1 }) {
       }
 
       // Soft inward push near the border keeps the swarm in frame without
-      // wrapping, which would snap an arc across the field.
+      // wrapping a body across the field.
       const margin = 0.12;
       vx += Math.max(0, margin - p.x) / margin;
       vx -= Math.max(0, p.x - (fieldAspect - margin)) / margin;
@@ -173,94 +133,40 @@ export default function createSwarm({ aspect, count, seed = 1 }) {
     separate(params);
   }
 
-  // Fills two flat lists, in pixels.
-  //
-  // A long arc lit from a single point glows from its middle and falls dark at
-  // its ends — the mechanism has no extended light source, so an emitter is
-  // approximated by several point lights spread along itself, sharing its
-  // output. Below about ten per arc the beads are visible.
-  //
-  // Only particles that are actually emitting get slots. Half the population
-  // is usually occluding, and giving those a light costs a shadow-map row and
-  // a compose iteration to contribute nothing — spending the budget on the
-  // ones that emit roughly doubles the sample density for free.
-  function writeScene(out, params, palette, scale, maxLights) {
-    const centerX = fieldAspect * 0.5 * scale;
-    const centerY = 0.5 * scale;
-    const aperture = (params.arcSpan * Math.PI) / 180;
-    let emitters = 0;
-    for (let i = 0; i < count; i += 1) {
-      if (particles[i].emission > EMISSION_EPSILON) emitters += 1;
-    }
-
-    const samples =
-      params.arcSpan <= 0
-        ? 1
-        : Math.max(
-            1,
-            Math.min(
-              params.arcLights,
-              Math.floor(maxLights / Math.max(1, emitters)) || 1
-            )
-          );
-
+  // Fills two flat lists, in pixels. One body per particle, and one light per
+  // particle that is actually emitting — a disc is its own light source, so
+  // nothing here needs several lights to stand in for one body.
+  function writeScene(out, params, palette, scale) {
     let lightCount = 0;
 
     for (let i = 0; i < count; i += 1) {
       const p = particles[i];
-      const radius = params.particleRadius * p.radiusScale * p.presence;
+      const radius = params.particleRadius * p.radiusScale * p.presence * scale;
       const glass = p.refractRoll < params.refractShare;
       const color = palette[p.colorIndex % palette.length];
 
-      const dx = p.x - fieldAspect * 0.5;
-      const dy = p.y - 0.5;
-      const orbit = Math.hypot(dx, dy);
-      const angle = Math.atan2(dy, dx);
-
-      // Each ring's sweep breathes on its own phase, as in the reference:
-      // range = (sin(time + hash) * 0.45 + 0.55) * range. Pulse at 0 holds
-      // every arc at its full length, at 1 it matches the reference's swing.
-      const pulse =
-        1 -
-        params.sweepPulse * 0.45 +
-        Math.sin(clock * params.sweepRate + p.sweepPhase) *
-          0.45 *
-          params.sweepPulse;
-
       const body = out.bodies[i];
-      body.aperture = aperture * 0.5 * p.spanScale * pulse;
-      body.centerX = centerX;
-      body.centerY = centerY;
-      body.orbit = orbit * scale;
-      body.angle = angle;
-      body.bodyRadius = radius * scale;
+      body.x = p.x * scale;
+      body.y = p.y * scale;
+      body.radius = radius;
       // Glass neither blocks nor makes light; it only bends it.
-      body.occluderRadius = glass ? 0 : radius * (1 - p.emission) * scale;
+      body.occluderRadius = glass ? 0 : radius * (1 - p.emission);
       body.emission = glass ? 0 : p.emission;
       body.refract = glass ? 1 : 0;
-      body.owner = i;
-      body.shape = 0;
       body.color = color;
 
-      if (p.emission <= EMISSION_EPSILON) continue;
+      if (glass || p.emission <= EMISSION_EPSILON) continue;
 
-      for (let s = 0; s < samples; s += 1) {
-        const t =
-          samples === 1 ? 0 : (s / (samples - 1) - 0.5) * body.aperture * 2;
-        const at = angle + t;
-        const light = out.lights[lightCount];
+      const light = out.lights[lightCount];
 
-        light.x = centerX + Math.cos(at) * orbit * scale;
-        light.y = centerY + Math.sin(at) * orbit * scale;
-        light.radius = radius * scale;
-        light.intensity = glass
-          ? 0
-          : (p.emission * params.lightStrength) / samples;
-        light.owner = i;
-        light.color = color;
+      light.x = body.x;
+      light.y = body.y;
+      light.radius = radius;
+      light.intensity = p.emission * params.lightStrength;
+      light.owner = i;
+      light.color = color;
 
-        lightCount += 1;
-      }
+      lightCount += 1;
     }
 
     return { bodyCount: count, lightCount };
@@ -276,18 +182,13 @@ export default function createSwarm({ aspect, count, seed = 1 }) {
 export function createSceneBuffers(maxLights, maxBodies) {
   return {
     bodies: Array.from({ length: maxBodies }, () => ({
-      angle: 0,
-      aperture: 0,
-      bodyRadius: 0,
-      centerX: 0,
-      centerY: 0,
       color: '#ffffff',
       emission: 0,
       occluderRadius: 0,
-      orbit: 0,
-      owner: 0,
+      radius: 0,
       refract: 0,
-      shape: 0,
+      x: 0,
+      y: 0,
     })),
     lights: Array.from({ length: maxLights }, () => ({
       color: '#ffffff',

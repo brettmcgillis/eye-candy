@@ -1,11 +1,7 @@
 import { uniform } from 'three/tsl';
 import * as THREE from 'three/webgpu';
 
-import { buildShadowMapMaterial, marchShadow } from '@modules/radialShadow';
-import {
-  createDistanceField,
-  createGrayScottField,
-} from '@modules/reactionDiffusion';
+import { buildShadowMapMaterial } from '@modules/radialShadow';
 
 import buildComposeMaterial from './buildComposeMaterial';
 import buildRefractMaterial from './refractPass';
@@ -13,23 +9,15 @@ import {
   MAX_BODIES,
   MAX_LIGHTS,
   buildBodySDF,
-  buildSceneSDF,
   createSceneUniforms,
 } from './sceneTSL';
 import { createSceneBuffers } from './swarm';
+import buildCircleTrace from './traceCircles';
 
-// Angular resolution of the shadow map, and by far the biggest lever on cost:
-// the march runs once per column per light, so halving it halves the shadow
-// pass. Low values show as stepped edges on shadows cast by a nearby occluder,
-// which Shadow Softness can hide some of.
+// Angular resolution of the shadow map. Still the biggest lever on cost, but a
+// much smaller one than it was: each column now solves one quadratic per body
+// instead of sphere-tracing up to 64 steps through an SDF.
 export const DEFAULT_ANGLE_STEPS = 1024;
-
-// Sim resolution. Gray-Scott's feature size is fixed in texels, so this is
-// really a feature-size control: fewer texels across the same frame makes the
-// spots bigger. Low enough that the pattern reads as structure rather than
-// noise, high enough that the jump flood's distance is not visibly blocky.
-const RD_WIDTH = 192;
-const RD_HEIGHT = 108;
 
 function makeShadowTarget() {
   const target = new THREE.RenderTarget(DEFAULT_ANGLE_STEPS, MAX_LIGHTS, {
@@ -67,58 +55,12 @@ export default function createRadiancePipeline() {
   const viewSize = uniform(new THREE.Vector2(1, 1));
 
   const shadowTarget = makeShadowTarget();
-  // The sim is fixed-size and 16:9; the visible field is whatever the window
-  // is, and the two meet in normalised space.
-  const growthField = createGrayScottField({
-    height: RD_HEIGHT,
-    seeds: { count: sceneUniforms.lightCount, data: sceneUniforms.lightData },
-    width: RD_WIDTH,
-  });
-
-  const growthDistance = createDistanceField({
-    height: RD_HEIGHT,
-    source: growthField.fieldTexture,
-    width: RD_WIDTH,
-  });
-
-  const growthEnabled = uniform(0);
-
-  const growth = {
-    enabled: growthEnabled.greaterThan(0.5),
-    dispatch: (renderer) => {
-      growthField.update(renderer);
-      growthDistance.dispatch(renderer);
-    },
-    distanceAt: (worldPos) =>
-      growthDistance.distanceAt(worldPos, growthField.uniforms.fieldSize),
-    dispose: () => {
-      growthField.dispose();
-      growthDistance.dispose();
-    },
-    uniforms: {
-      ...growthField.uniforms,
-      ...growthDistance.uniforms,
-      enabled: growthEnabled,
-    },
-  };
-
-  const sceneFn = buildSceneSDF(sceneUniforms, growth);
-  const bodyFn = buildBodySDF(sceneUniforms, bodyTint, fieldColor, growth);
+  const bodyFn = buildBodySDF(sceneUniforms, bodyTint);
 
   const shadowMaterial = buildShadowMapMaterial({
     lightCount: sceneUniforms.lightCount,
     lightData: sceneUniforms.lightData,
-    // The row index identifies a LIGHT, and an arc carries many of them, so
-    // the exclusion has to go through lightOwner to the body. Excluding the
-    // row index instead leaves every light sitting inside its own arc, which
-    // it then hits at t = 0 — the whole frame reads as shadowed and only the
-    // bodies' own glow survives.
-    marchFn: (rayOrigin, rayDir, lightIndex) =>
-      marchShadow(
-        (p) => sceneFn(p, sceneUniforms.lightOwner.element(lightIndex)),
-        rayOrigin,
-        rayDir
-      ),
+    marchFn: buildCircleTrace(sceneUniforms),
     maxLights: MAX_LIGHTS,
   });
 
@@ -130,27 +72,21 @@ export default function createRadiancePipeline() {
   });
 
   // In ball radii, measured behind the ball's centre. A distance, not a gain:
-  // the offset it produces scales with the ball, so a 90px bend no longer
-  // swallows a 45px ball and paints it one flat colour.
+  // the offset it produces scales with the ball.
   const refractDepth = uniform(2.5);
   const refractDispersion = uniform(0.06);
   const refractIor = uniform(1.45);
   const refractReflect = uniform(0.6);
 
-  const refractors = {
+  const refractMaterial = buildRefractMaterial({
     bodyCount: sceneUniforms.bodyCount,
     bodyData: sceneUniforms.bodyData,
     bodyInfo: sceneUniforms.bodyInfo,
-    bodyRefract: sceneUniforms.bodyRefract,
-    refractDepth,
-    refractIor,
-  };
-
-  const refractMaterial = buildRefractMaterial({
-    ...refractors,
     fieldSize: viewSize,
     litTexture: litTarget.texture,
+    refractDepth,
     refractDispersion,
+    refractIor,
     refractReflect,
   });
 
@@ -188,24 +124,23 @@ export default function createRadiancePipeline() {
 
   return {
     ambient,
-    growth,
+    bodyTint,
+    buffers,
+    composeMaterial,
+    exposure,
+    fieldColor,
+    lightStrength,
     litTarget,
+    origin,
+    passCamera,
+    passMesh,
+    passScene,
     refractCamera,
     refractDepth,
     refractDispersion,
     refractIor,
     refractMaterial,
     refractReflect,
-    buffers,
-    bodyTint,
-    composeMaterial,
-    exposure,
-    fieldColor,
-    lightStrength,
-    origin,
-    passCamera,
-    passMesh,
-    passScene,
     sceneUniforms,
     shadowMaterial,
     shadowTarget,

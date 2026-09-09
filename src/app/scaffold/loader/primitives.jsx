@@ -1,5 +1,7 @@
 import React from 'react';
 
+import { SQ, SQUARES_H, SQUARES_V } from '@utils/argylePattern';
+
 export const INK = {
   red: '#E5202A',
   redDeep: '#A8121A',
@@ -9,22 +11,9 @@ export const INK = {
 
 export const CX = 128;
 export const CY = 128;
-export const SQ = 36;
-export const D = SQ;
+export { SQ, SQUARES_H, SQUARES_V };
 
-export const SQUARES_H = [
-  { sx: 0.0, sy: 0.0, layer: 'b', i: 0 },
-  { sx: 1.5, sy: -1.5, layer: 'b', i: 1 },
-  { sx: -1.5, sy: 1.5, layer: 'b', i: 2 },
-  { sx: 0.0, sy: 1.5, layer: 'b', i: 3 },
-  { sx: 0.0, sy: -1.5, layer: 'b', i: 4 },
-  { sx: 1.5, sy: 0.0, layer: 'b', i: 5 },
-  { sx: -1.5, sy: 0.0, layer: 'b', i: 6 },
-  { sx: -0.75, sy: -0.75, layer: 't', i: 7 },
-  { sx: 0.75, sy: -0.75, layer: 't', i: 8 },
-  { sx: -0.75, sy: 0.75, layer: 't', i: 9 },
-  { sx: 0.75, sy: 0.75, layer: 't', i: 10 },
-];
+export const D = SQ;
 
 // V is SQUARES_H rotated 90° CW in grid space: (sx, sy) → (sy, -sx).
 // This keeps the portrait shape (caps at top/bottom instead of wings at
@@ -34,19 +23,6 @@ export const SQUARES_H = [
 //   i:1 → far top   (H: far right)    i:2 → far bottom  (H: far left)
 //   i:3 → lower-right (H: lower-left) i:4 → upper-left  (H: upper-right)
 //   i:5 → upper-right (H: lower-right) i:6 → lower-left (H: upper-left)
-export const SQUARES_V = [
-  { sx: 0.0, sy: 0.0, layer: 'b', i: 0 },
-  { sx: -1.5, sy: -1.5, layer: 'b', i: 1 },
-  { sx: 1.5, sy: 1.5, layer: 'b', i: 2 },
-  { sx: 1.5, sy: 0.0, layer: 'b', i: 3 },
-  { sx: -1.5, sy: 0.0, layer: 'b', i: 4 },
-  { sx: 0.0, sy: -1.5, layer: 'b', i: 5 },
-  { sx: 0.0, sy: 1.5, layer: 'b', i: 6 },
-  { sx: -0.75, sy: -0.75, layer: 't', i: 7 },
-  { sx: 0.75, sy: -0.75, layer: 't', i: 8 },
-  { sx: -0.75, sy: 0.75, layer: 't', i: 9 },
-  { sx: 0.75, sy: 0.75, layer: 't', i: 10 },
-];
 
 export const OrientationContext = React.createContext('h');
 

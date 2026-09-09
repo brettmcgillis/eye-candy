@@ -5,6 +5,8 @@ import { useFrame, useThree } from '@react-three/fiber';
 import { instancedArray, uniform } from 'three/tsl';
 import * as THREE from 'three/webgpu';
 
+import { applySolverConfig, createSolver } from '@modules/reactionDiffusion';
+
 import useManualDrops from '../hooks/useManualDrops';
 import createBedLayout from '../utils/bedLayout';
 import createGrainMaterial from '../utils/grainMaterial';
@@ -13,7 +15,6 @@ import {
   createNeutralPaletteTexture,
   createPaletteTexture,
 } from '../utils/palette';
-import createReactionField from '../utils/reactionField';
 
 function buildSandUniforms() {
   return {
@@ -154,7 +155,7 @@ function SandField({ config, dropTargetRef = null }) {
       rot: instancedArray(rot, 'vec4'),
     };
     const uniforms = buildSandUniforms();
-    const reactionField = createReactionField({
+    const reactionField = createSolver(config.solver, {
       blurSpread: config.blurSpread,
       height: config.fieldResolution,
       width: config.fieldResolution,
@@ -218,6 +219,8 @@ function SandField({ config, dropTargetRef = null }) {
     config.blurSpread,
     config.fieldResolution,
     config.seed,
+    // The solver is built here, so switching it has to rebuild the runtime.
+    config.solver,
     gl,
     scene,
   ]);
@@ -278,13 +281,9 @@ function SandField({ config, dropTargetRef = null }) {
       step,
     });
 
-    reactionField.uniforms.boundaryBounce.value = config.boundaryBounce ? 1 : 0;
-    reactionField.uniforms.decayRate.value = config.decayRate;
-    reactionField.uniforms.expansionStrength.value = config.expansionStrength;
-    reactionField.uniforms.fieldContrast.value = config.fieldContrast;
-    reactionField.uniforms.noiseAmount.value = config.noiseAmount;
-    reactionField.uniforms.paletteRefresh.value = config.paletteRefresh;
-    reactionField.uniforms.reactionStrength.value = config.reactionStrength;
+    // Whichever solver is mounted takes the keys it declares and ignores the
+    // rest, so the two can expose different parameters without this branching.
+    applySolverConfig(reactionField.uniforms, config);
 
     reactionField.update(gl, runtime.time);
 

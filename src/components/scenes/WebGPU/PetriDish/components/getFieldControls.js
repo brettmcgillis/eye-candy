@@ -1,8 +1,15 @@
 import { folder } from 'leva';
 
+import { SOLVERS } from '@modules/reactionDiffusion';
+
 export default function getFieldControls(p) {
   return folder(
     {
+      solver: {
+        label: 'Solver',
+        options: SOLVERS,
+        value: p.solver,
+      },
       fieldResolution: {
         label: 'Resolution',
         value: p.fieldResolution,
@@ -77,6 +84,38 @@ export default function getFieldControls(p) {
         min: 0,
         max: 0.02,
         step: 0.0005,
+      },
+      // Gray-Scott's own parameters. The regime — spots, worms, mazes — is
+      // set almost entirely by these two against each other.
+      feedRate: {
+        label: 'Feed (Gray-Scott)',
+        max: 0.09,
+        min: 0.01,
+        step: 0.001,
+        value: p.feedRate,
+      },
+      killRate: {
+        label: 'Kill (Gray-Scott)',
+        max: 0.075,
+        min: 0.04,
+        step: 0.001,
+        value: p.killRate,
+      },
+      feedBias: {
+        label: 'Feed Gradient (Gray-Scott)',
+        max: 0.08,
+        min: 0,
+        step: 0.002,
+        value: p.feedBias,
+      },
+      // Iterations per frame, not a timestep multiplier: the timestep is
+      // pinned by stability, so steps are the only speed lever the solver has.
+      stepScale: {
+        label: 'Iterations / Frame (Gray-Scott)',
+        max: 32,
+        min: 2,
+        step: 2,
+        value: p.stepScale,
       },
       reactionStrength: {
         label: 'Reaction Strength',

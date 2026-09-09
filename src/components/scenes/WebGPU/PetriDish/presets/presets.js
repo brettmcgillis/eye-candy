@@ -1,4 +1,12 @@
 const BASE = {
+  // Reaction-diffusion solver. Every existing preset keeps the expansive one
+  // it was authored against; the Gray-Scott parameters below only bite when
+  // that solver is selected.
+  feedBias: 0.012,
+  feedRate: 0.055,
+  killRate: 0.062,
+  solver: 'expansive',
+  stepScale: 14,
   // Straight down on the bed, auto-rotate off: the point of the default framing
   // is to watch the field evolve as the flat 2D pattern the reference shader
   // draws, which a spinning camera would fight.
@@ -144,6 +152,11 @@ export const PRESETS = {
     dropInterval: 5,
   },
   Gasoline: {
+    feedBias: 0.012,
+    feedRate: 0.055,
+    killRate: 0.062,
+    solver: 'expansive',
+    stepScale: 14,
     cameraMode: 'spline',
     cameraAutoFit: false,
     fixedBehavior: 'single',
@@ -354,6 +367,11 @@ export const PRESETS = {
     postBloomRadius: 0.4,
   },
   Two: {
+    feedBias: 0.012,
+    feedRate: 0.055,
+    killRate: 0.062,
+    solver: 'expansive',
+    stepScale: 14,
     cameraMode: 'orbit',
     cameraAutoFit: false,
     fixedBehavior: 'single',
@@ -564,6 +582,11 @@ export const PRESETS = {
     postBloomRadius: 0.4,
   },
   Petri: {
+    feedBias: 0.012,
+    feedRate: 0.055,
+    killRate: 0.062,
+    solver: 'expansive',
+    stepScale: 14,
     cameraMode: 'orbit',
     cameraAutoFit: false,
     fixedBehavior: 'single',
@@ -774,6 +797,11 @@ export const PRESETS = {
     postBloomRadius: 0.4,
   },
   Ocean: {
+    feedBias: 0.012,
+    feedRate: 0.055,
+    killRate: 0.062,
+    solver: 'expansive',
+    stepScale: 14,
     cameraMode: 'spline',
     cameraAutoFit: false,
     fixedBehavior: 'single',
@@ -984,6 +1012,21 @@ export const PRESETS = {
     postBloomRadius: 0.4,
   },
 };
+
+Object.assign(PRESETS, {
+  // Classic Gray-Scott rather than the expansive solver every other preset
+  // uses: spots and worms that hold their size, instead of shapes that grow
+  // outward from where they were seeded.
+  'Gray-Scott': {
+    ...PRESETS.Petri,
+    feedBias: 0.012,
+    feedRate: 0.055,
+    fieldContrast: 3,
+    killRate: 0.062,
+    solver: 'grayScott',
+    stepScale: 14,
+  },
+});
 
 export function getPresetControls({ presetSnapshot }) {
   return { ...presetSnapshot };

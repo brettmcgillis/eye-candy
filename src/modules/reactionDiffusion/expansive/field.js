@@ -1,24 +1,13 @@
 import { NodeAccess, storageTexture, uniform } from 'three/tsl';
-import * as THREE from 'three/webgpu';
 
+import createFieldTexture from '../fieldTexture';
 import {
   createBlurPass,
   createInjectPass,
   createReactPass,
   createSeedPass,
   createShapePass,
-} from './reactionCompute';
-
-function createFieldTexture(width, height) {
-  const texture = new THREE.StorageTexture(width, height);
-  texture.type = THREE.FloatType;
-  texture.generateMipmaps = false;
-  texture.minFilter = THREE.LinearFilter;
-  texture.magFilter = THREE.LinearFilter;
-  texture.wrapS = THREE.ClampToEdgeWrapping;
-  texture.wrapT = THREE.ClampToEdgeWrapping;
-  return texture;
-}
+} from './compute';
 
 function buildUniforms() {
   return {

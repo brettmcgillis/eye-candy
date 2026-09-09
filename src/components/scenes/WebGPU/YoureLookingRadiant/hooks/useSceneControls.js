@@ -10,15 +10,9 @@ import { DEFAULT_PRESET, PRESETS, getPresetControls } from '../presets/presets';
 
 const SCENE_LABEL = "You're Looking Radiant";
 
-// Merged so every key has a fallback whatever preset is active, then the
-// default preset applied last so it actually wins. usePresetsFolder only calls
-// setControls on a dropdown change or a reset, never on mount — so whatever
-// seeds this schema *is* what the scene opens with, and a plain merge opens on
-// whichever preset happens to be declared last.
-const PRESET_DEFAULTS = {
-  ...Object.assign({}, ...Object.values(PRESETS)),
-  ...PRESETS[DEFAULT_PRESET],
-};
+// Every key gets a fallback whatever preset is active. The active preset is
+// layered over it below.
+const PRESET_FALLBACK = Object.assign({}, ...Object.values(PRESETS));
 
 export default function useSceneControls() {
   const { attachSetControls, controlsSnapshotRef, presetsFolder } =
@@ -28,9 +22,17 @@ export default function useSceneControls() {
       presets: PRESETS,
     });
 
+  // usePresetsFolder only calls setControls on mount when the query param needs
+  // repairing, so whatever seeds this schema IS what the scene opens with. It
+  // has to be the ACTIVE preset — controlsSnapshotRef already holds it, deep
+  // link included — or a linked preset shows the default's values until the
+  // Reset button is pressed. Same reason the camera and lighting builders seed
+  // from this ref (docs/scene-conventions.md §10).
+  const schemaSeed = { ...PRESET_FALLBACK, ...controlsSnapshotRef.current };
+
   const [controls, setControls] = useControls(SCENE_LABEL, () => ({
     Presets: presetsFolder,
-    ...getSceneControls(PRESET_DEFAULTS),
+    ...getSceneControls(schemaSeed),
   }));
 
   attachSetControls(setControls);

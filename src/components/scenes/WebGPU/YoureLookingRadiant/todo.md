@@ -2,7 +2,7 @@
 
 [Back to main TODO](../../../../../TODO.md)
 
-# // Intent / Use Cases
+## // Intent / Use Cases
 
 - A flat 2D field where the light sources are the particles themselves. Each
   particle spends part of its life emitting and part of it occluding, so the
@@ -26,7 +26,7 @@
   pushing intersecting particles apart by half their overlap, using their
   actual radii.
 
-## // Extended emitters are approximated, not solved
+### // Extended emitters are approximated, not solved
 
 This mechanism has **no extended light source** — a light is a point, full
 stop. 3cKczD's arcs look evenly lit because radiance cascades integrate
@@ -40,7 +40,7 @@ Only emitting particles get light slots. Half the population is usually
 occluding, and giving those a light costs a shadow-map row and a compose
 iteration to contribute nothing.
 
-## // How a particle is both roles at once
+### // How a particle is both roles at once
 
 Every particle occupies one slot, used twice: as a light whose intensity is
 how much it is emitting, and as an occluder whose radius is how much it is
@@ -58,7 +58,7 @@ Two consequences worth knowing before changing anything here:
   up. Without it every particle renders as the same dark disc whatever it is
   doing.
 
-# // TODO:
+## // TODO:
 
 - [ ] **A capsule emits from one end.** The shadow map is per-point-light, so
       a long particle's light comes from its head rather than along its
@@ -98,7 +98,7 @@ Two consequences worth knowing before changing anything here:
       tracer that converges only because its scene is static, and these rays
       are straight and terminate on first hit.
 
-## // Rendering it without a browser
+### // Rendering it without a browser
 
 `utils/createPipeline.js` holds every target, uniform and material, with no
 React in it, and the hook is thin glue over it. That split is load-bearing: the
@@ -114,7 +114,7 @@ setup — browser-global stubs, a canvas stub, render to a RenderTarget,
 to a PNG in plain Node this way. Worth reaching for before guessing at a black
 frame; every bug in this scene's first build was invisible from the code.
 
-# // Presets
+## // Presets
 
 - [x] **Dark Neon** — near-black field, saturated emitters throwing coloured
       light, hard occluder silhouettes. The CrossTalk radiance look.
@@ -125,7 +125,7 @@ frame; every bug in this scene's first build was invisible from the code.
       composition. Emitting arcs glow along their whole length; occluding ones
       read as clean black curves cutting the field.
 
-# // Features
+## // Features
 
 - [x] Curl-noise advection with a soft inward push at the borders, so the
       swarm stays in frame without wrapping a body across the field.
@@ -159,13 +159,13 @@ frame; every bug in this scene's first build was invisible from the code.
       then every particle to occluding, which is the opposite of the premise
       that some emit while others occlude.
 
-# // Interactivity
+## // Interactivity
 
 - [x] The pointer is an attractor with its own strength and reach; negative
       strength repels.
 - [ ] Click to drop a persistent light.
 
-# // Bugs
+## // Bugs
 
 - [x] The scene opened on Light Paper whatever the default preset said.
       `usePresetsFolder` only calls `setControls` on a dropdown change or a
@@ -215,3 +215,129 @@ frame; every bug in this scene's first build was invisible from the code.
       half-emitting particle painted its light colour over only its inner
       half. The disc now covers the whole body and emission drives intensity
       alone, so the crossfade is uniform across the body.
+
+```
+#define RESOLUTION  iResolution
+#define TIME        iTime
+#define MAX_MARCHES 30
+#define TOLERANCE   0.0001
+#define ROT(a)      mat2(cos(a), sin(a), -sin(a), cos(a))
+#define PI          3.141592654
+#define TAU         (2.0*PI)
+
+const mat2 rot0 = ROT(0.0);
+mat2 g_rot0 = rot0;
+mat2 g_rot1 = rot0;
+
+
+float sRGB(float t) { return mix(1.055*pow(t, 1./2.4) - 0.055, 12.92*t, step(t, 0.0031308)); }
+
+vec3 sRGB(in vec3 c) { return vec3 (sRGB(c.x), sRGB(c.y), sRGB(c.z)); }
+
+
+const vec4 hsv2rgb_K = vec4(1.0, 2.0 / 3.0, 1.0 / 3.0, 3.0);
+vec3 hsv2rgb(vec3 c) {
+  vec3 p = abs(fract(c.xxx + hsv2rgb_K.xyz) * 6.0 - hsv2rgb_K.www);
+  return c.z * mix(hsv2rgb_K.xxx, clamp(p - hsv2rgb_K.xxx, 0.0, 1.0), c.y);
+}
+
+float apolloian(vec3 p, float s, out float h) {
+  float scale = 1.0;
+  for(int i=0; i < 5; ++i) {
+    p = -1.0 + 2.0*fract(0.5*p+0.5);
+    float r2 = dot(p,p);
+    float k  = s/r2;
+    p       *= k;
+    scale   *= k;
+  }
+
+  vec3 ap = abs(p/scale);
+  float d = length(ap.xy);
+  d = min(d, ap.z);
+
+  float hh = 0.0;
+  if (d == ap.z){
+    hh += 0.5;
+  }
+  h = hh;
+  return d;
+}
+
+float df(vec2 p, out float h) {
+  const float fz = 1.0-0.0;
+  float z = 1.55*fz;
+  p /= z;
+  vec3 p3 = vec3(p,0.1);
+  p3.xz*=g_rot0;
+  p3.yz*=g_rot1;
+  float d = apolloian(p3, 1.0/fz, h);
+  d *= z;
+  return d;
+}
+
+float shadow(vec2 lp, vec2 ld, float mint, float maxt) {
+  const float ds = 1.0-0.4;
+  float t = mint;
+  float nd = 1E6;
+  float h;
+  const float soff = 0.05;
+  const float smul = 1.5;
+  for (int i=0; i < MAX_MARCHES; ++i) {
+    vec2 p = lp + ld*t;
+    float d = df(p, h);
+    if (d < TOLERANCE || t >= maxt) {
+      float sd = 1.0-exp(-smul*max(t/maxt-soff, 0.0));
+      return t >= maxt ? mix(sd, 1.0, smoothstep(0.0, 0.025, nd)) : sd;
+    }
+    nd = min(nd, d);
+    t += ds*d;
+  }
+  float sd = 1.0-exp(-smul*max(t/maxt-soff, 0.0));
+  return sd;
+}
+
+vec3 effect(vec2 p, vec2 q) {
+  float aa = 2.0/RESOLUTION.y;
+  float a = 0.1*TIME;
+  g_rot0 = ROT(0.5*a);
+  g_rot1 = ROT(sqrt(0.5)*a);
+
+  vec2  lightPos  = vec2(0.0, 1.0);
+  lightPos        *= (g_rot1);
+  vec2  lightDiff = lightPos - p;
+  float lightD2   = dot(lightDiff,lightDiff);
+  float lightLen  = sqrt(lightD2);
+  vec2  lightDir  = lightDiff / lightLen;
+  vec3  lightPos3 = vec3(lightPos, 0.0);
+  vec3  p3        = vec3(p, -1.0);
+  float lightLen3 = distance(lightPos3, p3);
+  vec3  lightDir3 = normalize(lightPos3-p3);
+  vec3  n3        = vec3(0.0, 0.0, 1.0);
+  float diff      = max(dot(lightDir3, n3), 0.0);
+
+  float h;
+  float d   = df(p, h);
+  float ss  = shadow(p,lightDir, 0.005, lightLen);
+  vec3 bcol = hsv2rgb(vec3(fract(h-0.2*length(p)+0.25*TIME), 0.666, 1.0));
+
+  vec3 col = vec3(0.0);
+  col += mix(0., 1.0, diff)*0.5*mix(0.1, 1.0, ss)/(lightLen3*lightLen3);
+  col += exp(-300.0*abs(d))*sqrt(bcol);
+  col += exp(-40.0*max(lightLen-0.02, 0.0));
+
+  return col;
+}
+
+void mainImage(out vec4 fragColor, in vec2 fragCoord) {
+  vec2 q = fragCoord/RESOLUTION.xy;
+  vec2 p = -1. + 2. * q;
+  p.x *= RESOLUTION.x/RESOLUTION.y;
+
+  vec3 col = effect(p, q);
+  col *= mix(0.0, 1.0, smoothstep(0.0, 4.0, TIME));
+  col = sRGB(col);
+
+  fragColor = vec4(col, 1.0);
+}
+
+```

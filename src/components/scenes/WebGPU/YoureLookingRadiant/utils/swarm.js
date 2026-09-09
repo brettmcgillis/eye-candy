@@ -63,6 +63,9 @@ export default function createSwarm({ aspect, count, seed = 1 }) {
       phase: rand() * Math.PI * 2,
       presence: 1,
       radiusScale: 0.6 + rand() * 0.9,
+      // Fixed at birth so Refract Share can be dragged without the set of
+      // glass particles reshuffling under the cursor.
+      refractRoll: rand(),
       rate: 1,
       x: rand() * fieldAspect,
       y: rand(),
@@ -206,6 +209,7 @@ export default function createSwarm({ aspect, count, seed = 1 }) {
     for (let i = 0; i < count; i += 1) {
       const p = particles[i];
       const radius = params.particleRadius * p.radiusScale * p.presence;
+      const glass = p.refractRoll < params.refractShare;
       const color = palette[p.colorIndex % palette.length];
 
       const dx = p.x - fieldAspect * 0.5;
@@ -230,9 +234,12 @@ export default function createSwarm({ aspect, count, seed = 1 }) {
       body.orbit = orbit * scale;
       body.angle = angle;
       body.bodyRadius = radius * scale;
-      body.occluderRadius = radius * (1 - p.emission) * scale;
-      body.emission = p.emission;
+      // Glass neither blocks nor makes light; it only bends it.
+      body.occluderRadius = glass ? 0 : radius * (1 - p.emission) * scale;
+      body.emission = glass ? 0 : p.emission;
+      body.refract = glass ? 1 : 0;
       body.owner = i;
+      body.shape = 0;
       body.color = color;
 
       if (p.emission <= EMISSION_EPSILON) continue;
@@ -246,7 +253,9 @@ export default function createSwarm({ aspect, count, seed = 1 }) {
         light.x = centerX + Math.cos(at) * orbit * scale;
         light.y = centerY + Math.sin(at) * orbit * scale;
         light.radius = radius * scale;
-        light.intensity = (p.emission * params.lightStrength) / samples;
+        light.intensity = glass
+          ? 0
+          : (p.emission * params.lightStrength) / samples;
         light.owner = i;
         light.color = color;
 
@@ -277,6 +286,8 @@ export function createSceneBuffers(maxLights, maxBodies) {
       occluderRadius: 0,
       orbit: 0,
       owner: 0,
+      refract: 0,
+      shape: 0,
     })),
     lights: Array.from({ length: maxLights }, () => ({
       color: '#ffffff',

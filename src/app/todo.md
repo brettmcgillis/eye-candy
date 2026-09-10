@@ -21,3 +21,6 @@
 ## // Interactivity
 
 ## // Bugs
+
+- [ ] Leva color picker doesnt always disappera after selecting a color, sometimes need to click in scene.
+- [ ] Page doesnt load sometimes (local dev, remote phone) all white, have to reload multiple times.

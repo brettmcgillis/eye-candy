@@ -170,12 +170,16 @@
       "text": "A system of emissive spheres with curve/line tails, and grains of sand, in a studio similar to the speed of lightning"
     },
     {
-      "id": "idea-1788527875580-ld7sux",
-      "text": "emissive sphere with smoke like particle system being emitted, flying through dark caverns of the apollonian fractal. the sphere is the only source of light. the spheres motion and behaviour gives the illusion that the sphere is exploring the area"
-    },
-    {
       "id": "idea-1788538822720-1pasb0",
       "text": "reaction diffusion + sph fluid sim to emulate waves of foam-topped tides pushing in over shallow rocks and shoreline."
+    },
+    {
+      "id": "idea-1788979248225-s7qxze",
+      "text": "could we use this technique to fill a geometry with a tube of reaction diffusion?\nhttps://tympanus.net/codrops/2026/09/07/drawing-with-light-an-exploration-of-lit-gpu-tubes-with-tsl-and-webgpu/"
+    },
+    {
+      "id": "idea-1788990090198-xx6p9y",
+      "text": "Generative scene. thick white plane with noise based csg subtraction revealing whats behind the panel. behind the panel is packed tightly with white wires and spheres. wires are writhing. spheres are moving from right to left/left to right, in between the wires. pushing them around as they writhe and as the spheres move across the scene"
     }
   ],
   "statuses": {

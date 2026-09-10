@@ -49,6 +49,7 @@
 - [AllMyFriendsAreGhosts](src/components/scenes/WebGPU/AllMyFriendsAreGhosts/todo.md)
 - [Apollian](src/components/scenes/WebGPU/Apollian/todo.md)
 - [Apparitions](src/components/scenes/WebGPU/Apparitions/todo.md)
+- [AvoidantPersonalities](src/components/scenes/WebGPU/AvoidantPersonalities/todo.md)
 - [BurningCash](src/components/scenes/WebGPU/BurningCash/todo.md)
 - [Digital Rain](src/components/scenes/WebGPU/DigitalRain/todo.md)
 - [DrippingSkull](src/components/scenes/WebGPU/DrippingSkull/todo.md)

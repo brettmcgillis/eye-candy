@@ -6,7 +6,9 @@
 
 ## // TODO:
 
-- [ ] ensure particles only stay within the bounds of the screen, even bouncing off.
+- [ ] Fibonnaci sequence animation?
+- [ ] three-particles style curl noise cluster?
+- [ ] can we bring back argyle? is it emitting,occluding and refracting rounded squares? + particles?
 
 ## // Presets
 

@@ -41,6 +41,13 @@ const motion = (p) =>
         step: 0.1,
         value: p.flowScale,
       },
+      edgeMargin: {
+        label: 'Edge Margin',
+        max: 0.5,
+        min: 0,
+        step: 0.01,
+        value: p.edgeMargin,
+      },
       separation: {
         label: 'Keep Apart',
         max: 1,

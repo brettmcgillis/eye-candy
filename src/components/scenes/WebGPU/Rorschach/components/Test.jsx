@@ -5,6 +5,7 @@ import React, {
   useLayoutEffect,
   useMemo,
   useRef,
+  useState,
 } from 'react';
 
 import { useFrame } from '@react-three/fiber';
@@ -14,8 +15,8 @@ import {
   advanceEvolution,
   computeStyles,
   createRng,
+  createStructureBuilder,
   driftCoeffs,
-  generateStructure,
   growBundle,
   setMembraneDrawRange,
   writeMembraneRange,
@@ -53,15 +54,20 @@ function resolveGrowthRate(steps, overrideDuration, growthSpeed) {
   }
   return growthSpeed > 0 ? GROWTH_BASE_RATE * growthSpeed : Infinity;
 }
-// generateStructure's ODE search runs synchronously in a render-phase memo
-// (see below) and can stall the main thread for a frame or more, especially
-// right after a Continuous Mode reroll. Without this clamp, the first frame
-// back gets an inflated `delta`, and every rate*delta pacing calc below
-// (growth reveal, evolution advect) reads it as "a lot of time passed" and
-// jumps forward in one big step — a visible speed-up right at the moment a
-// Test starts, followed by normal pacing once delta recovers. Clamping caps
-// that jump at what a single frame would cover at ~20fps.
+// Kept as a floor under bad frames (a tab restored from the background, a
+// shader compile) rather than for structure generation, which no longer
+// blocks: without it the first frame back gets an inflated `delta`, and every
+// rate*delta pacing calc below (growth reveal, evolution advect) reads it as
+// "a lot of time passed" and jumps forward in one big step. Clamping caps that
+// jump at what a single frame would cover at ~20fps.
 const MAX_FRAME_DELTA = 1 / 20;
+// Wall-clock milliseconds per frame spent building the next structure. The
+// work is fixed (~230ms for this scene's own preset on a warm desktop), so
+// this only decides whether it lands as one dropped quarter-second or as a
+// slice a frame — and the total is what is left of a 16.67ms frame after
+// growth, evolution and the ink sim have taken theirs. Higher swaps sooner and
+// risks a dropped frame; lower is smoother and holds the outgoing test longer.
+const STRUCTURE_BUILD_BUDGET_MS = 8;
 
 function extendPreservingExisting(ref, length, defaultValue) {
   while (ref.current.length < length) ref.current.push(defaultValue);
@@ -69,18 +75,24 @@ function extendPreservingExisting(ref, length, defaultValue) {
 }
 
 // Structure (ODE search + integration, expensive) and style (color/visible/
-// growthDelay, cheap) are independent memos so cosmetic control changes
-// never re-trigger structural generation. Growth is real streaming
-// integration — generateStructure only validates+seeds a prefix,
-// growBundle() advances the rest a bit per frame here. No React state in
-// the hot path (refs only, see docs/scene-performance-checklist.md).
+// growthDelay, cheap) are kept apart so cosmetic control changes never
+// re-trigger structural generation.
+//
+// Both of the expensive halves are streamed rather than run in one call.
+// Growth is real streaming integration — a bundle arrives with only a
+// validated prefix and growBundle() advances the rest a bit per frame here.
+// The generation *before* that is streamed the same way: createStructureBuilder
+// is driven a few milliseconds a frame in useFrame, so a reseed never blocks a
+// paint, and the outgoing test stays on screen (still growing, still evolving)
+// until its replacement is finished. Structure is the one piece of React state
+// in the hot path, written once per generation rather than per frame (refs
+// otherwise, see docs/scene-performance-checklist.md).
 //
 // Growth and evolution are tracked per bundle, not scene-wide: a bundle
 // whose Structural Override just changed regenerates and re-grows on its
-// own while its siblings keep evolving uninterrupted (see
-// testGenerator.js's generateStructure — unaffected bundles are reused by
-// reference, and `previousBundlesRef` below is how this component tells
-// "regenerated" from "unchanged").
+// own while its siblings keep evolving uninterrupted (unaffected bundles are
+// reused by reference, and `previousBundlesRef` below is how this component
+// tells "regenerated" from "unchanged").
 function Test({
   seed,
   bundleCount,
@@ -157,28 +169,34 @@ function Test({
 
   const previousBundlesRef = useRef(null);
 
-  const structure = useMemo(
-    () =>
-      generateStructure(
-        seed,
-        {
-          bundleCount,
-          strandsPerBundle,
-          steps,
-          startSpread,
-          strandSeeding,
-          membraneSpan,
-          coeffRange,
-          freq,
-          framingShape,
-          boundRadius,
-          boundWidth,
-          boundHeight,
-          minSpread,
-          overrides,
-        },
-        previousBundlesRef.current
-      ),
+  // What the *next* structure should be, as one object whose identity changes
+  // exactly when something structural does. Splitting it out of the build
+  // itself is what lets the build be asynchronous: this is cheap and can be
+  // recomputed every render, while the expensive part below runs on its own
+  // schedule and the scene keeps drawing whatever it already has.
+  const structureTarget = useMemo(
+    () => ({
+      seed,
+      options: {
+        bundleCount,
+        strandsPerBundle,
+        steps,
+        startSpread,
+        strandSeeding,
+        membraneSpan,
+        coeffRange,
+        freq,
+        framingShape,
+        boundRadius,
+        boundWidth,
+        boundHeight,
+        minSpread,
+        overrides,
+      },
+    }),
+    // overrides is deliberately absent from these deps: only its *structural*
+    // fields matter here and structuralFingerprint already stands for them, so
+    // a colour or growth-delay edit must not restart a build.
     [
       seed,
       bundleCount,
@@ -197,6 +215,31 @@ function Test({
       structuralFingerprint,
     ]
   );
+
+  // The first structure is the one case that may block: nothing is on screen
+  // yet, the canvas and its pipelines are still coming up, and there is no
+  // motion for it to interrupt. Every structure after it is built a slice at a
+  // time in useFrame below.
+  const [structure, setStructure] = useState(() =>
+    createStructureBuilder(
+      structureTarget.seed,
+      structureTarget.options,
+      null
+    ).step()
+  );
+  // The target `structure` was built for. While these differ there is a build
+  // in flight and the previous test is still the one being drawn.
+  const builtTargetRef = useRef(structureTarget);
+  const builderRef = useRef(null);
+
+  useEffect(() => {
+    if (builtTargetRef.current === structureTarget) return;
+    builderRef.current = createStructureBuilder(
+      structureTarget.seed,
+      structureTarget.options,
+      previousBundlesRef.current
+    );
+  }, [structureTarget]);
 
   const styles = useMemo(
     () =>
@@ -356,6 +399,25 @@ function Test({
   useFrame((_, rawDelta) => {
     const delta = Math.min(rawDelta, MAX_FRAME_DELTA);
 
+    // A structure in flight gets its slice before anything else, so the
+    // budget is spent on the thing the viewer is waiting for. Growth and
+    // evolution below carry on over the *outgoing* test in the meantime —
+    // that is what keeps a reseed from blanking the screen or dropping a
+    // frame: the picture on screen stays live and correct until the moment
+    // its replacement is complete.
+    const builder = builderRef.current;
+    if (builder) {
+      const next = builder.step(STRUCTURE_BUILD_BUDGET_MS);
+      if (next) {
+        builderRef.current = null;
+        builtTargetRef.current = structureTarget;
+        // Commits the new structure, its fit scale and the draw-range reset
+        // in one paint — see the layout effect above for why that has to be
+        // a single commit.
+        setStructure(next);
+      }
+    }
+
     // Split each phase's own budget across every bundle in that phase this
     // frame — fixed iteration order otherwise lets early bundles hog it
     // while later ones stall.
@@ -382,7 +444,15 @@ function Test({
     });
 
     if (continuousMode) {
-      if (allBundlesGrown) {
+      // A build in flight freezes this rather than resetting it. The outgoing
+      // test is still fully grown while its replacement is being built, so the
+      // plain `allBundlesGrown` reading is true throughout — clearing the latch
+      // here would let a second reseed fire in the gap between the build
+      // finishing and its commit landing. Holding leaves the latch set until
+      // the new structure resets the reveal, which is the real "next cycle".
+      if (builderRef.current) {
+        // deliberately idle
+      } else if (allBundlesGrown) {
         continuousHoldRef.current += delta;
         if (
           !continuousTriggeredRef.current &&

@@ -147,61 +147,6 @@ function mirrorInto(points, out) {
 // Reused across every growBundle call — no per-step allocation.
 const stepScratch = [0, 0, 0];
 
-// formulaBuilder's findBoundedCoeffs only checks a single probe point (the
-// bundle's origin) — cheap, but a real strand seeded startSpread away can
-// still escape even when the origin trajectory doesn't (these are chaotic
-// fields; nearby starts diverge). So the authoritative check integrates
-// every *real* strand and requires all of them to stay bounded, retrying
-// with fresh coefficients when they don't — but only for VALIDATION_STEPS_CAP
-// steps, not the full (possibly 2000+) `steps`. isBounded is scoped to that
-// written prefix via subarray, same reasoning as formulaBuilder.js's probe.
-// This pass's integration isn't thrown away on acceptance: buildBundle seeds
-// the bundle's `grownSteps` cursor from it directly, and also reuses its
-// per-point distances to size the display scale — see generateStructure —
-// rather than requiring a separate full-length pass just to measure it.
-function validateAndMeasure(
-  coeffs,
-  startPoints,
-  strands,
-  steps,
-  freq,
-  bounds,
-  minSpread
-) {
-  const validationSteps = Math.min(steps, VALIDATION_STEPS_CAP);
-  let maxDist = 0;
-  let ok = true;
-  const endpoints = [];
-  // Every strand is integrated and measured even once one has failed, rather
-  // than bailing on the first. buildBundle has to hand *something* usable back
-  // when all MAX_BUNDLE_ATTEMPTS candidates fail — growBundle steps from
-  // `bundle.current[s]` per strand, so a short endpoints array is a crash, not
-  // a degraded bundle. Failing candidates are still rejected while retries
-  // remain; this only decides what the last one leaves behind.
-  for (let s = 0; s < startPoints.length; s += 1) {
-    const strand = strands[s * 2];
-    integrate(
-      coeffs,
-      startPoints[s],
-      validationSteps,
-      DT,
-      freq,
-      bounds,
-      strand
-    );
-    const view = strand.subarray(0, validationSteps * 3);
-    if (!isBounded(view, bounds, minSpread)) ok = false;
-
-    for (let i = 0; i < view.length; i += 3) {
-      const dist = Math.hypot(view[i], view[i + 1], view[i + 2]);
-      if (dist > maxDist) maxDist = dist;
-    }
-    const last = (validationSteps - 1) * 3;
-    endpoints.push([view[last], view[last + 1], view[last + 2]]);
-  }
-  return { ok, maxDist, validationSteps, endpoints };
-}
-
 // Structural generation: coefficients + trajectories only, no color/
 // visibility/growth-delay. This is the expensive half (ODE search + RK4
 // integration) — deliberately has no dependency on monochrome/inkColor/
@@ -218,7 +163,7 @@ function validateAndMeasure(
 // across frames by the caller, not all in this one synchronous call. This
 // is what turns a multi-second blocking freeze on every control change into
 // a real, incremental, never-blocking growth animation.
-function buildBundle(seed, id, options) {
+function createBundleBuilder(seed, id, options) {
   const { strandsPerBundle, steps, coeffRange, freq, bounds, minSpread } =
     options;
   const rng = createRng(combineSeed(seed, id));
@@ -236,26 +181,21 @@ function buildBundle(seed, id, options) {
     strands.push(new Float32Array(steps * 3), new Float32Array(steps * 3));
   }
 
-  let coeffs = findBoundedCoeffs(
-    rng,
-    origin,
-    coeffRange,
-    steps,
-    freq,
-    bounds,
-    minSpread
-  );
-  let result = validateAndMeasure(
-    coeffs,
-    startPoints,
-    strands,
-    steps,
-    freq,
-    bounds,
-    minSpread
-  );
-  let attempts = 0;
-  while (!result.ok && attempts < MAX_BUNDLE_ATTEMPTS) {
+  const validationSteps = Math.min(steps, VALIDATION_STEPS_CAP);
+
+  let coeffs = null;
+  let bundle = null;
+  // -1 until the first candidate is drawn, then the number of *retries* so
+  // far — matching the old loop, which drew once and then retried up to
+  // MAX_BUNDLE_ATTEMPTS times.
+  let attempts = -1;
+  // Starts past the end so the first advance() falls into the draw branch.
+  let strandIndex = strandsPerBundle;
+  let ok = true;
+  let maxDist = 0;
+  let endpoints = [];
+
+  function drawCandidate() {
     coeffs = findBoundedCoeffs(
       rng,
       origin,
@@ -265,52 +205,106 @@ function buildBundle(seed, id, options) {
       bounds,
       minSpread
     );
-    result = validateAndMeasure(
+    strandIndex = 0;
+    ok = true;
+    maxDist = 0;
+    endpoints = [];
+    attempts += 1;
+  }
+
+  function finish() {
+    // Backfill the mirror strand for the validated prefix the accepted
+    // candidate's strand already holds (only the primary strand was written
+    // above) — growBundle keeps both in sync for everything after this.
+    for (let s = 0; s < strandsPerBundle; s += 1) {
+      const view = strands[s * 2].subarray(0, validationSteps * 3);
+      mirrorInto(view, strands[s * 2 + 1].subarray(0, validationSteps * 3));
+    }
+
+    bundle = {
+      id,
       coeffs,
+      // Independent snapshot (not a reference to coeffs' arrays) of the
+      // validated, known-bounded coefficients — evolution.js's drift pulls
+      // `coeffs` back toward this over time rather than letting it wander
+      // away from a configuration that was actually verified to work.
+      originalCoeffs: {
+        dx: coeffs.dx.slice(),
+        dy: coeffs.dy.slice(),
+        dz: coeffs.dz.slice(),
+      },
       startPoints,
       strands,
       steps,
       freq,
       bounds,
-      minSpread
-    );
-    attempts += 1;
-  }
-
-  // Backfill the mirror strand for the validated prefix the accepted
-  // candidate's strand already holds (only the primary strand was written
-  // above) — growBundle keeps both in sync for everything after this.
-  for (let s = 0; s < strandsPerBundle; s += 1) {
-    const view = strands[s * 2].subarray(0, result.validationSteps * 3);
-    mirrorInto(
-      view,
-      strands[s * 2 + 1].subarray(0, result.validationSteps * 3)
-    );
+      grownSteps: validationSteps,
+      // Full float64 stepping state per strand, carried forward by growBundle
+      // independently of the (float32) render buffer — see growBundle's own
+      // comment for why this matters.
+      current: endpoints,
+      maxDist,
+    };
   }
 
   return {
-    id,
-    coeffs,
-    // Independent snapshot (not a reference to coeffs' arrays) of the
-    // validated, known-bounded coefficients — evolution.js's drift pulls
-    // `coeffs` back toward this over time rather than letting it wander
-    // away from a configuration that was actually verified to work.
-    originalCoeffs: {
-      dx: coeffs.dx.slice(),
-      dy: coeffs.dy.slice(),
-      dz: coeffs.dz.slice(),
+    get bundle() {
+      return bundle;
     },
-    startPoints,
-    strands,
-    steps,
-    freq,
-    bounds,
-    grownSteps: result.validationSteps,
-    // Full float64 stepping state per strand, carried forward by growBundle
-    // independently of the (float32) render buffer — see growBundle's own
-    // comment for why this matters.
-    current: result.endpoints,
-    maxDist: result.maxDist,
+    // One unit of work — drawing a candidate, or validating a single strand.
+    // Returns false once this bundle is finished. A unit is deliberately
+    // small (validating one strand is well under a millisecond at realistic
+    // settings) so a caller working to a per-frame budget can stop between
+    // units without ever straddling one.
+    advance() {
+      if (bundle) return false;
+
+      if (strandIndex >= strandsPerBundle) {
+        // A validation pass just completed (or none has started yet). Accept
+        // it, or spend a retry on fresh coefficients and walk it again.
+        if (attempts >= 0 && (ok || attempts >= MAX_BUNDLE_ATTEMPTS)) {
+          finish();
+          return false;
+        }
+        drawCandidate();
+        return true;
+      }
+
+      // formulaBuilder's findBoundedCoeffs only checks a single probe point
+      // (the bundle's origin) — cheap, but a real strand seeded startSpread
+      // away can still escape even when the origin trajectory doesn't (these
+      // are chaotic fields; nearby starts diverge). So the authoritative
+      // check integrates every *real* strand and requires all of them to stay
+      // bounded, retrying with fresh coefficients when they don't — but only
+      // for VALIDATION_STEPS_CAP steps, not the full (possibly 2000+) `steps`.
+      //
+      // Every strand is integrated and measured even once one has failed,
+      // rather than bailing on the first: the builder has to hand *something*
+      // usable back when all MAX_BUNDLE_ATTEMPTS candidates fail — growBundle
+      // steps from `bundle.current` per strand, so a short endpoints array is
+      // a crash, not a degraded bundle.
+      const strand = strands[strandIndex * 2];
+      integrate(
+        coeffs,
+        startPoints[strandIndex],
+        validationSteps,
+        DT,
+        freq,
+        bounds,
+        strand
+      );
+      const view = strand.subarray(0, validationSteps * 3);
+      if (!isBounded(view, bounds, minSpread)) ok = false;
+
+      for (let i = 0; i < view.length; i += 3) {
+        const dist = Math.hypot(view[i], view[i + 1], view[i + 2]);
+        if (dist > maxDist) maxDist = dist;
+      }
+      const last = (validationSteps - 1) * 3;
+      endpoints.push([view[last], view[last + 1], view[last + 2]]);
+      strandIndex += 1;
+      return true;
+    },
   };
 }
 
@@ -432,7 +426,11 @@ function fingerprintBundleOptions(resolvedOptions) {
 // `overrides[i].structuralOverride` bundles, or ones whose global inputs
 // actually changed, get rebuilt; everything else keeps its object identity
 // (and Test.jsx relies on that identity check to know what to reset).
-export function generateStructure(seed, options = {}, previousBundles = null) {
+export function createStructureBuilder(
+  seed,
+  options = {},
+  previousBundles = null
+) {
   const {
     bundleCount = DEFAULT_BUNDLE_COUNT,
     strandsPerBundle = DEFAULT_STRANDS_PER_BUNDLE,
@@ -468,29 +466,90 @@ export function generateStructure(seed, options = {}, previousBundles = null) {
   };
 
   const bundles = [];
-  let maxDist = 0;
-  for (let i = 0; i < bundleCount; i += 1) {
-    const resolvedOptions = resolveBundleOptions(
-      globalBundleOptions,
-      overrides[i]
-    );
-    const fingerprint = fingerprintBundleOptions(resolvedOptions);
-    const prev = previousBundles && previousBundles[i];
+  let index = 0;
+  let current = null;
+  let fingerprint = null;
+  let structure = null;
 
-    const bundle =
-      prev && prev.seed === seed && prev.structuralFingerprint === fingerprint
-        ? prev
-        : buildBundle(seed, i, resolvedOptions);
-    bundle.seed = seed;
-    bundle.structuralFingerprint = fingerprint;
+  function advance() {
+    if (structure) return false;
 
-    if (bundle.maxDist > maxDist) maxDist = bundle.maxDist;
-    bundles.push(bundle);
+    if (index >= bundleCount) {
+      let maxDist = 0;
+      bundles.forEach((bundle) => {
+        if (bundle.maxDist > maxDist) maxDist = bundle.maxDist;
+      });
+      structure = {
+        bundles,
+        scale: maxDist > 0 ? TARGET_RADIUS / maxDist : 1,
+        steps,
+        strandsPerBundle,
+      };
+      return false;
+    }
+
+    if (!current) {
+      const resolvedOptions = resolveBundleOptions(
+        globalBundleOptions,
+        overrides[index]
+      );
+      fingerprint = fingerprintBundleOptions(resolvedOptions);
+      const prev = previousBundles && previousBundles[index];
+      if (
+        prev &&
+        prev.seed === seed &&
+        prev.structuralFingerprint === fingerprint
+      ) {
+        bundles.push(prev);
+        index += 1;
+        return true;
+      }
+      current = createBundleBuilder(seed, index, resolvedOptions);
+      return true;
+    }
+
+    if (current.advance()) return true;
+
+    const built = current.bundle;
+    built.seed = seed;
+    built.structuralFingerprint = fingerprint;
+    bundles.push(built);
+    current = null;
+    index += 1;
+    return true;
   }
 
-  const scale = maxDist > 0 ? TARGET_RADIUS / maxDist : 1;
+  return {
+    get done() {
+      return structure !== null;
+    },
+    get structure() {
+      return structure;
+    },
+    // Runs units until the structure is complete or `budgetMs` of wall time
+    // has gone, whichever comes first; returns the structure once finished and
+    // null while there is still work left. Returning to the caller between
+    // units is the whole point — see Test.jsx, which spends a few milliseconds
+    // a frame here so a reseed never blocks a paint.
+    step(budgetMs = Infinity) {
+      const unlimited = budgetMs === Infinity;
+      const started = unlimited ? 0 : performance.now();
+      while (advance()) {
+        if (!unlimited && performance.now() - started >= budgetMs) break;
+      }
+      return structure;
+    },
+  };
+}
 
-  return { bundles, scale, steps, strandsPerBundle };
+// The blocking form of createStructureBuilder, and deliberately nothing more
+// than that: one machine walks the units in one order, so a structure is
+// identical whether it was built in a single call (the headless renderers, and
+// the scene's first mount) or a few milliseconds at a time across frames
+// (every reseed after it). Same guarantee growBundle already makes for growth
+// — the result depends on the seed, never on how it was paced.
+export function generateStructure(seed, options = {}, previousBundles = null) {
+  return createStructureBuilder(seed, options, previousBundles).step();
 }
 
 // `paletteColors`/`t` (bundle position 0-1 across the beast) sample a named

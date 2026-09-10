@@ -117,6 +117,50 @@ export default function getFieldControls(p) {
         step: 2,
         value: p.stepScale,
       },
+      // Physarum's own parameters, in the reference's units: the two angles
+      // are multiples of PI radians, the two distances are texels per step.
+      physarumAgents: {
+        label: 'Agents (Physarum)',
+        max: 1048576,
+        min: 16384,
+        step: 16384,
+        value: p.physarumAgents,
+      },
+      physarumSensorAngle: {
+        label: 'Sensor Angle (Physarum)',
+        max: 90,
+        min: 1,
+        step: 0.1,
+        value: p.physarumSensorAngle,
+      },
+      physarumRotationAngle: {
+        label: 'Rotation Angle (Physarum)',
+        max: 90,
+        min: 1,
+        step: 0.1,
+        value: p.physarumRotationAngle,
+      },
+      physarumSensorDistance: {
+        label: 'Sensor Distance (Physarum)',
+        max: 90,
+        min: 1,
+        step: 0.1,
+        value: p.physarumSensorDistance,
+      },
+      physarumStepSize: {
+        label: 'Step Size (Physarum)',
+        max: 10,
+        min: 0.1,
+        step: 0.1,
+        value: p.physarumStepSize,
+      },
+      physarumDecay: {
+        label: 'Trail Decay (Physarum)',
+        max: 0.99,
+        min: 0.01,
+        step: 0.01,
+        value: p.physarumDecay,
+      },
       reactionStrength: {
         label: 'Reaction Strength',
         value: p.reactionStrength,

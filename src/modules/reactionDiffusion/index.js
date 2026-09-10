@@ -11,8 +11,12 @@
 //   grayScott  — classic Gray-Scott feed/kill. Spots, worms and mazes, with the
 //                regime set by the feed and kill rates. Ported from
 //                https://www.shadertoy.com/view/Wt23W1.
+//   physarum   — slime mould agents that lay a trail and steer toward it,
+//                weaving transport networks rather than a static pattern. The
+//                only agent-based one of the three. Ported from
+//                https://github.com/nicoptere/physarum.
 //
-// Both present the same surface — update / inject / reseed / outputTexture /
+// All three present the same surface — update / inject / reseed / outputTexture /
 // uniforms / dispose — with `.r` of the output driving height or coverage and
 // `.g` a colour coordinate, so a scene can offer either behind one control.
 //
@@ -40,6 +44,7 @@ export function applySolverConfig(uniforms, config) {
 export const SOLVERS = {
   Expansive: 'expansive',
   'Gray-Scott': 'grayScott',
+  Physarum: 'physarum',
 };
 
 export { default as createDistanceField } from './distanceField';
@@ -50,4 +55,5 @@ export {
   writeOnly,
 } from './fieldTexture';
 export { default as createGrayScottField } from './grayScott/field';
+export { default as createPhysarumField } from './physarum/field';
 export { default as createSolver } from './createSolver';

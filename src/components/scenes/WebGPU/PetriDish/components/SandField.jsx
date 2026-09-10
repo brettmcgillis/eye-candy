@@ -156,6 +156,7 @@ function SandField({ config, dropTargetRef = null }) {
     };
     const uniforms = buildSandUniforms();
     const reactionField = createSolver(config.solver, {
+      agentCount: config.physarumAgents,
       blurSpread: config.blurSpread,
       height: config.fieldResolution,
       width: config.fieldResolution,
@@ -218,6 +219,9 @@ function SandField({ config, dropTargetRef = null }) {
     config.bedCount,
     config.blurSpread,
     config.fieldResolution,
+    // Sizes the physarum agent buffer, so it is baked into that solver's
+    // kernels rather than being a live uniform.
+    config.physarumAgents,
     config.seed,
     // The solver is built here, so switching it has to rebuild the runtime.
     config.solver,

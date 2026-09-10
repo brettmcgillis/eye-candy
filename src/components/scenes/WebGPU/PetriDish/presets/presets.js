@@ -5,6 +5,12 @@ const BASE = {
   feedBias: 0.012,
   feedRate: 0.055,
   killRate: 0.062,
+  physarumAgents: 262144,
+  physarumDecay: 0.9,
+  physarumRotationAngle: 4,
+  physarumSensorAngle: 2,
+  physarumSensorDistance: 12,
+  physarumStepSize: 1.1,
   solver: 'expansive',
   stepScale: 14,
   // Straight down on the bed, auto-rotate off: the point of the default framing
@@ -1025,6 +1031,23 @@ Object.assign(PRESETS, {
     killRate: 0.062,
     solver: 'grayScott',
     stepScale: 14,
+  },
+  // Agent-based rather than a continuum: slime mould trails that braid into a
+  // transport network. Every value here is the reference implementation's own
+  // default, and `alwaysOn` scatters the agents across the whole bed the way
+  // its `random` button does. Contrast stays at 1 so the trail drives the
+  // relief at exactly the strength the reference displays it.
+  Physarum: {
+    ...PRESETS.Petri,
+    fieldContrast: 1,
+    growthMode: 'alwaysOn',
+    physarumAgents: 262144,
+    physarumDecay: 0.9,
+    physarumRotationAngle: 4,
+    physarumSensorAngle: 2,
+    physarumSensorDistance: 12,
+    physarumStepSize: 1.1,
+    solver: 'physarum',
   },
 });
 

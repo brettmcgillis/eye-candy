@@ -1,10 +1,15 @@
 import createExpansiveField from './expansive/field';
 import createGrayScottField from './grayScott/field';
+import createPhysarumField from './physarum/field';
 
-// One call for either solver, so a scene switches between them by changing a
+const BUILDERS = {
+  expansive: createExpansiveField,
+  grayScott: createGrayScottField,
+  physarum: createPhysarumField,
+};
+
+// One call for any solver, so a scene switches between them by changing a
 // string rather than a code path.
 export default function createSolver(kind, options) {
-  return kind === 'grayScott'
-    ? createGrayScottField(options)
-    : createExpansiveField(options);
+  return (BUILDERS[kind] ?? createExpansiveField)(options);
 }

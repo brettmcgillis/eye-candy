@@ -11,6 +11,7 @@
 - [ ] Post-processing was left out of v1 per scene-conventions §12 — revisit once the field/cull look is settled.
 - [ ] The reference shader's mouse-driven vortex-pair warp was intentionally skipped — could come back as pointer interaction over the sand.
 - [ ] Tune `expansionStrength`/`reactionStrength`/`decayRate` live against `references/expansive-reaction-diffusion.glsl` — the texel-space reformulation isn't numerically identical to the original UV-space shader.
+- [ ] add a physarum mode. see `~/dev/examples/physarum`
 
 ## // Presets
 

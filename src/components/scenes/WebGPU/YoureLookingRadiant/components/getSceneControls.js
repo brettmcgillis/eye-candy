@@ -50,7 +50,7 @@ const motion = (p) =>
       },
       separation: {
         label: 'Keep Apart',
-        max: 1,
+        max: 2,
         min: 0,
         step: 0.05,
         value: p.separation,

@@ -7,7 +7,7 @@ export default function getFoamControls(p) {
         label: 'Birth',
         value: p.foamBirth,
         min: 0,
-        max: 6,
+        max: 8,
         step: 0.05,
       },
       foamDecay: {
@@ -18,92 +18,81 @@ export default function getFoamControls(p) {
         step: 0.01,
       },
       foamAdvect: {
-        label: 'Advection',
+        label: 'Carry',
         value: p.foamAdvect,
         min: 0,
-        max: 4,
-        step: 0.05,
-      },
-      // Curl-ish jitter on the advection — this is what tears the streaks into
-      // filigree instead of leaving them as smooth bands.
-      foamNoise: {
-        label: 'Curl',
-        value: p.foamNoise,
-        min: 0,
-        max: 4,
-        step: 0.05,
-      },
-      foamNoiseScale: {
-        label: 'Curl Scale',
-        value: p.foamNoiseScale,
-        min: 2,
-        max: 60,
-        step: 0.5,
-      },
-      breakLow: {
-        label: 'Break Start',
-        value: p.breakLow,
-        min: 0.02,
-        max: 2,
-        step: 0.01,
-      },
-      breakHigh: {
-        label: 'Break Full',
-        value: p.breakHigh,
-        min: 0.05,
         max: 3,
-        step: 0.01,
+        step: 0.02,
       },
-      breakWeight: {
-        label: 'Break Weight',
-        value: p.breakWeight,
+      // The reaction term is what separates lace from a blurred mask: it
+      // pushes every cell away from its neighbourhood average, so fronts
+      // sharpen and holes open instead of the field relaxing flat. Per
+      // second, so the pattern does not change with the substep count.
+      foamReaction: {
+        label: 'Reaction',
+        value: p.foamReaction,
         min: 0,
-        max: 4,
-        step: 0.05,
-      },
-      steepWeight: {
-        label: 'Steepness Weight',
-        value: p.steepWeight,
-        min: 0,
-        max: 6,
-        step: 0.05,
-      },
-      shallowDepth: {
-        label: 'Shallow Depth',
-        value: p.shallowDepth,
-        min: 0.2,
-        max: 10,
-        step: 0.1,
-      },
-      wetDepth: {
-        label: 'Wet Cutoff',
-        value: p.wetDepth,
-        min: 0.01,
-        max: 1,
-        step: 0.01,
-      },
-      foamThreshold: {
-        label: 'Threshold',
-        value: p.foamThreshold,
-        min: 0,
-        max: 1,
-        step: 0.01,
-      },
-      foamSoftness: {
-        label: 'Softness',
-        value: p.foamSoftness,
-        min: 0.01,
-        max: 1,
-        step: 0.01,
-      },
-      foamDetail: {
-        label: 'Detail',
-        value: p.foamDetail,
-        min: 2,
         max: 80,
         step: 0.5,
       },
-      foamColor: { label: 'Color', value: p.foamColor },
+      // Smooths at the texel scale before the reaction runs. Without it the
+      // reaction finds grid noise and amplifies that instead of the lace.
+      foamSmooth: {
+        label: 'Smoothing',
+        value: p.foamSmooth,
+        min: 0,
+        max: 90,
+        step: 0.5,
+      },
+      foamJitter: {
+        label: 'Jitter',
+        value: p.foamJitter,
+        min: 0,
+        max: 3,
+        step: 0.02,
+      },
+      foamSpread: {
+        label: 'Lace Scale',
+        value: p.foamSpread,
+        min: 0.01,
+        max: 100,
+        step: 0.01,
+      },
+      foamGrain: {
+        label: 'Seed Noise',
+        value: p.foamGrain,
+        min: 0,
+        max: 1,
+        step: 0.01,
+      },
+      foamGrainScale: {
+        label: 'Seed Scale',
+        value: p.foamGrainScale,
+        min: 0.1,
+        max: 6,
+        step: 0.05,
+      },
+      foamAging: {
+        label: 'Aging',
+        value: p.foamAging,
+        min: 0,
+        max: 3,
+        step: 0.01,
+      },
+      foamSink: {
+        label: 'Drown',
+        value: p.foamSink,
+        min: 0,
+        max: 1,
+        step: 0.01,
+      },
+      foamSinkDepth: {
+        label: 'Drown Depth',
+        value: p.foamSinkDepth,
+        min: 0.1,
+        max: 6,
+        step: 0.05,
+      },
     },
     { collapsed: true }
   );

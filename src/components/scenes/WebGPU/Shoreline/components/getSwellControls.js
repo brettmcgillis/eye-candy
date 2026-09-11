@@ -3,83 +3,58 @@ import { folder } from 'leva';
 export default function getSwellControls(p) {
   return folder(
     {
-      runSimulation: { label: 'Run', value: p.runSimulation },
-      timeScale: {
-        label: 'Time Scale',
-        value: p.timeScale,
-        min: 0.1,
-        max: 3,
-        step: 0.05,
-      },
-      // Substeps run in pairs so the settled state always lands in buffer 0.
-      substeps: {
-        label: 'Substeps',
-        value: p.substeps,
-        min: 2,
-        max: 8,
-        step: 2,
-      },
       swellAmplitude: {
-        label: 'Swell Height',
+        label: 'Amplitude',
         value: p.swellAmplitude,
         min: 0.1,
-        max: 6,
+        max: 3.5,
         step: 0.05,
       },
       swellPeriod: {
-        label: 'Period (s)',
+        label: 'Period',
         value: p.swellPeriod,
-        min: 2,
-        max: 20,
-        step: 0.25,
+        min: 3,
+        max: 14,
+        step: 0.1,
       },
-      swellSpread: {
-        label: 'Along-shore Spread',
-        value: p.swellSpread,
-        min: 0,
-        max: 4,
-        step: 0.05,
+      swellAngle: {
+        label: 'Approach',
+        value: p.swellAngle,
+        min: -60,
+        max: 60,
+        step: 1,
       },
       swellGroupRate: {
         label: 'Set Rate',
         value: p.swellGroupRate,
         min: 0,
         max: 0.6,
-        step: 0.01,
+        step: 0.005,
       },
       swellDrive: {
         label: 'Drive',
         value: p.swellDrive,
-        min: 0.02,
+        min: 0,
         max: 1,
         step: 0.01,
       },
-      Solver: folder(
-        {
-          pipeArea: {
-            label: 'Pipe Area',
-            value: p.pipeArea,
-            min: 0.1,
-            max: 2,
-            step: 0.05,
-          },
-          fluxDamping: {
-            label: 'Flux Damping',
-            value: p.fluxDamping,
-            min: 0.9,
-            max: 1,
-            step: 0.001,
-          },
-          bedDrag: {
-            label: 'Bed Drag',
-            value: p.bedDrag,
-            min: 0,
-            max: 0.3,
-            step: 0.005,
-          },
-        },
-        { collapsed: true }
-      ),
+      // Sea level itself, moving. The wave maker drives to it, so the water
+      // floods in and drains out for real instead of the waterline being
+      // redrawn where it stands.
+      tideAmplitude: {
+        label: 'Tide Range',
+        value: p.tideAmplitude,
+        min: 0,
+        max: 2.5,
+        step: 0.01,
+      },
+      tidePeriod: {
+        label: 'Tide Period',
+        value: p.tidePeriod,
+        min: 6,
+        max: 240,
+        step: 1,
+      },
     },
     { collapsed: true }
   );

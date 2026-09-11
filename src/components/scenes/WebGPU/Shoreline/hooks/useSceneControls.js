@@ -14,10 +14,12 @@ import {
 import { useMediaRecorder } from '@modules/mediaRecorder';
 
 import getFoamControls from '../components/getFoamControls';
+import getGrainControls from '../components/getGrainControls';
+import getPaletteControls from '../components/getPaletteControls';
 import getShoreControls from '../components/getShoreControls';
 import getStageControls from '../components/getStageControls';
+import getSurfControls from '../components/getSurfControls';
 import getSwellControls from '../components/getSwellControls';
-import getWaterControls from '../components/getWaterControls';
 import { DEFAULT_PRESET, PRESETS, getPresetControls } from '../presets/presets';
 import CAMERA from '../utils/camera';
 import LIGHTING from '../utils/lighting';
@@ -59,8 +61,10 @@ export default function useSceneControls() {
     Camera: folder(cameraControls, { collapsed: true }),
     Lighting: folder(lightingControls, { collapsed: true }),
     Swell: getSwellControls(p),
+    Surf: getSurfControls(p),
     Foam: getFoamControls(p),
-    Water: getWaterControls(p),
+    Grains: getGrainControls(p),
+    Palette: getPaletteControls(p),
     Shore: getShoreControls(p),
     Stage: getStageControls(p),
   }));

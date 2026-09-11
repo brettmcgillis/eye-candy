@@ -13,6 +13,8 @@
 - [ ] Webgpu scenes will randomly not render (all black) until a window resize?
 - [ ] Move showcase scenes over to WebGPU
 - [ ] Show scene name in browser title bar
+- [ ] Get off of gh-pages, onto your own domain/hosting/etc
+- [ ] put dev pages behind auth so it can be public once off gh-pages?
 
 ## // Presets
 

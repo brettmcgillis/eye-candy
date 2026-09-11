@@ -35,7 +35,7 @@
     },
     {
       "id": "idea-005",
-      "text": "Eyeball"
+      "text": "Generative eyeball irises"
     },
     {
       "id": "idea-006",
@@ -118,20 +118,12 @@
       "text": "House of leaves: could we use the skyscraper generator as a starting point to learn how to build a house generator to generate one/two/three story homes, and then use the Parallax Occlusion Mapping technique we see on the window to reveal surreal/impossible house interiors? peek in the window to find a forest, space, impossible corridors"
     },
     {
-      "id": "idea-026",
-      "text": "House of Leaves 2: scrape the book for all the visual descriptions of the inside of the house and the liminal spaces within and use this to generate a scene that shows the setting(s) of the book."
-    },
-    {
-      "id": "idea-027",
-      "text": "Wild horses. Horses running in an endless field. Use threejs webgpu volume fire example to create smoke coming off the horse's mane + tail."
-    },
-    {
       "id": "idea-028",
       "text": "Consider creative letterboxing for scenes. could be a 3d element to give it depth in the scene, catch shadows."
     },
     {
       "id": "idea-029",
-      "text": "Radar scene. like a radar scanner, rotating clockwise, the radar 'reveals' geometry in the scene as it passes over it similar to that Lidar game. Over time the dots fade so they are gone before the sweep returns. if we use a slowly animated model we could get snapshots in time."
+      "text": "Radar scene. like a radar scanner, rotating clockwise, the radar 'reveals' geometry in the scene as it passes over it similar to that Lidar game. Over time the dots fade so they are gone before the sweep returns. if we use a slowly animated model we could get snapshots in time. a good start might be a view from inside, looking out a window, with stationary trees and animated birds outside."
     },
     {
       "id": "idea-030",
@@ -152,10 +144,6 @@
     {
       "id": "idea-1787939274190-u51hbq",
       "text": "Get spline editor,  smokeTest, fireTest, hotBox, out of app and into devToolz. I want a new paradigm for authoring a scenes assets, and then saving/writing that data back to the appropriate assets preset."
-    },
-    {
-      "id": "idea-1787952880355-k0lcj7",
-      "text": "Get off of gh-pages, onto your own domain/hosting/etc"
     },
     {
       "id": "idea-1788374316206-6m3je8",
@@ -180,6 +168,10 @@
     {
       "id": "idea-1788990090198-xx6p9y",
       "text": "Generative scene. thick white plane with noise based csg subtraction revealing whats behind the panel. behind the panel is packed tightly with white wires and spheres. wires are writhing. spheres are moving from right to left/left to right, in between the wires. pushing them around as they writhe and as the spheres move across the scene"
+    },
+    {
+      "id": "idea-1789055458094-nzornx",
+      "text": "Could we build a 3d version of Youre Looking Radiant's default preset using godrays, transmission material, etc?"
     }
   ],
   "statuses": {

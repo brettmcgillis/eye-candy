@@ -14,8 +14,9 @@ Track scene maturity, local presets, publishing progress, and colocated TODO doc
 - [ ] Lets update the todo sections to include completed and wip presets
 - [ ] Update the cataloggr ux to support sorting presets by ready vs wip
 - [ ] establish the convention of tagging scenes, to be able to group and form collections. examples could be themes, techniques, etc.
-- [ ] Finish Themeing work. still seeing many out-of-pallette colors
-- [ ] allow me to open the scene to a given preset
+- [ ] allow me to open the scene to a given preset from the list of presets in the closure
+- [ ] make sure all todos show when 'all scenes' is selected
+- [ ] how can we establish the concept of tracking dev time against a given scene? this might be a cool metric to display
 
 ## // Presets
 
@@ -24,5 +25,3 @@ Track scene maturity, local presets, publishing progress, and colocated TODO doc
 ## // Interactivity
 
 ## // Bugs
-
-- [ ] lists are being formatted improperly when adding items

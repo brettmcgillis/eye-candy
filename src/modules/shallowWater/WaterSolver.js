@@ -2,12 +2,7 @@ import { instancedArray, uniform } from 'three/tsl';
 
 import createFieldTexture from '@utils/storageField';
 
-import {
-  GRAVITY,
-  SEA_LEVEL,
-  WARMUP_PAIRS,
-  WARMUP_PER_FRAME,
-} from './constants';
+import { WARMUP_PAIRS, WARMUP_PER_FRAME } from './constants';
 import {
   createFloodPass,
   createFluxPass,
@@ -15,9 +10,7 @@ import {
   createHeightPass,
   createRebasePass,
   createRestorePass,
-} from './surfKernels';
-
-const TAU = Math.PI * 2;
+} from './waterKernels';
 
 function buildUniforms() {
   return {
@@ -46,26 +39,30 @@ function buildUniforms() {
     foamSpread: uniform(2, 'int'),
     phase: uniform(0),
     pipeArea: uniform(1),
-    seaLevel: uniform(SEA_LEVEL),
+    restLevel: uniform(0),
     shallowDepth: uniform(1.4),
     steepWeight: uniform(1.5),
-    swellAmplitude: uniform(1.4),
-    swellDrive: uniform(0.7),
-    swellGroupRate: uniform(0.12),
-    swellKx: uniform(0.02),
-    swellPeriod: uniform(6),
     wetDepth: uniform(0.08),
   };
 }
 
-// Shallow water, aeration and foam over one baked coastline. The three fields
-// are separate textures but one pipeline: depth feeds aeration, aeration feeds
+const FLAT_SURFACE = ({ uniforms }) => uniforms.restLevel;
+
+// Shallow water, aeration and foam over one baked bed. The three fields are
+// separate textures but one pipeline: depth feeds aeration, aeration feeds
 // foam, and the velocity the depth pass derives is what carries both of them
 // and, downstream of here, the grains.
-export default class SurfSolver {
-  constructor({ field, resolution }) {
+//
+// A scene supplies a `driver`, which is everything about the water that is not
+// the solve: the uniforms its own controls move, the boundary that puts water
+// into the domain (`force`), and the surface the domain is flooded to at rest
+// (`restSurface`). A wave maker at a deep edge and a stream inflow with an
+// outfall below it are the same kernel with different drivers.
+export default class WaterSolver {
+  constructor({ driver, field, resolution, worldSize }) {
+    this.driver = driver;
     this.res = resolution;
-    this.field = instancedArray(field, 'vec4').setName('shorelineCoast');
+    this.field = instancedArray(field, 'vec4').setName('shallowWaterBed');
 
     const size = () => createFieldTexture(resolution, resolution);
     this.heights = [size(), size()];
@@ -81,6 +78,7 @@ export default class SurfSolver {
       heights: this.heights,
       res: resolution,
       uniforms: this.uniforms,
+      worldSize,
     };
 
     // Substeps run as 0 -> 1 -> 0 pairs so the settled half is always index 0.
@@ -90,21 +88,26 @@ export default class SurfSolver {
       const stage = { ...shared, read, write };
       return [
         createFluxPass(stage),
-        createHeightPass(stage),
+        createHeightPass({ ...stage, force: driver.force }),
         createFoamPass(stage),
       ];
     });
 
     this.floodPasses = [0, 1].map((index) =>
-      createFloodPass({ ...shared, index })
+      createFloodPass({
+        ...shared,
+        index,
+        restSurface: driver.restSurface || FLAT_SURFACE,
+      })
     );
     this.rebasePasses = [
       createRebasePass({
         field: this.field,
         heights: this.heights,
         res: resolution,
+        worldSize,
       }),
-      createRestorePass({ heights: this.heights, res: resolution }),
+      createRestorePass({ heights: this.heights, res: resolution, worldSize }),
     ];
 
     this.flooded = false;
@@ -119,7 +122,7 @@ export default class SurfSolver {
     return this.foam[0];
   }
 
-  // A new bed under the running water. The coast buffer's .z must already hold
+  // A new bed under the running water. The field buffer's .z must already hold
   // the bed this water was last solved against; see createRebasePass for why
   // the surface rather than the depth is what gets preserved.
   rebake(renderer, field) {
@@ -161,27 +164,9 @@ export default class SurfSolver {
     u.pipeArea.value = config.pipeArea;
     u.shallowDepth.value = config.shallowDepth;
     u.steepWeight.value = config.steepWeight;
-    u.swellAmplitude.value = config.swellAmplitude;
-    u.swellDrive.value = config.swellDrive;
-    u.swellGroupRate.value = config.swellGroupRate;
-    u.swellPeriod.value = config.swellPeriod;
     u.wetDepth.value = config.wetDepth;
 
-    // Deep-water dispersion, so the along-shore wavenumber stays physical as
-    // the period moves: a long swell wraps the coast at a shallower angle than
-    // a short one for the same heading.
-    const wavelength = (GRAVITY * config.swellPeriod ** 2) / TAU;
-    u.swellKx.value =
-      (TAU / wavelength) * Math.sin((config.swellAngle * Math.PI) / 180);
-
-    // The tide is just sea level moving, and everything else follows from
-    // that: the wave maker drives to it, so the water genuinely floods in and
-    // drains out rather than the waterline being redrawn. On an apron this
-    // shallow half a metre of range walks the waterline several metres.
-    u.seaLevel.value =
-      SEA_LEVEL +
-      config.tideAmplitude *
-        Math.sin((TAU * u.phase.value) / Math.max(1, config.tidePeriod));
+    this.driver.update(config, u);
   }
 
   step(renderer, delta, config) {
@@ -193,7 +178,7 @@ export default class SurfSolver {
 
     // The warm-up is spread over the first frames rather than burned in one
     // blocking burst: the scene has to open on water that is already running,
-    // and a 260-pair flood done at once is a visible stall on the first frame.
+    // and a 900-pair flood done at once is a visible stall on the first frame.
     const extra = Math.min(this.warmup, WARMUP_PER_FRAME);
     this.warmup -= extra;
     const total = pairs + extra;

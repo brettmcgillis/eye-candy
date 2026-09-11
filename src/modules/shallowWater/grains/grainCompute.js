@@ -17,7 +17,6 @@ import {
 
 import { readOnly } from '@utils/storageField';
 
-import { WORLD_SIZE } from './constants';
 import { grainAge } from './grainCycle';
 
 const TAU = Math.PI * 2;
@@ -39,17 +38,17 @@ const WET_REVEAL = 2;
 // here goes through one conversion. Cell (i, j) sits at the world point the
 // CPU bake wrote it from, which is what keeps the grains registered to the
 // coastline they were sorted against.
-function samplers(field, res) {
+function samplers(field, res, worldSize) {
   const clamped = (c) => ivec2(c.x.clamp(0, res - 1), c.y.clamp(0, res - 1));
 
   const cellOf = (world) =>
     vec2(
       world.x
-        .div(WORLD_SIZE)
+        .div(worldSize)
         .add(0.5)
         .mul(res - 1),
       world.y
-        .div(WORLD_SIZE)
+        .div(worldSize)
         .negate()
         .add(0.5)
         .mul(res - 1)
@@ -73,15 +72,15 @@ function samplers(field, res) {
   const bedSlope = (cell) => {
     const base = ivec2(floor(cell));
     const at = (dx, dy) => fieldAt(base.add(ivec2(dx, dy))).x;
-    const step = (WORLD_SIZE / (res - 1)) * 2;
+    const step = (worldSize / (res - 1)) * 2;
     return vec2(at(1, 0).sub(at(-1, 0)), at(0, -1).sub(at(0, 1))).div(step);
   };
 
   return { bedSlope, bilinear, cellOf, fieldAt };
 }
 
-export function createGrainSeed({ buffers, count, field, res }) {
-  const { cellOf, fieldAt } = samplers(field, res);
+export function createGrainSeed({ buffers, count, field, res, worldSize }) {
+  const { cellOf, fieldAt } = samplers(field, res, worldSize);
 
   return Fn(() => {
     const home = buffers.home.element(instanceIndex);
@@ -91,11 +90,13 @@ export function createGrainSeed({ buffers, count, field, res }) {
       .element(instanceIndex)
       .assign(vec4(home.x, ground.x, home.y, 0));
     buffers.motion.element(instanceIndex).assign(vec4(0, 0, 0, 0));
-    buffers.look.element(instanceIndex).assign(vec4(ground.x, ground.y, 0, 0));
+    buffers.look
+      .element(instanceIndex)
+      .assign(vec4(ground.x.sub(ground.w), ground.y, 0, 0));
     buffers.skin.element(instanceIndex).assign(vec4(0, 0, 0, 0));
   })()
     .compute(count)
-    .setName('Shoreline Grain Seed');
+    .setName('Grain Seed');
 }
 
 // One kernel, two populations. Rock grains are pinned to the baked bed and
@@ -112,8 +113,13 @@ export default function createGrainCompute({
   heightTexture,
   res,
   uniforms,
+  worldSize,
 }) {
-  const { bedSlope, bilinear, cellOf, fieldAt } = samplers(field, res);
+  const { bedSlope, bilinear, cellOf, fieldAt } = samplers(
+    field,
+    res,
+    worldSize
+  );
   const water = readOnly(heightTexture);
   const foam = readOnly(foamTexture);
 
@@ -187,7 +193,7 @@ export default function createGrainCompute({
       // arrives at whatever size it happened to be -- which is a grain popping
       // into frame out of nothing. Parked against the edge instead, it stays
       // out of shot until its cycle turns over on its own.
-      const half = WORLD_SIZE * 0.5;
+      const half = worldSize * 0.5;
       position.x.assign(carried.x.clamp(-half, half));
       position.z.assign(carried.y.clamp(-half, half));
 
@@ -277,8 +283,11 @@ export default function createGrainCompute({
 
     state.assign(vec4(position, depth));
     motion.assign(vec4(velocity, select(isRock, lace.x, charge), aeration));
-    look.assign(vec4(ground, shade, tip.x, tip.y));
+    // Bed height relative to the still surface, not absolute: that is what
+    // lets the material's submerged-rock term mean the same thing under a flat
+    // sea and under a stream surface that runs downhill.
+    look.assign(vec4(ground.sub(bed.w), shade, tip.x, tip.y));
   })()
     .compute(count)
-    .setName('Shoreline Grains');
+    .setName('Water Grains');
 }

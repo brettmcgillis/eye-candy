@@ -14,7 +14,7 @@ export default function getFoamControls(p) {
         label: 'Decay',
         value: p.foamDecay,
         min: 0.02,
-        max: 3,
+        max: 8,
         step: 0.01,
       },
       foamAdvect: {

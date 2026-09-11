@@ -1,3 +1,4 @@
+import { stampMounds } from '@modules/shallowWater';
 import { fbm2, mulberry32, valueNoise2 } from '@utils/noise2d';
 
 import { WORLD_SIZE } from './constants';
@@ -63,6 +64,7 @@ function makeStack({ config, index, random, scale = 1, x, z }) {
 
   return {
     heading: random() * Math.PI,
+    mottleScale: 0.35,
     // Capped against the footprint as well as scaled by it. Scaling alone
     // still let a small satellite come out twice as tall as it was wide, which
     // is the needle the whole field used to be made of.
@@ -211,63 +213,15 @@ export function buildCoastTerrain(config) {
 }
 
 // Stacks on top of a cached terrain. Writes into `out` so the caller controls
-// the allocation, and touches only the cells inside a stack's reach.
+// the allocation, and only the cells inside a stack's reach are touched.
 export function applyStacks(base, config, out = null) {
-  const n = config.resolution;
   const field = out || new Float32Array(base.length);
   field.set(base);
 
-  const stacks = placeStacks(config);
-  const cell = WORLD_SIZE / (n - 1);
-
-  for (let s = 0; s < stacks.length; s += 1) {
-    const stack = stacks[s];
-    const iLo = Math.max(
-      0,
-      Math.ceil((stack.x - stack.reach) / cell + (n - 1) / 2)
-    );
-    const iHi = Math.min(
-      n - 1,
-      Math.floor((stack.x + stack.reach) / cell + (n - 1) / 2)
-    );
-    const jLo = Math.max(
-      0,
-      Math.ceil((n - 1) / 2 - (stack.z + stack.reach) / cell)
-    );
-    const jHi = Math.min(
-      n - 1,
-      Math.floor((n - 1) / 2 - (stack.z - stack.reach) / cell)
-    );
-
-    const cos = Math.cos(stack.heading);
-    const sin = Math.sin(stack.heading);
-
-    for (let j = jLo; j <= jHi; j += 1) {
-      const worldZ = (0.5 - j / (n - 1)) * WORLD_SIZE;
-      for (let i = iLo; i <= iHi; i += 1) {
-        const worldX = (i / (n - 1) - 0.5) * WORLD_SIZE;
-        const ox = worldX - stack.x;
-        const oz = worldZ - stack.z;
-        // Into the stack's own frame, stretched along its heading.
-        const along = (ox * cos + oz * sin) / (stack.radius * stack.stretch);
-        const across = (oz * cos - ox * sin) / stack.radius;
-        // Lobed rather than elliptical. Without this every outline is a
-        // perfect oval and the cluster reads as scattered pebbles.
-        const warp =
-          1 +
-          (valueNoise2(worldX * 0.55, worldZ * 0.55, stack.seed) - 0.5) *
-            stack.rough;
-        const r = Math.sqrt(along * along + across * across) * warp;
-        const falloff = Math.exp(-(r ** (stack.sharpness * 2)) * 1.1);
-        field[(j * n + i) * 4] +=
-          stack.height *
-          falloff *
-          (0.65 + 0.7 * ridged(worldX * 0.35, worldZ * 0.35, stack.seed, 2));
-      }
-    }
-  }
-
-  return field;
+  return stampMounds(field, placeStacks(config), {
+    resolution: config.resolution,
+    worldSize: WORLD_SIZE,
+  });
 }
 
 // One CPU bake is the single source of truth for the shape of the place: the
@@ -279,24 +233,4 @@ export default function buildCoastField(config) {
     field: applyStacks(buildCoastTerrain(config), config),
     resolution: config.resolution,
   };
-}
-
-// Bilinear read of the baked bed, in the same world-to-cell mapping the
-// kernels use. The grain layout needs it on the CPU to decide which grains are
-// rock, so it has to agree with the GPU's reading of the same array exactly.
-export function sampleBed(field, resolution, worldX, worldZ) {
-  const n = resolution;
-  const fx = (worldX / WORLD_SIZE + 0.5) * (n - 1);
-  const fz = (0.5 - worldZ / WORLD_SIZE) * (n - 1);
-  const x0 = Math.min(n - 1, Math.max(0, Math.floor(fx)));
-  const z0 = Math.min(n - 1, Math.max(0, Math.floor(fz)));
-  const x1 = Math.min(n - 1, x0 + 1);
-  const z1 = Math.min(n - 1, z0 + 1);
-  const tx = clamp01(fx - x0);
-  const tz = clamp01(fz - z0);
-
-  const at = (ix, iz) => field[(iz * n + ix) * 4];
-  const top = at(x0, z0) + (at(x1, z0) - at(x0, z0)) * tx;
-  const bottom = at(x0, z1) + (at(x1, z1) - at(x0, z1)) * tx;
-  return top + (bottom - top) * tz;
 }

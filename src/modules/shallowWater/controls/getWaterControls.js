@@ -1,6 +1,6 @@
 import { folder } from 'leva';
 
-export default function getSurfControls(p) {
+export default function getWaterControls(p) {
   return folder(
     {
       breakLow: {

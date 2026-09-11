@@ -2,13 +2,9 @@
 import {
   Fn,
   float,
-  floor,
-  instanceIndex,
-  int,
   ivec2,
   mix,
   mx_noise_float,
-  sin,
   smoothstep,
   textureStore,
   vec2,
@@ -18,19 +14,10 @@ import {
 
 import { readOnly, writeOnly } from '@utils/storageField';
 
-import {
-  GRAVITY,
-  MIN_DEPTH,
-  SPEED_LIMIT,
-  VELOCITY_FLOOR,
-  WAVE_MAKER_CELLS,
-  WORLD_SIZE,
-} from './constants';
+import { GRAVITY, MIN_DEPTH, SPEED_LIMIT, VELOCITY_FLOOR } from './constants';
+import gridHelpers from './gridHelpers';
 
-const TAU = Math.PI * 2;
-const TRAIN_SUM = 1 + 0.55 + 0.3;
-
-// The bed the previous bake wrote, parked in .z of the coast buffer.
+// The bed the previous bake wrote, parked in .z of the field buffer.
 const fieldPrevious = (field, c, res) => {
   const x = c.x.clamp(0, res - 1);
   const y = c.y.clamp(0, res - 1);
@@ -45,111 +32,10 @@ const fieldPrevious = (field, c, res) => {
 const WIDE_BLUR = [1, 4, 6, 4, 1];
 const NARROW_BLUR = [1, 2, 1];
 
-// Everything below is parameterised on the grid size rather than reading a
-// module constant, because the solver resolution is a scene control: changing
-// it rebuilds these kernels instead of reinterpreting a fixed one.
-function gridHelpers(res) {
-  const cell = WORLD_SIZE / res;
-
-  const coordOf = () =>
-    ivec2(int(instanceIndex.mod(res)), int(instanceIndex.div(res)));
-  const clamped = (c) => ivec2(c.x.clamp(0, res - 1), c.y.clamp(0, res - 1));
-  const inside = (c) =>
-    c.x
-      .greaterThanEqual(0)
-      .and(c.x.lessThan(res))
-      .and(c.y.greaterThanEqual(0))
-      .and(c.y.lessThan(res));
-
-  const bedAt = (field, c) => {
-    const cc = clamped(c);
-    return field.element(cc.y.mul(res).add(cc.x)).x;
-  };
-
-  // Row 0 is the deep edge at +z, so world z runs backwards through the grid.
-  const worldOf = (c) =>
-    vec2(
-      float(c.x)
-        .div(res - 1)
-        .sub(0.5)
-        .mul(WORLD_SIZE),
-      float(0.5)
-        .sub(float(c.y).div(res - 1))
-        .mul(WORLD_SIZE)
-    );
-
-  const uvOf = (c) => vec2(c).add(0.5).div(res);
-
-  // Velocity is stored in world space so the grains can use it unchanged.
-  // Walking a uv back along it therefore has to flip z, which is the one place
-  // that sign lives.
-  const uvDrift = (velocity) =>
-    vec2(velocity.x, velocity.y.negate()).div(WORLD_SIZE);
-
-  const bilinear = (source, uv) => {
-    const p = uv.mul(res).sub(0.5);
-    const base = ivec2(floor(p));
-    const f = p.sub(floor(p));
-    const at = (dx, dy) => source.load(clamped(base.add(ivec2(dx, dy))));
-    return mix(mix(at(0, 0), at(1, 0), f.x), mix(at(0, 1), at(1, 1), f.x), f.y);
-  };
-
-  return {
-    bedAt,
-    bilinear,
-    cell,
-    clamped,
-    coordOf,
-    inside,
-    uvDrift,
-    uvOf,
-    worldOf,
-  };
-}
-
-// Driven by the solver's own `phase` uniform, never TSL's `time`: the time
-// node is a render-group uniform and is not refreshed for compute passes, so a
-// solver that reads it runs frozen while the materials around it animate.
-//
-// Three trains plus a group envelope, so sets arrive instead of a metronome.
-// `swellKx` is the along-shore wavenumber, which is what makes crests reach the
-// rock at an angle and peel along it rather than landing as one flat line.
-function swellSurface(uniforms, worldX) {
-  const t = uniforms.phase;
-  const w = float(TAU).div(uniforms.swellPeriod);
-  const k = uniforms.swellKx;
-
-  const train = sin(t.mul(w).add(worldX.mul(k)))
-    .add(
-      sin(
-        t
-          .mul(w.mul(0.61))
-          .add(worldX.mul(k.mul(-1.6)))
-          .add(1.7)
-      ).mul(0.55)
-    )
-    .add(
-      sin(
-        t
-          .mul(w.mul(1.43))
-          .add(worldX.mul(k.mul(0.45)))
-          .add(4.1)
-      ).mul(0.3)
-    );
-
-  const group = sin(t.mul(uniforms.swellGroupRate)).mul(0.32).add(0.68);
-  // Normalised by the sum of the three amplitudes, so Amplitude is the wave
-  // height it says it is. Unnormalised the three trains stacked to 1.85x and
-  // the maker was emitting a wave taller than the water it stood in.
-  return uniforms.seaLevel.add(
-    train.mul(uniforms.swellAmplitude).mul(group).div(TRAIN_SUM)
-  );
-}
-
 // Curl of a scalar noise potential: divergence-free in the plane, so it stirs
 // and folds the surface without inventing water. This is the small-scale
-// churn the pipe solve cannot resolve -- its cells are 12cm and the eddies
-// that tear foam into filigree are finer than that.
+// churn the pipe solve cannot resolve -- its cells are centimetres and the
+// eddies that tear foam into filigree are finer than that.
 function curlAt(point, phase) {
   const e = 0.35;
   const at = (offset) => mx_noise_float(vec3(point.add(offset), phase));
@@ -170,9 +56,10 @@ export function createFluxPass({
   read,
   res,
   uniforms,
+  worldSize,
   write,
 }) {
-  const { bedAt, cell, clamped, coordOf } = gridHelpers(res);
+  const { bedAt, cell, clamped, coordOf } = gridHelpers(res, worldSize);
   const footprint = cell * cell;
   const heightRead = readOnly(heights[read]);
   const fluxRead = readOnly(flux[read]);
@@ -193,15 +80,16 @@ export function createFluxPass({
       // The pipe's cross-section is the water column it actually cuts through.
       // Holding it constant -- which is how this started, and how most
       // virtual-pipe implementations write it -- makes the scheme's celerity
-      // sqrt(pipeArea * g / cell): no depth term at all. The waves then neither
+      // sqrt(pipeArea * g / cell): no depth term at all. Waves then neither
       // slow nor steepen nor grow as they shoal, which measured as a surface
       // swing that FELL from 1.70m offshore to 0.66m at the break. Nothing can
       // crash when the shelf is taking energy out of the wave.
       //
       // Scaled by depth instead, the celerity is sqrt(pipeArea * g * h), which
-      // is the shallow-water wave speed. Waves slow and stand up over the reef,
-      // which is what puts a bore front on the rock. The larger of the two
-      // depths is what keeps a wetting front moving onto dry ground.
+      // is the shallow-water wave speed. Water slows and stands up where the
+      // bed rises, which is what puts a bore front on a shelf and a standing
+      // wave over a riffle. The larger of the two depths is what keeps a
+      // wetting front moving onto dry ground.
       const column = depth.max(neighbourDepth).max(MIN_DEPTH);
       const area = column.mul(cell).mul(uniforms.pipeArea);
 
@@ -238,13 +126,19 @@ export function createFluxPass({
 // memory of having broken -- born where the flow goes supercritical or the
 // surface stands up, then carried along and decaying -- and it is what makes
 // whitewater persist behind a bore instead of existing only at the crest.
+//
+// `force` is the scene's boundary: it is handed the freshly integrated depth
+// and returns vec2(target depth, weight), which is how a wave maker at the
+// deep edge and an inflow-plus-outfall pair on a stream are the same kernel.
 export function createHeightPass({
   field,
   flux,
+  force,
   heights,
   read,
   res,
   uniforms,
+  worldSize,
   write,
 }) {
   const {
@@ -253,11 +147,12 @@ export function createHeightPass({
     cell,
     clamped,
     coordOf,
+    fieldAt,
     inside,
     uvDrift,
     uvOf,
     worldOf,
-  } = gridHelpers(res);
+  } = gridHelpers(res, worldSize);
   const footprint = cell * cell;
   const heightRead = readOnly(heights[read]);
   const fluxRead = readOnly(flux[write]);
@@ -284,18 +179,24 @@ export function createHeightPass({
       .max(0)
       .toVar('next');
 
-    const maker = float(1)
-      .sub(smoothstep(0, WAVE_MAKER_CELLS, float(c.y)))
-      .toConst('maker');
     const world = worldOf(c).toConst('world');
-    const target = swellSurface(uniforms, world.x).sub(bedAt(field, c)).max(0);
-    next.assign(mix(next, target, maker.mul(uniforms.swellDrive).clamp(0, 1)));
+    const bed = bedAt(field, c).toConst('bed');
+    const driven = force({
+      bed,
+      cell: fieldAt(field, c),
+      coord: c,
+      depth: next,
+      res,
+      uniforms,
+      world,
+    });
+    next.assign(mix(next, driven.x.max(0), driven.y.clamp(0, 1)));
 
     const average = depth.add(next).mul(0.5).max(MIN_DEPTH).toConst('average');
     const dGridX = left.y.sub(own.x).add(own.y).sub(right.x).mul(0.5);
     const dGridY = bottom.z.sub(own.w).add(own.z).sub(top.w).mul(0.5);
     // Flux over depth, so a cell holding a millimetre of water reports a
-    // singularity: this measured 44 m/s along the waterline before the floor
+    // singularity: this measured 44 m/s along a waterline before the floor
     // and the cap went in.
     const floored = average.max(VELOCITY_FLOOR).toConst('floored');
     const velocity = vec2(dGridX, dGridY.negate())
@@ -306,9 +207,10 @@ export function createHeightPass({
     velocity.mulAssign(speed.min(SPEED_LIMIT).div(speed));
 
     // Froude number: above 1 the flow outruns the wave that would carry it
-    // away, which is the condition for a hydraulic jump -- a bore face.
+    // away, which is the condition for a hydraulic jump -- a bore face, or the
+    // standing white water at the tail of a riffle.
     const froude = velocity.length().div(floored.mul(GRAVITY).sqrt());
-    const surface = bedAt(field, c).add(next);
+    const surface = bed.add(next);
     const surfaceAt = (dx, dy) => {
       const nc = clamped(c.add(ivec2(dx, dy)));
       return bedAt(field, nc).add(heightRead.load(nc).x);
@@ -346,7 +248,7 @@ export function createHeightPass({
       .clamp(0, 1)
       .toConst('aeration');
 
-    // Only aerated water gets stirred, so calm sea stays glassy and the
+    // Only aerated water gets stirred, so calm water stays glassy and the
     // whitewater is the part that churns.
     const swirl = curlAt(
       world.mul(uniforms.churnScale),
@@ -360,9 +262,9 @@ export function createHeightPass({
 
 // Foam is a field carried by the water, not a shading trick on top of it.
 // Advection alone smears it into soft bands; the reaction term is what turns
-// those bands into the reticulated lace the reference has. It is PetriDish's
-// expansive solver's anti-diffusion: boosting the difference between a texel
-// and its neighbourhood drives fronts apart instead of letting them relax.
+// those bands into reticulated lace. It is PetriDish's expansive solver's
+// anti-diffusion: boosting the difference between a texel and its
+// neighbourhood drives fronts apart instead of letting them relax.
 //
 // Three things keep that from degenerating into a one-texel dither, which is
 // exactly what it did without them:
@@ -372,15 +274,26 @@ export function createHeightPass({
 //  - the field is smoothed against a NARROW blur first, so there is no
 //    texel-scale energy left for the boost to find;
 //  - the advection is read at a sub-texel jitter, so the operator is not
-//    perfectly grid-aligned frame after frame. Without this the dominant
-//    shoreward flow blurs along z and the boost answers with stripes along x.
+//    perfectly grid-aligned frame after frame. Without this a dominant flow
+//    direction blurs along its axis and the boost answers with stripes across
+//    it.
 //
 // Both rates are per second and multiplied by dt, so the look does not change
 // when the substep count does -- substeps are a stability knob, not an art
 // one, and coupling the pattern to them made them one control.
-export function createFoamPass({ foam, heights, read, res, uniforms, write }) {
-  const { bilinear, clamped, coordOf, uvDrift, uvOf, worldOf } =
-    gridHelpers(res);
+export function createFoamPass({
+  foam,
+  heights,
+  read,
+  res,
+  uniforms,
+  worldSize,
+  write,
+}) {
+  const { bilinear, clamped, coordOf, uvDrift, uvOf, worldOf } = gridHelpers(
+    res,
+    worldSize
+  );
   const heightRead = readOnly(heights[write]);
   const foamRead = readOnly(foam[read]);
   const foamWrite = writeOnly(foam[write]);
@@ -490,17 +403,17 @@ export function createFoamPass({ foam, heights, read, res, uniforms, write }) {
 //
 // Depth is measured up from the bed, so re-uploading a new bed under an
 // unchanged depth field moves the whole water SURFACE by however much the bed
-// moved -- drag the sea stack slider and a two metre mound of water appears
-// over each stack and then explodes outward. What has to be preserved across a
-// rebake is the surface, not the column, so this reads the previous bed out of
-// the coast buffer's .z (the caller parks it there before uploading) and
-// solves for the depth that leaves the surface where it was.
+// moved -- drag a rock slider and a two metre mound of water appears over each
+// rock and then explodes outward. What has to be preserved across a rebake is
+// the surface, not the column, so this reads the previous bed out of the field
+// buffer's .z (the caller parks it there before uploading) and solves for the
+// depth that leaves the surface where it was.
 //
 // Two passes because a storage texture cannot be read and written in one: the
 // correction lands in the spare half, and the copy puts it back in the half
 // everything else binds.
-export function createRebasePass({ field, heights, res }) {
-  const { bedAt, coordOf } = gridHelpers(res);
+export function createRebasePass({ field, heights, res, worldSize }) {
+  const { bedAt, coordOf } = gridHelpers(res, worldSize);
   const readHalf = readOnly(heights[0]);
   const writeHalf = writeOnly(heights[1]);
 
@@ -514,8 +427,8 @@ export function createRebasePass({ field, heights, res }) {
   })().compute(res * res);
 }
 
-export function createRestorePass({ heights, res }) {
-  const { coordOf } = gridHelpers(res);
+export function createRestorePass({ heights, res, worldSize }) {
+  const { coordOf } = gridHelpers(res, worldSize);
   const readHalf = readOnly(heights[1]);
   const writeHalf = writeOnly(heights[0]);
 
@@ -525,6 +438,9 @@ export function createRestorePass({ heights, res }) {
   })().compute(res * res);
 }
 
+// The still surface the domain is filled to before the first substep. A coast
+// floods to one flat sea level; a stream has to fill to a surface that follows
+// its own bed downhill, which is what the baked reference in .w is for.
 export function createFloodPass({
   field,
   flux,
@@ -532,16 +448,23 @@ export function createFloodPass({
   heights,
   index,
   res,
+  restSurface,
   uniforms,
+  worldSize,
 }) {
-  const { bedAt, coordOf } = gridHelpers(res);
+  const { bedAt, coordOf, fieldAt } = gridHelpers(res, worldSize);
   const heightWrite = writeOnly(heights[index]);
   const fluxWrite = writeOnly(flux[index]);
   const foamWrite = writeOnly(foam[index]);
 
   return Fn(() => {
     const c = coordOf();
-    const depth = uniforms.seaLevel.sub(bedAt(field, c)).max(0);
+    const surface = restSurface({
+      cell: fieldAt(field, c),
+      coord: c,
+      uniforms,
+    });
+    const depth = surface.sub(bedAt(field, c)).max(0);
     textureStore(heightWrite, c, vec4(depth, 0, 0, 0));
     textureStore(fluxWrite, c, vec4(0));
     textureStore(foamWrite, c, vec4(0, 0, 0, 1));

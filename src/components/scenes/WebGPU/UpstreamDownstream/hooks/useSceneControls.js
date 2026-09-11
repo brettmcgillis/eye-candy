@@ -20,13 +20,13 @@ import {
   getWaterControls,
 } from '@modules/shallowWater';
 
-import getShoreControls from '../components/getShoreControls';
-import getSwellControls from '../components/getSwellControls';
+import getChannelControls from '../components/getChannelControls';
+import getFlowControls from '../components/getFlowControls';
 import { DEFAULT_PRESET, PRESETS, getPresetControls } from '../presets/presets';
 import CAMERA from '../utils/camera';
 import LIGHTING from '../utils/lighting';
 
-const SCENE_LABEL = 'Shoreline';
+const SCENE_LABEL = 'Upstream/Downstream';
 const CAMERA_FOLDER_PATH = `${SCENE_LABEL}.Camera`;
 const LIGHTING_FOLDER_PATH = `${SCENE_LABEL}.Lighting`;
 
@@ -62,19 +62,19 @@ export default function useSceneControls() {
     Presets: presetsFolder,
     Camera: folder(cameraControls, { collapsed: true }),
     Lighting: folder(lightingControls, { collapsed: true }),
-    Swell: getSwellControls(p),
-    Surf: getWaterControls(p),
+    Flow: getFlowControls(p),
+    Water: getWaterControls(p),
     Foam: getFoamControls(p),
     Grains: getGrainControls(p),
     Palette: getPaletteControls(p),
-    Shore: getShoreControls(p),
+    Channel: getChannelControls(p),
     Stage: getStageControls(p),
   }));
 
   attachSetControls(setControls);
   controlsSnapshotRef.current = { ...controls };
 
-  useMediaRecorder({ fileName: SCENE_LABEL });
+  useMediaRecorder({ fileName: 'UpstreamDownstream' });
 
   const cameraControlsKey = useMemo(
     () => getCameraControlsKey(controls),

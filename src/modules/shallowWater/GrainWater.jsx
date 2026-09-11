@@ -1,4 +1,4 @@
-import { memo, useEffect, useMemo, useRef } from 'react';
+import { memo, useEffect, useRef } from 'react';
 
 import { useFrame, useThree } from '@react-three/fiber';
 
@@ -7,126 +7,41 @@ import * as THREE from 'three/webgpu';
 
 import useRenderScale from '@hooks/useRenderScale';
 
-import SurfSolver from '../runtime/SurfSolver';
-import { applyStacks, buildCoastTerrain } from '../runtime/coastField';
-import createGrainCompute, { createGrainSeed } from '../runtime/grainCompute';
-import createGrainLayout from '../runtime/grainLayout';
-import createGrainMaterial from '../runtime/grainMaterial';
-import {
-  applyGrainUniforms,
-  buildGrainUniforms,
-} from '../runtime/grainUniforms';
+import WaterSolver from './WaterSolver';
+import createGrainCompute, { createGrainSeed } from './grains/grainCompute';
+import createGrainMaterial from './grains/grainMaterial';
+import { applyGrainUniforms, buildGrainUniforms } from './grains/grainUniforms';
 
-// The whole scene is this one mesh. Water, whitewater and rock are a single
-// instanced grain field sorted into two populations at layout time, which is
-// what lets the coastline be a dithered band of interleaved grains rather than
-// a seam between two meshes.
+// Water, whitewater and ground as a single instanced grain field sorted into
+// two populations at layout time, which is what lets a waterline be a dithered
+// band of interleaved grains rather than a seam between two meshes.
 //
-// Two effects, not one. Only the grain count and the solver grid size the
-// buffers and the kernels, so only those rebuild anything; reshaping the coast
-// re-bakes the bed and re-sorts the grains into the running simulation instead
-// of tearing it down. That is what makes the shore controls usable by eye --
-// dragging Stack Size used to drop the wave state and re-run the whole warm-up
-// on every frame of the drag.
-function GrainField({ config }) {
+// The scene owns the bake and the layout and hands both in; this owns the
+// solver, the buffers and the mesh. Two effects, not one: only the grain count
+// and the solver grid size the buffers and the kernels, so only those rebuild
+// anything. Reshaping the ground re-bakes the bed and re-sorts the grains into
+// the running simulation instead of tearing it down -- which is what makes the
+// terrain controls usable by eye, rather than dropping the water state and
+// re-running the whole warm-up on every frame of a drag.
+function GrainWater({ config, driver, field, layout, resolution, worldSize }) {
   const gl = useThree((state) => state.gl);
   const scene = useThree((state) => state.scene);
   const runtimeRef = useRef(null);
 
   useRenderScale(config.renderScale);
 
-  // The expensive half: shelf, coastline and rock. Cached apart from the
-  // stacks so that tuning stacks by eye does not pay for twenty octaves of
-  // noise on every cell of the grid.
-  const terrain = useMemo(
-    () =>
-      buildCoastTerrain({
-        coastLine: config.coastLine,
-        coastRagged: config.coastRagged,
-        coastTilt: config.coastTilt,
-        deepDepth: config.deepDepth,
-        reefRelief: config.reefRelief,
-        resolution: config.solverResolution,
-        rockHeight: config.rockHeight,
-        rockRelief: config.rockRelief,
-        rockRise: config.rockRise,
-        shelfWidth: config.shelfWidth,
-        shoreSeed: config.shoreSeed,
-        slopeCurve: config.slopeCurve,
-      }),
-    [
-      config.coastLine,
-      config.coastRagged,
-      config.coastTilt,
-      config.deepDepth,
-      config.reefRelief,
-      config.rockHeight,
-      config.rockRelief,
-      config.rockRise,
-      config.shelfWidth,
-      config.shoreSeed,
-      config.slopeCurve,
-      config.solverResolution,
-    ]
-  );
-
-  // The cheap half: only the cells inside a stack's reach are touched.
-  const coast = useMemo(
-    () => ({
-      field: applyStacks(terrain, {
-        coastLine: config.coastLine,
-        coastRagged: config.coastRagged,
-        coastTilt: config.coastTilt,
-        resolution: config.solverResolution,
-        shoreSeed: config.shoreSeed,
-        stackCount: config.stackCount,
-        stackSize: config.stackSize,
-      }),
-      resolution: config.solverResolution,
-    }),
-    [
-      terrain,
-      config.coastLine,
-      config.coastRagged,
-      config.coastTilt,
-      config.shoreSeed,
-      config.solverResolution,
-      config.stackCount,
-      config.stackSize,
-    ]
-  );
-
-  // Which grains are rock is decided against the bed, so this re-runs whenever
-  // the coast moves as well as when the waterline itself is retuned.
-  const layout = useMemo(
-    () =>
-      createGrainLayout({
-        count: config.grainCount,
-        field: coast.field,
-        jitter: config.grainJitter,
-        resolution: coast.resolution,
-        roleFeather: config.roleFeather,
-        seed: config.shoreSeed,
-        waterline: config.waterline,
-      }),
-    [
-      coast,
-      config.grainCount,
-      config.grainJitter,
-      config.roleFeather,
-      config.shoreSeed,
-      config.waterline,
-    ]
-  );
-
-  const latest = useRef({ coast, layout });
-  latest.current = { coast, layout };
+  const latest = useRef({ field, layout });
+  latest.current = { field, layout };
 
   useEffect(() => {
-    const { coast: baked, layout: sorted } = latest.current;
-    const { resolution } = baked;
+    const { field: baked, layout: sorted } = latest.current;
 
-    const solver = new SurfSolver({ field: baked.field, resolution });
+    const solver = new WaterSolver({
+      driver,
+      field: baked,
+      resolution,
+      worldSize,
+    });
     const buffers = {
       home: instancedArray(sorted.home, 'vec4'),
       look: instancedArray(sorted.total, 'vec4'),
@@ -143,6 +58,7 @@ function GrainField({ config }) {
       count: sorted.total,
       field: solver.field,
       res: resolution,
+      worldSize,
     };
     const seedKernel = createGrainSeed(shared);
     const grainKernel = createGrainCompute({
@@ -166,7 +82,7 @@ function GrainField({ config }) {
       // What the solver's water was last solved against. The rebake effect
       // compares against this both to skip the redundant pass right after a
       // build, and to hand the previous bed to the rebase.
-      bakedField: baked.field,
+      bakedField: baked,
       buffers,
       geometry,
       grainKernel,
@@ -185,26 +101,26 @@ function GrainField({ config }) {
       material.dispose();
       solver.dispose();
     };
-    // Deliberately narrow: only the two things that size a buffer or a kernel.
-    // Reshaping the coast is handled by the rebake effect below, and everything
-    // a preset switch normally moves is a live uniform.
-  }, [config.grainCount, config.solverResolution, gl, scene]);
+    // Deliberately narrow: only the things that size a buffer or a kernel.
+    // Reshaping the ground is handled by the rebake effect below, and
+    // everything a preset switch normally moves is a live uniform.
+  }, [driver, gl, layout.total, resolution, scene, worldSize]);
 
   useEffect(() => {
     const runtime = runtimeRef.current;
-    if (!runtime || runtime.bakedField === coast.field) return;
+    if (!runtime || runtime.bakedField === field) return;
 
     // The rebase needs the bed this water was last solved against, so it rides
     // along in the spare channel of the buffer being uploaded.
     const previous = runtime.bakedField;
-    const next = coast.field;
+    const next = field;
     for (let i = 2; i < next.length; i += 4) next[i] = previous[i - 2];
 
     runtime.solver.rebake(gl, next);
     runtime.buffers.home.value.array.set(layout.home);
     runtime.buffers.home.value.needsUpdate = true;
     runtime.bakedField = next;
-  }, [coast, layout, gl]);
+  }, [field, gl, layout]);
 
   useFrame((_, delta) => {
     const runtime = runtimeRef.current;
@@ -233,4 +149,4 @@ function GrainField({ config }) {
   return null;
 }
 
-export default memo(GrainField);
+export default memo(GrainWater);

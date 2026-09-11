@@ -1,6 +1,7 @@
 import { NodeAccess, storageTexture, uniform } from 'three/tsl';
 
-import createFieldTexture from '../fieldTexture';
+import createFieldTexture from '@utils/storageField';
+
 import {
   createBlurPass,
   createInjectPass,

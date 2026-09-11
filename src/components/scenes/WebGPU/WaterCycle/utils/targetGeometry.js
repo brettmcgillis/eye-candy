@@ -1,6 +1,7 @@
 import * as THREE from 'three/webgpu';
 
 export const OCEAN_TARGET = 'Ocean Waves';
+export const MOUNTAIN_TARGET = 'Mountain';
 
 // Model targets name a source and which of its meshes to bake. The logos are
 // flat extrusions lying in XZ, so they read best under a shallow tilt that lets
@@ -16,6 +17,7 @@ export const PRIMITIVE_TARGETS = ['Torus', 'Torus Knot', 'Sphere', 'Ribbon'];
 
 export const TARGET_MODES = [
   OCEAN_TARGET,
+  MOUNTAIN_TARGET,
   ...PRIMITIVE_TARGETS,
   ...Object.keys(MODEL_TARGETS),
 ];

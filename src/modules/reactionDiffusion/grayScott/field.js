@@ -17,7 +17,7 @@ import {
 } from 'three/tsl';
 import * as THREE from 'three/webgpu';
 
-import createFieldTexture, { readOnly, writeOnly } from '../fieldTexture';
+import createFieldTexture, { readOnly, writeOnly } from '@utils/storageField';
 
 // Classic Gray-Scott feed/kill, ported from Hadyn's React||Diffuse
 // (https://www.shadertoy.com/view/Wt23W1).

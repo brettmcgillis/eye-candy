@@ -12,6 +12,7 @@ import { useMediaRecorder } from '@modules/mediaRecorder';
 import { CAMERA_PATH, SCENE_LABEL } from '../components/controlPaths';
 import getImpactControls from '../components/getImpactControls';
 import getLightControls from '../components/getLightControls';
+import getMountainControls from '../components/getMountainControls';
 import getOceanControls, {
   OCEAN_PALETTES,
 } from '../components/getOceanControls';
@@ -54,6 +55,7 @@ export default function useSceneControls() {
     Target: folder(getTargetControls(p), { collapsed: true }),
     Rain: folder(getRainControls(p), { collapsed: true }),
     Surface: folder(getSurfaceControls(p), { collapsed: true }),
+    Mountain: folder(getMountainControls(p), { collapsed: true }),
     Light: folder(getLightControls(p), { collapsed: true }),
     Ocean: folder(getOceanControls(p), { collapsed: true }),
     Impacts: folder(getImpactControls(p), { collapsed: true }),
@@ -137,6 +139,26 @@ export default function useSceneControls() {
         spread: controls.lightSpread,
         x: controls.lightX,
         z: controls.lightZ,
+      },
+      mountain: {
+        baseHeight: controls.mountainBaseHeight,
+        erosionDetail: controls.erosionDetail,
+        erosionGullyWeight: controls.erosionGullyWeight,
+        erosionOctaves: controls.erosionOctaves,
+        erosionScale: controls.erosionScale,
+        erosionStrength: controls.erosionStrength,
+        extent: controls.mountainExtent,
+        fieldResolution: controls.mountainFieldResolution,
+        meshResolution: controls.mountainMeshResolution,
+        mountainAmplitude: controls.mountainAmplitude,
+        mountainFrequency: controls.mountainFrequency,
+        mountainTreeline: controls.mountainTreeline,
+        palette: controls.mountainPalette,
+        peakAmplitude: controls.peakAmplitude,
+        peakRadius: controls.peakRadius,
+        relief: controls.mountainRelief,
+        shape: controls.mountainShape,
+        visible: controls.mountainDisplayMode !== 'Hidden',
       },
       performance: {
         pauseWater: controls.pauseWater,

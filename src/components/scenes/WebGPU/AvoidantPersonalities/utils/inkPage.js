@@ -13,7 +13,7 @@ import {
   vec4,
 } from 'three/tsl';
 
-import { writeOnly } from '@modules/reactionDiffusion';
+import { writeOnly } from '@utils/storageField';
 
 import { FIXED } from './walkers';
 

@@ -14,7 +14,7 @@ import {
   vec4,
 } from 'three/tsl';
 
-import createFieldTexture, { readOnly, writeOnly } from '../fieldTexture';
+import createFieldTexture, { readOnly, writeOnly } from '@utils/storageField';
 
 // Physarum polycephalum — slime mould agents that lay a trail, sense it three
 // ways ahead, and turn toward the strongest reading. Ported 1:1 from Nicolas

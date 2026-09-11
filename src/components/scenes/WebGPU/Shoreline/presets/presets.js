@@ -1,0 +1,111 @@
+export const DEFAULT_PRESET = 'Rocky Break';
+
+const BASE = {
+  cameraMode: 'orbit',
+  orbitAutoRotate: false,
+  orbitDesktopPosition: [4, 12, 26],
+  orbitDesktopTarget: [0, 0, -6],
+  orbitDesktopPivot: [0, 0, -6],
+  orbitDesktopFov: 42,
+
+  runSimulation: true,
+  timeScale: 1,
+  substeps: 4,
+  swellAmplitude: 1.3,
+  swellPeriod: 5,
+  swellSpread: 1.6,
+  swellGroupRate: 0.11,
+  swellDrive: 0.6,
+  pipeArea: 0.6,
+  fluxDamping: 0.995,
+  bedDrag: 0.02,
+
+  shoreSeed: 12,
+  deepDepth: 4,
+  shoreHeight: 2.2,
+  slopeCurve: 1.7,
+  rockRelief: 3.2,
+  boulderCount: 14,
+  surfWidth: 0.45,
+  rockDryColor: '#3b3a38',
+  rockWetColor: '#0b0d0f',
+  rockWetLine: 0.35,
+  rockWetBand: 0.8,
+  rockMottle: 0.9,
+
+  foamBirth: 2.6,
+  foamDecay: 0.45,
+  foamAdvect: 1.4,
+  foamNoise: 1.6,
+  foamNoiseScale: 34,
+  breakLow: 0.18,
+  breakHigh: 0.7,
+  breakWeight: 1.2,
+  steepWeight: 1.6,
+  shallowDepth: 1.2,
+  wetDepth: 0.12,
+  foamThreshold: 0.1,
+  foamSoftness: 0.22,
+  foamDetail: 40,
+  foamColor: '#eaf7ff',
+
+  shallowColor: '#1e6f83',
+  deepColor: '#04141f',
+  skyColor: '#9fc6d8',
+  absorption: 0.7,
+  shallowOpacity: 0.12,
+  opacityDepth: 0.7,
+  waterRoughness: 0.12,
+  rippleAmplitude: 0.09,
+  rippleScale: 2.6,
+
+  backgroundColor: '#05090d',
+  fogNear: 40,
+  fogFar: 130,
+};
+
+export const PRESETS = {
+  'Rocky Break': { ...BASE },
+  // The reference framing: straight down, foam networks reading as a pattern
+  // rather than a seascape.
+  Overhead: {
+    ...BASE,
+    orbitDesktopPosition: [0, 38, 0.01],
+    orbitDesktopTarget: [0, 0, 0],
+    orbitDesktopPivot: [0, 0, 0],
+    orbitDesktopFov: 40,
+    boulderCount: 16,
+    foamBirth: 2.1,
+    foamNoise: 1.3,
+    foamDetail: 34,
+    deepColor: '#02101a',
+    shallowColor: '#1a6a80',
+    rockDryColor: '#15181b',
+    rockWetColor: '#05070a',
+  },
+  'Heavy Sets': {
+    ...BASE,
+    swellAmplitude: 2.1,
+    swellPeriod: 7,
+    swellGroupRate: 0.06,
+    swellDrive: 0.5,
+    foamBirth: 2.4,
+    foamDecay: 0.4,
+    shoreHeight: 2.8,
+  },
+  Glass: {
+    ...BASE,
+    swellAmplitude: 0.5,
+    swellPeriod: 9,
+    foamBirth: 0.5,
+    foamDecay: 0.9,
+    waterRoughness: 0.05,
+    rippleAmplitude: 0.05,
+    shallowOpacity: 0.05,
+    absorption: 0.5,
+  },
+};
+
+export function getPresetControls({ presetSnapshot }) {
+  return { ...presetSnapshot };
+}

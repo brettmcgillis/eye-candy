@@ -1,7 +1,5 @@
-import {
-  createFieldTexture,
-  createGrayScottField,
-} from '@modules/reactionDiffusion';
+import { createGrayScottField } from '@modules/reactionDiffusion';
+import createFieldTexture from '@utils/storageField';
 
 import createPageKernels from './inkPage';
 import createLineMaterial from './lineMaterial';

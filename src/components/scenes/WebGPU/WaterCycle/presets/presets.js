@@ -1,4 +1,4 @@
-import { OCEAN_TARGET } from '../utils/targetGeometry';
+import { MOUNTAIN_TARGET, OCEAN_TARGET } from '../utils/targetGeometry';
 
 export const DEFAULT_PRESET = 'An Ocean Implied';
 
@@ -64,9 +64,62 @@ const BASE = {
   impactDotStrength: 1,
   impactFoamStrength: 0.8,
   impactFoamDecay: 0.06,
+  mountainDisplayMode: 'Hidden',
+  mountainShape: 'Range',
+  mountainPalette: 'Monochrome',
+  mountainMeshResolution: 512,
+  mountainFieldResolution: 1024,
+  mountainExtent: 140,
+  mountainRelief: 140,
+  mountainBaseHeight: 0.4,
+  mountainFrequency: 2.2,
+  mountainAmplitude: 0.125,
+  mountainTreeline: 0.465,
+  peakRadius: 0.35,
+  peakAmplitude: 0.1,
+  erosionScale: 0.15,
+  erosionStrength: 0.22,
+  erosionGullyWeight: 0.5,
+  erosionDetail: 1.5,
+  erosionOctaves: 5,
   quality: 'Medium',
   pauseWater: false,
   waveUpdateHz: 30,
+};
+
+// The mirror of the implied ocean. The range is ~25 units of relief across 140,
+// so the rain volume has to sit above the peaks rather than above sea level, and
+// the drops live long enough on the surface to trace a gully end to end.
+const MOUNTAIN = {
+  ...BASE,
+  targetMode: MOUNTAIN_TARGET,
+  rainDropCount: 700000,
+  rainBounds: 120,
+  rainCeiling: 42,
+  rainSpawnRange: 26,
+  rainFallSpeed: 24,
+  rainWindX: 0.4,
+  rainStreakLength: 0.18,
+  rainStreakWidth: 0.06,
+  rainEdgeFade: 0.7,
+  catchDepth: 2,
+  slideGravity: 26,
+  slideDrag: 3.2,
+  // Measured slope magnitudes over the baked range run 0.5 mean, 1.85 peak, so
+  // the release sits between: cliff faces and ridges shed their drops, gullies
+  // and shoulders hold onto them.
+  slopeRelease: 1.2,
+  surfaceLifeMin: 4,
+  surfaceLifeMax: 11,
+  stretchSpeed: 5,
+  sinkDepth: 30,
+  lightHeight: 74,
+  lightRadius: 18,
+  lightSpread: 0.36,
+  lightReach: 130,
+  lightIntensity: 1.7,
+  lightAmbient: 0.07,
+  lightDriftRadius: 12,
 };
 
 // Geometry targets are small and close, so the whole rain volume, the light
@@ -236,6 +289,42 @@ export const PRESETS = {
     impactDotStrength: 1.4,
     impactFoamStrength: 1.1,
     impactFoamDecay: 0.05,
+  },
+  'A Mountain Implied': { ...MOUNTAIN },
+  // The same single eroded dome Endless Erosion's paint preset starts from, so
+  // the rain has one peak to run off rather than a whole range. The surrounding
+  // plain sits at the brush's own base height, which puts it at world zero.
+  'A Single Peak Implied': {
+    ...MOUNTAIN,
+    mountainShape: 'Single Peak',
+    mountainBaseHeight: 0.45,
+    rainBounds: 110,
+    rainCeiling: 38,
+    lightHeight: 66,
+    lightReach: 120,
+  },
+  'Visible Single Peak': {
+    ...MOUNTAIN,
+    mountainShape: 'Single Peak',
+    mountainBaseHeight: 0.45,
+    mountainDisplayMode: 'Full',
+    rainBounds: 110,
+    rainCeiling: 38,
+    rainDropCount: 320000,
+    rainOpacity: 0.82,
+    lightAmbient: 0.2,
+    lightIntensity: 1.25,
+    lightHeight: 66,
+    lightReach: 120,
+  },
+  'Visible Mountain': {
+    ...MOUNTAIN,
+    mountainDisplayMode: 'Full',
+    mountainPalette: 'Monochrome',
+    rainDropCount: 320000,
+    rainOpacity: 0.82,
+    lightAmbient: 0.2,
+    lightIntensity: 1.25,
   },
   'Still Light': {
     ...BASE,

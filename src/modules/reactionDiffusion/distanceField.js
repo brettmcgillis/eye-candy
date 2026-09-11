@@ -11,7 +11,7 @@ import {
   vec4,
 } from 'three/tsl';
 
-import createFieldTexture, { readOnly, writeOnly } from './fieldTexture';
+import createFieldTexture, { readOnly, writeOnly } from '@utils/storageField';
 
 // Jump flood: turns a thresholded field into a true Euclidean distance.
 //

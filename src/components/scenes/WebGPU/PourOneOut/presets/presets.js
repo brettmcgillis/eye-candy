@@ -1,0 +1,105 @@
+export const DEFAULT_PRESET = 'Data Structure';
+
+const BASE = {
+  cameraMode: 'orbit',
+  orbitAutoRotate: true,
+  orbitAutoRotateSpeed: 0.35,
+
+  runSimulation: true,
+  particles: 32768,
+  speed: 1,
+  gravity: 78,
+  fluidity: 0.96,
+  turbulence: 0.09,
+  pressureIterations: 20,
+  targetDensity: 3,
+  densityCorrection: 1,
+
+  sourceRadius: 3.2,
+  sourceSpeed: 0,
+  sourceHeight: 50,
+  sourceOrbitRadius: 6,
+  sourceOrbitSpeed: 0.07,
+  sourceOrbitBob: 2,
+  sourceOffsetX: 0,
+  sourceOffsetZ: 0,
+  pourRate: 16000,
+  drainHeight: 16,
+  maxAge: 30,
+
+  showFluid: true,
+  particleScale: 1,
+  fluidColorCold: '#2b0b3a',
+  fluidColorWarm: '#ff4a10',
+  fluidColorHot: '#fff1c4',
+  fluidEmissive: 2.2,
+  heatGain: 1.1,
+  heatBias: -0.05,
+  heatGamma: 1.5,
+  speedHeat: 0.25,
+
+  showPins: true,
+  showPlate: true,
+  solidColor: '#e9e9ef',
+  pinCount: 7,
+  pinRadius: 2.2,
+  pinLength: 15,
+  pinSpread: 6.5,
+  pinTilt: 0.35,
+  pinSeed: 7,
+  plateY: 30,
+  plateSize: 17,
+  plateThickness: 1.6,
+  solidFriction: 0.12,
+  solidRestitution: 0,
+
+  showGrid: true,
+  gridColor: '#c8dcff',
+  gridFluidLevel: 0,
+  gridSolidLevel: 2,
+  gridFineOpacity: 0.26,
+  gridCoarseOpacity: 0.24,
+  gridFalloff: 1.1,
+  gridMargin: 1,
+  gridInset: 0.98,
+
+  backgroundColor: '#000000',
+  showBounds: false,
+  boundsColor: '#2a3550',
+};
+
+export const PRESETS = {
+  'Data Structure': { ...BASE },
+  'Raw Pour': {
+    ...BASE,
+    showGrid: false,
+    fluidEmissive: 1.2,
+    heatGain: 0.8,
+    backgroundColor: '#05060a',
+  },
+  Scaffold: {
+    ...BASE,
+    showFluid: false,
+    gridColor: '#ffffff',
+    gridFineOpacity: 0.75,
+    gridCoarseOpacity: 0.1,
+    solidColor: '#1c1e26',
+    showBounds: true,
+  },
+  'Cold Sludge': {
+    ...BASE,
+    fluidity: 0.55,
+    turbulence: 0.02,
+    gravity: 40,
+    sourceSpeed: 0,
+    fluidColorWarm: '#2f6bff',
+    fluidColorHot: '#dff0ff',
+    fluidColorCold: '#06091c',
+    fluidEmissive: 1.1,
+    gridColor: '#5f7dff',
+  },
+};
+
+export function getPresetControls({ presetSnapshot }) {
+  return { ...presetSnapshot };
+}

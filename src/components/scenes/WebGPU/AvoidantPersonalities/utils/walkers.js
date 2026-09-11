@@ -18,8 +18,8 @@ import {
   vec4,
 } from 'three/tsl';
 
-import { readOnly } from '@modules/reactionDiffusion';
 import { curlNoise } from '@modules/tsl';
+import { readOnly } from '@utils/storageField';
 
 import { clampCoord, outlineSample, toGrid, unitVector } from './spawnShapes';
 

@@ -49,11 +49,6 @@ export const SOLVERS = {
 
 export { default as createDistanceField } from './distanceField';
 export { default as createExpansiveField } from './expansive/field';
-export {
-  default as createFieldTexture,
-  readOnly,
-  writeOnly,
-} from './fieldTexture';
 export { default as createGrayScottField } from './grayScott/field';
 export { default as createPhysarumField } from './physarum/field';
 export { default as createSolver } from './createSolver';

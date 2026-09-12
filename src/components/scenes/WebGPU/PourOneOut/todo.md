@@ -16,6 +16,7 @@
 - [ ] Pin layout is a jittered lattice with a seed; the reference's pins look hand-placed. Consider authoring positions instead of scattering them.
 - [ ] Solid cells are marked by point-sampling the SDF at cell centres, so a pin thinner than a cell can leak. Sub-sampling or a conservative test would close it.
 - [ ] No viscosity term. Axiom/Paradigm-style pours often want one; it would be a diffusion pass on the grid velocity before the projection.
+- [ ] use `~/dev/examples/dli-flow` as reference to improve the volumetric flow of particles
 
 ## // Presets
 

@@ -7,10 +7,19 @@ import * as THREE from 'three/webgpu';
 import { FlipSimulator } from '@modules/flip';
 
 import FluidRenderer from '../utils/FluidRenderer';
+import ParticleSort from '../utils/ParticleSort';
 import SparseGrid from '../utils/SparseGrid';
 import createCollider from '../utils/collider';
-import { GRID, MAX_PARTICLES } from '../utils/domain';
+import {
+  GRID,
+  GROUP_OFFSET,
+  MAX_PARTICLES,
+  WORLD_SCALE,
+} from '../utils/domain';
 import createEmitter from '../utils/emitter';
+
+const offset = new THREE.Vector3(...GROUP_OFFSET);
+const eye = new THREE.Vector3();
 
 function FluidSystem({ config, plate, pins }) {
   const { gl } = useThree();
@@ -52,11 +61,12 @@ function FluidSystem({ config, plate, pins }) {
       await simulator.init();
       if (cancelled) return;
 
-      const fluid = new FluidRenderer(simulator);
+      const sort = new ParticleSort(simulator);
+      const fluid = new FluidRenderer(simulator, sort);
       const grid = new SparseGrid(simulator);
       group.add(fluid.object);
       group.add(grid.object);
-      runtimeRef.current = { collider, emitter, fluid, grid, simulator };
+      runtimeRef.current = { collider, emitter, fluid, grid, simulator, sort };
     };
     setup();
 
@@ -73,12 +83,12 @@ function FluidSystem({ config, plate, pins }) {
     };
   }, [gl]);
 
-  useFrame((_, rawDelta) => {
+  useFrame((state, rawDelta) => {
     const runtime = runtimeRef.current;
     if (!runtime) return;
 
     const live = latestRef.current;
-    const { collider, emitter, fluid, grid, simulator } = runtime;
+    const { collider, emitter, fluid, grid, simulator, sort } = runtime;
 
     const delta = Math.min(rawDelta, 1 / 30);
     emitter.update(live.config, delta);
@@ -98,7 +108,10 @@ function FluidSystem({ config, plate, pins }) {
 
     if (live.config.runSimulation) simulator.step();
 
-    fluid.update(live.config);
+    eye.copy(state.camera.position).sub(offset).divideScalar(WORLD_SCALE);
+    sort.step(gl, eye, live.config.sortPasses);
+
+    fluid.update(live.config, state.size.height);
     grid.update(live.config);
     grid.compute(gl);
   });

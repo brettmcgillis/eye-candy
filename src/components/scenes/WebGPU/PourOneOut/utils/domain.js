@@ -10,4 +10,5 @@ export const GROUP_OFFSET = [-WORLD_SIZE / 2, -WORLD_SIZE / 2, -WORLD_SIZE / 2];
 export const MAX_PINS = 10;
 
 export const NOZZLE = { x: GRID * 0.5, y: GRID - 4, z: GRID * 0.5 };
-export const MAX_PARTICLES = 8192 * 8;
+// Power of two: the draw-order sort is a bitonic network over the whole buffer.
+export const MAX_PARTICLES = 8192 * 16;

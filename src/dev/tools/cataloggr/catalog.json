@@ -158,10 +158,6 @@
       "text": "A system of emissive spheres with curve/line tails, and grains of sand, in a studio similar to the speed of lightning"
     },
     {
-      "id": "idea-1788538822720-1pasb0",
-      "text": "reaction diffusion + sph fluid sim to emulate waves of foam-topped tides pushing in over shallow rocks and shoreline."
-    },
-    {
       "id": "idea-1788979248225-s7qxze",
       "text": "could we use this technique to fill a geometry with a tube of reaction diffusion?\nhttps://tympanus.net/codrops/2026/09/07/drawing-with-light-an-exploration-of-lit-gpu-tubes-with-tsl-and-webgpu/"
     },
@@ -172,6 +168,10 @@
     {
       "id": "idea-1789055458094-nzornx",
       "text": "Could we build a 3d version of Youre Looking Radiant's default preset using godrays, transmission material, etc?"
+    },
+    {
+      "id": "idea-1789139674203-9p9u35",
+      "text": "Immortal Snail. Where does he go? What will he do? What will he learn?  This would require some hosting and persistence."
     }
   ],
   "statuses": {

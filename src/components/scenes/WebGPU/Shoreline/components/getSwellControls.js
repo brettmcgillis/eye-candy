@@ -10,10 +10,13 @@ export default function getSwellControls(p) {
         max: 3.5,
         step: 0.05,
       },
+      // Down to 2, not 3: the presets are authored at 2.6 and a floor of 3
+      // silently clamped every one of them, so the swell you selected was
+      // never the swell you got.
       swellPeriod: {
         label: 'Period',
         value: p.swellPeriod,
-        min: 3,
+        min: 2,
         max: 14,
         step: 0.1,
       },

@@ -27,23 +27,35 @@
 - [ ] Fallen timber across the channel -- the strainer that makes a real stream
       read as a place rather than a channel.
 - [ ] Woody debris and leaf litter carried by the flow, caught against boulders.
-- [ ] A mode where discharge walks over a long cycle the way Shoreline's tide
-      does, so the bars go under and come back out while the scene runs.
-- [ ] Interactive mode: drop a rock in and watch the wake form.
+- [ ] should we be using sprites instead of cubes, like we see in `~/dev/examples/dli-flow`, if so build this into the grains/sand module and share with Shoreline
 
 ## // Presets
 
-- Riffle Run -- the default. One pool-riffle couplet in frame at moderate flow.
-- Spring Melt -- the reach running full, riffles drowned into a standing train.
-- Low Summer -- thin water, glassy pools, gravel reading straight through.
-- Braid Lace -- the foam reaction pushed past what the water would sustain.
+Named by the axis they move. Everything after the default is a pair that moves
+ONE axis and holds the rest at the default, so the two halves can be flipped
+between to see what that axis does and nothing else. Drift is off in all of
+them, because a preset that is wandering cannot be compared against anything.
+
+- Riffle Run -- the default, and what every pair below is read against.
+- Flow: High / Flow: Low
+- Rocks: Many / Rocks: None
+- Bends: Tight / Bends: Straight
+- Gradient: Steep / Gradient: Flat -- both move the datum, so both reflood.
+- Foam: Art Directed / Foam: Natural
+- Mode: Drifting / Mode: Reshaping -- the two things the scene does on its own,
+  each turned up far enough to be seen inside a minute.
 
 ## // Features
 
-## // Interactivity
+- Drift: discharge, surge, friction and the foam terms all walk on their own
+  long cycles, so the bars go under and come back out while the scene runs.
+- Reshape: the flow moves the bed it is running over. Transport capacity from
+  the solver's own speed and bed slope, sediment advected downstream, and the
+  bake's facet noise doubling as a hardness map.
+- Sculpt: four brushes over the domain -- deposit, scour, push ground, push
+  water. Strokes land on the baked bed, so a channel slider still overrules
+  them.
 
-- [ ] click and drag to move gravel
-- [ ] click to drop a boulder into the flow
-- [ ] click and drag to dam or divert the channel
+## // Interactivity
 
 ## // Bugs

@@ -4,6 +4,7 @@ import { GrainWater, createGrainLayout } from '@modules/shallowWater';
 
 import { applyStacks, buildCoastTerrain } from '../runtime/coastField';
 import { WORLD_SIZE } from '../runtime/constants';
+import DRIFT_TRACKS from '../runtime/driftTracks';
 import createSwellDriver from '../runtime/swellDriver';
 
 // The scene's half of the grain field: one CPU bake of the coastline, the
@@ -99,6 +100,7 @@ function GrainField({ config }) {
   return (
     <GrainWater
       config={config}
+      drift={DRIFT_TRACKS}
       driver={driver}
       field={field}
       layout={layout}

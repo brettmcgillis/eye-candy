@@ -1,8 +1,11 @@
 export const DEFAULT_PRESET = 'Riffle Run';
 
-// Everything under "the reach itself" is held identical across presets on
-// purpose: those keys rebake the channel and relay half a million grains, and
-// a preset switch should change the water, not the place.
+// The channel keys are fair game for a preset. A rebake re-solves the bed
+// under the running water rather than reflooding it, so switching to a preset
+// that moves the reach costs one CPU bake and a grain relay -- a hitch, not a
+// restart, and the water that was running is still running afterwards. Only
+// grain count and solver resolution tear the pipeline down, so those stay
+// identical everywhere.
 const BASE = {
   cameraMode: 'orbit',
   orbitAutoRotate: false,
@@ -113,6 +116,23 @@ const BASE = {
   rockRoughness: 0.88,
   grainVariance: 0.24,
 
+  brushEnabled: false,
+  brushMode: 'Push Ground',
+  brushRadius: 2.4,
+  brushStrength: 1.2,
+
+  morphologyEnabled: false,
+  bedCarry: 0.35,
+  bedErode: 0.12,
+  bedDeposit: 1.6,
+  bedResist: 0.4,
+  carryDepth: 0.3,
+  bedLimit: 0.03,
+
+  driftEnabled: false,
+  driftAmount: 0.45,
+  driftRate: 1,
+
   runSimulation: true,
   timeScale: 1,
   substeps: 4,
@@ -123,11 +143,17 @@ const BASE = {
 };
 
 export const PRESETS = {
+  // The signature look, and the one every pair below is read against: one
+  // pool-riffle couplet in frame at moderate flow.
   'Riffle Run': { ...BASE },
 
-  // Snowmelt: the reach running full and brown, riffles drowned out into one
-  // continuous train of standing waves.
-  'Spring Melt': {
+  // Each pair that follows moves ONE axis and holds everything else at BASE,
+  // so the two halves can be flipped between to see what that axis does and
+  // nothing else. Drift is off in all of them for the same reason -- a preset
+  // that is wandering is not a preset you can compare against anything.
+
+  // --- Discharge ------------------------------------------------------------
+  'Flow: High': {
     ...BASE,
     inflowDepth: 1.05,
     outfallDepth: 0.8,
@@ -148,13 +174,8 @@ export const PRESETS = {
     absorption: 1.4,
     shallowColor: '#39705f',
     deepColor: '#0a1c15',
-    timeScale: 1.1,
   },
-
-  // Late summer: barely enough water to cover the bars. Pools go glassy, the
-  // gravel reads straight through them, and the only white left in the frame
-  // is the thin lace where the riffles still break.
-  'Low Summer': {
+  'Flow: Low': {
     ...BASE,
     inflowDepth: 0.24,
     outfallDepth: 0.16,
@@ -179,10 +200,66 @@ export const PRESETS = {
     shallowColor: '#4d8f75',
   },
 
-  // The reaction term driven well past what the water alone would sustain, so
-  // the foam stops behaving like spray and starts behaving like a pattern:
-  // cells, fronts and holes that hold their shape all the way down the reach.
-  'Braid Lace': {
+  // --- Rock in the channel --------------------------------------------------
+  'Rocks: Many': {
+    ...BASE,
+    boulderCount: 44,
+    boulderSize: 1.7,
+    cobbleCount: 820,
+    cobbleSize: 1.3,
+  },
+  'Rocks: None': { ...BASE, boulderCount: 0, cobbleCount: 0 },
+
+  // --- Planform -------------------------------------------------------------
+  'Bends: Tight': { ...BASE, meander: 8.5, meanderRate: 2.6 },
+  'Bends: Straight': { ...BASE, meander: 0, meanderRate: 0.2 },
+
+  // --- Gradient -------------------------------------------------------------
+  // The strongest control in the scene: it is what the water runs down, so it
+  // sets the speed, the Froude number and therefore where the reach goes white.
+  // Both halves move the datum, so switching either way refloods rather than
+  // rebasing -- the reach refills on the new slope instead of being left dry
+  // at the top and ponded at the bottom.
+  'Gradient: Steep': {
+    ...BASE,
+    gradient: 0.12,
+    riffleRate: 9,
+    riffleRelief: 0.85,
+    inflowDepth: 0.8,
+    outfallDepth: 0.5,
+    friction: 0.55,
+    breakLow: 0.5,
+    breakWeight: 2.2,
+    aerationBirth: 3.8,
+    churnStrength: 2.6,
+    foamBirth: 9,
+    foamDecay: 4.5,
+    foamThreshold: 0.1,
+    grainLife: 2.2,
+  },
+  'Gradient: Flat': {
+    ...BASE,
+    gradient: 0.004,
+    riffleRate: 2,
+    riffleRelief: 0.15,
+    inflowDepth: 0.6,
+    outfallDepth: 0.5,
+    friction: 0.55,
+    breakWeight: 0.8,
+    aerationBirth: 0.9,
+    aerationDecay: 1.6,
+    churnStrength: 0.5,
+    foamBirth: 2.5,
+    foamDecay: 6,
+    absorption: 0.5,
+    waterRoughness: 0.07,
+  },
+
+  // --- Foam behaviour -------------------------------------------------------
+  // The reaction term driven past what the water alone would sustain, so the
+  // foam stops behaving like spray and starts behaving like a pattern: cells,
+  // fronts and holes that hold shape all the way down the reach.
+  'Foam: Art Directed': {
     ...BASE,
     foamBirth: 1.5,
     foamDecay: 1.2,
@@ -201,6 +278,43 @@ export const PRESETS = {
     foamSoftness: 0.15,
     foamBreakup: 0.3,
     aeratedColor: '#bfe9db',
+  },
+  // The opposite balance: high birth against high decay with the reaction
+  // subordinate, which is what makes foam follow the hydraulics instead of
+  // sustaining itself.
+  'Foam: Natural': {
+    ...BASE,
+    foamBirth: 9,
+    foamDecay: 8,
+    foamAdvect: 1,
+    foamReaction: 8,
+    foamSpread: 2,
+    foamGrain: 0.3,
+    foamAging: 0.8,
+    foamThreshold: 0.2,
+    foamSoftness: 0.32,
+    foamBreakup: 0.7,
+  },
+
+  // --- The two running modes ------------------------------------------------
+  // Not a contrast pair: these are the two things the scene does on its own,
+  // each turned up far enough to be seen inside a minute rather than tuned for
+  // how it should actually be left running.
+  'Mode: Drifting': {
+    ...BASE,
+    driftEnabled: true,
+    driftAmount: 0.85,
+    driftRate: 2.5,
+  },
+  'Mode: Reshaping': {
+    ...BASE,
+    morphologyEnabled: true,
+    bedErode: 0.5,
+    bedDeposit: 1.6,
+    bedLimit: 0.08,
+    bedCarry: 0.5,
+    boulderCount: 22,
+    cobbleCount: 600,
   },
 };
 

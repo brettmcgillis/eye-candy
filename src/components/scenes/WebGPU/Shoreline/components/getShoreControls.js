@@ -1,7 +1,9 @@
 import { folder } from 'leva';
 
-// Everything here rebakes the coastline and relays the grains, so these are
-// the controls that restart the surf. Presets deliberately leave them alone.
+// Everything here rebakes the coastline and relays the grains. The rebake
+// re-solves the bed under the water that is already running rather than
+// reflooding it, so a change costs a hitch rather than the surf -- which is
+// why presets are free to move these.
 export default function getShoreControls(p) {
   return folder(
     {
@@ -86,7 +88,7 @@ export default function getShoreControls(p) {
         label: 'Sea Stacks',
         value: p.stackCount,
         min: 0,
-        max: 24,
+        max: 60,
         step: 1,
       },
       stackSize: {

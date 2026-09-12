@@ -3,6 +3,7 @@ import React, { memo, useMemo } from 'react';
 import { GrainWater, createGrainLayout } from '@modules/shallowWater';
 
 import { WORLD_SIZE } from '../runtime/constants';
+import DRIFT_TRACKS from '../runtime/driftTracks';
 import createFlowDriver from '../runtime/flowDriver';
 import { applyRocks, buildStreamTerrain } from '../runtime/streamBed';
 
@@ -107,6 +108,7 @@ function StreamField({ config }) {
   return (
     <GrainWater
       config={config}
+      drift={DRIFT_TRACKS}
       driver={driver}
       field={field}
       layout={layout}

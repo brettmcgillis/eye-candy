@@ -1,8 +1,10 @@
-import { instancedArray, uniform } from 'three/tsl';
+import { instancedArray, uniform, vec2 } from 'three/tsl';
 
 import createFieldTexture from '@utils/storageField';
 
+import { createBedBrushPass, createWaterBrushPass } from './brush/brushKernels';
 import { WARMUP_PAIRS, WARMUP_PER_FRAME } from './constants';
+import { createErosionPass, createSedimentRestorePass } from './morphology';
 import {
   createFloodPass,
   createFluxPass,
@@ -37,6 +39,13 @@ function buildUniforms() {
     foamSinkDepth: uniform(1.6),
     foamSmooth: uniform(34),
     foamSpread: uniform(2, 'int'),
+    bedCarry: uniform(0.6),
+    bedDeposit: uniform(1.2),
+    bedErode: uniform(0.8),
+    bedLimit: uniform(0.25),
+    bedMinSlope: uniform(0.02),
+    bedResist: uniform(0.5),
+    carryDepth: uniform(0.5),
     phase: uniform(0),
     pipeArea: uniform(1),
     restLevel: uniform(0),
@@ -68,6 +77,10 @@ export default class WaterSolver {
     this.heights = [size(), size()];
     this.flux = [size(), size()];
     this.foam = [size(), size()];
+    // Suspended load. Its own pair rather than a spare channel of the foam
+    // texture: foam is advected with the foam's own jitter and spread, and
+    // sediment has no business inheriting either.
+    this.sediment = [size(), size()];
 
     this.uniforms = buildUniforms();
 
@@ -77,6 +90,7 @@ export default class WaterSolver {
       foam: this.foam,
       heights: this.heights,
       res: resolution,
+      sediment: this.sediment,
       uniforms: this.uniforms,
       worldSize,
     };
@@ -100,14 +114,54 @@ export default class WaterSolver {
         restSurface: driver.restSurface || FLAT_SURFACE,
       })
     );
-    this.rebasePasses = [
-      createRebasePass({
+    this.rebasePass = createRebasePass({
+      field: this.field,
+      heights: this.heights,
+      res: resolution,
+      worldSize,
+    });
+    this.restorePass = createRestorePass({
+      heights: this.heights,
+      res: resolution,
+      worldSize,
+    });
+
+    // One stroke's worth of brush, shared by both kernels. Whether the stroke
+    // is a dome or a push, and whether it lands on the bed or on the water, is
+    // all carried in which of the four gains is non-zero.
+    this.brush = {
+      centre: uniform(vec2(0, 0)),
+      domeGain: uniform(0),
+      drag: uniform(vec2(0, 0)),
+      pushGain: uniform(0),
+      radius: uniform(2),
+      waterLift: uniform(0),
+      waterPush: uniform(0),
+    };
+    const brushStage = { brush: this.brush, res: resolution, worldSize };
+    this.bedBrushPass = createBedBrushPass({
+      ...brushStage,
+      field: this.field,
+    });
+    this.waterBrushPass = createWaterBrushPass({
+      ...brushStage,
+      heights: this.heights,
+    });
+
+    this.erosionPasses = [
+      createErosionPass({
         field: this.field,
         heights: this.heights,
         res: resolution,
+        sediment: this.sediment,
+        uniforms: this.uniforms,
         worldSize,
       }),
-      createRestorePass({ heights: this.heights, res: resolution, worldSize }),
+      createSedimentRestorePass({
+        res: resolution,
+        sediment: this.sediment,
+        worldSize,
+      }),
     ];
 
     this.flooded = false;
@@ -128,13 +182,58 @@ export default class WaterSolver {
   rebake(renderer, field) {
     this.field.value.array.set(field);
     this.field.value.needsUpdate = true;
-    this.rebasePasses.forEach((pass) => renderer.compute(pass));
+    renderer.compute(this.rebasePass);
+    renderer.compute(this.restorePass);
+  }
+
+  // One brush stroke. The bed half runs the same rebase the rebake does, so
+  // the water is re-seated on the ground the stroke just moved; the water half
+  // only has to be copied back out of the spare half, because a storage
+  // texture cannot be read and written in the same pass.
+  //
+  // The CPU's copy of the bed is deliberately NOT updated. It is the bake, and
+  // the next time a terrain control moves it is uploaded whole and the
+  // sculpting is gone -- which is the behaviour a terrain slider has to have.
+  sculpt(renderer, brush) {
+    const u = this.brush;
+    u.centre.value.set(brush.x, brush.z);
+    u.drag.value.set(brush.dx, brush.dz);
+    u.radius.value = brush.radius;
+    u.domeGain.value = brush.domeGain;
+    u.pushGain.value = brush.pushGain;
+    u.waterLift.value = brush.waterLift;
+    u.waterPush.value = brush.waterPush;
+
+    if (brush.domeGain !== 0 || brush.pushGain !== 0) {
+      renderer.compute(this.bedBrushPass);
+      renderer.compute(this.rebasePass);
+      renderer.compute(this.restorePass);
+    }
+    if (brush.waterLift !== 0 || brush.waterPush !== 0) {
+      renderer.compute(this.waterBrushPass);
+      renderer.compute(this.restorePass);
+    }
   }
 
   flood(renderer) {
     this.floodPasses.forEach((pass) => renderer.compute(pass));
     this.flooded = true;
     this.warmup = WARMUP_PAIRS;
+  }
+
+  // A new bed whose REST SURFACE has moved, which is a different question from
+  // a new bed under the same one. Rebasing preserves the surface that was
+  // there, and on a reach that is the wrong answer: change the gradient and
+  // the datum tilts, so preserving the old surface leaves the upper reach dry
+  // and the lower reach ponded, with no warm-up left to dig itself out. That
+  // is a scene that has stopped rather than a scene that is settling.
+  //
+  // Reflooding reseats the whole domain on the new surface and re-arms the
+  // warm-up, so the reach is running again within a second.
+  reflood(renderer, field) {
+    this.field.value.array.set(field);
+    this.field.value.needsUpdate = true;
+    this.flood(renderer);
   }
 
   update(config) {
@@ -165,6 +264,12 @@ export default class WaterSolver {
     u.shallowDepth.value = config.shallowDepth;
     u.steepWeight.value = config.steepWeight;
     u.wetDepth.value = config.wetDepth;
+    u.bedCarry.value = config.bedCarry;
+    u.bedDeposit.value = config.bedDeposit;
+    u.bedErode.value = config.bedErode;
+    u.bedLimit.value = config.bedLimit;
+    u.bedResist.value = config.bedResist;
+    u.carryDepth.value = config.carryDepth;
 
     this.driver.update(config, u);
   }
@@ -190,9 +295,21 @@ export default class WaterSolver {
     }
   }
 
+  // The bed answering the water back, once per frame. `dt` is the solver's own
+  // substep at this point, which is far too small to move a bed by: erosion is
+  // given the whole frame it actually gets to act over, scaled by the same
+  // Time Scale everything else answers to.
+  erode(renderer, delta, config) {
+    this.uniforms.dt.value = Math.min(delta, 1 / 30) * config.timeScale;
+    renderer.compute(this.erosionPasses[0]);
+    renderer.compute(this.erosionPasses[1]);
+    renderer.compute(this.rebasePass);
+    renderer.compute(this.restorePass);
+  }
+
   dispose() {
-    [...this.heights, ...this.flux, ...this.foam].forEach((texture) =>
-      texture.dispose()
+    [...this.heights, ...this.flux, ...this.foam, ...this.sediment].forEach(
+      (texture) => texture.dispose()
     );
   }
 }

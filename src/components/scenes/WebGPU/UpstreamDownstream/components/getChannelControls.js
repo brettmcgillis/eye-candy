@@ -1,8 +1,9 @@
 import { folder } from 'leva';
 
-// Everything here rebakes the reach and relays the grains, so these are the
-// controls that reshape the place rather than the weather over it. Presets
-// deliberately leave them alone.
+// Everything here rebakes the reach and relays the grains. The rebake
+// re-solves the bed under the water that is already running rather than
+// reflooding it, so a change costs a hitch rather than the flow -- which is
+// why presets are free to move these.
 export default function getChannelControls(p) {
   return folder(
     {

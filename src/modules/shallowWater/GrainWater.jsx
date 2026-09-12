@@ -1,4 +1,4 @@
-import { memo, useEffect, useRef } from 'react';
+import React, { memo, useEffect, useRef } from 'react';
 
 import { useFrame, useThree } from '@react-three/fiber';
 
@@ -8,9 +8,20 @@ import * as THREE from 'three/webgpu';
 import useRenderScale from '@hooks/useRenderScale';
 
 import WaterSolver from './WaterSolver';
+import BrushPlane from './brush/BrushPlane';
+import applyDrift from './drift';
 import createGrainCompute, { createGrainSeed } from './grains/grainCompute';
 import createGrainMaterial from './grains/grainMaterial';
 import { applyGrainUniforms, buildGrainUniforms } from './grains/grainUniforms';
+
+// Which of the brush's four gains a tool drives. Everything not listed is
+// zero, which is how one pair of kernels covers moving ground, depositing it,
+// scouring it out and shoving the water around without a mode branch on the
+// GPU.
+const DOME_GAIN = { Deposit: 1, Scour: -1 };
+const PUSH_GAIN = { 'Push Ground': 1 };
+const WATER_LIFT = { 'Push Water': 0.4 };
+const WATER_PUSH = { 'Push Water': 1 };
 
 // Water, whitewater and ground as a single instanced grain field sorted into
 // two populations at layout time, which is what lets a waterline be a dithered
@@ -23,10 +34,34 @@ import { applyGrainUniforms, buildGrainUniforms } from './grains/grainUniforms';
 // the running simulation instead of tearing it down -- which is what makes the
 // terrain controls usable by eye, rather than dropping the water state and
 // re-running the whole warm-up on every frame of a drag.
-function GrainWater({ config, driver, field, layout, resolution, worldSize }) {
+function GrainWater({
+  config,
+  drift,
+  driver,
+  field,
+  layout,
+  resolution,
+  worldSize,
+}) {
   const gl = useThree((state) => state.gl);
   const scene = useThree((state) => state.scene);
   const runtimeRef = useRef(null);
+
+  // Outlives the solver: a resolution change should not reset what hour of the
+  // day the scene had drifted to.
+  const driftRef = useRef({ phase: 0, config: {} });
+  const strokeRef = useRef({ active: false, dx: 0, dz: 0, x: 0, z: 0 });
+  const brushRef = useRef({
+    domeGain: 0,
+    dx: 0,
+    dz: 0,
+    pushGain: 0,
+    radius: 1,
+    waterLift: 0,
+    waterPush: 0,
+    x: 0,
+    z: 0,
+  });
 
   useRenderScale(config.renderScale);
 
@@ -110,13 +145,32 @@ function GrainWater({ config, driver, field, layout, resolution, worldSize }) {
     const runtime = runtimeRef.current;
     if (!runtime || runtime.bakedField === field) return;
 
-    // The rebase needs the bed this water was last solved against, so it rides
-    // along in the spare channel of the buffer being uploaded.
     const previous = runtime.bakedField;
     const next = field;
-    for (let i = 2; i < next.length; i += 4) next[i] = previous[i - 2];
 
-    runtime.solver.rebake(gl, next);
+    // Two different questions. A bed that moved under an unchanged rest
+    // surface is a stack slider or a boulder slider, and the water on top of
+    // it should survive. A rest surface that moved is a different place --
+    // change a reach's gradient and the whole datum tilts -- and preserving
+    // the old surface there leaves the top of the domain dry and the bottom
+    // ponded, with no warm-up left to recover.
+    let surfaceMoved = false;
+    for (let i = 3; i < next.length; i += 4) {
+      if (next[i] !== previous[i]) {
+        surfaceMoved = true;
+        break;
+      }
+    }
+
+    if (surfaceMoved) {
+      runtime.solver.reflood(gl, next);
+    } else {
+      // The rebase needs the bed this water was last solved against, so it
+      // rides along in the spare channel of the buffer being uploaded.
+      for (let i = 2; i < next.length; i += 4) next[i] = previous[i - 2];
+      runtime.solver.rebake(gl, next);
+    }
+
     runtime.buffers.home.value.array.set(layout.home);
     runtime.buffers.home.value.needsUpdate = true;
     runtime.bakedField = next;
@@ -132,21 +186,71 @@ function GrainWater({ config, driver, field, layout, resolution, worldSize }) {
       runtime.seeded = true;
     }
 
-    runtime.solver.update(config);
-    if (config.runSimulation) runtime.solver.step(gl, delta, config);
+    const wandering = drift && config.driftEnabled && config.driftAmount > 0;
+    if (wandering) driftRef.current.phase += delta * config.driftRate;
+    const active = drift
+      ? applyDrift(
+          driftRef.current.config,
+          config,
+          drift,
+          driftRef.current.phase,
+          wandering ? config.driftAmount : 0
+        )
+      : config;
+
+    runtime.solver.update(active);
+    if (active.runSimulation) {
+      runtime.solver.step(gl, delta, active);
+      if (active.morphologyEnabled) runtime.solver.erode(gl, delta, active);
+    }
 
     // Grains step once per frame against the settled half of the solver, not
     // once per substep: they are dressing over the fields, and stepping them
     // four times would quadruple the expensive half of the scene for motion
     // nothing can see.
-    const step = Math.min(delta, 1 / 30) * config.timeScale;
-    applyGrainUniforms(runtime.uniforms, config);
+    const stroke = strokeRef.current;
+    if (stroke.active) {
+      // Dome terms are a rate, so holding still keeps piling; the push term is
+      // a distance already, and is consumed once for the drag that produced
+      // it.
+      const brush = brushRef.current;
+      const tool = active.brushMode;
+      const rate = active.brushStrength * Math.min(delta, 1 / 30);
+      const force = active.brushStrength;
+      brush.x = stroke.x;
+      brush.z = stroke.z;
+      brush.dx = stroke.dx;
+      brush.dz = stroke.dz;
+      brush.radius = active.brushRadius;
+      // Defaulted rather than looked up bare: a gain a tool does not drive has
+      // to come out zero, and an undefined one multiplies to NaN and writes
+      // that straight into the bed buffer.
+      brush.domeGain = (DOME_GAIN[tool] || 0) * rate;
+      brush.pushGain = (PUSH_GAIN[tool] || 0) * force;
+      brush.waterLift = (WATER_LIFT[tool] || 0) * rate;
+      brush.waterPush = (WATER_PUSH[tool] || 0) * force;
+      runtime.solver.sculpt(gl, brush);
+      stroke.dx = 0;
+      stroke.dz = 0;
+    }
+
+    const step = Math.min(delta, 1 / 30) * active.timeScale;
+    applyGrainUniforms(runtime.uniforms, active);
     runtime.uniforms.dt.value = step;
     runtime.uniforms.phase.value += step;
     gl.compute(runtime.grainKernel);
   });
 
-  return null;
+  if (!config.brushEnabled) return null;
+
+  return (
+    <BrushPlane
+      field={field}
+      resolution={resolution}
+      strokeRef={strokeRef}
+      worldSize={worldSize}
+    />
+  );
 }
 
 export default memo(GrainWater);

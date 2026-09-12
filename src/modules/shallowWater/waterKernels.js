@@ -449,6 +449,7 @@ export function createFloodPass({
   index,
   res,
   restSurface,
+  sediment,
   uniforms,
   worldSize,
 }) {
@@ -456,6 +457,7 @@ export function createFloodPass({
   const heightWrite = writeOnly(heights[index]);
   const fluxWrite = writeOnly(flux[index]);
   const foamWrite = writeOnly(foam[index]);
+  const sedimentWrite = writeOnly(sediment[index]);
 
   return Fn(() => {
     const c = coordOf();
@@ -468,5 +470,6 @@ export function createFloodPass({
     textureStore(heightWrite, c, vec4(depth, 0, 0, 0));
     textureStore(fluxWrite, c, vec4(0));
     textureStore(foamWrite, c, vec4(0, 0, 0, 1));
+    textureStore(sedimentWrite, c, vec4(0, 0, 0, 1));
   })().compute(res * res);
 }

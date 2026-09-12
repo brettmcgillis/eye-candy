@@ -7,7 +7,7 @@ export default function getFoamControls(p) {
         label: 'Birth',
         value: p.foamBirth,
         min: 0,
-        max: 8,
+        max: 12,
         step: 0.05,
       },
       foamDecay: {

@@ -201,13 +201,10 @@ export const PRESETS = {
   },
 
   // --- Rock in the channel --------------------------------------------------
-  'Rocks: Many': {
-    ...BASE,
-    boulderCount: 44,
-    boulderSize: 1.7,
-    cobbleCount: 820,
-    cobbleSize: 1.3,
-  },
+  // Count only. Size is a separate axis, and raising both at once was what
+  // put four-metre boulders abreast across a fifteen-metre channel and dammed
+  // the reach instead of splitting it.
+  'Rocks: Many': { ...BASE, boulderCount: 40, cobbleCount: 820 },
   'Rocks: None': { ...BASE, boulderCount: 0, cobbleCount: 0 },
 
   // --- Planform -------------------------------------------------------------
@@ -220,11 +217,21 @@ export const PRESETS = {
   // Both halves move the datum, so switching either way refloods rather than
   // rebasing -- the reach refills on the new slope instead of being left dry
   // at the top and ponded at the bottom.
+  // Real tilt, not faster ripples. The riffle controls stay at the default on
+  // purpose: an earlier version of this preset raised the riffle rate instead
+  // of the gradient, which made a high-frequency wave train rather than a
+  // reach running down a mountain. Everything else moved here follows from the
+  // slope -- a steeper reach breaks harder and holds its whitewater longer.
   'Gradient: Steep': {
     ...BASE,
-    gradient: 0.12,
-    riffleRate: 9,
-    riffleRelief: 0.85,
+    // A 9.4m fall across the frame, near six times the default's 1.6m. Pushed
+    // further the reach starts to surge: at 0.38 a cell's surface moved 1.6m
+    // up and down in steady state, which is the field heaving rather than a
+    // stream running. The control goes to 0.6 for anyone who wants that.
+    gradient: 0.26,
+    // Discharge held steadier than the default. A steep reach amplifies the
+    // inflow surge into a pumping motion the geometry alone does not have.
+    surgeAmount: 0.06,
     inflowDepth: 0.8,
     outfallDepth: 0.5,
     friction: 0.55,
@@ -240,8 +247,6 @@ export const PRESETS = {
   'Gradient: Flat': {
     ...BASE,
     gradient: 0.004,
-    riffleRate: 2,
-    riffleRelief: 0.15,
     inflowDepth: 0.6,
     outfallDepth: 0.5,
     friction: 0.55,

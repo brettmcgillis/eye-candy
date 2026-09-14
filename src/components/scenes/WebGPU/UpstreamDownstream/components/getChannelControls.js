@@ -17,12 +17,19 @@ export default function getChannelControls(p) {
       // Fall per metre down the reach. This is the single strongest control on
       // the whole scene: it is what the water runs down, so it sets the speed,
       // the Froude number and therefore where the reach breaks white.
+      //
+      // The range runs to a genuine mountain slope rather than a survey one.
+      // At the old ceiling of 0.14 the reach fell five metres across the frame,
+      // which is barely eight degrees -- not enough tilt to read as different
+      // country, so a steep preset could only fake it with faster riffles.
+      // Swept to 0.6 (a 21m fall, about 31 degrees) with no NaN and velocity
+      // still inside the solver's cap.
       gradient: {
         label: 'Gradient',
         value: p.gradient,
         min: 0.002,
-        max: 0.14,
-        step: 0.001,
+        max: 0.6,
+        step: 0.002,
       },
       channelWidth: {
         label: 'Channel Width',

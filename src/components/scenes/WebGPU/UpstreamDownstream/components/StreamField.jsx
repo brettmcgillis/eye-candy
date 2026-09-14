@@ -56,6 +56,7 @@ function StreamField({ config }) {
   const field = useMemo(
     () =>
       applyRocks(terrain, {
+        bankSlope: config.bankSlope,
         boulderCount: config.boulderCount,
         boulderSize: config.boulderSize,
         channelWidth: config.channelWidth,
@@ -68,6 +69,7 @@ function StreamField({ config }) {
       }),
     [
       terrain,
+      config.bankSlope,
       config.boulderCount,
       config.boulderSize,
       config.channelWidth,

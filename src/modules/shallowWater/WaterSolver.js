@@ -3,7 +3,7 @@ import { instancedArray, uniform, vec2 } from 'three/tsl';
 import createFieldTexture from '@utils/storageField';
 
 import { createBedBrushPass, createWaterBrushPass } from './brush/brushKernels';
-import { WARMUP_PAIRS, WARMUP_PER_FRAME } from './constants';
+import { REFLOOD_PAIRS, WARMUP_PAIRS, WARMUP_PER_FRAME } from './constants';
 import { createErosionPass, createSedimentRestorePass } from './morphology';
 import {
   createFloodPass,
@@ -215,10 +215,10 @@ export default class WaterSolver {
     }
   }
 
-  flood(renderer) {
+  flood(renderer, pairs = WARMUP_PAIRS) {
     this.floodPasses.forEach((pass) => renderer.compute(pass));
     this.flooded = true;
-    this.warmup = WARMUP_PAIRS;
+    this.warmup = pairs;
   }
 
   // A new bed whose REST SURFACE has moved, which is a different question from
@@ -233,7 +233,7 @@ export default class WaterSolver {
   reflood(renderer, field) {
     this.field.value.array.set(field);
     this.field.value.needsUpdate = true;
-    this.flood(renderer);
+    this.flood(renderer, REFLOOD_PAIRS);
   }
 
   update(config) {

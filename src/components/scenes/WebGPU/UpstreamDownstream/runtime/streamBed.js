@@ -11,15 +11,34 @@ function ridged(x, z, seed, octaves) {
   return 1 - Math.abs(fbm2(x, z, { seed, octaves }) * 2 - 1);
 }
 
+// How far the centreline may wander before the channel and its banks run out
+// of domain. A meander of 8 on a 15m channel puts the far bank 22m from the
+// middle of a domain that is only 18m to its edge, so the reach leaves the
+// frame on every bend and there is no ground on the outside of the turn.
+function meanderRoom(config) {
+  // The bank run, plus a margin the wetted edge is allowed to overrun into.
+  // The channel does not stop at its nominal half-width: bed relief and a low
+  // bank let water sit a metre or two beyond it, so reserving only the bank
+  // run left a tight bend with two metres of shore against the default's four.
+  const bank = Math.min(config.bankSlope, 4) + WORLD_SIZE * 0.06;
+  return Math.max(1, WORLD_SIZE * 0.5 - config.channelWidth * 0.5 - bank);
+}
+
 // The thalweg: where the deepest line of the channel lies at a given point
 // down the reach. A sine plus a wander octave, because a stream meandering on
 // one clean period reads as a pipe someone bent.
+//
+// Soft-limited rather than clamped. A hard clamp flattens the top of every
+// bend into a straight, which is the one shape a meander never makes; tanh
+// compresses the whole swing into the room available and leaves it curved.
 function centreOf(worldZ, config) {
   const { meander, meanderRate, streamSeed } = config;
   const swing = Math.sin((worldZ / WORLD_SIZE) * Math.PI * 2 * meanderRate);
   const wander =
     fbm2(worldZ * 0.06, 11.3, { octaves: 3, seed: streamSeed }) - 0.5;
-  return swing * meander + wander * meander * 0.7;
+  const raw = swing * meander + wander * meander * 0.7;
+  const room = meanderRoom(config);
+  return room * Math.tanh(raw / room);
 }
 
 // The pool-riffle couplet, which is the whole reason a stream looks like
@@ -119,8 +138,15 @@ const COBBLE_RADIUS = WORLD_SIZE * 0.008;
 // current works it. Sharpness under 1 domes the profile off, which is the one
 // parameter separating these from the sea stacks the same stamper draws.
 function makeRock({ config, index, isBoulder, random, x, z }) {
+  // A boulder is capped against the channel it stands in. Uncapped, the top of
+  // the size range is a rock four metres across in a fifteen metre channel,
+  // and three of them abreast dam the reach instead of splitting it.
+  const widest = config.channelWidth * 0.16;
   const radius = isBoulder
-    ? BOULDER_RADIUS * (0.55 + random() ** 1.4 * 1.2) * config.boulderSize
+    ? Math.min(
+        BOULDER_RADIUS * (0.55 + random() ** 1.4 * 1.2) * config.boulderSize,
+        widest
+      )
     : COBBLE_RADIUS * (0.5 + random()) * config.cobbleSize;
   const stretch = 1 + random() * (isBoulder ? 0.9 : 0.6);
   const sharpness = isBoulder ? 0.5 + random() * 0.4 : 0.7 + random() * 0.5;

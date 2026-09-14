@@ -5,6 +5,7 @@ import { localEnv } from '@utils/appUtils';
 import {
   SCENE_CAMERA_FIXED_BEHAVIOR_OPTIONS,
   SCENE_CAMERA_MODE_OPTIONS,
+  SCENE_CAMERA_PROJECTION_OPTIONS,
   SCENE_CAMERA_SPLINE_ORIENTATION_OPTIONS,
   buildCameraControlOverridesFromSnapshot,
   buildSceneCameraControlSnapshot,
@@ -35,6 +36,15 @@ function buildRender(cameraFolderPath, expectedMode) {
   }
 
   return (get) => get(`${cameraFolderPath}.cameraMode`) === expectedMode;
+}
+
+function buildOrthographicRender(cameraFolderPath) {
+  if (!cameraFolderPath) {
+    return undefined;
+  }
+
+  return (get) =>
+    get(`${cameraFolderPath}.cameraProjection`) === 'orthographic';
 }
 
 function buildSequenceRender(cameraFolderPath) {
@@ -749,6 +759,39 @@ export default function buildSceneCameraControls({
         label: 'Mode',
         options: SCENE_CAMERA_MODE_OPTIONS,
         value: normalizedCamera.defaultMode,
+      },
+      controlOverrides
+    ),
+    cameraProjection: applyControlOverride(
+      'cameraProjection',
+      {
+        label: 'Projection',
+        options: SCENE_CAMERA_PROJECTION_OPTIONS,
+        value: normalizedCamera.projection,
+      },
+      controlOverrides
+    ),
+    cameraFrustumHeight: applyControlOverride(
+      'cameraFrustumHeight',
+      {
+        label: 'Frustum Height',
+        max: 400,
+        min: 0.1,
+        render: buildOrthographicRender(cameraFolderPath),
+        step: 0.1,
+        value: normalizedCamera.frustumHeight,
+      },
+      controlOverrides
+    ),
+    cameraMobileFrustumHeight: applyControlOverride(
+      'cameraMobileFrustumHeight',
+      {
+        label: 'Frustum Height (Mobile)',
+        max: 400,
+        min: 0.1,
+        render: buildOrthographicRender(cameraFolderPath),
+        step: 0.1,
+        value: normalizedCamera.mobileFrustumHeight,
       },
       controlOverrides
     ),

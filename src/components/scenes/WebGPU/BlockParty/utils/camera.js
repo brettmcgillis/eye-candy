@@ -1,7 +1,6 @@
+import { ELEVATION_DEGREES as ELEVATION } from './elevation';
+
 const TARGET = [0, 0, 0];
-// asin(0.62) — the reference squashes its 45-degree plan by 0.62 vertically,
-// which is this elevation read back out of the drawing.
-const ELEVATION = 38.3;
 const AZIMUTH = 45;
 const DISTANCE = 40;
 

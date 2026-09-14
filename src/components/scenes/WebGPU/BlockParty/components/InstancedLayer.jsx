@@ -4,7 +4,7 @@ import {
   attachLayerBuffers,
   createLayerBuffers,
   writeLayer,
-} from '../utils/instances';
+} from '../utils/layerBuffers';
 
 const MIN_CAPACITY = 64;
 
@@ -20,25 +20,23 @@ function nextCapacity(current, needed) {
 
 function InstancedLayer({
   buildMaterial,
+  castShadow = false,
   geometry,
-  hasTint = false,
   instances,
+  receiveShadow = false,
 }) {
   const meshRef = useRef(null);
   const capacityRef = useRef(0);
 
-  // Headroom so a rolling rebuild that lands more cells in a district than
-  // the first bake did reuses the same buffers instead of remounting.
+  // Headroom so a rolling rebuild that lands more cells than the first bake
+  // reuses the same buffers instead of remounting.
   capacityRef.current = nextCapacity(
     capacityRef.current,
     Math.ceil(instances.length * 1.5)
   );
 
   const capacity = capacityRef.current;
-  const buffers = useMemo(
-    () => createLayerBuffers(capacity, hasTint),
-    [capacity, hasTint]
-  );
+  const buffers = useMemo(() => createLayerBuffers(capacity), [capacity]);
   const material = useMemo(
     () => buildMaterial(buffers),
     [buffers, buildMaterial]
@@ -54,7 +52,7 @@ function InstancedLayer({
     if (meshRef.current) {
       writeLayer(meshRef.current, buffers, instances);
     }
-  }, [buffers, instances]);
+  }, [buffers, instances, material]);
 
   if (!instances.length) {
     return null;
@@ -64,7 +62,9 @@ function InstancedLayer({
     <instancedMesh
       key={capacity}
       args={[geometry, material, capacity]}
+      castShadow={castShadow}
       frustumCulled={false}
+      receiveShadow={receiveShadow}
       ref={meshRef}
     />
   );

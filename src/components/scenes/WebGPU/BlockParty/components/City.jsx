@@ -1,25 +1,27 @@
-import React, { memo, useCallback, useEffect, useMemo } from 'react';
+/* eslint-disable no-param-reassign */
+import React, { memo, useEffect, useMemo } from 'react';
 
 import * as THREE from 'three/webgpu';
 
 import useBuildClock from '../hooks/useBuildClock';
 import useCityModel from '../hooks/useCityModel';
+import { COMPOSITION_KEYS, FORM_KEYS, pickValues } from '../utils/configKeys';
 import buildLayers from '../utils/instances';
+import LAYER_SPECS from '../utils/layerSpecs';
 import {
-  createDarkCardMaterial,
-  createGlowCardMaterial,
-  createNeonMaterial,
-  createPlazaMaterial,
-  createStairMaterial,
-  createTowerMaterial,
+  createGroundMaterial,
+  createPedestalMaterial,
 } from '../utils/materials';
-import { createStairVariants, createTowerVariants } from '../utils/variants';
+import Ground from './Ground';
 import InstancedLayer from './InstancedLayer';
+import Pedestal from './Pedestal';
 
-function unitCard() {
+const PEDESTAL_MARGIN = 4;
+
+function unitBox(hangs) {
   const geometry = new THREE.BoxGeometry(1, 1, 1);
 
-  geometry.translate(0, 0.5, 0);
+  geometry.translate(0, hangs ? -0.5 : 0.5, 0);
 
   return geometry;
 }
@@ -32,122 +34,109 @@ function City({ config, uniforms }) {
     uniforms,
   });
 
-  const { cells, model } = useCityModel({
+  const compositionKey = pickValues(config, COMPOSITION_KEYS).join('|');
+  const composition = useMemo(
+    () => Object.fromEntries(COMPOSITION_KEYS.map((key) => [key, config[key]])),
+    [compositionKey]
+  );
+  const formKey = pickValues(config, FORM_KEYS).join('|');
+  const metrics = useMemo(
+    () => Object.fromEntries(FORM_KEYS.map((key) => [key, config[key]])),
+    [formKey]
+  );
+
+  const { cells, cellsByDistrict, model } = useCityModel({
     buildClockRef,
+    composition,
     rebuildEnabled: config.rollingRebuild,
+    rebuildOrder: config.rebuildOrder,
     rebuildSeconds: config.rebuildSeconds,
     referenceHeight: config.referenceHeight,
+    revealBand: config.revealBand,
     seed: config.seed,
   });
 
-  const metrics = useMemo(
-    () => ({
-      darkCardRise: config.darkCardRise,
-      minTowerFootprint: config.minTowerFootprint,
-      neonThickness: config.neonThickness,
-      plazaRiseScale: config.plazaRiseScale,
-      stairRiseScale: config.stairRiseScale,
-      towerHeightScale: config.towerHeightScale,
-    }),
-    [
-      config.darkCardRise,
-      config.minTowerFootprint,
-      config.neonThickness,
-      config.plazaRiseScale,
-      config.stairRiseScale,
-      config.towerHeightScale,
-    ]
-  );
-
-  const variants = useMemo(
-    () => ({
-      stairs: createStairVariants(config.stairNarrowing),
-      towers: createTowerVariants(config.towerVariants),
-    }),
-    [config.stairNarrowing, config.towerVariants]
+  const geometries = useMemo(
+    () =>
+      Object.fromEntries(
+        LAYER_SPECS.map((spec) => [spec.key, unitBox(spec.hangs)])
+      ),
+    []
   );
 
   useEffect(
-    () => () => {
-      variants.towers.forEach((geometry) => geometry.dispose());
-      variants.stairs.forEach((variant) => variant.geometry.dispose());
-    },
-    [variants]
+    () => () => Object.values(geometries).forEach((g) => g.dispose()),
+    [geometries]
   );
 
-  const plazaGeometry = useMemo(unitCard, []);
-  const darkGeometry = useMemo(unitCard, []);
-  const glowGeometry = useMemo(unitCard, []);
-  const padGeometry = useMemo(unitCard, []);
-
-  useEffect(
-    () => () => {
-      plazaGeometry.dispose();
-      darkGeometry.dispose();
-      glowGeometry.dispose();
-      padGeometry.dispose();
-    },
-    [darkGeometry, glowGeometry, padGeometry, plazaGeometry]
+  const { deepest, layers } = useMemo(
+    () => buildLayers({ cells, metrics, radius: model.radius }),
+    [cells, metrics, model.radius]
   );
 
-  const layers = useMemo(
-    () => buildLayers({ cells, metrics, variants }),
-    [cells, metrics, variants]
-  );
-
-  const bind = (factory) => (buffers) => factory({ buffers, uniforms });
-  const buildTower = useCallback(bind(createTowerMaterial), [uniforms]);
-  const buildPlaza = useCallback(bind(createPlazaMaterial), [uniforms]);
-  const buildStair = useCallback(
-    (steps) => (buffers) => createStairMaterial({ buffers, steps, uniforms }),
+  const surfaces = useMemo(
+    () => ({
+      ground: createGroundMaterial({ uniforms }),
+      pedestal: createPedestalMaterial({ uniforms }),
+    }),
     [uniforms]
   );
-  const buildDark = useCallback(bind(createDarkCardMaterial), [uniforms]);
-  const buildGlow = useCallback(bind(createGlowCardMaterial), [uniforms]);
-  const buildNeon = useCallback(bind(createNeonMaterial), [uniforms]);
 
-  const scale = config.citySize / model.rootSize;
-  const viewScale = config.honorSeedZoom ? model.viewScale : 1;
+  useEffect(
+    () => () => Object.values(surfaces).forEach((m) => m.dispose()),
+    [surfaces]
+  );
+
+  const builders = useMemo(
+    () =>
+      Object.fromEntries(
+        LAYER_SPECS.filter((spec) => !spec.tower).map((spec) => [
+          spec.key,
+          (buffers) => spec.factory({ buffers, uniforms }),
+        ])
+      ),
+    [uniforms]
+  );
+  const buildTower = useMemo(
+    () => (buffers) =>
+      LAYER_SPECS.find((spec) => spec.tower).factory({
+        blend: config.towerBlend,
+        buffers,
+        uniforms,
+      }),
+    [config.towerBlend, uniforms]
+  );
+
+  const scale =
+    (config.citySize / model.rootSize) *
+    (config.honorSeedZoom ? model.viewScale : 1);
+
+  useEffect(() => {
+    uniforms.worldPerPixel.value = scale;
+  }, [scale, uniforms]);
 
   return (
-    <group scale={scale * viewScale}>
-      {variants.towers.map((geometry, index) => (
+    <group scale={scale}>
+      <Pedestal
+        depth={Math.max(config.pedestalDepth, deepest + PEDESTAL_MARGIN)}
+        material={surfaces.pedestal}
+        size={model.rootSize}
+      />
+      <Ground
+        cellsByDistrict={cellsByDistrict}
+        districts={model.districts}
+        material={surfaces.ground}
+      />
+      {LAYER_SPECS.map((spec) => (
         <InstancedLayer
-          key={geometry.uuid}
-          buildMaterial={buildTower}
-          geometry={geometry}
-          instances={layers.towers[index]}
+          key={spec.tower ? `${spec.key}-${config.towerBlend}` : spec.key}
+          buildMaterial={spec.tower ? buildTower : builders[spec.key]}
+          castShadow={spec.tower ? config.towerShadows : spec.castShadow}
+          geometry={geometries[spec.key]}
+          instances={layers[spec.key]}
+          receiveShadow={spec.receiveShadow}
         />
       ))}
-      {variants.stairs.map((variant, index) => (
-        <InstancedLayer
-          key={variant.geometry.uuid}
-          buildMaterial={buildStair(variant.steps)}
-          geometry={variant.geometry}
-          instances={layers.stairs[index]}
-        />
-      ))}
-      <InstancedLayer
-        buildMaterial={buildPlaza}
-        geometry={plazaGeometry}
-        instances={layers.plazas}
-      />
-      <InstancedLayer
-        buildMaterial={buildDark}
-        geometry={darkGeometry}
-        instances={layers.darkCards}
-      />
-      <InstancedLayer
-        buildMaterial={buildGlow}
-        geometry={glowGeometry}
-        instances={layers.glowCards}
-      />
-      <InstancedLayer
-        buildMaterial={buildNeon}
-        geometry={padGeometry}
-        hasTint
-        instances={layers.neon}
-      />
     </group>
   );
 }

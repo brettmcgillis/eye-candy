@@ -1,7 +1,7 @@
 const MIN_SPLIT_AREA = 100;
 const MAX_SPLIT_RATIO = 5;
 const GLOW_CHILD_INDEX = 1;
-const LEVELS_BELOW_DISTRICT = 2;
+const RANDOM_GLOW_CHANCE = 0.25;
 
 export function createQuad(x, y, w, h) {
   return {
@@ -19,7 +19,7 @@ export function createQuad(x, y, w, h) {
   };
 }
 
-export function splitQuad(quad, random) {
+export function splitQuad(quad, random, jitter = 0.5) {
   if (quad.w * quad.h < MIN_SPLIT_AREA) {
     return [];
   }
@@ -30,8 +30,8 @@ export function splitQuad(quad, random) {
     return [];
   }
 
-  const t0 = 0.5 + (random() - 0.5) * 0.5;
-  const t1 = 0.5 + (random() - 0.5) * 0.5;
+  const t0 = 0.5 + (random() - 0.5) * jitter;
+  const t1 = 0.5 + (random() - 0.5) * jitter;
   const w = quad.w * t0;
   const h = quad.h * t1;
   const w2 = quad.w * (1 - t0);
@@ -45,41 +45,46 @@ export function splitQuad(quad, random) {
   ];
 }
 
-// Two more jittered 4-way splits below a district, which is where the
-// reference's draw pass picks the quads up.
-export function subdivide(district, random) {
+export function subdivide(district, random, { splitJitter, subdivisionDepth }) {
   let level = [district];
 
-  for (let i = 0; i < LEVELS_BELOW_DISTRICT; i += 1) {
-    level = level.flatMap((quad) => splitQuad(quad, random));
+  for (let i = 0; i < subdivisionDepth; i += 1) {
+    level = level.flatMap((quad) => splitQuad(quad, random, splitJitter));
   }
 
   return level;
 }
 
-// Four jittered 4-way splits, with one second-level child per first-level
-// quadrant flagged so the flag propagates to its whole subtree. That
-// second level is the district: it is the unit the flag is assigned to, and
-// the unit a rolling rebuild replaces.
-export default function buildQuadTree(root, random) {
+function districtHash(seed, index) {
+  const value = Math.sin(seed * 91.7 + index * 37.3) * 43758.5453;
+
+  return value - Math.floor(value);
+}
+
+function isGlowing(mode, { childIndex, index, seed }) {
+  if (mode === 'all') return true;
+  if (mode === 'none') return false;
+  if (mode === 'random') return districtHash(seed, index) < RANDOM_GLOW_CHANCE;
+
+  return childIndex === GLOW_CHILD_INDEX;
+}
+
+// Two jittered 4-way splits make the districts: the unit the glow flag is
+// assigned to, and the unit a rolling rebuild replaces.
+export default function buildQuadTree(root, random, composition, seed) {
   const districts = [];
   const quads = [];
+  const { glowMode, splitJitter } = composition;
 
-  splitQuad(root, random).forEach((first) => {
-    const seconds = splitQuad(first, random);
+  splitQuad(root, random, splitJitter).forEach((first) => {
+    splitQuad(first, random, splitJitter).forEach((second, childIndex) => {
+      const index = districts.length;
+      const glow = isGlowing(glowMode, { childIndex, index, seed });
 
-    if (seconds[GLOW_CHILD_INDEX]) {
-      seconds[GLOW_CHILD_INDEX].glow = true;
-    }
+      districts.push({ bounds: second, glow, index });
 
-    seconds.forEach((second) => {
-      const glow = second.glow === true;
-      const districtIndex = districts.length;
-
-      districts.push({ bounds: second, glow, index: districtIndex });
-
-      subdivide(second, random).forEach((quad) => {
-        quads.push({ ...quad, district: districtIndex, glow });
+      subdivide(second, random, composition).forEach((quad) => {
+        quads.push({ ...quad, district: index, glow });
       });
     });
   });

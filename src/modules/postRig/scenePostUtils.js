@@ -2,6 +2,8 @@ export const SCENE_POST_TYPES = Object.freeze({
   bloom: 'bloom',
   dof: 'dof',
   godrays: 'godrays',
+  grain: 'grain',
+  ink: 'ink',
 });
 
 export const DOF_FOCUS_MODES = Object.freeze(['manual', 'target', 'pointer']);

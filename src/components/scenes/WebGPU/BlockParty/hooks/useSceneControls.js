@@ -7,19 +7,26 @@ import {
   getCameraControlsKey,
   useSceneCameraControls,
 } from '@modules/cameraRig';
+import {
+  getLightingControlsKey,
+  useSceneLightingControls,
+} from '@modules/lightingRig';
 import { useMediaRecorder } from '@modules/mediaRecorder';
 import { getPostControlsKey, useScenePostControls } from '@modules/postRig';
 
 import getCityControls from '../components/getCityControls';
+import getCompositionControls from '../components/getCompositionControls';
+import getFormControls from '../components/getFormControls';
 import getMotionControls from '../components/getMotionControls';
 import getPaletteControls from '../components/getPaletteControls';
-import getReliefControls from '../components/getReliefControls';
 import { DEFAULT_PRESET, PRESETS, getPresetControls } from '../presets/presets';
 import CAMERA from '../utils/camera';
+import LIGHTING from '../utils/lighting';
 import POST from '../utils/post';
 
 const SCENE_LABEL = 'Block Party';
 const CAMERA_FOLDER_PATH = `${SCENE_LABEL}.Camera`;
+const LIGHTING_FOLDER_PATH = `${SCENE_LABEL}.Lighting`;
 const MAX_SEED = 9999;
 
 export default function useSceneControls() {
@@ -44,6 +51,12 @@ export default function useSceneControls() {
     controlsSnapshotRef,
   });
 
+  const { buildLighting, lightingControls } = useSceneLightingControls({
+    controlsSnapshotRef,
+    lighting: LIGHTING,
+    lightingFolderPath: LIGHTING_FOLDER_PATH,
+  });
+
   const { buildPost, postControls } = useScenePostControls({
     controlsSnapshotRef,
     post: POST,
@@ -57,10 +70,12 @@ export default function useSceneControls() {
   const [controls, setControls] = useControls(SCENE_LABEL, () => ({
     Presets: presetsFolder,
     Camera: folder(cameraControls, { collapsed: true }),
+    Lighting: folder(lightingControls, { collapsed: true }),
     City: getCityControls(preset, { onReseed }),
-    Relief: getReliefControls(preset),
+    Composition: getCompositionControls(preset),
+    Form: getFormControls(preset),
     Motion: getMotionControls(preset),
-    Palette: getPaletteControls(preset),
+    Surface: getPaletteControls(preset),
     Post: folder(postControls, { collapsed: true }),
   }));
 
@@ -81,6 +96,15 @@ export default function useSceneControls() {
     [buildCamera, cameraControlsKey]
   );
 
+  const lightingControlsKey = useMemo(
+    () => getLightingControlsKey(controls),
+    [controls]
+  );
+  const lighting = useMemo(
+    () => buildLighting(controls),
+    [buildLighting, lightingControlsKey]
+  );
+
   const postControlsKey = useMemo(
     () => getPostControlsKey(controls),
     [controls]
@@ -88,7 +112,7 @@ export default function useSceneControls() {
   const post = useMemo(() => buildPost(controls), [buildPost, postControlsKey]);
 
   return useMemo(
-    () => ({ ...controls, camera, cameraApiRef, post }),
-    [camera, controls, post]
+    () => ({ ...controls, camera, cameraApiRef, lighting, post }),
+    [camera, controls, lighting, post]
   );
 }

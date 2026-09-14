@@ -5,6 +5,8 @@ const DEFAULT_CAMERA_POSITION = Object.freeze([0, 0, 5]);
 const DEFAULT_CAMERA_TARGET = Object.freeze([0, 0, 0]);
 const DEFAULT_CAMERA_SCALE = Object.freeze([1, 1, 1]);
 const DEFAULT_FOV = 50;
+const DEFAULT_PROJECTION = 'perspective';
+const DEFAULT_FRUSTUM_HEIGHT = 10;
 const DEFAULT_NEAR = 0.1;
 const DEFAULT_FAR = 1000;
 const DEFAULT_FIXED_SHOT_ID = 'default';
@@ -49,6 +51,11 @@ export const SCENE_CAMERA_MODE_OPTIONS = Object.freeze({
   Orbit: 'orbit',
   Operator: 'operator',
   'Spline Motion': 'spline',
+});
+
+export const SCENE_CAMERA_PROJECTION_OPTIONS = Object.freeze({
+  Perspective: 'perspective',
+  Orthographic: 'orthographic',
 });
 
 export const SCENE_CAMERA_FIXED_BEHAVIOR_OPTIONS = Object.freeze({
@@ -158,6 +165,16 @@ export function toVectorObject(value, fallback) {
   const [x, y, z] = toVectorTuple(value, fallback);
 
   return { x, y, z };
+}
+
+// An orthographic rig keeps every mode, target and frame the perspective one
+// has; only the frustum replaces fov, so the frustum height is declared once
+// at the top level rather than per mode.
+export function normalizeSceneCameraProjection(
+  value,
+  fallback = DEFAULT_PROJECTION
+) {
+  return value === 'orthographic' || value === 'perspective' ? value : fallback;
 }
 
 export function normalizeSceneCameraMode(value, fallback = DEFAULT_MODE) {
@@ -647,8 +664,17 @@ export function normalizeSceneCameraDeclaration(camera = {}) {
     far: toPositiveNumber(camera?.far, DEFAULT_FAR),
     fixed,
     near: toPositiveNumber(camera?.near, DEFAULT_NEAR),
+    frustumHeight: toPositiveNumber(
+      camera?.frustumHeight,
+      DEFAULT_FRUSTUM_HEIGHT
+    ),
+    mobileFrustumHeight: toPositiveNumber(
+      camera?.mobileFrustumHeight,
+      toPositiveNumber(camera?.frustumHeight, DEFAULT_FRUSTUM_HEIGHT)
+    ),
     operator: normalizeOperatorDeclaration(camera),
     orbit: normalizeOrbitDeclaration(camera, fixed),
+    projection: normalizeSceneCameraProjection(camera?.projection),
     spline: normalizeSplineDeclaration(camera, fixed),
   };
 }
@@ -692,6 +718,9 @@ export function buildSceneCameraControlValues(camera = {}, options = {}) {
 
   return {
     cameraMode: normalizedCamera.defaultMode,
+    cameraProjection: normalizedCamera.projection,
+    cameraFrustumHeight: normalizedCamera.frustumHeight,
+    cameraMobileFrustumHeight: normalizedCamera.mobileFrustumHeight,
     cameraAutoFit: normalizedCamera.cameraAutoFit,
     ...(includeClipPlaneControls
       ? {
@@ -935,6 +964,18 @@ export function buildSceneCameraRuntimeConfig({ camera, controls = {} } = {}) {
     cameraAutoFit: controls.cameraAutoFit ?? normalizedCamera.cameraAutoFit,
     defaultMode: normalizedCamera.defaultMode,
     far: toPositiveNumber(controls.cameraFar, normalizedCamera.far),
+    frustumHeight: toPositiveNumber(
+      controls.cameraFrustumHeight,
+      normalizedCamera.frustumHeight
+    ),
+    mobileFrustumHeight: toPositiveNumber(
+      controls.cameraMobileFrustumHeight,
+      normalizedCamera.mobileFrustumHeight
+    ),
+    projection: normalizeSceneCameraProjection(
+      controls.cameraProjection,
+      normalizedCamera.projection
+    ),
     fixed: {
       activeShot: fixedActiveShot,
       behavior: normalizeFixedBehavior(
@@ -1348,8 +1389,17 @@ function buildCapturedFrameControlValues({
     return {};
   }
 
+  // Under an orthographic camera the captured frame carries a frustum height
+  // instead of a usable fov, and that key is camera-level rather than
+  // per-mode — so it rides along with either capture shape.
+  const projectionValues =
+    capturedFrame.frustumHeight === undefined
+      ? {}
+      : { cameraFrustumHeight: capturedFrame.frustumHeight };
+
   if (captureMode === 'orbit') {
     return {
+      ...projectionValues,
       ...(options.includeAutoFitToggle === false
         ? {}
         : { cameraAutoFit: false }),
@@ -1392,6 +1442,7 @@ function buildCapturedFrameControlValues({
   }
 
   return {
+    ...projectionValues,
     ...(controlValues.fixedActiveShot === undefined
       ? {}
       : { fixedActiveShot: descriptor.id }),

@@ -29,20 +29,6 @@ export default function getCityControls(preset = {}, { onReseed } = {}) {
         label: 'Seed Crop',
         value: preset.honorSeedZoom ?? true,
       },
-      towerVariants: {
-        label: 'Tower Forms',
-        max: 16,
-        min: 1,
-        step: 1,
-        value: preset.towerVariants ?? 8,
-      },
-      stairNarrowing: {
-        label: 'Stair Taper',
-        max: 0.6,
-        min: 0,
-        step: 0.01,
-        value: preset.stairNarrowing ?? 0.18,
-      },
     },
     { collapsed: true }
   );

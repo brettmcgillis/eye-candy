@@ -1,6 +1,12 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
 
-import buildCityModel, { rebuildDistrictCells } from '../utils/cityModel';
+import { useFrame } from '@react-three/fiber';
+
+import buildCityModel, {
+  rebuildDistrictCells,
+  retireDistrictCells,
+} from '../utils/cityModel';
+import { districtOrder, nextDistrict } from '../utils/rebuildOrder';
 
 function groupByDistrict(model) {
   const byDistrict = model.districts.map(() => []);
@@ -9,39 +15,47 @@ function groupByDistrict(model) {
     byDistrict[cell.district].push(cell);
   });
 
-  return {
-    byDistrict,
-    dirty: null,
-    generations: model.districts.map(() => 0),
-    version: 0,
-  };
+  return { byDistrict, generations: model.districts.map(() => 0) };
 }
 
-// A district whose bounds never reach the clip disc classifies to nothing, so
-// rebuilding it would burn a turn on an empty tile.
-function occupiedDistricts(state) {
-  return state.byDistrict.reduce(
+function occupiedDistricts(byDistrict) {
+  return byDistrict.reduce(
     (indices, cells, index) => (cells.length ? [...indices, index] : indices),
     []
   );
 }
 
+// A rebuild is two phases on the build clock: the district recedes to ground
+// level, and only once every cell is flush does its replacement emerge.
 export default function useCityModel({
   buildClockRef,
+  composition,
   rebuildEnabled,
+  rebuildOrder,
   rebuildSeconds,
   referenceHeight,
+  revealBand,
   seed,
 }) {
   const model = useMemo(
-    () => buildCityModel({ referenceHeight, seed }),
-    [referenceHeight, seed]
+    () => buildCityModel({ composition, referenceHeight, seed }),
+    [composition, referenceHeight, seed]
   );
   const [state, setState] = useState(() => groupByDistrict(model));
-  const turnRef = useRef(0);
+  const cursorRef = useRef({ last: null, turn: -1 });
+  const retiringRef = useRef(null);
+  const liveRef = useRef({ composition, revealBand });
+
+  liveRef.current = { composition, revealBand };
+
+  const order = useMemo(
+    () => districtOrder(rebuildOrder, model.districts),
+    [model, rebuildOrder]
+  );
 
   useEffect(() => {
-    turnRef.current = 0;
+    cursorRef.current = { last: null, turn: -1 };
+    retiringRef.current = null;
     setState(groupByDistrict(model));
   }, [model]);
 
@@ -51,36 +65,37 @@ export default function useCityModel({
     }
 
     const intervalId = window.setInterval(() => {
-      setState((previous) => {
-        const occupied = occupiedDistricts(previous);
+      if (retiringRef.current) {
+        return;
+      }
 
-        if (!occupied.length) {
+      setState((previous) => {
+        const { index, turn } = nextDistrict({
+          ...cursorRef.current,
+          mode: rebuildOrder,
+          occupied: occupiedDistricts(previous.byDistrict),
+          order,
+        });
+
+        if (index === null) {
           return previous;
         }
 
-        turnRef.current = (turnRef.current + 1) % occupied.length;
-
-        const index = occupied[turnRef.current];
-        const generation = previous.generations[index] + 1;
-        const byDistrict = [...previous.byDistrict];
-        const generations = [...previous.generations];
-
-        byDistrict[index] = rebuildDistrictCells({
-          birthBase: buildClockRef.current,
-          district: model.districts[index],
-          generation,
+        const { cells, settlesAt } = retireDistrictCells({
+          cells: previous.byDistrict[index],
+          clock: buildClockRef.current,
           radius: model.radius,
-          referenceHeight,
-          seed,
         });
-        generations[index] = generation;
+        const byDistrict = [...previous.byDistrict];
 
-        return {
-          byDistrict,
-          dirty: index,
-          generations,
-          version: previous.version + 1,
+        byDistrict[index] = cells;
+        cursorRef.current = { last: index, turn };
+        retiringRef.current = {
+          index,
+          settlesAt: settlesAt + liveRef.current.revealBand,
         };
+
+        return { ...previous, byDistrict };
       });
     }, rebuildSeconds * 1000);
 
@@ -88,19 +103,43 @@ export default function useCityModel({
   }, [
     buildClockRef,
     model,
+    order,
     rebuildEnabled,
+    rebuildOrder,
     rebuildSeconds,
-    referenceHeight,
-    seed,
   ]);
+
+  useFrame(() => {
+    const retiring = retiringRef.current;
+
+    if (!retiring || buildClockRef.current < retiring.settlesAt) {
+      return;
+    }
+
+    retiringRef.current = null;
+
+    setState((previous) => {
+      const { index } = retiring;
+      const generation = previous.generations[index] + 1;
+      const byDistrict = [...previous.byDistrict];
+      const generations = [...previous.generations];
+
+      byDistrict[index] = rebuildDistrictCells({
+        birthBase: buildClockRef.current,
+        composition: liveRef.current.composition,
+        district: model.districts[index],
+        generation,
+        radius: model.radius,
+        referenceHeight,
+        seed,
+      });
+      generations[index] = generation;
+
+      return { byDistrict, generations };
+    });
+  });
 
   const cells = useMemo(() => state.byDistrict.flat(), [state.byDistrict]);
 
-  return {
-    cells,
-    cellsByDistrict: state.byDistrict,
-    dirtyDistrict: state.dirty,
-    model,
-    version: state.version,
-  };
+  return { cells, cellsByDistrict: state.byDistrict, model };
 }

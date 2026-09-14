@@ -8,7 +8,7 @@ import {
   useState,
 } from 'react';
 
-import { useFrame } from '@react-three/fiber';
+import { useFrame, useThree } from '@react-three/fiber';
 
 import * as THREE from 'three';
 
@@ -22,6 +22,7 @@ const DEFAULT_MODE = 'fixed';
 const DEFAULT_CAMERA_POSITION = Object.freeze([0, 0, 5]);
 const DEFAULT_CAMERA_TARGET = Object.freeze([0, 0, 0]);
 const DEFAULT_FOV = 50;
+const DEFAULT_FRUSTUM_HEIGHT = 10;
 const DEFAULT_NEAR = 0.1;
 const DEFAULT_FAR = 1000;
 const DEFAULT_FIXED_SHOT_ID = 'default';
@@ -415,6 +416,16 @@ export default function useSceneCamera({
   }, [camera?.operator, operatorDefaults]);
   const near = toFiniteNumber(camera?.near, DEFAULT_NEAR);
   const far = toFiniteNumber(camera?.far, DEFAULT_FAR);
+  const isOrthographic =
+    (camera?.projection ?? camera?.cameraProjection) === 'orthographic';
+  const frustumHeight = toPositiveNumber(
+    camera?.frustumHeight,
+    DEFAULT_FRUSTUM_HEIGHT
+  );
+  const mobileFrustumHeight = toPositiveNumber(
+    camera?.mobileFrustumHeight,
+    frustumHeight
+  );
   const fixedCamera = useMemo(() => {
     return normalizeFixedCamera(camera?.fixed ?? {});
   }, [camera?.fixed]);
@@ -479,6 +490,9 @@ export default function useSceneCamera({
     cameraTarget: fixedCameraTarget,
     isPortrait,
   } = useCameraFitToViewport(fixedCameraConfig);
+
+  const activeFrustumHeight = isPortrait ? mobileFrustumHeight : frustumHeight;
+  const viewportHeight = useThree((state) => state.size.height);
 
   const fixedFrame = useMemo(() => {
     return {
@@ -692,7 +706,11 @@ export default function useSceneCamera({
     const nextFrame = isOrbitMode ? activeOrbitFrame : fixedFrame;
 
     cameraNode.position.set(...nextFrame.position);
-    cameraNode.fov = nextFrame.fov;
+
+    if (cameraNode.isPerspectiveCamera) {
+      cameraNode.fov = nextFrame.fov;
+    }
+
     cameraNode.updateProjectionMatrix();
 
     if (!controlsNode) {
@@ -715,13 +733,25 @@ export default function useSceneCamera({
   ]);
 
   useLayoutEffect(() => {
-    if (!cameraNode || !isSplineMode) {
+    if (!cameraNode || !isSplineMode || !cameraNode.isPerspectiveCamera) {
       return;
     }
 
     cameraNode.fov = splineFrame.fov;
     cameraNode.updateProjectionMatrix();
   }, [cameraNode, isSplineMode, splineFrame.fov]);
+
+  // drei's OrthographicCamera derives its frustum from the canvas in pixels,
+  // so `zoom` is what turns a world-unit frustum height into a projection —
+  // and it has to be re-applied on resize, not just when the control changes.
+  useLayoutEffect(() => {
+    if (!cameraNode || !isOrthographic || !viewportHeight) {
+      return;
+    }
+
+    cameraNode.zoom = viewportHeight / activeFrustumHeight;
+    cameraNode.updateProjectionMatrix();
+  }, [activeFrustumHeight, cameraNode, isOrthographic, viewportHeight]);
 
   const handleCameraRef = useCallback((node) => {
     cameraRef.current = node;
@@ -789,7 +819,12 @@ export default function useSceneCamera({
 
       return {
         activeFixedShotId,
-        fov: toRoundedNumber(cameraNode.fov),
+        fov: toRoundedNumber(cameraNode.fov ?? initialFrame.fov),
+        ...(isOrthographic && cameraNode.zoom
+          ? {
+              frustumHeight: toRoundedNumber(viewportHeight / cameraNode.zoom),
+            }
+          : {}),
         mode,
         pivot,
         position,
@@ -803,11 +838,14 @@ export default function useSceneCamera({
       cameraNode,
       controlsNode,
       fixedFrame.target,
+      initialFrame.fov,
       isOrbitMode,
+      isOrthographic,
       isPortrait,
       isSplineMode,
       mode,
       splineFrame.target,
+      viewportHeight,
     ]
   );
 
@@ -943,6 +981,13 @@ export default function useSceneCamera({
     splinePoints,
     splineShowPath,
     splineTension,
+    isOrthographic,
+    orthographicCameraProps: {
+      far,
+      near,
+      position: initialFrame.position,
+      zoom: viewportHeight ? viewportHeight / activeFrustumHeight : 1,
+    },
     perspectiveCameraProps: {
       far,
       fov: initialFrame.fov,

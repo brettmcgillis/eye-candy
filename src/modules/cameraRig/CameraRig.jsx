@@ -1,6 +1,11 @@
 import React, { useEffect, useMemo, useRef } from 'react';
 
-import { Line, OrbitControls, PerspectiveCamera } from '@react-three/drei';
+import {
+  Line,
+  OrbitControls,
+  OrthographicCamera,
+  PerspectiveCamera,
+} from '@react-three/drei';
 import { useThree } from '@react-three/fiber';
 
 import * as THREE from 'three';
@@ -48,6 +53,7 @@ export default function CameraRig({
   operatorInputOptions,
   orbitControlsProps,
   orbitInteractionEnabled = true,
+  orthographicCameraProps,
   perspectiveCameraProps,
   shouldBlockPointerLook,
 }) {
@@ -70,7 +76,9 @@ export default function CameraRig({
     handleCameraRef,
     handleControlsRef,
     isOrbitMode,
+    isOrthographic,
     isSplineMode,
+    orthographicCameraProps: resolvedOrthographicCameraProps,
     perspectiveCameraProps: resolvedPerspectiveCameraProps,
     splineClosed,
     splinePoints,
@@ -156,12 +164,21 @@ export default function CameraRig({
 
   return (
     <>
-      <PerspectiveCamera
-        {...perspectiveCameraProps}
-        ref={handleCameraRef}
-        makeDefault
-        {...resolvedPerspectiveCameraProps}
-      />
+      {isOrthographic ? (
+        <OrthographicCamera
+          {...orthographicCameraProps}
+          ref={handleCameraRef}
+          makeDefault
+          {...resolvedOrthographicCameraProps}
+        />
+      ) : (
+        <PerspectiveCamera
+          {...perspectiveCameraProps}
+          ref={handleCameraRef}
+          makeDefault
+          {...resolvedPerspectiveCameraProps}
+        />
+      )}
       {isOrbitMode ? (
         <OrbitControls
           {...orbitControlsProps}

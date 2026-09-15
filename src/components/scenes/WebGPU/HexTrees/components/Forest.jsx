@@ -166,6 +166,8 @@ function Forest({ config }) {
         paletteMid={config.paletteMid}
         paletteEnd={config.paletteEnd}
         paletteMidpoint={config.paletteMidpoint}
+        paletteName={config.paletteName}
+        paletteExact={config.paletteExact}
       />
       <CircleField
         circles={forest.circles}

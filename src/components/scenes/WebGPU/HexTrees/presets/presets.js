@@ -27,6 +27,8 @@ export const PRESETS = {
     pitchAngle: 35,
     radialSegments: 8,
     colorMode: 'depth',
+    paletteName: 'None',
+    paletteExact: false,
     paletteStart: '#2a5d34',
     paletteMid: '#8a9b3f',
     paletteEnd: '#e8d27a',

@@ -1,6 +1,7 @@
 import { folder } from 'leva';
 
-import { PALETTE_NAMES } from '../utils/palette';
+import { PALETTE_NAMES, PALETTE_NONE } from '@utils/gradientPalette';
+
 import { SHAPE_OPTIONS } from '../utils/spawnShapes';
 import { BORDER_OPTIONS } from '../utils/uniforms';
 
@@ -250,7 +251,15 @@ const page = (p) =>
         step: 0.05,
         value: p.lineWidth,
       },
-      palette: { label: 'Palette', options: PALETTE_NAMES, value: p.palette },
+      palette: {
+        label: 'Palette',
+        options: [PALETTE_NONE, ...PALETTE_NAMES],
+        value: p.palette,
+      },
+      paletteExact: {
+        label: 'Exact Colors',
+        value: p.paletteExact,
+      },
       paletteMix: {
         label: 'Palette Mix',
         max: 1,

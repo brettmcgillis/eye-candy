@@ -1,6 +1,6 @@
 import { folder } from 'leva';
 
-import { PALETTE_NAMES } from '../utils/palette';
+import { PALETTE_NAMES, PALETTE_NONE } from '@utils/gradientPalette';
 
 export default function getSandControls(p) {
   return folder(
@@ -8,7 +8,11 @@ export default function getSandControls(p) {
       paletteName: {
         label: 'Palette',
         value: p.paletteName,
-        options: PALETTE_NAMES,
+        options: [PALETTE_NONE, ...PALETTE_NAMES],
+      },
+      paletteExact: {
+        label: 'Exact Colors',
+        value: p.paletteExact,
       },
       paletteMix: {
         label: 'Palette Mix',

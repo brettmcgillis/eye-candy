@@ -1,7 +1,7 @@
 /* eslint-disable no-param-reassign */
 import { applySolverConfig } from '@modules/reactionDiffusion';
+import { PALETTE_NONE } from '@utils/gradientPalette';
 
-import { PALETTE_NONE } from './palette';
 import { SHAPE_OPTIONS } from './spawnShapes';
 import { BORDER_OPTIONS, indexOf } from './uniforms';
 

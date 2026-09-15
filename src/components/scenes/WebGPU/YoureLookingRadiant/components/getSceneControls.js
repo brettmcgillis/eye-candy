@@ -1,5 +1,7 @@
 import { folder } from 'leva';
 
+import { PALETTE_NAMES, PALETTE_NONE } from '@utils/gradientPalette';
+
 import { ROLE_MODE_OPTIONS } from '../utils/roleModes';
 
 // One level of folders, ordered by how often you reach for them. Sizes are
@@ -200,6 +202,12 @@ const look = (p) =>
     {
       fieldColor: { label: 'Field', value: p.fieldColor },
       bodyTint: { label: 'Occluding', value: p.bodyTint },
+      paletteName: {
+        label: 'Emitting Palette',
+        options: [PALETTE_NONE, ...PALETTE_NAMES],
+        value: p.paletteName,
+      },
+      paletteExact: { label: 'Exact Colors', value: p.paletteExact },
       colorA: { label: 'Emitting A', value: p.colorA },
       colorB: { label: 'Emitting B', value: p.colorB },
       colorC: { label: 'Emitting C', value: p.colorC },

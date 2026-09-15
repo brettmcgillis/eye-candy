@@ -1,5 +1,7 @@
 import { folder } from 'leva';
 
+import { PALETTE_NAMES, PALETTE_NONE } from '@utils/gradientPalette';
+
 import { COLOR_MODES } from '../utils/paletteNode';
 
 // Palette controls, keys 1:1 with presets/presets.js. `colorMode` picks
@@ -13,6 +15,12 @@ export default function getPaletteControls(p = {}) {
         value: p.colorMode ?? 'growthOrder',
         options: COLOR_MODES,
       },
+      paletteName: {
+        label: 'Palette',
+        value: p.paletteName ?? PALETTE_NONE,
+        options: [PALETTE_NONE, ...PALETTE_NAMES],
+      },
+      paletteExact: { label: 'Exact Colors', value: p.paletteExact ?? false },
       paletteStart: {
         label: 'Color Start',
         value: p.paletteStart ?? '#3fd0ff',

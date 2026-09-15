@@ -3,14 +3,14 @@ import { useEffect, useMemo, useRef } from 'react';
 import { useFrame, useThree } from '@react-three/fiber';
 
 import useRenderScale from '@hooks/useRenderScale';
-
-import applyControls from '../utils/applyControls';
-import createRuntime from '../utils/createRuntime';
 import {
   PALETTE_NONE,
   createNeutralPaletteTexture,
   createPaletteTexture,
-} from '../utils/palette';
+} from '@utils/gradientPalette';
+
+import applyControls from '../utils/applyControls';
+import createRuntime from '../utils/createRuntime';
 import createUniforms, { createInkUniforms } from '../utils/uniforms';
 
 // The ceiling the walker buffers are allocated against. Must not be below the
@@ -26,6 +26,7 @@ const PAGE_ONLY = new Set([
   'lineSoftness',
   'lineThreshold',
   'palette',
+  'paletteExact',
   'paletteMix',
   'paletteShift',
   'renderScale',
@@ -89,11 +90,11 @@ export default function useContourPipeline(config) {
     const selected =
       config.palette === PALETTE_NONE
         ? null
-        : createPaletteTexture(config.palette);
+        : createPaletteTexture(config.palette, { exact: config.paletteExact });
 
     runtime.setPalette(selected || neutralPalette);
     return () => selected?.dispose();
-  }, [config.palette, neutralPalette, runtime]);
+  }, [config.palette, config.paletteExact, neutralPalette, runtime]);
 
   const live = useRef(config);
   live.current = config;

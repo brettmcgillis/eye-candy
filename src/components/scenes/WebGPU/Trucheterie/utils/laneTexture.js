@@ -1,5 +1,7 @@
 import * as THREE from 'three/webgpu';
 
+import { hexToRgb } from '@utils/gradientPalette';
+
 import buildLaneChannels from './laneChannels';
 import {
   channelColors,
@@ -26,12 +28,6 @@ export function createLaneTexture() {
   texture.generateMipmaps = false;
   texture.needsUpdate = true;
   return texture;
-}
-
-function hexToRgb(hex) {
-  const n = parseInt(hex.replace('#', ''), 16);
-  // eslint-disable-next-line no-bitwise
-  return [(n >> 16) & 255, (n >> 8) & 255, n & 255];
 }
 
 /* eslint-disable no-param-reassign */

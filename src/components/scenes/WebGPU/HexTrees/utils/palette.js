@@ -41,6 +41,12 @@ export function sampleGradient({ t, start, mid, end, midpoint, out }) {
   return out;
 }
 
+export function midpointT(t, midpoint) {
+  const m = Math.min(0.999, Math.max(0.001, midpoint));
+  const c = Math.min(1, Math.max(0, t));
+  return c <= m ? (0.5 * c) / m : 0.5 + (0.5 * (c - m)) / (1 - m);
+}
+
 export function createGradientColors({ paletteStart, paletteMid, paletteEnd }) {
   return {
     start: new Color(paletteStart),

@@ -146,6 +146,8 @@ const HaloDisplay = memo(function HaloDisplay({ controls, setControls }) {
       controls.ringsStart,
       controls.ringsEnd,
       controls.ringsSteps,
+      controls.ringsPalette,
+      controls.ringsPaletteExact,
       controls.ringsSm,
       controls.ringsMed,
       controls.ringsLg,

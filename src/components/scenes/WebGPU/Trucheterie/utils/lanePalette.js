@@ -1,17 +1,20 @@
-import GRADIENTS from '@utils/gradients.json';
+import {
+  PALETTE_NAMES as GRADIENT_NAMES,
+  PALETTE_NONE,
+  getPaletteStops,
+  hexToRgb,
+  sampleStops,
+} from '@utils/gradientPalette';
 
 import { mulberry32 } from './grid';
 
-// Lane colouring from the shared gradients.json (the same palette list
-// Rorschach offers), either as the palette's literal stops or as a gradient
-// blended from them.
-export const PALETTE_NONE = 'None';
-export const PALETTE_NAMES = [PALETTE_NONE, ...GRADIENTS.map((g) => g.name)];
+export { PALETTE_NONE };
+export const PALETTE_NAMES = [PALETTE_NONE, ...GRADIENT_NAMES];
 export const LANE_MODES = ['Cycle', 'Depth', 'Random'];
 
 export function resolvePaletteStops(name) {
   if (!name || name === PALETTE_NONE) return null;
-  return GRADIENTS.find((g) => g.name === name)?.colors ?? null;
+  return getPaletteStops(name);
 }
 
 // The blob field's seed is a string (it feeds seedrandom), so Random mode
@@ -28,12 +31,6 @@ export function hashSeed(value) {
   return h >>> 0;
 }
 
-function hexToRgb(hex) {
-  const n = parseInt(hex.replace('#', ''), 16);
-  // eslint-disable-next-line no-bitwise
-  return [(n >> 16) & 255, (n >> 8) & 255, n & 255];
-}
-
 // Seeded Fisher-Yates over the stop order. Reordering the stops themselves
 // (rather than re-rolling each channel's position, as Rorschach does) keeps
 // Cycle's ring cadence and Depth's stepping intact while changing which
@@ -47,17 +44,6 @@ export function shuffleStops(stops, shuffleSeed) {
     [out[i], out[j]] = [out[j], out[i]];
   }
   return out;
-}
-
-// Blend between the two stops bracketing t, in RGB.
-function sampleStops(stops, t) {
-  const scaled = Math.max(0, Math.min(1, t)) * (stops.length - 1);
-  const i0 = Math.floor(scaled);
-  const i1 = Math.min(stops.length - 1, i0 + 1);
-  const local = scaled - i0;
-  const c0 = hexToRgb(stops[i0]);
-  const c1 = hexToRgb(stops[i1]);
-  return c0.map((c, k) => Math.round(c + (c1[k] - c) * local));
 }
 
 // Each mode yields both a position along the palette and the stop it snaps
@@ -89,6 +75,8 @@ export function channelColors(channels, stops, { exact, mode, seed }) {
   const rng = mulberry32(seed);
   return channels.map((channel) => {
     const { index, t } = channelStop(channel, mode, rng, stops.length);
-    return exact ? hexToRgb(stops[index]) : sampleStops(stops, t);
+    return exact
+      ? hexToRgb(stops[index])
+      : sampleStops(stops, t).map(Math.round);
   });
 }

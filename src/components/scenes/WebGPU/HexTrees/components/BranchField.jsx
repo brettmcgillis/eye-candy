@@ -3,8 +3,15 @@ import React, { memo, useEffect, useRef, useState } from 'react';
 import * as THREE from 'three/webgpu';
 
 import {
+  getPaletteStops,
+  rgbToColor,
+  samplePalette,
+} from '@utils/gradientPalette';
+
+import {
   colorModeT,
   createGradientColors,
+  midpointT,
   sampleGradient,
 } from '../utils/palette';
 
@@ -40,6 +47,8 @@ function BranchField({
   paletteMid,
   paletteEnd,
   paletteMidpoint,
+  paletteName,
+  paletteExact,
 }) {
   const meshRef = useRef(null);
   const [renderObject, setRenderObject] = useState(null);
@@ -72,6 +81,7 @@ function BranchField({
       paletteMid,
       paletteEnd,
     });
+    const stops = getPaletteStops(paletteName);
 
     branches.forEach((branch, i) => {
       direction.subVectors(branch.end, branch.start);
@@ -86,14 +96,21 @@ function BranchField({
       mesh.setMatrixAt(i, dummy.matrix);
 
       const t = colorModeT(colorMode, branch);
-      sampleGradient({
-        t,
-        start,
-        mid,
-        end,
-        midpoint: paletteMidpoint,
-        out: mixedColor,
-      });
+      if (stops) {
+        rgbToColor(
+          samplePalette(stops, midpointT(t, paletteMidpoint), paletteExact),
+          mixedColor
+        );
+      } else {
+        sampleGradient({
+          t,
+          start,
+          mid,
+          end,
+          midpoint: paletteMidpoint,
+          out: mixedColor,
+        });
+      }
       mesh.setColorAt(i, mixedColor);
     });
 
@@ -119,6 +136,8 @@ function BranchField({
     paletteMid,
     paletteEnd,
     paletteMidpoint,
+    paletteName,
+    paletteExact,
   ]);
 
   if (!renderObject) return null;

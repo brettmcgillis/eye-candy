@@ -6,15 +6,15 @@ import { instancedArray, uniform } from 'three/tsl';
 import * as THREE from 'three/webgpu';
 
 import { applySolverConfig, createSolver } from '@modules/reactionDiffusion';
-
-import useManualDrops from '../hooks/useManualDrops';
-import createBedLayout from '../utils/bedLayout';
-import createGrainMaterial from '../utils/grainMaterial';
 import {
   PALETTE_NONE,
   createNeutralPaletteTexture,
   createPaletteTexture,
-} from '../utils/palette';
+} from '@utils/gradientPalette';
+
+import useManualDrops from '../hooks/useManualDrops';
+import createBedLayout from '../utils/bedLayout';
+import createGrainMaterial from '../utils/grainMaterial';
 
 function buildSandUniforms() {
   return {
@@ -130,8 +130,10 @@ function SandField({ config, dropTargetRef = null }) {
   // running simulation, which rebuilding the material would.
   const paletteTexture = useMemo(
     () =>
-      createPaletteTexture(config.paletteName) ?? createNeutralPaletteTexture(),
-    [config.paletteName]
+      createPaletteTexture(config.paletteName, {
+        exact: config.paletteExact,
+      }) ?? createNeutralPaletteTexture(),
+    [config.paletteExact, config.paletteName]
   );
 
   useEffect(() => () => paletteTexture.dispose(), [paletteTexture]);

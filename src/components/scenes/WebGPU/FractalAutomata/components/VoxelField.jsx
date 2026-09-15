@@ -18,6 +18,7 @@ import createMaterialStateNodes, {
   updateMaterialStateUniforms,
 } from '../utils/materialStateNode';
 import { createRuleTables } from '../utils/ruleTables';
+import createStateColors from '../utils/stateColors';
 
 const REBUILD_DEBOUNCE_MS = 300;
 const CUBE_GEOMETRY = new THREE.BoxGeometry(1, 1, 1);
@@ -169,11 +170,7 @@ function applyVisibilityAndBoundsFilter(states, k, config) {
 // the baked `state` attribute (greedyMesh.js) and DO stay live via
 // `materialUniforms`, re-synced by the live-update effect below.
 function buildStaticMesh({ states, k, cellSpacing, config }) {
-  const paletteColors = {
-    1: new THREE.Color(config.paletteStart),
-    2: new THREE.Color(config.paletteMid),
-    3: new THREE.Color(config.paletteEnd),
-  };
+  const paletteColors = createStateColors(config);
   const geometry = buildGreedyMeshGeometry({
     states,
     k,
@@ -291,11 +288,7 @@ async function bakeTierMesh({
   const stateFloats = new Float32Array(stateBytes);
   const exposedSlots = new Uint32Array(exposedBytes);
 
-  const paletteColors = {
-    1: new THREE.Color(config.paletteStart),
-    2: new THREE.Color(config.paletteMid),
-    3: new THREE.Color(config.paletteEnd),
-  };
+  const paletteColors = createStateColors(config);
   const debugColor = new THREE.Color(debugColorHex);
   const useDebugColor = !!config.debugTierColors;
 
@@ -1057,6 +1050,8 @@ function VoxelField({ config }) {
     config.paletteStart,
     config.paletteMid,
     config.paletteEnd,
+    config.paletteName,
+    config.paletteExact,
     config.debugTierColors,
   ]);
 

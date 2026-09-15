@@ -5,6 +5,7 @@ import { folder, useControls } from 'leva';
 import { useSkullControls } from '@elements/Skull/SkullControls';
 import usePresetsFolder from '@hooks/usePresetsFolder';
 import CAMERA_SPLINE_PRESETS from '@presets/spline/cameraSplinePresets';
+import { PALETTE_NAMES, PALETTE_NONE } from '@utils/gradientPalette';
 import { getRandomNumber } from '@utils/math';
 
 import { PRESETS } from '../presets';
@@ -530,6 +531,17 @@ export default function useSceneControls() {
                 min: 0.5,
                 max: 20,
                 step: 0.1,
+              },
+              ringsPalette: {
+                label: 'Palette',
+                value: PALETTE_NONE,
+                options: [PALETTE_NONE, ...PALETTE_NAMES],
+                render: (get) => get(RINGS_STYLE_PATH) === 'gradient',
+              },
+              ringsPaletteExact: {
+                label: 'Exact Colors',
+                value: false,
+                render: (get) => get(RINGS_STYLE_PATH) === 'gradient',
               },
               ringsStart: {
                 label: 'Start Color',

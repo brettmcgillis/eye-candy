@@ -1,14 +1,31 @@
 import getColorsInRange from '@utils/colors';
+import {
+  getPaletteStops,
+  rgbToHex,
+  samplePaletteColors,
+} from '@utils/gradientPalette';
+
+function ringGradientColors(controls) {
+  const stops = getPaletteStops(controls.ringsPalette);
+  if (!stops) {
+    return getColorsInRange(
+      controls.ringsStart,
+      controls.ringsEnd,
+      controls.ringsSteps
+    );
+  }
+  return samplePaletteColors(
+    stops,
+    controls.ringsSteps,
+    controls.ringsPaletteExact
+  ).map(rgbToHex);
+}
 
 export function buildRingsConfig(controls) {
   const width = controls.ringsOuterRadius - controls.ringsInnerRadius;
 
   if (controls.ringsStyle === 'gradient') {
-    const gradientColors = getColorsInRange(
-      controls.ringsStart,
-      controls.ringsEnd,
-      controls.ringsSteps
-    ).map((value) => ({
+    const gradientColors = ringGradientColors(controls).map((value) => ({
       width: width / controls.ringsSteps,
       color: value,
     }));

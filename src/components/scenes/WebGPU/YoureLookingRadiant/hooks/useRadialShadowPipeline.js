@@ -5,6 +5,12 @@ import { useFrame, useThree } from '@react-three/fiber';
 
 import * as THREE from 'three/webgpu';
 
+import {
+  getPaletteStops,
+  rgbToColor,
+  samplePaletteColors,
+} from '@utils/gradientPalette';
+
 import createRadiancePipeline from '../utils/createPipeline';
 import { MAX_BODIES, updateSceneUniforms } from '../utils/sceneTSL';
 import createSwarm from '../utils/swarm';
@@ -65,12 +71,14 @@ export default function useRadiancePipeline(config) {
   // each toward the palette's mean luminance so intensity means the same
   // thing whatever the hue.
   const palette = useMemo(() => {
-    const colors = [
-      config.colorA,
-      config.colorB,
-      config.colorC,
-      config.colorD,
-    ].map((hex) => new THREE.Color(hex));
+    const stops = getPaletteStops(config.paletteName);
+    const colors = stops
+      ? samplePaletteColors(stops, 4, config.paletteExact).map((rgb) =>
+          rgbToColor(rgb, new THREE.Color())
+        )
+      : [config.colorA, config.colorB, config.colorC, config.colorD].map(
+          (hex) => new THREE.Color(hex)
+        );
 
     const luminance = colors.map(
       (c) => c.r * 0.2126 + c.g * 0.7152 + c.b * 0.0722
@@ -87,6 +95,8 @@ export default function useRadiancePipeline(config) {
     config.colorC,
     config.colorD,
     config.matchBrightness,
+    config.paletteExact,
+    config.paletteName,
   ]);
   const paletteRef = useRef(palette);
   paletteRef.current = palette;

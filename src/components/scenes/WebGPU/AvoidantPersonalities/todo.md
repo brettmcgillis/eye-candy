@@ -16,7 +16,7 @@ every line steering away from ink that is already on the page.
 - [ ] Second emitter, so two shapes can compete for the same page.
 - [ ] allow camera zoom
 - [ ] add control for min spacing between lines.
-- [ ] allow control of initial angle of lines, ie, should they just be vertical +horizontal , or include 45* ?
+- [ ] allow control of initial angle of lines, ie, should they just be vertical +horizontal , or include 45\* ?
 
 ## // Presets
 

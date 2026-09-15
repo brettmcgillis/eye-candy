@@ -1,9 +1,15 @@
-/* eslint-disable no-bitwise */
+import {
+  PALETTE_NAMES as GRADIENT_PALETTE_NAMES,
+  getPaletteStops,
+  hexToRgb,
+  pickStop,
+  sampleStops,
+} from '@utils/gradientPalette';
 import GRADIENTS from '@utils/gradients.json';
 
 // Leva "Palette" dropdown options — 'Random' (existing per-bundle random hue
 // behavior) plus every named gradient in the shared gradients.json.
-export const GRADIENT_NAMES = GRADIENTS.map((g) => g.name);
+export const GRADIENT_NAMES = GRADIENT_PALETTE_NAMES;
 export const PALETTE_NAMES = ['Random', ...GRADIENT_NAMES];
 
 // Fewer than four stops is a two-colour ramp, not a palette. The ink samples
@@ -24,13 +30,7 @@ export const ROLLABLE_GRADIENT_NAMES = GRADIENTS.filter(
 
 export function resolvePaletteColors(paletteName) {
   if (!paletteName || paletteName === 'Random') return null;
-  const gradient = GRADIENTS.find((g) => g.name === paletteName);
-  return gradient ? gradient.colors : null;
-}
-
-function hexToRgb(hex) {
-  const n = parseInt(hex.replace('#', ''), 16);
-  return [(n >> 16) & 255, (n >> 8) & 255, n & 255];
+  return getPaletteStops(paletteName);
 }
 
 // Gamma-space luma, not linearized relative luminance — utils/rollConfig.js
@@ -93,34 +93,12 @@ export function hslToHex(h, s, l) {
   return `#${[r, g, b].map((c) => c.toString(16).padStart(2, '0')).join('')}`;
 }
 
-// Samples a gradient's hex stops at t (0-1), linearly interpolating RGB
-// between the two nearest stops, and converts to {h,s,l} — the shape
-// testGenerator.js's bundle.color already uses (THREE.Color.setHSL takes
-// fractional h/s/l), so swapping random-hue for a palette sample doesn't
-// need any change downstream in the render components.
 export function sampleGradientHsl(colors, t) {
-  const clampedT = Math.max(0, Math.min(1, t));
-  const scaled = clampedT * (colors.length - 1);
-  const i0 = Math.floor(scaled);
-  const i1 = Math.min(colors.length - 1, i0 + 1);
-  const localT = scaled - i0;
-
-  const c0 = hexToRgb(colors[i0]);
-  const c1 = hexToRgb(colors[i1]);
-  const r = c0[0] + (c1[0] - c0[0]) * localT;
-  const g = c0[1] + (c1[1] - c0[1]) * localT;
-  const b = c0[2] + (c1[2] - c0[2]) * localT;
-
-  const [h, s, l] = rgbToHsl(r, g, b);
+  const [h, s, l] = rgbToHsl(...sampleStops(colors, t));
   return { h, s, l };
 }
 
-// The "Exact Colors" counterpart to sampleGradientHsl: same t (0-1)
-// positioning across the stops, but snaps to the nearest stop instead of
-// blending between them — every bundle ends up one of the palette's actual
-// hex colors, never an in-between blend.
 export function pickGradientColorHsl(colors, t) {
-  const clampedT = Math.max(0, Math.min(1, t));
-  const idx = Math.round(clampedT * (colors.length - 1));
-  return hexToHsl(colors[idx]);
+  const [h, s, l] = rgbToHsl(...pickStop(colors, t));
+  return { h, s, l };
 }

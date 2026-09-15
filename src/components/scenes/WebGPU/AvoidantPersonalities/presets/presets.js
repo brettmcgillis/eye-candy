@@ -33,6 +33,7 @@ const BASE = {
   lineThreshold: 0.25,
   lineWidth: 0.7,
   palette: 'Anamnisar',
+  paletteExact: false,
   paletteMix: 1,
   paletteShift: 0,
   reactionResolution: 256,

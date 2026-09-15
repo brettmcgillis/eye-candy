@@ -46,6 +46,8 @@ export const PRESETS = {
     ringsStyle: 'gradient',
     ringsInnerRadius: 0.5,
     ringsOuterRadius: 2,
+    ringsPalette: 'None',
+    ringsPaletteExact: false,
     ringsStart: '#FFFFFF',
     ringsEnd: '#000000',
     ringsSteps: 8,

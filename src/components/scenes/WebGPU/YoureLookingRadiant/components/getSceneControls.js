@@ -35,6 +35,65 @@ const particles = (p) =>
 const motion = (p) =>
   folder(
     {
+      layout: {
+        label: 'Layout',
+        options: { Orbits: 'orbits', Wander: 'wander' },
+        value: p.layout,
+      },
+      Orbits: folder(
+        {
+          orbitRings: {
+            label: 'Rings',
+            max: 8,
+            min: 1,
+            step: 1,
+            value: p.orbitRings,
+          },
+          orbitDots: {
+            label: 'Per Ring',
+            max: 12,
+            min: 1,
+            step: 1,
+            value: p.orbitDots,
+          },
+          orbitRadius: {
+            label: 'Ring Radius',
+            max: 0.5,
+            min: 0.02,
+            step: 0.005,
+            value: p.orbitRadius,
+          },
+          orbitOffset: {
+            label: 'Ring Offset',
+            max: 0.5,
+            min: 0,
+            step: 0.005,
+            value: p.orbitOffset,
+          },
+          orbitGap: {
+            label: 'Centre Gap',
+            max: 8,
+            min: 0,
+            step: 0.1,
+            value: p.orbitGap,
+          },
+          orbitTwist: {
+            label: 'Twist (deg)',
+            max: 180,
+            min: 0,
+            step: 1,
+            value: p.orbitTwist,
+          },
+          orbitSpeed: {
+            label: 'Orbit Speed',
+            max: 3,
+            min: -3,
+            step: 0.05,
+            value: p.orbitSpeed,
+          },
+        },
+        { collapsed: false }
+      ),
       speed: { label: 'Speed', max: 0.6, min: 0, step: 0.005, value: p.speed },
       flowScale: {
         label: 'Curl Scale',

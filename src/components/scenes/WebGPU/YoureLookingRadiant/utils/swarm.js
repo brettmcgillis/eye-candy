@@ -20,6 +20,7 @@ export default function createSwarm({ aspect, count, seed = 1 }) {
   const particles = [];
   const flow = [0, 0];
   const heading = [0, 0];
+  let orbitPhase = 0;
 
   function respawn(p, ctx) {
     p.x = rand() * fieldAspect;
@@ -150,9 +151,56 @@ export default function createSwarm({ aspect, count, seed = 1 }) {
     p.y = Math.min(Math.max(p.y, r), 1 - r);
   }
 
+  // Port of the rings shader in plans/youre-looking-radiant.md. Its uv is
+  // height-normalised and centred, which is field space shifted to the middle,
+  // and its `uv *= rotation` accumulates across rings, so ring j sits at the
+  // triangular-number multiple of the twist. y is flipped because shader y
+  // points up and field y points down.
+  function placeOrbits(dt, params, ctx, mode) {
+    const dots = Math.max(1, Math.round(params.orbitDots));
+    const rings = Math.max(1, Math.round(params.orbitRings));
+    const twist = (params.orbitTwist * Math.PI) / 180;
+    const gap = params.orbitGap * params.particleRadius;
+
+    orbitPhase += dt * params.orbitSpeed;
+
+    for (let i = 0; i < count; i += 1) {
+      const p = particles[i];
+      const ring = Math.floor(i / dots);
+      const theta = (twist * ring * (ring + 1)) / 2;
+      const angle = ((i % dots) + orbitPhase) * ((Math.PI * 2) / dots);
+      const cx = params.orbitOffset + params.orbitRadius * Math.cos(angle);
+      const cy = params.orbitRadius * Math.sin(angle);
+      const c = Math.cos(theta);
+      const sn = Math.sin(theta);
+
+      // Every ring passes within a dot's width of the centre, and outside
+      // that the shader's timing never lets two dots meet. Pushing distance
+      // from the centre through sqrt(d² + gap²) opens a hole there and
+      // leaves everything further out almost exactly where it was.
+      const x = cx * c + cy * sn;
+      const y = -cx * sn + cy * c;
+      const d = Math.hypot(x, y);
+      const lifted = Math.sqrt(d * d + gap * gap);
+      const push = d > 1e-9 ? lifted / d : 0;
+
+      p.hidden = ring >= rings;
+      p.x = fieldAspect * 0.5 + (d > 1e-9 ? x * push : gap);
+      p.y = 0.5 - y * push;
+
+      mode.step(p, ctx);
+      if (p.dead) respawn(p, ctx);
+    }
+  }
+
   function step(dt, time, params) {
     const ctx = { aspect: fieldAspect, dt, params, rand, time };
     const mode = ROLE_MODES[params.roleMode] ?? ROLE_MODES.age;
+
+    if (params.layout === 'orbits') {
+      placeOrbits(dt, params, ctx, mode);
+      return;
+    }
 
     for (let i = 0; i < count; i += 1) {
       const p = particles[i];
@@ -210,7 +258,9 @@ export default function createSwarm({ aspect, count, seed = 1 }) {
 
     for (let i = 0; i < count; i += 1) {
       const p = particles[i];
-      const radius = params.particleRadius * p.radiusScale * p.presence * scale;
+      let size = p.radiusScale;
+      if (params.layout === 'orbits') size = p.hidden ? 0 : 1;
+      const radius = params.particleRadius * size * p.presence * scale;
       const glass = p.refractRoll < params.refractShare;
       const color = palette[p.colorIndex % palette.length];
 

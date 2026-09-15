@@ -23,6 +23,7 @@ const SHARED = {
   patternStrength: 0.6,
   patternWidth: 0.12,
   pedestalDepth: 160,
+  pedestalShape: 'square',
   pitEvery: 3,
   pitStyle: 'shaft',
   pitTerraceInset: 3,

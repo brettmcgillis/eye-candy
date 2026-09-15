@@ -45,7 +45,7 @@ function City({ config, uniforms }) {
     [formKey]
   );
 
-  const { cells, cellsByDistrict, model } = useCityModel({
+  const { cells, model } = useCityModel({
     buildClockRef,
     composition,
     rebuildEnabled: config.rollingRebuild,
@@ -120,12 +120,14 @@ function City({ config, uniforms }) {
       <Pedestal
         depth={Math.max(config.pedestalDepth, deepest + PEDESTAL_MARGIN)}
         material={surfaces.pedestal}
-        size={model.rootSize}
+        radius={model.radius}
+        shape={config.pedestalShape}
       />
       <Ground
-        cellsByDistrict={cellsByDistrict}
-        districts={model.districts}
+        cells={cells}
         material={surfaces.ground}
+        radius={model.radius}
+        shape={config.pedestalShape}
       />
       {LAYER_SPECS.map((spec) => (
         <InstancedLayer

@@ -132,8 +132,29 @@ function dressTowers(towers, random) {
   });
 }
 
+const RIM_MARGIN = 4;
+
+// A round pedestal keeps every corner of a cell inside its rim, with a little
+// margin for tower footprints that widen past their cell.
+function onPedestal(cell, shape, radius) {
+  if (shape !== 'circle') {
+    return true;
+  }
+
+  const { h, w, x, y } = cell.rect;
+  const reach = radius - RIM_MARGIN;
+
+  return [
+    [x, y],
+    [x + w, y],
+    [x, y + h],
+    [x + w, y + h],
+  ].every(([cx, cy]) => Math.hypot(cx, cy) <= reach);
+}
+
 // The reference runs stair direction, then plaza dressing, then tower
-// heights off one stream, so the order here is load-bearing.
+// heights off one stream, so the order here is load-bearing. The pedestal
+// filter runs after, so a round rim never reshuffles the rolls.
 export function dress(
   groups,
   { composition, idOffset, random, referenceHeight }
@@ -146,7 +167,9 @@ export function dress(
   });
   dressTowers(groups.towers, random);
 
+  const radius = referenceHeight / 1.5;
+
   return [...groups.towers, ...groups.landuse, ...groups.stairs].filter(
-    (cell) => cell.valid
+    (cell) => cell.valid && onPedestal(cell, composition.pedestalShape, radius)
   );
 }

@@ -2,26 +2,15 @@ import React, { memo, useEffect, useMemo } from 'react';
 
 import createGroundGeometry from '../utils/ground';
 
-const GroundTile = memo(function GroundTile({ bounds, cells, material }) {
+function Ground({ cells, material, radius, shape }) {
   const geometry = useMemo(
-    () => createGroundGeometry(bounds, cells),
-    [bounds, cells]
+    () => createGroundGeometry({ cells, radius, shape }),
+    [cells, radius, shape]
   );
 
   useEffect(() => () => geometry.dispose(), [geometry]);
 
   return <mesh geometry={geometry} material={material} receiveShadow />;
-});
-
-function Ground({ cellsByDistrict, districts, material }) {
-  return districts.map((district) => (
-    <GroundTile
-      key={district.index}
-      bounds={district.bounds}
-      cells={cellsByDistrict[district.index]}
-      material={material}
-    />
-  ));
 }
 
 export default memo(Ground);

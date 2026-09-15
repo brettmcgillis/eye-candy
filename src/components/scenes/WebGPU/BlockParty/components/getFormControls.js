@@ -102,6 +102,10 @@ export default function getFormControls(preset = {}) {
           value: p('stairTaperWall', false),
         },
       }),
+      pedestalShape: choice('Pedestal Shape', p('pedestalShape', 'square'), [
+        'square',
+        'circle',
+      ]),
       pedestalDepth: range(
         'Pedestal Depth',
         p('pedestalDepth', 160),

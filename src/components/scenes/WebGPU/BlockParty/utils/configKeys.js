@@ -4,6 +4,7 @@ export const COMPOSITION_KEYS = [
   'glowMode',
   'landAreaDivisor',
   'neonChance',
+  'pedestalShape',
   'pitEvery',
   'splitJitter',
   'stairAreaDivisor',

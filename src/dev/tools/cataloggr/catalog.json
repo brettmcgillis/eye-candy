@@ -135,7 +135,7 @@
     },
     {
       "id": "idea-032",
-      "text": "a pair of generative scenes/CLIs: Flora & Fauna. Procedural grasses, flowers, weeds, etc. Procedural creatures (maybe voxel space invaders), generative in their forms, with CA type rules applied for living, reproducing, travelling, and dying."
+      "text": "Fauna (companion to the Flora scene, which shares a kernel pattern in @modules/flora): generative scene/CLI of procedural creatures (maybe voxel space invaders), generative in their forms, with CA type rules applied for living, reproducing, travelling, and dying."
     },
     {
       "id": "idea-1787939182486-vze6zf",

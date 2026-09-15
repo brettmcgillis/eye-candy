@@ -168,8 +168,8 @@ Inside a scene folder, keep imports relative (`./components/Foo`,
   each a control-builder + runtime utils + drop-in component that only make
   sense together, exposed through an `index.js` barrel. Current modules:
   `cameraRig`, `lightingRig`, `ecctrl`, `handTracking`, `poseTracking`,
-  `mediaRecorder`, `splineAuthoring`, `trashAudio`, `trashCatalog`, `tsl`,
-  `verletPhysics`, `windowSync`. When a
+  `mediaRecorder`, `shallowWater`, `splineAuthoring`, `trashAudio`,
+  `trashCatalog`, `tsl`, `verletPhysics`, `windowSync`. When a
   control-builder + component pair grows this tightly coupled, promote it the
   same way rather than scattering it across `hooks/` and `components/`.
 
@@ -241,6 +241,17 @@ Inside a scene folder, keep imports relative (`./components/Foo`,
   key prefixes `buildSceneCameraControls` generates) as the `useMemo`
   dependency instead of `controls` itself. See
   `Template/SceneTemplate/hooks/useSceneControls.js` for the pattern.
+- **Projection is a camera-level choice, not a separate rig.** `projection:
+'orthographic'` in a scene's `camera.js` (or the Camera folder's Projection
+  control) swaps the rig's `PerspectiveCamera` for an `OrthographicCamera`
+  and leaves every mode, frame, target and orbit behaviour intact. Under
+  orthographic projection `fov` does nothing; the frame is set by
+  `frustumHeight` (plus `mobileFrustumHeight`), declared once at the top level
+  rather than per mode, in world units of visible height. drei derives an
+  orthographic frustum from the canvas in pixels, so the rig converts that
+  height into `camera.zoom` and re-applies it on resize — don't set `zoom`
+  yourself. `WebGPU/BlockParty` is the worked example.
+
 - **A preset's camera values apply on first mount, not just after "reset."**
   `buildSceneCameraControls` seeds the camera folder's Leva schema from
   `controlsSnapshotRef.current` (the active preset's snapshot, already

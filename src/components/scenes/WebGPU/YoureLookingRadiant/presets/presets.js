@@ -25,6 +25,8 @@ export const PRESETS = {
     lightStrength: 1.25,
     matchBrightness: 1,
     oscillatePeriod: 14,
+    paletteExact: false,
+    paletteName: 'None',
     particleCount: 30,
     particleRadius: 0.02,
     pointerRadius: 0.55,

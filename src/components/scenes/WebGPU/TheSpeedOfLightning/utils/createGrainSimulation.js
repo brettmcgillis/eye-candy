@@ -8,6 +8,8 @@ import {
 } from 'three/tsl';
 import * as THREE from 'three/webgpu';
 
+import { createNeutralPaletteTexture } from '@utils/gradientPalette';
+
 import createBedLayout from './bedLayout';
 import bedSurface from './bedSurface';
 import createGrainCompute, { BED } from './grainCompute';
@@ -46,6 +48,7 @@ function buildUniforms() {
     grainColorB: uniform(new THREE.Color('#6f8399')),
     grainColorC: uniform(new THREE.Color('#c7d4e2')),
     grainPaletteMix: uniform(0),
+    grainPaletteOn: uniform(0),
     grainPaletteSplitB: uniform(0.55),
     grainPaletteSplitC: uniform(0.85),
     grainSize: uniform(0.014),
@@ -155,7 +158,12 @@ export default function createGrainSimulation({
   );
   geometry.instanceCount = total;
 
-  const material = createGrainMaterial({ buffers, uniforms });
+  const neutralPalette = createNeutralPaletteTexture();
+  const { material, paletteTextureNode } = createGrainMaterial({
+    buffers,
+    paletteTexture: neutralPalette,
+    uniforms,
+  });
   const mesh = new THREE.Mesh(geometry, material);
   mesh.castShadow = true;
   mesh.receiveShadow = true;
@@ -170,10 +178,15 @@ export default function createGrainSimulation({
     dispose: () => {
       geometry.dispose();
       material.dispose();
+      neutralPalette.dispose();
     },
     mesh,
     seedPool,
     total,
+    setPalette: (next) => {
+      paletteTextureNode.value = next ?? neutralPalette;
+      uniforms.grainPaletteOn.value = next ? 1 : 0;
+    },
     uniforms,
     uploadBolt: () => {
       buffers.boltTarget.value.array.set(boltTarget);

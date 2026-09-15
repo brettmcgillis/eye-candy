@@ -1,5 +1,7 @@
 import { folder } from 'leva';
 
+import { PALETTE_NAMES, PALETTE_NONE } from '@utils/gradientPalette';
+
 export default function getGrainControls(p) {
   return folder(
     {
@@ -101,6 +103,15 @@ export default function getGrainControls(p) {
         min: 0,
         max: 1,
         step: 0.01,
+      },
+      grainPaletteName: {
+        label: 'Mineral Palette',
+        value: p.grainPaletteName,
+        options: [PALETTE_NONE, ...PALETTE_NAMES],
+      },
+      grainPaletteExact: {
+        label: 'Exact Colors',
+        value: p.grainPaletteExact,
       },
       grainColorB: { label: 'Mineral B', value: p.grainColorB },
       grainColorC: { label: 'Mineral C', value: p.grainColorC },

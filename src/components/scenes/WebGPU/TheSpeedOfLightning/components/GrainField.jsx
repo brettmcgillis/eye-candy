@@ -1,8 +1,9 @@
-import { memo, useEffect, useRef } from 'react';
+import { memo, useEffect, useMemo, useRef } from 'react';
 
 import { useFrame, useThree } from '@react-three/fiber';
 
 import createBoltAccretion from '@elements/Lightning/createBoltAccretion';
+import { createPaletteTexture } from '@utils/gradientPalette';
 
 import { sampleBedSurface } from '../utils/bedSurface';
 import sampleBoltTip from '../utils/boltTip';
@@ -19,6 +20,15 @@ function GrainField({ config, focusRef = null, trunkRef = null }) {
   const gl = useThree((state) => state.gl);
   const scene = useThree((state) => state.scene);
   const runtimeRef = useRef(null);
+
+  const paletteTexture = useMemo(
+    () =>
+      createPaletteTexture(config.grainPaletteName, {
+        exact: config.grainPaletteExact,
+      }),
+    [config.grainPaletteExact, config.grainPaletteName]
+  );
+  useEffect(() => () => paletteTexture?.dispose(), [paletteTexture]);
 
   useEffect(() => {
     const simulation = createGrainSimulation({
@@ -263,6 +273,7 @@ function GrainField({ config, focusRef = null, trunkRef = null }) {
     uniforms.grainPaletteMix.value = config.grainPaletteMix;
     uniforms.grainPaletteSplitB.value = config.grainPaletteSplitB;
     uniforms.grainPaletteSplitC.value = config.grainPaletteSplitC;
+    simulation.setPalette(paletteTexture);
     uniforms.leaderColor.value.set(config.leaderColor);
     uniforms.returnColor.value.set(config.returnColor);
 

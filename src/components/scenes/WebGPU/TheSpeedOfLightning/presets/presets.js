@@ -56,6 +56,8 @@ const BASE = {
   grainColorB: '#6f8399',
   grainColorC: '#c7d4e2',
   grainPaletteMix: 0,
+  grainPaletteName: 'None',
+  grainPaletteExact: false,
   grainPaletteSplitB: 0.55,
   grainPaletteSplitC: 0.85,
   leaderColor: '#2e2e2e',

@@ -7,7 +7,9 @@ import {
   positionLocal,
   select,
   smoothstep,
+  texture,
   transformNormalToView,
+  vec2,
   vec3,
 } from 'three/tsl';
 import * as THREE from 'three/webgpu';
@@ -35,7 +37,11 @@ function rotationMatrix(euler) {
   );
 }
 
-export default function createGrainMaterial({ buffers, uniforms }) {
+export default function createGrainMaterial({
+  buffers,
+  paletteTexture,
+  uniforms,
+}) {
   const posRole = buffers.posRole.toAttribute();
   const velLife = buffers.velLife.toAttribute();
   const boltTarget = buffers.boltTarget.toAttribute();
@@ -89,6 +95,7 @@ export default function createGrainMaterial({ buffers, uniforms }) {
   // `grainPaletteMix` at 0 collapses the palette back to grainColor, which is
   // what every preset authored before this existed expects.
   const pick = hash(seed.mul(65536).add(17));
+  const paletteTextureNode = texture(paletteTexture, vec2(pick, 0.5));
   const mineral = select(
     pick.lessThan(uniforms.grainPaletteSplitB),
     uniforms.grainColor,
@@ -98,12 +105,13 @@ export default function createGrainMaterial({ buffers, uniforms }) {
       uniforms.grainColorC
     )
   );
+  const baseColor = select(
+    uniforms.grainPaletteOn.greaterThan(0.5),
+    paletteTextureNode.rgb,
+    mix(uniforms.grainColor, mineral, uniforms.grainPaletteMix)
+  );
 
-  material.colorNode = mix(
-    uniforms.grainColor,
-    mineral,
-    uniforms.grainPaletteMix
-  ).mul(mix(float(0.82), float(1.18), seed));
+  material.colorNode = baseColor.mul(mix(float(0.82), float(1.18), seed));
 
   // Built as a plain expression chain, not inside an Fn(): nodes captured by an
   // Fn closure build fine headlessly but emit `unresolved value` WGSL.
@@ -148,5 +156,5 @@ export default function createGrainMaterial({ buffers, uniforms }) {
     heat.clamp(0, 1)
   ).mul(heat.mul(uniforms.emissiveStrength));
 
-  return material;
+  return { material, paletteTextureNode };
 }

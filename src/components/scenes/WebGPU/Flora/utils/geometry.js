@@ -1,4 +1,7 @@
+import { ConvexGeometry } from 'three/addons/geometries/ConvexGeometry.js';
 import * as THREE from 'three/webgpu';
+
+import { DICE } from '@modules/flora';
 
 const TUBE_SIDES = 6;
 
@@ -74,11 +77,21 @@ export function createTubeGeometry(segments) {
   );
 }
 
-export function createBeadGeometry(beads) {
+function solidTemplate(shape) {
+  if (shape === 'sphere') {
+    return new THREE.IcosahedronGeometry(1, 2);
+  }
+
+  return new ConvexGeometry(
+    DICE[shape].vertices.map((v) => new THREE.Vector3(...v))
+  );
+}
+
+export function createSolidGeometry(group) {
   return attachInstances(
-    fromTemplate(new THREE.IcosahedronGeometry(1, 1)),
-    { bInfo: beads.info, bPos: beads.position },
-    beads.count
+    fromTemplate(solidTemplate(group.shape)),
+    { sInfo: group.info, sPos: group.position },
+    group.count
   );
 }
 

@@ -1,14 +1,16 @@
 import React, { memo, useEffect, useMemo } from 'react';
 
+import { SOLID_SHAPES } from '@modules/flora';
+
 import useLifecycle from '../hooks/useLifecycle';
 import {
-  createBeadGeometry,
   createCardGeometry,
+  createSolidGeometry,
   createTubeGeometry,
 } from '../utils/geometry';
 import {
-  createBeadMaterial,
   createCardMaterial,
+  createSolidMaterial,
 } from '../utils/ornamentMaterials';
 import createTubeMaterial from '../utils/tubeMaterial';
 import { createUniforms, syncUniforms } from '../utils/uniforms';
@@ -17,11 +19,11 @@ import InstancedField from './InstancedField';
 function Specimen({ config, lifecycleApiRef }) {
   const uniforms = useMemo(createUniforms, []);
 
-  useEffect(() => {
-    syncUniforms(uniforms, config);
-  }, [config, uniforms]);
-
   const specimen = useLifecycle(config, uniforms, lifecycleApiRef);
+
+  useEffect(() => {
+    syncUniforms(uniforms, config, specimen?.palette);
+  }, [config, specimen, uniforms]);
 
   if (!specimen) {
     return null;
@@ -35,12 +37,15 @@ function Specimen({ config, lifecycleApiRef }) {
         createMaterial={createTubeMaterial}
         uniforms={uniforms}
       />
-      <InstancedField
-        buffers={specimen.beads}
-        createGeometry={createBeadGeometry}
-        createMaterial={createBeadMaterial}
-        uniforms={uniforms}
-      />
+      {SOLID_SHAPES.map((shape) => (
+        <InstancedField
+          buffers={specimen.solids[shape]}
+          createGeometry={createSolidGeometry}
+          createMaterial={createSolidMaterial}
+          key={shape}
+          uniforms={uniforms}
+        />
+      ))}
       <InstancedField
         buffers={specimen.cards}
         createGeometry={createCardGeometry}

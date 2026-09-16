@@ -35,8 +35,11 @@ export default function getMotionControls(
       Scatter: folder(
         {
           scatterDistance: range('Distance', p('scatterDistance'), 0, 30, 0.1),
-          scatterSpread: range('Spread', p('scatterSpread'), 0, 3, 0.01),
-          scatterLift: range('Lift', p('scatterLift'), -2, 3, 0.01),
+          scatterDrift: range('Wind Carry', p('scatterDrift'), 0, 1, 0.01),
+          scatterAngle: range('Wind Angle', p('scatterAngle'), -180, 180, 1),
+          scatterLift: range('Lift', p('scatterLift'), -1, 2, 0.01),
+          scatterGravity: range('Gravity', p('scatterGravity'), 0, 8, 0.05),
+          scatterFlutter: range('Flutter', p('scatterFlutter'), 0, 3, 0.01),
           scatterTurbulence: range(
             'Turbulence',
             p('scatterTurbulence'),
@@ -44,7 +47,7 @@ export default function getMotionControls(
             3,
             0.01
           ),
-          scatterSpin: range('Tumble', p('scatterSpin'), 0, 12, 0.1),
+          scatterSpin: range('Tumble', p('scatterSpin'), 0, 6, 0.05),
         },
         { collapsed: true }
       ),

@@ -20,7 +20,9 @@ const SCALARS = [
   'windSpeed',
   'scatterDistance',
   'scatterLift',
-  'scatterSpread',
+  'scatterDrift',
+  'scatterFlutter',
+  'scatterGravity',
   'scatterTurbulence',
   'scatterSpin',
   'ornamentScale',
@@ -42,6 +44,7 @@ export function createUniforms() {
     center: uniform(new THREE.Vector3(0, 8, 0)),
     exit: uniform(0),
     growth: uniform(0),
+    scatterDir: uniform(new THREE.Vector3(1, 0, 0)),
   };
 
   SCALARS.forEach((key) => {
@@ -54,7 +57,25 @@ export function createUniforms() {
   return u;
 }
 
-export function syncUniforms(u, config) {
+const TINTED = new Set([
+  'budColor',
+  'crownColor',
+  'accentColor',
+  'tipColor',
+  'ornamentColor',
+]);
+
+const hsl = { h: 0, l: 0, s: 0 };
+
+function syncScatterDirection(u, config) {
+  const angle = THREE.MathUtils.degToRad(config.scatterAngle ?? 25);
+
+  u.scatterDir.value.set(Math.sin(angle), 0, Math.cos(angle));
+}
+
+export function syncUniforms(u, config, palette = null) {
+  syncScatterDirection(u, config);
+
   SCALARS.forEach((key) => {
     if (config[key] !== undefined) {
       u[key].value = config[key];
@@ -62,7 +83,16 @@ export function syncUniforms(u, config) {
   });
   COLORS.forEach((key) => {
     if (config[key]) {
-      u[key].value.set(config[key]);
+      const color = u[key].value.set(config[key]);
+
+      if (palette && TINTED.has(key)) {
+        color.getHSL(hsl);
+        color.setHSL(
+          (hsl.h + palette.hue + 1) % 1,
+          Math.min(1, hsl.s * palette.saturation),
+          Math.min(1, hsl.l * palette.light)
+        );
+      }
     }
   });
 }

@@ -6,6 +6,7 @@ import { resolveParams } from './params';
 import { createRng } from './rng';
 import { growLeaves, growSideShoots, growStem } from './stem';
 import measure from './timing';
+import varyParams from './variation';
 
 function rootFor(graph, p, stemNodes, lobe) {
   const lowest = Math.floor(p.crownBase * (stemNodes.length - 1));
@@ -38,8 +39,9 @@ function umbelPoints(graph, p, rng, tip) {
 }
 
 export default function buildSpecimen(input) {
-  const p = resolveParams(input);
-  const rng = createRng(p.seed);
+  const base = resolveParams(input);
+  const rng = createRng(base.seed);
+  const p = varyParams(base, rng.fork('variation'));
   const started = Date.now();
   const graph = createGraph(1 << 18); // eslint-disable-line no-bitwise
 
@@ -52,6 +54,7 @@ export default function buildSpecimen(input) {
   const envelope = buildEnvelope(p, rng.fork('envelope'), stemTop);
   const fiberRng = rng.fork('fibers');
   const terminals = [];
+  const budget = { truncated: false };
 
   envelope.lobes.forEach((lobe, index) => {
     const points = envelope.points.filter((pt) => pt.lobe === index);
@@ -64,7 +67,8 @@ export default function buildSpecimen(input) {
         points,
         rootFor(graph, p, stemNodes, lobe),
         index,
-        terminals
+        terminals,
+        budget
       );
     }
   });
@@ -77,32 +81,43 @@ export default function buildSpecimen(input) {
       umbelPoints(graph, p, fiberRng, tip),
       tip,
       0,
-      terminals
+      terminals,
+      budget
     );
   });
 
   const measures = measure(graph, p);
-  const { beads, cards, segments } = pack(
+  const { cards, segments, solids } = pack(
     graph,
     p,
     rng.fork('ornaments'),
     envelope,
     measures,
-    terminals
+    terminals,
+    budget
   );
+
+  const paletteRng = rng.fork('palette');
+  const shift = (spread) => paletteRng.signed() * spread * p.paletteVariation;
 
   return {
     center: envelope.centroid,
+    palette: {
+      hue: shift(0.12),
+      light: 1 + shift(0.22),
+      saturation: 1 + shift(0.35),
+    },
     height: Math.max(...envelope.lobes.map((l) => l.center[1] + l.radii[1])),
-    beads,
     cards,
     segments,
+    solids,
     stats: {
       millis: Date.now() - started,
-      beads: beads.count,
       cards: cards.count,
+      solids: Object.values(solids).reduce((sum, g) => sum + g.count, 0),
       segments: segments.count,
       terminals: terminals.length,
+      truncated: budget.truncated,
     },
   };
 }

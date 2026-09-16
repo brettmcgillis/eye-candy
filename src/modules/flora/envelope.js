@@ -1,80 +1,29 @@
-function lobe(center, radius, stretch, accent) {
-  return {
-    accent,
-    center,
-    radii: [radius, radius * stretch, radius],
-  };
-}
-
 function layoutLobes(p, rng, top) {
-  const R = p.crownRadius;
-  const S = p.crownStretch;
-  const jitter = () => 1 + rng.signed() * p.lobeJitter;
-  const accent = () => (rng() < p.accentAmount ? 1 : 0);
-  const cy = top + R * p.crownLift;
+  const count = Math.max(1, Math.round(p.lobeCount * rng.range(0.55, 1.5)));
   const lobes = [];
+  const cursor = [0, top + p.crownRadius * p.crownLift, 0];
+  let size = p.crownRadius * rng.range(0.6, 1);
 
-  if (p.crownShape === 'heart') {
-    const offset = R * p.lobeSpread;
+  for (let i = 0; i < count; i += 1) {
+    const jitter = 1 + rng.signed() * p.lobeJitter;
 
-    [-1, 1].forEach((side) => {
-      lobes.push(
-        lobe(
-          [side * offset, cy + R * 0.25, -R * 0.15],
-          R * 0.62 * jitter(),
-          S,
-          0
-        )
-      );
-    });
-  } else if (p.crownShape === 'stack') {
-    const tiers = Math.max(2, Math.round(p.lobeCount * 0.5));
-
-    for (let i = 0; i < tiers; i += 1) {
-      const t = i / (tiers - 1);
-
-      lobes.push(
-        lobe(
-          [rng.signed() * R * 0.15, cy - R + t * R * 2.4, rng.signed() * 0.2],
-          R * (0.62 - t * 0.22) * jitter(),
-          S * 0.85,
-          0
-        )
-      );
-    }
-  } else if (p.crownShape === 'fan') {
     lobes.push({
-      accent: 0,
-      center: [0, cy, 0],
-      radii: [R * 1.2, R * S * 0.8, R * 0.55],
+      accent: rng() < p.accentAmount ? 1 : 0,
+      center: [...cursor],
+      radii: [
+        size * jitter,
+        size * p.crownStretch * (1 + rng.signed() * p.lobeJitter * 0.5),
+        size * jitter,
+      ],
     });
-  } else if (p.crownShape === 'cluster') {
-    lobes.push(lobe([0, cy, 0], R * 0.55, S, 0));
-  } else {
-    lobes.push(lobe([0, cy, 0], R, S, 0));
-  }
 
-  const satellites =
-    p.crownShape === 'stack' ? p.lobeCount - lobes.length : p.lobeCount;
-
-  for (let i = 0; i < satellites; i += 1) {
     const theta = rng() * Math.PI * 2;
-    const phi =
-      p.crownShape === 'cluster' ? rng.range(0.2, 2.2) : rng.range(0.25, 1.6);
-    const reach = R * p.lobeSpread * rng.range(0.7, 1.25);
+    const reach = size * p.lobeSpread * rng.range(0.35, 1.5);
 
-    lobes.push(
-      lobe(
-        [
-          Math.sin(phi) * Math.cos(theta) * reach,
-          cy + Math.cos(phi) * reach * S,
-          Math.sin(phi) * Math.sin(theta) * reach * 0.7,
-        ],
-        R * rng.range(0.25, 0.5) * jitter(),
-        S,
-        accent()
-      )
-    );
+    cursor[0] += Math.cos(theta) * reach;
+    cursor[1] += size * p.lobeRise * rng.range(0.15, 1.5);
+    cursor[2] += Math.sin(theta) * reach * 0.7;
+    size *= p.lobeFalloff + (1 - p.lobeFalloff) * rng();
   }
 
   return lobes;

@@ -1,3 +1,4 @@
+/* eslint-disable no-param-reassign */
 import { KIND } from './graph';
 import { normalize, perpendicular, randomUnit } from './vec';
 
@@ -86,7 +87,8 @@ export default function growFibers(
   points,
   root,
   cluster,
-  terminals
+  terminals,
+  budget
 ) {
   const stack = [{ from: root, gen: 0, ids: points.map((_, i) => i) }];
   const logTotal = Math.log(Math.max(points.length, 2));
@@ -95,7 +97,9 @@ export default function growFibers(
     const { from, gen, ids } = stack.pop();
     const origin = graph.position(from);
 
-    if (ids.length <= p.umbelSize) {
+    if (graph.count >= p.maxSegments) {
+      budget.truncated = true;
+    } else if (ids.length <= p.umbelSize) {
       ids.forEach((id) => {
         const pt = points[id];
         const kind = pt.wisp ? KIND.wisp : KIND.spray;

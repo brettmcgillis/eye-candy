@@ -1,8 +1,6 @@
 import { button, folder } from 'leva';
 
-import { CROWN_SHAPES } from '@modules/flora';
-
-import { choice, presetReader, range } from './controlHelpers';
+import { presetReader, range } from './controlHelpers';
 
 export default function getFormControls(preset = {}, { onReseed } = {}) {
   const p = presetReader(preset);
@@ -32,13 +30,14 @@ export default function getFormControls(preset = {}, { onReseed } = {}) {
       ),
       Crown: folder(
         {
-          crownShape: choice('Shape', p('crownShape'), CROWN_SHAPES),
           crownRadius: range('Radius', p('crownRadius'), 0.5, 6, 0.05),
           crownStretch: range('Stretch', p('crownStretch'), 0.3, 2, 0.01),
           crownLift: range('Lift', p('crownLift'), 0, 2, 0.01),
           crownOpen: range('Open Base', p('crownOpen'), 0, 1, 0.01),
           crownBase: range('Attach From', p('crownBase'), 0.2, 1, 0.01),
-          lobeCount: range('Lobes', p('lobeCount'), 0, 12, 1),
+          lobeCount: range('Lobes', p('lobeCount'), 1, 12, 1),
+          lobeRise: range('Lobe Rise', p('lobeRise'), 0, 2, 0.01),
+          lobeFalloff: range('Lobe Falloff', p('lobeFalloff'), 0.2, 1, 0.01),
           lobeSpread: range('Lobe Spread', p('lobeSpread'), 0, 1.5, 0.01),
           lobeJitter: range('Lobe Jitter', p('lobeJitter'), 0, 1, 0.01),
           accentAmount: range('Accent Lobes', p('accentAmount'), 0, 1, 0.01),
@@ -64,11 +63,42 @@ export default function getFormControls(preset = {}, { onReseed } = {}) {
       Ornaments: folder(
         {
           ornamentDensity: range('Density', p('ornamentDensity'), 0, 1, 0.01),
-          dotAmount: range('Dots', p('dotAmount'), 0, 1, 0.01),
-          cubeAmount: range('Wire Cubes', p('cubeAmount'), 0, 1, 0.01),
-          heartAmount: range('Hearts', p('heartAmount'), 0, 1, 0.01),
-          petalAmount: range('Petals', p('petalAmount'), 0, 1, 0.01),
           ornamentSize: range('Size', p('ornamentSize'), 0.005, 0.3, 0.005),
+          Mix: folder(
+            {
+              sphereAmount: range('Spheres', p('sphereAmount'), 0, 1, 0.01),
+              d4Amount: range('d4 Tetra', p('d4Amount'), 0, 1, 0.01),
+              d6Amount: range('d6 Cube', p('d6Amount'), 0, 1, 0.01),
+              d8Amount: range('d8 Octa', p('d8Amount'), 0, 1, 0.01),
+              d10Amount: range('d10 Trapezo', p('d10Amount'), 0, 1, 0.01),
+              d12Amount: range('d12 Dodeca', p('d12Amount'), 0, 1, 0.01),
+              d20Amount: range('d20 Icosa', p('d20Amount'), 0, 1, 0.01),
+              heartAmount: range('Hearts', p('heartAmount'), 0, 1, 0.01),
+              petalAmount: range('Petals', p('petalAmount'), 0, 1, 0.01),
+            },
+            { collapsed: true }
+          ),
+          'Wireframe Ratio': folder(
+            {
+              sphereWire: range('Spheres', p('sphereWire'), 0, 1, 0.01),
+              d4Wire: range('d4 Tetra', p('d4Wire'), 0, 1, 0.01),
+              d6Wire: range('d6 Cube', p('d6Wire'), 0, 1, 0.01),
+              d8Wire: range('d8 Octa', p('d8Wire'), 0, 1, 0.01),
+              d10Wire: range('d10 Trapezo', p('d10Wire'), 0, 1, 0.01),
+              d12Wire: range('d12 Dodeca', p('d12Wire'), 0, 1, 0.01),
+              d20Wire: range('d20 Icosa', p('d20Wire'), 0, 1, 0.01),
+              heartWire: range('Hearts', p('heartWire'), 0, 1, 0.01),
+              petalWire: range('Petals', p('petalWire'), 0, 1, 0.01),
+            },
+            { collapsed: true }
+          ),
+        },
+        { collapsed: true }
+      ),
+      Variation: folder(
+        {
+          variation: range('Form', p('variation'), 0, 1, 0.01),
+          paletteVariation: range('Palette', p('paletteVariation'), 0, 1, 0.01),
         },
         { collapsed: true }
       ),

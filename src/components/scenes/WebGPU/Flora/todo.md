@@ -11,9 +11,14 @@
 ## // TODO:
 
 - [ ] Headless stills/video CLI on the `@modules/flora` kernel
+- [ ] improve motion design, ending scatter sucks.
+- [ ] enable pan on camera
+- [ ] should we add controls for crown shyness?
 
 ## // Presets
 
 ## // Features
+
+## // Interactivity
 
 ## // Bugs

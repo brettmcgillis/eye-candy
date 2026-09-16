@@ -6,8 +6,11 @@ import {
   cross,
   faceDirection,
   float,
+  hash,
+  instanceIndex,
   max,
   mix,
+  normalGeometry,
   normalize,
   positionGeometry,
   pow,
@@ -49,20 +52,30 @@ function sizeFor(base, center, u, clampToPixels) {
     : size;
 }
 
-export function createBeadMaterial(u) {
+export function createSolidMaterial(u) {
   const material = new THREE.MeshStandardNodeMaterial();
-  const position = attribute('bPos', 'vec4');
-  const info = attribute('bInfo', 'vec4');
+  const position = attribute('sPos', 'vec4');
+  const info = attribute('sInfo', 'vec4');
+  const tumble = vec3(
+    hash(instanceIndex.add(3)),
+    hash(instanceIndex.add(101)),
+    hash(instanceIndex.add(997))
+  ).mul(PI.mul(2));
   const place = (clampToPixels) =>
     Fn(() => {
       const base = ornamentBase(position, info, info.x, u);
       const size = sizeFor(position.w, base.center, u, clampToPixels);
 
-      return base.center.add(positionGeometry.mul(size).mul(base.scale));
+      return base.center.add(
+        rotate(positionGeometry, tumble.add(base.spin))
+          .mul(size)
+          .mul(base.scale)
+      );
     })();
 
   material.positionNode = place(true);
   material.castShadowPositionNode = place(false);
+  material.normalNode = toViewNormal(rotate(normalGeometry, tumble));
   material.colorNode = ornamentColor(info, u);
   material.roughnessNode = u.roughness.mul(0.7);
   material.metalnessNode = float(0);

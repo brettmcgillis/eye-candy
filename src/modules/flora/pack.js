@@ -1,21 +1,10 @@
+/* eslint-disable no-param-reassign */
 import buildFrames, { octEncode } from './frames';
 import { KIND } from './graph';
-import { cross, normalize, randomUnit } from './vec';
+import { SOLID_SHAPES, WIRE_MODELS } from './polyhedra';
+import { cross, normalize, perpendicular, randomUnit } from './vec';
 
-const CUBE_EDGES = [
-  [0, 1],
-  [1, 3],
-  [3, 2],
-  [2, 0],
-  [4, 5],
-  [5, 7],
-  [7, 6],
-  [6, 4],
-  [0, 4],
-  [1, 5],
-  [2, 6],
-  [3, 7],
-];
+export const CARD_SHAPES = ['heart', 'petal'];
 
 const STEM_CODE = { [KIND.stem]: 2, [KIND.leaf]: 2, [KIND.shoot]: 1 };
 
@@ -42,24 +31,30 @@ function occlusionAt(lobes, x, y, z) {
   return 1 - inside ** 1.2 * 0.8;
 }
 
-function pickOrnament(p, rng) {
-  const weights = [p.dotAmount, p.heartAmount, p.petalAmount, p.cubeAmount];
-  const total = weights.reduce((a, b) => a + b, 0);
+function pickShape(p, rng) {
+  const weights = [...SOLID_SHAPES, ...CARD_SHAPES].map((shape) => [
+    shape,
+    Math.max(p[`${shape}Amount`] ?? 0, 0),
+  ]);
+  const total = weights.reduce((sum, [, weight]) => sum + weight, 0);
   let roll = rng() * total;
 
   if (total <= 0) {
-    return -1;
+    return null;
   }
 
-  for (let t = 0; t < weights.length; t += 1) {
-    roll -= weights[t];
+  return (weights.find(([, weight]) => {
+    roll -= weight;
 
-    if (roll < 0) {
-      return t;
-    }
-  }
+    return roll < 0;
+  }) ?? weights[0])[0];
+}
 
-  return 0;
+function randomBasis(rng) {
+  const u = randomUnit(rng);
+  const v = perpendicular(u);
+
+  return [u, v, cross(u, v)];
 }
 
 function createSegments(count) {
@@ -79,17 +74,111 @@ function writeFrame(out, offset, t, n) {
   octEncode(n[0], n[1], n[2], out, offset + 2);
 }
 
-export default function pack(graph, p, rng, envelope, measures, terminals) {
+function wirePlacement(pick, rng) {
+  const model = WIRE_MODELS[pick.shape];
+
+  if (!model.planar) {
+    const axes = randomBasis(rng);
+
+    return (v) =>
+      [0, 1, 2].map((a) =>
+        axes.reduce(
+          (sum, axis, i) => sum + axis[a] * v[i] * pick.size,
+          pick.center[a]
+        )
+      );
+  }
+
+  const up = pick.tangent;
+  const side = perpendicular(up);
+
+  return (v) =>
+    [0, 1, 2].map(
+      (a) =>
+        pick.center[a] +
+        side[a] * v[0] * pick.size +
+        up[a] * (v[1] + 1) * pick.size
+    );
+}
+
+function writeWireframe(segments, k, pick, tone, birth, flex) {
+  const { edges, vertices } = WIRE_MODELS[pick.shape];
+
+  edges.forEach(([a, b], e) => {
+    const o = (k + e) * 4;
+    const from = pick.place(vertices[a]);
+    const to = pick.place(vertices[b]);
+    const dir = normalize([to[0] - from[0], to[1] - from[1], to[2] - from[2]]);
+    const t0 = Math.min(0.97, birth + 0.01 + e * 0.002);
+
+    segments.start.set([...from, 0], o);
+    segments.end.set([...to, 0], o);
+    writeFrame(segments.frameStart, o, dir, perpendicular(dir));
+    writeFrame(segments.frameEnd, o, dir, perpendicular(dir));
+    segments.time.set([t0, t0 + 0.02, flex, flex], o);
+    segments.tone.set(tone, o);
+  });
+
+  return k + edges.length;
+}
+
+export default function pack(
+  graph,
+  p,
+  rng,
+  envelope,
+  measures,
+  terminals,
+  budget
+) {
   const { birth, crownT, flex, leafT, thickness, tips } = measures;
   const frames = buildFrames(graph, tips);
   const lobeValue = envelope.lobes.map((l) => l.accent + l.tint * 0.999);
   const picks = terminals
     .filter(() => rng() < p.ornamentDensity)
-    .map((node) => ({ node, type: pickOrnament(p, rng) }))
-    .filter((pick) => pick.type >= 0);
-  const cubes = picks.filter((pick) => pick.type === 3);
-  const segments = createSegments(graph.count - 1 + cubes.length * 12);
+    .map((node) => ({ node, shape: pickShape(p, rng) }))
+    .filter((pick) => pick.shape)
+    .map((pick) => ({
+      ...pick,
+      wire: rng() < (p[`${pick.shape}Wire`] ?? 0),
+    }));
   const tangentOf = (i) => frames.tangent.subarray(i * 3, i * 3 + 3);
+  let wireEdges = 0;
+  const affordable = (shape) => {
+    const edges = WIRE_MODELS[shape].edges.length;
+
+    if (graph.count + wireEdges + edges > p.maxSegments) {
+      budget.truncated = true;
+
+      return false;
+    }
+
+    wireEdges += edges;
+
+    return true;
+  };
+
+  picks.forEach((pick) => {
+    if (pick.wire && !affordable(pick.shape)) {
+      pick.wire = false;
+    }
+  });
+
+  const wires = picks
+    .filter((pick) => pick.wire)
+    .map((pick) => {
+      const { planar } = WIRE_MODELS[pick.shape];
+      const placed = {
+        ...pick,
+        center: graph.position(pick.node),
+        size:
+          p.ornamentSize * (planar ? rng.range(0.7, 1.4) : rng.range(1.1, 2.2)),
+        tangent: tangentOf(pick.node),
+      };
+
+      return { ...placed, place: wirePlacement(placed, rng) };
+    });
+  const segments = createSegments(graph.count - 1 + wireEdges);
   const normalOf = (i) => frames.normal.subarray(i * 3, i * 3 + 3);
   const lobeOf = (i) =>
     graph.kind[i] <= KIND.leaf ? 0 : (lobeValue[graph.cluster[i]] ?? 0);
@@ -118,50 +207,56 @@ export default function pack(graph, p, rng, envelope, measures, terminals) {
     k += 1;
   }
 
-  cubes.forEach(({ node }) => {
-    const size = p.ornamentSize * rng.range(0.9, 1.8);
-    const u = randomUnit(rng);
-    const v = normalize(cross(u, [0.3, 1, 0.2]));
-    const w = cross(u, v);
-    const c = graph.position(node);
-    const axes = [u, v, w];
-    const corner = (bits) =>
-      [0, 1, 2].map((a) =>
-        axes.reduce(
-          (sum, axis, bit) =>
-            sum + axis[a] * (Math.floor(bits / 2 ** bit) % 2 ? size : -size),
-          c[a]
-        )
-      );
-    const tone = toneOf(node);
+  wires.forEach((pick) => {
+    const tone = toneOf(pick.node);
 
     tone[1] = 2;
-
-    CUBE_EDGES.forEach(([a, b], e) => {
-      const o = k * 4;
-      const t0 = Math.min(0.97, birth[node] + 0.01 + e * 0.002);
-      const from = corner(a);
-      const to = corner(b);
-      const bit = Math.log2(Math.abs(b - a));
-      const side = axes[(bit + 1) % 3];
-
-      segments.start.set([...from, 0], o);
-      segments.end.set([...to, 0], o);
-      writeFrame(segments.frameStart, o, axes[bit], side);
-      writeFrame(segments.frameEnd, o, axes[bit], side);
-      segments.time.set([t0, t0 + 0.02, flex[node], flex[node]], o);
-      segments.tone.set(tone, o);
-      k += 1;
-    });
+    k = writeWireframe(
+      segments,
+      k,
+      pick,
+      tone,
+      birth[pick.node],
+      flex[pick.node]
+    );
   });
 
-  const beadPicks = picks.filter((pick) => pick.type === 0);
-  const cardPicks = picks.filter((pick) => pick.type === 1 || pick.type === 2);
-  const beads = {
-    count: beadPicks.length,
-    info: new Float32Array(beadPicks.length * 4),
-    position: new Float32Array(beadPicks.length * 4),
-  };
+  const solids = Object.fromEntries(
+    SOLID_SHAPES.map((shape) => {
+      const group = picks.filter((pick) => !pick.wire && pick.shape === shape);
+
+      return [
+        shape,
+        {
+          count: group.length,
+          info: new Float32Array(group.length * 4),
+          position: new Float32Array(group.length * 4),
+          shape,
+        },
+      ];
+    })
+  );
+
+  SOLID_SHAPES.forEach((shape) => {
+    const group = solids[shape];
+
+    picks
+      .filter((pick) => !pick.wire && pick.shape === shape)
+      .forEach(({ node }, index) => {
+        group.position.set(
+          [...graph.position(node), p.ornamentSize * rng.range(0.7, 1.5)],
+          index * 4
+        );
+        group.info.set(
+          [birth[node], lobeOf(node), rng(), flex[node]],
+          index * 4
+        );
+      });
+  });
+
+  const cardPicks = picks.filter(
+    (pick) => !pick.wire && CARD_SHAPES.includes(pick.shape)
+  );
   const cards = {
     count: cardPicks.length,
     dir: new Float32Array(cardPicks.length * 4),
@@ -169,15 +264,7 @@ export default function pack(graph, p, rng, envelope, measures, terminals) {
     position: new Float32Array(cardPicks.length * 4),
   };
 
-  beadPicks.forEach(({ node }, b) => {
-    beads.position.set(
-      [...graph.position(node), p.ornamentSize * rng.range(0.6, 1.3)],
-      b * 4
-    );
-    beads.info.set([birth[node], lobeOf(node), rng(), flex[node]], b * 4);
-  });
-
-  cardPicks.forEach(({ node, type }, c) => {
+  cardPicks.forEach(({ node, shape }, c) => {
     const t = tangentOf(node);
 
     cards.position.set(
@@ -185,8 +272,11 @@ export default function pack(graph, p, rng, envelope, measures, terminals) {
       c * 4
     );
     cards.dir.set([t[0], t[1], t[2], birth[node]], c * 4);
-    cards.info.set([type - 1, lobeOf(node), rng(), flex[node]], c * 4);
+    cards.info.set(
+      [CARD_SHAPES.indexOf(shape), lobeOf(node), rng(), flex[node]],
+      c * 4
+    );
   });
 
-  return { beads, cards, segments };
+  return { cards, segments, solids };
 }

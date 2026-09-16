@@ -38,13 +38,16 @@ export const MOTION = {
   holdSeconds: 6,
   exitSeconds: 8,
   restSeconds: 1.5,
-  windStrength: 0.2,
+  windStrength: 0,
   windSpeed: 0.6,
-  scatterDistance: 7,
-  scatterSpread: 1,
-  scatterLift: 0.7,
-  scatterTurbulence: 0.8,
-  scatterSpin: 3,
+  scatterDistance: 6,
+  scatterDrift: 0.75,
+  scatterAngle: 25,
+  scatterLift: 0.35,
+  scatterGravity: 1.1,
+  scatterFlutter: 0.45,
+  scatterTurbulence: 0.35,
+  scatterSpin: 1.1,
 };
 
 export const SCENE_DEFAULTS = { ...FORM, ...LOOK, ...MOTION };

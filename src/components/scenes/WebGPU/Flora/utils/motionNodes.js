@@ -34,31 +34,47 @@ export function windOffset(p, flex, u) {
 
 export function scatterState(p, crownT, stemness, rand, u) {
   const order = mix(
-    crownT.oneMinus().mul(0.5).add(rand.mul(0.3)),
-    rand.mul(0.12).add(0.72),
+    crownT.oneMinus().mul(0.4).add(rand.mul(0.22)),
+    rand.mul(0.1).add(0.66),
     stemness
   );
-  const age = clamp(u.exit.sub(order).div(max(order.oneMinus(), 0.12)), 0, 1);
+  const age = clamp(u.exit.sub(order).div(max(order.oneMinus(), 0.2)), 0, 1);
+  const ease = age.mul(age.mul(-1).add(2));
   const out = normalize(p.sub(u.center).add(vec3(0, 1e-3, 0)));
-  const drift = mix(
-    out.mul(u.scatterSpread).add(vec3(0, u.scatterLift, 0)),
-    vec3(out.x.mul(0.25), -0.7, out.z.mul(0.25)),
+  const heading = normalize(
+    mix(out, u.scatterDir, u.scatterDrift).add(vec3(0, u.scatterLift, 0))
+  );
+  const curl = mx_noise_vec3(
+    p.mul(0.25).add(vec3(rand.mul(11), rand.mul(7), 0))
+  ).mul(u.scatterTurbulence);
+  const flutter = u.scatterDir
+    .mul(sin(age.mul(5.5).add(rand.mul(6.3))))
+    .mul(u.scatterFlutter)
+    .mul(age);
+  const fall = age.mul(age).mul(u.scatterGravity);
+  const carried = heading
+    .add(curl.mul(0.35))
+    .mul(u.scatterDistance)
+    .mul(ease)
+    .add(flutter)
+    .sub(vec3(0, fall, 0));
+  const offset = mix(
+    carried,
+    vec3(carried.x.mul(0.12), fall.mul(-0.5), carried.z.mul(0.12)),
     stemness
   );
-  const turbulence = mx_noise_vec3(p.mul(0.3).add(vec3(rand.mul(9), 0, 0))).mul(
-    u.scatterTurbulence
-  );
-  const offset = drift.add(turbulence).mul(u.scatterDistance).mul(age.mul(age));
-  const spin = vec3(
-    rand.sub(0.5),
-    rand.mul(7.1).fract().sub(0.5),
-    rand.mul(3.3).fract().sub(0.5)
+  const spin = normalize(
+    vec3(
+      rand.sub(0.5),
+      rand.mul(7.1).fract().sub(0.5),
+      rand.mul(3.3).fract().sub(0.5)
+    )
   )
     .mul(u.scatterSpin)
-    .mul(age);
+    .mul(ease);
 
   return {
-    fade: smoothstep(0.35, 1, age).oneMinus(),
+    fade: smoothstep(0.72, 1, age).oneMinus(),
     offset,
     spin,
   };

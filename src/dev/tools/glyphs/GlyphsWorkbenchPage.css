@@ -1,0 +1,312 @@
+.glyphs-page__layout {
+  display: grid;
+  grid-template-columns: 15rem minmax(0, 1fr) 18rem;
+  gap: 0.75rem;
+  align-items: start;
+}
+
+.glyphs-page__fonts,
+.glyphs-page__params {
+  position: sticky;
+  top: 0.75rem;
+  max-height: calc(100vh - 1.5rem);
+  overflow: auto;
+  padding: 0.75rem;
+}
+
+.glyphs-page__workspace {
+  display: grid;
+  gap: 0.75rem;
+  min-width: 0;
+}
+
+.glyphs-page__message {
+  display: grid;
+  gap: 0.6rem;
+  padding: 0.75rem;
+}
+
+.glyphs-page__glyphs {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(16rem, 22rem);
+  gap: 0.75rem;
+  align-items: start;
+}
+
+.glyphs-page__glyphs > .dev-panel {
+  padding: 0.75rem;
+}
+
+.glyphs-page__buttons {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.4rem;
+  margin: 0.4rem 0;
+}
+
+.glyphs-page__usage {
+  margin: 0;
+  padding: 0.5rem;
+  overflow-x: auto;
+  border-radius: 4px;
+  background: var(--dev-surface-subtle);
+  font-family: var(--dev-mono);
+  font-size: 0.68rem;
+  line-height: 1.5;
+  white-space: pre;
+}
+
+.glyphs-page__status--error {
+  color: var(--dev-danger);
+  font-size: 0.78rem;
+}
+
+.glyphs-page__status--ok {
+  color: #15803d;
+  font-size: 0.78rem;
+}
+
+.glyphs-page__status--pending,
+.glyphs-page__status--info {
+  color: var(--dev-text-muted);
+  font-size: 0.78rem;
+}
+
+.glyphs-fonts {
+  display: grid;
+  gap: 0.25rem;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.glyphs-fonts__item {
+  display: flex;
+  justify-content: space-between;
+  width: 100%;
+  padding: 0.35rem 0.5rem;
+  border: 1px solid var(--dev-border);
+  border-radius: 4px;
+  background: var(--dev-surface);
+  color: var(--dev-text);
+  cursor: pointer;
+  text-align: left;
+}
+
+.glyphs-fonts__item[aria-pressed='true'] {
+  border-color: var(--dev-text);
+  background: var(--dev-surface-subtle);
+  font-weight: 650;
+}
+
+.glyphs-fonts__technique {
+  color: var(--dev-text-muted);
+  font-size: 0.72rem;
+}
+
+.glyphs-field {
+  display: grid;
+  gap: 0.2rem;
+  margin-bottom: 0.55rem;
+  font-size: 0.78rem;
+}
+
+.glyphs-field > span:first-child {
+  color: var(--dev-text-secondary);
+  font-weight: 600;
+}
+
+.glyphs-field input[type='text'],
+.glyphs-field select,
+.glyphs-field textarea {
+  width: 100%;
+  padding: 0.3rem 0.4rem;
+  border: 1px solid var(--dev-border-strong);
+  border-radius: 4px;
+  background: var(--dev-surface);
+  color: var(--dev-text);
+}
+
+.glyphs-field textarea {
+  font-family: var(--dev-mono);
+  resize: vertical;
+}
+
+.glyphs-field__control {
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+}
+
+.glyphs-field__control input[type='range'] {
+  flex: 1;
+  min-width: 0;
+}
+
+.glyphs-field__number {
+  width: 4.5rem;
+  padding: 0.15rem 0.3rem;
+  border: 1px solid var(--dev-border-strong);
+  border-radius: 4px;
+  background: var(--dev-surface);
+  color: var(--dev-text);
+}
+
+.glyphs-field--toggle {
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+}
+
+.glyphs-params__actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.4rem;
+}
+
+.glyphs-params__pending {
+  color: var(--dev-accent);
+  font-size: 0.75rem;
+}
+
+.glyphs-sheet {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(3.4rem, 1fr));
+  gap: 0.35rem;
+}
+
+.glyphs-sheet__cell {
+  display: grid;
+  gap: 0.15rem;
+  padding: 0.25rem;
+  border: 1px solid var(--dev-border);
+  border-radius: 4px;
+  background: var(--dev-surface);
+  cursor: pointer;
+}
+
+.glyphs-sheet__cell--selected {
+  border-color: var(--dev-text);
+  box-shadow: 0 0 0 1px var(--dev-text);
+}
+
+.glyphs-sheet__cell--edited .glyphs-sheet__label::after {
+  content: ' •';
+  color: var(--dev-accent);
+}
+
+.glyphs-sheet__glyph {
+  width: 100%;
+  height: 3.4rem;
+}
+
+.glyphs-sheet__label {
+  color: var(--dev-text-secondary);
+  font-family: var(--dev-mono);
+  font-size: 0.72rem;
+}
+
+.glyphs-editor {
+  display: grid;
+  gap: 0.5rem;
+}
+
+.glyphs-editor__header {
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+}
+
+.glyphs-editor__char {
+  min-width: 2rem;
+  font-family: var(--dev-mono);
+  font-size: 1.4rem;
+  font-weight: 700;
+}
+
+.glyphs-editor__canvas {
+  width: 100%;
+  height: 20rem;
+  border: 1px solid var(--dev-border);
+  border-radius: 4px;
+}
+
+.glyphs-editor__hit {
+  stroke: transparent;
+  stroke-linecap: round;
+  cursor: pointer;
+}
+
+.glyphs-editor__hit:hover {
+  stroke: rgba(245, 158, 11, 0.45);
+}
+
+.glyphs-editor__guide {
+  stroke: rgba(148, 163, 184, 0.7);
+  stroke-dasharray: 2 2;
+  stroke-width: 0.8;
+  pointer-events: none;
+}
+
+.glyphs-editor__point {
+  fill: rgba(245, 158, 11, 0.85);
+  stroke: #111827;
+  stroke-width: 0.8;
+  cursor: pointer;
+}
+
+.glyphs-editor__point--active {
+  fill: #ef4444;
+}
+
+.glyphs-editor__pixel {
+  fill: transparent;
+  stroke: rgba(148, 163, 184, 0.5);
+  stroke-width: 0.3;
+  cursor: pointer;
+}
+
+.glyphs-editor__pixel:hover {
+  fill: rgba(245, 158, 11, 0.3);
+}
+
+.glyphs-editor__pixel--edited {
+  stroke: #f59e0b;
+  stroke-width: 1;
+}
+
+.glyphs-editor__nudge {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.3rem;
+}
+
+.glyphs-strip {
+  width: 100%;
+  height: 4rem;
+  border: 1px solid var(--dev-border);
+  border-radius: 4px;
+  cursor: crosshair;
+}
+
+.glyphs-strip__window {
+  fill: rgba(245, 158, 11, 0.18);
+  stroke: #f59e0b;
+  stroke-width: 2;
+}
+
+@media (max-width: 1200px) {
+  .glyphs-page__layout {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .glyphs-page__fonts,
+  .glyphs-page__params {
+    position: static;
+    max-height: none;
+  }
+
+  .glyphs-page__glyphs {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}

@@ -17,6 +17,9 @@ geometry-agnostic and could be pointed at other models later.
 - pixel sort post processing. chunks of screen get pixel sorted. could be horizontal or verical bands, could be noise/cell noise driven.
 - slit scan post processing. horizontal or verical bands of screen get slit scanned.
 
+- [ ] Add a stop sign. can use retro reflective material, but might need to upgrade three.js
+- [ ] make the scene a 4 way stop with vehicles at each stop, each with a different set of glitches applied
+
 ## // Presets
 
 ## // Features

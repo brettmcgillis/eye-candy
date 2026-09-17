@@ -1,8 +1,8 @@
 import React, { lazy } from 'react';
-import { WiCloudyGusts } from 'react-icons/wi';
+import { DiDigitalOcean } from 'react-icons/di';
 
 function SceneIcon() {
-  return <WiCloudyGusts color="#000000" size={26} />;
+  return <DiDigitalOcean color="#000000" size={26} />;
 }
 
 export default {

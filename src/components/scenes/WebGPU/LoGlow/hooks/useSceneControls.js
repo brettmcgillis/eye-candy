@@ -179,6 +179,16 @@ export default function useSceneControls() {
           label: 'Apply to Logo',
           value: p.fractalPixelateApplyToLogo,
         },
+        fractalPixelateShape: {
+          label: 'Shape',
+          value: p.fractalPixelateShape,
+          options: ['quad', 'tri'],
+        },
+        fractalPixelateDriver: {
+          label: 'Driver',
+          value: p.fractalPixelateDriver,
+          options: ['noise', 'variance', 'pointer'],
+        },
         fractalPixelateCellSize: {
           label: 'Cell Size',
           value: p.fractalPixelateCellSize,
@@ -188,13 +198,19 @@ export default function useSceneControls() {
         fractalPixelateLevels: {
           label: 'Levels',
           value: p.fractalPixelateLevels,
-          min: 1,
+          min: 0,
           max: 4,
           step: 1,
         },
         fractalPixelateThreshold: {
-          label: 'Threshold',
+          label: 'Threshold (Noise)',
           value: p.fractalPixelateThreshold,
+          min: 0,
+          max: 1,
+        },
+        fractalPixelateVarianceThreshold: {
+          label: 'Threshold (Variance)',
+          value: p.fractalPixelateVarianceThreshold,
           min: 0,
           max: 1,
         },
@@ -220,6 +236,18 @@ export default function useSceneControls() {
           label: 'Outline Strength',
           value: p.fractalPixelateOutlineStrength,
           min: 0,
+          max: 1,
+        },
+        fractalPixelatePointerRadius: {
+          label: 'Pointer Radius',
+          value: p.fractalPixelatePointerRadius,
+          min: 0,
+          max: 1,
+        },
+        fractalPixelatePointerStrength: {
+          label: 'Pointer Strength',
+          value: p.fractalPixelatePointerStrength,
+          min: -1,
           max: 1,
         },
       },

@@ -17,9 +17,12 @@ export default function useBackdropPixelate(
   material,
   {
     enabled,
+    shape,
+    driver,
     cellSize,
     levels,
     threshold,
+    varianceThreshold,
     noiseScale,
     jitterAmount,
     outlineWidth,
@@ -43,9 +46,12 @@ export default function useBackdropPixelate(
     const { colorNode, uniforms } = fractalPixelate(
       (uv) => viewportSharedTexture(viewportSafeUV(uv)),
       {
+        shape,
+        driver,
         cellSize,
         levels,
         threshold,
+        varianceThreshold,
         noiseScale,
         jitterAmount,
         outlineWidth,
@@ -61,7 +67,7 @@ export default function useBackdropPixelate(
       uniformsRef.current = null;
     };
     // eslint-disable-next-line
-  }, [material, enabled]);
+  }, [material, enabled, shape, driver]);
 
   useFrame(() => {
     if (!uniformsRef.current) return;
@@ -69,6 +75,7 @@ export default function useBackdropPixelate(
       cellSize,
       levels,
       threshold,
+      varianceThreshold,
       noiseScale,
       jitterAmount,
       outlineWidth,

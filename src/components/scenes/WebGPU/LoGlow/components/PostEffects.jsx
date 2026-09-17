@@ -7,6 +7,7 @@ import { pass, uniform } from 'three/tsl';
 import * as THREE from 'three/webgpu';
 
 import { fractalPixelate, updateFractalPixelateUniforms } from '@modules/tsl';
+import useFractalPixelatePointer from '@postprocessing/WebGPU/fractalPixelate/useFractalPixelatePointer';
 
 // Replaces drei's <Effects><unrealBloomPass /></Effects> (classic
 // EffectComposer, raw-GLSL — incompatible with WebGPURenderer) with a
@@ -23,17 +24,23 @@ function PostEffects({
   bloomStrength = 0.2,
   bloomRadius = 0.2,
   fractalPixelateEnabled = false,
+  fractalPixelateShape = 'quad',
+  fractalPixelateDriver = 'noise',
   fractalPixelateCellSize = 12,
   fractalPixelateLevels = 3,
   fractalPixelateThreshold = 0.55,
+  fractalPixelateVarianceThreshold = 0.12,
   fractalPixelateNoiseScale = 1.5,
   fractalPixelateJitterAmount = 0.12,
   fractalPixelateOutlineWidth = 0.08,
   fractalPixelateOutlineStrength = 0.5,
+  fractalPixelatePointerRadius = 0.25,
+  fractalPixelatePointerStrength = 0,
 }) {
   const { gl: renderer, scene, camera } = useThree();
   const postRef = useRef(null);
   const pixelateUniformsRef = useRef(null);
+  const pointerRef = useFractalPixelatePointer();
 
   const bloomUniforms = useMemo(
     () => ({
@@ -58,13 +65,18 @@ function PostEffects({
       const { colorNode, uniforms } = fractalPixelate(
         (uv) => sceneTexture.sample(uv),
         {
+          shape: fractalPixelateShape,
+          driver: fractalPixelateDriver,
           cellSize: fractalPixelateCellSize,
           levels: fractalPixelateLevels,
           threshold: fractalPixelateThreshold,
+          varianceThreshold: fractalPixelateVarianceThreshold,
           noiseScale: fractalPixelateNoiseScale,
           jitterAmount: fractalPixelateJitterAmount,
           outlineWidth: fractalPixelateOutlineWidth,
           outlineStrength: fractalPixelateOutlineStrength,
+          pointerRadius: fractalPixelatePointerRadius,
+          pointerStrength: fractalPixelatePointerStrength,
         }
       );
       pixelateUniformsRef.current = uniforms;
@@ -95,6 +107,8 @@ function PostEffects({
     scene,
     camera,
     fractalPixelateEnabled,
+    fractalPixelateShape,
+    fractalPixelateDriver,
     bloomEnabled,
     bloomUniforms,
   ]);
@@ -105,14 +119,19 @@ function PostEffects({
     bloomUniforms.radius.value = bloomRadius;
 
     if (pixelateUniformsRef.current) {
+      const pointer = pointerRef.current;
       updateFractalPixelateUniforms(pixelateUniformsRef.current, {
         cellSize: fractalPixelateCellSize,
         levels: fractalPixelateLevels,
         threshold: fractalPixelateThreshold,
+        varianceThreshold: fractalPixelateVarianceThreshold,
         noiseScale: fractalPixelateNoiseScale,
         jitterAmount: fractalPixelateJitterAmount,
         outlineWidth: fractalPixelateOutlineWidth,
         outlineStrength: fractalPixelateOutlineStrength,
+        pointerUV: pointer,
+        pointerRadius: fractalPixelatePointerRadius,
+        pointerStrength: pointer.active ? fractalPixelatePointerStrength : 0,
       });
     }
 

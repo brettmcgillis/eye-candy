@@ -64,13 +64,18 @@ export default function LoGlow() {
     sparkleSpeed,
     fractalPixelateEnabled,
     fractalPixelateApplyToLogo,
+    fractalPixelateShape,
+    fractalPixelateDriver,
     fractalPixelateCellSize,
     fractalPixelateLevels,
     fractalPixelateThreshold,
+    fractalPixelateVarianceThreshold,
     fractalPixelateNoiseScale,
     fractalPixelateJitterAmount,
     fractalPixelateOutlineWidth,
     fractalPixelateOutlineStrength,
+    fractalPixelatePointerRadius,
+    fractalPixelatePointerStrength,
     enableNeonFlicker,
     neonFlickerIntensity,
     neonFlickerFrequency,
@@ -174,9 +179,12 @@ export default function LoGlow() {
           growthFresnel,
           growthSpecular,
           pixelateBackdrop: fractalPixelateApplyToLogo,
+          pixelateShape: fractalPixelateShape,
+          pixelateDriver: fractalPixelateDriver,
           pixelateCellSize: fractalPixelateCellSize,
           pixelateLevels: fractalPixelateLevels,
           pixelateThreshold: fractalPixelateThreshold,
+          pixelateVarianceThreshold: fractalPixelateVarianceThreshold,
           pixelateNoiseScale: fractalPixelateNoiseScale,
           pixelateJitterAmount: fractalPixelateJitterAmount,
           pixelateOutlineWidth: fractalPixelateOutlineWidth,
@@ -200,13 +208,18 @@ export default function LoGlow() {
         bloomStrength={bloomStrength}
         bloomRadius={bloomRadius}
         fractalPixelateEnabled={fractalPixelateEnabled}
+        fractalPixelateShape={fractalPixelateShape}
+        fractalPixelateDriver={fractalPixelateDriver}
         fractalPixelateCellSize={fractalPixelateCellSize}
         fractalPixelateLevels={fractalPixelateLevels}
         fractalPixelateThreshold={fractalPixelateThreshold}
+        fractalPixelateVarianceThreshold={fractalPixelateVarianceThreshold}
         fractalPixelateNoiseScale={fractalPixelateNoiseScale}
         fractalPixelateJitterAmount={fractalPixelateJitterAmount}
         fractalPixelateOutlineWidth={fractalPixelateOutlineWidth}
         fractalPixelateOutlineStrength={fractalPixelateOutlineStrength}
+        fractalPixelatePointerRadius={fractalPixelatePointerRadius}
+        fractalPixelatePointerStrength={fractalPixelatePointerStrength}
       />
     </>
   );

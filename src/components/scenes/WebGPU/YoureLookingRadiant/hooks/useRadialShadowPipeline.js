@@ -3,17 +3,11 @@ import { useEffect, useMemo, useRef } from 'react';
 
 import { useFrame, useThree } from '@react-three/fiber';
 
-import * as THREE from 'three/webgpu';
-
-import {
-  getPaletteStops,
-  rgbToColor,
-  samplePaletteColors,
-} from '@utils/gradientPalette';
+import { buildPalette, createSwarm, paletteKey } from '@modules/radiantSwarm';
 
 import createRadiancePipeline from '../utils/createPipeline';
 import { MAX_BODIES, updateSceneUniforms } from '../utils/sceneTSL';
-import createSwarm from '../utils/swarm';
+import writeScene from '../utils/writeScene';
 
 const MAX_DELTA = 1 / 30;
 
@@ -65,39 +59,8 @@ export default function useRadiancePipeline(config) {
     [stable]
   );
 
-  // Palette colours differ in luminance by up to ~3.5x, so at one Light
-  // Output a violet emitter genuinely puts out a third of what a cyan one
-  // does — it reads as "that colour isn't emissive". Match Brightness scales
-  // each toward the palette's mean luminance so intensity means the same
-  // thing whatever the hue.
-  const palette = useMemo(() => {
-    const stops = getPaletteStops(config.paletteName);
-    const colors = stops
-      ? samplePaletteColors(stops, 4, config.paletteExact).map((rgb) =>
-          rgbToColor(rgb, new THREE.Color())
-        )
-      : [config.colorA, config.colorB, config.colorC, config.colorD].map(
-          (hex) => new THREE.Color(hex)
-        );
-
-    const luminance = colors.map(
-      (c) => c.r * 0.2126 + c.g * 0.7152 + c.b * 0.0722
-    );
-    const mean = luminance.reduce((a, b) => a + b, 0) / luminance.length;
-
-    return colors.map((color, i) => {
-      const scale = luminance[i] > 1e-4 ? mean / luminance[i] : 1;
-      return color.multiplyScalar(1 + (scale - 1) * config.matchBrightness);
-    });
-  }, [
-    config.colorA,
-    config.colorB,
-    config.colorC,
-    config.colorD,
-    config.matchBrightness,
-    config.paletteExact,
-    config.paletteName,
-  ]);
+  const paletteSignature = paletteKey(config);
+  const palette = useMemo(() => buildPalette(config), [paletteSignature]);
   const paletteRef = useRef(palette);
   paletteRef.current = palette;
 
@@ -113,8 +76,9 @@ export default function useRadiancePipeline(config) {
 
     // The sim works in field units (height 1) so every size control is
     // resolution independent; the shadow pass works in pixels.
-    const counts = swarm.writeScene(
+    const counts = writeScene(
       stable.buffers,
+      swarm,
       c,
       paletteRef.current,
       size.height

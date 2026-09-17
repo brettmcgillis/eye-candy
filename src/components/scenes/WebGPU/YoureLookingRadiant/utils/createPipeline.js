@@ -11,8 +11,8 @@ import {
   buildBodySDF,
   createSceneUniforms,
 } from './sceneTSL';
-import { createSceneBuffers } from './swarm';
 import buildCircleTrace from './traceCircles';
+import { createSceneBuffers } from './writeScene';
 
 // Angular resolution of the shadow map. Still the biggest lever on cost, but a
 // much smaller one than it was: each column now solves one quadratic per body

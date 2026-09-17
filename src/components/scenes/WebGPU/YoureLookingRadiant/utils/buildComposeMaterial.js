@@ -84,7 +84,7 @@ export default function buildComposeMaterial(inputs) {
     const albedo = mix(fieldColor, body.albedo, inBody);
 
     const invH = float(1).div(size.y);
-    const softPx = softness.mul(size.y);
+    const softPx = softness.mul(size.y).max(1e-3);
     const light = vec3(ambient).toVar();
 
     Loop({ end: lightCount, start: 0, type: 'int' }, ({ i }) => {

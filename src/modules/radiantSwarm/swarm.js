@@ -1,30 +1,32 @@
 /* eslint-disable no-continue, no-param-reassign */
 import { mulberry32 } from '@utils/noise2d';
 
-import curlFlow from './flow';
+import curlFlow, { curlFlow3 } from './flow';
 import ROLE_MODES from './roleModes';
 
-// Field space is x in [0, aspect], y in [0, 1] — resolution independent, so
-// every size control reads as a fraction of field height.
+// Field space is x in [0, aspect], y in [0, 1], z in [0, depth] — resolution
+// independent, so every size control reads as a fraction of field height.
+// Depth 0 is the flat field, and takes exactly the 2D path it always did.
 const SEPARATION_PASSES = 3;
-const EMISSION_EPSILON = 1e-3;
 
 // 1 at the wall, easing to 0 once `gap` reaches the margin.
 function edgeWeight(gap, margin) {
   return Math.min(1, Math.max(0, (margin - gap) / margin));
 }
 
-export default function createSwarm({ aspect, count, seed = 1 }) {
+export default function createSwarm({ aspect, count, depth = 0, seed = 1 }) {
   const rand = mulberry32(seed);
+  const volumetric = depth > 0;
   let fieldAspect = aspect;
   const particles = [];
-  const flow = [0, 0];
-  const heading = [0, 0];
+  const flow = [0, 0, 0];
+  const heading = [0, 0, 0];
   let orbitPhase = 0;
 
   function respawn(p, ctx) {
     p.x = rand() * fieldAspect;
     p.y = rand();
+    if (volumetric) p.z = rand() * depth;
     p.emission = 1;
     p.presence = 0;
     p.dead = false;
@@ -39,7 +41,7 @@ export default function createSwarm({ aspect, count, seed = 1 }) {
   // happen to be mid-cycle that colour reads as "not emissive" when it is
   // only outnumbered.
   for (let i = 0; i < count; i += 1) {
-    particles.push({
+    const p = {
       colorIndex: i % 4,
       dead: false,
       emission: 1,
@@ -54,7 +56,10 @@ export default function createSwarm({ aspect, count, seed = 1 }) {
       rate: 1,
       x: rand() * fieldAspect,
       y: rand(),
-    });
+      z: 0,
+    };
+    if (volumetric) p.z = rand() * depth;
+    particles.push(p);
   }
 
   // Push overlapping bodies apart along the line between their centres, half
@@ -76,7 +81,8 @@ export default function createSwarm({ aspect, count, seed = 1 }) {
 
           let dx = b.x - a.x;
           let dy = b.y - a.y;
-          let d = Math.hypot(dx, dy);
+          const dz = volumetric ? b.z - a.z : 0;
+          let d = volumetric ? Math.hypot(dx, dy, dz) : Math.hypot(dx, dy);
 
           if (d >= minGap) continue;
 
@@ -93,6 +99,10 @@ export default function createSwarm({ aspect, count, seed = 1 }) {
           a.y -= dy * push;
           b.x += dx * push;
           b.y += dy * push;
+          if (volumetric) {
+            a.z -= dz * push;
+            b.z += dz * push;
+          }
         }
       }
     }
@@ -105,7 +115,8 @@ export default function createSwarm({ aspect, count, seed = 1 }) {
     return Math.min(
       params.particleRadius * p.radiusScale,
       fieldAspect * 0.5,
-      0.5
+      0.5,
+      volumetric ? depth * 0.5 : Infinity
     );
   }
 
@@ -119,9 +130,10 @@ export default function createSwarm({ aspect, count, seed = 1 }) {
   // the wall the drift is ignored entirely. Unit vectors in, unit vector out,
   // so no amount of curl can overpower it — the mistake the original border
   // push made by adding to a velocity that was normalised afterwards.
-  function steerInward(out, p, params, ux, uy) {
+  function steerInward(out, p, params, ux, uy, uz) {
     out[0] = ux;
     out[1] = uy;
+    out[2] = uz;
 
     const margin = params.edgeMargin;
     if (margin <= 0) return;
@@ -130,7 +142,10 @@ export default function createSwarm({ aspect, count, seed = 1 }) {
     const inX =
       edgeWeight(p.x - r, margin) - edgeWeight(fieldAspect - r - p.x, margin);
     const inY = edgeWeight(p.y - r, margin) - edgeWeight(1 - r - p.y, margin);
-    const inLen = Math.hypot(inX, inY);
+    const inZ = volumetric
+      ? edgeWeight(p.z - r, margin) - edgeWeight(depth - r - p.z, margin)
+      : 0;
+    const inLen = volumetric ? Math.hypot(inX, inY, inZ) : Math.hypot(inX, inY);
 
     if (inLen < 1e-6) return;
 
@@ -138,10 +153,12 @@ export default function createSwarm({ aspect, count, seed = 1 }) {
     const ease = w * w * (3 - 2 * w);
     const bx = ux * (1 - ease) + (inX / inLen) * ease;
     const by = uy * (1 - ease) + (inY / inLen) * ease;
-    const len = Math.hypot(bx, by) || 1;
+    const bz = uz * (1 - ease) + (inZ / inLen) * ease;
+    const len = (volumetric ? Math.hypot(bx, by, bz) : Math.hypot(bx, by)) || 1;
 
     out[0] = bx / len;
     out[1] = by / len;
+    out[2] = bz / len;
   }
 
   function confine(p, params) {
@@ -149,28 +166,31 @@ export default function createSwarm({ aspect, count, seed = 1 }) {
 
     p.x = Math.min(Math.max(p.x, r), fieldAspect - r);
     p.y = Math.min(Math.max(p.y, r), 1 - r);
+    if (volumetric) p.z = Math.min(Math.max(p.z, r), depth - r);
   }
 
   // Port of the rings shader in plans/youre-looking-radiant.md. Its uv is
   // height-normalised and centred, which is field space shifted to the middle,
   // and its `uv *= rotation` accumulates across rings, so ring j sits at the
   // triangular-number multiple of the twist. y is flipped because shader y
-  // points up and field y points down.
+  // points up and field y points down. In a volume each ring's plane also
+  // turns about the vertical by Ring Tilt, which is 0 on the flat field.
   function placeOrbits(dt, params, ctx, mode) {
-    const dots = Math.max(1, Math.round(params.orbitDots));
-    const rings = Math.max(1, Math.round(params.orbitRings));
-    const twist = (params.orbitTwist * Math.PI) / 180;
-    const gap = params.orbitGap * params.particleRadius;
+    const dots = Math.max(1, Math.round(params.ringDots));
+    const rings = Math.max(1, Math.round(params.ringCount));
+    const twist = (params.ringTwist * Math.PI) / 180;
+    const tilt = volumetric ? ((params.ringTilt ?? 0) * Math.PI) / 180 : 0;
+    const gap = params.ringGap * params.particleRadius;
 
-    orbitPhase += dt * params.orbitSpeed;
+    orbitPhase += dt * params.ringSpeed;
 
     for (let i = 0; i < count; i += 1) {
       const p = particles[i];
       const ring = Math.floor(i / dots);
       const theta = (twist * ring * (ring + 1)) / 2;
       const angle = ((i % dots) + orbitPhase) * ((Math.PI * 2) / dots);
-      const cx = params.orbitOffset + params.orbitRadius * Math.cos(angle);
-      const cy = params.orbitRadius * Math.sin(angle);
+      const cx = params.ringOffset + params.ringRadius * Math.cos(angle);
+      const cy = params.ringRadius * Math.sin(angle);
       const c = Math.cos(theta);
       const sn = Math.sin(theta);
 
@@ -183,18 +203,29 @@ export default function createSwarm({ aspect, count, seed = 1 }) {
       const d = Math.hypot(x, y);
       const lifted = Math.sqrt(d * d + gap * gap);
       const push = d > 1e-9 ? lifted / d : 0;
+      const px = d > 1e-9 ? x * push : gap;
 
       p.hidden = ring >= rings;
-      p.x = fieldAspect * 0.5 + (d > 1e-9 ? x * push : gap);
+      p.x = fieldAspect * 0.5 + px * Math.cos(tilt * ring);
       p.y = 0.5 - y * push;
+      if (volumetric) p.z = depth * 0.5 + px * Math.sin(tilt * ring);
 
       mode.step(p, ctx);
       if (p.dead) respawn(p, ctx);
     }
   }
 
+  function sampleFlow(p, time, params) {
+    if (volumetric) {
+      curlFlow3(flow, p.x, p.y, p.z, time, params.flowScale);
+      return;
+    }
+    curlFlow(flow, p.x, p.y, time, params.flowScale);
+    flow[2] = 0;
+  }
+
   function step(dt, time, params) {
-    const ctx = { aspect: fieldAspect, dt, params, rand, time };
+    const ctx = { aspect: fieldAspect, depth, dt, params, rand, time };
     const mode = ROLE_MODES[params.roleMode] ?? ROLE_MODES.age;
 
     if (params.layout === 'orbits') {
@@ -205,30 +236,35 @@ export default function createSwarm({ aspect, count, seed = 1 }) {
     for (let i = 0; i < count; i += 1) {
       const p = particles[i];
 
-      curlFlow(flow, p.x, p.y, time, params.flowScale);
+      sampleFlow(p, time, params);
 
       let vx = flow[0];
       let vy = flow[1];
+      let vz = flow[2];
 
       if (params.pointerStrength !== 0) {
         const dx = params.pointerX - p.x;
         const dy = params.pointerY - p.y;
-        const d = Math.hypot(dx, dy);
+        const dz = volumetric ? (params.pointerZ ?? depth * 0.5) - p.z : 0;
+        const d = volumetric ? Math.hypot(dx, dy, dz) : Math.hypot(dx, dy);
         if (d > 1e-4 && d < params.pointerRadius) {
           const falloff = 1 - d / params.pointerRadius;
           vx += (dx / d) * falloff * params.pointerStrength;
           vy += (dy / d) * falloff * params.pointerStrength;
+          vz += (dz / d) * falloff * params.pointerStrength;
         }
       }
 
-      const len = Math.hypot(vx, vy) || 1;
+      const len =
+        (volumetric ? Math.hypot(vx, vy, vz) : Math.hypot(vx, vy)) || 1;
       const r = wallGap(p, params);
 
-      steerInward(heading, p, params, vx / len, vy / len);
+      steerInward(heading, p, params, vx / len, vy / len, vz / len);
 
       const move = params.speed * dt;
       let ux = heading[0] * move;
       let uy = heading[1] * move;
+      let uz = heading[2] * move;
 
       // Last resort behind the steering: mirror a step that would still cross.
       // Only ever reverses motion INTO a wall, because a body already outside
@@ -239,6 +275,11 @@ export default function createSwarm({ aspect, count, seed = 1 }) {
       p.x += ux;
       p.y += uy;
 
+      if (volumetric) {
+        if (uz < 0 ? p.z + uz < r : p.z + uz > depth - r) uz = -uz;
+        p.z += uz;
+      }
+
       mode.step(p, ctx);
       if (p.dead) respawn(p, ctx);
     }
@@ -248,47 +289,6 @@ export default function createSwarm({ aspect, count, seed = 1 }) {
     // After separation, not before: pushing one pair apart routinely shoves a
     // third body through a wall, and nothing renders between here and there.
     for (let i = 0; i < count; i += 1) confine(particles[i], params);
-  }
-
-  // Fills two flat lists, in pixels. One body per particle, and one light per
-  // particle that is actually emitting — a disc is its own light source, so
-  // nothing here needs several lights to stand in for one body.
-  function writeScene(out, params, palette, scale) {
-    let lightCount = 0;
-
-    for (let i = 0; i < count; i += 1) {
-      const p = particles[i];
-      let size = p.radiusScale;
-      if (params.layout === 'orbits') size = p.hidden ? 0 : 1;
-      const radius = params.particleRadius * size * p.presence * scale;
-      const glass = p.refractRoll < params.refractShare;
-      const color = palette[p.colorIndex % palette.length];
-
-      const body = out.bodies[i];
-      body.x = p.x * scale;
-      body.y = p.y * scale;
-      body.radius = radius;
-      // Glass neither blocks nor makes light; it only bends it.
-      body.occluderRadius = glass ? 0 : radius * (1 - p.emission);
-      body.emission = glass ? 0 : p.emission;
-      body.refract = glass ? 1 : 0;
-      body.color = color;
-
-      if (glass || p.emission <= EMISSION_EPSILON) continue;
-
-      const light = out.lights[lightCount];
-
-      light.x = body.x;
-      light.y = body.y;
-      light.radius = radius;
-      light.intensity = p.emission * params.lightStrength;
-      light.owner = i;
-      light.color = color;
-
-      lightCount += 1;
-    }
-
-    return { bodyCount: count, lightCount };
   }
 
   // Field x runs 0..aspect, so narrowing the window moves the right wall left
@@ -307,27 +307,27 @@ export default function createSwarm({ aspect, count, seed = 1 }) {
     fieldAspect = next;
   }
 
-  return { count, particles, setAspect, step, writeScene };
+  const getAspect = () => fieldAspect;
+
+  return { count, depth, getAspect, particles, setAspect, step };
 }
 
-export function createSceneBuffers(maxLights, maxBodies) {
-  return {
-    bodies: Array.from({ length: maxBodies }, () => ({
-      color: '#ffffff',
-      emission: 0,
-      occluderRadius: 0,
-      radius: 0,
-      refract: 0,
-      x: 0,
-      y: 0,
-    })),
-    lights: Array.from({ length: maxLights }, () => ({
-      color: '#ffffff',
-      intensity: 0,
-      owner: 0,
-      radius: 0,
-      x: 0,
-      y: 0,
-    })),
-  };
+// What one particle is this frame, in field units. The single definition both
+// renderers read, so a disc and a sphere agree on size and role.
+export function readBody(out, p, params) {
+  let size = p.radiusScale;
+  if (params.layout === 'orbits') size = p.hidden ? 0 : 1;
+  const radius = params.particleRadius * size * p.presence;
+  // Glass neither blocks nor makes light; it only bends it.
+  const glass = p.refractRoll < params.refractShare;
+
+  out.radius = radius;
+  out.glass = glass;
+  out.emission = glass ? 0 : p.emission;
+  out.occluderRadius = glass ? 0 : radius * (1 - p.emission);
+  out.colorIndex = p.colorIndex;
+
+  return out;
 }
+
+export const EMISSION_EPSILON = 1e-3;

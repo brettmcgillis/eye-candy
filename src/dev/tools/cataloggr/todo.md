@@ -17,6 +17,7 @@ Track scene maturity, local presets, publishing progress, and colocated TODO doc
 - [ ] allow me to open the scene to a given preset from the list of presets in the closure
 - [ ] make sure all todos show when 'all scenes' is selected
 - [ ] how can we establish the concept of tracking dev time against a given scene? this might be a cool metric to display
+- [ ] scenes should carry a screenshot. this sets us up for thumbnails in cataloggr as well as future landing/home page
 
 ## // Presets
 

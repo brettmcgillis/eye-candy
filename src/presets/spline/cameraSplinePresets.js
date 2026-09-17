@@ -86,6 +86,82 @@ const CAMERA_SPLINE_PRESETS = {
       P(1, 6.5, -6),
     ],
   },
+
+  'Longitudinal Glide': {
+    tension: 0.35,
+    closed: true,
+    points: [
+      P(5, 8, 17),
+      P(-2, 6, 12),
+      P(-7, 4.5, 4),
+      P(-6, 3.5, -6),
+      P(-1, 4.5, -16),
+      P(6, 5, -11),
+      P(8, 6, -1),
+      P(7, 7, 9),
+    ],
+  },
+
+  'Wide Crossing Loop': {
+    tension: 0.4,
+    closed: true,
+    points: [
+      P(-14, 5, 7),
+      P(-9, 3.5, 0),
+      P(-4, 3, -8),
+      P(5, 3.5, -11),
+      P(13, 5, -5),
+      P(12, 7, 4),
+      P(4, 9, 10),
+      P(-7, 8, 11),
+    ],
+  },
+
+  'Lateral Arc Sweep': {
+    tension: 0.35,
+    closed: true,
+    points: [
+      P(-21, 11, -2),
+      P(-13, 7, -8),
+      P(0, 6, -11),
+      P(13, 7, -8),
+      P(21, 11, -2),
+      P(14, 14, 7),
+      P(0, 16, 11),
+      P(-14, 14, 7),
+    ],
+  },
+
+  'Low Survey Orbit': {
+    tension: 0.4,
+    closed: true,
+    points: [
+      P(-18, 8, 12),
+      P(-8, 5, 15),
+      P(4, 4.5, 13),
+      P(16, 6, 8),
+      P(19, 9, -1),
+      P(9, 12, -8),
+      P(-5, 11, -9),
+      P(-17, 9, -3),
+    ],
+  },
+
+  'Ground-Level Slalom': {
+    tension: 0.3,
+    closed: true,
+    points: [
+      P(-3, 1.4, 17),
+      P(4, 1.1, 11),
+      P(-5, 1.6, 4),
+      P(5, 1.2, -4),
+      P(-4, 1.5, -11),
+      P(3, 1.3, -17),
+      P(10, 5, -10),
+      P(11, 7, 0),
+      P(9, 5, 10),
+    ],
+  },
 };
 
 export default CAMERA_SPLINE_PRESETS;

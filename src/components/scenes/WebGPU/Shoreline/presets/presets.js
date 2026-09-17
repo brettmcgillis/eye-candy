@@ -7,7 +7,8 @@ export const DEFAULT_PRESET = 'Rock Break';
 // grain count and solver resolution tear the pipeline down, so those stay
 // identical everywhere.
 const BASE = {
-  cameraMode: 'orbit',
+  cameraMode: 'spline',
+  splinePreset: 'Wide Crossing Loop',
   orbitAutoRotate: false,
   orbitDesktopPosition: [0, 40, -3],
   orbitDesktopTarget: [0, 0, -6],

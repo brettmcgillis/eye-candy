@@ -9,7 +9,7 @@
 const TARGET = [0, 0, -4];
 
 const CAMERA = {
-  defaultMode: 'orbit',
+  defaultMode: 'spline',
   orbit: {
     desktop: {
       position: [6, 15, 20],
@@ -21,6 +21,17 @@ const CAMERA = {
       position: [4, 17, 22],
       target: TARGET,
       pivot: TARGET,
+      fov: 52,
+    },
+  },
+  spline: {
+    preset: 'Lateral Arc Sweep',
+    desktop: {
+      target: TARGET,
+      fov: 34,
+    },
+    mobile: {
+      target: TARGET,
       fov: 52,
     },
   },

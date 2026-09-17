@@ -9,7 +9,7 @@
 const TARGET = [0, 0, -6];
 
 const CAMERA = {
-  defaultMode: 'orbit',
+  defaultMode: 'spline',
   orbit: {
     desktop: {
       position: [0, 40, -3],
@@ -21,6 +21,17 @@ const CAMERA = {
       position: [0, 43, -5],
       target: TARGET,
       pivot: TARGET,
+      fov: 50,
+    },
+  },
+  spline: {
+    preset: 'Wide Crossing Loop',
+    desktop: {
+      target: TARGET,
+      fov: 33,
+    },
+    mobile: {
+      target: TARGET,
       fov: 50,
     },
   },

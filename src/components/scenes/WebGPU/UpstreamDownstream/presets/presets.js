@@ -7,7 +7,8 @@ export const DEFAULT_PRESET = 'Riffle Run';
 // grain count and solver resolution tear the pipeline down, so those stay
 // identical everywhere.
 const BASE = {
-  cameraMode: 'orbit',
+  cameraMode: 'spline',
+  splinePreset: 'Lateral Arc Sweep',
   orbitAutoRotate: false,
   orbitDesktopPosition: [6, 15, 20],
   orbitDesktopTarget: [0, 0, -4],

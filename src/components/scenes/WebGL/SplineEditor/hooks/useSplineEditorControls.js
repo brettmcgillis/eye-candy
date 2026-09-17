@@ -41,7 +41,7 @@ function parsePreset(preset) {
   const splines = sourceSplines.map((spline) =>
     spline.points.map((pt) => ({
       position: pt.position.clone(),
-      rotation: pt.rotation.clone(),
+      rotation: pt.rotation?.clone() ?? new THREE.Euler(),
     }))
   );
 

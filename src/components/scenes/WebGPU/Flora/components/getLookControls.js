@@ -1,5 +1,7 @@
 import { folder } from 'leva';
 
+import { PALETTE_NAMES, PALETTE_NONE } from '@utils/gradientPalette';
+
 import { presetReader, range } from './controlHelpers';
 
 function color(label, value) {
@@ -13,6 +15,16 @@ export default function getLookControls(preset = {}) {
     {
       Palette: folder(
         {
+          paletteName: {
+            label: 'Palette',
+            options: [PALETTE_NONE, ...PALETTE_NAMES],
+            value: p('paletteName'),
+          },
+          paletteShuffle: {
+            label: 'New Palette Each Generation',
+            value: p('paletteShuffle'),
+          },
+          paletteExact: { label: 'Exact Colors', value: p('paletteExact') },
           backgroundColor: color('Background', p('backgroundColor')),
           stemColor: color('Stem', p('stemColor')),
           budColor: color('Bud', p('budColor')),

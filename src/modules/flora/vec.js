@@ -53,3 +53,30 @@ export function blend(a, b, t) {
     a[2] + (b[2] - a[2]) * t,
   ]);
 }
+
+export function rotateVector(v, axis, angle) {
+  const c = Math.cos(angle);
+  const s = Math.sin(angle);
+  const d = v[0] * axis[0] + v[1] * axis[1] + v[2] * axis[2];
+  const turned = cross(axis, v);
+
+  return [0, 1, 2].map((i) => v[i] * c + turned[i] * s + axis[i] * d * (1 - c));
+}
+
+export function rotateAround(v, axis, angle) {
+  return normalize(rotateVector(v, axis, angle));
+}
+
+export function alignFromUp(direction, amount = 1) {
+  const axis = [direction[2], 0, -direction[0]];
+  const span = Math.hypot(axis[0], axis[2]);
+  const angle = Math.acos(Math.max(-1, Math.min(1, direction[1]))) * amount;
+
+  if (span < 1e-5) {
+    return direction[1] > 0 ? (v) => v : (v) => [v[0], -v[1], -v[2]];
+  }
+
+  const unit = [axis[0] / span, 0, axis[2] / span];
+
+  return (v) => rotateVector(v, unit, angle);
+}

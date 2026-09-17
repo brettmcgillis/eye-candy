@@ -1,38 +1,46 @@
-import React, {
-  createContext,
-  useCallback,
-  useContext,
-  useMemo,
-  useState,
-} from 'react';
+import React, { useCallback, useMemo, useState } from 'react';
 import {
   FiFilm,
   FiGrid,
   FiImage,
   FiList,
   FiRefreshCw,
-  FiSave,
   FiSquare,
   FiX,
 } from 'react-icons/fi';
+
+import ResultsPanel, {
+  activeJobCount,
+} from '@dev/renderWorkbench/ResultsPanel';
+import {
+  ChoiceField,
+  ColorField,
+  NumberField,
+  Pinnable,
+  SchemaProvider,
+  Segmented,
+  ToggleField,
+} from '@dev/renderWorkbench/SchemaFields';
+import '@dev/renderWorkbench/renderWorkbench.css';
+import usePins from '@dev/renderWorkbench/usePins';
+import useRenderJobs from '@dev/renderWorkbench/useRenderJobs';
 
 import {
   PALETTE_NAMES,
   RENDER_OPTIONS,
   defaultsFor,
+  facets,
+  keysInFacet,
   optionsFromPreset,
 } from '@modules/rorschach';
 
 import DevPageHeaderBar from '../../shell/DevPageHeaderBar';
 import './RorschachWorkbenchPage.css';
-import AssetGallery from './components/AssetGallery';
 import ClassicPatternBackground from './components/ClassicPatternBackground';
 import ClassicPatternSettings, {
   DEFAULT_CLASSIC_PATTERN_SETTINGS,
 } from './components/ClassicPatternSettings';
-import JobStatus from './components/JobStatus';
-import useRorschachJobs from './hooks/useRorschachJobs';
-import { countMediaItems } from './utils/assetGroups';
+import PreviewDetails from './components/PreviewDetails';
 
 // The overlay is laid out in CSS pixels; every profile here is a phone-viewed
 // format, so all of them emulate a phone viewport rather than only the ones
@@ -60,26 +68,13 @@ const GROWTH_PRESENTATION_OPTIONS = [
 ];
 
 // The facets the dice roll, read off the schema so a new one appears here on
-// its own. Pinning is per-key everywhere else; these are the shortcut for the
-// thing anyone actually wants — hold a whole look, roll the rest.
-const FACETS = [
-  ...new Set(
-    Object.values(RENDER_OPTIONS)
-      .map((spec) => spec.facet)
-      .filter(Boolean)
-  ),
-];
+// its own.
+const FACETS = facets();
 const FACET_LABELS = {
   ink: 'ink',
   palette: 'palette & bundles',
   structure: 'structure',
 };
-
-function keysInFacet(facet) {
-  return Object.entries(RENDER_OPTIONS)
-    .filter(([, spec]) => spec.facet === facet)
-    .map(([key]) => key);
-}
 
 // What the next render will actually do, in a sentence. The pins are the whole
 // model here and they were invisible: forty checkboxes scattered down a form
@@ -124,185 +119,11 @@ const INITIAL_OPTIONS = {
   ...defaultsFor('video', 'workbench'),
 };
 
-function Segmented({ label, onChange, options, value }) {
-  return (
-    <fieldset className="rw-fieldset">
-      <legend>{label}</legend>
-      <div className="rw-segmented">
-        {options.map((option) => (
-          <button
-            aria-label={option.label}
-            aria-pressed={value === option.value}
-            className="rw-segmented__button"
-            key={option.value}
-            onClick={() => onChange(option.value)}
-            type="button"
-          >
-            {option.icon}
-            <span>{option.label}</span>
-          </button>
-        ))}
-      </div>
-    </fieldset>
-  );
-}
-
-// Which rollable fields the user has taken control of. Everything the dice can
-// set starts disabled at its default: the page shows the whole parameter space,
-// and enabling a field is what turns it into a pin. That is the same rule the
-// CLI applies to a typed flag, so "I chose this" means one thing everywhere.
-//
-// Carried on context rather than threaded through forty call sites — every
-// field already names its option, which is all the wrapper needs.
-const PinContext = createContext({ pins: new Set(), toggle: () => {} });
-
-function usePin(option) {
-  const { pins, toggle } = useContext(PinContext);
-  const rollable = Boolean(RENDER_OPTIONS[option]?.facet);
-  return {
-    // A field the dice never touch is always live — there is nothing to pin it
-    // against.
-    enabled: !rollable || pins.has(option),
-    onToggle: () => toggle(option),
-    rollable,
-  };
-}
-
-// Wraps a control in its enable checkbox when the parameter is rollable, and
-// renders it untouched when it is not.
-function Pinnable({ children, label, option }) {
-  const { enabled, onToggle, rollable } = usePin(option);
-  if (!rollable) return children;
-
-  return (
-    <div className={`rw-pinnable${enabled ? ' rw-pinnable--on' : ''}`}>
-      <label className="rw-pin" htmlFor={`rw-pin-${option}`}>
-        <input
-          aria-label={`Pin ${label}`}
-          checked={enabled}
-          id={`rw-pin-${option}`}
-          onChange={onToggle}
-          type="checkbox"
-        />
-      </label>
-      {children}
-    </div>
-  );
-}
-
-// A spec with `choices` is a fixed set, not a range, so it gets a picker rather
-// than a spinner — typing 700 into a box that only accepts powers of two is a
-// 400 from the dev server for no reason. Driven off the schema, so any option
-// that grows a choice list picks this up without touching the workbench.
-function NumberField({ id, label, onChange, option, value }) {
-  const spec = RENDER_OPTIONS[option];
-  const { enabled } = usePin(option);
-
-  const control = spec.choices ? (
-    <label className="rw-field" htmlFor={id}>
-      {label}
-      <select
-        disabled={!enabled}
-        id={id}
-        onChange={(event) => onChange(Number(event.target.value))}
-        value={value ?? spec.default}
-      >
-        {spec.choices.map((choice) => (
-          <option key={choice} value={choice}>
-            {choice}
-          </option>
-        ))}
-      </select>
-    </label>
-  ) : (
-    <label className="rw-field" htmlFor={id}>
-      {label}
-      <input
-        disabled={!enabled}
-        id={id}
-        max={spec.max}
-        min={spec.min}
-        onChange={(event) => onChange(event.target.value)}
-        step={spec.step}
-        type="number"
-        value={value ?? ''}
-      />
-    </label>
-  );
-
-  return (
-    <Pinnable label={label} option={option}>
-      {control}
-    </Pinnable>
-  );
-}
-
-// The same treatment for the two shapes NumberField does not cover.
-function ChoiceField({ choices, id, label, onChange, option, value }) {
-  const { enabled } = usePin(option);
-  return (
-    <Pinnable label={label} option={option}>
-      <label className="rw-field" htmlFor={id}>
-        {label}
-        <select
-          disabled={!enabled}
-          id={id}
-          onChange={(event) => onChange(event.target.value)}
-          value={value}
-        >
-          {choices.map(([choiceValue, choiceLabel]) => (
-            <option key={choiceValue} value={choiceValue}>
-              {choiceLabel}
-            </option>
-          ))}
-        </select>
-      </label>
-    </Pinnable>
-  );
-}
-
-function ToggleField({ id, label, onChange, option, value }) {
-  const { enabled } = usePin(option);
-  return (
-    <Pinnable label={label} option={option}>
-      <label className="rw-field rw-field--toggle" htmlFor={id}>
-        {label}
-        <input
-          checked={Boolean(value)}
-          disabled={!enabled}
-          id={id}
-          onChange={(event) => onChange(event.target.checked)}
-          type="checkbox"
-        />
-      </label>
-    </Pinnable>
-  );
-}
-
-function ColorField({ id, label, onChange, option, value }) {
-  const { enabled } = usePin(option);
-  return (
-    <Pinnable label={label} option={option}>
-      <label className="rw-field" htmlFor={id}>
-        {label}
-        <input
-          disabled={!enabled}
-          id={id}
-          onChange={(event) => onChange(event.target.value)}
-          type="color"
-          value={value}
-        />
-      </label>
-    </Pinnable>
-  );
-}
-
 // The one option that is an object rather than a value, so it gets a summary
 // and a discard rather than an input. Twenty folders of sixteen fields is a
 // Leva panel, and the scene already has one — this is where its output lands,
 // not a second copy of it.
-function BundleField({ onChange, value }) {
-  const { enabled } = usePin('bundles');
+function BundleField({ enabled, onChange, value }) {
   const overridden = overriddenBundles(value);
 
   return (
@@ -353,22 +174,8 @@ function BundleField({ onChange, value }) {
 }
 
 export default function RorschachWorkbenchPage() {
-  const {
-    cancel,
-    error,
-    jobs,
-    keepAsset,
-    loading,
-    refresh,
-    remove,
-    removeAssets,
-    removeMany,
-    removeSavedAssets,
-    savedCollections,
-    submit,
-  } = useRorschachJobs();
-  const [deletingId, setDeletingId] = useState(null);
-  const [pendingDeleteId, setPendingDeleteId] = useState(null);
+  const jobsApi = useRenderJobs('rorschach');
+  const { error, jobs, refresh, submit } = jobsApi;
   const [kind, setKind] = useState('still');
   const [options, setOptions] = useState(INITIAL_OPTIONS);
   const [patternSettings, setPatternSettings] = useState(
@@ -376,7 +183,6 @@ export default function RorschachWorkbenchPage() {
   );
   const [patternSettingsOpen, setPatternSettingsOpen] = useState(false);
   const [profile, setProfile] = useState('post');
-  const [resultsTab, setResultsTab] = useState('transient');
   const [submitting, setSubmitting] = useState(false);
   // What the last press of Render did, kept next to the button. A job's first
   // image can be half a minute away at full size, so without this the only
@@ -384,35 +190,17 @@ export default function RorschachWorkbenchPage() {
   // page.
   const [submitted, setSubmitted] = useState(null);
   const [submitError, setSubmitError] = useState(null);
-  const [pins, setPins] = useState(() => new Set());
   const [base, setBase] = useState(null);
-  const pinContext = useMemo(
-    () => ({
-      pins,
-      toggle: (option) =>
-        setPins((current) => {
-          const next = new Set(current);
-          if (next.has(option)) next.delete(option);
-          else next.add(option);
-          return next;
-        }),
-    }),
-    [pins]
-  );
+  const {
+    chosen,
+    clear: clearPins,
+    context: pinContext,
+    heldFacets,
+    pins,
+    toggleFacet: togglePinGroup,
+  } = usePins({ facets: FACETS, keysInFacet, specs: RENDER_OPTIONS });
 
-  const activeCount = useMemo(
-    () =>
-      jobs.filter((job) =>
-        ['queued', 'running', 'cancelling'].includes(job.status)
-      ).length,
-    [jobs]
-  );
-  const workbenchJobs = useMemo(
-    () => jobs.filter((job) => job.source === 'workbench'),
-    [jobs]
-  );
-  const savedAssetCount = countMediaItems(savedCollections);
-  const transientAssetCount = countMediaItems(jobs);
+  const activeCount = activeJobCount(jobs);
 
   function setOption(key, value) {
     setOptions((current) => ({ ...current, [key]: value }));
@@ -436,28 +224,6 @@ export default function RorschachWorkbenchPage() {
 
   const clearBase = useCallback(() => setBase(null), []);
 
-  // All of a facet, or none of it. The per-field checkboxes still work; this is
-  // the shortcut for the thing a batch is usually after — hold one whole look
-  // still and let the others move.
-  const togglePinGroup = useCallback((facet) => {
-    const keys = keysInFacet(facet);
-    setPins((current) => {
-      const next = new Set(current);
-      const allOn = keys.every((key) => next.has(key));
-      keys.forEach((key) => (allOn ? next.delete(key) : next.add(key)));
-      return next;
-    });
-  }, []);
-
-  const clearPins = useCallback(() => setPins(new Set()), []);
-
-  const heldFacets = useMemo(
-    () =>
-      FACETS.filter((facet) =>
-        keysInFacet(facet).every((key) => pins.has(key))
-      ),
-    [pins]
-  );
   const summary = useMemo(
     () => rollSummary({ base, count: options.count, held: heldFacets }),
     [base, heldFacets, options.count]
@@ -489,17 +255,7 @@ export default function RorschachWorkbenchPage() {
     setSubmitted(null);
     setSubmitError(null);
     try {
-      // Send the render settings in full, but only the rollable parameters the
-      // user actually enabled. The server forwards exactly what it is sent, and
-      // the CLI reads a forwarded flag as a pin — so an unchecked field is left
-      // to the dice rather than silently pinned at whatever the form happens to
-      // be showing.
-      const chosen = Object.fromEntries(
-        Object.entries(options).filter(
-          ([key]) => !RENDER_OPTIONS[key]?.facet || pins.has(key)
-        )
-      );
-      const job = await submit({ kind, options: chosen });
+      const job = await submit({ kind, options: chosen(options) });
       setSubmitted(job);
     } catch (failure) {
       // Without this the rejection escaped as an unhandled promise, the button
@@ -511,28 +267,6 @@ export default function RorschachWorkbenchPage() {
       setSubmitting(false);
     }
   }
-
-  function handleQueueClick(event) {
-    const button = event.target.closest('[data-cancel-job]');
-    if (button) cancel(button.dataset.cancelJob);
-  }
-
-  const confirmDelete = useCallback(
-    async (job) => {
-      setDeletingId(job.id);
-      try {
-        await remove(job.id, job.outputDirectory);
-        setPendingDeleteId(null);
-      } finally {
-        setDeletingId(null);
-      }
-    },
-    [remove]
-  );
-
-  const cancelDelete = useCallback(() => {
-    setPendingDeleteId(null);
-  }, []);
 
   const openPatternSettings = useCallback(() => {
     setPatternSettingsOpen(true);
@@ -551,7 +285,7 @@ export default function RorschachWorkbenchPage() {
   }, []);
 
   return (
-    <PinContext.Provider value={pinContext}>
+    <SchemaProvider value={pinContext}>
       <main className="dev-page rw-page">
         <ClassicPatternBackground settings={patternSettings} />
         <DevPageHeaderBar
@@ -1622,6 +1356,7 @@ export default function RorschachWorkbenchPage() {
                 held and every bundle not in it is off.
               </p>
               <BundleField
+                enabled={pins.has('bundles')}
                 onChange={(value) => setOption('bundles', value)}
                 value={options.bundles}
               />
@@ -1771,97 +1506,14 @@ export default function RorschachWorkbenchPage() {
             {error ? <p className="rw-error">{error}</p> : null}
           </form>
 
-          <section className="rw-results">
-            <div
-              aria-label="Workbench results"
-              className="rw-results__tabs"
-              role="tablist"
-            >
-              <button
-                aria-controls="rw-panel-saved"
-                aria-selected={resultsTab === 'saved'}
-                onClick={() => setResultsTab('saved')}
-                role="tab"
-                type="button"
-              >
-                <FiSave />
-                <span>Saved</span>
-                <strong>{savedAssetCount}</strong>
-              </button>
-              <button
-                aria-controls="rw-panel-transient"
-                aria-selected={resultsTab === 'transient'}
-                onClick={() => setResultsTab('transient')}
-                role="tab"
-                type="button"
-              >
-                <FiImage />
-                <span>Transient</span>
-                <strong>{transientAssetCount}</strong>
-              </button>
-              <button
-                aria-controls="rw-panel-jobs"
-                aria-selected={resultsTab === 'jobs'}
-                onClick={() => setResultsTab('jobs')}
-                role="tab"
-                type="button"
-              >
-                <FiList />
-                <span>Jobs</span>
-                <strong>{workbenchJobs.length}</strong>
-              </button>
-            </div>
-            {resultsTab === 'saved' ? (
-              <div id="rw-panel-saved" role="tabpanel">
-                <AssetGallery
-                  emptyMessage="Kept images appear here."
-                  jobs={savedCollections}
-                  onRemoveAssets={removeSavedAssets}
-                  onUseAsBase={useAsBase}
-                  variant="saved"
-                />
-              </div>
-            ) : null}
-            {resultsTab === 'transient' ? (
-              <div id="rw-panel-transient" role="tabpanel">
-                <AssetGallery
-                  deletingId={deletingId}
-                  jobs={jobs}
-                  onCancelDelete={cancelDelete}
-                  onConfirmDelete={confirmDelete}
-                  onKeepAsset={keepAsset}
-                  onRemoveAssets={removeAssets}
-                  onRemoveMany={removeMany}
-                  onRequestDelete={setPendingDeleteId}
-                  onUseAsBase={useAsBase}
-                  pendingDeleteId={pendingDeleteId}
-                />
-              </div>
-            ) : null}
-            {resultsTab === 'jobs' ? (
-              <div id="rw-panel-jobs" role="tabpanel">
-                <div
-                  className="rw-queue"
-                  onClick={handleQueueClick}
-                  role="presentation"
-                >
-                  {loading ? (
-                    <div className="rw-empty">Loading queue...</div>
-                  ) : null}
-                  {!loading && workbenchJobs.length === 0 ? (
-                    <div className="rw-empty">
-                      No render jobs in this server session.
-                    </div>
-                  ) : null}
-                  {workbenchJobs.map((job) => (
-                    <JobStatus job={job} key={job.id} />
-                  ))}
-                </div>
-              </div>
-            ) : null}
-          </section>
+          <ResultsPanel
+            jobsApi={jobsApi}
+            renderDetails={(detail) => (
+              <PreviewDetails onUseAsBase={useAsBase} {...detail} />
+            )}
+          />
         </div>
       </main>
-    </PinContext.Provider>
+    </SchemaProvider>
   );
 }

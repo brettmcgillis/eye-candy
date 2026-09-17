@@ -62,10 +62,16 @@ async function checkRenderOptionsIsStandalone() {
     path.join(KERNEL_DIR, 'renderOptions.mjs'),
     'utf8'
   );
-  check(
-    !/^import /mu.test(source),
-    'renderOptions.mjs has an import — it must stay dependency-free so plain Node can load it without Vite.'
+  const imports = [...source.matchAll(/^import .* from '([^']+)';$/gmu)].map(
+    ([, specifier]) => specifier
   );
+  imports
+    .filter((specifier) => specifier !== '../optionSchema/index.mjs')
+    .forEach((specifier) => {
+      failures.push(
+        `renderOptions.mjs imports "${specifier}" — it must stay dependency-free so plain Node can load it without Vite; only ../optionSchema/index.mjs is allowed.`
+      );
+    });
 }
 
 // Every `kernel.foo` the headless renderers reach for has to be a real export

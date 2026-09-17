@@ -1,6 +1,7 @@
 /* eslint-disable no-param-reassign */
 import { KIND } from './graph';
-import { normalize, perpendicular, randomUnit } from './vec';
+import addTip from './tips';
+import { cross, normalize, perpendicular, randomUnit } from './vec';
 
 function centroidOf(points, ids) {
   let x = 0;
@@ -46,12 +47,41 @@ function partition(points, ids, rng, balance) {
   ];
 }
 
-export function fiber(graph, p, rng, from, target, kind, cluster, gen) {
+const STYLES = {
+  curly: { bend: 0.6, coil: 0.09 },
+  drooping: { sag: 6 },
+  fuzzy: { bend: 2.5, splitRatio: 0.8, umbel: 3 },
+  kinked: { bend: 0.4, kink: 0.07 },
+  straight: {},
+  wiry: { bend: 0.5, sheaf: 0.4, splitRatio: 1.3, umbel: -99 },
+};
+
+function styled(p, style) {
+  const s = STYLES[style] ?? STYLES.straight;
+
+  return {
+    ...p,
+    fiberBend: p.fiberBend * (s.bend ?? 1),
+    fiberSag: p.fiberSag * (s.sag ?? 1),
+    sheaf: p.sheaf * (s.sheaf ?? 1),
+    splitRatio: Math.min(1, p.splitRatio * (s.splitRatio ?? 1)),
+    umbelSize: Math.max(1, p.umbelSize + (s.umbel ?? 0)),
+  };
+}
+
+export function fiber(graph, p, rng, from, target, kind, cluster, gen, style) {
+  const shape = STYLES[style] ?? STYLES.straight;
   const a = graph.position(from);
   const d = [target[0] - a[0], target[1] - a[1], target[2] - a[2]];
   const len = Math.hypot(d[0], d[1], d[2]);
-  const steps = Math.max(1, Math.min(16, Math.round(len / p.fiberStep)));
-  const side = perpendicular(normalize(d));
+  const wiggly = shape.coil || shape.kink;
+  const steps = Math.max(
+    wiggly ? 8 : 1,
+    Math.min(wiggly ? 24 : 16, Math.round(len / p.fiberStep))
+  );
+  const unit = normalize(d);
+  const side = perpendicular(unit);
+  const lift = cross(unit, side);
   const twist = randomUnit(rng);
   const bend = len * p.fiberBend * rng.gauss();
   const sag = len * p.fiberSag * rng();
@@ -60,16 +90,26 @@ export function fiber(graph, p, rng, from, target, kind, cluster, gen) {
     side[1] * bend + twist[1] * bend * 0.4 - sag,
     side[2] * bend + twist[2] * bend * 0.4,
   ];
+  const turns = rng.range(1.5, 3.2);
+  const phase = rng() * Math.PI * 2;
   let node = from;
 
   for (let s = 1; s <= steps; s += 1) {
     const t = s / steps;
     const arc = Math.sin(Math.PI * t);
+    const spin = Math.PI * 2 * turns * t + phase;
+    const coil = (shape.coil ?? 0) * len * arc;
+    const kink = (shape.kink ?? 0) * len * arc * (s % 2 ? 1 : -1);
+    const extra = [0, 1, 2].map(
+      (k) =>
+        (side[k] * Math.cos(spin) + lift[k] * Math.sin(spin)) * coil +
+        lift[k] * kink
+    );
 
     node = graph.add(
-      a[0] + d[0] * t + offset[0] * arc,
-      a[1] + d[1] * t + offset[1] * arc,
-      a[2] + d[2] * t + offset[2] * arc,
+      a[0] + d[0] * t + offset[0] * arc + extra[0],
+      a[1] + d[1] * t + offset[1] * arc + extra[1],
+      a[2] + d[2] * t + offset[2] * arc + extra[2],
       node,
       kind,
       cluster,
@@ -82,15 +122,16 @@ export function fiber(graph, p, rng, from, target, kind, cluster, gen) {
 
 export default function growFibers(
   graph,
-  p,
+  base,
   rng,
   points,
-  root,
+  lobe,
   cluster,
   terminals,
   budget
 ) {
-  const stack = [{ from: root, gen: 0, ids: points.map((_, i) => i) }];
+  const p = styled(base, lobe.style);
+  const stack = [{ from: lobe.root, gen: 0, ids: points.map((_, i) => i) }];
   const logTotal = Math.log(Math.max(points.length, 2));
 
   while (stack.length) {
@@ -103,10 +144,23 @@ export default function growFibers(
       ids.forEach((id) => {
         const pt = points[id];
         const kind = pt.wisp ? KIND.wisp : KIND.spray;
-
-        terminals.push(
-          fiber(graph, p, rng, from, [pt.x, pt.y, pt.z], kind, cluster, gen + 1)
+        const end = fiber(
+          graph,
+          p,
+          rng,
+          from,
+          [pt.x, pt.y, pt.z],
+          kind,
+          cluster,
+          gen + 1,
+          lobe.style
         );
+
+        terminals.push(end);
+
+        if (lobe.tip && rng() < 0.45 && graph.count < p.maxSegments) {
+          addTip(graph, p, rng, end, lobe.tip, cluster, gen + 2);
+        }
       });
     } else {
       const c = centroidOf(points, ids);
@@ -118,7 +172,17 @@ export default function growFibers(
         origin[2] + (c[2] - origin[2]) * reach,
       ];
       const kind = gen < 2 ? KIND.scaffold : KIND.spray;
-      const split = fiber(graph, p, rng, from, target, kind, cluster, gen);
+      const split = fiber(
+        graph,
+        p,
+        rng,
+        from,
+        target,
+        kind,
+        cluster,
+        gen,
+        lobe.style
+      );
 
       partition(points, ids, rng, p.splitBalance).forEach((half) => {
         stack.push({ from: split, gen: gen + 1, ids: half });

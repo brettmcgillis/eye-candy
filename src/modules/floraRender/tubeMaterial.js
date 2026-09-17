@@ -12,7 +12,6 @@ import {
   normalize,
   positionGeometry,
   pow,
-  rotate,
   sin,
   varyingProperty,
 } from 'three/tsl';
@@ -20,8 +19,7 @@ import * as THREE from 'three/webgpu';
 
 import {
   growFraction,
-  scatterState,
-  spinAbout,
+  unravelGrowth,
   windOffset,
   worldPerPixel,
 } from './motionNodes';
@@ -51,19 +49,16 @@ function tubePosition(a, u, varyings, clampToPixels) {
     const along = positionGeometry.x;
     const angle = positionGeometry.y.mul(PI).mul(2);
     const rand = hash(instanceIndex.add(17));
-    const g = growFraction(a.time.x, a.time.y, u.growth);
-    const born = u.growth.greaterThanEqual(a.time.x).select(float(1), float(0));
+    const growth = unravelGrowth(u);
+    const g = growFraction(a.time.x, a.time.y, growth);
+    const born = growth.greaterThanEqual(a.time.x).select(float(1), float(0));
     const p0 = a.start.xyz.add(windOffset(a.start.xyz, a.time.z, u));
     const tip = mix(a.start.xyz, a.end.xyz, g);
     const p1 = tip.add(windOffset(tip, mix(a.time.z, a.time.w, g), u));
-    const mid = p0.add(p1).mul(0.5);
-    const scatter = scatterState(mid, a.tone.x, stemnessOf(a.tone), rand, u);
-    const center = spinAbout(mix(p0, p1, along), mid, scatter.spin).add(
-      scatter.offset
-    );
+    const center = mix(p0, p1, along);
     const frame = mix(a.frameStart, a.frameEnd, along);
-    const t = normalize(rotate(decodeOct(frame.xy), scatter.spin));
-    const n = normalize(rotate(decodeOct(frame.zw), scatter.spin));
+    const t = decodeOct(frame.xy);
+    const n = decodeOct(frame.zw);
     const b = cross(t, n);
     const thick = mix(a.start.w, a.end.w, along);
     const leaf = thick.lessThan(0).select(float(1), float(0));
@@ -88,13 +83,14 @@ function tubePosition(a, u, varyings, clampToPixels) {
       ry = ry.mul(grow);
     }
 
-    const shrink = scatter.fade.mul(born);
+    const shrink = born;
     const c = cos(angle);
     const s = sin(angle);
 
     varyings.normal.assign(normalize(n.mul(c).mul(ry).add(b.mul(s).mul(rx))));
     varyings.occlusion.assign(a.tone.z.fract());
     varyings.shade.assign(rand.mul(0.24).add(0.88));
+    varyings.rand.assign(rand);
 
     return center.add(n.mul(c).mul(rx).add(b.mul(s).mul(ry)).mul(shrink));
   })();
@@ -106,6 +102,7 @@ export default function createTubeMaterial(u) {
   const varyings = {
     normal: varyingProperty('vec3', 'vTubeNormal'),
     occlusion: varyingProperty('float', 'vTubeOcclusion'),
+    rand: varyingProperty('float', 'vTubeRand'),
     shade: varyingProperty('float', 'vTubeShade'),
   };
 
@@ -115,6 +112,7 @@ export default function createTubeMaterial(u) {
     a.tone,
     stemnessOf(a.tone),
     varyings.shade,
+    varyings.rand,
     u
   );
   material.normalNode = toViewNormal(varyings.normal);

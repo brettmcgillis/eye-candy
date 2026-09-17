@@ -1,5 +1,4 @@
 /* eslint-disable import/no-extraneous-dependencies */
-
 // Renders the Rorschach scene through the real three.js WebGPU renderer in
 // Node, so the PNG carries the actual post-processing chain rather than an
 // approximation of it. The `webgpu` package supplies a Dawn-backed
@@ -8,59 +7,16 @@
 // The scene is built imperatively here rather than mounted through R3F, so the
 // material and post setup below must stay in step with
 // components/TestStrokes.jsx and components/PostEffects.jsx.
+import { createHeadlessRenderer, loadThree } from './headlessWebgpu.mjs';
 
 let THREE = null;
 let TSL = null;
 let bloomModule = null;
-let gpuInstance = null;
 
-// three touches a handful of browser globals during construction. Only the
-// ones it actually reaches are stubbed; the canvas never backs a swapchain
-// because every render goes to a RenderTarget.
-async function installBrowserGlobals() {
-  if (THREE) return;
-
-  const webgpu = await import('webgpu');
-  gpuInstance = webgpu.create([]);
-
-  globalThis.navigator = { ...globalThis.navigator, gpu: gpuInstance };
-  globalThis.self = globalThis;
-  globalThis.requestAnimationFrame = (cb) =>
-    setTimeout(() => cb(Date.now()), 16);
-  globalThis.cancelAnimationFrame = (id) => clearTimeout(id);
-  Object.assign(globalThis, webgpu.globals);
-
-  THREE = await import('three/webgpu');
-  TSL = await import('three/tsl');
+async function loadModules() {
+  if (bloomModule) return;
+  ({ THREE, TSL } = await loadThree());
   bloomModule = await import('three/addons/tsl/display/BloomNode.js');
-}
-
-function stubCanvas(width, height) {
-  const context = {
-    configure() {},
-    unconfigure() {},
-    getCurrentTexture() {
-      throw new Error('headless capture never presents to a swapchain');
-    },
-  };
-  return {
-    addEventListener() {},
-    getBoundingClientRect: () => ({
-      bottom: height,
-      height,
-      left: 0,
-      right: width,
-      top: 0,
-      width,
-      x: 0,
-      y: 0,
-    }),
-    getContext: () => context,
-    height,
-    removeEventListener() {},
-    style: {},
-    width,
-  };
 }
 
 // Mirrors components/TestStrokes.jsx: unlit line material whose color is
@@ -196,32 +152,6 @@ function buildGeometry(bundle, buildStrokeGeometry, writeStrokePositions) {
   return geometry;
 }
 
-// WebGPU's copyTextureToBuffer aligns each row to 256 bytes and three returns
-// that padded buffer as-is, so any width that isn't a multiple of 64 pixels
-// comes back with trailing bytes per row. Reading it as tightly packed shears
-// the image progressively down the frame.
-function unpadRows(pixels, width, height) {
-  const tightBytes = width * 4;
-  const paddedBytes = Math.ceil(tightBytes / 256) * 256;
-  const source = Buffer.from(
-    pixels.buffer ?? pixels,
-    pixels.byteOffset ?? 0,
-    pixels.byteLength ?? pixels.length
-  );
-  if (paddedBytes === tightBytes) return source;
-
-  const out = Buffer.allocUnsafe(tightBytes * height);
-  for (let row = 0; row < height; row += 1) {
-    source.copy(
-      out,
-      row * tightBytes,
-      row * paddedBytes,
-      row * paddedBytes + tightBytes
-    );
-  }
-  return out;
-}
-
 // Everything the ink layer reads, in the order buildInkPaper hands it over.
 // Split in two because the two halves have very different costs: a change to
 // `look` is a handful of uniform writes, while `grid` sizes render targets and
@@ -285,24 +215,10 @@ function applyGroupScale(group, scale, flatten, flattenAxis) {
 }
 
 export default async function createCapturer({ height, samples = 4, width }) {
-  await installBrowserGlobals();
+  await loadModules();
 
-  const renderer = new THREE.WebGPURenderer({
-    antialias: true,
-    canvas: stubCanvas(width, height),
-    forceWebGPU: true,
-  });
-  renderer.setSize(width, height, false);
-  await renderer.init();
-
-  // NoColorSpace, not SRGBColorSpace: the RenderPipeline's output node already
-  // encodes to the renderer's output color space, and an sRGB target would
-  // encode a second time — a #5a5a5a background read back as 161, exactly the
-  // double-encoded value.
-  const target = new THREE.RenderTarget(width, height, {
-    colorSpace: THREE.NoColorSpace,
-    depthBuffer: true,
-  });
+  const headless = await createHeadlessRenderer({ height, width });
+  const { renderer } = headless;
 
   let session = null;
   // One ink sim, kept alive for the life of the capturer.
@@ -585,33 +501,20 @@ export default async function createCapturer({ height, samples = 4, width }) {
       // values above 1.0 through to the bloom threshold. `samples` is the only
       // way to antialias the scene pass; the renderer's own `antialias` flag
       // applies to the canvas, which a headless capture never draws to.
-      renderer.setRenderTarget(target);
-      post.render();
-
-      const pixels = await renderer.readRenderTargetPixelsAsync(
-        target,
-        0,
-        0,
-        width,
-        height
-      );
-      renderer.setRenderTarget(null);
+      const frame = await headless.readFrame(() => post.render());
 
       // Removed but not disposed: the sheet outlives the frame now.
       if (inkPaper) scene.remove(inkPaper.mesh);
 
       // Raw RGBA rather than a PNG: the caller composites the overlay onto
-      // these pixels and encodes once. Handing back an encoded frame made every
-      // overlaid render encode, decode and re-encode the same image.
-      return { data: unpadRows(pixels, width, height), height, width };
+      // these pixels and encodes once.
+      return frame;
     },
 
     dispose() {
       disposeInk();
       disposeSession();
-      target.dispose();
-      renderer.dispose?.();
-      gpuInstance = null;
+      headless.dispose();
     },
   };
 }

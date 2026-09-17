@@ -1,13 +1,19 @@
 import React, { memo, useCallback, useEffect, useMemo, useRef } from 'react';
 
+import {
+  applyPalette,
+  createCardMaterial,
+  createPaletteCache,
+  createSolidMaterial,
+  createTubeMaterial,
+  createUniforms,
+  resolvePaletteName,
+  syncSpecimen,
+  syncUniforms,
+} from '@modules/floraRender';
+
 import useFieldSlots from '../hooks/useFieldSlots';
 import useLifecycle from '../hooks/useLifecycle';
-import {
-  createCardMaterial,
-  createSolidMaterial,
-} from '../utils/ornamentMaterials';
-import createTubeMaterial from '../utils/tubeMaterial';
-import { createUniforms, syncSpecimen, syncUniforms } from '../utils/uniforms';
 import InstancedField from './InstancedField';
 
 function Specimen({ config, lifecycleApiRef }) {
@@ -15,21 +21,37 @@ function Specimen({ config, lifecycleApiRef }) {
   const { loadSpecimen, slots } = useFieldSlots();
   const configRef = useRef(config);
   const paletteRef = useRef(null);
+  const paletteCache = useMemo(createPaletteCache, []);
 
   configRef.current = config;
 
+  const syncColors = useCallback(
+    (current, palette) => {
+      syncUniforms(uniforms, current, palette);
+      applyPalette(
+        uniforms,
+        paletteCache,
+        resolvePaletteName(current, palette),
+        current.paletteExact
+      );
+    },
+    [paletteCache, uniforms]
+  );
+
+  useEffect(() => () => paletteCache.dispose(), [paletteCache]);
+
   useEffect(() => {
-    syncUniforms(uniforms, config, paletteRef.current);
-  }, [config, uniforms]);
+    syncColors(config, paletteRef.current);
+  }, [config, syncColors]);
 
   const onSpecimen = useCallback(
     (specimen) => {
       loadSpecimen(specimen);
       syncSpecimen(uniforms, specimen);
       paletteRef.current = specimen.palette;
-      syncUniforms(uniforms, configRef.current, specimen.palette);
+      syncColors(configRef.current, specimen.palette);
     },
-    [loadSpecimen, uniforms]
+    [loadSpecimen, syncColors, uniforms]
   );
 
   useLifecycle(config, uniforms, lifecycleApiRef, onSpecimen);

@@ -33,8 +33,8 @@ Codex).
 ## 2. Dev tool organization
 
 - Each independent tool lives under `src/dev/tools/<tool>/` (current tools:
-  `cataloggr`, `colors`, `gltfjsx`, `iconography`, `loaderPatterns`,
-  `rorschach`).
+  `cataloggr`, `colors`, `flora`, `gltfjsx`, `glyphs`, `iconography`,
+  `loaderPatterns`, `projectionMapping`, `rorschach`).
 - Every registered tool owns a colocated `todo.md` using the same canonical
   TODO shape as scenes. Cataloggr discovers and edits these files alongside
   scene TODOs so tool features and bugs remain attached to their owner.
@@ -46,6 +46,13 @@ Codex).
   when it's application chrome/UI (see `DevLandingPage.jsx`,
   `DevPageHeaderBar.jsx`, `DevPageTitle.jsx`, `DevTooltip.jsx`), or a clearly
   named shared folder under `src/dev` when it's non-shell dev-only behavior.
+- **Generative workbenches share `src/dev/renderWorkbench/`** (RorschachCLI,
+  FloraCLI, and Fauna next): `useRenderJobs(tool)`, `ResultsPanel`
+  (Saved / Transient / Jobs), `AssetGallery` with its `renderDetails` and
+  `selectionActions` slots, schema-bound `SchemaFields` + `usePins`, and
+  `renderWorkbench.css` (the `rw-` classes). A tool supplies only its form
+  layout, its preview details and its extra actions. The form fields bind to
+  an option table built with `src/modules/optionSchema` (see §5).
 - Keep a tool's route page at the tool root. Use `components/`, `hooks/`, and
   `utils/` subfolders only when the tool is large enough to benefit from them.
 - Do not create barrels unless an actual external consumer benefits from the
@@ -87,6 +94,19 @@ Codex).
   generic production `src/server` namespace.
 - Each server-backed tool owns its plugin and service implementation (e.g.
   `src/dev/server/rorschach/plugin.js` + `jobService.js`).
+- **CLI-backed generators use `src/dev/server/renderJobs/`.**
+  `createRenderJobService` spawns the tool's CLI per job (queued past
+  `maxConcurrent`), tracks progress from the shared `scripts/lib/progress.mjs`
+  output, persists a manifest, lists output and kept ("saved") media, and
+  reads generation sidecars back by URL. `createRenderJobPlugin` serves the
+  `/dev-api/<tool>/jobs|saved` surface plus any tool routes; `presetFile.js`
+  splices an entry into a scene's preset object and formats it with prettier.
+  A tool's server is then configuration: roots, kinds, and a `prepare` that
+  validates options against its schema and builds argv.
+- Headless generators share `scripts/lib/` — `headlessWebgpu.mjs` (Dawn
+  bootstrap, render target, unpadded readback), `loadModules.mjs` (repo
+  modules through Vite with the jsconfig aliases), `cliArgs.mjs`,
+  `progress.mjs`, `frameSink.mjs` and `videoMetadata.mjs`.
 - Register server plugins through `src/dev/server/devServerPlugins.js`
   (`vite.config.js` imports that one function); do not grow an import/plugin
   list directly in `vite.config.js`.

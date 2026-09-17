@@ -1,10 +1,19 @@
 import buildEnvelope from './envelope';
 import growFibers from './fibers';
+import {
+  growBracts,
+  growLeaves,
+  growSideShoots,
+  growStemLeaves,
+  growTendrils,
+} from './foliage';
 import { createGraph } from './graph';
+import rollHabit from './habit';
 import pack from './pack';
+import rollPalette from './palette';
 import { resolveParams } from './params';
 import { createRng } from './rng';
-import { growLeaves, growSideShoots, growStem } from './stem';
+import { growHeads, growMainStem } from './stem';
 import measure from './timing';
 import varyParams from './variation';
 
@@ -33,20 +42,48 @@ function umbelPoints(graph, p, rng, tip) {
   });
 }
 
+// The dense core of the crown, not its outermost wisps: a bouquet spaces
+// flowers by this, so the thin edges interleave the way cut stems really do.
+function crownRadius(envelope) {
+  const [cx, cy, cz] = envelope.centroid;
+  const reach = envelope.points
+    .map((pt) => Math.hypot(pt.x - cx, pt.y - cy, pt.z - cz))
+    .sort((a, b) => a - b);
+
+  return reach.length ? reach[Math.floor(reach.length * 0.75)] : 1;
+}
+
 export default function buildSpecimen(input) {
   const base = resolveParams(input);
   const rng = createRng(base.seed);
-  const p = varyParams(base, rng.fork('variation'));
+  const { habit, p } = rollHabit(
+    varyParams(base, rng.fork('variation')),
+    rng.fork('habit')
+  );
   const started = Date.now();
   const graph = createGraph(1 << 18); // eslint-disable-line no-bitwise
+  const stemRng = rng.fork('stem');
+  const mainNodes = growMainStem(graph, p, stemRng, habit);
+  const heads = growHeads(graph, p, stemRng, habit, mainNodes);
+  const stem = stemSampler(graph, mainNodes);
 
-  const stemNodes = growStem(graph, p, rng.fork('stem'));
+  growLeaves(graph, p, rng.fork('leaves'), mainNodes);
+  growStemLeaves(graph, p, rng.fork('stemLeaves'), mainNodes, habit.stemLeaves);
+  growTendrils(graph, p, rng.fork('tendrils'), mainNodes, habit.tendrils);
 
-  growLeaves(graph, p, rng.fork('leaves'), stemNodes);
+  if (habit.bracts) {
+    const bractRng = rng.fork('bracts');
 
-  const shootTips = growSideShoots(graph, p, rng.fork('shoots'), stemNodes);
-  const stem = stemSampler(graph, stemNodes);
-  const envelope = buildEnvelope(p, rng.fork('envelope'), stem.positionAt);
+    heads.forEach((head) => growBracts(graph, p, bractRng, head));
+  }
+
+  const shootTips = growSideShoots(graph, p, rng.fork('shoots'), mainNodes);
+  const envelope = buildEnvelope(p, rng.fork('envelope'), {
+    graph,
+    habit,
+    heads,
+    stem,
+  });
   const fiberRng = rng.fork('fibers');
   const terminals = [];
   const budget = { truncated: false };
@@ -55,16 +92,7 @@ export default function buildSpecimen(input) {
     const points = envelope.points.filter((pt) => pt.lobe === index);
 
     if (points.length) {
-      growFibers(
-        graph,
-        p,
-        fiberRng,
-        points,
-        stem.nodeAt(lobe.anchor),
-        index,
-        terminals,
-        budget
-      );
+      growFibers(graph, p, fiberRng, points, lobe, index, terminals, budget);
     }
   });
 
@@ -74,7 +102,7 @@ export default function buildSpecimen(input) {
       p,
       fiberRng,
       umbelPoints(graph, p, fiberRng, tip),
-      tip,
+      { root: tip, style: 'straight', tip: null },
       0,
       terminals,
       budget
@@ -92,26 +120,24 @@ export default function buildSpecimen(input) {
     budget
   );
 
-  const paletteRng = rng.fork('palette');
-  const shift = (spread) => paletteRng.signed() * spread * p.paletteVariation;
-
   return {
-    center: envelope.centroid,
-    palette: {
-      hue: shift(0.12),
-      light: 1 + shift(0.22),
-      saturation: 1 + shift(0.35),
-    },
-    height: envelope.height,
     cards,
+    center: envelope.centroid,
+    crownRadius: crownRadius(envelope),
+    height: envelope.height,
+    palette: rollPalette(p, rng.fork('palette')),
     segments,
     solids,
     stats: {
-      millis: Date.now() - started,
       cards: cards.count,
-      solids: Object.values(solids).reduce((sum, g) => sum + g.count, 0),
+      forms: envelope.lobes
+        .map((l) => `${l.name}/${l.style}${l.tip ? `+${l.tip}` : ''}`)
+        .join(' '),
+      habit: `${habit.branching} ${habit.posture} ${habit.stature} ${habit.vigor}${habit.bracts ? ' bracts' : ''}${habit.stemLeaves ? ` leaves${habit.stemLeaves}` : ''}${habit.tendrils ? ` tendrils${habit.tendrils}` : ''}`,
+      heads: heads.length,
+      millis: Date.now() - started,
       segments: segments.count,
-      forms: envelope.lobes.map((l) => l.name).join(' + '),
+      solids: Object.values(solids).reduce((sum, g) => sum + g.count, 0),
       terminals: terminals.length,
       truncated: budget.truncated,
     },

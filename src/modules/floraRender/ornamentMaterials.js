@@ -22,26 +22,28 @@ import {
 } from 'three/tsl';
 import * as THREE from 'three/webgpu';
 
-import { scatterState, windOffset, worldPerPixel } from './motionNodes';
-import { crownColor, toViewNormal } from './palette';
+import { seedFlight, windOffset, worldPerPixel } from './motionNodes';
+import { crownColor, ornamentTone, toViewNormal } from './palette';
 
 function ornamentBase(position, info, birth, u) {
   const appear = smoothstep(birth, birth.add(0.05), u.growth);
   const pop = appear.mul(sin(appear.mul(PI)).mul(0.35).add(1));
   const rest = position.xyz.add(windOffset(position.xyz, info.w, u));
-  const scatter = scatterState(rest, float(1), float(0), info.z, u);
+  const flight = seedFlight(rest, birth, info.z, u);
 
   return {
-    center: rest.add(scatter.offset),
-    scale: pop.mul(scatter.fade),
-    spin: scatter.spin,
+    center: rest.add(flight.offset),
+    scale: pop.mul(flight.fade),
+    spin: flight.spin,
   };
 }
 
 function ornamentColor(info, u) {
-  return mix(u.ornamentColor, crownColor(info.y, u), 0.2).mul(
-    info.z.mul(0.3).add(0.85)
-  );
+  return ornamentTone(
+    mix(u.ornamentColor, crownColor(info.y, u), 0.2),
+    info.z,
+    u
+  ).mul(info.z.mul(0.3).add(0.85));
 }
 
 function sizeFor(base, center, u, clampToPixels) {

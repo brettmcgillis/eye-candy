@@ -20,7 +20,7 @@ function useDevPageTitle() {
   const { pathname } = useLocation();
   const routeName = pathname.replace(/^\/dev\/?/u, '').replace(/\/+$/u, '');
 
-  useDocumentTitle(DEV_LABELS.get(routeName) ?? 'Dev');
+  useDocumentTitle(DEV_LABELS.get(routeName) ?? 'DevToolz');
 }
 
 export default function DevApp() {

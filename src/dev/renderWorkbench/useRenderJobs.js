@@ -1,18 +1,28 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
 
-const ENDPOINT = '/dev-api/rorschach/jobs';
-const SAVED_ENDPOINT = '/dev-api/rorschach/saved';
-
-async function request(url, options) {
+export async function request(url, options) {
   const response = await fetch(url, options);
   const payload = await response.json();
   if (!response.ok || !payload.ok) {
-    throw new Error(payload.message || 'Rorschach job request failed.');
+    throw new Error(payload.message || 'Render job request failed.');
   }
   return payload;
 }
 
-export default function useRorschachJobs() {
+export function postJson(url, body) {
+  return request(url, {
+    body: JSON.stringify(body),
+    headers: { 'Content-Type': 'application/json' },
+    method: 'POST',
+  });
+}
+
+// Client for a tool's /dev-api/<tool> job surface (see
+// src/dev/server/renderJobs/plugin.js): polls jobs, lists kept media, and
+// wraps every mutation so the lists refresh after it.
+export default function useRenderJobs(tool) {
+  const ENDPOINT = `/dev-api/${tool}/jobs`;
+  const SAVED_ENDPOINT = `/dev-api/${tool}/saved`;
   const [error, setError] = useState(null);
   const [jobs, setJobs] = useState([]);
   const [loading, setLoading] = useState(true);

@@ -6,6 +6,7 @@
 export { default as LightingRig } from './LightingRig';
 export { default as useSceneLightingControls } from './useSceneLightingControls';
 export { default as buildSceneLightingControls } from './buildSceneLightingControls';
+export { default as createSceneLights } from './createSceneLights';
 export {
   buildSceneLightingRuntimeConfig,
   getLightingControlsKey,

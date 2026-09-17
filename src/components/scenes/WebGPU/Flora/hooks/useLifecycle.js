@@ -3,21 +3,13 @@ import { useCallback, useEffect, useMemo, useRef } from 'react';
 
 import { useFrame } from '@react-three/fiber';
 
-import { DEFAULT_PARAMS } from '@modules/flora';
+import { DEFAULT_PARAMS, seedFor, timeline } from '@modules/flora';
 
-import advance, {
-  createCycleState,
-  resetRequest,
-  timeline,
-} from '../utils/cycleMachine';
+import advance, { createCycleState, resetRequest } from '../utils/cycleMachine';
 import useSpecimenBuilder from './useSpecimenBuilder';
 
 const GENERATION_KEYS = Object.keys(DEFAULT_PARAMS);
 const REBUILD_DEBOUNCE_MS = 250;
-
-function seedFor(seed, cycle) {
-  return cycle === 0 ? seed : `${seed}-${cycle}`;
-}
 
 // Specimens never enter React state: React's dev performance tracks format the
 // props of every re-rendered component, and stringifying the specimen's typed

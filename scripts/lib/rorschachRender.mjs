@@ -1,16 +1,12 @@
 /* eslint-disable import/no-extraneous-dependencies */
-import path from 'node:path';
-import { fileURLToPath } from 'node:url';
 import sharp from 'sharp';
-import { createServer } from 'vite';
 
 import createCapturer from './gpuCapture.mjs';
+import loadModules, { REPO_ROOT } from './loadModules.mjs';
 import overlaySvg from './overlaySvg.mjs';
 import { runStage } from './progress.mjs';
 
-export const REPO_ROOT = path.resolve(
-  fileURLToPath(new URL('../..', import.meta.url))
-);
+export { REPO_ROOT };
 // The kernel's barrel — the single entry point the headless renderers are
 // allowed to reach for. Deeper paths are forbidden on purpose: see
 // docs/rorschach-pipeline.md.
@@ -88,30 +84,8 @@ const BLOOM_LEVELS = [
   { sigmaScale: 4, weight: 0.35 },
 ];
 
-// Loads the kernel through Vite so it resolves the same aliases and module
-// graph the scene does — the two renderers execute literally the same files.
 export async function loadKernel() {
-  const server = await createServer({
-    appType: 'custom',
-    configFile: false,
-    logLevel: 'error',
-    // Nothing here is served to a browser, and with no index.html to crawl
-    // the dependency scanner just errors noisily on the SSR entry points.
-    optimizeDeps: { noDiscovery: true },
-    resolve: {
-      alias: {
-        '@utils': path.join(REPO_ROOT, 'src', 'utils'),
-      },
-    },
-    root: REPO_ROOT,
-    server: { middlewareMode: true },
-  });
-
-  try {
-    return await server.ssrLoadModule(KERNEL);
-  } finally {
-    await server.close();
-  }
+  return (await loadModules([KERNEL]))[KERNEL];
 }
 
 // The Bundle Editor's nested override shape is derived by the kernel's own

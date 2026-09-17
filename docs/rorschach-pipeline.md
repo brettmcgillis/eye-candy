@@ -54,7 +54,9 @@ Never hand-write an option default or range in a consumer. Intentional
 per-surface differences go in that file's `SURFACE_DEFAULTS` table, which
 therefore doubles as the complete list of ways the surfaces disagree.
 
-`renderOptions.mjs` is `.mjs` and **dependency-free** on purpose: the CLIs need
+`renderOptions.mjs` is `.mjs` and **dependency-free** on purpose (its only
+import is `src/modules/optionSchema/index.mjs`, the shared, equally
+dependency-free schema machinery Flora uses too): the CLIs need
 the schema before they can start Vite to load the rest of the kernel, and the
 dev server runs inside Vite's config loader, which resolves no path aliases.
 Those two import it by path; everything else gets it through the barrel.

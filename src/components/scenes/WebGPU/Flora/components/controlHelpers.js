@@ -1,4 +1,6 @@
-import { SCENE_DEFAULTS } from '../presets/defaults';
+import { sceneDefaults } from '@modules/flora';
+
+const SCENE_DEFAULTS = sceneDefaults();
 
 export function presetReader(preset) {
   return (key) => preset[key] ?? SCENE_DEFAULTS[key];

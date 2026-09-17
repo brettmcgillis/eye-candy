@@ -1,7 +1,9 @@
 import React from 'react';
 import { FiCheck, FiStopCircle } from 'react-icons/fi';
 
-export default function JobStatus({ job }) {
+const DEFAULT_TITLES = { still: 'Still batch', video: 'Video render' };
+
+export default function JobStatus({ job, title }) {
   const active = ['queued', 'running', 'cancelling'].includes(job.status);
   return (
     <article className="rw-job">
@@ -10,7 +12,7 @@ export default function JobStatus({ job }) {
           {job.status === 'completed' ? <FiCheck /> : null}
           {job.status}
         </span>
-        <strong>{job.kind === 'still' ? 'Still batch' : 'Video render'}</strong>
+        <strong>{title?.(job) ?? DEFAULT_TITLES[job.kind] ?? job.kind}</strong>
         <span>{new Date(job.createdAt).toLocaleTimeString()}</span>
       </div>
       <div className="rw-progress" aria-label={`${job.progress}% complete`}>

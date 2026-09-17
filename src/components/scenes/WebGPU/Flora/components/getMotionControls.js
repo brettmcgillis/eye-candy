@@ -18,10 +18,10 @@ export default function getMotionControls(
           bloomStart: range('Bloom Starts', p('bloomStart'), 0, 1, 0.01),
           bloomSeconds: range('Bloom', p('bloomSeconds'), 0.1, 40, 0.5),
           holdSeconds: range('Hold', p('holdSeconds'), 0, 60, 0.5),
-          exitSeconds: range('Scatter', p('exitSeconds'), 0.5, 30, 0.5),
+          exitSeconds: range('Unravel', p('exitSeconds'), 0.5, 30, 0.5),
           restSeconds: range('Rest', p('restSeconds'), 0, 10, 0.1),
           restartCycle: button(() => onRestart?.()),
-          scatterNow: button(() => onRegrow?.()),
+          unravelNow: button(() => onRegrow?.()),
         },
         { collapsed: true }
       ),
@@ -32,7 +32,7 @@ export default function getMotionControls(
         },
         { collapsed: true }
       ),
-      Scatter: folder(
+      Seeds: folder(
         {
           scatterDistance: range('Distance', p('scatterDistance'), 0, 30, 0.1),
           scatterDrift: range('Wind Carry', p('scatterDrift'), 0, 1, 0.01),

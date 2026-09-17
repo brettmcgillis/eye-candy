@@ -28,7 +28,7 @@ export default function measure(graph, p) {
       if (graph.kind[i] === KIND.leaf) {
         const along = graph.kind[parent] === KIND.leaf ? leafT[parent] : 0;
 
-        leafT[i] = along + len / (p.leafLength * 1.15);
+        leafT[i] = along + len;
       }
 
       if (STEM_CLASS.has(graph.kind[i])) {
@@ -48,7 +48,19 @@ export default function measure(graph, p) {
     }
   }
 
+  const bladeLength = new Float32Array(n);
+
   for (let i = n - 1; i >= 0; i -= 1) {
+    if (graph.kind[i] === KIND.leaf) {
+      bladeLength[i] = Math.max(bladeLength[i], leafT[i]);
+
+      if (graph.kind[graph.parent[i]] === KIND.leaf) {
+        const parent = graph.parent[i];
+
+        bladeLength[parent] = Math.max(bladeLength[parent], bladeLength[i]);
+      }
+    }
+
     if (tips[i] === 0) {
       tips[i] = 1;
     }
@@ -63,6 +75,12 @@ export default function measure(graph, p) {
   const thickness = new Float32Array(n);
   const crownT = new Float32Array(n);
   const flex = new Float32Array(n);
+
+  for (let i = 0; i < n; i += 1) {
+    if (graph.kind[i] === KIND.leaf) {
+      leafT[i] /= Math.max(bladeLength[i], 1e-4);
+    }
+  }
 
   for (let i = 0; i < n; i += 1) {
     const stemPart = Math.min(1, stemTime[i] / stemLength);

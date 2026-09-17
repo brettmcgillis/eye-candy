@@ -1,7 +1,7 @@
 /* eslint-disable no-param-reassign */
-const RETRY_COOLDOWN_SECONDS = 1;
+import { levelsAt, timeline } from '@modules/flora';
 
-const clamp01 = (v) => Math.min(1, Math.max(0, v));
+const RETRY_COOLDOWN_SECONDS = 1;
 
 export function createCycleState() {
   return {
@@ -10,19 +10,6 @@ export function createCycleState() {
     nextRequested: false,
     retryAt: 0,
     t: 0,
-  };
-}
-
-export function timeline(config) {
-  const bloomAt = config.growSeconds * config.bloomStart;
-  const matured = Math.max(config.growSeconds, bloomAt + config.bloomSeconds);
-  const exitAt = matured + config.holdSeconds;
-  const exitEnd = exitAt + config.exitSeconds;
-
-  return {
-    bloomAt,
-    cycleEnd: exitEnd + config.restSeconds,
-    exitAt,
   };
 }
 
@@ -36,7 +23,7 @@ export function resetRequest(state) {
 // one lands, and if it still is not ready at the end of a cycle the current
 // plant grows again rather than leaving the scene empty.
 export default function advance(state, config, delta, request) {
-  const { bloomAt, cycleEnd, exitAt } = timeline(config);
+  const { cycleEnd, exitAt } = timeline(config);
 
   state.t += Math.min(delta, 0.1) * config.timeScale;
 
@@ -44,12 +31,7 @@ export default function advance(state, config, delta, request) {
     state.t = exitAt;
   }
 
-  const levels = {
-    bloom: clamp01((state.t - bloomAt) / config.bloomSeconds),
-    exit: clamp01((state.t - exitAt) / config.exitSeconds),
-    growth: clamp01(state.t / config.growSeconds),
-    swap: null,
-  };
+  const levels = { ...levelsAt(config, state.t), swap: null };
 
   if (
     config.regrow &&

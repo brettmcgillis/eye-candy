@@ -1,65 +1,6 @@
-export const DEFAULT_PARAMS = {
-  seed: 'flora',
+import { generatorDefaults } from './renderOptions.mjs';
 
-  stemHeight: 6.5,
-  stemSegments: 48,
-  stemCurve: 0.35,
-  stemWaves: 1.2,
-  leafBlades: 2,
-  leafLength: 2.2,
-  leafHeight: 0.3,
-  sideShoots: 1,
-  sideShootLength: 4,
-
-  crownRadius: 3,
-  crownStretch: 1,
-  crownLift: 0.85,
-  crownBase: 0.94,
-  formCount: 2,
-  formSpread: 0.8,
-  warp: 0.35,
-  asymmetry: 0.3,
-  accentAmount: 0.25,
-  shellBias: 0.45,
-
-  tips: 22000,
-  umbelSize: 3,
-  splitRatio: 0.6,
-  sheaf: 0.85,
-  splitBalance: 0.35,
-  fiberStep: 0.16,
-  fiberBend: 0.06,
-  fiberSag: 0.03,
-  wispChance: 0.015,
-  wispReach: 0.8,
-  maxSegments: 400000,
-
-  ornamentDensity: 0.18,
-  sphereAmount: 1,
-  d4Amount: 0,
-  d6Amount: 0.25,
-  d8Amount: 0,
-  d10Amount: 0,
-  d12Amount: 0,
-  d20Amount: 0,
-  heartAmount: 0,
-  petalAmount: 0,
-  sphereWire: 0,
-  d4Wire: 0,
-  d6Wire: 1,
-  d8Wire: 0,
-  d10Wire: 0,
-  d12Wire: 0,
-  d20Wire: 0,
-  heartWire: 0,
-  petalWire: 0,
-  ornamentSize: 0.05,
-
-  variation: 0.5,
-  paletteVariation: 0.45,
-  stemPhase: 0.28,
-  burst: 0.75,
-};
+export const DEFAULT_PARAMS = generatorDefaults();
 
 export function resolveParams(params = {}) {
   const resolved = { ...DEFAULT_PARAMS };

@@ -50,6 +50,14 @@ the current scene folder go through path aliases (`@elements`, `@modules`,
   render options are declared once in `renderOptions.mjs`. This is the source
   of truth; follow it exactly.
 
+## Required reading before touching Flora
+
+- **`docs/flora-pipeline.md`** — the same kernel/renderers/dev-tool
+  arrangement as Rorschach: `@modules/flora` (three-free generator and option
+  schema), `@modules/floraRender` (the look, shared by scene and CLI), the
+  headless CLIs, and FloraCLI. Run `npm run flora:check` after changing any of
+  them.
+
 ## Orientation
 
 - Scenes: `src/components/scenes/<Renderer>/<SceneName>/` (`WebGL | WebGPU |

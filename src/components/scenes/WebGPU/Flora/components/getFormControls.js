@@ -96,6 +96,9 @@ export default function getFormControls(preset = {}, { onReseed } = {}) {
       Variation: folder(
         {
           variation: range('Form', p('variation'), 0, 1, 0.01),
+          habitVariety: range('Habits', p('habitVariety'), 0, 1, 0.01),
+          styleVariety: range('Fiber Styles', p('styleVariety'), 0, 1, 0.01),
+          tipChance: range('Tip Treatments', p('tipChance'), 0, 1, 0.01),
           paletteVariation: range('Palette', p('paletteVariation'), 0, 1, 0.01),
         },
         { collapsed: true }

@@ -7,6 +7,7 @@ import {
   getCameraControlsKey,
   useSceneCameraControls,
 } from '@modules/cameraRig';
+import { FLORA_CAMERA, FLORA_LIGHTING } from '@modules/floraRender';
 import {
   getLightingControlsKey,
   useSceneLightingControls,
@@ -17,8 +18,6 @@ import getFormControls from '../components/getFormControls';
 import getLookControls from '../components/getLookControls';
 import getMotionControls from '../components/getMotionControls';
 import { DEFAULT_PRESET, PRESETS, getPresetControls } from '../presets/presets';
-import CAMERA from '../utils/camera';
-import LIGHTING from '../utils/lighting';
 
 const SCENE_LABEL = 'Flora';
 const CAMERA_FOLDER_PATH = `${SCENE_LABEL}.Camera`;
@@ -41,14 +40,14 @@ export default function useSceneControls() {
   const cameraApiRef = useRef(null);
   const { buildCamera, cameraControls } = useSceneCameraControls({
     apiRef: cameraApiRef,
-    camera: CAMERA,
+    camera: FLORA_CAMERA,
     cameraFolderPath: CAMERA_FOLDER_PATH,
     controlsSnapshotRef,
   });
 
   const { buildLighting, lightingControls } = useSceneLightingControls({
     controlsSnapshotRef,
-    lighting: LIGHTING,
+    lighting: FLORA_LIGHTING,
     lightingFolderPath: LIGHTING_FOLDER_PATH,
   });
 

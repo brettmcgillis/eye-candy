@@ -7,11 +7,9 @@ import React, {
   useState,
 } from 'react';
 import {
-  FiBox,
   FiCheckSquare,
   FiChevronLeft,
   FiChevronRight,
-  FiExternalLink,
   FiFilm,
   FiFilter,
   FiFolder,
@@ -19,22 +17,14 @@ import {
   FiImage,
   FiList,
   FiMaximize2,
-  FiRefreshCw,
   FiTrash2,
   FiX,
   FiZoomIn,
   FiZoomOut,
 } from 'react-icons/fi';
 
-import { resolveLegacyScenePath } from '@app/sceneRegistry';
-import { presetFromRender } from '@modules/rorschach';
-
-import {
-  assetFormat,
-  groupMediaAssets,
-  isMediaAsset,
-} from '../utils/assetGroups';
 import AssetActions from './AssetActions';
+import { assetFormat, groupMediaAssets, isMediaAsset } from './assetGroups';
 
 function formatBytes(bytes) {
   if (bytes < 1024) return `${bytes} B`;
@@ -55,7 +45,15 @@ function mediaCountLabel(count, singular) {
   return `${count} ${singular}${count === 1 ? '' : 's'}`;
 }
 
-function collectionLabel(job, groups) {
+function defaultCollectionTitle(job) {
+  if (job.kind === 'video') {
+    const mode = job.options?.mode ?? 'video';
+    return `${mode[0].toUpperCase()}${mode.slice(1)} Video Render`;
+  }
+  return 'Stills Render';
+}
+
+function collectionLabel(job, groups, collectionTitle) {
   const videoCount = groups.filter((group) =>
     group.assets.some((asset) => assetFormat(asset) === 'mp4')
   ).length;
@@ -70,11 +68,8 @@ function collectionLabel(job, groups) {
     title = 'Saved Collection';
   } else if (job.source === 'legacy') {
     title = 'Legacy Batch';
-  } else if (job.kind === 'video') {
-    const mode = job.options?.mode ?? 'video';
-    title = `${mode[0].toUpperCase()}${mode.slice(1)} Video Render`;
   } else {
-    title = 'Stills Render';
+    title = collectionTitle?.(job) ?? defaultCollectionTitle(job);
   }
 
   return counts.length > 0 ? `${title} · ${counts.join(' · ')}` : title;
@@ -84,7 +79,7 @@ function isVideoGroup(group) {
   return group.assets.some((asset) => assetFormat(asset) === 'mp4');
 }
 
-function Stat({ label, value }) {
+export function Stat({ label, value }) {
   if (value == null || value === '') return null;
   return (
     <div>
@@ -94,146 +89,33 @@ function Stat({ label, value }) {
   );
 }
 
-function formatDimensions(width, height) {
+export function formatDimensions(width, height) {
   return width == null || height == null ? null : `${width} × ${height}`;
 }
 
-const VIEW_NAMES = ['front', 'back', 'top', 'bottom'];
-
-// A still names the view it was drawn from in its own filename; a video carries
-// it in the sidecar. The scene is framed from it, so guessing wrong points the
-// camera at the back of the picture.
-function viewOf(group, metadata) {
-  const name = group.key.split('/').pop();
-  if (VIEW_NAMES.includes(name)) return name;
-  return VIEW_NAMES.includes(metadata?.render?.view)
-    ? metadata.render.view
-    : 'front';
-}
-
-// The two things worth doing with a piece you like: make more of it, or see it
-// in three dimensions. Both start from the sidecar this preview already has —
-// the exact config that drew the picture — so neither needs the scene to have
-// been involved beforehand.
-function PreviewActions({ group, metadata, onUseAsBase }) {
-  const [saving, setSaving] = useState(false);
-  const [saved, setSaved] = useState(null);
-  const [error, setError] = useState(null);
-
-  const preset = metadata?.preset;
-  if (!preset) return null;
-
-  const saveScenePreset = async () => {
-    setError(null);
-    setSaving(true);
-    try {
-      const response = await fetch('/dev-api/rorschach/presets', {
-        body: JSON.stringify({
-          preset: presetFromRender(
-            {
-              preset,
-              render: metadata.render,
-              view: viewOf(group, metadata),
-            },
-            'still'
-          ),
-        }),
-        headers: { 'Content-Type': 'application/json' },
-        method: 'POST',
-      });
-      const body = await response.json();
-      if (!response.ok) throw new Error(body.message ?? 'Could not save.');
-      setSaved(body.preset);
-    } catch (saveError) {
-      setError(saveError.message);
-    } finally {
-      setSaving(false);
-    }
-  };
-
-  return (
-    <div className="rw-preview__actions">
-      <button
-        className="dev-button"
-        onClick={() => onUseAsBase(metadata, group.name)}
-        type="button"
-      >
-        <FiRefreshCw /> Roll variations
-      </button>
-      {saved ? (
-        <a
-          className="dev-button"
-          href={`${resolveLegacyScenePath('rorschach') ?? '/wip/rorschach'}?preset=${saved.name}`}
-          rel="noreferrer"
-          target="_blank"
-        >
-          <FiExternalLink /> Open preset {saved.name} in the scene
-        </a>
-      ) : (
-        <button
-          className="dev-button"
-          disabled={saving}
-          onClick={saveScenePreset}
-          type="button"
-        >
-          <FiBox /> {saving ? 'Saving...' : 'Save as scene preset'}
-        </button>
-      )}
-      {error ? <p className="rw-preview__actions-error">{error}</p> : null}
-    </div>
-  );
-}
-
-function PreviewStats({ error, group, loading, metadata, onUseAsBase }) {
-  if (loading)
+function PreviewDetails({
+  closePreview,
+  error,
+  group,
+  loading,
+  metadata,
+  renderDetails,
+}) {
+  if (loading) {
     return <aside className="rw-preview__stats">Loading stats...</aside>;
-  if (error)
+  }
+  if (error) {
     return (
       <aside className="rw-preview__stats rw-preview__stats--error">
         {error}
       </aside>
     );
+  }
   if (!metadata) return null;
 
-  const { preset = {}, render = {} } = metadata;
   return (
     <aside className="rw-preview__stats">
-      <PreviewActions
-        group={group}
-        metadata={metadata}
-        onUseAsBase={onUseAsBase}
-      />
-      <h2>Stats</h2>
-      <dl>
-        <Stat label="Seed" value={preset.seed} />
-        <Stat label="Bundles" value={preset.bundleCount} />
-        <Stat label="Strands" value={preset.strandsPerBundle} />
-        <Stat label="Steps" value={preset.steps} />
-        <Stat label="Shape" value={preset.framingShape} />
-        <Stat
-          label="Bounds"
-          value={formatDimensions(preset.boundWidth, preset.boundHeight)}
-        />
-        <Stat label="Spread" value={preset.startSpread} />
-        <Stat label="Frequency" value={preset.freq} />
-        <Stat
-          label="Palette"
-          value={preset.monochrome ? 'Monochrome' : preset.palette}
-        />
-        <Stat label="Ink" value={preset.inkColor} />
-        <Stat label="Background" value={preset.backgroundColor} />
-        <Stat
-          label="Output"
-          value={formatDimensions(render.width, render.height)}
-        />
-        <Stat label="Renderer" value={render.renderer} />
-        <Stat label="Distance" value={render.distance} />
-        <Stat label="FOV" value={render.fov} />
-        <Stat
-          label="Bloom"
-          value={render.bloom ? render.bloomStrength : 'Off'}
-        />
-      </dl>
+      {renderDetails?.({ closePreview, group, metadata })}
       <details>
         <summary>Full metadata</summary>
         <pre>{JSON.stringify(metadata, null, 2)}</pre>
@@ -261,7 +143,7 @@ function MediaPreview({ asset, controls = false, eager = false }) {
   }
   return (
     <img
-      alt="Generated Rorschach output"
+      alt="Generated output"
       draggable={false}
       loading={eager ? 'eager' : 'lazy'}
       src={asset.url}
@@ -285,8 +167,8 @@ function PreviewDialog({
   onNext,
   onPrevious,
   onRequestDelete,
-  onUseAsBase,
   pendingDeleteKey,
+  renderDetails,
 }) {
   const [assetIndex, setAssetIndex] = useState(0);
   const [isPanning, setIsPanning] = useState(false);
@@ -503,12 +385,13 @@ function PreviewDialog({
                 <MediaPreview asset={asset} controls eager />
               </div>
             </div>
-            <PreviewStats
+            <PreviewDetails
+              closePreview={onClose}
               error={metadataError}
               group={group}
               loading={metadataLoading}
               metadata={metadata}
-              onUseAsBase={onUseAsBase}
+              renderDetails={renderDetails}
             />
           </div>
           {hasNext ? (
@@ -628,6 +511,7 @@ function AssetCard({
 }
 
 export default function AssetGallery({
+  collectionTitle,
   deletingId,
   emptyMessage = 'Output collections appear here.',
   jobs,
@@ -637,8 +521,9 @@ export default function AssetGallery({
   onRemoveAssets,
   onRemoveMany,
   onRequestDelete,
-  onUseAsBase,
   pendingDeleteId,
+  renderDetails,
+  selectionActions,
   variant = 'transient',
 }) {
   const saved = variant === 'saved';
@@ -1054,6 +939,14 @@ export default function AssetGallery({
             {selectedGroups.length} items
             {!saved ? ` · ${selectedJobs.length} folders` : ''}
           </span>
+          {selectedGroups.length > 0 && selectionActions ? (
+            <div>
+              {selectionActions({
+                clear: () => setSelectedItems(new Set()),
+                selected: selectedGroups,
+              })}
+            </div>
+          ) : null}
           {pendingBulkDelete ? (
             <div>
               <strong>
@@ -1170,7 +1063,7 @@ export default function AssetGallery({
                     <strong>
                       <FiChevronRight className="rw-collection__chevron" />
                       <FiFolder />
-                      {collectionLabel(job, groups)}
+                      {collectionLabel(job, groups, collectionTitle)}
                     </strong>
                     <span title={job.outputDirectory}>
                       {job.outputDirectory}
@@ -1267,11 +1160,8 @@ export default function AssetGallery({
               itemKey(preview.groups[preview.index].collectionId, asset.path)
             )
           }
-          onUseAsBase={(metadata, name) => {
-            onUseAsBase(metadata, name);
-            closePreview();
-          }}
           pendingDeleteKey={pendingItemDelete}
+          renderDetails={renderDetails}
         />
       ) : null}
     </div>

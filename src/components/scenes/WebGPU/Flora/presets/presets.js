@@ -1,4 +1,6 @@
-import { SCENE_DEFAULTS } from './defaults';
+import { sceneDefaults } from '@modules/flora';
+
+const SCENE_DEFAULTS = sceneDefaults();
 
 export const DEFAULT_PRESET = 'Heart';
 
@@ -247,6 +249,29 @@ const SNAPSHOTS = {
     tipColor: '#fdf3ff',
     ornamentColor: '#ffd98a',
     greenReach: 0.22,
+  },
+  'Gradient Garden': {
+    seed: 'garden',
+    paletteShuffle: true,
+    formCount: 3,
+    formSpread: 0.9,
+    warp: 0.45,
+    asymmetry: 0.4,
+    tips: 45000,
+    ornamentDensity: 0.22,
+    ornamentSize: 0.055,
+    sphereAmount: 0.6,
+    d8Amount: 0.4,
+    d20Amount: 0.4,
+    petalAmount: 0.5,
+    d8Wire: 0.5,
+    d20Wire: 0.3,
+    stemColor: '#3c9a48',
+    budColor: '#e8ecdc',
+    greenReach: 0.2,
+    tipAmount: 0.25,
+    habitVariety: 0.8,
+    styleVariety: 0.7,
   },
   Mobile: {
     seed: 'heart',

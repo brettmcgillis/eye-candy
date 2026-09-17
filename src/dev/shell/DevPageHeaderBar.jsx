@@ -11,7 +11,7 @@ function classNames(...parts) {
 }
 
 export default function DevPageHeaderBar({
-  backLabel = 'back to dev',
+  backLabel = 'back to devToolz',
   backTo = '/dev',
   className = '',
   compact = true,

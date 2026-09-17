@@ -9,7 +9,9 @@
 // (it needs the schema before it can start Vite to load the rest of the
 // kernel), so it has to be unambiguous ESM to plain Node — and therefore must
 // stay dependency-free. Everything needing three.js or an alias belongs in a
-// sibling `.js` module instead.
+// sibling `.js` module instead. Its one import is the shared option-schema
+// machinery, which is dependency-free by the same rule.
+import createOptionSchema from '../optionSchema/index.mjs';
 
 export const VIEWS = ['front', 'back', 'top', 'bottom'];
 export const VIDEO_MODES = [
@@ -1325,13 +1327,38 @@ export const SURFACE_DEFAULTS = {
   },
 };
 
-export function optionsFor(kind, surface = `cli-${kind}`) {
-  return Object.entries(RENDER_OPTIONS).filter(
-    ([, spec]) =>
-      (spec.scope === 'shared' || spec.scope === kind) &&
-      (!spec.workbenchOnly || surface === 'workbench')
-  );
-}
+const SECTION_LABELS = {
+  output: 'output',
+  render: 'render',
+  bloom: 'bloom',
+  overlay: 'overlay',
+  layers: 'layers',
+  timing: 'mode timing',
+  palette: 'palette',
+  roll: 'rolling',
+  structure: 'structure',
+  source: 'source frames',
+};
+
+const schema = createOptionSchema({
+  options: RENDER_OPTIONS,
+  sectionLabels: SECTION_LABELS,
+  surfaceDefaults: SURFACE_DEFAULTS,
+  validate(kind, options, fail) {
+    if (kind === 'still' && !options.png && !options.svg && !options.webp) {
+      throw fail('Select at least one output format: PNG, SVG, or WebP.');
+    }
+  },
+});
+
+export const {
+  defaultsFor,
+  facets,
+  keysInFacet,
+  normalizeOptions,
+  optionsFor,
+  usageFor,
+} = schema;
 
 // Which options exist only to drive a render, and so have no control in the
 // scene: output framing, the CLIs' own plumbing, and the video modes. Every
@@ -1476,72 +1503,6 @@ export function presetFromRender(
   };
 }
 
-export function defaultsFor(kind, surface = `cli-${kind}`) {
-  const deviations = SURFACE_DEFAULTS[surface] ?? {};
-  return Object.fromEntries(
-    optionsFor(kind, surface).map(([key, spec]) => [
-      key,
-      key in deviations ? deviations[key] : spec.default,
-    ])
-  );
-}
-
-function flagSignature(key, spec) {
-  if (spec.type === 'boolean') return spec.default ? `--no-${key}` : `--${key}`;
-  if (spec.choices && !spec.placeholder) {
-    return `--${key} ${spec.choices.join('|')}`;
-  }
-  return `--${key} ${spec.placeholder ?? 'VALUE'}`;
-}
-
-const SECTION_LABELS = {
-  output: 'output',
-  render: 'render',
-  bloom: 'bloom',
-  overlay: 'overlay',
-  layers: 'layers',
-  timing: 'mode timing',
-  palette: 'palette',
-  roll: 'rolling',
-  structure: 'structure',
-  source: 'source frames',
-};
-
-// The `--help` body, generated so a flag can never exist without being
-// documented or be documented with a stale default.
-export function usageFor(kind, surface = `cli-${kind}`) {
-  const defaults = defaultsFor(kind, surface);
-  const bySection = new Map();
-  optionsFor(kind, surface).forEach(([key, spec]) => {
-    const section = spec.section ?? 'output';
-    if (!bySection.has(section)) bySection.set(section, []);
-    bySection.get(section).push([key, spec]);
-  });
-
-  const width =
-    Math.max(
-      ...optionsFor(kind, surface).map(
-        ([key, spec]) => flagSignature(key, spec).length
-      )
-    ) + 2;
-
-  const lines = [];
-  bySection.forEach((entries, section) => {
-    lines.push(``, ` ${SECTION_LABELS[section] ?? section}`);
-    entries.forEach(([key, spec]) => {
-      const shown = defaults[key];
-      const suffix =
-        spec.type === 'boolean' || shown == null
-          ? ''
-          : ` (default ${JSON.stringify(shown)})`;
-      lines.push(
-        `  ${flagSignature(key, spec).padEnd(width)}${spec.help}${suffix}`
-      );
-    });
-  });
-  return `${lines.join('\n')}\n`;
-}
-
 // `ig none` (or `--no-ig`) turns the safe-area insets off; anything else has
 // to name a real preset rather than silently rendering the wrong layout.
 export function resolveIgPreset(value) {
@@ -1560,81 +1521,4 @@ export function resolveViews(list) {
     throw new Error(`--views must name at least one of ${VIEWS.join(',')}`);
   }
   return views;
-}
-
-// Coerces and range-checks one raw value against its spec. `fail` builds the
-// error the caller wants — the CLI throws plain Errors, the dev server throws
-// its own typed RorschachRequestError so the workbench gets a 400.
-function coerce(key, spec, raw, fallback, fail) {
-  if (spec.type === 'boolean') {
-    return raw == null ? fallback : raw !== false && raw !== 'false';
-  }
-
-  const empty = raw === '' || raw == null;
-  if (empty && (spec.nullable || spec.type === 'seed')) return fallback ?? null;
-  if (empty) return fallback;
-
-  if (spec.type === 'json') {
-    let value = raw;
-    if (typeof value === 'string') {
-      try {
-        value = JSON.parse(value);
-      } catch {
-        throw fail(`${key} must be a JSON object.`);
-      }
-    }
-    if (typeof value !== 'object' || Array.isArray(value)) {
-      throw fail(`${key} must be a JSON object.`);
-    }
-    // A whole preset is a legitimate payload — take the keys this option is
-    // about and leave the rest of it alone.
-    const kept = Object.entries(value).filter(
-      ([name]) => !spec.keyPattern || spec.keyPattern.test(name)
-    );
-    if (kept.length === 0) {
-      throw fail(`${key} holds no ${spec.placeholder ?? key} entries.`);
-    }
-    return Object.fromEntries(kept);
-  }
-
-  if (spec.type === 'enum') {
-    const value = String(raw);
-    if (!spec.choices.includes(value)) {
-      throw fail(`${key} must be one of ${spec.choices.join(', ')}.`);
-    }
-    return value;
-  }
-
-  if (spec.type === 'string') return String(raw);
-
-  const value = Number(raw);
-  if (!Number.isFinite(value) || value < spec.min || value > spec.max) {
-    throw fail(`${key} must be a number between ${spec.min} and ${spec.max}.`);
-  }
-  if (spec.choices && !spec.choices.includes(value)) {
-    throw fail(`${key} must be one of ${spec.choices.join(', ')}.`);
-  }
-  return value;
-}
-
-// Validates a whole raw option bag for one command. Unknown keys are dropped
-// rather than passed through, so a stale workbench field can't reach the CLI
-// as an unrecognised flag.
-export function normalizeOptions(
-  kind,
-  raw = {},
-  { fail = (message) => new Error(message), surface = `cli-${kind}` } = {}
-) {
-  const defaults = defaultsFor(kind, surface);
-  const options = Object.fromEntries(
-    optionsFor(kind, surface).map(([key, spec]) => [
-      key,
-      coerce(key, spec, raw[key], defaults[key], fail),
-    ])
-  );
-
-  if (kind === 'still' && !options.png && !options.svg && !options.webp) {
-    throw fail('Select at least one output format: PNG, SVG, or WebP.');
-  }
-  return options;
 }

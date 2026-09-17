@@ -46,7 +46,12 @@ export default function cataloggrDevPlugin() {
         const rootDir = server.config.root;
 
         if (req.method === 'GET' && pathname === CATALOG_PATH) {
-          await handleRequest(res, () => readCatalog(rootDir));
+          await handleRequest(res, () =>
+            readCatalog(rootDir, {
+              loadPresetModule: (modulePath) =>
+                server.ssrLoadModule(modulePath),
+            })
+          );
           return;
         }
 

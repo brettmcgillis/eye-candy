@@ -28,8 +28,8 @@ function getObjectKeys(expression) {
   return expression.properties.map(getObjectPropertyName).filter(Boolean);
 }
 
-function getVariableObjects(program) {
-  const objects = new Map();
+function getVariableInitializers(program) {
+  const initializers = new Map();
 
   program.body.forEach((statement) => {
     const declaration =
@@ -40,29 +40,26 @@ function getVariableObjects(program) {
     if (declaration?.type !== 'VariableDeclaration') return;
 
     declaration.declarations.forEach((variable) => {
-      if (
-        variable.id.type === 'Identifier' &&
-        variable.init?.type === 'ObjectExpression'
-      ) {
-        objects.set(variable.id.name, variable.init);
+      if (variable.id.type === 'Identifier' && variable.init) {
+        initializers.set(variable.id.name, variable.init);
       }
     });
   });
 
-  return objects;
+  return initializers;
 }
 
-function getExportedPresetObjects(program, variableObjects) {
-  const presetObjects = [];
+function getExportedPresetExpressions(program, variableInitializers) {
+  const presetExpressions = [];
 
   program.body.forEach((statement) => {
     if (statement.type === 'ExportDefaultDeclaration') {
       const expression =
         statement.declaration.type === 'Identifier'
-          ? variableObjects.get(statement.declaration.name)
+          ? variableInitializers.get(statement.declaration.name)
           : statement.declaration;
 
-      if (expression) presetObjects.push(expression);
+      if (expression) presetExpressions.push(expression);
       return;
     }
 
@@ -73,9 +70,9 @@ function getExportedPresetObjects(program, variableObjects) {
         if (
           variable.id.type === 'Identifier' &&
           /PRESETS$/u.test(variable.id.name) &&
-          variable.init?.type === 'ObjectExpression'
+          variable.init
         ) {
-          presetObjects.push(variable.init);
+          presetExpressions.push(variable.init);
         }
       });
     }
@@ -85,13 +82,13 @@ function getExportedPresetObjects(program, variableObjects) {
         specifier.exported?.name ?? specifier.exported?.value;
 
       if (/PRESETS$/u.test(exportedName ?? '')) {
-        const expression = variableObjects.get(specifier.local.name);
-        if (expression) presetObjects.push(expression);
+        const expression = variableInitializers.get(specifier.local.name);
+        if (expression) presetExpressions.push(expression);
       }
     });
   });
 
-  return presetObjects;
+  return presetExpressions;
 }
 
 function parsePresetNames(source) {
@@ -99,13 +96,38 @@ function parsePresetNames(source) {
     sourceType: 'module',
     plugins: ['jsx'],
   });
-  const variableObjects = getVariableObjects(program);
-  const presetObjects = getExportedPresetObjects(program, variableObjects);
+  const variableInitializers = getVariableInitializers(program);
+  const presetExpressions = getExportedPresetExpressions(
+    program,
+    variableInitializers
+  );
 
-  return new Set(presetObjects.flatMap(getObjectKeys));
+  return {
+    names: new Set(presetExpressions.flatMap(getObjectKeys)),
+    requiresModuleLoad: presetExpressions.some(
+      (expression) => expression.type !== 'ObjectExpression'
+    ),
+  };
 }
 
-export default async function discoverLocalPresets(rootDir) {
+function getModulePresetNames(module) {
+  return new Set(
+    Object.entries(module)
+      .filter(
+        ([exportName, value]) =>
+          (exportName === 'default' || /PRESETS$/u.test(exportName)) &&
+          value &&
+          typeof value === 'object' &&
+          !Array.isArray(value)
+      )
+      .flatMap(([, value]) => Object.keys(value))
+  );
+}
+
+export default async function discoverLocalPresets(
+  rootDir,
+  { loadPresetModule } = {}
+) {
   const scenesPath = path.join(rootDir, SCENES_PATH);
   const relativePaths = await fs.readdir(scenesPath, { recursive: true });
   const presetPaths = relativePaths.filter((relativePath) =>
@@ -124,10 +146,20 @@ export default async function discoverLocalPresets(rootDir) {
         'utf8'
       );
       const presetNames = presetsByFolder.get(folderKey) ?? new Set();
+      const parsedPresets = parsePresetNames(source);
+      let discoveredNames = parsedPresets.names;
 
-      parsePresetNames(source).forEach((presetName) =>
-        presetNames.add(presetName)
-      );
+      if (loadPresetModule && parsedPresets.requiresModuleLoad) {
+        try {
+          const modulePath = `/${path.posix.join(SCENES_PATH, relativePath)}`;
+          const module = await loadPresetModule(modulePath);
+          discoveredNames = getModulePresetNames(module);
+        } catch {
+          // Static parsing keeps unrelated presets available when SSR loading fails.
+        }
+      }
+
+      discoveredNames.forEach((presetName) => presetNames.add(presetName));
       presetsByFolder.set(folderKey, presetNames);
     })
   );

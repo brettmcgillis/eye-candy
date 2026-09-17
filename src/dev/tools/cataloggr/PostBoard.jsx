@@ -19,21 +19,19 @@ function sortPostEntries(entries, statuses, sortKey, sortDirection) {
 
     if (sortKey === 'name') return direction * nameComparison;
 
-    if (sortKey !== 'name') {
-      const leftPosted = getPostedCount(left, statuses);
-      const rightPosted = getPostedCount(right, statuses);
-      const leftValue =
-        sortKey === 'posted'
-          ? leftPosted
-          : getSceneTargets(left).length - leftPosted;
-      const rightValue =
-        sortKey === 'posted'
-          ? rightPosted
-          : getSceneTargets(right).length - rightPosted;
-      const valueComparison = direction * (leftValue - rightValue);
+    const leftPosted = getPostedCount(left, statuses);
+    const rightPosted = getPostedCount(right, statuses);
+    const leftValue =
+      sortKey === 'posted'
+        ? leftPosted
+        : getSceneTargets(left).length - leftPosted;
+    const rightValue =
+      sortKey === 'posted'
+        ? rightPosted
+        : getSceneTargets(right).length - rightPosted;
+    const valueComparison = direction * (leftValue - rightValue);
 
-      if (valueComparison) return valueComparison;
-    }
+    if (valueComparison) return valueComparison;
 
     return nameComparison;
   });

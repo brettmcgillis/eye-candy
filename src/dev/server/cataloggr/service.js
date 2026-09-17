@@ -203,10 +203,10 @@ export async function readJsonBody(req) {
   });
 }
 
-export async function readCatalog(rootDir) {
+export async function readCatalog(rootDir, options) {
   const [contents, presetsByFolder] = await Promise.all([
     fs.readFile(getCatalogPath(rootDir), 'utf8'),
-    discoverLocalPresets(rootDir),
+    discoverLocalPresets(rootDir, options),
   ]);
   const catalog = JSON.parse(contents);
 

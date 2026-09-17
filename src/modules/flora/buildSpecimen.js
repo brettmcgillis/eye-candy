@@ -8,17 +8,12 @@ import { growLeaves, growSideShoots, growStem } from './stem';
 import measure from './timing';
 import varyParams from './variation';
 
-function rootFor(graph, p, stemNodes, lobe) {
-  const lowest = Math.floor(p.crownBase * (stemNodes.length - 1));
-  const floor = lobe.center[1] - lobe.radii[1] * 0.95;
+function stemSampler(graph, stemNodes) {
+  const last = stemNodes.length - 1;
+  const nodeAt = (fraction) =>
+    stemNodes[Math.round(Math.min(1, Math.max(0, fraction)) * last)];
 
-  for (let s = stemNodes.length - 1; s > lowest; s -= 1) {
-    if (graph.y[stemNodes[s]] <= floor) {
-      return stemNodes[s];
-    }
-  }
-
-  return stemNodes[Math.max(lowest, 0)];
+  return { nodeAt, positionAt: (fraction) => graph.position(nodeAt(fraction)) };
 }
 
 function umbelPoints(graph, p, rng, tip) {
@@ -50,8 +45,8 @@ export default function buildSpecimen(input) {
   growLeaves(graph, p, rng.fork('leaves'), stemNodes);
 
   const shootTips = growSideShoots(graph, p, rng.fork('shoots'), stemNodes);
-  const stemTop = graph.position(stemNodes[stemNodes.length - 1]);
-  const envelope = buildEnvelope(p, rng.fork('envelope'), stemTop);
+  const stem = stemSampler(graph, stemNodes);
+  const envelope = buildEnvelope(p, rng.fork('envelope'), stem.positionAt);
   const fiberRng = rng.fork('fibers');
   const terminals = [];
   const budget = { truncated: false };
@@ -65,7 +60,7 @@ export default function buildSpecimen(input) {
         p,
         fiberRng,
         points,
-        rootFor(graph, p, stemNodes, lobe),
+        stem.nodeAt(lobe.anchor),
         index,
         terminals,
         budget
@@ -107,7 +102,7 @@ export default function buildSpecimen(input) {
       light: 1 + shift(0.22),
       saturation: 1 + shift(0.35),
     },
-    height: Math.max(...envelope.lobes.map((l) => l.center[1] + l.radii[1])),
+    height: envelope.height,
     cards,
     segments,
     solids,
@@ -116,6 +111,7 @@ export default function buildSpecimen(input) {
       cards: cards.count,
       solids: Object.values(solids).reduce((sum, g) => sum + g.count, 0),
       segments: segments.count,
+      forms: envelope.lobes.map((l) => l.name).join(' + '),
       terminals: terminals.length,
       truncated: budget.truncated,
     },

@@ -12,18 +12,16 @@ const SPREAD = {
   crownRadius: 0.4,
   crownStretch: 0.4,
   crownLift: 0.4,
-  crownOpen: 0.25,
-  lobeSpread: 0.7,
-  lobeRise: 1,
-  lobeFalloff: 0.15,
-  lobeJitter: 0.5,
+  formSpread: 0.6,
+  warp: 0.9,
+  asymmetry: 1,
   accentAmount: 0.6,
   shellBias: 0.35,
-  splitRatio: 0.3,
-  sheaf: 0.2,
+  splitRatio: 0.45,
+  sheaf: 0.45,
   splitBalance: 0.4,
   fiberStep: 0.25,
-  fiberBend: 0.8,
+  fiberBend: 1.2,
   fiberSag: 0.8,
   wispChance: 1,
   wispReach: 0.5,
@@ -34,19 +32,17 @@ const SPREAD = {
 const COUNTS = {
   leafBlades: 1,
   sideShoots: 1,
-  lobeCount: 3,
-  umbelSize: 2,
+  formCount: 2,
+  umbelSize: 4,
 };
 
 const RATIOS = new Set([
-  'crownOpen',
   'shellBias',
   'sheaf',
   'splitBalance',
   'accentAmount',
   'ornamentDensity',
-  'lobeJitter',
-  'lobeFalloff',
+  'asymmetry',
 ]);
 
 const clamp01 = (v) => Math.min(1, Math.max(0, v));
@@ -73,7 +69,7 @@ export default function varyParams(p, rng) {
     const drift = Math.round(rng.signed() * spread * amount);
 
     varied[key] = Math.max(
-      key === 'lobeCount' || key === 'umbelSize' ? 1 : 0,
+      key === 'formCount' || key === 'umbelSize' ? 1 : 0,
       p[key] + drift
     );
   });

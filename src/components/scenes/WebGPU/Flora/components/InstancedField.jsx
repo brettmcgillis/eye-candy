@@ -1,29 +1,21 @@
 import React, { memo, useEffect, useMemo } from 'react';
 
-function InstancedField({ buffers, createGeometry, createMaterial, uniforms }) {
-  const geometry = useMemo(
-    () => createGeometry(buffers),
-    [buffers, createGeometry]
-  );
+function InstancedField({ createMaterial, slot, uniforms }) {
   const material = useMemo(
     () => createMaterial(uniforms),
     [createMaterial, uniforms]
   );
 
-  useEffect(() => () => geometry.dispose(), [geometry]);
   useEffect(() => () => material.dispose(), [material]);
-
-  if (!buffers.count) {
-    return null;
-  }
 
   return (
     <mesh
       castShadow
       frustumCulled={false}
-      geometry={geometry}
+      geometry={slot.geometry}
       material={material}
       receiveShadow
+      ref={slot.attach}
     />
   );
 }

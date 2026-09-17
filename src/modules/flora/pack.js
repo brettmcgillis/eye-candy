@@ -25,7 +25,7 @@ function occlusionAt(lobes, x, y, z) {
     const dz = (z - l.center[2]) / l.radii[2];
     const depth = 1 - Math.min(1, Math.sqrt(dx * dx + dy * dy + dz * dz));
 
-    inside = Math.max(inside, depth);
+    inside = Math.max(inside, depth * l.density);
   });
 
   return 1 - inside ** 1.2 * 0.8;

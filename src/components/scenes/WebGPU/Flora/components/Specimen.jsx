@@ -1,55 +1,57 @@
-import React, { memo, useEffect, useMemo } from 'react';
+import React, { memo, useCallback, useEffect, useMemo, useRef } from 'react';
 
-import { SOLID_SHAPES } from '@modules/flora';
-
+import useFieldSlots from '../hooks/useFieldSlots';
 import useLifecycle from '../hooks/useLifecycle';
-import {
-  createCardGeometry,
-  createSolidGeometry,
-  createTubeGeometry,
-} from '../utils/geometry';
 import {
   createCardMaterial,
   createSolidMaterial,
 } from '../utils/ornamentMaterials';
 import createTubeMaterial from '../utils/tubeMaterial';
-import { createUniforms, syncUniforms } from '../utils/uniforms';
+import { createUniforms, syncSpecimen, syncUniforms } from '../utils/uniforms';
 import InstancedField from './InstancedField';
 
 function Specimen({ config, lifecycleApiRef }) {
   const uniforms = useMemo(createUniforms, []);
+  const { loadSpecimen, slots } = useFieldSlots();
+  const configRef = useRef(config);
+  const paletteRef = useRef(null);
 
-  const specimen = useLifecycle(config, uniforms, lifecycleApiRef);
+  configRef.current = config;
 
   useEffect(() => {
-    syncUniforms(uniforms, config, specimen?.palette);
-  }, [config, specimen, uniforms]);
+    syncUniforms(uniforms, config, paletteRef.current);
+  }, [config, uniforms]);
 
-  if (!specimen) {
-    return null;
-  }
+  const onSpecimen = useCallback(
+    (specimen) => {
+      loadSpecimen(specimen);
+      syncSpecimen(uniforms, specimen);
+      paletteRef.current = specimen.palette;
+      syncUniforms(uniforms, configRef.current, specimen.palette);
+    },
+    [loadSpecimen, uniforms]
+  );
+
+  useLifecycle(config, uniforms, lifecycleApiRef, onSpecimen);
 
   return (
     <>
       <InstancedField
-        buffers={specimen.segments}
-        createGeometry={createTubeGeometry}
         createMaterial={createTubeMaterial}
+        slot={slots.tube}
         uniforms={uniforms}
       />
-      {SOLID_SHAPES.map((shape) => (
+      {slots.solids.map((slot) => (
         <InstancedField
-          buffers={specimen.solids[shape]}
-          createGeometry={createSolidGeometry}
           createMaterial={createSolidMaterial}
-          key={shape}
+          key={slot.key}
+          slot={slot}
           uniforms={uniforms}
         />
       ))}
       <InstancedField
-        buffers={specimen.cards}
-        createGeometry={createCardGeometry}
         createMaterial={createCardMaterial}
+        slot={slots.cards}
         uniforms={uniforms}
       />
     </>

@@ -1,5 +1,5 @@
 /* eslint-disable no-param-reassign */
-import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef } from 'react';
 
 import { useFrame } from '@react-three/fiber';
 
@@ -10,7 +10,6 @@ import advance, {
   resetRequest,
   timeline,
 } from '../utils/cycleMachine';
-import { syncSpecimen } from '../utils/uniforms';
 import useSpecimenBuilder from './useSpecimenBuilder';
 
 const GENERATION_KEYS = Object.keys(DEFAULT_PARAMS);
@@ -20,14 +19,19 @@ function seedFor(seed, cycle) {
   return cycle === 0 ? seed : `${seed}-${cycle}`;
 }
 
-export default function useLifecycle(config, uniforms, apiRef) {
+// Specimens never enter React state: React's dev performance tracks format the
+// props of every re-rendered component, and stringifying the specimen's typed
+// arrays froze the main thread for seconds on each swap.
+export default function useLifecycle(config, uniforms, apiRef, onSpecimen) {
   const build = useSpecimenBuilder();
-  const [specimen, setSpecimen] = useState(null);
   const stateRef = useRef(createCycleState());
+  const loadedRef = useRef(false);
   const tokenRef = useRef(0);
   const configRef = useRef(config);
+  const onSpecimenRef = useRef(onSpecimen);
 
   configRef.current = config;
+  onSpecimenRef.current = onSpecimen;
 
   const generationKey = JSON.stringify(
     GENERATION_KEYS.map((key) => config[key])
@@ -55,19 +59,14 @@ export default function useLifecycle(config, uniforms, apiRef) {
     const timer = setTimeout(() => {
       request(stateRef.current.cycle).then((next) => {
         if (next) {
-          setSpecimen(next);
+          onSpecimenRef.current(next);
+          loadedRef.current = true;
         }
       });
     }, REBUILD_DEBOUNCE_MS);
 
     return () => clearTimeout(timer);
   }, [request]);
-
-  useEffect(() => {
-    if (specimen) {
-      syncSpecimen(uniforms, specimen);
-    }
-  }, [specimen, uniforms]);
 
   useEffect(() => {
     apiRef.current = {
@@ -83,20 +82,18 @@ export default function useLifecycle(config, uniforms, apiRef) {
   }, [apiRef]);
 
   useFrame((_, delta) => {
-    if (!specimen) {
+    if (!loadedRef.current) {
       return;
     }
 
     const levels = advance(stateRef.current, configRef.current, delta, request);
 
+    if (levels.swap) {
+      onSpecimenRef.current(levels.swap);
+    }
+
     uniforms.growth.value = levels.growth;
     uniforms.bloom.value = levels.bloom;
     uniforms.exit.value = levels.exit;
-
-    if (levels.swap) {
-      setSpecimen(levels.swap);
-    }
   });
-
-  return specimen;
 }

@@ -1,84 +1,127 @@
-function layoutLobes(p, rng, top) {
-  const count = Math.max(1, Math.round(p.lobeCount * rng.range(0.55, 1.5)));
-  const lobes = [];
-  const cursor = [0, top + p.crownRadius * p.crownLift, 0];
-  let size = p.crownRadius * rng.range(0.6, 1);
+import composeForms from './forms';
+import { randomUnit } from './vec';
 
-  for (let i = 0; i < count; i += 1) {
-    const jitter = 1 + rng.signed() * p.lobeJitter;
+function createWarp(p, rng) {
+  const waves = Array.from({ length: 3 }, () => ({
+    direction: randomUnit(rng),
+    k: randomUnit(rng).map((v) => (v * rng.range(0.6, 1.6)) / p.crownRadius),
+    phase: rng() * Math.PI * 2,
+  }));
+  const amplitude = (p.warp * p.crownRadius * 0.35) / waves.length;
 
-    lobes.push({
-      accent: rng() < p.accentAmount ? 1 : 0,
-      center: [...cursor],
-      radii: [
-        size * jitter,
-        size * p.crownStretch * (1 + rng.signed() * p.lobeJitter * 0.5),
-        size * jitter,
-      ],
+  return (point) => {
+    const out = [...point];
+
+    waves.forEach(({ direction, k, phase }) => {
+      const s =
+        Math.sin(point[0] * k[0] + point[1] * k[1] + point[2] * k[2] + phase) *
+        amplitude;
+
+      out[0] += direction[0] * s;
+      out[1] += direction[1] * s;
+      out[2] += direction[2] * s;
     });
 
-    const theta = rng() * Math.PI * 2;
-    const reach = size * p.lobeSpread * rng.range(0.35, 1.5);
-
-    cursor[0] += Math.cos(theta) * reach;
-    cursor[1] += size * p.lobeRise * rng.range(0.15, 1.5);
-    cursor[2] += Math.sin(theta) * reach * 0.7;
-    size *= p.lobeFalloff + (1 - p.lobeFalloff) * rng();
-  }
-
-  return lobes;
+    return out;
+  };
 }
 
-export default function buildEnvelope(p, rng, stemTop) {
-  const lobes = layoutLobes(p, rng, stemTop[1]).map((l) => ({
-    ...l,
-    center: [l.center[0] + stemTop[0], l.center[1], l.center[2] + stemTop[2]],
-    tint: rng(),
-    volume: l.radii[0] * l.radii[1] * l.radii[2],
-  }));
+function createLean(p, rng, pivot) {
+  const heading = rng() * Math.PI * 2;
+  const axis = [Math.cos(heading), 0, Math.sin(heading)];
+  const angle = p.asymmetry * rng.range(0.15, 0.7) * (rng() < 0.5 ? -1 : 1);
+  const c = Math.cos(angle);
+  const s = Math.sin(angle);
 
-  const total = lobes.reduce((sum, l) => sum + l.volume, 0);
-  const exponent = 1 / 3 + (0.07 - 1 / 3) * p.shellBias;
+  return (point) => {
+    const v = [point[0] - pivot[0], point[1] - pivot[1], point[2] - pivot[2]];
+    const d = axis[0] * v[0] + axis[1] * v[1] + axis[2] * v[2];
+    const turned = [
+      axis[1] * v[2] - axis[2] * v[1],
+      axis[2] * v[0] - axis[0] * v[2],
+      axis[0] * v[1] - axis[1] * v[0],
+    ];
+
+    return [0, 1, 2].map(
+      (i) => pivot[i] + v[i] * c + turned[i] * s + axis[i] * d * (1 - c)
+    );
+  };
+}
+
+function placeCenter(component, p, stemAt, stemTop) {
+  if (component.side) {
+    const attach = stemAt(component.anchor);
+    const out = component.size * 0.85;
+
+    return [
+      attach[0] + Math.cos(component.sideDirection) * out,
+      attach[1] + component.size * 0.3,
+      attach[2] + Math.sin(component.sideDirection) * out,
+    ];
+  }
+
+  return [
+    stemTop[0] + component.offset[0],
+    stemTop[1] +
+      p.crownRadius * p.crownLift * component.lift +
+      component.offset[1],
+    stemTop[2] + component.offset[2],
+  ];
+}
+
+export default function buildEnvelope(p, rng, stemAt) {
+  const stemTop = stemAt(1);
+  const components = composeForms(p, rng);
+  const warp = createWarp(p, rng);
+  const lean = createLean(p, rng, stemTop);
+  const totalMass = components.reduce((sum, c) => sum + c.mass, 0);
   const points = [];
+  const lobes = components.map((component, index) => {
+    const center = placeCenter(component, p, stemAt, stemTop);
+    const count = Math.round((p.tips * component.mass) / totalMass);
 
-  lobes.forEach((l, index) => {
-    const count = Math.round((p.tips * l.volume) / total);
+    for (let i = 0; i < count; i += 1) {
+      const local = component.sample();
+      const wisp = rng() < p.wispChance;
+      const stretch = wisp ? 1 + p.wispReach * rng.range(0.4, 1) : 1;
+      const placed = lean(
+        warp([
+          center[0] + local[0] * stretch,
+          center[1] + local[1] * stretch,
+          center[2] + local[2] * stretch,
+        ])
+      );
 
-    for (let i = 0; i < count; ) {
-      const z = rng.signed();
-      const t = rng() * Math.PI * 2;
-      const s = Math.sqrt(1 - z * z);
-      const keep = 1 - p.crownOpen * (1 - (z + 1) / 2) ** 1.5;
-
-      if (rng() < keep) {
-        i += 1;
-        const wisp = rng() < p.wispChance;
-        const r =
-          rng() ** exponent * (wisp ? 1 + p.wispReach * rng.range(0.4, 1) : 1);
-
-        points.push({
-          lobe: index,
-          wisp,
-          x: l.center[0] + s * Math.cos(t) * r * l.radii[0],
-          y: l.center[1] + z * r * l.radii[1],
-          z: l.center[2] + s * Math.sin(t) * r * l.radii[2],
-        });
-      }
+      points.push({
+        lobe: index,
+        wisp,
+        x: placed[0],
+        y: placed[1],
+        z: placed[2],
+      });
     }
+
+    return {
+      accent: component.accent,
+      anchor: component.anchor,
+      center: lean(center),
+      density: component.density,
+      name: component.name,
+      radii: component.radii,
+      tint: component.tint,
+    };
   });
 
-  const centroid = lobes.reduce(
-    (acc, l) => {
-      const w = l.volume / total;
-
-      return [
-        acc[0] + l.center[0] * w,
-        acc[1] + l.center[1] * w,
-        acc[2] + l.center[2] * w,
-      ];
-    },
+  const sum = points.reduce(
+    (acc, pt) => [acc[0] + pt.x, acc[1] + pt.y, acc[2] + pt.z],
     [0, 0, 0]
   );
+  const n = Math.max(points.length, 1);
 
-  return { centroid, lobes, points };
+  return {
+    centroid: sum.map((v) => v / n),
+    height: points.reduce((top, pt) => Math.max(top, pt.y), stemTop[1]),
+    lobes,
+    points,
+  };
 }

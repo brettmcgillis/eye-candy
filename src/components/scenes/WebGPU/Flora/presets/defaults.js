@@ -1,7 +1,9 @@
 import { DEFAULT_PARAMS } from '@modules/flora';
 
+const GENERATOR_ONLY = new Set(['stemSegments', 'maxSegments']);
+
 const FORM = Object.fromEntries(
-  Object.entries(DEFAULT_PARAMS).filter(([key]) => key !== 'stemSegments')
+  Object.entries(DEFAULT_PARAMS).filter(([key]) => !GENERATOR_ONLY.has(key))
 );
 
 export const LOOK = {

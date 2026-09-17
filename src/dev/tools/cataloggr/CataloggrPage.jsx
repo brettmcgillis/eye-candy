@@ -44,6 +44,16 @@ const VIEW_OPTIONS = [
   ['ideas', 'Ideas'],
   ['todos', 'ToDos'],
 ];
+const POST_SORT_OPTIONS = [
+  ['name', 'Name'],
+  ['posted', 'Posted'],
+  ['remaining', 'Left to post'],
+];
+const DEFAULT_POST_SORT_DIRECTION = {
+  name: 'asc',
+  posted: 'desc',
+  remaining: 'desc',
+};
 
 function getSearchPlaceholder(view) {
   if (view === 'ideas') return 'Search ideas';
@@ -89,6 +99,8 @@ export default function CataloggrPage() {
   const [area, setArea] = useState('all');
   const [channel, setChannel] = useState('all');
   const [view, setView] = useState('all');
+  const [postSortKey, setPostSortKey] = useState('name');
+  const [postSortDirection, setPostSortDirection] = useState('asc');
   const [selectedStat, setSelectedStat] = useState(null);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
@@ -180,6 +192,9 @@ export default function CataloggrPage() {
 
   const filteredDevTools = useMemo(() => {
     const query = normalizeSearchText(deferredSearchText);
+
+    if ((area !== 'all' && area !== 'devtools') || channel !== 'all') return [];
+
     return DEV_PAGES.filter(
       (tool) =>
         !query ||
@@ -187,7 +202,7 @@ export default function CataloggrPage() {
           `${tool.label} ${tool.slug} ${tool.description}`
         ).includes(query)
     );
-  }, [deferredSearchText]);
+  }, [area, channel, deferredSearchText]);
 
   const filteredDemoScenes = useMemo(() => {
     const query = deferredSearchText.trim().toLowerCase();
@@ -196,12 +211,15 @@ export default function CataloggrPage() {
     return scenes.filter(
       (scene) =>
         ids.has(scene.id) &&
+        area !== 'devtools' &&
+        (area === 'all' || scene.area === area) &&
+        (channel === 'all' || scene.channel === channel) &&
         (!query ||
           `${scene.label} ${scene.slug} ${scene.channelLabel} ${scene.areaLabel}`
             .toLowerCase()
             .includes(query))
     );
-  }, [deferredSearchText, demoSceneIds, scenes]);
+  }, [area, channel, deferredSearchText, demoSceneIds, scenes]);
 
   const filteredScenes = useMemo(() => {
     const query = deferredSearchText.trim().toLowerCase();
@@ -316,6 +334,15 @@ export default function CataloggrPage() {
   }, []);
 
   const handleTodoError = useCallback((message) => setError(message), []);
+
+  const handlePostSortKeyChange = useCallback((nextSortKey) => {
+    setPostSortKey(nextSortKey);
+    setPostSortDirection(DEFAULT_POST_SORT_DIRECTION[nextSortKey]);
+  }, []);
+
+  const handlePostSortDirectionToggle = useCallback(() => {
+    setPostSortDirection((current) => (current === 'asc' ? 'desc' : 'asc'));
+  }, []);
 
   const handleStatFilter = useCallback(
     (statKey, nextView, nextArea) => {
@@ -432,7 +459,7 @@ export default function CataloggrPage() {
       </section>
 
       <section
-        className={`cataloggr-toolbar ${view === 'post' || view === 'ideas' || view === 'todos' ? 'cataloggr-toolbar--compact' : ''}`}
+        className={`cataloggr-toolbar ${view === 'post' ? 'cataloggr-toolbar--post' : ''} ${view === 'ideas' || view === 'todos' ? 'cataloggr-toolbar--compact' : ''}`}
         aria-label="Catalog filters"
       >
         <div className="cataloggr-segments">
@@ -461,7 +488,7 @@ export default function CataloggrPage() {
             value={searchText}
           />
         ) : null}
-        {view !== 'post' && view !== 'ideas' && view !== 'todos' ? (
+        {view !== 'ideas' && view !== 'todos' ? (
           <select
             aria-label="Filter by area"
             onChange={(event) => {
@@ -479,7 +506,7 @@ export default function CataloggrPage() {
             <option value="devtools">Dev tools</option>
           </select>
         ) : null}
-        {view !== 'post' && view !== 'ideas' && view !== 'todos' ? (
+        {view !== 'ideas' && view !== 'todos' ? (
           <select
             aria-label="Filter by renderer"
             onChange={(event) => {
@@ -492,6 +519,33 @@ export default function CataloggrPage() {
             <option value="webgl">WebGL</option>
             <option value="webgpu">WebGPU</option>
           </select>
+        ) : null}
+        {view === 'post' ? (
+          <div className="cataloggr-post-sort">
+            <select
+              aria-label="Sort publishing targets"
+              onChange={(event) => handlePostSortKeyChange(event.target.value)}
+              value={postSortKey}
+            >
+              {POST_SORT_OPTIONS.map(([value, label]) => (
+                <option key={value} value={value}>
+                  Sort: {label}
+                </option>
+              ))}
+            </select>
+            <button
+              aria-label={
+                postSortDirection === 'asc'
+                  ? 'Sort ascending, click for descending'
+                  : 'Sort descending, click for ascending'
+              }
+              onClick={handlePostSortDirectionToggle}
+              title={postSortDirection === 'asc' ? 'Ascending' : 'Descending'}
+              type="button"
+            >
+              {postSortDirection === 'asc' ? '↑' : '↓'}
+            </button>
+          </div>
         ) : null}
       </section>
 
@@ -535,6 +589,8 @@ export default function CataloggrPage() {
           disabled={loading || saving}
           onManageTodo={handleManageTodo}
           onToggle={handleToggle}
+          sortDirection={postSortDirection}
+          sortKey={postSortKey}
           showcaseScenes={filteredScenes}
           statuses={statuses}
         />

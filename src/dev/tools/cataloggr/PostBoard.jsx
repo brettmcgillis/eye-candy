@@ -1,7 +1,43 @@
-import React, { memo } from 'react';
+import React, { memo, useMemo } from 'react';
 
 import SceneRow from './SceneRow';
-import { toCatalogDevTool } from './catalogData';
+import { getSceneTargets, getStatusKey, toCatalogDevTool } from './catalogData';
+
+function getPostedCount(entry, statuses) {
+  return getSceneTargets(entry).filter((presetName) =>
+    Boolean(statuses[entry.statusKey ?? getStatusKey(entry.key, presetName)])
+  ).length;
+}
+
+function sortPostEntries(entries, statuses, sortKey, sortDirection) {
+  const direction = sortDirection === 'asc' ? 1 : -1;
+
+  return [...entries].sort((left, right) => {
+    const nameComparison = left.label.localeCompare(right.label, undefined, {
+      sensitivity: 'base',
+    });
+
+    if (sortKey === 'name') return direction * nameComparison;
+
+    if (sortKey !== 'name') {
+      const leftPosted = getPostedCount(left, statuses);
+      const rightPosted = getPostedCount(right, statuses);
+      const leftValue =
+        sortKey === 'posted'
+          ? leftPosted
+          : getSceneTargets(left).length - leftPosted;
+      const rightValue =
+        sortKey === 'posted'
+          ? rightPosted
+          : getSceneTargets(right).length - rightPosted;
+      const valueComparison = direction * (leftValue - rightValue);
+
+      if (valueComparison) return valueComparison;
+    }
+
+    return nameComparison;
+  });
+}
 
 function PostSection({ children, count, title }) {
   return (
@@ -21,14 +57,35 @@ function PostBoard({
   disabled,
   onManageTodo,
   onToggle,
+  sortDirection,
+  sortKey,
   showcaseScenes,
   statuses,
 }) {
+  const sortedShowcaseScenes = useMemo(
+    () => sortPostEntries(showcaseScenes, statuses, sortKey, sortDirection),
+    [showcaseScenes, sortDirection, sortKey, statuses]
+  );
+  const sortedDemoScenes = useMemo(
+    () => sortPostEntries(demoScenes, statuses, sortKey, sortDirection),
+    [demoScenes, sortDirection, sortKey, statuses]
+  );
+  const sortedDevTools = useMemo(
+    () =>
+      sortPostEntries(
+        devTools.map(toCatalogDevTool),
+        statuses,
+        sortKey,
+        sortDirection
+      ),
+    [devTools, sortDirection, sortKey, statuses]
+  );
+
   return (
     <div className="cataloggr-post-board">
-      <PostSection count={showcaseScenes.length} title="Showcase scenes">
+      <PostSection count={sortedShowcaseScenes.length} title="Showcase scenes">
         <div className="cataloggr-list">
-          {showcaseScenes.map((scene) => (
+          {sortedShowcaseScenes.map((scene) => (
             <SceneRow
               disabled={disabled}
               key={scene.key}
@@ -41,9 +98,12 @@ function PostBoard({
         </div>
       </PostSection>
 
-      <PostSection count={demoScenes.length} title="Toolbox / Test Lab demos">
+      <PostSection
+        count={sortedDemoScenes.length}
+        title="Toolbox / Test Lab demos"
+      >
         <div className="cataloggr-list">
-          {demoScenes.map((scene) => (
+          {sortedDemoScenes.map((scene) => (
             <SceneRow
               disabled={disabled}
               key={scene.key}
@@ -56,15 +116,15 @@ function PostBoard({
         </div>
       </PostSection>
 
-      <PostSection count={devTools.length} title="Dev tools">
+      <PostSection count={sortedDevTools.length} title="Dev tools">
         <div className="cataloggr-list">
-          {devTools.map((tool) => (
+          {sortedDevTools.map((tool) => (
             <SceneRow
               disabled={disabled}
               key={tool.slug}
               onManageTodo={onManageTodo}
               onToggle={onToggle}
-              scene={toCatalogDevTool(tool)}
+              scene={tool}
               statuses={statuses}
             />
           ))}

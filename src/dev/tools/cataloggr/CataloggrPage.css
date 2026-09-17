@@ -74,6 +74,10 @@
   grid-template-columns: auto minmax(12rem, 1fr);
 }
 
+.cataloggr-toolbar--post {
+  grid-template-columns: auto minmax(12rem, 1fr) auto auto 9rem;
+}
+
 .cataloggr-toolbar input,
 .cataloggr-toolbar select,
 .cataloggr-segments button {
@@ -546,17 +550,20 @@
   font-size: 0.76rem;
 }
 
+.cataloggr-post-sort,
 .cataloggr-todo-sort {
   display: flex;
   align-items: center;
   gap: 0.3rem;
 }
 
+.cataloggr-post-sort select,
 .cataloggr-todo-sort select {
   flex: 1;
   min-width: 0;
 }
 
+.cataloggr-post-sort button,
 .cataloggr-todo-sort button {
   display: grid;
   place-items: center;
@@ -572,6 +579,7 @@
   font-size: 0.8rem;
 }
 
+.cataloggr-post-sort button:hover,
 .cataloggr-todo-sort button:hover {
   background: var(--dev-surface-subtle);
 }

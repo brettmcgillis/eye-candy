@@ -26,6 +26,9 @@ import {
 import AssetActions from './AssetActions';
 import { assetFormat, groupMediaAssets, isMediaAsset } from './assetGroups';
 
+const MIN_ZOOM = 1;
+const MAX_ZOOM = 10;
+
 function formatBytes(bytes) {
   if (bytes < 1024) return `${bytes} B`;
   if (bytes < 1024 ** 2) return `${(bytes / 1024).toFixed(1)} KB`;
@@ -213,7 +216,7 @@ function PreviewDialog({
 
   const changeZoom = useCallback(
     (nextZoom) => {
-      const resolvedZoom = Math.min(5, Math.max(1, nextZoom));
+      const resolvedZoom = Math.min(MAX_ZOOM, Math.max(MIN_ZOOM, nextZoom));
       if (resolvedZoom === zoom) return;
 
       const viewport = mediaRef.current;
@@ -313,7 +316,7 @@ function PreviewDialog({
             <div className="rw-preview__zoom-controls">
               <button
                 aria-label="Zoom out"
-                disabled={zoom === 1}
+                disabled={zoom === MIN_ZOOM}
                 onClick={() => changeZoom(zoom - 0.25)}
                 type="button"
               >
@@ -328,7 +331,7 @@ function PreviewDialog({
               </button>
               <button
                 aria-label="Zoom in"
-                disabled={zoom === 5}
+                disabled={zoom === MAX_ZOOM}
                 onClick={() => changeZoom(zoom + 0.25)}
                 type="button"
               >

@@ -33,7 +33,7 @@ Codex).
 ## 2. Dev tool organization
 
 - Each independent tool lives under `src/dev/tools/<tool>/` (current tools:
-  `cataloggr`, `colors`, `flora`, `gltfjsx`, `glyphs`, `iconography`,
+  `cataloggr`, `colors`, `flora`, `fungi`, `gltfjsx`, `glyphs`, `iconography`,
   `loaderPatterns`, `projectionMapping`, `rorschach`).
 - Every registered tool owns a colocated `todo.md` using the same canonical
   TODO shape as scenes. Cataloggr discovers and edits these files alongside
@@ -47,7 +47,7 @@ Codex).
   `DevPageHeaderBar.jsx`, `DevPageTitle.jsx`, `DevTooltip.jsx`), or a clearly
   named shared folder under `src/dev` when it's non-shell dev-only behavior.
 - **Generative workbenches share `src/dev/renderWorkbench/`** (RorschachCLI,
-  FloraCLI, and Fauna next): `useRenderJobs(tool)`, `ResultsPanel`
+  FloraCLI, FungiCLI, and Fauna next): `useRenderJobs(tool)`, `ResultsPanel`
   (Saved / Transient / Jobs), `AssetGallery` with its `renderDetails` and
   `selectionActions` slots, schema-bound `SchemaFields` + `usePins`, and
   `renderWorkbench.css` (the `rw-` classes). A tool supplies only its form

@@ -58,6 +58,13 @@ the current scene folder go through path aliases (`@elements`, `@modules`,
   headless CLIs, and FloraCLI. Run `npm run flora:check` after changing any of
   them.
 
+## Required reading before touching Fungi
+
+- **`docs/fungi-pipeline.md`** — the Flora arrangement for fungi:
+  `@modules/fungi` (three-free generator and option schema),
+  `@modules/fungiRender` (the shared specimen rig), the headless CLIs, and
+  FungiCLI. Run `npm run fungi:check` after changing any of them.
+
 ## Orientation
 
 - Scenes: `src/components/scenes/<Renderer>/<SceneName>/` (`WebGL | WebGPU |

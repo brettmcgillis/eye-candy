@@ -20,9 +20,13 @@ const HANDLED = new Set([
   'bouquetTie',
   'count',
   'height',
+  'imageFormat',
+  'in',
+  'keepImages',
   'mode',
   'png',
   'svg',
+  'stillsOut',
   'views',
   'webp',
   'width',
@@ -99,6 +103,33 @@ export default function OptionSections({ kind, options, setOption }) {
             ))}
           </fieldset>
         </>
+      ) : null}
+      {kind === 'video' && ['stills', 'growth'].includes(options.mode) ? (
+        <fieldset className="rw-fieldset rw-formats">
+          <legend>Source images</legend>
+          <label htmlFor="fw-image-format">
+            Format
+            <select
+              id="fw-image-format"
+              onChange={(event) => setOption('imageFormat', event.target.value)}
+              value={options.imageFormat}
+            >
+              <option value="png">PNG</option>
+              <option value="webp">WebP</option>
+            </select>
+          </label>
+          <label htmlFor="fw-keep-images">
+            <input
+              checked={options.keepImages}
+              id="fw-keep-images"
+              onChange={(event) =>
+                setOption('keepImages', event.target.checked)
+              }
+              type="checkbox"
+            />
+            Keep source images
+          </label>
+        </fieldset>
       ) : null}
       {sections.map((section) => (
         <details

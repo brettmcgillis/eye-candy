@@ -1,9 +1,10 @@
 #!/usr/bin/env node
 
-/* eslint-disable no-await-in-loop */
-import { mkdir } from 'node:fs/promises';
+/* eslint-disable import/no-extraneous-dependencies, no-await-in-loop */
+import { mkdir, readdir, writeFile } from 'node:fs/promises';
 import path from 'node:path';
 import process from 'node:process';
+import sharp from 'sharp';
 
 import { usageFor } from '../src/modules/flora/renderOptions.mjs';
 import { readPackageVersion } from './lib/cliArgs.mjs';
@@ -17,6 +18,7 @@ import {
   loadKernel,
   parseCli,
   rollArgs,
+  sidecarFor,
   withCapturer,
 } from './lib/floraRender.mjs';
 import createFrameSink from './lib/frameSink.mjs';
@@ -25,6 +27,54 @@ import { writeVideoSidecar } from './lib/videoMetadata.mjs';
 
 const KIND = 'video';
 const GROWN = { bloom: 1, exit: 0, growth: 1 };
+
+async function collectExisting(dir, view, format) {
+  const entries = await readdir(dir, { withFileTypes: true });
+  return entries
+    .filter((entry) => entry.isDirectory())
+    .map((entry) => entry.name)
+    .sort((a, b) => a.localeCompare(b, undefined, { numeric: true }))
+    .map((name) => path.join(dir, name, `${view}.${format}`));
+}
+
+async function readSourceFrame(file, width, height) {
+  return sharp(file).resize(width, height).ensureAlpha().raw().toBuffer();
+}
+
+async function saveSourceFrame({ drawn, frame, options, sequence }) {
+  if (!options.stillsOut) return;
+  const outputDir = path.join(
+    path.resolve(REPO_ROOT, options.stillsOut),
+    String(drawn.seed)
+  );
+  const image = await sharp(frame, {
+    raw: {
+      channels: 4,
+      height: options.height * options.pixelRatio,
+      width: options.width * options.pixelRatio,
+    },
+  })
+    [options.imageFormat]({ lossless: true })
+    .toBuffer();
+  await mkdir(outputDir, { recursive: true });
+  await Promise.all([
+    writeFile(
+      path.join(outputDir, `${options.view}.${options.imageFormat}`),
+      image
+    ),
+    writeFile(
+      path.join(outputDir, 'props.json'),
+      `${JSON.stringify(
+        {
+          ...sidecarFor({ ...drawn, options }),
+          ...(sequence ? { sequence } : {}),
+        },
+        null,
+        2
+      )}\n`
+    ),
+  ]);
+}
 
 // Seconds of clip per drawn item, and the flower levels at a clip time. The
 // lifecycle clock runs at each flower's own timeScale, the way the scene does.
@@ -74,16 +124,33 @@ async function main() {
 
   const kernel = await runStage('loading the Flora kernel', loadKernel);
   assertPalette(kernel, parsed);
-  const roll = rollArgs(kernel, { options, typed });
-  const items = Array.from({ length: options.count }, (_, index) => {
-    const drawn = flowersAt(kernel, { index, options, roll });
-    const { duration, levels } = plan(kernel, options, drawn.configs);
-    return {
-      drawn,
-      frames: Math.max(1, Math.round(duration * options.fps)),
-      levels,
-    };
-  });
+  const sourceFiles = options.in
+    ? await collectExisting(
+        path.resolve(REPO_ROOT, options.in),
+        options.view,
+        options.imageFormat
+      )
+    : null;
+  if (sourceFiles && sourceFiles.length === 0) {
+    throw new Error(
+      `no ${options.view}.${options.imageFormat} files found in ${options.in}`
+    );
+  }
+  const roll = sourceFiles ? null : rollArgs(kernel, { options, typed });
+  const items = sourceFiles
+    ? sourceFiles.map((file) => ({
+        file,
+        frames: Math.max(1, Math.round(options.hold * options.fps)),
+      }))
+    : Array.from({ length: options.count }, (_, index) => {
+        const drawn = flowersAt(kernel, { index, options, roll });
+        const { duration, levels } = plan(kernel, options, drawn.configs);
+        return {
+          drawn,
+          frames: Math.max(1, Math.round(duration * options.fps)),
+          levels,
+        };
+      });
   const total = items.reduce((sum, item) => sum + item.frames, 0);
   const progress = createProgress('rendering frames', total);
   const sink = createFrameSink({
@@ -95,44 +162,77 @@ async function main() {
 
   let written = 0;
   try {
-    await withCapturer(kernel, options, async (capturer) => {
+    if (sourceFiles) {
       for (let item = 0; item < items.length; item += 1) {
-        const { drawn, frames, levels } = items[item];
-        const flowers = await progress.stage(
-          `growing ${drawn.bouquet ? `bouquet-${drawn.seed}` : drawn.seed}`,
-          async () => buildFlowers(kernel, { ...drawn, options })
+        const frame = await readSourceFrame(
+          items[item].file,
+          options.width * options.pixelRatio,
+          options.height * options.pixelRatio
         );
-        const bounds = capturer.setFlowers(flowers);
-        let still = null;
-
-        for (let frame = 0; frame < frames; frame += 1) {
-          const seconds = frame / options.fps;
-          if (options.mode === 'stills' && still) {
-            await sink.write(still);
-          } else {
-            const azimuthOffset =
-              options.mode === 'turntable'
-                ? (360 * options.turns * frame) / frames
-                : (options.orbit * written) / total;
-            const image = await capturer.capture({
-              ...frameView(kernel, {
-                azimuthOffset,
-                bounds,
-                options,
-                view: options.view,
-              }),
-              levels: levels(seconds),
-            });
-            still = options.overlay
-              ? await encodeFrame(image, 'raw', options)
-              : image.data;
-            await sink.write(still);
-          }
+        for (let index = 0; index < items[item].frames; index += 1) {
+          await sink.write(frame);
           written += 1;
           progress.update(written);
         }
       }
-    });
+    } else {
+      await withCapturer(kernel, options, async (capturer) => {
+        for (let item = 0; item < items.length; item += 1) {
+          const { drawn, frames, levels } = items[item];
+          const flowers = await progress.stage(
+            `growing ${drawn.bouquet ? `bouquet-${drawn.seed}` : drawn.seed}`,
+            async () => buildFlowers(kernel, { ...drawn, options })
+          );
+          const bounds = capturer.setFlowers(flowers);
+          let still = null;
+
+          for (let frame = 0; frame < frames; frame += 1) {
+            const seconds = frame / options.fps;
+            if (options.mode === 'stills' && still) {
+              await sink.write(still);
+            } else {
+              const azimuthOffset =
+                options.mode === 'turntable'
+                  ? (360 * options.turns * frame) / frames
+                  : (options.orbit * written) / total;
+              const image = await capturer.capture({
+                ...frameView(kernel, {
+                  azimuthOffset,
+                  bounds,
+                  options,
+                  view: options.view,
+                }),
+                levels: levels(seconds),
+              });
+              still = options.overlay
+                ? await encodeFrame(image, 'raw', options)
+                : image.data;
+              await sink.write(still);
+            }
+            written += 1;
+            progress.update(written);
+          }
+          if (
+            options.stillsOut &&
+            ['stills', 'growth'].includes(options.mode) &&
+            still
+          ) {
+            await saveSourceFrame({
+              drawn,
+              frame: still,
+              options,
+              sequence:
+                options.mode === 'growth'
+                  ? { index: item, total: items.length }
+                  : undefined,
+            });
+            progress.log(
+              `saved source: ${path.join(options.stillsOut, String(drawn.seed))}`
+            );
+          }
+        }
+      });
+    }
   } finally {
     await runStage('finishing encode', () => sink.finish());
   }
@@ -140,10 +240,12 @@ async function main() {
 
   const render = { ...options, base: undefined, bouquet: undefined };
   const metadataPath = await writeVideoSidecar(out, {
-    bouquets: items
-      .filter(({ drawn }) => drawn.bouquet)
-      .map(({ drawn }) => ({ flowers: drawn.configs, seed: drawn.seed })),
-    presets: items.flatMap(({ drawn }) => drawn.configs),
+    bouquets: sourceFiles
+      ? []
+      : items
+          .filter(({ drawn }) => drawn.bouquet)
+          .map(({ drawn }) => ({ flowers: drawn.configs, seed: drawn.seed })),
+    presets: sourceFiles ? [] : items.flatMap(({ drawn }) => drawn.configs),
     render,
   });
   process.stdout.write(

@@ -41,6 +41,14 @@ async function prepare(rootDir, { kind, outputDirectory, payload, service }) {
         ? outputDirectory
         : path.join(outputDirectory, 'flora.mp4'),
   };
+  if (
+    kind === 'video' &&
+    ['stills', 'growth'].includes(options.mode) &&
+    options.keepImages
+  ) {
+    command.stillsOut = path.join(outputDirectory, 'stills');
+  }
+  delete command.keepImages;
   const files = {};
   const bouquet = await bouquetFile(service, rootDir, payload.bouquet);
   if (bouquet) {

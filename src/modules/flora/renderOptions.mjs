@@ -633,6 +633,44 @@ const RENDER = {
     section: 'video',
     type: 'enum',
   },
+  imageFormat: {
+    choices: ['png', 'webp'],
+    default: 'png',
+    help: 'stills/growth: format of retained source images',
+    label: 'Source format',
+    scope: 'video',
+    section: 'source',
+    type: 'enum',
+  },
+  in: {
+    cliOnly: true,
+    default: null,
+    help: 'stills: use images from a flora:generate run instead',
+    nullable: true,
+    placeholder: 'DIR',
+    scope: 'video',
+    section: 'source',
+    type: 'string',
+  },
+  stillsOut: {
+    cliOnly: true,
+    default: null,
+    help: 'stills/growth: keep generated source images in this directory',
+    nullable: true,
+    placeholder: 'DIR',
+    scope: 'video',
+    section: 'source',
+    type: 'string',
+  },
+  keepImages: {
+    default: true,
+    help: 'Keep generated source images alongside the video',
+    label: 'Keep source images',
+    scope: 'video',
+    section: 'source',
+    type: 'boolean',
+    workbenchOnly: true,
+  },
   view: {
     choices: VIEWS,
     default: 'front',
@@ -708,6 +746,7 @@ const SECTION_LABELS = {
   palette: 'palette',
   roll: 'rolling',
   render: 'render',
+  source: 'source',
   seeds: 'seed flight',
   svg: 'svg',
   stem: 'stem',
@@ -761,6 +800,9 @@ const schema = createOptionSchema({
       );
     }
     if (kind === 'still') resolveViews(options.views, fail);
+    if (kind === 'video' && options.in && options.mode !== 'stills') {
+      throw fail('--in is only supported with --mode stills.');
+    }
   },
 });
 

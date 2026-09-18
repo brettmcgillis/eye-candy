@@ -191,6 +191,7 @@ async function compositeOverlay(image, options, output = 'png') {
 
   const overlay = await overlayLayer({
     height: options.height,
+    icon: 'rorschach.webp',
     ig: options.ig,
     version: options.version,
     viewport: options.viewport,

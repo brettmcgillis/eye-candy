@@ -96,7 +96,8 @@ export default function composeForms(p, rng, options = {}) {
         offset[2] + Math.sin(theta) * reach * 0.8,
       ],
       radii: shape.radii,
-      sample: () => (theta < Math.PI ? verticalFlip(shape.sample()) : shape.sample()),
+      sample: () =>
+        theta < Math.PI ? verticalFlip(shape.sample()) : shape.sample(),
       unit: shape.unit
         ? (u, U) => {
             const point = shape.unit(u, U);

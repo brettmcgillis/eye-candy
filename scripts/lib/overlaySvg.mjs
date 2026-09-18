@@ -161,6 +161,7 @@ export default async function overlaySvg({
   date = new Date(),
   height,
   ig = null,
+  icon = 'rorschach.webp',
   repoRoot,
   version = '0.0.0',
   viewport = null,
@@ -180,7 +181,7 @@ export default async function overlaySvg({
 
   const [logo, sceneIcon] = await Promise.all([
     readFile(path.join(repoRoot, 'public/icons/reversal-inner.png')),
-    readFile(path.join(repoRoot, 'public/icons/rorschach.webp')),
+    readFile(path.join(repoRoot, 'public/icons', icon)),
   ]);
   const logoDataUri = `data:image/png;base64,${logo.toString('base64')}`;
   const sceneIconPng = await sharp(sceneIcon).png().toBuffer();

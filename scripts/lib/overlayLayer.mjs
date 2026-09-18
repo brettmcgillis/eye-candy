@@ -11,8 +11,15 @@ import { runStage } from './progress.mjs';
 // dwarfs the frame itself. Built and rasterised once per geometry instead.
 const cache = new Map();
 
-export default function overlayLayer({ height, ig, version, viewport, width }) {
-  const key = `${width}x${height}:${ig ?? 'none'}:${viewport ?? 'auto'}:${version}`;
+export default function overlayLayer({
+  height,
+  icon = 'rorschach.webp',
+  ig,
+  version,
+  viewport,
+  width,
+}) {
+  const key = `${width}x${height}:${icon}:${ig ?? 'none'}:${viewport ?? 'auto'}:${version}`;
   if (!cache.has(key)) {
     cache.set(
       key,
@@ -20,6 +27,7 @@ export default function overlayLayer({ height, ig, version, viewport, width }) {
         const svg = await overlaySvg({
           height,
           ig,
+          icon,
           repoRoot: REPO_ROOT,
           version,
           viewport,

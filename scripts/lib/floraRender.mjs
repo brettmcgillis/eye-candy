@@ -483,6 +483,7 @@ export async function encodeFrame(frame, format, options = {}) {
       {
         input: await overlayLayer({
           height: frame.height,
+          icon: 'flora.svg',
           ig: options.ig === 'none' ? null : options.ig,
           version: options.version,
           viewport: options.viewport,

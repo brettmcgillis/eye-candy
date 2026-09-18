@@ -4,15 +4,25 @@ import FORMS from './formShapes';
 const TAU = Math.PI * 2;
 
 const HEADS = [
-  'blob',
-  'bowl',
-  'fan',
-  'umbel',
-  'cone',
-  'plume',
-  'weep',
-  'ring',
-  'helix',
+  // 'blob',
+  // 'bowl',
+  // 'capitulum',
+  // 'corymb',
+  // 'raceme',
+  // 'spadix',
+  // 'panicle',
+  // 'thistle',
+  // 'protea',
+  // 'bottlebrush',
+  // 'fan',
+  // 'umbel',
+  // 'cone',
+  // 'plume',
+  // 'weep',
+  // 'ring',
+  // 'helix',
+  'trihelix',
+  // 'doubleHelix',
 ];
 const EXTRAS = [...HEADS, 'spray', 'spray', 'spray'];
 

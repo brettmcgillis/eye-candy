@@ -18,6 +18,14 @@ export const CROWN_FORMS = [
   'auto',
   'blob',
   'bowl',
+  'capitulum',
+  'corymb',
+  'raceme',
+  'spadix',
+  'panicle',
+  'thistle',
+  'protea',
+  'bottlebrush',
   'fan',
   'umbel',
   'cone',
@@ -25,6 +33,8 @@ export const CROWN_FORMS = [
   'weep',
   'ring',
   'helix',
+  'trihelix',
+  'doubleHelix',
 ];
 
 // Azimuth and elevation, in degrees, of each named view around the target.
@@ -373,6 +383,9 @@ const MOTION = {
   // A scene behaviour, not a render setting: the CLI rolls every still
   // anyway, so this is marked sceneOnly and never becomes a flag.
   rollGenerations: flag('lifecycle', 'Roll each generation', false, {
+    sceneOnly: true,
+  }),
+  startGrown: flag('lifecycle', 'Start grown', false, {
     sceneOnly: true,
   }),
   timeScale: num('lifecycle', 'Time scale', 1, 0, 4, 0.05),

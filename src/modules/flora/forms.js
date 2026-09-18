@@ -30,6 +30,10 @@ function pick(rng, options) {
   return options[Math.floor(rng() * options.length)];
 }
 
+function verticalFlip(point) {
+  return [point[0], -point[1], -point[2]];
+}
+
 // `crownForm` names the form a plant is built from; `auto` is the old
 // behaviour, where every head picked its own and a crown could end up an
 // average of several.
@@ -92,8 +96,14 @@ export default function composeForms(p, rng, options = {}) {
         offset[2] + Math.sin(theta) * reach * 0.8,
       ],
       radii: shape.radii,
-      sample: shape.sample,
-      unit: shape.unit,
+      sample: () => (theta < Math.PI ? verticalFlip(shape.sample()) : shape.sample()),
+      unit: shape.unit
+        ? (u, U) => {
+            const point = shape.unit(u, U);
+
+            return theta < Math.PI ? verticalFlip(point) : point;
+          }
+        : null,
       side: !!form.side,
       sideDirection: theta,
       size,

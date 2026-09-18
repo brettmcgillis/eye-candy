@@ -139,8 +139,15 @@ export default function buildSpecimen(input) {
       millis: Date.now() - started,
       segments: segments.count,
       solids: Object.values(solids).reduce((sum, g) => sum + g.count, 0),
-      debugHeads: heads.map((h) => [graph.position(h.node), h.attach]),
-      debugStem: mainNodes.map((n) => graph.position(n)),
+      debugHeads: heads.map((h) => ({
+        dir: h.direction,
+        pos: graph.position(h.node),
+      })),
+      debugLobes: envelope.lobes.map((l) => ({
+        center: l.center,
+        root: graph.position(l.root),
+        name: l.name,
+      })),
       terminals: terminals.length,
       truncated: budget.truncated,
     },

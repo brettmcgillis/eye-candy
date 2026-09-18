@@ -156,9 +156,16 @@ const GENERATOR = {
   crownStretch: gen('crown', 'Stretch', 1, 0.3, 2, 0.01, 'form', [0.75, 1.25]),
   // The widest a crown may be relative to its stem; below 0.12 the crown is
   // grown back up instead. Both bounds are applied after the habit roll.
-  crownRatio: gen('crown', 'Crown / Stem', 0.45, 0.1, 1.2, 0.01, 'form', [
-    0.3, 0.55,
-  ]),
+  crownRatio: gen(
+    'crown',
+    'Crown / Stem',
+    0.45,
+    0.1,
+    1.2,
+    0.01,
+    'form',
+    [0.3, 0.55]
+  ),
   crownLift: gen('crown', 'Lift', 0.85, 0, 2, 0.01, 'form', [0.4, 1.1]),
   crownBase: gen(
     'crown',
@@ -184,9 +191,16 @@ const GENERATOR = {
   },
   formCount: gen('crown', 'Forms', 2, 1, 6, 1, 'form', [1, 5]),
   crownStructure: gen('crown', 'Structure', 0, 0, 1, 0.01, 'form', [0.25, 1]),
-  bractSize: gen('crown', 'Involucre', 0.18, 0.02, 0.6, 0.01, 'form', [
-    0.08, 0.3,
-  ]),
+  bractSize: gen(
+    'crown',
+    'Involucre',
+    0.18,
+    0.02,
+    0.6,
+    0.01,
+    'form',
+    [0.08, 0.3]
+  ),
   crownUnits: gen('crown', 'Units', 24, 1, 500, 1, 'form', [8, 160]),
   formSpread: gen('crown', 'Form spread', 0.8, 0, 2, 0.01, 'form', [0.4, 1.3]),
   warp: gen('crown', 'Warp', 0.35, 0, 1.5, 0.01, 'form', [0.15, 0.7]),

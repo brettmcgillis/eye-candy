@@ -13,10 +13,7 @@ import ResultsPanel, {
   activeJobCount,
 } from '@dev/renderWorkbench/ResultsPanel';
 import {
-  ChoiceField,
-  ColorField,
   NumberField,
-  Pinnable,
   SchemaProvider,
   Segmented,
   ToggleField,
@@ -26,7 +23,6 @@ import usePins from '@dev/renderWorkbench/usePins';
 import useRenderJobs from '@dev/renderWorkbench/useRenderJobs';
 
 import {
-  PALETTE_NAMES,
   RENDER_OPTIONS,
   defaultsFor,
   facets,
@@ -40,7 +36,13 @@ import ClassicPatternBackground from './components/ClassicPatternBackground';
 import ClassicPatternSettings, {
   DEFAULT_CLASSIC_PATTERN_SETTINGS,
 } from './components/ClassicPatternSettings';
+import CompositionSection from './components/CompositionSection';
+import MembraneSection from './components/MembraneSection';
+import OverlaySection from './components/OverlaySection';
 import PreviewDetails from './components/PreviewDetails';
+import RollingSection from './components/RollingSection';
+import TestSection from './components/TestSection';
+import WatercolourSection from './components/WatercolourSection';
 
 // The overlay is laid out in CSS pixels; every profile here is a phone-viewed
 // format, so all of them emulate a phone viewport rather than only the ones
@@ -99,79 +101,14 @@ function rollSummary({ base, count, held }) {
   } — ${tests}, rolling ${rolled.map((facet) => FACET_LABELS[facet]).join(' and ')}.`;
 }
 
-function overriddenBundles(bundles) {
-  if (!bundles) return [];
-  return Object.keys(bundles)
-    .map((key) => key.match(/^bundle(\d+)Override$/u))
-    .filter((match) => match && bundles[match[0]])
-    .map((match) => Number(match[1]))
-    .sort((a, b) => a - b);
-}
-
 // Both kinds' defaults merged, so toggling Stills/Video keeps whatever the
 // other kind's fields were set to. Every value and every range below comes
 // from the kernel's option schema — the workbench cannot offer a knob the CLI
 // doesn't have, or a range the dev server would reject.
-const PALETTE_CHOICES = PALETTE_NAMES.map((name) => [name, name]);
-
 const INITIAL_OPTIONS = {
   ...defaultsFor('still', 'workbench'),
   ...defaultsFor('video', 'workbench'),
 };
-
-// The one option that is an object rather than a value, so it gets a summary
-// and a discard rather than an input. Twenty folders of sixteen fields is a
-// Leva panel, and the scene already has one — this is where its output lands,
-// not a second copy of it.
-function BundleField({ enabled, onChange, value }) {
-  const overridden = overriddenBundles(value);
-
-  return (
-    <Pinnable label="Bundle overrides" option="bundles">
-      <div className={`rw-bundles${enabled ? '' : ' rw-bundles--off'}`}>
-        {value ? (
-          <>
-            <ul className="rw-bundles__list">
-              {overridden.length > 0 ? (
-                overridden.map((index) => (
-                  <li key={index}>
-                    <span
-                      className="rw-bundles__swatch"
-                      style={{
-                        background: value[`bundle${index}ColorOverride`]
-                          ? value[`bundle${index}Color`]
-                          : 'transparent',
-                      }}
-                    />
-                    Bundle {index}
-                    {value[`bundle${index}Emissive`] ? ' · emissive' : ''}
-                    {value[`bundle${index}StructuralOverride`]
-                      ? ' · structural'
-                      : ''}
-                    {value[`bundle${index}Visible`] === false
-                      ? ' · hidden'
-                      : ''}
-                  </li>
-                ))
-              ) : (
-                <li>No bundle in this preset is overridden.</li>
-              )}
-            </ul>
-            <button
-              className="dev-button"
-              onClick={() => onChange(null)}
-              type="button"
-            >
-              Discard
-            </button>
-          </>
-        ) : (
-          <p className="rw-hint">Load a preset to bring its overrides in.</p>
-        )}
-      </div>
-    </Pinnable>
-  );
-}
 
 export default function RorschachWorkbenchPage() {
   const jobsApi = useRenderJobs('rorschach');
@@ -202,9 +139,10 @@ export default function RorschachWorkbenchPage() {
 
   const activeCount = activeJobCount(jobs);
 
-  function setOption(key, value) {
-    setOptions((current) => ({ ...current, [key]: value }));
-  }
+  const setOption = useCallback(
+    (key, value) => setOptions((current) => ({ ...current, [key]: value })),
+    []
+  );
 
   // Takes a generated still as the base for the next batch. Its `props.json` is
   // the exact config that drew it — the rolled preset plus the render settings
@@ -678,772 +616,57 @@ export default function RorschachWorkbenchPage() {
               </div>
             </section>
 
-            <details className="rw-control-section rw-advanced">
-              <summary>Composition</summary>
-              <div className="rw-field-grid">
-                <NumberField
-                  id="rw-distance"
-                  option="distance"
-                  label="Distance"
-                  onChange={(value) => setOption('distance', value)}
-                  value={options.distance}
-                />
-                <NumberField
-                  id="rw-fov"
-                  option="fov"
-                  label="FOV"
-                  onChange={(value) => setOption('fov', value)}
-                  value={options.fov}
-                />
-                {kind === 'still' || options.mode !== 'cinematic' ? (
-                  <>
-                    <label htmlFor="rw-flatten-enabled">
-                      <input
-                        checked={options.flattenEnabled}
-                        id="rw-flatten-enabled"
-                        onChange={(event) =>
-                          setOption('flattenEnabled', event.target.checked)
-                        }
-                        type="checkbox"
-                      />
-                      Flatten (2D)
-                    </label>
-                    <NumberField
-                      id="rw-flatten"
-                      option="flatten"
-                      label="Flatten amount"
-                      onChange={(value) => setOption('flatten', value)}
-                      value={options.flatten}
-                    />
-                  </>
-                ) : null}
-                <NumberField
-                  id="rw-stroke"
-                  option="stroke"
-                  label="Stroke"
-                  onChange={(value) => setOption('stroke', value)}
-                  value={options.stroke}
-                />
-                <NumberField
-                  id="rw-simplify"
-                  option="simplify"
-                  label="Simplify"
-                  onChange={(value) => setOption('simplify', value)}
-                  value={options.simplify}
-                />
-                <label className="rw-field" htmlFor="rw-flatten-axis">
-                  Flatten axis
-                  <select
-                    id="rw-flatten-axis"
-                    onChange={(event) =>
-                      setOption('flattenAxis', event.target.value)
-                    }
-                    value={options.flattenAxis}
-                  >
-                    <option value="z">Z</option>
-                    <option value="y">Y</option>
-                  </select>
-                </label>
-                {options.bloom ? (
-                  <>
-                    <NumberField
-                      id="rw-bloom-strength"
-                      option="bloomStrength"
-                      label="Bloom strength"
-                      onChange={(value) => setOption('bloomStrength', value)}
-                      value={options.bloomStrength}
-                    />
-                    <NumberField
-                      id="rw-bloom-radius"
-                      option="bloomRadius"
-                      label="Bloom radius"
-                      onChange={(value) => setOption('bloomRadius', value)}
-                      value={options.bloomRadius}
-                    />
-                    <NumberField
-                      id="rw-bloom-threshold"
-                      option="bloomThreshold"
-                      label="Bloom threshold"
-                      onChange={(value) => setOption('bloomThreshold', value)}
-                      value={options.bloomThreshold}
-                    />
-                  </>
-                ) : null}
-              </div>
-            </details>
+            <CompositionSection
+              kind={kind}
+              options={options}
+              setOption={setOption}
+            />
 
             <section className="rw-toggles">
-              <label htmlFor="rw-lines">
-                <input
-                  checked={options.lines}
-                  id="rw-lines"
-                  onChange={(event) => setOption('lines', event.target.checked)}
-                  type="checkbox"
-                />
-                Lines
-              </label>
-              <label htmlFor="rw-ink">
-                <input
-                  checked={options.ink}
-                  id="rw-ink"
-                  onChange={(event) => setOption('ink', event.target.checked)}
-                  type="checkbox"
-                />
-                Ink
-              </label>
-              <label htmlFor="rw-membrane">
-                <input
-                  checked={options.membrane}
-                  id="rw-membrane"
-                  onChange={(event) =>
-                    setOption('membrane', event.target.checked)
-                  }
-                  type="checkbox"
-                />
-                Membrane
-              </label>
+              <ToggleField
+                id="rw-lines"
+                option="lines"
+                label="Lines"
+                onChange={(value) => setOption('lines', value)}
+                value={options.lines}
+              />
+              <ToggleField
+                id="rw-ink"
+                option="ink"
+                label="Ink"
+                onChange={(value) => setOption('ink', value)}
+                value={options.ink}
+              />
+              <ToggleField
+                id="rw-membrane"
+                option="membrane"
+                label="Membrane"
+                onChange={(value) => setOption('membrane', value)}
+                value={options.membrane}
+              />
             </section>
 
             {options.membrane ? (
-              <details className="rw-control-section rw-advanced" open>
-                <summary>Membrane</summary>
-                <div className="rw-field-grid">
-                  <NumberField
-                    id="rw-membrane-opacity"
-                    option="membraneOpacity"
-                    label="Opacity"
-                    onChange={(value) => setOption('membraneOpacity', value)}
-                    value={options.membraneOpacity}
-                  />
-                  <NumberField
-                    id="rw-membrane-tear"
-                    option="membraneTear"
-                    label="Tear distance"
-                    onChange={(value) => setOption('membraneTear', value)}
-                    value={options.membraneTear}
-                  />
-                  <NumberField
-                    id="rw-membrane-step-stride"
-                    option="membraneStepStride"
-                    label="Step stride"
-                    onChange={(value) => setOption('membraneStepStride', value)}
-                    value={options.membraneStepStride}
-                  />
-                  <NumberField
-                    id="rw-membrane-strand-stride"
-                    option="membraneStrandStride"
-                    label="Strand stride"
-                    onChange={(value) =>
-                      setOption('membraneStrandStride', value)
-                    }
-                    value={options.membraneStrandStride}
-                  />
-                  <label className="rw-checkbox" htmlFor="rw-membrane-weave">
-                    <input
-                      checked={options.membraneWeave}
-                      id="rw-membrane-weave"
-                      onChange={(event) =>
-                        setOption('membraneWeave', event.target.checked)
-                      }
-                      type="checkbox"
-                    />
-                    Weave
-                  </label>
-                  <NumberField
-                    id="rw-membrane-tear-softness"
-                    option="membraneTearSoftness"
-                    label="Tear softness"
-                    onChange={(value) =>
-                      setOption('membraneTearSoftness', value)
-                    }
-                    value={options.membraneTearSoftness}
-                  />
-                  <NumberField
-                    id="rw-membrane-edge-feather"
-                    option="membraneEdgeFeather"
-                    label="Edge feather"
-                    onChange={(value) =>
-                      setOption('membraneEdgeFeather', value)
-                    }
-                    value={options.membraneEdgeFeather}
-                  />
-                  <NumberField
-                    id="rw-membrane-taper"
-                    option="membraneTaper"
-                    label="Taper"
-                    onChange={(value) => setOption('membraneTaper', value)}
-                    value={options.membraneTaper}
-                  />
-                  <NumberField
-                    id="rw-membrane-rim"
-                    option="membraneRim"
-                    label="Rim"
-                    onChange={(value) => setOption('membraneRim', value)}
-                    value={options.membraneRim}
-                  />
-                  <NumberField
-                    id="rw-membrane-tint"
-                    option="membraneTint"
-                    label="Tint"
-                    onChange={(value) => setOption('membraneTint', value)}
-                    value={options.membraneTint}
-                  />
-                </div>
-              </details>
+              <MembraneSection options={options} setOption={setOption} />
             ) : null}
 
             {options.ink ? (
-              <details className="rw-control-section rw-advanced" open>
-                <summary>Watercolour</summary>
-                <div className="rw-field-grid">
-                  <label className="rw-field" htmlFor="rw-ink-orientation">
-                    Paper plane
-                    <select
-                      id="rw-ink-orientation"
-                      onChange={(event) =>
-                        setOption('inkOrientation', event.target.value)
-                      }
-                      value={options.inkOrientation}
-                    >
-                      <option value="vertical">Vertical (z)</option>
-                      <option value="horizontal">Horizontal (y)</option>
-                    </select>
-                  </label>
-                  <NumberField
-                    id="rw-ink-settle"
-                    option="inkSettle"
-                    label="Settle steps"
-                    onChange={(value) => setOption('inkSettle', value)}
-                    value={options.inkSettle}
-                  />
-                  <NumberField
-                    id="rw-ink-resolution"
-                    option="inkResolution"
-                    label="Sim resolution"
-                    onChange={(value) => setOption('inkResolution', value)}
-                    value={options.inkResolution}
-                  />
-                  <NumberField
-                    id="rw-ink-paper-size"
-                    option="inkPaperSize"
-                    label="Paper size"
-                    onChange={(value) => setOption('inkPaperSize', value)}
-                    value={options.inkPaperSize}
-                  />
-                  <NumberField
-                    id="rw-ink-offset"
-                    option="inkOffset"
-                    label="Paper offset"
-                    onChange={(value) => setOption('inkOffset', value)}
-                    value={options.inkOffset}
-                  />
-                  <NumberField
-                    id="rw-ink-grain"
-                    option="inkPaperGrain"
-                    label="Paper tooth"
-                    onChange={(value) => setOption('inkPaperGrain', value)}
-                    value={options.inkPaperGrain}
-                  />
-                  {kind === 'video' ? (
-                    <NumberField
-                      id="rw-ink-carry"
-                      option="inkCarry"
-                      label="Carry steps"
-                      onChange={(value) => setOption('inkCarry', value)}
-                      value={options.inkCarry}
-                    />
-                  ) : null}
-                </div>
-                {kind === 'video' && Number(options.inkCarry) > 0 ? (
-                  <p className="rw-hint">
-                    Carrying the wet sim between frames replaces a full settle
-                    with these few steps — several times faster on an ink clip,
-                    at the cost of a frame no longer being reproducible on its
-                    own.
-                  </p>
-                ) : null}
-
-                <h3 className="rw-subheading">Depth</h3>
-                <div className="rw-field-grid">
-                  <NumberField
-                    id="rw-ink-tonal-gap"
-                    option="inkTonalGap"
-                    label="Tonal gap"
-                    onChange={(value) => setOption('inkTonalGap', value)}
-                    value={options.inkTonalGap}
-                  />
-                  <NumberField
-                    id="rw-ink-recede"
-                    option="inkRecede"
-                    label="Recede"
-                    onChange={(value) => setOption('inkRecede', value)}
-                    value={options.inkRecede}
-                  />
-                  <NumberField
-                    id="rw-ink-desaturate"
-                    option="inkDesaturate"
-                    label="Desaturate"
-                    onChange={(value) => setOption('inkDesaturate', value)}
-                    value={options.inkDesaturate}
-                  />
-                </div>
-
-                <h3 className="rw-subheading">Bloom</h3>
-                <div className="rw-field-grid">
-                  <label htmlFor="rw-ink-bloom">
-                    <input
-                      checked={options.inkBloom}
-                      id="rw-ink-bloom"
-                      onChange={(event) =>
-                        setOption('inkBloom', event.target.checked)
-                      }
-                      type="checkbox"
-                    />
-                    Ink bloom
-                  </label>
-                  <label htmlFor="rw-ink-bloom-emissive">
-                    <input
-                      checked={options.inkBloomEmissiveOnly}
-                      id="rw-ink-bloom-emissive"
-                      onChange={(event) =>
-                        setOption('inkBloomEmissiveOnly', event.target.checked)
-                      }
-                      type="checkbox"
-                    />
-                    Emissive bundles only
-                  </label>
-                  <NumberField
-                    id="rw-ink-bloom-strength"
-                    option="inkBloomStrength"
-                    label="Strength"
-                    onChange={(value) => setOption('inkBloomStrength', value)}
-                    value={options.inkBloomStrength}
-                  />
-                  <label className="rw-field" htmlFor="rw-ink-bloom-source">
-                    Source
-                    <select
-                      id="rw-ink-bloom-source"
-                      onChange={(event) =>
-                        setOption('inkBloomSource', event.target.value)
-                      }
-                      value={options.inkBloomSource}
-                    >
-                      <option value="thickness">Thickness</option>
-                      <option value="wetness">Wetness</option>
-                    </select>
-                  </label>
-                </div>
-
-                <h3 className="rw-subheading">Pattern</h3>
-                <div className="rw-field-grid">
-                  <NumberField
-                    id="rw-ink-pattern-wash"
-                    option="inkPatternWash"
-                    label="Wash"
-                    onChange={(value) => setOption('inkPatternWash', value)}
-                    value={options.inkPatternWash}
-                  />
-                  <NumberField
-                    id="rw-ink-pattern-flow"
-                    option="inkPatternFlow"
-                    label="Flow"
-                    onChange={(value) => setOption('inkPatternFlow', value)}
-                    value={options.inkPatternFlow}
-                  />
-                  <NumberField
-                    id="rw-ink-pattern-fade"
-                    option="inkPatternFade"
-                    label="Fade"
-                    onChange={(value) => setOption('inkPatternFade', value)}
-                    value={options.inkPatternFade}
-                  />
-                  <NumberField
-                    id="rw-ink-pattern-density"
-                    option="inkPatternDensity"
-                    label="Density"
-                    onChange={(value) => setOption('inkPatternDensity', value)}
-                    value={options.inkPatternDensity}
-                  />
-                  <NumberField
-                    id="rw-ink-pattern-sharpness"
-                    option="inkPatternSharpness"
-                    label="Sharpness"
-                    onChange={(value) =>
-                      setOption('inkPatternSharpness', value)
-                    }
-                    value={options.inkPatternSharpness}
-                  />
-                  <NumberField
-                    id="rw-ink-pattern-softness"
-                    option="inkPatternSoftness"
-                    label="Softness"
-                    onChange={(value) => setOption('inkPatternSoftness', value)}
-                    value={options.inkPatternSoftness}
-                  />
-                  <NumberField
-                    id="rw-ink-pattern-scale"
-                    option="inkPatternScale"
-                    label="Scale"
-                    onChange={(value) => setOption('inkPatternScale', value)}
-                    value={options.inkPatternScale}
-                  />
-                  <NumberField
-                    id="rw-ink-pattern-details"
-                    option="inkPatternDetails"
-                    label="Details"
-                    onChange={(value) => setOption('inkPatternDetails', value)}
-                    value={options.inkPatternDetails}
-                  />
-                  <NumberField
-                    id="rw-ink-pattern-symmetry"
-                    option="inkPatternSymmetry"
-                    label="Symmetry"
-                    onChange={(value) => setOption('inkPatternSymmetry', value)}
-                    value={options.inkPatternSymmetry}
-                  />
-                  <NumberField
-                    id="rw-ink-pattern-speed"
-                    option="inkPatternSpeed"
-                    label="Speed"
-                    onChange={(value) => setOption('inkPatternSpeed', value)}
-                    value={options.inkPatternSpeed}
-                  />
-                  <NumberField
-                    id="rw-ink-pattern-time"
-                    option="inkPatternTime"
-                    label="Time"
-                    onChange={(value) => setOption('inkPatternTime', value)}
-                    value={options.inkPatternTime}
-                  />
-                </div>
-
-                <h3 className="rw-subheading">Palette</h3>
-                <div className="rw-field-grid">
-                  <NumberField
-                    id="rw-ink-palette-mix"
-                    option="inkPaletteMix"
-                    label="Spread"
-                    onChange={(value) => setOption('inkPaletteMix', value)}
-                    value={options.inkPaletteMix}
-                  />
-                  <NumberField
-                    id="rw-ink-palette-scale"
-                    option="inkPaletteScale"
-                    label="Region size"
-                    onChange={(value) => setOption('inkPaletteScale', value)}
-                    value={options.inkPaletteScale}
-                  />
-                  <NumberField
-                    id="rw-ink-palette-symmetry"
-                    option="inkPaletteSymmetry"
-                    label="Symmetry"
-                    onChange={(value) => setOption('inkPaletteSymmetry', value)}
-                    value={options.inkPaletteSymmetry}
-                  />
-                </div>
-
-                <h3 className="rw-subheading">Cell pixelation</h3>
-                <div className="rw-field-grid">
-                  <NumberField
-                    id="rw-ink-cell-amount"
-                    option="inkCellAmount"
-                    label="Pixelation"
-                    onChange={(value) => setOption('inkCellAmount', value)}
-                    value={options.inkCellAmount}
-                  />
-                  <NumberField
-                    id="rw-ink-cell-reveal"
-                    option="inkCellReveal"
-                    label="Reveal"
-                    onChange={(value) => setOption('inkCellReveal', value)}
-                    value={options.inkCellReveal}
-                  />
-                  <NumberField
-                    id="rw-ink-cell-flatten"
-                    option="inkCellFlatten"
-                    label="Flatten"
-                    onChange={(value) => setOption('inkCellFlatten', value)}
-                    value={options.inkCellFlatten}
-                  />
-                  <NumberField
-                    id="rw-ink-cell-scale"
-                    option="inkCellScale"
-                    label="Cell size"
-                    onChange={(value) => setOption('inkCellScale', value)}
-                    value={options.inkCellScale}
-                  />
-                  <NumberField
-                    id="rw-ink-cell-reveal-scale"
-                    option="inkCellRevealScale"
-                    label="Reveal scale"
-                    onChange={(value) => setOption('inkCellRevealScale', value)}
-                    value={options.inkCellRevealScale}
-                  />
-                  <NumberField
-                    id="rw-ink-cell-symmetry"
-                    option="inkCellSymmetry"
-                    label="Cell symmetry"
-                    onChange={(value) => setOption('inkCellSymmetry', value)}
-                    value={options.inkCellSymmetry}
-                  />
-                </div>
-              </details>
-            ) : null}
-
-            <details className="rw-control-section rw-advanced">
-              <summary>Test</summary>
-              <p className="rw-hint">
-                Every field here is something the dice set. Enable one to take
-                it over — it becomes a pin, and the rest keep rolling. Leave
-                them all off for a batch of pure rolls.
-              </p>
-
-              <h3 className="rw-subheading">Structure</h3>
-              <div className="rw-field-grid">
-                <NumberField
-                  id="rw-bundle-count"
-                  option="bundleCount"
-                  label="Bundles"
-                  onChange={(value) => setOption('bundleCount', value)}
-                  value={options.bundleCount}
-                />
-                <NumberField
-                  id="rw-strands"
-                  option="strandsPerBundle"
-                  label="Strands / bundle"
-                  onChange={(value) => setOption('strandsPerBundle', value)}
-                  value={options.strandsPerBundle}
-                />
-                <NumberField
-                  id="rw-steps"
-                  option="steps"
-                  label="Curl length"
-                  onChange={(value) => setOption('steps', value)}
-                  value={options.steps}
-                />
-                <NumberField
-                  id="rw-start-spread"
-                  option="startSpread"
-                  label="Strand spread"
-                  onChange={(value) => setOption('startSpread', value)}
-                  value={options.startSpread}
-                />
-                <ChoiceField
-                  choices={[
-                    ['scatter', 'Scatter'],
-                    ['line', 'Line (loftable)'],
-                  ]}
-                  id="rw-strand-seeding"
-                  option="strandSeeding"
-                  label="Strand seeding"
-                  onChange={(value) => setOption('strandSeeding', value)}
-                  value={options.strandSeeding}
-                />
-                <NumberField
-                  id="rw-membrane-span"
-                  option="membraneSpan"
-                  label="Membrane span"
-                  onChange={(value) => setOption('membraneSpan', value)}
-                  value={options.membraneSpan}
-                />
-                <NumberField
-                  id="rw-coeff-range"
-                  option="coeffRange"
-                  label="Chaos"
-                  onChange={(value) => setOption('coeffRange', value)}
-                  value={options.coeffRange}
-                />
-                <NumberField
-                  id="rw-freq"
-                  option="freq"
-                  label="Curl frequency"
-                  onChange={(value) => setOption('freq', value)}
-                  value={options.freq}
-                />
-                <ChoiceField
-                  choices={[
-                    ['cube', 'Cube'],
-                    ['sphere', 'Sphere'],
-                    ['none', 'None'],
-                  ]}
-                  id="rw-framing-shape"
-                  option="framingShape"
-                  label="Framing"
-                  onChange={(value) => setOption('framingShape', value)}
-                  value={options.framingShape}
-                />
-                <NumberField
-                  id="rw-bound-radius"
-                  option="boundRadius"
-                  label="Bound radius"
-                  onChange={(value) => setOption('boundRadius', value)}
-                  value={options.boundRadius}
-                />
-                <NumberField
-                  id="rw-bound-width"
-                  option="boundWidth"
-                  label="Bound width"
-                  onChange={(value) => setOption('boundWidth', value)}
-                  value={options.boundWidth}
-                />
-                <NumberField
-                  id="rw-bound-height"
-                  option="boundHeight"
-                  label="Bound height"
-                  onChange={(value) => setOption('boundHeight', value)}
-                  value={options.boundHeight}
-                />
-                <NumberField
-                  id="rw-min-spread"
-                  option="minSpread"
-                  label="Min spread"
-                  onChange={(value) => setOption('minSpread', value)}
-                  value={options.minSpread}
-                />
-              </div>
-
-              <h3 className="rw-subheading">Palette</h3>
-              <div className="rw-field-grid">
-                <ChoiceField
-                  choices={PALETTE_CHOICES}
-                  id="rw-palette"
-                  option="palette"
-                  label="Palette"
-                  onChange={(value) => setOption('palette', value)}
-                  value={options.palette}
-                />
-                <ToggleField
-                  id="rw-palette-exact"
-                  option="paletteExact"
-                  label="Exact stops"
-                  onChange={(value) => setOption('paletteExact', value)}
-                  value={options.paletteExact}
-                />
-                <ToggleField
-                  id="rw-monochrome"
-                  option="monochrome"
-                  label="Monochrome"
-                  onChange={(value) => setOption('monochrome', value)}
-                  value={options.monochrome}
-                />
-                <ColorField
-                  id="rw-line-color"
-                  option="inkColor"
-                  label="Line colour"
-                  onChange={(value) => setOption('inkColor', value)}
-                  value={options.inkColor}
-                />
-                <ColorField
-                  id="rw-background-color"
-                  option="backgroundColor"
-                  label="Background"
-                  onChange={(value) => setOption('backgroundColor', value)}
-                  value={options.backgroundColor}
-                />
-                <NumberField
-                  id="rw-palette-shuffle"
-                  option="paletteShuffleSeed"
-                  label="Stop order"
-                  onChange={(value) => setOption('paletteShuffleSeed', value)}
-                  value={options.paletteShuffleSeed}
-                />
-              </div>
-
-              <h3 className="rw-subheading">Bundle overrides</h3>
-              <p className="rw-hint">
-                The Bundle Editor&apos;s folders, as they were saved. They are
-                tuned in the scene and loaded here — pinned, this whole block is
-                held and every bundle not in it is off.
-              </p>
-              <BundleField
-                enabled={pins.has('bundles')}
-                onChange={(value) => setOption('bundles', value)}
-                value={options.bundles}
+              <WatercolourSection
+                kind={kind}
+                options={options}
+                setOption={setOption}
               />
-            </details>
-
-            <details className="rw-control-section rw-advanced">
-              <summary>Rolling</summary>
-              <p className="rw-hint">
-                Blank follows the main seed. Set one to hold that facet still
-                while the others keep moving — the same structure through a
-                hundred palettes, or one palette across a hundred blots.
-              </p>
-              <div className="rw-field-grid">
-                <NumberField
-                  id="rw-structure-seed"
-                  option="structureSeed"
-                  label="Structure seed"
-                  onChange={(value) => setOption('structureSeed', value)}
-                  value={options.structureSeed}
-                />
-                <NumberField
-                  id="rw-palette-seed"
-                  option="paletteSeed"
-                  label="Palette seed"
-                  onChange={(value) => setOption('paletteSeed', value)}
-                  value={options.paletteSeed}
-                />
-                <NumberField
-                  id="rw-ink-seed"
-                  option="inkSeed"
-                  label="Ink seed"
-                  onChange={(value) => setOption('inkSeed', value)}
-                  value={options.inkSeed}
-                />
-              </div>
-            </details>
-
-            <section className="rw-toggles">
-              <label htmlFor="rw-bloom">
-                <input
-                  checked={options.bloom}
-                  id="rw-bloom"
-                  onChange={(event) => setOption('bloom', event.target.checked)}
-                  type="checkbox"
-                />
-                Bloom
-              </label>
-              <label htmlFor="rw-overlay">
-                <input
-                  checked={options.overlay}
-                  id="rw-overlay"
-                  onChange={(event) =>
-                    setOption('overlay', event.target.checked)
-                  }
-                  type="checkbox"
-                />
-                Overlay
-              </label>
-            </section>
-
-            {/* Its own grid, not inside rw-toggles: that is a no-wrap flex row of
-              checkboxes, and a label-over-input field dropped into it gets
-              crushed to a few characters wide. */}
-            {options.overlay ? (
-              <div className="rw-field-grid">
-                <label className="rw-field" htmlFor="rw-ig">
-                  Safe area
-                  <select
-                    id="rw-ig"
-                    onChange={(event) => setOption('ig', event.target.value)}
-                    value={options.ig}
-                  >
-                    <option value="post">Post</option>
-                    <option value="story">Story</option>
-                    <option value="reel">Reel</option>
-                    <option value="none">None</option>
-                  </select>
-                </label>
-                <NumberField
-                  id="rw-viewport"
-                  option="viewport"
-                  label="Viewport"
-                  onChange={(value) => setOption('viewport', value)}
-                  value={options.viewport ?? ''}
-                />
-              </div>
             ) : null}
+
+            <TestSection
+              bundlesPinned={pins.has('bundles')}
+              options={options}
+              setOption={setOption}
+            />
+
+            <RollingSection options={options} setOption={setOption} />
+
+            <OverlaySection options={options} setOption={setOption} />
 
             {kind === 'still' ? (
               <fieldset className="rw-fieldset rw-formats">

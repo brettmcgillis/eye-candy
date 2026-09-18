@@ -535,8 +535,8 @@ const RENDER = {
     type: 'enum',
   },
   viewport: {
-    default: null,
-    help: 'CSS pixel width the overlay emulates; output width over this is the device pixel ratio it draws at. Defaults to 390 with --ig, else 1440',
+    default: 390,
+    help: 'CSS pixel width the overlay emulates; 390 matches an iPhone',
     label: 'Viewport',
     max: 8192,
     min: 64,

@@ -1345,10 +1345,19 @@ body:has(.rw-preview) {
 }
 
 .rw-field--toggle {
+  display: flex;
   flex-direction: row;
   align-items: center;
   justify-content: space-between;
   gap: 0.5rem;
+}
+
+/* Without this the input still matches `.rw-field input` below and stretches
+   to the full row width at 2rem tall — a giant square instead of a checkbox. */
+.rw-field--toggle input {
+  width: auto;
+  height: auto;
+  accent-color: var(--rw-ink);
 }
 
 /* The one line that says what pressing Render will actually do. The pins are

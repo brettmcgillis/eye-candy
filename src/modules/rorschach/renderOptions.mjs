@@ -232,13 +232,13 @@ export const RENDER_OPTIONS = {
     scope: 'shared',
     section: 'overlay',
     type: 'number',
-    default: null,
+    default: 390,
     min: 64,
     max: 8192,
     step: 1,
     nullable: true,
     placeholder: 'N',
-    help: 'CSS pixel width the overlay emulates; output width over this is the device pixel ratio it draws at. Defaults to 390 with --ig, else 1440',
+    help: 'CSS pixel width the overlay emulates; output width over this is the device pixel ratio it draws at',
   },
 
   lines: {

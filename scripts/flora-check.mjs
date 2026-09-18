@@ -20,6 +20,7 @@ const CONTROL_BUILDERS = [
   `${SCENE}/getFormControls.js`,
   `${SCENE}/getLookControls.js`,
   `${SCENE}/getMotionControls.js`,
+  `${SCENE}/getSceneControls.js`,
 ];
 const HEADLESS = [
   'lib/floraRender.mjs',
@@ -91,12 +92,16 @@ function checkSceneControls(builders) {
   builders.forEach((builder) => {
     collectControls(builder.default({}, {}).schema, controls);
   });
-  const sceneKeys = new Set(SCENE_KEYS);
+  // A spec may name its scene control differently (`overlay` is the scene's
+  // `showOverlay`), so the partition is held against those names.
+  const sceneNames = new Map(
+    SCENE_KEYS.map((key) => [RENDER_OPTIONS[key].sceneKey ?? key, key])
+  );
 
   Object.entries(controls).forEach(([key, control]) => {
-    const spec = RENDER_OPTIONS[key];
+    const spec = RENDER_OPTIONS[sceneNames.get(key)];
     check(
-      sceneKeys.has(key),
+      sceneNames.has(key),
       `the scene declares "${key}", which renderOptions.mjs does not mark as a scene control — a generation saved as a preset would never set it.`
     );
     if (!spec || control.min === undefined) return;
@@ -111,10 +116,10 @@ function checkSceneControls(builders) {
       `"${key}" defaults to ${control.value} in the scene but ${spec.default} in renderOptions.mjs.`
     );
   });
-  sceneKeys.forEach((key) =>
+  sceneNames.forEach((key, name) =>
     check(
-      key in controls,
-      `renderOptions.mjs marks "${key}" as a scene control, but the scene has no such Leva control.`
+      name in controls,
+      `renderOptions.mjs marks "${key}" as a scene control, but the scene has no "${name}" Leva control.`
     )
   );
 }

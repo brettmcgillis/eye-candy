@@ -6,6 +6,7 @@ import path from 'node:path';
 import process from 'node:process';
 
 import { resolveViews, usageFor } from '../src/modules/flora/renderOptions.mjs';
+import { readPackageVersion } from './lib/cliArgs.mjs';
 import {
   REPO_ROOT,
   assertPalette,
@@ -32,7 +33,8 @@ async function main() {
     );
     return;
   }
-  const { options, typed } = parsed;
+  const { typed } = parsed;
+  const options = { ...parsed.options, version: await readPackageVersion() };
   const views = resolveViews(options.views);
   const formats = ['png', 'webp'].filter((format) => options[format]);
   const labels = [...formats, options.svg ? 'svg' : null].filter(Boolean);
@@ -90,7 +92,7 @@ async function main() {
               formats.map(async (format) =>
                 writeFile(
                   path.join(dir, `${view}.${format}`),
-                  await encodeFrame(frame, format)
+                  await encodeFrame(frame, format, options)
                 )
               )
             );

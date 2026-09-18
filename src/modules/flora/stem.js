@@ -81,6 +81,30 @@ function arm(graph, from, dir, length, curl) {
   );
 }
 
+// How far, and which way, the trunk has leaned by the time it reaches its
+// top. Branches are placed around the stem by azimuth alone, so without this
+// a leaning stem grows heads back over its own base — `fork` and `umbellate`
+// already blend the stem's heading in, `candelabra`, `alternate` and the side
+// shoots did not.
+export function stemDrift(graph, nodes) {
+  const base = graph.position(nodes[0]);
+  const top = graph.position(nodes[nodes.length - 1]);
+  const dx = top[0] - base[0];
+  const dz = top[2] - base[2];
+  const span = Math.hypot(dx, dz);
+
+  if (span < 1e-3) {
+    return [0, 0, 0];
+  }
+
+  const rise = Math.max(top[1] - base[1], 1e-3);
+  // Full bias by the time the stem leans ~27°, which is where a branch
+  // growing back over the base starts to read as wrong.
+  const strength = Math.min(1, (span / rise) * 2);
+
+  return [(dx / span) * strength, 0, (dz / span) * strength];
+}
+
 export function growHeads(graph, p, rng, habit, mainNodes) {
   const top = mainNodes[mainNodes.length - 1];
   const topDir = directionAt(graph, top);
@@ -88,6 +112,7 @@ export function growHeads(graph, p, rng, habit, mainNodes) {
   const nodeAtHeight = (fraction) =>
     mainNodes[Math.round(fraction * (mainNodes.length - 1))];
   const base = rng() * Math.PI * 2;
+  const drift = stemDrift(graph, mainNodes);
   const heads = [];
 
   if (habit.branching === 'fork') {
@@ -108,7 +133,10 @@ export function growHeads(graph, p, rng, habit, mainNodes) {
         0.02
       );
 
-      heads.push({ ...end, size: rng.range(0.65, 0.9) });
+      heads.push({
+        ...end,
+        size: rng.range(0.65, 0.9),
+      });
     }
 
     return heads;
@@ -140,7 +168,10 @@ export function growHeads(graph, p, rng, habit, mainNodes) {
         KIND.stem
       );
 
-      heads.push({ ...end, size: rng.range(0.28, 0.42) });
+      heads.push({
+        ...end,
+        size: rng.range(0.28, 0.42),
+      });
     }
 
     return heads;
@@ -154,7 +185,11 @@ export function growHeads(graph, p, rng, habit, mainNodes) {
     for (let i = 0; i < arms; i += 1) {
       const out = outward(base + i * GOLDEN);
       const from = nodeAtHeight(rng.range(0.35, 0.8));
-      const dir = normalize([out[0] * 0.95, 0.35, out[2] * 0.95]);
+      const dir = normalize([
+        out[0] * 0.95 + drift[0] * 1.2,
+        0.35,
+        out[2] * 0.95 + drift[2] * 1.2,
+      ]);
       const end = arm(
         graph,
         from,
@@ -163,7 +198,10 @@ export function growHeads(graph, p, rng, habit, mainNodes) {
         0.035
       );
 
-      heads.push({ ...end, size: rng.range(0.45, 0.7) });
+      heads.push({
+        ...end,
+        size: rng.range(0.45, 0.7),
+      });
     }
   }
 
@@ -173,10 +211,17 @@ export function growHeads(graph, p, rng, habit, mainNodes) {
     for (let i = 0; i < count; i += 1) {
       const h = 0.3 + (0.55 * (i + rng())) / count;
       const out = outward(base + i * GOLDEN);
-      const dir = normalize([out[0], 0.8, out[2]]);
+      const dir = normalize([
+        out[0] + drift[0] * 1.2,
+        0.8,
+        out[2] + drift[2] * 1.2,
+      ]);
       const end = arm(graph, nodeAtHeight(h), dir, rng.range(0.5, 1.3), 0.02);
 
-      heads.push({ ...end, size: 0.45 - 0.23 * ((h - 0.3) / 0.55) });
+      heads.push({
+        ...end,
+        size: 0.45 - 0.23 * ((h - 0.3) / 0.55),
+      });
     }
   }
 

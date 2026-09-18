@@ -3,7 +3,7 @@ import sharp from 'sharp';
 
 import createCapturer from './gpuCapture.mjs';
 import loadModules, { REPO_ROOT } from './loadModules.mjs';
-import overlaySvg from './overlaySvg.mjs';
+import overlayLayer from './overlayLayer.mjs';
 import { runStage } from './progress.mjs';
 
 export { REPO_ROOT };
@@ -11,33 +11,6 @@ export { REPO_ROOT };
 // allowed to reach for. Deeper paths are forbidden on purpose: see
 // docs/rorschach-pipeline.md.
 const KERNEL = '/src/modules/rorschach/index.js';
-
-// The overlay is identical on every frame of a run, but building it costs a
-// handful of sharp calls (text measurement) and rasterising it costs more —
-// together about 1.2s, which dwarfed the frame itself. Built and rasterised
-// once per geometry instead.
-const overlayCache = new Map();
-
-async function overlayLayer({ height, ig, version, viewport, width }) {
-  const key = `${width}x${height}:${ig ?? 'none'}:${viewport ?? 'auto'}:${version}`;
-  if (!overlayCache.has(key)) {
-    overlayCache.set(
-      key,
-      runStage(`preparing overlay (${width}x${height})`, async () => {
-        const svg = await overlaySvg({
-          height,
-          ig,
-          repoRoot: REPO_ROOT,
-          version,
-          viewport,
-          width,
-        });
-        return sharp(Buffer.from(svg)).png().toBuffer();
-      })
-    );
-  }
-  return overlayCache.get(key);
-}
 
 // One WebGPU renderer per output size, reused across every frame of a run —
 // device + pipeline setup is by far the most expensive part of a capture.

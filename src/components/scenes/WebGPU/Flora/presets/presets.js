@@ -273,6 +273,12 @@ const SNAPSHOTS = {
     habitVariety: 0.8,
     styleVariety: 0.7,
   },
+  Wild: {
+    seed: 'wild',
+    rollGenerations: true,
+    botany: 0.5,
+    crownStructure: 0.6,
+  },
   Mobile: {
     seed: 'heart',
     crownRadius: 3.2,

@@ -13,6 +13,10 @@ export default function getMotionControls(
       Lifecycle: folder(
         {
           regrow: { label: 'Regrow Loop', value: p('regrow') },
+          rollGenerations: {
+            label: 'Roll Each Generation',
+            value: p('rollGenerations'),
+          },
           timeScale: range('Time Scale', p('timeScale'), 0, 4, 0.05),
           growSeconds: range('Grow', p('growSeconds'), 1, 60, 0.5),
           bloomStart: range('Bloom Starts', p('bloomStart'), 0, 1, 0.01),

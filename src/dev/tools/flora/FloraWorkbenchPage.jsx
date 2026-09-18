@@ -26,6 +26,7 @@ import {
   defaultsFor,
   facets,
   keysInFacet,
+  optionsFromConfig,
 } from '@modules/flora';
 
 import DevPageHeaderBar from '../../shell/DevPageHeaderBar';
@@ -110,7 +111,7 @@ export default function FloraWorkbenchPage() {
 
   // A generation's config fills the form; what to hold is the next decision.
   const useAsBase = useCallback((config, render, label) => {
-    const flat = configFrom(config);
+    const flat = optionsFromConfig(configFrom(config));
     const renderKeys = Object.fromEntries(
       Object.entries(render ?? {}).filter(
         ([key, value]) => RENDER_KEYS.has(key) && value != null

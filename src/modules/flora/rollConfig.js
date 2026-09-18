@@ -1,4 +1,5 @@
 import {
+  CROWN_FORMS,
   PALETTE_NONE,
   RENDER_OPTIONS,
   facets,
@@ -75,6 +76,16 @@ export default function rollFloraConfig(
         const spec = RENDER_OPTIONS[key];
         if (spec.roll) config[key] = rollValue(spec, rng);
       });
+
+      // A named form builds the whole crown from one shape, which reads as a
+      // plant rather than an average of several; `auto` keeps the old mixed
+      // crowns in the deck.
+      if (facet === 'form') {
+        const named = CROWN_FORMS.filter((name) => name !== 'auto');
+        config.crownForm = rng.chance(0.35)
+          ? 'auto'
+          : named[Math.floor(rng() * named.length)];
+      }
 
       if (facet === 'palette') {
         Object.assign(config, rollColors(rng));

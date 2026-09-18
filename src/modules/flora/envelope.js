@@ -91,6 +91,79 @@ function placeComponent(component, p, stem, graph) {
   };
 }
 
+// Crown against stem, measured rather than predicted. The width a crown ends
+// up with is the product of form sizes, offsets, head count, branching and
+// posture — every attempt to estimate it from the parameters left a tail of
+// plants whose crown was as wide as the whole plant was tall. The envelope is
+// already built here, so it can simply be measured and scaled about the stem
+// top, which keeps the crown attached where it grows.
+const MIN_RATIO = 0.12;
+
+function reachOf(points, centroid) {
+  const [cx, cy, cz] = centroid;
+  const spread = points
+    .map((pt) => Math.hypot(pt.x - cx, pt.y - cy, pt.z - cz))
+    .sort((a, b) => a - b);
+
+  return spread.length ? spread[Math.floor(spread.length * 0.75)] : 0;
+}
+
+// Each crown is judged on its own and scaled about the head it grows from.
+// Scaling everything about the main stem top dragged the crowns of forked and
+// umbel plants down under their own involucres, and judging the whole plant's
+// spread counted the gaps between heads, which no crown size can fix.
+function fitToStem(points, lobes, p, pivot, graph) {
+  const stem = Math.max(pivot[1], 1e-3);
+  const groups = new Map();
+
+  points.forEach((pt) => {
+    const { root } = lobes[pt.lobe];
+    if (!groups.has(root)) groups.set(root, []);
+    groups.get(root).push(pt);
+  });
+
+  const scales = new Map();
+  groups.forEach((group, root) => {
+    const centroid = group.reduce(
+      (acc, pt) => [
+        acc[0] + pt.x / group.length,
+        acc[1] + pt.y / group.length,
+        acc[2] + pt.z / group.length,
+      ],
+      [0, 0, 0]
+    );
+    const reach = reachOf(group, centroid);
+    if (reach <= 1e-6) return;
+
+    const ratio = reach / stem;
+    const target = Math.min(Math.max(ratio, MIN_RATIO), p.crownRatio);
+    if (Math.abs(target - ratio) < 1e-3) return;
+
+    const scale = target / ratio;
+    const origin = graph.position(root);
+    scales.set(root, { origin, scale });
+    group.forEach((pt) => {
+      /* eslint-disable no-param-reassign */
+      pt.x = origin[0] + (pt.x - origin[0]) * scale;
+      pt.y = origin[1] + (pt.y - origin[1]) * scale;
+      pt.z = origin[2] + (pt.z - origin[2]) * scale;
+      /* eslint-enable no-param-reassign */
+    });
+  });
+
+  lobes.forEach((lobe) => {
+    const fit = scales.get(lobe.root);
+    if (!fit) return;
+    const { origin, scale } = fit;
+    /* eslint-disable no-param-reassign */
+    lobe.center = lobe.center.map(
+      (v, i) => origin[i] + (v - origin[i]) * scale
+    );
+    lobe.radii = lobe.radii.map((v) => v * scale);
+    /* eslint-enable no-param-reassign */
+  });
+}
+
 export default function buildEnvelope(p, rng, { graph, habit, heads, stem }) {
   const pivot = stem.positionAt(1);
   const warp = createWarp(p, rng);
@@ -104,14 +177,33 @@ export default function buildEnvelope(p, rng, { graph, habit, heads, stem }) {
   );
   const totalMass = components.reduce((sum, c) => sum + c.mass, 0);
   const points = [];
+  const structure = p.crownStructure ?? 0;
   const lobes = components.map((component, index) => {
     const { center, orient, root } = placeComponent(component, p, stem, graph);
     const count = Math.round((p.tips * component.mass) / totalMass);
+    // Tips are dealt round-robin into the form's units, so each unit carries
+    // the same share and the fiber clustering sees them as real sub-branches.
+    const units = Math.max(
+      1,
+      Math.round((p.crownUnits * count) / Math.max(1, p.tips))
+    );
+    const spread = 0.5 / Math.cbrt(units);
 
     for (let i = 0; i < count; i += 1) {
       const wisp = rng() < p.wispChance;
       const stretch = wisp ? 1 + p.wispReach * rng.range(0.4, 1) : 1;
-      const local = orient(component.sample().map((v) => v * stretch));
+      const drawn = component.sample();
+      const placedLocal =
+        structure > 0 && component.unit
+          ? (() => {
+              const seat = component.unit(i % units, units);
+
+              return drawn.map(
+                (v, k) => v + (seat[k] + v * spread - v) * structure
+              );
+            })()
+          : drawn;
+      const local = orient(placedLocal.map((v) => v * stretch));
       const placed = lean(warp([0, 1, 2].map((k) => center[k] + local[k])));
 
       points.push({
@@ -135,6 +227,8 @@ export default function buildEnvelope(p, rng, { graph, habit, heads, stem }) {
       tip: component.tip,
     };
   });
+
+  fitToStem(points, lobes, p, pivot, graph);
 
   const sum = points.reduce(
     (acc, pt) => [acc[0] + pt.x, acc[1] + pt.y, acc[2] + pt.z],

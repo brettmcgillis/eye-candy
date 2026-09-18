@@ -7,16 +7,24 @@ import {
   getCameraControlsKey,
   useSceneCameraControls,
 } from '@modules/cameraRig';
+import {
+  facets,
+  keysInFacet,
+  randomSeed,
+  rollFloraConfig,
+} from '@modules/flora';
 import { FLORA_CAMERA, FLORA_LIGHTING } from '@modules/floraRender';
 import {
   getLightingControlsKey,
   useSceneLightingControls,
 } from '@modules/lightingRig';
 import { useMediaRecorder } from '@modules/mediaRecorder';
+import { PALETTE_NAMES } from '@utils/gradientPalette';
 
 import getFormControls from '../components/getFormControls';
 import getLookControls from '../components/getLookControls';
 import getMotionControls from '../components/getMotionControls';
+import getSceneControls from '../components/getSceneControls';
 import { DEFAULT_PRESET, PRESETS, getPresetControls } from '../presets/presets';
 
 const SCENE_LABEL = 'Flora';
@@ -53,9 +61,11 @@ export default function useSceneControls() {
 
   const lifecycleApiRef = useRef(null);
   const reseedRef = useRef(null);
+  const rollRef = useRef(null);
   const onReseed = useCallback(() => reseedRef.current?.(), []);
   const onRegrow = useCallback(() => lifecycleApiRef.current?.regrow(), []);
   const onRestart = useCallback(() => lifecycleApiRef.current?.restart(), []);
+  const onRoll = useCallback((facet) => rollRef.current?.(facet), []);
 
   const [controls, setControls] = useControls(SCENE_LABEL, () => ({
     Presets: presetsFolder,
@@ -64,13 +74,57 @@ export default function useSceneControls() {
     Form: getFormControls(preset, { onReseed }),
     Look: getLookControls(preset),
     Motion: getMotionControls(preset, { onRegrow, onRestart }),
+    Scene: getSceneControls(preset, { onRoll }),
   }));
 
   attachSetControls(setControls);
   controlsSnapshotRef.current = { ...controls };
 
-  reseedRef.current = () =>
-    setControls({ seed: Math.random().toString(36).slice(2, 8) });
+  reseedRef.current = () => setControls({ seed: randomSeed() });
+
+  // Rolling one facet leaves the others exactly as they are: the roll runs
+  // with every other facet held, and only this facet's keys are written back.
+  rollRef.current = (facet) => {
+    const snapshot = controlsSnapshotRef.current ?? {};
+    const rolled = rollFloraConfig(snapshot.seed ?? randomSeed(), {
+      base: snapshot,
+      keep: facets().filter((other) => other !== facet),
+      paletteNames: PALETTE_NAMES,
+      seeds: { [facet]: randomSeed() },
+    });
+
+    setControls(
+      Object.fromEntries(keysInFacet(facet).map((key) => [key, rolled[key]]))
+    );
+  };
+
+  // Regenerate is every facet at once plus a new seed — a different plant
+  // rather than a different cut of this one.
+  const regenerate = useCallback(() => {
+    const seed = randomSeed();
+    const rolled = rollFloraConfig(seed, { paletteNames: PALETTE_NAMES });
+
+    setControls({
+      seed,
+      ...Object.fromEntries(
+        facets()
+          .flatMap((facet) => keysInFacet(facet))
+          .map((key) => [key, rolled[key]])
+      ),
+    });
+  }, [setControls]);
+
+  // Pause stops the clock where it stands and keeps the speed to restore.
+  const pausedSpeedRef = useRef(null);
+  const togglePause = useCallback(() => {
+    if (pausedSpeedRef.current === null) {
+      pausedSpeedRef.current = controlsSnapshotRef.current?.timeScale ?? 1;
+      setControls({ timeScale: 0 });
+      return;
+    }
+    setControls({ timeScale: pausedSpeedRef.current || 1 });
+    pausedSpeedRef.current = null;
+  }, [controlsSnapshotRef, setControls]);
 
   useMediaRecorder({ fileName: SCENE_LABEL });
 
@@ -93,7 +147,18 @@ export default function useSceneControls() {
   );
 
   return useMemo(
-    () => ({ ...controls, camera, cameraApiRef, lifecycleApiRef, lighting }),
-    [camera, controls, lighting]
+    () => ({
+      ...controls,
+      camera,
+      cameraApiRef,
+      lifecycleApiRef,
+      lighting,
+      onRegrow,
+      onReseed,
+      paused: controls.timeScale === 0,
+      regenerate,
+      togglePause,
+    }),
+    [camera, controls, lighting, onRegrow, onReseed, regenerate, togglePause]
   );
 }

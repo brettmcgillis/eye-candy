@@ -1,5 +1,6 @@
 import { KIND } from './graph';
 import { GOLDEN, outward, polyline } from './polyline';
+import { stemDrift } from './stem';
 import { cross, normalize, perpendicular, rotateAround } from './vec';
 
 export function growLeaves(graph, p, rng, mainNodes) {
@@ -47,7 +48,13 @@ export function growBracts(graph, p, rng, head) {
   const back = head.direction.map((v) => -v);
   const u = perpendicular(head.direction);
   const v = cross(head.direction, u);
-  const reach = p.crownRadius * head.size * rng.range(0.25, 0.55);
+  // An involucre is a collar, not a second crown: capped against the nominal
+  // crown radius so a head that comes out smaller than its parameter — which
+  // happens often — is not swallowed by its own bracts.
+  const reach = Math.min(
+    p.crownRadius * head.size * p.bractSize * rng.range(0.8, 1.2),
+    p.crownRadius * 0.35
+  );
   const lean = rng.range(0.1, 0.5);
 
   for (let i = 0; i < count; i += 1) {
@@ -97,12 +104,17 @@ export function growTendrils(graph, p, rng, mainNodes, count) {
 
 export function growSideShoots(graph, p, rng, mainNodes) {
   const tips = [];
+  const drift = stemDrift(graph, mainNodes);
 
   for (let i = 0; i < p.sideShoots; i += 1) {
     const t = rng.range(0.35, 0.75);
     const from = mainNodes[Math.round(t * (mainNodes.length - 1))];
     const out = outward(rng() * Math.PI * 2);
-    const dir = normalize([out[0] * 0.9, 0.7, out[2] * 0.36]);
+    const dir = normalize([
+      out[0] * 0.9 + drift[0] * 1.1,
+      0.7,
+      out[2] * 0.36 + drift[2] * 1.1,
+    ]);
     const bend = [-out[0] * 0.012, 0.018, -out[2] * 0.0048];
 
     tips.push(

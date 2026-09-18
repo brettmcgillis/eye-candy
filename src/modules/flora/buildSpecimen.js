@@ -1,3 +1,4 @@
+import applyBotany from './botany';
 import buildEnvelope from './envelope';
 import growFibers from './fibers';
 import {
@@ -57,7 +58,7 @@ export default function buildSpecimen(input) {
   const base = resolveParams(input);
   const rng = createRng(base.seed);
   const { habit, p } = rollHabit(
-    varyParams(base, rng.fork('variation')),
+    applyBotany(varyParams(base, rng.fork('variation'))),
     rng.fork('habit')
   );
   const started = Date.now();
@@ -138,6 +139,8 @@ export default function buildSpecimen(input) {
       millis: Date.now() - started,
       segments: segments.count,
       solids: Object.values(solids).reduce((sum, g) => sum + g.count, 0),
+      debugHeads: heads.map((h) => [graph.position(h.node), h.attach]),
+      debugStem: mainNodes.map((n) => graph.position(n)),
       terminals: terminals.length,
       truncated: budget.truncated,
     },

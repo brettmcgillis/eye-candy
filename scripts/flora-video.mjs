@@ -6,10 +6,12 @@ import path from 'node:path';
 import process from 'node:process';
 
 import { usageFor } from '../src/modules/flora/renderOptions.mjs';
+import { readPackageVersion } from './lib/cliArgs.mjs';
 import {
   REPO_ROOT,
   assertPalette,
   buildFlowers,
+  encodeFrame,
   flowersAt,
   frameView,
   loadKernel,
@@ -59,7 +61,8 @@ async function main() {
     );
     return;
   }
-  const { options, typed } = parsed;
+  const { typed } = parsed;
+  const options = { ...parsed.options, version: await readPackageVersion() };
   const out = path.resolve(REPO_ROOT, String(options.out));
   await mkdir(path.dirname(out), { recursive: true });
   process.stdout.write(
@@ -120,8 +123,10 @@ async function main() {
               }),
               levels: levels(seconds),
             });
-            still = image.data;
-            await sink.write(image.data);
+            still = options.overlay
+              ? await encodeFrame(image, 'raw', options)
+              : image.data;
+            await sink.write(still);
           }
           written += 1;
           progress.update(written);

@@ -1,8 +1,8 @@
 import React, { lazy } from 'react';
-import { PiFlowerDuotone } from 'react-icons/pi';
+import { PiPlantDuotone } from 'react-icons/pi';
 
 function SceneIcon() {
-  return <PiFlowerDuotone color="#141414" size={24} />;
+  return <PiPlantDuotone color="#141414" size={24} />;
 }
 
 export default {

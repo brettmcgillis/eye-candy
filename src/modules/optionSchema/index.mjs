@@ -11,6 +11,7 @@
 //   facet        the roll stream that may set it; absent = never rolled
 //   roll         { min, max, step } art-directed window for the dice
 //   cliOnly      owned by the job runner, never offered as a form field
+//   sceneOnly    a scene control that is not a render option at all
 //   workbenchOnly  accepted from the workbench but not a CLI flag
 //   nullable     an empty value means "unset" rather than the default
 
@@ -95,9 +96,12 @@ export default function createOptionSchema({
   surfaceDefaults = {},
   validate,
 }) {
+  // `sceneOnly` marks a control that belongs to a scene preset but is not a
+  // render setting, so no surface offers it as an option.
   function optionsFor(kind, surface = `cli-${kind}`) {
     return Object.entries(options).filter(
       ([, spec]) =>
+        !spec.sceneOnly &&
         (spec.scope === 'shared' || spec.scope === kind) &&
         (!spec.workbenchOnly || surface === 'workbench')
     );

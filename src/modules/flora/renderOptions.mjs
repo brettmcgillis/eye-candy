@@ -11,6 +11,21 @@ export const PALETTE_NONE = 'None';
 export const VIEWS = ['front', 'right', 'back', 'left'];
 export const BOUQUET_STYLES = ['dome', 'fan', 'ikebana'];
 export const VIDEO_MODES = ['lifecycle', 'growth', 'turntable', 'stills'];
+export const IG_PRESETS = ['story', 'reel', 'post'];
+// The crown forms a plant may be built from; `auto` lets every head pick its
+// own, which is what Flora did before the form became a gene.
+export const CROWN_FORMS = [
+  'auto',
+  'blob',
+  'bowl',
+  'fan',
+  'umbel',
+  'cone',
+  'plume',
+  'weep',
+  'ring',
+  'helix',
+];
 
 // Azimuth and elevation, in degrees, of each named view around the target.
 export const VIEW_ANGLES = {
@@ -139,6 +154,11 @@ const GENERATOR = {
 
   crownRadius: gen('crown', 'Size', 3, 0.5, 6, 0.05, 'form', [2.4, 3.6]),
   crownStretch: gen('crown', 'Stretch', 1, 0.3, 2, 0.01, 'form', [0.75, 1.25]),
+  // The widest a crown may be relative to its stem; below 0.12 the crown is
+  // grown back up instead. Both bounds are applied after the habit roll.
+  crownRatio: gen('crown', 'Crown / Stem', 0.45, 0.1, 1.2, 0.01, 'form', [
+    0.3, 0.55,
+  ]),
   crownLift: gen('crown', 'Lift', 0.85, 0, 2, 0.01, 'form', [0.4, 1.1]),
   crownBase: gen(
     'crown',
@@ -150,7 +170,24 @@ const GENERATOR = {
     'form',
     [0.7, 0.95]
   ),
+  crownForm: {
+    choices: CROWN_FORMS,
+    default: 'auto',
+    facet: 'form',
+    generator: true,
+    help: `Crown form to build from: ${CROWN_FORMS.join(', ')}`,
+    label: 'Form',
+    scene: true,
+    scope: 'shared',
+    section: 'crown',
+    type: 'enum',
+  },
   formCount: gen('crown', 'Forms', 2, 1, 6, 1, 'form', [1, 5]),
+  crownStructure: gen('crown', 'Structure', 0, 0, 1, 0.01, 'form', [0.25, 1]),
+  bractSize: gen('crown', 'Involucre', 0.18, 0.02, 0.6, 0.01, 'form', [
+    0.08, 0.3,
+  ]),
+  crownUnits: gen('crown', 'Units', 24, 1, 500, 1, 'form', [8, 160]),
   formSpread: gen('crown', 'Form spread', 0.8, 0, 2, 0.01, 'form', [0.4, 1.3]),
   warp: gen('crown', 'Warp', 0.35, 0, 1.5, 0.01, 'form', [0.15, 0.7]),
   asymmetry: gen('crown', 'Asymmetry', 0.3, 0, 1, 0.01, 'form', [0.1, 0.6]),
@@ -229,6 +266,9 @@ const GENERATOR = {
     [0.035, 0.08]
   ),
 
+  // 0 is Flora's own free-form growth, 1 is a plant built the way a real one
+  // is, and between is a mix. See @modules/flora/botany.js.
+  botany: gen('variation', 'Botany', 0, 0, 1, 0.01, 'form', [0, 1]),
   variation: gen('variation', 'Form', 0.5, 0, 1, 0.01, 'form', [0.3, 0.8]),
   habitVariety: gen('variation', 'Habits', 0.6, 0, 1, 0.01, 'form', [0.3, 1]),
   styleVariety: gen(
@@ -316,6 +356,11 @@ const LOOK = {
 
 const MOTION = {
   regrow: flag('lifecycle', 'Regrow loop', true),
+  // A scene behaviour, not a render setting: the CLI rolls every still
+  // anyway, so this is marked sceneOnly and never becomes a flag.
+  rollGenerations: flag('lifecycle', 'Roll each generation', false, {
+    sceneOnly: true,
+  }),
   timeScale: num('lifecycle', 'Time scale', 1, 0, 4, 0.05),
   growSeconds: num('lifecycle', 'Grow', 16, 1, 60, 0.5),
   bloomStart: num('lifecycle', 'Bloom starts', 0.5, 0, 1, 0.01),
@@ -452,6 +497,42 @@ const RENDER = {
   formSeed: rollSeed('form'),
   paletteSeed: rollSeed('palette'),
   ornamentsSeed: rollSeed('ornaments'),
+
+  overlay: {
+    // The scene shows its button bar by default; a render burns nothing in
+    // unless asked, which is what the surface defaults below say.
+    default: true,
+    help: 'Burn the scene overlay into the output',
+    label: 'Overlay',
+    scene: true,
+    // The scene calls it showOverlay, the way Rorschach does.
+    sceneKey: 'showOverlay',
+    scope: 'shared',
+    section: 'overlay',
+    type: 'boolean',
+  },
+  ig: {
+    choices: [...IG_PRESETS, 'none'],
+    default: 'post',
+    help: 'Safe-area insets; only applies with --overlay',
+    label: 'Safe area',
+    scope: 'shared',
+    section: 'overlay',
+    type: 'enum',
+  },
+  viewport: {
+    default: null,
+    help: 'CSS pixel width the overlay emulates; output width over this is the device pixel ratio it draws at. Defaults to 390 with --ig, else 1440',
+    label: 'Viewport',
+    max: 8192,
+    min: 64,
+    nullable: true,
+    placeholder: 'N',
+    scope: 'shared',
+    section: 'overlay',
+    step: 1,
+    type: 'number',
+  },
 
   framing: render({
     choices: ['fit', 'scene'],
@@ -623,6 +704,7 @@ const SECTION_LABELS = {
   ornamentWire: 'ornament wireframe ratio',
   ornaments: 'ornaments',
   output: 'output',
+  overlay: 'overlay',
   palette: 'palette',
   roll: 'rolling',
   render: 'render',
@@ -637,15 +719,17 @@ const SECTION_LABELS = {
 };
 
 export const SURFACE_DEFAULTS = {
-  'cli-still': { seed: null },
+  'cli-still': { overlay: false, seed: null },
   'cli-video': {
     count: 3,
+    overlay: false,
     seed: null,
     height: 1920,
     out: 'output/flora.mp4',
   },
   workbench: {
     count: 6,
+    overlay: false,
     seed: null,
   },
 };
@@ -698,28 +782,52 @@ const keysWhere = (test) =>
 export const GENERATOR_KEYS = keysWhere((spec) => spec.generator);
 export const SCENE_KEYS = keysWhere((spec) => spec.scene);
 
-const defaultsOf = (keys) =>
-  Object.fromEntries(keys.map((key) => [key, RENDER_OPTIONS[key].default]));
+// A flower config lives in the scene's key space, which is the schema's except
+// where a spec renames it (`overlay` is the scene's `showOverlay`). Everything
+// that crosses between the two goes through here.
+export const sceneNameFor = (key) => RENDER_OPTIONS[key].sceneKey ?? key;
 
-export const generatorDefaults = () => defaultsOf(GENERATOR_KEYS);
-export const sceneDefaults = () => defaultsOf(SCENE_KEYS);
+const SCENE_NAMES = new Map(SCENE_KEYS.map((key) => [sceneNameFor(key), key]));
 
-// A flower config is the scene's preset key space. A render sidecar carries it
-// as `preset`; this pulls a config out of whatever shape was handed over.
+export const generatorDefaults = () =>
+  Object.fromEntries(
+    GENERATOR_KEYS.map((key) => [key, RENDER_OPTIONS[key].default])
+  );
+
+export const sceneDefaults = () =>
+  Object.fromEntries(
+    SCENE_KEYS.map((key) => [sceneNameFor(key), RENDER_OPTIONS[key].default])
+  );
+
+// A render sidecar carries a config as `preset`; this pulls one out of
+// whatever shape was handed over.
 export function configFrom(source) {
   const flat = source?.preset ?? source ?? {};
   return Object.fromEntries(
-    SCENE_KEYS.filter((key) => flat[key] != null).map((key) => [key, flat[key]])
+    [...SCENE_NAMES.keys()]
+      .filter((name) => flat[name] != null)
+      .map((name) => [name, flat[name]])
   );
 }
 
-// The reverse, for saving a generation as a scene preset: only what differs
-// from the scene's defaults, the way the hand-written snapshots are kept.
-export function presetFromConfig(config) {
+// The same config as CLI/workbench options, for filling a form from a
+// generation.
+export function optionsFromConfig(config = {}) {
+  return Object.fromEntries(
+    [...SCENE_NAMES]
+      .filter(([name]) => config[name] != null)
+      .map(([name, key]) => [key, config[name]])
+  );
+}
+
+// The other direction, for saving a generation as a scene preset: only what
+// differs from the scene's defaults, the way the hand-written snapshots are.
+export function presetFromConfig(config = {}) {
   const defaults = sceneDefaults();
   return Object.fromEntries(
-    SCENE_KEYS.filter(
-      (key) => config[key] != null && config[key] !== defaults[key]
-    ).map((key) => [key, config[key]])
+    Object.entries(config).filter(
+      ([name, value]) =>
+        name in defaults && value != null && value !== defaults[name]
+    )
   );
 }

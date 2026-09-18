@@ -1,4 +1,5 @@
 /* eslint-disable no-param-reassign */
+import { botanyOf, shapeWeight } from './botany';
 import buildFrames, { octEncode } from './frames';
 import { KIND } from './graph';
 import { SOLID_SHAPES, WIRE_MODELS } from './polyhedra';
@@ -32,9 +33,10 @@ function occlusionAt(lobes, x, y, z) {
 }
 
 function pickShape(p, rng) {
+  const botany = botanyOf(p);
   const weights = [...SOLID_SHAPES, ...CARD_SHAPES].map((shape) => [
     shape,
-    Math.max(p[`${shape}Amount`] ?? 0, 0),
+    Math.max(p[`${shape}Amount`] ?? 0, 0) * shapeWeight(shape, botany),
   ]);
   const total = weights.reduce((sum, [, weight]) => sum + weight, 0);
   let roll = rng() * total;
@@ -140,7 +142,8 @@ export default function pack(
     .filter((pick) => pick.shape)
     .map((pick) => ({
       ...pick,
-      wire: rng() < (p[`${pick.shape}Wire`] ?? 0),
+      // A wireframe ornament is an alien reading of a floret.
+      wire: rng() < (p[`${pick.shape}Wire`] ?? 0) * (1 - botanyOf(p)),
     }));
   const tangentOf = (i) => frames.tangent.subarray(i * 3, i * 3 + 3);
   let wireEdges = 0;

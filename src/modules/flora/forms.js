@@ -1,3 +1,4 @@
+import { botanyOf, pickForm } from './botany';
 import FORMS from './formShapes';
 
 const TAU = Math.PI * 2;
@@ -29,17 +30,36 @@ function pick(rng, options) {
   return options[Math.floor(rng() * options.length)];
 }
 
-function headForm(rng, options) {
+// `crownForm` names the form a plant is built from; `auto` is the old
+// behaviour, where every head picked its own and a crown could end up an
+// average of several.
+function headForm(rng, options, chosen, botany) {
+  if (chosen) {
+    return chosen;
+  }
   if (options.posture === 'weeping' && rng() < 0.6) {
     return 'weep';
   }
 
-  return pick(rng, HEADS);
+  return pickForm(rng, HEADS, botany);
+}
+
+// A named form repeats through the crown, but not slavishly: an occasional
+// other form keeps it from reading as one stamped shape. With no form chosen
+// the dice are untouched, so `auto` rolls exactly as it always did.
+function extraForm(rng, extras, chosen, botany) {
+  if (chosen && rng() < 0.65) {
+    return chosen;
+  }
+
+  return pickForm(rng, extras, botany);
 }
 
 export default function composeForms(p, rng, options = {}) {
   const scale = options.size ?? 1;
   const R = p.crownRadius * scale;
+  const botany = botanyOf(p);
+  const chosen = HEADS.includes(p.crownForm) ? p.crownForm : null;
   const extras = options.allowSpray ? EXTRAS : HEADS;
   const count = Math.max(
     1,
@@ -47,7 +67,10 @@ export default function composeForms(p, rng, options = {}) {
   );
 
   return Array.from({ length: count }, (_, i) => {
-    const name = i === 0 ? headForm(rng, options) : pick(rng, extras);
+    const name =
+      i === 0
+        ? headForm(rng, options, chosen, botany)
+        : extraForm(rng, extras, chosen, botany);
     const form = FORMS[name];
     const size = i === 0 ? R * rng.range(0.75, 1.15) : R * rng.range(0.3, 0.75);
     const shape = form.make(rng, size, p);
@@ -70,6 +93,7 @@ export default function composeForms(p, rng, options = {}) {
       ],
       radii: shape.radii,
       sample: shape.sample,
+      unit: shape.unit,
       side: !!form.side,
       sideDirection: theta,
       size,

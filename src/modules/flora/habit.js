@@ -32,15 +32,23 @@ function scaled(p, multipliers) {
 }
 
 export default function rollHabit(p, rng) {
+  const botany = Math.min(1, Math.max(0, p.botany ?? 0));
   const roll = (trait) =>
     rng() < p.habitVariety ? pick(rng, TRAITS[trait]) : TRAITS[trait][0];
   const habit = {
-    bracts: rng() < p.habitVariety * 0.6,
+    // An involucre and stem leaves are the ordinary case for a real plant.
+    bracts: rng() < p.habitVariety * 0.6 + botany * 0.5,
     branching: roll('branching'),
     posture: roll('posture'),
     stature: roll('stature'),
-    stemLeaves: rng() < p.habitVariety * 0.5 ? Math.floor(rng.range(2, 7)) : 0,
-    tendrils: rng() < p.habitVariety * 0.35 ? Math.floor(rng.range(1, 4)) : 0,
+    stemLeaves:
+      rng() < p.habitVariety * 0.5 + botany * 0.4
+        ? Math.floor(rng.range(2, 7))
+        : 0,
+    tendrils:
+      rng() < p.habitVariety * 0.35 * (1 - botany * 0.7)
+        ? Math.floor(rng.range(1, 4))
+        : 0,
     vigor: roll('vigor'),
   };
   let shaped = scaled(p, STATURE[habit.stature]);

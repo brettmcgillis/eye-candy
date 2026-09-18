@@ -10,6 +10,7 @@ import {
 import { parseArgs, providedKeys } from './cliArgs.mjs';
 import { createHeadlessRenderer, loadThree } from './headlessWebgpu.mjs';
 import loadModules, { REPO_ROOT } from './loadModules.mjs';
+import overlayLayer from './overlayLayer.mjs';
 import { runStage } from './progress.mjs';
 
 export { REPO_ROOT };
@@ -88,7 +89,7 @@ export function rollArgs(kernel, { options, typed }) {
     pinned: Object.fromEntries(
       [...typed]
         .filter((key) => scene.has(key))
-        .map((key) => [key, options[key]])
+        .map((key) => [kernel.flora.sceneNameFor(key), options[key]])
     ),
     seeds: {
       form: options.formSeed ?? undefined,
@@ -469,11 +470,28 @@ export function sidecarFor({ bouquet, configs, options, seed }) {
     : { preset: configs[0], render };
 }
 
-export async function encodeFrame(frame, format) {
-  const image = sharp(frame.data, {
+// `options` carries the overlay settings; the chrome is composited onto the
+// raw pixels so a frame is encoded exactly once. The overlay is laid out in
+// CSS pixels against `viewport`, so at a pixel ratio above 1 it scales with
+// the frame the way it does on a retina screen.
+export async function encodeFrame(frame, format, options = {}) {
+  let image = sharp(frame.data, {
     raw: { channels: 4, height: frame.height, width: frame.width },
   });
-  if (format === 'raw') return frame.data;
+  if (options.overlay) {
+    image = image.composite([
+      {
+        input: await overlayLayer({
+          height: frame.height,
+          ig: options.ig === 'none' ? null : options.ig,
+          version: options.version,
+          viewport: options.viewport,
+          width: frame.width,
+        }),
+      },
+    ]);
+  }
+  if (format === 'raw') return image.ensureAlpha().raw().toBuffer();
   if (format === 'webp') return image.webp({ lossless: true }).toBuffer();
   return image.png().toBuffer();
 }

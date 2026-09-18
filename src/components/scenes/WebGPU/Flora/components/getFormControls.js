@@ -1,6 +1,8 @@
 import { button, folder } from 'leva';
 
-import { presetReader, range } from './controlHelpers';
+import { CROWN_FORMS } from '@modules/flora';
+
+import { choice, presetReader, range } from './controlHelpers';
 
 export default function getFormControls(preset = {}, { onReseed } = {}) {
   const p = presetReader(preset);
@@ -32,9 +34,14 @@ export default function getFormControls(preset = {}, { onReseed } = {}) {
         {
           crownRadius: range('Size', p('crownRadius'), 0.5, 6, 0.05),
           crownStretch: range('Stretch', p('crownStretch'), 0.3, 2, 0.01),
+          crownRatio: range('Crown / Stem', p('crownRatio'), 0.1, 1.2, 0.01),
           crownLift: range('Lift', p('crownLift'), 0, 2, 0.01),
           crownBase: range('Side Sprays From', p('crownBase'), 0.2, 0.95, 0.01),
+          crownForm: choice('Form', p('crownForm'), CROWN_FORMS),
           formCount: range('Forms', p('formCount'), 1, 6, 1),
+          crownStructure: range('Structure', p('crownStructure'), 0, 1, 0.01),
+          crownUnits: range('Units', p('crownUnits'), 1, 500, 1),
+          bractSize: range('Involucre', p('bractSize'), 0.02, 0.6, 0.01),
           formSpread: range('Form Spread', p('formSpread'), 0, 2, 0.01),
           warp: range('Warp', p('warp'), 0, 1.5, 0.01),
           asymmetry: range('Asymmetry', p('asymmetry'), 0, 1, 0.01),
@@ -95,6 +102,7 @@ export default function getFormControls(preset = {}, { onReseed } = {}) {
       ),
       Variation: folder(
         {
+          botany: range('Botany', p('botany'), 0, 1, 0.01),
           variation: range('Form', p('variation'), 0, 1, 0.01),
           habitVariety: range('Habits', p('habitVariety'), 0, 1, 0.01),
           styleVariety: range('Fiber Styles', p('styleVariety'), 0, 1, 0.01),

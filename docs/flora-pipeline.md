@@ -44,6 +44,148 @@ typed applies, rollable or not — `--growSeconds 4` shortens a lifecycle clip.
 A batch's seeds follow the scene's regrow loop: `seed`, `seed-1`, `seed-2`…,
 so flower N of a batch is the plant the scene would grow on cycle N.
 
+## Crown form and structure
+
+Three genes shape a crown, and they came out of measuring a 100-still batch
+that read as repetitive (`docs` note: the diagnosis mattered more than the
+guesses — two plausible theories were wrong).
+
+- **`crownForm`** names the form the whole plant is built from (`auto` keeps
+  the old behaviour, where every head picks its own and a crown ends up an
+  average of several). A named form repeats through the crown, with a 35%
+  chance per extra form of something else so it does not read as one stamped
+  shape. The roll picks `auto` 35% of the time and a named form otherwise.
+  Before this, the form was rolled inside `composeForms` and never surfaced:
+  you could not ask for a ring flower, hold a form and reroll colour, or
+  art-direct one from the workbench.
+- **`crownStructure`** (0–1) blends how tips are placed. At 0 every tip is an
+  independent uniform draw inside the form's volume — a cloud, which is what
+  made every crown read alike. At 1 tips are dealt round-robin into `crownUnits`
+  discrete units seated on a lattice the form would really grow on: a
+  phyllotactic spiral on an ellipsoid, a Vogel spiral across a bowl's cap (a
+  daisy's disc), rays over an umbel's dome, whorls up a cone turned by the
+  golden angle, discrete pendulous strands on a weep, beads around a ring.
+  Measured effect: tip-spacing CV 0.68 → 1.04, i.e. real clumps with gaps
+  between them rather than even fuzz. The fiber clustering then finds those
+  clumps and grows visible sub-branches into them.
+- **`crownUnits`** is how many units the crown splits into; it does nothing at
+  `crownStructure` 0.
+
+`crownStructure` defaults to **0**, so every hand-tuned scene preset renders
+exactly as before; the roll uses 0.25–1, so generated flowers get structure.
+
+**What this did not fix.** Structure changes texture and coherence, not
+outline. Batch silhouette diversity (mean nearest-neighbour distance over 40
+renders) was 0.100 before and 0.092 after — unchanged. The outline is governed
+by the form's _volume_, so the next lever is the envelope itself: superformula
+silhouettes, profile-driven surfaces of revolution, and shell-vs-fill. Widening
+the roll windows is not the lever either: sampling every shape knob across its
+full declared range moved the same metric only ~13%.
+
+## Scene camera
+
+The scene opens on **Spline Motion** along the shared `Lateral Arc Sweep` path
+(`@presets/spline/cameraSplinePresets`), targeting y=5, orientation `target`,
+36s per loop. Orbit is still there as a mode with its own framing.
+
+## Scene controls
+
+The scene mirrors Rorschach's arrangement (`docs/scene-conventions.md` §13):
+a **Scene** folder with `showOverlay` and a **Roll** sub-folder, plus an
+overlay button bar — Regenerate (a whole new plant), Reseed (same art
+direction, new shape), Unravel now, and Pause (which parks `timeScale` at 0
+and restores it). Rolling a facet re-rolls only that facet's keys and leaves
+the rest of the plant alone, the same facets the CLI holds and rolls. Leva
+labels a button by its key, so the roll buttons are keyed by their label.
+
+**`rollGenerations` makes the scene do what the CLI does.** Without it a
+regrow loop is the same plant at a new seed (`seed-1`, `seed-2`…); with it
+every cycle is a fresh roll of every facet, so watching 100 generations is
+equivalent to generating 100 stills. Turning it on — including on mount, so a
+reload is not the same flower twice — rolls immediately rather than waiting
+out the current cycle, and the roll made for the _next_ generation is
+suppressed from swapping the plant currently on screen. The **Wild** preset
+switches it on. It is marked `sceneOnly` in the schema: a preset carries it,
+no CLI surface offers it, since a render rolls every still anyway.
+
+`overlay` is the one option whose scene control has a different name
+(`showOverlay`, as in Rorschach), which is what `sceneKey` is for. **A config
+lives in the scene's key space**, so everything crossing between the two goes
+through `sceneNameFor` / `optionsFromConfig` — `sceneDefaults()` keyed by the
+schema name instead was a real bug: the scene read `showOverlay` and got
+`undefined`, so the button bar never appeared.
+
+## Crown against stem
+
+`crownRatio` (default 0.45) is the widest a crown may be relative to its stem,
+and it is enforced on the **built envelope**, not on the parameters. Every
+attempt to predict the final width from the parameters left a tail of plants
+whose crown was as wide as the whole plant was tall: the width is the product
+of form sizes and offsets, head count, branching and posture, and each factor
+added to the estimate only moved the tail around. The envelope is already
+built when it can be measured, so `fitToStem` measures the crown's reach and
+scales the tip targets about the **stem top** — which keeps the crown attached
+where it grows — with a floor at 0.12 for the opposite case.
+
+Measured over 40 rolls, crown diameter against plant height: worst case
+1.36 → **0.72**, median 0.48 → 0.39.
+
+## Branches follow the stem
+
+Heads are placed around the stem by azimuth, and only `fork` and `umbellate`
+blended the stem's heading into that direction. `candelabra`, `alternate` and
+the side shoots picked a purely horizontal azimuth, so on a leaning stem about
+a third of their branches grew back over the plant's own base — which reads as
+a crown pointing the opposite way from where the stem was going.
+`stemDrift` measures the trunk's lean (base to top, full weight by ~27°) and
+biases those three placements with it. On stems leaning more than 14°,
+branches growing back against the lean: `alternate` 36% → 6%, `candelabra`
+33% → 7%, matching `fork` and `umbellate`, which were already 6–8%. An upright
+stem has no drift, so it is unchanged.
+
+Measure a branch from **its own attach point**, not the trunk top: heads
+attached partway down a leaning stem sit behind its top by construction, and
+measuring from the top reported 97% "backwards" for a placement that was only
+36% wrong.
+
+## The botany axis
+
+`botany` runs 0 to 1: 0 is Flora's own free-form growth, 1 is a plant built
+the way a real one is, and anything between is a mix. It is a bias on the
+parameters and on the dice (`botany.js`), applied after `varyParams` and
+before the habit roll — not a separate generator, so every other control keeps
+working. The roll uses the full 0–1, so a batch mixes alien and plausible
+rather than replacing one with the other; it defaults to 0, so hand-tuned
+presets are untouched.
+
+What rises with the axis:
+
+- **One plan instead of an average.** `formCount` is pulled to 1 — measured
+  7.5 → 2.8 forms per plant across 0 → 1.
+- **Real arrangements.** The form dice are weighted toward inflorescences a
+  plant actually makes (umbel, capitulum, spike, panicle) and away from the
+  ones it does not: ring and helix fall from 22% of forms to 9%.
+- **Arrangement over cloud.** `crownStructure` is pulled to 1, so earthly
+  plants get the lattices rather than a spray of random tips.
+- **Allometry.** The crown is pulled toward a real fraction of the stem
+  (`stemHeight * 0.36`, clamped), with a calmer stem, less warp and asymmetry,
+  and fewer wisps.
+- **Leaves and an involucre.** Bracts 12 → 18 plants in 24, stem leaves
+  8 → 17; tendrils become rarer.
+- **Florets rather than dice.** Ornament weights favour petals, hearts and
+  spheres (cards 122 → 746 per plant) and wireframe ornaments fade out, since
+  a wireframe reads as the alien version of a floret.
+
+Rolling the axis across a batch widens silhouette spread modestly (mean pair
+0.376 → 0.419); what it really changes is character, which that metric cannot
+see.
+
+**The involucre is capped.** Bracts ran 36–76% of the crown radius, which read
+as a second crown rather than a collar. `bractSize` (default 0.18) sets the
+fraction, and the reach is clamped to 35% of the nominal crown radius, because
+a head often comes out smaller than its parameter and was being swallowed by
+its own bracts.
+
 ## Resolution
 
 `pixelRatio` (default 2) multiplies the output size, and the minimum stroke
@@ -107,6 +249,17 @@ declaration is sized for one flower at the scene's crown.
 the scene camera's target at `distance`. Views are `front`, `right`, `back`
 and `left` — a flower reads the same from above or below, so it needs nothing
 like Rorschach's four axes.
+
+## Overlay burn-in
+
+`--overlay` composites the app's overlay chrome into stills and video frames,
+the same burn-in Rorschach does and from the same code
+(`scripts/lib/overlayLayer.mjs`, cached per geometry). `--ig` picks the
+safe-area insets and `--viewport` the CSS width being emulated. The overlay is
+laid out in CSS pixels against that viewport, so at `pixelRatio` above 1 it
+scales with the frame the way it does on a retina screen. It defaults on in
+the scene and off for renders (`SURFACE_DEFAULTS`). SVG output carries no
+overlay — it is raster chrome.
 
 ## SVG, and why not three-edge-projection
 

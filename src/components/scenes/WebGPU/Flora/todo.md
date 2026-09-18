@@ -10,10 +10,8 @@
 
 ## // TODO:
 
-- [ ] Headless stills/video CLI on the `@modules/flora` kernel
-- [ ] improve motion design, ending scatter sucks.
-- [ ] enable pan on camera
 - [ ] should we add controls for crown shyness?
+- [ ] should we add a photo matte in the scene to frame the crown of the flower? ideally its perfectly vertical and either frames the crown, or the flower grows through it and the majority of the stem & crown are framed.
 
 ## // Presets
 

@@ -1,4 +1,23 @@
 const TAU = Math.PI * 2;
+const GOLDEN = Math.PI * (3 - Math.sqrt(5));
+
+// Every form can place its tips two ways: `sample` draws an independent random
+// point inside the form's volume — a cloud — and `unit` returns the centre of
+// the u-th of U units arranged the way the form would really grow: a
+// phyllotactic spiral, a ring of rays, a stack of whorls. `crownStructure`
+// blends between them. The cloud is what made every crown read alike; the
+// lattice is what gives one an identity.
+function ellipsoidUnit(u, U, radii) {
+  const y = U > 1 ? 1 - (2 * (u + 0.5)) / U : 0;
+  const ring = Math.sqrt(Math.max(0, 1 - y * y));
+  const a = u * GOLDEN;
+
+  return [
+    Math.cos(a) * ring * radii[0],
+    y * radii[1],
+    Math.sin(a) * ring * radii[2],
+  ];
+}
 
 function shellRadius(rng, shellBias) {
   return rng() ** (1 / 3 + (0.07 - 1 / 3) * shellBias);
@@ -35,6 +54,7 @@ const FORMS = {
             d[2] * r * radii[2],
           ];
         },
+        unit: (u, U) => ellipsoidUnit(u, U, radii),
       };
     },
   },
@@ -57,6 +77,17 @@ const FORMS = {
             Math.sin(phi) * Math.cos(t) * r,
             -Math.cos(phi) * r * depth,
             Math.sin(phi) * Math.sin(t) * r,
+          ];
+        },
+        // A Vogel spiral across the cap: the arrangement of a daisy's disc.
+        unit: (u, U) => {
+          const phi = Math.sqrt((u + 0.5) / U) * cap;
+          const a = u * GOLDEN;
+
+          return [
+            Math.sin(phi) * Math.cos(a) * size,
+            -Math.cos(phi) * size * depth,
+            Math.sin(phi) * Math.sin(a) * size,
           ];
         },
       };
@@ -86,6 +117,22 @@ const FORMS = {
             x * Math.sin(yaw) + z * Math.cos(yaw),
           ];
         },
+        // Ribs across the arc, each carrying a run of units outward.
+        unit: (u, U) => {
+          const rays = Math.max(3, Math.round(Math.sqrt(U * 2)));
+          const steps = Math.max(1, Math.ceil(U / rays));
+          const ray = u % rays;
+          const step = Math.floor(u / rays) % steps;
+          const a = ((2 * (ray + 0.5)) / rays - 1) * spread;
+          const r = reach * (0.4 + 0.6 * ((step + 0.5) / steps));
+          const x = Math.sin(a) * r;
+
+          return [
+            x * Math.cos(yaw),
+            Math.cos(a) * r - reach * 0.5,
+            x * Math.sin(yaw),
+          ];
+        },
       };
     },
   },
@@ -109,6 +156,17 @@ const FORMS = {
             Math.sin(phi) * Math.sin(t) * r,
           ];
         },
+        // Rays from one point over a dome — an umbel's actual construction.
+        unit: (u, U) => {
+          const phi = Math.sqrt((u + 0.5) / U) * cap;
+          const a = u * GOLDEN;
+
+          return [
+            Math.sin(phi) * Math.cos(a) * dome,
+            (Math.cos(phi) - 1) * dome * 0.8,
+            Math.sin(phi) * Math.sin(a) * dome,
+          ];
+        },
       };
     },
   },
@@ -128,6 +186,17 @@ const FORMS = {
           const r = Math.sqrt(rng()) * h * height * flare;
 
           return [Math.cos(t) * r, h * height - height * 0.5, Math.sin(t) * r];
+        },
+        // Whorls up the spike, each turned from the last by the golden angle.
+        unit: (u, U) => {
+          const levels = Math.max(2, Math.round(Math.sqrt(U / 2)));
+          const per = Math.max(1, Math.ceil(U / levels));
+          const level = Math.min(levels - 1, Math.floor(u / per));
+          const h = ((level + 0.5) / levels) ** 0.6;
+          const a = ((u % per) / per) * TAU + level * GOLDEN;
+          const r = h * height * flare;
+
+          return [Math.cos(a) * r, h * height - height * 0.5, Math.sin(a) * r];
         },
       };
     },
@@ -154,6 +223,7 @@ const FORMS = {
             d[2] * r * radii[2],
           ];
         },
+        unit: (u, U) => ellipsoidUnit(u, U, radii),
       };
     },
   },
@@ -179,6 +249,21 @@ const FORMS = {
             Math.sin(t) * r,
           ];
         },
+        // Discrete pendulous strands rather than a shower of points.
+        unit: (u, U) => {
+          const strands = Math.max(4, Math.round(Math.sqrt(U * 1.5)));
+          const steps = Math.max(1, Math.ceil(U / strands));
+          const strand = u % strands;
+          const s = (Math.floor(u / strands) % steps) / steps + 0.5 / steps;
+          const t = (strand / strands) * TAU + s * 0.35;
+          const r = reach * s;
+
+          return [
+            Math.cos(t) * r,
+            reach * (0.45 * Math.sin(Math.PI * s * 0.8) - droop * s * s * 0.7),
+            Math.sin(t) * r,
+          ];
+        },
       };
     },
   },
@@ -198,6 +283,16 @@ const FORMS = {
           const rr = major + Math.cos(v) * minor * Math.sqrt(rng());
           const x = Math.cos(u) * rr;
           const z = Math.sin(u) * rr;
+
+          return [x, Math.sin(v) * minor + z * tilt, z];
+        },
+        // Beads evenly spaced around the ring.
+        unit: (u, U) => {
+          const a = ((u + 0.5) / U) * TAU;
+          const v = u * GOLDEN;
+          const rr = major + Math.cos(v) * minor * 0.75;
+          const x = Math.cos(a) * rr;
+          const z = Math.sin(a) * rr;
 
           return [x, Math.sin(v) * minor + z * tilt, z];
         },
@@ -225,6 +320,14 @@ const FORMS = {
             Math.sin(a) * r,
           ];
         },
+        // The helix itself, walked at an even pace.
+        unit: (u, U) => {
+          const s = (u + 0.5) / U;
+          const a = s * turns * TAU;
+          const r = size * (0.4 + 0.6 * (1 - s));
+
+          return [Math.cos(a) * r, s * height - height * 0.5, Math.sin(a) * r];
+        },
       };
     },
   },
@@ -247,6 +350,7 @@ const FORMS = {
             d[2] * r * radii[2],
           ];
         },
+        unit: (u, U) => ellipsoidUnit(u, U, radii),
       };
     },
   },

@@ -12,9 +12,11 @@
 /build
 /dist
 
-# generated Rorschach media
+# generated media
 /output/batch/
 /output/rorschach-workbench/
+/output/flora-workbench/
+/output/fungi-workbench/
 
 # misc
 .DS_Store

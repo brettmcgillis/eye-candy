@@ -35,16 +35,17 @@ function usePersianRugGeometry(baseGeometry) {
 }
 
 export default function PersianRug(props) {
+  const { material, ...groupProps } = props;
   const { baseGeometry, sourceMaterial } = usePersianRugModel();
   const geometry = usePersianRugGeometry(baseGeometry);
 
   return (
-    <group {...props} dispose={null}>
+    <group {...groupProps} dispose={null}>
       <mesh
         castShadow
         receiveShadow
         geometry={geometry}
-        material={sourceMaterial}
+        material={material ?? sourceMaterial}
       />
     </group>
   );

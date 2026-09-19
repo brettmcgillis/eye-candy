@@ -67,6 +67,17 @@ export const RENDER_OPTIONS = {
     placeholder: 'PX',
     help: 'Output height',
   },
+  pixelRatio: {
+    scope: 'shared',
+    section: 'output',
+    type: 'number',
+    default: 1,
+    min: 1,
+    max: 4,
+    step: 1,
+    choices: [1, 2, 3, 4],
+    help: 'Renders at width×ratio by height×ratio; a still\u2019s stroke width scales with it, so a 2x still is the 1x still, sharper',
+  },
   seed: {
     scope: 'shared',
     section: 'output',
@@ -1348,6 +1359,12 @@ const schema = createOptionSchema({
     if (kind === 'still' && !options.png && !options.svg && !options.webp) {
       throw fail('Select at least one output format: PNG, SVG, or WebP.');
     }
+    const longest = Math.max(options.width, options.height);
+    if (longest * options.pixelRatio > 8192) {
+      throw fail(
+        `width\u00d7pixelRatio must stay within 8192; the longest side would be ${longest * options.pixelRatio}.`
+      );
+    }
   },
 });
 
@@ -1405,6 +1422,7 @@ export const HEADLESS_ONLY_OPTIONS = new Set([
   'mode',
   'out',
   'paletteSeed',
+  'pixelRatio',
   'png',
   'renderer',
   'simplify',

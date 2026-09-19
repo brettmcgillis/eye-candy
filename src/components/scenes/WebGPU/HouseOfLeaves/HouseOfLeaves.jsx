@@ -1,35 +1,41 @@
-import React from 'react';
+import React, { useMemo } from 'react';
 
 import { CameraRig } from '@modules/cameraRig';
 import { LightingRig } from '@modules/lightingRig';
 
+import Beacon from './components/Beacon';
 import Corridor from './components/Corridor';
 import Flashlight from './components/Flashlight';
 import GreatRoom from './components/GreatRoom';
+import LivingRoom from './components/LivingRoom';
+import Post from './components/Post';
 import Shaft from './components/Shaft';
 import ShaftFloor from './components/ShaftFloor';
-import VolumetricFog from './components/VolumetricFog';
+import useDirector from './hooks/useDirector';
 import useFlares from './hooks/useFlares';
 import useFlashlight from './hooks/useFlashlight';
+import useMounted from './hooks/useMounted';
 import useSceneControls from './hooks/useSceneControls';
 import useSurfaces from './hooks/useSurfaces';
 import useWalker from './hooks/useWalker';
+import createWorld from './utils/world';
 
-// The walkable House of Leaves: living room, the five and a half minute
-// hallway, the great room, the grand staircase, and back.
-//
-// Currently the streaming spine and the darkness — an unbounded corridor and
-// an unbounded descent, walked rather than driven, lit only by a carried lamp
-// that reaches nowhere near the far wall. Everything either side of them is
-// still to come; see plans/houseOfLeaves/house-of-leaves-scene.md.
+// The House of Leaves, walked: living room, the hallway that should not be
+// there, the great room, the grand staircase, the floor, a hallway back, and
+// the same living room again. The director drives the walker; the world
+// chains the spaces lap by lap; whatever is within reach is drawn.
 export default function HouseOfLeaves() {
   const config = useSceneControls();
+  const world = useMemo(() => createWorld(config), [config.layoutKey]);
   const flashlight = useFlashlight(config);
   const flares = useFlares();
-  // The walker owns the rebase and the rise reference the surfaces are pinned
-  // to, so it has to resolve before they are built.
-  const walker = useWalker(config);
+  const director = useDirector(config);
+  const walker = useWalker(config, world, director);
   const surfaces = useSurfaces(config, walker);
+  const mounted = useMounted(walker, world, config);
+
+  const livingRoomMounted = (lap) =>
+    mounted.some((zone) => zone.kind === 'livingRoom' && zone.lap === lap);
 
   return (
     <>
@@ -39,39 +45,77 @@ export default function HouseOfLeaves() {
       {config.beamEnabled && (
         <Flashlight config={config} flashlight={flashlight} />
       )}
-      {/* Which space is drawn follows the walker, not the control: once the
-          journey is chaining, the zone it is standing in is the authority. */}
-      {(walker.zoneId === 'corridor' || walker.zoneId === 'returnCorridor') && (
-        <Corridor
-          config={config}
-          flares={flares}
-          material={surfaces.stone}
-          walker={walker}
-        />
-      )}
-      {walker.zoneId === 'greatRoom' && (
-        <GreatRoom config={config} material={surfaces.stone} walker={walker} />
-      )}
-      {walker.zoneId === 'shaft' && (
-        <Shaft
-          config={config}
-          flares={flares}
-          material={surfaces.stone}
-          wallMaterial={surfaces.wall}
-          walker={walker}
-        />
-      )}
-      {walker.zoneId === 'shaftFloor' && (
-        <ShaftFloor config={config} material={surfaces.stone} walker={walker} />
-      )}
-      {/* Mounting this takes over rendering, so it must unmount rather than
-          idle when the volumetric is switched off. */}
-      {config.fogEnabled && (
-        <VolumetricFog
-          config={config}
-          flares={flares}
-          flashlight={flashlight}
-        />
+      {mounted.map((zone) => {
+        switch (zone.kind) {
+          case 'livingRoom':
+            return (
+              <LivingRoom
+                config={config}
+                key={zone.id}
+                material={surfaces.home}
+                walker={walker}
+                zone={zone}
+              />
+            );
+          case 'corridor':
+            return (
+              <React.Fragment key={zone.id}>
+                <Corridor
+                  config={config}
+                  flares={flares}
+                  material={surfaces.stone}
+                  walker={walker}
+                  zone={zone}
+                />
+                {zone.role === 'return' && !livingRoomMounted(zone.lap + 1) && (
+                  <Beacon
+                    config={config}
+                    flares={flares}
+                    walker={walker}
+                    zone={zone}
+                  />
+                )}
+              </React.Fragment>
+            );
+          case 'greatRoom':
+            return (
+              <GreatRoom
+                config={config}
+                key={zone.id}
+                material={surfaces.stone}
+                walker={walker}
+                world={world}
+                zone={zone}
+              />
+            );
+          case 'shaft':
+            return (
+              <Shaft
+                config={config}
+                flares={flares}
+                key={zone.id}
+                material={surfaces.stone}
+                walker={walker}
+                wallMaterial={surfaces.stone}
+                zone={zone}
+              />
+            );
+          case 'shaftFloor':
+            return (
+              <ShaftFloor
+                config={config}
+                key={zone.id}
+                material={surfaces.stone}
+                walker={walker}
+                zone={zone}
+              />
+            );
+          default:
+            return null;
+        }
+      })}
+      {config.postEnabled && (
+        <Post config={config} flares={flares} flashlight={flashlight} />
       )}
     </>
   );

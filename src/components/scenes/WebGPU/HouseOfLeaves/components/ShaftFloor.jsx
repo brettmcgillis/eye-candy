@@ -2,82 +2,49 @@ import React, { memo, useEffect, useMemo, useRef } from 'react';
 
 import { useFrame } from '@react-three/fiber';
 
-import { createHallway, createShaftFloor } from '@modules/houseOfLeaves';
+import { createShaftFloor } from '@modules/houseOfLeaves';
 
-import createShaftFloorZone from '../utils/zones/shaftFloor';
+import createShaftGrid from '../utils/shaftGrid';
 
-// The bottom of the shaft, and every way out of it: hallways leaving like
-// spokes on a wagon wheel, all dark, none of them hinting which is the way on.
-//
-// The doorways come from the zone rather than being derived again here, so the
-// opening the walker can walk through is the same one that was cut.
-function ShaftFloor({ config, material, walker }) {
+// The bottom of the shaft, and every way out of it. Built on the shaft's
+// grid so its top ring is the streamed wall's own row, in the shaft's frame.
+function ShaftFloor({ config, material, walker, zone }) {
   const groupRef = useRef(null);
-  const zone = useMemo(() => createShaftFloorZone(config), [config]);
+  const grid = useMemo(() => createShaftGrid(config.shaft), [config.shaft]);
 
-  const parts = useMemo(
-    () => ({
-      floor: createShaftFloor({
+  const geometry = useMemo(
+    () =>
+      createShaftFloor({
+        ring: grid.ring,
+        inward: grid.inward,
+        rowTop: config.shaftRows.rowTop,
+        rowFloor: config.shaftRows.rowFloor,
+        cols: grid.cols,
+        centre: zone.centre,
+        exits: zone.exits,
         radius: zone.wallRadius,
-        skirtHeight: config.floorSkirt,
-        doorways: zone.exits,
+        spokeLength: config.spokeLength,
       }),
-      spokes: zone.exits.map((exit) =>
-        createHallway({
-          length: config.floorSpokeLength,
-          width: exit.width,
-          height: exit.height,
-          archRise: exit.archRise,
-          revealDepth: config.revealDepth,
-          mouthCurveRadius: zone.wallRadius,
-        })
-      ),
-    }),
-    [config.floorSkirt, config.floorSpokeLength, config.revealDepth, zone]
+    [config.shaftRows, config.spokeLength, grid, zone]
   );
-
-  useEffect(
-    () => () => {
-      parts.floor.dispose();
-      parts.spokes.forEach((geometry) => geometry.dispose());
-    },
-    [parts]
-  );
+  useEffect(() => () => geometry.dispose(), [geometry]);
 
   useFrame(() => {
     const group = groupRef.current;
     if (!group) return;
     const { anchor } = walker;
+    const { frame } = zone;
     group.position.set(
-      config.origin.x - anchor.x,
-      -anchor.y,
-      config.origin.z - anchor.z
+      frame.x - anchor.x,
+      frame.y - anchor.y,
+      frame.z - anchor.z
     );
+    group.rotation.y = frame.rotationY;
   });
 
   return (
     <group ref={groupRef}>
-      <mesh
-        castShadow
-        geometry={parts.floor}
-        material={material}
-        receiveShadow
-      />
-      {zone.exits.map((exit, i) => (
-        <mesh
-          castShadow
-          geometry={parts.spokes[i]}
-          key={exit.angle}
-          material={material}
-          position={[
-            Math.cos(exit.angle) * zone.wallRadius,
-            0,
-            Math.sin(exit.angle) * zone.wallRadius,
-          ]}
-          receiveShadow
-          rotation={[0, -exit.angle, 0]}
-        />
-      ))}
+      <mesh castShadow geometry={geometry} material={material} receiveShadow />
     </group>
   );
 }

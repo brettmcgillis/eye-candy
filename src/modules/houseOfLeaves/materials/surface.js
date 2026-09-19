@@ -95,6 +95,9 @@ export const SURFACE_DEFAULTS = {
   detileScale: 0.23,
   floorBlend: [0.55, 0.9],
   tint: '#ffffff',
+  floorTint: null,
+  roughnessScale: 1,
+  side: THREE.FrontSide,
 };
 
 // One material for a corridor or room: the floor set where a surface faces up,
@@ -112,7 +115,7 @@ export default function createSurfaceMaterial({
 
   const material = new THREE.MeshStandardNodeMaterial({
     metalness: 0,
-    side: THREE.DoubleSide,
+    side: o.side,
   });
 
   const frame = surfaceFrame();
@@ -137,8 +140,14 @@ export default function createSurfaceMaterial({
     return mix(wall, floor, upness);
   };
 
-  material.colorNode = pick('albedo').rgb.mul(tint);
-  material.roughnessNode = pick('roughness').r;
+  const floorTint = uniform(new THREE.Color(o.floorTint ?? o.tint));
+  const roughnessScale = uniform(o.roughnessScale);
+  material.colorNode = pick('albedo').rgb.mul(
+    upness ? mix(tint, floorTint, upness) : tint
+  );
+  material.roughnessNode = pick('roughness')
+    .r.mul(roughnessScale)
+    .clamp(0.04, 1);
   if (wallMaps.ao) {
     material.aoNode = pick('ao').r;
   }
@@ -153,7 +162,15 @@ export default function createSurfaceMaterial({
     );
   }
 
-  material.userData.houseSurface = { scale, sharpness, tint, frame };
+  material.userData.houseSurface = {
+    scale,
+    sharpness,
+    tint,
+    floorTint,
+    roughnessScale,
+    detile,
+    frame,
+  };
   return material;
 }
 
@@ -168,9 +185,9 @@ export function setSurfaceFrame(material, { x = 0, y = 0, z = 0, spin = 0 }) {
 }
 
 export const SURFACE_SETS = {
-  wall: '/textures/houseOfLeaves/wall',
-  wood: '/textures/houseOfLeaves/wood',
-  stone: '/textures/houseOfLeaves/stone',
+  wall: 'houseOfLeaves/wall',
+  wood: 'houseOfLeaves/wood',
+  stone: 'houseOfLeaves/stone',
 };
 
 export const SURFACE_MAPS = ['albedo', 'normal', 'roughness', 'ao'];

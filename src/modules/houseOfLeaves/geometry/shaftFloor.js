@@ -1,110 +1,71 @@
-import * as THREE from 'three/webgpu';
+import { mergeGeometries } from 'three/examples/jsm/utils/BufferGeometryUtils.js';
 
-import {
-  EDGE_EPSILON,
-  archHeightAt,
-  orientInward,
-  sampleSpan,
-} from './geometryUtils';
+import { boxAir, buildAir, loftAir } from './air';
 
 export const SHAFT_FLOOR_DEFAULTS = {
-  radius: 30,
-  skirtHeight: 40,
-  segments: 128,
-  doorways: [],
+  spokeLength: 3,
+  reach: 2,
 };
 
-// The bottom of the descent: a disc closing the shaft, with a skirt of wall
-// rising from its edge. Corridors leave it through arched openings cut in that
-// skirt — the floor of the world you finally reach, and every way out of it.
-export default function createShaftFloor(options = {}) {
-  const o = { ...SHAFT_FLOOR_DEFAULTS, ...options };
-  const segments = Math.max(24, Math.round(o.segments));
-  const positions = [0, 0, 0];
-  const indices = [];
-
-  for (let i = 0; i < segments; i += 1) {
-    const angle = (i / segments) * Math.PI * 2;
-    positions.push(Math.cos(angle) * o.radius, 0, Math.sin(angle) * o.radius);
-  }
-  for (let i = 0; i < segments; i += 1) {
-    indices.push(0, 1 + ((i + 1) % segments), 1 + i);
-  }
-
-  // Each doorway occupies an angular span; the skirt is sampled with a doubled
-  // vertex at every jamb so the opening's sides are vertical.
-  const TAU = Math.PI * 2;
-  const wrap = (a) => ((a % TAU) + TAU) % TAU;
-  // Angles are compared as shortest angular distance and normalised into
-  // [0, 2PI): a doorway placed past a full turn, or straddling the seam, must
-  // still be cut. Comparing raw angles silently produced a wall with no exits.
-  const spans = o.doorways.map((door) => {
-    const half = door.width / (2 * o.radius);
-    const angle = wrap(door.angle);
-    return {
-      ...door,
-      angle,
-      half,
-      from: wrap(angle - half),
-      to: wrap(angle + half),
-    };
+// The bottom of the descent. The last stretch of the shaft wall is rebuilt
+// here as a closed loft on the same grid the streamed wall uses — its top ring
+// is the wall's own row, its bottom cap is the floor — and every way out is a
+// box of air unioned through it. The spokes are short stubs; the corridors
+// that continue them begin at their open ends.
+export default function createShaftFloor({
+  ring,
+  inward,
+  rowTop,
+  rowFloor,
+  cols,
+  centre,
+  exits,
+  spokeLength = SHAFT_FLOOR_DEFAULTS.spokeLength,
+  reach = SHAFT_FLOOR_DEFAULTS.reach,
+  radius,
+  depth = 6,
+}) {
+  // Two rings only: the wall between the top row and the floor is a straight
+  // frustum, and every row in between would only be paid for in the boolean.
+  const skirt = loftAir({
+    rows: [rowTop, rowFloor],
+    rowIndices: [rowTop, rowFloor],
+    cols: [0, cols],
+    colsTotal: cols,
+    ring,
+    inward,
+    depth,
+    keepCaps: true,
   });
-  const topAt = (angle) => {
-    let top = 0;
-    spans.forEach((door) => {
-      const delta = wrap(angle - door.angle + Math.PI) - Math.PI;
-      const cut = archHeightAt(delta * o.radius, {
-        width: door.width,
-        height: door.height,
-        archRise: door.archRise ?? door.width * 0.5,
-      });
-      if (cut > top) top = cut;
-    });
-    return top;
-  };
+  // Only the floor is a real surface; the top ring opens into the shaft.
+  const { keep } = skirt.attributes;
+  const { normal } = skirt.attributes;
+  const floorY = ring(rowFloor, 0)[1];
+  const { position } = skirt.attributes;
+  for (let i = 0; i < keep.count; i += 1) {
+    if (normal.getY(i) > 0.9 && position.getY(i) > floorY + 0.01)
+      keep.setX(i, 0);
+  }
 
-  const breaks = [];
-  spans.forEach((door) => breaks.push(door.from, door.to));
-  // Resolve each doorway's arch properly: at 128 samples over a full turn a
-  // 5m opening gets three points, which is why the arches read as chunky
-  // facets rather than curves.
-  const narrowest = spans.reduce(
-    (min, door) => Math.min(min, door.half * 2),
-    Infinity
-  );
-  const needed = Number.isFinite(narrowest)
-    ? Math.ceil((TAU / narrowest) * 16)
-    : 0;
-  const samples = sampleSpan(
-    0,
-    TAU,
-    Math.min(2048, Math.max(segments, needed)),
-    breaks
-  );
-  const skirtBase = positions.length / 3;
-  samples.forEach((sample) => {
-    const angle = sample.v;
-    const x = Math.cos(angle) * o.radius;
-    const z = Math.sin(angle) * o.radius;
-    positions.push(
-      x,
-      Math.min(topAt(angle + sample.side * EDGE_EPSILON), o.skirtHeight),
-      z
+  // One boolean, not one per exit: every union re-walks the skirt, and six
+  // of them cost half a second where one costs a tenth of that.
+  const boxes = exits.map((exit) => {
+    const box = boxAir(
+      radius - reach,
+      radius + spokeLength,
+      floorY,
+      floorY + exit.height,
+      -exit.width * 0.5,
+      exit.width * 0.5,
+      { drop: ['x+'] }
     );
-    positions.push(x, o.skirtHeight, z);
+    box.rotateY(-exit.angle);
+    box.translate(centre.x, 0, centre.z);
+    return box.toNonIndexed();
   });
-  for (let i = 0; i < samples.length - 1; i += 1) {
-    const a = skirtBase + i * 2;
-    indices.push(a, a + 1, a + 3, a, a + 3, a + 2);
-  }
-
-  const geometry = new THREE.BufferGeometry();
-  geometry.setAttribute(
-    'position',
-    new THREE.Float32BufferAttribute(positions, 3)
-  );
-  geometry.setIndex(indices);
-  return orientInward(geometry, new THREE.Vector3(0, o.skirtHeight * 0.3, 0));
+  const cutter = mergeGeometries(boxes, false);
+  boxes.forEach((box) => box.dispose());
+  return buildAir([skirt, cutter]);
 }
 
 // Deterministic ring of exits, varied in size, for the room at the bottom.
@@ -114,8 +75,8 @@ export function shaftFloorDoorways({
   baseWidth = 5,
   baseHeight = 8,
   variance = 0.5,
-  archRatio = 0.3,
   avoidAngle = null,
+  seed = 0,
 } = {}) {
   const doorways = [];
   const spacing = (Math.PI * 2) / Math.max(1, count);
@@ -124,16 +85,16 @@ export function shaftFloorDoorways({
   const offset = avoidAngle === null ? 0 : avoidAngle + spacing * 0.5;
   for (let i = 0; i < count; i += 1) {
     const angle = offset + i * spacing;
-    const roll = Math.sin(i * 12.9898) * 43758.5453;
+    const roll = Math.sin((i + seed * 7) * 12.9898) * 43758.5453;
     const jitter = roll - Math.floor(roll);
     const scale = 1 + (jitter - 0.5) * variance;
-    const width = Math.max(1.5, baseWidth * scale);
-    const height = Math.max(2.5, baseHeight * scale);
+    const width = Math.max(1.2, baseWidth * scale);
+    const height = Math.max(2.2, baseHeight * scale);
     doorways.push({
+      index: i,
       angle: ((angle % (Math.PI * 2)) + Math.PI * 2) % (Math.PI * 2),
       width: Math.min(width, radius * 0.9),
       height,
-      archRise: height * archRatio,
     });
   }
   return doorways;

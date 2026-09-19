@@ -1,4 +1,10 @@
-import { angleAt, axisAt, riseAt, voidRadiusAt } from '@modules/houseOfLeaves';
+import {
+  allLandings,
+  angleAt,
+  axisAt,
+  riseTo,
+  voidRadiusAt,
+} from '@modules/houseOfLeaves';
 
 const QUANTA = { radius: 0.25, riser: 0.002, arc: 1e-6 };
 
@@ -9,16 +15,18 @@ const snap = (value, step) => Math.round(value / step) * step;
 // the one countable cue a viewer has to hold onto.
 //
 // Geometry is keyed on the quantised shape rather than the flight index, so
-// two flights that happen to come out the same size share one buffer. With the
-// drift off that collapses to a single geometry for the whole descent; with it
-// on the cache fills slowly and stays bounded.
-export function collectRuns(progress, behind, ahead, config, frame) {
+// two flights that happen to come out the same size share one buffer.
+export function collectRuns(fromU, toU, config) {
   const p = config.shaft;
-  const fromU = progress - behind;
-  const toU = progress + ahead;
-  const { landings, riseRef } = frame;
-  const ordered = [...landings].sort((a, b) => a.u - b.u);
-  const heightAt = (u) => -(riseAt(u, landings) - riseRef);
+  const all = allLandings(p);
+  // The descent is bracketed by a virtual landing at the top (the room's
+  // rim, where the stair begins) and the floor at the bottom.
+  const ordered = [
+    { u: 0, plateau: 0, virtual: true },
+    ...all,
+    { u: p.descentLength, plateau: 0, virtual: true },
+  ].sort((a, b) => a.u - b.u);
+  const heightAt = (u) => -riseTo(u, p);
   const radiusAt = (u) => snap(voidRadiusAt(u, p), QUANTA.radius);
 
   const runs = [];
@@ -32,12 +40,10 @@ export function collectRuns(progress, behind, ahead, config, frame) {
       const stepCount = Math.max(1, Math.round(rise / config.riser));
       const riser = rise / stepCount;
       const arcPerStep = (angleAt(u1, p) - angleAt(u0, p)) / stepCount;
-      // Both ends snap the same quantity, so the radius a flight arrives at is
-      // bit-for-bit the radius the landing below it leaves from — the taper is
-      // continuous across every joint even though each piece is quantised.
       const innerRadius = radiusAt(u0);
       const innerRadiusEnd = radiusAt(u1);
       const axis = axisAt(u0, p);
+      const axisEnd = axisAt(u1, p);
       runs.push({
         key: [
           stepCount,
@@ -45,6 +51,8 @@ export function collectRuns(progress, behind, ahead, config, frame) {
           innerRadiusEnd,
           snap(riser, QUANTA.riser),
           snap(arcPerStep, QUANTA.arc),
+          snap(axisEnd.x - axis.x, 0.01),
+          snap(axisEnd.z - axis.z, 0.01),
         ].join('|'),
         u0,
         u1,
@@ -53,6 +61,7 @@ export function collectRuns(progress, behind, ahead, config, frame) {
         arcPerStep,
         innerRadius,
         innerRadiusEnd,
+        axisShift: { x: axisEnd.x - axis.x, z: axisEnd.z - axis.z },
         x: axis.x,
         y: heightAt(u0),
         z: axis.z,
@@ -61,21 +70,18 @@ export function collectRuns(progress, behind, ahead, config, frame) {
     }
   }
 
-  const plates = ordered
-    .filter((landing) => landing.u >= fromU && landing.u <= toU)
+  const plates = all
+    .filter(
+      (landing) => landing.u >= fromU - landing.plateau && landing.u <= toU
+    )
     .map((landing) => {
       const end = landing.u + landing.plateau;
       const innerRadius = radiusAt(landing.u);
-      const innerRadiusEnd = radiusAt(end);
       const axis = axisAt(landing.u, p);
-      // The arc the helix actually climbs across the plateau, not the nominal
-      // one: pitch warp varies the rate, so the nominal arc misses where the
-      // next flight resumes and leaves a wedge of missing floor.
       const swept = angleAt(end, p) - angleAt(landing.u, p);
       return {
-        key: [innerRadius, innerRadiusEnd, snap(swept, QUANTA.arc)].join('|'),
+        key: [innerRadius, snap(swept, QUANTA.arc)].join('|'),
         innerRadius,
-        innerRadiusEnd,
         uStart: landing.u,
         arc: swept,
         x: axis.x,
@@ -85,7 +91,7 @@ export function collectRuns(progress, behind, ahead, config, frame) {
       };
     });
 
-  return { landings: ordered, runs, plates };
+  return { landings: all, runs, plates };
 }
 
 export function createGeometryCache(limit = 96) {

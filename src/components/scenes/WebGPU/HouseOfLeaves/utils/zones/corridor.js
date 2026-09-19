@@ -1,113 +1,105 @@
+import { corridorVariationFor, sectionAt } from '@modules/houseOfLeaves';
+
+import { yawAlong } from '../frames';
+
 // A zone owns how the walker's position is represented and how a world-space
 // step is clamped to what can actually be walked on. Nothing here is a mesh or
-// a collider: the architecture is swept from closed-form functions, so the
+// a collider: the architecture is built from closed-form functions, so the
 // ground the walker stands on is read from the same functions rather than
 // raycast against a copy of them that might disagree.
 //
-// Every zone answers the same questions — where do I start, where does a step
-// put me, where am I in the world, and have I left — so the walker never knows
-// which one it is in.
-//
-// The corridor is placed rather than fixed at the origin, because the way back
-// is the same zone laid down a spoke at the bottom of the shaft, pointing
-// wherever that spoke happens to point.
-export default function createCorridorZone(config, options = {}) {
+// The corridor runs down its frame's local +X from x = 0 for `length` metres.
+// Its section is a function of distance, so the clamp follows the walls as
+// they drift and grow.
+export default function createCorridorZone(config, options) {
   const {
-    id = 'corridor',
-    origin = { x: 0, y: 0, z: 0 },
-    heading = 0,
-    length = config.hallLength,
-    exitTo = 'greatRoom',
+    id,
+    lap,
+    frame,
+    length,
+    exitTo,
+    role = 'out',
+    entry = null,
+    seed = 0,
   } = options;
-
-  const halfWidth = config.corridorWidth * 0.5 - config.walkerRadius;
-
-  // Placement is live rather than baked, because the way back is this same
-  // zone laid down whichever spoke the walker chose — and which spoke that is
-  // is not known until they walk through it.
-  const placement = {
-    origin: { ...origin },
-    heading,
-    cos: Math.cos(heading),
-    sin: Math.sin(heading),
+  const profile = {
+    corridorWidth: config.corridorWidth,
+    corridorHeight: config.corridorHeight,
+    startWidth: config.startWidth,
+    startHeight: config.startHeight,
+    growthRun: config.hallGrowthRun,
+    length,
+    reverse: role === 'return',
+    seed,
+    segmentLength: config.segmentLength,
+    driftAmount: config.driftAmount,
+    driftWavelength: config.driftWavelength,
+    stepAmount: config.stepAmount,
+    stepRunLength: config.stepRunLength,
+    branchChance: config.branchChance,
   };
-  const placeAt = (at, angle) => {
-    placement.origin = { ...at };
-    placement.heading = angle;
-    placement.cos = Math.cos(angle);
-    placement.sin = Math.sin(angle);
-  };
-
-  // Local +X runs down the corridor; the heading turns that into world space.
-  const toWorld = (x, z) => ({
-    x: placement.origin.x + x * placement.cos - z * placement.sin,
-    z: placement.origin.z + x * placement.sin + z * placement.cos,
-  });
-  // A step is a direction, not a place, so it takes the rotation alone.
-  const deltaToLocal = (dx, dz) => ({
-    x: dx * placement.cos + dz * placement.sin,
-    z: -dx * placement.sin + dz * placement.cos,
-  });
+  const halfAt = (x) =>
+    Math.max(0.05, sectionAt(x, profile).width * 0.5 - config.walkerRadius);
 
   return {
+    kind: 'corridor',
+    role,
     id,
-    placement,
-    get origin() {
-      return placement.origin;
-    },
-    get heading() {
-      return placement.heading;
-    },
+    lap,
+    frame,
+    length,
+    entry,
+    profile,
+    exitTo,
+
     // Mid-segment, not on a joint. Spawning on one puts the walker inside
-    // whatever bulkhead that joint happens to carry.
+    // whatever wall that joint happens to carry.
     spawn: () => ({ x: config.segmentLength * 0.5, z: 0 }),
+    enter: ({ along = 0, lateral = 0 } = {}) => {
+      const half = halfAt(Math.max(0, along));
+      return { x: along, z: Math.max(-half, Math.min(half, lateral)) };
+    },
+    frameOf: () => null,
 
-    // Entering from a spoke at the bottom of the shaft: the corridor is laid
-    // down *that* spoke, not whichever one happened to be first, and the
-    // walker keeps the cross-track offset they came through the doorway with.
-    enter: ({ along = 0, lateral = 0, door, centre } = {}) => {
-      if (door && centre) {
-        placeAt(
-          {
-            x: centre.x + Math.cos(door.angle) * (centre.radius ?? 0),
-            y: 0,
-            z: centre.z + Math.sin(door.angle) * (centre.radius ?? 0),
-          },
-          door.angle
-        );
+    step: (current, delta) => {
+      const local = frame.deltaToLocal(delta.x, delta.z);
+      const x = current.x + local.x;
+      const half = halfAt(Math.max(0, x));
+      return { x, z: Math.max(-half, Math.min(half, current.z + local.z)) };
+    },
+
+    place: (current, out) => {
+      const world = frame.toWorld(current.x, current.z);
+      return out.set(world.x, frame.y, world.z);
+    },
+    facing: () => yawAlong(frame),
+    progress: (current) => current.x,
+
+    exit: (current) =>
+      current.x >= length ? { to: exitTo, lateral: current.z } : null,
+
+    near: (pos, margin) => {
+      const local = frame.toLocal(pos.x, pos.z);
+      return (
+        local.x > -margin &&
+        local.x < length + margin &&
+        Math.abs(local.z) < 30 + margin &&
+        Math.abs(pos.y - frame.y) < margin
+      );
+    },
+
+    // What the director can see coming: the next opening ahead of `x`.
+    openingAhead: (x) => {
+      const first = Math.floor(x / config.segmentLength);
+      for (let i = first; i < first + 3; i += 1) {
+        const variation = corridorVariationFor(i, profile);
+        if (variation.kind !== 'plain') {
+          const along = (i + 0.5) * config.segmentLength;
+          if (along > x)
+            return { along, side: variation.side, kind: variation.kind };
+        }
       }
-      return {
-        x: along,
-        z: Math.max(-halfWidth, Math.min(halfWidth, lateral)),
-      };
+      return null;
     },
-    frame: () => null,
-
-    // Straight down its own axis, forever. Nothing wraps and nothing recycles
-    // the walker's own coordinate — the corridor is genuinely unbounded and
-    // the rebase in the walker is what keeps the numbers small.
-    step: (state, delta) => {
-      const local = deltaToLocal(delta.x, delta.z);
-      return {
-        x: state.x + local.x,
-        z: Math.max(-halfWidth, Math.min(halfWidth, state.z + local.z)),
-      };
-    },
-
-    place: (state, out) => {
-      const world = toWorld(state.x, state.z);
-      return out.set(world.x, placement.origin.y ?? 0, world.z);
-    },
-    height: () => placement.origin.y ?? 0,
-    // Yaw 0 looks down -Z, and the corridor is swept along its local +X.
-    // Without this the walk starts side-on and W puts the walker straight into
-    // the wall, where the clamp holds it and progress never advances.
-    facing: () => Math.atan2(-placement.cos, -placement.sin),
-    progress: (state) => state.x,
-
-    // Endless in feel, not in fact: it releases into whatever it leads to once
-    // the walk has covered its length.
-    exit: (state) =>
-      exitTo && state.x >= length ? { to: exitTo, lateral: state.z } : null,
   };
 }

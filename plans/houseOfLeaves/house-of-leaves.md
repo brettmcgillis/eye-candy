@@ -1,169 +1,108 @@
-# House of Leaves — a constellation
+# House of Leaves — the loop
 
-Not one scene. A set of related pieces sharing one art direction, built and
-posted separately, each standing on its own.
+One scene, `WebGPU/HouseOfLeaves`. A directed first-person loop in tribute to
+the book: living room → the hallway that should not be there → the great room
+→ the grand staircase → the shaft floor → a hallway back → the same living
+room → the hallway again. Photoreal register, VR-like framing, the camera is a
+performance over a procedurally streamed world.
 
-**Status:** planning only, nothing built.
+Research notes that still apply: `five-minute-hallway.md`, `grand-staircase.md`.
 
----
+## Decisions (2026-09-18)
 
-## The governing idea
+- **Directed, not played.** A director script drives the walker's autopilot:
+  speed, look targets, pauses. WASD and drag-look stay as a debug mode only
+  (`walkEnabled` with `directed` off). Undecided whether playable stays long
+  term; nothing in the movement code depends on the answer.
+- **Rectilinear.** Flat walls, square openings, no arches. Truer to the
+  source's plain ash-grey surfaces and it is what makes watertight geometry
+  cheap. Arches can return later as a different air profile (see below); they
+  are not a different technique.
+- **Air volumes, not sheets.** Every artifact so far — paper walls, corners
+  that miss, holes to the void — came from building architecture as separate
+  zero-thickness lofts nudged into each other. Architecture is now the
+  *boundary of the union of the air volumes*: a corridor unit is a tapered
+  prism unioned (three-bvh-csg) with its branch box, room box or dead end;
+  the result is flipped to face inward, its open ends dropped. Corners meet by
+  construction, openings are the same volume as what is behind them, and
+  nothing is double-sided. Where two air volumes meet on a plane with
+  different sections (a stepped joint, a doorway into a bigger space) the wall
+  between them is an analytic rectangle-minus-rectangle frame, no boolean.
+  Measured: unit union ≈5 ms, landing mouth patch ≈5 ms, floor ≈40 ms once. A
+  boolean over the whole streamed shaft wall is 640 ms, so the shaft keeps its
+  lofted wall and only the cells around a landing's mouths are cut.
+- **Absolute coordinates, one system.** Heights are absolute (`riseTo(u)`
+  counts every landing plateau from the top, ~20 landings, trivially cheap),
+  so the frame-relative shaft and its rise reference are gone. Zones are
+  *placed* (origin + heading) and chained lap by lap: the living room at the
+  end of the return hallway is a new placement of the same zone, and the next
+  hallway leaves it exactly as the first did. Spaces mount by proximity to the
+  walker, not by which zone it is standing in, so looking back at the room
+  from the top landing shows the room.
+- **Two scenes cut.** `LabyrinthKit` (wrap/fold tour, stage previews) and
+  `GrandStaircase` (treadmill descent) are deleted. The analytic light column
+  from `GrandStaircase` is a concept to re-implement inside this scene later,
+  not a file to harvest.
+- **PBR back on.** Triplanar photo sets with normal and roughness over the
+  procedural ash; nothing here is ever lit past the flashlight cone, so the
+  tiling worry at room scale does not apply.
+- **Readability is exposure + light tiers**, not "less darkness": AgX tone
+  mapping with an exposure control, film grain to kill near-black banding,
+  vignette, bloom on the TV and the light at the end of the return hallway,
+  a very low cool fill in the shaft so the far wall is *barely* there and the
+  200 ft → 500 ft growth reads, warm practicals in the living room.
 
-The book's power is **scale betrayal witnessed, not navigated**. The horror is
-that a space refuses to agree with itself, and that you are looking at it.
+## The loop, as beats
 
-This produces one hard constraint, which every scene below inherits:
+1. Living room, evening, TV on. Settle. A slow 360° look; the north wall is
+   plain. The doorway is swapped in only while the wall is out of frame.
+   Coming back round: a doorway, dark, with no end.
+2. Walk in. Domestic width at first, then the section drifts and grows. Side
+   doorways to rooms, junctions, dead ends. The light is the carried torch.
+   Walking becomes running.
+3. The threshold to the great room: stop, look up and around into nothing.
+   Cross to the rim of the circular opening, look over — no bottom.
+4. Onto the top landing, down. Flights and landings whose count never
+   settles, the shaft opening as it goes, turns that stop being concentric.
+   Glances over the edge and up. Running.
+5. The floor. Several thresholds of different sizes. Turn, weigh each, choose.
+6. A hallway like the first, shrinking back toward domestic width. A warm
+   light far ahead. Run. It is the living room. Cross the threshold, turn:
+   everything as it was, and after the turn the doorway is gone.
+7. Loop from 1.
 
-> **Do not build a walkable house.** "Bigger on the inside" as an explorable is
-> a game, and navigating a space converts dread into puzzle-solving. The camera
-> should be trapped, not driven.
+## Layout
 
-Cameras are static holds or slow dollies. The viewer cannot get out. That also
-makes every scene generative-still and video capable, which is the Rorschach
-pipeline shape rather than a fight against it.
+Zones and their frames, per lap `n`:
 
-## Shared art direction
-
-- Ash-grey, featureless walls. No trim, no fixtures, no scale cues. Surfaces
-  that **absorb light** rather than return it — a lamp should reveal almost
-  nothing.
-- Volumetric fog and shafts. The mist is what makes the depth legible and the
-  distance unresolvable at the same time.
-- Deep black falloff. Darkness as a material, not an absence.
-- Restraint on color. When color appears (the red interior lighting in
-  Apart(maze)ment) it should be the only color in frame.
-- No people. No furniture. The absence is the subject.
-
-## The scenes
-
-Ordered by how ready they are to build, not by importance.
-
-### 1. The Grand Staircase — the starter
-
-Camera slowly descending an endless spiral staircase. Hallways branch off into
-darkness at intervals. Volumetric fog and lighting for the misty, surreal
-register.
-
-The single most important detail: **the staircase must be quietly wrong about
-its own length.** In the book the descent takes wildly different times on
-different expeditions. If the geometry loops on a fixed period the viewer will
-pin the trick and the dread evaporates. The period needs to drift — landings
-arriving at intervals that never resolve into a countable pattern.
-
-Open questions:
-
-- Procedural helix with instanced steps, or a repeating segment swapped out
-  below the camera? The second is cheaper but risks a detectable loop.
-- Does the camera fall at constant speed, or does the speed itself drift?
-- Do the branching hallways ever get lit, or only ever imply depth?
-
-### 2. Five and a Half Minute Hallway
-
-A normal domestic doorway in a normal interior wall, opening onto a corridor
-that recedes far past where the house ends. The entire thesis in one frame:
-domestic trim on the near side, ash-grey nothing on the far side.
-
-This is the most static of the set — possibly a single locked-off shot. The
-contrast between the two materials at the threshold is the whole image, so the
-domestic side has to be convincingly ordinary.
-
-### 3. Apart(maze)ment
-
-MarkovJunior-generated. White and grey voxels, black outlines, red dramatic
-lighting inside the structures. Maze-like halls, staircases, windows.
-
-**This is deliberately NOT the same scene as the house interiors** — the earlier
-call to merge them was wrong. Apart(maze)ment is a _building full of rooms_;
-the house's labyrinth is a negative space with no rooms at all, where the horror
-is that there is nothing in it. Those are opposite feelings and they should not
-share a renderer or a palette. It belongs in the constellation because it shares
-the labyrinth theme, not because it shares the look.
-
-References: MarkovJunior / MarkovJuniorWeb. Generator may need adjustment to
-land the apartemazement look specifically.
-
-### 4. Bigger on the Inside
-
-Exterior view of the house, with windows looking into impossible interiors.
-Parallax Occlusion Mapping on the window planes to reveal spaces that cannot
-fit: a forest, space, corridors receding past the far wall.
-
-This is the original "House of Leaves 1" idea from the main TODO. Possible
-starting point is the three.js skyscraper generator, adapted toward a
-one/two/three-story house generator.
-
-Open question: does the exterior stay perfectly ordinary (stronger contrast,
-truer to the book) or does it get subtly wrong too?
-
-### 5. Ash Tree Lane
-
-The calm exterior. A completely ordinary Virginia house shot as a still, giving
-away nothing.
-
-Works as the constellation's opening frame and as the deliberate contrast that
-makes every interior land harder. Cheapest piece in the set, and probably the
-one that does the most work per unit of effort. Overlaps with Bigger on the
-Inside — they may be one build with two treatments.
-
-### 6. The Growl
-
-The labyrinth reconfiguring while unobserved. Camera holds on a corridor;
-geometry changes only when it is not being looked at.
-
-Nearly pure trickery — visibility tests and geometry swaps — and genuinely
-upsetting when it works. Risk: if the change is too obvious it reads as a
-glitch; too subtle and nobody notices. Needs the most iteration of any piece
-here.
-
-### 7. Holloway's Descent
-
-The expedition footage. Handheld camera, a headlamp cone that reaches nothing,
-walls arriving and leaving the frame.
-
-Found-footage register rather than architectural. Different enough in feel that
-it might not belong — flagging it as a maybe.
-
-### 8. The Quarter-Inch
-
-The book's inciting image: measure the house outside, measure it inside, the
-interior is fractionally larger. A scene that is just two measurements refusing
-to agree.
-
-Small, cold, and the most literal statement of the premise. Could be nearly
-diagrammatic. Least "eye candy" of the set — include only if it earns a frame.
-
----
-
-## Sourcing the text
-
-The original TODO idea was to scrape the book for visual descriptions of the
-house and its liminal spaces.
-
-**Brett supplies the passages.** Agent recall of this text is reliable on
-structure and imagery — Ash Tree Lane, the quarter-inch discrepancy, the hallway
-in the living room wall, the Five and a Half Minute Hallway, the Great Staircase
-whose descent changes length, the growl, Holloway's expedition, Zampanò and
-Johnny Truant's footnotes — but **not** at page level, and extended description
-should not be reproduced from memory regardless. Working from passages Brett
-pulls himself is both more accurate and the correct way to handle the source.
+| Zone           | Origin                                        | Heading        |
+| -------------- | --------------------------------------------- | -------------- |
+| livingRoom     | lap 0: world origin; else return corridor end | as arrived + π |
+| corridor       | living room door, outside the wall            | living room    |
+| greatRoom      | corridor end + half the room                  | corridor       |
+| shaft          | great room centre (hole = axis at u=0)        | great room     |
+| shaftFloor     | shaft axis at u = descent                     | shaft          |
+| returnCorridor | chosen spoke, outside the skirt               | shaft + spoke  |
 
 ## Build order
 
-1. **The Grand Staircase** — best-specified, strongest single image, teaches the
-   fog/darkness look the rest of the constellation inherits.
-2. **Ash Tree Lane** or **Five and a Half Minute Hallway** — whichever the
-   staircase's lighting work makes cheaper.
-3. Everything else, informed by what the first two teach.
+1. Cut the two scenes, collapse the plans. — done
+2. Air-volume geometry in `@modules/houseOfLeaves/geometry`: `air` (CSG
+   helpers), `frame`, `corridorUnit`, `greatRoom`, `shaftFloor`, `mouthPatch`,
+   `livingRoom`. Old lofts removed.
+3. Zones with placement, absolute heights, lap chaining, proximity mounting.
+4. Director and the living-room reveal latch.
+5. Living room dressing: retro TV via the CRT channel materials, rug, and
+   placeholder furniture until the Poly Haven models are brought in.
+6. Light tiers, PBR surfaces, post stack, exposure pass.
+7. Presets: `Loop`, a long `Five and a Half Minutes`, per-zone rigs, seam
+   check.
 
-Apart(maze)ment can proceed independently at any point since it shares no
-renderer with the others.
+## Follow-ups
 
-## Open questions for Brett
-
-- One scene folder with presets per space, or separate scenes? Leaning separate
-  — they share art direction but not geometry, and the presets would have almost
-  nothing in common.
-- Is there an audio dimension? The growl is a sound in the book. Howler is
-  already in the repo (see the Surrender storm work).
-- Does any piece want the stills/video CLI treatment, or are these all
-  real-time-only scenes?
+- Corridor turns (a unit kind that rotates the axis) — the walk is straight
+  for now.
+- Arched profile as an alternative air section.
+- A droppable flare at the rim.
+- The analytic shaft column light for scale.
+- Audio: the growl, the TV, footsteps. Howler is in the repo.

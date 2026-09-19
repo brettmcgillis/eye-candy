@@ -13,6 +13,10 @@ export const STAIR_SEGMENT_DEFAULTS = {
   arcPerStep: TAU / 512,
   thickness: 1.2,
   nosing: 1.04,
+  // Where the shaft's axis has moved to by the bottom of the flight, in the
+  // flight's own frame, so a flight follows the axis as it wanders instead
+  // of arriving beside the landing it was meant to meet.
+  axisShift: { x: 0, z: 0 },
 };
 
 // One flight: `stepCount` treads climbing a helical arc. Built as real merged
@@ -49,9 +53,9 @@ export default function createStairSegment(options = {}) {
       -angle
     );
     const position = new THREE.Vector3(
-      Math.cos(angle) * midRadius,
+      Math.cos(angle) * midRadius + o.axisShift.x * t,
       -(i + 1) * o.riser - height * 0.5,
-      Math.sin(angle) * midRadius
+      Math.sin(angle) * midRadius + o.axisShift.z * t
     );
     matrix.compose(position, quaternion, new THREE.Vector3(1, 1, 1));
     box.applyMatrix4(matrix);

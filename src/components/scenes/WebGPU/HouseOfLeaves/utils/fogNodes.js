@@ -101,6 +101,7 @@ export default function buildFogVolume({
         uniforms.beamColor
           .mul(uniforms.beamScatter)
           .mul(beam)
+          .add(uniforms.airGlow)
           .mul(extinction)
           .mul(transmittance)
       );
@@ -119,6 +120,7 @@ export default function buildFogVolume({
       If(flare.w.lessThanEqual(0), () => {
         Break();
       });
+      const tint = textureLoad(flareTexture, ivec2(int(i), int(1)));
       const toFlare = flare.xyz.sub(cameraPosition);
       const along = clamp(toFlare.dot(direction), 0, tMax);
       const perpendicular = max(
@@ -129,9 +131,10 @@ export default function buildFogVolume({
         .sub(atan(along.negate().div(perpendicular)))
         .div(perpendicular);
       flareGlow.addAssign(
-        uniforms.flareColor
+        tint.rgb
           .mul(flare.w)
           .mul(integral)
+          .mul(tint.w)
           .mul(uniforms.flareScatter)
           .mul(uniforms.fogDensity)
           // Extinction between the flare and the eye, or a flare behind a wall

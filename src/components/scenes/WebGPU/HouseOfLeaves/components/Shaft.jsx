@@ -5,38 +5,30 @@ import { useFrame } from '@react-three/fiber';
 import {
   createLanding,
   createStairSegment,
-  riseAt,
+  rotateXZ,
 } from '@modules/houseOfLeaves';
 
 import collectMouths, { collectLandingFlares } from '../utils/mouths';
 import { collectRuns, createGeometryCache } from '../utils/runs';
-import buildShaftWall, { WALL_COLUMNS, WALL_ROWS } from '../utils/shaftWall';
-import ShaftMouths from './ShaftMouths';
+import createShaftGrid from '../utils/shaftGrid';
+import buildShaftWall from '../utils/shaftWall';
+import LandingMouths from './LandingMouths';
 
-// Flights and landings are recycled through pools the same way the corridor's
-// units are, but here the geometry differs run to run — the shaft opens as it
-// descends and the drift changes the pitch — so each slot is handed a cached
-// geometry for its shape rather than one shared buffer.
-function Shaft({ config, flares, material, wallMaterial, walker }) {
+// Flights and landings are recycled through pools, each slot handed a cached
+// geometry for its shape — the shaft opens as it descends and the drift
+// changes the pitch, so the geometry differs run to run. The wall is lofted
+// over the window on the shared grid and rebuilt only when the walker has
+// moved far enough to need it. Everything lives in the shaft's frame, at
+// absolute depth.
+function Shaft({ config, flares, material, wallMaterial, walker, zone }) {
   const rootRef = useRef(null);
   const flightRefs = useRef([]);
   const plateRefs = useRef([]);
   const wallRef = useRef(null);
   const cache = useMemo(() => createGeometryCache(), []);
-  // Mouths and the wall they pierce are rebuilt together and share a
-  // reference, because a tunnel drifting away from its hole would show a gap
-  // straight through the shaft.
-  const [openings, setOpenings] = useState({
-    mouths: [],
-    landingFlares: [],
-    uRef: 0,
-  });
-  const built = useRef({
-    from: Infinity,
-    to: -Infinity,
-    uRef: 0,
-    geometry: null,
-  });
+  const grid = useMemo(() => createShaftGrid(config.shaft), [config.shaft]);
+  const [openings, setOpenings] = useState({ mouths: [], landingFlares: [] });
+  const built = useRef({ from: Infinity, to: -Infinity, geometry: null });
 
   useEffect(
     () => () => {
@@ -59,26 +51,21 @@ function Shaft({ config, flares, material, wallMaterial, walker }) {
   );
 
   useFrame(() => {
-    if (!walker.frame) return;
-    const { runs, plates } = collectRuns(
-      walker.progress,
-      config.streamBehind,
-      config.streamAhead,
-      config,
-      walker.frame
-    );
-    const { anchor } = walker;
-    // One group carries both the rebase and the shaft's offset into the shared
-    // world, so every piece below is placed in the shaft's own axis frame and
-    // none of them has to know where the stairwell sits in the room.
+    const { anchor, position } = walker;
     const root = rootRef.current;
+    const { frame } = zone;
     if (root) {
       root.position.set(
-        config.origin.x - anchor.x,
-        -anchor.y,
-        config.origin.z - anchor.z
+        frame.x - anchor.x,
+        frame.y - anchor.y,
+        frame.z - anchor.z
       );
+      root.rotation.y = frame.rotationY;
     }
+    const u = walker.zone === zone ? walker.state.u : zone.uFor(position);
+    const from = u - config.streamBehind;
+    const to = u + config.streamAhead;
+    const { runs, plates } = collectRuns(from, to, config);
 
     for (let i = 0; i < flightRefs.current.length; i += 1) {
       const mesh = flightRefs.current[i];
@@ -89,13 +76,19 @@ function Shaft({ config, flares, material, wallMaterial, walker }) {
           mesh.geometry = cache.get(run.key, () =>
             createStairSegment({
               innerRadius: run.innerRadius,
-              outerRadius: run.innerRadius + config.stairWidth,
+              outerRadius: run.innerRadius + config.stairWidth + config.wallGap,
               innerRadiusEnd: run.innerRadiusEnd,
-              outerRadiusEnd: run.innerRadiusEnd + config.stairWidth,
+              outerRadiusEnd:
+                run.innerRadiusEnd + config.stairWidth + config.wallGap,
               riser: run.riser,
               stepCount: run.stepCount,
               arcPerStep: run.arcPerStep,
               thickness: config.slabThickness,
+              axisShift: rotateXZ(
+                run.axisShift.x,
+                run.axisShift.z,
+                run.rotation
+              ),
             })
           );
           mesh.position.set(run.x, run.y, run.z);
@@ -113,9 +106,8 @@ function Shaft({ config, flares, material, wallMaterial, walker }) {
           mesh.geometry = cache.get(`L${plate.key}`, () =>
             createLanding({
               innerRadius: plate.innerRadius - config.landingOvershoot,
-              outerRadius: plate.innerRadius + config.stairWidth,
-              innerRadiusEnd: plate.innerRadiusEnd - config.landingOvershoot,
-              outerRadiusEnd: plate.innerRadiusEnd + config.stairWidth,
+              outerRadius:
+                plate.innerRadius + config.stairWidth + config.wallGap,
               arc: plate.arc,
               thickness: config.slabThickness,
             })
@@ -128,55 +120,39 @@ function Shaft({ config, flares, material, wallMaterial, walker }) {
 
     const wall = wallRef.current;
     if (wall) {
-      const from = walker.progress - config.streamBehind;
-      const to = walker.progress + config.streamAhead;
       const state = built.current;
       const slack = config.wallRebuildSlack;
-
-      // Frame-relative height differs from the built one by a single constant,
-      // so between rebuilds the wall only has to be shifted in Y. Rebuilding
-      // this every frame would be a megabyte of vertex upload for a surface
-      // that has not changed shape.
       if (from < state.from + slack || to > state.to - slack) {
-        const inRange = walker.frame.landings.filter(
-          (landing) =>
-            landing.u >= from - slack * 2 && landing.u <= to + slack * 2
+        const spanFrom = from - slack * 2;
+        const spanTo = to + slack * 2;
+        const landings = collectRuns(spanFrom, spanTo, config).landings.filter(
+          (landing) => landing.u >= spanFrom && landing.u <= spanTo
         );
-        const mouths = collectMouths(inRange, config);
+        const mouths = collectMouths(landings, config, grid);
+        const rowFrom = Math.max(
+          0,
+          Math.floor(grid.rowOfU(Math.max(0, spanFrom)))
+        );
+        const rowTo = Math.min(
+          config.shaftRows.rowTop,
+          Math.ceil(grid.rowOfU(Math.min(config.shaft.descentLength, spanTo)))
+        );
         setOpenings({
-          mouths,
-          landingFlares: collectLandingFlares(inRange, config),
-          uRef: walker.progress,
+          mouths: mouths.filter(
+            (m) => m.rows[0] >= rowFrom && m.rows[1] <= rowTo
+          ),
+          landingFlares: collectLandingFlares(landings, config),
         });
         const next = buildShaftWall({
-          fromU: from - slack * 2,
-          toU: to + slack * 2,
-          config,
-          frame: walker.frame,
-          mouths,
-          uRef: walker.progress,
-          rows: WALL_ROWS,
-          columns: WALL_COLUMNS,
+          grid,
+          rowFrom,
+          rowTo,
+          patches: mouths,
         });
         state.geometry?.dispose();
-        built.current = {
-          from: from - slack * 2,
-          to: to + slack * 2,
-          uRef: walker.progress,
-          geometry: next,
-        };
+        built.current = { from: spanFrom, to: spanTo, geometry: next };
         wall.geometry = next;
       }
-
-      // The offset has to be a *difference* of rises taken against one landing
-      // set. A difference is independent of which landings the set happens to
-      // hold, because any landing behind both ends contributes to both and
-      // cancels — but the absolute rise is not, and a landing ageing out of
-      // the window would jump the wall by its plateau.
-      const shift =
-        walker.frame.riseRef -
-        riseAt(built.current.uRef, walker.frame.landings);
-      wall.position.set(0, shift, 0);
     }
   });
 
@@ -184,8 +160,10 @@ function Shaft({ config, flares, material, wallMaterial, walker }) {
     <group ref={rootRef}>
       {Array.from({ length: pool }, (_, i) => (
         <mesh
+          castShadow
           key={`flight${i}`}
           material={material}
+          receiveShadow
           ref={(node) => {
             flightRefs.current[i] = node;
           }}
@@ -193,22 +171,29 @@ function Shaft({ config, flares, material, wallMaterial, walker }) {
       ))}
       {Array.from({ length: pool }, (_, i) => (
         <mesh
+          castShadow
           key={`plate${i}`}
           material={material}
+          receiveShadow
           ref={(node) => {
             plateRefs.current[i] = node;
           }}
         />
       ))}
-      <mesh material={wallMaterial} ref={wallRef} />
-      <ShaftMouths
+      <mesh material={wallMaterial} ref={wallRef} receiveShadow />
+      <LandingMouths
         config={config}
         flares={flares}
+        grid={grid}
         landingFlares={openings.landingFlares}
-        material={material}
+        material={wallMaterial}
         mouths={openings.mouths}
-        uRef={openings.uRef}
-        walker={walker}
+      />
+      {/* The one place the darkness has a floor value: a faint cool fill so
+          the far side of the shaft is barely there, which is the only way
+          the shaft's growth can be perceived at all. */}
+      <hemisphereLight
+        args={[config.shaftFillColor, '#000000', config.shaftFill]}
       />
     </group>
   );

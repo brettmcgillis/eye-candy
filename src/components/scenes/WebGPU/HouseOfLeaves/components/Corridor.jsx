@@ -10,60 +10,61 @@ import {
 
 import CorridorUnit from './CorridorUnit';
 
-// The corridor is not folded and does not wrap: units are built at their
-// absolute index, so nothing about a unit depends on where the walker is and
-// the corridor is genuinely unbounded rather than a short loop pretending.
-//
-// The window is React state rather than a per-frame pool. Segments arrive one
-// every sixteen seconds at a walk, so the churn is nothing, and each unit's
-// pieces — a branch, a room, a bulkhead, a flare — differ far too much to
-// share pooled slots.
-function Corridor({ config, flares, material, walker }) {
+// Units are built at their absolute index in the zone, so nothing about a
+// unit depends on where the walker is. The window follows the walker's
+// position projected onto this corridor's axis — its own zone or not, so a
+// hallway seen from its far end is drawn from there.
+function Corridor({ config, flares, material, walker, zone }) {
   const groupRef = useRef(null);
-  const [first, setFirst] = useState(0);
-
-  const count = useMemo(
-    () =>
-      Math.ceil(
-        (config.streamAhead + config.streamBehind) / config.segmentLength
-      ) + 2,
-    [config.segmentLength, config.streamAhead, config.streamBehind]
-  );
+  const [window, setWindow] = useState({ first: 0, last: -1 });
+  const count = Math.round(zone.length / config.segmentLength);
 
   useFrame(() => {
     const group = groupRef.current;
+    const { anchor, position } = walker;
     if (group) {
-      const { anchor, zone } = walker;
-      const origin = zone?.origin ?? { x: 0, y: 0, z: 0 };
-      // The way back is this same corridor laid down a spoke, so the group
-      // carries the zone's placement as well as the rebase. Local +X maps to
-      // the heading, which is a rotation of its negative.
+      const { frame } = zone;
       group.position.set(
-        origin.x - anchor.x,
-        (origin.y ?? 0) - anchor.y,
-        origin.z - anchor.z
+        frame.x - anchor.x,
+        frame.y - anchor.y,
+        frame.z - anchor.z
       );
-      group.rotation.y = -(zone?.heading ?? 0);
+      group.rotation.y = frame.rotationY;
     }
-    const next = Math.floor(
-      (walker.progress - config.streamBehind) / config.segmentLength
+    const local = zone.frame.toLocal(position.x, position.z);
+    const first = Math.max(
+      0,
+      Math.floor((local.x - config.streamBehind) / config.segmentLength)
     );
-    setFirst((current) => (current === next ? current : next));
+    const last = Math.min(
+      count - 1,
+      Math.ceil((local.x + config.streamAhead) / config.segmentLength)
+    );
+    setWindow((current) =>
+      current.first === first && current.last === last
+        ? current
+        : { first, last }
+    );
   });
 
-  const units = useMemo(
-    () =>
-      Array.from({ length: count }, (_, i) => {
-        const index = first + i;
-        return {
-          index,
-          segment: segmentAt(index, config),
-          variation: corridorVariationFor(index, config),
-          hasFlare: hash01(index * 11.3 + 4.1) < config.flareChance,
-        };
-      }),
-    [config, count, first]
-  );
+  const units = useMemo(() => {
+    const list = [];
+    for (let index = window.first; index <= window.last; index += 1) {
+      const segment = segmentAt(index, zone.profile);
+      // The last unit ends at whatever the corridor leads into, which draws
+      // its own wall around the corridor's mouth.
+      if (index === count - 1) segment.jump = false;
+      list.push({
+        index,
+        segment,
+        variation: corridorVariationFor(index, zone.profile),
+        entry: index === 0 ? zone.entry : null,
+        hasFlare:
+          hash01(index * 11.3 + 4.1 + zone.profile.seed) < config.flareChance,
+      });
+    }
+    return list;
+  }, [config.flareChance, count, window, zone]);
 
   return (
     <group ref={groupRef}>
@@ -74,6 +75,7 @@ function Corridor({ config, flares, material, walker }) {
         >
           <CorridorUnit
             config={config}
+            entry={unit.entry}
             flares={flares}
             hasFlare={unit.hasFlare}
             material={material}

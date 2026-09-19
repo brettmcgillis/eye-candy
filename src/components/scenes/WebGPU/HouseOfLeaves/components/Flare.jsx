@@ -8,16 +8,24 @@ import { Flare as FlareBody, hash01 } from '@modules/houseOfLeaves';
 
 // The scene's flare: the module's body and light, plus the registration that
 // puts it into the volumetric. Its world position is read from the object
-// rather than the props, because the group it sits in is moved by the walker's
-// rebase every frame and the march needs where it actually is.
+// rather than the props, because the group it sits in is moved by the
+// walker's rebase every frame and the march needs where it actually is.
 function Flare({ config, flares, position, seed = 0 }) {
   const groupRef = useRef(null);
 
   const entry = useMemo(
-    () => ({ position: new THREE.Vector3(), intensity: 0 }),
+    () => ({
+      position: new THREE.Vector3(),
+      color: new THREE.Color(config.flareColor),
+      intensity: 0,
+      scatter: 1,
+    }),
     []
   );
   useEffect(() => flares.add(entry), [entry, flares]);
+  useEffect(() => {
+    entry.color.set(config.flareColor);
+  }, [config.flareColor, entry]);
 
   // Each flare burns at its own rate and its own phase, so a corridor of them
   // never pulses in unison.

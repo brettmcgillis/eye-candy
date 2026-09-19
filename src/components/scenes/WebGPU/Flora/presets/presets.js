@@ -295,6 +295,23 @@ const SNAPSHOTS = {
     crownColor: '#e0407e',
     ornamentColor: '#f4a531',
   },
+  Portrait: {
+    seed: 'portrait',
+    cameraMode: 'orbit',
+    orbitAutoRotate: false,
+    regrow: false,
+    rollGenerations: false,
+    startGrown: true,
+    timeScale: 0,
+    windStrength: 0,
+    windSpeed: 0,
+    scatterDistance: 0,
+    scatterDrift: 0,
+    scatterLift: 0,
+    scatterFlutter: 0,
+    scatterTurbulence: 0,
+    scatterSpin: 0,
+  },
 };
 
 export const PRESETS = Object.fromEntries(

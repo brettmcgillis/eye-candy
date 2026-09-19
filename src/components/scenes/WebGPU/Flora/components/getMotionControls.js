@@ -17,6 +17,7 @@ export default function getMotionControls(
             label: 'Roll Each Generation',
             value: p('rollGenerations'),
           },
+          startGrown: { label: 'Start Grown', value: p('startGrown') },
           timeScale: range('Time Scale', p('timeScale'), 0, 4, 0.05),
           growSeconds: range('Grow', p('growSeconds'), 1, 60, 0.5),
           bloomStart: range('Bloom Starts', p('bloomStart'), 0, 1, 0.01),

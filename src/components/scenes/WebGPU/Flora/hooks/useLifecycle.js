@@ -11,6 +11,10 @@ import useSpecimenBuilder from './useSpecimenBuilder';
 const GENERATION_KEYS = Object.keys(DEFAULT_PARAMS);
 const REBUILD_DEBOUNCE_MS = 250;
 
+function startTime(config) {
+  return config.startGrown ? timeline(config).matured : 0;
+}
+
 // Specimens never enter React state: React's dev performance tracks format the
 // props of every re-rendered component, and stringifying the specimen's typed
 // arrays froze the main thread for seconds on each swap.
@@ -57,6 +61,9 @@ export default function useLifecycle(config, uniforms, apiRef, onSpecimen) {
 
     tokenRef.current += 1;
     resetRequest(stateRef.current);
+    if (configRef.current.startGrown) {
+      stateRef.current.t = startTime(configRef.current);
+    }
 
     const timer = setTimeout(() => {
       request(stateRef.current.cycle).then((next) => {
@@ -95,7 +102,7 @@ export default function useLifecycle(config, uniforms, apiRef, onSpecimen) {
         state.t = Math.max(state.t, timeline(configRef.current).exitAt);
       },
       restart: () => {
-        stateRef.current.t = 0;
+        stateRef.current.t = startTime(configRef.current);
       },
     };
   }, [apiRef]);

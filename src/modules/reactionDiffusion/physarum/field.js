@@ -62,6 +62,7 @@ export default function createPhysarumField({
     physarumSensorAngle: uniform(2),
     physarumSensorDistance: uniform(12),
     physarumStepSize: uniform(1.1),
+    physarumSymmetry: uniform(1),
     seedCenterX: uniform(0.5),
     seedCenterY: uniform(0.5),
     seedRadius: uniform(0.06),
@@ -200,6 +201,23 @@ export default function createPhysarumField({
   const depositPass = Fn(() => {
     const at = agents.element(instanceIndex).xy;
     textureStore(depositWrite, texelOf(at), vec4(1, 0, 0, 1));
+
+    If(uniforms.physarumSymmetry.greaterThan(1), () => {
+      textureStore(depositWrite, texelOf(vec2(1).sub(at)), vec4(1, 0, 0, 1));
+    });
+
+    If(uniforms.physarumSymmetry.greaterThan(2), () => {
+      textureStore(
+        depositWrite,
+        texelOf(vec2(float(1).sub(at.y), at.x)),
+        vec4(1, 0, 0, 1)
+      );
+      textureStore(
+        depositWrite,
+        texelOf(vec2(at.y, float(1).sub(at.x))),
+        vec4(1, 0, 0, 1)
+      );
+    });
   })().compute(agentCount);
 
   function shapePass(from) {

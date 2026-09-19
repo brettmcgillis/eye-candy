@@ -11,6 +11,7 @@ const BASE = {
   physarumSensorAngle: 2,
   physarumSensorDistance: 12,
   physarumStepSize: 1.1,
+  physarumSymmetry: 1,
   solver: 'expansive',
   stepScale: 14,
   // Straight down on the bed, auto-rotate off: the point of the default framing
@@ -897,7 +898,7 @@ export const PRESETS = {
     splineForwardDistance: 1,
     splinePosition: {
       x: 0,
-      y: -4,
+      y: -3,
       z: 0,
     },
     splineScale: {
@@ -1052,7 +1053,19 @@ Object.assign(PRESETS, {
     physarumSensorAngle: 2,
     physarumSensorDistance: 12,
     physarumStepSize: 1.1,
+    physarumSymmetry: 1,
     solver: 'physarum',
+  },
+});
+
+Object.assign(PRESETS, {
+  'Physarum 2-Way': {
+    ...PRESETS.Physarum,
+    physarumSymmetry: 2,
+  },
+  'Physarum 4-Way': {
+    ...PRESETS.Physarum,
+    physarumSymmetry: 4,
   },
 });
 

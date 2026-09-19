@@ -126,6 +126,11 @@ export default function getFieldControls(p) {
         step: 16384,
         value: p.physarumAgents,
       },
+      physarumSymmetry: {
+        label: 'Symmetry (Physarum)',
+        options: { None: 1, '2-way': 2, '4-way': 4 },
+        value: p.physarumSymmetry,
+      },
       physarumSensorAngle: {
         label: 'Sensor Angle (Physarum)',
         max: 90,

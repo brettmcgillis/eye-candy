@@ -103,9 +103,18 @@ async function encode(args, { label, totalFrames }) {
   progress.done(`${label} complete`);
 }
 
+// iOS hardware H.264 decode has no software fallback in Safari, and in
+// practice refuses to touch a frame taller or wider than this regardless of
+// what the H.264 level spec allows — a custom render above it played on every
+// desktop browser but not a single iPhone.
+const MAX_VIDEO_DIMENSION = 3840;
+
 // yuv420p needs even dimensions, and the scale filter guards against an odd
-// --width slipping through.
-const SIZE_FILTER = 'scale=trunc(iw/2)*2:trunc(ih/2)*2';
+// --width slipping through. The first scale only engages once a dimension
+// clears MAX_VIDEO_DIMENSION, so ordinary renders pass through untouched.
+const SIZE_FILTER =
+  `scale='min(iw,${MAX_VIDEO_DIMENSION})':'min(ih,${MAX_VIDEO_DIMENSION})':` +
+  `force_original_aspect_ratio=decrease,scale=trunc(iw/2)*2:trunc(ih/2)*2`;
 const ENCODE_FILTER = `${SIZE_FILTER},format=yuv420p`;
 
 // Cuts: the concat demuxer with a duration per entry.
@@ -141,6 +150,10 @@ async function encodeCuts(files, { fps, hold, out, tmp }) {
         '17',
         '-preset',
         'slow',
+        // moov atom up front: iOS Safari refuses to play a progressively
+        // fetched mp4 whose index is only written after encoding finishes.
+        '-movflags',
+        '+faststart',
         out,
       ],
       { label: 'encoding', totalFrames: Math.round(files.length * hold * fps) }
@@ -192,6 +205,10 @@ async function encodeCrossfade(files, { crossfade, fps, hold, out }) {
       '17',
       '-preset',
       'slow',
+      // moov atom up front: iOS Safari refuses to play a progressively
+      // fetched mp4 whose index is only written after encoding finishes.
+      '-movflags',
+      '+faststart',
       out,
     ],
     {
@@ -210,7 +227,7 @@ async function collectExisting(dir, view) {
     .map((name) => path.join(dir, name, `${view}.png`));
 }
 
-async function renderStills(kernel, { options, roll, tmp }) {
+async function renderStills(kernel, { options, renderOptions, roll, tmp }) {
   if (options.in) {
     const dir = path.resolve(REPO_ROOT, String(options.in));
     const files = await runStage('collecting existing stills', () =>
@@ -236,7 +253,7 @@ async function renderStills(kernel, { options, roll, tmp }) {
     const test = buildTest(kernel, config, options);
     const raster = await renderFrame(kernel, {
       config,
-      options,
+      options: renderOptions,
       test,
       view: options.view,
     });
@@ -294,17 +311,17 @@ async function renderTurntable(kernel, { options, roll, sink }) {
   return { presets: [config], totalFrames: total };
 }
 
-async function renderGrowth(kernel, { options, roll, sink }) {
+async function renderGrowth(kernel, { options, renderOptions, roll, sink }) {
   const first =
     typeof options.seed === 'number' ? options.seed : kernel.randomSeed();
   const framesPerTest = Math.max(2, Math.round(options.hold * options.fps));
   const views = options.growthView === 'all' ? VIEWS : [options.growthView];
   const grid =
     options.growthView === 'all' && options.growthPresentation === 'grid';
-  const cellWidth = Math.floor(options.width / 2);
-  const cellHeight = Math.floor(options.height / 2);
+  const cellWidth = Math.floor(renderOptions.width / 2);
+  const cellHeight = Math.floor(renderOptions.height / 2);
   const cellOptions = {
-    ...options,
+    ...renderOptions,
     height: cellHeight,
     overlay: false,
     width: cellWidth,
@@ -375,11 +392,11 @@ async function renderGrowth(kernel, { options, roll, sink }) {
           create: {
             background: { alpha: 1, b: 0, g: 0, r: 0 },
             channels: 4,
-            height: options.height,
-            width: options.width,
+            height: renderOptions.height,
+            width: renderOptions.width,
           },
         }).composite(cells);
-        finalFrame = await applyOverlay(composite, options, 'raw');
+        finalFrame = await applyOverlay(composite, renderOptions, 'raw');
         await sink.write(finalFrame);
         frame += 1;
         progress.update(frame);
@@ -391,7 +408,7 @@ async function renderGrowth(kernel, { options, roll, sink }) {
           setGrowth(test, localFrame / (framesPerTest - 1));
           finalFrame = await renderFrame(kernel, {
             config,
-            options: withInkClock(options),
+            options: withInkClock(renderOptions),
             output: 'raw',
             test,
             view,
@@ -407,7 +424,7 @@ async function renderGrowth(kernel, { options, roll, sink }) {
       const outputDir = path.join(sourceRoot, String(config.seed));
       // The kept still is the only thing in this mode that becomes a file, so
       // it is the only thing that gets encoded.
-      const page = fromRaw(finalFrame, options);
+      const page = fromRaw(finalFrame, renderOptions);
       const image =
         options.imageFormat === 'webp'
           ? await page.webp({ lossless: true }).toBuffer()
@@ -551,10 +568,18 @@ async function main() {
     ig: resolveIgPreset(validated.ig),
     version: await readPackageVersion(),
   };
+  // Metadata and log lines describe the requested size; only the actual
+  // render calls see it multiplied by pixelRatio, so "Roll variations" reloads
+  // the base width/height rather than compounding the ratio.
+  const renderOptions = {
+    ...options,
+    width: Math.round(options.width * options.pixelRatio),
+    height: Math.round(options.height * options.pixelRatio),
+  };
   const out = path.resolve(REPO_ROOT, String(options.out));
   await mkdir(path.dirname(out), { recursive: true });
   process.stdout.write(
-    `rorschach video: mode ${options.mode}, ${options.width}x${options.height}, ` +
+    `rorschach video: mode ${options.mode}, ${options.width}x${options.height} at ${options.pixelRatio}x, ` +
       `${options.fps}fps, renderer ${options.renderer}, ` +
       `overlay ${options.overlay ? 'on' : 'off'}\n` +
       `output: ${out}\n`
@@ -582,7 +607,12 @@ async function main() {
   try {
     let presets;
     if (options.mode === 'stills') {
-      const rendered = await renderStills(kernel, { options, roll, tmp });
+      const rendered = await renderStills(kernel, {
+        options,
+        renderOptions,
+        roll,
+        tmp,
+      });
       const { files } = rendered;
       presets = rendered.presets;
       if (files.length === 0) throw new Error('no stills to stitch');
@@ -612,20 +642,37 @@ async function main() {
       // there is no second pass over the clip at the end.
       const sink = createFrameSink({
         fps: options.fps,
-        height: options.height,
+        height: renderOptions.height,
         out,
-        width: options.width,
+        width: renderOptions.width,
       });
       let rendered;
       try {
         if (options.mode === 'breathe') {
-          rendered = await renderBreathe(kernel, { options, roll, sink });
+          rendered = await renderBreathe(kernel, {
+            options: renderOptions,
+            roll,
+            sink,
+          });
         } else if (options.mode === 'growth') {
-          rendered = await renderGrowth(kernel, { options, roll, sink });
+          rendered = await renderGrowth(kernel, {
+            options,
+            renderOptions,
+            roll,
+            sink,
+          });
         } else if (options.mode === 'turntable') {
-          rendered = await renderTurntable(kernel, { options, roll, sink });
+          rendered = await renderTurntable(kernel, {
+            options: renderOptions,
+            roll,
+            sink,
+          });
         } else {
-          rendered = await renderCinematic(kernel, { options, roll, sink });
+          rendered = await renderCinematic(kernel, {
+            options: renderOptions,
+            roll,
+            sink,
+          });
         }
       } finally {
         // Closed on the failure path too, or a thrown render leaves ffmpeg

@@ -18,6 +18,7 @@ import {
   Segmented,
   ToggleField,
 } from '@dev/renderWorkbench/SchemaFields';
+import WorkbenchLayout from '@dev/renderWorkbench/WorkbenchLayout';
 import '@dev/renderWorkbench/renderWorkbench.css';
 import usePins from '@dev/renderWorkbench/usePins';
 import useRenderJobs from '@dev/renderWorkbench/useRenderJobs';
@@ -253,222 +254,279 @@ export default function RorschachWorkbenchPage() {
           </div>
         </div>
 
-        <div className="rw-layout">
-          {/*
-            `noValidate` because the browser was stricter than the renderer and
-            silently won.
+        <WorkbenchLayout
+          controls={
+            /*
+              `noValidate` because the browser was stricter than the renderer
+              and silently won.
 
-            A spec's `step` is a spinner increment, not a constraint —
-            `coerce` range-checks min/max and never looks at it. But as an
-            `<input step>` it also gates submission, so any value off the grid
-            made the form refuse: preset 012's own `bloomStrength: 1.72` against
-            a 0.05 step, a distance of 22.4 against 0.5. Rolled values snap to
-            the *roll* step, hand-authored ones are arbitrary floats, and a
-            still's sidecar is full of both — so loading one as a base could
-            wedge Render for good.
+              A spec's `step` is a spinner increment, not a constraint —
+              `coerce` range-checks min/max and never looks at it. But as an
+              `<input step>` it also gates submission, so any value off the
+              grid made the form refuse: preset 012's own `bloomStrength: 1.72`
+              against a 0.05 step, a distance of 22.4 against 0.5. Rolled
+              values snap to the *roll* step, hand-authored ones are arbitrary
+              floats, and a still's sidecar is full of both — so loading one
+              as a base could wedge Render for good.
 
-            Worse, the offending fields live inside collapsed `<details>`, so
-            the browser could not even show its own bubble ("An invalid form
-            control is not focusable") and the press did nothing at all, with
-            nothing on screen to say why. The dev server validates every option
-            against the same schema the CLI uses and now reports a refusal where
-            it can be read, which is where that check belongs.
-          */}
-          <form
-            className="dev-panel rw-controls"
-            noValidate
-            onSubmit={handleSubmit}
-          >
-            <Segmented
-              label="Output"
-              onChange={setKind}
-              options={OUTPUT_OPTIONS}
-              value={kind}
-            />
+              Worse, the offending fields live inside collapsed `<details>`,
+              so the browser could not even show its own bubble ("An invalid
+              form control is not focusable") and the press did nothing at
+              all, with nothing on screen to say why. The dev server validates
+              every option against the same schema the CLI uses and now
+              reports a refusal where it can be read, which is where that
+              check belongs.
+            */
+            <form
+              className="dev-panel rw-controls"
+              noValidate
+              onSubmit={handleSubmit}
+            >
+              <Segmented
+                label="Output"
+                onChange={setKind}
+                options={OUTPUT_OPTIONS}
+                value={kind}
+              />
 
-            <Segmented
-              label="Format"
-              onChange={selectProfile}
-              options={PROFILE_OPTIONS}
-              value={profile}
-            />
+              <Segmented
+                label="Format"
+                onChange={selectProfile}
+                options={PROFILE_OPTIONS}
+                value={profile}
+              />
 
-            <section className="rw-control-section">
-              <h2>Roll</h2>
-              <p className="rw-status">{summary}</p>
-              {base ? (
-                <p className="rw-base">
-                  Based on <strong>{base}</strong>
-                  <button
-                    className="rw-base__clear"
-                    onClick={clearBase}
-                    type="button"
-                  >
-                    <FiX /> clear
-                  </button>
-                </p>
-              ) : (
-                <p className="rw-hint">
-                  Nothing is held, so every test is random. To make variations
-                  of a piece you like, open it below and press{' '}
-                  <strong>Roll variations</strong> — that fills this form with
-                  what drew it, and these buttons choose how much of it to keep.
-                </p>
-              )}
-              <div className="rw-pin-groups">
-                {FACETS.map((facet) => (
-                  <button
-                    aria-pressed={heldFacets.includes(facet)}
-                    className="rw-pin-group"
-                    key={facet}
-                    onClick={() => togglePinGroup(facet)}
-                    type="button"
-                  >
-                    Hold {FACET_LABELS[facet] ?? facet}
-                  </button>
-                ))}
-                {pins.size > 0 ? (
-                  <button
-                    className="rw-pin-group"
-                    onClick={clearPins}
-                    type="button"
-                  >
-                    Roll everything
-                  </button>
-                ) : null}
-              </div>
-            </section>
-
-            <section className="rw-control-section">
-              <h2>Frame</h2>
-              <div className="rw-field-grid">
-                <NumberField
-                  id="rw-width"
-                  option="width"
-                  label="Width"
-                  onChange={(value) => setOption('width', value)}
-                  value={options.width}
-                />
-                <NumberField
-                  id="rw-height"
-                  option="height"
-                  label="Height"
-                  onChange={(value) => setOption('height', value)}
-                  value={options.height}
-                />
-                <NumberField
-                  id="rw-seed"
-                  option="seed"
-                  label="Seed"
-                  onChange={(value) => setOption('seed', value)}
-                  value={options.seed}
-                />
-                <label className="rw-field" htmlFor="rw-renderer">
-                  Renderer
-                  <select
-                    id="rw-renderer"
-                    onChange={(event) =>
-                      setOption('renderer', event.target.value)
-                    }
-                    value={options.renderer}
-                  >
-                    <option value="gpu">WebGPU</option>
-                    <option value="svg">SVG fallback</option>
-                  </select>
-                </label>
-              </div>
-            </section>
-
-            <section className="rw-control-section">
-              <h2>{kind === 'still' ? 'Batch' : 'Motion'}</h2>
-              <div className="rw-field-grid">
-                {kind === 'still' ? (
-                  <>
-                    <NumberField
-                      id="rw-count"
-                      option="count"
-                      label="Count"
-                      onChange={(value) => setOption('count', value)}
-                      value={options.count}
-                    />
-                    <label
-                      className="rw-field rw-field--wide"
-                      htmlFor="rw-views"
+              <section className="rw-control-section">
+                <h2>Roll</h2>
+                <p className="rw-status">{summary}</p>
+                {base ? (
+                  <p className="rw-base">
+                    Based on <strong>{base}</strong>
+                    <button
+                      className="rw-base__clear"
+                      onClick={clearBase}
+                      type="button"
                     >
-                      Views
-                      <select
-                        id="rw-views"
-                        onChange={(event) =>
-                          setOption('views', event.target.value)
-                        }
-                        value={options.views}
-                      >
-                        <option value="front,back,top,bottom">All views</option>
-                        <option value="front">Front</option>
-                        <option value="back">Back</option>
-                        <option value="top">Top</option>
-                        <option value="bottom">Bottom</option>
-                      </select>
-                    </label>
-                  </>
+                      <FiX /> clear
+                    </button>
+                  </p>
                 ) : (
-                  <>
-                    <label
-                      className="rw-field rw-field--wide"
-                      htmlFor="rw-mode"
+                  <p className="rw-hint">
+                    Nothing is held, so every test is random. To make variations
+                    of a piece you like, open it below and press{' '}
+                    <strong>Roll variations</strong> — that fills this form with
+                    what drew it, and these buttons choose how much of it to
+                    keep.
+                  </p>
+                )}
+                <div className="rw-pin-groups">
+                  {FACETS.map((facet) => (
+                    <button
+                      aria-pressed={heldFacets.includes(facet)}
+                      className="rw-pin-group"
+                      key={facet}
+                      onClick={() => togglePinGroup(facet)}
+                      type="button"
                     >
-                      Mode
-                      <select
-                        id="rw-mode"
-                        onChange={(event) =>
-                          setOption('mode', event.target.value)
-                        }
-                        value={options.mode}
+                      Hold {FACET_LABELS[facet] ?? facet}
+                    </button>
+                  ))}
+                  {pins.size > 0 ? (
+                    <button
+                      className="rw-pin-group"
+                      onClick={clearPins}
+                      type="button"
+                    >
+                      Roll everything
+                    </button>
+                  ) : null}
+                </div>
+              </section>
+
+              <section className="rw-control-section">
+                <h2>Frame</h2>
+                <div className="rw-field-grid">
+                  <NumberField
+                    id="rw-width"
+                    option="width"
+                    label="Width"
+                    onChange={(value) => setOption('width', value)}
+                    value={options.width}
+                  />
+                  <NumberField
+                    id="rw-height"
+                    option="height"
+                    label="Height"
+                    onChange={(value) => setOption('height', value)}
+                    value={options.height}
+                  />
+                  <NumberField
+                    id="rw-pixel-ratio"
+                    option="pixelRatio"
+                    label="Pixel ratio"
+                    onChange={(value) => setOption('pixelRatio', value)}
+                    value={options.pixelRatio}
+                  />
+                  <NumberField
+                    id="rw-seed"
+                    option="seed"
+                    label="Seed"
+                    onChange={(value) => setOption('seed', value)}
+                    value={options.seed}
+                  />
+                  <label className="rw-field" htmlFor="rw-renderer">
+                    Renderer
+                    <select
+                      id="rw-renderer"
+                      onChange={(event) =>
+                        setOption('renderer', event.target.value)
+                      }
+                      value={options.renderer}
+                    >
+                      <option value="gpu">WebGPU</option>
+                      <option value="svg">SVG fallback</option>
+                    </select>
+                  </label>
+                </div>
+              </section>
+
+              <section className="rw-control-section">
+                <h2>{kind === 'still' ? 'Batch' : 'Motion'}</h2>
+                <div className="rw-field-grid">
+                  {kind === 'still' ? (
+                    <>
+                      <NumberField
+                        id="rw-count"
+                        option="count"
+                        label="Count"
+                        onChange={(value) => setOption('count', value)}
+                        value={options.count}
+                      />
+                      <label
+                        className="rw-field rw-field--wide"
+                        htmlFor="rw-views"
                       >
-                        <option value="stills">Stills montage</option>
-                        <option value="growth">Growth</option>
-                        <option value="breathe">Breathe</option>
-                        <option value="turntable">Turntable</option>
-                        <option value="cinematic">Cinematic</option>
-                      </select>
-                    </label>
-                    <NumberField
-                      id="rw-fps"
-                      option="fps"
-                      label="FPS"
-                      onChange={(value) => setOption('fps', value)}
-                      value={options.fps}
-                    />
-                    <NumberField
-                      id="rw-hold"
-                      option="hold"
-                      label="Seconds"
-                      onChange={(value) => setOption('hold', value)}
-                      value={options.hold}
-                    />
-                    {options.mode === 'stills' ? (
-                      <>
-                        <NumberField
-                          id="rw-shots"
-                          option="count"
-                          label="Shots"
-                          onChange={(value) => setOption('count', value)}
-                          value={options.count}
-                        />
-                        <NumberField
-                          id="rw-crossfade"
-                          option="crossfade"
-                          label="Crossfade"
-                          onChange={(value) => setOption('crossfade', value)}
-                          value={options.crossfade}
-                        />
-                        <label
-                          className="rw-field rw-field--wide"
-                          htmlFor="rw-view"
+                        Views
+                        <select
+                          id="rw-views"
+                          onChange={(event) =>
+                            setOption('views', event.target.value)
+                          }
+                          value={options.views}
                         >
+                          <option value="front,back,top,bottom">
+                            All views
+                          </option>
+                          <option value="front">Front</option>
+                          <option value="back">Back</option>
+                          <option value="top">Top</option>
+                          <option value="bottom">Bottom</option>
+                        </select>
+                      </label>
+                    </>
+                  ) : (
+                    <>
+                      <label
+                        className="rw-field rw-field--wide"
+                        htmlFor="rw-mode"
+                      >
+                        Mode
+                        <select
+                          id="rw-mode"
+                          onChange={(event) =>
+                            setOption('mode', event.target.value)
+                          }
+                          value={options.mode}
+                        >
+                          <option value="stills">Stills montage</option>
+                          <option value="growth">Growth</option>
+                          <option value="breathe">Breathe</option>
+                          <option value="turntable">Turntable</option>
+                          <option value="cinematic">Cinematic</option>
+                        </select>
+                      </label>
+                      <NumberField
+                        id="rw-fps"
+                        option="fps"
+                        label="FPS"
+                        onChange={(value) => setOption('fps', value)}
+                        value={options.fps}
+                      />
+                      <NumberField
+                        id="rw-hold"
+                        option="hold"
+                        label="Seconds"
+                        onChange={(value) => setOption('hold', value)}
+                        value={options.hold}
+                      />
+                      {options.mode === 'stills' ? (
+                        <>
+                          <NumberField
+                            id="rw-shots"
+                            option="count"
+                            label="Shots"
+                            onChange={(value) => setOption('count', value)}
+                            value={options.count}
+                          />
+                          <NumberField
+                            id="rw-crossfade"
+                            option="crossfade"
+                            label="Crossfade"
+                            onChange={(value) => setOption('crossfade', value)}
+                            value={options.crossfade}
+                          />
+                          <label
+                            className="rw-field rw-field--wide"
+                            htmlFor="rw-view"
+                          >
+                            View
+                            <select
+                              id="rw-view"
+                              onChange={(event) =>
+                                setOption('view', event.target.value)
+                              }
+                              value={options.view}
+                            >
+                              <option value="front">Front</option>
+                              <option value="back">Back</option>
+                              <option value="top">Top</option>
+                              <option value="bottom">Bottom</option>
+                            </select>
+                          </label>
+                          <label className="rw-field" htmlFor="rw-image-format">
+                            Source format
+                            <select
+                              id="rw-image-format"
+                              onChange={(event) =>
+                                setOption('imageFormat', event.target.value)
+                              }
+                              value={options.imageFormat}
+                            >
+                              <option value="png">PNG</option>
+                              <option value="webp">WebP</option>
+                            </select>
+                          </label>
+                          <label
+                            className="rw-field rw-field--checkbox"
+                            htmlFor="rw-keep-images"
+                          >
+                            <input
+                              checked={options.keepImages}
+                              id="rw-keep-images"
+                              onChange={(event) =>
+                                setOption('keepImages', event.target.checked)
+                              }
+                              type="checkbox"
+                            />
+                            Keep source images
+                          </label>
+                        </>
+                      ) : null}
+                      {options.mode === 'breathe' ? (
+                        <label className="rw-field" htmlFor="rw-breathe-view">
                           View
                           <select
-                            id="rw-view"
+                            id="rw-breathe-view"
                             onChange={(event) =>
                               setOption('view', event.target.value)
                             }
@@ -480,262 +538,226 @@ export default function RorschachWorkbenchPage() {
                             <option value="bottom">Bottom</option>
                           </select>
                         </label>
-                        <label className="rw-field" htmlFor="rw-image-format">
-                          Source format
-                          <select
-                            id="rw-image-format"
-                            onChange={(event) =>
-                              setOption('imageFormat', event.target.value)
-                            }
-                            value={options.imageFormat}
-                          >
-                            <option value="png">PNG</option>
-                            <option value="webp">WebP</option>
-                          </select>
-                        </label>
-                        <label
-                          className="rw-field rw-field--checkbox"
-                          htmlFor="rw-keep-images"
-                        >
-                          <input
-                            checked={options.keepImages}
-                            id="rw-keep-images"
-                            onChange={(event) =>
-                              setOption('keepImages', event.target.checked)
-                            }
-                            type="checkbox"
+                      ) : null}
+                      {options.mode === 'growth' ? (
+                        <>
+                          <NumberField
+                            id="rw-growth-count"
+                            option="count"
+                            label="Tests"
+                            onChange={(value) => setOption('count', value)}
+                            value={options.count}
                           />
-                          Keep source images
-                        </label>
-                      </>
-                    ) : null}
-                    {options.mode === 'breathe' ? (
-                      <label className="rw-field" htmlFor="rw-breathe-view">
-                        View
-                        <select
-                          id="rw-breathe-view"
-                          onChange={(event) =>
-                            setOption('view', event.target.value)
-                          }
-                          value={options.view}
-                        >
-                          <option value="front">Front</option>
-                          <option value="back">Back</option>
-                          <option value="top">Top</option>
-                          <option value="bottom">Bottom</option>
-                        </select>
-                      </label>
-                    ) : null}
-                    {options.mode === 'growth' ? (
-                      <>
+                          <label
+                            className="rw-field rw-field--wide"
+                            htmlFor="rw-growth-view"
+                          >
+                            View
+                            <select
+                              id="rw-growth-view"
+                              onChange={(event) =>
+                                setOption('growthView', event.target.value)
+                              }
+                              value={options.growthView}
+                            >
+                              <option value="front">Front</option>
+                              <option value="back">Back</option>
+                              <option value="top">Top</option>
+                              <option value="bottom">Bottom</option>
+                              <option value="all">All</option>
+                            </select>
+                          </label>
+                          {options.growthView === 'all' ? (
+                            <Segmented
+                              label="Presentation"
+                              onChange={(value) =>
+                                setOption('growthPresentation', value)
+                              }
+                              options={GROWTH_PRESENTATION_OPTIONS}
+                              value={options.growthPresentation}
+                            />
+                          ) : null}
+                          <label
+                            className="rw-field"
+                            htmlFor="rw-growth-format"
+                          >
+                            Source format
+                            <select
+                              id="rw-growth-format"
+                              onChange={(event) =>
+                                setOption('imageFormat', event.target.value)
+                              }
+                              value={options.imageFormat}
+                            >
+                              <option value="png">PNG</option>
+                              <option value="webp">WebP</option>
+                            </select>
+                          </label>
+                          <label
+                            className="rw-field rw-field--checkbox"
+                            htmlFor="rw-growth-keep-images"
+                          >
+                            <input
+                              checked={options.keepImages}
+                              id="rw-growth-keep-images"
+                              onChange={(event) =>
+                                setOption('keepImages', event.target.checked)
+                              }
+                              type="checkbox"
+                            />
+                            Keep final images
+                          </label>
+                        </>
+                      ) : null}
+                      {options.mode === 'turntable' ? (
                         <NumberField
-                          id="rw-growth-count"
-                          option="count"
-                          label="Tests"
-                          onChange={(value) => setOption('count', value)}
-                          value={options.count}
+                          id="rw-turns"
+                          option="turns"
+                          label="Turns"
+                          onChange={(value) => setOption('turns', value)}
+                          value={options.turns}
                         />
-                        <label
-                          className="rw-field rw-field--wide"
-                          htmlFor="rw-growth-view"
-                        >
-                          View
-                          <select
-                            id="rw-growth-view"
-                            onChange={(event) =>
-                              setOption('growthView', event.target.value)
-                            }
-                            value={options.growthView}
-                          >
-                            <option value="front">Front</option>
-                            <option value="back">Back</option>
-                            <option value="top">Top</option>
-                            <option value="bottom">Bottom</option>
-                            <option value="all">All</option>
-                          </select>
-                        </label>
-                        {options.growthView === 'all' ? (
-                          <Segmented
-                            label="Presentation"
-                            onChange={(value) =>
-                              setOption('growthPresentation', value)
-                            }
-                            options={GROWTH_PRESENTATION_OPTIONS}
-                            value={options.growthPresentation}
-                          />
-                        ) : null}
-                        <label className="rw-field" htmlFor="rw-growth-format">
-                          Source format
-                          <select
-                            id="rw-growth-format"
-                            onChange={(event) =>
-                              setOption('imageFormat', event.target.value)
-                            }
-                            value={options.imageFormat}
-                          >
-                            <option value="png">PNG</option>
-                            <option value="webp">WebP</option>
-                          </select>
-                        </label>
-                        <label
-                          className="rw-field rw-field--checkbox"
-                          htmlFor="rw-growth-keep-images"
-                        >
-                          <input
-                            checked={options.keepImages}
-                            id="rw-growth-keep-images"
-                            onChange={(event) =>
-                              setOption('keepImages', event.target.checked)
-                            }
-                            type="checkbox"
-                          />
-                          Keep final images
-                        </label>
-                      </>
-                    ) : null}
-                    {options.mode === 'turntable' ? (
-                      <NumberField
-                        id="rw-turns"
-                        option="turns"
-                        label="Turns"
-                        onChange={(value) => setOption('turns', value)}
-                        value={options.turns}
-                      />
-                    ) : null}
-                    {options.mode === 'cinematic' ? (
-                      <NumberField
-                        id="rw-systems"
-                        option="systems"
-                        label="Systems"
-                        onChange={(value) => setOption('systems', value)}
-                        value={options.systems}
-                      />
-                    ) : null}
-                  </>
-                )}
-              </div>
-            </section>
+                      ) : null}
+                      {options.mode === 'cinematic' ? (
+                        <NumberField
+                          id="rw-systems"
+                          option="systems"
+                          label="Systems"
+                          onChange={(value) => setOption('systems', value)}
+                          value={options.systems}
+                        />
+                      ) : null}
+                    </>
+                  )}
+                </div>
+              </section>
 
-            <CompositionSection
-              kind={kind}
-              options={options}
-              setOption={setOption}
-            />
-
-            <section className="rw-toggles">
-              <ToggleField
-                id="rw-lines"
-                option="lines"
-                label="Lines"
-                onChange={(value) => setOption('lines', value)}
-                value={options.lines}
-              />
-              <ToggleField
-                id="rw-ink"
-                option="ink"
-                label="Ink"
-                onChange={(value) => setOption('ink', value)}
-                value={options.ink}
-              />
-              <ToggleField
-                id="rw-membrane"
-                option="membrane"
-                label="Membrane"
-                onChange={(value) => setOption('membrane', value)}
-                value={options.membrane}
-              />
-            </section>
-
-            {options.membrane ? (
-              <MembraneSection options={options} setOption={setOption} />
-            ) : null}
-
-            {options.ink ? (
-              <WatercolourSection
+              <CompositionSection
                 kind={kind}
                 options={options}
                 setOption={setOption}
               />
-            ) : null}
 
-            <TestSection
-              bundlesPinned={pins.has('bundles')}
-              options={options}
-              setOption={setOption}
+              <section className="rw-toggles">
+                <ToggleField
+                  id="rw-lines"
+                  option="lines"
+                  label="Lines"
+                  onChange={(value) => setOption('lines', value)}
+                  value={options.lines}
+                />
+                <ToggleField
+                  id="rw-ink"
+                  option="ink"
+                  label="Ink"
+                  onChange={(value) => setOption('ink', value)}
+                  value={options.ink}
+                />
+                <ToggleField
+                  id="rw-membrane"
+                  option="membrane"
+                  label="Membrane"
+                  onChange={(value) => setOption('membrane', value)}
+                  value={options.membrane}
+                />
+              </section>
+
+              {options.membrane ? (
+                <MembraneSection options={options} setOption={setOption} />
+              ) : null}
+
+              {options.ink ? (
+                <WatercolourSection
+                  kind={kind}
+                  options={options}
+                  setOption={setOption}
+                />
+              ) : null}
+
+              <TestSection
+                bundlesPinned={pins.has('bundles')}
+                options={options}
+                setOption={setOption}
+              />
+
+              <RollingSection options={options} setOption={setOption} />
+
+              <OverlaySection options={options} setOption={setOption} />
+
+              {kind === 'still' ? (
+                <fieldset className="rw-fieldset rw-formats">
+                  <legend>Image files</legend>
+                  <label htmlFor="rw-png">
+                    <input
+                      checked={options.png}
+                      disabled={options.png && !options.svg && !options.webp}
+                      id="rw-png"
+                      onChange={(event) =>
+                        setOption('png', event.target.checked)
+                      }
+                      type="checkbox"
+                    />
+                    PNG
+                  </label>
+                  <label htmlFor="rw-svg">
+                    <input
+                      checked={options.svg}
+                      disabled={options.svg && !options.png && !options.webp}
+                      id="rw-svg"
+                      onChange={(event) =>
+                        setOption('svg', event.target.checked)
+                      }
+                      type="checkbox"
+                    />
+                    SVG
+                  </label>
+                  <label htmlFor="rw-webp">
+                    <input
+                      checked={options.webp}
+                      disabled={options.webp && !options.png && !options.svg}
+                      id="rw-webp"
+                      onChange={(event) =>
+                        setOption('webp', event.target.checked)
+                      }
+                      type="checkbox"
+                    />
+                    WebP
+                  </label>
+                </fieldset>
+              ) : null}
+
+              <button
+                className="dev-button dev-button--primary rw-submit"
+                disabled={submitting}
+                type="submit"
+              >
+                {kind === 'still' ? <FiImage /> : <FiFilm />}
+                {submitting
+                  ? 'Submitting...'
+                  : `Render ${kind === 'still' ? 'stills' : 'video'}`}
+              </button>
+              {submitError ? (
+                <p className="rw-error">Could not start: {submitError}</p>
+              ) : null}
+              {submitted ? (
+                <p className="rw-submitted">
+                  Started {kind === 'still' ? 'stills' : 'video'} job — watch it
+                  in Jobs, or wait for it to appear in Transient. The first
+                  image can take a while at full size.
+                </p>
+              ) : null}
+              {error ? <p className="rw-error">{error}</p> : null}
+            </form>
+          }
+          results={
+            <ResultsPanel
+              jobsApi={jobsApi}
+              renderDetails={(detail) => (
+                <PreviewDetails onUseAsBase={useAsBase} {...detail} />
+              )}
             />
-
-            <RollingSection options={options} setOption={setOption} />
-
-            <OverlaySection options={options} setOption={setOption} />
-
-            {kind === 'still' ? (
-              <fieldset className="rw-fieldset rw-formats">
-                <legend>Image files</legend>
-                <label htmlFor="rw-png">
-                  <input
-                    checked={options.png}
-                    disabled={options.png && !options.svg && !options.webp}
-                    id="rw-png"
-                    onChange={(event) => setOption('png', event.target.checked)}
-                    type="checkbox"
-                  />
-                  PNG
-                </label>
-                <label htmlFor="rw-svg">
-                  <input
-                    checked={options.svg}
-                    disabled={options.svg && !options.png && !options.webp}
-                    id="rw-svg"
-                    onChange={(event) => setOption('svg', event.target.checked)}
-                    type="checkbox"
-                  />
-                  SVG
-                </label>
-                <label htmlFor="rw-webp">
-                  <input
-                    checked={options.webp}
-                    disabled={options.webp && !options.png && !options.svg}
-                    id="rw-webp"
-                    onChange={(event) =>
-                      setOption('webp', event.target.checked)
-                    }
-                    type="checkbox"
-                  />
-                  WebP
-                </label>
-              </fieldset>
-            ) : null}
-
-            <button
-              className="dev-button dev-button--primary rw-submit"
-              disabled={submitting}
-              type="submit"
-            >
-              {kind === 'still' ? <FiImage /> : <FiFilm />}
-              {submitting
-                ? 'Submitting...'
-                : `Render ${kind === 'still' ? 'stills' : 'video'}`}
-            </button>
-            {submitError ? (
-              <p className="rw-error">Could not start: {submitError}</p>
-            ) : null}
-            {submitted ? (
-              <p className="rw-submitted">
-                Started {kind === 'still' ? 'stills' : 'video'} job — watch it
-                in Jobs, or wait for it to appear in Transient. The first image
-                can take a while at full size.
-              </p>
-            ) : null}
-            {error ? <p className="rw-error">{error}</p> : null}
-          </form>
-
-          <ResultsPanel
-            jobsApi={jobsApi}
-            renderDetails={(detail) => (
-              <PreviewDetails onUseAsBase={useAsBase} {...detail} />
-            )}
-          />
-        </div>
+          }
+        />
       </main>
     </SchemaProvider>
   );

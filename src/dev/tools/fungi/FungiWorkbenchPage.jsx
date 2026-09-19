@@ -9,6 +9,7 @@ import {
   SchemaProvider,
   Segmented,
 } from '@dev/renderWorkbench/SchemaFields';
+import WorkbenchLayout from '@dev/renderWorkbench/WorkbenchLayout';
 import '@dev/renderWorkbench/renderWorkbench.css';
 import usePins from '@dev/renderWorkbench/usePins';
 import useRenderJobs from '@dev/renderWorkbench/useRenderJobs';
@@ -148,123 +149,126 @@ export default function FungiWorkbenchPage() {
           </div>
         </div>
 
-        <div className="rw-layout">
-          <form
-            className="dev-panel rw-controls"
-            noValidate
-            onSubmit={handleSubmit}
-          >
-            <Segmented
-              label="Output"
-              onChange={setKind}
-              options={KIND_OPTIONS}
-              value={kind}
-            />
-            <Segmented
-              label="Format"
-              onChange={selectProfile}
-              options={PROFILE_OPTIONS}
-              value={profile}
-            />
-            {kind === 'video' ? (
-              <Segmented
-                label="Mode"
-                onChange={(value) => setOption('mode', value)}
-                options={MODE_OPTIONS}
-                value={options.mode}
-              />
-            ) : null}
-
-            <section className="rw-control-section">
-              <h2>Roll</h2>
-              <p className="rw-status">{summary}</p>
-              {base ? (
-                <p className="rw-base">
-                  Based on <strong>{base}</strong>
-                  <button
-                    className="rw-base__clear"
-                    onClick={() => setBase(null)}
-                    type="button"
-                  >
-                    <FiX /> clear
-                  </button>
-                </p>
-              ) : (
-                <p className="rw-hint">
-                  Nothing is held, so every specimen is random. Open one you
-                  like and press <strong>Roll variations</strong>, then hold the
-                  facets to keep.
-                </p>
-              )}
-              <div className="rw-pin-groups">
-                {FACETS.map((facet) => (
-                  <button
-                    aria-pressed={pins.heldFacets.includes(facet)}
-                    className="rw-pin-group"
-                    key={facet}
-                    onClick={() => pins.toggleFacet(facet)}
-                    type="button"
-                  >
-                    Hold {facet}
-                  </button>
-                ))}
-                {pins.pins.size > 0 ? (
-                  <button
-                    className="rw-pin-group"
-                    onClick={pins.clear}
-                    type="button"
-                  >
-                    Roll everything
-                  </button>
-                ) : null}
-              </div>
-            </section>
-
-            <div className="rw-field-grid">
-              {['count', 'width', 'height'].map((key) => (
-                <SchemaField
-                  key={key}
-                  onChange={(value) => setOption(key, value)}
-                  option={key}
-                  value={options[key]}
-                />
-              ))}
-            </div>
-
-            <OptionSections
-              kind={kind}
-              options={options}
-              setOption={setOption}
-            />
-
-            <button
-              className="dev-button dev-button--primary rw-submit"
-              disabled={submitting}
-              type="submit"
+        <WorkbenchLayout
+          controls={
+            <form
+              className="dev-panel rw-controls"
+              noValidate
+              onSubmit={handleSubmit}
             >
-              {kind === 'still' ? <FiImage /> : <FiFilm />}
-              {submitting
-                ? 'Submitting...'
-                : `Render fungi ${kind === 'still' ? 'stills' : 'video'}`}
-            </button>
-            {outcome?.ok === false ? (
-              <p className="rw-error">Could not start: {outcome.message}</p>
-            ) : null}
-            {outcome?.ok ? (
-              <p className="rw-submitted">
-                Started — jobs run one at a time; watch Jobs or Transient.
-              </p>
-            ) : null}
-            {error ? <p className="rw-error">{error}</p> : null}
-          </form>
+              <Segmented
+                label="Output"
+                onChange={setKind}
+                options={KIND_OPTIONS}
+                value={kind}
+              />
+              <Segmented
+                label="Format"
+                onChange={selectProfile}
+                options={PROFILE_OPTIONS}
+                value={profile}
+              />
+              {kind === 'video' ? (
+                <Segmented
+                  label="Mode"
+                  onChange={(value) => setOption('mode', value)}
+                  options={MODE_OPTIONS}
+                  value={options.mode}
+                />
+              ) : null}
 
-          <ResultsPanel
-            collectionTitle={jobTitle}
-            jobTitle={jobTitle}
-            jobsApi={jobsApi}
-            renderDetails={renderDetails}
-          />
-        </div>
+              <section className="rw-control-section">
+                <h2>Roll</h2>
+                <p className="rw-status">{summary}</p>
+                {base ? (
+                  <p className="rw-base">
+                    Based on <strong>{base}</strong>
+                    <button
+                      className="rw-base__clear"
+                      onClick={() => setBase(null)}
+                      type="button"
+                    >
+                      <FiX /> clear
+                    </button>
+                  </p>
+                ) : (
+                  <p className="rw-hint">
+                    Nothing is held, so every specimen is random. Open one you
+                    like and press <strong>Roll variations</strong>, then hold
+                    the facets to keep.
+                  </p>
+                )}
+                <div className="rw-pin-groups">
+                  {FACETS.map((facet) => (
+                    <button
+                      aria-pressed={pins.heldFacets.includes(facet)}
+                      className="rw-pin-group"
+                      key={facet}
+                      onClick={() => pins.toggleFacet(facet)}
+                      type="button"
+                    >
+                      Hold {facet}
+                    </button>
+                  ))}
+                  {pins.pins.size > 0 ? (
+                    <button
+                      className="rw-pin-group"
+                      onClick={pins.clear}
+                      type="button"
+                    >
+                      Roll everything
+                    </button>
+                  ) : null}
+                </div>
+              </section>
+
+              <div className="rw-field-grid">
+                {['count', 'width', 'height'].map((key) => (
+                  <SchemaField
+                    key={key}
+                    onChange={(value) => setOption(key, value)}
+                    option={key}
+                    value={options[key]}
+                  />
+                ))}
+              </div>
+
+              <OptionSections
+                kind={kind}
+                options={options}
+                setOption={setOption}
+              />
+
+              <button
+                className="dev-button dev-button--primary rw-submit"
+                disabled={submitting}
+                type="submit"
+              >
+                {kind === 'still' ? <FiImage /> : <FiFilm />}
+                {submitting
+                  ? 'Submitting...'
+                  : `Render fungi ${kind === 'still' ? 'stills' : 'video'}`}
+              </button>
+              {outcome?.ok === false ? (
+                <p className="rw-error">Could not start: {outcome.message}</p>
+              ) : null}
+              {outcome?.ok ? (
+                <p className="rw-submitted">
+                  Started — jobs run one at a time; watch Jobs or Transient.
+                </p>
+              ) : null}
+              {error ? <p className="rw-error">{error}</p> : null}
+            </form>
+          }
+          results={
+            <ResultsPanel
+              collectionTitle={jobTitle}
+              jobTitle={jobTitle}
+              jobsApi={jobsApi}
+              renderDetails={renderDetails}
+            />
+          }
+        />
       </main>
     </SchemaProvider>
   );

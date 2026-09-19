@@ -16,9 +16,18 @@ import { spawn } from 'node:child_process';
 // duration and a crossfade each, which is the concat demuxer's job, and their
 // encode is not where any time goes.
 
+// iOS hardware H.264 decode has no software fallback in Safari, and in
+// practice refuses to touch a frame taller or wider than this regardless of
+// what the H.264 level spec allows — a custom render above it played on every
+// desktop browser but not a single iPhone.
+const MAX_VIDEO_DIMENSION = 3840;
+
 // yuv420p needs even dimensions, and the scale filter guards against an odd
-// --width slipping through.
-const SIZE_FILTER = 'scale=trunc(iw/2)*2:trunc(ih/2)*2';
+// --width slipping through. The first scale only engages once a dimension
+// clears MAX_VIDEO_DIMENSION, so ordinary renders pass through untouched.
+const SIZE_FILTER =
+  `scale='min(iw,${MAX_VIDEO_DIMENSION})':'min(ih,${MAX_VIDEO_DIMENSION})':` +
+  `force_original_aspect_ratio=decrease,scale=trunc(iw/2)*2:trunc(ih/2)*2`;
 
 export default function createFrameSink({ fps, height, out, width }) {
   const child = spawn(
@@ -43,6 +52,10 @@ export default function createFrameSink({ fps, height, out, width }) {
       '17',
       '-preset',
       'slow',
+      // moov atom up front: iOS Safari refuses to play a progressively
+      // fetched mp4 whose index is only written after encoding finishes.
+      '-movflags',
+      '+faststart',
       out,
     ],
     { stdio: ['pipe', 'ignore', 'pipe'] }

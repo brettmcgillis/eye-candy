@@ -59,13 +59,21 @@ async function main() {
     ig: resolveIgPreset(validated.ig),
     version: await readPackageVersion(),
   };
+  // The sidecar and every log line describe the requested size; only the
+  // actual render calls see it multiplied by pixelRatio, so "Roll variations"
+  // reloads the base width/height rather than compounding the ratio.
+  const renderOptions = {
+    ...options,
+    width: Math.round(options.width * options.pixelRatio),
+    height: Math.round(options.height * options.pixelRatio),
+  };
   const outRoot = path.resolve(REPO_ROOT, String(options.out));
   const formats = ['png', 'svg', 'webp'].filter((format) => options[format]);
 
   await mkdir(outRoot, { recursive: true });
   process.stdout.write(
     `rorschach stills: ${options.count} tests, ${views.length} views each, ` +
-      `${options.width}x${options.height}, renderer ${options.renderer}, ` +
+      `${options.width}x${options.height} at ${options.pixelRatio}x, renderer ${options.renderer}, ` +
       `formats ${formats.join('+')}, overlay ${options.overlay ? 'on' : 'off'}\n` +
       `output: ${outRoot}\n`
   );
@@ -120,7 +128,7 @@ async function main() {
                 frameSvg(kernel, {
                   bloomEnabled: options.bloom,
                   config,
-                  options,
+                  options: renderOptions,
                   test,
                   view,
                 })
@@ -130,7 +138,7 @@ async function main() {
             if (options.png || options.webp) {
               const raster = await renderFrame(kernel, {
                 config,
-                options,
+                options: renderOptions,
                 test,
                 view,
               });

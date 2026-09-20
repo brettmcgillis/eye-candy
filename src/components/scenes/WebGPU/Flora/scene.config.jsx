@@ -9,7 +9,7 @@ export default {
   id: 'flora',
   label: 'Flora',
   channel: 'webgpu',
-  area: 'wip',
+  area: 'showcase',
   icon: SceneIcon,
   Component: lazy(() => import('./Flora')),
 };

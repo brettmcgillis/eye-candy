@@ -1,9 +1,9 @@
 /* eslint-disable no-param-reassign */
-import { float, sin, smoothstep, uniform, vec2 } from 'three/tsl';
+import { float, sin, uniform, vec2 } from 'three/tsl';
 
-import { GRAVITY } from '@modules/shallowWater';
+import { GRAVITY, bedRimBand } from '@modules/shallowWater';
 
-import { SEA_LEVEL, WAVE_MAKER_CELLS } from './constants';
+import { SEA_LEVEL, WAVE_MAKER_REACH } from './constants';
 
 const TAU = Math.PI * 2;
 const TRAIN_SUM = 1 + 0.55 + 0.3;
@@ -60,10 +60,8 @@ export default function createSwellDriver() {
   };
 
   return {
-    force({ bed, coord, uniforms, world }) {
-      const maker = float(1).sub(
-        smoothstep(0, WAVE_MAKER_CELLS, float(coord.y))
-      );
+    force({ bed, shape, uniforms, world }) {
+      const maker = bedRimBand(world, shape, WAVE_MAKER_REACH, 1);
       const target = swellSurface(uniforms, swell, world.x).sub(bed);
       return vec2(target, maker.mul(swell.swellDrive));
     },

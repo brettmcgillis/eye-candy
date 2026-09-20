@@ -29,3 +29,9 @@ export const WARMUP_PER_FRAME = 5;
 // Measured on the stream, 180 pairs recovers most of the drain-down that 900
 // does; the rest arrives while the scene is being looked at.
 export const REFLOOD_PAIRS = 180;
+
+// A shape change is lighter still: the ground and the rest surface are both
+// where they were and only the rim has moved, so what has to rebuild is the
+// flow within a couple of metres of the new outline. A warm-up frame measures
+// 78ms against a settled 22ms, so every pair spent here is visible.
+export const RESHAPE_PAIRS = 60;

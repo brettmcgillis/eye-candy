@@ -17,6 +17,7 @@ import {
 
 import { readOnly } from '@utils/storageField';
 
+import { bedShapeAt } from '../shape/bedShapeNodes';
 import { grainAge } from './grainCycle';
 
 const TAU = Math.PI * 2;
@@ -112,6 +113,7 @@ export default function createGrainCompute({
   foamTexture,
   heightTexture,
   res,
+  shape,
   uniforms,
   worldSize,
 }) {
@@ -187,6 +189,21 @@ export default function createGrainCompute({
         carried.assign(position.xz);
         velocity.assign(vec2(0));
       });
+
+      // That check alone cannot hold a grain off the rim wall, because it
+      // reads the bed bilinearly: the wall smears inward over a cell or two,
+      // so each step lifts `ground` a little, which lifts `standing`, which
+      // lets the next step through. The grain ratchets up the ramp with no
+      // flow left to carry it sideways, which is the vertical spout that
+      // collects wherever the water runs into the outline. The rim has to be
+      // a position limit, not a height test.
+      If(
+        bedShapeAt(carried, shape).distance.greaterThan(shape.inset.negate()),
+        () => {
+          carried.assign(position.xz);
+          velocity.assign(vec2(0));
+        }
+      );
 
       // Leaving the domain is not a reason to go home. The fade is tied to the
       // grain's own cycle, so a grain sent home part way through its life

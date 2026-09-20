@@ -1,6 +1,11 @@
 import React, { memo, useMemo } from 'react';
 
-import { GrainWater, createGrainLayout } from '@modules/shallowWater';
+import {
+  GrainWater,
+  createBedShape,
+  createGrainLayout,
+  maskBedField,
+} from '@modules/shallowWater';
 
 import { applyStacks, buildCoastTerrain } from '../runtime/coastField';
 import { WORLD_SIZE } from '../runtime/constants';
@@ -12,6 +17,23 @@ import createSwellDriver from '../runtime/swellDriver';
 // solver, the buffers and the mesh belong to the module.
 function GrainField({ config }) {
   const driver = useMemo(() => createSwellDriver(), []);
+
+  const shape = useMemo(
+    () =>
+      createBedShape({
+        bedRotation: config.bedRotation,
+        bedShape: config.bedShape,
+        bedSize: config.bedSize,
+        resolution: config.solverResolution,
+        worldSize: WORLD_SIZE,
+      }),
+    [
+      config.bedRotation,
+      config.bedShape,
+      config.bedSize,
+      config.solverResolution,
+    ]
+  );
 
   // The expensive half: shelf, coastline and rock. Cached apart from the
   // stacks so that tuning stacks by eye does not pay for twenty octaves of
@@ -49,7 +71,7 @@ function GrainField({ config }) {
   );
 
   // The cheap half: only the cells inside a stack's reach are touched.
-  const field = useMemo(
+  const stacked = useMemo(
     () =>
       applyStacks(terrain, {
         coastLine: config.coastLine,
@@ -72,6 +94,17 @@ function GrainField({ config }) {
     ]
   );
 
+  // Its own pass over its own copy, so dragging Rotation costs a mask and not
+  // another stamp of every sea stack.
+  const field = useMemo(
+    () =>
+      maskBedField(Float32Array.from(stacked), shape, {
+        resolution: config.solverResolution,
+        worldSize: WORLD_SIZE,
+      }),
+    [config.solverResolution, shape, stacked]
+  );
+
   // Which grains are rock is decided against the bed, so this re-runs whenever
   // the coast moves as well as when the waterline itself is retuned.
   const layout = useMemo(
@@ -83,6 +116,7 @@ function GrainField({ config }) {
         resolution: config.solverResolution,
         roleFeather: config.roleFeather,
         seed: config.shoreSeed,
+        shape,
         waterline: config.waterline,
         worldSize: WORLD_SIZE,
       }),
@@ -94,6 +128,7 @@ function GrainField({ config }) {
       config.shoreSeed,
       config.solverResolution,
       config.waterline,
+      shape,
     ]
   );
 
@@ -105,6 +140,7 @@ function GrainField({ config }) {
       field={field}
       layout={layout}
       resolution={config.solverResolution}
+      shape={shape}
       worldSize={WORLD_SIZE}
     />
   );

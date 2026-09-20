@@ -1,7 +1,9 @@
 /* eslint-disable no-param-reassign */
-import { float, max, select, smoothstep, uniform, vec2 } from 'three/tsl';
+import { max, select, smoothstep, uniform, vec2 } from 'three/tsl';
 
-import { INFLOW_CELLS, OUTFLOW_CELLS } from './constants';
+import { bedRimBand } from '@modules/shallowWater';
+
+import { INFLOW_REACH, OUTFLOW_REACH } from './constants';
 
 const TAU = Math.PI * 2;
 
@@ -25,18 +27,13 @@ export default function createFlowDriver() {
   };
 
   return {
-    force({ bed, cell, coord, res }) {
-      const row = float(coord.y);
+    force({ bed, cell, shape, world }) {
       // Only where the channel is: an inflow band that spans the full width
       // of the domain pours water onto the banks as well, and the sheet it
       // makes runs down the outside of the reach instead of through it.
       const channel = smoothstep(0, flow.gateDepth, cell.w.sub(bed));
-      const inlet = float(1)
-        .sub(smoothstep(0, INFLOW_CELLS, row))
-        .mul(channel);
-      const outlet = smoothstep(res - 1 - OUTFLOW_CELLS, res - 1, row).mul(
-        channel
-      );
+      const inlet = bedRimBand(world, shape, INFLOW_REACH, 1).mul(channel);
+      const outlet = bedRimBand(world, shape, OUTFLOW_REACH, -1).mul(channel);
 
       const target = select(
         outlet.greaterThan(inlet),

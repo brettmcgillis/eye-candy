@@ -13,7 +13,9 @@ import {
 } from '@modules/lightingRig';
 import { useMediaRecorder } from '@modules/mediaRecorder';
 import {
+  getBedControls,
   getBrushControls,
+  getContainerControls,
   getDriftControls,
   getFoamControls,
   getGrainControls,
@@ -71,6 +73,8 @@ export default function useSceneControls() {
     Grains: getGrainControls(p),
     Palette: getPaletteControls(p),
     Channel: getChannelControls(p),
+    Bed: getBedControls(p),
+    Container: getContainerControls(p),
     Drift: getDriftControls(p),
     Sculpt: getBrushControls(p),
     Reshape: getMorphologyControls(p),

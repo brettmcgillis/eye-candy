@@ -42,13 +42,18 @@
 //               with the flow, and the rebase pair keeping the water surface
 //               where it was while the ground moves under it.
 export { default as GrainWater } from './GrainWater';
+export { default as maskBedField } from './shape/maskBedField';
+export { BED_SHAPES, bedDistance, createBedShape } from './shape/bedShape';
+export { bedRimBand } from './shape/bedShapeNodes';
 export { default as WaterSolver } from './WaterSolver';
 export { default as createGrainLayout } from './grains/grainLayout';
 export { default as sampleField } from './sampleField';
 export { default as stampMounds } from './stampMounds';
 export { applyGrainUniforms, buildGrainUniforms } from './grains/grainUniforms';
 export { GRAVITY, MIN_DEPTH, SPEED_LIMIT, VELOCITY_FLOOR } from './constants';
+export { default as getBedControls } from './controls/getBedControls';
 export { default as getBrushControls } from './controls/getBrushControls';
+export { default as getContainerControls } from './controls/getContainerControls';
 export { default as getDriftControls } from './controls/getDriftControls';
 export { default as getFoamControls } from './controls/getFoamControls';
 export { default as getGrainControls } from './controls/getGrainControls';

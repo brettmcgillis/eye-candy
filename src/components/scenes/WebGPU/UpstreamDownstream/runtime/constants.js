@@ -5,9 +5,10 @@
 // several of them.
 export const WORLD_SIZE = 36;
 
-// Rows at the upstream edge held at the inflow depth, and rows at the
-// downstream edge held at the outfall depth. Without the second band the far
+// How far in from the upstream and downstream rims of the bed the reach is
+// held at the inflow and outfall depths. Without the second band the far
 // boundary is a wall, the reach ponds against it, and the backwater walks all
-// the way up the channel.
-export const INFLOW_CELLS = 10;
-export const OUTFLOW_CELLS = 8;
+// the way up the channel. In metres rather than cells so both bands follow the
+// rim of a circle or the V of a rotated hexagon.
+export const INFLOW_REACH = 0.95;
+export const OUTFLOW_REACH = 0.75;

@@ -1,4 +1,4 @@
-import React, { memo, useEffect, useRef } from 'react';
+import React, { memo, useEffect, useMemo, useRef } from 'react';
 
 import { useFrame, useThree } from '@react-three/fiber';
 
@@ -9,10 +9,14 @@ import useRenderScale from '@hooks/useRenderScale';
 
 import WaterSolver from './WaterSolver';
 import BrushPlane from './brush/BrushPlane';
+import { RESHAPE_PAIRS } from './constants';
 import applyDrift from './drift';
 import createGrainCompute, { createGrainSeed } from './grains/grainCompute';
 import createGrainMaterial from './grains/grainMaterial';
 import { applyGrainUniforms, buildGrainUniforms } from './grains/grainUniforms';
+import BedContainer from './shape/BedContainer';
+import bedLevels from './shape/bedLevels';
+import { applyBedShapeUniforms } from './shape/bedShapeNodes';
 
 // Which of the brush's four gains a tool drives. Everything not listed is
 // zero, which is how one pair of kernels covers moving ground, depositing it,
@@ -41,6 +45,7 @@ function GrainWater({
   field,
   layout,
   resolution,
+  shape,
   worldSize,
 }) {
   const gl = useThree((state) => state.gl);
@@ -65,11 +70,11 @@ function GrainWater({
 
   useRenderScale(config.renderScale);
 
-  const latest = useRef({ field, layout });
-  latest.current = { field, layout };
+  const latest = useRef({ field, layout, shape });
+  latest.current = { field, layout, shape };
 
   useEffect(() => {
-    const { field: baked, layout: sorted } = latest.current;
+    const { field: baked, layout: sorted, shape: outline } = latest.current;
 
     const solver = new WaterSolver({
       driver,
@@ -100,13 +105,17 @@ function GrainWater({
       ...shared,
       foamTexture: solver.foamTexture,
       heightTexture: solver.heightTexture,
+      shape: solver.shape,
       uniforms,
     });
 
     const geometry = new THREE.InstancedBufferGeometry().copy(
       new THREE.BoxGeometry(1, 1, 1)
     );
-    geometry.instanceCount = sorted.total;
+    geometry.instanceCount = sorted.live;
+    grainKernel.count = sorted.live;
+    seedKernel.count = sorted.live;
+    applyBedShapeUniforms(solver.shape, outline);
 
     const material = createGrainMaterial({ buffers, uniforms });
     const mesh = new THREE.Mesh(geometry, material);
@@ -121,10 +130,13 @@ function GrainWater({
       buffers,
       geometry,
       grainKernel,
+      layout: sorted,
       material,
       mesh,
+      reseed: false,
       seedKernel,
       seeded: false,
+      shape: outline,
       solver,
       uniforms,
     };
@@ -162,8 +174,16 @@ function GrainWater({
       }
     }
 
-    if (surfaceMoved) {
-      runtime.solver.reflood(gl, next);
+    // A shape change moves the bed by the whole height of the rim wall, and
+    // rebasing that preserves a water surface twelve metres above the ground
+    // it just uncovered -- which arrives as a tidal wave off the old rim.
+    const reshaped = runtime.shape !== shape;
+    if (surfaceMoved || reshaped) {
+      runtime.solver.reflood(
+        gl,
+        next,
+        reshaped && !surfaceMoved ? RESHAPE_PAIRS : undefined
+      );
     } else {
       // The rebase needs the bed this water was last solved against, so it
       // rides along in the spare channel of the buffer being uploaded.
@@ -171,10 +191,37 @@ function GrainWater({
       runtime.solver.rebake(gl, next);
     }
 
+    runtime.shape = shape;
+    runtime.bakedField = next;
+  }, [field, gl, shape]);
+
+  useEffect(() => {
+    const runtime = runtimeRef.current;
+    if (!runtime || runtime.layout === layout) return;
+
     runtime.buffers.home.value.array.set(layout.home);
     runtime.buffers.home.value.needsUpdate = true;
-    runtime.bakedField = next;
-  }, [field, gl, layout]);
+    // Slots that were outside the old outline hold stale state, so a bed that
+    // grew has to be re-seeded rather than left to advect in from nowhere.
+    runtime.reseed = layout.live !== runtime.layout.live;
+    runtime.grainKernel.count = layout.live;
+    runtime.seedKernel.count = layout.live;
+    runtime.geometry.instanceCount = layout.live;
+    runtime.layout = layout;
+  }, [layout]);
+
+  useEffect(() => {
+    const runtime = runtimeRef.current;
+    if (runtime) applyBedShapeUniforms(runtime.solver.shape, shape);
+  }, [shape]);
+
+  const levels = useMemo(
+    () =>
+      config.containerEnabled
+        ? bedLevels(field, shape, { resolution, worldSize })
+        : null,
+    [config.containerEnabled, field, resolution, shape, worldSize]
+  );
 
   useFrame((_, delta) => {
     const runtime = runtimeRef.current;
@@ -182,8 +229,12 @@ function GrainWater({
 
     if (!runtime.seeded) {
       runtime.solver.flood(gl);
-      gl.compute(runtime.seedKernel);
       runtime.seeded = true;
+      runtime.reseed = true;
+    }
+    if (runtime.reseed) {
+      gl.compute(runtime.seedKernel);
+      runtime.reseed = false;
     }
 
     const wandering = drift && config.driftEnabled && config.driftAmount > 0;
@@ -241,15 +292,25 @@ function GrainWater({
     gl.compute(runtime.grainKernel);
   });
 
-  if (!config.brushEnabled) return null;
-
   return (
-    <BrushPlane
-      field={field}
-      resolution={resolution}
-      strokeRef={strokeRef}
-      worldSize={worldSize}
-    />
+    <>
+      {config.containerEnabled && levels ? (
+        <BedContainer
+          config={config}
+          floor={levels.low - config.containerDrop}
+          rim={levels.high + config.containerRim}
+          shape={shape}
+        />
+      ) : null}
+      {config.brushEnabled ? (
+        <BrushPlane
+          field={field}
+          resolution={resolution}
+          strokeRef={strokeRef}
+          worldSize={worldSize}
+        />
+      ) : null}
+    </>
   );
 }
 

@@ -3,6 +3,10 @@
 // Without the key a bed of cubes seen from above is a flat wash and the gravel
 // stops reading as packed material.
 //
+// The fill bounce is blue rather than the seafoam it started as: a saturated
+// green bounce at this intensity tints the water green whatever the palette
+// says.
+//
 // No slot declares `shadow`. Half a million instanced grains is a second full
 // vertex pass for a shadow map that, at this angle, would land almost entirely
 // underneath the grains casting it.
@@ -21,7 +25,7 @@ const LIGHTING = {
   },
   fill: {
     type: 'directional',
-    color: '#39685a',
+    color: '#3a6a8f',
     intensity: 0.5,
     position: { azimuth: -128, elevation: 18, radius: 120 },
   },

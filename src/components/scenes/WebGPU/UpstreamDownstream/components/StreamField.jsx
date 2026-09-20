@@ -1,6 +1,11 @@
 import React, { memo, useMemo } from 'react';
 
-import { GrainWater, createGrainLayout } from '@modules/shallowWater';
+import {
+  GrainWater,
+  createBedShape,
+  createGrainLayout,
+  maskBedField,
+} from '@modules/shallowWater';
 
 import { WORLD_SIZE } from '../runtime/constants';
 import DRIFT_TRACKS from '../runtime/driftTracks';
@@ -12,6 +17,23 @@ import { applyRocks, buildStreamTerrain } from '../runtime/streamBed';
 // the buffers and the mesh belong to the module.
 function StreamField({ config }) {
   const driver = useMemo(() => createFlowDriver(), []);
+
+  const shape = useMemo(
+    () =>
+      createBedShape({
+        bedRotation: config.bedRotation,
+        bedShape: config.bedShape,
+        bedSize: config.bedSize,
+        resolution: config.solverResolution,
+        worldSize: WORLD_SIZE,
+      }),
+    [
+      config.bedRotation,
+      config.bedShape,
+      config.bedSize,
+      config.solverResolution,
+    ]
+  );
 
   // The expensive half: gradient, channel, banks and gravel. Cached apart from
   // the rocks so that tuning boulders by eye does not pay for the octaves of
@@ -53,7 +75,8 @@ function StreamField({ config }) {
   );
 
   // The cheap half: only the cells inside a rock's reach are touched.
-  const field = useMemo(
+  // The cheap half: only the cells inside a rock's reach are touched.
+  const rocked = useMemo(
     () =>
       applyRocks(terrain, {
         bankSlope: config.bankSlope,
@@ -82,6 +105,17 @@ function StreamField({ config }) {
     ]
   );
 
+  // Its own pass over its own copy, so dragging Rotation costs a mask and not
+  // another stamp of every boulder and cobble.
+  const field = useMemo(
+    () =>
+      maskBedField(Float32Array.from(rocked), shape, {
+        resolution: config.solverResolution,
+        worldSize: WORLD_SIZE,
+      }),
+    [config.solverResolution, rocked, shape]
+  );
+
   // Which grains are rock is decided against the bed, so this re-runs whenever
   // the channel moves as well as when the waterline itself is retuned.
   const layout = useMemo(
@@ -93,6 +127,7 @@ function StreamField({ config }) {
         resolution: config.solverResolution,
         roleFeather: config.roleFeather,
         seed: config.streamSeed,
+        shape,
         waterline: config.waterline,
         worldSize: WORLD_SIZE,
       }),
@@ -104,6 +139,7 @@ function StreamField({ config }) {
       config.solverResolution,
       config.streamSeed,
       config.waterline,
+      shape,
     ]
   );
 
@@ -115,6 +151,7 @@ function StreamField({ config }) {
       field={field}
       layout={layout}
       resolution={config.solverResolution}
+      shape={shape}
       worldSize={WORLD_SIZE}
     />
   );

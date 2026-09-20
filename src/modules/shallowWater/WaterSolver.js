@@ -5,6 +5,7 @@ import createFieldTexture from '@utils/storageField';
 import { createBedBrushPass, createWaterBrushPass } from './brush/brushKernels';
 import { REFLOOD_PAIRS, WARMUP_PAIRS, WARMUP_PER_FRAME } from './constants';
 import { createErosionPass, createSedimentRestorePass } from './morphology';
+import { bedShapeUniforms } from './shape/bedShapeNodes';
 import {
   createFloodPass,
   createFluxPass,
@@ -83,9 +84,13 @@ export default class WaterSolver {
     this.sediment = [size(), size()];
 
     this.uniforms = buildUniforms();
+    // The bed outline, so a driver's boundary band can hug the rim of a circle
+    // or a rotated hexagon instead of a row of the grid.
+    this.shape = bedShapeUniforms();
 
     const shared = {
       field: this.field,
+      shape: this.shape,
       flux: this.flux,
       foam: this.foam,
       heights: this.heights,
@@ -230,10 +235,10 @@ export default class WaterSolver {
   //
   // Reflooding reseats the whole domain on the new surface and re-arms the
   // warm-up, so the reach is running again within a second.
-  reflood(renderer, field) {
+  reflood(renderer, field, pairs = REFLOOD_PAIRS) {
     this.field.value.array.set(field);
     this.field.value.needsUpdate = true;
-    this.flood(renderer, REFLOOD_PAIRS);
+    this.flood(renderer, pairs);
   }
 
   update(config) {

@@ -137,6 +137,7 @@ export function createHeightPass({
   heights,
   read,
   res,
+  shape,
   uniforms,
   worldSize,
   write,
@@ -187,6 +188,7 @@ export function createHeightPass({
       coord: c,
       depth: next,
       res,
+      shape,
       uniforms,
       world,
     });

@@ -115,6 +115,10 @@ export default function createClothSimulation({
   anchors = [],
   alpha = {},
   material,
+  // Optional (viewNormal) => viewNormal hook, for surface detail the cloth
+  // itself knows nothing about. It has to live here because the geometric
+  // normal is only assembled inside positionNode, at shader build time.
+  normalDetail = null,
 }) {
   // ── Verlet topology ──
   const vertices = [];
@@ -764,10 +768,11 @@ export default function createClothSimulation({
     // normal, inner side (seen through cutout holes) gets flipped so
     // lights on that side can illuminate it.
     // Applied AFTER toVarying() so gl_FrontFacing evaluates in fragment stage.
-    // eslint-disable-next-line no-param-reassign
-    mat.normalNode = transformNormalToView(normal)
+    const viewNormal = transformNormalToView(normal)
       .toVarying()
       .mul(faceDirection.negate());
+    // eslint-disable-next-line no-param-reassign
+    mat.normalNode = normalDetail ? normalDetail(viewNormal) : viewNormal;
 
     return v0.add(v1).add(v2).add(v3).mul(0.25);
   })();

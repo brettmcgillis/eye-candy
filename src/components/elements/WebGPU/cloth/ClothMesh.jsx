@@ -26,6 +26,8 @@ import {
 } from 'three/tsl';
 import * as THREE from 'three/webgpu';
 
+import { fabricWeave } from '@modules/tsl';
+
 import createClothSimulation from './createClothSimulation';
 
 // Module-level shared objects — avoid per-frame allocation.
@@ -39,6 +41,20 @@ const sharedGravityDir = new THREE.Vector3();
 const sharedSphereLocal = new THREE.Vector3();
 const sharedWorldMatrix = new THREE.Matrix4();
 const sharedInteractionCenterWorld = new THREE.Vector3();
+
+const FABRIC_DEFAULTS = {
+  amount: 1,
+  threads: 110,
+  depth: 0.32,
+  slub: 0.35,
+  weaveShade: 0.35,
+  weaveRoughness: 0.25,
+  hemWidth: 0.018,
+  hemDepth: 2.5,
+  stitchPitch: 110,
+  wearScale: 3.5,
+  wearAmount: 0.35,
+};
 
 // Color-type properties on MeshPhysicalNodeMaterial that need .set()
 const COLOR_KEYS = new Set([
@@ -124,6 +140,10 @@ const ClothMesh = forwardRef(function ClothMesh(
     textureProjection = 'uv',
     // Texture application side: both | inner | outer
     textureSide = 'both',
+    // Procedural woven-fabric surface detail. Passing null keeps the material
+    // exactly as it was; the values are all uniforms, so a panel that opts in
+    // can be retuned live without rebuilding the shader.
+    fabric = null,
     // Lightweight silhouette outline
     outlineEnabled = false,
     outlineColor = '#ffffff',
@@ -183,12 +203,39 @@ const ClothMesh = forwardRef(function ClothMesh(
     []
   );
 
+  // Opting in is decided once, at mount: the simulation's GPU buffers and the
+  // material's node graph are both built here and never rebuilt. Everything
+  // the weave reads is a uniform, so the look still retunes live.
+  const fabricEnabledRef = useRef(fabric !== null);
+  const fabricUniforms = useMemo(() => {
+    if (!fabricEnabledRef.current) return null;
+    const u = {};
+    Object.entries(FABRIC_DEFAULTS).forEach(([key, value]) => {
+      u[key] = nodeUniform(value);
+    });
+    // Threads are counted across the panel's width; the other axis follows so
+    // they stay square in world space rather than square in UV space.
+    u.threadsU = nodeUniform(FABRIC_DEFAULTS.threads);
+    u.threadsV = nodeUniform(FABRIC_DEFAULTS.threads);
+    u.aspectU = nodeUniform(1);
+    u.aspectV = nodeUniform(1);
+    u.panelWidth = nodeUniform(1);
+    return u;
+  }, []);
+
+  const weaveNodes = useMemo(
+    () =>
+      fabricUniforms ? fabricWeave({ uvNode: uv(), ...fabricUniforms }) : null,
+    [fabricUniforms]
+  );
+
   const { sim, interactionCenter } = useMemo(() => {
     const mat = new THREE.MeshPhysicalNodeMaterial({
       side: THREE.DoubleSide,
       ...initialMaterial,
     });
     const s = createClothSimulation({
+      normalDetail: weaveNodes ? weaveNodes.normalNode : null,
       width,
       height,
       segmentsX,
@@ -409,10 +456,16 @@ const ClothMesh = forwardRef(function ClothMesh(
     const rimmedOuter = mix(outerNode, sim.cutoutRimColorU, sim.cutoutRimNode);
 
     if (innerColor) texUniforms.innerColorU.value.set(innerColor);
-    sim.material.colorNode = mix(rimmedOuter, innerNode, frontFacing);
+    const faceColor = mix(rimmedOuter, innerNode, frontFacing);
+    // The weave's own ambient occlusion: valleys between threads, the shadow
+    // under a stitch, and weathering all darken the albedo.
+    sim.material.colorNode = weaveNodes
+      ? faceColor.mul(weaveNodes.shadeNode)
+      : faceColor;
     sim.material.needsUpdate = true;
   }, [
     sim,
+    weaveNodes,
     innerColor,
     textureUrl,
     texture,
@@ -491,17 +544,23 @@ const ClothMesh = forwardRef(function ClothMesh(
   // shader compiles — avoids a recompile cycle that drops the computed normalNode.
   // Uniform values are pushed each frame in useFrame; node structure never changes.
   useMemo(() => {
-    sim.material.roughnessNode = mix(
+    const faceRoughness = mix(
       texUniforms.outerRoughnessU,
       texUniforms.innerRoughnessU,
       frontFacing
     );
+    // Thread crowns catch a cleaner highlight than the valleys between them,
+    // and a weathered panel is duller still.
+    sim.material.roughnessNode = weaveNodes
+      ? faceRoughness.add(weaveNodes.roughnessDelta).clamp(0, 1)
+      : faceRoughness;
     sim.material.metalnessNode = mix(
       texUniforms.outerMetalnessU,
       texUniforms.innerMetalnessU,
       frontFacing
     );
-  }, [sim, texUniforms]); // sim and texUniforms are both stable (empty deps useMemo)
+    // sim, texUniforms and weaveNodes are all stable (empty-deps useMemo)
+  }, [sim, texUniforms, weaveNodes]);
 
   // Rebuild alpha mask when params change
   useEffect(() => {
@@ -532,6 +591,25 @@ const ClothMesh = forwardRef(function ClothMesh(
 
   useFrame(({ gl, pointer, camera }, delta) => {
     const s = simState.current;
+
+    if (fabricUniforms) {
+      const f = { ...FABRIC_DEFAULTS, ...fabric };
+      Object.keys(FABRIC_DEFAULTS).forEach((key) => {
+        fabricUniforms[key].value = f[key];
+      });
+      // Keep threads square in world space: the panel is `width` by `height`,
+      // so the V axis needs proportionally fewer of them.
+      fabricUniforms.threadsU.value = f.threads;
+      fabricUniforms.threadsV.value = Math.max(
+        Math.round((f.threads * height) / Math.max(width, 1e-4)),
+        1
+      );
+      // Hem width is given in panel-width units, so the V edges have to be
+      // measured in the same units rather than in UV.
+      fabricUniforms.aspectU.value = 1;
+      fabricUniforms.aspectV.value = height / Math.max(width, 1e-4);
+      fabricUniforms.panelWidth.value = width;
+    }
 
     // Push control values into GPU uniforms
     if (!windManaged) {

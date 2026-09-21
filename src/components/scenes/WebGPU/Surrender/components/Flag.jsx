@@ -35,6 +35,7 @@ const FlagCloth = forwardRef(function FlagCloth(
     transmission,
     ior,
     thickness,
+    fabric,
     ...rest
   },
   ref
@@ -53,6 +54,7 @@ const FlagCloth = forwardRef(function FlagCloth(
       {...CLOTH_DEFAULTS}
       textureUrl={textureUrl}
       texture={texture}
+      fabric={fabric}
       materialProps={{
         color,
         roughness,

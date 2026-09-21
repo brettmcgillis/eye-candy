@@ -66,6 +66,12 @@ export default function Surrender() {
     sheen,
     sheenRoughness,
     sheenColor,
+    fabricAmount,
+    fabricThreads,
+    fabricDepth,
+    fabricShade,
+    fabricHem,
+    fabricWear,
     clearcoat,
     clearcoatRoughness,
     transmission,
@@ -169,6 +175,25 @@ export default function Surrender() {
     [keyPosX, keyPosY, keyPosZ]
   );
 
+  const fabric = useMemo(
+    () => ({
+      amount: fabricAmount,
+      threads: fabricThreads,
+      depth: fabricDepth,
+      weaveShade: fabricShade,
+      hemWidth: fabricHem,
+      wearAmount: fabricWear,
+    }),
+    [
+      fabricAmount,
+      fabricThreads,
+      fabricDepth,
+      fabricShade,
+      fabricHem,
+      fabricWear,
+    ]
+  );
+
   const leafModeNormalized = leafMode?.toLowerCase() ?? 'billboard';
   const scenePhysics = usePhysicsState({
     outlineGroupRef,
@@ -212,20 +237,24 @@ export default function Surrender() {
         sunDirection={keyDirection}
       />
       <ambientLight intensity={ambientIntensity} color={ambientColor} />
+      {/* The shadow camera is tight to the flag. The old box also spanned the
+          pole's full drop, which casts onto nothing, so most of the map's
+          texels went to empty space and the folds got a quarter of the
+          density they could have had. */}
       <directionalLight
         position={[keyPosX, keyPosY, keyPosZ]}
         intensity={keyIntensity}
         color={keyColor}
         castShadow={keyShadow}
         shadow-mapSize={[2048, 2048]}
-        shadow-camera-left={-2}
-        shadow-camera-right={2}
-        shadow-camera-top={2}
-        shadow-camera-bottom={-1.5}
+        shadow-camera-left={-0.4}
+        shadow-camera-right={1.6}
+        shadow-camera-top={1.3}
+        shadow-camera-bottom={-0.5}
         shadow-camera-near={0.5}
         shadow-camera-far={20}
-        shadow-bias={-0.001}
-        shadow-normalBias={0.02}
+        shadow-bias={-0.0004}
+        shadow-normalBias={0.012}
       />
       <directionalLight
         position={[fillPosX, fillPosY, fillPosZ]}
@@ -298,6 +327,7 @@ export default function Surrender() {
           transmission={transmission}
           ior={ior}
           thickness={materialThickness}
+          fabric={fabric}
         />
       </group>
 

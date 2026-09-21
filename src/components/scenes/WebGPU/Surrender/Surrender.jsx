@@ -1,9 +1,10 @@
 /* eslint-disable no-nested-ternary */
-import React, { useCallback, useRef } from 'react';
+import React, { useCallback, useMemo, useRef } from 'react';
 
 import { OrbitControls, PerspectiveCamera } from '@react-three/drei';
 
 import AudioToggleOverlay from '@app/scaffold/overlay/components/AudioToggleOverlay';
+import GradientEnvironment from '@elements/WebGPU/lights/GradientEnvironment';
 import useLoopedSceneAudio from '@hooks/useLoopedSceneAudio';
 import Bloom from '@postprocessing/WebGPU/bloom/Bloom';
 import OutlineFX from '@postprocessing/WebGPU/outline/Outline';
@@ -84,6 +85,11 @@ export default function Surrender() {
     fogFar,
     ambientIntensity,
     ambientColor,
+    envIntensity,
+    envSkyColor,
+    envHorizonColor,
+    envGroundColor,
+    envSunIntensity,
     keyIntensity,
     keyColor,
     keyPosX,
@@ -125,6 +131,9 @@ export default function Surrender() {
     leafColor3,
     leafAspect,
     leafWindInfluence,
+    leafFlutter,
+    leafRoughness,
+    leafTranslucency,
     thunderEnabled,
     thunderPeakIntensity,
     thunderMinGap,
@@ -151,6 +160,14 @@ export default function Surrender() {
 
   useLoopedSceneAudio(ambienceTrack);
   const { cameraPosition, orbitTarget } = useCamera({ posX, posY });
+
+  // The key light aims at the origin, so its position is the direction the
+  // light arrives from — shared by the environment's sun and the leaves'
+  // translucency term.
+  const keyDirection = useMemo(
+    () => [keyPosX, keyPosY, keyPosZ],
+    [keyPosX, keyPosY, keyPosZ]
+  );
 
   const leafModeNormalized = leafMode?.toLowerCase() ?? 'billboard';
   const scenePhysics = usePhysicsState({
@@ -182,7 +199,18 @@ export default function Surrender() {
         makeDefault
       />
 
-      {/* Soft overcast lighting to match the painting */}
+      {/* Soft overcast lighting to match the painting. The gradient
+          environment is what fills the shadow side and gives the pole
+          something to reflect; the lights only shape on top of it. */}
+      <GradientEnvironment
+        intensity={envIntensity}
+        skyColor={envSkyColor}
+        horizonColor={envHorizonColor}
+        groundColor={envGroundColor}
+        sunColor={keyColor}
+        sunIntensity={envSunIntensity}
+        sunDirection={keyDirection}
+      />
       <ambientLight intensity={ambientIntensity} color={ambientColor} />
       <directionalLight
         position={[keyPosX, keyPosY, keyPosZ]}
@@ -319,6 +347,13 @@ export default function Surrender() {
           windDirX={windDirX}
           windDirZ={windDirZ}
           windInfluence={leafWindInfluence}
+          flutter={leafFlutter}
+          roughness={leafRoughness}
+          translucency={leafTranslucency}
+          keyPosX={keyPosX}
+          keyPosY={keyPosY}
+          keyPosZ={keyPosZ}
+          keyColor={keyColor}
           scenePhysics={scenePhysics}
         />
       )}

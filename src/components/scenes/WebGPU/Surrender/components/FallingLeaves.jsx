@@ -8,12 +8,19 @@ import { useFrame, useThree } from '@react-three/fiber';
 
 import {
   Fn,
+  cameraPosition,
+  cos,
+  dot,
+  faceDirection,
   float,
   instancedBufferAttribute,
   mod,
   positionLocal,
+  positionWorld,
   rotate,
+  sin,
   time,
+  transformNormalToView,
   texture as tslTexture,
   uniform,
   uv,
@@ -148,6 +155,13 @@ function FallingLeavesInner({
   windDirX,
   windDirZ,
   windInfluence,
+  flutter,
+  roughness,
+  translucency,
+  keyPosX,
+  keyPosY,
+  keyPosZ,
+  keyColor,
   flowMode,
   alignToWind,
   wireframe,
@@ -218,6 +232,15 @@ function FallingLeavesInner({
     []
   );
 
+  const lightUniforms = useMemo(
+    () => ({
+      keyDirU: uniform(new THREE.Vector3(0, 1, 0)),
+      keyColorU: uniform(new THREE.Color('#ffffff')),
+      translucencyU: uniform(0),
+    }),
+    []
+  );
+
   const cursorUniforms = useMemo(
     () => ({
       cursorPosU: uniform(new THREE.Vector3(10, 10, 10)),
@@ -228,6 +251,12 @@ function FallingLeavesInner({
   );
 
   useFrame(() => {
+    // The scene's key light aims at the origin, so its position doubles as the
+    // direction light arrives from.
+    lightUniforms.keyDirU.value.set(keyPosX, keyPosY, keyPosZ).normalize();
+    lightUniforms.keyColorU.value.set(keyColor);
+    lightUniforms.translucencyU.value = translucency;
+
     windUniforms.windU.value = wind;
     windUniforms.windDirXU.value = windDirX;
     windUniforms.windDirZU.value = windDirZ;
@@ -251,12 +280,13 @@ function FallingLeavesInner({
     const numColors = colors.length;
     const totalCombos = numSprites * numColors;
 
-    const positions = [];
+    // WebGPU binds at most 8 vertex buffers and a lit material claims three of
+    // them for position/uv/normal, so every per-instance scalar rides in the
+    // spare component of a vector rather than taking a buffer of its own.
+    const positions = []; // vec4: xyz = spawn point, w = scale
     const rotations = []; // vec4: xyz = euler angles, w = speed multiplier
     const timeOffsets = [];
-    const spriteIndices = [];
-    const instanceColors = [];
-    const instanceScales = [];
+    const instanceColors = []; // vec4: rgb = tint, w = sprite layer
 
     const col = new THREE.Color();
 
@@ -274,8 +304,8 @@ function FallingLeavesInner({
 
       // Extend z toward camera (at z=2.5) so some particles pass close
       const z = THREE.MathUtils.randFloat(-2, 2.1);
-      positions.push(x, y, z);
-      // Pack speed multiplier into w to avoid exceeding WebGPU's 8-buffer limit
+      // Natural size variation — closer particles also appear larger via perspective
+      positions.push(x, y, z, THREE.MathUtils.randFloat(0.5, 1.8));
       rotations.push(
         Math.random(),
         Math.random(),
@@ -283,15 +313,12 @@ function FallingLeavesInner({
         1 + (Math.random() * 2 - 1) * speedJitter
       );
       timeOffsets.push(i / count);
-      spriteIndices.push(si);
-      instanceColors.push(col.r, col.g, col.b);
-      // Natural size variation — closer particles also appear larger via perspective
-      instanceScales.push(THREE.MathUtils.randFloat(0.5, 1.8));
+      instanceColors.push(col.r, col.g, col.b, si);
     }
 
     const posAttr = new THREE.InstancedBufferAttribute(
       new Float32Array(positions),
-      3
+      4
     );
     const rotAttr = new THREE.InstancedBufferAttribute(
       new Float32Array(rotations),
@@ -301,17 +328,9 @@ function FallingLeavesInner({
       new Float32Array(timeOffsets),
       1
     );
-    const spriteAttr = new THREE.InstancedBufferAttribute(
-      new Float32Array(spriteIndices),
-      1
-    );
     const colorAttr = new THREE.InstancedBufferAttribute(
       new Float32Array(instanceColors),
-      3
-    );
-    const scaleAttr = new THREE.InstancedBufferAttribute(
-      new Float32Array(instanceScales),
-      1
+      4
     );
 
     const geometry = new THREE.PlaneGeometry(
@@ -322,26 +341,31 @@ function FallingLeavesInner({
     );
     const alphaClip = 0.1;
 
-    const material = new THREE.MeshBasicNodeMaterial({
+    const material = new THREE.MeshStandardNodeMaterial({
       side: THREE.DoubleSide,
       forceSinglePass: true,
       transparent: true,
       alphaTest: alphaClip,
+      roughness,
+      metalness: 0,
       wireframe,
     });
 
     // TSL instance nodes
-    const instancePosition = instancedBufferAttribute(posAttr);
+    const posAndScale = instancedBufferAttribute(posAttr); // vec4
+    const instancePosition = posAndScale.xyz;
+    const instanceScale = posAndScale.w;
     const rotAndSpeed = instancedBufferAttribute(rotAttr); // vec4
     const instanceRotation = rotAndSpeed.xyz;
     const instanceSpeedMult = rotAndSpeed.w;
     const instanceTime = instancedBufferAttribute(timeAttr);
-    const instanceSpriteIdx = instancedBufferAttribute(spriteAttr);
-    const instanceColor = instancedBufferAttribute(colorAttr);
-    const instanceScale = instancedBufferAttribute(scaleAttr);
+    const colorAndSprite = instancedBufferAttribute(colorAttr); // vec4
+    const instanceColor = colorAndSprite.xyz;
+    const instanceSpriteIdx = colorAndSprite.w;
 
     const { windDirXU, windDirZU, windInfluenceU, windTiltU } = windUniforms;
     const { cursorPosU, cursorRadiusU, cursorEnabledU } = cursorUniforms;
+    const { keyDirU, keyColorU, translucencyU } = lightUniforms;
 
     const localTime = instanceTime.add(time.mul(speed).mul(instanceSpeedMult));
     const modTime = mod(localTime, 1.0);
@@ -393,22 +417,71 @@ function FallingLeavesInner({
       cursorResponse.mul(cursorSpinStrength * 0.25)
     );
 
+    // A leaf falls unevenly — it stalls, slips sideways and rocks about its
+    // stem. Without this every instance tracks the same straight line at a
+    // constant rate and the field reads as being on rails.
+    const flutterPhase = instanceTime.mul(Math.PI * 2 * 7).add(time.mul(2.1));
+    const flutterSway = vec3(
+      sin(flutterPhase),
+      sin(flutterPhase.mul(0.73).add(1.7)).mul(0.35),
+      cos(flutterPhase.mul(1.31))
+    ).mul(flutter * leafSize * 2.5);
+    const flutterRock = vec3(
+      sin(flutterPhase.mul(1.17)).mul(0.6),
+      cos(flutterPhase.mul(0.81)).mul(0.4),
+      sin(flutterPhase.mul(1.43)).mul(0.5)
+    ).mul(flutter);
+
     // windTiltU is 0 for normal particles; for rain it aligns the streak to travel direction.
     // tumble is 0 for rain, so the two terms are mutually exclusive in practice.
-    const rotated = rotate(
-      bent.mul(instanceScale),
-      instanceRotation
-        .mul(modTime.mul(tumble))
-        .add(vec3(0, 0, windTiltU))
-        .add(cursorSpin)
-    );
+    const rotation = instanceRotation
+      .mul(modTime.mul(tumble))
+      .add(vec3(0, 0, windTiltU))
+      .add(cursorSpin)
+      .add(flutterRock);
+    const rotated = rotate(bent.mul(instanceScale), rotation);
 
-    material.positionNode = rotated.add(basePosition).add(cursorOffset);
+    material.positionNode = rotated
+      .add(basePosition)
+      .add(cursorOffset)
+      .add(flutterSway);
+
+    // The geometry is a flat plane, so its stored normal points at +Z for every
+    // instance no matter how the positionNode has tumbled it. Rotate the cup's
+    // own normal by the same euler or the whole field lights identically.
+    // dx/dy are UV-space while the cup's rise is world-space, so divide the
+    // slope through by the quad's extent in each axis.
+    const cupSlope = curvature * 4;
+    const leafNormal = vec3(
+      dx.mul(-cupSlope),
+      dy.mul(-cupSlope / leafAspect),
+      1
+    ).normalize();
+    const rotatedNormal = rotate(leafNormal, rotation).normalize();
+    // Carried as a varying so the tumble stays in the vertex stage instead of
+    // dragging every instanced attribute it depends on into the fragment one.
+    // faceDirection is applied after, where gl_FrontFacing exists.
+    material.normalNode = transformNormalToView(rotatedNormal)
+      .toVarying()
+      .mul(faceDirection);
 
     // Sample DataArrayTexture: uv as vec2, layer as separate depth int
     const texSample = tslTexture(arrayTex, leafUV).depth(instanceSpriteIdx);
     material.colorNode = instanceColor.mul(texSample.rgb);
     material.opacityNode = texSample.a;
+
+    // Autumn leaves are thin enough to glow when the light is behind them.
+    // Strongest looking into the light, through a leaf turned broadside to it.
+    // Both terms vary slowly across a leaf this small, so resolve them per
+    // vertex and hand the fragment stage a single float.
+    const viewDirWorld = cameraPosition.sub(positionWorld).normalize();
+    const towardLight = dot(viewDirWorld, keyDirU).negate().clamp(0, 1).pow(3);
+    const broadside = dot(rotatedNormal, keyDirU).abs();
+    const backlit = towardLight.mul(broadside).toVarying();
+    material.emissiveNode = instanceColor
+      .mul(texSample.rgb)
+      .mul(keyColorU)
+      .mul(backlit.mul(translucencyU));
     material.castShadowNode = Fn(() => {
       texSample.a.lessThanEqual(alphaClip).discard();
       return vec4(0, 0, 0, 1);
@@ -431,8 +504,11 @@ function FallingLeavesInner({
     effectiveTravel,
     tumble,
     curvature,
+    flutter,
+    roughness,
     windUniforms,
     cursorUniforms,
+    lightUniforms,
     flowMode,
     spawnXMin,
     spawnXMax,
@@ -485,6 +561,13 @@ function FallingLeaves({
   windDirX = 1,
   windDirZ = 0,
   windInfluence = 0.15,
+  flutter = 0,
+  roughness = 0.6,
+  translucency = 0,
+  keyPosX = 0,
+  keyPosY = 1,
+  keyPosZ = 0,
+  keyColor = '#ffffff',
   wireframe = false,
   scenePhysics = null,
 }) {
@@ -540,6 +623,13 @@ function FallingLeaves({
         windDirX={windDirX}
         windDirZ={windDirZ}
         windInfluence={windInfluence}
+        flutter={flutter}
+        roughness={roughness}
+        translucency={translucency}
+        keyPosX={keyPosX}
+        keyPosY={keyPosY}
+        keyPosZ={keyPosZ}
+        keyColor={keyColor}
         flowMode={flowMode}
         alignToWind={alignToWind}
         wireframe={wireframe}

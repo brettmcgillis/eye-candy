@@ -1,9 +1,7 @@
-/* eslint-disable no-underscore-dangle */
 import { memo, useEffect, useMemo, useRef } from 'react';
 
 import { useFrame, useThree } from '@react-three/fiber';
 
-import { outline } from 'three/addons/tsl/display/OutlineNode.js';
 import {
   Fn,
   If,
@@ -20,6 +18,7 @@ import {
   mx_fractal_noise_float as mxFractalNoise,
   mx_worley_noise_float as mxWorleyNoise,
   pass,
+  positionView,
   screenCoordinate,
   screenUV,
   sin,
@@ -87,12 +86,10 @@ function Outline({
 }) {
   const { gl: renderer, scene, camera, size } = useThree();
   const postRef = useRef(null);
-  const outlinePassRef = useRef(null);
   const jfaRTsRef = useRef([null, null]);
   const jfaQuadRef = useRef(null);
   const maskRTRef = useRef(null);
   const whiteMatRef = useRef(null);
-  const depthOnlyMatRef = useRef(null);
 
   const uniformsRef = useMemo(
     () => ({
@@ -105,6 +102,7 @@ function Outline({
       resolution: uniform(new THREE.Vector2(1, 1)),
       time: uniform(0),
       thickness: uniform(thickness),
+      glow: uniform(glow),
       jfaStep: uniform(1),
       ringStride: uniform(ringStride),
       halftoneScale: uniform(halftoneScale),
@@ -123,21 +121,10 @@ function Outline({
     const baseMode = MODE_PATTERN_MAP[mode] ? 'glow' : mode;
     const resolvedPatternType = MODE_PATTERN_MAP[mode] || 'None';
 
-    const outlineNode = outline(scene, camera, {
-      selectedObjects: [],
-      edgeGlow: uniform(glow),
-      edgeThickness: uniform(Math.max(thickness, 1)),
-    });
-    outlinePassRef.current = outlineNode;
-
-    outlineNode._prepareMaskMaterial.side = THREE.DoubleSide;
-    outlineNode._prepareMaskMaterial.needsUpdate = true;
-    outlineNode._depthMaterial.side = THREE.DoubleSide;
-    outlineNode._depthMaterial.needsUpdate = true;
-
     const maskRT = new THREE.RenderTarget(rtWidth, rtHeight, {
       depthBuffer: true,
       samples: 0,
+      type: THREE.HalfFloatType,
       minFilter: THREE.NearestFilter,
       magFilter: THREE.NearestFilter,
       colorSpace: THREE.NoColorSpace,
@@ -168,17 +155,12 @@ function Outline({
       fog: false,
       toneMapped: false,
     });
+    // .r = silhouette coverage, .g = the target's distance from the camera.
+    // The composite needs that depth to decide whether the scene occludes the
+    // outline band. fragmentNode, not colorNode: colorNode runs the colour
+    // pipeline, which clamps, and the distance is not a colour.
+    whiteMat.fragmentNode = vec4(1.0, positionView.z.negate(), 0.0, 1.0);
     whiteMatRef.current = whiteMat;
-
-    const depthOnlyMat = new THREE.MeshBasicNodeMaterial({
-      side: THREE.DoubleSide,
-      depthWrite: true,
-      depthTest: true,
-      fog: false,
-      toneMapped: false,
-    });
-    depthOnlyMat.colorWrite = false;
-    depthOnlyMatRef.current = depthOnlyMat;
 
     const scenePass = pass(scene, camera);
     const maxCoord = ivec2(Math.max(rtWidth - 1, 0), Math.max(rtHeight - 1, 0));
@@ -197,28 +179,40 @@ function Outline({
       depthTest: false,
       toneMapped: false,
     });
-    seedMat.colorNode = Fn(() => {
+    seedMat.fragmentNode = Fn(() => {
       const coord = ivec2(screenCoordinate.xy);
-      const isInside = textureLoad(maskRT.texture, coord).r.greaterThan(0.5);
       const left = ivec2(coord.x.sub(1).max(0), coord.y);
       const right = ivec2(coord.x.add(1).min(maxCoord.x), coord.y);
       const down = ivec2(coord.x, coord.y.sub(1).max(0));
       const up = ivec2(coord.x, coord.y.add(1).min(maxCoord.y));
-      const leftInside = textureLoad(maskRT.texture, left).r.greaterThan(0.5);
-      const rightInside = textureLoad(maskRT.texture, right).r.greaterThan(0.5);
-      const downInside = textureLoad(maskRT.texture, down).r.greaterThan(0.5);
-      const upInside = textureLoad(maskRT.texture, up).r.greaterThan(0.5);
-      const isBoundary = leftInside
+      const selfTexel = textureLoad(maskRT.texture, coord);
+      const leftTexel = textureLoad(maskRT.texture, left);
+      const rightTexel = textureLoad(maskRT.texture, right);
+      const downTexel = textureLoad(maskRT.texture, down);
+      const upTexel = textureLoad(maskRT.texture, up);
+
+      const isInside = selfTexel.r.greaterThan(0.5);
+      const isBoundary = leftTexel.r
+        .greaterThan(0.5)
         .notEqual(isInside)
-        .or(rightInside.notEqual(isInside))
-        .or(downInside.notEqual(isInside))
-        .or(upInside.notEqual(isInside));
+        .or(rightTexel.r.greaterThan(0.5).notEqual(isInside))
+        .or(downTexel.r.greaterThan(0.5).notEqual(isInside))
+        .or(upTexel.r.greaterThan(0.5).notEqual(isInside));
+
+      // Seeds land on both sides of the silhouette and outside texels cleared
+      // to 0, so take the farthest distance in the neighbourhood — every seed
+      // then carries the target's depth rather than the clear.
+      const edgeDistance = selfTexel.g
+        .max(leftTexel.g)
+        .max(rightTexel.g)
+        .max(downTexel.g)
+        .max(upTexel.g);
 
       return vec4(
         float(coord.x),
         float(coord.y),
         isBoundary.select(0.0, hugeDistanceNode),
-        1.0
+        edgeDistance
       );
     })();
 
@@ -229,12 +223,13 @@ function Outline({
         toneMapped: false,
       });
 
-      mat.colorNode = Fn(() => {
+      mat.fragmentNode = Fn(() => {
         const coord = ivec2(screenCoordinate.xy);
         const coordVec = vec2(float(coord.x), float(coord.y));
         const result = textureLoad(sourceTexture, coord).toVar();
         const bestSeed = vec2(result.x, result.y).toVar();
         const bestDist = result.z.toVar();
+        const bestViewZ = result.w.toVar();
 
         Loop(
           {
@@ -264,6 +259,7 @@ function Outline({
                   If(propagatedDistance.lessThan(bestDist), () => {
                     bestDist.assign(propagatedDistance);
                     bestSeed.assign(candidate.xy);
+                    bestViewZ.assign(candidate.w);
                   });
                 });
               }
@@ -271,7 +267,7 @@ function Outline({
           }
         );
 
-        return vec4(bestSeed, bestDist, 1.0);
+        return vec4(bestSeed, bestDist, bestViewZ);
       })();
 
       return mat;
@@ -289,14 +285,14 @@ function Outline({
       geo: quadGeo,
     };
 
-    const sampleSignedDistance = Fn(([inputCoord]) => {
+    const sampleJfa = Fn(([inputCoord]) => {
       const coord = inputCoord.max(ivec2(0, 0)).min(maxCoord).toVar();
       const seedA = textureLoad(jfaRTs[0].texture, coord);
       const seedB = textureLoad(jfaRTs[1].texture, coord);
 
       return seedA
         .mul(float(1.0).sub(uniformsRef.activeJfaIndex))
-        .add(seedB.mul(uniformsRef.activeJfaIndex)).z;
+        .add(seedB.mul(uniformsRef.activeJfaIndex));
     });
 
     const patternBuilder = PATTERN_BUILDERS[resolvedPatternType];
@@ -309,19 +305,46 @@ function Outline({
         )
       : float(1.0);
 
-    const { hiddenEdge, visibleEdge } = outlineNode;
-    const visibilityMaskNode = visibleEdge
-      .add(hiddenEdge.mul(uniformsRef.hiddenStrength))
-      .clamp(0.0, 1.0);
-    const outsideVisibilityGateNode = visibilityMaskNode
-      .greaterThan(0.001)
-      .select(float(1.0), float(0.0));
-
     const thicknessPx = uniformsRef.thickness.max(1.0);
     const currCoord = ivec2(screenCoordinate.xy);
     const insideSign = float(inside ? -1.0 : 1.0);
-    const unsignedDist = sampleSignedDistance(currCoord);
-    const maskValue = textureLoad(maskRT.texture, currCoord).r;
+    const jfaTexel = sampleJfa(currCoord);
+    const unsignedDist = jfaTexel.z;
+    const maskTexel = textureLoad(maskRT.texture, currCoord);
+    const maskValue = maskTexel.r;
+
+    // The band is pure screen space, so without this it paints over anything
+    // sitting in front of it — leaves crossing the silhouette, for instance.
+    // Outside mode compares against the target's depth at the nearest
+    // silhouette point the JFA propagated; inside mode against this pixel's.
+    // Soft rather than binary: a hard compare leaves a pixel of fringe at the
+    // occluder's own edge, where its depth and the band's land in one texel.
+    const gateDistance = inside ? maskTexel.g : jfaTexel.w;
+    const gateThreshold = gateDistance.mul(0.98).sub(0.02);
+    const gateSoftness = gateDistance
+      .mul(uniformsRef.glow)
+      .mul(0.05)
+      .add(0.005);
+    const depthGateNode = smoothstep(
+      gateThreshold.sub(gateSoftness),
+      gateThreshold.add(gateSoftness),
+      scenePass.getViewZNode().negate()
+    );
+
+    // "Visible" means the silhouette point this band pixel belongs to is not
+    // occluded, which is what the depth gate already measures. three's
+    // OutlineNode used to answer this, but it renders selected objects by
+    // handing its mask material straight to renderer.renderObject, bypassing
+    // the scene.overrideMaterial branch that forwards positionNode. A mesh
+    // whose shape lives only in a positionNode — a GPU cloth, whose stored
+    // position attribute is all zeros — collapsed to a point in that mask, so
+    // it never registered as visible and its band was gated away.
+    const hiddenNode = float(1.0).sub(depthGateNode);
+    const visibilityMaskNode = depthGateNode
+      .add(hiddenNode.mul(uniformsRef.hiddenStrength))
+      .clamp(0.0, 1.0);
+    const outsideVisibilityGateNode = visibilityMaskNode;
+
     const maskSign = maskValue.greaterThan(0.5).select(float(-1.0), float(1.0));
     const targetMaskGateNode = maskValue
       .greaterThan(0.5)
@@ -358,7 +381,7 @@ function Outline({
       thicknessPx.sub(pulseWidth),
       dist
     ).mul(smoothstep(float(-1.0).sub(pulseWidth), pulseWidth.sub(1.0), dist));
-    const hiddenMixNode = hiddenEdge
+    const hiddenMixNode = hiddenNode
       .mul(uniformsRef.hiddenStrength)
       .div(visibilityMaskNode.max(0.0001))
       .clamp(0.0, 1.0);
@@ -368,7 +391,7 @@ function Outline({
       hiddenMixNode
     );
     const modeVisibilityGateNode = inside
-      ? targetMaskGateNode
+      ? targetMaskGateNode.mul(depthGateNode)
       : outsideVisibilityGateNode;
 
     let effectColor = uniformsRef.color;
@@ -465,7 +488,6 @@ function Outline({
     return () => {
       whiteMat.dispose();
       maskRT.dispose();
-      depthOnlyMat.dispose();
       jfaRTs.forEach((rt) => rt.dispose());
       seedMat.dispose();
       jfaStepMatA.dispose();
@@ -473,17 +495,14 @@ function Outline({
       quadGeo.dispose();
       whiteMatRef.current = null;
       maskRTRef.current = null;
-      depthOnlyMatRef.current = null;
       jfaRTsRef.current = [null, null];
       jfaQuadRef.current = null;
-      outlinePassRef.current = null;
       postRef.current = null;
     };
   }, [
     camera,
     downSampleRatio,
     enabled,
-    glow,
     halftoneScale,
     inside,
     mode,
@@ -527,20 +546,11 @@ function Outline({
 
     const target = resolveTarget(targetRef);
     const post = postRef.current;
-    const outlineNode = outlinePassRef.current;
     const jfaRTs = jfaRTsRef.current;
     const jfaQuad = jfaQuadRef.current;
     const maskRT = maskRTRef.current;
     const whiteMat = whiteMatRef.current;
-    if (
-      !target ||
-      !post ||
-      !outlineNode ||
-      !jfaRTs[0] ||
-      !jfaQuad ||
-      !maskRT ||
-      !whiteMat
-    ) {
+    if (!target || !post || !jfaRTs[0] || !jfaQuad || !maskRT || !whiteMat) {
       renderer.render(scene, camera);
       return;
     }
@@ -549,27 +559,22 @@ function Outline({
       child.layers.enable(OUTLINE_LAYER);
     });
 
-    outlineNode.selectedObjects = [target];
-
     const savedLayerMask = camera.layers.mask;
     const savedBg = scene.background;
     const savedFog = scene.fog;
     const savedOverride = scene.overrideMaterial;
 
-    const depthOnlyMat = depthOnlyMatRef.current;
+    // Target only — the silhouette is the whole target, unclipped. Occlusion is
+    // resolved at composite time against the scene pass's own depth, which is
+    // both cheaper than a second scene render and actually correct for the
+    // alpha-cutout sprites a depth prepass cannot represent.
     renderer.setRenderTarget(maskRT);
-    camera.layers.enableAll();
-    camera.layers.disable(OUTLINE_LAYER);
-    scene.overrideMaterial = depthOnlyMat;
-    renderer.clear(true, true, false);
-    renderer.render(scene, camera);
-
     camera.layers.set(OUTLINE_LAYER);
     scene.background = BLACK;
     scene.fog = null;
     scene.overrideMaterial = whiteMat;
 
-    renderer.clear(true, false, false);
+    renderer.clear(true, true, false);
     renderer.render(scene, camera);
 
     camera.layers.mask = savedLayerMask;
@@ -624,6 +629,7 @@ function Outline({
     uniformsRef.resolution.value.set(rtWidth, rtHeight);
     uniformsRef.time.value = clock.elapsedTime * 1000;
     uniformsRef.thickness.value = thickness;
+    uniformsRef.glow.value = glow;
     uniformsRef.ringStride.value = ringStride;
     uniformsRef.halftoneScale.value = halftoneScale;
     uniformsRef.activeJfaIndex.value = activeIndex;

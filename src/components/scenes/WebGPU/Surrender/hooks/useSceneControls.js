@@ -92,12 +92,37 @@ export default function useSceneControls({ onResetSim } = {}) {
                 },
                 C
               ),
+              Environment: folder(
+                {
+                  envIntensity: {
+                    value: p.envIntensity,
+                    min: 0,
+                    max: 3,
+                    step: 0.05,
+                    label: 'Intensity',
+                  },
+                  envSkyColor: { value: p.envSkyColor, label: 'Sky' },
+                  envHorizonColor: {
+                    value: p.envHorizonColor,
+                    label: 'Horizon',
+                  },
+                  envGroundColor: { value: p.envGroundColor, label: 'Ground' },
+                  envSunIntensity: {
+                    value: p.envSunIntensity,
+                    min: 0,
+                    max: 12,
+                    step: 0.1,
+                    label: 'Sun',
+                  },
+                },
+                C
+              ),
               Key: folder(
                 {
                   keyIntensity: {
                     value: p.keyIntensity,
                     min: 0,
-                    max: 3,
+                    max: 6,
                     step: 0.01,
                     label: 'Intensity',
                   },
@@ -699,6 +724,27 @@ export default function useSceneControls({ onResetSim } = {}) {
             max: 2,
             step: 0.05,
             label: 'Wind Influence',
+          },
+          leafFlutter: {
+            value: p.leafFlutter,
+            min: 0,
+            max: 2,
+            step: 0.05,
+            label: 'Flutter',
+          },
+          leafRoughness: {
+            value: p.leafRoughness,
+            min: 0,
+            max: 1,
+            step: 0.05,
+            label: 'Roughness',
+          },
+          leafTranslucency: {
+            value: p.leafTranslucency,
+            min: 0,
+            max: 3,
+            step: 0.05,
+            label: 'Translucency',
           },
           leafColor1: { value: p.leafColor1, label: 'Color 1' },
           leafColor2: { value: p.leafColor2, label: 'Color 2' },

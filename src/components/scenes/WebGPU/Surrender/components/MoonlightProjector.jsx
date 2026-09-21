@@ -1,5 +1,5 @@
 /* eslint-disable camelcase */
-import { memo, useEffect, useMemo } from 'react';
+import React, { memo, useEffect, useMemo } from 'react';
 
 import {
   Fn,

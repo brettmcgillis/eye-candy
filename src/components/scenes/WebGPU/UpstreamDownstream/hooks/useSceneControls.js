@@ -2,6 +2,8 @@ import { useMemo, useRef } from 'react';
 
 import { folder, useControls } from 'leva';
 
+import getBedControls from '@elements/BedContainer/getBedControls';
+import getContainerControls from '@elements/BedContainer/getContainerControls';
 import usePresetsFolder from '@hooks/usePresetsFolder';
 import {
   getCameraControlsKey,
@@ -13,9 +15,7 @@ import {
 } from '@modules/lightingRig';
 import { useMediaRecorder } from '@modules/mediaRecorder';
 import {
-  getBedControls,
   getBrushControls,
-  getContainerControls,
   getDriftControls,
   getFoamControls,
   getGrainControls,

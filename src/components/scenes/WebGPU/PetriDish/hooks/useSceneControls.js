@@ -2,6 +2,8 @@ import { useMemo, useRef } from 'react';
 
 import { folder, useControls } from 'leva';
 
+import getBedControls from '@elements/BedContainer/getBedControls';
+import getContainerControls from '@elements/BedContainer/getContainerControls';
 import usePresetsFolder from '@hooks/usePresetsFolder';
 import {
   getCameraControlsKey,
@@ -64,6 +66,8 @@ export default function useSceneControls() {
     Camera: folder(cameraControls, { collapsed: true }),
     Lighting: folder(lightingControls, { collapsed: true }),
     Sand: getSandControls(p),
+    Bed: getBedControls(p),
+    Container: getContainerControls(p),
     Field: getFieldControls(p),
     Studio: getStudioControls(p),
     Post: folder(postControls, { collapsed: true }),

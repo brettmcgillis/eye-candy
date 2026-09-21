@@ -11,6 +11,7 @@ import {
   createNeutralPaletteTexture,
   createPaletteTexture,
 } from '@utils/gradientPalette';
+import { createBedPolygon } from '@utils/regularPolygon';
 
 import useManualDrops from '../hooks/useManualDrops';
 import createBedLayout from '../utils/bedLayout';
@@ -125,6 +126,20 @@ function SandField({ config, dropTargetRef = null }) {
     onDrop: handleManualDrop,
   });
 
+  // Unit space, because the layout is: the shape is inscribed in [-1, 1] and
+  // bedRadius scales it in the shader, so resizing the dish stays a uniform
+  // write rather than a re-upload of every grain.
+  const shape = useMemo(
+    () =>
+      createBedPolygon({
+        bedRotation: config.bedRotation,
+        bedShape: config.bedShape,
+        bedSize: 1,
+        worldSize: 2,
+      }),
+    [config.bedRotation, config.bedShape]
+  );
+
   // Rebuilt only when the chosen gradient changes, and repointed on the
   // material's sampler per frame — swapping the palette must not disturb the
   // running simulation, which rebuilding the material would.
@@ -143,7 +158,7 @@ function SandField({ config, dropTargetRef = null }) {
     const home = new Float32Array(count * 4);
     const rot = new Float32Array(count * 4);
 
-    createBedLayout({ count, home, seed: config.seed });
+    createBedLayout({ count, home, seed: config.seed, shape });
     for (let index = 0; index < count; index += 1) {
       const slot = index * 4;
       rot[slot] = Math.random() * Math.PI * 2;
@@ -194,6 +209,7 @@ function SandField({ config, dropTargetRef = null }) {
 
     scene.add(mesh);
     runtimeRef.current = {
+      buffers,
       drop: null,
       dropElapsed: 0,
       geometry,
@@ -202,6 +218,7 @@ function SandField({ config, dropTargetRef = null }) {
       mesh,
       paletteTextureNode,
       reactionField,
+      shape,
       time: 0,
       uniforms,
     };
@@ -230,6 +247,18 @@ function SandField({ config, dropTargetRef = null }) {
     gl,
     scene,
   ]);
+
+  useEffect(() => {
+    const runtime = runtimeRef.current;
+    if (!runtime || runtime.shape === shape) return;
+
+    const count = config.bedCount;
+    const home = new Float32Array(count * 4);
+    createBedLayout({ count, home, seed: config.seed, shape });
+    runtime.buffers.home.value.array.set(home);
+    runtime.buffers.home.value.needsUpdate = true;
+    runtime.shape = shape;
+  }, [config.bedCount, config.seed, shape]);
 
   useFrame((_, delta) => {
     const runtime = runtimeRef.current;

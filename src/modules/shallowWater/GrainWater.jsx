@@ -5,18 +5,18 @@ import { useFrame, useThree } from '@react-three/fiber';
 import { instancedArray } from 'three/tsl';
 import * as THREE from 'three/webgpu';
 
+import BedContainer from '@elements/BedContainer/BedContainer';
 import useRenderScale from '@hooks/useRenderScale';
+import { applyPolygonUniforms } from '@utils/regularPolygonNodes';
 
 import WaterSolver from './WaterSolver';
+import bedLevels from './bedLevels';
 import BrushPlane from './brush/BrushPlane';
 import { RESHAPE_PAIRS } from './constants';
 import applyDrift from './drift';
 import createGrainCompute, { createGrainSeed } from './grains/grainCompute';
 import createGrainMaterial from './grains/grainMaterial';
 import { applyGrainUniforms, buildGrainUniforms } from './grains/grainUniforms';
-import BedContainer from './shape/BedContainer';
-import bedLevels from './shape/bedLevels';
-import { applyBedShapeUniforms } from './shape/bedShapeNodes';
 
 // Which of the brush's four gains a tool drives. Everything not listed is
 // zero, which is how one pair of kernels covers moving ground, depositing it,
@@ -115,7 +115,7 @@ function GrainWater({
     geometry.instanceCount = sorted.live;
     grainKernel.count = sorted.live;
     seedKernel.count = sorted.live;
-    applyBedShapeUniforms(solver.shape, outline);
+    applyPolygonUniforms(solver.shape, outline);
 
     const material = createGrainMaterial({ buffers, uniforms });
     const mesh = new THREE.Mesh(geometry, material);
@@ -212,7 +212,7 @@ function GrainWater({
 
   useEffect(() => {
     const runtime = runtimeRef.current;
-    if (runtime) applyBedShapeUniforms(runtime.solver.shape, shape);
+    if (runtime) applyPolygonUniforms(runtime.solver.shape, shape);
   }, [shape]);
 
   const levels = useMemo(

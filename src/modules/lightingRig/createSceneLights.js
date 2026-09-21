@@ -7,6 +7,10 @@ function applyShadow(light, slot) {
   const lightShadow = light.shadow;
 
   lightShadow.mapSize.set(shadow.mapSize, shadow.mapSize);
+  if (shadow.mapType) {
+    lightShadow.mapType =
+      shadow.mapType === 'float' ? THREE.FloatType : THREE.HalfFloatType;
+  }
   lightShadow.bias = shadow.bias;
   lightShadow.normalBias = shadow.normalBias;
   if (shadow.radius != null) lightShadow.radius = shadow.radius;

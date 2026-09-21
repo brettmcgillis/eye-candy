@@ -1,11 +1,11 @@
 import { instancedArray, uniform, vec2 } from 'three/tsl';
 
+import { polygonUniforms } from '@utils/regularPolygonNodes';
 import createFieldTexture from '@utils/storageField';
 
 import { createBedBrushPass, createWaterBrushPass } from './brush/brushKernels';
 import { REFLOOD_PAIRS, WARMUP_PAIRS, WARMUP_PER_FRAME } from './constants';
 import { createErosionPass, createSedimentRestorePass } from './morphology';
-import { bedShapeUniforms } from './shape/bedShapeNodes';
 import {
   createFloodPass,
   createFluxPass,
@@ -86,7 +86,7 @@ export default class WaterSolver {
     this.uniforms = buildUniforms();
     // The bed outline, so a driver's boundary band can hug the rim of a circle
     // or a rotated hexagon instead of a row of the grid.
-    this.shape = bedShapeUniforms();
+    this.shape = polygonUniforms();
 
     const shared = {
       field: this.field,

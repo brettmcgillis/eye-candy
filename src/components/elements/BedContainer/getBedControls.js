@@ -1,6 +1,6 @@
 import { folder } from 'leva';
 
-import { BED_SHAPES } from '../shape/bedShape';
+import { SHAPE_SIDES } from '@utils/regularPolygon';
 
 // Rotation turns the outline, not the terrain: the flow keeps running down -z
 // and the shape swings round it, so 30 degrees on a hexagon is the difference
@@ -8,7 +8,11 @@ import { BED_SHAPES } from '../shape/bedShape';
 export default function getBedControls(p) {
   return folder(
     {
-      bedShape: { label: 'Shape', value: p.bedShape, options: BED_SHAPES },
+      bedShape: {
+        label: 'Shape',
+        value: p.bedShape,
+        options: Object.keys(SHAPE_SIDES),
+      },
       bedSize: {
         label: 'Size',
         value: p.bedSize,

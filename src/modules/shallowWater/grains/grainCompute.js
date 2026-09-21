@@ -15,9 +15,9 @@ import {
   vec4,
 } from 'three/tsl';
 
+import { polygonAt } from '@utils/regularPolygonNodes';
 import { readOnly } from '@utils/storageField';
 
-import { bedShapeAt } from '../shape/bedShapeNodes';
 import { grainAge } from './grainCycle';
 
 const TAU = Math.PI * 2;
@@ -198,7 +198,7 @@ export default function createGrainCompute({
       // collects wherever the water runs into the outline. The rim has to be
       // a position limit, not a height test.
       If(
-        bedShapeAt(carried, shape).distance.greaterThan(shape.inset.negate()),
+        polygonAt(carried, shape).distance.greaterThan(shape.inset.negate()),
         () => {
           carried.assign(position.xz);
           velocity.assign(vec2(0));

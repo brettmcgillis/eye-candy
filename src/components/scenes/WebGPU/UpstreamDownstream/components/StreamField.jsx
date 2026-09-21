@@ -2,10 +2,10 @@ import React, { memo, useMemo } from 'react';
 
 import {
   GrainWater,
-  createBedShape,
   createGrainLayout,
   maskBedField,
 } from '@modules/shallowWater';
+import { createBedPolygon } from '@utils/regularPolygon';
 
 import { WORLD_SIZE } from '../runtime/constants';
 import DRIFT_TRACKS from '../runtime/driftTracks';
@@ -20,7 +20,7 @@ function StreamField({ config }) {
 
   const shape = useMemo(
     () =>
-      createBedShape({
+      createBedPolygon({
         bedRotation: config.bedRotation,
         bedShape: config.bedShape,
         bedSize: config.bedSize,

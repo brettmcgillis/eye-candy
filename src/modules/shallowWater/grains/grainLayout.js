@@ -1,8 +1,8 @@
 /* eslint-disable no-param-reassign */
 import { mulberry32 } from '@utils/noise2d';
+import { polygonArea, polygonOutside } from '@utils/regularPolygon';
 
 import sampleField from '../sampleField';
-import { bedArea, bedOutside } from '../shape/bedShape';
 
 // A stratified grid rather than uniform random: the whole point of the grain
 // bed is even coverage, and rejection-free random sampling leaves clumps and
@@ -27,7 +27,8 @@ export default function createGrainLayout({
   worldSize,
 }) {
   const inset = shape ? shape.inset : 0;
-  const fill = inset > 0 ? bedArea(shape, inset) / (worldSize * worldSize) : 1;
+  const fill =
+    inset > 0 ? polygonArea(shape, inset) / (worldSize * worldSize) : 1;
   // Count is a count: the grid is sized so that this many grains land INSIDE
   // the bed, whatever its shape. The buffer is a function of count alone, with
   // headroom for the boundary cells, so reshaping never resizes a buffer and
@@ -56,7 +57,7 @@ export default function createGrainLayout({
       const grainSeed = random();
       const rock = bed > rest + waterline + feather;
 
-      if (live < total && !(shape && bedOutside(shape, x, z, inset))) {
+      if (live < total && !(shape && polygonOutside(shape, x, z, inset))) {
         const slot = live * 4;
         live += 1;
 

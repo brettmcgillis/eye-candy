@@ -175,6 +175,10 @@ function normalizeShadow(value, type) {
     far: toFiniteNumber(config.far, 100),
     intensity: toFiniteNumber(config.intensity, 1),
     mapSize,
+    // 'half' or 'float' stores the shadow map in HDR, which is what a
+    // castShadowNode needs to write a value BRIGHTER than the unshadowed
+    // surround -- a caustic. Absent, the map keeps its default format.
+    mapType: config.mapType ?? null,
     near: toFiniteNumber(config.near, 0.5),
     normalBias: toFiniteNumber(config.normalBias, 0),
     radius: toFiniteNumber(config.radius, 1),

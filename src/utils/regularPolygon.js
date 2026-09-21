@@ -1,6 +1,6 @@
-export const BED_SHAPES = ['Square', 'Circle', 'Hexagon'];
-
-const SIDES = { Circle: 240, Hexagon: 6, Square: 4 };
+// Named rather than a raw side count, because these three are what the bed
+// controls offer and the names are what a preset stores.
+export const SHAPE_SIDES = { Square: 4, Circle: 240, Hexagon: 6 };
 
 const TAU = Math.PI * 2;
 
@@ -25,20 +25,20 @@ function vertexExtent(sides, base, step) {
   return extent;
 }
 
-// grainCompute reads the bed BILINEARLY and bedSlope reads two cells out, so
-// anything closer than this to the rim averages in the wall maskBedField parks
-// outside it. Grains are kept this far inside the outline, at layout time and
-// again every time one is advected.
+// Only for callers that rasterise the outline into a grid and wall the cells
+// outside it. A bilinear read of that wall smears it inward by a cell or two,
+// so anything sampling the grid is kept this far inside the outline. Callers
+// with no grid (PetriDish) pass no resolution and get no clearance.
 const RIM_CLEARANCE_CELLS = 2.5;
 
-export function createBedShape({
+export function createBedPolygon({
   bedRotation,
   bedShape,
   bedSize,
   resolution,
   worldSize,
 }) {
-  const sides = SIDES[bedShape] || SIDES.Square;
+  const sides = SHAPE_SIDES[bedShape] || SHAPE_SIDES.Square;
   const step = TAU / sides;
   const offset = normalOffset(step);
   const rotation = ((bedRotation || 0) * Math.PI) / 180;
@@ -58,14 +58,15 @@ export function createBedShape({
     apothem,
     base,
     circumscribe,
-    inset: walled ? (RIM_CLEARANCE_CELLS * worldSize) / (resolution || 384) : 0,
+    inset:
+      walled && resolution ? (RIM_CLEARANCE_CELLS * worldSize) / resolution : 0,
     sides,
     step,
     worldSize,
   };
 }
 
-export function bedDistance(shape, x, z) {
+export function polygonDistance(shape, x, z) {
   const { apothem, base, step } = shape;
   const swept = Math.atan2(z, x) - base;
   const angle = base + Math.round(swept / step) * step;
@@ -78,18 +79,18 @@ export function bedDistance(shape, x, z) {
 // outside it.
 const EDGE_EPSILON = 1e-6;
 
-export function bedOutside(shape, x, z, inset = 0) {
-  return bedDistance(shape, x, z) > EDGE_EPSILON - inset;
+export function polygonOutside(shape, x, z, inset = 0) {
+  return polygonDistance(shape, x, z) > EDGE_EPSILON - inset;
 }
 
 // Regular polygon of apothem a: n * a^2 * tan(pi/n). Exact for the square and
 // the hexagon, and within a part in 10^4 of pi*r^2 for the 240-gon circle.
-export function bedArea(shape, inset = 0) {
+export function polygonArea(shape, inset = 0) {
   const a = Math.max(0, shape.apothem - inset);
   return shape.sides * a * a * Math.tan(Math.PI / shape.sides);
 }
 
-export function bedOutline(shape, inset = 0) {
+export function polygonOutline(shape, inset = 0) {
   const { apothem, base, circumscribe, sides, step } = shape;
   const radius = (apothem + inset) * circumscribe;
   const points = [];

@@ -1,4 +1,4 @@
-import { bedOutside } from './bedShape';
+import { polygonOutside } from '@utils/regularPolygon';
 
 // What the container has to contain: the lowest ground inside the outline and
 // the highest of ground or still surface, so a tray clears a stream's banks
@@ -12,7 +12,7 @@ export default function bedLevels(field, shape, { resolution, worldSize }) {
     const worldZ = (0.5 - j / (n - 1)) * worldSize;
     for (let i = 0; i < n; i += 1) {
       const worldX = (i / (n - 1) - 0.5) * worldSize;
-      if (!bedOutside(shape, worldX, worldZ)) {
+      if (!polygonOutside(shape, worldX, worldZ)) {
         const slot = (j * n + i) * 4;
         low = Math.min(low, field[slot]);
         high = Math.max(high, field[slot], field[slot + 3]);

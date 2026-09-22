@@ -3,6 +3,8 @@ import { FOG_DEFAULTS } from '../components/getFogControls';
 import { MOTION_DEFAULTS } from '../components/getMotionControls';
 import { STRUCTURE_DEFAULTS } from '../components/getStructureControls';
 import { SURFACE_DEFAULTS } from '../components/getSurfaceControls';
+import { WINDOW_DEFAULTS } from '../components/getWindowControls';
+import LIGHTING from '../utils/lighting';
 
 export const DEFAULT_PRESET = 'Tree of Boxes';
 
@@ -13,6 +15,16 @@ const BASE = {
   ...COLOR_DEFAULTS,
   ...SURFACE_DEFAULTS,
   ...FOG_DEFAULTS,
+  ...WINDOW_DEFAULTS,
+  lightSkySkyColor: LIGHTING.sky.skyColor,
+  lightSkyGroundColor: LIGHTING.sky.groundColor,
+  lightSkyIntensity: LIGHTING.sky.intensity,
+  lightKeyColor: LIGHTING.key.color,
+  lightKeyIntensity: LIGHTING.key.intensity,
+  postBloomEnabled: false,
+  postBloomThreshold: 0.9,
+  postBloomStrength: 0.35,
+  postBloomRadius: 0.4,
 };
 
 export const PRESETS = {
@@ -61,6 +73,51 @@ export const PRESETS = {
     textureScale: 0.35,
     textureStrength: 0.6,
     roughness: 1,
+  },
+  Arcology: {
+    ...BASE,
+    levels: 8,
+    identityLevel: 4,
+    colorMode: 'palette',
+    paletteName: 'Midnight City',
+    paletteSource: 'height',
+    paletteRepeat: 1,
+    paletteShift: 0,
+    windowPaletteMatch: 0.6,
+    surface: 'Concrete',
+    textureScale: 1.5,
+    textureStrength: 0.6,
+    roughness: 0.9,
+    weathering: 0.3,
+    background: '#141a2a',
+    fogEnabled: true,
+    fogColor: '#27324d',
+    fogNear: 6,
+    fogFar: 22,
+    windowsEnabled: true,
+    lightSkySkyColor: '#5a6f9e',
+    lightSkyGroundColor: '#1a120c',
+    lightSkyIntensity: 0.6,
+    lightKeyColor: '#9fb4ff',
+    lightKeyIntensity: 0.6,
+    postBloomEnabled: true,
+    postBloomThreshold: 0.8,
+    postBloomStrength: 0.6,
+    postBloomRadius: 0.5,
+    growMode: 'animate',
+    growNewSeed: false,
+    growLevelSeconds: 1.2,
+    growHoldSeconds: 18,
+    driftEnabled: true,
+    driftSpeed: 0.25,
+    driftBias: 2.5,
+    placementDriftX: 0.08,
+    placementDriftY: 0.05,
+    placementDriftZ: 0.08,
+    sizeDriftX: 0.05,
+    sizeDriftY: 0.03,
+    sizeDriftZ: 0.05,
+    tintDrift: 0,
   },
 };
 

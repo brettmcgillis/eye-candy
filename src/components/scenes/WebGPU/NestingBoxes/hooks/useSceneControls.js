@@ -19,6 +19,7 @@ import getFogControls from '../components/getFogControls';
 import getMotionControls from '../components/getMotionControls';
 import getStructureControls from '../components/getStructureControls';
 import getSurfaceControls from '../components/getSurfaceControls';
+import getWindowControls from '../components/getWindowControls';
 import { DEFAULT_PRESET, PRESETS, getPresetControls } from '../presets/presets';
 import { randomStructure } from '../utils/boxTree';
 import CAMERA from '../utils/camera';
@@ -80,6 +81,7 @@ export default function useSceneControls() {
         folderPath: `${SCENE_LABEL}.Color`,
       }),
       ...getSurfaceControls(defaultValues),
+      ...getWindowControls(defaultValues),
       ...getFogControls(defaultValues),
     };
   }, [controlsSnapshotRef]);

@@ -14,6 +14,7 @@ import {
   applyColorConfig,
   applySurfaceConfig,
   applyTreeConfig,
+  applyWindowConfig,
 } from '../utils/applyConfig';
 import {
   buildBoxMaterial,
@@ -118,6 +119,7 @@ function BoxTree({ config }) {
     meshRef.current.count = 2 ** drawLevel;
     applyColorConfig(uniforms.color, c, drift);
     applySurfaceConfig(uniforms.surface, c);
+    applyWindowConfig(uniforms.windows, c);
   });
 
   return (

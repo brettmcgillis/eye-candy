@@ -22,6 +22,7 @@ export function applyTreeConfig(t, c, drift) {
 
 export function applyColorConfig(u, c, drift) {
   u.colorMode.value = COLOR_MODES[c.colorMode] ?? 0;
+  u.identityLevel.value = c.identityLevel;
   u.seed.value = c.seed;
   u.baseColor.value.set(c.baseColor);
   u.tintFrequency.value = c.tintFrequency;
@@ -47,4 +48,25 @@ export function applySurfaceConfig(u, c) {
   u.grimeColor.value.set(c.grimeColor);
   u.grimeScale.value = c.grimeScale;
   u.grimeStreaks.value = c.grimeStreaks;
+}
+
+export function applyWindowConfig(u, c) {
+  u.enabled.value = c.windowsEnabled ? 1 : 0;
+  u.floorHeight.value = c.windowFloorHeight;
+  u.width.value = c.windowWidth;
+  u.paneWidth.value = c.windowPaneWidth;
+  u.paneHeight.value = c.windowPaneHeight;
+  u.paletteMatch.value = c.windowPaletteMatch;
+  u.margin.value = c.windowMargin;
+  u.frame.value = c.windowFrame;
+  u.slab.value = c.windowSlab;
+  u.edge.value = c.windowEdge;
+  u.frameColor.value.set(c.windowFrameColor);
+  u.glassColor.value.set(c.windowGlassColor);
+  u.glassRoughness.value = c.windowGlassRoughness;
+  u.lit.value = c.windowLit;
+  u.blinkRate.value = c.windowBlinkRate;
+  u.glow.value = c.windowGlow;
+  u.coolChance.value = c.windowCoolChance;
+  u.green.value = c.windowGreen;
 }

@@ -4,7 +4,6 @@ import {
   hash,
   int,
   log,
-  mix,
   select,
   texture,
   uniform,
@@ -22,6 +21,7 @@ export function createColorUniforms() {
   return {
     baseColor: uniform(new THREE.Color('#d8d4cc')),
     colorMode: uniform(0, 'int'),
+    identityLevel: uniform(4, 'uint'),
     paletteRepeat: uniform(1),
     paletteShift: uniform(0),
     paletteSource: uniform(0, 'int'),
@@ -35,9 +35,9 @@ export function createColorUniforms() {
   };
 }
 
-// Per-box values are resolved in the vertex stage, but the palette lookup
-// happens in the fragment stage: a texture sampled in the vertex stage leaves
-// its binding undeclared for the fragment shader and the pipeline fails.
+// Every colour decision happens in the fragment stage: the vertex output budget
+// is tight (fog, shadows and the surface maps share it), and a texture sampled
+// in the vertex stage leaves its binding undeclared for the fragment shader.
 export function createColorNodes({ paletteTexture, uniforms: u }) {
   const samplers = [];
 
@@ -52,13 +52,28 @@ export function createColorNodes({ paletteTexture, uniforms: u }) {
       vec3(u.baseColor)
     );
 
-  const paletteCoordinate = ({ center, id, radius }) => {
-    const byId = float(seeded(id)).mul(0.6180339).fract();
-    const byHeight = center.y.div(u.rootRadius.y.mul(2)).add(0.5);
+  // One coordinate per building, so a whole branch of the tree reads as one
+  // structure instead of re-rolling every time growth subdivides it.
+  const identityCoordinate = (id) =>
+    float(seeded(id))
+      .mul(0.6180339)
+      .fract()
+      .mul(u.paletteRepeat)
+      .add(u.paletteShift);
+
+  const paletteCoordinate = ({ anchorId, center, radius }) => {
+    const byId = identityCoordinate(anchorId);
+    const byHeight = center.y
+      .div(u.rootRadius.y.mul(2))
+      .add(0.5)
+      .mul(u.paletteRepeat)
+      .add(u.paletteShift);
     const bySize = log(radius.length().div(u.rootRadius.length()))
       .div(log(u.sizeFloor))
-      .oneMinus();
-    const byRandom = hash(seeded(id));
+      .oneMinus()
+      .mul(u.paletteRepeat)
+      .add(u.paletteShift);
+    const byRandom = hash(seeded(anchorId));
 
     return select(
       u.paletteSource.equal(int(PALETTE_SOURCES.id)),
@@ -72,9 +87,7 @@ export function createColorNodes({ paletteTexture, uniforms: u }) {
           byRandom
         )
       )
-    )
-      .mul(u.paletteRepeat)
-      .add(u.paletteShift);
+    );
   };
 
   const samplePalette = (coordinate) => {
@@ -83,26 +96,29 @@ export function createColorNodes({ paletteTexture, uniforms: u }) {
     return node.rgb;
   };
 
-  // `from` and `to` are the two tree levels Grow is blending between.
-  const boxColor = ({ blend, from, to }) => {
-    const direct = mix(directColor(from.id), directColor(to.id), blend);
-    const fromCoordinate = paletteCoordinate(from).toVarying('vPaletteFrom');
-    const toCoordinate = paletteCoordinate(to).toVarying('vPaletteTo');
-    const paletteBlend = float(blend).toVarying('vPaletteBlend');
-
-    return select(
+  // Tint and palette-by-building key off `anchorId`, the building this box
+  // belongs to, so they survive growth untouched. The height and size sources
+  // vary per box, but they read the box's blended centre and radius, so they
+  // move smoothly rather than snapping.
+  const boxColor = (box) =>
+    select(
       u.colorMode.equal(int(COLOR_MODES.palette)),
-      mix(
-        samplePalette(fromCoordinate),
-        samplePalette(toCoordinate),
-        paletteBlend
-      ),
-      direct.toVarying('vDirectColor')
+      samplePalette(paletteCoordinate(box)),
+      directColor(box.anchorId)
     );
-  };
+
+  // The building's own colour, used to keep window light in the same palette as
+  // the structure it sits in.
+  const buildingColor = (anchorId) =>
+    select(
+      u.colorMode.equal(int(COLOR_MODES.palette)),
+      samplePalette(identityCoordinate(anchorId)),
+      directColor(anchorId)
+    );
 
   return {
     boxColor,
+    buildingColor,
     setPalette(next) {
       samplers.forEach((node) => {
         node.value = next;

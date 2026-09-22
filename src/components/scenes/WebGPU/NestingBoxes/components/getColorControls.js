@@ -4,6 +4,7 @@ import { PALETTE_NAMES } from '@utils/gradientPalette';
 
 export const COLOR_DEFAULTS = {
   colorMode: 'tint',
+  identityLevel: 4,
   baseColor: '#d8d4cc',
   tintFrequency: 0.5,
   tintPhaseR: 0,
@@ -37,6 +38,13 @@ export default function getColorControls({ defaultValues = {}, folderPath }) {
   return {
     Color: folder(
       {
+        identityLevel: {
+          value: v.identityLevel,
+          label: 'Identity Level',
+          min: 0,
+          max: 10,
+          step: 1,
+        },
         colorMode: {
           value: v.colorMode,
           label: 'Mode',
@@ -89,7 +97,7 @@ export default function getColorControls({ defaultValues = {}, folderPath }) {
           value: v.paletteSource,
           label: 'Color By',
           options: {
-            Node: 'id',
+            Building: 'id',
             Height: 'height',
             Size: 'size',
             Random: 'random',

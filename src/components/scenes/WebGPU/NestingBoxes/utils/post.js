@@ -24,6 +24,10 @@ const POST = {
     focusMode: 'target',
     focusSmoothing: 6,
   },
+  bloom: {
+    type: 'bloom',
+    enabled: false,
+  },
 };
 
 export default POST;

@@ -3,14 +3,15 @@
 // change if they are rewritten as Math.floor/for-of.
 
 /* eslint-disable no-bitwise, no-param-reassign, no-plusplus */
-import { Cell, Grid } from './blobGrid';
 import Formula from './formula';
+import { Cell, Grid } from './grid';
 import withSeededRandom from './seedrandom';
 
 // The reference's global setup + walk loop: build the packing, sever it, then
 // resolve each surviving cell to the up-to-two arc families Cell.draw() would
-// have stroked. Only the drawing itself is deferred — utils/blobShader.js
-// evaluates those same families analytically per pixel.
+// have stroked. Only the drawing itself is deferred —
+// @modules/trucheterieBlobRender's blobArcs.js evaluates those same families
+// analytically per pixel.
 //
 // Everything here runs inside one withSeededRandom() call because the
 // reference's random draws are interleaved across all of it (placement,
@@ -150,8 +151,9 @@ export default function buildBlobField({
     centers[i * 2 + 1] = cy;
 
     positions[i * 3 + 0] = cx;
-    // Turtle canvases run y-down; negating here (and again on the shader's
-    // local y) keeps a given seed's layout identical to TurtleToy's.
+    // Turtle canvases run y-down (@modules/trucheterieBlobRender's blobShader
+    // negates the local y to match); negating here keeps a given seed's
+    // layout identical to TurtleToy's.
     positions[i * 3 + 1] = -cy;
     positions[i * 3 + 2] = 0;
     sizes[i] = Math.max(cell.size, 1);
@@ -170,8 +172,8 @@ export default function buildBlobField({
   return {
     cellSize,
     // The surviving cells with their resolved connections, so the lane
-    // channel solve (utils/laneChannels.js) can re-derive lane geometry
-    // without re-running the seeded generation.
+    // channel solve (./laneChannels.js) can re-derive lane geometry without
+    // re-running the seeded generation.
     cells: drawn,
     centers,
     conn0,

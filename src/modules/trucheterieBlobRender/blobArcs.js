@@ -29,9 +29,9 @@ export function toCanonicalSide(q, edge) {
 // The reference strokes a polyline, so its ink is every point within a pen
 // half-width of the arcs — which caps each arc ROUND at its endpoint. That
 // distinction only bites because the quads are inflated past the cell
-// footprint (utils/blobShader.js): measuring plain distance-to-circle out
-// there continues the arc along its circle instead of stopping, laying a
-// second stroke over the neighbouring cell's that curves away from it.
+// footprint (blobShader.js): measuring plain distance-to-circle out there
+// continues the arc along its circle instead of stopping, laying a second
+// stroke over the neighbouring cell's that curves away from it.
 export function arcFamily(q, type, edge, size, pathDivU) {
   const isCorner = type.equal(2);
   const halfSize = size.mul(-0.5);
@@ -75,7 +75,7 @@ export function arcFamily(q, type, edge, size, pathDivU) {
 
   // The lane is the annulus BETWEEN two arcs, so it floors where the band
   // rounds. `laneBase` re-zeroes the odd half-step's inner disc, matching the
-  // indexing utils/laneChannels.js assigns on the CPU.
+  // indexing @modules/trucheterieBlob/laneChannels.js assigns on the CPU.
   const laneBase = select(odd.greaterThan(0.25), 1, 0);
   const lanes = select(isCorner, bands, kMax.add(laneBase));
   const lane = clamp(
@@ -90,6 +90,9 @@ export function arcFamily(q, type, edge, size, pathDivU) {
     d,
     dBand: vec2(band, capOffset).length(),
     lane,
+    // How many lanes this family has, so a caller can normalize `lane` into
+    // a 0..1 reveal order for growth — see blobShader.js's `growthU`.
+    lanes,
     rMax,
   };
 }
@@ -110,7 +113,7 @@ export function strokeMask(smoothField, distance, halfWidthU) {
 
 // A family's filled pie sector — the area its arcs sweep, and what the
 // reference registers as an occluder. The union of a cell's two sectors is
-// the blob silhouette: the region "inside the curves".
+// the blob silhouette — the region "inside the curves".
 export function sectorMask(d, rMax) {
   const aa = d.fwidth().max(0.0001);
   return smoothstep(rMax.add(aa), rMax.sub(aa), d);

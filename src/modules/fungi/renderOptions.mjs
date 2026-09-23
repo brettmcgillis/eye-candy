@@ -200,11 +200,11 @@ const RENDER = {
     section: 'output',
     type: 'string',
   },
-  width: num('output', 'Width', 1080, 64, 8192, 2, {
+  width: num('output', 'Width', 1440, 64, 8192, 2, {
     placeholder: 'PX',
     scene: false,
   }),
-  height: num('output', 'Height', 1350, 64, 8192, 2, {
+  height: num('output', 'Height', 2560, 64, 8192, 2, {
     placeholder: 'PX',
     scene: false,
   }),

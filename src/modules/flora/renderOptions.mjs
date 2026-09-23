@@ -10,6 +10,8 @@ import createOptionSchema from '../optionSchema/index.mjs';
 export const PALETTE_NONE = 'None';
 export const VIEWS = ['front', 'right', 'back', 'left'];
 export const BOUQUET_STYLES = ['dome', 'fan', 'ikebana'];
+// A batch item rolls its own style, seeded off its own draw.
+export const BOUQUET_STYLE_ALL = 'All';
 export const VIDEO_MODES = ['lifecycle', 'growth', 'turntable', 'stills'];
 export const IG_PRESETS = ['story', 'reel', 'post'];
 // The crown forms a plant may be built from; `auto` lets every head pick its
@@ -431,11 +433,11 @@ const RENDER = {
     section: 'output',
     type: 'string',
   },
-  width: num('output', 'Width', 1080, 64, 8192, 2, {
+  width: num('output', 'Width', 1440, 64, 8192, 2, {
     placeholder: 'PX',
     scene: false,
   }),
-  height: num('output', 'Height', 1350, 64, 8192, 2, {
+  height: num('output', 'Height', 2560, 64, 8192, 2, {
     placeholder: 'PX',
     scene: false,
   }),
@@ -617,9 +619,9 @@ const RENDER = {
     scene: false,
   }),
   bouquetStyle: {
-    choices: BOUQUET_STYLES,
+    choices: [BOUQUET_STYLE_ALL, ...BOUQUET_STYLES],
     default: 'dome',
-    help: 'dome: round hand-tied posy; fan: one-sided triangle facing front; ikebana: shin/soe/hikae lines from a kenzan',
+    help: 'dome: round hand-tied posy; fan: one-sided triangle facing front; ikebana: shin/soe/hikae lines from a kenzan; All: each item in the batch rolls its own',
     label: 'Style',
     scope: 'shared',
     section: 'bouquet',

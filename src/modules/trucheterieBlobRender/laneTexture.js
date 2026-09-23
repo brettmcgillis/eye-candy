@@ -1,14 +1,14 @@
 import * as THREE from 'three/webgpu';
 
+import { buildLaneChannels } from '@modules/trucheterieBlob';
 import { hexToRgb } from '@utils/gradientPalette';
 
-import buildLaneChannels from './laneChannels';
 import {
   channelColors,
   hashSeed,
   resolvePaletteStops,
   shuffleStops,
-} from './lanePalette';
+} from './palette';
 
 // A lookup table, not an image: one row per cell, one texel per (family slot,
 // lane), fetched with textureLoad so nothing is filtered or interpolated.
@@ -38,8 +38,31 @@ export function createLaneTexture() {
 export default function fillLaneTexture(
   texture,
   drawn,
-  { exact, fallback, mode, palette, pathDiv, seed, shuffleSeed }
+  {
+    exact,
+    fallback,
+    mode,
+    monoColor,
+    monochrome,
+    palette,
+    pathDiv,
+    phase = 0,
+    seed,
+    shuffleSeed,
+  }
 ) {
+  if (monochrome) {
+    const [r, g, b] = hexToRgb(monoColor);
+    texture.image = {
+      data: new Uint8Array([r, g, b, 255]),
+      height: 1,
+      width: 1,
+    };
+    texture.dispose();
+    texture.needsUpdate = true;
+    return { channelCount: 0, maxLanes: 1 };
+  }
+
   const stops = shuffleStops(resolvePaletteStops(palette), shuffleSeed);
 
   if (!stops || drawn.length === 0) {
@@ -65,6 +88,7 @@ export default function fillLaneTexture(
   const colors = channelColors(channels, stops, {
     exact,
     mode,
+    phase,
     seed: hashSeed(`${seed}:${shuffleSeed}`),
   });
 

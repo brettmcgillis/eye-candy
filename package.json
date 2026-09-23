@@ -45,6 +45,9 @@
     "rorschach:check": "node scripts/rorschach-check.mjs",
     "rorschach:generate": "node scripts/rorschach-generate.mjs",
     "rorschach:video": "node scripts/rorschach-video.mjs",
+    "trucheterie:check": "node scripts/trucheterie-check.mjs",
+    "trucheterie:generate": "node scripts/trucheterie-generate.mjs",
+    "trucheterie:video": "node scripts/trucheterie-video.mjs",
     "start": "npm run dev",
     "start-https": "npm run dev:https"
   },

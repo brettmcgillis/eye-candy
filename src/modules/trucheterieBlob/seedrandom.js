@@ -1,7 +1,8 @@
 /* eslint-disable */
-// Vendored verbatim from the TurtleToy blob-field reference (todo.md,
-// 'Turtlelib Jurgen Randomness v 2'), which itself vendors David Bau's
-// seedrandom: http://davidbau.com/archives/2010/01/30/random_seeds_coded_hints_and_quintillions.html
+// Vendored verbatim from the TurtleToy blob-field reference (Trucheterie
+// todo.md, 'Turtlelib Jurgen Randomness v 2'), which itself vendors David
+// Bau's seedrandom:
+// http://davidbau.com/archives/2010/01/30/random_seeds_coded_hints_and_quintillions.html
 // Kept byte-identical to the reference so a given seed string reproduces
 // TurtleToy's exact layout — do not reformat or 'clean up'.
 function installSeedrandom() {

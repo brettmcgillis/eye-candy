@@ -4,6 +4,7 @@ import fungiPlugin from './fungi/plugin';
 import gltfjsxPlugin from './gltfjsx/plugin';
 import glyphsPlugin from './glyphs/plugin';
 import rorschachPlugin from './rorschach/plugin';
+import trucheteriePlugin from './trucheterie/plugin';
 
 export default function devServerPlugins() {
   return [
@@ -13,5 +14,6 @@ export default function devServerPlugins() {
     glyphsPlugin(),
     gltfjsxPlugin(),
     rorschachPlugin(),
+    trucheteriePlugin(),
   ];
 }

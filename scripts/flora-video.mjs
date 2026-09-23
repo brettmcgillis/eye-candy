@@ -17,6 +17,7 @@ import {
   frameView,
   loadKernel,
   parseCli,
+  resolveItemOptions,
   rollArgs,
   sidecarFor,
   withCapturer,
@@ -144,10 +145,12 @@ async function main() {
       }))
     : Array.from({ length: options.count }, (_, index) => {
         const drawn = flowersAt(kernel, { index, options, roll });
+        const itemOptions = resolveItemOptions(kernel, options, drawn.seed);
         const { duration, levels } = plan(kernel, options, drawn.configs);
         return {
           drawn,
           frames: Math.max(1, Math.round(duration * options.fps)),
+          itemOptions,
           levels,
         };
       });
@@ -178,10 +181,10 @@ async function main() {
     } else {
       await withCapturer(kernel, options, async (capturer) => {
         for (let item = 0; item < items.length; item += 1) {
-          const { drawn, frames, levels } = items[item];
+          const { drawn, frames, itemOptions, levels } = items[item];
           const flowers = await progress.stage(
             `growing ${drawn.bouquet ? `bouquet-${drawn.seed}` : drawn.seed}`,
-            async () => buildFlowers(kernel, { ...drawn, options })
+            async () => buildFlowers(kernel, { ...drawn, options: itemOptions })
           );
           const bounds = capturer.setFlowers(flowers);
           let still = null;
@@ -220,7 +223,7 @@ async function main() {
             await saveSourceFrame({
               drawn,
               frame: still,
-              options,
+              options: itemOptions,
               sequence:
                 options.mode === 'growth'
                   ? { index: item, total: items.length }

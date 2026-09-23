@@ -17,6 +17,7 @@ import {
   loadKernel,
   parseCli,
   renderSvg,
+  resolveItemOptions,
   rollArgs,
   sidecarFor,
   withCapturer,
@@ -61,10 +62,11 @@ async function main() {
   await withCapturer(kernel, options, async (capturer) => {
     for (let index = 0; index < options.count; index += 1) {
       const drawn = flowersAt(kernel, { index, options, roll });
+      const itemOptions = resolveItemOptions(kernel, options, drawn.seed);
       const label = drawn.bouquet ? `bouquet-${drawn.seed}` : drawn.seed;
       const flowers = await progress.stage(
         `growing ${label} (${drawn.configs.length} specimen${drawn.configs.length === 1 ? '' : 's'})`,
-        async () => buildFlowers(kernel, { ...drawn, options })
+        async () => buildFlowers(kernel, { ...drawn, options: itemOptions })
       );
       const bounds = capturer.setFlowers(flowers);
       const dir = path.join(outRoot, label);
@@ -72,7 +74,7 @@ async function main() {
       await mkdir(dir, { recursive: true });
       await writeFile(
         path.join(dir, 'props.json'),
-        `${JSON.stringify(sidecarFor({ ...drawn, options }), null, 2)}\n`
+        `${JSON.stringify(sidecarFor({ ...drawn, options: itemOptions }), null, 2)}\n`
       );
 
       for (let viewIndex = 0; viewIndex < views.length; viewIndex += 1) {

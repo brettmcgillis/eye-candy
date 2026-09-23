@@ -160,8 +160,8 @@ function formatDate(date) {
 export default async function overlaySvg({
   date = new Date(),
   height,
+  icon,
   ig = null,
-  icon = 'rorschach.webp',
   repoRoot,
   version = '0.0.0',
   viewport = null,
@@ -172,6 +172,12 @@ export default async function overlaySvg({
   // the raw output size instead (the previous `min(w,h)/1080`) drew a phone
   // export at roughly 1x, so every chip came out about a third of the size it
   // is on the device and the insets shrank to match.
+  if (!icon) {
+    throw new Error(
+      "overlaySvg needs the calling scene's icon (public/icons/<file>)."
+    );
+  }
+
   const cssWidth = viewport ?? (ig ? PHONE_VIEWPORT : DESKTOP_VIEWPORT);
   const zoom = width / cssWidth;
   const isMobile = cssWidth <= MOBILE_BREAKPOINT;

@@ -13,7 +13,7 @@ const cache = new Map();
 
 export default function overlayLayer({
   height,
-  icon = 'rorschach.webp',
+  icon,
   ig,
   version,
   viewport,
@@ -26,8 +26,8 @@ export default function overlayLayer({
       runStage(`preparing overlay (${width}x${height})`, async () => {
         const svg = await overlaySvg({
           height,
-          ig,
           icon,
+          ig,
           repoRoot: REPO_ROOT,
           version,
           viewport,

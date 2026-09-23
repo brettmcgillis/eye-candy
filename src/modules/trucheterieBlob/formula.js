@@ -1,9 +1,9 @@
 /* eslint-disable */
-// Vendored verbatim from the TurtleToy blob-field reference (todo.md,
-// 'Turtlelib Jurgen Formula v 3' — https://turtletoy.net/turtle/187a81ec7d).
-// Parses/solves the reference's `sizeFunction` control string. Its
-// Math.random() token resolves against the global Math, which is what
-// utils/seedrandom.js temporarily replaces.
+// Vendored verbatim from the TurtleToy blob-field reference (Trucheterie
+// todo.md, 'Turtlelib Jurgen Formula v 3' —
+// https://turtletoy.net/turtle/187a81ec7d). Parses/solves the reference's
+// `sizeFunction` control string. Its Math.random() token resolves against the
+// global Math, which is what seedrandom.js temporarily replaces.
 function Formula(string) {
   const types = {
     Function: 'Function',

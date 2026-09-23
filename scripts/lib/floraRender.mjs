@@ -3,6 +3,8 @@ import { readFile } from 'node:fs/promises';
 import sharp from 'sharp';
 
 import {
+  BOUQUET_STYLES,
+  BOUQUET_STYLE_ALL,
   RENDER_OPTIONS,
   defaultsFor,
   normalizeOptions,
@@ -136,6 +138,15 @@ export function flowersAt(kernel, { index, options, roll }) {
     return flora.rollFloraConfig(flowerSeed, roll);
   });
   return { bouquet: true, configs, seed };
+}
+
+// `options.bouquetStyle === 'All'` means each item rolls its own, seeded off
+// its own draw so the pick is reproducible from the seed alone.
+export function resolveItemOptions(kernel, options, seed) {
+  if (options.bouquetStyle !== BOUQUET_STYLE_ALL) return options;
+  const rng = kernel.flora.createRng(`${seed}:bouquetStyle`);
+  const style = BOUQUET_STYLES[Math.floor(rng() * BOUQUET_STYLES.length)];
+  return { ...options, bouquetStyle: style };
 }
 
 function viewDirection(angles, view, azimuthOffset) {

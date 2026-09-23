@@ -75,10 +75,15 @@
               {
                 "group": [
                   "**/cataloggr/**",
+                  "**/flora/**",
+                  "**/fungi/**",
                   "**/gltfjsx/**",
+                  "**/glyphs/**",
                   "**/iconography/**",
                   "**/loaderPatterns/**",
-                  "**/rorschach/**"
+                  "**/projectionMapping/**",
+                  "**/rorschach/**",
+                  "**/trucheterie/**"
                 ],
                 "message": "A dev tool may not import another tool's internals. Promote shared code to src/dev/shell (UI) or a shared src/dev folder (behavior)."
               }
@@ -98,9 +103,14 @@
                 "group": [
                   "**/cataloggr/**",
                   "**/colors/**",
+                  "**/flora/**",
+                  "**/fungi/**",
+                  "**/glyphs/**",
                   "**/iconography/**",
                   "**/loaderPatterns/**",
-                  "**/rorschach/**"
+                  "**/projectionMapping/**",
+                  "**/rorschach/**",
+                  "**/trucheterie/**"
                 ],
                 "message": "A dev tool may not import another tool's internals. Promote shared code to src/dev/shell (UI) or a shared src/dev folder (behavior)."
               }
@@ -120,9 +130,14 @@
                 "group": [
                   "**/cataloggr/**",
                   "**/colors/**",
+                  "**/flora/**",
+                  "**/fungi/**",
                   "**/gltfjsx/**",
+                  "**/glyphs/**",
                   "**/loaderPatterns/**",
-                  "**/rorschach/**"
+                  "**/projectionMapping/**",
+                  "**/rorschach/**",
+                  "**/trucheterie/**"
                 ],
                 "message": "A dev tool may not import another tool's internals. Promote shared code to src/dev/shell (UI) or a shared src/dev folder (behavior)."
               }
@@ -142,9 +157,14 @@
                 "group": [
                   "**/cataloggr/**",
                   "**/colors/**",
+                  "**/flora/**",
+                  "**/fungi/**",
                   "**/gltfjsx/**",
+                  "**/glyphs/**",
                   "**/iconography/**",
-                  "**/rorschach/**"
+                  "**/projectionMapping/**",
+                  "**/rorschach/**",
+                  "**/trucheterie/**"
                 ],
                 "message": "A dev tool may not import another tool's internals. Promote shared code to src/dev/shell (UI) or a shared src/dev folder (behavior)."
               }
@@ -164,9 +184,14 @@
                 "group": [
                   "**/cataloggr/**",
                   "**/colors/**",
+                  "**/flora/**",
+                  "**/fungi/**",
                   "**/gltfjsx/**",
+                  "**/glyphs/**",
                   "**/iconography/**",
-                  "**/loaderPatterns/**"
+                  "**/loaderPatterns/**",
+                  "**/projectionMapping/**",
+                  "**/trucheterie/**"
                 ],
                 "message": "A dev tool may not import another tool's internals. Promote shared code to src/dev/shell (UI) or a shared src/dev folder (behavior)."
               },
@@ -189,12 +214,179 @@
               {
                 "group": [
                   "**/colors/**",
+                  "**/flora/**",
+                  "**/fungi/**",
+                  "**/gltfjsx/**",
+                  "**/glyphs/**",
+                  "**/iconography/**",
+                  "**/loaderPatterns/**",
+                  "**/projectionMapping/**",
+                  "**/rorschach/**",
+                  "**/trucheterie/**"
+                ],
+                "message": "A dev tool may not import another tool's internals. Promote shared code to src/dev/shell (UI) or a shared src/dev folder (behavior)."
+              }
+            ]
+          }
+        ]
+      }
+    },
+    {
+      "files": ["src/dev/tools/projectionMapping/**/*.{js,jsx}"],
+      "rules": {
+        "no-restricted-imports": [
+          "error",
+          {
+            "patterns": [
+              {
+                "group": [
+                  "**/cataloggr/**",
+                  "**/colors/**",
+                  "**/flora/**",
+                  "**/fungi/**",
+                  "**/gltfjsx/**",
+                  "**/glyphs/**",
+                  "**/iconography/**",
+                  "**/loaderPatterns/**",
+                  "**/rorschach/**",
+                  "**/trucheterie/**"
+                ],
+                "message": "A dev tool may not import another tool's internals. Promote shared code to src/dev/shell (UI) or a shared src/dev folder (behavior)."
+              }
+            ]
+          }
+        ]
+      }
+    },
+    {
+      "files": ["src/dev/tools/glyphs/**/*.{js,jsx}"],
+      "rules": {
+        "no-restricted-imports": [
+          "error",
+          {
+            "patterns": [
+              {
+                "group": [
+                  "**/cataloggr/**",
+                  "**/colors/**",
+                  "**/flora/**",
+                  "**/fungi/**",
                   "**/gltfjsx/**",
                   "**/iconography/**",
                   "**/loaderPatterns/**",
+                  "**/projectionMapping/**",
+                  "**/rorschach/**",
+                  "**/trucheterie/**"
+                ],
+                "message": "A dev tool may not import another tool's internals. Promote shared code to src/dev/shell (UI) or a shared src/dev folder (behavior)."
+              }
+            ]
+          }
+        ]
+      }
+    },
+    {
+      "files": ["src/dev/tools/flora/**/*.{js,jsx}"],
+      "rules": {
+        "no-restricted-imports": [
+          "error",
+          {
+            "patterns": [
+              {
+                "group": [
+                  "**/cataloggr/**",
+                  "**/colors/**",
+                  "**/fungi/**",
+                  "**/gltfjsx/**",
+                  "**/glyphs/**",
+                  "**/iconography/**",
+                  "**/loaderPatterns/**",
+                  "**/projectionMapping/**",
+                  "**/rorschach/**",
+                  "**/trucheterie/**"
+                ],
+                "message": "A dev tool may not import another tool's internals. Promote shared code to src/dev/shell (UI) or a shared src/dev folder (behavior)."
+              },
+              {
+                "group": [
+                  "@modules/flora/*",
+                  "**/modules/flora/*",
+                  "@modules/floraRender/*",
+                  "**/modules/floraRender/*"
+                ],
+                "message": "Import the Flora kernel through its @modules/flora barrel, never a file inside it. See docs/flora-pipeline.md."
+              }
+            ]
+          }
+        ]
+      }
+    },
+    {
+      "files": ["src/dev/tools/fungi/**/*.{js,jsx}"],
+      "rules": {
+        "no-restricted-imports": [
+          "error",
+          {
+            "patterns": [
+              {
+                "group": [
+                  "**/cataloggr/**",
+                  "**/colors/**",
+                  "**/flora/**",
+                  "**/gltfjsx/**",
+                  "**/glyphs/**",
+                  "**/iconography/**",
+                  "**/loaderPatterns/**",
+                  "**/projectionMapping/**",
+                  "**/rorschach/**",
+                  "**/trucheterie/**"
+                ],
+                "message": "A dev tool may not import another tool's internals. Promote shared code to src/dev/shell (UI) or a shared src/dev folder (behavior)."
+              },
+              {
+                "group": [
+                  "@modules/fungi/*",
+                  "**/modules/fungi/*",
+                  "@modules/fungiRender/*",
+                  "**/modules/fungiRender/*"
+                ],
+                "message": "Import the Fungi kernel through its @modules/fungi barrel, never a file inside it. See docs/fungi-pipeline.md."
+              }
+            ]
+          }
+        ]
+      }
+    },
+    {
+      "files": ["src/dev/tools/trucheterie/**/*.{js,jsx}"],
+      "rules": {
+        "no-restricted-imports": [
+          "error",
+          {
+            "patterns": [
+              {
+                "group": [
+                  "**/cataloggr/**",
+                  "**/colors/**",
+                  "**/flora/**",
+                  "**/fungi/**",
+                  "**/gltfjsx/**",
+                  "**/glyphs/**",
+                  "**/iconography/**",
+                  "**/loaderPatterns/**",
+                  "**/projectionMapping/**",
                   "**/rorschach/**"
                 ],
                 "message": "A dev tool may not import another tool's internals. Promote shared code to src/dev/shell (UI) or a shared src/dev folder (behavior)."
+              },
+              {
+                "group": [
+                  "@modules/trucheterieBlob/*",
+                  "**/modules/trucheterieBlob/*",
+                  "@modules/trucheterieBlobRender/*",
+                  "**/modules/trucheterieBlobRender/*"
+                ],
+                "message": "Import the Trucheterie blob-field kernel through its @modules/trucheterieBlob barrel, never a file inside it. See docs/flora-pipeline.md."
               }
             ]
           }
@@ -234,6 +426,39 @@
                   "@react-three/*"
                 ],
                 "message": "The Rorschach kernel is renderer-agnostic: no React, R3F, Leva, DOM, scene or dev-tooling imports. See docs/rorschach-pipeline.md."
+              }
+            ]
+          }
+        ]
+      }
+    },
+    {
+      "files": ["src/modules/trucheterieBlob/**/*.{js,mjs}"],
+      "rules": {
+        "no-restricted-imports": [
+          "error",
+          {
+            "patterns": [
+              {
+                "group": [
+                  "@app",
+                  "@app/*",
+                  "@components",
+                  "@components/*",
+                  "@dev",
+                  "@dev/*",
+                  "**/dev/**",
+                  "**/scenes/**",
+                  "react",
+                  "react-dom",
+                  "react-*",
+                  "leva",
+                  "@react-three/*",
+                  "three",
+                  "three/*",
+                  "@utils/*"
+                ],
+                "message": "The Trucheterie blob-field kernel is three-free and renderer-agnostic: no three, React, R3F, Leva, DOM, scene, dev-tooling or @utils imports. Rendering code belongs in @modules/trucheterieBlobRender. See docs/flora-pipeline.md."
               }
             ]
           }

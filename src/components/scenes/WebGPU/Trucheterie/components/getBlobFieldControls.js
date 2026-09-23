@@ -1,9 +1,17 @@
 import { button } from 'leva';
 
-import { LANE_MODES, PALETTE_NAMES, PALETTE_NONE } from '../utils/lanePalette';
+import {
+  LANE_MODES,
+  PALETTE_NAMES,
+  PALETTE_NONE,
+} from '@modules/trucheterieBlobRender';
+
 import { BLOB_PATH } from './controlPaths';
 
-const hasPalette = (get) => get(`${BLOB_PATH}.blobPalette`) !== PALETTE_NONE;
+const hasPalette = (get) =>
+  !get(`${BLOB_PATH}.blobMonochrome`) &&
+  get(`${BLOB_PATH}.blobPalette`) !== PALETTE_NONE;
+const isMonochrome = (get) => get(`${BLOB_PATH}.blobMonochrome`) === true;
 
 // The blob field's parameters, mirroring the TurtleToy reference's own
 // control block one for one (todo.md, "IRREGULAR / BLOB FIELD EXAMPLE") —
@@ -105,6 +113,15 @@ export default function getBlobFieldControls(snapshot, setControlsRef) {
       render: hasPalette,
       step: 1,
       value: saved.blobPaletteShuffle ?? 0,
+    },
+    blobMonochrome: {
+      label: 'Monochrome',
+      value: saved.blobMonochrome ?? false,
+    },
+    blobMonoColor: {
+      label: 'Monochrome Color',
+      render: isMonochrome,
+      value: saved.blobMonoColor ?? '#141414',
     },
     // Leva reads `label`/`render` off the input object, not out of button()'s
     // settings argument — passing them to button() drops both silently.

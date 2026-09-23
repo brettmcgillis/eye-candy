@@ -6,44 +6,35 @@ import React, {
   useRef,
 } from 'react';
 
-import { uniform } from 'three/tsl';
 import * as THREE from 'three/webgpu';
 
-import buildBlobField from '../utils/blobField';
-import buildBlobColorNode from '../utils/blobShader';
-import fillLaneTexture, { createLaneTexture } from '../utils/laneTexture';
-
-// TurtleToy's pen is a fixed 0.25 units on its 200-unit canvas. Expressed in
-// micro-cell units that reduces to a function of gridSize alone, so the line
-// weight tracks the reference at any world canvas size.
-const REFERENCE_CANVAS = 190;
-const REFERENCE_PEN = 0.25;
-// How far each quad is inflated past its cell, in pen half-widths, so a
-// stroke tangent to a cell edge can overhang instead of being sliced by the
-// quad. One half-width covers the pen itself; the rest is AA headroom.
-const MARGIN_PENS = 1.5;
-
-const ATTRIBUTES = [
-  ['instanceSize', 'sizes', 1],
-  ['instanceCenter', 'centers', 2],
-  ['instanceConn0', 'conn0', 2],
-  ['instanceConn1', 'conn1', 2],
-  ['instanceConnectors', 'connectorMask', 1],
-];
+import { buildBlobField } from '@modules/trucheterieBlob';
+import {
+  applyFieldToMesh,
+  createBlobMaterial,
+  createBlobUniforms,
+  createLaneTexture,
+  fillLaneTexture,
+  penGeometry,
+  syncBlobUniforms,
+} from '@modules/trucheterieBlobRender';
 
 // Standalone from useTileMesh: the blob field has no motif enum, no retile
 // animation and no per-tile background, so it shares no instance attributes
-// or uniforms with the square/triangular grids.
+// or uniforms with the square/triangular grids. The mesh/material assembly
+// below is shared with the headless TrucheterieCLI renderer through
+// @modules/trucheterieBlobRender — see docs/flora-pipeline.md.
 function BlobFieldMesh({ config }) {
   const {
     bgColor,
     blobCanvasSize,
     blobConnectivity,
-    blobDebug,
     blobDistribution,
     blobGridSize,
     blobHoles,
     blobMeatballs,
+    blobMonoColor,
+    blobMonochrome,
     blobOneFill,
     blobPathsPerUnit,
     blobSeed,
@@ -51,7 +42,6 @@ function BlobFieldMesh({ config }) {
     blobPalette,
     blobPaletteExact,
     blobPaletteShuffle,
-    blobShowStrokes,
     blobSizeFunction,
     strokeColor,
   } = config;
@@ -95,6 +85,8 @@ function BlobFieldMesh({ config }) {
         exact: blobPaletteExact,
         fallback: bgColor,
         mode: blobLaneMode,
+        monoColor: blobMonoColor,
+        monochrome: blobMonochrome,
         palette: blobPalette,
         pathDiv: blobPathsPerUnit,
         seed: blobSeed,
@@ -103,6 +95,8 @@ function BlobFieldMesh({ config }) {
     [
       bgColor,
       blobLaneMode,
+      blobMonoColor,
+      blobMonochrome,
       blobPalette,
       blobPaletteExact,
       blobPaletteShuffle,
@@ -115,87 +109,30 @@ function BlobFieldMesh({ config }) {
 
   const uniformsRef = useRef(null);
   if (!uniformsRef.current) {
-    uniformsRef.current = {
-      cellSizeU: uniform(field.cellSize),
-      maxLanesU: uniform(1),
-      debugCellsU: uniform(0),
-      debugConnectorsU: uniform(0),
-      pathDivU: uniform(blobPathsPerUnit),
-      penHalfWidthU: uniform(0),
-      quadMarginU: uniform(0),
-      referenceScaleU: uniform(1),
-      showStrokesU: uniform(1),
-      strokeColorU: uniform(new THREE.Color(strokeColor)),
-    };
+    uniformsRef.current = createBlobUniforms(strokeColor);
   }
 
-  const penHalfWidth = (REFERENCE_PEN / 2 / REFERENCE_CANVAS) * blobGridSize;
-  const quadMargin = penHalfWidth * MARGIN_PENS;
-
   useEffect(() => {
-    const u = uniformsRef.current;
-    u.strokeColorU.value.set(strokeColor);
-    u.maxLanesU.value = laneInfo.maxLanes;
-    u.cellSizeU.value = field.cellSize;
-    u.debugCellsU.value = blobDebug % 2;
-    u.debugConnectorsU.value = Math.floor(blobDebug / 2) % 2;
-    u.pathDivU.value = blobPathsPerUnit;
-    u.penHalfWidthU.value = penHalfWidth;
-    u.quadMarginU.value = quadMargin;
-    u.referenceScaleU.value = REFERENCE_CANVAS / blobCanvasSize;
-    u.showStrokesU.value = blobShowStrokes ? 1 : 0;
-  }, [
-    blobCanvasSize,
-    blobDebug,
-    blobPathsPerUnit,
-    blobShowStrokes,
-    field,
-    laneInfo,
-    penHalfWidth,
-    quadMargin,
-    strokeColor,
-  ]);
+    syncBlobUniforms(uniformsRef.current, {
+      blobCanvasSize,
+      config,
+      field,
+      laneInfo,
+    });
+  }, [blobCanvasSize, config, field, laneInfo]);
 
-  const material = useMemo(() => {
-    const mat = new THREE.MeshBasicNodeMaterial();
-    mat.transparent = true;
-    mat.depthWrite = false;
-    mat.colorNode = buildBlobColorNode({ ...uniformsRef.current, laneTexture });
-    return mat;
-  }, [laneTexture]);
+  const material = useMemo(
+    () => createBlobMaterial(uniformsRef.current, laneTexture),
+    [laneTexture]
+  );
   useEffect(() => () => material.dispose(), [material]);
 
   useLayoutEffect(() => {
     const mesh = meshRef.current;
     if (!mesh) return;
-
-    ATTRIBUTES.forEach(([name, key, itemSize]) => {
-      const existing = mesh.geometry.getAttribute(name);
-      if (existing && existing.array.length === field[key].length) {
-        existing.array.set(field[key]);
-        existing.needsUpdate = true;
-      } else {
-        mesh.geometry.setAttribute(
-          name,
-          new THREE.InstancedBufferAttribute(field[key], itemSize, false)
-        );
-      }
-    });
-
-    const dummy = new THREE.Object3D();
-    for (let i = 0; i < field.count; i += 1) {
-      dummy.position.set(
-        field.positions[i * 3 + 0],
-        field.positions[i * 3 + 1],
-        0
-      );
-      dummy.scale.setScalar((field.sizes[i] + quadMargin * 2) * field.cellSize);
-      dummy.updateMatrix();
-      mesh.setMatrixAt(i, dummy.matrix);
-    }
-    mesh.instanceMatrix.needsUpdate = true;
-    mesh.count = field.count;
-  }, [field, quadMargin]);
+    const { quadMargin } = penGeometry(blobGridSize);
+    applyFieldToMesh(mesh, field, quadMargin);
+  }, [blobGridSize, field]);
 
   return (
     <instancedMesh

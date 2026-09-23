@@ -1,10 +1,10 @@
 /* eslint-disable max-classes-per-file, no-bitwise, no-continue, no-loop-func, no-param-reassign, no-plusplus */
 
 // Line-for-line port of the TurtleToy blob-field reference's Grid and Cell
-// classes (todo.md, "IRREGULAR / BLOB FIELD EXAMPLE"). Loop structure and
-// Math.random() call ORDER are preserved deliberately: utils/seedrandom.js
-// seeds the global generator, so any reordering silently changes the layout
-// a given seed string produces.
+// classes (Trucheterie/todo.md, "IRREGULAR / BLOB FIELD EXAMPLE"). Loop
+// structure and Math.random() call ORDER are preserved deliberately:
+// seedrandom.js seeds the global generator, so any reordering silently
+// changes the layout a given seed string produces.
 //
 // Sides/connectors are [top, right, bottom, left] = [0, 1, 2, 3].
 const COL = 1;

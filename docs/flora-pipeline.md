@@ -254,7 +254,10 @@ like Rorschach's four axes.
 
 `--overlay` composites the app's overlay chrome into stills and video frames,
 the same burn-in Rorschach does and from the same code
-(`scripts/lib/overlayLayer.mjs`, cached per geometry). `--ig` picks the
+(`scripts/lib/overlayLayer.mjs`, cached per geometry). Every caller passes its
+own scene's icon explicitly (`icon: 'flora.svg'`, a file in `public/icons/`);
+there is no default, so a CLI that forgets it fails instead of wearing another
+scene's. `--ig` picks the
 safe-area insets and `--viewport` the CSS width being emulated. The overlay is
 laid out in CSS pixels against that viewport, so at `pixelRatio` above 1 it
 scales with the frame the way it does on a retina screen. It defaults on in

@@ -14,31 +14,61 @@ const SNAPSHOTS = {
     archetype: 'amanita',
     habit: 'solitary',
     mycology: 1,
-    size: 2.6,
   },
-  'Inkcap Clump': {
-    seed: 'inkcap',
-    archetype: 'inkcap',
-    habit: 'clump',
-    members: 5,
-    mycology: 0.95,
-  },
-  'Bonnet Glow': {
+  'Bonnet Clump': {
     seed: 'bonnet',
     archetype: 'mycena',
     habit: 'clump',
-    members: 6,
-    mycology: 0.7,
-    glow: 0.8,
-  },
-  'Shelf Rosette': {
-    seed: 'shelf',
-    archetype: 'bracket',
+    members: 5,
     mycology: 0.9,
   },
-  Hybrid: {
-    seed: 'hybrid',
-    mycology: 0.35,
+  'Lattice Cap': {
+    seed: 'lattice',
+    archetype: 'lattice',
+    habit: 'solitary',
+    mycology: 0.6,
+  },
+  'Split Gill': {
+    seed: 'split',
+    archetype: 'fan',
+    mycology: 0.9,
+  },
+  'Honeycomb Paddles': {
+    seed: 'favolaschia',
+    archetype: 'honeycomb',
+    habit: 'troop',
+    members: 3,
+    mycology: 0.9,
+  },
+  Reticulum: {
+    seed: 'reticulum',
+    archetype: 'reticulum',
+    mycology: 0.5,
+  },
+  'Veiled Stinkhorn': {
+    seed: 'phallus',
+    archetype: 'stinkhorn',
+    mycology: 0.95,
+  },
+  'Stemonitis Tuft': {
+    seed: 'chocolate',
+    archetype: 'stemonitis',
+    mycology: 0.95,
+  },
+  'Arcyria Net': {
+    seed: 'arcyria',
+    archetype: 'arcyria',
+    mycology: 0.9,
+  },
+  'Reaction Bloom': {
+    seed: 'bloom',
+    archetype: 'bloom',
+    mycology: 0.3,
+  },
+  'Lichen Terrace': {
+    seed: 'terrace',
+    archetype: 'terrace',
+    mycology: 0.8,
   },
   Wild: {
     seed: 'wild',

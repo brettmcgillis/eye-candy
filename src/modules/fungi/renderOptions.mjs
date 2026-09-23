@@ -6,28 +6,23 @@ import createOptionSchema from '../optionSchema/index.mjs';
 export const ARCHETYPES = [
   'auto',
   'amanita',
-  'bolete',
-  'chanterelle',
-  'inkcap',
-  'parasol',
   'mycena',
-  'hedgehog',
-  'bracket',
-  'puffball',
-  'morel',
-  'cup',
+  'parasol',
+  'inkcap',
+  'bonnet',
+  'lattice',
   'stinkhorn',
-  'basket',
-  'turkeytail',
-  'mazegill',
-  'oyster',
   'stemonitis',
   'arcyria',
-  'physarum',
-  'lycogala',
-  'trichia',
+  'fan',
+  'funnel',
+  'honeycomb',
+  'reticulum',
+  'bloom',
+  'coral',
+  'terrace',
 ];
-export const HABITS = ['auto', 'solitary', 'clump', 'troop', 'colony'];
+export const HABITS = ['auto', 'solitary', 'clump', 'troop'];
 export const VIEWS = ['front', 'right', 'back', 'left'];
 export const VIDEO_MODES = ['lifecycle', 'growth', 'turntable', 'stills'];
 export const IG_PRESETS = ['story', 'reel', 'post'];
@@ -159,9 +154,10 @@ const LOOK = {
     section: 'look',
     type: 'color',
   },
-  hairAmount: num('look', 'Stem hairs', 1, 0, 3, 0.05),
   sporeAmount: num('look', 'Spores', 1, 0, 3, 0.05),
-  showMycelium: flag('look', 'Mycelium', true),
+  roughness: num('look', 'Roughness', 0.55, 0.05, 1, 0.01),
+  occlusion: num('look', 'Occlusion', 0.85, 0, 1, 0.01),
+  minPixels: num('look', 'Min fibre pixels', 0.9, 0, 3, 0.05),
 };
 
 const MOTION = {
@@ -172,12 +168,11 @@ const MOTION = {
     sceneOnly: true,
   }),
   timeScale: num('lifecycle', 'Time scale', 1, 0, 4, 0.05),
-  myceliumSeconds: num('lifecycle', 'Mycelium', 5, 0.5, 60, 0.5),
-  growSeconds: num('lifecycle', 'Grow', 9, 1, 60, 0.5),
-  holdSeconds: num('lifecycle', 'Hold', 3, 0, 60, 0.5),
+  growSeconds: num('lifecycle', 'Grow', 10, 1, 60, 0.5),
+  holdSeconds: num('lifecycle', 'Hold', 5, 0, 60, 0.5),
   sporeSeconds: num('lifecycle', 'Spore', 5, 0, 60, 0.5),
-  rotSeconds: num('lifecycle', 'Rot', 6, 0.5, 60, 0.5),
-  unravelSeconds: num('lifecycle', 'Unravel', 4, 0.5, 60, 0.5),
+  rotSeconds: num('lifecycle', 'Rot', 5, 0.5, 60, 0.5),
+  unravelSeconds: num('lifecycle', 'Unravel', 5, 0.5, 60, 0.5),
   restSeconds: num('lifecycle', 'Rest', 1, 0, 30, 0.5),
 };
 
@@ -293,7 +288,7 @@ const RENDER = {
     type: 'enum',
   },
   viewport: {
-    default: null,
+    default: 390,
     help: 'CSS pixel width the overlay emulates. Defaults to 390 with --ig, else 1440',
     label: 'Viewport',
     max: 8192,
@@ -313,10 +308,6 @@ const RENDER = {
   fov: num('render', 'FOV', 30, 5, 120, 1, { scene: false }),
   grow: num('render', 'Grow', 1, 0, 1, 0.01, {
     help: 'How grown a still’s fruiting bodies are, 0-1',
-    scene: false,
-  }),
-  myceliumLevel: num('render', 'Mycelium grown', 1, 0, 1, 0.01, {
-    help: 'How far a still’s mycelium has spread, 0-1',
     scene: false,
   }),
   rot: num('render', 'Rot', 0, 0, 1, 0.01, {
@@ -342,7 +333,7 @@ const RENDER = {
   mode: {
     choices: VIDEO_MODES,
     default: 'lifecycle',
-    help: 'lifecycle: mycelium→fruit→spore→rot→unravel per specimen; growth: grow and hold; turntable: orbit a grown specimen; stills: a cut per specimen',
+    help: 'lifecycle: grow→spore→rot→unravel per specimen; growth: grow and hold; turntable: orbit a grown specimen; stills: a cut per specimen',
     label: 'Mode',
     scope: 'video',
     section: 'video',

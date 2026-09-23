@@ -18,7 +18,7 @@ export function resetRequest(state) {
   state.retryAt = 0;
 }
 
-// Advances one frame of mycelium -> fruit -> spore -> rot -> unravel. Flora's
+// Advances one frame of grow -> spore -> rot -> unravel. Flora's
 // rule: the cycle never waits on a build. The next specimen is requested as
 // soon as the current one lands, and if it is still not ready when the cycle
 // ends the current fungus grows again rather than leaving the void empty.

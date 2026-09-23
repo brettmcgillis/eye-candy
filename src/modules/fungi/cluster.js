@@ -1,203 +1,280 @@
-import { memberGenome } from './genome';
+/* eslint-disable no-param-reassign */
+import { agaricHead, stipeRadius } from './agaric';
+import { fanHead, fanLayout, stalkRadius } from './fan';
+import { mutate } from './genome';
+import solveLayout, { touching } from './layout';
 
-const TAU = Math.PI * 2;
-const clamp = (v, lo, hi) => Math.min(hi, Math.max(lo, v));
+const HABITS = ['solitary', 'clump', 'troop'];
+const GOLDEN = Math.PI * (3 - Math.sqrt(5));
 
-function weighted(rng, weights) {
-  const entries = Object.entries(weights);
-  const total = entries.reduce((sum, [, w]) => sum + w, 0);
-  const roll = rng() * total;
-  let running = 0;
-  const hit = entries.find(([, w]) => {
-    running += w;
-    return roll <= running;
-  });
-  return (hit ?? entries[entries.length - 1])[0];
+export function reachOf(genome) {
+  if (genome.plan === 'agaric') return genome.cap.radius;
+  if (genome.plan === 'fan') return genome.fan.radius;
+  if (genome.plan === 'sporangia') return genome.spor.colony;
+  if (genome.plan === 'coral') return genome.coral.reach;
+
+  return genome.reaction.domain * 0.5;
 }
 
-function tilt(normal, angle, heading) {
-  const [nx, ny, nz] = normal;
-  const helper = Math.abs(ny) < 0.9 ? [0, 1, 0] : [1, 0, 0];
-  const ux = ny * helper[2] - nz * helper[1];
-  const uy = nz * helper[0] - nx * helper[2];
-  const uz = nx * helper[1] - ny * helper[0];
-  const ul = Math.hypot(ux, uy, uz) || 1;
-  const u = [ux / ul, uy / ul, uz / ul];
-  const v = [
-    ny * u[2] - nz * u[1],
-    nz * u[0] - nx * u[2],
-    nx * u[1] - ny * u[0],
-  ];
-  const c = Math.cos(angle);
-  const s = Math.sin(angle);
-  const ch = Math.cos(heading);
-  const sh = Math.sin(heading);
-  return [0, 1, 2].map((i) => normal[i] * c + (u[i] * ch + v[i] * sh) * s);
+export function heightOf(genome) {
+  if (genome.plan === 'agaric') return genome.stipe.height + genome.cap.height;
+  if (genome.plan === 'fan') return genome.fan.stalk + genome.fan.radius;
+  if (genome.plan === 'sporangia') return genome.spor.height;
+  if (genome.plan === 'coral') return genome.coral.height;
+
+  return genome.reaction.height;
 }
 
-function outwardLean(x, z, angle) {
-  const len = Math.hypot(x, z);
-  if (len < 1e-6) return [0, 1, 0];
-  return [
-    (x / len) * Math.sin(angle),
-    Math.cos(angle),
-    (z / len) * Math.sin(angle),
-  ];
+const CLUSTERED = new Set(['agaric', 'fan']);
+
+function pickHabit(rng, genome, params) {
+  if (!CLUSTERED.has(genome.plan)) return 'solitary';
+  if (params.habit && params.habit !== 'auto') return params.habit;
+  if (genome.habit && rng.chance(0.85)) return genome.habit;
+
+  return HABITS[Math.floor(rng() * HABITS.length)];
 }
 
-function scatter(rng, count, radii, extent) {
-  const points = [];
-  for (let i = 0; i < count; i += 1) {
-    let best = null;
-    let bestGap = -Infinity;
-    for (let attempt = 0; attempt < 40; attempt += 1) {
-      const r = extent * Math.sqrt(rng());
-      const a = rng() * TAU;
-      const x = Math.cos(a) * r;
-      const z = Math.sin(a) * r;
-      const gap = points.reduce(
-        (min, p, j) =>
-          Math.min(
-            min,
-            Math.hypot(p[0] - x, p[1] - z) - (radii[i] + radii[j]) * 0.85
-          ),
-        Infinity
-      );
-      if (gap > bestGap) {
-        best = [x, z];
-        bestGap = gap;
-      }
-      if (gap > 0) break;
+const normalize = (v) => {
+  const l = Math.hypot(v[0], v[1], v[2]) || 1;
+
+  return [v[0] / l, v[1] / l, v[2] / l];
+};
+
+function toWorld(v, yaw) {
+  const c = Math.cos(yaw);
+  const s = Math.sin(yaw);
+
+  return [c * v[0] + s * v[2], v[1], -s * v[0] + c * v[2]];
+}
+
+function toLocal(v, yaw) {
+  const c = Math.cos(yaw);
+  const s = Math.sin(yaw);
+
+  return [c * v[0] - s * v[2], v[1], s * v[0] + c * v[2]];
+}
+
+// A member as the layout sees it: its stem from `foot` to the top it would
+// grow to on its own, and its head as spheres around that top.
+function memberBody(member, rng) {
+  const { genome: g, scale, yaw } = member;
+  let localTop;
+  let head;
+  let tube;
+  let curve;
+  let footLean;
+
+  if (g.plan === 'agaric') {
+    const { stipe } = g;
+
+    localTop = [stipe.bendX, stipe.height, stipe.bendZ];
+    head = agaricHead(g);
+    const flare = stipe.ring > 0 ? g.cap.radius * stipe.ringFlare : 0;
+
+    tube = (v) =>
+      (stipeRadius(stipe, v) +
+        (Math.abs(v - stipe.ringAt) < stipe.ringLength ? flare : 0)) *
+      scale;
+    curve = stipe;
+    footLean = stipe.footLean;
+  } else {
+    g.layout = fanLayout(g, rng);
+    localTop = g.layout.top;
+    head = fanHead(g, g.layout);
+    tube = (v) => stalkRadius(g.fan, v) * scale;
+    curve = g.fan;
+    footLean = g.fan.footLean;
+  }
+
+  const offset = toWorld(localTop, yaw).map((v) => v * scale);
+  const top = member.position.map((p, i) => p + offset[i]);
+
+  return {
+    curve: {
+      lane: curve.lane,
+      sway: curve.sway,
+      swayPhase: curve.swayPhase - yaw,
+      swayShift: curve.swayShift,
+      wobble: curve.wobble,
+    },
+    foot: member.position,
+    footLean,
+    head: head.map(([x, y, z, r]) => [
+      ...toWorld([x, y, z], yaw).map((v) => v * scale),
+      r * scale,
+    ]),
+    home: [...top],
+    maxLean: g.plan === 'fan' ? 0.75 : 0.9,
+    rise: [top[1] * 0.78, top[1] * (g.plan === 'fan' ? 2.4 : 1.2)],
+    shrink: 1,
+    top,
+    tube,
+  };
+}
+
+// Shrinks a member that cannot be laid clear, about its foot.
+function shrinkBody(body, by) {
+  body.shrink *= by;
+  body.head = body.head.map(([x, y, z, r]) => [x * by, y * by, z * by, r * by]);
+  const { tube } = body;
+
+  body.tube = (v) => tube(v) * by;
+  body.top = body.top.map((v, i) => body.foot[i] + (v - body.foot[i]) * by);
+  body.home = body.home.map((v, i) => body.foot[i] + (v - body.foot[i]) * by);
+  body.rise = body.rise.map((v) => v * by);
+}
+
+function writeBack(member, body) {
+  member.scale *= body.shrink;
+  const local = toLocal(
+    body.top.map((v, i) => (v - member.position[i]) / member.scale),
+    member.yaw
+  );
+  const g = member.genome;
+
+  if (g.plan === 'agaric') {
+    [g.stipe.bendX, g.stipe.height, g.stipe.bendZ] = local;
+  } else {
+    g.layout.top = local;
+  }
+}
+
+// Spreads a clump's heads around one shared foot: tallest near the middle,
+// the rest thrown out on a golden-angle spiral, then solved apart.
+function arrange(members, habit, spread, rng) {
+  const count = members.length;
+  const reach =
+    members.reduce((sum, m) => sum + reachOf(m.genome) * m.scale, 0) / count;
+  const stem =
+    members.reduce(
+      (sum, m) =>
+        sum +
+        (m.genome.plan === 'agaric'
+          ? m.genome.stipe.radius
+          : m.genome.fan.stalkRadius) *
+          m.scale,
+      0
+    ) / count;
+  const wide = habit === 'troop' ? 1.35 : 0.8;
+  const turn = rng() * Math.PI * 2;
+
+  members.forEach((m, i) => {
+    const a = turn + i * GOLDEN;
+    const f = count > 1 ? Math.sqrt(i / (count - 1)) : 0;
+
+    m.position = [
+      Math.cos(a) * stem * 1.3 * f * Math.sqrt(count),
+      0,
+      Math.sin(a) * stem * 1.3 * f * Math.sqrt(count),
+    ];
+    const out = reach * wide * spread * (0.35 + 0.9 * f);
+
+    if (m.genome.plan === 'agaric') {
+      const local = toLocal(
+        [Math.cos(a) * out, 0, Math.sin(a) * out],
+        m.yaw
+      ).map((v) => v / m.scale);
+
+      [m.genome.stipe.bendX, , m.genome.stipe.bendZ] = local;
+      m.genome.stipe.footLean = habit === 'troop' ? 1.6 : 1.3;
+    } else {
+      m.genome.fan.footLean = habit === 'troop' ? 1.3 : 1.1;
     }
-    points.push(best);
-  }
-  return points;
-}
-
-function placeTroop(rng, radii, spread) {
-  const mean = radii.reduce((a, b) => a + b, 0) / radii.length;
-  const extent = spread * mean * 1.2 * Math.sqrt(radii.length);
-  return scatter(rng, radii.length, radii, extent).map(([x, z]) => ({
-    position: [x, 0, z],
-    up: tilt([0, 1, 0], rng.range(0, 0.14), rng() * TAU),
-  }));
-}
-
-function placeClump(rng, radii, spread) {
-  const base = radii[0] * 0.45 * spread;
-  return radii.map((_, i) => {
-    const r = i === 0 ? 0 : base * Math.sqrt(rng.range(0.2, 1));
-    const a = rng() * TAU;
-    const x = Math.cos(a) * r;
-    const z = Math.sin(a) * r;
-    const lean =
-      i === 0 ? rng.range(0, 0.08) : 0.2 + (r / Math.max(base, 1e-6)) * 0.45;
-    return { position: [x, 0, z], up: outwardLean(x, z, lean) };
   });
-}
 
-// Shelves fanning out from one base (hen-of-the-woods): each member tilts
-// outward and turns its fan to face the way it leans.
-function placeRosette(rng, radii) {
-  const turn = rng() * TAU;
-  return radii.map((radius, i) => {
-    const a = turn + i * TAU * 0.618034 + rng.signed() * 0.2;
-    const lean = rng.range(0.35, 0.75);
-    const x = Math.cos(a) * radius * 0.15;
-    const z = Math.sin(a) * radius * 0.15;
-    return {
-      position: [x, 0, z],
-      up: [
-        Math.cos(a) * Math.sin(lean),
-        Math.cos(lean),
-        Math.sin(a) * Math.sin(lean),
-      ],
-      yaw: -a,
-    };
+  const bodies = members.map((m) => memberBody(m, rng));
+
+  members.forEach((m, i) => {
+    if (m.genome.plan === 'fan') {
+      const a = turn + i * GOLDEN;
+      const f = count > 1 ? Math.sqrt(i / (count - 1)) : 0;
+      const out = reach * wide * spread * (0.35 + 0.9 * f);
+
+      bodies[i].top[0] = m.position[0] + Math.cos(a) * out;
+      bodies[i].top[2] = m.position[2] + Math.sin(a) * out;
+      bodies[i].home = [...bodies[i].top];
+    }
   });
-}
 
-// A slime-mould colony: heads packed shoulder to shoulder on one film, the
-// middle standing tallest.
-function placeColony(rng, radii) {
-  const mean = radii.reduce((a, b) => a + b, 0) / radii.length;
-  const extent = mean * 2.1 * Math.sqrt(radii.length);
-  return scatter(rng, radii.length, radii, extent).map(([x, z]) => ({
-    position: [x, 0, z],
-    up: tilt(outwardLean(x, z, 0), rng.range(0, 0.12), rng() * TAU),
-  }));
-}
+  const gap = reach * 0.04;
+  let kept = members.map((m, i) => i);
 
-function rollWarts(rng, genome) {
-  const warts = new Float32Array(genome.warts * 3);
-  for (let i = 0; i < genome.warts; i += 1) {
-    warts[i * 3] = Math.sqrt(rng()) * 0.85;
-    warts[i * 3 + 1] = rng() * TAU;
-    warts[i * 3 + 2] = genome.wartSize * rng.range(0.5, 1.4);
+  for (let round = 0; round < 5; round += 1) {
+    const live = kept.map((i) => bodies[i]);
+
+    solveLayout(live, { gap, iterations: 120 });
+    const current = kept;
+    const stuck = touching(live, gap * 0.5).map((k) => current[k]);
+
+    if (stuck.length === 0) break;
+    if (round === 4) {
+      const worst = stuck.filter((i) => i !== 0);
+
+      kept = kept.filter((i) => !worst.includes(i));
+      break;
+    }
+    stuck.forEach((i) => {
+      if (i === 0) return;
+      const b = bodies[i];
+
+      shrinkBody(b, 0.86);
+      b.home = [b.home[0] * 1.15, b.home[1], b.home[2] * 1.15];
+      b.maxLean = Math.min(1.3, b.maxLean + 0.08);
+    });
   }
-  return warts;
-}
 
-const HABIT_WEIGHTS = { clump: 3, solitary: 5, troop: 1.2 };
-const MAX_COLONY = 48;
+  kept.forEach((i) => writeBack(members[i], bodies[i]));
 
-function chooseHabit(rng, genome, requested) {
-  if (genome.plan === 'bracket') return 'rosette';
-  if (requested !== 'auto') return requested;
-  if (genome.habitHint && rng.chance(0.85)) return genome.habitHint;
-  if (genome.plan === 'sporangium') return 'colony';
-  return weighted(rng, HABIT_WEIGHTS);
+  return kept.map((i) => members[i]);
 }
 
 export default function buildCluster(rng, genome, params) {
-  const bracket = genome.plan === 'bracket';
-  const habit = chooseHabit(rng, genome, params.habit);
+  const habit = pickHabit(rng, genome, params);
+  const count =
+    habit === 'solitary' ? 1 : Math.max(2, Math.round(params.members));
+  const spread = params.spread ?? 1;
+  const variance = params.variance ?? 0.35;
+  let members = [];
 
-  const most = Math.max(2, Math.round(params.members));
-  let count = 1;
-  if (habit === 'clump') count = 2 + Math.floor(rng() * (most - 1));
-  if (habit === 'troop') count = 2 + Math.floor(rng() * Math.min(3, most - 1));
-  if (habit === 'rosette') count = 5 + Math.floor(rng() * 6);
-  if (habit === 'colony') {
-    count = Math.min(MAX_COLONY, 12 + Math.floor(rng() * (most * 5)));
+  for (let i = 0; i < count; i += 1) {
+    const own = i === 0 ? genome : mutate(genome, rng, variance * 0.7);
+    const scale = i === 0 ? 1 : 1 - rng() * variance * 0.55;
+    let up = [0, 1, 0];
+
+    if (genome.reaction?.mode === 'terrace') {
+      up = normalize([rng.signed() * 0.2, 0.55, 0.85]);
+    } else if (genome.reaction?.mode === 'bloom') {
+      up = normalize([rng.signed() * 0.15, 0.8, 0.5]);
+    }
+
+    members.push({
+      genome: own,
+      position: [0, 0, 0],
+      scale,
+      up,
+      yaw:
+        genome.plan === 'agaric' || genome.plan === 'coral'
+          ? rng() * Math.PI * 2
+          : rng.signed() * 0.5,
+    });
   }
 
-  const scales = Array.from({ length: count }, () =>
-    clamp(Math.exp(rng.gauss() * params.variance * 0.4), 0.45, 1.7)
-  ).sort((a, b) => b - a);
-  const radii = scales.map((s) => genome.size * genome.capRadius * s);
+  if (habit !== 'solitary') {
+    members = arrange(members, habit, spread, rng.fork('layout'));
+  }
+  members.forEach((m) => {
+    m.height = heightOf(m.genome) * m.scale;
+    m.reach = reachOf(m.genome) * m.scale;
+  });
 
-  let placements;
-  if (habit === 'clump') placements = placeClump(rng, radii, params.spread);
-  else if (habit === 'troop')
-    placements = placeTroop(rng, radii, params.spread);
-  else if (habit === 'rosette') placements = placeRosette(rng, radii);
-  else if (habit === 'colony') placements = placeColony(rng, radii);
-  else
-    placements = [
-      {
-        position: [0, 0, 0],
-        up: tilt([0, 1, 0], rng.range(0, 0.08), rng() * TAU),
-      },
-    ];
+  const order = members
+    .map((m, i) => [i, m.scale + rng() * 0.2])
+    .sort((a, b) => b[1] - a[1]);
+  const last = Math.max(1, members.length - 1);
 
-  const members = placements.map((placement, i) => {
-    const member = rng.fork(`member-${i}`);
-    const age = clamp(0.5 - (scales[i] - 1) * 0.9 + rng.gauss() * 0.2, 0, 1);
-    const own = memberGenome(genome, member, params.variance, scales[i]);
-    if (bracket) {
-      own.stipeH = own.capR * member.range(0.35, 0.8);
-      own.stipeR = own.capR * member.range(0.1, 0.16);
-    }
-    return {
-      delay: age,
-      genome: own,
-      position: placement.position,
-      scale: scales[i],
-      up: placement.up,
-      warts: rollWarts(member, own),
-      yaw: placement.yaw ?? member() * TAU,
-    };
+  order.forEach(([index], rank) => {
+    members[index].delay = members.length > 1 ? rank / last : 0;
   });
 
   return { habit, members };

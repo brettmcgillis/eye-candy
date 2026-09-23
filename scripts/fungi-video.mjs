@@ -29,8 +29,7 @@ function plan(kernel, options, config) {
   const { fungi } = kernel;
   const speed = config.timeScale || 1;
   const { cycleEnd, matured } = fungi.timeline(config);
-  const grown = (specimen) =>
-    fungi.stillLevels(specimen, { grow: 1, mycelium: 1, rot: 0 });
+  const grown = (specimen) => fungi.stillLevels(specimen, { grow: 1, rot: 0 });
 
   if (options.mode === 'lifecycle') {
     return {
@@ -44,10 +43,10 @@ function plan(kernel, options, config) {
       duration: matured / speed + options.hold,
       levels: (seconds) => (specimen) => {
         const t = Math.min(seconds * speed, matured);
-        const levels = fungi.specimenLevels(config, specimen, t);
         return {
-          ...levels,
-          members: levels.members.map((m) => ({ ...m, rot: 0, spore: 0 })),
+          ...fungi.specimenLevels(config, specimen, t),
+          rot: 0,
+          spore: 0,
         };
       },
     };

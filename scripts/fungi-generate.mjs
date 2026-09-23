@@ -76,7 +76,6 @@ async function main() {
               levels: (specimen) =>
                 kernel.fungi.stillLevels(specimen, {
                   grow: options.grow,
-                  mycelium: options.myceliumLevel,
                   rot: options.rot,
                 }),
             });

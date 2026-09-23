@@ -12,7 +12,6 @@
 - [ ] Reread the Mathias-reaseach article on cloth self-collision and use it to improve cloth flag and ghost. https://github.com/matthias-research/pages/blob/master/tenMinutePhysics/15-selfCollision.html
 - [ ] Webgpu scenes will randomly not render (all black) until a window resize?
 - [ ] Move showcase scenes over to WebGPU
-- [ ] Show scene name in browser title bar
 - [ ] Get off of gh-pages, onto your own domain/hosting/etc
 - [ ] put dev pages behind auth so it can be public once off gh-pages?
 

@@ -16,7 +16,6 @@ export default function getMotionControls(
         value: p('rollGenerations'),
       },
       timeScale: range('Time Scale', p('timeScale'), 0, 4, 0.05),
-      myceliumSeconds: range('Mycelium', p('myceliumSeconds'), 0.5, 60, 0.5),
       growSeconds: range('Grow', p('growSeconds'), 1, 60, 0.5),
       holdSeconds: range('Hold', p('holdSeconds'), 0, 60, 0.5),
       sporeSeconds: range('Spore', p('sporeSeconds'), 0, 60, 0.5),

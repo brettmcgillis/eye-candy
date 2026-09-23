@@ -127,6 +127,7 @@ export async function createFungiCapturer(
     { samples }
   );
   const rig = look.createSpecimenRig();
+  rig.setRenderer(headless.renderer);
   scene.add(rig.group);
   let lightGroup = null;
   let lightKey = null;
@@ -159,7 +160,9 @@ export async function createFungiCapturer(
     },
 
     async capture({ eye, fov, levels, target }) {
-      rig.setLevels(levels(current));
+      // A still runs the reaction field out to the iteration count its growth
+      // level calls for, so a batch is repeatable.
+      rig.setLevels(levels(current), { catchUp: true });
       const distance = Math.hypot(...eye.map((v, a) => v - target[a]));
       camera.near = Math.max(0.05, distance - rig.bounds().radius * 2.5);
       camera.far = distance + rig.bounds().radius * 3;

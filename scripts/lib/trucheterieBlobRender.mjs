@@ -122,16 +122,46 @@ export function buildField(kernel, config) {
   });
 }
 
-// The vector twin of a capture: plottable stroke centrelines, no fill, no
-// palette — see @modules/trucheterieBlob/renderSvg.js.
+function laneOptions(config, phase = 0) {
+  return {
+    exact: config.blobPaletteExact,
+    fallback: config.bgColor,
+    mode: config.blobLaneMode,
+    monoColor: config.blobMonoColor,
+    monochrome: config.blobMonochrome,
+    palette: config.blobPalette,
+    pathDiv: config.blobPathsPerUnit,
+    phase,
+    seed: config.blobSeed,
+    shuffleSeed: config.blobPaletteShuffle,
+  };
+}
+
+// The vector twin of a capture: the same background, lane colours, strokes
+// and pen weight, through the same tone curve — see
+// @modules/trucheterieBlob/renderSvg.js. `svgFill` off leaves only the
+// (occlusion-clipped) stroke layer, for a plotter.
 export function renderSvg(kernel, field, config, options) {
+  const { look } = kernel;
+  const lanes = look.resolveLaneColors(field.cells, laneOptions(config));
+  const { penHalfWidth } = look.penGeometry(config.blobGridSize);
   return kernel.blob.renderBlobSvg(field, {
+    background:
+      options.svgFill && !options.transparentBackground
+        ? look.acesFilmicHex(config.sceneBgColor)
+        : null,
     height: options.height,
+    laneBreaks: (cell, slot, lane) => look.laneBreaks(lanes, cell, slot, lane),
+    laneColor: options.svgFill
+      ? (cell, slot, lane, u) =>
+          look.acesFilmic(look.laneColorAt(lanes, cell, slot, lane, u))
+      : null,
     margin: options.margin,
     pathDiv: config.blobPathsPerUnit,
+    penWidth: penHalfWidth * 2 * field.cellSize * options.svgStroke,
     planeRotation: config.planeRotation,
-    strokeColor: config.strokeColor,
-    strokeWidth: options.svgStroke,
+    showStrokes: config.blobShowStrokes,
+    strokeColor: look.acesFilmicHex(config.strokeColor),
     width: options.width,
   });
 }
@@ -163,9 +193,12 @@ export async function encodeFrame(frame, format, options = {}) {
 
 // One renderer per output size, reused across frames. The field is flat and
 // unlit, so this needs no lighting rig and no perspective camera: an
-// orthographic camera framed to the drawn bounds is the whole "shot".
+// orthographic camera framed to the drawn bounds is the whole "shot". It
+// renders through a RenderPipeline because only the pipeline's output node
+// applies the tone mapping and sRGB encode the scene's canvas gets — a plain
+// render into the readback target stores linear values.
 export async function createBlobCapturer(kernel, { height, width }) {
-  const { THREE, look } = kernel;
+  const { THREE, TSL, look } = kernel;
 
   const headless = await createHeadlessRenderer({
     configure(renderer) {
@@ -179,10 +212,12 @@ export async function createBlobCapturer(kernel, { height, width }) {
 
   const scene = new THREE.Scene();
   const camera = new THREE.OrthographicCamera(-1, 1, 1, -1, 0.1, 100);
+  const post = new THREE.RenderPipeline(headless.renderer);
+  post.outputNode = TSL.pass(scene, camera);
   const geometry = new THREE.PlaneGeometry(1, 1);
-  const laneTexture = look.createLaneTexture();
+  const laneTextures = look.createLaneTextures();
   const uniforms = look.createBlobUniforms('#141414');
-  const material = look.createBlobMaterial(uniforms, laneTexture);
+  const material = look.createBlobMaterial(uniforms, laneTextures);
   let mesh = null;
   let current = null;
 
@@ -207,10 +242,10 @@ export async function createBlobCapturer(kernel, { height, width }) {
     const aspect = width / height;
     const half = Math.max(halfW / aspect, halfH) * (1 + margin);
 
-    camera.left = centerX - half * aspect;
-    camera.right = centerX + half * aspect;
-    camera.top = centerY + half;
-    camera.bottom = centerY - half;
+    camera.left = -half * aspect;
+    camera.right = half * aspect;
+    camera.top = half;
+    camera.bottom = -half;
     camera.position.set(centerX, centerY, 10);
     camera.lookAt(centerX, centerY, 0);
     camera.updateProjectionMatrix();
@@ -230,17 +265,11 @@ export async function createBlobCapturer(kernel, { height, width }) {
         seed: config.blobSeed,
         sizeFunction: config.blobSizeFunction,
       });
-      const laneInfo = look.fillLaneTexture(laneTexture, field.cells, {
-        exact: config.blobPaletteExact,
-        fallback: config.bgColor,
-        mode: config.blobLaneMode,
-        monoColor: config.blobMonoColor,
-        monochrome: config.blobMonochrome,
-        palette: config.blobPalette,
-        pathDiv: config.blobPathsPerUnit,
-        seed: config.blobSeed,
-        shuffleSeed: config.blobPaletteShuffle,
-      });
+      const laneInfo = look.fillLaneTextures(
+        laneTextures,
+        field.cells,
+        laneOptions(config)
+      );
       const { quadMargin } = look.syncBlobUniforms(uniforms, {
         blobCanvasSize: config.blobCanvasSize,
         config,
@@ -255,7 +284,7 @@ export async function createBlobCapturer(kernel, { height, width }) {
       activeMesh.rotation.z = ((config.planeRotation ?? 0) * Math.PI) / 180;
       activeMesh.updateMatrixWorld(true);
       current = { config, field };
-      return look.fieldBounds(field);
+      return look.fieldBounds(field, config.planeRotation ?? 0);
     },
 
     // A video's per-frame reveal, 0 (nothing) to 1 (fully grown). No field
@@ -270,18 +299,15 @@ export async function createBlobCapturer(kernel, { height, width }) {
     setPalettePhase(phase) {
       if (!current) return;
       const { config, field } = current;
-      look.fillLaneTexture(laneTexture, field.cells, {
-        exact: config.blobPaletteExact,
-        fallback: config.bgColor,
-        mode: config.blobLaneMode,
-        monoColor: config.blobMonoColor,
-        monochrome: config.blobMonochrome,
-        palette: config.blobPalette,
-        pathDiv: config.blobPathsPerUnit,
-        phase,
-        seed: config.blobSeed,
-        shuffleSeed: config.blobPaletteShuffle,
-      });
+      if (config.blobLaneMode === 'Spectrum') {
+        uniforms.spectrumPhaseU.value = phase;
+        return;
+      }
+      look.fillLaneTextures(
+        laneTextures,
+        field.cells,
+        laneOptions(config, phase)
+      );
     },
 
     async capture({ backgroundColor, bounds, margin, transparentBackground }) {
@@ -290,13 +316,16 @@ export async function createBlobCapturer(kernel, { height, width }) {
         new THREE.Color(backgroundColor),
         transparentBackground ? 0 : 1
       );
-      return headless.readFrame(() => headless.renderer.render(scene, camera));
+      // The first render after a uniform change reads back stale in Dawn.
+      await headless.readFrame(() => post.render());
+      return headless.readFrame(() => post.render());
     },
 
     dispose() {
+      post.dispose();
       geometry.dispose();
       material.dispose();
-      laneTexture.dispose();
+      look.disposeLaneTextures(laneTextures);
       headless.dispose();
     },
   };

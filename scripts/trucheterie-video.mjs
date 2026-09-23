@@ -22,9 +22,31 @@ import {
 import { writeVideoSidecar } from './lib/videoMetadata.mjs';
 
 const KIND = 'video';
-// A touch past 1 so the outermost ring of a coarse (few-lane) family clears
-// blobShader.js's GROWTH_AA falloff and reads as fully solid, not half-drawn.
+// A touch past 1 so the last cell the front reaches clears blobShader.js's
+// GROWTH_AA falloff and reads as fully drawn.
 const FULLY_GROWN = 1.05;
+// A grown field recedes at twice its growth speed before the next one starts.
+const RECEDE = 0.5;
+
+const easeInOut = (t) => t * t * (3 - 2 * t);
+
+// Seconds on screen per field, and the growth dial at a given second.
+function timeline(mode, options) {
+  if (mode === 'growth') {
+    const grow = options.growSeconds;
+    const recede = grow * RECEDE;
+    return {
+      growthAt(seconds) {
+        if (seconds < grow) return FULLY_GROWN * easeInOut(seconds / grow);
+        const receding = seconds - grow - options.hold;
+        if (receding <= 0) return FULLY_GROWN;
+        return FULLY_GROWN * easeInOut(Math.max(0, 1 - receding / recede));
+      },
+      seconds: grow + options.hold + recede,
+    };
+  }
+  return { growthAt: () => FULLY_GROWN, seconds: options.hold };
+}
 
 async function main() {
   const parsed = await parseCli(KIND, process.argv.slice(2));
@@ -52,11 +74,15 @@ async function main() {
   assertPalette(kernel, parsed);
   const roll = rollArgs(kernel, { options, typed });
 
-  const grown = options.mode === 'growth';
+  const animated = options.mode !== 'stills';
+  const clip = timeline(options.mode, options);
   const items = Array.from({ length: options.count }, (_, index) => {
     const drawn = fieldAt(kernel, { index, options, roll });
-    const seconds = grown ? options.growSeconds + options.hold : options.hold;
-    return { drawn, frames: Math.max(1, Math.round(seconds * options.fps)) };
+    if (options.mode === 'stream') drawn.config.blobLaneMode = 'Spectrum';
+    return {
+      drawn,
+      frames: Math.max(1, Math.round(clip.seconds * options.fps)),
+    };
   });
   const total = items.reduce((sum, item) => sum + item.frames, 0);
   const progress = createProgress('rendering frames', total);
@@ -81,10 +107,8 @@ async function main() {
         for (let frame = 0; frame < frames; frame += 1) {
           const seconds = frame / options.fps;
           let still;
-          if (grown) {
-            capturer.setGrowth(
-              Math.min(FULLY_GROWN, seconds / options.growSeconds)
-            );
+          if (animated) {
+            capturer.setGrowth(clip.growthAt(seconds));
             capturer.setPalettePhase(seconds * options.paletteDrift);
             const image = await capturer.capture({
               backgroundColor: drawn.config.sceneBgColor,

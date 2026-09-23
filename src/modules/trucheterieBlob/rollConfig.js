@@ -1,4 +1,5 @@
 import {
+  LANE_MODES,
   MEATBALLS,
   PALETTE_NONE,
   RENDER_OPTIONS,
@@ -18,6 +19,9 @@ function rollValue(spec, rng) {
 export function rollableKeys() {
   return new Set(facets().flatMap((facet) => keysInFacet(facet)));
 }
+
+// Square on, or the field turned onto its diagonal.
+const ROTATION_CHOICES = [0, 45];
 
 const MEATBALL_CHOICES = [
   MEATBALLS.HIDE_LOOSE,
@@ -52,13 +56,18 @@ export default function rollBlobConfig(
       if (facet === 'structure') {
         config.blobMeatballs =
           MEATBALL_CHOICES[Math.floor(rng() * MEATBALL_CHOICES.length)];
+        config.planeRotation = rng.chance(0.5)
+          ? ROTATION_CHOICES[1]
+          : ROTATION_CHOICES[0];
       }
 
       if (facet === 'palette') {
         config.blobPalette =
-          paletteNames.length > 0 && rng.chance(0.7)
+          paletteNames.length > 0
             ? paletteNames[Math.floor(rng() * paletteNames.length)]
             : PALETTE_NONE;
+        config.blobPaletteExact = rng.chance(0.5);
+        config.blobLaneMode = LANE_MODES[Math.floor(rng() * LANE_MODES.length)];
       }
     });
 

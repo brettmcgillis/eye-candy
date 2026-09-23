@@ -19,25 +19,32 @@ import { arcFamily, sectorMask, strokeMask } from './blobArcs';
 import { debugCellsMask, debugConnectorsMask } from './blobDebug';
 
 // A family's lane index normalized to 0 (innermost ring) .. 1 (outermost),
-// so `growthU` can gate it against a single 0..1 dial regardless of how many
-// lanes this particular family happens to have.
+// so growth can order rings regardless of how many this family has.
 function revealDepth(family) {
   return family.lane.div(max(family.lanes.sub(1), 1));
 }
 
-// A small, fixed falloff in normalized-depth space (not scaled by lane
-// count): a family with few, wide lanes would otherwise need `growthU` well
-// past 1 before its outermost ring stopped being partly transparent.
-const GROWTH_AA = 0.04;
+// How much of `growthU`'s 0..1 timeline the front takes to cross the field;
+// each cell spends the rest growing its own rings.
+const FRONT_SPAN = 0.6;
+// How much of a cell's own growth one ring spends sweeping from its midpoint
+// to its ends; the rest staggers the rings inner to outer.
+const RING_SWEEP = 0.45;
+const GROWTH_AA = 0.03;
 
-// 1 while a family's rings are within the grown fraction, falling smoothly
-// to 0 just past it.
-function growthMask(family, growthU) {
-  return smoothstep(
-    growthU.sub(GROWTH_AA),
-    growthU.add(GROWTH_AA),
-    revealDepth(family)
-  ).oneMinus();
+// 1 once this sample's ring has been drawn past it. A cell starts when the
+// front reaches its delay; within it, each ring starts after the ones inside
+// it and draws outward from its midpoint. `growthU` sits above 1 outside a
+// growth video, which saturates every cell at fully grown.
+function growthMask(family, growthU, delay) {
+  const local = growthU
+    .sub(delay.mul(FRONT_SPAN))
+    .div(1 - FRONT_SPAN)
+    .clamp(0, 1.5);
+  const threshold = revealDepth(family)
+    .mul(1 - RING_SWEEP)
+    .add(family.sweep.mul(RING_SWEEP));
+  return smoothstep(threshold.sub(GROWTH_AA), threshold.add(GROWTH_AA), local);
 }
 
 export default function buildBlobColorNode({
@@ -45,13 +52,17 @@ export default function buildBlobColorNode({
   debugCellsU,
   debugConnectorsU,
   growthU,
-  laneTexture,
+  laneTextures,
   maxLanesU,
   pathDivU,
   penHalfWidthU,
   quadMarginU,
   referenceScaleU,
   showStrokesU,
+  spectrumBlendU,
+  spectrumPhaseU,
+  spectrumU,
+  stopCountU,
   strokeColorU,
 }) {
   return Fn(() => {
@@ -77,8 +88,10 @@ export default function buildBlobColorNode({
     // overlap — the hard terminations where two blobs meet. Within a family
     // the sectors nest, so nothing self-occludes.
     const outsideFirst = select(first.d.greaterThan(first.rMax), 1, 0);
-    const firstGrown = growthMask(first, growthU);
-    const secondGrown = growthMask(second, growthU);
+    const meta = attribute('instanceMeta', 'vec2');
+    const delay = meta.y;
+    const firstGrown = growthMask(first, growthU, delay);
+    const secondGrown = growthMask(second, growthU, delay);
     const ink = max(
       strokeMask(first.aaField, first.dBand, penHalfWidthU).mul(firstGrown),
       strokeMask(second.aaField, second.dBand, penHalfWidthU)
@@ -88,11 +101,15 @@ export default function buildBlobColorNode({
     ).mul(showStrokesU);
 
     // The union of both families' sectors is the blob silhouette — the area
-    // "inside the curves" that bgColor fills. Hard-clamped to the true
-    // footprint (not the inflated quad) so adjacent cells' fills abut exactly
-    // instead of overlapping into a darker seam.
+    // "inside the curves" that the lane fill covers. Clamped to the cell's
+    // footprint (not the inflated quad), plus half a pixel: an exact edge
+    // lets a pixel centred on a shared edge fall just outside both cells
+    // through rounding, which shows as a dotted background seam wherever
+    // the grid is rotated. The fill is opaque and a lane's colour is
+    // continuous across the edge, so the overlap never shows.
+    const footprint = max(q.x.abs(), q.y.abs());
     const inCell = select(
-      max(q.x.abs(), q.y.abs()).lessThanEqual(size.mul(0.5)),
+      footprint.lessThanEqual(size.mul(0.5).add(footprint.fwidth().mul(0.5))),
       1,
       0
     );
@@ -110,10 +127,31 @@ export default function buildBlobColorNode({
     const laneSlot = usesSecond
       .mul(maxLanesU)
       .add(mix(first.lane, second.lane, usesSecond));
-    const fill = textureLoad(
-      laneTexture,
-      ivec2(int(laneSlot), int(instanceIndex))
-    ).rgb;
+    const slotCoord = ivec2(int(laneSlot), int(instanceIndex));
+    const flatFill = textureLoad(laneTextures.colors, slotCoord).rgb;
+
+    // Spectrum: the lane's distance along its whole channel picks a position
+    // in the palette, offset per channel, wrapping last stop into first.
+    const piece = textureLoad(laneTextures.along, slotCoord);
+    const u = mix(first.along, second.along, usesSecond);
+    const position = piece.w
+      .add(piece.x.add(piece.y.mul(u)).mul(piece.z).mul(stopCountU))
+      .add(spectrumPhaseU);
+    const wrapped = position.sub(
+      position.div(stopCountU).floor().mul(stopCountU)
+    );
+    const index = wrapped.floor();
+    const next = select(
+      index.add(1).greaterThanEqual(stopCountU),
+      0,
+      index.add(1)
+    );
+    const spectrum = mix(
+      textureLoad(laneTextures.stops, ivec2(int(index), int(0))).rgb,
+      textureLoad(laneTextures.stops, ivec2(int(next), int(0))).rgb,
+      wrapped.sub(index).mul(spectrumBlendU)
+    );
+    const fill = mix(flatFill, spectrum, spectrumU);
 
     // The debug hatch is specified in absolute units on the reference's own
     // canvas, so rescale this pixel's turtle-space position onto it.
@@ -127,12 +165,7 @@ export default function buildBlobColorNode({
       penHalfWidthU,
       inCell.mul(inBlob.oneMinus())
     );
-    const dots = debugConnectorsMask(
-      q,
-      size,
-      attribute('instanceConnectors'),
-      penHalfWidthU
-    );
+    const dots = debugConnectorsMask(q, size, meta.x, penHalfWidthU);
 
     const marks = max(
       ink,

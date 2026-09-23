@@ -4,7 +4,7 @@ export {
   familySector,
   laneCount,
 } from './laneChannels';
-export { default as fieldBounds } from './bounds';
+export { canvasBounds, default as fieldBounds } from './bounds';
 export { default as renderBlobSvg } from './renderSvg';
 export { createRng, hashSeed, randomSeed, seedFor } from './rng';
 export { default as rollBlobConfig, rollableKeys } from './rollConfig';

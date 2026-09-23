@@ -23,11 +23,39 @@ const MEATBALLS = { HIDE_LOOSE: 0, KEEP_ALL: 2, PRUNE_LOOSE: 1 };
 
 const NO_CONNECTION = -1;
 const ATTEMPTS = 100;
+const DELAY_JITTER = 0.12;
+
+// When each cell starts growing in a growth video, 0..1: a front spreading
+// from the field's centroid, loosened by a fixed per-cell jitter so the
+// front reads as organic rather than a ring. Plain arithmetic, not the
+// seeded stream — nothing here may shift the reference's random draws.
+function growthDelays(centers, count) {
+  let sumX = 0;
+  let sumY = 0;
+  for (let i = 0; i < count; i++) {
+    sumX += centers[i * 2];
+    sumY += centers[i * 2 + 1];
+  }
+  const midX = sumX / count;
+  const midY = sumY / count;
+  const reach = new Float32Array(count);
+  let farthest = 1e-6;
+  for (let i = 0; i < count; i++) {
+    reach[i] = Math.hypot(centers[i * 2] - midX, centers[i * 2 + 1] - midY);
+    farthest = Math.max(farthest, reach[i]);
+  }
+  return reach.map((r, i) => {
+    const hash = Math.sin(i * 12.9898 + 78.233) * 43758.5453;
+    const jitter = hash - Math.floor(hash);
+    return (1 - DELAY_JITTER) * (r / farthest) + DELAY_JITTER * jitter;
+  });
+}
 
 const EMPTY = {
   cellSize: 1,
   cells: [],
   centers: new Float32Array(0),
+  delays: new Float32Array(0),
   conn0: new Float32Array(0),
   conn1: new Float32Array(0),
   connectorMask: new Float32Array(0),
@@ -180,6 +208,7 @@ export default function buildBlobField({
     conn1,
     connectorMask,
     count,
+    delays: growthDelays(centers, count),
     positions,
     sizes,
   };

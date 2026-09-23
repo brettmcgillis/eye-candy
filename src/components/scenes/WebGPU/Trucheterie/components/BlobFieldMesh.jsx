@@ -13,8 +13,9 @@ import {
   applyFieldToMesh,
   createBlobMaterial,
   createBlobUniforms,
-  createLaneTexture,
-  fillLaneTexture,
+  createLaneTextures,
+  disposeLaneTextures,
+  fillLaneTextures,
   penGeometry,
   syncBlobUniforms,
 } from '@modules/trucheterieBlobRender';
@@ -76,12 +77,12 @@ function BlobFieldMesh({ config }) {
     ]
   );
 
-  const laneTexture = useMemo(() => createLaneTexture(), []);
-  useEffect(() => () => laneTexture.dispose(), [laneTexture]);
+  const laneTextures = useMemo(() => createLaneTextures(), []);
+  useEffect(() => () => disposeLaneTextures(laneTextures), [laneTextures]);
 
   const laneInfo = useMemo(
     () =>
-      fillLaneTexture(laneTexture, field.cells, {
+      fillLaneTextures(laneTextures, field.cells, {
         exact: blobPaletteExact,
         fallback: bgColor,
         mode: blobLaneMode,
@@ -103,7 +104,7 @@ function BlobFieldMesh({ config }) {
       blobPathsPerUnit,
       blobSeed,
       field,
-      laneTexture,
+      laneTextures,
     ]
   );
 
@@ -122,8 +123,8 @@ function BlobFieldMesh({ config }) {
   }, [blobCanvasSize, config, field, laneInfo]);
 
   const material = useMemo(
-    () => createBlobMaterial(uniformsRef.current, laneTexture),
-    [laneTexture]
+    () => createBlobMaterial(uniformsRef.current, laneTextures),
+    [laneTextures]
   );
   useEffect(() => () => material.dispose(), [material]);
 

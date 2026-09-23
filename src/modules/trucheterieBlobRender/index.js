@@ -19,7 +19,14 @@ export {
   penGeometry,
   syncBlobUniforms,
 } from './fieldMesh';
-export { default as fillLaneTexture, createLaneTexture } from './laneTexture';
+export {
+  default as fillLaneTextures,
+  createLaneTextures,
+  disposeLaneTextures,
+  laneBreaks,
+  laneColorAt,
+  resolveLaneColors,
+} from './laneTexture';
 export {
   LANE_MODES,
   PALETTE_NAMES,
@@ -28,4 +35,6 @@ export {
   hashSeed,
   resolvePaletteStops,
   shuffleStops,
+  spectrumColor,
 } from './palette';
+export { acesFilmic, acesFilmicHex } from './toneMap';

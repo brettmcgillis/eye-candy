@@ -8,7 +8,7 @@
 import createOptionSchema from '../optionSchema/index.mjs';
 
 export const PALETTE_NONE = 'None';
-export const LANE_MODES = ['Cycle', 'Depth', 'Random'];
+export const LANE_MODES = ['Cycle', 'Depth', 'Random', 'Spectrum'];
 export const MEATBALLS = { HIDE_LOOSE: 0, KEEP_ALL: 2, PRUNE_LOOSE: 1 };
 
 function num(section, label, value, min, max, step, extra = {}) {
@@ -157,7 +157,7 @@ const LOOK = {
     choices: LANE_MODES,
     default: 'Cycle',
     facet: 'palette',
-    help: `How a channel picks its palette stop: ${LANE_MODES.join(', ')}`,
+    help: `How a channel picks its palette stop: ${LANE_MODES.join(', ')}. Spectrum runs the whole palette along every lane, one stop further round per lane`,
     label: 'Lane Colors',
     scene: true,
     scope: 'shared',
@@ -184,7 +184,17 @@ const LOOK = {
   bgColor: color('palette', 'Tile Background', '#f5f2ea'),
   strokeColor: color('palette', 'Stroke Color', '#141414'),
   sceneBgColor: color('palette', 'Scene Background', '#f5f2ea'),
-  planeRotation: num('composition', 'Plane Rotation (\u00b0)', 0, -180, 180, 1),
+  planeRotation: num(
+    'composition',
+    'Plane Rotation (\u00b0)',
+    0,
+    -180,
+    180,
+    1,
+    {
+      facet: 'structure',
+    }
+  ),
 };
 
 const rollSeed = (facet) => ({
@@ -255,16 +265,24 @@ const RENDER = {
     type: 'boolean',
   },
   svgStroke: {
-    default: 0,
-    help: 'SVG stroke width, in output pixels; 0 draws hairlines for plotting',
+    default: 1,
+    help: 'Multiplier on the render\u2019s pen width; 0 draws hairlines for plotting',
     label: 'SVG stroke',
-    max: 20,
+    max: 8,
     min: 0,
-    placeholder: 'PX',
+    placeholder: 'N',
     scope: 'still',
     section: 'svg',
     step: 0.1,
     type: 'number',
+  },
+  svgFill: {
+    default: true,
+    help: 'Draw the background and palette lanes; off leaves only the strokes, for plotting',
+    label: 'SVG fill',
+    scope: 'still',
+    section: 'svg',
+    type: 'boolean',
   },
   transparentBackground: {
     default: false,
@@ -329,9 +347,9 @@ const RENDER = {
   },
 
   mode: {
-    choices: ['stills', 'growth'],
+    choices: ['stills', 'growth', 'flow', 'stream'],
     default: 'stills',
-    help: 'stills: a cut per field; growth: rings sweep outward while the palette drifts',
+    help: 'stills: a cut per field; growth: a front spreads from the centre, drawing each ring, then recedes; flow: the grown field with its palette flowing through the channels; stream: Spectrum lanes, the gradient travelling along every lane',
     label: 'Mode',
     scope: 'video',
     section: 'video',
@@ -350,7 +368,7 @@ const RENDER = {
   },
   hold: {
     default: 3,
-    help: 'Seconds per field (stills), or held once fully grown (growth)',
+    help: 'Seconds per field (stills, flow, stream), or held once fully grown (growth)',
     label: 'Hold',
     max: 60,
     min: 0,
@@ -362,7 +380,7 @@ const RENDER = {
   },
   growSeconds: {
     default: 4,
-    help: 'growth: seconds to sweep rings from center to edge',
+    help: 'growth: seconds for the front to cross the field; it recedes in half that',
     label: 'Grow',
     max: 60,
     min: 0.5,
@@ -373,8 +391,8 @@ const RENDER = {
     type: 'number',
   },
   paletteDrift: {
-    default: 0,
-    help: 'growth: palette lane-steps advanced per second; 0 holds the palette still (Random mode never drifts)',
+    default: 1,
+    help: 'growth/flow/stream: palette stops each channel moves through per second; 0 holds the palette still',
     label: 'Palette drift',
     max: 20,
     min: -20,

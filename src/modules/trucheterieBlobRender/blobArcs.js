@@ -1,4 +1,13 @@
-import { clamp, cos, round, select, sin, smoothstep, vec2 } from 'three/tsl';
+import {
+  atan,
+  clamp,
+  cos,
+  round,
+  select,
+  sin,
+  smoothstep,
+  vec2,
+} from 'three/tsl';
 
 // The reference's Cell.draw(), expressed as a distance field instead of
 // polylines. Every length here is in MICRO-CELL units (one grid square = 1),
@@ -7,6 +16,7 @@ import { clamp, cos, round, select, sin, smoothstep, vec2 } from 'three/tsl';
 // cells sharing an edge always cross it at the same offsets.
 
 const HALF_PI = Math.PI / 2;
+const QUARTER_PI = Math.PI / 4;
 
 // The reference rotates a canonical arc family by `edge` quarter turns
 // (V.rot2d(edge * -PI/2), which V.trans applies as a +edge*PI/2 rotation).
@@ -84,7 +94,33 @@ export function arcFamily(q, type, edge, size, pathDivU) {
     lanes.sub(1)
   );
 
+  // How far round its arc this sample sits, 0 at the middle of the family's
+  // wedge to 1 at either end, so a growth video can draw each ring outward
+  // from its midpoint and meet the neighbouring cell's ring at the shared
+  // edge from both sides at once.
+  const sweep = select(
+    type.equal(0),
+    atan(clamped.x, clamped.y.negate()).abs().div(Math.PI),
+    select(
+      isCorner,
+      atan(clamped.y, clamped.x).sub(QUARTER_PI).abs().div(QUARTER_PI),
+      atan(clamped.x, clamped.y).abs().div(HALF_PI)
+    )
+  ).clamp(0, 1);
+
+  // How far round the wedge this sample sits, 0 at its first edge to 1 at
+  // its second — laneChannels.js's wedgeParam, per pixel. A Spectrum lane
+  // maps it onto the distance along its channel.
+  const along = select(
+    type.equal(0),
+    atan(rel.y, rel.x)
+      .add(Math.PI)
+      .div(Math.PI * 2),
+    atan(clamped.y, clamped.x).div(select(isCorner, HALF_PI, Math.PI))
+  ).clamp(0, 1);
+
   return {
+    along,
     // Both terms are smooth, unlike dBand — see strokeMask.
     aaField: d.add(capOffset),
     d,
@@ -94,6 +130,7 @@ export function arcFamily(q, type, edge, size, pathDivU) {
     // a 0..1 reveal order for growth — see blobShader.js's `growthU`.
     lanes,
     rMax,
+    sweep,
   };
 }
 

@@ -68,6 +68,48 @@ export function familySector(cell, type, edge) {
   return { rMax: half, x: column + mid[0], y: row + mid[1] };
 }
 
+// A lane's inner and outer radius, in micro-cell units — the annulus between
+// two of the family's arcs, matching blobArcs.js's lane indexing.
+export function laneRadii(type, size, pathDiv) {
+  const bands = Math.round(size * pathDiv);
+  if (type === 2) {
+    return Array.from({ length: bands }, (_, j) => [
+      j / pathDiv,
+      (j + 1) / pathDiv,
+    ]);
+  }
+  const odd = bands % 2 === 1 ? 0.5 : 0;
+  const laneBase = odd > 0 ? 1 : 0;
+  return Array.from({ length: laneCount(type, size, pathDiv) }, (_, j) => [
+    Math.max(0, j + odd - laneBase) / pathDiv,
+    Math.min(bands / 2, j + 1 + odd - laneBase) / pathDiv,
+  ]);
+}
+
+const WEDGE_ANGLE = [Math.PI * 2, Math.PI, Math.PI / 2];
+
+// How far round its family's wedge a grid point sits, 0..1 — the same
+// parameter blobArcs.js's `along` gives a pixel: measured in the family's
+// canonical frame, from the wedge's first edge towards its second.
+export function wedgeParam(cell, type, edge, px, py) {
+  const { x, y } = familySector(cell, type, edge);
+  const phi = -edge * (Math.PI / 2);
+  const c = Math.cos(phi);
+  const s = Math.sin(phi);
+  const rx = (px - x) * c - (py - y) * s;
+  const ry = (px - x) * s + (py - y) * c;
+  if (type === 0) return (Math.atan2(ry, rx) + Math.PI) / (Math.PI * 2);
+  if (type === 2) {
+    return Math.atan2(Math.max(ry, 0), Math.max(rx, 0)) / (Math.PI / 2);
+  }
+  return Math.atan2(Math.max(ry, 0), rx) / Math.PI;
+}
+
+function intervalPoint(vertical, line, start, pathDiv) {
+  const along = (start + 0.5) / pathDiv;
+  return vertical ? [line, along] : [along, line];
+}
+
 // Where each lane meets the cell's active edges, as absolute interval starts.
 // `occluder` is the first-drawn family's sector when this is the second
 // family: anywhere inside it the second family is painted over, so its lanes
@@ -93,7 +135,11 @@ function laneIntervals(cell, type, edge, pathDiv, occluder) {
 
   const push = (vertical, line, start, lane) => {
     if (visible(vertical, line, start)) {
-      out.push({ key: intervalKey(vertical, line, start), lane });
+      out.push({
+        key: intervalKey(vertical, line, start),
+        lane,
+        point: intervalPoint(vertical, line, start, pathDiv),
+      });
     }
   };
 
@@ -151,6 +197,52 @@ function makeUnionFind(n) {
   };
 }
 
+// Arc length along every channel. Each lane piece has two ends and each end
+// joins at most one other piece, so a channel is a chain or a loop: walk it
+// from a loose end (or anywhere, for a loop), laying pieces end to end. Per
+// slot the result is [offset, signed length, 1 / channel length, the
+// channel's representative lane, which sets where its spectrum starts] — the
+// distance along the channel at the piece's wedge parameter u is
+// offset + signed length * u, whichever way round the walk entered it.
+function alongChannels({ channelOf, channels, lengthOf, links }) {
+  const total = channelOf.length;
+  const along = new Float32Array(total * 4);
+  const visited = new Uint8Array(total);
+  const members = channels.map(() => []);
+  for (let id = 0; id < total; id += 1) {
+    if (channelOf[id] >= 0) members[channelOf[id]].push(id);
+  }
+
+  members.forEach((ids, channel) => {
+    let reach = 0;
+    const walk = (startId, startEnd) => {
+      let id = startId;
+      let entry = startEnd;
+      while (id >= 0 && !visited[id]) {
+        visited[id] = 1;
+        const length = lengthOf[id];
+        along[id * 4] = entry === 0 ? reach : reach + length;
+        along[id * 4 + 1] = entry === 0 ? length : -length;
+        reach += length;
+        const next = links[id * 2 + (1 - entry)];
+        id = next >= 0 ? Math.floor(next / 2) : -1;
+        entry = next >= 0 ? next % 2 : 0;
+      }
+    };
+    ids
+      .filter((id) => links[id * 2] < 0 || links[id * 2 + 1] < 0)
+      .forEach((id) => walk(id, links[id * 2] < 0 ? 0 : 1));
+    ids.forEach((id) => walk(id, 0));
+    const inverse = reach > 0 ? 1 / reach : 0;
+    ids.forEach((id) => {
+      along[id * 4 + 2] = inverse;
+      along[id * 4 + 3] = channels[channel].lane;
+    });
+  });
+
+  return along;
+}
+
 // Resolves every (cell, family slot, lane) triple to a channel id, plus the
 // per-channel facts the colour modes need. `slots` is a flat lookup sized
 // count * 2 * maxLanes so the shader can index it as a texture row per cell.
@@ -172,6 +264,9 @@ export default function buildLaneChannels(drawn, pathDiv) {
   const depthOf = new Float32Array(total);
   const buckets = new Map();
 
+  const lengthOf = new Float32Array(total);
+  const links = new Int32Array(total * 2).fill(-1);
+
   drawn.forEach(({ cell, connections }, cellIndex) => {
     const occluder =
       connections.length > 1
@@ -179,11 +274,13 @@ export default function buildLaneChannels(drawn, pathDiv) {
         : null;
     connections.forEach(([type, edge], slot) => {
       const count = laneCount(type, cell.size, pathDiv);
+      const radii = laneRadii(type, cell.size, pathDiv);
       for (let j = 0; j < count; j += 1) {
         const id = cellIndex * slotStride + slot * maxLanes + j;
         used[id] = 1;
         laneOf[id] = j;
         depthOf[id] = count > 1 ? j / (count - 1) : 0;
+        lengthOf[id] = ((radii[j][0] + radii[j][1]) / 2) * WEDGE_ANGLE[type];
       }
       const joins = laneIntervals(
         cell,
@@ -192,17 +289,31 @@ export default function buildLaneChannels(drawn, pathDiv) {
         pathDiv,
         slot === 1 ? occluder : null
       );
-      joins.forEach(({ key, lane }) => {
+      const { x, y } = familySector(cell, type, edge);
+      joins.forEach(({ key, lane, point }) => {
         const id = cellIndex * slotStride + slot * maxLanes + lane;
+        // Which end of the lane this join sits at. An odd stub's innermost
+        // lane meets its edge at the family centre itself, where the angle
+        // is undefined; it is a dead end either way, so it takes the far end.
+        const atCentre = Math.hypot(point[0] - x, point[1] - y) < 1e-6;
+        const end =
+          atCentre || wedgeParam(cell, type, edge, ...point) > 0.5 ? 1 : 0;
         const bucket = buckets.get(key);
-        if (bucket) bucket.push(id);
-        else buckets.set(key, [id]);
+        if (bucket) bucket.push([id, end]);
+        else buckets.set(key, [[id, end]]);
       });
     });
   });
 
-  buckets.forEach((ids) => {
-    for (let i = 1; i < ids.length; i += 1) uf.union(ids[0], ids[i]);
+  buckets.forEach((members) => {
+    for (let i = 1; i < members.length; i += 1) {
+      uf.union(members[0][0], members[i][0]);
+    }
+    if (members.length === 2) {
+      const [[a, endA], [b, endB]] = members;
+      links[a * 2 + endA] = b * 2 + endB;
+      links[b * 2 + endB] = a * 2 + endA;
+    }
   });
 
   const channelOf = new Int32Array(total).fill(-1);
@@ -224,5 +335,7 @@ export default function buildLaneChannels(drawn, pathDiv) {
     }
   }
 
-  return { channelOf, channels, maxLanes, slotStride };
+  const along = alongChannels({ channelOf, channels, lengthOf, links });
+
+  return { along, channelOf, channels, maxLanes, slotStride };
 }

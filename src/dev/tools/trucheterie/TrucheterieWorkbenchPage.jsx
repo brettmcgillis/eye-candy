@@ -1,5 +1,5 @@
 import React, { useCallback, useMemo, useState } from 'react';
-import { FiFilm, FiImage, FiRefreshCw, FiX } from 'react-icons/fi';
+import { FiFilm, FiImage, FiRefreshCw, FiSquare, FiX } from 'react-icons/fi';
 
 import ResultsPanel, {
   activeJobCount,
@@ -31,10 +31,32 @@ import './TrucheterieWorkbenchPage.css';
 import PreviewDetails from './components/PreviewDetails';
 
 const FACETS = facets();
+const PROFILES = {
+  post: { height: 1350, label: 'Post', width: 1080 },
+  reel: { height: 1920, label: 'Reel', width: 1080 },
+  square: { height: 1080, label: 'Square', width: 1080 },
+};
+const PROFILE_OPTIONS = Object.entries(PROFILES).map(([value, item]) => ({
+  icon: <FiSquare />,
+  label: item.label,
+  value,
+}));
 const INITIAL_OPTIONS = {
   ...defaultsFor('still', 'workbench'),
   ...defaultsFor('video', 'workbench'),
 };
+
+// The format follows the size rather than owning it, so the schema's default
+// size (or one typed by hand) simply leaves no format highlighted.
+function profileFor({ height, width }) {
+  return (
+    Object.keys(PROFILES).find(
+      (key) =>
+        PROFILES[key].width === Number(width) &&
+        PROFILES[key].height === Number(height)
+    ) ?? null
+  );
+}
 const PALETTE_CHOICES = [PALETTE_NONE, ...PALETTE_NAMES].map((name) => [
   name,
   name,
@@ -98,6 +120,14 @@ export default function TrucheterieWorkbenchPage() {
     (key, value) => setOptions((current) => ({ ...current, [key]: value })),
     []
   );
+
+  const selectProfile = useCallback((next) => {
+    setOptions((current) => ({
+      ...current,
+      height: PROFILES[next].height,
+      width: PROFILES[next].width,
+    }));
+  }, []);
 
   // A generation's config fills the form; what to hold is the next decision.
   const useAsBase = useCallback((config, render) => {
@@ -173,6 +203,12 @@ export default function TrucheterieWorkbenchPage() {
                 onChange={setKind}
                 options={KIND_OPTIONS}
                 value={kind}
+              />
+              <Segmented
+                label="Format"
+                onChange={selectProfile}
+                options={PROFILE_OPTIONS}
+                value={profileFor(options)}
               />
               {kind === 'video' ? (
                 <Segmented
@@ -278,9 +314,8 @@ export default function TrucheterieWorkbenchPage() {
                   {[
                     'fps',
                     'hold',
-                    ...(options.mode === 'growth'
-                      ? ['growSeconds', 'paletteDrift']
-                      : []),
+                    ...(options.mode === 'growth' ? ['growSeconds'] : []),
+                    ...(options.mode === 'stills' ? [] : ['paletteDrift']),
                   ].map((key) => (
                     <SchemaField
                       key={key}

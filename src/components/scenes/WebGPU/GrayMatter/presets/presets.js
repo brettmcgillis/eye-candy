@@ -1,0 +1,122 @@
+export const DEFAULT_PRESET = 'Gray Matter';
+
+const STUDIO = {
+  backgroundColor: '#0b0c0e',
+  floorColor: '#141517',
+  floorCenterColor: '#3a3833',
+  wallLowColor: '#2a2926',
+  wallHighColor: '#0b0c0e',
+  wallGradientStart: 0,
+  wallGradientEnd: 0.55,
+  floorHeight: 0,
+  roomRadius: 12,
+  roomHeight: 14,
+  fogNear: 10,
+  fogFar: 30,
+};
+
+const SHARED = {
+  ...STUDIO,
+  growthLoop: true,
+  growthSpeed: 1,
+  growDuration: 20,
+  holdDuration: 12,
+  witherDuration: 8,
+  restDuration: 1,
+
+  settleIterations: 640,
+  ridgeFloor: 0.24,
+  mazeSpacing: 0.045,
+
+  strandSeed: 7,
+  flowCount: 500,
+  wanderCount: 1000,
+  wanderSteps: 500,
+  skullHeight: 2.4,
+  hyphaRadius: 0.0022,
+  crowdThinning: 0.6,
+  tubularSegments: 160,
+  radialSegments: 6,
+  frameMode: 'fixed',
+
+  pulseSpeed: 0.04,
+
+  diffusionV: 0.5,
+  stepScale: 16,
+  driftScale: 0.05,
+  driftSpeed: 0.15,
+  seedCoverage: 0.35,
+  swellLow: 0.2,
+  swellHigh: 0.3,
+
+  hyphaColor: '#e9e3d6',
+  metalness: 0,
+  roughness: 0.6,
+
+  dgSeed: 520671,
+  dgSimSpeed: 0.15,
+  dgGrowthStep: 1.33,
+  dgSeedInfluence: 0.62,
+  dgEdgeLength: 0.06,
+  dgSplitThreshold: 1.35,
+  dgRepulsion: 0.68,
+  dgShapeRetention: 0,
+  dgMaxVertices: 12000,
+  dgSmoothing: 0.14,
+  dgSideBias: 0,
+  dgTubeRadius: 0.019,
+  dgGradientStart: '#c800ff',
+  dgGradientEnd: '#00ff1e',
+  dgCurvatureContrast: 1.4,
+  dgCurvatureBias: -0.4,
+  dgGradientBlur: 0.35,
+  dgFresnel: 0.05,
+  dgSpecular: 0.6,
+};
+
+export const PRESETS = {
+  'Gray Matter': {
+    ...SHARED,
+    form: 'RD Tubes',
+    skullBaseY: 0.02,
+    fieldResolution: 192,
+    diffusionScale: 0.5,
+    feedRate: 0.037,
+    killRate: 0.06,
+    drift: 0,
+    bodyRadius: 0.013,
+    bodyColor: '#6b5cd6',
+    metalness: 0.1,
+    roughness: 0.4,
+  },
+  'Differential Growth': {
+    ...SHARED,
+    form: 'Differential Growth',
+    skullBaseY: 0.02,
+    fieldResolution: 128,
+    diffusionScale: 1,
+    feedRate: 0.037,
+    killRate: 0.06,
+    drift: 0,
+    bodyRadius: 0.013,
+    bodyColor: '#6b5cd6',
+    growDuration: 90,
+  },
+  Threads: {
+    ...SHARED,
+    form: 'Threads',
+    skullBaseY: 0.55,
+    fieldResolution: 128,
+    diffusionScale: 1,
+    feedRate: 0.0545,
+    killRate: 0.062,
+    drift: 0,
+    bodyRadius: 0.018,
+    bodyColor: '#cdb996',
+    radialSegments: 5,
+  },
+};
+
+export function getPresetControls({ presetSnapshot }) {
+  return { ...presetSnapshot };
+}

@@ -13,6 +13,7 @@ export const BOUQUET_STYLES = ['dome', 'fan', 'ikebana'];
 // A batch item rolls its own style, seeded off its own draw.
 export const BOUQUET_STYLE_ALL = 'all';
 export const VIDEO_MODES = ['lifecycle', 'growth', 'turntable', 'stills'];
+export const TURNTABLE_SPANS = ['flower', 'video'];
 export const IG_PRESETS = ['story', 'reel', 'post'];
 // The crown forms a plant may be built from; `auto` lets every head pick its
 // own, which is what Flora did before the form became a gene.
@@ -734,15 +735,24 @@ const RENDER = {
   },
   turns: {
     default: 1,
-    help: 'Turntable revolutions per flower',
+    help: 'Turntable revolutions, counted per flower or across the whole clip per turntableSpan',
     label: 'Turns',
     max: 10,
-    min: 0.25,
+    min: 0.125,
     placeholder: 'N',
     scope: 'video',
     section: 'video',
     step: 0.25,
     type: 'number',
+  },
+  turntableSpan: {
+    choices: TURNTABLE_SPANS,
+    default: 'flower',
+    help: 'flower: each bouquet spins turns on its own, resetting at every cut; video: the camera keeps turning across every bouquet in the clip',
+    label: 'Turntable span',
+    scope: 'video',
+    section: 'video',
+    type: 'enum',
   },
   orbit: {
     default: 0,

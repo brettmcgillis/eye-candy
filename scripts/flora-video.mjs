@@ -77,6 +77,17 @@ async function saveSourceFrame({ drawn, frame, options, sequence }) {
   ]);
 }
 
+// Turntable spins per flower (resetting at every cut) or once across the
+// whole clip (climbing with the global frame count, never resetting); other
+// modes drift by `orbit` across the whole clip the same way.
+function azimuthFor(options, { frame, frames, total, written }) {
+  if (options.mode !== 'turntable') return (options.orbit * written) / total;
+  if (options.turntableSpan === 'video') {
+    return (360 * options.turns * written) / total;
+  }
+  return (360 * options.turns * frame) / frames;
+}
+
 // Seconds of clip per drawn item, and the flower levels at a clip time. The
 // lifecycle clock runs at each flower's own timeScale, the way the scene does.
 function plan(kernel, options, configs) {
@@ -194,10 +205,12 @@ async function main() {
             if (options.mode === 'stills' && still) {
               await sink.write(still);
             } else {
-              const azimuthOffset =
-                options.mode === 'turntable'
-                  ? (360 * options.turns * frame) / frames
-                  : (options.orbit * written) / total;
+              const azimuthOffset = azimuthFor(options, {
+                frame,
+                frames,
+                total,
+                written,
+              });
               const image = await capturer.capture({
                 ...frameView(kernel, {
                   azimuthOffset,

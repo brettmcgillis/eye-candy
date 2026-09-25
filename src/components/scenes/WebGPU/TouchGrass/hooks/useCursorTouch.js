@@ -5,7 +5,7 @@ import { useFrame, useThree } from '@react-three/fiber';
 import { uniform } from 'three/tsl';
 import * as THREE from 'three/webgpu';
 
-// Far outside any reasonable touch radius, so the falloff in bladeMaterial
+// Far outside any reasonable touch radius, so the falloff in the grass material
 // reads as fully inactive without needing a separate enabled uniform.
 const FAR_AWAY = 1e5;
 const Y_AXIS = new THREE.Vector3(0, 1, 0);
@@ -25,7 +25,7 @@ const heightPlane = new THREE.Plane(new THREE.Vector3(0, 1, 0), 0);
 // as the next world-space plane), and repeat.
 const HEIGHT_REFINE_ITERATIONS = 3;
 
-// Matches the rejection threshold in utils/grass.js's scatterBlades — below
+// Matches the rejection threshold in utils/grass.js's meadowSampler — below
 // this, the heightfield's carve channel is meadow (grass gets placed there);
 // at or above it, the surface is carved-out dirt/pit/strata (no blades).
 const GRASS_CARVE_THRESHOLD = 0.3;
@@ -49,7 +49,7 @@ function refineHitOnHeightField(heightField, terrainYaw) {
 }
 
 // Cursor-grass interaction: raycasts the pointer onto a ground plane every
-// frame and exposes the hit as a live TSL uniform for bladeMaterial to bend
+// frame and exposes the hit as a live TSL uniform for the grass material to bend
 // blades away from. Ported from the vanilla-three example in
 // `reference/interactiveGrass.js` (player-proximity push), swapped for a
 // continuous distance falloff instead of a hard collider radius. Radius and

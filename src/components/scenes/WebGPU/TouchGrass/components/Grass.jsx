@@ -1,199 +1,70 @@
-/* eslint-disable no-continue */
-import React, { memo, useEffect, useMemo, useState } from 'react';
+import React, { memo, useCallback, useEffect, useMemo, useState } from 'react';
 
 import { uniform } from 'three/tsl';
-import * as THREE from 'three/webgpu';
 
-import { fbm2, hash01 } from '@utils/noise2d';
+import {
+  Grass as GrassField,
+  createGrassUniforms,
+  scatterGrid,
+  scatterRejection,
+  setBacklightDirection,
+  setGrassUniforms,
+  setWindDirection,
+} from '@elements/Grass';
 
-import createBladeMaterial from '../utils/bladeMaterial';
-import { MAX_BLADES, createGrassStore, scatterBlades } from '../utils/grass';
+import {
+  GRASS_EDGE_OVERDRAW,
+  MAX_BLADES,
+  estimateHeroGrassCoverage,
+  meadowSampler,
+  outerMeadowSampler,
+} from '../utils/grass';
+import createPulseLift from '../utils/grassPulse';
 import renderTextMask from '../utils/textMask';
 
 const ENDLESS_TILE_RADIUS = 2;
 const OUTER_GRASS_PER_TILE_MAX = 150000;
 
-function smoothstepCpu(edge0, edge1, x) {
-  const t = Math.min(Math.max((x - edge0) / (edge1 - edge0), 0), 1);
-  return t * t * (3 - 2 * t);
-}
-
-function estimateHeroGrassCoverage(heightField, sampleGrid = 72) {
-  const threshold = 0.3;
-  const half = heightField.worldSize * 0.5;
-  const step = heightField.worldSize / sampleGrid;
-  let accepted = 0;
-  let total = 0;
-
-  for (let z = 0; z < sampleGrid; z += 1) {
-    for (let x = 0; x < sampleGrid; x += 1) {
-      const sx = -half + (x + 0.5) * step;
-      const sz = -half + (z + 0.5) * step;
-      if (heightField.sampleCarve(sx, sz) < threshold) {
-        accepted += 1;
-      }
-      total += 1;
-    }
-  }
-
-  return total > 0 ? accepted / total : 1;
-}
-
-function scatterOuterBlades(
-  store,
-  { chunkOffsetX, chunkOffsetZ, config, count, sampleOuterCarve, worldSize }
-) {
-  const { clumpAttribute, dataAttribute, geometry, offsetAttribute } = store;
-  const offsets = offsetAttribute.array;
-  const data = dataAttribute.array;
-  const clump = clumpAttribute.array;
-  const placedMax = Math.min(count, MAX_BLADES);
-  const half = worldSize * 0.5;
-  const minX = chunkOffsetX - half;
-  const maxX = chunkOffsetX + half;
-  const minZ = chunkOffsetZ - half;
-  const maxZ = chunkOffsetZ + half;
-
-  // World-space jittered grid: deterministic and seam-free across chunks.
-  const cellSize = Math.max(worldSize / Math.sqrt(placedMax), 0.05);
-  const minCellX = Math.floor(minX / cellSize) - 1;
-  const maxCellX = Math.ceil(maxX / cellSize) + 1;
-  const minCellZ = Math.floor(minZ / cellSize) - 1;
-  const maxCellZ = Math.ceil(maxZ / cellSize) + 1;
-
-  let placed = 0;
-  for (let cz = minCellZ; cz <= maxCellZ && placed < placedMax; cz += 1) {
-    for (let cx = minCellX; cx <= maxCellX && placed < placedMax; cx += 1) {
-      const jitterX = hash01(cx, cz, config.seed + 101);
-      const jitterZ = hash01(cx, cz, config.seed + 211);
-      const worldX = (cx + jitterX) * cellSize;
-      const worldZ = (cz + jitterZ) * cellSize;
-
-      if (worldX < minX || worldX > maxX || worldZ < minZ || worldZ > maxZ) {
-        continue;
-      }
-
-      const x = worldX - chunkOffsetX;
-      const z = worldZ - chunkOffsetZ;
-      const hill =
-        fbm2(worldX * config.hillFrequency, worldZ * config.hillFrequency, {
-          seed: config.seed,
-          octaves: 4,
-        }) * config.hillAmplitude;
-      const carve = sampleOuterCarve ? sampleOuterCarve(worldX, worldZ) : 0;
-      if (carve >= 0.3) {
-        continue;
-      }
-      const pitFloor = config.waterLevel - config.pitDepth;
-      const carvedHeight = hill + (pitFloor - hill) * carve;
-
-      // Match hero chunk's clump-driven normal/tint shaping so endless
-      // chunks don't read brighter from flatter clump normals.
-      const clumpSize = Math.max(config.clumpSize ?? 0.2, 1e-3);
-      const cellX = Math.floor(worldX / clumpSize);
-      const cellZ = Math.floor(worldZ / clumpSize);
-      const centerX =
-        (cellX + 0.5 + (hash01(cellX, cellZ, config.seed + 11) - 0.5) * 0.8) *
-        clumpSize;
-      const centerZ =
-        (cellZ + 0.5 + (hash01(cellX, cellZ, config.seed + 23) - 0.5) * 0.8) *
-        clumpSize;
-      const dx = centerX - worldX;
-      const dz = centerZ - worldZ;
-      const dist = Math.sqrt(dx * dx + dz * dz);
-      const closeness = Math.max(0, 1 - dist / clumpSize);
-      const invDist = dist > 1e-5 ? 1 / dist : 0;
-
-      const yaw = hash01(cx, cz, config.seed + 307) * Math.PI * 2;
-      const scale = 0.7 + hash01(cx, cz, config.seed + 401) * 0.6;
-      const seedA = hash01(cx, cz, config.seed + 503);
-      const seedB = hash01(cx, cz, config.seed + 601);
-
-      offsets[placed * 3] = x;
-      offsets[placed * 3 + 1] = carvedHeight - 0.02;
-      offsets[placed * 3 + 2] = z;
-      data[placed * 4] = yaw;
-      data[placed * 4 + 1] = scale;
-      data[placed * 4 + 2] = seedA;
-      data[placed * 4 + 3] = seedB;
-      clump[placed * 4] = dx * invDist * closeness;
-      clump[placed * 4 + 1] = dz * invDist * closeness;
-      clump[placed * 4 + 2] = hash01(cellX, cellZ, config.seed + 701);
-      clump[placed * 4 + 3] = hash01(cx, cz, config.seed + 809);
-
-      placed += 1;
-    }
-  }
-
-  offsetAttribute.needsUpdate = true;
-  dataAttribute.needsUpdate = true;
-  clumpAttribute.needsUpdate = true;
-  geometry.instanceCount = placed;
-}
-
-// Full-field instanced grass. Placement is CPU-scattered onto the shared
-// heightfield (blades hug the terrain, avoid the carved letters, and cluster
-// into clumps); all motion and shading live in the TSL blade material.
 function Grass({ cloudShade, config, heightField, touchPosition }) {
-  const store = useMemo(() => createGrassStore(), []);
   const showChunkMode = (config.terrainEdgeMode ?? 'chunk') === 'chunk';
   const [heroPlacedCount, setHeroPlacedCount] = useState(config.grassCount);
+  const motion = config.globalMotionSpeed ?? 1;
 
   const uniforms = useMemo(
+    () => createGrassUniforms({ touchPosition }),
+    [touchPosition]
+  );
+  const pulseUniforms = useMemo(
     () => ({
-      backlightStrength: uniform(config.backlightStrength),
-      bladeBend: uniform(config.bladeBend),
-      bladeHeight: uniform(config.bladeHeight),
-      bladeWidth: uniform(config.bladeWidth),
-      rootColor: uniform(new THREE.Color(config.rootColor)),
-      sunColor: uniform(new THREE.Color(config.sunColor)),
-      sunDir: uniform(new THREE.Vector3(0, -1, 0)),
-      tipColor: uniform(new THREE.Color(config.tipColor)),
-      terrainPulseAmplitude: uniform(config.terrainPulseAmplitude ?? 0),
-      terrainPulseScale: uniform(config.terrainPulseScale ?? 0.25),
-      terrainPulseSpeed: uniform(config.terrainPulseSpeed ?? 0.35),
-      touchPosition,
-      touchRadius: uniform(config.touchRadius ?? 1.4),
-      touchStrength: uniform(config.touchStrength ?? 0.8),
-      windDir: uniform(new THREE.Vector2(config.windDirX, config.windDirZ)),
-      windScale: uniform(config.windScale),
-      windSpeed: uniform(config.windSpeed),
-      windStrength: uniform(config.windStrength),
+      terrainPulseAmplitude: uniform(0),
+      terrainPulseScale: uniform(0.25),
+      terrainPulseSpeed: uniform(0.35),
     }),
     []
   );
 
   useEffect(() => {
-    uniforms.backlightStrength.value = config.backlightStrength;
-    uniforms.bladeBend.value = config.bladeBend;
-    uniforms.bladeHeight.value = config.bladeHeight;
-    uniforms.bladeWidth.value = config.bladeWidth;
-    uniforms.rootColor.value.set(config.rootColor);
-    uniforms.sunColor.value.set(config.sunColor);
-    uniforms.tipColor.value.set(config.tipColor);
-    uniforms.terrainPulseAmplitude.value = config.terrainPulseAmplitude ?? 0;
-    uniforms.terrainPulseScale.value = config.terrainPulseScale ?? 0.25;
-    uniforms.terrainPulseSpeed.value =
-      (config.terrainPulseSpeed ?? 0.35) * (config.globalMotionSpeed ?? 1);
-    uniforms.touchRadius.value = config.touchRadius ?? 1.4;
-    uniforms.touchStrength.value = config.touchStrength ?? 0.8;
-    uniforms.windDir.value.set(config.windDirX, config.windDirZ).normalize();
-    uniforms.windScale.value = config.windScale;
-    uniforms.windSpeed.value =
-      config.windSpeed * (config.globalMotionSpeed ?? 1);
-    uniforms.windStrength.value = config.windStrength;
-
-    // Direction sunlight travels (sun position -> scene origin), matching
-    // SkyRig's sun placement, for the translucency term.
-    const azimuth = (config.sunAzimuth * Math.PI) / 180;
-    const elevation = (config.sunElevation * Math.PI) / 180;
-    uniforms.sunDir.value
-      .set(
-        -Math.sin(azimuth) * Math.cos(elevation),
-        -Math.sin(elevation),
-        -Math.cos(azimuth) * Math.cos(elevation)
-      )
-      .normalize();
+    setGrassUniforms(uniforms, {
+      backlightColor: config.sunColor,
+      backlightStrength: config.backlightStrength,
+      bladeBend: config.bladeBend,
+      bladeHeight: config.bladeHeight,
+      bladeWidth: config.bladeWidth,
+      rootColor: config.rootColor,
+      tipColor: config.tipColor,
+      touchRadius: config.touchRadius ?? 1.4,
+      touchStrength: config.touchStrength ?? 0.8,
+      windScale: config.windScale,
+      windSpeed: config.windSpeed * motion,
+      windStrength: config.windStrength,
+    });
+    setWindDirection(uniforms, config.windDirX, config.windDirZ);
+    setBacklightDirection(uniforms, config.sunAzimuth, config.sunElevation);
+    setGrassUniforms(pulseUniforms, {
+      terrainPulseAmplitude: config.terrainPulseAmplitude ?? 0,
+      terrainPulseScale: config.terrainPulseScale ?? 0.25,
+      terrainPulseSpeed: (config.terrainPulseSpeed ?? 0.35) * motion,
+    });
   }, [
     config.backlightStrength,
     config.bladeBend,
@@ -211,34 +82,44 @@ function Grass({ cloudShade, config, heightField, touchPosition }) {
     config.touchStrength,
     config.windDirX,
     config.windDirZ,
-    config.globalMotionSpeed,
     config.windScale,
     config.windSpeed,
     config.windStrength,
+    motion,
+    pulseUniforms,
     uniforms,
   ]);
 
-  useEffect(() => {
-    const placed = scatterBlades(store, {
-      clumpPull: config.clumpPull,
-      clumpSize: config.clumpSize,
-      count: config.grassCount,
-      heightField,
-      seed: config.seed,
-    });
-    setHeroPlacedCount(placed);
-  }, [
-    config.clumpPull,
-    config.clumpSize,
-    config.grassCount,
-    config.seed,
-    heightField,
-    store,
-  ]);
+  const heroMaterial = useMemo(
+    () => ({
+      gradient: 'smooth',
+      lift: createPulseLift(pulseUniforms),
+      shade: (position) => cloudShade(position.xz),
+      touch: true,
+      wind: 'sway',
+    }),
+    [cloudShade, pulseUniforms]
+  );
 
-  const material = useMemo(
-    () => createBladeMaterial({ cloudShade, store, uniforms }),
-    [cloudShade, store, uniforms]
+  const heroScatter = useCallback(
+    (store) =>
+      setHeroPlacedCount(
+        scatterRejection(store, {
+          clumpPull: config.clumpPull,
+          clumpSize: config.clumpSize,
+          count: config.grassCount,
+          half: heightField.worldSize * GRASS_EDGE_OVERDRAW,
+          sample: meadowSampler(heightField),
+          seed: config.seed,
+        })
+      ),
+    [
+      config.clumpPull,
+      config.clumpSize,
+      config.grassCount,
+      config.seed,
+      heightField,
+    ]
   );
 
   const endlessCarveSampler = useMemo(() => {
@@ -250,8 +131,6 @@ function Grass({ cloudShade, config, heightField, touchPosition }) {
     // continue naturally into surrounding chunks.
     const spanChunks = ENDLESS_TILE_RADIUS * 2 + 1;
     const worldSpan = heightField.worldSize * spanChunks;
-    const endlessTextScale = (config.textScale ?? 1) / spanChunks;
-
     const textMask = renderTextMask({
       edgeSoftness: config.edgeSoftness,
       fontFamily: config.fontFamily,
@@ -259,7 +138,7 @@ function Grass({ cloudShade, config, heightField, touchPosition }) {
       letterSpacing: config.letterSpacing,
       text: config.text,
       textRotation: config.textRotation,
-      textScale: endlessTextScale,
+      textScale: (config.textScale ?? 1) / spanChunks,
     });
 
     return (worldX, worldZ) => {
@@ -279,7 +158,6 @@ function Grass({ cloudShade, config, heightField, touchPosition }) {
     config.textRotation,
     config.textTiltX,
     config.textScale,
-    config.terrainEdgeMode,
     heightField.worldSize,
     showChunkMode,
   ]);
@@ -289,21 +167,33 @@ function Grass({ cloudShade, config, heightField, touchPosition }) {
     [heightField]
   );
 
-  const endlessOuterTiles = useMemo(() => {
+  const outerTiles = useMemo(() => {
     if (showChunkMode) {
       return [];
     }
-
-    const offsets = [];
+    const tiles = [];
     for (let z = -ENDLESS_TILE_RADIUS; z <= ENDLESS_TILE_RADIUS; z += 1) {
       for (let x = -ENDLESS_TILE_RADIUS; x <= ENDLESS_TILE_RADIUS; x += 1) {
-        if (x === 0 && z === 0) {
-          continue;
+        if (x !== 0 || z !== 0) {
+          const offsetX = x * heightField.worldSize;
+          const offsetZ = z * heightField.worldSize;
+          tiles.push({
+            key: `${offsetX}:${offsetZ}`,
+            material: {
+              ...heroMaterial,
+              chunkOffsetX: offsetX,
+              chunkOffsetZ: offsetZ,
+            },
+            offsetX,
+            offsetZ,
+          });
         }
-        offsets.push([x * heightField.worldSize, z * heightField.worldSize]);
       }
     }
+    return tiles;
+  }, [heightField.worldSize, heroMaterial, showChunkMode]);
 
+  const outerPerTileCount = useMemo(() => {
     const outerDensity =
       config.endlessTileDensityRatio ?? config.endlessGrassDensity ?? 1;
     const outerPerTileCap =
@@ -317,88 +207,77 @@ function Grass({ cloudShade, config, heightField, touchPosition }) {
     const heroEquivalentFullTileCount = Math.floor(
       heroPlacedCount / Math.max(heroGrassCoverage, 0.05)
     );
-    const outerPerTileCount = Math.max(
+    return Math.max(
       800,
       Math.min(
         outerPerTileCap,
         Math.floor(heroEquivalentFullTileCount * outerDensity)
       )
     );
-
-    return offsets.map(([x, z], index) => {
-      const tileStore = createGrassStore();
-      scatterOuterBlades(tileStore, {
-        chunkOffsetX: x,
-        chunkOffsetZ: z,
-        config,
-        count: outerPerTileCount,
-        sampleOuterCarve: endlessCarveSampler,
-        worldSize: heightField.worldSize,
-      });
-
-      const tileMaterial = createBladeMaterial({
-        chunkOffsetX: x,
-        chunkOffsetZ: z,
-        cloudShade,
-        store: tileStore,
-        uniforms,
-      });
-
-      return {
-        key: `${index}:${x}:${z}`,
-        material: tileMaterial,
-        position: [x, 0, z],
-        store: tileStore,
-      };
-    });
   }, [
-    cloudShade,
     config.endlessGrassDensity,
     config.endlessGrassPerTileCap,
+    config.endlessTileDensityRatio,
     config.grassCount,
-    config.pitDepth,
     heroGrassCoverage,
     heroPlacedCount,
+  ]);
+
+  const outerScatters = useMemo(() => {
+    const sample = outerMeadowSampler(
+      {
+        hillAmplitude: config.hillAmplitude,
+        hillFrequency: config.hillFrequency,
+        pitDepth: config.pitDepth,
+        seed: config.seed,
+        waterLevel: config.waterLevel,
+      },
+      endlessCarveSampler
+    );
+    return outerTiles.map(
+      ({ offsetX, offsetZ }) =>
+        (store) =>
+          scatterGrid(store, {
+            centerX: offsetX,
+            centerZ: offsetZ,
+            clumpSize: config.clumpSize ?? 0.2,
+            count: outerPerTileCount,
+            sample,
+            seed: config.seed,
+            size: heightField.worldSize,
+          })
+    );
+  }, [
+    config.clumpSize,
     config.hillAmplitude,
     config.hillFrequency,
+    config.pitDepth,
     config.seed,
-    config.terrainEdgeMode,
     config.waterLevel,
     endlessCarveSampler,
     heightField.worldSize,
-    showChunkMode,
-    uniforms,
+    outerPerTileCount,
+    outerTiles,
   ]);
-
-  useEffect(() => () => material.dispose(), [material]);
-  useEffect(() => () => store.geometry.dispose(), [store]);
-  useEffect(
-    () => () => {
-      endlessOuterTiles.forEach((tile) => {
-        tile.material.dispose();
-        tile.store.geometry.dispose();
-      });
-    },
-    [endlessOuterTiles]
-  );
 
   return (
     <group>
-      <mesh
-        frustumCulled={false}
-        geometry={store.geometry}
-        material={material}
+      <GrassField
+        material={heroMaterial}
+        maxCount={MAX_BLADES}
+        scatter={heroScatter}
+        uniforms={uniforms}
       />
-      {!showChunkMode &&
-        endlessOuterTiles.map((tile) => (
-          <mesh
-            key={tile.key}
-            frustumCulled={false}
-            geometry={tile.store.geometry}
-            material={tile.material}
-            position={tile.position}
-          />
-        ))}
+      {outerTiles.map((tile, index) => (
+        <GrassField
+          key={tile.key}
+          material={tile.material}
+          maxCount={MAX_BLADES}
+          position={[tile.offsetX, 0, tile.offsetZ]}
+          scatter={outerScatters[index]}
+          uniforms={uniforms}
+        />
+      ))}
     </group>
   );
 }

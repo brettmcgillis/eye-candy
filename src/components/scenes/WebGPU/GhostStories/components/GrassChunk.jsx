@@ -1,46 +1,51 @@
-import React, { memo, useEffect, useMemo } from 'react';
+import React, { memo, useCallback, useMemo } from 'react';
 
-import createBladeMaterial from '../utils/bladeMaterial';
-import { createGrassStore, scatterChunkBlades } from '../utils/grass';
+import { Grass, scatterGrid } from '@elements/Grass';
+
+import sampleGrassGround from '../utils/grass';
 import { CHUNK_SIZE } from '../utils/worldgen';
 
-// One chunk of instanced grass. The store is allocated once per chunk and
-// refilled in place on rescatter; the material binds this chunk's instanced
-// attributes plus the world offset (blades bend from world-space wind and
-// the ghost's position), while all artistic uniforms are shared.
+const MATERIAL = {
+  aoFloor: 0.35,
+  fade: true,
+  gradient: 2,
+  gustGlow: 0.35,
+  jitterTint: [0.85, 0.95, 1.1],
+  roughness: 0.9,
+  touch: true,
+  wind: 'quick',
+};
+
 function GrassChunk({ bladeCount, clumpSize, cx, cz, uniforms, world }) {
-  const store = useMemo(() => createGrassStore(bladeCount), [bladeCount]);
+  const centerX = cx * CHUNK_SIZE;
+  const centerZ = cz * CHUNK_SIZE;
 
-  useEffect(() => {
-    scatterChunkBlades(store, {
-      clumpSize,
-      count: bladeCount,
-      cx,
-      cz,
-      world,
-    });
-  }, [bladeCount, clumpSize, cx, cz, store, world]);
-
-  const material = useMemo(
-    () =>
-      createBladeMaterial({
-        chunkOffsetX: cx * CHUNK_SIZE,
-        chunkOffsetZ: cz * CHUNK_SIZE,
-        store,
-        uniforms,
+  const scatter = useCallback(
+    (store) =>
+      scatterGrid(store, {
+        centerX,
+        centerZ,
+        clumpSize,
+        count: bladeCount,
+        sample: (x, z) => sampleGrassGround(world, x, z),
+        seed: world.seed,
+        size: CHUNK_SIZE,
       }),
-    [cx, cz, store, uniforms]
+    [bladeCount, centerX, centerZ, clumpSize, world]
   );
 
-  useEffect(() => () => material.dispose(), [material]);
-  useEffect(() => () => store.geometry.dispose(), [store]);
+  const material = useMemo(
+    () => ({ ...MATERIAL, chunkOffsetX: centerX, chunkOffsetZ: centerZ }),
+    [centerX, centerZ]
+  );
 
   return (
-    <mesh
-      frustumCulled={false}
-      geometry={store.geometry}
+    <Grass
       material={material}
-      position={[cx * CHUNK_SIZE, 0, cz * CHUNK_SIZE]}
+      maxCount={bladeCount}
+      position={[centerX, 0, centerZ]}
+      scatter={scatter}
+      uniforms={uniforms}
     />
   );
 }

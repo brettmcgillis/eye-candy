@@ -5,6 +5,13 @@ import { useFrame } from '@react-three/fiber';
 import { uniform } from 'three/tsl';
 import * as THREE from 'three/webgpu';
 
+import {
+  createGrassUniforms,
+  setBacklightDirection,
+  setGrassUniforms,
+  setWindDirection,
+} from '@elements/Grass';
+
 import createTerrainMaterial from '../utils/terrainMaterial';
 import {
   CHUNK_SIZE,
@@ -25,7 +32,7 @@ import TreeChunk from './TreeChunk';
 // between survives untouched. New chunks are *revealed one per frame*
 // (center-out) instead of all at once: geometry building + grass scatter
 // for a whole row in a single frame is what caused the visible stutter on
-// chunk crossings. The grass distance fade in bladeMaterial hides the
+// chunk crossings. The grass distance fade hides the
 // staggered arrivals — blades grow in from zero past the fade line.
 function World({ config, tracker, world }) {
   const [center, setCenter] = useState({ cx: 0, cz: 0 });
@@ -93,49 +100,35 @@ function World({ config, tracker, world }) {
   useEffect(() => () => terrainMaterial.dispose(), [terrainMaterial]);
 
   const grassUniforms = useMemo(
-    () => ({
-      backlightStrength: uniform(config.backlightStrength),
-      bladeBend: uniform(config.bladeBend),
-      bladeHeight: uniform(config.bladeHeight),
-      bladeWidth: uniform(config.bladeWidth),
-      fadeEnd: uniform(60),
-      fadeStart: uniform(40),
-      ghostPosition: tracker.ghostPosition,
-      moonColor: uniform(new THREE.Color(config.moonLightColor)),
-      moonDir: uniform(new THREE.Vector3(0, -1, 0)),
-      rootColor: uniform(new THREE.Color(config.grassRootColor)),
-      tipColor: uniform(new THREE.Color(config.grassTipColor)),
-      touchRadius: uniform(config.touchRadius),
-      touchStrength: uniform(config.touchStrength),
-      windAngle: uniform(0),
-      windDir: uniform(new THREE.Vector2(config.windDirX, config.windDirZ)),
-      windScale: uniform(config.windScale),
-      windSpeed: uniform(config.windSpeed),
-      windStrength: uniform(config.windStrength),
-    }),
-    []
+    () =>
+      createGrassUniforms({
+        fadeCenter: tracker.ghostPosition,
+        touchPosition: tracker.ghostPosition,
+      }),
+    [tracker.ghostPosition]
   );
 
   useEffect(() => {
-    grassUniforms.backlightStrength.value = config.backlightStrength;
-    grassUniforms.bladeBend.value = config.bladeBend;
-    grassUniforms.bladeHeight.value = config.bladeHeight;
-    grassUniforms.bladeWidth.value = config.bladeWidth;
-    grassUniforms.moonColor.value.set(config.moonLightColor);
-    grassUniforms.rootColor.value.set(config.grassRootColor);
-    grassUniforms.tipColor.value.set(config.grassTipColor);
-    grassUniforms.touchRadius.value = config.touchRadius;
-    grassUniforms.touchStrength.value = config.touchStrength;
-    grassUniforms.windDir.value
-      .set(config.windDirX, config.windDirZ)
-      .normalize();
-    grassUniforms.windAngle.value = Math.atan2(
-      grassUniforms.windDir.value.y,
-      grassUniforms.windDir.value.x
+    setGrassUniforms(grassUniforms, {
+      backlightColor: config.moonLightColor,
+      backlightStrength: config.backlightStrength,
+      bladeBend: config.bladeBend,
+      bladeHeight: config.bladeHeight,
+      bladeWidth: config.bladeWidth,
+      rootColor: config.grassRootColor,
+      tipColor: config.grassTipColor,
+      touchRadius: config.touchRadius,
+      touchStrength: config.touchStrength,
+      windScale: config.windScale,
+      windSpeed: config.windSpeed,
+      windStrength: config.windStrength,
+    });
+    setWindDirection(grassUniforms, config.windDirX, config.windDirZ);
+    setBacklightDirection(
+      grassUniforms,
+      config.moonAzimuth,
+      config.moonElevation
     );
-    grassUniforms.windScale.value = config.windScale;
-    grassUniforms.windSpeed.value = config.windSpeed;
-    grassUniforms.windStrength.value = config.windStrength;
 
     // Blades vanish just inside the loaded grass ring so chunk streaming
     // stays hidden behind the fade.
@@ -144,18 +137,6 @@ function World({ config, tracker, world }) {
       CHUNK_SIZE;
     grassUniforms.fadeStart.value = grassExtent * 0.6;
     grassUniforms.fadeEnd.value = grassExtent * 0.95;
-
-    // Direction moonlight travels (moon position -> scene), matching
-    // SkyRig's moon placement, for the translucency term.
-    const azimuth = (config.moonAzimuth * Math.PI) / 180;
-    const elevation = (config.moonElevation * Math.PI) / 180;
-    grassUniforms.moonDir.value
-      .set(
-        -Math.sin(azimuth) * Math.cos(elevation),
-        -Math.sin(elevation),
-        -Math.cos(azimuth) * Math.cos(elevation)
-      )
-      .normalize();
   }, [
     config.backlightStrength,
     config.bladeBend,

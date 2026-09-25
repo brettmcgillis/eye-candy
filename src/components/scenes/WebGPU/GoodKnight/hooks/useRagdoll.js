@@ -1,4 +1,11 @@
-import { useCallback, useEffect, useLayoutEffect, useState } from 'react';
+/* eslint-disable no-param-reassign */
+import {
+  useCallback,
+  useEffect,
+  useLayoutEffect,
+  useRef,
+  useState,
+} from 'react';
 
 import { useBeforePhysicsStep, useRapier } from '@react-three/rapier';
 
@@ -11,10 +18,11 @@ import {
   removeRagdoll,
 } from '../utils/ragdoll';
 import { solvePose } from '../utils/skeleton';
+import { createStatue, followStatue, releaseStatue } from '../utils/statue';
 
 export default function useRagdoll(
   rig,
-  { damping, friction, linearDamping, pose }
+  { damping, enabled, friction, linearDamping, pose }
 ) {
   const { rapier, world } = useRapier();
   const [ragdoll, setRagdoll] = useState(null);
@@ -27,7 +35,10 @@ export default function useRagdoll(
       linearDamping,
     });
     setRagdoll(created);
-    return () => removeRagdoll(world, created);
+    return () => {
+      if (created.statue) world.removeRigidBody(created.statue.body);
+      removeRagdoll(world, created);
+    };
   }, [rapier, rig, world]);
 
   useEffect(() => {
@@ -40,18 +51,51 @@ export default function useRagdoll(
     });
   }, [damping, friction, linearDamping, ragdoll]);
 
+  const enabledRef = useRef(enabled);
+  enabledRef.current = enabled;
+  const frictionRef = useRef(friction);
+  frictionRef.current = friction;
+
+  const setStatue = useCallback(
+    (on) => {
+      if (ragdoll.statue) {
+        releaseStatue(world, rapier, ragdoll, ragdoll.statue);
+        ragdoll.statue = null;
+      }
+      if (on)
+        ragdoll.statue = createStatue(
+          world,
+          rapier,
+          ragdoll,
+          frictionRef.current
+        );
+    },
+    [rapier, ragdoll, world]
+  );
+
+  useEffect(() => {
+    if (ragdoll && enabled === Boolean(ragdoll.statue)) setStatue(!enabled);
+  }, [enabled, ragdoll, setStatue]);
+
+  const place = useCallback(
+    (transforms, sleep) => {
+      if (!ragdoll) return;
+      setStatue(false);
+      placeRagdoll(ragdoll, transforms);
+      if (sleep) Object.values(ragdoll.bodies).forEach((body) => body.sleep());
+      if (!enabledRef.current) setStatue(true);
+      setGeneration((g) => g + 1);
+    },
+    [ragdoll, setStatue]
+  );
+
   const reset = useCallback(() => {
-    if (!ragdoll) return;
-    placeRagdoll(ragdoll, poseTransforms(ragdoll, pose));
-    Object.values(ragdoll.bodies).forEach((body) => body.sleep());
-    setGeneration((g) => g + 1);
-  }, [pose, ragdoll]);
+    if (ragdoll) place(poseTransforms(ragdoll, pose), true);
+  }, [place, pose, ragdoll]);
 
   const drop = useCallback(() => {
-    if (!ragdoll) return;
-    placeRagdoll(ragdoll, solvePose(ragdoll.rig, pose.drop));
-    setGeneration((g) => g + 1);
-  }, [pose, ragdoll]);
+    if (ragdoll) place(solvePose(ragdoll.rig, pose.drop), false);
+  }, [place, pose, ragdoll]);
 
   const capture = useCallback(
     () => (ragdoll ? captureRagdoll(ragdoll) : null),
@@ -61,7 +105,9 @@ export default function useRagdoll(
   useLayoutEffect(reset, [reset]);
 
   useBeforePhysicsStep((w) => {
-    if (ragdoll) enforceJointLimits(ragdoll, w.timestep);
+    if (!ragdoll) return;
+    if (ragdoll.statue) followStatue(ragdoll, ragdoll.statue);
+    else enforceJointLimits(ragdoll, w.timestep);
   });
 
   return { capture, drop, generation, ragdoll, reset };

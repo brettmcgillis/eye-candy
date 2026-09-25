@@ -52,10 +52,31 @@ export function swordFrame(tipward, roll, guard) {
   return new Matrix4().makeBasis(x, y, z).setPosition(guard);
 }
 
+// Pierce is measured against the body's own thickness along the blade:
+// 1 puts the tip at the back surface, below 1 keeps it inside the hull.
+export function pierceGap(bladeLength, thickness, pierce) {
+  const depth = Math.min(
+    Math.max(pierce * thickness, 0.03),
+    bladeLength - 0.02
+  );
+  return bladeLength - depth;
+}
+
 export function placeSwords(
   targets,
   blades,
-  { count, seed, spread, heightMin, heightMax, width, gapMin, gapMax, waist }
+  {
+    count,
+    seed,
+    spread,
+    heightMin,
+    heightMax,
+    width,
+    pierceMin,
+    pierceMax,
+    side = 'front',
+    waist,
+  }
 ) {
   const rand = mulberry32(seed);
   const raycaster = new Raycaster();
@@ -68,7 +89,7 @@ export function placeSwords(
     const dir = new Vector3(
       Math.sin(yaw) * Math.cos(pitch),
       -Math.sin(pitch),
-      -Math.cos(yaw) * Math.cos(pitch)
+      (side === 'back' ? 1 : -1) * Math.cos(yaw) * Math.cos(pitch)
     );
     const aim = new Vector3(
       (rand() * 2 - 1) * width,
@@ -76,11 +97,14 @@ export function placeSwords(
       0.03
     );
     raycaster.set(aim.clone().addScaledVector(dir, -1), dir);
-    const [hit] = raycaster.intersectObjects(targets, false);
+    const hits = raycaster.intersectObjects(targets, false);
     const variant = Math.floor(rand() * blades.length);
-    const gap = gapMin + rand() * (gapMax - gapMin);
+    const pierce = pierceMin + rand() * (pierceMax - pierceMin);
     const roll = rand() * Math.PI * 2;
-    if (hit) {
+    if (hits.length) {
+      const hit = hits[0];
+      const thickness = hits[hits.length - 1].distance - hit.distance;
+      const gap = pierceGap(blades[variant].bladeLength, thickness, pierce);
       placements.push({
         variant,
         host: hit.point.y < waist ? 'hips' : 'chest',

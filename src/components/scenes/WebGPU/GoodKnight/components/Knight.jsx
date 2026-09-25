@@ -17,8 +17,8 @@ import Interaction from './Interaction';
 
 function Knight({
   apiRef,
+  clickAction,
   grabFollow,
-  mode,
   gripGuardOffset,
   gripPalmOffset,
   handSwordDrop,
@@ -26,15 +26,16 @@ function Knight({
   pose,
   pressers,
   ragdollDamping,
+  ragdollEnabled,
   ragdollLinearDamping,
   ragdollFriction,
   stabImpulse,
   swordColliders,
   swordCount,
-  swordGapMax,
-  swordGapMin,
   swordHeightMax,
   swordHeightMin,
+  swordPierceMax,
+  swordPierceMin,
   swordSeed,
   swordSpread,
   swordWidth,
@@ -45,6 +46,7 @@ function Knight({
 
   const { capture, drop, generation, ragdoll, reset } = useRagdoll(rig, {
     damping: ragdollDamping,
+    enabled: ragdollEnabled,
     linearDamping: ragdollLinearDamping,
     friction: ragdollFriction,
     pose: POSES[pose],
@@ -66,21 +68,23 @@ function Knight({
   const placement = useMemo(
     () => ({
       count: swordCount,
-      gapMax: swordGapMax,
-      gapMin: swordGapMin,
       heightMax: swordHeightMax,
       heightMin: swordHeightMin,
+      pierceMax: swordPierceMax,
+      pierceMin: swordPierceMin,
       seed: swordSeed,
+      side: POSES[pose].swordSide,
       spread: swordSpread,
       waist: 0.95,
       width: swordWidth,
     }),
     [
+      pose,
       swordCount,
-      swordGapMax,
-      swordGapMin,
       swordHeightMax,
       swordHeightMin,
+      swordPierceMax,
+      swordPierceMin,
       swordSeed,
       swordSpread,
       swordWidth,
@@ -89,11 +93,11 @@ function Knight({
 
   const stab = useMemo(
     () => ({
-      gapMax: swordGapMax,
-      gapMin: swordGapMin,
       impulse: stabImpulse,
+      pierceMax: swordPierceMax,
+      pierceMin: swordPierceMin,
     }),
-    [stabImpulse, swordGapMax, swordGapMin]
+    [stabImpulse, swordPierceMax, swordPierceMin]
   );
 
   useFrame(() => {
@@ -118,7 +122,7 @@ function Knight({
             torsoTargets={torsoTargets}
           />
           <HandSword
-            dropEnabled={handSwordDrop}
+            dropEnabled={handSwordDrop && ragdollEnabled}
             dropThreshold={handSwordDropThreshold}
             generation={generation}
             gripWorld={gripWorld}
@@ -130,7 +134,7 @@ function Knight({
             blades={blades}
             followRate={grabFollow}
             impalementsRef={impalementsRef}
-            mode={mode}
+            mode={clickAction}
             ragdoll={ragdoll}
             stab={stab}
           />

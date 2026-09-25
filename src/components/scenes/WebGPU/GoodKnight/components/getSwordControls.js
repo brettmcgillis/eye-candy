@@ -45,19 +45,19 @@ export default function getSwordControls(p) {
         max: 1.45,
         step: 0.01,
       },
-      swordGapMin: {
-        label: 'Hilt Gap Min',
-        value: p.swordGapMin ?? 0.04,
+      swordPierceMin: {
+        label: 'Pierce Min',
+        value: p.swordPierceMin ?? 1.4,
         min: 0,
-        max: 0.6,
-        step: 0.01,
+        max: 4,
+        step: 0.05,
       },
-      swordGapMax: {
-        label: 'Hilt Gap Max',
-        value: p.swordGapMax ?? 0.28,
+      swordPierceMax: {
+        label: 'Pierce Max',
+        value: p.swordPierceMax ?? 3,
         min: 0,
-        max: 0.6,
-        step: 0.01,
+        max: 4,
+        step: 0.05,
       },
       stabImpulse: {
         label: 'Stab Impulse',

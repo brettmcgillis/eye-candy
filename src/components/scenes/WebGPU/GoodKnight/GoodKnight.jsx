@@ -1,4 +1,4 @@
-import React, { useMemo, useState } from 'react';
+import React, { useMemo } from 'react';
 
 import { Physics } from '@react-three/rapier';
 
@@ -6,7 +6,6 @@ import useSceneBackdrop from '@hooks/useSceneBackdrop';
 import { CameraRig } from '@modules/cameraRig';
 import { LightingRig } from '@modules/lightingRig';
 
-import ButtonOverlay from './components/ButtonOverlay';
 import Grass from './components/Grass';
 import Ground from './components/Ground';
 import Knight from './components/Knight';
@@ -18,11 +17,10 @@ import { createPressers } from './utils/press';
 const NO_AVOID = [];
 
 // A knight run through by every sword in the armory, left where he fell.
-// The corpse is a Rapier ragdoll placed in a baked pose: grab to throw him
-// around, or switch to stab mode and add to the collection.
+// The corpse is a Rapier ragdoll placed in a baked pose: click to grab and
+// throw him, or switch Click To to Stab and add to the collection.
 export default function GoodKnight() {
   const config = useSceneControls();
-  const [mode, setMode] = useState('grab');
   const pressers = useMemo(createPressers, []);
   const { stump } = POSES[config.pose];
 
@@ -64,24 +62,25 @@ export default function GoodKnight() {
         )}
         <Knight
           apiRef={config.knightApiRef}
+          clickAction={config.clickAction}
           grabFollow={config.grabFollow}
           gripGuardOffset={config.gripGuardOffset}
           gripPalmOffset={config.gripPalmOffset}
           handSwordDrop={config.handSwordDrop}
           handSwordDropThreshold={config.handSwordDropThreshold}
-          mode={mode}
           pose={config.pose}
           pressers={pressers}
           ragdollDamping={config.ragdollDamping}
+          ragdollEnabled={config.ragdollEnabled}
           ragdollLinearDamping={config.ragdollLinearDamping}
           ragdollFriction={config.ragdollFriction}
           stabImpulse={config.stabImpulse}
           swordColliders={config.swordColliders}
           swordCount={config.swordCount}
-          swordGapMax={config.swordGapMax}
-          swordGapMin={config.swordGapMin}
           swordHeightMax={config.swordHeightMax}
           swordHeightMin={config.swordHeightMin}
+          swordPierceMax={config.swordPierceMax}
+          swordPierceMin={config.swordPierceMin}
           swordSeed={config.swordSeed}
           swordSpread={config.swordSpread}
           swordWidth={config.swordWidth}
@@ -101,8 +100,6 @@ export default function GoodKnight() {
         windSpeed={config.windSpeed}
         windStrength={config.windStrength}
       />
-
-      <ButtonOverlay mode={mode} onModeChange={setMode} />
     </>
   );
 }

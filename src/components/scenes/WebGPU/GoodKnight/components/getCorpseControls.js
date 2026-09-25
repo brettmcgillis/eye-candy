@@ -8,6 +8,12 @@ export default function getCorpseControls(p, apiRef) {
   return folder(
     {
       pose: { label: 'Pose', options: POSE_OPTIONS, value: p.pose ?? 'fallen' },
+      clickAction: {
+        label: 'Click To',
+        options: { Grab: 'grab', Stab: 'stab', Nothing: 'off' },
+        value: p.clickAction ?? 'grab',
+      },
+      ragdollEnabled: { label: 'Ragdoll', value: p.ragdollEnabled ?? true },
       'Reset Corpse': button(() => apiRef.current?.reset()),
       'Drop Live': button(() => apiRef.current?.drop()),
       ...(localEnv() && {

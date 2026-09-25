@@ -8,7 +8,7 @@ import { Plane, Raycaster, Vector2, Vector3 } from 'three';
 import { mulberry32 } from '@utils/noise2d';
 
 import { PICK_GROUPS } from '../utils/ragdoll';
-import { swordFrame } from '../utils/swordPlacement';
+import { pierceGap, swordFrame } from '../utils/swordPlacement';
 
 const STAB_REACH = 0.7;
 
@@ -47,7 +47,7 @@ function Interaction({
     };
 
     const onDown = (event) => {
-      if (event.button !== 0) return;
+      if (event.button !== 0 || mode === 'off') return;
       const ray = castFrom(event);
       const hit = world.castRay(
         new rapier.Ray(ray.origin, ray.direction),
@@ -58,21 +58,42 @@ function Interaction({
       );
       if (!hit) return;
       const point = ray.at(hit.timeOfImpact, new Vector3());
-      const body = hit.collider.parent();
+      const { statue } = ragdoll;
+      const hitBody = hit.collider.parent();
+      const onCorpse =
+        hitBody === statue?.body || segmentOf.has(hitBody.handle);
+      const body = statue && onCorpse ? statue.body : hitBody;
       event.stopImmediatePropagation();
 
       if (mode === 'stab') {
-        const segment = segmentOf.get(body.handle);
+        const segment =
+          segmentOf.get(hitBody.handle) ??
+          statue?.segmentOf.get(hit.collider.handle);
         const impalements = impalementsRef.current;
         if (!segment || !impalements) return;
         const r = rand.current;
-        const gap = stab.gapMin + r() * (stab.gapMax - stab.gapMin);
+        const variant = Math.floor(r() * blades.length);
+        const far = 2;
+        const back = hit.collider.castRay(
+          new rapier.Ray(
+            point.clone().addScaledVector(ray.direction, far),
+            ray.direction.clone().negate()
+          ),
+          far,
+          true
+        );
+        const thickness = back < 0 ? 0.3 : far - back;
+        const gap = pierceGap(
+          blades[variant].bladeLength,
+          thickness,
+          stab.pierceMin + r() * (stab.pierceMax - stab.pierceMin)
+        );
         impalements.stab({
           distance: STAB_REACH,
           gap,
           now: clock.elapsedTime,
           segment,
-          variant: Math.floor(r() * blades.length),
+          variant,
           world: swordFrame(
             ray.direction,
             r() * Math.PI * 2,

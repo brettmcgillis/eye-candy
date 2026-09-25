@@ -21,14 +21,14 @@ export default function getEnvironmentControls(p) {
       groundColor: { label: 'Ground', value: p.groundColor ?? '#2c3a1c' },
       groundRadius: {
         label: 'Meadow Radius',
-        value: p.groundRadius ?? 7,
+        value: p.groundRadius ?? 5,
         min: 2,
         max: 20,
         step: 0.5,
       },
       grassCount: {
         label: 'Blades',
-        value: p.grassCount ?? 60000,
+        value: p.grassCount ?? 80000,
         min: 0,
         max: 200000,
         step: 1000,
@@ -49,7 +49,7 @@ export default function getEnvironmentControls(p) {
       },
       grassPressReach: {
         label: 'Parting Reach',
-        value: p.grassPressReach ?? 0.12,
+        value: p.grassPressReach ?? 0.16,
         min: 0,
         max: 0.5,
         step: 0.01,

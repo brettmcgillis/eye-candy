@@ -38,6 +38,27 @@ export const POSE_DROPS = {
   },
 };
 
+POSE_DROPS.kneeling = {
+  label: 'Taken a knee',
+  rigid: true,
+  swordSide: 'back',
+  drop: {
+    root: { position: [0, 0.48, 0], rotation: [0, 0, 0] },
+    joints: {
+      chest: [40, 0, 0],
+      head: [35, 0, 0],
+      thighL: [-95, 0, 15],
+      shinL: [95, 0, 0],
+      thighR: [8, 0, -30],
+      shinR: [90, 0, 0],
+      upperArmL: [-20, 0, 10],
+      forearmL: [-40, 0, 0],
+      upperArmR: [-25, 0, -10],
+      forearmR: [-50, 0, 0],
+    },
+  },
+};
+
 export const POSES = Object.fromEntries(
   Object.entries(POSE_DROPS).map(([id, pose]) => [
     id,

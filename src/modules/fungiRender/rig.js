@@ -98,6 +98,12 @@ export default function createSpecimenRig({
       return { center: fit.center, radius: fit.radius, size };
     },
 
+    matrix() {
+      content.updateWorldMatrix(true, false);
+
+      return Array.from(content.matrixWorld.elements);
+    },
+
     dispose() {
       materials.forEach((material) => material.dispose());
       tubes.dispose();

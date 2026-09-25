@@ -10,6 +10,7 @@ const HANDLED = new Set([
   'height',
   'mode',
   'png',
+  'svg',
   'views',
   'webp',
   'width',
@@ -67,13 +68,13 @@ export default function OptionSections({ kind, options, setOption }) {
           />
           <fieldset className="rw-fieldset rw-formats">
             <legend>Image files</legend>
-            {['png', 'webp'].map((format) => (
+            {['png', 'webp', 'svg'].map((format) => (
               <label htmlFor={`gw-${format}`} key={format}>
                 <input
                   checked={Boolean(options[format])}
                   disabled={
                     options[format] &&
-                    !['png', 'webp'].some(
+                    !['png', 'webp', 'svg'].some(
                       (other) => other !== format && options[other]
                     )
                   }

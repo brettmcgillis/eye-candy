@@ -13,6 +13,7 @@ import {
   frameView,
   loadKernel,
   parseCli,
+  renderSvg,
   rollArgs,
   sidecarFor,
   specimenAt,
@@ -34,13 +35,14 @@ async function main() {
   const options = { ...parsed.options, version: await readPackageVersion() };
   const views = resolveViews(options.views);
   const formats = ['png', 'webp'].filter((format) => options[format]);
+  const labels = [...formats, options.svg ? 'svg' : null].filter(Boolean);
   const outRoot = path.resolve(REPO_ROOT, String(options.out));
 
   await mkdir(outRoot, { recursive: true });
   process.stdout.write(
     `fungi stills: ${options.count} specimens, ${views.length} views each, ` +
       `${options.width}x${options.height} at ${options.pixelRatio}x, ` +
-      `formats ${formats.join('+')}\n` +
+      `formats ${labels.join('+')}\n` +
       `output: ${outRoot}\n`
   );
 
@@ -71,22 +73,35 @@ async function main() {
         await progress.stage(
           `rendering ${drawn.seed}, ${view} view`,
           async () => {
-            const frame = await capturer.capture({
+            const framing = {
               ...frameView(kernel, { bounds, options, view }),
               levels: (specimen) =>
                 kernel.fungi.stillLevels(specimen, {
                   grow: options.grow,
                   rot: options.rot,
                 }),
-            });
-            await Promise.all(
-              formats.map(async (format) =>
-                writeFile(
-                  path.join(dir, `${view}.${format}`),
-                  await encodeFrame(frame, format, options)
+            };
+            if (formats.length > 0) {
+              const frame = await capturer.capture(framing);
+              await Promise.all(
+                formats.map(async (format) =>
+                  writeFile(
+                    path.join(dir, `${view}.${format}`),
+                    await encodeFrame(frame, format, options)
+                  )
                 )
-              )
-            );
+              );
+            }
+            if (options.svg) {
+              await writeFile(
+                path.join(dir, `${view}.svg`),
+                await renderSvg(kernel, capturer, {
+                  ...drawn,
+                  options,
+                  view: framing,
+                })
+              );
+            }
           }
         );
         progress.update(index * views.length + viewIndex + 1);

@@ -101,9 +101,9 @@ export function specimenAt(kernel, { index, options, roll }) {
 // setup dominate a capture, and the rig's materials compile once.
 export async function createFungiCapturer(
   kernel,
-  { height, samples = 4, shadows = true, width }
+  { height, pixelRatio = 1, samples = 4, shadows = true, width }
 ) {
-  const { THREE, lights, look } = kernel;
+  const { THREE, TSL, lights, look } = kernel;
 
   // Mirrors src/app/scaffold/canvas/WebGPUCanvas.jsx: ACES tone mapping and
   // PCF soft shadows.
@@ -132,6 +132,40 @@ export async function createFungiCapturer(
   let lightGroup = null;
   let lightKey = null;
   let current = null;
+  let depthPipeline = null;
+
+  // Linear depth across two 8-bit channels: one channel over the frustum
+  // quantises far coarser than a fibre is thick.
+  function depthPass() {
+    if (depthPipeline) return depthPipeline;
+    const unit = TSL.pass(scene, camera)
+      .getLinearDepthNode()
+      .clamp(0, 1)
+      .mul(65535);
+    const high = unit.div(256).floor();
+    depthPipeline = new THREE.RenderPipeline(headless.renderer);
+    depthPipeline.outputColorTransform = false;
+    depthPipeline.outputNode = TSL.vec4(
+      high.div(255),
+      unit.sub(high.mul(256)).floor().div(255),
+      0,
+      1
+    );
+    return depthPipeline;
+  }
+
+  function aim({ eye, fov, levels, target }) {
+    // A still runs the reaction field out to the iteration count its growth
+    // level calls for, so a batch is repeatable.
+    rig.setLevels(levels(current), { catchUp: true });
+    const distance = Math.hypot(...eye.map((v, a) => v - target[a]));
+    camera.near = Math.max(0.05, distance - rig.bounds().radius * 2.5);
+    camera.far = distance + rig.bounds().radius * 3;
+    camera.fov = fov;
+    camera.position.set(...eye);
+    camera.lookAt(...target);
+    camera.updateProjectionMatrix();
+  }
 
   function setLights(config) {
     const key = config.backgroundColor;
@@ -159,20 +193,42 @@ export async function createFungiCapturer(
       return rig.bounds();
     },
 
-    async capture({ eye, fov, levels, target }) {
-      // A still runs the reaction field out to the iteration count its growth
-      // level calls for, so a batch is repeatable.
-      rig.setLevels(levels(current), { catchUp: true });
-      const distance = Math.hypot(...eye.map((v, a) => v - target[a]));
-      camera.near = Math.max(0.05, distance - rig.bounds().radius * 2.5);
-      camera.far = distance + rig.bounds().radius * 3;
-      camera.fov = fov;
-      camera.position.set(...eye);
-      camera.lookAt(...target);
-      camera.updateProjectionMatrix();
+    async capture(view) {
+      aim(view);
       // The first render after a uniform change reads back stale in Dawn.
       await headless.readFrame(() => post.render());
       return headless.readFrame(() => post.render());
+    },
+
+    // World-space depth per output pixel, for the SVG's hidden-line test.
+    async captureDepth(view) {
+      aim(view);
+      const pipeline = depthPass();
+      await headless.readFrame(() => pipeline.render());
+      const frame = await headless.readFrame(() => pipeline.render());
+      const { far, near } = camera;
+      const depths = new Float32Array(frame.width * frame.height);
+      for (let i = 0; i < depths.length; i += 1) {
+        const unit = (frame.data[i * 4] * 256 + frame.data[i * 4 + 1]) / 65535;
+        depths[i] = near + unit * (far - near);
+      }
+      return { data: depths, height: frame.height, width: frame.width };
+    },
+
+    // A hidden-line test in output pixels, whatever the pixel ratio is.
+    depthProbe(depth) {
+      return (x, y, z) => {
+        const px = Math.round(x * pixelRatio);
+        const py = Math.round(y * pixelRatio);
+        if (px < 0 || py < 0 || px >= depth.width || py >= depth.height) {
+          return true;
+        }
+        return z <= depth.data[py * depth.width + px];
+      };
+    },
+
+    matrix() {
+      return rig.matrix();
     },
 
     dispose() {
@@ -212,6 +268,29 @@ export function frameView(
   };
 }
 
+// The vector twin of a capture: the same specimen at the same levels,
+// projected as centrelines, with what the render hides removed by its depth
+// pass.
+export async function renderSvg(
+  kernel,
+  capturer,
+  { config, options, specimen, view }
+) {
+  const depth = options.svgOcclusion ? await capturer.captureDepth(view) : null;
+  return kernel.fungi.renderFungiSvg({
+    background: config.backgroundColor,
+    camera: view,
+    height: options.height,
+    levels: view.levels(specimen),
+    matrix: capturer.matrix(),
+    specimen,
+    sporeAmount: config.sporeAmount ?? 1,
+    stroke: options.svgStroke,
+    visible: depth ? capturer.depthProbe(depth) : null,
+    width: options.width,
+  });
+}
+
 export function sidecarFor({ config, options }) {
   return { preset: config, render: { ...options, base: undefined } };
 }
@@ -248,6 +327,7 @@ export async function withCapturer(kernel, options, work) {
     () =>
       createFungiCapturer(kernel, {
         height: options.height * options.pixelRatio,
+        pixelRatio: options.pixelRatio,
         samples: options.samples,
         shadows: options.shadows,
         width: options.width * options.pixelRatio,

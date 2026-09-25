@@ -122,3 +122,22 @@ the current specimen if the next isn't ready.
 Bloom runs only above a threshold of 1.0: the scene uses PostRig with
 `FUNGI_POST`, and the CLI uses `createSpecimenPost`, whose strength follows the
 specimen's glow gene. Emissive is the fibre's own colour × its glow weight.
+
+## SVG
+
+`fungi:generate --svg` writes a plottable twin of each still
+(`@modules/fungi/renderSvg.js`, three-free, projection shared with Flora via
+`svgProjection`):
+
+- One stroke per fibre centreline; a plate (aspect ≥ 2: gills, ridges, walls)
+  plots as its two edges; a bead is a circle.
+- The lifecycle is replayed on the CPU exactly as the tube and bead shaders
+  play it (member delay × stagger, grow front, droop, rot shrink, spore fall),
+  so a still at any `grow` / `rot` plots what it renders. Change a shader's
+  displacement and this mirror in the same commit.
+- Hidden line work is dropped against a depth pass of the same frame
+  (`svgOcclusion`); `svgStroke` 0 draws hairlines.
+- Pens are the five gradient stops plus `spore`: groups `stop-0..4`, then
+  `stop-0..4-beads` / `spore-beads` drawn above the lines.
+- There is no shading, so dense layers the render darkens with occlusion
+  (a honeycomb's backing) plot at full strength.

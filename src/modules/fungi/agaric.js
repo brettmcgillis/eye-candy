@@ -452,17 +452,38 @@ function buildWarts(e, g, rng, surf) {
     const nrm = surf.normal(s, theta);
     const size =
       cap.radius * cap.wartSize * rng.range(0.5, 1.3) * (1.1 - s * 0.5);
-    const beads = 1 + Math.floor(rng() * 4);
+    const around = [-Math.sin(theta), 0, Math.cos(theta)];
+    const down = [
+      around[1] * nrm[2] - around[2] * nrm[1],
+      around[2] * nrm[0] - around[0] * nrm[2],
+      around[0] * nrm[1] - around[1] * nrm[0],
+    ];
+    const spin = rng() * TAU;
+    const stretch = rng.range(1, 1.8);
+    const lobes = 2 + Math.floor(rng() * 4);
+    const lobePhase = rng() * TAU;
+    const peak = rng.range(0.5, 1.1);
+    const beads = 5 + Math.floor(rng() * 10);
 
     surf.at(s, theta, false, p);
     for (let b = 0; b < beads; b += 1) {
-      const j = b === 0 ? 0 : size * 0.9;
-      const r = size * (b === 0 ? 1 : rng.range(0.4, 0.7));
+      const phi = rng() * TAU;
+      const edge =
+        size *
+        1.3 *
+        (1 + 0.35 * Math.sin(phi * lobes + lobePhase)) *
+        (1 + (stretch - 1) * Math.abs(Math.cos(phi - spin)));
+      const rho = b === 0 ? 0 : edge * Math.sqrt(rng());
+      const fall = 1 - Math.min(1, rho / edge);
+      const r = size * (0.35 + 0.55 * fall) * rng.range(0.8, 1.15);
+      const lift = r * 0.25 + size * peak * fall ** 1.5;
+      const u = Math.cos(phi) * rho;
+      const v = Math.sin(phi) * rho;
 
       e.bead(
-        p[0] + nrm[0] * r * 0.4 + rng.signed() * j,
-        p[1] + nrm[1] * r * 0.4 + rng.signed() * j * 0.3,
-        p[2] + nrm[2] * r * 0.4 + rng.signed() * j,
+        p[0] + around[0] * u + down[0] * v + nrm[0] * lift,
+        p[1] + around[1] * u + down[1] * v + nrm[1] * lift,
+        p[2] + around[2] * u + down[2] * v + nrm[2] * lift,
         r,
         {
           born: 0.62 + 0.3 * s,

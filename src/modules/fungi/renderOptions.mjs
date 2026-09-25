@@ -233,6 +233,34 @@ const RENDER = {
     section: 'output',
     type: 'boolean',
   },
+  svg: {
+    default: false,
+    help: 'Write a plottable SVG: fibre centrelines, plate edges and bead circles, one pen per gradient stop',
+    label: 'SVG',
+    scope: 'still',
+    section: 'output',
+    type: 'boolean',
+  },
+  svgOcclusion: {
+    default: true,
+    help: 'Drop line work hidden behind nearer geometry (uses a depth pass)',
+    label: 'SVG hidden lines',
+    scope: 'still',
+    section: 'svg',
+    type: 'boolean',
+  },
+  svgStroke: {
+    default: 1,
+    help: 'Multiplier on the projected fibre width; 0 draws hairlines for plotting',
+    label: 'SVG stroke',
+    max: 8,
+    min: 0,
+    placeholder: 'N',
+    scope: 'still',
+    section: 'svg',
+    step: 0.1,
+    type: 'number',
+  },
   views: {
     default: 'front',
     help: `Comma-separated views: ${VIEWS.join(', ')}`,
@@ -435,12 +463,13 @@ const schema = createOptionSchema({
     palette: 'palette',
     render: 'render',
     roll: 'rolling',
+    svg: 'svg',
     video: 'video',
   },
   surfaceDefaults: SURFACE_DEFAULTS,
   validate(kind, options, fail) {
-    if (kind === 'still' && !options.png && !options.webp) {
-      throw fail('Select at least one output format: PNG or WebP.');
+    if (kind === 'still' && !options.png && !options.webp && !options.svg) {
+      throw fail('Select at least one output format: PNG, WebP or SVG.');
     }
     const longest = Math.max(options.width, options.height);
     if (longest * options.pixelRatio > 8192) {

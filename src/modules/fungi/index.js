@@ -10,4 +10,5 @@ export {
   timeline,
 } from './lifecycle';
 export { default as rollFungiConfig } from './rollConfig';
+export { default as renderFungiSvg } from './renderSvg';
 export * from './renderOptions.mjs';

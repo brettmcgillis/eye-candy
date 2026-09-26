@@ -1,6 +1,8 @@
 # // Weightless
 
-# // Intent / Use Cases
+[Back to main TODO](../../../../../TODO.md)
+
+## // Intent / Use Cases
 
 Particle hummingbird. The animated hummingbird rig drives a WebGPU compute
 sim: bind-pose surface samples (+ BVH interior fill) carry skin weights, and
@@ -10,25 +12,24 @@ curl noise (gpu-party style); fast-moving home points (wing tips / feathers)
 shed particles that inherit wing velocity, fly free under curl noise +
 pointer attractor, fade, and rebind. Afterimage post is toggleable.
 
-# // TODO:
-
-[Back to main TODO](../../../../../TODO.md)
+## // TODO:
 
 - [ ] bird hover animation has a few ms of stationary hover before moving up and down. can we skip this when looping? (not attempted — needs visual inspection of the clip's loop point to trim safely, can't verify blind)
 - [ ] what about the bee!?
 - [ ] butterfly might be a great candidate for surface curl
 - [ ] dragon fly
 - [ ] black goldfish
+- [ ] Could we do a split screen light/dark contrasting tech preset like juanrg92
 
-# // Presets
+## // Presets
 
-# // Features
+## // Features
 
-# // Interactivity
+## // Interactivity
 
 - [ ] Pointer-curl trail interaction
 
-# // Bugs
+## // Bugs
 
 - [ ] field lines seem to be attached to bird. shouldnt be.
 - [ ] internal lines still seem to go out of bounds of bird, may need to limit to mesh of n-volume,

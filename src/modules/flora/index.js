@@ -1,6 +1,7 @@
 export { default as buildSpecimen } from './buildSpecimen';
 export { default as renderSkeletonSvg } from './renderSkeletonSvg';
 export { default as renderFloraSvg } from './renderSvg';
+export * as svgProjection from './svgProjection';
 export { DEFAULT_PARAMS, resolveParams } from './params';
 export {
   default as DICE,

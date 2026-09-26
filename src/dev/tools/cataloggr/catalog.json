@@ -86,10 +86,6 @@
       "text": "can we build a scene with a lightbulb that casts darkness? Negative light intensity!"
     },
     {
-      "id": "idea-018",
-      "text": "2D truchet tiling using 3D geometry, animated so a tile, or tiles, rotate 90\\* every n-seconds. This could be easily accomplished using Torus geometry and appropriately setting tube, radius, and arc. Another interesting variation might be CSG tiles like the Chips in PaperStack"
-    },
-    {
       "id": "idea-019",
       "text": "Build a cymatic particle system `~/dev/examples/260610_ChladniCymatics`"
     },
@@ -131,15 +127,11 @@
     },
     {
       "id": "idea-031",
-      "text": "Use RorschachCLI as an example and build a similar tool/devpage for: Trucheterie, HexTrees"
-    },
-    {
-      "id": "idea-032",
-      "text": "Fauna (companion to the Flora scene, which shares a kernel pattern in @modules/flora): generative scene/CLI of procedural creatures (maybe voxel space invaders), generative in their forms, with CA type rules applied for living, reproducing, travelling, and dying."
+      "text": "Use RorschachCLI as an example and build a similar tool/devpage for: HexTrees, BlockParty"
     },
     {
       "id": "idea-1787939182486-vze6zf",
-      "text": "Create lenticular devTool for simulating lenticular sheet behaviour, creating, and previewing new lenticular pints from app scenes"
+      "text": "Create lenticular devTool for simulating lenticular sheet behaviour, creating, and previewing new lenticular pints from app scenes, from lenticular plan md"
     },
     {
       "id": "idea-1787939274190-u51hbq",
@@ -158,20 +150,24 @@
       "text": "A system of emissive spheres with curve/line tails, and grains of sand, in a studio similar to the speed of lightning"
     },
     {
-      "id": "idea-1788979248225-s7qxze",
-      "text": "could we use this technique to fill a geometry with a tube of reaction diffusion?\nhttps://tympanus.net/codrops/2026/09/07/drawing-with-light-an-exploration-of-lit-gpu-tubes-with-tsl-and-webgpu/"
-    },
-    {
-      "id": "idea-1788990090198-xx6p9y",
-      "text": "Generative scene. thick white plane with noise based csg subtraction revealing whats behind the panel. behind the panel is packed tightly with white wires and spheres. wires are writhing. spheres are moving from right to left/left to right, in between the wires. pushing them around as they writhe and as the spheres move across the scene"
-    },
-    {
-      "id": "idea-1789055458094-nzornx",
-      "text": "Could we build a 3d version of Youre Looking Radiant's default preset using godrays, transmission material, etc?"
-    },
-    {
       "id": "idea-1789139674203-9p9u35",
       "text": "Immortal Snail. Where does he go? What will he do? What will he learn?  This would require some hosting and persistence."
+    },
+    {
+      "id": "idea-1789665574471-872hqo",
+      "text": "Screen space comic book style framing like https://www.reddit.com/r/gamedevscreens/s/eOSS4LCS7M"
+    },
+    {
+      "id": "idea-1789736877998-iis4xj",
+      "text": "particle water ala Shoreline crashing against an abstract architecture like the one found in https://www.shadertoy.com/view/XttSz2"
+    },
+    {
+      "id": "idea-1789755896190-crq8e0",
+      "text": "use webcam face tracking and create a scene that appears different when youre not looking at it"
+    },
+    {
+      "id": "idea-1790349043155-zn4t69",
+      "text": "could we do a generative scene that emulates the poured paint styles of artists like"
     }
   ],
   "statuses": {
@@ -192,6 +188,7 @@
     "webgpu:birdsArentReal::$scene": true,
     "webgpu:crossTalk::CloudConnected": true,
     "webgpu:crossTalk::Waterworks": true,
+    "webgpu:flora::$scene": true,
     "webgpu:ghostBuster::$scene": true,
     "webgpu:horsesForCourses::$scene": true,
     "webgpu:loGlow::Default": true,

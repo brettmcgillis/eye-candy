@@ -15,74 +15,76 @@ export const DEFAULT_PRESET_VALUES = {
   godraysIntensity: 15,
   godraysPosition: [0, 4.2, 2.2],
 
-  // Global orientation applied to every shell (radians). Adjust if the posed
-  // hands don't stand upright by default — e.g. set X to ±Math.PI / 2.
   handsRotation: [0, 0, 0],
-  // Axis a pair's two hands open along when spread (to cup an inner shell).
-  spreadAxis: 'x',
 
-  // Inner / Middle / Outer shells. Each shell loads a demographic's posed pair
-  // and freezes a pose clip; nesting comes from scale + spread (and, once you
-  // author them, distinct cupping poses).
+  fitEnabled: true,
+  fitGap: 0.004,
+  fitTilt: 35,
+  fitCurl: 45,
+  fitSwing: 30,
+
   baseVisible: true,
   baseDemographic: 'child',
   basePose: 'Pray1',
-  baseMaterial: 'clean',
-  baseScale: 1,
+  baseMaterial: 'ivory',
+  baseScale: 0.8,
   baseSpread: 0,
   basePosition: [0, 0, 0],
-  baseYaw: 0,
+  baseRotation: [0, 0, 0],
 
   middleVisible: true,
   middleDemographic: 'female',
-  middlePose: 'Pray2',
-  middleMaterial: 'oil',
-  middleScale: 1,
+  middlePose: 'Pray1',
+  middleMaterial: 'blood',
+  middleScale: 0.92,
   middleSpread: 0,
   middlePosition: [0, 0, 0],
-  middleYaw: 0,
+  middleRotation: [0, 0, 0],
 
   outerVisible: true,
   outerDemographic: 'male',
-  outerPose: 'Pray3',
-  outerMaterial: 'blood',
+  outerPose: 'Pray1',
+  outerMaterial: 'oil',
   outerScale: 1,
   outerSpread: 0,
   outerPosition: [0, 0, 0],
-  outerYaw: 0,
+  outerRotation: [0, 0, 0],
 
-  cleanBaseColor: '#fafafa',
-  cleanAccentColor: '#ffffff',
-  cleanAmount: 0.08,
-  cleanScale: 3.5,
-  cleanIterations: 4,
-  cleanNoise: 0.12,
-  cleanNoiseScale: 0.75,
-  cleanSeed: 2,
-  cleanMetalness: 0.08,
-  cleanRoughness: 0.26,
+  ivoryBaseColor: '#f3ead8',
+  ivoryAccentColor: '#d8c9a8',
+  ivoryAmount: -0.2,
+  ivoryScale: 3.5,
+  ivoryIterations: 4,
+  ivoryNoise: 0.12,
+  ivoryNoiseScale: 0.75,
+  ivorySeed: 2,
+  ivoryMetalness: 0,
+  ivoryRoughness: 0.32,
+  ivoryClearcoat: 0.35,
 
-  oilBaseColor: '#050505',
-  oilAccentColor: '#101010',
+  oilBaseColor: '#030303',
+  oilAccentColor: '#0e0b07',
   oilAmount: -0.32,
   oilScale: 6.5,
   oilIterations: 6,
   oilNoise: 0.42,
   oilNoiseScale: 0.9,
   oilSeed: 7,
-  oilMetalness: 0.93,
-  oilRoughness: 0.08,
+  oilMetalness: 0.2,
+  oilRoughness: 0.12,
+  oilClearcoat: 1,
 
-  bloodBaseColor: '#240104',
-  bloodAccentColor: '#5d050d',
+  bloodBaseColor: '#2a0105',
+  bloodAccentColor: '#6a0710',
   bloodAmount: -0.12,
   bloodScale: 5.8,
   bloodIterations: 7,
   bloodNoise: 0.55,
   bloodNoiseScale: 0.82,
   bloodSeed: 11,
-  bloodMetalness: 0.58,
-  bloodRoughness: 0.16,
+  bloodMetalness: 0.1,
+  bloodRoughness: 0.22,
+  bloodClearcoat: 0.8,
 
   bloodFadeBaseColor: '#000000',
   bloodFadeAccentColor: '#ff0000',
@@ -94,6 +96,7 @@ export const DEFAULT_PRESET_VALUES = {
   bloodFadeSeed: 13,
   bloodFadeMetalness: 0.44,
   bloodFadeRoughness: 0.2,
+  bloodFadeClearcoat: 0.6,
   bloodFadeTipColor: '#000000',
   bloodFadeWristColor: '#a70000',
   bloodFadeGradientStart: 0.04,
@@ -114,26 +117,50 @@ export const DEFAULT_PRESET_VALUES = {
   bloomRadius: 0.45,
 };
 
-// Build a preset by listing the demographics for the visible shells, innermost
-// first. Pose and material stay tied to shell position (inner=Pray1/clean,
-// middle=Pray2/oil, outer=Pray3/blood) so each shell reads distinctly.
-function makePreset([base, middle, outer]) {
+const SHELL_LOOKS = [
+  { pose: 'Pray1', material: 'ivory' },
+  { pose: 'Pray1', material: 'blood' },
+  { pose: 'Pray1', material: 'oil' },
+];
+
+function makePreset(demographics) {
   return {
     ...DEFAULT_PRESET_VALUES,
-
-    baseVisible: Boolean(base),
-    baseDemographic: base || DEFAULT_PRESET_VALUES.baseDemographic,
-
-    middleVisible: Boolean(middle),
-    middleDemographic: middle || DEFAULT_PRESET_VALUES.middleDemographic,
-
-    outerVisible: Boolean(outer),
-    outerDemographic: outer || DEFAULT_PRESET_VALUES.outerDemographic,
+    ...Object.fromEntries(
+      ['base', 'middle', 'outer'].flatMap((prefix, i) => [
+        [`${prefix}Visible`, Boolean(demographics[i])],
+        [
+          `${prefix}Demographic`,
+          demographics[i] || DEFAULT_PRESET_VALUES[`${prefix}Demographic`],
+        ],
+        [`${prefix}Pose`, SHELL_LOOKS[i].pose],
+        [`${prefix}Material`, SHELL_LOOKS[i].material],
+      ])
+    ),
   };
 }
 
 const PRESETS = {
   [DEFAULT_PRESET]: DEFAULT_PRESET_VALUES,
+
+  'Blood, Blood, Ivory': {
+    ...DEFAULT_PRESET_VALUES,
+    outerMaterial: 'blood',
+  },
+
+  'Nested Prayer': {
+    ...DEFAULT_PRESET_VALUES,
+    middleMaterial: 'ivory',
+    outerMaterial: 'ivory',
+    middlePosition: [0, -0.06, 0.05],
+    outerPosition: [0, -0.12, 0.1],
+  },
+
+  'Held Shut': {
+    ...DEFAULT_PRESET_VALUES,
+    outerPosition: [0, 0.08, -0.06],
+    outerRotation: [0, Math.PI, 0],
+  },
 
   '1 child': makePreset(['child']),
   '2 child': makePreset(['child', 'child']),

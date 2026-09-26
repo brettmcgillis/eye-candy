@@ -14,8 +14,9 @@ export default function createHandsMaterial({
   seed,
   metalness,
   roughness,
-  gradientTipColor,
-  gradientWristColor,
+  clearcoat = 0,
+  tipColor,
+  wristColor,
   gradientStart = 0,
   gradientEnd = 1,
 }) {
@@ -32,29 +33,25 @@ export default function createHandsMaterial({
 
   let colorNode = rustNode;
 
-  if (gradientTipColor && gradientWristColor) {
+  if (tipColor && wristColor) {
     const gradient = smoothstep(
       gradientStart,
       gradientEnd,
       attribute('prayerGradient')
     );
-    const gradientColor = mix(
-      color(gradientTipColor),
-      color(gradientWristColor),
-      gradient
-    );
-
     colorNode = mix(
-      color(gradientTipColor),
-      rustNode.mul(gradientColor),
+      color(tipColor),
+      rustNode.mul(mix(color(tipColor), color(wristColor), gradient)),
       gradient
     );
   }
 
-  return new THREE.MeshStandardNodeMaterial({
+  return new THREE.MeshPhysicalNodeMaterial({
     colorNode,
     metalness,
     roughness,
+    clearcoat,
+    clearcoatRoughness: 0.04,
     side: THREE.DoubleSide,
   });
 }

@@ -1,191 +1,146 @@
 import React, { memo, useEffect, useMemo } from 'react';
 
+import usePosedHands from '../hooks/usePosedHands';
 import createHandsMaterial from '../utils/createHandsMaterial';
+import { handsInFrame, shellMatrix } from '../utils/posedHands';
+import solveNesting from '../utils/solveNesting';
 import PrayerHands from './PrayerHands';
 
-function resolveMaterial(selection, materials) {
-  return materials[selection] || materials.clean;
+const MATERIAL_PREFIXES = ['ivory', 'oil', 'blood', 'bloodFade'];
+const MATERIAL_KEYS = [
+  'baseColor',
+  'accentColor',
+  'amount',
+  'scale',
+  'iterations',
+  'noise',
+  'noiseScale',
+  'seed',
+  'metalness',
+  'roughness',
+  'clearcoat',
+  'tipColor',
+  'wristColor',
+  'gradientStart',
+  'gradientEnd',
+];
+
+function capitalize(key) {
+  return key[0].toUpperCase() + key.slice(1);
 }
 
-// Compose the global hands orientation with a shell's own yaw.
-function shellRotation(handsRotation, yaw) {
-  const base = handsRotation || [0, 0, 0];
-  return [base[0], base[1] + (yaw || 0), base[2]];
+function materialOptions(config, prefix) {
+  return Object.fromEntries(
+    MATERIAL_KEYS.map((key) => [key, config[`${prefix}${capitalize(key)}`]])
+  );
+}
+
+function useHandsMaterials(config) {
+  const optionsKey = JSON.stringify(
+    MATERIAL_PREFIXES.map((prefix) => materialOptions(config, prefix))
+  );
+
+  const materials = useMemo(() => {
+    return Object.fromEntries(
+      JSON.parse(optionsKey).map((options, i) => [
+        MATERIAL_PREFIXES[i],
+        createHandsMaterial(options),
+      ])
+    );
+  }, [optionsKey]);
+
+  useEffect(() => {
+    return () => Object.values(materials).forEach((m) => m.dispose());
+  }, [materials]);
+
+  return materials;
+}
+
+function shellOf(config, prefix) {
+  const base = config.handsRotation;
+  const own = config[`${prefix}Rotation`];
+  return {
+    prefix,
+    visible: config[`${prefix}Visible`],
+    material: config[`${prefix}Material`],
+    extraGap: config[`${prefix}Spread`],
+    transform: {
+      position: config[`${prefix}Position`],
+      rotation: base.map((value, i) => value + own[i]),
+      scale: config[`${prefix}Scale`],
+    },
+  };
+}
+
+function useShellMatrix(transform, posed) {
+  const key = JSON.stringify(transform);
+  return useMemo(() => shellMatrix(JSON.parse(key), posed), [key, posed]);
 }
 
 function PrayerCluster({ config }) {
-  const cleanMaterial = useMemo(() => {
-    return createHandsMaterial({
-      baseColor: config.cleanBaseColor,
-      accentColor: config.cleanAccentColor,
-      amount: config.cleanAmount,
-      scale: config.cleanScale,
-      iterations: config.cleanIterations,
-      noise: config.cleanNoise,
-      noiseScale: config.cleanNoiseScale,
-      seed: config.cleanSeed,
-      metalness: config.cleanMetalness,
-      roughness: config.cleanRoughness,
-    });
-  }, [
-    config.cleanBaseColor,
-    config.cleanAccentColor,
-    config.cleanAmount,
-    config.cleanScale,
-    config.cleanIterations,
-    config.cleanNoise,
-    config.cleanNoiseScale,
-    config.cleanSeed,
-    config.cleanMetalness,
-    config.cleanRoughness,
+  const materials = useHandsMaterials(config);
+
+  const shells = [
+    shellOf(config, 'base'),
+    shellOf(config, 'middle'),
+    shellOf(config, 'outer'),
+  ];
+
+  const posed = [
+    usePosedHands(config.baseDemographic, config.basePose),
+    usePosedHands(config.middleDemographic, config.middlePose),
+    usePosedHands(config.outerDemographic, config.outerPose),
+  ];
+
+  const matrices = [
+    useShellMatrix(shells[0].transform, posed[0]),
+    useShellMatrix(shells[1].transform, posed[1]),
+    useShellMatrix(shells[2].transform, posed[2]),
+  ];
+
+  const nestingKey = JSON.stringify([
+    shells.map((shell) => [shell.visible, shell.extraGap]),
+    config.fitEnabled,
+    config.fitGap,
+    config.fitTilt,
+    config.fitCurl,
+    config.fitSwing,
   ]);
 
-  const oilMaterial = useMemo(() => {
-    return createHandsMaterial({
-      baseColor: config.oilBaseColor,
-      accentColor: config.oilAccentColor,
-      amount: config.oilAmount,
-      scale: config.oilScale,
-      iterations: config.oilIterations,
-      noise: config.oilNoise,
-      noiseScale: config.oilNoiseScale,
-      seed: config.oilSeed,
-      metalness: config.oilMetalness,
-      roughness: config.oilRoughness,
+  const corrections = useMemo(() => {
+    const [visibility, fitEnabled, gap, maxTilt, maxCurl, maxSwing] =
+      JSON.parse(nestingKey);
+    const result = [null, null, null];
+    if (!fitEnabled) return result;
+
+    const active = [0, 1, 2].filter((i) => visibility[i][0]);
+    const solved = solveNesting(
+      active.map((i) => ({
+        extraGap: visibility[i][1],
+        hands: handsInFrame(posed[i].hands, matrices[i]),
+      })),
+      { gap, maxTilt, maxCurl, maxSwing }
+    );
+    active.forEach((i, k) => {
+      result[i] = solved[k];
     });
-  }, [
-    config.oilBaseColor,
-    config.oilAccentColor,
-    config.oilAmount,
-    config.oilScale,
-    config.oilIterations,
-    config.oilNoise,
-    config.oilNoiseScale,
-    config.oilSeed,
-    config.oilMetalness,
-    config.oilRoughness,
-  ]);
-
-  const bloodMaterial = useMemo(() => {
-    return createHandsMaterial({
-      baseColor: config.bloodBaseColor,
-      accentColor: config.bloodAccentColor,
-      amount: config.bloodAmount,
-      scale: config.bloodScale,
-      iterations: config.bloodIterations,
-      noise: config.bloodNoise,
-      noiseScale: config.bloodNoiseScale,
-      seed: config.bloodSeed,
-      metalness: config.bloodMetalness,
-      roughness: config.bloodRoughness,
-    });
-  }, [
-    config.bloodBaseColor,
-    config.bloodAccentColor,
-    config.bloodAmount,
-    config.bloodScale,
-    config.bloodIterations,
-    config.bloodNoise,
-    config.bloodNoiseScale,
-    config.bloodSeed,
-    config.bloodMetalness,
-    config.bloodRoughness,
-  ]);
-
-  const bloodFadeMaterial = useMemo(() => {
-    return createHandsMaterial({
-      baseColor: config.bloodFadeBaseColor,
-      accentColor: config.bloodFadeAccentColor,
-      amount: config.bloodFadeAmount,
-      scale: config.bloodFadeScale,
-      iterations: config.bloodFadeIterations,
-      noise: config.bloodFadeNoise,
-      noiseScale: config.bloodFadeNoiseScale,
-      seed: config.bloodFadeSeed,
-      metalness: config.bloodFadeMetalness,
-      roughness: config.bloodFadeRoughness,
-      gradientTipColor: config.bloodFadeTipColor,
-      gradientWristColor: config.bloodFadeWristColor,
-      gradientStart: config.bloodFadeGradientStart,
-      gradientEnd: config.bloodFadeGradientEnd,
-    });
-  }, [
-    config.bloodFadeAccentColor,
-    config.bloodFadeAmount,
-    config.bloodFadeBaseColor,
-    config.bloodFadeGradientEnd,
-    config.bloodFadeGradientStart,
-    config.bloodFadeIterations,
-    config.bloodFadeMetalness,
-    config.bloodFadeNoise,
-    config.bloodFadeNoiseScale,
-    config.bloodFadeRoughness,
-    config.bloodFadeScale,
-    config.bloodFadeSeed,
-    config.bloodFadeTipColor,
-    config.bloodFadeWristColor,
-  ]);
-
-  useEffect(() => {
-    return () => {
-      cleanMaterial.dispose();
-      oilMaterial.dispose();
-      bloodMaterial.dispose();
-      bloodFadeMaterial.dispose();
-    };
-  }, [bloodFadeMaterial, bloodMaterial, cleanMaterial, oilMaterial]);
-
-  const materials = useMemo(() => {
-    return {
-      clean: cleanMaterial,
-      oil: oilMaterial,
-      blood: bloodMaterial,
-      bloodFade: bloodFadeMaterial,
-    };
-  }, [bloodFadeMaterial, bloodMaterial, cleanMaterial, oilMaterial]);
+    return result;
+  }, [nestingKey, ...posed, ...matrices]);
 
   return (
     <group>
-      {config.baseVisible && (
-        <PrayerHands
-          demographic={config.baseDemographic}
-          pose={config.basePose}
-          material={resolveMaterial(config.baseMaterial, materials)}
-          withGradient={config.baseMaterial === 'bloodFade'}
-          scale={config.baseScale}
-          spread={config.baseSpread}
-          spreadAxis={config.spreadAxis}
-          position={config.basePosition}
-          rotation={shellRotation(config.handsRotation, config.baseYaw)}
-        />
-      )}
-
-      {config.middleVisible && (
-        <PrayerHands
-          demographic={config.middleDemographic}
-          pose={config.middlePose}
-          material={resolveMaterial(config.middleMaterial, materials)}
-          withGradient={config.middleMaterial === 'bloodFade'}
-          scale={config.middleScale}
-          spread={config.middleSpread}
-          spreadAxis={config.spreadAxis}
-          position={config.middlePosition}
-          rotation={shellRotation(config.handsRotation, config.middleYaw)}
-        />
-      )}
-
-      {config.outerVisible && (
-        <PrayerHands
-          demographic={config.outerDemographic}
-          pose={config.outerPose}
-          material={resolveMaterial(config.outerMaterial, materials)}
-          withGradient={config.outerMaterial === 'bloodFade'}
-          scale={config.outerScale}
-          spread={config.outerSpread}
-          spreadAxis={config.spreadAxis}
-          position={config.outerPosition}
-          rotation={shellRotation(config.handsRotation, config.outerYaw)}
-        />
+      {shells.map(
+        (shell, i) =>
+          shell.visible && (
+            <PrayerHands
+              key={shell.prefix}
+              posed={posed[i]}
+              matrix={matrices[i]}
+              corrections={corrections[i]}
+              material={materials[shell.material] || materials.ivory}
+              withGradient={shell.material === 'bloodFade'}
+            />
+          )
       )}
     </group>
   );

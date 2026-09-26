@@ -13,17 +13,22 @@ import PRESETS, {
 const SCENE_LABEL = 'Prayer';
 const CAMERA_FOLDER_PATH = `${SCENE_LABEL}.Camera`;
 const HANDS_MATERIAL_OPTIONS = {
-  Clean: 'clean',
+  Ivory: 'ivory',
   Oil: 'oil',
   Blood: 'blood',
   'Black Blood': 'bloodFade',
 };
 const DEMOGRAPHIC_OPTIONS = { Child: 'child', Female: 'female', Male: 'male' };
 const POSE_OPTIONS = {
-  'Pose 1': 'Pray1',
-  'Pose 2': 'Pray2',
-  'Pose 3': 'Pray3',
+  Prayer: 'Pray1',
+  'Open Palm': 'Pray2',
+  'Open Palm (alt)': 'Pray3',
 };
+const SHELL_FOLDERS = [
+  ['Inner', 'base', 4],
+  ['Middle', 'middle', 5],
+  ['Outer', 'outer', 6],
+];
 
 const CAMERA = {
   defaultMode: 'orbit',
@@ -128,6 +133,13 @@ function materialFolder(prefix, label, p) {
         max: 1,
         step: 0.01,
       },
+      [`${prefix}Clearcoat`]: {
+        label: 'Clearcoat',
+        value: p[`${prefix}Clearcoat`],
+        min: 0,
+        max: 1,
+        step: 0.01,
+      },
       ...(hasGradientControls
         ? {
             [`${prefix}TipColor`]: {
@@ -199,151 +211,92 @@ export default function useSceneControls() {
           step: 0.01,
           label: 'Base Rotation',
         },
-        spreadAxis: {
-          value: p.spreadAxis,
-          label: 'Spread Axis',
-          options: { X: 'x', Y: 'y', Z: 'z' },
-        },
-        Inner: folder(
+        Fit: folder(
           {
-            baseVisible: { value: p.baseVisible, label: 'Visible' },
-            baseDemographic: {
-              value: p.baseDemographic,
-              label: 'Hands',
-              options: DEMOGRAPHIC_OPTIONS,
-            },
-            basePose: {
-              value: p.basePose,
-              label: 'Pose',
-              options: POSE_OPTIONS,
-            },
-            baseMaterial: {
-              value: p.baseMaterial,
-              label: 'Material',
-              options: HANDS_MATERIAL_OPTIONS,
-            },
-            baseScale: {
-              value: p.baseScale,
-              min: 0.2,
-              max: 4,
-              step: 0.01,
-              label: 'Scale',
-            },
-            baseSpread: {
-              value: p.baseSpread,
+            fitEnabled: { value: p.fitEnabled, label: 'Rest Against' },
+            fitGap: {
+              value: p.fitGap,
               min: 0,
-              max: 2,
-              step: 0.005,
-              label: 'Spread',
+              max: 0.05,
+              step: 0.001,
+              label: 'Contact Gap',
             },
-            basePosition: {
-              value: p.basePosition,
-              step: 0.01,
-              label: 'Position',
+            fitTilt: {
+              value: p.fitTilt,
+              min: 0,
+              max: 60,
+              step: 1,
+              label: 'Max Tilt°',
             },
-            baseYaw: {
-              value: p.baseYaw,
-              min: -Math.PI,
-              max: Math.PI,
-              step: 0.01,
-              label: 'Yaw',
+            fitCurl: {
+              value: p.fitCurl,
+              min: 0,
+              max: 90,
+              step: 1,
+              label: 'Max Finger Curl°',
+            },
+            fitSwing: {
+              value: p.fitSwing,
+              min: 0,
+              max: 60,
+              step: 1,
+              label: 'Max Wrist Bend°',
             },
           },
           { collapsed: true }
         ),
-        Middle: folder(
-          {
-            middleVisible: { value: p.middleVisible, label: 'Visible' },
-            middleDemographic: {
-              value: p.middleDemographic,
-              label: 'Hands',
-              options: DEMOGRAPHIC_OPTIONS,
-            },
-            middlePose: {
-              value: p.middlePose,
-              label: 'Pose',
-              options: POSE_OPTIONS,
-            },
-            middleMaterial: {
-              value: p.middleMaterial,
-              label: 'Material',
-              options: HANDS_MATERIAL_OPTIONS,
-            },
-            middleScale: {
-              value: p.middleScale,
-              min: 0.2,
-              max: 5,
-              step: 0.01,
-              label: 'Scale',
-            },
-            middleSpread: {
-              value: p.middleSpread,
-              min: 0,
-              max: 2,
-              step: 0.005,
-              label: 'Spread',
-            },
-            middlePosition: {
-              value: p.middlePosition,
-              step: 0.01,
-              label: 'Position',
-            },
-            middleYaw: {
-              value: p.middleYaw,
-              min: -Math.PI,
-              max: Math.PI,
-              step: 0.01,
-              label: 'Yaw',
-            },
-          },
-          { collapsed: true }
-        ),
-        Outer: folder(
-          {
-            outerVisible: { value: p.outerVisible, label: 'Visible' },
-            outerDemographic: {
-              value: p.outerDemographic,
-              label: 'Hands',
-              options: DEMOGRAPHIC_OPTIONS,
-            },
-            outerPose: {
-              value: p.outerPose,
-              label: 'Pose',
-              options: POSE_OPTIONS,
-            },
-            outerMaterial: {
-              value: p.outerMaterial,
-              label: 'Material',
-              options: HANDS_MATERIAL_OPTIONS,
-            },
-            outerScale: {
-              value: p.outerScale,
-              min: 0.2,
-              max: 6,
-              step: 0.01,
-              label: 'Scale',
-            },
-            outerSpread: {
-              value: p.outerSpread,
-              min: 0,
-              max: 2,
-              step: 0.005,
-              label: 'Spread',
-            },
-            outerPosition: {
-              value: p.outerPosition,
-              step: 0.01,
-              label: 'Position',
-            },
-            outerYaw: {
-              value: p.outerYaw,
-              min: -Math.PI,
-              max: Math.PI,
-              step: 0.01,
-              label: 'Yaw',
-            },
-          },
-          { collapsed: true }
+        ...Object.fromEntries(
+          SHELL_FOLDERS.map(([label, prefix, maxScale]) => [
+            label,
+            folder(
+              {
+                [`${prefix}Visible`]: {
+                  value: p[`${prefix}Visible`],
+                  label: 'Visible',
+                },
+                [`${prefix}Demographic`]: {
+                  value: p[`${prefix}Demographic`],
+                  label: 'Hands',
+                  options: DEMOGRAPHIC_OPTIONS,
+                },
+                [`${prefix}Pose`]: {
+                  value: p[`${prefix}Pose`],
+                  label: 'Pose',
+                  options: POSE_OPTIONS,
+                },
+                [`${prefix}Material`]: {
+                  value: p[`${prefix}Material`],
+                  label: 'Material',
+                  options: HANDS_MATERIAL_OPTIONS,
+                },
+                [`${prefix}Scale`]: {
+                  value: p[`${prefix}Scale`],
+                  min: 0.2,
+                  max: maxScale,
+                  step: 0.01,
+                  label: 'Scale',
+                },
+                [`${prefix}Spread`]: {
+                  value: p[`${prefix}Spread`],
+                  min: 0,
+                  max: 0.3,
+                  step: 0.001,
+                  label: 'Extra Gap',
+                },
+                [`${prefix}Position`]: {
+                  value: p[`${prefix}Position`],
+                  step: 0.01,
+                  label: 'Position',
+                },
+                [`${prefix}Rotation`]: {
+                  value: p[`${prefix}Rotation`],
+                  step: 0.01,
+                  label: 'Rotation',
+                },
+              },
+              { collapsed: true }
+            ),
+          ])
         ),
       },
       { collapsed: true }
@@ -404,7 +357,7 @@ export default function useSceneControls() {
 
     Materials: folder(
       {
-        Clean: materialFolder('clean', 'Clean', p),
+        Ivory: materialFolder('ivory', 'Ivory', p),
         Oil: materialFolder('oil', 'Oil', p),
         Blood: materialFolder('blood', 'Blood', p),
         BlackBlood: materialFolder('bloodFade', 'Black Blood', p),

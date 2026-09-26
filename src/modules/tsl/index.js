@@ -11,3 +11,24 @@ export {
   fractalPixelate,
   updateFractalPixelateUniforms,
 } from './fractalPixelate';
+export {
+  HALFTONE_VARIANTS,
+  createMouseTrail,
+  halftone,
+  updateHalftoneUniforms,
+} from './halftone';
+export {
+  DITHER_PATTERNS,
+  DITHER_QUANTIZE,
+  dither,
+  updateDitherUniforms,
+} from './dither';
+export {
+  SHADING_MOTION_MODES,
+  createShadingMotion,
+  createVelocityMaterial,
+  createVelocityTarget,
+  motionBlurNode,
+  updateShadingMotionUniforms,
+  velocityMapNode,
+} from './shadingMotion';

@@ -27,14 +27,14 @@ import DevPageHeaderBar from '../../shell/DevPageHeaderBar';
 import './CataloggrPage.css';
 import IdeaBoard from './IdeaBoard';
 import PostBoard from './PostBoard';
-import SceneCard from './SceneCard';
 import SceneDetail from './SceneDetail';
+import SceneGrid from './SceneGrid';
 import ThumbnailSeeder, { readSeedSession } from './ThumbnailSeeder';
 import {
   AREA_ORDER,
   buildCatalogScenes,
+  getProgress,
   getSceneTargets,
-  getStatusKey,
   toCatalogDevTool,
   toCatalogTodoOnly,
 } from './catalogData';
@@ -79,17 +79,6 @@ function getSearchPlaceholder(view) {
 
 function normalizeSearchText(value) {
   return value.toLowerCase().replace(/&/gu, 'and').replace(/\s+/gu, ' ').trim();
-}
-
-function getProgress(scene, statuses) {
-  if (scene.trackPosting === false) return { postedCount: 0, totalCount: 0 };
-  const targets = getSceneTargets(scene);
-  const postedCount = targets.filter(
-    (presetName) =>
-      statuses[scene.statusKey ?? getStatusKey(scene.key, presetName)]
-  ).length;
-
-  return { postedCount, totalCount: targets.length };
 }
 
 function matchesView(scene, view, statuses) {
@@ -466,15 +455,6 @@ export default function CataloggrPage() {
     }
   }, []);
 
-  const handleManageTodo = useCallback((entryKey) => {
-    setSelectedKey(entryKey);
-    setError('');
-    startTransition(() => {
-      setSelectedStat(null);
-      setView('all');
-    });
-  }, []);
-
   const handleTodoError = useCallback((message) => setError(message), []);
 
   const handleCloseDetail = useCallback(() => setSelectedKey(null), []);
@@ -803,42 +783,37 @@ export default function CataloggrPage() {
           visibleIdeas={filteredIdeas}
         />
       ) : null}
-      {view === 'post' ? (
-        <PostBoard
-          demoScenes={filteredDemoScenes}
-          devTools={filteredDevTools}
-          disabled={loading || saving}
-          onManageTodo={handleManageTodo}
-          onToggle={handleToggle}
-          sortDirection={postSortDirection}
-          sortKey={postSortKey}
-          showcaseScenes={filteredScenes}
-          statuses={statuses}
-        />
-      ) : null}
-      {showGrid ? (
+      {showGrid || view === 'post' ? (
         <div
           className="cataloggr-browser"
           data-detail={selectedEntry ? 'open' : undefined}
         >
-          <section className="cataloggr-grid" aria-label="Scenes and dev tools">
-            {gridEntries.map((entry) => {
-              const progress = getProgress(entry, statuses);
-              return (
-                <SceneCard
-                  entry={entry}
-                  key={entry.key}
-                  onDropImage={handleDropImage}
-                  onSelect={setSelectedKey}
-                  postedCount={progress.postedCount}
-                  selected={entry.key === selectedKey}
-                  thumbnailVersion={thumbnails[entry.sourcePath]}
-                  todo={todosBySource.get(entry.sourcePath)}
-                  totalCount={progress.totalCount}
-                />
-              );
-            })}
-          </section>
+          {view === 'post' ? (
+            <PostBoard
+              demoScenes={filteredDemoScenes}
+              devTools={filteredDevTools}
+              onDropImage={handleDropImage}
+              onSelect={setSelectedKey}
+              selectedKey={selectedKey}
+              showcaseScenes={filteredScenes}
+              sortDirection={postSortDirection}
+              sortKey={postSortKey}
+              statuses={statuses}
+              thumbnails={thumbnails}
+              todosBySource={todosBySource}
+            />
+          ) : (
+            <SceneGrid
+              entries={gridEntries}
+              label="Scenes and dev tools"
+              onDropImage={handleDropImage}
+              onSelect={setSelectedKey}
+              selectedKey={selectedKey}
+              statuses={statuses}
+              thumbnails={thumbnails}
+              todosBySource={todosBySource}
+            />
+          )}
           {selectedEntry ? (
             <SceneDetail
               disabled={loading || saving}

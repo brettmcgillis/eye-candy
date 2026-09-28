@@ -176,6 +176,14 @@
     {
       "id": "idea-1790555433867-os9gkp",
       "text": "generative geodes using the sand grain particles."
+    },
+    {
+      "id": "idea-1790557379760-0fuvi4",
+      "text": "generative networks. use noise to scatter points and then networkTest them together"
+    },
+    {
+      "id": "idea-1790559608571-v4x9vh",
+      "text": "generative scene using fractalPixelate's recursive subdivision and the pallettes & gradients."
     }
   ],
   "statuses": {

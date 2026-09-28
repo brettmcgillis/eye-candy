@@ -1,6 +1,6 @@
 import React, { memo, useMemo } from 'react';
 
-import SceneRow from './SceneRow';
+import SceneGrid from './SceneGrid';
 import { getSceneTargets, getStatusKey, toCatalogDevTool } from './catalogData';
 
 function getPostedCount(entry, statuses) {
@@ -52,82 +52,45 @@ function PostSection({ children, count, title }) {
 function PostBoard({
   demoScenes,
   devTools,
-  disabled,
-  onManageTodo,
-  onToggle,
+  onDropImage,
+  onSelect,
+  selectedKey,
+  showcaseScenes,
   sortDirection,
   sortKey,
-  showcaseScenes,
   statuses,
+  thumbnails,
+  todosBySource,
 }) {
-  const sortedShowcaseScenes = useMemo(
-    () => sortPostEntries(showcaseScenes, statuses, sortKey, sortDirection),
-    [showcaseScenes, sortDirection, sortKey, statuses]
-  );
-  const sortedDemoScenes = useMemo(
-    () => sortPostEntries(demoScenes, statuses, sortKey, sortDirection),
-    [demoScenes, sortDirection, sortKey, statuses]
-  );
-  const sortedDevTools = useMemo(
+  const sections = useMemo(
     () =>
-      sortPostEntries(
-        devTools.map(toCatalogDevTool),
-        statuses,
-        sortKey,
-        sortDirection
-      ),
-    [devTools, sortDirection, sortKey, statuses]
+      [
+        ['Showcase scenes', showcaseScenes],
+        ['Toolbox / Test Lab demos', demoScenes],
+        ['Dev tools', devTools.map(toCatalogDevTool)],
+      ].map(([title, entries]) => [
+        title,
+        sortPostEntries(entries, statuses, sortKey, sortDirection),
+      ]),
+    [demoScenes, devTools, showcaseScenes, sortDirection, sortKey, statuses]
   );
 
   return (
     <div className="cataloggr-post-board">
-      <PostSection count={sortedShowcaseScenes.length} title="Showcase scenes">
-        <div className="cataloggr-list">
-          {sortedShowcaseScenes.map((scene) => (
-            <SceneRow
-              disabled={disabled}
-              key={scene.key}
-              onManageTodo={onManageTodo}
-              onToggle={onToggle}
-              scene={scene}
-              statuses={statuses}
-            />
-          ))}
-        </div>
-      </PostSection>
-
-      <PostSection
-        count={sortedDemoScenes.length}
-        title="Toolbox / Test Lab demos"
-      >
-        <div className="cataloggr-list">
-          {sortedDemoScenes.map((scene) => (
-            <SceneRow
-              disabled={disabled}
-              key={scene.key}
-              onManageTodo={onManageTodo}
-              onToggle={onToggle}
-              scene={scene}
-              statuses={statuses}
-            />
-          ))}
-        </div>
-      </PostSection>
-
-      <PostSection count={sortedDevTools.length} title="Dev tools">
-        <div className="cataloggr-list">
-          {sortedDevTools.map((tool) => (
-            <SceneRow
-              disabled={disabled}
-              key={tool.slug}
-              onManageTodo={onManageTodo}
-              onToggle={onToggle}
-              scene={tool}
-              statuses={statuses}
-            />
-          ))}
-        </div>
-      </PostSection>
+      {sections.map(([title, entries]) => (
+        <PostSection count={entries.length} key={title} title={title}>
+          <SceneGrid
+            entries={entries}
+            label={title}
+            onDropImage={onDropImage}
+            onSelect={onSelect}
+            selectedKey={selectedKey}
+            statuses={statuses}
+            thumbnails={thumbnails}
+            todosBySource={todosBySource}
+          />
+        </PostSection>
+      ))}
     </div>
   );
 }

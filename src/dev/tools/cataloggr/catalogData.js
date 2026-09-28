@@ -105,4 +105,15 @@ export function toCatalogTodoOnly(todo) {
   };
 }
 
+export function getProgress(scene, statuses) {
+  if (scene.trackPosting === false) return { postedCount: 0, totalCount: 0 };
+  const targets = getSceneTargets(scene);
+  const postedCount = targets.filter(
+    (presetName) =>
+      statuses[scene.statusKey ?? getStatusKey(scene.key, presetName)]
+  ).length;
+
+  return { postedCount, totalCount: targets.length };
+}
+
 export { AREA_ORDER };

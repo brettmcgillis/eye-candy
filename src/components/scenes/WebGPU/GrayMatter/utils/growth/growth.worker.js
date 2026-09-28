@@ -1,6 +1,8 @@
-import SurfaceGrowthEngine from './engine';
-import seedLoop from './seedLoop';
-import createSurfaceProjector from './surfaceProjector';
+import {
+  SurfaceGrowthEngine,
+  createSurfaceProjector,
+  seedLoop,
+} from '@modules/differentialGrowth';
 
 let project = null;
 let engine = null;

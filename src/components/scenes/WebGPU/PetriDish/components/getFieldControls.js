@@ -2,12 +2,22 @@ import { folder } from 'leva';
 
 import { SOLVERS } from '@modules/reactionDiffusion';
 
+import { GROWTH_SOLVER } from '../utils/growthField';
+
+const range = (label, value, min, max, step) => ({
+  label,
+  max,
+  min,
+  step,
+  value,
+});
+
 export default function getFieldControls(p) {
   return folder(
     {
       solver: {
         label: 'Solver',
-        options: SOLVERS,
+        options: { ...SOLVERS, 'Differential Growth': GROWTH_SOLVER },
         value: p.solver,
       },
       fieldResolution: {
@@ -166,6 +176,94 @@ export default function getFieldControls(p) {
         step: 0.01,
         value: p.physarumDecay,
       },
+      // GrayMatter's differential growth, run on the dish. The engine's own
+      // constants are tuned in world units, so it grows at the bed's radius.
+      dgSeed: range('Seed (Growth)', p.dgSeed, 0, 999999, 1),
+      dgSimSpeed: range(
+        'Simulation Rate (Growth)',
+        p.dgSimSpeed,
+        0.02,
+        3,
+        0.01
+      ),
+      dgGrowthStep: range(
+        'Growth Step (Growth)',
+        p.dgGrowthStep,
+        0.05,
+        2,
+        0.01
+      ),
+      dgSeedInfluence: range(
+        'Seed Influence (Growth)',
+        p.dgSeedInfluence,
+        0,
+        1,
+        0.01
+      ),
+      // 0 starts the loop in the centre, 1 against the wall.
+      dgSeedOffset: range(
+        'Seed Offset (Growth)',
+        p.dgSeedOffset,
+        0,
+        0.95,
+        0.01
+      ),
+      dgEdgeLength: range(
+        'Edge Length (Growth)',
+        p.dgEdgeLength,
+        0.01,
+        0.2,
+        0.001
+      ),
+      dgSplitThreshold: range(
+        'Split Threshold (Growth)',
+        p.dgSplitThreshold,
+        1.1,
+        2.5,
+        0.01
+      ),
+      dgRepulsion: range('Repulsion (Growth)', p.dgRepulsion, 0, 1, 0.01),
+      dgShapeRetention: range(
+        'Shape Retention (Growth)',
+        p.dgShapeRetention,
+        0,
+        0.5,
+        0.01
+      ),
+      dgSmoothing: range('Smoothing (Growth)', p.dgSmoothing, 0, 1, 0.01),
+      dgSideBias: range('Side Bias (Growth)', p.dgSideBias, -100, 100, 1),
+      dgMaxVertices: range(
+        'Max Vertices (Growth)',
+        p.dgMaxVertices,
+        2000,
+        40000,
+        1000
+      ),
+      dgGradientBlur: range(
+        'Curvature Blur (Growth)',
+        p.dgGradientBlur,
+        0,
+        1,
+        0.01
+      ),
+      dgLineWidth: range(
+        'Ridge Width (Growth)',
+        p.dgLineWidth,
+        0.01,
+        0.2,
+        0.001
+      ),
+      dgLoop: { label: 'Loop (Growth)', value: p.dgLoop },
+      dgGrowDuration: range('Grow (s) (Growth)', p.dgGrowDuration, 5, 300, 1),
+      dgHoldDuration: range('Hold (s) (Growth)', p.dgHoldDuration, 0, 60, 0.5),
+      dgRewindDuration: range(
+        'Rewind (s) (Growth)',
+        p.dgRewindDuration,
+        0.5,
+        30,
+        0.5
+      ),
+      dgRestDuration: range('Rest (s) (Growth)', p.dgRestDuration, 0, 10, 0.1),
       reactionStrength: {
         label: 'Reaction Strength',
         value: p.reactionStrength,

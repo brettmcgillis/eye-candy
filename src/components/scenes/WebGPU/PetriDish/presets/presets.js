@@ -14,6 +14,25 @@ const BASE = {
   physarumSymmetry: 1,
   solver: 'expansive',
   stepScale: 14,
+  dgSeed: 520671,
+  dgSimSpeed: 0.15,
+  dgGrowthStep: 1.33,
+  dgSeedInfluence: 0.62,
+  dgSeedOffset: 0.85,
+  dgEdgeLength: 0.06,
+  dgSplitThreshold: 1.35,
+  dgRepulsion: 0.68,
+  dgShapeRetention: 0,
+  dgSmoothing: 0.14,
+  dgSideBias: 0,
+  dgMaxVertices: 12000,
+  dgGradientBlur: 0.35,
+  dgLineWidth: 0.05,
+  dgLoop: true,
+  dgGrowDuration: 180,
+  dgHoldDuration: 8,
+  dgRewindDuration: 6,
+  dgRestDuration: 1,
   // Straight down on the bed, auto-rotate off: the point of the default framing
   // is to watch the field evolve as the flat 2D pattern the reference shader
   // draws, which a spinning camera would fight.
@@ -151,6 +170,10 @@ const BASE = {
   fogNear: 14,
   fogFar: 50,
 };
+
+const BASE_GROWTH = Object.fromEntries(
+  Object.entries(BASE).filter(([key]) => key.startsWith('dg'))
+);
 
 export const DEFAULT_PRESET = 'Thick Bed';
 
@@ -1239,6 +1262,17 @@ Object.assign(PRESETS, {
   'Physarum 4-Way': {
     ...PRESETS.Physarum,
     physarumSymmetry: 4,
+  },
+  // GrayMatter's differential growth: one loop grows from the centre until it
+  // fills the dish, and the culled bed keeps sand only along its ridge.
+  'Differential Growth': {
+    ...PRESETS.Petri,
+    ...BASE_GROWTH,
+    solver: 'differentialGrowth',
+    growthMode: 'onceGrow',
+    paletteAdvect: 1,
+    seedRadius: 0.07,
+    fieldResolution: 512,
   },
 });
 

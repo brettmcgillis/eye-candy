@@ -57,24 +57,27 @@ export default class SurfaceGrowthEngine {
   }
 
   setCurve(points, closed) {
+    this.curves = [];
+    this.addCurve(points, closed);
+  }
+
+  addCurve(points, closed) {
     const normals = points.map(() => vec());
     points.forEach((p, i) => this.project(p, normals[i]));
     const variation = new Float32Array(points.length);
     for (let i = 0; i < variation.length; i += 1)
       variation[i] = this.rng.signed();
-    this.curves = [
-      {
-        basePoints: points.map(copy),
-        baseNormals: normals.map(copy),
-        closed,
-        curvature: new Float32Array(points.length),
-        displacement: new Float32Array(points.length),
-        mask: new Float32Array(points.length),
-        normals,
-        points,
-        variation,
-      },
-    ];
+    this.curves.push({
+      basePoints: points.map(copy),
+      baseNormals: normals.map(copy),
+      closed,
+      curvature: new Float32Array(points.length),
+      displacement: new Float32Array(points.length),
+      mask: new Float32Array(points.length),
+      normals,
+      points,
+      variation,
+    });
     this.updateScalarFields();
   }
 

@@ -16,6 +16,7 @@ import { createBedPolygon } from '@utils/regularPolygon';
 import useManualDrops from '../hooks/useManualDrops';
 import createBedLayout from '../utils/bedLayout';
 import createGrainMaterial from '../utils/grainMaterial';
+import createGrowthField, { GROWTH_SOLVER } from '../utils/growthField';
 
 function buildSandUniforms() {
   return {
@@ -172,12 +173,18 @@ function SandField({ config, dropTargetRef = null }) {
       rot: instancedArray(rot, 'vec4'),
     };
     const uniforms = buildSandUniforms();
-    const reactionField = createSolver(config.solver, {
+    const options = {
       agentCount: config.physarumAgents,
       blurSpread: config.blurSpread,
       height: config.fieldResolution,
+      shape,
       width: config.fieldResolution,
-    });
+    };
+    const reactionField =
+      config.solver === GROWTH_SOLVER
+        ? createGrowthField(options)
+        : createSolver(config.solver, options);
+    applySolverConfig(reactionField.uniforms, config);
 
     reseedForMode({
       gl,
@@ -257,6 +264,7 @@ function SandField({ config, dropTargetRef = null }) {
     createBedLayout({ count, home, seed: config.seed, shape });
     runtime.buffers.home.value.array.set(home);
     runtime.buffers.home.value.needsUpdate = true;
+    runtime.reactionField.setShape?.(shape);
     runtime.shape = shape;
   }, [config.bedCount, config.seed, shape]);
 

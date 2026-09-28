@@ -1,5 +1,11 @@
-import React, { memo, useEffect, useState } from 'react';
-import { FiCamera, FiExternalLink, FiUpload, FiX } from 'react-icons/fi';
+import React, { memo, useCallback, useEffect, useRef, useState } from 'react';
+import {
+  FiCamera,
+  FiClipboard,
+  FiExternalLink,
+  FiUpload,
+  FiX,
+} from 'react-icons/fi';
 
 import { SceneThumbnail } from './SceneCard';
 import TodoPanel from './TodoPanel';
@@ -74,6 +80,26 @@ function SceneDetail({
   thumbnailVersion,
 }) {
   const [dragging, setDragging] = useState(false);
+  const fileInputRef = useRef(null);
+
+  const handlePasteClick = useCallback(async () => {
+    try {
+      const items = await navigator.clipboard.read();
+      const item = items.find((candidate) =>
+        candidate.types.some((type) => type.startsWith('image/'))
+      );
+      if (!item) {
+        onError('The clipboard has no image. Copy a screenshot first.');
+        return;
+      }
+      const type = item.types.find((candidate) =>
+        candidate.startsWith('image/')
+      );
+      onDropImage(entry.sourcePath, await item.getType(type));
+    } catch (error) {
+      onError(`Clipboard read failed: ${error.message}`);
+    }
+  }, [entry.sourcePath, onDropImage, onError]);
   const canCapture = Boolean(entry.path) && !entry.key.startsWith('devtool:');
   const canHoldThumbnail = entry.trackPosting !== false;
 
@@ -131,9 +157,31 @@ function SceneDetail({
                 <FiCamera aria-hidden="true" /> Capture
               </button>
             ) : null}
-            <span title="Paste an image (Cmd+V) or drop a file here">
-              <FiUpload aria-hidden="true" /> Paste / drop
-            </span>
+            <button
+              onClick={handlePasteClick}
+              title="Paste an image from the clipboard (or Cmd+V, or drop a file here)"
+              type="button"
+            >
+              <FiClipboard aria-hidden="true" /> Paste
+            </button>
+            <button
+              onClick={() => fileInputRef.current?.click()}
+              title="Choose an image file"
+              type="button"
+            >
+              <FiUpload aria-hidden="true" /> File
+            </button>
+            <input
+              accept="image/*"
+              hidden
+              onChange={(event) => {
+                const file = event.target.files?.[0];
+                if (file) onDropImage(entry.sourcePath, file);
+                fileInputRef.current.value = '';
+              }}
+              ref={fileInputRef}
+              type="file"
+            />
           </span>
         </div>
       ) : null}

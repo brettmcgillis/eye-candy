@@ -1139,8 +1139,7 @@
 .cataloggr-detail {
   position: sticky;
   top: 0.75rem;
-  display: grid;
-  align-content: start;
+  display: block;
   overflow: auto;
   max-height: calc(100vh - 1.5rem);
   border: 1px solid var(--dev-border);

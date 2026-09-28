@@ -10,6 +10,7 @@ import React, {
 import {
   FiActivity,
   FiBox,
+  FiCamera,
   FiCheckCircle,
   FiCode,
   FiGrid,
@@ -26,15 +27,19 @@ import DevPageHeaderBar from '../../shell/DevPageHeaderBar';
 import './CataloggrPage.css';
 import IdeaBoard from './IdeaBoard';
 import PostBoard from './PostBoard';
-import SceneRow from './SceneRow';
-import TodoWorkspace from './TodoWorkspace';
+import SceneCard from './SceneCard';
+import SceneDetail from './SceneDetail';
+import ThumbnailSeeder, { readSeedSession } from './ThumbnailSeeder';
 import {
   AREA_ORDER,
   buildCatalogScenes,
   getSceneTargets,
   getStatusKey,
   toCatalogDevTool,
+  toCatalogTodoOnly,
 } from './catalogData';
+import { uploadThumbnail } from './thumbnailApi';
+import { listTodos } from './todoApi';
 
 const CATALOG_ENDPOINT = '/dev-api/cataloggr';
 const VIEW_OPTIONS = [
@@ -42,8 +47,19 @@ const VIEW_OPTIONS = [
   ['post', 'Post'],
   ['finish', 'Finish'],
   ['ideas', 'Ideas'],
-  ['todos', 'ToDos'],
 ];
+const GRID_SORT_OPTIONS = [
+  ['name', 'Name'],
+  ['updated', 'TODO updated'],
+  ['open', 'Open TODOs'],
+];
+const GRID_FILTER_OPTIONS = [
+  ['all', 'Everything'],
+  ['open', 'Has open TODOs'],
+  ['noThumbnail', 'No thumbnail'],
+  ['issues', 'TODO format issues'],
+];
+const DEV_TOOL_ENTRIES = DEV_PAGES.map(toCatalogDevTool);
 const POST_SORT_OPTIONS = [
   ['name', 'Name'],
   ['posted', 'Posted'],
@@ -66,9 +82,11 @@ function normalizeSearchText(value) {
 }
 
 function getProgress(scene, statuses) {
+  if (scene.trackPosting === false) return { postedCount: 0, totalCount: 0 };
   const targets = getSceneTargets(scene);
   const postedCount = targets.filter(
-    (presetName) => statuses[getStatusKey(scene.key, presetName)]
+    (presetName) =>
+      statuses[scene.statusKey ?? getStatusKey(scene.key, presetName)]
   ).length;
 
   return { postedCount, totalCount: targets.length };
@@ -105,7 +123,12 @@ export default function CataloggrPage() {
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState('');
-  const [todoSourcePath, setTodoSourcePath] = useState('');
+  const [todos, setTodos] = useState([]);
+  const [thumbnails, setThumbnails] = useState({});
+  const [selectedKey, setSelectedKey] = useState(null);
+  const [gridSortKey, setGridSortKey] = useState('name');
+  const [gridFilter, setGridFilter] = useState('all');
+  const [seeder, setSeeder] = useState(null);
   const deferredSearchText = useDeferredValue(searchText);
 
   const loadCatalog = useCallback(async (isCancelled) => {
@@ -113,7 +136,10 @@ export default function CataloggrPage() {
     setError('');
 
     try {
-      const response = await fetch(CATALOG_ENDPOINT);
+      const [response, nextTodos] = await Promise.all([
+        fetch(CATALOG_ENDPOINT),
+        listTodos(),
+      ]);
       const payload = await response.json();
 
       if (!response.ok)
@@ -127,6 +153,8 @@ export default function CataloggrPage() {
         setIdeas(nextIdeas);
         setStatuses(nextStatuses);
         setScenes(buildCatalogScenes(payload.presetsByFolder));
+        setThumbnails(payload.thumbnails ?? {});
+        setTodos(nextTodos);
       }
     } catch (loadError) {
       if (!isCancelled()) {
@@ -152,6 +180,29 @@ export default function CataloggrPage() {
   const handleRefresh = useCallback(() => {
     loadCatalog(() => false);
   }, [loadCatalog]);
+
+  const todosBySource = useMemo(
+    () => new Map(todos.map((todo) => [todo.sourcePath, todo])),
+    [todos]
+  );
+
+  const todoOnlyEntries = useMemo(() => {
+    const owned = new Set([
+      ...scenes.map((scene) => scene.sourcePath),
+      ...DEV_TOOL_ENTRIES.map((tool) => tool.sourcePath),
+    ]);
+    return todos
+      .filter((todo) => !owned.has(todo.sourcePath))
+      .map(toCatalogTodoOnly);
+  }, [scenes, todos]);
+
+  const refreshTodos = useCallback(async () => {
+    try {
+      setTodos(await listTodos());
+    } catch (todoError) {
+      setError(todoError.message);
+    }
+  }, []);
 
   const stats = useMemo(() => {
     const showcaseCount = scenes.filter(
@@ -237,27 +288,118 @@ export default function CataloggrPage() {
         scene.slug,
         scene.channelLabel,
         scene.areaLabel,
+        todosBySource.get(scene.sourcePath)?.searchText ?? '',
         ...scene.presetNames,
       ]
         .join(' ')
         .toLowerCase()
         .includes(query);
     });
-  }, [area, channel, deferredSearchText, scenes, statuses, view]);
+  }, [
+    area,
+    channel,
+    deferredSearchText,
+    scenes,
+    statuses,
+    todosBySource,
+    view,
+  ]);
 
-  const allEntries = useMemo(() => {
+  const gridEntries = useMemo(() => {
+    const query = normalizeSearchText(deferredSearchText);
     const devTools =
-      (area === 'all' || area === 'devtools') && channel === 'all'
+      view === 'all' &&
+      (area === 'all' || area === 'devtools') &&
+      channel === 'all'
         ? filteredDevTools.map(toCatalogDevTool)
         : [];
+    const others =
+      view === 'all' &&
+      (area === 'all' || area === 'other') &&
+      channel === 'all'
+        ? todoOnlyEntries.filter(
+            (entry) =>
+              !query ||
+              normalizeSearchText(
+                `${entry.label} ${entry.slug} ${todosBySource.get(entry.sourcePath)?.searchText ?? ''}`
+              ).includes(query)
+          )
+        : [];
+    const base = area === 'other' ? [] : filteredScenes;
 
-    return [...filteredScenes, ...devTools].sort(
-      (left, right) =>
-        left.label.localeCompare(right.label, undefined, {
-          sensitivity: 'base',
-        }) || left.key.localeCompare(right.key)
-    );
-  }, [area, channel, filteredDevTools, filteredScenes]);
+    return [...base, ...devTools, ...others]
+      .filter((entry) => {
+        const todo = todosBySource.get(entry.sourcePath);
+        if (gridFilter === 'open') return Boolean(todo?.openCount);
+        if (gridFilter === 'issues') return Boolean(todo?.issues.length);
+        if (gridFilter === 'noThumbnail') {
+          return entry.trackPosting !== false && !thumbnails[entry.sourcePath];
+        }
+        return true;
+      })
+      .sort((left, right) => {
+        const leftTodo = todosBySource.get(left.sourcePath);
+        const rightTodo = todosBySource.get(right.sourcePath);
+        const byName =
+          left.label.localeCompare(right.label, undefined, {
+            sensitivity: 'base',
+          }) || left.key.localeCompare(right.key);
+
+        if (gridSortKey === 'updated') {
+          return (
+            new Date(rightTodo?.updatedAt ?? 0).getTime() -
+              new Date(leftTodo?.updatedAt ?? 0).getTime() || byName
+          );
+        }
+        if (gridSortKey === 'open') {
+          return (
+            (rightTodo?.openCount ?? 0) - (leftTodo?.openCount ?? 0) || byName
+          );
+        }
+        return byName;
+      });
+  }, [
+    area,
+    channel,
+    deferredSearchText,
+    filteredDevTools,
+    filteredScenes,
+    gridFilter,
+    gridSortKey,
+    thumbnails,
+    todoOnlyEntries,
+    todosBySource,
+    view,
+  ]);
+
+  const entriesByKey = useMemo(
+    () =>
+      new Map(
+        [...scenes, ...DEV_TOOL_ENTRIES, ...todoOnlyEntries].map((entry) => [
+          entry.key,
+          entry,
+        ])
+      ),
+    [scenes, todoOnlyEntries]
+  );
+  const selectedEntry = selectedKey ? entriesByKey.get(selectedKey) : null;
+
+  const captureTargets = useMemo(() => {
+    const seen = new Set();
+    return gridEntries.filter((entry) => {
+      if (
+        !entry.path ||
+        entry.trackPosting === false ||
+        entry.key.startsWith('devtool:') ||
+        thumbnails[entry.sourcePath] ||
+        seen.has(entry.sourcePath)
+      ) {
+        return false;
+      }
+      seen.add(entry.sourcePath);
+      return true;
+    });
+  }, [gridEntries, thumbnails]);
 
   const handleToggle = useCallback(async (statusKey, posted) => {
     const previousStatuses = statusesRef.current;
@@ -324,16 +466,57 @@ export default function CataloggrPage() {
     }
   }, []);
 
-  const handleManageTodo = useCallback((sourcePath) => {
-    setTodoSourcePath(sourcePath);
+  const handleManageTodo = useCallback((entryKey) => {
+    setSelectedKey(entryKey);
     setError('');
     startTransition(() => {
       setSelectedStat(null);
-      setView('todos');
+      setView('all');
     });
   }, []);
 
   const handleTodoError = useCallback((message) => setError(message), []);
+
+  const handleCloseDetail = useCallback(() => setSelectedKey(null), []);
+
+  const handleThumbnailSaved = useCallback((sourcePath, updatedAt) => {
+    setThumbnails((current) => ({ ...current, [sourcePath]: updatedAt }));
+  }, []);
+
+  const handleDropImage = useCallback(
+    async (sourcePath, file) => {
+      setSaving(true);
+      setError('');
+      try {
+        const saved = await uploadThumbnail(sourcePath, file);
+        handleThumbnailSaved(sourcePath, saved.updatedAt);
+      } catch (uploadError) {
+        setError(uploadError.message);
+      } finally {
+        setSaving(false);
+      }
+    },
+    [handleThumbnailSaved]
+  );
+
+  const handleCaptureOne = useCallback((entry) => {
+    setSeeder({ autoStart: true, targets: [entry] });
+  }, []);
+
+  const handleCaptureMissing = useCallback(() => {
+    setSeeder({ autoStart: false, targets: captureTargets });
+  }, [captureTargets]);
+
+  const handleCloseSeeder = useCallback(() => setSeeder(null), []);
+
+  const resumeCheckedRef = useRef(false);
+  useEffect(() => {
+    if (loading || resumeCheckedRef.current) return;
+    resumeCheckedRef.current = true;
+    if (readSeedSession() && captureTargets.length) {
+      setSeeder({ autoStart: true, targets: captureTargets });
+    }
+  }, [captureTargets, loading]);
 
   const handlePostSortKeyChange = useCallback((nextSortKey) => {
     setPostSortKey(nextSortKey);
@@ -364,16 +547,17 @@ export default function CataloggrPage() {
 
   let resultLabel = `${filteredScenes.length} scenes`;
   if (loading) resultLabel = 'Loading catalog...';
-  if (!loading && view === 'all') resultLabel = `${allEntries.length} entries`;
+  if (!loading && (view === 'all' || view === 'finish')) {
+    resultLabel = `${gridEntries.length} entries`;
+  }
   if (!loading && view === 'ideas')
     resultLabel = `${filteredIdeas.length} ideas`;
   if (!loading && view === 'post') {
     resultLabel = `${filteredScenes.length + filteredDemoScenes.length + filteredDevTools.length} publishing targets`;
   }
-  if (!loading && view === 'todos') resultLabel = 'TODO manager';
   let storageLabel = 'Checked-in catalog';
-  if (saving) storageLabel = 'Saving to catalog.json...';
-  if (view === 'todos') storageLabel = 'Colocated Markdown';
+  if (saving) storageLabel = 'Saving...';
+  const showGrid = view === 'all' || view === 'finish' || view === 'posted';
 
   return (
     <main className="dev-page cataloggr-page">
@@ -459,7 +643,7 @@ export default function CataloggrPage() {
       </section>
 
       <section
-        className={`cataloggr-toolbar ${view === 'post' ? 'cataloggr-toolbar--post' : ''} ${view === 'ideas' || view === 'todos' ? 'cataloggr-toolbar--compact' : ''}`}
+        className={`cataloggr-toolbar ${view === 'post' ? 'cataloggr-toolbar--post' : ''} ${showGrid ? 'cataloggr-toolbar--grid' : ''} ${view === 'ideas' ? 'cataloggr-toolbar--compact' : ''}`}
         aria-label="Catalog filters"
       >
         <div className="cataloggr-segments">
@@ -479,16 +663,14 @@ export default function CataloggrPage() {
             </button>
           ))}
         </div>
-        {view !== 'todos' ? (
-          <input
-            aria-label="Search scenes and presets"
-            onChange={(event) => setSearchText(event.target.value)}
-            placeholder={getSearchPlaceholder(view)}
-            type="search"
-            value={searchText}
-          />
-        ) : null}
-        {view !== 'ideas' && view !== 'todos' ? (
+        <input
+          aria-label="Search scenes and presets"
+          onChange={(event) => setSearchText(event.target.value)}
+          placeholder={getSearchPlaceholder(view)}
+          type="search"
+          value={searchText}
+        />
+        {view !== 'ideas' ? (
           <select
             aria-label="Filter by area"
             onChange={(event) => {
@@ -504,9 +686,10 @@ export default function CataloggrPage() {
               </option>
             ))}
             <option value="devtools">Dev tools</option>
+            <option value="other">TODO only</option>
           </select>
         ) : null}
-        {view !== 'ideas' && view !== 'todos' ? (
+        {view !== 'ideas' ? (
           <select
             aria-label="Filter by renderer"
             onChange={(event) => {
@@ -518,6 +701,32 @@ export default function CataloggrPage() {
             <option value="all">All renderers</option>
             <option value="webgl">WebGL</option>
             <option value="webgpu">WebGPU</option>
+          </select>
+        ) : null}
+        {showGrid ? (
+          <select
+            aria-label="Filter entries"
+            onChange={(event) => setGridFilter(event.target.value)}
+            value={gridFilter}
+          >
+            {GRID_FILTER_OPTIONS.map(([value, label]) => (
+              <option key={value} value={value}>
+                {label}
+              </option>
+            ))}
+          </select>
+        ) : null}
+        {showGrid ? (
+          <select
+            aria-label="Sort entries"
+            onChange={(event) => setGridSortKey(event.target.value)}
+            value={gridSortKey}
+          >
+            {GRID_SORT_OPTIONS.map(([value, label]) => (
+              <option key={value} value={value}>
+                Sort: {label}
+              </option>
+            ))}
           </select>
         ) : null}
         {view === 'post' ? (
@@ -552,6 +761,18 @@ export default function CataloggrPage() {
       <div className="cataloggr-result-bar">
         <span>{resultLabel}</span>
         <span className="cataloggr-result-bar__end">
+          {showGrid && captureTargets.length ? (
+            <button
+              className="cataloggr-capture-missing"
+              disabled={loading}
+              onClick={handleCaptureMissing}
+              title="Load each visible scene without a thumbnail and capture it"
+              type="button"
+            >
+              <FiCamera aria-hidden="true" />
+              Capture {captureTargets.length} missing
+            </button>
+          ) : null}
           {storageLabel}
           <button
             aria-label="Refresh catalog data"
@@ -595,25 +816,52 @@ export default function CataloggrPage() {
           statuses={statuses}
         />
       ) : null}
-      {view === 'todos' ? (
-        <TodoWorkspace
-          initialSourcePath={todoSourcePath}
-          onError={handleTodoError}
-        />
-      ) : null}
-      {view !== 'post' && view !== 'ideas' && view !== 'todos' ? (
-        <section className="cataloggr-list" aria-label="Scenes and dev tools">
-          {(view === 'all' ? allEntries : filteredScenes).map((scene) => (
-            <SceneRow
+      {showGrid ? (
+        <div
+          className="cataloggr-browser"
+          data-detail={selectedEntry ? 'open' : undefined}
+        >
+          <section className="cataloggr-grid" aria-label="Scenes and dev tools">
+            {gridEntries.map((entry) => {
+              const progress = getProgress(entry, statuses);
+              return (
+                <SceneCard
+                  entry={entry}
+                  key={entry.key}
+                  onDropImage={handleDropImage}
+                  onSelect={setSelectedKey}
+                  postedCount={progress.postedCount}
+                  selected={entry.key === selectedKey}
+                  thumbnailVersion={thumbnails[entry.sourcePath]}
+                  todo={todosBySource.get(entry.sourcePath)}
+                  totalCount={progress.totalCount}
+                />
+              );
+            })}
+          </section>
+          {selectedEntry ? (
+            <SceneDetail
               disabled={loading || saving}
-              key={scene.key}
-              onManageTodo={handleManageTodo}
+              entry={selectedEntry}
+              onCapture={handleCaptureOne}
+              onClose={handleCloseDetail}
+              onDropImage={handleDropImage}
+              onError={handleTodoError}
               onToggle={handleToggle}
-              scene={scene}
+              onTodoSaved={refreshTodos}
               statuses={statuses}
+              thumbnailVersion={thumbnails[selectedEntry.sourcePath]}
             />
-          ))}
-        </section>
+          ) : null}
+        </div>
+      ) : null}
+      {seeder ? (
+        <ThumbnailSeeder
+          autoStart={seeder.autoStart}
+          onCaptured={handleThumbnailSaved}
+          onClose={handleCloseSeeder}
+          targets={seeder.targets}
+        />
       ) : null}
     </main>
   );

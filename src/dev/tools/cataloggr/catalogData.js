@@ -47,6 +47,7 @@ export function buildCatalogScenes(presetsByFolder = {}) {
           label: entry.label,
           channel: entry.channel,
           channelLabel: CHANNELS[entry.channel],
+          icon: entry.icon ?? null,
           area: entry.area,
           areaLabel: AREAS[entry.area],
           path: registeredScene?.path ?? null,
@@ -86,6 +87,21 @@ export function toCatalogDevTool(tool) {
     sourcePath: tool.sourcePath,
     statusKey: `devtool:${tool.slug}`,
     targetLabel: 'Dev tool',
+  };
+}
+
+export function toCatalogTodoOnly(todo) {
+  return {
+    area: 'other',
+    areaLabel: 'Other',
+    channelLabel: 'TODO only',
+    key: `todo:${todo.sourcePath}`,
+    label: todo.title || todo.sourcePath.split('/').pop(),
+    path: null,
+    presetNames: [],
+    slug: todo.sourcePath.replace(/^src\//u, ''),
+    sourcePath: todo.sourcePath,
+    trackPosting: false,
   };
 }
 

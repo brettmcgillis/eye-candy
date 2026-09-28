@@ -4,10 +4,17 @@ import {
   readJsonBody,
   writeCatalog,
 } from './service';
+import {
+  listThumbnails,
+  readBinaryBody,
+  readThumbnail,
+  writeThumbnail,
+} from './thumbnailService';
 import { listSceneTodos, readSceneTodo, writeSceneTodo } from './todoService';
 
 const CATALOG_PATH = '/dev-api/cataloggr';
 const TODOS_PATH = '/dev-api/cataloggr/todos';
+const THUMBNAIL_PATH = '/dev-api/cataloggr/thumbnail';
 
 function sendJson(res, statusCode, payload) {
   res.statusCode = statusCode;
@@ -46,13 +53,50 @@ export default function cataloggrDevPlugin() {
         const rootDir = server.config.root;
 
         if (req.method === 'GET' && pathname === CATALOG_PATH) {
-          await handleRequest(res, () =>
-            readCatalog(rootDir, {
-              loadPresetModule: (modulePath) =>
-                server.ssrLoadModule(modulePath),
-            })
-          );
+          await handleRequest(res, async () => {
+            const [catalog, thumbnails] = await Promise.all([
+              readCatalog(rootDir, {
+                loadPresetModule: (modulePath) =>
+                  server.ssrLoadModule(modulePath),
+              }),
+              listThumbnails(rootDir),
+            ]);
+            return { ...catalog, thumbnails };
+          });
           return;
+        }
+
+        if (pathname === THUMBNAIL_PATH) {
+          const sourcePath = new URL(
+            req.url,
+            'http://localhost'
+          ).searchParams.get('sourcePath');
+
+          if (req.method === 'GET') {
+            try {
+              const image = await readThumbnail(rootDir, sourcePath);
+              res.statusCode = 200;
+              res.setHeader('Content-Type', 'image/webp');
+              res.setHeader('Cache-Control', 'no-cache');
+              res.end(image);
+            } catch (error) {
+              await handleRequest(res, () => {
+                throw error;
+              });
+            }
+            return;
+          }
+
+          if (req.method === 'POST') {
+            await handleRequest(res, async () =>
+              writeThumbnail({
+                body: await readBinaryBody(req),
+                rootDir,
+                sourcePath,
+              })
+            );
+            return;
+          }
         }
 
         if (req.method === 'POST' && pathname === CATALOG_PATH) {

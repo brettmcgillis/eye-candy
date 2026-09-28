@@ -74,8 +74,34 @@ export function removeTaskContent(content, taskStartOffset, taskEndOffset) {
   return next.replace(/\n{3,}/gu, '\n\n');
 }
 
+export function editTaskContent(content, taskOffset, text) {
+  const lineMatch = content
+    .slice(taskOffset)
+    .match(/^([-*+]\s+\[[ xX]\]\s*)([^\n]*)/u);
+
+  if (!lineMatch) {
+    throw new Error('This task changed. Reload and retry.');
+  }
+
+  const [line, marker] = lineMatch;
+
+  return (
+    content.slice(0, taskOffset) +
+    marker +
+    text.trim() +
+    content.slice(taskOffset + line.length)
+  );
+}
+
+export function getTaskText(content, taskOffset) {
+  return (
+    content.slice(taskOffset).match(/^[-*+]\s+\[[ xX]\]\s*([^\n]*)/u)?.[1] ?? ''
+  );
+}
+
 export function addTaskContent(document, sectionName, text) {
-  const item = `- [ ] ${text.trim()}\n`;
+  const isIntent = sectionName === TODO_SECTIONS[0];
+  const item = `${isIntent ? '-' : '- [ ]'} ${text.trim()}\n`;
   const section = document.sectionDetails.find(
     (candidate) => candidate.name === sectionName
   );
@@ -90,7 +116,7 @@ export function addTaskContent(document, sectionName, text) {
   const headingName = sectionName === 'TODO' ? 'TODO:' : sectionName;
   const heading = section ? '' : `## // ${headingName}\n\n`;
   const lastLine = before.split('\n').pop() ?? '';
-  const appendingAfterItem = /^[-*+]\s+\[[ xX]\]/u.test(lastLine);
+  const appendingAfterItem = /^[-*+]\s/u.test(lastLine);
   const separator = section && appendingAfterItem ? '\n' : '\n\n';
 
   return `${before}${separator}${heading}${item}${after ? `\n${after}` : ''}`;

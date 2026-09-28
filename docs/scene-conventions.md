@@ -95,6 +95,7 @@ SceneName/
   presets/presets.js
   utils/sceneUtils.js
   todo.md
+  thumbnail.webp           ← 640×400 cover, written by Cataloggr (capture or paste)
 ```
 
 ## 1b. Import aliases

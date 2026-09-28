@@ -51,8 +51,8 @@ function SceneRow({ disabled, onManageTodo, onToggle, scene, statuses }) {
           <button
             aria-label={`Manage ${scene.label} TODO`}
             className="cataloggr-scene__todo"
-            onClick={() => onManageTodo(scene.sourcePath)}
-            title="Manage TODO"
+            onClick={() => onManageTodo(scene.key)}
+            title="Open details"
             type="button"
           >
             <FiFileText aria-hidden="true" />

@@ -6,6 +6,7 @@ export { default as FLORA_CAMERA } from './camera';
 export { default as FLORA_LIGHTING } from './lighting';
 export { default as createFieldSlots } from './fieldSlots';
 export { default as createSpecimenRig } from './specimenRig';
+export { default as placeFlower } from './placement';
 export { default as createTubeMaterial } from './tubeMaterial';
 export { createCardMaterial, createSolidMaterial } from './ornamentMaterials';
 export {

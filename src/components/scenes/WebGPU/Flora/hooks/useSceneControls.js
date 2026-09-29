@@ -21,6 +21,7 @@ import {
 import { useMediaRecorder } from '@modules/mediaRecorder';
 import { PALETTE_NAMES } from '@utils/gradientPalette';
 
+import getBouquetControls from '../components/getBouquetControls';
 import getFormControls from '../components/getFormControls';
 import getLookControls from '../components/getLookControls';
 import getMotionControls from '../components/getMotionControls';
@@ -74,6 +75,7 @@ export default function useSceneControls() {
     Form: getFormControls(preset, { onReseed }),
     Look: getLookControls(preset),
     Motion: getMotionControls(preset, { onRegrow, onRestart }),
+    Bouquet: getBouquetControls(preset),
     Scene: getSceneControls(preset, { onRoll }),
   }));
 

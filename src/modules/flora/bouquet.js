@@ -1,5 +1,8 @@
 /* eslint-disable no-param-reassign */
+import { seedFor } from './lifecycle';
+import { BOUQUET_STYLES, BOUQUET_STYLE_ALL } from './renderOptions.mjs';
 import { createRng } from './rng';
+import rollFloraConfig from './rollConfig';
 
 const GOLDEN_ANGLE = Math.PI * (3 - Math.sqrt(5));
 const DEG = Math.PI / 180;
@@ -264,6 +267,47 @@ export default function arrangeBouquet(
     to: head.u,
     turn: rng() * Math.PI * 2,
   }));
+}
+
+// `all` rolls a style per bouquet, seeded off the bouquet's own seed so the
+// pick is reproducible from the seed alone.
+export function bouquetStyleFor(style, seed) {
+  if (style !== BOUQUET_STYLE_ALL) return style;
+  const rng = createRng(`${seed}:bouquetStyle`);
+  return BOUQUET_STYLES[Math.floor(rng() * BOUQUET_STYLES.length)];
+}
+
+// The flowers of bouquet `index` (a batch item, or a scene cycle): the given
+// `sources` first, at that index's seed, then `fill` up to `size` — the
+// sources again at new seeds, or rolled flowers. `rolled` marks the latter.
+export function bouquetMembers({
+  fill = 'repeat',
+  index = 0,
+  roll = {},
+  seed,
+  size,
+  sources = [],
+}) {
+  return Array.from({ length: Math.max(size, sources.length) }, (_, slot) => {
+    if (slot < sources.length) {
+      const source = sources[slot];
+      return {
+        config:
+          index === 0
+            ? source
+            : { ...source, seed: seedFor(source.seed ?? seed, index) },
+        rolled: false,
+      };
+    }
+    const flowerSeed = `${seed}.${slot}`;
+    if (fill === 'repeat' && sources.length > 0) {
+      return {
+        config: { ...sources[slot % sources.length], seed: flowerSeed },
+        rolled: false,
+      };
+    }
+    return { config: rollFloraConfig(flowerSeed, roll), rolled: true };
+  });
 }
 
 // Axis-aligned bounds of a specimen's segment endpoints, sampled so a

@@ -11,7 +11,12 @@ export {
 } from './polyhedra';
 export { CARD_SHAPES } from './pack';
 export { createRng, hashSeed } from './rng';
-export { default as arrangeBouquet, specimenBounds } from './bouquet';
+export {
+  default as arrangeBouquet,
+  bouquetMembers,
+  bouquetStyleFor,
+  specimenBounds,
+} from './bouquet';
 export { levelsAt, randomSeed, seedFor, timeline } from './lifecycle';
 export { default as rollFloraConfig, rollableKeys } from './rollConfig';
 export * from './renderOptions.mjs';

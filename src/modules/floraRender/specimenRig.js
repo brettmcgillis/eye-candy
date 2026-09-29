@@ -10,9 +10,9 @@ import {
 import createTubeMaterial from './tubeMaterial';
 import { createUniforms, syncSpecimen, syncUniforms } from './uniforms';
 
-// One flower as plain three objects: the scene's Specimen component, built
-// imperatively for renderers that have no React (the headless CLI). Each rig
-// owns its uniforms, so a bouquet can hold flowers with different looks.
+// One flower as plain three objects, drawn by the scene and the headless CLI
+// alike. Each rig owns its uniforms, so a bouquet can hold flowers with
+// different looks.
 export default function createSpecimenRig() {
   const uniforms = createUniforms();
   const palettes = createPaletteCache();

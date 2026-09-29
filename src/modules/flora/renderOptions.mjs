@@ -61,7 +61,9 @@ const SHAPES = [
 ];
 
 // `generator` marks the params @modules/flora's buildSpecimen reads; `scene`
-// marks a Leva control of the Flora scene. A spec can be both.
+// marks a Leva control of the Flora scene. A spec can be both. `arrangement`
+// marks a scene control that places flowers rather than describing one: it
+// belongs to a preset but never to a flower's config.
 function num(section, label, value, min, max, step, extra = {}) {
   return {
     default: value,
@@ -616,42 +618,46 @@ const RENDER = {
     type: 'json',
   },
   bouquetSize: num('bouquet', 'Stems', 0, 0, 24, 1, {
+    arrangement: true,
     help: 'Flowers per bouquet; 0 renders single flowers',
-    scene: false,
   }),
   bouquetStyle: {
+    arrangement: true,
     choices: [BOUQUET_STYLE_ALL, ...BOUQUET_STYLES],
     default: 'all',
     help: 'dome: round hand-tied posy; fan: one-sided triangle facing front; ikebana: shin/soe/hikae lines from a kenzan; All: each item in the batch rolls its own',
     label: 'Style',
+    scene: true,
     scope: 'shared',
     section: 'bouquet',
     type: 'enum',
   },
   bouquetFill: {
+    arrangement: true,
     choices: ['repeat', 'roll'],
     default: 'repeat',
     help: 'Filling past the given flowers: repeat them at new seeds, or roll new ones',
     label: 'Fill',
+    scene: true,
     scope: 'shared',
     section: 'bouquet',
     type: 'enum',
   },
   bouquetSpread: num('bouquet', 'Spread', 30, 0, 80, 1, {
+    arrangement: true,
     help: 'Minimum lean of the outermost heads, degrees; widened as needed so crowns do not overlap',
-    scene: false,
   }),
   bouquetTie: num('bouquet', 'Tie height', 0.12, 0, 0.9, 0.01, {
+    arrangement: true,
     help: 'Where the stems cross, as a fraction of stem height; lowered automatically if the crowns need a longer lever',
-    scene: false,
   }),
   bouquetGap: num('bouquet', 'Gap', 0.1, -0.5, 1, 0.01, {
+    arrangement: true,
     help: 'Space kept between neighbouring crowns, as a fraction of their radii; negative lets them mingle',
-    scene: false,
   }),
   bouquetJitter: num('bouquet', 'Jitter', 0.35, 0, 1, 0.01, {
+    arrangement: true,
     help: 'Irregularity of lean, height and turn',
-    scene: false,
   }),
 
   mode: {
@@ -862,30 +868,39 @@ const keysWhere = (test) =>
 
 export const GENERATOR_KEYS = keysWhere((spec) => spec.generator);
 export const SCENE_KEYS = keysWhere((spec) => spec.scene);
+export const ARRANGEMENT_KEYS = keysWhere((spec) => spec.arrangement);
+const FLOWER_KEYS = keysWhere((spec) => spec.scene && !spec.arrangement);
 
 // A flower config lives in the scene's key space, which is the schema's except
 // where a spec renames it (`overlay` is the scene's `showOverlay`). Everything
 // that crosses between the two goes through here.
 export const sceneNameFor = (key) => RENDER_OPTIONS[key].sceneKey ?? key;
 
-const SCENE_NAMES = new Map(SCENE_KEYS.map((key) => [sceneNameFor(key), key]));
+const FLOWER_NAMES = new Map(
+  FLOWER_KEYS.map((key) => [sceneNameFor(key), key])
+);
 
 export const generatorDefaults = () =>
   Object.fromEntries(
     GENERATOR_KEYS.map((key) => [key, RENDER_OPTIONS[key].default])
   );
 
-export const sceneDefaults = () =>
+const defaultsOf = (keys) =>
   Object.fromEntries(
-    SCENE_KEYS.map((key) => [sceneNameFor(key), RENDER_OPTIONS[key].default])
+    keys.map((key) => [sceneNameFor(key), RENDER_OPTIONS[key].default])
   );
+
+export const sceneDefaults = () => defaultsOf(SCENE_KEYS);
+
+// One flower's config: the scene's key space less the arrangement.
+export const flowerDefaults = () => defaultsOf(FLOWER_KEYS);
 
 // A render sidecar carries a config as `preset`; this pulls one out of
 // whatever shape was handed over.
 export function configFrom(source) {
   const flat = source?.preset ?? source ?? {};
   return Object.fromEntries(
-    [...SCENE_NAMES.keys()]
+    [...FLOWER_NAMES.keys()]
       .filter((name) => flat[name] != null)
       .map((name) => [name, flat[name]])
   );
@@ -895,7 +910,7 @@ export function configFrom(source) {
 // generation.
 export function optionsFromConfig(config = {}) {
   return Object.fromEntries(
-    [...SCENE_NAMES]
+    [...FLOWER_NAMES]
       .filter(([name]) => config[name] != null)
       .map(([name, key]) => [key, config[name]])
   );

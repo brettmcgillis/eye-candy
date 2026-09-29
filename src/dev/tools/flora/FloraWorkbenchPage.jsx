@@ -60,7 +60,9 @@ const MODE_OPTIONS = RENDER_OPTIONS.mode.choices.map((mode) => ({
   value: mode,
 }));
 const RENDER_KEYS = new Set(
-  Object.keys(RENDER_OPTIONS).filter((key) => !RENDER_OPTIONS[key].scene)
+  Object.keys(RENDER_OPTIONS).filter(
+    (key) => !RENDER_OPTIONS[key].scene || RENDER_OPTIONS[key].arrangement
+  )
 );
 
 function rollSummary({ base, bouquetCount, count, held, size }) {

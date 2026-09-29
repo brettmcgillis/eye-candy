@@ -17,6 +17,7 @@ import loadModules, { REPO_ROOT } from './lib/loadModules.mjs';
 const KERNEL_DIR = path.join(REPO_ROOT, 'src', 'modules', 'flora');
 const SCENE = '/src/components/scenes/WebGPU/Flora/components';
 const CONTROL_BUILDERS = [
+  `${SCENE}/getBouquetControls.js`,
   `${SCENE}/getFormControls.js`,
   `${SCENE}/getLookControls.js`,
   `${SCENE}/getMotionControls.js`,

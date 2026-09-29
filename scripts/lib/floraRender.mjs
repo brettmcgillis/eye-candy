@@ -3,8 +3,7 @@ import { readFile } from 'node:fs/promises';
 import sharp from 'sharp';
 
 import {
-  BOUQUET_STYLES,
-  BOUQUET_STYLE_ALL,
+  ARRANGEMENT_KEYS,
   RENDER_OPTIONS,
   defaultsFor,
   normalizeOptions,
@@ -80,7 +79,12 @@ export function assertPalette(kernel, { options, typed }) {
 }
 
 export function rollArgs(kernel, { options, typed }) {
-  const scene = new Set(kernel.flora.SCENE_KEYS);
+  // Arrangement options describe the bouquet, not a flower, so a typed one is
+  // never pinned into the flowers' configs.
+  const arrangement = new Set(ARRANGEMENT_KEYS);
+  const scene = new Set(
+    kernel.flora.SCENE_KEYS.filter((key) => !arrangement.has(key))
+  );
   return {
     base: options.base ? kernel.flora.configFrom(options.base) : {},
     keep: String(options.keep ?? '')
@@ -118,35 +122,27 @@ export function flowersAt(kernel, { index, options, roll }) {
   const baseSeed = options.seed ?? flora.randomSeed();
   const seed = options.seed == null ? baseSeed : flora.seedFor(baseSeed, index);
   const sources = sourceFlowers(kernel, options);
-  const size = Math.max(options.bouquetSize, sources.length);
 
-  if (size === 0) {
+  if (Math.max(options.bouquetSize, sources.length) === 0) {
     return { configs: [flora.rollFloraConfig(seed, roll)], seed };
   }
 
-  const configs = Array.from({ length: size }, (_, slot) => {
-    if (slot < sources.length) {
-      const source = sources[slot];
-      return index === 0
-        ? source
-        : { ...source, seed: flora.seedFor(source.seed ?? seed, index) };
-    }
-    const flowerSeed = `${seed}.${slot}`;
-    if (options.bouquetFill === 'repeat' && sources.length > 0) {
-      return { ...sources[slot % sources.length], seed: flowerSeed };
-    }
-    return flora.rollFloraConfig(flowerSeed, roll);
+  const members = flora.bouquetMembers({
+    fill: options.bouquetFill,
+    index,
+    roll,
+    seed,
+    size: options.bouquetSize,
+    sources,
   });
-  return { bouquet: true, configs, seed };
+  return { bouquet: true, configs: members.map((m) => m.config), seed };
 }
 
-// `options.bouquetStyle === 'All'` means each item rolls its own, seeded off
-// its own draw so the pick is reproducible from the seed alone.
 export function resolveItemOptions(kernel, options, seed) {
-  if (options.bouquetStyle !== BOUQUET_STYLE_ALL) return options;
-  const rng = kernel.flora.createRng(`${seed}:bouquetStyle`);
-  const style = BOUQUET_STYLES[Math.floor(rng() * BOUQUET_STYLES.length)];
-  return { ...options, bouquetStyle: style };
+  return {
+    ...options,
+    bouquetStyle: kernel.flora.bouquetStyleFor(options.bouquetStyle, seed),
+  };
 }
 
 function viewDirection(angles, view, azimuthOffset) {
@@ -158,29 +154,6 @@ function viewDirection(angles, view, azimuthOffset) {
     Math.sin(el),
     Math.cos(az) * Math.cos(el),
   ];
-}
-
-// A flower is rigid: it turns about its own axis, swings its head direction
-// onto the arrangement's target, and slides down its own stem — see
-// @modules/flora/bouquet.js.
-function composePlacement(THREE, group, placement) {
-  const from = new THREE.Vector3(...placement.from);
-  const to = new THREE.Vector3(...placement.to);
-  const pivot = new THREE.Vector3(...placement.pivot);
-  const turn = new THREE.Quaternion().setFromAxisAngle(from, placement.turn);
-
-  group.quaternion.setFromUnitVectors(from, to).multiply(turn);
-  group.scale.setScalar(placement.scale);
-  group.position
-    .copy(pivot)
-    .sub(
-      pivot
-        .clone()
-        .multiplyScalar(placement.scale)
-        .applyQuaternion(group.quaternion)
-    )
-    .addScaledVector(to, -placement.slide);
-  group.updateMatrixWorld(true);
 }
 
 // One renderer per output size, reused across frames: device and pipeline
@@ -320,11 +293,7 @@ export async function createFloraCapturer(
           ornamentMinPixels: entry.config.ornamentMinPixels * pixelRatio,
         });
         const { group } = slot.rig;
-        group.position.set(0, 0, 0);
-        group.quaternion.identity();
-        group.scale.setScalar(1);
-        if (entry.placement) composePlacement(THREE, group, entry.placement);
-        group.updateMatrixWorld(true);
+        look.placeFlower(group, entry.placement);
         scene.add(group);
         const point = new THREE.Vector3();
         return flora.specimenBounds(entry.specimen, (p) =>

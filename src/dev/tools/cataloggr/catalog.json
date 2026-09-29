@@ -170,10 +170,6 @@
       "text": "could we do a generative scene that emulates the poured paint styles of artists like"
     },
     {
-      "id": "idea-1790555417372-03giax",
-      "text": "generative kumiko patterns"
-    },
-    {
       "id": "idea-1790555433867-os9gkp",
       "text": "generative geodes using the sand grain particles."
     },
@@ -205,6 +201,7 @@
     "webgpu:crossTalk::CloudConnected": true,
     "webgpu:crossTalk::Waterworks": true,
     "webgpu:flora::$scene": true,
+    "webgpu:flora::Bouquet": true,
     "webgpu:ghostBuster::$scene": true,
     "webgpu:horsesForCourses::$scene": true,
     "webgpu:loGlow::Default": true,
@@ -213,6 +210,7 @@
     "webgpu:theSpeedOfLightning::Dark": true,
     "webgpu:touchGrass::$scene": true,
     "webgpu:trucheterie::001": true,
+    "webgpu:upstreamDownstream::Default": true,
     "webgpu:waterCycle::An Ocean Implied": true,
     "webgpu:weightless::Sketchbook": true,
     "webgpu:windswept::Tangled": true,

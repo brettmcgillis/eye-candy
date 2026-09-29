@@ -228,7 +228,18 @@ sources, either repeating them at new seeds or rolling new flowers. The
 workbench passes sidecar URLs; the dev server reads them and writes
 `bouquet.json` beside the output, which is also the bouquet's recipe.
 
-A bouquet cannot be saved as a scene preset: the scene grows one specimen.
+**The scene grows bouquets too.** Its Bouquet folder carries the same
+options; at 0 stems it grows its single specimen. The live plant is the one
+source, so stem N of cycle C is the flower the CLI draws for
+`--bouquet <that plant> --bouquetSize N` at batch index C —
+`bouquetMembers` and `bouquetStyleFor` in the kernel are shared by both.
+Every stem is a `createSpecimenRig`, pooled; the worker builds a cycle's
+stems in one message so a bouquet lands whole. A repeated stem follows the
+live controls except for its seed; a rolled stem holds its rolled facets.
+Arrangement sliders re-place the loaded stems without a rebuild. Bouquet
+options are `arrangement` specs: scene controls and preset keys, but never
+part of a flower's config (`flowerDefaults`, `configFrom`), so a typed
+`--bouquetSize` is not pinned into every flower.
 
 **Rotated flowers need model-aware shading.** The materials build positions in
 the flower's own space; normals go through `modelNormalMatrix` and the

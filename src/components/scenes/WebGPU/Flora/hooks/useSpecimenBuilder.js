@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useRef } from 'react';
 
-// One build in flight at a time, newest request wins. Control edits otherwise
+// One build in flight at a time, newest request wins. A job is a list of
+// params — every stem of a bouquet — and resolves with their specimens. Control edits otherwise
 // queue a 1-2s build each, and a regrow waits behind the whole backlog.
 export default function useSpecimenBuilder() {
   const workerRef = useRef(null);
@@ -19,8 +20,8 @@ export default function useSpecimenBuilder() {
       { type: 'module' }
     );
     const state = stateRef.current;
-    const settle = (specimen) => {
-      state.inFlight?.resolve(specimen);
+    const settle = (specimens) => {
+      state.inFlight?.resolve(specimens);
       state.inFlight = null;
 
       if (state.queued) {
@@ -33,7 +34,7 @@ export default function useSpecimenBuilder() {
 
     worker.onmessage = ({ data }) => {
       if (data.id === state.inFlight?.id) {
-        settle(data.specimen);
+        settle(data.specimens);
       }
     };
     worker.onerror = (event) => {

@@ -3,8 +3,8 @@ import {
   PALETTE_NONE,
   RENDER_OPTIONS,
   facets,
+  flowerDefaults,
   keysInFacet,
-  sceneDefaults,
 } from './renderOptions.mjs';
 import { createRng } from './rng';
 
@@ -60,7 +60,7 @@ export default function rollFloraConfig(
   seed,
   { base = {}, keep = [], paletteNames = [], pinned = {}, seeds = {} } = {}
 ) {
-  const config = { ...sceneDefaults(), ...base, seed: String(seed) };
+  const config = { ...flowerDefaults(), ...base, seed: String(seed) };
   const streams = Object.fromEntries(
     facets().map((facet) => [
       facet,

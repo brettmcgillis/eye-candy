@@ -47,6 +47,7 @@ export const PRESETS = {
     palette: 'None',
     varianceThreshold: 0.06,
     webcam: true,
+    paletteExact: false,
   },
   'Webcam Trixels': {
     cellSize: 180,

@@ -570,7 +570,7 @@ export const PRESETS = {
     foamAging: 0.5,
     foamSink: 0.35,
     foamSinkDepth: 0.9,
-    grainCount: 500000,
+    grainCount: 400000,
     waterGrainSize: 0.1,
     rockGrainSize: 0.16,
     grainSizeMin: 0.6,

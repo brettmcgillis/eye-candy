@@ -1,6 +1,6 @@
 import * as THREE from 'three/webgpu';
 
-import { isOpening } from './instances';
+import { isOpening } from '@modules/blockParty';
 
 // Ellipse curves emit two points per segment, so this lands on the same 128
 // rim vertices as the pedestal cylinder.

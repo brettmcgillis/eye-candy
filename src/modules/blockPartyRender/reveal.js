@@ -10,7 +10,6 @@ import {
   sin,
   smoothstep,
   step,
-  time,
   vec3,
 } from 'three/tsl';
 
@@ -49,14 +48,14 @@ function sequenced(t, sequence, uniforms) {
   return mix(t, staged, uniforms.emergeStyle);
 }
 
-export function wave(buffers, rate) {
+export function wave(buffers, rate, uniforms) {
   const seed = instancedBufferAttribute(buffers.seed);
 
-  return sin(time.mul(rate).add(seed.mul(TWO_PI)));
+  return sin(uniforms.time.mul(rate).add(seed.mul(TWO_PI)));
 }
 
 export function pulse(buffers, uniforms) {
-  const w = wave(buffers, uniforms.pulseRate).mul(0.5).add(0.5);
+  const w = wave(buffers, uniforms.pulseRate, uniforms).mul(0.5).add(0.5);
 
   return mix(
     float(1).sub(uniforms.pulseDepth),
@@ -67,7 +66,9 @@ export function pulse(buffers, uniforms) {
 
 export function flicker(buffers, uniforms) {
   const seed = instancedBufferAttribute(buffers.seed);
-  const tick = floor(time.mul(uniforms.neonFlickerRate)).add(seed.mul(97.13));
+  const tick = floor(uniforms.time.mul(uniforms.neonFlickerRate)).add(
+    seed.mul(97.13)
+  );
   const noise = fract(sin(tick.mul(12.9898)).mul(43758.5453));
 
   return float(1).sub(uniforms.neonFlicker.mul(step(0.55, noise)));
@@ -105,7 +106,9 @@ export function applyReveal(material, buffers, uniforms, options = {}) {
 
   if (breathe) {
     height = height.mul(
-      wave(buffers, uniforms.towerBreatheRate).mul(uniforms.towerBreathe).add(1)
+      wave(buffers, uniforms.towerBreatheRate, uniforms)
+        .mul(uniforms.towerBreathe)
+        .add(1)
     );
   }
 
@@ -119,7 +122,9 @@ export function applyReveal(material, buffers, uniforms, options = {}) {
 
   if (bob) {
     y = y.add(
-      wave(buffers, uniforms.cardBobRate).mul(uniforms.cardBob).mul(settled)
+      wave(buffers, uniforms.cardBobRate, uniforms)
+        .mul(uniforms.cardBob)
+        .mul(settled)
     );
   }
 

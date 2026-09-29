@@ -1,4 +1,4 @@
-import { ELEVATION_DEGREES as ELEVATION } from './elevation';
+import { ELEVATION_DEGREES as ELEVATION } from '@modules/blockParty';
 
 const TARGET = [0, 0, 0];
 const AZIMUTH = 45;

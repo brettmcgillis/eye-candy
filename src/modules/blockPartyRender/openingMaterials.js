@@ -13,7 +13,7 @@ import {
 import * as THREE from 'three/webgpu';
 
 import groundTone from './groundPattern';
-import { canvasAlpha, isTop } from './nodes';
+import { canvasAlpha, cellTint, isTop } from './nodes';
 import { applyReveal, pulse } from './reveal';
 
 const RING_COUNT = 10;
@@ -53,7 +53,8 @@ function wallTone(depth, glow, buffers, uniforms) {
   const { fade, line, wall } = strata(depth, uniforms);
 
   if (glow) {
-    const ring = uniforms.ringColor
+    const cell = cellTint(buffers, uniforms, 'cellAccents');
+    const ring = mix(uniforms.ringColor, cell.color, cell.amount)
       .mul(uniforms.ringIntensity)
       .mul(pulse(buffers, uniforms));
 

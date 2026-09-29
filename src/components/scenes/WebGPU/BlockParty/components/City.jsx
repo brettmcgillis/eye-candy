@@ -1,30 +1,18 @@
-/* eslint-disable no-param-reassign */
 import React, { memo, useEffect, useMemo } from 'react';
 
-import * as THREE from 'three/webgpu';
+import {
+  COMPOSITION_KEYS,
+  FORM_KEYS,
+  cityScale,
+  compositionOf,
+  layCity,
+  metricsOf,
+  pedestalDepthFor,
+} from '@modules/blockParty';
+import { createCityRig } from '@modules/blockPartyRender';
 
 import useBuildClock from '../hooks/useBuildClock';
-import useCityModel from '../hooks/useCityModel';
-import { COMPOSITION_KEYS, FORM_KEYS, pickValues } from '../utils/configKeys';
-import buildLayers from '../utils/instances';
-import LAYER_SPECS from '../utils/layerSpecs';
-import {
-  createGroundMaterial,
-  createPedestalMaterial,
-} from '../utils/materials';
-import Ground from './Ground';
-import InstancedLayer from './InstancedLayer';
-import Pedestal from './Pedestal';
-
-const PEDESTAL_MARGIN = 4;
-
-function unitBox(hangs) {
-  const geometry = new THREE.BoxGeometry(1, 1, 1);
-
-  geometry.translate(0, hangs ? -0.5 : 0.5, 0);
-
-  return geometry;
-}
+import useCityState from '../hooks/useCityState';
 
 function City({ config, uniforms }) {
   const buildClockRef = useBuildClock({
@@ -34,18 +22,12 @@ function City({ config, uniforms }) {
     uniforms,
   });
 
-  const compositionKey = pickValues(config, COMPOSITION_KEYS).join('|');
-  const composition = useMemo(
-    () => Object.fromEntries(COMPOSITION_KEYS.map((key) => [key, config[key]])),
-    [compositionKey]
-  );
-  const formKey = pickValues(config, FORM_KEYS).join('|');
-  const metrics = useMemo(
-    () => Object.fromEntries(FORM_KEYS.map((key) => [key, config[key]])),
-    [formKey]
-  );
+  const compositionKey = COMPOSITION_KEYS.map((key) => config[key]).join('|');
+  const composition = useMemo(() => compositionOf(config), [compositionKey]);
+  const formKey = FORM_KEYS.map((key) => config[key]).join('|');
+  const metrics = useMemo(() => metricsOf(config), [formKey]);
 
-  const { cells, model } = useCityModel({
+  const { cells, model } = useCityState({
     buildClockRef,
     composition,
     rebuildEnabled: config.rollingRebuild,
@@ -56,91 +38,53 @@ function City({ config, uniforms }) {
     seed: config.seed,
   });
 
-  const geometries = useMemo(
-    () =>
-      Object.fromEntries(
-        LAYER_SPECS.map((spec) => [spec.key, unitBox(spec.hangs)])
-      ),
-    []
-  );
+  const rig = useMemo(() => createCityRig({ uniforms }), [uniforms]);
 
-  useEffect(
-    () => () => Object.values(geometries).forEach((g) => g.dispose()),
-    [geometries]
-  );
+  useEffect(() => () => rig.dispose(), [rig]);
 
   const { deepest, layers } = useMemo(
-    () => buildLayers({ cells, metrics, radius: model.radius }),
-    [cells, metrics, model.radius]
+    () => layCity({ cells, colorBy: config.colorBy, metrics, model }),
+    [cells, config.colorBy, metrics, model]
   );
 
-  const surfaces = useMemo(
-    () => ({
-      ground: createGroundMaterial({ uniforms }),
-      pedestal: createPedestalMaterial({ uniforms }),
-    }),
-    [uniforms]
+  useEffect(() => rig.setLayers(layers), [layers, rig]);
+
+  useEffect(
+    () =>
+      rig.setGround({
+        cells,
+        radius: model.radius,
+        shape: config.pedestalShape,
+      }),
+    [cells, config.pedestalShape, model.radius, rig]
+  );
+
+  const pedestalDepth = pedestalDepthFor(config, deepest);
+
+  useEffect(
+    () =>
+      rig.setPedestal({
+        depth: pedestalDepth,
+        radius: model.radius,
+        shape: config.pedestalShape,
+      }),
+    [config.pedestalShape, model.radius, pedestalDepth, rig]
   );
 
   useEffect(
-    () => () => Object.values(surfaces).forEach((m) => m.dispose()),
-    [surfaces]
+    () => rig.setTowerBlend(config.towerBlend),
+    [config.towerBlend, rig]
+  );
+  useEffect(
+    () => rig.setTowerShadows(config.towerShadows),
+    [config.towerShadows, rig]
   );
 
-  const builders = useMemo(
-    () =>
-      Object.fromEntries(
-        LAYER_SPECS.filter((spec) => !spec.tower).map((spec) => [
-          spec.key,
-          (buffers) => spec.factory({ buffers, uniforms }),
-        ])
-      ),
-    [uniforms]
-  );
-  const buildTower = useMemo(
-    () => (buffers) =>
-      LAYER_SPECS.find((spec) => spec.tower).factory({
-        blend: config.towerBlend,
-        buffers,
-        uniforms,
-      }),
-    [config.towerBlend, uniforms]
-  );
+  const scale = cityScale(config, model);
 
-  const scale =
-    (config.citySize / model.rootSize) *
-    (config.honorSeedZoom ? model.viewScale : 1);
+  useEffect(() => rig.setScale(scale), [rig, scale]);
 
-  useEffect(() => {
-    uniforms.worldPerPixel.value = scale;
-  }, [scale, uniforms]);
-
-  return (
-    <group scale={scale}>
-      <Pedestal
-        depth={Math.max(config.pedestalDepth, deepest + PEDESTAL_MARGIN)}
-        material={surfaces.pedestal}
-        radius={model.radius}
-        shape={config.pedestalShape}
-      />
-      <Ground
-        cells={cells}
-        material={surfaces.ground}
-        radius={model.radius}
-        shape={config.pedestalShape}
-      />
-      {LAYER_SPECS.map((spec) => (
-        <InstancedLayer
-          key={spec.tower ? `${spec.key}-${config.towerBlend}` : spec.key}
-          buildMaterial={spec.tower ? buildTower : builders[spec.key]}
-          castShadow={spec.tower ? config.towerShadows : spec.castShadow}
-          geometry={geometries[spec.key]}
-          instances={layers[spec.key]}
-          receiveShadow={spec.receiveShadow}
-        />
-      ))}
-    </group>
-  );
+  return <primitive object={rig.group} />;
 }
 
 export default memo(City);

@@ -8,35 +8,16 @@ import {
   normalGeometry,
   positionGeometry,
   step,
-  uniform,
   vec3,
 } from 'three/tsl';
 import * as THREE from 'three/webgpu';
 
 import groundTone from './groundPattern';
-import { canvasAlpha, isTop, select } from './nodes';
+import { canvasAlpha, cellTint, isTop, select } from './nodes';
 import { applyReveal, flicker, pulse } from './reveal';
-import { COLORS, ENUMS, SCALARS } from './uniformDefaults';
 
 const TOWER_RAMP = 0.75;
-
-export const COLOR_KEYS = Object.keys(COLORS);
-export const SCALAR_KEYS = Object.keys(SCALARS);
-export const ENUM_KEYS = Object.keys(ENUMS);
-
-export function createCityUniforms() {
-  return {
-    build: uniform(1),
-    worldPerPixel: uniform(0.01),
-    ...Object.fromEntries(
-      COLOR_KEYS.map((key) => [key, uniform(new THREE.Color(COLORS[key]))])
-    ),
-    ...Object.fromEntries(
-      SCALAR_KEYS.map((key) => [key, uniform(SCALARS[key])])
-    ),
-    ...Object.fromEntries(ENUM_KEYS.map((key) => [key, uniform(0)])),
-  };
-}
+const CARD_EDGE_SHADE = 0.85;
 
 function lit(color) {
   const material = new THREE.MeshLambertNodeMaterial();
@@ -59,9 +40,14 @@ function pivotOf(buffers) {
 }
 
 export function createCardMaterial({ buffers, uniforms }) {
-  const material = lit(
-    mix(uniforms.cardEdgeColor, uniforms.cardColor, isTop())
+  const cell = cellTint(buffers, uniforms, 'cellCards');
+  const top = mix(uniforms.cardColor, cell.color, cell.amount);
+  const edge = mix(
+    uniforms.cardEdgeColor,
+    cell.color.mul(CARD_EDGE_SHADE),
+    cell.amount
   );
+  const material = lit(mix(edge, top, isTop()));
 
   applyReveal(material, buffers, uniforms, {
     bob: true,
@@ -78,11 +64,16 @@ export function createNeonMaterial({ buffers, uniforms }) {
     pivot: pivotOf(buffers),
   });
   const slot = instancedBufferAttribute(buffers.info).z;
-  const tint = select(slot, [
-    uniforms.neonMagentaColor,
-    uniforms.neonCyanColor,
-    uniforms.neonAmberColor,
-  ]);
+  const cell = cellTint(buffers, uniforms, 'cellAccents');
+  const tint = mix(
+    select(slot, [
+      uniforms.neonMagentaColor,
+      uniforms.neonCyanColor,
+      uniforms.neonAmberColor,
+    ]),
+    cell.color,
+    cell.amount
+  );
 
   material.colorNode = tint
     .mul(uniforms.neonIntensity)
@@ -131,7 +122,12 @@ export function createTowerMaterial({ blend, buffers, uniforms }) {
     .mul(banding)
     .mul(grow)
     .clamp(0, 1);
-  const tint = mix(uniforms.towerBaseColor, uniforms.towerColor, height);
+  const cell = cellTint(buffers, uniforms, 'cellTowers');
+  const tint = mix(
+    mix(uniforms.towerBaseColor, uniforms.towerColor, height),
+    cell.color,
+    cell.amount
+  );
 
   if (blend === 'glow') {
     material.blending = THREE.AdditiveBlending;

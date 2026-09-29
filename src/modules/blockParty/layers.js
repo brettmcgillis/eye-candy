@@ -1,5 +1,3 @@
-import * as THREE from 'three/webgpu';
-
 import { PIXEL_RISE } from './elevation';
 import terraceRings from './pits';
 import layoutSteps, { wellDepth } from './stairs';
@@ -9,22 +7,21 @@ const WALL_OVERLAP = 0.25;
 const ALIVE = 1e9;
 const MIN_TOWER_SCALE = 0.05;
 
-export const LAYER_KEYS = [
-  'glowPits',
-  'glowTerraces',
-  'neon',
-  'pits',
-  'plazas',
-  'steps',
-  'taperWalls',
-  'terraces',
-  'towers',
-  'wells',
+// Shafts hang below their anchor; everything else stands on it.
+export const LAYERS = [
+  { hangs: true, key: 'pits' },
+  { hangs: true, key: 'glowPits' },
+  { key: 'terraces' },
+  { key: 'glowTerraces' },
+  { hangs: true, key: 'wells' },
+  { key: 'steps' },
+  { key: 'taperWalls' },
+  { key: 'plazas' },
+  { key: 'neon' },
+  { key: 'towers' },
 ];
 
-const scratchPosition = new THREE.Vector3();
-const scratchQuaternion = new THREE.Quaternion();
-const scratchScale = new THREE.Vector3();
+export const LAYER_KEYS = LAYERS.map((layer) => layer.key);
 
 function hash(cell, a = 41.17, b = 289.3) {
   const value = Math.sin(cell.rect.w * a + cell.rect.h * b) * 21374.53;
@@ -32,15 +29,17 @@ function hash(cell, a = 41.17, b = 289.3) {
   return value - Math.floor(value);
 }
 
-function makeMatrix(rect, origin, height) {
-  scratchPosition.set(rect.x + rect.w / 2, origin, rect.y + rect.h / 2);
-  scratchScale.set(rect.w, height, rect.h);
-
-  return new THREE.Matrix4().compose(
-    scratchPosition,
-    scratchQuaternion,
-    scratchScale
-  );
+// [centre x, anchor y, centre z, width, height, depth] of a unit box that
+// stands on (or hangs from) its anchor.
+function makeBox(rect, origin, height) {
+  return [
+    rect.x + rect.w / 2,
+    origin,
+    rect.y + rect.h / 2,
+    rect.w,
+    height,
+    rect.h,
+  ];
 }
 
 function atLeast(rect, minimum) {
@@ -59,12 +58,14 @@ function grow(rect, amount) {
   };
 }
 
-function instance(cell, matrix, info = [0, 0, 0, 0]) {
+function instance(cell, box, info = [0, 0, 0, 0]) {
   return {
+    box,
+    cell,
     info,
     life: [cell.birth, cell.death ?? ALIVE],
-    matrix,
     seed: hash(cell),
+    tone: cell.tone ?? 0,
   };
 }
 
@@ -76,22 +77,18 @@ function addPlaza(layers, cell, metrics) {
   const pivot = [cell.rect.x, cell.rect.y];
 
   for (let level = 0; level < metrics.cardStack; level += 1) {
-    const matrix = makeMatrix(
-      cell.rect,
-      base + level * gap,
-      metrics.cardThickness
-    );
+    const box = makeBox(cell.rect, base + level * gap, metrics.cardThickness);
 
-    layers.plazas.push(instance(cell, matrix, [...pivot, level, 0]));
+    layers.plazas.push(instance(cell, box, [...pivot, level, 0]));
   }
 
   if (cell.neon) {
     const top = base + (metrics.cardStack - 1) * gap + metrics.cardThickness;
     const pad = grow(cell.rect, -cell.neon.inset);
-    const matrix = makeMatrix(pad, top, metrics.neonThickness);
+    const box = makeBox(pad, top, metrics.neonThickness);
 
     layers.neon.push(
-      instance(cell, matrix, [...pivot, NEON_SLOTS[cell.neon.slot], 0])
+      instance(cell, box, [...pivot, NEON_SLOTS[cell.neon.slot], 0])
     );
   }
 
@@ -109,16 +106,16 @@ function addTerraces(layers, cell, metrics, depth) {
 
   rings.forEach(({ layer, strips }) => {
     strips.forEach((strip) => {
-      const matrix = makeMatrix(strip, -depth, depth - layer * layerDepth);
+      const box = makeBox(strip, -depth, depth - layer * layerDepth);
 
-      target.push(instance(cell, matrix, [metrics.pitLayers, layer, 0, 0]));
+      target.push(instance(cell, box, [metrics.pitLayers, layer, 0, 0]));
     });
   });
 }
 
 function addPit(layers, cell, metrics) {
   const depth = metrics.pitLayers * metrics.pitLayerDepth * PIXEL_RISE;
-  const shaft = makeMatrix(grow(cell.rect, WALL_OVERLAP), 0, depth);
+  const shaft = makeBox(grow(cell.rect, WALL_OVERLAP), 0, depth);
 
   (cell.glow ? layers.glowPits : layers.pits).push(
     instance(cell, shaft, [metrics.pitLayers, 0, 0, 0])
@@ -136,19 +133,19 @@ function addStair(layers, cell, metrics) {
   const { steps, walls } = layoutSteps(cell, metrics);
 
   layers.wells.push(
-    instance(cell, makeMatrix(grow(cell.rect, WALL_OVERLAP), 0, depth))
+    instance(cell, makeBox(grow(cell.rect, WALL_OVERLAP), 0, depth))
   );
 
   steps.forEach((step) => {
-    const matrix = makeMatrix(step.rect, step.bottom, step.top - step.bottom);
+    const box = makeBox(step.rect, step.bottom, step.top - step.bottom);
 
-    layers.steps.push(instance(cell, matrix, [step.index, cell.steps, 0, 0]));
+    layers.steps.push(instance(cell, box, [step.index, cell.steps, 0, 0]));
   });
 
   walls.forEach((wall) => {
-    const matrix = makeMatrix(wall.rect, wall.bottom, -wall.bottom);
+    const box = makeBox(wall.rect, wall.bottom, -wall.bottom);
 
-    layers.taperWalls.push(instance(cell, matrix));
+    layers.taperWalls.push(instance(cell, box));
   });
 
   return depth;
@@ -173,7 +170,7 @@ function addTower(layers, cell, metrics, radius) {
   const rect = atLeast(cell.rect, metrics.minTowerFootprint);
   const height = towerHeight(cell, metrics, radius);
 
-  layers.towers.push(instance(cell, makeMatrix(rect, 0, height)));
+  layers.towers.push(instance(cell, makeBox(rect, 0, height)));
 
   return 0;
 }
@@ -189,11 +186,12 @@ export function isOpening(cell) {
   return cell.role === 'pit' || cell.role === 'stair';
 }
 
-export default function buildLayers({ cells, metrics, radius }) {
+export default function buildLayers({ cells, metrics, radius, tone }) {
   const layers = Object.fromEntries(LAYER_KEYS.map((key) => [key, []]));
   let deepest = 0;
 
-  cells.forEach((cell) => {
+  cells.forEach((source) => {
+    const cell = tone ? { ...source, tone: tone(source) } : source;
     const depth = BUILDERS[cell.role]?.(layers, cell, metrics, radius) ?? 0;
 
     deepest = Math.max(deepest, depth);

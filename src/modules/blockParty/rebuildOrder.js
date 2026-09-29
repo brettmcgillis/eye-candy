@@ -30,7 +30,7 @@ export function districtOrder(mode, districts) {
   return districts.map((district) => district.index);
 }
 
-export function nextDistrict({ last, mode, occupied, order, turn }) {
+export function nextDistrict({ last, mode, occupied, order, random, turn }) {
   const candidates = order.filter((index) => occupied.includes(index));
 
   if (!candidates.length) {
@@ -43,7 +43,7 @@ export function nextDistrict({ last, mode, occupied, order, turn }) {
         ? candidates.filter((index) => index !== last)
         : candidates;
 
-    return { index: pool[Math.floor(Math.random() * pool.length)], turn };
+    return { index: pool[Math.floor(random() * pool.length)], turn };
   }
 
   const next = (turn + 1) % candidates.length;

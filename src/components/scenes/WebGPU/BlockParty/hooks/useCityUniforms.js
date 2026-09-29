@@ -1,14 +1,13 @@
-import { useEffect, useMemo, useRef } from 'react';
+import { useMemo, useRef } from 'react';
 
+import { RENDER_OPTIONS, SCENE_KEYS } from '@modules/blockParty';
 import {
-  COLOR_KEYS,
-  ENUM_KEYS,
-  SCALAR_KEYS,
+  applyCityConfig,
   createCityUniforms,
-} from '../utils/materials';
-import { ENUMS } from '../utils/uniformDefaults';
+  paletteStops,
+} from '@modules/blockPartyRender';
 
-const KEYS = [...COLOR_KEYS, ...SCALAR_KEYS, ...ENUM_KEYS];
+const KEYS = SCENE_KEYS.filter((key) => !RENDER_OPTIONS[key].rig);
 
 // Tones, rates and modes reach the materials as uniforms so a Leva edit never
 // rebuilds a node graph. The joined values are the dependency because the
@@ -21,20 +20,15 @@ export default function useCityUniforms(config) {
 
   const signature = KEYS.map((key) => config[key]).join('|');
 
-  useEffect(() => {
-    const { current } = configRef;
+  const colors = useMemo(
+    () =>
+      applyCityConfig(
+        uniforms,
+        configRef.current,
+        paletteStops(configRef.current.palette)
+      ),
+    [signature, uniforms]
+  );
 
-    COLOR_KEYS.forEach((key) => uniforms[key].value.set(current[key]));
-    SCALAR_KEYS.forEach((key) => {
-      uniforms[key].value = current[key];
-    });
-    ENUM_KEYS.forEach((key) => {
-      uniforms[key].value = Math.max(
-        ENUMS[key].values.indexOf(current[key]),
-        0
-      );
-    });
-  }, [signature, uniforms]);
-
-  return uniforms;
+  return { colors, uniforms };
 }

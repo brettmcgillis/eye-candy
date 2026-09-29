@@ -3,7 +3,7 @@ import { useEffect, useRef } from 'react';
 
 import { useFrame } from '@react-three/fiber';
 
-const SETTLED = 1000;
+import { SETTLED } from '@modules/blockParty';
 
 // One unbounded clock. Cells hold the value they were born at, so the same
 // ramp plays the opening sweep and every later rebuild without ever resetting.
@@ -20,9 +20,10 @@ export default function useBuildClock({
     uniforms.build.value = clockRef.current;
   }, [buildIn, resetKey, uniforms]);
 
-  useFrame((_, delta) => {
+  useFrame((state, delta) => {
     clockRef.current += delta / Math.max(buildSeconds, 0.01);
     uniforms.build.value = clockRef.current;
+    uniforms.time.value = state.clock.elapsedTime;
   });
 
   return clockRef;

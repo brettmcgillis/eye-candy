@@ -1,7 +1,18 @@
 // Keys match the Leva schema in useSceneControls 1:1.
+import { sceneDefaults } from '@modules/blockParty';
+
 export const DEFAULT_PRESET = 'Paper';
 
 const SHARED = {
+  cellStrength: 1,
+  colorBy: 'district',
+  colorTarget: 'towers',
+  palette: 'None',
+  paletteExact: true,
+  paletteRepeat: 1,
+  paletteReverse: false,
+  paletteShift: 0,
+  paletteSurfaces: 1,
   buildIn: true,
   cardBob: 0,
   cardBobRate: 0.6,
@@ -71,7 +82,7 @@ const SHARED = {
 export const PRESETS = {
   Paper: {
     ...SHARED,
-    backgroundColor: '#fcfcfc',
+    backgroundColor: '#ffffff',
     cameraFrustumHeight: 13,
     glowFloorColor: '#3c3c44',
     lightAmbientIntensity: 1.68,
@@ -155,6 +166,32 @@ export const PRESETS = {
     wellWallColor: '#1f2833',
   },
 };
+
+PRESETS['Street Print'] = {
+  ...PRESETS.Paper,
+  colorBy: 'district',
+  colorTarget: 'all',
+  palette: 'City Street 6 (lospec)',
+  seed: 11,
+};
+
+PRESETS['Argon Glass'] = {
+  ...PRESETS.Paper,
+  colorBy: 'radial',
+  colorTarget: 'towers',
+  palette: 'Argon',
+  paletteExact: false,
+  paletteSurfaces: 0.3,
+  seed: 5,
+  towerHeightScale: 1.4,
+};
+
+// Saved from BlockPartyCLI: only what differs from the scene defaults.
+const SNAPSHOTS = {};
+
+Object.entries(SNAPSHOTS).forEach(([name, snapshot]) => {
+  PRESETS[name] = { ...PRESETS.Paper, ...sceneDefaults(), ...snapshot };
+});
 
 export function getPresetControls({ presetSnapshot }) {
   return { ...presetSnapshot };

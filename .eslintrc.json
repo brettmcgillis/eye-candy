@@ -74,15 +74,19 @@
             "patterns": [
               {
                 "group": [
+                  "**/blockParty/**",
                   "**/cataloggr/**",
                   "**/flora/**",
                   "**/fungi/**",
                   "**/gltfjsx/**",
                   "**/glyphs/**",
                   "**/iconography/**",
+                  "**/kumiko/**",
                   "**/loaderPatterns/**",
+                  "**/nestingBoxes/**",
                   "**/projectionMapping/**",
                   "**/rorschach/**",
+                  "**/subdivision/**",
                   "**/trucheterie/**"
                 ],
                 "message": "A dev tool may not import another tool's internals. Promote shared code to src/dev/shell (UI) or a shared src/dev folder (behavior)."
@@ -101,15 +105,19 @@
             "patterns": [
               {
                 "group": [
+                  "**/blockParty/**",
                   "**/cataloggr/**",
                   "**/colors/**",
                   "**/flora/**",
                   "**/fungi/**",
                   "**/glyphs/**",
                   "**/iconography/**",
+                  "**/kumiko/**",
                   "**/loaderPatterns/**",
+                  "**/nestingBoxes/**",
                   "**/projectionMapping/**",
                   "**/rorschach/**",
+                  "**/subdivision/**",
                   "**/trucheterie/**"
                 ],
                 "message": "A dev tool may not import another tool's internals. Promote shared code to src/dev/shell (UI) or a shared src/dev folder (behavior)."
@@ -128,15 +136,19 @@
             "patterns": [
               {
                 "group": [
+                  "**/blockParty/**",
                   "**/cataloggr/**",
                   "**/colors/**",
                   "**/flora/**",
                   "**/fungi/**",
                   "**/gltfjsx/**",
                   "**/glyphs/**",
+                  "**/kumiko/**",
                   "**/loaderPatterns/**",
+                  "**/nestingBoxes/**",
                   "**/projectionMapping/**",
                   "**/rorschach/**",
+                  "**/subdivision/**",
                   "**/trucheterie/**"
                 ],
                 "message": "A dev tool may not import another tool's internals. Promote shared code to src/dev/shell (UI) or a shared src/dev folder (behavior)."
@@ -155,6 +167,7 @@
             "patterns": [
               {
                 "group": [
+                  "**/blockParty/**",
                   "**/cataloggr/**",
                   "**/colors/**",
                   "**/flora/**",
@@ -162,8 +175,11 @@
                   "**/gltfjsx/**",
                   "**/glyphs/**",
                   "**/iconography/**",
+                  "**/kumiko/**",
+                  "**/nestingBoxes/**",
                   "**/projectionMapping/**",
                   "**/rorschach/**",
+                  "**/subdivision/**",
                   "**/trucheterie/**"
                 ],
                 "message": "A dev tool may not import another tool's internals. Promote shared code to src/dev/shell (UI) or a shared src/dev folder (behavior)."
@@ -182,6 +198,7 @@
             "patterns": [
               {
                 "group": [
+                  "**/blockParty/**",
                   "**/cataloggr/**",
                   "**/colors/**",
                   "**/flora/**",
@@ -189,8 +206,11 @@
                   "**/gltfjsx/**",
                   "**/glyphs/**",
                   "**/iconography/**",
+                  "**/kumiko/**",
                   "**/loaderPatterns/**",
+                  "**/nestingBoxes/**",
                   "**/projectionMapping/**",
+                  "**/subdivision/**",
                   "**/trucheterie/**"
                 ],
                 "message": "A dev tool may not import another tool's internals. Promote shared code to src/dev/shell (UI) or a shared src/dev folder (behavior)."
@@ -213,15 +233,19 @@
             "patterns": [
               {
                 "group": [
+                  "**/blockParty/**",
                   "**/colors/**",
                   "**/flora/**",
                   "**/fungi/**",
                   "**/gltfjsx/**",
                   "**/glyphs/**",
                   "**/iconography/**",
+                  "**/kumiko/**",
                   "**/loaderPatterns/**",
+                  "**/nestingBoxes/**",
                   "**/projectionMapping/**",
                   "**/rorschach/**",
+                  "**/subdivision/**",
                   "**/trucheterie/**"
                 ],
                 "message": "A dev tool may not import another tool's internals. Promote shared code to src/dev/shell (UI) or a shared src/dev folder (behavior)."
@@ -240,6 +264,7 @@
             "patterns": [
               {
                 "group": [
+                  "**/blockParty/**",
                   "**/cataloggr/**",
                   "**/colors/**",
                   "**/flora/**",
@@ -247,8 +272,11 @@
                   "**/gltfjsx/**",
                   "**/glyphs/**",
                   "**/iconography/**",
+                  "**/kumiko/**",
                   "**/loaderPatterns/**",
+                  "**/nestingBoxes/**",
                   "**/rorschach/**",
+                  "**/subdivision/**",
                   "**/trucheterie/**"
                 ],
                 "message": "A dev tool may not import another tool's internals. Promote shared code to src/dev/shell (UI) or a shared src/dev folder (behavior)."
@@ -267,15 +295,19 @@
             "patterns": [
               {
                 "group": [
+                  "**/blockParty/**",
                   "**/cataloggr/**",
                   "**/colors/**",
                   "**/flora/**",
                   "**/fungi/**",
                   "**/gltfjsx/**",
                   "**/iconography/**",
+                  "**/kumiko/**",
                   "**/loaderPatterns/**",
+                  "**/nestingBoxes/**",
                   "**/projectionMapping/**",
                   "**/rorschach/**",
+                  "**/subdivision/**",
                   "**/trucheterie/**"
                 ],
                 "message": "A dev tool may not import another tool's internals. Promote shared code to src/dev/shell (UI) or a shared src/dev folder (behavior)."
@@ -294,15 +326,19 @@
             "patterns": [
               {
                 "group": [
+                  "**/blockParty/**",
                   "**/cataloggr/**",
                   "**/colors/**",
                   "**/fungi/**",
                   "**/gltfjsx/**",
                   "**/glyphs/**",
                   "**/iconography/**",
+                  "**/kumiko/**",
                   "**/loaderPatterns/**",
+                  "**/nestingBoxes/**",
                   "**/projectionMapping/**",
                   "**/rorschach/**",
+                  "**/subdivision/**",
                   "**/trucheterie/**"
                 ],
                 "message": "A dev tool may not import another tool's internals. Promote shared code to src/dev/shell (UI) or a shared src/dev folder (behavior)."
@@ -330,15 +366,59 @@
             "patterns": [
               {
                 "group": [
+                  "**/blockParty/**",
                   "**/cataloggr/**",
                   "**/colors/**",
                   "**/flora/**",
                   "**/gltfjsx/**",
                   "**/glyphs/**",
                   "**/iconography/**",
+                  "**/kumiko/**",
                   "**/loaderPatterns/**",
+                  "**/nestingBoxes/**",
                   "**/projectionMapping/**",
                   "**/rorschach/**",
+                  "**/subdivision/**",
+                  "**/trucheterie/**"
+                ],
+                "message": "A dev tool may not import another tool's internals. Promote shared code to src/dev/shell (UI) or a shared src/dev folder (behavior)."
+              },
+              {
+                "group": [
+                  "@modules/fungi/*",
+                  "**/modules/fungi/*",
+                  "@modules/fungiRender/*",
+                  "**/modules/fungiRender/*"
+                ],
+                "message": "Import the Fungi kernel through its @modules/fungi barrel, never a file inside it. See docs/fungi-pipeline.md."
+              }
+            ]
+          }
+        ]
+      }
+    },
+    {
+      "files": ["src/dev/tools/kumiko/**/*.{js,jsx}"],
+      "rules": {
+        "no-restricted-imports": [
+          "error",
+          {
+            "patterns": [
+              {
+                "group": [
+                  "**/blockParty/**",
+                  "**/cataloggr/**",
+                  "**/colors/**",
+                  "**/flora/**",
+                  "**/fungi/**",
+                  "**/gltfjsx/**",
+                  "**/glyphs/**",
+                  "**/iconography/**",
+                  "**/loaderPatterns/**",
+                  "**/nestingBoxes/**",
+                  "**/projectionMapping/**",
+                  "**/rorschach/**",
+                  "**/subdivision/**",
                   "**/trucheterie/**"
                 ],
                 "message": "A dev tool may not import another tool's internals. Promote shared code to src/dev/shell (UI) or a shared src/dev folder (behavior)."
@@ -366,6 +446,7 @@
             "patterns": [
               {
                 "group": [
+                  "**/blockParty/**",
                   "**/cataloggr/**",
                   "**/colors/**",
                   "**/flora/**",
@@ -373,9 +454,12 @@
                   "**/gltfjsx/**",
                   "**/glyphs/**",
                   "**/iconography/**",
+                  "**/kumiko/**",
                   "**/loaderPatterns/**",
+                  "**/nestingBoxes/**",
                   "**/projectionMapping/**",
-                  "**/rorschach/**"
+                  "**/rorschach/**",
+                  "**/subdivision/**"
                 ],
                 "message": "A dev tool may not import another tool's internals. Promote shared code to src/dev/shell (UI) or a shared src/dev folder (behavior)."
               },
@@ -387,6 +471,121 @@
                   "**/modules/trucheterieBlobRender/*"
                 ],
                 "message": "Import the Trucheterie blob-field kernel through its @modules/trucheterieBlob barrel, never a file inside it. See docs/flora-pipeline.md."
+              }
+            ]
+          }
+        ]
+      }
+    },
+    {
+      "files": ["src/dev/tools/subdivision/**/*.{js,jsx}"],
+      "rules": {
+        "no-restricted-imports": [
+          "error",
+          {
+            "patterns": [
+              {
+                "group": [
+                  "**/blockParty/**",
+                  "**/cataloggr/**",
+                  "**/colors/**",
+                  "**/flora/**",
+                  "**/fungi/**",
+                  "**/gltfjsx/**",
+                  "**/glyphs/**",
+                  "**/iconography/**",
+                  "**/kumiko/**",
+                  "**/loaderPatterns/**",
+                  "**/nestingBoxes/**",
+                  "**/projectionMapping/**",
+                  "**/rorschach/**",
+                  "**/trucheterie/**"
+                ],
+                "message": "A dev tool may not import another tool's internals. Promote shared code to src/dev/shell (UI) or a shared src/dev folder (behavior)."
+              },
+              {
+                "group": ["@modules/subdivision/*", "**/modules/subdivision/*"],
+                "message": "Import the Subdivision kernel through its @modules/subdivision barrel, never a file inside it."
+              }
+            ]
+          }
+        ]
+      }
+    },
+    {
+      "files": ["src/dev/tools/blockParty/**/*.{js,jsx}"],
+      "rules": {
+        "no-restricted-imports": [
+          "error",
+          {
+            "patterns": [
+              {
+                "group": [
+                  "**/cataloggr/**",
+                  "**/colors/**",
+                  "**/flora/**",
+                  "**/fungi/**",
+                  "**/gltfjsx/**",
+                  "**/glyphs/**",
+                  "**/iconography/**",
+                  "**/kumiko/**",
+                  "**/loaderPatterns/**",
+                  "**/nestingBoxes/**",
+                  "**/projectionMapping/**",
+                  "**/rorschach/**",
+                  "**/subdivision/**",
+                  "**/trucheterie/**"
+                ],
+                "message": "A dev tool may not import another tool's internals. Promote shared code to src/dev/shell (UI) or a shared src/dev folder (behavior)."
+              },
+              {
+                "group": [
+                  "@modules/blockParty/*",
+                  "**/modules/blockParty/*",
+                  "@modules/blockPartyRender/*",
+                  "**/modules/blockPartyRender/*"
+                ],
+                "message": "Import the Block Party kernel through its @modules/blockParty barrel, never a file inside it. See docs/block-party-pipeline.md."
+              }
+            ]
+          }
+        ]
+      }
+    },
+    {
+      "files": ["src/dev/tools/nestingBoxes/**/*.{js,jsx}"],
+      "rules": {
+        "no-restricted-imports": [
+          "error",
+          {
+            "patterns": [
+              {
+                "group": [
+                  "**/blockParty/**",
+                  "**/cataloggr/**",
+                  "**/colors/**",
+                  "**/flora/**",
+                  "**/fungi/**",
+                  "**/gltfjsx/**",
+                  "**/glyphs/**",
+                  "**/iconography/**",
+                  "**/kumiko/**",
+                  "**/loaderPatterns/**",
+                  "**/projectionMapping/**",
+                  "**/rorschach/**",
+                  "**/subdivision/**",
+                  "**/trucheterie/**"
+                ],
+                "message": "A dev tool may not import another tool's internals. Promote shared code to src/dev/shell (UI) or a shared src/dev folder (behavior)."
+              },
+              {
+                "group": [
+                  "@modules/nestingBoxes/*",
+                  "**/modules/nestingBoxes/*",
+                  "@modules/nestingBoxesRender/*",
+                  "**/modules/nestingBoxesRender/*"
+                ],
+                "message": "Import the Nesting Boxes kernel through its @modules/nestingBoxes barrel, never a file inside it. See docs/nesting-boxes-pipeline.md."
               }
             ]
           }

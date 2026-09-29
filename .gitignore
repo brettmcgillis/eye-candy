@@ -18,6 +18,10 @@
 /output/flora-workbench/
 /output/fungi-workbench/
 /output/trucheterie-workbench/
+/output/subdivision-workbench/
+/output/kumiko-workbench/
+/output/nesting-boxes-workbench/
+/output/block-party-workbench/
 
 # misc
 .DS_Store

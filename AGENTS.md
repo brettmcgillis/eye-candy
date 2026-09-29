@@ -65,6 +65,40 @@ the current scene folder go through path aliases (`@elements`, `@modules`,
   `@modules/fungiRender` (the shared specimen rig), the headless CLIs, and
   FungiCLI. Run `npm run fungi:check` after changing any of them.
 
+## Required reading before touching Kumiko
+
+- **`docs/kumiko-pipeline.md`** — the Fungi arrangement for kumiko panels:
+  `@modules/kumiko` (three-free tilings, patterns, mixing, arrangement and
+  option schema), `@modules/kumikoRender` (CSG slab / strip geometry and the
+  rig), the headless CLI, and KumikoCLI. Run `npm run kumiko:check` after
+  changing any of them.
+
+## Required reading before touching Block Party
+
+- **`docs/block-party-pipeline.md`** — the Fungi arrangement for the
+  isometric city: `@modules/blockParty` (three-free quadtree city, rebuild
+  state machine, palette roles, plot SVG and option schema; the scene's Leva
+  is generated from it), `@modules/blockPartyRender` (`createCityRig`, the
+  look), the headless CLIs, and BlockPartyCLI. Run `npm run block-party:check`
+  after changing any of them.
+
+## Required reading before touching Nesting Boxes
+
+- **`docs/nesting-boxes-pipeline.md`** — the Fungi arrangement for the tree
+  of boxes: `@modules/nestingBoxes` (three-free CPU mirror of the tree
+  kernel, motion, colour pens, facet roll, plot SVG and option schema; the
+  scene's Leva is generated from it), `@modules/nestingBoxesRender`
+  (`createBoxRig`, the compute kernel and the look), the headless CLIs, and
+  NestingBoxesCLI. Run `npm run nesting-boxes:check` after changing any of
+  them.
+
+## Required reading before touching Subdivision
+
+- **`docs/subdivision-pipeline.md`** — `@modules/subdivision` is a three-free
+  kernel (fractalPixelate's split loop on the CPU, shading, hatching, SVG)
+  drawn by the WebGPU scene and by the headless CLI, with SubdivisionCLI over
+  the latter. Run `npm run subdivision:check` after changing any of them.
+
 ## Orientation
 
 - Scenes: `src/components/scenes/<Renderer>/<SceneName>/` (`WebGL | WebGPU |

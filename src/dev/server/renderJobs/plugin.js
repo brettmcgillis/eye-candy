@@ -19,7 +19,7 @@ export function sendJson(res, statusCode, payload) {
   res.end(JSON.stringify(payload, null, 2));
 }
 
-export function readJsonBody(req) {
+export function readJsonBody(req, maxBytes = MAX_BODY_BYTES) {
   return new Promise((resolve, reject) => {
     const chunks = [];
     let size = 0;
@@ -28,7 +28,7 @@ export function readJsonBody(req) {
     req.on('data', (chunk) => {
       if (failed) return;
       size += chunk.length;
-      if (size > MAX_BODY_BYTES) {
+      if (size > maxBytes) {
         failed = true;
         reject(
           new RenderJobRequestError(
@@ -118,7 +118,7 @@ export async function handleJson(res, handler) {
 
 // The /dev-api/<tool> surface every generative workbench shares: jobs, their
 // assets, and the kept ("saved") tree. `routes` adds tool-specific endpoints,
-// each `{ method, path, handler(rootDir, body) }` answered as JSON.
+// each `{ method, path, handler(rootDir, body), maxBytes? }` answered as JSON.
 export default function createRenderJobPlugin({ routes = [], service, tool }) {
   const base = `/dev-api/${tool}`;
   const jobsApi = `${base}/jobs`;
@@ -146,7 +146,10 @@ export default function createRenderJobPlugin({ routes = [], service, tool }) {
         );
         if (extra) {
           await json(async () =>
-            extra.handler(rootDir, method === 'GET' ? {} : await body())
+            extra.handler(
+              rootDir,
+              method === 'GET' ? {} : await readJsonBody(req, extra.maxBytes)
+            )
           );
           return;
         }

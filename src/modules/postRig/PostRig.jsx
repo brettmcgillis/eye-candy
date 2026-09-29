@@ -2,9 +2,9 @@ import { memo, useCallback, useEffect, useMemo, useRef, useState } from 'react';
 
 import { useFrame, useThree } from '@react-three/fiber';
 
-import { pass } from 'three/tsl';
 import * as THREE from 'three/webgpu';
 
+import createPostChain from './createPostChain';
 import EFFECTS from './effects';
 
 const scratchViewPoint = new THREE.Vector3();
@@ -50,39 +50,21 @@ function PostRig({
       return undefined;
     }
 
-    const scenePass = pass(scene, camera);
-    const ctx = {
+    const built = createPostChain({
       camera,
-      colorNode: scenePass.getTextureNode('output'),
-      depthNode: scenePass.getTextureNode('depth'),
+      lights,
       renderer,
       scene,
-      scenePass,
-      viewZNode: scenePass.getViewZNode(),
-    };
+      slots: activeSlots,
+    });
 
-    const chain = [];
-    const node = activeSlots.reduce((input, slot) => {
-      const effect = EFFECTS[slot.type];
-      const light = slot.light ? lights[slot.light] : null;
-
-      if (!effect || (effect.isReady && !effect.isReady(slot, light))) {
-        return input;
-      }
-
-      const built = effect.create({ ctx, input, light, slot });
-      chain.push({ slot, update: built.update });
-      return built.node;
-    }, ctx.colorNode);
-
-    if (chain.length === 0) {
+    if (!built) {
       pipelineRef.current = null;
       chainRef.current = [];
       return undefined;
     }
 
-    const pipeline = new THREE.RenderPipeline(renderer);
-    pipeline.outputNode = node;
+    const { chain, pipeline } = built;
     pipelineRef.current = pipeline;
     chainRef.current = chain;
 

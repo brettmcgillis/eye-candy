@@ -12,7 +12,10 @@
 
 ### EFFECTS
 
+- [Dither](src/components/postprocessing/WebGPU/dither/todo.md)
 - [FractalPixelate](src/components/postprocessing/WebGPU/fractalPixelate/todo.md)
+- [Halftone](src/components/postprocessing/WebGPU/halftone/todo.md)
+- [ShadingMotion](src/components/postprocessing/WebGPU/shadingMotion/todo.md)
 
 ### SCENES
 
@@ -56,30 +59,39 @@
 - [DrippingSkull](src/components/scenes/WebGPU/DrippingSkull/todo.md)
 - [EndlessErosion](src/components/scenes/WebGPU/EndlessErosion/todo.md)
 - [Explorer](src/components/scenes/WebGPU/Explorer/todo.md)
+- [Fauna](src/components/scenes/WebGPU/Fauna/todo.md)
 - [FightingFish](src/components/scenes/WebGPU/FightingFish/todo.md)
 - [Fireflies](src/components/scenes/WebGPU/Fireflies/todo.md)
 - [Flora](src/components/scenes/WebGPU/Flora/todo.md)
+- [Fungi](src/components/scenes/WebGPU/Fungi/todo.md)
 - [FlyingHigh](src/components/scenes/WebGL/FlyingHigh/todo.md)
 - [Fractal Automata](src/components/scenes/WebGPU/FractalAutomata/todo.md)
 - [GetWrecked](src/components/scenes/WebGPU/GetWrecked/todo.md)
 - [GhostStories](src/components/scenes/WebGPU/GhostStories/todo.md)
-- [GrandStaircase](src/components/scenes/WebGPU/GrandStaircase/todo.md)
+- [Good Knight](src/components/scenes/WebGPU/GoodKnight/todo.md)
+- [Gray Matter](src/components/scenes/WebGPU/GrayMatter/todo.md)
+- [House of Leaves](src/components/scenes/WebGPU/HouseOfLeaves/todo.md)
 - [HexTrees](src/components/scenes/WebGPU/HexTrees/todo.md)
+- [Kumiko](src/components/scenes/WebGPU/Kumiko/todo.md)
 - [My Heart Is A Broken Fish Tank](src/components/scenes/WebGPU/MyHeartIsABrokenFishTank/todo.md)
 - [Nesting Boxes](src/components/scenes/WebGPU/NestingBoxes/todo.md)
 - [OneInTheHand](src/components/scenes/WebGPU/OneInTheHand/todo.md)
 - [PolicePresence](src/components/scenes/WebGL/PolicePresence/todo.md)
 - [Pour One Out](src/components/scenes/WebGPU/PourOneOut/todo.md)
 - [Prayer](src/components/scenes/WebGPU/Prayer/todo.md)
+- [Push Comes to Shove](src/components/scenes/WebGPU/PushComesToShove/todo.md)
 - [QuinnsPlayground](src/components/scenes/WebGL/QuinnsPlayground/todo.md)
 - [RaisedByTV](src/components/scenes/WebGPU/RaisedByTV/todo.md)
 - [RowItAlone](src/components/scenes/WebGL/RowItAlone/todo.md)
 - [RowItAlone-WebGPU](src/components/scenes/WebGPU/RowItAlone/todo.md)
 - [Rorschach](src/components/scenes/WebGPU/Rorschach/todo.md)
+- [Rug Pull](src/components/scenes/WebGPU/RugPull/todo.md)
 - [Shoreline](src/components/scenes/WebGPU/Shoreline/todo.md)
 - [StayHunted](src/components/scenes/WebGPU/StayHunted/todo.md)
 - [StayingAfloat](src/components/scenes/WebGL/StayingAfloat/todo.md)
 - [StillPullingForYou](src/components/scenes/WebGPU/StillPullingForYou/todo.md)
+- [Strings](src/components/scenes/WebGPU/Strings/todo.md)
+- [Subdivision](src/components/scenes/WebGPU/Subdivision/todo.md)
 - [ThatsAllFolks](src/components/scenes/WebGPU/ThatsAllFolks/todo.md)
 - [Upstream/Downstream](src/components/scenes/WebGPU/UpstreamDownstream/todo.md)
 - [UrbanWildlife](src/components/scenes/WebGPU/UrbanWildlife/todo.md)
@@ -90,6 +102,7 @@
 - [WindowBreaker](src/components/scenes/WebGPU/WindowBreaker/todo.md)
 - [WriteOff](src/components/scenes/WebGPU/WriteOff/todo.md)
 - [You're Looking Radiant](src/components/scenes/WebGPU/YoureLookingRadiant/todo.md)
+- [You're Looking Radiant 3D](src/components/scenes/WebGPU/YoureLookingRadiant3D/todo.md)
 
 **Template**
 

@@ -2506,5 +2506,21 @@
   {
     "name": "Krabwhop (lospec)",
     "colors": ["#EADED3", "#E3BC2E", "#D65C41", "#376F85", "#47352A"]
+  },
+  {
+    "name": "Kumiko Sumi",
+    "colors": ["#1d1a17", "#3b3029", "#6b5543", "#a88a68", "#e8dcc4"]
+  },
+  {
+    "name": "Kumiko Sakura",
+    "colors": ["#3a2230", "#7d3a55", "#c9728c", "#efb3c0", "#fbe9ea"]
+  },
+  {
+    "name": "Kumiko Aizome",
+    "colors": ["#0e1a2b", "#1f3b63", "#3f6ea3", "#8fb3d6", "#e6eef5"]
+  },
+  {
+    "name": "Kumiko Hinoki",
+    "colors": ["#4a2f1b", "#8a5a33", "#c08a55", "#e2bb86", "#f6e7c9"]
   }
 ]

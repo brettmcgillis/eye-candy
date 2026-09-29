@@ -1,0 +1,40 @@
+import { hexToRgb, rgbToHex } from '@utils/paletteStops';
+
+// The GPU's stand-in for "never" — a leaf never gives way to children.
+export const LEAF_HIDE = 1e4;
+
+export const hideAt = (node) => (node.leaf ? Infinity : node.depth + 1);
+
+const smoothstep = (t) => t * t * (3 - 2 * t);
+
+// `grow` is in levels. A cell splits rather than grows: at grow = d the
+// children of every splitting level-(d-1) cell replace it exactly, in its
+// colour and with no seams, then over [d, d+1] their seams open and their
+// colours move to their own. Collapse runs it backwards — children close up,
+// take their parent's colour and recombine into it. Returns that 0..1 split
+// progress, or -1 while the node is not on screen. The scene's cell shader is
+// the GPU twin of this.
+export function splitProgress(node, grow) {
+  const g = Math.max(0, grow);
+  if (g < node.depth) return -1;
+  if (!node.leaf && g >= node.depth + 1) return -1;
+  return smoothstep(Math.min(1, g - node.depth));
+}
+
+export const fullyGrown = (piece) =>
+  piece.nodes.reduce((max, node) => Math.max(max, node.depth), 0) + 1;
+
+const toLinear = (c) => {
+  const v = c / 255;
+  return v <= 0.04045 ? v / 12.92 : ((v + 0.055) / 1.055) ** 2.4;
+};
+const toSrgb = (v) =>
+  255 * (v <= 0.0031308 ? v * 12.92 : 1.055 * v ** (1 / 2.4) - 0.055);
+
+// Mixed in linear light, as the GPU mixes, so a frame matches the scene.
+export function mixHex(from, to, t) {
+  if (t >= 1 || from === to) return to;
+  const a = hexToRgb(from).map(toLinear);
+  const b = hexToRgb(to).map(toLinear);
+  return rgbToHex(a.map((v, i) => toSrgb(v + (b[i] - v) * t)));
+}

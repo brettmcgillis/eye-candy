@@ -1,0 +1,51 @@
+.sd-swatches {
+  display: flex;
+  gap: 0.25rem;
+  margin-top: 0.5rem;
+}
+
+.sd-swatches span {
+  width: 1.25rem;
+  height: 1.25rem;
+  border: 1px solid var(--dev-border-strong);
+  border-radius: 0.25rem;
+}
+
+.sd-save-preset {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.4rem;
+  width: 100%;
+}
+
+.sd-save-preset input {
+  flex: 1;
+  min-width: 8rem;
+}
+
+.sd-source {
+  grid-column: 1 / -1;
+}
+
+.sd-source__row {
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+}
+
+.sd-source__row select {
+  flex: 1;
+  min-width: 0;
+}
+
+.sd-source__thumb {
+  width: 2.25rem;
+  height: 2.25rem;
+  border: 1px solid var(--dev-border-strong);
+  border-radius: 0.25rem;
+  object-fit: cover;
+}
+
+.sd-source__upload {
+  cursor: pointer;
+}

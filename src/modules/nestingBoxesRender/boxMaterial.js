@@ -26,14 +26,6 @@ export function createBoxUniforms() {
   };
 }
 
-// One instance per node at `drawLevel`, blended out of its ancestor at the
-// progress floor. Drawing every leaf as its ancestor instead stacks thousands of
-// identical boxes on top of each other and stalls the GPU on overdraw.
-export function getDrawLevel(progress, levels) {
-  const lo = Math.min(Math.floor(progress), levels);
-  return progress > lo ? Math.min(lo + 1, levels) : lo;
-}
-
 export function buildBoxMaterial({ maps, paletteTexture, tree, uniforms: u }) {
   const node = uint(1).shiftLeft(u.drawLevel).add(instanceIndex);
   const lo = min(uint(floor(u.progress)), u.drawLevel);

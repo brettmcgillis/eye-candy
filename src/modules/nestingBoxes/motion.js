@@ -24,6 +24,14 @@ export function growProgressAt(time, c) {
   return 0;
 }
 
+// One instance per node at the draw level, blended out of its ancestor at
+// the progress floor. Drawing every leaf as its ancestor instead stacks
+// thousands of identical boxes and stalls the GPU on overdraw.
+export function getDrawLevel(progress, levels) {
+  const lo = Math.min(Math.floor(progress), levels);
+  return progress > lo ? Math.min(lo + 1, levels) : lo;
+}
+
 export default function createMotion() {
   let driftTime = 0;
   let growEpoch = 0;

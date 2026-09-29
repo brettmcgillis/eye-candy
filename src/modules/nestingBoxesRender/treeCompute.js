@@ -18,7 +18,7 @@ import {
 } from 'three/tsl';
 import * as THREE from 'three/webgpu';
 
-import { MAX_NODES } from './boxTree';
+import { MAX_NODES } from '@modules/nestingBoxes';
 
 export function createTreeUniforms() {
   return {

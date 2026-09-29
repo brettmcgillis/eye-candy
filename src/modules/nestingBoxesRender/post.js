@@ -27,6 +27,9 @@ const POST = {
   bloom: {
     type: 'bloom',
     enabled: false,
+    radius: 0.4,
+    strength: 0.35,
+    threshold: 0.9,
   },
 };
 

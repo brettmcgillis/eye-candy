@@ -1,4 +1,4 @@
-import { useMemo, useRef } from 'react';
+import { useCallback, useMemo, useRef } from 'react';
 
 import { folder, useControls } from 'leva';
 
@@ -12,21 +12,16 @@ import {
   useSceneLightingControls,
 } from '@modules/lightingRig';
 import { useMediaRecorder } from '@modules/mediaRecorder';
+import {
+  NESTING_BOXES_CAMERA as CAMERA,
+  NESTING_BOXES_LIGHTING as LIGHTING,
+  NESTING_BOXES_POST as POST,
+} from '@modules/nestingBoxesRender';
 import { getPostControlsKey, useScenePostControls } from '@modules/postRig';
 
-import getColorControls from '../components/getColorControls';
-import getFogControls from '../components/getFogControls';
-import getMotionControls from '../components/getMotionControls';
-import getStructureControls from '../components/getStructureControls';
-import getSurfaceControls from '../components/getSurfaceControls';
-import getWindowControls from '../components/getWindowControls';
 import { DEFAULT_PRESET, PRESETS, getPresetControls } from '../presets/presets';
-import { randomStructure } from '../utils/boxTree';
-import CAMERA from '../utils/camera';
-import LIGHTING from '../utils/lighting';
-import POST from '../utils/post';
+import sceneFolders, { SCENE_LABEL, rollStructure } from '../utils/controls';
 
-const SCENE_LABEL = 'Nesting Boxes';
 const CAMERA_FOLDER_PATH = `${SCENE_LABEL}.Camera`;
 const LIGHTING_FOLDER_PATH = `${SCENE_LABEL}.Lighting`;
 
@@ -59,38 +54,18 @@ export default function useSceneControls() {
 
   const setControlsRef = useRef(null);
   const growReplayRef = useRef(0);
-  const sceneControls = useMemo(() => {
-    const defaultValues = controlsSnapshotRef.current;
-    return {
-      ...getStructureControls({
-        defaultValues,
-        onRandomize: () => setControlsRef.current?.(randomStructure()),
-      }),
-      Motion: folder(
-        getMotionControls({
-          defaultValues,
-          folderPath: `${SCENE_LABEL}.Motion`,
-          onReplay: () => {
-            growReplayRef.current += 1;
-          },
-        }),
-        { collapsed: true }
-      ),
-      ...getColorControls({
-        defaultValues,
-        folderPath: `${SCENE_LABEL}.Color`,
-      }),
-      ...getSurfaceControls(defaultValues),
-      ...getWindowControls(defaultValues),
-      ...getFogControls(defaultValues),
-    };
+  const onRandomize = useCallback(() => {
+    setControlsRef.current?.(rollStructure(controlsSnapshotRef.current));
   }, [controlsSnapshotRef]);
+  const onReplay = useCallback(() => {
+    growReplayRef.current += 1;
+  }, []);
 
   const [controls, setControls] = useControls(SCENE_LABEL, () => ({
     Presets: presetsFolder,
     Camera: folder(cameraControls, { collapsed: true }),
     Lighting: folder(lightingControls, { collapsed: true }),
-    ...sceneControls,
+    ...sceneFolders(controlsSnapshotRef.current, { onRandomize, onReplay }),
     Post: folder(postControls, { collapsed: true }),
   }));
 

@@ -1,30 +1,11 @@
-import { COLOR_DEFAULTS } from '../components/getColorControls';
-import { FOG_DEFAULTS } from '../components/getFogControls';
-import { MOTION_DEFAULTS } from '../components/getMotionControls';
-import { STRUCTURE_DEFAULTS } from '../components/getStructureControls';
-import { SURFACE_DEFAULTS } from '../components/getSurfaceControls';
-import { WINDOW_DEFAULTS } from '../components/getWindowControls';
-import LIGHTING from '../utils/lighting';
+// Keys match the Leva schema generated from renderOptions.mjs 1:1.
+import { sceneDefaults } from '@modules/nestingBoxes';
 
 export const DEFAULT_PRESET = 'Tree of Boxes';
 
 const BASE = {
   cameraMode: 'orbit',
-  ...STRUCTURE_DEFAULTS,
-  ...MOTION_DEFAULTS,
-  ...COLOR_DEFAULTS,
-  ...SURFACE_DEFAULTS,
-  ...FOG_DEFAULTS,
-  ...WINDOW_DEFAULTS,
-  lightSkySkyColor: LIGHTING.sky.skyColor,
-  lightSkyGroundColor: LIGHTING.sky.groundColor,
-  lightSkyIntensity: LIGHTING.sky.intensity,
-  lightKeyColor: LIGHTING.key.color,
-  lightKeyIntensity: LIGHTING.key.intensity,
-  postBloomEnabled: false,
-  postBloomThreshold: 0.9,
-  postBloomStrength: 0.35,
-  postBloomRadius: 0.4,
+  ...sceneDefaults(),
 };
 
 export const PRESETS = {
@@ -120,6 +101,13 @@ export const PRESETS = {
     tintDrift: 0,
   },
 };
+
+// Saved from NestingBoxesCLI: only what differs from the scene defaults.
+const SNAPSHOTS = {};
+
+Object.entries(SNAPSHOTS).forEach(([name, snapshot]) => {
+  PRESETS[name] = { ...BASE, ...snapshot };
+});
 
 export function getPresetControls({ presetSnapshot }) {
   return { ...presetSnapshot };

@@ -4,12 +4,12 @@ import * as THREE from 'three/webgpu';
 
 import { CameraRig } from '@modules/cameraRig';
 import { LightingRig } from '@modules/lightingRig';
+import { NESTING_BOXES_CAMERA as CAMERA } from '@modules/nestingBoxesRender';
 import { PostRig } from '@modules/postRig';
 
 import BoxTree from './components/BoxTree';
 import FogRig from './components/FogRig';
 import useSceneControls from './hooks/useSceneControls';
-import CAMERA from './utils/camera';
 
 const FOCUS_TARGET = new THREE.Vector3(...CAMERA.orbit.desktop.target);
 

@@ -1,0 +1,1 @@
+function o(r,n){const a=[];return Object.entries(n).forEach(([e,t])=>{if(r[e]){if(typeof t=="number")r[e].value=t;else if(typeof t=="boolean")r[e].value=t?1:0;else return;a.push(e)}}),a}const p={Expansive:"expansive","Gray-Scott":"grayScott",Physarum:"physarum"};export{p as S,o as a};

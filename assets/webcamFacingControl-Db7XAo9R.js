@@ -1,0 +1,1 @@
+import{i as a}from"./isMobileDevice-De1yZKQi.js";const e={Front:"front",Back:"back"};function c(r="front",{label:t="Camera",render:o}={}){return{label:t,options:e,render:n=>a()&&(o?o(n):!0),value:r}}export{e as W,c as w};

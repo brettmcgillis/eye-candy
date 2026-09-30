@@ -80,6 +80,7 @@
                   "**/fungi/**",
                   "**/gltfjsx/**",
                   "**/glyphs/**",
+                  "**/hyperCubes/**",
                   "**/iconography/**",
                   "**/kumiko/**",
                   "**/loaderPatterns/**",
@@ -111,6 +112,7 @@
                   "**/flora/**",
                   "**/fungi/**",
                   "**/glyphs/**",
+                  "**/hyperCubes/**",
                   "**/iconography/**",
                   "**/kumiko/**",
                   "**/loaderPatterns/**",
@@ -143,6 +145,7 @@
                   "**/fungi/**",
                   "**/gltfjsx/**",
                   "**/glyphs/**",
+                  "**/hyperCubes/**",
                   "**/kumiko/**",
                   "**/loaderPatterns/**",
                   "**/nestingBoxes/**",
@@ -174,6 +177,7 @@
                   "**/fungi/**",
                   "**/gltfjsx/**",
                   "**/glyphs/**",
+                  "**/hyperCubes/**",
                   "**/iconography/**",
                   "**/kumiko/**",
                   "**/nestingBoxes/**",
@@ -205,6 +209,7 @@
                   "**/fungi/**",
                   "**/gltfjsx/**",
                   "**/glyphs/**",
+                  "**/hyperCubes/**",
                   "**/iconography/**",
                   "**/kumiko/**",
                   "**/loaderPatterns/**",
@@ -239,6 +244,7 @@
                   "**/fungi/**",
                   "**/gltfjsx/**",
                   "**/glyphs/**",
+                  "**/hyperCubes/**",
                   "**/iconography/**",
                   "**/kumiko/**",
                   "**/loaderPatterns/**",
@@ -271,6 +277,7 @@
                   "**/fungi/**",
                   "**/gltfjsx/**",
                   "**/glyphs/**",
+                  "**/hyperCubes/**",
                   "**/iconography/**",
                   "**/kumiko/**",
                   "**/loaderPatterns/**",
@@ -301,6 +308,7 @@
                   "**/flora/**",
                   "**/fungi/**",
                   "**/gltfjsx/**",
+                  "**/hyperCubes/**",
                   "**/iconography/**",
                   "**/kumiko/**",
                   "**/loaderPatterns/**",
@@ -332,6 +340,7 @@
                   "**/fungi/**",
                   "**/gltfjsx/**",
                   "**/glyphs/**",
+                  "**/hyperCubes/**",
                   "**/iconography/**",
                   "**/kumiko/**",
                   "**/loaderPatterns/**",
@@ -372,6 +381,7 @@
                   "**/flora/**",
                   "**/gltfjsx/**",
                   "**/glyphs/**",
+                  "**/hyperCubes/**",
                   "**/iconography/**",
                   "**/kumiko/**",
                   "**/loaderPatterns/**",
@@ -413,6 +423,7 @@
                   "**/fungi/**",
                   "**/gltfjsx/**",
                   "**/glyphs/**",
+                  "**/hyperCubes/**",
                   "**/iconography/**",
                   "**/loaderPatterns/**",
                   "**/nestingBoxes/**",
@@ -453,6 +464,7 @@
                   "**/fungi/**",
                   "**/gltfjsx/**",
                   "**/glyphs/**",
+                  "**/hyperCubes/**",
                   "**/iconography/**",
                   "**/kumiko/**",
                   "**/loaderPatterns/**",
@@ -493,6 +505,7 @@
                   "**/fungi/**",
                   "**/gltfjsx/**",
                   "**/glyphs/**",
+                  "**/hyperCubes/**",
                   "**/iconography/**",
                   "**/kumiko/**",
                   "**/loaderPatterns/**",
@@ -527,6 +540,7 @@
                   "**/fungi/**",
                   "**/gltfjsx/**",
                   "**/glyphs/**",
+                  "**/hyperCubes/**",
                   "**/iconography/**",
                   "**/kumiko/**",
                   "**/loaderPatterns/**",
@@ -568,6 +582,7 @@
                   "**/fungi/**",
                   "**/gltfjsx/**",
                   "**/glyphs/**",
+                  "**/hyperCubes/**",
                   "**/iconography/**",
                   "**/kumiko/**",
                   "**/loaderPatterns/**",
@@ -586,6 +601,47 @@
                   "**/modules/nestingBoxesRender/*"
                 ],
                 "message": "Import the Nesting Boxes kernel through its @modules/nestingBoxes barrel, never a file inside it. See docs/nesting-boxes-pipeline.md."
+              }
+            ]
+          }
+        ]
+      }
+    },
+    {
+      "files": ["src/dev/tools/hyperCubes/**/*.{js,jsx}"],
+      "rules": {
+        "no-restricted-imports": [
+          "error",
+          {
+            "patterns": [
+              {
+                "group": [
+                  "**/blockParty/**",
+                  "**/cataloggr/**",
+                  "**/colors/**",
+                  "**/flora/**",
+                  "**/fungi/**",
+                  "**/gltfjsx/**",
+                  "**/glyphs/**",
+                  "**/iconography/**",
+                  "**/kumiko/**",
+                  "**/loaderPatterns/**",
+                  "**/nestingBoxes/**",
+                  "**/projectionMapping/**",
+                  "**/rorschach/**",
+                  "**/subdivision/**",
+                  "**/trucheterie/**"
+                ],
+                "message": "A dev tool may not import another tool's internals. Promote shared code to src/dev/shell (UI) or a shared src/dev folder (behavior)."
+              },
+              {
+                "group": [
+                  "@modules/hyperCubes/*",
+                  "**/modules/hyperCubes/*",
+                  "@modules/hyperCubesRender/*",
+                  "**/modules/hyperCubesRender/*"
+                ],
+                "message": "Import the HyperCubes kernel through its @modules/hyperCubes barrel, never a file inside it. See docs/hyper-cubes-pipeline.md."
               }
             ]
           }

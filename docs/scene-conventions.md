@@ -224,6 +224,18 @@ Inside a scene folder, keep imports relative (`./components/Foo`,
   `utils/appUtils`) that serializes a `controlsSnapshotRef` to a paste-friendly
   object literal.
 
+### Webcam
+
+- Open the webcam only through **`@modules/webcam`**: `useWebcamFrame` for RGBA
+  frames, `openWebcam` / `stopWebcam` for a raw stream. Never call
+  `getUserMedia` for video directly.
+- Every webcam consumer exposes a **`webcamFacing`** control (`'front'` |
+  `'back'`) via `webcamFacingControl()` (or `WEBCAM_FACING_OPTIONS` in
+  schema-generated panels). It renders only when `@utils/isMobileDevice` is
+  true; on desktop the module always resolves to the front camera.
+- The front camera is mirrored, the back one is not. Hand/pose trackers flip
+  back-camera landmarks into selfie space, so their mapping code never branches.
+
 ## 10. Camera
 
 - Scenes should generally use **`CameraRig`** for maximum camera flexibility,

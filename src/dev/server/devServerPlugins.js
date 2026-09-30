@@ -4,6 +4,7 @@ import floraPlugin from './flora/plugin';
 import fungiPlugin from './fungi/plugin';
 import gltfjsxPlugin from './gltfjsx/plugin';
 import glyphsPlugin from './glyphs/plugin';
+import hyperCubesPlugin from './hyperCubes/plugin';
 import kumikoPlugin from './kumiko/plugin';
 import nestingBoxesPlugin from './nestingBoxes/plugin';
 import rorschachPlugin from './rorschach/plugin';
@@ -18,6 +19,7 @@ export default function devServerPlugins() {
     fungiPlugin(),
     glyphsPlugin(),
     gltfjsxPlugin(),
+    hyperCubesPlugin(),
     kumikoPlugin(),
     nestingBoxesPlugin(),
     rorschachPlugin(),

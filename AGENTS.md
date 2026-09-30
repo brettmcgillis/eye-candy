@@ -92,6 +92,16 @@ the current scene folder go through path aliases (`@elements`, `@modules`,
   NestingBoxesCLI. Run `npm run nesting-boxes:check` after changing any of
   them.
 
+## Required reading before touching HyperCubes
+
+- **`docs/hyper-cubes-pipeline.md`** — the Nesting Boxes arrangement for the
+  subdivided cubes: `@modules/hyperCubes` (three-free rect-subdivision and
+  octree trees, morph/grow layout, looks, roll, plot SVG and option schema;
+  the scene's Leva is generated from it), `@modules/hyperCubesRender`
+  (`createCubeRig`, the studio environment and the look), the headless CLIs,
+  and HyperCubesCLI. Run `npm run hyper-cubes:check` after changing any of
+  them.
+
 ## Required reading before touching Subdivision
 
 - **`docs/subdivision-pipeline.md`** — `@modules/subdivision` is a three-free
@@ -106,7 +116,7 @@ Shared`). Maturity is the `area` field in `scene.config.jsx`, not a folder —
   promoting a scene is a one-line edit, nothing moves.
 - Reusable model wrappers: `src/components/elements/<ModelName>/`.
 - Shared hooks: `src/hooks/`. Promoted modules: `src/modules/` (e.g. `ecctrl`,
-  `cameraRig`, `lightingRig`, `handTracking`, `poseTracking`, `tsl`,
+  `cameraRig`, `lightingRig`, `handTracking`, `poseTracking`, `webcam`, `tsl`,
   `trashCatalog`) — each
   behind an `index.js` barrel.
 - Rorschach kernel: `src/modules/rorschach/` — see the required reading above

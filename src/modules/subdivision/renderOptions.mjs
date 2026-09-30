@@ -248,6 +248,9 @@ const GENERATOR = {
     help: 'The live webcam is the source image; pair it with the variance driver',
     sceneOnly: true,
   }),
+  webcamFacing: choice('field', 'Webcam camera', ['front', 'back'], 'front', {
+    sceneOnly: true,
+  }),
   webcamRate: num('field', 'Webcam updates/s', 6, 1, 30, 1, {
     sceneOnly: true,
   }),

@@ -1,6 +1,11 @@
 import { useMemo } from 'react';
 
-import { RENDER_OPTIONS, SCENE_KEYS, buildPiece } from '@modules/subdivision';
+import {
+  RENDER_OPTIONS,
+  SCENE_KEYS,
+  buildPiece,
+  sceneDefaults,
+} from '@modules/subdivision';
 import { useWebcamFrame } from '@modules/webcam';
 import { PALETTE_NONE, getPaletteStops } from '@utils/gradientPalette';
 
@@ -15,9 +20,9 @@ const PIECE_KEYS = SCENE_KEYS.filter(
     !RENDER_OPTIONS[key].sceneOnly && RENDER_OPTIONS[key].section !== 'video'
 );
 
-// `canvas` is the viewport in CSS px: the scene lays the piece out on the
-// screen the way fractalPixelate does, cellSize in screen pixels. The webcam,
-// when on, is the source image whatever the Field says.
+// `canvas` is the panel in px. The webcam, when on, is the source image
+// whatever the Field says. Outline keys have no control here, so the kernel
+// reads their defaults.
 export default function usePiece(config, canvas) {
   const webcam = useWebcamFrame(config.webcam, {
     facing: config.webcamFacing,
@@ -34,7 +39,11 @@ export default function usePiece(config, canvas) {
   return useMemo(() => {
     const stops =
       config.palette === PALETTE_NONE ? null : getPaletteStops(config.palette);
-    const settings = config.webcam ? { ...config, field: 'image' } : config;
+    const settings = {
+      ...sceneDefaults(),
+      ...config,
+      ...(config.webcam ? { field: 'image' } : {}),
+    };
     const piece = buildPiece(settings, { canvas, image, stops });
     const maxDepth = piece.nodes.reduce(
       (deepest, node) => Math.max(deepest, node.depth),

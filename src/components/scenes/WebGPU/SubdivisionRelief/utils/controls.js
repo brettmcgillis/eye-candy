@@ -3,15 +3,20 @@ import { WEBCAM_FACING_OPTIONS } from '@modules/webcam';
 import { PALETTE_NAMES, PALETTE_NONE } from '@utils/gradientPalette';
 import isMobileDevice from '@utils/isMobileDevice';
 
-export const SCENE_LABEL = 'Subdivision';
-export const DEFAULT_SEED = 'quad';
+import { RELIEF_OPTIONS } from './reliefOptions';
+
+export const SCENE_LABEL = 'Subdivision Relief';
+export const DEFAULT_SEED = 'relief';
+// The 2D look's outline band; here the gap between prisms does its job.
+export const OMITTED_KEYS = ['outlineColor', 'outlineStrength', 'outlineWidth'];
 
 const PALETTE_OPTIONS = [PALETTE_NONE, ...PALETTE_NAMES];
+export const OPTIONS = { ...RENDER_OPTIONS, ...RELIEF_OPTIONS };
 
 // Leva inputs straight from the option schema, so the scene's ranges,
 // defaults and labels cannot drift from the CLI's.
 export function schemaControl(key, saved = {}, extra = {}) {
-  const spec = RENDER_OPTIONS[key];
+  const spec = OPTIONS[key];
   const value = saved[key] ?? spec.default;
   const base = { label: spec.label, ...extra };
 
@@ -48,6 +53,16 @@ const WHEN = {
   colorSeed: ['colorMode', 'random'],
   gradientAngle: ['colorMode', 'position'],
   gradientRadial: ['colorMode', 'position'],
+  lumaInvert: ['lumaWeight', (v) => v > 0],
+  focalFalloff: ['focalWeight', (v) => v > 0],
+  motionNoiseScale: ['animate', true],
+  motionNoiseSpeed: ['animate', true],
+  motionNoiseAmount: ['animate', true],
+  motionDepth: ['animate', true],
+  motionWaveAmount: ['animate', true],
+  motionWaveLength: ['animate', true],
+  motionWaveSpeed: ['animate', true],
+  motionWaveOrigin: ['animate', true],
 };
 
 export function folderControls(folderName, keys, saved, paths) {

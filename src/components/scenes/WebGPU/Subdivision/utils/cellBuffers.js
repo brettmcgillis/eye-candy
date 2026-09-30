@@ -1,3 +1,4 @@
+/* eslint-disable no-param-reassign */
 import * as THREE from 'three/webgpu';
 
 import { KIND, LEAF_HIDE, hideAt } from '@modules/subdivision';
@@ -6,65 +7,23 @@ import { toWorld } from './world';
 
 const color = new THREE.Color();
 
-// Two instances per node, fractalPixelate's look as geometry: the whole cell
-// in its outline colour, then the cell inset by its outline band in its fill.
-// Each carries its parent's colour too, so a split can start as its parent
-// and diverge. A tri repeats its last corner so every instance is a quad.
-export default function createCellGeometry(piece, config) {
+const ATTRIBUTES = [
+  ['aCornersA', 4],
+  ['aCornersB', 4],
+  ['aColor', 3],
+  ['aParentColor', 3],
+  ['aSpan', 4],
+  ['aInset', 1],
+];
+
+export function cellCount(piece, config) {
   const outlined = config.outlineWidth > 0 && config.outlineStrength > 0;
-  const world = toWorld(piece.canvas);
-  const items = [];
-  piece.nodes.forEach((node) => {
-    const parent = piece.nodes[node.parent] ?? node;
-    if (!outlined) {
-      items.push({
-        from: parent.fill,
-        inset: 0,
-        layer: 0,
-        node,
-        to: node.fill,
-      });
-      return;
-    }
-    const band = (node.kind === KIND.QUAD ? 2 : 3) * config.outlineWidth;
-    items.push({ from: parent.edge, inset: 0, layer: 0, node, to: node.edge });
-    items.push({
-      from: parent.fill,
-      inset: band,
-      layer: 0.5,
-      node,
-      to: node.fill,
-    });
-  });
+  return piece.nodes.length * (outlined ? 2 : 1);
+}
 
-  const count = items.length;
-  const cornersA = new Float32Array(count * 4);
-  const cornersB = new Float32Array(count * 4);
-  const colors = new Float32Array(count * 3);
-  const parentColors = new Float32Array(count * 3);
-  const spans = new Float32Array(count * 4);
-  const insets = new Float32Array(count);
-
-  items.forEach(({ from, inset, layer, node, to }, i) => {
-    const corners = [];
-    for (let v = 0; v < 4; v += 1) {
-      const k = Math.min(v, node.poly.length / 2 - 1);
-      corners.push(...world(node.poly[k * 2], node.poly[k * 2 + 1]));
-    }
-    cornersA.set(corners.slice(0, 4), i * 4);
-    cornersB.set(corners.slice(4, 8), i * 4);
-    color.set(to);
-    colors.set([color.r, color.g, color.b], i * 3);
-    color.set(from);
-    parentColors.set([color.r, color.g, color.b], i * 3);
-    const [cx, cy] = world(node.cx, node.cy);
-    spans.set(
-      [node.depth + layer, Math.min(hideAt(node), LEAF_HIDE), cx, cy],
-      i * 4
-    );
-    insets[i] = inset;
-  });
-
+// Room for `capacity` instances, filled in place by writeCells so a live
+// source re-uses the same GPU buffers frame after frame.
+export default function createCellGeometry(capacity) {
   const geometry = new THREE.InstancedBufferGeometry();
   geometry.setIndex([0, 1, 2, 0, 2, 3]);
   geometry.setAttribute(
@@ -75,17 +34,73 @@ export default function createCellGeometry(piece, config) {
     'corner',
     new THREE.BufferAttribute(new Float32Array([0, 1, 2, 3]), 1)
   );
-  const instanced = (name, array, size) =>
-    geometry.setAttribute(
-      name,
-      new THREE.InstancedBufferAttribute(array, size)
+  ATTRIBUTES.forEach(([name, size]) => {
+    const attribute = new THREE.InstancedBufferAttribute(
+      new Float32Array(capacity * size),
+      size
     );
-  instanced('aCornersA', cornersA, 4);
-  instanced('aCornersB', cornersB, 4);
-  instanced('aColor', colors, 3);
-  instanced('aParentColor', parentColors, 3);
-  instanced('aSpan', spans, 4);
-  instanced('aInset', insets, 1);
-  geometry.instanceCount = count;
+    attribute.setUsage(THREE.DynamicDrawUsage);
+    geometry.setAttribute(name, attribute);
+  });
+  geometry.instanceCount = 0;
   return geometry;
+}
+
+// Two instances per node, fractalPixelate's look as geometry: the whole cell
+// in its outline colour, then the cell inset by its outline band in its fill.
+// Each carries its parent's colour too, so a split can start as its parent
+// and diverge. A tri repeats its last corner so every instance is a quad.
+export function writeCells(geometry, piece, config) {
+  const outlined = config.outlineWidth > 0 && config.outlineStrength > 0;
+  const world = toWorld(piece.canvas);
+  const cornersA = geometry.getAttribute('aCornersA');
+  const cornersB = geometry.getAttribute('aCornersB');
+  const colors = geometry.getAttribute('aColor');
+  const parentColors = geometry.getAttribute('aParentColor');
+  const spans = geometry.getAttribute('aSpan');
+  const insets = geometry.getAttribute('aInset');
+  let i = 0;
+
+  const write = (node, from, to, inset, layer) => {
+    const last = node.poly.length / 2 - 1;
+    for (let v = 0; v < 4; v += 1) {
+      const k = Math.min(v, last);
+      const [x, y] = world(node.poly[k * 2], node.poly[k * 2 + 1]);
+      const target = v < 2 ? cornersA.array : cornersB.array;
+      const offset = i * 4 + (v % 2) * 2;
+      target[offset] = x;
+      target[offset + 1] = y;
+    }
+    color.set(to);
+    colors.array.set([color.r, color.g, color.b], i * 3);
+    color.set(from);
+    parentColors.array.set([color.r, color.g, color.b], i * 3);
+    const [cx, cy] = world(node.cx, node.cy);
+    spans.array.set(
+      [node.depth + layer, Math.min(hideAt(node), LEAF_HIDE), cx, cy],
+      i * 4
+    );
+    insets.array[i] = inset;
+    i += 1;
+  };
+
+  piece.nodes.forEach((node) => {
+    const parent = piece.nodes[node.parent] ?? node;
+    if (!outlined) {
+      write(node, parent.fill, node.fill, 0, 0);
+      return;
+    }
+    const band = (node.kind === KIND.QUAD ? 2 : 3) * config.outlineWidth;
+    write(node, parent.edge, node.edge, 0, 0);
+    write(node, parent.fill, node.fill, band, 0.5);
+  });
+
+  [cornersA, cornersB, colors, parentColors, spans, insets].forEach(
+    (attribute) => {
+      attribute.clearUpdateRanges();
+      attribute.addUpdateRange(0, i * attribute.itemSize);
+      attribute.needsUpdate = true;
+    }
+  );
+  geometry.instanceCount = i;
 }

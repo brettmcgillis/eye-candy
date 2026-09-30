@@ -1,5 +1,5 @@
 export { default as buildPiece } from './buildPiece';
-export { default as buildTree, KIND } from './tree';
+export { default as buildTree, KIND, jitterHash } from './tree';
 export { default as createField } from './fields';
 export { default as shadeTree, paletteStopsFor } from './shade';
 export {

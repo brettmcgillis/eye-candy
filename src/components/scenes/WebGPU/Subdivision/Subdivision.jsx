@@ -8,6 +8,7 @@ import useSceneBackdrop from '@hooks/useSceneBackdrop';
 import { CameraRig } from '@modules/cameraRig';
 
 import Cells from './components/Cells';
+import useCellGeometry from './hooks/useCellGeometry';
 import useGrowClock from './hooks/useGrowClock';
 import usePiece from './hooks/usePiece';
 import useSceneControls from './hooks/useSceneControls';
@@ -21,6 +22,7 @@ export default function Subdivision() {
   const height = useThree((state) => Math.round(state.size.height));
   const canvas = useMemo(() => ({ height, width }), [height, width]);
   const piece = usePiece(config, canvas);
+  const geometry = useCellGeometry(piece, config);
   const grow = useGrowClock(config, piece.maxDepth);
   const groupRef = useRef(null);
   const halfSize = useMemo(
@@ -39,7 +41,7 @@ export default function Subdivision() {
     <>
       <CameraRig camera={config.camera} />
       <group ref={groupRef}>
-        <Cells config={config} grow={grow} halfSize={halfSize} piece={piece} />
+        <Cells geometry={geometry} grow={grow} halfSize={halfSize} />
       </group>
     </>
   );

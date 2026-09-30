@@ -4,7 +4,11 @@ import { Canvas } from '@react-three/fiber';
 
 import * as THREE from 'three/webgpu';
 
+import { useCanvasDpr } from '@hooks/useRenderScale';
+
 export default function WebGPUCanvas({ children }) {
+  const dpr = useCanvasDpr();
+
   // R3F's configure effect has no dependency array, so it re-runs on every
   // render and only writes state.gl *after* awaiting this factory. A re-render
   // during renderer.init() would otherwise build a second WebGPURenderer on the
@@ -34,7 +38,7 @@ export default function WebGPUCanvas({ children }) {
 
   return (
     <Canvas
-      dpr={[1, 1.5]}
+      dpr={dpr}
       shadows="soft"
       style={{ touchAction: 'none' }}
       gl={createRenderer}

@@ -4,6 +4,7 @@ export {
 } from './BilateralBlurNode';
 export { default as DatamoshNode, datamosh } from './DatamoshNode';
 export { default as GodraysNode, godrays } from './GodraysNode';
+export { default as MipBloomNode, mipBloom } from './MipBloomNode';
 export { default as curlNoise } from './curlNoise';
 export { default as fabricWeave } from './fabricWeave';
 export { depthAwareBlend } from './depthAwareBlend';

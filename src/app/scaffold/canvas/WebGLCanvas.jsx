@@ -4,10 +4,14 @@ import { Canvas } from '@react-three/fiber';
 
 import * as THREE from 'three';
 
+import { useCanvasDpr } from '@hooks/useRenderScale';
+
 export default function WebGLCanvas({ children }) {
+  const dpr = useCanvasDpr();
+
   return (
     <Canvas
-      dpr={[1, 1.5]}
+      dpr={dpr}
       shadows
       style={{ touchAction: 'none' }}
       gl={{

@@ -83,6 +83,7 @@ function ParticleSystem({ controls, setControls, statsRef }) {
 
   const tracking = useMediaPipeBodyTracking({
     enabled: controls.interactivityEnabled,
+    facing: controls.webcamFacing,
     mode: controls.trackingMode,
     maxPoses: controls.maxPeople,
     minPoseDetectionConfidence: controls.minPoseDetectionConfidence,

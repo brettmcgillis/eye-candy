@@ -22,7 +22,9 @@ export const POOL_IDS = [
   'masu',
   'sakura',
   'yaeZakura',
-  'mitsukude',
+  'pinwheel',
+  'goma',
+  'kakuAsanoha',
   'izutsu',
   'shokko',
   'star',
@@ -229,7 +231,7 @@ const GENERATOR = {
   zoneCount: gen('mix', 'Zone count', 4, 1, 16, 1, 'mix', [2, 7]),
   zoneMix: gen('mix', 'Zone mix', 0.1, 0, 1, 0.01, 'mix', [0, 0.35]),
   symmetry: choice('mix', 'Symmetry', SYMMETRY_NAMES, 'none', 'mix'),
-  subdivide: gen('mix', 'Subdivide depth', 0, 0, 3, 1, 'mix', [0, 2]),
+  subdivide: gen('mix', 'Subdivide depth', 0, 0, 5, 1, 'mix', [0, 2]),
   splitChance: gen('mix', 'Split chance', 0.4, 0, 1, 0.01, 'mix', [0.2, 0.7]),
   splitFocus: choice('mix', 'Split focus', SPLIT_FOCI, 'random', 'mix'),
   childMix: gen('mix', 'Child reroll', 0.5, 0, 1, 0.01, 'mix', [0, 1]),
@@ -318,7 +320,8 @@ const IMAGE = {
     type: 'boolean',
   },
   imageContrast: num('image', 'Image contrast', 1.2, 0.2, 4, 0.05),
-  imageDetail: num('image', 'Image detail', 0.55, 0, 1, 0.01),
+  varianceThreshold: num('image', 'Variance threshold', 0.2, 0.01, 0.6, 0.005),
+  halftoneMinCell: num('image', 'Halftone min cell (mm)', 20, 0, 200, 1),
   halftoneDither: num('image', 'Halftone dither', 0.12, 0, 1, 0.01),
   webcam: {
     default: false,
@@ -330,6 +333,16 @@ const IMAGE = {
     section: 'image',
     type: 'boolean',
   },
+  webcamFacing: choice(
+    'image',
+    'Webcam camera',
+    ['front', 'back'],
+    'front',
+    null,
+    {
+      sceneOnly: true,
+    }
+  ),
   webcamRate: num('image', 'Webcam fps', 12, 1, 30, 1, { sceneOnly: true }),
   cellEase: num('image', 'Cell ease (s)', 0.35, 0, 3, 0.05, {
     sceneOnly: true,

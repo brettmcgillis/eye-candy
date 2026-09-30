@@ -24,12 +24,14 @@ export const catalogSignature = (config) =>
 
 // The rotation of a leaf's side widths that reads smallest, so every leaf
 // that is the same cell turned shares one entry. Returns the vertex the
-// canonical cell starts from.
-function canonicalStart(widths) {
+// canonical cell starts from. A phased leaf may only start on a corner of
+// its own parity.
+function canonicalStart(widths, phase = -1) {
   const n = widths.length;
   let best = 0;
   let bestKey = null;
-  for (let k = 0; k < n; k += 1) {
+  const step = phase >= 0 ? 2 : 1;
+  for (let k = Math.max(0, phase) % step; k < n; k += step) {
     const key = widths.map((_, j) => round(widths[(j + k) % n])).join(',');
     if (bestKey === null || key < bestKey) {
       best = k;
@@ -42,7 +44,10 @@ function canonicalStart(widths) {
 // Where a leaf sits and which baked cell it is: the entry key, its centre,
 // and the angle of the vertex the entry starts from.
 export function placeLeaf(leaf, signature) {
-  const { key: widthKey, start } = canonicalStart(leaf.edgeWidths);
+  const { key: widthKey, start } = canonicalStart(
+    leaf.edgeWidths,
+    leaf.phase ?? -1
+  );
   const first = leaf.poly[start];
   const edge = dist(leaf.poly[0], leaf.poly[1]);
   const variant =

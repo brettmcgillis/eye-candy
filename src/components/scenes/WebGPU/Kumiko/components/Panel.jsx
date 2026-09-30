@@ -3,9 +3,9 @@ import React, { memo, useEffect, useMemo, useRef } from 'react';
 import { useFrame } from '@react-three/fiber';
 
 import useImageBytes from '@hooks/useImageBytes';
-import useWebcamFrame from '@hooks/useWebcamFrame';
 import { SCENE_KEYS } from '@modules/kumiko';
 import { createPanelRig } from '@modules/kumikoRender';
+import { useWebcamFrame } from '@modules/webcam';
 
 import useLeavesBuilder from '../hooks/useLeavesBuilder';
 
@@ -33,7 +33,7 @@ const BAKE_KEYS = [
   'jointGap',
   'borderDepth',
 ];
-const SCENE_ONLY = ['cellEase', 'webcam', 'webcamRate'];
+const SCENE_ONLY = ['cellEase', 'webcam', 'webcamFacing', 'webcamRate'];
 const PLAN_KEYS = SCENE_KEYS.filter(
   (key) => ![...LOOK_KEYS, ...BAKE_KEYS, ...SCENE_ONLY].includes(key)
 );
@@ -51,6 +51,7 @@ function Panel({ config }) {
 
   const imageOn = config.imageMode !== 'off';
   const webcam = useWebcamFrame(imageOn && config.webcam, {
+    facing: config.webcamFacing,
     rate: config.webcamRate,
   });
   const still = useImageBytes(
@@ -61,18 +62,32 @@ function Panel({ config }) {
   const planKey = JSON.stringify(pick(config, PLAN_KEYS));
   const bakeKey = JSON.stringify(pick(config, BAKE_KEYS));
 
+  // A webcam frame arrives faster than a big panel plans, so a result is
+  // drawn whenever it is newer than the one showing, not only when no newer
+  // request has been made — or a stream would never draw at all.
+  const requestRef = useRef(0);
+  const shownRef = useRef(-1);
+  const mountedRef = useRef(true);
   useEffect(() => {
-    let live = true;
+    mountedRef.current = true;
+    return () => {
+      mountedRef.current = false;
+    };
+  }, []);
+
+  useEffect(() => {
+    requestRef.current += 1;
+    const request = requestRef.current;
     const bytes = image && { ...image, data: image.data.slice() };
     build(JSON.parse(planKey), bytes).then((result) => {
-      if (!live || !result) return;
+      if (!mountedRef.current || !result || request <= shownRef.current) {
+        return;
+      }
+      shownRef.current = request;
       resultRef.current = result;
       rig.setPanel(result, configRef.current, { immediate: firstRef.current });
       firstRef.current = false;
     });
-    return () => {
-      live = false;
-    };
   }, [build, image, planKey, rig]);
 
   useEffect(() => {

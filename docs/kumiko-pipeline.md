@@ -38,6 +38,14 @@ by each edge's own half-width) and the **pieces** (a strip between two nodes,
 mitred along node→corner lines — the joinery cut). A face whose inset
 collapses has no opening and is solid wood (`solids`).
 
+A **phased** pattern (`kakuAsanoha`, `shokko` on a square) is only 2-fold:
+it is built with `poly[0]` and `poly[2]` on the grid's even corners
+(`ctx.evenCorner`, a checkerboard over the square grid), and the catalogue
+only starts such a cell on a corner of that parity, so neighbours meet in the
+2×2 motifs (sixteen-ray stars, octagons with four-pane windows). Pattern
+constructions were checked against Tanihata's and Yoshihara's catalogues;
+tsuno-asanoha is still unverified.
+
 A pattern must be connected to its cell: a floating ring is a face with a
 hole, which the arrangement does not model and a joiner could not build
 (`masu` ties its box to the jigumi for that reason).
@@ -92,19 +100,25 @@ gets four seeded variants.
   it.
 
 Timings (Node): `buildLeaves` ~5 ms warm for a default panel, 12–18 ms with
-an image; the scene plans in a worker, bakes on the main thread (~1 ms per
+an image, ~60 ms for the Webcam Halftone preset (5 levels, ~5.7k leaves); the scene plans in a worker, bakes on the main thread (~1 ms per
 new entry), and only updates instance buffers per frame.
 
 ## Image modes
 
 `imageMode` `subdivide` splits a cell where the image under it is busy
-(spread over 13 samples > `0.3 − 0.28·imageDetail`). `halftone` does that
-and picks each cell's pattern by openness: the pool, filtered to the cell's
+(its brightness range over 13 samples > `varianceThreshold`, Subdivision's
+variance rule). `halftone` does that
+and picks each cell's pattern by openness (cells under `halftoneMinCell` mm
+stay plain jigumi: infill there is only more wood, and each pattern is a
+separate instanced draw): the pool, filtered to the cell's
 shape, is ranked by measured open area (`openness.js`, on a real cell of that
-level) and the cell's brightness (± `halftoneDither`) picks along the ramp;
+level) and the cell's brightness (± `halftoneDither`) sets a target open
+fraction across the ramp's range, nearest pattern wins;
 the darkest cells also subdivide, since finer lattice is more wood. The
 backlit paper then shows the picture as light. `colorBy` `image` runs the
-palette by brightness, `source` uses the image's own colour. The scene takes
+palette by brightness, `source` uses the image's own colour. Every frame is
+auto-levelled (2nd–98th percentile luma stretched to 0–1) before
+`imageContrast`. The scene takes
 `sourceImage` (under public/) or the webcam (`@hooks/useWebcamFrame`); the
 CLI decodes `--sourceImage` with sharp.
 

@@ -1,12 +1,16 @@
 import { useEffect, useState } from 'react';
 
-// The webcam as RGBA bytes, mirrored like a selfie and fitted inside
-// `maxSize`, taken `rate` times a second while `enabled`.
+import { isMirrored, resolveFacing } from './facing';
+import { openWebcam, stopWebcam } from './openWebcam';
+
+// The webcam as RGBA bytes fitted inside `maxSize`, taken `rate` times a
+// second while `enabled`. The front camera is mirrored like a selfie.
 export default function useWebcamFrame(
   enabled,
-  { maxSize = 320, rate = 12 } = {}
+  { facing = 'front', maxSize = 320, rate = 12 } = {}
 ) {
   const [frame, setFrame] = useState(null);
+  const resolved = resolveFacing(facing);
 
   useEffect(() => {
     if (!enabled) {
@@ -16,6 +20,7 @@ export default function useWebcamFrame(
     let stream = null;
     let timer = null;
     let cancelled = false;
+    const mirrored = isMirrored(resolved);
     const video = document.createElement('video');
     video.muted = true;
     video.playsInline = true;
@@ -32,17 +37,17 @@ export default function useWebcamFrame(
       const height = Math.round(video.videoHeight * scale);
       if (canvas.width !== width) canvas.width = width;
       if (canvas.height !== height) canvas.height = height;
-      context.setTransform(-1, 0, 0, 1, width, 0);
+      if (mirrored) context.setTransform(-1, 0, 0, 1, width, 0);
+      else context.setTransform(1, 0, 0, 1, 0, 0);
       context.drawImage(video, 0, 0, width, height);
       const { data } = context.getImageData(0, 0, width, height);
       setFrame({ channels: 4, data, height, width });
     };
 
-    navigator.mediaDevices
-      ?.getUserMedia({ audio: false, video: { facingMode: 'user' } })
+    openWebcam({ facing: resolved })
       .then((media) => {
         if (cancelled) {
-          media.getTracks().forEach((track) => track.stop());
+          stopWebcam(media);
           return;
         }
         stream = media;
@@ -50,14 +55,18 @@ export default function useWebcamFrame(
         video.play();
         timer = setInterval(grab, 1000 / rate);
       })
-      .catch(() => setFrame(null));
+      .catch((error) => {
+        // eslint-disable-next-line no-console
+        console.warn('[webcam]', error.name, error.message);
+        setFrame(null);
+      });
 
     return () => {
       cancelled = true;
       clearInterval(timer);
-      stream?.getTracks().forEach((track) => track.stop());
+      stopWebcam(stream);
     };
-  }, [enabled, maxSize, rate]);
+  }, [enabled, maxSize, rate, resolved]);
 
   return frame;
 }

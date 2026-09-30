@@ -34,11 +34,11 @@ export default function getPoolControls(preset = {}, { onPool } = {}) {
             'masu',
             'sakura',
             'yaeZakura',
-            'mitsukude'
+            'pinwheel'
           ),
           twist: uses(
             range('Pinwheel Twist', p('twist'), 0, 0.5, 0.01),
-            'mitsukude'
+            'pinwheel'
           ),
           inset: uses(
             range('Izutsu Inset', p('inset'), 0.05, 0.9, 0.01),

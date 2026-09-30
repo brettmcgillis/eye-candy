@@ -6,6 +6,7 @@ import { extend, useFrame } from '@react-three/fiber';
 
 import * as THREE from 'three';
 
+import { openWebcam, stopWebcam } from '@modules/webcam';
 import { videoFile } from '@utils/appUtils';
 
 /* ---------------------------------------------
@@ -219,6 +220,7 @@ extend({ CrtShowMaterial });
 export default function CRTShowMaterial({
   src = videoFile(`ren_and_stimpy.mp4`),
   useWebcam = false,
+  webcamFacing = 'front',
 
   padX = 0.06,
   padY = 0.08,
@@ -286,33 +288,10 @@ export default function CRTShowMaterial({
 
     const startWebcam = async () => {
       try {
-        const nav = navigator;
-
-        const getUserMedia =
-          nav.mediaDevices?.getUserMedia ||
-          nav.getUserMedia ||
-          nav.webkitGetUserMedia ||
-          nav.mozGetUserMedia;
-
-        if (!getUserMedia) {
-          throw new Error('getUserMedia not supported on this device');
-        }
-
-        if (nav.mediaDevices?.getUserMedia) {
-          stream = await nav.mediaDevices.getUserMedia({
-            video: { facingMode: 'user' },
-            audio: false,
-          });
-        } else {
-          // Legacy mobile fallback
-          stream = await new Promise((resolve, reject) => {
-            getUserMedia.call(
-              nav,
-              { video: true, audio: false },
-              resolve,
-              reject
-            );
-          });
+        stream = await openWebcam({ facing: webcamFacing });
+        if (disposed) {
+          stopWebcam(stream);
+          return;
         }
 
         video.srcObject = stream;
@@ -337,9 +316,7 @@ export default function CRTShowMaterial({
     return () => {
       disposed = true;
 
-      if (stream) {
-        stream.getTracks().forEach((t) => t.stop());
-      }
+      stopWebcam(stream);
 
       if (ref.current?.uTexture) {
         ref.current.uTexture.dispose();
@@ -348,7 +325,7 @@ export default function CRTShowMaterial({
       video.pause();
       video.remove();
     };
-  }, [src, useWebcam]);
+  }, [src, useWebcam, webcamFacing]);
 
   useFrame((_, delta) => {
     if (!ref.current) return;

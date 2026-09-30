@@ -1,6 +1,7 @@
 const QUINNS_DICE_PRESETS = {
   Default: {
     mode: 'touch/pointer',
+    handsWebcamFacing: 'front',
     handsShowVideo: true,
     handsShowDebugSkeleton: true,
     handsVideoSize: 1,

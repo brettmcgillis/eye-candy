@@ -1,6 +1,6 @@
 import { button, useControls } from 'leva';
 
-import isMobileDevice from '../utils/platform';
+import isMobileDevice from '@utils/isMobileDevice';
 
 // Leva folder mirroring the old App.Screenshot folder: an editable filename field
 // plus screenshot / toggle-recording buttons.

@@ -6,6 +6,7 @@ import * as THREE from 'three';
 import { Fn, texture as tslTexture, uniform, uv, vec3 } from 'three/tsl';
 import * as THREE_WEBGPU from 'three/webgpu';
 
+import { openWebcam, stopWebcam } from '@modules/webcam';
 import { videoFile } from '@utils/appUtils';
 
 import {
@@ -51,6 +52,7 @@ function buildShowColorNode(uniforms, sourceTexture) {
 export default function CRTShowMaterial({
   src = videoFile('ren_and_stimpy.mp4'),
   useWebcam = false,
+  webcamFacing = 'front',
   staticAmount = 0.35,
   staticScale = 700,
   staticSpeed = 9,
@@ -122,12 +124,9 @@ export default function CRTShowMaterial({
 
       if (useWebcam) {
         try {
-          stream = await navigator.mediaDevices.getUserMedia({
-            video: { facingMode: 'user' },
-            audio: false,
-          });
+          stream = await openWebcam({ facing: webcamFacing });
           if (disposed) {
-            stream.getTracks().forEach((track) => track.stop());
+            stopWebcam(stream);
             return;
           }
           video.srcObject = stream;
@@ -150,14 +149,12 @@ export default function CRTShowMaterial({
         prev?.dispose?.();
         return new THREE.Texture();
       });
-      if (stream) {
-        stream.getTracks().forEach((track) => track.stop());
-      }
+      stopWebcam(stream);
       video.pause();
       video.remove();
       videoRef.current = null;
     };
-  }, [src, useWebcam]);
+  }, [src, useWebcam, webcamFacing]);
 
   useEffect(() => {
     uniforms.staticAmount.value = staticAmount;

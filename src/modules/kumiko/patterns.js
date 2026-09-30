@@ -1,6 +1,7 @@
 import {
   add,
   centroid,
+  dist,
   dot,
   lerp,
   lineIntersect,
@@ -51,6 +52,28 @@ function exitPoint(poly, from, dir) {
   return best?.point ?? from;
 }
 
+// A line parallel to every side, `inset` of the way in toward the centre,
+// run right across the cell.
+function parallels(poly, inset) {
+  const c = centroid(poly);
+  return each(poly, (i) => {
+    const a = at(poly, i);
+    const b = at(poly, i + 1);
+    const start = add(lerp(a, b, 0.5), scale(sub(c, lerp(a, b, 0.5)), inset));
+    const dir = normalize(sub(b, a));
+    return [
+      seg(exitPoint(poly, start, scale(dir, -1)), exitPoint(poly, start, dir)),
+    ];
+  });
+}
+
+// Where a triangle's corner bisectors meet.
+function incentre(tri) {
+  const w = tri.map((_, i) => dist(at(tri, i + 1), at(tri, i + 2)));
+  const total = w[0] + w[1] + w[2];
+  return tri.reduce((sum, p, i) => add(sum, scale(p, w[i] / total)), [0, 0]);
+}
+
 function sakura(poly, k) {
   const petals = inner(poly, k);
   return [
@@ -60,8 +83,10 @@ function sakura(poly, k) {
 }
 
 // Traditional names are for the triangle grid unless a shape says otherwise.
+// A `phased` pattern is only 2-fold on its shape: it is built with poly[0]
+// and poly[2] on the grid's even corners, so neighbours meet in 2×2 motifs.
 export const PATTERNS = {
-  plain: { label: 'Plain jigumi', build: () => [] },
+  plain: { label: 'Plain jigumi', names: { 3: 'Mitsukude' }, build: () => [] },
   asanoha: {
     label: 'Asanoha',
     names: { 4: 'Yotsu-bishi', 6: 'Hex asanoha' },
@@ -131,22 +156,33 @@ export const PATTERNS = {
   },
   yaeZakura: {
     label: 'Yae-zakura',
+    // Every spoke doubled: two pieces from each corner to the two corners of
+    // a small central 2n-gon that flank it.
     build: (poly, { inner: k }) => {
-      const petals = inner(poly, k);
-      const heart = inner(poly, k * 0.45, Math.PI / poly.length);
+      const c = centroid(poly);
+      const r = dist(c, poly[0]) * k * 0.35;
+      const half = Math.PI / (2 * poly.length);
+      const tips = poly.map((p) => {
+        const d = sub(p, c);
+        const angle = Math.atan2(d[1], d[0]);
+        return [angle - half, angle + half].map((t) =>
+          add(c, [r * Math.cos(t), r * Math.sin(t)])
+        );
+      });
+      const heart = tips.flat().sort((p, q) => {
+        const u = sub(p, c);
+        const v = sub(q, c);
+        return Math.atan2(u[1], u[0]) - Math.atan2(v[1], v[0]);
+      });
       return [
-        ...sakura(poly, k),
-        ...each(petals, (i) => [
-          seg(mid(petals, i), at(heart, i), TIER.detail),
-        ]),
+        ...poly.flatMap((p, i) => tips[i].map((tip) => seg(p, tip))),
         ...ring(heart, TIER.detail),
       ];
     },
   },
-  mitsukude: {
-    label: 'Mitsukude',
-    names: { 4: 'Yotsu-kude', 6: 'Mutsu-kude' },
-    // A turned inner polygon whose sides run on out to the jigumi: a pinwheel.
+  pinwheel: {
+    label: 'Pinwheel',
+    // A turned inner polygon whose sides run on out to the jigumi.
     build: (poly, { inner: k, twist }) => {
       const hub = inner(poly, k, (twist * 2 * Math.PI) / poly.length);
       return each(hub, (i) => {
@@ -157,49 +193,71 @@ export const PATTERNS = {
       });
     },
   },
+  goma: {
+    label: 'Goma',
+    // Three pieces lapped over each other, each parallel to a side and a
+    // third of the way in.
+    build: (poly) => parallels(poly, 0.3),
+  },
+  kakuAsanoha: {
+    label: 'Kaku-asanoha',
+    fits: (n) => n === 4,
+    phased: (n) => n === 4,
+    // One diagonal between the even corners, each half an asanoha to its
+    // incentre: sixteen rays meet at every other corner.
+    build: (poly) => {
+      const halves = [
+        [at(poly, 0), at(poly, 1), at(poly, 2)],
+        [at(poly, 2), at(poly, 3), at(poly, 0)],
+      ];
+      return [
+        seg(at(poly, 0), at(poly, 2)),
+        ...halves.flatMap((tri) => {
+          const hub = incentre(tri);
+          return tri.map((p) => seg(p, hub, TIER.detail));
+        }),
+      ];
+    },
+  },
   izutsu: {
     label: 'Izutsu',
-    names: { 3: 'Kagome' },
-    // A line parallel to every side, run right across the cell.
-    build: (poly, { inset }) => {
-      const c = centroid(poly);
-      return each(poly, (i) => {
-        const a = at(poly, i);
-        const b = at(poly, i + 1);
-        const toward = sub(c, lerp(a, b, 0.5));
-        const shift = scale(toward, inset);
-        const dir = normalize(sub(b, a));
-        const start = add(lerp(a, b, 0.5), shift);
-        return [
-          seg(
-            exitPoint(poly, start, scale(dir, -1)),
-            exitPoint(poly, start, dir)
-          ),
-        ];
-      });
-    },
+    build: (poly, { inset }) => parallels(poly, inset),
   },
   shokko: {
     label: 'Kaku-kikkō',
     names: { 4: 'Shokkō', 6: 'Hana-kikkō' },
-    // Every corner cut off: a triangle becomes a hexagon, a square an octagon.
+    phased: (n) => n === 4,
     build: (poly, { inset }) => {
-      const t = Math.min(0.49, 0.18 + inset * 0.5);
-      const cuts = each(poly, (i) => [
-        seg(
-          lerp(at(poly, i), at(poly, i - 1), t),
-          lerp(at(poly, i), at(poly, i + 1), t)
-        ),
-      ]);
-      if (poly.length !== 4) return cuts;
-      // The shokkō diamond, tied to the middle of each side it points at.
-      const diamond = inner(poly, 0.3, Math.PI / 4);
+      if (poly.length !== 4) {
+        // Every corner cut off: a triangle becomes a hexagon.
+        const t = Math.min(0.49, 0.18 + inset * 0.5);
+        return each(poly, (i) => [
+          seg(
+            lerp(at(poly, i), at(poly, i - 1), t),
+            lerp(at(poly, i), at(poly, i + 1), t)
+          ),
+        ]);
+      }
+      // A small square in each even corner (four make the lattice's little
+      // windows) and a diagonal joining their inner corners: four diagonals
+      // round an odd corner are the octagon.
+      const t = Math.min(0.45, 0.12 + inset * 0.5);
+      const boxes = [0, 2].map((i) => {
+        const p = at(poly, i);
+        const next = lerp(p, at(poly, i + 1), t);
+        const prev = lerp(p, at(poly, i - 1), t);
+        const inside = add(next, sub(prev, p));
+        return {
+          inside,
+          sides: [
+            seg(next, inside, TIER.detail),
+            seg(prev, inside, TIER.detail),
+          ],
+        };
+      });
       return [
-        ...cuts,
-        ...ring(diamond, TIER.detail),
-        ...each(diamond, (i) => [
-          seg(at(diamond, i), mid(poly, i), TIER.detail),
-        ]),
+        ...boxes.flatMap((box) => box.sides),
+        seg(boxes[0].inside, boxes[1].inside),
       ];
     },
   },
@@ -217,6 +275,8 @@ export const PATTERNS = {
 export const PATTERN_IDS = Object.keys(PATTERNS);
 
 export const fitsShape = (id, sides) => PATTERNS[id].fits?.(sides) ?? true;
+
+export const isPhased = (id, sides) => PATTERNS[id].phased?.(sides) ?? false;
 
 export const patternLabel = (id, sides) =>
   PATTERNS[id].names?.[sides] ?? PATTERNS[id].label;

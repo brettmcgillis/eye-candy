@@ -1,4 +1,4 @@
-import isMobileDevice from './platform';
+import isMobileDevice from '@utils/isMobileDevice';
 
 function downloadViaAnchor(blob, filename) {
   const url = URL.createObjectURL(blob);

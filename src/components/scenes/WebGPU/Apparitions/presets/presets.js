@@ -16,6 +16,7 @@ const FLOW_BASE = {
   // ---- Tracking ----
   trackingMode: BODY_TRACKING_MODE.holistic,
   maxPeople: 3,
+  webcamFacing: 'front',
   showVideo: false,
   showDebugSkeleton: false,
   videoSize: 1,

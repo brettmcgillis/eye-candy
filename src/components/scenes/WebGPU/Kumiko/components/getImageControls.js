@@ -1,6 +1,8 @@
 import { folder } from 'leva';
 
 import { IMAGE_FITS, IMAGE_MODES } from '@modules/kumiko';
+import { WEBCAM_FACING_OPTIONS } from '@modules/webcam';
+import isMobileDevice from '@utils/isMobileDevice';
 
 import { choice, presetReader, range, shownWhen } from './controlHelpers';
 
@@ -21,14 +23,30 @@ export default function getImageControls(preset = {}) {
         ['Image.imageMode', 'Image.webcam'],
         (mode, webcam) => mode !== 'off' && !webcam
       ),
+      webcamFacing: shownWhen(
+        {
+          label: 'Camera',
+          options: WEBCAM_FACING_OPTIONS,
+          value: p('webcamFacing'),
+        },
+        ['Image.imageMode', 'Image.webcam'],
+        (mode, webcam) => mode !== 'off' && webcam && isMobileDevice()
+      ),
       webcamRate: shownWhen(
         range('Webcam FPS', p('webcamRate'), 1, 30, 1),
         ['Image.imageMode', 'Image.webcam'],
         (mode, webcam) => mode !== 'off' && webcam
       ),
-      imageDetail: driven(range('Detail', p('imageDetail'), 0, 1, 0.01)),
+      varianceThreshold: driven(
+        range('Variance Threshold', p('varianceThreshold'), 0.01, 0.6, 0.005)
+      ),
       imageContrast: driven(
         range('Contrast', p('imageContrast'), 0.2, 4, 0.05)
+      ),
+      halftoneMinCell: shownWhen(
+        range('Min Pattern Cell (mm)', p('halftoneMinCell'), 0, 200, 1),
+        ['Image.imageMode'],
+        (mode) => mode === 'halftone'
       ),
       halftoneDither: shownWhen(
         range('Halftone Dither', p('halftoneDither'), 0, 1, 0.01),

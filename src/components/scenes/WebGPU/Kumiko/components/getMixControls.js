@@ -22,7 +22,7 @@ export default function getMixControls(preset = {}) {
       symmetry: choice('Symmetry', p('symmetry'), SYMMETRY_NAMES),
       Multiscale: folder(
         {
-          subdivide: range('Subdivide Depth', p('subdivide'), 0, 3, 1),
+          subdivide: range('Subdivide Depth', p('subdivide'), 0, 5, 1),
           splitChance: subdivided(
             range('Split Chance', p('splitChance'), 0, 1, 0.01)
           ),

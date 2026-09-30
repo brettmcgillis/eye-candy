@@ -47,11 +47,11 @@ export function openness(id, sides, level, config, widths) {
   return cache.get(key);
 }
 
-// The pool's patterns that fit a shape, densest first — the halftone ramp.
+// The pool's patterns that fit a shape with how open each is, densest
+// first — the halftone ramp.
 export function opennessRamp(pool, sides, level, config, widths) {
   return pool
     .filter(({ id }) => fitsShape(id, sides))
     .map(({ id }) => ({ id, open: openness(id, sides, level, config, widths) }))
-    .sort((a, b) => a.open - b.open)
-    .map(({ id }) => id);
+    .sort((a, b) => a.open - b.open);
 }

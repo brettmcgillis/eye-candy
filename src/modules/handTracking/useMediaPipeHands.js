@@ -1,9 +1,16 @@
 /* eslint-disable consistent-return */
 import { useEffect, useRef, useState } from 'react';
 
-import { Camera } from '@mediapipe/camera_utils';
 import { drawConnectors, drawLandmarks } from '@mediapipe/drawing_utils';
 import { HAND_CONNECTIONS, Hands } from '@mediapipe/hands';
+
+import {
+  flipPointsX,
+  isMirrored,
+  openWebcam,
+  resolveFacing,
+  stopWebcam,
+} from '@modules/webcam';
 
 function isMobile() {
   return window.innerWidth < window.innerHeight;
@@ -19,6 +26,7 @@ export default function useMediaPipeHands({
   minTrackingConfidence = 0.6,
   cameraWidth = isMobile() ? 720 : 1280,
   cameraHeight = isMobile() ? 1280 : 720,
+  facing = 'front',
 
   showVideo = false,
   showDebugSkeleton = true,
@@ -34,7 +42,7 @@ export default function useMediaPipeHands({
   const canvasRef = useRef(null);
   const ctxRef = useRef(null);
   const handsRef = useRef(null);
-  const cameraRef = useRef(null);
+  const mirroredRef = useRef(true);
 
   const showVideoRef = useRef(showVideo);
   const showSkeletonRef = useRef(showDebugSkeleton);
@@ -128,7 +136,18 @@ export default function useMediaPipeHands({
     hands.onResults((res) => {
       if (!active) return;
 
-      setResults(res);
+      setResults(
+        mirroredRef.current
+          ? res
+          : {
+              ...res,
+              multiHandLandmarks: flipPointsX(res.multiHandLandmarks),
+              multiHandWorldLandmarks: flipPointsX(
+                res.multiHandWorldLandmarks,
+                0
+              ),
+            }
+      );
 
       const videoVisible = showVideoRef.current;
       const skeletonVisible = showSkeletonRef.current;
@@ -180,36 +199,73 @@ export default function useMediaPipeHands({
 
     handsRef.current = hands;
 
-    /* ---------- camera ---------- */
-
-    const camera = new Camera(video, {
-      onFrame: async () => {
-        if (!handsRef.current) return;
-        await handsRef.current.send({ image: video });
-      },
-      width: cameraWidth,
-      height: cameraHeight,
-    });
-
-    camera.start();
-    cameraRef.current = camera;
-
     return () => {
       active = false;
 
-      cameraRef.current?.stop();
       handsRef.current?.close();
 
       video.remove();
       canvas.remove();
 
       handsRef.current = null;
-      cameraRef.current = null;
       videoRef.current = null;
       canvasRef.current = null;
       ctxRef.current = null;
     };
   }, []);
+
+  /* ---------------- camera ---------------- */
+
+  const resolvedFacing = resolveFacing(facing);
+
+  useEffect(() => {
+    const video = videoRef.current;
+    if (!video) return;
+
+    let active = true;
+    let stream = null;
+    let frame = 0;
+
+    mirroredRef.current = isMirrored(resolvedFacing);
+    const transform = mirroredRef.current ? 'scaleX(-1)' : 'none';
+    video.style.transform = transform;
+    if (canvasRef.current) canvasRef.current.style.transform = transform;
+
+    const pump = async () => {
+      if (!active) return;
+      if (video.readyState >= HTMLMediaElement.HAVE_CURRENT_DATA) {
+        await handsRef.current?.send({ image: video });
+      }
+      if (active) frame = window.requestAnimationFrame(pump);
+    };
+
+    openWebcam({
+      facing: resolvedFacing,
+      height: cameraHeight,
+      width: cameraWidth,
+    })
+      .then(async (media) => {
+        if (!active) {
+          stopWebcam(media);
+          return;
+        }
+        stream = media;
+        video.srcObject = media;
+        await video.play();
+        pump();
+      })
+      .catch((error) => {
+        // eslint-disable-next-line no-console
+        console.error('Failed to start hand tracking camera', error);
+      });
+
+    return () => {
+      active = false;
+      window.cancelAnimationFrame(frame);
+      stopWebcam(stream);
+      video.srcObject = null;
+    };
+  }, [cameraHeight, cameraWidth, resolvedFacing]);
 
   /* ---------------- live option updates ---------------- */
 

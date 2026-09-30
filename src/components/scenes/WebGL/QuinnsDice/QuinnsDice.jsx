@@ -201,6 +201,7 @@ export default function QuinnsDice() {
   const {
     mode,
     autoSpeed,
+    handsWebcamFacing,
     handsShowVideo,
     handsShowDebugSkeleton,
     handsVideoSize,
@@ -455,6 +456,7 @@ export default function QuinnsDice() {
         {mode === 'hands' && (
           <HandsPointer
             {...sharedPointerProps}
+            facing={handsWebcamFacing}
             showVideo={handsShowVideo}
             showDebugSkeleton={handsShowDebugSkeleton}
             videoSize={handsVideoSize}

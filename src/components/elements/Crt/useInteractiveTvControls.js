@@ -1,5 +1,6 @@
 import { folder, useControls } from 'leva';
 
+import { webcamFacingControl } from '@modules/webcam';
 import { asciiSkull } from '@utils/ascii';
 
 const fonts = [
@@ -276,6 +277,8 @@ export default function useInteractiveTvControls() {
   const homeVideo = useControls(
     'HomeVideo',
     {
+      webcamFacing: webcamFacingControl(),
+
       /* ---------- Screen / Framing ---------- */
       padX: { value: 0.06, min: 0, max: 0.25, step: 0.001 },
       padY: { value: 0.08, min: 0, max: 0.25, step: 0.001 },

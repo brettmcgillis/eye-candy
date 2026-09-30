@@ -4,12 +4,9 @@ import { button, folder, useControls } from 'leva';
 
 import usePresetsFolder from '@hooks/usePresetsFolder';
 import { useSceneCameraControls } from '@modules/cameraRig';
+import isMobileDevice from '@utils/isMobileDevice';
 
 import PRESETS from '../presets/presets';
-
-function isMobileDevice() {
-  return /iP(hone|ad|od)|Android/.test(navigator.userAgent);
-}
 
 const DEFAULT_PRESET = 'Default';
 const SCENE_LABEL = 'HorsesForCourses';

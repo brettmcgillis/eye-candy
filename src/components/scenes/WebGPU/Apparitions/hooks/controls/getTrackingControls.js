@@ -1,6 +1,7 @@
 import { folder } from 'leva';
 
 import { BODY_TRACKING_MODE } from '@modules/poseTracking';
+import { webcamFacingControl } from '@modules/webcam';
 
 const confidence = (label, value) => ({
   label,
@@ -28,6 +29,7 @@ export default function getTrackingControls(snapshot) {
         max: 4,
         step: 1,
       },
+      webcamFacing: webcamFacingControl(snapshot.webcamFacing),
       showVideo: { label: 'Show Video', value: snapshot.showVideo },
       showDebugSkeleton: {
         label: 'Show Skeleton',

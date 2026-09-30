@@ -2,6 +2,8 @@ import { useEffect, useRef } from 'react';
 
 import { button, folder, useControls } from 'leva';
 
+import { webcamFacingControl } from '@modules/webcam';
+
 import QUINNS_DICE_PRESETS from '../presets/QuinnsDice.presets';
 
 const PRESET_OPTIONS = Object.keys(QUINNS_DICE_PRESETS);
@@ -29,6 +31,7 @@ const POINTER_LOOK_OPTIONS = {
 const PRESET_CONTROL_KEYS = [
   'mode',
   'autoSpeed',
+  'handsWebcamFacing',
   'handsShowVideo',
   'handsShowDebugSkeleton',
   'handsVideoSize',
@@ -195,6 +198,10 @@ export default function useQuinnsDiceControls() {
     ),
     Hands: folder(
       {
+        handsWebcamFacing: webcamFacingControl(
+          QUINNS_DICE_PRESETS.Default.handsWebcamFacing,
+          { render: (get) => get('Quinns Dice.Mode.mode') === 'hands' }
+        ),
         handsShowVideo: {
           label: 'Show Cam',
           value: QUINNS_DICE_PRESETS.Default.handsShowVideo,

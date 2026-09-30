@@ -11,6 +11,7 @@ import {
   useHandGestureEvents,
   useMediaPipeHands,
 } from '@modules/handTracking';
+import { webcamFacingControl } from '@modules/webcam';
 
 import HandLandmarksDebug from './HandLandmarksDebug';
 
@@ -24,6 +25,7 @@ export default function HandStuff() {
   const mp = useControls(
     'MediaPipe',
     {
+      webcamFacing: webcamFacingControl(),
       maxHands: { label: 'Hands', value: 2, min: 1, max: 2, step: 1 },
       showVideo: { label: 'Show Video', value: true },
       showDebugSkeleton: { label: 'Show Skeleton', value: true },
@@ -73,6 +75,7 @@ export default function HandStuff() {
   /* ---------------- Hooks pipeline ---------------- */
 
   const results = useMediaPipeHands({
+    facing: mp.webcamFacing,
     maxHands: mp.maxHands,
     showVideo: mp.showVideo,
     showDebugSkeleton: mp.showDebugSkeleton,

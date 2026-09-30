@@ -8,6 +8,14 @@ import {
   PoseLandmarker,
 } from '@mediapipe/tasks-vision';
 
+import {
+  flipPointsX,
+  isMirrored,
+  openWebcam,
+  resolveFacing,
+  stopWebcam,
+} from '@modules/webcam';
+
 import { POSE_CONNECTIONS } from './poseLandmarkUtils';
 
 export const BODY_TRACKING_MODE = {
@@ -102,8 +110,35 @@ async function createLandmarker(mode, vision, options) {
   });
 }
 
-function normalizeTrackingResults(mode, rawResults) {
+const NORMALIZED_KEYS = [
+  'faceLandmarks',
+  'landmarks',
+  'leftHandLandmarks',
+  'rightHandLandmarks',
+];
+const WORLD_KEYS = [
+  'leftHandWorldLandmarks',
+  'rightHandWorldLandmarks',
+  'worldLandmarks',
+];
+
+function flipResultsX(results) {
+  return {
+    ...results,
+    ...Object.fromEntries(
+      NORMALIZED_KEYS.map((key) => [key, flipPointsX(results[key])])
+    ),
+    ...Object.fromEntries(
+      WORLD_KEYS.map((key) => [key, flipPointsX(results[key], 0)])
+    ),
+  };
+}
+
+function normalizeTrackingResults(mode, rawResults, mirrored) {
   if (!rawResults) return null;
+  if (!mirrored) {
+    return flipResultsX(normalizeTrackingResults(mode, rawResults, true));
+  }
 
   if (mode === BODY_TRACKING_MODE.holistic) {
     return {
@@ -192,6 +227,7 @@ export default function useMediaPipeBodyTracking({
   minHandLandmarksConfidence = 0.6,
   cameraWidth = isMobile() ? 720 : 1280,
   cameraHeight = isMobile() ? 1280 : 720,
+  facing = 'front',
 
   showVideo = false,
   showDebugSkeleton = true,
@@ -216,6 +252,7 @@ export default function useMediaPipeBodyTracking({
   const connectorStyleRef = useRef(connectorStyle);
 
   const [results, setResults] = useState(null);
+  const resolvedFacing = resolveFacing(facing);
 
   useEffect(() => {
     showVideoRef.current = showVideo;
@@ -280,9 +317,12 @@ export default function useMediaPipeBodyTracking({
     video.autoplay = true;
     video.muted = true;
 
+    const mirrored = isMirrored(resolvedFacing);
+    const transform = mirrored ? 'scaleX(-1)' : 'none';
+
     Object.assign(video.style, {
       position: 'fixed',
-      transform: 'scaleX(-1)',
+      transform,
       zIndex: 9999,
       pointerEvents: 'none',
       borderRadius: 'var(--overlay-radius)',
@@ -296,7 +336,7 @@ export default function useMediaPipeBodyTracking({
 
     Object.assign(canvas.style, {
       position: 'fixed',
-      transform: 'scaleX(-1)',
+      transform,
       zIndex: 10000,
       pointerEvents: 'none',
       borderRadius: 'var(--overlay-radius)',
@@ -344,17 +384,14 @@ export default function useMediaPipeBodyTracking({
 
         landmarkerRef.current = landmarker;
 
-        const stream = await navigator.mediaDevices.getUserMedia({
-          audio: false,
-          video: {
-            facingMode: 'user',
-            height: cameraHeight,
-            width: cameraWidth,
-          },
+        const stream = await openWebcam({
+          facing: resolvedFacing,
+          height: cameraHeight,
+          width: cameraWidth,
         });
 
         if (!active) {
-          stream.getTracks().forEach((track) => track.stop());
+          stopWebcam(stream);
           return;
         }
 
@@ -377,7 +414,9 @@ export default function useMediaPipeBodyTracking({
               performance.now()
             );
 
-            setResults(normalizeTrackingResults(mode, trackingResults));
+            setResults(
+              normalizeTrackingResults(mode, trackingResults, mirrored)
+            );
 
             if (ctxRef.current && canvasRef.current) {
               ctxRef.current.clearRect(
@@ -442,7 +481,7 @@ export default function useMediaPipeBodyTracking({
         rafRef.current = null;
       }
 
-      streamRef.current?.getTracks().forEach((track) => track.stop());
+      stopWebcam(streamRef.current);
       landmarkerRef.current?.close();
 
       video.remove();
@@ -467,6 +506,7 @@ export default function useMediaPipeBodyTracking({
     minPosePresenceConfidence,
     minTrackingConfidence,
     mode,
+    resolvedFacing,
     videoPosition,
     videoSize,
   ]);

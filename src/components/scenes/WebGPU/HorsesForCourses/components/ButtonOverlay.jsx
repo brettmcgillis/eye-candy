@@ -4,10 +4,7 @@ import { LuScreenShare, LuScreenShareOff } from 'react-icons/lu';
 
 import OverlayIconButton from '@app/scaffold/overlay/components/OverlayIconButton';
 import SceneButtonBar from '@app/scaffold/overlay/components/SceneButtonBar';
-
-function isMobileDevice() {
-  return /iP(hone|ad|od)|Android/.test(navigator.userAgent);
-}
+import isMobileDevice from '@utils/isMobileDevice';
 
 export default function ButtonOverlay({
   sourceMode,

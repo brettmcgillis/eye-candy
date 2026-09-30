@@ -9,6 +9,7 @@ import {
   useMediaPipeBodyTracking,
   usePoseControls,
 } from '@modules/poseTracking';
+import { webcamFacingControl } from '@modules/webcam';
 
 import PoseDrivenSkeleton from './PoseDrivenSkeleton';
 import PoseLandmarksDebug from './PoseLandmarksDebug';
@@ -25,6 +26,7 @@ export default function TheBoneZone() {
         },
         value: BODY_TRACKING_MODE.pose,
       },
+      webcamFacing: webcamFacingControl(),
       showVideo: { label: 'Show Video', value: true },
       showDebugSkeleton: { label: 'Show Overlay Landmarks', value: true },
       landmarkColor: { label: 'Landmark Color', value: '#38bdf8' },
@@ -174,6 +176,7 @@ export default function TheBoneZone() {
   );
 
   const results = useMediaPipeBodyTracking({
+    facing: mediaPipe.webcamFacing,
     mode: mediaPipe.trackingMode,
     minPoseDetectionConfidence: mediaPipe.minPoseDetectionConfidence,
     minPosePresenceConfidence: mediaPipe.minPosePresenceConfidence,

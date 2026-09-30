@@ -167,7 +167,7 @@
     },
     {
       "id": "idea-1790349043155-zn4t69",
-      "text": "could we do a generative scene that emulates the poured paint styles of artists like"
+      "text": "could we do a generative scene that emulates the poured paint styles of artists like Ondrash&Kasparek"
     },
     {
       "id": "idea-1790555433867-os9gkp",
@@ -178,8 +178,8 @@
       "text": "generative networks. use noise to scatter points and then networkTest them together"
     },
     {
-      "id": "idea-1790559608571-v4x9vh",
-      "text": "generative scene using fractalPixelate's recursive subdivision and the pallettes & gradients."
+      "id": "idea-1790710653894-4wxtp0",
+      "text": "Above and Below: a half submerged scene, camera half underwater half above, with waterline cutting across the middle of the frame. Water droplets. caustics underwater"
     }
   ],
   "statuses": {

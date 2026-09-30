@@ -480,7 +480,7 @@ export default function CataloggrPage() {
   );
 
   const handleCaptureOne = useCallback((entry) => {
-    setSeeder({ autoStart: true, targets: [entry] });
+    setSeeder({ autoStart: false, targets: [entry] });
   }, []);
 
   const handleCaptureMissing = useCallback(() => {

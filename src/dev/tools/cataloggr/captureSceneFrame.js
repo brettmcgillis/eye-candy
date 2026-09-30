@@ -89,6 +89,12 @@ export function isBlankFrame(canvas) {
   return alpha === 0 || variance < BLANK_VARIANCE_THRESHOLD;
 }
 
+export async function snapshotSceneFrame(iframe) {
+  const canvas = findSceneCanvas(iframe.contentDocument);
+  if (!canvas?.width || !canvas.height) return null;
+  return snapshotInFrame(iframe.contentWindow, canvas);
+}
+
 export async function captureSceneFrame(
   iframe,
   { attempts = 3, retryMs = 1500, settleMs, signal, url }
@@ -99,16 +105,11 @@ export async function captureSceneFrame(
   const attemptCapture = async (remaining, lastSnapshot) => {
     if (!remaining) return { blank: true, snapshot: lastSnapshot };
 
-    const canvas = findSceneCanvas(iframe.contentDocument);
-    let snapshot = lastSnapshot;
-
-    if (canvas?.width && canvas.height) {
-      snapshot = await snapshotInFrame(iframe.contentWindow, canvas);
-      if (!isBlankFrame(snapshot)) return { blank: false, snapshot };
-    }
+    const snapshot = await snapshotSceneFrame(iframe);
+    if (snapshot && !isBlankFrame(snapshot)) return { blank: false, snapshot };
 
     await wait(retryMs, signal);
-    return attemptCapture(remaining - 1, snapshot);
+    return attemptCapture(remaining - 1, snapshot ?? lastSnapshot);
   };
 
   return attemptCapture(attempts, null);

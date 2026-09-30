@@ -1224,11 +1224,15 @@
   color: var(--dev-text-secondary);
 }
 
-.cataloggr-seeder__header input {
-  width: 3.2rem;
+.cataloggr-seeder__header input,
+.cataloggr-seeder__header select {
   padding: 0.2rem 0.35rem;
   border: 1px solid var(--dev-border-strong);
   border-radius: 4px;
+}
+
+.cataloggr-seeder__header input {
+  width: 3.2rem;
 }
 
 .cataloggr-seeder__header .dev-button {
@@ -1285,11 +1289,21 @@
 
 .cataloggr-seeder__queue li {
   display: flex;
+  flex-wrap: wrap;
   justify-content: space-between;
-  gap: 0.5rem;
+  gap: 0.3rem 0.5rem;
   padding: 0.3rem 0.4rem;
   border-radius: 4px;
   font-size: 0.72rem;
+}
+
+.cataloggr-seeder__queue select {
+  flex-basis: 100%;
+  min-width: 0;
+  padding: 0.15rem 0.3rem;
+  border: 1px solid var(--dev-border-strong);
+  border-radius: 4px;
+  font-size: 0.7rem;
 }
 
 .cataloggr-seeder__queue small {
@@ -1297,7 +1311,8 @@
   color: var(--dev-text-muted);
 }
 
-.cataloggr-seeder__queue li[data-status='capturing'] {
+.cataloggr-seeder__queue li[data-status='capturing'],
+.cataloggr-seeder__queue li[data-status='waiting'] {
   background: color-mix(in srgb, var(--dev-accent), white 90%);
 }
 

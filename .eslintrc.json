@@ -66,7 +66,7 @@
       }
     },
     {
-      "files": ["src/dev/tools/colors/**/*.{js,jsx}"],
+      "files": ["src/dev/tools/apollian/**/*.{js,jsx}"],
       "rules": {
         "no-restricted-imports": [
           "error",
@@ -75,22 +75,120 @@
               {
                 "group": [
                   "**/blockParty/**",
+                  "**/brutalist/**",
                   "**/cataloggr/**",
+                  "**/colors/**",
+                  "**/darkroom/**",
                   "**/flora/**",
                   "**/fungi/**",
                   "**/gltfjsx/**",
                   "**/glyphs/**",
                   "**/hyperCubes/**",
                   "**/iconography/**",
+                  "**/isoLines/**",
+                  "**/isoLinesRelief/**",
                   "**/kumiko/**",
                   "**/loaderPatterns/**",
                   "**/nestingBoxes/**",
+                  "**/networkTest/**",
                   "**/projectionMapping/**",
+                  "**/pushComesToShove/**",
                   "**/rorschach/**",
+                  "**/rugPull/**",
                   "**/subdivision/**",
                   "**/trucheterie/**"
                 ],
                 "message": "A dev tool may not import another tool's internals. Promote shared code to src/dev/shell (UI) or a shared src/dev folder (behavior)."
+              },
+              {
+                "group": [
+                  "@modules/apollian/*",
+                  "**/modules/apollian/*",
+                  "@modules/apollianRender/*",
+                  "**/modules/apollianRender/*"
+                ],
+                "message": "Import the Apollian kernel through its @modules/apollian barrel, never a file inside it. See docs/apollian-pipeline.md."
+              }
+            ]
+          }
+        ]
+      }
+    },
+    {
+      "files": ["src/dev/tools/colors/**/*.{js,jsx}"],
+      "rules": {
+        "no-restricted-imports": [
+          "error",
+          {
+            "patterns": [
+              {
+                "group": [
+                  "**/apollian/**",
+                  "**/blockParty/**",
+                  "**/brutalist/**",
+                  "**/cataloggr/**",
+                  "**/darkroom/**",
+                  "**/flora/**",
+                  "**/fungi/**",
+                  "**/gltfjsx/**",
+                  "**/glyphs/**",
+                  "**/hyperCubes/**",
+                  "**/iconography/**",
+                  "**/isoLines/**",
+                  "**/isoLinesRelief/**",
+                  "**/kumiko/**",
+                  "**/loaderPatterns/**",
+                  "**/nestingBoxes/**",
+                  "**/networkTest/**",
+                  "**/projectionMapping/**",
+                  "**/pushComesToShove/**",
+                  "**/rorschach/**",
+                  "**/rugPull/**",
+                  "**/subdivision/**",
+                  "**/trucheterie/**"
+                ],
+                "message": "A dev tool may not import another tool's internals. Promote shared code to src/dev/shell (UI) or a shared src/dev folder (behavior)."
+              }
+            ]
+          }
+        ]
+      }
+    },
+    {
+      "files": ["src/dev/tools/darkroom/**/*.{js,jsx}"],
+      "rules": {
+        "no-restricted-imports": [
+          "error",
+          {
+            "patterns": [
+              {
+                "group": [
+                  "**/apollian/**",
+                  "**/blockParty/**",
+                  "**/brutalist/**",
+                  "**/cataloggr/**",
+                  "**/colors/**",
+                  "**/flora/**",
+                  "**/fungi/**",
+                  "**/gltfjsx/**",
+                  "**/glyphs/**",
+                  "**/hyperCubes/**",
+                  "**/iconography/**",
+                  "**/isoLines/**",
+                  "**/isoLinesRelief/**",
+                  "**/kumiko/**",
+                  "**/loaderPatterns/**",
+                  "**/nestingBoxes/**",
+                  "**/networkTest/**",
+                  "**/projectionMapping/**",
+                  "**/pushComesToShove/**",
+                  "**/rorschach/**",
+                  "**/rugPull/**",
+                  "**/subdivision/**",
+                  "**/trucheterie/**"
+                ],
+                "message": "A dev tool may not import another tool's internals. Promote shared code to src/dev/shell (UI) or a shared src/dev folder (behavior).",
+                "caseSensitive": true
               }
             ]
           }
@@ -106,19 +204,27 @@
             "patterns": [
               {
                 "group": [
+                  "**/apollian/**",
                   "**/blockParty/**",
+                  "**/brutalist/**",
                   "**/cataloggr/**",
                   "**/colors/**",
+                  "**/darkroom/**",
                   "**/flora/**",
                   "**/fungi/**",
                   "**/glyphs/**",
                   "**/hyperCubes/**",
                   "**/iconography/**",
+                  "**/isoLines/**",
+                  "**/isoLinesRelief/**",
                   "**/kumiko/**",
                   "**/loaderPatterns/**",
                   "**/nestingBoxes/**",
+                  "**/networkTest/**",
                   "**/projectionMapping/**",
+                  "**/pushComesToShove/**",
                   "**/rorschach/**",
+                  "**/rugPull/**",
                   "**/subdivision/**",
                   "**/trucheterie/**"
                 ],
@@ -138,19 +244,27 @@
             "patterns": [
               {
                 "group": [
+                  "**/apollian/**",
                   "**/blockParty/**",
+                  "**/brutalist/**",
                   "**/cataloggr/**",
                   "**/colors/**",
+                  "**/darkroom/**",
                   "**/flora/**",
                   "**/fungi/**",
                   "**/gltfjsx/**",
                   "**/glyphs/**",
                   "**/hyperCubes/**",
+                  "**/isoLines/**",
+                  "**/isoLinesRelief/**",
                   "**/kumiko/**",
                   "**/loaderPatterns/**",
                   "**/nestingBoxes/**",
+                  "**/networkTest/**",
                   "**/projectionMapping/**",
+                  "**/pushComesToShove/**",
                   "**/rorschach/**",
+                  "**/rugPull/**",
                   "**/subdivision/**",
                   "**/trucheterie/**"
                 ],
@@ -170,19 +284,27 @@
             "patterns": [
               {
                 "group": [
+                  "**/apollian/**",
                   "**/blockParty/**",
+                  "**/brutalist/**",
                   "**/cataloggr/**",
                   "**/colors/**",
+                  "**/darkroom/**",
                   "**/flora/**",
                   "**/fungi/**",
                   "**/gltfjsx/**",
                   "**/glyphs/**",
                   "**/hyperCubes/**",
                   "**/iconography/**",
+                  "**/isoLines/**",
+                  "**/isoLinesRelief/**",
                   "**/kumiko/**",
                   "**/nestingBoxes/**",
+                  "**/networkTest/**",
                   "**/projectionMapping/**",
+                  "**/pushComesToShove/**",
                   "**/rorschach/**",
+                  "**/rugPull/**",
                   "**/subdivision/**",
                   "**/trucheterie/**"
                 ],
@@ -202,19 +324,27 @@
             "patterns": [
               {
                 "group": [
+                  "**/apollian/**",
                   "**/blockParty/**",
+                  "**/brutalist/**",
                   "**/cataloggr/**",
                   "**/colors/**",
+                  "**/darkroom/**",
                   "**/flora/**",
                   "**/fungi/**",
                   "**/gltfjsx/**",
                   "**/glyphs/**",
                   "**/hyperCubes/**",
                   "**/iconography/**",
+                  "**/isoLines/**",
+                  "**/isoLinesRelief/**",
                   "**/kumiko/**",
                   "**/loaderPatterns/**",
                   "**/nestingBoxes/**",
+                  "**/networkTest/**",
                   "**/projectionMapping/**",
+                  "**/pushComesToShove/**",
+                  "**/rugPull/**",
                   "**/subdivision/**",
                   "**/trucheterie/**"
                 ],
@@ -238,19 +368,27 @@
             "patterns": [
               {
                 "group": [
+                  "**/apollian/**",
                   "**/blockParty/**",
+                  "**/brutalist/**",
                   "**/colors/**",
+                  "**/darkroom/**",
                   "**/flora/**",
                   "**/fungi/**",
                   "**/gltfjsx/**",
                   "**/glyphs/**",
                   "**/hyperCubes/**",
                   "**/iconography/**",
+                  "**/isoLines/**",
+                  "**/isoLinesRelief/**",
                   "**/kumiko/**",
                   "**/loaderPatterns/**",
                   "**/nestingBoxes/**",
+                  "**/networkTest/**",
                   "**/projectionMapping/**",
+                  "**/pushComesToShove/**",
                   "**/rorschach/**",
+                  "**/rugPull/**",
                   "**/subdivision/**",
                   "**/trucheterie/**"
                 ],
@@ -270,19 +408,27 @@
             "patterns": [
               {
                 "group": [
+                  "**/apollian/**",
                   "**/blockParty/**",
+                  "**/brutalist/**",
                   "**/cataloggr/**",
                   "**/colors/**",
+                  "**/darkroom/**",
                   "**/flora/**",
                   "**/fungi/**",
                   "**/gltfjsx/**",
                   "**/glyphs/**",
                   "**/hyperCubes/**",
                   "**/iconography/**",
+                  "**/isoLines/**",
+                  "**/isoLinesRelief/**",
                   "**/kumiko/**",
                   "**/loaderPatterns/**",
                   "**/nestingBoxes/**",
+                  "**/networkTest/**",
+                  "**/pushComesToShove/**",
                   "**/rorschach/**",
+                  "**/rugPull/**",
                   "**/subdivision/**",
                   "**/trucheterie/**"
                 ],
@@ -302,19 +448,27 @@
             "patterns": [
               {
                 "group": [
+                  "**/apollian/**",
                   "**/blockParty/**",
+                  "**/brutalist/**",
                   "**/cataloggr/**",
                   "**/colors/**",
+                  "**/darkroom/**",
                   "**/flora/**",
                   "**/fungi/**",
                   "**/gltfjsx/**",
                   "**/hyperCubes/**",
                   "**/iconography/**",
+                  "**/isoLines/**",
+                  "**/isoLinesRelief/**",
                   "**/kumiko/**",
                   "**/loaderPatterns/**",
                   "**/nestingBoxes/**",
+                  "**/networkTest/**",
                   "**/projectionMapping/**",
+                  "**/pushComesToShove/**",
                   "**/rorschach/**",
+                  "**/rugPull/**",
                   "**/subdivision/**",
                   "**/trucheterie/**"
                 ],
@@ -334,19 +488,27 @@
             "patterns": [
               {
                 "group": [
+                  "**/apollian/**",
                   "**/blockParty/**",
+                  "**/brutalist/**",
                   "**/cataloggr/**",
                   "**/colors/**",
+                  "**/darkroom/**",
                   "**/fungi/**",
                   "**/gltfjsx/**",
                   "**/glyphs/**",
                   "**/hyperCubes/**",
                   "**/iconography/**",
+                  "**/isoLines/**",
+                  "**/isoLinesRelief/**",
                   "**/kumiko/**",
                   "**/loaderPatterns/**",
                   "**/nestingBoxes/**",
+                  "**/networkTest/**",
                   "**/projectionMapping/**",
+                  "**/pushComesToShove/**",
                   "**/rorschach/**",
+                  "**/rugPull/**",
                   "**/subdivision/**",
                   "**/trucheterie/**"
                 ],
@@ -375,19 +537,27 @@
             "patterns": [
               {
                 "group": [
+                  "**/apollian/**",
                   "**/blockParty/**",
+                  "**/brutalist/**",
                   "**/cataloggr/**",
                   "**/colors/**",
+                  "**/darkroom/**",
                   "**/flora/**",
                   "**/gltfjsx/**",
                   "**/glyphs/**",
                   "**/hyperCubes/**",
                   "**/iconography/**",
+                  "**/isoLines/**",
+                  "**/isoLinesRelief/**",
                   "**/kumiko/**",
                   "**/loaderPatterns/**",
                   "**/nestingBoxes/**",
+                  "**/networkTest/**",
                   "**/projectionMapping/**",
+                  "**/pushComesToShove/**",
                   "**/rorschach/**",
+                  "**/rugPull/**",
                   "**/subdivision/**",
                   "**/trucheterie/**"
                 ],
@@ -416,19 +586,27 @@
             "patterns": [
               {
                 "group": [
+                  "**/apollian/**",
                   "**/blockParty/**",
+                  "**/brutalist/**",
                   "**/cataloggr/**",
                   "**/colors/**",
+                  "**/darkroom/**",
                   "**/flora/**",
                   "**/fungi/**",
                   "**/gltfjsx/**",
                   "**/glyphs/**",
                   "**/hyperCubes/**",
                   "**/iconography/**",
+                  "**/isoLines/**",
+                  "**/isoLinesRelief/**",
                   "**/loaderPatterns/**",
                   "**/nestingBoxes/**",
+                  "**/networkTest/**",
                   "**/projectionMapping/**",
+                  "**/pushComesToShove/**",
                   "**/rorschach/**",
+                  "**/rugPull/**",
                   "**/subdivision/**",
                   "**/trucheterie/**"
                 ],
@@ -457,20 +635,28 @@
             "patterns": [
               {
                 "group": [
+                  "**/apollian/**",
                   "**/blockParty/**",
+                  "**/brutalist/**",
                   "**/cataloggr/**",
                   "**/colors/**",
+                  "**/darkroom/**",
                   "**/flora/**",
                   "**/fungi/**",
                   "**/gltfjsx/**",
                   "**/glyphs/**",
                   "**/hyperCubes/**",
                   "**/iconography/**",
+                  "**/isoLines/**",
+                  "**/isoLinesRelief/**",
                   "**/kumiko/**",
                   "**/loaderPatterns/**",
                   "**/nestingBoxes/**",
+                  "**/networkTest/**",
                   "**/projectionMapping/**",
+                  "**/pushComesToShove/**",
                   "**/rorschach/**",
+                  "**/rugPull/**",
                   "**/subdivision/**"
                 ],
                 "message": "A dev tool may not import another tool's internals. Promote shared code to src/dev/shell (UI) or a shared src/dev folder (behavior)."
@@ -498,20 +684,28 @@
             "patterns": [
               {
                 "group": [
+                  "**/apollian/**",
                   "**/blockParty/**",
+                  "**/brutalist/**",
                   "**/cataloggr/**",
                   "**/colors/**",
+                  "**/darkroom/**",
                   "**/flora/**",
                   "**/fungi/**",
                   "**/gltfjsx/**",
                   "**/glyphs/**",
                   "**/hyperCubes/**",
                   "**/iconography/**",
+                  "**/isoLines/**",
+                  "**/isoLinesRelief/**",
                   "**/kumiko/**",
                   "**/loaderPatterns/**",
                   "**/nestingBoxes/**",
+                  "**/networkTest/**",
                   "**/projectionMapping/**",
+                  "**/pushComesToShove/**",
                   "**/rorschach/**",
+                  "**/rugPull/**",
                   "**/trucheterie/**"
                 ],
                 "message": "A dev tool may not import another tool's internals. Promote shared code to src/dev/shell (UI) or a shared src/dev folder (behavior)."
@@ -534,19 +728,27 @@
             "patterns": [
               {
                 "group": [
+                  "**/apollian/**",
+                  "**/brutalist/**",
                   "**/cataloggr/**",
                   "**/colors/**",
+                  "**/darkroom/**",
                   "**/flora/**",
                   "**/fungi/**",
                   "**/gltfjsx/**",
                   "**/glyphs/**",
                   "**/hyperCubes/**",
                   "**/iconography/**",
+                  "**/isoLines/**",
+                  "**/isoLinesRelief/**",
                   "**/kumiko/**",
                   "**/loaderPatterns/**",
                   "**/nestingBoxes/**",
+                  "**/networkTest/**",
                   "**/projectionMapping/**",
+                  "**/pushComesToShove/**",
                   "**/rorschach/**",
+                  "**/rugPull/**",
                   "**/subdivision/**",
                   "**/trucheterie/**"
                 ],
@@ -575,19 +777,27 @@
             "patterns": [
               {
                 "group": [
+                  "**/apollian/**",
                   "**/blockParty/**",
+                  "**/brutalist/**",
                   "**/cataloggr/**",
                   "**/colors/**",
+                  "**/darkroom/**",
                   "**/flora/**",
                   "**/fungi/**",
                   "**/gltfjsx/**",
                   "**/glyphs/**",
                   "**/hyperCubes/**",
                   "**/iconography/**",
+                  "**/isoLines/**",
+                  "**/isoLinesRelief/**",
                   "**/kumiko/**",
                   "**/loaderPatterns/**",
+                  "**/networkTest/**",
                   "**/projectionMapping/**",
+                  "**/pushComesToShove/**",
                   "**/rorschach/**",
+                  "**/rugPull/**",
                   "**/subdivision/**",
                   "**/trucheterie/**"
                 ],
@@ -608,6 +818,46 @@
       }
     },
     {
+      "files": ["src/dev/tools/brutalist/**/*.{js,jsx}"],
+      "rules": {
+        "no-restricted-imports": [
+          "error",
+          {
+            "patterns": [
+              {
+                "group": [
+                  "**/apollian/**",
+                  "**/blockParty/**",
+                  "**/cataloggr/**",
+                  "**/colors/**",
+                  "**/darkroom/**",
+                  "**/flora/**",
+                  "**/fungi/**",
+                  "**/gltfjsx/**",
+                  "**/glyphs/**",
+                  "**/hyperCubes/**",
+                  "**/iconography/**",
+                  "**/isoLines/**",
+                  "**/isoLinesRelief/**",
+                  "**/kumiko/**",
+                  "**/loaderPatterns/**",
+                  "**/nestingBoxes/**",
+                  "**/networkTest/**",
+                  "**/projectionMapping/**",
+                  "**/pushComesToShove/**",
+                  "**/rorschach/**",
+                  "**/rugPull/**",
+                  "**/subdivision/**",
+                  "**/trucheterie/**"
+                ],
+                "message": "A dev tool may not import another tool's internals. Promote shared code to src/dev/shell (UI) or a shared src/dev folder (behavior)."
+              }
+            ]
+          }
+        ]
+      }
+    },
+    {
       "files": ["src/dev/tools/hyperCubes/**/*.{js,jsx}"],
       "rules": {
         "no-restricted-imports": [
@@ -616,19 +866,27 @@
             "patterns": [
               {
                 "group": [
+                  "**/apollian/**",
                   "**/blockParty/**",
+                  "**/brutalist/**",
                   "**/cataloggr/**",
                   "**/colors/**",
+                  "**/darkroom/**",
                   "**/flora/**",
                   "**/fungi/**",
                   "**/gltfjsx/**",
                   "**/glyphs/**",
                   "**/iconography/**",
+                  "**/isoLines/**",
+                  "**/isoLinesRelief/**",
                   "**/kumiko/**",
                   "**/loaderPatterns/**",
                   "**/nestingBoxes/**",
+                  "**/networkTest/**",
                   "**/projectionMapping/**",
+                  "**/pushComesToShove/**",
                   "**/rorschach/**",
+                  "**/rugPull/**",
                   "**/subdivision/**",
                   "**/trucheterie/**"
                 ],
@@ -642,6 +900,251 @@
                   "**/modules/hyperCubesRender/*"
                 ],
                 "message": "Import the HyperCubes kernel through its @modules/hyperCubes barrel, never a file inside it. See docs/hyper-cubes-pipeline.md."
+              }
+            ]
+          }
+        ]
+      }
+    },
+    {
+      "files": ["src/dev/tools/networkTest/**/*.{js,jsx}"],
+      "rules": {
+        "no-restricted-imports": [
+          "error",
+          {
+            "patterns": [
+              {
+                "group": [
+                  "**/apollian/**",
+                  "**/blockParty/**",
+                  "**/brutalist/**",
+                  "**/cataloggr/**",
+                  "**/colors/**",
+                  "**/darkroom/**",
+                  "**/flora/**",
+                  "**/fungi/**",
+                  "**/gltfjsx/**",
+                  "**/glyphs/**",
+                  "**/hyperCubes/**",
+                  "**/iconography/**",
+                  "**/isoLines/**",
+                  "**/isoLinesRelief/**",
+                  "**/kumiko/**",
+                  "**/loaderPatterns/**",
+                  "**/nestingBoxes/**",
+                  "**/projectionMapping/**",
+                  "**/pushComesToShove/**",
+                  "**/rorschach/**",
+                  "**/rugPull/**",
+                  "**/subdivision/**",
+                  "**/trucheterie/**"
+                ],
+                "message": "A dev tool may not import another tool's internals. Promote shared code to src/dev/shell (UI) or a shared src/dev folder (behavior)."
+              },
+              {
+                "group": [
+                  "@modules/networkTest/*",
+                  "**/modules/networkTest/*",
+                  "@modules/networkTestRender/*",
+                  "**/modules/networkTestRender/*"
+                ],
+                "message": "Import the NetworkTest kernel through its @modules/networkTest barrel, never a file inside it. See docs/network-test-pipeline.md."
+              }
+            ]
+          }
+        ]
+      }
+    },
+    {
+      "files": ["src/dev/tools/isoLines/**/*.{js,jsx}"],
+      "rules": {
+        "no-restricted-imports": [
+          "error",
+          {
+            "patterns": [
+              {
+                "group": [
+                  "**/apollian/**",
+                  "**/blockParty/**",
+                  "**/brutalist/**",
+                  "**/cataloggr/**",
+                  "**/colors/**",
+                  "**/darkroom/**",
+                  "**/flora/**",
+                  "**/fungi/**",
+                  "**/gltfjsx/**",
+                  "**/glyphs/**",
+                  "**/hyperCubes/**",
+                  "**/iconography/**",
+                  "**/isoLinesRelief/**",
+                  "**/kumiko/**",
+                  "**/loaderPatterns/**",
+                  "**/nestingBoxes/**",
+                  "**/networkTest/**",
+                  "**/projectionMapping/**",
+                  "**/pushComesToShove/**",
+                  "**/rorschach/**",
+                  "**/rugPull/**",
+                  "**/subdivision/**",
+                  "**/trucheterie/**"
+                ],
+                "message": "A dev tool may not import another tool's internals. Promote shared code to src/dev/shell (UI) or a shared src/dev folder (behavior)."
+              },
+              {
+                "group": [
+                  "@modules/isoLines/*",
+                  "**/modules/isoLines/*",
+                  "@modules/isoLinesRender/*",
+                  "**/modules/isoLinesRender/*"
+                ],
+                "message": "Import the IsoLines kernel through its @modules/isoLines barrel, never a file inside it. See docs/iso-lines-pipeline.md."
+              }
+            ]
+          }
+        ]
+      }
+    },
+    {
+      "files": ["src/dev/tools/rugPull/**/*.{js,jsx}"],
+      "rules": {
+        "no-restricted-imports": [
+          "error",
+          {
+            "patterns": [
+              {
+                "group": [
+                  "**/apollian/**",
+                  "**/blockParty/**",
+                  "**/brutalist/**",
+                  "**/cataloggr/**",
+                  "**/colors/**",
+                  "**/darkroom/**",
+                  "**/flora/**",
+                  "**/fungi/**",
+                  "**/gltfjsx/**",
+                  "**/glyphs/**",
+                  "**/hyperCubes/**",
+                  "**/iconography/**",
+                  "**/isoLines/**",
+                  "**/isoLinesRelief/**",
+                  "**/kumiko/**",
+                  "**/loaderPatterns/**",
+                  "**/nestingBoxes/**",
+                  "**/networkTest/**",
+                  "**/projectionMapping/**",
+                  "**/pushComesToShove/**",
+                  "**/rorschach/**",
+                  "**/subdivision/**",
+                  "**/trucheterie/**"
+                ],
+                "message": "A dev tool may not import another tool's internals. Promote shared code to src/dev/shell (UI) or a shared src/dev folder (behavior)."
+              },
+              {
+                "group": [
+                  "@modules/isoLines/*",
+                  "**/modules/isoLines/*",
+                  "@modules/isoLinesRender/*",
+                  "**/modules/isoLinesRender/*"
+                ],
+                "message": "Import the IsoLines kernel through its @modules/isoLines barrel, never a file inside it. See docs/iso-lines-pipeline.md."
+              }
+            ]
+          }
+        ]
+      }
+    },
+    {
+      "files": ["src/dev/tools/isoLinesRelief/**/*.{js,jsx}"],
+      "rules": {
+        "no-restricted-imports": [
+          "error",
+          {
+            "patterns": [
+              {
+                "group": [
+                  "**/apollian/**",
+                  "**/blockParty/**",
+                  "**/brutalist/**",
+                  "**/cataloggr/**",
+                  "**/colors/**",
+                  "**/darkroom/**",
+                  "**/flora/**",
+                  "**/fungi/**",
+                  "**/gltfjsx/**",
+                  "**/glyphs/**",
+                  "**/hyperCubes/**",
+                  "**/iconography/**",
+                  "**/isoLines/**",
+                  "**/kumiko/**",
+                  "**/loaderPatterns/**",
+                  "**/nestingBoxes/**",
+                  "**/networkTest/**",
+                  "**/projectionMapping/**",
+                  "**/pushComesToShove/**",
+                  "**/rorschach/**",
+                  "**/rugPull/**",
+                  "**/subdivision/**",
+                  "**/trucheterie/**"
+                ],
+                "message": "A dev tool may not import another tool's internals. Promote shared code to src/dev/shell (UI) or a shared src/dev folder (behavior)."
+              },
+              {
+                "group": [
+                  "@modules/isoLinesRelief/*",
+                  "**/modules/isoLinesRelief/*",
+                  "@modules/isoLinesReliefRender/*",
+                  "**/modules/isoLinesReliefRender/*"
+                ],
+                "message": "Import the IsoLinesRelief modules through their barrels, never a file inside them. See docs/iso-lines-relief-pipeline.md."
+              }
+            ]
+          }
+        ]
+      }
+    },
+    {
+      "files": ["src/dev/tools/pushComesToShove/**/*.{js,jsx}"],
+      "rules": {
+        "no-restricted-imports": [
+          "error",
+          {
+            "patterns": [
+              {
+                "group": [
+                  "**/apollian/**",
+                  "**/blockParty/**",
+                  "**/brutalist/**",
+                  "**/cataloggr/**",
+                  "**/colors/**",
+                  "**/darkroom/**",
+                  "**/flora/**",
+                  "**/fungi/**",
+                  "**/gltfjsx/**",
+                  "**/glyphs/**",
+                  "**/hyperCubes/**",
+                  "**/iconography/**",
+                  "**/isoLines/**",
+                  "**/isoLinesRelief/**",
+                  "**/kumiko/**",
+                  "**/loaderPatterns/**",
+                  "**/nestingBoxes/**",
+                  "**/networkTest/**",
+                  "**/projectionMapping/**",
+                  "**/rorschach/**",
+                  "**/rugPull/**",
+                  "**/subdivision/**",
+                  "**/trucheterie/**"
+                ],
+                "message": "A dev tool may not import another tool's internals. Promote shared code to src/dev/shell (UI) or a shared src/dev folder (behavior)."
+              },
+              {
+                "group": [
+                  "@modules/pushComesToShove/*",
+                  "**/modules/pushComesToShove/*",
+                  "@modules/pushComesToShoveRender/*",
+                  "**/modules/pushComesToShoveRender/*"
+                ],
+                "message": "Import the Push Comes to Shove kernel through its @modules/pushComesToShove barrel, never a file inside it. See docs/push-comes-to-shove-pipeline.md."
               }
             ]
           }

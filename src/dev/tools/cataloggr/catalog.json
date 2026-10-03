@@ -127,7 +127,7 @@
     },
     {
       "id": "idea-031",
-      "text": "Use RorschachCLI as an example and build a similar tool/devpage for: HexTrees, BlockParty"
+      "text": "Use RorschachCLI as an example and build a similar tool/devpage for: HexTrees"
     },
     {
       "id": "idea-1787939182486-vze6zf",
@@ -167,19 +167,39 @@
     },
     {
       "id": "idea-1790349043155-zn4t69",
-      "text": "could we do a generative scene that emulates the poured paint styles of artists like Ondrash&Kasparek"
+      "text": "could we do a generative scene that emulates the poured paint styles of artists like Ondrash&Kasparek? paint poured on water and blown around dutch pour style, transferred to canvas, then strategically airbrushed to give the illusion of shadow from the paint and space between paint & canvas"
     },
     {
       "id": "idea-1790555433867-os9gkp",
       "text": "generative geodes using the sand grain particles."
     },
     {
-      "id": "idea-1790557379760-0fuvi4",
-      "text": "generative networks. use noise to scatter points and then networkTest them together"
-    },
-    {
       "id": "idea-1790710653894-4wxtp0",
       "text": "Above and Below: a half submerged scene, camera half underwater half above, with waterline cutting across the middle of the frame. Water droplets. caustics underwater"
+    },
+    {
+      "id": "idea-1790813183244-d9hfoc",
+      "text": "can we use our particle sand grains to make a zen garden?"
+    },
+    {
+      "id": "idea-1790858418288-zbth9s",
+      "text": "marionettes driving by mediapipe hand tracking"
+    },
+    {
+      "id": "idea-1790858780721-y4tyi8",
+      "text": "Generative audio scene. Find novel techniques to generate music. ex. falling particles triggering notes, find a way to use light/radiance to trigger notes,"
+    },
+    {
+      "id": "idea-1790859236803-0yxpgn",
+      "text": "Create a scene that leverages the webcam to put the viewer in the piece"
+    },
+    {
+      "id": "idea-1790860829475-n2uz94",
+      "text": "Magnetic fields"
+    },
+    {
+      "id": "idea-1790861263399-o3xmbz",
+      "text": "multiple render targets"
     }
   ],
   "statuses": {

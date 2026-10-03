@@ -33,8 +33,8 @@ Codex).
 ## 2. Dev tool organization
 
 - Each independent tool lives under `src/dev/tools/<tool>/` (current tools:
-  `blockParty`, `cataloggr`, `colors`, `flora`, `fungi`, `gltfjsx`, `glyphs`, `hyperCubes`, `iconography`,
-  `kumiko`, `loaderPatterns`, `nestingBoxes`, `projectionMapping`, `rorschach`,
+  `blockParty`, `brutalist`, `cataloggr`, `colors`, `darkroom`, `flora`, `fungi`, `gltfjsx`, `glyphs`, `hyperCubes`, `iconography`,
+  `isoLines`, `isoLinesRelief`, `kumiko`, `loaderPatterns`, `nestingBoxes`, `networkTest`, `projectionMapping`, `pushComesToShove`, `rorschach`,
   `subdivision`).
 - Every registered tool owns a colocated `todo.md` using the same canonical
   TODO shape as scenes. Cataloggr discovers and edits these files alongside
@@ -48,12 +48,21 @@ Codex).
   `DevPageHeaderBar.jsx`, `DevPageTitle.jsx`, `DevTooltip.jsx`), or a clearly
   named shared folder under `src/dev` when it's non-shell dev-only behavior.
 - **Generative workbenches share `src/dev/renderWorkbench/`** (RorschachCLI,
-  FloraCLI, FungiCLI, KumikoCLI, BlockPartyCLI, NestingBoxesCLI, HyperCubesCLI, and Fauna next): `useRenderJobs(tool)`, `ResultsPanel`
+  FloraCLI, FungiCLI, KumikoCLI, BlockPartyCLI, BrutalistCLI, NestingBoxesCLI, HyperCubesCLI, NetworkTestCLI, IsoLinesCLI, IsoLinesReliefCLI, PushComesToShoveCLI, and Fauna next): `useRenderJobs(tool)`, `ResultsPanel`
   (Saved / Transient / Jobs), `AssetGallery` with its `renderDetails` and
   `selectionActions` slots, schema-bound `SchemaFields` + `usePins`, and
   `renderWorkbench.css` (the `rw-` classes). A tool supplies only its form
   layout, its preview details and its extra actions. The form fields bind to
   an option table built with `src/modules/optionSchema` (see §5).
+- **Darkroom** (`src/dev/tools/darkroom/`) is the media-in tool: a still,
+  clip, webcam or phone camera through one image-driven technique. It renders
+  in the browser (live preview and frame-exact export alike) and only stages
+  frames on the server, where `scripts/darkroom-encode.mjs` turns them into a
+  render-job collection. A technique is one folder,
+  `techniques/<id>/technique.js` (`id`, `label`, `inputs`, `engine`,
+  `options`, `sections`, `presets`, `create(stage)`), discovered by glob —
+  add a technique there rather than editing the page. Its lint block is
+  case-sensitive so techniques may import a PascalCase scene's presets.
 - Keep a tool's route page at the tool root. Use `components/`, `hooks/`, and
   `utils/` subfolders only when the tool is large enough to benefit from them.
 - Do not create barrels unless an actual external consumer benefits from the
@@ -62,8 +71,11 @@ Codex).
 ## 3. Dev page registration
 
 - Every routable tool owns a colocated `devPage.config.js`, exporting `slug`,
-  `label`, `description`, `order`, and a lazy `Component`. `aliases` is
+  `label`, `description`, and a lazy `Component`. `aliases` is
   optional.
+- Landing-page sections use the optional `group` field: `general` (the
+  default) or `render-workbenches`. Tools are sorted alphabetically by label
+  within each section. The registry also sorts tools alphabetically by label.
 - `src/dev/devPageRegistry.js` discovers every config via
   `import.meta.glob('./tools/*/devPage.config.js', { eager: true })` and
   throws on a missing required field or a duplicate `slug`/alias.

@@ -4,8 +4,7 @@ export default {
   slug: 'nesting-boxes',
   aliases: ['NestingBoxesCLI'],
   label: 'NestingBoxesCLI',
-  description:
-    'Generate Nesting Boxes trees in batches — stills, grow/loop/drift/turntable videos and plotter SVG — using the NestingBoxesCLI.',
-  order: 59,
+  group: 'render-workbenches',
+  description: 'Generate images and videos using the NestingBoxesCLI.',
   Component: lazy(() => import('./NestingBoxesWorkbenchPage')),
 };

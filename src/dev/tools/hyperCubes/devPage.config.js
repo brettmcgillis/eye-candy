@@ -4,8 +4,7 @@ export default {
   slug: 'hyper-cubes',
   aliases: ['HyperCubesCLI'],
   label: 'HyperCubesCLI',
-  description:
-    'Generate HyperCubes structures in batches — stills, grow/morph/turntable videos and plotter SVG — using the HyperCubesCLI.',
-  order: 60,
+  group: 'render-workbenches',
+  description: 'Generate images and videos using the HyperCubesCLI.',
   Component: lazy(() => import('./HyperCubesWorkbenchPage')),
 };

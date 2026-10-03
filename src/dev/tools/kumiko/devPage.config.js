@@ -4,8 +4,7 @@ export default {
   slug: 'kumiko',
   aliases: ['KumikoCLI'],
   label: 'KumikoCLI',
-  description:
-    'Generate Kumiko lattice panels — flat art, plotter SVG and 3D renders — using the KumikoCLI.',
-  order: 57,
+  group: 'render-workbenches',
+  description: 'Generate images and videos using the KumikoCLI.',
   Component: lazy(() => import('./KumikoWorkbenchPage')),
 };

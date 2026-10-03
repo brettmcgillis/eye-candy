@@ -31,11 +31,8 @@ function buildDevPageRegistry(modules) {
         sourcePath: `src/dev/${modulePath.replace(/^\.\//u, '').replace(/\/devPage\.config\.js$/u, '')}`,
       };
     })
-    .sort(
-      (left, right) =>
-        (left.order ?? Number.MAX_SAFE_INTEGER) -
-          (right.order ?? Number.MAX_SAFE_INTEGER) ||
-        left.label.localeCompare(right.label)
+    .sort((left, right) =>
+      left.label.localeCompare(right.label, undefined, { sensitivity: 'base' })
     );
 }
 

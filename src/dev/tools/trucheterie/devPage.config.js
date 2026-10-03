@@ -4,8 +4,7 @@ export default {
   slug: 'trucheterie',
   aliases: ['TrucheterieCLI'],
   label: 'TrucheterieCLI',
-  description:
-    'Generate Trucheterie blob-field stills using the TrucheterieCLI.',
-  order: 60,
+  group: 'render-workbenches',
+  description: 'Generate images and videos using the TrucheterieCLI.',
   Component: lazy(() => import('./TrucheterieWorkbenchPage')),
 };

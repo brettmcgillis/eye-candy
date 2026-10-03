@@ -4,8 +4,7 @@ export default {
   slug: 'fungi',
   aliases: ['FungiCLI'],
   label: 'FungiCLI',
-  description:
-    'Generate Fungi stills and videos in batches using the FungiCLI.',
-  order: 56,
+  group: 'render-workbenches',
+  description: 'Generate images and videos using the FungiCLI.',
   Component: lazy(() => import('./FungiWorkbenchPage')),
 };

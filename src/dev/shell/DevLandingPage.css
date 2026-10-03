@@ -1,3 +1,19 @@
+.dev-landing__group + .dev-landing__group {
+  margin-top: 1.5rem;
+}
+
+.dev-landing__group-title {
+  margin: 0 0 0.65rem;
+  color: var(--dev-text-secondary);
+  font-size: 1rem;
+  font-weight: 700;
+}
+
+.dev-landing__group-count {
+  font-size: 0.75rem;
+  font-weight: 400;
+}
+
 .dev-landing__grid {
   display: grid;
   grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));

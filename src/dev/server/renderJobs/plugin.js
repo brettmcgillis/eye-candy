@@ -6,7 +6,9 @@ import { RenderJobRequestError } from './jobService';
 const MAX_BODY_BYTES = 256 * 1024;
 
 const CONTENT_TYPES = {
+  '.jpg': 'image/jpeg',
   '.json': 'application/json; charset=utf-8',
+  '.mov': 'video/quicktime',
   '.mp4': 'video/mp4',
   '.png': 'image/png',
   '.svg': 'image/svg+xml; charset=utf-8',
@@ -71,7 +73,7 @@ function parseByteRange(header, size) {
 }
 
 // Range support is what lets a <video> seek a clip that is still on disk.
-async function streamAsset(req, res, next, assetPath) {
+export async function streamAsset(req, res, next, assetPath) {
   const { size } = await fs.promises.stat(assetPath);
   const range = req.headers.range
     ? parseByteRange(req.headers.range, size)

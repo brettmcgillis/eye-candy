@@ -13,16 +13,8 @@
 /dist
 
 # generated media
-/output/batch/
-/output/rorschach-workbench/
-/output/flora-workbench/
-/output/fungi-workbench/
-/output/trucheterie-workbench/
-/output/subdivision-workbench/
-/output/kumiko-workbench/
-/output/nesting-boxes-workbench/
-/output/block-party-workbench/
-/output/hyper-cubes-workbench/
+/output/*
+
 
 # misc
 .DS_Store

@@ -4,8 +4,7 @@ export default {
   slug: 'block-party',
   aliases: ['BlockPartyCLI'],
   label: 'BlockPartyCLI',
-  description:
-    'Generate Block Party cities in batches — stills, build/rebuild/turntable videos and plotter SVG — using the BlockPartyCLI.',
-  order: 58,
+  group: 'render-workbenches',
+  description: 'Generate images and videos using the BlockPartyCLI.',
   Component: lazy(() => import('./BlockPartyWorkbenchPage')),
 };

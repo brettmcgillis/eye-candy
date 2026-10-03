@@ -41,6 +41,26 @@ the current scene folder go through path aliases (`@elements`, `@modules`,
   server code under `src/dev/`. This is the source of truth; follow it
   exactly. None of this ships to GitHub Pages.
 
+## Required reading before touching Apollian
+
+- **`docs/apollian-pipeline.md`** — the HyperCubes arrangement for the
+  Apollonian fractal objects: `@modules/apollian` (three-free CPU mirrors of
+  the four fields, the exact Soddy packing, slice sampling and contours, plot
+  SVG, roll and option schema; the scene's Leva is generated from it),
+  `@modules/apollianRender` (`createApollianRig`, the full-screen stage
+  march, surfaces and slice view), the headless CLIs, and ApollianCLI. Run
+  `npm run apollian:check` after changing any of them.
+
+## Required reading before touching Brutalist / BrutalistMaquette
+
+- **`docs/brutalist-pipeline.md`** — the HyperCubes arrangement with two
+  scenes over one kernel: `@modules/brutalist` (three-free family grammars,
+  parts and disjoint cutters, siting, moods, roll, framing, plot SVG and the
+  stage-tagged option schema both scenes' Leva is generated from),
+  `@modules/brutalistRender` (`createBrutalistRig`: CSG carving, procedural
+  concrete, ez-tree forest, height fog, PetriDish studio), the headless CLIs
+  and BrutalistCLI. Run `npm run brutalist:check` after changing any of them.
+
 ## Required reading before touching Rorschach
 
 - **`docs/rorschach-pipeline.md`** — Rorschach is one kernel
@@ -102,12 +122,57 @@ the current scene folder go through path aliases (`@elements`, `@modules`,
   and HyperCubesCLI. Run `npm run hyper-cubes:check` after changing any of
   them.
 
+## Required reading before touching NetworkTest
+
+- **`docs/network-test-pipeline.md`** — the HyperCubes arrangement for
+  generative networks: `@modules/networkTest` (three-free composition of point
+  generators, the wiring rules, grow/drift/pulse motion, instances, plot SVG
+  and option schema; the scene's Leva is generated from it),
+  `@modules/networkTestRender` (`createNetworkRig`, the look), the headless
+  CLIs, and NetworkTestCLI. Run `npm run network-test:check` after changing
+  any of them.
+
+## Required reading before touching Push Comes to Shove
+
+- **`docs/push-comes-to-shove-pipeline.md`** — the HyperCubes arrangement
+  for the holed panel over its cable tangle: `@modules/pushComesToShove`
+  (three-free layout, hole field and panel mesh, seeding, palette maths with
+  the CPU hash mirror, roll, field fitting, framing, loop planner, plot SVG
+  and option schema; the scene's Leva is generated from it),
+  `@modules/pushComesToShoveRender` (`createShoveRig`, the GPU cable sim and
+  the look), the headless CLIs, and PushComesToShoveCLI. Run
+  `npm run push-comes-to-shove:check` after changing any of them.
+
+## Required reading before touching IsoLines / IsoLinesRelief
+
+- **`docs/iso-lines-pipeline.md`** — the flat pair half and the shared
+  kernel: `@modules/isoLines` (three-free field drivers including the
+  reference noise port, the vertex grid, marching-squares contours, segments
+  and trail, plan SVG, the flat schema and the specs both schemas share),
+  `@modules/isoLinesRender` (the flat rig and the shared shading), the
+  headless CLIs, IsoLinesCLI and its Darkroom technique.
+- **`docs/iso-lines-relief-pipeline.md`** — the relief half over the same
+  kernel: `@modules/isoLinesRelief` (schema, roller, framing, cycle),
+  `@modules/isoLinesReliefRender` (`createReliefRig`), its CLIs,
+  IsoLinesReliefCLI and its Darkroom technique. Run `npm run iso-lines:check`
+  and `npm run iso-lines-relief:check` after changing either.
+
 ## Required reading before touching Subdivision
 
 - **`docs/subdivision-pipeline.md`** — `@modules/subdivision` is a three-free
   kernel (fractalPixelate's split loop on the CPU, shading, hatching, SVG)
   drawn by the WebGPU scene and by the headless CLI, with SubdivisionCLI over
   the latter. Run `npm run subdivision:check` after changing any of them.
+
+## Required reading before touching Rug Pull
+
+- **`docs/rug-pull-pipeline.md`** — the Kumiko arrangement for generative
+  Persian rugs: `@modules/rugPull` (three-free knot-grid cartoon — designs,
+  motifs, borders, house motifs, palettes, finishing, verlet cloth and the
+  option schema; the scene's Leva is generated from it),
+  `@modules/rugPullRender` (`createRugRig`, the pile and the room), the
+  headless CLI and RugPullCLI. Run `npm run rug-pull:check` after changing
+  any of them.
 
 ## Orientation
 

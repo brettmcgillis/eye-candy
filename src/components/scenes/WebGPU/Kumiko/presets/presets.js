@@ -71,7 +71,7 @@ const SNAPSHOTS = {
     ),
     subdivide: 2,
     imageMode: 'halftone',
-    sourceImage: 'images/kumiko/ramp.png',
+    sourceImage: 'textures/ramp.png',
     imageContrast: 1,
     colorTarget: 'none',
   },

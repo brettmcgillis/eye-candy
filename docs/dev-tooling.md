@@ -33,7 +33,7 @@ Codex).
 ## 2. Dev tool organization
 
 - Each independent tool lives under `src/dev/tools/<tool>/` (current tools:
-  `blockParty`, `brutalist`, `cataloggr`, `colors`, `darkroom`, `flora`, `fungi`, `gltfjsx`, `glyphs`, `hyperCubes`, `iconography`,
+  `blockParty`, `brutalist`, `cataloggr`, `colors`, `darkroom`, `flora`, `fungi`, `gltfjsx`, `glyphs`, `hyperCubes`, `iconography`, `inventory`,
   `isoLines`, `isoLinesRelief`, `kumiko`, `loaderPatterns`, `nestingBoxes`, `networkTest`, `projectionMapping`, `pushComesToShove`, `rorschach`,
   `subdivision`).
 - Every registered tool owns a colocated `todo.md` using the same canonical

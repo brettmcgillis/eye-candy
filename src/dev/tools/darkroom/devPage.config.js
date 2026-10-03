@@ -4,7 +4,6 @@ export default {
   slug: 'darkroom',
   label: 'Darkroom',
   group: 'general',
-  description:
-    'Stills, clips, the webcam or a phone camera through Subdivision, Kumiko, Relief and the screen-space effects — preview live, export stills and video.',
+  description: 'Videos and stills in various techniques',
   Component: lazy(() => import('./DarkroomPage')),
 };

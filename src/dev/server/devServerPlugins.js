@@ -8,6 +8,7 @@ import fungiPlugin from './fungi/plugin';
 import gltfjsxPlugin from './gltfjsx/plugin';
 import glyphsPlugin from './glyphs/plugin';
 import hyperCubesPlugin from './hyperCubes/plugin';
+import inventoryPlugin from './inventory/plugin';
 import isoLinesPlugin from './isoLines/plugin';
 import isoLinesReliefPlugin from './isoLinesRelief/plugin';
 import kumikoPlugin from './kumiko/plugin';
@@ -31,6 +32,7 @@ export default function devServerPlugins() {
     glyphsPlugin(),
     gltfjsxPlugin(),
     hyperCubesPlugin(),
+    inventoryPlugin(),
     isoLinesPlugin(),
     isoLinesReliefPlugin(),
     kumikoPlugin(),

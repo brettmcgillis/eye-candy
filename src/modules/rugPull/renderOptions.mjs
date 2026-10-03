@@ -298,9 +298,16 @@ const customColor = (role, value) =>
 const PALETTE = {
   palette: inFacet(
     'palette',
-    choice('palette', null, 'Palette', [...PALETTE_CHOICES, 'custom'], 'tabriz', {
-      help: 'Named dye sets after their weaving centres, two house sets (loader, turboflex), or custom',
-    })
+    choice(
+      'palette',
+      null,
+      'Palette',
+      [...PALETTE_CHOICES, 'custom'],
+      'tabriz',
+      {
+        help: 'Named dye sets after their weaving centres, two house sets (loader, turboflex), or custom',
+      }
+    )
   ),
   groundRole: roleChoice(
     'Field',
@@ -509,13 +516,13 @@ const RENDER = {
     type: 'number',
   }),
   png: still({
-    default: true,
+    default: false,
     help: 'Write PNG files',
     label: 'PNG',
     type: 'boolean',
   }),
   webp: still({
-    default: false,
+    default: true,
     help: 'Write lossless WebP files',
     label: 'WebP',
     type: 'boolean',

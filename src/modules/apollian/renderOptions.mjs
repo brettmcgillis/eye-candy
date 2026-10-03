@@ -401,7 +401,9 @@ const STAGE = {
       help: 'What the floor darkens toward under shadow; unshadowed, the floor is the backdrop',
     })
   ),
-  floorShadow: stage(num('stage', 'Floor', 'Shadow Strength', 0.75, 0, 1, 0.01)),
+  floorShadow: stage(
+    num('stage', 'Floor', 'Shadow Strength', 0.75, 0, 1, 0.01)
+  ),
   fog: stage(num('stage', null, 'Fog', 0.04, 0, 1, 0.001)),
   exposure: rolled(
     'stage',
@@ -611,13 +613,13 @@ const RENDER = {
     type: 'number',
   }),
   png: still({
-    default: true,
+    default: false,
     help: 'Write PNG files',
     label: 'PNG',
     type: 'boolean',
   }),
   webp: still({
-    default: false,
+    default: true,
     help: 'Write lossless WebP files',
     label: 'WebP',
     type: 'boolean',

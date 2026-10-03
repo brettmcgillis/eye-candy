@@ -667,13 +667,13 @@ const RENDER = {
     type: 'number',
   }),
   png: still({
-    default: true,
+    default: false,
     help: 'Write PNG files',
     label: 'PNG',
     type: 'boolean',
   }),
   webp: still({
-    default: false,
+    default: true,
     help: 'Write lossless WebP files',
     label: 'WebP',
     type: 'boolean',

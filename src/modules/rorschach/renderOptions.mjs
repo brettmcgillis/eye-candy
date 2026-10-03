@@ -1116,7 +1116,7 @@ export const RENDER_OPTIONS = {
     scope: 'still',
     section: 'output',
     type: 'boolean',
-    default: false,
+    default: true,
     help: 'Also write lossless WebP output',
   },
 

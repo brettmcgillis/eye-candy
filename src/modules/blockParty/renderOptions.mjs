@@ -578,7 +578,7 @@ const RENDER = {
     type: 'number',
   },
   png: {
-    default: true,
+    default: false,
     help: 'Write PNG files',
     label: 'PNG',
     scope: 'still',
@@ -586,7 +586,7 @@ const RENDER = {
     type: 'boolean',
   },
   webp: {
-    default: false,
+    default: true,
     help: 'Write lossless WebP files',
     label: 'WebP',
     scope: 'still',

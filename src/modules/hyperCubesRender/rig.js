@@ -18,6 +18,10 @@ import {
   createGlassUniforms,
 } from './materials';
 
+// Where the sky gradient sits along the reflection of the default view.
+const FLOOR_SKY_MIX = 0.7;
+const floorSkyZenith = new THREE.Color();
+
 const writeBox = ({ center, half }, a, i, w = 0) => {
   a.aCenter.set(center, i);
   a.aHalf.set([...half, w], i);
@@ -104,6 +108,9 @@ export default function createCubeRig() {
       frameUniforms.roughness.value = config.frameRoughness;
       floorUniforms.color.value.set(config.floorColor);
       floorUniforms.roughness.value = config.floorRoughness;
+      floorUniforms.sky.value
+        .set(config.skyNadir)
+        .lerp(floorSkyZenith.set(config.skyZenith), FLOOR_SKY_MIX);
       floor.visible = config.floorEnabled;
       floor.position.y = -config.domainY - config.floorOffset;
     },

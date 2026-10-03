@@ -103,11 +103,17 @@ export function createFloorUniforms() {
   return {
     color: uniform(new THREE.Color('#bc3939')),
     roughness: uniform(0.15),
+    sky: uniform(new THREE.Color('#000000')),
   };
 }
 
+// The floor mirrors a fixed sky instead of the studio: under an orthographic
+// lens every floor pixel shares one reflection vector, so the baked emitter
+// panels would sweep across the whole floor (and blow the bloom out over the
+// backdrop) as the camera orbits.
 export function createFloorMaterial(uniforms) {
   const material = new THREE.MeshStandardNodeMaterial({ metalness: 0 });
+  material.envNode = uniforms.sky;
   material.colorNode = uniforms.color;
   material.roughnessNode = uniforms.roughness;
   return material;

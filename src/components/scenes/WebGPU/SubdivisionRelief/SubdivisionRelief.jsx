@@ -11,6 +11,7 @@ import useGrowClock from './hooks/useGrowClock';
 import useMotionUniforms from './hooks/useMotionUniforms';
 import usePiece from './hooks/usePiece';
 import useSceneControls from './hooks/useSceneControls';
+import { slidesIn } from './utils/cellBuffers';
 
 function SubdivisionRelief() {
   const config = useSceneControls();
@@ -33,7 +34,12 @@ function SubdivisionRelief() {
         color={config.plateColor}
         roughness={config.roughness}
       />
-      <Cells geometry={geometry} grow={grow} motion={motion} />
+      <Cells
+        geometry={geometry}
+        grow={grow}
+        motion={motion}
+        slide={slidesIn(config)}
+      />
     </>
   );
 }

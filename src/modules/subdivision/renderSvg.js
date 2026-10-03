@@ -1,5 +1,5 @@
 import { insetPoly } from './geometry';
-import { mixHex, splitProgress } from './grow';
+import { grownCell, mixHex } from './grow';
 import buildPlot from './plot';
 
 const fmt = (v) => Number(v.toFixed(2));
@@ -28,21 +28,22 @@ function fillBody(piece, config, { grow, seam }) {
   const outlined = config.outlineWidth > 0 && config.outlineStrength > 0;
   const levels = new Map();
   piece.nodes.forEach((node) => {
-    const t = splitProgress(node, grow);
-    if (t < 0) return;
+    const cell = grownCell(node, grow, config.growStyle);
+    if (!cell) return;
+    const { band, centre, poly, t } = cell;
     const parent = piece.nodes[node.parent] ?? node;
     if (!levels.has(node.depth)) {
       levels.set(node.depth, { inner: new Map(), outer: new Map() });
     }
     const level = levels.get(node.depth);
-    const add = (map, color, poly) =>
-      map.set(color, `${map.get(color) ?? ''}${polyPath(poly)}`);
+    const add = (map, color, shape) =>
+      map.set(color, `${map.get(color) ?? ''}${polyPath(shape)}`);
     if (!outlined) {
-      add(level.outer, mixHex(parent.fill, node.fill, t), node.poly);
+      add(level.outer, mixHex(parent.fill, node.fill, t), poly);
       return;
     }
-    add(level.outer, mixHex(parent.edge, node.edge, t), node.poly);
-    const inner = insetPoly(node, config.outlineWidth * t);
+    add(level.outer, mixHex(parent.edge, node.edge, t), poly);
+    const inner = insetPoly(node, config.outlineWidth * band, { centre, poly });
     if (inner) add(level.inner, mixHex(parent.fill, node.fill, t), inner);
   });
   return [...levels.keys()]

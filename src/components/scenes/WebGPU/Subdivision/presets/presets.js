@@ -4,10 +4,11 @@ import { DEFAULT_SEED } from '../utils/controls';
 
 // Keys match the Leva schema 1:1, which is @modules/subdivision's option
 // schema — presets saved from SubdivisionCLI land here in the same shape.
+// SubdivisionRelief builds its presets from these, so the two stay aligned.
 export const DEFAULT_PRESET = 'Quadtree';
 
 export const PRESETS = {
-  Quadtree: {},
+  Quadtree: { palette: 'Cobalt Desert 7 (lospec)' },
   Trixels: {
     colorMode: 'value',
     field: 'ridged',
@@ -20,6 +21,7 @@ export const PRESETS = {
     field: 'rings',
     fieldScale: 3,
     levels: 6,
+    palette: 'Sunraze (lospec)',
     varianceThreshold: 0.06,
   },
   Focal: {
@@ -28,12 +30,26 @@ export const PRESETS = {
     driver: 'focal',
     focalCount: 4,
     levels: 6,
+    palette: 'Witching Hour (lospec)',
   },
   Blobs: {
     colorMode: 'position',
     driver: 'variance',
     field: 'blobs',
+    palette: 'Beach Day (lospec)',
     varianceThreshold: 0.2,
+  },
+  'Rect Slide': {
+    cellSize: 180,
+    colorMode: 'value',
+    cutMargin: 0.12,
+    driver: 'variance',
+    field: 'ridged',
+    growStyle: 'slide',
+    lattice: 'rect',
+    levels: 6,
+    palette: 'Rare Vintage (lospec)',
+    varianceThreshold: 0.05,
   },
   'Webcam Squares': {
     cellSize: 160,
@@ -41,13 +57,27 @@ export const PRESETS = {
     driver: 'variance',
     field: 'image',
     jitterAmount: 0,
-    lattice: 'quad',
     levels: 6,
     outlineWidth: 0.04,
-    palette: 'None',
+    palette: 'Ink Crimson (lospec)',
+    paletteExact: false,
     varianceThreshold: 0.06,
     webcam: true,
-    paletteExact: false,
+  },
+  'Webcam Rects': {
+    cellSize: 240,
+    colorMode: 'value',
+    cutDriver: 'edge',
+    cutMargin: 0.04,
+    driver: 'variance',
+    field: 'image',
+    jitterAmount: 0,
+    lattice: 'rect',
+    levels: 7,
+    outlineWidth: 0.02,
+    palette: 'Hyper_Drive (lospec)',
+    varianceThreshold: 0.05,
+    webcam: true,
   },
   'Webcam Trixels': {
     cellSize: 180,

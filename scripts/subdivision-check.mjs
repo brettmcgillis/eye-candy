@@ -11,6 +11,7 @@ import process from 'node:process';
 
 import {
   COLOR_MODES,
+  CUT_DRIVERS,
   DRIVERS,
   LATTICES,
   RENDER_OPTIONS,
@@ -29,6 +30,13 @@ const ENTRIES = {
 };
 
 const CANVAS = { height: 1350, width: 1080 };
+const VARIANTS = LATTICES.flatMap((lattice) =>
+  lattice === 'rect'
+    ? CUT_DRIVERS.map((cutDriver) => ({ cutDriver, lattice }))
+    : [{ lattice }]
+);
+const variantLabel = ({ cutDriver, lattice }) =>
+  cutDriver ? `${lattice}:${cutDriver}` : lattice;
 const failures = [];
 const check = (condition, message) => {
   if (!condition) failures.push(message);
@@ -86,13 +94,13 @@ async function checkThreeFree() {
 
 function checkPieces({ palettes, subdivision }) {
   const stops = palettes.getPaletteStops('Combi');
-  LATTICES.forEach((lattice) => {
+  VARIANTS.forEach((variant) => {
     DRIVERS.forEach((driver) => {
       const config = {
         ...sceneDefaults(),
         ...plotOptionsFrom(defaultsFor('still')),
+        ...variant,
         driver,
-        lattice,
         seed: 'check',
       };
       const piece = subdivision.buildPiece(config, { canvas: CANVAS, stops });
@@ -102,15 +110,15 @@ function checkPieces({ palettes, subdivision }) {
         (sum, node) => sum + clipArea(node.poly, width, height),
         0
       );
-      const label = `${lattice}/${driver}`;
+      const label = `${variantLabel(variant)}/${driver}`;
       check(leaves.length > 0, `${label}: no leaves`);
       check(
         Math.abs(covered - width * height) / (width * height) < 1e-6,
         `${label}: leaves cover ${covered.toFixed(1)} of ${width * height} — the tree does not tile the canvas`
       );
       check(
-        piece.nodes.every((node) => node.depth <= config.levels),
-        `${label}: a node is deeper than levels`
+        piece.nodes.every((node) => node.free <= config.levels),
+        `${label}: a node splits past levels`
       );
       check(
         piece.nodes.some((node) => !node.leaf),
@@ -156,23 +164,39 @@ function checkPieces({ palettes, subdivision }) {
 function checkSymmetry({ palettes, subdivision }) {
   const stops = palettes.getPaletteStops('Combi');
   const { height, width } = CANVAS;
-  LATTICES.forEach((lattice) => {
+  VARIANTS.forEach((variant) => {
     ['2-fold', '4-fold'].forEach((symmetry) => {
       DRIVERS.forEach((driver) => {
         const config = {
           ...sceneDefaults(),
+          ...variant,
           colorMode: 'random',
           driver,
-          lattice,
+          holeChance: 0.15,
           seed: 'check',
           symmetry,
         };
         const piece = subdivision.buildPiece(config, { canvas: CANVAS, stops });
         const leaves = piece.nodes.filter((node) => node.leaf);
-        const at = (x, y) =>
-          `${Math.round(x * 10 + 0.3)},${Math.round(y * 10 + 0.3)}`;
-        const fills = new Map(leaves.map((n) => [at(n.cx, n.cy), n.fill]));
-        const label = `${lattice}/${symmetry}/${driver}`;
+        const look = (n) => (n.hole ? 'hole' : n.fill);
+        const bins = new Map();
+        const bin = (x, y) => `${Math.round(x)},${Math.round(y)}`;
+        leaves.forEach((n) => {
+          const k = bin(n.cx, n.cy);
+          bins.set(k, [...(bins.get(k) ?? []), n]);
+        });
+        const lookAt = (x, y) => {
+          for (let dx = -1; dx <= 1; dx += 1) {
+            for (let dy = -1; dy <= 1; dy += 1) {
+              const hit = (bins.get(bin(x + dx, y + dy)) ?? []).find(
+                (n) => Math.abs(n.cx - x) < 0.05 && Math.abs(n.cy - y) < 0.05
+              );
+              if (hit) return look(hit);
+            }
+          }
+          return null;
+        };
+        const label = `${variantLabel(variant)}/${symmetry}/${driver}`;
         const covered = leaves.reduce(
           (sum, node) => sum + clipArea(node.poly, width, height),
           0
@@ -184,7 +208,7 @@ function checkSymmetry({ palettes, subdivision }) {
         const broken = leaves.filter((node) => {
           const twins = [[width - node.cx, node.cy]];
           if (symmetry === '4-fold') twins.push([node.cx, height - node.cy]);
-          return twins.some(([x, y]) => fills.get(at(x, y)) !== node.fill);
+          return twins.some(([x, y]) => lookAt(x, y) !== look(node));
         });
         check(
           broken.length === 0,
@@ -193,6 +217,57 @@ function checkSymmetry({ palettes, subdivision }) {
       });
     });
   });
+}
+
+// Mid-slide, the cells on screen still tile the canvas: a cut sweeping in
+// opens one child exactly as much as it closes the other.
+function checkSlide({ subdivision }) {
+  const { height, width } = CANVAS;
+  VARIANTS.filter(({ lattice }) => lattice !== 'tri').forEach((variant) => {
+    const config = {
+      ...sceneDefaults(),
+      ...variant,
+      driver: 'variance',
+      growStyle: 'slide',
+      outlineWidth: 0,
+      seed: 'check',
+    };
+    const piece = subdivision.buildPiece(config, { canvas: CANVAS });
+    const top = subdivision.fullyGrown(piece);
+    [0, 0.5, 1.25, 2.6, top - 0.4, top].forEach((grow) => {
+      const covered = piece.nodes.reduce((sum, node) => {
+        const cell = subdivision.grownCell(node, grow, config.growStyle);
+        return cell ? sum + clipArea(cell.poly, width, height) : sum;
+      }, 0);
+      check(
+        Math.abs(covered - width * height) / (width * height) < 1e-6,
+        `${variantLabel(variant)}/slide at grow ${grow}: cells cover ${covered.toFixed(1)} of ${width * height}`
+      );
+    });
+  });
+}
+
+function checkHoles({ subdivision }) {
+  const config = {
+    ...sceneDefaults(),
+    holeChance: 0.2,
+    lattice: 'rect',
+    seed: 'check',
+  };
+  const piece = subdivision.buildPiece(config, { canvas: CANVAS });
+  const holes = piece.nodes.filter((node) => node.hole);
+  check(holes.length > 0, 'holes: holeChance 0.2 left no holes');
+  check(
+    holes.every((node) => node.leaf),
+    'holes: a hole has children'
+  );
+  const fill = subdivision.renderFillSvg(piece, { ...config, outlineWidth: 0 });
+  const drawn = (fill.match(/Z/gu) ?? []).length;
+  const shown = piece.nodes.filter((node) => node.leaf && !node.hole).length;
+  check(
+    drawn === shown,
+    `holes: the still draws ${drawn} cells, not the ${shown} non-hole leaves`
+  );
 }
 
 function checkPresets({ presets }) {
@@ -228,6 +303,8 @@ async function main() {
   );
   checkPieces(modules);
   checkSymmetry(modules);
+  checkSlide(modules);
+  checkHoles(modules);
   checkPresets(modules);
 
   if (failures.length > 0) {

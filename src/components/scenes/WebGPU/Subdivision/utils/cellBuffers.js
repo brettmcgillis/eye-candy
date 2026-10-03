@@ -1,7 +1,7 @@
 /* eslint-disable no-param-reassign */
 import * as THREE from 'three/webgpu';
 
-import { KIND, LEAF_HIDE, hideAt } from '@modules/subdivision';
+import { KIND, LEAF_HIDE, boxOf, hideAt, slides } from '@modules/subdivision';
 
 import { toWorld } from './world';
 
@@ -15,6 +15,9 @@ const ATTRIBUTES = [
   ['aSpan', 4],
   ['aInset', 1],
 ];
+
+export const slidesIn = (config) =>
+  config.growStyle === 'slide' && config.lattice !== 'tri';
 
 export function cellCount(piece, config) {
   const outlined = config.outlineWidth > 0 && config.outlineStrength > 0;
@@ -50,9 +53,13 @@ export default function createCellGeometry(capacity) {
 // in its outline colour, then the cell inset by its outline band in its fill.
 // Each carries its parent's colour too, so a split can start as its parent
 // and diverge. A tri repeats its last corner so every instance is a quad.
+// Sliding, the corner pairs hold the cell's box and the box it slides from.
+// A hole's inset is -1 - band: it shrinks away whatever its band.
 export function writeCells(geometry, piece, config) {
   const outlined = config.outlineWidth > 0 && config.outlineStrength > 0;
+  const slide = slidesIn(config);
   const world = toWorld(piece.canvas);
+  const worldBox = ([x0, y0, x1, y1]) => [...world(x0, y0), ...world(x1, y1)];
   const cornersA = geometry.getAttribute('aCornersA');
   const cornersB = geometry.getAttribute('aCornersB');
   const colors = geometry.getAttribute('aColor');
@@ -62,14 +69,23 @@ export function writeCells(geometry, piece, config) {
   let i = 0;
 
   const write = (node, from, to, inset, layer) => {
-    const last = node.poly.length / 2 - 1;
-    for (let v = 0; v < 4; v += 1) {
-      const k = Math.min(v, last);
-      const [x, y] = world(node.poly[k * 2], node.poly[k * 2 + 1]);
-      const target = v < 2 ? cornersA.array : cornersB.array;
-      const offset = i * 4 + (v % 2) * 2;
-      target[offset] = x;
-      target[offset + 1] = y;
+    if (slide) {
+      const box = boxOf(node);
+      cornersA.array.set(worldBox(box), i * 4);
+      cornersB.array.set(
+        worldBox(slides(node, 'slide') ? node.from : box),
+        i * 4
+      );
+    } else {
+      const last = node.poly.length / 2 - 1;
+      for (let v = 0; v < 4; v += 1) {
+        const k = Math.min(v, last);
+        const [x, y] = world(node.poly[k * 2], node.poly[k * 2 + 1]);
+        const target = v < 2 ? cornersA.array : cornersB.array;
+        const offset = i * 4 + (v % 2) * 2;
+        target[offset] = x;
+        target[offset + 1] = y;
+      }
     }
     color.set(to);
     colors.array.set([color.r, color.g, color.b], i * 3);
@@ -80,7 +96,7 @@ export function writeCells(geometry, piece, config) {
       [node.depth + layer, Math.min(hideAt(node), LEAF_HIDE), cx, cy],
       i * 4
     );
-    insets.array[i] = inset;
+    insets.array[i] = node.hole ? -1 - inset : inset;
     i += 1;
   };
 

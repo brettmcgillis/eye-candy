@@ -12,6 +12,7 @@ import useCellGeometry from './hooks/useCellGeometry';
 import useGrowClock from './hooks/useGrowClock';
 import usePiece from './hooks/usePiece';
 import useSceneControls from './hooks/useSceneControls';
+import { slidesIn } from './utils/cellBuffers';
 import { WORLD_SCALE } from './utils/world';
 
 const ORIGIN = new THREE.Vector3();
@@ -41,7 +42,12 @@ export default function Subdivision() {
     <>
       <CameraRig camera={config.camera} />
       <group ref={groupRef}>
-        <Cells geometry={geometry} grow={grow} halfSize={halfSize} />
+        <Cells
+          geometry={geometry}
+          grow={grow}
+          halfSize={halfSize}
+          slide={slidesIn(config)}
+        />
       </group>
     </>
   );

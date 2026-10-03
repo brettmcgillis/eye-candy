@@ -13,7 +13,7 @@ const MIN_CAPACITY = 1024;
 // now, so a frame drawn with the new geometry first leaks the old buffers.
 export default function useCellGeometry(
   piece,
-  { outlineStrength, outlineWidth }
+  { growStyle, lattice, outlineStrength, outlineWidth }
 ) {
   const capacityRef = useRef(MIN_CAPACITY);
   const needed = cellCount(piece, { outlineStrength, outlineWidth });
@@ -23,8 +23,13 @@ export default function useCellGeometry(
   const geometry = useMemo(() => createCellGeometry(capacity), [capacity]);
   useLayoutEffect(() => () => geometry.dispose(), [geometry]);
   useLayoutEffect(() => {
-    writeCells(geometry, piece, { outlineStrength, outlineWidth });
-  }, [geometry, outlineStrength, outlineWidth, piece]);
+    writeCells(geometry, piece, {
+      growStyle,
+      lattice,
+      outlineStrength,
+      outlineWidth,
+    });
+  }, [geometry, growStyle, lattice, outlineStrength, outlineWidth, piece]);
 
   return geometry;
 }

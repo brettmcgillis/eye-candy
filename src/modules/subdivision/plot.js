@@ -27,23 +27,25 @@ export default function buildPlot(shaded, config, { nodes } = {}) {
   const hatches = createLineSet();
   const outlines = createLineSet();
 
-  (nodes ?? shaded.nodes.filter((node) => node.leaf)).forEach((node) => {
-    const poly = clipToRect(node.poly, width, height);
-    if (!poly) return;
-    if (config.plotOutlines) addPolyEdges(outlines, poly, OUTLINE_LAYER);
-    const hatch = hatchFor(node, config);
-    if (!hatch) return;
-    addHatch(hatches, poly, hatch.angle, hatch.spacing, node.stop);
-    if (hatch.cross) {
-      addHatch(
-        hatches,
-        poly,
-        hatch.angle + Math.PI / 2,
-        hatch.spacing,
-        node.stop
-      );
+  (nodes ?? shaded.nodes.filter((node) => node.leaf && !node.hole)).forEach(
+    (node) => {
+      const poly = clipToRect(node.poly, width, height);
+      if (!poly) return;
+      if (config.plotOutlines) addPolyEdges(outlines, poly, OUTLINE_LAYER);
+      const hatch = hatchFor(node, config);
+      if (!hatch) return;
+      addHatch(hatches, poly, hatch.angle, hatch.spacing, node.stop);
+      if (hatch.cross) {
+        addHatch(
+          hatches,
+          poly,
+          hatch.angle + Math.PI / 2,
+          hatch.spacing,
+          node.stop
+        );
+      }
     }
-  });
+  );
 
   return { hatches: hatches.segments(), outlines: outlines.segments() };
 }

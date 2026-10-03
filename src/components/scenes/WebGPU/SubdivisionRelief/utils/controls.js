@@ -34,6 +34,9 @@ export function schemaControl(key, saved = {}, extra = {}) {
 
 // Keys shown only while another control has a given value.
 const WHEN = {
+  cutDriver: ['lattice', 'rect'],
+  cutMargin: ['lattice', 'rect'],
+  growStyle: ['lattice', (v) => v !== 'tri'],
   focalCount: ['driver', 'focal'],
   focalInvert: ['driver', 'focal'],
   focalRadius: ['driver', 'focal'],

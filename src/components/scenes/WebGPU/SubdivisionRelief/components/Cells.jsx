@@ -2,10 +2,10 @@ import React, { memo, useEffect, useMemo } from 'react';
 
 import createCellMaterial from '../utils/cellMaterial';
 
-function Cells({ geometry, grow, motion }) {
+function Cells({ geometry, grow, motion, slide }) {
   const material = useMemo(
-    () => createCellMaterial({ grow, motion }),
-    [grow, motion]
+    () => createCellMaterial({ grow, motion, slide }),
+    [grow, motion, slide]
   );
 
   useEffect(() => () => material.dispose(), [material]);

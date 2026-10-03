@@ -3,7 +3,8 @@ import { useLayoutEffect, useMemo, useRef } from 'react';
 import createCellGeometry, { writeCells } from '../utils/cellBuffers';
 
 const MIN_CAPACITY = 1024;
-const HEIGHT_KEYS = [
+const REWRITE_KEYS = [
+  'growStyle',
   'baseHeight',
   'depthBias',
   'depthWeight',
@@ -24,7 +25,7 @@ export default function useCellGeometry(piece, config) {
   const capacityRef = useRef(MIN_CAPACITY);
   while (capacityRef.current < piece.nodes.length) capacityRef.current *= 2;
   const capacity = capacityRef.current;
-  const heightKey = HEIGHT_KEYS.map((key) => config[key]).join('|');
+  const heightKey = REWRITE_KEYS.map((key) => config[key]).join('|');
 
   const geometry = useMemo(
     () => createCellGeometry(capacity, config.lattice),

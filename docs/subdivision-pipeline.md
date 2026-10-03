@@ -40,6 +40,29 @@ jitter from the same hash, and the outline band as an inset polygon (quad
 inset by `w` on every side, tri scaled about its centroid by `1 - 3w`),
 hard-edged so the SVG and the scene agree.
 
+## Rect lattice and holes
+
+`rect` is HyperCubes' rect split in 2D: the root is the canvas (its halves or
+quarters under symmetry), cut into four off-centre children. Cells split
+unconditionally until no side is longer than `cellSize`, so no square grid
+shows; from there `levels` counts the driver's splits (`node.free`).
+`driver` still decides whether a cell splits;
+`cutDriver` decides where — `hash` (seeded per axis), `median` (halves the
+cell's detail, |value − cell mean|, so busy sides come out narrow) or `edge`
+(the sharpest jump in the field's line averages). Field cuts read a 10×10
+grid over the box. `cutMargin` and `minCellSize` keep every cut off the walls.
+Every node carries its folded box (`fbox`), built by the same arithmetic for
+a cell and its twins, and child keys follow the folded side, so mirrored twins
+get exactly mirrored cuts. HyperCubes' octree has no 2D counterpart
+beyond `quad`; its holes became `holeChance`: on any lattice, a cell may stop
+splitting and stay empty (a pit in the relief). Holes are leaves, keyed like
+the split hash, and are left out of the plot. Rolls and presets leave
+`holeChance` at 0.
+
+SubdivisionRelief builds its presets from Subdivision's (same names and
+pieces, outline keys dropped, relief and motion added), so the two scenes
+stay aligned.
+
 ## Canvas
 
 The canvas is the output `width` × `height` in px, and `cellSize`,
@@ -58,6 +81,13 @@ not an empty frame. `renderFillSvg` takes `grow` for video frames and the
 scene's cell shader is its GPU twin (each instance carries its parent's
 colour). `growSeconds`/`holdSeconds`/`collapseSeconds` are shared by the scene
 loop and the `growth` video. The scene's **Loop** off holds the finished piece.
+
+`growStyle: slide` swaps the split for HyperCubes' sliding cut (quad and rect;
+tri always splits): each child carries a `from` box — a sliver on the wall the
+cut sweeps from, or the whole parent — and grows out of it over its level with
+its outline band already open, so the canvas stays covered mid-slide.
+`grownCell` is the one CPU rule for both styles and the shaders are its twins.
+A hole shrinks away over its level and is gone once it ends, in either style.
 
 ## Symmetry
 

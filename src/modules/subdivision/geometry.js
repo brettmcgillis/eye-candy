@@ -5,13 +5,14 @@ const EPS = 1e-6;
 // fractalPixelate's outline band as a polygon: quad edge distance < w is a
 // square inset by w on every side; tri barycentric < w is the triangle
 // scaled about its centroid by 1 - 3w.
-export function insetPoly(node, width) {
+export function insetPoly(
+  node,
+  width,
+  { centre = [node.cx, node.cy], poly = node.poly } = {}
+) {
   const k = 1 - (node.kind === KIND.QUAD ? 2 : 3) * width;
   if (k <= 0) return null;
-  return node.poly.map((v, i) => {
-    const c = i % 2 === 0 ? node.cx : node.cy;
-    return c + (v - c) * k;
-  });
+  return poly.map((v, i) => centre[i % 2] + (v - centre[i % 2]) * k);
 }
 
 function clipAxis(poly, axis, bound, keepBelow) {

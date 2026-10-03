@@ -14,6 +14,7 @@ import {
   positionGeometry,
   pow,
   select,
+  sign,
   sin,
   smoothstep,
   transformNormalToView,
@@ -27,21 +28,32 @@ import * as THREE from 'three/webgpu';
 // in its colour, then over one level their gaps open, their colours move to
 // their own and their tops rise or sink to their own height. Each cell is a
 // unit cube or tri prism scaled into place; a down tri is the prism turned
-// 180°, so its normals turn with it.
-export default function createCellMaterial({ grow, motion }) {
+// 180°, so its normals turn with it. Under `slide` a cell instead grows out
+// of aFrom as its parent's cut sweeps in, gap already open; a hole shrinks
+// and sinks into a pit either way.
+export default function createCellMaterial({ grow, motion, slide = false }) {
   const material = new THREE.MeshStandardNodeMaterial();
 
   const span = attribute('aSpan');
   const shape = attribute('aShape');
-  const orient = shape.z;
+  const from = attribute('aFrom');
+  const orient = sign(shape.z);
+  const hole = shape.z.abs().greaterThan(1.5);
   const g = max(grow, 0);
   const depth = floor(span.x);
   const shown = g.greaterThanEqual(depth).and(g.lessThan(span.y));
   const t = smoothstep(0, 1, clamp(g.sub(depth), 0, 1));
-  const scale = select(shown, motion.gap.mul(2).mul(t).oneMinus(), 0);
-  const centre = span.zw;
+  const gapOpen = slide ? select(depth.lessThan(0.5), t, 1) : t;
+  const sink = select(hole, t.oneMinus(), 1);
+  const scale = select(
+    shown,
+    motion.gap.mul(2).mul(gapOpen).oneMinus().mul(sink),
+    0
+  );
+  const centre = slide ? mix(from.xy, span.zw, t) : span.zw;
+  const size = slide ? mix(from.zw, shape.xy, t) : shape.xy;
   const placed = centre.add(
-    positionGeometry.xy.mul(shape.xy).mul(orient).mul(scale)
+    positionGeometry.xy.mul(size).mul(orient).mul(scale)
   );
 
   const color = attribute('aColor');
@@ -62,7 +74,10 @@ export default function createCellMaterial({ grow, motion }) {
     .add(motion.waveAmount.mul(wave))
     .mul(mix(float(1), fine, motion.depth))
     .mul(motion.mix);
-  const top = max(mix(parentColor.w, color.w, t).add(offset), motion.base);
+  const top = max(
+    mix(parentColor.w, color.w, t).add(offset).mul(sink),
+    motion.base
+  );
   const z = select(shown, positionGeometry.z.mul(top), 0);
 
   material.positionNode = vec3(placed, z);

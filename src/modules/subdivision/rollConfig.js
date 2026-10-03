@@ -1,6 +1,6 @@
 import {
   COLOR_MODES,
-  LATTICES,
+  CUT_DRIVERS,
   PALETTE_NONE,
   RENDER_OPTIONS,
   facets,
@@ -28,6 +28,7 @@ function rollValue(spec, rng) {
 }
 
 const pick = (items, rng) => items[Math.floor(rng() * items.length)];
+const step = (value, by) => Number((Math.round(value / by) * by).toFixed(6));
 
 function weighted(entries, rng) {
   let roll = rng() * entries.reduce((sum, [, w]) => sum + w, 0);
@@ -58,8 +59,13 @@ const FACET_DICE = {
     Object.assign(config, {
       driver: weighted(DRIVER_WEIGHTS, rng),
       focalInvert: rng.chance(0.2),
-      lattice: pick(LATTICES, rng),
+      lattice: pick(['quad', 'tri'], rng),
       symmetry: weighted(SYMMETRY_WEIGHTS, rng),
+    });
+    Object.assign(config, {
+      cutDriver: pick(CUT_DRIVERS, rng),
+      cutMargin: step(0.03 + rng() * 0.25, 0.01),
+      lattice: rng.chance(1 / 3) ? 'rect' : config.lattice,
     });
   },
 };

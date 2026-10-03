@@ -6,8 +6,10 @@
 import createOptionSchema from '../optionSchema/index.mjs';
 
 export const PALETTE_NONE = 'None';
-export const LATTICES = ['quad', 'tri'];
+export const LATTICES = ['quad', 'tri', 'rect'];
 export const DRIVERS = ['noise', 'variance', 'focal'];
+export const CUT_DRIVERS = ['hash', 'median', 'edge'];
+export const GROW_STYLES = ['split', 'slide'];
 export const SYMMETRIES = ['none', '2-fold', '4-fold'];
 export const FIELDS = [
   'none',
@@ -109,6 +111,17 @@ const GENERATOR = {
   lattice: choice('structure', 'Lattice', LATTICES, 'quad', {
     facet: 'structure',
     generator: true,
+    help: 'quad: midpoint quadtree; tri: trixel tree; rect: quadtree cut off-centre, wherever the cut driver puts it',
+  }),
+  cutDriver: choice('structure', 'Cut driver', CUT_DRIVERS, 'hash', {
+    facet: 'structure',
+    generator: true,
+    help: "rect: where a cell is cut. hash (seeded), median (halves the cell's detail, so busy sides come out narrow), edge (on the sharpest change in the field or image)",
+  }),
+  cutMargin: num('structure', 'Cut margin', 0.1, 0, 0.45, 0.01, {
+    facet: 'structure',
+    generator: true,
+    help: 'rect: cuts stay this fraction of a cell off its walls',
   }),
   driver: choice('structure', 'Split driver', DRIVERS, 'noise', {
     facet: 'structure',
@@ -124,9 +137,13 @@ const GENERATOR = {
     1,
     'structure',
     [120, 400],
-    { help: "Root cell size in px, as fractalPixelate's cellSize" }
+    {
+      help: "Root cell size in px, as fractalPixelate's cellSize. rect: the canvas is cut until no cell side is longer than this, then the driver takes over",
+    }
   ),
-  levels: gen('structure', 'Levels', 5, 0, 8, 1, 'structure', [3, 6]),
+  levels: gen('structure', 'Levels', 5, 0, 8, 1, 'structure', [3, 6], {
+    help: 'Driver levels: how many times a root cell may split (rect: counted once cells fit cellSize)',
+  }),
   threshold: gen(
     'structure',
     'Noise threshold',
@@ -208,6 +225,11 @@ const GENERATOR = {
   minCellSize: num('structure', 'Min cell size', 3, 0.5, 100, 0.5, {
     generator: true,
     help: 'Nothing splits below this many px',
+  }),
+  holeChance: num('structure', 'Hole chance', 0, 0, 0.6, 0.01, {
+    facet: 'structure',
+    generator: true,
+    help: 'Chance a cell, at any level, stops splitting and is left empty',
   }),
 
   field: choice('field', 'Field', FIELDS, 'fbm', {
@@ -342,6 +364,10 @@ const PLOT = Object.fromEntries(
 
 // The grow loop is the scene's and the growth video's alike.
 const LOOP = {
+  growStyle: choice('video', 'Grow style', GROW_STYLES, 'split', {
+    help: 'split: children open in place out of their parent; slide: each cut sweeps in from a wall (quad and rect; tri always splits)',
+    scope: 'video',
+  }),
   growSeconds: num('video', 'Grow (s)', 6, 0.5, 60, 0.5, { scope: 'video' }),
   holdSeconds: num('video', 'Hold (s)', 4, 0, 60, 0.5, {
     help: 'Seconds a finished piece holds (growth), or each piece shows (stills)',

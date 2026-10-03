@@ -15,6 +15,9 @@ import patternThreshold from './thresholds';
 
 export { DITHER_PATTERNS, DITHER_QUANTIZE };
 
+export const ditherDefaults = ({ crt = false, pattern, quantize }) =>
+  resolveOptions({ crt, pattern, quantize }, {});
+
 // `pattern`, `quantize`, `crt` and palette lengths are baked into the shader.
 export function dither(sampleFn, options = {}) {
   const pattern = DITHER_PATTERNS.includes(options.pattern)

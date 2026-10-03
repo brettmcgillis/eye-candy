@@ -81,6 +81,9 @@ function resolveOptions(mode, fill, options) {
   return merged;
 }
 
+export const shadingMotionDefaults = (mode, fill = 'none') =>
+  resolveOptions(mode, fill, {});
+
 function createUniforms(values) {
   const uniforms = Object.fromEntries(
     SCALARS.map((key) => [key, uniform(values[key])])

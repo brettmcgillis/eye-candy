@@ -22,6 +22,11 @@ import {
 } from './shared';
 
 export { HALFTONE_VARIANTS };
+
+export const halftoneDefaults = (variant) => ({
+  ...resolveOptions(variant, {}),
+  kernelRadius: DEFAULT_KERNEL_RADIUS[variant] ?? 0,
+});
 export { default as createMouseTrail } from './mouseTrail';
 
 const BUILDERS = {

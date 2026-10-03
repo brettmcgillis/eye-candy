@@ -1,10 +1,19 @@
 import { instancedArray, uniform } from 'three/tsl';
 import * as THREE from 'three/webgpu';
 
-import { MAX_PER_CELL } from '../layout';
-import { seedSpheres, seedWires } from './seedTangle';
+import {
+  MAX_PER_CELL,
+  puckBackOf,
+  seedCylinders,
+  seedWires,
+} from '@modules/pushComesToShove';
+
+import {
+  createCylinderPosition,
+  createCylinderVelocity,
+} from './cylinderKernels';
+import createFrames from './frameKernel';
 import createSolve from './solveKernel';
-import { createSpherePosition, createSphereVelocity } from './sphereKernels';
 import {
   createClearGrid,
   createContact,
@@ -17,13 +26,13 @@ const SIM_KEYS = [
   'anchorSpeed',
   'bendStiffness',
   'collideStiffness',
+  'cylinderDrive',
+  'cylinderResistance',
+  'cylinderWander',
+  'cylinderWanderSpeed',
   'damping',
-  'growTime',
-  'laneStiffness',
   'relaxation',
-  'sphereDrive',
-  'sphereResistance',
-  'sphereSpeed',
+  'wireSmoothing',
   'writheScale',
   'writheSpeed',
   'writheStrength',
@@ -31,15 +40,16 @@ const SIM_KEYS = [
 
 function createUniforms(layout) {
   const u = {
+    bendSpan: uniform(0),
     cellSize: uniform(layout.cellSize),
     collideRadius: uniform(layout.collideRadius),
+    cylinderCount: uniform(0, 'uint'),
     dt: uniform(1 / 120),
     gridOrigin: uniform(new THREE.Vector3(...layout.gridOrigin)),
-    laneRange: uniform(layout.fieldHalfHeight * 0.7),
     maxStep: uniform(layout.collideRadius * 0.5),
     phase: uniform(0),
+    puckBack: uniform(layout.zBack),
     restLength: uniform(layout.restLength),
-    sphereCount: uniform(0, 'uint'),
     zBack: uniform(layout.zBack),
     zFront: uniform(layout.zFront),
   };
@@ -50,56 +60,61 @@ function createUniforms(layout) {
 }
 
 export default function createTangle(config, layout) {
-  const wires = seedWires(config, layout);
-  const spheres = seedSpheres(config, layout);
-  const sphereCount = Math.max(config.sphereCount, 1);
+  const cylinders = seedCylinders(config, layout);
+  const wires = seedWires(config, layout, cylinders.placed);
+  const cylinderCount = Math.max(config.cylinderCount, 1);
   const grid = { ...layout, maxPerCell: MAX_PER_CELL };
 
   const b = {
     anchors: instancedArray(wires.anchors, 'vec4'),
-    bodies: instancedArray(spheres.bodies, 'vec4'),
+    bodies: instancedArray(cylinders.bodies, 'vec4'),
     cellCount: instancedArray(layout.cellCount, 'uint').toAtomic(),
     cellItems: instancedArray(layout.cellCount * MAX_PER_CELL, 'uint'),
-    lanes: instancedArray(spheres.lanes, 'vec4'),
-    motion: instancedArray(spheres.motion, 'vec4'),
+    frame: instancedArray(layout.pointCount, 'vec4'),
+    lanes: instancedArray(cylinders.lanes, 'vec4'),
+    motion: instancedArray(cylinders.motion, 'vec4'),
     pos: instancedArray(wires.positions, 'vec4'),
     posAlt: instancedArray(wires.positions.slice(), 'vec4'),
     prev: instancedArray(wires.positions.slice(), 'vec4'),
-    reaction: instancedArray(sphereCount * 4, 'int').toAtomic(),
+    reaction: instancedArray(cylinderCount * 4, 'int').toAtomic(),
+    render: instancedArray(wires.positions.slice(), 'vec4'),
   };
   const u = createUniforms(layout);
-  u.sphereCount.value = config.sphereCount;
+  u.cylinderCount.value = config.cylinderCount;
 
   const kernels = {
     clearGrid: createClearGrid(b, grid),
     contact: createContact(b, u, grid),
+    cylinderPosition: createCylinderPosition(b, u, cylinderCount),
+    cylinderVelocity: createCylinderVelocity(b, u, cylinderCount),
+    frames: createFrames(b, u, layout),
     insert: createInsert(b, u, grid),
     integrate: createIntegrate(b, u, grid),
     solveForward: createSolve(b, u, grid, b.pos, b.posAlt),
     solveBack: createSolve(b, u, grid, b.posAlt, b.pos),
-    spherePosition: createSpherePosition(b, u, layout, sphereCount),
-    sphereVelocity: createSphereVelocity(b, u, sphereCount),
   };
 
   function sync(values) {
     SIM_KEYS.forEach((key) => {
       u[key].value = values[key];
     });
+    const joint =
+      layout.restLength / (values.bendRadius * layout.collideRadius);
+    u.bendSpan.value =
+      joint < Math.PI ? 2 * layout.restLength * Math.cos(joint * 0.5) : 0;
+    u.puckBack.value = puckBackOf(values, layout);
   }
 
   // Iterations run in forward/back pairs so the settled positions always land
-  // back in `pos`, the buffer the tubes read.
-  function step(renderer, values, delta) {
-    const substeps = Math.max(1, values.substeps);
-    const dt = (Math.min(delta, 1 / 30) * values.timeScale) / substeps;
-    if (dt <= 0) return;
+  // back in `pos`, which the frame pass smooths into `render` for the tubes.
+  function simulate(renderer, values, substeps, dt) {
     u.dt.value = dt;
     const pairs = Math.max(1, Math.round(values.iterations / 2));
     for (let s = 0; s < substeps; s += 1) {
       u.phase.value += dt;
       const pass = [
-        kernels.sphereVelocity,
-        kernels.spherePosition,
+        kernels.cylinderVelocity,
+        kernels.cylinderPosition,
         kernels.integrate,
         kernels.clearGrid,
         kernels.insert,
@@ -112,7 +127,22 @@ export default function createTangle(config, layout) {
     }
   }
 
+  function step(renderer, values, delta) {
+    const substeps = Math.max(1, values.substeps);
+    const dt = (Math.min(delta, 1 / 30) * values.timeScale) / substeps;
+    if (dt > 0) simulate(renderer, values, substeps, dt);
+    renderer.compute(kernels.frames);
+  }
+
   sync(config);
 
-  return { buffers: b, kernels, layout, sphereCount, step, sync, uniforms: u };
+  return {
+    buffers: b,
+    cylinderCount,
+    kernels,
+    layout,
+    step,
+    sync,
+    uniforms: u,
+  };
 }

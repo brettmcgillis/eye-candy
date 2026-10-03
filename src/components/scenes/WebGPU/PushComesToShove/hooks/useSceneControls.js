@@ -1,4 +1,4 @@
-import { useMemo, useRef } from 'react';
+import { useCallback, useMemo, useRef } from 'react';
 
 import { folder, useControls } from 'leva';
 
@@ -12,36 +12,24 @@ import {
   useSceneLightingControls,
 } from '@modules/lightingRig';
 import { useMediaRecorder } from '@modules/mediaRecorder';
+import {
+  PUSH_CAMERA as CAMERA,
+  PUSH_LIGHTING as LIGHTING,
+} from '@modules/pushComesToShoveRender';
 
-import getCavityControls from '../components/getCavityControls';
-import getMotionControls from '../components/getMotionControls';
-import getPanelControls from '../components/getPanelControls';
-import getSolverControls from '../components/getSolverControls';
-import getSphereControls from '../components/getSphereControls';
-import getWireControls from '../components/getWireControls';
-import SCENE_DEFAULTS from '../presets/defaults';
 import { DEFAULT_PRESET, PRESETS, getPresetControls } from '../presets/presets';
-import CAMERA from '../utils/camera';
-import LIGHTING from '../utils/lighting';
+import sceneFolders, { SCENE_LABEL, rollFacet } from '../utils/controls';
 
-const SCENE_LABEL = 'Push Comes to Shove';
 const CAMERA_FOLDER_PATH = `${SCENE_LABEL}.Camera`;
 const LIGHTING_FOLDER_PATH = `${SCENE_LABEL}.Lighting`;
-const SCENE_KEYS = Object.keys(SCENE_DEFAULTS);
 
 export default function useSceneControls() {
-  const {
-    attachSetControls,
-    controlsSnapshotRef,
-    initialPreset,
-    presetsFolder,
-  } = usePresetsFolder({
-    defaultPreset: DEFAULT_PRESET,
-    getPresetControls,
-    presets: PRESETS,
-  });
-
-  const preset = PRESETS[initialPreset] || PRESETS[DEFAULT_PRESET];
+  const { attachSetControls, controlsSnapshotRef, presetsFolder } =
+    usePresetsFolder({
+      defaultPreset: DEFAULT_PRESET,
+      getPresetControls,
+      presets: PRESETS,
+    });
 
   const cameraApiRef = useRef(null);
   const { buildCamera, cameraControls } = useSceneCameraControls({
@@ -57,19 +45,23 @@ export default function useSceneControls() {
     lightingFolderPath: LIGHTING_FOLDER_PATH,
   });
 
+  const setControlsRef = useRef(null);
+  const onRoll = useCallback(
+    (facet) => {
+      setControlsRef.current?.(rollFacet(controlsSnapshotRef.current, facet));
+    },
+    [controlsSnapshotRef]
+  );
+
   const [controls, setControls] = useControls(SCENE_LABEL, () => ({
     Presets: presetsFolder,
     Camera: folder(cameraControls, { collapsed: true }),
     Lighting: folder(lightingControls, { collapsed: true }),
-    Panel: getPanelControls(preset),
-    Cavity: getCavityControls(preset),
-    Wires: getWireControls(preset),
-    Spheres: getSphereControls(preset),
-    Motion: getMotionControls(preset),
-    Solver: getSolverControls(preset),
+    ...sceneFolders(controlsSnapshotRef.current, { onRoll }),
   }));
 
   attachSetControls(setControls);
+  setControlsRef.current = setControls;
   controlsSnapshotRef.current = { ...controls };
 
   useMediaRecorder({ fileName: SCENE_LABEL });
@@ -92,15 +84,8 @@ export default function useSceneControls() {
     [buildLighting, lightingControlsKey]
   );
 
-  // Camera and lighting edits must not re-render the sim or re-mesh the panel.
-  const sceneKey = SCENE_KEYS.map((key) => controls[key]).join('|');
-  const scene = useMemo(
-    () => Object.fromEntries(SCENE_KEYS.map((key) => [key, controls[key]])),
-    [sceneKey]
-  );
-
   return useMemo(
-    () => ({ camera, cameraApiRef, lighting, scene }),
-    [camera, lighting, scene]
+    () => ({ ...controls, camera, cameraApiRef, lighting }),
+    [camera, controls, lighting]
   );
 }

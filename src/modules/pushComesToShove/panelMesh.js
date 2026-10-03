@@ -1,5 +1,3 @@
-import * as THREE from 'three/webgpu';
-
 import buildHoleField from './holeField';
 import surfaceNets from './surfaceNets';
 
@@ -12,7 +10,7 @@ function smoothMax(a, b, k) {
 // The subtraction is done in distance-field space rather than with mesh
 // booleans: slab minus noise-cutter is max(slab, -cutter), and a smooth max in
 // its place is the fillet round every hole's lip for free.
-export default function buildPanelGeometry(config, layout) {
+export default function buildPanelMesh(config, layout) {
   const { panelBevel, panelResolution, panelThickness } = config;
   const { panelHalfHeight, panelHalfWidth } = layout;
   const step = panelResolution;
@@ -60,14 +58,5 @@ export default function buildPanelGeometry(config, layout) {
     }
   }
 
-  const mesh = surfaceNets({ values, dims: [nx, ny, nz], origin, step });
-  const geometry = new THREE.BufferGeometry();
-  geometry.setAttribute(
-    'position',
-    new THREE.BufferAttribute(mesh.positions, 3)
-  );
-  geometry.setAttribute('normal', new THREE.BufferAttribute(mesh.normals, 3));
-  geometry.setIndex(new THREE.BufferAttribute(mesh.indices, 1));
-  geometry.computeBoundingSphere();
-  return geometry;
+  return surfaceNets({ values, dims: [nx, ny, nz], origin, step });
 }

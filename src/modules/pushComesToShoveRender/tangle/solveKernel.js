@@ -20,6 +20,8 @@ import {
 import { cellCoordOf, cellIdFromCoord } from './grid';
 import { wireAddress } from './wireKernels';
 
+// Points two apart must stay at least `bendSpan` apart: that caps the angle
+// at every joint, so no stretch of wire curls tighter than the tube is thick.
 // One Jacobi sweep, read from `source` and written to `target`: every point
 // sums its own share of each constraint it touches, so no point ever reads a
 // neighbour mid-update. Pairwise shares are halved because the partner applies
@@ -54,6 +56,25 @@ export default function createSolve(b, u, layout, source, target) {
       );
     });
     delta.addAssign(before.add(after).mul(0.5).sub(p).mul(u.bendStiffness));
+
+    [
+      { has: t.greaterThanEqual(uint(2)), index: instanceIndex.sub(2) },
+      {
+        has: t.add(uint(2)).lessThan(uint(pointsPerWire)),
+        index: instanceIndex.add(2),
+      },
+    ].forEach(({ has, index }) => {
+      If(has, () => {
+        const q = source.element(index).xyz;
+        const offset = p.sub(q);
+        const distance = max(length(offset), float(1e-6));
+        If(distance.lessThan(u.bendSpan), () => {
+          delta.addAssign(
+            offset.mul(u.bendSpan.sub(distance).div(distance)).mul(0.5)
+          );
+        });
+      });
+    });
 
     const contact = u.collideRadius.mul(2);
     const scaled = p.sub(u.gridOrigin).div(u.cellSize);
@@ -117,23 +138,30 @@ export default function createSolve(b, u, layout, source, target) {
       );
     });
 
+    // A puck spans zFront back to puckBack. Whichever way out is shallower,
+    // sideways or back behind its face, is the way a wire is pushed.
     Loop(
-      { start: uint(0), end: u.sphereCount, type: 'uint', name: 's' },
+      { start: uint(0), end: u.cylinderCount, type: 'uint', name: 's' },
       ({ s }) => {
         const body = b.bodies.element(s);
-        const offset = p.sub(body.xyz);
+        const offset = p.xy.sub(body.xy);
         const distance = max(length(offset), float(1e-5));
-        const reach = body.w.add(u.collideRadius);
-        If(distance.lessThan(reach), () => {
-          delta.addAssign(offset.div(distance).mul(reach.sub(distance)));
+        const side = body.w.add(u.collideRadius).sub(distance);
+        const back = p.z.sub(u.puckBack.sub(u.collideRadius));
+        If(side.greaterThan(0).and(back.greaterThan(0)), () => {
+          If(side.lessThan(back), () => {
+            delta.xy.addAssign(offset.div(distance).mul(side));
+          }).Else(() => {
+            delta.z.subAssign(back);
+          });
           crowd.addAssign(1);
         });
       }
     );
 
-    const step = length(delta);
-    If(step.greaterThan(u.collideRadius), () => {
-      delta.mulAssign(u.collideRadius.div(step));
+    const shift = length(delta);
+    If(shift.greaterThan(u.collideRadius), () => {
+      delta.mulAssign(u.collideRadius.div(shift));
     });
     p.addAssign(delta.mul(u.relaxation));
 

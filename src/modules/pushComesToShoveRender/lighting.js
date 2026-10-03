@@ -11,11 +11,11 @@ const LIGHTING = {
     type: 'directional',
     color: '#fff8ee',
     intensity: 2.6,
-    position: [-7, 9, 11],
+    position: { azimuth: -32, elevation: 35, radius: 16 },
     target: [0, 0, -1],
     shadow: {
       bias: -0.0003,
-      extent: 10,
+      extent: 14,
       far: 40,
       mapSize: 4096,
       near: 1,

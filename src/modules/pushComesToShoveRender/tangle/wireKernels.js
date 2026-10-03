@@ -101,31 +101,28 @@ export function createInsert(b, u, layout) {
   })().compute(layout.pointCount);
 }
 
-// What each sphere is ploughing into, summed as fixed point: WGSL has no
+// What each cylinder is ploughing into, summed as fixed point: WGSL has no
 // float atomics. The wires are pushed out in the solve; this is only the
-// reaction the sphere feels.
+// reaction the cylinder feels.
 export function createContact(b, u, layout) {
   return Fn(() => {
     If(instanceIndex.greaterThanEqual(uint(layout.pointCount)), () => {
       Return();
     });
-    const p = b.pos.element(instanceIndex).xyz;
-    Loop({ start: uint(0), end: u.sphereCount, type: 'uint' }, ({ i }) => {
+    const p = b.pos.element(instanceIndex);
+    Loop({ start: uint(0), end: u.cylinderCount, type: 'uint' }, ({ i }) => {
       const body = b.bodies.element(i);
-      const offset = p.sub(body.xyz);
+      const offset = p.xy.sub(body.xy);
       const distance = max(length(offset), float(1e-5));
       const depth = body.w.add(u.collideRadius).sub(distance);
-      If(depth.greaterThan(0), () => {
+      const back = p.z.sub(u.puckBack.sub(u.collideRadius));
+      If(depth.greaterThan(0).and(back.greaterThan(depth)), () => {
         const push = offset.div(distance).mul(min(depth, u.collideRadius));
         const base = i.mul(uint(4));
         atomicAdd(b.reaction.element(base), int(push.x.mul(-FORCE_SCALE)));
         atomicAdd(
           b.reaction.element(base.add(1)),
           int(push.y.mul(-FORCE_SCALE))
-        );
-        atomicAdd(
-          b.reaction.element(base.add(2)),
-          int(push.z.mul(-FORCE_SCALE))
         );
         atomicAdd(b.reaction.element(base.add(3)), int(1));
       });

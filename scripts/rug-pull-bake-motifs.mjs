@@ -1,0 +1,175 @@
+#!/usr/bin/env node
+
+/* eslint-disable import/no-extraneous-dependencies, no-console */
+// Charts the personal motifs a rug weaves from a picture (the Reversal knot
+// and the Turboflex skull) into class bitmaps the three-free kernel embeds,
+// so the kernel never decodes an image. Re-run after changing a source.
+import { writeFile } from 'node:fs/promises';
+import path from 'node:path';
+import sharp from 'sharp';
+
+import { REPO_ROOT } from './lib/loadModules.mjs';
+
+const OUT = path.join(REPO_ROOT, 'src/modules/rugPull/bitmaps.js');
+
+const SOURCES = {
+  reversal: {
+    file: 'public/images/reversal.png',
+    width: 132,
+    classes: {
+      R: [255, 0, 0],
+      k: [0, 0, 0],
+      '.': [255, 255, 255],
+    },
+  },
+  turboflex: {
+    file: 'public/images/turbo_flex.png',
+    width: 150,
+    classes: {
+      k: [22, 16, 12],
+      w: [255, 255, 255],
+      g: [168, 168, 168],
+      r: [240, 168, 138],
+      c: [206, 122, 102],
+      y: [246, 194, 18],
+    },
+    // The skull's white and the paper's white are one colour; whatever white
+    // touches the edge is paper.
+    floodWhite: 'w',
+  },
+};
+
+function nearest(classes, r, g, b) {
+  let best = null;
+  let bestDistance = Infinity;
+  Object.entries(classes).forEach(([key, [cr, cg, cb]]) => {
+    const distance = (r - cr) ** 2 + (g - cg) ** 2 + (b - cb) ** 2;
+    if (distance < bestDistance) {
+      bestDistance = distance;
+      best = key;
+    }
+  });
+  return best;
+}
+
+function floodBackground(grid, width, height, key) {
+  const stack = [];
+  const push = (x, y) => {
+    if (x < 0 || y < 0 || x >= width || y >= height) return;
+    const i = y * width + x;
+    if (grid[i] !== key) return;
+    grid[i] = '.'; // eslint-disable-line no-param-reassign
+    stack.push(i);
+  };
+  for (let x = 0; x < width; x += 1) {
+    push(x, 0);
+    push(x, height - 1);
+  }
+  for (let y = 0; y < height; y += 1) {
+    push(0, y);
+    push(width - 1, y);
+  }
+  while (stack.length) {
+    const i = stack.pop();
+    const x = i % width;
+    const y = (i - x) / width;
+    push(x + 1, y);
+    push(x - 1, y);
+    push(x, y + 1);
+    push(x, y - 1);
+  }
+}
+
+function crop(grid, width, height) {
+  let x0 = width;
+  let y0 = height;
+  let x1 = -1;
+  let y1 = -1;
+  for (let y = 0; y < height; y += 1) {
+    for (let x = 0; x < width; x += 1) {
+      if (grid[y * width + x] !== '.') {
+        x0 = Math.min(x0, x);
+        y0 = Math.min(y0, y);
+        x1 = Math.max(x1, x);
+        y1 = Math.max(y1, y);
+      }
+    }
+  }
+  return { h: y1 - y0 + 1, w: x1 - x0 + 1, x0, y0 };
+}
+
+// Each chart cell takes the class most of its source pixels hold, so a thin
+// black contour survives the shrink where a resample would grey it out.
+function chart(grid, width, box, targetWidth) {
+  const scale = box.w / targetWidth;
+  const targetHeight = Math.max(1, Math.round(box.h / scale));
+  const rows = [];
+  for (let ty = 0; ty < targetHeight; ty += 1) {
+    let row = '';
+    for (let tx = 0; tx < targetWidth; tx += 1) {
+      const counts = {};
+      const sx0 = Math.floor(box.x0 + tx * scale);
+      const sx1 = Math.max(sx0 + 1, Math.floor(box.x0 + (tx + 1) * scale));
+      const sy0 = Math.floor(box.y0 + ty * scale);
+      const sy1 = Math.max(sy0 + 1, Math.floor(box.y0 + (ty + 1) * scale));
+      for (let y = sy0; y < sy1; y += 1) {
+        for (let x = sx0; x < sx1; x += 1) {
+          const key = grid[y * width + x];
+          counts[key] = (counts[key] ?? 0) + (key === 'k' ? 1.15 : 1);
+        }
+      }
+      row += Object.entries(counts).sort((a, b) => b[1] - a[1])[0][0];
+    }
+    rows.push(row);
+  }
+  return { h: targetHeight, rows, w: targetWidth };
+}
+
+const rle = (row) =>
+  row.replace(/(.)\1*/gu, (run, char) =>
+    run.length === 1 ? char : `${run.length}${char}`
+  );
+
+async function bake([name, source]) {
+  const { data, info } = await sharp(path.join(REPO_ROOT, source.file))
+    .flatten({ background: '#ffffff' })
+    .removeAlpha()
+    .raw()
+    .toBuffer({ resolveWithObject: true });
+  const { height, width } = info;
+  const grid = new Array(width * height);
+  for (let i = 0; i < width * height; i += 1) {
+    grid[i] = nearest(
+      source.classes,
+      data[i * 3],
+      data[i * 3 + 1],
+      data[i * 3 + 2]
+    );
+  }
+  if (source.floodWhite)
+    floodBackground(grid, width, height, source.floodWhite);
+  const charted = chart(grid, width, crop(grid, width, height), source.width);
+  console.log(`${name}: ${charted.w}x${charted.h}`);
+  return [name, { h: charted.h, rows: charted.rows.map(rle), w: charted.w }];
+}
+
+const baked = Object.fromEntries(
+  await Promise.all(Object.entries(SOURCES).map(bake))
+);
+
+const body = Object.entries(baked)
+  .map(
+    ([name, map]) =>
+      `  ${name}: {\n    w: ${map.w},\n    h: ${map.h},\n    rows: [\n${map.rows
+        .map((row) => `      '${row}',`)
+        .join('\n')}\n    ],\n  },`
+  )
+  .join('\n');
+
+await writeFile(
+  OUT,
+  `// Generated by scripts/rug-pull-bake-motifs.mjs — do not edit by hand.\n` +
+    `// Run-length rows; '.' is empty, every other letter is a colour class.\n` +
+    `/* eslint-disable */\nconst BITMAPS = {\n${body}\n};\n\nexport default BITMAPS;\n`
+);
+console.log(`wrote ${path.relative(REPO_ROOT, OUT)}`);

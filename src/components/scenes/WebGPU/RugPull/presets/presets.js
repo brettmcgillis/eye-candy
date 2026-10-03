@@ -1,145 +1,137 @@
-export const DEFAULT_PRESET = 'Persian Rug';
+// Keys match the Leva schema generated from @modules/rugPull's
+// renderOptions.mjs 1:1, plus the camera rig's orbit keys per mode.
+import { sceneDefaults } from '@modules/rugPull';
 
-const MADDER = {
-  paletteMix: 1,
-  palette0: '#1c1633',
-  palette1: '#8e1b1b',
-  palette2: '#d9a441',
-  palette3: '#efe3c8',
-  guardColor: '#efe3c8',
+import { MODE_CAMERA } from '../utils/camera';
+
+export const DEFAULT_PRESET = 'Tabriz Medallion';
+
+const BASE = sceneDefaults();
+const FLOOR = { ...BASE, ...MODE_CAMERA.floor, rugMode: 'floor' };
+const WALL = { ...BASE, ...MODE_CAMERA.wall, rugMode: 'wall' };
+
+const HOUSE = {
+  weightArgyle: 1,
+  weightReversal: 1,
+  weightTurboflex: 1,
 };
-
-const RUG = {
-  cameraMode: 'orbit',
-  layout: 'rug',
-  floorColor: '#2a2522',
-  pattern: 'persianRug',
-  patternZoom: 1,
-  borderZoom: 1,
-  timeScale: 0.2,
-  seed: 30,
-  tile: -1,
-  paletteMix: 0,
-  palette0: '#1c1633',
-  palette1: '#8e1b1b',
-  palette2: '#d9a441',
-  palette3: '#efe3c8',
-  inkSteps: 0,
-  gamma: 1,
-  renderScale: 1,
-  rugWidth: 4,
-  rugLength: 6,
-  symmetry: 1,
-  borderWidth: 0.5,
-  guardWidth: 0.08,
-  guardFrequency: 6,
-  guardColor: '#efe3c8',
-  medallionSize: 0.4,
-  medallionPetals: 8,
-  knotDensity: 0,
-  knotShade: 0.3,
-  fringeLength: 0.4,
-  fringeDensity: 24,
-  fringeColor: '#efe8d8',
-};
-
-const BANDANA = {
-  ...RUG,
-  layout: 'bandana',
-  rugWidth: 5,
-  symmetry: 2,
-  borderWidth: 0.6,
-  guardWidth: 0.05,
-  guardFrequency: 0,
-  medallionSize: 0.3,
-  paletteMix: 1,
-  inkSteps: 1,
-};
-
-const ROUND = {
-  ...RUG,
-  layout: 'round',
-  rugWidth: 5.5,
-  symmetry: 2,
-  borderWidth: 0.45,
-  medallionSize: 0.45,
-  medallionPetals: 12,
-};
-
-const FULLSCREEN = {
-  ...RUG,
-  layout: 'fullscreen',
-  timeScale: 1,
-  seed: 0,
-};
-
-const MOTHERBOARD = {
-  ...RUG,
-  pattern: 'funkyMotherboardCarpet',
-  timeScale: 0,
-  seed: 0,
-  medallionSize: 0,
-  floorColor: '#101014',
-  guardColor: '#3fd0c9',
-  fringeColor: '#2b2f36',
-};
-
-const GRID = 4;
-
-const MOTHERBOARD_TILES = Object.fromEntries(
-  Array.from({ length: GRID * GRID }, (_, index) => {
-    const row = Math.floor(index / GRID);
-    const col = index % GRID;
-    const tile = col + (GRID - 1 - row) * GRID;
-    return [`Motherboard R${row + 1}C${col + 1}`, { ...MOTHERBOARD, tile }];
-  })
-);
 
 export const PRESETS = {
-  'Persian Rug': { ...RUG },
-  'Oriental Rug': { ...RUG, ...MADDER, pattern: 'orientalRug' },
-  'Persian Carpet 7': { ...ROUND, pattern: 'persianCarpet7' },
-  'Persian Carpet 18': {
-    ...RUG,
-    pattern: 'persianCarpet18',
-    knotDensity: 40,
+  'Tabriz Medallion': {
+    ...FLOOR,
+    design: 'city',
+    palette: 'tabriz',
+    rugSeed: 7,
+    knotsAcross: 220,
+    rumple: 0.3,
   },
-  'Black & White Bandana': {
-    ...BANDANA,
-    pattern: 'blackAndWhiteRug',
-    palette0: '#14213d',
-    palette1: '#14213d',
-    palette2: '#14213d',
-    palette3: '#f4f1ea',
-    guardColor: '#f4f1ea',
+  'Heriz By The Couch': {
+    ...FLOOR,
+    design: 'village',
+    palette: 'heriz',
+    rugSeed: 412,
+    knotsAcross: 120,
+    borderMotif: 'hookedDiamonds',
+    cornerFlip: 0.22,
+    wear: 0.35,
   },
-  'Red & Blue Rug': { ...RUG, pattern: 'redAndBlueRug', symmetry: 2 },
-  'Red & Black Rug': {
-    ...RUG,
-    pattern: 'redAndBlackRug',
-    guardColor: '#b3121b',
-    fringeColor: '#1a1414',
+  'Qashqai Wall Hanging': {
+    ...WALL,
+    design: 'tribal',
+    palette: 'qashqai',
+    rugSeed: 9031,
+    knotsAcross: 104,
+    rugAspect: 1.55,
+    hangStyle: 'clips',
+    clipCount: 6,
+    abrash: 0.6,
   },
-  'Green & Gold Flower Rug': {
-    ...ROUND,
-    pattern: 'greenAndGoldFlowerRug',
-    guardColor: '#c9a646',
+  'Turkmen Guls': {
+    ...FLOOR,
+    design: 'gul',
+    palette: 'turkmen',
+    rugSeed: 55,
+    knotsAcross: 130,
+    rugAspect: 1.4,
   },
-  'Fractal Knots Bandana': {
-    ...BANDANA,
-    pattern: 'fractalKnots7',
-    palette0: '#b3121b',
-    palette1: '#f4f1ea',
-    palette2: '#b3121b',
-    palette3: '#f4f1ea',
-    guardColor: '#f4f1ea',
+  'Herati Runner': {
+    ...FLOOR,
+    design: 'herati',
+    palette: 'kashan',
+    rugSeed: 3,
+    knotsAcross: 150,
+    rugAspect: 2.8,
+    rugWidth: 1,
   },
-  'Frost Fractal': { ...RUG, ...MADDER, pattern: 'frostFractal' },
-  'Motherboard Mosaic': { ...FULLSCREEN, pattern: 'funkyMotherboardCarpet' },
-  'Motherboard Mosaic Rug': { ...MOTHERBOARD, tile: -1, patternZoom: 2 },
-  ...MOTHERBOARD_TILES,
-  'Shadertoy Original': { ...FULLSCREEN },
+  'Prayer Rug': {
+    ...WALL,
+    design: 'prayer',
+    palette: 'kerman',
+    rugSeed: 21,
+    knotsAcross: 160,
+    rugAspect: 1.5,
+    rugWidth: 1.2,
+  },
+  'Garden Of Paradise': {
+    ...FLOOR,
+    design: 'garden',
+    palette: 'ziegler',
+    rugSeed: 1717,
+    knotsAcross: 150,
+  },
+  'Tree Of Life': {
+    ...WALL,
+    design: 'tree',
+    palette: 'isfahan',
+    rugSeed: 88,
+    knotsAcross: 190,
+    hangStyle: 'rod',
+  },
+  'Argyle Harlequin': {
+    ...FLOOR,
+    ...HOUSE,
+    design: 'harlequin',
+    palette: 'loader',
+    rugSeed: 140,
+    knotsAcross: 140,
+    mineField: 0.3,
+    mineGuard: 0.6,
+    mineSignature: 1,
+  },
+  'House Medallion': {
+    ...FLOOR,
+    ...HOUSE,
+    design: 'city',
+    palette: 'tabriz',
+    rugSeed: 3141,
+    knotsAcross: 240,
+    mineMedallion: 1,
+    mineBorder: 1,
+    weightArgyle: 0,
+    weightTurboflex: 0,
+  },
+  'Turboflex Tapestry': {
+    ...WALL,
+    ...HOUSE,
+    design: 'city',
+    palette: 'turboflex',
+    rugSeed: 2600,
+    knotsAcross: 260,
+    mineMedallion: 1,
+    mineField: 0.15,
+    mineSignature: 1,
+    weightArgyle: 0.3,
+    weightReversal: 0.3,
+    hangStyle: 'clips',
+  },
 };
+
+// Saved from RugPullCLI: only what differs from the scene defaults.
+const SNAPSHOTS = {};
+
+Object.entries(SNAPSHOTS).forEach(([name, snapshot]) => {
+  PRESETS[name] = { ...FLOOR, ...snapshot };
+});
 
 export function getPresetControls({ presetSnapshot }) {
   return { ...presetSnapshot };

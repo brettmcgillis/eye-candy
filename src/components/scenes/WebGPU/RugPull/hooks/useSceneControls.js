@@ -1,4 +1,4 @@
-import { useMemo, useRef } from 'react';
+import { useCallback, useEffect, useMemo, useRef } from 'react';
 
 import { folder, useControls } from 'leva';
 
@@ -9,13 +9,9 @@ import {
 } from '@modules/cameraRig';
 import { useMediaRecorder } from '@modules/mediaRecorder';
 
-import getLayoutControls from '../components/getLayoutControls';
-import getPatternControls from '../components/getPatternControls';
 import { DEFAULT_PRESET, PRESETS, getPresetControls } from '../presets/presets';
-import CAMERA from '../utils/camera';
-
-const SCENE_LABEL = 'Rug Pull';
-const CAMERA_FOLDER_PATH = `${SCENE_LABEL}.Camera`;
+import CAMERA, { MODE_CAMERA } from '../utils/camera';
+import sceneFolders, { SCENE_LABEL, rollFacets } from '../utils/controls';
 
 export default function useSceneControls() {
   const { attachSetControls, controlsSnapshotRef, presetsFolder } =
@@ -29,28 +25,43 @@ export default function useSceneControls() {
   const { buildCamera, cameraControls } = useSceneCameraControls({
     apiRef: cameraApiRef,
     camera: CAMERA,
-    cameraFolderPath: CAMERA_FOLDER_PATH,
+    cameraFolderPath: `${SCENE_LABEL}.Camera`,
     controlsSnapshotRef,
   });
 
-  const sceneControls = useMemo(
-    () => ({
-      ...getPatternControls(SCENE_LABEL, controlsSnapshotRef.current),
-      ...getLayoutControls(SCENE_LABEL, controlsSnapshotRef.current),
-    }),
+  const setControlsRef = useRef(null);
+  const pullRef = useRef(null);
+  const onRoll = useCallback(
+    (facets) => {
+      setControlsRef.current?.(rollFacets(controlsSnapshotRef.current, facets));
+    },
     [controlsSnapshotRef]
   );
+  const onReweave = useCallback(() => {
+    setControlsRef.current?.({ rugSeed: Math.floor(Math.random() * 99999) });
+  }, []);
+  const onPull = useCallback(() => pullRef.current?.(), []);
 
   const [controls, setControls] = useControls(SCENE_LABEL, () => ({
     Presets: presetsFolder,
+    ...sceneFolders(controlsSnapshotRef.current, { onPull, onReweave, onRoll }),
     Camera: folder(cameraControls, { collapsed: true }),
-    ...sceneControls,
   }));
 
   attachSetControls(setControls);
+  setControlsRef.current = setControls;
   controlsSnapshotRef.current = { ...controls };
 
   useMediaRecorder({ fileName: SCENE_LABEL });
+
+  // A Leva mode switch reframes the camera; a preset carries its own
+  // framing, which is the same one.
+  const modeRef = useRef(controls.rugMode);
+  useEffect(() => {
+    if (modeRef.current === controls.rugMode) return;
+    modeRef.current = controls.rugMode;
+    setControls(MODE_CAMERA[controls.rugMode]);
+  }, [controls.rugMode, setControls]);
 
   const cameraControlsKey = useMemo(
     () => getCameraControlsKey(controls),
@@ -62,7 +73,7 @@ export default function useSceneControls() {
   );
 
   return useMemo(
-    () => ({ ...controls, cameraApiRef, camera }),
+    () => ({ ...controls, camera, cameraApiRef, pullRef }),
     [camera, controls]
   );
 }

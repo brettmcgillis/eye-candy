@@ -1,18 +1,22 @@
-import React from 'react';
+import React, { memo } from 'react';
 
+import useSceneBackdrop from '@hooks/useSceneBackdrop';
 import { CameraRig } from '@modules/cameraRig';
 
-import RugRoom from './components/RugRoom';
+import Rug from './components/Rug';
 import useSceneControls from './hooks/useSceneControls';
 
-export default function RugPull() {
+function RugPull() {
   const config = useSceneControls();
+
+  useSceneBackdrop({ color: '#17120f' });
 
   return (
     <>
-      <color args={[config.floorColor]} attach="background" />
       <CameraRig camera={config.camera} />
-      <RugRoom config={config} />
+      <Rug config={config} />
     </>
   );
 }
+
+export default memo(RugPull);

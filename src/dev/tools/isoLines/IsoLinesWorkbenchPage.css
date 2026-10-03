@@ -1,0 +1,11 @@
+.il-save-preset {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.4rem;
+  width: 100%;
+}
+
+.il-save-preset input {
+  flex: 1;
+  min-width: 8rem;
+}

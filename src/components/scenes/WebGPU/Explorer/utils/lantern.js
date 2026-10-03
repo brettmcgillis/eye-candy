@@ -1,27 +1,32 @@
 // The sphere is the only light, so how far it reaches decides both the look
-// and the cost: past that distance every pixel is fog-black whatever it hits,
+// and the cost: past that distance every pixel is black whatever it hits,
 // which is exactly when a ray can stop marching. Range therefore drives the
-// falloff, the fog and the march cap together — set independently they
-// disagree, and the march cap becomes a visible sphere of nothing around the
-// camera instead of a fade into the dark.
+// glow, the palette's cooling and the fog together — set independently they
+// disagree, and the march cap becomes a visible sphere of nothing instead of
+// a fade into the dark.
 //
 // Range is authored in fractal units like every other length in this scene.
-// FADE is how many e-folds of fog fit inside it and DIM is the inverse-square
-// divisor at exactly one range. They multiply, so they are deliberately mild:
-// tuned to 1% each they compound to nothing and the frame is a bright dot in
-// black. At these values a surface one range away keeps a quarter of the
-// light and 5% of the fog, which lands at half a percent together — dark
-// enough that capping the march there is invisible, bright enough that the
-// chamber the sphere is actually in reads.
+// GLOW is how many e-folds of the exponential halo fit inside it: 8 leaves
+// 3e-4 at the edge, about one 8-bit step after the sRGB encode, so the cap
+// never shows. The reference's own exp(-1.2·d) can't be copied as a number —
+// its torus sits within a unit of the floor, while walls here are 5–14 world
+// units from the sphere — so what carries over is its shape: the same reach
+// in e-folds, and the palette cooling at 1/15 of the glow's rate (0.08 / 1.2),
+// which is where Cooling's default of 8/15 comes from.
+//
+// The glow is measured from the light but the march from the camera, so the
+// cap is the camera's distance to the light plus Range — a ray can't reach a
+// lit surface without first getting that close to the sphere.
+const GLOW = 8;
 const FADE = 3;
-const DIM = 3;
 
 export default function lantern(config) {
   const range = Math.max(config.lanternRange * config.worldScale, 1e-3);
 
   return {
     range,
-    falloff: (DIM / (range * range)) * config.lightFalloff,
     fogDensity: (FADE / range) * config.fogDensity,
+    glowRate: (GLOW / range) * config.lightFalloff,
+    paletteRate: config.paletteDecay / range,
   };
 }

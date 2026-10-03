@@ -1,7 +1,7 @@
 /* eslint-disable no-param-reassign */
 import * as THREE from 'three';
 
-import { treeDistance, treeGradient } from './treeDistance';
+import { sceneDistance, sceneGradient } from './treeDistance';
 
 // Probe directions on a Fibonacci sphere. Built once: the agent re-uses the
 // same set every frame and only weighs them differently.
@@ -44,7 +44,7 @@ function openness(origin, dir, field, range, safety) {
   let t = 0.005;
 
   for (let i = 0; i < PROBE_STEPS; i += 1) {
-    const d = treeDistance(
+    const d = sceneDistance(
       origin.x + dir.x * t,
       origin.y + dir.y * t,
       origin.z + dir.z * t,
@@ -81,7 +81,7 @@ export function stepAgent(agent, dt, params) {
     agent.dwell = lo + Math.random() * Math.max(hi - lo, 0);
   }
 
-  agent.clearance = treeDistance(
+  agent.clearance = sceneDistance(
     agent.position.x,
     agent.position.y,
     agent.position.z,
@@ -103,7 +103,8 @@ export function stepAgent(agent, dt, params) {
       );
       const weight =
         (reach / params.probeRange) ** params.opennessBias *
-        (0.35 + 0.65 * Math.max(alignment, 0));
+        (0.35 + 0.65 * Math.max(alignment, 0)) *
+        (1 - params.levelFlight * Math.abs(probe.y));
       desired.addScaledVector(probe, weight);
     }
   }
@@ -114,6 +115,18 @@ export function stepAgent(agent, dt, params) {
   desired.add(
     wander(agent.elapsed, agent.peering ? params.wander * 2 : params.wander)
   );
+
+  // Skim the ground: pull back toward the cruise altitude, saturating a band
+  // either side of it so a tall chamber doesn't fling the sphere upward.
+  if (params.altitudeHold > 0) {
+    const band = Math.max(params.altitudeBand, 1e-3);
+    desired.y +=
+      THREE.MathUtils.clamp(
+        (params.altitude - agent.position.y) / band,
+        -1,
+        1
+      ) * params.altitudeHold;
+  }
 
   // Leash: the lattice is infinite, so without this the sphere eventually
   // wanders into a region the camera has no reason to be in.
@@ -126,8 +139,27 @@ export function stepAgent(agent, dt, params) {
     );
   }
 
+  // Exploring means skimming the rock, not hanging in the middle of the
+  // chamber: the sphere is the only light, so open space is just dark. Past
+  // the hug distance the nearest wall pulls the heading in; the margin push
+  // below stops it before contact.
+  if (agent.clearance > params.hugDistance && params.hugStrength > 0) {
+    sceneGradient(
+      agent.position.x,
+      agent.position.y,
+      agent.position.z,
+      field,
+      scratchGrad
+    );
+    const excess = Math.min(
+      (agent.clearance - params.hugDistance) / params.hugDistance,
+      1
+    );
+    desired.addScaledVector(scratchGrad, -excess * params.hugStrength);
+  }
+
   if (agent.clearance < params.margin) {
-    treeGradient(
+    sceneGradient(
       agent.position.x,
       agent.position.y,
       agent.position.z,
@@ -155,14 +187,14 @@ export function stepAgent(agent, dt, params) {
     return agent;
   }
 
-  const settled = treeDistance(
+  const settled = sceneDistance(
     agent.position.x,
     agent.position.y,
     agent.position.z,
     field
   );
   if (settled < params.radius) {
-    treeGradient(
+    sceneGradient(
       agent.position.x,
       agent.position.y,
       agent.position.z,

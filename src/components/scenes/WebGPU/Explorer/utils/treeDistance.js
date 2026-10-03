@@ -63,6 +63,26 @@ export function treeDistance(px, py, pz, o) {
   return ((Math.abs(d) - 0.01) * 0.25) / scale;
 }
 
+// Mirrors `createDistanceField` in sceneTSL: Confine to Tree puts back the
+// Shadertoy's bounding box and ground plane, the floor at y = 0.
+export function sceneDistance(px, py, pz, o) {
+  const tree = treeDistance(px, py, pz, o);
+  if (!o.confine) return tree;
+
+  const box = sdBox(px, py - 0.5, pz, 0.75, 1, 0.75) - 0.5;
+  return Math.min(Math.max(tree, box), py);
+}
+
+export function sceneGradient(px, py, pz, o, out, epsilon = 0.002) {
+  const e = epsilon;
+  out.set(
+    sceneDistance(px + e, py, pz, o) - sceneDistance(px - e, py, pz, o),
+    sceneDistance(px, py + e, pz, o) - sceneDistance(px, py - e, pz, o),
+    sceneDistance(px, py, pz + e, o) - sceneDistance(px, py, pz - e, o)
+  );
+  return out.normalize();
+}
+
 export function treeGradient(px, py, pz, o, out, epsilon = 0.002) {
   const e = epsilon;
   out.set(

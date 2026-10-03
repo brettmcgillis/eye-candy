@@ -11,6 +11,7 @@ export function toFractal(worldPoint, pivot, worldScale, out) {
 
 export function fieldParams(config) {
   return {
+    confine: config.confine,
     folds: config.folds,
     periodXZ: config.periodXZ,
     periodY: config.periodY,
@@ -23,6 +24,9 @@ export function fieldParams(config) {
 export function agentParams(config) {
   return {
     accel: config.accel,
+    altitude: config.altitude,
+    altitudeBand: config.altitudeBand,
+    altitudeHold: config.altitudeHold,
     avoidance: config.avoidance,
     bounceDamping: config.bounceDamping,
     comfort: config.comfort,
@@ -30,8 +34,11 @@ export function agentParams(config) {
     cruiseMin: config.cruiseMin,
     cruiseSpeed: config.cruiseSpeed,
     field: fieldParams(config),
+    hugDistance: config.hugDistance,
+    hugStrength: config.hugStrength,
     leash: config.leash,
     leashStrength: config.leashStrength,
+    levelFlight: config.levelFlight,
     margin: config.margin,
     opennessBias: config.opennessBias,
     peerMax: config.peerMax,

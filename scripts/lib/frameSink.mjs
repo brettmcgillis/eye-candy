@@ -25,7 +25,7 @@ const MAX_VIDEO_DIMENSION = 3840;
 // yuv420p needs even dimensions, and the scale filter guards against an odd
 // --width slipping through. The first scale only engages once a dimension
 // clears MAX_VIDEO_DIMENSION, so ordinary renders pass through untouched.
-const SIZE_FILTER =
+export const SIZE_FILTER =
   `scale='min(iw,${MAX_VIDEO_DIMENSION})':'min(ih,${MAX_VIDEO_DIMENSION})':` +
   `force_original_aspect_ratio=decrease,scale=trunc(iw/2)*2:trunc(ih/2)*2`;
 

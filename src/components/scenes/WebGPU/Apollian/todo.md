@@ -14,6 +14,7 @@
 
 ## // TODO:
 
+- [ ] Decide the Pseudo-Kleinian licence: it is a faithful port of Durand's CC BY-NC-SA 3.0 shader (references/kleinian.glsl) — keep with attribution, or rewrite the DE from knighty's formula and author new keyframes
 - [ ] Compare Shader Camera mode side by side with both Shadertoys and fix any drift
 - [ ] Tune Scene Camera mode: AO and step count are tuned for the original shot and band at other angles
 - [ ] Find good pivot + zoom presets for deep exploration

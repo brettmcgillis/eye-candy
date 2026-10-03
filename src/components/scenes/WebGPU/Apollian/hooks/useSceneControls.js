@@ -1,19 +1,22 @@
-import { useMemo, useRef } from 'react';
+import { useCallback, useMemo, useRef } from 'react';
 
 import { folder, useControls } from 'leva';
 
 import usePresetsFolder from '@hooks/usePresetsFolder';
 import {
+  APOLLIAN_CAMERA as CAMERA,
+  APOLLIAN_POST as POST,
+} from '@modules/apollianRender';
+import {
   getCameraControlsKey,
   useSceneCameraControls,
 } from '@modules/cameraRig';
 import { useMediaRecorder } from '@modules/mediaRecorder';
+import { getPostControlsKey, useScenePostControls } from '@modules/postRig';
 
-import getFractalControls from '../components/getFractalControls';
 import { DEFAULT_PRESET, PRESETS, getPresetControls } from '../presets/presets';
-import CAMERA from '../utils/camera';
+import sceneFolders, { SCENE_LABEL, rollFacet } from '../utils/controls';
 
-const SCENE_LABEL = 'Apollian';
 const CAMERA_FOLDER_PATH = `${SCENE_LABEL}.Camera`;
 
 export default function useSceneControls() {
@@ -32,18 +35,28 @@ export default function useSceneControls() {
     controlsSnapshotRef,
   });
 
-  const fractalControls = useMemo(
-    () => getFractalControls(SCENE_LABEL, controlsSnapshotRef.current),
+  const { buildPost, postControls } = useScenePostControls({
+    controlsSnapshotRef,
+    post: POST,
+  });
+
+  const setControlsRef = useRef(null);
+  const onRoll = useCallback(
+    (facet) => {
+      setControlsRef.current?.(rollFacet(controlsSnapshotRef.current, facet));
+    },
     [controlsSnapshotRef]
   );
 
   const [controls, setControls] = useControls(SCENE_LABEL, () => ({
     Presets: presetsFolder,
     Camera: folder(cameraControls, { collapsed: true }),
-    ...fractalControls,
+    ...sceneFolders(controlsSnapshotRef.current, { onRoll }),
+    Post: folder(postControls, { collapsed: true }),
   }));
 
   attachSetControls(setControls);
+  setControlsRef.current = setControls;
   controlsSnapshotRef.current = { ...controls };
 
   useMediaRecorder({ fileName: SCENE_LABEL });
@@ -57,8 +70,14 @@ export default function useSceneControls() {
     [buildCamera, cameraControlsKey]
   );
 
+  const postControlsKey = useMemo(
+    () => getPostControlsKey(controls),
+    [controls]
+  );
+  const post = useMemo(() => buildPost(controls), [buildPost, postControlsKey]);
+
   return useMemo(
-    () => ({ ...controls, cameraApiRef, camera }),
-    [camera, controls]
+    () => ({ ...controls, camera, cameraApiRef, post }),
+    [camera, controls, post]
   );
 }

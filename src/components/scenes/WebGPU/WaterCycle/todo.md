@@ -12,7 +12,7 @@
 
 ## // TODO:
 
-- [ ] could we do a mountain or mountain range as a contrast to the ocean?
+- [ ] could we do a tree as a contrast to the ocean and mountain?
 - [ ] rain that lands on the mountain, runs off it, then lands on an ocean
       below and sinks through that. Not a preset: the probe is `sample(worldXZ)`
       with no height input, so it answers with one surface per column and a drop

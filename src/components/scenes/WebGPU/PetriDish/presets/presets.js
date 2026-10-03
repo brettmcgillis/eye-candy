@@ -1154,9 +1154,6 @@ export const PRESETS = {
 };
 
 Object.assign(PRESETS, {
-  // Classic Gray-Scott rather than the expansive solver every other preset
-  // uses: spots and worms that hold their size, instead of shapes that grow
-  // outward from where they were seeded.
   // --- The bed as an object -------------------------------------------------
   // The literal article: a shallow clear dish with a thin wall, the sand
   // filling it to just under the rim. Glass rather than Clear because the one
@@ -1224,56 +1221,116 @@ Object.assign(PRESETS, {
     containerMetalness: 0,
     backgroundColor: '#15171b',
   },
+});
 
-  'Gray-Scott': {
-    ...PRESETS.Petri,
-    feedBias: 0.012,
-    feedRate: 0.055,
-    fieldContrast: 3,
-    killRate: 0.062,
-    solver: 'grayScott',
-    stepScale: 14,
+// Every solver ships as a pair: a thick bed the pattern only carves relief
+// into, and a thin spread culled down to where the solver is actually active.
+const THICK_BED = {
+  bedThickness: 0.22,
+  bedBaseY: 0.05,
+  fieldHeightScale: 0.2,
+  cullEnabled: false,
+};
+
+const THIN_SPREAD = {
+  bedThickness: 0.05,
+  bedBaseY: 0,
+  fieldHeightScale: 0.08,
+  cullEnabled: true,
+  cullThreshold: 0.4,
+  cullSoftness: 0.07,
+};
+
+const EXPANSIVE = { ...PRESETS.Petri, solver: 'expansive' };
+
+// Classic Gray-Scott: spots and worms that hold their size, instead of shapes
+// that grow outward from where they were seeded.
+const GRAY_SCOTT = {
+  ...PRESETS.Petri,
+  feedBias: 0.012,
+  feedRate: 0.055,
+  fieldContrast: 3,
+  killRate: 0.062,
+  solver: 'grayScott',
+  stepScale: 14,
+};
+
+// Agent-based rather than a continuum: slime mould trails that braid into a
+// transport network. Every value here is the reference implementation's own
+// default, and `alwaysOn` scatters the agents across the whole bed the way
+// its `random` button does. Contrast stays at 1 so the trail drives the
+// relief at exactly the strength the reference displays it.
+const PHYSARUM = {
+  ...PRESETS.Petri,
+  fieldContrast: 1,
+  growthMode: 'alwaysOn',
+  physarumAgents: 262144,
+  physarumDecay: 0.9,
+  physarumRotationAngle: 4,
+  physarumSensorAngle: 2,
+  physarumSensorDistance: 12,
+  physarumStepSize: 1.1,
+  physarumSymmetry: 1,
+  solver: 'physarum',
+};
+
+// GrayMatter's differential growth: one loop grows from the rim until it
+// fills the dish.
+const DIFFERENTIAL_GROWTH = {
+  ...PRESETS.Petri,
+  ...BASE_GROWTH,
+  solver: 'differentialGrowth',
+  growthMode: 'onceGrow',
+  paletteAdvect: 1,
+  seedRadius: 0.07,
+  fieldResolution: 512,
+};
+
+Object.assign(PRESETS, {
+  'Expansive: Thick Bed': { ...EXPANSIVE, ...THICK_BED },
+  'Expansive: Thin Spread': { ...EXPANSIVE, ...THIN_SPREAD },
+  'Gray-Scott: Thick Bed': { ...GRAY_SCOTT, ...THICK_BED },
+  'Gray-Scott: Thin Spread': { ...GRAY_SCOTT, ...THIN_SPREAD },
+  'Physarum: Thick Bed': { ...PHYSARUM, ...THICK_BED },
+  // At the reference's agent count the trail saturates nearly every texel, so
+  // nothing falls under the cull. Fewer agents and a higher threshold leave
+  // the network as the only sand on the floor.
+  'Physarum: Thin Spread': {
+    ...PHYSARUM,
+    ...THIN_SPREAD,
+    physarumAgents: 65536,
+    cullThreshold: 0.55,
   },
-  // Agent-based rather than a continuum: slime mould trails that braid into a
-  // transport network. Every value here is the reference implementation's own
-  // default, and `alwaysOn` scatters the agents across the whole bed the way
-  // its `random` button does. Contrast stays at 1 so the trail drives the
-  // relief at exactly the strength the reference displays it.
-  Physarum: {
-    ...PRESETS.Petri,
-    fieldContrast: 1,
-    growthMode: 'alwaysOn',
-    physarumAgents: 262144,
-    physarumDecay: 0.9,
-    physarumRotationAngle: 4,
-    physarumSensorAngle: 2,
-    physarumSensorDistance: 12,
-    physarumStepSize: 1.1,
-    physarumSymmetry: 1,
-    solver: 'physarum',
+  // Off-ridge curvature reads the same as on-ridge, so on an uncut bed the
+  // palette has to follow ridge height or the growth vanishes into the floor.
+  'Differential Growth: Thick Bed': {
+    ...DIFFERENTIAL_GROWTH,
+    ...THICK_BED,
+    paletteAdvect: 0,
+  },
+  'Differential Growth: Thin Spread': {
+    ...DIFFERENTIAL_GROWTH,
+    ...THIN_SPREAD,
   },
 });
 
 Object.assign(PRESETS, {
   'Physarum 2-Way': {
-    ...PRESETS.Physarum,
+    ...PRESETS['Physarum: Thick Bed'],
     physarumSymmetry: 2,
   },
   'Physarum 4-Way': {
-    ...PRESETS.Physarum,
+    ...PRESETS['Physarum: Thick Bed'],
     physarumSymmetry: 4,
   },
-  // GrayMatter's differential growth: one loop grows from the centre until it
-  // fills the dish, and the culled bed keeps sand only along its ridge.
-  'Differential Growth': {
-    ...PRESETS.Petri,
-    ...BASE_GROWTH,
-    solver: 'differentialGrowth',
-    growthMode: 'onceGrow',
-    paletteAdvect: 1,
-    seedRadius: 0.07,
-    fieldResolution: 512,
-  },
+});
+
+// Leva only writes the keys a preset carries, so any key a preset leaves out
+// keeps whatever the previous preset set. Petri spells out the camera and
+// lighting keys BASE omits.
+const COMPLETE = { ...PRESETS.Petri, ...BASE };
+Object.keys(PRESETS).forEach((name) => {
+  PRESETS[name] = { ...COMPLETE, ...PRESETS[name] };
 });
 
 export function getPresetControls({ presetSnapshot }) {

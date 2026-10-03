@@ -1,0 +1,255 @@
+.dk-layout {
+  display: grid;
+  grid-template-areas:
+    'controls stage'
+    'controls results';
+  grid-template-columns: minmax(17rem, 22rem) minmax(0, 1fr);
+  gap: 0.85rem;
+  align-items: start;
+}
+
+.dk-controls {
+  grid-area: controls;
+}
+
+.dk-stage {
+  display: grid;
+  grid-area: stage;
+  gap: 0.5rem;
+  padding: 0.75rem;
+}
+
+.dk-results {
+  grid-area: results;
+  min-width: 0;
+}
+
+.dk-stage__bar {
+  display: flex;
+  justify-content: space-between;
+  gap: 0.5rem;
+  color: var(--dev-text-muted);
+  font-size: 0.75rem;
+}
+
+.dk-stage__bar strong {
+  color: var(--dev-text);
+}
+
+.dk-stage__host {
+  position: relative;
+  width: min(100%, calc(70vh * var(--dk-aspect, 0.8)));
+  max-height: 70vh;
+  margin: 0 auto;
+  overflow: hidden;
+  border: 1px solid var(--dev-border-strong);
+  border-radius: 4px;
+  background: repeating-conic-gradient(#0000 0 25%, #8881 0 50%) 0 0 / 16px
+    16px;
+}
+
+.dk-stage__host canvas {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+}
+
+.dk-stage__host[data-engine='canvas'] canvas[data-surface='webgpu'],
+.dk-stage__host[data-engine='webgpu'] canvas[data-surface='canvas'] {
+  visibility: hidden;
+}
+
+.dk-stage__empty {
+  position: absolute;
+  inset: 0;
+  display: grid;
+  margin: 0;
+  place-items: center;
+  color: var(--dev-text-muted);
+  font-size: 0.85rem;
+}
+
+.dk-transport {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  font-family: var(--dev-mono);
+  font-size: 0.75rem;
+}
+
+.dk-transport input {
+  flex: 1;
+  min-width: 0;
+}
+
+.dk-source__actions,
+.dk-export__actions,
+.dk-record {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: end;
+  gap: 0.4rem;
+}
+
+.dk-source__actions .dev-button,
+.dk-export__actions .rw-submit {
+  flex: 1;
+}
+
+.dk-source__current {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  margin: 0.5rem 0;
+}
+
+.dk-source__kind {
+  display: grid;
+  color: var(--dev-accent);
+  place-items: center;
+}
+
+.dk-source__label {
+  display: grid;
+  flex: 1;
+  min-width: 0;
+  overflow-wrap: anywhere;
+  font-size: 0.8rem;
+}
+
+.dk-source__label small {
+  color: var(--dev-text-muted);
+  font-family: var(--dev-mono);
+}
+
+.dk-record {
+  margin: 0.5rem 0;
+}
+
+.dk-record .rw-field {
+  flex: 1;
+}
+
+.dk-record__stop {
+  color: var(--dev-danger);
+}
+
+.dk-library__head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-top: 0.75rem;
+}
+
+.dk-library__head h3 {
+  margin: 0;
+  color: var(--dev-text-muted);
+  font-size: 0.67rem;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.dk-library {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(3.75rem, 1fr));
+  gap: 0.35rem;
+  margin: 0.5rem 0 0;
+  padding: 0;
+  list-style: none;
+}
+
+.dk-library__item {
+  position: relative;
+  aspect-ratio: 1;
+}
+
+.dk-library__pick {
+  width: 100%;
+  height: 100%;
+  padding: 0;
+  overflow: hidden;
+  border: 1px solid var(--dev-border-strong);
+  border-radius: 4px;
+  background: var(--dev-surface);
+  cursor: pointer;
+}
+
+.dk-library__item--on .dk-library__pick {
+  outline: 2px solid var(--dev-accent);
+  outline-offset: 1px;
+}
+
+.dk-library__pick img,
+.dk-library__pick video {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  pointer-events: none;
+}
+
+.dk-library__badge {
+  position: absolute;
+  bottom: 0.2rem;
+  left: 0.2rem;
+  display: grid;
+  padding: 0.1rem;
+  border-radius: 3px;
+  background: #000a;
+  color: #fff;
+  font-size: 0.65rem;
+  pointer-events: none;
+}
+
+.dk-library__remove {
+  position: absolute;
+  top: 0.15rem;
+  right: 0.15rem;
+  display: none;
+  padding: 0.15rem;
+  border: 0;
+  border-radius: 3px;
+  background: #000a;
+  color: #fff;
+  cursor: pointer;
+  font-size: 0.7rem;
+}
+
+.dk-library__item:hover .dk-library__remove,
+.dk-library__item:focus-within .dk-library__remove {
+  display: grid;
+}
+
+.dk-export progress {
+  width: 100%;
+}
+
+@media (max-width: 900px) {
+  .dk-layout {
+    grid-template-areas:
+      'stage'
+      'controls'
+      'results';
+    grid-template-columns: 1fr;
+  }
+
+  .dk-stage {
+    position: sticky;
+    z-index: 2;
+    top: 0;
+  }
+
+  .dk-stage__host {
+    max-height: 42vh;
+    width: min(100%, calc(42vh * var(--dk-aspect, 0.8)));
+  }
+
+  .dk-controls {
+    position: static;
+    max-height: none;
+  }
+
+  .dk-library__remove {
+    display: grid;
+  }
+}

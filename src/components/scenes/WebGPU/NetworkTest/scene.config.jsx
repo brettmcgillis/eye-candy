@@ -9,7 +9,7 @@ export default {
   id: 'networkTest',
   label: 'Network Test',
   channel: 'webgpu',
-  area: 'testlab',
+  area: 'wip',
   icon: SceneIcon,
   Component: lazy(() => import('./NetworkTest')),
 };

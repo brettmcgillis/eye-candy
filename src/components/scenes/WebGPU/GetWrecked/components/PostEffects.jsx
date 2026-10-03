@@ -30,26 +30,20 @@ import {
 import * as THREE from 'three/webgpu';
 
 import {
+  BLEED_QUALITY,
+  PixelBleedNode,
   bilateralBlur,
+  buildPixelBleedNode,
+  buildPixelSortNode,
+  buildSlitScanPostNode,
+  createPixelBleedUniforms,
+  createPixelSortUniforms,
+  createSlitScanUniforms,
   datamosh,
   depthAwareBlend,
   godrays,
+  syncChunkUniforms,
 } from '@modules/tsl';
-
-import PixelBleedNode, {
-  BLEED_QUALITY,
-  buildPixelBleedNode,
-  createPixelBleedUniforms,
-} from '../utils/pixelBleed';
-import {
-  buildPixelSortNode,
-  createPixelSortUniforms,
-} from '../utils/pixelSortPost';
-import { syncChunkUniforms } from '../utils/screenChunks';
-import {
-  buildSlitScanPostNode,
-  createSlitScanUniforms,
-} from '../utils/slitScanPost';
 
 function PostEffects({ config, godrayLight }) {
   const { gl: renderer, scene, camera } = useThree();

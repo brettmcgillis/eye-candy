@@ -7,11 +7,13 @@ const only = (...keys) =>
 
 export const DEFAULT_PRESET = 'Asanoha';
 
-const SNAPSHOTS = {
+export const PRESETS = {
   Asanoha: {
+    ...SCENE_DEFAULTS,
     seed: 'kumiko',
   },
   'Sakura Field': {
+    ...SCENE_DEFAULTS,
     seed: 'sakura',
     ...only('useAsanoha', 'useSakura', 'useYaeZakura'),
     zoneMode: 'voronoi',
@@ -21,6 +23,7 @@ const SNAPSHOTS = {
     colorBy: 'zone',
   },
   'Kikko Rings': {
+    ...SCENE_DEFAULTS,
     seed: 'kikko',
     ...only('useKikko', 'useShokko', 'useSixfold', 'useUroko'),
     zoneMode: 'rings',
@@ -30,6 +33,7 @@ const SNAPSHOTS = {
     colorBy: 'zone',
   },
   'Asanoha Mandala': {
+    ...SCENE_DEFAULTS,
     seed: 'mandala',
     panelWidth: 900,
     panelHeight: 900,
@@ -49,6 +53,7 @@ const SNAPSHOTS = {
     colorBy: 'zone',
   },
   'Density Ramp': {
+    ...SCENE_DEFAULTS,
     seed: 'ramp',
     tiling: 'triangle',
     gridRotation: 90,
@@ -76,6 +81,7 @@ const SNAPSHOTS = {
     colorTarget: 'none',
   },
   'Webcam Halftone': {
+    ...SCENE_DEFAULTS,
     seed: 'mirror',
     panelWidth: 1600,
     panelHeight: 1200,
@@ -114,6 +120,7 @@ const SNAPSHOTS = {
     backlight: 1.6,
   },
   'Masu Grid': {
+    ...SCENE_DEFAULTS,
     seed: 'masu',
     tiling: 'square',
     gridRotation: 0,
@@ -125,6 +132,7 @@ const SNAPSHOTS = {
     colorBy: 'pattern',
   },
   'Ice Ray': {
+    ...SCENE_DEFAULTS,
     seed: 'ice',
     tiling: 'square',
     gridRotation: 0,
@@ -136,6 +144,7 @@ const SNAPSHOTS = {
     paletteExact: false,
   },
   'Nested Frames': {
+    ...SCENE_DEFAULTS,
     seed: 'nest',
     ...only('useAsanoha', 'useSakura', 'useKikko', 'useTsunoAsanoha'),
     nestFrames: 2,
@@ -146,6 +155,7 @@ const SNAPSHOTS = {
     palette: 'Kumiko Hinoki',
   },
   Multiscale: {
+    ...SCENE_DEFAULTS,
     seed: 'multiscale',
     ...only('useAsanoha', 'useSakura', 'useUroko', 'usePlain'),
     cellSize: 150,
@@ -157,6 +167,7 @@ const SNAPSHOTS = {
     palette: 'Kumiko Sumi',
   },
   Kagome: {
+    ...SCENE_DEFAULTS,
     seed: 'kagome',
     tiling: 'kagome',
     cellSize: 48,
@@ -168,6 +179,7 @@ const SNAPSHOTS = {
     colorBy: 'pattern',
   },
   'Snub Square': {
+    ...SCENE_DEFAULTS,
     seed: 'snub',
     tiling: 'snubSquare',
     cellSize: 55,
@@ -177,6 +189,7 @@ const SNAPSHOTS = {
     palette: 'Kumiko Aizome',
   },
   Everything: {
+    ...SCENE_DEFAULTS,
     seed: 'everything',
     tiling: 'rhombitrihex',
     cellSize: 52,
@@ -187,6 +200,7 @@ const SNAPSHOTS = {
     palette: 'Kumiko Hinoki',
   },
   'Strip Build': {
+    ...SCENE_DEFAULTS,
     seed: 'strips',
     ...only('useAsanoha', 'useSakura'),
     zoneMode: 'diagonal',
@@ -198,13 +212,6 @@ const SNAPSHOTS = {
     backlight: 0.6,
   },
 };
-
-export const PRESETS = Object.fromEntries(
-  Object.entries(SNAPSHOTS).map(([name, snapshot]) => [
-    name,
-    { ...SCENE_DEFAULTS, ...snapshot },
-  ])
-);
 
 export function getPresetControls({ currentControls, presetSnapshot }) {
   return Object.fromEntries(

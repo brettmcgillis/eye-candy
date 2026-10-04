@@ -172,10 +172,10 @@ export function applyConfig(u, config, { aspect = 1, stops = null } = {}) {
     a.colorRadius,
     a.colorHeight
   );
-  const lutKey = stops ? stops.join(',') : '';
+  const lutKey = stops ? `${stops.join(',')}|${Boolean(a.paletteExact)}` : '';
   if (u.paletteKey !== lutKey) {
     u.paletteKey = lutKey;
-    writePaletteLut(u.paletteTexture, stops);
+    writePaletteLut(u.paletteTexture, stops, a.paletteExact);
   }
 
   u.roughness.value = a.roughness;

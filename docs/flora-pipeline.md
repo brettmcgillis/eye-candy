@@ -25,7 +25,7 @@ Flora.
 | `@modules/floraRender` | The only home of the flower's materials. The scene and the CLI both draw with it, so there is no "must stay in step with" copy the way Rorschach's `gpuCapture.mjs` has one.                             |
 | `renderOptions.mjs`    | Every knob, declared once: generator params (`generator: true`), scene controls (`scene: true`) and headless-only render settings. `DEFAULT_PARAMS` and the scene's preset defaults are derived from it. |
 | The scene's Leva files | Still hand-written (labels, folders). `npm run flora:check` holds their keys, ranges and defaults to the schema in both directions.                                                                      |
-| FloraCLI               | Builds its whole form from `sectionsFor()`; a new option appears there with no page change. It never reads the scene — it only writes a generation into the scene's `SNAPSHOTS`.                         |
+| FloraCLI               | Builds its whole form from `sectionsFor()`; a new option appears there with no page change. It never reads the scene — it only writes a generation into the scene's `PRESETS`.                           |
 
 ## Rolling
 

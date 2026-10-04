@@ -26,10 +26,12 @@ export function applyShading(s, config) {
   u.outlineWidth.value = config.outlineWidth;
   u.imageColor.value = config.imageColor;
   const name = config.colorMode === 'palette' ? config.paletteName : null;
-  if (name !== s.paletteName) {
+  const exact = Boolean(config.paletteExact);
+  if (name !== s.paletteName || exact !== s.paletteExact) {
     s.paletteName = name;
+    s.paletteExact = exact;
     s.palette?.dispose();
-    s.palette = name ? createPaletteTexture(name) : null;
+    s.palette = name ? createPaletteTexture(name, { exact }) : null;
     s.setTexture('palette', s.palette);
   }
 }

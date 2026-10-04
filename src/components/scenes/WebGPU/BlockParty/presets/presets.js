@@ -1,6 +1,4 @@
 // Keys match the Leva schema in useSceneControls 1:1.
-import { sceneDefaults } from '@modules/blockParty';
-
 export const DEFAULT_PRESET = 'Paper';
 
 const SHARED = {
@@ -79,49 +77,51 @@ const SHARED = {
   towerShadows: true,
 };
 
+const PAPER = {
+  ...SHARED,
+  backgroundColor: '#ffffff',
+  cameraFrustumHeight: 13,
+  glowFloorColor: '#3c3c44',
+  lightAmbientIntensity: 1.68,
+  lightSunIntensity: 1.46,
+  neonIntensity: 1.15,
+  cardColor: '#fcfcfc',
+  cardEdgeColor: '#fcfcfc',
+  groundColor: '#fcfcfc',
+  patternColor: '#d8d8d8',
+  pedestalColor: '#fcfcfc',
+  towerBaseColor: '#000000',
+  neonAmberColor: '#ffcc00',
+  neonCyanColor: '#00ffcc',
+  neonMagentaColor: '#ff0066',
+  pitColor: '#050505',
+  pitFloorColor: '#000000',
+  pitRimColor: '#bfbfbf',
+  pitStrataColor: '#3a3a3a',
+  pitStrataStrength: 0.5,
+  postBloomStrength: 0.35,
+  postBloomThreshold: 0.85,
+  postGrainAmount: 0.063,
+  postInkColor: '#000000',
+  postInkStrength: 0.25,
+  pulseDepth: 0.35,
+  pulseRate: 1.1,
+  riserShade: 0.8,
+  ringColor: '#00aaff',
+  ringIntensity: 1.8,
+  seed: 2,
+  stairHighColor: '#c8c8c8',
+  stairLowColor: '#050505',
+  towerBlend: 'ink',
+  towerColor: '#000000',
+  towerInk: 1,
+  wellFalloff: 0.7,
+  wellFloorColor: '#050505',
+  wellWallColor: '#d6d6d6',
+};
+
 export const PRESETS = {
-  Paper: {
-    ...SHARED,
-    backgroundColor: '#ffffff',
-    cameraFrustumHeight: 13,
-    glowFloorColor: '#3c3c44',
-    lightAmbientIntensity: 1.68,
-    lightSunIntensity: 1.46,
-    neonIntensity: 1.15,
-    cardColor: '#fcfcfc',
-    cardEdgeColor: '#fcfcfc',
-    groundColor: '#fcfcfc',
-    patternColor: '#d8d8d8',
-    pedestalColor: '#fcfcfc',
-    towerBaseColor: '#000000',
-    neonAmberColor: '#ffcc00',
-    neonCyanColor: '#00ffcc',
-    neonMagentaColor: '#ff0066',
-    pitColor: '#050505',
-    pitFloorColor: '#000000',
-    pitRimColor: '#bfbfbf',
-    pitStrataColor: '#3a3a3a',
-    pitStrataStrength: 0.5,
-    postBloomStrength: 0.35,
-    postBloomThreshold: 0.85,
-    postGrainAmount: 0.063,
-    postInkColor: '#000000',
-    postInkStrength: 0.25,
-    pulseDepth: 0.35,
-    pulseRate: 1.1,
-    riserShade: 0.8,
-    ringColor: '#00aaff',
-    ringIntensity: 1.8,
-    seed: 2,
-    stairHighColor: '#c8c8c8',
-    stairLowColor: '#050505',
-    towerBlend: 'ink',
-    towerColor: '#000000',
-    towerInk: 1,
-    wellFalloff: 0.7,
-    wellFloorColor: '#050505',
-    wellWallColor: '#d6d6d6',
-  },
+  Paper: PAPER,
   Night: {
     ...SHARED,
     backgroundColor: '#05070a',
@@ -165,33 +165,24 @@ export const PRESETS = {
     wellFloorColor: '#020305',
     wellWallColor: '#1f2833',
   },
+  'Street Print': {
+    ...PAPER,
+    colorBy: 'district',
+    colorTarget: 'all',
+    palette: 'City Street 6 (lospec)',
+    seed: 11,
+  },
+  'Argon Glass': {
+    ...PAPER,
+    colorBy: 'radial',
+    colorTarget: 'towers',
+    palette: 'Argon',
+    paletteExact: false,
+    paletteSurfaces: 0.3,
+    seed: 5,
+    towerHeightScale: 1.4,
+  },
 };
-
-PRESETS['Street Print'] = {
-  ...PRESETS.Paper,
-  colorBy: 'district',
-  colorTarget: 'all',
-  palette: 'City Street 6 (lospec)',
-  seed: 11,
-};
-
-PRESETS['Argon Glass'] = {
-  ...PRESETS.Paper,
-  colorBy: 'radial',
-  colorTarget: 'towers',
-  palette: 'Argon',
-  paletteExact: false,
-  paletteSurfaces: 0.3,
-  seed: 5,
-  towerHeightScale: 1.4,
-};
-
-// Saved from BlockPartyCLI: only what differs from the scene defaults.
-const SNAPSHOTS = {};
-
-Object.entries(SNAPSHOTS).forEach(([name, snapshot]) => {
-  PRESETS[name] = { ...PRESETS.Paper, ...sceneDefaults(), ...snapshot };
-});
 
 export function getPresetControls({ presetSnapshot }) {
   return { ...presetSnapshot };

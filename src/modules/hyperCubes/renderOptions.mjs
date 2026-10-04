@@ -238,6 +238,12 @@ const CELLS = {
     [0.4, 1],
     num('cells', 'Palette', 'Mix', 1, 0, 1, 0.01)
   ),
+  paletteExact: inFacet(
+    'color',
+    flag('cells', 'Palette', 'Exact Stops', true, {
+      help: 'Each cell takes a whole palette stop; off blends between stops',
+    })
+  ),
 };
 
 const FRAMES = {

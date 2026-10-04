@@ -246,6 +246,7 @@ const FACET_ROLLS = {
       ]),
       paletteName: palettes?.length ? pick(rng, palettes) : config.paletteName,
       paletteReverse: rng.chance(0.3),
+      paletteExact: rng.chance(0.4),
     });
   },
 

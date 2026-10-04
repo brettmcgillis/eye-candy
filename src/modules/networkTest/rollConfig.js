@@ -186,6 +186,7 @@ const FACET_ROLLS = {
         pulseColor: hsl(accent, between(rng, 0, 0.4), 0.92),
       });
     }
+    config.paletteExact = rng.chance(0.7);
   },
 
   atmosphere(config, rng) {

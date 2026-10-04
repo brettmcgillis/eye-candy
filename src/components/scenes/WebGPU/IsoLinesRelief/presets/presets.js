@@ -99,13 +99,6 @@ export const PRESETS = {
   },
 };
 
-// Saved from IsoLinesReliefCLI: only what differs from the scene defaults.
-const SNAPSHOTS = {};
-
-Object.entries(SNAPSHOTS).forEach(([name, snapshot]) => {
-  PRESETS[name] = { ...BASE, ...snapshot };
-});
-
 export function getPresetControls({ presetSnapshot }) {
   return { ...presetSnapshot };
 }

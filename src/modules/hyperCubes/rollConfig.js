@@ -96,6 +96,7 @@ const FACET_ROLLS = {
       roleEmissive: round(rng.chance(0.7) ? between(rng, 0.03, 0.15) : 0),
       roleGlass: round(glass ? between(rng, 0.1, 0.35) : 0),
       roleLight: round(rng.chance(0.5) ? between(rng, 0.1, 0.5) : 0),
+      paletteExact: rng.chance(0.7),
     });
   },
 

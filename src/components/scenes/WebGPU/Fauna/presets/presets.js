@@ -2,9 +2,10 @@ import { SCENE_DEFAULTS } from './defaults';
 
 export const DEFAULT_PRESET = 'Petri';
 
-const SNAPSHOTS = {
-  Petri: {},
+export const PRESETS = {
+  Petri: { ...SCENE_DEFAULTS },
   Invasion: {
+    ...SCENE_DEFAULTS,
     founderSeed: 'invasion',
     planInvader: 1,
     planBlob: 0,
@@ -15,6 +16,7 @@ const SNAPSHOTS = {
     invaderSkin: 'voxel',
   },
   Ooze: {
+    ...SCENE_DEFAULTS,
     founderSeed: 'ooze',
     planInvader: 0.3,
     planBlob: 1,
@@ -25,6 +27,7 @@ const SNAPSHOTS = {
     invaderSkin: 'smooth',
   },
   Reef: {
+    ...SCENE_DEFAULTS,
     founderSeed: 'reef',
     planInvader: 0,
     planBlob: 0.4,
@@ -36,6 +39,7 @@ const SNAPSHOTS = {
     meatColor: '#a0503a',
   },
   Crucible: {
+    ...SCENE_DEFAULTS,
     founderSeed: 'crucible',
     founderCount: 8,
     carnivoreChance: 0.5,
@@ -44,6 +48,7 @@ const SNAPSHOTS = {
     foodGrowth: 0.06,
   },
   Mobile: {
+    ...SCENE_DEFAULTS,
     founderCount: 4,
     founderCopies: 3,
     populationCap: 140,
@@ -51,13 +56,6 @@ const SNAPSHOTS = {
     heroScale: 4,
   },
 };
-
-export const PRESETS = Object.fromEntries(
-  Object.entries(SNAPSHOTS).map(([name, snapshot]) => [
-    name,
-    { ...SCENE_DEFAULTS, ...snapshot },
-  ])
-);
 
 export function getPresetControls({ presetSnapshot }) {
   return { ...presetSnapshot };

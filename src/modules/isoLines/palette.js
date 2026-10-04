@@ -1,4 +1,4 @@
-import { hexToRgb, sampleStops } from '@utils/paletteStops';
+import { hexToRgb, samplePalette } from '@utils/paletteStops';
 
 const clamp01 = (v) => Math.max(0, Math.min(1, v));
 
@@ -7,7 +7,7 @@ const clamp01 = (v) => Math.max(0, Math.min(1, v));
 // .5 + .5·cos(12n + (0, 2.1, -2.1)).
 export default function colorAt(t, config, stops = null) {
   if (config.colorMode === 'palette' && stops?.length) {
-    return sampleStops(stops, t).map((c) => c / 255);
+    return samplePalette(stops, t, config.paletteExact).map((c) => c / 255);
   }
   if (config.colorMode === 'ramp') {
     const low = hexToRgb(config.rampLow);

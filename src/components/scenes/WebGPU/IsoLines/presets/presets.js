@@ -57,14 +57,33 @@ export const PRESETS = {
   },
   'Webcam Bands': { ...BASE, ...WEBCAM, imageColor: 0.4 },
   'Webcam Lines': { ...BASE, ...WEBCAM, ...LINES, ...SINE, levels: 24 },
+  'c0uuxh-78': {
+    ...BASE,
+    levels: 30,
+    fieldSeed: 4429,
+    noiseScale: 10.4,
+    shapeKind: 'ridged',
+    shapeScale: 1.75,
+    focalCount: 5,
+    focalFalloff: 0.43,
+    warpScale: 2.45,
+    fieldContrast: 1.29,
+    colorMode: 'palette',
+    cosineFreq: 8.4,
+    cosinePhase: 0.26,
+    cosineSpread: 1.28,
+    paletteName: 'Exophobia (lospec)',
+    rampLow: '#0f1d28',
+    rampHigh: '#f0bef3',
+    background: '#0d0a08',
+    lineColor: '#e7ebef',
+    lineTint: 0.46,
+    outlineColor: '#070b0d',
+    outlineWidth: 0.45,
+    lineWidth: 2.15,
+    postGradeVignette: 0.11,
+  },
 };
-
-// Saved from IsoLinesCLI: only what differs from the scene defaults.
-const SNAPSHOTS = {};
-
-Object.entries(SNAPSHOTS).forEach(([name, snapshot]) => {
-  PRESETS[name] = { ...BASE, ...snapshot };
-});
 
 export function getPresetControls({ presetSnapshot }) {
   return { ...presetSnapshot };

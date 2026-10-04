@@ -28,6 +28,21 @@ function objectRange(source, declaration) {
   return null;
 }
 
+const KEY = /^ {2}(?:'([^']+)'|"([^"]+)"|(\w+)):/gmu;
+
+// Picks the first free `requested`, `requested 2`, … among the object's
+// top-level keys, whatever form their values take.
+export function uniqueName(requested) {
+  return (source) => {
+    const taken = new Set(
+      [...source.matchAll(KEY)].map(([, a, b, c]) => a ?? b ?? c)
+    );
+    let name = requested;
+    for (let n = 2; taken.has(name); n += 1) name = `${requested} ${n}`;
+    return name;
+  };
+}
+
 async function format(source, filePath) {
   const prettier = await import('prettier');
   const config = await prettier.resolveConfig(filePath);
@@ -38,10 +53,12 @@ async function format(source, filePath) {
 // file and hands the result to prettier with the repo's own config, so a
 // written entry is indistinguishable from a hand-authored one. `nameFor`
 // receives the object's source and picks the entry's key; names are never
-// reused, since a name is how a preset is linked to.
+// reused, since a name is how a preset is linked to. `base` names the object
+// the scene's own presets spread first, so a written entry carries only what
+// differs from it.
 export default async function appendPreset(
   rootDir,
-  { declaration, file, nameFor, value }
+  { base, declaration, file, nameFor, value }
 ) {
   if (!value || typeof value !== 'object' || Array.isArray(value)) {
     throw new Error('A preset must be an object of control values.');
@@ -55,7 +72,9 @@ export default async function appendPreset(
   }
 
   const name = nameFor(source.slice(range.open, range.close));
-  const entry = `${JSON.stringify(name)}: ${JSON.stringify(value)},\n`;
+  const fields = JSON.stringify(value).slice(1, -1);
+  const body = base ? [`...${base}`, fields].filter(Boolean).join(',') : fields;
+  const entry = `${JSON.stringify(name)}: {${body}},\n`;
   const spliced =
     source.slice(0, range.close) + entry + source.slice(range.close);
 

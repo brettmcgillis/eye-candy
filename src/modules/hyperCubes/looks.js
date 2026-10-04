@@ -1,4 +1,4 @@
-import { hexToRgb, pickStop } from '@utils/paletteStops';
+import { hexToRgb, samplePalette } from '@utils/paletteStops';
 
 import { ROLES } from './renderOptions.mjs';
 
@@ -62,7 +62,7 @@ export function lookOf(config, leaf, stops) {
   const emissive = role === 'emissive';
   let base = linearOf(config[`${role}Color`] ?? config.darkColor);
   if (!emissive && stops?.length && config.paletteMix > 0) {
-    const stop = pickStop(stops, vary).map(toLinear);
+    const stop = samplePalette(stops, vary, config.paletteExact).map(toLinear);
     base = base.map((c, i) => c + (stop[i] - c) * config.paletteMix);
   }
 

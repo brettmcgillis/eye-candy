@@ -252,6 +252,14 @@ function PreviewDialog({
       if (event.key === 'Escape') onClose();
       if (event.key === 'ArrowLeft' && hasPrevious) onPrevious();
       if (event.key === 'ArrowRight' && hasNext) onNext();
+      if (event.key === 'ArrowDown') {
+        event.preventDefault();
+        changeZoom(zoom - 0.25);
+      }
+      if (event.key === 'ArrowUp') {
+        event.preventDefault();
+        changeZoom(zoom + 0.25);
+      }
       if (event.key === '-' || event.key === '_') changeZoom(zoom - 0.25);
       if (event.key === '+' || event.key === '=') changeZoom(zoom + 0.25);
       if (event.key === '0') changeZoom(1);

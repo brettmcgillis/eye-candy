@@ -4,8 +4,9 @@ const SCENE_DEFAULTS = sceneDefaults();
 
 export const DEFAULT_PRESET = 'Heart';
 
-const SNAPSHOTS = {
+export const PRESETS = {
   Heart: {
+    ...SCENE_DEFAULTS,
     seed: 'heart',
     formCount: 2,
     warp: 0.3,
@@ -38,6 +39,7 @@ const SNAPSHOTS = {
     tipAmount: 0.45,
   },
   'Pink Tuft': {
+    ...SCENE_DEFAULTS,
     seed: 'tuft',
     formCount: 4,
     formSpread: 1.1,
@@ -66,6 +68,7 @@ const SNAPSHOTS = {
     greenReach: 0.28,
   },
   'Blush Plume': {
+    ...SCENE_DEFAULTS,
     seed: 'plume',
     formCount: 2,
     warp: 0.45,
@@ -96,6 +99,7 @@ const SNAPSHOTS = {
     greenReach: 0.12,
   },
   Marigold: {
+    ...SCENE_DEFAULTS,
     seed: 'marigold',
     formCount: 1,
     warp: 0.2,
@@ -124,6 +128,7 @@ const SNAPSHOTS = {
     greenReach: 0.05,
   },
   'Lilac Tower': {
+    ...SCENE_DEFAULTS,
     seed: 'lilac',
     formCount: 4,
     formSpread: 0.9,
@@ -152,6 +157,7 @@ const SNAPSHOTS = {
     greenReach: 0.35,
   },
   'Ember Bloom': {
+    ...SCENE_DEFAULTS,
     seed: 'ember',
     formCount: 4,
     formSpread: 0.6,
@@ -182,6 +188,7 @@ const SNAPSHOTS = {
     greenReach: 0.12,
   },
   'Petal Burst': {
+    ...SCENE_DEFAULTS,
     seed: 'petal',
     formCount: 2,
     warp: 0.25,
@@ -210,6 +217,7 @@ const SNAPSHOTS = {
     greenReach: 0.25,
   },
   'Dice Bloom': {
+    ...SCENE_DEFAULTS,
     seed: 'dice',
     formCount: 3,
     formSpread: 1,
@@ -251,6 +259,7 @@ const SNAPSHOTS = {
     greenReach: 0.22,
   },
   'Gradient Garden': {
+    ...SCENE_DEFAULTS,
     seed: 'garden',
     paletteShuffle: true,
     formCount: 3,
@@ -274,12 +283,14 @@ const SNAPSHOTS = {
     styleVariety: 0.7,
   },
   Wild: {
+    ...SCENE_DEFAULTS,
     seed: 'wild',
     rollGenerations: true,
     botany: 0.5,
     crownStructure: 0.6,
   },
   Bouquet: {
+    ...SCENE_DEFAULTS,
     seed: 'posy',
     formCount: 2,
     warp: 0.3,
@@ -324,6 +335,7 @@ const SNAPSHOTS = {
     lightKeyShadowExtent: 14,
   },
   Mobile: {
+    ...SCENE_DEFAULTS,
     seed: 'heart',
     crownRadius: 3.2,
     crownStretch: 0.85,
@@ -340,6 +352,7 @@ const SNAPSHOTS = {
     ornamentColor: '#f4a531',
   },
   Portrait: {
+    ...SCENE_DEFAULTS,
     seed: 'portrait',
     cameraMode: 'orbit',
     orbitAutoRotate: false,
@@ -357,13 +370,6 @@ const SNAPSHOTS = {
     scatterSpin: 0,
   },
 };
-
-export const PRESETS = Object.fromEntries(
-  Object.entries(SNAPSHOTS).map(([name, snapshot]) => [
-    name,
-    { ...SCENE_DEFAULTS, ...snapshot },
-  ])
-);
 
 export function getPresetControls({ currentControls, presetSnapshot }) {
   return Object.fromEntries(

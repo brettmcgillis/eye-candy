@@ -187,7 +187,7 @@
     },
     {
       "id": "idea-1790858780721-y4tyi8",
-      "text": "Generative audio scene. Find novel techniques to generate music. ex. falling particles triggering notes, find a way to use light/radiance to trigger notes,"
+      "text": "CrossTalk style generative audio scene. Find novel techniques to generate music. each technique can be its own component/preset\n- falling particles triggering notes when colliding with items placed by the user\n- use light/radiance to trigger notes, user can move emitters and occluders to determine which notes are playing, how loud etc. Each region of space corresponds to a pitch, Each color a voice/tone. light accumulation correlates to volume.\n- water ripples, every ripple intersection produces a random note in a random velocity"
     },
     {
       "id": "idea-1790859236803-0yxpgn",
@@ -200,6 +200,10 @@
     {
       "id": "idea-1790861263399-o3xmbz",
       "text": "multiple render targets"
+    },
+    {
+      "id": "idea-1791072432545-iqa7ux",
+      "text": "CrossTalk style Multiplayer drawing games scene. each game can be its own component/preset.\n- Competitive Scribble. Everyone gets the same canvas. everyone gets assigned a color, cursor appears as a large pencil with a very tiny tip, brush size is a few pixels. players have n seconds to cover as much of the canvas as possible. players can draw over eachother. randomly a pink rubber eraser will blow across the screen and clear some pixels. after the timer elapses we count up the pixels per user, then declare a winner.\n-  Collaborative Scribble. Everyone gets the same canvas. Everyone has a different colored brush. Draw together in real time. Periodically the game gives prompts: \"Make a monster\" \"Add something that flies\" \"Turn it into a spaceship\"\n- Draw in the Dark. Shared canvas, entirely covered by a fog of darkness except for a flashlight cookie around the cursor/pen. You have to draw something without seeing the whole canvas, When time expires, the lights come on.\n-  Draw the Path. A little creature/vehicle needs to get from A → B. Players draw the path it should follow. Then: RUN! The physics engine follows the drawing. If you draw a ramp, the vehicle jumps. If you draw a loop, it loops. If you draw a terrible path, everyone watches the poor creature die. Then players get to modify the path and try again.\n- Draw Battle. Players receive the same mad-lobs style prompt. They have 60 seconds. But there are weird constraints: (ex. Draw a cat without lifting your brush. Draw a house using exactly 12 strokes. Draw a monster using only circles. Draw something recognizable using only straight lines.) Then everyone votes.\n- Saboteur. One player is secretly the Saboteur. Everyone gets: \"Draw a castle.\" The saboteur gets: \"Make the castle subtly look like a spaceship.\" Nobody knows who the saboteur is. At the end, everyone votes: WHO WAS THE SABOTEUR?\n- Radiance drawing. radiance cascades and users can draw in emitting lines and occluding lines"
     }
   ],
   "statuses": {
@@ -220,6 +224,7 @@
     "webgpu:birdsArentReal::$scene": true,
     "webgpu:crossTalk::CloudConnected": true,
     "webgpu:crossTalk::Waterworks": true,
+    "webgpu:exhibitA::Kleinian Walk": false,
     "webgpu:flora::$scene": true,
     "webgpu:flora::Bouquet": true,
     "webgpu:ghostBuster::$scene": true,

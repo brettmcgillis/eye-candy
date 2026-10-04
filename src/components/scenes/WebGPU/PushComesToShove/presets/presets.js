@@ -9,9 +9,10 @@ const BASE = {
 };
 
 // Only what differs from BASE; the workbench appends generations here.
-const SNAPSHOTS = {
-  'Tight Squeeze': {},
+export const PRESETS = {
+  'Tight Squeeze': { ...BASE },
   'Few Big Windows': {
+    ...BASE,
     holeScale: 0.18,
     holeThreshold: 0.6,
     holeWarp: 2.4,
@@ -19,12 +20,14 @@ const SNAPSHOTS = {
     panelThickness: 0.5,
   },
   'Loose Weave': {
+    ...BASE,
     wireCount: 340,
     wireSlack: 1.3,
     writheStrength: 5,
     cylinderResistance: 0.06,
   },
   Crowded: {
+    ...BASE,
     cylinderCount: 14,
     cylinderRadiusMin: 0.3,
     cylinderRadiusMax: 0.5,
@@ -32,10 +35,12 @@ const SNAPSHOTS = {
     cylinderWanderSpeed: 0.25,
   },
   'Painted Cables': {
+    ...BASE,
     palette: 'Retrotronic (lospec)',
     paintWires: true,
   },
   'Painted Pucks': {
+    ...BASE,
     palette: 'Electric Peacock',
     paintCylinders: true,
     cylinderTone: 1,
@@ -43,6 +48,7 @@ const SNAPSHOTS = {
     rimTone: 0,
   },
   'Full Bleed': {
+    ...BASE,
     palette: 'Cobalt Desert 7 (lospec)',
     paintPanelFace: true,
     faceTone: 0.17,
@@ -53,13 +59,6 @@ const SNAPSHOTS = {
     paintWires: true,
   },
 };
-
-export const PRESETS = Object.fromEntries(
-  Object.entries(SNAPSHOTS).map(([name, snapshot]) => [
-    name,
-    { ...BASE, ...snapshot },
-  ])
-);
 
 export function getPresetControls({ presetSnapshot }) {
   return { ...presetSnapshot };

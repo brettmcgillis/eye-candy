@@ -902,6 +902,11 @@ const LOOK = {
     num('look', 'Palette', 'Shift', 0, -1, 1, 0.001)
   ),
   paletteReverse: look(flag('look', 'Palette', 'Reverse', false)),
+  paletteExact: look(
+    flag('look', 'Palette', 'Exact Stops', false, {
+      help: 'Snap to the nearest palette stop instead of blending between stops',
+    })
+  ),
   colorStructure: look(
     num('look', 'Colour By', 'Structure', 1, 0, 1, 0.01, {
       help: 'Orbit trap on fractals, position along the path or surface elsewhere',

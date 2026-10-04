@@ -126,13 +126,6 @@ export const PRESETS = {
   },
 };
 
-// Saved from RugPullCLI: only what differs from the scene defaults.
-const SNAPSHOTS = {};
-
-Object.entries(SNAPSHOTS).forEach(([name, snapshot]) => {
-  PRESETS[name] = { ...FLOOR, ...snapshot };
-});
-
 export function getPresetControls({ presetSnapshot }) {
   return { ...presetSnapshot };
 }

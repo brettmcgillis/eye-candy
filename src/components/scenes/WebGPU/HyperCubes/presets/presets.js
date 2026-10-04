@@ -108,11 +108,8 @@ export const PRESETS = {
     motionMode: 'grow',
     growLevelSeconds: 0.9,
   },
-};
-
-// Saved from HyperCubesCLI: only what differs from the scene defaults.
-const SNAPSHOTS = {
   'u6wstl-64': {
+    ...BASE,
     rectSeed: 0.4129,
     rectBreakChance: 0.11,
     octreeSeed: 26,
@@ -149,10 +146,6 @@ const SNAPSHOTS = {
     postBloomStrength: 0.85,
   },
 };
-
-Object.entries(SNAPSHOTS).forEach(([name, snapshot]) => {
-  PRESETS[name] = { ...BASE, ...snapshot };
-});
 
 export function getPresetControls({ presetSnapshot }) {
   return { ...presetSnapshot };

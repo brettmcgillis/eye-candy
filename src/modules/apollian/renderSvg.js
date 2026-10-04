@@ -1,4 +1,4 @@
-import { rgbToHex, sampleStops } from '@utils/paletteStops';
+import { rgbToHex, samplePalette } from '@utils/paletteStops';
 
 import { DEG } from './math';
 import { paletteCoordinate } from './palette';
@@ -296,7 +296,9 @@ export default function renderApollianSvg({
 
   const colourOf = (pen) => {
     if (style === 'outline' || !stops) return config.inkColor;
-    return rgbToHex(sampleStops(stops, (pen + 0.5) / pens));
+    return rgbToHex(
+      samplePalette(stops, (pen + 0.5) / pens, config.paletteExact)
+    );
   };
   const strokeWidth = stroke || 0.1;
   const layers = groups

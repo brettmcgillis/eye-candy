@@ -41,13 +41,6 @@ export const PRESETS = {
   },
 };
 
-// Generations saved from BrutalistCLI: only what differs from BASE.
-const SNAPSHOTS = {};
-
-Object.entries(SNAPSHOTS).forEach(([name, snapshot]) => {
-  PRESETS[name] = { ...BASE, ...snapshot };
-});
-
 export function getPresetControls({ presetSnapshot }) {
   return { ...presetSnapshot };
 }

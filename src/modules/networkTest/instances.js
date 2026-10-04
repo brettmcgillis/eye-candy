@@ -1,4 +1,4 @@
-import { hexToRgb, pickStop } from '@utils/paletteStops';
+import { hexToRgb, samplePalette } from '@utils/paletteStops';
 
 import { growState } from './motion';
 import { hashUnit } from './noise';
@@ -28,7 +28,8 @@ export function placementColors(network, config, stops) {
   return network.placements.map((placement, index) => {
     if (!stops?.length || config.paletteMix <= 0) return base;
     const t = hashUnit(Math.round(config.pointSeed), index, 0, 91);
-    return mix3(base, pickStop(stops, t).map(toLinear), config.paletteMix);
+    const stop = samplePalette(stops, t, config.paletteExact);
+    return mix3(base, stop.map(toLinear), config.paletteMix);
   });
 }
 

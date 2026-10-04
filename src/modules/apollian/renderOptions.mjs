@@ -320,6 +320,11 @@ const LOOK = {
     num('look', 'Palette', 'Shift', 0, -1, 1, 0.001)
   ),
   paletteReverse: look(flag('look', 'Palette', 'Reverse', false)),
+  paletteExact: look(
+    flag('look', 'Palette', 'Exact Stops', false, {
+      help: 'Snap to the nearest palette stop instead of blending between stops',
+    })
+  ),
   colorTrap: look(num('look', 'Colour By', 'Orbit Trap', 1, 0, 1, 0.01)),
   colorDepth: look(num('look', 'Colour By', 'Fold Depth', 0, 0, 1, 0.01)),
   colorRadius: look(num('look', 'Colour By', 'Radius', 0, 0, 1, 0.01)),

@@ -104,9 +104,17 @@ function parsePresetNames(source) {
 
   return {
     names: new Set(presetExpressions.flatMap(getObjectKeys)),
-    requiresModuleLoad: presetExpressions.some(
-      (expression) => expression.type !== 'ObjectExpression'
-    ),
+    requiresModuleLoad:
+      program.body.some(
+        (statement) => statement.type === 'ExpressionStatement'
+      ) ||
+      presetExpressions.some(
+        (expression) =>
+          expression.type !== 'ObjectExpression' ||
+          expression.properties.some(
+            (property) => property.type === 'SpreadElement'
+          )
+      ),
   };
 }
 

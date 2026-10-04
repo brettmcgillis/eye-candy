@@ -1,4 +1,4 @@
-import { sampleStops } from '@utils/paletteStops';
+import { samplePalette } from '@utils/paletteStops';
 
 import { clamp } from './math';
 
@@ -40,5 +40,9 @@ export function paletteCoordinate(t, config) {
 }
 
 export default function colorAt(t, config, stops) {
-  return sampleStops(stops, paletteCoordinate(t, config)).map((v) => v / 255);
+  return samplePalette(
+    stops,
+    paletteCoordinate(t, config),
+    config.paletteExact
+  ).map((v) => v / 255);
 }

@@ -68,6 +68,7 @@ function rollLook(config, rng, { palettes }) {
   if (config.material === 'painted') {
     config.paletteAmount = Number((0.7 + 0.3 * rng()).toFixed(2));
   }
+  config.paletteExact = rng.chance(0.4);
 }
 
 const PLINTH_GREYS = ['#b3ada4', '#d8d3ca', '#8f8a94', '#c9c3b8', '#ece8e0'];

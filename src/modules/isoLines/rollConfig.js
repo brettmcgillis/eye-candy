@@ -91,6 +91,7 @@ export const SHARED_ROLLS = {
       rampLow: hsl(hue, between(rng, 0.3, 0.7), between(rng, 0.08, 0.2)),
     });
     if (paper && config.style === 'lines') config.lineTint = 1;
+    config.paletteExact = rng.chance(0.5);
   },
 
   atmosphere(config, rng) {

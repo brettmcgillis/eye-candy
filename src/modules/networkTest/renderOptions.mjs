@@ -376,6 +376,12 @@ const NODES = {
     [0.4, 1],
     num('stage', 'Palette', 'Mix', 0.8, 0, 1, 0.01)
   ),
+  paletteExact: inFacet(
+    'color',
+    spec('boolean', 'stage', 'Palette', 'Exact Stops', true, {
+      help: 'Each placement takes a whole palette stop; off blends between stops',
+    })
+  ),
   nodeColor: inFacet('color', color('nodes', null, 'Color', '#9fd8ff')),
   nodeIntensity: rolled(
     'color',

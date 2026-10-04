@@ -271,6 +271,13 @@ export const COLOR = {
       when: { colorMode: ['palette'] },
     })
   ),
+  paletteExact: inFacet(
+    'color',
+    flag('color', 'Palette', 'Exact Stops', false, {
+      help: 'Snap each level to its nearest palette stop instead of blending between stops',
+      when: { colorMode: ['palette'] },
+    })
+  ),
   rampLow: inFacet(
     'color',
     color('color', 'Ramp', 'Low', '#16202e', { when: { colorMode: ['ramp'] } })

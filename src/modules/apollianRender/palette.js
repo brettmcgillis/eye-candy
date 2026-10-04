@@ -7,7 +7,8 @@ import { samplePalette } from '@utils/gradientPalette';
 const LUT_WIDTH = 256;
 
 // One texture for the rig's lifetime, rewritten in place, so a palette swap
-// never rebuilds a material.
+// never rebuilds a material. Nearest-sampled at 256 texels, a blended ramp
+// reads as a filtered one and an exact one steps where pickStop does.
 export function createPaletteLut() {
   const lut = new THREE.DataTexture(
     new Uint8Array(LUT_WIDTH * 4).fill(255),
@@ -15,17 +16,17 @@ export function createPaletteLut() {
     1
   );
   lut.colorSpace = THREE.SRGBColorSpace;
-  lut.minFilter = THREE.LinearFilter;
-  lut.magFilter = THREE.LinearFilter;
+  lut.minFilter = THREE.NearestFilter;
+  lut.magFilter = THREE.NearestFilter;
   lut.needsUpdate = true;
   return lut;
 }
 
-export function writePaletteLut(lut, stops) {
+export function writePaletteLut(lut, stops, exact = false) {
   const { data } = lut.image;
   for (let i = 0; i < LUT_WIDTH; i += 1) {
     const rgb = stops
-      ? samplePalette(stops, i / (LUT_WIDTH - 1))
+      ? samplePalette(stops, i / (LUT_WIDTH - 1), exact)
       : [255, 255, 255];
     data.set([...rgb, 255], i * 4);
   }

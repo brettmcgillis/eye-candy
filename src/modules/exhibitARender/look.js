@@ -79,10 +79,10 @@ export function applyLook(u, config, stops) {
   );
   u.threadColor.value.set(config.threadColor);
   u.threadColor2.value.set(config.threadColor2);
-  const key = stops ? stops.join(',') : '';
+  const key = stops ? `${stops.join(',')}|${Boolean(config.paletteExact)}` : '';
   if (u.paletteKey !== key) {
     u.paletteKey = key;
-    writePaletteLut(u.paletteTexture, stops);
+    writePaletteLut(u.paletteTexture, stops, config.paletteExact);
   }
 }
 

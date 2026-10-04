@@ -18,6 +18,7 @@ import pushComesToShovePlugin from './pushComesToShove/plugin';
 import rorschachPlugin from './rorschach/plugin';
 import rugPullPlugin from './rugPull/plugin';
 import subdivisionPlugin from './subdivision/plugin';
+import trucheterie3dPlugin from './trucheterie3d/plugin';
 import trucheteriePlugin from './trucheterie/plugin';
 
 export default function devServerPlugins() {
@@ -43,5 +44,6 @@ export default function devServerPlugins() {
     rugPullPlugin(),
     subdivisionPlugin(),
     trucheteriePlugin(),
+    trucheterie3dPlugin(),
   ];
 }

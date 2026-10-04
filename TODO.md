@@ -100,6 +100,7 @@
 - [Subdivision](src/components/scenes/WebGPU/Subdivision/todo.md)
 - [SubdivisionRelief](src/components/scenes/WebGPU/SubdivisionRelief/todo.md)
 - [ThatsAllFolks](src/components/scenes/WebGPU/ThatsAllFolks/todo.md)
+- [Trucheterie3D](src/components/scenes/WebGPU/Trucheterie3D/todo.md)
 - [Upstream/Downstream](src/components/scenes/WebGPU/UpstreamDownstream/todo.md)
 - [UrbanWildlife](src/components/scenes/WebGPU/UrbanWildlife/todo.md)
 - [WaterCycle](src/components/scenes/WebGPU/WaterCycle/todo.md)

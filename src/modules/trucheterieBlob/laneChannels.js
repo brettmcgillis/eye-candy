@@ -88,6 +88,17 @@ export function laneRadii(type, size, pathDiv) {
 
 const WEDGE_ANGLE = [Math.PI * 2, Math.PI, Math.PI / 2];
 
+// Two corner families on opposite corners: each owns two sides outright, so
+// the second can pass under the first instead of stopping against it.
+export function isWeaveCell(connections) {
+  return (
+    connections.length === 2 &&
+    connections[0][0] === 2 &&
+    connections[1][0] === 2 &&
+    Math.abs(connections[0][1] - connections[1][1]) === 2
+  );
+}
+
 // How far round its family's wedge a grid point sits, 0..1 — the same
 // parameter blobArcs.js's `along` gives a pixel: measured in the family's
 // canonical frame, from the wedge's first edge towards its second.
@@ -246,7 +257,11 @@ function alongChannels({ channelOf, channels, lengthOf, links }) {
 // Resolves every (cell, family slot, lane) triple to a channel id, plus the
 // per-channel facts the colour modes need. `slots` is a flat lookup sized
 // count * 2 * maxLanes so the shader can index it as a texture row per cell.
-export default function buildLaneChannels(drawn, pathDiv) {
+export default function buildLaneChannels(
+  drawn,
+  pathDiv,
+  { weave = false } = {}
+) {
   const maxLanes = drawn.reduce(
     (acc, { cell, connections }) =>
       connections.reduce(
@@ -269,7 +284,7 @@ export default function buildLaneChannels(drawn, pathDiv) {
 
   drawn.forEach(({ cell, connections }, cellIndex) => {
     const occluder =
-      connections.length > 1
+      connections.length > 1 && !(weave && isWeaveCell(connections))
         ? familySector(cell, connections[0][0], connections[0][1])
         : null;
     connections.forEach(([type, edge], slot) => {

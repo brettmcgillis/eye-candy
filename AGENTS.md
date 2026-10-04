@@ -174,6 +174,17 @@ the current scene folder go through path aliases (`@elements`, `@modules`,
   headless CLI and RugPullCLI. Run `npm run rug-pull:check` after changing
   any of them.
 
+## Required reading before touching Trucheterie3D
+
+- **`docs/trucheterie3d-pipeline.md`** — the Trucheterie blob field as
+  tubes: `@modules/trucheterie3d` (three-free tube solve over
+  `@modules/trucheterieBlob`: strands, chains, heights, retraction, crossing
+  lift, the no-intersection invariants and their verifier, the mesh sweep,
+  option schema; the scene's Leva is generated from it),
+  `@modules/trucheterie3dRender` (`createTubeRig`), the headless CLIs and
+  Trucheterie3DCLI. Run `npm run trucheterie3d:check` after changing any of
+  them, and `npm run trucheterie:check` too if you touch the blob modules.
+
 ## Orientation
 
 - Scenes: `src/components/scenes/<Renderer>/<SceneName>/` (`WebGL | WebGPU |

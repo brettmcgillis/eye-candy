@@ -2,7 +2,10 @@ export { default as buildBlobField } from './field';
 export {
   default as buildLaneChannels,
   familySector,
+  isWeaveCell,
   laneCount,
+  laneRadii,
+  wedgeParam,
 } from './laneChannels';
 export { canvasBounds, default as fieldBounds } from './bounds';
 export { default as renderBlobSvg } from './renderSvg';

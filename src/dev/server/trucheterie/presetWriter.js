@@ -4,20 +4,7 @@ import {
   configFrom,
   presetFromConfig,
 } from '../../../modules/trucheterieBlob/renderOptions.mjs';
-import appendPreset from '../renderJobs/presetFile';
-
-const KEY = /^ {2}(?:'([^']+)'|"([^"]+)"|(\w+)): \{$/gmu;
-
-function uniqueName(requested) {
-  return (source) => {
-    const taken = new Set(
-      [...source.matchAll(KEY)].map(([, a, b, c]) => a ?? b ?? c)
-    );
-    let name = requested;
-    for (let n = 2; taken.has(name); n += 1) name = `${requested} ${n}`;
-    return name;
-  };
-}
+import appendPreset, { uniqueName } from '../renderJobs/presetFile';
 
 // Writes a generated field into the scene's PRESETS as a hand-written preset
 // would be: only what differs from the scene defaults. gridMode isn't a blob

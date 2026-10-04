@@ -73,6 +73,8 @@ export function resolveLaneColors(
     phase = 0,
     seed,
     shuffleSeed,
+    solved = null,
+    weave = false,
   }
 ) {
   const stops = monochrome
@@ -86,8 +88,10 @@ export function resolveLaneColors(
     };
   }
 
+  // `solved` is a caller's cached channel solve: it depends only on the
+  // field, so a drifting palette need not redo it every frame.
   const { along, channelOf, channels, maxLanes, slotStride } =
-    buildLaneChannels(drawn, pathDiv);
+    solved ?? buildLaneChannels(drawn, pathDiv, { weave });
   // Rerolling the shuffle must also move Random mode's picks, so it salts
   // that stream too rather than only reordering the stops.
   const colors = channelColors(channels, stops, {

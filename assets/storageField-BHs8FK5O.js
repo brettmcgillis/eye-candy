@@ -1,0 +1,1 @@
+import{Q as s,R as o}from"./three.tsl-B44k1AWC.js";import{ao as p,K as c,a1 as r,ap as t}from"./index-CpBEyLIG.js";function m(a,n){const e=new p(a,n);return e.type=c,e.generateMipmaps=!1,e.minFilter=r,e.magFilter=r,e.wrapS=t,e.wrapT=t,e}const T=a=>s(a).setAccess(o.READ_ONLY),g=a=>s(a).setAccess(o.WRITE_ONLY);export{m as c,T as r,g as w};

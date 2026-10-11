@@ -1,6 +1,8 @@
 # // Cross Talk
 
-# // Intent / Use Cases
+[Back to main TODO](../../../../../TODO.md)
+
+## // Intent / Use Cases
 
 - The scene turns every open browser window/tab (of this same scene) into a
   viewport onto one shared desktop-spanning 3D world. Drag a window and its
@@ -25,9 +27,7 @@
   `./launch-crossTalk.sh 4 FluidSim` (count, preset, optional URL — the preset
   deep-links every window via `?preset=`).
 
-# // TODO:
-
-[Back to main TODO](../../../../../TODO.md)
+## // TODO:
 
 - [ ] instead of typical folder structure lets group components by scene. ie, CrossTalk/CloudConnected, CrossTalk/Waterworks,...
 
@@ -47,7 +47,7 @@
       stable so presets don't care whether the transport underneath is
       `localStorage` or IPC.
 
-# // Presets
+## // Presets
 
 - [x] **Clouds** — each window gets one `cartoon_clouds.glb`
       instance (`src/components/elements/CartoonClouds`, merged/instanced via
@@ -98,7 +98,7 @@
 - [ ] **Portals** - each window gets 2 portals that the user can move around. the first window gets a ball that can fall through the portals. when multiple tabs are open portals are chained so the ball can travel through windows. similar to fluid sim there is y- graviy, and the ball is constrained to the current/overlapping tabs.
 - [ ] **n-Tangled** - tribute to Bjorn Stall's Entangled but with support for n tabs. particle systems only become entangled when tabs overlap, unline Entangled.
 
-# // Features
+## // Features
 
 - [x] `src/modules/windowSync` — generic cross-tab/window registry (heartbeat,
       stale-window cleanup, host election), independent of any one preset's
@@ -115,6 +115,6 @@
       tell which open window is currently simulating vs. just rendering the
       broadcast; useful for Gravity Rooms too.
 
-# // Interactivity
+## // Interactivity
 
-# // Bugs
+## // Bugs

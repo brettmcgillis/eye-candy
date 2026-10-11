@@ -18,9 +18,11 @@
 #
 # Usage:
 #   ./launch-crossTalk.sh [count] [preset] [url]
-#   ./launch-crossTalk.sh 3
+#   ./launch-crossTalk.sh 3 CloudConnected
 #   ./launch-crossTalk.sh 3 RadianceCascades
-#   ./launch-crossTalk.sh 3 FluidSim https://localhost:3000/crossTalk
+#   ./launch-crossTalk.sh 3 Waterworks
+#   ./launch-crossTalk.sh 3 GravityRooms
+#   ./launch-crossTalk.sh 3 Waterworks https://localhost:3000/crossTalk
 #
 # The preset is appended as ?preset=<name> so every window deep-links
 # straight into it (matched case-insensitively by usePresetsFolder) instead
@@ -82,5 +84,3 @@ for ((i = 0; i < COUNT; i++)); do
     --window-size="$WIN_W,$WIN_H" \
     --window-position="$WIN_X,$WIN_Y" # \
 done
-
-#    --user-data-dir="/tmp/eye-candy-crosstalk-1"

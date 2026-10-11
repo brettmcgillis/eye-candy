@@ -29,3 +29,5 @@
 ## // Interactivity
 
 ## // Bugs
+
+- [ ] rain on mountain needs work. Seems like there are rain particles just scattered all over the surface and remaining stationary instead of being supplied entirely by the rain

@@ -23,11 +23,15 @@ Generate images and video using the RorschachCLI.
 - [ ] allow me to regenerate a given image in new dimensions
 - [ ] allow me to generate a growth video from an image
 
+## // Presets
+
 ## // Features
 
 - Phase 3: Points mode — same trajectory data as an alt render mode (GPU point cloud, likely a TSL compute migration for density), plus the `mode` toggle control. we will want to do something interesting with the points here but im uncertain where to go. are the particles circle, square, noisy transparency? do they move along the line created by the system or are they stationary? if theyre stationary is there a wave of noise that travels down the line slightly pushing them out of the way as it moves past their location on the line?
 
 - Phase 4: marching cubes & 3d geometry. could we use the existing logic to create organic 3d geometry ala persancte? this may be bleeding into the intent for Fauna CLI.
+
+## // Interactivity
 
 ## // Bugs
 

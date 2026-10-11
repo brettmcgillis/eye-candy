@@ -9,6 +9,10 @@ pieces, hold facets, and keep PNG/WebP stills and plotter SVGs.
 
 ## // TODO:
 
+## // Presets
+
 ## // Features
+
+## // Interactivity
 
 ## // Bugs

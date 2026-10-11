@@ -10,6 +10,10 @@ Import and optimize models.
 
 - [ ] GLTF Report automatically converts incompatible materials, can we build this in as well?
 
+## // Presets
+
 ## // Features
+
+## // Interactivity
 
 ## // Bugs

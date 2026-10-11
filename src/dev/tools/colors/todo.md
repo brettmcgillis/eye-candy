@@ -10,6 +10,10 @@ Browse and edit shared palette entries.
 
 - move add button down to same row as the sort row
 
+## // Presets
+
 ## // Features
+
+## // Interactivity
 
 ## // Bugs

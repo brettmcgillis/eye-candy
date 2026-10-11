@@ -14,6 +14,10 @@ corner-pinned projector output controlled from a separate browser window.
 - [ ] Add deterministic shared clocks for scenes that require frame-identical
       controller and output playback.
 
+## // Presets
+
 ## // Features
+
+## // Interactivity
 
 ## // Bugs

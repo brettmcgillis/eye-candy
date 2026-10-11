@@ -8,6 +8,10 @@ Reference UI and scene icons.
 
 ## // TODO:
 
+## // Presets
+
 ## // Features
+
+## // Interactivity
 
 ## // Bugs

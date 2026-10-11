@@ -6,3 +6,13 @@
 
 - A volumetric take on You're Looking Radiant. The bodies, motion, roles and
   palette come from `@modules/radiantSwarm`, shared with the flat scene.
+
+## // TODO:
+
+## // Presets
+
+## // Features
+
+## // Interactivity
+
+## // Bugs

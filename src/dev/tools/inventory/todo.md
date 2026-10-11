@@ -10,6 +10,10 @@ remaining disk space.
 
 ## // TODO:
 
+## // Presets
+
 ## // Features
+
+## // Interactivity
 
 ## // Bugs

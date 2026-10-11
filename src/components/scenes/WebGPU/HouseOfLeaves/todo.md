@@ -17,4 +17,6 @@ Plan: `plans/houseOfLeaves/house-of-leaves-scene.md`.
 
 ## // Features
 
+## // Interactivity
+
 ## // Bugs

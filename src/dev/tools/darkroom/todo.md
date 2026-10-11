@@ -11,6 +11,10 @@ exported as stills or video. A technique is a folder under `techniques/`.
 
 ## // TODO:
 
+## // Presets
+
 ## // Features
+
+## // Interactivity
 
 ## // Bugs

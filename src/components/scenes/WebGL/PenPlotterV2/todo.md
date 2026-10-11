@@ -16,4 +16,6 @@ Finally, once we undertsand scope of the project we need to build webGL and webG
 
 ## // Features
 
+## // Interactivity
+
 ## // Bugs

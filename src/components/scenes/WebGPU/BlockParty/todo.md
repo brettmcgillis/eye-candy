@@ -81,4 +81,6 @@ and where you are on it. The scene carries no LightingRig by design.
 - [x] Ink, bloom and grain post chain.
 - [x] Seed crop honouring the sketch's random zoom.
 
+## // Interactivity
+
 ## // Bugs

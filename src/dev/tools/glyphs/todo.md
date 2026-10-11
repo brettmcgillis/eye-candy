@@ -14,6 +14,10 @@ sign.
 - SVG / pen-plotter export (runes and sigil glyphs are already line segments;
   script glyphs are pixel windows)
 
+## // Presets
+
 ## // Features
+
+## // Interactivity
 
 ## // Bugs

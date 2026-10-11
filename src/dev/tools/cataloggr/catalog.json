@@ -23,7 +23,7 @@
     },
     {
       "id": "idea-002",
-      "text": "CSG Skull. Knock a reversal out of its forehead. grow some crystals on it `~/dev/examples/260222_CrystalGrowth`"
+      "text": "CSG Skull. subtract a reversal out of its forehead. subtract the loaderPattern from a tooth."
     },
     {
       "id": "idea-003",
@@ -186,10 +186,6 @@
       "text": "marionettes driving by mediapipe hand tracking"
     },
     {
-      "id": "idea-1790858780721-y4tyi8",
-      "text": "CrossTalk style generative audio scene. Find novel techniques to generate music. each technique can be its own component/preset\n- falling particles triggering notes when colliding with items placed by the user\n- use light/radiance to trigger notes, user can move emitters and occluders to determine which notes are playing, how loud etc. Each region of space corresponds to a pitch, Each color a voice/tone. light accumulation correlates to volume.\n- water ripples, every ripple intersection produces a random note in a random velocity"
-    },
-    {
       "id": "idea-1790859236803-0yxpgn",
       "text": "Create a scene that leverages the webcam to put the viewer in the piece"
     },
@@ -203,7 +199,27 @@
     },
     {
       "id": "idea-1791072432545-iqa7ux",
-      "text": "CrossTalk style Multiplayer drawing games scene. each game can be its own component/preset.\n- Competitive Scribble. Everyone gets the same canvas. everyone gets assigned a color, cursor appears as a large pencil with a very tiny tip, brush size is a few pixels. players have n seconds to cover as much of the canvas as possible. players can draw over eachother. randomly a pink rubber eraser will blow across the screen and clear some pixels. after the timer elapses we count up the pixels per user, then declare a winner.\n-  Collaborative Scribble. Everyone gets the same canvas. Everyone has a different colored brush. Draw together in real time. Periodically the game gives prompts: \"Make a monster\" \"Add something that flies\" \"Turn it into a spaceship\"\n- Draw in the Dark. Shared canvas, entirely covered by a fog of darkness except for a flashlight cookie around the cursor/pen. You have to draw something without seeing the whole canvas, When time expires, the lights come on.\n-  Draw the Path. A little creature/vehicle needs to get from A → B. Players draw the path it should follow. Then: RUN! The physics engine follows the drawing. If you draw a ramp, the vehicle jumps. If you draw a loop, it loops. If you draw a terrible path, everyone watches the poor creature die. Then players get to modify the path and try again.\n- Draw Battle. Players receive the same mad-lobs style prompt. They have 60 seconds. But there are weird constraints: (ex. Draw a cat without lifting your brush. Draw a house using exactly 12 strokes. Draw a monster using only circles. Draw something recognizable using only straight lines.) Then everyone votes.\n- Saboteur. One player is secretly the Saboteur. Everyone gets: \"Draw a castle.\" The saboteur gets: \"Make the castle subtly look like a spaceship.\" Nobody knows who the saboteur is. At the end, everyone votes: WHO WAS THE SABOTEUR?\n- Radiance drawing. radiance cascades and users can draw in emitting lines and occluding lines"
+      "text": "PartyLine presets: \n- Draw in the Dark. Shared canvas, entirely covered by a fog of darkness except for a flashlight cookie around the cursor/pen. You have to draw something without seeing the whole canvas, When time expires, the lights come on.\n-  Draw the Path. A little creature/vehicle needs to get from A → B. Players draw the path it should follow. Then: RUN! The physics engine follows the drawing. If you draw a ramp, the vehicle jumps. If you draw a loop, it loops. If you draw a terrible path, everyone watches the poor creature die. Then players get to modify the path and try again.\n- Draw Battle. Players receive the same mad-lobs style prompt. They have 60 seconds. But there are weird constraints: (ex. Draw a cat without lifting your brush. Draw a house using exactly 12 strokes. Draw a monster using only circles. Draw something recognizable using only straight lines.) Then everyone votes.\n- Saboteur. One player is secretly the Saboteur. Everyone gets: \"Draw a castle.\" The saboteur gets: \"Make the castle subtly look like a spaceship.\" Nobody knows who the saboteur is. At the end, everyone votes: WHO WAS THE SABOTEUR?\n- Radiance drawing. radiance cascades and users can draw in emitting lines and occluding lines\n- Draw sections of a character, vehicle or landscape. each player gets assigned a horizontal section, canvases are combined at the end for a laugh, ie one player does the head, another does the body, a third does the legs, one player does the front of a car the other the back"
+    },
+    {
+      "id": "idea-1791637300831-x7civl",
+      "text": "All My Friends Are Ghosts locations: \n- in space looking at a black hole\n- by a campfire at night\n- middle of the ocean\n- on the moon\n- on the wing of a plane"
+    },
+    {
+      "id": "idea-1791652421511-yjebbt",
+      "text": "PrintShop candidates:\n- trucheterie\n- papercuts\n- paper stack\n- flora?\n- isolines relief\n- kumiko\n- subdivision relief"
+    },
+    {
+      "id": "idea-1791652447623-35o1ch",
+      "text": "particle fluid + attractors/repellers"
+    },
+    {
+      "id": "idea-1791652459075-7zvhi3",
+      "text": "particle fluid + mobile physics"
+    },
+    {
+      "id": "idea-1791652702261-3frswl",
+      "text": "new dev tool: AntiSocialMedia. streamline the actual posting of my videos & shit to IG/FB/plus more. Goal should include making a post across FB and IG as I currently do, and include one more platform as well, X, Meta/Threads"
     }
   ],
   "statuses": {

@@ -35,6 +35,7 @@ import {
   buildCatalogScenes,
   getProgress,
   getSceneTargets,
+  loadSceneConfigModules,
   toCatalogDevTool,
   toCatalogTodoOnly,
 } from './catalogData';
@@ -133,6 +134,9 @@ export default function CataloggrPage() {
 
       if (!response.ok)
         throw new Error(payload.message || 'Catalog failed to load.');
+      const sceneModules = await loadSceneConfigModules(
+        payload.sceneConfigPaths
+      );
       if (!isCancelled()) {
         const nextStatuses = payload.statuses ?? {};
         setDemoSceneIds(payload.demoSceneIds ?? []);
@@ -141,7 +145,7 @@ export default function CataloggrPage() {
         statusesRef.current = nextStatuses;
         setIdeas(nextIdeas);
         setStatuses(nextStatuses);
-        setScenes(buildCatalogScenes(payload.presetsByFolder));
+        setScenes(buildCatalogScenes(payload.presetsByFolder, sceneModules));
         setThumbnails(payload.thumbnails ?? {});
         setTodos(nextTodos);
       }

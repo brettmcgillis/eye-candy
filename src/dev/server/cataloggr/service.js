@@ -203,10 +203,30 @@ export async function readJsonBody(req) {
   });
 }
 
+async function listSceneConfigPaths(rootDir) {
+  const scenesPath = path.join('src', 'components', 'scenes');
+  const relativePaths = await fs.readdir(path.join(rootDir, scenesPath), {
+    recursive: true,
+  });
+
+  return relativePaths
+    .filter(
+      (relativePath) => path.basename(relativePath) === 'scene.config.jsx'
+    )
+    .map((relativePath) =>
+      path.posix.join(
+        ...scenesPath.split(path.sep),
+        ...relativePath.split(path.sep)
+      )
+    )
+    .sort();
+}
+
 export async function readCatalog(rootDir, options) {
-  const [contents, presetsByFolder] = await Promise.all([
+  const [contents, presetsByFolder, sceneConfigPaths] = await Promise.all([
     fs.readFile(getCatalogPath(rootDir), 'utf8'),
     discoverLocalPresets(rootDir, options),
+    listSceneConfigPaths(rootDir),
   ]);
   const catalog = JSON.parse(contents);
 
@@ -216,6 +236,7 @@ export async function readCatalog(rootDir, options) {
     ideas: normalizeIdeas(catalog.ideas ?? []),
     statuses: normalizeStatuses(catalog.statuses ?? {}),
     presetsByFolder,
+    sceneConfigPaths,
   };
 }
 

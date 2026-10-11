@@ -1,4 +1,9 @@
-import { AREAS, CHANNELS, getScenesFor } from '@app/sceneRegistry';
+import {
+  AREAS,
+  CHANNELS,
+  getScenePath,
+  getScenesFor,
+} from '@app/sceneRegistry';
 
 const sceneConfigModules = import.meta.glob(
   '../../../components/scenes/**/scene.config.jsx',
@@ -27,8 +32,36 @@ function findRegisteredScene(entry) {
   );
 }
 
-export function buildCatalogScenes(presetsByFolder = {}) {
-  return Object.entries(sceneConfigModules)
+// Configs created after page load are missing from the static glob.
+export async function loadSceneConfigModules(sceneConfigPaths) {
+  const staticModules = new Map(
+    Object.entries(sceneConfigModules).map(([globKey, module]) => [
+      `src/${globKey.replace(/^(?:\.\.\/)+/u, '')}`,
+      module,
+    ])
+  );
+  const entries = await Promise.all(
+    sceneConfigPaths.map(async (configPath) => {
+      if (staticModules.has(configPath)) {
+        return [configPath, staticModules.get(configPath)];
+      }
+
+      try {
+        return [configPath, await import(/* @vite-ignore */ `/${configPath}`)];
+      } catch {
+        return null;
+      }
+    })
+  );
+
+  return Object.fromEntries(entries.filter(Boolean));
+}
+
+export function buildCatalogScenes(
+  presetsByFolder = {},
+  configModules = sceneConfigModules
+) {
+  return Object.entries(configModules)
     .flatMap(([modulePath, module]) => {
       const source = getSceneSource(modulePath);
       const entries = Array.isArray(module.default)
@@ -50,7 +83,9 @@ export function buildCatalogScenes(presetsByFolder = {}) {
           icon: entry.icon ?? null,
           area: entry.area,
           areaLabel: AREAS[entry.area],
-          path: registeredScene?.path ?? null,
+          path:
+            registeredScene?.path ??
+            getScenePath(entry.area, entry.route ?? entry.id),
           presetNames,
           slug: registeredScene?.route ?? entry.route ?? entry.id,
           sourcePath: source.sourcePath,

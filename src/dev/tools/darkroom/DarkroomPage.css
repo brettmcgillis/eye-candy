@@ -44,8 +44,7 @@
   overflow: hidden;
   border: 1px solid var(--dev-border-strong);
   border-radius: 4px;
-  background: repeating-conic-gradient(#0000 0 25%, #8881 0 50%) 0 0 / 16px
-    16px;
+  background: repeating-conic-gradient(#0000 0 25%, #8881 0 50%) 0 0 / 16px 16px;
 }
 
 .dk-stage__host canvas {

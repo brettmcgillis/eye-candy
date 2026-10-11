@@ -1,8 +1,9 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 import { useLocation } from 'react-router-dom';
 
 import { localEnv } from '@utils/appUtils';
 
+import { resolveScenePath } from '../../sceneRegistry';
 import './Overlay.css';
 import Date from './components/DateDisplay';
 import ExternalLinks from './components/ExternalLinks';
@@ -18,7 +19,9 @@ function Overlay() {
   const local = localEnv();
 
   const overlayIgPreset = useOverlayIgPreset();
-  const [hideUI] = useHideUI();
+  const [hideUI, setHideUI] = useHideUI();
+  const sceneHidesUI = resolveScenePath(location.pathname)?.hideUI === true;
+  const autoHiddenRef = useRef(false);
   const [showLeva, setShowLeva] = useState(
     () => !!local && !getNoLevaFromQueryParam()
   );
@@ -31,6 +34,16 @@ function Overlay() {
     .join(' ');
 
   const handleDebug = () => setShowLeva((s) => !s);
+
+  useEffect(() => {
+    if (sceneHidesUI) {
+      autoHiddenRef.current = true;
+      setHideUI(true);
+    } else if (autoHiddenRef.current) {
+      autoHiddenRef.current = false;
+      setHideUI(false);
+    }
+  }, [sceneHidesUI, setHideUI]);
 
   useEffect(() => {
     if (getNoLevaFromQueryParam()) setShowLeva(false);

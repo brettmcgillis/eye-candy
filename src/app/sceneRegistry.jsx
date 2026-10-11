@@ -67,7 +67,7 @@ function getSceneKey(channel, area, sceneId) {
   return `${channel}:${area}:${sceneId}`;
 }
 
-function getScenePath(area, route) {
+export function getScenePath(area, route) {
   const areaSegment = AREA_ROUTE_SEGMENTS[area];
   return areaSegment ? `/${areaSegment}/${route}` : `/${route}`;
 }

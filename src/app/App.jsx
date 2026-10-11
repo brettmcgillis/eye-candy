@@ -2,6 +2,7 @@ import React, { Suspense, lazy } from 'react';
 import { Navigate, Route, Routes, useLocation } from 'react-router-dom';
 
 import './App.css';
+import Gallery from './gallery/Gallery';
 import useAppScenes from './scaffold/hooks/useAppScenes';
 import useDocumentTitle from './scaffold/hooks/useDocumentTitle';
 import Loader from './scaffold/loader/Loader';
@@ -9,7 +10,6 @@ import SuspenseSignal from './scaffold/loader/SuspenseSignal';
 import useLoaderGate from './scaffold/loader/useLoaderGate';
 import Overlay from './scaffold/overlay/Overlay';
 import {
-  DEFAULT_SCENE_PATH,
   getAreaDefaultPath,
   resolveSceneRoute,
   resolveSceneTitle,
@@ -100,7 +100,7 @@ function SceneRoute() {
 export default function AppRoot() {
   return (
     <Routes>
-      <Route path="/" element={<Navigate to={DEFAULT_SCENE_PATH} replace />} />
+      <Route path="/" element={<Gallery />} />
 
       {DevApp ? <Route path="/dev/*" element={<DevApp />} /> : null}
 

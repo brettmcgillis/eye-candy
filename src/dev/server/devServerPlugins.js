@@ -3,7 +3,9 @@ import blockPartyPlugin from './blockParty/plugin';
 import brutalistPlugin from './brutalist/plugin';
 import cataloggrPlugin from './cataloggr/plugin';
 import darkroomPlugin from './darkroom/plugin';
+import exhibitAPlugin from './exhibitA/plugin';
 import floraPlugin from './flora/plugin';
+import fractalAutomataPlugin from './fractalAutomata/plugin';
 import fungiPlugin from './fungi/plugin';
 import gltfjsxPlugin from './gltfjsx/plugin';
 import glyphsPlugin from './glyphs/plugin';
@@ -14,10 +16,12 @@ import isoLinesReliefPlugin from './isoLinesRelief/plugin';
 import kumikoPlugin from './kumiko/plugin';
 import nestingBoxesPlugin from './nestingBoxes/plugin';
 import networkTestPlugin from './networkTest/plugin';
+import printShopPlugin from './printShop/plugin';
 import pushComesToShovePlugin from './pushComesToShove/plugin';
 import rorschachPlugin from './rorschach/plugin';
 import rugPullPlugin from './rugPull/plugin';
 import subdivisionPlugin from './subdivision/plugin';
+import subdivisionReliefPlugin from './subdivisionRelief/plugin';
 import trucheterie3dPlugin from './trucheterie3d/plugin';
 import trucheteriePlugin from './trucheterie/plugin';
 
@@ -28,7 +32,9 @@ export default function devServerPlugins() {
     brutalistPlugin(),
     cataloggrPlugin(),
     darkroomPlugin(),
+    exhibitAPlugin(),
     floraPlugin(),
+    fractalAutomataPlugin(),
     fungiPlugin(),
     glyphsPlugin(),
     gltfjsxPlugin(),
@@ -39,10 +45,12 @@ export default function devServerPlugins() {
     kumikoPlugin(),
     nestingBoxesPlugin(),
     networkTestPlugin(),
+    printShopPlugin(),
     pushComesToShovePlugin(),
     rorschachPlugin(),
     rugPullPlugin(),
     subdivisionPlugin(),
+    subdivisionReliefPlugin(),
     trucheteriePlugin(),
     trucheterie3dPlugin(),
   ];

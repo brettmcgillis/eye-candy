@@ -1,19 +1,18 @@
-import createRenderJobPlugin from '../renderJobs/plugin';
-import service from './jobService';
+// Relative, not `@modules/brutalist`: this runs inside Vite's config loader,
+// which resolves no aliases.
+import {
+  RENDER_OPTIONS,
+  normalizeOptions,
+} from '../../../modules/brutalist/renderOptions.mjs';
+import createSchemaToolPlugin from '../renderJobs/schemaTool';
 import writeScenePreset from './presetWriter';
 
 export default function brutalistDevPlugin() {
-  return createRenderJobPlugin({
-    routes: [
-      {
-        handler: async (rootDir, body) => ({
-          preset: await writeScenePreset(rootDir, body),
-        }),
-        method: 'POST',
-        path: '/presets',
-      },
-    ],
-    service,
+  return createSchemaToolPlugin({
+    normalizeOptions,
+    options: RENDER_OPTIONS,
+    writePreset: writeScenePreset,
+    slug: 'brutalist',
     tool: 'brutalist',
   });
 }

@@ -81,7 +81,7 @@ function ThumbnailSeeder({
   const [settleSeconds, setSettleSeconds] = useState(
     () => readSeedSession()?.settleSeconds ?? DEFAULT_SETTLE_SECONDS
   );
-  const [mode, setMode] = useState(() => readSeedSession()?.mode ?? 'auto');
+  const [mode, setMode] = useState(() => readSeedSession()?.mode ?? 'manual');
   const [presets, setPresets] = useState(
     () => readSeedSession()?.presets ?? {}
   );

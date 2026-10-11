@@ -100,6 +100,10 @@ export function buildCatalogScenes(
     );
 }
 
+export function needsByline(entry, bylines) {
+  return entry.area === 'showcase' && !bylines[entry.sourcePath];
+}
+
 export function getStatusKey(sceneKey, presetName = null) {
   return `${sceneKey}::${presetName ?? '$scene'}`;
 }

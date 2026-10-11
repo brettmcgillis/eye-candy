@@ -8,9 +8,15 @@ import {
 } from 'react-icons/fi';
 
 import { SceneThumbnail } from './SceneCard';
+import ScreenshotsPanel from './ScreenshotsPanel';
 import TodoPanel from './TodoPanel';
 import { getSceneTargets, getStatusKey } from './catalogData';
-import { getAppUrl, getImageFile } from './thumbnailApi';
+import {
+  fetchByline,
+  getAppUrl,
+  getImageFile,
+  saveByline,
+} from './thumbnailApi';
 
 function isTypingTarget(target) {
   return (
@@ -67,15 +73,84 @@ function PublishTargets({ disabled, entry, onToggle, statuses }) {
   );
 }
 
+function BylineEditor({ onError, onSaved, sourcePath }) {
+  const [saved, setSaved] = useState('');
+  const [draft, setDraft] = useState('');
+  const [loaded, setLoaded] = useState(false);
+  const [busy, setBusy] = useState(false);
+
+  useEffect(() => {
+    let cancelled = false;
+    fetchByline(sourcePath)
+      .then((byline) => {
+        if (cancelled) return;
+        setSaved(byline);
+        setDraft(byline);
+        setLoaded(true);
+      })
+      .catch((error) => onError(`Byline load failed: ${error.message}`));
+    return () => {
+      cancelled = true;
+    };
+  }, [sourcePath, onError]);
+
+  const dirty = draft.trim() !== saved;
+
+  const handleSave = async () => {
+    setBusy(true);
+    try {
+      const byline = await saveByline(sourcePath, draft);
+      setSaved(byline);
+      setDraft(byline);
+      onSaved(sourcePath, byline);
+    } catch (error) {
+      onError(`Byline save failed: ${error.message}`);
+    } finally {
+      setBusy(false);
+    }
+  };
+
+  return (
+    <>
+      <textarea
+        aria-label="Byline"
+        disabled={!loaded || busy}
+        onChange={(event) => setDraft(event.target.value)}
+        onKeyDown={(event) => {
+          if ((event.metaKey || event.ctrlKey) && event.key === 'Enter') {
+            event.preventDefault();
+            if (dirty) handleSave();
+          }
+        }}
+        placeholder="Markdown shown in the Gallery modal"
+        rows={3}
+        value={draft}
+      />
+      <button
+        className="dev-button"
+        disabled={!dirty || busy}
+        onClick={handleSave}
+        type="button"
+      >
+        Save byline
+      </button>
+    </>
+  );
+}
+
 function SceneDetail({
   disabled,
   entry,
   onCapture,
+  onCaptureScreenshot,
   onClose,
   onDropImage,
+  onBylineSaved,
   onError,
+  onThumbnailSaved,
   onToggle,
   onTodoSaved,
+  screenshotRevision,
   statuses,
   thumbnailVersion,
 }) {
@@ -228,6 +303,34 @@ function SceneDetail({
             entry={entry}
             onToggle={onToggle}
             statuses={statuses}
+          />
+        </section>
+      ) : null}
+
+      {canHoldThumbnail ? (
+        <section className="cataloggr-detail__section">
+          <h3>Gallery screenshots</h3>
+          <ScreenshotsPanel
+            canCapture={canCapture}
+            key={entry.sourcePath}
+            onCapture={() => onCaptureScreenshot(entry)}
+            onError={onError}
+            onThumbnailSaved={onThumbnailSaved}
+            revision={screenshotRevision}
+            sourcePath={entry.sourcePath}
+            thumbnailVersion={thumbnailVersion}
+          />
+        </section>
+      ) : null}
+
+      {canHoldThumbnail ? (
+        <section className="cataloggr-detail__section cataloggr-detail__section--byline">
+          <h3>Byline</h3>
+          <BylineEditor
+            key={entry.sourcePath}
+            onError={onError}
+            onSaved={onBylineSaved}
+            sourcePath={entry.sourcePath}
           />
         </section>
       ) : null}

@@ -2,6 +2,7 @@ import React, { memo, useState } from 'react';
 import {
   FiAlertTriangle,
   FiCheckSquare,
+  FiFileText,
   FiImage,
   FiTool,
 } from 'react-icons/fi';
@@ -32,6 +33,7 @@ export function SceneThumbnail({ entry, thumbnailVersion }) {
 
 function SceneCard({
   entry,
+  missingByline,
   onDropImage,
   onSelect,
   postedCount,
@@ -71,6 +73,12 @@ function SceneCard({
         <strong>{entry.label}</strong>
         <span className="cataloggr-card__meta">
           <span>{entry.channelLabel}</span>
+          {entry.trackPosting !== false && !thumbnailVersion ? (
+            <FiImage aria-label="No screenshot" title="No screenshot" />
+          ) : null}
+          {missingByline ? (
+            <FiFileText aria-label="No byline" title="No byline" />
+          ) : null}
           {todo?.issues.length ? (
             <FiAlertTriangle aria-label="TODO format issues" />
           ) : null}

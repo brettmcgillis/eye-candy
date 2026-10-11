@@ -1,9 +1,10 @@
 import React, { memo } from 'react';
 
 import SceneCard from './SceneCard';
-import { getProgress } from './catalogData';
+import { getProgress, needsByline } from './catalogData';
 
 function SceneGrid({
+  bylines,
   entries,
   label,
   onDropImage,
@@ -20,6 +21,7 @@ function SceneGrid({
         return (
           <SceneCard
             entry={entry}
+            missingByline={needsByline(entry, bylines)}
             key={entry.key}
             onDropImage={onDropImage}
             onSelect={onSelect}

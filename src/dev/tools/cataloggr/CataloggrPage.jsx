@@ -36,6 +36,7 @@ import {
   getProgress,
   getSceneTargets,
   loadSceneConfigModules,
+  needsByline,
   toCatalogDevTool,
   toCatalogTodoOnly,
 } from './catalogData';
@@ -58,6 +59,7 @@ const GRID_FILTER_OPTIONS = [
   ['all', 'Everything'],
   ['open', 'Has open TODOs'],
   ['noThumbnail', 'No thumbnail'],
+  ['noByline', 'No byline'],
   ['issues', 'TODO format issues'],
 ];
 const DEV_TOOL_ENTRIES = DEV_PAGES.map(toCatalogDevTool);
@@ -115,6 +117,8 @@ export default function CataloggrPage() {
   const [error, setError] = useState('');
   const [todos, setTodos] = useState([]);
   const [thumbnails, setThumbnails] = useState({});
+  const [bylines, setBylines] = useState({});
+  const [screenshotRevision, setScreenshotRevision] = useState(0);
   const [selectedKey, setSelectedKey] = useState(null);
   const [gridSortKey, setGridSortKey] = useState('name');
   const [gridFilter, setGridFilter] = useState('all');
@@ -147,6 +151,7 @@ export default function CataloggrPage() {
         setStatuses(nextStatuses);
         setScenes(buildCatalogScenes(payload.presetsByFolder, sceneModules));
         setThumbnails(payload.thumbnails ?? {});
+        setBylines(payload.bylines ?? {});
         setTodos(nextTodos);
       }
     } catch (loadError) {
@@ -328,6 +333,7 @@ export default function CataloggrPage() {
         if (gridFilter === 'noThumbnail') {
           return entry.trackPosting !== false && !thumbnails[entry.sourcePath];
         }
+        if (gridFilter === 'noByline') return needsByline(entry, bylines);
         return true;
       })
       .sort((left, right) => {
@@ -354,6 +360,7 @@ export default function CataloggrPage() {
   }, [
     area,
     channel,
+    bylines,
     deferredSearchText,
     filteredDevTools,
     filteredScenes,
@@ -463,6 +470,15 @@ export default function CataloggrPage() {
 
   const handleCloseDetail = useCallback(() => setSelectedKey(null), []);
 
+  const handleBylineSaved = useCallback((sourcePath, byline) => {
+    setBylines((current) => {
+      const next = { ...current };
+      if (byline) next[sourcePath] = true;
+      else delete next[sourcePath];
+      return next;
+    });
+  }, []);
+
   const handleThumbnailSaved = useCallback((sourcePath, updatedAt) => {
     setThumbnails((current) => ({ ...current, [sourcePath]: updatedAt }));
   }, []);
@@ -486,6 +502,15 @@ export default function CataloggrPage() {
   const handleCaptureOne = useCallback((entry) => {
     setSeeder({ autoStart: false, targets: [entry] });
   }, []);
+
+  const handleCaptureScreenshot = useCallback((entry) => {
+    setSeeder({ asScreenshot: true, autoStart: false, targets: [entry] });
+  }, []);
+
+  const handleScreenshotCaptured = useCallback(
+    () => setScreenshotRevision((current) => current + 1),
+    []
+  );
 
   const handleCaptureMissing = useCallback(() => {
     setSeeder({ autoStart: false, targets: captureTargets });
@@ -803,6 +828,7 @@ export default function CataloggrPage() {
               sortDirection={postSortDirection}
               sortKey={postSortKey}
               statuses={statuses}
+              bylines={bylines}
               thumbnails={thumbnails}
               todosBySource={todosBySource}
             />
@@ -814,6 +840,7 @@ export default function CataloggrPage() {
               onSelect={setSelectedKey}
               selectedKey={selectedKey}
               statuses={statuses}
+              bylines={bylines}
               thumbnails={thumbnails}
               todosBySource={todosBySource}
             />
@@ -823,12 +850,16 @@ export default function CataloggrPage() {
               disabled={loading || saving}
               entry={selectedEntry}
               onCapture={handleCaptureOne}
+              onCaptureScreenshot={handleCaptureScreenshot}
               onClose={handleCloseDetail}
               onDropImage={handleDropImage}
               onError={handleTodoError}
               onToggle={handleToggle}
               onTodoSaved={refreshTodos}
               statuses={statuses}
+              onBylineSaved={handleBylineSaved}
+              onThumbnailSaved={handleThumbnailSaved}
+              screenshotRevision={screenshotRevision}
               thumbnailVersion={thumbnails[selectedEntry.sourcePath]}
             />
           ) : null}
@@ -836,8 +867,13 @@ export default function CataloggrPage() {
       ) : null}
       {seeder ? (
         <ThumbnailSeeder
+          asScreenshot={seeder.asScreenshot}
           autoStart={seeder.autoStart}
-          onCaptured={handleThumbnailSaved}
+          onCaptured={
+            seeder.asScreenshot
+              ? handleScreenshotCaptured
+              : handleThumbnailSaved
+          }
           onClose={handleCloseSeeder}
           targets={seeder.targets}
         />

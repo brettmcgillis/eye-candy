@@ -1,3 +1,10 @@
+import { listBylines, readByline, writeByline } from './bylineService';
+import {
+  addScreenshot,
+  listScreenshots,
+  readScreenshotFile,
+  writeScreenshots,
+} from './screenshotService';
 import {
   CatalogRequestError,
   readCatalog,
@@ -15,6 +22,8 @@ import { listSceneTodos, readSceneTodo, writeSceneTodo } from './todoService';
 const CATALOG_PATH = '/dev-api/cataloggr';
 const TODOS_PATH = '/dev-api/cataloggr/todos';
 const THUMBNAIL_PATH = '/dev-api/cataloggr/thumbnail';
+const BYLINE_PATH = '/dev-api/cataloggr/byline';
+const SCREENSHOTS_PATH = '/dev-api/cataloggr/screenshots';
 
 function sendJson(res, statusCode, payload) {
   res.statusCode = statusCode;
@@ -54,14 +63,15 @@ export default function cataloggrDevPlugin() {
 
         if (req.method === 'GET' && pathname === CATALOG_PATH) {
           await handleRequest(res, async () => {
-            const [catalog, thumbnails] = await Promise.all([
+            const [catalog, thumbnails, bylines] = await Promise.all([
               readCatalog(rootDir, {
                 loadPresetModule: (modulePath) =>
                   server.ssrLoadModule(modulePath),
               }),
               listThumbnails(rootDir),
+              listBylines(rootDir),
             ]);
-            return { ...catalog, thumbnails };
+            return { ...catalog, thumbnails, bylines };
           });
           return;
         }
@@ -95,6 +105,86 @@ export default function cataloggrDevPlugin() {
                 sourcePath,
               })
             );
+            return;
+          }
+        }
+
+        if (pathname?.startsWith(SCREENSHOTS_PATH)) {
+          const params = new URL(req.url, 'http://localhost').searchParams;
+          const sourcePath = params.get('sourcePath');
+          const route = pathname.slice(SCREENSHOTS_PATH.length);
+
+          if (req.method === 'GET' && route === '') {
+            await handleRequest(res, () =>
+              listScreenshots(rootDir, sourcePath)
+            );
+            return;
+          }
+
+          if (req.method === 'GET' && route === '/file') {
+            try {
+              const image = await readScreenshotFile(
+                rootDir,
+                sourcePath,
+                params.get('file')
+              );
+              res.statusCode = 200;
+              res.setHeader('Content-Type', 'image/webp');
+              res.setHeader('Cache-Control', 'no-cache');
+              res.end(image);
+            } catch (error) {
+              await handleRequest(res, () => {
+                throw error;
+              });
+            }
+            return;
+          }
+
+          if (req.method === 'POST' && route === '') {
+            await handleRequest(res, async () =>
+              addScreenshot({
+                body: await readBinaryBody(req),
+                rootDir,
+                sourcePath,
+              })
+            );
+            return;
+          }
+
+          if (req.method === 'POST' && route === '/manifest') {
+            await handleRequest(res, async () => {
+              const payload = await readJsonBody(req);
+              return writeScreenshots({
+                rootDir,
+                mainCaption: payload.mainCaption,
+                screenshots: payload.screenshots,
+                sourcePath,
+              });
+            });
+            return;
+          }
+        }
+
+        if (pathname === BYLINE_PATH) {
+          const sourcePath = new URL(
+            req.url,
+            'http://localhost'
+          ).searchParams.get('sourcePath');
+
+          if (req.method === 'GET') {
+            await handleRequest(res, () => readByline(rootDir, sourcePath));
+            return;
+          }
+
+          if (req.method === 'POST') {
+            await handleRequest(res, async () => {
+              const payload = await readJsonBody(req);
+              return writeByline({
+                byline: payload.byline,
+                rootDir,
+                sourcePath,
+              });
+            });
             return;
           }
         }

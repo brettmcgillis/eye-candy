@@ -6,6 +6,7 @@ import {
   loadFrame,
   snapshotSceneFrame,
 } from './captureSceneFrame';
+import { addScreenshot } from './screenshotApi';
 import { getAppUrl, uploadThumbnail } from './thumbnailApi';
 
 const DEFAULT_SETTLE_SECONDS = 6;
@@ -67,7 +68,13 @@ function waitForVisible(signal) {
   });
 }
 
-function ThumbnailSeeder({ autoStart, onCaptured, onClose, targets }) {
+function ThumbnailSeeder({
+  asScreenshot = false,
+  autoStart,
+  onCaptured,
+  onClose,
+  targets,
+}) {
   const iframeRef = useRef(null);
   const controllerRef = useRef(null);
   const actionRef = useRef(null);
@@ -179,9 +186,15 @@ function ThumbnailSeeder({ autoStart, onCaptured, onClose, targets }) {
           snapshot = result.snapshot;
         }
 
-        const saved = await uploadThumbnail(target.sourcePath, snapshot);
-        setStatus(target.key, 'saved');
-        onCaptured(target.sourcePath, saved.updatedAt);
+        if (asScreenshot) {
+          await addScreenshot(target.sourcePath, snapshot);
+          setStatus(target.key, 'saved');
+          onCaptured(target.sourcePath);
+        } else {
+          const saved = await uploadThumbnail(target.sourcePath, snapshot);
+          setStatus(target.key, 'saved');
+          onCaptured(target.sourcePath, saved.updatedAt);
+        }
       } catch (error) {
         if (error.name === 'AbortError') throw error;
         setStatus(target.key, 'error', error.message);
@@ -207,7 +220,7 @@ function ThumbnailSeeder({ autoStart, onCaptured, onClose, targets }) {
       setActiveKey(null);
       setRunning(false);
     }
-  }, [onCaptured, setStatus, targets]);
+  }, [asScreenshot, onCaptured, setStatus, targets]);
 
   const handlePause = useCallback(() => {
     controllerRef.current?.abort();

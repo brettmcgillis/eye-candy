@@ -59,6 +59,7 @@ function PostBoard({
   sortDirection,
   sortKey,
   statuses,
+  bylines,
   thumbnails,
   todosBySource,
 }) {
@@ -86,6 +87,7 @@ function PostBoard({
             onSelect={onSelect}
             selectedKey={selectedKey}
             statuses={statuses}
+            bylines={bylines}
             thumbnails={thumbnails}
             todosBySource={todosBySource}
           />

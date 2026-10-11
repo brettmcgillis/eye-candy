@@ -36,7 +36,7 @@ function drawCover(source, sourceWidth, sourceHeight) {
   return canvas;
 }
 
-function canvasToWebp(canvas) {
+export function canvasToWebp(canvas) {
   return new Promise((resolve, reject) => {
     canvas.toBlob(
       (blob) =>
@@ -87,4 +87,32 @@ export function getImageFile(dataTransfer) {
       file.type.startsWith('image/')
     ) ?? null
   );
+}
+
+const BYLINE_ENDPOINT = '/dev-api/cataloggr/byline';
+
+async function requestByline(sourcePath, options) {
+  const response = await fetch(
+    `${BYLINE_ENDPOINT}?${new URLSearchParams({ sourcePath })}`,
+    options
+  );
+  const payload = await response.json();
+
+  if (!response.ok) {
+    throw new Error(payload.message || 'Byline request failed.');
+  }
+
+  return payload.byline;
+}
+
+export function fetchByline(sourcePath) {
+  return requestByline(sourcePath);
+}
+
+export function saveByline(sourcePath, byline) {
+  return requestByline(sourcePath, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ byline }),
+  });
 }

@@ -25,6 +25,7 @@ export default {
   label: 'Rosie',
   channel: 'webgl',
   area: 'showcase',
+  galleryLink: false,
   icon: SceneIcon,
   Component: lazy(() => import('./Rosie')),
 };

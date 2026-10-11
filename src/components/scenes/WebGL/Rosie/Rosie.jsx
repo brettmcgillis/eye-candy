@@ -23,7 +23,7 @@ export default function Rosie() {
           Drei: 'drei',
           'Custom Splat': 'customSplat',
         },
-        value: 'drei',
+        value: 'customSplat',
       },
     },
     { collapsed: true }

@@ -1,11 +1,5 @@
 # #TODO:
 
-### GENERAL
-
-### REPO
-
-### EXPLORE/EXPLODE
-
 ### APP
 
 - [Scaffold](src/app/scaffold/todo.md)
@@ -149,12 +143,6 @@
 - [TrashCollector](src/components/scenes/WebGL/TrashCollector/todo.md)
 - [GhostBuster](src/components/scenes/WebGPU/GhostBuster/todo.md)
 - [CharacterController & MultiplayerMadness](src/components/scenes/Shared/CharacterController/todo.md)
-
-### ELEMENTS
-
-#### SKULL
-
-- [ ] Refactor like we did with bret/reversal to offer a generic that takes props, and specialized versions
 
 ## Lenticulars
 

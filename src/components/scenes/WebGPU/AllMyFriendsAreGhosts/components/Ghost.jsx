@@ -2,153 +2,102 @@ import React, { memo, useMemo, useRef } from 'react';
 
 import { useFrame } from '@react-three/fiber';
 
-import * as THREE from 'three';
+import GhostCharacter from '@elements/WebGPU/ghost/GhostCharacter';
+import { SPHERE_BASE_Y } from '@elements/WebGPU/ghost/ghostRig';
 
-import ClothMesh from '@elements/WebGPU/cloth/ClothMesh';
-import { pinRing } from '@elements/WebGPU/cloth/pinHelpers';
+import GHOST_SKIN from '../utils/ghostSkin';
 
-// Ghost cloth parameters (derived from ghostCloth preset)
-const SEG_X = 28;
-const SEG_Y = 28;
-const SPHERE_BASE_Y = -0.15;
-const SPHERE_RADIUS = 0.15;
+const DEG2RAD = Math.PI / 180;
 
-const CUTOUTS = [
-  { u: 0.43, v: 0.6, radius: 0.06 },
-  { u: 0.57, v: 0.6, radius: 0.06 },
-];
+function gustNoise(t) {
+  return (
+    0.5 * Math.sin(t * 1.3 + 0.4) +
+    0.3 * Math.sin(t * 3.7 + 2.1) +
+    0.2 * Math.sin(t * 9.1 + 4.6)
+  );
+}
 
-// Stable pins computed once (same for every ghost instance)
-const PINS = pinRing(
-  Math.round(SEG_X / 2),
-  Math.round(SEG_Y / 2),
-  2,
-  SEG_X,
-  SEG_Y
-);
+function Ghost({ anchorRef, config }) {
+  const anchorGroupRef = useRef(null);
+  const inputRef = useRef({
+    animation: null,
+    expressionKey: 0,
+    jumpTriggered: false,
+    windDirX: 0,
+    windDirZ: 0,
+    windStrength: 0,
+  });
+  const timeRef = useRef(0);
 
-function Ghost({
-  color = '#f5f0e8',
-  eyeColor = '#88ccff',
-  eyeIntensity = 3,
-  wind = 0.3,
-  windDirX = 1,
-  windDirZ = 0,
-  stiffness = 0.15,
-  dampening = 0.99,
-  cursorCollider = true,
-  cursorRadius = 0.12,
-  bobYArray = null,
-  velArrays = null,
-  ghostIndex = 0,
-}) {
-  const clothRef = useRef();
-  const lightLeftRef = useRef();
-  const lightRightRef = useRef();
+  const {
+    ghostPosition,
+    ghostRotationY,
+    ghostScale,
+    ghostTiltBack,
+    ghostWindAngle,
+    ghostWindGust,
+    ghostWindStrength,
+  } = config;
 
-  // Per-instance mutable Vector3 for the sphere collider position
-  const spherePos = useMemo(() => new THREE.Vector3(0, SPHERE_BASE_Y, 0), []);
-
-  const colliders = useMemo(
-    () => [{ position: spherePos, radius: SPHERE_RADIUS }],
-    [spherePos]
+  const position = useMemo(
+    () => [ghostPosition.x, ghostPosition.y, ghostPosition.z],
+    [ghostPosition.x, ghostPosition.y, ghostPosition.z]
   );
 
-  // Stable materialProps object — only changes when color changes
-  const materialProps = useMemo(
-    () => ({
-      color,
-      roughness: 0.8,
-      metalness: 0,
-      opacity: 1,
-    }),
-    [color]
-  );
-
-  // Update sphere collider + light positions each frame based on bobY
-  // Combine base wind (from controls) with movement headwind
-  useFrame(() => {
-    const bobY = bobYArray ? bobYArray[ghostIndex] : 0;
-    const y = SPHERE_BASE_Y + bobY;
-    spherePos.y = y;
-
-    if (lightLeftRef.current) lightLeftRef.current.position.y = y;
-    if (lightRightRef.current) lightRightRef.current.position.y = y;
-
-    // Write combined wind directly to sim uniforms (windManaged skips
-    // ClothMesh’s own overwrite so these values reach the compute step).
-    const sim = clothRef.current?.sim;
-    if (sim) {
-      // Base wind from controls
-      const fx = wind * windDirX;
-      let fz = wind * windDirZ;
-
-      // Add headwind from movement velocity (local +Z)
-      if (velArrays) {
-        const vdx = velArrays.dx[ghostIndex];
-        const vdz = velArrays.dz[ghostIndex];
-        // speed is tiny (dt=0.01 derivative), scale up to meaningful wind
-        fz += Math.sqrt(vdx * vdx + vdz * vdz) * 600;
-      }
-
-      const strength = Math.sqrt(fx * fx + fz * fz);
-      sim.windU.value = strength;
-      if (strength > 0.0001) {
-        sim.windDirU.value.set(fx / strength, 0, fz / strength);
-      }
+  useFrame((_, delta) => {
+    timeRef.current += delta;
+    const anchorGroup = anchorGroupRef.current;
+    const anchor = anchorRef.current;
+    if (anchorGroup && anchor) {
+      anchorGroup.position.copy(anchor.position);
+      anchorGroup.quaternion.copy(anchor.quaternion);
     }
+
+    const heading = ghostWindAngle * DEG2RAD;
+    const facing = ghostRotationY * DEG2RAD;
+    const worldX = Math.sin(heading);
+    const worldZ = Math.cos(heading);
+    const cosF = Math.cos(facing);
+    const sinF = Math.sin(facing);
+    const gust = 1 + ghostWindGust * gustNoise(timeRef.current);
+    const input = inputRef.current;
+    input.windDirX = worldX * cosF - worldZ * sinF;
+    input.windDirZ = worldX * sinF + worldZ * cosF;
+    input.windStrength = Math.max(0, ghostWindStrength * gust);
   });
 
   return (
-    <group>
-      <ClothMesh
-        ref={clothRef}
-        width={1.0}
-        height={1.0}
-        segmentsX={SEG_X}
-        segmentsY={SEG_Y}
-        pins={PINS}
-        centered
-        orientation="horizontal"
-        shape="circle"
-        gravity={0.00008}
-        stepsPerSecond={360}
-        maxVelocity={0.01}
-        wind={wind}
-        windDirX={windDirX}
-        windDirZ={windDirZ}
-        windManaged
-        stiffness={stiffness}
-        dampening={dampening}
-        cursorCollider={cursorCollider}
-        cursorRadius={cursorRadius}
-        colliders={colliders}
-        alphaSeed={42}
-        alphaScale={4}
-        edgeFade={0.15}
-        holeAmount={0.2}
-        tatterEdge={0}
-        cutouts={CUTOUTS}
-        materialProps={materialProps}
-      />
-
-      {/* Point lights for eye glow through cutout holes */}
-      <pointLight
-        ref={lightLeftRef}
-        position={[-0.05, SPHERE_BASE_Y, 0]}
-        color={eyeColor}
-        intensity={eyeIntensity * 0.3}
-        distance={0.5}
-        decay={2}
-      />
-      <pointLight
-        ref={lightRightRef}
-        position={[0.05, SPHERE_BASE_Y, 0]}
-        color={eyeColor}
-        intensity={eyeIntensity * 0.3}
-        distance={0.5}
-        decay={2}
-      />
+    <group ref={anchorGroupRef}>
+      <group
+        position={position}
+        rotation-y={ghostRotationY * DEG2RAD}
+        scale={ghostScale}
+      >
+        <group position-y={SPHERE_BASE_Y} rotation-x={-ghostTiltBack * DEG2RAD}>
+          <group position-y={-SPHERE_BASE_Y}>
+            <GhostCharacter
+              {...GHOST_SKIN}
+              animationInputRef={inputRef}
+              baseWind={config.ghostBaseWind}
+              bobAmplitude={config.ghostBobAmplitude}
+              bobSpeed={config.ghostBobSpeed}
+              color={config.ghostColor}
+              eyeColor={config.ghostEyeColor}
+              eyeIntensity={config.ghostEyeIntensity}
+              groundLightColor={config.ghostGlowColor}
+              groundLightIntensity={config.ghostGroundLightIntensity}
+              innerEmissiveColor={config.ghostGlowColor}
+              innerEmissiveIntensity={config.ghostInnerGlow}
+              outerEmissiveColor={config.ghostGlowColor}
+              outerEmissiveIntensity={config.ghostOuterGlow}
+              segmentsX={config.ghostClothSegments}
+              segmentsY={config.ghostClothSegments}
+              tiltIntensity={config.ghostTilt}
+              windBoostMul={config.ghostWindBoost}
+            />
+          </group>
+        </group>
+      </group>
     </group>
   );
 }

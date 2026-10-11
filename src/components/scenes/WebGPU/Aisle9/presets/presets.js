@@ -1,3 +1,15 @@
+import {
+  BLACK_HOLE_VARIANT_LEGACY_PORT,
+  BLACK_HOLE_VARIANT_SINGULARITY,
+  BLACK_HOLE_VARIANT_WEBGPU,
+  DEFAULT_LENS_DIAMETER,
+  LEGACY_CONTROL_KEYS,
+  LEGACY_DEFAULTS,
+  SINGULARITY_CONTROL_KEYS,
+  SINGULARITY_DEFAULTS,
+  WEBGPU_CONTROL_KEYS,
+  WEBGPU_DEFAULTS,
+} from '@modules/blackHole';
 import { buildSceneCameraControlValues } from '@modules/cameraRig';
 
 import {
@@ -14,10 +26,6 @@ export const CAMERA_MODE_ORBIT = 'orbit';
 export const CAMERA_MODE_FIXED = 'fixed';
 export const CAMERA_MODE_SPLINE = 'spline';
 
-export const BLACK_HOLE_VARIANT_LEGACY_PORT = 'legacyPort';
-export const BLACK_HOLE_VARIANT_WEBGPU = 'webgpu';
-export const BLACK_HOLE_VARIANT_SINGULARITY = 'singularity';
-
 export const STORE_VARIANT_SEVEN_ELEVEN = 'sevenEleven';
 export const STORE_VARIANT_AISLE9 = 'aisle9Store';
 
@@ -25,73 +33,6 @@ export const SETTING_INDOOR = 'indoor';
 export const SETTING_OUTDOOR = 'outdoor';
 
 export const DEFAULT_PRESET = 'Store';
-
-const LEGACY_CONTROL_KEYS = [
-  'legacyDiskVariant',
-  'legacyBlackHoleDiameter',
-  'legacyDiskDiameter',
-  'legacyLensDiameter',
-  'legacyGravityStrength',
-  'legacyStepCount',
-  'legacyDiskBrightness',
-  'legacyDiskTemperature',
-  'legacyDopplerStrength',
-  'legacyAccretionMinRadius',
-  'legacyAccretionWidth',
-  'legacyMaxRevolutions',
-  'legacyStarBrightness',
-  'legacyGalaxyBrightness',
-  'legacyUseProceduralDisk',
-  'legacyChromaticRingFreq',
-  'legacyChromaticAnimSpeed',
-  'legacyChromaticColorSpeed',
-  'legacyChromaticSaturation',
-  'legacyRibbonRotationSpeed',
-  'legacyRibbonBandScale',
-  'legacyRibbonBiasStrength',
-];
-
-const WEBGPU_CONTROL_KEYS = [
-  'webgpuBlackHoleDiameter',
-  'webgpuDiskDiameter',
-  'webgpuLensDiameter',
-  'webgpuMass',
-  'webgpuDiskInnerRadius',
-  'webgpuDiskOuterRadius',
-  'webgpuDiskBrightness',
-  'webgpuTemperature',
-  'webgpuTemperatureFalloff',
-  'webgpuLensingStrength',
-  'webgpuDopplerStrength',
-  'webgpuRotationSpeed',
-  'webgpuStepCount',
-  'webgpuStepSize',
-  'webgpuTurbulenceScale',
-  'webgpuTurbulenceStretch',
-  'webgpuTurbulenceSharpness',
-  'webgpuTurbulenceCycleTime',
-  'webgpuTurbulenceLacunarity',
-  'webgpuTurbulencePersistence',
-  'webgpuDiskEdgeSoftnessInner',
-  'webgpuDiskEdgeSoftnessOuter',
-];
-
-const SINGULARITY_CONTROL_KEYS = [
-  'singularityLensDiameter',
-  'singularityIterations',
-  'singularityStepSize',
-  'singularityPower',
-  'singularityOriginRadius',
-  'singularityBandWidth',
-  'singularityFieldScale',
-  'singularityRampPos1',
-  'singularityRampPos2',
-  'singularityRampPos3',
-  'singularityRampColor1',
-  'singularityRampColor2',
-  'singularityRampColor3',
-  'singularityEmissionStrength',
-];
 
 const CONTROL_KEYS = [
   'blackHoleEnabled',
@@ -172,77 +113,6 @@ const CONTROL_KEYS = [
   'signEmissiveColor',
   'signGlowIntensity',
 ];
-
-const BLACK_HOLE_DIAMETER_METERS = 0.3048;
-const DISK_DIAMETER_METERS = 1.08;
-const DEFAULT_LENS_DIAMETER = 1.55;
-
-const BASE_LEGACY_BLACK_HOLE = {
-  legacyDiskVariant: 'ribbon',
-  legacyBlackHoleDiameter: BLACK_HOLE_DIAMETER_METERS,
-  legacyDiskDiameter: DISK_DIAMETER_METERS,
-  legacyLensDiameter: DEFAULT_LENS_DIAMETER,
-  legacyGravityStrength: 1,
-  legacyStepCount: 100,
-  legacyDiskBrightness: 1.67,
-  legacyDiskTemperature: 8000,
-  legacyDopplerStrength: 1,
-  legacyAccretionMinRadius: 1.5,
-  legacyAccretionWidth: 5,
-  legacyMaxRevolutions: 2,
-  legacyStarBrightness: 1,
-  legacyGalaxyBrightness: 0.4,
-  legacyUseProceduralDisk: true,
-  legacyChromaticRingFreq: 1.0,
-  legacyChromaticAnimSpeed: 1.0,
-  legacyChromaticColorSpeed: 0.5,
-  legacyChromaticSaturation: 0.45,
-  legacyRibbonRotationSpeed: 0.02,
-  legacyRibbonBandScale: 16,
-  legacyRibbonBiasStrength: 0.05,
-};
-
-const BASE_WEBGPU_BLACK_HOLE = {
-  webgpuBlackHoleDiameter: BLACK_HOLE_DIAMETER_METERS,
-  webgpuDiskDiameter: DISK_DIAMETER_METERS,
-  webgpuLensDiameter: DEFAULT_LENS_DIAMETER,
-  webgpuMass: 0.4,
-  webgpuDiskInnerRadius: 4.1,
-  webgpuDiskOuterRadius: 14.5,
-  webgpuDiskBrightness: 5,
-  webgpuTemperature: 49.78,
-  webgpuTemperatureFalloff: 5.22,
-  webgpuLensingStrength: 2.4,
-  webgpuDopplerStrength: 1,
-  webgpuRotationSpeed: -8.7,
-  webgpuStepCount: 64,
-  webgpuStepSize: 1,
-  webgpuTurbulenceScale: 1.81,
-  webgpuTurbulenceStretch: 0.75,
-  webgpuTurbulenceSharpness: 7.4,
-  webgpuTurbulenceCycleTime: 5,
-  webgpuTurbulenceLacunarity: 3,
-  webgpuTurbulencePersistence: 0.8,
-  webgpuDiskEdgeSoftnessInner: 0.18,
-  webgpuDiskEdgeSoftnessOuter: 0.5,
-};
-
-const BASE_SINGULARITY_BLACK_HOLE = {
-  singularityLensDiameter: DEFAULT_LENS_DIAMETER,
-  singularityIterations: 112,
-  singularityStepSize: 0.011,
-  singularityPower: 0.26,
-  singularityOriginRadius: 0.11,
-  singularityBandWidth: 0.058,
-  singularityFieldScale: 3.8,
-  singularityRampPos1: 0.05,
-  singularityRampPos2: 0.425,
-  singularityRampPos3: 1,
-  singularityRampColor1: '#f2b670',
-  singularityRampColor2: '#3d180a',
-  singularityRampColor3: '#050505',
-  singularityEmissionStrength: 1.9,
-};
 
 const BASE_BODIES = {
   orbitingBodiesEnabled: true,
@@ -485,9 +355,9 @@ function createPreset(overrides) {
       target: STORE_CENTER,
     },
     blackHoleVariant: BLACK_HOLE_VARIANT_LEGACY_PORT,
-    ...BASE_LEGACY_BLACK_HOLE,
-    ...BASE_WEBGPU_BLACK_HOLE,
-    ...BASE_SINGULARITY_BLACK_HOLE,
+    ...LEGACY_DEFAULTS,
+    ...WEBGPU_DEFAULTS,
+    ...SINGULARITY_DEFAULTS,
     ...BASE_BODIES,
     ...BASE_POST,
     ...BASE_NIGHT_LIGHTS,

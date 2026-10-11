@@ -25,52 +25,12 @@ import {
 } from 'three/tsl';
 import * as THREE from 'three/webgpu';
 
-import { getShape } from './shapePresets';
-
-// ── CPU-side value noise for tatter face removal ──
-
-// eslint-disable-next-line no-bitwise
-function tatterHash(xi, yi, seed) {
-  let h = (xi * 374761393 + yi * 668265263 + seed) | 0; // eslint-disable-line no-bitwise
-  h = Math.imul(h ^ (h >>> 13), 1274126177); // eslint-disable-line no-bitwise
-  h = Math.imul(h ^ (h >>> 16), 1262610899); // eslint-disable-line no-bitwise
-  return ((h ^ (h >>> 13)) >>> 0) / 4294967295; // eslint-disable-line no-bitwise
-}
-
-function smootherstep(t) {
-  return t * t * (3 - 2 * t);
-}
-
-function valueNoise2D(px, py, seed) {
-  const ix = Math.floor(px);
-  const iy = Math.floor(py);
-  const fx = smootherstep(px - ix);
-  const fy = smootherstep(py - iy);
-  const v00 = tatterHash(ix, iy, seed);
-  const v10 = tatterHash(ix + 1, iy, seed);
-  const v01 = tatterHash(ix, iy + 1, seed);
-  const v11 = tatterHash(ix + 1, iy + 1, seed);
-  return (
-    v00 +
-    (v10 - v00) * fx +
-    (v01 - v00) * fy +
-    (v00 - v10 - v01 + v11) * fx * fy
-  );
-}
-
-function fbm2D(px, py, seed, octaves = 3) {
-  let value = 0;
-  let amp = 1;
-  let freq = 1;
-  let total = 0;
-  for (let i = 0; i < octaves; i += 1) {
-    value += valueNoise2D(px * freq, py * freq, seed + i * 31) * amp;
-    total += amp;
-    amp *= 0.5;
-    freq *= 2;
-  }
-  return value / total;
-}
+import {
+  NUM_ANCHORS,
+  buildClothTopology,
+  computeClothAlpha,
+  fbm2D,
+} from './clothTopology';
 
 /**
  * Creates a GPU-accelerated cloth simulation using verlet integration
@@ -120,99 +80,31 @@ export default function createClothSimulation({
   // normal is only assembled inside positionNode, at shader build time.
   normalDetail = null,
 }) {
-  // ── Verlet topology ──
-  const vertices = [];
-  const springs = [];
-  const columns = [];
-  const [ox, oy, oz] = origin;
-
-  const addVertex = (x, y, z, isFixed) => {
-    const id = vertices.length;
-    const v = {
-      id,
-      position: new THREE.Vector3(x, y, z),
-      isFixed,
-      springIds: [],
-    };
-    vertices.push(v);
-    return v;
-  };
-
-  const addSpring = (v0, v1) => {
-    const id = springs.length;
-    v0.springIds.push(id);
-    v1.springIds.push(id);
-    springs.push({ id, vertex0: v0, vertex1: v1 });
-  };
-
-  // Build vertex grid
-  const pinSet = new Set(pins);
-  const horiz = orientation === 'horizontal';
-  const xOffset = centered ? -width * 0.5 : 0;
-  const yOffset = horiz && centered ? -height * 0.5 : 0;
-  const shapeFn = getShape(shape);
-  // Per-vertex signed distance from shape boundary (positive = inside)
-  const shapeDistArr = new Float32Array((segmentsX + 1) * (segmentsY + 1));
-
-  // Track which vertices are outside the shape (for spring filtering)
-  const outsideSet = new Set();
-
-  for (let x = 0; x <= segmentsX; x += 1) {
-    const col = [];
-    for (let y = 0; y <= segmentsY; y += 1) {
-      const px = ox + x * (width / segmentsX) + xOffset;
-      const py = horiz ? oy : oy - y * (height / segmentsY);
-      const pz = horiz ? oz + y * (height / segmentsY) + yOffset : oz;
-      const vtxIdx = x * (segmentsY + 1) + y;
-      const u = x / segmentsX;
-      const v = y / segmentsY;
-      const sd = shapeFn(u, v);
-      shapeDistArr[vtxIdx] = sd;
-      // Vertices outside shape are always fixed (early-return in GPU)
-      const isOutside = sd < 0;
-      if (isOutside) outsideSet.add(vtxIdx);
-      col.push(addVertex(px, py, pz, pinSet.has(vtxIdx) || isOutside));
-    }
-    columns.push(col);
-  }
-
-  // Structural + shear springs
-  // Skip springs where either endpoint is outside the shape so that
-  // outside-shape fixed vertices don't anchor the cloth body.
-  for (let x = 0; x <= segmentsX; x += 1) {
-    for (let y = 0; y <= segmentsY; y += 1) {
-      const v0 = columns[x][y];
-      if (!outsideSet.has(v0.id)) {
-        if (x > 0 && !outsideSet.has(columns[x - 1][y].id))
-          addSpring(v0, columns[x - 1][y]);
-        if (y > 0 && !outsideSet.has(columns[x][y - 1].id))
-          addSpring(v0, columns[x][y - 1]);
-        if (x > 0 && y > 0 && !outsideSet.has(columns[x - 1][y - 1].id))
-          addSpring(v0, columns[x - 1][y - 1]);
-        if (x > 0 && y < segmentsY && !outsideSet.has(columns[x - 1][y + 1].id))
-          addSpring(v0, columns[x - 1][y + 1]);
-      }
-    }
-  }
-
-  // ── Vertex storage buffers ──
-  const vCount = vertices.length;
-  const springListArr = [];
-  const posArr = new Float32Array(vCount * 3);
-  const paramsArr = new Uint32Array(vCount * 3);
-
-  for (let i = 0; i < vCount; i += 1) {
-    const v = vertices[i];
-    posArr[i * 3] = v.position.x;
-    posArr[i * 3 + 1] = v.position.y;
-    posArr[i * 3 + 2] = v.position.z;
-    paramsArr[i * 3] = v.isFixed ? 1 : 0;
-    if (!v.isFixed) {
-      paramsArr[i * 3 + 1] = v.springIds.length;
-      paramsArr[i * 3 + 2] = springListArr.length;
-      springListArr.push(...v.springIds);
-    }
-  }
+  const topology = buildClothTopology({
+    width,
+    height,
+    segmentsX,
+    segmentsY,
+    pins,
+    centered,
+    orientation,
+    origin,
+    shape,
+    anchors,
+  });
+  const {
+    anchorOffsetArr,
+    edgePinned,
+    meshVCount,
+    paramsArr,
+    posArr,
+    sCount,
+    shapeDistArr,
+    springList,
+    springRestLen,
+    springVtxIds,
+    vCount,
+  } = topology;
 
   const posBuf = instancedArray(posArr, 'vec3').setPBO(true);
   const forceBuf = instancedArray(vCount, 'vec3');
@@ -221,75 +113,19 @@ export default function createClothSimulation({
   // Anchors pin clusters of vertices that translate rigidly with an
   // external position each frame. Up to NUM_ANCHORS slots.
   // paramsBuf.x encoding: 0 = free, 1 = static pin, 2+ = anchor slot.
-  const NUM_ANCHORS = 11;
   const anchorPosU = [];
   for (let a = 0; a < NUM_ANCHORS; a += 1) {
     anchorPosU.push(uniform(new THREE.Vector3(0, 0, 0)));
   }
 
-  // Per-vertex offset from anchor center (only meaningful for anchored vtx).
-  const anchorOffsetArr = new Float32Array(vCount * 3);
-
-  for (let a = 0; a < Math.min(anchors.length, NUM_ANCHORS); a += 1) {
-    const anch = anchors[a];
-    // Convert anchor world position to grid coordinates
-    const cellW = width / segmentsX;
-    const cellH = height / segmentsY;
-    const gxCenter = Math.round((anch.worldX - ox - xOffset) / cellW);
-    const gyCenter = horiz
-      ? Math.round((anch.worldZ - oz - yOffset) / cellH)
-      : Math.round((oy - anch.worldZ) / cellH);
-    const r = anch.gridRadius ?? 2;
-
-    for (let dx = -r; dx <= r; dx += 1) {
-      for (let dy = -r; dy <= r; dy += 1) {
-        const gx = gxCenter + dx;
-        const gy = gyCenter + dy;
-        if (
-          gx >= 0 &&
-          gx <= segmentsX &&
-          gy >= 0 &&
-          gy <= segmentsY &&
-          dx * dx + dy * dy <= r * r
-        ) {
-          const vtxIdx = gx * (segmentsY + 1) + gy;
-          // Skip vertices outside shape boundary or already statically pinned
-          if (!outsideSet.has(vtxIdx) && !pinSet.has(vtxIdx)) {
-            // Tag as anchor: slot 0 → 2, slot 1 → 3
-            paramsArr[vtxIdx * 3] = 2 + a;
-            // Store offset: vertex rest position minus anchor rest position
-            const vp = vertices[vtxIdx].position;
-            anchorOffsetArr[vtxIdx * 3] = vp.x - anch.restX;
-            anchorOffsetArr[vtxIdx * 3 + 1] = vp.y - anch.restY;
-            anchorOffsetArr[vtxIdx * 3 + 2] = vp.z - anch.restZ;
-          }
-        }
-      }
-    }
-  }
-
   const anchorOffsetBuf = instancedArray(anchorOffsetArr, 'vec3');
 
   const paramsBuf = instancedArray(paramsArr, 'uvec3');
-  const springListBuf = instancedArray(
-    new Uint32Array(springListArr),
-    'uint'
-  ).setPBO(true);
+  const springListBuf = instancedArray(springList, 'uint').setPBO(true);
 
   // ── Spring storage buffers ──
-  const sCount = springs.length;
-  const sVtxIds = new Uint32Array(sCount * 2);
-  const sRestLen = new Float32Array(sCount);
-
-  for (let i = 0; i < sCount; i += 1) {
-    const s = springs[i];
-    sVtxIds[i * 2] = s.vertex0.id;
-    sVtxIds[i * 2 + 1] = s.vertex1.id;
-    sRestLen[i] = s.vertex0.position.distanceTo(s.vertex1.position);
-  }
-
-  const springVtxIdBuf = instancedArray(sVtxIds, 'uvec2').setPBO(true);
-  const springRestLenBuf = instancedArray(sRestLen, 'float');
+  const springVtxIdBuf = instancedArray(springVtxIds, 'uvec2').setPBO(true);
+  const springRestLenBuf = instancedArray(springRestLen, 'float');
   const springForceBuf = instancedArray(sCount * 3, 'vec3').setPBO(true);
 
   // ── Uniforms ──
@@ -351,29 +187,6 @@ export default function createClothSimulation({
   // (left, right, top, bottom) — 1 if that edge is fully pinned
   const edgePinnedU = uniform(new THREE.Vector4(0, 0, 0, 0));
 
-  // Edge-pinned flags depend only on pinSet, which is fixed after construction.
-  const edgePinned = {
-    left: (() => {
-      for (let yy = 0; yy <= segmentsY; yy += 1)
-        if (!pinSet.has(yy)) return false;
-      return true;
-    })(),
-    right: (() => {
-      for (let yy = 0; yy <= segmentsY; yy += 1)
-        if (!pinSet.has(segmentsX * (segmentsY + 1) + yy)) return false;
-      return true;
-    })(),
-    top: (() => {
-      for (let xx = 0; xx <= segmentsX; xx += 1)
-        if (!pinSet.has(xx * (segmentsY + 1))) return false;
-      return true;
-    })(),
-    bottom: (() => {
-      for (let xx = 0; xx <= segmentsX; xx += 1)
-        if (!pinSet.has(xx * (segmentsY + 1) + segmentsY)) return false;
-      return true;
-    })(),
-  };
   edgePinnedU.value.set(
     edgePinned.left ? 1 : 0,
     edgePinned.right ? 1 : 0,
@@ -537,84 +350,18 @@ export default function createClothSimulation({
     .setName('Cloth Vertex Forces');
 
   // ── Renderable cloth geometry ──
-  const meshVCount = segmentsX * segmentsY;
   const geometry = new THREE.BufferGeometry();
-  const vtxIdArr = new Uint32Array(meshVCount * 4);
-  const uvArr = new Float32Array(meshVCount * 2);
-  const getIdx = (gx, gy) => gy * segmentsX + gx;
-
-  for (let x = 0; x < segmentsX; x += 1) {
-    for (let y = 0; y < segmentsY; y += 1) {
-      const idx = getIdx(x, y);
-      vtxIdArr[idx * 4] = columns[x][y].id;
-      vtxIdArr[idx * 4 + 1] = columns[x + 1][y].id;
-      vtxIdArr[idx * 4 + 2] = columns[x][y + 1].id;
-      vtxIdArr[idx * 4 + 3] = columns[x + 1][y + 1].id;
-
-      // Average UV of the quad's four corner vertices
-      const u = (x + 0.5) / segmentsX;
-      const v = 1 - (y + 0.5) / segmentsY;
-      uvArr[idx * 2] = u;
-      uvArr[idx * 2 + 1] = v;
-    }
-  }
+  const { uvArr, vtxIdArr } = topology;
 
   // Pre-allocate index buffer at max capacity (all quads present)
   const maxFaces = (segmentsX - 1) * (segmentsY - 1);
   const indexArray = new Uint32Array(maxFaces * 6);
   const indexAttr = new THREE.BufferAttribute(indexArray, 1);
 
-  // Per-mesh-quad dead flag: true when ANY of the quad's 4 sim corner vertices
-  // is outside the shape. Dead quads are excluded from all triangles so that
-  // the positionNode (which averages 4 corner positions) never mixes fixed
-  // outside vertices with free inside vertices.
-  const quadDead = new Uint8Array(meshVCount);
-  for (let x = 0; x < segmentsX; x += 1) {
-    for (let y = 0; y < segmentsY; y += 1) {
-      const idx = getIdx(x, y);
-      const c0 = columns[x][y].id;
-      const c1 = columns[x + 1][y].id;
-      const c2 = columns[x][y + 1].id;
-      const c3 = columns[x + 1][y + 1].id;
-      quadDead[idx] =
-        shapeDistArr[c0] < 0 ||
-        shapeDistArr[c1] < 0 ||
-        shapeDistArr[c2] < 0 ||
-        shapeDistArr[c3] < 0
-          ? 1
-          : 0;
-    }
-  }
-
-  // Build index buffer — excludes triangles that reference any dead mesh quad.
-  // Called once at construction (shape is static).
+  // Dead quads (any sim corner outside the shape) are excluded so the
+  // positionNode never averages fixed outside vertices with free ones.
   const buildIndexBuffer = () => {
-    let count = 0;
-
-    for (let x = 1; x < segmentsX; x += 1) {
-      for (let y = 1; y < segmentsY; y += 1) {
-        const q00 = getIdx(x, y);
-        const q10 = getIdx(x - 1, y);
-        const q11 = getIdx(x - 1, y - 1);
-        const q01 = getIdx(x, y - 1);
-
-        // Triangle A: (x,y) → (x-1,y) → (x-1,y-1)
-        if (!quadDead[q00] && !quadDead[q10] && !quadDead[q11]) {
-          indexArray[count] = q00;
-          indexArray[count + 1] = q10;
-          indexArray[count + 2] = q11;
-          count += 3;
-        }
-
-        // Triangle B: (x,y) → (x-1,y-1) → (x,y-1)
-        if (!quadDead[q00] && !quadDead[q11] && !quadDead[q01]) {
-          indexArray[count] = q00;
-          indexArray[count + 1] = q11;
-          indexArray[count + 2] = q01;
-          count += 3;
-        }
-      }
-    }
+    const { count } = topology.buildIndices(indexArray);
     geometry.setDrawRange(0, count);
     indexAttr.needsUpdate = true;
   };
@@ -659,65 +406,19 @@ export default function createClothSimulation({
     holeAmountU.value = aHoles;
     tatterEdgeU.value = aTatterEdge;
 
-    // Per-vertex noise drives binary kill (verlet death + collider pass).
-    const vertexNoise = new Float32Array(vCount);
-    if (aHoles > 0 || aTatterEdge > 0) {
-      for (let x = 0; x <= segmentsX; x += 1) {
-        for (let y = 0; y <= segmentsY; y += 1) {
-          const vid = columns[x][y].id;
-          const nx = x / segmentsX;
-          const ny = y / segmentsY;
-          vertexNoise[vid] = fbm2D(nx * aScale, ny * aScale, aSeed);
-        }
+    const { alpha: nextAlpha, render: nextRender } = computeClothAlpha(
+      topology,
+      {
+        seed: aSeed,
+        scale: aScale,
+        edgeFade: aEdgeFade,
+        holeAmount: aHoles,
+        tatterEdge: aTatterEdge,
+        smoothEdges: aSmoothEdges,
       }
-    }
-
-    const tatterDepth = aTatterEdge * 0.5;
-
-    for (let x = 0; x <= segmentsX; x += 1) {
-      for (let y = 0; y <= segmentsY; y += 1) {
-        const vid = columns[x][y].id;
-        const u = x / segmentsX;
-        const v = y / segmentsY;
-        let softA = 1;
-        let killed = 0;
-
-        // 1. Shape edge fade — smooth falloff near shape boundary
-        if (aEdgeFade > 0) {
-          const sd = shapeDistArr[vid];
-          if (sd < aEdgeFade) {
-            softA *= Math.max(0, sd / aEdgeFade);
-          }
-        }
-
-        // 2. Tatter edge — noise-driven kill near free (non-pinned) edges
-        if (aTatterEdge > 0 && tatterDepth > 0) {
-          const dists = [];
-          if (!edgePinned.left) dists.push(u);
-          if (!edgePinned.right) dists.push(1 - u);
-          if (!edgePinned.top) dists.push(v);
-          if (!edgePinned.bottom) dists.push(1 - v);
-          const minFreeDist = dists.length > 0 ? Math.min(...dists) : 1;
-          if (minFreeDist < tatterDepth) {
-            const t = minFreeDist / tatterDepth;
-            const n = vertexNoise[vid];
-            const threshold = 0.7 - t * 0.65;
-            if (n < threshold) killed = 1;
-          }
-        }
-
-        // 3. Interior holes — noise above threshold → kill
-        if (aHoles > 0) {
-          const n = vertexNoise[vid];
-          const threshold = 1 - aHoles * 0.4;
-          if (n > threshold) killed = 1;
-        }
-
-        const visible = killed ? 0 : softA;
-        alphaArr[vid] = visible;
-        renderAlphaArr[vid] = aSmoothEdges ? softA : visible;
-      }
-    }
+    );
+    alphaArr.set(nextAlpha);
+    renderAlphaArr.set(nextRender);
     alphaBuf.value.needsUpdate = true;
     renderAlphaBuf.value.needsUpdate = true;
   };
@@ -936,7 +637,7 @@ export default function createClothSimulation({
       const current = arr[i * 3];
       // Don't overwrite anchor vertices
       if (current < 2) {
-        arr[i * 3] = outsideSet.has(i) || newPinSet.has(i) ? 1 : 0;
+        arr[i * 3] = topology.outsideSet.has(i) || newPinSet.has(i) ? 1 : 0;
       }
     }
     paramsBuf.value.needsUpdate = true;

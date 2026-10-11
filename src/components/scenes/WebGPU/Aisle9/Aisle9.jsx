@@ -2,9 +2,9 @@ import React, { useCallback, useEffect, useMemo, useState } from 'react';
 
 import * as THREE from 'three';
 
+import { BlackHole } from '@modules/blackHole';
 import { CameraRig } from '@modules/cameraRig';
 
-import BlackHoleHero from './components/BlackHoleHero';
 import OrbitingBodies from './components/OrbitingBodies';
 import OutdoorLights from './components/OutdoorLights';
 import OutdoorStage from './components/OutdoorStage';
@@ -269,9 +269,7 @@ export default function Aisle9() {
         />
       ) : null}
 
-      {config.blackHoleEnabled ? (
-        <BlackHoleHero config={effectiveConfig} />
-      ) : null}
+      {config.blackHoleEnabled ? <BlackHole config={effectiveConfig} /> : null}
       {config.orbitingBodiesEnabled ? (
         <OrbitingBodies
           blackHolePosition={blackHolePosition}

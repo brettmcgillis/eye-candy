@@ -3,9 +3,10 @@ import React, { Suspense } from 'react';
 import { OrbitControls, PerspectiveCamera } from '@react-three/drei';
 import { Physics } from '@react-three/rapier';
 
+import { useIfftOceanRuntime } from '@modules/ifftOcean';
+
 import BoatRig from './components/BoatRig';
 import SceneLighting from './components/SceneLighting';
-import useIfftOceanRuntime from './hooks/useIfftOceanRuntime';
 import useSceneControls from './hooks/useSceneControls';
 
 export default function RowItAloneWebGPU() {

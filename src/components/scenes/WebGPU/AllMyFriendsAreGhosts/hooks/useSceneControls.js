@@ -1,304 +1,131 @@
-import { useMemo } from 'react';
+import { useMemo, useRef } from 'react';
 
 import { folder, useControls } from 'leva';
 
 import usePresetsFolder from '@hooks/usePresetsFolder';
+import {
+  getCameraControlsKey,
+  useSceneCameraControls,
+} from '@modules/cameraRig';
+import {
+  getLightingControlsKey,
+  useSceneLightingControls,
+} from '@modules/lightingRig';
+import { useMediaRecorder } from '@modules/mediaRecorder';
 
-import PRESETS from '../presets/presets';
+import getGhostControls from '../components/getGhostControls';
+import {
+  getEarthControls,
+  getStarControls,
+} from '../components/getSpaceControls';
+import getBlackHoleControls from '../components/locations/getBlackHoleControls';
+import {
+  getLunarControls,
+  getTinyMoonControls,
+} from '../components/locations/getMoonControls';
+import getOceanControls from '../components/locations/getOceanControls';
+import getWingControls from '../components/locations/getWingControls';
+import BASE from '../presets/base';
+import { DEFAULT_PRESET, PRESETS, getPresetControls } from '../presets/presets';
+import CAMERA from '../utils/camera';
+import LIGHTING from '../utils/lighting';
+import { LOCATION_OPTIONS } from '../utils/locations';
 
-const DEFAULT_PRESET = 'Default';
-
-function getPresetControls({ presetSnapshot }) {
-  return { ...presetSnapshot };
-}
+const SCENE_LABEL = 'All My Friends Are Ghosts';
+const CAMERA_FOLDER_PATH = `${SCENE_LABEL}.Camera`;
+const LIGHTING_FOLDER_PATH = `${SCENE_LABEL}.Lighting`;
+const BLACK_HOLE_FOLDER_PATH = `${SCENE_LABEL}.Black Hole`;
+const COLLAPSED = { collapsed: true };
 
 export default function useSceneControls() {
-  const {
-    attachSetControls,
+  const { attachSetControls, controlsSnapshotRef, presetsFolder } =
+    usePresetsFolder({
+      defaultPreset: DEFAULT_PRESET,
+      getPresetControls,
+      presets: PRESETS,
+    });
+
+  const p = { ...BASE, ...controlsSnapshotRef.current };
+
+  const cameraApiRef = useRef(null);
+  const { buildCamera, cameraControls } = useSceneCameraControls({
+    apiRef: cameraApiRef,
+    camera: CAMERA,
+    cameraFolderPath: CAMERA_FOLDER_PATH,
     controlsSnapshotRef,
-    initialPreset,
-    presetsFolder,
-  } = usePresetsFolder({
-    defaultPreset: DEFAULT_PRESET,
-    getPresetControls,
-    presets: PRESETS,
   });
 
-  const p = PRESETS[initialPreset] || PRESETS[DEFAULT_PRESET];
+  const { buildLighting, lightingControls } = useSceneLightingControls({
+    controlsSnapshotRef,
+    lighting: LIGHTING,
+    lightingFolderPath: LIGHTING_FOLDER_PATH,
+  });
 
-  const [controls, setControls] = useControls(
-    'Ghosts',
-    () => ({
-      Presets: presetsFolder,
-
-      Scene: folder(
-        {
-          bgColor: { value: p.bgColor, label: 'Background' },
-          ambientIntensity: {
-            value: p.ambientIntensity,
-            min: 0,
-            max: 1,
-            step: 0.01,
-            label: 'Ambient',
-          },
-          directionalIntensity: {
-            value: p.directionalIntensity,
-            min: 0,
-            max: 2,
-            step: 0.01,
-            label: 'Dir Light',
-          },
-          directionalColor: { value: p.directionalColor, label: 'Dir Color' },
+  const [controls, setControls] = useControls(SCENE_LABEL, () => ({
+    Presets: presetsFolder,
+    Camera: folder(cameraControls, COLLAPSED),
+    Lighting: folder(lightingControls, COLLAPSED),
+    Place: folder(
+      {
+        location: {
+          label: 'Location',
+          value: p.location,
+          options: LOCATION_OPTIONS,
         },
-        { collapsed: true }
-      ),
-
-      Ghosts: folder(
-        {
-          ghostCount: {
-            value: p.ghostCount,
-            options: [1, 2, 3, 4],
-            label: 'Count',
-          },
-          Colors: folder(
-            {
-              ghost1Color: { value: p.ghost1Color, label: 'Ghost 1' },
-              ghost2Color: { value: p.ghost2Color, label: 'Ghost 2' },
-              ghost3Color: { value: p.ghost3Color, label: 'Ghost 3' },
-              ghost4Color: { value: p.ghost4Color, label: 'Ghost 4' },
-            },
-            { collapsed: true }
-          ),
-          Cloth: folder(
-            {
-              wind: { value: p.wind, min: 0, max: 2, step: 0.01 },
-              windDirX: {
-                value: p.windDirX,
-                min: -1,
-                max: 1,
-                step: 0.01,
-                label: 'Wind Dir X',
-              },
-              windDirZ: {
-                value: p.windDirZ,
-                min: -1,
-                max: 1,
-                step: 0.01,
-                label: 'Wind Dir Z',
-              },
-              stiffness: {
-                value: p.stiffness,
-                min: 0,
-                max: 1,
-                step: 0.01,
-              },
-              dampening: {
-                value: p.dampening,
-                min: 0.9,
-                max: 1,
-                step: 0.001,
-              },
-            },
-            { collapsed: true }
-          ),
+        backdropColor: { label: 'Backdrop', value: p.backdropColor },
+        fogEnabled: { label: 'Fog', value: p.fogEnabled },
+        fogNear: {
+          label: 'Fog Near',
+          value: p.fogNear,
+          min: 0,
+          max: 500,
+          step: 0.5,
         },
-        { collapsed: true }
-      ),
-
-      Path: folder(
-        {
-          pathType: {
-            value: p.pathType,
-            options: ['figure8', 'retro'],
-            label: 'Type',
-          },
-          pathAmplitude: {
-            value: p.pathAmplitude,
-            min: 0.5,
-            max: 5,
-            step: 0.1,
-            label: 'Amplitude',
-          },
-          pathSpeed: {
-            value: p.pathSpeed,
-            min: 0,
-            max: 2,
-            step: 0.01,
-            label: 'Speed',
-          },
-          bobHeight: {
-            value: p.bobHeight,
-            min: 0,
-            max: 0.15,
-            step: 0.005,
-            label: 'Bob Height',
-          },
-          bobFrequency: {
-            value: p.bobFrequency,
-            min: 0.5,
-            max: 5,
-            step: 0.1,
-            label: 'Bob Freq',
-          },
-          baseY: {
-            value: p.baseY,
-            min: -2,
-            max: 3,
-            step: 0.1,
-            label: 'Base Y',
-          },
+        fogFar: {
+          label: 'Fog Far',
+          value: p.fogFar,
+          min: 1,
+          max: 4000,
+          step: 1,
         },
-        { collapsed: true }
-      ),
-
-      Eyes: folder(
-        {
-          'Eye Colors': folder(
-            {
-              eye1Color: { value: p.eye1Color, label: 'Eye 1' },
-              eye2Color: { value: p.eye2Color, label: 'Eye 2' },
-              eye3Color: { value: p.eye3Color, label: 'Eye 3' },
-              eye4Color: { value: p.eye4Color, label: 'Eye 4' },
-            },
-            { collapsed: true }
-          ),
-          eyeIntensity: {
-            value: p.eyeIntensity,
-            min: 0,
-            max: 10,
-            step: 0.1,
-            label: 'Intensity',
-          },
-          eyeSize: {
-            value: p.eyeSize,
-            min: 0.005,
-            max: 0.1,
-            step: 0.005,
-            label: 'Size',
-          },
-        },
-        { collapsed: true }
-      ),
-
-      Sparkles: folder(
-        {
-          sparkleCount: {
-            value: p.sparkleCount,
-            min: 0,
-            max: 500,
-            step: 10,
-            label: 'Count',
-          },
-          sparkleSpeed: {
-            value: p.sparkleSpeed,
-            min: 0,
-            max: 5,
-            step: 0.1,
-            label: 'Speed',
-          },
-          sparkleColor: { value: p.sparkleColor, label: 'Color' },
-          sparkleSize: {
-            value: p.sparkleSize,
-            min: 0.5,
-            max: 20,
-            step: 0.5,
-            label: 'Size',
-          },
-          sparkleScale: {
-            value: p.sparkleScale,
-            min: 1,
-            max: 20,
-            step: 0.5,
-            label: 'Scale',
-          },
-          sparkleOpacity: {
-            value: p.sparkleOpacity,
-            min: 0,
-            max: 1,
-            step: 0.01,
-            label: 'Opacity',
-          },
-        },
-        { collapsed: true }
-      ),
-
-      Floor: folder(
-        {
-          floorColor: { value: p.floorColor, label: 'Color' },
-          floorOpacity: {
-            value: p.floorOpacity,
-            min: 0,
-            max: 1,
-            step: 0.01,
-            label: 'Opacity',
-          },
-        },
-        { collapsed: true }
-      ),
-
-      Bloom: folder(
-        {
-          bloomEnabled: { value: p.bloomEnabled, label: 'Enabled' },
-          bloomThreshold: {
-            value: p.bloomThreshold,
-            min: 0,
-            max: 2,
-            step: 0.05,
-            label: 'Threshold',
-          },
-          bloomStrength: {
-            value: p.bloomStrength,
-            min: 0,
-            max: 3,
-            step: 0.05,
-            label: 'Strength',
-          },
-          bloomRadius: {
-            value: p.bloomRadius,
-            min: 0,
-            max: 2,
-            step: 0.05,
-            label: 'Radius',
-          },
-        },
-        { collapsed: true }
-      ),
-    }),
-    { collapsed: true }
-  );
+      },
+      COLLAPSED
+    ),
+    Ghost: getGhostControls(p),
+    Stars: getStarControls(p),
+    Earth: getEarthControls(p),
+    'Black Hole': getBlackHoleControls(p, BLACK_HOLE_FOLDER_PATH),
+    Ocean: getOceanControls(p),
+    Wing: getWingControls(p),
+    'Tiny Moon': getTinyMoonControls(p),
+    'Lunar Surface': getLunarControls(p),
+  }));
 
   attachSetControls(setControls);
   controlsSnapshotRef.current = { ...controls };
 
-  const ghostColors = useMemo(
-    () => [
-      controls.ghost1Color,
-      controls.ghost2Color,
-      controls.ghost3Color,
-      controls.ghost4Color,
-    ],
-    [
-      controls.ghost1Color,
-      controls.ghost2Color,
-      controls.ghost3Color,
-      controls.ghost4Color,
-    ]
+  useMediaRecorder({ fileName: SCENE_LABEL });
+
+  const cameraControlsKey = useMemo(
+    () => getCameraControlsKey(controls),
+    [controls]
+  );
+  const camera = useMemo(
+    () => buildCamera(controls),
+    [buildCamera, cameraControlsKey]
   );
 
-  const eyeColors = useMemo(
-    () => [
-      controls.eye1Color,
-      controls.eye2Color,
-      controls.eye3Color,
-      controls.eye4Color,
-    ],
-    [
-      controls.eye1Color,
-      controls.eye2Color,
-      controls.eye3Color,
-      controls.eye4Color,
-    ]
+  const lightingControlsKey = useMemo(
+    () => getLightingControlsKey(controls),
+    [controls]
+  );
+  const lighting = useMemo(
+    () => buildLighting(controls),
+    [buildLighting, lightingControlsKey]
   );
 
-  return { controls, ghostColors, eyeColors };
+  return useMemo(
+    () => ({ ...controls, cameraApiRef, camera, lighting }),
+    [camera, controls, lighting]
+  );
 }

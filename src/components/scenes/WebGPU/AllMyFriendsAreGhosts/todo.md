@@ -1,44 +1,31 @@
-# All My Friends Are Ghosts
-
-# // Intent / Use Cases
-
-- Ghost figures made from cloth draped over sphere geometries using WebGPU cloth simulation
-
-# // TODO:
+# // All My Friends Are Ghosts
 
 [Back to main TODO](../../../../../TODO.md)
 
-- [x] Ghost body shape — cloth pinned at center-top, draped over a sphere like the Ghost preset in TheLoom
-- [x] Eye holes using tatter/holes in cloth or alpha masking
-- [x] Multipls ghost instances
-- [x] Spooky lighting and atmosphere
-- [x] Ghosts movement in a figure 8 with hovering animation
-- [x] Mouse interactivity w/ cloth
-- [x] Emissive eyes inside the ghost
-- [x] Light bloom
-- [x] Include sparkles and colors from LoGlow scene
-- [x] Reflective floor panel that "fades" into background color like in Burning At Both Ends
+## // Intent / Use Cases
 
-# // Presets
+- A single ghost (the shared `@elements/WebGPU/ghost` GhostCharacter) observing places and things you would never associate with a ghost — impossible locations.
+- Each preset is a location; the ghost always stands at the world origin and the location is built around it.
+- Slow cinematic camera drift per location (CameraRig spline paths in `utils/camera.js`), keeping the ghost and what it is watching in one frame.
+- Locations reuse shared code: the black hole is `@modules/blackHole` (promoted from Aisle9), the ocean is `@modules/ifftOcean` (promoted from RowItAlone), the plane is `@elements/Boeing737`.
 
-- [x] Default - 2 white ghosts travelling in a figure 8 sin-waving up and down as they go
-- [x] Retro - 4 ghosts, light pastel pac-man colors, path is composed entirely of right angles, still sin-waving up and down though
-- [x] LoGlow - 3 Hot ghosts
+## // TODO:
 
-# // Features
+- [ ] Campfire at night — on hold until a fire implementation is chosen in FireTest (FireAndSmoke vs VolumetricFire vs LowPolyFire).
 
-- [ ] Consider adding "hands" for the ghosts. ie, smaller spheres located lower to the left and right of the main sphere. Could animate "hand movements".
+## // Presets
 
-# // Interactivity
+- [ ] Black Hole — floating in deep space, watching a lensed black hole.
+- [ ] Ocean: Day — hovering over open water, riding the real swell.
+- [ ] Ocean: Night — moonlit ocean, glitter path, stars.
+- [ ] Wing: Storm — on the 737's wing at night in rain and lightning, staring in the window.
+- [ ] Wing: Above the Clouds — on the wing at sunset over a cloud sea.
+- [ ] Tiny Moon — Little Prince style, standing on a small moon with Earth overhead.
+- [ ] Lunar Surface — cratered regolith to the horizon, hard low sun, Earth in a black sky.
+- [ ] Campfire — by a campfire at night.
 
-- [ ] Ghost/Cursor interaction
-- [ ] Ghost/Hands interaction
+## // Features
 
-# // Bugs
+## // Interactivity
 
-- [x] Sparkles are WAY too big even on smallest setting
-- [ ] Retro ghosts crash and cloth falls off sphere, cloth pin location should match coords of top of sphere
-- [x] Need to make sure ghost paths do not cross.
-- [ ] Cloth seems to be rotating around the sphere, may need more pins?
-- [x] Eyes should be inside of the sphere making them inside of ghost and lessening the need for exact alignment with eye holes
-- [x] Can we have path speed and path direction drive wind strength and direction?
+## // Bugs

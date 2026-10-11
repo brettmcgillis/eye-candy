@@ -3,13 +3,16 @@ import { useEffect, useMemo, useRef } from 'react';
 import { folder, useControls } from 'leva';
 
 import usePresetsFolder from '@hooks/usePresetsFolder';
+import {
+  BLACK_HOLE_VARIANT_OPTIONS,
+  buildLegacyControls,
+  buildSingularityControls,
+  buildWebGPUControls,
+} from '@modules/blackHole';
 import { useSceneCameraControls } from '@modules/cameraRig';
 import { useMediaRecorder } from '@modules/mediaRecorder';
 
 import {
-  BLACK_HOLE_VARIANT_LEGACY_PORT,
-  BLACK_HOLE_VARIANT_SINGULARITY,
-  BLACK_HOLE_VARIANT_WEBGPU,
   DEFAULT_PRESET,
   PRESETS,
   SETTING_INDOOR,
@@ -17,11 +20,6 @@ import {
   buildAisle9CameraDeclaration,
   getPresetControls,
 } from '../presets/presets';
-import {
-  buildLegacyControls,
-  buildSingularityControls,
-  buildWebGPUControls,
-} from './blackHoleControlDefs';
 import buildLightingControls from './lightingControlDefs';
 import buildOrbitControls from './orbitControlDefs';
 import buildPostControls from './postControlDefs';
@@ -31,12 +29,6 @@ const SCENE_LABEL = 'Aisle 9';
 const CAMERA_FOLDER_PATH = `${SCENE_LABEL}.Camera`;
 const LEGACY_BH_FOLDER_PATH = `${SCENE_LABEL}.Blackhole.Legacy`;
 const COLLAPSED = { collapsed: true };
-
-const BLACK_HOLE_VARIANT_OPTIONS = {
-  'Legacy Port': BLACK_HOLE_VARIANT_LEGACY_PORT,
-  'WebGPU Black Hole': BLACK_HOLE_VARIANT_WEBGPU,
-  Singularity: BLACK_HOLE_VARIANT_SINGULARITY,
-};
 
 export default function useSceneControls() {
   const {

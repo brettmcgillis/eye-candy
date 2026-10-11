@@ -2,32 +2,11 @@ import { folder, useControls } from 'leva';
 
 import {
   DEFAULT_WAVE_QUALITY,
-  FIRST_WAVE_BORDERS,
-  FIRST_WAVE_DATASET,
-  SECOND_WAVE_BORDERS,
-  SECOND_WAVE_DATASET,
   WAVE_QUALITY_PRESETS,
-} from '../runtime/waves/waveConstants';
-
-function buildSpectrumControls(prefix, dataset, borders) {
-  return Object.fromEntries(
-    Object.entries(dataset).map(([key, control]) => [
-      `${prefix}${key}`,
-      {
-        label: key,
-        max: borders[key].max,
-        min: borders[key].min,
-        value: control.value,
-      },
-    ])
-  );
-}
-
-function readSpectrumValues(controls, prefix, dataset) {
-  return Object.fromEntries(
-    Object.keys(dataset).map((key) => [key, controls[`${prefix}${key}`]])
-  );
-}
+  buildFirstWaveControls,
+  buildSecondWaveControls,
+  readWaveSettings,
+} from '@modules/ifftOcean';
 
 export default function useSceneControls() {
   const controls = useControls('Row It Alone WebGPU', {
@@ -69,18 +48,12 @@ export default function useSceneControls() {
       },
       { collapsed: true }
     ),
-    'First Wave Spectrum': folder(
-      buildSpectrumControls('first_', FIRST_WAVE_DATASET, FIRST_WAVE_BORDERS),
-      { collapsed: true }
-    ),
-    'Second Wave Spectrum': folder(
-      buildSpectrumControls(
-        'second_',
-        SECOND_WAVE_DATASET,
-        SECOND_WAVE_BORDERS
-      ),
-      { collapsed: true }
-    ),
+    'First Wave Spectrum': folder(buildFirstWaveControls(), {
+      collapsed: true,
+    }),
+    'Second Wave Spectrum': folder(buildSecondWaveControls(), {
+      collapsed: true,
+    }),
     Foam: folder(
       {
         foamStrength: { value: 0.8, min: 0, max: 5, step: 0.1 },
@@ -365,9 +338,6 @@ export default function useSceneControls() {
       quality: controls.quality,
       waveUpdateHz: controls.waveUpdateHz,
     },
-    waveSettings: {
-      ...readSpectrumValues(controls, 'first_', FIRST_WAVE_DATASET),
-      ...readSpectrumValues(controls, 'second_', SECOND_WAVE_DATASET),
-    },
+    waveSettings: readWaveSettings(controls),
   };
 }
